@@ -81,11 +81,11 @@ var PaymentDialogUtils = {
       "postalCodeLabel": country == "US" ? "zip" : "postalCode",
       "fieldsOrder": [
         {fieldId: "name", newLine: true},
-        {fieldId: "organization", newLine: true},
         {fieldId: "street-address", newLine: true},
         {fieldId: "address-level2"},
         {fieldId: "address-level1"},
         {fieldId: "postal-code"},
+        {fieldId: "organization"},
       ],
       
       

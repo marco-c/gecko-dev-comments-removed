@@ -162,8 +162,8 @@ class EditAddress extends EditAutofillForm {
 
 
 
-  computeVisibleFields(mailingFieldsOrder) {
-    let addressFields = this._elements.form.dataset.addressFields;
+
+  static computeVisibleFields(mailingFieldsOrder, addressFields) {
     if (addressFields) {
       let requestedFieldClasses = addressFields.trim().split(/\s+/);
       let fieldClasses = [];
@@ -212,7 +212,8 @@ class EditAddress extends EditAutofillForm {
     } = this.getFormFormat(country);
     this._elements.addressLevel1Label.dataset.localization = addressLevel1Label;
     this._elements.postalCodeLabel.dataset.localization = postalCodeLabel;
-    let fieldClasses = this.computeVisibleFields(mailingFieldsOrder);
+    let addressFields = this._elements.form.dataset.addressFields;
+    let fieldClasses = EditAddress.computeVisibleFields(mailingFieldsOrder, addressFields);
     this.arrangeFields(fieldClasses);
     this.updatePostalCodeValidation(postalCodePattern);
   }

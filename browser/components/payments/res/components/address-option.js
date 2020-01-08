@@ -2,8 +2,12 @@
 
 
 
+
 import ObservedPropertiesMixin from "../mixins/ObservedPropertiesMixin.js";
 import RichOption from "./rich-option.js";
+
+
+
 
 
 
@@ -31,6 +35,7 @@ export default class AddressOption extends ObservedPropertiesMixin(RichOption) {
       "email",
       "guid",
       "name",
+      "organization",
       "postal-code",
       "street-address",
       "tel",
@@ -38,22 +43,34 @@ export default class AddressOption extends ObservedPropertiesMixin(RichOption) {
   }
 
   static get observedAttributes() {
-    return RichOption.observedAttributes.concat(AddressOption.recordAttributes);
+    return RichOption.observedAttributes.concat(AddressOption.recordAttributes,
+                                                "address-fields",
+                                                "break-after-nth-field",
+                                                "data-field-separator");
   }
 
   constructor() {
     super();
 
-    for (let name of ["name", "street-address", "email", "tel"]) {
+    this._line1 = document.createElement("div");
+    this._line1.classList.add("line");
+    this._line2 = document.createElement("div");
+    this._line2.classList.add("line");
+
+    for (let name of AddressOption.recordAttributes) {
       this[`_${name}`] = document.createElement("span");
       this[`_${name}`].classList.add(name);
+      
+      let missingValueString = name.replace(/(-|^)([a-z])/g, ($0, $1, $2) => {
+        return $1.replace("-", " ") + $2.toUpperCase();
+      }) + " Missing";
+      this[`_${name}`].dataset.missingString = missingValueString;
     }
   }
 
   connectedCallback() {
-    for (let name of ["name", "street-address", "email", "tel"]) {
-      this.appendChild(this[`_${name}`]);
-    }
+    this.appendChild(this._line1);
+    this.appendChild(this._line2);
     super.connectedCallback();
   }
 
@@ -61,14 +78,72 @@ export default class AddressOption extends ObservedPropertiesMixin(RichOption) {
     return PaymentDialogUtils.getAddressLabel(address, addressFields);
   }
 
+  get requiredFields() {
+    if (this.hasAttribute("address-fields")) {
+      let names = this.getAttribute("address-fields").trim().split(/\s+/);
+      if (names.length) {
+        return names;
+      }
+    }
+
+    return [
+      
+      "address-level2",
+      "country",
+      "name",
+      "postal-code",
+      "street-address",
+    ];
+  }
+
   render() {
     
-    this._name.textContent = this.name || "";
-    this["_street-address"].textContent =
-      `${this.streetAddress || ""} ${this.addressLevel2 || ""} ` +
-      `${this.addressLevel1 || ""} ${this.postalCode || ""} ${this.country || ""}`;
-    this._email.textContent = this.email || "";
-    this._tel.textContent = this.tel || "";
+    
+    this._line1.textContent = "";
+    this._line2.textContent = "";
+
+    
+    
+    for (let name of AddressOption.recordAttributes) {
+      let camelCaseName = super.constructor.kebabToCamelCase(name);
+      let fieldEl = this[`_${name}`];
+      fieldEl.textContent = this[camelCaseName] || "";
+    }
+
+    let {fieldsOrder} = PaymentDialogUtils.getFormFormat(this.country);
+    
+    let requestedVisibleFields = this.addressFields || "mailing-address";
+    let visibleFields = EditAddress.computeVisibleFields(fieldsOrder, requestedVisibleFields);
+    let visibleFieldCount = 0;
+    let requiredFields = this.requiredFields;
+    
+    let lineEl = this._line1;
+    
+    let breakAfterNthField = this.breakAfterNthField || 2;
+
+    
+    for (let field of visibleFields) {
+      let fieldEl = this[`_${field.fieldId}`];
+      if (!fieldEl) {
+        log.warn(`address-option render: '${field.fieldId}' doesn't exist`);
+        continue;
+      }
+
+      if (!fieldEl.textContent && !requiredFields.includes(field.fieldId)) {
+        
+        continue;
+      }
+
+      if (lineEl.children.length > 0) {
+        lineEl.append(this.dataset.fieldSeparator);
+      }
+      lineEl.appendChild(fieldEl);
+
+      
+      if (++visibleFieldCount == breakAfterNthField) {
+        lineEl = this._line2;
+      }
+    }
   }
 }
 

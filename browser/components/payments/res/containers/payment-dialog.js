@@ -265,6 +265,39 @@ export default class PaymentDialog extends PaymentStateSubscriberMixin(HTMLEleme
     }
   }
 
+  _renderPayerFields(state) {
+    let paymentOptions = state.request.paymentOptions;
+    let payerRequested = this._isPayerRequested(paymentOptions);
+    for (let element of this._payerRelatedEls) {
+      element.hidden = !payerRequested;
+    }
+
+    if (payerRequested) {
+      let fieldNames = new Set(); 
+      if (paymentOptions.requestPayerName) {
+        fieldNames.add("name");
+      }
+      if (paymentOptions.requestPayerEmail) {
+        fieldNames.add("email");
+      }
+      if (paymentOptions.requestPayerPhone) {
+        fieldNames.add("tel");
+      }
+      this._payerAddressPicker.setAttribute("address-fields", [...fieldNames].join(" "));
+      
+      
+      if (fieldNames.size == 3) {
+        this._payerAddressPicker.setAttribute("break-after-nth-field", 1);
+      } else {
+        this._payerAddressPicker.removeAttribute("break-after-nth-field");
+      }
+    } else {
+      this._payerAddressPicker.removeAttribute("address-fields");
+    }
+    this._payerAddressPicker.dataset.addAddressTitle = this.dataset.payerTitleAdd;
+    this._payerAddressPicker.dataset.editAddressTitle = this.dataset.payerTitleEdit;
+  }
+
   stateChangeCallback(state) {
     super.stateChangeCallback(state);
 
@@ -325,28 +358,8 @@ export default class PaymentDialog extends PaymentStateSubscriberMixin(HTMLEleme
     for (let element of this._shippingRelatedEls) {
       element.hidden = !paymentOptions.requestShipping;
     }
-    let payerRequested = this._isPayerRequested(paymentOptions);
-    for (let element of this._payerRelatedEls) {
-      element.hidden = !payerRequested;
-    }
 
-    if (payerRequested) {
-      let fieldNames = new Set(); 
-      if (paymentOptions.requestPayerName) {
-        fieldNames.add("name");
-      }
-      if (paymentOptions.requestPayerEmail) {
-        fieldNames.add("email");
-      }
-      if (paymentOptions.requestPayerPhone) {
-        fieldNames.add("tel");
-      }
-      this._payerAddressPicker.setAttribute("address-fields", [...fieldNames].join(" "));
-    } else {
-      this._payerAddressPicker.removeAttribute("address-fields");
-    }
-    this._payerAddressPicker.dataset.addAddressTitle = this.dataset.payerTitleAdd;
-    this._payerAddressPicker.dataset.editAddressTitle = this.dataset.payerTitleEdit;
+    this._renderPayerFields(state);
 
     
     let basicCardMethod = request.paymentMethods
