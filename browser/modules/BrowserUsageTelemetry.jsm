@@ -117,6 +117,11 @@ function getSearchEngineId(engine) {
   return "other";
 }
 
+function shouldRecordSearchCount(tabbrowser) {
+  return !PrivateBrowsingUtils.isWindowPrivate(tabbrowser.ownerGlobal) ||
+         !Services.prefs.getBoolPref("browser.engagement.search_counts.pbm", false);
+}
+
 let URICountListener = {
   
   _domainSet: new Set(),
@@ -200,7 +205,9 @@ let URICountListener = {
       return;
     }
 
-    Services.search.recordSearchURLTelemetry(uriSpec);
+    if (shouldRecordSearchCount(browser.getTabBrowser())) {
+      Services.search.recordSearchURLTelemetry(uriSpec);
+    }
 
     if (!shouldCountURI) {
       return;
@@ -416,7 +423,13 @@ let BrowserUsageTelemetry = {
 
 
 
-  recordSearch(engine, source, details = {}) {
+
+
+  recordSearch(tabbrowser, engine, source, details = {}) {
+    if (!shouldRecordSearchCount(tabbrowser)) {
+      return;
+    }
+
     const isOneOff = !!details.isOneOff;
     const countId = getSearchEngineId(engine) + "." + source;
 

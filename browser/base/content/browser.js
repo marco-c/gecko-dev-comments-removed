@@ -1333,6 +1333,10 @@ var gBrowserInit = {
     });
 
     this._setInitialFocus();
+
+    
+    gUIDensity.init();
+    TabsInTitlebar.whenWindowLayoutReady();
   },
 
   onLoad() {
@@ -1389,7 +1393,6 @@ var gBrowserInit = {
     }
 
     
-    gUIDensity.init();
     TabletModeUpdater.init();
     CombinedStopReload.ensureInitialized();
     gPrivateBrowsingUI.init();
@@ -4150,7 +4153,7 @@ const BrowserSearch = {
 
   recordSearchInTelemetry(engine, source, details = {}) {
     try {
-      BrowserUsageTelemetry.recordSearch(engine, source, details);
+      BrowserUsageTelemetry.recordSearch(gBrowser, engine, source, details);
     } catch (ex) {
       Cu.reportError(ex);
     }
@@ -4174,7 +4177,7 @@ const BrowserSearch = {
   recordOneoffSearchInTelemetry(engine, source, type, where) {
     try {
       const details = {type, isOneOff: true};
-      BrowserUsageTelemetry.recordSearch(engine, source, details);
+      BrowserUsageTelemetry.recordSearch(gBrowser, engine, source, details);
     } catch (ex) {
       Cu.reportError(ex);
     }
@@ -5581,7 +5584,7 @@ function onViewToolbarsPopupShowing(aEvent, aInsertPoint) {
 
   var firstMenuItem = aInsertPoint || popup.firstElementChild;
 
-  let toolbarNodes = gNavToolbox.querySelectorAll("toolbar");
+  let toolbarNodes = gNavToolbox.children;
 
   for (let toolbar of toolbarNodes) {
     if (!toolbar.hasAttribute("toolbarname")) {
@@ -5858,6 +5861,7 @@ var gUIDensity = {
       }
     }
 
+    TabsInTitlebar.update();
     gBrowser.tabContainer.uiDensityChanged();
   },
 };
