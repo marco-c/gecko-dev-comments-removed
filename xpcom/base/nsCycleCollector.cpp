@@ -3931,6 +3931,12 @@ nsCycleCollector::BeginCollection(ccType aCCType,
     mCCJSRuntime->CheckGrayBits();
   }
 
+  
+  
+  if (recordreplay::IsRecordingOrReplaying()) {
+    recordreplay::ExecuteTriggers();
+  }
+
   FreeSnowWhite(true);
   timeLog.Checkpoint("BeginCollection FreeSnowWhite");
 

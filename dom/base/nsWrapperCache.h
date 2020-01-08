@@ -81,6 +81,10 @@ static_assert(sizeof(void*) == 4, "Only support 32-bit and 64-bit");
 
 
 
+
+
+
+
 class nsWrapperCache
 {
 public:
@@ -96,6 +100,10 @@ public:
   }
   ~nsWrapperCache()
   {
+    
+    if (mozilla::recordreplay::IsReplaying()) {
+      mozilla::recordreplay::SetWeakPointerJSRoot(this, nullptr);
+    }
     MOZ_ASSERT(!PreservingWrapper(),
                "Destroying cache with a preserved wrapper!");
   }
@@ -133,6 +141,23 @@ public:
 
   JSObject* GetWrapperMaybeDead() const
   {
+    
+    
+    
+    
+    if (mozilla::recordreplay::IsRecordingOrReplaying() &&
+        !mozilla::recordreplay::AreThreadEventsDisallowed() &&
+        !mozilla::recordreplay::HasDivergedFromRecording()) {
+      bool success = mozilla::recordreplay::RecordReplayValue(!!mWrapper);
+      if (mozilla::recordreplay::IsReplaying()) {
+        if (success) {
+          MOZ_RELEASE_ASSERT(mWrapper);
+        } else {
+          const_cast<nsWrapperCache*>(this)->ClearWrapper();
+        }
+      }
+    }
+
     return mWrapper;
   }
 

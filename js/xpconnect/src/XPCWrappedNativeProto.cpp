@@ -32,6 +32,8 @@ XPCWrappedNativeProto::XPCWrappedNativeProto(XPCWrappedNativeScope* Scope,
 #ifdef DEBUG
     gDEBUG_LiveProtoCount++;
 #endif
+
+    RecordReplayRegisterDeferredFinalizeThing(nullptr, nullptr, mClassInfo);
 }
 
 XPCWrappedNativeProto::~XPCWrappedNativeProto()
@@ -47,6 +49,8 @@ XPCWrappedNativeProto::~XPCWrappedNativeProto()
     
 
     XPCNativeSet::ClearCacheEntryForClassInfo(mClassInfo);
+
+    DeferredFinalize(mClassInfo.forget().take());
 }
 
 bool

@@ -13,7 +13,7 @@
 inline JSObject*
 nsWrapperCache::GetWrapperPreserveColor() const
 {
-  JSObject* obj = mWrapper;
+  JSObject* obj = GetWrapperMaybeDead();
   if (obj && js::gc::EdgeNeedsSweepUnbarriered(&obj)) {
     
     

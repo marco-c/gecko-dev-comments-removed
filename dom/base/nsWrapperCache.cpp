@@ -43,6 +43,10 @@ nsWrapperCache::SetWrapperJSObject(JSObject* aWrapper)
   if (aWrapper && !JS::ObjectIsTenured(aWrapper)) {
     CycleCollectedJSRuntime::Get()->NurseryWrapperAdded(this);
   }
+
+  if (mozilla::recordreplay::IsReplaying()) {
+    mozilla::recordreplay::SetWeakPointerJSRoot(this, aWrapper);
+  }
 }
 
 void
@@ -114,6 +118,12 @@ void
 nsWrapperCache::CheckCCWrapperTraversal(void* aScriptObjectHolder,
                                         nsScriptObjectTracer* aTracer)
 {
+  
+  
+  if (recordreplay::IsRecordingOrReplaying()) {
+    return;
+  }
+
   JSObject* wrapper = GetWrapperPreserveColor();
   if (!wrapper) {
     return;

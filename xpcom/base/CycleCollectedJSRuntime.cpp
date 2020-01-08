@@ -572,6 +572,18 @@ CycleCollectedJSRuntime::CycleCollectedJSRuntime(JSContext* aCx)
 #ifdef MOZ_JS_DEV_ERROR_INTERCEPTOR
   JS_SetErrorInterceptorCallback(mJSRuntime, &mErrorInterceptor);
 #endif 
+
+  if (recordreplay::IsRecordingOrReplaying()) {
+    
+    
+    
+    
+    
+    recordreplay::RegisterTrigger(this,
+                                  [=]() {
+                                    FinalizeDeferredThings(CycleCollectedJSContext::FinalizeNow);
+                                  });
+  }
 }
 
 void
@@ -592,6 +604,10 @@ CycleCollectedJSRuntime::~CycleCollectedJSRuntime()
   MOZ_COUNT_DTOR(CycleCollectedJSRuntime);
   MOZ_ASSERT(!mDeferredFinalizerTable.Count());
   MOZ_ASSERT(mShutdownCalled);
+
+  if (recordreplay::IsRecordingOrReplaying()) {
+    recordreplay::UnregisterTrigger(this);
+  }
 }
 
 void
@@ -1266,7 +1282,7 @@ CycleCollectedJSRuntime::JSObjectsTenured()
   for (auto iter = mNurseryObjects.Iter(); !iter.Done(); iter.Next()) {
     nsWrapperCache* cache = iter.Get();
     JSObject* wrapper = cache->GetWrapperMaybeDead();
-    MOZ_DIAGNOSTIC_ASSERT(wrapper);
+    MOZ_DIAGNOSTIC_ASSERT(wrapper || recordreplay::IsReplaying());
     if (!JS::ObjectIsTenured(wrapper)) {
       MOZ_ASSERT(!cache->PreservingWrapper());
       const JSClass* jsClass = js::GetObjectJSClass(wrapper);
@@ -1512,10 +1528,16 @@ CycleCollectedJSRuntime::OnGC(JSContext* aContext,
       
       
       
-      bool finalizeIncrementally = JS::WasIncrementalGC(mJSRuntime) || JS_IsExceptionPending(aContext);
-      FinalizeDeferredThings(finalizeIncrementally
-                             ? CycleCollectedJSContext::FinalizeIncrementally
-                             : CycleCollectedJSContext::FinalizeNow);
+      if (recordreplay::IsRecordingOrReplaying()) {
+        
+        
+        recordreplay::ActivateTrigger(this);
+      } else {
+        bool finalizeIncrementally = JS::WasIncrementalGC(mJSRuntime) || JS_IsExceptionPending(aContext);
+        FinalizeDeferredThings(finalizeIncrementally
+                               ? CycleCollectedJSContext::FinalizeIncrementally
+                               : CycleCollectedJSContext::FinalizeNow);
+      }
 
       break;
     }

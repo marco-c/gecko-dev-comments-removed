@@ -14,7 +14,14 @@ mozilla::DeferredFinalize(nsISupports* aSupports)
 {
   CycleCollectedJSRuntime* rt = CycleCollectedJSRuntime::Get();
   MOZ_ASSERT(rt, "Should have a CycleCollectedJSRuntime by now");
-  rt->DeferredFinalize(aSupports);
+  if (mozilla::recordreplay::IsRecordingOrReplaying()) {
+    
+    
+    
+    mozilla::recordreplay::ActivateTrigger(aSupports);
+  } else {
+    rt->DeferredFinalize(aSupports);
+  }
 }
 
 void
@@ -24,5 +31,40 @@ mozilla::DeferredFinalize(DeferredFinalizeAppendFunction aAppendFunc,
 {
   CycleCollectedJSRuntime* rt = CycleCollectedJSRuntime::Get();
   MOZ_ASSERT(rt, "Should have a CycleCollectedJSRuntime by now");
-  rt->DeferredFinalize(aAppendFunc, aFunc, aThing);
+  if (mozilla::recordreplay::IsRecordingOrReplaying()) {
+    
+    
+    mozilla::recordreplay::ActivateTrigger(aThing);
+  } else {
+    rt->DeferredFinalize(aAppendFunc, aFunc, aThing);
+  }
+}
+
+static void
+RecordReplayDeferredFinalize(DeferredFinalizeAppendFunction aAppendFunc,
+                             DeferredFinalizeFunction aFunc,
+                             void* aThing)
+{
+  mozilla::recordreplay::UnregisterTrigger(aThing);
+
+  CycleCollectedJSRuntime* rt = CycleCollectedJSRuntime::Get();
+  if (aAppendFunc) {
+    rt->DeferredFinalize(aAppendFunc, aFunc, aThing);
+  } else {
+    rt->DeferredFinalize(reinterpret_cast<nsISupports*>(aThing));
+  }
+}
+
+void
+mozilla::RecordReplayRegisterDeferredFinalizeThing(DeferredFinalizeAppendFunction aAppendFunc,
+                                                   DeferredFinalizeFunction aFunc,
+                                                   void* aThing)
+{
+  if (mozilla::recordreplay::IsRecordingOrReplaying()) {
+    mozilla::recordreplay::RegisterTrigger(aThing,
+                                           [=]() {
+                                             RecordReplayDeferredFinalize(aAppendFunc,
+                                                                          aFunc, aThing);
+                                           });
+  }
 }

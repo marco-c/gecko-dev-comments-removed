@@ -1052,6 +1052,12 @@ nsThread::ProcessNextEvent(bool aMayWait, bool* aResult)
 
   
   
+  if (recordreplay::IsRecordingOrReplaying()) {
+    recordreplay::ExecuteTriggers();
+  }
+
+  
+  
   
   
   

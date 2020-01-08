@@ -34,6 +34,7 @@ public:
 
         
         
+        mozilla::RecordReplayRegisterDeferredFinalizeThing(nullptr, nullptr, sbp);
         JS_SetPrivate(global, static_cast<nsIScriptObjectPrincipal*>(sbp.forget().take()));
     }
 
