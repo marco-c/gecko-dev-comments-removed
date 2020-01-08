@@ -591,9 +591,25 @@ var FullScreen = {
     }
 
     
-    if (document.commandDispatcher.focusedElement &&
-        document.commandDispatcher.focusedElement.ownerDocument == document &&
-        document.commandDispatcher.focusedElement.localName == "input") {
+    let focused = document.commandDispatcher.focusedElement;
+    if (focused && focused.ownerDocument == document &&
+        focused.localName == "input") {
+      
+      
+      
+      
+      
+      let retryHideNavToolbox = () => {
+        
+        
+        requestAnimationFrame(() => {
+          setTimeout(() => this.hideNavToolbox(aAnimate), 0);
+        });
+        window.removeEventListener("keypress", retryHideNavToolbox);
+        window.removeEventListener("click", retryHideNavToolbox);
+      };
+      window.addEventListener("keypress", retryHideNavToolbox);
+      window.addEventListener("click", retryHideNavToolbox);
       return;
     }
 
