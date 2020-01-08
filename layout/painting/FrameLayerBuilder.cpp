@@ -579,6 +579,16 @@ public:
 
 
 
+  bool SetupComponentAlpha(ContainerState* aState,
+                           nsDisplayItem* aItem,
+                           const nsIntRect& aVisibleRect,
+                           const TransformClipNode* aTransform);
+
+  
+
+
+
+
 
 
   void Accumulate(ContainerState* aState,
@@ -4012,6 +4022,54 @@ PaintedLayerData::UpdateEffectStatus(DisplayItemEntryType aType,
   }
 }
 
+
+bool
+PaintedLayerData::SetupComponentAlpha(ContainerState* aState,
+                                      nsDisplayItem* aItem,
+                                      const nsIntRect& aVisibleRect,
+                                      const TransformClipNode* aTransform)
+{
+  nsRect componentAlphaBounds =
+    aItem->GetComponentAlphaBounds(aState->mBuilder);
+
+  if (componentAlphaBounds.IsEmpty()) {
+    
+    return false;
+  }
+
+  if (aTransform) {
+    componentAlphaBounds = aTransform->TransformRect(
+      componentAlphaBounds, aState->mAppUnitsPerDevPixel);
+  }
+
+  const nsIntRect pixelBounds =
+    aState->ScaleToOutsidePixels(componentAlphaBounds, false);
+
+  const nsIntRect visibleRect =
+    pixelBounds.Intersect(aVisibleRect);
+
+  if (!mOpaqueRegion.Contains(visibleRect)) {
+    nsRect buildingRect = aItem->GetBuildingRect();
+
+    if (aTransform) {
+      buildingRect =
+        aTransform->TransformRect(buildingRect, aState->mAppUnitsPerDevPixel);
+    }
+
+    const nsRect tightBounds = componentAlphaBounds.Intersect(buildingRect);
+
+    if (IsItemAreaInWindowOpaqueRegion(aState->mBuilder, aItem, tightBounds)) {
+      mNeedComponentAlpha = true;
+    } else {
+      
+      aItem->DisableComponentAlpha();
+      return false;
+    }
+  }
+
+  return true;
+}
+
 void
 PaintedLayerData::Accumulate(ContainerState* aState,
                              nsDisplayItem* aItem,
@@ -4067,16 +4125,16 @@ PaintedLayerData::Accumulate(ContainerState* aState,
     mForceTransparentSurface = true;
   }
 
-  nsRect componentAlphaBounds;
   if (aState->mParameters.mDisableSubpixelAntialiasingInDescendants) {
     
     
     
     aItem->DisableComponentAlpha();
   } else {
-    componentAlphaBounds = aItem->GetComponentAlphaBounds(aState->mBuilder);
+    const bool needsComponentAlpha =
+      SetupComponentAlpha(aState, aItem, aVisibleRect, aTransform);
 
-    if (!componentAlphaBounds.IsEmpty()) {
+    if (needsComponentAlpha) {
       
       for (size_t i : aOpacityIndices) {
         AssignedDisplayItem& item = mAssignedDisplayItems[i];
@@ -4203,24 +4261,6 @@ PaintedLayerData::Accumulate(ContainerState* aState,
       
       if (tmp.GetNumRects() <= 4 || aItem->Frame()->PresContext()->IsChrome()) {
         mOpaqueRegion = std::move(tmp);
-      }
-    }
-  }
-
-  if (!aState->mParameters.mDisableSubpixelAntialiasingInDescendants &&
-      !componentAlphaBounds.IsEmpty()) {
-    nsIntRect componentAlphaRect =
-      aState->ScaleToOutsidePixels(componentAlphaBounds, false)
-        .Intersect(aVisibleRect);
-
-    if (!mOpaqueRegion.Contains(componentAlphaRect)) {
-      if (IsItemAreaInWindowOpaqueRegion(
-            aState->mBuilder,
-            aItem,
-            componentAlphaBounds.Intersect(aItem->GetBuildingRect()))) {
-        mNeedComponentAlpha = true;
-      } else {
-        aItem->DisableComponentAlpha();
       }
     }
   }
