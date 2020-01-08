@@ -183,6 +183,15 @@ class WeakMap
 
   bool markIteratively(GCMarker* marker) override;
 
+  
+
+
+
+
+
+
+
+
   JSObject* getDelegate(JSObject* key) const;
   JSObject* getDelegate(JSScript* script) const;
   JSObject* getDelegate(LazyScript* script) const;

@@ -493,8 +493,6 @@ typedef bool (*JSHasInstanceOp)(JSContext* cx, JS::HandleObject obj,
 
 typedef void (*JSTraceOp)(JSTracer* trc, JSObject* obj);
 
-typedef JSObject* (*JSWeakmapKeyDelegateOp)(JSObject* obj);
-
 typedef size_t (*JSObjectMovedOp)(JSObject* obj, JSObject* old);
 
 
@@ -687,19 +685,6 @@ struct MOZ_STATIC_CLASS ClassSpec {
 };
 
 struct MOZ_STATIC_CLASS ClassExtension {
-  
-
-
-
-
-
-
-
-
-
-
-  JSWeakmapKeyDelegateOp weakmapKeyDelegateOp;
-
   
 
 
@@ -952,9 +937,6 @@ struct MOZ_STATIC_CLASS Class {
     return spec ? spec->finishInit : nullptr;
   }
 
-  JSWeakmapKeyDelegateOp extWeakmapKeyDelegateOp() const {
-    return ext ? ext->weakmapKeyDelegateOp : nullptr;
-  }
   JSObjectMovedOp extObjectMovedOp() const {
     return ext ? ext->objectMovedOp : nullptr;
   }

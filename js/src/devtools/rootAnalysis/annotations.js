@@ -31,9 +31,6 @@ function indirectCallCannotGC(fullCaller, fullVariable)
     if (name == "params" && caller == "PR_ExplodeTime")
         return true;
 
-    if (name == "op" && /GetWeakmapKeyDelegate/.test(caller))
-        return true;
-
     
     if (/CallDestroyScriptHook/.test(caller))
         return true;
@@ -168,7 +165,6 @@ var ignoreFunctions = {
     "PR_ExplodeTime" : true,
     "PR_ErrorInstallTable" : true,
     "PR_SetThreadPrivate" : true,
-    "JSObject* js::GetWeakmapKeyDelegate(JSObject*)" : true, 
     "uint8 NS_IsMainThread()" : true,
 
     

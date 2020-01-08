@@ -293,7 +293,6 @@ static const ClassSpec ArrayBufferObjectClassSpec = {
     arraybuffer_proto_properties};
 
 static const ClassExtension ArrayBufferObjectClassExtension = {
-    nullptr, 
     ArrayBufferObject::objectMoved};
 
 const Class ArrayBufferObject::class_ = {

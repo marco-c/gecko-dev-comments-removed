@@ -95,7 +95,6 @@ struct ProxyTraps {
   
 
   
-  
 };
 
 static int HandlerFamily;

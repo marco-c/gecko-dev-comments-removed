@@ -280,11 +280,6 @@ bool ForwardingProxyHandler::isConstructor(JSObject* obj) const {
   return target->isConstructor();
 }
 
-JSObject* Wrapper::weakmapKeyDelegate(JSObject* proxy) const {
-  
-  return UncheckedUnwrapWithoutExpose(proxy);
-}
-
 JSObject* Wrapper::New(JSContext* cx, JSObject* obj, const Wrapper* handler,
                        const WrapperOptions& options) {
   

@@ -141,7 +141,6 @@ static const ClassOps MapIteratorObjectClassOps = {nullptr,
                                                    MapIteratorObject::finalize};
 
 static const ClassExtension MapIteratorObjectClassExtension = {
-    nullptr, 
     MapIteratorObject::objectMoved};
 
 const Class MapIteratorObject::class_ = {
@@ -912,7 +911,6 @@ static const ClassOps SetIteratorObjectClassOps = {nullptr,
                                                    SetIteratorObject::finalize};
 
 static const ClassExtension SetIteratorObjectClassExtension = {
-    nullptr, 
     SetIteratorObject::objectMoved};
 
 const Class SetIteratorObject::class_ = {
