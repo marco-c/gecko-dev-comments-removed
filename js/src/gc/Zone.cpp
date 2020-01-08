@@ -9,6 +9,7 @@
 #include "gc/FreeOp.h"
 #include "gc/Policy.h"
 #include "gc/PublicIterators.h"
+#include "jit/BaselineIC.h"
 #include "jit/BaselineJIT.h"
 #include "jit/Ion.h"
 #include "jit/JitRealm.h"
@@ -18,6 +19,7 @@
 
 #include "gc/GC-inl.h"
 #include "gc/Marking-inl.h"
+#include "vm/JSScript-inl.h"
 #include "vm/Realm-inl.h"
 
 using namespace js;
@@ -262,8 +264,17 @@ Zone::discardJitCode(FreeOp* fop, bool discardBaselineCode, bool releaseTypes)
 
         
         
+        
         if (releaseTypes) {
             script->maybeReleaseTypes();
+        }
+
+        
+        
+        
+        
+        if (discardBaselineCode && script->hasICScript()) {
+            script->icScript()->purgeOptimizedStubs(script->zone());
         }
     }
 

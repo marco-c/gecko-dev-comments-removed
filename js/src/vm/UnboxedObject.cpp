@@ -17,6 +17,7 @@
 #include "gc/Nursery-inl.h"
 #include "jit/MacroAssembler-inl.h"
 #include "vm/JSObject-inl.h"
+#include "vm/JSScript-inl.h"
 #include "vm/Shape-inl.h"
 #include "vm/TypeInference-inl.h"
 
@@ -649,8 +650,8 @@ UnboxedLayout::makeNativeGroup(JSContext* cx, ObjectGroup* group)
         realm.replaceAllocationSiteGroup(script, pc, JSProto_Object, replacementGroup);
 
         
-        if (script->hasBaselineScript()) {
-            jit::ICEntry& entry = script->baselineScript()->icEntryFromPCOffset(script->pcToOffset(pc));
+        if (script->hasICScript()) {
+            jit::ICEntry& entry = script->icScript()->icEntryFromPCOffset(script->pcToOffset(pc));
             jit::ICFallbackStub* fallback = entry.fallbackStub();
             for (jit::ICStubIterator iter = fallback->beginChain(); !iter.atEnd(); iter++) {
                 iter.unlink(cx);

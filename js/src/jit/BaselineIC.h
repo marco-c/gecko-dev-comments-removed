@@ -222,19 +222,18 @@ class ICEntry
     ICStub* firstStub_;
 
     
-    uint32_t pcOffset_ : 31;
-    uint32_t isForOp_ : 1;
+    uint32_t pcOffset_;
 
   public:
-    ICEntry(ICStub* firstStub, uint32_t pcOffset, bool isForOp)
-      : firstStub_(firstStub), pcOffset_(pcOffset), isForOp_(uint32_t(isForOp))
-    {
-        
-        
-        MOZ_ASSERT(pcOffset_ == pcOffset);
-        JS_STATIC_ASSERT(BaselineMaxScriptLength <= (1u << 31) - 1);
-        MOZ_ASSERT(pcOffset <= BaselineMaxScriptLength);
-    }
+    
+    
+    
+    
+    static constexpr uint32_t NonOpPCOffset = UINT32_MAX;
+
+    ICEntry(ICStub* firstStub, uint32_t pcOffset)
+      : firstStub_(firstStub), pcOffset_(pcOffset)
+    {}
 
     ICStub* firstStub() const {
         MOZ_ASSERT(firstStub_);
@@ -248,10 +247,10 @@ class ICEntry
     }
 
     uint32_t pcOffset() const {
-        return pcOffset_;
+        return pcOffset_ == NonOpPCOffset ? 0 : pcOffset_;
     }
     jsbytecode* pc(JSScript* script) const {
-        return script->offsetToPC(pcOffset_);
+        return script->offsetToPC(pcOffset());
     }
 
     static inline size_t offsetOfFirstStub() {
@@ -263,10 +262,109 @@ class ICEntry
     }
 
     bool isForOp() const {
-        return !!isForOp_;
+        return pcOffset_ != NonOpPCOffset;
     }
 
     void trace(JSTracer* trc);
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class ICScript
+{
+    
+    FallbackICStubSpace fallbackStubSpace_ = {};
+
+    uint32_t numICEntries_;
+
+    explicit ICScript(uint32_t numICEntries)
+      : numICEntries_(numICEntries)
+    {}
+
+    ICEntry* icEntryList() {
+        return (ICEntry*)(reinterpret_cast<uint8_t*>(this) + sizeof(ICScript));
+    }
+
+    void initICEntries(JSScript* script, const ICEntry* entries);
+
+  public:
+    static MOZ_MUST_USE js::UniquePtr<ICScript> create(JSContext* cx, JSScript* script);
+
+    ~ICScript() {
+        
+        
+        MOZ_ASSERT(fallbackStubSpace_.isEmpty());
+    }
+    void prepareForDestruction(Zone* zone) {
+        
+        
+        
+        
+        
+        
+        fallbackStubSpace_.freeAllAfterMinorGC(zone);
+    }
+
+    FallbackICStubSpace* fallbackStubSpace() {
+        return &fallbackStubSpace_;
+    }
+
+    void addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf, size_t* data,
+                                size_t* fallbackStubs) const {
+        *data += mallocSizeOf(this);
+
+        
+        
+        *fallbackStubs += fallbackStubSpace_.sizeOfExcludingThis(mallocSizeOf);
+    }
+
+    size_t numICEntries() const {
+        return numICEntries_;
+    }
+
+    ICEntry& icEntry(size_t index) {
+        MOZ_ASSERT(index < numICEntries());
+        return icEntryList()[index];
+    }
+
+    void noteAccessedGetter(uint32_t pcOffset);
+    void noteHasDenseAdd(uint32_t pcOffset);
+
+    void trace(JSTracer* trc);
+    void purgeOptimizedStubs(Zone* zone);
+
+    ICEntry* maybeICEntryFromPCOffset(uint32_t pcOffset);
+    ICEntry* maybeICEntryFromPCOffset(uint32_t pcOffset, ICEntry* prevLookedUpEntry);
+
+    ICEntry& icEntryFromPCOffset(uint32_t pcOffset);
+    ICEntry& icEntryFromPCOffset(uint32_t pcOffset, ICEntry* prevLookedUpEntry);
 };
 
 class ICMonitoredStub;
@@ -782,9 +880,6 @@ class ICCacheIR_Regular : public ICStub, public ICCacheIR_Trait<ICCacheIR_Regula
         ICCacheIR_Trait(stubInfo)
     {}
 
-    static ICCacheIR_Regular* Clone(JSContext* cx, ICStubSpace* space, ICStub* firstMonitorStub,
-                                    ICCacheIR_Regular& other);
-
     void notePreliminaryObject() {
         extra_ = 1;
     }
@@ -834,9 +929,6 @@ class ICCacheIR_Monitored : public ICMonitoredStub, public ICCacheIR_Trait<ICCac
       : ICMonitoredStub(ICStub::CacheIR_Monitored, stubCode, firstMonitorStub),
         ICCacheIR_Trait(stubInfo)
     {}
-
-    static ICCacheIR_Monitored* Clone(JSContext* cx, ICStubSpace* space, ICStub* firstMonitorStub,
-                                      ICCacheIR_Monitored& other);
 
     void notePreliminaryObject() {
         extra_ = 1;
@@ -929,9 +1021,6 @@ class ICCacheIR_Updated : public ICUpdatedStub, public ICCacheIR_Trait<ICCacheIR
         updateStubGroup_(nullptr),
         updateStubId_(JSID_EMPTY)
     {}
-
-    static ICCacheIR_Updated* Clone(JSContext* cx, ICStubSpace* space, ICStub* firstMonitorStub,
-                                    ICCacheIR_Updated& other);
 
     GCPtrObjectGroup& updateStubGroup() {
         return updateStubGroup_;
@@ -1051,12 +1140,8 @@ class ICStubCompiler
   public:
     virtual ICStub* getStub(ICStubSpace* space) = 0;
 
-    static ICStubSpace* StubSpaceForStub(bool makesGCCalls, JSScript* outerScript) {
-        if (makesGCCalls) {
-            return outerScript->baselineScript()->fallbackStubSpace();
-        }
-        return outerScript->zone()->jitZone()->optimizedStubSpace();
-    }
+    static ICStubSpace* StubSpaceForStub(bool makesGCCalls, JSScript* script);
+
     ICStubSpace* getStubSpace(JSScript* outerScript) {
         return StubSpaceForStub(ICStub::NonCacheIRStubMakesGCCalls(kind), outerScript);
     }
@@ -2114,9 +2199,6 @@ class ICCall_Scripted : public ICMonitoredStub
                     uint32_t pcOffset);
 
   public:
-    static ICCall_Scripted* Clone(JSContext* cx, ICStubSpace* space, ICStub* firstMonitorStub,
-                                  ICCall_Scripted& other);
-
     GCPtrFunction& callee() {
         return callee_;
     }
@@ -2145,9 +2227,6 @@ class ICCall_AnyScripted : public ICMonitoredStub
     { }
 
   public:
-    static ICCall_AnyScripted* Clone(JSContext* cx, ICStubSpace* space, ICStub* firstMonitorStub,
-                                     ICCall_AnyScripted& other);
-
     static size_t offsetOfPCOffset() {
         return offsetof(ICCall_AnyScripted, pcOffset_);
     }
@@ -2226,9 +2305,6 @@ class ICCall_Native : public ICMonitoredStub
                   uint32_t pcOffset);
 
   public:
-    static ICCall_Native* Clone(JSContext* cx, ICStubSpace* space, ICStub* firstMonitorStub,
-                                ICCall_Native& other);
-
     GCPtrFunction& callee() {
         return callee_;
     }
@@ -2308,9 +2384,6 @@ class ICCall_ClassHook : public ICMonitoredStub
                      uint32_t pcOffset);
 
   public:
-    static ICCall_ClassHook* Clone(JSContext* cx, ICStubSpace* space, ICStub* firstMonitorStub,
-                                   ICCall_ClassHook& other);
-
     const Class* clasp() {
         return clasp_;
     }
@@ -2386,11 +2459,6 @@ class ICCall_ScriptedApplyArray : public ICMonitoredStub
     {}
 
   public:
-    static ICCall_ScriptedApplyArray* Clone(JSContext* cx,
-                                            ICStubSpace* space,
-                                            ICStub* firstMonitorStub,
-                                            ICCall_ScriptedApplyArray& other);
-
     static size_t offsetOfPCOffset() {
         return offsetof(ICCall_ScriptedApplyArray, pcOffset_);
     }
@@ -2429,11 +2497,6 @@ class ICCall_ScriptedApplyArguments : public ICMonitoredStub
     {}
 
   public:
-    static ICCall_ScriptedApplyArguments* Clone(JSContext* cx,
-                                                ICStubSpace* space,
-                                                ICStub* firstMonitorStub,
-                                                ICCall_ScriptedApplyArguments& other);
-
     static size_t offsetOfPCOffset() {
         return offsetof(ICCall_ScriptedApplyArguments, pcOffset_);
     }
@@ -2473,9 +2536,6 @@ class ICCall_ScriptedFunCall : public ICMonitoredStub
     {}
 
   public:
-    static ICCall_ScriptedFunCall* Clone(JSContext* cx, ICStubSpace* space,
-                                         ICStub* firstMonitorStub, ICCall_ScriptedFunCall& other);
-
     static size_t offsetOfPCOffset() {
         return offsetof(ICCall_ScriptedFunCall, pcOffset_);
     }

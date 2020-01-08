@@ -23,8 +23,6 @@ struct DebugModeOSREntry
 {
     JSScript* script;
     BaselineScript* oldBaselineScript;
-    ICStub* oldStub;
-    ICStub* newStub;
     BaselineDebugModeOSRInfo* recompInfo;
     uint32_t pcOffset;
     RetAddrEntry::Kind frameKind;
@@ -32,8 +30,6 @@ struct DebugModeOSREntry
     explicit DebugModeOSREntry(JSScript* script)
       : script(script),
         oldBaselineScript(script->baselineScript()),
-        oldStub(nullptr),
-        newStub(nullptr),
         recompInfo(nullptr),
         pcOffset(uint32_t(-1)),
         frameKind(RetAddrEntry::Kind::Invalid)
@@ -42,8 +38,6 @@ struct DebugModeOSREntry
     DebugModeOSREntry(JSScript* script, uint32_t pcOffset)
       : script(script),
         oldBaselineScript(script->baselineScript()),
-        oldStub(nullptr),
-        newStub(nullptr),
         recompInfo(nullptr),
         pcOffset(pcOffset),
         frameKind(RetAddrEntry::Kind::Invalid)
@@ -52,8 +46,6 @@ struct DebugModeOSREntry
     DebugModeOSREntry(JSScript* script, const RetAddrEntry& retAddrEntry)
       : script(script),
         oldBaselineScript(script->baselineScript()),
-        oldStub(nullptr),
-        newStub(nullptr),
         recompInfo(nullptr),
         pcOffset(retAddrEntry.pcOffset()),
         frameKind(retAddrEntry.kind())
@@ -67,8 +59,6 @@ struct DebugModeOSREntry
     DebugModeOSREntry(JSScript* script, BaselineDebugModeOSRInfo* info)
       : script(script),
         oldBaselineScript(script->baselineScript()),
-        oldStub(nullptr),
-        newStub(nullptr),
         recompInfo(nullptr),
         pcOffset(script->pcToOffset(info->pc)),
         frameKind(info->frameKind)
@@ -82,8 +72,6 @@ struct DebugModeOSREntry
     DebugModeOSREntry(DebugModeOSREntry&& other)
       : script(other.script),
         oldBaselineScript(other.oldBaselineScript),
-        oldStub(other.oldStub),
-        newStub(other.newStub),
         recompInfo(other.recompInfo ? other.takeRecompInfo() : nullptr),
         pcOffset(other.pcOffset),
         frameKind(other.frameKind)
@@ -132,12 +120,6 @@ struct DebugModeOSREntry
         recompInfo = cx->new_<BaselineDebugModeOSRInfo>(pc, kind);
         return !!recompInfo;
     }
-
-    ICFallbackStub* fallbackStub() const {
-        MOZ_ASSERT(script);
-        MOZ_ASSERT(oldStub);
-        return script->baselineScript()->icEntryFromPCOffset(pcOffset).fallbackStub();
-    }
 };
 
 typedef Vector<DebugModeOSREntry> DebugModeOSREntryVector;
@@ -184,7 +166,6 @@ static bool
 CollectJitStackScripts(JSContext* cx, const Debugger::ExecutionObservableSet& obs,
                        const ActivationIterator& activation, DebugModeOSREntryVector& entries)
 {
-    ICStub* prevFrameStubPtr = nullptr;
     bool needsRecompileHandler = false;
     for (OnlyJSJitFrameIter iter(activation); !iter.done(); ++iter) {
         const JSJitFrameIter& frame = iter.frame();
@@ -193,7 +174,6 @@ CollectJitStackScripts(JSContext* cx, const Debugger::ExecutionObservableSet& ob
             JSScript* script = frame.script();
 
             if (!obs.shouldRecompileOrInvalidate(script)) {
-                prevFrameStubPtr = nullptr;
                 break;
             }
 
@@ -235,14 +215,10 @@ CollectJitStackScripts(JSContext* cx, const Debugger::ExecutionObservableSet& ob
 
                 needsRecompileHandler |= true;
             }
-            entries.back().oldStub = prevFrameStubPtr;
-            prevFrameStubPtr = nullptr;
             break;
           }
 
           case FrameType::BaselineStub:
-            prevFrameStubPtr =
-                reinterpret_cast<BaselineStubFrameLayout*>(frame.fp())->maybeStubPtr();
             break;
 
           case FrameType::IonJS: {
@@ -347,14 +323,6 @@ SpewPatchBaselineFrameFromExceptionHandler(uint8_t* oldReturnAddress, uint8_t* n
 }
 
 static void
-SpewPatchStubFrame(ICStub* oldStub, ICStub* newStub)
-{
-    JitSpew(JitSpew_BaselineDebugModeOSR,
-            "Patch   stub %p -> %p on BaselineStub frame (%s)",
-            oldStub, newStub, newStub ? ICStub::KindString(newStub->kind()) : "exception handler");
-}
-
-static void
 PatchBaselineFramesForDebugMode(JSContext* cx,
                                 const Debugger::ExecutionObservableSet& obs,
                                 const ActivationIterator& activation,
@@ -422,10 +390,6 @@ PatchBaselineFramesForDebugMode(JSContext* cx,
             RetAddrEntry::Kind kind = entry.frameKind;
 
             if (kind == RetAddrEntry::Kind::IC) {
-                
-                
-                
-                
                 
                 
                 
@@ -590,51 +554,6 @@ PatchBaselineFramesForDebugMode(JSContext* cx,
             break;
           }
 
-          case FrameType::BaselineStub: {
-            JSJitFrameIter prev(iter.frame());
-            ++prev;
-            BaselineFrame* prevFrame = prev.baselineFrame();
-            if (!obs.shouldRecompileOrInvalidate(prevFrame->script())) {
-                break;
-            }
-
-            DebugModeOSREntry& entry = entries[entryIndex];
-
-            
-            if (!entry.recompiled()) {
-                break;
-            }
-
-            BaselineStubFrameLayout* layout =
-                reinterpret_cast<BaselineStubFrameLayout*>(frame.fp());
-            MOZ_ASSERT(layout->maybeStubPtr() == entry.oldStub);
-
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            if (layout->maybeStubPtr()) {
-                MOZ_ASSERT(entry.newStub || prevFrame->isHandlingException());
-                SpewPatchStubFrame(entry.oldStub, entry.newStub);
-                layout->setStubPtr(entry.newStub);
-            }
-
-            break;
-          }
-
           case FrameType::IonJS: {
             
             InlineFrameIterator inlineIter(cx, &frame);
@@ -709,113 +628,6 @@ RecompileBaselineScriptForDebugMode(JSContext* cx, JSScript* script,
     
     
     MOZ_ASSERT(script->baselineScript()->hasDebugInstrumentation() == observing);
-    return true;
-}
-
-#define PATCHABLE_ICSTUB_KIND_LIST(_)           \
-    _(CacheIR_Monitored)                        \
-    _(CacheIR_Regular)                          \
-    _(CacheIR_Updated)                          \
-    _(Call_Scripted)                            \
-    _(Call_AnyScripted)                         \
-    _(Call_Native)                              \
-    _(Call_ClassHook)                           \
-    _(Call_ScriptedApplyArray)                  \
-    _(Call_ScriptedApplyArguments)              \
-    _(Call_ScriptedFunCall)
-
-static bool
-CloneOldBaselineStub(JSContext* cx, DebugModeOSREntryVector& entries, size_t entryIndex)
-{
-    DebugModeOSREntry& entry = entries[entryIndex];
-    if (!entry.oldStub) {
-        return true;
-    }
-
-    ICStub* oldStub = entry.oldStub;
-    MOZ_ASSERT(oldStub->makesGCCalls());
-
-    
-    
-    if (!entry.recompiled()) {
-        entry.newStub = nullptr;
-        return true;
-    }
-
-    if (entry.frameKind == RetAddrEntry::Kind::Invalid) {
-        
-        
-        
-        
-        
-        entry.newStub = nullptr;
-        return true;
-    }
-
-    
-    ICFallbackStub* fallbackStub = entry.fallbackStub();
-
-    
-    
-    
-    
-    ICStub* firstMonitorStub;
-    if (fallbackStub->isMonitoredFallback()) {
-        ICMonitoredFallbackStub* monitored = fallbackStub->toMonitoredFallbackStub();
-        ICTypeMonitor_Fallback* fallback = monitored->getFallbackMonitorStub(cx, entry.script);
-        if (!fallback) {
-            return false;
-        }
-        firstMonitorStub = fallback->firstMonitorStub();
-    } else {
-        firstMonitorStub = nullptr;
-    }
-
-    
-    
-    
-    if (oldStub->isFallback()) {
-        MOZ_ASSERT(oldStub->jitCode() == fallbackStub->jitCode());
-        entry.newStub = fallbackStub;
-        return true;
-    }
-
-    
-    
-    
-    for (size_t i = 0; i < entryIndex; i++) {
-        if (oldStub == entries[i].oldStub && entries[i].frameKind != RetAddrEntry::Kind::Invalid) {
-            MOZ_ASSERT(entries[i].newStub);
-            entry.newStub = entries[i].newStub;
-            return true;
-        }
-    }
-
-    ICStubSpace* stubSpace = ICStubCompiler::StubSpaceForStub(oldStub->makesGCCalls(),
-                                                              entry.script);
-
-    
-    
-    
-    
-    switch (oldStub->kind()) {
-#define CASE_KIND(kindName)                                                  \
-      case ICStub::kindName:                                                 \
-        entry.newStub = IC##kindName::Clone(cx, stubSpace, firstMonitorStub, \
-                                            *oldStub->to##kindName());       \
-        break;
-        PATCHABLE_ICSTUB_KIND_LIST(CASE_KIND)
-#undef CASE_KIND
-
-      default:
-        MOZ_CRASH("Bad stub kind");
-    }
-
-    if (!entry.newStub) {
-        return false;
-    }
-
-    fallbackStub->addNewStub(entry.newStub);
     return true;
 }
 
@@ -918,9 +730,7 @@ jit::RecompileOnStackBaselineScriptsForDebugMode(JSContext* cx,
     for (size_t i = 0; i < entries.length(); i++) {
         JSScript* script = entries[i].script;
         AutoRealm ar(cx, script);
-        if (!RecompileBaselineScriptForDebugMode(cx, script, observing) ||
-            !CloneOldBaselineStub(cx, entries, i))
-        {
+        if (!RecompileBaselineScriptForDebugMode(cx, script, observing)) {
             UndoRecompileBaselineScriptsForDebugMode(cx, entries);
             return false;
         }

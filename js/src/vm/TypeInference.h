@@ -37,6 +37,7 @@ class HeapTypeSetKey;
 
 namespace jit {
 
+class ICScript;
 struct IonScript;
 class TempAllocator;
 
@@ -235,6 +236,10 @@ class TypeScript
     RecompileInfoVector inlinedCompilations_;
 
     
+    
+    js::UniquePtr<js::jit::ICScript> icScript_;
+
+    
     StackTypeSet typeArray_[1];
 
   public:
@@ -246,6 +251,11 @@ class TypeScript
             return true;
         }
         return inlinedCompilations_.append(info);
+    }
+
+    jit::ICScript* icScript() const {
+        MOZ_ASSERT(icScript_);
+        return icScript_.get();
     }
 
     
@@ -314,9 +324,10 @@ class TypeScript
 
     static void Purge(JSContext* cx, HandleScript script);
 
-    void destroy();
+    void destroy(Zone* zone);
 
     size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
+        
         return mallocSizeOf(this);
     }
 

@@ -31,17 +31,12 @@ EmitRepushTailCallReg(MacroAssembler& masm)
 }
 
 inline void
-EmitCallIC(MacroAssembler& masm, CodeOffset* patchOffset, CodeOffset* callOffset)
+EmitCallIC(MacroAssembler& masm, const ICEntry* entry, CodeOffset* callOffset)
 {
     
-    CodeOffset offset = masm.movWithPatch(ImmWord(-1), ICStubReg);
-    *patchOffset = offset;
-
-    
-    masm.loadPtr(Address(ICStubReg, (int32_t) ICEntry::offsetOfFirstStub()),
+    masm.loadPtr(AbsoluteAddress(entry).offset(ICEntry::offsetOfFirstStub()),
                  ICStubReg);
 
-    
     
     masm.call(Address(ICStubReg, ICStub::offsetOfStubCode()));
     *callOffset = CodeOffset(masm.currentOffset());
