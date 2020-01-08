@@ -582,7 +582,10 @@ var paymentDialogWrapper = {
                                      formAutofillStorage[collectionName];
 
       if (guid) {
-        let preserveOldProperties = true;
+        
+        
+        
+        let preserveOldProperties = collectionName == "creditCards";
         await collection.update(guid, record, preserveOldProperties);
       } else {
         responseMessage.guid = await collection.add(record);
