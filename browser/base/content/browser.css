@@ -879,9 +879,6 @@ toolbarspring {
 menupopup[emptyplacesresult="true"] > .hide-if-empty-places-result {
   display: none;
 }
-menuitem.spell-suggestion {
-  font-weight: bold;
-}
 
 
 window[chromehidden~="location"][chromehidden~="toolbar"] toolbar:not(.chromeclass-menubar),
