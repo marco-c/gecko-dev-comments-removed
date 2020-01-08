@@ -66,6 +66,7 @@ class nsLoadGroup : public nsILoadGroup,
   uint32_t mForegroundCount;
   uint32_t mLoadFlags;
   uint32_t mDefaultLoadFlags;
+  int32_t mPriority;
 
   nsCOMPtr<nsILoadGroup> mLoadGroup;  
   nsCOMPtr<nsIInterfaceRequestor> mCallbacks;
@@ -79,12 +80,11 @@ class nsLoadGroup : public nsILoadGroup,
   nsWeakPtr mParentLoadGroup;
 
   nsresult mStatus;
-  int32_t mPriority;
   bool mIsCanceling;
+  bool mDefaultLoadIsTimed;
 
   
   mozilla::TimeStamp mDefaultRequestCreationTime;
-  bool mDefaultLoadIsTimed;
   uint32_t mTimedRequests;
   uint32_t mCachedRequests;
 
