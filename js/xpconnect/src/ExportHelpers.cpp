@@ -206,20 +206,13 @@ public:
 
 
 bool
-StackScopedClone(JSContext* cx, StackScopedCloneOptions& options,
+StackScopedClone(JSContext* cx, StackScopedCloneOptions& options, HandleObject sourceScope,
                  MutableHandleValue val)
 {
     StackScopedCloneData data(cx, &options);
     {
         
-        
-        Maybe<JSAutoRealmAllowCCW> ar;
-        if (val.isObject()) {
-            ar.emplace(cx, &val.toObject());
-        } else if (val.isString() && !JS_WrapValue(cx, val)) {
-            return false;
-        }
-
+        JSAutoRealm ar(cx, sourceScope);
         if (!data.Write(cx, val))
             return false;
     }
