@@ -153,6 +153,7 @@ public:
 
 
 
+
   MOZ_CAN_RUN_SCRIPT nsresult HideLastPasswordInput(Selection& aSelection);
 
 protected:

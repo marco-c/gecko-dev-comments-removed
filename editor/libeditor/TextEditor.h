@@ -232,6 +232,10 @@ public:
   nsresult ComputeTextValue(uint32_t aDocumentEncoderFlags,
                             nsAString& aOutputString) const
   {
+    AutoEditActionDataSetter editActionData(*this, EditAction::eNotEditing);
+    if (NS_WARN_IF(!editActionData.CanHandle())) {
+      return NS_ERROR_NOT_INITIALIZED;
+    }
     return ComputeValueInternal(NS_LITERAL_STRING("text/plain"),
                                 aDocumentEncoderFlags, aOutputString);
   }

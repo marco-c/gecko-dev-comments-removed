@@ -23,7 +23,80 @@ enum class EditAction
   eNotEditing,
 
   
+  eInsertText,
+
+  
+  
+  eInsertParagraphSeparator,
+
+  
+  
+  eDeleteSelection,
+
+  
+  
+  eDeleteBackward,
+
+  
+  
+  eDeleteForward,
+
+  
+  
+  
+  eDeleteWordBackward,
+
+  
+  
+  
+  eDeleteWordForward,
+
+  
+  
+  
+  eDeleteToBeginningOfSoftLine,
+
+  
+  
+  
+  eDeleteToEndOfSoftLine,
+
+  
+  eStartComposition,
+
+  
+  
+  eUpdateComposition,
+
+  
+  eCommitComposition,
+
+  
+  eEndComposition,
+
+  
+  eUndo,
+  eRedo,
+
+  
   eSetTextDirection,
+
+  
+  eCut,
+
+  
+  eCopy,
+
+  
+  ePaste,
+
+  
+  eDrop,
+
+  
+  
+  
+  eReplaceText,
 
   
   
@@ -50,6 +123,19 @@ enum class EditAction
 
   
   eJoinNodes,
+
+  
+  eSetCharacterSet,
+
+  
+  eSetWrapWidth,
+
+  
+  
+  eSetText,
+
+  
+  eHidePassword,
 };
 
 
