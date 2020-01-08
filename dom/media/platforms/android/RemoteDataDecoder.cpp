@@ -208,6 +208,8 @@ public:
     }
     mIsCodecSupportAdaptivePlayback =
       mJavaDecoder->IsAdaptivePlaybackSupported();
+    mIsHardwareAccelerated =
+      mJavaDecoder->IsHardwareAccelerated();
     return InitPromise::CreateAndResolve(TrackInfo::kVideoTrack, __func__);
   }
 
@@ -272,12 +274,19 @@ public:
     return true;
   }
 
+  bool IsHardwareAccelerated(nsACString& aFailureReason) const override
+  {
+    return mIsHardwareAccelerated;
+  }
+
 private:
   const VideoInfo mConfig;
   GeckoSurface::GlobalRef mSurface;
   AndroidSurfaceTextureHandle mSurfaceHandle;
   
   bool mIsCodecSupportAdaptivePlayback = false;
+  
+  bool mIsHardwareAccelerated = false;
   
   
   SimpleMap<InputInfo> mInputInfos;
