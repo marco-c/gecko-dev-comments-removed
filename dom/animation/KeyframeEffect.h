@@ -174,13 +174,9 @@ public:
   void GetProperties(nsTArray<AnimationPropertyDetails>& aProperties,
                      ErrorResult& aRv) const;
 
-  
-  
-  IterationCompositeOperation IterationComposite(
-    CallerType aCallerType = CallerType::System) const;
+  IterationCompositeOperation IterationComposite() const;
   void SetIterationComposite(
-    const IterationCompositeOperation& aIterationComposite,
-    CallerType aCallerType);
+    const IterationCompositeOperation& aIterationComposite);
 
   CompositeOperation Composite() const;
   void SetComposite(const CompositeOperation& aComposite);

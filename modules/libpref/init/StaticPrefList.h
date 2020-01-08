@@ -92,6 +92,19 @@ VARCACHE_PREF(
 
 
 
+#ifdef RELEASE_OR_BETA
+# define PREF_VALUE false
+#else
+# define PREF_VALUE true
+#endif
+VARCACHE_PREF(
+  "dom.animations-api.compositing.enabled",
+   dom_animations_api_compositing_enabled,
+  bool, PREF_VALUE
+)
+#undef PREF_VALUE
+
+
 
 #ifdef RELEASE_OR_BETA
 # define PREF_VALUE false

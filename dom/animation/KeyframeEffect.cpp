@@ -21,6 +21,7 @@
 #include "mozilla/LookAndFeel.h" 
 #include "mozilla/KeyframeUtils.h"
 #include "mozilla/ServoBindings.h"
+#include "mozilla/StaticPrefs.h"
 #include "mozilla/TypeTraits.h"
 #include "Layers.h" 
 #include "nsComputedDOMStyle.h" 
@@ -28,7 +29,6 @@
 #include "nsCSSPropertyIDSet.h"
 #include "nsCSSProps.h" 
 #include "nsCSSPseudoElements.h" 
-#include "nsDocument.h" 
 #include "nsIFrame.h"
 #include "nsIPresShell.h"
 #include "nsIScriptError.h"
@@ -88,23 +88,15 @@ KeyframeEffect::WrapObject(JSContext* aCx,
   return KeyframeEffect_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-IterationCompositeOperation KeyframeEffect::IterationComposite(
-  CallerType ) const
+IterationCompositeOperation KeyframeEffect::IterationComposite() const
 {
   return mEffectOptions.mIterationComposite;
 }
 
 void
 KeyframeEffect::SetIterationComposite(
-  const IterationCompositeOperation& aIterationComposite,
-  CallerType aCallerType)
+  const IterationCompositeOperation& aIterationComposite)
 {
-  
-  
-  if (!nsDocument::IsWebAnimationsEnabled(aCallerType)) {
-    return;
-  }
-
   if (mEffectOptions.mIterationComposite == aIterationComposite) {
     return;
   }
@@ -599,7 +591,7 @@ KeyframeEffectParamsFromUnion(const OptionsType& aOptions,
   if (aOptions.IsUnrestrictedDouble() ||
       
       
-      !nsDocument::IsWebAnimationsEnabled(aCallerType)) {
+      !StaticPrefs::dom_animations_api_compositing_enabled()) {
     return result;
   }
 
