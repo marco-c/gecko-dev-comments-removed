@@ -986,6 +986,12 @@ nsIFrame::RemoveDisplayItemDataForDeletion()
 
   RetainedDisplayListData* data = GetOrSetRetainedDisplayListData(rootFrame);
 
+  if (MayHaveWillChangeBudget()) {
+    
+    data->Flags(this) = RetainedDisplayListData::FrameFlags::HadWillChange;
+    return;
+  }
+
   if (IsFrameModified() || HasOverrideDirtyRegion()) {
     
     DebugOnly<bool> removed = data->Remove(this);
@@ -3486,7 +3492,7 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
        NS_FRAME_TOO_DEEP_IN_FRAME_TREE | NS_FRAME_IS_NONDISPLAY))
     return;
 
-  aBuilder->ClearWillChangeBudget(child);
+  aBuilder->RemoveFromWillChangeBudget(child);
 
   const bool shortcutPossible = aBuilder->IsPaintingToWindow() &&
      aBuilder->BuildCompositorHitTestInfo();
@@ -3563,7 +3569,7 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
     isPlaceholder = true;
     nsPlaceholderFrame* placeholder = static_cast<nsPlaceholderFrame*>(child);
     child = placeholder->GetOutOfFlowFrame();
-    aBuilder->ClearWillChangeBudget(child);
+    aBuilder->RemoveFromWillChangeBudget(child);
     NS_ASSERTION(child, "No out of flow frame?");
     
     
