@@ -101,6 +101,11 @@ void LiveSavedFrameCache::find(JSContext* cx, FramePtr& framePtr,
 
   
   
+  
+  
+
+  
+  
   if (frames->empty()) {
     frame.set(nullptr);
     return;
@@ -129,14 +134,8 @@ void LiveSavedFrameCache::find(JSContext* cx, FramePtr& framePtr,
     
     
     
-    
-    
-    
-    
     frames->popBack();
 
-    
-    
     
     
     MOZ_ALWAYS_TRUE(!frames->empty());
@@ -148,11 +147,6 @@ void LiveSavedFrameCache::find(JSContext* cx, FramePtr& framePtr,
   
   if (pc != frames->back().pc) {
     frames->popBack();
-
-    
-    
-    
-    framePtr.clearHasCachedSavedFrame();
     frame.set(nullptr);
     return;
   }
@@ -1325,14 +1319,16 @@ bool SavedStacks::insertFrames(JSContext* cx, MutableHandleSavedFrame frame,
       
       
       
-      
-      
-      
-      
-      
       if (parent) {
         break;
       }
+
+      
+      
+      
+      
+      
+      framePtr->clearHasCachedSavedFrame();
     }
 
     
