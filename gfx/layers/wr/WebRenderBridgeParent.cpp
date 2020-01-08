@@ -1702,7 +1702,7 @@ bool WebRenderBridgeParent::SampleAnimations(
 void WebRenderBridgeParent::CompositeIfNeeded() {
   if (mSkippedComposite) {
     mSkippedComposite = false;
-    CompositeToTarget(VsyncId(), nullptr, nullptr);
+    CompositeToTarget(mSkippedCompositeId, nullptr, nullptr);
   }
 }
 
@@ -1726,7 +1726,13 @@ void WebRenderBridgeParent::CompositeToTarget(VsyncId aId,
   if (mSkippedComposite ||
       wr::RenderThread::Get()->TooManyPendingFrames(mApi->GetId())) {
     
-    mSkippedComposite = true;
+    if (!mSkippedComposite) {
+      
+      
+      
+      mSkippedComposite = true;
+      mSkippedCompositeId = aId;
+    }
     mPreviousFrameTimeStamp = TimeStamp();
 
     
