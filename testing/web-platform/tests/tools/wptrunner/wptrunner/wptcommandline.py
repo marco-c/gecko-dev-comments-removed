@@ -498,6 +498,10 @@ def check_args(kwargs):
         kwargs['extra_prefs'] = [tuple(prefarg.split('=', 1)) for prefarg in
                                  kwargs['extra_prefs']]
 
+    if kwargs["reftest_internal"] is None:
+        
+        kwargs["reftest_internal"] = sys.platform.startswith("linux") or sys.platform.startswith("darwin")
+
     return kwargs
 
 
