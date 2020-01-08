@@ -207,7 +207,12 @@ class ProfilingStackFrame
         STRING_TEMPLATE_GETTER = 1 << 5, 
         STRING_TEMPLATE_SETTER = 1 << 6, 
 
-        FLAGS_BITCOUNT = 7,
+        
+        
+        
+        RELEVANT_FOR_JS = 1 << 7,
+
+        FLAGS_BITCOUNT = 8,
         FLAGS_MASK = (1 << FLAGS_BITCOUNT) - 1
     };
 
