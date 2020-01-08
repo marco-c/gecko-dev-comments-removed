@@ -1,0 +1,11 @@
+
+
+
+
+#include <Windows.h>
+
+BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD aReason, LPVOID)
+{
+  return TRUE;
+}
+
