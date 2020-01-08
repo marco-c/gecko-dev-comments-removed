@@ -3,12 +3,17 @@
 
 
 
+.tab-modal-background,
 tabmodalprompt {
   background-color: hsla(0,0%,10%,.5);
+}
+
+tabmodalprompt {
   font-family: sans-serif; 
   font-size: 110%;
 }
 
+.paymentDialogContainerFrame,
 .tabmodalprompt-mainContainer {
   color: black;
   background-color: hsla(0,0%,100%,.95);

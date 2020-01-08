@@ -109,7 +109,6 @@ var paymentRequest = {
   onPaymentRequestLoad() {
     log.debug("onPaymentRequestLoad");
     window.addEventListener("unload", this, {once: true});
-    this.sendMessageToChrome("paymentDialogReady");
 
     
     if (new URLSearchParams(location.search).get("debug")) {
@@ -170,6 +169,8 @@ var paymentRequest = {
     }
 
     paymentDialog.setStateFromParent(state);
+
+    this.sendMessageToChrome("paymentDialogReady");
   },
 
   openPreferences() {

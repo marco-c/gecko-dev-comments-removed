@@ -12,12 +12,15 @@
 const paymentSrv = Cc["@mozilla.org/dom/payments/payment-request-service;1"]
                      .getService(Ci.nsIPaymentRequestService);
 
+const paymentUISrv = Cc["@mozilla.org/dom/payments/payment-ui-service;1"]
+                     .getService(Ci.nsIPaymentUIService);
+
 ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
-ChromeUtils.defineModuleGetter(this, "MasterPassword",
-                               "resource://formautofill/MasterPassword.jsm");
+ChromeUtils.defineModuleGetter(this, "OSKeyStore",
+                               "resource://formautofill/OSKeyStore.jsm");
 ChromeUtils.defineModuleGetter(this, "PrivateBrowsingUtils",
                                "resource://gre/modules/PrivateBrowsingUtils.jsm");
 
@@ -162,7 +165,7 @@ var paymentDialogWrapper = {
 
     let cardNumber;
     try {
-      cardNumber = await MasterPassword.decrypt(cardData["cc-number-encrypted"], true);
+      cardNumber = await OSKeyStore.decrypt(cardData["cc-number-encrypted"], true);
     } catch (ex) {
       if (ex.result != Cr.NS_ERROR_ABORT) {
         throw ex;
@@ -216,7 +219,7 @@ var paymentDialogWrapper = {
     if (AppConstants.platform == "win") {
       this.frame.setAttribute("selectmenulist", "ContentSelectDropdown-windows");
     }
-    this.frame.loadURI("resource://payments/paymentRequest.xhtml");
+    this.frame.setAttribute("src", "resource://payments/paymentRequest.xhtml");
 
     this.temporaryStore = {
       addresses: new TempCollection("addresses"),
@@ -452,7 +455,7 @@ var paymentDialogWrapper = {
     Services.obs.addObserver(this, "formautofill-storage-changed", true);
 
     let requestSerialized = this._serializeRequest(this.request);
-    let chromeWindow = Services.wm.getMostRecentWindow("navigator:browser");
+    let chromeWindow = window.frameElement.ownerGlobal;
     let isPrivate = PrivateBrowsingUtils.isWindowPrivate(chromeWindow);
 
     let [savedAddresses, savedBasicCards] =
@@ -474,12 +477,11 @@ var paymentDialogWrapper = {
       Cu.reportError("devtools.chrome.enabled must be enabled to debug the frame");
       return;
     }
-    let chromeWindow = Services.wm.getMostRecentWindow(null);
     let {
       gDevToolsBrowser,
     } = ChromeUtils.import("resource://devtools/client/framework/gDevTools.jsm", {});
     gDevToolsBrowser.openContentProcessToolbox({
-      selectedBrowser: chromeWindow.document.getElementById("paymentRequestFrame").frameLoader,
+      selectedBrowser: document.getElementById("paymentRequestFrame").frameLoader,
     });
   },
 
@@ -494,8 +496,9 @@ var paymentDialogWrapper = {
     const showResponse = this.createShowResponse({
       acceptStatus: Ci.nsIPaymentActionResponse.PAYMENT_REJECTED,
     });
+
     paymentSrv.respondPayment(showResponse);
-    window.close();
+    paymentUISrv.closePayment(this.request.requestId);
   },
 
   async onPay({
@@ -503,8 +506,16 @@ var paymentDialogWrapper = {
     selectedPaymentCardGUID: paymentCardGUID,
     selectedPaymentCardSecurityCode: cardSecurityCode,
   }) {
-    let methodData = await this._convertProfileBasicCardToPaymentMethodData(paymentCardGUID,
-                                                                            cardSecurityCode);
+    let methodData;
+    try {
+      methodData = await this._convertProfileBasicCardToPaymentMethodData(paymentCardGUID,
+                                                                          cardSecurityCode);
+    } catch (ex) {
+      
+      
+      Cu.reportError(ex);
+      return;
+    }
 
     if (!methodData) {
       
@@ -567,7 +578,7 @@ var paymentDialogWrapper = {
 
   onCloseDialogMessage() {
     
-    window.close();
+    paymentUISrv.closePayment(this.request.requestId);
   },
 
   async onUpdateAutofillRecord(collectionName, record, guid, messageID) {
@@ -677,6 +688,12 @@ var paymentDialogWrapper = {
         this.onPaymentCancel();
         break;
       }
+      case "paymentDialogReady": {
+        window.dispatchEvent(new Event("tabmodaldialogready", {
+          bubbles: true,
+        }));
+        break;
+      }
       case "pay": {
         this.onPay(data);
         break;
@@ -684,6 +701,9 @@ var paymentDialogWrapper = {
       case "updateAutofillRecord": {
         this.onUpdateAutofillRecord(data.collectionName, data.record, data.guid, data.messageID);
         break;
+      }
+      default: {
+        throw new Error(`paymentDialogWrapper: Unexpected messageType: ${messageType}`);
       }
     }
   },
