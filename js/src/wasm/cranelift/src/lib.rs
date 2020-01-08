@@ -39,7 +39,14 @@ use std::ptr;
 pub extern "C" fn cranelift_initialize() {
     
     
-    let _ = env_logger::try_init();
+    
+    let filter = log::max_level();
+    match env_logger::try_init() {
+        Ok(_) => {}
+        Err(_) => {
+            log::set_max_level(filter);
+        }
+    }
 }
 
 
