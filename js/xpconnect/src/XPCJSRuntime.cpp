@@ -3014,8 +3014,6 @@ XPCJSRuntime::Initialize(JSContext* cx)
 bool
 XPCJSRuntime::InitializeStrings(JSContext* cx)
 {
-    JSAutoRequest ar(cx);
-
     
     if (JSID_IS_VOID(mStrIDs[0])) {
         RootedString str(cx);
@@ -3227,7 +3225,6 @@ XPCJSRuntime::InitSingletonScopes()
 {
     
     JSContext* cx = XPCJSContext::Get()->Context();
-    JSAutoRequest ar(cx);
     RootedValue v(cx);
     nsresult rv;
 

@@ -200,7 +200,6 @@ private:
 
 
 
-
 class MOZ_STACK_CLASS AutoJSAPI : protected ScriptSettingsStackEntry {
 public:
   
@@ -295,7 +294,6 @@ protected:
   
   AutoJSAPI(nsIGlobalObject* aGlobalObject, bool aIsMainThread, Type aType);
 
-  mozilla::Maybe<JSAutoRequest> mAutoRequest;
   mozilla::Maybe<JSAutoNullableRealm> mAutoNullableRealm;
   JSContext *mCx;
 

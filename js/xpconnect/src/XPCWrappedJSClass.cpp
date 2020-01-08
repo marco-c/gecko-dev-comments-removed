@@ -45,7 +45,6 @@ bool AutoScriptEvaluate::StartEvaluating(HandleObject scope)
 
     mEvaluated = true;
 
-    JS_BeginRequest(mJSContext);
     mAutoRealm.emplace(mJSContext, scope);
 
     
@@ -64,8 +63,6 @@ AutoScriptEvaluate::~AutoScriptEvaluate()
     if (!mJSContext || !mEvaluated)
         return;
     mState->restore();
-
-    JS_EndRequest(mJSContext);
 }
 
 

@@ -1,7 +1,7 @@
 #include "WindowDestroyedEvent.h"
 
 #include "nsJSUtils.h"
-#include "jsapi.h"              
+#include "jsapi.h"
 #include "js/Wrapper.h"
 #include "nsIPrincipal.h"
 #include "nsISupportsPrimitives.h"

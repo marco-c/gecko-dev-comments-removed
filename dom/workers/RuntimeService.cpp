@@ -2756,10 +2756,7 @@ WorkerThreadPrimaryRunnable::Run()
       PROFILER_SET_JS_CONTEXT(cx);
 
       {
-        JSAutoRequest ar(cx);
-
         mWorkerPrivate->DoRunLoop(cx);
-        
         
         
         MOZ_ASSERT(!JS_IsExceptionPending(cx));

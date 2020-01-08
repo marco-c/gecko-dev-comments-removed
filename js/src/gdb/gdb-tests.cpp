@@ -82,8 +82,6 @@ main(int argc, const char** argv)
     checkBool(JS::InitSelfHostedCode(cx));
     JS::SetWarningReporter(cx, reportWarning);
 
-    JSAutoRequest areq(cx);
-
     
     JS::RealmOptions options;
     RootedObject global(cx, checkPtr(JS_NewGlobalObject(cx, &global_class,

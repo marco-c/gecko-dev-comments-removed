@@ -470,9 +470,6 @@ struct JSContext : public JS::RootingContext,
 
     js::ThreadData<js::EnterDebuggeeNoExecute*> noExecuteDebuggerTop;
 
-    
-    js::ThreadData<unsigned> requestDepth;
-
 #ifdef DEBUG
     js::ThreadData<uint32_t> inUnsafeCallWithABI;
     js::ThreadData<bool> hasAutoUnsafeCallWithABI;
@@ -706,9 +703,6 @@ struct JSContext : public JS::RootingContext,
     bool runtimeMatches(JSRuntime* rt) const {
         return runtime_ == rt;
     }
-
-    
-    js::ThreadData<unsigned> outstandingRequests;
 
     js::ThreadData<bool> jitIsBroken;
 

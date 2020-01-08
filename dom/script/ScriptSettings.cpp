@@ -322,11 +322,6 @@ AutoJSAPI::~AutoJSAPI()
     JS::SetWarningReporter(cx(), mOldWarningReporter.value());
   }
 
-  
-  if (mIsMainThread) {
-    mAutoRequest.reset();
-  }
-
   ScriptSettingsStack::Pop(this);
 }
 
@@ -349,12 +344,6 @@ AutoJSAPI::InitInternal(nsIGlobalObject* aGlobalObject, JSObject* aGlobal,
   mCx = aCx;
   mIsMainThread = aIsMainThread;
   mGlobalObject = aGlobalObject;
-  if (aIsMainThread) {
-    
-    
-    
-    mAutoRequest.emplace(mCx);
-  }
   if (aGlobal) {
     JS::ExposeObjectToActiveJS(aGlobal);
   }

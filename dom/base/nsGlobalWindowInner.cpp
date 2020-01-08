@@ -69,7 +69,7 @@
 
 
 #include "nsJSUtils.h"
-#include "jsapi.h"              
+#include "jsapi.h"
 #include "js/Wrapper.h"
 #include "nsCharSeparatedTokenizer.h"
 #include "nsReadableUtils.h"
