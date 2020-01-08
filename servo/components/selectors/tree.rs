@@ -12,8 +12,7 @@ use std::fmt::Debug;
 use std::ptr::NonNull;
 
 
-
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OpaqueElement(NonNull<()>);
 
 unsafe impl Send for OpaqueElement {}
