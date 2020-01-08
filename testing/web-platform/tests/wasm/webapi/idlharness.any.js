@@ -1,0 +1,10 @@
+
+
+
+"use strict";
+
+idl_test(
+  ["wasm-web-api"],
+  ["wasm-js-api"],
+  idl_array => {}
+);
