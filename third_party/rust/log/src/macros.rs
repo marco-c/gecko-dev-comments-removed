@@ -29,22 +29,19 @@
 
 
 
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! log {
     (target: $target:expr, $lvl:expr, $($arg:tt)+) => ({
         let lvl = $lvl;
         if lvl <= $crate::STATIC_MAX_LEVEL && lvl <= $crate::max_level() {
             $crate::__private_api_log(
-                format_args!($($arg)+),
+                __log_format_args!($($arg)+),
                 lvl,
-                $target,
-                module_path!(),
-                file!(),
-                line!(),
+                &($target, __log_module_path!(), __log_file!(), __log_line!()),
             );
         }
     });
-    ($lvl:expr, $($arg:tt)+) => (log!(target: module_path!(), $lvl, $($arg)+))
+    ($lvl:expr, $($arg:tt)+) => (log!(target: __log_module_path!(), $lvl, $($arg)+))
 }
 
 
@@ -61,7 +58,7 @@ macro_rules! log {
 
 
 
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! error {
     (target: $target:expr, $($arg:tt)*) => (
         log!(target: $target, $crate::Level::Error, $($arg)*);
@@ -85,7 +82,7 @@ macro_rules! error {
 
 
 
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! warn {
     (target: $target:expr, $($arg:tt)*) => (
         log!(target: $target, $crate::Level::Warn, $($arg)*);
@@ -111,7 +108,7 @@ macro_rules! warn {
 
 
 
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! info {
     (target: $target:expr, $($arg:tt)*) => (
         log!(target: $target, $crate::Level::Info, $($arg)*);
@@ -136,7 +133,7 @@ macro_rules! info {
 
 
 
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! debug {
     (target: $target:expr, $($arg:tt)*) => (
         log!(target: $target, $crate::Level::Debug, $($arg)*);
@@ -163,7 +160,7 @@ macro_rules! debug {
 
 
 
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! trace {
     (target: $target:expr, $($arg:tt)*) => (
         log!(target: $target, $crate::Level::Trace, $($arg)*);
@@ -209,6 +206,48 @@ macro_rules! log_enabled {
             && $crate::__private_api_enabled(lvl, $target)
     }};
     ($lvl:expr) => {
-        log_enabled!(target: module_path!(), $lvl)
+        log_enabled!(target: __log_module_path!(), $lvl)
+    };
+}
+
+
+
+
+
+
+
+
+
+
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __log_format_args {
+    ($($args:tt)*) => {
+        format_args!($($args)*)
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __log_module_path {
+    () => {
+        module_path!()
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __log_file {
+    () => {
+        file!()
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __log_line {
+    () => {
+        line!()
     };
 }
