@@ -610,6 +610,22 @@ static bool FixWaiverAfterTransplant(JSContext* cx, HandleObject oldWaiver,
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  js::NukeCrossCompartmentWrapperIfExists(cx, js::GetObjectCompartment(newobj),
+                                          oldWaiver);
+
+  
+  
+  
+  
   JSObject* newWaiver = WrapperFactory::CreateXrayWaiver(cx, newobj);
   if (!newWaiver) {
     return false;
