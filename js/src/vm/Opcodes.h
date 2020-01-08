@@ -2364,14 +2364,23 @@
 
 
  \
-    macro(JSOP_IMPORTMETA,    232, "importmeta", NULL,      1,  0,  1,  JOF_BYTE)
+    macro(JSOP_IMPORTMETA,    232, "importmeta", NULL,      1,  0,  1,  JOF_BYTE) \
+    
+
+
+
+
+
+
+
+ \
+    macro(JSOP_DYNAMIC_IMPORT, 233, "call-import", NULL,      1,  1,  1,  JOF_BYTE)
 
 
 
 
 
 #define FOR_EACH_TRAILING_UNUSED_OPCODE(macro) \
-    macro(233) \
     macro(234) \
     macro(235) \
     macro(236) \

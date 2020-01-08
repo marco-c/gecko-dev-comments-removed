@@ -3050,6 +3050,25 @@ GetModuleMetadataHook(JSRuntime* rt);
 extern JS_PUBLIC_API(void)
 SetModuleMetadataHook(JSRuntime* rt, ModuleMetadataHook func);
 
+using ModuleDynamicImportHook = bool (*)(JSContext* cx, HandleValue referencingPrivate,
+                                         HandleString specifier, HandleObject promise);
+
+
+
+
+extern JS_PUBLIC_API(ModuleDynamicImportHook)
+GetModuleDynamicImportHook(JSRuntime* rt);
+
+
+
+
+extern JS_PUBLIC_API(void)
+SetModuleDynamicImportHook(JSRuntime* rt, ModuleDynamicImportHook func);
+
+extern JS_PUBLIC_API(bool)
+FinishDynamicModuleImport(JSContext* cx, HandleValue referencingPrivate, HandleString specifier,
+                          HandleObject promise);
+
 
 
 

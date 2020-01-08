@@ -2557,6 +2557,7 @@ IonBuilder::inspectOpcode(JSOp op)
       case JSOP_RETSUB:
       case JSOP_SETINTRINSIC:
       case JSOP_THROWMSG:
+      case JSOP_DYNAMIC_IMPORT:
         
         
         

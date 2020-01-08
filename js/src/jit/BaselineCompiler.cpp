@@ -1201,6 +1201,8 @@ BaselineCompiler::emitBody()
             
           case JSOP_SETINTRINSIC:
             
+          case JSOP_DYNAMIC_IMPORT:
+            
           case JSOP_UNUSED126:
           case JSOP_UNUSED206:
           case JSOP_LIMIT:
