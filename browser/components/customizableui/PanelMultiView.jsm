@@ -391,10 +391,6 @@ var PanelMultiView = class extends AssociatedToNode {
     this._panel.addEventListener("popuppositioned", this);
     this._panel.addEventListener("popuphidden", this);
     this._panel.addEventListener("popupshown", this);
-    let cs = this.window.getComputedStyle(this.document.documentElement);
-    
-    
-    this._dir = cs.direction;
 
     
     
@@ -930,7 +926,7 @@ var PanelMultiView = class extends AssociatedToNode {
     details.phase = TRANSITION_PHASES.PREPARE;
 
     
-    let moveToLeft = (this._dir == "rtl" && !reverse) || (this._dir == "ltr" && reverse);
+    let moveToLeft = (this.window.RTL_UI && !reverse) || (!this.window.RTL_UI && reverse);
     let deltaX = prevPanelView.knownWidth;
     let deepestNode = reverse ? previousViewNode : viewNode;
 
@@ -1094,7 +1090,7 @@ var PanelMultiView = class extends AssociatedToNode {
         
         
         let currentView = this.openViews[this.openViews.length - 1];
-        currentView.keyNavigation(aEvent, this._dir);
+        currentView.keyNavigation(aEvent);
         break;
       case "mousemove":
         this.openViews.forEach(panelView => panelView.clearNavigation());
@@ -1522,9 +1518,7 @@ var PanelView = class extends AssociatedToNode {
 
 
 
-
-
-  keyNavigation(event, dir) {
+  keyNavigation(event) {
     if (!this.active) {
       return;
     }
@@ -1562,8 +1556,8 @@ var PanelView = class extends AssociatedToNode {
       case "ArrowLeft":
       case "ArrowRight": {
         stop();
-        if ((dir == "ltr" && keyCode == "ArrowLeft") ||
-            (dir == "rtl" && keyCode == "ArrowRight")) {
+        if ((!this.window.RTL_UI && keyCode == "ArrowLeft") ||
+            (this.window.RTL_UI && keyCode == "ArrowRight")) {
           this.node.panelMultiView.goBack();
           break;
         }

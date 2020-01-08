@@ -12,8 +12,7 @@ var EXPORTED_SYMBOLS = ["DragPositionManager"];
 
 function AreaPositionManager(aContainer) {
   
-  let window = aContainer.ownerGlobal;
-  this._dir = window.getComputedStyle(aContainer).direction;
+  this._rtl = aContainer.ownerGlobal.RTL_UI;
   let containerRect = aContainer.getBoundingClientRect();
   this._containerInfo = {
     left: containerRect.left,
@@ -84,13 +83,13 @@ AreaPositionManager.prototype = {
     
     if (closest) {
       let targetBounds = this._lazyStoreGet(closest);
-      let farSide = this._dir == "ltr" ? "right" : "left";
+      let farSide = this._rtl ? "left" : "right";
       let outsideX = targetBounds[farSide];
       
       
       if (aY > targetBounds.top && aY < targetBounds.bottom) {
-        if ((this._dir == "ltr" && aX > outsideX) ||
-            (this._dir == "rtl" && aX < outsideX)) {
+        if ((!this._rtl && aX > outsideX) ||
+            (this._rtl && aX < outsideX)) {
           return closest.nextElementSibling || aContainer;
         }
       }
@@ -170,7 +169,7 @@ AreaPositionManager.prototype = {
     let xDiff;
     let yDiff = null;
     let nodeBounds = this._lazyStoreGet(aNode);
-    let side = this._dir == "ltr" ? "left" : "right";
+    let side = this._rtl ? "right" : "left";
     let next = this._getVisibleSiblingForDirection(aNode, "next");
     
     
@@ -188,7 +187,7 @@ AreaPositionManager.prototype = {
       if (aNode == firstNode) {
         
         
-        xDiff = this._horizontalDistance || (this._dir == "ltr" ? 1 : -1) * aSize.width;
+        xDiff = this._horizontalDistance || (this._rtl ? -1 : 1) * aSize.width;
       } else {
         
         
@@ -201,7 +200,7 @@ AreaPositionManager.prototype = {
     if (yDiff === null) {
       
       
-      if ((xDiff > 0 && this._dir == "rtl") || (xDiff < 0 && this._dir == "ltr")) {
+      if ((xDiff > 0 && this._rtl) || (xDiff < 0 && !this._rtl)) {
         yDiff = aSize.height;
       } else {
         
@@ -221,14 +220,14 @@ AreaPositionManager.prototype = {
   _moveNextBasedOnPrevious(aNode, aNodeBounds, aFirstNodeInRow) {
     let next = this._getVisibleSiblingForDirection(aNode, "previous");
     let otherBounds = this._lazyStoreGet(next);
-    let side = this._dir == "ltr" ? "left" : "right";
+    let side = this._rtl ? "right" : "left";
     let xDiff = aNodeBounds[side] - otherBounds[side];
     
     
     
-    let bound = this._containerInfo[this._dir == "ltr" ? "right" : "left"];
-    if ((this._dir == "ltr" && xDiff + aNodeBounds.right > bound) ||
-        (this._dir == "rtl" && xDiff + aNodeBounds.left < bound)) {
+    let bound = this._containerInfo[this._rtl ? "left" : "right"];
+    if ((!this._rtl && xDiff + aNodeBounds.right > bound) ||
+        (this._rtl && xDiff + aNodeBounds.left < bound)) {
       xDiff = this._lazyStoreGet(aFirstNodeInRow)[side] - aNodeBounds[side];
     }
     return xDiff;
