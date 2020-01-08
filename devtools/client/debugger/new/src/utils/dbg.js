@@ -21,14 +21,13 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 
 
 function findSource(dbg, url) {
-  const sources = dbg.selectors.getSources();
-  const source = sources.find(s => (s.url || "").includes(url));
+  const sources = dbg.selectors.getSourceList();
+  return sources.find(s => (s.url || "").includes(url));
+}
 
-  if (!source) {
-    return;
-  }
-
-  return source;
+function findSources(dbg, url) {
+  const sources = dbg.selectors.getSourceList();
+  return sources.filter(s => (s.url || "").includes(url));
 }
 
 function sendPacket(dbg, packet, callback) {
@@ -76,6 +75,7 @@ function setupHelper(obj) {
     getCM,
     helpers: {
       findSource: url => findSource(dbg, url),
+      findSources: url => findSources(dbg, url),
       evaluate: (expression, cbk) => evaluate(dbg, expression, cbk),
       sendPacketToThread: (packet, cbk) => sendPacketToThread(dbg, packet, cbk),
       sendPacket: (packet, cbk) => sendPacket(dbg, packet, cbk)
