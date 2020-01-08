@@ -33,13 +33,14 @@ namespace optional_internal {
 
 
 
-void* FunctionThatDoesNothingImpl(void*);
+const void* FunctionThatDoesNothingImpl(const void*);
 
 template <typename T>
-inline T* FunctionThatDoesNothing(T* x) {
-  return reinterpret_cast<T*>(
-      FunctionThatDoesNothingImpl(reinterpret_cast<void*>(x)));
+inline const T* FunctionThatDoesNothing(const T* x) {
+  return reinterpret_cast<const T*>(
+      FunctionThatDoesNothingImpl(reinterpret_cast<const void*>(x)));
 }
+
 
 #else
 
