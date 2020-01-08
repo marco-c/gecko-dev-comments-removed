@@ -312,6 +312,10 @@ pref("browser.urlbar.timesBeforeHidingSuggestionsHint", 4);
 
 pref("browser.urlbar.maxCharsForSearchSuggestions", 20);
 
+
+
+pref("browser.urlbar.suggest.history.onlyTyped",    false);
+
 pref("browser.urlbar.formatting.enabled", true);
 pref("browser.urlbar.trimURLs", true);
 
@@ -1168,6 +1172,7 @@ pref("services.sync.prefs.sync.browser.urlbar.matchBuckets", true);
 pref("services.sync.prefs.sync.browser.urlbar.maxRichResults", true);
 pref("services.sync.prefs.sync.browser.urlbar.suggest.bookmark", true);
 pref("services.sync.prefs.sync.browser.urlbar.suggest.history", true);
+pref("services.sync.prefs.sync.browser.urlbar.suggest.history.onlyTyped", true);
 pref("services.sync.prefs.sync.browser.urlbar.suggest.openpage", true);
 pref("services.sync.prefs.sync.browser.urlbar.suggest.searches", true);
 pref("services.sync.prefs.sync.dom.disable_open_during_load", true);
@@ -1508,7 +1513,8 @@ pref("browser.ping-centre.production.endpoint", "https://tiles.services.mozilla.
 pref("media.gmp-provider.enabled", true);
 
 
-#ifdef NIGHTLY_BUILD
+
+#ifdef EARLY_BETA_OR_EARLIER
 pref("network.cookie.cookieBehavior", 4 );
 #endif
 
