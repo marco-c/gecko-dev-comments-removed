@@ -261,6 +261,8 @@ public:
   {
     static const int BUFFER_SIZE = 4096;
 
+    uint32_t previousBlocksize = Header().mBlocksize;
+
     Reset();
 
     nsTArray<char> buffer;
@@ -283,7 +285,7 @@ public:
 
       if (foundOffset >= 0) {
         SetOffset(aResource, foundOffset + offset);
-        SetIndex();
+        SetIndex(previousBlocksize);
         return true;
       }
 
@@ -365,14 +367,20 @@ private:
     aResource.Seek(SEEK_SET, mOffset);
   }
 
-  void SetIndex()
+  void SetIndex(uint32_t aPreviousBlocksize)
   {
     
     MOZ_ASSERT(Header().mBlocksize);
 
+    
+    
+    
+    
+    
     mIndex = Header().mVariableBlockSize
       ? Header().mFrameOrSampleNum
-      : Header().mFrameOrSampleNum * Header().mBlocksize;
+      : Header().mFrameOrSampleNum * std::max(Header().mBlocksize,
+                                              aPreviousBlocksize);
   }
 
   
@@ -385,7 +393,6 @@ private:
 
   
   FrameHeader mHeader;
-
 };
 
 class FrameParser
