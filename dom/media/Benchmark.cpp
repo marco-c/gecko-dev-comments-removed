@@ -22,6 +22,7 @@
 #include "mozilla/Telemetry.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/gfx/gfxVars.h"
+#include "nsIGfxInfo.h"
 
 #ifndef MOZ_WIDGET_ANDROID
 #include "WebMSample.h"
@@ -33,7 +34,7 @@ namespace mozilla {
 
 
 
-const uint32_t VP9Benchmark::sBenchmarkVersionID = 4;
+const uint32_t VP9Benchmark::sBenchmarkVersionID = 5;
 
 const char* VP9Benchmark::sBenchmarkFpsPref = "media.benchmark.vp9.fps";
 const char* VP9Benchmark::sBenchmarkFpsVersionCheck = "media.benchmark.vp9.versioncheck";
@@ -41,12 +42,44 @@ bool VP9Benchmark::sHasRunTest = false;
 
 
 bool
-VP9Benchmark::IsVP9DecodeFast(bool aDefault)
+VP9Benchmark::ShouldRun()
 {
+#if defined(MOZ_WIDGET_ANDROID)
   
-#if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_APPLEMEDIA)
   return false;
 #else
+#if defined(MOZ_APPLEMEDIA)
+  const nsCOMPtr<nsIGfxInfo> gfxInfo = services::GetGfxInfo();
+  nsString vendorID, deviceID;
+  gfxInfo->GetAdapterVendorID(vendorID);
+  
+  
+  if (vendorID.EqualsLiteral("0x8086")) {
+    return false;
+  }
+  
+#endif
+  return true;
+#endif
+}
+
+
+uint32_t
+VP9Benchmark::MediaBenchmarkVp9Fps()
+{
+  if (!ShouldRun()) {
+    return 0;
+  }
+  return StaticPrefs::MediaBenchmarkVp9Threshold();
+}
+
+
+bool
+VP9Benchmark::IsVP9DecodeFast(bool aDefault)
+{
+  if (!ShouldRun()) {
+    return false;
+  }
   static StaticMutex sMutex;
   uint32_t decodeFps = StaticPrefs::MediaBenchmarkVp9Fps();
   uint32_t hadRecentUpdate = StaticPrefs::MediaBenchmarkVp9Versioncheck();
@@ -92,7 +125,6 @@ VP9Benchmark::IsVP9DecodeFast(bool aDefault)
   }
 
   return decodeFps >= StaticPrefs::MediaBenchmarkVp9Threshold();
-#endif
 }
 
 Benchmark::Benchmark(MediaDataDemuxer* aDemuxer, const Parameters& aParameters)

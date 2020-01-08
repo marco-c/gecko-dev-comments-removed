@@ -114,6 +114,11 @@ public:
   static const char* sBenchmarkFpsVersionCheck;
   static const uint32_t sBenchmarkVersionID;
   static bool sHasRunTest;
+  
+  
+  static uint32_t MediaBenchmarkVp9Fps();
+private:
+  static bool ShouldRun();
 };
 }
 
