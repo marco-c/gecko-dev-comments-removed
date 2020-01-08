@@ -560,6 +560,10 @@ function parseNamedDeclarations(isCssPropertyKnown, inputString,
 function RuleRewriter(isCssPropertyKnown, rule, inputString) {
   this.rule = rule;
   this.isCssPropertyKnown = isCssPropertyKnown;
+  
+  
+  
+  this.modifications = [];
 
   
   
@@ -858,6 +862,7 @@ RuleRewriter.prototype = {
     
     
     this.completeCopying(this.decl.colonOffsets[0]);
+    this.modifications.push({ type: "set", index, name, newName });
   },
 
   
@@ -912,6 +917,12 @@ RuleRewriter.prototype = {
         " " + escapeCSSComment(declText) + " */";
     }
     this.completeCopying(copyOffset);
+
+    if (isEnabled) {
+      this.modifications.push({ type: "set", index, name, value: decl.value });
+    } else {
+      this.modifications.push({ type: "remove", index, name });
+    }
   },
 
   
@@ -1006,8 +1017,11 @@ RuleRewriter.prototype = {
 
 
   createProperty: function(index, name, value, priority, enabled) {
-    this.editPromise = this.internalCreateProperty(index, name, value,
-                                                   priority, enabled);
+    this.editPromise = this.internalCreateProperty(index, name, value, priority, enabled);
+    
+    if (enabled) {
+      this.modifications.push({ type: "set", index, name, value, priority });
+    }
   },
 
   
@@ -1043,6 +1057,7 @@ RuleRewriter.prototype = {
     }
     this.result += ";";
     this.completeCopying(this.decl.offsets[1]);
+    this.modifications.push({ type: "set", index, name, value, priority });
   },
 
   
@@ -1089,6 +1104,7 @@ RuleRewriter.prototype = {
       }
     }
     this.completeCopying(copyOffset);
+    this.modifications.push({ type: "remove", index, name });
   },
 
   
@@ -1111,7 +1127,7 @@ RuleRewriter.prototype = {
 
   apply: function() {
     return promise.resolve(this.editPromise).then(() => {
-      return this.rule.setRuleText(this.result);
+      return this.rule.setRuleText(this.result, this.modifications);
     });
   },
 

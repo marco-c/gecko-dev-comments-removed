@@ -26,6 +26,7 @@ loader.lazyRequireGetter(this, "UPDATE_PRESERVING_RULES",
   "devtools/server/actors/stylesheets", true);
 loader.lazyRequireGetter(this, "UPDATE_GENERAL",
   "devtools/server/actors/stylesheets", true);
+loader.lazyRequireGetter(this, "findCssSelector", "devtools/shared/inspector/css-logic", true);
 
 loader.lazyGetter(this, "PSEUDO_ELEMENTS", () => {
   return InspectorUtils.getCSSPseudoElementNames();
@@ -976,6 +977,10 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
     this.rawStyle = item.style;
     this._parentSheet = null;
     this._onStyleApplied = this._onStyleApplied.bind(this);
+    
+    
+    
+    this._declarations = [];
 
     if (CSSRule.isInstance(item)) {
       this.type = item.type;
@@ -1016,6 +1021,7 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
     this.pageStyle = null;
     this.rawNode = null;
     this.rawRule = null;
+    this._declarations = null;
     if (this.sheetActor) {
       this.sheetActor.off("style-applied", this._onStyleApplied);
     }
@@ -1152,6 +1158,9 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
         decl.isNameValid = CSS.supports(decl.name, "initial");
         return decl;
       });
+      
+      
+      this._declarations = declarations;
     }
 
     return form;
@@ -1295,10 +1304,29 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
 
 
 
-  async setRuleText(newText) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async setRuleText(newText, modifications = []) {
     if (!this.canSetRuleText) {
       throw new Error("invalid call to setRuleText");
     }
+
+    
+    modifications.map(mod => this.logChange(mod));
 
     if (this.type === ELEMENT_STYLE) {
       
@@ -1336,6 +1364,8 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
 
 
 
+
+
   modifyProperties: function(modifications) {
     
     
@@ -1356,6 +1386,7 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
     const tempElement = document.createElementNS(XHTML_NS, "div");
 
     for (const mod of modifications) {
+      this.logChange(mod);
       if (mod.type === "set") {
         tempElement.style.setProperty(mod.name, mod.value, mod.priority || "");
         this.rawStyle.setProperty(mod.name,
@@ -1466,6 +1497,71 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
       return true;
     }
     return false;
+  },
+
+  
+
+
+
+
+
+
+  logChange(change) {
+    const prevValue = this._declarations[change.index]
+      ? this._declarations[change.index].value
+      : null;
+    const prevName = this._declarations[change.index]
+      ? this._declarations[change.index].name
+      : null;
+
+    
+    const data = {};
+    data.type = change.type;
+    data.selector = this.rawRule.selectorText;
+
+    
+    if (this.type === ELEMENT_STYLE) {
+      data.tag = this.rawNode.tagName;
+      data.href = "inline";
+      
+      try {
+        data.selector = findCssSelector(this.rawNode);
+      } catch (err) {}
+    } else {
+      data.href = this._parentSheet.href || "inline stylesheet";
+    }
+
+    switch (change.type) {
+      case "set":
+        
+        
+        
+        const name = change.newName ? change.newName : change.name;
+        
+        const value = change.newName ? prevValue : change.value;
+
+        data.add = { property: name, value };
+        
+        
+        
+        data.remove = prevValue ? { property: prevName, value: prevValue } : null;
+        break;
+
+      case "remove":
+        data.add = null;
+        data.remove = { property: change.name, value: prevValue };
+        break;
+    }
+
+    
+    
+    if (data.add && data.remove &&
+        data.add.property === data.remove.property &&
+        data.add.value === data.remove.value) {
+      return;
+    }
+
+    this.emit("track-change", data);
   },
 
   

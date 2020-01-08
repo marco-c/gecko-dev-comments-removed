@@ -289,9 +289,9 @@ const StyleRuleFront = FrontClassWithSpec(styleRuleSpec, {
     impl: "_modifySelector"
   }),
 
-  setRuleText: custom(function(newText) {
+  setRuleText: custom(function(newText, modifications) {
     this._form.authoredText = newText;
-    return this._setRuleText(newText);
+    return this._setRuleText(newText, modifications);
   }, {
     impl: "_setRuleText"
   })
@@ -344,12 +344,7 @@ class RuleModificationList {
 
 
   setProperty(index, name, value, priority) {
-    this.modifications.push({
-      type: "set",
-      name: name,
-      value: value,
-      priority: priority
-    });
+    this.modifications.push({ type: "set", index, name, value, priority });
   }
 
   
@@ -363,10 +358,7 @@ class RuleModificationList {
 
 
   removeProperty(index, name) {
-    this.modifications.push({
-      type: "remove",
-      name: name
-    });
+    this.modifications.push({ type: "remove", index, name });
   }
 
   
