@@ -334,6 +334,7 @@ ChromeUtils.import("resource://gre/modules/Services.jsm");
 XPCOMUtils.defineLazyGlobalGetters(this, ["fetch"]);
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  AboutPagesUtils: "resource://gre/modules/AboutPagesUtils.jsm",
   BrowserUtils: "resource://gre/modules/BrowserUtils.jsm",
   ExtensionSearchHandler: "resource://gre/modules/ExtensionSearchHandler.jsm",
   OS: "resource://gre/modules/osfile.jsm",
@@ -1020,6 +1021,8 @@ Search.prototype = {
     
     this._cleanUpNonCurrentMatches(UrlbarUtils.MATCHTYPE.GENERAL);
 
+    this._matchAboutPages();
+
     
     
     
@@ -1041,6 +1044,46 @@ Search.prototype = {
     
     await searchSuggestionsCompletePromise;
     await extensionsCompletePromise;
+  },
+
+  _shouldMatchAboutPages() {
+    
+    
+    return (this._strippedPrefix == "about:" &&
+            this._searchString);
+  },
+
+  _matchAboutPages() {
+    if (!this._shouldMatchAboutPages()) {
+      return;
+    }
+    for (const url of AboutPagesUtils.visibleAboutUrls) {
+      if (url.startsWith(`about:${this._searchString}`)) {
+        this._addMatch({
+          value: url,
+          comment: url,
+          frecency: FRECENCY_DEFAULT,
+        });
+      }
+    }
+  },
+
+  _matchAboutPageForAutofill() {
+    if (!this._shouldMatchAboutPages()) {
+      return false;
+    }
+    for (const url of AboutPagesUtils.visibleAboutUrls) {
+      if (url.startsWith(`about:${this._searchString}`)) {
+        this._addAutofillMatch(
+          url.replace(/^about:/, ""),
+          url,
+          Infinity,
+          []
+        );
+        return true;
+      }
+    }
+    return false;
   },
 
   async _checkPreloadedSitesExpiry() {
@@ -1138,6 +1181,15 @@ Search.prototype = {
     }
 
     let shouldAutofill = this._shouldAutofill;
+
+    if (this.pending && shouldAutofill) {
+      
+      let matched = await this._matchAboutPageForAutofill();
+      if (matched) {
+        return true;
+      }
+    }
+
     if (this.pending && shouldAutofill) {
       
       let matched = await this._matchKnownUrl(conn);
