@@ -48,10 +48,16 @@ class LIRGeneratorShared
     }
 
     
+    
+    
     bool errored() {
         return gen->getOffThreadStatus().isErr();
     }
     void abort(AbortReason r, const char* message, ...) MOZ_FORMAT_PRINTF(3, 4) {
+        if (errored()) {
+            return;
+        }
+
         va_list ap;
         va_start(ap, message);
         auto reason_ = gen->abortFmt(r, message, ap);
@@ -59,6 +65,10 @@ class LIRGeneratorShared
         gen->setOffThreadStatus(reason_);
     }
     void abort(AbortReason r) {
+        if (errored()) {
+            return;
+        }
+
         auto reason_ = gen->abort(r);
         gen->setOffThreadStatus(reason_);
     }
