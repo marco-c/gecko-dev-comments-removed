@@ -433,9 +433,23 @@ public:
 
   void operator=(const CallbackObjectHolder& aOther) = delete;
 
+  void Reset()
+  {
+    UnlinkSelf();
+  }
+
   nsISupports* GetISupports() const
   {
     return reinterpret_cast<nsISupports*>(mPtrBits & ~XPCOMCallbackFlag);
+  }
+
+  already_AddRefed<nsISupports> Forget()
+  {
+    
+    
+    nsISupports* supp = GetISupports();
+    mPtrBits = 0;
+    return dont_AddRef(supp);
   }
 
   
