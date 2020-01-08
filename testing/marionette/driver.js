@@ -262,12 +262,12 @@ Object.defineProperty(GeckoDriver.prototype, "windowHandles", {
 
       
       if (tabBrowser && tabBrowser.tabs) {
-        tabBrowser.tabs.forEach(tab => {
+        for (let tab of tabBrowser.tabs) {
           let winId = this.getIdForBrowser(browser.getBrowserForTab(tab));
           if (winId !== null) {
             hs.push(winId);
           }
-        });
+        }
       }
     }
 
