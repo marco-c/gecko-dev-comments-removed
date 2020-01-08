@@ -38,7 +38,11 @@ function runTest() {
     seenLocationChange = true;
     ok(seenLoadStart, 'Location change after load start.');
     ok(!seenLoadEnd, 'Location change before load end.');
-    ok(e.detail.url, browserElementTestHelpers.emptyPage1, "event's reported location");
+    
+    
+    
+    
+    todo_is(e.detail.url, browserElementTestHelpers.emptyPage1, "event's reported location");
   }
 
   function loadend(e) {
@@ -91,7 +95,7 @@ function runTest2() {
     seenLocationChange = true;
     ok(seenLoadStart, 'Location change after load start.');
     ok(!seenLoadEnd, 'Location change before load end.');
-    ok(e.detail.url, browserElementTestHelpers.emptyPage2, "event's reported location");
+    is(e.detail.url, browserElementTestHelpers.emptyPage2, "event's reported location");
   });
 
   iframe.addEventListener('mozbrowserloadend', function(e) {
