@@ -57,7 +57,6 @@
 #include "mozilla/dom/ImageBitmapSource.h"
 #include "mozilla/UniquePtr.h"
 
-class nsDocShell;
 class nsIArray;
 class nsIBaseWindow;
 class nsIContent;
@@ -94,7 +93,6 @@ class AbstractThread;
 class DOMEventTargetHelper;
 namespace dom {
 class BarProp;
-class BrowsingContext;
 struct ChannelPixelLayout;
 class Console;
 class Crypto;
@@ -113,7 +111,6 @@ class MediaQueryList;
 class Navigator;
 class OwningExternalOrWindowProxy;
 class Promise;
-class PostMessageData;
 class PostMessageEvent;
 struct RequestInit;
 class RequestOrUSVString;
@@ -219,7 +216,7 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
     return (nsGlobalWindowOuter*)(mozilla::dom::EventTarget*)supports;
   }
 
-  static already_AddRefed<nsGlobalWindowOuter> Create(nsDocShell* aDocShell,
+  static already_AddRefed<nsGlobalWindowOuter> Create(nsIDocShell* aDocShell,
                                                       bool aIsChrome);
 
   
@@ -274,7 +271,7 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
 
   bool ComputeDefaultWantsUntrusted(mozilla::ErrorResult& aRv) final;
 
-  virtual nsPIDOMWindowOuter* GetOwnerGlobalForBindingsInternal() override;
+  virtual nsPIDOMWindowOuter* GetOwnerGlobalForBindings() override;
 
   virtual nsIGlobalObject* GetOwnerGlobal() const override;
 
@@ -365,8 +362,7 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
 
   inline nsGlobalWindowOuter* GetScriptableTopInternal();
 
-  already_AddRefed<mozilla::dom::BrowsingContext> GetChildWindow(
-      const nsAString& aName);
+  nsPIDOMWindowOuter* GetChildWindow(const nsAString& aName);
 
   
   
@@ -527,13 +523,13 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   bool GetClosedOuter();
   bool Closed() override;
   void StopOuter(mozilla::ErrorResult& aError);
-  void FocusOuter();
+  void FocusOuter(mozilla::ErrorResult& aError);
   nsresult Focus() override;
   void BlurOuter();
-  mozilla::dom::BrowsingContext* GetFramesOuter();
+  already_AddRefed<nsPIDOMWindowOuter> GetFramesOuter();
   nsDOMWindowList* GetFrames() final;
   uint32_t Length();
-  mozilla::dom::Nullable<mozilla::dom::WindowProxyHolder> GetTopOuter();
+  already_AddRefed<nsPIDOMWindowOuter> GetTopOuter();
 
   nsresult GetPrompter(nsIPrompt** aPrompt) override;
 
@@ -546,15 +542,16 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   nsPIDOMWindowOuter* GetSanitizedOpener(nsPIDOMWindowOuter* aOpener);
 
   already_AddRefed<nsPIDOMWindowOuter> GetOpener() override;
-  mozilla::dom::Nullable<mozilla::dom::WindowProxyHolder> GetParentOuter();
+  already_AddRefed<nsPIDOMWindowOuter> GetParentOuter();
   already_AddRefed<nsPIDOMWindowOuter> GetParent() override;
   nsPIDOMWindowOuter* GetScriptableParent() override;
   nsPIDOMWindowOuter* GetScriptableParentOrNull() override;
   mozilla::dom::Element* GetFrameElementOuter(nsIPrincipal& aSubjectPrincipal);
   mozilla::dom::Element* GetFrameElement() override;
-  mozilla::dom::Nullable<mozilla::dom::WindowProxyHolder> OpenOuter(
-      const nsAString& aUrl, const nsAString& aName, const nsAString& aOptions,
-      mozilla::ErrorResult& aError);
+  already_AddRefed<nsPIDOMWindowOuter> OpenOuter(const nsAString& aUrl,
+                                                 const nsAString& aName,
+                                                 const nsAString& aOptions,
+                                                 mozilla::ErrorResult& aError);
   nsresult Open(const nsAString& aUrl, const nsAString& aName,
                 const nsAString& aOptions, nsDocShellLoadState* aLoadState,
                 bool aForceNoOpener, nsPIDOMWindowOuter** _retval) override;
@@ -618,7 +615,7 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
 
   bool ShouldResistFingerprinting();
 
-  mozilla::dom::Nullable<mozilla::dom::WindowProxyHolder> OpenDialogOuter(
+  already_AddRefed<nsPIDOMWindowOuter> OpenDialogOuter(
       JSContext* aCx, const nsAString& aUrl, const nsAString& aName,
       const nsAString& aOptions,
       const mozilla::dom::Sequence<JS::Value>& aExtraArgument,
@@ -758,7 +755,7 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   inline void MaybeClearInnerWindow(nsGlobalWindowInner* aExpectedInner);
 
   
-  static nsGlobalWindowInner* CallerInnerWindow(JSContext* aCx);
+  nsGlobalWindowInner* CallerInnerWindow(JSContext* aCx);
 
   
   nsPIDOMWindowOuter* GetParentInternal();
@@ -968,70 +965,6 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
                            nsIPrincipal& aSubjectPrincipal,
                            mozilla::ErrorResult& aError);
 
- public:
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  bool GetPrincipalForPostMessage(const nsAString& aTargetOrigin,
-                                  nsIURI* aTargetOriginURI,
-                                  nsIPrincipal* aCallerPrincipal,
-                                  nsIPrincipal& aSubjectPrincipal,
-                                  nsIPrincipal** aProvidedPrincipal);
-
- private:
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static bool GatherPostMessageData(
-      JSContext* aCx, const nsAString& aTargetOrigin,
-      mozilla::dom::BrowsingContext** aSource, nsAString& aOrigin,
-      nsIURI** aTargetOriginURI, nsIPrincipal** aCallerPrincipal,
-      nsGlobalWindowInner** aCallerInnerWindow, nsIURI** aCallerDocumentURI,
-      mozilla::ErrorResult& aError);
-
   
   
   
@@ -1049,7 +982,7 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
       nsIDocument* aDocument,
       SecureContextFlags aFlags = SecureContextFlags::eDefault);
 
-  void SetDocShell(nsDocShell* aDocShell);
+  void SetDocShell(nsIDocShell* aDocShell);
 
   
   friend class nsPIDOMWindowInner;
@@ -1167,7 +1100,6 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
 
   friend class nsDOMScriptableHelper;
   friend class nsDOMWindowUtils;
-  friend class mozilla::dom::BrowsingContext;
   friend class mozilla::dom::PostMessageEvent;
   friend class DesktopNotification;
   friend class mozilla::dom::TimeoutManager;

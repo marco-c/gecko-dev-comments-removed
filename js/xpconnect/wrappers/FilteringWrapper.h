@@ -85,6 +85,11 @@ class CrossOriginXrayWrapper : public SecurityXrayDOM {
                             JS::ObjectOpResult& result) const override;
 };
 
+
+
+
+bool IsCrossOriginWhitelistedProp(JSContext* cx, JS::HandleId id);
+
 }  
 
 #endif 

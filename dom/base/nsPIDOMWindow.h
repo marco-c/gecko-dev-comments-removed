@@ -539,7 +539,7 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   uint32_t GetMarkedCCGeneration() { return mMarkedCCGeneration; }
 
   mozilla::dom::Navigator* Navigator();
-  virtual mozilla::dom::Location* Location() = 0;
+  virtual mozilla::dom::Location* GetLocation() = 0;
 
   virtual nsresult GetControllers(nsIControllers** aControllers) = 0;
 
@@ -883,10 +883,7 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
 
   inline nsIDocShell* GetDocShell() const;
 
-  
-
-
-  inline mozilla::dom::BrowsingContext* GetBrowsingContext() const;
+  mozilla::dom::BrowsingContext* GetBrowsingContext() const;
 
   
 
@@ -1106,10 +1103,8 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
 
 
 
-  void SetOpenerForInitialContentBrowser(
-      mozilla::dom::BrowsingContext* aOpener);
-  already_AddRefed<mozilla::dom::BrowsingContext>
-  TakeOpenerForInitialContentBrowser();
+  void SetOpenerForInitialContentBrowser(nsPIDOMWindowOuter* aOpener);
+  already_AddRefed<nsPIDOMWindowOuter> TakeOpenerForInitialContentBrowser();
 
  protected:
   
@@ -1136,7 +1131,6 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
 
   
   nsCOMPtr<nsIDocShell> mDocShell;
-  RefPtr<mozilla::dom::BrowsingContext> mBrowsingContext;
 
   uint32_t mModalStateDepth;
 
@@ -1186,7 +1180,7 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
 
   mozilla::dom::LargeAllocStatus mLargeAllocStatus;
 
-  RefPtr<mozilla::dom::BrowsingContext> mOpenerForInitialContentBrowser;
+  nsCOMPtr<nsPIDOMWindowOuter> mOpenerForInitialContentBrowser;
 
   using PermissionInfo = std::pair<bool, mozilla::TimeStamp>;
   nsDataHashtable<nsStringHashKey, PermissionInfo> mAutoplayTemporaryPermission;

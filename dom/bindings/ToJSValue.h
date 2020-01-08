@@ -23,7 +23,6 @@ namespace mozilla {
 namespace dom {
 
 class Promise;
-class WindowProxyHolder;
 
 
 
@@ -221,9 +220,6 @@ ToJSValue(JSContext* aCx, T& aArgument, JS::MutableHandle<JS::Value> aValue) {
   JS::Rooted<JSObject*> scope(aCx, JS::CurrentGlobalOrNull(aCx));
   return XPCOMObjectToJsval(aCx, scope, helper, nullptr, true, aValue);
 }
-
-MOZ_MUST_USE bool ToJSValue(JSContext* aCx, const WindowProxyHolder& aArgument,
-                            JS::MutableHandle<JS::Value> aValue);
 
 
 template <typename T>

@@ -19,7 +19,6 @@ class nsIURI;
 namespace mozilla {
 
 namespace dom {
-class BrowsingContext;
 class TabParent;
 }  
 
@@ -104,8 +103,8 @@ class BrowserElementParent {
 
 
   static OpenWindowResult OpenWindowInProcess(
-      mozilla::dom::BrowsingContext* aOpenerWindow, nsIURI* aURI,
-      const nsAString& aName, const nsACString& aFeatures, bool aForceNoOpener,
+      nsPIDOMWindowOuter* aOpenerWindow, nsIURI* aURI, const nsAString& aName,
+      const nsACString& aFeatures, bool aForceNoOpener,
       mozIDOMWindowProxy** aReturnWindow);
 
  private:
