@@ -114,11 +114,6 @@ function analyzeInputString(str) {
           const previousNonSpaceChar = trimmedBefore[trimmedBefore.length - 1];
 
           
-          if (!nextNonSpaceChar) {
-            return buildReturnObject();
-          }
-
-          
           
           
           if (
@@ -126,7 +121,16 @@ function analyzeInputString(str) {
             previousNonSpaceChar !== "[" && nextNonSpaceChar !== "[" &&
             !NO_AUTOCOMPLETE_PREFIXES.includes(currentLastStatement)
           ) {
-            start = i + nextNonSpaceCharIndex;
+            start = i + (
+              nextNonSpaceCharIndex >= 0
+                ? nextNonSpaceCharIndex
+                : (after.length + 1)
+            );
+          }
+
+          
+          if (!nextNonSpaceChar) {
+            return buildReturnObject();
           }
 
           
