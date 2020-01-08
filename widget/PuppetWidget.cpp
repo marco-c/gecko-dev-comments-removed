@@ -718,15 +718,35 @@ PuppetWidget::RequestIMEToCommitComposition(bool aCancel)
 }
 
 nsresult
-PuppetWidget::StartPluginIME(const mozilla::WidgetKeyboardEvent& aKeyboardEvent,
+PuppetWidget::StartPluginIME(const WidgetKeyboardEvent& aKeyboardEvent,
                              int32_t aPanelX, int32_t aPanelY,
                              nsString& aCommitted)
 {
+  DebugOnly<bool> propagationAlreadyStopped =
+    aKeyboardEvent.mFlags.mPropagationStopped;
+  DebugOnly<bool> immediatePropagationAlreadyStopped =
+    aKeyboardEvent.mFlags.mImmediatePropagationStopped;
   if (!mTabChild ||
       !mTabChild->SendStartPluginIME(aKeyboardEvent, aPanelX,
                                      aPanelY, &aCommitted)) {
     return NS_ERROR_FAILURE;
   }
+  
+  
+  
+  
+  
+  const_cast<WidgetKeyboardEvent&>(aKeyboardEvent).
+    ResetCrossProcessDispatchingState();
+  
+  
+  
+  
+  
+  MOZ_ASSERT(propagationAlreadyStopped ==
+               aKeyboardEvent.mFlags.mPropagationStopped);
+  MOZ_ASSERT(immediatePropagationAlreadyStopped ==
+               aKeyboardEvent.mFlags.mImmediatePropagationStopped);
   return NS_OK;
 }
 
