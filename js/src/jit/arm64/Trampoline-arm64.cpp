@@ -140,7 +140,7 @@ JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm)
             masm.Subs(tmp_argc, tmp_argc, Operand(1));
 
             
-            masm.B(&loopHead, vixl::Condition::ge);
+            masm.B(&loopHead, vixl::Condition::NonZero);
         }
 
         masm.bind(&noArguments);
