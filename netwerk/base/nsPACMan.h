@@ -176,7 +176,7 @@ public:
 
   
   void ProcessPendingQ();
-  void CancelPendingQ(nsresult, bool aShutdown);
+  void CancelPendingQ(nsresult);
 
   void SetWPADOverDHCPEnabled(bool aValue) { mWPADOverDHCPEnabled = aValue; }
 
@@ -232,18 +232,12 @@ private:
 
   
   void PostProcessPendingQ();
-  void PostCancelPendingQ(nsresult, bool aShutdown = false);
+  void PostCancelPendingQ(nsresult);
   bool ProcessPending();
   nsresult GetPACFromDHCP(nsACString &aSpec);
   nsresult ConfigureWPAD(nsACString &aSpec);
 
 private:
-  
-
-
-
-  nsresult DispatchToPAC(already_AddRefed<nsIRunnable> aEvent);
-
   ProxyAutoConfig mPAC;
   nsCOMPtr<nsIThread>           mPACThread;
   nsCOMPtr<nsISystemProxySettings> mSystemProxySettings;
