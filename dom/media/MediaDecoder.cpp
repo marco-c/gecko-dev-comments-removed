@@ -975,6 +975,14 @@ void MediaDecoder::UpdateVideoDecodeMode() {
   }
 
   
+  if (!mMediaSeekable) {
+    LOG("UpdateVideoDecodeMode(), set Normal because the media is not "
+        "seekable");
+    mDecoderStateMachine->SetVideoDecodeMode(VideoDecodeMode::Normal);
+    return;
+  }
+
+  
   if (mHasSuspendTaint) {
     LOG("UpdateVideoDecodeMode(), set Normal because the element has been "
         "tainted.");
