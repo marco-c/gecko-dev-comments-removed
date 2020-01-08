@@ -1500,16 +1500,18 @@ function appendProcessAboutMemoryElements(aP, aN, aProcess, aTrees,
   otherDegenerates.sort(TreeNode.compareUnsafeNames);
 
   
-  let pre = appendSectionHeader(aP, "Other Measurements");
-  for (let t of otherTrees) {
-    appendTreeElements(pre, t, aProcess, "");
-    appendTextNode(pre, "\n"); 
+  if (otherTrees.length || otherDegenerates.length) {
+    let pre = appendSectionHeader(aP, "Other Measurements");
+    for (let t of otherTrees) {
+      appendTreeElements(pre, t, aProcess, "");
+      appendTextNode(pre, "\n"); 
+    }
+    for (let t of otherDegenerates) {
+      let padText = "".padStart(maxStringLength - t.toString().length, " ");
+      appendTreeElements(pre, t, aProcess, padText);
+    }
+    appendTextNode(aP, "\n"); 
   }
-  for (let t of otherDegenerates) {
-    let padText = "".padStart(maxStringLength - t.toString().length, " ");
-    appendTreeElements(pre, t, aProcess, padText);
-  }
-  appendTextNode(aP, "\n"); 
 
   
   
