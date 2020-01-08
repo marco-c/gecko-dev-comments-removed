@@ -25,7 +25,6 @@ struct FeatureMap {
 
 
 static FeatureMap sSupportedFeatures[] = {
-  
   { "autoplay", FeatureMap::eAll },
   
   { "camera", FeatureMap::eAll  },

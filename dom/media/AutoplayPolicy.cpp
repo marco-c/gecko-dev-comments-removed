@@ -11,6 +11,7 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/dom/AudioContext.h"
 #include "mozilla/AutoplayPermissionManager.h"
+#include "mozilla/dom/FeaturePolicyUtils.h"
 #include "mozilla/dom/HTMLMediaElement.h"
 #include "mozilla/dom/HTMLMediaElementBinding.h"
 #include "nsGlobalWindowInner.h"
@@ -76,6 +77,16 @@ IsWindowAllowedToPlay(nsPIDOMWindowInner* aWindow)
   }
 
   if (!aWindow->GetExtantDoc()) {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  if (!FeaturePolicyUtils::IsFeatureAllowed(aWindow->GetExtantDoc(),
+                                            NS_LITERAL_STRING("autoplay"))) {
     return false;
   }
 
