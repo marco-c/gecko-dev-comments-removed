@@ -80,6 +80,11 @@ public:
 
   mozilla::dom::Element* FindImageMap();
 
+  
+
+
+  void SetSyncDecodingHint(bool aHint);
+
 protected:
   enum ImageLoadType {
     
@@ -451,6 +456,19 @@ private:
 
 
 
+
+
+  void MaybeForceSyncDecoding(bool aPrepareNextRequest,
+                              nsIFrame* aFrame = nullptr);
+
+  
+
+
+
+
+
+
+
   ImageObserver mObserverList;
 
   
@@ -522,6 +540,9 @@ private:
   
   
   bool mIsStartingImageLoad;
+
+  
+  bool mSyncDecodingHint;
 };
 
 #endif 

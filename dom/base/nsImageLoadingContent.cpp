@@ -99,7 +99,8 @@ nsImageLoadingContent::nsImageLoadingContent()
     mStateChangerDepth(0),
     mCurrentRequestRegistered(false),
     mPendingRequestRegistered(false),
-    mIsStartingImageLoad(false)
+    mIsStartingImageLoad(false),
+    mSyncDecodingHint(false)
 {
   if (!nsContentUtils::GetImgLoaderForChannel(nullptr, nullptr)) {
     mLoadingEnabled = false;
@@ -332,6 +333,50 @@ nsImageLoadingContent::SetLoadingEnabled(bool aLoadingEnabled)
 {
   if (nsContentUtils::GetImgLoaderForChannel(nullptr, nullptr)) {
     mLoadingEnabled = aLoadingEnabled;
+  }
+}
+
+void
+nsImageLoadingContent::SetSyncDecodingHint(bool aHint)
+{
+  if (mSyncDecodingHint == aHint) {
+    return;
+  }
+
+  mSyncDecodingHint = aHint;
+  MaybeForceSyncDecoding( false);
+}
+
+void
+nsImageLoadingContent::MaybeForceSyncDecoding(bool aPrepareNextRequest,
+                                              nsIFrame* aFrame )
+{
+  nsIFrame* frame = aFrame ? aFrame : GetOurPrimaryFrame();
+  nsImageFrame* imageFrame = do_QueryFrame(frame);
+  nsSVGImageFrame* svgImageFrame = do_QueryFrame(frame);
+  if (!imageFrame && !svgImageFrame) {
+    return;
+  }
+
+  bool forceSync = mSyncDecodingHint;
+  if (!forceSync && aPrepareNextRequest) {
+    
+    
+    TimeStamp now = TimeStamp::Now();
+    TimeDuration threshold =
+      TimeDuration::FromMilliseconds(
+        gfxPrefs::ImageInferSrcAnimationThresholdMS());
+
+    
+    
+    forceSync = (now - mMostRecentRequestChange < threshold);
+    mMostRecentRequestChange = now;
+  }
+
+  if (imageFrame) {
+    imageFrame->SetForceSyncDecoding(forceSync);
+  } else {
+    svgImageFrame->SetForceSyncDecoding(forceSync);
   }
 }
 
@@ -629,6 +674,7 @@ nsImageLoadingContent::FrameCreated(nsIFrame* aFrame)
 {
   NS_ASSERTION(aFrame, "aFrame is null");
 
+  MaybeForceSyncDecoding( false, aFrame);
   TrackImage(mCurrentRequest, aFrame);
   TrackImage(mPendingRequest, aFrame);
 
@@ -1263,27 +1309,7 @@ nsImageLoadingContent::CancelPendingEvent()
 RefPtr<imgRequestProxy>&
 nsImageLoadingContent::PrepareNextRequest(ImageLoadType aImageLoadType)
 {
-  nsImageFrame* imageFrame = do_QueryFrame(GetOurPrimaryFrame());
-  nsSVGImageFrame* svgImageFrame = do_QueryFrame(GetOurPrimaryFrame());
-  if (imageFrame || svgImageFrame) {
-    
-    
-    TimeStamp now = TimeStamp::Now();
-    TimeDuration threshold =
-      TimeDuration::FromMilliseconds(
-        gfxPrefs::ImageInferSrcAnimationThresholdMS());
-
-    
-    
-    bool forceSync = (now - mMostRecentRequestChange < threshold);
-    if (imageFrame) {
-      imageFrame->SetForceSyncDecoding(forceSync);
-    } else {
-      svgImageFrame->SetForceSyncDecoding(forceSync);
-    }
-
-    mMostRecentRequestChange = now;
-  }
+  MaybeForceSyncDecoding( true);
 
   
   
