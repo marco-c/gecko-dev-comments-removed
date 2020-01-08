@@ -15,34 +15,34 @@ var didDialog;
 
 var timer; 
 function startCallbackTimer() {
-    didDialog = false;
+  didDialog = false;
 
-    
-    const dialogDelay = 10;
+  
+  const dialogDelay = 10;
 
-    
-    timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-    timer.init(observer, dialogDelay, Ci.nsITimer.TYPE_ONE_SHOT);
+  
+  timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+  timer.init(observer, dialogDelay, Ci.nsITimer.TYPE_ONE_SHOT);
 }
 
 
 var observer = SpecialPowers.wrapCallbackObject({
-    QueryInterface(iid) {
-        const interfaces = [Ci.nsIObserver,
-                            Ci.nsISupports, Ci.nsISupportsWeakReference];
+  QueryInterface(iid) {
+    const interfaces = [Ci.nsIObserver,
+                        Ci.nsISupports, Ci.nsISupportsWeakReference];
 
-        if (!interfaces.some( function(v) { return iid.equals(v); } ))
-            throw SpecialPowers.Components.results.NS_ERROR_NO_INTERFACE;
-        return this;
-    },
+    if (!interfaces.some( function(v) { return iid.equals(v); } ))
+      throw SpecialPowers.Components.results.NS_ERROR_NO_INTERFACE;
+    return this;
+  },
 
-    observe(subject, topic, data) {
-        var doc = getDialogDoc();
-        if (doc)
-            handleDialog(doc, testNum);
-        else
-            startCallbackTimer(); 
-    },
+  observe(subject, topic, data) {
+    var doc = getDialogDoc();
+    if (doc)
+      handleDialog(doc, testNum);
+    else
+      startCallbackTimer(); 
+  },
 });
 
 function getDialogDoc() {
@@ -51,17 +51,17 @@ function getDialogDoc() {
   
   for (let {docShell} of SpecialPowers.Services.wm.getXULWindowEnumerator(null)) {
     var containedDocShells = docShell.getDocShellEnumerator(
-                                      docShell.typeChrome,
-                                      docShell.ENUMERATE_FORWARDS);
+      docShell.typeChrome,
+      docShell.ENUMERATE_FORWARDS);
     for (let childDocShell of containedDocShells) {
-        
-        if (childDocShell.busyFlags != Ci.nsIDocShell.BUSY_FLAGS_NONE)
-          continue;
-        var childDoc = childDocShell.contentViewer.DOMDocument;
+      
+      if (childDocShell.busyFlags != Ci.nsIDocShell.BUSY_FLAGS_NONE)
+        continue;
+      var childDoc = childDocShell.contentViewer.DOMDocument;
 
-        
-        if (childDoc.location.href == "chrome://global/content/commonDialog.xul")
-          return childDoc;
+      
+      if (childDoc.location.href == "chrome://global/content/commonDialog.xul")
+        return childDoc;
     }
   }
 

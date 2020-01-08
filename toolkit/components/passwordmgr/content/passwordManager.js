@@ -59,10 +59,10 @@ let signonReloadDisplay = {
 
 
 let dateFormatter = new Services.intl.DateTimeFormat(undefined,
-                      { dateStyle: "medium" });
+                                                     { dateStyle: "medium" });
 let dateAndTimeFormatter = new Services.intl.DateTimeFormat(undefined,
-                             { dateStyle: "medium",
-                               timeStyle: "short" });
+                                                            { dateStyle: "medium",
+                                                              timeStyle: "short" });
 
 function Startup() {
   
@@ -195,7 +195,7 @@ let signonsTreeView = {
     }
 
     if (col.id == "userCol") {
-     _editLogin("username");
+      _editLogin("username");
 
     } else if (col.id == "passwordCol") {
       if (!value) {
@@ -380,10 +380,10 @@ function DeleteAllSignons() {
   
   let dummy = { value: false };
   if (Services.prompt.confirmEx(window,
-    kSignonBundle.getString("removeAllPasswordsTitle"),
-    kSignonBundle.getString("removeAllPasswordsPrompt"),
-    Services.prompt.STD_YES_NO_BUTTONS + Services.prompt.BUTTON_POS_1_DEFAULT,
-    null, null, null, null, dummy) == 1) 
+                                kSignonBundle.getString("removeAllPasswordsTitle"),
+                                kSignonBundle.getString("removeAllPasswordsPrompt"),
+                                Services.prompt.STD_YES_NO_BUTTONS + Services.prompt.BUTTON_POS_1_DEFAULT,
+                                null, null, null, null, dummy) == 1) 
     return;
 
   let syncNeeded = signonsTreeView._filterSet.length != 0;
@@ -435,9 +435,9 @@ function AskUserShowPasswords() {
 
   
   return Services.prompt.confirmEx(window,
-          null,
-          kSignonBundle.getString("noMasterPasswordPrompt"), Services.prompt.STD_YES_NO_BUTTONS,
-          null, null, null, null, dummy) == 0; 
+                                   null,
+                                   kSignonBundle.getString("noMasterPasswordPrompt"), Services.prompt.STD_YES_NO_BUTTONS,
+                                   null, null, null, null, dummy) == 0; 
 }
 
 function FinalizeSignonDeletions(syncNeeded) {
@@ -714,7 +714,7 @@ function masterPasswordLogin(noPasswordCallback) {
   try {
     
     token.login(true); 
-                        
+    
   } catch (e) {
     
     

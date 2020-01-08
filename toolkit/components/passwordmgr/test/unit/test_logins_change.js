@@ -243,8 +243,8 @@ add_task(function test_modifyLogin_nsILoginInfo()
 
   
   Assert.throws(
-         () => Services.logins.modifyLogin(loginInfo, differentLoginInfo),
-         /already exists/);
+    () => Services.logins.modifyLogin(loginInfo, differentLoginInfo),
+    /already exists/);
   LoginTestUtils.checkLogins([loginInfo, differentLoginInfo]);
 
   LoginTestUtils.clearData();
@@ -310,8 +310,8 @@ add_task(function test_modifyLogin_nsIProperyBag()
 
   
   Assert.throws(
-         () => Services.logins.modifyLogin(loginInfo, differentLoginProperties),
-         /already exists/);
+    () => Services.logins.modifyLogin(loginInfo, differentLoginProperties),
+    /already exists/);
   LoginTestUtils.checkLogins([loginInfo, differentLoginInfo]);
 
   LoginTestUtils.clearData();

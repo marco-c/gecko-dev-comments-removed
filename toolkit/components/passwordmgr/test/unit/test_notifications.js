@@ -13,34 +13,34 @@ var TestObserver = {
     Assert.equal(data, expectedNotification);
 
     switch (data) {
-        case "addLogin":
-            Assert.ok(subject instanceof Ci.nsILoginInfo);
-            Assert.ok(subject instanceof Ci.nsILoginMetaInfo);
-            Assert.ok(expectedData.equals(subject)); 
-            break;
-        case "modifyLogin":
-            Assert.ok(subject instanceof Ci.nsIArray);
-            Assert.equal(subject.length, 2);
-            var oldLogin = subject.queryElementAt(0, Ci.nsILoginInfo);
-            var newLogin = subject.queryElementAt(1, Ci.nsILoginInfo);
-            Assert.ok(expectedData[0].equals(oldLogin)); 
-            Assert.ok(expectedData[1].equals(newLogin));
-            break;
-        case "removeLogin":
-            Assert.ok(subject instanceof Ci.nsILoginInfo);
-            Assert.ok(subject instanceof Ci.nsILoginMetaInfo);
-            Assert.ok(expectedData.equals(subject)); 
-            break;
-        case "removeAllLogins":
-            Assert.equal(subject, null);
-            break;
-        case "hostSavingEnabled":
-        case "hostSavingDisabled":
-            Assert.ok(subject instanceof Ci.nsISupportsString);
-            Assert.equal(subject.data, expectedData);
-            break;
-        default:
-            do_throw("Unhandled notification: " + data + " / " + topic);
+      case "addLogin":
+        Assert.ok(subject instanceof Ci.nsILoginInfo);
+        Assert.ok(subject instanceof Ci.nsILoginMetaInfo);
+        Assert.ok(expectedData.equals(subject)); 
+        break;
+      case "modifyLogin":
+        Assert.ok(subject instanceof Ci.nsIArray);
+        Assert.equal(subject.length, 2);
+        var oldLogin = subject.queryElementAt(0, Ci.nsILoginInfo);
+        var newLogin = subject.queryElementAt(1, Ci.nsILoginInfo);
+        Assert.ok(expectedData[0].equals(oldLogin)); 
+        Assert.ok(expectedData[1].equals(newLogin));
+        break;
+      case "removeLogin":
+        Assert.ok(subject instanceof Ci.nsILoginInfo);
+        Assert.ok(subject instanceof Ci.nsILoginMetaInfo);
+        Assert.ok(expectedData.equals(subject)); 
+        break;
+      case "removeAllLogins":
+        Assert.equal(subject, null);
+        break;
+      case "hostSavingEnabled":
+      case "hostSavingDisabled":
+        Assert.ok(subject instanceof Ci.nsISupportsString);
+        Assert.equal(subject.data, expectedData);
+        break;
+      default:
+        do_throw("Unhandled notification: " + data + " / " + topic);
     }
 
     expectedNotification = null; 
@@ -51,122 +51,122 @@ var TestObserver = {
 add_task(function test_notifications()
 {
 
-try {
+  try {
 
-var testnum = 0;
-var testdesc = "Setup of nsLoginInfo test-users";
+    var testnum = 0;
+    var testdesc = "Setup of nsLoginInfo test-users";
 
-var testuser1 = new LoginInfo("http://testhost1", "", null,
-    "dummydude", "itsasecret", "put_user_here", "put_pw_here");
+    var testuser1 = new LoginInfo("http://testhost1", "", null,
+                                  "dummydude", "itsasecret", "put_user_here", "put_pw_here");
 
-var testuser2 = new LoginInfo("http://testhost2", "", null,
-    "dummydude2", "itsasecret2", "put_user2_here", "put_pw2_here");
+    var testuser2 = new LoginInfo("http://testhost2", "", null,
+                                  "dummydude2", "itsasecret2", "put_user2_here", "put_pw2_here");
 
-Services.obs.addObserver(TestObserver, "passwordmgr-storage-changed");
-
-
-
-testnum = 1;
-testdesc = "Initial connection to storage module";
+    Services.obs.addObserver(TestObserver, "passwordmgr-storage-changed");
 
 
-testnum++;
-testdesc = "addLogin";
+    
+    testnum = 1;
+    testdesc = "Initial connection to storage module";
 
-expectedNotification = "addLogin";
-expectedData = testuser1;
-Services.logins.addLogin(testuser1);
-LoginTestUtils.checkLogins([testuser1]);
-Assert.equal(expectedNotification, null); 
+    
+    testnum++;
+    testdesc = "addLogin";
 
+    expectedNotification = "addLogin";
+    expectedData = testuser1;
+    Services.logins.addLogin(testuser1);
+    LoginTestUtils.checkLogins([testuser1]);
+    Assert.equal(expectedNotification, null); 
 
-testnum++;
-testdesc = "modifyLogin";
+    
+    testnum++;
+    testdesc = "modifyLogin";
 
-expectedNotification = "modifyLogin";
-expectedData = [testuser1, testuser2];
-Services.logins.modifyLogin(testuser1, testuser2);
-Assert.equal(expectedNotification, null);
-LoginTestUtils.checkLogins([testuser2]);
+    expectedNotification = "modifyLogin";
+    expectedData = [testuser1, testuser2];
+    Services.logins.modifyLogin(testuser1, testuser2);
+    Assert.equal(expectedNotification, null);
+    LoginTestUtils.checkLogins([testuser2]);
 
+    
+    testnum++;
+    testdesc = "removeLogin";
 
-testnum++;
-testdesc = "removeLogin";
+    expectedNotification = "removeLogin";
+    expectedData = testuser2;
+    Services.logins.removeLogin(testuser2);
+    Assert.equal(expectedNotification, null);
+    LoginTestUtils.checkLogins([]);
 
-expectedNotification = "removeLogin";
-expectedData = testuser2;
-Services.logins.removeLogin(testuser2);
-Assert.equal(expectedNotification, null);
-LoginTestUtils.checkLogins([]);
+    
+    testnum++;
+    testdesc = "removeAllLogins";
 
+    expectedNotification = "removeAllLogins";
+    expectedData = null;
+    Services.logins.removeAllLogins();
+    Assert.equal(expectedNotification, null);
+    LoginTestUtils.checkLogins([]);
 
-testnum++;
-testdesc = "removeAllLogins";
+    
+    testnum++;
+    testdesc = "removeAllLogins (again)";
 
-expectedNotification = "removeAllLogins";
-expectedData = null;
-Services.logins.removeAllLogins();
-Assert.equal(expectedNotification, null);
-LoginTestUtils.checkLogins([]);
+    expectedNotification = "removeAllLogins";
+    expectedData = null;
+    Services.logins.removeAllLogins();
+    Assert.equal(expectedNotification, null);
+    LoginTestUtils.checkLogins([]);
 
+    
+    testnum++;
+    testdesc = "setLoginSavingEnabled / false";
 
-testnum++;
-testdesc = "removeAllLogins (again)";
+    expectedNotification = "hostSavingDisabled";
+    expectedData = "http://site.com";
+    Services.logins.setLoginSavingEnabled("http://site.com", false);
+    Assert.equal(expectedNotification, null);
+    LoginTestUtils.assertDisabledHostsEqual(Services.logins.getAllDisabledHosts(),
+                                            ["http://site.com"]);
 
-expectedNotification = "removeAllLogins";
-expectedData = null;
-Services.logins.removeAllLogins();
-Assert.equal(expectedNotification, null);
-LoginTestUtils.checkLogins([]);
+    
+    testnum++;
+    testdesc = "setLoginSavingEnabled / false (again)";
 
+    expectedNotification = "hostSavingDisabled";
+    expectedData = "http://site.com";
+    Services.logins.setLoginSavingEnabled("http://site.com", false);
+    Assert.equal(expectedNotification, null);
+    LoginTestUtils.assertDisabledHostsEqual(Services.logins.getAllDisabledHosts(),
+                                            ["http://site.com"]);
 
-testnum++;
-testdesc = "setLoginSavingEnabled / false";
+    
+    testnum++;
+    testdesc = "setLoginSavingEnabled / true";
 
-expectedNotification = "hostSavingDisabled";
-expectedData = "http://site.com";
-Services.logins.setLoginSavingEnabled("http://site.com", false);
-Assert.equal(expectedNotification, null);
-LoginTestUtils.assertDisabledHostsEqual(Services.logins.getAllDisabledHosts(),
-                                        ["http://site.com"]);
+    expectedNotification = "hostSavingEnabled";
+    expectedData = "http://site.com";
+    Services.logins.setLoginSavingEnabled("http://site.com", true);
+    Assert.equal(expectedNotification, null);
+    LoginTestUtils.checkLogins([]);
 
+    
+    testnum++;
+    testdesc = "setLoginSavingEnabled / true (again)";
 
-testnum++;
-testdesc = "setLoginSavingEnabled / false (again)";
+    expectedNotification = "hostSavingEnabled";
+    expectedData = "http://site.com";
+    Services.logins.setLoginSavingEnabled("http://site.com", true);
+    Assert.equal(expectedNotification, null);
+    LoginTestUtils.checkLogins([]);
 
-expectedNotification = "hostSavingDisabled";
-expectedData = "http://site.com";
-Services.logins.setLoginSavingEnabled("http://site.com", false);
-Assert.equal(expectedNotification, null);
-LoginTestUtils.assertDisabledHostsEqual(Services.logins.getAllDisabledHosts(),
-                                        ["http://site.com"]);
+    Services.obs.removeObserver(TestObserver, "passwordmgr-storage-changed");
 
+    LoginTestUtils.clearData();
 
-testnum++;
-testdesc = "setLoginSavingEnabled / true";
-
-expectedNotification = "hostSavingEnabled";
-expectedData = "http://site.com";
-Services.logins.setLoginSavingEnabled("http://site.com", true);
-Assert.equal(expectedNotification, null);
-LoginTestUtils.checkLogins([]);
-
-
-testnum++;
-testdesc = "setLoginSavingEnabled / true (again)";
-
-expectedNotification = "hostSavingEnabled";
-expectedData = "http://site.com";
-Services.logins.setLoginSavingEnabled("http://site.com", true);
-Assert.equal(expectedNotification, null);
-LoginTestUtils.checkLogins([]);
-
-Services.obs.removeObserver(TestObserver, "passwordmgr-storage-changed");
-
-LoginTestUtils.clearData();
-
-} catch (e) {
+  } catch (e) {
     throw new Error("FAILED in test #" + testnum + " -- " + testdesc + ": " + e);
-}
+  }
 
 });

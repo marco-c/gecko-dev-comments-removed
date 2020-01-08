@@ -10,16 +10,16 @@ function getSelectDialogDoc() {
   
   for (let {docShell} of Services.wm.getEnumerator(null)) {
     var containedDocShells = docShell.getDocShellEnumerator(
-                                      docShell.typeChrome,
-                                      docShell.ENUMERATE_FORWARDS);
+      docShell.typeChrome,
+      docShell.ENUMERATE_FORWARDS);
     for (let childDocShell of containedDocShells) {
-        
-        if (childDocShell.busyFlags != Ci.nsIDocShell.BUSY_FLAGS_NONE)
-          continue;
-        var childDoc = childDocShell.contentViewer.DOMDocument;
+      
+      if (childDocShell.busyFlags != Ci.nsIDocShell.BUSY_FLAGS_NONE)
+        continue;
+      var childDoc = childDocShell.contentViewer.DOMDocument;
 
-        if (childDoc.location.href == "chrome://global/content/selectDialog.xul")
-          return childDoc;
+      if (childDoc.location.href == "chrome://global/content/selectDialog.xul")
+        return childDoc;
     }
   }
 
