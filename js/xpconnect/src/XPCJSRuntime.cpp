@@ -599,9 +599,13 @@ CompartmentOriginInfo::IsSameOrigin(nsIPrincipal* aOther) const
 void
 SetCompartmentChangedDocumentDomain(JS::Compartment* compartment)
 {
-    CompartmentPrivate* priv = CompartmentPrivate::Get(compartment);
-    MOZ_ASSERT(priv);
-    priv->originInfo.SetChangedDocumentDomain();
+    
+    
+    
+    
+    if (CompartmentPrivate* priv = CompartmentPrivate::Get(compartment)) {
+        priv->originInfo.SetChangedDocumentDomain();
+    }
 }
 
 JSObject*
