@@ -927,8 +927,8 @@ Grouper::PaintContainerItem(DIGroup* aGroup, nsDisplayItem* aItem, const IntRect
       BlobItemData* data = GetBlobItemDataForGroup(aItem, aGroup);
       if (data->mLayerManager->GetRoot()) {
         data->mLayerManager->BeginTransaction();
-        static_cast<nsDisplayFilter*>(aItem)->PaintAsLayer(mDisplayListBuilder,
-                                                           aContext, data->mLayerManager);
+        static_cast<nsDisplayFilters*>(aItem)->PaintAsLayer(mDisplayListBuilder,
+                                                            aContext, data->mLayerManager);
         if (data->mLayerManager->InTransaction()) {
           data->mLayerManager->AbortTransaction();
         }
@@ -1742,8 +1742,8 @@ PaintItemByDrawTarget(nsDisplayItem* aItem,
     {
       context->SetMatrix(context->CurrentMatrix().PreTranslate(-aOffset.x, -aOffset.y));
       isInvalidated = PaintByLayer(aItem, aDisplayListBuilder, aManager, context, aScale, [&]() {
-        static_cast<nsDisplayFilter*>(aItem)->PaintAsLayer(aDisplayListBuilder,
-                                                           context, aManager);
+        static_cast<nsDisplayFilters*>(aItem)->PaintAsLayer(aDisplayListBuilder,
+                                                            context, aManager);
       });
       break;
     }
