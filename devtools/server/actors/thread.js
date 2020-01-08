@@ -861,16 +861,17 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
   
 
 
-
-
-
-
-  _clearSteppingHooks: function(frame) {
-    if (frame && frame.live) {
-      while (frame) {
-        frame.onStep = undefined;
-        frame.onPop = undefined;
-        frame = frame.older;
+  _clearSteppingHooks: function() {
+    if (this.dbg.replaying) {
+      this.dbg.replayClearSteppingHooks();
+    } else {
+      let frame = this.youngestFrame;
+      if (frame && frame.live) {
+        while (frame) {
+          frame.onStep = undefined;
+          frame.onPop = undefined;
+          frame = frame.older;
+        }
       }
     }
   },
@@ -940,7 +941,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     if (request && request.resumeLimit) {
       resumeLimitHandled = this._handleResumeLimit(request);
     } else {
-      this._clearSteppingHooks(this.youngestFrame);
+      this._clearSteppingHooks();
       resumeLimitHandled = Promise.resolve(true);
     }
 
@@ -1462,10 +1463,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     this.dbg.onEnterFrame = undefined;
     this.dbg.replayingOnPopFrame = undefined;
     this.dbg.onExceptionUnwind = undefined;
-    if (frame) {
-      frame.onStep = undefined;
-      frame.onPop = undefined;
-    }
+    this._clearSteppingHooks();
 
     
     
