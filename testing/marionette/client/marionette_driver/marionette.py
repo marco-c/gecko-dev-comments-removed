@@ -722,6 +722,10 @@ class Marionette(object):
             time.sleep(poll_interval)
 
         if not connected:
+            
+            if runner is not None and self.check_for_crash() > 0:
+                raise IOError('Process crashed (Exit code: {})'.format(runner.wait(0)))
+
             raise socket.timeout("Timed out waiting for connection on {0}:{1}!".format(
                 self.host, self.port))
 
