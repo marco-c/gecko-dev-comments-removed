@@ -17,7 +17,7 @@ public:
 
   
   virtual nsresult InvokeDragSessionImpl(nsIArray* anArrayTransferables,
-                                         nsIScriptableRegion* aRegion,
+                                         const mozilla::Maybe<mozilla::CSSIntRegion>& aRegion,
                                          uint32_t aActionType) override;
 private:
   virtual ~nsDragServiceProxy();

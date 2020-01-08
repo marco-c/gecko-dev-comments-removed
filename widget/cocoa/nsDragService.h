@@ -25,7 +25,7 @@ public:
 
   
   virtual nsresult InvokeDragSessionImpl(nsIArray* anArrayTransferables,
-                                         nsIScriptableRegion* aRegion,
+                                         const mozilla::Maybe<mozilla::CSSIntRegion>& aRegion,
                                          uint32_t aActionType) override;
   
   NS_IMETHOD EndDragSession(bool aDoneDrag, uint32_t aKeyModifiers) override;
@@ -46,14 +46,14 @@ private:
   
   
   NSImage* ConstructDragImage(nsINode* aDOMNode,
-                              nsIScriptableRegion* aRegion,
+                              const mozilla::Maybe<mozilla::CSSIntRegion>& aRegion,
                               NSPoint* aImagePoint);
 
   
   
   
   NSImage* ConstructDragImage(nsINode* aDOMNode,
-                              nsIScriptableRegion* aRegion,
+                              const mozilla::Maybe<mozilla::CSSIntRegion>& aRegion,
                               mozilla::CSSIntPoint aPoint,
                               mozilla::LayoutDeviceIntRect* aDragRect);
 
