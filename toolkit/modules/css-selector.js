@@ -213,9 +213,9 @@ const findAllCssSelectors = function(node) {
 
 
 function getCssPath(ele) {
-  ele = getRootBindingParent(ele);
-  const document = ele.ownerDocument;
-  if (!document || !document.contains(ele)) {
+  const { node, containingDocOrShadow } = findNodeAndContainer(ele);
+  ele = node;
+  if (!containingDocOrShadow || !containingDocOrShadow.contains(ele)) {
     
     return "";
   }
@@ -264,9 +264,9 @@ function getCssPath(ele) {
 
 
 function getXPath(ele) {
-  ele = getRootBindingParent(ele);
-  const document = ele.ownerDocument;
-  if (!document || !document.contains(ele)) {
+  const { node, containingDocOrShadow } = findNodeAndContainer(ele);
+  ele = node;
+  if (!containingDocOrShadow || !containingDocOrShadow.contains(ele)) {
     
     return "";
   }
