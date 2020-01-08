@@ -32,12 +32,12 @@ public final class OverscrollEdgeEffect {
     
     private final EdgeEffect[] mEdges = new EdgeEffect[4];
 
-    private final LayerSession mSession;
+    private final GeckoSession mSession;
     private Runnable mInvalidationCallback;
     private int mWidth;
     private int mHeight;
 
-     OverscrollEdgeEffect(final LayerSession session) {
+     OverscrollEdgeEffect(final GeckoSession session) {
         mSession = session;
     }
 
