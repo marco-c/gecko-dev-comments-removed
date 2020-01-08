@@ -635,15 +635,6 @@ ParentIsWrapperAnonBox(nsIFrame* aParent)
 
 
 
-
-
-
-static void
-FindFirstBlock(nsFrameList::FrameLinkEnumerator& aLink)
-{
-  aLink.Find([](nsIFrame* aFrame) { return !aFrame->IsInlineOutside(); });
-}
-
 inline void
 SetInitialSingleChild(nsContainerFrame* aParent, nsIFrame* aFrame)
 {
@@ -6218,10 +6209,9 @@ nsCSSFrameConstructor::AppendFramesToParent(nsFrameConstructorState&       aStat
     }
 
     
-    nsFrameList::FrameLinkEnumerator firstBlockEnumerator(aFrameList);
-    FindFirstBlock(firstBlockEnumerator);
+    nsFrameList inlineKids =
+      aFrameList.Split([](nsIFrame* f) { return !f->IsInlineOutside(); });
 
-    nsFrameList inlineKids = aFrameList.ExtractHead(firstBlockEnumerator);
     if (!inlineKids.IsEmpty()) {
       AppendFrames(aParentFrame, kPrincipalList, inlineKids);
     }
@@ -10241,10 +10231,9 @@ nsCSSFrameConstructor::WrapFramesInFirstLineFrame(
   nsFrameItems&            aFrameItems)
 {
   
-  nsFrameList::FrameLinkEnumerator link(aFrameItems);
-  FindFirstBlock(link);
-
-  nsFrameList firstLineChildren = aFrameItems.ExtractHead(link);
+  
+  nsFrameList firstLineChildren =
+    aFrameItems.Split([](nsIFrame* f) { return !f->IsInlineOutside(); });
 
   if (firstLineChildren.IsEmpty()) {
     
@@ -11123,7 +11112,8 @@ nsCSSFrameConstructor::ConstructInline(nsFrameConstructorState& aState,
 
   nsFrameList::FrameLinkEnumerator firstBlockEnumerator(childItems);
   if (!aItem.mIsAllInline) {
-    FindFirstBlock(firstBlockEnumerator);
+    firstBlockEnumerator.Find(
+      [](nsIFrame* aFrame) { return !aFrame->IsInlineOutside(); });
   }
 
   if (aItem.mIsAllInline || firstBlockEnumerator.AtEnd()) {
@@ -11212,10 +11202,8 @@ nsCSSFrameConstructor::CreateIBSiblings(nsFrameConstructorState& aState,
     }
 
     if (aChildItems.NotEmpty()) {
-      nsFrameList::FrameLinkEnumerator firstBlock(aChildItems);
-      FindFirstBlock(firstBlock);
-      nsFrameList inlineKids = aChildItems.ExtractHead(firstBlock);
-
+      nsFrameList inlineKids =
+        aChildItems.Split([](nsIFrame* f) { return !f->IsInlineOutside(); });
       MoveChildrenTo(aInitialInline, inlineFrame, inlineKids);
     }
 
