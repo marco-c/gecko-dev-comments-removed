@@ -39,15 +39,5 @@ module.exports = {
     "env": {
       "mozilla/browser-window": true
     }
-  }, {
-    
-    
-    "files": [
-      "services/fxaccounts/**",
-      "toolkit/components/**",
-    ],
-    "rules": {
-      "mozilla/rejects-requires-await": "off",
-    }
   }]
 };
