@@ -167,9 +167,10 @@ PluginProcessChild::CleanUp()
     
     
     nsThreadManager::get().Shutdown();
-    mozilla::KillClearOnShutdown(ShutdownPhase::ShutdownFinal);
     NS_LogTerm();
 #endif
+
+    mozilla::KillClearOnShutdown(ShutdownPhase::ShutdownFinal);
 }
 
 } 
