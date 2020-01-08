@@ -1915,6 +1915,12 @@ public:
       return XRE_IsContentProcess();
     }
 
+    static already_AddRefed<nsIWidget>
+    CreateTopLevelWindow();
+
+    static already_AddRefed<nsIWidget>
+    CreateChildWindow();
+
     
 
 
