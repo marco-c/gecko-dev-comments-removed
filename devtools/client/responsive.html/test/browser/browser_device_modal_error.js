@@ -7,7 +7,6 @@
 
 const TEST_URL = "data:text/html;charset=utf-8,";
 const Types = require("devtools/client/responsive.html/types");
-const { getStr } = require("devtools/client/responsive.html/utils/l10n");
 
 
 add_task(async function() {
@@ -18,7 +17,7 @@ add_task(async function() {
 
 addRDMTask(TEST_URL, async function({ ui }) {
   const { store, document } = ui.toolWindow;
-  const select = document.querySelector(".viewport-device-selector");
+  const button = document.getElementById("device-selector");
 
   
   
@@ -26,10 +25,5 @@ addRDMTask(TEST_URL, async function({ ui }) {
     && state.devices.listState == Types.loadableState.ERROR);
 
   
-  const placeholder = select.options[select.selectedIndex].innerHTML;
-  ok(placeholder == getStr("responsive.deviceListError"),
-    "Device selector indicates an error");
-
-  
-  ok(select.disabled, "Device selector is disabled");
+  ok(button.disabled, "Device selector is disabled");
 });
