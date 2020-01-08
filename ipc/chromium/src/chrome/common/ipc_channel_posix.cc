@@ -25,7 +25,6 @@
 
 #include "base/command_line.h"
 #include "base/eintr_wrapper.h"
-#include "base/lock.h"
 #include "base/logging.h"
 #include "base/process_util.h"
 #include "base/string_util.h"
@@ -33,6 +32,7 @@
 #include "chrome/common/file_descriptor_set_posix.h"
 #include "chrome/common/ipc_message_utils.h"
 #include "mozilla/ipc/ProtocolUtils.h"
+#include "mozilla/StaticMutex.h"
 #include "mozilla/UniquePtr.h"
 
 #ifdef FUZZING
@@ -108,7 +108,7 @@ class PipeMap {
  public:
   
   int Lookup(const std::string& channel_id) {
-    AutoLock locked(lock_);
+    mozilla::StaticMutexAutoLock locked(lock_);
 
     ChannelToFDMap::const_iterator i = map_.find(channel_id);
     if (i == map_.end()) return -1;
@@ -118,7 +118,7 @@ class PipeMap {
   
   
   void Remove(const std::string& channel_id) {
-    AutoLock locked(lock_);
+    mozilla::StaticMutexAutoLock locked(lock_);
 
     ChannelToFDMap::iterator i = map_.find(channel_id);
     if (i != map_.end()) map_.erase(i);
@@ -127,7 +127,7 @@ class PipeMap {
   
   
   void Insert(const std::string& channel_id, int fd) {
-    AutoLock locked(lock_);
+    mozilla::StaticMutexAutoLock locked(lock_);
     DCHECK(fd != -1);
 
     ChannelToFDMap::const_iterator i = map_.find(channel_id);
@@ -137,15 +137,25 @@ class PipeMap {
   }
 
   static PipeMap& instance() {
-    static PipeMap map;
+    
+    
+    
+    
+    
+    
+    
+    static mozilla::StaticMutex mutex;
+    static PipeMap map(mutex);
     return map;
   }
 
  private:
-  PipeMap() = default;
+  explicit PipeMap(mozilla::StaticMutex& aMutex)
+    : lock_(aMutex)
+  {}
   ~PipeMap() = default;
 
-  Lock lock_;
+  mozilla::StaticMutex& lock_;
   typedef std::map<std::string, int> ChannelToFDMap;
   ChannelToFDMap map_;
 };
