@@ -7,206 +7,14 @@
 
 
 #include "xpcprivate.h"
-#include "xpc_make_class.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/jsipc/CrossProcessObjectWrappers.h"
-#include "mozilla/StaticPtr.h"
 
 using namespace mozilla::dom;
 using namespace JS;
 
-
-
-
-#define NULL_CID                                                              \
-{ 0x00000000, 0x0000, 0x0000,                                                 \
-  { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 } }
-
-NS_IMPL_CLASSINFO(nsJSID, nullptr, 0, NULL_CID)
-NS_IMPL_ISUPPORTS_CI(nsJSID, nsIJSID)
-
-const char nsJSID::gNoString[] = "";
-
-nsJSID::nsJSID()
-    : mID(GetInvalidIID()),
-      mNumber(const_cast<char*>(gNoString)),
-      mName(const_cast<char*>(gNoString))
-{
-}
-
-nsJSID::~nsJSID()
-{
-    if (mNumber && mNumber != gNoString) {
-        free(mNumber);
-    }
-    if (mName && mName != gNoString) {
-        free(mName);
-    }
-}
-
-void nsJSID::Reset()
-{
-    mID = GetInvalidIID();
-
-    if (mNumber && mNumber != gNoString) {
-        free(mNumber);
-    }
-    if (mName && mName != gNoString) {
-        free(mName);
-    }
-
-    mNumber = mName = nullptr;
-}
-
-void
-nsJSID::SetName(const char* name)
-{
-    MOZ_ASSERT(!mName || mName == gNoString, "name already set");
-    MOZ_ASSERT(name, "null name");
-    mName = NS_xstrdup(name);
-}
-
-NS_IMETHODIMP
-nsJSID::GetName(char * *aName)
-{
-    if (!aName) {
-        return NS_ERROR_NULL_POINTER;
-    }
-
-    if (!NameIsSet()) {
-        SetNameToNoString();
-    }
-    MOZ_ASSERT(mName, "name not set");
-    *aName = NS_xstrdup(mName);
-    return NS_OK;
-}
-
-NS_IMETHODIMP
-nsJSID::GetNumber(char * *aNumber)
-{
-    if (!aNumber) {
-        return NS_ERROR_NULL_POINTER;
-    }
-
-    if (!mNumber) {
-        if (!(mNumber = mID.ToString())) {
-            mNumber = const_cast<char*>(gNoString);
-        }
-    }
-
-    *aNumber = NS_xstrdup(mNumber);
-    return NS_OK;
-}
-
-NS_IMETHODIMP_(const nsID*)
-nsJSID::GetID()
-{
-    return &mID;
-}
-
-NS_IMETHODIMP
-nsJSID::GetValid(bool* aValid)
-{
-    if (!aValid) {
-        return NS_ERROR_NULL_POINTER;
-    }
-
-    *aValid = IsValid();
-    return NS_OK;
-}
-
-NS_IMETHODIMP
-nsJSID::Equals(nsIJSID* other, bool* _retval)
-{
-    if (!_retval) {
-        return NS_ERROR_NULL_POINTER;
-    }
-
-    if (!other || mID.Equals(GetInvalidIID())) {
-        *_retval = false;
-        return NS_OK;
-    }
-
-    *_retval = other->GetID()->Equals(mID);
-    return NS_OK;
-}
-
-NS_IMETHODIMP
-nsJSID::Initialize(const char* idString)
-{
-    if (!idString) {
-        return NS_ERROR_NULL_POINTER;
-    }
-
-    if (*idString != '\0' && mID.Equals(GetInvalidIID())) {
-        Reset();
-
-        if (idString[0] == '{') {
-            if (mID.Parse(idString)) {
-                return NS_OK;
-            }
-
-            
-            mID = GetInvalidIID();
-        }
-    }
-    return NS_ERROR_FAILURE;
-}
-
-void
-nsJSID::InitWithName(const nsID& id, const char* nameString)
-{
-    MOZ_ASSERT(nameString, "no name");
-    Reset();
-    mID = id;
-    SetName(nameString);
-}
-
-
-NS_IMETHODIMP
-nsJSID::ToString(char** _retval)
-{
-    if (mName && mName != gNoString) {
-        return GetName(_retval);
-    }
-
-    return GetNumber(_retval);
-}
-
-const nsID&
-nsJSID::GetInvalidIID() const
-{
-    
-    static const nsID invalid = {0xbb1f47b0, 0xd137, 0x11d2,
-                                  {0x98, 0x41, 0x0, 0x60, 0x8, 0x96, 0x24, 0x22}};
-    return invalid;
-}
-
-
-already_AddRefed<nsJSID>
-nsJSID::NewID(const char* str)
-{
-    if (!str) {
-        NS_ERROR("no string");
-        return nullptr;
-    }
-
-    RefPtr<nsJSID> idObj = new nsJSID();
-    NS_ENSURE_SUCCESS(idObj->Initialize(str), nullptr);
-    return idObj.forget();
-}
-
-
-already_AddRefed<nsJSID>
-nsJSID::NewID(const nsID& id)
-{
-    RefPtr<nsJSID> idObj = new nsJSID();
-    idObj->mID = id;
-    idObj->mName = nullptr;
-    idObj->mNumber = nullptr;
-    return idObj.forget();
-}
+namespace xpc {
 
 
 
@@ -219,218 +27,344 @@ nsJSID::NewID(const nsID& id)
 
 
 
+static bool ID_Equals(JSContext* aCx, unsigned aArgc, Value* aVp);
+static bool ID_GetNumber(JSContext* aCx, unsigned aArgc, Value* aVp);
 
-class SharedScriptableHelperForJSIID final : public nsIXPCScriptable
-{
-    ~SharedScriptableHelperForJSIID() {}
-public:
-    NS_DECL_ISUPPORTS
-    NS_DECL_NSIXPCSCRIPTABLE
-    SharedScriptableHelperForJSIID() {}
+
+
+
+enum { kID_Slot0, kID_Slot1, kID_Slot2, kID_Slot3, kID_SlotCount };
+static const js::Class sID_Class = {
+    "nsJSID",
+    JSCLASS_HAS_RESERVED_SLOTS(kID_SlotCount),
+    JS_NULL_CLASS_OPS
 };
 
-NS_IMPL_ISUPPORTS(SharedScriptableHelperForJSIID,
-                  nsIXPCScriptable)
 
 
-#define XPC_MAP_CLASSNAME SharedScriptableHelperForJSIID
-#define XPC_MAP_QUOTED_CLASSNAME "JSIID"
-#define XPC_MAP_FLAGS XPC_SCRIPTABLE_ALLOW_PROP_MODS_DURING_RESOLVE
-#include "xpc_map_end.h" 
 
-static mozilla::StaticRefPtr<nsIXPCScriptable> gSharedScriptableHelperForJSIID;
-static bool gClassObjectsWereInited = false;
 
-static void EnsureClassObjectsInitialized()
+
+
+
+
+static bool IID_HasInstance(JSContext* aCx, unsigned aArgc, Value* aVp);
+static bool IID_GetName(JSContext* aCx, unsigned aArgc, Value* aVp);
+
+
+
+enum { kIID_InfoSlot, kIID_SlotCount };
+static const js::Class sIID_Class = {
+    "nsJSIID",
+    JSCLASS_HAS_RESERVED_SLOTS(kIID_SlotCount),
+    JS_NULL_CLASS_OPS
+};
+
+
+
+
+
+
+
+
+
+static bool CID_CreateInstance(JSContext* aCx, unsigned aArgc, Value* aVp);
+static bool CID_GetService(JSContext* aCx, unsigned aArgc, Value* aVp);
+static bool CID_GetName(JSContext* aCx, unsigned aArgc, Value* aVp);
+
+
+
+enum { kCID_ContractSlot, kCID_SlotCount };
+static const js::Class sCID_Class = {
+    "nsJSCID",
+    JSCLASS_HAS_RESERVED_SLOTS(kCID_SlotCount),
+    JS_NULL_CLASS_OPS
+};
+
+
+
+
+
+
+static JSObject*
+GetIDPrototype(JSContext* aCx, const js::Class* aClass)
 {
-    if (!gClassObjectsWereInited) {
-        gSharedScriptableHelperForJSIID = new SharedScriptableHelperForJSIID();
-
-        gClassObjectsWereInited = true;
-    }
-}
-
-static nsresult GetSharedScriptableHelperForJSIID(nsIXPCScriptable** helper)
-{
-    EnsureClassObjectsInitialized();
-    nsCOMPtr<nsIXPCScriptable> temp = gSharedScriptableHelperForJSIID.get();
-    temp.forget(helper);
-    return NS_OK;
-}
-
-
-
-NS_DECL_CI_INTERFACE_GETTER(nsJSIID)
-NS_IMPL_CLASSINFO(nsJSIID, GetSharedScriptableHelperForJSIID, 0, NULL_CID)
-
-NS_DECL_CI_INTERFACE_GETTER(nsJSCID)
-NS_IMPL_CLASSINFO(nsJSCID, nullptr, 0, NULL_CID)
-
-void xpc_DestroyJSxIDClassObjects()
-{
-    if (gClassObjectsWereInited) {
-        NS_IF_RELEASE(NS_CLASSINFO_NAME(nsJSIID));
-        NS_IF_RELEASE(NS_CLASSINFO_NAME(nsJSCID));
-        gSharedScriptableHelperForJSIID = nullptr;
-
-        gClassObjectsWereInited = false;
-    }
-}
-
-
-
-NS_IMPL_QUERY_INTERFACE_CI(nsJSIID,
-                           nsIJSID,
-                           nsIJSIID,
-                           nsIXPCScriptable)
-
-NS_IMPL_ADDREF(nsJSIID)
-NS_IMPL_RELEASE(nsJSIID)
-NS_IMPL_CI_INTERFACE_GETTER(nsJSIID, nsIJSID, nsIJSIID)
-
-
-#define XPC_MAP_CLASSNAME         nsJSIID
-#define XPC_MAP_QUOTED_CLASSNAME "nsJSIID"
-#define XPC_MAP_FLAGS (XPC_SCRIPTABLE_WANT_RESOLVE | \
-                       XPC_SCRIPTABLE_WANT_ENUMERATE | \
-                       XPC_SCRIPTABLE_WANT_HASINSTANCE | \
-                       XPC_SCRIPTABLE_ALLOW_PROP_MODS_DURING_RESOLVE)
-#include "xpc_map_end.h" 
-
-
-nsJSIID::nsJSIID(const nsXPTInterfaceInfo* aInfo)
-    : mInfo(aInfo)
-{
-}
-
-nsJSIID::~nsJSIID() {}
-
-
-
-NS_IMETHODIMP nsJSIID::GetName(char * *aName)
-{
-    *aName = moz_xstrdup(mInfo->Name());
-    return NS_OK;
-}
-
-NS_IMETHODIMP nsJSIID::GetNumber(char * *aNumber)
-{
-    char str[NSID_LENGTH];
-    mInfo->IID().ToProvidedString(str);
-    *aNumber = (char*) moz_xmemdup(str, NSID_LENGTH);
-    return NS_OK;
-}
-
-NS_IMETHODIMP_(const nsID*) nsJSIID::GetID()
-{
-    return &mInfo->IID();
-}
-
-NS_IMETHODIMP nsJSIID::GetValid(bool* aValid)
-{
-    *aValid = true;
-    return NS_OK;
-}
-
-NS_IMETHODIMP nsJSIID::Equals(nsIJSID* other, bool* _retval)
-{
-    if (!_retval) {
-        return NS_ERROR_NULL_POINTER;
-    }
-
-    if (!other) {
-        *_retval = false;
-        return NS_OK;
-    }
-
-    *_retval = mInfo->IID() == *other->GetID();
-    return NS_OK;
-}
-
-NS_IMETHODIMP nsJSIID::Initialize(const char* idString)
-{
-    return NS_ERROR_FAILURE;
-}
-
-NS_IMETHODIMP nsJSIID::ToString(char** _retval)
-{
-    *_retval = moz_xstrdup(mInfo->Name());
-    return NS_OK;
-}
-
-
-already_AddRefed<nsJSIID>
-nsJSIID::NewID(const nsXPTInterfaceInfo* aInfo)
-{
-    if (!aInfo) {
-        NS_ERROR("no info");
+    XPCWrappedNativeScope* scope = ObjectScope(CurrentGlobalOrNull(aCx));
+    if (NS_WARN_IF(!scope)) {
         return nullptr;
     }
 
-    RefPtr<nsJSIID> idObj = new nsJSIID(aInfo);
-    return idObj.forget();
-}
-
-
-NS_IMETHODIMP
-nsJSIID::Resolve(nsIXPConnectWrappedNative* wrapper,
-                 JSContext * cx, JSObject * objArg,
-                 jsid idArg, bool* resolvedp,
-                 bool* _retval)
-{
-    RootedObject obj(cx, objArg);
-    RootedId id(cx, idArg);
-    XPCCallContext ccx(cx);
-
-    RefPtr<XPCNativeInterface> iface =
-        XPCNativeInterface::GetNewOrUsed(mInfo);
-
-    if (!iface) {
-        return NS_OK;
-    }
-
-    XPCNativeMember* member = iface->FindMember(id);
-    if (member && member->IsConstant()) {
-        RootedValue val(cx);
-        if (!member->GetConstantValue(ccx, iface, val.address())) {
-            return NS_ERROR_OUT_OF_MEMORY;
-        }
-
-        *resolvedp = true;
-        *_retval = JS_DefinePropertyById(cx, obj, id, val,
-                                         JSPROP_ENUMERATE | JSPROP_READONLY |
-                                         JSPROP_PERMANENT | JSPROP_RESOLVING);
-    }
-
-    return NS_OK;
-}
-
-NS_IMETHODIMP
-nsJSIID::Enumerate(nsIXPConnectWrappedNative* wrapper,
-                   JSContext * cx, JSObject * objArg, bool* _retval)
-{
     
+    
+    if (!scope->mIDProto) {
+        MOZ_ASSERT(!scope->mIIDProto && !scope->mCIDProto);
 
-    RootedObject obj(cx, objArg);
-    XPCCallContext ccx(cx);
+        RootedObject idProto(aCx, JS_NewPlainObject(aCx));
+        RootedObject iidProto(aCx, JS_NewObjectWithGivenProto(aCx, nullptr, idProto));
+        RootedObject cidProto(aCx, JS_NewObjectWithGivenProto(aCx, nullptr, idProto));
+        RootedId hasInstance(aCx, SYMBOL_TO_JSID(GetWellKnownSymbol(aCx, SymbolCode::hasInstance)));
 
-    RefPtr<XPCNativeInterface> iface =
-        XPCNativeInterface::GetNewOrUsed(mInfo);
+        const uint32_t kFlags = JSPROP_READONLY | JSPROP_ENUMERATE | JSPROP_PERMANENT;
+        const uint32_t kNoEnum = JSPROP_READONLY | JSPROP_PERMANENT;
 
-    if (!iface) {
-        return NS_OK;
+        bool ok = idProto && iidProto && cidProto &&
+            
+            JS_DefineFunction(aCx, idProto, "equals", ID_Equals, 1, kFlags) &&
+            JS_DefineProperty(aCx, idProto, "number", ID_GetNumber, nullptr, kFlags) &&
+
+            
+            JS_DefineFunctionById(aCx, iidProto, hasInstance, IID_HasInstance, 1, kNoEnum) &&
+            JS_DefineProperty(aCx, iidProto, "name", IID_GetName, nullptr, kFlags) &&
+
+            
+            JS_DefineFunction(aCx, cidProto, "createInstance", CID_CreateInstance, 1, kFlags) &&
+            JS_DefineFunction(aCx, cidProto, "getService", CID_GetService, 1, kFlags) &&
+            JS_DefineProperty(aCx, cidProto, "name", CID_GetName, nullptr, kFlags) &&
+
+            
+            
+            JS_DefineFunction(aCx, idProto, "toString", ID_GetNumber, 0, kFlags) &&
+            JS_DefineFunction(aCx, iidProto, "toString", IID_GetName, 0, kFlags) &&
+            JS_DefineFunction(aCx, cidProto, "toString", CID_GetName, 0, kFlags);
+        if (!ok) {
+            return nullptr;
+        }
+
+        scope->mIDProto = idProto;
+        scope->mIIDProto = iidProto;
+        scope->mCIDProto = cidProto;
     }
 
-    uint16_t count = iface->GetMemberCount();
-    for (uint16_t i = 0; i < count; i++) {
-        XPCNativeMember* member = iface->GetMemberAt(i);
-        if (member && member->IsConstant() &&
-            !xpc_ForcePropertyResolve(cx, obj, member->GetName())) {
-            return NS_ERROR_UNEXPECTED;
+    if (aClass == &sID_Class) {
+        return scope->mIDProto;
+    } else if (aClass == &sIID_Class) {
+        return scope->mIIDProto;
+    } else if (aClass == &sCID_Class) {
+        return scope->mCIDProto;
+    }
+
+    MOZ_CRASH("Unrecognized ID Object Class");
+}
+
+
+static JSObject*
+GetIDObject(HandleValue aVal, const Class* aClass)
+{
+    if (aVal.isObject()) {
+        JSObject* obj = js::CheckedUnwrap(&aVal.toObject());
+        if (obj && js::GetObjectClass(obj) == aClass) {
+            return obj;
         }
     }
-    return NS_OK;
+    return nullptr;
 }
+
+
+
+
+
+
+
+
+
+
+Maybe<nsID>
+JSValue2ID(JSContext* aCx, HandleValue aVal)
+{
+    if (!aVal.isObject()) {
+        return Nothing();
+    }
+
+    mozilla::Maybe<nsID> id;
+    RootedObject obj(aCx, js::CheckedUnwrap(&aVal.toObject()));
+    if (js::GetObjectClass(obj) == &sID_Class) {
+        
+        uint32_t rawid[] = {
+            js::GetReservedSlot(obj, kID_Slot0).toPrivateUint32(),
+            js::GetReservedSlot(obj, kID_Slot1).toPrivateUint32(),
+            js::GetReservedSlot(obj, kID_Slot2).toPrivateUint32(),
+            js::GetReservedSlot(obj, kID_Slot3).toPrivateUint32()
+        };
+
+        
+        id.emplace();
+        memcpy(id.ptr(), &rawid, sizeof(nsID));
+    } else if (js::GetObjectClass(obj) == &sIID_Class) {
+        
+        auto* info = static_cast<const nsXPTInterfaceInfo*>(
+            js::GetReservedSlot(obj, kIID_InfoSlot).toPrivate());
+        id.emplace(info->IID());
+    } else if (js::GetObjectClass(obj) == &sCID_Class) {
+        
+        JS::UniqueChars contractId = JS_EncodeStringToLatin1(aCx,
+            js::GetReservedSlot(obj, kCID_ContractSlot).toString());
+
+        
+        
+        
+        
+        
+
+        nsCOMPtr<nsIComponentRegistrar> registrar;
+        nsresult rv = NS_GetComponentRegistrar(getter_AddRefs(registrar));
+        if (NS_FAILED(rv) || !registrar) {
+            return Nothing();
+        }
+
+        nsCID* cid = nullptr;
+        if (NS_SUCCEEDED(registrar->ContractIDToCID(contractId.get(), &cid))) {
+            id.emplace(*cid);
+            free(cid);
+        }
+    }
+    return id;
+}
+
+
+
+
+
+static JSObject*
+NewIDObjectHelper(JSContext* aCx, const js::Class* aClass)
+{
+    RootedObject proto(aCx, GetIDPrototype(aCx, aClass));
+    if (proto) {
+        return JS_NewObjectWithGivenProto(aCx, Jsvalify(aClass), proto);
+    }
+    return nullptr;
+}
+
+bool
+ID2JSValue(JSContext* aCx, const nsID& aId, MutableHandleValue aVal)
+{
+    RootedObject obj(aCx, NewIDObjectHelper(aCx, &sID_Class));
+    if (!obj) {
+        return false;
+    }
+
+    
+    uint32_t rawid[4];
+    memcpy(&rawid, &aId, sizeof(nsID));
+    static_assert(sizeof(nsID) == sizeof(rawid), "Wrong size of nsID");
+    js::SetReservedSlot(obj, kID_Slot0, PrivateUint32Value(rawid[0]));
+    js::SetReservedSlot(obj, kID_Slot1, PrivateUint32Value(rawid[1]));
+    js::SetReservedSlot(obj, kID_Slot2, PrivateUint32Value(rawid[2]));
+    js::SetReservedSlot(obj, kID_Slot3, PrivateUint32Value(rawid[3]));
+
+    aVal.setObject(*obj);
+    return true;
+}
+
+bool
+IfaceID2JSValue(JSContext* aCx, const nsXPTInterfaceInfo& aInfo,
+                MutableHandleValue aVal)
+{
+    RootedObject obj(aCx, NewIDObjectHelper(aCx, &sIID_Class));
+    if (!obj) {
+        return false;
+    }
+
+    
+    
+    
+    
+    
+    
+    RootedValue constant(aCx);
+    for (uint16_t i = 0; i < aInfo.ConstantCount(); ++i) {
+        constant.set(aInfo.Constant(i).JSValue());
+        if (!JS_DefineProperty(aCx, obj, aInfo.Constant(i).Name(), constant,
+                               JSPROP_READONLY | JSPROP_ENUMERATE |
+                               JSPROP_PERMANENT)) {
+            return false;
+        }
+    }
+
+    
+    js::SetReservedSlot(obj, kIID_InfoSlot, PrivateValue((void*)&aInfo));
+    aVal.setObject(*obj);
+    return true;
+}
+
+bool
+ContractID2JSValue(JSContext* aCx, JSString* aContract, MutableHandleValue aVal)
+{
+    RootedString jsContract(aCx, aContract);
+
+    {
+        
+        
+        nsCOMPtr<nsIComponentRegistrar> registrar;
+        NS_GetComponentRegistrar(getter_AddRefs(registrar));
+        if (!registrar) {
+            return false;
+        }
+
+        bool registered = false;
+        JS::UniqueChars contract = JS_EncodeStringToLatin1(aCx, jsContract);
+        registrar->IsContractIDRegistered(contract.get(), &registered);
+        if (!registered) {
+            return false;
+        }
+    }
+
+    RootedObject obj(aCx, NewIDObjectHelper(aCx, &sCID_Class));
+    if (!obj) {
+        return false;
+    }
+
+    
+    js::SetReservedSlot(obj, kCID_ContractSlot, StringValue(jsContract));
+    aVal.setObject(*obj);
+    return true;
+}
+
+
+
+
+
+
+
+
+static bool
+ID_GetNumber(JSContext* aCx, unsigned aArgc, Value* aVp)
+{
+    CallArgs args = CallArgsFromVp(aArgc, aVp);
+
+    Maybe<nsID> id = JSValue2ID(aCx, args.thisv());
+    if (!id) {
+        return Throw(aCx, NS_ERROR_XPC_BAD_CONVERT_JS);
+    }
+
+    char buf[NSID_LENGTH];
+    id->ToProvidedString(buf);
+    JSString* jsnum = JS_NewStringCopyZ(aCx, buf);
+    if (!jsnum) {
+        return Throw(aCx, NS_ERROR_OUT_OF_MEMORY);
+    }
+
+    args.rval().setString(jsnum);
+    return true;
+}
+
+static bool
+ID_Equals(JSContext* aCx, unsigned aArgc, Value* aVp)
+{
+    CallArgs args = CallArgsFromVp(aArgc, aVp);
+    if (!args.requireAtLeast(aCx, "nsID.equals", 1)) {
+        return false;
+    }
+
+    Maybe<nsID> id = JSValue2ID(aCx, args.thisv());
+    Maybe<nsID> id2 = JSValue2ID(aCx, args[0]);
+    if (!id || !id2) {
+        return Throw(aCx, NS_ERROR_XPC_BAD_CONVERT_JS);
+    }
+
+    args.rval().setBoolean(id->Equals(*id2));
+    return true;
+}
+
 
 
 
@@ -478,7 +412,7 @@ FindObjectForHasInstance(JSContext* cx, HandleObject objArg, MutableHandleObject
 }
 
 nsresult
-xpc::HasInstance(JSContext* cx, HandleObject objArg, const nsID* iid, bool* bp)
+HasInstance(JSContext* cx, HandleObject objArg, const nsID* iid, bool* bp)
 {
     *bp = false;
 
@@ -517,331 +451,130 @@ xpc::HasInstance(JSContext* cx, HandleObject objArg, const nsID* iid, bool* bp)
     return NS_OK;
 }
 
-NS_IMETHODIMP
-nsJSIID::HasInstance(nsIXPConnectWrappedNative* wrapper,
-                     JSContext* cx, JSObject * ,
-                     HandleValue val, bool* bp, bool* _retval)
+static bool
+IID_HasInstance(JSContext* aCx, unsigned aArgc, Value* aVp)
 {
-    *bp = false;
-
-    if (val.isPrimitive()) {
-        return NS_OK;
-    }
-
-    
-    RootedObject obj(cx, &val.toObject());
-
-    const nsIID* iid = &mInfo->IID();
-    return xpc::HasInstance(cx, obj, iid, bp);
-}
-
-
-
-NS_IMPL_QUERY_INTERFACE_CI(nsJSCID,
-                           nsIJSID,
-                           nsIJSCID,
-                           nsIXPCScriptable)
-
-NS_IMPL_ADDREF(nsJSCID)
-NS_IMPL_RELEASE(nsJSCID)
-NS_IMPL_CI_INTERFACE_GETTER(nsJSCID, nsIJSID, nsIJSCID)
-
-
-#define XPC_MAP_CLASSNAME         nsJSCID
-#define XPC_MAP_QUOTED_CLASSNAME "nsJSCID"
-#define XPC_MAP_FLAGS (XPC_SCRIPTABLE_WANT_CONSTRUCT | \
-                       XPC_SCRIPTABLE_WANT_HASINSTANCE)
-#include "xpc_map_end.h" 
-
-nsJSCID::nsJSCID()  { mDetails = new nsJSID(); }
-nsJSCID::~nsJSCID() {}
-
-NS_IMETHODIMP nsJSCID::GetName(char * *aName)
-    {ResolveName(); return mDetails->GetName(aName);}
-
-NS_IMETHODIMP nsJSCID::GetNumber(char * *aNumber)
-    {return mDetails->GetNumber(aNumber);}
-
-NS_IMETHODIMP_(const nsID*) nsJSCID::GetID()
-    {return &mDetails->ID();}
-
-NS_IMETHODIMP nsJSCID::GetValid(bool* aValid)
-    {return mDetails->GetValid(aValid);}
-
-NS_IMETHODIMP nsJSCID::Equals(nsIJSID* other, bool* _retval)
-    {return mDetails->Equals(other, _retval);}
-
-NS_IMETHODIMP
-nsJSCID::Initialize(const char* str)
-{
-    if (str[0] == '{') {
-        NS_ENSURE_SUCCESS(mDetails->Initialize(str), NS_ERROR_FAILURE);
-    } else {
-        nsCOMPtr<nsIComponentRegistrar> registrar;
-        NS_GetComponentRegistrar(getter_AddRefs(registrar));
-        NS_ENSURE_TRUE(registrar, NS_ERROR_FAILURE);
-
-        nsCID* cid;
-        if (NS_FAILED(registrar->ContractIDToCID(str, &cid))) {
-            return NS_ERROR_FAILURE;
-        }
-        mDetails->InitWithName(*cid, str);
-        free(cid);
-    }
-    return NS_OK;
-}
-
-NS_IMETHODIMP nsJSCID::ToString(char** _retval)
-    {ResolveName(); return mDetails->ToString(_retval);}
-
-void
-nsJSCID::ResolveName()
-{
-    if (!mDetails->NameIsSet()) {
-        mDetails->SetNameToNoString();
-    }
-}
-
-
-already_AddRefed<nsJSCID>
-nsJSCID::NewID(const char* str)
-{
-    if (!str) {
-        NS_ERROR("no string");
-        return nullptr;
-    }
-
-    RefPtr<nsJSCID> idObj = new nsJSCID();
-    if (NS_FAILED(idObj->Initialize(str))) {
-        return nullptr;
-    }
-    return idObj.forget();
-}
-
-NS_IMETHODIMP
-nsJSCID::RefreshCID()
-{
-    char* name = nullptr;
-    nsresult rv = mDetails->GetName(&name);
-    if (NS_SUCCEEDED(rv)) {
-        rv = *name ? Initialize(name) : NS_ERROR_UNEXPECTED;
-    }
-    free(name);
-    return rv;
-}
-
-static Maybe<nsID>
-GetIIDArg(uint32_t argc, JS::HandleValue val, JSContext* cx)
-{
-    
-    if (argc) {
-        return xpc::JSValue2ID(cx, val);
-    }
-    return Some(NS_GET_IID(nsISupports));
-}
-
-NS_IMETHODIMP
-nsJSCID::CreateInstance(HandleValue iidval, JSContext* cx,
-                        uint8_t optionalArgc, MutableHandleValue retval)
-{
-    if (!mDetails->IsValid()) {
-        return NS_ERROR_XPC_BAD_CID;
-    }
-
-    if (NS_FAILED(nsXPConnect::SecurityManager()->CanCreateInstance(cx, mDetails->ID()))) {
-        NS_ERROR("how are we not being called from chrome here?");
-        return NS_OK;
-    }
-
-    
-    Maybe<nsID> iid = GetIIDArg(optionalArgc, iidval, cx);
-    if (!iid) {
-        return NS_ERROR_XPC_BAD_IID;
-    }
-
-    nsCOMPtr<nsIComponentManager> compMgr;
-    nsresult rv = NS_GetComponentManager(getter_AddRefs(compMgr));
-    if (NS_FAILED(rv)) {
-        return NS_ERROR_UNEXPECTED;
-    }
-
-    nsCOMPtr<nsISupports> inst;
-    rv = compMgr->CreateInstance(mDetails->ID(), nullptr, iid.ref(), getter_AddRefs(inst));
-    MOZ_ASSERT(NS_FAILED(rv) || inst, "component manager returned success, but instance is null!");
-
-    NS_ENSURE_SUCCESS(rv, NS_ERROR_XPC_CI_RETURNED_FAILURE);
-    if (!inst) {
-      return NS_ERROR_XPC_CI_RETURNED_FAILURE;
-    }
-
-    rv = nsContentUtils::WrapNative(cx, inst, iid.ptr(), retval);
-    if (NS_FAILED(rv) || retval.isPrimitive()) {
-        return NS_ERROR_XPC_CANT_CREATE_WN;
-    }
-    return NS_OK;
-}
-
-NS_IMETHODIMP
-nsJSCID::GetService(HandleValue iidval, JSContext* cx, uint8_t optionalArgc,
-                    MutableHandleValue retval)
-{
-    if (!mDetails->IsValid()) {
-        return NS_ERROR_XPC_BAD_CID;
-    }
-
-    if (NS_FAILED(nsXPConnect::SecurityManager()->CanCreateInstance(cx, mDetails->ID()))) {
-        MOZ_ASSERT(JS_IsExceptionPending(cx),
-                   "security manager vetoed GetService without setting exception");
-        return NS_OK;
-    }
-
-    
-    Maybe<nsID> iid = GetIIDArg(optionalArgc, iidval, cx);
-    if (!iid) {
-        return NS_ERROR_XPC_BAD_IID;
-    }
-
-    nsCOMPtr<nsIServiceManager> svcMgr;
-    nsresult rv = NS_GetServiceManager(getter_AddRefs(svcMgr));
-    if (NS_FAILED(rv)) {
-        return rv;
-    }
-
-    nsCOMPtr<nsISupports> srvc;
-    rv = svcMgr->GetService(mDetails->ID(), iid.ref(), getter_AddRefs(srvc));
-    MOZ_ASSERT(NS_FAILED(rv) || srvc, "service manager returned success, but service is null!");
-
-    NS_ENSURE_SUCCESS(rv, NS_ERROR_XPC_GS_RETURNED_FAILURE);
-    if (!srvc) {
-        return NS_ERROR_XPC_GS_RETURNED_FAILURE;
-    }
-
-    RootedValue v(cx);
-    rv = nsContentUtils::WrapNative(cx, srvc, iid.ptr(), &v);
-    if (NS_FAILED(rv) || !v.isObject()) {
-        return NS_ERROR_XPC_CANT_CREATE_WN;
-    }
-
-    retval.set(v);
-    return NS_OK;
-}
-
-NS_IMETHODIMP
-nsJSCID::Construct(nsIXPConnectWrappedNative* wrapper,
-                   JSContext* cx, JSObject* objArg,
-                   const CallArgs& args, bool* _retval)
-{
-    RootedObject obj(cx, objArg);
-    XPCJSRuntime* xpcrt = nsXPConnect::GetRuntimeInstance();
-    if (!xpcrt) {
-        return NS_ERROR_FAILURE;
-    }
-
-    
-    RootedId name(cx, xpcrt->GetStringID(XPCJSContext::IDX_CREATE_INSTANCE));
-    XPCCallContext ccx(cx, obj, nullptr, name, args.length(), args.array(),
-                       args.rval().address());
-
-    *_retval = XPCWrappedNative::CallMethod(ccx);
-    return NS_OK;
-}
-
-NS_IMETHODIMP
-nsJSCID::HasInstance(nsIXPConnectWrappedNative* wrapper,
-                     JSContext* cx, JSObject * ,
-                     HandleValue val, bool* bp, bool* _retval)
-{
-    *bp = false;
-
-    if (!val.isObject()) {
-        return NS_OK;
-    }
-
-    RootedObject obj(cx, &val.toObject());
-
-    
-    RootedObject target(cx);
-    nsresult rv = FindObjectForHasInstance(cx, obj, &target);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-    }
-
-    if (!target || !IS_WN_REFLECTOR(target)) {
-        return NS_OK;
-    }
-
-    if (XPCWrappedNative* other_wrapper = XPCWrappedNative::Get(target)) {
-        if (nsIClassInfo* ci = other_wrapper->GetClassInfo()) {
-            
-            
-            nsID cid;
-            if (NS_SUCCEEDED(ci->GetClassIDNoAlloc(&cid))) {
-                *bp = cid.Equals(mDetails->ID());
-            }
-        }
-    }
-
-    return NS_OK;
-}
-
-
-
-
-namespace xpc {
-
-Maybe<nsID>
-JSValue2ID(JSContext* aCx, JS::HandleValue aVal)
-{
-    if (!aVal.isObject()) {
-        return Nothing();
-    }
-
-    JS::RootedObject obj(aCx, js::CheckedUnwrap(&aVal.toObject()));
-    if (!obj || !IS_WN_REFLECTOR(obj)) {
-        return Nothing();
-    }
-
-    XPCWrappedNative* wrapper = XPCWrappedNative::Get(obj);
-    if (!wrapper || !(wrapper->HasInterfaceNoQI(NS_GET_IID(nsIJSID)) ||
-                      wrapper->HasInterfaceNoQI(NS_GET_IID(nsIJSIID)) ||
-                      wrapper->HasInterfaceNoQI(NS_GET_IID(nsIJSCID)))) {
-        return Nothing();
-    }
-
-    nsIJSID* jsid = static_cast<nsIJSID*>(wrapper->GetIdentityObject());
-    return Some(*jsid->GetID());
-}
-
-bool
-ID2JSValue(JSContext* aCx, const nsID& aId, JS::MutableHandleValue aVal)
-{
-    nsCOMPtr<nsIJSID> jsid = nsJSID::NewID(aId);
-    return jsid && NS_SUCCEEDED(
-        nsContentUtils::WrapNative(aCx, jsid, &NS_GET_IID(nsIJSID), aVal));
-}
-
-bool
-IfaceID2JSValue(JSContext* aCx, const nsXPTInterfaceInfo& aInfo,
-                JS::MutableHandleValue aVal)
-{
-    nsCOMPtr<nsIJSIID> jsid = nsJSIID::NewID(&aInfo);
-    return jsid && NS_SUCCEEDED(
-        nsContentUtils::WrapNative(aCx, jsid, &NS_GET_IID(nsIJSIID), aVal));
-}
-
-bool
-ContractID2JSValue(JSContext* aCx, const nsACString& aContract,
-                   JS::MutableHandleValue aVal)
-{
-    if (aContract.IsEmpty() || aContract.First() == '{') {
+    CallArgs args = CallArgsFromVp(aArgc, aVp);
+    if (!args.requireAtLeast(aCx, "nsIID[Symbol.hasInstance]", 1)) {
         return false;
     }
 
-    nsCOMPtr<nsIJSCID> jsid =
-        nsJSCID::NewID(PromiseFlatCString(aContract).get());
-    return jsid && NS_SUCCEEDED(
-        nsContentUtils::WrapNative(aCx, jsid, &NS_GET_IID(nsIJSCID), aVal));
+    Maybe<nsID> id = JSValue2ID(aCx, args.thisv());
+    if (!id) {
+        return Throw(aCx, NS_ERROR_XPC_BAD_CONVERT_JS);
+    }
+
+    bool hasInstance = false;
+    if (args[0].isObject()) {
+        RootedObject target(aCx, &args[0].toObject());
+        nsresult rv = HasInstance(aCx, target, id.ptr(), &hasInstance);
+        if (NS_FAILED(rv)) {
+            return Throw(aCx, rv);
+        }
+    }
+    args.rval().setBoolean(hasInstance);
+    return true;
+}
+
+
+
+static bool
+IID_GetName(JSContext* aCx, unsigned aArgc, Value* aVp)
+{
+    CallArgs args = CallArgsFromVp(aArgc, aVp);
+
+    RootedObject obj(aCx, GetIDObject(args.thisv(), &sIID_Class));
+    if (!obj) {
+        return Throw(aCx, NS_ERROR_XPC_BAD_CONVERT_JS);
+    }
+
+    auto* info = (const nsXPTInterfaceInfo*)
+        js::GetReservedSlot(obj, kIID_InfoSlot).toPrivate();
+
+    
+    JSString* name = JS_NewStringCopyZ(aCx, info->Name());
+    if (!name) {
+        return Throw(aCx, NS_ERROR_OUT_OF_MEMORY);
+    }
+
+    args.rval().setString(name);
+    return true;
+}
+
+
+
+static bool
+CIGSHelper(JSContext* aCx, unsigned aArgc, Value* aVp, bool aGetService)
+{
+    CallArgs args = CallArgsFromVp(aArgc, aVp);
+
+    
+    
+    
+    RootedObject obj(aCx, GetIDObject(args.thisv(), &sCID_Class));
+    if (!obj) {
+        return Throw(aCx, NS_ERROR_XPC_BAD_CONVERT_JS);
+    }
+    JS::UniqueChars contractID = JS_EncodeStringToLatin1(aCx,
+        js::GetReservedSlot(obj, kCID_ContractSlot).toString());
+
+    
+    Maybe<nsIID> iid = args.length() >= 1 ? JSValue2ID(aCx, args[0])
+                                          : Some(NS_GET_IID(nsISupports));
+    if (!iid) {
+        return Throw(aCx, NS_ERROR_XPC_BAD_CONVERT_JS);
+    }
+
+    
+    nsresult rv;
+    nsCOMPtr<nsISupports> result;
+    if (aGetService) {
+        rv = CallGetService(contractID.get(), *iid, getter_AddRefs(result));
+        if (NS_FAILED(rv) || !result) {
+            return Throw(aCx, NS_ERROR_XPC_GS_RETURNED_FAILURE);
+        }
+    } else {
+        rv = CallCreateInstance(contractID.get(), nullptr, *iid,
+                                getter_AddRefs(result));
+        if (NS_FAILED(rv) || !result) {
+            return Throw(aCx, NS_ERROR_XPC_CI_RETURNED_FAILURE);
+        }
+    }
+
+    
+    rv = nsContentUtils::WrapNative(aCx, result, iid.ptr(), args.rval());
+    if (NS_FAILED(rv) || args.rval().isPrimitive()) {
+        return Throw(aCx, NS_ERROR_XPC_CANT_CREATE_WN);
+    }
+    return true;
+}
+
+static bool
+CID_CreateInstance(JSContext* aCx, unsigned aArgc, Value* aVp)
+{
+    return CIGSHelper(aCx, aArgc, aVp,  false);
+}
+
+static bool
+CID_GetService(JSContext* aCx, unsigned aArgc, Value* aVp)
+{
+    return CIGSHelper(aCx, aArgc, aVp,  true);
+}
+
+
+
+static bool
+CID_GetName(JSContext* aCx, unsigned aArgc, Value* aVp)
+{
+    CallArgs args = CallArgsFromVp(aArgc, aVp);
+    RootedObject obj(aCx, GetIDObject(args.thisv(), &sCID_Class));
+    if (!obj) {
+        return Throw(aCx, NS_ERROR_XPC_BAD_CONVERT_JS);
+    }
+
+    
+    args.rval().set(js::GetReservedSlot(obj, kCID_ContractSlot));
+    return true;
 }
 
 } 
-

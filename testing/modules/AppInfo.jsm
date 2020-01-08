@@ -132,9 +132,4 @@ var updateAppInfo = function(options) {
   };
 
   registrar.registerFactory(id, "XULAppInfo", contractid, factory);
-
-  
-  
-  
-  Cc[contractid].refreshCID();
 };

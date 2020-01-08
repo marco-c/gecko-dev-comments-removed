@@ -766,7 +766,7 @@ bool IfaceID2JSValue(JSContext* aCx, const nsXPTInterfaceInfo& aInfo,
 
 
 
-bool ContractID2JSValue(JSContext* aCx, const nsACString& aContract,
+bool ContractID2JSValue(JSContext* aCx, JSString* aContract,
                         JS::MutableHandleValue aVal);
 
 } 
