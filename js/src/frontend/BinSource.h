@@ -213,6 +213,10 @@ class BinASTParser : public BinASTParserBase, public ErrorReporter, public BCEPa
     MOZ_MUST_USE JS::Result<ParseNode*> appendDirectivesToBody(ListNode* body,
         ListNode* directives);
 
+    
+    
+    void forceStrictIfNecessary(FunctionBox* funbox, ListNode* directives);
+
   private: 
     const JS::ReadOnlyCompileOptions& options_;
 
