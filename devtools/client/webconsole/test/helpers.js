@@ -11,6 +11,7 @@ const { getAllMessagesById } = require("devtools/client/webconsole/selectors/mes
 const { getPrefsService } = require("devtools/client/webconsole/utils/prefs");
 const prefsService = getPrefsService({});
 const { PREFS } = require("devtools/client/webconsole/constants");
+const Telemetry = require("devtools/client/shared/telemetry");
 
 
 
@@ -35,7 +36,7 @@ function setupActions() {
 
 
 function setupStore(input = [], {
-  storeOptions,
+  storeOptions = {},
   actions,
   hud,
 } = {}) {
@@ -51,7 +52,11 @@ function setupStore(input = [], {
       },
     };
   }
-  const store = configureStore(hud, storeOptions);
+  const store = configureStore(hud, {
+    ...storeOptions,
+    sessionId: -1,
+    telemetry: new Telemetry(),
+  });
 
   
   const messagesAdd = actions
