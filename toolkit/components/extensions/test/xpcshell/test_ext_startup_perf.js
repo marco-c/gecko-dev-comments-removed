@@ -14,6 +14,7 @@ const STARTUP_MODULES = [
   
   
   "resource://gre/modules/ExtensionPermissions.jsm",
+  "resource://gre/modules/ExtensionProcessScript.jsm",
   "resource://gre/modules/ExtensionUtils.jsm",
   "resource://gre/modules/ExtensionTelemetry.jsm",
 ];

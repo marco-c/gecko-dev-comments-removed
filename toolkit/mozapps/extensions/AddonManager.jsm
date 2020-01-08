@@ -79,7 +79,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "WEBEXT_PERMISSION_PROMPTS",
 
 
 Services.ppmm.loadProcessScript(
-  "data:,Components.classes['@mozilla.org/webextensions/extension-process-script;1'].getService()",
+  "data:,ChromeUtils.import('resource://gre/modules/ExtensionProcessScript.jsm')",
   true);
 
 const INTEGER = /^[1-9]\d*$/;
