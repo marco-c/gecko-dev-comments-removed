@@ -26,8 +26,6 @@ class GeckoRuntimeRunner(BaseRunner):
 
         
         self.env['MOZ_NO_REMOTE'] = '1'
-        
-        self.env['NO_EM_RESTART'] = '1'
 
         
         self.env['GNOME_DISABLE_CRASH_DIALOG'] = '1'
