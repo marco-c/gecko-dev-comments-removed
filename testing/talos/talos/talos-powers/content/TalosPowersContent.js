@@ -8,10 +8,39 @@
 
 
 
+var TalosPowers;
 var TalosPowersContent;
 var TalosPowersParent;
 
 (function() {
+  
+  
+  
+  
+  
+  
+  async function tryPing() {
+    let pingPromise = new Promise(resolve => {
+      TalosPowersParent.exec("ping", null, resolve);
+    });
+    let timeoutPromise = new Promise((resolve, reject) => { setTimeout(reject, 500); });
+
+    try {
+      await Promise.race([pingPromise, timeoutPromise]);
+    } catch (e) {
+      return tryPing();
+    }
+
+    return null;
+  }
+
+  TalosPowers = {};
+  Object.defineProperty(TalosPowers, "loadPromise", {
+    get: () => tryPing(),
+    configurable: true,
+    enumerable: true,
+  });
+
   TalosPowersContent = {
     
 

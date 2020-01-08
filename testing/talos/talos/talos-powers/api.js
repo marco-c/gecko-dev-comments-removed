@@ -2,19 +2,24 @@
 
 
 
+
+
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-ChromeUtils.defineModuleGetter(this, "Services",
-  "resource://gre/modules/Services.jsm");
-ChromeUtils.defineModuleGetter(this, "OS",
-  "resource://gre/modules/osfile.jsm");
-ChromeUtils.defineModuleGetter(this, "BrowserWindowTracker",
-  "resource:///modules/BrowserWindowTracker.jsm");
+XPCOMUtils.defineLazyModuleGetters(this, {
+  BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
+  OS: "resource://gre/modules/osfile.jsm",
+  Services: "resource://gre/modules/Services.jsm",
+});
+
+XPCOMUtils.defineLazyServiceGetter(this, "resProto",
+                                   "@mozilla.org/network/protocol;1?name=resource",
+                                   "nsISubstitutingProtocolHandler");
 
 Cu.importGlobalProperties(["TextEncoder"]);
 
 const Cm = Components.manager.QueryInterface(Ci.nsIComponentRegistrar);
 
-const FRAME_SCRIPT = "chrome://talos-powers/content/talos-powers-content.js";
+let frameScriptURL;
 
 function TalosPowersService() {
   this.wrappedJSObject = this;
@@ -41,7 +46,10 @@ TalosPowersService.prototype = {
   },
 
   init() {
-    Services.mm.loadFrameScript(FRAME_SCRIPT, true);
+    if (!frameScriptURL) {
+      throw new Error("Cannot find frame script url (extension not started?)");
+    }
+    Services.mm.loadFrameScript(frameScriptURL, true);
     Services.mm.addMessageListener("Talos:ForceQuit", this);
     Services.mm.addMessageListener("TalosContentProfiler:Command", this);
     Services.mm.addMessageListener("TalosPowersContent:ForceCCAndGC", this);
@@ -295,6 +303,9 @@ TalosPowersService.prototype = {
 
 
   ParentExecServices: {
+    ping(arg, callback, win) {
+      callback();
+    },
 
     
     startFrameTimeRecording(arg, callback, win) {
@@ -349,12 +360,20 @@ TalosPowersService.prototype = {
 
 };
 
-function startup(data, reason) {
-  TalosPowersService.prototype.register();
-}
+this.talos_powers = class extends ExtensionAPI {
+  onStartup() {
+    let uri = Services.io.newURI("content/", null, this.extension.rootURI);
+    resProto.setSubstitutionWithFlags("talos-powers", uri, resProto.ALLOW_CONTENT_ACCESS);
 
-function shutdown(data, reason) {
-  TalosPowersService.prototype.unregister();
-}
-function install(data, reason) {}
-function uninstall(data, reason) {}
+    frameScriptURL = this.extension.baseURI.resolve("chrome/talos-powers-content.js");
+
+    TalosPowersService.prototype.register();
+  }
+
+  onShutdown() {
+    TalosPowersService.prototype.unregister();
+
+    frameScriptURL = null;
+    resProto.setSubstitution("talos-powers", null);
+  }
+};
