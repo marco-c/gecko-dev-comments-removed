@@ -50,7 +50,9 @@ function waitUntilState(store, predicate) {
 
 
 
-function waitUntilAction(store, actionType) {
+
+
+function waitUntilAction(store, actionType, count = 1) {
   const deferred = defer();
   const unsubscribe = store.subscribe(check);
   const history = store.history;
@@ -61,8 +63,11 @@ function waitUntilAction(store, actionType) {
     const action = history[index++];
     if (action && action.type === actionType) {
       info(`Found action "${actionType}"`);
-      unsubscribe();
-      deferred.resolve(store.getState());
+      count--;
+      if (count === 0) {
+        unsubscribe();
+        deferred.resolve(store.getState());
+      }
     }
   }
 
