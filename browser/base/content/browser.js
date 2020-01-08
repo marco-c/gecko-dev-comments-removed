@@ -67,6 +67,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Translation: "resource:///modules/translation/Translation.jsm",
   UITour: "resource:///modules/UITour.jsm",
   UpdateUtils: "resource://gre/modules/UpdateUtils.jsm",
+  UrlbarInput: "resource:///modules/UrlbarInput.jsm",
   Utils: "resource://gre/modules/sessionstore/Utils.jsm",
   Weave: "resource://services-sync/main.js",
   WebNavigationFrames: "resource://gre/modules/WebNavigationFrames.jsm",
@@ -251,27 +252,41 @@ if (AppConstants.platform != "macosx") {
   var gEditUIVisible = true;
 }
 
+Object.defineProperty(this, "gURLBar", {
+  configurable: true,
+  enumerable: true,
+  get() {
+    delete this.gURLBar;
 
-[
-  ["gNavToolbox",         "navigator-toolbox"],
-  ["gURLBar",             "urlbar"],
-].forEach(function(elementGlobal) {
-  var [name, id] = elementGlobal;
-  Object.defineProperty(window, name, {
-    configurable: true,
-    enumerable: true,
-    get() {
-      var element = document.getElementById(id);
-      if (!element)
-        return null;
-      delete window[name];
-      return window[name] = element;
-    },
-    set(val) {
-      delete window[name];
-      return window[name] = val;
-    },
-  });
+    let element = document.getElementById("urlbar");
+
+    
+    
+    if (BrowserWindowTracker.windowCount <= 1 ||
+        !Services.prefs.getBoolPref("browser.urlbar.quantumbar", false)) {
+      return this.gURLBar = element;
+    }
+
+    
+    element.setAttribute("quantumbar", "true");
+
+    
+    if (element.hasAttribute("focused")) {
+      element.inputField.focus();
+    }
+
+    return this.gURLBar =
+      new UrlbarInput(element, document.getElementById("urlbar-results"));
+  },
+});
+
+Object.defineProperty(this, "gNavToolbox", {
+  configurable: true,
+  enumerable: true,
+  get() {
+    delete this.gNavToolbox;
+    return this.gNavToolbox = document.getElementById("navigator-toolbox");
+  },
 });
 
 
@@ -3666,8 +3681,7 @@ const DOMEventHandler = {
         break;
 
       case "Link:SetIcon":
-        this.setIconFromLink(aMsg.target, aMsg.data.pageURL,
-                             aMsg.data.originalURL, aMsg.data.canUseForTab,
+        this.setIconFromLink(aMsg.target, aMsg.data.originalURL, aMsg.data.canUseForTab,
                              aMsg.data.expiration, aMsg.data.iconURL);
         break;
 
@@ -3705,15 +3719,14 @@ const DOMEventHandler = {
     tab.removeAttribute("pendingicon");
   },
 
-  setIconFromLink(aBrowser, aPageURL, aOriginalURL, aCanUseForTab, aExpiration, aIconURL) {
+  setIconFromLink(aBrowser, aOriginalURL, aCanUseForTab, aExpiration, aIconURL) {
     let tab = gBrowser.getTabForBrowser(aBrowser);
-    if (!tab) {
+    if (!tab)
       return false;
-    }
+
     try {
       PlacesUIUtils.loadFavicon(aBrowser, Services.scriptSecurityManager.getSystemPrincipal(),
-                                makeURI(aPageURL), makeURI(aOriginalURL),
-                                aExpiration, makeURI(aIconURL));
+                                makeURI(aOriginalURL), aExpiration, makeURI(aIconURL));
     } catch (ex) {
       Cu.reportError(ex);
     }
