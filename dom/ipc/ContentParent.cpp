@@ -1933,7 +1933,7 @@ ContentParent::StartForceKillTimer()
     return;
   }
 
-  int32_t timeoutSecs = StaticPrefs::dom_ipc_tabs_shutdownTimeoutSecs();
+  int32_t timeoutSecs = Preferences::GetInt("dom.ipc.tabs.shutdownTimeoutSecs", 5);
   if (timeoutSecs > 0) {
     NS_NewTimerWithFuncCallback(getter_AddRefs(mForceKillTimer),
                                 ContentParent::ForceKillTimerCallback,
@@ -2449,7 +2449,7 @@ ContentParent::InitInternal(ProcessPriority aInitialPriority)
     bidi->GetHaveBidiKeyboards(&xpcomInit.haveBidiKeyboards());
   }
 
-  nsCOMPtr<nsISpellChecker> spellChecker(mozSpellChecker::Create());
+  RefPtr<mozSpellChecker> spellChecker(mozSpellChecker::Create());
   MOZ_ASSERT(spellChecker, "No spell checker?");
 
   spellChecker->GetDictionaryList(&xpcomInit.dictionaries());
@@ -4622,7 +4622,7 @@ ContentParent::IgnoreIPCPrincipal()
 void
 ContentParent::NotifyUpdatedDictionaries()
 {
-  nsCOMPtr<nsISpellChecker> spellChecker(mozSpellChecker::Create());
+  RefPtr<mozSpellChecker> spellChecker(mozSpellChecker::Create());
   MOZ_ASSERT(spellChecker, "No spell checker?");
 
   InfallibleTArray<nsString> dictionaries;

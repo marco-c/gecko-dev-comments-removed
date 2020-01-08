@@ -144,7 +144,6 @@
 #include "nsLayoutStylesheetCache.h"
 #include "nsThreadManager.h"
 #include "nsAnonymousTemporaryFile.h"
-#include "nsISpellChecker.h"
 #include "nsClipboardProxy.h"
 #include "nsDirectoryService.h"
 #include "nsDirectoryServiceUtils.h"
@@ -2992,7 +2991,7 @@ ContentChild::StartForceKillTimer()
     return;
   }
 
-  int32_t timeoutSecs = StaticPrefs::dom_ipc_tabs_shutdownTimeoutSecs();
+  int32_t timeoutSecs = Preferences::GetInt("dom.ipc.tabs.shutdownTimeoutSecs", 5);
   if (timeoutSecs > 0) {
     NS_NewTimerWithFuncCallback(getter_AddRefs(mForceKillTimer),
                                 ContentChild::ForceKillTimerCallback,
