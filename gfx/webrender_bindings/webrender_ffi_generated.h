@@ -288,7 +288,7 @@ struct LayoutPixel;
 struct Renderer;
 
 
-struct Tiles;
+struct TileCoordinate;
 
 
 struct Transaction;
@@ -987,7 +987,7 @@ struct ByteSlice {
   }
 };
 
-using TileOffset = TypedPoint2D<int32_t, Tiles>;
+using TileOffset = TypedPoint2D<int32_t, TileCoordinate>;
 
 using DeviceIntRect = TypedRect<int32_t, DevicePixel>;
 
