@@ -36,7 +36,7 @@ class AutoplayPolicy
 {
 public:
   
-  static uint32_t IsAllowedToPlay(const HTMLMediaElement& aElement);
+  static bool IsAllowedToPlay(const HTMLMediaElement& aElement);
 
   
   

@@ -1015,7 +1015,9 @@ var gIdentityHandler = {
     let nameLabelId = "identity-popup-permission-label-" + aPermission.id;
     nameLabel.setAttribute("id", nameLabelId);
 
-    let isPolicyPermission = aPermission.scope == SitePermissions.SCOPE_POLICY;
+    let isPolicyPermission = [
+      SitePermissions.SCOPE_POLICY, SitePermissions.SCOPE_GLOBAL
+    ].includes(aPermission.scope);
 
     if (aPermission.id == "popup" && !isPolicyPermission) {
       let menulist = document.createXULElement("menulist");
