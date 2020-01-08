@@ -177,6 +177,9 @@ CraneliftStaticEnvironment::CraneliftStaticEnvironment()
     hasSse42(Assembler::HasSSE42()),
     hasPopcnt(Assembler::HasPOPCNT()),
     hasAvx(Assembler::HasAVX()),
+    hasBmi1(Assembler::HasBMI1()),
+    hasBmi2(Assembler::HasBMI2()),
+    hasLzcnt(Assembler::HasLZCNT()),
 #else
     hasSse2(false),
     hasSse3(false),
@@ -184,10 +187,10 @@ CraneliftStaticEnvironment::CraneliftStaticEnvironment()
     hasSse42(false),
     hasPopcnt(false),
     hasAvx(false),
+    hasBmi1(false),
+    hasBmi2(false),
+    hasLzcnt(false),
 #endif
-    hasBmi1(false), 
-    hasBmi2(false), 
-    hasLzcnt(false), 
     staticMemoryBound(
 #ifdef WASM_HUGE_MEMORY
         
