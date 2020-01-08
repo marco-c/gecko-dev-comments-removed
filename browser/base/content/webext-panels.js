@@ -38,7 +38,6 @@ function getBrowser(sidebar) {
   browser.setAttribute("tooltip", "aHTMLTooltip");
   browser.setAttribute("autocompletepopup", "PopupAutoComplete");
   browser.setAttribute("selectmenulist", "ContentSelectDropdown");
-  browser.setAttribute("onclick", "window.parent.contentAreaClick(event, true);");
 
   
   
@@ -67,20 +66,21 @@ function getBrowser(sidebar) {
     browser.messageManager.loadFrameScript("chrome://browser/content/content.js", false, true);
     ExtensionParent.apiManager.emit("extension-browser-inserted", browser);
 
-    if (sidebar.browserStyle) {
-      browser.messageManager.loadFrameScript(
-        "chrome://extensions/content/ext-browser-content.js", false, true);
+    browser.messageManager.loadFrameScript(
+      "chrome://extensions/content/ext-browser-content.js", false, true);
 
-      browser.messageManager.sendAsyncMessage("Extension:InitBrowser", {
-        stylesheets: ExtensionParent.extensionStylesheets,
-      });
-    }
+    let options = sidebar.browserStyle !== false ? {stylesheets: ExtensionParent.extensionStylesheets} : {};
+    browser.messageManager.sendAsyncMessage("Extension:InitBrowser", options);
     return browser;
   });
 }
 
 
 var gBrowser = {
+  get selectedBrowser() {
+    return document.getElementById("webext-panels-browser");
+  },
+
   getTabForBrowser(browser) {
     return null;
   },
