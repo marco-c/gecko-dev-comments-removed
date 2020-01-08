@@ -447,13 +447,18 @@ class TabTracker extends TabTrackerBase {
           
           
           
-          let currentTab = nativeTab.ownerGlobal.gBrowser.selectedTab;
+          const currentTab = nativeTab.ownerGlobal.gBrowser.selectedTab;
+          const {frameLoader} = currentTab.linkedBrowser;
+          const currentTabSize = {
+            width: frameLoader.lazyWidth,
+            height: frameLoader.lazyHeight,
+          };
 
           
           
           
           Promise.resolve().then(() => {
-            this.emitCreated(event.originalTarget, currentTab);
+            this.emitCreated(event.originalTarget, currentTabSize);
           });
         }
         break;
@@ -588,8 +593,8 @@ class TabTracker extends TabTrackerBase {
 
 
 
-  emitCreated(nativeTab, currentTab) {
-    this.emit("tab-created", {nativeTab, currentTab});
+  emitCreated(nativeTab, currentTabSize) {
+    this.emit("tab-created", {nativeTab, currentTabSize});
   }
 
   

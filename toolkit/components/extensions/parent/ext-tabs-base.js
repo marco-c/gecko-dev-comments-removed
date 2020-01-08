@@ -296,7 +296,7 @@ class TabBase {
 
 
   get frameLoader() {
-    return this.browser.frameLoader;
+    return this.browser && this.browser.frameLoader;
   }
 
   
@@ -586,7 +586,7 @@ class TabBase {
 
 
 
-  convert(fallbackTab = null) {
+  convert(fallbackTabSize = null) {
     let result = {
       id: this.id,
       index: this.index,
@@ -611,9 +611,9 @@ class TabBase {
 
     
     
-    if (fallbackTab && (!result.width || !result.height)) {
-      result.width = fallbackTab.width;
-      result.height = fallbackTab.height;
+    if (fallbackTabSize && (!result.width || !result.height)) {
+      result.width = fallbackTabSize.width;
+      result.height = fallbackTabSize.height;
     }
 
     let opener = this.openerTabId;
@@ -1837,9 +1837,9 @@ class TabManagerBase {
 
 
 
-  convert(nativeTab, fallbackTab = null) {
+  convert(nativeTab, fallbackTabSize = null) {
     return this.getWrapper(nativeTab)
-               .convert(fallbackTab && this.getWrapper(fallbackTab));
+               .convert(fallbackTabSize);
   }
 
   
