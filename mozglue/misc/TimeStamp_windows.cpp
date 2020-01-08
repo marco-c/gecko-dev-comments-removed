@@ -168,7 +168,9 @@ PerformanceCounter()
   LARGE_INTEGER pc;
   ::QueryPerformanceCounter(&pc);
 
-  if (!sHasStableTSC) {
+  
+  
+  if (true || !sHasStableTSC) {
     
     AutoCriticalSection lock(&sTimeStampLock);
 
