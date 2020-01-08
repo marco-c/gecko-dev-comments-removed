@@ -170,7 +170,6 @@ class NVImage;
 #ifdef XP_WIN
 class D3D11YCbCrRecycleAllocator;
 #endif
-class SurfaceDescriptorBuffer;
 
 struct ImageBackendData
 {
@@ -888,14 +887,6 @@ public:
   virtual size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const = 0;
 
   PlanarYCbCrImage* AsPlanarYCbCrImage() override { return this; }
-
-  
-
-
-
-
-  virtual nsresult BuildSurfaceDescriptorBuffer(
-    SurfaceDescriptorBuffer& aSdBuffer);
 
 protected:
   already_AddRefed<gfx::SourceSurface> GetAsSourceSurface() override;

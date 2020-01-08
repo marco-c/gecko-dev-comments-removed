@@ -35,7 +35,6 @@ class ImageContainer;
 
 class GpuDecoderModule;
 class MediaDataDecoder;
-class RemoteDecoderModule;
 class TaskQueue;
 class CDMProxy;
 
@@ -214,7 +213,6 @@ protected:
   friend class PDMFactory;
   friend class GpuDecoderModule;
   friend class EMEDecoderModule;
-  friend class RemoteDecoderModule;
 
   
   
