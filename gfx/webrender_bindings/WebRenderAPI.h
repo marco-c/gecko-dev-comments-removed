@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef MOZILLA_LAYERS_WEBRENDERAPI_H
 #define MOZILLA_LAYERS_WEBRENDERAPI_H
@@ -40,8 +40,8 @@ class DisplayListBuilder;
 class RendererOGL;
 class RendererEvent;
 
-
-
+// This isn't part of WR's API, but we define it here to simplify layout's
+// logic and data plumbing.
 struct Line {
   wr::LayoutRect bounds;
   float wavyLineThickness;
@@ -175,7 +175,7 @@ class WebRenderAPI
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WebRenderAPI);
 
 public:
-  
+  /// This can be called on the compositor thread only.
   static already_AddRefed<WebRenderAPI> Create(layers::CompositorBridgeParent* aBridge,
                                                RefPtr<widget::CompositorWidget>&& aWidget,
                                                const wr::WrWindowId& aWindowId,
@@ -209,6 +209,7 @@ public:
   void FlushSceneBuilder();
 
   void NotifyMemoryPressure();
+  void AccumulateMemoryReport(wr::MemoryReport*);
 
   wr::WrIdNamespace GetNamespace();
   uint32_t GetMaxTextureSize() const { return mMaxTextureSize; }
@@ -229,7 +230,7 @@ protected:
   {}
 
   ~WebRenderAPI();
-  
+  // Should be used only for shutdown handling
   void WaitFlushed();
 
   wr::DocumentHandle* mDocHandle;
@@ -239,14 +240,14 @@ protected:
   bool mUseDComp;
   layers::SyncHandle mSyncHandle;
 
-  
-  
-  
-  
-  
-  
-  
-  
+  // We maintain alive the root api to know when to shut the render backend down,
+  // and the root api for the document to know when to delete the document.
+  // mRootApi is null for the api object that owns the channel (and is responsible
+  // for shutting it down), and mRootDocumentApi is null for the api object owning
+  // (and responsible for destroying) a given document.
+  // All api objects in the same window use the same channel, and some api objects
+  // write to the same document (but there is only one owner for each channel and
+  // for each document).
   RefPtr<wr::WebRenderAPI> mRootApi;
   RefPtr<wr::WebRenderAPI> mRootDocumentApi;
 
@@ -254,13 +255,13 @@ protected:
   friend class layers::WebRenderBridgeParent;
 };
 
-
-
-
-
-
-
-
+// This is a RAII class that automatically sends the transaction on
+// destruction. This is useful for code that has multiple exit points and we
+// want to ensure that the stuff accumulated in the transaction gets sent
+// regardless of which exit we take. Note that if the caller explicitly calls
+// mApi->SendTransaction() that's fine too because that empties out the
+// TransactionBuilder and leaves it as a valid empty transaction, so calling
+// SendTransaction on it again ends up being a no-op.
 class MOZ_RAII AutoTransactionSender
 {
 public:
@@ -278,9 +279,9 @@ private:
   TransactionBuilder* mTxn;
 };
 
-
-
-
+/// This is a simple C++ wrapper around WrState defined in the rust bindings.
+/// We may want to turn this into a direct wrapper on top of WebRenderFrameBuilder
+/// instead, so the interface may change a bit.
 class DisplayListBuilder {
 public:
   explicit DisplayListBuilder(wr::PipelineId aId,
@@ -299,7 +300,7 @@ public:
                 wr::BuiltDisplayList& aOutDisplayList);
 
   Maybe<wr::WrClipId> PushStackingContext(
-          const wr::LayoutRect& aBounds, 
+          const wr::LayoutRect& aBounds, // TODO: We should work with strongly typed rects
           const wr::WrClipId* aClipNodeId,
           const wr::WrAnimationProperty* aAnimation,
           const float* aOpacity,
@@ -334,7 +335,7 @@ public:
   Maybe<wr::WrClipId> GetScrollIdForDefinedScrollLayer(layers::FrameMetrics::ViewID aViewId) const;
   wr::WrClipId DefineScrollLayer(const layers::FrameMetrics::ViewID& aViewId,
                                  const Maybe<wr::WrClipId>& aParentId,
-                                 const wr::LayoutRect& aContentRect, 
+                                 const wr::LayoutRect& aContentRect, // TODO: We should work with strongly typed rects
                                  const wr::LayoutRect& aClipRect);
 
   void PushClipAndScrollInfo(const wr::WrClipId* aScrollId,
@@ -416,8 +417,8 @@ public:
                   wr::PipelineId aPipeline,
                   bool aIgnoreMissingPipeline);
 
-  
-  
+  // XXX WrBorderSides are passed with Range.
+  // It is just to bypass compiler bug. See Bug 1357734.
   void PushBorder(const wr::LayoutRect& aBounds,
                   const wr::LayoutRect& aClip,
                   bool aIsBackfaceVisible,
@@ -492,24 +493,24 @@ public:
                      const wr::BorderRadius& aBorderRadius,
                      const wr::BoxShadowClipMode& aClipMode);
 
-  
-  
-  
+  // Checks to see if the innermost enclosing fixed pos item has the same
+  // ASR. If so, it returns the scroll target for that fixed-pos item.
+  // Otherwise, it returns Nothing().
   Maybe<layers::FrameMetrics::ViewID> GetContainingFixedPosScrollTarget(const ActiveScrolledRoot* aAsr);
 
-  
-  
+  // Set the hit-test info to be used for all display items until the next call
+  // to SetHitTestInfo or ClearHitTestInfo.
   void SetHitTestInfo(const layers::FrameMetrics::ViewID& aScrollId,
                       gfx::CompositorHitTestInfo aHitInfo);
-  
+  // Clears the hit-test info so that subsequent display items will not have it.
   void ClearHitTestInfo();
 
-  
+  // Try to avoid using this when possible.
   wr::WrState* Raw() { return mWrState; }
 
-  
-  
-  
+  // A chain of RAII objects, each holding a (ASR, ViewID) tuple of data. The
+  // topmost object is pointed to by the mActiveFixedPosTracker pointer in
+  // the wr::DisplayListBuilder.
   class MOZ_RAII FixedPosScrollTargetTracker {
   public:
     FixedPosScrollTargetTracker(DisplayListBuilder& aBuilder,
@@ -536,14 +537,14 @@ protected:
 
   wr::WrState* mWrState;
 
-  
-  
-  
+  // Track each scroll id that we encountered. We use this structure to
+  // ensure that we don't define a particular scroll layer multiple times,
+  // as that results in undefined behaviour in WR.
   std::unordered_map<layers::FrameMetrics::ViewID, wr::WrClipId> mScrollIds;
 
-  
-  
-  
+  // Contains the current leaf of the clip chain to be merged with the
+  // display item's clip rect when pushing an item. May be set to Nothing() if
+  // there is no clip rect to merge with.
   Maybe<wr::LayoutRect> mClipChainLeaf;
 
   FixedPosScrollTargetTracker* mActiveFixedPosTracker;
@@ -554,7 +555,7 @@ protected:
 Maybe<wr::ImageFormat>
 SurfaceFormatToImageFormat(gfx::SurfaceFormat aFormat);
 
-} 
-} 
+} // namespace wr
+} // namespace mozilla
 
 #endif
