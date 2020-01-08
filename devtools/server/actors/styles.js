@@ -1075,9 +1075,6 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
       traits: {
         
         
-        modifySelectorUnmatched: true,
-        
-        
         canSetRuleText: this.canSetRuleText,
       }
     };
