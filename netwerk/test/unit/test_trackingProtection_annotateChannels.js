@@ -19,7 +19,7 @@ ChromeUtils.import("resource://testing-common/httpd.js");
 
 
 
-const runtime = Cc["@mozilla.org/xre/app-info;1"].getService(Ci.nsIXULRuntime);
+const runtime = Services.appinfo;
 if (runtime.processType == runtime.PROCESS_TYPE_DEFAULT) {
   do_get_profile();
 }
@@ -46,10 +46,8 @@ listener.prototype = {
     request.cancel(Cr.NS_ERROR_ABORT);
     this._nextTest();
   },
-  onDataAvailable: function(request, context, stream, offset, count) {
-  },
-  onStopRequest: function(request, context, status) {
-  }
+  onDataAvailable: (request, context, stream, offset, count) => {},
+  onStopRequest: (request, context, status) => {},
 };
 
 var httpServer;
@@ -110,7 +108,7 @@ function makeChannel(path, loadingPrincipal, topWindowURI) {
   if (loadingPrincipal) {
     chan = NetUtil.newChannel({
       uri: path,
-      loadingPrincipal: loadingPrincipal,
+      loadingPrincipal,
       securityFlags: Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
       contentPolicyType: Ci.nsIContentPolicy.TYPE_OTHER,
     });
@@ -129,7 +127,7 @@ function makeChannel(path, loadingPrincipal, topWindowURI) {
   return chan;
 }
 
-var tests =[
+var tests = [
   
   setup_test,
 
@@ -308,8 +306,7 @@ var tests =[
   }
 ];
 
-function runTests()
-{
+function runTests() {
   if (!tests.length) {
     do_test_finished();
     return;
