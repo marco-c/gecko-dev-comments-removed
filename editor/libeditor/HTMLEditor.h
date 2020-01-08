@@ -827,12 +827,10 @@ protected:
 
 
 
-
-
-  already_AddRefed<nsINode>
-  GetSelectedNode(Selection& aSelection,
-                  const nsAtom* aTagName,
-                  ErrorResult& aRv);
+  already_AddRefed<Element>
+  GetSelectedElement(Selection& aSelection,
+                     const nsAtom* aTagName,
+                     ErrorResult& aRv);
 
   
 
@@ -1350,12 +1348,6 @@ protected:
   void SetSelectionAfterTableEdit(Element* aTable,
                                   int32_t aRow, int32_t aCol,
                                   int32_t aDirection, bool aSelected);
-
-  
-
-
-
-  already_AddRefed<dom::Element> GetSelectedElement(const nsAString& aTagName);
 
   void RemoveListenerAndDeleteRef(const nsAString& aEvent,
                                   nsIDOMEventListener* aListener,
