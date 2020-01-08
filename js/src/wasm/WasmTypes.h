@@ -1447,7 +1447,6 @@ class CodeRange
         TrapExit,          
         DebugTrap,         
         FarJumpIsland,     
-        OutOfBoundsExit,   
         UnalignedExit,     
                            
         Throw              
@@ -1762,7 +1761,6 @@ enum class SymbolicAddress
     HandleDebugTrap,
     HandleThrow,
     HandleTrap,
-    ReportOutOfBounds,
     ReportUnalignedAccess,
     ReportInt64JSCall,
     CallImport_Void,

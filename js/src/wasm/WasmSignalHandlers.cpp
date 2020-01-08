@@ -740,14 +740,7 @@ HandleOutOfBounds(CONTEXT* context, uint8_t* pc, uint8_t* faultingAddress,
 
     Trap trap;
     BytecodeOffset bytecode;
-    if (!segment->code().lookupTrap(pc, &trap, &bytecode)) {
-        
-        
-        
-        activation->startWasmTrap(Trap::OutOfBounds, 0, ToRegisterState(context));
-        *ppc = segment->outOfBoundsCode();
-        return true;
-    }
+    MOZ_ALWAYS_TRUE(segment->code().lookupTrap(pc, &trap, &bytecode));
 
     if (trap != Trap::OutOfBounds)
         return false;

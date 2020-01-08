@@ -289,13 +289,6 @@ WasmHandleTrap()
 }
 
 static void
-WasmReportOutOfBounds()
-{
-    JSContext* cx = TlsContext.get();
-    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr, JSMSG_WASM_OUT_OF_BOUNDS);
-}
-
-static void
 WasmReportUnalignedAccess()
 {
     JSContext* cx = TlsContext.get();
@@ -517,9 +510,6 @@ AddressOf(SymbolicAddress imm, ABIFunctionType* abiType)
       case SymbolicAddress::HandleTrap:
         *abiType = Args_General0;
         return FuncCast(WasmHandleTrap, *abiType);
-      case SymbolicAddress::ReportOutOfBounds:
-        *abiType = Args_General0;
-        return FuncCast(WasmReportOutOfBounds, *abiType);
       case SymbolicAddress::ReportUnalignedAccess:
         *abiType = Args_General0;
         return FuncCast(WasmReportUnalignedAccess, *abiType);
@@ -700,7 +690,6 @@ wasm::NeedsBuiltinThunk(SymbolicAddress sym)
       case SymbolicAddress::HandleDebugTrap:          
       case SymbolicAddress::HandleThrow:              
       case SymbolicAddress::HandleTrap:               
-      case SymbolicAddress::ReportOutOfBounds:        
       case SymbolicAddress::ReportUnalignedAccess:    
       case SymbolicAddress::CallImport_Void:          
       case SymbolicAddress::CallImport_I32:
