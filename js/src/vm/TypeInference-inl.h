@@ -437,7 +437,7 @@ ObjectGroup::hasUnanalyzedPreliminaryObjects()
 
 
 
-struct AutoEnterAnalysis
+struct MOZ_RAII AutoEnterAnalysis
 {
     
     
@@ -446,6 +446,7 @@ struct AutoEnterAnalysis
     
     gc::AutoSuppressGC suppressGC;
 
+    
     
     mozilla::Maybe<AutoClearTypeInferenceStateOnOOM> oom;
 
@@ -493,7 +494,7 @@ struct AutoEnterAnalysis
         this->zone = zone;
 
         if (!zone->types.activeAnalysis) {
-            MOZ_RELEASE_ASSERT(!zone->types.sweepingTypes);
+            oom.emplace(zone);
             zone->types.activeAnalysis = this;
         }
     }
@@ -1442,14 +1443,13 @@ ObjectGroup::getProperty(const AutoSweepObjectGroup& sweep, unsigned i)
 }
 
 inline
-AutoSweepObjectGroup::AutoSweepObjectGroup(ObjectGroup* group,
-                                           AutoClearTypeInferenceStateOnOOM* oom)
+AutoSweepObjectGroup::AutoSweepObjectGroup(ObjectGroup* group)
 #ifdef DEBUG
   : group_(group)
 #endif
 {
     if (group->needsSweep()) {
-        group->sweep(*this, oom);
+        group->sweep(*this);
     }
 }
 
@@ -1463,14 +1463,13 @@ AutoSweepObjectGroup::~AutoSweepObjectGroup()
 #endif
 
 inline
-AutoSweepTypeScript::AutoSweepTypeScript(JSScript* script,
-                                         AutoClearTypeInferenceStateOnOOM* oom)
+AutoSweepTypeScript::AutoSweepTypeScript(JSScript* script)
 #ifdef DEBUG
   : script_(script)
 #endif
 {
     if (script->typesNeedsSweep()) {
-        script->sweepTypes(*this, oom);
+        script->sweepTypes(*this);
     }
 }
 
