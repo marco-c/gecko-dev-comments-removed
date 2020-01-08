@@ -846,23 +846,10 @@ nsresult Accessible::HandleAccEvent(AccEvent* aEvent) {
         case nsIAccessibleEvent::EVENT_TEXT_INSERTED:
         case nsIAccessibleEvent::EVENT_TEXT_REMOVED: {
           AccTextChangeEvent* event = downcast_accEvent(aEvent);
-          const nsString& text = event->ModifiedText();
-#if defined(XP_WIN)
-          
-          
-          bool sync = text.Contains(L'\xfffc') &&
-                      nsAccUtils::IsARIALive(aEvent->GetAccessible());
-#endif
-          ipcDoc->SendTextChangeEvent(id, text, event->GetStartOffset(),
-                                      event->GetLength(),
-                                      event->IsTextInserted(),
-                                      event->IsFromUserInput()
-#if defined(XP_WIN)
-                                      
-                                      ,
-                                      sync
-#endif
-          );
+          ipcDoc->SendTextChangeEvent(
+              id, event->ModifiedText(), event->GetStartOffset(),
+              event->GetLength(), event->IsTextInserted(),
+              event->IsFromUserInput());
           break;
         }
         case nsIAccessibleEvent::EVENT_SELECTION:
