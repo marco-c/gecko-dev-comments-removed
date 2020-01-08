@@ -952,7 +952,7 @@ WebConsoleActor.prototype =
     const response = this.evaluateJS(request);
     response.resultID = resultID;
 
-    this._waitForHelperResultAndSend(response).catch(e =>
+    this._waitForResultAndSend(response).catch(e =>
       DevToolsUtils.reportException(
         "evaluateJSAsync",
         Error(`Encountered error while waiting for Helper Result: ${e}`)
@@ -975,14 +975,31 @@ WebConsoleActor.prototype =
 
 
 
-
-  _waitForHelperResultAndSend: async function(response) {
+  _waitForResultAndSend: async function(response) {
     
     if (
-      response.helperResult &&
-      typeof response.helperResult.then == "function"
+      response.helperResult && typeof response.helperResult.then == "function"
     ) {
       response.helperResult = await response.helperResult;
+    } else if (response.awaitResult && typeof response.awaitResult.then === "function") {
+      let result;
+      try {
+        result = await response.awaitResult;
+      } catch (e) {
+        
+        
+        response.topLevelAwaitRejected = true;
+      }
+
+      if (!response.topLevelAwaitRejected) {
+        
+        
+        const dbgResult = this.makeDebuggeeValue(result);
+        response.result = this.createValueGrip(dbgResult);
+      }
+
+      
+      delete response.awaitResult;
     }
 
     
@@ -1010,21 +1027,30 @@ WebConsoleActor.prototype =
       selectedNodeActor: request.selectedNodeActor,
       selectedObjectActor: request.selectedObjectActor,
     };
+    const {mapped} = request;
 
     const evalInfo = evalWithDebugger(input, evalOptions, this);
     const evalResult = evalInfo.result;
     const helperResult = evalInfo.helperResult;
 
     let result, errorDocURL, errorMessage, errorNotes = null, errorGrip = null,
-      frame = null;
+      frame = null, awaitResult;
     if (evalResult) {
       if ("return" in evalResult) {
         result = evalResult.return;
+        if (
+          mapped &&
+          mapped.await &&
+          result &&
+          result.class === "Promise" &&
+          typeof result.unsafeDereference === "function"
+        ) {
+          awaitResult = result.unsafeDereference();
+        }
       } else if ("yield" in evalResult) {
         result = evalResult.yield;
       } else if ("throw" in evalResult) {
         const error = evalResult.throw;
-
         errorGrip = this.createValueGrip(error);
 
         errorMessage = String(error);
@@ -1100,18 +1126,31 @@ WebConsoleActor.prototype =
     
     
     let resultGrip;
-    try {
-      resultGrip = this.createValueGrip(result);
-    } catch (e) {
-      errorMessage = e;
+    if (!awaitResult) {
+      try {
+        resultGrip = this.createValueGrip(result);
+      } catch (e) {
+        errorMessage = e;
+      }
     }
 
-    this._lastConsoleInputEvaluation = result;
+    if (!awaitResult) {
+      this._lastConsoleInputEvaluation = result;
+    } else {
+      
+      
+      
+      
+      awaitResult.then(res => {
+        this._lastConsoleInputEvaluation = this.makeDebuggeeValue(res);
+      });
+    }
 
     return {
       from: this.actorID,
       input: input,
       result: resultGrip,
+      awaitResult,
       timestamp: timestamp,
       exception: errorGrip,
       exceptionMessage: this._createStringGrip(errorMessage),

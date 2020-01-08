@@ -440,20 +440,8 @@ class JSTerm extends Component {
 
 
 
-
-
-
-
-  async _executeResultCallback(response, options = {}) {
+  async _executeResultCallback(response) {
     if (!this.hud) {
-      return null;
-    }
-
-    
-    
-    
-    
-    if (options && options.mapped && options.mapped.await) {
       return null;
     }
 
@@ -461,6 +449,13 @@ class JSTerm extends Component {
       console.error("Evaluation error " + response.error + ": " + response.message);
       return null;
     }
+
+    
+    
+    if (response.topLevelAwaitRejected === true) {
+      return null;
+    }
+
     let errorMessage = response.exceptionMessage;
 
     
@@ -580,6 +575,7 @@ class JSTerm extends Component {
     const options = {
       frame: this.SELECTED_FRAME,
       selectedNodeActor,
+      mapped: mappedExpressionRes ? mappedExpressionRes.mapped : null
     };
 
     
@@ -587,12 +583,12 @@ class JSTerm extends Component {
     const onEvaluated = this.requestEvaluation(executeString, options)
       .then(res => res, res => res);
     const response = await onEvaluated;
-    return this._executeResultCallback(response, {
-      mapped: mappedExpressionRes ? mappedExpressionRes.mapped : null
-    });
+    return this._executeResultCallback(response);
   }
 
   
+
+
 
 
 
@@ -628,14 +624,10 @@ class JSTerm extends Component {
       frameActor = this.getFrameActor(options.frame);
     }
 
-    const evalOptions = {
-      bindObjectActor: options.bindObjectActor,
+    return this.webConsoleClient.evaluateJSAsync(str, null, {
       frameActor,
-      selectedNodeActor: options.selectedNodeActor,
-      selectedObjectActor: options.selectedObjectActor,
-    };
-
-    return this.webConsoleClient.evaluateJSAsync(str, null, evalOptions);
+      ...options,
+    });
   }
 
   
