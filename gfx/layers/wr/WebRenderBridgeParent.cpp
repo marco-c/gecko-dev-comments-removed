@@ -333,6 +333,7 @@ WebRenderBridgeParent::WebRenderBridgeParent(CompositorBridgeParentBase* aCompos
   , mDestroyed(false)
   , mReceivedDisplayList(false)
   , mIsFirstPaint(true)
+  , mSkippedComposite(false)
 {
   MOZ_ASSERT(mAsyncImageManager);
   MOZ_ASSERT(mAnimStorage);
@@ -354,6 +355,7 @@ WebRenderBridgeParent::WebRenderBridgeParent(const wr::PipelineId& aPipelineId)
   , mDestroyed(true)
   , mReceivedDisplayList(false)
   , mIsFirstPaint(false)
+  , mSkippedComposite(false)
 {
 }
 
@@ -994,7 +996,7 @@ WebRenderBridgeParent::RecvSetDisplayList(const gfx::IntSize& aSize,
       txn.SetWindowParameters(widgetSize, docRect);
     }
     gfx::Color clearColor(0.f, 0.f, 0.f, 0.f);
-    txn.SetDisplayList(clearColor, wrEpoch, LayerSize(aSize.width, aSize.height),
+    txn.SetDisplayList(clearColor, wrEpoch, LayoutDeviceSize(aSize.width, aSize.height),
                        mPipelineId, aContentSize,
                        dlDesc, dlData);
 
@@ -1233,7 +1235,7 @@ WebRenderBridgeParent::ProcessWebRenderParentCommands(const InfallibleTArray<Web
       case WebRenderParentCommand::TOpUpdateAsyncImagePipeline: {
         const OpUpdateAsyncImagePipeline& op = cmd.get_OpUpdateAsyncImagePipeline();
         mAsyncImageManager->UpdateAsyncImagePipeline(op.pipelineId(),
-                                                     op.scBounds(),
+                                                     op.scSize(),
                                                      op.scTransform(),
                                                      op.scaleToSize(),
                                                      op.filter(),
@@ -1777,6 +1779,15 @@ WebRenderBridgeParent::SampleAnimations(nsTArray<wr::WrOpacityProperty>& aOpacit
 }
 
 void
+WebRenderBridgeParent::CompositeIfNeeded()
+{
+  if (mSkippedComposite) {
+    mSkippedComposite = false;
+    CompositeToTarget(nullptr, nullptr);
+  }
+}
+
+void
 WebRenderBridgeParent::CompositeToTarget(gfx::DrawTarget* aTarget, const gfx::IntRect* aRect)
 {
   
@@ -1793,9 +1804,9 @@ WebRenderBridgeParent::CompositeToTarget(gfx::DrawTarget* aTarget, const gfx::In
     return;
   }
 
-  if (wr::RenderThread::Get()->TooManyPendingFrames(mApi->GetId())) {
+  if (mSkippedComposite || wr::RenderThread::Get()->TooManyPendingFrames(mApi->GetId())) {
     
-    mCompositorScheduler->ScheduleComposition();
+    mSkippedComposite = true;
     mPreviousFrameTimeStamp = TimeStamp();
 
     
