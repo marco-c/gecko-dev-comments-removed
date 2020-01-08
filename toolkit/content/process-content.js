@@ -52,7 +52,7 @@ let ProcessObserver = {
 
         let registeredURLs = Services.cpmm.sharedData.get("RemotePageManager:urls");
 
-        if (!registeredURLs.has(url))
+        if (!registeredURLs || !registeredURLs.has(url))
           return;
 
         
