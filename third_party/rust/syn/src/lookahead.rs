@@ -57,11 +57,6 @@ use token::Token;
 
 
 
-
-
-
-
-
 pub struct Lookahead1<'a> {
     scope: Span,
     cursor: Cursor<'a>,
@@ -114,11 +109,13 @@ impl<'a> Lookahead1<'a> {
     pub fn error(self) -> Error {
         let comparisons = self.comparisons.borrow();
         match comparisons.len() {
-            0 => if self.cursor.eof() {
-                Error::new(self.scope, "unexpected end of input")
-            } else {
-                Error::new(self.cursor.span(), "unexpected token")
-            },
+            0 => {
+                if self.cursor.eof() {
+                    Error::new(self.scope, "unexpected end of input")
+                } else {
+                    Error::new(self.cursor.span(), "unexpected token")
+                }
+            }
             1 => {
                 let message = format!("expected {}", comparisons[0]);
                 error::new_at(self.scope, self.cursor, message)

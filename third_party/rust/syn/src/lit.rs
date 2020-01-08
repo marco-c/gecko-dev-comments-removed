@@ -1,11 +1,3 @@
-
-
-
-
-
-
-
-
 use proc_macro2::{Literal, Span};
 use std::str;
 
@@ -123,18 +115,6 @@ impl LitStr {
         value::parse_lit_str(&self.token.to_string())
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -656,20 +636,24 @@ mod value {
                     _ => {}
                 },
                 b'\'' => return Lit::Char(LitChar { token: token }),
-                b'0'...b'9' => if number_is_int(&value) {
-                    return Lit::Int(LitInt { token: token });
-                } else if number_is_float(&value) {
-                    return Lit::Float(LitFloat { token: token });
-                } else {
-                    
-                    return Lit::Verbatim(LitVerbatim { token: token });
-                },
-                _ => if value == "true" || value == "false" {
-                    return Lit::Bool(LitBool {
-                        value: value == "true",
-                        span: token.span(),
-                    });
-                },
+                b'0'...b'9' => {
+                    if number_is_int(&value) {
+                        return Lit::Int(LitInt { token: token });
+                    } else if number_is_float(&value) {
+                        return Lit::Float(LitFloat { token: token });
+                    } else {
+                        
+                        return Lit::Verbatim(LitVerbatim { token: token });
+                    }
+                }
+                _ => {
+                    if value == "true" || value == "false" {
+                        return Lit::Bool(LitBool {
+                            value: value == "true",
+                            span: token.span(),
+                        });
+                    }
+                }
             }
 
             panic!("Unrecognized literal: {}", value);
@@ -954,12 +938,13 @@ mod value {
         let mut ch = 0;
         let b0 = byte(s, 0);
         let b1 = byte(s, 1);
-        ch += 0x10 * match b0 {
-            b'0'...b'9' => b0 - b'0',
-            b'a'...b'f' => 10 + (b0 - b'a'),
-            b'A'...b'F' => 10 + (b0 - b'A'),
-            _ => panic!("unexpected non-hex character after \\x"),
-        };
+        ch += 0x10
+            * match b0 {
+                b'0'...b'9' => b0 - b'0',
+                b'a'...b'f' => 10 + (b0 - b'a'),
+                b'A'...b'F' => 10 + (b0 - b'A'),
+                _ => panic!("unexpected non-hex character after \\x"),
+            };
         ch += match b1 {
             b'0'...b'9' => b1 - b'0',
             b'a'...b'f' => 10 + (b1 - b'a'),

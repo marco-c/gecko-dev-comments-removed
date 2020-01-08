@@ -1,11 +1,3 @@
-
-
-
-
-
-
-
-
 #[cfg(feature = "fold")]
 pub mod fold {
     use fold::Fold;

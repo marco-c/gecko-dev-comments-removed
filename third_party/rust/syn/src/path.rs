@@ -1,11 +1,3 @@
-
-
-
-
-
-
-
-
 use super::*;
 use punctuated::Punctuated;
 
@@ -91,6 +83,13 @@ impl PathArguments {
             PathArguments::None => true,
             PathArguments::AngleBracketed(ref bracketed) => bracketed.args.is_empty(),
             PathArguments::Parenthesized(_) => false,
+        }
+    }
+
+    fn is_none(&self) -> bool {
+        match *self {
+            PathArguments::None => true,
+            PathArguments::AngleBracketed(_) | PathArguments::Parenthesized(_) => false,
         }
     }
 }
@@ -385,11 +384,6 @@ pub mod parsing {
         
         
         
-        
-        
-        
-        
-        
         pub fn parse_mod_style(input: ParseStream) -> Result<Self> {
             Ok(Path {
                 leading_colon: input.parse()?,
@@ -421,6 +415,26 @@ pub mod parsing {
                     segments
                 },
             })
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        pub fn is_ident<I>(&self, ident: I) -> bool
+        where
+            Ident: PartialEq<I>,
+        {
+            self.leading_colon.is_none()
+                && self.segments.len() == 1
+                && self.segments[0].arguments.is_none()
+                && self.segments[0].ident == ident
         }
 
         fn parse_helper(input: ParseStream, expr_style: bool) -> Result<Self> {

@@ -222,40 +222,7 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#![doc(html_root_url = "https://docs.rs/syn/0.15.7")]
+#![doc(html_root_url = "https://docs.rs/syn/0.15.24")]
 #![cfg_attr(feature = "cargo-clippy", allow(renamed_and_removed_lints))]
 #![cfg_attr(feature = "cargo-clippy", deny(clippy, clippy_pedantic))]
 
@@ -265,15 +232,14 @@
         block_in_if_condition_stmt,
         const_static_lifetime,
         cyclomatic_complexity,
+        deprecated_cfg_attr,
         doc_markdown,
         eval_order_dependence,
         large_enum_variant,
-        match_bool,
-        never_loop,
-        redundant_closure,
         needless_pass_by_value,
+        never_loop,
         redundant_field_names,
-        trivially_copy_pass_by_ref
+        too_many_arguments,
     )
 )]
 
@@ -284,15 +250,14 @@
         cast_possible_wrap,
         empty_enum,
         if_not_else,
-        indexing_slicing,
         items_after_statements,
+        module_name_repetitions,
         shadow_unrelated,
         similar_names,
         single_match_else,
-        stutter,
         unseparated_literal_suffix,
         use_self,
-        used_underscore_binding
+        used_underscore_binding,
     )
 )]
 
@@ -325,7 +290,7 @@ pub use ident::Ident;
 #[cfg(any(feature = "full", feature = "derive"))]
 mod attr;
 #[cfg(any(feature = "full", feature = "derive"))]
-pub use attr::{AttrStyle, Attribute, Meta, MetaList, MetaNameValue, NestedMeta};
+pub use attr::{AttrStyle, Attribute, AttributeArgs, Meta, MetaList, MetaNameValue, NestedMeta};
 
 #[cfg(any(feature = "full", feature = "derive"))]
 mod data;
@@ -362,10 +327,7 @@ pub use generics::{
     PredicateLifetime, PredicateType, TraitBound, TraitBoundModifier, TypeParam, TypeParamBound,
     WhereClause, WherePredicate,
 };
-#[cfg(all(
-    any(feature = "full", feature = "derive"),
-    feature = "printing"
-))]
+#[cfg(all(any(feature = "full", feature = "derive"), feature = "printing"))]
 pub use generics::{ImplGenerics, Turbofish, TypeGenerics};
 
 #[cfg(feature = "full")]
@@ -435,16 +397,22 @@ pub mod buffer;
 #[cfg(feature = "parsing")]
 pub mod ext;
 pub mod punctuated;
-#[cfg(all(
-    any(feature = "full", feature = "derive"),
-    feature = "extra-traits"
-))]
+#[cfg(all(any(feature = "full", feature = "derive"), feature = "extra-traits"))]
 mod tt;
 
 
 #[cfg(feature = "parsing")]
 #[doc(hidden)]
 pub mod parse_quote;
+
+
+#[cfg(all(
+    not(all(target_arch = "wasm32", target_os = "unknown")),
+    feature = "parsing",
+    feature = "proc-macro"
+))]
+#[doc(hidden)]
+pub mod parse_macro_input;
 
 #[cfg(all(feature = "parsing", feature = "printing"))]
 pub mod spanned;
@@ -580,11 +548,10 @@ pub mod parse;
 
 mod span;
 
-#[cfg(all(
-    any(feature = "full", feature = "derive"),
-    feature = "printing"
-))]
+#[cfg(all(any(feature = "full", feature = "derive"), feature = "printing"))]
 mod print;
+
+mod thread;
 
 
 
@@ -594,15 +561,8 @@ struct private;
 
 
 
-#[cfg(feature = "parsing")]
 mod error;
-#[cfg(feature = "parsing")]
-use error::Error;
-
-
-
-
-
+pub use error::{Error, Result};
 
 
 
@@ -650,7 +610,7 @@ use error::Error;
     feature = "parsing",
     feature = "proc-macro"
 ))]
-pub fn parse<T: parse::Parse>(tokens: proc_macro::TokenStream) -> Result<T, Error> {
+pub fn parse<T: parse::Parse>(tokens: proc_macro::TokenStream) -> Result<T> {
     parse::Parser::parse(T::parse, tokens)
 }
 
@@ -667,7 +627,7 @@ pub fn parse<T: parse::Parse>(tokens: proc_macro::TokenStream) -> Result<T, Erro
 
 
 #[cfg(feature = "parsing")]
-pub fn parse2<T: parse::Parse>(tokens: proc_macro2::TokenStream) -> Result<T, Error> {
+pub fn parse2<T: parse::Parse>(tokens: proc_macro2::TokenStream) -> Result<T> {
     parse::Parser::parse2(T::parse, tokens)
 }
 
@@ -696,9 +656,8 @@ pub fn parse2<T: parse::Parse>(tokens: proc_macro2::TokenStream) -> Result<T, Er
 
 
 
-
 #[cfg(feature = "parsing")]
-pub fn parse_str<T: parse::Parse>(s: &str) -> Result<T, Error> {
+pub fn parse_str<T: parse::Parse>(s: &str) -> Result<T> {
     parse::Parser::parse_str(T::parse, s)
 }
 
@@ -741,7 +700,7 @@ pub fn parse_str<T: parse::Parse>(s: &str) -> Result<T, Error> {
 
 
 #[cfg(all(feature = "parsing", feature = "full"))]
-pub fn parse_file(mut content: &str) -> Result<File, Error> {
+pub fn parse_file(mut content: &str) -> Result<File> {
     
     const BOM: &'static str = "\u{feff}";
     if content.starts_with(BOM) {
@@ -762,59 +721,4 @@ pub fn parse_file(mut content: &str) -> Result<File, Error> {
     let mut file: File = parse_str(content)?;
     file.shebang = shebang;
     Ok(file)
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[cfg(feature = "proc-macro")]
-#[macro_export]
-macro_rules! parse_macro_input {
-    ($tokenstream:ident as $ty:ty) => {
-        match $crate::parse::<$ty>($tokenstream) {
-            $crate::export::Ok(data) => data,
-            $crate::export::Err(err) => {
-                return $crate::export::TokenStream::from(err.to_compile_error());
-            }
-        };
-    };
 }

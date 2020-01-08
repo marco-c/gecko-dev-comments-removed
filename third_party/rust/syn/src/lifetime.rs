@@ -1,11 +1,3 @@
-
-
-
-
-
-
-
-
 use std::cmp::Ordering;
 use std::fmt::{self, Display};
 use std::hash::{Hash, Hasher};
@@ -37,9 +29,6 @@ pub struct Lifetime {
 }
 
 impl Lifetime {
-    
-    
-    
     
     
     

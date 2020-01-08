@@ -1,11 +1,3 @@
-
-
-
-
-
-
-
-
 ast_enum! {
     /// A binary operator: `+`, `+=`, `&`.
     ///

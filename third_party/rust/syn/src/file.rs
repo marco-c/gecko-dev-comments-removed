@@ -1,11 +1,3 @@
-
-
-
-
-
-
-
-
 use super::*;
 
 ast_struct! {
@@ -18,9 +10,7 @@ ast_struct! {
     /// Parse a Rust source file into a `syn::File` and print out a debug
     /// representation of the syntax tree.
     ///
-    /// ```
-    /// # extern crate syn;
-    /// #
+    /// ```edition2018
     /// use std::env;
     /// use std::fs::File;
     /// use std::io::Read;

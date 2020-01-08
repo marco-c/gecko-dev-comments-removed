@@ -1,6 +1,6 @@
 
 
-#![cfg_attr(feature = "cargo-clippy", allow(match_same_arms))]
+#![cfg_attr(feature = "cargo-clippy", allow(trivially_copy_pass_by_ref))]
 #[cfg(any(feature = "full", feature = "derive"))]
 use gen::helper::visit::*;
 use proc_macro2::Span;

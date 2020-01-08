@@ -188,16 +188,8 @@
 
 
 
-
-
-
-
-
-
-
-
 use std::cell::Cell;
-use std::fmt::Display;
+use std::fmt::{self, Debug, Display};
 use std::marker::PhantomData;
 use std::mem;
 use std::ops::Deref;
@@ -242,6 +234,19 @@ pub type ParseStream<'a> = &'a ParseBuffer<'a>;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 pub struct ParseBuffer<'a> {
     scope: Span,
     
@@ -267,6 +272,29 @@ impl<'a> Drop for ParseBuffer<'a> {
         }
     }
 }
+
+impl<'a> Display for ParseBuffer<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        Display::fmt(&self.cursor().token_stream(), f)
+    }
+}
+
+impl<'a> Debug for ParseBuffer<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        Debug::fmt(&self.cursor().token_stream(), f)
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -358,7 +386,8 @@ fn skip(input: ParseStream) -> bool {
             } else {
                 Ok((false, *cursor))
             }
-        }).unwrap()
+        })
+        .unwrap()
 }
 
 impl private {
@@ -388,11 +417,6 @@ impl<'a> ParseBuffer<'a> {
         T::parse(self)
     }
 
-    
-    
-    
-    
-    
     
     
     
@@ -504,21 +528,11 @@ impl<'a> ParseBuffer<'a> {
     
     
     
-    
-    
-    
-    
-    
     pub fn peek<T: Peek>(&self, token: T) -> bool {
         let _ = token;
         T::Token::peek(self.cursor())
     }
 
-    
-    
-    
-    
-    
     
     
     
@@ -610,10 +624,6 @@ impl<'a> ParseBuffer<'a> {
     
     
     
-    
-    
-    
-    
     pub fn parse_terminated<T, P: Parse>(
         &self,
         parser: fn(ParseStream) -> Result<T>,
@@ -658,19 +668,10 @@ impl<'a> ParseBuffer<'a> {
     
     
     
-    
-    
-    
-    
     pub fn is_empty(&self) -> bool {
         self.cursor().eof()
     }
 
-    
-    
-    
-    
-    
     
     
     
@@ -836,11 +837,6 @@ impl<'a> ParseBuffer<'a> {
     
     
     
-    
-    
-    
-    
-    
     pub fn fork(&self) -> Self {
         ParseBuffer {
             scope: self.scope,
@@ -880,15 +876,21 @@ impl<'a> ParseBuffer<'a> {
     
     
     
-    
-    
-    
-    
-    
     pub fn error<T: Display>(&self, message: T) -> Error {
         error::new_at(self.scope, self.cursor(), message)
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -1047,8 +1049,14 @@ pub trait Parser: Sized {
     type Output;
 
     
+    
+    
+    
     fn parse2(self, tokens: TokenStream) -> Result<Self::Output>;
 
+    
+    
+    
     
     
     
@@ -1061,6 +1069,9 @@ pub trait Parser: Sized {
         self.parse2(proc_macro2::TokenStream::from(tokens))
     }
 
+    
+    
+    
     
     
     

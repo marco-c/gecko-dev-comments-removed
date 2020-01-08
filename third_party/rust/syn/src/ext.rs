@@ -39,11 +39,6 @@ pub trait IdentExt: Sized + private::Sealed {
     
     
     
-    
-    
-    
-    
-    
     fn parse_any(input: ParseStream) -> Result<Self>;
 }
 

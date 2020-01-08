@@ -43,10 +43,13 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/proc-macro2/0.4.9")]
-#![cfg_attr(feature = "nightly", feature(proc_macro_raw_ident, proc_macro_span))]
+#![doc(html_root_url = "https://docs.rs/proc-macro2/0.4.24")]
+#![cfg_attr(
+    super_unstable,
+    feature(proc_macro_raw_ident, proc_macro_span, proc_macro_def_site)
+)]
 
-#[cfg(feature = "proc-macro")]
+#[cfg(use_proc_macro)]
 extern crate proc_macro;
 extern crate unicode_xid;
 
@@ -55,6 +58,8 @@ use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::iter::FromIterator;
 use std::marker;
+#[cfg(procmacro2_semver_exempt)]
+use std::path::PathBuf;
 use std::rc::Rc;
 use std::str::FromStr;
 
@@ -62,10 +67,10 @@ use std::str::FromStr;
 mod strnom;
 mod stable;
 
-#[cfg(not(feature = "nightly"))]
+#[cfg(not(wrap_proc_macro))]
 use stable as imp;
 #[path = "unstable.rs"]
-#[cfg(feature = "nightly")]
+#[cfg(wrap_proc_macro)]
 mod imp;
 
 
@@ -146,14 +151,14 @@ impl FromStr for TokenStream {
     }
 }
 
-#[cfg(feature = "proc-macro")]
+#[cfg(use_proc_macro)]
 impl From<proc_macro::TokenStream> for TokenStream {
     fn from(inner: proc_macro::TokenStream) -> TokenStream {
         TokenStream::_new(inner.into())
     }
 }
 
-#[cfg(feature = "proc-macro")]
+#[cfg(use_proc_macro)]
 impl From<TokenStream> for proc_macro::TokenStream {
     fn from(inner: TokenStream) -> proc_macro::TokenStream {
         inner.inner.into()
@@ -166,10 +171,22 @@ impl Extend<TokenTree> for TokenStream {
     }
 }
 
+impl Extend<TokenStream> for TokenStream {
+    fn extend<I: IntoIterator<Item = TokenStream>>(&mut self, streams: I) {
+        self.inner
+            .extend(streams.into_iter().map(|stream| stream.inner))
+    }
+}
+
 
 impl FromIterator<TokenTree> for TokenStream {
     fn from_iter<I: IntoIterator<Item = TokenTree>>(streams: I) -> Self {
         TokenStream::_new(streams.into_iter().collect())
+    }
+}
+impl FromIterator<TokenStream> for TokenStream {
+    fn from_iter<I: IntoIterator<Item = TokenStream>>(streams: I) -> Self {
+        TokenStream::_new(streams.into_iter().map(|i| i.inner).collect())
     }
 }
 
@@ -197,18 +214,24 @@ impl fmt::Debug for LexError {
 }
 
 
-#[cfg(procmacro2_semver_exempt)]
-pub use imp::FileName;
-
-
 
 
 #[cfg(procmacro2_semver_exempt)]
 #[derive(Clone, PartialEq, Eq)]
-pub struct SourceFile(imp::SourceFile);
+pub struct SourceFile {
+    inner: imp::SourceFile,
+    _marker: marker::PhantomData<Rc<()>>,
+}
 
 #[cfg(procmacro2_semver_exempt)]
 impl SourceFile {
+    fn _new(inner: imp::SourceFile) -> Self {
+        SourceFile {
+            inner: inner,
+            _marker: marker::PhantomData,
+        }
+    }
+
     
     
     
@@ -222,28 +245,21 @@ impl SourceFile {
     
     
     
-    pub fn path(&self) -> &FileName {
-        self.0.path()
+    pub fn path(&self) -> PathBuf {
+        self.inner.path()
     }
 
     
     
     pub fn is_real(&self) -> bool {
-        self.0.is_real()
-    }
-}
-
-#[cfg(procmacro2_semver_exempt)]
-impl AsRef<FileName> for SourceFile {
-    fn as_ref(&self) -> &FileName {
-        self.0.path()
+        self.inner.is_real()
     }
 }
 
 #[cfg(procmacro2_semver_exempt)]
 impl fmt::Debug for SourceFile {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.0.fmt(f)
+        self.inner.fmt(f)
     }
 }
 
@@ -318,7 +334,8 @@ impl Span {
     }
 
     
-    #[cfg(all(feature = "nightly", feature = "proc-macro"))]
+    #[doc(hidden)]
+    #[cfg(any(feature = "nightly", super_unstable))]
     pub fn unstable(self) -> proc_macro::Span {
         self.inner.unstable()
     }
@@ -328,7 +345,7 @@ impl Span {
     
     #[cfg(procmacro2_semver_exempt)]
     pub fn source_file(&self) -> SourceFile {
-        SourceFile(self.inner.source_file())
+        SourceFile::_new(self.inner.source_file())
     }
 
     
@@ -486,9 +503,7 @@ impl fmt::Debug for TokenTree {
 
 #[derive(Clone)]
 pub struct Group {
-    delimiter: Delimiter,
-    stream: TokenStream,
-    span: Span,
+    inner: imp::Group,
 }
 
 
@@ -511,6 +526,18 @@ pub enum Delimiter {
 }
 
 impl Group {
+    fn _new(inner: imp::Group) -> Self {
+        Group {
+            inner: inner,
+        }
+    }
+
+    fn _new_stable(inner: stable::Group) -> Self {
+        Group {
+            inner: inner.into(),
+        }
+    }
+
     
     
     
@@ -518,15 +545,13 @@ impl Group {
     
     pub fn new(delimiter: Delimiter, stream: TokenStream) -> Group {
         Group {
-            delimiter: delimiter,
-            stream: stream,
-            span: Span::call_site(),
+            inner: imp::Group::new(delimiter, stream.inner),
         }
     }
 
     
     pub fn delimiter(&self) -> Delimiter {
-        self.delimiter
+        self.inner.delimiter()
     }
 
     
@@ -534,13 +559,40 @@ impl Group {
     
     
     pub fn stream(&self) -> TokenStream {
-        self.stream.clone()
+        TokenStream::_new(self.inner.stream())
     }
 
     
     
+    
+    
+    
+    
+    
     pub fn span(&self) -> Span {
-        self.span
+        Span::_new(self.inner.span())
+    }
+
+    
+    
+    
+    
+    
+    
+    #[cfg(procmacro2_semver_exempt)]
+    pub fn span_open(&self) -> Span {
+        Span::_new(self.inner.span_open())
+    }
+
+    
+    
+    
+    
+    
+    
+    #[cfg(procmacro2_semver_exempt)]
+    pub fn span_close(&self) -> Span {
+        Span::_new(self.inner.span_close())
     }
 
     
@@ -550,7 +602,7 @@ impl Group {
     
     
     pub fn set_span(&mut self, span: Span) {
-        self.span = span;
+        self.inner.set_span(span.inner)
     }
 }
 
@@ -558,30 +610,14 @@ impl Group {
 
 
 impl fmt::Display for Group {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let (left, right) = match self.delimiter {
-            Delimiter::Parenthesis => ("(", ")"),
-            Delimiter::Brace => ("{", "}"),
-            Delimiter::Bracket => ("[", "]"),
-            Delimiter::None => ("", ""),
-        };
-
-        f.write_str(left)?;
-        self.stream.fmt(f)?;
-        f.write_str(right)?;
-
-        Ok(())
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Display::fmt(&self.inner, formatter)
     }
 }
 
 impl fmt::Debug for Group {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        let mut debug = fmt.debug_struct("Group");
-        debug.field("delimiter", &self.delimiter);
-        debug.field("stream", &self.stream);
-        #[cfg(procmacro2_semver_exempt)]
-        debug.field("span", &self.span);
-        debug.finish()
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Debug::fmt(&self.inner, formatter)
     }
 }
 
@@ -811,7 +847,7 @@ impl Ident {
 
 impl PartialEq for Ident {
     fn eq(&self, other: &Ident) -> bool {
-        self.to_string() == other.to_string()
+        self.inner == other.inner
     }
 }
 
@@ -820,7 +856,7 @@ where
     T: ?Sized + AsRef<str>,
 {
     fn eq(&self, other: &T) -> bool {
-        self.to_string() == other.as_ref()
+        self.inner == other
     }
 }
 
@@ -938,6 +974,12 @@ impl Literal {
         isize_suffixed => isize,
     }
 
+    #[cfg(u128)]
+    suffixed_int_literals! {
+        u128_suffixed => u128,
+        i128_suffixed => i128,
+    }
+
     unsuffixed_int_literals! {
         u8_unsuffixed => u8,
         u16_unsuffixed => u16,
@@ -949,6 +991,12 @@ impl Literal {
         i32_unsuffixed => i32,
         i64_unsuffixed => i64,
         isize_unsuffixed => isize,
+    }
+
+    #[cfg(u128)]
+    unsuffixed_int_literals! {
+        u128_unsuffixed => u128,
+        i128_unsuffixed => i128,
     }
 
     pub fn f64_unsuffixed(f: f64) -> Literal {
