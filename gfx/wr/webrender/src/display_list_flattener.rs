@@ -263,21 +263,36 @@ impl<'a> DisplayListFlattener<'a> {
         
 
         
+        let mut first_index = None;
         let mut main_scroll_root = None;
 
-        let first_index = primitives.iter().position(|instance| {
+        for (i, instance) in primitives.iter().enumerate() {
             let scroll_root = self.find_scroll_root(
                 instance.spatial_node_index,
             );
 
-            if scroll_root == ROOT_SPATIAL_NODE_INDEX {
-                false
-            } else {
-                debug_assert!(main_scroll_root.is_none());
-                main_scroll_root = Some(scroll_root);
-                true
+            if scroll_root != ROOT_SPATIAL_NODE_INDEX {
+                
+                
+                
+                
+                
+                match main_scroll_root {
+                    Some(main_scroll_root) => {
+                        if main_scroll_root != scroll_root {
+                            return;
+                        }
+                    }
+                    None => {
+                        main_scroll_root = Some(scroll_root);
+                    }
+                }
+
+                if first_index.is_none() {
+                    first_index = Some(i);
+                }
             }
-        });
+        }
 
         let main_scroll_root = match main_scroll_root {
             Some(main_scroll_root) => main_scroll_root,
