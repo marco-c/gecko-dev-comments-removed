@@ -14,6 +14,8 @@ const { setTimeout } = require("resource://gre/modules/Timer.jsm");
 const { PromiseUtils } = require("resource://gre/modules/PromiseUtils.jsm");
 const { OS } = require("resource://gre/modules/osfile.jsm");
 const { Services } = require("resource://gre/modules/Services.jsm");
+loader.lazyRequireGetter(this, "check",
+                         "devtools/shared/adb/adb-running-checker", true);
 
 let ready = false;
 let didRunInitially = false;
@@ -57,7 +59,7 @@ const ADB = {
         resolve();
       };
 
-      let isAdbRunning = await require("./adb-running-checker").check();
+      let isAdbRunning = await check();
       if (isAdbRunning) {
         this.didRunInitially = false;
         console.log("Found ADB process running, not restarting");
@@ -111,6 +113,17 @@ const ADB = {
       return; 
     }
     await this.kill(sync);
+    
+    
+    
+    
+    
+    while (true) {
+      const isAdbRunning = await check();
+      if (!isAdbRunning) {
+        break;
+      }
+    }
   },
 
   
