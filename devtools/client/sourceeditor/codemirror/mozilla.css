@@ -286,10 +286,3 @@
 .CodeMirror-scrollbar-filler, .CodeMirror-gutter-filler {
   -moz-appearance: scrollcorner;
 }
-
-
-
-
-.CodeMirror-scroll {
-  contain: layout size;
-}
