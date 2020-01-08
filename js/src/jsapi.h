@@ -3403,25 +3403,6 @@ extern JS_PUBLIC_API bool SetForEach(JSContext* cx, HandleObject obj,
 
 
 
-extern JS_PUBLIC_API JSObject* JS_NewDateObject(JSContext* cx, int year,
-                                                int mon, int mday, int hour,
-                                                int min, int sec);
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API bool JS_ObjectIsDate(JSContext* cx, JS::HandleObject obj,
-                                          bool* isDate);
-
-
-
-
-
 
 #define JSREG_FOLD 0x01u      /* fold uppercase to lowercase */
 #define JSREG_GLOB 0x02u      /* global exec, creates array of matches */
