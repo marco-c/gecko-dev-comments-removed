@@ -261,6 +261,8 @@ void MessagePumpForUI::WaitForWork() {
   if (delay < 0)  
     delay = INFINITE;
 
+  AUTO_PROFILER_THREAD_SLEEP;
+
   mozilla::widget::WinUtils::WaitForMessage(delay);
 }
 
