@@ -61,7 +61,7 @@ void VRLayerChild::SubmitFrame(const VRDisplayInfo& aDisplayInfo) {
 
 
 
-  if (!mThisFrameTexture || aDisplayInfo.mDisplayState.mLastSubmittedFrameId ==
+  if (!mThisFrameTexture || aDisplayInfo.mDisplayState.lastSubmittedFrameId ==
                                 mLastSubmittedFrameId) {
     mThisFrameTexture = mCanvasElement->GetVRFrame();
   }

@@ -255,29 +255,29 @@ struct VRDisplayState {
   bool shutdown;
   
   
-  uint32_t mMinRestartInterval;
-  char mDisplayName[kVRDisplayNameMaxLen];
+  uint32_t minRestartInterval;
+  char displayName[kVRDisplayNameMaxLen];
   
   
   
   
-  uint64_t mEightCC;
-  VRDisplayCapabilityFlags mCapabilityFlags;
-  VRFieldOfView mEyeFOV[VRDisplayState::NumEyes];
-  Point3D_POD mEyeTranslation[VRDisplayState::NumEyes];
-  IntSize_POD mEyeResolution;
-  bool mSuppressFrames;
-  bool mIsConnected;
-  bool mIsMounted;
-  FloatSize_POD mStageSize;
+  uint64_t eightCC;
+  VRDisplayCapabilityFlags capabilityFlags;
+  VRFieldOfView eyeFOV[VRDisplayState::NumEyes];
+  Point3D_POD eyeTranslation[VRDisplayState::NumEyes];
+  IntSize_POD eyeResolution;
+  bool suppressFrames;
+  bool isConnected;
+  bool isMounted;
+  FloatSize_POD stageSize;
   
-  float mSittingToStandingTransform[16];
-  uint64_t mLastSubmittedFrameId;
-  bool mLastSubmittedFrameSuccessful;
-  uint32_t mPresentingGeneration;
+  float sittingToStandingTransform[16];
+  uint64_t lastSubmittedFrameId;
+  bool lastSubmittedFrameSuccessful;
+  uint32_t presentingGeneration;
   
-  bool mReportsDroppedFrames;
-  uint64_t mDroppedFrameCount;
+  bool reportsDroppedFrames;
+  uint64_t droppedFrameCount;
 };
 
 struct VRControllerState {
@@ -328,18 +328,18 @@ enum class VRLayerTextureType : uint16_t {
 };
 
 struct VRLayer_2D_Content {
-  VRLayerTextureHandle mTextureHandle;
-  VRLayerTextureType mTextureType;
-  uint64_t mFrameId;
+  VRLayerTextureHandle textureHandle;
+  VRLayerTextureType textureType;
+  uint64_t frameId;
 };
 
 struct VRLayer_Stereo_Immersive {
-  VRLayerTextureHandle mTextureHandle;
-  VRLayerTextureType mTextureType;
-  uint64_t mFrameId;
-  uint64_t mInputFrameId;
-  VRLayerEyeRect mLeftEyeRect;
-  VRLayerEyeRect mRightEyeRect;
+  VRLayerTextureHandle textureHandle;
+  VRLayerTextureType textureType;
+  uint64_t frameId;
+  uint64_t inputFrameId;
+  VRLayerEyeRect leftEyeRect;
+  VRLayerEyeRect rightEyeRect;
 };
 
 struct VRLayerState {

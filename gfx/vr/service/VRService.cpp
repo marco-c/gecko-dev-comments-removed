@@ -30,7 +30,7 @@ namespace {
 int64_t FrameIDFromBrowserState(const mozilla::gfx::VRBrowserState& aState) {
   for (const auto& layer : aState.layerState) {
     if (layer.type == VRLayerType::LayerType_Stereo_Immersive) {
-      return layer.layer_stereo_immersive.mFrameId;
+      return layer.layer_stereo_immersive.frameId;
     }
   }
   return 0;
@@ -261,7 +261,7 @@ void VRService::ServiceInitialize() {
     
     memset(&mSystemState, 0, sizeof(mSystemState));
     mSystemState.enumerationCompleted = true;
-    mSystemState.displayState.mMinRestartInterval =
+    mSystemState.displayState.minRestartInterval =
         gfxPrefs::VRExternalNotDetectedTimeout();
     mSystemState.displayState.shutdown = true;
     PushState(mSystemState);
@@ -278,7 +278,7 @@ void VRService::ServiceShutdown() {
   mSystemState.enumerationCompleted = true;
   mSystemState.displayState.shutdown = true;
   if (mSession && mSession->ShouldQuit()) {
-    mSystemState.displayState.mMinRestartInterval =
+    mSystemState.displayState.minRestartInterval =
         gfxPrefs::VRExternalQuitTimeout();
   }
   PushState(mSystemState);
@@ -341,7 +341,7 @@ void VRService::ServiceImmersiveMode() {
   }
 
   uint64_t newFrameId = FrameIDFromBrowserState(mBrowserState);
-  if (newFrameId != mSystemState.displayState.mLastSubmittedFrameId) {
+  if (newFrameId != mSystemState.displayState.lastSubmittedFrameId) {
     
     
     bool success = false;
@@ -358,8 +358,8 @@ void VRService::ServiceImmersiveMode() {
     
     
     
-    mSystemState.displayState.mLastSubmittedFrameId = newFrameId;
-    mSystemState.displayState.mLastSubmittedFrameSuccessful = success;
+    mSystemState.displayState.lastSubmittedFrameId = newFrameId;
+    mSystemState.displayState.lastSubmittedFrameSuccessful = success;
 
     
     mSession->StartFrame(mSystemState);
