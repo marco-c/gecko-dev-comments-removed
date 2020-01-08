@@ -10,11 +10,11 @@ import java.util.List;
 import java.util.Map;
 
 import org.mozilla.gecko.annotation.RobocopTarget;
-import org.mozilla.gecko.util.StrictModeContext;
 
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
+import android.os.StrictMode;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
@@ -172,7 +172,6 @@ public final class GeckoSharedPrefs {
 
 
 
-    @SuppressWarnings("try")
     private static synchronized void migrateIfNecessary(final Context context) {
         if (!GeckoAppShell.isFennec()) {
             return;
@@ -186,8 +185,12 @@ public final class GeckoSharedPrefs {
         
         
         
-        try (StrictModeContext unused = StrictModeContext.allowDiskWrites()) {
+        final StrictMode.ThreadPolicy savedPolicy = StrictMode.allowThreadDiskReads();
+        StrictMode.allowThreadDiskWrites();
+        try {
             performMigration(context);
+        } finally {
+            StrictMode.setThreadPolicy(savedPolicy);
         }
 
         migrationDone = true;
