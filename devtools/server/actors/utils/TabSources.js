@@ -7,7 +7,7 @@
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const { assert } = DevToolsUtils;
 const EventEmitter = require("devtools/shared/event-emitter");
-const { OriginalLocation, GeneratedLocation } = require("devtools/server/actors/common");
+const { GeneratedLocation } = require("devtools/server/actors/common");
 
 loader.lazyRequireGetter(this, "SourceActor", "devtools/server/actors/source", true);
 loader.lazyRequireGetter(this, "isEvalSource", "devtools/server/actors/source", true);
@@ -217,9 +217,7 @@ TabSources.prototype = {
 
 
 
-
-
-  createNonSourceMappedActor: function(source) {
+  createSourceActor: function(source) {
     
     
     
@@ -298,25 +296,10 @@ TabSources.prototype = {
 
 
 
-  createSourceActors: async function(source) {
-    const actor = this.createNonSourceMappedActor(source);
-    return actor ? [actor] : [];
-  },
-
-  
-
-
-
-
-
-
-
-
-
   getScriptOffsetLocation: function(script, offset) {
     const {lineNumber, columnNumber} = script.getOffsetLocation(offset);
     return new GeneratedLocation(
-      this.createNonSourceMappedActor(script.source),
+      this.createSourceActor(script.source),
       lineNumber,
       columnNumber
     );
@@ -336,21 +319,6 @@ TabSources.prototype = {
       return new GeneratedLocation();
     }
     return this.getScriptOffsetLocation(frame.script, frame.offset);
-  },
-
-  
-
-
-
-
-
-
-  getOriginalLocation: async function(generatedLocation) {
-    return OriginalLocation.fromGeneratedLocation(generatedLocation);
-  },
-
-  getAllGeneratedLocations: async function(originalLocation) {
-    return [GeneratedLocation.fromOriginalLocation(originalLocation)];
   },
 
   

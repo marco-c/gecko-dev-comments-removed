@@ -128,21 +128,14 @@ function resolveURIToLocalPath(uri) {
 
 
 
-
-
-
-
-
-
 const SourceActor = ActorClassWithSpec(sourceSpec, {
   typeName: "source",
 
-  initialize: function({ source, thread, originalUrl, generatedSource,
+  initialize: function({ source, thread, originalUrl,
                           isInlineSource, contentType }) {
     this._threadActor = thread;
     this._originalUrl = originalUrl;
     this._source = source;
-    this._generatedSource = generatedSource;
     this._contentType = contentType;
     this._isInlineSource = isInlineSource;
 
@@ -152,12 +145,6 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
     this._mapSourceToAddon();
 
     this._init = null;
-  },
-
-  get isSourceMapped() {
-    return !!(!this.isInlineSource && (
-      this._originalURL || this._generatedSource
-    ));
   },
 
   get isInlineSource() {
@@ -175,9 +162,6 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
   },
   get source() {
     return this._source;
-  },
-  get generatedSource() {
-    return this._generatedSource;
   },
   get breakpointActorMap() {
     return this.threadActor.breakpointActorMap;
@@ -203,8 +187,7 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
   },
 
   form: function() {
-    const source = this.source || this.generatedSource;
-    
+    const source = this.source;
     
     
     let introductionUrl = null;
@@ -214,12 +197,10 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
 
     return {
       actor: this.actorID,
-      generatedUrl: this.generatedSource ? this.generatedSource.url : null,
       url: this.url ? this.url.split(" -> ").pop() : null,
       addonID: this._addonID,
       addonPath: this._addonPath,
       isBlackBoxed: this.threadActor.sources.isBlackBoxed(this.url),
-      isSourceMapped: this.isSourceMapped,
       sourceMapURL: source ? source.sourceMapURL : null,
       introductionUrl: introductionUrl ? introductionUrl.split(" -> ").pop() : null,
       introductionType: source ? source.introductionType : null,
@@ -574,103 +555,92 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
     const { originalLocation } = actor;
     const { originalLine, originalSourceActor } = originalLocation;
 
-    if (!this.isSourceMapped) {
-      const generatedLocation = GeneratedLocation.fromOriginalLocation(originalLocation);
-      const isWasm = this.source && this.source.introductionType === "wasm";
-      if (!this._setBreakpointAtGeneratedLocation(actor, generatedLocation) &&
-          !noSliding &&
-          !isWasm) {
-        const query = { line: originalLine };
-        
-        
-        
-        
-        if (this.source) {
-          query.source = this.source;
-        } else {
-          query.url = this.url;
+    const generatedLocation = GeneratedLocation.fromOriginalLocation(originalLocation);
+    const isWasm = this.source && this.source.introductionType === "wasm";
+    if (!this._setBreakpointAtGeneratedLocation(actor, generatedLocation) &&
+        !noSliding &&
+        !isWasm) {
+      const query = { line: originalLine };
+      
+      
+      
+      
+      if (this.source) {
+        query.source = this.source;
+      } else {
+        query.url = this.url;
+      }
+      const scripts = this.dbg.findScripts(query);
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (originalLocation.originalColumn || scripts.length === 0) {
+        return Promise.resolve(actor);
+      }
+
+      
+      
+      const largestScript = scripts.reduce((largestScr, script) => {
+        if (script.lineCount > largestScr.lineCount) {
+          return script;
         }
-        const scripts = this.dbg.findScripts(query);
+        return largestScr;
+      });
+      const maxLine = largestScript.startLine + largestScript.lineCount - 1;
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        if (originalLocation.originalColumn || scripts.length === 0) {
-          return Promise.resolve(actor);
-        }
-
-        
-        
-        const largestScript = scripts.reduce((largestScr, script) => {
-          if (script.lineCount > largestScr.lineCount) {
-            return script;
-          }
-          return largestScr;
-        });
-        const maxLine = largestScript.startLine + largestScript.lineCount - 1;
-
-        let actualLine = originalLine;
-        for (; actualLine <= maxLine; actualLine++) {
-          const loc = new GeneratedLocation(this, actualLine);
-          if (this._setBreakpointAtGeneratedLocation(actor, loc)) {
-            break;
-          }
-        }
-
-        
-        
-        
-        
-        if (actualLine > maxLine) {
-          return Promise.reject({
-            error: "noCodeAtLineColumn",
-            message:
-              "Could not find any entry points to set a breakpoint on, " +
-              "even though I was told a script existed on the line I started " +
-              "the search with.",
-          });
-        }
-
-        
-        
-        const actualLocation = new OriginalLocation(originalSourceActor, actualLine);
-        const existingActor = this.breakpointActorMap.getActor(actualLocation);
-        this.breakpointActorMap.deleteActor(originalLocation);
-        if (existingActor) {
-          actor.delete();
-          actor = existingActor;
-        } else {
-          actor.originalLocation = actualLocation;
-          this.breakpointActorMap.setActor(actualLocation, actor);
+      let actualLine = originalLine;
+      for (; actualLine <= maxLine; actualLine++) {
+        const loc = new GeneratedLocation(this, actualLine);
+        if (this._setBreakpointAtGeneratedLocation(actor, loc)) {
+          break;
         }
       }
 
-      return Promise.resolve(actor);
-    }
-    return this.sources.getAllGeneratedLocations(originalLocation)
-      .then((generatedLocations) => {
-        this._setBreakpointAtAllGeneratedLocations(
-          actor,
-          generatedLocations
-        );
+      
+      
+      
+      
+      if (actualLine > maxLine) {
+        return Promise.reject({
+          error: "noCodeAtLineColumn",
+          message:
+            "Could not find any entry points to set a breakpoint on, " +
+            "even though I was told a script existed on the line I started " +
+            "the search with.",
+        });
+      }
 
-        return actor;
-      });
+      
+      
+      const actualLocation = new OriginalLocation(originalSourceActor, actualLine);
+      const existingActor = this.breakpointActorMap.getActor(actualLocation);
+      this.breakpointActorMap.deleteActor(originalLocation);
+      if (existingActor) {
+        actor.delete();
+        actor = existingActor;
+      } else {
+        actor.originalLocation = actualLocation;
+        this.breakpointActorMap.setActor(actualLocation, actor);
+      }
+    }
+
+    return Promise.resolve(actor);
   },
 
   _setBreakpointAtAllGeneratedLocations: function(actor, generatedLocations) {
