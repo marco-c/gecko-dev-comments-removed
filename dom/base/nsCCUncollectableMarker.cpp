@@ -471,6 +471,12 @@ mozilla::dom::TraceBlackJS(JSTracer* aTrc, bool aIsShutdownGC)
   }
 
   if (ProcessGlobal::WasCreated() && nsFrameMessageManager::GetChildProcessManager()) {
+    
+    
+    
+    
+    recordreplay::AutoPassThroughThreadEvents pt;
+
     ProcessGlobal* pg = ProcessGlobal::Get();
     if (pg) {
       mozilla::TraceScriptHolder(ToSupports(pg), aTrc);
