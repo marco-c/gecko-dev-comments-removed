@@ -2818,7 +2818,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleColumn
 
   mozilla::StyleComplexColor mColumnRuleColor;
   uint8_t      mColumnRuleStyle;  
-  uint8_t      mColumnFill;  
+  mozilla::StyleColumnFill mColumnFill = mozilla::StyleColumnFill::Balance;
   uint8_t      mColumnSpan;  
 
   void SetColumnRuleWidth(nscoord aWidth) {

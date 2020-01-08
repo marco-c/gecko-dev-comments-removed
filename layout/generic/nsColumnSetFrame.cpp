@@ -333,7 +333,7 @@ nsColumnSetFrame::ChooseColumnStrategy(const ReflowInput& aReflowInput,
   int32_t numColumns = colStyle->mColumnCount;
 
   
-  const bool isBalancing = colStyle->mColumnFill == NS_STYLE_COLUMN_FILL_BALANCE
+  const bool isBalancing = colStyle->mColumnFill == StyleColumnFill::Balance
                            && !aForceAuto;
   if (isBalancing) {
     const uint32_t MAX_NESTED_COLUMN_BALANCING = 2;
@@ -663,7 +663,7 @@ nsColumnSetFrame::ReflowChildren(ReflowOutput&     aDesiredSize,
     
     
     if (skipIncremental && changingBSize &&
-        StyleColumn()->mColumnFill == NS_STYLE_COLUMN_FILL_AUTO) {
+        StyleColumn()->mColumnFill == StyleColumnFill::Auto) {
       skipIncremental = false;
     }
     
