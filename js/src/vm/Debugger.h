@@ -94,6 +94,9 @@ extern void
 CheckDebuggeeThing(JSScript* script, bool invisibleOk);
 
 extern void
+CheckDebuggeeThing(LazyScript* script, bool invisibleOk);
+
+extern void
 CheckDebuggeeThing(JSObject* obj, bool invisibleOk);
 #endif
 
@@ -292,7 +295,7 @@ typedef JSObject Env;
 
 
 
-typedef mozilla::Variant<JSScript*, WasmInstanceObject*> DebuggerScriptReferent;
+typedef mozilla::Variant<JSScript*, LazyScript*, WasmInstanceObject*> DebuggerScriptReferent;
 
 
 
