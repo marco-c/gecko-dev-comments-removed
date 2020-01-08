@@ -26,6 +26,7 @@
 #include "mozilla/ipc/BackgroundUtils.h"
 #include "mozilla/ipc/PBackgroundChild.h"
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
+#include "mozilla/StaticPrefs.h"
 #include "nsContentUtils.h"
 #include "nsIDocument.h"
 #include "nsIGlobalObject.h"
@@ -207,7 +208,7 @@ CacheStorage::CreateOnWorker(Namespace aNamespace, nsIGlobalObject* aGlobal,
   
   
   
-  bool testingEnabled = DOMPrefs::DOMCachesTestingEnabled() ||
+  bool testingEnabled = StaticPrefs::dom_caches_testing_enabled() ||
                         DOMPrefs::ServiceWorkersTestingEnabled() ||
                         aWorkerPrivate->ServiceWorkersTestingInWindow() ||
                         aWorkerPrivate->IsServiceWorker();
