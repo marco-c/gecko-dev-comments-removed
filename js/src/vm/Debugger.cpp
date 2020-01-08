@@ -1561,7 +1561,6 @@ static bool CheckResumptionValue(JSContext* cx, AbstractFramePtr frame,
   if (maybeThisv.isSome()) {
     const HandleValue& thisv = maybeThisv.ref();
     if (resumeMode == ResumeMode::Return && vp.isPrimitive()) {
-      
       if (vp.isUndefined()) {
         if (thisv.isMagic(JS_UNINITIALIZED_LEXICAL)) {
           return ThrowUninitializedThis(cx, frame);
@@ -1575,53 +1574,45 @@ static bool CheckResumptionValue(JSContext* cx, AbstractFramePtr frame,
       }
     }
   }
+  return true;
+}
 
-  
+static void AdjustGeneratorResumptionValue(JSContext* cx,
+                                           AbstractFramePtr frame,
+                                           ResumeMode& resumeMode,
+                                           MutableHandleValue vp) {
   if (resumeMode == ResumeMode::Return && frame && frame.isFunctionFrame() &&
       frame.callee()->isGenerator()) {
-    bool beforeInitialYield = true;
-    {
-      AutoRealm ar(cx, frame.callee());
-
+    
+    
+    
+    
+    
+    
+    Rooted<GeneratorObject*> genObj(cx, GetGeneratorObjectForFrame(cx, frame));
+    if (genObj) {
       
       
-      
-      
-      
-      
-      Rooted<GeneratorObject*> genObj(cx,
-                                      GetGeneratorObjectForFrame(cx, frame));
-      if (genObj) {
-        
-        
-        beforeInitialYield = genObj->isBeforeInitialYield();
-        if (!beforeInitialYield) {
-          JSObject* pair = CreateIterResultObject(cx, vp, true);
-          if (!pair) {
-            
-            return false;
-          }
-          vp.setObject(*pair);
+      if (!genObj->isBeforeInitialYield()) {
+        JSObject* pair = CreateIterResultObject(cx, vp, true);
+        if (!pair) {
+          
+          MOZ_ALWAYS_TRUE(cx->getPendingException(vp));
+          cx->clearPendingException();
+          resumeMode = ResumeMode::Throw;
+          return;
         }
-
-        
-        genObj->setClosed();
-      } else {
-        beforeInitialYield = true;
+        vp.setObject(*pair);
       }
-    }
 
-    
-    
-    
-    if (beforeInitialYield) {
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_DEBUG_FORCED_RETURN_DISALLOWED);
-      return false;
+      
+      genObj->setClosed();
+    } else {
+      
+      
+      
     }
   }
-
-  return true;
 }
 
 ResumeMode Debugger::reportUncaughtException(Maybe<AutoRealm>& ar) {
@@ -1729,6 +1720,7 @@ ResumeMode Debugger::leaveDebugger(Maybe<AutoRealm>& ar, AbstractFramePtr frame,
     resumeMode = ResumeMode::Terminate;
     vp.setUndefined();
   }
+  AdjustGeneratorResumptionValue(cx, frame, resumeMode, vp);
 
   return resumeMode;
 }
