@@ -34,8 +34,7 @@ pub type BasicShape = generic::BasicShape<
 pub type InsetRect = generic::InsetRect<LengthPercentage, NonNegativeLengthPercentage>;
 
 
-pub type Circle =
-    generic::Circle<LengthPercentage, LengthPercentage, NonNegativeLengthPercentage>;
+pub type Circle = generic::Circle<LengthPercentage, LengthPercentage, NonNegativeLengthPercentage>;
 
 
 pub type Ellipse =

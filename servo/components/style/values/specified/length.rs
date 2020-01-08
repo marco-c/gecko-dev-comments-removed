@@ -922,12 +922,9 @@ impl LengthPercentageOrAuto {
             return Ok(LengthPercentageOrAuto::Auto);
         }
 
-        Ok(LengthPercentageOrAuto::LengthPercentage(LengthPercentage::parse_internal(
-            context,
-            input,
-            num_context,
-            allow_quirks,
-        )?))
+        Ok(LengthPercentageOrAuto::LengthPercentage(
+            LengthPercentage::parse_internal(context, input, num_context, allow_quirks)?,
+        ))
     }
 
     
@@ -1052,12 +1049,9 @@ impl LengthPercentageOrNone {
             return Ok(LengthPercentageOrNone::None);
         }
 
-        Ok(LengthPercentageOrNone::LengthPercentage(LengthPercentage::parse_internal(
-            context,
-            input,
-            num_context,
-            allow_quirks,
-        )?))
+        Ok(LengthPercentageOrNone::LengthPercentage(
+            LengthPercentage::parse_internal(context, input, num_context, allow_quirks)?,
+        ))
     }
 
     
@@ -1117,8 +1111,7 @@ impl Parse for NonNegativeLengthPercentage {
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        LengthPercentage::parse_non_negative(context, input)
-            .map(NonNegative::<LengthPercentage>)
+        LengthPercentage::parse_non_negative(context, input).map(NonNegative::<LengthPercentage>)
     }
 }
 
