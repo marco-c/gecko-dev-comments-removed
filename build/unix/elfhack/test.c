@@ -136,8 +136,12 @@ size_t dummy;
 void end_test() {
     static size_t count = 0;
     
-    if (++count == 2)
+    if (++count == 2) {
         ret = 0;
+        
+        
+        dummy = 1;
+    }
 }
 
 void test() {
