@@ -154,12 +154,12 @@ OpusDataDecoder::DecodeHeader(const unsigned char* aData, size_t aLength)
 
     AutoTArray<uint8_t, 8> map;
     map.SetLength(channels);
-    if (vorbisLayout.MappingTable(smpteLayout, &map)) {
+    if (mOpusParser->mChannelMapping == 1 &&
+        vorbisLayout.MappingTable(smpteLayout, &map)) {
       for (int i = 0; i < channels; i++) {
         mMappingTable[i] = mOpusParser->mMappingTable[map[i]];
       }
     } else {
-      
       
       PodCopy(mMappingTable.Elements(), mOpusParser->mMappingTable, channels);
     }
