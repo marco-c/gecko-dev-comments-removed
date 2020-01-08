@@ -231,6 +231,9 @@ pref("devtools.dom.enabled", false);
 pref("devtools.accessibility.enabled", true);
 
 
+pref("devtools.promote.accessibility", 1);
+
+
 pref("devtools.webaudioeditor.inspectorWidth", 300);
 
 
