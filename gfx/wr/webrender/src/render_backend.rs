@@ -30,6 +30,7 @@ use frame_builder::{FrameBuilder, FrameBuilderConfig};
 use gpu_cache::GpuCache;
 use hit_test::{HitTest, HitTester};
 use internal_types::{DebugOutput, FastHashMap, FastHashSet, RenderedDocument, ResultMsg};
+use picture::RetainedTiles;
 use prim_store::{PrimitiveDataStore, PrimitiveScratchBuffer, PrimitiveInstance};
 use prim_store::{PrimitiveInstanceKind, PrimTemplateCommonData};
 use prim_store::gradient::{LinearGradientDataStore, RadialGradientDataStore};
@@ -548,7 +549,7 @@ impl Document {
         
         
         
-        let mut retained_tiles = FastHashMap::default();
+        let mut retained_tiles = RetainedTiles::new();
         if let Some(frame_builder) = self.frame_builder.take() {
             frame_builder.destroy(
                 &mut retained_tiles,

@@ -4,8 +4,8 @@
 
 use api::{DeviceRect, FilterOp, MixBlendMode, PipelineId, PremultipliedColorF, PictureRect, PicturePoint};
 use api::{DeviceIntRect, DevicePoint, LayoutRect, PictureToRasterTransform, LayoutPixel, PropertyBinding, PropertyBindingId};
-use api::{DevicePixelScale, RasterRect, RasterSpace, PictureSize, DeviceIntPoint, ColorF, ImageKey, DirtyRect};
-use api::{PicturePixel, RasterPixel, WorldPixel, WorldRect, ImageFormat, ImageDescriptor};
+use api::{DevicePixelScale, RasterRect, RasterSpace, DeviceIntPoint, ColorF, ImageKey, DirtyRect};
+use api::{PicturePixel, RasterPixel, WorldPixel, WorldRect, ImageFormat, ImageDescriptor, LayoutSize, LayoutPoint};
 use box_shadow::{BLUR_SAMPLE_SCALE};
 use clip::{ClipNodeCollector, ClipStore, ClipChainId, ClipChainNode};
 use clip_scroll_tree::{ROOT_SPATIAL_NODE_INDEX, ClipScrollTree, SpatialNodeIndex};
@@ -50,6 +50,20 @@ use util::{TransformedRectKind, MatrixHelpers, MaxRect, RectHelpers};
 struct PictureInfo {
     
     spatial_node_index: SpatialNodeIndex,
+}
+
+
+
+pub struct RetainedTiles {
+    pub tiles: FastHashMap<TileDescriptor, TextureCacheHandle>,
+}
+
+impl RetainedTiles {
+    pub fn new() -> Self {
+        RetainedTiles {
+            tiles: FastHashMap::default(),
+        }
+    }
 }
 
 
@@ -302,14 +316,14 @@ impl TileDescriptor {
 #[derive(Debug)]
 pub struct DirtyRegion {
     tile_offset: DeviceIntPoint,
-    dirty_rect: PictureRect,
+    dirty_rect: LayoutRect,
     dirty_world_rect: WorldRect,
 }
 
 
 pub struct TileCache {
     
-    pub local_tile_size: PictureSize,
+    pub local_tile_size: LayoutSize,
     
     pub tiles: Vec<Tile>,
     
@@ -324,7 +338,7 @@ pub struct TileCache {
     
     pub opacity_bindings: FastHashMap<PropertyBindingId, OpacityBindingInfo>,
     
-    pub space_mapper: SpaceMapper<LayoutPixel, PicturePixel>,
+    pub space_mapper: SpaceMapper<LayoutPixel, LayoutPixel>,
     
     
     
@@ -337,6 +351,13 @@ pub struct TileCache {
     
     
     raster_transform: TransformKey,
+
+    
+    
+    
+    
+    
+    local_origin: LayoutPoint,
 }
 
 impl TileCache {
@@ -346,16 +367,17 @@ impl TileCache {
             tiles: Vec::new(),
             old_tiles: FastHashMap::default(),
             tile_rect: TileRect::zero(),
-            local_tile_size: PictureSize::zero(),
+            local_tile_size: LayoutSize::zero(),
             transforms: Vec::new(),
             opacity_bindings: FastHashMap::default(),
             needs_update: true,
             dirty_region: None,
             space_mapper: SpaceMapper::new(
                 ROOT_SPATIAL_NODE_INDEX,
-                PictureRect::zero(),
+                LayoutRect::zero(),
             ),
             raster_transform: TransformKey::Local,
+            local_origin: LayoutPoint::zero(),
         }
     }
 
@@ -368,6 +390,7 @@ impl TileCache {
         raster_spatial_node_index: SpatialNodeIndex,
         raster_space: RasterSpace,
         frame_context: &FrameBuildingContext,
+        pic_rect: LayoutRect,
     ) {
         
         
@@ -380,7 +403,7 @@ impl TileCache {
 
         let pic_bounds = world_mapper
             .unmap(&frame_context.screen_world_rect)
-            .unwrap_or(PictureRect::max_rect());
+            .unwrap_or(LayoutRect::max_rect());
 
         self.space_mapper = SpaceMapper::new(
             surface_spatial_node_index,
@@ -400,6 +423,7 @@ impl TileCache {
             .unmap(&world_tile_rect)
             .expect("bug: unable to get local tile size");
         self.local_tile_size = local_tile_rect.size;
+        self.local_origin = pic_rect.origin;
 
         
         
@@ -438,6 +462,7 @@ impl TileCache {
         
         let current_properties = frame_context.scene_properties.float_properties();
         let old_properties = mem::replace(&mut self.opacity_bindings, FastHashMap::default());
+
         for (id, value) in current_properties {
             let changed = match old_properties.get(id) {
                 Some(old_property) => !old_property.value.approx_eq(value),
@@ -528,6 +553,18 @@ impl TileCache {
             
             self.tile_rect = TileRect::zero();
         }
+
+        
+        let pic_rect = TypedRect::from_untyped(&pic_rect.to_untyped());
+        let local_pic_rect = pic_rect.translate(&-self.local_origin.to_vector());
+
+        let x0 = (local_pic_rect.origin.x / self.local_tile_size.width).floor() as i32;
+        let y0 = (local_pic_rect.origin.y / self.local_tile_size.height).floor() as i32;
+        let x1 = ((local_pic_rect.origin.x + local_pic_rect.size.width) / self.local_tile_size.width).ceil() as i32;
+        let y1 = ((local_pic_rect.origin.y + local_pic_rect.size.height) / self.local_tile_size.height).ceil() as i32;
+
+        
+        self.reconfigure_tiles_if_required(x0, y0, x1, y1);
     }
 
     
@@ -553,7 +590,11 @@ impl TileCache {
         let x_tiles = x1 - x0;
         let y_tiles = y1 - y0;
 
-        if self.tile_rect.size.width == x_tiles && self.tile_rect.size.height == y_tiles {
+        
+        if self.tile_rect.size.width == x_tiles &&
+           self.tile_rect.size.height == y_tiles &&
+           self.tile_rect.origin.x == x0 &&
+           self.tile_rect.origin.y == y0 {
             return;
         }
 
@@ -610,6 +651,10 @@ impl TileCache {
         opacity_binding_store: &OpacityBindingStorage,
         image_instances: &ImageInstanceStorage,
     ) {
+        if !self.needs_update {
+            return;
+        }
+
         self.space_mapper.set_target_spatial_node(
             prim_instance.spatial_node_index,
             clip_scroll_tree,
@@ -648,13 +693,13 @@ impl TileCache {
         }
 
         
-        let x0 = (rect.origin.x / self.local_tile_size.width).floor() as i32;
-        let y0 = (rect.origin.y / self.local_tile_size.height).floor() as i32;
-        let x1 = ((rect.origin.x + rect.size.width) / self.local_tile_size.width).ceil() as i32;
-        let y1 = ((rect.origin.y + rect.size.height) / self.local_tile_size.height).ceil() as i32;
+        let origin = rect.origin - self.local_origin;
 
         
-        self.reconfigure_tiles_if_required(x0, y0, x1, y1);
+        let x0 = (origin.x / self.local_tile_size.width).floor() as i32;
+        let y0 = (origin.y / self.local_tile_size.height).floor() as i32;
+        let x1 = ((origin.x + rect.size.width) / self.local_tile_size.width).ceil() as i32;
+        let y1 = ((origin.y + rect.size.height) / self.local_tile_size.height).ceil() as i32;
 
         
         let mut opacity_bindings: SmallVec<[PropertyBindingId; 4]> = SmallVec::new();
@@ -797,6 +842,17 @@ impl TileCache {
     }
 
     
+    pub fn get_tile_rect(&self, x: i32, y: i32) -> LayoutRect {
+        LayoutRect::new(
+            LayoutPoint::new(
+                self.local_origin.x + (self.tile_rect.origin.x + x) as f32 * self.local_tile_size.width,
+                self.local_origin.y + (self.tile_rect.origin.y + y) as f32 * self.local_tile_size.height,
+            ),
+            self.local_tile_size,
+        )
+    }
+
+    
     
     pub fn build_dirty_regions(
         &mut self,
@@ -804,7 +860,7 @@ impl TileCache {
         frame_context: &FrameBuildingContext,
         resource_cache: &mut ResourceCache,
         gpu_cache: &mut GpuCache,
-        retained_tiles: &mut FastHashMap<TileDescriptor, TextureCacheHandle>,
+        retained_tiles: &mut RetainedTiles,
     ) {
         self.needs_update = false;
 
@@ -824,12 +880,13 @@ impl TileCache {
             self.tile_rect.size.height,
         );
 
-        let mut dirty_rect = PictureRect::zero();
+        let mut dirty_rect = LayoutRect::zero();
 
         
         for y in 0 .. self.tile_rect.size.height {
             for x in 0 .. self.tile_rect.size.width {
                 let i = y * self.tile_rect.size.width + x;
+                let tile_rect = self.get_tile_rect(x, y);
                 let tile = &mut self.tiles[i as usize];
 
                 
@@ -837,14 +894,6 @@ impl TileCache {
                 if !tile.in_use {
                     continue;
                 }
-
-                let tile_rect = PictureRect::new(
-                    PicturePoint::new(
-                        (self.tile_rect.origin.x + x) as f32 * self.local_tile_size.width,
-                        (self.tile_rect.origin.y + y) as f32 * self.local_tile_size.height,
-                    ),
-                    self.local_tile_size,
-                );
 
                 
                 let tile_world_rect = world_mapper
@@ -857,7 +906,8 @@ impl TileCache {
                 if tile.is_visible && !resource_cache.texture_cache.is_allocated(&tile.handle) {
                     
                     
-                    if let Some(retained_handle) = retained_tiles.remove(&tile.descriptor) {
+
+                    if let Some(retained_handle) = retained_tiles.tiles.remove(&tile.descriptor) {
                         
                         if resource_cache.texture_cache.is_allocated(&retained_handle) {
                             
@@ -944,16 +994,24 @@ impl TileCache {
 }
 
 
+pub struct TileCacheUpdateState {
+    pub tile_cache: Option<(TileCache, SpatialNodeIndex)>,
+}
+
+impl TileCacheUpdateState {
+    pub fn new() -> Self {
+        TileCacheUpdateState {
+            tile_cache: None,
+        }
+    }
+}
+
+
 
 pub struct PictureUpdateState<'a> {
     pub surfaces: &'a mut Vec<SurfaceInfo>,
     surface_stack: Vec<SurfaceIndex>,
     picture_stack: Vec<PictureInfo>,
-    
-    tile_cache_stack: Vec<TileCache>,
-    
-    
-    tile_cache_update_count: usize,
 }
 
 impl<'a> PictureUpdateState<'a> {
@@ -962,8 +1020,6 @@ impl<'a> PictureUpdateState<'a> {
             surfaces,
             surface_stack: vec![SurfaceIndex(0)],
             picture_stack: Vec::new(),
-            tile_cache_stack: Vec::new(),
-            tile_cache_update_count: 0,
         }
     }
 
@@ -1013,30 +1069,6 @@ impl<'a> PictureUpdateState<'a> {
         &mut self,
     ) -> PictureInfo {
         self.picture_stack.pop().unwrap()
-    }
-
-    
-    pub fn push_tile_cache(
-        &mut self,
-        tile_cache: TileCache,
-    ) {
-        if tile_cache.needs_update {
-            self.tile_cache_update_count += 1;
-        }
-        self.tile_cache_stack.push(tile_cache);
-    }
-
-    
-    pub fn pop_tile_cache(
-        &mut self,
-    ) -> TileCache {
-        let tile_cache = self.tile_cache_stack.pop().unwrap();
-
-        if tile_cache.needs_update {
-            self.tile_cache_update_count -= 1;
-        }
-
-        tile_cache
     }
 }
 
@@ -1470,12 +1502,17 @@ impl PicturePrimitive {
     
     pub fn destroy(
         mut self,
-        retained_tiles: &mut FastHashMap<TileDescriptor, TextureCacheHandle>,
+        retained_tiles: &mut RetainedTiles,
     ) {
         if let Some(tile_cache) = self.tile_cache.take() {
             debug_assert!(tile_cache.old_tiles.is_empty());
             for tile in tile_cache.tiles {
-                retained_tiles.extend(tile.destroy());
+                if let Some((descriptor, handle)) = tile.destroy() {
+                    retained_tiles.tiles.insert(
+                        descriptor,
+                        handle,
+                    );
+                }
             }
         }
     }
@@ -1686,33 +1723,9 @@ impl PicturePrimitive {
         self.prim_list = prim_list;
         self.state = Some((state, context));
 
-        match self.raster_config {
-            Some(ref raster_config) => {
-                let local_rect = frame_state.surfaces[raster_config.surface_index.0].rect;
-                let local_rect = LayoutRect::from_untyped(&local_rect.to_untyped());
-
-                
-                
-                
-                
-                
-                
-                
-                if self.local_rect != local_rect {
-                    frame_state.gpu_cache.invalidate(&self.gpu_location);
-                    if let PictureCompositeMode::Filter(FilterOp::DropShadow(..)) = raster_config.composite_mode {
-                        frame_state.gpu_cache.invalidate(&self.extra_gpu_data_handle);
-                    }
-                }
-
-                self.local_rect = local_rect;
-
-                Some(frame_state.clip_store.pop_surface())
-            }
-            None => {
-                None
-            }
-        }
+        self.raster_config.as_ref().map(|_| {
+            frame_state.clip_store.pop_surface()
+        })
     }
 
     pub fn take_state_and_context(&mut self) -> (PictureState, PictureContext) {
@@ -1919,20 +1932,6 @@ impl PicturePrimitive {
 
             
             
-            
-            if let Some(mut tile_cache) = self.tile_cache.take() {
-                tile_cache.update_transforms(
-                    surface_spatial_node_index,
-                    raster_spatial_node_index,
-                    raster_space,
-                    frame_context,
-                );
-
-                state.push_tile_cache(tile_cache);
-            }
-
-            
-            
             if let Some(ref mut surface_desc) = self.surface_desc {
                 surface_desc.update(
                     surface_spatial_node_index,
@@ -1950,7 +1949,8 @@ impl PicturePrimitive {
     
     pub fn update_prim_dependencies(
         &self,
-        state: &mut PictureUpdateState,
+        tile_cache: &mut TileCache,
+        surface_spatial_node_index: SpatialNodeIndex,
         frame_context: &FrameBuildingContext,
         resource_cache: &mut ResourceCache,
         resources: &FrameResources,
@@ -1959,26 +1959,18 @@ impl PicturePrimitive {
         opacity_binding_store: &OpacityBindingStorage,
         image_instances: &ImageInstanceStorage,
     ) {
-        if state.tile_cache_update_count == 0 {
-            return;
-        }
-
-        let surface_spatial_node_index = state.current_surface().surface_spatial_node_index;
-
         for prim_instance in &self.prim_list.prim_instances {
-            for tile_cache in &mut state.tile_cache_stack {
-                tile_cache.update_prim_dependencies(
-                    prim_instance,
-                    surface_spatial_node_index,
-                    &frame_context.clip_scroll_tree,
-                    resources,
-                    &clip_store.clip_chain_nodes,
-                    pictures,
-                    resource_cache,
-                    opacity_binding_store,
-                    image_instances,
-                );
-            }
+            tile_cache.update_prim_dependencies(
+                prim_instance,
+                surface_spatial_node_index,
+                &frame_context.clip_scroll_tree,
+                resources,
+                &clip_store.clip_chain_nodes,
+                pictures,
+                resource_cache,
+                opacity_binding_store,
+                image_instances,
+            );
         }
     }
 
@@ -1989,9 +1981,7 @@ impl PicturePrimitive {
         child_pictures: PictureList,
         state: &mut PictureUpdateState,
         frame_context: &FrameBuildingContext,
-        resource_cache: &mut ResourceCache,
         gpu_cache: &mut GpuCache,
-        retained_tiles: &mut FastHashMap<TileDescriptor, TextureCacheHandle>,
     ) {
         
         state.pop_picture();
@@ -2076,25 +2066,25 @@ impl PicturePrimitive {
         if let Some(ref raster_config) = self.raster_config {
             let surface_rect = state.current_surface().rect;
 
-            if let PictureCompositeMode::TileCache { .. } = raster_config.composite_mode {
-                let mut tile_cache = state.pop_tile_cache();
-
-                
-                tile_cache.build_dirty_regions(
-                    self.spatial_node_index,
-                    frame_context,
-                    resource_cache,
-                    gpu_cache,
-                    retained_tiles,
-                );
-
-                self.tile_cache = Some(tile_cache);
-            }
-
             let mut surface_rect = TypedRect::from_untyped(&surface_rect.to_untyped());
 
             
             state.pop_surface();
+
+            
+            
+            
+            
+            
+            
+            
+            if self.local_rect != surface_rect {
+                gpu_cache.invalidate(&self.gpu_location);
+                if let PictureCompositeMode::Filter(FilterOp::DropShadow(..)) = raster_config.composite_mode {
+                    gpu_cache.invalidate(&self.extra_gpu_data_handle);
+                }
+                self.local_rect = surface_rect;
+            }
 
             
             
