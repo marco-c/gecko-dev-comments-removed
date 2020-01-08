@@ -515,13 +515,11 @@ nsHttpChannelAuthProvider::PrepareForAuthentication(bool proxyAuth)
     
     
 
-    nsAutoCString contractId;
-    contractId.AssignLiteral(NS_HTTP_AUTHENTICATOR_CONTRACTID_PREFIX);
-    contractId.Append(mProxyAuthType);
-
     nsresult rv;
-    nsCOMPtr<nsIHttpAuthenticator> precedingAuth =
-        do_GetService(contractId.get(), &rv);
+    nsCOMPtr<nsIHttpAuthenticator> precedingAuth;
+    nsCString proxyAuthType;
+    rv = GetAuthenticator(mProxyAuthType.get(), proxyAuthType,
+                          getter_AddRefs(precedingAuth));
     if (NS_FAILED(rv))
         return rv;
 
