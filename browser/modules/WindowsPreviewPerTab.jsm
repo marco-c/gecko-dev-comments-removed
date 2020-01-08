@@ -432,9 +432,9 @@ TabWindow.prototype = {
     let docShell = this.win.docShell;
     let preview = AeroPeek.taskbar.createTaskbarTabPreview(docShell, controller);
     preview.visible = AeroPeek.enabled;
-    preview.active = this.tabbrowser.selectedTab == controller.tab;
-    this.onLinkIconAvailable(controller.tab.linkedBrowser,
-                             controller.tab.getAttribute("image"));
+    let {tab} = controller;
+    preview.active = this.tabbrowser.selectedTab == tab;
+    this.updateFavicon(tab, tab.getAttribute("image"));
     return preview;
   },
 
@@ -585,6 +585,10 @@ TabWindow.prototype = {
     "file", "chrome", "resource", "about"
   ]),
   onLinkIconAvailable(aBrowser, aIconURL) {
+    let tab = this.win.gBrowser.getTabForBrowser(aBrowser);
+    this.updateFavicon(tab, aIconURL);
+  },
+  updateFavicon(aTab, aIconURL) {
     let requestURL = null;
     if (aIconURL) {
       let shouldRequestFaviconURL = true;
@@ -603,17 +607,22 @@ TabWindow.prototype = {
       requestURL,
       PrivateBrowsingUtils.isWindowPrivate(this.win),
       img => {
-        let index = this.tabbrowser.browsers.indexOf(aBrowser);
+        
+        
+        if (this.win.closed || aTab.closing || !aTab.linkedBrowser) {
+          return;
+        }
         
         
         
-        if (index != -1) {
-          let tab = this.tabbrowser.tabs[index];
-          let preview = this.previews.get(tab);
-          if (tab.getAttribute("image") == aIconURL ||
-              (!preview.icon && isDefaultFavicon)) {
-            preview.icon = img;
-          }
+        
+        
+        
+        
+        let preview = this.previews.get(aTab);
+        if (aTab.getAttribute("image") == aIconURL ||
+            (!preview.icon && isDefaultFavicon)) {
+          preview.icon = img;
         }
       }
     );
@@ -824,7 +833,7 @@ var AeroPeek = {
       for (let win of this.windows) {
         for (let [tab, ] of win.previews) {
           if (tab.getAttribute("image") == newValue) {
-            win.onLinkIconAvailable(tab.linkedBrowser, newValue);
+            win.updateFavicon(tab, newValue);
           }
         }
       }
