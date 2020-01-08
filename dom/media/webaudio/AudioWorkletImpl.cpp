@@ -51,6 +51,21 @@ JSObject* AudioWorkletImpl::WrapWorklet(JSContext* aCx, dom::Worklet* aWorklet,
   return dom::AudioWorklet_Binding::Wrap(aCx, aWorklet, aGivenProto);
 }
 
+nsresult AudioWorkletImpl::SendControlMessage(
+    already_AddRefed<nsIRunnable> aRunnable) {
+  MediaStreamGraph* graph = mDestinationStream->Graph();
+  if (!graph->IsNonRealtime()) {
+    
+    
+    
+    
+    return WorkletImpl::SendControlMessage(std::move(aRunnable));
+  }
+
+  mDestinationStream->SendRunnable(std::move(aRunnable));
+  return NS_OK;
+}
+
 already_AddRefed<dom::WorkletGlobalScope>
 AudioWorkletImpl::ConstructGlobalScope() {
   dom::WorkletThread::AssertIsOnWorkletThread();
