@@ -695,15 +695,12 @@ impl TextureCacheRenderTarget {
             RenderTaskKind::Border(ref mut task_info) => {
                 self.clears.push(target_rect.0);
 
-                
-                
                 let task_origin = target_rect.0.origin.to_f32();
-                for instance in &mut task_info.instances {
-                    instance.task_origin = task_origin;
-                }
-
                 let instances = mem::replace(&mut task_info.instances, Vec::new());
-                for instance in instances {
+                for mut instance in instances {
+                    
+                    
+                    instance.task_origin = task_origin;
                     if instance.flags & STYLE_MASK == STYLE_SOLID {
                         self.border_segments_solid.push(instance);
                     } else {

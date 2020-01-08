@@ -511,7 +511,7 @@ pub struct StackingContext {
     pub transform_style: TransformStyle,
     pub mix_blend_mode: MixBlendMode,
     pub clip_node_id: Option<ClipId>,
-    pub glyph_raster_space: GlyphRasterSpace,
+    pub raster_space: RasterSpace,
 } 
 
 
@@ -525,9 +525,12 @@ pub enum TransformStyle {
 
 
 
+
+
+
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 #[repr(u32)]
-pub enum GlyphRasterSpace {
+pub enum RasterSpace {
     
     
     Local(f32),
@@ -537,6 +540,15 @@ pub enum GlyphRasterSpace {
     
     
     Screen,
+}
+
+impl RasterSpace {
+    pub fn local_scale(&self) -> Option<f32> {
+        match *self {
+            RasterSpace::Local(scale) => Some(scale),
+            RasterSpace::Screen => None,
+        }
+    }
 }
 
 #[repr(u32)]
