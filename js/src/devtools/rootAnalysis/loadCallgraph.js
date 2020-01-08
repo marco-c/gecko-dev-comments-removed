@@ -29,18 +29,29 @@ loadRelativeToScript('utility.js');
 
 var readableNames = {}; 
 var mangledName = {}; 
-var calleeGraph = {}; 
-var callerGraph = {}; 
+var calleesOf = {}; 
+var callersOf; 
 var gcFunctions = {}; 
-var suppressedFunctions = {}; 
+var limitedFunctions = {}; 
 var gcEdges = {};
 
-function addGCFunction(caller, reason)
+
+var idToMangled = [""];
+
+
+
+var functionNames = [""];
+
+var mangledToId = {};
+
+
+
+function addGCFunction(caller, reason, functionLimits)
 {
-    if (caller in suppressedFunctions)
+    if (functionLimits[caller] & LIMIT_CANNOT_GC)
         return false;
 
-    if (ignoreGCFunction(caller))
+    if (ignoreGCFunction(idToMangled[caller]))
         return false;
 
     if (!(caller in gcFunctions)) {
@@ -51,126 +62,217 @@ function addGCFunction(caller, reason)
     return false;
 }
 
-function addCallEdge(caller, callee, suppressed)
-{
-    addToKeyedList(calleeGraph, caller, {callee:callee, suppressed:suppressed});
-    addToKeyedList(callerGraph, callee, {caller:caller, suppressed:suppressed});
+
+
+
+
+
+
+
+
+
+
+
+function merge_repeated_calls(calleesOf) {
+    const callersOf = Object.create(null);
+
+    for (const [caller, callee_limits] of Object.entries(calleesOf)) {
+        const ordered_callees = [];
+
+        
+        const callee2limit = new Map();
+        for (const {callee, limits} of callee_limits) {
+            const prev_limits = callee2limit.get(callee);
+            if (prev_limits === undefined) {
+                callee2limit.set(callee, limits);
+                ordered_callees.push(callee);
+            } else {
+                callee2limit.set(callee, prev_limits & limits);
+            }
+        }
+
+        
+        
+        
+        callee_limits.length = 0;
+        for (const callee of ordered_callees) {
+            const limits = callee2limit.get(callee);
+            callee_limits.push({callee, limits});
+            if (!(callee in callersOf))
+                callersOf[callee] = [];
+            callersOf[callee].push({caller, limits});
+        }
+    }
+
+    return callersOf;
 }
-
-
-
-var functionNames = [""];
-
-
-var idToMangled = [""];
 
 function loadCallgraph(file)
 {
-    var suppressedFieldCalls = {};
-    var resolvedFunctions = {};
+    const fieldCallLimits = {};
+    const fieldCallCSU = new Map(); 
+    const resolvedFieldCalls = new Set();
 
-    var numGCCalls = 0;
+    
+    var functionLimits = {};
 
-    for (var line of readFileLines_gen(file)) {
+    let numGCCalls = 0;
+
+    for (let line of readFileLines_gen(file)) {
         line = line.replace(/\n/, "");
 
-        var match;
+        let match;
         if (match = line.charAt(0) == "#" && /^\#(\d+) (.*)/.exec(line)) {
             assert(functionNames.length == match[1]);
             functionNames.push(match[2]);
-            var [ mangled, readable ] = splitFunction(match[2]);
+            const [ mangled, readable ] = splitFunction(match[2]);
             if (mangled in readableNames)
                 readableNames[mangled].push(readable);
             else
                 readableNames[mangled] = [ readable ];
             mangledName[readable] = mangled;
+            mangledToId[mangled] = idToMangled.length;
             idToMangled.push(mangled);
             continue;
         }
-        var suppressed = false;
-        if (line.indexOf("SUPPRESS_GC") != -1) {
-            match = /^(..)SUPPRESS_GC (.*)/.exec(line);
-            line = match[1] + match[2];
-            suppressed = true;
+        let limits = 0;
+        
+        
+        
+        
+        
+        
+        if (line.indexOf("/") != -1) {
+            match = /^(..)\/(\d+) (.*)/.exec(line);
+            line = match[1] + match[3];
+            limits = match[2]|0;
         }
-        var tag = line.charAt(0);
+        const tag = line.charAt(0);
         if (match = tag == 'I' && /^I (\d+) VARIABLE ([^\,]*)/.exec(line)) {
-            var mangledCaller = idToMangled[match[1]];
-            var name = match[2];
-            if (!indirectCallCannotGC(functionNames[match[1]], name) && !suppressed)
-                addGCFunction(mangledCaller, "IndirectCall: " + name);
-        } else if (match = (tag == 'F' || tag == 'V') && /^[FV] (\d+) CLASS (.*?) FIELD (.*)/.exec(line)) {
-            var caller = idToMangled[match[1]];
-            var csu = match[2];
-            var fullfield = csu + "." + match[3];
-            if (suppressed)
-                suppressedFieldCalls[fullfield] = true;
-            else if (!fieldCallCannotGC(csu, fullfield))
-                addGCFunction(caller, "FieldCall: " + fullfield);
+            const caller = match[1]|0;
+            const name = match[2];
+            if (!indirectCallCannotGC(functionNames[caller], name) &&
+                !(limits & LIMIT_CANNOT_GC))
+            {
+                addGCFunction(caller, "IndirectCall: " + name, functionLimits);
+            }
+        } else if (match = (tag == 'F' || tag == 'V') && /^[FV] (\d+) (\d+) CLASS (.*?) FIELD (.*)/.exec(line)) {
+            const caller = match[1]|0;
+            const fullfield = match[2]|0;
+            const csu = match[3];
+            const fullfield_str = csu + "." + match[4];
+            assert(functionNames[fullfield] == fullfield_str);
+            if (limits)
+                fieldCallLimits[fullfield] = limits;
+            addToKeyedList(calleesOf, caller, {callee:fullfield, limits});
+            fieldCallCSU.set(fullfield, csu);
         } else if (match = tag == 'D' && /^D (\d+) (\d+)/.exec(line)) {
-            var caller = idToMangled[match[1]];
-            var callee = idToMangled[match[2]];
-            addCallEdge(caller, callee, suppressed);
+            const caller = match[1]|0;
+            const callee = match[2]|0;
+            addToKeyedList(calleesOf, caller, {callee:callee, limits:limits});
         } else if (match = tag == 'R' && /^R (\d+) (\d+)/.exec(line)) {
-            var callerField = idToMangled[match[1]];
-            var callee = idToMangled[match[2]];
-            addCallEdge(callerField, callee, false);
-            resolvedFunctions[callerField] = true;
+            const callerField = match[1]|0;
+            const callee = match[2]|0;
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            addToKeyedList(calleesOf, callerField, {callee:callee, limits:0});
+            
+            
+            resolvedFieldCalls.add(callerField);
         } else if (match = tag == 'T' && /^T (\d+) (.*)/.exec(line)) {
-            var mangled = idToMangled[match[1]];
-            var tag = match[2];
+            const mangled = match[1]|0;
+            let tag = match[2];
             if (tag == 'GC Call') {
-                addGCFunction(mangled, "GC");
+                addGCFunction(mangled, "GC", functionLimits);
                 numGCCalls++;
             }
+        } else {
+            assert(false, "Invalid format in callgraph line: " + line);
         }
     }
+
+    
+    
+    
+    
+    callersOf = merge_repeated_calls(calleesOf);
 
     
     
     
     for (var func of extraGCFunctions()) {
-        addGCFunction(func, "annotation");
+        addGCFunction(mangledToId[func], "annotation", functionLimits);
     }
 
+    
+    
+    
+
+    
     
     
     var worklist = [];
-    for (var callee in callerGraph)
-        suppressedFunctions[callee] = true;
-    for (var caller in calleeGraph) {
-        if (!(caller in callerGraph)) {
-            suppressedFunctions[caller] = true;
-            worklist.push(caller);
+    for (let callee in callersOf)
+        functionLimits[callee] = LIMIT_UNVISITED;
+    for (var caller in calleesOf) {
+        if (!(caller in callersOf)) {
+            functionLimits[caller] = LIMIT_UNVISITED;
+            worklist.push([caller, LIMIT_NONE, 'root']);
         }
+    }
+
+    
+    for (var [name, limits] of Object.entries(fieldCallLimits)) {
+        if (limits)
+            functionLimits[name] = limits;
     }
 
     
     
     
-    var top = worklist.length;
-    while (top > 0) {
-        name = worklist[--top];
-        if (!(name in suppressedFunctions))
-            continue;
-        delete suppressedFunctions[name];
-        if (!(name in calleeGraph))
-            continue;
-        for (var entry of calleeGraph[name]) {
-            if (!entry.suppressed)
-                worklist[top++] = entry.callee;
+    while (worklist.length > 0) {
+        
+        
+        const [caller, edge_limits, callercaller] = worklist.pop();
+        const prev_limits = functionLimits[caller];
+        if (prev_limits & ~edge_limits) {
+            
+            
+            
+            
+            const new_limits = prev_limits & edge_limits;
+            if (new_limits)
+                functionLimits[caller] = new_limits;
+            else
+                delete functionLimits[caller];
+            for (const {callee, limits} of (calleesOf[caller] || []))
+                worklist.push([callee, limits | edge_limits, caller]);
         }
+    }
+
+    
+    
+    for (var func in functionLimits) {
+        if (functionLimits[func] == LIMIT_UNVISITED)
+            delete functionLimits[func];
     }
 
     
     for (var name in gcFunctions) {
-        if (name in suppressedFunctions)
+        if (functionLimits[name] & LIMIT_CANNOT_GC)
             delete gcFunctions[name];
     }
 
-    for (var name in suppressedFieldCalls) {
-        suppressedFunctions[name] = true;
-    }
+    
+    
 
     
     
@@ -180,25 +282,67 @@ function loadCallgraph(file)
 
     
     var worklist = [];
-    for (var name in gcFunctions)
+    for (const name in gcFunctions)
         worklist.push(name);
 
     
-    while (worklist.length) {
-        name = worklist.shift();
-        assert(name in gcFunctions);
-        if (!(name in callerGraph))
-            continue;
-        for (var entry of callerGraph[name]) {
-            if (!entry.suppressed && addGCFunction(entry.caller, name))
-                worklist.push(entry.caller);
+    for (const [name, csuName] of fieldCallCSU) {
+        if (resolvedFieldCalls.has(name))
+            continue; 
+        const fullFieldName = idToMangled[name];
+        if (!fieldCallCannotGC(csuName, fullFieldName)) {
+            gcFunctions[name] = 'unresolved ' + idToMangled[name];
+            worklist.push(name);
         }
     }
 
     
     
-    for (var name in resolvedFunctions) {
-        if (!(name in gcFunctions))
-            suppressedFunctions[name] = true;
+    while (worklist.length) {
+        name = worklist.shift();
+        assert(name in gcFunctions);
+        if (!(name in callersOf))
+            continue;
+        for (const {caller, limits} of callersOf[name]) {
+            if (!(limits & LIMIT_CANNOT_GC)) {
+                if (addGCFunction(caller, name, functionLimits))
+                    worklist.push(caller);
+            }
+        }
+    }
+
+    
+    
+
+    for (const [id, limits] of Object.entries(functionLimits))
+        limitedFunctions[idToMangled[id]] = limits;
+
+    
+    
+    
+    remap_ids_to_mangled_names();
+}
+
+function remap_ids_to_mangled_names() {
+    var tmp = gcFunctions;
+    gcFunctions = {};
+    for (const [caller, reason] of Object.entries(tmp))
+        gcFunctions[idToMangled[caller]] = idToMangled[reason] || reason;
+
+    tmp = calleesOf;
+    calleesOf = {};
+    for (const [callerId, callees] of Object.entries(calleesOf)) {
+        const caller = idToMangled[callerId];
+        for (const {calleeId, limits} of callees)
+            calleesOf[caller][idToMangled[calleeId]] = limits;
+    }
+
+    tmp = callersOf;
+    callersOf = {};
+    for (const [calleeId, callers] of Object.entries(callersOf)) {
+        const callee = idToMangled[calleeId];
+        callersOf[callee] = {};
+        for (const {callerId, limits} of callers)
+            callersOf[callee][idToMangled[caller]] = limits;
     }
 }

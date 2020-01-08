@@ -2,6 +2,22 @@
 
 "use strict";
 
+loadRelativeToScript('dumpCFG.js');
+
+
+
+
+var LIMIT_NONE = 0;
+var LIMIT_CANNOT_GC = 1;
+var LIMIT_ALL = 1;
+
+
+
+
+
+
+var LIMIT_UNVISITED = 0xffff;
+
 
 
 var internalMarker = " *INTERNAL* ";

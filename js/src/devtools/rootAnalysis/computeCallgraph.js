@@ -39,6 +39,11 @@ function printOnce(line)
 
 
 
+
+
+
+
+
 function getAnnotations(body)
 {
     var all_annotations = {};
@@ -56,6 +61,7 @@ function getAnnotations(body)
     return all_annotations;
 }
 
+
 function getTags(functionName, body) {
     var tags = new Set();
     var annotations = getAnnotations(body);
@@ -67,6 +73,8 @@ function getTags(functionName, body) {
     }
     return tags;
 }
+
+
 
 function processBody(functionName, body)
 {
@@ -81,7 +89,10 @@ function processBody(functionName, body)
     
     
     
-    var seen = [ new Set(), new Set() ];
+    
+    
+    
+    var seen = new Map();
 
     lastline = null;
     for (var edge of body.PEdge) {
@@ -89,21 +100,28 @@ function processBody(functionName, body)
             continue;
 
         
-        var edgeSuppressed = (edge.Index[0] in body.suppressed);
+        
+        
+        var edgeLimited = body.limits[edge.Index[0]] | 0;
 
         for (var callee of getCallees(edge)) {
-            var suppressed = Boolean(edgeSuppressed || callee.suppressed);
-            var prologue = suppressed ? "SUPPRESS_GC " : "";
+            
+            
+            
+            const limits = edgeLimited | callee.limits;
+            let prologue = limits ? `/${limits} ` : "";
             prologue += memo(functionName) + " ";
             if (callee.kind == 'direct') {
-                if (!seen[+suppressed].has(callee.name)) {
-                    seen[+suppressed].add(callee.name);
+                const prev_limits = seen.has(callee.name) ? seen.get(callee.name) : LIMIT_UNVISITED;
+                if (prev_limits & ~limits) {
+                    
+                    seen.set(callee.name, prev_limits & limits);
                     printOnce("D " + prologue + memo(callee.name));
                 }
             } else if (callee.kind == 'field') {
                 var { csu, field, isVirtual } = callee;
                 const tag = isVirtual ? 'V' : 'F';
-                printOnce(tag + " " + prologue + "CLASS " + csu + " FIELD " + field);
+                printOnce(tag + " " + prologue + memo(`${csu}.${field}`) + " CLASS " + csu + " FIELD " + field);
             } else if (callee.kind == 'resolved-field') {
                 
                 
@@ -155,11 +173,12 @@ if (theFunctionNameToFind) {
 function process(functionName, functionBodies)
 {
     for (var body of functionBodies)
-        body.suppressed = [];
+        body.limits = [];
 
     for (var body of functionBodies) {
-        for (var [pbody, id] of allRAIIGuardedCallPoints(typeInfo, functionBodies, body, isSuppressConstructor))
-            pbody.suppressed[id] = true;
+        for (var [pbody, id, limits] of allRAIIGuardedCallPoints(typeInfo, functionBodies, body, isLimitConstructor)) {
+            pbody.limits[id] = limits;
+        }
     }
 
     for (var body of functionBodies)

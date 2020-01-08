@@ -19,9 +19,11 @@ function addToNamedSet(map, name, entry)
 function fieldKey(csuName, field)
 {
     
+    
+    
     var nargs = 0;
     if (field.Type.Kind == "Function" && "TypeFunctionArguments" in field.Type)
-	nargs = field.Type.TypeFunctionArguments.length;
+        nargs = field.Type.TypeFunctionArguments.Type.length;
     return csuName + ":" + field.Name[0] + ":" + nargs;
 }
 
@@ -68,6 +70,7 @@ function nearestAncestorMethods(csu, field)
 
 
 
+
 function findVirtualFunctions(initialCSU, field)
 {
     const fieldName = field.Name[0];
@@ -87,7 +90,7 @@ function findVirtualFunctions(initialCSU, field)
     while (worklist.length) {
         const csu = worklist.pop();
         if (isSuppressedVirtualMethod(csu, fieldName))
-            return [ new Set(), true ];
+            return [ new Set(), LIMIT_CANNOT_GC ];
         if (isOverridableField(initialCSU, csu, fieldName)) {
             
             
@@ -120,7 +123,7 @@ function findVirtualFunctions(initialCSU, field)
             worklist.push(...subclasses.get(csu));
     }
 
-    return [ functions, false ];
+    return [ functions, LIMIT_NONE ];
 }
 
 
@@ -141,7 +144,7 @@ function getCallees(edge)
 
     if (callee.Kind == "Int")
         return []; 
-  
+
     assert(callee.Kind == "Drf");
     const called = callee.Exp[0];
     if (called.Kind == "Var") {
@@ -159,15 +162,11 @@ function getCallees(edge)
     const fieldName = field.Name[0];
     const csuName = field.FieldCSU.Type.Name;
     let functions;
+    let limits = LIMIT_NONE;
     if ("FieldInstanceFunction" in field) {
-        let suppressed;
-        [ functions, suppressed ] = findVirtualFunctions(csuName, field, suppressed);
-        if (suppressed) {
-            
-            
-            callees.push({'kind': "field", 'csu': csuName, 'field': fieldName,
-                          'suppressed': true, 'isVirtual': true});
-        }
+        [ functions, limits ] = findVirtualFunctions(csuName, field);
+        callees.push({'kind': "field", 'csu': csuName, 'field': fieldName,
+                      'limits': limits, 'isVirtual': true});
     } else {
         functions = new Set([null]); 
     }
@@ -186,11 +185,11 @@ function getCallees(edge)
             
             
             callees.push({'kind': "field", 'csu': csuName, 'field': fieldName,
+                          'limits': limits,
 			  'isVirtual': "FieldInstanceFunction" in field});
             fullyResolved = false;
         } else {
-            callees.push({'kind': "direct", 'name': name});
-            targets.push({'kind': "direct", 'name': name});
+            targets.push({'kind': "direct", name, limits });
         }
     }
     if (fullyResolved)

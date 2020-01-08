@@ -340,31 +340,37 @@ function isUnsafeStorage(typeName)
     return typeName.startsWith('UniquePtr<');
 }
 
-function isSuppressConstructor(typeInfo, edgeType, varName)
+
+
+function isLimitConstructor(typeInfo, edgeType, varName)
 {
     
     if (edgeType.Kind != 'Function')
-        return false;
+        return 0;
     if (!('TypeFunctionCSU' in edgeType))
-        return false;
+        return 0;
     if (edgeType.Type.Kind != 'Void')
-        return false;
+        return 0;
 
     
     var type = edgeType.TypeFunctionCSU.Type.Name;
-    if (!(type in typeInfo.GCSuppressors))
-        return false;
+    let limit = 0;
+    if (type in typeInfo.GCSuppressors)
+        limit = limit | LIMIT_CANNOT_GC;
 
     
     
     var [ mangled, unmangled ] = splitFunction(varName[0]);
-    if (mangled.search(/C\dE/) == -1)
-        return false; 
+    if (mangled.search(/C\d[EI]/) == -1)
+        return 0; 
     var m = unmangled.match(/([~\w]+)(?:<.*>)?\(/);
     if (!m)
-        return false;
+        return 0;
     var type_stem = type.replace(/\w+::/g, '').replace(/\<.*\>/g, '');
-    return m[1] == type_stem;
+    if (m[1] != type_stem)
+        return 0;
+
+    return limit;
 }
 
 
