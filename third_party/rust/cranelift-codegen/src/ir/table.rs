@@ -1,6 +1,6 @@
 
 
-use ir::immediates::Imm64;
+use ir::immediates::Uimm64;
 use ir::{GlobalValue, Type};
 use std::fmt;
 
@@ -12,13 +12,13 @@ pub struct TableData {
 
     
     
-    pub min_size: Imm64,
+    pub min_size: Uimm64,
 
     
     pub bound_gv: GlobalValue,
 
     
-    pub element_size: Imm64,
+    pub element_size: Uimm64,
 
     
     pub index_type: Type,

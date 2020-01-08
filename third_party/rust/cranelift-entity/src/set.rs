@@ -1,8 +1,9 @@
 
 
+use keys::Keys;
 use std::marker::PhantomData;
 use std::vec::Vec;
-use {EntityRef, Keys};
+use EntityRef;
 
 
 

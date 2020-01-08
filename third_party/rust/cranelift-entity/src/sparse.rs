@@ -7,11 +7,12 @@
 
 
 
+use map::SecondaryMap;
 use std::mem;
 use std::slice;
 use std::u32;
 use std::vec::Vec;
-use {EntityRef, SecondaryMap};
+use EntityRef;
 
 
 

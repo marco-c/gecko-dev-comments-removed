@@ -27,6 +27,15 @@ impl MemFlags {
     }
 
     
+    
+    pub fn trusted() -> Self {
+        let mut result = Self::new();
+        result.set_notrap();
+        result.set_aligned();
+        result
+    }
+
+    
     fn read(self, bit: FlagBit) -> bool {
         self.bits & (1 << bit as usize) != 0
     }

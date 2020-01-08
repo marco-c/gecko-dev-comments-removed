@@ -208,7 +208,7 @@ pub trait TargetIsa: fmt::Display + Sync {
 
     
     fn default_call_conv(&self) -> CallConv {
-        CallConv::default_for_triple(self.triple())
+        CallConv::triple_default(self.triple())
     }
 
     

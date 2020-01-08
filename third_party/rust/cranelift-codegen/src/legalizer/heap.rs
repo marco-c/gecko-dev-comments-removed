@@ -49,7 +49,7 @@ fn dynamic_addr(
     bound_gv: ir::GlobalValue,
     func: &mut ir::Function,
 ) {
-    let access_size = i64::from(access_size);
+    let access_size = u64::from(access_size);
     let offset_ty = func.dfg.value_type(offset);
     let addr_ty = func.dfg.value_type(func.dfg.first_result(inst));
     let min_size = func.heaps[heap].min_size.into();
@@ -67,13 +67,13 @@ fn dynamic_addr(
     } else if access_size <= min_size {
         
         
-        let adj_bound = pos.ins().iadd_imm(bound, -access_size);
+        let adj_bound = pos.ins().iadd_imm(bound, -(access_size as i64));
         oob = pos
             .ins()
             .icmp(IntCC::UnsignedGreaterThan, offset, adj_bound);
     } else {
         
-        let access_size_val = pos.ins().iconst(offset_ty, access_size);
+        let access_size_val = pos.ins().iconst(offset_ty, access_size as i64);
         let (adj_offset, overflow) = pos.ins().iadd_cout(offset, access_size_val);
         pos.ins().trapnz(overflow, ir::TrapCode::HeapOutOfBounds);
         oob = pos
@@ -91,11 +91,11 @@ fn static_addr(
     heap: ir::Heap,
     offset: ir::Value,
     access_size: u32,
-    bound: i64,
+    bound: u64,
     func: &mut ir::Function,
     cfg: &mut ControlFlowGraph,
 ) {
-    let access_size = i64::from(access_size);
+    let access_size = u64::from(access_size);
     let offset_ty = func.dfg.value_type(offset);
     let addr_ty = func.dfg.value_type(func.dfg.first_result(inst));
     let mut pos = FuncCursor::new(func).at_inst(inst);
@@ -117,7 +117,7 @@ fn static_addr(
     }
 
     
-    let limit = bound - access_size;
+    let limit = bound - u64::from(access_size);
 
     
     
@@ -126,10 +126,10 @@ fn static_addr(
             
             
             pos.ins()
-                .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, offset, limit - 1)
+                .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, offset, limit as i64 - 1)
         } else {
             pos.ins()
-                .icmp_imm(IntCC::UnsignedGreaterThan, offset, limit)
+                .icmp_imm(IntCC::UnsignedGreaterThan, offset, limit as i64)
         };
         pos.ins().trapnz(oob, ir::TrapCode::HeapOutOfBounds);
     }

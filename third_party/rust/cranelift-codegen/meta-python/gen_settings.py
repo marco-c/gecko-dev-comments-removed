@@ -255,7 +255,7 @@ def gen_display(sgrp, fmt):
             fmt.line('Ok(())')
 
 
-def gen_constructor(sgrp, parent, fmt):
+def gen_constructor(sgrp, fmt):
     
     """
     Generate a Flags constructor.
@@ -310,7 +310,7 @@ def gen_group(sgrp, fmt):
     with fmt.indented('pub struct Flags {', '}'):
         fmt.line('bytes: [u8; {}],'.format(sgrp.byte_size()))
 
-    gen_constructor(sgrp, None, fmt)
+    gen_constructor(sgrp, fmt)
     gen_enum_types(sgrp, fmt)
     gen_getters(sgrp, fmt)
     gen_descriptors(sgrp, fmt)

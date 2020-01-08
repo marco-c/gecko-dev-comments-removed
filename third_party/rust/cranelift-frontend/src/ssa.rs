@@ -192,9 +192,9 @@ impl SSABuilder {
 
 #[derive(Debug)]
 enum ZeroOneOrMore<T> {
-    Zero(),
+    Zero,
     One(T),
-    More(),
+    More,
 }
 
 #[derive(Debug)]
@@ -526,7 +526,7 @@ impl SSABuilder {
         temp_arg_var: Variable,
         dest_ebb: Ebb,
     ) {
-        let mut pred_values: ZeroOneOrMore<Value> = ZeroOneOrMore::Zero();
+        let mut pred_values: ZeroOneOrMore<Value> = ZeroOneOrMore::Zero;
 
         
         for _ in 0..self.predecessors(dest_ebb).len() {
@@ -534,21 +534,21 @@ impl SSABuilder {
             
             let pred_val = self.results.pop().unwrap();
             match pred_values {
-                ZeroOneOrMore::Zero() => {
+                ZeroOneOrMore::Zero => {
                     if pred_val != temp_arg_val {
                         pred_values = ZeroOneOrMore::One(pred_val);
                     }
                 }
                 ZeroOneOrMore::One(old_val) => {
                     if pred_val != temp_arg_val && pred_val != old_val {
-                        pred_values = ZeroOneOrMore::More();
+                        pred_values = ZeroOneOrMore::More;
                     }
                 }
-                ZeroOneOrMore::More() => {}
+                ZeroOneOrMore::More => {}
             }
         }
         let result_val = match pred_values {
-            ZeroOneOrMore::Zero() => {
+            ZeroOneOrMore::Zero => {
                 
                 
                 
@@ -583,7 +583,7 @@ impl SSABuilder {
                 func.dfg.change_to_alias(temp_arg_val, resolved);
                 resolved
             }
-            ZeroOneOrMore::More() => {
+            ZeroOneOrMore::More => {
                 
                 
                 

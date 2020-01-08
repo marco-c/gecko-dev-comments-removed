@@ -1,10 +1,12 @@
 
 
+use iter::{Iter, IterMut};
+use keys::Keys;
 use std::marker::PhantomData;
 use std::ops::{Index, IndexMut};
 use std::slice;
 use std::vec::Vec;
-use {EntityRef, Iter, IterMut, Keys};
+use EntityRef;
 
 
 

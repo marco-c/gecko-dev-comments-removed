@@ -40,13 +40,87 @@ impl From<i64> for Imm64 {
     }
 }
 
+impl Display for Imm64 {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        let x = self.0;
+        if -10_000 < x && x < 10_000 {
+            
+            write!(f, "{}", x)
+        } else {
+            write_hex(x as u64, f)
+        }
+    }
+}
+
+
+fn parse_i64(s: &str) -> Result<i64, &'static str> {
+    let negative = s.starts_with('-');
+    let s2 = if negative || s.starts_with('+') {
+        &s[1..]
+    } else {
+        s
+    };
+
+    let mut value = parse_u64(s2)?;
+
+    
+    if negative {
+        value = value.wrapping_neg();
+        
+        if value as i64 > 0 {
+            return Err("Negative number too small");
+        }
+    }
+    Ok(value as i64)
+}
+
+impl FromStr for Imm64 {
+    type Err = &'static str;
+
+    
+    fn from_str(s: &str) -> Result<Self, &'static str> {
+        parse_i64(s).map(Self::new)
+    }
+}
+
+
+
+
+
+#[derive(Copy, Clone, PartialEq, Eq, Debug, Hash)]
+pub struct Uimm64(u64);
+
+impl Uimm64 {
+    
+    pub fn new(x: u64) -> Self {
+        Uimm64(x)
+    }
+
+    
+    pub fn wrapping_neg(self) -> Self {
+        Uimm64(self.0.wrapping_neg())
+    }
+}
+
+impl Into<u64> for Uimm64 {
+    fn into(self) -> u64 {
+        self.0
+    }
+}
+
+impl From<u64> for Uimm64 {
+    fn from(x: u64) -> Self {
+        Uimm64(x)
+    }
+}
 
 
 
 
 
 
-fn write_hex(x: i64, f: &mut Formatter) -> fmt::Result {
+
+fn write_hex(x: u64, f: &mut Formatter) -> fmt::Result {
     let mut pos = (64 - x.leading_zeros() - 1) & 0xf0;
     write!(f, "0x{:04x}", (x >> pos) & 0xffff)?;
     while pos > 0 {
@@ -56,10 +130,10 @@ fn write_hex(x: i64, f: &mut Formatter) -> fmt::Result {
     Ok(())
 }
 
-impl Display for Imm64 {
+impl Display for Uimm64 {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let x = self.0;
-        if -10_000 < x && x < 10_000 {
+        if x < 10_000 {
             
             write!(f, "{}", x)
         } else {
@@ -69,19 +143,15 @@ impl Display for Imm64 {
 }
 
 
-fn parse_i64(s: &str) -> Result<i64, &'static str> {
+fn parse_u64(s: &str) -> Result<u64, &'static str> {
     let mut value: u64 = 0;
     let mut digits = 0;
-    let negative = s.starts_with('-');
-    let s2 = if negative || s.starts_with('+') {
-        &s[1..]
-    } else {
-        s
-    };
 
-    if s2.starts_with("0x") {
+    if s.starts_with("-0x") {
+        return Err("Invalid character in hexadecimal number");
+    } else if s.starts_with("0x") {
         
-        for ch in s2[2..].chars() {
+        for ch in s[2..].chars() {
             match ch.to_digit(16) {
                 Some(digit) => {
                     digits += 1;
@@ -101,7 +171,7 @@ fn parse_i64(s: &str) -> Result<i64, &'static str> {
         }
     } else {
         
-        for ch in s2.chars() {
+        for ch in s.chars() {
             match ch.to_digit(16) {
                 Some(digit) => {
                     digits += 1;
@@ -128,23 +198,15 @@ fn parse_i64(s: &str) -> Result<i64, &'static str> {
         return Err("No digits in number");
     }
 
-    
-    if negative {
-        value = value.wrapping_neg();
-        
-        if value as i64 > 0 {
-            return Err("Negative number too small");
-        }
-    }
-    Ok(value as i64)
+    Ok(value)
 }
 
-impl FromStr for Imm64 {
+impl FromStr for Uimm64 {
     type Err = &'static str;
 
     
     fn from_str(s: &str) -> Result<Self, &'static str> {
-        parse_i64(s).map(Self::new)
+        parse_u64(s).map(Self::new)
     }
 }
 
@@ -182,7 +244,7 @@ impl Display for Uimm32 {
         if self.0 < 10_000 {
             write!(f, "{}", self.0)
         } else {
-            write_hex(i64::from(self.0), f)
+            write_hex(u64::from(self.0), f)
         }
     }
 }
@@ -268,7 +330,7 @@ impl Display for Offset32 {
         if val < 10_000 {
             write!(f, "{}", val)
         } else {
-            write_hex(val, f)
+            write_hex(val as u64, f)
         }
     }
 }
@@ -683,6 +745,20 @@ mod tests {
         assert_eq!(Imm64(0x10000).to_string(), "0x0001_0000");
     }
 
+    #[test]
+    fn format_uimm64() {
+        assert_eq!(Uimm64(0).to_string(), "0");
+        assert_eq!(Uimm64(9999).to_string(), "9999");
+        assert_eq!(Uimm64(10000).to_string(), "0x2710");
+        assert_eq!(Uimm64(-9999i64 as u64).to_string(), "0xffff_ffff_ffff_d8f1");
+        assert_eq!(
+            Uimm64(-10000i64 as u64).to_string(),
+            "0xffff_ffff_ffff_d8f0"
+        );
+        assert_eq!(Uimm64(0xffff).to_string(), "0xffff");
+        assert_eq!(Uimm64(0x10000).to_string(), "0x0001_0000");
+    }
+
     
     fn parse_ok<T: FromStr + Display>(text: &str, want: &str)
     where
@@ -748,6 +824,46 @@ mod tests {
 
         
         parse_err::<Imm64>("0x0_0000_0000_0000_0000", "Too many hexadecimal digits");
+    }
+
+    #[test]
+    fn parse_uimm64() {
+        parse_ok::<Uimm64>("0", "0");
+        parse_ok::<Uimm64>("1", "1");
+        parse_ok::<Uimm64>("0x0", "0");
+        parse_ok::<Uimm64>("0xf", "15");
+        parse_ok::<Uimm64>("0xffffffff_fffffff7", "0xffff_ffff_ffff_fff7");
+
+        
+        parse_ok::<Uimm64>("0xffffffff_ffffffff", "0xffff_ffff_ffff_ffff");
+        parse_ok::<Uimm64>("0x80000000_00000000", "0x8000_0000_0000_0000");
+        parse_ok::<Uimm64>("18446744073709551615", "0xffff_ffff_ffff_ffff");
+        
+        parse_err::<Uimm64>("18446744073709551616", "Too large decimal number");
+        parse_err::<Uimm64>("184467440737095516100", "Too large decimal number");
+
+        
+        parse_ok::<Uimm64>("0_0", "0");
+        parse_ok::<Uimm64>("_10_", "10");
+        parse_ok::<Uimm64>("0x97_88_bb", "0x0097_88bb");
+        parse_ok::<Uimm64>("0x_97_", "151");
+
+        parse_err::<Uimm64>("", "No digits in number");
+        parse_err::<Uimm64>("_", "No digits in number");
+        parse_err::<Uimm64>("0x", "No digits in number");
+        parse_err::<Uimm64>("0x_", "No digits in number");
+        parse_err::<Uimm64>("-", "Invalid character in decimal number");
+        parse_err::<Uimm64>("-0x", "Invalid character in hexadecimal number");
+        parse_err::<Uimm64>(" ", "Invalid character in decimal number");
+        parse_err::<Uimm64>("0 ", "Invalid character in decimal number");
+        parse_err::<Uimm64>(" 0", "Invalid character in decimal number");
+        parse_err::<Uimm64>("--", "Invalid character in decimal number");
+        parse_err::<Uimm64>("-0x-", "Invalid character in hexadecimal number");
+        parse_err::<Uimm64>("-0", "Invalid character in decimal number");
+        parse_err::<Uimm64>("-1", "Invalid character in decimal number");
+
+        
+        parse_err::<Uimm64>("0x0_0000_0000_0000_0000", "Too many hexadecimal digits");
     }
 
     #[test]

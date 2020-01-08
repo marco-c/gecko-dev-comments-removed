@@ -1,6 +1,7 @@
 
 
 use cranelift_codegen::cursor::FuncCursor;
+use cranelift_codegen::ir::immediates::Offset32;
 use cranelift_codegen::ir::{self, InstBuilder};
 use cranelift_codegen::isa::TargetFrontendConfig;
 use std::convert::From;
@@ -21,6 +22,8 @@ pub enum GlobalVariable {
         
         gv: ir::GlobalValue,
         
+        offset: Offset32,
+        
         ty: ir::Type,
     },
 }
@@ -35,11 +38,7 @@ pub enum WasmError {
     
     
     
-    #[fail(
-        display = "Invalid input WebAssembly code at offset {}: {}",
-        _1,
-        _0
-    )]
+    #[fail(display = "Invalid input WebAssembly code at offset {}: {}", _1, _0)]
     InvalidWebAssembly {
         
         message: &'static str,
@@ -238,9 +237,6 @@ pub trait FuncEnvironment {
 pub trait ModuleEnvironment<'data> {
     
     fn target_config(&self) -> TargetFrontendConfig;
-
-    
-    fn get_func_name(&self, func_index: FuncIndex) -> ir::ExternalName;
 
     
     fn declare_signature(&mut self, sig: &ir::Signature);

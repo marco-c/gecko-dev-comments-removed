@@ -165,7 +165,8 @@ fn split_any(
                     .get_mut(
                         num_fixed_args + repair.hi_num,
                         &mut pos.func.dfg.value_lists,
-                    ).unwrap() = hi;
+                    )
+                    .unwrap() = hi;
             } else {
                 
                 

@@ -110,9 +110,7 @@ fn load_addr(
     };
 
     
-    let mut mflags = ir::MemFlags::new();
-    mflags.set_notrap();
-    mflags.set_aligned();
+    let mut mflags = ir::MemFlags::trusted();
     if readonly {
         mflags.set_readonly();
     }

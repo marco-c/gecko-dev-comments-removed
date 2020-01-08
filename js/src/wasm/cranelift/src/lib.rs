@@ -21,11 +21,11 @@ extern crate target_lexicon;
 extern crate log;
 extern crate env_logger;
 
-mod baldrapi;  
+mod baldrapi; 
 mod baldrdash; 
-mod compile;   
-mod cpu;       
-mod utils;     
+mod compile; 
+mod cpu; 
+mod utils; 
 mod wasm2clif; 
 
 use baldrdash::{CompiledFunc, FuncCompileInput, ModuleEnvironment, StaticEnvironment};

@@ -524,8 +524,13 @@ X86_32.enc(base.indirect_jump_table_br.i32, *r.indirect_jmp(0xff, rrr=4))
 
 
 
+
 X86_32.enc(base.trap, *r.trap(0x0f, 0x0b))
 X86_64.enc(base.trap, *r.trap(0x0f, 0x0b))
+
+
+X86_32.enc(base.debugtrap, r.debugtrap, 0)
+X86_64.enc(base.debugtrap, r.debugtrap, 0)
 
 
 X86_32.enc(base.trapif, r.trapif, 0)

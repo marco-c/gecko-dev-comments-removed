@@ -71,9 +71,9 @@ pub enum GlobalInit {
     
     F64Const(u64),
     
-    GlobalRef(GlobalIndex),
+    GetGlobal(GlobalIndex),
     
-    Import(),
+    Import,
 }
 
 
@@ -82,25 +82,27 @@ pub struct Table {
     
     pub ty: TableElementType,
     
-    pub size: usize,
+    pub minimum: u32,
     
-    pub maximum: Option<usize>,
+    pub maximum: Option<u32>,
 }
 
 
 #[derive(Debug, Clone, Copy)]
 pub enum TableElementType {
+    
     Val(ir::Type),
-    Func(),
+    
+    Func,
 }
 
 
 #[derive(Debug, Clone, Copy)]
 pub struct Memory {
     
-    pub pages_count: usize,
+    pub minimum: u32,
     
-    pub maximum: Option<usize>,
+    pub maximum: Option<u32>,
     
     pub shared: bool,
 }

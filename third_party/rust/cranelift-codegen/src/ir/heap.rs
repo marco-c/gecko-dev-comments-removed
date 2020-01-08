@@ -1,6 +1,6 @@
 
 
-use ir::immediates::Imm64;
+use ir::immediates::Uimm64;
 use ir::{GlobalValue, Type};
 use std::fmt;
 
@@ -12,10 +12,10 @@ pub struct HeapData {
 
     
     
-    pub min_size: Imm64,
+    pub min_size: Uimm64,
 
     
-    pub guard_size: Imm64,
+    pub offset_guard_size: Uimm64,
 
     
     pub style: HeapStyle,
@@ -37,7 +37,7 @@ pub enum HeapStyle {
     
     Static {
         
-        bound: Imm64,
+        bound: Uimm64,
     },
 }
 
@@ -55,8 +55,8 @@ impl fmt::Display for HeapData {
         }
         write!(
             f,
-            ", guard {}, index_type {}",
-            self.guard_size, self.index_type
+            ", offset_guard {}, index_type {}",
+            self.offset_guard_size, self.index_type
         )
     }
 }
