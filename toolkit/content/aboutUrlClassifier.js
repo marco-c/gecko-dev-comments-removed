@@ -339,6 +339,7 @@ var Debug = {
   
   modules: ["UrlClassifierDbService",
             "nsChannelClassifier",
+            "UrlClassifier",
             "UrlClassifierProtocolParser",
             "UrlClassifierStreamUpdater",
             "UrlClassifierPrefixSet",
