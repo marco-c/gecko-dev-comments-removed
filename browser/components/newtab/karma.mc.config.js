@@ -13,7 +13,7 @@ const PATHS = {
   
   resourcePathRegEx: /^resource:\/\/activity-stream\//,
 
-  coverageReportingPath: "logs/coverage/",
+  coverageReportingPath: "logs/coverage/"
 };
 
 
@@ -21,7 +21,7 @@ const PATHS = {
 const preprocessors = {};
 preprocessors[PATHS.testFilesPattern] = [
   "webpack", 
-  "sourcemap", 
+  "sourcemap" 
 ];
 
 module.exports = function(config) {
@@ -33,17 +33,17 @@ module.exports = function(config) {
     customLaunchers: {
       FirefoxHeadless: {
         base: "Firefox",
-        flags: ["--headless"],
-      },
+        flags: ["--headless"]
+      }
     },
     frameworks: [
       "chai", 
       "mocha", 
-      "sinon", 
+      "sinon" 
     ],
     reporters: [
       "coverage", 
-      "mocha", 
+      "mocha" 
     ],
     coverageReporter: {
       dir: PATHS.coverageReportingPath,
@@ -53,14 +53,14 @@ module.exports = function(config) {
           statements: 100,
           lines: 100,
           functions: 100,
-          branches: 90,
-        },
+          branches: 90
+        }
       },
       reporters: [
         {type: "html", subdir: "report-html"},
         {type: "text", subdir: ".", file: "text.txt"},
-        {type: "text-summary", subdir: ".", file: "text-summary.txt"},
-      ],
+        {type: "text-summary", subdir: ".", file: "text-summary.txt"}
+      ]
     },
     files: [PATHS.testEntryFile],
     preprocessors,
@@ -74,15 +74,15 @@ module.exports = function(config) {
         extensions: [".js", ".jsx"],
         modules: [
           PATHS.moduleResolveDirectory,
-          "node_modules",
-        ],
+          "node_modules"
+        ]
       },
       externals: {
         
         
         "react/addons": true,
         "react/lib/ReactContext": true,
-        "react/lib/ExecutionEnvironment": true,
+        "react/lib/ExecutionEnvironment": true
       },
       module: {
         rules: [
@@ -98,10 +98,10 @@ module.exports = function(config) {
                   ["jsm-to-commonjs", {basePath: PATHS.resourcePathRegEx, replace: true}], 
                   ["transform-async-to-module-method", {module: "co-task", method: "async"}], 
                   "transform-es2015-modules-commonjs", 
-                  ["transform-object-rest-spread", {"useBuiltIns": true}], 
-                ],
-              },
-            }],
+                  ["transform-object-rest-spread", {"useBuiltIns": true}] 
+                ]
+              }
+            }]
           },
           {
             test: /\.js$/,
@@ -114,10 +114,10 @@ module.exports = function(config) {
                   "transform-es2015-modules-commonjs",
                   ["transform-object-rest-spread", {"useBuiltIns": true}],
                   ["transform-async-to-generator"],
-                  ["transform-async-generator-functions"],
-                ],
-              },
-            }],
+                  ["transform-async-generator-functions"]
+                ]
+              }
+            }]
           },
           {
             test: /\.jsx$/,
@@ -125,8 +125,8 @@ module.exports = function(config) {
             loader: "babel-loader",
             options: {
               presets: ["react"], 
-              plugins: [["transform-object-rest-spread", {"useBuiltIns": true}]],
-            },
+              plugins: [["transform-object-rest-spread", {"useBuiltIns": true}]]
+            }
           },
           {
             enforce: "post",
@@ -135,7 +135,7 @@ module.exports = function(config) {
             include: [
               path.resolve("content-src"),
               path.resolve("lib"),
-              path.resolve("common"),
+              path.resolve("common")
             ],
             exclude: [
               path.resolve("test"),
@@ -144,13 +144,13 @@ module.exports = function(config) {
               path.resolve("lib/ASRouterTriggerListeners.jsm"),
               path.resolve("lib/OnboardingMessageProvider.jsm"),
               path.resolve("lib/CFRMessageProvider.jsm"),
-              path.resolve("lib/CFRPageActions.jsm"),
-            ],
-          },
-        ],
-      },
+              path.resolve("lib/CFRPageActions.jsm")
+            ]
+          }
+        ]
+      }
     },
     
-    webpackMiddleware: {noInfo: true},
+    webpackMiddleware: {noInfo: true}
   });
 };

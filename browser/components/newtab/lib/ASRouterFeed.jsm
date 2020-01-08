@@ -1,5 +1,8 @@
 const {actionTypes: at} = ChromeUtils.import("resource://activity-stream/common/Actions.jsm", {});
 const {ASRouter} = ChromeUtils.import("resource://activity-stream/lib/ASRouter.jsm", {});
+ChromeUtils.import("resource://gre/modules/Services.jsm");
+
+const ONBOARDING_FINISHED_PREF = "browser.onboarding.notification.finished";
 
 
 
@@ -11,25 +14,47 @@ class ASRouterFeed {
   }
 
   async enable() {
-    if (!this.router.initialized) {
-      await this.router.init(
-        this.store._messageChannel.channel,
-        this.store.dbStorage.getDbTable("snippets"),
-        this.store.dispatch
-      );
-    }
+    await this.router.init(
+      this.store._messageChannel.channel,
+      this.store.dbStorage.getDbTable("snippets"),
+      this.store.dispatch
+    );
+    
+    Services.prefs.setBoolPref(ONBOARDING_FINISHED_PREF, true);
   }
 
   disable() {
     if (this.router.initialized) {
       this.router.uninit();
+      
+      Services.prefs.setBoolPref(ONBOARDING_FINISHED_PREF, false);
+    }
+  }
+
+  
+
+
+
+
+  enableOrDisableBasedOnPref() {
+    const prefs = this.store.getState().Prefs.values;
+    const isExperimentEnabled = prefs.asrouterExperimentEnabled;
+    if (!this.router.initialized && isExperimentEnabled) {
+      this.enable();
+    } else if (!isExperimentEnabled && this.router.initialized) {
+      this.disable();
     }
   }
 
   onAction(action) {
     switch (action.type) {
       case at.INIT:
-        this.enable();
+        this.enableOrDisableBasedOnPref();
+        break;
+      case at.PREF_CHANGED:
+        if (action.data.name === "asrouterExperimentEnabled") {
+          this.enableOrDisableBasedOnPref();
+        }
         break;
       case at.UNINIT:
         this.disable();

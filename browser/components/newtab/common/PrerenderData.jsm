@@ -63,7 +63,7 @@ this.PrerenderData = new _PrerenderData({
     "feeds.section.topstories": true,
     "feeds.section.highlights": true,
     "sectionOrder": "topsites,topstories,highlights",
-    "collapsed": false,
+    "collapsed": false
   },
   
   
@@ -81,7 +81,7 @@ this.PrerenderData = new _PrerenderData({
     {oneOf: ["feeds.section.topstories", "feeds.section.highlights"]},
     
     
-    {indexedDB: ["collapsed"]},
+    {indexedDB: ["collapsed"]}
   ],
   initialSections: [
     {
@@ -89,16 +89,16 @@ this.PrerenderData = new _PrerenderData({
       icon: "pocket",
       id: "topstories",
       order: 1,
-      title: {id: "header_recommended_by", values: {provider: "Pocket"}},
+      title: {id: "header_recommended_by", values: {provider: "Pocket"}}
     },
     {
       enabled: true,
       id: "highlights",
       icon: "highlights",
       order: 2,
-      title: {id: "header_highlights"},
-    },
-  ],
+      title: {id: "header_highlights"}
+    }
+  ]
 });
 
 this._PrerenderData = _PrerenderData;

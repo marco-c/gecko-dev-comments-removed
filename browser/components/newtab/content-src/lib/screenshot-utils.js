@@ -46,5 +46,5 @@ export const ScreenshotUtils = {
     
     
     return !remoteImage && !localImage;
-  },
+  }
 };
