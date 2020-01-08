@@ -13,7 +13,10 @@ const {
   VIEW_NODE_SHAPE_POINT_TYPE,
 } = require("devtools/client/inspector/shared/node-types");
 
-const DEFAULT_GRID_COLOR = "#4B0082";
+loader.lazyRequireGetter(this, "parseURL", "devtools/client/shared/source-utils", true);
+loader.lazyRequireGetter(this, "asyncStorage", "devtools/shared/async-storage");
+
+const DEFAULT_HIGHLIGHTER_COLOR = "#9400FF";
 
 
 
@@ -246,11 +249,32 @@ class HighlightersOverlay {
   
 
 
-
-  getFlexboxHighlighterSettings() {
+  async getFlexboxHighlighterColor() {
+    
     const { flexbox } = this.store.getState();
     const color = flexbox.color;
-    return { color };
+
+    if (color) {
+      return color;
+    }
+
+    
+    
+    const customHostColors = await asyncStorage.getItem("flexboxInspectorHostColors") ||
+      {};
+
+    
+    
+    let hostname;
+    try {
+      hostname = parseURL(this.inspector.target.url).hostname ||
+        parseURL(this.inspector.target.url).protocol;
+    } catch (e) {
+      this._handleRejection(e);
+    }
+
+    return hostname && customHostColors[hostname] ?
+      customHostColors[hostname] : DEFAULT_HIGHLIGHTER_COLOR;
   }
 
   
@@ -290,9 +314,19 @@ class HighlightersOverlay {
       return;
     }
 
-    options = Object.assign({}, options, this.getFlexboxHighlighterSettings(node));
+    const color = await this.getFlexboxHighlighterColor(node);
+    options = Object.assign({}, options, { color });
 
-    const isShown = await highlighter.show(node, options);
+    let isShown;
+
+    try {
+      isShown = await highlighter.show(node, options);
+    } catch (e) {
+      
+      
+      this._handleRejection(e);
+    }
+
     if (!isShown) {
       return;
     }
@@ -384,8 +418,6 @@ class HighlightersOverlay {
       return;
     }
 
-    options = Object.assign({}, options, this.getFlexboxHighlighterSettings());
-
     const isShown = await highlighter.show(node, options);
     if (!isShown) {
       return;
@@ -418,7 +450,7 @@ class HighlightersOverlay {
   getGridHighlighterSettings(nodeFront) {
     const { grids, highlighterSettings } = this.store.getState();
     const grid = grids.find(g => g.nodeFront === nodeFront);
-    const color = grid ? grid.color : DEFAULT_GRID_COLOR;
+    const color = grid ? grid.color : DEFAULT_HIGHLIGHTER_COLOR;
     return Object.assign({}, highlighterSettings, { color });
   }
 
