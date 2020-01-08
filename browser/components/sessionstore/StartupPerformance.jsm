@@ -76,7 +76,9 @@ var StartupPerformance = {
   
   
   _onRestorationStarts(isAutoRestore) {
-    Services.profiler.AddMarker("_onRestorationStarts");
+    if (Services.profiler) {
+      Services.profiler.AddMarker("_onRestorationStarts");
+    }
     this._latestRestoredTimeStamp = this._startTimeStamp = Date.now();
     this._totalNumberOfEagerTabs = 0;
     this._totalNumberOfTabs = 0;
@@ -199,7 +201,9 @@ var StartupPerformance = {
             
             
             if (!event.detail.isRemotenessUpdate) {
-              Services.profiler.AddMarker("SSTabRestored");
+              if (Services.profiler) {
+                Services.profiler.AddMarker("SSTabRestored");
+              }
               this._latestRestoredTimeStamp = Date.now();
               this._totalNumberOfEagerTabs += 1;
             }
