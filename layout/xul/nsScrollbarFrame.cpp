@@ -318,7 +318,8 @@ nsScrollbarFrame::CreateAnonymousContent(nsTArray<ContentInfo>& aElements)
   
   
   
-
+  
+  
   nsNodeInfoManager* nodeInfoManager = mContent->NodeInfo()->NodeInfoManager();
 
   Element* el(GetContent()->AsElement());

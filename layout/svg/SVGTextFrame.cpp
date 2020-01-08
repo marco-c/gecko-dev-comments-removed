@@ -608,6 +608,7 @@ struct TextRenderedRun
 
 
 
+
   gfxMatrix GetTransformFromUserSpaceForPainting(
                                       nsPresContext* aContext,
                                       const nsCharClipDisplayItem& aItem) const;

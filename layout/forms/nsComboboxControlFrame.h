@@ -128,6 +128,7 @@ public:
 
 
 
+
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   virtual void SetFocus(bool aOn, bool aRepaint) override;
 

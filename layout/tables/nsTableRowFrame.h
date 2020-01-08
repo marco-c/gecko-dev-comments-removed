@@ -97,6 +97,7 @@ public:
 
 
 
+
   virtual void Reflow(nsPresContext*           aPresContext,
                       ReflowOutput&     aDesiredSize,
                       const ReflowInput& aReflowInput,
@@ -300,6 +301,7 @@ private:
   
   nscoord mStyleFixedBSize;
 
+  
   
   nscoord mMaxCellAscent;  
   nscoord mMaxCellDescent; 

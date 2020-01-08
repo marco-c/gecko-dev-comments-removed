@@ -1644,6 +1644,7 @@ ResolveAutoFlexBasisFromRatio(FlexItem& aFlexItem,
   
   
   
+  
   if (aAxisTracker.GetCrossComponent(aFlexItem.IntrinsicRatio()) != 0) {
     
     const bool useMinSizeIfCrossSizeIsIndefinite = false;

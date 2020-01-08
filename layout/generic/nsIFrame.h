@@ -68,6 +68,7 @@
 
 
 
+
 class nsAtom;
 class nsPresContext;
 class nsIPresShell;
@@ -3286,6 +3287,11 @@ public:
 
 
 
+
+
+
+
+
   nsresult GetFrameFromDirection(nsDirection aDirection, bool aVisual,
                                  bool aJumpLines, bool aScrollViewStop,
                                  bool aForceEditableRegion,
@@ -3293,6 +3299,9 @@ public:
                                  bool* aOutJumpedLine, bool* aOutMovedOverNonSelectableText);
 
   
+
+
+
 
 
 
@@ -4345,6 +4354,7 @@ protected:
 
   
   
+
 
 
 

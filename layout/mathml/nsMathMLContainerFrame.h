@@ -401,6 +401,8 @@ private:
 
 
 
+
+
 class nsMathMLmathBlockFrame final : public nsBlockFrame
 {
 public:

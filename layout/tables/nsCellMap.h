@@ -336,6 +336,7 @@ public:
 
 
 
+
   CellData* AppendCell(nsTableCellMap&   aMap,
                        nsTableCellFrame* aCellFrame,
                        int32_t           aRowIndex,
