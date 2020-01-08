@@ -408,6 +408,6 @@ function reload(target, waitForTargetEvent = "navigate") {
 
 
 function navigate(target, url, waitForTargetEvent = "navigate") {
-  executeSoon(() => target.activeTab.navigateTo({ url }));
+  executeSoon(() => target.activeTab.navigateTo(url));
   return once(target, waitForTargetEvent);
 }

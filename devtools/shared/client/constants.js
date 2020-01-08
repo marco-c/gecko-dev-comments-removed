@@ -33,16 +33,13 @@ const UnsolicitedNotifications = {
   "addonListChanged": "addonListChanged",
   "workerListChanged": "workerListChanged",
   "serviceWorkerRegistrationListChanged": "serviceWorkerRegistrationList",
+  "tabNavigated": "tabNavigated",
+  "frameUpdate": "frameUpdate",
   "pageError": "pageError",
   "evaluationResult": "evaluationResult",
-  "updatedSource": "updatedSource",
-  "inspectObject": "inspectObject",
-
-  
-  
-  
-  
   "newSource": "newSource",
+  "updatedSource": "updatedSource",
+  "inspectObject": "inspectObject"
 };
 
 

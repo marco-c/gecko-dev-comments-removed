@@ -194,7 +194,6 @@ const TargetFactory = exports.TargetFactory = {
 function TabTarget({ form, client, chrome, tab = null }) {
   EventEmitter.decorate(this);
   this.destroy = this.destroy.bind(this);
-  this._onTabNavigated = this._onTabNavigated.bind(this);
   this.activeTab = this.activeConsole = null;
 
   this._form = form;
@@ -519,12 +518,6 @@ TabTarget.prototype = {
       const [response, tabClient] = await this._client.attachTarget(this._form.actor);
       this.activeTab = tabClient;
       this.threadActor = response.threadActor;
-
-      this.activeTab.on("tabNavigated", this._onTabNavigated);
-      this._onFrameUpdate = packet => {
-        this.emit("frame-update", packet);
-      };
-      this.activeTab.on("frameUpdate", this._onFrameUpdate);
     };
 
     
@@ -556,16 +549,14 @@ TabTarget.prototype = {
         this._title = form.title;
       }
 
+      this._setupRemoteListeners();
+
       
       
       
       if (this.isBrowsingContext) {
         await attachTarget();
       }
-
-      
-      
-      this._setupRemoteListeners();
 
       
       return attachConsole();
@@ -597,92 +588,67 @@ TabTarget.prototype = {
   
 
 
-  _onTabNavigated: function(packet) {
-    const event = Object.create(null);
-    event.url = packet.url;
-    event.title = packet.title;
-    event.nativeConsoleAPI = packet.nativeConsoleAPI;
-    event.isFrameSwitching = packet.isFrameSwitching;
-
-    
-    
-    
-    
-    if (!packet.isFrameSwitching || this.isWebExtension) {
-      this._url = packet.url;
-      this._title = packet.title;
-    }
-
-    
-    
-    if (packet.state == "start") {
-      event._navPayload = this._navRequest;
-      this.emit("will-navigate", event);
-      this._navRequest = null;
-    } else {
-      event._navPayload = this._navWindow;
-      this.emit("navigate", event);
-      this._navWindow = null;
-    }
-  },
-
-  
-
-
   _setupRemoteListeners: function() {
     this.client.addListener("closed", this.destroy);
 
-    
-    
-    
-    
-    
-    if (this.activeTab) {
-      this.activeTab.on("tabDetached", this.destroy);
+    this._onTabDetached = (type, packet) => {
+      
+      if (packet.from == this._form.actor) {
+        this.destroy();
+      }
+    };
+    this.client.addListener("tabDetached", this._onTabDetached);
+
+    this._onTabNavigated = (type, packet) => {
+      const event = Object.create(null);
+      event.url = packet.url;
+      event.title = packet.title;
+      event.nativeConsoleAPI = packet.nativeConsoleAPI;
+      event.isFrameSwitching = packet.isFrameSwitching;
 
       
       
-      this._onSourceUpdated = packet => this.emit("source-updated", packet);
-      this.activeTab.on("newSource", this._onSourceUpdated);
-      this.activeTab.on("updatedSource", this._onSourceUpdated);
-    } else {
-      this._onTabDetached = (type, packet) => {
-        
-        if (packet.from == this._form.actor) {
-          this.destroy();
-        }
-      };
-      this.client.addListener("tabDetached", this._onTabDetached);
+      
+      
+      if (!packet.isFrameSwitching || this.isWebExtension) {
+        this._url = packet.url;
+        this._title = packet.title;
+      }
 
-      this._onSourceUpdated = (type, packet) => this.emit("source-updated", packet);
-      this.client.addListener("newSource", this._onSourceUpdated);
-      this.client.addListener("updatedSource", this._onSourceUpdated);
-    }
+      
+      
+      if (packet.state == "start") {
+        event._navPayload = this._navRequest;
+        this.emit("will-navigate", event);
+        this._navRequest = null;
+      } else {
+        event._navPayload = this._navWindow;
+        this.emit("navigate", event);
+        this._navWindow = null;
+      }
+    };
+    this.client.addListener("tabNavigated", this._onTabNavigated);
+
+    this._onFrameUpdate = (type, packet) => {
+      this.emit("frame-update", packet);
+    };
+    this.client.addListener("frameUpdate", this._onFrameUpdate);
+
+    this._onSourceUpdated = (event, packet) => this.emit("source-updated", packet);
+    this.client.addListener("newSource", this._onSourceUpdated);
+    this.client.addListener("updatedSource", this._onSourceUpdated);
   },
 
   
 
 
   _teardownRemoteListeners: function() {
-    
     this.client.removeListener("closed", this.destroy);
-    if (this.activeTab) {
-      this.activeTab.off("tabDetached", this.destroy);
-      this.activeTab.off("newSource", this._onSourceUpdated);
-      this.activeTab.off("updatedSource", this._onSourceUpdated);
-    } else {
-      this.client.removeListener("tabDetached", this._onTabDetached);
-      this.client.removeListener("newSource", this._onSourceUpdated);
-      this.client.removeListener("updatedSource", this._onSourceUpdated);
-    }
-
-    
-    if (this.activeTab) {
-      this.activeTab.off("tabNavigated", this._onTabNavigated);
-      this.activeTab.off("frameUpdate", this._onFrameUpdate);
-    }
-
-    
+    this.client.removeListener("tabNavigated", this._onTabNavigated);
+    this.client.removeListener("tabDetached", this._onTabDetached);
+    this.client.removeListener("frameUpdate", this._onFrameUpdate);
+    this.client.removeListener("newSource", this._onSourceUpdated);
+    this.client.removeListener("updatedSource", this._onSourceUpdated);
     if (this.activeConsole && this._onInspectObject) {
       this.activeConsole.off("inspectObject", this._onInspectObject);
     }
@@ -775,11 +741,7 @@ TabTarget.prototype = {
           
           
           
-          try {
-            await this.activeTab.detach();
-          } catch (e) {
-            console.warn(`Error while detaching target: ${e.message}`);
-          }
+          this.activeTab.detach();
           cleanupAndResolve();
         } else {
           cleanupAndResolve();
@@ -828,7 +790,7 @@ TabTarget.prototype = {
   logErrorInPage: function(text, category) {
     if (this.activeTab && this.activeTab.traits.logInPage) {
       const errorFlag = 0;
-      this.activeTab.logInPage({ text, category, flags: errorFlag });
+      this.activeTab.logInPage(text, category, errorFlag);
     }
   },
 
@@ -843,7 +805,7 @@ TabTarget.prototype = {
   logWarningInPage: function(text, category) {
     if (this.activeTab && this.activeTab.traits.logInPage) {
       const warningFlag = 1;
-      this.activeTab.logInPage({ text, category, flags: warningFlag });
+      this.activeTab.logInPage(text, category, warningFlag);
     }
   },
 };

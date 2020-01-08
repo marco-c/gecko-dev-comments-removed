@@ -61,11 +61,15 @@ TabStore.prototype = {
       
       this._connection.client.addListener("tabListChanged",
                                           this._onTabListChanged);
+      this._connection.client.addListener("tabNavigated",
+                                          this._onTabNavigated);
       this.listTabs();
     } else {
       if (this._connection.client) {
         this._connection.client.removeListener("tabListChanged",
                                                this._onTabListChanged);
+        this._connection.client.removeListener("tabNavigated",
+                                               this._onTabNavigated);
       }
       this._resetStore();
     }

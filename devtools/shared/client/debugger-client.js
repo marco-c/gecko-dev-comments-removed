@@ -24,11 +24,10 @@ loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
 loader.lazyRequireGetter(this, "WebConsoleClient", "devtools/shared/webconsole/client", true);
 loader.lazyRequireGetter(this, "AddonClient", "devtools/shared/client/addon-client");
 loader.lazyRequireGetter(this, "RootClient", "devtools/shared/client/root-client");
-loader.lazyRequireGetter(this, "BrowsingContextFront", "devtools/shared/fronts/targets/browsing-context", true);
+loader.lazyRequireGetter(this, "TabClient", "devtools/shared/client/tab-client");
 loader.lazyRequireGetter(this, "ThreadClient", "devtools/shared/client/thread-client");
 loader.lazyRequireGetter(this, "WorkerClient", "devtools/shared/client/worker-client");
 loader.lazyRequireGetter(this, "ObjectClient", "devtools/shared/client/object-client");
-loader.lazyRequireGetter(this, "Pool", "devtools/shared/protocol", true);
 
 
 const PLATFORM_MAJOR_VERSION = AppConstants.MOZ_APP_VERSION.match(/\d+/)[0];
@@ -51,18 +50,7 @@ function DebuggerClient(transport) {
   this._transport.hooks = this;
 
   
-  
   this._clients = new Map();
-
-  
-  
-  
-  
-  
-  
-  
-  
-  this._frontPool = new Pool(this);
 
   this._pendingRequests = new Map();
   this._activeRequests = new Map();
@@ -296,9 +284,7 @@ DebuggerClient.prototype = {
     this._eventsEnabled = false;
 
     const cleanup = () => {
-      if (this._transport) {
-        this._transport.close();
-      }
+      this._transport.close();
       this._transport = null;
     };
 
@@ -368,15 +354,29 @@ DebuggerClient.prototype = {
 
 
 
-  attachTarget: async function(targetActor) {
-    let front = this._frontPool.actor(targetActor);
-    if (!front) {
-      front = new BrowsingContextFront(this, { actor: targetActor });
-      this._frontPool.manage(front);
+  attachTarget: function(targetActor) {
+    if (this._clients.has(targetActor)) {
+      const cachedTarget = this._clients.get(targetActor);
+      const cachedResponse = {
+        cacheDisabled: cachedTarget.cacheDisabled,
+        javascriptEnabled: cachedTarget.javascriptEnabled,
+        traits: cachedTarget.traits,
+      };
+      return promise.resolve([cachedResponse, cachedTarget]);
     }
 
-    const response = await front.attach();
-    return [response, front];
+    const packet = {
+      to: targetActor,
+      type: "attach"
+    };
+    return this.request(packet).then(response => {
+      
+      
+      
+      const targetClient = new TabClient(this, response);
+      this.registerClient(targetClient);
+      return [response, targetClient];
+    });
   },
 
   attachWorker: function(workerTargetActor) {

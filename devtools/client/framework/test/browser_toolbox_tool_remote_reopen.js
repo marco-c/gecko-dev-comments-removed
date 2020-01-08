@@ -115,6 +115,10 @@ function test() {
           todo(false, "Front for " + actor + " still held in pool!");
           continue;
         }
+        
+        if (actor.includes("gcliActor")) {
+          continue;
+        }
         ok(false, "Front for " + actor + " still held in pool!");
       }
     }
