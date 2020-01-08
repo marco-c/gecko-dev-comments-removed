@@ -14,7 +14,7 @@ active_fragment = None
 
 
 
-def run_fragment(fragment, function='breakpoint'):
+def run_fragment(fragment, function='gdb-tests.cpp:breakpoint'):
     
     bp = gdb.Breakpoint(function)
     try:
