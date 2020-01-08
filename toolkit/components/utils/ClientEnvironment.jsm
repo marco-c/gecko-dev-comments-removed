@@ -9,6 +9,7 @@ ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.defineModuleGetter(this, "ShellService", "resource:///modules/ShellService.jsm");
 ChromeUtils.defineModuleGetter(this, "AddonManager", "resource://gre/modules/AddonManager.jsm");
 ChromeUtils.defineModuleGetter(this, "TelemetryArchive", "resource://gre/modules/TelemetryArchive.jsm");
+ChromeUtils.defineModuleGetter(this, "TelemetryEnvironment", "resource://gre/modules/TelemetryEnvironment.jsm");
 ChromeUtils.defineModuleGetter(this, "UpdateUtils", "resource://gre/modules/UpdateUtils.jsm");
 ChromeUtils.defineModuleGetter(this, "AppConstants", "resource://gre/modules/AppConstants.jsm");
 
@@ -122,5 +123,45 @@ class ClientEnvironmentBase {
 
   static get doNotTrack() {
     return Services.prefs.getBoolPref("privacy.donottrackheader.enabled", false);
+  }
+
+  static get os() {
+    function coerceToNumber(version) {
+      const parts = version.split(".");
+      return parseFloat(parts.slice(0, 2).join("."));
+    }
+
+    return (async () => {
+      await TelemetryEnvironment.onInitialized();
+
+      const { system } = TelemetryEnvironment.currentEnvironment;
+      const rv = {
+        isWindows: AppConstants.platform === "win",
+        isMac: AppConstants.platform === "macosx",
+        isLinux: AppConstants.platform === "linux",
+        windowsVersion: null,
+        windowsBuildNumber: null,
+        macVersion: null,
+        darwinVersion: null,
+      };
+
+      if (rv.isWindows) {
+        rv.windowsVersion = coerceToNumber(system.os.version);
+        rv.windowsBuildNumber = system.os.windowsBuildNumber;
+      } else if (rv.isMac) {
+        rv.darwinVersion = coerceToNumber(system.os.version);
+        
+        if (rv.darwinVersion >= 5) {
+          
+          const intPart = Math.floor(rv.darwinVersion);
+          rv.macVersion = 10 + 0.1 * (intPart - 4);
+        }
+      }
+
+      
+      
+
+      return rv;
+    })();
   }
 }
