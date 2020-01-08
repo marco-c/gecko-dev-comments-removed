@@ -5308,42 +5308,23 @@ nsIDocument::DispatchContentLoadedEvents()
 
 
 static void
-AssertContentPrivilegedAboutPageHasCSP(nsIURI* aDocumentURI, nsIPrincipal* aPrincipal)
+AssertAboutPageHasCSP(nsIURI* aDocumentURI, nsIPrincipal* aPrincipal)
 {
-  
-  
-  if (!XRE_IsContentProcess()) {
-    return;
-  }
-
   
   bool isAboutURI =
     (NS_SUCCEEDED(aDocumentURI->SchemeIs("about", &isAboutURI)) && isAboutURI);
 
-  if (!isAboutURI) {
-    return;
-  }
-
-  
-  nsCOMPtr<nsIAboutModule> aboutModule;
-  nsresult rv = NS_GetAboutModule(aDocumentURI, getter_AddRefs(aboutModule));
-  NS_ENSURE_SUCCESS_VOID(rv);
-
-  uint32_t aboutModuleFlags = 0;
-  rv = aboutModule->GetURIFlags(aDocumentURI, &aboutModuleFlags);
-  NS_ENSURE_SUCCESS_VOID(rv);
-
-  if (!(aboutModuleFlags & nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT)) {
+  if (!isAboutURI || Preferences::GetBool("csp.skip_about_page_has_csp_assert")) {
     return;
   }
 
   
   static StaticAutoPtr<nsTArray<nsCString>> sLegacyAboutPagesWithNoCSP;
   if (!sLegacyAboutPagesWithNoCSP ||
-      Preferences::GetBool("csp.overrule_content_privileged_about_uris_without_csp_whitelist")) {
+      Preferences::GetBool("csp.overrule_about_uris_without_csp_whitelist")) {
     sLegacyAboutPagesWithNoCSP = new nsTArray<nsCString>();
     nsAutoCString legacyAboutPages;
-    Preferences::GetCString("csp.content_privileged_about_uris_without_csp",
+    Preferences::GetCString("csp.about_uris_without_csp",
       legacyAboutPages);
     for (const nsACString& hostString : legacyAboutPages.Split(',')) {
       
@@ -5360,6 +5341,7 @@ AssertContentPrivilegedAboutPageHasCSP(nsIURI* aDocumentURI, nsIPrincipal* aPrin
   
   nsAutoCString aboutSpec;
   aDocumentURI->GetSpec(aboutSpec);
+  ToLowerCase(aboutSpec);
   for (auto& legacyPageEntry : *sLegacyAboutPagesWithNoCSP) {
     
     
@@ -5379,7 +5361,7 @@ AssertContentPrivilegedAboutPageHasCSP(nsIURI* aDocumentURI, nsIPrincipal* aPrin
        csp->GetPolicyString(0, parsedPolicyStr);
      }
   }
-  if (Preferences::GetBool("csp.overrule_content_privileged_about_uris_without_csp_whitelist")) {
+  if (Preferences::GetBool("csp.overrule_about_uris_without_csp_whitelist")) {
     NS_ASSERTION(parsedPolicyStr.Find("default-src") >= 0, "about: page must have a CSP");
     return;
   }
@@ -5394,7 +5376,7 @@ nsDocument::EndLoad()
 #if defined(DEBUG) && !defined(ANDROID)
   
   if (!mParserAborted) {
-    AssertContentPrivilegedAboutPageHasCSP(mDocumentURI, NodePrincipal());
+    AssertAboutPageHasCSP(mDocumentURI, NodePrincipal());
   }
 #endif
 
