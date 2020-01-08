@@ -6,29 +6,30 @@ async function openContextMenuInOptionsPage(optionsBrowser) {
   let contentAreaContextMenu = document.getElementById("contentAreaContextMenu");
   let popupShownPromise = BrowserTestUtils.waitForEvent(contentAreaContextMenu, "popupshown");
 
-  await BrowserTestUtils.waitForCondition(async () => {
-    BrowserTestUtils.synthesizeMouseAtCenter("a", {type: "contextmenu"}, optionsBrowser);
+  info("Trigger context menu in the extension options page");
 
-    
-    
-    
-    
-    return Promise.race([
-      popupShownPromise.then(() => true),
-      delay(500).then(() => false),
-    ]);
-  }, "Waiting the context menu to be shown");
+  
+  
+  
+  ContentTask.spawn(optionsBrowser, null, () => {
+    let el = content.document.querySelector("a");
+    el.dispatchEvent(new content.MouseEvent("contextmenu", {
+      bubbles: true,
+      cancelable: true,
+      view: el.ownerGlobal,
+    }));
+  });
+
+  info("Wait the context menu to be shown");
+  await popupShownPromise;
 
   return contentAreaContextMenu;
 }
 
-function contextMenuClosed(contextMenu) {
-  
-  
-  return BrowserTestUtils.waitForCondition(async () => {
-    await closeContextMenu(contextMenu);
-    return contextMenu.state === "closed";
-  }, "Wait context menu popup to be closed");
+async function contextMenuClosed(contextMenu) {
+  info("Wait context menu popup to be closed");
+  await closeContextMenu(contextMenu);
+  is(contextMenu.state, "closed", "The context menu popup has been closed");
 }
 
 add_task(async function test_tab_options_popups() {
