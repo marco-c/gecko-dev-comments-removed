@@ -22,11 +22,13 @@
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/gfx/Tools.h"
 #include "mozilla/gfx/SourceSurfaceRawData.h"
+#include "mozilla/image/RecyclingSourceSurface.h"
 #include "mozilla/layers/SourceSurfaceSharedData.h"
 #include "mozilla/layers/SourceSurfaceVolatileData.h"
 #include "mozilla/Likely.h"
 #include "mozilla/MemoryReporting.h"
 #include "nsMargin.h"
+#include "nsRefreshDriver.h"
 #include "nsThreadUtils.h"
 
 namespace mozilla {
@@ -178,9 +180,11 @@ imgFrame::imgFrame()
   : mMonitor("imgFrame")
   , mDecoded(0, 0, 0, 0)
   , mLockCount(0)
+  , mRecycleLockCount(0)
   , mAborted(false)
   , mFinished(false)
   , mOptimizable(false)
+  , mShouldRecycle(false)
   , mTimeout(FrameTimeout::FromRawMilliseconds(100))
   , mDisposalMethod(DisposalMethod::NOT_SPECIFIED)
   , mBlendMethod(BlendMethod::OVER)
@@ -209,10 +213,11 @@ nsresult
 imgFrame::InitForDecoder(const nsIntSize& aImageSize,
                          const nsIntRect& aRect,
                          SurfaceFormat aFormat,
-                         uint8_t aPaletteDepth ,
-                         bool aNonPremult ,
-                         const Maybe<AnimationParams>& aAnimParams ,
-                         bool aIsFullFrame )
+                         uint8_t aPaletteDepth,
+                         bool aNonPremult,
+                         const Maybe<AnimationParams>& aAnimParams,
+                         bool aIsFullFrame,
+                         bool aShouldRecycle)
 {
   
   
@@ -254,9 +259,21 @@ imgFrame::InitForDecoder(const nsIntSize& aImageSize,
     return NS_ERROR_FAILURE;
   }
 
-  mFormat = aFormat;
+  if (aShouldRecycle) {
+    
+    
+    
+    MOZ_ASSERT(mIsFullFrame);
+    MOZ_ASSERT(aPaletteDepth == 0);
+    MOZ_ASSERT(aAnimParams);
+    mFormat = SurfaceFormat::B8G8R8A8;
+  } else {
+    mFormat = aFormat;
+  }
+
   mPaletteDepth = aPaletteDepth;
   mNonPremult = aNonPremult;
+  mShouldRecycle = aShouldRecycle;
 
   if (aPaletteDepth != 0) {
     
@@ -299,6 +316,69 @@ imgFrame::InitForDecoder(const nsIntSize& aImageSize,
       return NS_ERROR_OUT_OF_MEMORY;
     }
   }
+
+  return NS_OK;
+}
+
+nsresult
+imgFrame::InitForDecoderRecycle(const AnimationParams& aAnimParams)
+{
+  
+  
+  MonitorAutoLock lock(mMonitor);
+
+  MOZ_ASSERT(mIsFullFrame);
+  MOZ_ASSERT(mLockCount > 0);
+  MOZ_ASSERT(mLockedSurface);
+  MOZ_ASSERT(mShouldRecycle);
+
+  if (mRecycleLockCount > 0) {
+    if (NS_IsMainThread()) {
+      
+      
+      
+      
+      
+      MOZ_ASSERT_UNREACHABLE("Recycling/decoding on the main thread?");
+      return NS_ERROR_NOT_AVAILABLE;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    TimeDuration timeout =
+      TimeDuration::FromMilliseconds(nsRefreshDriver::DefaultInterval());
+    while (true) {
+      TimeStamp start = TimeStamp::Now();
+      mMonitor.Wait(timeout);
+      if (mRecycleLockCount == 0) {
+        break;
+      }
+
+      TimeDuration delta = TimeStamp::Now() - start;
+      if (delta >= timeout) {
+        
+        
+        return NS_ERROR_NOT_AVAILABLE;
+      }
+
+      timeout -= delta;
+    }
+  }
+
+  mBlendRect = aAnimParams.mBlendRect;
+  mTimeout = aAnimParams.mTimeout;
+  mBlendMethod = aAnimParams.mBlendMethod;
+  mDisposalMethod = aAnimParams.mDisposalMethod;
+  mDirtyRect = mFrameRect;
 
   return NS_OK;
 }
@@ -564,6 +644,7 @@ bool imgFrame::Draw(gfxContext* aContext, const ImageRegion& aRegion,
 
   
   
+  
   RefPtr<SourceSurface> surf;
   SurfaceWithFormat surfaceResult;
   ImageRegion region(aRegion);
@@ -578,7 +659,16 @@ bool imgFrame::Draw(gfxContext* aContext, const ImageRegion& aRegion,
 
     bool doPartialDecode = !AreAllPixelsWritten();
 
-    surf = GetSourceSurfaceInternal();
+    
+    
+    
+    
+    
+    
+    DrawTarget* drawTarget = aContext->GetDrawTarget();
+    bool temporary = !drawTarget->IsCaptureDT() &&
+                    drawTarget->GetBackendType() != BackendType::RECORDING;
+    RefPtr<SourceSurface> surf = GetSourceSurfaceInternal(temporary);
     if (!surf) {
       return false;
     }
@@ -857,11 +947,11 @@ already_AddRefed<SourceSurface>
 imgFrame::GetSourceSurface()
 {
   MonitorAutoLock lock(mMonitor);
-  return GetSourceSurfaceInternal();
+  return GetSourceSurfaceInternal( false);
 }
 
 already_AddRefed<SourceSurface>
-imgFrame::GetSourceSurfaceInternal()
+imgFrame::GetSourceSurfaceInternal(bool aTemporary)
 {
   mMonitor.AssertCurrentThreadOwns();
 
@@ -875,9 +965,19 @@ imgFrame::GetSourceSurfaceInternal()
   }
 
   if (mLockedSurface) {
+    
+    
+    if (!aTemporary && mShouldRecycle) {
+      RefPtr<SourceSurface> surf =
+        new RecyclingSourceSurface(this, mLockedSurface);
+      return surf.forget();
+    }
+
     RefPtr<SourceSurface> surf(mLockedSurface);
     return surf.forget();
   }
+
+  MOZ_ASSERT(!mShouldRecycle, "Should recycle but no locked surface!");
 
   if (!mRawSurface) {
     return nullptr;
@@ -971,6 +1071,24 @@ imgFrame::AddSizeOfExcludingThis(MallocSizeOf aMallocSizeOf,
   }
 
   aCallback(metadata);
+}
+
+RecyclingSourceSurface::RecyclingSourceSurface(imgFrame* aParent, DataSourceSurface* aSurface)
+  : mParent(aParent)
+  , mSurface(aSurface)
+  , mType(SurfaceType::DATA)
+{
+  mParent->mMonitor.AssertCurrentThreadOwns();
+  ++mParent->mRecycleLockCount;
+}
+
+RecyclingSourceSurface::~RecyclingSourceSurface()
+{
+  MonitorAutoLock lock(mParent->mMonitor);
+  MOZ_ASSERT(mParent->mRecycleLockCount > 0);
+  if (--mParent->mRecycleLockCount == 0) {
+    mParent->mMonitor.NotifyAll();
+  }
 }
 
 } 

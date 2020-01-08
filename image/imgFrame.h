@@ -57,10 +57,11 @@ public:
   nsresult InitForDecoder(const nsIntSize& aImageSize,
                           const nsIntRect& aRect,
                           SurfaceFormat aFormat,
-                          uint8_t aPaletteDepth = 0,
-                          bool aNonPremult = false,
-                          const Maybe<AnimationParams>& aAnimParams = Nothing(),
-                          bool aIsFullFrame = false);
+                          uint8_t aPaletteDepth,
+                          bool aNonPremult,
+                          const Maybe<AnimationParams>& aAnimParams,
+                          bool aIsFullFrame,
+                          bool aShouldRecycle);
 
   nsresult InitForAnimator(const nsIntSize& aSize,
                            SurfaceFormat aFormat)
@@ -74,9 +75,18 @@ public:
     
     return InitForDecoder(aSize, frameRect, aFormat,  0,
                            false, Some(animParams),
-                           false);
+                           false,  false);
   }
 
+  
+
+
+
+
+
+
+
+  nsresult InitForDecoderRecycle(const AnimationParams& aAnimParams);
 
   
 
@@ -201,6 +211,8 @@ public:
   bool GetCompositingFailed() const;
   void SetCompositingFailed(bool val);
 
+  bool ShouldRecycle() const { return mShouldRecycle; }
+
   void SetOptimizable();
 
   void FinalizeSurface();
@@ -247,7 +259,14 @@ private:
   uint32_t GetImageBytesPerRow() const;
   uint32_t GetImageDataLength() const;
   void FinalizeSurfaceInternal();
-  already_AddRefed<SourceSurface> GetSourceSurfaceInternal();
+
+  
+
+
+
+
+
+  already_AddRefed<SourceSurface> GetSourceSurfaceInternal(bool aTemporary);
 
   uint32_t PaletteDataLength() const
   {
@@ -287,6 +306,7 @@ private:
 private: 
   friend class DrawableFrameRef;
   friend class RawAccessFrameRef;
+  friend class RecyclingSourceSurface;
   friend class UnlockImageDataRunnable;
 
   
@@ -318,11 +338,15 @@ private:
   nsIntRect mDecoded;
 
   
-  int32_t mLockCount;
+  int16_t mLockCount;
+
+  
+  int16_t mRecycleLockCount;
 
   bool mAborted;
   bool mFinished;
   bool mOptimizable;
+  bool mShouldRecycle;
 
 
   
