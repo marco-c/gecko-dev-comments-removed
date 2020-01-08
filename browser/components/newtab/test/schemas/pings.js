@@ -187,6 +187,9 @@ export const SessionPing = Joi.object().keys(Object.assign({}, baseKeys, {
     topsites_pinned: Joi.number(),
 
     
+    topsites_search_shortcuts: Joi.number(),
+
+    
     
     
     
