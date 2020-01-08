@@ -2225,6 +2225,12 @@ nsProtocolProxyService::Resolve_Internal(nsIChannel *channel,
     if (mPACMan && mPACMan->IsPACURI(uri))
         return NS_OK;
 
+    
+    
+    if ((mProxyConfig == PROXYCONFIG_DIRECT) ||
+        !CanUseProxy(uri, info.defaultPort))
+        return NS_OK;
+
     bool mainThreadOnly;
     if (mSystemProxySettings &&
         mProxyConfig == PROXYCONFIG_SYSTEM &&
@@ -2287,13 +2293,6 @@ nsProtocolProxyService::Resolve_Internal(nsIChannel *channel,
             return NS_OK;
         }
     }
-
-    
-    
-    if (mProxyConfig == PROXYCONFIG_DIRECT ||
-        (mProxyConfig == PROXYCONFIG_MANUAL &&
-         !CanUseProxy(uri, info.defaultPort)))
-        return NS_OK;
 
     
     if (mProxyConfig == PROXYCONFIG_PAC || mProxyConfig == PROXYCONFIG_WPAD) {
