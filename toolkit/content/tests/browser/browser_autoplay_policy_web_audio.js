@@ -22,13 +22,6 @@ function setup_test_preference() {
   ]});
 }
 
-function loadFrameScript(browser, fn) {
-  
-  
-  const mm = browser.messageManager;
-  mm.loadFrameScript("data:,(" + fn.toString() + ")();", false);
-}
-
 function createAudioContext() {
   content.ac = new content.AudioContext();
   const ac = content.ac;
