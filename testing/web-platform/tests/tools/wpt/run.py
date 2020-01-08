@@ -224,6 +224,10 @@ Consider installing certutil via your OS package manager or directly.""")
                                                     channel=kwargs["browser_channel"])
             kwargs["prefs_root"] = prefs_root
 
+        if kwargs["headless"] is None:
+            kwargs["headless"] = True
+            logger.info("Running in headless mode, pass --no-headless to disable")
+
         
         kwargs["extra_prefs"].append("media.navigator.streams.fake=true")
 
