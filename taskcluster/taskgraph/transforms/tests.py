@@ -758,6 +758,11 @@ def enable_code_coverage(config, tests):
                 continue
             test['mozharness'].setdefault('extra-options', []).append('--code-coverage')
             test['instance-size'] = 'xlarge'
+
+            
+            if 'mac' in test['build-platform']:
+                test['run-on-projects'] = ['try']
+
             
             
             if test['run-on-projects'] not in [[], ['try']]:
