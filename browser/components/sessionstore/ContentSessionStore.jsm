@@ -441,13 +441,13 @@ class SessionStorageListener extends Handler {
     
     this._listener = null;
 
-    Services.obs.addObserver(this, "browser:purge-domain-data");
+    Services.obs.addObserver(this, "browser:purge-sessionStorage");
     this.stateChangeNotifier.addObserver(this);
     this.resetEventListener();
   }
 
   uninit() {
-    Services.obs.removeObserver(this, "browser:purge-domain-data");
+    Services.obs.removeObserver(this, "browser:purge-sessionStorage");
   }
 
   observe() {
