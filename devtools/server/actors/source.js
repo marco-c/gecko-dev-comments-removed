@@ -16,6 +16,7 @@ const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const { assert, fetch } = DevToolsUtils;
 const { joinURI } = require("devtools/shared/path");
 const { sourceSpec } = require("devtools/shared/specs/source");
+const { findClosestScriptBySource } = require("devtools/server/actors/utils/closest-scripts");
 
 loader.lazyRequireGetter(this, "SourceMapConsumer", "source-map", true);
 loader.lazyRequireGetter(this, "SourceMapGenerator", "source-map", true);
@@ -978,7 +979,20 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
       
       
       if (entryPoints.length === 0) {
-        for (const [script, columnToOffsetMap] of columnToOffsetMaps) {
+        
+        
+        
+        
+        const closestScripts = findClosestScriptBySource(
+          columnToOffsetMaps.map(pair => pair[0]),
+          generatedLine,
+          generatedColumn,
+        );
+
+        const columnToOffsetLookup = new Map(columnToOffsetMaps);
+        for (const script of closestScripts) {
+          const columnToOffsetMap = columnToOffsetLookup.get(script);
+
           if (columnToOffsetMap.length > 0) {
             const firstColumnOffset = columnToOffsetMap[0];
             const lastColumnOffset = columnToOffsetMap[columnToOffsetMap.length - 1];
