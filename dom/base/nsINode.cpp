@@ -2047,9 +2047,12 @@ nsINode::RemoveChildNode(nsIContent* aKid, bool aNotify)
 
 
 
+
+
 static
-bool IsAllowedAsChild(nsIContent* aNewChild, nsINode* aParent,
-                      bool aIsReplace, nsINode* aRefChild)
+void EnsureAllowedAsChild(nsIContent* aNewChild, nsINode* aParent,
+                          bool aIsReplace, nsINode* aRefChild,
+                          ErrorResult& aRv)
 {
   MOZ_ASSERT(aNewChild, "Must have new child");
   MOZ_ASSERT_IF(aIsReplace, aRefChild);
@@ -2073,7 +2076,8 @@ bool IsAllowedAsChild(nsIContent* aNewChild, nsINode* aParent,
         aNewChild->GetShadowRoot()) &&
        nsContentUtils::ContentIsHostIncludingDescendantOf(aParent,
                                                           aNewChild))) {
-    return false;
+    aRv.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
+    return;
   }
 
   
@@ -2081,17 +2085,20 @@ bool IsAllowedAsChild(nsIContent* aNewChild, nsINode* aParent,
   case nsINode::COMMENT_NODE :
   case nsINode::PROCESSING_INSTRUCTION_NODE :
     
-    return true;
+    return;
   case nsINode::TEXT_NODE :
   case nsINode::CDATA_SECTION_NODE :
   case nsINode::ENTITY_REFERENCE_NODE :
     
-    return aParent->NodeType() != nsINode::DOCUMENT_NODE;
+    if (aParent->NodeType() == nsINode::DOCUMENT_NODE) {
+      aRv.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
+    }
+    return;
   case nsINode::ELEMENT_NODE :
     {
       if (!aParent->IsDocument()) {
         
-        return true;
+        return;
       }
 
       nsIDocument* parentDocument = aParent->AsDocument();
@@ -2099,20 +2106,23 @@ bool IsAllowedAsChild(nsIContent* aNewChild, nsINode* aParent,
       if (rootElement) {
         
         
-        return aIsReplace && rootElement == aRefChild;
+        if (!aIsReplace || rootElement != aRefChild) {
+          aRv.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
+        }
+        return;
       }
 
       
       
       if (!aRefChild) {
         
-        return true;
+        return;
       }
 
       nsIContent* docTypeContent = parentDocument->GetDoctype();
       if (!docTypeContent) {
         
-        return true;
+        return;
       }
 
       int32_t doctypeIndex = aParent->ComputeIndexOf(docTypeContent);
@@ -2121,21 +2131,29 @@ bool IsAllowedAsChild(nsIContent* aNewChild, nsINode* aParent,
       
       
       
-      return aIsReplace ? (insertIndex >= doctypeIndex) :
+      bool ok = aIsReplace ? (insertIndex >= doctypeIndex) :
         insertIndex > doctypeIndex;
+      if (!ok) {
+        aRv.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
+      }
+      return;
     }
   case nsINode::DOCUMENT_TYPE_NODE :
     {
       if (!aParent->IsDocument()) {
         
-        return false;
+        aRv.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
+        return;
       }
 
       nsIDocument* parentDocument = aParent->AsDocument();
       nsIContent* docTypeContent = parentDocument->GetDoctype();
       if (docTypeContent) {
         
-        return aIsReplace && docTypeContent == aRefChild;
+        if (!aIsReplace || docTypeContent != aRefChild) {
+          aRv.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
+        }
+        return;
       }
 
       
@@ -2143,12 +2161,13 @@ bool IsAllowedAsChild(nsIContent* aNewChild, nsINode* aParent,
       Element* rootElement = parentDocument->GetRootElement();
       if (!rootElement) {
         
-        return true;
+        return;
       }
 
       if (!aRefChild) {
         
-        return false;
+        aRv.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
+        return;
       }
 
       int32_t rootIndex = aParent->ComputeIndexOf(rootElement);
@@ -2157,7 +2176,10 @@ bool IsAllowedAsChild(nsIContent* aNewChild, nsINode* aParent,
       
       
       
-      return insertIndex <= rootIndex;
+      if (insertIndex > rootIndex) {
+        aRv.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
+      }
+      return;
     }
   case nsINode::DOCUMENT_FRAGMENT_NODE :
     {
@@ -2168,7 +2190,7 @@ bool IsAllowedAsChild(nsIContent* aNewChild, nsINode* aParent,
       
       if (!aParent->IsDocument()) {
         
-        return true;
+        return;
       }
 
       bool sawElement = false;
@@ -2178,19 +2200,21 @@ bool IsAllowedAsChild(nsIContent* aNewChild, nsINode* aParent,
         if (child->IsElement()) {
           if (sawElement) {
             
-            return false;
+            aRv.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
+            return;
           }
           sawElement = true;
         }
         
         
-        if (!IsAllowedAsChild(child, aParent, aIsReplace, aRefChild)) {
-          return false;
+        EnsureAllowedAsChild(child, aParent, aIsReplace, aRefChild, aRv);
+        if (aRv.Failed()) {
+          return;
         }
       }
 
       
-      return true;
+      return;
     }
   default:
     
@@ -2199,7 +2223,7 @@ bool IsAllowedAsChild(nsIContent* aNewChild, nsINode* aParent,
     break;
   }
 
-  return false;
+  aRv.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
 }
 
 void
@@ -2238,10 +2262,7 @@ nsINode::EnsurePreInsertionValidity2(bool aReplace, nsINode& aNewChild,
   }
 
   
-  if (!IsAllowedAsChild(newContent, this, aReplace, aRefChild)) {
-    aError.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
-    return;
-  }
+  EnsureAllowedAsChild(newContent, this, aReplace, aRefChild, aError);
 }
 
 nsINode*
@@ -2372,16 +2393,20 @@ nsINode::ReplaceOrInsertBefore(bool aReplace, nsINode* aNewChild,
       if (aNewChild == aRefChild) {
         
         
-        if (!IsAllowedAsChild(newContent, this, false, nodeToInsertBefore)) {
-          aError.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
+        EnsureAllowedAsChild(newContent, this, false, nodeToInsertBefore, aError);
+        if (aError.Failed()) {
           return nullptr;
         }
       } else {
-        if ((aRefChild && aRefChild->GetParent() != this) ||
-            !IsAllowedAsChild(newContent, this, aReplace, aRefChild)) {
+        if (aRefChild && aRefChild->GetParent() != this) {
           aError.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
           return nullptr;
         }
+        EnsureAllowedAsChild(newContent, this, aReplace, aRefChild, aError);
+        if (aError.Failed()) {
+          return nullptr;
+        }
+
         
         if (aReplace) {
           nodeToInsertBefore = aRefChild->GetNextSibling();
@@ -2480,8 +2505,8 @@ nsINode::ReplaceOrInsertBefore(bool aReplace, nsINode* aNewChild,
             }
             sawElement = true;
           }
-          if (!IsAllowedAsChild(child, this, aReplace, aRefChild)) {
-            aError.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
+          EnsureAllowedAsChild(child, this, aReplace, aRefChild, aError);
+          if (aError.Failed()) {
             return nullptr;
           }
         }
