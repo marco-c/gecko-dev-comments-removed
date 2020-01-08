@@ -1986,6 +1986,8 @@ const {
 
 const { clearSourceMaps } = __webpack_require__(3704);
 
+const { getOriginalStackFrames } = __webpack_require__(3783);
+
 const {
   workerUtils: { workerHandler }
 } = __webpack_require__(3651);
@@ -2001,6 +2003,7 @@ self.onmessage = workerHandler({
   getOriginalLocation,
   getLocationScopes,
   getOriginalSourceText,
+  getOriginalStackFrames,
   hasMappedSource,
   applySourceMap,
   clearSourceMaps
@@ -4491,6 +4494,27 @@ exports.WasmRemap = WasmRemap;
 
 module.exports = __webpack_require__(3709);
 
+
+ }),
+
+ 3783:
+ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+
+
+async function getOriginalStackFrames(generatedLocation) {
+  
+  return null;
+} 
+
+
+
+module.exports = {
+  getOriginalStackFrames
+};
 
  })
 

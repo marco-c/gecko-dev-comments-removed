@@ -27,10 +27,7 @@ async function test() {
 
   await stepOverToLine(client, 22);
   await stepOverToLine(client, 23);
-  
-  
-  
-  
+  await stepOverToLine(client, 13);
   await stepOverToLine(client, 17);
   await stepOverToLine(client, 18);
 

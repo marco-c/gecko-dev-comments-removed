@@ -14,6 +14,8 @@ exports.jumpToMappedSelectedLocation = jumpToMappedSelectedLocation;
 
 var _devtoolsSourceMap = require("devtools/client/shared/source-map/index.js");
 
+var _sources = require("../../reducers/sources");
+
 var _ast = require("../ast");
 
 var _ui = require("../ui");
@@ -68,22 +70,27 @@ const clearSelectedLocation = exports.clearSelectedLocation = () => ({
 
 
 
-function selectSourceURL(url, options = {}) {
+
+
+function selectSourceURL(url, options = {
+  line: 1
+}) {
   return async ({
     dispatch,
-    getState
+    getState,
+    sourceMaps
   }) => {
     const source = (0, _selectors.getSourceByURL)(getState(), url);
 
-    if (source) {
-      const sourceId = source.id;
-      const location = (0, _location.createLocation)({ ...options.location,
-        sourceId
-      });
-      await dispatch(selectLocation(location));
-    } else {
-      dispatch(setPendingSelectedLocation(url, options));
+    if (!source) {
+      return dispatch(setPendingSelectedLocation(url, options));
     }
+
+    const sourceId = source.id;
+    const location = (0, _location.createLocation)({ ...options,
+      sourceId
+    });
+    return dispatch(selectLocation(location));
   };
 }
 
@@ -109,11 +116,12 @@ function selectSource(sourceId) {
 
 
 function selectLocation(location, {
-  checkPrettyPrint = true
+  keepContext = true
 } = {}) {
   return async ({
     dispatch,
     getState,
+    sourceMaps,
     client
   }) => {
     const currentSource = (0, _selectors.getSelectedSource)(getState());
@@ -124,7 +132,7 @@ function selectLocation(location, {
       return;
     }
 
-    const source = (0, _selectors.getSource)(getState(), location.sourceId);
+    let source = (0, _selectors.getSource)(getState(), location.sourceId);
 
     if (!source) {
       
@@ -135,6 +143,15 @@ function selectLocation(location, {
 
     if (activeSearch !== "file") {
       dispatch((0, _ui.closeActiveSearch)());
+    } 
+    
+
+
+    const selectedSource = (0, _selectors.getSelectedSource)(getState());
+
+    if (keepContext && selectedSource && (0, _devtoolsSourceMap.isOriginalId)(selectedSource.id) != (0, _devtoolsSourceMap.isOriginalId)(location.sourceId)) {
+      location = await (0, _sourceMaps.getMappedLocation)(getState(), sourceMaps, location);
+      source = (0, _sources.getSourceFromId)(getState(), location.sourceId);
     }
 
     dispatch((0, _tabs.addTab)(source.url, 0));
@@ -147,7 +164,7 @@ function selectLocation(location, {
       return;
     }
 
-    if (checkPrettyPrint && _prefs.prefs.autoPrettyPrint && !(0, _selectors.getPrettySource)(getState(), loadedSource.id) && (0, _source.shouldPrettyPrint)(loadedSource) && (0, _source.isMinified)(loadedSource)) {
+    if (keepContext && _prefs.prefs.autoPrettyPrint && !(0, _selectors.getPrettySource)(getState(), loadedSource.id) && (0, _source.shouldPrettyPrint)(loadedSource) && (0, _source.isMinified)(loadedSource)) {
       await dispatch((0, _prettyPrint.togglePrettyPrint)(loadedSource.id));
       dispatch((0, _tabs.closeTab)(loadedSource.url));
     }
@@ -170,7 +187,7 @@ function selectLocation(location, {
 
 function selectSpecificLocation(location) {
   return selectLocation(location, {
-    checkPrettyPrint: false
+    keepContext: false
   });
 }
 
@@ -206,16 +223,8 @@ function jumpToMappedLocation(location) {
       return;
     }
 
-    const source = (0, _selectors.getSource)(getState(), location.sourceId);
-    let pairedLocation;
-
-    if ((0, _devtoolsSourceMap.isOriginalId)(location.sourceId)) {
-      pairedLocation = await (0, _sourceMaps.getGeneratedLocation)(getState(), source, location, sourceMaps);
-    } else {
-      pairedLocation = await sourceMaps.getOriginalLocation(location, source);
-    }
-
-    return dispatch(selectLocation({ ...pairedLocation
+    const pairedLocation = await (0, _sourceMaps.getMappedLocation)(getState(), sourceMaps, location);
+    return dispatch(selectSpecificLocation({ ...pairedLocation
     }));
   };
 }

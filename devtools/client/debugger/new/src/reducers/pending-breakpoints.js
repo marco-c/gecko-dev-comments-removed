@@ -7,6 +7,10 @@ exports.getPendingBreakpoints = getPendingBreakpoints;
 exports.getPendingBreakpointList = getPendingBreakpointList;
 exports.getPendingBreakpointsForSource = getPendingBreakpointsForSource;
 
+var _devtoolsSourceMap = require("devtools/client/shared/source-map/index.js");
+
+var _sources = require("./sources");
+
 var _breakpoint = require("../utils/breakpoint/index");
 
 
@@ -168,8 +172,15 @@ function getPendingBreakpointList(state) {
   return Object.values(getPendingBreakpoints(state));
 }
 
-function getPendingBreakpointsForSource(state, sourceUrl) {
-  return getPendingBreakpointList(state).filter(pendingBreakpoint => pendingBreakpoint.location.sourceUrl === sourceUrl);
+function getPendingBreakpointsForSource(state, source) {
+  const sources = (0, _sources.getSourcesByURL)(state, source.url);
+
+  if (sources.length > 1 && (0, _devtoolsSourceMap.isGeneratedId)(source.id)) {
+    
+    return [];
+  }
+
+  return getPendingBreakpointList(state).filter(pendingBreakpoint => pendingBreakpoint.location.sourceUrl === source.url);
 }
 
 exports.default = update;
