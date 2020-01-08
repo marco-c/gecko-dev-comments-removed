@@ -56,9 +56,6 @@ from ..compilation.warnings import (
 from ..shellutil import (
     quote as shell_quote,
 )
-from ..telemetry import (
-    gather_telemetry,
-)
 from ..util import (
     FileAvoidWrite,
     mkdir,
@@ -1284,10 +1281,6 @@ class BuildDriver(MozbuildObject):
         if monitor.elapsed > notify_minimum_time:
             
             self.notify('Build complete' if not status else 'Build failed')
-
-        gather_telemetry(command='build', success=(status == 0), monitor=monitor,
-                         mach_context=mach_context, substs=self.substs,
-                         paths=[self.topsrcdir, self.topobjdir])
 
         if status:
             return status

@@ -235,7 +235,8 @@ def bootstrap(topsrcdir, mozilla_dir=None):
 
         return False
 
-    def post_dispatch_handler(context, handler, args):
+    def post_dispatch_handler(context, handler, instance, result,
+                              start_time, end_time, args):
         """Perform global operations after command dispatch.
 
 
@@ -248,6 +249,23 @@ def bootstrap(topsrcdir, mozilla_dir=None):
         
         if not context.settings.build.telemetry:
             return
+
+        from mozbuild.telemetry import gather_telemetry
+        from mozbuild.base import MozbuildObject
+
+        if not isinstance(instance, MozbuildObject):
+            instance = MozbuildObject.from_environment()
+
+        try:
+            substs = instance.substs
+        except Exception:
+            substs = {}
+
+        
+        gather_telemetry(command=handler.name, success=(result == 0),
+                         start_time=start_time, end_time=end_time,
+                         mach_context=context, substs=substs,
+                         paths=[instance.topsrcdir, instance.topobjdir])
 
         
         if random.randint(1, TELEMETRY_SUBMISSION_FREQUENCY) != 1:
