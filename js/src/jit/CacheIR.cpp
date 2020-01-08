@@ -4930,6 +4930,58 @@ CompareIRGenerator::tryAttachNumberUndefined(ValOperandId lhsId, ValOperandId rh
 
 
 bool
+CompareIRGenerator::tryAttachPrimitiveUndefined(ValOperandId lhsId, ValOperandId rhsId)
+{
+    MOZ_ASSERT(IsEqualityOp(op_));
+
+    
+    auto isPrimitive = [](HandleValue& x) {
+        return x.isString() || x.isSymbol() || x.isBoolean() || x.isNumber();
+    };
+
+    if (!(lhsVal_.isNullOrUndefined() && isPrimitive(rhsVal_)) &&
+        !(rhsVal_.isNullOrUndefined() && isPrimitive(lhsVal_)))
+    {
+        return false;
+    }
+
+    auto guardPrimitive = [&](HandleValue v, ValOperandId id) {
+        if (v.isNumber()) {
+            writer.guardIsNumber(id);
+            return;
+        }
+        switch (v.extractNonDoubleType()) {
+          case JSVAL_TYPE_BOOLEAN:
+            writer.guardIsBoolean(id);
+            return;
+          case JSVAL_TYPE_SYMBOL:
+            writer.guardIsSymbol(id);
+            return;
+          case JSVAL_TYPE_STRING:
+            writer.guardIsString(id);
+            return;
+          default:
+            MOZ_CRASH("unexpected type");
+            return;
+        }
+    };
+
+    isPrimitive(lhsVal_) ? guardPrimitive(lhsVal_, lhsId)
+                         : writer.guardIsNullOrUndefined(lhsId);
+    isPrimitive(rhsVal_) ? guardPrimitive(rhsVal_, rhsId)
+                         : writer.guardIsNullOrUndefined(rhsId);
+
+    
+    
+    writer.loadBooleanResult(op_ == JSOP_NE || op_ == JSOP_STRICTNE);
+    writer.returnFromIC();
+
+    trackAttached("PrimitiveUndefined");
+    return true;
+}
+
+
+bool
 CompareIRGenerator::tryAttachNullUndefined(ValOperandId lhsId, ValOperandId rhsId)
 {
     if (!lhsVal_.isNullOrUndefined() || !rhsVal_.isNullOrUndefined())
@@ -4985,6 +5037,11 @@ CompareIRGenerator::tryAttachStub()
         if (tryAttachObjectUndefined(lhsId, rhsId))
             return true;
         if (tryAttachStrictDifferentTypes(lhsId, rhsId))
+            return true;
+
+        
+        
+        if (tryAttachPrimitiveUndefined(lhsId, rhsId))
             return true;
 
         
