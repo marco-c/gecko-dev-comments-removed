@@ -160,7 +160,9 @@ add_task(async function test_userScripts_matches_denied() {
 
 
 
-add_task(async function test_userScripts_no_webext_apis() {
+
+
+false && add_task(async function test_userScripts_no_webext_apis() {
   async function background() {
     const matches = ["http://localhost/*/file_sample.html"];
 
