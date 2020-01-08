@@ -202,34 +202,33 @@ const PREFS_CONFIG = new Map([
     title: "Does the user allow CFR recommendations?",
     value: true,
   }],
-  ["asrouter.providers.onboarding", {
-    title: "Configuration for onboarding provider",
-    value: JSON.stringify({
+  ["asrouter.messageProviders", {
+    title: "Configuration for ASRouter message providers",
+
+    
+
+
+
+
+
+    value: JSON.stringify([{
       id: "onboarding",
       type: "local",
       localProvider: "OnboardingMessageProvider",
       enabled: true,
-    }),
-  }],
-  ["asrouter.providers.snippets", {
-    title: "Configuration for snippets provider",
-    value: JSON.stringify({
+    }, {
       id: "snippets",
       type: "remote",
       url: "https://snippets.cdn.mozilla.net/%STARTPAGE_VERSION%/%NAME%/%VERSION%/%APPBUILDID%/%BUILD_TARGET%/%LOCALE%/%CHANNEL%/%OS_VERSION%/%DISTRIBUTION%/%DISTRIBUTION_VERSION%/",
       updateCycleInMs: ONE_HOUR_IN_MS * 4,
-      enabled: UpdateUtils.getUpdateChannel(true) === "nightly",
-    }),
-  }],
-  ["asrouter.providers.cfr", {
-    title: "Configuration for CFR provider",
-    value: JSON.stringify({
+      enabled: false,
+    }, {
       id: "cfr",
       type: "local",
       localProvider: "CFRMessageProvider",
-      frequency: {custom: [{period: "daily", cap: 1}]},
-      enabled: true,
-    }),
+      enabled: IS_NIGHTLY_OR_UNBRANDED_BUILD,
+      cohort: IS_NIGHTLY_OR_UNBRANDED_BUILD ? "nightly" : "",
+    }]),
   }],
 ]);
 
