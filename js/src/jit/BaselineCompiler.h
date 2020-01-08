@@ -312,6 +312,24 @@ class BaselineCodeGen {
   void pushArg(const T& t) {
     masm.Push(t);
   }
+
+  
+  void pushScriptArg();
+
+  
+  void pushBytecodePCArg();
+
+  
+  
+  enum class ScriptObjectType { RegExp, Function, ObjectLiteral };
+  void pushScriptObjectArg(ScriptObjectType type);
+  void pushScriptNameArg();
+  void pushScriptScopeArg();
+
+  
+  void pushUint8BytecodeOperandArg();
+  void pushUint16BytecodeOperandArg();
+
   void prepareVMCall();
 
   enum CallVMPhase { POST_INITIALIZE, CHECK_OVER_RECURSED };
