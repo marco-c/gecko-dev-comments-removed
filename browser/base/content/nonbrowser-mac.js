@@ -94,9 +94,13 @@ function nonBrowserWindowDelayedStartup() {
 }
 
 function nonBrowserWindowShutdown() {
-  let dockSupport = Cc["@mozilla.org/widget/macdocksupport;1"]
-                    .getService(Ci.nsIMacDockSupport);
-  dockSupport.dockMenu = null;
+  
+  
+  if (window.location.href == "chrome://browser/content/hiddenWindow.xul") {
+    let dockSupport = Cc["@mozilla.org/widget/macdocksupport;1"]
+                      .getService(Ci.nsIMacDockSupport);
+    dockSupport.dockMenu = null;
+  }
 
   
   
