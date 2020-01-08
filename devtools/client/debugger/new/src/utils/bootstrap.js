@@ -110,7 +110,8 @@ function bootstrapWorkers() {
 
   if ((0, _devtoolsEnvironment.isDevelopment)()) {
     
-    (0, _devtoolsSourceMap.startSourceMapWorker)(`${workerPath}/source-map-worker.js`);
+    (0, _devtoolsSourceMap.startSourceMapWorker)(`${workerPath}/source-map-worker.js`, 
+    "./source-map-worker-assets/");
   }
 
   prettyPrint.start(`${workerPath}/pretty-print-worker.js`);
