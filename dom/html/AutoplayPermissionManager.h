@@ -42,7 +42,7 @@ class AutoplayPermissionManager final
   
   
   
-  RefPtr<GenericPromise> RequestWithPrompt();
+  RefPtr<GenericNonExclusivePromise> RequestWithPrompt();
 
   
   
@@ -56,7 +56,7 @@ class AutoplayPermissionManager final
   ~AutoplayPermissionManager();
 
   nsWeakPtr mWindow;
-  MozPromiseHolder<GenericPromise> mPromiseHolder;
+  MozPromiseHolder<GenericNonExclusivePromise> mPromiseHolder;
   
   
   

@@ -19,7 +19,8 @@ extern mozilla::LazyLogModule gAutoplayPermissionLog;
 
 namespace mozilla {
 
-RefPtr<GenericPromise> AutoplayPermissionManager::RequestWithPrompt() {
+RefPtr<GenericNonExclusivePromise>
+AutoplayPermissionManager::RequestWithPrompt() {
   
   
   
@@ -34,15 +35,15 @@ RefPtr<GenericPromise> AutoplayPermissionManager::RequestWithPrompt() {
 
   nsCOMPtr<nsPIDOMWindowInner> window = do_QueryReferent(mWindow);
   if (!window) {
-    return GenericPromise::CreateAndReject(NS_ERROR_DOM_MEDIA_NOT_ALLOWED_ERR,
-                                           __func__);
+    return GenericNonExclusivePromise::CreateAndReject(
+        NS_ERROR_DOM_MEDIA_NOT_ALLOWED_ERR, __func__);
   }
 
   RefPtr<AutoplayPermissionRequest> request = AutoplayPermissionRequest::Create(
       nsGlobalWindowInner::Cast(window), this);
   if (!request) {
-    return GenericPromise::CreateAndReject(NS_ERROR_DOM_MEDIA_NOT_ALLOWED_ERR,
-                                           __func__);
+    return GenericNonExclusivePromise::CreateAndReject(
+        NS_ERROR_DOM_MEDIA_NOT_ALLOWED_ERR, __func__);
   }
 
   

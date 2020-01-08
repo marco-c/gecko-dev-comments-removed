@@ -1491,7 +1491,8 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   MozPromiseRequestHolder<SetCDMPromise> mSetCDMRequest;
   
   
-  MozPromiseRequestHolder<GenericPromise> mAutoplayPermissionRequest;
+  MozPromiseRequestHolder<GenericNonExclusivePromise>
+      mAutoplayPermissionRequest;
 
   
   double mCurrentPlayRangeStart = 1.0;
