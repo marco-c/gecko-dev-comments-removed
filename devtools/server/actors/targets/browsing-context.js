@@ -1607,6 +1607,10 @@ DebuggerProgressListener.prototype = {
     if (!this._targetActor.attached) {
       return;
     }
+    progress.QueryInterface(Ci.nsIDocShell);
+    if (progress.isBeingDestroyed()) {
+      return;
+    }
 
     const isStart = flag & Ci.nsIWebProgressListener.STATE_START;
     const isStop = flag & Ci.nsIWebProgressListener.STATE_STOP;
@@ -1616,7 +1620,6 @@ DebuggerProgressListener.prototype = {
     
     if (isDocument && isStop) {
       
-      progress.QueryInterface(Ci.nsIDocShell);
       this._targetActor._notifyDocShellsUpdate([progress]);
     }
 

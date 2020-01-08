@@ -480,7 +480,16 @@ NetworkResponseListener.prototype = {
       
     }
     if (isOptimizedContent) {
-      const charset = this.request.contentCharset || this.httpActivity.charset;
+      let charset;
+      try {
+        charset = this.request.contentCharset;
+      } catch (e) {
+        
+        
+      }
+      if (!charset) {
+        charset = this.httpActivity.charset;
+      }
       NetworkHelper.loadFromCache(this.httpActivity.url, charset,
                                   this._onComplete.bind(this));
       return;
@@ -636,7 +645,16 @@ NetworkResponseListener.prototype = {
     } else if (!this.httpActivity.discardResponseBody &&
                this.httpActivity.responseStatus == 304) {
       
-      const charset = this.request.contentCharset || this.httpActivity.charset;
+      let charset;
+      try {
+        charset = this.request.contentCharset;
+      } catch (e) {
+        
+        
+      }
+      if (!charset) {
+        charset = this.httpActivity.charset;
+      }
       NetworkHelper.loadFromCache(this.httpActivity.url, charset,
                                   this._onComplete.bind(this));
     } else {
