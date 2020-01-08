@@ -1539,6 +1539,8 @@ pref("dom.storage_access.max_concurrent_auto_grants", 5);
 pref("browser.contentblocking.trackingprotection.control-center.ui.enabled", true);
 pref("browser.contentblocking.rejecttrackers.control-center.ui.enabled", true);
 
+pref("browser.contentblocking.control-center.ui.showAllowedLabels", false);
+
 
 #ifdef EARLY_BETA_OR_EARLIER
 pref("browser.contentblocking.reportBreakage.enabled", true);
