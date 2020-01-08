@@ -788,6 +788,16 @@ protected:
 
   nsresult InsertBrElementAtSelectionWithTransaction();
 
+  
+
+
+
+
+
+
+
+  nsresult InsertTextWithQuotationsInternal(const nsAString& aStringToInsert);
+
   nsresult LoadHTML(const nsAString& aInputString);
 
   

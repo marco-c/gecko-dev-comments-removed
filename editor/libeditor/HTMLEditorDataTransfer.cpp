@@ -1684,6 +1684,16 @@ HTMLEditor::InsertTextWithQuotations(const nsAString& aStringToInsert)
   AutoTransactionBatch bundleAllTransactions(*this);
   AutoPlaceholderBatch beginBatching(this);
 
+  nsresult rv = InsertTextWithQuotationsInternal(aStringToInsert);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  return NS_OK;
+}
+
+nsresult
+HTMLEditor::InsertTextWithQuotationsInternal(const nsAString& aStringToInsert)
+{
   
   
   
@@ -1918,7 +1928,16 @@ HTMLEditor::Rewrap(bool aRespectNewlines)
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),  "Failed to select all text");
   }
 
-  return InsertTextWithQuotations(wrapped);
+  
+  
+  
+  AutoTransactionBatch bundleAllTransactions(*this);
+  AutoPlaceholderBatch beginBatching(this);
+  rv = InsertTextWithQuotationsInternal(wrapped);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  return NS_OK;
 }
 
 NS_IMETHODIMP
