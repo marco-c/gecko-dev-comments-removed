@@ -117,7 +117,7 @@ PACKAGE_FORMATS = {
     'installer': {
         'args': [
             "installer",
-            "--package-name", "firefox",
+            "--package-name", "{package-name}",
             "--tag", "{installer-tag}",
             "--sfx-stub", "{sfx-stub}",
         ],
