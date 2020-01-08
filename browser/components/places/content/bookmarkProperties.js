@@ -365,6 +365,8 @@ var BookmarkPropertiesPanel = {
     
     this._element("locationField")
         .removeEventListener("input", this);
+    this._element("keywordField")
+        .removeEventListener("input", this);
   },
 
   onDialogAccept() {
