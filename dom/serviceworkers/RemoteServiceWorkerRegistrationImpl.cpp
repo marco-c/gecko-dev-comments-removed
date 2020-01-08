@@ -73,7 +73,7 @@ void RemoteServiceWorkerRegistrationImpl::Update(
         auto& ipcDesc = aResult.get_IPCServiceWorkerRegistrationDescriptor();
         successCB(ServiceWorkerRegistrationDescriptor(ipcDesc));
       },
-      [aFailureCB](ResponseRejectReason aReason) {
+      [aFailureCB](ResponseRejectReason&& aReason) {
         
         aFailureCB(CopyableErrorResult(NS_ERROR_DOM_INVALID_STATE_ERR));
       });
@@ -98,7 +98,7 @@ void RemoteServiceWorkerRegistrationImpl::Unregister(
         
         successCB(Get<0>(aResult));
       },
-      [aFailureCB](ResponseRejectReason aReason) {
+      [aFailureCB](ResponseRejectReason&& aReason) {
         
         aFailureCB(CopyableErrorResult(NS_ERROR_DOM_INVALID_STATE_ERR));
       });
