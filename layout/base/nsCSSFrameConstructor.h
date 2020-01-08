@@ -349,12 +349,6 @@ public:
 
   nsContainerFrame* GetContentInsertionFrameFor(nsIContent* aContent);
 
-  void CreateListBoxContent(nsContainerFrame* aParentFrame,
-                            nsIFrame*         aPrevFrame,
-                            nsIContent*       aChild,
-                            nsIFrame**        aResult,
-                            bool              aIsAppend);
-
   
   
   
@@ -1565,10 +1559,6 @@ private:
   static const FrameConstructionData*
     FindXULMenubarData(Element* aElement, ComputedStyle* aComputedStyle);
 #endif 
-  static const FrameConstructionData*
-    FindXULListBoxBodyData(Element* aElement, ComputedStyle* aComputedStyle);
-  static const FrameConstructionData*
-    FindXULListItemData(Element* aElement, ComputedStyle* aComputedStyle);
 #endif 
 
   

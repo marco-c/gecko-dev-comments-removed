@@ -42,7 +42,6 @@
 #include "nsPIBoxObject.h"
 #include "XULDocument.h"
 #include "nsXULPopupListener.h"
-#include "ListBoxObject.h"
 #include "nsContentUtils.h"
 #include "nsContentList.h"
 #include "mozilla/InternalMutationEvent.h"
@@ -447,7 +446,6 @@ nsXULElement::GetEventListenerManagerForAttr(nsAtom* aAttrName, bool* aDefer)
 static bool IsNonList(mozilla::dom::NodeInfo* aNodeInfo)
 {
   return !aNodeInfo->Equals(nsGkAtoms::tree) &&
-         !aNodeInfo->Equals(nsGkAtoms::listbox) &&
          !aNodeInfo->Equals(nsGkAtoms::richlistbox);
 }
 
@@ -792,98 +790,6 @@ nsXULElement::UnbindFromTree(bool aDeep, bool aNullParent)
     }
 
     nsStyledElement::UnbindFromTree(aDeep, aNullParent);
-}
-
-void
-nsXULElement::RemoveChildNode(nsIContent* aKid, bool aNotify)
-{
-    
-    
-    
-    nsCOMPtr<nsIDOMXULMultiSelectControlElement> controlElement;
-    nsCOMPtr<nsIListBoxObject> listBox;
-    bool fireSelectionHandler = false;
-
-    
-    
-    int32_t newCurrentIndex = -1;
-
-    if (aKid->NodeInfo()->Equals(nsGkAtoms::listitem, kNameSpaceID_XUL)) {
-      
-      
-      
-      
-      controlElement = do_QueryObject(this);
-
-      
-      if (!controlElement)
-        GetParentTree(getter_AddRefs(controlElement));
-      nsCOMPtr<nsIContent> controlContent(do_QueryInterface(controlElement));
-      RefPtr<nsXULElement> xulElement = FromNodeOrNull(controlContent);
-
-      if (xulElement) {
-        
-        
-        int32_t length;
-        controlElement->GetSelectedCount(&length);
-        for (int32_t i = 0; i < length; i++) {
-          nsCOMPtr<nsIDOMXULSelectControlItemElement> item;
-          controlElement->MultiGetSelectedItem(i, getter_AddRefs(item));
-          nsCOMPtr<nsINode> node = do_QueryInterface(item);
-          if (node == aKid &&
-              NS_SUCCEEDED(controlElement->RemoveItemFromSelection(item))) {
-            length--;
-            i--;
-            fireSelectionHandler = true;
-          }
-        }
-
-        nsCOMPtr<nsIDOMXULSelectControlItemElement> curItem;
-        controlElement->GetCurrentItem(getter_AddRefs(curItem));
-        nsCOMPtr<nsIContent> curNode = do_QueryInterface(curItem);
-        if (curNode && nsContentUtils::ContentIsDescendantOf(curNode, aKid)) {
-            
-            nsCOMPtr<nsIBoxObject> box = xulElement->GetBoxObject(IgnoreErrors());
-            listBox = do_QueryInterface(box);
-            if (listBox) {
-              listBox->GetIndexOfItem(aKid->AsElement(), &newCurrentIndex);
-            }
-
-            
-            if (newCurrentIndex == -1)
-              newCurrentIndex = -2;
-        }
-      }
-    }
-
-    nsStyledElement::RemoveChildNode(aKid, aNotify);
-
-    if (newCurrentIndex == -2) {
-        controlElement->SetCurrentItem(nullptr);
-    } else if (newCurrentIndex > -1) {
-        
-        int32_t treeRows;
-        listBox->GetRowCount(&treeRows);
-        if (treeRows > 0) {
-            newCurrentIndex = std::min((treeRows - 1), newCurrentIndex);
-            RefPtr<Element> newCurrentItem;
-            listBox->GetItemAtIndex(newCurrentIndex, getter_AddRefs(newCurrentItem));
-            nsCOMPtr<nsIDOMXULSelectControlItemElement> xulCurItem = do_QueryInterface(newCurrentItem);
-            if (xulCurItem)
-                controlElement->SetCurrentItem(xulCurItem);
-        } else {
-            controlElement->SetCurrentItem(nullptr);
-        }
-    }
-
-    nsIDocument* doc;
-    if (fireSelectionHandler && (doc = GetComposedDoc())) {
-      nsContentUtils::DispatchTrustedEvent(doc,
-                                           static_cast<nsIContent*>(this),
-                                           NS_LITERAL_STRING("select"),
-                                           CanBubble::eNo,
-                                           Cancelable::eYes);
-    }
 }
 
 void
@@ -1316,24 +1222,6 @@ nsXULElement::GetBoxObject(ErrorResult& rv)
 {
     
     return OwnerDoc()->GetBoxObjectFor(this, rv);
-}
-
-NS_IMETHODIMP
-nsXULElement::GetParentTree(nsIDOMXULMultiSelectControlElement** aTreeElement)
-{
-    for (nsIContent* current = GetParent(); current;
-         current = current->GetParent()) {
-        if (current->NodeInfo()->Equals(nsGkAtoms::listbox,
-                                        kNameSpaceID_XUL)) {
-            CallQueryInterface(current, aTreeElement);
-            
-            
-
-            return NS_OK;
-        }
-    }
-
-    return NS_OK;
 }
 
 void

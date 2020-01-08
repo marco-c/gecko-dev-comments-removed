@@ -156,12 +156,6 @@ public:
   
 
 
-
-  virtual bool SupportsOrdinalsInChildren();
-
-  
-
-
   void AppendDirectlyOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult) override;
 
 private:
