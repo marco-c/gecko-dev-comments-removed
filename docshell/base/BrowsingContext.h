@@ -8,7 +8,6 @@
 #define mozilla_dom_BrowsingContext_h
 
 #include "mozilla/LinkedList.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/WeakPtr.h"
 #include "nsCOMPtr.h"
@@ -25,7 +24,16 @@ class LogModule;
 
 namespace dom {
 
+class BrowsingContext;
 class ContentParent;
+
+
+class BrowsingContextGroup : public nsTArray<WeakPtr<BrowsingContext>> {
+ public:
+  NS_INLINE_DECL_REFCOUNTING(BrowsingContextGroup)
+ private:
+  ~BrowsingContextGroup() {}
+};
 
 
 
@@ -119,7 +127,7 @@ class BrowsingContext : public nsWrapperCache,
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(BrowsingContext)
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_NATIVE_CLASS(BrowsingContext)
 
-  using Children = AutoCleanLinkedList<RefPtr<BrowsingContext>>;
+  using Children = nsTArray<RefPtr<BrowsingContext>>;
 
  protected:
   virtual ~BrowsingContext();
@@ -134,7 +142,8 @@ class BrowsingContext : public nsWrapperCache,
   
   const uint64_t mBrowsingContextId;
 
-  WeakPtr<BrowsingContext> mParent;
+  RefPtr<BrowsingContextGroup> mBrowsingContextGroup;
+  RefPtr<BrowsingContext> mParent;
   Children mChildren;
   WeakPtr<BrowsingContext> mOpener;
   nsCOMPtr<nsIDocShell> mDocShell;
