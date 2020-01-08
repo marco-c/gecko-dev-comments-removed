@@ -3750,7 +3750,6 @@ const std::string kMalformedImageattr =
 
 TEST_P(NewSdpTest, CheckMalformedImageattr)
 {
-  SKIP_TEST_WITH_RUST_PARSER; 
   if (::testing::get<0>(GetParam())) {
     
     return;

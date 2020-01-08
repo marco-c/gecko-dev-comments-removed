@@ -721,9 +721,13 @@ public:
     public:
       XYRange() : min(0), max(0), step(1) {}
       void Serialize(std::ostream& os) const;
+      
       bool Parse(std::istream& is, std::string* error);
+      
       bool ParseAfterBracket(std::istream& is, std::string* error);
+      
       bool ParseAfterMin(std::istream& is, std::string* error);
+      
       bool ParseDiscreteValues(std::istream& is, std::string* error);
       std::vector<uint32_t> discreteValues;
       
@@ -737,9 +741,13 @@ public:
     public:
       SRange() : min(0), max(0) {}
       void Serialize(std::ostream& os) const;
+      
       bool Parse(std::istream& is, std::string* error);
+      
       bool ParseAfterBracket(std::istream& is, std::string* error);
+      
       bool ParseAfterMin(std::istream& is, std::string* error);
+      
       bool ParseDiscreteValues(std::istream& is, std::string* error);
       bool IsSet() const
       {
@@ -756,6 +764,7 @@ public:
     public:
       PRange() : min(0), max(0) {}
       void Serialize(std::ostream& os) const;
+      
       bool Parse(std::istream& is, std::string* error);
       bool IsSet() const
       {
@@ -770,6 +779,7 @@ public:
     public:
       Set() : qValue(-1) {}
       void Serialize(std::ostream& os) const;
+      
       bool Parse(std::istream& is, std::string* error);
       XYRange xRange;
       XYRange yRange;
@@ -783,7 +793,9 @@ public:
     public:
       Imageattr() : pt(), sendAll(false), recvAll(false) {}
       void Serialize(std::ostream& os) const;
+      
       bool Parse(std::istream& is, std::string* error);
+      
       bool ParseSets(std::istream& is, std::string* error);
       
       Maybe<uint16_t> pt;
@@ -794,6 +806,8 @@ public:
   };
 
   virtual void Serialize(std::ostream& os) const override;
+
+  
   bool PushEntry(const std::string& raw, std::string* error, size_t* errorPos);
 
   std::vector<Imageattr> mImageattrs;
