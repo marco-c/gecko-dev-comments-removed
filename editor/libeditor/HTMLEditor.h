@@ -377,6 +377,17 @@ public:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
   nsresult RemoveInlinePropertyAsAction(nsAtom& aProperty,
                                         nsAtom* aAttribute);
 
