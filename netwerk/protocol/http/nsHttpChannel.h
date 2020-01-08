@@ -648,6 +648,10 @@ private:
     
     uint32_t                          mTrackingProtectionCancellationPending : 1;
 
+    
+    
+    uint32_t                          mAsyncResumePending : 1;
+
     nsTArray<nsContinueRedirectionFunc> mRedirectFuncStack;
 
     
