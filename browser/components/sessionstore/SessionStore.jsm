@@ -2522,13 +2522,15 @@ var SessionStoreInternal = {
 
     
     let tabbrowser = aWindow.gBrowser;
-    let tab = tabbrowser.selectedTab = tabbrowser.addTab(null, state);
+    let tab = tabbrowser.selectedTab =
+      tabbrowser.addTab(null, {
+        index: pos,
+        pinned: state.pinned,
+        userContextId: state.userContextId,
+      });
 
     
     this.restoreTab(tab, state);
-
-    
-    tabbrowser.moveTabTo(tab, pos);
 
     
     this._notifyOfClosedObjectsChange();
