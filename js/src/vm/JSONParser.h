@@ -49,11 +49,11 @@ class MOZ_STACK_CLASS JSONParserBase
 
     
     
-    typedef GCVector<Value, 20> ElementVector;
+    typedef Vector<Value, 20> ElementVector;
 
     
     
-    typedef GCVector<IdValuePair, 10> PropertyVector;
+    typedef Vector<IdValuePair, 10> PropertyVector;
 
     
     enum ParserState {

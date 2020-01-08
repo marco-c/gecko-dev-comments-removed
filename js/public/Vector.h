@@ -19,9 +19,10 @@ template <typename T>
 struct TypeIsGCThing : mozilla::FalseType
 {};
 
-template <>
-struct TypeIsGCThing<JS::Value> : mozilla::TrueType
-{};
+
+
+
+
 
 } 
 
