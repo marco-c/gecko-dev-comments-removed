@@ -88,6 +88,21 @@ public:
     return mCanceled != 0;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual bool
+  IsDebuggeeRunnable() const
+  {
+    return false;
+  }
+
   static WorkerRunnable*
   FromRunnable(nsIRunnable* aRunnable);
 
@@ -496,6 +511,44 @@ private:
 
   bool
   DispatchInternal() final;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class WorkerDebuggeeRunnable : public WorkerRunnable
+{
+ protected:
+  WorkerDebuggeeRunnable(WorkerPrivate* aWorkerPrivate,
+                         TargetAndBusyBehavior aBehavior = ParentThreadUnchangedBusyCount)
+    : WorkerRunnable(aWorkerPrivate, aBehavior)
+  { }
+
+ private:
+  
+  
+  bool
+  IsDebuggeeRunnable() const override
+  {
+    return true;
+  }
 };
 
 } 

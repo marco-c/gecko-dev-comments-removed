@@ -935,11 +935,11 @@ PRThreadFromThread(nsIThread* aThread)
 
 
 
-class CancelingOnParentRunnable final : public WorkerRunnable
+class CancelingOnParentRunnable final : public WorkerDebuggeeRunnable
 {
 public:
   explicit CancelingOnParentRunnable(WorkerPrivate* aWorkerPrivate)
-    : WorkerRunnable(aWorkerPrivate, ParentThreadUnchangedBusyCount)
+    : WorkerDebuggeeRunnable(aWorkerPrivate, ParentThreadUnchangedBusyCount)
   {}
 
   bool
