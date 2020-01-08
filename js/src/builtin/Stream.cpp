@@ -1487,7 +1487,14 @@ ReadableStreamErrorInternal(JSContext* cx, Handle<ReadableStream*> stream, Handl
     stream->setErrored();
 
     
-    stream->setStoredError(e);
+    {
+        AutoRealm ar(cx, stream);
+        RootedValue wrappedError(cx, e);
+        if (!cx->compartment()->wrap(cx, &wrappedError)) {
+            return false;
+        }
+        stream->setStoredError(wrappedError);
+    }
 
     
     if (!stream->hasReader()) {
