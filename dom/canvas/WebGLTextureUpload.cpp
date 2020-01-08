@@ -1030,7 +1030,6 @@ ValidateTargetForFormat(WebGLContext* webgl, TexImageTarget target,
                     return false;
                 break;
 
-            case webgl::CompressionFamily::ATC:
             case webgl::CompressionFamily::ETC1:
             case webgl::CompressionFamily::PVRTC:
             case webgl::CompressionFamily::RGTC:
@@ -1566,7 +1565,6 @@ WebGLTexture::CompressedTexSubImage(TexImageTarget target,
     switch (format->compression->family) {
     
     case webgl::CompressionFamily::ETC1:
-    case webgl::CompressionFamily::ATC:
         mContext->ErrorInvalidOperation("Format does not allow sub-image"
                                         " updates.");
         return;
