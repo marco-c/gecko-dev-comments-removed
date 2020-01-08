@@ -10,90 +10,63 @@
 
 
 
-var gDebuggee;
-var gClient;
-var gThreadClient;
-var gCallback;
-
-function run_test() {
-  run_test_with_server(DebuggerServer, function() {
-    run_test_with_server(WorkerDebuggerServer, do_test_finished);
-  });
-  do_test_pending();
-}
-
-function run_test_with_server(server, callback) {
-  gCallback = callback;
-  initTestDebuggerServer(server);
-  gDebuggee = addTestGlobal("test-stack", server);
-  gClient = new DebuggerClient(server.connectPipe());
-  gClient.connect().then(function() {
-    attachTestTabAndResume(gClient,
-                           "test-stack",
-                           function(response, targetFront, threadClient) {
-                             gThreadClient = threadClient;
-                             test_skip_breakpoint();
-                           });
-  });
-}
-
-var test_no_skip_breakpoint = async function(source, location) {
+var test_no_skip_breakpoint = async function(source, location, debuggee) {
   const [response, bpClient] = await source.setBreakpoint(
     Object.assign({}, location, { noSliding: true })
   );
 
   Assert.ok(!response.actualLocation);
-  Assert.equal(bpClient.location.line, gDebuggee.line0 + 3);
+  Assert.equal(bpClient.location.line, debuggee.line0 + 3);
   await bpClient.remove();
 };
 
-var test_skip_breakpoint = function() {
-  gThreadClient.addOneTimeListener("paused", async function(event, packet) {
-    const location = { line: gDebuggee.line0 + 3 };
-    const source = gThreadClient.source(packet.frame.where.source);
-
-    
-    
-    await test_no_skip_breakpoint(source, location);
-
-    
-    const [response, bpClient] = await source.setBreakpoint(location);
-    Assert.ok(!!response.actualLocation);
-    Assert.equal(response.actualLocation.source.actor, source.actor);
-    Assert.equal(response.actualLocation.line, location.line + 1);
-
-    gThreadClient.addOneTimeListener("paused", function(event, packet) {
-      
-      Assert.equal(packet.type, "paused");
-      Assert.equal(packet.frame.where.source.actor, source.actor);
-      Assert.equal(packet.frame.where.line, location.line + 1);
-      Assert.equal(packet.why.type, "breakpoint");
-      Assert.equal(packet.why.actors[0], bpClient.actor);
-      
-      Assert.equal(gDebuggee.a, 1);
-      Assert.equal(gDebuggee.b, undefined);
+add_task(threadClientTest(({ threadClient, debuggee }) => {
+  return new Promise(resolve => {
+    threadClient.addOneTimeListener("paused", async function(event, packet) {
+      const location = { line: debuggee.line0 + 3 };
+      const source = threadClient.source(packet.frame.where.source);
 
       
-      bpClient.remove(function(response) {
-        gThreadClient.resume(function() {
-          gClient.close().then(gCallback);
+      
+      await test_no_skip_breakpoint(source, location, debuggee);
+
+      
+      const [response, bpClient] = await source.setBreakpoint(location);
+      Assert.ok(!!response.actualLocation);
+      Assert.equal(response.actualLocation.source.actor, source.actor);
+      Assert.equal(response.actualLocation.line, location.line + 1);
+
+      threadClient.addOneTimeListener("paused", function(event, packet) {
+        
+        Assert.equal(packet.type, "paused");
+        Assert.equal(packet.frame.where.source.actor, source.actor);
+        Assert.equal(packet.frame.where.line, location.line + 1);
+        Assert.equal(packet.why.type, "breakpoint");
+        Assert.equal(packet.why.actors[0], bpClient.actor);
+        
+        Assert.equal(debuggee.a, 1);
+        Assert.equal(debuggee.b, undefined);
+
+        
+        bpClient.remove(function(response) {
+          threadClient.resume(resolve);
         });
       });
+
+      threadClient.resume();
     });
 
-    gThreadClient.resume();
+    
+    
+    
+    Cu.evalInSandbox(
+      "var line0 = Error().lineNumber;\n" +
+      "debugger;\n" +      
+      "var a = 1;\n" +     
+      "// A comment.\n" +  
+      "var b = 2;",        
+      debuggee
+    );
+    
   });
-
-  
-  
-  
-  Cu.evalInSandbox(
-    "var line0 = Error().lineNumber;\n" +
-    "debugger;\n" +      
-    "var a = 1;\n" +     
-    "// A comment.\n" +  
-    "var b = 2;",        
-    gDebuggee
-  );
-  
-};
+}));

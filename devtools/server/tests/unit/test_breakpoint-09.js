@@ -8,81 +8,57 @@
 
 
 
-var gDebuggee;
-var gClient;
-var gThreadClient;
-var gCallback;
+add_task(threadClientTest(({ threadClient, debuggee }) => {
+  return new Promise(resolve => {
+    let done = false;
+    threadClient.addOneTimeListener("paused", function(event, packet) {
+      const source = threadClient.source(packet.frame.where.source);
+      const location = { line: debuggee.line0 + 2 };
 
-function run_test() {
-  run_test_with_server(DebuggerServer, function() {
-    run_test_with_server(WorkerDebuggerServer, do_test_finished);
-  });
-  do_test_pending();
-}
+      source.setBreakpoint(location).then(function([response, bpClient]) {
+        threadClient.addOneTimeListener("paused", function(event, packet) {
+          
+          Assert.equal(packet.type, "paused");
+          Assert.equal(packet.frame.where.source.actor, source.actor);
+          Assert.equal(packet.frame.where.line, location.line);
+          Assert.equal(packet.why.type, "breakpoint");
+          Assert.equal(packet.why.actors[0], bpClient.actor);
+          
+          Assert.equal(debuggee.a, undefined);
 
-function run_test_with_server(server, callback) {
-  gCallback = callback;
-  initTestDebuggerServer(server);
-  gDebuggee = addTestGlobal("test-stack", server);
-  gClient = new DebuggerClient(server.connectPipe());
-  gClient.connect().then(function() {
-    attachTestTabAndResume(gClient, "test-stack",
-                           function(response, targetFront, threadClient) {
-                             gThreadClient = threadClient;
-                             test_remove_breakpoint();
-                           });
-  });
-}
-
-function test_remove_breakpoint() {
-  let done = false;
-  gThreadClient.addOneTimeListener("paused", function(event, packet) {
-    const source = gThreadClient.source(packet.frame.where.source);
-    const location = { line: gDebuggee.line0 + 2 };
-
-    source.setBreakpoint(location).then(function([response, bpClient]) {
-      gThreadClient.addOneTimeListener("paused", function(event, packet) {
-        
-        Assert.equal(packet.type, "paused");
-        Assert.equal(packet.frame.where.source.actor, source.actor);
-        Assert.equal(packet.frame.where.line, location.line);
-        Assert.equal(packet.why.type, "breakpoint");
-        Assert.equal(packet.why.actors[0], bpClient.actor);
-        
-        Assert.equal(gDebuggee.a, undefined);
-
-        
-        bpClient.remove(function(response) {
-          done = true;
-          gThreadClient.addOneTimeListener("paused",
-                                           function(event, packet) {
-            
-                                             gThreadClient.resume(function() {
-                                               Assert.ok(false);
+          
+          bpClient.remove(function(response) {
+            done = true;
+            threadClient.addOneTimeListener("paused",
+                                             function(event, packet) {
+              
+                                               threadClient.resume(function() {
+                                                 Assert.ok(false);
+                                               });
                                              });
-                                           });
-          gThreadClient.resume();
+            threadClient.resume();
+          });
         });
+        
+        threadClient.resume();
       });
-      
-      gThreadClient.resume();
     });
-  });
 
-  
-  Cu.evalInSandbox("var line0 = Error().lineNumber;\n" +
-                   "function foo(stop) {\n" + 
-                   "  this.a = 1;\n" +        
-                   "  if (stop) return;\n" +  
-                   "  delete this.a;\n" +     
-                   "  foo(true);\n" +         
-                   "}\n" +                    
-                   "debugger;\n" +            
-                   "foo();\n",                
-                   gDebuggee);
-  
-  if (!done) {
-    Assert.ok(false);
-  }
-  gClient.close().then(gCallback);
-}
+    
+    Cu.evalInSandbox("var line0 = Error().lineNumber;\n" +
+                     "function foo(stop) {\n" + 
+                     "  this.a = 1;\n" +        
+                     "  if (stop) return;\n" +  
+                     "  delete this.a;\n" +     
+                     "  foo(true);\n" +         
+                     "}\n" +                    
+                     "debugger;\n" +            
+                     "foo();\n",                
+                     debuggee);
+    
+    if (!done) {
+      Assert.ok(false);
+    }
+    resolve();
+  });
+}));

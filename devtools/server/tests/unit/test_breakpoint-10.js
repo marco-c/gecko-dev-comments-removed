@@ -9,80 +9,54 @@
 
 
 
-var gDebuggee;
-var gClient;
-var gThreadClient;
-var gCallback;
+add_task(threadClientTest(({ threadClient, debuggee }) => {
+  return new Promise(resolve => {
+    threadClient.addOneTimeListener("paused", function(event, packet) {
+      const source = threadClient.source(packet.frame.where.source);
+      const location = { line: debuggee.line0 + 3 };
 
-function run_test() {
-  run_test_with_server(DebuggerServer, function() {
-    run_test_with_server(WorkerDebuggerServer, do_test_finished);
-  });
-  do_test_pending();
-}
-
-function run_test_with_server(server, callback) {
-  gCallback = callback;
-  initTestDebuggerServer(server);
-  gDebuggee = addTestGlobal("test-stack", server);
-  gClient = new DebuggerClient(server.connectPipe());
-  gClient.connect().then(function() {
-    attachTestTabAndResume(gClient, "test-stack",
-                           function(response, targetFront, threadClient) {
-                             gThreadClient = threadClient;
-                             test_child_breakpoint();
-                           });
-  });
-}
-
-function test_child_breakpoint() {
-  gThreadClient.addOneTimeListener("paused", function(event, packet) {
-    const source = gThreadClient.source(packet.frame.where.source);
-    const location = { line: gDebuggee.line0 + 3 };
-
-    source.setBreakpoint(location).then(function([response, bpClient]) {
-      
-      Assert.equal(response.actualLocation, undefined);
-
-      gThreadClient.addOneTimeListener("paused", function(event, packet) {
+      source.setBreakpoint(location).then(function([response, bpClient]) {
         
-        Assert.equal(packet.type, "paused");
-        Assert.equal(packet.why.type, "breakpoint");
-        Assert.equal(packet.why.actors[0], bpClient.actor);
-        
-        Assert.equal(gDebuggee.i, 0);
+        Assert.equal(response.actualLocation, undefined);
 
-        gThreadClient.addOneTimeListener("paused", function(event, packet) {
+        threadClient.addOneTimeListener("paused", function(event, packet) {
           
           Assert.equal(packet.type, "paused");
           Assert.equal(packet.why.type, "breakpoint");
           Assert.equal(packet.why.actors[0], bpClient.actor);
           
-          Assert.equal(gDebuggee.i, 1);
+          Assert.equal(debuggee.i, 0);
 
-          
-          bpClient.remove(function(response) {
-            gThreadClient.resume(function() {
-              gClient.close().then(gCallback);
+          threadClient.addOneTimeListener("paused", function(event, packet) {
+            
+            Assert.equal(packet.type, "paused");
+            Assert.equal(packet.why.type, "breakpoint");
+            Assert.equal(packet.why.actors[0], bpClient.actor);
+            
+            Assert.equal(debuggee.i, 1);
+
+            
+            bpClient.remove(function(response) {
+              threadClient.resume(resolve);
             });
           });
+
+          
+          threadClient.resume();
         });
-
         
-        gThreadClient.resume();
+        threadClient.resume();
       });
-      
-      gThreadClient.resume();
     });
-  });
 
-  
-  Cu.evalInSandbox("var line0 = Error().lineNumber;\n" +
-                   "debugger;\n" +                      
-                   "var a, i = 0;\n" +                  
-                   "for (i = 1; i <= 2; i++) {\n" +     
-                   "  a = i;\n" +                       
-                   "}\n",                               
-                   gDebuggee);
-  
-}
+    
+    Cu.evalInSandbox("var line0 = Error().lineNumber;\n" +
+                     "debugger;\n" +                      
+                     "var a, i = 0;\n" +                  
+                     "for (i = 1; i <= 2; i++) {\n" +     
+                     "  a = i;\n" +                       
+                     "}\n",                               
+                     debuggee);
+    
+  });
+}));
