@@ -409,9 +409,6 @@ class VideoCodingModule : public Module {
   
   
   virtual int SetMinReceiverDelay(int desired_delay_ms) = 0;
- 
-  
-  virtual void SetCPULoadState(CPULoadState state) = 0;
 
   virtual void RegisterPostEncodeImageCallback(
       EncodedImageCallback* post_encode_callback) = 0;

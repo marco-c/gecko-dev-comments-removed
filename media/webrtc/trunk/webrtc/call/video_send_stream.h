@@ -267,10 +267,6 @@ class VideoSendStream {
 
   
   
-  virtual CPULoadStateObserver* LoadStateObserver() = 0;
-
-  
-  
   
   virtual void ReconfigureVideoEncoder(VideoEncoderConfig config) = 0;
 
