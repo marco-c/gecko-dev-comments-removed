@@ -2012,6 +2012,29 @@ public class GeckoSession extends LayerSession
                 delegate.onFilePrompt(session, title, intMode, mimeTypes, cb);
                 break;
             }
+            case "popup": {
+                GeckoResult<Boolean> res = delegate.onPopupRequest(session, message.getString("targetUri"));
+
+                if (res == null) {
+                    
+                    callback.sendSuccess(false);
+                }
+
+                res.then(new GeckoResult.OnValueListener<Boolean, Void>() {
+                    @Override
+                    public GeckoResult<Void> onValue(Boolean value) throws Throwable {
+                        callback.sendSuccess(value);
+                        return null;
+                    }
+                }, new GeckoResult.OnExceptionListener<Void>() {
+                    @Override
+                    public GeckoResult<Void> onException(Throwable exception) throws Throwable {
+                        callback.sendError("Failed to get popup-blocking decision");
+                        return null;
+                    }
+                });
+                break;
+            }
             default: {
                 callback.sendError("Invalid type");
                 break;
@@ -3082,6 +3105,18 @@ public class GeckoSession extends LayerSession
 
         void onFilePrompt(GeckoSession session, String title, @FileType int type,
                           String[] mimeTypes, FileCallback callback);
+
+        
+
+
+
+
+
+
+
+
+
+        GeckoResult<Boolean> onPopupRequest(GeckoSession session, String targetUri);
     }
 
     
