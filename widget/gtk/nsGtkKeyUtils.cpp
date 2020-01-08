@@ -1101,15 +1101,28 @@ void KeymapWrapper::OnDirectionChanged(GdkKeymap* aGdkKeymap,
     
     
     
-    guint keyvalWithoutModifier = GetGDKKeyvalWithoutModifier(aGdkKeyEvent);
-    uint32_t DOMKeyCode = GetDOMKeyCodeFromKeyPairs(keyvalWithoutModifier);
-    if (!DOMKeyCode) {
+    
+    
+    
+    
+    uint32_t DOMKeyCode = GetDOMKeyCodeFromKeyPairs(keyval);
+    if (DOMKeyCode) {
       
       
       
-      DOMKeyCode = GetDOMKeyCodeFromKeyPairs(keyval);
+      
+      
+      
+      
+      
+      
+      return DOMKeyCode;
     }
-    return DOMKeyCode;
+    
+    
+    
+    guint keyvalWithoutModifier = GetGDKKeyvalWithoutModifier(aGdkKeyEvent);
+    return GetDOMKeyCodeFromKeyPairs(keyvalWithoutModifier);
   }
 
   
