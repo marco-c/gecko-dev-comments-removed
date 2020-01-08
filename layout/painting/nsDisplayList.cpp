@@ -10092,16 +10092,14 @@ nsDisplayFilter::BuildLayer(
 
   nsIFrame* firstFrame =
     nsLayoutUtils::FirstContinuationOrIBSplitSibling(mFrame);
-  SVGObserverUtils::EffectProperties effectProperties =
-    SVGObserverUtils::GetEffectProperties(firstFrame);
 
-  if (effectProperties.HasInvalidFilter()) {
+  
+  
+  
+  if (SVGObserverUtils::GetAndObserveFilters(firstFrame, nullptr) ==
+        SVGObserverUtils::eHasRefsSomeInvalid) {
     return nullptr;
   }
-
-  MOZ_ASSERT(effectProperties.mFilterObservers &&
-             mFrame->StyleEffects()->HasFilters(),
-             "By getting here, we must have valid CSS filters.");
 
   ContainerLayerParameters newContainerParameters = aContainerParameters;
   newContainerParameters.mDisableSubpixelAntialiasingInDescendants = true;
@@ -10319,15 +10317,17 @@ nsDisplayFilter::PrintEffects(nsACString& aTo)
 {
   nsIFrame* firstFrame =
     nsLayoutUtils::FirstContinuationOrIBSplitSibling(mFrame);
-  SVGObserverUtils::EffectProperties effectProperties =
-    SVGObserverUtils::GetEffectProperties(firstFrame);
   bool first = true;
   aTo += " effects=(";
   if (mFrame->StyleEffects()->mOpacity != 1.0f && mHandleOpacity) {
     first = false;
     aTo += nsPrintfCString("opacity(%f)", mFrame->StyleEffects()->mOpacity);
   }
-  if (effectProperties.HasValidFilter()) {
+  
+  
+  
+  if (SVGObserverUtils::GetAndObserveFilters(firstFrame, nullptr) !=
+        SVGObserverUtils::eHasRefsSomeInvalid) {
     if (!first) {
       aTo += ", ";
     }

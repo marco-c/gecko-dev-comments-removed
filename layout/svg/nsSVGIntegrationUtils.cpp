@@ -287,14 +287,24 @@ nsRect
     ComputePostEffectsVisualOverflowRect(nsIFrame* aFrame,
                                          const nsRect& aPreEffectsOverflowRect)
 {
-  NS_ASSERTION(!(aFrame->GetStateBits() & NS_FRAME_SVG_LAYOUT),
-                 "Don't call this on SVG child frames");
+  MOZ_ASSERT(!(aFrame->GetStateBits() & NS_FRAME_SVG_LAYOUT),
+             "Don't call this on SVG child frames");
+
+  MOZ_ASSERT(aFrame->StyleEffects()->HasFilters(),
+             "We should only be called if the frame is filtered, since filters "
+             "are the only effect that affects overflow.");
 
   nsIFrame* firstFrame =
     nsLayoutUtils::FirstContinuationOrIBSplitSibling(aFrame);
-  SVGObserverUtils::EffectProperties effectProperties =
-    SVGObserverUtils::GetEffectProperties(firstFrame);
-  if (!effectProperties.HasValidFilter()) {
+  
+  
+  
+  
+  
+  
+  
+  if (SVGObserverUtils::GetAndObserveFilters(aFrame, nullptr) ==
+        SVGObserverUtils::eHasRefsSomeInvalid) {
     return aPreEffectsOverflowRect;
   }
 
@@ -1106,10 +1116,16 @@ nsSVGIntegrationUtils::PaintFilter(const PaintFramesParams& aParams)
 
   nsIFrame* firstFrame =
     nsLayoutUtils::FirstContinuationOrIBSplitSibling(frame);
-  SVGObserverUtils::EffectProperties effectProperties =
-    SVGObserverUtils::GetEffectProperties(firstFrame);
-
-  if (effectProperties.HasInvalidFilter()) {
+  
+  
+  
+  
+  
+  
+  
+  
+  if (SVGObserverUtils::GetAndObserveFilters(firstFrame, nullptr) ==
+        SVGObserverUtils::eHasRefsSomeInvalid) {
     return;
   }
 

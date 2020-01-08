@@ -148,9 +148,16 @@ nsSVGUtils::GetPostFilterVisualOverflowRect(nsIFrame *aFrame,
   MOZ_ASSERT(aFrame->GetStateBits() & NS_FRAME_SVG_LAYOUT,
              "Called on invalid frame type");
 
-  SVGFilterObserverListForCSSProp* observers =
-    SVGObserverUtils::GetFilterObserverList(aFrame);
-  if (!observers || !observers->ReferencesValidResources()) {
+  
+  
+  
+  
+  
+  
+  
+  if (!aFrame->StyleEffects()->HasFilters() ||
+      SVGObserverUtils::GetAndObserveFilters(aFrame, nullptr) ==
+        SVGObserverUtils::eHasRefsSomeInvalid) {
     return aPreFilterRect;
   }
 
@@ -727,7 +734,12 @@ nsSVGUtils::PaintFrameWithEffects(nsIFrame *aFrame,
 
   SVGObserverUtils::EffectProperties effectProperties =
     SVGObserverUtils::GetEffectProperties(aFrame);
-  if (effectProperties.HasInvalidEffects()) {
+  
+  
+  
+  if (effectProperties.HasInvalidEffects() ||
+      SVGObserverUtils::GetAndObserveFilters(aFrame, nullptr) ==
+        SVGObserverUtils::eHasRefsSomeInvalid) {
     
     return;
   }
@@ -820,7 +832,11 @@ nsSVGUtils::PaintFrameWithEffects(nsIFrame *aFrame,
   }
 
   
-  if (effectProperties.HasValidFilter()) {
+
+  
+  
+  
+  if (aFrame->StyleEffects()->HasFilters()) {
     nsRegion* dirtyRegion = nullptr;
     nsRegion tmpDirtyRegion;
     if (aDirtyRect) {

@@ -366,6 +366,10 @@ public:
   bool ReferencesValidResources();
   void Invalidate() { OnRenderingChange(); }
 
+  const nsTArray<RefPtr<SVGFilterObserver>>& GetObservers() const {
+    return mObservers;
+  }
+
   
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS(SVGFilterObserverList)
@@ -571,7 +575,6 @@ public:
                                       URIObserverHashtable)
 
   struct EffectProperties {
-    SVGFilterObserverListForCSSProp* mFilterObservers;
     SVGMaskObserverList* mMaskObservers;
     nsSVGPaintingProperty* mClipPath;
 
@@ -622,25 +625,6 @@ public:
 
     bool HasInvalidMask() {
       return !HasNoOrValidMask();
-    }
-
-    bool HasValidFilter() {
-      return mFilterObservers && mFilterObservers->ReferencesValidResources();
-    }
-
-    
-
-
-
-    bool HasNoOrValidFilter() {
-      return !mFilterObservers || mFilterObservers->ReferencesValidResources();
-    }
-
-    
-
-
-    bool HasInvalidFilter() {
-      return !HasNoOrValidFilter();
     }
   };
 
@@ -706,6 +690,13 @@ public:
     INVALIDATE_REFLOW = 1
   };
 
+  enum ReferenceState {
+    
+    eHasNoRefs,
+    eHasRefsAllValid,
+    eHasRefsSomeInvalid,
+  };
+
   
 
 
@@ -726,6 +717,25 @@ public:
 
   static bool
   GetMarkerFrames(nsIFrame* aMarkedFrame, nsSVGMarkerFrame*(*aFrames)[3]);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static ReferenceState
+  GetAndObserveFilters(nsIFrame* aFilteredFrame,
+                       nsTArray<nsSVGFilterFrame*>* aFilterFrames);
 
   
 
