@@ -440,13 +440,20 @@ var ensureKnownRegion = async function(ss) {
 
 
 function storeRegion(region) {
-  Services.prefs.setCharPref("browser.search.region", region);
-  
   let isTimezoneUS = isUSTimezone();
+  
+  
+  if (region != "US" || isTimezoneUS) {
+    Services.prefs.setCharPref("browser.search.region", region);
+  }
+
+  
   if (region == "US" && !isTimezoneUS) {
+    LOG("storeRegion mismatch - US Region, non-US timezone");
     Services.telemetry.getHistogramById("SEARCH_SERVICE_US_COUNTRY_MISMATCHED_TIMEZONE").add(1);
   }
   if (region != "US" && isTimezoneUS) {
+    LOG("storeRegion mismatch - non-US Region, US timezone");
     Services.telemetry.getHistogramById("SEARCH_SERVICE_US_TIMEZONE_MISMATCHED_COUNTRY").add(1);
   }
   

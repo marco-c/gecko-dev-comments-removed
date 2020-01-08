@@ -2192,7 +2192,7 @@ BrowserGlue.prototype = {
   _migrateUI: function BG__migrateUI() {
     
     
-    const UI_VERSION = 77;
+    const UI_VERSION = 78;
     const BROWSER_DOCURL = AppConstants.BROWSER_CHROME_URL;
 
     let currentUIVersion;
@@ -2531,10 +2531,6 @@ BrowserGlue.prototype = {
       }
     }
 
-    if (currentUIVersion < 74) {
-      Services.prefs.clearUserPref("browser.search.region");
-    }
-
     if (currentUIVersion < 75) {
       
       
@@ -2559,6 +2555,10 @@ BrowserGlue.prototype = {
       for (let toolbarId of toolbars) {
         xulStore.removeValue(BROWSER_DOCURL, toolbarId, "currentset");
       }
+    }
+
+    if (currentUIVersion < 78) {
+      Services.prefs.clearUserPref("browser.search.region");
     }
 
     
