@@ -1,5 +1,4 @@
-if (helperThreadCount() === 0)
-  quit(0);
+
 
 offThreadCompileScript(`
   function foo(x, {}) {
