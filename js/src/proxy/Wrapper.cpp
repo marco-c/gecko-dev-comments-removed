@@ -339,19 +339,21 @@ Wrapper::wrappedObject(JSObject* wrapper)
     MOZ_ASSERT(wrapper->is<WrapperObject>());
     JSObject* target = wrapper->as<ProxyObject>().target();
 
-    
-    
-    
-    
     if (target) {
         
         
         
         MOZ_ASSERT_IF(IsCrossCompartmentWrapper(wrapper),
                       !IsCrossCompartmentWrapper(target));
-        if (wrapper->isMarkedBlack()) {
-            MOZ_ASSERT(JS::ObjectIsNotGray(target));
-        }
+
+        
+        
+        MOZ_ASSERT_IF(!wrapper->runtimeFromMainThread()->gc.isIncrementalGCInProgress() &&
+                      wrapper->isMarkedBlack(),
+                      JS::ObjectIsNotGray(target));
+
+        
+        
         if (!wrapper->isMarkedGray()) {
             JS::ExposeObjectToActiveJS(target);
         }
