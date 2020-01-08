@@ -624,7 +624,9 @@ bool LinuxDumper::EnumerateMappings() {
             if ((start_addr == module->start_addr + module->size) &&
                 (my_strlen(name) == my_strlen(module->name)) &&
                 (my_strncmp(name, module->name, my_strlen(name)) == 0)) {
+              module->system_mapping_info.end_addr = end_addr;
               module->size = end_addr - module->start_addr;
+              module->exec |= exec;
               line_reader->PopLine(line_len);
               continue;
             }
@@ -635,12 +637,13 @@ bool LinuxDumper::EnumerateMappings() {
           
           if (!name && !mappings_.empty()) {
             MappingInfo* module = mappings_.back();
-            if ((start_addr == module->start_addr + module->size) &&
+            uintptr_t module_end_addr = module->start_addr + module->size;
+            if ((start_addr == module_end_addr) &&
                 module->exec &&
                 module->name[0] == '/' &&
-                offset == 0 && my_strncmp(i2,
-                                          kReservedFlags,
-                                          sizeof(kReservedFlags) - 1) == 0) {
+                ((offset == 0) || (offset == module_end_addr)) &&
+                my_strncmp(i2, kReservedFlags,
+                           sizeof(kReservedFlags) - 1) == 0) {
               module->size = end_addr - module->start_addr;
               line_reader->PopLine(line_len);
               continue;
