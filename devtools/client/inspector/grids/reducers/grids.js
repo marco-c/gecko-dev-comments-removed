@@ -4,6 +4,8 @@
 
 "use strict";
 
+const Services = require("Services");
+
 const {
   UPDATE_GRID_COLOR,
   UPDATE_GRID_HIGHLIGHTED,
@@ -16,7 +18,7 @@ const reducers = {
 
   [UPDATE_GRID_COLOR](grids, { nodeFront, color }) {
     const newGrids = grids.map(g => {
-      if (g.nodeFront == nodeFront) {
+      if (g.nodeFront === nodeFront) {
         g = Object.assign({}, g, { color });
       }
 
@@ -27,11 +29,44 @@ const reducers = {
   },
 
   [UPDATE_GRID_HIGHLIGHTED](grids, { nodeFront, highlighted }) {
+    const maxHighlighters =
+      Services.prefs.getIntPref("devtools.gridinspector.maxHighlighters");
+    const highlightedNodeFronts = grids.filter(g => g.highlighted)
+                                       .map(g => g.nodeFront);
+    let numHighlighted = highlightedNodeFronts.length;
+
+    
+    
+    if (!highlightedNodeFronts.includes(nodeFront) && highlighted) {
+      numHighlighted += 1;
+    } else if (highlightedNodeFronts.includes(nodeFront) && !highlighted) {
+      numHighlighted -= 1;
+    }
+
     return grids.map(g => {
-      const isUpdatedNode = g.nodeFront === nodeFront;
+      if (maxHighlighters === 1) {
+        
+        
+        
+        return Object.assign({}, g, {
+          highlighted: g.nodeFront === nodeFront && highlighted,
+        });
+      } else if (numHighlighted === maxHighlighters && g.nodeFront !== nodeFront) {
+        
+        
+        return Object.assign({}, g, {
+          disabled: !g.highlighted,
+        });
+      } else if (g.nodeFront === nodeFront) {
+        
+        return Object.assign({}, g, {
+          disabled: false,
+          highlighted,
+        });
+      }
 
       return Object.assign({}, g, {
-        highlighted: isUpdatedNode && highlighted
+        disabled: false,
       });
     });
   },

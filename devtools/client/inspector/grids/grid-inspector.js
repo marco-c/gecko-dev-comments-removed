@@ -56,6 +56,9 @@ class GridInspector {
     this.store = inspector.store;
     this.telemetry = inspector.telemetry;
     this.walker = this.inspector.walker;
+    
+    this.maxHighlighters =
+      Services.prefs.getIntPref("devtools.gridinspector.maxHighlighters");
 
     this.onHighlighterShown = this.onHighlighterShown.bind(this);
     this.onHighlighterHidden = this.onHighlighterHidden.bind(this);
@@ -163,15 +166,15 @@ class GridInspector {
 
 
   getInitialGridColor(nodeFront, customColor, fallbackColor) {
-    const highlighted = nodeFront == this.highlighters.gridHighlighterShown;
+    const highlighted = this.highlighters.gridHighlighters.has(nodeFront);
 
     let color;
     if (customColor) {
       color = customColor;
-    } else if (highlighted && this.highlighters.state.grid.options) {
+    } else if (highlighted && this.highlighters.state.grids.has(nodeFront.actorID)) {
       
       
-      color = this.highlighters.state.grid.options.color;
+      color = this.highlighters.state.grids.get(nodeFront.actorID).options.color;
     } else {
       
       color = this.getGridColorForNodeFront(nodeFront);
@@ -208,21 +211,32 @@ class GridInspector {
 
 
   haveCurrentFragmentsChanged(newGridFronts) {
-    const currentNode = this.highlighters.gridHighlighterShown;
-    if (!currentNode) {
+    const gridHighlighters = this.highlighters.gridHighlighters;
+
+    if (!gridHighlighters.size) {
       return false;
     }
 
-    const newGridFront = newGridFronts.find(g => g.containerNodeFront === currentNode);
-    if (!newGridFront) {
+    const gridFronts = newGridFronts.filter(g =>
+      gridHighlighters.has(g.containerNodeFront));
+    if (!gridFronts.length) {
       return false;
     }
 
     const { grids } = this.store.getState();
-    const oldFragments = grids.find(g => g.nodeFront === currentNode).gridFragments;
-    const newFragments = newGridFront.gridFragments;
 
-    return !compareFragmentsGeometry(oldFragments, newFragments);
+    for (const node of gridHighlighters.keys()) {
+      const oldFragments = grids
+        .find(g => g.nodeFront === node).gridFragments;
+      const newFragments = newGridFronts
+        .find(g => g.containerNodeFront === node).gridFragments;
+
+      if (!compareFragmentsGeometry(oldFragments, newFragments)) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   
@@ -300,12 +314,16 @@ class GridInspector {
       const colorForHost = customColors[hostname] ? customColors[hostname][i] : null;
       const fallbackColor = GRID_COLORS[i % GRID_COLORS.length];
       const color = this.getInitialGridColor(nodeFront, colorForHost, fallbackColor);
-      const highlighted = nodeFront == this.highlighters.gridHighlighterShown;
+      const highlighted = this.highlighters.gridHighlighters.has(nodeFront);
+      const disabled = !highlighted &&
+                       this.maxHighlighters > 1 &&
+                       this.highlighters.gridHighlighters.size === this.maxHighlighters;
 
       grids.push({
         id: i,
         actorID: grid.actorID,
         color,
+        disabled,
         direction: grid.direction,
         gridFragments: grid.gridFragments,
         highlighted,
@@ -326,10 +344,21 @@ class GridInspector {
 
 
 
+  onHighlighterShown(nodeFront) {
+    this.onHighlighterChange(nodeFront, true);
+  }
+
+  
 
 
-  onHighlighterShown(nodeFront, options) {
-    this.onHighlighterChange(nodeFront, true, options);
+
+
+
+
+
+
+  onHighlighterHidden(nodeFront) {
+    this.onHighlighterChange(nodeFront, false);
   }
 
   
@@ -342,24 +371,7 @@ class GridInspector {
 
 
 
-
-  onHighlighterHidden(nodeFront, options) {
-    this.onHighlighterChange(nodeFront, false, options);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  onHighlighterChange(nodeFront, highlighted, options = {}) {
+  onHighlighterChange(nodeFront, highlighted) {
     if (!this.isPanelVisible()) {
       return;
     }
@@ -417,27 +429,23 @@ class GridInspector {
 
     
     
-    const oldNodeFronts = grids.map(grid => grid.nodeFront.actorID);
-
-    
-    
     if (grids.length && grids.some(grid => !grid.nodeFront.actorID)) {
       this.updateGridPanel(newGridFronts);
       return;
     }
 
     
-    const newNodeFronts = newGridFronts.filter(grid => grid.containerNodeFront)
+    
+    const oldNodeFronts = grids.map(grid => grid.nodeFront.actorID);
+    const newNodeFronts = newGridFronts.filter(grid => grid.containerNode)
                                        .map(grid => grid.containerNodeFront.actorID);
+
     if (grids.length === newGridFronts.length &&
-        oldNodeFronts.sort().join(",") == newNodeFronts.sort().join(",")) {
+        oldNodeFronts.sort().join(",") == newNodeFronts.sort().join(",") &&
+        !this.haveCurrentFragmentsChanged(newGridFronts)) {
       
       
-      if (!this.highlighters.gridHighlighterShown ||
-          (this.highlighters.gridHighlighterShown &&
-           !this.haveCurrentFragmentsChanged(newGridFronts))) {
-        return;
-      }
+      return;
     }
 
     
