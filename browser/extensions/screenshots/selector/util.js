@@ -46,7 +46,7 @@ this.util = (function() {
         top: elBox.top + scrollY,
         bottom: elBox.bottom + scrollY,
         left: elBox.left + scrollX,
-        right: elBox.right + scrollX
+        right: elBox.right + scrollX,
       };
       if (elBox.bottom < box.top ||
           elBox.top > box.bottom ||
