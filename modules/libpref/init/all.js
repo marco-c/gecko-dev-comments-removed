@@ -1440,11 +1440,7 @@ pref("dom.event.clipboardevents.enabled",   true);
 pref("dom.event.highrestimestamp.enabled",  true);
 pref("dom.event.coalesce_mouse_move",       true);
 
-#if defined(NIGHTLY_BUILD)
 pref("dom.ua_widget.enabled", true);
-#else
-pref("dom.ua_widget.enabled", false);
-#endif
 
 pref("javascript.enabled",                  true);
 pref("javascript.options.strict",           false);
@@ -1951,8 +1947,6 @@ pref("network.sts.max_time_for_pr_close_during_shutdown", 5000);
 
 
 pref("network.sts.pollable_event_timeout", 6);
-
-
 
 
 pref("network.security.esni.enabled", false);
