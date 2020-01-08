@@ -135,8 +135,8 @@ HandlerProvider::GetHandlerPayloadSize(
   MOZ_ASSERT(mscom::IsCurrentThreadMTA());
 
   if (!IsTargetInterfaceCacheable()) {
-    *aOutPayloadSize = mscom::StructToStream::GetEmptySize();
-    return S_OK;
+    
+    return E_NOTIMPL;
   }
 
   MutexAutoLock lock(mMutex);
@@ -378,6 +378,11 @@ bool HandlerProvider::IsTargetInterfaceCacheable() {
 HRESULT
 HandlerProvider::WriteHandlerPayload(NotNull<mscom::IInterceptor*> aInterceptor,
                                      NotNull<IStream*> aStream) {
+  if (!IsTargetInterfaceCacheable()) {
+    
+    return E_NOTIMPL;
+  }
+
   MutexAutoLock lock(mMutex);
 
   if (!mSerializer || !(*mSerializer)) {
