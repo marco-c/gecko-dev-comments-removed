@@ -58,6 +58,9 @@ class Element;
 class MozIdleObserver;
 class Navigator;
 class Performance;
+class Report;
+class ReportBody;
+class ReportingObserver;
 class Selection;
 class ServiceWorker;
 class ServiceWorkerDescriptor;
@@ -254,16 +257,6 @@ public:
   void SetHasPointerEnterLeaveEventListeners()
   {
     mMayHavePointerEnterLeaveEventListener = true;
-  }
-
-  
-
-
-
-
-  void SetHasTextEventListenerInDefaultGroup()
-  {
-    mMayHaveTextEventListenerInDefaultGroup = true;
   }
 
   
@@ -628,6 +621,19 @@ public:
   already_AddRefed<mozilla::AutoplayPermissionManager>
   GetAutoplayPermissionManager();
 
+  void
+  RegisterReportingObserver(mozilla::dom::ReportingObserver* aObserver,
+                            bool aBuffered);
+
+  void
+  UnregisterReportingObserver(mozilla::dom::ReportingObserver* aObserver);
+
+  void
+  BroadcastReport(mozilla::dom::Report* aReport);
+
+  void
+  NotifyReportingObservers();
+
 protected:
   void CreatePerformanceObjectIfNeeded();
 
@@ -671,9 +677,6 @@ protected:
   bool mMayHaveSelectionChangeEventListener;
   bool mMayHaveMouseEnterLeaveEventListener;
   bool mMayHavePointerEnterLeaveEventListener;
-  
-  
-  bool mMayHaveTextEventListenerInDefaultGroup;
 
   bool mAudioCaptured;
 
@@ -722,6 +725,10 @@ protected:
   
   
   mozilla::dom::Event* mEvent;
+
+  
+  nsTArray<RefPtr<mozilla::dom::ReportingObserver>> mReportingObservers;
+  nsTArray<RefPtr<mozilla::dom::Report>> mReportRecords;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsPIDOMWindowInner, NS_PIDOMWINDOWINNER_IID)
