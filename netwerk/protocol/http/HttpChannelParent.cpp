@@ -73,16 +73,12 @@ HttpChannelParent::HttpChannelParent(const PBrowserOrId& iframeEmbedding,
   , mIgnoreProgress(false)
   , mSentRedirect1BeginFailed(false)
   , mReceivedRedirect2Verify(false)
-  , mHasSuspendedByBackPressure(false)
   , mPendingDiversion(false)
   , mDivertingFromChild(false)
   , mDivertedOnStartRequest(false)
   , mSuspendedForDiversion(false)
   , mSuspendAfterSynthesizeResponse(false)
   , mWillSynthesizeResponse(false)
-  , mCacheNeedFlowControlInitialized(false)
-  , mNeedFlowControl(true)
-  , mSuspendedForFlowControl(false)
 {
   LOG(("Creating HttpChannelParent [this=%p]\n", this));
 
@@ -1589,10 +1585,6 @@ HttpChannelParent::OnStopRequest(nsIRequest *aRequest,
     return NS_ERROR_UNEXPECTED;
   }
 
-  if (NeedFlowControl()) {
-    Telemetry::Accumulate(Telemetry::NETWORK_BACK_PRESSURE_SUSPENSION_RATE, mHasSuspendedByBackPressure);
-  }
-
   return NS_OK;
 }
 
@@ -1661,7 +1653,6 @@ HttpChannelParent::OnDataAvailable(nsIRequest *aRequest,
       MOZ_ASSERT(!mSuspendedForFlowControl);
       Unused << mChannel->Suspend();
       mSuspendedForFlowControl = true;
-      mHasSuspendedByBackPressure = true;
     }
     mSendWindowSize -= count;
   }
@@ -1704,7 +1695,7 @@ HttpChannelParent::RecvBytesRead(const int32_t& aCount)
     return IPC_OK();
   }
 
-  LOG(("HttpChannelParent::RecvBytesRead [this=%p count=%" PRId32 "]\n", this, aCount));
+  LOG(("HttpBackgroundChannelParent::RecvBytesRead [this=%p count=%" PRId32 "]\n", this, aCount));
 
   if (mSendWindowSize <= 0 && mSendWindowSize + aCount > 0) {
     MOZ_ASSERT(mSuspendedForFlowControl);

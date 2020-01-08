@@ -185,8 +185,6 @@ HttpChannelChild::HttpChannelChild()
   , mPostRedirectChannelShouldUpgrade(false)
   , mShouldParentIntercept(false)
   , mSuspendParentAfterSynthesizeResponse(false)
-  , mCacheNeedToReportBytesReadInitialized(false)
-  , mNeedToReportBytesRead(true)
 {
   LOG(("Creating HttpChannelChild @%p\n", this));
 

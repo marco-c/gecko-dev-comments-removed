@@ -267,6 +267,9 @@ private:
   
   
   bool NeedFlowControl();
+  bool mCacheNeedFlowControlInitialized = false;
+  bool mNeedFlowControl = true;
+  bool mSuspendedForFlowControl = false;
   int32_t mSendWindowSize;
 
   friend class HttpBackgroundChannelParent;
@@ -316,7 +319,6 @@ private:
 
   uint8_t mSentRedirect1BeginFailed    : 1;
   uint8_t mReceivedRedirect2Verify     : 1;
-  uint8_t mHasSuspendedByBackPressure  : 1;
 
   
   
@@ -335,11 +337,6 @@ private:
   uint8_t mSuspendAfterSynthesizeResponse : 1;
   
   uint8_t mWillSynthesizeResponse         : 1;
-
-  
-  uint8_t mCacheNeedFlowControlInitialized : 1;
-  uint8_t mNeedFlowControl : 1;
-  uint8_t mSuspendedForFlowControl : 1;
 
   
   

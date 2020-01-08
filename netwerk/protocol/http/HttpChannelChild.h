@@ -261,6 +261,8 @@ private:
   
   
   bool NeedToReportBytesRead();
+  bool mCacheNeedToReportBytesReadInitialized = false;
+  bool mNeedToReportBytesRead = true;
   int32_t mUnreportBytesRead = 0;
 
   void DoOnStartRequest(nsIRequest* aRequest, nsISupports* aContext);
@@ -415,12 +417,6 @@ private:
   
   
   uint8_t mSuspendParentAfterSynthesizeResponse : 1;
-
-  
-  uint8_t mCacheNeedToReportBytesReadInitialized : 1;
-
-  
-  uint8_t mNeedToReportBytesRead : 1;
 
   void FinishInterceptedRedirect();
   void CleanupRedirectingChannel(nsresult rv);
