@@ -84,6 +84,8 @@ private:
   SharedSurfacesChild() = delete;
   ~SharedSurfacesChild() = delete;
 
+  friend class SharedSurfacesAnimation;
+
   class ImageKeyData final {
   public:
     ImageKeyData(WebRenderLayerManager* aManager,
@@ -107,14 +109,24 @@ private:
     wr::ImageKey mImageKey;
   };
 
-  class SharedUserData final {
+  class SharedUserData {
   public:
+    SharedUserData()
+      : mShared(false)
+    { }
+
     explicit SharedUserData(const wr::ExternalImageId& aId)
       : mId(aId)
       , mShared(false)
     { }
 
     ~SharedUserData();
+
+    SharedUserData(const SharedUserData& aOther) = delete;
+    SharedUserData& operator=(const SharedUserData& aOther) = delete;
+
+    SharedUserData(SharedUserData&& aOther) = delete;
+    SharedUserData& operator=(SharedUserData&& aOther) = delete;
 
     const wr::ExternalImageId& Id() const
     {
@@ -143,7 +155,7 @@ private:
                            wr::IpcResourceUpdateQueue& aResources,
                            const Maybe<gfx::IntRect>& aDirtyRect);
 
-  private:
+  protected:
     AutoTArray<ImageKeyData, 1> mKeys;
     wr::ExternalImageId mId;
     bool mShared : 1;
@@ -152,10 +164,45 @@ private:
   static nsresult ShareInternal(gfx::SourceSurfaceSharedData* aSurface,
                                 SharedUserData** aUserData);
 
-  static void Unshare(const wr::ExternalImageId& aId, nsTArray<ImageKeyData>& aKeys);
+  static void Unshare(const wr::ExternalImageId& aId,
+                      bool aReleaseId,
+                      nsTArray<ImageKeyData>& aKeys);
+
   static void DestroySharedUserData(void* aClosure);
 
   static gfx::UserDataKey sSharedKey;
+};
+
+
+
+
+
+class SharedSurfacesAnimation final : private SharedSurfacesChild::SharedUserData
+{
+public:
+  SharedSurfacesAnimation()
+  { }
+
+  
+
+
+
+
+
+
+  nsresult SetCurrentFrame(gfx::SourceSurfaceSharedData* aSurface,
+                           const gfx::IntRect& aDirtyRect);
+
+  
+
+
+
+
+
+  nsresult UpdateKey(gfx::SourceSurfaceSharedData* aSurface,
+                     WebRenderLayerManager* aManager,
+                     wr::IpcResourceUpdateQueue& aResources,
+                     wr::ImageKey& aKey);
 };
 
 } 
