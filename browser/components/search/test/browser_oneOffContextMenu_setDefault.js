@@ -9,10 +9,10 @@ const ONEOFF_URLBAR_PREF = "browser.urlbar.oneOffSearches";
 const urlbar = document.getElementById("urlbar");
 const searchPopup = document.getElementById("PopupSearchAutoComplete");
 const urlbarPopup = document.getElementById("PopupAutoCompleteRichResult");
-const searchOneOffBinding = document.getAnonymousElementByAttribute(
+const searchOneOffElement = document.getAnonymousElementByAttribute(
   searchPopup, "anonid", "search-one-off-buttons"
 );
-const urlBarOneOffBinding = document.getAnonymousElementByAttribute(
+const urlBarOneOffElement = document.getAnonymousElementByAttribute(
   urlbarPopup, "anonid", "one-off-search-buttons"
 );
 
@@ -40,11 +40,11 @@ add_task(async function init() {
 
 add_task(async function test_searchBarChangeEngine() {
   let oneOffButton = await openPopupAndGetEngineButton(true, searchPopup,
-                                                       searchOneOffBinding,
+                                                       searchOneOffElement,
                                                        SEARCHBAR_BASE_ID);
 
-  const setDefaultEngineMenuItem = document.getAnonymousElementByAttribute(
-    searchOneOffBinding, "anonid", "search-one-offs-context-set-default"
+  const setDefaultEngineMenuItem = searchOneOffElement.querySelector(
+    ".search-one-offs-context-set-default"
   );
 
   
@@ -74,11 +74,11 @@ add_task(async function test_urlBarChangeEngine() {
   resetEngine();
 
   let oneOffButton = await openPopupAndGetEngineButton(false, urlbarPopup,
-                                                       urlBarOneOffBinding,
+                                                       urlBarOneOffElement,
                                                        URLBAR_BASE_ID);
 
-  const setDefaultEngineMenuItem = document.getAnonymousElementByAttribute(
-    urlBarOneOffBinding, "anonid", "search-one-offs-context-set-default"
+  const setDefaultEngineMenuItem = urlBarOneOffElement.querySelector(
+    ".search-one-offs-context-set-default"
   );
 
   
@@ -134,7 +134,7 @@ function promiseCurrentEngineChanged() {
 
 
 
-async function openPopupAndGetEngineButton(isSearch, popup, oneOffBinding, baseId) {
+async function openPopupAndGetEngineButton(isSearch, popup, oneOffElement, baseId) {
   
   let promise = promiseEvent(popup, "popupshown");
   info("Opening panel");
@@ -150,12 +150,8 @@ async function openPopupAndGetEngineButton(isSearch, popup, oneOffBinding, baseI
   }
   await promise;
 
-  const contextMenu = document.getAnonymousElementByAttribute(
-    oneOffBinding, "anonid", "search-one-offs-context-menu"
-  );
-  const oneOffButtons = document.getAnonymousElementByAttribute(
-    oneOffBinding, "anonid", "search-panel-one-offs"
-  );
+  const contextMenu = oneOffElement.contextMenuPopup;
+  const oneOffButtons = oneOffElement.buttons;
 
   
   let oneOffButton;
