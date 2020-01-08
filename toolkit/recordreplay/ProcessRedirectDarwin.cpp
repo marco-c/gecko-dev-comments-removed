@@ -695,25 +695,19 @@ ReplayInvokeCallback(size_t aCallbackId)
 
 
 
-static bool
-TestObjCObjectClass(id aObj, const char* aName)
-{
-  Class cls = object_getClass(aObj);
-  while (cls) {
-    const char* className = class_getName(cls);
-    if (!strcmp(className, aName)) {
-      return true;
-    }
-    cls = class_getSuperclass(cls);
-  }
-  return false;
-}
-
 
 
 enum class ObjCInputKind {
   StaticClass,
   ConstantString,
+};
+
+
+struct CFConstantString {
+  Class mClass;
+  size_t mStuff;
+  char* mData;
+  size_t mLength;
 };
 
 
@@ -764,17 +758,18 @@ Middleman_ObjCInput(MiddlemanCallContext& aCx, id* aThingPtr)
     
     
     
-    
-    if (TestObjCObjectClass(*aThingPtr, "NSString")) {
-      AutoPassThroughThreadEvents pt;
-      CFIndex len = CFStringGetLength((CFStringRef)*aThingPtr);
-      InfallibleVector<UniChar> buffer;
-      buffer.appendN(0, len);
-      CFStringGetCharacters((CFStringRef)*aThingPtr, { 0, len }, buffer.begin());
-      aCx.WriteInputScalar((size_t) ObjCInputKind::ConstantString);
-      aCx.WriteInputScalar(len);
-      aCx.WriteInputBytes(buffer.begin(), len * sizeof(UniChar));
-      return;
+    if (MemoryRangeIsTracked(*aThingPtr, sizeof(CFConstantString))) {
+      CFConstantString* str = (CFConstantString*) *aThingPtr;
+      if (str->mClass == objc_lookUpClass("__NSCFConstantString") &&
+          str->mLength <= 4096 && 
+          MemoryRangeIsTracked(str->mData, str->mLength)) {
+        InfallibleVector<UniChar> buffer;
+        NS_ConvertUTF8toUTF16 converted(str->mData, str->mLength);
+        aCx.WriteInputScalar((size_t) ObjCInputKind::ConstantString);
+        aCx.WriteInputScalar(str->mLength);
+        aCx.WriteInputBytes(converted.get(), str->mLength * sizeof(UniChar));
+        return;
+      }
     }
 
     aCx.MarkAsFailed();

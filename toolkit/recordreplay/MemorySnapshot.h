@@ -51,6 +51,11 @@ void RegisterAllocatedMemory(void* aBaseAddress, size_t aSize, MemoryKind aKind)
 void AddInitialUntrackedMemoryRegion(uint8_t* aBase, size_t aSize);
 
 
+
+
+bool MemoryRangeIsTracked(void* aAddress, size_t aSize);
+
+
 void InitializeMemorySnapshots();
 
 
