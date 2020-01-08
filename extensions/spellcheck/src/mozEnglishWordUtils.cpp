@@ -67,7 +67,7 @@ mozEnglishWordUtils::FindNextWord(const char16_t *word, uint32_t length,
 
     
     
-    if ( (*p == ':' || *p == '@' || *p == '.') &&  p < endbuf - 1) {
+    if ((p < endbuf - 1) && (*p == ':' || *p == '@' || *p == '.')) {
 
         
         
