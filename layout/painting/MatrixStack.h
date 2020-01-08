@@ -7,11 +7,8 @@
 #ifndef MOZILLA_PAINTING_MATRIXSTACK_H
 #define MOZILLA_PAINTING_MATRIXSTACK_H
 
-#include "nsISupports.h"
 #include "nsTArray.h"
 #include "mozilla/gfx/MatrixFwd.h"
-#include "mozilla/Maybe.h"
-#include "DisplayItemClip.h"
 
 namespace mozilla {
 
@@ -69,62 +66,6 @@ private:
 };
 
 typedef MatrixStack<gfx::Matrix4x4Flagged> MatrixStack4x4;
-
-
-
-
-
-
-
-
-class TransformClipNode {
-  NS_INLINE_DECL_REFCOUNTING(TransformClipNode);
-public:
-  TransformClipNode(const RefPtr<TransformClipNode>& aParent,
-                    const gfx::Matrix4x4Flagged& aTransform,
-                    const Maybe<nsRect>& aClip)
-  : mParent(aParent)
-  , mTransform(aTransform)
-  , mClip(aClip)
-  {
-    MOZ_COUNT_CTOR(TransformClipNode);
-  }
-
-  
-
-
-  const RefPtr<TransformClipNode>& Parent() const
-  {
-    return mParent;
-  }
-
-  
-
-
-  const Maybe<nsRect>& Clip() const
-  {
-    return mClip;
-  }
-
-  
-
-
-
-  const gfx::Matrix4x4Flagged& Transform() const
-  {
-    return mTransform;
-  }
-
-private:
-  ~TransformClipNode()
-  {
-    MOZ_COUNT_DTOR(TransformClipNode);
-  }
-
-  const RefPtr<TransformClipNode> mParent;
-  const gfx::Matrix4x4Flagged mTransform;
-  const Maybe<nsRect> mClip;
-};
 
 } 
 
