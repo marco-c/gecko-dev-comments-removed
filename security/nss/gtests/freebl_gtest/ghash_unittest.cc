@@ -2,7 +2,7 @@
 
 
 
-#include "gcm-vectors.h"
+#include "testvectors/gcm-vectors.h"
 #include "gtest/gtest.h"
 #include "util.h"
 

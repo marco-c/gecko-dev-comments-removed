@@ -457,6 +457,25 @@ smime_choose_cipher(CERTCertificate *scert, CERTCertificate **rcerts)
                 cipher_votes[strong_mapi] += pref;
                 pref--;
             } else {
+                if (pklen_bits > 3072) {
+                    
+
+
+
+
+                    cipher_abilities[aes256_mapi]++;
+                    cipher_votes[aes256_mapi] += pref;
+                    pref--;
+                }
+                if (pklen_bits > 1023) {
+                    
+
+
+
+                    cipher_abilities[aes128_mapi]++;
+                    cipher_votes[aes128_mapi] += pref;
+                    pref--;
+                }
                 if (pklen_bits > 512) {
                     
                     cipher_abilities[strong_mapi]++;
