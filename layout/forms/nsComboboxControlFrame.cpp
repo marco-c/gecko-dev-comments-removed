@@ -1060,6 +1060,10 @@ nsComboboxControlFrame::HandleRedisplayTextEvent()
   mRedisplayTextEvent.Forget();
 
   ActuallyDisplayText(true);
+  if (!weakThis.IsAlive()) {
+    return;
+  }
+
   
   PresShell()->FrameNeedsReflow(mDisplayFrame,
                                                nsIPresShell::eStyleChange,
@@ -1071,13 +1075,14 @@ nsComboboxControlFrame::HandleRedisplayTextEvent()
 void
 nsComboboxControlFrame::ActuallyDisplayText(bool aNotify)
 {
+  RefPtr<nsTextNode> displayContent = mDisplayContent;
   if (mDisplayedOptionTextOrPreview.IsEmpty()) {
     
     
     static const char16_t space = 0xA0;
-    mDisplayContent->SetText(&space, 1, aNotify);
+    displayContent->SetText(&space, 1, aNotify);
   } else {
-    mDisplayContent->SetText(mDisplayedOptionTextOrPreview, aNotify);
+    displayContent->SetText(mDisplayedOptionTextOrPreview, aNotify);
   }
 }
 
