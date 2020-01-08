@@ -301,13 +301,10 @@ const getRelativeRect = function(node, relativeTo) {
 
 
 
-
-
 function HTMLTooltip(toolboxDoc, {
     id = "",
     className = "",
     type = "normal",
-    autofocus = false,
     consumeOutsideClicks = true,
     useXulWrapper = false,
   } = {}) {
@@ -317,7 +314,6 @@ function HTMLTooltip(toolboxDoc, {
   this.id = id;
   this.className = className;
   this.type = type;
-  this.autofocus = autofocus;
   this.consumeOutsideClicks = consumeOutsideClicks;
   this.useXulWrapper = this._isXUL() && useXulWrapper;
   this.preferredWidth = "auto";
@@ -451,9 +447,6 @@ HTMLTooltip.prototype = {
 
     this.doc.defaultView.clearTimeout(this.attachEventsTimer);
     this.attachEventsTimer = this.doc.defaultView.setTimeout(() => {
-      if (this.autofocus) {
-        this.focus();
-      }
       
       this.topWindow = this._getTopWindow();
       this.topWindow.addEventListener("click", this._onClick, true);
