@@ -22,19 +22,33 @@ pub trait BrowserCapabilities {
 
     
     fn browser_name(&mut self, &Capabilities) -> WebDriverResult<Option<String>>;
+
     
     fn browser_version(&mut self, &Capabilities) -> WebDriverResult<Option<String>>;
+
     
     
     
     
-    fn compare_browser_version(&mut self, version: &str, comparison: &str) -> WebDriverResult<bool>;
+    
+    fn compare_browser_version(&mut self, version: &str, comparison: &str)
+        -> WebDriverResult<bool>;
+
     
     fn platform_name(&mut self, &Capabilities) -> WebDriverResult<Option<String>>;
+
     
     fn accept_insecure_certs(&mut self, &Capabilities) -> WebDriverResult<bool>;
 
-    fn accept_proxy(&mut self, proxy_settings: &BTreeMap<String, Json>, &Capabilities) -> WebDriverResult<bool>;
+    
+    
+    fn set_window_rect(&mut self, &Capabilities) -> WebDriverResult<bool>;
+
+    fn accept_proxy(
+        &mut self,
+        proxy_settings: &BTreeMap<String, Json>,
+        &Capabilities,
+    ) -> WebDriverResult<bool>;
 
     
     
@@ -42,11 +56,17 @@ pub trait BrowserCapabilities {
     
     
     fn validate_custom(&self, name: &str, value: &Json) -> WebDriverResult<()>;
+
     
     
     
     
-    fn accept_custom(&mut self, name: &str, value: &Json, merged: &Capabilities) -> WebDriverResult<bool>;
+    fn accept_custom(
+        &mut self,
+        name: &str,
+        value: &Json,
+        merged: &Capabilities,
+    ) -> WebDriverResult<bool>;
 }
 
 
@@ -70,9 +90,11 @@ pub struct SpecNewSessionParameters {
 }
 
 impl SpecNewSessionParameters {
-    fn validate<T: BrowserCapabilities>(&self,
-                                        mut capabilities: Capabilities,
-                                        browser_capabilities: &T) -> WebDriverResult<Capabilities> {
+    fn validate<T: BrowserCapabilities>(
+        &self,
+        mut capabilities: Capabilities,
+        browser_capabilities: &T,
+    ) -> WebDriverResult<Capabilities> {
         
         let null_entries = capabilities
             .iter()
@@ -85,34 +107,37 @@ impl SpecNewSessionParameters {
 
         for (key, value) in capabilities.iter() {
             match &**key {
-                "acceptInsecureCerts" => if !value.is_boolean() {
-                        return Err(WebDriverError::new(ErrorStatus::InvalidArgument,
-                                                       format!("acceptInsecureCerts is not boolean: {}", value)))
-                    },
-                x @ "browserName" |
-                x @ "browserVersion" |
-                x @ "platformName" => if !value.is_string() {
-                        return Err(WebDriverError::new(ErrorStatus::InvalidArgument,
-                                                       format!("{} is not a string: {}", x, value)))
-                    },
-                "pageLoadStrategy" => {
-                    try!(SpecNewSessionParameters::validate_page_load_strategy(value))
+                x @ "acceptInsecureCerts" | x @ "setWindowRect" => if !value.is_boolean() {
+                    return Err(WebDriverError::new(
+                        ErrorStatus::InvalidArgument,
+                        format!("{} is not boolean: {}", x, value),
+                    ));
+                },
+                x @ "browserName" | x @ "browserVersion" | x @ "platformName" => {
+                    if !value.is_string() {
+                        return Err(WebDriverError::new(
+                            ErrorStatus::InvalidArgument,
+                            format!("{} is not a string: {}", x, value),
+                        ));
+                    }
                 }
-                "proxy" => {
-                    try!(SpecNewSessionParameters::validate_proxy(value))
-                },
-                "timeouts" => {
-                    try!(SpecNewSessionParameters::validate_timeouts(value))
-                },
+                "pageLoadStrategy" => SpecNewSessionParameters::validate_page_load_strategy(value)?,
+                "proxy" => SpecNewSessionParameters::validate_proxy(value)?,
+                "timeouts" => SpecNewSessionParameters::validate_timeouts(value)?,
                 "unhandledPromptBehavior" => {
-                    try!(SpecNewSessionParameters::validate_unhandled_prompt_behaviour(value))
+                    SpecNewSessionParameters::validate_unhandled_prompt_behaviour(value)?
                 }
                 x => {
                     if !x.contains(":") {
-                        return Err(WebDriverError::new(ErrorStatus::InvalidArgument,
-                                                       format!("{} is not the name of a known capability or extension capability", x)))
+                        return Err(WebDriverError::new(
+                            ErrorStatus::InvalidArgument,
+                            format!(
+                                "{} is not the name of a known capability or extension capability",
+                                x
+                            ),
+                        ));
                     } else {
-                        try!(browser_capabilities.validate_custom(x, value));
+                        browser_capabilities.validate_custom(x, value)?
                     }
                 }
             }
@@ -453,6 +478,15 @@ impl CapabilitiesMatching for SpecNewSessionParameters {
                             if value.as_boolean().unwrap_or(false) &&
                                 !browser_capabilities
                                     .accept_insecure_certs(merged)
+                                    .unwrap_or(false)
+                            {
+                                return None;
+                            }
+                        }
+                        "setWindowRect" => {
+                            if value.as_boolean().unwrap_or(false) &&
+                                !browser_capabilities
+                                    .set_window_rect(merged)
                                     .unwrap_or(false)
                             {
                                 return None;
