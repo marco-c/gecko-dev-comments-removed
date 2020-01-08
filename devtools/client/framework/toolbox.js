@@ -1339,16 +1339,21 @@ Toolbox.prototype = {
 
 
 
-  _applyCacheSettings: function() {
+  _applyCacheSettings: async function() {
     const pref = "devtools.cache.disabled";
     const cacheDisabled = Services.prefs.getBoolPref(pref);
 
     if (this.target.activeTab) {
-      this.target.activeTab.reconfigure({
+      await this.target.activeTab.reconfigure({
         options: {
           "cacheDisabled": cacheDisabled
         }
       });
+
+      
+      if (flags.testing) {
+        this.emit("cache-reconfigured");
+      }
     }
   },
 
