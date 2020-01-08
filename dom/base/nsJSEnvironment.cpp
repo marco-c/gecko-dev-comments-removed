@@ -222,25 +222,38 @@ namespace xpc {
 
 
 
-JSObject*
+void
 FindExceptionStackForConsoleReport(nsPIDOMWindowInner* win,
-                                   JS::HandleValue exceptionValue)
+                                   JS::HandleValue exceptionValue,
+                                   JS::MutableHandleObject stackObj,
+                                   JS::MutableHandleObject stackGlobal)
 {
+  stackObj.set(nullptr);
+  stackGlobal.set(nullptr);
+
   if (!exceptionValue.isObject()) {
-    return nullptr;
+    return;
   }
 
   if (win && win->AsGlobal()->IsDying()) {
     
     
-    return nullptr;
+    return;
   }
 
   JS::RootingContext* rcx = RootingCx();
   JS::RootedObject exceptionObject(rcx, &exceptionValue.toObject());
-  JSObject* stackObject = JS::ExceptionStackOrNull(exceptionObject);
-  if (stackObject) {
-    return stackObject;
+  if (JSObject* excStack = JS::ExceptionStackOrNull(exceptionObject)) {
+    
+    
+    
+    
+    
+    
+    JSObject* unwrappedException = js::UncheckedUnwrap(exceptionObject);
+    stackObj.set(excStack);
+    stackGlobal.set(JS::GetNonCCWObjectGlobal(unwrappedException));
+    return;
   }
 
   
@@ -250,20 +263,22 @@ FindExceptionStackForConsoleReport(nsPIDOMWindowInner* win,
     
     UNWRAP_OBJECT(Exception, exceptionObject, exception);
     if (!exception) {
-      return nullptr;
+      return;
     }
   }
 
   nsCOMPtr<nsIStackFrame> stack = exception->GetLocation();
   if (!stack) {
-    return nullptr;
+    return;
   }
   JS::RootedValue value(rcx);
   stack->GetNativeSavedFrame(&value);
   if (value.isObject()) {
-    return &value.toObject();
+    stackObj.set(&value.toObject());
+    MOZ_ASSERT(JS::IsUnwrappedSavedFrame(stackObj));
+    stackGlobal.set(JS::GetNonCCWObjectGlobal(stackObj));
+    return;
   }
-  return nullptr;
 }
 
 } 
@@ -466,9 +481,11 @@ public:
     }
 
     if (status != nsEventStatus_eConsumeNoDefault) {
-      JS::Rooted<JSObject*> stack(rootingCx,
-        xpc::FindExceptionStackForConsoleReport(win, mError));
-      mReport->LogToConsoleWithStack(stack);
+      JS::Rooted<JSObject*> stack(rootingCx);
+      JS::Rooted<JSObject*> stackGlobal(rootingCx);
+      xpc::FindExceptionStackForConsoleReport(win, mError,
+                                              &stack, &stackGlobal);
+      mReport->LogToConsoleWithStack(stack, stackGlobal);
     }
 
     return NS_OK;

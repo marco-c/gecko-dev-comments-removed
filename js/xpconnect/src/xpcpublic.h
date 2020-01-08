@@ -606,7 +606,9 @@ class ErrorReport : public ErrorBase {
     
     
     
-    void LogToConsoleWithStack(JS::HandleObject aStack);
+    
+    
+    void LogToConsoleWithStack(JS::HandleObject aStack, JS::HandleObject aStackGlobal);
 
     
     
@@ -636,9 +638,16 @@ DispatchScriptErrorEvent(nsPIDOMWindowInner* win, JS::RootingContext* rootingCx,
 
 
 
-JSObject*
+
+
+
+
+
+void
 FindExceptionStackForConsoleReport(nsPIDOMWindowInner* win,
-                                   JS::HandleValue exceptionValue);
+                                   JS::HandleValue exceptionValue,
+                                   JS::MutableHandleObject stackObj,
+                                   JS::MutableHandleObject stackGlobal);
 
 
 

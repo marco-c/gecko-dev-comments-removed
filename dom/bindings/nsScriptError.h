@@ -91,7 +91,7 @@ private:
 
 class nsScriptErrorWithStack : public nsScriptErrorBase {
 public:
-  explicit nsScriptErrorWithStack(JS::HandleObject);
+  nsScriptErrorWithStack(JS::HandleObject aStack, JS::HandleObject aStackGlobal);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(nsScriptErrorWithStack)
@@ -103,7 +103,9 @@ private:
   virtual ~nsScriptErrorWithStack();
   
   
-  JS::Heap<JSObject*>  mStack;
+  JS::Heap<JSObject*> mStack;
+  
+  JS::Heap<JSObject*> mStackGlobal;
 };
 
 #endif 
