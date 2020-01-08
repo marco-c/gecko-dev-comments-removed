@@ -132,6 +132,7 @@
 #include "mozilla/DoublyLinkedList.h"
 #include "mozilla/Likely.h"
 #include "mozilla/MathAlgorithms.h"
+#include "mozilla/RandomNum.h"
 #include "mozilla/Sprintf.h"
 
 
@@ -1158,8 +1159,10 @@ public:
   Mutex mLock;
 
 private:
+  inline arena_t* GetByIdInternal(arena_id_t aArenaId, bool aIsPrivate);
+
   arena_t* mDefaultArena;
-  arena_id_t mLastArenaId;
+  arena_id_t mLastPublicArenaId;
   Tree mArenas;
   Tree mPrivateArenas;
 };
@@ -3735,9 +3738,33 @@ ArenaCollection::CreateArena(bool aIsPrivate, arena_params_t* aParams)
   MutexAutoLock lock(mLock);
 
   
-  ret->mId = mLastArenaId++;
-  (aIsPrivate ? mPrivateArenas : mArenas).Insert(ret);
-  return ret;
+  if (!aIsPrivate) {
+    ret->mId = mLastPublicArenaId++;
+    mArenas.Insert(ret);
+    return ret;
+  }
+
+  
+  
+  
+  
+
+  while(true) {
+    mozilla::Maybe<uint64_t> maybeRandomId = mozilla::RandomUint64();
+    MOZ_RELEASE_ASSERT(maybeRandomId.isSome());
+
+    
+    
+    arena_t* existingArena =
+      GetByIdInternal(maybeRandomId.value(), true );
+
+    if (!existingArena) {
+      ret->mId = static_cast<arena_id_t>(maybeRandomId.value());
+      mPrivateArenas.Insert(ret);
+      return ret;
+    }
+  }
+
 }
 
 
@@ -4562,17 +4589,24 @@ MozJemalloc::jemalloc_free_dirty_pages(void)
 }
 
 inline arena_t*
+ArenaCollection::GetByIdInternal(arena_id_t aArenaId, bool aIsPrivate)
+{
+  
+  
+  mozilla::AlignedStorage2<arena_t> key;
+  key.addr()->mId = aArenaId;
+  return (aIsPrivate ? mPrivateArenas : mArenas).Search(key.addr());
+}
+
+inline arena_t*
 ArenaCollection::GetById(arena_id_t aArenaId, bool aIsPrivate)
 {
   if (!malloc_initialized) {
     return nullptr;
   }
   
-  
-  mozilla::AlignedStorage2<arena_t> key;
-  key.addr()->mId = aArenaId;
   MutexAutoLock lock(mLock);
-  arena_t* result = (aIsPrivate ? mPrivateArenas : mArenas).Search(key.addr());
+  arena_t* result = GetByIdInternal(aArenaId, aIsPrivate);
   MOZ_RELEASE_ASSERT(result);
   return result;
 }
