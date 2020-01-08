@@ -11,6 +11,7 @@
 
 
 
+ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const windowTracker = {
@@ -26,7 +27,7 @@ const windowTracker = {
       let {document} = window;
       let {documentURI} = document;
 
-      if (documentURI !== "chrome://browser/content/browser.xul") {
+      if (documentURI !== AppConstants.BROWSER_CHROME_URL) {
         return;
       }
       initializeBrowser(window);
