@@ -1895,13 +1895,6 @@ MappedYCbCrChannelData::CopyInto(MappedYCbCrChannelData& aDst)
   if (bytesPerPixel == 1) {
     copyData(aDst.data, aDst, data, *this);
   } else if (bytesPerPixel == 2) {
-    if (skip != 0) {
-      
-      
-      
-      NS_WARNING("skip value non zero for HDR content, please verify code "
-                 "(see bug 1421187)");
-    }
     copyData(reinterpret_cast<uint16_t*>(aDst.data),
              aDst,
              reinterpret_cast<uint16_t*>(data),
