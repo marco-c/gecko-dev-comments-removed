@@ -3,7 +3,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/GeckoViewContentModule.jsm");
+ChromeUtils.import("resource://gre/modules/GeckoViewChildModule.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
@@ -12,7 +12,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 });
 
 
-class GeckoViewNavigationContent extends GeckoViewContentModule {
+class GeckoViewNavigationChild extends GeckoViewChildModule {
   onInit() {
     docShell.loadURIDelegate = this;
   }
@@ -53,5 +53,5 @@ class GeckoViewNavigationContent extends GeckoViewContentModule {
   }
 }
 
-let {debug, warn} = GeckoViewNavigationContent.initLogging("GeckoViewNavigation");
-let module = GeckoViewNavigationContent.create(this);
+let {debug, warn} = GeckoViewNavigationChild.initLogging("GeckoViewNavigation");
+let module = GeckoViewNavigationChild.create(this);

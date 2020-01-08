@@ -3,7 +3,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/GeckoViewContentModule.jsm");
+ChromeUtils.import("resource://gre/modules/GeckoViewChildModule.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
@@ -12,7 +12,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 
 
-class GeckoViewSelectionActionContent extends GeckoViewContentModule {
+class GeckoViewSelectionActionChild extends GeckoViewChildModule {
   constructor(aModuleName, aMessageManager) {
     super(aModuleName, aMessageManager);
 
@@ -246,5 +246,5 @@ class GeckoViewSelectionActionContent extends GeckoViewContentModule {
 }
 
 let {debug, warn} =
-    GeckoViewSelectionActionContent.initLogging("GeckoViewSelectionAction");
-let module = GeckoViewSelectionActionContent.create(this);
+    GeckoViewSelectionActionChild.initLogging("GeckoViewSelectionAction");
+let module = GeckoViewSelectionActionChild.create(this);
