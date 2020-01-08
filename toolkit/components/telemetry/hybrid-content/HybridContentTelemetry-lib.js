@@ -10,6 +10,7 @@ if (typeof Mozilla == "undefined") {
   "use strict";
 
   var _canUpload = false;
+  var _initPromise = null;
 
   if (typeof Mozilla.ContentTelemetry == "undefined") {
     
@@ -48,15 +49,21 @@ if (typeof Mozilla == "undefined") {
 
   function _registerInternalPolicyHandler() {
     
-    function policyChangeHandler(updatedPref) {
-      if (!("detail" in updatedPref) ||
-          !("canUpload" in updatedPref.detail) ||
-          typeof updatedPref.detail.canUpload != "boolean") {
-        return;
+    _initPromise = new Promise(resolveInit => {
+      
+      function policyChangeHandler(updatedPref) {
+        if (!("detail" in updatedPref) ||
+            !("canUpload" in updatedPref.detail) ||
+            typeof updatedPref.detail.canUpload != "boolean") {
+          return;
+        }
+        _canUpload = updatedPref.detail.canUpload;
+        
+        
+        resolveInit();
       }
-      _canUpload = updatedPref.detail.canUpload;
-    }
-    document.addEventListener("mozTelemetryPolicyChange", policyChangeHandler);
+      document.addEventListener("mozTelemetryPolicyChange", policyChangeHandler);
+    });
 
     
     _sendMessageToChrome("init");
@@ -64,6 +71,10 @@ if (typeof Mozilla == "undefined") {
 
   Mozilla.ContentTelemetry.canUpload = function() {
     return _canUpload;
+  };
+
+  Mozilla.ContentTelemetry.initPromise = function() {
+    return _initPromise;
   };
 
   Mozilla.ContentTelemetry.registerEvents = function(category, eventData) {

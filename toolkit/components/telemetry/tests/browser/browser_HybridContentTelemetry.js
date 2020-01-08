@@ -339,7 +339,7 @@ add_task(async function test_hybrid_content_recording() {
 add_task(async function test_can_upload() {
   const testHost = "https://example.org";
 
-  await SpecialPowers.pushPrefEnv({set: [[TelemetryUtils.Preferences.FhrUploadEnabled, false]]});
+  await SpecialPowers.pushPrefEnv({set: [[TelemetryUtils.Preferences.FhrUploadEnabled, true]]});
 
   
   let testHttpsUri = Services.io.newURI(testHost);
@@ -349,19 +349,23 @@ add_task(async function test_can_upload() {
   let newTab = await BrowserTestUtils.openNewForegroundTab(gBrowser, url);
 
   
-  await ContentTask.spawn(newTab.linkedBrowser, {}, () => {
+  await ContentTask.spawn(newTab.linkedBrowser, {}, async function() {
     let contentWin = Cu.waiveXrays(content);
+
+    await contentWin.Mozilla.ContentTelemetry.initPromise();
+
     
     let canUpload = contentWin.Mozilla.ContentTelemetry.canUpload();
-    ok(!canUpload, "CanUpload must report 'false' if the preference has that value.");
+    ok(canUpload, "CanUpload must report 'true' if the preference has that value.");
   });
 
   
-  await SpecialPowers.pushPrefEnv({set: [[TelemetryUtils.Preferences.FhrUploadEnabled, true]]});
-  await ContentTask.spawn(newTab.linkedBrowser, {}, () => {
+  await SpecialPowers.pushPrefEnv({set: [[TelemetryUtils.Preferences.FhrUploadEnabled, false]]});
+  await ContentTask.spawn(newTab.linkedBrowser, {}, async function() {
     let contentWin = Cu.waiveXrays(content);
+    await contentWin.Mozilla.ContentTelemetry.initPromise();
     let canUpload = contentWin.Mozilla.ContentTelemetry.canUpload();
-    ok(canUpload, "CanUpload must report 'true' if the preference has that value.");
+    ok(!canUpload, "CanUpload must report 'false' if the preference has that value.");
   });
 
   
