@@ -196,6 +196,12 @@ GPUProcessManager::DisableGPUProcess(const char* aMessage)
   
   
   HandleProcessLost();
+
+  
+  
+#if XP_WIN
+  FallbackToSoftware("GPU Process is disabled, fallback to software solution.");
+#endif
 }
 
 bool
@@ -501,24 +507,26 @@ GPUProcessManager::OnRemoteProcessDeviceReset(GPUProcessHost* aHost)
   if (ShouldLimitDeviceResets(mDeviceResetCount, delta)) {
     DestroyProcess();
     DisableGPUProcess("GPU processed experienced too many device resets");
-
-    
-    gfxConfig::SetFailed(Feature::HW_COMPOSITING,
-      FeatureStatus::Blocked,
-      "Too many attemps of D3D11 creation, fallback to software solution.");
-    gfxConfig::SetFailed(Feature::D3D11_COMPOSITING,
-      FeatureStatus::Blocked,
-      "Too many attemps of D3D11 creation, fallback to software solution.");
-    gfxConfig::SetFailed(Feature::DIRECT2D,
-      FeatureStatus::Blocked,
-      "Too many attemps of D3D11 creation, fallback to software solution.");
-
     HandleProcessLost();
     return;
   }
 
   RebuildRemoteSessions();
   NotifyListenersOnCompositeDeviceReset();
+}
+
+void
+GPUProcessManager::FallbackToSoftware(const char* aMessage)
+{
+  gfxConfig::SetFailed(Feature::HW_COMPOSITING,
+    FeatureStatus::Blocked,
+    aMessage);
+  gfxConfig::SetFailed(Feature::D3D11_COMPOSITING,
+    FeatureStatus::Blocked,
+    aMessage);
+  gfxConfig::SetFailed(Feature::DIRECT2D,
+    FeatureStatus::Blocked,
+    aMessage);
 }
 
 void
