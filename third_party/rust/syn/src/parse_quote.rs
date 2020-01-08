@@ -76,25 +76,18 @@
 
 
 
-
-
 #[macro_export]
 macro_rules! parse_quote {
     ($($tt:tt)*) => {
-        $crate::parse_quote::parse($crate::parse_quote::From::from(quote!($($tt)*)))
+        $crate::parse_quote::parse($crate::export::From::from(quote!($($tt)*)))
     };
 }
 
 
 
 
-use buffer::Cursor;
+use parse::{Parse, ParseStream, Parser, Result};
 use proc_macro2::TokenStream;
-use synom::{PResult, Parser, Synom};
-
-
-#[doc(hidden)]
-pub use std::convert::From;
 
 
 #[doc(hidden)]
@@ -102,30 +95,19 @@ pub fn parse<T: ParseQuote>(token_stream: TokenStream) -> T {
     let parser = T::parse;
     match parser.parse2(token_stream) {
         Ok(t) => t,
-        Err(err) => match T::description() {
-            Some(s) => panic!("failed to parse {}: {}", s, err),
-            None => panic!("{}", err),
-        },
+        Err(err) => panic!("{}", err),
     }
 }
 
 
 #[doc(hidden)]
 pub trait ParseQuote: Sized {
-    fn parse(input: Cursor) -> PResult<Self>;
-    fn description() -> Option<&'static str>;
+    fn parse(input: ParseStream) -> Result<Self>;
 }
 
-impl<T> ParseQuote for T
-where
-    T: Synom,
-{
-    fn parse(input: Cursor) -> PResult<Self> {
-        <T as Synom>::parse(input)
-    }
-
-    fn description() -> Option<&'static str> {
-        <T as Synom>::description()
+impl<T: Parse> ParseQuote for T {
+    fn parse(input: ParseStream) -> Result<Self> {
+        <T as Parse>::parse(input)
     }
 }
 
@@ -133,31 +115,22 @@ where
 
 
 use punctuated::Punctuated;
-
 #[cfg(any(feature = "full", feature = "derive"))]
-use Attribute;
-
-impl<T, P> ParseQuote for Punctuated<T, P>
-where
-    T: Synom,
-    P: Synom,
-{
-    named!(parse -> Self, call!(Punctuated::parse_terminated));
-
-    fn description() -> Option<&'static str> {
-        Some("punctuated sequence")
-    }
-}
+use {attr, Attribute};
 
 #[cfg(any(feature = "full", feature = "derive"))]
 impl ParseQuote for Attribute {
-    named!(parse -> Self, alt!(
-        call!(Attribute::parse_outer)
-        |
-        call!(Attribute::parse_inner)
-    ));
+    fn parse(input: ParseStream) -> Result<Self> {
+        if input.peek(Token![#]) && input.peek2(Token![!]) {
+            attr::parsing::single_parse_inner(input)
+        } else {
+            attr::parsing::single_parse_outer(input)
+        }
+    }
+}
 
-    fn description() -> Option<&'static str> {
-        Some("attribute")
+impl<T: Parse, P: Parse> ParseQuote for Punctuated<T, P> {
+    fn parse(input: ParseStream) -> Result<Self> {
+        Self::parse_terminated(input)
     }
 }

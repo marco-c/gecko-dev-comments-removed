@@ -255,19 +255,21 @@
 
 
 
-
-
-
-#![doc(html_root_url = "https://docs.rs/syn/0.14.6")]
+#![doc(html_root_url = "https://docs.rs/syn/0.15.7")]
+#![cfg_attr(feature = "cargo-clippy", allow(renamed_and_removed_lints))]
 #![cfg_attr(feature = "cargo-clippy", deny(clippy, clippy_pedantic))]
 
 #![cfg_attr(
     feature = "cargo-clippy",
     allow(
+        block_in_if_condition_stmt,
         const_static_lifetime,
+        cyclomatic_complexity,
         doc_markdown,
+        eval_order_dependence,
         large_enum_variant,
         match_bool,
+        never_loop,
         redundant_closure,
         needless_pass_by_value,
         redundant_field_names,
@@ -280,9 +282,11 @@
     allow(
         cast_possible_truncation,
         cast_possible_wrap,
+        empty_enum,
         if_not_else,
         indexing_slicing,
         items_after_statements,
+        shadow_unrelated,
         similar_names,
         single_match_else,
         stutter,
@@ -292,7 +296,10 @@
     )
 )]
 
-#[cfg(feature = "proc-macro")]
+#[cfg(all(
+    not(all(target_arch = "wasm32", target_os = "unknown")),
+    feature = "proc-macro"
+))]
 extern crate proc_macro;
 extern crate proc_macro2;
 extern crate unicode_xid;
@@ -300,18 +307,20 @@ extern crate unicode_xid;
 #[cfg(feature = "printing")]
 extern crate quote;
 
-#[cfg(feature = "parsing")]
-#[macro_use]
-#[doc(hidden)]
-pub mod parsers;
-
 #[macro_use]
 mod macros;
+
+
+#[cfg(feature = "parsing")]
+#[doc(hidden)]
+#[macro_use]
+pub mod group;
 
 #[macro_use]
 pub mod token;
 
-pub use proc_macro2::Ident;
+mod ident;
+pub use ident::Ident;
 
 #[cfg(any(feature = "full", feature = "derive"))]
 mod attr;
@@ -330,12 +339,12 @@ pub use data::{
 mod expr;
 #[cfg(any(feature = "full", feature = "derive"))]
 pub use expr::{
-    Expr, ExprArray, ExprAssign, ExprAssignOp, ExprBinary, ExprBlock, ExprBox, ExprBreak, ExprCall,
-    ExprCast, ExprCatch, ExprClosure, ExprContinue, ExprField, ExprForLoop, ExprGroup, ExprIf,
-    ExprIfLet, ExprInPlace, ExprIndex, ExprLit, ExprLoop, ExprMacro, ExprMatch, ExprMethodCall,
-    ExprParen, ExprPath, ExprRange, ExprReference, ExprRepeat, ExprReturn, ExprStruct, ExprTry,
-    ExprTuple, ExprType, ExprUnary, ExprUnsafe, ExprVerbatim, ExprWhile, ExprWhileLet, ExprYield,
-    Index, Member,
+    Expr, ExprArray, ExprAssign, ExprAssignOp, ExprAsync, ExprBinary, ExprBlock, ExprBox,
+    ExprBreak, ExprCall, ExprCast, ExprClosure, ExprContinue, ExprField, ExprForLoop, ExprGroup,
+    ExprIf, ExprInPlace, ExprIndex, ExprLet, ExprLit, ExprLoop, ExprMacro, ExprMatch,
+    ExprMethodCall, ExprParen, ExprPath, ExprRange, ExprReference, ExprRepeat, ExprReturn,
+    ExprStruct, ExprTry, ExprTryBlock, ExprTuple, ExprType, ExprUnary, ExprUnsafe, ExprVerbatim,
+    ExprWhile, ExprYield, Index, Member,
 };
 
 #[cfg(feature = "full")]
@@ -353,25 +362,24 @@ pub use generics::{
     PredicateLifetime, PredicateType, TraitBound, TraitBoundModifier, TypeParam, TypeParamBound,
     WhereClause, WherePredicate,
 };
-#[cfg(
-    all(
-        any(feature = "full", feature = "derive"),
-        feature = "printing"
-    )
-)]
+#[cfg(all(
+    any(feature = "full", feature = "derive"),
+    feature = "printing"
+))]
 pub use generics::{ImplGenerics, Turbofish, TypeGenerics};
 
 #[cfg(feature = "full")]
 mod item;
 #[cfg(feature = "full")]
 pub use item::{
-    ArgCaptured, ArgSelf, ArgSelfRef, FnArg, FnDecl, ForeignItem, ForeignItemFn, ForeignItemStatic,
-    ForeignItemType, ForeignItemVerbatim, ImplItem, ImplItemConst, ImplItemMacro, ImplItemMethod,
-    ImplItemType, ImplItemVerbatim, Item, ItemConst, ItemEnum, ItemExternCrate, ItemFn,
-    ItemForeignMod, ItemImpl, ItemMacro, ItemMacro2, ItemMod, ItemStatic, ItemStruct, ItemTrait,
-    ItemType, ItemUnion, ItemUse, ItemVerbatim, MethodSig, TraitItem, TraitItemConst,
-    TraitItemMacro, TraitItemMethod, TraitItemType, TraitItemVerbatim, UseGlob, UseGroup, UseName,
-    UsePath, UseRename, UseTree,
+    ArgCaptured, ArgSelf, ArgSelfRef, FnArg, FnDecl, ForeignItem, ForeignItemFn, ForeignItemMacro,
+    ForeignItemStatic, ForeignItemType, ForeignItemVerbatim, ImplItem, ImplItemConst,
+    ImplItemExistential, ImplItemMacro, ImplItemMethod, ImplItemType, ImplItemVerbatim, Item,
+    ItemConst, ItemEnum, ItemExistential, ItemExternCrate, ItemFn, ItemForeignMod, ItemImpl,
+    ItemMacro, ItemMacro2, ItemMod, ItemStatic, ItemStruct, ItemTrait, ItemTraitAlias, ItemType,
+    ItemUnion, ItemUse, ItemVerbatim, MethodSig, TraitItem, TraitItemConst, TraitItemMacro,
+    TraitItemMethod, TraitItemType, TraitItemVerbatim, UseGlob, UseGroup, UseName, UsePath,
+    UseRename, UseTree,
 };
 
 #[cfg(feature = "full")]
@@ -379,9 +387,7 @@ mod file;
 #[cfg(feature = "full")]
 pub use file::File;
 
-#[cfg(any(feature = "full", feature = "derive"))]
 mod lifetime;
-#[cfg(any(feature = "full", feature = "derive"))]
 pub use lifetime::Lifetime;
 
 #[cfg(any(feature = "full", feature = "derive"))]
@@ -418,25 +424,21 @@ pub use ty::{
 
 #[cfg(any(feature = "full", feature = "derive"))]
 mod path;
-#[cfg(
-    all(
-        any(feature = "full", feature = "derive"),
-        feature = "printing"
-    )
-)]
-pub use path::PathTokens;
 #[cfg(any(feature = "full", feature = "derive"))]
 pub use path::{
-    AngleBracketedGenericArguments, Binding, GenericArgument, ParenthesizedGenericArguments, Path,
-    PathArguments, PathSegment, QSelf,
+    AngleBracketedGenericArguments, Binding, Constraint, GenericArgument,
+    ParenthesizedGenericArguments, Path, PathArguments, PathSegment, QSelf,
 };
 
 #[cfg(feature = "parsing")]
 pub mod buffer;
-pub mod punctuated;
 #[cfg(feature = "parsing")]
-pub mod synom;
-#[cfg(any(feature = "full", feature = "derive"))]
+pub mod ext;
+pub mod punctuated;
+#[cfg(all(
+    any(feature = "full", feature = "derive"),
+    feature = "extra-traits"
+))]
 mod tt;
 
 
@@ -446,9 +448,6 @@ pub mod parse_quote;
 
 #[cfg(all(feature = "parsing", feature = "printing"))]
 pub mod spanned;
-
-#[cfg(all(feature = "parsing", feature = "full"))]
-mod verbatim;
 
 mod gen {
     
@@ -568,19 +567,37 @@ mod gen {
 pub use gen::*;
 
 
+#[doc(hidden)]
+pub mod export;
+
+mod keyword;
 
 #[cfg(feature = "parsing")]
-use synom::{Parser, Synom};
+mod lookahead;
+
+#[cfg(feature = "parsing")]
+pub mod parse;
+
+mod span;
+
+#[cfg(all(
+    any(feature = "full", feature = "derive"),
+    feature = "printing"
+))]
+mod print;
+
+
+
+#[cfg(any(feature = "parsing", feature = "full", feature = "derive"))]
+#[allow(non_camel_case_types)]
+struct private;
+
+
 
 #[cfg(feature = "parsing")]
 mod error;
 #[cfg(feature = "parsing")]
-use error::ParseError;
-
-
-#[cfg(feature = "parsing")]
-#[doc(hidden)]
-pub use error::parse_error;
+use error::Error;
 
 
 
@@ -628,13 +645,13 @@ pub use error::parse_error;
 
 
 
-
-#[cfg(all(feature = "parsing", feature = "proc-macro"))]
-pub fn parse<T>(tokens: proc_macro::TokenStream) -> Result<T, ParseError>
-where
-    T: Synom,
-{
-    parse2(tokens.into())
+#[cfg(all(
+    not(all(target_arch = "wasm32", target_os = "unknown")),
+    feature = "parsing",
+    feature = "proc-macro"
+))]
+pub fn parse<T: parse::Parse>(tokens: proc_macro::TokenStream) -> Result<T, Error> {
+    parse::Parser::parse(T::parse, tokens)
 }
 
 
@@ -650,18 +667,9 @@ where
 
 
 #[cfg(feature = "parsing")]
-pub fn parse2<T>(tokens: proc_macro2::TokenStream) -> Result<T, ParseError>
-where
-    T: Synom,
-{
-    let parser = T::parse;
-    parser.parse2(tokens).map_err(|err| match T::description() {
-        Some(s) => ParseError::new(format!("failed to parse {}: {}", s, err)),
-        None => err,
-    })
+pub fn parse2<T: parse::Parse>(tokens: proc_macro2::TokenStream) -> Result<T, Error> {
+    parse::Parser::parse2(T::parse, tokens)
 }
-
-
 
 
 
@@ -690,14 +698,9 @@ where
 
 
 #[cfg(feature = "parsing")]
-pub fn parse_str<T: Synom>(s: &str) -> Result<T, ParseError> {
-    match s.parse() {
-        Ok(tts) => parse2(tts),
-        Err(_) => Err(ParseError::new("error while lexing input string")),
-    }
+pub fn parse_str<T: parse::Parse>(s: &str) -> Result<T, Error> {
+    parse::Parser::parse_str(T::parse, s)
 }
-
-
 
 
 
@@ -738,7 +741,7 @@ pub fn parse_str<T: Synom>(s: &str) -> Result<T, ParseError> {
 
 
 #[cfg(all(feature = "parsing", feature = "full"))]
-pub fn parse_file(mut content: &str) -> Result<File, ParseError> {
+pub fn parse_file(mut content: &str) -> Result<File, Error> {
     
     const BOM: &'static str = "\u{feff}";
     if content.starts_with(BOM) {
@@ -761,28 +764,57 @@ pub fn parse_file(mut content: &str) -> Result<File, ParseError> {
     Ok(file)
 }
 
-#[cfg(
-    all(
-        any(feature = "full", feature = "derive"),
-        feature = "printing"
-    )
-)]
-struct TokensOrDefault<'a, T: 'a>(&'a Option<T>);
 
-#[cfg(
-    all(
-        any(feature = "full", feature = "derive"),
-        feature = "printing"
-    )
-)]
-impl<'a, T> quote::ToTokens for TokensOrDefault<'a, T>
-where
-    T: quote::ToTokens + Default,
-{
-    fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-        match *self.0 {
-            Some(ref t) => t.to_tokens(tokens),
-            None => T::default().to_tokens(tokens),
-        }
-    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(feature = "proc-macro")]
+#[macro_export]
+macro_rules! parse_macro_input {
+    ($tokenstream:ident as $ty:ty) => {
+        match $crate::parse::<$ty>($tokenstream) {
+            $crate::export::Ok(data) => data,
+            $crate::export::Err(err) => {
+                return $crate::export::TokenStream::from(err.to_compile_error());
+            }
+        };
+    };
 }

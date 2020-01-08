@@ -2,15 +2,22 @@ extern crate memmap;
 
 use std::env;
 use std::io::{self, Write};
+use std::fs::File;
 
-use memmap::{Mmap, Protection};
+use memmap::Mmap;
 
 
 
 fn main() {
-    let path = env::args().nth(1).expect("supply a single path as the program argument");
+    let path = env::args()
+        .nth(1)
+        .expect("supply a single path as the program argument");
 
-    let mmap = Mmap::open_path(path, Protection::Read).unwrap();
+    let file = File::open(path).expect("failed to open the file");
 
-    io::stdout().write_all(unsafe { mmap.as_slice() }).unwrap();
+    let mmap = unsafe { Mmap::map(&file).expect("failed to map the file") };
+
+    io::stdout()
+        .write_all(&mmap[..])
+        .expect("failed to output the file contents");
 }
