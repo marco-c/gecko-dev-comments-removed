@@ -889,6 +889,9 @@ class MOZ_RAII AssertRealmUnchanged
     MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
 
+
+
+
 class AutoRealm
 {
     JSContext* const cx_;
