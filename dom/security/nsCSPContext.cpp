@@ -777,6 +777,7 @@ struct ConsoleMsgQueueElem {
   uint32_t      mLineNumber;
   uint32_t      mColumnNumber;
   uint32_t      mSeverityFlag;
+  nsCString     mCategory;
 };
 
 void
@@ -797,7 +798,7 @@ nsCSPContext::flushConsoleMessages()
     ConsoleMsgQueueElem &elem = mConsoleMsgQueue[i];
     CSP_LogMessage(elem.mMsg, elem.mSourceName, elem.mSourceLine,
                    elem.mLineNumber, elem.mColumnNumber,
-                   elem.mSeverityFlag, "CSP", mInnerWindowID,
+                   elem.mSeverityFlag, elem.mCategory, mInnerWindowID,
                    privateWindow);
   }
   mConsoleMsgQueue.Clear();
@@ -814,6 +815,10 @@ nsCSPContext::logToConsole(const char* aName,
                            uint32_t aSeverityFlag)
 {
   
+  
+  nsDependentCString category(aName);
+
+  
   if (mQueueUpMessages) {
     nsAutoString msg;
     CSP_GetLocalizedStr(aName, aParams, aParamsLength, msg);
@@ -824,6 +829,7 @@ nsCSPContext::logToConsole(const char* aName,
     elem.mLineNumber = aLineNumber;
     elem.mColumnNumber = aColumnNumber;
     elem.mSeverityFlag = aSeverityFlag;
+    elem.mCategory = category;
     return;
   }
 
@@ -833,9 +839,10 @@ nsCSPContext::logToConsole(const char* aName,
     privateWindow = !!doc->NodePrincipal()->OriginAttributesRef().mPrivateBrowsingId;
   }
 
+
   CSP_LogLocalizedStr(aName, aParams, aParamsLength, aSourceName,
                       aSourceLine, aLineNumber, aColumnNumber,
-                      aSeverityFlag, "CSP", mInnerWindowID, privateWindow);
+                      aSeverityFlag, category, mInnerWindowID, privateWindow);
 }
 
 
