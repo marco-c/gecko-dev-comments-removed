@@ -5001,11 +5001,16 @@ var TabContextMenu = {
     document.getElementById("context_closeSelectedTabs").hidden = !multiselectionContext;
 
     
+    
     let bookmarkAllTabs = document.getElementById("context_bookmarkAllTabs");
-    bookmarkAllTabs.hidden = this.contextTab.pinned;
+    bookmarkAllTabs.hidden = this.contextTab.pinned || multiselectionContext;
     if (!bookmarkAllTabs.hidden) {
       PlacesCommandHook.updateBookmarkAllTabsCommand();
     }
+
+    
+    let bookmarkMultiSelectedTabs = document.getElementById("context_bookmarkSelectedTabs");
+    bookmarkMultiSelectedTabs.hidden = !multiselectionContext;
 
     let toggleMute = document.getElementById("context_toggleMuteTab");
     let toggleMultiSelectMute = document.getElementById("context_toggleMuteSelectedTabs");
