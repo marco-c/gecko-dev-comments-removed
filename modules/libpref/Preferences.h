@@ -62,7 +62,21 @@ enum class PrefType : uint8_t
 
 #ifdef XP_UNIX
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 static const int kPrefsFileDescriptor = 8;
+static const int kPrefMapFileDescriptor = 9;
 #endif
 
 
