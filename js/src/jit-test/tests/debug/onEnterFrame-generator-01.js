@@ -25,8 +25,10 @@ function check(frame) {
     
     
     
-    assertEq(frame.arguments.length, hits < 2 ? args.length : 0);
-    for (var i = 0; i < frame.arguments.length; i++) {
+    
+    
+    assertEq(frame.arguments.length, args.length);
+    for (var i = 0; i < args.length; i++) {
         assertEq(frame.arguments.hasOwnProperty(i), true);
 
         if (hits < 2)

@@ -23,6 +23,7 @@
 #include "js/HashTable.h"
 #include "js/Utility.h"
 #include "js/Wrapper.h"
+#include "vm/GeneratorObject.h"
 #include "vm/GlobalObject.h"
 #include "vm/JSContext.h"
 #include "vm/Realm.h"
@@ -124,6 +125,8 @@ CheckDebuggeeThing(JSObject* obj, bool invisibleOk);
 
 
 
+
+
 template <class UnbarrieredKey, bool InvisibleKeysOk=false>
 class DebuggerWeakMap : private WeakMap<HeapPtr<UnbarrieredKey>, HeapPtr<JSObject*>>
 {
@@ -161,6 +164,7 @@ class DebuggerWeakMap : private WeakMap<HeapPtr<UnbarrieredKey>, HeapPtr<JSObjec
     
 
     using Base::lookupForAdd;
+    using Base::remove;
     using Base::all;
     using Base::trace;
 
@@ -181,10 +185,27 @@ class DebuggerWeakMap : private WeakMap<HeapPtr<UnbarrieredKey>, HeapPtr<JSObjec
         return ok;
     }
 
+    template <typename KeyInput>
+    bool has(const KeyInput& k) const {
+        return !!this->lookup(k);
+    }
+
     void remove(const Lookup& l) {
         MOZ_ASSERT(Base::has(l));
         Base::remove(l);
         decZoneCount(l->zone());
+    }
+
+    
+    template <typename Predicate>
+    void removeIf(Predicate test) {
+        for (Enum e(*static_cast<Base*>(this)); !e.empty(); e.popFront()) {
+            JSObject* key = e.front().key();
+            if (test(key)) {
+                decZoneCount(key->zoneFromAnyThread());
+                e.removeFront();
+            }
+        }
     }
 
   public:
@@ -534,6 +555,29 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
     FrameMap frames;
 
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    typedef DebuggerWeakMap<JSObject*> GeneratorWeakMap;
+    GeneratorWeakMap generatorFrames;
+
+    
     typedef DebuggerWeakMap<JSScript*> ScriptWeakMap;
     ScriptWeakMap scripts;
 
@@ -806,6 +850,8 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
     static ResumeMode slowPathOnEnterFrame(JSContext* cx, AbstractFramePtr frame);
     static MOZ_MUST_USE bool slowPathOnLeaveFrame(JSContext* cx, AbstractFramePtr frame,
                                                   jsbytecode* pc, bool ok);
+    static MOZ_MUST_USE bool slowPathOnNewGenerator(JSContext* cx, AbstractFramePtr frame,
+                                                    Handle<GeneratorObject*> genObj);
     static ResumeMode slowPathOnDebuggerStatement(JSContext* cx, AbstractFramePtr frame);
     static ResumeMode slowPathOnExceptionUnwind(JSContext* cx, AbstractFramePtr frame);
     static void slowPathOnNewScript(JSContext* cx, HandleScript script);
@@ -965,6 +1011,15 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 
     static inline MOZ_MUST_USE bool onLeaveFrame(JSContext* cx, AbstractFramePtr frame,
                                                  jsbytecode* pc, bool ok);
+
+    
+
+
+
+
+
+    static inline MOZ_MUST_USE bool onNewGenerator(JSContext* cx, AbstractFramePtr frame,
+                                                   Handle<GeneratorObject*> genObj);
 
     static inline void onNewScript(JSContext* cx, HandleScript script);
     static inline void onNewWasmInstance(JSContext* cx, Handle<WasmInstanceObject*> wasmInstance);
@@ -1149,6 +1204,23 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 
 
     JSObject* wrapWasmSource(JSContext* cx, Handle<WasmInstanceObject*> wasmInstance);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    MOZ_MUST_USE bool addGeneratorFrame(JSContext* cx,
+                                        Handle<GeneratorObject*> genObj,
+                                        HandleDebuggerFrame frameObj);
 
   private:
     Debugger(const Debugger&) = delete;

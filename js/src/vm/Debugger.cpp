@@ -702,6 +702,7 @@ Debugger::Debugger(JSContext* cx, NativeObject* dbg)
     maxAllocationsLogLength(DEFAULT_MAX_LOG_LENGTH),
     allocationsLogOverflowed(false),
     frames(cx->zone()),
+    generatorFrames(cx),
     scripts(cx),
     lazyScripts(cx),
     sources(cx),
@@ -801,26 +802,105 @@ Debugger::getFrame(JSContext* cx, const FrameIter& iter, MutableHandleDebuggerFr
 
     FrameMap::AddPtr p = frames.lookupForAdd(referent);
     if (!p) {
-        
-        RootedObject proto(cx, &object->getReservedSlot(JSSLOT_DEBUG_FRAME_PROTO).toObject());
-        RootedNativeObject debugger(cx, object);
+        RootedDebuggerFrame frame(cx);
 
-        RootedDebuggerFrame frame(cx, DebuggerFrame::create(cx, proto, iter, debugger));
-        if (!frame) {
-            return false;
+        
+        
+        
+        Rooted<GeneratorObject*> genObj(cx);
+        GeneratorWeakMap::AddPtr gp;
+        if (referent.isFunctionFrame() && (referent.callee()->isGenerator() ||
+                                           referent.callee()->isAsync()))
+        {
+            {
+                AutoRealm ar(cx, referent.callee());
+                genObj = GetGeneratorObjectForFrame(cx, referent);
+            }
+            if (genObj) {
+                gp = generatorFrames.lookupForAdd(genObj);
+                if (gp) {
+                    frame = &gp->value()->as<DebuggerFrame>();
+
+                    
+                    
+                    
+                    MOZ_ASSERT(!frame->isLive());
+                    FrameIter::Data* data = iter.copyData();
+                    if (!data) {
+                        return false;
+                    }
+                    frame->setPrivate(data);
+
+                    if (!ensureExecutionObservabilityOfFrame(cx, referent)) {
+                        return false;
+                    }
+
+                    RootedValue onStep(cx, frame->getReservedSlot(JSSLOT_DEBUGFRAME_ONSTEP_HANDLER));
+                    if (!onStep.isUndefined()) {
+                        AutoRealm ar(cx, genObj);
+                        if (!referent.script()->incrementStepModeCount(cx)) {
+                            return false;
+                        }
+                    }
+                }
+            }
+
+            
+            
+            
         }
 
-        if (!ensureExecutionObservabilityOfFrame(cx, referent)) {
-            return false;
+        if (!frame) {
+            
+            RootedObject proto(cx, &object->getReservedSlot(JSSLOT_DEBUG_FRAME_PROTO).toObject());
+            RootedNativeObject debugger(cx, object);
+
+            frame = DebuggerFrame::create(cx, proto, iter, debugger);
+            if (!frame) {
+                return false;
+            }
+
+            if (!ensureExecutionObservabilityOfFrame(cx, referent)) {
+                return false;
+            }
+
+            if (genObj) {
+                DebuggerFrame* frameObj = frame;
+                if (!generatorFrames.relookupOrAdd(gp, genObj, frameObj)) {
+                    ReportOutOfMemory(cx);
+                    return false;
+                }
+            }
         }
 
         if (!frames.add(p, referent, frame)) {
+            NukeDebuggerWrapper(frame);
+            if (genObj) {
+                generatorFrames.remove(genObj);
+            }
             ReportOutOfMemory(cx);
             return false;
         }
     }
 
     result.set(&p->value()->as<DebuggerFrame>());
+    return true;
+}
+
+bool
+Debugger::addGeneratorFrame(JSContext* cx,
+                            Handle<GeneratorObject*> genObj,
+                            HandleDebuggerFrame frameObj)
+{
+    GeneratorWeakMap::AddPtr p = generatorFrames.lookupForAdd(genObj);
+    if (p) {
+        MOZ_ASSERT(p->value() == frameObj);
+    } else {
+        if (!generatorFrames.relookupOrAdd(p, genObj, frameObj)) {
+            ReportOutOfMemory(cx);
+            return false;
+        }
+    }
     return true;
 }
 
@@ -950,7 +1030,8 @@ class MOZ_RAII AutoSetGeneratorRunning
         genObj_(cx, genObj)
     {
         if (genObj) {
-            if (!genObj->isBeforeInitialYield() && !genObj->isClosed() && genObj->isSuspended()) {
+            if (!genObj->isClosed() && genObj->isSuspended()) {
+                
                 yieldAwaitIndex_ =
                     genObj->getFixedSlot(GeneratorObject::YIELD_AND_AWAIT_INDEX_SLOT).toInt32();
                 genObj->setRunning();
@@ -1075,6 +1156,35 @@ Debugger::slowPathOnLeaveFrame(JSContext* cx, AbstractFramePtr frame, jsbytecode
       default:
         MOZ_CRASH("bad final onLeaveFrame resume mode");
     }
+}
+
+ bool
+Debugger::slowPathOnNewGenerator(JSContext* cx, AbstractFramePtr frame,
+                                 Handle<GeneratorObject*> genObj)
+{
+    
+    
+    
+    
+    
+    bool ok = true;
+    forEachDebuggerFrame(frame, [&] (DebuggerFrame* frameObjPtr) {
+        if (!ok) {
+            return;
+        }
+
+        RootedDebuggerFrame frameObj(cx, frameObjPtr);
+        Debugger* dbg = Debugger::fromChildJSObject(frameObj);
+        if (!dbg->addGeneratorFrame(cx, genObj, frameObj)) {
+            ReportOutOfMemory(cx);
+
+            
+            
+            
+            ok = false;
+        }
+    });
+    return ok;
 }
 
  ResumeMode
@@ -3157,6 +3267,7 @@ Debugger::removeAllocationsTrackingForAllDebuggees()
 void
 Debugger::traceCrossCompartmentEdges(JSTracer* trc)
 {
+    generatorFrames.traceCrossCompartmentEdges<DebuggerFrame_trace>(trc);
     objects.traceCrossCompartmentEdges<DebuggerObject_trace>(trc);
     environments.traceCrossCompartmentEdges<DebuggerEnv_trace>(trc);
     scripts.traceCrossCompartmentEdges<DebuggerScript_trace>(trc);
@@ -3345,7 +3456,6 @@ Debugger::trace(JSTracer* trc)
     
     
     
-    
     for (FrameMap::Range r = frames.all(); !r.empty(); r.popFront()) {
         HeapPtr<DebuggerFrame*>& frameobj = r.front().value();
         TraceEdge(trc, &frameobj, "live Debugger.Frame");
@@ -3354,25 +3464,13 @@ Debugger::trace(JSTracer* trc)
 
     allocationsLog.trace(trc);
 
-    
+    generatorFrames.trace(trc);
     scripts.trace(trc);
-
-    
     lazyScripts.trace(trc);
-
-    
     sources.trace(trc);
-
-    
     objects.trace(trc);
-
-    
     environments.trace(trc);
-
-    
     wasmInstanceScripts.trace(trc);
-
-    
     wasmInstanceSources.trace(trc);
 }
 
@@ -3439,6 +3537,7 @@ Debugger::findZoneEdges(Zone* zone, js::gc::ZoneComponentFinder& finder)
             
             
             if (dbg->debuggeeZones.has(zone) ||
+                dbg->generatorFrames.hasKeyInZone(zone) ||
                 dbg->scripts.hasKeyInZone(zone) ||
                 dbg->lazyScripts.hasKeyInZone(zone) ||
                 dbg->sources.hasKeyInZone(zone) ||
@@ -4351,6 +4450,21 @@ Debugger::removeDebuggeeGlobal(FreeOp* fop, GlobalObject* global,
             DebuggerFrame_maybeDecrementFrameScriptStepModeCount(fop, frame, frameobj);
             e.removeFront();
         }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!global->zone()->isGCSweeping()) {
+        generatorFrames.removeIf([global](JSObject* key) {
+            GeneratorObject& genObj = key->as<GeneratorObject>();
+            return genObj.isClosed() || &genObj.callee().global() == global;
+        });
     }
 
     auto *globalDebuggersVector = global->getDebuggers();

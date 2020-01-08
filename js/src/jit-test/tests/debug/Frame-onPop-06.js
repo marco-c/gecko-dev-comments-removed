@@ -1,4 +1,5 @@
 
+
 var g = newGlobal();
 g.eval("function f() { debugger; }");
 g.eval("function g() { f(); }");
