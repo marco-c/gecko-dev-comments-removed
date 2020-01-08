@@ -90,8 +90,9 @@ class InlineScriptTree {
         return caller_ != nullptr;
     }
     InlineScriptTree* outermostCaller() {
-        if (isOutermostCaller())
+        if (isOutermostCaller()) {
             return this;
+        }
         return caller_->outermostCaller();
     }
 
@@ -120,8 +121,9 @@ class InlineScriptTree {
     }
 
     unsigned depth() const {
-        if (isOutermostCaller())
+        if (isOutermostCaller()) {
             return 1;
+        }
         return 1 + caller_->depth();
     }
 };
@@ -234,8 +236,9 @@ class CompileInfo
         if (script->isDerivedClassConstructor()) {
             MOZ_ASSERT(script->functionHasThisBinding());
             for (BindingIter bi(script); bi; bi++) {
-                if (bi.name() != runtime->names().dotThis)
+                if (bi.name() != runtime->names().dotThis) {
                     continue;
+                }
                 BindingLocation loc = bi.location();
                 if (loc.kind() == BindingLocation::Kind::Frame) {
                     thisSlotForDerivedClassConstructor_ = mozilla::Some(localSlot(loc.slot()));
@@ -417,8 +420,9 @@ class CompileInfo
     bool isSlotAliased(uint32_t index) const {
         MOZ_ASSERT(index >= startArgSlot());
         uint32_t arg = index - firstArgSlot();
-        if (arg < nargs())
+        if (arg < nargs()) {
             return script()->formalIsAliased(arg);
+        }
         return false;
     }
 
@@ -454,13 +458,15 @@ class CompileInfo
     inline bool isObservableSlot(uint32_t slot) const {
         if (slot >= firstLocalSlot()) {
             
-            if (thisSlotForDerivedClassConstructor_)
+            if (thisSlotForDerivedClassConstructor_) {
                 return *thisSlotForDerivedClassConstructor_ == slot;
+            }
             return false;
         }
 
-        if (slot < firstArgSlot())
+        if (slot < firstArgSlot()) {
             return isObservableFrameSlot(slot);
+        }
 
         return isObservableArgumentSlot(slot);
     }
@@ -468,39 +474,46 @@ class CompileInfo
     bool isObservableFrameSlot(uint32_t slot) const {
         
         
-        if (needsBodyEnvironmentObject() && slot == environmentChainSlot())
+        if (needsBodyEnvironmentObject() && slot == environmentChainSlot()) {
             return true;
+        }
 
-        if (!funMaybeLazy())
+        if (!funMaybeLazy()) {
             return false;
+        }
 
         
-        if (slot == thisSlot())
+        if (slot == thisSlot()) {
             return true;
-
-        
-        
-        
-        
-        if (thisSlotForDerivedClassConstructor_ && *thisSlotForDerivedClassConstructor_ == slot)
-            return true;
-
-        if (funNeedsSomeEnvironmentObject_ && slot == environmentChainSlot())
-            return true;
+        }
 
         
         
         
         
-        if (hasArguments() && (slot == environmentChainSlot() || slot == argsObjSlot()))
+        if (thisSlotForDerivedClassConstructor_ && *thisSlotForDerivedClassConstructor_ == slot) {
             return true;
+        }
+
+        if (funNeedsSomeEnvironmentObject_ && slot == environmentChainSlot()) {
+            return true;
+        }
+
+        
+        
+        
+        
+        if (hasArguments() && (slot == environmentChainSlot() || slot == argsObjSlot())) {
+            return true;
+        }
 
         return false;
     }
 
     bool isObservableArgumentSlot(uint32_t slot) const {
-        if (!funMaybeLazy())
+        if (!funMaybeLazy()) {
             return false;
+        }
 
         
         
@@ -519,21 +532,26 @@ class CompileInfo
     bool isRecoverableOperand(uint32_t slot) const {
         
         
-        if (needsBodyEnvironmentObject() && slot == environmentChainSlot())
+        if (needsBodyEnvironmentObject() && slot == environmentChainSlot()) {
             return false;
+        }
 
-        if (!funMaybeLazy())
+        if (!funMaybeLazy()) {
             return true;
+        }
 
         
-        if (slot == thisSlot() || slot == environmentChainSlot())
+        if (slot == thisSlot() || slot == environmentChainSlot()) {
             return true;
+        }
 
-        if (isObservableFrameSlot(slot))
+        if (isObservableFrameSlot(slot)) {
             return false;
+        }
 
-        if (needsArgsObj() && isObservableArgumentSlot(slot))
+        if (needsArgsObj() && isObservableArgumentSlot(slot)) {
             return false;
+        }
 
         return true;
     }
