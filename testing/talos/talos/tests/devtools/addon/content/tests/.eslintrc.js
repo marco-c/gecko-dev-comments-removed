@@ -21,7 +21,7 @@ module.exports = {
     "mozilla/no-aArgs": "error",
     "mozilla/no-single-arg-cu-import": "error",
     
-    "mozilla/reject-importGlobalProperties": "error",
+    "mozilla/reject-importGlobalProperties": ["error", "everything"],
     
     
     
