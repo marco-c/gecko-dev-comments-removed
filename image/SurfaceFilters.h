@@ -417,7 +417,7 @@ public:
     
     
     if (mFrameRect.IsEmpty()) {
-      mFrameRect.MoveTo(0, 0);
+      mFrameRect.SetRect(0, 0, 0, 0);
     }
 
     BlendMethod blendMethod = currentFrame->GetBlendMethod();
