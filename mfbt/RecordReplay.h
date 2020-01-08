@@ -255,30 +255,6 @@ static inline bool HasDivergedFromRecording();
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-MFBT_API void NotifyUnrecordedWait(const std::function<void()>& aCallback,
-                                   bool aOnlyWhenDiverged);
-MFBT_API void MaybeWaitForCheckpointSave();
-
-
-
-
-
-
-
-
-
 static inline void RecordReplayAssert(const char* aFormat, ...);
 static inline void RecordReplayAssertBytes(const void* aData, size_t aSize);
 static inline void RegisterThing(void* aThing);

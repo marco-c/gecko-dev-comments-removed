@@ -58,6 +58,7 @@ namespace recordreplay {
 
 
 
+
 static const size_t MainThreadId = 1;
 
 
@@ -137,7 +138,6 @@ private:
   
   
   std::function<void()> mUnrecordedWaitCallback;
-  bool mUnrecordedWaitOnlyWhenDiverged;
   bool mUnrecordedWaitNotified;
 
   
@@ -198,10 +198,6 @@ public:
     MOZ_RELEASE_ASSERT(CurrentIsMainThread());
     mShouldDivergeFromRecording = true;
     Notify(mId);
-  }
-  bool WillDivergeFromRecordingSoon() {
-    MOZ_RELEASE_ASSERT(CurrentIsMainThread());
-    return mShouldDivergeFromRecording;
   }
   bool MaybeDivergeFromRecording() {
     if (mShouldDivergeFromRecording) {
@@ -287,9 +283,21 @@ public:
   static void WaitForeverNoIdle();
 
   
-  void NotifyUnrecordedWait(const std::function<void()>& aCallback,
-                            bool aOnlyWhenDiverged);
-  static void MaybeWaitForCheckpointSave();
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void NotifyUnrecordedWait(const std::function<void()>& aNotifyCallback);
+  bool MaybeWaitForCheckpointSave(const std::function<void()>& aReleaseCallback);
 
   
   

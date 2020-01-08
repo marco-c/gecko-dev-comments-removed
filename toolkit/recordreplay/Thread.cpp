@@ -386,9 +386,7 @@ Thread::WaitForIdleThreads()
         
         
         
-        if (thread->mUnrecordedWaitCallback && !thread->mUnrecordedWaitNotified &&
-            (!thread->mUnrecordedWaitOnlyWhenDiverged ||
-             thread->WillDivergeFromRecordingSoon())) {
+        if (thread->mUnrecordedWaitCallback && !thread->mUnrecordedWaitNotified) {
           
           
           
@@ -436,8 +434,12 @@ Thread::ResumeIdleThreads()
 }
 
 void
-Thread::NotifyUnrecordedWait(const std::function<void()>& aCallback, bool aOnlyWhenDiverged)
+Thread::NotifyUnrecordedWait(const std::function<void()>& aNotifyCallback)
 {
+  if (IsMainThread()) {
+    return;
+  }
+
   MonitorAutoLock lock(*gMonitor);
   if (mUnrecordedWaitCallback) {
     
@@ -448,8 +450,7 @@ Thread::NotifyUnrecordedWait(const std::function<void()>& aCallback, bool aOnlyW
     MOZ_RELEASE_ASSERT(!mUnrecordedWaitNotified);
   }
 
-  mUnrecordedWaitCallback = aCallback;
-  mUnrecordedWaitOnlyWhenDiverged = aOnlyWhenDiverged;
+  mUnrecordedWaitCallback = aNotifyCallback;
 
   
   
@@ -458,33 +459,24 @@ Thread::NotifyUnrecordedWait(const std::function<void()>& aCallback, bool aOnlyW
   }
 }
 
- void
-Thread::MaybeWaitForCheckpointSave()
+bool
+Thread::MaybeWaitForCheckpointSave(const std::function<void()>& aReleaseCallback)
 {
+  MOZ_RELEASE_ASSERT(!PassThroughEvents());
+  if (IsMainThread()) {
+    return false;
+  }
   MonitorAutoLock lock(*gMonitor);
-  Thread* thread = Thread::Current();
-  while (thread->mShouldIdle) {
+  if (!mShouldIdle) {
+    return false;
+  }
+  aReleaseCallback();
+  while (mShouldIdle) {
     MonitorAutoUnlock unlock(*gMonitor);
     Wait();
   }
+  return true;
 }
-
-extern "C" {
-
-MOZ_EXPORT void
-RecordReplayInterface_NotifyUnrecordedWait(const std::function<void()>& aCallback,
-                                           bool aOnlyWhenDiverged)
-{
-  Thread::Current()->NotifyUnrecordedWait(aCallback, aOnlyWhenDiverged);
-}
-
-MOZ_EXPORT void
-RecordReplayInterface_MaybeWaitForCheckpointSave()
-{
-  Thread::MaybeWaitForCheckpointSave();
-}
-
-} 
 
  void
 Thread::WaitNoIdle()
