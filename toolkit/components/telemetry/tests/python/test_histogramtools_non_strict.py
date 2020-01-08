@@ -13,7 +13,7 @@ sys.path.append(TELEMETRY_ROOT_PATH)
 
 
 sys.path.append(path.join(TELEMETRY_ROOT_PATH, "build_scripts"))
-from python_mozparsers import parse_histograms   
+from mozparsers import parse_histograms   
 
 
 def load_histogram(histograms):

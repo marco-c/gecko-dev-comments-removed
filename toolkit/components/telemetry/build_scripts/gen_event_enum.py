@@ -7,8 +7,8 @@
 
 
 from __future__ import print_function
-from python_mozparsers.shared_telemetry_utils import ParserError
-from python_mozparsers import parse_events
+from mozparsers.shared_telemetry_utils import ParserError
+from mozparsers import parse_events
 
 import sys
 
