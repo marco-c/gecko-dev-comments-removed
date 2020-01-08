@@ -18,6 +18,12 @@ pref("toolkit.telemetry.eventping.enabled", false);
 
 pref("geckoview.console.enabled", false);
 
+#ifdef RELEASE_OR_BETA
+pref("geckoview.logging", "Warn");
+#else
+pref("geckoview.logging", "Debug");
+#endif
+
 
 pref("dom.push.enabled", false);
 
