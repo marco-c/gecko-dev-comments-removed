@@ -528,9 +528,6 @@ var SaveToPocket = {
   },
 
   uninit() {
-    
-    
     Services.prefs.removeObserver("extensions.pocket.enabled", prefObserver);
-    PocketOverlay.shutdown();
   },
 };
