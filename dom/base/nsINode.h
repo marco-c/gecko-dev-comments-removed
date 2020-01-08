@@ -1241,6 +1241,8 @@ public:
     return DoGetContainingSVGUseShadowHost();
   }
 
+  bool IsInUAWidget() const;
+
   
   
   bool ChromeOnlyAccess() const

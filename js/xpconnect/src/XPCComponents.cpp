@@ -2183,8 +2183,7 @@ nsXPCComponents_Utils::GetUAWidgetScope(nsIPrincipal* principal,
 {
     rval.set(UndefinedValue());
 
-    JSObject* scope = XPCJSRuntime::Get()->GetUAWidgetScope(cx, principal);
-    NS_ENSURE_TRUE(scope, NS_ERROR_OUT_OF_MEMORY); 
+    JSObject* scope = xpc::GetUAWidgetScope(cx, principal);
 
     rval.set(JS::ObjectValue(*scope));
 

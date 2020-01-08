@@ -2666,6 +2666,7 @@ public:
         , sameZoneAs(cx)
         , freshZone(false)
         , isContentXBLScope(false)
+        , isUAWidgetScope(false)
         , invisibleToDebugger(false)
         , discardSource(false)
         , metadata(cx)
@@ -2685,6 +2686,7 @@ public:
     JS::RootedObject sameZoneAs;
     bool freshZone;
     bool isContentXBLScope;
+    bool isUAWidgetScope;
     bool invisibleToDebugger;
     bool discardSource;
     GlobalProperties globalProperties;
@@ -2936,7 +2938,15 @@ public:
     bool isContentXBLCompartment;
 
     
+    bool isUAWidgetCompartment;
+
+    
     bool isSandboxCompartment;
+
+    
+    
+    
+    bool isAddonCompartment;
 
     
     

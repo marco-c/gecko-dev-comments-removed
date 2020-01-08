@@ -86,6 +86,10 @@ bool IsContentXBLCompartment(JS::Compartment* compartment);
 bool IsContentXBLScope(JS::Realm* realm);
 bool IsInContentXBLScope(JSObject* obj);
 
+bool IsUAWidgetCompartment(JS::Compartment* compartment);
+bool IsUAWidgetScope(JS::Realm* realm);
+bool IsInUAWidgetScope(JSObject* obj);
+
 bool IsInSandboxCompartment(JSObject* obj);
 
 
@@ -103,6 +107,12 @@ bool IsInSandboxCompartment(JSObject* obj);
 
 JSObject*
 GetXBLScope(JSContext* cx, JSObject* contentScope);
+
+JSObject*
+GetUAWidgetScope(JSContext* cx, nsIPrincipal* principal);
+
+JSObject*
+GetUAWidgetScope(JSContext* cx, JSObject* contentScope);
 
 inline JSObject*
 GetXBLScopeOrGlobal(JSContext* cx, JSObject* obj)
@@ -725,7 +735,20 @@ bool IsChromeOrXBL(JSContext* cx, JSObject* );
 
 
 
-bool ThreadSafeIsChromeOrXBL(JSContext* cx, JSObject* obj);
+
+
+bool IsNotUAWidget(JSContext* cx, JSObject* );
+
+
+
+
+
+bool IsChromeOrXBLOrUAWidget(JSContext* cx, JSObject* );
+
+
+
+
+bool ThreadSafeIsChromeOrXBLOrUAWidget(JSContext* cx, JSObject* obj);
 
 } 
 } 

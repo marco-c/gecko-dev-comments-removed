@@ -180,6 +180,7 @@ nsVideoFrame::GetVideoControls()
   }
   if (mContent->GetShadowRoot()) {
     
+    MOZ_ASSERT(mContent->GetShadowRoot()->IsUAWidget());
     return mContent->GetShadowRoot()->GetFirstChild();
   }
   return nullptr;
