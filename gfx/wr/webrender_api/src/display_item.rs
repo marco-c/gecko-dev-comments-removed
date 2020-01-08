@@ -66,6 +66,15 @@ pub struct GenericDisplayItem<T> {
 
 pub type DisplayItem = GenericDisplayItem<SpecificDisplayItem>;
 
+
+
+#[derive(Serialize)]
+pub struct SerializedDisplayItem<'a> {
+    pub item: &'a SpecificDisplayItem,
+    pub clip_and_scroll: &'a ClipAndScrollInfo,
+    pub info: &'a LayoutPrimitiveInfo,
+}
+
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub struct PrimitiveInfo<T> {
     pub rect: TypedRect<f32, T>,
