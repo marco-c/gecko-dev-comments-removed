@@ -1160,11 +1160,17 @@ public:
 
   static bool DevToolsEnabled(JSContext* aCx);
 
+  static nsresult CalculateBufferSizeForImage(const uint32_t& aStride,
+                                            const mozilla::gfx::IntSize& aImageSize,
+                                            const mozilla::gfx::SurfaceFormat& aFormat,
+                                            size_t* aMaxBufferSize,
+                                            size_t* aUsedBufferSize);
+
+private:
   
 
 
 
-private:
   static nsresult FormatLocalizedString(PropertiesFile aFile,
                                         const char* aKey,
                                         const char16_t** aParams,
