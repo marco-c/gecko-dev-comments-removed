@@ -3,6 +3,8 @@
 
 "use strict";
 
+const { Localization } = ChromeUtils.import("resource://gre/modules/Localization.jsm", {});
+
 const POPUP_NOTIFICATION_ID = "contextual-feature-recommendation";
 
 const DELAY_BEFORE_EXPAND_MS = 1000;
@@ -43,16 +45,20 @@ class PageAction {
     this._handleClick = this._handleClick.bind(this);
     this.dispatchUserAction = this.dispatchUserAction.bind(this);
 
+    this._l10n = new Localization([
+      "browser/newtab/asrouter.ftl"
+    ]);
+
     
     this.stateTransitionTimeoutIDs = [];
 
     this.container.onclick = this._handleClick;
   }
 
-  async show(notificationText, shouldExpand = false) {
+  async show(notification_text, shouldExpand = false) {
     this.container.hidden = false;
 
-    this.label.value = notificationText;
+    this.label.value = await this.getStrings({string: notification_text});
 
     
     
@@ -132,7 +138,35 @@ class PageAction {
 
 
 
-  _handleClick(event) {
+
+
+
+  async getStrings({string, hasAttributes}) {
+    if (!string.string_id) {
+      return string;
+    }
+
+    const [localeStrings] = await this._l10n.formatMessages([{id: string.string_id}]);
+
+    if (hasAttributes && localeStrings.attributes) {
+      const attributes = localeStrings.attributes.reduce((acc, attribute) => {
+        acc[attribute.name] = attribute.value;
+        return acc;
+      }, {});
+      return {
+        value: localeStrings.value,
+        attributes
+      };
+    } else {
+      return localeStrings.value;
+    }
+  }
+
+  
+
+
+
+  async _handleClick(event) {
     const browser = this.window.gBrowser.selectedBrowser;
     if (!RecommendationMap.has(browser)) {
       
@@ -151,16 +185,18 @@ class PageAction {
     browser.cfrpopupnotificationanchor = this.container;
 
     const {primary, secondary} = content.buttons;
+    const primaryBtnStrings = await this.getStrings({string: primary.label, hasAttributes: true});
+    const secondaryBtnStrings = await this.getStrings({string: secondary.label, hasAttributes: true});
 
     const mainAction = {
-      label: primary.label,
-      accessKey: primary.accessKey,
+      label: primaryBtnStrings.value,
+      accessKey: primaryBtnStrings.attributes.accesskey,
       callback: () => this.dispatchUserAction(primary.action)
     };
 
     const secondaryActions = [{
-      label: secondary.label,
-      accessKey: secondary.accessKey,
+      label: secondaryBtnStrings.value,
+      accessKey: secondaryBtnStrings.attributes.accesskey,
       callback: this._collapse
     }];
 
@@ -173,7 +209,7 @@ class PageAction {
     this.window.PopupNotifications.show(
       browser,
       POPUP_NOTIFICATION_ID,
-      content.text,
+      await this.getStrings({string: content.text}),
       "cfr",
       mainAction,
       secondaryActions,
@@ -207,7 +243,7 @@ const CFRPageActions = {
       if (isHostMatch(browser, host)) {
         
         
-        pageAction.show(content.notification_text);
+        pageAction.show(this.getStrings({string: content.notification_text}));
       } else {
         
         
@@ -235,7 +271,7 @@ const CFRPageActions = {
     if (!PageActionMap.has(win)) {
       PageActionMap.set(win, new PageAction(win, dispatchToASRouter));
     }
-    await PageActionMap.get(win).show(recommendation.content.notification_text, true);
+    await PageActionMap.get(win).show(this.getStrings({string: recommendation.content.notification_text}), true);
     return true;
   },
 
