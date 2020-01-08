@@ -289,14 +289,10 @@ public:
   PLDHashTable(PLDHashTable&& aOther)
       
       
-      
-      
-      
-      
-    : mOps(aOther.mOps)
+    : mOps(nullptr)
     , mEntryStore()
     , mGeneration(0)
-    , mEntrySize(aOther.mEntrySize)
+    , mEntrySize(0)
 #ifdef DEBUG
     , mChecker()
 #endif
@@ -309,7 +305,10 @@ public:
   ~PLDHashTable();
 
   
-  const PLDHashTableOps* Ops() const { return mOps; }
+  const PLDHashTableOps* Ops() const
+  {
+    return mozilla::recordreplay::UnwrapPLDHashTableCallbacks(mOps);
+  }
 
   
   
