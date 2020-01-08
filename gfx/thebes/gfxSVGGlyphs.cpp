@@ -40,7 +40,7 @@ using namespace mozilla;
 
 typedef mozilla::dom::Element Element;
 
- const Color SimpleTextContextPaint::sZero = Color();
+ const mozilla::gfx::Color SimpleTextContextPaint::sZero;
 
 gfxSVGGlyphs::gfxSVGGlyphs(hb_blob_t *aSVGTable, gfxFontEntry *aFontEntry)
     : mSVGData(aSVGTable)

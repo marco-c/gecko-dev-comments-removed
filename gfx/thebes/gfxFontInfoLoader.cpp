@@ -9,6 +9,10 @@
 #include "nsThreadUtils.h"              
 #include "gfxPlatformFontList.h"
 
+#ifdef XP_WIN
+#include <windows.h>
+#endif
+
 using namespace mozilla;
 using services::GetObserverService;
 
