@@ -52,6 +52,9 @@
 
 
 
+
+
+
 class nsIDocument;
 class nsIHttpChannel;
 class nsINode;

@@ -48,7 +48,9 @@ var gTestWindows = [
   { test: "file_fullscreen-lenient-setters.html" },
   { test: "file_fullscreen-table.html" },
   { test: "file_fullscreen-event-order.html" },
-  { test: "file_fullscreen-featurePolicy.html", prefs: [["dom.security.featurePolicy.enabled", true]] },
+  { test: "file_fullscreen-featurePolicy.html",
+    prefs: [["dom.security.featurePolicy.enabled", true],
+            ["dom.security.featurePolicy.header.enabled", true]] },
 ];
 
 var testWindow = null;
@@ -174,7 +176,8 @@ addLoadEvent(function() {
         ["full-screen-api.unprefix.enabled", true],
         ["full-screen-api.allow-trusted-requests-only", false],
         ["full-screen-api.transition-duration.enter", "0 0"],
-        ["full-screen-api.transition-duration.leave", "0 0"]
+        ["full-screen-api.transition-duration.leave", "0 0"],
+        ["dom.webcomponents.shadowdom.enabled", true]
       ]}, nextTest);
 });
 SimpleTest.waitForExplicitFinish();
