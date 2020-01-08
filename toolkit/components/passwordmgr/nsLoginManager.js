@@ -205,10 +205,13 @@ LoginManager.prototype = {
     clearAndGetHistogram("PWMGR_NUM_HTTPAUTH_PASSWORDS").add(
       this.countLogins("", null, "")
     );
+    Services.obs.notifyObservers(null, "weave:telemetry:histogram", "PWMGR_BLOCKLIST_NUM_SITES");
+    Services.obs.notifyObservers(null, "weave:telemetry:histogram", "PWMGR_NUM_SAVED_PASSWORDS");
 
     
     
     clearAndGetHistogram("PWMGR_SAVING_ENABLED").add(this._remember);
+    Services.obs.notifyObservers(null, "weave:telemetry:histogram", "PWMGR_SAVING_ENABLED");
 
     
     if (!this.isLoggedIn) {
@@ -235,11 +238,13 @@ LoginManager.prototype = {
         );
       }
     }
+    Services.obs.notifyObservers(null, "weave:telemetry:histogram", "PWMGR_LOGIN_LAST_USED_DAYS");
 
     let passwordsCountHistogram = clearAndGetHistogram("PWMGR_NUM_PASSWORDS_PER_HOSTNAME");
     for (let count of hostnameCount.values()) {
       passwordsCountHistogram.add(count);
     }
+    Services.obs.notifyObservers(null, "weave:telemetry:histogram", "PWMGR_NUM_PASSWORDS_PER_HOSTNAME");
   },
 
 
