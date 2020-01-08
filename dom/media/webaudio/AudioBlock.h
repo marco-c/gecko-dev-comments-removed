@@ -74,6 +74,7 @@ public:
     return static_cast<float*>(const_cast<void*>(mChannelData[aChannel]));
   }
 
+  ThreadSharedObject* GetBuffer() const { return mBuffer; }
   void SetBuffer(ThreadSharedObject* aNewBuffer);
   void SetNull(StreamTime aDuration) {
     MOZ_ASSERT(aDuration == WEBAUDIO_BLOCK_SIZE);
