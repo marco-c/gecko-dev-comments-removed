@@ -53,19 +53,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 var EXPORTED_SYMBOLS = [ "XPCOMUtils" ];
 
 let global = Cu.getGlobalForObject({});
@@ -92,47 +79,8 @@ var XPCOMUtils = {
 
 
 
-
-
-
   generateQI: function XPCU_generateQI(interfaces) {
     return ChromeUtils.generateQI(interfaces);
-  },
-
-  
-
-
-
-
-
-
-
-  generateCI: function XPCU_generateCI(classInfo)
-  {
-    if (QueryInterface in classInfo)
-      throw Error("In generateCI, don't use a component for generating classInfo");
-    
-    let _interfaces = [];
-    for (let i = 0; i < classInfo.interfaces.length; i++) {
-      let iface = classInfo.interfaces[i];
-      if (Ci[iface]) {
-        _interfaces.push(Ci[iface]);
-      }
-    }
-    return {
-      getInterfaces: function XPCU_getInterfaces(countRef) {
-        countRef.value = _interfaces.length;
-        return _interfaces;
-      },
-      getScriptableHelper: function XPCU_getScriptableHelper() {
-        return null;
-      },
-      contractID: classInfo.contractID,
-      classDescription: classInfo.classDescription,
-      classID: classInfo.classID,
-      flags: classInfo.flags,
-      QueryInterface: this.generateQI([Ci.nsIClassInfo])
-    };
   },
 
   
