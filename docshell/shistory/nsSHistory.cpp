@@ -727,7 +727,7 @@ nsSHistory::GetEntryAtIndex(int32_t aIndex, bool aModifyIndex,
 }
 
 
-nsresult
+NS_IMETHODIMP
 nsSHistory::GetTransactionAtIndex(int32_t aIndex, nsISHTransaction** aResult)
 {
   NS_ENSURE_ARG_POINTER(aResult);
