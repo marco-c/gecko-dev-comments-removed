@@ -110,6 +110,13 @@ var LightweightThemeManager = {
     return themes;
   },
 
+  
+
+
+
+
+
+
   get currentTheme() {
     let selectedThemeID = _prefs.getStringPref("selectedThemeID", DEFAULT_THEME_ID);
 
@@ -120,8 +127,29 @@ var LightweightThemeManager = {
     return data;
   },
 
-  get currentThemeForDisplay() {
-    var data = _substituteDefaultThemeIfNeeded(this.currentTheme);
+  
+
+
+
+
+
+
+  get currentThemeWithFallback() {
+    return _substituteDefaultThemeIfNeeded(this.currentTheme);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  get currentThemeWithPersistedData() {
+    let data = this.currentThemeWithFallback;
 
     if (data && LightweightThemePersister.persistEnabled) {
       data = LightweightThemePersister.getPersistedData(data);
@@ -226,7 +254,7 @@ var LightweightThemeManager = {
     if (_previewTimer) {
       _previewTimer.cancel();
       _previewTimer = null;
-      _notifyWindows(this.currentThemeForDisplay);
+      _notifyWindows(this.currentThemeWithPersistedData);
     }
   },
 
@@ -371,7 +399,7 @@ var LightweightThemeManager = {
       if (LightweightThemePersister.persistEnabled) {
         LightweightThemeImageOptimizer.purge();
         _persistImages(themeToSwitchTo, () => {
-          _notifyWindows(this.currentThemeForDisplay);
+          _notifyWindows(this.currentThemeWithPersistedData);
         });
       }
     }
@@ -476,7 +504,7 @@ var LightweightThemeManager = {
       if (LightweightThemePersister.persistEnabled) {
         LightweightThemeImageOptimizer.purge();
         _persistImages(themeToSwitchTo, () => {
-          _notifyWindows(this.currentThemeForDisplay);
+          _notifyWindows(this.currentThemeWithPersistedData);
         });
       }
     }

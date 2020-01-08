@@ -43,7 +43,7 @@ var LightweightThemePersister = {
   persistImages(aData, aCallback) {
     function onSuccess(key) {
       return function() {
-        let current = LightweightThemeManager.currentTheme;
+        let current = LightweightThemeManager.currentThemeWithFallback;
         if (current && current.id == aData.id) {
           _prefs.setBoolPref("persisted." + key, true);
         }
@@ -101,12 +101,17 @@ function _persistProgressListener(successCallback) {
     if (aRequest &&
         aStateFlags & Ci.nsIWebProgressListener.STATE_IS_NETWORK &&
         aStateFlags & Ci.nsIWebProgressListener.STATE_STOP) {
-      try {
-        if (aRequest.QueryInterface(Ci.nsIHttpChannel).requestSucceeded) {
+      
+      if (aRequest instanceof Ci.nsIHttpChannel &&
+          aRequest.QueryInterface(Ci.nsIHttpChannel).requestSucceeded ||
           
-          successCallback();
-        }
-      } catch (e) { }
+          
+          aRequest instanceof Ci.nsIChannel &&
+          aRequest.originalURI.schemeIs("moz-extension") &&
+          aRequest.QueryInterface(Ci.nsIChannel).contentLength > 0) {
+        
+        successCallback();
+      }
       
     }
   };
