@@ -1311,6 +1311,7 @@ private:
 
   GeckoChildProcessHost* mSubprocess;
   const TimeStamp mLaunchTS; 
+  TimeStamp mLaunchYieldTS; 
   TimeStamp mActivateTS;
   ContentParent* mOpener;
 
