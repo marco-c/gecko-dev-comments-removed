@@ -353,7 +353,7 @@ function _isInputAlive(input) {
 
 function _storeCertOverride(s, host, port) {
   
-  const cert = s.securityInfo.QueryInterface(Ci.nsITransportSecurityInfo)
+  const cert = s.securityInfo.QueryInterface(Ci.nsISSLStatusProvider)
               .SSLStatus.serverCert;
   const overrideBits = Ci.nsICertOverrideService.ERROR_UNTRUSTED |
                      Ci.nsICertOverrideService.ERROR_MISMATCH;
@@ -436,12 +436,15 @@ SocketListener.prototype = {
       if (self.isPortBased) {
         const port = Number(self.portOrPath);
         self._socket.initSpecialConnection(port, flags, backlog);
-      } else {
+      } else if (self.portOrPath.startsWith("/")) {
         const file = nsFile(self.portOrPath);
         if (file.exists()) {
           file.remove(false);
         }
         self._socket.initWithFilename(file, parseInt("666", 8), backlog);
+      } else {
+        
+        self._socket.initWithAbstractAddress(self.portOrPath, backlog);
       }
       await self._setAdditionalSocketOptions();
       self._socket.asyncListen(self);
