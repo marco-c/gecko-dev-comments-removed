@@ -5180,12 +5180,19 @@ BaselineCompiler::emit_JSOP_RESUME()
         
         masm.subStackPtrFrom(scratch1);
         masm.makeFrameDescriptor(scratch1, FrameType::BaselineJS, ExitFrameLayout::Size());
-
-        
-        
-        
         masm.push(scratch1);
 
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        
         
 #ifndef JS_CODEGEN_ARM64
         masm.push(ImmWord(0));
@@ -5437,31 +5444,6 @@ BaselineCompiler::emit_JSOP_IMPORTMETA()
     prepareVMCall();
     pushArg(ImmGCPtr(module));
     if (!callVM(GetOrCreateModuleMetaObjectInfo)) {
-        return false;
-    }
-
-    masm.tagValue(JSVAL_TYPE_OBJECT, ReturnReg, R0);
-    frame.push(R0);
-    return true;
-}
-
-typedef JSObject* (*StartDynamicModuleImportFn)(JSContext*, HandleValue, HandleValue);
-static const VMFunction StartDynamicModuleImportInfo =
-    FunctionInfo<StartDynamicModuleImportFn>(js::StartDynamicModuleImport,
-                                                "StartDynamicModuleImport");
-
-bool
-BaselineCompiler::emit_JSOP_DYNAMIC_IMPORT()
-{
-    RootedValue referencingPrivate(cx, FindScriptOrModulePrivateForScript(script));
-
-    
-    frame.popRegsAndSync(1);
-
-    prepareVMCall();
-    pushArg(R0);
-    pushArg(referencingPrivate);
-    if (!callVM(StartDynamicModuleImportInfo)) {
         return false;
     }
 

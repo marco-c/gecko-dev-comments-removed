@@ -210,7 +210,7 @@ CollectJitStackScripts(JSContext* cx, const Debugger::ExecutionObservableSet& ob
                 if (!entries.append(DebugModeOSREntry(script, info))) {
                     return false;
                 }
-            } else if (baselineFrame->isHandlingException()) {
+            } else if (baselineFrame->hasOverridePc()) {
                 
                 
                 uint32_t offset = script->pcToOffset(baselineFrame->overridePc());
@@ -387,6 +387,7 @@ PatchBaselineFramesForDebugMode(JSContext* cx,
     
     
     
+    
 
     CommonFrameLayout* prev = nullptr;
     size_t entryIndex = *start;
@@ -450,7 +451,6 @@ PatchBaselineFramesForDebugMode(JSContext* cx,
                 
                 
                 
-                MOZ_ASSERT(frame.baselineFrame()->isHandlingException());
                 MOZ_ASSERT(frame.baselineFrame()->overridePc() == pc);
                 uint8_t* retAddr;
                 if (cx->runtime()->geckoProfiler().enabled()) {
@@ -695,7 +695,7 @@ RecompileBaselineScriptForDebugMode(JSContext* cx, JSScript* script,
     }
 
     JitSpew(JitSpew_BaselineDebugModeOSR, "Recompiling (%s:%u:%u) for %s",
-            script->filename(), script->lineno(), script->column(), 
+            script->filename(), script->lineno(), script->column(),
             observing ? "DEBUGGING" : "NORMAL EXECUTION");
 
     AutoKeepTypeScripts keepTypes(cx);
