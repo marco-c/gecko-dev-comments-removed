@@ -487,7 +487,6 @@ protected:
     
     void LoadBadUnderlineList();
 
-    void GenerateFontListKey(const nsAString& aKeyName, nsAString& aResult);
     void GenerateFontListKey(const nsACString& aKeyName, nsACString& aResult);
 
     virtual void GetFontFamilyNames(nsTArray<nsCString>& aFontFamilyNames);
