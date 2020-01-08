@@ -809,6 +809,17 @@ ImageBitmap::ToCloneData() const
 }
 
  already_AddRefed<ImageBitmap>
+ImageBitmap::CreateFromSourceSurface(nsIGlobalObject* aGlobal,
+                                     gfx::SourceSurface* aSource,
+                                     ErrorResult& aRv)
+{
+  RefPtr<layers::Image> data = CreateImageFromSurface(aSource);
+  RefPtr<ImageBitmap> ret = new ImageBitmap(aGlobal, data);
+  ret->mAllocatedImageData = true;
+  return ret.forget();
+}
+
+ already_AddRefed<ImageBitmap>
 ImageBitmap::CreateFromCloneData(nsIGlobalObject* aGlobal,
                                  ImageBitmapCloneData* aData)
 {
