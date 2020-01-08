@@ -129,9 +129,6 @@ RootActor.prototype = {
     wasmBinarySource: true,
     bulk: true,
     
-    
-    selectorEditable: true,
-    
     getCssPath: true,
     
     getXPath: true,

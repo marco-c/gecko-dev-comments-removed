@@ -1465,44 +1465,6 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
 
 
 
-
-
-
-
-
-
-  async modifySelector(value) {
-    if (this.type === ELEMENT_STYLE) {
-      return false;
-    }
-
-    const document = this.getDocument(this._parentSheet);
-    
-    const [selector] = value.split(/(:{1,2}.+$)/);
-    let selectorElement;
-
-    try {
-      selectorElement = document.querySelector(selector);
-    } catch (e) {
-      return false;
-    }
-
-    
-    
-    if (selectorElement && this.rawRule.selectorText !== value) {
-      await this._addNewSelector(value, false);
-      return true;
-    }
-    return false;
-  },
-
-  
-
-
-
-
-
-
   logChange(change) {
     const prevValue = this._declarations[change.index]
       ? this._declarations[change.index].value
@@ -1563,6 +1525,14 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
 
   
 
+
+
+
+  modifySelector: function(node, value, editAuthored = false) {
+    return this.modifySelector2(node, value, editAuthored);
+  },
+
+  
 
 
 
