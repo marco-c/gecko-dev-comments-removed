@@ -842,8 +842,19 @@ KeyHandlingState IMContextWrapper::OnKeyEvent(
         
         if (mMaybeInDeadKeySequence && aEvent->type == GDK_KEY_PRESS) {
           maybeHandledAsynchronously = false;
-          isUnexpectedAsyncEvent = isHandlingAsyncEvent;
-          break;
+          if (isHandlingAsyncEvent) {
+            isUnexpectedAsyncEvent = true;
+            break;
+          }
+          
+          
+          
+          
+          if (!gdk_keyval_to_unicode(aEvent->keyval) &&
+              !aEvent->hardware_keycode) {
+            isUnexpectedAsyncEvent = true;
+            break;
+          }
         }
         
         
@@ -878,8 +889,19 @@ KeyHandlingState IMContextWrapper::OnKeyEvent(
         
         if (mMaybeInDeadKeySequence && aEvent->type == GDK_KEY_PRESS) {
           maybeHandledAsynchronously = false;
-          isUnexpectedAsyncEvent = isHandlingAsyncEvent;
-          break;
+          if (isHandlingAsyncEvent) {
+            isUnexpectedAsyncEvent = true;
+            break;
+          }
+          
+          
+          
+          
+          if (!gdk_keyval_to_unicode(aEvent->keyval) &&
+              !aEvent->hardware_keycode) {
+            isUnexpectedAsyncEvent = true;
+            break;
+          }
         }
 
         
