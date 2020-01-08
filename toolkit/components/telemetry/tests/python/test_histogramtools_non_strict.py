@@ -10,7 +10,10 @@ from os import path
 
 TELEMETRY_ROOT_PATH = path.abspath(path.join(path.dirname(__file__), path.pardir, path.pardir))
 sys.path.append(TELEMETRY_ROOT_PATH)
-import parse_histograms   
+
+
+sys.path.append(path.join(TELEMETRY_ROOT_PATH, "build_scripts"))
+from parsers import parse_histograms   
 
 
 def load_histogram(histograms):

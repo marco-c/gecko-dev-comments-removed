@@ -39,7 +39,7 @@ XPCOMUtils.defineLazyGetter(this, "gAbortedSessionFilePath", function() {
 ChromeUtils.defineModuleGetter(this, "CommonUtils",
                                "resource://services-common/utils.js");
 ChromeUtils.defineModuleGetter(this, "TelemetryHealthPing",
-                               "resource://gre/modules/TelemetryHealthPing.jsm");
+                               "resource://gre/modules/HealthPing.jsm");
 
 const MAX_ARCHIVED_PINGS_RETENTION_MS = 60 * 24 * 60 * 60 * 1000; 
 
