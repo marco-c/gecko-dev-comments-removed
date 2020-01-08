@@ -23,6 +23,7 @@ public class IconRequest {
     
      String pageUrl;
      boolean privileged;
+     boolean isPrivate;
      TreeSet<IconDescriptor> icons;
      boolean skipNetwork;
      boolean backgroundThread;
@@ -40,6 +41,7 @@ public class IconRequest {
 
         
         this.privileged = false;
+        this.isPrivate = false;
         this.skipMemory = false;
         this.skipDisk = false;
         this.skipNetwork = false;
@@ -94,6 +96,13 @@ public class IconRequest {
 
     public boolean isPrivileged() {
         return privileged;
+    }
+
+    
+
+
+    public boolean isPrivateMode() {
+        return isPrivate;
     }
 
     

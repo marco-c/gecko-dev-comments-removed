@@ -65,6 +65,15 @@ public class IconRequestBuilder {
 
 
     @CheckResult
+    public IconRequestBuilder setPrivateMode(boolean isPrivate) {
+        internal.isPrivate = isPrivate;
+        return this;
+    }
+
+    
+
+
+    @CheckResult
     public IconRequestBuilder skipNetwork() {
         internal.skipNetwork = true;
         return this;
@@ -165,6 +174,7 @@ public class IconRequestBuilder {
         IconRequest request = new IconRequest(internal.getContext());
         request.pageUrl = internal.pageUrl;
         request.privileged = internal.privileged;
+        request.isPrivate = internal.isPrivate;
         request.icons = new TreeSet<>(internal.icons);
         request.skipNetwork = internal.skipNetwork;
         request.backgroundThread = internal.backgroundThread;
