@@ -595,6 +595,10 @@ public:
                                    int32_t aDepth,
                                    int32_t aIncrement,
                                    bool aForCounting) override;
+
+  
+  void AddSizeOfExcludingThisForTree(nsWindowSizes&) const override;
+
 protected:
   
   void DoRemoveFrameInternal(nsIFrame* aDeletedFrame, uint32_t aFlags,

@@ -3610,7 +3610,7 @@ public:
   
   
   
-  void AddSizeOfExcludingThisForTree(nsWindowSizes& aWindowSizes) const;
+  virtual void AddSizeOfExcludingThisForTree(nsWindowSizes& aWindowSizes) const;
 
   
 

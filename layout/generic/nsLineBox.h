@@ -20,6 +20,7 @@ class nsLineBox;
 class nsFloatCache;
 class nsFloatCacheList;
 class nsFloatCacheFreeList;
+class nsWindowSizes;
 
 
 
@@ -581,6 +582,8 @@ public:
   void List(FILE* out = stderr, const char* aPrefix = "", uint32_t aFlags = 0) const;
   nsIFrame* LastChild() const;
 #endif
+
+  void AddSizeOfExcludingThis(nsWindowSizes& aSizes) const;
 
 private:
   int32_t IndexOf(nsIFrame* aFrame) const;
