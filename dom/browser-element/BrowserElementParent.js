@@ -49,18 +49,18 @@ function defineNoReturnMethod(fn) {
   };
 }
 
-function defineDOMRequestMethod(msgName) {
+function definePromiseMethod(msgName) {
   return function() {
-    return this._sendDOMRequest(msgName);
+    return this._sendAsyncRequest(msgName);
   };
 }
 
 function BrowserElementParent() {
   debug("Creating new BrowserElementParent object");
-  this._domRequestCounter = 0;
+  this._promiseCounter = 0;
   this._domRequestReady = false;
   this._pendingAPICalls = [];
-  this._pendingDOMRequests = {};
+  this._pendingPromises = {};
   this._pendingDOMFullscreen = false;
 
   Services.obs.addObserver(this, 'oop-frameloader-crashed',  true);
@@ -156,8 +156,8 @@ BrowserElementParent.prototype = {
       "error": this._fireEventFromMsg,
       "firstpaint": this._fireProfiledEventFromMsg,
       "documentfirstpaint": this._fireProfiledEventFromMsg,
-      "got-can-go-back": this._gotDOMRequestResult,
-      "got-can-go-forward": this._gotDOMRequestResult,
+      "got-can-go-back": this._gotAsyncResult,
+      "got-can-go-forward": this._gotAsyncResult,
       "requested-dom-fullscreen": this._requestedDOMFullscreen,
       "fullscreen-origin-change": this._fullscreenOriginChange,
       "exit-dom-fullscreen": this._exitDomFullscreen,
@@ -452,18 +452,22 @@ BrowserElementParent.prototype = {
 
 
 
-  _sendDOMRequest: function(msgName, args) {
-    let id = 'req_' + this._domRequestCounter++;
-    let req = Services.DOMRequest.createRequest(this._window);
+  _sendAsyncRequest: function(msgName, args) {
+    let id = 'req_' + this._promiseCounter++;
+    let resolve, reject;
+    let p = new this._window.Promise((res, rej) => {
+      resolve = res;
+      reject = rej;
+    });
     let self = this;
     let send = function() {
       if (!self._isAlive()) {
         return;
       }
       if (self._sendAsyncMsg(msgName, {id: id, args: args})) {
-        self._pendingDOMRequests[id] = req;
+        self._pendingPromises[id] = { p, resolve, reject };
       } else {
-        Services.DOMRequest.fireErrorAsync(req, "fail");
+        reject(new this._window.DOMException("fail"));
       }
     };
     if (this._domRequestReady) {
@@ -472,7 +476,7 @@ BrowserElementParent.prototype = {
       
       this._pendingAPICalls.push(send);
     }
-    return req;
+    return p;
   },
 
   
@@ -488,19 +492,19 @@ BrowserElementParent.prototype = {
 
 
 
-  _gotDOMRequestResult: function(data) {
-    let req = this._pendingDOMRequests[data.json.id];
-    delete this._pendingDOMRequests[data.json.id];
+  _gotAsyncResult: function(data) {
+    let p = this._pendingPromises[data.json.id];
+    delete this._pendingPromises[data.json.id];
 
     if ('successRv' in data.json) {
-      debug("Successful gotDOMRequestResult.");
+      debug("Successful gotAsyncResult.");
       let clientObj = Cu.cloneInto(data.json.successRv, this._window);
-      Services.DOMRequest.fireSuccess(req, clientObj);
+      p.resolve(clientObj);
     }
     else {
-      debug("Got error in gotDOMRequestResult.");
-      Services.DOMRequest.fireErrorAsync(req,
-        Cu.cloneInto(data.json.errorMsg, this._window));
+      debug("Got error in gotAsyncResult.");
+      p.reject(new this._window.DOMException(
+        Cu.cloneInto(data.json.errorMsg, this._window)));
     }
   },
 
@@ -532,8 +536,8 @@ BrowserElementParent.prototype = {
     });
   }),
 
-  getCanGoBack: defineDOMRequestMethod('get-can-go-back'),
-  getCanGoForward: defineDOMRequestMethod('get-can-go-forward'),
+  getCanGoBack: definePromiseMethod('get-can-go-back'),
+  getCanGoForward: definePromiseMethod('get-can-go-forward'),
 
   goBack: defineNoReturnMethod(function() {
     this._sendAsyncMsg('go-back');
