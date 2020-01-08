@@ -40,8 +40,7 @@ WebRenderLayerManager::WebRenderLayerManager(nsIWidget* aWidget)
       mTarget(nullptr),
       mPaintSequenceNumber(0),
       mWebRenderCommandBuilder(this),
-      mLastDisplayListSize(0),
-      mStateManager(this) {
+      mLastDisplayListSize(0) {
   MOZ_COUNT_CTOR(WebRenderLayerManager);
 }
 
@@ -94,11 +93,21 @@ void WebRenderLayerManager::DoDestroy(bool aIsSync) {
 
   LayerManager::Destroy();
 
-  mStateManager.Destroy();
-
   if (WrBridge()) {
+    
+    DiscardLocalImages();
+    
+    mDiscardedCompositorAnimationsIds.Clear();
     WrBridge()->Destroy(aIsSync);
   }
+
+  
+  
+  
+  
+  mActiveCompositorAnimationIds.clear();
+
+  ClearAsyncAnimations();
 
   mWebRenderCommandBuilder.Destroy();
 
@@ -221,10 +230,9 @@ bool WebRenderLayerManager::EndEmptyTransaction(EndTransactionFlags aFlags) {
     }
   }
 
-  Maybe<wr::IpcResourceUpdateQueue> nothing;
   WrBridge()->EndEmptyTransaction(mFocusTarget, mPendingScrollUpdates,
-                                  mStateManager.mAsyncResourceUpdates,
-                                  mPaintSequenceNumber, mLatestTransactionId,
+                                  mAsyncResourceUpdates, mPaintSequenceNumber,
+                                  mLatestTransactionId,
                                   mTransactionIdAllocator->GetVsyncId(),
                                   mTransactionIdAllocator->GetVsyncStart(),
                                   refreshStart, mTransactionStart, mURL);
@@ -290,8 +298,6 @@ void WebRenderLayerManager::EndTransactionWithoutLayer(
     }
   }
 
-  mStateManager.DiscardCompositorAnimations();
-
   mWidget->AddWindowOverlayWebRenderCommands(WrBridge(), builder,
                                              resourceUpdates);
   mWindowOverlayChanged = false;
@@ -325,20 +331,19 @@ void WebRenderLayerManager::EndTransactionWithoutLayer(
     refreshStart = mTransactionStart;
   }
 
-  if (mStateManager.mAsyncResourceUpdates) {
+  if (mAsyncResourceUpdates) {
     if (resourceUpdates.IsEmpty()) {
-      resourceUpdates = std::move(mStateManager.mAsyncResourceUpdates.ref());
+      resourceUpdates = std::move(mAsyncResourceUpdates.ref());
     } else {
       
       
       
-      WrBridge()->UpdateResources(mStateManager.mAsyncResourceUpdates.ref());
+      WrBridge()->UpdateResources(mAsyncResourceUpdates.ref());
     }
-    mStateManager.mAsyncResourceUpdates.reset();
+    mAsyncResourceUpdates.reset();
   }
 
-  mStateManager.DiscardImagesInTransaction(resourceUpdates);
-
+  DiscardImagesInTransaction(resourceUpdates);
   WrBridge()->RemoveExpiredFontKeys(resourceUpdates);
 
   
@@ -363,6 +368,11 @@ void WebRenderLayerManager::EndTransactionWithoutLayer(
                                mTransactionIdAllocator->GetVsyncStart(),
                                refreshStart, mTransactionStart, mURL);
   }
+
+  
+  
+  
+  DiscardCompositorAnimations();
 
   mTransactionStart = TimeStamp();
 
@@ -436,14 +446,63 @@ void WebRenderLayerManager::MakeSnapshotIfRequired(LayoutDeviceIntSize aSize) {
   mTarget = nullptr;
 }
 
+void WebRenderLayerManager::AddImageKeyForDiscard(wr::ImageKey key) {
+  mImageKeysToDelete.AppendElement(key);
+}
+
+void WebRenderLayerManager::AddBlobImageKeyForDiscard(wr::BlobImageKey key) {
+  mBlobImageKeysToDelete.AppendElement(key);
+}
+
+void WebRenderLayerManager::DiscardImagesInTransaction(
+    wr::IpcResourceUpdateQueue& aResources) {
+  for (const auto& key : mImageKeysToDelete) {
+    aResources.DeleteImage(key);
+  }
+  for (const auto& key : mBlobImageKeysToDelete) {
+    aResources.DeleteBlobImage(key);
+  }
+  mImageKeysToDelete.Clear();
+  mBlobImageKeysToDelete.Clear();
+}
+
 void WebRenderLayerManager::DiscardImages() {
   wr::IpcResourceUpdateQueue resources(WrBridge());
-  mStateManager.DiscardImagesInTransaction(resources);
+  DiscardImagesInTransaction(resources);
   WrBridge()->UpdateResources(resources);
 }
 
+void WebRenderLayerManager::AddActiveCompositorAnimationId(uint64_t aId) {
+  
+  
+  
+  
+  mActiveCompositorAnimationIds.insert(aId);
+}
+
+void WebRenderLayerManager::AddCompositorAnimationsIdForDiscard(uint64_t aId) {
+  if (mActiveCompositorAnimationIds.erase(aId)) {
+    
+    
+    
+    mDiscardedCompositorAnimationsIds.AppendElement(aId);
+  }
+}
+
+void WebRenderLayerManager::DiscardCompositorAnimations() {
+  if (WrBridge()->IPCOpen() && !mDiscardedCompositorAnimationsIds.IsEmpty()) {
+    WrBridge()->SendDeleteCompositorAnimations(
+        mDiscardedCompositorAnimationsIds);
+  }
+  mDiscardedCompositorAnimationsIds.Clear();
+}
+
 void WebRenderLayerManager::DiscardLocalImages() {
-  mStateManager.DiscardLocalImages();
+  
+  
+  
+  mImageKeysToDelete.Clear();
+  mBlobImageKeysToDelete.Clear();
 }
 
 void WebRenderLayerManager::SetLayersObserverEpoch(LayersObserverEpoch aEpoch) {
@@ -491,7 +550,11 @@ void WebRenderLayerManager::ClearCachedResources(Layer* aSubtree) {
   WrBridge()->BeginClearCachedResources();
   mWebRenderCommandBuilder.ClearCachedResources();
   DiscardImages();
-  mStateManager.ClearCachedResources();
+  
+  
+  
+  mActiveCompositorAnimationIds.clear();
+  mDiscardedCompositorAnimationsIds.Clear();
   WrBridge()->EndClearCachedResources();
 }
 
@@ -622,13 +685,69 @@ WebRenderLayerManager::CreatePersistentBufferProvider(
   return LayerManager::CreatePersistentBufferProvider(aSize, aFormat);
 }
 
+wr::IpcResourceUpdateQueue& WebRenderLayerManager::AsyncResourceUpdates() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (!mAsyncResourceUpdates) {
+    mAsyncResourceUpdates.emplace(WrBridge());
+
+    RefPtr<Runnable> task = NewRunnableMethod(
+        "WebRenderLayerManager::FlushAsyncResourceUpdates", this,
+        &WebRenderLayerManager::FlushAsyncResourceUpdates);
+    NS_DispatchToMainThread(task.forget());
+  }
+
+  return mAsyncResourceUpdates.ref();
+}
+
+void WebRenderLayerManager::FlushAsyncResourceUpdates() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (!mAsyncResourceUpdates) {
+    return;
+  }
+
+  if (!IsDestroyed() && WrBridge()) {
+    WrBridge()->UpdateResources(mAsyncResourceUpdates.ref());
+  }
+
+  mAsyncResourceUpdates.reset();
+}
+
+void WebRenderLayerManager::RegisterAsyncAnimation(
+    const wr::ImageKey& aKey, SharedSurfacesAnimation* aAnimation) {
+  mAsyncAnimations.insert(std::make_pair(wr::AsUint64(aKey), aAnimation));
+}
+
+void WebRenderLayerManager::DeregisterAsyncAnimation(const wr::ImageKey& aKey) {
+  mAsyncAnimations.erase(wr::AsUint64(aKey));
+}
+
 void WebRenderLayerManager::ClearAsyncAnimations() {
-  mStateManager.ClearAsyncAnimations();
+  for (const auto& i : mAsyncAnimations) {
+    i.second->Invalidate(this);
+  }
+  mAsyncAnimations.clear();
 }
 
 void WebRenderLayerManager::WrReleasedImages(
     const nsTArray<wr::ExternalImageKeyPair>& aPairs) {
-  mStateManager.WrReleasedImages(aPairs);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  for (const auto& pair : aPairs) {
+    auto i = mAsyncAnimations.find(wr::AsUint64(pair.key));
+    if (i != mAsyncAnimations.end()) {
+      i->second->ReleasePreviousFrame(this, pair.id);
+    }
+  }
 }
 
 }  
