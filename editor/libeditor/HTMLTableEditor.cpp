@@ -2332,9 +2332,8 @@ HTMLEditor::SplitCellIntoRows(Element* aTable,
       }
       
       
-      if (cellDataAtInsertionPoint.mFirst.mColumn +
-            cellDataAtInsertionPoint.mEffectiveColSpan ==
-              cellData.mFirst.mColumn) {
+      if (cellDataAtInsertionPoint.NextColumnIndex() ==
+            cellData.mFirst.mColumn) {
         break;
       }
       
