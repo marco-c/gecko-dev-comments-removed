@@ -458,7 +458,9 @@ SelectorAutocompleter.prototype = {
       const onPopupOpened = this.searchPopup.once("popup-opened");
       this.searchPopup.once("popup-closed", () => {
         this.searchPopup.setItems(items);
-        this.searchPopup.openPopup(this.searchBox);
+        
+        const xOffset = 23;
+        this.searchPopup.openPopup(this.searchBox, xOffset);
       });
       this.searchPopup.hidePopup();
       return onPopupOpened;

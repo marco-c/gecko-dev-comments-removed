@@ -228,7 +228,7 @@ function autoComplete({ ed, cm }) {
     
 
     const cursorElement = cm.display.cursorDiv.querySelector(".CodeMirror-cursor");
-    const left = suggestions[0].preLabel.length * cm.defaultCharWidth() + 4;
+    const left = suggestions[0].preLabel.length * cm.defaultCharWidth();
     popup.hidePopup();
     popup.setItems(suggestions);
 
