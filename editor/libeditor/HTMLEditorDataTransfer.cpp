@@ -185,9 +185,19 @@ HTMLEditor::InsertHTML(const nsAString& aInString)
     return NS_ERROR_NOT_INITIALIZED;
   }
 
-  return DoInsertHTMLWithContext(aInString, EmptyString(), EmptyString(),
-                                 EmptyString(), nullptr,  EditorDOMPoint(),
-                                 true, true, false);
+  nsresult rv =
+    DoInsertHTMLWithContext(aInString, EmptyString(), EmptyString(),
+                            EmptyString(), nullptr,  EditorDOMPoint(),
+                            true, true, false);
+  if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
+    
+    
+    return NS_OK;
+  }
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  return NS_OK;
 }
 
 nsresult
@@ -197,7 +207,7 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
                                     const nsAString& aFlavor,
                                     nsIDocument* aSourceDoc,
                                     const EditorDOMPoint& aPointToInsert,
-                                    bool aDeleteSelection,
+                                    bool aDoDeleteSelection,
                                     bool aTrustedInput,
                                     bool aClearStyle)
 {
@@ -232,17 +242,6 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
     return rv;
   }
 
-  EditorDOMPoint targetPoint(aPointToInsert);
-  if (!targetPoint.IsSet()) {
-    
-    
-    targetPoint = EditorBase::GetStartPoint(*SelectionRefPtr());
-    if (NS_WARN_IF(!targetPoint.IsSet()) ||
-        !IsEditable(targetPoint.GetContainer())) {
-      return NS_ERROR_FAILURE;
-    }
-  }
-
   
   
   
@@ -250,20 +249,9 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
   
   
   if (aPointToInsert.IsSet()) {
-    if (aDeleteSelection) {
-      
-      
-      AutoTrackDOMPoint tracker(mRangeUpdater, &targetPoint);
-      rv = DeleteSelectionAsSubAction(eNone, eStrip);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
-    }
-
-    ErrorResult error;
-    SelectionRefPtr()->Collapse(targetPoint, error);
-    if (NS_WARN_IF(error.Failed())) {
-      return error.StealNSResult();
+    rv = PrepareToInsertContent(aPointToInsert, aDoDeleteSelection);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
     }
   }
 
@@ -284,7 +272,7 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
     
     
     
-    if (aDeleteSelection) {
+    if (aDoDeleteSelection) {
       nsresult rv = DeleteSelectionAsSubAction(eNone, eStrip);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
@@ -1051,7 +1039,14 @@ HTMLEditor::BlobReader::OnResult(const nsACString& aResult)
                                             mSourceDoc, mPointToInsert,
                                             mDoDeleteSelection,
                                             mIsSafe, false);
-  return rv;
+  if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
+    
+    return NS_OK;
+  }
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  return NS_OK;
 }
 
 nsresult
@@ -1514,7 +1509,11 @@ HTMLEditor::InsertFromDataTransfer(DataTransfer* aDataTransfer,
         type.EqualsLiteral(kMozTextInternal)) {
       nsAutoString text;
       GetStringFromDataTransfer(aDataTransfer, type, aIndex, text);
-      return InsertTextAt(text, aDroppedAt, aDoDeleteSelection);
+      nsresult rv = InsertTextAt(text, aDroppedAt, aDoDeleteSelection);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+      return NS_OK;
     }
   }
 
@@ -1656,8 +1655,13 @@ HTMLEditor::PasteTransferable(nsITransferable* aTransferable)
   }
 
   nsAutoString contextStr, infoStr;
-  return InsertFromTransferable(aTransferable, nullptr, contextStr, infoStr,
-                                false, true);
+  nsresult rv =
+    InsertFromTransferable(aTransferable, nullptr, contextStr, infoStr,
+                           false, true);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  return NS_OK;
 }
 
 
@@ -1686,16 +1690,34 @@ HTMLEditor::PasteNoFormatting(int32_t aSelectionType)
   
   nsCOMPtr<nsITransferable> trans;
   rv = TextEditor::PrepareTransferable(getter_AddRefs(trans));
-  if (NS_SUCCEEDED(rv) && trans) {
-    
-    if (NS_SUCCEEDED(clipboard->GetData(trans, aSelectionType)) &&
-        IsModifiable()) {
-      const nsString& empty = EmptyString();
-      rv = InsertFromTransferable(trans, nullptr, empty, empty, false, true);
-    }
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  if (!trans) {
+    return NS_OK;
   }
 
-  return rv;
+  if (!IsModifiable()) {
+    return NS_OK;
+  }
+
+  
+  rv = clipboard->GetData(trans, aSelectionType);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  const nsString& empty = EmptyString();
+  rv = InsertFromTransferable(trans, nullptr, empty, empty, false, true);
+  if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
+    
+    
+    return NS_OK;
+  }
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  return NS_OK;
 }
 
 
