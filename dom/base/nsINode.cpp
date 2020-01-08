@@ -2806,26 +2806,19 @@ nsINode::ParseSelectorList(const nsAString& aSelectorString,
   return ret;
 }
 
-namespace {
-struct SelectorMatchInfo {
-};
-} 
-
 
 
 inline static Element*
-FindMatchingElementWithId(const nsAString& aId, nsINode* aRoot)
+FindMatchingElementWithId(const nsAString& aId,
+                          const Element& aRoot,
+                          const DocumentOrShadowRoot& aContainingDocOrShadowRoot)
 {
-  MOZ_ASSERT(aRoot->IsInUncomposedDoc(),
-             "Don't call me if the root is not in the document");
-  
-  MOZ_ASSERT(aRoot->IsElement() || aRoot->IsDocument(),
-             "The optimization below to check ContentIsDescendantOf only for "
-             "elements depends on aRoot being either an element or a "
-             "document if it's in the document.  Note that document fragments "
-             "can't be IsInUncomposedDoc(), so should never show up here.");
+  MOZ_ASSERT(aRoot.SubtreeRoot() == &aContainingDocOrShadowRoot.AsNode());
+  MOZ_ASSERT(aRoot.IsInUncomposedDoc() || aRoot.IsInShadowTree(),
+             "Don't call me if the root is not in the document or in a shadow tree");
 
-  const nsTArray<Element*>* elements = aRoot->OwnerDoc()->GetAllElementsForId(aId);
+  const nsTArray<Element*>* elements =
+    aContainingDocOrShadowRoot.GetAllElementsForId(aId);
   if (!elements) {
     
     return nullptr;
@@ -2833,16 +2826,20 @@ FindMatchingElementWithId(const nsAString& aId, nsINode* aRoot)
 
   
   
-  for (size_t i = 0; i < elements->Length(); ++i) {
-    Element* element = (*elements)[i];
-    if (!aRoot->IsElement() ||
-        (element != aRoot &&
-           nsContentUtils::ContentIsDescendantOf(element, aRoot))) {
-      
-      
-      return element;
+  for (Element* element : *elements) {
+    if (MOZ_UNLIKELY(element == &aRoot)) {
+      continue;
     }
+
+    if (!nsContentUtils::ContentIsDescendantOf(element, &aRoot)) {
+      continue;
+    }
+
+    
+    
+    return element;
   }
+
   return nullptr;
 }
 
@@ -2881,10 +2878,17 @@ nsINode::QuerySelectorAll(const nsAString& aSelector, ErrorResult& aResult)
 Element*
 nsINode::GetElementById(const nsAString& aId)
 {
+  MOZ_ASSERT(!IsShadowRoot(), "Should use the faster version");
   MOZ_ASSERT(IsElement() || IsDocumentFragment(),
              "Bogus this object for GetElementById call");
   if (IsInUncomposedDoc()) {
-    return FindMatchingElementWithId(aId, this);
+    MOZ_ASSERT(IsElement(), "Huh? A fragment in a document?");
+    return FindMatchingElementWithId(aId, *AsElement(), *OwnerDoc());
+  }
+
+  if (ShadowRoot* containingShadow = AsContent()->GetContainingShadow()) {
+    MOZ_ASSERT(IsElement(), "Huh? A fragment in a ShadowRoot?");
+    return FindMatchingElementWithId(aId, *AsElement(), *containingShadow);
   }
 
   for (nsIContent* kid = GetFirstChild(); kid; kid = kid->GetNextNode(this)) {
