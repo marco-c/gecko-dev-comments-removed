@@ -1695,6 +1695,8 @@ nsGlobalWindowOuter::SetNewDocument(nsIDocument* aDocument,
   bool reUseInnerWindow = (aForceReuseInnerWindow || wouldReuseInnerWindow) &&
                           GetCurrentInnerWindowInternal();
 
+  nsresult rv = NS_OK;
+
   
   
   
@@ -1792,11 +1794,11 @@ nsGlobalWindowOuter::SetNewDocument(nsIDocument* aDocument,
       mCreatingInnerWindow = true;
       
       
-      nsresult rv = CreateNativeGlobalForInner(cx, newInnerWindow,
-                                               aDocument->GetDocumentURI(),
-                                               aDocument->NodePrincipal(),
-                                               &newInnerGlobal,
-                                               ComputeIsSecureContext(aDocument));
+      rv = CreateNativeGlobalForInner(cx, newInnerWindow,
+                                      aDocument->GetDocumentURI(),
+                                      aDocument->NodePrincipal(),
+                                      &newInnerGlobal,
+                                      ComputeIsSecureContext(aDocument));
       NS_ASSERTION(NS_SUCCEEDED(rv) && newInnerGlobal &&
                    newInnerWindow->GetWrapperPreserveColor() == newInnerGlobal,
                    "Failed to get script global");
