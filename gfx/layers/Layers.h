@@ -125,6 +125,54 @@ class DidCompositeObserver {
     virtual void DidComposite() = 0;
 };
 
+class FrameRecorder {
+public:
+  
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+  virtual uint32_t StartFrameTimeRecording(int32_t aBufferSize);
+
+  
+
+
+
+
+  virtual void StopFrameTimeRecording(uint32_t         aStartIndex,
+                                      nsTArray<float>& aFrameIntervals);
+
+  void RecordFrame();
+private:
+  struct FramesTimingRecording
+  {
+    
+    
+    FramesTimingRecording()
+      : mNextIndex(0)
+      , mLatestStartIndex(0)
+      , mCurrentRunStartIndex(0)
+      , mIsPaused(true)
+    {}
+    nsTArray<float> mIntervals;
+    TimeStamp mLastFrameTime;
+    uint32_t mNextIndex;
+    uint32_t mLatestStartIndex;
+    uint32_t mCurrentRunStartIndex;
+    bool mIsPaused;
+  };
+  FramesTimingRecording mRecording;
+};
 
 
 
@@ -173,7 +221,8 @@ class DidCompositeObserver {
 
 
 
-class LayerManager {
+
+class LayerManager : public FrameRecorder {
   NS_INLINE_DECL_REFCOUNTING(LayerManager)
 
 protected:
@@ -617,33 +666,6 @@ public:
 
   void LogSelf(const char* aPrefix="");
 
-  
-
-
-
-
-
-
-
-
-
-
-
-  
-
-
-  virtual uint32_t StartFrameTimeRecording(int32_t aBufferSize);
-
-  
-
-
-
-
-  virtual void StopFrameTimeRecording(uint32_t         aStartIndex,
-                                      nsTArray<float>& aFrameIntervals);
-
-  void RecordFrame();
-
   static bool IsLogEnabled();
   static mozilla::LogModule* GetLog();
 
@@ -734,25 +756,6 @@ protected:
   TimeStamp mAnimationReadyTime;
   
   uint32_t mPaintedPixelCount;
-private:
-  struct FramesTimingRecording
-  {
-    
-    
-    FramesTimingRecording()
-      : mNextIndex(0)
-      , mLatestStartIndex(0)
-      , mCurrentRunStartIndex(0)
-      , mIsPaused(true)
-    {}
-    nsTArray<float> mIntervals;
-    TimeStamp mLastFrameTime;
-    uint32_t mNextIndex;
-    uint32_t mLatestStartIndex;
-    uint32_t mCurrentRunStartIndex;
-    bool mIsPaused;
-  };
-  FramesTimingRecording mRecording;
 
 public:
   
