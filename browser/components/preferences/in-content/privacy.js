@@ -405,10 +405,7 @@ var gPrivacyPane = {
       }
     }
 
-    if (!contentBlockingUiEnabled) {
-      
-      this.initSiteDataControls();
-    }
+    this.initSiteDataControls();
     setEventListener("clearSiteDataButton", "command",
       gPrivacyPane.clearSiteData);
     setEventListener("siteDataSettings", "command",
@@ -535,28 +532,6 @@ var gPrivacyPane = {
     if (contentBlockingRejectTrackersRecommended) {
       document.l10n.setAttributes(blockCookiesFromTrackers, "content-blocking-reject-trackers-block-trackers-option-recommended");
     }
-
-    
-    
-    let trackingGroup = document.getElementById("trackingGroup");
-    let siteDataGroup = document.getElementById("siteDataGroup");
-    let browserPrivacyCategory = document.getElementById("browserPrivacyCategory");
-
-    
-    
-    
-    setTimeout(() => {
-      browserPrivacyCategory.parentNode.insertBefore(siteDataGroup,
-                                                     browserPrivacyCategory.nextSibling);
-      browserPrivacyCategory.parentNode.insertBefore(trackingGroup,
-                                                     browserPrivacyCategory.nextSibling);
-
-      
-      
-      
-      
-      this.initSiteDataControls();
-    }, 0);
   },
 
   
