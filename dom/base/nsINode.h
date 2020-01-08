@@ -646,21 +646,21 @@ public:
 
 
 
-  bool IsInComposedDoc() const
-  {
-    return GetBoolFlag(IsConnected);
-  }
-
-  
-
-
-
 
 
 
   nsIDocument* GetComposedDoc() const
   {
-    return IsInComposedDoc() ? OwnerDoc() : nullptr;
+    return IsInShadowTree() ?
+      GetComposedDocInternal() : GetUncomposedDoc();
+  }
+
+  
+
+
+  bool IsInComposedDoc() const
+  {
+    return IsInUncomposedDoc() || (IsInShadowTree() && GetComposedDocInternal());
   }
 
   
@@ -1418,6 +1418,8 @@ private:
 
   mozilla::dom::SVGUseElement* DoGetContainingSVGUseShadowHost() const;
 
+  nsIDocument* GetComposedDocInternal() const;
+
   nsIContent* GetNextNodeImpl(const nsINode* aRoot,
                               const bool aSkipChildren) const
   {
@@ -1500,9 +1502,6 @@ private:
     
     IsInDocument,
     
-    
-    IsConnected,
-    
     ParentIsContent,
     
     NodeIsElement,
@@ -1556,6 +1555,8 @@ private:
     NodeAncestorHasDirAuto,
     
     NodeHandlingClick,
+    
+    NodeHasRelevantHoverRules,
     
     
     ElementHasWeirdParserInsertionMode,
@@ -1679,6 +1680,8 @@ public:
   
   inline bool NodeOrAncestorHasDirAuto() const;
 
+  bool HasRelevantHoverRules() const { return GetBoolFlag(NodeHasRelevantHoverRules); }
+  void SetHasRelevantHoverRules() { SetBoolFlag(NodeHasRelevantHoverRules); }
   void SetParserHasNotified() { SetBoolFlag(ParserHasNotified); };
   bool HasParserNotified() { return GetBoolFlag(ParserHasNotified); }
 
@@ -1697,9 +1700,8 @@ public:
 protected:
   void SetParentIsContent(bool aValue) { SetBoolFlag(ParentIsContent, aValue); }
   void SetIsInDocument() { SetBoolFlag(IsInDocument); }
-  void ClearInDocument() { ClearBoolFlag(IsInDocument); }
-  void SetIsConnected(bool aConnected) { SetBoolFlag(IsConnected, aConnected); }
   void SetNodeIsContent() { SetBoolFlag(NodeIsContent); }
+  void ClearInDocument() { ClearBoolFlag(IsInDocument); }
   void SetIsElement() { SetBoolFlag(NodeIsElement); }
   void SetHasID() { SetBoolFlag(ElementHasID); }
   void ClearHasID() { ClearBoolFlag(ElementHasID); }
