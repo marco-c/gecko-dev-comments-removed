@@ -270,20 +270,21 @@ KeyframeEffect::GetEffectiveAnimationOfProperty(nsCSSPropertyID aProperty,
     &aEffects ==
       EffectSet::GetEffectSet(mTarget->mElement, mTarget->mPseudoType));
 
-  for (size_t propIdx = 0, propEnd = mProperties.Length();
-       propIdx != propEnd; ++propIdx) {
-    if (aProperty == mProperties[propIdx].mProperty) {
-      const AnimationProperty* result = &mProperties[propIdx];
-      
-      
-      if (aEffects.PropertiesWithImportantRules()
-            .HasProperty(result->mProperty) &&
-          aEffects.PropertiesForAnimationsLevel()
-            .HasProperty(result->mProperty)) {
-        result = nullptr;
-      }
-      return result;
+  for (const AnimationProperty& property : mProperties) {
+    if (aProperty != property.mProperty) {
+      continue;
     }
+
+    const AnimationProperty* result = nullptr;
+    
+    
+    if (!aEffects.PropertiesWithImportantRules()
+           .HasProperty(property.mProperty) ||
+        !aEffects.PropertiesForAnimationsLevel()
+           .HasProperty(property.mProperty)) {
+      result = &property;
+    }
+    return result;
   }
   return nullptr;
 }
