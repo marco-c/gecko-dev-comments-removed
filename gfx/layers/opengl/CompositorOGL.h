@@ -7,6 +7,8 @@
 #ifndef MOZILLA_GFX_COMPOSITOROGL_H
 #define MOZILLA_GFX_COMPOSITOROGL_H
 
+#include <unordered_set>
+
 #include "gfx2DGlue.h"
 #include "GLContextTypes.h"             
 #include "GLDefs.h"                     
@@ -262,6 +264,11 @@ class CompositorOGL final : public Compositor {
     mSurfaceOrigin = aOrigin;
   }
 
+  
+  
+  void RegisterTextureSource(TextureSource* aTextureSource);
+  void UnregisterTextureSource(TextureSource* aTextureSource);
+
  private:
   template <typename Geometry>
   void DrawGeometry(const Geometry& aGeometry, const gfx::Rect& aRect,
@@ -442,6 +449,12 @@ class CompositorOGL final : public Compositor {
   GLint FlipY(GLint y) const { return mViewportSize.height - y; }
 
   RefPtr<CompositorTexturePoolOGL> mTexturePool;
+
+#ifdef MOZ_WIDGET_GTK
+  
+  
+  std::unordered_set<TextureSource*> mRegisteredTextureSources;
+#endif
 
   bool mDestroyed;
 
