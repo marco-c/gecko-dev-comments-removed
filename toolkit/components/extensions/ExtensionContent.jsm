@@ -689,6 +689,12 @@ class ContentScriptContextChild extends BaseContext {
       
       
       
+      this.cloneScopePromise = this.sandbox.Promise;
+      this.cloneScopeError = this.sandbox.Error;
+
+      
+      
+      
       
       Cu.evalInSandbox(`
         this.content = {
