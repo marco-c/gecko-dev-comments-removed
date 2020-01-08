@@ -21,7 +21,6 @@
 
 #include "InfallibleVector.h"
 #include "MemorySnapshot.h"
-#include "Monitor.h"
 #include "ParentInternal.h"
 #include "ProcessRecordReplay.h"
 #include "ProcessRedirect.h"
@@ -42,7 +41,7 @@ namespace child {
 
 
 
-static Monitor* gMonitor;
+Monitor* gMonitor;
 
 
 Channel* gChannel;
