@@ -150,9 +150,11 @@ public:
     
 
 
-
-    void Rectangle(const gfxRect& rect, bool snapToPixels = false);
+    void Rectangle(const gfxRect& rect) { return Rectangle(rect, false); }
     void SnappedRectangle(const gfxRect& rect) { return Rectangle(rect, true); }
+private:
+    void Rectangle(const gfxRect& rect, bool snapToPixels);
+public:
 
     
 
