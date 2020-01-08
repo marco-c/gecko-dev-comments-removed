@@ -1123,11 +1123,6 @@ protected:
   
 
 
-  void DoRemoveSelfReference();
-
-  
-
-
   void NotifyShutdownEvent();
 
   
