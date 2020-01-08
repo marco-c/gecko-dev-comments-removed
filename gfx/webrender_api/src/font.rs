@@ -81,6 +81,12 @@ impl FontKey {
 }
 
 
+
+
+
+
+
+
 #[derive(Clone)]
 pub enum FontTemplate {
     Raw(Arc<Vec<u8>>, u32),
@@ -347,6 +353,10 @@ impl FontInstanceKey {
         FontInstanceKey(namespace, key)
     }
 }
+
+
+
+
 
 #[derive(Clone)]
 pub struct FontInstanceData {

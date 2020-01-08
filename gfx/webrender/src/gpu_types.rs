@@ -2,8 +2,11 @@
 
 
 
-use api::{DevicePoint, DeviceSize, DeviceRect, LayoutRect, LayoutToWorldTransform, LayoutTransform};
-use api::{PremultipliedColorF, LayoutToPictureTransform, PictureToLayoutTransform, PicturePixel, WorldPixel};
+use api::{
+    DevicePoint, DeviceSize, DeviceRect, LayoutRect, LayoutToWorldTransform, LayoutTransform,
+    PremultipliedColorF, LayoutToPictureTransform, PictureToLayoutTransform, PicturePixel,
+    WorldPixel, WorldToLayoutTransform,
+};
 use clip_scroll_tree::{ClipScrollTree, ROOT_SPATIAL_NODE_INDEX, SpatialNodeIndex};
 use gpu_cache::{GpuCacheAddress, GpuDataRequest};
 use internal_types::FastHashMap;
@@ -485,6 +488,15 @@ impl TransformPalette {
         self.transforms[index.0]
             .transform
             .with_destination::<WorldPixel>()
+    }
+
+    pub fn get_world_inv_transform(
+        &self,
+        index: SpatialNodeIndex,
+    ) -> WorldToLayoutTransform {
+        self.transforms[index.0]
+            .inv_transform
+            .with_source::<WorldPixel>()
     }
 
     
