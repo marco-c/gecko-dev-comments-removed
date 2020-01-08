@@ -709,6 +709,9 @@ pref("layers.enable-tiles", true);
 pref("browser.chrome.dynamictoolbar", true);
 
 
+pref("browser.urlbar.autocomplete.enabled", true);
+
+
 pref("browser.urlbar.trimURLs", true);
 
 
