@@ -340,8 +340,7 @@ const LayoutActor = ActorClassWithSpec(layoutSpec, {
 
 
 
-
-  getCurrentDisplay(node, type, onlyLookAtCurrentNode) {
+  getCurrentDisplay(node, type, container) {
     if (isNodeDead(node)) {
       return null;
     }
@@ -362,10 +361,18 @@ const LayoutActor = ActorClassWithSpec(layoutSpec, {
       }
 
       if (type == "flex") {
-        if (displayType == "inline-flex" || displayType == "flex") {
+        
+        
+        if ((displayType == "inline-flex" || displayType == "flex") &&
+              !container) {
           return new FlexboxActor(this, currentNode);
-        } else if (onlyLookAtCurrentNode) {
-          return null;
+
+        
+        
+        } else if (container) {
+          if (this.isNodeFlexItemInContainer(currentNode, container)) {
+            return new FlexboxActor(this, container);
+          }
         }
       } else if (type == "grid" &&
                  (displayType == "inline-grid" || displayType == "grid")) {
@@ -387,7 +394,9 @@ const LayoutActor = ActorClassWithSpec(layoutSpec, {
 
       if (type == "flex" &&
           (displayType == "inline-flex" || displayType == "flex")) {
-        return new FlexboxActor(this, currentNode);
+        if (this.isNodeFlexItemInContainer(node, currentNode)) {
+          return new FlexboxActor(this, currentNode);
+        }
       } else if (type == "grid" &&
                  (displayType == "inline-grid" || displayType == "grid")) {
         return new GridActor(this, currentNode);
@@ -431,11 +440,13 @@ const LayoutActor = ActorClassWithSpec(layoutSpec, {
 
 
   getCurrentFlexbox(node, onlyLookAtParents) {
+    let container = null;
+
     if (onlyLookAtParents) {
-      node = node.rawNode.parentNode;
+      container = node.rawNode.parentNode;
     }
 
-    return this.getCurrentDisplay(node, "flex", onlyLookAtParents);
+    return this.getCurrentDisplay(node, "flex", container);
   },
 
   
@@ -470,6 +481,35 @@ const LayoutActor = ActorClassWithSpec(layoutSpec, {
     }
 
     return gridActors;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  isNodeFlexItemInContainer(supposedItem, container) {
+    const containerDisplayType = this.walker.getNode(container).displayType;
+
+    if (containerDisplayType == "inline-flex" || containerDisplayType == "flex") {
+      const containerFlex = container.getAsFlexContainer();
+
+      for (const line of containerFlex.getLines()) {
+        for (const item of line.getItems()) {
+          if (item.node === supposedItem) {
+            return true;
+          }
+        }
+      }
+    }
+
+    return false;
   },
 });
 
