@@ -1415,7 +1415,7 @@ pref("identity.fxaccounts.migrateToDevEdition", false);
 #endif
 
 
-pref("identity.fxaccounts.commands.enabled", false);
+pref("identity.fxaccounts.commands.enabled", true);
 
 
 #ifdef MOZ_WIDGET_GTK
