@@ -18,13 +18,6 @@ var declareSamples = `
         { value: {}, expected: false },
         { value: { length: 1 }, expected: false }
     ];
-
-    var allNonObjectSamples = [
-        { value: "a", expected: false },
-        { value: 1.2, expected: false },
-        { value: true, expected: false },
-        { value: Symbol("a"), expected: false }
-    ];
 `;
 
 
@@ -62,14 +55,12 @@ function checkSamples(samples) {
 }
 
 
-function test(a, b, c, d, e, f) {
+function test(a, b, c, d) {
     var samples = [
         a == -1 ? null : allTypedArraySamples[a],
         b == -1 ? null : allObjectSamples[b],
-        c == -1 ? null : allNonObjectSamples[c],
-        d == -1 ? null : g.allTypedArraySamples[d],
-        e == -1 ? null : g.allObjectSamples[e],
-        f == -1 ? null : g.allNonObjectSamples[f]
+        c == -1 ? null : g.allTypedArraySamples[c],
+        d == -1 ? null : g.allObjectSamples[d],
     ];
 
     checkSamples(samples);
@@ -78,74 +69,23 @@ function test(a, b, c, d, e, f) {
 
 checkSamples(allTypedArraySamples);
 checkSamples(allObjectSamples);
-checkSamples(allNonObjectSamples);
 checkSamples(g.allTypedArraySamples);
 checkSamples(g.allObjectSamples);
-checkSamples(g.allNonObjectSamples);
 
 
-test(-1, -1, -1, -1,  0,  0);
-test(-1, -1, -1,  0, -1,  0);
-test(-1, -1, -1,  0,  0, -1);
-test(-1, -1,  0, -1, -1,  0);
-test(-1, -1,  0, -1,  0, -1);
-test(-1, -1,  0,  0, -1, -1);
-test(-1,  0, -1, -1, -1,  0);
-test(-1,  0, -1, -1,  0, -1);
-test(-1,  0, -1,  0, -1, -1);
-test(-1,  0,  0, -1, -1, -1);
-test( 0, -1, -1, -1, -1,  0);
-test( 0, -1, -1, -1,  0, -1);
-test( 0, -1, -1,  0, -1, -1);
-test( 0, -1,  0, -1, -1, -1);
-test( 0,  0, -1, -1, -1, -1);
+test(-1, -1,  0,  0);
+test(-1,  0, -1,  0);
+test(-1,  0,  0, -1);
+test( 0, -1, -1,  0);
+test( 0, -1,  0, -1);
+test( 0,  0, -1, -1);
+test( 0,  0, -1,  0);
 
 
-test(-1, -1, -1,  0,  0,  0);
-test(-1, -1,  0, -1,  0,  0);
-test(-1, -1,  0,  0, -1,  0);
-test(-1, -1,  0,  0,  0, -1);
-test(-1,  0, -1, -1,  0,  0);
-test(-1,  0, -1,  0, -1,  0);
-test(-1,  0, -1,  0,  0, -1);
-test(-1,  0,  0, -1, -1,  0);
-test(-1,  0,  0, -1,  0, -1);
-test(-1,  0,  0,  0, -1, -1);
-test( 0, -1, -1, -1,  0,  0);
-test( 0, -1, -1,  0, -1,  0);
-test( 0, -1, -1,  0,  0, -1);
-test( 0, -1,  0, -1, -1,  0);
-test( 0, -1,  0, -1,  0, -1);
-test( 0, -1,  0,  0, -1, -1);
-test( 0,  0, -1, -1, -1,  0);
-test( 0,  0, -1, -1,  0, -1);
-test( 0,  0, -1,  0, -1, -1);
-test( 0,  0,  0, -1, -1, -1);
+test(-1,  0,  0,  0);
+test( 0, -1,  0,  0);
+test( 0,  0, -1,  0);
+test( 0,  0,  0, -1);
 
 
-test(-1, -1,  0,  0,  0,  0);
-test(-1,  0, -1,  0,  0,  0);
-test(-1,  0,  0, -1,  0,  0);
-test(-1,  0,  0,  0, -1,  0);
-test(-1,  0,  0,  0,  0, -1);
-test( 0, -1, -1,  0,  0,  0);
-test( 0, -1,  0, -1,  0,  0);
-test( 0, -1,  0,  0, -1,  0);
-test( 0, -1,  0,  0,  0, -1);
-test( 0,  0, -1, -1,  0,  0);
-test( 0,  0, -1,  0, -1,  0);
-test( 0,  0, -1,  0,  0, -1);
-test( 0,  0,  0, -1, -1,  0);
-test( 0,  0,  0, -1,  0, -1);
-test( 0,  0,  0,  0, -1, -1);
-
-
-test(-1,  0,  0,  0,  0,  0);
-test( 0, -1,  0,  0,  0,  0);
-test( 0,  0, -1,  0,  0,  0);
-test( 0,  0,  0, -1,  0,  0);
-test( 0,  0,  0,  0, -1,  0);
-test( 0,  0,  0,  0,  0, -1);
-
-
-test( 0,  0,  0,  0,  0,  0);
+test( 0,  0,  0,  0);
