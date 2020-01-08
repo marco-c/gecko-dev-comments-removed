@@ -4142,7 +4142,7 @@ HttpBaseChannel::TimingAllowCheck(nsIPrincipal *aOrigin, bool *_retval)
     if (t.Type() == Tokenizer::TOKEN_EOF ||
         t.Equals(Tokenizer::Token::Char(','))) {
       p.Claim(headerItem);
-      headerItem.StripWhitespace();
+      nsHttp::TrimHTTPWhitespace(headerItem, headerItem);
       
       
       if (headerItem == origin || headerItem == "*") {
