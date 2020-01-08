@@ -5,9 +5,9 @@
 
 package org.mozilla.gecko;
 
-import android.app.Activity;
 import android.content.Context;
-import android.content.SharedPreferences;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.annotation.WorkerThread;
 import android.text.TextUtils;
 import android.util.Log;
@@ -22,7 +22,6 @@ import org.mozilla.gecko.util.FileUtils;
 import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.util.INIParser;
 import org.mozilla.gecko.util.INISection;
-import org.mozilla.gecko.util.IntentUtils;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -46,6 +45,9 @@ public final class GeckoProfile {
     private static final String CLIENT_ID_FILE_PATH = "datareporting/state.json";
     
     private static final String CLIENT_ID_JSON_ATTR = "clientID";
+    private static final String HAD_CANARY_CLIENT_ID_JSON_ATTR = "wasCanary";
+    
+    private static final String CANARY_CLIENT_ID = "c0ffeec0-ffee-c0ff-eec0-ffeec0ffeec0";
 
     private static final String TIMES_PATH = "times.json";
     private static final String PROFILE_CREATION_DATE_JSON_ATTR = "created";
@@ -449,26 +451,37 @@ public final class GeckoProfile {
     
     @WorkerThread
     public String getClientId() throws IOException {
+        String clientId = "";
         try {
-            return getValidClientIdFromDisk(CLIENT_ID_FILE_PATH);
+            clientId = getClientIdFromDisk(CLIENT_ID_FILE_PATH);
         } catch (final IOException e) {
             
             Log.d(LOGTAG, "Could not get client ID - creating a new one: " + e.getLocalizedMessage());
         }
 
-        String clientIdToWrite = generateNewClientId();
+        if (isClientIdValid(clientId)) {
+            return clientId;
+        } else {
+            String newClientId = generateNewClientId();
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            persistNewClientId(clientId, newClientId);
+        }
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        persistClientId(clientIdToWrite);
-        return getValidClientIdFromDisk(CLIENT_ID_FILE_PATH);
+        return getClientIdFromDisk(CLIENT_ID_FILE_PATH);
+    }
+
+    @WorkerThread
+    public boolean getIfHadCanaryClientId() throws IOException {
+        final JSONObject obj = readJSONObjectFromFile(CLIENT_ID_FILE_PATH);
+        return obj.optBoolean(HAD_CANARY_CLIENT_ID_JSON_ATTR);
     }
 
     protected static String generateNewClientId() {
@@ -480,43 +493,50 @@ public final class GeckoProfile {
 
 
     @WorkerThread
-    private String getValidClientIdFromDisk(final String filePath) throws IOException {
+    private String getClientIdFromDisk(final String filePath) throws IOException {
         final JSONObject obj = readJSONObjectFromFile(filePath);
-        final String clientId = obj.optString(CLIENT_ID_JSON_ATTR);
-        if (isClientIdValid(clientId)) {
-            return clientId;
-        }
-        throw new IOException("Received client ID is invalid: " + clientId);
+        return obj.optString(CLIENT_ID_JSON_ATTR);
     }
 
     
 
 
     @WorkerThread
-    private void persistClientId(final String clientId) throws IOException {
+    private void persistNewClientId(@Nullable final String oldClientId,
+                                    @NonNull final String newClientId) throws IOException {
         if (!ensureParentDirs(CLIENT_ID_FILE_PATH)) {
             throw new IOException("Could not create client ID parent directories");
         }
 
         final JSONObject obj = new JSONObject();
         try {
-            obj.put(CLIENT_ID_JSON_ATTR, clientId);
+            obj.put(CLIENT_ID_JSON_ATTR, newClientId);
+            obj.put(HAD_CANARY_CLIENT_ID_JSON_ATTR, isCanaryClientId(oldClientId));
         } catch (final JSONException e) {
             throw new IOException("Could not create client ID JSON object", e);
         }
 
         
-        Log.d(LOGTAG, "Attempting to write new client ID");
+        Log.d(LOGTAG, "Attempting to write new client ID properties");
         writeFile(CLIENT_ID_FILE_PATH, obj.toString()); 
     }
 
     
-    public static boolean isClientIdValid(final String clientId) {
+    public static boolean isClientIdValid(@Nullable final String clientId) {
         
         if (TextUtils.isEmpty(clientId)) {
             return false;
         }
+
+        if (CANARY_CLIENT_ID.equals(clientId)) {
+            return false;
+        }
+
         return clientId.matches("(?i:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})");
+    }
+
+    private static boolean isCanaryClientId(@Nullable final String clientId) {
+        return CANARY_CLIENT_ID.equals(clientId);
     }
 
     
@@ -958,7 +978,7 @@ public final class GeckoProfile {
         
         
         
-        persistClientId(generateNewClientId());
+        persistNewClientId(null, generateNewClientId());
 
         return profileDir;
     }
