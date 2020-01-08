@@ -163,7 +163,6 @@ ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", this);
 ChromeUtils.import("resource://gre/modules/osfile.jsm", this);
 
 XPCOMUtils.defineLazyServiceGetters(this, {
-  gSessionStartup: ["@mozilla.org/browser/sessionstartup;1", "nsISessionStartup"],
   gScreenManager: ["@mozilla.org/gfx/screenmanager;1", "nsIScreenManager"],
   Telemetry: ["@mozilla.org/base/telemetry;1", "nsITelemetry"],
 });
@@ -181,6 +180,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   SessionCookies: "resource:///modules/sessionstore/SessionCookies.jsm",
   SessionFile: "resource:///modules/sessionstore/SessionFile.jsm",
   SessionSaver: "resource:///modules/sessionstore/SessionSaver.jsm",
+  SessionStartup: "resource:///modules/sessionstore/SessionStartup.jsm",
   TabAttributes: "resource:///modules/sessionstore/TabAttributes.jsm",
   TabCrashHandler: "resource:///modules/ContentCrashHandlers.jsm",
   TabState: "resource:///modules/sessionstore/TabState.jsm",
@@ -639,10 +639,10 @@ var SessionStoreInternal = {
   initSession() {
     TelemetryStopwatch.start("FX_SESSION_RESTORE_STARTUP_INIT_SESSION_MS");
     let state;
-    let ss = gSessionStartup;
+    let ss = SessionStartup;
 
     if (ss.doRestore() ||
-        ss.sessionType == Ci.nsISessionStartup.DEFER_SESSION) {
+        ss.sessionType == ss.DEFER_SESSION) {
       state = ss.state;
     }
 
@@ -650,7 +650,7 @@ var SessionStoreInternal = {
       try {
         
         
-        if (ss.sessionType == Ci.nsISessionStartup.DEFER_SESSION) {
+        if (ss.sessionType == ss.DEFER_SESSION) {
           let [iniState, remainingState] = this._prepDataForDeferredRestore(state);
           
           
@@ -1159,7 +1159,7 @@ var SessionStoreInternal = {
           
           
           
-          this._deferredInitialState = gSessionStartup.state;
+          this._deferredInitialState = SessionStartup.state;
 
           
           Services.obs.notifyObservers(null, NOTIFY_WINDOWS_RESTORED);
@@ -1310,7 +1310,7 @@ var SessionStoreInternal = {
       
       
       this._promiseReadyForInitialization =
-        Promise.all([promise, gSessionStartup.onceInitialized]);
+        Promise.all([promise, SessionStartup.onceInitialized]);
     }
 
     

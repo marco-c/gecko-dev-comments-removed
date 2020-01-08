@@ -8,15 +8,13 @@
 
 
 function run_test() {
-  do_get_profile();
   
+  do_get_profile();
 
   do_test_pending();
-  let startup = Cc["@mozilla.org/browser/sessionstartup;1"].
-    getService(Ci.nsISessionStartup);
 
   afterSessionStartupInitialization(function cb() {
-    Assert.equal(startup.sessionType, Ci.nsISessionStartup.NO_SESSION);
+    Assert.equal(SessionStartup.sessionType, SessionStartup.NO_SESSION);
     do_test_finished();
   });
 }

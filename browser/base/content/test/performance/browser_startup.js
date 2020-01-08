@@ -31,7 +31,6 @@ const startupPhases = {
       "MainProcessSingleton.js",
 
       
-      "nsSessionStartup.js", 
       "PushComponents.js", 
     ]),
     modules: new Set([
