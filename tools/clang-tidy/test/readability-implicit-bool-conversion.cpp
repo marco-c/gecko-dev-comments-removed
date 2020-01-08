@@ -48,4 +48,8 @@ void f() {
 
   if (b == exp) {}
   if (exp == b) {}
+
+  char* ptr;
+  
+  if (ptr) {}
 }
