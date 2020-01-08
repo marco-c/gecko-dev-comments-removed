@@ -763,10 +763,12 @@ FragmentOrElement::nsExtendedDOMSlots::UnlinkExtendedSlots()
 
   
   
+  
+  
+  
   mSMILOverrideStyle = nullptr;
   mControllers = nullptr;
   mLabelsList = nullptr;
-  mShadowRoot = nullptr;
   if (mCustomElementData) {
     mCustomElementData->Unlink();
     mCustomElementData = nullptr;
@@ -1499,6 +1501,17 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(FragmentOrElement)
   
   
   tmp->UnsetFlags(NODE_IS_IN_SHADOW_TREE);
+
+  if (ShadowRoot* shadowRoot = tmp->GetShadowRoot()) {
+    for (nsIContent* child = shadowRoot->GetFirstChild();
+         child;
+         child = child->GetNextSibling()) {
+      child->UnbindFromTree(true, false);
+    }
+
+    shadowRoot->SetIsComposedDocParticipant(false);
+    tmp->ExtendedDOMSlots()->mShadowRoot = nullptr;
+  }
 
   nsIDocument* doc = tmp->OwnerDoc();
   doc->BindingManager()->RemovedFromDocument(tmp, doc,
