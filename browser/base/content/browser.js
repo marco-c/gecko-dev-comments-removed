@@ -474,15 +474,6 @@ const gClickAndHoldListenersOnElement = {
     aButton.removeEventListener("mouseup", this);
   },
 
-  _keypressHandler(aEvent) {
-    if (aEvent.key == " " || aEvent.key == "Enter") {
-      
-      
-      
-      aEvent.target.click();
-    }
-  },
-
   handleEvent(e) {
     switch (e.type) {
       case "mouseout":
@@ -497,16 +488,12 @@ const gClickAndHoldListenersOnElement = {
       case "mouseup":
         this._mouseupHandler(e);
         break;
-      case "keypress":
-        this._keypressHandler(e);
-        break;
     }
   },
 
   remove(aButton) {
     aButton.removeEventListener("mousedown", this, true);
     aButton.removeEventListener("click", this, true);
-    aButton.removeEventListener("keypress", this, true);
   },
 
   add(aElm) {
@@ -514,7 +501,6 @@ const gClickAndHoldListenersOnElement = {
 
     aElm.addEventListener("mousedown", this, true);
     aElm.addEventListener("click", this, true);
-    aElm.addEventListener("keypress", this, true);
   },
 };
 
@@ -814,38 +800,7 @@ var gPopupBlockerObserver = {
   },
 
   editPopupSettings() {
-    let prefillValue = "";
-    try {
-      
-      
-      
-      let principalURI = gBrowser.contentPrincipal.URI || gBrowser.currentURI;
-      if (principalURI) {
-        
-        if (principalURI.asciiHost) {
-          prefillValue = principalURI.prePath;
-        } else {
-          
-          
-          prefillValue = principalURI.spec;
-        }
-      }
-    } catch (e) { }
-
-    var params = { blockVisible: false,
-                   sessionVisible: false,
-                   allowVisible: true,
-                   prefilledHost: prefillValue,
-                   permissionType: "popup",
-    };
-
-    var existingWindow = Services.wm.getMostRecentWindow("Browser:Permissions");
-    if (existingWindow) {
-      existingWindow.initWithParams(params);
-      existingWindow.focus();
-    } else
-      window.openDialog("chrome://browser/content/preferences/permissions.xul",
-                        "_blank", "resizable,dialog=no,centerscreen", params);
+    openPreferences("privacy-permissions-block-popups");
   },
 
   dontShowMessage() {
@@ -4001,9 +3956,8 @@ const BrowserSearch = {
 
 
   webSearch: function BrowserSearch_webSearch() {
-    if (window.location.href != AppConstants.BROWSER_CHROME_URL ||
-        gURLBar.readOnly) {
-      let win = getTopWin(true);
+    if (window.location.href != AppConstants.BROWSER_CHROME_URL) {
+      var win = getTopWin();
       if (win) {
         
         win.focus();
