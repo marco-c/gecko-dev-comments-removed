@@ -39,6 +39,13 @@ SECStatus PRG_get_int(PRG prg, mp_int* out, const mp_int* max);
 
 
 
+SECStatus PRG_get_int_range(PRG prg, mp_int* out, const mp_int* lower,
+                            const mp_int* max);
+
+
+
+
+
 
 SECStatus PRG_share_int(PRG prg, mp_int* shareA, const mp_int* src,
                         const_PrioConfig cfg);

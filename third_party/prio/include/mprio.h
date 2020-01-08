@@ -87,18 +87,26 @@ void Prio_clear();
 
 
 
-PrioConfig PrioConfig_new(int n_fields, PublicKey server_a, PublicKey server_b,
-                          const unsigned char* batch_id,
-                          unsigned int batch_id_len);
+
+
+
+PrioConfig PrioConfig_new(int nFields, PublicKey serverA, PublicKey serverB,
+                          const unsigned char* batchId,
+                          unsigned int batchIdLen);
 void PrioConfig_clear(PrioConfig cfg);
 int PrioConfig_numDataFields(const_PrioConfig cfg);
 
 
 
 
+int PrioConfig_maxDataFields(void);
 
 
-PrioConfig PrioConfig_newTest(int n_fields);
+
+
+
+
+PrioConfig PrioConfig_newTest(int nFields);
 
 
 
@@ -113,8 +121,15 @@ SECStatus Keypair_new(PrivateKey* pvtkey, PublicKey* pubkey);
 
 
 
+
+
+
 SECStatus PublicKey_import(PublicKey* pk, const unsigned char* data,
                            unsigned int dataLen);
+SECStatus PrivateKey_import(PrivateKey* sk, const unsigned char* privData,
+                            unsigned int privDataLen,
+                            const unsigned char* pubData,
+                            unsigned int pubDataLen);
 
 
 
@@ -122,20 +137,36 @@ SECStatus PublicKey_import(PublicKey* pk, const unsigned char* data,
 
 
 
-SECStatus PublicKey_import_hex(PublicKey* pk, const unsigned char* hex_data,
+
+
+SECStatus PublicKey_import_hex(PublicKey* pk, const unsigned char* hexData,
                                unsigned int dataLen);
+SECStatus PrivateKey_import_hex(PrivateKey* sk,
+                                const unsigned char* privHexData,
+                                unsigned int privDataLen,
+                                const unsigned char* pubHexData,
+                                unsigned int pubDataLen);
 
 
 
 
-SECStatus PublicKey_export(const_PublicKey pk,
-                           unsigned char data[CURVE25519_KEY_LEN]);
+
+
+SECStatus PublicKey_export(const_PublicKey pk, unsigned char* data,
+                           unsigned int dataLen);
+SECStatus PrivateKey_export(PrivateKey sk, unsigned char* data,
+                            unsigned int dataLen);
 
 
 
 
-SECStatus PublicKey_export_hex(const_PublicKey pk,
-                               unsigned char data[CURVE25519_KEY_LEN_HEX + 1]);
+
+
+
+SECStatus PublicKey_export_hex(const_PublicKey pk, unsigned char* data,
+                               unsigned int dataLen);
+SECStatus PrivateKey_export_hex(PrivateKey sk, unsigned char* data,
+                                unsigned int dataLen);
 
 void PublicKey_clear(PublicKey pubkey);
 void PrivateKey_clear(PrivateKey pvtkey);
@@ -152,8 +183,8 @@ void PrivateKey_clear(PrivateKey pvtkey);
 
 
 SECStatus PrioClient_encode(const_PrioConfig cfg, const bool* data_in,
-                            unsigned char** for_server_a, unsigned int* aLen,
-                            unsigned char** for_server_b, unsigned int* bLen);
+                            unsigned char** forServerA, unsigned int* aLen,
+                            unsigned char** forServerB, unsigned int* bLen);
 
 
 
@@ -167,9 +198,9 @@ SECStatus PrioPRGSeed_randomize(PrioPRGSeed* seed);
 
 
 
-PrioServer PrioServer_new(const_PrioConfig cfg, PrioServerId server_idx,
-                          PrivateKey server_priv,
-                          const PrioPRGSeed server_shared_secret);
+PrioServer PrioServer_new(const_PrioConfig cfg, PrioServerId serverIdx,
+                          PrivateKey serverPriv,
+                          const PrioPRGSeed serverSharedSecret);
 void PrioServer_clear(PrioServer s);
 
 
@@ -259,7 +290,10 @@ SECStatus PrioTotalShare_read(PrioTotalShare t, msgpack_unpacker* upk,
 
 
 
-SECStatus PrioTotalShare_final(const_PrioConfig cfg, unsigned long* output,
+
+
+
+SECStatus PrioTotalShare_final(const_PrioConfig cfg, unsigned long long* output,
                                const_PrioTotalShare tA,
                                const_PrioTotalShare tB);
 
