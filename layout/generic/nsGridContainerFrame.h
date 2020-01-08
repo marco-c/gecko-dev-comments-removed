@@ -161,7 +161,6 @@ public:
 
 
 
-
   static const nsRect& GridItemCB(nsIFrame* aChild);
 
   NS_DECLARE_FRAME_PROPERTY_DELETABLE(GridItemContainingBlockRect, nsRect)
