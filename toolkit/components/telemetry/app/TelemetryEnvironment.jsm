@@ -48,6 +48,21 @@ const MAX_EXPERIMENT_TYPE_LENGTH = 20;
 
 var Policy = {
   now: () => new Date(),
+  _intlLoaded: false,
+  _browserDelayedStartup() {
+    if (Policy._intlLoaded) {
+      return Promise.resolve();
+    }
+    return new Promise(resolve => {
+      let startupTopic = "browser-delayed-startup-finished";
+      Services.obs.addObserver(function observer(subject, topic) {
+        if (topic == startupTopic) {
+          Services.obs.removeObserver(observer, startupTopic);
+          resolve();
+        }
+      }, startupTopic);
+    });
+  },
 };
 
 
@@ -318,6 +333,22 @@ function getSystemLocale() {
   } catch (e) {
     return null;
   }
+}
+
+function getIntlSettings() {
+  let osprefs = Cc["@mozilla.org/intl/ospreferences;1"].getService(Ci.mozIOSPreferences);
+  return {
+    requestedLocales: Services.locale.requestedLocales,
+    availableLocales: Services.locale.availableLocales,
+    appLocales: Services.locale.appLocalesAsBCP47,
+    systemLocales: osprefs.systemLocales,
+    regionalPrefsLocales: osprefs.regionalPrefsLocales,
+    acceptLanguages:
+      Services.prefs.getComplexValue("intl.accept_languages", Ci.nsIPrefLocalizedString)
+        .data
+        .split(",")
+        .map(str => str.trim()),
+  };
 }
 
 
@@ -904,6 +935,7 @@ function EnvironmentCache() {
     p.push(this._loadAttributionAsync());
   }
   p.push(this._loadAutoUpdateAsync());
+  p.push(this._loadIntlData());
 
   for (const [id, {branch, options}] of gActiveExperimentStartupBuffer.entries()) {
     this.setExperimentActive(id, branch, options);
@@ -1416,6 +1448,9 @@ EnvironmentCache.prototype = {
       e10sMultiProcesses: Services.appinfo.maxWebProcessCount,
       telemetryEnabled: Utils.isTelemetryEnabled,
       locale: getBrowserLocale(),
+      
+      
+      intl: Policy._intlLoaded ? getIntlSettings() : {},
       update: {
         channel: updateChannel,
         enabled: !Services.policies || Services.policies.isAllowed("appUpdate"),
@@ -1529,6 +1564,17 @@ EnvironmentCache.prototype = {
       return;
     }
     this._currentEnvironment.settings.update.autoDownload = this._updateAutoDownloadCache;
+  },
+
+  
+
+
+
+  async _loadIntlData() {
+    
+    await Policy._browserDelayedStartup();
+    this._currentEnvironment.settings.intl = getIntlSettings();
+    Policy._intlLoaded = true;
   },
 
   

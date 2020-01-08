@@ -407,8 +407,9 @@ function checkSettingsSection(data) {
   const EXPECTED_FIELDS_TYPES = {
     blocklistEnabled: "boolean",
     e10sEnabled: "boolean",
-    telemetryEnabled: "boolean",
+    intl: "object",
     locale: "string",
+    telemetryEnabled: "boolean",
     update: "object",
     userPrefs: "object",
   };
@@ -448,6 +449,23 @@ function checkSettingsSection(data) {
   if (gIsWindows && AppConstants.MOZ_BUILD_APP == "browser") {
     Assert.equal(typeof data.settings.attribution, "object");
     Assert.equal(data.settings.attribution.source, "google.com");
+  }
+
+  checkIntlSettings(data.settings);
+}
+
+function checkIntlSettings({intl}) {
+  let fields = [
+    "requestedLocales",
+    "availableLocales",
+    "appLocales",
+    "systemLocales",
+    "regionalPrefsLocales",
+    "acceptLanguages",
+  ];
+
+  for (let field of fields) {
+    Assert.ok(Array.isArray(intl[field]), `${field} is an array`);
   }
 }
 
@@ -909,11 +927,20 @@ add_task(async function test_checkEnvironment() {
   Assert.equal(AddonManagerPrivate.isDBLoaded(), false,
                "addons database is not loaded");
 
-  checkAddonsSection(TelemetryEnvironment.currentEnvironment, false, true);
+  let data = TelemetryEnvironment.currentEnvironment;
+  checkAddonsSection(data, false, true);
+
+  
+  Assert.equal(typeof data.settings.intl, "object", "intl is initially an object");
+  Assert.equal(Object.keys(data.settings.intl).length, 0, "intl is initially empty");
 
   
   let initPromise = TelemetryEnvironment.onInitialized();
   finishAddonManagerStartup();
+
+  
+  fakeIntlReady();
+
   let environmentData = await initPromise;
   checkEnvironmentData(environmentData, {isInitial: true});
 
