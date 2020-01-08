@@ -138,6 +138,7 @@ public:
 };
 
 typedef nsRefPtrHashtable<nsUint64HashKey, GetUserMediaWindowListener> WindowTable;
+typedef MozPromise<RefPtr<AudioDeviceInfo>, nsresult, true> SinkInfoPromise;
 
 class MediaManager final : public nsIMediaManagerService,
                            public nsIObserver
@@ -227,6 +228,26 @@ public:
                             dom::CallerType aCallerType);
 
   nsresult EnumerateDevices(nsPIDOMWindowInner* aWindow, dom::Promise& aPromise);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<SinkInfoPromise> GetSinkDevice(nsPIDOMWindowInner* aWindow,
+                                        const nsString& aDeviceId);
+
   void OnNavigation(uint64_t aWindowID);
   bool IsActivelyCapturingOrHasAPermission(uint64_t aWindowId);
 
