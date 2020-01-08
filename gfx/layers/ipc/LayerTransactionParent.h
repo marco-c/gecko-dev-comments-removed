@@ -22,10 +22,6 @@ namespace ipc {
 class Shmem;
 } 
 
-namespace layout {
-class RenderFrameParent;
-} 
-
 namespace layers {
 
 class Layer;
@@ -39,7 +35,6 @@ class LayerTransactionParent final : public PLayerTransactionParent,
                                      public CompositableParentManager,
                                      public ShmemAllocator
 {
-  typedef mozilla::layout::RenderFrameParent RenderFrameParent;
   typedef InfallibleTArray<Edit> EditArray;
   typedef InfallibleTArray<OpDestroy> OpDestroyArray;
   typedef InfallibleTArray<PluginWindowData> PluginsArray;
@@ -168,7 +163,6 @@ protected:
   }
   friend class CompositorBridgeParent;
   friend class CrossProcessCompositorBridgeParent;
-  friend class layout::RenderFrameParent;
 
 private:
   
