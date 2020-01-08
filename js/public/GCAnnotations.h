@@ -12,45 +12,45 @@
 #ifdef XGILL_PLUGIN
 
 
-# define JS_HAZ_GC_THING __attribute__((tag("GC Thing")))
+# define JS_HAZ_GC_THING __attribute__((annotate("GC Thing")))
 
 
 
-# define JS_HAZ_GC_POINTER __attribute__((tag("GC Pointer")))
+# define JS_HAZ_GC_POINTER __attribute__((annotate("GC Pointer")))
 
 
 
-# define JS_HAZ_ROOTED __attribute__((tag("Rooted Pointer")))
+# define JS_HAZ_ROOTED __attribute__((annotate("Rooted Pointer")))
 
 
 
-# define JS_HAZ_GC_INVALIDATED __attribute__((tag("Invalidated by GC")))
-
-
-
-
-
-# define JS_HAZ_ROOTED_BASE __attribute__((tag("Rooted Base")))
+# define JS_HAZ_GC_INVALIDATED __attribute__((annotate("Invalidated by GC")))
 
 
 
 
 
+# define JS_HAZ_ROOTED_BASE __attribute__((annotate("Rooted Base")))
 
 
 
-# define JS_HAZ_NON_GC_POINTER __attribute__((tag("Suppressed GC Pointer")))
 
 
 
-# define JS_HAZ_GC_CALL __attribute__((tag("GC Call")))
 
 
-# define JS_HAZ_GC_SUPPRESSED __attribute__((tag("Suppress GC")))
+# define JS_HAZ_NON_GC_POINTER __attribute__((annotate("Suppressed GC Pointer")))
 
 
 
-# define JS_HAZ_CAN_RUN_SCRIPT __attribute__((tag("Can run script")))
+# define JS_HAZ_GC_CALL __attribute__((annotate("GC Call")))
+
+
+# define JS_HAZ_GC_SUPPRESSED __attribute__((annotate("Suppress GC")))
+
+
+
+# define JS_HAZ_CAN_RUN_SCRIPT __attribute__((annotate("Can run script")))
 
 #else
 
