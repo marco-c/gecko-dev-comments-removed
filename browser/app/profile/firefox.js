@@ -691,9 +691,6 @@ pref("plugins.testmode", false);
 
 pref("plugins.show_infobar", false);
 
-
-pref("plugins.remember_infobar_dismissal", true);
-
 pref("plugin.default.state", 1);
 
 

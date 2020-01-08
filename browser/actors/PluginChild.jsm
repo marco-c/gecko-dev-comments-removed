@@ -51,9 +51,6 @@ class PluginChild extends ActorChild {
       case "BrowserPlugins:ActivatePlugins":
         this.activatePlugins(msg.data.pluginInfo, msg.data.newState);
         break;
-      case "BrowserPlugins:NotificationShown":
-        setTimeout(() => this.updateNotificationUI(), 0);
-        break;
       case "BrowserPlugins:ContextMenuCommand":
         switch (msg.data.command) {
           case "play":
@@ -95,7 +92,6 @@ class PluginChild extends ActorChild {
             aSubject.top.document == this.content.document &&
             data.formats.toLowerCase().includes("application/x-mpegurl", 0)) {
           this.content.pluginRequiresReload = true;
-          this.updateNotificationUI(this.content.document);
         }
     }
   }
@@ -408,11 +404,6 @@ class PluginChild extends ActorChild {
       return;
     }
 
-    if (eventType == "PluginRemoved") {
-      this.updateNotificationUI(event.target);
-      return;
-    }
-
     if (eventType == "click") {
       this.onOverlayClick(event);
       return;
@@ -516,7 +507,6 @@ class PluginChild extends ActorChild {
         let resizeListener = () => {
           this.setVisibility(plugin, overlay,
             this.computeAndAdjustOverlayDisplay(plugin, overlay));
-          this.updateNotificationUI();
         };
         plugin.addEventListener("overflow", resizeListener);
         plugin.addEventListener("underflow", resizeListener);
@@ -707,7 +697,6 @@ class PluginChild extends ActorChild {
        (!pluginFound || contentWindow.pluginRequiresReload)) {
       this.reloadPage();
     }
-    this.updateNotificationUI();
   }
 
   _showClickToPlayNotification(plugin, showNow) {
@@ -773,89 +762,6 @@ class PluginChild extends ActorChild {
     }, null, principal);
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-  updateNotificationUI(document) {
-    document = document || this.content.document;
-
-    
-    
-    
-    let principal = document.defaultView.top.document.nodePrincipal;
-    let location = document.location.href;
-
-    
-    let haveInsecure = false;
-    let actions = new Map();
-    for (let action of this.pluginData.values()) {
-      switch (action.fallbackType) {
-        
-        
-        case Ci.nsIObjectLoadingContent.PLUGIN_VULNERABLE_UPDATABLE:
-        case Ci.nsIObjectLoadingContent.PLUGIN_VULNERABLE_NO_UPDATE:
-          haveInsecure = true;
-          
-
-        case Ci.nsIObjectLoadingContent.PLUGIN_CLICK_TO_PLAY_QUIET:
-        case Ci.nsIObjectLoadingContent.PLUGIN_CLICK_TO_PLAY:
-          actions.set(action.permissionString, action);
-          continue;
-      }
-    }
-
-    
-    let cwu = this.content.windowUtils;
-    for (let plugin of cwu.plugins) {
-      let info = this._getPluginInfo(plugin);
-      if (!actions.has(info.permissionString)) {
-        continue;
-      }
-      let fallbackType = info.fallbackType;
-      if (fallbackType == Ci.nsIObjectLoadingContent.PLUGIN_ACTIVE) {
-        actions.delete(info.permissionString);
-        if (actions.size == 0) {
-          break;
-        }
-        continue;
-      }
-      if (fallbackType != Ci.nsIObjectLoadingContent.PLUGIN_CLICK_TO_PLAY &&
-          fallbackType != Ci.nsIObjectLoadingContent.PLUGIN_CLICK_TO_PLAY_QUIET &&
-          fallbackType != Ci.nsIObjectLoadingContent.PLUGIN_VULNERABLE_UPDATABLE &&
-          fallbackType != Ci.nsIObjectLoadingContent.PLUGIN_VULNERABLE_NO_UPDATE) {
-        continue;
-      }
-      let overlay = this.getPluginUI(plugin, "main");
-      if (!overlay) {
-        continue;
-      }
-      let overlayDisplayState = this.computeAndAdjustOverlayDisplay(plugin, overlay);
-      this.setVisibility(plugin, overlay, overlayDisplayState);
-      if (overlayDisplayState > OVERLAY_DISPLAY.BLANK) {
-        actions.delete(info.permissionString);
-        if (actions.size == 0) {
-          break;
-        }
-      }
-    }
-
-    
-    
-    this.mm.sendAsyncMessage("PluginContent:UpdateHiddenPluginUI", {
-      haveInsecure,
-      actions: [...actions.values()],
-      location,
-    }, null, principal);
-  }
-
   removeNotification(name) {
     this.mm.sendAsyncMessage("PluginContent:RemoveNotification", { name });
   }
@@ -863,10 +769,6 @@ class PluginChild extends ActorChild {
   clearPluginCaches() {
     this.pluginData.clear();
     this.pluginCrashData.clear();
-  }
-
-  hideNotificationBar(name) {
-    this.mm.sendAsyncMessage("PluginContent:HideNotificationBar", { name });
   }
 
   
@@ -1037,10 +939,6 @@ class PluginChild extends ActorChild {
     let runID = plugin.runID;
 
     if (overlayDisplayState == OVERLAY_DISPLAY.FULL) {
-      
-      
-      
-      this.hideNotificationBar("plugin-crashed");
       doc.mozNoPluginCrashedNotification = true;
 
       
@@ -1053,10 +951,6 @@ class PluginChild extends ActorChild {
       
       this.mm.sendAsyncMessage("PluginContent:ShowPluginCrashedNotification",
                                    { messageString: message, pluginID: runID });
-      
-      doc.defaultView.top.addEventListener("unload", event => {
-        this.hideNotificationBar("plugin-crashed");
-      });
     }
   }
 

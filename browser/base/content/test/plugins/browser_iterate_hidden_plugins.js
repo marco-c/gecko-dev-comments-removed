@@ -9,8 +9,6 @@ const HIDDEN_CTP_PLUGIN_PREF = "plugins.navigator.hidden_ctp_plugin";
 
 
 
-
-
 add_task(async function setup() {
   
   let originalPluginState = getTestPluginEnabledState();
@@ -63,64 +61,6 @@ add_task(async function test_plugin_is_hidden_on_iteration() {
       let plugins = Array.from(content.navigator.plugins);
       Assert.ok(plugins.some(p => p.name == pluginName),
                 "Should have found the Test Plugin");
-    });
-  });
-
-  await SpecialPowers.popPrefEnv();
-});
-
-
-
-
-
-
-add_task(async function test_plugin_shows_hidden_notification_on_access() {
-  await BrowserTestUtils.withNewTab({
-    gBrowser,
-    url: "http://example.com",
-  }, async function(browser) {
-    let notificationPromise = waitForNotificationBar("plugin-hidden", gBrowser.selectedBrowser);
-
-    await ContentTask.spawn(browser, TEST_PLUGIN_NAME, async function(pluginName) {
-      let plugins = content.navigator.plugins;
-      
-      
-      
-      let sawEvent = false;
-      addEventListener("HiddenPlugin", function onHiddenPlugin(e) {
-        sawEvent = true;
-        removeEventListener("HiddenPlugin", onHiddenPlugin, true);
-      }, true);
-      plugins[pluginName];
-      Assert.ok(sawEvent, "Should have seen the HiddenPlugin event.");
-    });
-
-    let notification = await notificationPromise;
-    notification.close();
-  });
-
-  
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [[HIDDEN_CTP_PLUGIN_PREF, ""]],
-  });
-
-  await BrowserTestUtils.withNewTab({
-    gBrowser,
-    url: "http://example.com",
-  }, async function(browser) {
-    await ContentTask.spawn(browser, TEST_PLUGIN_NAME, async function(pluginName) {
-      let plugins = content.navigator.plugins;
-      
-      
-      
-      let sawEvent = false;
-      addEventListener("HiddenPlugin", function onHiddenPlugin(e) {
-        sawEvent = true;
-        removeEventListener("HiddenPlugin", onHiddenPlugin, true);
-      }, true);
-      plugins[pluginName];
-      Assert.ok(!sawEvent, "Should not have seen the HiddenPlugin event.");
     });
   });
 

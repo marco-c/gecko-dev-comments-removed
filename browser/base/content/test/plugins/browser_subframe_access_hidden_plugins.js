@@ -58,8 +58,6 @@ add_task(async function test_plugin_accessible_in_subframe() {
       await loadedPromise;
 
       
-      
-      
       let sawEvent = false;
       addEventListener("HiddenPlugin", function onHiddenPlugin(e) {
         sawEvent = true;
