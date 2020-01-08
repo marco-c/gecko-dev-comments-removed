@@ -2444,6 +2444,24 @@ static MOZ_MUST_USE bool RunResolutionFunction(JSContext* cx,
   }
 
   if (!promiseObj) {
+    if (mode == RejectMode) {
+      
+      
+      
+      
+      
+      
+      
+      Rooted<PromiseObject*> temporaryPromise(cx);
+      temporaryPromise = CreatePromiseObjectWithoutResolutionFunctions(cx);
+      if (!temporaryPromise) {
+        cx->clearPendingException();
+        return true;
+      }
+
+      return RejectPromiseInternal(cx, temporaryPromise, result);
+    }
+
     return true;
   }
 
