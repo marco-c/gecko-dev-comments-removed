@@ -10,28 +10,52 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
 
+import org.mozilla.gecko.AppConstants;
 import org.mozilla.gecko.R;
 
 public final class NotificationService extends Service {
+    
+
+
     public static final String EXTRA_NOTIFICATION = "notification";
+    
+
+
+    public static final String EXTRA_ACTION_STOP = "action_stop";
+
+    
+
+
+
+    private Notification currentNotification;
 
     @Override 
     public int onStartCommand(final Intent intent, final int flags, final int startId) {
-        final Notification notification = intent.getParcelableExtra(EXTRA_NOTIFICATION);
-        if (notification != null) {
-            
-            startForeground(R.id.foregroundNotification, notification);
-            return START_NOT_STICKY;
-        }
-
-        
-        stopForeground(true);
-        stopSelfResult(startId);
+        handleIntent(intent, startId);
         return START_NOT_STICKY;
     }
 
     @Override 
     public IBinder onBind(final Intent intent) {
         return null;
+    }
+
+    private void handleIntent(Intent intent, int startId) {
+        
+        if (intent.hasExtra(EXTRA_NOTIFICATION)) {
+            currentNotification = intent.getParcelableExtra(EXTRA_NOTIFICATION);
+            startForeground(R.id.foregroundNotification, currentNotification);
+        }
+
+        
+        if (intent.hasExtra(NotificationService.EXTRA_ACTION_STOP)) {
+            
+            if (!AppConstants.Versions.preO) {
+                startForeground(R.id.foregroundNotification, currentNotification);
+            }
+
+            stopForeground(true);
+            stopSelfResult(startId);
+        }
     }
 }
