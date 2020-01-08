@@ -7,8 +7,11 @@
 #ifndef dom_ipc_SharedMap_h
 #define dom_ipc_SharedMap_h
 
+#include "mozilla/dom/MozSharedMapBinding.h"
+
 #include "mozilla/AutoMemMap.h"
 #include "mozilla/dom/ipc/StructuredCloneData.h"
+#include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Variant.h"
@@ -45,12 +48,11 @@ namespace ipc {
 
 
 
-class SharedMap : public nsISupports
+class SharedMap : public DOMEventTargetHelper
 {
   using FileDescriptor = mozilla::ipc::FileDescriptor;
 
 public:
-  NS_DECL_ISUPPORTS
 
   SharedMap();
 
@@ -63,6 +65,40 @@ public:
   
   void Get(JSContext* cx, const nsACString& name, JS::MutableHandleValue aRetVal,
            ErrorResult& aRv);
+
+
+  
+  bool Has(const nsAString& aName)
+  {
+    return Has(NS_ConvertUTF16toUTF8(aName));
+  }
+
+  void Get(JSContext* aCx, const nsAString& aName, JS::MutableHandleValue aRetVal,
+           ErrorResult& aRv)
+  {
+    return Get(aCx, NS_ConvertUTF16toUTF8(aName), aRetVal, aRv);
+  }
+
+
+  
+
+
+  uint32_t GetIterableLength() const
+  {
+    return EntryArray().Length();
+  }
+
+  
+
+
+
+
+  const nsString GetKeyAtIndex(uint32_t aIndex) const;
+  
+  
+  
+  
+  JS::Value GetValueAtIndex(uint32_t aIndex) const;
 
 
   
@@ -89,8 +125,10 @@ public:
               nsTArray<nsCString>&& aChangedKeys);
 
 
+  JSObject* WrapObject(JSContext* aCx, JS::HandleObject aGivenProto) override;
+
 protected:
-  virtual ~SharedMap() = default;
+  ~SharedMap() override = default;
 
   class Entry
   {
@@ -222,6 +260,8 @@ protected:
     uint32_t mSize = 0;
   };
 
+  const nsTArray<Entry*>& EntryArray() const;
+
   
   
   
@@ -238,6 +278,7 @@ protected:
   size_t mMapSize = 0;
 
   mutable nsClassHashtable<nsCStringHashKey, Entry> mEntries;
+  mutable Maybe<nsTArray<Entry*>> mEntryArray;
 
   
   
@@ -255,6 +296,7 @@ protected:
 class WritableSharedMap final : public SharedMap
 {
 public:
+
   WritableSharedMap();
 
   
@@ -263,6 +305,19 @@ public:
 
   
   void Delete(const nsACString& name);
+
+
+  
+  void Set(JSContext* aCx, const nsAString& aName, JS::HandleValue aValue, ErrorResult& aRv)
+  {
+    return Set(aCx, NS_ConvertUTF16toUTF8(aName), aValue, aRv);
+  }
+
+  void Delete(const nsAString& aName)
+  {
+    return Delete(NS_ConvertUTF16toUTF8(aName));
+  }
+
 
   
   
@@ -274,6 +329,9 @@ public:
 
 
   SharedMap* GetReadOnly();
+
+
+  JSObject* WrapObject(JSContext* aCx, JS::HandleObject aGivenProto) override;
 
 protected:
   ~WritableSharedMap() override = default;
