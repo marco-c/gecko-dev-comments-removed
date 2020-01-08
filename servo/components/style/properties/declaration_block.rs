@@ -65,19 +65,6 @@ pub struct SourcePropertyDeclarationUpdate {
 }
 
 
-#[derive(Clone, Copy, Debug, Eq, Hash, MallocSizeOf, PartialEq)]
-pub enum DeclarationPushMode {
-    
-    
-    
-    
-    Parsing,
-    
-    
-    Append,
-}
-
-
 
 
 #[derive(Clone, Copy, Debug, Eq, Hash, MallocSizeOf, PartialEq)]
@@ -472,46 +459,27 @@ impl PropertyDeclarationBlock {
         &mut self,
         mut drain: SourcePropertyDeclarationDrain,
         importance: Importance,
-        mode: DeclarationPushMode,
     ) -> bool {
-        match mode {
-            DeclarationPushMode::Parsing => {
-                let all_shorthand_len = match drain.all_shorthand {
-                    AllShorthand::NotSet => 0,
-                    AllShorthand::CSSWideKeyword(_) |
-                    AllShorthand::WithVariables(_) => shorthands::ALL_SHORTHAND_MAX_LEN,
-                };
-                let push_calls_count =
-                    drain.declarations.len() + all_shorthand_len;
+        let all_shorthand_len = match drain.all_shorthand {
+            AllShorthand::NotSet => 0,
+            AllShorthand::CSSWideKeyword(_) |
+            AllShorthand::WithVariables(_) => shorthands::ALL_SHORTHAND_MAX_LEN,
+        };
+        let push_calls_count =
+            drain.declarations.len() + all_shorthand_len;
 
-                
-                self.declarations.reserve(push_calls_count);
-            }
-            _ => {
-                
-                
-                
-                
-                
-                
-            }
-        }
+        
+        self.declarations.reserve(push_calls_count);
 
         let mut changed = false;
         for decl in &mut drain.declarations {
-            changed |= self.push(
-                decl,
-                importance,
-                mode,
-            );
+            changed |= self.push(decl, importance);
         }
         drain.all_shorthand.declarations().fold(changed, |changed, decl| {
-            changed | self.push(decl, importance, mode)
+            changed | self.push(decl, importance)
         })
     }
 
-    
-    
     
     
     
@@ -521,7 +489,6 @@ impl PropertyDeclarationBlock {
         &mut self,
         declaration: PropertyDeclaration,
         importance: Importance,
-        mode: DeclarationPushMode,
     ) -> bool {
         if !self.is_definitely_new(&declaration) {
             let mut index_to_remove = None;
@@ -530,28 +497,26 @@ impl PropertyDeclarationBlock {
                     continue;
                 }
 
-                if matches!(mode, DeclarationPushMode::Parsing) {
-                    let important = self.declarations_importance[i];
+                let important = self.declarations_importance[i];
 
-                    
-                    
-                    if important && !importance.important() {
-                        return false;
-                    }
+                
+                
+                if important && !importance.important() {
+                    return false;
+                }
 
-                    
-                    
-                    
-                    
-                    
-                    
-                    if let PropertyDeclaration::Display(old_display) = *slot {
-                        use properties::longhands::display::computed_value::T as display;
+                
+                
+                
+                
+                
+                
+                if let PropertyDeclaration::Display(old_display) = *slot {
+                    use properties::longhands::display::computed_value::T as display;
 
-                        if let PropertyDeclaration::Display(new_display) = declaration {
-                            if display::should_ignore_parsed_value(old_display, new_display) {
-                                return false;
-                            }
+                    if let PropertyDeclaration::Display(new_display) = declaration {
+                        if display::should_ignore_parsed_value(old_display, new_display) {
+                            return false;
                         }
                     }
                 }
@@ -1400,7 +1365,6 @@ pub fn parse_property_declaration_list(
                 block.extend(
                     iter.parser.declarations.drain(),
                     importance,
-                    DeclarationPushMode::Parsing,
                 );
             }
             Err((error, slice)) => {
