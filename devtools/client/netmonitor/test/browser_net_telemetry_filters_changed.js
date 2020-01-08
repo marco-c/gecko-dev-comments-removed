@@ -42,6 +42,8 @@ add_task(async function() {
     trigger: "html",
     active: "html",
     inactive: "all,css,js,xhr,fonts,images,media,ws,other",
+  }, {
+    method: "filters_changed"
   });
 
   info("Click on the 'CSS' filter");
@@ -52,6 +54,8 @@ add_task(async function() {
     trigger: "css",
     active: "html,css",
     inactive: "all,js,xhr,fonts,images,media,ws,other",
+  }, {
+    method: "filters_changed"
   });
 
   info("Filter the output using the text filter input");
@@ -64,6 +68,8 @@ add_task(async function() {
     trigger: "text",
     active: "html,css",
     inactive: "all,js,xhr,fonts,images,media,ws,other",
+  }, {
+    method: "filters_changed"
   });
 
   return teardown(monitor);
@@ -79,31 +85,4 @@ function setFreetextFilter(monitor, value) {
   for (const ch of value) {
     EventUtils.synthesizeKey(ch, {}, monitor.panelWin);
   }
-}
-
-function checkTelemetryEvent(expectedEvent) {
-  const events = getFiltersChangedEventsExtra();
-  is(events.length, 1, "There was only 1 event logged");
-  const [event] = events;
-  ok(event.session_id > 0, "There is a valid session_id in the logged event");
-  const f = e => JSON.stringify(e, null, 2);
-  is(f(event), f({
-    ...expectedEvent,
-    "session_id": event.session_id
-  }), "The event has the expected data");
-}
-
-function getFiltersChangedEventsExtra() {
-  
-  const snapshot = Services.telemetry.snapshotEvents(OPTOUT, true);
-
-  const filtersChangedEvents = snapshot.parent.filter(event =>
-    event[1] === "devtools.main" &&
-    event[2] === "filters_changed" &&
-    event[3] === "netmonitor"
-  );
-
-  
-  
-  return filtersChangedEvents.map(event => event[5]);
 }
