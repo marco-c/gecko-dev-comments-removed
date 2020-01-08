@@ -869,11 +869,33 @@ void CodeGenerator::visitFloat32(LFloat32* ins) {
 }
 
 void CodeGenerator::visitTestDAndBranch(LTestDAndBranch* test) {
-  MOZ_CRASH("visitTestDAndBranch");
+  const LAllocation* opd = test->input();
+  MBasicBlock* ifTrue = test->ifTrue();
+  MBasicBlock* ifFalse = test->ifFalse();
+
+  masm.Fcmp(ARMFPRegister(ToFloatRegister(opd), 64), 0.0);
+
+  
+  jumpToBlock(ifFalse, Assembler::Zero);
+
+  
+  jumpToBlock(ifFalse, Assembler::Overflow);
+  jumpToBlock(ifTrue);
 }
 
 void CodeGenerator::visitTestFAndBranch(LTestFAndBranch* test) {
-  MOZ_CRASH("visitTestFAndBranch");
+  const LAllocation* opd = test->input();
+  MBasicBlock* ifTrue = test->ifTrue();
+  MBasicBlock* ifFalse = test->ifFalse();
+
+  masm.Fcmp(ARMFPRegister(ToFloatRegister(opd), 32), 0.0);
+
+  
+  jumpToBlock(ifFalse, Assembler::Zero);
+
+  
+  jumpToBlock(ifFalse, Assembler::Overflow);
+  jumpToBlock(ifTrue);
 }
 
 void CodeGenerator::visitCompareD(LCompareD* comp) {
