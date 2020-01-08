@@ -80,7 +80,6 @@
 #include "nsCDefaultURIFixup.h"
 #include "nsIWebBrowser.h"
 #include "nsIWebBrowserFocus.h"
-#include "nsIWebBrowserSetup.h"
 #include "nsIWebProgress.h"
 #include "nsIXULRuntime.h"
 #include "nsPIDOMWindow.h"
@@ -124,6 +123,7 @@
 #include "nsISupportsPrimitives.h"
 #include "mozilla/Telemetry.h"
 #include "nsDocShellLoadInfo.h"
+#include "nsWebBrowser.h"
 
 #ifdef XP_WIN
 #include "mozilla/plugins/PluginWidgetChild.h"
@@ -549,11 +549,10 @@ TabChild::Init()
     mTabGroup = TabGroup::GetFromActor(this);
   }
 
-  nsCOMPtr<nsIWebBrowser> webBrowser = do_CreateInstance(NS_WEBBROWSER_CONTRACTID);
-  if (!webBrowser) {
-    NS_ERROR("Couldn't create a nsWebBrowser?");
-    return NS_ERROR_FAILURE;
-  }
+  
+  
+  mWebBrowser = new nsWebBrowser();
+  nsIWebBrowser* webBrowser = mWebBrowser;
 
   webBrowser->SetContainerWindow(this);
   webBrowser->SetOriginAttributes(OriginAttributesRef());
@@ -589,15 +588,7 @@ TabChild::Init()
 
   
   
-  nsCOMPtr<nsIWebBrowserSetup> webBrowserSetup =
-    do_QueryInterface(baseWindow);
-  if (webBrowserSetup) {
-    webBrowserSetup->SetProperty(nsIWebBrowserSetup::SETUP_ALLOW_DNS_PREFETCH,
-                                 true);
-  } else {
-    NS_WARNING("baseWindow doesn't QI to nsIWebBrowserSetup, skipping "
-               "DNS prefetching enable step.");
-  }
+  mWebBrowser->SetAllowDNSPrefetch(true);
 
   nsCOMPtr<nsIDocShell> docShell = do_GetInterface(WebNavigation());
   MOZ_ASSERT(docShell);
