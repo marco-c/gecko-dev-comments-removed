@@ -1060,6 +1060,16 @@ pref("toolkit.asyncshutdown.crash_timeout", 180000);
 pref("toolkit.asyncshutdown.log", false);
 
 
+
+
+
+#ifdef MOZILLA_OFFICIAL
+pref("browser.dom.window.dump.enabled", false, sticky);
+#else
+pref("browser.dom.window.dump.enabled", true, sticky);
+#endif
+
+
 pref("toolkit.dump.emit", false);
 
 
