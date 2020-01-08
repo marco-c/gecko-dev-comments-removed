@@ -220,9 +220,8 @@ nsDBusRemoteService::Startup(const char* aAppName, const char* aProfileName)
     return NS_ERROR_FAILURE;
   }
 
-  nsAutoCString pathName;
-  pathName = nsPrintfCString("/org/mozilla/%s/Remote", mAppName.get());
-  if (!dbus_connection_register_object_path(mConnection, pathName.get(),
+  mPathName = nsPrintfCString("/org/mozilla/%s/Remote", mAppName.get());
+  if (!dbus_connection_register_object_path(mConnection, mPathName.get(),
                                             &remoteHandlersTable, this)) {
     mConnection = nullptr;
     return NS_ERROR_FAILURE;
@@ -234,6 +233,8 @@ nsDBusRemoteService::Startup(const char* aAppName, const char* aProfileName)
 NS_IMETHODIMP
 nsDBusRemoteService::Shutdown()
 {
+  dbus_connection_unregister_object_path(mConnection, mPathName.get());
+
   
   mConnection = nullptr;
   return NS_OK;

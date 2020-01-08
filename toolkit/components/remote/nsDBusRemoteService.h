@@ -36,6 +36,7 @@ private:
   
   RefPtr<DBusConnection>  mConnection;
   nsCString               mAppName;
+  nsCString               mPathName;
 };
 
 #endif 
