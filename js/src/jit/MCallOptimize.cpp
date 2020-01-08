@@ -2488,19 +2488,26 @@ IonBuilder::inlineObjectIs(CallInfo& callInfo)
     MIRType leftType = left->type();
     MIRType rightType = right->type();
 
+    auto mightBeFloatingPointType = [](MDefinition* def) {
+        return def->mightBeType(MIRType::Double) || def->mightBeType(MIRType::Float32);
+    };
+
     bool strictEq;
     bool incompatibleTypes = false;
     if (leftType == rightType) {
         
         
         
-        strictEq = !(IsFloatingPointType(leftType) || leftType == MIRType::Value);
+        strictEq = leftType != MIRType::Value
+                   ? !IsFloatingPointType(leftType)
+                   : (!mightBeFloatingPointType(left) && !mightBeFloatingPointType(right));
     } else if (leftType == MIRType::Value) {
         
-        strictEq = !IsNumberType(rightType);
+        
+        strictEq = !IsNumberType(rightType) || !mightBeFloatingPointType(left);
     } else if (rightType == MIRType::Value) {
         
-        strictEq = !IsNumberType(leftType);
+        strictEq = !IsNumberType(leftType) || !mightBeFloatingPointType(right);
     } else if (IsNumberType(leftType) && IsNumberType(rightType)) {
         
         
@@ -2513,23 +2520,18 @@ IonBuilder::inlineObjectIs(CallInfo& callInfo)
     if (incompatibleTypes) {
         
         pushConstant(BooleanValue(false));
+    } else if (strictEq) {
+        
+        MOZ_TRY(jsop_compare(JSOP_STRICTEQ, left, right));
     } else {
-        bool emitted = false;
-        if (strictEq) {
-            
-            MOZ_TRY(compareTrySpecialized(&emitted, JSOP_STRICTEQ, left, right, false));
-        }
+        MSameValue* ins = MSameValue::New(alloc(), left, right);
 
-        if (!emitted) {
-            MSameValue* ins = MSameValue::New(alloc(), left, right);
+        
+        if (IsNumberType(leftType) && rightType == MIRType::Value)
+            ins->swapOperands();
 
-            
-            if (IsNumberType(leftType) && rightType == MIRType::Value)
-                ins->swapOperands();
-
-            current->add(ins);
-            current->push(ins);
-        }
+        current->add(ins);
+        current->push(ins);
     }
 
     callInfo.setImplicitlyUsedUnchecked();
