@@ -24,6 +24,7 @@
 #include "mozilla/ipc/Shmem.h"
 #include "mozilla/ipc/Transport.h"
 #include "mozilla/ipc/MessageLink.h"
+#include "mozilla/recordreplay/ChildIPC.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"
@@ -287,6 +288,13 @@ public:
     const MessageChannel* GetIPCChannel() const
     {
         return mState->GetIPCChannel();
+    }
+    void SetMiddlemanIPCChannel(MessageChannel* aChannel)
+    {
+        
+        
+        MOZ_RELEASE_ASSERT(recordreplay::IsMiddleman());
+        mState->SetIPCChannel(aChannel);
     }
 
     
@@ -865,7 +873,16 @@ public:
     bool Bind(PFooSide* aActor)
     {
         MOZ_RELEASE_ASSERT(mValid);
-        MOZ_RELEASE_ASSERT(mMyPid == base::GetCurrentProcId());
+        if (mMyPid != base::GetCurrentProcId()) {
+            
+            
+            
+            
+            MOZ_RELEASE_ASSERT(recordreplay::IsRecordingOrReplaying());
+            MOZ_RELEASE_ASSERT(recordreplay::IsReplaying() ||
+                               mMyPid == recordreplay::child::MiddlemanProcessId());
+            mMyPid = base::GetCurrentProcId();
+        }
 
         UniquePtr<Transport> t = mozilla::ipc::OpenDescriptor(mTransport, mMode);
         if (!t) {
