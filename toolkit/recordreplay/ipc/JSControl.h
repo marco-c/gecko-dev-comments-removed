@@ -13,14 +13,9 @@
 #include "ProcessRewind.h"
 
 #include "mozilla/DefineEnum.h"
-#include "nsString.h"
 
 namespace mozilla {
 namespace recordreplay {
-
-struct Message;
-struct HitExecutionPointMessage;
-
 namespace js {
 
 
@@ -140,7 +135,6 @@ struct BreakpointPosition {
 
   JSObject* Encode(JSContext* aCx) const;
   bool Decode(JSContext* aCx, JS::HandleObject aObject);
-  void ToString(nsCString& aStr) const;
 };
 
 
@@ -188,7 +182,6 @@ struct ExecutionPoint {
 
   JSObject* Encode(JSContext* aCx) const;
   bool Decode(JSContext* aCx, JS::HandleObject aObject);
-  void ToString(nsCString& aStr) const;
 };
 
 
@@ -196,21 +189,15 @@ typedef InfallibleVector<char16_t> CharBuffer;
 
 
 
+
+bool DebuggerOnPause();
+
+
+void DebuggerOnSwitchChild();
+
+
+
 void SetupDevtoolsSandbox();
-
-
-
-
-
-void SetupMiddlemanControl(const Maybe<size_t>& aRecordingChildId);
-
-
-void ForwardHitExecutionPointMessage(size_t aId,
-                                     const HitExecutionPointMessage& aMsg);
-
-
-void BeforeSaveRecording();
-void AfterSaveRecording();
 
 
 
@@ -233,9 +220,6 @@ void ClearPausedState();
 
 
 Maybe<BreakpointPosition> GetEntryPosition(const BreakpointPosition& aPosition);
-
-
-void OnDebuggerResponse(const Message& aMsg);
 
 }  
 }  

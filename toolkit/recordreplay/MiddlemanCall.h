@@ -344,13 +344,11 @@ bool SendCallToMiddleman(size_t aCallId, CallArguments* aArguments,
 
 
 
-
-void ProcessMiddlemanCall(size_t aChildId,
-                          const char* aInputData, size_t aInputSize,
+void ProcessMiddlemanCall(const char* aInputData, size_t aInputSize,
                           InfallibleVector<char>* aOutputData);
 
 
-void ResetMiddlemanCalls(size_t aChildId);
+void ResetMiddlemanCalls();
 
 
 

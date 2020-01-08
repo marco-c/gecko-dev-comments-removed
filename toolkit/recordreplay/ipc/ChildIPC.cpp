@@ -58,28 +58,26 @@ static FileHandle gCheckpointReadFd;
 
 
 
-static UniquePtr<IntroductionMessage, Message::FreePolicy> gIntroductionMessage;
+static IntroductionMessage* gIntroductionMessage;
 
 
 static bool gDebuggerRunsInMiddleman;
 
 
-static UniquePtr<MiddlemanCallResponseMessage, Message::FreePolicy>
-  gCallResponseMessage;
+static MiddlemanCallResponseMessage* gCallResponseMessage;
 
 
 
 static bool gWaitingForCallResponse;
 
 
-static void ChannelMessageHandler(Message::UniquePtr aMsg) {
+static void ChannelMessageHandler(Message* aMsg) {
   MOZ_RELEASE_ASSERT(MainThreadShouldPause() || aMsg->CanBeSentWhileUnpaused());
 
   switch (aMsg->mType) {
     case MessageType::Introduction: {
       MOZ_RELEASE_ASSERT(!gIntroductionMessage);
-      gIntroductionMessage.reset(
-          static_cast<IntroductionMessage*>(aMsg.release()));
+      gIntroductionMessage = (IntroductionMessage*)aMsg->Clone();
       break;
     }
     case MessageType::CreateCheckpoint: {
@@ -179,14 +177,16 @@ static void ChannelMessageHandler(Message::UniquePtr aMsg) {
       MonitorAutoLock lock(*gMonitor);
       MOZ_RELEASE_ASSERT(gWaitingForCallResponse);
       MOZ_RELEASE_ASSERT(!gCallResponseMessage);
-      gCallResponseMessage.reset(
-          static_cast<MiddlemanCallResponseMessage*>(aMsg.release()));
+      gCallResponseMessage = (MiddlemanCallResponseMessage*)aMsg;
+      aMsg = nullptr;  
       gMonitor->NotifyAll();
       break;
     }
     default:
       MOZ_CRASH();
   }
+
+  free(aMsg);
 }
 
 
@@ -294,7 +294,7 @@ void InitRecordingOrReplayingProcess(int* aArgc, char*** aArgv) {
 
   
   
-  HitExecutionPoint(js::ExecutionPoint(),  false);
+  HitCheckpoint(CheckpointId::Invalid,  false);
 
   
   if (gInitializationFailureMessage) {
@@ -322,6 +322,7 @@ void InitRecordingOrReplayingProcess(int* aArgc, char*** aArgv) {
     free(msg);
   }
 
+  free(gIntroductionMessage);
   gIntroductionMessage = nullptr;
 
   
@@ -634,7 +635,7 @@ bool CurrentRepaintCannotFail() {
 
 
 
-static double gLastPauseTime;
+static double gLastCheckpointTime;
 
 
 static double gIdleTimeStart;
@@ -649,24 +650,23 @@ void EndIdleTime() {
 
   
   
-  gLastPauseTime += CurrentTime() - gIdleTimeStart;
+  gLastCheckpointTime += CurrentTime() - gIdleTimeStart;
   gIdleTimeStart = 0;
 }
 
-void HitExecutionPoint(const js::ExecutionPoint& aPoint,
-                       bool aRecordingEndpoint) {
+void HitCheckpoint(size_t aId, bool aRecordingEndpoint) {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
   double time = CurrentTime();
   PauseMainThreadAndInvokeCallback([=]() {
     double duration = 0;
-    if (gLastPauseTime) {
-      duration = time - gLastPauseTime;
+    if (aId > CheckpointId::First) {
+      duration = time - gLastCheckpointTime;
       MOZ_RELEASE_ASSERT(duration > 0);
     }
     gChannel->SendMessage(
-        HitExecutionPointMessage(aPoint, aRecordingEndpoint, duration));
+        HitCheckpointMessage(aId, aRecordingEndpoint, duration));
   });
-  gLastPauseTime = time;
+  gLastCheckpointTime = time;
 }
 
 
@@ -678,6 +678,13 @@ void RespondToRequest(const js::CharBuffer& aBuffer) {
       DebuggerResponseMessage::New(aBuffer.begin(), aBuffer.length());
   gChannel->SendMessage(*msg);
   free(msg);
+}
+
+void HitBreakpoint(bool aRecordingEndpoint) {
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  PauseMainThreadAndInvokeCallback([=]() {
+    gChannel->SendMessage(HitBreakpointMessage(aRecordingEndpoint));
+  });
 }
 
 void SendMiddlemanCallRequest(const char* aInputData, size_t aInputSize,
@@ -702,6 +709,7 @@ void SendMiddlemanCallRequest(const char* aInputData, size_t aInputSize,
   aOutputData->append(gCallResponseMessage->BinaryData(),
                       gCallResponseMessage->BinaryDataSize());
 
+  free(gCallResponseMessage);
   gCallResponseMessage = nullptr;
   gWaitingForCallResponse = false;
 

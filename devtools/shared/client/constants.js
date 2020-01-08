@@ -37,7 +37,6 @@ const UnsolicitedNotifications = {
   "evaluationResult": "evaluationResult",
   "updatedSource": "updatedSource",
   "inspectObject": "inspectObject",
-  "virtualConsoleLog": "virtualConsoleLog",
 
   
   

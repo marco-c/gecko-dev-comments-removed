@@ -736,7 +736,21 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
     return success;
   },
 
-  _findEntryPointsForLocation: function(generatedLocation) {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _setBreakpointAtGeneratedLocation: function(actor, generatedLocation) {
     const {
       generatedSourceActor,
       generatedLine,
@@ -746,9 +760,11 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
 
     
     
-    const scripts = generatedSourceActor._findDebuggeeScripts(
+    let scripts = generatedSourceActor._findDebuggeeScripts(
       { line: generatedLine }
     );
+
+    scripts = scripts.filter((script) => !actor.hasScript(script));
 
     
     const entryPoints = [];
@@ -815,55 +831,12 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
       }
     }
 
-    return entryPoints;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  _setBreakpointAtGeneratedLocation: function(actor, generatedLocation) {
-    let entryPoints = this._findEntryPointsForLocation(generatedLocation);
-    entryPoints = entryPoints.filter(({script}) => !actor.hasScript(script));
-
     if (entryPoints.length === 0) {
       return false;
     }
 
     setBreakpointAtEntryPoints(actor, entryPoints);
     return true;
-  },
-
-  setVirtualLog(line, column, text) {
-    const location = new GeneratedLocation(this, line, column);
-    const entryPoints = this._findEntryPointsForLocation(location);
-
-    for (const { script, offsets } of entryPoints) {
-      for (const offset of offsets) {
-        script.replayVirtualConsoleLog(offset, text, (point, rv) => {
-          const packet = {
-            from: this.actorID,
-            type: "virtualConsoleLog",
-            url: this.url,
-            line,
-            column,
-            executionPoint: point,
-            message: "return" in rv ? "" + rv.return : "" + rv.throw,
-          };
-          this.conn.send(packet);
-        });
-      }
-    }
   },
 });
 

@@ -469,12 +469,6 @@ Toolbox.prototype = {
       this._threadClient = await attachThread(this);
       await domReady;
 
-      
-      
-      if (this.target.isReplayEnabled()) {
-        await this.loadTool("webconsole");
-      }
-
       this.isReady = true;
 
       const framesPromise = this._listFrames();

@@ -41,8 +41,7 @@ function ReplayDebugger() {
   }
 
   
-  assert(this._control);
-  assert(this._searchControl);
+  this._paused = false;
 
   
   this._direction = Direction.NONE;
@@ -77,9 +76,6 @@ function ReplayDebugger() {
   this._resumeCallback = null;
 
   
-  this._searches = [];
-
-  
   
   this.replayingOnForcedPause = null;
 
@@ -101,17 +97,14 @@ ReplayDebugger.prototype = {
   canRewind: RecordReplayControl.canRewind,
 
   replayCurrentExecutionPoint() {
-    assert(this._paused);
-    return this._control.pausePoint();
+    return this._sendRequest({ type: "currentExecutionPoint" });
   },
 
   replayRecordingEndpoint() {
     return this._sendRequest({ type: "recordingEndpoint" });
   },
 
-  replayIsRecording() {
-    return this._control.childIsRecording();
-  },
+  replayIsRecording: RecordReplayControl.childIsRecording,
 
   addDebuggee() {},
   removeAllDebuggees() {},
@@ -124,7 +117,8 @@ ReplayDebugger.prototype = {
   
   
   _sendRequest(request) {
-    const data = this._control.sendRequest(request);
+    assert(this._paused);
+    const data = RecordReplayControl.sendRequest(request);
     dumpv("SendRequest: " +
           JSON.stringify(request) + " -> " + JSON.stringify(data));
     if (data.exception) {
@@ -138,7 +132,8 @@ ReplayDebugger.prototype = {
   
   
   _sendRequestAllowDiverge(request) {
-    this._control.maybeSwitchToReplayingChild();
+    assert(this._paused);
+    RecordReplayControl.maybeSwitchToReplayingChild();
     return this._sendRequest(request);
   },
 
@@ -178,19 +173,16 @@ ReplayDebugger.prototype = {
   
   
 
-  get _paused() {
-    return !!this._control.pausePoint();
-  },
-
   replayResumeBackward() { this._resume( false); },
   replayResumeForward() { this._resume( true); },
 
   _resume(forward) {
     this._ensurePaused();
     this._setResume(() => {
+      this._paused = false;
       this._direction = forward ? Direction.FORWARD : Direction.BACKWARD;
       dumpv("Resuming " + this._direction);
-      this._control.resume(forward);
+      RecordReplayControl.resume(forward);
       if (this._paused) {
         
         
@@ -202,9 +194,10 @@ ReplayDebugger.prototype = {
   replayTimeWarp(target) {
     this._ensurePaused();
     this._setResume(() => {
+      this._paused = false;
       this._direction = Direction.NONE;
       dumpv("Warping " + JSON.stringify(target));
-      this._control.timeWarp(target);
+      RecordReplayControl.timeWarp(target);
 
       
       
@@ -222,7 +215,7 @@ ReplayDebugger.prototype = {
 
   _ensurePaused() {
     if (!this._paused) {
-      this._control.waitUntilPaused();
+      RecordReplayControl.waitUntilPaused();
       assert(this._paused);
     }
   },
@@ -231,6 +224,8 @@ ReplayDebugger.prototype = {
   
   
   _onPause() {
+    this._paused = true;
+
     
     if (this.replayingOnPositionChange) {
       this.replayingOnPositionChange();
@@ -253,7 +248,7 @@ ReplayDebugger.prototype = {
     const point = this.replayCurrentExecutionPoint();
     dumpv("PerformPause " + JSON.stringify(point));
 
-    if (!point.position) {
+    if (point.position.kind == "Invalid") {
       
     } else {
       
@@ -285,7 +280,11 @@ ReplayDebugger.prototype = {
   _onSwitchChild() {
     
     if (this.replayingOnPositionChange) {
+      
+      const paused = this._paused;
+      this._paused = true;
       this.replayingOnPositionChange();
+      this._paused = paused;
     }
   },
 
@@ -296,7 +295,7 @@ ReplayDebugger.prototype = {
     assert(!this._resumeCallback);
     if (++this._threadPauseCount == 1) {
       
-      this._control.markExplicitPause();
+      RecordReplayControl.markExplicitPause();
 
       
       this._direction = Direction.NONE;
@@ -356,51 +355,10 @@ ReplayDebugger.prototype = {
   
   
 
-  _forEachSearch(callback) {
-    for (const { position } of this._searches) {
-      callback(position);
-    }
-  },
-
-  _virtualConsoleLog(position, text, callback) {
-    this._searches.push({ position, text, callback, results: [] });
-    this._searchControl.reset();
-  },
-
-  _onSearchPause(point) {
-    for (const { position, text, callback, results } of this._searches) {
-      if (RecordReplayControl.positionSubsumes(position, point.position)) {
-        if (!results.some(existing => point.progress == existing.progress)) {
-          let evaluateResult;
-          if (text) {
-            const frameData = this._searchControl.sendRequest({
-              type: "getFrame",
-              index: NewestFrameIndex,
-            });
-            if ("index" in frameData) {
-              const rv = this._searchControl.sendRequest({
-                type: "frameEvaluate",
-                index: frameData.index,
-                text,
-              });
-              evaluateResult = this._convertCompletionValue(rv, { forSearch: true });
-            }
-          }
-          results.push(point);
-          callback(point, evaluateResult);
-        }
-      }
-    }
-  },
-
-  
-  
-  
-
   _setBreakpoint(handler, position, data) {
     this._ensurePaused();
     dumpv("AddBreakpoint " + JSON.stringify(position));
-    this._control.addBreakpoint(position);
+    RecordReplayControl.addBreakpoint(position);
     this._breakpoints.push({handler, position, data});
   },
 
@@ -409,10 +367,10 @@ ReplayDebugger.prototype = {
     const newBreakpoints = this._breakpoints.filter(bp => !callback(bp));
     if (newBreakpoints.length != this._breakpoints.length) {
       dumpv("ClearBreakpoints");
-      this._control.clearBreakpoints();
+      RecordReplayControl.clearBreakpoints();
       for (const { position } of newBreakpoints) {
         dumpv("AddBreakpoint " + JSON.stringify(position));
-        this._control.addBreakpoint(position);
+        RecordReplayControl.addBreakpoint(position);
       }
     }
     this._breakpoints = newBreakpoints;
@@ -487,7 +445,6 @@ ReplayDebugger.prototype = {
   },
 
   findScripts(query) {
-    this._ensurePaused();
     const data = this._sendRequest({
       type: "findScripts",
       query: this._convertScriptQuery(query),
@@ -530,20 +487,14 @@ ReplayDebugger.prototype = {
   
   
 
-  _getObject(id, options) {
-    if (options && options.forSearch) {
-      
-      return "<UnknownSearchObject>";
-    }
-    const forConsole = options && options.forConsole;
-
+  
+  
+  
+  _getObject(id, forConsole) {
     if (id && !this._objects[id]) {
       const data = this._sendRequest({ type: "getObject", id });
       switch (data.kind) {
       case "Object":
-        
-        
-        
         this._objects[id] = new ReplayDebuggerObject(this, data, forConsole);
         break;
       case "Environment":
@@ -560,10 +511,10 @@ ReplayDebugger.prototype = {
     return rv;
   },
 
-  _convertValue(value, options) {
+  _convertValue(value, forConsole) {
     if (isNonNullObject(value)) {
       if (value.object) {
-        return this._getObject(value.object, options);
+        return this._getObject(value.object, forConsole);
       } else if (value.special == "undefined") {
         return undefined;
       } else if (value.special == "NaN") {
@@ -577,12 +528,12 @@ ReplayDebugger.prototype = {
     return value;
   },
 
-  _convertCompletionValue(value, options) {
+  _convertCompletionValue(value) {
     if ("return" in value) {
-      return { return: this._convertValue(value.return, options) };
+      return { return: this._convertValue(value.return) };
     }
     if ("throw" in value) {
-      return { throw: this._convertValue(value.throw, options) };
+      return { throw: this._convertValue(value.throw) };
     }
     ThrowError("Unexpected completion value");
     return null; 
@@ -633,7 +584,7 @@ ReplayDebugger.prototype = {
     if (message.messageType == "ConsoleAPI" && message.arguments) {
       for (let i = 0; i < message.arguments.length; i++) {
         message.arguments[i] = this._convertValue(message.arguments[i],
-                                                  { forConsole: true });
+                                                   true);
       }
     }
     return message;
@@ -710,7 +661,6 @@ ReplayDebuggerScript.prototype = {
   get source() { return this._dbg._getSource(this._data.sourceId); },
   get sourceStart() { return this._data.sourceStart; },
   get sourceLength() { return this._data.sourceLength; },
-  get format() { return this._data.format; },
 
   _forward(type, value) {
     return this._dbg._sendRequest({ type, id: this._data.id, value });
@@ -720,7 +670,6 @@ ReplayDebuggerScript.prototype = {
   getOffsetLocation(pc) { return this._forward("getOffsetLocation", pc); },
   getSuccessorOffsets(pc) { return this._forward("getSuccessorOffsets", pc); },
   getPredecessorOffsets(pc) { return this._forward("getPredecessorOffsets", pc); },
-  getAllColumnOffsets() { return this._forward("getAllColumnOffsets"); },
 
   setBreakpoint(offset, handler) {
     this._dbg._setBreakpoint(() => { handler.hit(this._dbg.getNewestFrame()); },
@@ -734,15 +683,12 @@ ReplayDebuggerScript.prototype = {
     });
   },
 
-  replayVirtualConsoleLog(offset, text, callback) {
-    this._dbg._virtualConsoleLog({ kind: "Break", script: this._data.id, offset },
-                                 text, callback);
-  },
-
   get isGeneratorFunction() { NYI(); },
   get isAsyncFunction() { NYI(); },
+  get format() { NYI(); },
   getChildScripts: NYI,
   getAllOffsets: NYI,
+  getAllColumnOffsets: NYI,
   getBreakpoints: NYI,
   clearAllBreakpoints: NYI,
   isInCatchScope: NYI,

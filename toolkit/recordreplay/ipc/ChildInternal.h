@@ -87,7 +87,8 @@ namespace child {
 
 
 void RespondToRequest(const js::CharBuffer& aBuffer);
-void HitExecutionPoint(const js::ExecutionPoint& aPoint, bool aRecordingEndpoint);
+void HitCheckpoint(size_t aId, bool aRecordingEndpoint);
+void HitBreakpoint(bool aRecordingEndpoint);
 
 
 

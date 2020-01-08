@@ -18,11 +18,6 @@ namespace mozilla {
 namespace recordreplay {
 namespace parent {
 
-static bool ActiveChildIsRecording() {
-  ChildProcessInfo* child = GetActiveChild();
-  return child && child->IsRecording();
-}
-
 static bool HandleMessageInMiddleman(ipc::Side aSide,
                                      const IPC::Message& aMessage) {
   IPC::Message::msgid_t type = aMessage.type();
@@ -78,10 +73,9 @@ static bool HandleMessageInMiddleman(ipc::Side aSide,
     ipc::IProtocol::Result r =
         contentChild->PContentChild::OnMessageReceived(aMessage);
     MOZ_RELEASE_ASSERT(r == ipc::IProtocol::MsgProcessed);
-    if (type == dom::PContent::Msg_RegisterChrome__ID) {
+    if (type == dom::PContent::Msg_SetXPCOMProcessAttributes__ID) {
       
-      
-      ChromeRegistered();
+      PreferencesLoaded();
     }
     return false;
   }
@@ -256,10 +250,7 @@ class MiddlemanProtocol : public ipc::IToplevelProtocol {
 
     if (mSide == ipc::ChildSide) {
       AutoMarkMainThreadWaitingForIPDLReply blocked;
-      while (!aReply) {
-        GetActiveChild()->WaitUntilPaused();
-        GetActiveChild()->SendMessage(ResumeMessage( true));
-      }
+      ActiveRecordingChild()->WaitUntil([&]() { return !!aReply; });
     } else {
       MonitorAutoLock lock(*gMonitor);
       while (!aReply) {
@@ -300,10 +291,7 @@ class MiddlemanProtocol : public ipc::IToplevelProtocol {
 
     if (mSide == ipc::ChildSide) {
       AutoMarkMainThreadWaitingForIPDLReply blocked;
-      while (!aReply) {
-        GetActiveChild()->WaitUntilPaused();
-        GetActiveChild()->SendMessage(ResumeMessage( true));
-      }
+      ActiveRecordingChild()->WaitUntil([&]() { return !!aReply; });
     } else {
       MonitorAutoLock lock(*gMonitor);
       while (!aReply) {
