@@ -3,7 +3,7 @@
 
 
 import { getSelectedSource } from "../reducers/sources";
-import { getBreakpoints } from "../reducers/breakpoints";
+import { getBreakpointsList } from "../reducers/breakpoints";
 import { isGenerated } from "../utils/source";
 
 function getColumn(column, selectedSource) {
@@ -20,8 +20,11 @@ function getLocation(bp, selectedSource) {
     : bp.location;
 }
 
-function getBreakpointsForSource(state: OuterState, selectedSource: Source) {
-  const breakpoints = getBreakpoints(state);
+function getBreakpointsForSource(
+  state: OuterState,
+  selectedSource: Source
+): Breakpoint[] {
+  const breakpoints = getBreakpointsList(state);
 
   return breakpoints.filter(bp => {
     const location = getLocation(bp, selectedSource);

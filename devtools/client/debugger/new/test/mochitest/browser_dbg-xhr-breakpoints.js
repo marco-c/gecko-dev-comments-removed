@@ -2,46 +2,124 @@
 
 
 
+ async function addXHRBreakpoint(dbg, text) {
+  info("Adding a XHR breakpoint");
+
+  const plusIcon = findElementWithSelector(dbg, ".xhr-breakpoints-pane .plus");
+  if (plusIcon) {
+    plusIcon.click();
+  }
+  findElementWithSelector(dbg, ".xhr-input").focus();
+  type(dbg, text);
+  pressKey(dbg, "Enter");
+
+  await waitForDispatch(dbg, "SET_XHR_BREAKPOINT");
+}
+
+async function removeXHRBreakpoint(dbg, index) {
+  info("Removing a XHR breakpoint");
+
+  const closeButtons = dbg.win.document.querySelectorAll(".xhr-breakpoints-pane .close-btn");
+  if (closeButtons[index]) {
+    closeButtons[index].click();
+  }
+
+  await waitForDispatch(dbg, "REMOVE_XHR_BREAKPOINT");
+}
+
+function getXHRBreakpointsElements(dbg) {
+  return [...dbg.win.document.querySelectorAll(".xhr-breakpoints-pane .xhr-container")];
+}
+
+function getXHRBreakpointLabels(elements) {
+  return elements.map(element => element.title);
+}
+
+function getXHRBreakpointCheckbox(dbg) {
+  return findElementWithSelector(dbg, ".xhr-breakpoints-pane .breakpoints-exceptions input");
+}
+
+async function clickPauseOnAny(dbg, expectedEvent) {
+  getXHRBreakpointCheckbox(dbg).click();
+  await waitForDispatch(dbg, expectedEvent);
+}
+
 
 add_task(async function() {
-    const dbg = await initDebugger("doc-xhr.html");
-    await waitForSources(dbg, "fetch.js");
-    await dbg.actions.setXHRBreakpoint("doc", "GET");
-    invokeInTab("main", "doc-xhr.html");
-    await waitForPaused(dbg);
-    assertPausedLocation(dbg);
-    resume(dbg);
+  const dbg = await initDebugger("doc-xhr.html");
+  await waitForSources(dbg, "fetch.js");
+  await dbg.actions.setXHRBreakpoint("doc", "GET");
+  invokeInTab("main", "doc-xhr.html");
+  await waitForPaused(dbg);
+  assertPausedLocation(dbg);
+  resume(dbg);
 
-    await dbg.actions.removeXHRBreakpoint(0);
-    invokeInTab("main", "doc-xhr.html");
-    assertNotPaused(dbg);
+  await dbg.actions.removeXHRBreakpoint(0);
+  invokeInTab("main", "doc-xhr.html");
+  assertNotPaused(dbg);
 
-    await dbg.actions.setXHRBreakpoint("doc-xhr.html", "POST");
-    invokeInTab("main", "doc");
-    assertNotPaused(dbg);
+  await dbg.actions.setXHRBreakpoint("doc-xhr.html", "POST");
+  invokeInTab("main", "doc");
+  assertNotPaused(dbg);
 });
 
 
 add_task(async function() {
-    const dbg = await initDebugger("doc-xhr.html");
-    await waitForSources(dbg, "fetch.js");
+  const dbg = await initDebugger("doc-xhr.html");
+  await waitForSources(dbg, "fetch.js");
 
-    
-    await dbg.actions.togglePauseOnAny();
-    invokeInTab("main", "doc-xhr.html");
-    await waitForPaused(dbg);
-    await resume(dbg);
+  info("HERE 1");
 
-    invokeInTab("main", "fetch.js");
-    await waitForPaused(dbg);
-    await resume(dbg);
+  
+  await clickPauseOnAny(dbg, "SET_XHR_BREAKPOINT");
 
-    invokeInTab("main", "README.md");
-    await waitForPaused(dbg);
-    await resume(dbg);
+  invokeInTab("main", "doc-xhr.html");
+  await waitForPaused(dbg);
+  await resume(dbg);
 
-    
-    await dbg.actions.togglePauseOnAny();
-    invokeInTab("main", "README.md");
-    assertNotPaused(dbg);
+  invokeInTab("main", "fetch.js");
+  await waitForPaused(dbg);
+  await resume(dbg);
+
+  invokeInTab("main", "README.md");
+  await waitForPaused(dbg);
+  await resume(dbg);
+
+  
+  await clickPauseOnAny(dbg, "DISABLE_XHR_BREAKPOINT");
+  info("HERE 4");
+  invokeInTab("main", "README.md");
+  assertNotPaused(dbg);
+
+  
+  await dbg.actions.removeXHRBreakpoint(0);
+});
+
+
+add_task(async function() {
+  const dbg = await initDebugger("doc-xhr.html");
+
+  const pauseOnAnyCheckbox = getXHRBreakpointCheckbox(dbg);
+
+  await clickPauseOnAny(dbg, "SET_XHR_BREAKPOINT");
+  await addXHRBreakpoint(dbg, "1");
+  await addXHRBreakpoint(dbg, "2");
+  await addXHRBreakpoint(dbg, "3");
+  await addXHRBreakpoint(dbg, "4");
+
+  
+  await removeXHRBreakpoint(dbg, 1);
+
+  const listItems = getXHRBreakpointsElements(dbg);
+  is(listItems.length, 3, "3 XHR breakpoints display in list");
+  is(
+    pauseOnAnyCheckbox.checked, true, 
+    "The pause on any is still checked"
+  );
+  is(
+    getXHRBreakpointLabels(listItems).join(""),
+    "134",
+    "Only the desired breakpoint was removed"
+  );
+
 });
