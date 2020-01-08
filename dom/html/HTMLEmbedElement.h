@@ -127,6 +127,8 @@ public:
 
   void StartObjectLoad(bool aNotify, bool aForceLoad);
 
+  NS_FORWARD_NSIFRAMELOADEROWNER(nsObjectLoadingContent::)
+
 protected:
   
   nsIContent* AsContent() override { return this; }
