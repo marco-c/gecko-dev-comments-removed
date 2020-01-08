@@ -10,10 +10,10 @@
 #include "nsCycleCollectionParticipant.h"
 #include "nsError.h"
 #include "nsISMILAttr.h"
+#include "SVGElement.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/SVGAnimatedEnumeration.h"
-#include "mozilla/dom/SVGElement.h"
+#include "mozilla/UniquePtr.h"
 
 class nsAtom;
 class nsSMILValue;
@@ -22,15 +22,16 @@ namespace mozilla {
 namespace dom {
 class SVGAnimationElement;
 }  
+}  
 
-typedef uint8_t SVGEnumValue;
+typedef uint8_t nsSVGEnumValue;
 
-struct SVGEnumMapping {
+struct nsSVGEnumMapping {
   nsStaticAtom* const mKey;
-  const SVGEnumValue mVal;
+  const nsSVGEnumValue mVal;
 };
 
-class SVGEnum {
+class nsSVGEnum {
  public:
   typedef mozilla::dom::SVGElement SVGElement;
 
@@ -56,21 +57,21 @@ class SVGEnum {
   mozilla::UniquePtr<nsISMILAttr> ToSMILAttr(SVGElement* aSVGElement);
 
  private:
-  SVGEnumValue mAnimVal;
-  SVGEnumValue mBaseVal;
+  nsSVGEnumValue mAnimVal;
+  nsSVGEnumValue mBaseVal;
   uint8_t mAttrEnum;  
   bool mIsAnimated;
   bool mIsBaseSet;
 
-  const SVGEnumMapping* GetMapping(SVGElement* aSVGElement);
+  const nsSVGEnumMapping* GetMapping(SVGElement* aSVGElement);
 
  public:
   struct DOMAnimatedEnum final : public mozilla::dom::SVGAnimatedEnumeration {
-    DOMAnimatedEnum(SVGEnum* aVal, SVGElement* aSVGElement)
+    DOMAnimatedEnum(nsSVGEnum* aVal, SVGElement* aSVGElement)
         : mozilla::dom::SVGAnimatedEnumeration(aSVGElement), mVal(aVal) {}
     virtual ~DOMAnimatedEnum();
 
-    SVGEnum* mVal;  
+    nsSVGEnum* mVal;  
 
     using mozilla::dom::SVGAnimatedEnumeration::SetBaseVal;
     virtual uint16_t BaseVal() override { return mVal->GetBaseValue(); }
@@ -89,13 +90,13 @@ class SVGEnum {
 
   struct SMILEnum : public nsISMILAttr {
    public:
-    SMILEnum(SVGEnum* aVal, SVGElement* aSVGElement)
+    SMILEnum(nsSVGEnum* aVal, SVGElement* aSVGElement)
         : mVal(aVal), mSVGElement(aSVGElement) {}
 
     
     
     
-    SVGEnum* mVal;
+    nsSVGEnum* mVal;
     SVGElement* mSVGElement;
 
     
@@ -108,7 +109,5 @@ class SVGEnum {
     virtual nsresult SetAnimValue(const nsSMILValue& aValue) override;
   };
 };
-
-}  
 
 #endif  
