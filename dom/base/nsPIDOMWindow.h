@@ -51,6 +51,7 @@ namespace dom {
 class AudioContext;
 class ClientInfo;
 class ClientState;
+class ContentFrameMessageManager;
 class DocGroup;
 class TabGroup;
 class Element;
@@ -872,6 +873,15 @@ public:
     return mParentTarget;
   }
 
+  mozilla::dom::ContentFrameMessageManager* GetMessageManager()
+  {
+    
+    if (!mParentTarget) {
+      UpdateParentTarget();
+    }
+    return mMessageManager;
+  }
+
   nsIDocument* GetExtantDoc() const
   {
     return mDoc;
@@ -1160,11 +1170,7 @@ protected:
   
   void MaybeCreateDoc();
 
-  void SetChromeEventHandlerInternal(mozilla::dom::EventTarget* aChromeEventHandler) {
-    mChromeEventHandler = aChromeEventHandler;
-    
-    mParentTarget = nullptr;
-  }
+  void SetChromeEventHandlerInternal(mozilla::dom::EventTarget* aChromeEventHandler);
 
   virtual void UpdateParentTarget() = 0;
 
@@ -1177,6 +1183,7 @@ protected:
   nsCOMPtr<nsIURI> mDocumentURI; 
 
   nsCOMPtr<mozilla::dom::EventTarget> mParentTarget; 
+  RefPtr<mozilla::dom::ContentFrameMessageManager> mMessageManager; 
 
   nsCOMPtr<mozilla::dom::Element> mFrameElement;
 
