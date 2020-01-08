@@ -298,6 +298,33 @@ void profiler_add_sampled_counter(BaseProfilerCount* aCounter);
 void profiler_remove_sampled_counter(BaseProfilerCount* aCounter);
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void profiler_register_page(const nsID& aDocShellId,
+                            uint32_t aHistoryId,
+                            const nsCString& aUrl,
+                            bool aIsSubFrame);
+
+
+
+void profiler_unregister_pages(const nsID& aRegisteredDocShellId);
+
+
 #define AUTO_PROFILER_REGISTER_THREAD(name) \
   mozilla::AutoProfilerRegisterThread PROFILER_RAII(name)
 
