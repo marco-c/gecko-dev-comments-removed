@@ -1,11 +1,11 @@
-var INPUTS = {
+const INPUTS = {
   HTML: "Hi, I want to be transformed!",
   SCRIPT: "Hi, I want to be transformed!",
   SCRIPTURL: "http://this.is.a.scripturl.test/",
   URL: "http://hello.i.am.an.url/"
 };
 
-var RESULTS = {
+const RESULTS = {
   HTML: "Quack, I want to be a duck!",
   SCRIPT: "Meow, I want to be a cat!",
   SCRIPTURL: "http://this.is.a.successful.test/",
@@ -29,6 +29,14 @@ function createScriptURLJS(scripturl) {
 function createURLJS(url) {
   return url.replace("hello", "hooray")
       .replace("an.url", "successfully.transformed");
+}
+
+
+
+
+
+function createLocationURLJS(value) {
+  return location.href.replace(/#.*/g, "") + "#" + value;
 }
 
 function createHTML_policy(win, c) {
