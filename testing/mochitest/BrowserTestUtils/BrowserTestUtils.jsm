@@ -581,7 +581,7 @@ var BrowserTestUtils = {
         
         
         let promises = [
-          this.waitForEvent(win, "focus"),
+          this.waitForEvent(win, "focus", true),
           this.waitForEvent(win, "activate"),
         ];
 
@@ -599,12 +599,8 @@ var BrowserTestUtils = {
         if (url) {
           let browser = win.gBrowser.selectedBrowser;
 
-          
-          let process =
-              browser.isRemoteBrowser ? Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT
-              : Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT;
           if (win.gMultiProcessBrowser &&
-              !E10SUtils.canLoadURIInProcess(url, process)) {
+              !E10SUtils.canLoadURIInRemoteType(url, browser.remoteType)) {
             await this.waitForEvent(browser, "XULFrameLoaderCreated");
           }
 
@@ -648,13 +644,9 @@ var BrowserTestUtils = {
     }
 
     
-    let process = browser.isRemoteBrowser ? Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT
-                                          : Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT;
-
     
     
-    
-    if (!E10SUtils.canLoadURIInProcess(uri, process)) {
+    if (!E10SUtils.canLoadURIInRemoteType(uri, browser.remoteType)) {
       await this.waitForEvent(browser, "XULFrameLoaderCreated");
     }
   },
@@ -731,7 +723,7 @@ var BrowserTestUtils = {
     }
     let win = currentWin.OpenBrowserWindow(options);
 
-    let promises = [this.waitForEvent(win, "focus"), this.waitForEvent(win, "activate")];
+    let promises = [this.waitForEvent(win, "focus", true), this.waitForEvent(win, "activate")];
 
     
     
