@@ -5,8 +5,11 @@
 
 
 
-use shared::minwindef::{BOOL, DWORD, LPDWORD, LPVOID};
-use um::winnt::{HANDLE, HRESULT, LPCSTR, LPCWSTR, LPSTR, LPWSTR};
+use shared::minwindef::{BOOL, DWORD, LPDWORD, LPVOID, PHKEY};
+use um::winnt::{
+    HANDLE, HRESULT, LPCSTR, LPCWSTR, LPSTR, LPWSTR, PCWSTR, PSID, PSID_AND_ATTRIBUTES, PWSTR
+};
+use um::winreg::REGSAM;
 extern "system" {
     
     
@@ -126,10 +129,32 @@ extern "system" {
     
     
     
-    
-    
-    
-    
-    
-    
+    pub fn CreateAppContainerProfile(
+        pszAppContainerName: PCWSTR,
+        pszDisplayName: PCWSTR,
+        pszDescription: PCWSTR,
+        pCapabilities: PSID_AND_ATTRIBUTES,
+        dwCapabilityCount: DWORD,
+        ppSidAppContainerSid: *mut PSID
+    ) -> HRESULT;
+    pub fn DeleteAppContainerProfile(
+        pszAppContainerName: PCWSTR
+    ) -> HRESULT;
+    pub fn GetAppContainerRegistryLocation(
+        desiredAccess: REGSAM,
+        phAppContainerKey: PHKEY
+    ) -> HRESULT;
+    pub fn GetAppContainerFolderPath(
+        pszAppContainerSid: PCWSTR,
+        ppszPath: *mut PWSTR
+    ) -> HRESULT;
+    pub fn DeriveAppContainerSidFromAppContainerName(
+        pszAppContainerName: PCWSTR,
+        ppsidAppContainerSid: *mut PSID
+    ) -> HRESULT;
+    pub fn DeriveRestrictedAppContainerSidFromAppContainerSidAndRestrictedName(
+        psidAppContainerSid: PSID,
+        pszRestrictedAppContainerName: PCWSTR,
+        ppsidRestrictedAppContainerSid: *mut PSID
+    ) -> HRESULT;
 }

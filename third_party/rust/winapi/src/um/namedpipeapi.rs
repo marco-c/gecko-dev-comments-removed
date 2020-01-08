@@ -63,6 +63,9 @@ extern "system" {
         ClientComputerName: LPWSTR,
         ClientComputerNameLength: ULONG,
     ) -> BOOL;
+    pub fn ImpersonateNamedPipeClient(
+        hNamedPipe: HANDLE,
+    ) -> BOOL;
     pub fn GetNamedPipeInfo(
         hNamedPipe: HANDLE,
         lpFlags: LPDWORD,

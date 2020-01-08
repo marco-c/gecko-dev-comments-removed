@@ -4,7 +4,7 @@
 
 
 
-use shared::guiddef::{IsEqualIID};
+use shared::guiddef::IsEqualIID;
 use shared::wtypes::{PROPERTYKEY, PROPID};
 pub const PID_FIRST_USABLE: PROPID = 2;
 pub type REFPROPERTYKEY = *const PROPERTYKEY;

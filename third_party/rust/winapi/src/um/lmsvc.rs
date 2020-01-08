@@ -5,7 +5,7 @@
 
 
 
-use ctypes::{c_long};
+use ctypes::c_long;
 use shared::lmcons::NET_API_STATUS;
 use shared::minwindef::{DWORD, LPBYTE, LPDWORD};
 use um::winnt::{LPCWSTR, LPWSTR};
