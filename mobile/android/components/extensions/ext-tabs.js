@@ -276,7 +276,11 @@ this.tabs = class extends ExtensionAPI {
 
           
           
-          options.disallowInheritPrincipal = true;
+          if (url && url.startsWith("about:")) {
+            options.disallowInheritPrincipal = true;
+          } else {
+            options.triggeringPrincipal = context.principal;
+          }
 
           options.parentId = BrowserApp.selectedTab.id;
 
