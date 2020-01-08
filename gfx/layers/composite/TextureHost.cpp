@@ -927,10 +927,6 @@ BufferTextureHost::UnbindTextureSource()
     mFirstSource->Unbind();
   }
 
-  if (mFirstSource && mFirstSource->IsDirectMap() && mProvider) {
-    mProvider->ReferenceUntilAfterComposition(mFirstSource);
-  }
-
   
   
   
