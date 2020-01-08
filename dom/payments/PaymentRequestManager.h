@@ -95,7 +95,6 @@ private:
 
   
   nsDataHashtable<nsRefPtrHashKey<PaymentRequest>, uint32_t> mActivePayments;
-  RefPtr<PaymentRequest> mShowingRequest;
 };
 
 } 
