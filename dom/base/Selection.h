@@ -303,7 +303,12 @@ class Selection final : public nsSupportsWeakReference,
 
   nsresult RemoveAllRangesTemporarily();
 
-  void Stringify(nsAString& aResult);
+  
+
+
+  enum class FlushFrames { No, Yes };
+  MOZ_CAN_RUN_SCRIPT
+  void Stringify(nsAString& aResult, FlushFrames = FlushFrames::Yes);
 
   
 

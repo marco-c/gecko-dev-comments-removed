@@ -383,17 +383,19 @@ void printRange(nsRange* aDomRange) {
 }
 #endif 
 
-void Selection::Stringify(nsAString& aResult) {
-  
-  
-  
-  nsCOMPtr<nsIPresShell> shell =
-      mFrameSelection ? mFrameSelection->GetShell() : nullptr;
-  if (!shell) {
-    aResult.Truncate();
-    return;
+void Selection::Stringify(nsAString& aResult, FlushFrames aFlushFrames) {
+  if (aFlushFrames == FlushFrames::Yes) {
+    
+    
+    
+    nsCOMPtr<nsIPresShell> shell =
+        mFrameSelection ? mFrameSelection->GetShell() : nullptr;
+    if (!shell) {
+      aResult.Truncate();
+      return;
+    }
+    shell->FlushPendingNotifications(FlushType::Frames);
   }
-  shell->FlushPendingNotifications(FlushType::Frames);
 
   IgnoredErrorResult rv;
   ToStringWithFormat(NS_LITERAL_STRING("text/plain"),
