@@ -102,6 +102,7 @@ input {
   word-spacing: normal;
   letter-spacing: normal;
   cursor: text;
+  -moz-binding: url("chrome://global/content/platformHTMLBindings.xml#inputFields");
   text-indent: 0;
   -moz-user-select: text;
   text-shadow: none;
@@ -133,6 +134,7 @@ textarea {
   vertical-align: text-bottom;
   cursor: text;
   resize: both;
+  -moz-binding: url("chrome://global/content/platformHTMLBindings.xml#textAreas");
   -moz-appearance: textfield-multiline;
   text-indent: 0;
   -moz-user-select: text;
@@ -446,6 +448,7 @@ input[type="hidden"] {
   border: 0;
   cursor: auto;
   -moz-user-focus: ignore;
+  -moz-binding: none;
 }
 
 
@@ -457,6 +460,7 @@ input[type="image"] {
   font-family: sans-serif;
   font-size: small;
   cursor: pointer;
+  -moz-binding: none;
 }
 
 input[type="image"]:disabled {
@@ -478,6 +482,7 @@ input[type="file"] {
 
   
   -moz-appearance: none;
+  -moz-binding: none;
   cursor: default;
 
   border: none;
@@ -547,6 +552,7 @@ input[type="checkbox"] {
   cursor: default;
   
   padding: unset;
+  -moz-binding: unset;
   border: unset;
   background-color: unset;
   color: unset;
@@ -602,6 +608,7 @@ input[type="submit"] {
   cursor: default;
   box-sizing: border-box;
   -moz-user-select: none;
+  -moz-binding: none;
 }
 
 
@@ -886,6 +893,7 @@ input[type=range] {
   cursor: default;
   background: none;
   border: none;
+  -moz-binding: none; 
   
   -moz-user-select: none ! important;
 }
@@ -1007,6 +1015,7 @@ input[type=range]::-moz-range-thumb {
 input[type="number"] {
   -moz-appearance: number-input;
   
+  -moz-binding: none;
   inline-size: 20ch; 
 
 

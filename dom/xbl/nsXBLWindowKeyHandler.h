@@ -50,16 +50,17 @@ public:
 protected:
   virtual ~nsXBLWindowKeyHandler();
 
-  nsresult WalkHandlers(KeyboardEvent* aKeyEvent);
+  nsresult WalkHandlers(KeyboardEvent* aKeyEvent, nsAtom* aEventType);
 
   
   bool WalkHandlersInternal(KeyboardEvent* aKeyEvent,
+                            nsAtom* aEventType,
                             bool aExecute,
                             bool* aOutReservedForChrome = nullptr);
 
   
   
-  bool WalkHandlersAndExecute(KeyboardEvent* aKeyEvent,
+  bool WalkHandlersAndExecute(KeyboardEvent* aKeyEvent, nsAtom* aEventType,
                               uint32_t aCharCode,
                               const IgnoreModifierState& aIgnoreModifierState,
                               bool aExecute,
@@ -80,6 +81,15 @@ protected:
   
   bool IsReservedKey(mozilla::WidgetKeyboardEvent* aKeyEvent,
                      nsXBLPrototypeHandler* aHandler);
+
+  
+  
+  
+  nsAtom* ConvertEventToDOMEventType(
+             const mozilla::WidgetKeyboardEvent& aWidgetKeyboardEvent) const;
+
+  
+  static void EnsureSpecialDocInfo();
 
   
   
@@ -116,7 +126,12 @@ protected:
   nsWeakPtr              mWeakPtrForElement;
   mozilla::dom::EventTarget* mTarget; 
 
+  
+  
   nsXBLPrototypeHandler* mHandler;     
+
+  
+  static uint32_t sRefCnt;
 };
 
 already_AddRefed<nsXBLWindowKeyHandler>

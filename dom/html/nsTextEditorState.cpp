@@ -45,9 +45,6 @@
 #include "nsFrameSelection.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/Telemetry.h"
-#include "mozilla/ShortcutKeys.h"
-#include "nsXBLPrototypeHandler.h"
-#include "mozilla/dom/KeyboardEvent.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -960,44 +957,13 @@ TextInputListener::HandleEvent(Event* aEvent)
     return NS_OK;
   }
 
-  RefPtr<KeyboardEvent> keyEvent = aEvent->AsKeyboardEvent();
+  WidgetKeyboardEvent* keyEvent =
+    aEvent->WidgetEventPtr()->AsKeyboardEvent();
   if (!keyEvent) {
     return NS_ERROR_UNEXPECTED;
   }
 
-  WidgetKeyboardEvent* widgetKeyEvent =
-      aEvent->WidgetEventPtr()->AsKeyboardEvent();
-  if (!keyEvent) {
-    return NS_ERROR_UNEXPECTED;
-  }
-
-  nsXBLPrototypeHandler* keyHandlers =
-      ShortcutKeys::GetHandlers(mTxtCtrlElement->IsTextArea() ?
-                                HandlerType::eTextArea : HandlerType::eInput);
-
-  RefPtr<nsAtom> eventTypeAtom =
-    ShortcutKeys::ConvertEventToDOMEventType(widgetKeyEvent);
-  for (nsXBLPrototypeHandler* handler = keyHandlers;
-       handler;
-       handler = handler->GetNextHandler()) {
-    if (!handler->EventTypeEquals(eventTypeAtom)) {
-      continue;
-    }
-
-    if (!handler->KeyEventMatched(keyEvent, 0, IgnoreModifierState())) {
-      continue;
-    }
-
-    
-    
-    nsCOMPtr<EventTarget> target = do_QueryInterface(mTxtCtrlElement);
-    nsresult rv = handler->ExecuteHandler(target, aEvent);
-    if (NS_SUCCEEDED(rv)) {
-      return rv;
-    }
-  }
-
-  if (widgetKeyEvent->mMessage != eKeyPress) {
+  if (keyEvent->mMessage != eKeyPress) {
     return NS_OK;
   }
 
@@ -1006,7 +972,7 @@ TextInputListener::HandleEvent(Event* aEvent)
       nsIWidget::NativeKeyBindingsForMultiLineEditor :
       nsIWidget::NativeKeyBindingsForSingleLineEditor;
 
-  nsIWidget* widget = widgetKeyEvent->mWidget;
+  nsIWidget* widget = keyEvent->mWidget;
   
   if (!widget) {
     widget = mFrame->GetNearestWidget();
@@ -1017,10 +983,10 @@ TextInputListener::HandleEvent(Event* aEvent)
   
   
   
-  AutoRestore<nsCOMPtr<nsIWidget>> saveWidget(widgetKeyEvent->mWidget);
-  widgetKeyEvent->mWidget = widget;
-  if (widgetKeyEvent->ExecuteEditCommands(nativeKeyBindingsType,
-                                          DoCommandCallback, mFrame)) {
+  AutoRestore<nsCOMPtr<nsIWidget>> saveWidget(keyEvent->mWidget);
+  keyEvent->mWidget = widget;
+  if (keyEvent->ExecuteEditCommands(nativeKeyBindingsType,
+                                    DoCommandCallback, mFrame)) {
     aEvent->PreventDefault();
   }
   return NS_OK;
