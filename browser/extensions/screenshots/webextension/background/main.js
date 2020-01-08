@@ -13,6 +13,14 @@ this.main = (function() {
 
   let hasSeenOnboarding = browser.storage.local.get(["hasSeenOnboarding"]).then((result) => {
     const onboarded = !!result.hasSeenOnboarding;
+    if (!onboarded) {
+      setIconActive(false, null);
+      
+      startBackground.photonPageActionPort.postMessage({
+        type: "setProperties",
+        title: "Firefox Screenshots"
+      });
+    }
     hasSeenOnboarding = Promise.resolve(onboarded);
     return hasSeenOnboarding;
   }).catch((error) => {
@@ -45,7 +53,10 @@ this.main = (function() {
 
   function setIconActive(active, tabId) {
     const path = active ? "icons/icon-highlight-32-v2.svg" : "icons/icon-v2.svg";
-    browser.pageAction.setIcon({tabId, path});
+    startBackground.photonPageActionPort.postMessage({
+      type: "setProperties",
+      iconPath: path
+    });
   }
 
   function toggleSelector(tab) {
@@ -80,7 +91,6 @@ this.main = (function() {
     return /^about:(?:newtab|blank|home)/i.test(url) || /^resource:\/\/activity-streams\//i.test(url);
   }
 
-  
   
   exports.onClicked = catcher.watchFunction((tab) => {
     catcher.watchPromise(hasSeenOnboarding.then(onboarded => {
@@ -280,6 +290,11 @@ this.main = (function() {
   communication.register("hasSeenOnboarding", () => {
     hasSeenOnboarding = Promise.resolve(true);
     catcher.watchPromise(browser.storage.local.set({hasSeenOnboarding: true}));
+    setIconActive(false, null);
+    startBackground.photonPageActionPort.postMessage({
+      type: "setProperties",
+      title: browser.i18n.getMessage("contextMenuLabel")
+    });
   });
 
   communication.register("abortStartShot", () => {
