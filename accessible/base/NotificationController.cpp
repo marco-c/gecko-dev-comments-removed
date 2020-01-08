@@ -441,9 +441,8 @@ NotificationController::ScheduleContentInsertion(nsIContent* aStartChildNode,
     
     
     
-    
-    
-    if (node->GetPrimaryFrame()) {
+    if (node->GetPrimaryFrame() ||
+        (node->IsElement() && node->AsElement()->IsDisplayContents())) {
       list.AppendElement(node);
     }
   }
