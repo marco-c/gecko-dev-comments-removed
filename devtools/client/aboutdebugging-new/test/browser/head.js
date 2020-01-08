@@ -5,12 +5,17 @@
 
 
 
+
 "use strict";
 
 
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/devtools/client/shared/test/shared-head.js",
   this);
+
+
+Services.scriptloader.loadSubScript(
+  CHROME_URL_ROOT + "debug-target-pane_collapsibilities_head.js", this);
 
 
 
@@ -35,4 +40,11 @@ async function openAboutDebugging(page, win) {
   await waitUntil(() => document.querySelector(".js-runtime-page"));
 
   return { tab, document, window };
+}
+
+function findSidebarItemByText(text, document) {
+  const sidebarItems = document.querySelectorAll(".js-sidebar-item");
+  return [...sidebarItems].find(element => {
+    return element.textContent.includes(text);
+  });
 }
