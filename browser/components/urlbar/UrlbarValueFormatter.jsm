@@ -278,23 +278,35 @@ class UrlbarValueFormatter {
       return false;
     }
 
-    
-    
-    
-    
-    
-    if ((popup.selectedIndex < 0 &&
-         popup._previousSelectedIndex != 0) ||
-        popup.selectedIndex > 0 ||
-        popup.oneOffSearchButtons.selectedButton) {
+    if (popup.oneOffSearchButtons.selectedButton) {
       return false;
     }
-    let heuristicItem = popup.richlistbox.children[0] || null;
-    if (!heuristicItem ||
-        heuristicItem.getAttribute("actiontype") != "searchengine") {
+
+    
+    
+    
+    
+    
+    
+    
+    let itemIndex =
+      popup.selectedIndex < 0 ? popup._previousSelectedIndex :
+      popup.selectedIndex;
+    if (itemIndex < 0) {
       return false;
     }
-    let url = heuristicItem.getAttribute("url");
+    let item = popup.richlistbox.children[itemIndex] || null;
+
+    
+    
+    
+    
+    
+    if (!item || item.getAttribute("actiontype") != "searchengine") {
+      return false;
+    }
+
+    let url = item.getAttribute("url");
     let action = this.urlbarInput._parseActionUrl(url);
     if (!action) {
       return false;
@@ -313,7 +325,13 @@ class UrlbarValueFormatter {
     
     
     
-    if (decodeURIComponent(action.params.input) != value) {
+    
+    
+    
+    
+    
+    
+    if (!value.trim().startsWith(decodeURIComponent(action.params.input).trim())) {
       return false;
     }
 

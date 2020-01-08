@@ -32,6 +32,12 @@ const SearchAutocompleteProviderInternal = {
 
   enginesByAlias: new Map(),
 
+  
+
+
+
+  tokenAliasEngines: [],
+
   initialize() {
     return new Promise((resolve, reject) => {
       Services.search.init(status => {
@@ -69,6 +75,7 @@ const SearchAutocompleteProviderInternal = {
   _refresh() {
     this.enginesByDomain.clear();
     this.enginesByAlias.clear();
+    this.tokenAliasEngines = [];
 
     
     
@@ -85,9 +92,14 @@ const SearchAutocompleteProviderInternal = {
     if (engine.alias) {
       aliases.push(engine.alias);
     }
-    aliases.push(...engine.wrappedJSObject._internalAliases);
+    let tokenAliases = engine.wrappedJSObject._internalAliases;
+    aliases.push(...tokenAliases);
     for (let alias of aliases) {
       this.enginesByAlias.set(alias.toLocaleLowerCase(), engine);
+    }
+
+    if (tokenAliases.length) {
+      this.tokenAliasEngines.push({ engine, tokenAliases });
     }
   },
 
@@ -114,7 +126,7 @@ class SuggestionsFetch {
 
 
   constructor(engine,
-              searchToken,
+              searchString,
               inPrivateContext,
               maxLocalResults,
               maxRemoteResults,
@@ -125,7 +137,7 @@ class SuggestionsFetch {
     this._engine = engine;
     this._suggestions = [];
     this._success = false;
-    this._promise = this._controller.fetch(searchToken, inPrivateContext, engine, userContextId).then(results => {
+    this._promise = this._controller.fetch(searchString, inPrivateContext, engine, userContextId).then(results => {
       this._success = true;
       if (results) {
         this._suggestions.push(
@@ -241,6 +253,18 @@ var PlacesSearchAutocompleteProvider = Object.freeze({
 
 
 
+  async tokenAliasEngines() {
+    await this.ensureInitialized();
+
+    return SearchAutocompleteProviderInternal.tokenAliasEngines.slice();
+  },
+
+  
+
+
+
+
+
   async currentEngine() {
     await this.ensureInitialized();
 
@@ -299,7 +323,7 @@ var PlacesSearchAutocompleteProvider = Object.freeze({
 
 
   newSuggestionsFetch(engine,
-                      searchToken,
+                      searchString,
                       inPrivateContext,
                       maxLocalResults,
                       maxRemoteResults,
@@ -310,7 +334,7 @@ var PlacesSearchAutocompleteProvider = Object.freeze({
     if (!engine) {
       throw new Error("`engine` is null");
     }
-    return new SuggestionsFetch(engine, searchToken, inPrivateContext,
+    return new SuggestionsFetch(engine, searchString, inPrivateContext,
                                 maxLocalResults, maxRemoteResults,
                                 userContextId);
   },

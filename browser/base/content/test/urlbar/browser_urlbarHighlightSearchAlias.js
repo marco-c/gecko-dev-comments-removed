@@ -22,13 +22,22 @@ add_task(async function init() {
   });
 });
 
+
+
+
 add_task(async function testNoRevert() {
-  await doTest(false);
+  await doSimpleTest(false);
 });
 
+
+
+
 add_task(async function testRevert() {
-  await doTest(true);
+  await doSimpleTest(true);
 });
+
+
+
 
 add_task(async function spacesBeforeAlias() {
   gURLBar.search("     " + ALIAS);
@@ -39,6 +48,8 @@ add_task(async function spacesBeforeAlias() {
   EventUtils.synthesizeKey("KEY_Escape");
   await promisePopupHidden(gURLBar.popup);
 });
+
+
 
 add_task(async function charsBeforeAlias() {
   gURLBar.search("not an alias " + ALIAS);
@@ -53,6 +64,7 @@ add_task(async function charsBeforeAlias() {
 
 
 
+
 add_task(async function aliasCase() {
   let alias = "@TeSt";
   gURLBar.search(alias);
@@ -63,6 +75,13 @@ add_task(async function aliasCase() {
   EventUtils.synthesizeKey("KEY_Escape");
   await promisePopupHidden(gURLBar.popup);
 });
+
+
+
+
+
+
+
 
 add_task(async function inputDoesntMatchHeuristicResult() {
   
@@ -106,10 +125,52 @@ add_task(async function inputDoesntMatchHeuristicResult() {
   Assert.equal(gURLBar.value, value);
   Assert.ok(gURLBar.value.includes(ALIAS));
   assertHighlighted(false, ALIAS);
+
+  
+  gURLBar.search("");
 });
 
 
-async function doTest(revertBetweenSteps) {
+
+
+add_task(async function nonHeuristicAliases() {
+  
+  
+  let tokenEngines = [];
+  for (let engine of Services.search.getEngines()) {
+    let tokenAliases = engine.wrappedJSObject._internalAliases;
+    if (tokenAliases.length) {
+      tokenEngines.push({ engine, tokenAliases });
+    }
+  }
+  if (!tokenEngines.length) {
+    Assert.ok(true, "No token alias engines, skipping task.");
+    return;
+  }
+  info("Got token alias engines: " +
+       tokenEngines.map(({ engine }) => engine.name));
+
+  
+  
+  gURLBar.search("@");
+  await promiseSearchComplete();
+  await waitForAutocompleteResultAt(tokenEngines.length - 1);
+
+  
+  
+  for (let { tokenAliases } of tokenEngines) {
+    let alias = tokenAliases[0];
+    EventUtils.synthesizeKey("KEY_ArrowDown");
+    assertHighlighted(true, alias);
+  }
+
+  
+  EventUtils.synthesizeKey("KEY_Escape");
+  await promisePopupHidden(gURLBar.popup);
+});
+
+
+async function doSimpleTest(revertBetweenSteps) {
   
   gURLBar.search(ALIAS.substr(0, ALIAS.length - 1));
   await promiseSearchComplete();
@@ -190,8 +251,11 @@ function assertHighlighted(highlighted, expectedAlias) {
     return;
   }
   Assert.equal(selection.rangeCount, 1);
-  let index = gURLBar.value.indexOf(expectedAlias);
-  Assert.ok(index >= 0);
+  let index = gURLBar.textValue.indexOf(expectedAlias);
+  Assert.ok(
+    index >= 0,
+    `gURLBar.textValue="${gURLBar.textValue}" expectedAlias="${expectedAlias}"`
+  );
   let range = selection.getRangeAt(0);
   Assert.ok(range);
   Assert.equal(range.startOffset, index);

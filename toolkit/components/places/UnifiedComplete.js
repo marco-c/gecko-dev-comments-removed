@@ -814,6 +814,17 @@ Search.prototype = {
 
     
     
+    if (this._trimmedOriginalSearchString == "@") {
+      let added = await this._addSearchEngineTokenAliasResults();
+      if (added) {
+        this._cleanUpNonCurrentMatches(null);
+        this._autocompleteSearch.finishSearch(true);
+        return;
+      }
+    }
+
+    
+    
     
     this._addingHeuristicFirstMatch = true;
     let hasHeuristic = await this._matchFirstHeuristicResult(conn);
@@ -886,7 +897,7 @@ Search.prototype = {
           if (this._searchEngineAliasMatch || this.hasBehavior("restrict")) {
             
             await searchSuggestionsCompletePromise;
-            this._cleanUpNonCurrentMatches(UrlbarUtils.MATCH_GROUP.SUGGESTION);
+            this._cleanUpNonCurrentMatches(null);
             this._autocompleteSearch.finishSearch(true);
             return;
           }
@@ -1069,6 +1080,30 @@ Search.prototype = {
       Infinity,
       ["preloaded-top-site"]
     );
+    return true;
+  },
+
+  
+
+
+
+
+  async _addSearchEngineTokenAliasResults() {
+    let engines = await PlacesSearchAutocompleteProvider.tokenAliasEngines();
+    if (!engines || !engines.length) {
+      return false;
+    }
+    for (let { engine, tokenAliases } of engines) {
+      let alias = tokenAliases[0];
+      
+      
+      
+      this._addSearchEngineMatch({
+        engine,
+        alias,
+        input: alias + " ",
+      });
+    }
     return true;
   },
 
@@ -1398,11 +1433,10 @@ Search.prototype = {
       return false;
     }
 
-    let query = this._trimmedOriginalSearchString.substr(alias.length + 1);
     this._searchEngineAliasMatch = {
       engine,
-      query,
       alias,
+      query: this._trimmedOriginalSearchString.substr(alias.length + 1),
     };
     this._addSearchEngineMatch(this._searchEngineAliasMatch);
     if (!this._keywordSubstitute) {
@@ -1457,20 +1491,27 @@ Search.prototype = {
 
 
 
+
+
+
+
+
   _addSearchEngineMatch({engine,
-                         query,
-                         alias,
-                         suggestion,
-                         historical}) {
+                         query = "",
+                         alias = undefined,
+                         suggestion = undefined,
+                         historical = false,
+                         input = undefined}) {
     let actionURLParams = {
       engineName: engine.name,
-      input: suggestion || this._originalSearchString,
+      input: input || suggestion || this._originalSearchString,
       searchQuery: query,
     };
-    if (suggestion)
-      actionURLParams.searchSuggestion = suggestion;
     if (alias) {
       actionURLParams.alias = alias;
+    }
+    if (suggestion) {
+      actionURLParams.searchSuggestion = suggestion;
     }
     let value = PlacesUtils.mozActionURI("searchengine", actionURLParams);
     let match = {
