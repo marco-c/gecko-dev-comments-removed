@@ -310,7 +310,7 @@ var gSearchResultsPane = {
       gotoPref("paneGeneral");
 
       
-      for (let element of document.querySelectorAll("caption.search-header")) {
+      for (let element of document.querySelectorAll(".search-header")) {
         element.hidden = true;
       }
     }
