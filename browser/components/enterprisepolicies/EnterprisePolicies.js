@@ -43,22 +43,6 @@ XPCOMUtils.defineLazyGetter(this, "log", () => {
   });
 });
 
-
-
-
-const EnterprisePoliciesFactory = {
-  _instance: null,
-  createInstance: function BGSF_createInstance(outer, iid) {
-    if (outer != null)
-      throw Cr.NS_ERROR_NO_AGGREGATION;
-    return this._instance == null ?
-      this._instance = new EnterprisePoliciesManager() : this._instance;
-  }
-};
-
-
-
-
 function EnterprisePoliciesManager() {
   Services.obs.addObserver(this, "profile-after-change", true);
   Services.obs.addObserver(this, "final-ui-startup", true);
@@ -67,14 +51,11 @@ function EnterprisePoliciesManager() {
 }
 
 EnterprisePoliciesManager.prototype = {
-  
-  classID:          Components.ID("{ea4e1414-779b-458b-9d1f-d18e8efbc145}"),
+  classID:        Components.ID("{ea4e1414-779b-458b-9d1f-d18e8efbc145}"),
   QueryInterface: ChromeUtils.generateQI([Ci.nsIObserver,
                                           Ci.nsISupportsWeakReference,
                                           Ci.nsIEnterprisePolicies]),
-
-  
-  _xpcom_factory: EnterprisePoliciesFactory,
+  _xpcom_factory: XPCOMUtils.generateSingletonFactory(EnterprisePoliciesManager),
 
   _initialize() {
     let provider = this._chooseProvider();
