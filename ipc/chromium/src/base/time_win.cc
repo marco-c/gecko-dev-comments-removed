@@ -139,17 +139,6 @@ Time Time::NowFromSystemTime() {
 }
 
 
-Time Time::FromFileTime(FILETIME ft) {
-  return Time(FileTimeToMicroseconds(ft));
-}
-
-FILETIME Time::ToFileTime() const {
-  FILETIME utc_ft;
-  MicrosecondsToFileTime(us_, &utc_ft);
-  return utc_ft;
-}
-
-
 Time Time::FromExploded(bool is_local, const Exploded& exploded) {
   
   
@@ -255,14 +244,6 @@ class NowSingleton {
 };
 
 }  
-
-
-TimeTicks::TickFunctionType TimeTicks::SetMockTickFunction(
-    TickFunctionType ticker) {
-  TickFunctionType old = tick_function;
-  tick_function = ticker;
-  return old;
-}
 
 
 TimeTicks TimeTicks::Now() {

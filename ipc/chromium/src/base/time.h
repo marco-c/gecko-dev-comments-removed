@@ -28,12 +28,6 @@
 
 #include "base/basictypes.h"
 
-#if defined(OS_WIN)
-
-
-#include <windows.h>
-#endif
-
 namespace base {
 
 class Time;
@@ -198,11 +192,6 @@ class Time {
   
   static Time FromDoubleT(double dt);
   double ToDoubleT() const;
-
-#if defined(OS_WIN)
-  static Time FromFileTime(FILETIME ft);
-  FILETIME ToFileTime() const;
-#endif
 
   
   
@@ -391,11 +380,6 @@ class TimeTicks {
 
   
   int64_t ticks_;
-
-#if defined(OS_WIN)
-  typedef DWORD (*TickFunctionType)(void);
-  static TickFunctionType SetMockTickFunction(TickFunctionType ticker);
-#endif
 };
 
 inline TimeTicks TimeDelta::operator+(TimeTicks t) const {
