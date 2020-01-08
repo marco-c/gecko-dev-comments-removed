@@ -279,25 +279,33 @@ nsListControlFrame::AccessibleType()
 }
 #endif
 
-static nscoord
-GetMaxOptionBSize(nsIFrame* aContainer, WritingMode aWM)
+
+
+static bool
+GetMaxRowBSize(nsIFrame* aContainer, WritingMode aWM, nscoord* aResult)
 {
-  nscoord result = 0;
-  for (nsIFrame* option : aContainer->PrincipalChildList()) {
-    nscoord optionBSize;
-    if (HTMLOptGroupElement::FromNode(option->GetContent())) {
+  bool found = false;
+  for (nsIFrame* child : aContainer->PrincipalChildList()) {
+    if (child->GetContent()->IsHTMLElement(nsGkAtoms::optgroup)) {
       
       
-      auto frame = option->GetContentInsertionFrame();
-      optionBSize = frame ? GetMaxOptionBSize(frame, aWM) : 0;
+      auto inner = child->GetContentInsertionFrame();
+      if (inner && GetMaxRowBSize(inner, aWM, aResult)) {
+        found = true;
+      }
     } else {
       
-      optionBSize = option->BSize(aWM);
+      bool isOptGroupLabel = child->Style()->IsPseudoElement() &&
+        aContainer->GetContent()->IsHTMLElement(nsGkAtoms::optgroup);
+      nscoord childBSize = child->BSize(aWM);
+      
+      if (!isOptGroupLabel || childBSize > nscoord(0)) {
+        found = true;
+        *aResult = std::max(childBSize, *aResult);
+      }
     }
-    if (result < optionBSize)
-      result = optionBSize;
   }
-  return result;
+  return found;
 }
 
 
@@ -312,17 +320,13 @@ nsListControlFrame::CalcBSizeOfARow()
   
   
   
-  int32_t blockSizeOfARow = GetMaxOptionBSize(GetOptionsContainer(),
-                                              GetWritingMode());
-
-  
-  
-  if (blockSizeOfARow == 0 && GetNumberOfOptions() == 0) {
+  nscoord rowBSize(0);
+  if (!GetMaxRowBSize(GetOptionsContainer(), GetWritingMode(), &rowBSize)) {
+    
     float inflation = nsLayoutUtils::FontSizeInflationFor(this);
-    blockSizeOfARow = CalcFallbackRowBSize(inflation);
+    rowBSize = CalcFallbackRowBSize(inflation);
   }
-
-  return blockSizeOfARow;
+  return rowBSize;
 }
 
 nscoord
