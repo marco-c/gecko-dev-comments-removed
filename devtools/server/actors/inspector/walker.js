@@ -758,6 +758,8 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       }
     }
 
+    const useNonAnonymousWalker = shadowRoot || shadowHost || isUnslottedHostChild;
+
     
     
     const getFilteredWalker = documentWalkerNode => {
@@ -767,7 +769,6 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       
       const skipTo = SKIP_TO_SIBLING;
 
-      const useNonAnonymousWalker = shadowRoot || shadowHost || isUnslottedHostChild;
       if (useNonAnonymousWalker) {
         
         
@@ -809,7 +810,10 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       
       
       
-      if (isShadowRoot(start)) {
+      if (
+        useNonAnonymousWalker &&
+        (isShadowRoot(start) || isNativeAnonymous(start))
+      ) {
         start = firstChild;
       }
 
