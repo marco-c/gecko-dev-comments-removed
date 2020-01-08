@@ -71,7 +71,6 @@ class Header extends PureComponent {
       onHideBoxModelHighlighter,
       onSetFlexboxOverlayColor,
       onShowBoxModelHighlighterForNode,
-      setSelectedNode,
     } = this.props;
 
     return FlexContainer({
@@ -80,7 +79,6 @@ class Header extends PureComponent {
       onHideBoxModelHighlighter,
       onSetFlexboxOverlayColor,
       onShowBoxModelHighlighterForNode,
-      setSelectedNode,
     });
   }
 
@@ -97,14 +95,9 @@ class Header extends PureComponent {
       flexItems,
       flexItemShown,
     } = flexContainer;
-    const flexItem = flexItems.find(item => item.nodeFront.actorID === flexItemShown);
-
-    if (!flexItem) {
-      return null;
-    }
 
     return FlexItemSelector({
-      flexItem,
+      flexItem: flexItems.find(item => item.nodeFront.actorID === flexItemShown),
       flexItems,
       setSelectedNode,
     });
