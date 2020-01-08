@@ -159,23 +159,30 @@ function getInterfaceProxy(obj) {
 
 window.MozXULElement = MozXULElement;
 
-for (let script of [
-  "chrome://global/content/elements/general.js",
-  "chrome://global/content/elements/textbox.js",
-  "chrome://global/content/elements/tabbox.js",
-]) {
-  Services.scriptloader.loadSubScript(script, window);
-}
 
-for (let [tag, script] of [
-  ["findbar", "chrome://global/content/elements/findbar.js"],
-  ["stringbundle", "chrome://global/content/elements/stringbundle.js"],
-  ["printpreview-toolbar", "chrome://global/content/printPreviewToolbar.js"],
-  ["editor", "chrome://global/content/elements/editor.js"],
-]) {
-  customElements.setElementCreationCallback(tag, () => {
+
+const isDummyDocument = document.documentURI == "chrome://extensions/content/dummy.xul";
+if (!isDummyDocument) {
+
+  for (let script of [
+    "chrome://global/content/elements/general.js",
+    "chrome://global/content/elements/textbox.js",
+    "chrome://global/content/elements/tabbox.js",
+  ]) {
     Services.scriptloader.loadSubScript(script, window);
-  });
+  }
+
+  for (let [tag, script] of [
+    ["findbar", "chrome://global/content/elements/findbar.js"],
+    ["stringbundle", "chrome://global/content/elements/stringbundle.js"],
+    ["printpreview-toolbar", "chrome://global/content/printPreviewToolbar.js"],
+    ["editor", "chrome://global/content/elements/editor.js"],
+  ]) {
+    customElements.setElementCreationCallback(tag, () => {
+      Services.scriptloader.loadSubScript(script, window);
+    });
+  }
+
 }
 
 }
