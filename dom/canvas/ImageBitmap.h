@@ -148,11 +148,6 @@ public:
   friend CreateImageBitmapFromBlobTask;
   friend CreateImageBitmapFromBlobWorkerTask;
 
-  
-  ImageBitmapFormat
-  FindOptimalFormat(const Optional<Sequence<ImageBitmapFormat>>& aPossibleFormats,
-                    ErrorResult& aRv);
-
   size_t GetAllocatedSize() const;
 
   void OnShutdown();
