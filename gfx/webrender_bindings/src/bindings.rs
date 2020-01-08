@@ -1626,6 +1626,17 @@ pub extern "C" fn wr_api_capture(
     let cstr = unsafe { CStr::from_ptr(path) };
     let mut path = PathBuf::from(&*cstr.to_string_lossy());
 
+    #[cfg(target_os = "android")]
+    {
+        
+        
+        
+        
+        if let Ok(storage_path) = env::var("PUBLIC_STORAGE") {
+            path = PathBuf::from(storage_path).join(path);
+        }
+    }
+
     
     while path.is_dir() {
         let count: u32 = path.extension()
@@ -1635,8 +1646,9 @@ pub extern "C" fn wr_api_capture(
         path.set_extension((count + 1).to_string());
     }
 
+    
     let border = "--------------------------\n";
-    print!("{} Capturing WR state to: {:?}\n{}", &border, &path, &border);
+    warn!("{} Capturing WR state to: {:?}\n{}", &border, &path, &border);
 
     let _ = create_dir_all(&path);
     match File::create(path.join("wr.txt")) {
