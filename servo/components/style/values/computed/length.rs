@@ -953,7 +953,7 @@ impl ExtremumLength {
     
     
     
-    fn valid_for(&self, wm: WritingMode, longhand: LonghandId) -> bool {
+    fn valid_for(wm: WritingMode, longhand: LonghandId) -> bool {
         
         match longhand {
             
@@ -1018,7 +1018,7 @@ impl ToComputedValue for specified::MozLength {
                     .rule_cache_conditions
                     .borrow_mut()
                     .set_writing_mode_dependency(context.builder.writing_mode);
-                if !ext.valid_for(
+                if !ExtremumLength::valid_for(
                     context.builder.writing_mode,
                     context.for_non_inherited_property.unwrap(),
                 ) {
@@ -1080,7 +1080,7 @@ impl ToComputedValue for specified::MaxLength {
                     .rule_cache_conditions
                     .borrow_mut()
                     .set_writing_mode_dependency(context.builder.writing_mode);
-                if !ext.valid_for(
+                if !ExtremumLength::valid_for(
                     context.builder.writing_mode,
                     context.for_non_inherited_property.unwrap(),
                 ) {
