@@ -73,9 +73,8 @@ TMimeType<char_type>::Parse(const nsTSubstring<char_type>& aMimeType)
           ++pos;
         }
         break;
-      } else {
-        return nullptr;
       }
+      return nullptr;
     }
     ++pos;
   }
@@ -127,23 +126,42 @@ TMimeType<char_type>::Parse(const nsTSubstring<char_type>& aMimeType)
     }
 
     
+    if (pos == end) {
+      break;
+    }
+
+    
     ParameterValue paramValue;
     bool paramValueHadInvalidChars = false;
 
     
-    if (pos < end) {
+    if (*pos == '"') {
 
       
-      if (*pos == '"') {
+      ++pos;
+
+      
+      while (true) {
 
         
-        ++pos;
+        while (pos < end && *pos != '"' && *pos != '\\') {
+          if (!IsHTTPQuotedStringTokenPoint(*pos)) {
+            paramValueHadInvalidChars = true;
+          }
+          if (!IsHTTPTokenPoint(*pos)) {
+            paramValue.mRequiresQuoting = true;
+          }
+          paramValue.Append(*pos);
+          ++pos;
+        }
 
         
-        while (true) {
+        if (pos < end && *pos == '\\') {
+          
+          ++pos;
 
           
-          while (pos < end && *pos != '"' && *pos != '\\') {
+          if (pos < end) {
             if (!IsHTTPQuotedStringTokenPoint(*pos)) {
               paramValueHadInvalidChars = true;
             }
@@ -152,78 +170,65 @@ TMimeType<char_type>::Parse(const nsTSubstring<char_type>& aMimeType)
             }
             paramValue.Append(*pos);
             ++pos;
+            continue;
           }
 
           
-          if (pos < end && *pos == '\\') {
-            
-            ++pos;
-
-            
-            if (pos < end) {
-              if (!IsHTTPQuotedStringTokenPoint(*pos)) {
-                paramValueHadInvalidChars = true;
-              }
-              if (!IsHTTPTokenPoint(*pos)) {
-                paramValue.mRequiresQuoting = true;
-              }
-              paramValue.Append(*pos);
-              ++pos;
-              continue;
-            }
-
-            
-            paramValue.Append('\\');
-            paramValue.mRequiresQuoting = true;
-            break;
-          } else {
-            
-            break;
-          }
+          paramValue.Append('\\');
+          paramValue.mRequiresQuoting = true;
         }
 
         
-        while (pos < end && *pos != ';') {
-          ++pos;
-        }
-
-      } else {
-
-        const char_type* paramValueStart = pos;
-
-        
-        while (pos < end && *pos != ';') {
-          if (!IsHTTPQuotedStringTokenPoint(*pos)) {
-            paramValueHadInvalidChars = true;
-          }
-          if (!IsHTTPTokenPoint(*pos)) {
-            paramValue.mRequiresQuoting = true;
-          }
-          ++pos;
-        }
-
-        
-        const char_type* paramValueEnd = pos - 1;
-        while (paramValueEnd >= paramValueStart &&
-               mozilla::IsAsciiWhitespace(*paramValueEnd)) {
-          --paramValueEnd;
-        }
-
-        for (const char_type* c = paramValueStart; c <= paramValueEnd; ++c) {
-          paramValue.Append(*c);
-        }
+        break;
       }
 
       
-      if (!paramName.IsEmpty() && !paramValue.IsEmpty() &&
-          !paramNameHadInvalidChars && !paramValueHadInvalidChars &&
-          !mimeType->mParameters.Get(paramName, &paramValue)) {
-        mimeType->mParameters.Put(paramName, paramValue);
-        mimeType->mParameterNames.AppendElement(paramName);
+      while (pos < end && *pos != ';') {
+        ++pos;
       }
+
+    
+    } else {
+
+      
+      const char_type* paramValueStart = pos;
+      while (pos < end && *pos != ';') {
+        ++pos;
+      }
+
+      
+      const char_type* paramValueLastChar = pos - 1;
+      while (paramValueLastChar >= paramValueStart &&
+             mozilla::IsAsciiWhitespace(*paramValueLastChar)) {
+        --paramValueLastChar;
+      }
+
+      
+      if (paramValueStart > paramValueLastChar) {
+        continue;
+      }
+
+      for (const char_type* c = paramValueStart; c <= paramValueLastChar; ++c) {
+        if (!IsHTTPQuotedStringTokenPoint(*c)) {
+          paramValueHadInvalidChars = true;
+        }
+        if (!IsHTTPTokenPoint(*c)) {
+          paramValue.mRequiresQuoting = true;
+        }
+        paramValue.Append(*c);
+      }
+    }
+
+    
+    if (!paramName.IsEmpty() && !paramNameHadInvalidChars &&
+        !paramValueHadInvalidChars &&
+        !mimeType->mParameters.Get(paramName, &paramValue)) {
+      mimeType->mParameters.Put(paramName, paramValue);
+      mimeType->mParameterNames.AppendElement(paramName);
     }
   }
 
+  
   return mimeType;
 }
 
@@ -274,7 +279,7 @@ TMimeType<char_type>::GetParameterValue(const nsTSubstring<char_type>& aName,
     return false;
   }
 
-  if (value.mRequiresQuoting) {
+  if (value.mRequiresQuoting || value.IsEmpty()) {
     aOutput.AppendLiteral("\"");
     const char_type* vcur = value.BeginReading();
     const char_type* vend = value.EndReading();
