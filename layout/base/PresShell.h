@@ -51,6 +51,7 @@ class Selection;
 }  
 
 class EventDispatchingCallback;
+class OverflowChangedTracker;
 
 
 
@@ -426,7 +427,10 @@ class PresShell final : public nsIPresShell,
   void ScheduleReflow();
 
   
-  bool DoReflow(nsIFrame* aFrame, bool aInterruptible);
+  
+  
+  bool DoReflow(nsIFrame* aFrame, bool aInterruptible,
+                mozilla::OverflowChangedTracker* aOverflowTracker);
 #ifdef DEBUG
   void DoVerifyReflow();
   void VerifyHasDirtyRootAncestor(nsIFrame* aFrame);
