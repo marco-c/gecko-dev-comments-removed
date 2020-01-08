@@ -616,7 +616,8 @@ static bool
 ShouldLoadCachedImage(imgRequest* aImgRequest,
                       nsISupports* aLoadingContext,
                       nsIPrincipal* aTriggeringPrincipal,
-                      nsContentPolicyType aPolicyType)
+                      nsContentPolicyType aPolicyType,
+                      bool aSendCSPViolationReports)
 {
   
 
@@ -649,6 +650,8 @@ ShouldLoadCachedImage(imgRequest* aImgRequest,
                  requestingNode,
                  nsILoadInfo::SEC_ONLY_FOR_EXPLICIT_CONTENTSEC_CHECK,
                  aPolicyType);
+
+  secCheckLoadInfo->SetSendCSPViolationEvents(aSendCSPViolationReports);
 
   int16_t decision = nsIContentPolicy::REJECT_REQUEST;
   rv = NS_CheckContentLoadPolicy(contentLocation,
@@ -746,7 +749,8 @@ ValidateSecurityInfo(imgRequest* request, bool forcePrincipalCheck,
   }
 
   
-  return ShouldLoadCachedImage(request, aCX, triggeringPrincipal, aPolicyType);
+  return ShouldLoadCachedImage(request, aCX, triggeringPrincipal, aPolicyType,
+                                false);
 }
 
 static nsresult
@@ -1797,7 +1801,8 @@ imgLoader::ValidateRequestWithNewChannel(imgRequest* request,
                                          nsContentPolicyType aLoadPolicyType,
                                          imgRequestProxy** aProxyRequest,
                                          nsIPrincipal* aTriggeringPrincipal,
-                                         int32_t aCORSMode)
+                                         int32_t aCORSMode,
+                                         bool* aNewChannelCreated)
 {
   
   
@@ -1851,6 +1856,10 @@ imgLoader::ValidateRequestWithNewChannel(imgRequest* request,
                        mRespectPrivacy);
   if (NS_FAILED(rv)) {
     return false;
+  }
+
+  if (aNewChannelCreated) {
+    *aNewChannelCreated = true;
   }
 
   RefPtr<imgRequestProxy> req;
@@ -1917,6 +1926,7 @@ imgLoader::ValidateEntry(imgCacheEntry* aEntry,
                          nsLoadFlags aLoadFlags,
                          nsContentPolicyType aLoadPolicyType,
                          bool aCanMakeNewChannel,
+                         bool* aNewChannelCreated,
                          imgRequestProxy** aProxyRequest,
                          nsIPrincipal* aTriggeringPrincipal,
                          int32_t aCORSMode)
@@ -2036,7 +2046,7 @@ imgLoader::ValidateEntry(imgCacheEntry* aEntry,
                                          aCX, aLoadingDocument,
                                          aLoadFlags, aLoadPolicyType,
                                          aProxyRequest, aTriggeringPrincipal,
-                                         aCORSMode);
+                                         aCORSMode, aNewChannelCreated);
   }
 
   return !validateRequest;
@@ -2341,10 +2351,12 @@ imgLoader::LoadImage(nsIURI* aURI,
   imgCacheTable& cache = GetCache(key);
 
   if (cache.Get(key, getter_AddRefs(entry)) && entry) {
+    bool newChannelCreated = false;
     if (ValidateEntry(entry, aURI, aInitialDocumentURI, aReferrerURI,
                       aReferrerPolicy, aLoadGroup, aObserver, aLoadingDocument,
                       aLoadingDocument, requestFlags, aContentPolicyType, true,
-                      _retval, aTriggeringPrincipal, corsmode)) {
+                      &newChannelCreated, _retval, aTriggeringPrincipal,
+                      corsmode)) {
       request = entry->GetRequest();
 
       
@@ -2363,6 +2375,18 @@ imgLoader::LoadImage(nsIURI* aURI,
 
       entry->Touch();
 
+      if (!newChannelCreated) {
+        
+        
+        
+        
+        
+        DebugOnly<bool> shouldLoad =
+          ShouldLoadCachedImage(request, aLoadingDocument, aTriggeringPrincipal,
+                                aContentPolicyType,
+                                 true);
+        MOZ_ASSERT(shouldLoad);
+      }
     } else {
       
       
@@ -2613,7 +2637,7 @@ imgLoader::LoadImageWithChannel(nsIChannel* channel,
 
       if (ValidateEntry(entry, uri, nullptr, nullptr, RP_Unset,
                         nullptr, aObserver, aCX, doc, requestFlags,
-                        policyType, false, nullptr,
+                        policyType, false, nullptr, nullptr,
                         nullptr, imgIRequest::CORS_NONE)) {
         request = entry->GetRequest();
       } else {

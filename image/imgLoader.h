@@ -413,6 +413,7 @@ private:
                      nsLoadFlags aLoadFlags,
                      nsContentPolicyType aContentPolicyType,
                      bool aCanMakeNewChannel,
+                     bool* aNewChannelCreated,
                      imgRequestProxy** aProxyRequest,
                      nsIPrincipal* aLoadingPrincipal,
                      int32_t aCORSMode);
@@ -429,7 +430,8 @@ private:
                                      nsContentPolicyType aContentPolicyType,
                                      imgRequestProxy** aProxyRequest,
                                      nsIPrincipal* aLoadingPrincipal,
-                                     int32_t aCORSMode);
+                                     int32_t aCORSMode,
+                                     bool* aNewChannelCreated);
 
   nsresult CreateNewProxyForRequest(imgRequest* aRequest,
                                     nsILoadGroup* aLoadGroup,

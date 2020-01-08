@@ -188,6 +188,7 @@ CSPService::ShouldLoad(nsIURI *aContentLocation,
                                   requestContext,
                                   aMimeTypeGuess,
                                   nullptr, 
+                                  aLoadInfo->GetSendCSPViolationEvents(),
                                   aDecision);
       NS_ENSURE_SUCCESS(rv, rv);
 
@@ -212,6 +213,7 @@ CSPService::ShouldLoad(nsIURI *aContentLocation,
                          requestContext,
                          aMimeTypeGuess,
                          nullptr, 
+                         aLoadInfo->GetSendCSPViolationEvents(),
                          aDecision);
     NS_ENSURE_SUCCESS(rv, rv);
   }
@@ -324,6 +326,7 @@ CSPService::AsyncOnChannelRedirect(nsIChannel *oldChannel,
                              requestContext, 
                              EmptyCString(), 
                              originalUri,    
+                             true,           
                              &aDecision);
 
       
@@ -348,6 +351,7 @@ CSPService::AsyncOnChannelRedirect(nsIChannel *oldChannel,
                     requestContext, 
                     EmptyCString(), 
                     originalUri,    
+                    true,           
                     &aDecision);
   }
 
