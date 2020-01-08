@@ -1761,7 +1761,12 @@ class JSScript : public js::gc::TenuredCell
 
 
 
-    bool isTopLevel() { return code() && !functionNonDelazifying(); }
+
+
+
+    bool isTopLevel() const {
+        return code() && !functionNonDelazifying();
+    }
 
     
     inline bool ensureHasTypes(JSContext* cx, js::AutoKeepTypeScripts&);
@@ -2083,6 +2088,12 @@ class JSScript : public js::gc::TenuredCell
 #ifdef DEBUG
     uint32_t stepModeCount() { return bitFields_.hasDebugScript_ ? debugScript()->stepMode : 0; }
 #endif
+
+    
+    
+    
+    void setTopLevelPrivate(void* value);
+    void* maybeTopLevelPrivate() const;
 
     void finalize(js::FreeOp* fop);
 

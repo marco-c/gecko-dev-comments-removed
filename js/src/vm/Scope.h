@@ -419,6 +419,17 @@ class Scope : public js::gc::TenuredCell
 class BaseScopeData
 {};
 
+
+
+
+
+class TopLevelScopeData : public BaseScopeData
+{
+  public:
+    
+    void* privateData = nullptr;
+};
+
 template<class Data>
 inline size_t
 SizeOfData(uint32_t numBindings)
@@ -772,7 +783,7 @@ class GlobalScope : public Scope
   public:
     
     
-    struct Data : BaseScopeData
+    struct Data : public TopLevelScopeData
     {
         
         
@@ -825,6 +836,14 @@ class GlobalScope : public Scope
 
     bool hasBindings() const {
         return data().length > 0;
+    }
+
+    void setTopLevelPrivate(void* value) {
+        data().privateData = value;
+    }
+
+    void* topLevelPrivate() const {
+        return data().privateData;
     }
 };
 
@@ -964,7 +983,7 @@ class ModuleScope : public Scope
   public:
     
     
-    struct Data : BaseScopeData
+    struct Data : public TopLevelScopeData
     {
         
         GCPtr<ModuleObject*> module = {};
@@ -1020,6 +1039,14 @@ class ModuleScope : public Scope
     }
 
     JSScript* script() const;
+
+    void setTopLevelPrivate(void* value) {
+        data().privateData = value;
+    }
+
+    void* topLevelPrivate() const {
+        return data().privateData;
+    }
 
     static Shape* getEmptyEnvironmentShape(JSContext* cx);
 };
