@@ -133,38 +133,38 @@ class nsDocShell final
 {
 public:
   enum InternalLoad : uint32_t {
-  INTERNAL_LOAD_FLAGS_NONE                    = 0x0,
-  INTERNAL_LOAD_FLAGS_INHERIT_PRINCIPAL       = 0x1,
-  INTERNAL_LOAD_FLAGS_DONT_SEND_REFERRER      = 0x2,
-  INTERNAL_LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP = 0x4,
+    INTERNAL_LOAD_FLAGS_NONE                    = 0x0,
+    INTERNAL_LOAD_FLAGS_INHERIT_PRINCIPAL       = 0x1,
+    INTERNAL_LOAD_FLAGS_DONT_SEND_REFERRER      = 0x2,
+    INTERNAL_LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP = 0x4,
 
-  
-  
-  INTERNAL_LOAD_FLAGS_FIRST_LOAD              = 0x8,
-
-
-  
-  
-  INTERNAL_LOAD_FLAGS_LOADURI_SETUP_FLAGS     = 0xf,
+    
+    
+    INTERNAL_LOAD_FLAGS_FIRST_LOAD              = 0x8,
 
 
-  INTERNAL_LOAD_FLAGS_BYPASS_CLASSIFIER       = 0x10,
-  INTERNAL_LOAD_FLAGS_FORCE_ALLOW_COOKIES     = 0x20,
+    
+    
+    INTERNAL_LOAD_FLAGS_LOADURI_SETUP_FLAGS     = 0xf,
 
-  
-  INTERNAL_LOAD_FLAGS_IS_SRCDOC               = 0x40,
 
-  
-  INTERNAL_LOAD_FLAGS_ORIGINAL_FRAME_SRC      = 0x80,
+    INTERNAL_LOAD_FLAGS_BYPASS_CLASSIFIER       = 0x10,
+    INTERNAL_LOAD_FLAGS_FORCE_ALLOW_COOKIES     = 0x20,
 
-  INTERNAL_LOAD_FLAGS_NO_OPENER               = 0x100,
+    
+    INTERNAL_LOAD_FLAGS_IS_SRCDOC               = 0x40,
 
-  
-  INTERNAL_LOAD_FLAGS_FORCE_ALLOW_DATA_URI    = 0x200,
+    
+    INTERNAL_LOAD_FLAGS_ORIGINAL_FRAME_SRC      = 0x80,
 
-  
-  INTERNAL_LOAD_FLAGS_IS_USER_TRIGGERED       = 0x1000,
-    };
+    INTERNAL_LOAD_FLAGS_NO_OPENER               = 0x100,
+
+    
+    INTERNAL_LOAD_FLAGS_FORCE_ALLOW_DATA_URI    = 0x200,
+
+    
+    INTERNAL_LOAD_FLAGS_IS_USER_TRIGGERED       = 0x1000,
+  };
 
   
   class RestorePresentationEvent : public mozilla::Runnable
@@ -1089,15 +1089,15 @@ private:
   int32_t mChildOffset;
 
   uint32_t mSandboxFlags;
-  uint32_t mBusyFlags;
-  uint32_t mAppType;
+  BusyFlags mBusyFlags;
+  AppType mAppType;
   uint32_t mLoadType;
   uint32_t mDefaultLoadFlags;
   uint32_t mReferrerPolicy;
   uint32_t mFailedLoadType;
 
   
-  uint32_t mFrameType;
+  FrameType mFrameType;
 
   
   
@@ -1108,15 +1108,7 @@ private:
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  uint32_t mDisplayMode;
+  DisplayMode mDisplayMode;
 
   
   
@@ -1124,11 +1116,11 @@ private:
 
   
   
-  uint32_t mTouchEventsOverride;
+  TouchEventsOverride mTouchEventsOverride;
 
   
   
-  uint32_t mMetaViewportOverride;
+  MetaViewportOverride mMetaViewportOverride;
 
   
   
