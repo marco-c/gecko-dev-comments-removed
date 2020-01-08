@@ -22,6 +22,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/Compression.h"
 #include "mozilla/MathAlgorithms.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/Unused.h"
 
 #include <new>
@@ -5890,7 +5891,11 @@ CheckFunction(ModuleValidator& m)
 {
     
     
+    
     AsmJSParser::Mark mark = m.parser().mark();
+    auto releaseMark = mozilla::MakeScopeExit([&] {
+        m.parser().release(mark);
+    });
 
     CodeNode* funNode = nullptr;
     unsigned line = 0;
@@ -5944,8 +5949,6 @@ CheckFunction(ModuleValidator& m)
 
     f.define(func, line);
 
-    
-    m.parser().release(mark);
     return true;
 }
 
