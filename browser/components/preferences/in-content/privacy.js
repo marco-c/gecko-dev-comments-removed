@@ -545,8 +545,7 @@ var gPrivacyPane = {
     let blockCookiesCtrl = document.getElementById("blockCookies");
     let blockCookiesLabel = document.getElementById("blockCookiesLabel");
     let blockCookiesMenu = document.getElementById("blockCookiesMenu");
-    let keepUntilLabel = document.getElementById("keepUntil");
-    let keepUntilMenu = document.getElementById("keepCookiesUntil");
+    let deleteOnCloseCheckbox = document.getElementById("deleteOnClose");
 
     let blockCookies = (behavior != 0);
     let cookieBehaviorLocked = Services.prefs.prefIsLocked("network.cookie.cookieBehavior");
@@ -556,9 +555,8 @@ var gPrivacyPane = {
     let completelyBlockCookies = (behavior == 2);
     let privateBrowsing = Preferences.get("browser.privatebrowsing.autostart").value;
     let cookieExpirationLocked = Services.prefs.prefIsLocked("network.cookie.lifetimePolicy");
-    let keepUntilControlsDisabled = privateBrowsing || completelyBlockCookies ||
-                                    cookieExpirationLocked;
-    keepUntilLabel.disabled = keepUntilMenu.disabled = keepUntilControlsDisabled;
+    deleteOnCloseCheckbox.disabled = privateBrowsing || completelyBlockCookies ||
+                                     cookieExpirationLocked;
 
     switch (behavior) {
       case Ci.nsICookieService.BEHAVIOR_ACCEPT:
@@ -744,7 +742,7 @@ var gPrivacyPane = {
   updatePrivacyMicroControls() {
     
     
-    document.getElementById("keepCookiesUntil").value = this.readKeepCookiesUntil();
+    document.getElementById("deleteOnClose").checked = this.readDeleteOnClose();
 
     let clearDataSettings = document.getElementById("clearDataSettings");
 
@@ -932,20 +930,19 @@ var gPrivacyPane = {
 
 
 
-  readKeepCookiesUntil() {
+  readDeleteOnClose() {
     let privateBrowsing = Preferences.get("browser.privatebrowsing.autostart").value;
     if (privateBrowsing) {
-      return Ci.nsICookieService.ACCEPT_SESSION;
+      return true;
     }
 
     let lifetimePolicy = Preferences.get("network.cookie.lifetimePolicy").value;
-    if (lifetimePolicy == Ci.nsICookieService.ACCEPT_SESSION) {
-      return Ci.nsICookieService.ACCEPT_SESSION;
-    }
+    return lifetimePolicy == Ci.nsICookieService.ACCEPT_SESSION;
+  },
 
-    
-    
-    return Ci.nsICookieService.ACCEPT_NORMALLY;
+  writeDeleteOnClose() {
+    let checkbox = document.getElementById("deleteOnClose");
+    return checkbox.checked ? Ci.nsICookieService.ACCEPT_SESSION : Ci.nsICookieService.ACCEPT_NORMALLY;
   },
 
   
