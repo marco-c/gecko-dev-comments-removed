@@ -601,14 +601,14 @@ public:
   
 
 
-  virtual int32_t Invalidations() const {
-    return -1;
+  virtual Maybe<IntRect> TakeDirtyRect() {
+    return Nothing();
   }
 
   
 
 
-  virtual void Invalidate() { }
+  virtual void Invalidate(const IntRect& aDirtyRect) { }
 
 protected:
   bool mIsMapped;

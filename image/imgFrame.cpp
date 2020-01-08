@@ -619,19 +619,27 @@ imgFrame::ImageUpdatedInternal(const nsIntRect& aUpdateRect)
 {
   mMonitor.AssertCurrentThreadOwns();
 
-  mDecoded.UnionRect(mDecoded, aUpdateRect);
+  
+  
+  IntRect updateRect = mFrameRect.Intersect(aUpdateRect);
+  if (updateRect.IsEmpty()) {
+    return NS_OK;
+  }
+
+  mDecoded.UnionRect(mDecoded, updateRect);
 
   
-  
-  mDecoded.IntersectRect(mDecoded, mFrameRect);
+  if (mPalettedImageData) {
+    return NS_OK;
+  }
 
   
   
   if (mRawSurface) {
-    mRawSurface->Invalidate();
+    mRawSurface->Invalidate(updateRect);
   }
   if (mLockedSurface && mRawSurface != mLockedSurface) {
-    mLockedSurface->Invalidate();
+    mLockedSurface->Invalidate(updateRect);
   }
   return NS_OK;
 }
@@ -643,7 +651,27 @@ imgFrame::Finish(Opacity aFrameOpacity ,
   MonitorAutoLock lock(mMonitor);
   MOZ_ASSERT(mLockCount > 0, "Image data should be locked");
 
-  ImageUpdatedInternal(GetRect());
+  if (mPalettedImageData) {
+    ImageUpdatedInternal(mFrameRect);
+  } else if (!mDecoded.IsEqualEdges(mFrameRect)) {
+    
+    
+    
+    IntRect delta(0, 0, mFrameRect.width, 0);
+    if (mDecoded.y == 0) {
+      delta.y = mDecoded.height;
+      delta.height = mFrameRect.height - mDecoded.height;
+    } else if (mDecoded.y + mDecoded.height == mFrameRect.height) {
+      delta.height = mFrameRect.height - mDecoded.y;
+    } else {
+      MOZ_ASSERT_UNREACHABLE("Decoder only updated middle of image!");
+      delta = mFrameRect;
+    }
+
+    ImageUpdatedInternal(delta);
+  }
+
+  MOZ_ASSERT(mDecoded.IsEqualEdges(mFrameRect));
 
   if (aFinalize) {
     FinalizeSurfaceInternal();
