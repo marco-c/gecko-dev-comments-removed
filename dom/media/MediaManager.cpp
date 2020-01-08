@@ -908,20 +908,6 @@ uint32_t MediaDevice::GetBestFitnessDistance(
   MOZ_ASSERT(MediaManager::IsInMediaThread());
   MOZ_ASSERT(mSource);
 
-  nsString mediaSource;
-  GetMediaSource(mediaSource);
-
-  
-  
-  
-  if (!mediaSource.EqualsASCII("microphone")) {
-    for (const auto& constraint : aConstraintSets) {
-      if (constraint->mMediaSource.mIdeal.find(mediaSource) ==
-          constraint->mMediaSource.mIdeal.end()) {
-        return UINT32_MAX;
-      }
-    }
-  }
   
   
   const nsString& id = aIsChrome ? mRawID : mID;
@@ -2487,6 +2473,32 @@ RefPtr<MediaManager::StreamPromise> MediaManager::GetUserMedia(
       }
     }
     if (!privileged) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+
+      if (videoType == MediaSourceEnum::Screen ||
+          videoType == MediaSourceEnum::Application ||
+          videoType == MediaSourceEnum::Browser) {
+        videoType = MediaSourceEnum::Window;
+        vc.mMediaSource.AssignASCII(
+            EnumToASCII(dom::MediaSourceEnumValues::strings, videoType));
+      }
       
       if (vc.mBrowserWindow.WasPassed()) {
         vc.mBrowserWindow.Value() = -1;

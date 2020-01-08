@@ -110,14 +110,14 @@ class MediaEngineRemoteVideoSource : public MediaEngineSource,
 
  public:
   MediaEngineRemoteVideoSource(int aIndex, camera::CaptureEngine aCapEngine,
-                               dom::MediaSourceEnum aMediaSource, bool aScary);
+                               bool aScary);
 
   
   int DeliverFrame(uint8_t* buffer,
                    const camera::VideoFrameProperties& properties) override;
 
   
-  dom::MediaSourceEnum GetMediaSource() const override { return mMediaSource; }
+  dom::MediaSourceEnum GetMediaSource() const override;
   nsresult Allocate(const dom::MediaTrackConstraints& aConstraints,
                     const MediaEnginePrefs& aPrefs, const nsString& aDeviceId,
                     const ipc::PrincipalInfo& aPrincipalInfo,
@@ -174,9 +174,7 @@ class MediaEngineRemoteVideoSource : public MediaEngineSource,
   webrtc::CaptureCapability GetCapability(size_t aIndex) const;
 
   int mCaptureIndex;
-  const dom::MediaSourceEnum
-      mMediaSource;  
-  const camera::CaptureEngine mCapEngine;
+  const camera::CaptureEngine mCapEngine;  
   const bool mScary;
 
   
