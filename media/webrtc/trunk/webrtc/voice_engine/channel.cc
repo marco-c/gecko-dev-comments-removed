@@ -1160,6 +1160,10 @@ int Channel::SetSendAudioLevelIndicationStatus(bool enable, unsigned char id) {
   return SetSendRtpHeaderExtension(enable, kRtpExtensionAudioLevel, id);
 }
 
+int Channel::SetSendMIDStatus(bool enable, unsigned char id) {
+  return SetSendRtpHeaderExtension(enable, kRtpExtensionMId, id);
+}
+
 int Channel::SetReceiveAudioLevelIndicationStatus(bool enable,
                                                   unsigned char id) {
   rtp_header_parser_->DeregisterRtpHeaderExtension(kRtpExtensionAudioLevel);
@@ -1283,12 +1287,14 @@ int Channel::GetRemoteRTCPReportBlocks(
 
 int Channel::GetRTPStatistics(CallStatistics& stats) {
   
+  
+  
 
   
   
   RtcpStatistics statistics;
   StreamStatistician* statistician =
-      rtp_receive_statistics_->GetStatistician(rtp_receiver_->SSRC());
+    rtp_receive_statistics_->GetStatistician(rtp_receiver_->SSRC());
   if (statistician) {
     statistician->GetStatistics(&statistics,
                                 _rtpRtcpModule->RTCP() == RtcpMode::kOff);
@@ -1592,13 +1598,12 @@ int Channel::SetSendRtpHeaderExtension(bool enable,
 }
 
 int Channel::GetRtpTimestampRateHz() const {
-  const auto format = audio_coding_->ReceiveFormat();
+  int sampleRate = audio_coding_->ReceiveSampleRate();
   
   
   
   
-  return (format && format->clockrate_hz != 0)
-             ? format->clockrate_hz
+  return sampleRate != 0 ? sampleRate
              : audio_coding_->PlayoutFrequency();
 }
 

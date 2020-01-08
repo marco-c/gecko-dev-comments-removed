@@ -59,8 +59,10 @@ public:
     
     void RegisterCaptureDataCallback(
         rtc::VideoSinkInterface<VideoFrame>* dataCallback) override;
-    void DeRegisterCaptureDataCallback() override;
+    void DeRegisterCaptureDataCallback(
+        rtc::VideoSinkInterface<VideoFrame>* dataCallback) override;
 
+    int32_t StopCaptureIfAllClientsClose() override;
     int32_t SetCaptureRotation(VideoRotation rotation) override;
     bool SetApplyRotation(bool enable) override;
     bool GetApplyRotation() override {
@@ -104,7 +106,7 @@ private:
     
     int64_t _lastFrameRateCallbackTimeNanos;
 
-    rtc::VideoSinkInterface<VideoFrame>* _dataCallBack;
+    std::set<rtc::VideoSinkInterface<VideoFrame>*> _dataCallBacks;
 
     int64_t _lastProcessFrameTimeNanos;
     

@@ -72,6 +72,9 @@ class VP9EncoderImpl : public VP9Encoder {
   
   int InitAndSetControlSettings(const VideoCodec* inst);
 
+  
+  int UpdateCodecFrameSize(const VideoFrame& input_image);
+
   void PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
                              const vpx_codec_cx_pkt& pkt,
                              uint32_t timestamp);
