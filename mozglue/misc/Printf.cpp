@@ -11,6 +11,7 @@
 
 
 #include "mozilla/AllocPolicy.h"
+#include "mozilla/Likely.h"
 #include "mozilla/Printf.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/UniquePtrExtensions.h"
@@ -258,9 +259,27 @@ bool mozilla::PrintfTarget::cvt_f(double d, const char* fmt0,
   }
 #endif
   size_t len = SprintfLiteral(fout, fin, d);
-  MOZ_RELEASE_ASSERT(len <= sizeof(fout));
+  
+  
+  
+  
+  if (MOZ_LIKELY(len < sizeof(fout))) {
+    return emit(fout, len);
+  }
 
-  return emit(fout, len);
+  
+  size_t buf_size = len + 1;
+  UniqueFreePtr<char> buf((char*)malloc(buf_size));
+  if (!buf) {
+    return false;
+  }
+  len = snprintf(buf.get(), buf_size, fin, d);
+  
+  
+  
+  MOZ_RELEASE_ASSERT(len < buf_size);
+
+  return emit(buf.get(), len);
 }
 
 

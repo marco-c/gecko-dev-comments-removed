@@ -122,6 +122,11 @@ static void TestPrintfFormats() {
   
   print_one("ignore", "%lf", DBL_MAX);
 
+  
+  
+  
+  print_one("ignore", "%500.500lf", DBL_MAX);
+
   MOZ_RELEASE_ASSERT(print_one("2727", "%" PRIu32, (uint32_t)2727));
   MOZ_RELEASE_ASSERT(print_one("aa7", "%" PRIx32, (uint32_t)2727));
   MOZ_RELEASE_ASSERT(print_one("2727", "%" PRIu64, (uint64_t)2727));
