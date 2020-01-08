@@ -86,6 +86,14 @@ public:
   
   void EndBatchChanges(int16_t aReason = nsISelectionListener::NO_REASON);
 
+  
+
+
+  void NotifyAutoCopy()
+  {
+    mNotifyAutoCopy = true;
+  }
+
   nsIDocument* GetParentObject() const;
   DocGroup* GetDocGroup() const;
 
@@ -679,6 +687,10 @@ private:
   UniquePtr<SelectionCustomColors> mCustomColors;
 
   
+  
+  uint32_t mSelectionChangeBlockerCount;
+
+  
 
 
 
@@ -692,8 +704,9 @@ private:
   bool mCalledByJS;
 
   
-  
-  uint32_t mSelectionChangeBlockerCount;
+
+
+  bool mNotifyAutoCopy;
 };
 
 

@@ -61,7 +61,6 @@ static NS_DEFINE_CID(kFrameTraversalCID, NS_FRAMETRAVERSAL_CID);
 #include "nsIDocument.h"
 
 #include "nsISelectionController.h" 
-#include "nsAutoCopyListener.h"
 #include "SelectionChangeListener.h"
 #include "nsCopySupport.h"
 #include "nsIClipboard.h"
@@ -70,6 +69,7 @@ static NS_DEFINE_CID(kFrameTraversalCID, NS_FRAMETRAVERSAL_CID);
 #include "nsIBidiKeyboard.h"
 
 #include "nsError.h"
+#include "mozilla/AutoCopyListener.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/ShadowRoot.h"
@@ -301,22 +301,23 @@ nsFrameSelection::nsFrameSelection()
     mDomSelections[i]->SetType(kPresentSelectionTypes[i]);
   }
 
-  nsAutoCopyListener *autoCopy = nullptr;
-  
 #ifdef XP_MACOSX
-  autoCopy = nsAutoCopyListener::GetInstance(nsIClipboard::kSelectionCache);
-#endif
-
+  
+  bool enableAutoCopy = true;
+  AutoCopyListener::Init(nsIClipboard::kSelectionCache);
+#else 
   
   
-  if (Preferences::GetBool("clipboard.autocopy")) {
-    autoCopy = nsAutoCopyListener::GetInstance(nsIClipboard::kSelectionClipboard);
+  bool enableAutoCopy = AutoCopyListener::IsPrefEnabled();
+  if (enableAutoCopy) {
+    AutoCopyListener::Init(nsIClipboard::kSelectionClipboard);
   }
+#endif 
 
-  if (autoCopy) {
+  if (enableAutoCopy) {
     int8_t index = GetIndexFromSelectionType(SelectionType::eNormal);
     if (mDomSelections[index]) {
-      autoCopy->Listen(mDomSelections[index]);
+      mDomSelections[index]->NotifyAutoCopy();
     }
   }
 }
@@ -2919,9 +2920,7 @@ nsFrameSelection::UpdateSelectionCacheOnRepaintSelection(Selection* aSel)
 
 
 
-nsAutoCopyListener* nsAutoCopyListener::sInstance = nullptr;
-
-NS_IMPL_ISUPPORTS(nsAutoCopyListener, nsISelectionListener)
+int16_t AutoCopyListener::sClipboardID = -1;
 
 
 
@@ -2955,40 +2954,51 @@ NS_IMPL_ISUPPORTS(nsAutoCopyListener, nsISelectionListener)
 
 
 
-NS_IMETHODIMP
-nsAutoCopyListener::NotifySelectionChanged(nsIDocument *aDoc,
-                                           Selection *aSel, int16_t aReason)
+
+void
+AutoCopyListener::OnSelectionChange(nsIDocument* aDocument,
+                                    Selection& aSelection,
+                                    int16_t aReason)
 {
-  if (mCachedClipboard == nsIClipboard::kSelectionCache) {
+  MOZ_ASSERT(IsValidClipboardID(sClipboardID));
+
+  if (sClipboardID == nsIClipboard::kSelectionCache) {
     nsFocusManager* fm = nsFocusManager::GetFocusManager();
     
     
     if (!fm->GetActiveWindow()) {
-      return NS_OK;
+      return;
     }
   }
 
-  if (!(aReason & nsISelectionListener::MOUSEUP_REASON   ||
-        aReason & nsISelectionListener::SELECTALL_REASON ||
-        aReason & nsISelectionListener::KEYPRESS_REASON))
-    return NS_OK; 
+  static const int16_t kResasonsToHandle =
+    nsISelectionListener::MOUSEUP_REASON |
+    nsISelectionListener::SELECTALL_REASON |
+    nsISelectionListener::KEYPRESS_REASON;
+  if (!(aReason & kResasonsToHandle)) {
+    return; 
+  }
 
-  if (!aDoc || !aSel || aSel->IsCollapsed()) {
+  if (!aDocument || aSelection.IsCollapsed()) {
 #ifdef DEBUG_CLIPBOARD
     fprintf(stderr, "CLIPBOARD: no selection/collapsed selection\n");
 #endif
-    
-    
-    if (mCachedClipboard == nsIClipboard::kSelectionCache) {
-      return nsCopySupport::ClearSelectionCache();
+    if (sClipboardID != nsIClipboard::kSelectionCache) {
+      
+      return;
     }
+
     
-    return NS_OK;
+    
+    DebugOnly<nsresult> rv = nsCopySupport::ClearSelectionCache();
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+      "nsCopySupport::ClearSelectionCache() failed");
+    return;
   }
 
-  NS_ENSURE_TRUE(aDoc, NS_ERROR_FAILURE);
-
   
-  return nsCopySupport::HTMLCopy(aSel, aDoc,
-                                 mCachedClipboard, false);
+  DebugOnly<nsresult> rv =
+    nsCopySupport::HTMLCopy(&aSelection, aDocument, sClipboardID, false);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+    "nsCopySupport::HTMLCopy() failed");
 }
