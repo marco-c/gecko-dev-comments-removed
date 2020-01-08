@@ -103,7 +103,6 @@ struct DebugModeOSREntry
                frameKind == ICEntry::Kind_EarlyStackCheck ||
                frameKind == ICEntry::Kind_DebugTrap ||
                frameKind == ICEntry::Kind_DebugPrologue ||
-               frameKind == ICEntry::Kind_DebugAfterYield ||
                frameKind == ICEntry::Kind_DebugEpilogue;
     }
 
@@ -308,8 +307,6 @@ ICEntryKindToString(ICEntry::Kind kind)
         return "debug trap";
       case ICEntry::Kind_DebugPrologue:
         return "debug prologue";
-      case ICEntry::Kind_DebugAfterYield:
-        return "debug after yield";
       case ICEntry::Kind_DebugEpilogue:
         return "debug epilogue";
       default:
@@ -352,7 +349,6 @@ PatchBaselineFramesForDebugMode(JSContext* cx,
                                 const ActivationIterator& activation,
                                 DebugModeOSREntryVector& entries, size_t* start)
 {
-    
     
     
     
@@ -474,7 +470,6 @@ PatchBaselineFramesForDebugMode(JSContext* cx,
                            kind == ICEntry::Kind_EarlyStackCheck ||
                            kind == ICEntry::Kind_DebugTrap ||
                            kind == ICEntry::Kind_DebugPrologue ||
-                           kind == ICEntry::Kind_DebugAfterYield ||
                            kind == ICEntry::Kind_DebugEpilogue);
 
                 
@@ -548,17 +543,6 @@ PatchBaselineFramesForDebugMode(JSContext* cx,
                 
                 
                 recompInfo->resumeAddr = bl->postDebugPrologueAddr();
-                popFrameReg = true;
-                break;
-
-              case ICEntry::Kind_DebugAfterYield:
-                
-                
-                
-                MOZ_ASSERT(*pc == JSOP_DEBUGAFTERYIELD);
-                recompInfo->resumeAddr = bl->nativeCodeForPC(script,
-                                                             pc + JSOP_DEBUGAFTERYIELD_LENGTH,
-                                                             &recompInfo->slotInfo);
                 popFrameReg = true;
                 break;
 
@@ -963,7 +947,7 @@ HasForcedReturn(BaselineDebugModeOSRInfo* info, bool rv)
 
     
     
-    if (kind == ICEntry::Kind_DebugPrologue || kind == ICEntry::Kind_DebugAfterYield)
+    if (kind == ICEntry::Kind_DebugPrologue)
         return rv;
 
     

@@ -258,7 +258,6 @@ class ICEntry
         
         
         Kind_DebugPrologue,
-        Kind_DebugAfterYield,
         Kind_DebugEpilogue,
 
         Kind_Invalid

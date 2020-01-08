@@ -957,19 +957,12 @@ InterpretResume(JSContext* cx, HandleObject obj, HandleValue val, HandleProperty
 }
 
 bool
-DebugAfterYield(JSContext* cx, BaselineFrame* frame, jsbytecode* pc, bool* mustReturn)
+DebugAfterYield(JSContext* cx, BaselineFrame* frame)
 {
-    *mustReturn = false;
-
     
     
-    
-    
-    
-    if (frame->script()->isDebuggee() && !frame->isDebuggee()) {
+    if (frame->script()->isDebuggee())
         frame->setIsDebuggee();
-        return DebugPrologue(cx, frame, pc, mustReturn);
-    }
     return true;
 }
 
@@ -982,19 +975,9 @@ GeneratorThrowOrReturn(JSContext* cx, BaselineFrame* frame, Handle<GeneratorObje
     
     JSScript* script = frame->script();
     uint32_t offset = script->yieldAndAwaitOffsets()[genObj->yieldAndAwaitIndex()];
-    jsbytecode* pc = script->offsetToPC(offset);
-    frame->setOverridePc(pc);
+    frame->setOverridePc(script->offsetToPC(offset));
 
-    
-    
-    genObj->setRunning();
-
-    bool mustReturn = false;
-    if (!DebugAfterYield(cx, frame, pc, &mustReturn))
-        return false;
-    if (mustReturn)
-        resumeKind = GeneratorObject::RETURN;
-
+    MOZ_ALWAYS_TRUE(DebugAfterYield(cx, frame));
     MOZ_ALWAYS_FALSE(js::GeneratorThrowOrReturn(cx, frame, genObj, arg, resumeKind));
     return false;
 }
@@ -1106,13 +1089,9 @@ HandleDebugTrap(JSContext* cx, BaselineFrame* frame, uint8_t* retAddr, bool* mus
     if (*pc == JSOP_DEBUGAFTERYIELD) {
         
         
-        
         MOZ_ASSERT(!frame->isDebuggee());
-
-        if (!DebugAfterYield(cx, frame, pc, mustReturn))
+        if (!DebugAfterYield(cx, frame))
             return false;
-        if (*mustReturn)
-            return true;
     }
 
     MOZ_ASSERT(frame->isDebuggee());
