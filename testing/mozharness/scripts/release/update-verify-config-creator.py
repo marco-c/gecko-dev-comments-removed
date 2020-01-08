@@ -246,8 +246,6 @@ class UpdateVerifyConfigCreator(BaseScript):
             
             product, version = release_name.split('-', 1)
             category = release_info['category']
-            if category == 'esr':
-                version += 'esr'
             tag = "{}_{}_RELEASE".format(product.upper(), version.replace(".", "_"))
             
             
