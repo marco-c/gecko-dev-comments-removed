@@ -1883,7 +1883,7 @@ MacroAssembler::generateBailoutTail(Register scratch, Register bailoutInfo)
         
         loadPtr(Address(bailoutInfo, offsetof(BaselineBailoutInfo, resumeFramePtr)), temp);
         load32(Address(temp, BaselineFrame::reverseOffsetOfFrameSize()), temp);
-        makeFrameDescriptor(temp, JitFrame_BaselineJS, ExitFrameLayout::Size());
+        makeFrameDescriptor(temp, FrameType::BaselineJS, ExitFrameLayout::Size());
         push(temp);
         push(Address(bailoutInfo, offsetof(BaselineBailoutInfo, resumeAddr)));
         
@@ -1981,10 +1981,10 @@ MacroAssembler::assertRectifierFrameParentType(Register frameType)
     {
         
         Label checkOk;
-        branch32(Assembler::Equal, frameType, Imm32(JitFrame_IonJS), &checkOk);
-        branch32(Assembler::Equal, frameType, Imm32(JitFrame_BaselineStub), &checkOk);
-        branch32(Assembler::Equal, frameType, Imm32(JitFrame_WasmToJSJit), &checkOk);
-        branch32(Assembler::Equal, frameType, Imm32(JitFrame_CppToJSJit), &checkOk);
+        branch32(Assembler::Equal, frameType, Imm32(FrameType::IonJS), &checkOk);
+        branch32(Assembler::Equal, frameType, Imm32(FrameType::BaselineStub), &checkOk);
+        branch32(Assembler::Equal, frameType, Imm32(FrameType::WasmToJSJit), &checkOk);
+        branch32(Assembler::Equal, frameType, Imm32(FrameType::CppToJSJit), &checkOk);
         assumeUnreachable("Unrecognized frame type preceding RectifierFrame.");
         bind(&checkOk);
     }
