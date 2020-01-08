@@ -425,6 +425,19 @@ class AsyncTabSwitcher {
         this.log(`Switch to tab ${index} - ${this.tinfo(showTab)}`);
         tabpanels.setAttribute("selectedIndex", index);
         if (showTab === this.requestedTab) {
+          if (requestedTabState == this.STATE_LOADED) {
+            
+            
+            
+            this.switchPaintId = this.window.windowUtils.lastTransactionId + 1;
+          } else {
+            
+            
+            
+            
+            TelemetryStopwatch.cancel("FX_TAB_SWITCH_COMPOSITE_E10S_MS", this.window);
+          }
+
           if (this._requestingTab) {
             
 
