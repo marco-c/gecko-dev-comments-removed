@@ -791,9 +791,9 @@ void
 nsDocShell::MaybeHandleSubframeHistory(nsDocShellLoadState* aLoadState)
 {
   
-  nsCOMPtr<nsIDocShellTreeItem> parentAsItem;
-  GetSameTypeParent(getter_AddRefs(parentAsItem));
-  nsCOMPtr<nsIDocShell> parentDS(do_QueryInterface(parentAsItem));
+    nsCOMPtr<nsIDocShellTreeItem> parentAsItem;
+    GetSameTypeParent(getter_AddRefs(parentAsItem));
+    nsCOMPtr<nsIDocShell> parentDS(do_QueryInterface(parentAsItem));
 
   if (!parentDS || parentDS == static_cast<nsIDocShell*>(this)) {
     
@@ -815,55 +815,56 @@ nsDocShell::MaybeHandleSubframeHistory(nsDocShellLoadState* aLoadState)
 
 
 
-  
+      
   uint32_t parentLoadType;
-  parentDS->GetLoadType(&parentLoadType);
+      parentDS->GetLoadType(&parentLoadType);
 
-  
-  nsCOMPtr<nsISHEntry> currentSH;
-  bool oshe = false;
-  parentDS->GetCurrentSHEntry(getter_AddRefs(currentSH), &oshe);
-  bool dynamicallyAddedChild = mDynamicallyCreated;
+      
+      nsCOMPtr<nsISHEntry> currentSH;
+      bool oshe = false;
+      parentDS->GetCurrentSHEntry(getter_AddRefs(currentSH), &oshe);
+      bool dynamicallyAddedChild = mDynamicallyCreated;
 
-  if (!dynamicallyAddedChild && !oshe && currentSH) {
-    currentSH->HasDynamicallyAddedChild(&dynamicallyAddedChild);
-  }
+      if (!dynamicallyAddedChild && !oshe && currentSH) {
+        currentSH->HasDynamicallyAddedChild(&dynamicallyAddedChild);
+      }
 
-  if (!dynamicallyAddedChild) {
-    
-    
+      if (!dynamicallyAddedChild) {
+        
+        
     nsCOMPtr<nsISHEntry> shEntry;
-    parentDS->GetChildSHEntry(mChildOffset, getter_AddRefs(shEntry));
+        parentDS->GetChildSHEntry(mChildOffset, getter_AddRefs(shEntry));
     aLoadState->SetSHEntry(shEntry);
-  }
+      }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  nsCOMPtr<nsISHEntry> currentChildEntry;
-  GetCurrentSHEntry(getter_AddRefs(currentChildEntry), &oshe);
+      
+      
+      
+      
+      
+      
+      
+      
+      nsCOMPtr<nsISHEntry> currentChildEntry;
+      GetCurrentSHEntry(getter_AddRefs(currentChildEntry), &oshe);
 
   if (mCurrentURI && (!NS_IsAboutBlank(mCurrentURI) || currentChildEntry)) {
+        
+        
+        
+        
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    BusyFlags parentBusy = parentDS->GetBusyFlags();
-    BusyFlags selfBusy = GetBusyFlags();
-
-    if (parentBusy & BUSY_FLAGS_BUSY ||
-        selfBusy & BUSY_FLAGS_BUSY) {
+        
+        
+        
+        
+        
+        uint32_t parentBusy = BUSY_FLAGS_NONE;
+        uint32_t selfBusy = BUSY_FLAGS_NONE;
+        parentDS->GetBusyFlags(&parentBusy);
+        GetBusyFlags(&selfBusy);
+        if (parentBusy & BUSY_FLAGS_BUSY ||
+            selfBusy & BUSY_FLAGS_BUSY) {
       aLoadState->SetLoadType(LOAD_NORMAL_REPLACE);
       aLoadState->SetSHEntry(nullptr);
     }
@@ -881,9 +882,9 @@ nsDocShell::MaybeHandleSubframeHistory(nsDocShellLoadState* aLoadState)
     
     
     
-    bool inOnLoadHandler = false;
+      bool inOnLoadHandler = false;
     parentDS->GetIsExecutingOnLoadHandler(&inOnLoadHandler);
-    if (inOnLoadHandler) {
+      if (inOnLoadHandler) {
       aLoadState->SetLoadType(LOAD_NORMAL_REPLACE);
       aLoadState->SetSHEntry(nullptr);
     }
@@ -2009,7 +2010,7 @@ nsDocShell::GetMayEnableCharacterEncodingMenu(
 }
 
 NS_IMETHODIMP
-nsDocShell::GetDocShellEnumerator(int32_t aItemType, DocShellEnumeratorDirection aDirection,
+nsDocShell::GetDocShellEnumerator(int32_t aItemType, int32_t aDirection,
                                   nsISimpleEnumerator** aResult)
 {
   NS_ENSURE_ARG_POINTER(aResult);
@@ -2044,14 +2045,14 @@ nsDocShell::GetDocShellEnumerator(int32_t aItemType, DocShellEnumeratorDirection
 }
 
 NS_IMETHODIMP
-nsDocShell::GetAppType(AppType* aAppType)
+nsDocShell::GetAppType(uint32_t* aAppType)
 {
   *aAppType = mAppType;
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsDocShell::SetAppType(AppType aAppType)
+nsDocShell::SetAppType(uint32_t aAppType)
 {
   mAppType = aAppType;
   return NS_OK;
@@ -2118,7 +2119,7 @@ nsDocShell::SetMarginHeight(int32_t aHeight)
 }
 
 NS_IMETHODIMP
-nsDocShell::GetBusyFlags(BusyFlags* aBusyFlags)
+nsDocShell::GetBusyFlags(uint32_t* aBusyFlags)
 {
   NS_ENSURE_ARG_POINTER(aBusyFlags);
 
@@ -2520,20 +2521,18 @@ nsDocShell::SetCustomUserAgent(const nsAString& aCustomUserAgent)
 }
 
 NS_IMETHODIMP
-nsDocShell::GetTouchEventsOverride(TouchEventsOverride* aTouchEventsOverride)
+nsDocShell::GetTouchEventsOverride(uint32_t* aTouchEventsOverride)
 {
   *aTouchEventsOverride = mTouchEventsOverride;
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsDocShell::SetTouchEventsOverride(TouchEventsOverride aTouchEventsOverride)
+nsDocShell::SetTouchEventsOverride(uint32_t aTouchEventsOverride)
 {
-  
-  
-  if (!(aTouchEventsOverride == TOUCHEVENTS_OVERRIDE_NONE ||
-        aTouchEventsOverride == TOUCHEVENTS_OVERRIDE_ENABLED ||
-        aTouchEventsOverride == TOUCHEVENTS_OVERRIDE_DISABLED)) {
+  if (!(aTouchEventsOverride == nsIDocShell::TOUCHEVENTS_OVERRIDE_NONE ||
+        aTouchEventsOverride == nsIDocShell::TOUCHEVENTS_OVERRIDE_ENABLED ||
+        aTouchEventsOverride == nsIDocShell::TOUCHEVENTS_OVERRIDE_DISABLED)) {
     return NS_ERROR_INVALID_ARG;
   }
 
@@ -2550,7 +2549,7 @@ nsDocShell::SetTouchEventsOverride(TouchEventsOverride aTouchEventsOverride)
 }
 
 NS_IMETHODIMP
-nsDocShell::GetMetaViewportOverride(MetaViewportOverride* aMetaViewportOverride)
+nsDocShell::GetMetaViewportOverride(uint32_t* aMetaViewportOverride)
 {
   NS_ENSURE_ARG_POINTER(aMetaViewportOverride);
 
@@ -2559,13 +2558,11 @@ nsDocShell::GetMetaViewportOverride(MetaViewportOverride* aMetaViewportOverride)
 }
 
 NS_IMETHODIMP
-nsDocShell::SetMetaViewportOverride(MetaViewportOverride aMetaViewportOverride)
+nsDocShell::SetMetaViewportOverride(uint32_t aMetaViewportOverride)
 {
-  
-  
-  if (!(aMetaViewportOverride == META_VIEWPORT_OVERRIDE_NONE ||
-        aMetaViewportOverride == META_VIEWPORT_OVERRIDE_ENABLED ||
-        aMetaViewportOverride == META_VIEWPORT_OVERRIDE_DISABLED)) {
+  if (!(aMetaViewportOverride == nsIDocShell::META_VIEWPORT_OVERRIDE_NONE ||
+        aMetaViewportOverride == nsIDocShell::META_VIEWPORT_OVERRIDE_ENABLED ||
+        aMetaViewportOverride == nsIDocShell::META_VIEWPORT_OVERRIDE_DISABLED)) {
     return NS_ERROR_INVALID_ARG;
   }
 
@@ -2830,9 +2827,10 @@ nsDocShell::SetDocLoaderParent(nsDocLoader* aParent)
     if (NS_SUCCEEDED(parentAsDocShell->GetDefaultLoadFlags(&flags))) {
       SetDefaultLoadFlags(flags);
     }
-
-    SetTouchEventsOverride(parentAsDocShell->GetTouchEventsOverride());
-
+    uint32_t touchEventsOverride;
+    if (NS_SUCCEEDED(parentAsDocShell->GetTouchEventsOverride(&touchEventsOverride))) {
+      SetTouchEventsOverride(touchEventsOverride);
+    }
     
     
     
@@ -6116,7 +6114,8 @@ nsDocShell::RefreshURI(nsIURI* aURI, nsIPrincipal* aPrincipal,
   nsCOMPtr<nsITimerCallback> refreshTimer =
     new nsRefreshTimer(this, aURI, aPrincipal, aDelay, aRepeat, aMetaRefresh);
 
-  BusyFlags busyFlags = GetBusyFlags();
+  uint32_t busyFlags = 0;
+  GetBusyFlags(&busyFlags);
 
   if (!mRefreshURIList) {
     mRefreshURIList = nsArray::Create();
@@ -6799,7 +6798,7 @@ nsDocShell::OnStateChange(nsIWebProgress* aProgress, nsIRequest* aRequest,
       }
     }
     
-    mBusyFlags = (BusyFlags)(BUSY_FLAGS_BUSY | BUSY_FLAGS_BEFORE_PAGE_LOAD);
+    mBusyFlags = BUSY_FLAGS_BUSY | BUSY_FLAGS_BEFORE_PAGE_LOAD;
 
     if ((aStateFlags & STATE_RESTORING) == 0) {
       
@@ -6813,7 +6812,7 @@ nsDocShell::OnStateChange(nsIWebProgress* aProgress, nsIRequest* aRequest,
     }
   } else if ((~aStateFlags & (STATE_TRANSFERRING | STATE_IS_DOCUMENT)) == 0) {
     
-    mBusyFlags = (BusyFlags)(BUSY_FLAGS_BUSY | BUSY_FLAGS_PAGE_LOADING);
+    mBusyFlags = BUSY_FLAGS_BUSY | BUSY_FLAGS_PAGE_LOADING;
   } else if ((aStateFlags & STATE_STOP) && (aStateFlags & STATE_IS_NETWORK)) {
     
     mBusyFlags = BUSY_FLAGS_NONE;
@@ -13282,18 +13281,43 @@ nsDocShell::OnLinkClickSync(nsIContent* aContent,
     nsAutoString referrer;
     aContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::rel, referrer);
     nsWhitespaceTokenizerTemplate<nsContentUtils::IsHTMLWhitespace> tok(referrer);
+
+    bool targetBlank = aTargetSpec.LowerCaseEqualsLiteral("_blank");
+    bool explicitOpenerSet = false;
+
+    
+    
+    
+
     while (tok.hasMoreTokens()) {
       const nsAString& token = tok.nextToken();
       if (token.LowerCaseEqualsLiteral("noreferrer")) {
         flags |= INTERNAL_LOAD_FLAGS_DONT_SEND_REFERRER |
                  INTERNAL_LOAD_FLAGS_NO_OPENER;
         
+        explicitOpenerSet = true;
         break;
       }
+
       if (token.LowerCaseEqualsLiteral("noopener")) {
         flags |= INTERNAL_LOAD_FLAGS_NO_OPENER;
+        explicitOpenerSet = true;
+      }
+
+      if (targetBlank &&
+          StaticPrefs::dom_targetBlankNoOpener_enabled() &&
+          token.LowerCaseEqualsLiteral("opener") &&
+          !explicitOpenerSet) {
+        explicitOpenerSet = true;
       }
     }
+
+    if (targetBlank &&
+        StaticPrefs::dom_targetBlankNoOpener_enabled() &&
+        !explicitOpenerSet) {
+      flags |= INTERNAL_LOAD_FLAGS_NO_OPENER;
+    }
+
     if (aNoOpenerImplied) {
       flags |= INTERNAL_LOAD_FLAGS_NO_OPENER;
     }
@@ -13575,14 +13599,14 @@ nsDocShell::GetCanExecuteScripts(bool* aResult)
 }
 
  NS_IMETHODIMP
-nsDocShell::SetFrameType(FrameType aFrameType)
+nsDocShell::SetFrameType(uint32_t aFrameType)
 {
   mFrameType = aFrameType;
   return NS_OK;
 }
 
  NS_IMETHODIMP
-nsDocShell::GetFrameType(FrameType* aFrameType)
+nsDocShell::GetFrameType(uint32_t* aFrameType)
 {
   *aFrameType = mFrameType;
   return NS_OK;
@@ -14065,17 +14089,15 @@ nsIDocShell::SetHTMLEditor(HTMLEditor* aHTMLEditor)
 }
 
 NS_IMETHODIMP
-nsDocShell::GetDisplayMode(DisplayMode* aDisplayMode)
+nsDocShell::GetDisplayMode(uint32_t* aDisplayMode)
 {
   *aDisplayMode = mDisplayMode;
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsDocShell::SetDisplayMode(DisplayMode aDisplayMode)
+nsDocShell::SetDisplayMode(uint32_t aDisplayMode)
 {
-  
-  
   if (!(aDisplayMode == nsIDocShell::DISPLAY_MODE_BROWSER ||
         aDisplayMode == nsIDocShell::DISPLAY_MODE_STANDALONE ||
         aDisplayMode == nsIDocShell::DISPLAY_MODE_FULLSCREEN ||
