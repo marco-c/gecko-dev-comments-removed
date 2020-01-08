@@ -1323,6 +1323,28 @@ class SourceUnits
 
 
 
+
+
+
+
+
+
+
+
+
+
+    void consumeRestOfSingleLineComment();
+
+    
+
+
+
+
+
+
+
+
+
     static constexpr size_t WindowRadius = ErrorMetadata::lineOfContextRadius;
 
     
@@ -1563,13 +1585,6 @@ class SpecializedTokenStreamCharsBase<char16_t>
 
   protected:
     
-
-    
-
-
-
-
-    void infallibleConsumeRestOfSingleLineComment();
 
     
 
@@ -1871,7 +1886,6 @@ class TokenStreamChars<char16_t, AnyCharsAccess>
   protected:
     using GeneralCharsBase::anyCharsAccess;
     using GeneralCharsBase::getCodeUnit;
-    using SpecializedCharsBase::infallibleConsumeRestOfSingleLineComment;
     using SpecializedCharsBase::infallibleGetNonAsciiCodePointDontNormalize;
     using TokenStreamCharsShared::isAsciiCodePoint;
     using CharsBase::matchLineTerminator;
@@ -1916,17 +1930,6 @@ class TokenStreamChars<char16_t, AnyCharsAccess>
 
 
     MOZ_MUST_USE bool getNonAsciiCodePoint(int32_t lead, int32_t* codePoint);
-
-    
-
-
-
-    MOZ_MUST_USE bool consumeRestOfSingleLineComment() {
-        
-        
-        infallibleConsumeRestOfSingleLineComment();
-        return true;
-    }
 };
 
 template<class AnyCharsAccess>
@@ -2023,7 +2026,6 @@ class MOZ_STACK_CLASS TokenStreamSpecific
     using GeneralCharsBase::badToken;
     
     using CharsBase::consumeKnownCodeUnit;
-    using SpecializedChars::consumeRestOfSingleLineComment;
     using TokenStreamCharsShared::copyCharBufferTo;
     using TokenStreamCharsShared::drainCharBufferIntoAtom;
     using CharsBase::fillCharBufferFromSourceNormalizingAsciiLineBreaks;
