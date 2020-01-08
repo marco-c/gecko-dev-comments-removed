@@ -415,9 +415,9 @@ void nsBlockFrame::List(FILE* out, const char* aPrefix, uint32_t aFlags) const {
   
   
   ChildListIterator lists(this);
-  ChildListIDs skip(kPrincipalList | kOverflowList);
+  ChildListIDs skip = {kPrincipalList, kOverflowList};
   for (; !lists.IsDone(); lists.Next()) {
-    if (skip.Contains(lists.CurrentID())) {
+    if (skip.contains(lists.CurrentID())) {
       continue;
     }
     fprintf_stderr(out, "%s%s %p <\n", pfx.get(),
@@ -1820,7 +1820,7 @@ void nsBlockFrame::UnionChildOverflow(nsOverflowAreas& aOverflowAreas) {
   
   
   nsLayoutUtils::UnionChildOverflow(this, aOverflowAreas,
-                                    kPrincipalList | kFloatList);
+                                    {kPrincipalList, kFloatList});
 }
 
 bool nsBlockFrame::ComputeCustomOverflow(nsOverflowAreas& aOverflowAreas) {
