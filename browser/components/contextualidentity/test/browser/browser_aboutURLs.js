@@ -16,6 +16,8 @@ add_task(async function() {
     "telemetry",
     
     "downloads",
+    
+    "debugging",
   ];
 
   for (let cid in Cc) {
