@@ -896,6 +896,15 @@ class GCRuntime {
   MainThreadData<bool> hasMarkedGrayRoots;
   MainThreadData<bool> abortSweepAfterCurrentGroup;
 
+#ifdef DEBUG
+  
+  
+  
+  MainThreadData<Vector<const Cell*, 0, SystemAllocPolicy>>
+      cellsToAssertNotGray;
+  friend void js::gc::detail::AssertCellIsNotGray(const Cell*);
+#endif
+
   friend class SweepGroupsIter;
   friend class WeakCacheSweepIterator;
 

@@ -3830,7 +3830,7 @@ bool js::detail::CopyScript(JSContext* cx, HandleScript src, HandleScript dst,
   
 
   
-  MOZ_ASSERT(!src->sourceObject()->isMarkedGray());
+  JS::AssertObjectIsNotGray(src->sourceObject());
 
   uint32_t nscopes = src->scopes().size();
   uint32_t nconsts = src->hasConsts() ? src->consts().size() : 0;
