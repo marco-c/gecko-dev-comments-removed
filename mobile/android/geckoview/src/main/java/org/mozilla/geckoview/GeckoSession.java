@@ -202,13 +202,27 @@ public class GeckoSession extends LayerSession
                     final int where = convertGeckoTarget(message.getInt("where"));
                     final int flags = filterFlags(message.getInt("flags"));
 
-                    delegate.onLoadRequest(GeckoSession.this, uri, where, flags,
-                        new GeckoResponse<Boolean>() {
-                            @Override
-                            public void respond(Boolean handled) {
-                                callback.sendSuccess(handled);
-                            }
-                        });
+                    final GeckoResult<Boolean> result = delegate.onLoadRequest(GeckoSession.this,
+                            uri, where, flags);
+
+                    if (result == null) {
+                        callback.sendSuccess(null);
+                        return;
+                    }
+
+                    result.then(new GeckoResult.OnValueListener<Boolean, Void>() {
+                        @Override
+                        public GeckoResult<Void> onValue(Boolean value) throws Throwable {
+                            callback.sendSuccess(value);
+                            return null;
+                        }
+                    }, new GeckoResult.OnExceptionListener<Void>() {
+                        @Override
+                        public GeckoResult<Void> onException(Throwable exception) throws Throwable {
+                            callback.sendError(exception.getMessage());
+                            return null;
+                        }
+                    });
                 } else if ("GeckoView:OnNewSession".equals(event)) {
                     final String uri = message.getString("uri");
                     delegate.onNewSession(GeckoSession.this, uri,
@@ -2227,10 +2241,12 @@ public class GeckoSession extends LayerSession
 
 
 
-        void onLoadRequest(GeckoSession session, String uri,
-                           @TargetWindow int target,
-                           @LoadRequestFlags int flags,
-                           GeckoResponse<Boolean> response);
+
+
+        @Nullable GeckoResult<Boolean> onLoadRequest(@NonNull GeckoSession session,
+                                                     @NonNull String uri,
+                                                     @TargetWindow int target,
+                                                     @LoadRequestFlags int flags);
 
         
 
