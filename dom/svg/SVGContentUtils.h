@@ -265,23 +265,6 @@ public:
   
 
 
-  static inline bool IsDigit(char16_t aCh)
-  {
-    return aCh >= '0' && aCh <= '9';
-  }
-
- 
-
-
-  static inline uint32_t DecimalDigitValue(char16_t aCh)
-  {
-    MOZ_ASSERT(IsDigit(aCh), "Digit expected");
-    return aCh - '0';
-  }
-
-  
-
-
 
 
 
