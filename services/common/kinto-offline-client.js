@@ -486,8 +486,15 @@ const cursorHandlers = {
 
 
 function createListRequest(cid, store, filters, done) {
+  const filterFields = Object.keys(filters); 
+
+  if (filterFields.length == 0) {
+    const request = store.index("cid").getAll(IDBKeyRange.only(cid));
+    request.onsuccess = event => done(event.target.result);
+    return request;
+  }
   
-  const indexField = Object.keys(filters).find(field => {
+  const indexField = filterFields.find(field => {
     return INDEXED_FIELDS.includes(field);
   });
 
@@ -501,8 +508,11 @@ function createListRequest(cid, store, filters, done) {
 
   const remainingFilters = (0, _utils.omitKeys)(filters, indexField); 
 
-  const value = filters[indexField]; 
+  const value = filters[indexField];
+  
+  const indexStore = indexField == "id" ? store : store.index(indexField);
 
+  
   if (Array.isArray(value)) {
     if (value.length === 0) {
       return done([]);
@@ -510,13 +520,20 @@ function createListRequest(cid, store, filters, done) {
 
     const values = value.map(i => [cid, i]).sort();
     const range = IDBKeyRange.bound(values[0], values[values.length - 1]);
-    const request = store.index(indexField).openCursor(range);
+    const request = indexStore.openCursor(range);
     request.onsuccess = cursorHandlers.in(values, remainingFilters, done);
+    return request;
+  }
+
+  
+  if (remainingFilters.length == 0) {
+    const request = indexStore.getAll(IDBKeyRange.only([cid, value]));
+    request.onsuccess = event => done(event.target.result);
     return request;
   } 
 
 
-  const request = store.index(indexField).openCursor(IDBKeyRange.only([cid, value]));
+  const request = indexStore.openCursor(IDBKeyRange.only([cid, value]));
   request.onsuccess = cursorHandlers.all(remainingFilters, done);
   return request;
 }
@@ -578,8 +595,6 @@ class IDB extends _base.default {
 
         recordsStore.createIndex("cid", "_cid"); 
         
-
-        recordsStore.createIndex("id", ["_cid", "id"]); 
 
         recordsStore.createIndex("_status", ["_cid", "_status"]); 
 
