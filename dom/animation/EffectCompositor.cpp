@@ -19,7 +19,6 @@
 #include "mozilla/AutoRestore.h"
 #include "mozilla/ComputedStyleInlines.h"
 #include "mozilla/EffectSet.h"
-#include "mozilla/LayerAnimationInfo.h"
 #include "mozilla/RestyleManager.h"
 #include "mozilla/ServoBindings.h" 
 #include "mozilla/ServoStyleSet.h"
@@ -668,31 +667,17 @@ EffectCompositor::UpdateCascadeResults(EffectSet& aEffectSet,
   nsCSSPropertyIDSet overriddenProperties =
     GetOverriddenProperties(aEffectSet, aElement, aPseudoType);
 
-  
-  
-  auto compositorPropertiesInSet =
-    [](nsCSSPropertyIDSet& aPropertySet) ->
-      std::bitset<LayerAnimationInfo::kRecords> {
-        std::bitset<LayerAnimationInfo::kRecords> result;
-        for (size_t i = 0; i < LayerAnimationInfo::kRecords; i++) {
-          if (aPropertySet.HasProperty(
-                LayerAnimationInfo::sRecords[i].mProperty)) {
-            result.set(i);
-          }
-        }
-      return result;
-    };
-
   nsCSSPropertyIDSet& propertiesWithImportantRules =
     aEffectSet.PropertiesWithImportantRules();
   nsCSSPropertyIDSet& propertiesForAnimationsLevel =
     aEffectSet.PropertiesForAnimationsLevel();
 
+  static constexpr nsCSSPropertyIDSet compositorAnimatables =
+    nsCSSPropertyIDSet::CompositorAnimatables();
   
   
-  std::bitset<LayerAnimationInfo::kRecords>
-    prevCompositorPropertiesWithImportantRules =
-      compositorPropertiesInSet(propertiesWithImportantRules);
+  nsCSSPropertyIDSet prevCompositorPropertiesWithImportantRules =
+    propertiesWithImportantRules.Intersect(compositorAnimatables);
 
   nsCSSPropertyIDSet prevPropertiesForAnimationsLevel =
     propertiesForAnimationsLevel;
@@ -734,8 +719,8 @@ EffectCompositor::UpdateCascadeResults(EffectSet& aEffectSet,
   
   
   
-  if (prevCompositorPropertiesWithImportantRules !=
-        compositorPropertiesInSet(propertiesWithImportantRules)) {
+  if (!prevCompositorPropertiesWithImportantRules.Equals(
+        propertiesWithImportantRules.Intersect(compositorAnimatables))) {
     presContext->EffectCompositor()->
       RequestRestyle(aElement, aPseudoType,
                      EffectCompositor::RestyleType::Layer,
@@ -752,7 +737,7 @@ EffectCompositor::UpdateCascadeResults(EffectSet& aEffectSet,
       changedPropertiesForAnimationLevel);
   if (!commonProperties.IsEmpty()) {
     EffectCompositor::RestyleType restyleType =
-      compositorPropertiesInSet(changedPropertiesForAnimationLevel).none()
+      changedPropertiesForAnimationLevel.Intersects(compositorAnimatables)
       ? EffectCompositor::RestyleType::Standard
       : EffectCompositor::RestyleType::Layer;
     presContext->EffectCompositor()->
