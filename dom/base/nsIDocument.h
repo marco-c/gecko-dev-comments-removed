@@ -7,7 +7,6 @@
 #define nsIDocument_h___
 
 #include "mozilla/FlushType.h"           
-#include "mozilla/Pair.h"                
 #include "nsAutoPtr.h"                   
 #include "nsCOMArray.h"                  
 #include "nsCompatibility.h"             
@@ -30,7 +29,6 @@
 #include "nsIServiceManager.h"
 #include "nsIURI.h"                      
 #include "nsIUUIDGenerator.h"
-#include "nsIWebProgressListener.h"      
 #include "nsPIDOMWindow.h"               
 #include "nsPropertyTable.h"             
 #include "nsStringFwd.h"
@@ -45,7 +43,6 @@
 #include "nsExpirationTracker.h"
 #include "nsClassHashtable.h"
 #include "mozilla/CORSMode.h"
-#include "mozilla/dom/ContentBlockingLog.h"
 #include "mozilla/dom/DispatcherTrait.h"
 #include "mozilla/dom/DocumentOrShadowRoot.h"
 #include "mozilla/EnumSet.h"
@@ -982,18 +979,9 @@ public:
   
 
 
-  mozilla::dom::ContentBlockingLog* GetContentBlockingLog()
-  {
-    return &mContentBlockingLog;
-  }
-
-  
-
-
   bool GetHasTrackingContentBlocked()
   {
-    return mContentBlockingLog.HasBlockedAnyOfType(
-        nsIWebProgressListener::STATE_BLOCKED_TRACKING_CONTENT);
+    return mHasTrackingContentBlocked;
   }
 
   
@@ -1001,8 +989,7 @@ public:
 
   bool GetHasSlowTrackingContentBlocked()
   {
-    return mContentBlockingLog.HasBlockedAnyOfType(
-        nsIWebProgressListener::STATE_BLOCKED_SLOW_TRACKING_CONTENT);
+    return mHasSlowTrackingContentBlocked;
   }
 
   
@@ -1010,8 +997,7 @@ public:
 
   bool GetHasAllCookiesBlocked()
   {
-    return mContentBlockingLog.HasBlockedAnyOfType(
-        nsIWebProgressListener::STATE_COOKIES_BLOCKED_ALL);
+    return mHasAllCookiesBlocked;
   }
 
   
@@ -1019,8 +1005,7 @@ public:
 
   bool GetHasTrackingCookiesBlocked()
   {
-    return mContentBlockingLog.HasBlockedAnyOfType(
-        nsIWebProgressListener::STATE_COOKIES_BLOCKED_TRACKER);
+    return mHasTrackingCookiesBlocked;
   }
 
   
@@ -1028,8 +1013,7 @@ public:
 
   bool GetHasForeignCookiesBlocked()
   {
-    return mContentBlockingLog.HasBlockedAnyOfType(
-        nsIWebProgressListener::STATE_COOKIES_BLOCKED_FOREIGN);
+    return mHasForeignCookiesBlocked;
   }
 
   
@@ -1037,74 +1021,55 @@ public:
 
   bool GetHasCookiesBlockedByPermission()
   {
-    return mContentBlockingLog.HasBlockedAnyOfType(
-        nsIWebProgressListener::STATE_COOKIES_BLOCKED_BY_PERMISSION);
+    return mHasCookiesBlockedByPermission;
   }
 
   
 
 
-  void SetHasTrackingContentBlocked(bool aHasTrackingContentBlocked,
-                                    const nsAString& aOriginBlocked)
+  void SetHasTrackingContentBlocked(bool aHasTrackingContentBlocked)
   {
-    RecordContentBlockingLog(aOriginBlocked,
-                             nsIWebProgressListener::STATE_BLOCKED_TRACKING_CONTENT,
-                             aHasTrackingContentBlocked);
+    mHasTrackingContentBlocked = aHasTrackingContentBlocked;
   }
 
   
 
 
-  void SetHasSlowTrackingContentBlocked(bool aHasSlowTrackingContentBlocked,
-                                        const nsAString& aOriginBlocked)
+  void SetHasSlowTrackingContentBlocked(bool aHasSlowTrackingContentBlocked)
   {
-    RecordContentBlockingLog(aOriginBlocked,
-                             nsIWebProgressListener::STATE_BLOCKED_SLOW_TRACKING_CONTENT,
-                             aHasSlowTrackingContentBlocked);
+    mHasSlowTrackingContentBlocked = aHasSlowTrackingContentBlocked;
   }
 
   
 
 
-  void SetHasAllCookiesBlocked(bool aHasAllCookiesBlocked,
-                               const nsAString& aOriginBlocked)
+  void SetHasAllCookiesBlocked(bool aHasAllCookiesBlocked)
   {
-    RecordContentBlockingLog(aOriginBlocked,
-                             nsIWebProgressListener::STATE_COOKIES_BLOCKED_ALL,
-                             aHasAllCookiesBlocked);
+    mHasAllCookiesBlocked = aHasAllCookiesBlocked;
   }
 
   
 
 
-  void SetHasTrackingCookiesBlocked(bool aHasTrackingCookiesBlocked,
-                                    const nsAString& aOriginBlocked)
+  void SetHasTrackingCookiesBlocked(bool aHasTrackingCookiesBlocked)
   {
-    RecordContentBlockingLog(aOriginBlocked,
-                             nsIWebProgressListener::STATE_COOKIES_BLOCKED_TRACKER,
-                             aHasTrackingCookiesBlocked);
+    mHasTrackingCookiesBlocked = aHasTrackingCookiesBlocked;
   }
 
   
 
 
-  void SetHasForeignCookiesBlocked(bool aHasForeignCookiesBlocked,
-                                   const nsAString& aOriginBlocked)
+  void SetHasForeignCookiesBlocked(bool aHasForeignCookiesBlocked)
   {
-    RecordContentBlockingLog(aOriginBlocked,
-                             nsIWebProgressListener::STATE_COOKIES_BLOCKED_FOREIGN,
-                             aHasForeignCookiesBlocked);
+    mHasForeignCookiesBlocked = aHasForeignCookiesBlocked;
   }
 
   
 
 
-  void SetHasCookiesBlockedByPermission(bool aHasCookiesBlockedByPermission,
-                                        const nsAString& aOriginBlocked)
+  void SetHasCookiesBlockedByPermission(bool aHasCookiesBlockedByPermission)
   {
-    RecordContentBlockingLog(aOriginBlocked,
-                             nsIWebProgressListener::STATE_COOKIES_BLOCKED_BY_PERMISSION,
-                             aHasCookiesBlockedByPermission);
+    mHasCookiesBlockedByPermission = aHasCookiesBlockedByPermission;
   }
 
   
@@ -3885,12 +3850,6 @@ protected:
                                        bool aUpdateCSSLoader);
 
 private:
-  void RecordContentBlockingLog(const nsAString& aOrigin,
-                                uint32_t aType, bool aBlocked)
-  {
-    mContentBlockingLog.RecordLog(aOrigin, aType, aBlocked);
-  }
-
   mutable std::bitset<eDeprecatedOperationCount> mDeprecationWarnedAbout;
   mutable std::bitset<eDocumentWarningCount> mDocWarningWarnedAbout;
 
@@ -4189,6 +4148,24 @@ protected:
 
   
   bool mHasUnsafeInlineCSP : 1;
+
+  
+  bool mHasTrackingContentBlocked : 1;
+
+  
+  bool mHasSlowTrackingContentBlocked : 1;
+
+  
+  bool mHasAllCookiesBlocked : 1;
+
+  
+  bool mHasTrackingCookiesBlocked : 1;
+
+  
+  bool mHasForeignCookiesBlocked : 1;
+
+  
+  bool mHasCookiesBlockedByPermission : 1;
 
   
   bool mHasTrackingContentLoaded : 1;
@@ -4541,11 +4518,6 @@ protected:
   
   
   nsTHashtable<nsCStringHashKey> mTrackingScripts;
-
-  
-  
-  
-  mozilla::dom::ContentBlockingLog mContentBlockingLog;
 
   
   
