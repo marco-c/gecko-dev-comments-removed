@@ -2181,13 +2181,10 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
   RefPtr<nsCSSValueSharedList> mSpecifiedRotate;
   RefPtr<nsCSSValueSharedList> mSpecifiedTranslate;
   RefPtr<nsCSSValueSharedList> mSpecifiedScale;
+  
+  
+  RefPtr<nsCSSValueSharedList> mIndividualTransform;
   mozilla::UniquePtr<mozilla::StyleMotion> mMotion;
-
-  
-  
-  
-  
-  RefPtr<nsCSSValueSharedList> mCombinedTransform;
 
   nsStyleCoord mTransformOrigin[3]; 
   nsStyleCoord mChildPerspective; 
@@ -2530,19 +2527,15 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
   
 
 
-  already_AddRefed<nsCSSValueSharedList> GetCombinedTransform() const {
-    if (mCombinedTransform) {
-      return do_AddRef(mCombinedTransform);
-    }
-
-    
-    return mSpecifiedTransform ? do_AddRef(mSpecifiedTransform) : nullptr;
+  already_AddRefed<nsCSSValueSharedList> GetCombinedTransform() const
+  {
+    return mIndividualTransform ? do_AddRef(mIndividualTransform) : nullptr;
   }
 
 private:
   
   
-  void GenerateCombinedTransform();
+  void GenerateCombinedIndividualTransform();
 };
 
 struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleTable

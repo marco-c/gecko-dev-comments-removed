@@ -24,6 +24,10 @@ class nsPresContext;
 struct gfxQuaternion;
 struct nsRect;
 
+namespace mozilla {
+struct MotionPathData;
+}
+
 
 
 
@@ -199,6 +203,16 @@ namespace nsStyleTransformMatrix {
                                          TransformReferenceBox& aBounds,
                                          float aAppUnitsPerMatrixUnit,
                                          bool* aContains3dTransform);
+
+  
+  
+  mozilla::gfx::Matrix4x4
+  ReadTransforms(const nsCSSValueList* aIndividualTransforms,
+                 const mozilla::Maybe<mozilla::MotionPathData>& aMotion,
+                 const nsCSSValueList* aTransform,
+                 TransformReferenceBox& aRefBox,
+                 float aAppUnitsPerMatrixUnit,
+                 bool* aContains3dTransform);
 
   
 
