@@ -156,10 +156,6 @@
   </binding>
 
   <binding id="findbar">
-    <resources>
-      <stylesheet src="chrome://global/skin/findBar.css"/>
-    </resources>
-
     <content hidden="true">
     <xul:hbox anonid="findbar-container" class="findbar-container" flex="1" align="center">
       <xul:hbox anonid="findbar-textbox-wrapper" align="stretch">
@@ -406,10 +402,8 @@
 
         // Make sure the FAYT keypress listener is attached by initializing the
         // browser property
-        if (this.getAttribute("browserid")) {
-          // eslint-disable-next-line no-self-assign
+        if (this.getAttribute("browserid"))
           setTimeout(function(aSelf) { aSelf.browser = aSelf.browser; }, 0, this);
-        }
       ]]></constructor>
 
       <destructor><![CDATA[
@@ -932,7 +926,7 @@
         <body><![CDATA[
           let showMinimalUI = this._findMode != this.FIND_NORMAL;
 
-          let nodes = this.getElement("findbar-container").children;
+          let nodes = this.getElement("findbar-container").childNodes;
           let wrapper = this.getElement("findbar-textbox-wrapper");
           let foundMatches = this._foundMatches;
           for (let node of nodes) {
