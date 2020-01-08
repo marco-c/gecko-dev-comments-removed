@@ -87,7 +87,8 @@ async function test_bookmarks_popup({isNewBookmark, popupShowFn, popupEditFn,
       let onItemRemovedPromise = Promise.resolve();
       if (isBookmarkRemoved) {
         onItemRemovedPromise = PlacesTestUtils.waitForNotification("onItemRemoved",
-          (id, parentId, index, type, itemUrl) => TEST_URL == itemUrl.spec);
+          (id, parentId, index, type, uri, guid, parentGuid) =>
+            parentGuid == PlacesUtils.bookmarks.unfiledGuid && TEST_URL == uri.spec);
       }
 
       let hiddenPromise = promisePopupHidden(bookmarkPanel);
@@ -480,7 +481,7 @@ add_task(async function enter_during_autocomplete_should_prevent_autoclose() {
     popupHideFn() {
       EventUtils.synthesizeKey("KEY_Escape", {}, window);
     },
-    isBookmarkRemoved: false,
+    isBookmarkRemoved: true,
   });
 });
 
@@ -514,14 +515,17 @@ add_task(async function escape_during_autocomplete_should_prevent_autoclose() {
       
       EventUtils.synthesizeKey("KEY_Escape", {}, window);
 
-      Assert.equal(tagsField.value, "Abc",
-        "Autocomplete should've inserted the selected item and shouldn't clear it");
+      
+      
+      
+      Assert.equal(tagsField.value, "a",
+        "Autocomplete should revert to what was typed");
     },
     shouldAutoClose: false,
     popupHideFn() {
       EventUtils.synthesizeKey("KEY_Escape", {}, window);
     },
-    isBookmarkRemoved: false,
+    isBookmarkRemoved: true,
   });
 });
 
