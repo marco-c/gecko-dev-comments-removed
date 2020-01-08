@@ -308,6 +308,12 @@ pref("devtools.editor.enableCodeFolding", true);
 pref("devtools.editor.autocomplete", true);
 
 
+pref("devtools.responsive.viewport.width", 320);
+
+pref("devtools.responsive.viewport.height", 480);
+
+pref("devtools.responsive.viewport.pixelRatio", 0);
+
 pref("devtools.responsive.leftAlignViewport.enabled", false);
 
 pref("devtools.responsive.reloadConditions.touchSimulation", false);
@@ -315,6 +321,11 @@ pref("devtools.responsive.reloadConditions.touchSimulation", false);
 pref("devtools.responsive.reloadConditions.userAgent", false);
 
 pref("devtools.responsive.reloadNotification.enabled", true);
+
+pref("devtools.responsive.touchSimulation.enabled", false);
+
+pref("devtools.responsive.userAgent", "");
+
 
 #if defined(RELEASE_OR_BETA)
 pref("devtools.responsive.show-setting-tooltip", true);
