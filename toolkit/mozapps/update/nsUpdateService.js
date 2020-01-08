@@ -1706,6 +1706,11 @@ UpdateService.prototype = {
   observe: function AUS_observe(subject, topic, data) {
     switch (topic) {
       case "post-update-processing":
+        
+        
+        
+        Services.prefs.clearUserPref("app.update.enabled");
+
         if (readStatusFile(getUpdatesDir()) == STATE_SUCCEEDED) {
           
           
