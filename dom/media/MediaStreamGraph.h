@@ -181,7 +181,6 @@ class AudioSegment;
 class DirectMediaStreamTrackListener;
 class MediaInputPort;
 class MediaStreamGraphImpl;
-class MediaStreamListener;
 class MediaStreamTrackListener;
 class MediaStreamVideoSink;
 class ProcessedMediaStream;
@@ -320,8 +319,6 @@ class MediaStream : public mozilla::LinkedListElement<MediaStream> {
   virtual void Suspend();
   virtual void Resume();
   
-  virtual void AddListener(MediaStreamListener* aListener);
-  virtual void RemoveListener(MediaStreamListener* aListener);
   virtual void AddTrackListener(MediaStreamTrackListener* aListener,
                                 TrackID aTrackID);
   virtual void RemoveTrackListener(MediaStreamTrackListener* aListener,
@@ -433,8 +430,6 @@ class MediaStream : public mozilla::LinkedListElement<MediaStream> {
   void AddVideoOutputImpl(already_AddRefed<MediaStreamVideoSink> aSink,
                           TrackID aID);
   void RemoveVideoOutputImpl(MediaStreamVideoSink* aSink, TrackID aID);
-  void AddListenerImpl(already_AddRefed<MediaStreamListener> aListener);
-  void RemoveListenerImpl(MediaStreamListener* aListener);
 
   
 
@@ -581,7 +576,6 @@ class MediaStream : public mozilla::LinkedListElement<MediaStream> {
   
   
   VideoFrame mLastPlayedVideoFrame;
-  nsTArray<RefPtr<MediaStreamListener>> mListeners;
   nsTArray<TrackBound<MediaStreamTrackListener>> mTrackListeners;
   nsTArray<MainThreadMediaStreamListener*> mMainThreadListeners;
   
@@ -634,18 +628,9 @@ class MediaStream : public mozilla::LinkedListElement<MediaStream> {
 
 
 
-  bool mNotifiedBlocked;
-  
-
-
-
 
 
   bool mHasCurrentData;
-  
-
-
-  bool mNotifiedHasCurrentData;
 
   
   StreamTime mMainThreadCurrentTime;
@@ -708,14 +693,6 @@ class SourceMediaStream : public MediaStream {
 
 
   void ExtractPendingInput(GraphTime aCurrentTime);
-
-  
-
-
-
-
-  void NotifyListenersEventImpl(MediaStreamGraphEvent aEvent);
-  void NotifyListenersEvent(MediaStreamGraphEvent aEvent);
 
   enum {
     ADDTRACK_QUEUED = 0x01  

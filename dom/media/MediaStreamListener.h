@@ -36,117 +36,30 @@ class VideoSegment;
 
 
 
-
-
-
-
-class MediaStreamListener {
- protected:
-  
-  virtual ~MediaStreamListener() {}
-
- public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaStreamListener)
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  virtual void NotifyPull(MediaStreamGraph* aGraph, StreamTime aDesiredTime) {}
-
-  enum Blocking { BLOCKED, UNBLOCKED };
-  
-
-
-
-  virtual void NotifyBlockingChanged(MediaStreamGraph* aGraph,
-                                     Blocking aBlocked) {}
-
-  
-
-
-
-
-
-  virtual void NotifyHasCurrentData(MediaStreamGraph* aGraph) {}
-
-  
-
-
-
-
-  virtual void NotifyOutput(MediaStreamGraph* aGraph, GraphTime aCurrentTime) {}
-
-  
-
-
-  virtual void NotifyEvent(MediaStreamGraph* aGraph,
-                           MediaStreamGraphEvent aEvent) {}
-
-  
-
-
-
-
-
-
-
-
-  virtual void NotifyQueuedTrackChanges(MediaStreamGraph* aGraph, TrackID aID,
-                                        StreamTime aTrackOffset,
-                                        TrackEventCommand aTrackEvents,
-                                        const MediaSegment& aQueuedMedia,
-                                        MediaStream* aInputStream = nullptr,
-                                        TrackID aInputTrackID = TRACK_INVALID) {
-  }
-
-  
-
-
-
-  virtual void NotifyQueuedAudioData(MediaStreamGraph* aGraph, TrackID aID,
-                                     StreamTime aTrackOffset,
-                                     const AudioSegment& aQueuedMedia,
-                                     MediaStream* aInputStream = nullptr,
-                                     TrackID aInputTrackID = TRACK_INVALID) {}
-
-  
-
-
-
-
-  virtual void NotifyFinishedTrackCreation(MediaStreamGraph* aGraph) {}
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class MediaStreamTrackListener {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaStreamTrackListener)
 
  public:
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   virtual void NotifyPull(MediaStreamGraph* aGraph,
                           StreamTime aEndOfAppendedData,
                           StreamTime aDesiredTime) {}
@@ -158,10 +71,21 @@ class MediaStreamTrackListener {
   virtual void NotifyPrincipalHandleChanged(
       MediaStreamGraph* aGraph, const PrincipalHandle& aNewPrincipalHandle) {}
 
+  
+
+
+
   virtual void NotifyOutput(MediaStreamGraph* aGraph,
                             StreamTime aCurrentTrackTime) {}
 
+  
+
+
   virtual void NotifyEnded() {}
+
+  
+
+
 
   virtual void NotifyRemoved() {}
 

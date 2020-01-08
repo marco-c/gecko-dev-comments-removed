@@ -343,10 +343,6 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
   
 
 
-  void NotifyHasCurrentData(MediaStream* aStream);
-  
-
-
 
   void CreateOrDestroyAudioStreams(MediaStream* aStream);
   
