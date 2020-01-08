@@ -377,8 +377,8 @@ public:
 
 
 
-    nsString GetDefaultFontName(const nsACString& aLangGroup,
-                                const nsACString& aGenericFamily);
+    nsAutoString GetDefaultFontName(const nsACString& aLangGroup,
+                                    const nsACString& aGenericFamily);
 
     
 

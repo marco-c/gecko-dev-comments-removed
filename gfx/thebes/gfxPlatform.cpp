@@ -1653,17 +1653,20 @@ gfxPlatform::GetStandardFamilyName(const nsAString& aFontName,
     return NS_OK;
 }
 
-nsString
+nsAutoString
 gfxPlatform::GetDefaultFontName(const nsACString& aLangGroup,
                                 const nsACString& aGenericFamily)
 {
+    
+    
+    nsAutoString result;
+
     gfxFontFamily* fontFamily = gfxPlatformFontList::PlatformFontList()->
         GetDefaultFontFamily(aLangGroup, aGenericFamily);
-    if (!fontFamily) {
-      return EmptyString();
-    }
-    nsAutoString result;
-    fontFamily->LocalizedName(result);
+    if (fontFamily) {
+      fontFamily->LocalizedName(result);
+    } 
+
     return result;
 }
 
