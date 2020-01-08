@@ -1299,15 +1299,15 @@ gfxWindowsPlatform::IsOptimus()
     return knowIsOptimus;
 }
 
-static inline bool
-IsWARPStable()
-{
-  
-  if (!IsWin8OrLater() || GetModuleHandleA("nvdxgiwrap.dll")) {
-    return false;
-  }
-  return true;
-}
+
+
+
+
+
+
+
+
+
 
 static void
 InitializeANGLEConfig()
