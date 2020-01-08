@@ -4,17 +4,13 @@
 
 "use strict";
 
-const { Cc, Ci, Cr } = require("chrome");
-const ChromeUtils = require("ChromeUtils");
+const { Cc, Ci } = require("chrome");
 const { LocalizationHelper } = require("devtools/shared/l10n");
 const Services = require("Services");
-const { NetUtil } = require("resource://gre/modules/NetUtil.jsm");
 
 loader.lazyImporter(this, "Downloads", "resource://gre/modules/Downloads.jsm");
 loader.lazyImporter(this, "OS", "resource://gre/modules/osfile.jsm");
 loader.lazyImporter(this, "FileUtils", "resource://gre/modules/FileUtils.jsm");
-loader.lazyImporter(this, "PrivateBrowsingUtils",
-                          "resource://gre/modules/PrivateBrowsingUtils.jsm");
 
 const STRINGS_URI = "devtools/shared/locales/screenshot.properties";
 const L10N = new LocalizationHelper(STRINGS_URI);
@@ -162,7 +158,7 @@ async function saveScreenshot(window, args, image) {
   const results = [];
 
   if (args.clipboard) {
-    const result = await saveToClipboard(window, image.data);
+    const result = saveToClipboard(window, image.data);
     results.push(result);
   }
 
@@ -186,132 +182,31 @@ async function saveScreenshot(window, args, image) {
 
 
 
-function saveToClipboard(window, data) {
-  return new Promise(resolve => {
-    try {
-      const channel = NetUtil.newChannel({
-        uri: data,
-        loadUsingSystemPrincipal: true,
-        contentPolicyType: Ci.nsIContentPolicy.TYPE_INTERNAL_IMAGE
-      });
-      const input = channel.open2();
+function saveToClipboard(window, base64URI) {
+  try {
+    const imageTools = Cc["@mozilla.org/image/tools;1"]
+                       .getService(Ci.imgITools);
 
-      const loadContext = window.QueryInterface(Ci.nsIInterfaceRequestor)
-                                .getInterface(Ci.nsIWebNavigation)
-                                .QueryInterface(Ci.nsILoadContext);
+    const base64Data = base64URI.replace("data:image/png;base64,", "");
 
-      const callback = {
-        onImageReady(container, status) {
-          if (!container) {
-            console.error("imgTools.decodeImageAsync failed");
-            resolve(L10N.getStr("screenshotErrorCopying"));
-            return;
-          }
+    const image = atob(base64Data);
+    const imgPtr = Cc["@mozilla.org/supports-interface-pointer;1"]
+                   .createInstance(Ci.nsISupportsInterfacePointer);
+    imgPtr.data = imageTools.decodeImageFromBuffer(image, image.length, "image/png");
 
-          try {
-            const wrapped = Cc["@mozilla.org/supports-interface-pointer;1"]
-                              .createInstance(Ci.nsISupportsInterfacePointer);
-            wrapped.data = container;
+    const transferable = Cc["@mozilla.org/widget/transferable;1"]
+                     .createInstance(Ci.nsITransferable);
+    transferable.init(null);
+    transferable.addDataFlavor("image/png");
+    transferable.setTransferData("image/png", imgPtr, -1);
 
-            const trans = Cc["@mozilla.org/widget/transferable;1"]
-                            .createInstance(Ci.nsITransferable);
-            trans.init(loadContext);
-            trans.addDataFlavor(channel.contentType);
-            trans.setTransferData(channel.contentType, wrapped, -1);
-
-            Services.clipboard.setData(trans, null, Ci.nsIClipboard.kGlobalClipboard);
-
-            resolve(L10N.getStr("screenshotCopied"));
-          } catch (ex) {
-            console.error(ex);
-            resolve(L10N.getStr("screenshotErrorCopying"));
-          }
-        }
-      };
-
-      const threadManager = Cc["@mozilla.org/thread-manager;1"].getService();
-      const imgTools = Cc["@mozilla.org/image/tools;1"]
-                          .getService(Ci.imgITools);
-      imgTools.decodeImageAsync(input, channel.contentType, callback,
-                                threadManager.currentThread);
-    } catch (ex) {
-      console.error(ex);
-      resolve(L10N.getStr("screenshotErrorCopying"));
-    }
-  });
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function DownloadListener(win, transfer) {
-  this.window = win;
-  this.transfer = transfer;
-
-  
-  for (const name in transfer) {
-    if (name != "QueryInterface" &&
-        name != "onStateChange") {
-      this[name] = (...args) => transfer[name].apply(transfer, args);
-    }
+    Services.clipboard.setData(transferable, null, Services.clipboard.kGlobalClipboard);
+    return L10N.getStr("screenshotCopied");
+  } catch (ex) {
+    console.error(ex);
+    return L10N.getStr("screenshotErrorCopying");
   }
-
-  
-  this._completedDeferred = {};
-  this.completed = new Promise((resolve, reject) => {
-    this._completedDeferred.resolve = resolve;
-    this._completedDeferred.reject = reject;
-  });
 }
-
-DownloadListener.prototype = {
-  QueryInterface: ChromeUtils.generateQI(["nsIInterfaceRequestor",
-                                          "nsIWebProgressListener",
-                                          "nsIWebProgressListener2"]),
-
-  getInterface: function(iid) {
-    if (iid.equals(Ci.nsIAuthPrompt) ||
-        iid.equals(Ci.nsIAuthPrompt2)) {
-      const ww = Cc["@mozilla.org/embedcomp/window-watcher;1"]
-                 .getService(Ci.nsIPromptFactory);
-      return ww.getPrompt(this.window, iid);
-    }
-
-    throw Cr.NS_ERROR_NO_INTERFACE;
-  },
-
-  onStateChange: function(webProgress, request, state, status) {
-    
-    if ((state & Ci.nsIWebProgressListener.STATE_STOP) &&
-        (state & Ci.nsIWebProgressListener.STATE_IS_NETWORK)) {
-      if (status == Cr.NS_OK) {
-        this._completedDeferred.resolve();
-      } else {
-        this._completedDeferred.reject();
-      }
-    }
-
-    this.transfer.onStateChange.apply(this.transfer, arguments);
-  }
-};
 
 
 
@@ -327,7 +222,6 @@ DownloadListener.prototype = {
 
 
 async function saveToFile(window, image) {
-  const document = window.document;
   let filename = image.filename;
 
   
@@ -345,48 +239,18 @@ async function saveToFile(window, image) {
 
   const sourceURI = Services.io.newURI(image.data);
   const targetFile = new FileUtils.File(filename);
-  const targetFileURI = Services.io.newFileURI(targetFile);
 
   
-  
-  
-  
-  
-  
-  const nsIWBP = Ci.nsIWebBrowserPersist;
-  const flags = nsIWBP.PERSIST_FLAGS_REPLACE_EXISTING_FILES |
-                nsIWBP.PERSIST_FLAGS_BYPASS_CACHE |
-                nsIWBP.PERSIST_FLAGS_AUTODETECT_APPLY_CONVERSION;
-  const isPrivate =
-    PrivateBrowsingUtils.isContentWindowPrivate(document.defaultView);
-  const persist = Cc["@mozilla.org/embedding/browser/nsWebBrowserPersist;1"]
-                  .createInstance(Ci.nsIWebBrowserPersist);
-  persist.persistFlags = flags;
-  const tr = Cc["@mozilla.org/transfer;1"].createInstance(Ci.nsITransfer);
-  tr.init(sourceURI,
-          targetFileURI,
-          "",
-          null,
-          null,
-          null,
-          persist,
-          isPrivate);
-  const listener = new DownloadListener(window, tr);
-  persist.progressListener = listener;
-  const principal = Services.scriptSecurityManager.getSystemPrincipal();
-  persist.savePrivacyAwareURI(sourceURI,
-                              principal,
-                              0,
-                              document.documentURIObject,
-                              Ci.nsIHttpChannel.REFERRER_POLICY_UNSET,
-                              null,
-                              null,
-                              targetFileURI,
-                              isPrivate);
-
   try {
+    const download = await Downloads.createDownload({
+      source: sourceURI,
+      target: targetFile
+    });
+    const list = await Downloads.getList(Downloads.ALL);
     
-    await listener.completed;
+    list.add(download);
+    
+    await download.start();
     return L10N.getFormatStr("screenshotSavedToFile", filename);
   } catch (ex) {
     console.error(ex);
