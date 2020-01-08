@@ -1072,6 +1072,17 @@ class BuildDriver(MozbuildObject):
                             mozpath.join(self.topobjdir, 'config.status')]
                     self.run_process(args, cwd=self.topobjdir, pass_thru=True)
 
+                
+                
+                
+                
+                
+                if jobs == 0 and 'make_extra' in self.mozconfig:
+                    for param in self.mozconfig['make_extra']:
+                        key, value = param.split('=')
+                        if key == 'MOZ_PARALLEL_BUILD':
+                            jobs = int(value)
+
                 backend_cls = get_backend_class(active_backend)(config)
                 status = backend_cls.build(self, output, jobs, verbose, what)
 
