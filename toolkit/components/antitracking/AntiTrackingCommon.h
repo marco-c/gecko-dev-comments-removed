@@ -74,8 +74,7 @@ public:
   enum StorageAccessGrantedReason
   {
     eStorageAccessAPI,
-    eOpenerAfterUserInteraction,
-    eOpener
+    eHeuristic,
   };
 
   
