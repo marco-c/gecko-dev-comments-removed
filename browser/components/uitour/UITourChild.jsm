@@ -2,18 +2,15 @@
 
 
 
-var EXPORTED_SYMBOLS = ["UITourListener"];
+var EXPORTED_SYMBOLS = ["UITourChild"];
 
+ChromeUtils.import("resource://gre/modules/ActorChild.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const PREF_TEST_WHITELIST = "browser.uitour.testingOrigins";
 const UITOUR_PERMISSION   = "uitour";
 
-class UITourListener {
-  constructor(mm) {
-    this.mm = mm;
-  }
-
+class UITourChild extends ActorChild {
   handleEvent(event) {
     if (!Services.prefs.getBoolPref("browser.uitour.enabled")) {
       return;
