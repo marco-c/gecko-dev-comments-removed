@@ -11,6 +11,10 @@ function repeat(limit, func) {
 
 function is_selected(index) {
   is(gURLBar.popup.richlistbox.selectedIndex, index, `Item ${index + 1} should be selected`);
+  
+  
+  ok(gURLBar.popup.richlistbox.selectedItem.hasAttribute("selected"),
+     `Item ${index + 1} should have the "selected" attribute`);
 
   
   
