@@ -10,9 +10,11 @@
 #include "nsContentUtils.h"
 #include "nsLayoutUtils.h"
 #include "nsString.h"
+#include "mozilla/AntiTrackingCommon.h"
 #include "mozilla/dom/BlobURLProtocolHandler.h"
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/ServiceWorkerManager.h"
+#include "mozilla/StaticPrefs.h"
 #include "nsIDocument.h"
 #include "nsPrintfCString.h"
 
@@ -128,26 +130,45 @@ ImageCacheKey::SchemeIs(const char* aScheme)
  void*
 ImageCacheKey::GetSpecialCaseDocumentToken(nsIDocument* aDocument, nsIURI* aURI)
 {
+  if (!aDocument) {
+    return nullptr;
+  }
+
   
   
-  void* pointer = nullptr;
   RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
-  if (aDocument && swm) {
-    ErrorResult rv;
-    if (aDocument->GetController().isSome()) {
-      pointer = aDocument;
-    }
+  if (swm && aDocument->GetController().isSome()) {
+    return aDocument;
   }
 
   
   
-  if (!pointer && aDocument &&
-      nsContentUtils::StorageDisabledByAntiTracking(aDocument->GetInnerWindow(),
-                                                    nullptr, aURI)) {
-    pointer = aDocument;
+  if (!StaticPrefs::privacy_restrict3rdpartystorage_enabled() ||
+      !nsContentUtils::IsThirdPartyWindowOrChannel(aDocument->GetInnerWindow(),
+                                                   nullptr, aURI)) {
+    return nullptr;
   }
 
-  return pointer;
+  
+  
+  if (nsContentUtils::IsTrackingResourceWindow(aDocument->GetInnerWindow())) {
+    return nsContentUtils::StorageDisabledByAntiTracking(aDocument->GetInnerWindow(),
+                                                         nullptr, aURI)
+             ? aDocument : nullptr;
+  }
+
+  
+  
+  
+  
+  
+  
+  if (!AntiTrackingCommon::MaybeIsFirstPartyStorageAccessGrantedFor(aDocument->GetInnerWindow(),
+                                                                    aURI)) {
+    return aDocument;
+  }
+
+  return nullptr;
 }
 
 } 

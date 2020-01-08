@@ -21,9 +21,21 @@ class AntiTrackingCommon final
 public:
   
   
+  
+  
   static bool
   IsFirstPartyStorageAccessGrantedFor(nsPIDOMWindowInner* a3rdPartyTrackingWindow,
                                       nsIURI* aURI);
+
+  
+  
+  
+  
+  
+  
+  static bool
+  MaybeIsFirstPartyStorageAccessGrantedFor(nsPIDOMWindowInner* aFirstPartyWindow,
+                                           nsIURI* aURI);
 
   
   

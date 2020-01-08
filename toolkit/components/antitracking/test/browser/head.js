@@ -12,7 +12,7 @@ const TEST_3RD_PARTY_PAGE_UI = TEST_3RD_PARTY_DOMAIN + TEST_PATH + "3rdPartyUI.h
 let {UrlClassifierTestUtils} = ChromeUtils.import("resource://testing-common/UrlClassifierTestUtils.jsm", {});
 
 this.AntiTracking = {
-  runTest(name, callbackTracking, callbackNonTracking, cleanupFunction, extraPrefs) {
+  runTest(name, callbackTracking, callbackNonTracking, cleanupFunction, extraPrefs, windowOpenTest = true, userInteractionTest = true) {
     
     this._createTask(name, true, callbackTracking, extraPrefs);
     this._createCleanupTask(cleanupFunction);
@@ -23,12 +23,16 @@ this.AntiTracking = {
       this._createCleanupTask(cleanupFunction);
 
       
-      this._createWindowOpenTask(name, callbackTracking, callbackNonTracking, extraPrefs);
-      this._createCleanupTask(cleanupFunction);
+      if (windowOpenTest) {
+        this._createWindowOpenTask(name, callbackTracking, callbackNonTracking, extraPrefs);
+        this._createCleanupTask(cleanupFunction);
+      }
 
       
-      this._createUserInteractionTask(name, callbackTracking, callbackNonTracking, extraPrefs);
-      this._createCleanupTask(cleanupFunction);
+      if (userInteractionTest) {
+        this._createUserInteractionTask(name, callbackTracking, callbackNonTracking, extraPrefs);
+        this._createCleanupTask(cleanupFunction);
+      }
     }
   },
 
