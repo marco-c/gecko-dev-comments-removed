@@ -134,14 +134,15 @@ nsLayoutStatics::Initialize()
 
   ContentParent::StartUp();
 
+  
+  
+  nsCSSAnonBoxes::RegisterStaticAtoms();
+  nsCSSPseudoElements::RegisterStaticAtoms();
   nsCSSKeywords::AddRefTable();
   nsCSSProps::AddRefTable();
   nsColorNames::AddRefTable();
 
-#ifdef DEBUG
-  nsCSSPseudoElements::AssertAtoms();
-  nsCSSAnonBoxes::AssertAtoms();
-#endif
+  NS_SetStaticAtomsDone();
 
   StartupJSEnvironment();
   nsJSContext::EnsureStatics();

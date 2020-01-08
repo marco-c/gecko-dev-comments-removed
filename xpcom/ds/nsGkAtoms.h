@@ -8,192 +8,19 @@
 #define nsGkAtoms_h___
 
 #include "nsAtom.h"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define DEFINE_STATIC_ATOM_SUBCLASS(name_)                   \
-  class name_ : public nsStaticAtom                          \
-  {                                                          \
-  public:                                                    \
-    constexpr name_(const char16_t* aStr, uint32_t aLength,  \
-                    uint32_t aHash, uint32_t aOffset)        \
-      : nsStaticAtom(aStr, aLength, aHash, aOffset) {}       \
-  };
-
-DEFINE_STATIC_ATOM_SUBCLASS(nsICSSAnonBoxPseudo)
-DEFINE_STATIC_ATOM_SUBCLASS(nsICSSPseudoElement)
-
-#undef DEFINE_STATIC_ATOM_SUBCLASS
+#include "nsStaticAtom.h"
 
 namespace mozilla {
 namespace detail {
 
-
-
-
-
-
-
 struct GkAtoms
 {
-  
-  #define GK_ATOM(name_, value_, hash_, type_, atom_type_) \
-    const char16_t name_##_string[sizeof(value_)];
+  #define GK_ATOM(name_, value_) NS_STATIC_ATOM_DECL_STRING(name_, value_)
   #include "nsGkAtomList.h"
   #undef GK_ATOM
 
-  
   enum class Atoms {
-    #define GK_ATOM(name_, value_, hash_, type_, atom_type_) \
-      name_,
+    #define GK_ATOM(name_, value_) NS_STATIC_ATOM_ENUM(name_)
     #include "nsGkAtomList.h"
     #undef GK_ATOM
     AtomsCount
@@ -215,18 +42,7 @@ private:
 public:
   static void RegisterStaticAtoms();
 
-  static nsStaticAtom* GetAtomByIndex(size_t aIndex)
-  {
-    MOZ_ASSERT(aIndex < sAtomsLen);
-    return const_cast<nsStaticAtom*>(&sAtoms[aIndex]);
-  }
-
-  
-  
-  
-  
-  #define GK_ATOM(name_, value_, hash_, type_, atom_type_) \
-    static type_* name_;
+  #define GK_ATOM(name_, value_) NS_STATIC_ATOM_DECL_PTR(nsStaticAtom, name_)
   #include "nsGkAtomList.h"
   #undef GK_ATOM
 };

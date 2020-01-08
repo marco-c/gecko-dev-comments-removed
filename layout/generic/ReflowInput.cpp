@@ -2468,7 +2468,7 @@ ReflowInput::InitConstraints(nsPresContext* aPresContext,
         
         if (isBlock &&
             ((aFrameType == LayoutFrameType::Legend &&
-              mFrame->Style()->GetPseudo() != nsCSSAnonBoxes::scrolledContent()) ||
+              mFrame->Style()->GetPseudo() != nsCSSAnonBoxes::scrolledContent) ||
              (aFrameType == LayoutFrameType::Scroll &&
               mFrame->GetContentInsertionFrame()->IsLegendFrame()) ||
              (mCBReflowInput &&

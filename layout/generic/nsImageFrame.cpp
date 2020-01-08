@@ -2549,7 +2549,7 @@ IsInAutoWidthTableCellForQuirk(nsIFrame *aFrame)
     return false;
   
   nsBlockFrame *ancestor = nsLayoutUtils::FindNearestBlockAncestor(aFrame);
-  if (ancestor->Style()->GetPseudo() == nsCSSAnonBoxes::cellContent()) {
+  if (ancestor->Style()->GetPseudo() == nsCSSAnonBoxes::cellContent) {
     
     nsFrame *grandAncestor = static_cast<nsFrame*>(ancestor->GetParent());
     return grandAncestor &&

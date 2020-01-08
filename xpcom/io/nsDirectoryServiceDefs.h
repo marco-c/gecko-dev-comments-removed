@@ -17,11 +17,11 @@
 
 
 
-
-
-
 #ifndef nsDirectoryServiceDefs_h___
 #define nsDirectoryServiceDefs_h___
+
+
+
 
 
 

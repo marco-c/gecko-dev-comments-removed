@@ -1989,7 +1989,7 @@ ExpectedOwnerForChild(const nsIFrame& aFrame)
   
   while (parent && (IsAnonBox(*parent) || parent->IsLineFrame())) {
     auto* pseudo = parent->Style()->GetPseudo();
-    if (pseudo == nsCSSAnonBoxes::tableWrapper()) {
+    if (pseudo == nsCSSAnonBoxes::tableWrapper) {
       const nsIFrame* tableFrame = parent->PrincipalChildList().FirstChild();
       MOZ_ASSERT(tableFrame->IsTableFrame());
       
@@ -2057,10 +2057,10 @@ ServoRestyleState::AddPendingWrapperRestyle(nsIFrame* aWrapperFrame)
              "All our wrappers are anon boxes, and why would we restyle "
              "non-inheriting ones?");
   MOZ_ASSERT(aWrapperFrame->Style()->GetPseudo() !=
-             nsCSSAnonBoxes::cellContent(),
+             nsCSSAnonBoxes::cellContent,
              "Someone should be using TableAwareParentFor");
   MOZ_ASSERT(aWrapperFrame->Style()->GetPseudo() !=
-             nsCSSAnonBoxes::tableWrapper(),
+             nsCSSAnonBoxes::tableWrapper,
              "Someone should be using TableAwareParentFor");
   
   aWrapperFrame = aWrapperFrame->FirstContinuation();
@@ -2188,7 +2188,7 @@ ServoRestyleState::TableAwareParentFor(const nsIFrame* aChild)
 
   nsIFrame* parent = aChild->GetParent();
   
-  if (parent->Style()->GetPseudo() == nsCSSAnonBoxes::cellContent()) {
+  if (parent->Style()->GetPseudo() == nsCSSAnonBoxes::cellContent) {
     parent = parent->GetParent();
   } else if (parent->IsTableWrapperFrame()) {
     
@@ -2380,14 +2380,14 @@ public:
                            ComputedStyle& aNewStyle)
   {
     MOZ_ASSERT(aTextFrame);
-    MOZ_ASSERT(aNewStyle.GetPseudo() == nsCSSAnonBoxes::mozText());
+    MOZ_ASSERT(aNewStyle.GetPseudo() == nsCSSAnonBoxes::mozText);
 
     if (MOZ_LIKELY(!mShouldPostHints)) {
       return;
     }
 
     ComputedStyle* oldStyle = aTextFrame->Style();
-    MOZ_ASSERT(oldStyle->GetPseudo() == nsCSSAnonBoxes::mozText());
+    MOZ_ASSERT(oldStyle->GetPseudo() == nsCSSAnonBoxes::mozText);
 
     
     
