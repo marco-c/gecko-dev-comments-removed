@@ -536,11 +536,28 @@ private:
   MaybeResumeAsyncOpen();
 
 protected:
+  nsCString mSpec; 
+  nsCString mContentTypeHint;
+  nsCString mContentCharsetHint;
+  nsCString mUserSetCookieHeader;
+  
+  nsCString mUpgradeProtocol;
+  
+  nsCString mEntityID;
   
   
-  Atomic<bool, ReleaseAcquire> mCanceled;
+  nsString mInitiatorType;
+  
+  nsCString mPreferredCachedAltDataType;
+  
+  nsCString mAvailableCachedAltDataType;
+  nsString mIntegrityMetadata;
 
-  nsTArray<Pair<nsString, nsString>> mSecurityConsoleMessages;
+  
+  nsCString mMatchedList;
+  nsCString mMatchedProvider;
+  nsCString mMatchedFullHash;
+
 
   nsCOMPtr<nsISupports>             mOwner;
 
@@ -554,29 +571,65 @@ protected:
   RefPtr<nsHttpConnectionInfo>      mConnectionInfo;
   nsCOMPtr<nsIProxyInfo>            mProxyInfo;
   nsCOMPtr<nsISupports>             mSecurityInfo;
+  nsCOMPtr<nsIHttpUpgradeListener> mUpgradeProtocolCallback;
+  nsAutoPtr<nsString> mContentDispositionFilename;
+  nsCOMPtr<nsIConsoleReportCollector> mReportCollector;
 
-  nsCString                         mSpec; 
-  nsCString                         mContentTypeHint;
-  nsCString                         mContentCharsetHint;
-  nsCString                         mUserSetCookieHeader;
+  RefPtr<nsHttpHandler> mHttpHandler;  
+  nsAutoPtr<nsTArray<nsCString> > mRedirectedCachekeys;
+  nsCOMPtr<nsIRequestContext> mRequestContext;
 
   NetAddr                           mSelfAddr;
   NetAddr                           mPeerAddr;
 
-  
-  nsCString                        mUpgradeProtocol;
-  nsCOMPtr<nsIHttpUpgradeListener> mUpgradeProtocolCallback;
+  nsTArray<Pair<nsString, nsString>> mSecurityConsoleMessages;
+  nsTArray<nsCString>               mUnsafeHeaders;
 
   
-  nsCString                         mEntityID;
+  
+  mozilla::TimeStamp                mRedirectStartTimeStamp;
+  
+  
+  mozilla::TimeStamp                mRedirectEndTimeStamp;
+
+  PRTime                            mChannelCreationTime;
+  TimeStamp                         mChannelCreationTimestamp;
+  TimeStamp                         mAsyncOpenTime;
+  TimeStamp                         mCacheReadStart;
+  TimeStamp                         mCacheReadEnd;
+  TimeStamp                         mLaunchServiceWorkerStart;
+  TimeStamp                         mLaunchServiceWorkerEnd;
+  TimeStamp                         mDispatchFetchEventStart;
+  TimeStamp                         mDispatchFetchEventEnd;
+  TimeStamp                         mHandleFetchEventStart;
+  TimeStamp                         mHandleFetchEventEnd;
+  
+  
+  TimingStruct                      mTransactionTimings;
+
   uint64_t                          mStartPos;
+  uint64_t mTransferSize;
+  uint64_t mDecodedBodySize;
+  uint64_t mEncodedBodySize;
+  uint64_t mRequestContextID;
+  
+  
+  uint64_t mContentWindowId;
+  uint64_t mTopLevelOuterContentWindowId;
+  int64_t mAltDataLength;
+  uint64_t mChannelId;
+  uint64_t mReqContentLength;
 
   Atomic<nsresult, ReleaseAcquire>  mStatus;
+
+  
+  
+  Atomic<bool, ReleaseAcquire> mCanceled;
+  Atomic<bool, ReleaseAcquire> mIsTrackingResource;
+
   uint32_t                          mLoadFlags;
   uint32_t                          mCaps;
   uint32_t                          mClassOfService;
-  int16_t                           mPriority;
-  uint8_t                           mRedirectionLimit;
 
   uint32_t                          mUpgradeToSecure            : 1;
   uint32_t                          mApplyConversion            : 1;
@@ -628,6 +681,11 @@ protected:
 
   
   
+  uint32_t                          mUpgradableToSecure : 1;
+
+
+  
+  
   
   uint32_t                          mTlsFlags;
 
@@ -637,53 +695,32 @@ protected:
   
   uint32_t                          mInitialRwin;
 
-  nsAutoPtr<nsTArray<nsCString> >   mRedirectedCachekeys;
-
   uint32_t                          mProxyResolveFlags;
 
   uint32_t                          mContentDispositionHint;
-  nsAutoPtr<nsString>               mContentDispositionFilename;
-
-  RefPtr<nsHttpHandler>           mHttpHandler;  
-
   uint32_t                          mReferrerPolicy;
 
+  uint32_t mCorsMode;
+  uint32_t mRedirectMode;
+
   
   
   
-  nsString                          mInitiatorType;
+  uint32_t mLastRedirectFlags;
+
+  int16_t                           mPriority;
+  uint8_t                           mRedirectionLimit;
+
+  
   
   int8_t                            mRedirectCount;
   
   int8_t                            mInternalRedirectCount;
-  
-  
-  mozilla::TimeStamp                mRedirectStartTimeStamp;
-  
-  
-  mozilla::TimeStamp                mRedirectEndTimeStamp;
-
-  PRTime                            mChannelCreationTime;
-  TimeStamp                         mChannelCreationTimestamp;
-  TimeStamp                         mAsyncOpenTime;
-  TimeStamp                         mCacheReadStart;
-  TimeStamp                         mCacheReadEnd;
-  TimeStamp                         mLaunchServiceWorkerStart;
-  TimeStamp                         mLaunchServiceWorkerEnd;
-  TimeStamp                         mDispatchFetchEventStart;
-  TimeStamp                         mDispatchFetchEventEnd;
-  TimeStamp                         mHandleFetchEventStart;
-  TimeStamp                         mHandleFetchEventEnd;
-  
-  
-  TimingStruct                      mTransactionTimings;
 
   bool                              mAsyncOpenTimeOverriden;
   bool                              mForcePending;
 
   bool mCorsIncludeCredentials;
-  uint32_t mCorsMode;
-  uint32_t mRedirectMode;
 
   
   
@@ -692,19 +729,20 @@ protected:
 
   
   
-  uint32_t                          mUpgradableToSecure : 1;
-
-  
-  
   bool mAfterOnStartRequestBegun;
 
-  uint64_t mTransferSize;
-  uint64_t mDecodedBodySize;
-  uint64_t mEncodedBodySize;
+  bool mRequireCORSPreflight;
 
-  uint64_t mRequestContextID;
+  
+  
+  bool mAltDataForChild;
+
+  bool mForceMainDocumentChannel;
+  
+  
+  bool mPendingInputStreamLengthOperation;
+
   bool EnsureRequestContextID();
-  nsCOMPtr<nsIRequestContext> mRequestContext;
   bool EnsureRequestContext();
 
   
@@ -713,49 +751,7 @@ protected:
   void AddAsNonTailRequest();
   void RemoveAsNonTailRequest();
 
-  
-  
-  uint64_t mContentWindowId;
-
-  uint64_t mTopLevelOuterContentWindowId;
   void EnsureTopLevelOuterContentWindowId();
-
-  bool                              mRequireCORSPreflight;
-  nsTArray<nsCString>               mUnsafeHeaders;
-
-  nsCOMPtr<nsIConsoleReportCollector> mReportCollector;
-
-  
-  nsCString mPreferredCachedAltDataType;
-  
-  nsCString mAvailableCachedAltDataType;
-  int64_t   mAltDataLength;
-  
-  
-  bool mAltDataForChild;
-
-  bool mForceMainDocumentChannel;
-  Atomic<bool, ReleaseAcquire> mIsTrackingResource;
-
-  uint64_t mChannelId;
-
-  
-  
-  
-  uint32_t mLastRedirectFlags;
-
-  uint64_t mReqContentLength;
-
-  nsString mIntegrityMetadata;
-
-  
-  nsCString mMatchedList;
-  nsCString mMatchedProvider;
-  nsCString mMatchedFullHash;
-
-  
-  
-  bool mPendingInputStreamLengthOperation;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(HttpBaseChannel, HTTP_BASE_CHANNEL_IID)
