@@ -1443,6 +1443,11 @@ Toolbox.prototype = {
       this.frameButton.disabled = false;
       this.frameButton.description = L10N.getStr("toolbox.frames.tooltip");
     }
+
+    
+    const selectedFrame = this.frameMap.get(this.selectedFrameId) || {};
+    this.frameButton.isChecked = selectedFrame.parentID != null;
+
     this.frameButton.isVisible = this._commandIsVisible(this.frameButton);
   },
 
@@ -2394,18 +2399,6 @@ Toolbox.prototype = {
       const frames = [...this.frameMap.values()];
       const topFrames = frames.filter(frame => !frame.parentID);
       this.selectedFrameId = topFrames.length ? topFrames[0].id : null;
-    }
-
-    
-    
-    const frame = this.frameMap.get(this.selectedFrameId);
-    const topFrameSelected = frame ? !frame.parentID : false;
-    this._framesButtonChecked = false;
-
-    
-    
-    if (!topFrameSelected && this.selectedFrameId) {
-      this._framesButtonChecked = false;
     }
 
     

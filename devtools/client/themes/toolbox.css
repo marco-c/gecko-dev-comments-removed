@@ -22,6 +22,7 @@
   --command-pick-image: url(images/command-pick.svg);
   --command-pick-accessibility-image: url(images/command-pick-accessibility.svg);
   --command-frames-image: url(images/command-frames.svg);
+  --command-frames-active-image: url(images/command-frames.svg#filled);
   --command-rulers-image: url(images/command-rulers.svg);
   --command-measure-image: url(images/command-measure.svg);
   --command-chevron-image: url(images/command-chevron.svg);
@@ -339,34 +340,12 @@
 
 #command-button-frames::before {
   background-image: var(--command-frames-image);
+  fill: var(--theme-toolbar-photon-icon-color);
 }
 
-#command-button-frames {
-  background-image: url("chrome://devtools/skin/images/dropmarker.svg");
-  background-repeat: no-repeat;
-
-  
-
-  background-size: 8px 4px !important;
-  min-width: 32px;
-}
-
-#command-button-frames::before {
-  
-
-  margin-inline-start: 0px;
-  
-
-
-  direction: unset;
-}
-
-#command-button-frames:-moz-locale-dir(ltr) {
-  background-position: right 2px top 14px;
-}
-
-#command-button-frames:-moz-locale-dir(rtl) {
-  background-position: left 2px top 14px;
+#command-button-frames.command-button-checked::before {
+  background-image: var(--command-frames-active-image);
+  fill: var(--theme-toolbar-checked-color);
 }
 
 
