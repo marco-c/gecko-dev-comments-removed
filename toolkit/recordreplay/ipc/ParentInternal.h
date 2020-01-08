@@ -95,9 +95,6 @@ void SendGraphicsMemoryToChild();
 void UpdateGraphicsInUIProcess(const PaintMessage* aMsg);
 
 
-void UpdateGraphicsOverlay();
-
-
 
 void MaybeUpdateGraphicsAtPaint(const PaintMessage& aMsg);
 void MaybeUpdateGraphicsAtCheckpoint(size_t aCheckpointId);

@@ -26,7 +26,6 @@ Cu.evalInSandbox(
 
 
 
-
 function setupContents(window) {
   
   const canvas = window.middlemanCanvas = window.document.createElement("canvas");
@@ -92,12 +91,6 @@ function UpdateCanvas(buffer, width, height, hadFailure) {
 }
 
 
-
-function UpdateOverlay() {
-}
-
-
 var EXPORTED_SYMBOLS = [
   "UpdateCanvas",
-  "UpdateOverlay",
 ];
