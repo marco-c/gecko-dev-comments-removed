@@ -326,11 +326,6 @@ TaggingService.prototype = {
   },
 
   
-  get hasTags() {
-    return this._tagFolders.length > 0;
-  },
-
-  
   observe: function TS_observe(aSubject, aTopic, aData) {
     if (aTopic == TOPIC_SHUTDOWN) {
       PlacesUtils.bookmarks.removeObserver(this);

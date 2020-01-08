@@ -1879,17 +1879,6 @@ nsNavHistoryQueryResultNode::GetHasChildren(bool* aHasChildren)
   }
 
   
-  if (resultType == nsINavHistoryQueryOptions::RESULTS_AS_TAGS_ROOT) {
-    nsCOMPtr<nsITaggingService> tagging =
-      do_GetService(NS_TAGGINGSERVICE_CONTRACTID);
-    if (tagging) {
-      bool hasTags;
-      *aHasChildren = NS_SUCCEEDED(tagging->GetHasTags(&hasTags)) && hasTags;
-    }
-    return NS_OK;
-  }
-
-  
   if (resultType == nsINavHistoryQueryOptions::RESULTS_AS_DATE_QUERY ||
       resultType == nsINavHistoryQueryOptions::RESULTS_AS_DATE_SITE_QUERY ||
       resultType == nsINavHistoryQueryOptions::RESULTS_AS_SITE_QUERY) {
@@ -1904,10 +1893,13 @@ nsNavHistoryQueryResultNode::GetHasChildren(bool* aHasChildren)
   
   
 
+  
   if (mContentsValid) {
     *aHasChildren = (mChildren.Count() > 0);
     return NS_OK;
   }
+
+  
   *aHasChildren = true;
   return NS_OK;
 }
