@@ -67,8 +67,11 @@ class Timeouts {
           break;
 
         case "script":
-          t.script = assert.positiveInteger(ms,
-              pprint`Expected ${type} to be a positive integer, got ${ms}`);
+          if (ms !== null) {
+            assert.positiveInteger(ms,
+                pprint`Expected ${type} to be a positive integer, got ${ms}`);
+          }
+          t.script = ms;
           break;
 
         case "pageLoad":
@@ -438,7 +441,9 @@ class Capabilities extends Map {
 
 
   toJSON() {
-    return marshal(this);
+    let marshalled = marshal(this);
+    marshalled.timeouts = super.get("timeouts");
+    return marshalled;
   }
 
   
