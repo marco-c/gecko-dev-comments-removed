@@ -6,7 +6,6 @@
 
 "use strict";
 
-const Services = require("Services");
 const EventEmitter = require("devtools/shared/event-emitter");
 const {
   VIEW_NODE_VALUE_TYPE,
@@ -24,32 +23,21 @@ class HighlightersOverlay {
 
 
   constructor(inspector) {
+    
+
+
+
+    this.highlighters = {};
+    
+
+
+
+
+    this.editors = {};
     this.inspector = inspector;
     this.highlighterUtils = this.inspector.toolbox.highlighterUtils;
     this.store = this.inspector.store;
     this.telemetry = inspector.telemetry;
-
-    
-    
-    this.highlighters = {};
-    
-    this.gridHighlighters = new Map();
-    
-    
-    this.extraGridHighlighterPool = [];
-
-    
-    
-    
-    this.editors = {};
-
-    
-    this.state = {
-      flexbox: {},
-      
-      grids: new Map(),
-      shapes: {},
-    };
 
     
     this.flexboxHighlighterShown = null;
@@ -58,11 +46,19 @@ class HighlightersOverlay {
     
     this.geometryEditorHighlighterShown = null;
     
+    this.gridHighlighterShown = null;
+    
     this.hoveredHighlighterShown = null;
     
     this.selectorHighlighterShown = null;
     
     this.shapesHighlighterShown = null;
+    
+    this.state = {
+      flexbox: {},
+      grid: {},
+      shapes: {},
+    };
 
     this.onClick = this.onClick.bind(this);
     this.onMarkupMutation = this.onMarkupMutation.bind(this);
@@ -393,7 +389,7 @@ class HighlightersOverlay {
 
 
   async toggleGridHighlighter(node, trigger) {
-    if (this.gridHighlighters.has(node)) {
+    if (node == this.gridHighlighterShown) {
       await this.hideGridHighlighter(node);
       return;
     }
@@ -414,26 +410,7 @@ class HighlightersOverlay {
 
 
   async showGridHighlighter(node, options, trigger) {
-    const maxHighlighters =
-      Services.prefs.getIntPref("devtools.gridinspector.maxHighlighters");
-
-    
-    
-    if (!this.gridHighlighters.has(node)) {
-      if (maxHighlighters === 1) {
-        
-        
-        for (const nodeFront of this.gridHighlighters.keys()) {
-          await this.hideGridHighlighter(nodeFront);
-        }
-      } else if (this.gridHighlighters.size === maxHighlighters) {
-        
-        
-        return;
-      }
-    }
-
-    const highlighter = await this._getGridHighlighter(node);
+    const highlighter = await this._getHighlighter("CssGridHighlighter");
     if (!highlighter) {
       return;
     }
@@ -457,8 +434,8 @@ class HighlightersOverlay {
       
       const { url } = this.inspector.target;
       const selector = await node.getUniqueSelector();
-      this.state.grids.set(node, { selector, options, url });
-
+      this.state.grid = { selector, options, url };
+      this.gridHighlighterShown = node;
       
       
       this.emit("grid-highlighter-shown", node, options);
@@ -474,24 +451,22 @@ class HighlightersOverlay {
 
 
   async hideGridHighlighter(node) {
-    if (!this.gridHighlighters.has(node)) {
+    if (!this.gridHighlighterShown || !this.highlighters.CssGridHighlighter) {
       return;
     }
 
     this._toggleRuleViewIcon(node, false, ".ruleview-grid");
 
-    
-    
-    const highlighter = this.gridHighlighters.get(node);
-    await highlighter.hide();
-    this.extraGridHighlighterPool.push(highlighter);
-
-    this.state.grids.delete(node);
-    this.gridHighlighters.delete(node);
+    await this.highlighters.CssGridHighlighter.hide();
 
     
     
-    this.emit("grid-highlighter-hidden", node);
+    const nodeFront = this.gridHighlighterShown;
+    this.gridHighlighterShown = null;
+    this.emit("grid-highlighter-hidden", nodeFront, this.state.grid.options);
+
+    
+    this.state.grid = {};
   }
 
   
@@ -597,16 +572,8 @@ class HighlightersOverlay {
 
 
   async restoreGridState() {
-    
-    
-    
-    const values = [...this.state.grids.values()];
-    this.state.grids.clear();
-
     try {
-      for (const gridState of values) {
-        await this.restoreState("grid", gridState, this.showGridHighlighter);
-      }
+      await this.restoreState("grid", this.state.grid, this.showGridHighlighter);
     } catch (e) {
       this._handleRejection(e);
     }
@@ -646,12 +613,13 @@ class HighlightersOverlay {
 
       await showFunction(nodeFront, options);
       this.emit(`${name}-state-restored`, { restored: true });
-    } else {
-      this.emit(`${name}-state-restored`, { restored: false });
     }
+
+    this.emit(`${name}-state-restored`, { restored: false });
   }
 
   
+
 
 
 
@@ -699,6 +667,8 @@ class HighlightersOverlay {
 
 
   async _getHighlighter(type) {
+    const utils = this.highlighterUtils;
+
     if (this.highlighters[type]) {
       return this.highlighters[type];
     }
@@ -706,9 +676,9 @@ class HighlightersOverlay {
     let highlighter;
 
     try {
-      highlighter = await this.highlighterUtils.getHighlighterByType(type);
+      highlighter = await utils.getHighlighterByType(type);
     } catch (e) {
-      this._handleRejection(e);
+      
     }
 
     if (!highlighter) {
@@ -716,41 +686,6 @@ class HighlightersOverlay {
     }
 
     this.highlighters[type] = highlighter;
-    return highlighter;
-  }
-
-  
-
-
-
-
-
-
-  async _getGridHighlighter(node) {
-    if (this.gridHighlighters.has(node)) {
-      return this.gridHighlighters.get(node);
-    }
-
-    let highlighter;
-
-    
-    
-    if (this.extraGridHighlighterPool.length > 0) {
-      highlighter = this.extraGridHighlighterPool.pop();
-    } else {
-      try {
-        highlighter = await this.highlighterUtils.getHighlighterByType(
-          "CssGridHighlighter");
-      } catch (e) {
-        this._handleRejection(e);
-      }
-    }
-
-    if (!highlighter) {
-      return null;
-    }
-
-    this.gridHighlighters.set(node, highlighter);
     return highlighter;
   }
 
@@ -843,7 +778,7 @@ class HighlightersOverlay {
         hideHighlighter(node);
       }
     } catch (e) {
-      this._handleRejection(e);
+      console.error(e);
     }
   }
 
@@ -1033,36 +968,27 @@ class HighlightersOverlay {
       return;
     }
 
-    for (const node of this.gridHighlighters.keys()) {
-      await this._hideHighlighterIfDeadNode(node, this.hideGridHighlighter);
-    }
-
-    await this._hideHighlighterIfDeadNode(this.flexboxHighlighterShown,
+    this._hideHighlighterIfDeadNode(this.flexboxHighlighterShown,
       this.hideFlexboxHighlighter);
-    await this._hideHighlighterIfDeadNode(this.flexItemHighlighterShown,
+    this._hideHighlighterIfDeadNode(this.flexItemHighlighterShown,
       this.hideFlexItemHighlighter);
-    await this._hideHighlighterIfDeadNode(this.shapesHighlighterShown,
+    this._hideHighlighterIfDeadNode(this.gridHighlighterShown,
+      this.hideGridHighlighter);
+    this._hideHighlighterIfDeadNode(this.shapesHighlighterShown,
       this.hideShapesHighlighter);
   }
 
   
 
 
-  async onWillNavigate() {
+  onWillNavigate() {
     this.destroyEditors();
-
-    
-    
-    for (const highlighter of this.gridHighlighters.values()) {
-      this.extraGridHighlighterPool.push(highlighter);
-    }
-
-    this.gridHighlighters.clear();
 
     this.boxModelHighlighterShown = null;
     this.flexboxHighlighterShown = null;
     this.flexItemHighlighterShown = null;
     this.geometryEditorHighlighterShown = null;
+    this.gridHighlighterShown = null;
     this.hoveredHighlighterShown = null;
     this.selectorHighlighterShown = null;
     this.shapesHighlighterShown = null;
@@ -1081,27 +1007,6 @@ class HighlightersOverlay {
     this.editors = {};
   }
 
-  
-
-
-  destroyGridHighlighters() {
-    for (const highlighter of this.gridHighlighters.values()) {
-      highlighter.finalize();
-    }
-
-    for (const highlighter of this.extraGridHighlighterPool) {
-      highlighter.finalize();
-    }
-
-    this.gridHighlighters.clear();
-
-    this.gridHighlighters = null;
-    this.extraGridHighlighterPool = null;
-  }
-
-  
-
-
   destroyHighlighters() {
     for (const type in this.highlighters) {
       if (this.highlighters[type]) {
@@ -1109,7 +1014,6 @@ class HighlightersOverlay {
         this.highlighters[type] = null;
       }
     }
-
     this.highlighters = null;
   }
 
@@ -1118,12 +1022,12 @@ class HighlightersOverlay {
 
 
   destroy() {
+    this.destroyHighlighters();
+    this.destroyEditors();
+
+    
     this.inspector.off("markupmutation", this.onMarkupMutation);
     this.inspector.target.off("will-navigate", this.onWillNavigate);
-
-    this.destroyEditors();
-    this.destroyGridHighlighters();
-    this.destroyHighlighters();
 
     this._lastHovered = null;
 
@@ -1136,6 +1040,7 @@ class HighlightersOverlay {
     this.flexboxHighlighterShown = null;
     this.flexItemHighlighterShown = null;
     this.geometryEditorHighlighterShown = null;
+    this.gridHighlighterShown = null;
     this.hoveredHighlighterShown = null;
     this.selectorHighlighterShown = null;
     this.shapesHighlighterShown = null;

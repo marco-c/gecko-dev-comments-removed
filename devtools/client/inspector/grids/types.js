@@ -20,10 +20,6 @@ exports.grid = {
   direction: PropTypes.string,
 
   
-  
-  disabled: PropTypes.bool,
-
-  
   gridFragments: PropTypes.array,
 
   
