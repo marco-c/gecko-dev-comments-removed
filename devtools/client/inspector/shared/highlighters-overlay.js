@@ -70,6 +70,7 @@ class HighlightersOverlay {
     this.shapesHighlighterShown = null;
 
     this.onClick = this.onClick.bind(this);
+    this.onDisplayChange = this.onDisplayChange.bind(this);
     this.onMarkupMutation = this.onMarkupMutation.bind(this);
     this.onMouseMove = this.onMouseMove.bind(this);
     this.onMouseOut = this.onMouseOut.bind(this);
@@ -88,6 +89,7 @@ class HighlightersOverlay {
 
     
     this.inspector.on("markupmutation", this.onMarkupMutation);
+    this.inspector.walker.on("display-change", this.onDisplayChange);
     this.inspector.target.on("will-navigate", this.onWillNavigate);
 
     EventEmitter.decorate(this);
@@ -1035,6 +1037,35 @@ class HighlightersOverlay {
         mode: event.target.dataset.mode,
         transformMode: event.metaKey || event.ctrlKey,
       }, nodeInfo.value.textProperty);
+    }
+  }
+
+  
+
+
+
+
+
+
+
+  async onDisplayChange(nodes) {
+    for (const node of nodes) {
+      const display = node.displayType;
+
+      
+      
+      if (display !== "flex" && display !== "inline-flex" &&
+          node == this.flexboxHighlighterShown) {
+        await this.hideFlexboxHighlighter(node);
+        return;
+      }
+
+      
+      if (display !== "grid" && display !== "inline-grid" &&
+          this.gridHighlighters.has(node)) {
+        await this.hideGridHighlighter(node);
+        return;
+      }
     }
   }
 
