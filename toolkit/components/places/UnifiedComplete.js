@@ -28,11 +28,14 @@ const INSERTMETHOD = {
 };
 
 
+
+
 const PREF_URLBAR_BRANCH = "browser.urlbar.";
 const PREF_URLBAR_DEFAULTS = new Map([
   ["autocomplete.enabled", true],
   ["autoFill", true],
   ["autoFill.searchEngines", false],
+  ["autoFill.stddevMultiplier", [0.0, "getFloatPref"]],
   ["restyleSearches", false],
   ["delay", 50],
   ["matchBehavior", MATCH_BOUNDARY_ANYWHERE],
@@ -275,7 +278,7 @@ const SQL_AUTOFILL_WITH = `
       CASE count
       WHEN 0 THEN 0.0
       WHEN 1 THEN sum
-      ELSE (sum / count) + sqrt((squares - ((sum * sum) / count)) / count)
+      ELSE (sum / count) + (:stddevMultiplier * sqrt((squares - ((sum * sum) / count)) / count))
       END
     ) FROM frecency_stats
   )
@@ -567,7 +570,16 @@ XPCOMUtils.defineLazyGetter(this, "Prefs", () => {
     }
     if (def === undefined)
       throw new Error("Trying to access an unknown pref " + pref);
-    return prefs[`get${prefTypes.get(typeof def)}Pref`](pref, def);
+    let getterName;
+    if (!Array.isArray(def)) {
+      getterName = `get${prefTypes.get(typeof def)}Pref`;
+    } else {
+      if (def.length != 2) {
+        throw new Error("Malformed pref def: " + pref);
+      }
+      [def, getterName] = def;
+    }
+    return prefs[getterName](pref, def);
   }
 
   function getPrefValue(pref) {
@@ -2419,6 +2431,7 @@ Search.prototype = {
     let opts = {
       query_type: QUERYTYPE_AUTOFILL_ORIGIN,
       searchString: searchStr.toLowerCase(),
+      stddevMultiplier: Prefs.get("autoFill.stddevMultiplier"),
     };
 
     let bookmarked = this.hasBehavior("bookmark") &&
@@ -2473,6 +2486,7 @@ Search.prototype = {
       query_type: QUERYTYPE_AUTOFILL_URL,
       revHost,
       strippedURL,
+      stddevMultiplier: Prefs.get("autoFill.stddevMultiplier"),
     };
 
     let bookmarked = this.hasBehavior("bookmark") &&
