@@ -5,20 +5,20 @@
 
 
 use app_units::Au;
-use context::QuirksMode;
-use cssparser::{Parser, RGBA};
+use cssparser::RGBA;
 use euclid::{Size2D, TypedScale, TypedSize2D};
 use media_queries::MediaType;
-use parser::ParserContext;
 use properties::ComputedValues;
-use selectors::parser::SelectorParseErrorKind;
-use std::fmt::{self, Write};
 use std::sync::atomic::{AtomicBool, AtomicIsize, Ordering};
-use style_traits::{CSSPixel, CssWriter, DevicePixel, ParseError, ToCss};
+use style_traits::{CSSPixel, DevicePixel};
 use style_traits::viewport::ViewportConstraints;
-use values::{specified, KeyframesName};
-use values::computed::{self, ToComputedValue};
+use values::KeyframesName;
+use values::computed::CSSPixelLength;
 use values::computed::font::FontSize;
+
+use media_queries::media_feature::{MediaFeatureDescription, Evaluator};
+use media_queries::media_feature::{AllowsRanges, ParsingRequirements};
+use media_queries::media_feature_expression::RangeOrOperator;
 
 
 
@@ -156,124 +156,46 @@ impl Device {
 }
 
 
+fn eval_width(
+    device: &Device,
+    value: Option<CSSPixelLength>,
+    range_or_operator: Option<RangeOrOperator>,
+) -> bool {
+    RangeOrOperator::evaluate(
+        range_or_operator,
+        value.map(Au::from),
+        device.au_viewport_size().width,
+    )
+}
 
-
-#[derive(Clone, Debug, PartialEq)]
-#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
-pub enum ExpressionKind {
-    
-    Width(Range<specified::Length>),
+#[derive(Debug, Copy, Clone, FromPrimitive, ToCss, Parse)]
+#[repr(u8)]
+enum Scan {
+    Progressive,
+    Interlace,
 }
 
 
-
-
-#[derive(Clone, Debug, PartialEq)]
-#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
-pub struct MediaFeatureExpression(pub ExpressionKind);
-
-impl MediaFeatureExpression {
+fn eval_scan(_: &Device, _: Option<Scan>) -> bool {
     
     
-    
-    pub fn kind_for_testing(&self) -> &ExpressionKind {
-        &self.0
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    pub fn parse<'i, 't>(
-        context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
-        input.expect_parenthesis_block()?;
-        input.parse_nested_block(|input| {
-            Self::parse_in_parenthesis_block(context, input)
-        })
-    }
-
-    
-    
-    pub fn parse_in_parenthesis_block<'i, 't>(
-        context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
-        let name = input.expect_ident_cloned()?;
-        input.expect_colon()?;
-        
-        Ok(MediaFeatureExpression(match_ignore_ascii_case! { &name,
-            "min-width" => {
-                ExpressionKind::Width(Range::Min(specified::Length::parse_non_negative(context, input)?))
-            },
-            "max-width" => {
-                ExpressionKind::Width(Range::Max(specified::Length::parse_non_negative(context, input)?))
-            },
-            "width" => {
-                ExpressionKind::Width(Range::Eq(specified::Length::parse_non_negative(context, input)?))
-            },
-            _ => return Err(input.new_custom_error(SelectorParseErrorKind::UnexpectedIdent(name.clone())))
-        }))
-    }
-
-    
-    
-    pub fn matches(&self, device: &Device, quirks_mode: QuirksMode) -> bool {
-        let viewport_size = device.au_viewport_size();
-        let value = viewport_size.width;
-        match self.0 {
-            ExpressionKind::Width(ref range) => {
-                match range.to_computed_range(device, quirks_mode) {
-                    Range::Min(ref width) => value >= *width,
-                    Range::Max(ref width) => value <= *width,
-                    Range::Eq(ref width) => value == *width,
-                }
-            },
-        }
-    }
+    false
 }
 
-impl ToCss for MediaFeatureExpression {
-    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
-    where
-        W: Write,
-    {
-        let (s, l) = match self.0 {
-            ExpressionKind::Width(Range::Min(ref l)) => ("(min-width: ", l),
-            ExpressionKind::Width(Range::Max(ref l)) => ("(max-width: ", l),
-            ExpressionKind::Width(Range::Eq(ref l)) => ("(width: ", l),
-        };
-        dest.write_str(s)?;
-        l.to_css(dest)?;
-        dest.write_char(')')
-    }
-}
-
-
-
-
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "servo", derive(MallocSizeOf))]
-pub enum Range<T> {
-    
-    Min(T),
-    
-    Max(T),
-    
-    Eq(T),
-}
-
-impl Range<specified::Length> {
-    fn to_computed_range(&self, device: &Device, quirks_mode: QuirksMode) -> Range<Au> {
-        computed::Context::for_media_query_evaluation(device, quirks_mode, |context| match *self {
-            Range::Min(ref width) => Range::Min(Au::from(width.to_computed_value(&context))),
-            Range::Max(ref width) => Range::Max(Au::from(width.to_computed_value(&context))),
-            Range::Eq(ref width) => Range::Eq(Au::from(width.to_computed_value(&context))),
-        })
-    }
+lazy_static! {
+    /// A list with all the media features that Servo supports.
+    pub static ref MEDIA_FEATURES: [MediaFeatureDescription; 2] = [
+        feature!(
+            atom!("width"),
+            AllowsRanges::Yes,
+            Evaluator::Length(eval_width),
+            ParsingRequirements::empty(),
+        ),
+        feature!(
+            atom!("scan"),
+            AllowsRanges::No,
+            keyword_evaluator!(eval_scan, Scan),
+            ParsingRequirements::empty(),
+        ),
+    ];
 }
