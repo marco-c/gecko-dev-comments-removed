@@ -15,6 +15,18 @@ ChromeUtils.defineModuleGetter(this, "RemoteSettings",
 ChromeUtils.defineModuleGetter(this, "SelectionChangedMenulist",
                                "resource:///modules/SelectionChangedMenulist.jsm");
 
+
+
+
+
+
+
+
+
+
+
+
+
 async function installFromUrl(url, hash) {
   let install = await AddonManager.getInstallForURL(
     url, "application/x-xpinstall", hash);
@@ -293,8 +305,8 @@ function compareItems(a, b) {
 
 var gBrowserLanguagesDialog = {
   _availableLocales: null,
-  _requestedLocales: null,
-  requestedLocales: null,
+  _selectedLocales: null,
+  selectedLocales: null,
 
   get downloadEnabled() {
     
@@ -302,34 +314,45 @@ var gBrowserLanguagesDialog = {
   },
 
   beforeAccept() {
-    this.requestedLocales = this.getRequestedLocales();
+    this.selected = this.getSelectedLocales();
     return true;
   },
 
   async onLoad() {
     
-    let {requesting, search} = window.arguments[0] || {};
-    this.requestedLocales = requesting;
+    let {selected, search} = window.arguments[0] || {};
+    this.selectedLocales = selected;
 
-    let requested = this.requestedLocales || Services.locale.requestedLocales;
-    let requestedSet = new Set(requested);
-    let available = Services.locale.availableLocales
-      .filter(locale => !requestedSet.has(locale));
+    
+    
+    
+    
+    let selectedLocales = this.selectedLocales || Services.locale.appLocalesAsBCP47;
+    let selectedLocaleSet = new Set(selectedLocales);
+    let available = Services.locale.availableLocales;
+    let availableSet = new Set(available);
 
-    this.initRequestedLocales(requested);
+    
+    
+    selectedLocales = selectedLocales.filter(locale => availableSet.has(locale));
+    
+    available = available.filter(locale => !selectedLocaleSet.has(locale));
+
+    this.initSelectedLocales(selectedLocales);
     await this.initAvailableLocales(available, search);
+
     this.initialized = true;
   },
 
-  initRequestedLocales(requested) {
-    this._requestedLocales = new OrderedListBox({
-      richlistbox: document.getElementById("requestedLocales"),
+  initSelectedLocales(selectedLocales) {
+    this._selectedLocales = new OrderedListBox({
+      richlistbox: document.getElementById("selectedLocales"),
       upButton: document.getElementById("up"),
       downButton: document.getElementById("down"),
       removeButton: document.getElementById("remove"),
-      onRemove: (item) => this.requestedLocaleRemoved(item),
+      onRemove: (item) => this.selectedLocaleRemoved(item),
     });
-    this._requestedLocales.setItems(getLocaleDisplayInfo(requested));
+    this._selectedLocales.setItems(getLocaleDisplayInfo(selectedLocales));
   },
 
   async initAvailableLocales(available, search) {
@@ -383,23 +406,22 @@ var gBrowserLanguagesDialog = {
     }
 
     
-    let installedLocales = new Set([
-      ...Services.locale.requestedLocales,
-      ...Services.locale.availableLocales,
-    ]);
-
-    let availableLocales = availableLangpacks
+    let installedLocales = new Set(Services.locale.availableLocales);
+    let notInstalledLocales = availableLangpacks
       .filter(({target_locale}) => !installedLocales.has(target_locale))
       .map(lang => lang.target_locale);
-    let availableItems = getLocaleDisplayInfo(availableLocales);
+
+    
+    let availableItems = getLocaleDisplayInfo(notInstalledLocales);
     availableItems.push({
       label: await document.l10n.formatValue("browser-languages-available-label"),
       className: "label-item",
       disabled: true,
       installed: false,
     });
-    let items = this._availableLocales.items;
+
     
+    let items = this._availableLocales.items;
     items.pop();
     items = items.concat(availableItems);
 
@@ -436,10 +458,10 @@ var gBrowserLanguagesDialog = {
   },
 
   requestLocalLanguage(item, available) {
-    this._requestedLocales.addItem(item);
-    let requestedCount = this._requestedLocales.items.length;
+    this._selectedLocales.addItem(item);
+    let selectedCount = this._selectedLocales.items.length;
     let availableCount = Services.locale.availableLocales.length;
-    if (requestedCount == availableCount) {
+    if (selectedCount == availableCount) {
       
       this._availableLocales.items.shift();
       this._availableLocales.setItems(this._availableLocales.items);
@@ -460,7 +482,7 @@ var gBrowserLanguagesDialog = {
     }
 
     item.installed = true;
-    this._requestedLocales.addItem(item);
+    this._selectedLocales.addItem(item);
     this._availableLocales.enableWithMessageId(
       "browser-languages-select-language");
 
@@ -494,11 +516,11 @@ var gBrowserLanguagesDialog = {
     document.getElementById("warning-message").hidden = true;
   },
 
-  getRequestedLocales() {
-    return this._requestedLocales.items.map(item => item.value);
+  getSelectedLocales() {
+    return this._selectedLocales.items.map(item => item.value);
   },
 
-  async requestedLocaleRemoved(item) {
+  async selectedLocaleRemoved(item) {
     this._availableLocales.addItem(item);
 
     
