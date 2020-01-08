@@ -17,10 +17,6 @@
 namespace mozilla {
 namespace wr {
 
-static const uint32_t MAX_CACHED_PROGRAM_COUNT = 15;
-
-static const uint64_t MAX_LOAD_TIME_MS = 400;
-
 
 enum class AntialiasBorder {
   No = 0,
