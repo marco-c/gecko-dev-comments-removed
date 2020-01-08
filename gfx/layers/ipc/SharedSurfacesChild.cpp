@@ -30,39 +30,20 @@ public:
 
   ImageKeyData(ImageKeyData&& aOther)
     : mManager(std::move(aOther.mManager))
-    , mDirtyRect(std::move(aOther.mDirtyRect))
     , mImageKey(aOther.mImageKey)
   { }
 
   ImageKeyData& operator=(ImageKeyData&& aOther)
   {
     mManager = std::move(aOther.mManager);
-    mDirtyRect = std::move(aOther.mDirtyRect);
     mImageKey = aOther.mImageKey;
     return *this;
-  }
-
-  void MergeDirtyRect(const Maybe<IntRect>& aDirtyRect)
-  {
-    if (mDirtyRect) {
-      if (aDirtyRect) {
-        mDirtyRect->UnionRect(mDirtyRect.ref(), aDirtyRect.ref());
-      }
-    } else {
-      mDirtyRect = aDirtyRect;
-    }
-  }
-
-  Maybe<IntRect> TakeDirtyRect()
-  {
-    return std::move(mDirtyRect);
   }
 
   ImageKeyData(const ImageKeyData&) = delete;
   ImageKeyData& operator=(const ImageKeyData&) = delete;
 
   RefPtr<WebRenderLayerManager> mManager;
-  Maybe<IntRect> mDirtyRect;
   wr::ImageKey mImageKey;
 };
 
@@ -162,23 +143,14 @@ public:
         bool ownsKey = wrBridge->GetNamespace() == entry.mImageKey.mNamespace;
         if (!ownsKey) {
           entry.mImageKey = wrBridge->GetNextImageKey();
-          entry.TakeDirtyRect();
           aResources.AddExternalImage(mId, entry.mImageKey);
-        } else {
-          entry.MergeDirtyRect(aDirtyRect);
-          Maybe<IntRect> dirtyRect = entry.TakeDirtyRect();
-          if (dirtyRect) {
-            aResources.UpdateExternalImage(mId, entry.mImageKey,
-                                           ViewAs<ImagePixel>(dirtyRect.ref()));
-          }
+        } else if (aDirtyRect) {
+          aResources.UpdateExternalImage(mId, entry.mImageKey,
+                                         ViewAs<ImagePixel>(aDirtyRect.ref()));
         }
 
         key = entry.mImageKey;
         found = true;
-      } else {
-        
-        
-        entry.MergeDirtyRect(aDirtyRect);
       }
     }
 
