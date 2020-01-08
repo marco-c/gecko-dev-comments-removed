@@ -48,6 +48,9 @@ class MenuButton extends PureComponent {
 
       
       onClick: PropTypes.func,
+
+      
+      onCloseButton: PropTypes.func,
     };
   }
 
@@ -97,6 +100,15 @@ class MenuButton extends PureComponent {
       this.setState({ win });
       this.resetTooltip();
       this.initializeTooltip();
+    }
+  }
+
+  componentDidUpdate() {
+    
+    
+    
+    if (typeof this.props.children === "function") {
+      this.resizeContent();
     }
   }
 
@@ -193,6 +205,10 @@ class MenuButton extends PureComponent {
         this.buttonRef.style.pointerEvents = "auto";
       }
     }, 0);
+
+    if (this.props.onCloseButton) {
+      this.props.onCloseButton();
+    }
   }
 
   async onClick(e) {
@@ -223,6 +239,12 @@ class MenuButton extends PureComponent {
         
         if (wasKeyboardEvent && this.tooltip) {
           this.tooltip.focus();
+        }
+
+        
+        
+        if (typeof this.props.children === "function") {
+          this.forceUpdate();
         }
       }
     
@@ -274,7 +296,9 @@ class MenuButton extends PureComponent {
     
     
     const menu = ReactDOM.createPortal(
-      this.props.children,
+      typeof this.props.children === "function"
+        ? this.props.children()
+        : this.props.children,
       this.tooltip.panel
     );
 
