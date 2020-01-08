@@ -39,11 +39,6 @@ logger = logging.getLogger(__name__)
 
 task_description_schema = {str(k): v for k, v in task_description_schema.schema.iteritems()}
 
-
-taskref_or_string = Any(
-    basestring,
-    {Required('task-reference'): basestring})
-
 beetmover_description_schema = schema.extend({
     
     Required('depname', default='build'): basestring,

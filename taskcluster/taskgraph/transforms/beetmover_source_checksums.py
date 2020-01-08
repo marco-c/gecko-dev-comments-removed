@@ -18,15 +18,11 @@ from taskgraph.util.scriptworker import (generate_beetmover_artifact_map,
                                          get_worker_type_for_scope,
                                          should_use_artifact_map)
 from taskgraph.transforms.task import task_description_schema
-from voluptuous import Any, Required, Optional
+from voluptuous import Required, Optional
 
 
 
 task_description_schema = {str(k): v for k, v in task_description_schema.schema.iteritems()}
-
-taskref_or_string = Any(
-    basestring,
-    {Required('task-reference'): basestring})
 
 beetmover_checksums_description_schema = schema.extend({
     Required('depname', default='build'): basestring,
