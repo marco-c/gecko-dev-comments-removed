@@ -63,6 +63,7 @@ class ObjectBox;
     F(Label) \
     F(Object) \
     F(Call) \
+    F(Arguments) \
     F(Name) \
     F(ObjectPropertyName) \
     F(ComputedName) \
@@ -221,6 +222,7 @@ IsTypeofKind(ParseNodeKind kind)
 {
     return ParseNodeKind::TypeOfName <= kind && kind <= ParseNodeKind::TypeOfExpr;
 }
+
 
 
 
