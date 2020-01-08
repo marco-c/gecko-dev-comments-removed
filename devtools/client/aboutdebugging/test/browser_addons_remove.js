@@ -44,10 +44,20 @@ add_task(async function removeWebextension() {
   const { tab, document } = await openAboutDebugging("addons");
   await waitForInitialAddonList(document);
 
+  const addonFile = ExtensionTestCommon.generateXPI({
+    manifest: {
+      name: addonName,
+      applications: {
+        gecko: {id: addonID},
+      },
+    },
+  });
+  registerCleanupFunction(() => addonFile.remove(false));
+
   
   await installAddon({
     document,
-    path: "addons/test-devtools-webextension/manifest.json",
+    file: addonFile,
     name: addonName,
     isWebExtension: true,
   });
