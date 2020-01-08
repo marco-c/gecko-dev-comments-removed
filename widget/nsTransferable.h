@@ -25,15 +25,15 @@ class nsIMutableArray;
 struct DataStruct
 {
   explicit DataStruct ( const char* aFlavor )
-    : mDataLen(0), mCacheFD(nullptr), mFlavor(aFlavor) { }
+    : mCacheFD(nullptr), mFlavor(aFlavor) { }
   DataStruct(DataStruct&& aRHS);
   ~DataStruct();
-  
+
   const nsCString& GetFlavor() const { return mFlavor; }
-  void SetData( nsISupports* inData, uint32_t inDataLen, bool aIsPrivateData );
-  void GetData( nsISupports** outData, uint32_t *outDataLen );
-  bool IsDataAvailable() const { return mData ? mDataLen > 0 : mCacheFD != nullptr; }
-  
+  void SetData(nsISupports* inData, bool aIsPrivateData);
+  void GetData(nsISupports** outData);
+  bool IsDataAvailable() const { return mData || mCacheFD; }
+
 protected:
 
   enum {
@@ -41,13 +41,12 @@ protected:
     
     kLargeDatasetSize = 1000000        
   };
-  
+
   nsresult WriteCache(void* aData, uint32_t aDataLen);
-  nsresult ReadCache(nsISupports** aData, uint32_t* aDataLen );
-  
+  nsresult ReadCache(nsISupports** aData);
+
   
   nsCOMPtr<nsISupports> mData;   
-  uint32_t mDataLen;
   PRFileDesc* mCacheFD;
   const nsCString mFlavor;
 
