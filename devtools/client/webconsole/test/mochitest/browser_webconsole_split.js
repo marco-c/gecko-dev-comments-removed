@@ -12,11 +12,20 @@ const L10N =
   new LocalizationHelper("devtools/client/locales/toolbox.properties");
 
 
-requestLongerTimeout(2);
+requestLongerTimeout(4);
 
 add_task(async function() {
-  let toolbox;
+  
+  await pushPref("devtools.webconsole.jsterm.codeMirror", false);
+  await performTests();
+  
+  await pushPref("devtools.webconsole.jsterm.codeMirror", true);
+  await performTests();
+});
 
+async function performTests() {
+  let toolbox;
+  await pushPref("devtools.webconsole.jsterm.codeMirror", true);
   await addTab(TEST_URI);
   await testConsoleLoadOnDifferentPanel();
   await testKeyboardShortcuts();
@@ -249,4 +258,4 @@ add_task(async function() {
     const pref = Services.prefs.getCharPref("devtools.toolbox.host");
     is(pref, hostType, "host pref is " + hostType);
   }
-});
+}
