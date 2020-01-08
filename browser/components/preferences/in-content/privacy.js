@@ -20,9 +20,6 @@ ChromeUtils.defineModuleGetter(this, "SiteDataManager",
 
 ChromeUtils.import("resource://gre/modules/PrivateBrowsingUtils.jsm");
 
-XPCOMUtils.defineLazyPreferenceGetter(this, "contentBlockingCookiesAndSiteDataRejectTrackersEnabled",
-                                      "browser.contentblocking.cookies-site-data.ui.reject-trackers.enabled");
-
 XPCOMUtils.defineLazyPreferenceGetter(this, "contentBlockingTrackingProtectionUiEnabled",
                                       "browser.contentblocking.trackingprotection.ui.enabled");
 
@@ -522,12 +519,6 @@ var gPrivacyPane = {
     
     document.getElementById("contentBlockingCheckboxContainer").hidden =
       !Services.prefs.getBoolPref("browser.contentblocking.global-toggle.enabled", true);
-
-    
-    let blockCookiesFromTrackers = document.getElementById("blockCookiesFromTrackers");
-    if (!contentBlockingCookiesAndSiteDataRejectTrackersEnabled) {
-      blockCookiesFromTrackers.remove();
-    }
   },
 
   
