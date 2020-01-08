@@ -41,10 +41,10 @@ async function assertConditionalBreakpointIsFocused(dbg) {
 async function setConditionalBreakpoint(dbg, index, condition) {
   const {
     addConditionalBreakpoint,
-    editBreakpoint
+    editConditionalBreakpoint
   } = selectors.gutterContextMenu;
   
-  const selector = `${addConditionalBreakpoint},${editBreakpoint}`;
+  const selector = `${addConditionalBreakpoint},${editConditionalBreakpoint}`;
 
   rightClickElement(dbg, "gutter", index);
   selectContextMenuItem(dbg, selector);
