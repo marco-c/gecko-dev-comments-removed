@@ -1,27 +1,45 @@
-importScripts('/common/get-host-info.sub.js');
-importScripts('test-helpers.sub.js');
+let source;
+let resolveDone;
+let done = new Promise(resolve => resolveDone = resolve);
 
-var port = undefined;
 
-self.onmessage = function(e) {
-  var message = e.data;
-  if ('port' in message) {
-    port = message.port;
-    port.postMessage({ready: true});
-  }
-};
 
-self.addEventListener('fetch', function(event) {
-    var url = event.request.url;
-    if (url.indexOf('fetch-request-css-base-url-style.css') != -1) {
-      event.respondWith(fetch(
-        get_host_info()['HTTPS_REMOTE_ORIGIN'] + base_path() +
-        'fetch-request-css-base-url-style.css',
-        {mode: 'no-cors'}));
-    } else if (url.indexOf('dummy.png') != -1) {
-      port.postMessage({
-          url: event.request.url,
-          referrer: event.request.referrer
-        });
+self.addEventListener('message', event => {
+  source = event.data.port;
+  source.postMessage('pong');
+  event.waitUntil(done);
+});
+
+self.addEventListener('fetch', event => {
+  const url = new URL(event.request.url);
+
+  
+  
+  const cssPath = 'request-url-path/fetch-request-css-base-url-style.css';
+  if (url.pathname.indexOf(cssPath) != -1) {
+    
+    if (url.search == '?fetch') {
+      event.respondWith(fetch('fetch-request-css-base-url-style.css'));
     }
-  });
+    
+    else if (url.search == '?newResponse') {
+      const styleString = 'body { background-image: url("./dummy.png");}';
+      const headers = {'content-type': 'text/css'};
+      event.respondWith(new Response(styleString, headers));
+    }
+  }
+
+  
+  
+  else if (url.pathname.indexOf('dummy.png') != -1) {
+    
+    
+    
+    
+    source.postMessage({
+      url: event.request.url,
+      referrer: event.request.referrer
+    });
+    resolveDone();
+  }
+});
