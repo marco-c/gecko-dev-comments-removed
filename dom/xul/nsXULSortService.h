@@ -10,29 +10,34 @@
 #ifndef nsXULSortService_h
 #define nsXULSortService_h
 
-#include "nsISupportsImpl.h"
-#include "nsIXULSortService.h"
+#include "nsAString.h"
+#include "nsError.h"
+
+namespace mozilla {
+
+namespace dom {
+class Element;
+} 
 
 
 
 
 
 
-class XULSortServiceImpl : public nsIXULSortService
-{
-public:
-  XULSortServiceImpl(void) {}
 
-protected:
-  virtual ~XULSortServiceImpl(void) {}
 
-public:
-  
-  NS_DECL_ISUPPORTS
 
-  
-  NS_DECL_NSIXULSORTSERVICE
 
-};
+
+
+
+
+
+
+nsresult XULWidgetSort(dom::Element* aNode,
+                       const nsAString& aSortKey,
+                       const nsAString& aSortHints);
+
+} 
 
 #endif 
