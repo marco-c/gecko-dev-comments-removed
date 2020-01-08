@@ -11,6 +11,7 @@ module.exports = {
   "env": {
     "browser": true,
     "es6": true,
+    "mozilla/privileged": true,
   },
 
   "extends": [
@@ -18,63 +19,22 @@ module.exports = {
   ],
 
   "globals": {
-    "AddonManagerPermissions": false,
-    "BroadcastChannel": false,
-    "CSSAnimation": false,
-    "CSSPrimitiveValue": false,
-    "CSSValueList": false,
     "Cc": false,
-    "CheckerboardReportService": false,
     
     "ChromeUtils": false,
-    "ChromeWorker": false,
     "Ci": false,
     "Components": false,
     "Cr": false,
     "Cu": false,
-    "DOMRequest": false,
     "Debugger": false,
-    "DedicatedWorkerGlobalScope": false,
-    "DeprecationReportBody": false,
-    "DominatorTree": false,
-    "HeapSnapshot": false,
-    "IDBFileRequest": false,
-    "IDBLocaleAwareKeyRange": false,
-    "IDBMutableFile": false,
-    "ImageDocument": false,
     "InstallTrigger": false,
     
     
     
     "InternalError": true,
-    "KeyEvent": false,
-    "MatchGlob": false,
-    "MatchPattern": false,
-    "MatchPatternSet": false,
-    "MenuBoxObject": false,
-    
-    "PlacesBookmarkAddition": false,
-    "PlacesEvent": false,
-    "PlacesObservers": false,
-    "PlacesWeakCallbackWrapper": false,
-    "PrioEncoder": false,
-    "ReportingObserver": false,
-    
+    "Intl": false,
     "SharedArrayBuffer": false,
-    "SimpleGestureEvent": false,
-    
-    
     "StopIteration": false,
-    "StructuredCloneHolder": false,
-    "TelemetryStopwatch": false,
-    "TestingDeprecatedInterface": false,
-    "WebAssembly": false,
-    "WebExtensionContentScript": false,
-    "WebExtensionPolicy": false,
-    "WebrtcGlobalInformation": false,
-    
-    "XULElement": false,
-    "console": true,
     "dump": true,
     "openDialog": false,
     "saveStack": false,
@@ -94,6 +54,7 @@ module.exports = {
     },
   }, {
     
+    
     "env": {
       "browser": false,
       "mozilla/jsm": true,
@@ -101,6 +62,8 @@ module.exports = {
     "files": "**/*.jsm",
     "rules": {
       "mozilla/mark-exported-symbols-as-used": "error",
+      
+      
       "no-unused-vars": ["error", {
         "args": "none",
         "vars": "all",
