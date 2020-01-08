@@ -370,19 +370,7 @@ public:
   friend class nsAttrAndChildArray;
 
 #ifdef MOZILLA_INTERNAL_API
-  explicit nsINode(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo)
-  : mNodeInfo(aNodeInfo)
-  , mParent(nullptr)
-#ifndef BOOL_FLAGS_ON_WRAPPER_CACHE
-  , mBoolFlags(0)
-#endif
-  , mNextSibling(nullptr)
-  , mPreviousSibling(nullptr)
-  , mFirstChild(nullptr)
-  , mSubtreeRoot(this)
-  , mSlots(nullptr)
-  {
-  }
+  explicit nsINode(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo);
 #endif
 
   virtual ~nsINode();
@@ -582,7 +570,10 @@ public:
 
 
 
-  virtual uint32_t GetChildCount() const = 0;
+  uint32_t GetChildCount() const
+  {
+    return mChildCount;
+  }
 
   
 
@@ -592,7 +583,7 @@ public:
 
 
 
-  virtual nsIContent* GetChildAt_Deprecated(uint32_t aIndex) const = 0;
+  nsIContent* GetChildAt_Deprecated(uint32_t aIndex) const;
 
   
 
@@ -602,7 +593,7 @@ public:
 
 
 
-  virtual int32_t ComputeIndexOf(const nsINode* aPossibleChild) const = 0;
+  virtual int32_t ComputeIndexOf(const nsINode* aPossibleChild) const;
 
   
 
@@ -827,7 +818,7 @@ public:
 
 
   virtual nsresult InsertChildBefore(nsIContent* aKid, nsIContent* aBeforeThis,
-                                     bool aNotify) = 0;
+                                     bool aNotify);
 
   
 
@@ -861,7 +852,7 @@ public:
 
 
 
-  virtual void RemoveChildNode(nsIContent* aKid, bool aNotify) = 0;
+  virtual void RemoveChildNode(nsIContent* aKid, bool aNotify);
 
   
 
@@ -1296,13 +1287,13 @@ public:
   nsIContent* GetSelectionRootContent(nsIPresShell* aPresShell);
 
   nsINodeList* ChildNodes();
-  nsIContent* GetFirstChild() const { return mFirstChild; }
-  nsIContent* GetLastChild() const
-  {
-    uint32_t count = GetChildCount();
 
-    return count > 0 ? GetChildAt_Deprecated(count - 1) : nullptr;
+  nsIContent* GetFirstChild() const
+  {
+    return mFirstChild;
   }
+
+  nsIContent* GetLastChild() const;
 
   
 
@@ -1373,6 +1364,10 @@ protected:
   
   mozilla::dom::Element* GetElementById(const nsAString& aId);
 
+  void AppendChildToChildList(nsIContent* aKid);
+  void InsertChildToChildList(nsIContent* aKid, nsIContent* aNextSibling);
+  void DisconnectChild(nsIContent* aKid);
+
 public:
   void LookupPrefix(const nsAString& aNamespace, nsAString& aResult);
   bool IsDefaultNamespace(const nsAString& aNamespaceURI)
@@ -1385,7 +1380,7 @@ public:
                           nsAString& aNamespaceURI);
 
   nsIContent* GetNextSibling() const { return mNextSibling; }
-  nsIContent* GetPreviousSibling() const { return mPreviousSibling; }
+  nsIContent* GetPreviousSibling() const;
 
   
 
@@ -1999,33 +1994,6 @@ protected:
 
 
 
-
-
-
-  void doRemoveChildAt(uint32_t aIndex, bool aNotify, nsIContent* aKid,
-                       nsAttrAndChildArray& aChildArray);
-
-  
-
-
-
-
-
-
-
-
-
-  nsresult doInsertChildAt(nsIContent* aKid, uint32_t aIndex,
-                           bool aNotify, nsAttrAndChildArray& aChildArray);
-
-  
-
-
-
-
-
-
-
   const RawServoSelectorList* ParseSelectorList(const nsAString& aSelectorString,
                                                 mozilla::ErrorResult&);
 
@@ -2065,16 +2033,17 @@ private:
   uint32_t mBoolFlags;
 #endif
 
+  
+
+  uint32_t mChildCount;
 
 protected:
   
   
-  nsIContent* MOZ_NON_OWNING_REF mNextSibling;
-  nsIContent* MOZ_NON_OWNING_REF mPreviousSibling;
   
-  
-  
-  nsIContent* MOZ_NON_OWNING_REF mFirstChild;
+  nsCOMPtr<nsIContent> mFirstChild;
+  nsCOMPtr<nsIContent> mNextSibling;
+  nsIContent* MOZ_NON_OWNING_REF mPreviousOrLastSibling;
 
   union {
     

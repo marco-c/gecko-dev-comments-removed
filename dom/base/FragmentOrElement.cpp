@@ -1208,27 +1208,6 @@ nsIContent::SetXBLInsertionPoint(nsIContent* aContent)
   }
 }
 
-nsresult
-FragmentOrElement::InsertChildBefore(nsIContent* aKid,
-                                     nsIContent* aBeforeThis,
-                                     bool aNotify)
-{
-  MOZ_ASSERT(aKid, "null ptr");
-
-  int32_t index = aBeforeThis ? ComputeIndexOf(aBeforeThis) : GetChildCount();
-  MOZ_ASSERT(index >= 0);
-
-  return doInsertChildAt(aKid, index, aNotify, mAttrsAndChildren);
-}
-
-void
-FragmentOrElement::RemoveChildNode(nsIContent* aKid, bool aNotify)
-{
-  
-  nsCOMPtr<nsIContent> kungFuDeathGrip = aKid;
-  doRemoveChildAt(ComputeIndexOf(aKid), aNotify, aKid, mAttrsAndChildren);
-}
-
 void
 FragmentOrElement::GetTextContentInternal(nsAString& aTextContent,
                                           OOMReporter& aError)
@@ -1349,12 +1328,11 @@ public:
       return;
     }
     FragmentOrElement* container = static_cast<FragmentOrElement*>(aNode);
-    uint32_t childCount = container->mAttrsAndChildren.ChildCount();
-    if (childCount) {
+    if (container->HasChildren()) {
       
       container->InvalidateChildNodes();
 
-      while (childCount-- > 0) {
+      while (container->HasChildren()) {
         
         
         
@@ -1362,11 +1340,8 @@ public:
         
         
         
-        nsCOMPtr<nsIContent> child =
-          container->mAttrsAndChildren.TakeChildAt(childCount);
-        if (childCount == 0) {
-          container->mFirstChild = nullptr;
-        }
+        nsCOMPtr<nsIContent> child = container->GetLastChild();
+        container->DisconnectChild(child);
         UnbindSubtree(child);
         child->UnbindFromTree();
       }
@@ -1471,26 +1446,18 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(FragmentOrElement)
 
   
   if (tmp->UnoptimizableCCNode() || !nsCCUncollectableMarker::sGeneration) {
-    uint32_t childCount = tmp->mAttrsAndChildren.ChildCount();
-    if (childCount) {
+    
+    nsAutoScriptBlocker scriptBlocker;
+    while (tmp->HasChildren()) {
       
-      nsAutoScriptBlocker scriptBlocker;
-      while (childCount-- > 0) {
-        
-        
-        
-        
-        
-        
-        
-        nsCOMPtr<nsIContent> child = tmp->mAttrsAndChildren.TakeChildAt(childCount);
-        if (childCount == 0) {
-          tmp->mFirstChild = nullptr;
-        }
-        child->UnbindFromTree();
-      }
+      
+      
+      
+      nsCOMPtr<nsIContent> child = tmp->GetLastChild();
+      tmp->DisconnectChild(child);
+      child->UnbindFromTree();
     }
-  } else if (!tmp->GetParent() && tmp->mAttrsAndChildren.ChildCount()) {
+  } else if (!tmp->GetParent() && tmp->HasChildren()) {
     ContentUnbinder::Append(tmp);
   } 
 
@@ -2062,12 +2029,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(FragmentOrElement)
                            NS_CYCLE_COLLECTION_PARTICIPANT(NodeInfo));
       }
     }
-
-    uint32_t kids = tmp->mAttrsAndChildren.ChildCount();
-    for (i = 0; i < kids; i++) {
-      NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mAttrsAndChildren[i]");
-      cb.NoteXPCOMChild(tmp->mAttrsAndChildren.GetSafeChildAt(i));
-    }
   }
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
@@ -2126,24 +2087,6 @@ bool
 FragmentOrElement::ThreadSafeTextIsOnlyWhitespace() const
 {
   return false;
-}
-
-uint32_t
-FragmentOrElement::GetChildCount() const
-{
-  return mAttrsAndChildren.ChildCount();
-}
-
-nsIContent *
-FragmentOrElement::GetChildAt_Deprecated(uint32_t aIndex) const
-{
-  return mAttrsAndChildren.GetSafeChildAt(aIndex);
-}
-
-int32_t
-FragmentOrElement::ComputeIndexOf(const nsINode* aPossibleChild) const
-{
-  return mAttrsAndChildren.IndexOfChild(aPossibleChild);
 }
 
 static inline bool

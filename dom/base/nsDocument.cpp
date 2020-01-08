@@ -1696,11 +1696,10 @@ nsDocument::~nsDocument()
   
   InvalidateChildNodes();
 
-  for (uint32_t indx = mChildren.ChildCount(); indx-- != 0; ) {
-    mChildren.ChildAt(indx)->UnbindFromTree();
-    mChildren.RemoveChildAt(indx);
-  }
-  mFirstChild = nullptr;
+  
+  
+  MOZ_ASSERT(!HasChildren());
+
   mCachedRootElement = nullptr;
 
   for (auto& sheets : mAdditionalSheets) {
@@ -1867,12 +1866,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(nsDocument)
   tmp->mExternalResourceMap.Traverse(&cb);
 
   
-  for (int32_t indx = int32_t(tmp->mChildren.ChildCount()); indx > 0; --indx) {
-    NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mChildren[i]");
-    cb.NoteXPCOMChild(tmp->mChildren.ChildAt(indx - 1));
-  }
-
-  
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSecurityInfo)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDisplayDocument)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mFontFaceSet)
@@ -1987,25 +1980,15 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsDocument)
 
   nsINode::Unlink(tmp);
 
-  
-  uint32_t childCount = tmp->mChildren.ChildCount();
-  if (childCount) {
-    while (childCount-- > 0) {
-      
-      
-      
-      
-      
-      
-      
-      nsCOMPtr<nsIContent> child = tmp->mChildren.TakeChildAt(childCount);
-      if (childCount == 0) {
-        tmp->mFirstChild = nullptr;
-      }
-      child->UnbindFromTree();
-    }
+  while (tmp->HasChildren()) {
+    
+    
+    
+    
+    nsCOMPtr<nsIContent> child = tmp->GetLastChild();
+    tmp->DisconnectChild(child);
+    child->UnbindFromTree();
   }
-  tmp->mFirstChild = nullptr;
 
   tmp->UnlinkOriginalDocumentIfStatic();
 
@@ -2253,22 +2236,16 @@ nsIDocument::ResetToURI(nsIURI* aURI,
 
   bool oldVal = mInUnlinkOrDeletion;
   mInUnlinkOrDeletion = true;
-  uint32_t count = mChildren.ChildCount();
   { 
     MOZ_AUTO_DOC_UPDATE(this, true);
 
     
     InvalidateChildNodes();
 
-    for (int32_t i = int32_t(count) - 1; i >= 0; i--) {
-      nsCOMPtr<nsIContent> content = mChildren.ChildAt(i);
-
+    while (HasChildren()) {
+      nsCOMPtr<nsIContent> content = GetLastChild();
       nsIContent* previousSibling = content->GetPreviousSibling();
-
-      if (nsINode::GetFirstChild() == content) {
-        mFirstChild = content->GetNextSibling();
-      }
-      mChildren.RemoveChildAt(i);
+      DisconnectChild(content);
       if (content == mCachedRootElement) {
         
         
@@ -4143,10 +4120,7 @@ nsIDocument::InsertChildBefore(nsIContent* aKid,
     return NS_ERROR_DOM_HIERARCHY_REQUEST_ERR;
   }
 
-  int32_t index = aBeforeThis ? ComputeIndexOf(aBeforeThis) : GetChildCount();
-  MOZ_ASSERT(index >= 0);
-
-  return doInsertChildAt(aKid, index, aNotify, mChildren);
+  return nsINode::InsertChildBefore(aKid, aBeforeThis, aNotify);
 }
 
 void
@@ -4165,7 +4139,7 @@ nsIDocument::RemoveChildNode(nsIContent* aKid, bool aNotify)
   
   
   mCachedRootElement = nullptr;
-  doRemoveChildAt(ComputeIndexOf(aKid), aNotify, aKid, mChildren);
+  nsINode::RemoveChildNode(aKid, aNotify);
   MOZ_ASSERT(mCachedRootElement != aKid,
              "Stale pointer in mCachedRootElement, after we tried to clear it "
              "(maybe somebody called GetRootElement() too early?)");
@@ -8770,10 +8744,6 @@ nsDocument::CloneDocHelper(nsDocument* clone, bool aPreallocateChildren) const
   clone->mType = mType;
   clone->mXMLDeclarationBits = mXMLDeclarationBits;
   clone->mBaseTarget = mBaseTarget;
-
-  
-  rv = clone->mChildren.EnsureCapacityToClone(mChildren, aPreallocateChildren);
-  NS_ENSURE_SUCCESS(rv, rv);
 
   return NS_OK;
 }
