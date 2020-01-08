@@ -53,7 +53,7 @@ public:
                          BasicTiledLayerPaintData* aPaintData,
                          LayerManager::DrawPaintedLayerCallback aCallback,
                          void* aCallbackData) override;
-
+  
   void ResetPaintedAndValidState() override {
     mValidRegion.SetEmpty();
     mTiles.mSize.width = 0;
@@ -122,7 +122,7 @@ private:
   
   
   std::vector<gfx::Tile> mPaintTiles;
-  std::vector<RefPtr<PaintTask>> mPaintTasks;
+  std::vector<RefPtr<CapturedTiledPaintState>> mPaintStates;
 
   
 

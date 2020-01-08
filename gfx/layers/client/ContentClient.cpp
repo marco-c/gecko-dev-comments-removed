@@ -116,12 +116,9 @@ ContentClient::PaintState
 ContentClient::BeginPaint(PaintedLayer* aLayer,
                           uint32_t aFlags)
 {
-  BufferDecision dest = CalculateBufferForPaint(aLayer, aFlags);
-
-  bool asyncPaint = (aFlags & PAINT_ASYNC);
-
   PaintState result;
-  result.mAsyncPaint = asyncPaint;
+
+  BufferDecision dest = CalculateBufferForPaint(aLayer, aFlags);
   result.mContentType = dest.mBufferContentType;
 
   if (!dest.mCanKeepBufferContents) {
@@ -157,59 +154,80 @@ ContentClient::BeginPaint(PaintedLayer* aLayer,
                          !(aFlags & (PAINT_WILL_RESAMPLE | PAINT_NO_ROTATION)) &&
                          !(aLayer->Manager()->AsWebRenderLayerManager());
   bool canDrawRotated = aFlags & PAINT_CAN_DRAW_ROTATED;
-  OpenMode readMode = asyncPaint ? OpenMode::OPEN_READ_ASYNC
-                                 : OpenMode::OPEN_READ;
-  OpenMode writeMode = asyncPaint ? OpenMode::OPEN_READ_WRITE_ASYNC
-                                  : OpenMode::OPEN_READ_WRITE;
+  bool asyncPaint = (aFlags & PAINT_ASYNC);
 
   IntRect drawBounds = result.mRegionToDraw.GetBounds();
+  OpenMode lockMode = asyncPaint ? OpenMode::OPEN_READ_WRITE_ASYNC
+                                 : OpenMode::OPEN_READ_WRITE;
 
   if (asyncPaint) {
-    result.mAsyncTask = new PaintTask();
+    result.mBufferState = new CapturedBufferState();
   }
 
-  
-  
-  if (mBuffer && dest.mCanReuseBuffer) {
-    if (mBuffer->Lock(writeMode)) {
-      auto newParameters = mBuffer->AdjustedParameters(dest.mBufferRect);
-
-      bool needsUnrotate = (!canHaveRotation && newParameters.IsRotated()) ||
-                           (!canDrawRotated && newParameters.RectWrapsBuffer(drawBounds));
-      bool canUnrotate = !asyncPaint || mBuffer->BufferRotation() == IntPoint(0,0);
-
+  if (mBuffer) {
+    if (mBuffer->Lock(lockMode)) {
       
-      
-      
-      if (!needsUnrotate || canUnrotate) {
-        
-        if (asyncPaint) {
-          mBuffer->BeginCapture();
-        }
+      Maybe<CapturedBufferState::Copy> bufferFinalize =
+        FinalizeFrame(result.mRegionToDraw);
 
-        
-        FinalizeFrame(result);
-      }
-
-      
-      if (needsUnrotate) {
-        if (canUnrotate && mBuffer->UnrotateBufferTo(newParameters)) {
-          newParameters.SetUnrotated();
-          mBuffer->SetParameters(newParameters);
-        } else {
-          MOZ_ASSERT(!asyncPaint);
-          MOZ_ASSERT(GetFrontBuffer());
-          mBuffer->Unlock();
-          dest.mBufferRect = ComputeBufferRect(dest.mNeededRegion.GetBounds());
-          dest.mCanReuseBuffer = false;
-        }
-      } else {
-        mBuffer->SetParameters(newParameters);
+      if (asyncPaint) {
+        result.mBufferState->mBufferFinalize = std::move(bufferFinalize);
+      } else if (bufferFinalize) {
+        bufferFinalize->CopyBuffer();
       }
     } else {
       result.mRegionToDraw = dest.mNeededRegion;
       dest.mCanReuseBuffer = false;
       Clear();
+    }
+  }
+
+  if (dest.mCanReuseBuffer) {
+    MOZ_ASSERT(mBuffer);
+
+    bool canReuseBuffer = false;
+
+    auto newParameters = mBuffer->AdjustedParameters(dest.mBufferRect);
+    Maybe<CapturedBufferState::Unrotate> bufferUnrotate = Nothing();
+
+    if ((!canHaveRotation && newParameters.IsRotated()) ||
+        (!canDrawRotated && newParameters.RectWrapsBuffer(drawBounds))) {
+      bufferUnrotate = Some(CapturedBufferState::Unrotate {
+        newParameters,
+        mBuffer->ShallowCopy(),
+      });
+    }
+
+    
+    
+    if (asyncPaint) {
+      
+      
+      if (!bufferUnrotate ||
+          mBuffer->BufferRotation() == IntPoint(0,0)) {
+        result.mBufferState->mBufferUnrotate = std::move(bufferUnrotate);
+
+        
+        
+        if (result.mBufferState->mBufferUnrotate) {
+          newParameters.SetUnrotated();
+        }
+        mBuffer->SetParameters(newParameters);
+        canReuseBuffer = true;
+      }
+    } else {
+      if (!bufferUnrotate || bufferUnrotate->UnrotateBuffer()) {
+        if (bufferUnrotate) {
+          newParameters.SetUnrotated();
+        }
+        mBuffer->SetParameters(newParameters);
+        canReuseBuffer = true;
+      }
+    }
+
+    if (!canReuseBuffer) {
+      dest.mBufferRect = ComputeBufferRect(dest.mNeededRegion.GetBounds());
+      dest.mCanReuseBuffer = false;
     }
   }
 
@@ -243,30 +261,39 @@ ContentClient::BeginPaint(PaintedLayer* aLayer,
       return result;
     }
 
-    if (!newBuffer->Lock(writeMode)) {
+    if (!newBuffer->Lock(lockMode)) {
       gfxCriticalNote << "Failed to lock new back buffer.";
       Clear();
       return result;
     }
 
-    if (asyncPaint) {
-      newBuffer->BeginCapture();
-    }
-
     
-    RefPtr<RotatedBuffer> frontBuffer = GetFrontBuffer();
+    if (mBuffer) {
+      if (mBuffer->IsLocked()) {
+        mBuffer->Unlock();
+      }
 
-    if (frontBuffer && frontBuffer->Lock(readMode)) {
       nsIntRegion updateRegion = newBuffer->BufferRect();
       updateRegion.Sub(updateRegion, result.mRegionToDraw);
 
       if (!updateRegion.IsEmpty()) {
-        newBuffer->UpdateDestinationFrom(*frontBuffer, updateRegion.GetBounds());
-      }
+        auto bufferInitialize = CapturedBufferState::Copy {
+          mBuffer->ShallowCopy(),
+          newBuffer->ShallowCopy(),
+          updateRegion.GetBounds(),
+        };
 
-      frontBuffer->Unlock();
-    } else {
-      result.mRegionToDraw = dest.mNeededRegion;
+        
+        
+        if (asyncPaint) {
+          result.mBufferState->mBufferInitialize = Some(std::move(bufferInitialize));
+        } else {
+          if (!bufferInitialize.CopyBuffer()) {
+            gfxCriticalNote << "Failed to copy front buffer to back buffer.";
+            return result;
+          }
+        }
+      }
     }
 
     Clear();
@@ -275,14 +302,6 @@ ContentClient::BeginPaint(PaintedLayer* aLayer,
 
   NS_ASSERTION(canHaveRotation || mBuffer->BufferRotation() == IntPoint(0,0),
                "Rotation disabled, but we have nonzero rotation?");
-
-  if (result.mAsyncPaint) {
-    result.mAsyncTask->mTarget = mBuffer->GetBufferTarget();
-    result.mAsyncTask->mClients.push_back(mBuffer->GetClient());
-    if (mBuffer->GetClientOnWhite()) {
-      result.mAsyncTask->mClients.push_back(mBuffer->GetClientOnWhite());
-    }
-  }
 
   nsIntRegion invalidate;
   invalidate.Sub(aLayer->GetValidRegion(), dest.mBufferRect);
@@ -294,12 +313,22 @@ ContentClient::BeginPaint(PaintedLayer* aLayer,
   return result;
 }
 
-void
-ContentClient::EndPaint(PaintState& aPaintState, nsTArray<ReadbackProcessor::Update>* aReadbackUpdates)
+DrawTarget*
+ContentClient::BorrowDrawTargetForPainting(ContentClient::PaintState& aPaintState,
+                                           RotatedBuffer::DrawIterator* aIter )
 {
-  if (aPaintState.mAsyncTask) {
-    aPaintState.mAsyncTask->mCapture = mBuffer->EndCapture();
+  RefPtr<CapturedPaintState> capturedState =
+    ContentClient::BorrowDrawTargetForRecording(aPaintState, aIter, true);
+
+  if (!capturedState) {
+    return nullptr;
   }
+
+  if (!ContentClient::PrepareDrawTargetForPainting(capturedState)) {
+    return nullptr;
+  }
+
+  return capturedState->mTargetDual;
 }
 
 nsIntRegion
@@ -323,43 +352,77 @@ ExpandDrawRegion(ContentClient::PaintState& aPaintState,
   return *drawPtr;
 }
 
-DrawTarget*
-ContentClient::BorrowDrawTargetForPainting(ContentClient::PaintState& aPaintState,
-                                           RotatedBuffer::DrawIterator* aIter )
+RefPtr<CapturedPaintState>
+ContentClient::BorrowDrawTargetForRecording(ContentClient::PaintState& aPaintState,
+                                            RotatedBuffer::DrawIterator* aIter,
+                                            bool aSetTransform)
 {
   if (aPaintState.mMode == SurfaceMode::SURFACE_NONE || !mBuffer) {
     return nullptr;
   }
 
+  Matrix transform;
   DrawTarget* result = mBuffer->BorrowDrawTargetForQuadrantUpdate(
                                   aPaintState.mRegionToDraw.GetBounds(),
-                                  aIter);
-  if (!result || !result->IsValid()) {
-    if (result) {
-      mBuffer->ReturnDrawTarget(result);
-    }
+                                  RotatedBuffer::BUFFER_BOTH, aIter,
+                                  aSetTransform,
+                                  &transform);
+  if (!result) {
     return nullptr;
   }
 
   nsIntRegion regionToDraw =
     ExpandDrawRegion(aPaintState, aIter, result->GetBackendType());
 
-  if (aPaintState.mMode == SurfaceMode::SURFACE_COMPONENT_ALPHA ||
-      aPaintState.mContentType == gfxContentType::COLOR_ALPHA) {
-    
-    for (auto iter = regionToDraw.RectIter(); !iter.Done(); iter.Next()) {
-      const IntRect& rect = iter.Get();
-      result->ClearRect(Rect(rect.X(), rect.Y(), rect.Width(), rect.Height()));
-    }
-  }
-
-  return result;
+  RefPtr<CapturedPaintState> state =
+    new CapturedPaintState(regionToDraw,
+                           result,
+                           mBuffer->GetDTBuffer(),
+                           mBuffer->GetDTBufferOnWhite(),
+                           transform,
+                           aPaintState.mMode,
+                           aPaintState.mContentType);
+  return state;
 }
 
 void
 ContentClient::ReturnDrawTarget(gfx::DrawTarget*& aReturned)
 {
   mBuffer->ReturnDrawTarget(aReturned);
+}
+
+ bool
+ContentClient::PrepareDrawTargetForPainting(CapturedPaintState* aState)
+{
+  MOZ_ASSERT(aState);
+  RefPtr<DrawTarget> target = aState->mTarget;
+  RefPtr<DrawTarget> whiteTarget = aState->mTargetOnWhite;
+
+  if (aState->mSurfaceMode == SurfaceMode::SURFACE_COMPONENT_ALPHA) {
+    if (!target || !target->IsValid() ||
+        !whiteTarget || !whiteTarget->IsValid()) {
+      
+      
+      
+      return false;
+    }
+    for (auto iter = aState->mRegionToDraw.RectIter(); !iter.Done(); iter.Next()) {
+      const IntRect& rect = iter.Get();
+      target->FillRect(Rect(rect.X(), rect.Y(), rect.Width(), rect.Height()),
+                            ColorPattern(Color(0.0, 0.0, 0.0, 1.0)));
+      whiteTarget->FillRect(Rect(rect.X(), rect.Y(), rect.Width(), rect.Height()),
+                                 ColorPattern(Color(1.0, 1.0, 1.0, 1.0)));
+    }
+  } else if (aState->mContentType == gfxContentType::COLOR_ALPHA &&
+             target->IsValid()) {
+    
+    for (auto iter = aState->mRegionToDraw.RectIter(); !iter.Done(); iter.Next()) {
+      const IntRect& rect = iter.Get();
+      target->ClearRect(Rect(rect.X(), rect.Y(), rect.Width(), rect.Height()));
+    }
+  }
+
+  return true;
 }
 
 ContentClient::BufferDecision
@@ -539,6 +602,31 @@ ContentClientBasic::CreateBuffer(gfxContentType aType,
   return new DrawTargetRotatedBuffer(drawTarget, nullptr, aRect, IntPoint(0,0));
 }
 
+RefPtr<CapturedPaintState>
+ContentClientBasic::BorrowDrawTargetForRecording(ContentClient::PaintState& aPaintState,
+                                                 RotatedBuffer::DrawIterator* aIter,
+                                                 bool aSetTransform)
+{
+  
+  return nullptr;
+}
+
+RefPtr<CapturedPaintState>
+ContentClientRemoteBuffer::BorrowDrawTargetForRecording(ContentClient::PaintState& aPaintState,
+                                                        RotatedBuffer::DrawIterator* aIter,
+                                                        bool aSetTransform)
+{
+  RefPtr<CapturedPaintState> cps = ContentClient::BorrowDrawTargetForRecording(aPaintState, aIter, aSetTransform);
+  if (!cps) {
+    return nullptr;
+  }
+
+  RemoteRotatedBuffer* remoteBuffer = GetRemoteBuffer();
+  cps->mTextureClient = remoteBuffer->GetClient();
+  cps->mTextureClientOnWhite = remoteBuffer->GetClientOnWhite();
+  return cps.forget();
+}
+
 class RemoteBufferReadbackProcessor : public TextureReadbackSink
 {
 public:
@@ -580,7 +668,7 @@ public:
 
       dt->SetTransform(Matrix::Translation(offset.x, offset.y));
 
-      rotBuffer.DrawBufferWithRotation(dt);
+      rotBuffer.DrawBufferWithRotation(dt, RotatedBuffer::BUFFER_BLACK);
 
       update.mLayer->GetSink()->EndUpdate(update.mUpdateRect + offset);
     }
@@ -596,7 +684,7 @@ private:
 };
 
 void
-ContentClientRemoteBuffer::EndPaint(PaintState& aPaintState, nsTArray<ReadbackProcessor::Update>* aReadbackUpdates)
+ContentClientRemoteBuffer::EndPaint(nsTArray<ReadbackProcessor::Update>* aReadbackUpdates)
 {
   MOZ_ASSERT(!mBuffer || !mBuffer->HaveBufferOnWhite() ||
              !aReadbackUpdates || aReadbackUpdates->Length() == 0);
@@ -616,7 +704,7 @@ ContentClientRemoteBuffer::EndPaint(PaintState& aPaintState, nsTArray<ReadbackPr
     remoteBuffer->SyncWithObject(mForwarder->GetSyncObject());
   }
 
-  ContentClient::EndPaint(aPaintState, aReadbackUpdates);
+  ContentClient::EndPaint(aReadbackUpdates);
 }
 
 RefPtr<RotatedBuffer>
@@ -845,18 +933,18 @@ ContentClientDoubleBuffered::BeginPaint(PaintedLayer* aLayer,
 
 
 
-void
-ContentClientDoubleBuffered::FinalizeFrame(PaintState& aPaintState)
+Maybe<CapturedBufferState::Copy>
+ContentClientDoubleBuffered::FinalizeFrame(const nsIntRegion& aRegionToDraw)
 {
   if (!mFrontAndBackBufferDiffer) {
     MOZ_ASSERT(!mFrontBuffer || !mFrontBuffer->DidSelfCopy(),
                "If the front buffer did a self copy then our front and back buffer must be different.");
-    return;
+    return Nothing();
   }
 
   MOZ_ASSERT(mFrontBuffer && mBuffer);
   if (!mFrontBuffer || !mBuffer) {
-    return;
+    return Nothing();
   }
 
   MOZ_LAYERS_LOG(("BasicShadowableThebes(%p): reading back <x=%d,y=%d,w=%d,h=%d>",
@@ -876,27 +964,16 @@ ContentClientDoubleBuffered::FinalizeFrame(PaintState& aPaintState)
 
   
   
-  updateRegion.Sub(updateRegion, aPaintState.mRegionToDraw);
+  updateRegion.Sub(updateRegion, aRegionToDraw);
   if (updateRegion.IsEmpty()) {
-    return;
+    return Nothing();
   }
 
-  OpenMode openMode = aPaintState.mAsyncPaint
-                        ? OpenMode::OPEN_READ_ASYNC
-                        : OpenMode::OPEN_READ_ONLY;
-
-  if (mFrontBuffer->Lock(openMode)) {
-    mBuffer->UpdateDestinationFrom(*mFrontBuffer, updateRegion.GetBounds());
-
-    if (aPaintState.mAsyncPaint) {
-      aPaintState.mAsyncTask->mClients.push_back(mFrontBuffer->GetClient());
-      if (mFrontBuffer->GetClientOnWhite()) {
-        aPaintState.mAsyncTask->mClients.push_back(mFrontBuffer->GetClientOnWhite());
-      }
-    }
-
-    mFrontBuffer->Unlock();
-  }
+  return Some(CapturedBufferState::Copy {
+    mFrontBuffer->ShallowCopy(),
+    mBuffer->ShallowCopy(),
+    updateRegion.GetBounds(),
+  });
 }
 
 void

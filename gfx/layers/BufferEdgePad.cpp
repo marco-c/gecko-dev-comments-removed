@@ -1,22 +1,15 @@
-
-
-
-
-
-
 #include "BufferEdgePad.h"
 
-#include "2D.h" 
-#include "Point.h" 
-#include "Types.h" 
-
-#include "nsRegion.h"
+#include "mozilla/gfx/Point.h" 
+#include "mozilla/gfx/Types.h" 
 
 namespace mozilla {
-namespace gfx {
+namespace layers {
+
+using namespace gfx;
 
 void
-PadDrawTargetOutFromRegion(DrawTarget* aDrawTarget, const nsIntRegion &aRegion)
+PadDrawTargetOutFromRegion(RefPtr<DrawTarget> aDrawTarget, nsIntRegion &aRegion)
 {
   struct LockedBits {
     uint8_t *data;

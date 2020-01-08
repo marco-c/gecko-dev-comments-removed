@@ -16,7 +16,6 @@
 #include "Units.h"                      
 #include "gfxTypes.h"
 #include "mozilla/Attributes.h"         
-#include "mozilla/gfx/2D.h"             
 #include "mozilla/RefPtr.h"             
 #include "mozilla/ipc/Shmem.h"          
 #include "mozilla/ipc/SharedMemory.h"   
@@ -50,33 +49,6 @@ enum class TilePaintFlags : uint8_t {
   Progressive = 0x2,
 };
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(TilePaintFlags)
-
-struct AcquiredBackBuffer
-{
-  AcquiredBackBuffer(gfx::DrawTarget* aTarget,
-                     gfx::DrawTargetCapture* aCapture,
-                     gfx::DrawTarget* aBackBuffer,
-                     const gfx::IntRect& aUpdatedRect,
-                     std::vector<RefPtr<TextureClient>>&& aTextureClients)
-    : mTarget(aTarget)
-    , mCapture(aCapture)
-    , mBackBuffer(aBackBuffer)
-    , mUpdatedRect(aUpdatedRect)
-    , mTextureClients(aTextureClients)
-  {}
-
-  AcquiredBackBuffer(const AcquiredBackBuffer&) = delete;
-  AcquiredBackBuffer& operator=(const AcquiredBackBuffer&) = delete;
-
-  AcquiredBackBuffer(AcquiredBackBuffer&&) = default;
-  AcquiredBackBuffer& operator=(AcquiredBackBuffer&&) = default;
-
-  RefPtr<gfx::DrawTarget> mTarget;
-  RefPtr<gfx::DrawTargetCapture> mCapture;
-  RefPtr<gfx::DrawTarget> mBackBuffer;
-  gfx::IntRect mUpdatedRect;
-  std::vector<RefPtr<TextureClient>> mTextureClients;
-};
 
 
 
@@ -156,16 +128,31 @@ struct TileClient
 
 
 
-  Maybe<AcquiredBackBuffer> AcquireBackBuffer(CompositableClient&,
-                                              const nsIntRegion& aDirtyRegion,
-                                              const nsIntRegion& aVisibleRegion,
-                                              gfxContentType aContent,
-                                              SurfaceMode aMode,
-                                              TilePaintFlags aFlags);
+  TextureClient* GetBackBuffer(CompositableClient&,
+                               const nsIntRegion& aDirtyRegion,
+                               const nsIntRegion& aVisibleRegion,
+                               gfxContentType aContent, SurfaceMode aMode,
+                               nsIntRegion& aAddPaintedRegion,
+                               TilePaintFlags aFlags,
+                               RefPtr<TextureClient>* aTextureClientOnWhite,
+                               std::vector<CapturedTiledPaintState::Copy>* aCopies,
+                               std::vector<RefPtr<TextureClient>>* aClients);
 
   void DiscardFrontBuffer();
 
   void DiscardBackBuffer();
+
+  
+
+
+
+  bool CopyFromBuffer(RefPtr<TextureClient> aBuffer,
+                      RefPtr<TextureClient> aBufferOnWhite,
+                      nsIntPoint aBufferOrigin,
+                      nsIntPoint aTileOrigin,
+                      const nsIntRegion& aRegion,
+                      TilePaintFlags aFlags,
+                      std::vector<CapturedTiledPaintState::Copy>* aCopies);
 
   
 
@@ -199,12 +186,12 @@ private:
 
 
 
-  void ValidateFromFront(const nsIntRegion& aDirtyRegion,
-                         const nsIntRegion& aVisibleRegion,
-                         gfx::DrawTarget* aBackBuffer,
-                         TilePaintFlags aFlags,
-                         gfx::IntRect* aCopiedRegion,
-                         std::vector<RefPtr<TextureClient>>* aClients);
+  void ValidateBackBufferFromFront(const nsIntRegion &aDirtyRegion,
+                                   const nsIntRegion& aVisibleRegion,
+                                   nsIntRegion& aAddPaintedRegion,
+                                   TilePaintFlags aFlags,
+                                   std::vector<CapturedTiledPaintState::Copy>* aCopies,
+                                   std::vector<RefPtr<TextureClient>>* aClients);
 };
 
 

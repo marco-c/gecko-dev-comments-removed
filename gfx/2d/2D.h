@@ -34,8 +34,6 @@
 
 #include "mozilla/DebugOnly.h"
 
-#include "nsRegionFwd.h"
-
 #if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_GTK)
   #ifndef MOZ_ENABLE_FREETYPE
   #define MOZ_ENABLE_FREETYPE
@@ -1301,16 +1299,6 @@ public:
   
 
 
-  virtual void PadEdges(const IntRegion& aRegion);
-
-  
-
-
-  virtual bool Unrotate(IntPoint aRotation);
-
-  
-
-
 
 
 
@@ -1547,7 +1535,6 @@ class DrawTargetCapture : public DrawTarget
 public:
   virtual bool IsCaptureDT() const override { return true; }
 
-  virtual bool IsEmpty() const = 0;
   virtual void Dump() = 0;
 };
 
@@ -1632,18 +1619,6 @@ public:
 
   static already_AddRefed<DrawTarget>
     CreateDrawTarget(BackendType aBackend, const IntSize &aSize, SurfaceFormat aFormat);
-
-  
-
-
-
-
-
-
-
-
-  static already_AddRefed<DrawTargetCapture>
-    CreateCaptureDrawTargetForTarget(gfx::DrawTarget* aTarget, size_t aFlushBytes = 0);
 
   
 
@@ -1778,9 +1753,6 @@ public:
 
   static already_AddRefed<DrawTarget>
     CreateDualDrawTarget(DrawTarget *targetA, DrawTarget *targetB);
-
-  static already_AddRefed<SourceSurface>
-    CreateDualSourceSurface(SourceSurface *sourceA, SourceSurface *sourceB);
 
   
 
