@@ -50,9 +50,16 @@ WebRenderLayerScrollData::Initialize(WebRenderScrollData& aOwner,
 
   MOZ_ASSERT(aItem);
   aItem->UpdateScrollData(&aOwner, this);
-  for (const ActiveScrolledRoot* asr = aItem->GetActiveScrolledRoot();
-       asr && asr != aStopAtAsr;
-       asr = asr->mParent) {
+
+  const ActiveScrolledRoot* asr = aItem->GetActiveScrolledRoot();
+  if (ActiveScrolledRoot::IsAncestor(asr, aStopAtAsr)) {
+    
+    
+    
+    asr = nullptr;
+  }
+
+  while (asr && asr != aStopAtAsr) {
     MOZ_ASSERT(aOwner.GetManager());
     FrameMetrics::ViewID scrollId = asr->GetViewId();
     if (Maybe<size_t> index = aOwner.HasMetadataFor(scrollId)) {
@@ -65,6 +72,7 @@ WebRenderLayerScrollData::Initialize(WebRenderScrollData& aOwner,
       MOZ_ASSERT(metadata->GetMetrics().GetScrollId() == scrollId);
       mScrollIds.AppendElement(aOwner.AddMetadata(metadata.ref()));
     }
+    asr = asr->mParent;
   }
 
   
