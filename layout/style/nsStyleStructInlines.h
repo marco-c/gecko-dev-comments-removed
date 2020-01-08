@@ -161,15 +161,19 @@ nsStyleDisplay::IsFixedPosContainingBlockForNonSVGTextFrames(
   
   NS_ASSERTION(aStyle.ThreadsafeStyleDisplay() == this, "unexpected aStyle");
 
-  if (IsContainPaint()) {
-    return true;
-  }
-
   if (mWillChangeBitField & NS_STYLE_WILL_CHANGE_FIXPOS_CB) {
     return true;
   }
 
   return aStyle.ThreadsafeStyleEffects()->HasFilters();
+}
+
+bool
+nsStyleDisplay::IsFixedPosContainingBlockForContainLayoutAndPaintSupportingFrames() const
+{
+  
+  
+  return IsContainPaint();
 }
 
 bool
@@ -189,6 +193,8 @@ nsStyleDisplay::IsFixedPosContainingBlock(const nsIFrame* aContextFrame) const
   
   
   if (!IsFixedPosContainingBlockForNonSVGTextFrames(*style) &&
+      (!IsFixedPosContainingBlockForContainLayoutAndPaintSupportingFrames() ||
+       !aContextFrame->IsFrameOfType(nsIFrame::eSupportsContainLayoutAndPaint)) &&
       (!IsFixedPosContainingBlockForTransformSupportingFrames() ||
        !aContextFrame->IsFrameOfType(nsIFrame::eSupportsCSSTransforms))) {
     return false;
@@ -216,6 +222,8 @@ nsStyleDisplay::IsAbsPosContainingBlock(const nsIFrame* aContextFrame) const
   
   if (!IsAbsPosContainingBlockForNonSVGTextFrames() &&
       !IsFixedPosContainingBlockForNonSVGTextFrames(*style) &&
+      (!IsFixedPosContainingBlockForContainLayoutAndPaintSupportingFrames() ||
+       !aContextFrame->IsFrameOfType(nsIFrame::eSupportsContainLayoutAndPaint)) &&
       (!IsFixedPosContainingBlockForTransformSupportingFrames() ||
        !aContextFrame->IsFrameOfType(nsIFrame::eSupportsCSSTransforms))) {
     return false;

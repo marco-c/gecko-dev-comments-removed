@@ -252,7 +252,20 @@ ComputedStyle::CalcStyleDifference(ComputedStyle* aNewContext,
         
         (isFixedCB ||
          oldDisp->IsFixedPosContainingBlockForTransformSupportingFrames() ==
-         newDisp->IsFixedPosContainingBlockForTransformSupportingFrames())) {
+         newDisp->IsFixedPosContainingBlockForTransformSupportingFrames()) &&
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        (isFixedCB ||
+         oldDisp->IsFixedPosContainingBlockForContainLayoutAndPaintSupportingFrames() ==
+         newDisp->IsFixedPosContainingBlockForContainLayoutAndPaintSupportingFrames())) {
       
       
       
