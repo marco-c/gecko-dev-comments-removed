@@ -795,7 +795,12 @@ gather_time_entropy(void)
   int gettimeofday_res;
 
   gettimeofday_res = gettimeofday(&tv, NULL);
+
+#if defined(NDEBUG)
+  (void)gettimeofday_res;
+#else
   assert (gettimeofday_res == 0);
+#endif 
 
   
   return tv.tv_usec;
