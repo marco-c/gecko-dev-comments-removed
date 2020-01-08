@@ -18,6 +18,7 @@ const {
   SELECT_PAGE_FAILURE,
   SELECT_PAGE_START,
   SELECT_PAGE_SUCCESS,
+  SELECTED_RUNTIME_ID_UPDATED,
   USB_RUNTIMES_SCAN_START,
   USB_RUNTIMES_SCAN_SUCCESS,
 } = require("../constants");
@@ -53,6 +54,14 @@ function selectPage(page, runtimeId) {
         const currentRuntimeId = getState().runtimes.selectedRuntimeId;
         await dispatch(Actions.unwatchRuntime(currentRuntimeId));
       }
+
+      
+      
+      
+      
+      
+      
+      dispatch({ type: SELECTED_RUNTIME_ID_UPDATED, runtimeId });
 
       
       if (page === PAGE_TYPES.RUNTIME) {
