@@ -54,9 +54,11 @@ function getSupportFile(path) {
 }
 
 add_task(async function testReloadExitedAddon() {
-  const client = await new Promise(resolve => {
-    get_parent_process_actors(client => resolve(client));
-  });
+  DebuggerServer.init();
+  DebuggerServer.registerAllActors();
+
+  const client = new DebuggerClient(DebuggerServer.connectPipe());
+  await client.connect();
 
   
   const addonFile = getSupportFile("addons/web-extension");
