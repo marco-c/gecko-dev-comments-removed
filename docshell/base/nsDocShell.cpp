@@ -527,7 +527,6 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsDocShell)
   NS_INTERFACE_MAP_ENTRY(nsIWebPageDescriptor)
   NS_INTERFACE_MAP_ENTRY(nsIAuthPromptProvider)
   NS_INTERFACE_MAP_ENTRY(nsILoadContext)
-  NS_INTERFACE_MAP_ENTRY(nsIWebShellServices)
   NS_INTERFACE_MAP_ENTRY(nsILinkHandler)
   NS_INTERFACE_MAP_ENTRY(nsIClipboardCommands)
   NS_INTERFACE_MAP_ENTRY(nsIDOMStorageManager)
@@ -13785,8 +13784,8 @@ nsDocShell::PluginsAllowedInCurrentDoc()
 
 
 
-NS_IMETHODIMP
-nsDocShell::ReloadDocument(const char* aCharset, int32_t aSource)
+nsresult
+nsDocShell::CharsetChangeReloadDocument(const char* aCharset, int32_t aSource)
 {
   
   nsCOMPtr<nsIContentViewer> cv;
@@ -13818,8 +13817,8 @@ nsDocShell::ReloadDocument(const char* aCharset, int32_t aSource)
   return NS_ERROR_DOCSHELL_REQUEST_REJECTED;
 }
 
-NS_IMETHODIMP
-nsDocShell::StopDocumentLoad(void)
+nsresult
+nsDocShell::CharsetChangeStopDocumentLoad()
 {
   if (eCharsetReloadRequested != mCharsetReloadState) {
     Stop(nsIWebNavigation::STOP_ALL);
