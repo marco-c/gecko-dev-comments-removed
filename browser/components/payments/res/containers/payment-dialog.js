@@ -158,6 +158,20 @@ export default class PaymentDialog extends PaymentStateSubscriberMixin(HTMLEleme
 
 
 
+  changePaymentMethod(selectedPaymentCardGUID) {
+    
+    let request = Object.assign({}, this.requestStore.getState().request);
+    request.paymentDetails = Object.assign({}, request.paymentDetails);
+    request.paymentDetails.paymentMethodErrors = null;
+    this.requestStore.setState({request});
+
+    
+  }
+
+  
+
+
+
   changePayerAddress(payerAddressGUID) {
     
     let request = Object.assign({}, this.requestStore.getState().request);
@@ -216,6 +230,7 @@ export default class PaymentDialog extends PaymentStateSubscriberMixin(HTMLEleme
 
   async setStateFromParent(state) { 
     let oldAddresses = paymentRequest.getAddresses(this.requestStore.getState());
+    let oldBasicCards = paymentRequest.getBasicCards(this.requestStore.getState());
     if (state.request) {
       state = this._updateCompleteStatus(state);
     }
@@ -269,9 +284,28 @@ export default class PaymentDialog extends PaymentStateSubscriberMixin(HTMLEleme
       }
     }
 
-    
-    
     let basicCards = paymentRequest.getBasicCards(state);
+    let oldPaymentMethod = selectedPaymentCard && oldBasicCards[selectedPaymentCard];
+    let paymentMethod = selectedPaymentCard && basicCards[selectedPaymentCard];
+    if (oldPaymentMethod && paymentMethod.guid == oldPaymentMethod.guid &&
+        paymentMethod.timeLastModified != oldPaymentMethod.timeLastModified) {
+      delete this._cachedState.selectedPaymentCard;
+    } else {
+      
+      
+
+      let billingAddressGUID = paymentMethod && paymentMethod.billingAddressGUID;
+      let billingAddress = billingAddressGUID && addresses[billingAddressGUID];
+      let oldBillingAddress = billingAddressGUID && oldAddresses[billingAddressGUID];
+
+      if (oldBillingAddress && billingAddress &&
+          billingAddress.timeLastModified != oldBillingAddress.timeLastModified) {
+        delete this._cachedState.selectedPaymentCard;
+      }
+    }
+
+    
+    
     if (!basicCards[selectedPaymentCard]) {
       
       this.requestStore.setState({
@@ -398,6 +432,10 @@ export default class PaymentDialog extends PaymentStateSubscriberMixin(HTMLEleme
       }
     }
 
+    if (state.selectedPaymentCard != this._cachedState.selectedPaymentCard) {
+      this.changePaymentMethod(state.selectedPaymentCard);
+    }
+
     if (this._isPayerRequested(state.request.paymentOptions)) {
       if (state.selectedPayerAddress != this._cachedState.selectedPayerAddress) {
         this.changePayerAddress(state.selectedPayerAddress);
@@ -406,6 +444,7 @@ export default class PaymentDialog extends PaymentStateSubscriberMixin(HTMLEleme
 
     this._cachedState.selectedShippingAddress = state.selectedShippingAddress;
     this._cachedState.selectedShippingOption = state.selectedShippingOption;
+    this._cachedState.selectedPaymentCard = state.selectedPaymentCard;
     this._cachedState.selectedPayerAddress = state.selectedPayerAddress;
   }
 
