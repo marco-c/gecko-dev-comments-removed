@@ -315,6 +315,10 @@ static inline bool ShouldMarkCrossCompartment(GCMarker* marker, JSObject* src,
 
   if (color == MarkColor::Black) {
     
+    
+    MOZ_ASSERT_IF(!dst.isMarkedBlack(), !dstZone->isGCSweeping());
+
+    
 
 
 
@@ -326,8 +330,12 @@ static inline bool ShouldMarkCrossCompartment(GCMarker* marker, JSObject* src,
       UnmarkGrayGCThing(marker->runtime(),
                         JS::GCCellPtr(&dst, dst.getTraceKind()));
     }
+
     return dstZone->isGCMarking();
   } else {
+    
+    MOZ_ASSERT_IF(!dst.isMarkedAny(), !dstZone->isGCSweeping());
+
     if (dstZone->isGCMarkingBlack()) {
       
 
@@ -339,6 +347,7 @@ static inline bool ShouldMarkCrossCompartment(GCMarker* marker, JSObject* src,
       }
       return false;
     }
+
     return dstZone->isGCMarkingGray();
   }
 }
