@@ -67,14 +67,12 @@ VsyncChild::RecvNotify(const TimeStamp& aVsyncTimestamp)
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(!mIsShutdown);
 
-  
-  
-  if (recordreplay::IsRecordingOrReplaying()) {
-    return IPC_OK();
-  }
-
   SchedulerGroup::MarkVsyncRan();
   if (mObservingVsync && mObserver) {
+    if (recordreplay::IsRecordingOrReplaying()) {
+      recordreplay::child::OnVsync();
+    }
+
     mObserver->NotifyVsync(aVsyncTimestamp);
   }
   return IPC_OK();

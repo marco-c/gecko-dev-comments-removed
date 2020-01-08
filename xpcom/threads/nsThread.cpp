@@ -1126,13 +1126,6 @@ nsThread::ProcessNextEvent(bool aMayWait, bool* aResult)
   
   
   
-  if (recordreplay::IsRecordingOrReplaying() && mIsMainThread == MAIN_THREAD) {
-    recordreplay::child::NotifyVsyncObserver();
-  }
-
-  
-  
-  
   
   
   
