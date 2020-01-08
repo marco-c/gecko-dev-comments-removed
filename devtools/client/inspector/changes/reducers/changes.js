@@ -229,6 +229,26 @@ const reducers = {
         if (rule.add[addIndex] && rule.add[addIndex].value === decl.value) {
           rule.add.splice(addIndex, 1);
         }
+
+        
+        
+        if (changeType === "declaration-remove") {
+          rule.add = rule.add.map((addDecl => {
+            if (addDecl.index > decl.index) {
+              addDecl.index--;
+            }
+
+            return addDecl;
+          }));
+
+          rule.remove = rule.remove.map((removeDecl => {
+            if (removeDecl.index > decl.index) {
+              removeDecl.index--;
+            }
+
+            return removeDecl;
+          }));
+        }
       }
     }
 

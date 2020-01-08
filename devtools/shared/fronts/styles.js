@@ -385,10 +385,9 @@ class RuleModificationList {
 
 
 
-
   setPropertyEnabled(index, name, isEnabled) {
     if (!isEnabled) {
-      this.removeProperty(index, name);
+      this.modifications.push({ type: "disable", index, name });
     }
   }
 
