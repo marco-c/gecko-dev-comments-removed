@@ -112,18 +112,7 @@ def delete(path):
 
 
 def install_libgcc(gcc_dir, clang_dir):
-    gcc_bin_dir = os.path.join(gcc_dir, 'bin')
-
-    
-    
-    
-    
-    
-    x64_bin_dir = os.path.join(clang_dir, 'x86_64-unknown-linux-gnu', 'bin')
-    mkdir_p(x64_bin_dir)
-    shutil.copy2(os.path.join(gcc_bin_dir, 'ld'), x64_bin_dir)
-
-    out = subprocess.check_output([os.path.join(gcc_bin_dir, "gcc"),
+    out = subprocess.check_output([os.path.join(gcc_dir, "bin", "gcc"),
                                    '-print-libgcc-file-name'])
 
     libgcc_dir = os.path.dirname(out.rstrip())
@@ -289,8 +278,7 @@ def get_tool(config, key):
 
 def prune_final_dir_for_clang_tidy(final_dir):
     
-    dirs = ("bin", "include", "lib", "libexec", "msbuild-bin", "share", "tools",
-            "x86_64-unknown-linux-gnu")
+    dirs = ("bin", "include", "lib", "libexec", "msbuild-bin", "share", "tools")
     for f in glob.glob("%s/*" % final_dir):
         if os.path.basename(f) not in dirs:
             raise Exception("Found unknown file %s in the final directory" % f)
@@ -537,15 +525,9 @@ if __name__ == "__main__":
     elif is_linux():
         extra_cflags = ["-static-libgcc"]
         extra_cxxflags = ["-static-libgcc", "-static-libstdc++"]
+        extra_cflags2 = ["-fPIC"]
         
-        
-        
-        
-        extra_cflags2 = ["-fPIC",
-                         '-gcc-toolchain', stage1_inst_dir]
-        
-        extra_cxxflags2 = ["-fPIC", '-Qunused-arguments', "-static-libstdc++",
-                           '-gcc-toolchain', stage1_inst_dir]
+        extra_cxxflags2 = ["-fPIC", '-Qunused-arguments', "-static-libstdc++"]
         extra_asmflags = []
         extra_ldflags = []
 
