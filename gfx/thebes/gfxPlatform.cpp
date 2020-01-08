@@ -2508,6 +2508,10 @@ gfxPlatform::InitCompositorAccelerationPrefs()
     feature.ForceDisable(FeatureStatus::Blocked, "Acceleration blocked by headless mode",
                          NS_LITERAL_CSTRING("FEATURE_FAILURE_COMP_HEADLESSMODE"));
   }
+  if (recordreplay::IsRecordingOrReplaying()) {
+    feature.ForceDisable(FeatureStatus::Blocked, "Acceleration blocked by recording/replaying",
+                         NS_LITERAL_CSTRING("FEATURE_FAILURE_COMP_RECORDREPLAY"));
+  }
 }
 
  bool
