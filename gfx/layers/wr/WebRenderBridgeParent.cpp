@@ -2001,18 +2001,9 @@ TransactionId WebRenderBridgeParent::FlushTransactionIdsForEpoch(
           Telemetry::AccumulateCategorical(
               LABELS_CONTENT_FRAME_TIME_REASON::NoVsync);
         } else if (aCompositeStartId - transactionId.mVsyncId > 1) {
-          auto fullPaintTime = transactionId.mSceneBuiltTime - transactionId.mTxnStartTime;
           
-          if (fullPaintTime >= TimeDuration::FromMilliseconds(20)) {
-            Telemetry::AccumulateCategorical(
-                LABELS_CONTENT_FRAME_TIME_REASON::MissedCompositeLongPaint);
-          } else if (fullPaintTime >= TimeDuration::FromMilliseconds(10)) {
-            Telemetry::AccumulateCategorical(
-                LABELS_CONTENT_FRAME_TIME_REASON::MissedCompositeMidPaint);
-          } else {
-            Telemetry::AccumulateCategorical(
-                LABELS_CONTENT_FRAME_TIME_REASON::MissedComposite);
-          }
+          Telemetry::AccumulateCategorical(
+              LABELS_CONTENT_FRAME_TIME_REASON::MissedComposite);
         } else {
           
           Telemetry::AccumulateCategorical(
