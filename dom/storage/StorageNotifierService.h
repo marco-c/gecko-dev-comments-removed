@@ -14,6 +14,13 @@ namespace dom {
 
 class StorageEvent;
 
+
+
+
+
+
+
+
 class StorageNotificationObserver
 {
 public:
@@ -33,6 +40,15 @@ public:
   virtual nsIEventTarget*
   GetEventTarget() const = 0;
 };
+
+
+
+
+
+
+
+
+
 
 class StorageNotifierService final
 {

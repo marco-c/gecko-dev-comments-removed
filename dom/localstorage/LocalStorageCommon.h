@@ -186,6 +186,13 @@ namespace dom {
 
 extern const char16_t* kLocalStorageType;
 
+
+
+
+
+
+
+
 class MOZ_STACK_CLASS LSNotifyInfo
 {
   bool mChanged;
@@ -221,8 +228,15 @@ public:
   }
 };
 
+
+
+
+
 bool
 NextGenLocalStorageEnabled();
+
+
+
 
 bool
 CachedNextGenLocalStorageEnabled();

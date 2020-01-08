@@ -119,8 +119,24 @@ static_assert(kSQLiteGrowthIncrement >= 0 &&
               kSQLiteGrowthIncrement < uint32_t(INT32_MAX),
               "Must be 0 (disabled) or a positive multiple of the page size!");
 
+
+
+
 #define DATA_FILE_NAME "data.sqlite"
+
+
+
 #define JOURNAL_FILE_NAME "data.sqlite-journal"
+
+
+
+
+
+
+
+
+
+
 
 const uint32_t kFlushTimeoutMs = 5000;
 
@@ -129,13 +145,55 @@ const char kPrivateBrowsingObserverTopic[] = "last-pb-context-exited";
 const uint32_t kDefaultOriginLimitKB = 5 * 1024;
 const uint32_t kDefaultShadowWrites = true;
 const uint32_t kDefaultSnapshotPrefill = 4096;
+
+
+
+
+
+
+
 const char kDefaultQuotaPref[] = "dom.storage.default_quota";
+
+
+
+
+
+
+
+
 const char kShadowWritesPref[] = "dom.storage.shadow_writes";
+
+
+
+
+
+
 const char kSnapshotPrefillPref[] = "dom.storage.snapshot_prefill";
+
+
+
+
+
 
 const uint32_t kPreparedDatastoreTimeoutMs = 20000;
 
+
+
+
+
+
+
+
+
+
+
+
+
 #define LS_ARCHIVE_FILE_NAME "ls-archive.sqlite"
+
+
+
+
 #define WEB_APPS_STORE_FILE_NAME "webappsstore.sqlite"
 
 
@@ -948,6 +1006,16 @@ DetachShadowDatabase(mozIStorageConnection* aConnection)
 
 
 
+
+
+
+
+
+
+
+
+
+
 class WriteOptimizer final
 {
   class WriteInfo;
@@ -1001,6 +1069,12 @@ public:
   PerformWrites(Connection* aConnection, bool aShadowWrites);
 };
 
+
+
+
+
+
+
 class WriteOptimizer::WriteInfo
 {
 public:
@@ -1019,6 +1093,9 @@ public:
 
   virtual ~WriteInfo() = default;
 };
+
+
+
 
 class WriteOptimizer::AddItemInfo
   : public WriteInfo
@@ -1055,6 +1132,9 @@ private:
   nsresult
   Perform(Connection* aConnection, bool aShadowWrites) override;
 };
+
+
+
 
 class WriteOptimizer::UpdateItemInfo final
   : public AddItemInfo
@@ -1099,6 +1179,9 @@ private:
   nsresult
   Perform(Connection* aConnection, bool aShadowWrites) override;
 };
+
+
+
 
 class WriteOptimizer::ClearInfo final
   : public WriteInfo
@@ -1301,6 +1384,7 @@ public:
   }
 
   
+  
 
   
   
@@ -1332,6 +1416,7 @@ public:
   void
   EndUpdateBatch();
 
+  
   
 
   nsresult
@@ -1471,17 +1556,54 @@ private:
   ~ConnectionThread();
 };
 
+
+
+
+
+
+
+
+
 class Datastore final
 {
   RefPtr<DirectoryLock> mDirectoryLock;
   RefPtr<Connection> mConnection;
   RefPtr<QuotaObject> mQuotaObject;
   nsCOMPtr<nsIRunnable> mCompleteCallback;
+  
+
+
+
   nsTHashtable<nsPtrHashKey<PrepareDatastoreOp>> mPrepareDatastoreOps;
+  
+
+
+
+
+
+
   nsTHashtable<nsPtrHashKey<PreparedDatastore>> mPreparedDatastores;
+  
+
+
+
+
   nsTHashtable<nsPtrHashKey<Database>> mDatabases;
+  
+
+
+
+
   nsTHashtable<nsPtrHashKey<Database>> mActiveDatabases;
+  
+
+
+
   nsDataHashtable<nsStringHashKey, nsString> mValues;
+  
+
+
+
   nsTArray<LSItemInfo> mOrderedItems;
   nsTArray<int64_t> mPendingUsageDeltas;
   WriteOptimizer mWriteOptimizer;
@@ -1524,6 +1646,9 @@ public:
   bool
   IsPersistent() const
   {
+    
+    
+    
     return mPrivateBrowsingId == 0;
   }
 
@@ -1588,6 +1713,15 @@ public:
 
   void
   GetKeys(nsTArray<nsString>& aKeys) const;
+
+  
+  
+  
+  
+
+  
+
+
 
   void
   SetItem(Database* aDatabase,
@@ -1878,24 +2012,103 @@ private:
                                      override;
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class Snapshot final
   : public PBackgroundLSSnapshotParent
 {
+  
+
+
+
   RefPtr<Database> mDatabase;
   RefPtr<Datastore> mDatastore;
+  
+
+
+
+
+
+
   nsTHashtable<nsStringHashKey> mLoadedItems;
+  
+
+
+
+
+
+
+
+
   nsTHashtable<nsStringHashKey> mUnknownItems;
+  
+
+
+
+
+
+
+
+
+
   nsDataHashtable<nsStringHashKey, nsString> mValues;
+  
+
+
+
+
+
   nsTArray<nsString> mKeys;
   nsString mDocumentURI;
+  
+
+
+
+
+
+
+
   uint32_t mTotalLength;
   int64_t mUsage;
   int64_t mPeakUsage;
+  
+
+
+
   bool mSavedKeys;
   bool mActorDestroyed;
   bool mFinishReceived;
   bool mLoadedReceived;
+  
+
+
+
+
+
+
+
+
   bool mLoadedAllItems;
+  
+
+
+
+
   bool mLoadKeysReceived;
   bool mSentMarkDirty;
 
@@ -1932,6 +2145,11 @@ public:
       mLoadKeysReceived = true;
     }
   }
+
+  
+
+
+
 
   void
   SaveItem(const nsAString& aKey,
@@ -4984,6 +5202,8 @@ Datastore::NotifyObservers(Database* aDatabase,
 
   MOZ_ASSERT(array);
 
+  
+  
   PBackgroundParent* databaseBackgroundActor = aDatabase->Manager();
 
   for (Observer* observer : *array) {

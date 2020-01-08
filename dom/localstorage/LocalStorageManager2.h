@@ -17,6 +17,19 @@ class LSRequestParams;
 class LSSimpleRequestParams;
 class Promise;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 class LocalStorageManager2 final
   : public nsIDOMStorageManager
   , public nsILocalStorageManager
@@ -31,9 +44,19 @@ public:
 private:
   ~LocalStorageManager2();
 
+  
+
+
+
+
+
   nsresult
   StartRequest(Promise* aPromise,
                const LSRequestParams& aParams);
+
+  
+
+
 
   nsresult
   StartSimpleRequest(Promise* aPromise,

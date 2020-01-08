@@ -110,6 +110,13 @@ public:
 
   bool IsSessionOnly() const { return mIsSessionOnly; }
 
+  
+  
+  
+  
+  
+  
+
   virtual void
   Open(nsIPrincipal& aSubjectPrincipal, ErrorResult& aRv)
   { }
@@ -126,6 +133,13 @@ public:
   EndExplicitSnapshot(nsIPrincipal& aSubjectPrincipal, ErrorResult& aRv)
   { }
 
+  
+
+  
+  
+  
+  
+  
   
   
   

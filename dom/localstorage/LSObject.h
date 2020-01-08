@@ -33,6 +33,28 @@ class LSRequestChildCallback;
 class LSRequestParams;
 class LSRequestResponse;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class LSObject final
   : public Storage
 {
@@ -52,9 +74,20 @@ class LSObject final
   bool mInExplicitSnapshot;
 
 public:
+  
+
+
   static nsresult
   CreateForWindow(nsPIDOMWindowInner* aWindow,
                   Storage** aStorage);
+
+  
+
+
+
+
+
+
 
   static nsresult
   CreateForPrincipal(nsPIDOMWindowInner* aWindow,
@@ -70,6 +103,16 @@ public:
 
   static already_AddRefed<nsIEventTarget>
   GetSyncLoopEventTarget();
+
+  
+
+
+
+
+
+
+
+
 
   static void
   CancelSyncLoop();
@@ -135,6 +178,8 @@ public:
   Clear(nsIPrincipal& aSubjectPrincipal,
         ErrorResult& aError) override;
 
+  
+  
   void
   Open(nsIPrincipal& aSubjectPrincipal,
        ErrorResult& aError) override;
@@ -150,6 +195,8 @@ public:
   void
   EndExplicitSnapshot(nsIPrincipal& aSubjectPrincipal,
                       ErrorResult& aError) override;
+
+  
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(LSObject, Storage)
@@ -170,11 +217,31 @@ private:
   void
   DropDatabase();
 
+  
+
+
+
+
+
+
+
+
+
+
+
   nsresult
   EnsureObserver();
 
+  
+
+
+
   void
   DropObserver();
+
+  
+
+
 
   void
   OnChange(const nsAString& aKey,

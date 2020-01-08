@@ -133,6 +133,11 @@ LocalStorageManager2::PrecacheStorage(nsIPrincipal* aPrincipal,
   MOZ_ASSERT(aPrincipal);
   MOZ_ASSERT(_retval);
 
+  
+  
+  
+  
+  
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
@@ -182,6 +187,8 @@ LocalStorageManager2::CloneStorage(Storage* aStorageToCloneFrom)
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aStorageToCloneFrom);
 
+  
+  
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
@@ -195,6 +202,7 @@ LocalStorageManager2::CheckStorage(nsIPrincipal* aPrincipal,
   MOZ_ASSERT(aStorage);
   MOZ_ASSERT(_retval);
 
+  
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 

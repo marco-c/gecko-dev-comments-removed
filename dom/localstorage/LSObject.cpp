@@ -28,26 +28,85 @@ class RequestHelper;
 StaticMutex gRequestHelperMutex;
 RequestHelper* gRequestHelper = nullptr;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class RequestHelper final
   : public Runnable
   , public LSRequestChildCallback
 {
   enum class State
   {
+    
+
+
     Initial,
+    
+
+
+
+
+
     ResponsePending,
+    
+
+
+
     Finishing,
+    
+
+
+
+
     Complete
   };
 
+  
+  
+  
   RefPtr<LSObject> mObject;
+  
+  
   nsCOMPtr<nsIEventTarget> mOwningEventTarget;
+  
+  
+  
   nsCOMPtr<nsIEventTarget> mNestedEventTarget;
+  
+  
+  
   LSRequestChild* mActor;
   const LSRequestParams mParams;
   LSRequestResponse mResponse;
   nsresult mResultCode;
   State mState;
+  
   bool mWaiting;
 
 public:
@@ -350,6 +409,14 @@ LSObject::GetOriginQuotaUsage() const
 {
   AssertIsOnOwningThread();
 
+  
+  
+  
+  
+  
+  
+  
+  
   return 0;
 }
 

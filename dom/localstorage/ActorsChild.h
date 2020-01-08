@@ -31,6 +31,24 @@ class LSRequestChildCallback;
 class LSSimpleRequestChildCallback;
 class LSSnapshot;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class LSDatabaseChild final
   : public PBackgroundLSDatabaseChild
 {
@@ -78,6 +96,14 @@ private:
                                     override;
 };
 
+
+
+
+
+
+
+
+
 class LSObserverChild final
   : public PBackgroundLSObserverChild
 {
@@ -118,6 +144,17 @@ private:
               const nsString& aOldValue,
               const nsString& aNewValue) override;
 };
+
+
+
+
+
+
+
+
+
+
+
 
 class LSRequestChild final
   : public PBackgroundLSRequestChild
@@ -172,6 +209,15 @@ protected:
   { }
 };
 
+
+
+
+
+
+
+
+
+
 class LSSimpleRequestChild final
   : public PBackgroundLSSimpleRequestChild
 {
@@ -215,6 +261,16 @@ protected:
   virtual ~LSSimpleRequestChildCallback()
   { }
 };
+
+
+
+
+
+
+
+
+
+
 
 class LSSnapshotChild final
   : public PBackgroundLSSnapshotChild

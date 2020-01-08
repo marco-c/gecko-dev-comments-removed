@@ -12,6 +12,24 @@ namespace dom {
 
 class LSObserverChild;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class LSObserver final
 {
   friend class LSObject;
