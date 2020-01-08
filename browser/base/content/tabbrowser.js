@@ -5269,6 +5269,10 @@ var TabContextMenu = {
     contextUnpinSelectedTabs.hidden = !this.contextTab.pinned || !multiselectionContext;
 
     
+    let contextDuplicateTab = document.getElementById("context_duplicateTab");
+    contextDuplicateTab.hidden = multiselectionContext;
+
+    
     
     document.getElementById("context_closeTabsToTheEnd").disabled =
       gBrowser.getTabsToTheEndFrom(this.contextTab).length == 0;
