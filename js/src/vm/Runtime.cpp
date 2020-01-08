@@ -206,29 +206,34 @@ JSRuntime::init(JSContext* cx, uint32_t maxbytes, uint32_t maxNurseryBytes)
     initialized_ = true;
 #endif
 
-    if (CanUseExtraThreads() && !EnsureHelperThreadsInitialized())
+    if (CanUseExtraThreads() && !EnsureHelperThreadsInitialized()) {
         return false;
+    }
 
     mainContext_ = cx;
 
     defaultFreeOp_ = js_new<js::FreeOp>(this);
-    if (!defaultFreeOp_)
+    if (!defaultFreeOp_) {
         return false;
+    }
 
-    if (!gc.init(maxbytes, maxNurseryBytes))
+    if (!gc.init(maxbytes, maxNurseryBytes)) {
         return false;
+    }
 
     UniquePtr<Zone> atomsZone = MakeUnique<Zone>(this);
-    if (!atomsZone || !atomsZone->init(true))
+    if (!atomsZone || !atomsZone->init(true)) {
         return false;
+    }
 
     gc.atomsZone = atomsZone.release();
 
     
     gcInitialized = true;
 
-    if (!InitRuntimeNumberState(this))
+    if (!InitRuntimeNumberState(this)) {
         return false;
+    }
 
     js::ResetTimeZoneInternal(ResetTimeZoneMode::DontResetIfOffsetUnchanged);
 
@@ -238,8 +243,9 @@ JSRuntime::init(JSContext* cx, uint32_t maxbytes, uint32_t maxNurseryBytes)
 
     if (!parentRuntime) {
         sharedImmutableStrings_ = js::SharedImmutableStringsCache::Create();
-        if (!sharedImmutableStrings_)
+        if (!sharedImmutableStrings_) {
             return false;
+        }
     }
 
     return true;
@@ -260,8 +266,9 @@ JSRuntime::destroyRuntime()
 
 
         JSContext* cx = mainContextFromOwnThread();
-        if (JS::IsIncrementalGCInProgress(cx))
+        if (JS::IsIncrementalGCInProgress(cx)) {
             gc::FinishGC(cx);
+        }
 
         
         sourceHook = nullptr;
@@ -321,8 +328,9 @@ JSRuntime::destroyRuntime()
 void
 JSRuntime::addTelemetry(int id, uint32_t sample, const char* key)
 {
-    if (telemetryCallback)
+    if (telemetryCallback) {
         (*telemetryCallback)(id, sample, key);
+    }
 }
 
 void
@@ -334,8 +342,9 @@ JSRuntime::setTelemetryCallback(JSRuntime* rt, JSAccumulateTelemetryDataCallback
 void
 JSRuntime::setUseCounter(JSObject* obj, JSUseCounter counter)
 {
-    if (useCounterCallback)
+    if (useCounterCallback) {
         (*useCounterCallback)(obj, counter);
+    }
 }
 
 void
@@ -364,8 +373,9 @@ JSRuntime::addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf, JS::Runtim
     rtSizes->temporary += cx->tempLifoAlloc().sizeOfExcludingThis(mallocSizeOf);
     rtSizes->interpreterStack += cx->interpreterStack().sizeOfExcludingThis(mallocSizeOf);
 #ifdef JS_TRACE_LOGGING
-    if (cx->traceLogger)
+    if (cx->traceLogger) {
         rtSizes->tracelogger += cx->traceLogger->sizeOfIncludingThis(mallocSizeOf);
+    }
 #endif
 
     rtSizes->uncompressedSourceCache +=
@@ -385,16 +395,18 @@ JSRuntime::addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf, JS::Runtim
     {
         AutoLockScriptData lock(this);
         rtSizes->scriptData += scriptDataTable(lock).shallowSizeOfExcludingThis(mallocSizeOf);
-        for (ScriptDataTable::Range r = scriptDataTable(lock).all(); !r.empty(); r.popFront())
+        for (ScriptDataTable::Range r = scriptDataTable(lock).all(); !r.empty(); r.popFront()) {
             rtSizes->scriptData += mallocSizeOf(r.front());
+        }
     }
 
     if (jitRuntime_) {
         jitRuntime_->execAlloc().addSizeOfCode(&rtSizes->code);
 
         
-        for (auto builder : jitRuntime_->ionLazyLinkList(this))
+        for (auto builder : jitRuntime_->ionLazyLinkList(this)) {
             rtSizes->jitLazyLink += builder->sizeOfExcludingThis(mallocSizeOf);
+        }
     }
 
     rtSizes->wasmRuntime += wasmInstances.lock()->sizeOfExcludingThis(mallocSizeOf);
@@ -419,19 +431,22 @@ HandleInterrupt(JSContext* cx, bool invokeCallback)
     jit::AttachFinishedCompilations(cx);
 
     
-    if (!invokeCallback)
+    if (!invokeCallback) {
         return true;
+    }
 
     
     
     
-    if (cx->interruptCallbackDisabled)
+    if (cx->interruptCallbackDisabled) {
         return true;
+    }
 
     bool stop = false;
     for (JSInterruptCallback cb : cx->interruptCallbacks()) {
-        if (!cb(cx))
+        if (!cb(cx)) {
             stop = true;
+        }
     }
 
     if (!stop) {
@@ -474,10 +489,11 @@ HandleInterrupt(JSContext* cx, bool invokeCallback)
 
     const char16_t* chars;
     AutoStableStringChars stableChars(cx);
-    if (flat && stableChars.initTwoByte(cx, flat))
+    if (flat && stableChars.initTwoByte(cx, flat)) {
         chars = stableChars.twoByteRange().begin().get();
-    else
+    } else {
         chars = u"(stack not available)";
+    }
     JS_ReportErrorFlagsAndNumberUC(cx, JSREPORT_WARNING, GetErrorMessage, nullptr,
                                    JSMSG_TERMINATED, chars);
 
@@ -496,8 +512,9 @@ JSContext::requestInterrupt(InterruptReason reason)
         
         
         FutexThread::lock();
-        if (fx.isWaiting())
+        if (fx.isWaiting()) {
             fx.notify(FutexThread::NotifyForJSInterrupt);
+        }
         fx.unlock();
         wasm::InterruptRunningCode(this);
     }
@@ -521,12 +538,14 @@ JSContext::handleInterrupt()
 bool
 JSRuntime::setDefaultLocale(const char* locale)
 {
-    if (!locale)
+    if (!locale) {
         return false;
+    }
 
     UniqueChars newLocale = DuplicateString(mainContextFromOwnThread(), locale);
-    if (!newLocale)
+    if (!newLocale) {
         return false;
+    }
 
     defaultLocale.ref() = std::move(newLocale);
     return true;
@@ -541,24 +560,29 @@ JSRuntime::resetDefaultLocale()
 const char*
 JSRuntime::getDefaultLocale()
 {
-    if (defaultLocale.ref())
+    if (defaultLocale.ref()) {
         return defaultLocale.ref().get();
+    }
 
     const char* locale = setlocale(LC_ALL, nullptr);
 
     
-    if (!locale || !strcmp(locale, "C"))
+    if (!locale || !strcmp(locale, "C")) {
         locale = "und";
+    }
 
     UniqueChars lang = DuplicateString(mainContextFromOwnThread(), locale);
-    if (!lang)
+    if (!lang) {
         return nullptr;
+    }
 
     char* p;
-    if ((p = strchr(lang.get(), '.')))
+    if ((p = strchr(lang.get(), '.'))) {
         *p = '\0';
-    while ((p = strchr(lang.get(), '_')))
+    }
+    while ((p = strchr(lang.get(), '_'))) {
         *p = '-';
+    }
 
     defaultLocale.ref() = std::move(lang);
     return defaultLocale.ref().get();
@@ -578,11 +602,13 @@ FreeOp::FreeOp(JSRuntime* maybeRuntime)
 
 FreeOp::~FreeOp()
 {
-    for (size_t i = 0; i < freeLaterList.length(); i++)
+    for (size_t i = 0; i < freeLaterList.length(); i++) {
         free_(freeLaterList[i]);
+    }
 
-    if (!jitPoisonRanges.empty())
+    if (!jitPoisonRanges.empty()) {
         jit::ExecutableAllocator::poisonCode(runtime(), jitPoisonRanges);
+    }
 }
 
 bool
@@ -597,8 +623,9 @@ JSRuntime::getIncumbentGlobal(JSContext* cx)
     
     
     if (!cx->getIncumbentGlobalCallback) {
-        if (!cx->compartment())
+        if (!cx->compartment()) {
             return nullptr;
+        }
         return cx->global();
     }
 
@@ -625,10 +652,12 @@ JSRuntime::enqueuePromiseJob(JSContext* cx, HandleFunction job, HandleObject pro
         
         
         
-        if (IsWrapper(promise))
+        if (IsWrapper(promise)) {
             unwrappedPromise = UncheckedUnwrap(promise);
-        if (unwrappedPromise->is<PromiseObject>())
+        }
+        if (unwrappedPromise->is<PromiseObject>()) {
             allocationSite = JS::GetPromiseAllocationSite(unwrappedPromise);
+        }
     }
     return cx->enqueuePromiseJobCallback(cx, job, allocationSite, incumbentGlobal, data);
 }
@@ -637,8 +666,9 @@ void
 JSRuntime::addUnhandledRejectedPromise(JSContext* cx, js::HandleObject promise)
 {
     MOZ_ASSERT(promise->is<PromiseObject>());
-    if (!cx->promiseRejectionTrackerCallback)
+    if (!cx->promiseRejectionTrackerCallback) {
         return;
+    }
 
     void* data = cx->promiseRejectionTrackerCallbackData;
     cx->promiseRejectionTrackerCallback(cx, promise,
@@ -649,8 +679,9 @@ void
 JSRuntime::removeUnhandledRejectedPromise(JSContext* cx, js::HandleObject promise)
 {
     MOZ_ASSERT(promise->is<PromiseObject>());
-    if (!cx->promiseRejectionTrackerCallback)
+    if (!cx->promiseRejectionTrackerCallback) {
         return;
+    }
 
     void* data = cx->promiseRejectionTrackerCallbackData;
     cx->promiseRejectionTrackerCallback(cx, promise,
@@ -708,8 +739,9 @@ JSRuntime::onOutOfMemory(AllocFunction allocFunc, size_t nbytes, void* reallocPt
 {
     MOZ_ASSERT_IF(allocFunc != AllocFunction::Realloc, !reallocPtr);
 
-    if (JS::RuntimeHeapIsBusy())
+    if (JS::RuntimeHeapIsBusy()) {
         return nullptr;
+    }
 
     if (!oom::IsSimulatedOOMAllocation()) {
         
@@ -731,20 +763,23 @@ JSRuntime::onOutOfMemory(AllocFunction allocFunc, size_t nbytes, void* reallocPt
           default:
             MOZ_CRASH();
         }
-        if (p)
+        if (p) {
             return p;
+        }
     }
 
-    if (maybecx)
+    if (maybecx) {
         ReportOutOfMemory(maybecx);
+    }
     return nullptr;
 }
 
 void*
 JSRuntime::onOutOfMemoryCanGC(AllocFunction allocFunc, size_t bytes, void* reallocPtr)
 {
-    if (OnLargeAllocationFailure && bytes >= LARGE_ALLOCATION)
+    if (OnLargeAllocationFailure && bytes >= LARGE_ALLOCATION) {
         OnLargeAllocationFailure();
+    }
     return onOutOfMemory(allocFunc, bytes, reallocPtr);
 }
 
@@ -764,8 +799,9 @@ JSRuntime::setUsedByHelperThread(Zone* zone)
     MOZ_ASSERT(!isOffThreadParsingBlocked());
 
     zone->setUsedByHelperThread();
-    if (numActiveHelperThreadZones++ == 0)
+    if (numActiveHelperThreadZones++ == 0) {
         gc.setParallelAtomsAllocEnabled(true);
+    }
 }
 
 void
@@ -774,12 +810,14 @@ JSRuntime::clearUsedByHelperThread(Zone* zone)
     MOZ_ASSERT(zone->usedByHelperThread());
 
     zone->clearUsedByHelperThread();
-    if (--numActiveHelperThreadZones == 0)
+    if (--numActiveHelperThreadZones == 0) {
         gc.setParallelAtomsAllocEnabled(false);
+    }
 
     JSContext* cx = mainContextFromOwnThread();
-    if (gc.fullGCForAtomsRequested() && cx->canCollectAtoms())
+    if (gc.fullGCForAtomsRequested() && cx->canCollectAtoms()) {
         gc.triggerFullGCForAtoms(cx);
+    }
 }
 
 bool
@@ -792,8 +830,9 @@ bool
 js::CurrentThreadCanAccessZone(Zone* zone)
 {
     
-    if (zone->usedByHelperThread())
+    if (zone->usedByHelperThread()) {
         return zone->ownedByCurrentHelperThread();
+    }
 
     
     return CurrentThreadCanAccessRuntime(zone->runtime_);

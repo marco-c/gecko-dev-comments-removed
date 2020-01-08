@@ -305,8 +305,9 @@ class RegExpRealm
 
     
     ArrayObject* getOrCreateMatchResultTemplateObject(JSContext* cx) {
-        if (matchResultTemplateObject_)
+        if (matchResultTemplateObject_) {
             return matchResultTemplateObject_;
+        }
         return createMatchResultTemplateObject(cx);
     }
 

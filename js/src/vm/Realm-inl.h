@@ -97,12 +97,14 @@ js::ObjectRealm::objectMaybeInIteration(JSObject* obj)
 
     
     js::NativeIterator* next = enumerators->next();
-    if (enumerators == next)
+    if (enumerators == next) {
         return false;
+    }
 
     
-    if (next->next() == enumerators)
+    if (next->next() == enumerators) {
         return next->objectBeingIterated() == obj;
+    }
 
     return true;
 }
