@@ -1487,6 +1487,27 @@ VARCACHE_PREF(
 )
 
 
+
+#ifdef NIGHTLY_BUILD
+# define PREF_VALUE true
+#else
+# define PREF_VALUE false
+#endif
+VARCACHE_PREF(
+  "browser.contentblocking.ui.enabled",
+   browser_contentblocking_ui_enabled,
+  bool, PREF_VALUE
+)
+#undef PREF_VALUE
+
+
+VARCACHE_PREF(
+  "browser.contentblocking.rejecttrackers.ui.enabled",
+   browser_contentblocking_rejecttrackers_ui_enabled,
+  bool, false
+)
+
+
 VARCACHE_PREF(
   "browser.fastblock.enabled",
   browser_fastblock_enabled,
