@@ -359,6 +359,26 @@ impl Parse for NumberOrPercentage {
     }
 }
 
+
+pub type NonNegativeNumberOrPercentage = NonNegative<NumberOrPercentage>;
+
+impl NonNegativeNumberOrPercentage {
+    
+    #[inline]
+    pub fn hundred_percent() -> Self {
+        NonNegative(NumberOrPercentage::Percentage(Percentage::hundred()))
+    }
+}
+
+impl Parse for NonNegativeNumberOrPercentage {
+    fn parse<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        Ok(NonNegative(NumberOrPercentage::parse_non_negative(context, input)?))
+    }
+}
+
 #[allow(missing_docs)]
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, PartialOrd, SpecifiedValueInfo, ToCss)]
 pub struct Opacity(Number);

@@ -16,7 +16,7 @@ use crate::values::specified::border::BorderRadius;
 use crate::values::specified::image::Image;
 use crate::values::specified::position::{HorizontalPosition, Position, VerticalPosition};
 use crate::values::specified::url::SpecifiedUrl;
-use crate::values::specified::LengthOrPercentage;
+use crate::values::specified::{LengthOrPercentage, NonNegativeLengthOrPercentage};
 use crate::values::specified::SVGPathData;
 use cssparser::Parser;
 use std::fmt::{self, Write};
@@ -32,10 +32,10 @@ pub type ClippingShape = generic::ClippingShape<BasicShape, SpecifiedUrl>;
 pub type FloatAreaShape = generic::FloatAreaShape<BasicShape, Image>;
 
 
-pub type BasicShape = generic::BasicShape<HorizontalPosition, VerticalPosition, LengthOrPercentage>;
+pub type BasicShape = generic::BasicShape<HorizontalPosition, VerticalPosition, LengthOrPercentage, NonNegativeLengthOrPercentage>;
 
 
-pub type InsetRect = generic::InsetRect<LengthOrPercentage>;
+pub type InsetRect = generic::InsetRect<LengthOrPercentage, NonNegativeLengthOrPercentage>;
 
 
 pub type Circle = generic::Circle<HorizontalPosition, VerticalPosition, LengthOrPercentage>;
@@ -199,10 +199,7 @@ impl InsetRect {
         } else {
             None
         };
-        Ok(generic::InsetRect {
-            rect: rect,
-            round: round,
-        })
+        Ok(generic::InsetRect { rect, round })
     }
 }
 

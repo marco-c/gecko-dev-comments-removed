@@ -8,7 +8,7 @@
 
 
 use crate::values::computed::url::ComputedUrl;
-use crate::values::computed::{Image, LengthOrPercentage};
+use crate::values::computed::{Image, LengthOrPercentage, NonNegativeLengthOrPercentage};
 use crate::values::generics::basic_shape as generic;
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ToCss};
@@ -24,10 +24,10 @@ pub type FloatAreaShape = generic::FloatAreaShape<BasicShape, Image>;
 
 
 pub type BasicShape =
-    generic::BasicShape<LengthOrPercentage, LengthOrPercentage, LengthOrPercentage>;
+    generic::BasicShape<LengthOrPercentage, LengthOrPercentage, LengthOrPercentage, NonNegativeLengthOrPercentage>;
 
 
-pub type InsetRect = generic::InsetRect<LengthOrPercentage>;
+pub type InsetRect = generic::InsetRect<LengthOrPercentage, NonNegativeLengthOrPercentage>;
 
 
 pub type Circle = generic::Circle<LengthOrPercentage, LengthOrPercentage, LengthOrPercentage>;
