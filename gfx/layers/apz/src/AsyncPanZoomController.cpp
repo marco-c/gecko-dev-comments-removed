@@ -4109,12 +4109,16 @@ AsyncPanZoomController::UpdateCheckerboardEvent(const MutexAutoLock& aProofOfLoc
 {
   if (mCheckerboardEvent && mCheckerboardEvent->RecordFrameInfo(aMagnitude)) {
     
-    mozilla::Telemetry::Accumulate(mozilla::Telemetry::CHECKERBOARD_SEVERITY,
-      mCheckerboardEvent->GetSeverity());
-    mozilla::Telemetry::Accumulate(mozilla::Telemetry::CHECKERBOARD_PEAK,
-      mCheckerboardEvent->GetPeak());
-    mozilla::Telemetry::Accumulate(mozilla::Telemetry::CHECKERBOARD_DURATION,
-      (uint32_t)mCheckerboardEvent->GetDuration().ToMilliseconds());
+    
+    
+    if (!gfxPrefs::SanityTestRunning()) {
+      mozilla::Telemetry::Accumulate(mozilla::Telemetry::CHECKERBOARD_SEVERITY,
+        mCheckerboardEvent->GetSeverity());
+      mozilla::Telemetry::Accumulate(mozilla::Telemetry::CHECKERBOARD_PEAK,
+        mCheckerboardEvent->GetPeak());
+      mozilla::Telemetry::Accumulate(mozilla::Telemetry::CHECKERBOARD_DURATION,
+        (uint32_t)mCheckerboardEvent->GetDuration().ToMilliseconds());
+    }
 
     mPotentialCheckerboardTracker.CheckerboardDone();
 
