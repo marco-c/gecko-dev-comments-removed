@@ -509,6 +509,10 @@ Arena::arenaAllocatedDuringGC()
 void
 GCRuntime::setParallelAtomsAllocEnabled(bool enabled)
 {
+    
+    MOZ_ASSERT(CurrentThreadCanAccessRuntime(rt));
+    MOZ_ASSERT(enabled == rt->hasHelperThreadZones());
+
     atomsZone->arenas.setParallelAllocEnabled(enabled);
 }
 
