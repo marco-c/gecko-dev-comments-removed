@@ -16,6 +16,8 @@
 namespace mozilla {
 namespace layers {
 
+struct FrameMetrics;
+
 class UiCompositorControllerParent final
     : public PUiCompositorControllerParent {
   
@@ -66,6 +68,7 @@ class UiCompositorControllerParent final
   
   void NotifyLayersUpdated();
   void NotifyFirstPaint();
+  void NotifyUpdateScreenMetrics(const FrameMetrics& aMetrics);
 
  private:
   explicit UiCompositorControllerParent(const LayersId& aRootLayerTreeId);
