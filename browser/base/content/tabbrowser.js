@@ -282,49 +282,39 @@ window._gBrowser = {
     return this._selectedBrowser;
   },
 
-  get initialBrowser() {
-    delete this.initialBrowser;
-    return this.initialBrowser = document.getElementById("tabbrowser-initialBrowser");
-  },
-
   _setupInitialBrowserAndTab() {
-    let browser = this.initialBrowser;
-    this._selectedBrowser = browser;
-
-    browser.permanentKey = {};
+    
+    
+    let browser = this._createBrowser({uriIsAboutBlank: true});
+    browser.setAttribute("primary", "true");
+    browser.setAttribute("blank", "true");
     browser.droppedLinkHandler = handleDroppedLink;
     browser.loadURI = _loadURI.bind(null, browser);
 
-    let autoScrollPopup = browser._createAutoScrollPopup();
-    autoScrollPopup.id = "autoscroller";
-    document.getElementById("mainPopupSet").appendChild(autoScrollPopup);
-    browser.setAttribute("autoscrollpopup", autoScrollPopup.id);
-
-    this._defaultBrowserAttributes = {
-      autoscrollpopup: "",
-      contextmenu: "",
-      datetimepicker: "",
-      message: "",
-      messagemanagergroup: "",
-      selectmenulist: "",
-      tooltip: "",
-      type: "",
-    };
-    for (let attribute in this._defaultBrowserAttributes) {
-      this._defaultBrowserAttributes[attribute] = browser.getAttribute(attribute);
-    }
+    let uniqueId = this._generateUniquePanelID();
+    let notificationbox = this.getNotificationBox(browser);
+    notificationbox.id = uniqueId;
+    this.tabpanels.appendChild(notificationbox);
 
     let tab = this.tabs[0];
-    this._selectedTab = tab;
-
-    let uniqueId = this._generateUniquePanelID();
-    this.tabpanels.children[0].id = uniqueId;
     tab.linkedPanel = uniqueId;
+    this._selectedTab = tab;
+    this._selectedBrowser = browser;
     tab.permanentKey = browser.permanentKey;
     tab._tPos = 0;
     tab._fullyOpen = true;
     tab.linkedBrowser = browser;
     this._tabForBrowser.set(browser, tab);
+
+    this._appendStatusPanel();
+
+    this.initialBrowser = browser;
+
+    let autoScrollPopup = browser._createAutoScrollPopup();
+    autoScrollPopup.id = "autoscroller";
+    document.getElementById("mainPopupSet").appendChild(autoScrollPopup);
+    browser.setAttribute("autoscrollpopup", autoScrollPopup.id);
+    this._autoScrollPopup = autoScrollPopup;
 
     
     let tabListener = new TabProgressListener(tab, browser, true, false);
@@ -1811,8 +1801,17 @@ window._gBrowser = {
     let b = document.createXULElement("browser");
     b.permanentKey = {};
 
-    for (let attribute in this._defaultBrowserAttributes) {
-      b.setAttribute(attribute, this._defaultBrowserAttributes[attribute]);
+    const defaultBrowserAttributes = {
+      contextmenu: "contentAreaContextMenu",
+      datetimepicker: "DateTimePickerPanel",
+      message: "true",
+      messagemanagergroup: "browsers",
+      selectmenulist: "ContentSelectDropdown",
+      tooltip: "aHTMLTooltip",
+      type: "content",
+    };
+    for (let attribute in defaultBrowserAttributes) {
+      b.setAttribute(attribute, defaultBrowserAttributes[attribute]);
     }
 
     if (userContextId) {
@@ -1842,6 +1841,10 @@ window._gBrowser = {
     if (!isPreloadBrowser) {
       b.setAttribute("autocompletepopup", "PopupAutoComplete");
     }
+    if (this._autoScrollPopup) {
+      b.setAttribute("autoscrollpopup", this._autoScrollPopup.id);
+    }
+
 
     
 
@@ -1889,12 +1892,16 @@ window._gBrowser = {
     stack.setAttribute("flex", "1");
 
     
+    
+    
+    
+    
+    
     let browserContainer = document.createXULElement("vbox");
     browserContainer.className = "browserContainer";
     browserContainer.appendChild(stack);
     browserContainer.setAttribute("flex", "10000");
 
-    
     let browserSidebarContainer = document.createXULElement("hbox");
     browserSidebarContainer.className = "browserSidebarContainer";
     browserSidebarContainer.appendChild(browserContainer);
