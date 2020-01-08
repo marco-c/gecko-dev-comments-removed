@@ -1493,6 +1493,11 @@ MediaPipelineTransmit::UpdateSinkIdentity_m(const MediaStreamTrack* aTrack,
     return;
   }
 
+  if (!mDomTrack) {
+    
+    return;
+  }
+
   bool enableTrack = aPrincipal->Subsumes(mDomTrack->GetPrincipal());
   if (!enableTrack) {
     
