@@ -149,7 +149,7 @@ var gSearchPane = {
     
     let list = document.getElementById("defaultEngine");
     
-    let currentEngine = Services.search.defaultEngine.name;
+    let currentEngine = Services.search.currentEngine.name;
 
     
     let engines = gEngineView._engineStore._engines;
@@ -391,7 +391,7 @@ var gSearchPane = {
   },
 
   setDefaultEngine() {
-    Services.search.defaultEngine =
+    Services.search.currentEngine =
       document.getElementById("defaultEngine").selectedItem.engine;
     ExtensionSettingsStore.setByUser(SEARCH_TYPE, SEARCH_KEY);
   },
