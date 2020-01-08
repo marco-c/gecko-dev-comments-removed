@@ -81,6 +81,11 @@ const key = (id, win = window) => {
   
   Services.prefs.setBoolPref(PrefUtils.UI_ENABLE_MEMORY_FLAME_CHART, true);
 
+  
+  
+  
+  Services.prefs.setIntPref(PrefUtils.PROFILER_BUFFER_SIZE_PREF, 100000);
+
   registerCleanupFunction(() => {
     info("finish() was called, cleaning up...");
 
