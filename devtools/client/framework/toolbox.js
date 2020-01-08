@@ -2767,14 +2767,6 @@ Toolbox.prototype = {
       this._inspector.destroy();
 
       if (this._highlighter) {
-        
-        
-        
-        
-        
-        if (!this.highlighter.traits.autoHideOnDestroy) {
-          this.highlighterUtils.unhighlight();
-        }
         await this._highlighter.destroy();
       }
       if (this._selection) {
