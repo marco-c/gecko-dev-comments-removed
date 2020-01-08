@@ -1835,6 +1835,21 @@ JS_NewGlobalObject(JSContext* cx, const JSClass* clasp, JSPrincipals* principals
 extern JS_PUBLIC_API(void)
 JS_GlobalObjectTraceHook(JSTracer* trc, JSObject* global);
 
+namespace JS {
+
+
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_DATA(const JSClassOps) DefaultGlobalClassOps;
+
+} 
+
 extern JS_PUBLIC_API(void)
 JS_FireOnNewGlobalObject(JSContext* cx, JS::HandleObject global);
 
