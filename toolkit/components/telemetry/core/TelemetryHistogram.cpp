@@ -2400,26 +2400,28 @@ void TelemetryHistogram::InitializeGlobalState(bool canRecordBase,
       new KeyedHistogram*[HistogramCount * size_t(ProcessID::Count)] {};
   }
 
-    
-    
-    
-    
-    static_assert((JS::gcreason::NUM_TELEMETRY_REASONS + 1) ==
-                        gHistogramInfos[mozilla::Telemetry::GC_MINOR_REASON].bucketCount &&
-                  (JS::gcreason::NUM_TELEMETRY_REASONS + 1) ==
-                        gHistogramInfos[mozilla::Telemetry::GC_MINOR_REASON_LONG].bucketCount &&
-                  (JS::gcreason::NUM_TELEMETRY_REASONS + 1) ==
-                        gHistogramInfos[mozilla::Telemetry::GC_REASON_2].bucketCount,
-                  "NUM_TELEMETRY_REASONS is assumed to be a fixed value in Histograms.json."
-                  " If this was an intentional change, update the n_values for the "
-                  "following in Histograms.json: GC_MINOR_REASON, GC_MINOR_REASON_LONG, "
-                  "GC_REASON_2");
+  
+  
+  
+  
+  
+  static_assert((JS::gcreason::NUM_TELEMETRY_REASONS + 1) ==
+      gHistogramInfos[mozilla::Telemetry::GC_MINOR_REASON].bucketCount &&
+      (JS::gcreason::NUM_TELEMETRY_REASONS + 1) ==
+      gHistogramInfos[mozilla::Telemetry::GC_MINOR_REASON_LONG].bucketCount &&
+      (JS::gcreason::NUM_TELEMETRY_REASONS + 1) ==
+      gHistogramInfos[mozilla::Telemetry::GC_REASON_2].bucketCount,
+      "NUM_TELEMETRY_REASONS is assumed to be a fixed value in Histograms.json."
+      " If this was an intentional change, update the n_values for the "
+      "following in Histograms.json: GC_MINOR_REASON, GC_MINOR_REASON_LONG, "
+      "GC_REASON_2");
 
-    static_assert((mozilla::StartupTimeline::MAX_EVENT_ID + 1) ==
-                        gHistogramInfos[mozilla::Telemetry::STARTUP_MEASUREMENT_ERRORS].bucketCount,
-                  "MAX_EVENT_ID is assumed to be a fixed value in Histograms.json.  If this"
-                  " was an intentional change, update the n_values for the following in "
-                  "Histograms.json: STARTUP_MEASUREMENT_ERRORS");
+  static_assert((mozilla::StartupTimeline::MAX_EVENT_ID + 1) ==
+      gHistogramInfos[mozilla::Telemetry::STARTUP_MEASUREMENT_ERRORS].bucketCount,
+      "MAX_EVENT_ID is assumed to be a fixed value in Histograms.json.  If this"
+      " was an intentional change, update the n_values for the following in "
+      "Histograms.json: STARTUP_MEASUREMENT_ERRORS");
+  
 
   gInitDone = true;
 }
