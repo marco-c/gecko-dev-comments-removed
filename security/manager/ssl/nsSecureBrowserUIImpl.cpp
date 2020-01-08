@@ -8,6 +8,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Unused.h"
+#include "nsContentUtils.h"
 #include "nsIChannel.h"
 #include "nsIDocShell.h"
 #include "nsIDocShellTreeItem.h"
@@ -209,6 +210,71 @@ nsSecureBrowserUIImpl::CheckForBlockedContent()
 
 
 
+
+
+static nsresult
+URICanBeConsideredSecure(nsIURI* uri,  bool& canBeConsideredSecure)
+{
+  MOZ_ASSERT(uri);
+  NS_ENSURE_ARG(uri);
+
+  canBeConsideredSecure = false;
+
+  nsCOMPtr<nsIURI> innermostURI = NS_GetInnermostURI(uri);
+  if (!innermostURI) {
+    MOZ_LOG(gSecureBrowserUILog, LogLevel::Debug,
+            ("  couldn't get innermost URI"));
+    return NS_ERROR_FAILURE;
+  }
+  MOZ_LOG(gSecureBrowserUILog, LogLevel::Debug,
+          ("  innermost URI is '%s'", innermostURI->GetSpecOrDefault().get()));
+
+  
+  
+  bool isWyciwyg;
+  nsresult rv = innermostURI->SchemeIs("wyciwyg", &isWyciwyg);
+  if (NS_FAILED(rv)) {
+    MOZ_LOG(gSecureBrowserUILog, LogLevel::Debug,
+            ("  nsIURI->SchemeIs failed"));
+    return rv;
+  }
+
+  if (isWyciwyg) {
+    nsCOMPtr<nsIURI> nonWyciwygURI;
+    rv = nsContentUtils::RemoveWyciwygScheme(innermostURI,
+                                             getter_AddRefs(nonWyciwygURI));
+    if (NS_FAILED(rv)) {
+      MOZ_LOG(gSecureBrowserUILog, LogLevel::Debug,
+              ("  nsContentUtils::RemoveWyciwygScheme failed"));
+      return rv;
+    }
+    if (!nonWyciwygURI) {
+      MOZ_LOG(gSecureBrowserUILog, LogLevel::Debug,
+              ("  apparently that wasn't a valid wyciwyg URI"));
+      return NS_ERROR_FAILURE;
+    }
+    innermostURI = nonWyciwygURI;
+    MOZ_LOG(gSecureBrowserUILog, LogLevel::Debug,
+            ("  innermost URI is now '%s'",
+             innermostURI->GetSpecOrDefault().get()));
+  }
+
+  bool isHttps;
+  rv = innermostURI->SchemeIs("https", &isHttps);
+  if (NS_FAILED(rv)) {
+    MOZ_LOG(gSecureBrowserUILog, LogLevel::Debug,
+            ("  nsIURI->SchemeIs failed"));
+    return rv;
+  }
+
+  canBeConsideredSecure = isHttps;
+
+  return NS_OK;
+}
+
+
+
+
 static void
 GetSecurityInfoFromChannel(nsIChannel* channel,
                            nsITransportSecurityInfo** securityInfoOut)
@@ -246,13 +312,27 @@ nsSecureBrowserUIImpl::UpdateStateAndSecurityInfo(nsIChannel* channel,
   mState = STATE_IS_INSECURE;
   mTopLevelSecurityInfo = nullptr;
 
+  
+  
+  
+  bool canBeConsideredSecure;
+  nsresult rv = URICanBeConsideredSecure(uri, canBeConsideredSecure);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  if (!canBeConsideredSecure) {
+    MOZ_LOG(gSecureBrowserUILog, LogLevel::Debug,
+            ("  URI can't be considered secure"));
+    return NS_OK;
+  }
+
   nsCOMPtr<nsITransportSecurityInfo> securityInfo;
   GetSecurityInfoFromChannel(channel, getter_AddRefs(securityInfo));
   if (securityInfo) {
     MOZ_LOG(gSecureBrowserUILog, LogLevel::Debug,
             ("  we have a security info %p", securityInfo.get()));
 
-    nsresult rv = securityInfo->GetSecurityState(&mState);
+    rv = securityInfo->GetSecurityState(&mState);
     if (NS_FAILED(rv)) {
       return rv;
     }
@@ -329,8 +409,15 @@ nsSecureBrowserUIImpl::OnLocationChange(nsIWebProgress* aWebProgress,
     MOZ_LOG(gSecureBrowserUILog, LogLevel::Debug,
             ("  we have a channel %p", channel.get()));
     nsresult rv = UpdateStateAndSecurityInfo(channel, aLocation);
+    
+    
+    
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
+      MOZ_LOG(gSecureBrowserUILog, LogLevel::Debug,
+              ("  Failed to update security info. "
+               "Setting everything to 'not secure' to be safe."));
+      mState = STATE_IS_INSECURE;
+      mTopLevelSecurityInfo = nullptr;
     }
   }
 
