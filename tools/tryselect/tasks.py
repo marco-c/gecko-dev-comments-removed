@@ -6,6 +6,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import hashlib
 import os
+import re
 import shutil
 import sys
 
@@ -36,6 +37,12 @@ https://firefox-source-docs.mozilla.org/taskcluster/taskcluster/mach.html#parame
 """
 
 
+
+TARGET_TASK_FILTERS = (
+    '.*-ccov\/.*',
+)
+
+
 def invalidate(cache, root):
     if not os.path.isfile(cache):
         return
@@ -46,6 +53,10 @@ def invalidate(cache, root):
 
     if tmod > cmod:
         os.remove(cache)
+
+
+def filter_target_task(task):
+    return not any(re.search(pattern, task) for pattern in TARGET_TASK_FILTERS)
 
 
 def generate_tasks(params, full, root):
@@ -84,6 +95,9 @@ def generate_tasks(params, full, root):
     root = os.path.join(root, 'taskcluster', 'ci')
     tg = getattr(TaskGraphGenerator(root_dir=root, parameters=params), attr)
     labels = [label for label in tg.graph.visit_postorder()]
+
+    if not full:
+        labels = filter(filter_target_task, labels)
 
     os.chdir(cwd)
 
