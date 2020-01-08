@@ -33,6 +33,7 @@ class FreeBSDBootstrapper(BaseBootstrapper):
             'gtk3',
             'libXt',
             'mesa-dri',  
+            'nasm',
             'pulseaudio',
             'v4l_compat',
             'yasm',

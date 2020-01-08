@@ -40,6 +40,7 @@ class CentOSFedoraBootstrapper(NodeInstall, StyloInstall, BaseBootstrapper):
                            
             'libstdc++-static',
             'libXt-devel',
+            'nasm',
             'pulseaudio-libs-devel',
             'wireless-tools-devel',
             'yasm',
