@@ -9,15 +9,6 @@
 
 
 var tabPreviews = {
-  init: function tabPreviews_init() {
-    if (this._selectedTab)
-      return;
-    this._selectedTab = gBrowser.selectedTab;
-
-    gBrowser.tabContainer.addEventListener("TabSelect", this);
-    gBrowser.tabContainer.addEventListener("SSTabRestored", this);
-  },
-
   get aspectRatio() {
     let { PageThumbUtils } = ChromeUtils.import("resource://gre/modules/PageThumbUtils.jsm", {});
     let [ width, height ] = PageThumbUtils.getThumbnailSize(window);
@@ -70,33 +61,6 @@ var tabPreviews = {
     });
     return canvas;
   },
-
-  handleEvent: function tabPreviews_handleEvent(event) {
-    switch (event.type) {
-      case "TabSelect":
-        if (this._selectedTab &&
-            this._selectedTab.parentNode &&
-            !this._pendingUpdate) {
-          
-          
-          
-          
-          this._pendingUpdate = true;
-          setTimeout(function(self, aTab) {
-            self._pendingUpdate = false;
-            if (aTab.parentNode &&
-                !aTab.hasAttribute("busy") &&
-                !aTab.hasAttribute("pending"))
-              self.capture(aTab, true);
-          }, 2000, this, this._selectedTab);
-        }
-        this._selectedTab = event.target;
-        break;
-      case "SSTabRestored":
-        this.capture(event.target, true);
-        break;
-    }
-  }
 };
 
 var tabPreviewPanelHelper = {
@@ -206,8 +170,6 @@ var ctrlTab = {
 
   init: function ctrlTab_init() {
     if (!this._recentlyUsedTabs) {
-      tabPreviews.init();
-
       this._initRecentlyUsedTabs();
       this._init(true);
     }
