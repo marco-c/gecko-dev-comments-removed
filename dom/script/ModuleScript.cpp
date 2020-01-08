@@ -5,7 +5,10 @@
 
 
 #include "ModuleScript.h"
+
 #include "mozilla/HoldDropJSObjects.h"
+
+#include "jsfriendapi.h"
 #include "ScriptLoader.h"
 
 namespace mozilla {
@@ -20,6 +23,7 @@ NS_IMPL_CYCLE_COLLECTION_CLASS(ModuleScript)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(ModuleScript)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mLoader)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mFetchOptions)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mBaseURL)
   tmp->UnlinkModuleRecord();
   tmp->mParseError.setUndefined();
@@ -28,6 +32,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(ModuleScript)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mLoader)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mFetchOptions)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN(ModuleScript)
@@ -39,9 +44,14 @@ NS_IMPL_CYCLE_COLLECTION_TRACE_END
 NS_IMPL_CYCLE_COLLECTING_ADDREF(ModuleScript)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(ModuleScript)
 
-ModuleScript::ModuleScript(ScriptLoader* aLoader, nsIURI* aBaseURL)
-    : mLoader(aLoader), mBaseURL(aBaseURL), mSourceElementAssociated(false) {
+ModuleScript::ModuleScript(ScriptLoader* aLoader,
+                           ScriptFetchOptions* aFetchOptions, nsIURI* aBaseURL)
+    : mLoader(aLoader),
+      mFetchOptions(aFetchOptions),
+      mBaseURL(aBaseURL),
+      mSourceElementAssociated(false) {
   MOZ_ASSERT(mLoader);
+  MOZ_ASSERT(mFetchOptions);
   MOZ_ASSERT(mBaseURL);
   MOZ_ASSERT(!mModuleRecord);
   MOZ_ASSERT(!HasParseError());
@@ -50,10 +60,13 @@ ModuleScript::ModuleScript(ScriptLoader* aLoader, nsIURI* aBaseURL)
 
 void ModuleScript::UnlinkModuleRecord() {
   
+  
+  
   if (mModuleRecord) {
     MOZ_ASSERT(JS::GetModulePrivate(mModuleRecord).toPrivate() == this);
     JS::SetModulePrivate(mModuleRecord, JS::UndefinedValue());
     mModuleRecord = nullptr;
+    Release();
   }
 }
 
@@ -72,8 +85,19 @@ void ModuleScript::SetModuleRecord(JS::Handle<JSObject*> aModuleRecord) {
 
   
   
+  
   JS::SetModulePrivate(mModuleRecord, JS::PrivateValue(this));
   HoldJSObjects(this);
+  AddRef();
+}
+
+void HostFinalizeTopLevelScript(JSFreeOp* aFop, const JS::Value& aPrivate) {
+  auto script = static_cast<ModuleScript*>(aPrivate.toPrivate());
+  if (script) {
+    MOZ_ASSERT(JS::GetModulePrivate(script->mModuleRecord.unbarrieredGet()) ==
+               aPrivate);
+    script->UnlinkModuleRecord();
+  }
 }
 
 void ModuleScript::SetParseError(const JS::Value& aError) {
@@ -88,7 +112,6 @@ void ModuleScript::SetParseError(const JS::Value& aError) {
 
 void ModuleScript::SetErrorToRethrow(const JS::Value& aError) {
   MOZ_ASSERT(!aError.isUndefined());
-  MOZ_ASSERT(!HasErrorToRethrow());
 
   
   

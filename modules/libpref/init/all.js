@@ -1585,6 +1585,9 @@ pref("javascript.options.streams", true);
 pref("javascript.options.bigint", false);
 
 
+pref("javascript.options.dynamicImport", false);
+
+
 pref("advanced.mailftp",                    false);
 pref("image.animation_mode",                "normal");
 

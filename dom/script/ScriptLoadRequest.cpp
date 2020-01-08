@@ -4,7 +4,7 @@
 
 
 
-#include "ModuleLoadRequest.h"
+#include "ScriptLoadRequest.h"
 
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/Unused.h"
@@ -52,6 +52,7 @@ NS_IMPL_CYCLE_COLLECTION_CLASS(ScriptLoadRequest)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(ScriptLoadRequest)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mFetchOptions)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mCacheInfo)
+  tmp->mScript = nullptr;
   tmp->DropBytecodeCacheReferences();
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
@@ -105,6 +106,8 @@ ScriptLoadRequest::~ScriptLoadRequest() {
   if (mScript) {
     DropBytecodeCacheReferences();
   }
+
+  DropJSObjects(this);
 }
 
 void ScriptLoadRequest::SetReady() {
@@ -205,6 +208,12 @@ void ScriptLoadRequest::ClearScriptSource() {
   } else if (IsBinASTSource()) {
     ScriptBinASTData().clearAndFree();
   }
+}
+
+void ScriptLoadRequest::SetScript(JSScript* aScript) {
+  MOZ_ASSERT(!mScript);
+  mScript = aScript;
+  HoldJSObjects(this);
 }
 
 

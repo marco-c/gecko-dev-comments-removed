@@ -36,22 +36,40 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
   ModuleLoadRequest(const ModuleLoadRequest& aOther) = delete;
   ModuleLoadRequest(ModuleLoadRequest&& aOther) = delete;
 
- public:
-  NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ModuleLoadRequest, ScriptLoadRequest)
-
-  
   ModuleLoadRequest(nsIURI* aURI, ScriptFetchOptions* aFetchOptions,
                     const SRIMetadata& aIntegrity, nsIURI* aReferrer,
-                    ScriptLoader* aLoader);
+                    bool aIsTopLevel, bool aIsDynamicImport,
+                    ScriptLoader* aLoader, VisitedURLSet* aVisitedSet);
+
+ public:
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_INHERITED(ModuleLoadRequest,
+                                                         ScriptLoadRequest)
 
   
-  ModuleLoadRequest(nsIURI* aURI, ModuleLoadRequest* aParent);
+  static ModuleLoadRequest* CreateTopLevel(nsIURI* aURI,
+                                           ScriptFetchOptions* aFetchOptions,
+                                           const SRIMetadata& aIntegrity,
+                                           nsIURI* aReferrer,
+                                           ScriptLoader* aLoader);
+
+  
+  static ModuleLoadRequest* CreateStaticImport(nsIURI* aURI,
+                                               ModuleLoadRequest* aParent);
+
+  
+  static ModuleLoadRequest* CreateDynamicImport(
+      nsIURI* aURI, ModuleScript* aScript,
+      JS::Handle<JS::Value> aReferencingPrivate,
+      JS::Handle<JSString*> aSpecifier, JS::Handle<JSObject*> aPromise);
 
   bool IsTopLevel() const override { return mIsTopLevel; }
 
+  bool IsDynamicImport() const { return mIsDynamicImport; }
+
   void SetReady() override;
   void Cancel() override;
+  void ClearDynamicImport();
 
   void ModuleLoaded();
   void ModuleErrored();
@@ -65,6 +83,9 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
  public:
   
   const bool mIsTopLevel;
+
+  
+  const bool mIsDynamicImport;
 
   
   nsCOMPtr<nsIURI> mBaseURL;
@@ -88,6 +109,11 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
   
   
   RefPtr<VisitedURLSet> mVisitedSet;
+
+  
+  JS::Heap<JS::Value> mDynamicReferencingPrivate;
+  JS::Heap<JSString*> mDynamicSpecifier;
+  JS::Heap<JSObject*> mDynamicPromise;
 };
 
 }  
