@@ -906,6 +906,9 @@ Preamble_getenv(CallArguments* aArguments)
     return PreambleResult::Veto;
   }
 
+  
+  
+  RecordReplayAssert("getenv %s", env);
   return PreambleResult::Redirect;
 }
 

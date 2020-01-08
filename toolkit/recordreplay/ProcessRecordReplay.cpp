@@ -355,6 +355,8 @@ RecordReplayInterface_InternalRecordReplayAssert(const char* aFormat, va_list aA
   char text[1024];
   VsprintfLiteral(text, aFormat, aArgs);
 
+  
+  
   thread->Events().RecordOrReplayThreadEvent(ThreadEvent::Assert);
   thread->Events().CheckInput(text);
 }
