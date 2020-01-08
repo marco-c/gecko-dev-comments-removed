@@ -385,12 +385,17 @@ void CodeGenerator::visitDivI(LDivI* ins) {
   
   if (mir->canBeDivideByZero()) {
     masm.test32(rhs, rhs);
-    
-    
     if (mir->trapOnError()) {
       Label nonZero;
       masm.j(Assembler::NonZero, &nonZero);
       masm.wasmTrap(wasm::Trap::IntegerDivideByZero, mir->bytecodeOffset());
+      masm.bind(&nonZero);
+    } else if (mir->canTruncateInfinities()) {
+      
+      Label nonZero;
+      masm.j(Assembler::NonZero, &nonZero);
+      masm.Mov(output32, wzr);
+      masm.jump(&done);
       masm.bind(&nonZero);
     } else {
       MOZ_ASSERT(mir->fallible());
