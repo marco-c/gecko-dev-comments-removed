@@ -331,8 +331,8 @@ var TelemetryStopwatch = {
   
 
 
-  setTestModeEnabled(testing) {
-    TelemetryStopwatchImpl.suppressErrors(true);
+  setTestModeEnabled(testing = true) {
+    TelemetryStopwatchImpl.suppressErrors(testing);
   },
 };
 
