@@ -116,7 +116,7 @@ class AndroidPresentor {
 
   selected(aAccessible) {
     return [{
-      eventType: AndroidEvents.VIEW_CLICKED,
+      eventType: AndroidEvents.VIEW_SELECTED,
       selected: Utils.getState(aAccessible).contains(States.SELECTED)
     }];
   }
@@ -124,13 +124,8 @@ class AndroidPresentor {
   
 
 
-
-
-  actionInvoked(aAccessible, aActionName) {
-    return [{
-      eventType: AndroidEvents.VIEW_CLICKED,
-      text: Utils.localize(UtteranceGenerator.genForAction(aAccessible, aActionName))
-    }];
+  actionInvoked() {
+    return [{ eventType: AndroidEvents.VIEW_CLICKED }];
   }
 
   
