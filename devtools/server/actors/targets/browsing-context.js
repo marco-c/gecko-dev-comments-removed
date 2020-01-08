@@ -247,9 +247,6 @@ const browsingContextTargetPrototype = {
       
       frames: true,
       
-      
-      noTabReconfigureOnClose: true,
-      
       logInPage: true,
       
       canRewind,

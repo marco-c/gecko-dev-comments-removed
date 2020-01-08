@@ -2873,16 +2873,6 @@ Toolbox.prototype = {
     this._toolNames = null;
 
     
-    
-    
-    if (this.target.activeTab && !this.target.activeTab.traits.noTabReconfigureOnClose) {
-      this.target.activeTab.reconfigure({
-        "cacheDisabled": false,
-        "serviceWorkersTestingEnabled": false
-      });
-    }
-
-    
     outstanding.push(this.destroyInspector());
 
     
