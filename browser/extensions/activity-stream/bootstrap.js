@@ -4,7 +4,6 @@
 "use strict";
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-XPCOMUtils.defineLazyGlobalGetters(this, ["fetch"]);
 
 ChromeUtils.defineModuleGetter(this, "Services",
   "resource://gre/modules/Services.jsm");
@@ -14,72 +13,6 @@ XPCOMUtils.defineLazyServiceGetter(this, "resProto",
                                    "nsISubstitutingProtocolHandler");
 
 const RESOURCE_HOST = "activity-stream";
-
-const BROWSER_READY_NOTIFICATION = "sessionstore-windows-restored";
-const RESOURCE_BASE = "resource://activity-stream";
-
-let activityStream;
-let modulesToUnload = new Set();
-let waitingForBrowserReady = true;
-
-
-XPCOMUtils.defineLazyModuleGetter(this, "ActivityStream",
-  "resource://activity-stream/lib/ActivityStream.jsm", null, null, () => {
-    
-    const processListing = async (uri, cb) => {
-      try {
-        (await (await fetch(uri)).text())
-          .split("\n").slice(2).forEach(line => cb(line.split(" ").slice(1)));
-      } catch (e) {
-        
-        
-      }
-    };
-
-    
-    processListing(RESOURCE_BASE, ([directory, , , type]) => {
-      if (type === "DIRECTORY") {
-        
-        const subDir = `${RESOURCE_BASE}/${directory}`;
-        processListing(subDir, ([name]) => {
-          if (name && name.search(/\.jsm$/) !== -1) {
-            modulesToUnload.add(`${subDir}/${name}`);
-          }
-        });
-      }
-    });
-  });
-
-
-
-
-
-function init() {
-  
-  if (activityStream && activityStream.initialized) {
-    return;
-  }
-  activityStream = new ActivityStream();
-  try {
-    activityStream.init();
-  } catch (e) {
-    Cu.reportError(e);
-  }
-}
-
-
-
-
-
-
-
-function uninit(reason) {
-  
-  if (activityStream) {
-    activityStream.uninit(reason);
-    activityStream = null;
-  }
-}
 
 
 
@@ -115,10 +48,12 @@ function migratePref(oldPrefName, cbIfNotDefault) {
 
 
 
+this.install = function install(data, reason) {};
 
-function onBrowserReady() {
-  waitingForBrowserReady = false;
-  init();
+this.startup = function startup(data, reason) {
+  resProto.setSubstitutionWithFlags(RESOURCE_HOST,
+                                    Services.io.newURI("chrome/content/", null, data.resourceURI),
+                                    resProto.ALLOW_CONTENT_ACCESS);
 
   
   migratePref("browser.newtabpage.rows", rows => {
@@ -140,57 +75,10 @@ function onBrowserReady() {
   migratePref("browser.newtabpage.activity-stream.topSitesCount", count => {
     Services.prefs.setIntPref("browser.newtabpage.activity-stream.topSitesRows", Math.ceil(count / 6));
   });
-}
-
-
-
-
-function observe(subject, topic, data) {
-  switch (topic) {
-    case BROWSER_READY_NOTIFICATION:
-      Services.obs.removeObserver(observe, BROWSER_READY_NOTIFICATION);
-      
-      Services.tm.dispatchToMainThread(() => onBrowserReady());
-      break;
-  }
-}
-
-
-
-this.install = function install(data, reason) {};
-
-this.startup = function startup(data, reason) {
-  resProto.setSubstitutionWithFlags(RESOURCE_HOST,
-                                    Services.io.newURI("chrome/content/", null, data.resourceURI),
-                                    resProto.ALLOW_CONTENT_ACCESS);
-
-  
-  if (Services.startup.startingUp) {
-    Services.obs.addObserver(observe, BROWSER_READY_NOTIFICATION);
-  } else {
-    
-    onBrowserReady();
-  }
 };
 
 this.shutdown = function shutdown(data, reason) {
   resProto.setSubstitution(RESOURCE_HOST, null);
-
-  
-  uninit(reason);
-
-  
-  if (waitingForBrowserReady) {
-    Services.obs.removeObserver(observe, BROWSER_READY_NOTIFICATION);
-  }
-
-  
-  modulesToUnload.forEach(Cu.unload);
 };
 
-this.uninstall = function uninstall(data, reason) {
-  if (activityStream) {
-    activityStream.uninstall(reason);
-    activityStream = null;
-  }
-};
+this.uninstall = function uninstall(data, reason) {};

@@ -9,43 +9,74 @@ var EXPORTED_SYMBOLS = [ "AboutNewTab" ];
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-ChromeUtils.defineModuleGetter(this, "AutoMigrate",
-  "resource:///modules/AutoMigrate.jsm");
-ChromeUtils.defineModuleGetter(this, "NewTabUtils",
-  "resource://gre/modules/NewTabUtils.jsm");
-ChromeUtils.defineModuleGetter(this, "RemotePages",
-  "resource://gre/modules/RemotePageManager.jsm");
+XPCOMUtils.defineLazyModuleGetters(this, {
+  ActivityStream: "resource://activity-stream/lib/ActivityStream.jsm",
+  RemotePages: "resource://gre/modules/RemotePageManager.jsm"
+});
+
+const BROWSER_READY_NOTIFICATION = "sessionstore-windows-restored";
 
 var AboutNewTab = {
+  QueryInterface: ChromeUtils.generateQI([Ci.nsIObserver, Ci.nsISupportsWeakReference]),
+
+  
 
   pageListener: null,
 
   isOverridden: false,
 
+  activityStream: null,
+
+  
+
+
+
+
+
+
+
+
   init(pageListener) {
     if (this.isOverridden) {
       return;
     }
+
+    
+    
+    
+    if (!pageListener) {
+      Services.obs.addObserver(this, BROWSER_READY_NOTIFICATION);
+    }
+
     this.pageListener = pageListener || new RemotePages(["about:home", "about:newtab", "about:welcome"]);
-    this.pageListener.addMessageListener("NewTab:Customize", this.customize);
-    this.pageListener.addMessageListener("NewTab:MaybeShowMigrateMessage",
-      this.maybeShowMigrateMessage);
   },
 
-  maybeShowMigrateMessage({ target }) {
-    AutoMigrate.shouldShowMigratePrompt(target.browser).then((prompt) => {
-      if (prompt) {
-        AutoMigrate.showUndoNotificationBar(target.browser);
-      }
-    });
+  
+
+
+  onBrowserReady() {
+    if (this.activityStream && this.activityStream.initialized) {
+       return;
+    }
+
+    this.activityStream = new ActivityStream();
+    try {
+      this.activityStream.init();
+    } catch (e) {
+      Cu.reportError(e);
+    }
   },
 
-  customize(message) {
-    NewTabUtils.allPages.enabled = message.data.enabled;
-    NewTabUtils.allPages.enhanced = message.data.enhanced;
-  },
+  
+
+
 
   uninit() {
+    if (this.activityStream) {
+      this.activityStream.uninit();
+      this.activityStream = null;
+    }
+
     if (this.pageListener) {
       this.pageListener.destroy();
       this.pageListener = null;
@@ -59,9 +90,6 @@ var AboutNewTab = {
       return null;
     if (shouldPassPageListener) {
       this.pageListener = null;
-      pageListener.removeMessageListener("NewTab:Customize", this.customize);
-      pageListener.removeMessageListener("NewTab:MaybeShowMigrateMessage",
-        this.maybeShowMigrateMessage);
       return pageListener;
     }
     this.uninit();
@@ -71,5 +99,17 @@ var AboutNewTab = {
   reset(pageListener) {
     this.isOverridden = false;
     this.init(pageListener);
+  },
+
+  
+
+  observe(subject, topic, data) {
+    switch (topic) {
+      case BROWSER_READY_NOTIFICATION:
+        Services.obs.removeObserver(this, BROWSER_READY_NOTIFICATION);
+        
+        Services.tm.dispatchToMainThread(() => this.onBrowserReady());
+        break;
+    }
   }
 };
