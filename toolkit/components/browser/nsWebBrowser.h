@@ -16,7 +16,6 @@
 #include "nsCycleCollectionParticipant.h"
 
 
-#include "nsCWebBrowser.h"
 #include "nsIBaseWindow.h"
 #include "nsIDocShell.h"
 #include "nsIDocShellTreeItem.h"
