@@ -132,7 +132,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   SafeBrowsing: "resource://gre/modules/SafeBrowsing.jsm",
   Sanitizer: "resource:///modules/Sanitizer.jsm",
   SavantShieldStudy: "resource:///modules/SavantShieldStudy.jsm",
-  SessionStartup: "resource:///modules/sessionstore/SessionStartup.jsm",
   SessionStore: "resource:///modules/sessionstore/SessionStore.jsm",
   ShellService: "resource:///modules/ShellService.jsm",
   TabCrashHandler: "resource:///modules/ContentCrashHandlers.jsm",
@@ -703,8 +702,6 @@ BrowserGlue.prototype = {
   
   
   _beforeUIStartup: function BG__beforeUIStartup() {
-    SessionStartup.init();
-
     
     if (Services.appinfo.inSafeMode) {
       Services.ww.openWindow(null, "chrome://browser/content/safeMode.xul",
@@ -2163,8 +2160,13 @@ BrowserGlue.prototype = {
     let promptCount =
       usePromptLimit ? Services.prefs.getIntPref("browser.shell.defaultBrowserCheckCount") : 0;
 
-    let willRecoverSession =
-      (SessionStartup.sessionType == SessionStartup.RECOVER_SESSION);
+    let willRecoverSession = false;
+    try {
+      let ss = Cc["@mozilla.org/browser/sessionstartup;1"].
+               getService(Ci.nsISessionStartup);
+      willRecoverSession =
+        (ss.sessionType == Ci.nsISessionStartup.RECOVER_SESSION);
+    } catch (ex) {  }
 
     
     let isDefault = false;
@@ -2342,7 +2344,7 @@ BrowserGlue.prototype = {
           let tabs = win.gBrowser.tabs;
           tab = tabs[tabs.length - 1];
         } else {
-          tab = win.gBrowser.addTab(URI.uri);
+          tab = win.gBrowser.addWebTab(URI.uri);
         }
         tab.setAttribute("attention", true);
         return tab;
@@ -2422,7 +2424,7 @@ BrowserGlue.prototype = {
       let tabs = win.gBrowser.tabs;
       tab = tabs[tabs.length - 1];
     } else {
-      tab = win.gBrowser.addTab(url);
+      tab = win.gBrowser.addWebTab(url);
     }
     tab.setAttribute("attention", true);
     let clickCallback = (subject, topic, data) => {
@@ -2455,7 +2457,7 @@ BrowserGlue.prototype = {
       if (!win) {
         this._openURLInNewWindow(url);
       } else {
-        win.gBrowser.addTab(url);
+        win.gBrowser.addWebTab(url);
       }
     };
 

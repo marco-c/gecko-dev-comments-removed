@@ -163,6 +163,7 @@ ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", this);
 ChromeUtils.import("resource://gre/modules/osfile.jsm", this);
 
 XPCOMUtils.defineLazyServiceGetters(this, {
+  gSessionStartup: ["@mozilla.org/browser/sessionstartup;1", "nsISessionStartup"],
   gScreenManager: ["@mozilla.org/gfx/screenmanager;1", "nsIScreenManager"],
   Telemetry: ["@mozilla.org/base/telemetry;1", "nsITelemetry"],
 });
@@ -180,7 +181,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   SessionCookies: "resource:///modules/sessionstore/SessionCookies.jsm",
   SessionFile: "resource:///modules/sessionstore/SessionFile.jsm",
   SessionSaver: "resource:///modules/sessionstore/SessionSaver.jsm",
-  SessionStartup: "resource:///modules/sessionstore/SessionStartup.jsm",
   TabAttributes: "resource:///modules/sessionstore/TabAttributes.jsm",
   TabCrashHandler: "resource:///modules/ContentCrashHandlers.jsm",
   TabState: "resource:///modules/sessionstore/TabState.jsm",
@@ -639,10 +639,10 @@ var SessionStoreInternal = {
   initSession() {
     TelemetryStopwatch.start("FX_SESSION_RESTORE_STARTUP_INIT_SESSION_MS");
     let state;
-    let ss = SessionStartup;
+    let ss = gSessionStartup;
 
     if (ss.doRestore() ||
-        ss.sessionType == ss.DEFER_SESSION) {
+        ss.sessionType == Ci.nsISessionStartup.DEFER_SESSION) {
       state = ss.state;
     }
 
@@ -650,7 +650,7 @@ var SessionStoreInternal = {
       try {
         
         
-        if (ss.sessionType == ss.DEFER_SESSION) {
+        if (ss.sessionType == Ci.nsISessionStartup.DEFER_SESSION) {
           let [iniState, remainingState] = this._prepDataForDeferredRestore(state);
           
           
@@ -1159,7 +1159,7 @@ var SessionStoreInternal = {
           
           
           
-          this._deferredInitialState = SessionStartup.state;
+          this._deferredInitialState = gSessionStartup.state;
 
           
           Services.obs.notifyObservers(null, NOTIFY_WINDOWS_RESTORED);
@@ -1310,7 +1310,7 @@ var SessionStoreInternal = {
       
       
       this._promiseReadyForInitialization =
-        Promise.all([promise, SessionStartup.onceInitialized]);
+        Promise.all([promise, gSessionStartup.onceInitialized]);
     }
 
     
@@ -2431,9 +2431,12 @@ var SessionStoreInternal = {
 
     
     let userContextId = aTab.getAttribute("usercontextid");
-    let newTab = aTab == aWindow.gBrowser.selectedTab ?
-      aWindow.gBrowser.addTab(null, {relatedToCurrent: true, ownerTab: aTab, userContextId}) :
-      aWindow.gBrowser.addTab(null, {userContextId});
+
+    let tabOptions = {
+      userContextId,
+      ...(aTab == aWindow.gBrowser.selectedTab ? {relatedToCurrent: true, ownerTab: aTab} : {})
+    };
+    let newTab = aWindow.gBrowser.addTrustedTab(null, tabOptions);
 
     
     
@@ -2522,7 +2525,7 @@ var SessionStoreInternal = {
     
     let tabbrowser = aWindow.gBrowser;
     let tab = tabbrowser.selectedTab =
-      tabbrowser.addTab(null, {
+      tabbrowser.addTrustedTab(null, {
         index: pos,
         pinned: state.pinned,
         userContextId: state.userContextId,
@@ -3492,13 +3495,13 @@ var SessionStoreInternal = {
         
         
         
-        tab = tabbrowser.addTab(url,
-                                { createLazyBrowser,
-                                  skipAnimation: true,
-                                  noInitialLabel: true,
-                                  userContextId,
-                                  skipBackgroundNotify: true,
-                                  bulkOrderedOpen: true });
+        tab = tabbrowser.addTrustedTab(url,
+                                       { createLazyBrowser,
+                                         skipAnimation: true,
+                                         noInitialLabel: true,
+                                         userContextId,
+                                         skipBackgroundNotify: true,
+                                         bulkOrderedOpen: true });
 
         if (select) {
           let leftoverTab = tabbrowser.selectedTab;

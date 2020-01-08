@@ -1373,6 +1373,11 @@ window._gBrowser = {
       aName = params.name;
     }
 
+    
+    if (!aTriggeringPrincipal) {
+      throw new Error("Required argument triggeringPrincipal missing within loadOneTab");
+    }
+
     var bgLoad = (aLoadInBackground != null) ? aLoadInBackground :
       Services.prefs.getBoolPref("browser.tabs.loadInBackground");
     var owner = bgLoad ? null : this.selectedTab;
@@ -2135,6 +2140,30 @@ window._gBrowser = {
   },
 
   
+
+
+  addWebTab(aURI, params = {}) {
+    if (!params.triggeringPrincipal) {
+      params.triggeringPrincipal = Services.scriptSecurityManager.createNullPrincipal({
+        userContextId: params.userContextId,
+      });
+    }
+    if (Services.scriptSecurityManager.isSystemPrincipal(params.triggeringPrincipal)) {
+      throw new Error("System principal should never be passed into addWebTab()");
+    }
+    return this.addTab(aURI, params);
+  },
+
+  
+
+
+
+  addTrustedTab(aURI, params = {}) {
+    params.triggeringPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
+    return this.addTab(aURI, params);
+  },
+
+  
   addTab(aURI, {
     allowMixedContent,
     allowThirdPartyFixup,
@@ -2169,6 +2198,13 @@ window._gBrowser = {
     recordExecution,
     replayExecution,
   } = {}) {
+    
+    
+    if (!triggeringPrincipal) {
+      throw new Error("Required argument triggeringPrincipal missing within addTab");
+    }
+
+
     
     if (this.selectedTab.owner) {
       this.selectedTab.owner = null;
@@ -2824,7 +2860,9 @@ window._gBrowser = {
       aTab._mouseleave();
 
     if (newTab)
-      this.addTab(BROWSER_NEW_TAB_URL, { skipAnimation: true });
+      this.addTrustedTab(BROWSER_NEW_TAB_URL, {
+        skipAnimation: true,
+      });
     else
       TabBarVisibility.update();
 
@@ -3599,7 +3637,7 @@ window._gBrowser = {
       
       params.userContextId = aTab.getAttribute("usercontextid");
     }
-    let newTab = this.addTab("about:blank", params);
+    let newTab = this.addWebTab("about:blank", params);
     let newBrowser = this.getBrowserForTab(newTab);
 
     
@@ -5276,10 +5314,22 @@ var TabContextMenu = {
     });
   },
   reopenInContainer(event) {
+    let userContextId = parseInt(event.target.getAttribute("data-usercontextid"));
+    
+
+
+
+    let triggeringPrincipal = this.contextTab.linkedBrowser.contentPrincipal;
+    if (triggeringPrincipal.isNullPrincipal) {
+      triggeringPrincipal = Services.scriptSecurityManager.createNullPrincipal({ userContextId });
+    } else if (triggeringPrincipal.isCodebasePrincipal) {
+      triggeringPrincipal = Services.scriptSecurityManager.createCodebasePrincipal(triggeringPrincipal.URI, { userContextId });
+    }
     let newTab = gBrowser.addTab(this.contextTab.linkedBrowser.currentURI.spec, {
-      userContextId: parseInt(event.target.getAttribute("data-usercontextid")),
+      userContextId,
       pinned: this.contextTab.pinned,
       index: this.contextTab._tPos + 1,
+      triggeringPrincipal,
     });
 
     if (gBrowser.selectedTab == this.contextTab) {
