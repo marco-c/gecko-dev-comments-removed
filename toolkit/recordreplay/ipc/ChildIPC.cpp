@@ -420,6 +420,18 @@ NotifyVsyncObserver()
   }
 }
 
+void
+OnVsync()
+{
+  
+  
+  
+  
+  if (parent::InRepaintStressMode()) {
+    CreateCheckpoint();
+  }
+}
+
 
 
 

@@ -106,6 +106,13 @@ static const size_t GraphicsMemorySize = 4096 * 4096 * 4;
 
 
 
+bool InRepaintStressMode();
+
+
+
+
+
+
 
 class ChildRole
 {
