@@ -43,14 +43,31 @@ nsRect
 nsFieldSetFrame::VisualBorderRectRelativeToSelf() const
 {
   WritingMode wm = GetWritingMode();
-  Side legendSide = wm.PhysicalSide(eLogicalSideBStart);
-  nscoord legendBorder = StyleBorder()->GetComputedBorderWidth(legendSide);
   LogicalRect r(wm, LogicalPoint(wm, 0, 0), GetLogicalSize(wm));
   nsSize containerSize = r.Size(wm).GetPhysicalSize(wm);
-  if (legendBorder < mLegendRect.BSize(wm)) {
-    nscoord off = (mLegendRect.BSize(wm) - legendBorder) / 2;
-    r.BStart(wm) += off;
-    r.BSize(wm) -= off;
+  if (nsIFrame* legend = GetLegend()) {
+    nscoord legendSize = legend->GetLogicalSize(wm).BSize(wm);
+    auto legendMargin = legend->GetLogicalUsedMargin(wm);
+    nscoord legendStartMargin = legendMargin.BStart(wm);
+    nscoord legendEndMargin = legendMargin.BEnd(wm);
+    nscoord border = GetUsedBorder().Side(wm.PhysicalSide(eLogicalSideBStart));
+    
+    
+    nscoord off = (legendStartMargin + legendSize / 2) - border / 2;
+    
+    if (off > nscoord(0)) {
+      nscoord marginBoxSize = legendStartMargin + legendSize + legendEndMargin;
+      if (marginBoxSize > border) {
+        
+        
+        nscoord overflow = off + border - marginBoxSize;
+        if (overflow > nscoord(0)) {
+          off -= overflow;
+        }
+        r.BStart(wm) += off;
+        r.BSize(wm) -= off;
+      }
+    }
   }
   return r.GetPhysicalRect(wm, containerSize);
 }
@@ -453,12 +470,23 @@ nsFieldSetFrame::Reflow(nsPresContext*           aPresContext,
                   legendDesiredSize.BSize(wm) + legendMargin.BStartEnd(wm));
     nscoord oldSpace = mLegendSpace;
     mLegendSpace = 0;
-    if (mLegendRect.BSize(wm) > border.BStart(wm)) {
+    nscoord borderBStart = border.BStart(wm);
+    if (mLegendRect.BSize(wm) > borderBStart) {
       
-      mLegendSpace = mLegendRect.BSize(wm) - border.BStart(wm);
+      mLegendSpace = mLegendRect.BSize(wm) - borderBStart;
     } else {
-      mLegendRect.BStart(wm) =
-        (border.BStart(wm) - mLegendRect.BSize(wm)) / 2;
+      
+      
+      nscoord off = (borderBStart - legendDesiredSize.BSize(wm)) / 2;
+      off -= legendMargin.BStart(wm); 
+      if (off > nscoord(0)) {
+        
+        nscoord overflow = off + mLegendRect.BSize(wm) - borderBStart;
+        if (overflow > nscoord(0)) {
+          off -= overflow;
+        }
+        mLegendRect.BStart(wm) += off;
+      }
     }
 
     
