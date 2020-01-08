@@ -4982,8 +4982,6 @@ nsGridContainerFrame::ReflowInFlowChild(nsIFrame*              aChild,
   nsPresContext* pc = PresContext();
   ComputedStyle* containerSC = Style();
   WritingMode wm = aState.mReflowInput->GetWritingMode();
-  LogicalMargin pad(aState.mReflowInput->ComputedLogicalPadding());
-  const LogicalPoint padStart(wm, pad.IStart(wm), pad.BStart(wm));
   const bool isGridItem = !!aGridItemInfo;
   MOZ_ASSERT(isGridItem == !aChild->IsPlaceholderFrame());
   LogicalRect cb(wm);
@@ -5053,7 +5051,7 @@ nsGridContainerFrame::ReflowInFlowChild(nsIFrame*              aChild,
     
     
     
-    cb = aContentArea - padStart;
+    cb = aContentArea;
     aChild->AddStateBits(PLACEHOLDER_STATICPOS_NEEDS_CSSALIGN);
   }
 
