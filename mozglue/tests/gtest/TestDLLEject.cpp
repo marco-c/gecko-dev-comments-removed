@@ -2,7 +2,7 @@
 
 
 
-#include <Windows.h>
+#include <windows.h>
 #include <winternl.h>
 #include "gtest/gtest.h"
 #include "nsReadableUtils.h"

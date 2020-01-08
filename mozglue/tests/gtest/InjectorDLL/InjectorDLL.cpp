@@ -2,7 +2,7 @@
 
 
 
-#include <Windows.h>
+#include <windows.h>
 
 BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD aReason, LPVOID)
 {

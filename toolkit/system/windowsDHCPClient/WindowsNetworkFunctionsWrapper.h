@@ -7,7 +7,7 @@
 #ifndef mozilla_toolkit_system_windowsDHCPClient_windowsNetworkFunctionsWrapper_h
 #define mozilla_toolkit_system_windowsDHCPClient_windowsNetworkFunctionsWrapper_h
 
-#include <Winsock2.h> 
+#include <winsock2.h> 
                       
 #include <dhcpcsdk.h>
 #include <iphlpapi.h>
