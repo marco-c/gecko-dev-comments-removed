@@ -304,7 +304,7 @@ var SiteDataManager = {
         
         
         principal = Services.scriptSecurityManager.createCodebasePrincipalFromOrigin(originNoSuffix);
-        let request = this._qms.clearStoragesForPrincipal(principal, null, true);
+        let request = this._qms.clearStoragesForPrincipal(principal, null, null, true);
         request.callback = resolve;
       }));
     }
