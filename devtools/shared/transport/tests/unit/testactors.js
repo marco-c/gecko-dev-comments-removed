@@ -2,6 +2,7 @@
 
 "use strict";
 
+const { appendExtraActors } = require("devtools/server/actors/common");
 const { LazyPool, createExtraActors } = require("devtools/shared/protocol/lazy-pool");
 const { RootActor } = require("devtools/server/actors/root");
 const { ThreadActor } = require("devtools/server/actors/thread");
@@ -106,7 +107,10 @@ TestTargetActor.prototype = {
       return { "error": "wrongState" };
     }
     return { type: "detached" };
-  }
+  },
+
+  
+  _appendExtraActors: appendExtraActors
 };
 
 TestTargetActor.prototype.requestTypes = {
