@@ -54,7 +54,9 @@ var SelectParentHelper = {
 
 
 
-  populate(menulist, items, selectedIndex, zoom,
+
+
+  populate(menulist, items, selectedIndex, zoom, uaBackgroundColor, uaColor,
            uaSelectBackgroundColor, uaSelectColor, selectBackgroundColor,
            selectColor, selectTextShadow) {
     
@@ -97,7 +99,7 @@ var SelectParentHelper = {
       ruleBody += `color: ${selectColor};`;
       usedSelectColor = selectColor;
     } else {
-      usedSelectColor = uaSelectColor;
+      usedSelectColor = uaColor;
     }
 
     if (customStylingEnabled &&
@@ -250,13 +252,16 @@ var SelectParentHelper = {
 
       let options = msg.data.options;
       let selectedIndex = msg.data.selectedIndex;
+      let uaBackgroundColor = msg.data.uaBackgroundColor;
+      let uaColor = msg.data.uaColor;
       let uaSelectBackgroundColor = msg.data.uaSelectBackgroundColor;
       let uaSelectColor = msg.data.uaSelectColor;
       let selectBackgroundColor = msg.data.selectBackgroundColor;
       let selectColor = msg.data.selectColor;
       let selectTextShadow = msg.data.selectTextShadow;
       this.populate(currentMenulist, options, selectedIndex,
-                    currentZoom, uaSelectBackgroundColor, uaSelectColor,
+                    currentZoom, uaBackgroundColor, uaColor,
+                    uaSelectBackgroundColor, uaSelectColor,
                     selectBackgroundColor, selectColor, selectTextShadow);
 
       
