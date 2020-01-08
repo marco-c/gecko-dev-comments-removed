@@ -1013,10 +1013,9 @@ GetXrayTraits(JSObject* obj)
 
 
 static inline bool
-GlobalHasExclusiveExpandos(JSObject* obj)
+CompartmentHasExclusiveExpandos(JSObject* obj)
 {
-    MOZ_ASSERT(JS_IsGlobalObject(obj));
-    return !strcmp(js::GetObjectJSClass(obj)->name, "Sandbox");
+    return IsInSandboxCompartment(obj);
 }
 
 static inline JSObject*
@@ -1135,8 +1134,7 @@ XrayTraits::getExpandoObject(JSContext* cx, HandleObject target, HandleObject co
     if (!chain)
         return true;
 
-    JSObject* consumerGlobal = js::GetGlobalForObjectCrossCompartment(consumer);
-    bool isExclusive = GlobalHasExclusiveExpandos(consumerGlobal);
+    bool isExclusive = CompartmentHasExclusiveExpandos(consumer);
     return getExpandoObjectInternal(cx, chain, isExclusive ? consumer : nullptr,
                                     ObjectPrincipal(consumer), expandoObject);
 }
@@ -1242,8 +1240,7 @@ XrayTraits::ensureExpandoObject(JSContext* cx, HandleObject wrapper,
     if (!getExpandoObject(cx, target, wrapper, &expandoObject))
         return nullptr;
     if (!expandoObject) {
-        JSObject* consumerGlobal = js::GetGlobalForObjectCrossCompartment(wrapper);
-        bool isExclusive = GlobalHasExclusiveExpandos(consumerGlobal);
+        bool isExclusive = CompartmentHasExclusiveExpandos(wrapper);
         expandoObject = attachExpandoObject(cx, target, isExclusive ? wrapper : nullptr,
                                             ObjectPrincipal(wrapper));
     }
@@ -2269,7 +2266,7 @@ IsCrossCompartmentXrayCallback(const js::BaseProxyHandler* handler)
 
 js::XrayJitInfo gXrayJitInfo = {
     IsCrossCompartmentXrayCallback,
-    GlobalHasExclusiveExpandos,
+    CompartmentHasExclusiveExpandos,
     JSSLOT_XRAY_HOLDER,
     XrayTraits::HOLDER_SLOT_EXPANDO,
     JSSLOT_EXPANDO_PROTOTYPE

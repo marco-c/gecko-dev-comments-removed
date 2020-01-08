@@ -1356,7 +1356,7 @@ struct XrayJitInfo {
 
     
     
-    bool (*globalHasExclusiveExpandos)(JSObject* obj);
+    bool (*compartmentHasExclusiveExpandos)(JSObject* obj);
 
     
     
