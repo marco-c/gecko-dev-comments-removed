@@ -1,0 +1,19 @@
+
+
+
+
+"use strict";
+
+const INITIAL_RULES = {};
+
+const reducers = {
+
+};
+
+module.exports = function(rules = INITIAL_RULES, action) {
+  const reducer = reducers[action.type];
+  if (!reducer) {
+    return rules;
+  }
+  return reducer(rules, action);
+};
