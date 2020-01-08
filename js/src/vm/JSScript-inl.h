@@ -176,16 +176,6 @@ inline bool JSScript::isDebuggee() const {
   return realm_->debuggerObservesAllExecution() || hasDebugScript();
 }
 
-inline bool JSScript::trackRecordReplayProgress() const {
-  
-  
-  
-  
-  return MOZ_UNLIKELY(mozilla::recordreplay::IsRecordingOrReplaying()) &&
-         !runtimeFromAnyThread()->parentRuntime && !selfHosted() &&
-         mozilla::recordreplay::ShouldUpdateProgressCounter(filename());
-}
-
 inline js::jit::ICScript* JSScript::icScript() const {
   MOZ_ASSERT(hasICScript());
   return types_->icScript();

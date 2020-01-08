@@ -1694,6 +1694,10 @@ class JSScript : public js::gc::TenuredCell {
 
     
     IsForEval = 1 << 22,
+
+    
+    
+    TrackRecordReplayProgress = 1 << 23,
   };
   
   
@@ -2732,9 +2736,9 @@ class JSScript : public js::gc::TenuredCell {
     void dropScript();
   };
 
-  
-  
-  inline bool trackRecordReplayProgress() const;
+  bool trackRecordReplayProgress() const {
+    return hasFlag(ImmutableFlags::TrackRecordReplayProgress);
+  }
 };
 
 

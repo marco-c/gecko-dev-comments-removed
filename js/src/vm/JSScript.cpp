@@ -3131,6 +3131,17 @@ JSScript::JSScript(JS::Realm* realm, uint8_t* stubEntry,
                toStringStart, toStringEnd);
 }
 
+static bool ShouldTrackRecordReplayProgress(JSScript* script) {
+  
+  
+  
+  
+  return MOZ_UNLIKELY(mozilla::recordreplay::IsRecordingOrReplaying()) &&
+         !script->runtimeFromAnyThread()->parentRuntime &&
+         !script->selfHosted() &&
+         mozilla::recordreplay::ShouldUpdateProgressCounter(script->filename());
+}
+
  JSScript* JSScript::Create(
     JSContext* cx, const ReadOnlyCompileOptions& options,
     HandleScriptSourceObject sourceObject, uint32_t sourceStart,
@@ -3147,6 +3158,9 @@ JSScript::JSScript(JS::Realm* realm, uint8_t* stubEntry,
   script->setFlag(ImmutableFlags::TreatAsRunOnce, options.isRunOnce);
   script->setFlag(MutableFlags::HideScriptFromDebugger,
                   options.hideScriptFromDebugger);
+
+  script->setFlag(ImmutableFlags::TrackRecordReplayProgress,
+                  ShouldTrackRecordReplayProgress(script));
 
   if (cx->runtime()->lcovOutput().isEnabled()) {
     if (!script->initScriptName(cx)) {
