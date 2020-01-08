@@ -8,7 +8,6 @@
 
 
 @namespace url(http://www.w3.org/1999/xhtml); 
-@namespace xul url(http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul);
 
 *|*::-moz-fieldset-content {
   display: block; 
@@ -480,7 +479,7 @@ input[type="image"]:-moz-focusring {
 
 input[type="file"] {
   display: inline-block;
-  white-space: nowrap;
+  white-space: nowrap !important;
   overflow: hidden;
   overflow-clip-box: padding-box;
   color: unset;
@@ -495,7 +494,7 @@ input[type="file"] {
   padding: unset;
 }
 
-input[type="file"] > xul|label {
+input[type="file"] > label {
   min-inline-size: 12em;
   padding-inline-start: 5px;
   text-align: match-parent;
@@ -504,11 +503,8 @@ input[type="file"] > xul|label {
   font-size: unset;
   letter-spacing: unset;
 
-  
-
-
-
-  direction: ltr !important;
+  -moz-user-select: none;
+  unicode-bidi: plaintext;
 }
 
 
@@ -530,14 +526,6 @@ input[type="color"]::-moz-color-swatch {
   box-sizing: border-box;
   border: 1px solid grey;
   display: block;
-}
-
-
-
-
-input[type="file"]:dir(rtl) > xul|label {
-  padding-inline-start: 0px;
-  padding-inline-end: 5px;
 }
 
 
