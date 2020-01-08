@@ -64,6 +64,8 @@ pref("devtools.inspector.fonteditor.enabled", true);
 
 pref("devtools.inspector.fonthighlighter.enabled", true);
 
+pref("devtools.inspector.changes.enabled", false);
+
 
 
 #if defined(NIGHTLY_BUILD)
