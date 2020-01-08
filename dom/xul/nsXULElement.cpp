@@ -1138,7 +1138,7 @@ nsXULElement::GetControllers(ErrorResult& rv)
     if (! Controllers()) {
         nsExtendedDOMSlots* slots = ExtendedDOMSlots();
 
-        slots->mControllers = NS_NewXULControllers();
+        slots->mControllers = new nsXULControllers();
     }
 
     return Controllers();
@@ -1869,10 +1869,8 @@ nsXULPrototypeElement::SetAttrAt(uint32_t aPos, const nsAString& aValue,
         
         
         
-        
         RefPtr<URLExtraData> data =
-          new URLExtraData(aDocumentURI, aDocumentURI, principal,
-                           mozilla::net::RP_Unset);
+          new URLExtraData(aDocumentURI, aDocumentURI, principal);
         RefPtr<DeclarationBlock> declaration =
           DeclarationBlock::FromCssText(
             aValue, data, eCompatibility_FullStandards, nullptr);
