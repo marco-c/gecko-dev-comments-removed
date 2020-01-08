@@ -796,7 +796,9 @@ InitFromBailout(JSContext* cx, size_t frameNo,
         JitSpew(JitSpew_BaselineBailouts, "      frame slots %u, nargs %zu, nfixed %zu",
                 iter.numAllocations(), fun->nargs(), script->nfixed());
 
-        if (frameNo == 0) {
+        bool argsObjAliasesFormals = script->argsObjAliasesFormals();
+        if (frameNo == 0 && !argsObjAliasesFormals) {
+            
             
             
             
@@ -814,6 +816,12 @@ InitFromBailout(JSContext* cx, size_t frameNo,
             if (frameNo > 0) {
                 size_t argOffset = builder.framePushed() + JitFrameLayout::offsetOfActualArg(i);
                 builder.valuePointerAtStackOffset(argOffset).set(arg);
+            } else if (argsObjAliasesFormals) {
+                
+                
+                
+                
+                
             } else {
                 startFrameFormals[i].set(arg);
             }
