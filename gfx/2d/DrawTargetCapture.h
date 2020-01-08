@@ -24,6 +24,7 @@ class DrawTargetCaptureImpl : public DrawTargetCapture
   friend class SourceSurfaceCapture;
 
 public:
+  DrawTargetCaptureImpl(gfx::DrawTarget* aTarget, size_t aFlushBytes);
   DrawTargetCaptureImpl(BackendType aBackend, const IntSize& aSize, SurfaceFormat aFormat);
 
   bool Init(const IntSize& aSize, DrawTarget* aRefDT);
@@ -156,6 +157,12 @@ protected:
   void MarkChanged();
 
 private:
+  void FlushCommandBuffer()
+  {
+    ReplayToDrawTarget(mRefDT, Matrix());
+    mCommands.Clear();
+  }
+
   
   
   
@@ -164,12 +171,22 @@ private:
     if (T::AffectsSnapshot) {
       MarkChanged();
     }
+    if (mFlushBytes &&
+        mCommands.BufferWillAlloc<T>() &&
+        mCommands.BufferCapacity() > mFlushBytes) {
+      FlushCommandBuffer();
+    }
     return mCommands.Append<T>();
   }
   template<typename T>
   T* ReuseOrAppendToCommandList() {
     if (T::AffectsSnapshot) {
       MarkChanged();
+    }
+    if (mFlushBytes &&
+        mCommands.BufferWillAlloc<T>() &&
+        mCommands.BufferCapacity() > mFlushBytes) {
+      FlushCommandBuffer();
     }
     return mCommands.ReuseOrAppend<T>();
   }
@@ -192,6 +209,7 @@ private:
   std::vector<PushedLayer> mPushedLayers;
 
   CaptureCommandList mCommands;
+  size_t mFlushBytes;
 };
 
 } 

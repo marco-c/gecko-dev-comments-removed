@@ -711,10 +711,7 @@ TileClient::AcquireBackBuffer(CompositableClient& aCompositable,
   
   RefPtr<DrawTargetCapture> capture;
   if (aFlags & TilePaintFlags::Async) {
-    capture =
-      Factory::CreateCaptureDrawTarget(target->GetBackendType(),
-                                       target->GetSize(),
-                                       target->GetFormat());
+    capture = Factory::CreateCaptureDrawTargetForTarget(target, gfxPrefs::LayersOMTPCaptureLimit());
     target = capture;
   }
 
