@@ -96,6 +96,9 @@ class ProviderUnifiedComplete extends UrlbarProvider {
     
     
     params.push(`insert-method:${UrlbarUtils.INSERTMETHOD.APPEND}`);
+    
+    
+    params.push("disable-telemetry");
     if (queryContext.isPrivate) {
       params.push("private-window");
       if (!PrivateBrowsingUtils.permanentPrivateBrowsing) {
