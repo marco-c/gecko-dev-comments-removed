@@ -387,11 +387,6 @@ FindInflectionApproximationRange(BezierControlPoints aControlPoints,
 
 
 
-
-
-
-
-
 static inline void
 FindInflectionPoints(const BezierControlPoints &aControlPoints,
                      double *aT1, double *aT2, uint32_t *aCount)

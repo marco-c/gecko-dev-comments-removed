@@ -65,11 +65,9 @@ public:
   
 
 
-
   uint32_t GetRowSpanOffset() const;
 
   
-
 
 
   void SetRowSpanOffset(uint32_t aSpan);
@@ -80,7 +78,6 @@ public:
   bool IsColSpan() const;
 
   
-
 
 
   uint32_t GetColSpanOffset() const;
@@ -96,7 +93,6 @@ public:
   bool IsOverlap() const;
 
   
-
 
 
   void SetOverlap(bool aOverlap);

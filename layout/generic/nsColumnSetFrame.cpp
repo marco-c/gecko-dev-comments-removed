@@ -626,7 +626,6 @@ nsColumnSetFrame::ReflowChildren(ReflowOutput&     aDesiredSize,
     
     
     
-    
   }
 
   

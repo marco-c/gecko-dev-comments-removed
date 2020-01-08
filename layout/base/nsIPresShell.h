@@ -752,7 +752,6 @@ public:
 
 
 
-
     explicit ScrollAxis(int16_t aWhere = SCROLL_MINIMUM,
                         WhenToScroll aWhen = SCROLL_IF_NOT_FULLY_VISIBLE,
                         bool aOnlyIfPerceivedScrollableDirection = false) :

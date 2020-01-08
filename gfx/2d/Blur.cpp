@@ -221,8 +221,6 @@ BoxBlurRow(const uint8_t* aInput,
 
 
 
-
-
 template<bool aTranspose>
 static void
 BoxBlur(uint8_t* aData,

@@ -560,8 +560,6 @@ nsCSPContext::GetAllowsInline(nsContentPolicyType aContentType,
 
 
 
-
-
 #define CASE_CHECK_AND_REPORT(violationType, contentPolicyType, nonceOrHash,   \
                               keyword, observerTopic)                          \
   case nsIContentSecurityPolicy::VIOLATION_TYPE_ ## violationType :            \

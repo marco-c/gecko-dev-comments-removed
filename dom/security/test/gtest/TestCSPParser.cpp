@@ -179,7 +179,6 @@ TEST(CSPParser, Directives)
 {
   static const PolicyTest policies[] =
   {
-    
     { "connect-src xn--mnchen-3ya.de",
       "connect-src http://xn--mnchen-3ya.de"},
     { "default-src http://www.example.com",
@@ -222,7 +221,6 @@ TEST(CSPParser, Directives)
       "worker-src https://example.com" },
     { "worker-src http://worker.com; frame-src http://frame.com; child-src http://child.com",
       "worker-src http://worker.com; frame-src http://frame.com; child-src http://child.com" },
-    
   };
 
   uint32_t policyCount = sizeof(policies) / sizeof(PolicyTest);
@@ -235,7 +233,6 @@ TEST(CSPParser, Keywords)
 {
   static const PolicyTest policies[] =
   {
-    
     { "script-src 'self'",
       "script-src 'self'" },
     { "script-src 'unsafe-inline'",
@@ -248,7 +245,6 @@ TEST(CSPParser, Keywords)
       "script-src 'none'" },
     { "img-src 'none'; script-src 'unsafe-eval' 'unsafe-inline'; default-src 'self'",
       "img-src 'none'; script-src 'unsafe-eval' 'unsafe-inline'; default-src 'self'" },
-    
   };
 
   uint32_t policyCount = sizeof(policies) / sizeof(PolicyTest);
@@ -261,7 +257,6 @@ TEST(CSPParser, IgnoreUpperLowerCasePolicies)
 {
   static const PolicyTest policies[] =
   {
-    
     { "script-src 'SELF'",
       "script-src 'self'" },
     { "sCriPt-src 'Unsafe-Inline'",
@@ -294,7 +289,6 @@ TEST(CSPParser, IgnoreUpperLowerCasePolicies)
       "sandbox allow-forms"},
     { "require-SRI-for sCript stYle",
       "require-sri-for script style"},
-    
   };
 
   uint32_t policyCount = sizeof(policies) / sizeof(PolicyTest);
@@ -307,7 +301,6 @@ TEST(CSPParser, Paths)
 {
   static const PolicyTest policies[] =
   {
-    
     { "script-src http://www.example.com",
       "script-src http://www.example.com" },
     { "script-src http://www.example.com/",
@@ -394,7 +387,6 @@ TEST(CSPParser, Paths)
       "script-src http://www.example.com:88/.js" },
     { "script-src https://foo.com/_abc/abc_/_/_a_b_c_",
       "script-src https://foo.com/_abc/abc_/_/_a_b_c_" }
-    
   };
 
   uint32_t policyCount = sizeof(policies) / sizeof(PolicyTest);
@@ -407,7 +399,6 @@ TEST(CSPParser, SimplePolicies)
 {
   static const PolicyTest policies[] =
   {
-    
     { "default-src *",
       "default-src *" },
     { "default-src https:",
@@ -472,7 +463,6 @@ TEST(CSPParser, SimplePolicies)
       "upgrade-insecure-requests" },
     { "sandbox allow-scripts allow-forms  ",
       "sandbox allow-scripts allow-forms" },
-    
   };
 
   uint32_t policyCount = sizeof(policies) / sizeof(PolicyTest);
@@ -485,7 +475,6 @@ TEST(CSPParser, PoliciesWithInvalidSrc)
 {
   static const PolicyTest policies[] =
   {
-    
     { "script-src 'self'; SCRIPT-SRC http://www.example.com",
       "script-src 'self'" },
     { "script-src 'none' test.com; script-src example.com",
@@ -568,7 +557,6 @@ TEST(CSPParser, PoliciesWithInvalidSrc)
       "require-sri-for script"},
     { "sandbox    foo",
       "sandbox"},
-    
   };
 
   
@@ -582,7 +570,6 @@ TEST(CSPParser, BadPolicies)
 {
   static const PolicyTest policies[] =
   {
-    
     { "script-sr 'self", "" },
     { "", "" },
     { "; ; ; ; ; ; ;", "" },
@@ -593,7 +580,6 @@ TEST(CSPParser, BadPolicies)
     { "require-sri-for foo", ""},
     { "report-uri", ""},
     { "report-uri http://:foo", ""},
-    
   };
 
   uint32_t policyCount = sizeof(policies) / sizeof(PolicyTest);
@@ -606,7 +592,6 @@ TEST(CSPParser, GoodGeneratedPolicies)
 {
   static const PolicyTest policies[] =
   {
-    
     { "default-src 'self'; img-src *",
       "default-src 'self'; img-src *" },
     { "report-uri /policy",
@@ -823,7 +808,6 @@ TEST(CSPParser, GoodGeneratedPolicies)
       "default-src 'self'; frame-ancestors 'self'" },
     { "frame-ancestors http://bar.com/foo.png",
       "frame-ancestors http://bar.com/foo.png" },
-    
   };
 
   uint32_t policyCount = sizeof(policies) / sizeof(PolicyTest);
@@ -836,7 +820,6 @@ TEST(CSPParser, BadGeneratedPolicies)
 {
   static const PolicyTest policies[] =
   {
-    
     { "foo.*.bar", ""},
     { "foo!bar.com", ""},
     { "x.*.a.com", ""},
@@ -851,7 +834,6 @@ TEST(CSPParser, BadGeneratedPolicies)
     { "http://other:pass1@self.com/foo", ""},
     { "http://user1:pass1@self.com/foo", ""},
     { "http://username:password@self.com/bar", ""},
-    
   };
 
   uint32_t policyCount = sizeof(policies) / sizeof(PolicyTest);
@@ -867,7 +849,6 @@ TEST(CSPParser, GoodGeneratedPoliciesForPathHandling)
 
   static const PolicyTest policies[] =
   {
-    
     { "img-src http://test1.example.com",
       "img-src http://test1.example.com" },
     { "img-src http://test1.example.com/",
@@ -976,7 +957,6 @@ TEST(CSPParser, GoodGeneratedPoliciesForPathHandling)
       "img-src https://test1.example.com/abc////////////def/" },
     { "img-src https://test1.example.com/abc////////////",
       "img-src https://test1.example.com/abc////////////" },
-    
   };
 
   uint32_t policyCount = sizeof(policies) / sizeof(PolicyTest);
@@ -989,7 +969,6 @@ TEST(CSPParser, BadGeneratedPoliciesForPathHandling)
 {
   static const PolicyTest policies[] =
   {
-    
     { "img-src test1.example.com:88path-1/",
       "img-src 'none'" },
     { "img-src test1.example.com:80.js",
@@ -1004,7 +983,6 @@ TEST(CSPParser, BadGeneratedPoliciesForPathHandling)
       "img-src 'none'" },
     { "img-src http://test1.example.com:80abc",
       "img-src 'none'" },
-    
   };
 
   uint32_t policyCount = sizeof(policies) / sizeof(PolicyTest);

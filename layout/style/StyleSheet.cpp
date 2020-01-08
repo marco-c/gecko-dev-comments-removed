@@ -989,8 +989,6 @@ StyleSheet::CreateEmptyChildSheet(
 
 
 
-
-
 static bool
 AllowParallelParse(css::Loader* aLoader, nsIURI* aSheetURI)
 {

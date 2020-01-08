@@ -847,7 +847,6 @@ TextServicesDocument::SetSelection(int32_t aOffset,
   
   
   
-  
 
   return rv;
 }
@@ -1114,7 +1113,6 @@ TextServicesDocument::DeleteSelection()
   
   
   
-  
 
   return rv;
 }
@@ -1274,7 +1272,6 @@ TextServicesDocument::InsertText(const nsString* aText)
     }
   }
 
-  
   
   
   
@@ -1693,7 +1690,6 @@ TextServicesDocument::IsBlockNode(nsIContent* aContent)
 
   nsAtom *atom = aContent->NodeInfo()->NameAtom();
 
-  
   return (nsGkAtoms::a       != atom &&
           nsGkAtoms::address != atom &&
           nsGkAtoms::big     != atom &&
@@ -1720,7 +1716,6 @@ TextServicesDocument::IsBlockNode(nsIContent* aContent)
           nsGkAtoms::u       != atom &&
           nsGkAtoms::var     != atom &&
           nsGkAtoms::wbr     != atom);
-  
 }
 
 
@@ -1843,7 +1838,6 @@ TextServicesDocument::SetSelectionInternal(int32_t aOffset,
    
    
    
-   
 
     return NS_OK;
   }
@@ -1883,7 +1877,6 @@ TextServicesDocument::SetSelectionInternal(int32_t aOffset,
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
-  
   
   
   

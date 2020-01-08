@@ -646,7 +646,6 @@ nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
   
   
   
-  
 
   nsCOMPtr<nsIPrincipal> principal;
   

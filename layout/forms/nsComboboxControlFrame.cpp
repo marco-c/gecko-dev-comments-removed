@@ -860,7 +860,6 @@ nsComboboxControlFrame::Reflow(nsPresContext*          aPresContext,
   }
 
   
-  
   if (!mDroppedDown) {
     mDisplayedIndex = mListControlFrame->GetSelectedIndex();
   }

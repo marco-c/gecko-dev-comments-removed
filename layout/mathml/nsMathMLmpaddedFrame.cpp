@@ -56,7 +56,6 @@ void
 nsMathMLmpaddedFrame::ProcessAttributes()
 {
   
-  
 
 
 
@@ -65,7 +64,6 @@ nsMathMLmpaddedFrame::ProcessAttributes()
 
 
 
-  
 
   nsAutoString value;
 

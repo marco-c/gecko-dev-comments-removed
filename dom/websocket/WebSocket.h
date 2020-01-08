@@ -129,7 +129,6 @@ public:
   void GetProtocol(nsAString& aResult);
 
   
-  
   void Close(const Optional<uint16_t>& aCode,
              const Optional<nsAString>& aReason,
              ErrorResult& aRv);

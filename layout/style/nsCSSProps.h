@@ -329,7 +329,6 @@ public:
   static const KTableEntry kAlignContentDistribution[]; 
   static const KTableEntry kAlignContentPosition[]; 
   
-  
   static const KTableEntry kAutoCompletionAlignJustifySelf[];
   static const KTableEntry kAutoCompletionAlignItems[];
   static const KTableEntry kAutoCompletionAlignJustifyContent[];

@@ -140,9 +140,6 @@ public:
 
 
 
-
-
-
   NS_IMETHOD
   InheritAutomaticData(nsIFrame* aParent) = 0;
 

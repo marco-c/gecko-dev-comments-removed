@@ -3387,7 +3387,6 @@ nsDocumentViewer::GetHintCharset()
   }
   
   
-  
   return mHintCharset;
 }
 

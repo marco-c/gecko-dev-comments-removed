@@ -243,7 +243,6 @@ public:
 
 
 
-
   NS_IMETHOD FindFrameAt(int32_t aLineNumber,
                          nsPoint aPos,
                          nsIFrame** aFrameFound,

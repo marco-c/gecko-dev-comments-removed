@@ -108,7 +108,6 @@ namespace indexedDB {
 
 
 
-
 nsresult
 Key::ToLocaleBasedKey(Key& aTarget, const nsCString& aLocale) const
 {

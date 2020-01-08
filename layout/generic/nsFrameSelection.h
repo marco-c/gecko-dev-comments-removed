@@ -234,17 +234,10 @@ public:
 
 
 
-
-
   void Init(nsIPresShell *aShell, nsIContent *aLimiter,
             bool aAccessibleCaretEnabled);
 
   
-
-
-
-
-
 
 
 
@@ -270,19 +263,10 @@ public:
 
 
 
-
-
   
   void HandleDrag(nsIFrame* aFrame, const nsPoint& aPoint);
 
   
-
-
-
-
-
-
-
 
 
 
@@ -372,7 +356,6 @@ public:
   void StopAutoScrollTimer();
 
   
-
 
 
 
@@ -540,7 +523,6 @@ public:
 
 
 
-
   
   nsresult WordExtendForDelete(bool aForward);
 
@@ -549,12 +531,10 @@ public:
 
 
 
-
   
   nsresult LineMove(bool aForward, bool aExtend);
 
   
-
 
 
 

@@ -807,7 +807,6 @@ nsHTMLFramesetFrame::Reflow(nsPresContext*           aPresContext,
 
   
   
-  
   GetDesiredSize(aPresContext, aReflowInput, aDesiredSize);
 
   nscoord width  = (aDesiredSize.Width() <= aReflowInput.AvailableWidth())
