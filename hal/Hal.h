@@ -81,17 +81,19 @@ void Vibrate(const nsTArray<uint32_t>& pattern,
 void CancelVibrate(nsPIDOMWindowInner* aWindow);
 void CancelVibrate(const hal::WindowIdentifier &id);
 
+#define MOZ_DEFINE_HAL_OBSERVER(name_)
 
 
 
+                                                                 \
+void Register##name_##Observer(hal::name_##Observer* aObserver);    \
+/**                                                                 \
+ * Inform the backend a |name_| observer unregistered.              \
+ * @param aObserver The observer that should be removed.            \
+ */                                                                 \
+void Unregister##name_##Observer(hal::name_##Observer* aObserver);
 
-void RegisterBatteryObserver(hal::BatteryObserver* aBatteryObserver);
-
-
-
-
-
-void UnregisterBatteryObserver(hal::BatteryObserver* aBatteryObserver);
+MOZ_DEFINE_HAL_OBSERVER(Battery);
 
 
 
@@ -143,17 +145,7 @@ void EnableSensorNotifications(hal::SensorType aSensor);
 void DisableSensorNotifications(hal::SensorType aSensor);
 
 
-
-
-
-
-void RegisterNetworkObserver(hal::NetworkObserver* aNetworkObserver);
-
-
-
-
-
-void UnregisterNetworkObserver(hal::NetworkObserver* aNetworkObserver);
+MOZ_DEFINE_HAL_OBSERVER(Network);
 
 
 
@@ -180,17 +172,7 @@ void EnableWakeLockNotifications();
 
 void DisableWakeLockNotifications();
 
-
-
-
-
-void RegisterWakeLockObserver(hal::WakeLockObserver* aObserver);
-
-
-
-
-
-void UnregisterWakeLockObserver(hal::WakeLockObserver* aObserver);
+MOZ_DEFINE_HAL_OBSERVER(WakeLock);
 
 
 
@@ -226,17 +208,7 @@ void GetWakeLockInfo(const nsAString &aTopic, hal::WakeLockInformation *aWakeLoc
 
 void NotifyWakeLockChange(const hal::WakeLockInformation& aWakeLockInfo);
 
-
-
-
-
-void RegisterScreenConfigurationObserver(hal::ScreenConfigurationObserver* aScreenConfigurationObserver);
-
-
-
-
-
-void UnregisterScreenConfigurationObserver(hal::ScreenConfigurationObserver* aScreenConfigurationObserver);
+MOZ_DEFINE_HAL_OBSERVER(ScreenConfiguration);
 
 
 
