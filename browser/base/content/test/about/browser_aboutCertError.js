@@ -71,10 +71,13 @@ add_task(async function checkReturnToAboutHome() {
       if (!frame) {
         is(returnButton.getAttribute("autofocus"), "true", "returnButton has autofocus");
       }
+      
+      
+      
       returnButton.click();
-
-      await ContentTaskUtils.waitForEvent(this, "pageshow", true);
     });
+
+    await BrowserTestUtils.waitForLocationChange(gBrowser, "about:home");
 
     is(browser.webNavigation.canGoBack, true, "webNavigation.canGoBack");
     is(browser.webNavigation.canGoForward, false, "!webNavigation.canGoForward");

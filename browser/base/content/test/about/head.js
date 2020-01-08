@@ -129,17 +129,44 @@ function waitForDocLoadAndStopIt(aExpectedURL, aBrowser = gBrowser.selectedBrows
     });
   }
 
-  return new Promise((resolve, reject) => {
-    function complete({ data }) {
-      is(data.uri, aExpectedURL, "waitForDocLoadAndStopIt: The expected URL was loaded");
-      mm.removeMessageListener("Test:WaitForDocLoadAndStopIt", complete);
-      resolve();
-    }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  let stoppedDocLoadPromise = () => {
+    return new Promise((resolve, reject) => {
+      function complete({ data }) {
+        is(data.uri, aExpectedURL, "waitForDocLoadAndStopIt: The expected URL was loaded");
+        mm.removeMessageListener("Test:WaitForDocLoadAndStopIt", complete);
+        resolve();
+      }
 
-    let mm = aBrowser.messageManager;
-    mm.loadFrameScript("data:,(" + content_script.toString() + ")(" + aStopFromProgressListener + ");", true);
-    mm.addMessageListener("Test:WaitForDocLoadAndStopIt", complete);
-    info("waitForDocLoadAndStopIt: Waiting for URL: " + aExpectedURL);
+      let mm = aBrowser.messageManager;
+      mm.loadFrameScript("data:,(" + content_script.toString() + ")(" + aStopFromProgressListener + ");", true);
+      mm.addMessageListener("Test:WaitForDocLoadAndStopIt", complete);
+      info("waitForDocLoadAndStopIt: Waiting for URL: " + aExpectedURL);
+    });
+  };
+
+  let win = aBrowser.ownerGlobal;
+  let tab = win.gBrowser.getTabForBrowser(aBrowser);
+  let { mustChangeProcess } = E10SUtils.shouldLoadURIInBrowser(aBrowser, aExpectedURL);
+  if (!tab ||
+      !win.gMultiProcessBrowser ||
+      !mustChangeProcess) {
+    return stoppedDocLoadPromise();
+  }
+
+  return new Promise((resolve, reject) => {
+    tab.addEventListener("TabRemotenessChange", function() {
+      stoppedDocLoadPromise().then(resolve, reject);
+    }, {once: true});
   });
 }
 

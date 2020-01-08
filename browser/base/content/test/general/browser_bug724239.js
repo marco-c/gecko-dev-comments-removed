@@ -13,12 +13,29 @@ add_task(async function test_blank() {
 add_task(async function test_newtab() {
   await BrowserTestUtils.withNewTab({ gBrowser, url: "about:blank" },
                                     async function(browser) {
+    let tab = gBrowser.getTabForBrowser(browser);
+
     
     BrowserTestUtils.loadURI(browser, "about:newtab");
-    await BrowserTestUtils.browserLoaded(browser);
+    
+    
+    await BrowserTestUtils.browserStopped(browser, "about:newtab");
+
+    let { mustChangeProcess } =
+      E10SUtils.shouldLoadURIInBrowser(browser, "http://example.com");
 
     BrowserTestUtils.loadURI(browser, "http://example.com");
-    await BrowserTestUtils.browserLoaded(browser);
+
+    let stopped = BrowserTestUtils.browserStopped(browser);
+
+    if (mustChangeProcess) {
+      
+      
+      await BrowserTestUtils.waitForEvent(tab, "SSTabRestored");
+    }
+
+    await stopped;
+
     is(gBrowser.canGoBack, true, "about:newtab was added to the session history when AS was enabled.");
   });
 });
