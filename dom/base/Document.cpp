@@ -3547,21 +3547,21 @@ void Document::TryChannelCharset(nsIChannel* aChannel, int32_t& aCharsetSource,
   }
 }
 
-static inline void AssertNoStaleServoDataIn(nsINode& aSubtreeRoot) {
+static inline void AssertNoStaleServoDataIn(const nsINode& aSubtreeRoot) {
 #ifdef DEBUG
-  for (nsINode* node : ShadowIncludingTreeIterator(aSubtreeRoot)) {
+  for (const nsINode* node = &aSubtreeRoot; node;
+       node = node->GetNextNode(&aSubtreeRoot)) {
     const Element* element = Element::FromNode(node);
     if (!element) {
       continue;
     }
     MOZ_ASSERT(!element->HasServoData());
+    if (auto* shadow = element->GetShadowRoot()) {
+      AssertNoStaleServoDataIn(*shadow);
+    }
     if (nsXBLBinding* binding = element->GetXBLBinding()) {
       if (nsXBLBinding* bindingWithContent = binding->GetBindingWithContent()) {
         nsIContent* content = bindingWithContent->GetAnonymousContent();
-        
-        
-        
-        
         MOZ_ASSERT(!content->AsElement()->HasServoData());
         for (nsINode* child = content->GetFirstChild(); child;
              child = child->GetNextSibling()) {
@@ -3581,7 +3581,7 @@ already_AddRefed<nsIPresShell> Document::CreateShell(
   NS_ENSURE_FALSE(GetBFCacheEntry(), nullptr);
 
   FillStyleSet(aStyleSet.get());
-  AssertNoStaleServoDataIn(*this);
+  AssertNoStaleServoDataIn(static_cast<nsINode&>(*this));
 
   RefPtr<PresShell> shell = new PresShell;
   
@@ -3704,7 +3704,7 @@ void Document::DeleteShell() {
   mStyleSetFilled = false;
 
   ClearStaleServoData();
-  AssertNoStaleServoDataIn(*this);
+  AssertNoStaleServoDataIn(static_cast<nsINode&>(*this));
 }
 
 void Document::SetBFCacheEntry(nsIBFCacheEntry* aEntry) {
