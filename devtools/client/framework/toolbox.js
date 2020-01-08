@@ -2677,7 +2677,10 @@ Toolbox.prototype = {
   initInspector: function() {
     if (!this._initInspector) {
       this._initInspector = (async function() {
-        this._inspector = this.target.getFront("inspector");
+        
+        
+        
+        this._inspector = this.target.getInspector();
         const pref = "devtools.inspector.showAllAnonymousContent";
         const showAllAnonymousContent = Services.prefs.getBoolPref(pref);
         this._walker = await this._inspector.getWalker({ showAllAnonymousContent });
@@ -2749,6 +2752,7 @@ Toolbox.prototype = {
 
 
 
+
   destroyInspector: function() {
     if (this._destroyingInspector) {
       return this._destroyingInspector;
@@ -2769,6 +2773,9 @@ Toolbox.prototype = {
       } else {
         await this.highlighterUtils.stopPicker();
       }
+      
+      
+      this._inspector.destroy();
 
       if (this._highlighter) {
         

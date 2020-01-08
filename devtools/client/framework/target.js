@@ -237,6 +237,10 @@ function TabTarget({ form, client, chrome, tab = null }) {
   
   
   this.fronts = new Map();
+  
+  
+  
+  this._inspector = null;
 }
 
 exports.TabTarget = TabTarget;
@@ -373,6 +377,18 @@ TabTarget.prototype = {
   
   get root() {
     return this.client.mainRoot.rootForm;
+  },
+
+  
+  
+  
+  getInspector(typeName) {
+    
+    if (this._inspector && this._inspector.actorID) {
+      return this._inspector;
+    }
+    this._inspector = getFront(this.client, "inspector", this.form);
+    return this._inspector;
   },
 
   
