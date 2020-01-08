@@ -148,7 +148,7 @@ TransformLayerGeometry(Layer* aLayer, Maybe<gfx::Polygon>& aGeometry)
   transform = transform.ProjectTo2D();
 
   if (!transform.IsSingular()) {
-    aGeometry->TransformToScreenSpace(transform.Inverse());
+    aGeometry->TransformToScreenSpace(transform.Inverse(), transform);
   } else {
     
     aGeometry.reset();
