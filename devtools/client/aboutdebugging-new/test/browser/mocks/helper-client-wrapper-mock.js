@@ -76,6 +76,8 @@ function createClientMock() {
       sharedWorkers: [],
     }),
     
+    getFront: () => {},
+    
     onFront: () => {},
     
     setPreference: function(prefName, value) {

@@ -31,7 +31,12 @@ const runtimeDetails = {
 
   
   info: PropTypes.shape(runtimeInfo).isRequired,
+
+  
+  
+  isMultiE10s: PropTypes.bool,
 };
+exports.runtimeDetails = PropTypes.shape(runtimeDetails);
 
 const networkRuntimeConnectionParameter = {
   
