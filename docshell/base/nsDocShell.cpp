@@ -4704,6 +4704,10 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
         
         error = "blockedByPolicy";
         break;
+      case NS_ERROR_NET_HTTP2_SENT_GOAWAY:
+        
+        error = "networkProtocolError";
+        break;
       default:
         break;
     }
@@ -7433,6 +7437,7 @@ nsDocShell::EndPageLoad(nsIWebProgress* aProgress,
                aStatus == NS_ERROR_REMOTE_XUL ||
                aStatus == NS_ERROR_INTERCEPTION_FAILED ||
                aStatus == NS_ERROR_NET_INADEQUATE_SECURITY ||
+               aStatus == NS_ERROR_NET_HTTP2_SENT_GOAWAY ||
                NS_ERROR_GET_MODULE(aStatus) == NS_ERROR_MODULE_SECURITY) {
       
       DisplayLoadError(aStatus, url, nullptr, aChannel);

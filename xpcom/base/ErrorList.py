@@ -337,6 +337,8 @@ with modules["NETWORK"]:
     errors["NS_ERROR_NET_PARTIAL_TRANSFER"] = FAILURE(76)
     
     errors["NS_ERROR_NET_INADEQUATE_SECURITY"] = FAILURE(82)
+    
+    errors["NS_ERROR_NET_HTTP2_SENT_GOAWAY"] = FAILURE(83)
 
     
     
