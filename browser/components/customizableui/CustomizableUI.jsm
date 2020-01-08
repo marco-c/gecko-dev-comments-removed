@@ -3252,10 +3252,6 @@ var CustomizableUI = {
 
 
 
-
-
-
-
   ensureWidgetPlacedInWindow(aWidgetId, aWindow) {
     return CustomizableUIInternal.ensureWidgetPlacedInWindow(aWidgetId, aWindow);
   },

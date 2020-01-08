@@ -38,8 +38,8 @@ add_task(async function() {
   hidden1.hidden = hidden2.hidden = true;
 
   
-  navbar.insertItem(hidden1.id);
-  navbar.insertItem(hidden2.id);
+  CustomizableUI.addWidgetToArea(kHidden1Id, "nav-bar");
+  CustomizableUI.addWidgetToArea(kHidden2Id, "nav-bar");
 
   
   
