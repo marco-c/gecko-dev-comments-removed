@@ -101,6 +101,19 @@
   }
 }
 
+@media not (-moz-os-version: windows-win7) {
+  @media not (-moz-os-version: windows-win8) {
+    
+
+    :root[tabsintitlebar] #toolbar-menubar[autohide="true"] {
+      height: calc(var(--tab-min-height) - @navbarTabsShadowSize@);
+    }
+    :root[tabsintitlebar][sizemode="normal"] #toolbar-menubar[autohide="true"] {
+      height: calc(var(--tab-min-height) + var(--space-above-tabbar) - @navbarTabsShadowSize@);
+    }
+  }
+}
+
 :root[sizemode="normal"][chromehidden~="menubar"] #TabsToolbar > .toolbar-items,
 :root[sizemode="normal"] #toolbar-menubar[autohide="true"][inactive] + #TabsToolbar > .toolbar-items {
   padding-top: var(--space-above-tabbar);
@@ -953,7 +966,6 @@ notification[value="translation"] {
 #main-window:-moz-any([customize-entering],[customize-exiting]) label {
   transform: perspective(0.01px);
 }
-
 
 
 
