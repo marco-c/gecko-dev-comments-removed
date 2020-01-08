@@ -3,6 +3,8 @@
 
 
 use glutin::{self, ContextBuilder, CreationError};
+#[cfg(not(windows))]
+use glutin::dpi::PhysicalSize;
 use winit::{EventsLoop, Window, WindowBuilder};
 
 #[cfg(not(windows))]
@@ -65,7 +67,7 @@ impl glutin::GlContext for Context {
         match *self {}
     }
 
-    fn resize(&self, _: u32, _: u32) {
+    fn resize(&self, _: PhysicalSize) {
         match *self {}
     }
 }
