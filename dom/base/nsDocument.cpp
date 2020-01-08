@@ -1415,7 +1415,6 @@ nsIDocument::nsIDocument()
     mDidCallBeginLoad(false),
     mAllowPaymentRequest(false),
     mEncodingMenuDisabled(false),
-    mIsShadowDOMEnabled(false),
     mIsSVGGlyphsDocument(false),
     mInDestructor(false),
     mIsGoingAway(false),
@@ -2139,11 +2138,6 @@ nsDocument::Init()
 
   
   
-  mIsShadowDOMEnabled = nsContentUtils::IsShadowDOMEnabled() ||
-    (XRE_IsParentProcess() && AllowXULXBL());
-
-  
-  
   
   
   nsCOMPtr<nsIGlobalObject> global = xpc::NativeGlobal(xpc::PrivilegedJunkScope());
@@ -2656,39 +2650,14 @@ nsIDocument::IsSynthesized() {
   return loadInfo && loadInfo->GetServiceWorkerTaintingSynthesized();
 }
 
-bool
-nsDocument::IsShadowDOMEnabled(JSContext* aCx, JSObject* aGlobal)
-{
-  MOZ_DIAGNOSTIC_ASSERT(JS_IsGlobalObject(aGlobal));
-  nsCOMPtr<nsPIDOMWindowInner> window = xpc::WindowOrNull(aGlobal);
-
-  nsIDocument* doc = window ? window->GetExtantDoc() : nullptr;
-  if (!doc) {
-    return false;
-  }
-
-  return doc->IsShadowDOMEnabled();
-}
-
 
 bool
-nsDocument::IsShadowDOMEnabledAndCallerIsChromeOrAddon(JSContext* aCx,
-                                                       JSObject* aObject)
+nsDocument::IsCallerChromeOrAddon(JSContext* aCx, JSObject* aObject)
 {
-  if (IsShadowDOMEnabled(aCx, aObject)) {
-    nsIPrincipal* principal = nsContentUtils::SubjectPrincipal(aCx);
-    return principal &&
-      (nsContentUtils::IsSystemPrincipal(principal) ||
-       principal->GetIsAddonOrExpandedAddonPrincipal());
-  }
-
-  return false;
-}
-
-bool
-nsDocument::IsShadowDOMEnabled(const nsINode* aNode)
-{
-  return aNode->OwnerDoc()->IsShadowDOMEnabled();
+  nsIPrincipal* principal = nsContentUtils::SubjectPrincipal(aCx);
+  return principal &&
+    (nsContentUtils::IsSystemPrincipal(principal) ||
+     principal->GetIsAddonOrExpandedAddonPrincipal());
 }
 
 nsresult

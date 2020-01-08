@@ -197,11 +197,8 @@ public:
   }
 
   
-  static bool IsShadowDOMEnabled(JSContext* aCx, JSObject* aGlobal);
   
-  
-  static bool IsShadowDOMEnabledAndCallerIsChromeOrAddon(JSContext* aCx, JSObject* aObject);
-  static bool IsShadowDOMEnabled(const nsINode* aNode);
+  static bool IsCallerChromeOrAddon(JSContext* aCx, JSObject* aObject);
 
 public:
   using mozilla::dom::DocumentOrShadowRoot::GetElementById;

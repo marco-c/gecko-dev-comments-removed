@@ -347,10 +347,7 @@ impl<'a, 'i> ::selectors::Parser<'i> for SelectorParser<'a> {
 
     #[inline]
     fn parse_slotted(&self) -> bool {
-        
-        
-        
-        unsafe { structs::nsContentUtils_sIsShadowDOMEnabled }
+        true
     }
 
     #[inline]

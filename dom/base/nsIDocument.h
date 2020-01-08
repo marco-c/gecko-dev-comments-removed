@@ -3799,11 +3799,6 @@ public:
   mozilla::dom::FeaturePolicy*
   Policy() const;
 
-  bool IsShadowDOMEnabled() const
-  {
-    return mIsShadowDOMEnabled;
-  }
-
   bool ModuleScriptsEnabled();
 
   
@@ -4270,10 +4265,6 @@ protected:
 
   
   bool mEncodingMenuDisabled : 1;
-
-  
-  
-  bool mIsShadowDOMEnabled : 1;
 
   
   bool mIsSVGGlyphsDocument : 1;
