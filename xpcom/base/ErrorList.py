@@ -180,8 +180,6 @@ with modules["XPCOM"]:
     
     errors["NS_SUCCESS_INTERRUPTED_TRAVERSE"] = SUCCESS(2)
     
-    errors["NS_ERROR_SERVICE_NOT_FOUND"] = SUCCESS(22)
-    
     errors["NS_ERROR_SERVICE_IN_USE"] = SUCCESS(23)
 
 
