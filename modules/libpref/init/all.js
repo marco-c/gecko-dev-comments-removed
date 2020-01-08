@@ -2241,9 +2241,12 @@ pref("network.auth.private-browsing-sso", false);
 
 
 
-
+#ifdef ANDROID
 
 pref("network.http.throttle.enable", false);
+#else
+pref("network.http.throttle.enable", true);
+#endif
 
 
 #ifdef NIGHTLY_BUILD
