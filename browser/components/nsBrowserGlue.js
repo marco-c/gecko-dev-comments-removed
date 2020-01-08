@@ -1811,7 +1811,7 @@ BrowserGlue.prototype = {
   _migrateUI: function BG__migrateUI() {
     
     
-    const UI_VERSION = 72;
+    const UI_VERSION = 71;
     const BROWSER_DOCURL = AppConstants.BROWSER_CHROME_URL;
 
     let currentUIVersion;
@@ -2140,12 +2140,6 @@ BrowserGlue.prototype = {
       for (let savedHandlerPref of savedContentHandlers) {
         Services.prefs.clearUserPref(savedHandlerPref);
       }
-    }
-
-    if (currentUIVersion < 72) {
-      
-      let pref = "devtools.performance.recording.interval";
-      Services.prefs.setIntPref(pref, Services.prefs.getIntPref(pref, 1) * 1000);
     }
 
     
