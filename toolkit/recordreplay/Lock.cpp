@@ -196,11 +196,16 @@ static AtomicLock* gAtomicLock = nullptr;
  void
 Lock::InitializeLocks()
 {
-  MOZ_RELEASE_ASSERT(!AreThreadEventsPassedThrough());
   gNumLocks = gAtomicLockId;
-
   gAtomicLock = new AtomicLock();
-  MOZ_RELEASE_ASSERT(!IsRecording() || gNumLocks == gAtomicLockId + 1);
+
+  AssertEventsAreNotPassedThrough();
+
+  
+  
+  MOZ_RELEASE_ASSERT(!IsRecording() ||
+                     gNumLocks == gAtomicLockId + 1 ||
+                     gInitializationFailureMessage);
 }
 
  void

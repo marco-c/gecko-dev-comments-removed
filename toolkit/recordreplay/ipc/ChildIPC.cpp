@@ -222,9 +222,12 @@ InitRecordingOrReplayingProcess(int* aArgc, char*** aArgv)
 
   pt.reset();
 
-  DirectCreatePipe(&gCheckpointWriteFd, &gCheckpointReadFd);
-
-  Thread::StartThread(ListenForCheckpointThreadMain, nullptr, false);
+  
+  
+  if (!gInitializationFailureMessage) {
+    DirectCreatePipe(&gCheckpointWriteFd, &gCheckpointReadFd);
+    Thread::StartThread(ListenForCheckpointThreadMain, nullptr, false);
+  }
 
   pt.emplace();
 
@@ -267,6 +270,12 @@ InitRecordingOrReplayingProcess(int* aArgc, char*** aArgv)
   HitCheckpoint(CheckpointId::Invalid,  false);
 
   
+  if (gInitializationFailureMessage) {
+    ReportFatalError(Nothing(), "%s", gInitializationFailureMessage);
+    Unreachable();
+  }
+
+  
   MOZ_RELEASE_ASSERT(gParentArgv.empty());
 
   gParentPid = gIntroductionMessage->mParentPid;
@@ -296,12 +305,6 @@ InitRecordingOrReplayingProcess(int* aArgc, char*** aArgv)
 
   *aArgc = gParentArgv.length() - 1; 
   *aArgv = gParentArgv.begin();
-
-  
-  if (gInitializationFailureMessage) {
-    ReportFatalError(Nothing(), "%s", gInitializationFailureMessage);
-    Unreachable();
-  }
 }
 
 base::ProcessId

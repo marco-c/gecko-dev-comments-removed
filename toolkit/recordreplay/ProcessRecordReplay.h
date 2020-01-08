@@ -88,7 +88,17 @@ extern File* gRecordingFile;
 extern bool gInitialized;
 
 
+
+
 extern char* gInitializationFailureMessage;
+
+
+
+static inline void
+AssertEventsAreNotPassedThrough()
+{
+  MOZ_RELEASE_ASSERT(!AreThreadEventsPassedThrough() || gInitializationFailureMessage);
+}
 
 
 void FlushRecording();
