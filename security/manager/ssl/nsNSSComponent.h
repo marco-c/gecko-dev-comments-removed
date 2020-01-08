@@ -124,15 +124,7 @@ private:
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  bool mNonIdempotentCleanupMustHappen;
+  bool mLoadLoadableRootsTaskDispatched;
 };
 
 inline nsresult

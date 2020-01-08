@@ -103,6 +103,7 @@ extern nsresult nsStringInputStreamConstructor(nsISupports*, REFNSIID, void**);
 #include "nsSecurityConsoleMessage.h"
 #include "nsMessageLoop.h"
 #include "nss.h"
+#include "ssl.h"
 
 #include <locale.h>
 #include "mozilla/Services.h"
@@ -1037,6 +1038,7 @@ ShutdownXPCOM(nsIServiceManager* aServMgr)
   
   
   if (NSS_IsInitialized()) {
+    SSL_ClearSessionCache();
     if (NSS_Shutdown() != SECSuccess) {
       
       

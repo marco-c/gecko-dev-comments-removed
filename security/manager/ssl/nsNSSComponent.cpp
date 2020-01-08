@@ -203,7 +203,7 @@ nsNSSComponent::nsNSSComponent()
   , mLoadableRootsLoadedResult(NS_ERROR_FAILURE)
   , mMutex("nsNSSComponent.mMutex")
   , mMitmDetecionEnabled(false)
-  , mNonIdempotentCleanupMustHappen(false)
+  , mLoadLoadableRootsTaskDispatched(false)
 {
   MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("nsNSSComponent::ctor\n"));
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
@@ -1947,17 +1947,6 @@ nsNSSComponent::InitializeNSS()
 
     
     
-    
-    
-    
-    
-    
-    if (SSL_ConfigServerSessionIDCache(1000, 0, 0, nullptr) != SECSuccess) {
-      return NS_ERROR_FAILURE;
-    }
-
-    
-    
     setValidationOptions(true, lock);
 
     RefPtr<LoadLoadableRootsTask> loadLoadableRootsTask(
@@ -1967,7 +1956,7 @@ nsNSSComponent::InitializeNSS()
       return rv;
     }
 
-    mNonIdempotentCleanupMustHappen = true;
+    mLoadLoadableRootsTaskDispatched = true;
     return NS_OK;
   }
 }
@@ -1986,16 +1975,9 @@ nsNSSComponent::ShutdownNSS()
   
   
   
-  if (mNonIdempotentCleanupMustHappen) {
+  if (mLoadLoadableRootsTaskDispatched) {
     Unused << BlockUntilLoadableRootsLoaded();
-
-    
-    
-    SSL_ClearSessionCache();
-    
-    
-    Unused << SSL_ShutdownServerSessionIDCache();
-    mNonIdempotentCleanupMustHappen = false;
+    mLoadLoadableRootsTaskDispatched = false;
   }
 
   ::mozilla::psm::UnloadLoadableRoots();
