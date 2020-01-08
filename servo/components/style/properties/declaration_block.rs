@@ -41,11 +41,15 @@ impl AnimationRules {
 
 
 #[derive(Clone, Copy, Debug, Eq, Hash, MallocSizeOf, PartialEq)]
-pub enum DeclarationSource {
+pub enum DeclarationPushMode {
+    
+    
+    
     
     Parsing,
     
-    CssOm,
+    
+    Append,
 }
 
 
@@ -418,10 +422,10 @@ impl PropertyDeclarationBlock {
         &mut self,
         mut drain: SourcePropertyDeclarationDrain,
         importance: Importance,
-        source: DeclarationSource,
+        mode: DeclarationPushMode,
     ) -> bool {
-        match source {
-            DeclarationSource::Parsing => {
+        match mode {
+            DeclarationPushMode::Parsing => {
                 let all_shorthand_len = match drain.all_shorthand {
                     AllShorthand::NotSet => 0,
                     AllShorthand::CSSWideKeyword(_) |
@@ -433,7 +437,7 @@ impl PropertyDeclarationBlock {
                 
                 self.declarations.reserve(push_calls_count);
             }
-            DeclarationSource::CssOm => {
+            _ => {
                 
                 
                 
@@ -448,7 +452,7 @@ impl PropertyDeclarationBlock {
             changed |= self.push(
                 decl,
                 importance,
-                source,
+                mode,
             );
         }
         match drain.all_shorthand {
@@ -461,7 +465,7 @@ impl PropertyDeclarationBlock {
                     changed |= self.push(
                         decl,
                         importance,
-                        source,
+                        mode,
                     );
                 }
             }
@@ -473,7 +477,7 @@ impl PropertyDeclarationBlock {
                     changed |= self.push(
                         decl,
                         importance,
-                        source,
+                        mode,
                     );
                 }
             }
@@ -488,17 +492,11 @@ impl PropertyDeclarationBlock {
     
     
     
-    
-    
-    
-    
-    
-    
     pub fn push(
         &mut self,
         declaration: PropertyDeclaration,
         importance: Importance,
-        source: DeclarationSource,
+        mode: DeclarationPushMode,
     ) -> bool {
         let longhand_id = match declaration.id() {
             PropertyDeclarationId::Longhand(id) => Some(id),
@@ -516,7 +514,7 @@ impl PropertyDeclarationBlock {
                     continue;
                 }
 
-                if matches!(source, DeclarationSource::Parsing) {
+                if matches!(mode, DeclarationPushMode::Parsing) {
                     let important = self.declarations_importance[i];
 
                     
@@ -1209,7 +1207,7 @@ pub fn parse_property_declaration_list(
                 block.extend(
                     iter.parser.declarations.drain(),
                     importance,
-                    DeclarationSource::Parsing,
+                    DeclarationPushMode::Parsing,
                 );
             }
             Err((error, slice)) => {
