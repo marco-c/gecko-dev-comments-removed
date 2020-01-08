@@ -190,6 +190,20 @@ public:
 
   nsresult OnDrop(dom::DragEvent* aDropEvent);
 
+  
+
+
+
+
+
+
+  nsresult ComputeTextValue(uint32_t aDocumentEncoderFlags,
+                            nsAString& aOutputString) const
+  {
+    return ComputeValueInternal(NS_LITERAL_STRING("text/plain"),
+                                aDocumentEncoderFlags, aOutputString);
+  }
+
 protected: 
   
 
@@ -340,6 +354,18 @@ protected:
   GetAndInitDocEncoder(const nsAString& aFormatType,
                        uint32_t aDocumentEncoderFlags,
                        const nsACString& aCharset) const;
+
+  
+
+
+
+
+
+
+
+  nsresult ComputeValueInternal(const nsAString& aFormatType,
+                                uint32_t aDocumentEncoderFlags,
+                                nsAString& aOutputString) const;
 
   
 
