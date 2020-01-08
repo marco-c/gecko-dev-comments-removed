@@ -566,6 +566,10 @@ public class CodeGenerator {
         return cpp.toString();
     }
 
+    private boolean haveNatives() {
+        return nativesInits.length() > 0 || Utils.isJNIObject(cls);
+    }
+
     
 
 
@@ -581,7 +585,7 @@ public class CodeGenerator {
                 "            " + this.callingThread.nativeValue() + ";\n" +
                 "\n");
 
-        if (nativesInits.length() > 0) {
+        if (haveNatives()) {
             header.append(
                     "    template<class Impl> class Natives;\n");
         }
@@ -598,7 +602,7 @@ public class CodeGenerator {
 
 
     public String getNativesFileContents() {
-        if (nativesInits.length() == 0) {
+        if (!haveNatives()) {
             return "";
         }
         natives.append(
