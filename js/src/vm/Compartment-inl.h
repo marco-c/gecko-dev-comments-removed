@@ -16,6 +16,7 @@
 #include "jsnum.h"
 #include "gc/Barrier.h"
 #include "gc/Marking.h"
+#include "js/CallArgs.h"
 #include "js/Wrapper.h"
 #include "vm/Iteration.h"
 #include "vm/JSObject.h"
@@ -276,6 +277,42 @@ UnwrapAndTypeCheckArgument(JSContext* cx,
 
 
 
+template <class T>
+MOZ_MUST_USE T*
+UnwrapAndDowncastValue(JSContext* cx, const Value& value)
+{
+    static_assert(!std::is_convertible<T*, Wrapper*>::value,
+                  "T can't be a Wrapper type; this function discards wrappers");
+    JSObject* result = &value.toObject();
+    if (IsProxy(result)) {
+        if (JS_IsDeadWrapper(result)) {
+            JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_DEAD_OBJECT);
+            return nullptr;
+        }
+
+        
+        
+        result = CheckedUnwrap(result);
+        if (!result) {
+            ReportAccessDenied(cx);
+            return nullptr;
+        }
+    }
+
+    return &result->as<T>();
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -294,23 +331,11 @@ UnwrapInternalSlot(JSContext* cx,
     static_assert(!std::is_convertible<T*, Wrapper*>::value,
                   "T can't be a Wrapper type; this function discards wrappers");
 
-    JSObject* result = &unwrappedObj->getFixedSlot(slot).toObject();
-    if (IsProxy(result)) {
-        if (JS_IsDeadWrapper(result)) {
-            JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_DEAD_OBJECT);
-            return false;
-        }
-
-        
-        
-        result = CheckedUnwrap(result);
-        if (!result) {
-            ReportAccessDenied(cx);
-            return false;
-        }
+    T* result = UnwrapAndDowncastValue<T>(cx, unwrappedObj->getFixedSlot(slot));
+    if (!result) {
+        return false;
     }
-
-    unwrappedResult.set(&result->as<T>());
+    unwrappedResult.set(result);
     return true;
 }
 
@@ -325,6 +350,21 @@ UnwrapInternalSlot(JSContext* cx,
                    Rooted<T*>* unwrappedResult)
 {
     return UnwrapInternalSlot(cx, obj, slot, MutableHandle<T*>(unwrappedResult));
+}
+
+
+
+
+
+
+
+
+template <class T>
+MOZ_MUST_USE T*
+UnwrapCalleeSlot(JSContext* cx, CallArgs& args, size_t extendedSlot)
+{
+    JSFunction& func = args.callee().as<JSFunction>();
+    return UnwrapAndDowncastValue<T>(cx, func.getExtendedSlot(extendedSlot));
 }
 
 } 

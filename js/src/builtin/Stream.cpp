@@ -155,11 +155,15 @@ NewHandler(JSContext* cx, Native handler, HandleObject target)
     return handlerFun;
 }
 
-template<class T>
+
+
+
+
+template <class T>
 inline static MOZ_MUST_USE T*
-TargetFromHandler(JSObject& handler)
+TargetFromHandler(CallArgs& args)
 {
-    return &handler.as<JSFunction>().getExtendedSlot(0).toObject().as<T>();
+    return &args.callee().as<JSFunction>().getExtendedSlot(0).toObject().as<T>();
 }
 
 inline static MOZ_MUST_USE bool
@@ -925,7 +929,7 @@ static bool
 TeeReaderReadHandler(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
-    Rooted<TeeState*> teeState(cx, TargetFromHandler<TeeState>(args.callee()));
+    Rooted<TeeState*> unwrappedTeeState(cx, UnwrapCalleeSlot<TeeState>(cx, args, 0));
     HandleValue resultVal = args.get(0);
 
     
@@ -947,31 +951,31 @@ TeeReaderReadHandler(JSContext* cx, unsigned argc, Value* vp)
     bool done = doneVal.toBoolean();
 
     
-    if (done && !teeState->closedOrErrored()) {
+    if (done && !unwrappedTeeState->closedOrErrored()) {
         
-        if (!teeState->canceled1()) {
+        if (!unwrappedTeeState->canceled1()) {
             
-            Rooted<ReadableStreamDefaultController*> branch1(cx, teeState->branch1());
+            Rooted<ReadableStreamDefaultController*> branch1(cx, unwrappedTeeState->branch1());
             if (!ReadableStreamDefaultControllerClose(cx, branch1)) {
                 return false;
             }
         }
 
         
-        if (!teeState->canceled2()) {
+        if (!unwrappedTeeState->canceled2()) {
             
-            Rooted<ReadableStreamDefaultController*> branch2(cx, teeState->branch2());
+            Rooted<ReadableStreamDefaultController*> branch2(cx, unwrappedTeeState->branch2());
             if (!ReadableStreamDefaultControllerClose(cx, branch2)) {
                 return false;
             }
         }
 
         
-        teeState->setClosedOrErrored();
+        unwrappedTeeState->setClosedOrErrored();
     }
 
     
-    if (teeState->closedOrErrored()) {
+    if (unwrappedTeeState->closedOrErrored()) {
         return true;
     }
 
@@ -984,23 +988,23 @@ TeeReaderReadHandler(JSContext* cx, unsigned argc, Value* vp)
     
     
     
-    MOZ_ASSERT(!teeState->cloneForBranch2(), "tee(cloneForBranch2=true) should not be exposed");
+    MOZ_ASSERT(!unwrappedTeeState->cloneForBranch2(), "tee(cloneForBranch2=true) should not be exposed");
 
     
     
-    Rooted<ReadableStreamDefaultController*> controller(cx);
-    if (!teeState->canceled1()) {
-        controller = teeState->branch1();
-        if (!ReadableStreamDefaultControllerEnqueue(cx, controller, value1)) {
+    Rooted<ReadableStreamDefaultController*> unwrappedController(cx);
+    if (!unwrappedTeeState->canceled1()) {
+        unwrappedController = unwrappedTeeState->branch1();
+        if (!ReadableStreamDefaultControllerEnqueue(cx, unwrappedController, value1)) {
             return false;
         }
     }
 
     
     
-    if (!teeState->canceled2()) {
-        controller = teeState->branch2();
-        if (!ReadableStreamDefaultControllerEnqueue(cx, controller, value2)) {
+    if (!unwrappedTeeState->canceled2()) {
+        unwrappedController = unwrappedTeeState->branch2();
+        if (!ReadableStreamDefaultControllerEnqueue(cx, unwrappedController, value2)) {
             return false;
         }
     }
@@ -1041,7 +1045,11 @@ ReadableStreamTee_Pull(JSContext* cx, Handle<TeeState*> unwrappedTeeState)
         return nullptr;
     }
 
-    RootedObject onFulfilled(cx, NewHandler(cx, TeeReaderReadHandler, unwrappedTeeState));
+    RootedObject teeState(cx, unwrappedTeeState);
+    if (!cx->compartment()->wrap(cx, &teeState)) {
+        return nullptr;
+    }
+    RootedObject onFulfilled(cx, NewHandler(cx, TeeReaderReadHandler, teeState));
     if (!onFulfilled) {
         return nullptr;
     }
@@ -1152,7 +1160,7 @@ static bool
 TeeReaderClosedHandler(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
-    Rooted<TeeState*> teeState(cx, TargetFromHandler<TeeState>(args.callee()));
+    Rooted<TeeState*> teeState(cx, TargetFromHandler<TeeState>(args));
     HandleValue reason = args.get(0);
 
     
@@ -2138,8 +2146,8 @@ static bool
 ControllerStartHandler(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
-    Rooted<ReadableStreamController*> controller(cx);
-    controller = TargetFromHandler<ReadableStreamController>(args.callee());
+    Rooted<ReadableStreamController*> controller(cx,
+        TargetFromHandler<ReadableStreamController>(args));
 
     
     controller->setStarted();
@@ -2175,7 +2183,7 @@ ControllerStartFailedHandler(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
     Rooted<ReadableStreamController*> controller(cx,
-        TargetFromHandler<ReadableStreamController>(args.callee()));
+        TargetFromHandler<ReadableStreamController>(args));
 
     
     
@@ -2687,9 +2695,8 @@ ControllerPullHandler(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
 
-    RootedValue controllerVal(cx, args.callee().as<JSFunction>().getExtendedSlot(0));
-    Rooted<ReadableStreamController*> controller(cx);
-    controller = ToUnwrapped<ReadableStreamController>(cx, controllerVal);
+    Rooted<ReadableStreamController*> controller(cx,
+        UnwrapCalleeSlot<ReadableStreamController>(cx, args, 0));
     if (!controller) {
         return false;
     }
@@ -2722,9 +2729,8 @@ ControllerPullFailedHandler(JSContext* cx, unsigned argc, Value* vp)
     CallArgs args = CallArgsFromVp(argc, vp);
     HandleValue e = args.get(0);
 
-    RootedValue controllerVal(cx, args.callee().as<JSFunction>().getExtendedSlot(0));
-    Rooted<ReadableStreamController*> controller(cx);
-    controller = ToUnwrapped<ReadableStreamController>(cx, controllerVal);
+    Rooted<ReadableStreamController*> controller(cx,
+        UnwrapCalleeSlot<ReadableStreamController>(cx, args, 0));
     if (!controller) {
         return false;
     }
@@ -2790,9 +2796,10 @@ ReadableStreamControllerCallPullIfNeeded(JSContext* cx,
     RootedObject pullPromise(cx);
 
     if (IsMaybeWrapped<TeeState>(unwrappedUnderlyingSource)) {
-        Rooted<TeeState*> unwrappedTeeState(cx);
-        unwrappedTeeState = &UncheckedUnwrap(&unwrappedUnderlyingSource.toObject())->as<TeeState>();
-        Rooted<ReadableStream*> stream(cx, unwrappedController->stream());
+        MOZ_ASSERT(unwrappedUnderlyingSource.toObject().is<TeeState>(),
+                   "tee streams and controllers are always same-compartment with the TeeState object");
+        Rooted<TeeState*> unwrappedTeeState(cx,
+            &unwrappedUnderlyingSource.toObject().as<TeeState>());
         pullPromise = ReadableStreamTee_Pull(cx, unwrappedTeeState);
     } else if (unwrappedController->hasExternalSource()) {
         {
