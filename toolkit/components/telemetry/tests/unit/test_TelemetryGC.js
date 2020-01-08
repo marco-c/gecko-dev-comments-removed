@@ -18,6 +18,12 @@ function do_register_cleanup() {
 
 function run_test() {
   
+  const limit = 24;
+
+  
+  const make_gc_fields = 19;
+
+  
   Assert.ok(GCTelemetry.init(), "Initialize success");
   Assert.ok(!GCTelemetry.init(), "Wont initialize twice");
 
@@ -30,7 +36,7 @@ function run_test() {
   GCTelemetry.observeRaw(make_gc());
   
   assert_num_entries(1, false);
-  Assert.equal(19, Object.keys(get_entry()).length);
+  Assert.equal(make_gc_fields, Object.keys(get_entry()).length);
   
   assert_num_entries(1, true);
   
@@ -47,23 +53,24 @@ function run_test() {
   assert_num_entries(1, true);
   assert_num_entries(0, false);
 
-  
-  let my_gc_24 = make_gc();
-  for (let i = 0; i < 5; i++) {
-      my_gc_24["new_property_" + i] = "Data";
+  let my_gc_exact = make_gc();
+  Assert.equal(make_gc_fields, Object.keys(my_gc_exact).length);
+
+  for (let i = 0; i < limit - make_gc_fields; i++) {
+      my_gc_exact["new_property_" + i] = "Data";
   }
-  GCTelemetry.observeRaw(my_gc_24);
+  GCTelemetry.observeRaw(my_gc_exact);
   
-  Assert.equal(24, Object.keys(get_entry()).length);
+  Assert.equal(limit, Object.keys(get_entry()).length);
   assert_num_entries(1, true);
   assert_num_entries(0, false);
 
   
-  let my_gc_25 = make_gc();
-  for (let i = 0; i < 6; i++) {
-      my_gc_25["new_property_" + i] = "Data";
+  let my_gc_too_many = make_gc();
+  for (let i = 0; i < limit - make_gc_fields + 1; i++) {
+      my_gc_too_many["new_property_" + i] = "Data";
   }
-  GCTelemetry.observeRaw(my_gc_25);
+  GCTelemetry.observeRaw(my_gc_too_many);
   
   Assert.equal(7, Object.keys(get_entry()).length);
   assert_num_entries(1, true);
