@@ -32,6 +32,7 @@
 #include <cairo-gobject.h>
 #include "WidgetStyleCache.h"
 #include "prenv.h"
+#include "nsCSSColorUtils.h"
 
 using namespace mozilla;
 using mozilla::LookAndFeel;
@@ -215,6 +216,58 @@ GetBorderColors(GtkStyleContext* aContext,
     return ret;
 }
 
+
+
+
+nsresult
+nsLookAndFeel::InitCellHighlightColors() {
+    
+    
+    
+    int32_t minLuminosityDifference = NS_SUFFICIENT_LUMINOSITY_DIFFERENCE / 5;
+    int32_t backLuminosityDifference = NS_LUMINOSITY_DIFFERENCE(
+        mMozWindowBackground, mMozFieldBackground);
+    if (backLuminosityDifference >= minLuminosityDifference) {
+        mMozCellHighlightBackground = mMozWindowBackground;
+        mMozCellHighlightText = mMozWindowText;
+        return NS_OK;
+    }
+
+    uint16_t hue, sat, luminance;
+    uint8_t alpha;
+    mMozCellHighlightBackground = mMozFieldBackground;
+    mMozCellHighlightText = mMozFieldText;
+
+    NS_RGB2HSV(mMozCellHighlightBackground, hue, sat, luminance, alpha);
+
+    uint16_t step = 30;
+    
+    if (luminance <= step) {
+        luminance += step;
+    }
+    
+    else if (luminance >= 255 - step) {
+        luminance -= step;
+    }
+    
+    else {
+        uint16_t textHue, textSat, textLuminance;
+        uint8_t textAlpha;
+        NS_RGB2HSV(mMozCellHighlightText, textHue, textSat, textLuminance,
+            textAlpha);
+        
+        if (textLuminance < luminance) {
+            luminance += step;
+        }
+        
+        else {
+            luminance -= step;
+        }
+    }
+    NS_HSV2RGB(mMozCellHighlightBackground, hue, sat, luminance, alpha);
+    return NS_OK;
+}
+
 void
 nsLookAndFeel::NativeInit()
 {
@@ -271,7 +324,6 @@ nsLookAndFeel::NativeGetColor(ColorID aID, nscolor& aColor)
     case eColorID_IMESelectedRawTextBackground:
     case eColorID_IMESelectedConvertedTextBackground:
     case eColorID__moz_dragtargetzone:
-    case eColorID__moz_cellhighlight:
     case eColorID__moz_html_cellhighlight:
     case eColorID_highlight: 
         aColor = mTextSelectedBackground;
@@ -281,9 +333,14 @@ nsLookAndFeel::NativeGetColor(ColorID aID, nscolor& aColor)
     case eColorID_IMESelectedRawTextForeground:
     case eColorID_IMESelectedConvertedTextForeground:
     case eColorID_highlighttext:
-    case eColorID__moz_cellhighlighttext:
     case eColorID__moz_html_cellhighlighttext:
         aColor = mTextSelectedText;
+        break;
+    case eColorID__moz_cellhighlight:
+        aColor = mMozCellHighlightBackground;
+        break;
+    case eColorID__moz_cellhighlighttext:
+        aColor = mMozCellHighlightText;
         break;
     case eColorID_Widget3DHighlight:
         aColor = NS_RGB(0xa0,0xa0,0xa0);
@@ -1021,6 +1078,9 @@ nsLookAndFeel::EnsureInit()
     gtk_style_context_get_background_color(style, GTK_STATE_FLAG_NORMAL, &color);
     mOddCellBackground = GDK_RGBA_TO_NS_RGBA(color);
     gtk_style_context_restore(style);
+
+    
+    InitCellHighlightColors();
 
     
     

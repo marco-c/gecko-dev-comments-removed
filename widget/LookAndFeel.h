@@ -107,6 +107,8 @@ public:
     eColorID__moz_dragtargetzone,
 
     
+    
+    
     eColorID__moz_cellhighlight,
     
     eColorID__moz_cellhighlighttext,
