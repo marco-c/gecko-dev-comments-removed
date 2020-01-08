@@ -1051,9 +1051,6 @@ class ChildAPIManager {
         !allowedContexts.includes("content")) {
       return false;
     }
-    if (allowedContexts.includes("addon_parent_only")) {
-      return false;
-    }
 
     
     if (this.context.envType === "devtools_child" &&
