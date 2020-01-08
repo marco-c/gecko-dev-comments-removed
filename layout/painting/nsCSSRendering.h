@@ -595,7 +595,7 @@ struct nsCSSRendering
   
   static void DrawTableBorderSegment(
     DrawTarget& aDrawTarget,
-    uint8_t aBorderStyle,
+    mozilla::StyleBorderStyle aBorderStyle,
     nscolor aBorderColor,
     const nsRect& aBorderRect,
     int32_t aAppUnitsPerDevPixel,
@@ -624,7 +624,7 @@ struct nsCSSRendering
   
   static void GetTableBorderSolidSegments(
       nsTArray<SolidBeveledBorderSegment>& aSegments,
-      uint8_t aBorderStyle,
+      mozilla::StyleBorderStyle aBorderStyle,
       nscolor aBorderColor,
       const nsRect& aBorderRect,
       int32_t aAppUnitsPerDevPixel,

@@ -454,17 +454,13 @@ SetAnimatable(nsCSSPropertyID aProperty,
   }
 }
 
-enum class Send {
-  NextTransaction,
-  Immediate,
-};
 static void
 AddAnimationForProperty(nsIFrame* aFrame,
                         const AnimationProperty& aProperty,
                         dom::Animation* aAnimation,
                         AnimationInfo& aAnimationInfo,
                         AnimationData& aData,
-                        Send aSendFlag)
+                        bool aPending)
 {
   MOZ_ASSERT(aAnimation->GetEffect(),
              "Should not be adding an animation without an effect");
@@ -478,9 +474,8 @@ AddAnimationForProperty(nsIFrame* aFrame,
              " one later");
 
   layers::Animation* animation =
-    (aSendFlag == Send::NextTransaction)
-      ? aAnimationInfo.AddAnimationForNextTransaction()
-      : aAnimationInfo.AddAnimation();
+    aPending ? aAnimationInfo.AddAnimationForNextTransaction()
+             : aAnimationInfo.AddAnimation();
 
   const TimingParams& timing = aAnimation->GetEffect()->SpecifiedTiming();
 
@@ -585,10 +580,10 @@ AddAnimationsForProperty(nsIFrame* aFrame,
                          nsDisplayItem* aItem,
                          nsCSSPropertyID aProperty,
                          AnimationInfo& aAnimationInfo,
-                         Send aSendFlag,
-                         layers::LayersBackend aLayersBackend)
+                         bool aPending,
+                         bool aIsForWebRender)
 {
-  if (aSendFlag == Send::NextTransaction) {
+  if (aPending) {
     aAnimationInfo.ClearAnimationsForNextTransaction();
   } else {
     aAnimationInfo.ClearAnimations();
@@ -647,7 +642,7 @@ AddAnimationsForProperty(nsIFrame* aFrame,
     float scaleX = 1.0f;
     float scaleY = 1.0f;
     bool hasPerspectiveParent = false;
-    if (aLayersBackend == layers::LayersBackend::LAYERS_WR) {
+    if (aIsForWebRender) {
       
       
       
@@ -726,45 +721,9 @@ AddAnimationsForProperty(nsIFrame* aFrame,
     }
 
     AddAnimationForProperty(
-      aFrame, *property, anim, aAnimationInfo, data, aSendFlag);
+      aFrame, *property, anim, aAnimationInfo, data, aPending);
     keyframeEffect->SetIsRunningOnCompositor(aProperty, true);
   }
-}
-
-static uint64_t
-AddAnimationsForWebRender(
-  nsDisplayItem* aItem,
-  nsCSSPropertyID aProperty,
-  mozilla::layers::WebRenderLayerManager* aManager,
-  nsDisplayListBuilder* aDisplayListBuilder)
-{
-  RefPtr<WebRenderAnimationData> animationData =
-    aManager->CommandBuilder()
-      .CreateOrRecycleWebRenderUserData<WebRenderAnimationData>(aItem);
-  AnimationInfo& animationInfo = animationData->GetAnimationInfo();
-  AddAnimationsForProperty(aItem->Frame(),
-                           aDisplayListBuilder,
-                           aItem,
-                           aProperty,
-                           animationInfo,
-                           Send::Immediate,
-                           layers::LayersBackend::LAYERS_WR);
-  animationInfo.StartPendingAnimations(aManager->GetAnimationReadyTime());
-
-  
-  
-  uint64_t animationsId = animationInfo.GetCompositorAnimationsId();
-  if (!animationInfo.GetAnimations().IsEmpty()) {
-    OpAddCompositorAnimations anim(
-      CompositorAnimations(animationInfo.GetAnimations(), animationsId));
-    aManager->WrBridge()->AddWebRenderParentCommand(anim);
-    aManager->AddActiveCompositorAnimationId(animationsId);
-  } else if (animationsId) {
-    aManager->AddCompositorAnimationsIdForDiscard(animationsId);
-    animationsId = 0;
-  }
-
-  return animationsId;
 }
 
 static bool
@@ -874,13 +833,10 @@ nsDisplayListBuilder::AddAnimationsAndTransitionsToLayer(
     return;
   }
 
-  Send sendFlag = !aBuilder
-                  ? Send::NextTransaction
-                  : Send::Immediate;
+  bool pending = !aBuilder;
   AnimationInfo& animationInfo = aLayer->GetAnimationInfo();
   AddAnimationsForProperty(
-    aFrame, aBuilder, aItem, aProperty, animationInfo, sendFlag,
-    layers::LayersBackend::LAYERS_CLIENT);
+    aFrame, aBuilder, aItem, aProperty, animationInfo, pending, false);
   animationInfo.TransferMutatedFlagToLayer(aLayer);
 }
 
@@ -5307,8 +5263,8 @@ nsDisplayOutline::CreateWebRenderCommands(
 {
   ContainerLayerParameters parameter;
 
-  uint8_t outlineStyle = mFrame->Style()->StyleOutline()->mOutlineStyle;
-  if (outlineStyle == NS_STYLE_BORDER_STYLE_AUTO &&
+  StyleBorderStyle outlineStyle = mFrame->Style()->StyleOutline()->mOutlineStyle;
+  if (outlineStyle == StyleBorderStyle::Auto &&
       nsLayoutUtils::IsOutlineStyleAutoEnabled()) {
     nsITheme* theme = mFrame->PresContext()->GetTheme();
     if (theme && theme->ThemeSupportsWidget(mFrame->PresContext(),
@@ -6780,14 +6736,36 @@ nsDisplayOpacity::CreateWebRenderCommands(
 {
   float* opacityForSC = &mOpacity;
 
-  uint64_t animationsId = AddAnimationsForWebRender(this,
-                                                    eCSSProperty_opacity,
-                                                    aManager,
-                                                    aDisplayListBuilder);
-  wr::WrAnimationProperty prop {
-    wr::WrAnimationType::Opacity,
-    animationsId,
-  };
+  RefPtr<WebRenderAnimationData> animationData =
+    aManager->CommandBuilder()
+      .CreateOrRecycleWebRenderUserData<WebRenderAnimationData>(this);
+  AnimationInfo& animationInfo = animationData->GetAnimationInfo();
+  AddAnimationsForProperty(Frame(),
+                           aDisplayListBuilder,
+                           this,
+                           eCSSProperty_opacity,
+                           animationInfo,
+                           false,
+                           true);
+  animationInfo.StartPendingAnimations(aManager->GetAnimationReadyTime());
+
+  
+  
+  uint64_t animationsId = animationInfo.GetCompositorAnimationsId();
+  wr::WrAnimationProperty prop;
+
+  if (!animationInfo.GetAnimations().IsEmpty()) {
+    prop.id = animationsId;
+    prop.effect_type = wr::WrAnimationType::Opacity;
+
+    OpAddCompositorAnimations anim(
+      CompositorAnimations(animationInfo.GetAnimations(), animationsId));
+    aManager->WrBridge()->AddWebRenderParentCommand(anim);
+    aManager->AddActiveCompositorAnimationId(animationsId);
+  } else if (animationsId) {
+    aManager->AddCompositorAnimationsIdForDiscard(animationsId);
+    animationsId = 0;
+  }
 
   nsTArray<mozilla::wr::WrFilterOp> filters;
   StackingContextHelper sc(aSc,
@@ -8843,14 +8821,36 @@ nsDisplayTransform::CreateWebRenderCommands(
     transformForSC = nullptr;
   }
 
-  uint64_t animationsId = AddAnimationsForWebRender(this,
-                                                    eCSSProperty_transform,
-                                                    aManager,
-                                                    aDisplayListBuilder);
-  wr::WrAnimationProperty prop {
-    wr::WrAnimationType::Transform,
-    animationsId,
-  };
+  RefPtr<WebRenderAnimationData> animationData =
+    aManager->CommandBuilder()
+      .CreateOrRecycleWebRenderUserData<WebRenderAnimationData>(this);
+
+  AnimationInfo& animationInfo = animationData->GetAnimationInfo();
+  AddAnimationsForProperty(Frame(),
+                           aDisplayListBuilder,
+                           this,
+                           eCSSProperty_transform,
+                           animationInfo,
+                           false,
+                           true);
+  animationInfo.StartPendingAnimations(aManager->GetAnimationReadyTime());
+
+  
+  
+  uint64_t animationsId = animationInfo.GetCompositorAnimationsId();
+  wr::WrAnimationProperty prop;
+  if (!animationInfo.GetAnimations().IsEmpty()) {
+    prop.id = animationsId;
+    prop.effect_type = wr::WrAnimationType::Transform;
+
+    OpAddCompositorAnimations anim(
+      CompositorAnimations(animationInfo.GetAnimations(), animationsId));
+    aManager->WrBridge()->AddWebRenderParentCommand(anim);
+    aManager->AddActiveCompositorAnimationId(animationsId);
+  } else if (animationsId) {
+    aManager->AddCompositorAnimationsIdForDiscard(animationsId);
+    animationsId = 0;
+  }
 
   nsTArray<mozilla::wr::WrFilterOp> filters;
   Maybe<nsDisplayTransform*> deferredTransformItem;
