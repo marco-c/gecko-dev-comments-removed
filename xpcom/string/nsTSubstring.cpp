@@ -199,22 +199,21 @@ nsTSubstring<T>::StartBulkWriteImpl(size_type aCapacity,
       
       
       nsStringBuffer* newHdr = nsStringBuffer::Alloc(storageSize).take();
-      if (!newHdr) {
+      if (newHdr) {
+        newData = (char_type*)newHdr->Data();
+      } else if (shrinking) {
         
-        if (shrinking) {
-          
-          
-          
-          
-          
-          newData = oldData;
-          newCapacity = curCapacity;
-        } else {
-          return mozilla::Err(NS_ERROR_OUT_OF_MEMORY);
-        }
+        
+        
+        
+        
+        
+        
+        newData = oldData;
+        newCapacity = curCapacity;
+      } else {
+        return mozilla::Err(NS_ERROR_OUT_OF_MEMORY);
       }
-
-      newData = (char_type*)newHdr->Data();
     }
     newDataFlags = DataFlags::TERMINATED | DataFlags::REFCOUNTED;
   }
