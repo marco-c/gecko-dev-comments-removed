@@ -422,6 +422,13 @@ VARCACHE_PREF(
 )
 
 
+VARCACHE_PREF(
+  "layout.css.overflow.moz-scrollbars.enabled",
+   layout_css_overflow_moz_scrollbars_enabled,
+  bool, false
+)
+
+
 
 
 
