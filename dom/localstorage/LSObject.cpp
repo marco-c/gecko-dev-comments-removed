@@ -26,7 +26,37 @@ namespace {
 class RequestHelper;
 
 StaticMutex gRequestHelperMutex;
-RequestHelper* gRequestHelper = nullptr;
+nsISerialEventTarget* gSyncLoopEventTarget = nullptr;
+
+
+
+
+
+
+
+bool gPendingSyncMessage = false;
+
+
+
+
+
+
+class NestedEventTargetWrapper final : public nsISerialEventTarget {
+  nsCOMPtr<nsISerialEventTarget> mNestedEventTarget;
+  bool mDisconnected;
+
+ public:
+  explicit NestedEventTargetWrapper(nsISerialEventTarget* aNestedEventTarget)
+      : mNestedEventTarget(aNestedEventTarget)
+      , mDisconnected(false) {}
+
+ private:
+  ~NestedEventTargetWrapper() {}
+
+  NS_DECL_THREADSAFE_ISUPPORTS
+
+  NS_DECL_NSIEVENTTARGET_FULL
+};
 
 
 
@@ -93,7 +123,11 @@ class RequestHelper final : public Runnable, public LSRequestChildCallback {
   
   
   
-  nsCOMPtr<nsIEventTarget> mNestedEventTarget;
+  nsCOMPtr<nsISerialEventTarget> mNestedEventTarget;
+  
+  
+  
+  nsCOMPtr<nsISerialEventTarget> mNestedEventTargetWrapper;
   
   
   
@@ -114,10 +148,7 @@ class RequestHelper final : public Runnable, public LSRequestChildCallback {
         mParams(aParams),
         mResultCode(NS_OK),
         mState(State::Initial),
-        mWaiting(true) {
-    StaticMutexAutoLock lock(gRequestHelperMutex);
-    gRequestHelper = this;
-  }
+        mWaiting(true) {}
 
   bool IsOnOwningThread() const {
     MOZ_ASSERT(mOwningEventTarget);
@@ -132,24 +163,10 @@ class RequestHelper final : public Runnable, public LSRequestChildCallback {
     MOZ_ASSERT(IsOnOwningThread());
   }
 
-  
-  
-  
-  const nsCOMPtr<nsIEventTarget>& GetSyncLoopEventTarget() const {
-    MOZ_ASSERT(XRE_IsParentProcess());
-
-    return mNestedEventTarget;
-  }
-
   nsresult StartAndReturnResponse(LSRequestResponse& aResponse);
 
-  nsresult CancelOnAnyThread();
-
  private:
-  ~RequestHelper() {
-    StaticMutexAutoLock lock(gRequestHelperMutex);
-    gRequestHelper = nullptr;
-  }
+  ~RequestHelper() {}
 
   nsresult Start();
 
@@ -299,34 +316,42 @@ nsresult LSObject::CreateForPrincipal(nsPIDOMWindowInner* aWindow,
 }
 
 
-already_AddRefed<nsIEventTarget> LSObject::GetSyncLoopEventTarget() {
-  RefPtr<RequestHelper> helper;
+already_AddRefed<nsISerialEventTarget> LSObject::GetSyncLoopEventTarget() {
+  MOZ_ASSERT(XRE_IsParentProcess());
+
+  nsCOMPtr<nsISerialEventTarget> target;
 
   {
     StaticMutexAutoLock lock(gRequestHelperMutex);
-    helper = gRequestHelper;
-  }
-
-  nsCOMPtr<nsIEventTarget> target;
-  if (helper) {
-    target = helper->GetSyncLoopEventTarget();
+    target = gSyncLoopEventTarget;
   }
 
   return target.forget();
 }
 
 
-void LSObject::CancelSyncLoop() {
-  RefPtr<RequestHelper> helper;
+void LSObject::OnSyncMessageReceived() {
+  nsCOMPtr<nsISerialEventTarget> target;
 
   {
     StaticMutexAutoLock lock(gRequestHelperMutex);
-    helper = gRequestHelper;
+    target = gSyncLoopEventTarget;
+    gPendingSyncMessage = true;
   }
 
-  if (helper) {
-    Unused << NS_WARN_IF(NS_FAILED(helper->CancelOnAnyThread()));
+  if (target) {
+    RefPtr<Runnable> runnable =
+        NS_NewRunnableFunction("LSObject::CheckFlagRunnable", []() {});
+
+    MOZ_ALWAYS_SUCCEEDS(
+      target->Dispatch(runnable.forget(), NS_DISPATCH_NORMAL));
   }
+}
+
+
+void LSObject::OnSyncMessageHandled() {
+  StaticMutexAutoLock lock(gRequestHelperMutex);
+  gPendingSyncMessage = false;
 }
 
 LSRequestChild* LSObject::StartRequest(nsIEventTarget* aMainEventTarget,
@@ -871,6 +896,63 @@ void LSObject::LastRelease() {
   DropDatabase();
 }
 
+NS_IMPL_ISUPPORTS(NestedEventTargetWrapper, nsIEventTarget,
+                  nsISerialEventTarget);
+
+NS_IMETHODIMP_(bool)
+NestedEventTargetWrapper::IsOnCurrentThreadInfallible() {
+  MOZ_CRASH("IsOnCurrentThreadInfallible should never be called on "
+            "NestedEventTargetWrapper");
+}
+
+NS_IMETHODIMP
+NestedEventTargetWrapper::IsOnCurrentThread(bool* aResult) {
+  MOZ_CRASH("IsOnCurrentThread should never be called on "
+            "NestedEventTargetWrapper");
+}
+
+NS_IMETHODIMP
+NestedEventTargetWrapper::Dispatch(already_AddRefed<nsIRunnable> aEvent,
+                                   uint32_t aFlags) {
+  MOZ_ASSERT(mNestedEventTarget);
+
+  if (mDisconnected) {
+    MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(std::move(aEvent), aFlags));
+    return NS_OK;
+  }
+
+  nsCOMPtr<nsIRunnable> event(aEvent);
+
+  nsresult rv = mNestedEventTarget->Dispatch(event, aFlags);
+  if (rv == NS_ERROR_UNEXPECTED) {
+    mDisconnected = true;
+
+    
+    
+    event.get()->Release();
+
+    MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(event.forget(), aFlags));
+  } else if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+NestedEventTargetWrapper::DispatchFromScript(nsIRunnable* aEvent,
+                                             uint32_t aFlags) {
+  MOZ_CRASH("DispatchFromScript should never be called on "
+            "NestedEventTargetWrapper");
+}
+
+NS_IMETHODIMP
+NestedEventTargetWrapper::DelayedDispatch(already_AddRefed<nsIRunnable> aEvent,
+                                          uint32_t aDelayMs) {
+  MOZ_CRASH("DelayedDispatch should never be called on "
+            "NestedEventTargetWrapper");
+}
+
 nsresult RequestHelper::StartAndReturnResponse(LSRequestResponse& aResponse) {
   AssertIsOnOwningThread();
 
@@ -900,18 +982,93 @@ nsresult RequestHelper::StartAndReturnResponse(LSRequestResponse& aResponse) {
     auto autoPopEventQueue = mozilla::MakeScopeExit(
         [&] { queue->PopEventQueue(mNestedEventTarget); });
 
+    mNestedEventTargetWrapper =
+      new NestedEventTargetWrapper(mNestedEventTarget);
+
     nsCOMPtr<nsIEventTarget> domFileThread =
         IPCBlobInputStreamThread::GetOrCreate();
     if (NS_WARN_IF(!domFileThread)) {
       return NS_ERROR_FAILURE;
     }
 
-    nsresult rv = domFileThread->Dispatch(this, NS_DISPATCH_NORMAL);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
+    nsresult rv;
+
+    {
+      {
+        StaticMutexAutoLock lock(gRequestHelperMutex);
+
+        if (NS_WARN_IF(gPendingSyncMessage)) {
+          return NS_ERROR_FAILURE;
+        }
+
+        gSyncLoopEventTarget = mNestedEventTargetWrapper;
+      }
+
+      auto autoClearSyncLoopEventTarget = mozilla::MakeScopeExit([&] {
+        StaticMutexAutoLock lock(gRequestHelperMutex);
+        gSyncLoopEventTarget = nullptr;
+      });
+
+      rv = domFileThread->Dispatch(this, NS_DISPATCH_NORMAL);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+
+      MOZ_ALWAYS_TRUE(SpinEventLoopUntil([&]() {
+        if (!mWaiting) {
+          return true;
+        }
+
+        {
+          StaticMutexAutoLock lock(gRequestHelperMutex);
+          if (NS_WARN_IF(gPendingSyncMessage)) {
+            return true;
+          }
+        }
+
+        return false;
+      }));
     }
 
-    MOZ_ALWAYS_TRUE(SpinEventLoopUntil([&]() { return !mWaiting; }));
+    
+    
+    
+    
+    
+    if (NS_WARN_IF(mWaiting)) {
+      
+      
+
+      RefPtr<RequestHelper> self = this;
+
+      RefPtr<Runnable> runnable =
+          NS_NewRunnableFunction("RequestHelper::SendCancelRunnable", [self]() {
+            LSRequestChild* actor = self->mActor;
+
+            
+            
+            
+            
+            
+            
+            if (actor && !actor->Finishing()) {
+              actor->SendCancel();
+            }
+          });
+
+      rv = domFileThread->Dispatch(runnable, NS_DISPATCH_NORMAL);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+
+      return NS_ERROR_FAILURE;
+    }
+
+    
+    
+    
+    
+    
   }
 
   if (NS_WARN_IF(NS_FAILED(mResultCode))) {
@@ -922,31 +1079,6 @@ nsresult RequestHelper::StartAndReturnResponse(LSRequestResponse& aResponse) {
   return NS_OK;
 }
 
-nsresult RequestHelper::CancelOnAnyThread() {
-  RefPtr<RequestHelper> self = this;
-
-  RefPtr<Runnable> runnable =
-      NS_NewRunnableFunction("RequestHelper::CancelOnAnyThread", [self]() {
-        LSRequestChild* actor = self->mActor;
-        if (actor && !actor->Finishing()) {
-          actor->SendCancel();
-        }
-      });
-
-  nsCOMPtr<nsIEventTarget> domFileThread =
-      IPCBlobInputStreamThread::GetOrCreate();
-  if (NS_WARN_IF(!domFileThread)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  nsresult rv = domFileThread->Dispatch(runnable, NS_DISPATCH_NORMAL);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  return NS_OK;
-}
-
 nsresult RequestHelper::Start() {
   AssertIsOnDOMFileThread();
   MOZ_ASSERT(mState == State::Initial);
@@ -954,7 +1086,7 @@ nsresult RequestHelper::Start() {
   mState = State::ResponsePending;
 
   LSRequestChild* actor =
-      mObject->StartRequest(mNestedEventTarget, mParams, this);
+      mObject->StartRequest(mNestedEventTargetWrapper, mParams, this);
   if (NS_WARN_IF(!actor)) {
     return NS_ERROR_FAILURE;
   }
@@ -1005,7 +1137,7 @@ RequestHelper::Run() {
       Finish();
     } else {
       MOZ_ALWAYS_SUCCEEDS(
-          mNestedEventTarget->Dispatch(this, NS_DISPATCH_NORMAL));
+          mNestedEventTargetWrapper->Dispatch(this, NS_DISPATCH_NORMAL));
     }
   }
 
@@ -1021,7 +1153,9 @@ void RequestHelper::OnResponse(const LSRequestResponse& aResponse) {
   mResponse = aResponse;
 
   mState = State::Finishing;
-  MOZ_ALWAYS_SUCCEEDS(mNestedEventTarget->Dispatch(this, NS_DISPATCH_NORMAL));
+
+  MOZ_ALWAYS_SUCCEEDS(
+      mNestedEventTargetWrapper->Dispatch(this, NS_DISPATCH_NORMAL));
 }
 
 }  

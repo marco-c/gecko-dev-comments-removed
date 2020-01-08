@@ -23,6 +23,7 @@ var is_remote;
     cancel_test,
     cancel_test2,
     dead_test,
+    localStorage_test,
     unsafe_test,
   ];
 
@@ -364,4 +365,28 @@ function dead_test(finish) {
   }
 
   addMessageListener("cpows:dead_done", finish);
+}
+
+function localStorage_test(finish)
+{
+  
+  
+  
+  
+  
+  
+  if (!is_remote) {
+    
+    finish();
+    return;
+  }
+
+  function f() {}
+
+  sendAsyncMessage("cpows:localStorage", null, {f});
+  addMessageListener("cpows:localStorage_done", finish);
+
+  for (let i = 0; i < 3; i++) {
+    try { let l = content.localStorage.length; } catch (ex) {}
+  }
 }

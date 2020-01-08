@@ -96,7 +96,7 @@ class LSObject final : public Storage {
 
 
 
-  static already_AddRefed<nsIEventTarget> GetSyncLoopEventTarget();
+  static already_AddRefed<nsISerialEventTarget> GetSyncLoopEventTarget();
 
   
 
@@ -108,7 +108,18 @@ class LSObject final : public Storage {
 
 
 
-  static void CancelSyncLoop();
+
+
+
+
+  static void OnSyncMessageReceived();
+
+  
+
+
+
+
+  static void OnSyncMessageHandled();
 
   void AssertIsOnOwningThread() const { NS_ASSERT_OWNINGTHREAD(LSObject); }
 
