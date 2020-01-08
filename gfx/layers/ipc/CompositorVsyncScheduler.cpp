@@ -76,7 +76,6 @@ CompositorVsyncScheduler::CompositorVsyncScheduler(CompositorVsyncSchedulerOwner
   : mVsyncSchedulerOwner(aVsyncSchedulerOwner)
   , mLastCompose(TimeStamp::Now())
   , mIsObservingVsync(false)
-  , mNeedsComposite(0)
   , mVsyncNotificationsSkipped(0)
   , mWidget(aWidget)
   , mCurrentCompositeTaskMonitor("CurrentCompositeTaskMonitor")
@@ -114,7 +113,7 @@ CompositorVsyncScheduler::Destroy()
   mVsyncObserver->Destroy();
   mVsyncObserver = nullptr;
 
-  mNeedsComposite = 0;
+  mCompositeRequestedAt = TimeStamp();
   CancelCurrentCompositeTask();
 }
 
@@ -162,7 +161,8 @@ CompositorVsyncScheduler::ScheduleComposition()
     
     PostCompositeTask(TimeStamp::Now());
 #ifdef MOZ_WIDGET_ANDROID
-  } else if (mNeedsComposite >= 2 && mIsObservingVsync) {
+  } else if (mIsObservingVsync && mCompositeRequestedAt &&
+      (TimeStamp::Now() - mCompositeRequestedAt) >= mVsyncSchedulerOwner->GetVsyncInterval() * 2) {
     
     
     
@@ -172,8 +172,10 @@ CompositorVsyncScheduler::ScheduleComposition()
     PostCompositeTask(TimeStamp::Now());
 #endif
   } else {
-    mNeedsComposite++;
-    if (!mIsObservingVsync && mNeedsComposite) {
+    if (!mCompositeRequestedAt) {
+      mCompositeRequestedAt = TimeStamp::Now();
+    }
+    if (!mIsObservingVsync && mCompositeRequestedAt) {
       ObserveVsync();
       
       
@@ -236,8 +238,8 @@ CompositorVsyncScheduler::Composite(TimeStamp aVsyncTimestamp)
     }
   }
 
-  if (mNeedsComposite || mAsapScheduling) {
-    mNeedsComposite = 0;
+  if (mCompositeRequestedAt || mAsapScheduling) {
+    mCompositeRequestedAt = TimeStamp();
     mLastCompose = aVsyncTimestamp;
 
     
@@ -284,14 +286,14 @@ bool
 CompositorVsyncScheduler::NeedsComposite()
 {
   MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
-  return mNeedsComposite;
+  return (bool)mCompositeRequestedAt;
 }
 
 bool
 CompositorVsyncScheduler::FlushPendingComposite()
 {
   MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
-  if (mNeedsComposite) {
+  if (mCompositeRequestedAt) {
     CancelCurrentCompositeTask();
     ForceComposeToTarget(nullptr, nullptr);
     return true;
