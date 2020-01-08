@@ -108,7 +108,7 @@ add_task(async function startup() {
     
     "chrome.override_package.global": {
       min: 0,
-      max: 50,
+      max: 70,
     },
   };
 
