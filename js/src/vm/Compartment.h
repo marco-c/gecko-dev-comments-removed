@@ -466,6 +466,13 @@ class JS::Compartment {
 
   RealmVector& realms() { return realms_; }
 
+  
+  
+  
+  
+  
+  Realm* realmForNewCCW() const { return realms_[0]; }
+
   void assertNoCrossCompartmentWrappers() {
     MOZ_ASSERT(crossCompartmentWrappers.empty());
   }
