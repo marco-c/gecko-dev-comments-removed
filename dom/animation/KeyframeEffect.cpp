@@ -1242,10 +1242,12 @@ KeyframeEffect::CanThrottle() const
     return true;
   }
 
-  
-  
-  
-  
+  for (const AnimationProperty& property : mProperties) {
+    if (!property.mIsRunningOnCompositor) {
+      return false;
+    }
+  }
+
   for (const LayerAnimationInfo::Record& record :
         LayerAnimationInfo::sRecords) {
     
@@ -1274,12 +1276,6 @@ KeyframeEffect::CanThrottle() const
     
     if (HasPropertiesThatMightAffectOverflow() &&
         !CanThrottleOverflowChangesInScrollable(*frame)) {
-      return false;
-    }
-  }
-
-  for (const AnimationProperty& property : mProperties) {
-    if (!property.mIsRunningOnCompositor) {
       return false;
     }
   }
