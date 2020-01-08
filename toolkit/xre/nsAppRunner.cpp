@@ -23,6 +23,7 @@
 #include "mozilla/Services.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/intl/LocaleService.h"
+#include "mozilla/recordreplay/ParentIPC.h"
 
 #include "nsAppRunner.h"
 #include "mozilla/XREAppData.h"
@@ -1625,6 +1626,8 @@ DumpHelp()
 #if defined(XP_WIN) || defined(MOZ_WIDGET_GTK) || defined(XP_MACOSX)
   printf("  --headless         Run without a GUI.\n");
 #endif
+
+  printf("  --save-recordings  Save recordings for all content processes to a directory.\n");
 
   
   
@@ -4279,8 +4282,9 @@ XREMain::XRE_mainStartup(bool* aExitFlag)
   
   
   nsCOMPtr<nsIFile> flagFile;
+  rv = NS_ERROR_FILE_NOT_FOUND;
   if (mAppData->directory) {
-    Unused << mAppData->directory->Clone(getter_AddRefs(flagFile));
+    rv = mAppData->directory->Clone(getter_AddRefs(flagFile));
   }
   if (flagFile) {
     flagFile->AppendNative(FILE_INVALIDATE_CACHES);
@@ -5037,6 +5041,8 @@ XRE_InitCommandLine(int aArgc, char* aArgv[])
       free(canonArgs[i]);
   delete[] canonArgs;
 #endif
+
+  recordreplay::parent::InitializeUIProcess(gArgc, gArgv);
 
   const char *path = nullptr;
   ArgResult ar = CheckArg("greomni", &path);
