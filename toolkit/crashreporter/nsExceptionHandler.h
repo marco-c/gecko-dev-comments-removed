@@ -247,10 +247,6 @@ bool CreateAdditionalChildMinidump(ProcessHandle childPid,
                                    nsIFile* parentMinidump,
                                    const nsACString& name);
 
-
-
-void GetChildProcessTmpDir(nsIFile** aOutTmpDir);
-
 #if defined(XP_WIN32) || defined(XP_MACOSX)
 
 const char* GetChildNotificationPipe();
