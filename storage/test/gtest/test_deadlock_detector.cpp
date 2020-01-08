@@ -60,6 +60,11 @@ extern unsigned int _gdb_sleep_duration;
 #define TESTNAME(name) storage_##name
 
 
+#if defined(XP_MACOSX) && defined(MOZ_CODE_COVERAGE)
+#define DISABLE_STORAGE_SANITY5_DEATH_TEST
+#endif
+
+
 
 namespace storage {
 #include "../../../xpcom/tests/gtest/TestDeadlockDetector.cpp"
