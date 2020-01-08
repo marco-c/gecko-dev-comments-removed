@@ -1770,13 +1770,7 @@ nsIOService::SpeculativeConnectInternal(nsIURI *aURI,
 
     nsCOMPtr<nsIPrincipal> loadingPrincipal = aPrincipal;
 
-    NS_ASSERTION(aPrincipal, "We expect passing a principal here.");
-
-    
-    
-    if (!aPrincipal) {
-        loadingPrincipal = nsContentUtils::GetSystemPrincipal();
-    }
+    MOZ_ASSERT(aPrincipal, "We expect passing a principal here.");
 
     
     
@@ -1814,25 +1808,11 @@ nsIOService::SpeculativeConnectInternal(nsIURI *aURI,
 }
 
 NS_IMETHODIMP
-nsIOService::SpeculativeConnect(nsIURI *aURI,
-                                nsIInterfaceRequestor *aCallbacks)
-{
-    return SpeculativeConnectInternal(aURI, nullptr, aCallbacks, false);
-}
-
-NS_IMETHODIMP
 nsIOService::SpeculativeConnect2(nsIURI *aURI,
                                  nsIPrincipal *aPrincipal,
                                  nsIInterfaceRequestor *aCallbacks)
 {
     return SpeculativeConnectInternal(aURI, aPrincipal, aCallbacks, false);
-}
-
-NS_IMETHODIMP
-nsIOService::SpeculativeAnonymousConnect(nsIURI *aURI,
-                                         nsIInterfaceRequestor *aCallbacks)
-{
-    return SpeculativeConnectInternal(aURI, nullptr, aCallbacks, true);
 }
 
 NS_IMETHODIMP
