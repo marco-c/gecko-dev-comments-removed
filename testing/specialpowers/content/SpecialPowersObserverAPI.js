@@ -558,6 +558,12 @@ SpecialPowersObserverAPI.prototype = {
         return undefined; 
       }
 
+      case "SPCheckServiceWorkers": {
+        let swm = Cc["@mozilla.org/serviceworkers/manager;1"]
+                    .getService(Ci.nsIServiceWorkerManager);
+        return { hasWorkers: swm.getAllRegistrations().length != 0 };
+      }
+
       case "SPLoadExtension": {
         let id = aMessage.data.id;
         let ext = aMessage.data.ext;
@@ -640,7 +646,7 @@ SpecialPowersObserverAPI.prototype = {
       }
 
       default:
-        throw new SpecialPowersError("Unrecognized Special Powers API");
+        throw new SpecialPowersError(`Unrecognized Special Powers API: ${aMessage.name}`);
     }
 
     

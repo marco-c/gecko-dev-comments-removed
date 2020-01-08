@@ -27,6 +27,7 @@ Services.scriptloader.loadSubScript("resource://specialpowers/SpecialPowersObser
 function SpecialPowersObserver() {
   this._isFrameScriptLoaded = false;
   this._messageManager = Services.mm;
+  this._serviceWorkerListener = null;
 }
 
 
@@ -78,6 +79,7 @@ SpecialPowersObserver.prototype._loadFrameScript = function() {
     this._messageManager.addMessageListener("SPCleanUpSTSData", this);
     this._messageManager.addMessageListener("SPRequestDumpCoverageCounters", this);
     this._messageManager.addMessageListener("SPRequestResetCoverageCounters", this);
+    this._messageManager.addMessageListener("SPCheckServiceWorkers", this);
 
     this._messageManager.loadFrameScript(CHILD_LOGGER_SCRIPT, true);
     this._messageManager.loadFrameScript(CHILD_SCRIPT_API, true);
@@ -109,6 +111,28 @@ SpecialPowersObserver.prototype.init = function() {
 
   obs.addObserver(this, "http-on-modify-request");
 
+  
+  
+  
+  
+  
+  
+  
+  
+  let swm = Cc["@mozilla.org/serviceworkers/manager;1"]
+              .getService(Ci.nsIServiceWorkerManager);
+  let self = this;
+  this._serviceWorkerListener = {
+    onRegister() {
+      self.onRegister();
+    },
+
+    onUnregister() {
+      
+    },
+  };
+  swm.addListener(this._serviceWorkerListener);
+
   this._loadFrameScript();
 };
 
@@ -120,6 +144,10 @@ SpecialPowersObserver.prototype.uninit = function() {
     obs.removeObserver(this._registerObservers, element);
   });
   this._removeProcessCrashObservers();
+
+  let swm = Cc["@mozilla.org/serviceworkers/manager;1"]
+              .getService(Ci.nsIServiceWorkerManager);
+  swm.removeListener(this._serviceWorkerListener);
 
   if (this._isFrameScriptLoaded) {
     this._messageManager.removeMessageListener("SPPrefService", this);
@@ -144,6 +172,7 @@ SpecialPowersObserver.prototype.uninit = function() {
     this._messageManager.removeMessageListener("SPCleanUpSTSData", this);
     this._messageManager.removeMessageListener("SPRequestDumpCoverageCounters", this);
     this._messageManager.removeMessageListener("SPRequestResetCoverageCounters", this);
+    this._messageManager.removeMessageListener("SPCheckServiceWorkers", this);
 
     this._messageManager.removeDelayedFrameScript(CHILD_LOGGER_SCRIPT);
     this._messageManager.removeDelayedFrameScript(CHILD_SCRIPT_API);
@@ -281,4 +310,9 @@ SpecialPowersObserver.prototype.receiveMessage = function(aMessage) {
       return this._receiveMessage(aMessage);
   }
   return undefined;
+};
+
+SpecialPowersObserver.prototype.onRegister = function() {
+  this._sendAsyncMessage("SPServiceWorkerRegistered",
+    { registered: true });
 };
