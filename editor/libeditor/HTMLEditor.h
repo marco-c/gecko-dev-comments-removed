@@ -1091,6 +1091,8 @@ protected:
   GetNextTableRowElement(Element& aTableRowElement,
                          ErrorResult& aRv) const;
 
+  struct CellAndIndexes;
+
   
 
 
@@ -1136,6 +1138,42 @@ protected:
                 ErrorResult& aRv)
       : mRow(-1)
       , mColumn(-1)
+    {
+      Update(aHTMLEditor, aSelection, aRv);
+    }
+
+    
+
+
+
+
+
+    void Update(HTMLEditor& aHTMLEditor, Selection& aSelection,
+                ErrorResult& aRv);
+
+  private:
+    CellIndexes()
+      : mRow(-1)
+      , mColumn(-1)
+    {
+    }
+
+    friend struct CellAndIndexes;
+  };
+
+  struct MOZ_STACK_CLASS CellAndIndexes final
+  {
+    RefPtr<Element> mElement;
+    CellIndexes mIndexes;
+
+    
+
+
+
+
+
+    CellAndIndexes(HTMLEditor& aHTMLEditor, Selection& aSelection,
+                   ErrorResult& aRv)
     {
       Update(aHTMLEditor, aSelection, aRv);
     }
