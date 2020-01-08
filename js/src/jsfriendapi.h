@@ -350,6 +350,7 @@ JS_CopyPropertiesFrom(JSContext* cx, JS::HandleObject target, JS::HandleObject o
 
 
 
+
 typedef enum  {
     MakeNonConfigurableIntoConfigurable,
     CopyNonConfigurableAsIs
