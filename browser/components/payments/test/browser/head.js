@@ -324,7 +324,7 @@ add_task(async function setup_head() {
       
       return;
     }
-    if (msg.message.match(/docShell is null.*BrowserUtils.jsm/)) {
+    if (msg.message && msg.message.match(/docShell is null.*BrowserUtils.jsm/)) {
       
       return;
     }
