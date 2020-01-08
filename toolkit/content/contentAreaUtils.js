@@ -19,12 +19,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 });
 
 var ContentAreaUtils = {
-
-  
-  get ioService() {
-    return Services.io;
-  },
-
   get stringBundle() {
     delete this.stringBundle;
     return this.stringBundle =
