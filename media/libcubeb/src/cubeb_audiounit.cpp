@@ -64,6 +64,52 @@ const char * PRIVATE_AGGREGATE_DEVICE_NAME = "CubebAggregateDevice";
 const uint32_t SAFE_MIN_LATENCY_FRAMES = 256;
 const uint32_t SAFE_MAX_LATENCY_FRAMES = 512;
 
+const AudioObjectPropertyAddress DEFAULT_INPUT_DEVICE_PROPERTY_ADDRESS = {
+  kAudioHardwarePropertyDefaultInputDevice,
+  kAudioObjectPropertyScopeGlobal,
+  kAudioObjectPropertyElementMaster
+};
+
+const AudioObjectPropertyAddress DEFAULT_OUTPUT_DEVICE_PROPERTY_ADDRESS = {
+  kAudioHardwarePropertyDefaultOutputDevice,
+  kAudioObjectPropertyScopeGlobal,
+  kAudioObjectPropertyElementMaster
+};
+
+const AudioObjectPropertyAddress DEVICE_IS_ALIVE_PROPERTY_ADDRESS = {
+  kAudioDevicePropertyDeviceIsAlive,
+  kAudioObjectPropertyScopeGlobal,
+  kAudioObjectPropertyElementMaster
+};
+
+const AudioObjectPropertyAddress DEVICES_PROPERTY_ADDRESS = {
+  kAudioHardwarePropertyDevices,
+  kAudioObjectPropertyScopeGlobal,
+  kAudioObjectPropertyElementMaster
+};
+
+const AudioObjectPropertyAddress INPUT_DATA_SOURCE_PROPERTY_ADDRESS = {
+  kAudioDevicePropertyDataSource,
+  kAudioDevicePropertyScopeInput,
+  kAudioObjectPropertyElementMaster
+};
+
+const AudioObjectPropertyAddress OUTPUT_DATA_SOURCE_PROPERTY_ADDRESS = {
+  kAudioDevicePropertyDataSource,
+  kAudioDevicePropertyScopeOutput,
+  kAudioObjectPropertyElementMaster
+};
+
+typedef uint32_t device_flags_value;
+
+enum device_flags {
+  DEV_UNKNOWN           = 0x00, 
+  DEV_INPUT             = 0x01, 
+  DEV_OUTPUT            = 0x02, 
+  DEV_SYSTEM_DEFAULT    = 0x04, 
+  DEV_SELECTED_DEFAULT  = 0x08, 
+};
+
 void audiounit_stream_stop_internal(cubeb_stream * stm);
 void audiounit_stream_start_internal(cubeb_stream * stm);
 static void audiounit_close_stream(cubeb_stream *stm);
@@ -71,6 +117,13 @@ static int audiounit_setup_stream(cubeb_stream *stm);
 static vector<AudioObjectID>
 audiounit_get_devices_of_type(cubeb_device_type devtype);
 static UInt32 audiounit_get_device_presentation_latency(AudioObjectID devid, AudioObjectPropertyScope scope);
+
+#if !TARGET_OS_IPHONE
+static AudioObjectID audiounit_get_default_device_id(cubeb_device_type type);
+static int audiounit_uninstall_device_changed_callback(cubeb_stream * stm);
+static int audiounit_uninstall_system_changed_callback(cubeb_stream * stm);
+static void audiounit_reinit_stream_async(cubeb_stream * stm, device_flags_value flags);
+#endif
 
 extern cubeb_ops const audiounit_ops;
 
@@ -100,7 +153,7 @@ make_sized_audio_channel_layout(size_t sz)
     return unique_ptr<AudioChannelLayout, decltype(&free)>(acl, free);
 }
 
-enum io_side {
+enum class io_side {
   INPUT,
   OUTPUT,
 };
@@ -109,26 +162,33 @@ static char const *
 to_string(io_side side)
 {
   switch (side) {
-  case INPUT:
+  case io_side::INPUT:
     return "input";
-  case OUTPUT:
+  case io_side::OUTPUT:
     return "output";
   }
 }
 
-typedef uint32_t device_flags_value;
-
-enum device_flags {
-  DEV_UNKNOWN           = 0x00, 
-  DEV_INPUT             = 0x01, 
-  DEV_OUTPUT            = 0x02, 
-  DEV_SYSTEM_DEFAULT    = 0x04, 
-  DEV_SELECTED_DEFAULT  = 0x08, 
-};
-
 struct device_info {
   AudioDeviceID id = kAudioObjectUnknown;
   device_flags_value flags = DEV_UNKNOWN;
+};
+
+struct property_listener {
+  AudioDeviceID device_id;
+  const AudioObjectPropertyAddress * property_address;
+  AudioObjectPropertyListenerProc callback;
+  cubeb_stream * stream;
+
+  property_listener(AudioDeviceID id,
+                    const AudioObjectPropertyAddress * address,
+                    AudioObjectPropertyListenerProc proc,
+                    cubeb_stream * stm)
+    : device_id(id)
+    , property_address(address)
+    , callback(proc)
+    , stream(stm)
+  {}
 };
 
 struct cubeb_stream {
@@ -162,21 +222,20 @@ struct cubeb_stream {
   int expected_output_callbacks_in_a_row = 0;
   owned_critical_section mutex;
   
-
+  
   unique_ptr<auto_array_wrapper> input_linear_buffer;
-  owned_critical_section input_linear_buffer_lock;
-  
-  
-  
-  atomic<uint32_t> available_input_frames{ 0 };
-  
-  atomic<uint32_t> input_buffer_frames{ 0 };
   
   atomic<uint64_t> frames_played{ 0 };
   uint64_t frames_queued = 0;
+  
+  
   atomic<int64_t> frames_read{ 0 };
+  
+  atomic<int64_t> frames_written{ 0 };
   atomic<bool> shutdown{ true };
   atomic<bool> draining{ false };
+  atomic<bool> reinit_pending { false };
+  atomic<bool> destroy_pending{ false };
   
   uint32_t latency_frames = 0;
   atomic<uint32_t> current_latency_frames{ 0 };
@@ -193,6 +252,12 @@ struct cubeb_stream {
   
   unique_ptr<uint8_t[]> temp_buffer;
   size_t temp_buffer_size = 0; 
+  
+  unique_ptr<property_listener> default_input_listener;
+  unique_ptr<property_listener> default_output_listener;
+  unique_ptr<property_listener> input_alive_listener;
+  unique_ptr<property_listener> input_source_listener;
+  unique_ptr<property_listener> output_source_listener;
 };
 
 bool has_input(cubeb_stream * stm)
@@ -382,12 +447,21 @@ audiounit_render_input(cubeb_stream * stm,
 
   if (r != noErr) {
     LOG("AudioUnitRender rv=%d", r);
-    return r;
-  }
-
-  
-  {
-    auto_lock l(stm->input_linear_buffer_lock);
+    if (r != kAudioUnitErr_CannotDoInCurrentContext) {
+      return r;
+    }
+    if (stm->output_unit) {
+      
+      
+      
+      audiounit_reinit_stream_async(stm, DEV_INPUT | DEV_OUTPUT);
+    }
+    
+    
+    ALOGV("(%p) input: reinit pending feeding silence instead", stm);
+    stm->input_linear_buffer->push_silence(input_frames * stm->input_desc.mChannelsPerFrame);
+  } else {
+    
     stm->input_linear_buffer->push(input_buffer_list.mBuffers[0].mData,
                                    input_frames * stm->input_desc.mChannelsPerFrame);
   }
@@ -395,15 +469,14 @@ audiounit_render_input(cubeb_stream * stm,
   
   assert(input_frames > 0);
   stm->frames_read += input_frames;
-  stm->available_input_frames += input_frames;
 
-  ALOGV("(%p) input: buffers %u, size %u, channels %u, rendered frames %d, total frames %d.",
-       stm,
-       (unsigned int) input_buffer_list.mNumberBuffers,
-       (unsigned int) input_buffer_list.mBuffers[0].mDataByteSize,
-       (unsigned int) input_buffer_list.mBuffers[0].mNumberChannels,
-       (unsigned int) input_frames,
-        stm->available_input_frames.load());
+  ALOGV("(%p) input: buffers %u, size %u, channels %u, rendered frames %d, total frames %lu.",
+        stm,
+        (unsigned int) input_buffer_list.mNumberBuffers,
+        (unsigned int) input_buffer_list.mBuffers[0].mDataByteSize,
+        (unsigned int) input_buffer_list.mBuffers[0].mNumberChannels,
+        (unsigned int) input_frames,
+        stm->input_linear_buffer->length() / stm->input_desc.mChannelsPerFrame);
 
   return noErr;
 }
@@ -438,46 +511,24 @@ audiounit_input_callback(void * user_ptr,
 
   
 
-  {
-    auto_lock l(stm->input_linear_buffer_lock);
-    assert(input_frames <= stm->input_linear_buffer->length() / stm->input_desc.mChannelsPerFrame);
-    long total_input_frames = stm->input_linear_buffer->length() / stm->input_desc.mChannelsPerFrame;
-    long outframes = cubeb_resampler_fill(stm->resampler.get(),
-                                          stm->input_linear_buffer->data(),
-                                          &total_input_frames,
-                                          NULL,
-                                          0);
-    if (outframes < total_input_frames) {
-      OSStatus r = AudioOutputUnitStop(stm->input_unit);
-      assert(r == 0);
-      stm->state_callback(stm, stm->user_ptr, CUBEB_STATE_DRAINED);
-      return noErr;
-    }
-    assert(outframes >= 0);
-
-    
-    stm->input_linear_buffer->clear();
+  assert(input_frames <= stm->input_linear_buffer->length() / stm->input_desc.mChannelsPerFrame);
+  long total_input_frames = stm->input_linear_buffer->length() / stm->input_desc.mChannelsPerFrame;
+  long outframes = cubeb_resampler_fill(stm->resampler.get(),
+                                        stm->input_linear_buffer->data(),
+                                        &total_input_frames,
+                                        NULL,
+                                        0);
+  if (outframes < total_input_frames) {
+    OSStatus r = AudioOutputUnitStop(stm->input_unit);
+    assert(r == 0);
+    stm->state_callback(stm, stm->user_ptr, CUBEB_STATE_DRAINED);
+    return noErr;
   }
 
-  return noErr;
-}
-
-static uint32_t
-minimum_resampling_input_frames(cubeb_stream *stm)
-{
-  return ceilf(stm->input_hw_rate / stm->output_hw_rate * stm->input_buffer_frames);
-}
-
-static bool
-is_extra_input_needed(cubeb_stream * stm)
-{
   
+  stm->input_linear_buffer->clear();
 
-
-
-
-  return stm->frames_read == 0 ||
-         stm->available_input_frames.load() < minimum_resampling_input_frames(stm);
+  return noErr;
 }
 
 static void
@@ -504,6 +555,19 @@ audiounit_mix_output_buffer(cubeb_stream * stm,
   }
 }
 
+
+
+static int64_t
+minimum_resampling_input_frames(cubeb_stream * stm, uint32_t output_frames)
+{
+  if (stm->input_hw_rate == stm->output_stream_params.rate) {
+    
+    return output_frames;
+  }
+  return ceil(stm->input_hw_rate * output_frames /
+              stm->output_stream_params.rate);
+}
+
 static OSStatus
 audiounit_output_callback(void * user_ptr,
                           AudioUnitRenderActionFlags * ,
@@ -517,15 +581,15 @@ audiounit_output_callback(void * user_ptr,
 
   cubeb_stream * stm = static_cast<cubeb_stream *>(user_ptr);
 
-  ALOGV("(%p) output: buffers %u, size %u, channels %u, frames %u, total input frames %d.",
+  ALOGV("(%p) output: buffers %u, size %u, channels %u, frames %u, total input frames %lu.",
         stm,
         (unsigned int) outBufferList->mNumberBuffers,
         (unsigned int) outBufferList->mBuffers[0].mDataByteSize,
         (unsigned int) outBufferList->mBuffers[0].mNumberChannels,
         (unsigned int) output_frames,
-        stm->available_input_frames.load());
+        stm->input_linear_buffer->length() / stm->input_desc.mChannelsPerFrame);
 
-  long input_frames = 0, input_frames_before_fill = 0;
+  long input_frames = 0;
   void * output_buffer = NULL, * input_buffer = NULL;
 
   if (stm->shutdown) {
@@ -561,25 +625,29 @@ audiounit_output_callback(void * user_ptr,
     output_buffer = outBufferList->mBuffers[0].mData;
   }
 
+  stm->frames_written += output_frames;
+
   
   if (stm->input_unit != NULL) {
-    if (is_extra_input_needed(stm)) {
-      uint32_t min_input_frames = minimum_resampling_input_frames(stm);
-      {
-        auto_lock l(stm->input_linear_buffer_lock);
-        stm->input_linear_buffer->push_silence(min_input_frames * stm->input_desc.mChannelsPerFrame);
-      }
-      stm->available_input_frames += min_input_frames;
+    
 
-      ALOG("(%p) %s pushed %u frames of input silence.", stm, stm->frames_read == 0 ? "Input hasn't started," :
-           stm->switching_device ? "Device switching," : "Drop out,", min_input_frames);
+
+
+
+    uint32_t input_frames_needed =
+      minimum_resampling_input_frames(stm, stm->frames_written);
+    long missing_frames = input_frames_needed - stm->frames_read;
+    if (missing_frames > 0) {
+      stm->input_linear_buffer->push_silence(missing_frames * stm->input_desc.mChannelsPerFrame);
+      stm->frames_read = input_frames_needed;
+
+      ALOG("(%p) %s pushed %ld frames of input silence.", stm, stm->frames_read == 0 ? "Input hasn't started," :
+           stm->switching_device ? "Device switching," : "Drop out,", missing_frames);
     }
     input_buffer = stm->input_linear_buffer->data();
     
     
     input_frames = stm->input_linear_buffer->length() / stm->input_desc.mChannelsPerFrame;
-    
-    input_frames_before_fill = input_frames;
   }
 
   
@@ -591,11 +659,7 @@ audiounit_output_callback(void * user_ptr,
 
   if (input_buffer) {
     
-    stm->available_input_frames -= input_frames;
-    assert(stm->available_input_frames.load() >= 0);
-    
-    auto_lock l(stm->input_linear_buffer_lock);
-    stm->input_linear_buffer->pop(input_frames_before_fill * stm->input_desc.mChannelsPerFrame);
+    stm->input_linear_buffer->pop(input_frames * stm->input_desc.mChannelsPerFrame);
   }
 
   if (outframes < 0 || outframes > output_frames) {
@@ -673,8 +737,6 @@ audiounit_get_backend_id(cubeb * )
 
 static int audiounit_stream_get_volume(cubeb_stream * stm, float * volume);
 static int audiounit_stream_set_volume(cubeb_stream * stm, float volume);
-static int audiounit_uninstall_device_changed_callback(cubeb_stream * stm);
-static AudioObjectID audiounit_get_default_device_id(cubeb_device_type type);
 
 static int
 audiounit_set_device_info(cubeb_stream * stm, AudioDeviceID id, io_side side)
@@ -684,19 +746,19 @@ audiounit_set_device_info(cubeb_stream * stm, AudioDeviceID id, io_side side)
   device_info * info = nullptr;
   cubeb_device_type type = CUBEB_DEVICE_TYPE_UNKNOWN;
 
-  if (side == INPUT) {
+  if (side == io_side::INPUT) {
     info = &stm->input_device;
     type = CUBEB_DEVICE_TYPE_INPUT;
-  } else if (side == OUTPUT) {
+  } else if (side == io_side::OUTPUT) {
     info = &stm->output_device;
     type = CUBEB_DEVICE_TYPE_OUTPUT;
   }
   memset(info, 0, sizeof(device_info));
   info->id = id;
 
-  if (side == INPUT) {
+  if (side == io_side::INPUT) {
     info->flags |= DEV_INPUT;
-  } else if (side == OUTPUT) {
+  } else if (side == io_side::OUTPUT) {
     info->flags |= DEV_OUTPUT;
   }
 
@@ -749,17 +811,22 @@ audiounit_reinit_stream(cubeb_stream * stm, device_flags_value flags)
     
 
 
+
+
+
+    AudioDeviceID input_device = flags & DEV_INPUT ? stm->input_device.id : 0;
     if (flags & DEV_INPUT) {
-      r = audiounit_set_device_info(stm, 0, INPUT);
+      r = audiounit_set_device_info(stm, input_device, io_side::INPUT);
       if (r != CUBEB_OK) {
         LOG("(%p) Set input device info failed. This can happen when last media device is unplugged", stm);
         return CUBEB_ERROR;
       }
     }
+
     
 
 
-    r = audiounit_set_device_info(stm, 0, OUTPUT);
+    r = audiounit_set_device_info(stm, 0, io_side::OUTPUT);
     if (r != CUBEB_OK) {
       LOG("(%p) Set output device info failed. This can happen when last media device is unplugged", stm);
       return CUBEB_ERROR;
@@ -767,7 +834,15 @@ audiounit_reinit_stream(cubeb_stream * stm, device_flags_value flags)
 
     if (audiounit_setup_stream(stm) != CUBEB_OK) {
       LOG("(%p) Stream reinit failed.", stm);
-      return CUBEB_ERROR;
+      if (flags & DEV_INPUT && input_device != 0) {
+        
+        
+        if (audiounit_set_device_info(stm, 0, io_side::INPUT) != CUBEB_OK ||
+            audiounit_setup_stream(stm) != CUBEB_OK) {
+          LOG("(%p) Second stream reinit failed.", stm);
+          return CUBEB_ERROR;
+        }
+      }
     }
 
     if (vol_rv == CUBEB_OK) {
@@ -775,15 +850,40 @@ audiounit_reinit_stream(cubeb_stream * stm, device_flags_value flags)
     }
 
     
-    
-    stm->frames_read = 0;
-
-    
     if (!stm->shutdown) {
       audiounit_stream_start_internal(stm);
     }
   }
   return CUBEB_OK;
+}
+
+static void
+audiounit_reinit_stream_async(cubeb_stream * stm, device_flags_value flags)
+{
+  if (std::atomic_exchange(&stm->reinit_pending, true)) {
+    
+    ALOG("(%p) re-init stream task already pending, cancelling request ", stm);
+    return;
+  }
+
+  
+  
+  dispatch_async(stm->context->serial_queue, ^() {
+    if (stm->destroy_pending) {
+      ALOG("(%p) stream pending destroy, cancelling reinit task", stm);
+      return;
+    }
+
+    if (audiounit_reinit_stream(stm, flags) != CUBEB_OK) {
+      if (audiounit_uninstall_system_changed_callback(stm) != CUBEB_OK) {
+        LOG("(%p) Could not uninstall system changed callback", stm);
+      }
+      stm->state_callback(stm, stm->user_ptr, CUBEB_STATE_ERROR);
+      LOG("(%p) Could not reopen the stream after switching.", stm);
+    }
+    stm->switching_device = false;
+    stm->reinit_pending = false;
+  });
 }
 
 static char const *
@@ -802,8 +902,6 @@ event_addr_to_string(AudioObjectPropertySelector selector)
       return "Unknown";
   }
 }
-
-static int audiounit_uninstall_system_changed_callback(cubeb_stream * stm);
 
 static OSStatus
 audiounit_property_listener_callback(AudioObjectID id, UInt32 address_count,
@@ -875,48 +973,29 @@ audiounit_property_listener_callback(AudioObjectID id, UInt32 address_count,
     }
   }
 
-  
-  
-  dispatch_async(stm->context->serial_queue, ^() {
-    if (audiounit_reinit_stream(stm, switch_side) != CUBEB_OK) {
-      if (audiounit_uninstall_system_changed_callback(stm) != CUBEB_OK) {
-        LOG("(%p) Could not uninstall system changed callback", stm);
-      }
-      stm->state_callback(stm, stm->user_ptr, CUBEB_STATE_ERROR);
-      LOG("(%p) Could not reopen the stream after switching.", stm);
-    }
-    stm->switching_device = false;
-  });
+  audiounit_reinit_stream_async(stm, switch_side);
 
   return noErr;
 }
 
 OSStatus
-audiounit_add_listener(cubeb_stream * stm, AudioDeviceID id, AudioObjectPropertySelector selector,
-    AudioObjectPropertyScope scope, AudioObjectPropertyListenerProc listener)
+audiounit_add_listener(const property_listener * listener)
 {
-  AudioObjectPropertyAddress address = {
-      selector,
-      scope,
-      kAudioObjectPropertyElementMaster
-  };
-
-  return AudioObjectAddPropertyListener(id, &address, listener, stm);
+  assert(listener);
+  return AudioObjectAddPropertyListener(listener->device_id,
+                                        listener->property_address,
+                                        listener->callback,
+                                        listener->stream);
 }
 
 OSStatus
-audiounit_remove_listener(cubeb_stream * stm, AudioDeviceID id,
-                          AudioObjectPropertySelector selector,
-                          AudioObjectPropertyScope scope,
-                          AudioObjectPropertyListenerProc listener)
+audiounit_remove_listener(const property_listener * listener)
 {
-  AudioObjectPropertyAddress address = {
-      selector,
-      scope,
-      kAudioObjectPropertyElementMaster
-  };
-
-  return AudioObjectRemovePropertyListener(id, &address, listener, stm);
+  assert(listener);
+  return AudioObjectRemovePropertyListener(listener->device_id,
+                                           listener->property_address,
+                                           listener->callback,
+                                           listener->stream);
 }
 
 static int
@@ -929,9 +1008,12 @@ audiounit_install_device_changed_callback(cubeb_stream * stm)
     
 
 
-    rv = audiounit_add_listener(stm, stm->output_device.id, kAudioDevicePropertyDataSource,
-        kAudioDevicePropertyScopeOutput, &audiounit_property_listener_callback);
+    stm->output_source_listener.reset(new property_listener(
+      stm->output_device.id, &OUTPUT_DATA_SOURCE_PROPERTY_ADDRESS,
+      &audiounit_property_listener_callback, stm));
+    rv = audiounit_add_listener(stm->output_source_listener.get());
     if (rv != noErr) {
+      stm->output_source_listener.reset();
       LOG("AudioObjectAddPropertyListener/output/kAudioDevicePropertyDataSource rv=%d, device id=%d", rv, stm->output_device.id);
       r = CUBEB_ERROR;
     }
@@ -939,17 +1021,23 @@ audiounit_install_device_changed_callback(cubeb_stream * stm)
 
   if (stm->input_unit) {
     
-    rv = audiounit_add_listener(stm, stm->input_device.id, kAudioDevicePropertyDataSource,
-        kAudioDevicePropertyScopeInput, &audiounit_property_listener_callback);
+    stm->input_source_listener.reset(new property_listener(
+      stm->input_device.id, &INPUT_DATA_SOURCE_PROPERTY_ADDRESS,
+      &audiounit_property_listener_callback, stm));
+    rv = audiounit_add_listener(stm->input_source_listener.get());
     if (rv != noErr) {
+      stm->input_source_listener.reset();
       LOG("AudioObjectAddPropertyListener/input/kAudioDevicePropertyDataSource rv=%d, device id=%d", rv, stm->input_device.id);
       r = CUBEB_ERROR;
     }
 
     
-    rv = audiounit_add_listener(stm, stm->input_device.id, kAudioDevicePropertyDeviceIsAlive,
-        kAudioObjectPropertyScopeGlobal, &audiounit_property_listener_callback);
+    stm->input_alive_listener.reset(new property_listener(
+      stm->input_device.id, &DEVICE_IS_ALIVE_PROPERTY_ADDRESS,
+      &audiounit_property_listener_callback, stm));
+    rv = audiounit_add_listener(stm->input_alive_listener.get());
     if (rv != noErr) {
+      stm->input_alive_listener.reset();
       LOG("AudioObjectAddPropertyListener/input/kAudioDevicePropertyDeviceIsAlive rv=%d, device id =%d", rv, stm->input_device.id);
       r = CUBEB_ERROR;
     }
@@ -968,9 +1056,12 @@ audiounit_install_system_changed_callback(cubeb_stream * stm)
 
 
 
-    r = audiounit_add_listener(stm, kAudioObjectSystemObject, kAudioHardwarePropertyDefaultOutputDevice,
-                               kAudioObjectPropertyScopeGlobal, &audiounit_property_listener_callback);
+    stm->default_output_listener.reset(new property_listener(
+      kAudioObjectSystemObject, &DEFAULT_OUTPUT_DEVICE_PROPERTY_ADDRESS,
+      &audiounit_property_listener_callback, stm));
+    r = audiounit_add_listener(stm->default_output_listener.get());
     if (r != noErr) {
+      stm->default_output_listener.reset();
       LOG("AudioObjectAddPropertyListener/output/kAudioHardwarePropertyDefaultOutputDevice rv=%d", r);
       return CUBEB_ERROR;
     }
@@ -978,9 +1069,12 @@ audiounit_install_system_changed_callback(cubeb_stream * stm)
 
   if (stm->input_unit) {
     
-    r = audiounit_add_listener(stm, kAudioObjectSystemObject, kAudioHardwarePropertyDefaultInputDevice,
-                               kAudioObjectPropertyScopeGlobal, &audiounit_property_listener_callback);
+    stm->default_input_listener.reset(new property_listener(
+      kAudioObjectSystemObject, &DEFAULT_INPUT_DEVICE_PROPERTY_ADDRESS,
+      &audiounit_property_listener_callback, stm));
+    r = audiounit_add_listener(stm->default_input_listener.get());
     if (r != noErr) {
+      stm->default_input_listener.reset();
       LOG("AudioObjectAddPropertyListener/input/kAudioHardwarePropertyDefaultInputDevice rv=%d", r);
       return CUBEB_ERROR;
     }
@@ -996,30 +1090,33 @@ audiounit_uninstall_device_changed_callback(cubeb_stream * stm)
   
   int r = CUBEB_OK;
 
-  if (stm->output_unit) {
-    rv = audiounit_remove_listener(stm, stm->output_device.id, kAudioDevicePropertyDataSource,
-        kAudioDevicePropertyScopeOutput, &audiounit_property_listener_callback);
+  if (stm->output_source_listener) {
+    rv = audiounit_remove_listener(stm->output_source_listener.get());
     if (rv != noErr) {
       LOG("AudioObjectRemovePropertyListener/output/kAudioDevicePropertyDataSource rv=%d, device id=%d", rv, stm->output_device.id);
       r = CUBEB_ERROR;
     }
+    stm->output_source_listener.reset();
   }
 
-  if (stm->input_unit) {
-    rv = audiounit_remove_listener(stm, stm->input_device.id, kAudioDevicePropertyDataSource,
-        kAudioDevicePropertyScopeInput, &audiounit_property_listener_callback);
+  if (stm->input_source_listener) {
+    rv = audiounit_remove_listener(stm->input_source_listener.get());
     if (rv != noErr) {
       LOG("AudioObjectRemovePropertyListener/input/kAudioDevicePropertyDataSource rv=%d, device id=%d", rv, stm->input_device.id);
       r = CUBEB_ERROR;
     }
+    stm->input_source_listener.reset();
+  }
 
-    rv = audiounit_remove_listener(stm, stm->input_device.id, kAudioDevicePropertyDeviceIsAlive,
-                                  kAudioObjectPropertyScopeGlobal, &audiounit_property_listener_callback);
+  if (stm->input_alive_listener) {
+    rv = audiounit_remove_listener(stm->input_alive_listener.get());
     if (rv != noErr) {
       LOG("AudioObjectRemovePropertyListener/input/kAudioDevicePropertyDeviceIsAlive rv=%d, device id=%d", rv, stm->input_device.id);
       r = CUBEB_ERROR;
     }
+    stm->input_alive_listener.reset();
   }
+
   return r;
 }
 
@@ -1028,20 +1125,20 @@ audiounit_uninstall_system_changed_callback(cubeb_stream * stm)
 {
   OSStatus r;
 
-  if (has_output(stm)) {
-    r = audiounit_remove_listener(stm, kAudioObjectSystemObject, kAudioHardwarePropertyDefaultOutputDevice,
-                                  kAudioObjectPropertyScopeGlobal, &audiounit_property_listener_callback);
+  if (stm->default_output_listener) {
+    r = audiounit_remove_listener(stm->default_output_listener.get());
     if (r != noErr) {
       return CUBEB_ERROR;
     }
+    stm->default_output_listener.reset();
   }
 
-  if (has_input(stm)) {
-    r = audiounit_remove_listener(stm, kAudioObjectSystemObject, kAudioHardwarePropertyDefaultInputDevice,
-                                  kAudioObjectPropertyScopeGlobal, &audiounit_property_listener_callback);
+  if (stm->default_input_listener) {
+    r = audiounit_remove_listener(stm->default_input_listener.get());
     if (r != noErr) {
       return CUBEB_ERROR;
     }
+    stm->default_input_listener.reset();
   }
   return CUBEB_OK;
 }
@@ -1086,20 +1183,19 @@ audiounit_get_acceptable_latency_range(AudioValueRange * latency_range)
 static AudioObjectID
 audiounit_get_default_device_id(cubeb_device_type type)
 {
-  AudioObjectPropertyAddress adr = { 0, kAudioObjectPropertyScopeGlobal, kAudioObjectPropertyElementMaster };
-  AudioDeviceID devid;
-  UInt32 size;
-
+  const AudioObjectPropertyAddress * adr;
   if (type == CUBEB_DEVICE_TYPE_OUTPUT) {
-    adr.mSelector = kAudioHardwarePropertyDefaultOutputDevice;
+    adr = &DEFAULT_OUTPUT_DEVICE_PROPERTY_ADDRESS;
   } else if (type == CUBEB_DEVICE_TYPE_INPUT) {
-    adr.mSelector = kAudioHardwarePropertyDefaultInputDevice;
+    adr = &DEFAULT_INPUT_DEVICE_PROPERTY_ADDRESS;
   } else {
     return kAudioObjectUnknown;
   }
 
-  size = sizeof(AudioDeviceID);
-  if (AudioObjectGetPropertyData(kAudioObjectSystemObject, &adr, 0, NULL, &size, &devid) != noErr) {
+  AudioDeviceID devid;
+  UInt32 size = sizeof(AudioDeviceID);
+  if (AudioObjectGetPropertyData(kAudioObjectSystemObject,
+                                 adr, 0, NULL, &size, &devid) != noErr) {
     return kAudioObjectUnknown;
   }
 
@@ -1395,7 +1491,7 @@ audiounit_set_channel_layout(AudioUnit unit,
                              io_side side,
                              cubeb_channel_layout layout)
 {
-  if (side != OUTPUT) {
+  if (side != io_side::OUTPUT) {
     return CUBEB_ERROR;
   }
 
@@ -1447,13 +1543,13 @@ void
 audiounit_layout_init(cubeb_stream * stm, io_side side)
 {
   
-  if (side == INPUT) {
+  if (side == io_side::INPUT) {
     return;
   }
 
   stm->context->layout = audiounit_get_current_channel_layout(stm->output_unit);
 
-  audiounit_set_channel_layout(stm->output_unit, OUTPUT, stm->context->layout);
+  audiounit_set_channel_layout(stm->output_unit, io_side::OUTPUT, stm->context->layout);
 }
 
 static vector<AudioObjectID>
@@ -1804,7 +1900,6 @@ audiounit_create_aggregate_device(cubeb_stream * stm)
   int r = audiounit_create_blank_aggregate_device(&stm->plugin_id, &stm->aggregate_device_id);
   if (r != CUBEB_OK) {
     LOG("(%p) Failed to create blank aggregate device", stm);
-    audiounit_destroy_aggregate_device(stm->plugin_id, &stm->aggregate_device_id);
     return CUBEB_ERROR;
   }
 
@@ -1920,8 +2015,8 @@ audiounit_enable_unit_scope(AudioUnit * unit, io_side side, enable_state state)
   OSStatus rv;
   UInt32 enable = state;
   rv = AudioUnitSetProperty(*unit, kAudioOutputUnitProperty_EnableIO,
-                            (side == INPUT) ? kAudioUnitScope_Input : kAudioUnitScope_Output,
-                            (side == INPUT) ? AU_IN_BUS : AU_OUT_BUS,
+                            (side == io_side::INPUT) ? kAudioUnitScope_Input : kAudioUnitScope_Output,
+                            (side == io_side::INPUT) ? AU_IN_BUS : AU_OUT_BUS,
                             &enable,
                             sizeof(UInt32));
   if (rv != noErr) {
@@ -1953,23 +2048,23 @@ audiounit_create_unit(AudioUnit * unit, device_info * device)
 
 
   if (device->flags & DEV_INPUT) {
-    r = audiounit_enable_unit_scope(unit, INPUT, ENABLE);
+    r = audiounit_enable_unit_scope(unit, io_side::INPUT, ENABLE);
     if (r != CUBEB_OK) {
       LOG("Failed to enable audiounit input scope ");
       return r;
     }
-    r = audiounit_enable_unit_scope(unit, OUTPUT, DISABLE);
+    r = audiounit_enable_unit_scope(unit, io_side::OUTPUT, DISABLE);
     if (r != CUBEB_OK) {
       LOG("Failed to disable audiounit output scope ");
       return r;
     }
   } else if (device->flags & DEV_OUTPUT) {
-    r = audiounit_enable_unit_scope(unit, OUTPUT, ENABLE);
+    r = audiounit_enable_unit_scope(unit, io_side::OUTPUT, ENABLE);
     if (r != CUBEB_OK) {
       LOG("Failed to enable audiounit output scope ");
       return r;
     }
-    r = audiounit_enable_unit_scope(unit, INPUT, DISABLE);
+    r = audiounit_enable_unit_scope(unit, io_side::INPUT, DISABLE);
     if (r != CUBEB_OK) {
       LOG("Failed to disable audiounit input scope ");
       return r;
@@ -1994,7 +2089,7 @@ audiounit_create_unit(AudioUnit * unit, device_info * device)
 static int
 audiounit_init_input_linear_buffer(cubeb_stream * stream, uint32_t capacity)
 {
-  uint32_t size = capacity * stream->input_buffer_frames * stream->input_desc.mChannelsPerFrame;
+  uint32_t size = capacity * stream->latency_frames * stream->input_desc.mChannelsPerFrame;
   if (stream->input_desc.mFormatFlags & kAudioFormatFlagIsSignedInteger) {
     stream->input_linear_buffer.reset(new auto_array_wrapper_impl<short>(size));
   } else {
@@ -2130,7 +2225,7 @@ audiounit_set_buffer_size(cubeb_stream * stm, uint32_t new_size_frames, io_side 
   AudioUnitScope au_scope = kAudioUnitScope_Input;
   AudioUnitElement au_element = AU_OUT_BUS;
 
-  if (side == INPUT) {
+  if (side == io_side::INPUT) {
     au = stm->input_unit;
     au_scope = kAudioUnitScope_Output;
     au_element = AU_IN_BUS;
@@ -2251,8 +2346,7 @@ audiounit_configure_input(cubeb_stream * stm)
   }
 
   
-  stm->input_buffer_frames = stm->latency_frames;
-  r = audiounit_set_buffer_size(stm, stm->input_buffer_frames, INPUT);
+  r = audiounit_set_buffer_size(stm, stm->latency_frames, io_side::INPUT);
   if (r != CUBEB_OK) {
     LOG("(%p) Error in change input buffer size.", stm);
     return CUBEB_ERROR;
@@ -2279,7 +2373,7 @@ audiounit_configure_input(cubeb_stream * stm)
                            kAudioUnitProperty_MaximumFramesPerSlice,
                            kAudioUnitScope_Global,
                            AU_IN_BUS,
-                           &stm->input_buffer_frames,
+                           &stm->latency_frames,
                            sizeof(UInt32));
   if (r != noErr) {
     LOG("AudioUnitSetProperty/input/kAudioUnitProperty_MaximumFramesPerSlice rv=%d", r);
@@ -2309,6 +2403,8 @@ audiounit_configure_input(cubeb_stream * stm)
     LOG("AudioUnitSetProperty/input/kAudioOutputUnitProperty_SetInputCallback rv=%d", r);
     return CUBEB_ERROR;
   }
+
+  stm->frames_read = 0;
 
   LOG("(%p) Input audiounit init successfully.", stm);
 
@@ -2354,7 +2450,7 @@ audiounit_configure_output(cubeb_stream * stm)
   stm->context->channels = output_hw_desc.mChannelsPerFrame;
 
   
-  audiounit_layout_init(stm, OUTPUT);
+  audiounit_layout_init(stm, io_side::OUTPUT);
   if (stm->context->channels != stm->output_stream_params.channels ||
       stm->context->layout != stm->output_stream_params.layout) {
     LOG("Incompatible channel layouts detected, setting up remixer");
@@ -2382,7 +2478,7 @@ audiounit_configure_output(cubeb_stream * stm)
     return CUBEB_ERROR;
   }
 
-  r = audiounit_set_buffer_size(stm, stm->latency_frames, OUTPUT);
+  r = audiounit_set_buffer_size(stm, stm->latency_frames, io_side::OUTPUT);
   if (r != CUBEB_OK) {
     LOG("(%p) Error in change output buffer size.", stm);
     return CUBEB_ERROR;
@@ -2412,6 +2508,8 @@ audiounit_configure_output(cubeb_stream * stm)
     LOG("AudioUnitSetProperty/output/kAudioUnitProperty_SetRenderCallback rv=%d", r);
     return CUBEB_ERROR;
   }
+
+  stm->frames_written = 0;
 
   LOG("(%p) Output audiounit init successfully.", stm);
   return CUBEB_OK;
@@ -2659,7 +2757,7 @@ audiounit_stream_init(cubeb * context,
   }
   if (input_stream_params) {
     stm->input_stream_params = *input_stream_params;
-    r = audiounit_set_device_info(stm.get(), reinterpret_cast<uintptr_t>(input_device), INPUT);
+    r = audiounit_set_device_info(stm.get(), reinterpret_cast<uintptr_t>(input_device), io_side::INPUT);
     if (r != CUBEB_OK) {
       LOG("(%p) Fail to set device info for input.", stm.get());
       return r;
@@ -2667,7 +2765,7 @@ audiounit_stream_init(cubeb * context,
   }
   if (output_stream_params) {
     stm->output_stream_params = *output_stream_params;
-    r = audiounit_set_device_info(stm.get(), reinterpret_cast<uintptr_t>(output_device), OUTPUT);
+    r = audiounit_set_device_info(stm.get(), reinterpret_cast<uintptr_t>(output_device), io_side::OUTPUT);
     if (r != CUBEB_OK) {
       LOG("(%p) Fail to set device info for output.", stm.get());
       return r;
@@ -2755,6 +2853,7 @@ audiounit_stream_destroy(cubeb_stream * stm)
     stm->shutdown = true;
   }
 
+  stm->destroy_pending = true;
   
   
   dispatch_sync(stm->context->serial_queue, ^() {
@@ -2889,6 +2988,69 @@ int audiounit_stream_set_panning(cubeb_stream * stm, float panning)
   return CUBEB_OK;
 }
 
+unique_ptr<char[]> convert_uint32_into_string(UInt32 data)
+{
+  
+  size_t size = data == 0 ? 0 : 4; 
+  auto str = unique_ptr<char[]> { new char[size + 1] }; 
+  str[size] = '\0';
+  if (size < 4) {
+    return str;
+  }
+
+  
+  str[0] = (char)(data >> 24);
+  str[1] = (char)(data >> 16);
+  str[2] = (char)(data >> 8);
+  str[3] = (char)(data);
+  return str;
+}
+
+int audiounit_get_default_device_datasource(cubeb_device_type type,
+                                            UInt32 * data)
+{
+  AudioDeviceID id = audiounit_get_default_device_id(type);
+  if (id == kAudioObjectUnknown) {
+    return CUBEB_ERROR;
+  }
+
+  UInt32 size = sizeof(*data);
+  
+  OSStatus r = AudioObjectGetPropertyData(id,
+                                          type == CUBEB_DEVICE_TYPE_INPUT ?
+                                            &INPUT_DATA_SOURCE_PROPERTY_ADDRESS :
+                                            &OUTPUT_DATA_SOURCE_PROPERTY_ADDRESS,
+                                          0, NULL, &size, data);
+  if (r != noErr) {
+    *data = 0;
+  }
+
+  return CUBEB_OK;
+}
+
+int audiounit_get_default_device_name(cubeb_stream * stm,
+                                      cubeb_device * const device,
+                                      cubeb_device_type type)
+{
+  assert(stm);
+  assert(device);
+
+  UInt32 data;
+  int r = audiounit_get_default_device_datasource(type, &data);
+  if (r != CUBEB_OK) {
+    return r;
+  }
+  char ** name = type == CUBEB_DEVICE_TYPE_INPUT ?
+    &device->input_name : &device->output_name;
+  *name = convert_uint32_into_string(data).release();
+  if (!strlen(*name)) { 
+    LOG("(%p) name of %s device is empty!", stm,
+        type == CUBEB_DEVICE_TYPE_INPUT ? "input" : "output");
+  }
+  return CUBEB_OK;
+}
+
+
 int audiounit_stream_get_current_device(cubeb_stream * stm,
                                         cubeb_device ** const device)
 {
@@ -2896,88 +3058,23 @@ int audiounit_stream_get_current_device(cubeb_stream * stm,
   
   return CUBEB_ERROR_NOT_SUPPORTED;
 #else
-  OSStatus r;
-  UInt32 size;
-  UInt32 data;
-  char strdata[4];
-  AudioDeviceID output_device_id;
-  AudioDeviceID input_device_id;
-
-  AudioObjectPropertyAddress datasource_address = {
-    kAudioDevicePropertyDataSource,
-    kAudioDevicePropertyScopeOutput,
-    kAudioObjectPropertyElementMaster
-  };
-
-  AudioObjectPropertyAddress datasource_address_input = {
-    kAudioDevicePropertyDataSource,
-    kAudioDevicePropertyScopeInput,
-    kAudioObjectPropertyElementMaster
-  };
-
-  *device = NULL;
-
-  output_device_id = audiounit_get_default_device_id(CUBEB_DEVICE_TYPE_OUTPUT);
-  if (output_device_id == kAudioObjectUnknown) {
-    return CUBEB_ERROR;
-  }
-
   *device = new cubeb_device;
   if (!*device) {
     return CUBEB_ERROR;
   }
   PodZero(*device, 1);
 
-  size = sizeof(UInt32);
-  
-  r = AudioObjectGetPropertyData(output_device_id,
-                                 &datasource_address,
-                                 0, NULL, &size, &data);
-  if (r != noErr) {
-    size = 0;
-    data = 0;
+  int r = audiounit_get_default_device_name(stm, *device,
+                                            CUBEB_DEVICE_TYPE_OUTPUT);
+  if (r != CUBEB_OK) {
+    return r;
   }
 
-  (*device)->output_name = new char[size + 1];
-  if (!(*device)->output_name) {
-    return CUBEB_ERROR;
+  r = audiounit_get_default_device_name(stm, *device,
+                                        CUBEB_DEVICE_TYPE_INPUT);
+  if (r != CUBEB_OK) {
+    return r;
   }
-
-  
-  strdata[0] = (char)(data >> 24);
-  strdata[1] = (char)(data >> 16);
-  strdata[2] = (char)(data >> 8);
-  strdata[3] = (char)(data);
-
-  memcpy((*device)->output_name, strdata, size);
-  (*device)->output_name[size] = '\0';
-
-  input_device_id = audiounit_get_default_device_id(CUBEB_DEVICE_TYPE_INPUT);
-  if (input_device_id == kAudioObjectUnknown) {
-    return CUBEB_ERROR;
-  }
-
-  size = sizeof(UInt32);
-  r = AudioObjectGetPropertyData(input_device_id, &datasource_address_input, 0, NULL, &size, &data);
-  if (r != noErr) {
-    LOG("(%p) Error when getting device !", stm);
-    size = 0;
-    data = 0;
-  }
-
-  (*device)->input_name = new char[size + 1];
-  if (!(*device)->input_name) {
-    return CUBEB_ERROR;
-  }
-
-  
-  strdata[0] = (char)(data >> 24);
-  strdata[1] = (char)(data >> 16);
-  strdata[2] = (char)(data >> 8);
-  strdata[3] = (char)(data);
-
-  memcpy((*device)->input_name, strdata, size);
-  (*device)->input_name[size] = '\0';
 
   return CUBEB_OK;
 #endif
@@ -3292,11 +3389,10 @@ audiounit_device_collection_destroy(cubeb * ,
 static vector<AudioObjectID>
 audiounit_get_devices_of_type(cubeb_device_type devtype)
 {
-  AudioObjectPropertyAddress adr = { kAudioHardwarePropertyDevices,
-                                     kAudioObjectPropertyScopeGlobal,
-                                     kAudioObjectPropertyElementMaster };
   UInt32 size = 0;
-  OSStatus ret = AudioObjectGetPropertyDataSize(kAudioObjectSystemObject, &adr, 0, NULL, &size);
+  OSStatus ret = AudioObjectGetPropertyDataSize(kAudioObjectSystemObject,
+                                                &DEVICES_PROPERTY_ADDRESS, 0,
+                                                NULL, &size);
   if (ret != noErr) {
     return vector<AudioObjectID>();
   }
@@ -3304,7 +3400,9 @@ audiounit_get_devices_of_type(cubeb_device_type devtype)
   uint32_t count = (uint32_t)(size / sizeof(AudioObjectID));
 
   vector<AudioObjectID> devices(count);
-  ret = AudioObjectGetPropertyData(kAudioObjectSystemObject, &adr, 0, NULL, &size, devices.data());
+  ret = AudioObjectGetPropertyData(kAudioObjectSystemObject,
+                                   &DEVICES_PROPERTY_ADDRESS, 0, NULL, &size,
+                                   devices.data());
   if (ret != noErr) {
     return vector<AudioObjectID>();
   }
@@ -3404,13 +3502,8 @@ audiounit_add_device_listener(cubeb * context,
 
   assert(context->collection_changed_callback == NULL);
 
-  AudioObjectPropertyAddress devAddr;
-  devAddr.mSelector = kAudioHardwarePropertyDevices;
-  devAddr.mScope = kAudioObjectPropertyScopeGlobal;
-  devAddr.mElement = kAudioObjectPropertyElementMaster;
-
   OSStatus ret = AudioObjectAddPropertyListener(kAudioObjectSystemObject,
-                                                &devAddr,
+                                                &DEVICES_PROPERTY_ADDRESS,
                                                 audiounit_collection_changed_callback,
                                                 context);
   if (ret == noErr) {
@@ -3433,14 +3526,9 @@ audiounit_add_device_listener(cubeb * context,
 static OSStatus
 audiounit_remove_device_listener(cubeb * context)
 {
-  AudioObjectPropertyAddress devAddr;
-  devAddr.mSelector = kAudioHardwarePropertyDevices;
-  devAddr.mScope = kAudioObjectPropertyScopeGlobal;
-  devAddr.mElement = kAudioObjectPropertyElementMaster;
-
   
   OSStatus ret = AudioObjectRemovePropertyListener(kAudioObjectSystemObject,
-                                                   &devAddr,
+                                                   &DEVICES_PROPERTY_ADDRESS,
                                                    audiounit_collection_changed_callback,
                                                    context);
   if (ret == noErr) {
