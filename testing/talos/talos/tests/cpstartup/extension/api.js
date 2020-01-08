@@ -1,0 +1,126 @@
+
+
+
+
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+XPCOMUtils.defineLazyScriptGetter(this, "TalosParentProfiler",
+                                  "resource://talos-powers/TalosParentProfiler.js");
+
+ChromeUtils.defineModuleGetter(this, "Services",
+                               "resource://gre/modules/Services.jsm");
+
+const PREALLOCATED_PREF = "dom.ipc.processPrelaunch.enabled";
+const MESSAGES = [
+  "CPStartup:Go",
+  "Content:BrowserChildReady",
+];
+
+
+
+this.cpstartup = class extends ExtensionAPI {
+  onStartup() {
+    for (let msgName of MESSAGES) {
+      Services.mm.addMessageListener(msgName, this);
+    }
+
+    this.framescriptURL = this.extension.baseURI.resolve("/framescript.js");
+    Services.mm.loadFrameScript(this.framescriptURL, true);
+
+    this.originalPreallocatedEnabled = Services.prefs.getBoolPref(PREALLOCATED_PREF);
+    Services.prefs.setBoolPref(PREALLOCATED_PREF, false);
+
+    this.readyCallback = null;
+    this.startStamp = null;
+    this.tab = null;
+  }
+
+  onShutdown() {
+    Services.prefs.setBoolPref(PREALLOCATED_PREF, this.originalPreallocatedEnabled);
+    Services.mm.removeDelayedFrameScript(this.framescriptURL);
+
+    for (let msgName of MESSAGES) {
+      Services.mm.removeMessageListener(msgName, this);
+    }
+  }
+
+  receiveMessage(msg) {
+    let browser = msg.target;
+    let gBrowser = browser.ownerGlobal.gBrowser;
+
+    switch (msg.name) {
+      case "CPStartup:Go": {
+        this.openTab(gBrowser, msg.data.target).then(results =>
+          this.reportResults(results));
+        break;
+      }
+
+      case "Content:BrowserChildReady": {
+        
+        if (!this.readyCallback) {
+          throw new Error("Content:BrowserChildReady fired without a readyCallback set");
+        }
+        let tab = gBrowser.getTabForBrowser(browser);
+        if (tab != this.tab) {
+          
+          break;
+        }
+        
+        
+        let delta = msg.data.time - this.startStamp;
+        this.readyCallback({tab, delta});
+        break;
+      }
+    }
+  }
+
+  async openTab(gBrowser, url) {
+    
+    TalosParentProfiler.resume("tab opening starts");
+    this.startStamp = Services.telemetry.msSystemNow();
+    this.tab = gBrowser.selectedTab = gBrowser.addTrustedTab(url);
+
+    let {tab, delta} = await this.whenTabReady();
+    TalosParentProfiler.pause("tab opening end");
+    await this.removeTab(tab);
+    return delta;
+  }
+
+  whenTabReady() {
+    return new Promise((resolve) => {
+      this.readyCallback = resolve;
+    });
+  }
+
+  removeTab(tab) {
+    return new Promise((resolve) => {
+      let {messageManager: mm, frameLoader} = tab.linkedBrowser;
+      mm.addMessageListener("SessionStore:update", function onMessage(msg) {
+        if (msg.targetFrameLoader == frameLoader && msg.data.isFinal) {
+          mm.removeMessageListener("SessionStore:update", onMessage);
+          resolve();
+        }
+      }, true);
+
+      tab.ownerGlobal.gBrowser.removeTab(tab);
+    });
+  }
+
+  reportResults(results) {
+    Services.mm.broadcastAsyncMessage("CPStartup:FinalResults", results);
+  }
+};
