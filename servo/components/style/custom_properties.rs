@@ -24,6 +24,59 @@ use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
 
 
 
+
+pub struct CssEnvironment;
+
+struct EnvironmentVariable {
+    name: Atom,
+    value: VariableValue,
+}
+
+macro_rules! make_variable {
+    ($name:expr, $value:expr) => {{
+        EnvironmentVariable {
+            name: $name,
+            value: {
+                // TODO(emilio): We could make this be more efficient (though a
+                // bit less convenient).
+                let mut input = ParserInput::new($value);
+                let mut input = Parser::new(&mut input);
+
+                let (first_token_type, css, last_token_type) =
+                    parse_self_contained_declaration_value(&mut input, None).unwrap();
+
+                VariableValue {
+                    css: css.into_owned(),
+                    first_token_type,
+                    last_token_type,
+                    references: Default::default(),
+                    references_environment: false,
+                }
+            },
+        }
+    }};
+}
+
+lazy_static! {
+    static ref ENVIRONMENT_VARIABLES: [EnvironmentVariable; 4] = [
+        make_variable!(atom!("safe-area-inset-top"), "0px"),
+        make_variable!(atom!("safe-area-inset-bottom"), "0px"),
+        make_variable!(atom!("safe-area-inset-left"), "0px"),
+        make_variable!(atom!("safe-area-inset-right"), "0px"),
+    ];
+}
+
+impl CssEnvironment {
+    #[inline]
+    fn get(&self, name: &Atom) -> Option<&VariableValue> {
+        let var = ENVIRONMENT_VARIABLES.iter().find(|var| var.name == *name)?;
+        Some(&var.value)
+    }
+}
+
+
+
+
 pub type Name = Atom;
 
 
@@ -47,6 +100,12 @@ pub struct VariableValue {
 
     first_token_type: TokenSerializationType,
     last_token_type: TokenSerializationType,
+
+    
+    
+    
+    
+    references_environment: bool,
 
     
     references: PrecomputedHashSet<Name>,
@@ -216,6 +275,14 @@ where
     }
 }
 
+
+
+#[derive(Default)]
+struct VarOrEnvReferences {
+    custom_property_references: PrecomputedHashSet<Name>,
+    references_environment: bool,
+}
+
 impl VariableValue {
     fn empty() -> Self {
         Self {
@@ -223,6 +290,7 @@ impl VariableValue {
             last_token_type: TokenSerializationType::nothing(),
             first_token_type: TokenSerializationType::nothing(),
             references: PrecomputedHashSet::default(),
+            references_environment: false,
         }
     }
 
@@ -273,7 +341,7 @@ impl VariableValue {
 
     
     pub fn parse<'i, 't>(input: &mut Parser<'i, 't>) -> Result<Arc<Self>, ParseError<'i>> {
-        let mut references = PrecomputedHashSet::default();
+        let mut references = VarOrEnvReferences::default();
 
         let (first_token_type, css, last_token_type) =
             parse_self_contained_declaration_value(input, Some(&mut references))?;
@@ -282,7 +350,8 @@ impl VariableValue {
             css: css.into_owned(),
             first_token_type,
             last_token_type,
-            references,
+            references: references.custom_property_references,
+            references_environment: references.references_environment,
         }))
     }
 }
@@ -297,7 +366,7 @@ pub fn parse_non_custom_with_var<'i, 't>(
 
 fn parse_self_contained_declaration_value<'i, 't>(
     input: &mut Parser<'i, 't>,
-    references: Option<&mut PrecomputedHashSet<Name>>,
+    references: Option<&mut VarOrEnvReferences>,
 ) -> Result<(TokenSerializationType, Cow<'i, str>, TokenSerializationType), ParseError<'i>> {
     let start_position = input.position();
     let mut missing_closing_characters = String::new();
@@ -317,7 +386,7 @@ fn parse_self_contained_declaration_value<'i, 't>(
 
 fn parse_declaration_value<'i, 't>(
     input: &mut Parser<'i, 't>,
-    references: Option<&mut PrecomputedHashSet<Name>>,
+    references: Option<&mut VarOrEnvReferences>,
     missing_closing_characters: &mut String,
 ) -> Result<(TokenSerializationType, TokenSerializationType), ParseError<'i>> {
     input.parse_until_before(Delimiter::Bang | Delimiter::Semicolon, |input| {
@@ -334,7 +403,7 @@ fn parse_declaration_value<'i, 't>(
 
 fn parse_declaration_value_block<'i, 't>(
     input: &mut Parser<'i, 't>,
-    mut references: Option<&mut PrecomputedHashSet<Name>>,
+    mut references: Option<&mut VarOrEnvReferences>,
     missing_closing_characters: &mut String,
 ) -> Result<(TokenSerializationType, TokenSerializationType), ParseError<'i>> {
     let mut token_start = input.position();
@@ -407,6 +476,12 @@ fn parse_declaration_value_block<'i, 't>(
                         parse_var_function(input, references.as_mut().map(|r| &mut **r))
                     })?;
                     input.reset(&args_start);
+                } else if name.eq_ignore_ascii_case("env") {
+                    let args_start = input.state();
+                    input.parse_nested_block(|input| {
+                        parse_env_function(input, references.as_mut().map(|r| &mut **r))
+                    })?;
+                    input.reset(&args_start);
                 }
                 nested!();
                 check_closed!(")");
@@ -468,29 +543,48 @@ fn parse_declaration_value_block<'i, 't>(
     }
 }
 
+fn parse_fallback<'i, 't>(input: &mut Parser<'i, 't>) -> Result<(), ParseError<'i>> {
+    
+    
+    input.parse_until_before(Delimiter::Bang | Delimiter::Semicolon, |input| {
+        
+        input.next_including_whitespace()?;
+        
+        while let Ok(_) = input.next_including_whitespace_and_comments() {}
+        Ok(())
+    })
+}
+
 
 fn parse_var_function<'i, 't>(
     input: &mut Parser<'i, 't>,
-    references: Option<&mut PrecomputedHashSet<Name>>,
+    references: Option<&mut VarOrEnvReferences>,
 ) -> Result<(), ParseError<'i>> {
     let name = input.expect_ident_cloned()?;
-    let name: Result<_, ParseError> = parse_name(&name).map_err(|()| {
+    let name = parse_name(&name).map_err(|()| {
         input.new_custom_error(SelectorParseErrorKind::UnexpectedIdent(name.clone()))
-    });
-    let name = name?;
+    })?;
     if input.try(|input| input.expect_comma()).is_ok() {
-        
-        
-        input.parse_until_before(Delimiter::Bang | Delimiter::Semicolon, |input| {
-            
-            input.next_including_whitespace()?;
-            
-            while let Ok(_) = input.next_including_whitespace_and_comments() {}
-            Ok(())
-        })?;
+        parse_fallback(input)?;
     }
     if let Some(refs) = references {
-        refs.insert(Atom::from(name));
+        refs.custom_property_references.insert(Atom::from(name));
+    }
+    Ok(())
+}
+
+fn parse_env_function<'i, 't>(
+    input: &mut Parser<'i, 't>,
+    references: Option<&mut VarOrEnvReferences>,
+) -> Result<(), ParseError<'i>> {
+    
+    
+    input.expect_ident()?;
+    if input.try(|input| input.expect_comma()).is_ok() {
+        parse_fallback(input)?;
+    }
+    if let Some(references) = references {
+        references.references_environment = true;
     }
     Ok(())
 }
@@ -502,25 +596,26 @@ pub struct CustomPropertiesBuilder<'a> {
     may_have_cycles: bool,
     custom_properties: Option<CustomPropertiesMap>,
     inherited: Option<&'a Arc<CustomPropertiesMap>>,
+    environment: &'a CssEnvironment,
 }
 
 impl<'a> CustomPropertiesBuilder<'a> {
     
-    pub fn new(inherited: Option<&'a Arc<CustomPropertiesMap>>) -> Self {
+    pub fn new(
+        inherited: Option<&'a Arc<CustomPropertiesMap>>,
+        environment: &'a CssEnvironment,
+    ) -> Self {
         Self {
             seen: PrecomputedHashSet::default(),
             may_have_cycles: false,
             custom_properties: None,
             inherited,
+            environment,
         }
     }
 
     
-    pub fn cascade(
-        &mut self,
-        name: &'a Name,
-        specified_value: &CustomDeclarationValue,
-    ) {
+    pub fn cascade(&mut self, name: &'a Name, specified_value: &CustomDeclarationValue) {
         let was_already_present = !self.seen.insert(name);
         if was_already_present {
             return;
@@ -540,8 +635,31 @@ impl<'a> CustomPropertiesBuilder<'a> {
         let map = self.custom_properties.as_mut().unwrap();
         match *specified_value {
             CustomDeclarationValue::Value(ref unparsed_value) => {
-                self.may_have_cycles |= !unparsed_value.references.is_empty();
-                map.insert(name.clone(), (*unparsed_value).clone());
+                let has_references = !unparsed_value.references.is_empty();
+                self.may_have_cycles |= has_references;
+
+                
+                
+                
+                let value = if !has_references && unparsed_value.references_environment {
+                    let invalid = Default::default(); 
+                    let result = substitute_references_in_value(
+                        unparsed_value,
+                        &map,
+                        &invalid,
+                        &self.environment,
+                    );
+                    match result {
+                        Ok(new_value) => Arc::new(new_value),
+                        Err(..) => {
+                            map.remove(name);
+                            return;
+                        },
+                    }
+                } else {
+                    (*unparsed_value).clone()
+                };
+                map.insert(name.clone(), value);
             },
             CustomDeclarationValue::CSSWideKeyword(keyword) => match keyword {
                 CSSWideKeyword::Initial => {
@@ -553,11 +671,7 @@ impl<'a> CustomPropertiesBuilder<'a> {
         }
     }
 
-    fn value_may_affect_style(
-        &self,
-        name: &Name,
-        value: &CustomDeclarationValue,
-    ) -> bool {
+    fn value_may_affect_style(&self, name: &Name, value: &CustomDeclarationValue) -> bool {
         match *value {
             CustomDeclarationValue::CSSWideKeyword(CSSWideKeyword::Unset) |
             CustomDeclarationValue::CSSWideKeyword(CSSWideKeyword::Inherit) => {
@@ -605,9 +719,8 @@ impl<'a> CustomPropertiesBuilder<'a> {
             Some(m) => m,
             None => return self.inherited.cloned(),
         };
-
         if self.may_have_cycles {
-            substitute_all(&mut map);
+            substitute_all(&mut map, self.environment);
         }
         Some(Arc::new(map))
     }
@@ -616,7 +729,7 @@ impl<'a> CustomPropertiesBuilder<'a> {
 
 
 
-fn substitute_all(custom_properties_map: &mut CustomPropertiesMap) {
+fn substitute_all(custom_properties_map: &mut CustomPropertiesMap, environment: &CssEnvironment) {
     
     
     
@@ -664,6 +777,8 @@ fn substitute_all(custom_properties_map: &mut CustomPropertiesMap) {
         map: &'a mut CustomPropertiesMap,
         
         invalid: &'a mut PrecomputedHashSet<Name>,
+        
+        environment: &'a CssEnvironment,
     }
 
     
@@ -686,11 +801,23 @@ fn substitute_all(custom_properties_map: &mut CustomPropertiesMap) {
     
     fn traverse<'a>(name: Name, context: &mut Context<'a>) -> Option<usize> {
         
-        let (name, value) = if let Some(value) = context.map.get(&name) {
+        let (name, value) = {
+            let value = context.map.get(&name)?;
+
             
-            if value.references.is_empty() || context.invalid.contains(&name) {
+            if value.references.is_empty() {
+                debug_assert!(
+                    !value.references_environment,
+                    "Should've been handled earlier"
+                );
                 return None;
             }
+
+            
+            if context.invalid.contains(&name) {
+                return None;
+            }
+
             
             let key;
             match context.index_map.entry(name) {
@@ -702,12 +829,10 @@ fn substitute_all(custom_properties_map: &mut CustomPropertiesMap) {
                     entry.insert(context.count);
                 },
             }
+
             
             
             (key, value.clone())
-        } else {
-            
-            return None;
         };
 
         
@@ -793,29 +918,20 @@ fn substitute_all(custom_properties_map: &mut CustomPropertiesMap) {
         
         
         
-        let mut computed_value = ComputedValue::empty();
-        let mut input = ParserInput::new(&value.css);
-        let mut input = Parser::new(&mut input);
-        let mut position = (input.position(), value.first_token_type);
-        let result = substitute_block(
-            &mut input,
-            &mut position,
-            &mut computed_value,
-            &mut |name, partial_computed_value| {
-                if let Some(value) = context.map.get(name) {
-                    if !context.invalid.contains(name) {
-                        partial_computed_value.push_variable(value);
-                        return Ok(value.last_token_type);
-                    }
-                }
-                Err(())
-            },
+        let result = substitute_references_in_value(
+            &value,
+            &context.map,
+            &context.invalid,
+            &context.environment,
         );
-        if let Ok(last_token_type) = result {
-            computed_value.push_from(position, &input, last_token_type);
-            context.map.insert(name, Arc::new(computed_value));
-        } else {
-            context.invalid.insert(name);
+
+        match result {
+            Ok(computed_value) => {
+                context.map.insert(name, Arc::new(computed_value));
+            },
+            Err(..) => {
+                context.invalid.insert(name);
+            },
         }
 
         
@@ -834,11 +950,39 @@ fn substitute_all(custom_properties_map: &mut CustomPropertiesMap) {
             var_info: SmallVec::new(),
             map: custom_properties_map,
             invalid: &mut invalid,
+            environment,
         };
         traverse(name, &mut context);
     }
 
     custom_properties_map.remove_set(&invalid);
+}
+
+
+fn substitute_references_in_value<'i>(
+    value: &'i VariableValue,
+    custom_properties: &CustomPropertiesMap,
+    invalid_custom_properties: &PrecomputedHashSet<Name>,
+    environment: &CssEnvironment,
+) -> Result<ComputedValue, ParseError<'i>> {
+    debug_assert!(!value.references.is_empty() || value.references_environment);
+
+    let mut input = ParserInput::new(&value.css);
+    let mut input = Parser::new(&mut input);
+    let mut position = (input.position(), value.first_token_type);
+    let mut computed_value = ComputedValue::empty();
+
+    let last_token_type = substitute_block(
+        &mut input,
+        &mut position,
+        &mut computed_value,
+        custom_properties,
+        invalid_custom_properties,
+        environment,
+    )?;
+
+    computed_value.push_from(position, &input, last_token_type);
+    Ok(computed_value)
 }
 
 
@@ -851,15 +995,14 @@ fn substitute_all(custom_properties_map: &mut CustomPropertiesMap) {
 
 
 
-fn substitute_block<'i, 't, F>(
+fn substitute_block<'i, 't>(
     input: &mut Parser<'i, 't>,
     position: &mut (SourcePosition, TokenSerializationType),
     partial_computed_value: &mut ComputedValue,
-    substitute_one: &mut F,
-) -> Result<TokenSerializationType, ParseError<'i>>
-where
-    F: FnMut(&Name, &mut ComputedValue) -> Result<TokenSerializationType, ()>,
-{
+    custom_properties: &CustomPropertiesMap,
+    invalid_custom_properties: &PrecomputedHashSet<Name>,
+    env: &CssEnvironment,
+) -> Result<TokenSerializationType, ParseError<'i>> {
     let mut last_token_type = TokenSerializationType::nothing();
     let mut set_position_at_next_iteration = false;
     loop {
@@ -883,7 +1026,11 @@ where
             Err(..) => break,
         };
         match token {
-            Token::Function(ref name) if name.eq_ignore_ascii_case("var") => {
+            Token::Function(ref name)
+                if name.eq_ignore_ascii_case("var") || name.eq_ignore_ascii_case("env") =>
+            {
+                let is_env = name.eq_ignore_ascii_case("env");
+
                 partial_computed_value.push(
                     input.slice(position.0..before_this_token),
                     position.1,
@@ -891,19 +1038,37 @@ where
                 );
                 input.parse_nested_block(|input| {
                     
-                    let name = input.expect_ident_cloned().unwrap();
-                    let name = Atom::from(parse_name(&name).unwrap());
+                    let name = {
+                        let name = input.expect_ident().unwrap();
+                        if is_env {
+                            Atom::from(&**name)
+                        } else {
+                            Atom::from(parse_name(&name).unwrap())
+                        }
+                    };
 
-                    if let Ok(last) = substitute_one(&name, partial_computed_value) {
-                        last_token_type = last;
+                    let value = if is_env {
+                        env.get(&name)
+                    } else {
+                        if invalid_custom_properties.contains(&name) {
+                            None
+                        } else {
+                            custom_properties.get(&name).map(|v| &**v)
+                        }
+                    };
+
+                    if let Some(v) = value {
+                        last_token_type = v.last_token_type;
+                        partial_computed_value.push_variable(v);
                         
                         
                         
-                        while let Ok(_) = input.next() {}
+                        while input.next().is_ok() {}
                     } else {
                         input.expect_comma()?;
                         let after_comma = input.state();
-                        let first_token_type = input.next_including_whitespace_and_comments()
+                        let first_token_type = input
+                            .next_including_whitespace_and_comments()
                             
                             .unwrap()
                             .serialization_type();
@@ -913,21 +1078,29 @@ where
                             input,
                             &mut position,
                             partial_computed_value,
-                            substitute_one,
+                            custom_properties,
+                            invalid_custom_properties,
+                            env,
                         )?;
                         partial_computed_value.push_from(position, input, last_token_type);
                     }
                     Ok(())
                 })?;
                 set_position_at_next_iteration = true
-            },
-
+            }
             Token::Function(_) |
             Token::ParenthesisBlock |
             Token::CurlyBracketBlock |
             Token::SquareBracketBlock => {
                 input.parse_nested_block(|input| {
-                    substitute_block(input, position, partial_computed_value, substitute_one)
+                    substitute_block(
+                        input,
+                        position,
+                        partial_computed_value,
+                        custom_properties,
+                        invalid_custom_properties,
+                        env,
+                    )
                 })?;
                 
                 last_token_type = Token::CloseParenthesis.serialization_type();
@@ -947,27 +1120,30 @@ where
 
 
 
+
 pub fn substitute<'i>(
     input: &'i str,
     first_token_type: TokenSerializationType,
     computed_values_map: Option<&Arc<CustomPropertiesMap>>,
+    env: &CssEnvironment,
 ) -> Result<String, ParseError<'i>> {
     let mut substituted = ComputedValue::empty();
     let mut input = ParserInput::new(input);
     let mut input = Parser::new(&mut input);
     let mut position = (input.position(), first_token_type);
+    let invalid = PrecomputedHashSet::default();
+    let empty_map = CustomPropertiesMap::new();
+    let custom_properties = match computed_values_map {
+        Some(m) => &**m,
+        None => &empty_map,
+    };
     let last_token_type = substitute_block(
         &mut input,
         &mut position,
         &mut substituted,
-        &mut |name, substituted| {
-            if let Some(value) = computed_values_map.and_then(|map| map.get(name)) {
-                substituted.push_variable(value);
-                Ok(value.last_token_type)
-            } else {
-                Err(())
-            }
-        },
+        &custom_properties,
+        &invalid,
+        env,
     )?;
     substituted.push_from(position, &input, last_token_type);
     Ok(substituted.css)

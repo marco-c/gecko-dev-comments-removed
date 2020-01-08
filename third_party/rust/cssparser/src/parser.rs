@@ -471,16 +471,18 @@ impl<'i: 't, 't> Parser<'i, 't> {
     }
 
     
+    
     #[inline]
-    pub fn look_for_var_functions(&mut self) {
-        self.input.tokenizer.look_for_var_functions()
+    pub fn look_for_var_or_env_functions(&mut self) {
+        self.input.tokenizer.look_for_var_or_env_functions()
     }
 
     
     
+    
     #[inline]
-    pub fn seen_var_functions(&mut self) -> bool {
-        self.input.tokenizer.seen_var_functions()
+    pub fn seen_var_or_env_functions(&mut self) -> bool {
+        self.input.tokenizer.seen_var_or_env_functions()
     }
 
     
