@@ -8,6 +8,7 @@
 #define mozilla_layers_GeckoContentController_h
 
 #include "InputData.h"                  
+#include "LayersTypes.h"                
 #include "Units.h"                      
 #include "mozilla/Assertions.h"         
 #include "mozilla/DefineEnum.h"         
@@ -156,7 +157,19 @@ public:
 
   virtual void NotifyFlushComplete() = 0;
 
+  
+
+
+
+
+
+
+
+  virtual void NotifyAsyncScrollbarDragInitiated(uint64_t aDragBlockId,
+                                                 const ScrollableLayerGuid::ViewID& aScrollId,
+                                                 ScrollDirection aDirection) = 0;
   virtual void NotifyAsyncScrollbarDragRejected(const ScrollableLayerGuid::ViewID& aScrollId) = 0;
+
   virtual void NotifyAsyncAutoscrollRejected(const ScrollableLayerGuid::ViewID& aScrollId) = 0;
 
   virtual void CancelAutoscroll(const ScrollableLayerGuid& aGuid) = 0;

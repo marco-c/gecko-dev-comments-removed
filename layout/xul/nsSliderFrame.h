@@ -136,6 +136,11 @@ public:
   
   
   
+  void AsyncScrollbarDragInitiated(uint64_t aDragBlockId);
+
+  
+  
+  
   void AsyncScrollbarDragRejected();
 
   bool OnlySystemGroupDispatch(mozilla::EventMessage aMessage) const override;
@@ -209,6 +214,13 @@ private:
   
   
   bool mSuppressionActive;
+
+  
+  
+  
+  
+  
+  Maybe<uint64_t> mAPZDragInitiated;
 
   static bool gMiddlePref;
   static int32_t gSnapMultiplier;

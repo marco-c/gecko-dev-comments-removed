@@ -503,6 +503,22 @@ nsSliderFrame::HandleEvent(nsPresContext* aPresContext,
 {
   NS_ENSURE_ARG_POINTER(aEventStatus);
 
+  if (mAPZDragInitiated &&
+      *mAPZDragInitiated == InputAPZContext::GetInputBlockId() &&
+      aEvent->mMessage == eMouseDown) {
+    
+    
+    
+    
+    
+    
+    
+    mAPZDragInitiated = Nothing();
+    DragThumb(true);
+    mScrollingWithAPZ = true;
+    return NS_OK;
+  }
+
   
   
   if (!mContent->IsInNativeAnonymousSubtree() &&
@@ -1527,6 +1543,12 @@ nsSliderFrame::GetThumbRatio() const
   
   
   return mRatio / mozilla::AppUnitsPerCSSPixel();
+}
+
+void
+nsSliderFrame::AsyncScrollbarDragInitiated(uint64_t aDragBlockId)
+{
+  mAPZDragInitiated = Some(aDragBlockId);
 }
 
 void
