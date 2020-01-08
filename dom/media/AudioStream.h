@@ -200,7 +200,8 @@ public:
   
   nsresult Init(uint32_t aNumChannels,
                 AudioConfig::ChannelLayout::ChannelMap aChannelMap,
-                uint32_t aRate);
+                uint32_t aRate,
+                AudioDeviceInfo* aSinkInfo);
 
   
   void Shutdown();
@@ -212,7 +213,7 @@ public:
   void SetVolume(double aVolume);
 
   
-  void Start();
+  nsresult Start();
 
   
   void Pause();
@@ -317,6 +318,11 @@ private:
   DataSource& mDataSource;
 
   bool mPrefillQuirk;
+
+  
+  
+  
+  RefPtr<AudioDeviceInfo> mSinkInfo;
 };
 
 } 

@@ -38,7 +38,7 @@ public:
 
   
   
-  RefPtr<GenericPromise> Init(const PlaybackParams& aParams);
+  nsresult Init(const PlaybackParams& aParams, RefPtr<GenericPromise>& aEndPromise);
 
   
 

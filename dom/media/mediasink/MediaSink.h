@@ -7,10 +7,11 @@
 #ifndef MediaSink_h_
 #define MediaSink_h_
 
+#include "AudioDeviceInfo.h"
+#include "MediaInfo.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/MozPromise.h"
 #include "nsISupportsImpl.h"
-#include "MediaInfo.h"
 
 namespace mozilla {
 
@@ -44,6 +45,7 @@ public:
     double mVolume;
     double mPlaybackRate;
     bool mPreservesPitch;
+    RefPtr<AudioDeviceInfo> mSink;
   };
 
   
@@ -100,7 +102,7 @@ public:
 
   
   
-  virtual void Start(const TimeUnit& aStartTime, const MediaInfo& aInfo) = 0;
+  virtual nsresult Start(const TimeUnit& aStartTime, const MediaInfo& aInfo) = 0;
 
   
   
