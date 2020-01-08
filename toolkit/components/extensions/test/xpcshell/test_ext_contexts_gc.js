@@ -33,7 +33,11 @@ async function assertContextReleased(contentPage, description) {
     let gcCount = 0;
     while (gcCount < 30 && this.contextWeakRef.get() !== null) {
       ++gcCount;
-      Cu.forceGC();
+      
+      
+      
+      
+      Cu.forceShrinkingGC();
       Cu.forceCC();
       Cu.forceGC();
       await new Promise(resolve => this.content.setTimeout(resolve, 0));
