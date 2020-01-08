@@ -7,7 +7,6 @@
 #define nsComposeTxtSrvFilter_h__
 
 #include "nsISupportsImpl.h"            
-#include "nsITextServicesFilter.h"
 
 
 
@@ -16,16 +15,13 @@
 
 
 
-class nsComposeTxtSrvFilter final : public nsITextServicesFilter
+class nsComposeTxtSrvFilter final : public nsISupports
 {
 public:
   nsComposeTxtSrvFilter();
 
   
   NS_DECL_ISUPPORTS
-
-  
-  NS_DECL_NSITEXTSERVICESFILTER
 
   
   void Init(bool aIsForMail) { mIsForMail = aIsForMail; }

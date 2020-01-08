@@ -110,7 +110,9 @@ public:
 
 
 
-  nsresult SetFilter(nsComposeTxtSrvFilter* aFilter);
+
+
+  nsresult SetFilterType(uint32_t aFilterType);
 
   
 

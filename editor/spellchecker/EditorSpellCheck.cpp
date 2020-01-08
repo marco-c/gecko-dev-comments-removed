@@ -29,7 +29,6 @@
 #include "nsILoadContext.h"
 #include "nsISupportsBase.h"            
 #include "nsISupportsUtils.h"           
-#include "nsITextServicesFilter.h"      
 #include "nsIURI.h"                     
 #include "nsThreadUtils.h"              
 #include "nsVariant.h"                  
@@ -291,11 +290,11 @@ NS_INTERFACE_MAP_END
 
 NS_IMPL_CYCLE_COLLECTION(EditorSpellCheck,
                          mEditor,
-                         mSpellChecker,
-                         mTxtSrvFilter)
+                         mSpellChecker)
 
 EditorSpellCheck::EditorSpellCheck()
-  : mSuggestedWordIndex(0)
+  : mTxtSrvFilterType(0)
+  , mSuggestedWordIndex(0)
   , mDictionaryIndex(0)
   , mDictionaryFetcherGroup(0)
   , mUpdateDictionaryRunning(false)
@@ -385,7 +384,7 @@ EditorSpellCheck::InitSpellChecker(nsIEditor* aEditor,
   
   RefPtr<TextServicesDocument> textServicesDocument =
     new TextServicesDocument();
-  textServicesDocument->SetFilter(mTxtSrvFilter);
+  textServicesDocument->SetFilterType(mTxtSrvFilterType);
 
   
   
@@ -689,9 +688,9 @@ EditorSpellCheck::UninitSpellChecker()
 
 
 NS_IMETHODIMP
-EditorSpellCheck::SetFilter(nsITextServicesFilter *aFilter)
+EditorSpellCheck::SetFilterType(uint32_t aFilterType)
 {
-  mTxtSrvFilter = reinterpret_cast<nsComposeTxtSrvFilter*>(aFilter);
+  mTxtSrvFilterType = aFilterType;
   return NS_OK;
 }
 
