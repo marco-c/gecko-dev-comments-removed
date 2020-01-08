@@ -18,7 +18,6 @@ pub type Slot = Option<usize>;
 
 
 #[doc(hidden)]
-#[derive(Clone, Debug)]
 pub struct Locations(Vec<Slot>);
 
 impl Locations {
@@ -48,11 +47,12 @@ impl Locations {
     pub fn len(&self) -> usize {
         self.0.len() / 2
     }
+}
 
-    
-    pub(crate) fn as_slots(&mut self) -> &mut [Slot] {
-        &mut self.0
-    }
+
+
+pub fn as_slots(locs: &mut Locations) -> &mut [Slot] {
+    &mut locs.0
 }
 
 
@@ -139,7 +139,7 @@ pub trait RegularExpression: Sized {
 
     
     
-    fn captures_read_at(
+    fn read_captures_at(
         &self,
         locs: &mut Locations,
         text: &Self::Text,
@@ -246,7 +246,7 @@ impl<'t, R> Iterator for CaptureMatches<'t, R>
             return None
         }
         let mut locs = self.0.re.locations();
-        let (s, e) = match self.0.re.captures_read_at(
+        let (s, e) = match self.0.re.read_captures_at(
             &mut locs,
             self.0.text,
             self.0.last_end,

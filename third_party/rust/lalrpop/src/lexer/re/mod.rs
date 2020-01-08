@@ -1,7 +1,7 @@
 
 
-use regex_syntax::hir::Hir;
 use regex_syntax::{self, Error, Parser};
+use regex_syntax::hir::Hir;
 
 #[cfg(test)]
 mod test;
