@@ -59,9 +59,6 @@ add_task(async function default_state() {
   wh.onload = function() {
     
     this.selectDuration(Sanitizer.TIMESPAN_HOUR);
-    
-    if (!this.getItemList().collapsed)
-      this.toggleDetails();
     this.acceptDialog();
   };
   wh.open();
@@ -87,15 +84,6 @@ add_task(async function test_cancel() {
   wh.onload = function() {
     this.selectDuration(Sanitizer.TIMESPAN_HOUR);
     this.checkPrefCheckbox("history", false);
-    this.checkDetails(false);
-
-    
-    this.toggleDetails();
-    this.checkDetails(true);
-
-    
-    this.toggleDetails();
-    this.checkDetails(false);
     this.cancelDialog();
   };
   wh.onunload = async function() {
@@ -276,16 +264,6 @@ add_task(async function test_everything() {
        "with a predefined timespan");
     this.selectDuration(Sanitizer.TIMESPAN_EVERYTHING);
     this.checkPrefCheckbox("history", true);
-    this.checkDetails(true);
-
-    
-    this.toggleDetails();
-    this.checkDetails(false);
-
-    
-    this.toggleDetails();
-    this.checkDetails(true);
-
     this.acceptDialog();
   };
   wh.onunload = async function() {
@@ -441,111 +419,6 @@ add_task(async function test_form_entries() {
 });
 
 
-
-
-
-
-add_task(async function test_toggling_details_persists() {
-  {
-    let wh = new WindowHelper();
-    wh.onload = function() {
-      
-      this.checkAllCheckboxes();
-      this.selectDuration(Sanitizer.TIMESPAN_EVERYTHING);
-
-      
-      this.toggleDetails();
-      this.checkDetails(false);
-      this.acceptDialog();
-    };
-    wh.open();
-    await wh.promiseClosed;
-  }
-  {
-    let wh = new WindowHelper();
-    wh.onload = function() {
-      
-      this.checkDetails(false);
-
-      
-      this.checkPrefCheckbox("history", false);
-      this.acceptDialog();
-    };
-    wh.open();
-    await wh.promiseClosed;
-  }
-  {
-    let wh = new WindowHelper();
-    wh.onload = function() {
-      
-      this.checkDetails(true);
-
-      
-      this.checkAllCheckboxes();
-      this.checkPrefCheckbox("siteSettings", false);
-      this.acceptDialog();
-    };
-    wh.open();
-    await wh.promiseClosed;
-  }
-  {
-    let wh = new WindowHelper();
-    wh.onload = function() {
-      
-      this.checkDetails(true);
-
-      
-      this.toggleDetails();
-      this.checkDetails(false);
-      this.cancelDialog();
-    };
-    wh.open();
-    await wh.promiseClosed;
-  }
-  {
-    let wh = new WindowHelper();
-    wh.onload = function() {
-      
-      this.checkDetails(true);
-
-      
-      this.selectDuration(Sanitizer.TIMESPAN_HOUR);
-      
-      this.toggleDetails();
-      this.checkDetails(false);
-      this.acceptDialog();
-    };
-    wh.open();
-    await wh.promiseClosed;
-  }
-  {
-    let wh = new WindowHelper();
-    wh.onload = function() {
-      
-      this.checkDetails(false);
-
-      this.cancelDialog();
-    };
-    wh.open();
-    await wh.promiseClosed;
-  }
-  {
-    let wh = new WindowHelper();
-    wh.onload = function() {
-      
-      this.checkDetails(false);
-
-      
-      this.toggleDetails();
-      this.checkDetails(true);
-      this.cancelDialog();
-    };
-    wh.open();
-    await wh.promiseClosed;
-  }
-});
-
-
 add_task(async function test_offline_cache() {
   
   var URL = "http://www.example.com";
@@ -567,8 +440,6 @@ add_task(async function test_offline_cache() {
   let wh = new WindowHelper();
   wh.onload = function() {
     this.selectDuration(Sanitizer.TIMESPAN_EVERYTHING);
-    
-    this.toggleDetails();
     
     this.uncheckAllCheckboxes();
     this.checkPrefCheckbox("offlineApps", true);
@@ -617,8 +488,6 @@ add_task(async function test_offline_apps_permissions() {
   let wh = new WindowHelper();
   wh.onload = function() {
     this.selectDuration(Sanitizer.TIMESPAN_EVERYTHING);
-    
-    this.toggleDetails();
     
     this.uncheckAllCheckboxes();
     this.checkPrefCheckbox("siteSettings", true);
@@ -674,36 +543,6 @@ WindowHelper.prototype = {
 
 
 
-  checkDetails(aShouldBeShown) {
-    let button = this.getDetailsButton();
-    let list = this.getItemList();
-    let hidden = list.hidden || list.collapsed;
-    is(hidden, !aShouldBeShown,
-       "Details should be " + (aShouldBeShown ? "shown" : "hidden") +
-       " but were actually " + (hidden ? "hidden" : "shown"));
-    let dir = hidden ? "down" : "up";
-    is(button.className, "expander-" + dir,
-       "Details button should be " + dir + " because item list is " +
-       (hidden ? "" : "not ") + "hidden");
-    let height = 0;
-    if (!hidden) {
-      ok(list.boxObject.height > 30, "listbox has sufficient size");
-      height += list.boxObject.height;
-    }
-    if (this.isWarningPanelVisible())
-      height += this.getWarningPanel().boxObject.height;
-    ok(height < this.win.innerHeight,
-       "Window should be tall enough to fit warning panel and item list");
-  },
-
-  
-
-
-
-
-
-
-
 
   checkPrefCheckbox(aPrefName, aCheckState) {
     var pref = "privacy.cpd." + aPrefName;
@@ -738,22 +577,8 @@ WindowHelper.prototype = {
   
 
 
-  getDetailsButton() {
-    return this.win.document.getElementById("detailsExpander");
-  },
-
-  
-
-
   getDurationDropdown() {
     return this.win.document.getElementById("sanitizeDurationChoice");
-  },
-
-  
-
-
-  getItemList() {
-    return this.win.document.getElementById("itemList");
   },
 
   
@@ -857,13 +682,6 @@ WindowHelper.prototype = {
          "Warning panel should not be visible for non-TIMESPAN_EVERYTHING");
     }
   },
-
-  
-
-
-  toggleDetails() {
-    this.getDetailsButton().click();
-  }
 };
 
 function promiseSanitizationComplete() {

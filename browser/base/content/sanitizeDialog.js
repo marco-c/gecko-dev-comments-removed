@@ -117,11 +117,7 @@ var gSanitizePromptDialog = {
 
 
 
-
-
-
-
-  prepareWarning(aDontShowItemList) {
+  prepareWarning() {
     
     
     
@@ -129,8 +125,6 @@ var gSanitizePromptDialog = {
     var warningStringID;
     if (this.hasNonSelectedItems()) {
       warningStringID = "sanitizeSelectedWarning";
-      if (!aDontShowItemList)
-        this.showItemList();
     } else {
       warningStringID = "sanitizeEverythingWarning2";
     }
@@ -162,7 +156,7 @@ var gSanitizePromptDialog = {
     } catch (e) { }
 
     
-    this.prepareWarning(true);
+    this.prepareWarning();
 
     return undefined;
   },
@@ -202,47 +196,4 @@ var gSanitizePromptDialog = {
     }
     return false;
   },
-
-  
-
-
-  showItemList() {
-    var itemList = document.getElementById("itemList");
-    var expanderButton = document.getElementById("detailsExpander");
-
-    if (itemList.collapsed) {
-      expanderButton.className = "expander-up";
-      itemList.setAttribute("collapsed", "false");
-      if (document.documentElement.boxObject.height)
-        window.resizeBy(0, itemList.boxObject.height);
-    }
-  },
-
-  
-
-
-  hideItemList() {
-    var itemList = document.getElementById("itemList");
-    var expanderButton = document.getElementById("detailsExpander");
-
-    if (!itemList.collapsed) {
-      expanderButton.className = "expander-down";
-      window.resizeBy(0, -itemList.boxObject.height);
-      itemList.setAttribute("collapsed", "true");
-    }
-  },
-
-  
-
-
-  toggleItemList() {
-    var itemList = document.getElementById("itemList");
-
-    if (itemList.collapsed)
-      this.showItemList();
-    else
-      this.hideItemList();
-  }
-
-
 };
