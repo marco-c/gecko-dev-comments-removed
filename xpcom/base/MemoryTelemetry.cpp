@@ -418,6 +418,14 @@ nsresult MemoryTelemetry::TotalMemoryGatherer::MaybeFinish() {
     
     
     
+    
+    if (!mean) {
+      return NS_ERROR_UNEXPECTED;
+    }
+
+    
+    
+    
     for (auto size : mChildSizes) {
       int64_t diff = llabs(size - mean) * 100 / mean;
 
