@@ -120,7 +120,7 @@ class MobileViewportManager final : public nsIDOMEventListener,
   mozilla::CSSToScreenScale ComputeIntrinsicScale(
       const nsViewportInfo& aViewportInfo,
       const mozilla::ScreenIntSize& aDisplaySize,
-      const mozilla::CSSSize& aViewportSize) const;
+      const mozilla::CSSSize& aViewportOrContentSize) const;
 
   
 
