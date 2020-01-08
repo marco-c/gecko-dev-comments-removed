@@ -1133,7 +1133,8 @@ impl Stylist {
             applicable_declarations,
             context,
             flags_setter,
-        ).collect_all();
+        )
+        .collect_all();
     }
 
     
