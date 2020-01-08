@@ -5019,6 +5019,14 @@ pref("extensions.webextensions.protocol.remote", true);
 
 pref("extensions.webextensions.tabhide.enabled", true);
 
+#ifdef NIGHTLY_BUILD
+
+pref("extensions.webextensions.userScripts.enabled", true);
+#else
+
+pref("extensions.webextensions.userScripts.enabled", false);
+#endif
+
 pref("extensions.webextensions.background-delayed-startup", false);
 
 
