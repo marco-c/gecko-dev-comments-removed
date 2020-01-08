@@ -452,7 +452,17 @@ ProxyAutoConfig::ResolveAddress(const nsCString &aHostName,
   
   
   
-  SpinEventLoopUntil([&, helper]() { return !helper->mRequest; });
+  SpinEventLoopUntil([&, helper, this]() {
+    if (!helper->mRequest) {
+      return true;
+    }
+    if (this->mShutdown) {
+      NS_WARNING("mShutdown set with PAC request not cancelled");
+      MOZ_ASSERT(NS_FAILED(helper->mStatus));
+      return true;
+    }
+    return false;
+  });
 
   if (NS_FAILED(helper->mStatus) ||
       NS_FAILED(helper->mResponse->GetNextAddr(0, aNetAddr)))
