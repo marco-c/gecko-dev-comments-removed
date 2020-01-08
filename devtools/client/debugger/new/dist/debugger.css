@@ -3089,6 +3089,10 @@ debug-expression-error {
   visibility: visible;
 }
 
+.download-anchor {
+  display: none;
+}
+
 
 
 
