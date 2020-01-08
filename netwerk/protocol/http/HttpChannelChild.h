@@ -258,6 +258,10 @@ private:
                                        const nsCString& aProvider,
                                        const nsCString& aFullHash);
 
+  
+  
+  bool NeedToReportBytesRead();
+  int32_t mUnreportBytesRead = 0;
 
   void DoOnStartRequest(nsIRequest* aRequest, nsISupports* aContext);
   void DoOnStatus(nsIRequest* aRequest, nsresult status);
@@ -411,6 +415,12 @@ private:
   
   
   uint8_t mSuspendParentAfterSynthesizeResponse : 1;
+
+  
+  uint8_t mCacheNeedToReportBytesReadInitialized : 1;
+
+  
+  uint8_t mNeedToReportBytesRead : 1;
 
   void FinishInterceptedRedirect();
   void CleanupRedirectingChannel(nsresult rv);

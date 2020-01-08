@@ -4663,13 +4663,23 @@ inline bool ShouldUseXBLScope(const T* aNode)
   return aNode->IsInAnonymousSubtree();
 }
 
+template<typename T>
+inline bool ShouldUseUAWidgetScope(const T* aNode)
+{
+  return aNode->IsInUAWidget();
+}
+
 inline mozilla::dom::ParentObject
 nsINode::GetParentObject() const
 {
   mozilla::dom::ParentObject p(OwnerDoc());
     
     
-  p.mUseXBLScope = ShouldUseXBLScope(this);
+  if (ShouldUseXBLScope(this)) {
+    p.mReflectionScope = mozilla::dom::ReflectionScope::XBL;
+  } else if (ShouldUseUAWidgetScope(this)) {
+    p.mReflectionScope = mozilla::dom::ReflectionScope::UAWidget;
+  }
   return p;
 }
 
