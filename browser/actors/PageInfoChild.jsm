@@ -2,10 +2,12 @@
 
 
 
-var EXPORTED_SYMBOLS = ["PageInfoListener"];
+var EXPORTED_SYMBOLS = ["PageInfoChild"];
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+
+ChromeUtils.import("resource://gre/modules/ActorChild.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   Feeds: "resource:///modules/Feeds.jsm",
@@ -13,7 +15,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   setTimeout: "resource://gre/modules/Timer.jsm"
 });
 
-var PageInfoListener = {
+class PageInfoChild extends ActorChild {
   
   receiveMessage(message) {
     let strings = message.data.strings;
@@ -39,7 +41,7 @@ var PageInfoListener = {
 
     
     this.getMediaInfo(document, window, strings, message.target);
-  },
+  }
 
   getMetaInfo(document) {
     let metaViewRows = [];
@@ -53,7 +55,7 @@ var PageInfoListener = {
     }
 
     return metaViewRows;
-  },
+  }
 
   getWindowInfo(window) {
     let windowInfo = {};
@@ -66,7 +68,7 @@ var PageInfoListener = {
 
     windowInfo.hostName = hostName;
     return windowInfo;
-  },
+  }
 
   getDocumentInfo(document) {
     let docInfo = {};
@@ -94,7 +96,7 @@ var PageInfoListener = {
     docInfo.isContentWindowPrivate = PrivateBrowsingUtils.isContentWindowPrivate(document.ownerGlobal);
 
     return docInfo;
-  },
+  }
 
   getFeedsInfo(document, strings) {
     let feeds = [];
@@ -124,13 +126,13 @@ var PageInfoListener = {
       }
     }
     return feeds;
-  },
+  }
 
   
   getMediaInfo(document, window, strings, mm) {
     let frameList = this.goThroughFrames(document, window);
     this.processFrames(document, frameList, strings, mm);
-  },
+  }
 
   goThroughFrames(document, window) {
     let frameList = [document];
@@ -143,7 +145,7 @@ var PageInfoListener = {
       }
     }
     return frameList;
-  },
+  }
 
   async processFrames(document, frameList, strings, mm) {
     let nodeCount = 0;
@@ -168,7 +170,7 @@ var PageInfoListener = {
     }
     
     mm.sendAsyncMessage("PageInfo:mediaData", {isComplete: true});
-  },
+  }
 
   getMediaItems(document, strings, elem) {
     
@@ -233,7 +235,7 @@ var PageInfoListener = {
     }
 
     return mediaItems;
-  },
+  }
 
   
 
@@ -316,7 +318,7 @@ var PageInfoListener = {
     result.baseURI = item.baseURI;
 
     return result;
-  },
+  }
 
   
   
@@ -355,7 +357,7 @@ var PageInfoListener = {
     }
 
     return this.stripWS(valueText);
-  },
+  }
 
   
   
@@ -372,7 +374,7 @@ var PageInfoListener = {
       }
     }
     return "";
-  },
+  }
 
   
   
@@ -383,4 +385,4 @@ var PageInfoListener = {
     text = text.replace(middleRE, " ");
     return text.replace(endRE, "");
   }
-};
+}
