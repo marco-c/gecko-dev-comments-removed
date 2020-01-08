@@ -30,6 +30,7 @@
 #include "mozilla/AnimationEventDispatcher.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/AutoRestore.h"
+#include "mozilla/DebugOnly.h"
 #include "mozilla/IntegerRange.h"
 #include "mozilla/dom/FontTableURIProtocolHandler.h"
 #include "nsITimer.h"
@@ -662,7 +663,10 @@ private:
         mLastChildTick = TimeStamp::Now();
         mLastProcessedTickInChildProcess = aVsyncTimestamp;
       }
-      MOZ_ASSERT(aVsyncTimestamp <= TimeStamp::Now());
+
+      
+      DebugOnly<TimeStamp> rightnow = TimeStamp::Now();
+      MOZ_ASSERT_IF((*&rightnow).UsedCanonicalNow() == aVsyncTimestamp.UsedCanonicalNow(), aVsyncTimestamp <= *&rightnow);
 
       
       
