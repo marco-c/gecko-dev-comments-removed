@@ -55,6 +55,9 @@
 #include "mozilla/Compiler.h"
 #include "mozilla/Types.h"
 #include "mozilla/UniquePtr.h"
+#ifdef XP_WIN
+#include "mozilla/WinHeaderOnlyUtils.h"
+#endif 
 
 
 
@@ -508,6 +511,7 @@ get_quoted_path(const NS_tchar *path)
   NS_tstrcat(c, kQuote);
   c += lenQuote;
   *c = NS_T('\0');
+  c++;
   return s;
 }
 
@@ -2102,7 +2106,7 @@ LaunchCallbackApp(const NS_tchar *workingDir,
       
       
       
-      WaitForInputIdle(hProcess, kWaitForInputIdleTimeoutMS);
+      mozilla::WaitForInputIdle(hProcess);
       CloseHandle(hProcess);
     }
   }

@@ -368,9 +368,4 @@ LoadLibrarySystem32(LPCWSTR aModule)
 
 }
 
-
-
-
-const DWORD kWaitForInputIdleTimeoutMS = 10*1000;
-
 #endif

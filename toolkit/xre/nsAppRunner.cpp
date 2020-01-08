@@ -105,6 +105,7 @@
 #include <math.h>
 #include "cairo/cairo-features.h"
 #include "mozilla/WindowsDllBlocklist.h"
+#include "mozilla/WinHeaderOnlyUtils.h"
 #include "mozilla/mscom/MainThreadRuntime.h"
 #include "mozilla/widget/AudioSession.h"
 
@@ -1861,7 +1862,7 @@ static nsresult LaunchChild(nsINativeAppSupport* aNative,
   
   
   
-  ::WaitForInputIdle(hProcess, kWaitForInputIdleTimeoutMS);
+  mozilla::WaitForInputIdle(hProcess);
   ::CloseHandle(hProcess);
 
 #else
