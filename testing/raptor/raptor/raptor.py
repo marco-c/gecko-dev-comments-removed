@@ -270,6 +270,9 @@ class Raptor(object):
         self.config['raptor_json_path'] = raptor_json_path
         return self.results_handler.summarize_and_output(self.config)
 
+    def get_page_timeout_list(self):
+        return self.results_handler.page_timeout_list
+
     def clean_up(self):
         self.control_server.stop()
         if self.config['app'] != "geckoview":
@@ -319,7 +322,17 @@ def main(args=sys.argv[1:]):
 
     if not success:
         
-        LOG.critical("error: no raptor test results were found")
+        LOG.critical("TEST-UNEXPECTED-FAIL: no raptor test results were found")
+        os.sys.exit(1)
+
+    
+    
+    
+    pages_that_timed_out = raptor.get_page_timeout_list()
+    if len(pages_that_timed_out) > 0:
+        for _page in pages_that_timed_out:
+            LOG.critical("TEST-UNEXPECTED-FAIL: test '%s' timed out loading test page: %s"
+                         % (_page['test_name'], _page['url']))
         os.sys.exit(1)
 
 
