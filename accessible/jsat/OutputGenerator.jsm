@@ -329,7 +329,7 @@ var OutputGenerator = {
     "row": NAME_FROM_SUBTREE_RULE,
     "cell": INCLUDE_DESC | INCLUDE_NAME,
     "application": INCLUDE_NAME,
-    "document": INCLUDE_NAME,
+    "document": INCLUDE_NAME | NAME_FROM_SUBTREE_RULE, 
     "grouping": INCLUDE_DESC | INCLUDE_NAME,
     "toolbar": INCLUDE_DESC,
     "table": INCLUDE_DESC | INCLUDE_NAME,
