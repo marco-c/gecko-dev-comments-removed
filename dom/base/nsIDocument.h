@@ -2849,15 +2849,6 @@ public:
   using mozilla::dom::DocumentOrShadowRoot::GetElementsByTagNameNS;
   using mozilla::dom::DocumentOrShadowRoot::GetElementsByClassName;
 
-  
-
-
-
-
-
-
-  Element* LookupImageElement(const nsAString& aElementId);
-
   mozilla::dom::DocumentTimeline* Timeline();
   mozilla::LinkedList<mozilla::dom::DocumentTimeline>& Timelines()
   {
