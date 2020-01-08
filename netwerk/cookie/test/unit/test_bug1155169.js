@@ -14,29 +14,29 @@ function run_test() {
 
   
   setCookie("foo=bar", {
-    type: "added", isSession: true, isSecure: false, isHttpOnly: false
+    type: "added", isSession: true, isSecure: false, isHttpOnly: false,
   });
 
   
   setCookie("foo=bar; HttpOnly", {
-    type: "changed", isSession: true, isSecure: false, isHttpOnly: true
+    type: "changed", isSession: true, isSecure: false, isHttpOnly: true,
   });
 
   
   setCookie("foo=bar; Secure", {
-    type: "changed", isSession: true, isSecure: true, isHttpOnly: false
+    type: "changed", isSession: true, isSecure: true, isHttpOnly: false,
   });
 
   
   let expiry = new Date();
   expiry.setUTCFullYear(expiry.getUTCFullYear() + 2);
   setCookie(`foo=bar; Expires=${expiry.toGMTString()}`, {
-    type: "changed", isSession: false, isSecure: false, isHttpOnly: false
+    type: "changed", isSession: false, isSecure: false, isHttpOnly: false,
   });
 
   
   setCookie("foo=bar", {
-    type: "changed", isSession: true, isSecure: false, isHttpOnly: false
+    type: "changed", isSession: true, isSecure: false, isHttpOnly: false,
   });
 }
 
