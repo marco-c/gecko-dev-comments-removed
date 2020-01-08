@@ -5901,10 +5901,3 @@ pref("dom.events.asyncClipboard", true);
 pref("dom.events.asyncClipboard.dataTransfer", false);
 
 pref("dom.events.testing.asyncClipboard", false);
-
-#ifdef NIGHTLY_BUILD
-
-pref("dom.datatransfer.mozAtAPIs", false);
-#else
-pref("dom.datatransfer.mozAtAPIs", true);
-#endif

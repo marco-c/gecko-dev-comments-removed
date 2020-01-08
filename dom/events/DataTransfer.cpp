@@ -40,8 +40,6 @@
 #include "mozilla/dom/Promise.h"
 #include "nsNetUtil.h"
 
-#define MOZ_CALLS_ENABLED_PREF "dom.datatransfer.mozAtAPIs"
-
 namespace mozilla {
 namespace dom {
 
@@ -1523,23 +1521,6 @@ DataTransfer::SetMode(DataTransfer::Mode aMode)
   } else {
     mMode = aMode;
   }
-}
-
-
-bool
-DataTransfer::MozAtAPIsEnabled(JSContext* aCx, JSObject* aObj )
-{
-  
-  static bool sPrefCached = false;
-  static bool sPrefCacheValue = false;
-
-  if (!sPrefCached) {
-    sPrefCached = true;
-    Preferences::AddBoolVarCache(&sPrefCacheValue, MOZ_CALLS_ENABLED_PREF);
-  }
-
-  
-  return nsContentUtils::IsSystemCaller(aCx) || sPrefCacheValue;
 }
 
 } 

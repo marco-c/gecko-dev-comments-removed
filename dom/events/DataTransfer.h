@@ -428,11 +428,6 @@ public:
                               const bool& aPlainTextOnly,
                               nsTArray<nsCString>* aResult);
 
-  
-  
-  
-  static bool MozAtAPIsEnabled(JSContext* cx, JSObject* obj);
-
 protected:
 
   
