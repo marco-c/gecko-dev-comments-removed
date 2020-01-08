@@ -130,12 +130,6 @@ const ADB = {
       return; 
     }
     await this.kill();
-    
-    
-    
-    await this._waitUntil(async () => {
-      return !await check();
-    });
   },
 
   
