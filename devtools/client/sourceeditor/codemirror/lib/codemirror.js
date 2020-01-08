@@ -6577,8 +6577,6 @@ function registerGlobalHandlers() {
 
 function onResize(cm) {
   var d = cm.display
-  if (d.lastWrapHeight == d.wrapper.clientHeight && d.lastWrapWidth == d.wrapper.clientWidth)
-    { return }
   
   d.cachedCharWidth = d.cachedTextHeight = d.cachedPaddingH = null
   d.scrollbarsClipped = false
@@ -9678,7 +9676,7 @@ CodeMirror.fromTextArea = fromTextArea
 
 addLegacyProps(CodeMirror)
 
-CodeMirror.version = "5.38.0"
+CodeMirror.version = "5.39.0"
 
 return CodeMirror;
 
