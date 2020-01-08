@@ -73,42 +73,6 @@ class OnTracksAvailableCallback {
 
 
 
-class MediaStreamTrackSourceGetter : public nsISupports {
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_CLASS(MediaStreamTrackSourceGetter)
-
- public:
-  explicit MediaStreamTrackSourceGetter(bool aFinishedOnInactive = true)
-      : mFinishedOnInactive(aFinishedOnInactive) {}
-
-  virtual already_AddRefed<dom::MediaStreamTrackSource>
-  GetMediaStreamTrackSource(TrackID aInputTrackID) = 0;
-
-  bool FinishedOnInactive() { return mFinishedOnInactive; }
-
-  
-
-
-
-
-
-
-
-
-  void FinishOnNextInactive(RefPtr<DOMMediaStream>& aStream);
-
- protected:
-  virtual ~MediaStreamTrackSourceGetter() {}
-
- private:
-  bool mFinishedOnInactive;
-};
-
-
-
-
-
-
 
 
 
@@ -218,7 +182,6 @@ class DOMMediaStream
       public dom::PrincipalChangeObserver<dom::MediaStreamTrack>,
       public RelativeTimeline {
   friend class dom::MediaStreamTrack;
-  friend class MediaStreamTrackSourceGetter;
   typedef dom::MediaStreamTrack MediaStreamTrack;
   typedef dom::AudioStreamTrack AudioStreamTrack;
   typedef dom::VideoStreamTrack VideoStreamTrack;
@@ -332,8 +295,7 @@ class DOMMediaStream
     const InputPortOwnership mOwnership;
   };
 
-  DOMMediaStream(nsPIDOMWindowInner* aWindow,
-                 MediaStreamTrackSourceGetter* aTrackSourceGetter);
+  explicit DOMMediaStream(nsPIDOMWindowInner* aWindow);
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(DOMMediaStream, DOMEventTargetHelper)
@@ -370,8 +332,6 @@ class DOMMediaStream
   MediaStreamTrack* GetTrackById(const nsAString& aId) const;
   void AddTrack(MediaStreamTrack& aTrack);
   void RemoveTrack(MediaStreamTrack& aTrack);
-
-  
   already_AddRefed<DOMMediaStream> Clone();
 
   bool Active() const;
@@ -380,18 +340,6 @@ class DOMMediaStream
   IMPL_EVENT_HANDLER(removetrack)
 
   
-
-  
-
-
-
-
-
-
-
-  enum class TrackForwardingOption { CURRENT, ALL };
-  already_AddRefed<DOMMediaStream> CloneInternal(
-      TrackForwardingOption aForwarding);
 
   MediaStreamTrack* GetOwnedTrackById(const nsAString& aId);
 
@@ -498,16 +446,14 @@ class DOMMediaStream
 
 
   static already_AddRefed<DOMMediaStream> CreateSourceStreamAsInput(
-      nsPIDOMWindowInner* aWindow, MediaStreamGraph* aGraph,
-      MediaStreamTrackSourceGetter* aTrackSourceGetter = nullptr);
+      nsPIDOMWindowInner* aWindow, MediaStreamGraph* aGraph);
 
   
 
 
 
   static already_AddRefed<DOMMediaStream> CreateTrackUnionStreamAsInput(
-      nsPIDOMWindowInner* aWindow, MediaStreamGraph* aGraph,
-      MediaStreamTrackSourceGetter* aTrackSourceGetter = nullptr);
+      nsPIDOMWindowInner* aWindow, MediaStreamGraph* aGraph);
 
   
 
@@ -573,6 +519,10 @@ class DOMMediaStream
   
   
   void UnregisterTrackListener(TrackListener* aListener);
+
+  
+  
+  void SetFinishedOnInactive(bool aFinishedOnInactive);
 
  protected:
   virtual ~DOMMediaStream();
@@ -687,10 +637,6 @@ class DOMMediaStream
 
   
   
-  RefPtr<MediaStreamTrackSourceGetter> mTrackSourceGetter;
-
-  
-  
   RefPtr<OwnedStreamListener> mOwnedListener;
 
   
@@ -717,6 +663,10 @@ class DOMMediaStream
 
   
   bool mActive;
+
+  
+  
+  bool mFinishedOnInactive;
 
  private:
   void NotifyPrincipalChanged();

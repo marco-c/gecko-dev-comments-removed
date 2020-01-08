@@ -108,6 +108,7 @@ class MediaSink;
 class AbstractThread;
 class AudioSegment;
 class DecodedStream;
+class DOMMediaStream;
 class OutputStreamManager;
 class ReaderProxy;
 class TaskQueue;
@@ -187,11 +188,25 @@ class MediaDecoderStateMachine
 
   RefPtr<MediaDecoder::DebugInfoPromise> RequestDebugInfo();
 
-  void AddOutputStream(ProcessedMediaStream* aStream,
-                       TrackID aNextAvailableTrackID, bool aFinishWhenEnded);
+  void SetOutputStreamPrincipal(const nsCOMPtr<nsIPrincipal>& aPrincipal);
+  void SetOutputStreamCORSMode(CORSMode aCORSMode);
   
-  void RemoveOutputStream(MediaStream* aStream);
-  TrackID NextAvailableTrackIDFor(MediaStream* aOutputStream) const;
+  
+  
+  void EnsureOutputStreamManager(MediaStreamGraph* aGraph,
+                                 const Maybe<MediaInfo>& aLoadedInfo);
+  
+  
+  void AddOutputStream(DOMMediaStream* aStream);
+  
+  
+  void RemoveOutputStream(DOMMediaStream* aStream);
+  
+  
+  void SetNextOutputStreamTrackID(TrackID aNextTrackID);
+  
+  
+  TrackID GetNextOutputStreamTrackID();
 
   
   RefPtr<MediaDecoder::SeekPromise> InvokeSeek(const SeekTarget& aTarget);
@@ -307,7 +322,10 @@ class MediaDecoderStateMachine
   
   void InitializationTask(MediaDecoder* aDecoder);
 
-  void SetAudioCaptured(bool aCaptured);
+  
+  
+  void SetAudioCaptured(bool aCaptured,
+                        OutputStreamManager* aManager = nullptr);
 
   RefPtr<MediaDecoder::SeekPromise> Seek(const SeekTarget& aTarget);
 
@@ -427,7 +445,9 @@ class MediaDecoderStateMachine
   media::MediaSink* CreateAudioSink();
 
   
-  already_AddRefed<media::MediaSink> CreateMediaSink(bool aAudioCaptured);
+  
+  already_AddRefed<media::MediaSink> CreateMediaSink(
+      bool aAudioCaptured, OutputStreamManager* aManager = nullptr);
 
   
   
@@ -657,7 +677,18 @@ class MediaDecoderStateMachine
   DelayedScheduler mVideoDecodeSuspendTimer;
 
   
-  const RefPtr<OutputStreamManager> mOutputStreamManager;
+  
+  RefPtr<OutputStreamManager> mOutputStreamManager;
+
+  
+  nsCOMPtr<nsIPrincipal> mOutputStreamPrincipal;
+
+  
+  CORSMode mOutputStreamCORSMode = CORS_NONE;
+
+  
+  
+  TrackID mNextOutputStreamTrackID = 1;
 
   
   VideoDecodeMode mVideoDecodeMode;
@@ -716,10 +747,6 @@ class MediaDecoderStateMachine
   
   
   Mirror<bool> mSameOriginMedia;
-
-  
-  
-  Mirror<PrincipalHandle> mMediaPrincipalHandle;
 
   
   

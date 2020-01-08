@@ -7,85 +7,146 @@
 #ifndef OutputStreamManager_h
 #define OutputStreamManager_h
 
+#include "mozilla/CORSMode.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/StateMirroring.h"
 #include "nsTArray.h"
 #include "TrackID.h"
 
 namespace mozilla {
 
+class DOMMediaStream;
 class MediaInputPort;
 class MediaStream;
-class MediaStreamGraph;
 class OutputStreamManager;
 class ProcessedMediaStream;
+class SourceMediaStream;
+
+namespace dom {
+class MediaStreamTrack;
+}
 
 class OutputStreamData {
  public:
+  OutputStreamData(OutputStreamManager* aManager,
+                   AbstractThread* aAbstractMainThread,
+                   DOMMediaStream* aDOMStream);
+  OutputStreamData(const OutputStreamData& aOther) = delete;
+  OutputStreamData(OutputStreamData&& aOther) = delete;
   ~OutputStreamData();
-  void Init(OutputStreamManager* aOwner, ProcessedMediaStream* aStream,
-            TrackID aNextAvailableTrackID);
 
   
   
-  bool Connect(MediaStream* aStream, TrackID aAudioTrackID,
-               TrackID aVideoTrackID);
   
   
-  bool Disconnect();
+  void AddTrack(TrackID aTrackID, MediaSegment::Type aType,
+                nsIPrincipal* aPrincipal, CORSMode aCORSMode,
+                bool aAsyncAddTrack);
   
   
-  bool Equals(MediaStream* aStream) const;
+  void RemoveTrack(TrackID aTrackID);
+
+  void SetPrincipal(nsIPrincipal* aPrincipal);
+
   
-  MediaStreamGraph* Graph() const;
+  const RefPtr<OutputStreamManager> mManager;
+  const RefPtr<AbstractThread> mAbstractMainThread;
   
-  TrackID NextAvailableTrackID() const;
+  const RefPtr<DOMMediaStream> mDOMStream;
+  
+  const RefPtr<ProcessedMediaStream> mInputStream;
 
  private:
-  OutputStreamManager* mOwner;
-  RefPtr<ProcessedMediaStream> mStream;
   
-  nsTArray<RefPtr<MediaInputPort>> mPorts;
+  const RefPtr<MediaInputPort> mPort;
+
   
-  TrackID mNextAvailableTrackID = TRACK_INVALID;
+  nsTArray<RefPtr<dom::MediaStreamTrack>> mTracks;
 };
 
 class OutputStreamManager {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(OutputStreamManager);
 
  public:
+  explicit OutputStreamManager(SourceMediaStream* aSourceStream,
+                               TrackID aNextTrackID, nsIPrincipal* aPrincipal,
+                               CORSMode aCORSMode,
+                               AbstractThread* aAbstractMainThread);
   
-  void Add(ProcessedMediaStream* aStream, TrackID aNextAvailableTrackID,
-           bool aFinishWhenEnded);
+  void Add(DOMMediaStream* aDOMStream);
   
-  void Remove(MediaStream* aStream);
+  void Remove(DOMMediaStream* aDOMStream);
   
-  void Clear();
+  bool HasTrack(TrackID aTrackID);
   
-  TrackID NextAvailableTrackIDFor(MediaStream* aOutputStream) const;
+  
+  bool HasTracks(TrackID aAudioTrack, TrackID aVideoTrack);
+  
+  size_t NumberOfTracks();
+  
+  void AddTrack(TrackID aTrackID, MediaSegment::Type aType);
+  
+  void RemoveTrack(TrackID aTrackID);
+  
+  void RemoveTracks();
+  
+  void Disconnect();
+  
+  AbstractCanonical<PrincipalHandle>* CanonicalPrincipalHandle();
+  
+  void SetPrincipal(nsIPrincipal* aPrincipal);
+  
+  AbstractCanonical<CORSMode>* CanonicalCORSMode();
+  
+  
+  void SetCORSMode(CORSMode aCORSMode);
+  
+  TrackID NextTrackID() const;
+  
+  
+  TrackID AllocateNextTrackID();
+  
+  
+  void SetPlaying(bool aPlaying);
   
   bool IsEmpty() const {
     MOZ_ASSERT(NS_IsMainThread());
     return mStreams.IsEmpty();
   }
+
   
-  void Connect(MediaStream* aStream, TrackID aAudioTrackID,
-               TrackID aVideoTrackID);
   
-  void Disconnect();
-  
-  MediaStreamGraph* Graph() const {
-    MOZ_ASSERT(NS_IsMainThread());
-    return !IsEmpty() ? mStreams[0].Graph() : nullptr;
-  }
+  const RefPtr<SourceMediaStream> mSourceStream;
+  const RefPtr<AbstractThread> mAbstractMainThread;
 
  private:
-  ~OutputStreamManager() {}
-  
-  
-  RefPtr<MediaStream> mInputStream;
-  TrackID mInputAudioTrackID = TRACK_INVALID;
-  TrackID mInputVideoTrackID = TRACK_INVALID;
-  nsTArray<OutputStreamData> mStreams;
+  ~OutputStreamManager() = default;
+  struct StreamComparator {
+    static bool Equals(const UniquePtr<OutputStreamData>& aData,
+                       DOMMediaStream* aStream) {
+      return aData->mDOMStream == aStream;
+    }
+  };
+  struct TrackIDComparator {
+    static bool Equals(const Pair<TrackID, MediaSegment::Type>& aLiveTrack,
+                       TrackID aTrackID) {
+      return aLiveTrack.first() == aTrackID;
+    }
+  };
+  struct TrackTypeComparator {
+    static bool Equals(const Pair<TrackID, MediaSegment::Type>& aLiveTrack,
+                       const Pair<TrackID, MediaSegment::Type>& aOther) {
+      return aLiveTrack.first() == aOther.first() &&
+             aLiveTrack.second() == aOther.second();
+    }
+  };
+  nsTArray<UniquePtr<OutputStreamData>> mStreams;
+  nsTArray<Pair<TrackID, MediaSegment::Type>> mLiveTracks;
+  Canonical<PrincipalHandle> mPrincipalHandle;
+  nsCOMPtr<nsIPrincipal> mPrincipal;
+  const CORSMode mCORSMode;
+  TrackID mNextTrackID;
+  bool mPlaying;
 };
 
 }  

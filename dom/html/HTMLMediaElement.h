@@ -300,32 +300,7 @@ public:
 
   void GetEMEInfo(nsString& aEMEInfo);
 
-  
-  
-  class DecoderPrincipalChangeObserver
-  {
-  public:
-    virtual void NotifyDecoderPrincipalChanged() = 0;
-  };
-
-  
-
-
-
-
-
-  void AddDecoderPrincipalChangeObserver(DecoderPrincipalChangeObserver* aObserver);
-
-  
-
-
-
-
-  bool RemoveDecoderPrincipalChangeObserver(DecoderPrincipalChangeObserver* aObserver);
-
   class StreamCaptureTrackSource;
-  class DecoderCaptureTrackSource;
-  class CaptureStreamTrackSourceGetter;
 
   
   
@@ -868,13 +843,6 @@ protected:
     bool mCapturingDecoder;
     bool mCapturingMediaStream;
 
-    RefPtr<CaptureStreamTrackSourceGetter> mTrackSourceGetter;
-
-    
-    
-    
-    nsTArray<RefPtr<MediaStreamTrack>> mPreCreatedTracks;
-
     
     nsTArray<Pair<nsString, RefPtr<MediaInputPort>>> mTrackPorts;
   };
@@ -1414,10 +1382,6 @@ protected:
 
   
   
-  nsTArray<DecoderPrincipalChangeObserver*> mDecoderPrincipalChangeObservers;
-
-  
-  
   RefPtr<VideoFrameContainer> mVideoFrameContainer;
 
   
@@ -1453,6 +1417,9 @@ protected:
   
   
   nsTArray<OutputMediaStream> mOutputStreams;
+
+  
+  TrackID mNextAvailableMediaDecoderOutputTrackID = 1;
 
   
   

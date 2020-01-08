@@ -19,6 +19,7 @@
 #include "MediaStreamGraph.h"
 #include "SeekTarget.h"
 #include "TimeUnits.h"
+#include "TrackID.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/CDMProxy.h"
 #include "mozilla/MozPromise.h"
@@ -40,6 +41,7 @@ class MediaMemoryInfo;
 }
 
 class AbstractThread;
+class DOMMediaStream;
 class FrameStatistics;
 class VideoFrameContainer;
 class MediaFormatReader;
@@ -166,15 +168,21 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   
 
   
+  void SetOutputStreamCORSMode(CORSMode aCORSMode);
+
   
   
-  virtual void AddOutputStream(ProcessedMediaStream* aStream,
-                               TrackID aNextAvailableTrackID,
-                               bool aFinishWhenEnded);
   
-  virtual void RemoveOutputStream(MediaStream* aStream);
+  void AddOutputStream(DOMMediaStream* aStream);
   
-  virtual TrackID NextAvailableTrackIDFor(MediaStream* aOutputStream) const;
+  void RemoveOutputStream(DOMMediaStream* aStream);
+
+  
+  
+  void SetNextOutputStreamTrackID(TrackID aNextTrackID);
+  
+  
+  TrackID GetNextOutputStreamTrackID();
 
   
   virtual double GetDuration();
@@ -615,10 +623,6 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
 
   
   
-  Canonical<PrincipalHandle> mMediaPrincipalHandle;
-
-  
-  
   
   RefPtr<BackgroundVideoDecodingPermissionObserver> mVideoDecodingOberver;
 
@@ -635,9 +639,6 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   AbstractCanonical<PlayState>* CanonicalPlayState() { return &mPlayState; }
   AbstractCanonical<bool>* CanonicalSameOriginMedia() {
     return &mSameOriginMedia;
-  }
-  AbstractCanonical<PrincipalHandle>* CanonicalMediaPrincipalHandle() {
-    return &mMediaPrincipalHandle;
   }
 
  private:

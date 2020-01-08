@@ -431,9 +431,8 @@ void MediaStreamTrack::RemoveConsumer(MediaStreamTrackConsumer* aConsumer) {
 already_AddRefed<MediaStreamTrack> MediaStreamTrack::Clone() {
   
   
-  
   RefPtr<DOMMediaStream> newStream =
-      new DOMMediaStream(mOwningStream->GetParentObject(), nullptr);
+      new DOMMediaStream(mOwningStream->GetParentObject());
 
   MediaStreamGraph* graph = Graph();
   newStream->InitOwnedStreamCommon(graph);
