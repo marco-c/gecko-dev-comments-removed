@@ -195,7 +195,7 @@ CheckDecoderDelayedChunk(const ImageTestCase& aTestCase)
 }
 
 static void
-CheckDecoderMultiChunk(const ImageTestCase& aTestCase)
+CheckDecoderMultiChunk(const ImageTestCase& aTestCase, uint64_t aChunkSize = 1)
 {
   nsCOMPtr<nsIInputStream> inputStream = LoadFile(aTestCase.mPath);
   ASSERT_TRUE(inputStream != nullptr);
@@ -216,22 +216,31 @@ CheckDecoderMultiChunk(const ImageTestCase& aTestCase)
                                            DefaultSurfaceFlags());
   ASSERT_TRUE(decoder != nullptr);
   RefPtr<IDecodingTask> task =
-    new AnonymousDecodingTask(WrapNotNull(decoder),  false);
+    new AnonymousDecodingTask(WrapNotNull(decoder),  true);
 
-  for (uint64_t read = 0; read < length ; ++read) {
+  
+  
+  task->Run();
+
+  while (length > 0) {
+    uint64_t read = length > aChunkSize ? aChunkSize : length;
+    length -= read;
+
     uint64_t available = 0;
     rv = inputStream->Available(&available);
-    ASSERT_TRUE(available > 0);
+    ASSERT_TRUE(available >= read);
     ASSERT_TRUE(NS_SUCCEEDED(rv));
 
-    rv = sourceBuffer->AppendFromInputStream(inputStream, 1);
+    
+    rv = sourceBuffer->AppendFromInputStream(inputStream, read);
     ASSERT_TRUE(NS_SUCCEEDED(rv));
 
-    task->Run();
+    
+    SpinPendingEvents();
   }
 
   sourceBuffer->Complete(NS_OK);
-  task->Run();
+  SpinPendingEvents();
 
   CheckDecoderResults(aTestCase, decoder);
 }
@@ -775,6 +784,11 @@ TEST_F(ImageDecoders, WebPMultiChunk)
   CheckDecoderMultiChunk(GreenWebPTestCase());
 }
 
+TEST_F(ImageDecoders, WebPLargeMultiChunk)
+{
+  CheckDecoderMultiChunk(LargeWebPTestCase(),  64);
+}
+
 TEST_F(ImageDecoders, WebPDownscaleDuringDecode)
 {
   CheckDownscaleDuringDecode(DownscaledWebPTestCase());
@@ -976,7 +990,7 @@ TEST_F(ImageDecoders, LargeICOWithBMPSingleChunk)
 
 TEST_F(ImageDecoders, LargeICOWithBMPMultiChunk)
 {
-  CheckDecoderMultiChunk(LargeICOWithBMPTestCase());
+  CheckDecoderMultiChunk(LargeICOWithBMPTestCase(),  64);
 }
 
 TEST_F(ImageDecoders, LargeICOWithPNGSingleChunk)
