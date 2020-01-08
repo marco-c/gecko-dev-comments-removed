@@ -142,6 +142,10 @@ class ReftestRunner(MozbuildObject):
         if not args.adb_path:
             args.adb_path = get_adb_path(self)
 
+        if 'geckoview' not in args.app:
+            args.e10s = False
+            print("using e10s=False for non-geckoview app")
+
         
         
         

@@ -999,11 +999,6 @@ class AndroidArguments(ArgumentContainer):
 
         
         
-        options.e10s = False
-        mozinfo.update({'e10s': options.e10s})
-
-        
-        
         options.remoteappname = options.app
         return options
 

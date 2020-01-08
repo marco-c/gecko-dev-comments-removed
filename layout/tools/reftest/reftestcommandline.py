@@ -485,7 +485,4 @@ class RemoteArgumentsParser(ReftestArgumentsParser):
         if not options.httpdPath:
             options.httpdPath = os.path.join(options.utilityPath, "components")
 
-        
-        
-        options.e10s = False
         return options

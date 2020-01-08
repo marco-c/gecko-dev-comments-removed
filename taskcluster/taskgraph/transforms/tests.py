@@ -551,6 +551,8 @@ def set_target(config, tests):
         if 'target' in test:
             resolve_keyed_by(test, 'target', item_name=test['test-name'])
             target = test['target']
+            if target and 'geckoview' in target:
+                test['e10s'] = True
         if not target:
             if build_platform.startswith('macosx'):
                 target = 'target.dmg'
