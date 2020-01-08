@@ -87,12 +87,6 @@ ProcessId GetProcId(ProcessHandle process);
 
 
 
-
-void SetAllFDsToCloseOnExec();
-
-
-
-
 void CloseSuperfluousFds(void* aCtx, bool (*aShouldPreserve)(void*, int));
 
 typedef std::vector<std::pair<int, int> > file_handle_mapping_vector;
