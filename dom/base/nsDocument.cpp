@@ -13582,6 +13582,29 @@ nsIDocument::HasStorageAccess(mozilla::ErrorResult& aRv)
     return promise.forget();
   }
 
+  if (StaticPrefs::browser_contentblocking_enabled() &&
+      StaticPrefs::network_cookie_cookieBehavior() ==
+        nsICookieService::BEHAVIOR_REJECT_TRACKER) {
+    
+    
+    
+    
+    
+    
+    if (!nsContentUtils::StorageDisabledByAntiTracking(this, nullptr)) {
+      
+      
+      
+      bool isOnAllowList = false;
+      if (NS_SUCCEEDED(AntiTrackingCommon::IsOnContentBlockingAllowList(
+                         topLevelDoc->GetDocumentURI(), isOnAllowList)) &&
+          !isOnAllowList) {
+        promise->MaybeResolve(true);
+        return promise.forget();
+      }
+    }
+  }
+
   nsPIDOMWindowInner* inner = GetInnerWindow();
   nsGlobalWindowOuter* outer = nullptr;
   if (inner) {
@@ -13685,6 +13708,13 @@ nsIDocument::RequestStorageAccess(mozilla::ErrorResult& aRv)
         nsICookieService::BEHAVIOR_REJECT_TRACKER) {
     
     if (nsContentUtils::StorageDisabledByAntiTracking(this, nullptr)) {
+      
+      
+      DebugOnly<bool> isOnAllowList = false;
+      MOZ_ASSERT_IF(NS_SUCCEEDED(AntiTrackingCommon::IsOnContentBlockingAllowList(
+                                   parent->GetDocumentURI(), isOnAllowList)),
+                    !isOnAllowList);
+
       isTrackingWindow = true;
       
     }
