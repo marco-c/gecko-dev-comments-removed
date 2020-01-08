@@ -5,6 +5,7 @@
 
 
 #include "mozilla/Attributes.h"
+#include "mozilla/AntiTrackingCommon.h"
 #include "mozilla/DebugOnly.h"
 
 #include "mozilla/dom/ContentParent.h"
@@ -137,7 +138,9 @@ static const char* kPreloadPermissions[] = {
   
   "cookie",
   "trackingprotection",
-  "trackingprotection-pb"
+  "trackingprotection-pb",
+
+  USER_INTERACTION_PERM
 };
 
 
