@@ -5222,8 +5222,7 @@ void js::NotifyGCPostSwap(JSObject* a, JSObject* b, unsigned removedFlags) {
   }
 }
 
-static inline void MaybeCheckWeakMapMarking(GCRuntime* gc)
-{
+static inline void MaybeCheckWeakMapMarking(GCRuntime* gc) {
 #if defined(JS_GC_ZEAL) || defined(DEBUG)
 
   bool shouldCheck;
@@ -6897,8 +6896,9 @@ static bool ShouldCleanUpEverything(JS::gcreason::Reason reason,
   return IsShutdownGC(reason) || gckind == GC_SHRINK;
 }
 
-void GCRuntime::incrementalSlice(
-    SliceBudget& budget, JS::gcreason::Reason reason, AutoGCSession& session) {
+void GCRuntime::incrementalSlice(SliceBudget& budget,
+                                 JS::gcreason::Reason reason,
+                                 AutoGCSession& session) {
   AutoDisableBarriers disableBarriers(rt);
 
   bool destroyingRuntime = (reason == JS::gcreason::DESTROY_RUNTIME);
@@ -7048,21 +7048,20 @@ void GCRuntime::incrementalSlice(
 
       MOZ_FALLTHROUGH;
 
-    case State::Finalize:
-      {
-        gcstats::AutoPhase ap(stats(),
-                              gcstats::PhaseKind::WAIT_BACKGROUND_THREAD);
+    case State::Finalize: {
+      gcstats::AutoPhase ap(stats(),
+                            gcstats::PhaseKind::WAIT_BACKGROUND_THREAD);
 
+      
+      if (!budget.isUnlimited()) {
         
-        if (!budget.isUnlimited()) {
-          
-          if (isBackgroundSweeping()) {
-            break;
-          }
-        } else {
-          waitBackgroundSweepEnd();
+        if (isBackgroundSweeping()) {
+          break;
         }
+      } else {
+        waitBackgroundSweepEnd();
       }
+    }
 
       {
         
@@ -7332,8 +7331,7 @@ void GCRuntime::maybeCallGCCallback(JSGCStatus status) {
 
 
 MOZ_NEVER_INLINE GCRuntime::IncrementalResult GCRuntime::gcCycle(
-    bool nonincrementalByAPI, SliceBudget budget,
-    JS::gcreason::Reason reason) {
+    bool nonincrementalByAPI, SliceBudget budget, JS::gcreason::Reason reason) {
   
   rt->mainContextFromOwnThread()->verifyIsSafeToGC();
 

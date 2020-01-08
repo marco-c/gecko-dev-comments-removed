@@ -2605,7 +2605,8 @@ extern JS_FRIEND_API JSObject* GetJSMEnvironmentOfScriptedCaller(JSContext* cx);
 
 extern JS_FRIEND_API bool IsJSMEnvironment(JSObject* obj);
 
-#if defined(XP_WIN) && defined(_WIN64)
+
+#if defined(XP_WIN) && defined(HAVE_64BIT_BUILD) && defined(_M_X64)
 
 
 typedef long (*JitExceptionHandler)(void* exceptionRecord,  
