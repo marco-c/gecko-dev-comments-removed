@@ -35,6 +35,9 @@ loader.lazyRequireGetter(this, "EnvironmentActor", "devtools/server/actors/envir
 loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
 
 
+loader.lazyRequireGetter(this, "RESERVED_JS_KEYWORDS", "devtools/shared/webconsole/reserved-js-words");
+
+
 
 if (isWorker) {
   loader.lazyRequireGetter(this, "ConsoleAPIListener", "devtools/server/actors/webconsole/worker-listeners", true);
@@ -1235,6 +1238,7 @@ WebConsoleActor.prototype =
       const lastNonAlphaIsDot = /[.][a-zA-Z0-9$\s]*$/.test(reqText);
 
       
+      
       if (!lastNonAlphaIsDot && !isElementAccess) {
         this._getWebConsoleCommandsCache().forEach(n => {
           
@@ -1242,6 +1246,12 @@ WebConsoleActor.prototype =
             matches.add(n);
           }
         });
+
+        for (const keyword of RESERVED_JS_KEYWORDS) {
+          if (keyword.startsWith(result.matchProp)) {
+            matches.add(keyword);
+          }
+        }
       }
 
       
