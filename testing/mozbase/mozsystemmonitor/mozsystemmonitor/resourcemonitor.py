@@ -74,6 +74,26 @@ def get_disk_io_counters():
     return io_counters
 
 
+def _poll(pipe, poll_interval=0.1):
+    """Wrap multiprocessing.Pipe.poll to hide POLLERR and POLLIN
+    exceptions.
+
+    multiprocessing.Pipe is not actually a pipe on at least Linux.
+    That has an effect on the expected outcome of reading from it when
+    the other end of the pipe dies, leading to possibly hanging on revc()
+    below.
+    """
+    try:
+        return pipe.poll(poll_interval)
+    except Exception:
+        
+        
+        
+        
+        
+        return True
+
+
 def _collect(pipe, poll_interval):
     """Collects system metrics.
 
@@ -98,7 +118,7 @@ def _collect(pipe, poll_interval):
 
     sleep_interval = poll_interval
 
-    while not pipe.poll(sleep_interval):
+    while not _poll(pipe, poll_interval=sleep_interval):
         io = get_disk_io_counters()
         cpu_times = psutil.cpu_times(True)
         cpu_percent = psutil.cpu_percent(None, True)
@@ -308,21 +328,7 @@ class SystemResourceMonitor(object):
         
         
 
-        
-        
-        
-        
-        def poll():
-            try:
-                return self._pipe.poll(0.1)
-            except Exception:
-                
-                
-                
-                
-                
-                return True
-        while poll():
+        while _poll(self._pipe, poll_interval=0.1):
             try:
                 start_time, end_time, io_diff, cpu_diff, cpu_percent, virt_mem, \
                     swap_mem = self._pipe.recv()
