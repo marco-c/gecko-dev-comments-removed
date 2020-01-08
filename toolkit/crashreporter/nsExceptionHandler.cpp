@@ -1398,9 +1398,7 @@ static nsresult LocateExecutable(nsIFile* aXREDirectory,
 nsresult SetExceptionHandler(nsIFile* aXREDirectory, bool force ) {
   if (gExceptionHandler) return NS_ERROR_ALREADY_INITIALIZED;
 
-#if defined(DEBUG) || defined(_M_ARM64)
-  
-  
+#if defined(DEBUG)
   
   
   const char* envvar = PR_GetEnv("MOZ_CRASHREPORTER");
