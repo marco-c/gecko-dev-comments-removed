@@ -1,0 +1,39 @@
+
+
+
+"use strict";
+
+const kSearchEngineID1 = "ignorelist_test_engine1";
+const kSearchEngineID2 = "ignorelist_test_engine2";
+const kSearchEngineID3 = "ignorelist_test_engine3";
+const kSearchEngineURL1 = "http://example.com/?search={searchTerms}&ignore=true";
+const kSearchEngineURL2 = "http://example.com/?search={searchTerms}&IGNORE=TRUE";
+const kSearchEngineURL3 = "http://example.com/?search={searchTerms}";
+const kExtensionID = "searchignore@mozilla.com";
+
+add_task(async function test_ignorelistEngineLowerCase() {
+  Assert.ok(!Services.search.isInitialized);
+
+  await asyncInit();
+
+  Services.search.addEngineWithDetails(kSearchEngineID1, "", "", "", "get",
+                                       kSearchEngineURL1);
+
+  
+  let engine = Services.search.getEngineByName(kSearchEngineID1);
+  Assert.equal(engine, null, "Engine should not exist");
+
+  Services.search.addEngineWithDetails(kSearchEngineID2, "", "", "", "get",
+                                       kSearchEngineURL2);
+
+  
+  engine = Services.search.getEngineByName(kSearchEngineID2);
+  Assert.equal(engine, null, "Engine should not exist");
+
+  Services.search.addEngineWithDetails(kSearchEngineID3, "", "", "", "get",
+                                       kSearchEngineURL3, kExtensionID);
+
+  
+  engine = Services.search.getEngineByName(kSearchEngineID3);
+  Assert.equal(engine, null, "Engine should not exist");
+});
