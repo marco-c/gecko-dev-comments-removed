@@ -92,6 +92,14 @@ public:
   virtual void BindTexture(GLenum aTextureUnit,
                            gfx::SamplingFilter aSamplingFilter) = 0;
 
+  
+  
+  
+  
+  
+  
+  virtual void MaybeFenceTexture() {}
+
   virtual gfx::IntSize GetSize() const = 0;
 
   virtual GLenum GetTextureTarget() const { return LOCAL_GL_TEXTURE_2D; }
@@ -298,6 +306,7 @@ class DirectMapTextureSource : public GLTextureSource
 public:
   DirectMapTextureSource(TextureSourceProvider* aProvider,
                          gfx::DataSourceSurface* aSurface);
+  ~DirectMapTextureSource();
 
   virtual bool Update(gfx::DataSourceSurface* aSurface,
                       nsIntRegion* aDestRegion = nullptr,
@@ -310,11 +319,15 @@ public:
   
   virtual bool Sync(bool aBlocking) override;
 
+  virtual void MaybeFenceTexture() override;
+
 private:
   bool UpdateInternal(gfx::DataSourceSurface* aSurface,
                       nsIntRegion* aDestRegion,
                       gfx::IntPoint* aSrcOffset,
                       bool aInit);
+
+  GLsync mSync;
 };
 
 class GLTextureHost : public TextureHost
