@@ -20,7 +20,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/mscom/Utils.h"
 
-#ifdef __GNUC__
+#if defined(__GNUC__) || defined(__clang__)
 
 
 
