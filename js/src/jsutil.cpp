@@ -164,6 +164,8 @@ ResetSimulatedInterrupt()
 } 
 #endif 
 
+bool js::gDisablePoisoning = false;
+
 JS_PUBLIC_DATA(arena_id_t) js::MallocArena;
 JS_PUBLIC_DATA(arena_id_t) js::ArrayBufferContentsArena;
 
