@@ -1,3 +1,10 @@
+
+
+
+
+
+#ifdef XML_TOK_NS_C
+
 const ENCODING *
 NS(XmlGetUtf8InternalEncoding)(void)
 {
@@ -104,3 +111,5 @@ NS(XmlParseXmlDecl)(int isGeneralTextEntity,
                         encoding,
                         standalone);
 }
+
+#endif 

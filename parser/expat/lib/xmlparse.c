@@ -23,12 +23,8 @@
 
 #define XML_BUILDING_EXPAT 1
 
-#ifdef COMPILED_FROM_DSP
+#ifdef _WIN32
 #include "winconfig.h"
-#elif defined(MACOS_CLASSIC)
-#include "macconfig.h"
-#elif defined(__amigaos4__)
-#include "amigaconfig.h"
 #elif defined(HAVE_EXPAT_CONFIG_H)
 #include <expat_config.h>
 #endif 

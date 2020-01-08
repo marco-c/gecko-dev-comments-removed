@@ -2,6 +2,9 @@
 
 
 
+
+#ifdef XML_TOK_IMPL_C
+
 #ifndef IS_INVALID_CHAR
 #define IS_INVALID_CHAR(enc, ptr, n) (0)
 #endif
@@ -1773,3 +1776,4 @@ PREFIX(updatePosition)(const ENCODING *enc,
 #undef CHECK_NMSTRT_CASE
 #undef CHECK_NMSTRT_CASES
 
+#endif 
