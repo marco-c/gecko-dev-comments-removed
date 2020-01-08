@@ -3981,12 +3981,13 @@ HTMLInputElement::MaybeInitPickers(EventChainPostVisitor& aVisitor)
 
 
 
+
+
 static bool
-IgnoreInputEventWithModifier(WidgetInputEvent* aEvent)
+IgnoreInputEventWithModifier(WidgetInputEvent* aEvent, bool ignoreControl)
 {
-  return aEvent->IsShift() || aEvent->IsControl() || aEvent->IsAlt() ||
-         aEvent->IsMeta() || aEvent->IsAltGraph() || aEvent->IsFn() ||
-         aEvent->IsOS();
+  return (ignoreControl && aEvent->IsControl()) || aEvent->IsAltGraph() ||
+         aEvent->IsFn() || aEvent->IsOS();
 }
 
 nsresult
@@ -4135,7 +4136,7 @@ HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
         keyEvent && keyEvent->mMessage == eKeyPress &&
         aVisitor.mEvent->IsTrusted() &&
         (keyEvent->mKeyCode == NS_VK_UP || keyEvent->mKeyCode == NS_VK_DOWN) &&
-        !IgnoreInputEventWithModifier(keyEvent)) {
+        !IgnoreInputEventWithModifier(keyEvent, false)) {
       
       
       
@@ -4356,7 +4357,7 @@ HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
           }
           if (mType == NS_FORM_INPUT_NUMBER && aVisitor.mEvent->IsTrusted()) {
             if (mouseEvent->button == WidgetMouseEvent::eLeftButton &&
-                !IgnoreInputEventWithModifier(mouseEvent)) {
+                !IgnoreInputEventWithModifier(mouseEvent, false)) {
               nsNumberControlFrame* numberControlFrame =
                 do_QueryFrame(GetPrimaryFrame());
               if (numberControlFrame) {
@@ -4519,7 +4520,7 @@ HTMLInputElement::PostHandleEventForRangeThumb(EventChainPostVisitor& aVisitor)
         break; 
       }
       WidgetInputEvent* inputEvent = aVisitor.mEvent->AsInputEvent();
-      if (IgnoreInputEventWithModifier(inputEvent)) {
+      if (IgnoreInputEventWithModifier(inputEvent, true)) {
         break; 
       }
       if (aVisitor.mEvent->mMessage == eMouseDown) {
