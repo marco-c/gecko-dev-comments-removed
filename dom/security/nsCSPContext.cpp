@@ -161,7 +161,7 @@ nsCSPContext::ShouldLoad(nsContentPolicyType aContentType,
                          nsIURI*             aRequestOrigin,
                          nsISupports*        aRequestContext,
                          const nsACString&   aMimeTypeGuess,
-                         nsISupports*        aExtra,
+                         nsIURI*             aOriginalURIIfRedirect,
                          int16_t*            outDecision)
 {
   if (CSPCONTEXTLOGENABLED()) {
@@ -226,17 +226,11 @@ nsCSPContext::ShouldLoad(nsContentPolicyType aContentType,
     }
   }
 
-  
-  
-  nsCOMPtr<nsIURI> originalURI = do_QueryInterface(aExtra);
-  bool wasRedirected = originalURI;
-
   bool permitted = permitsInternal(dir,
                                    nullptr, 
                                    aContentLocation,
-                                   originalURI,
+                                   aOriginalURIIfRedirect,
                                    nonce,
-                                   wasRedirected,
                                    isPreload,
                                    false,     
                                    true,      
@@ -264,9 +258,8 @@ bool
 nsCSPContext::permitsInternal(CSPDirective aDir,
                               Element* aTriggeringElement,
                               nsIURI* aContentLocation,
-                              nsIURI* aOriginalURI,
+                              nsIURI* aOriginalURIIfRedirect,
                               const nsAString& aNonce,
-                              bool aWasRedirected,
                               bool aIsPreload,
                               bool aSpecific,
                               bool aSendViolationReports,
@@ -280,7 +273,7 @@ nsCSPContext::permitsInternal(CSPDirective aDir,
     if (!mPolicies[p]->permits(aDir,
                                aContentLocation,
                                aNonce,
-                               aWasRedirected,
+                               !!aOriginalURIIfRedirect,
                                aSpecific,
                                aParserCreated,
                                violatedDirective)) {
@@ -299,7 +292,7 @@ nsCSPContext::permitsInternal(CSPDirective aDir,
                              (aSendContentLocationInViolationReports ?
                               aContentLocation : nullptr),
                              BlockedContentSource::eUnknown, 
-                             aOriginalURI,  
+                             aOriginalURIIfRedirect,  
                              violatedDirective,
                              p,             
                              EmptyString(), 
@@ -1569,7 +1562,6 @@ nsCSPContext::PermitsAncestry(nsIDocShell* aDocShell, bool* outPermitsAncestry)
                                    nullptr, 
                                    EmptyString(), 
                                    false,   
-                                   false,   
                                    true,    
                                    true,    
                                    okToSendAncestor,
@@ -1598,7 +1590,6 @@ nsCSPContext::Permits(Element* aTriggeringElement,
                                 aURI,
                                 nullptr,  
                                 EmptyString(),  
-                                false,    
                                 false,    
                                 aSpecific,
                                 true,     

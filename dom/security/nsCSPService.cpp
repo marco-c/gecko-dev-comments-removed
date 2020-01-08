@@ -184,7 +184,6 @@ CSPService::ShouldLoad(nsIURI *aContentLocation,
 
     if (preloadCsp) {
       
-      
       rv = preloadCsp->ShouldLoad(contentType,
                                   aContentLocation,
                                   requestOrigin,
@@ -209,13 +208,12 @@ CSPService::ShouldLoad(nsIURI *aContentLocation,
 
   if (csp) {
     
-    
     rv = csp->ShouldLoad(contentType,
                          aContentLocation,
                          requestOrigin,
                          requestContext,
                          aMimeTypeGuess,
-                         nullptr,
+                         nullptr, 
                          aDecision);
     NS_ENSURE_SUCCESS(rv, rv);
   }
