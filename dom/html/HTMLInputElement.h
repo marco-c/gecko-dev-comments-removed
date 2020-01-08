@@ -751,6 +751,14 @@ class HTMLInputElement final : public nsGenericHTMLFormElementWithState,
 
 
 
+
+  Element* GetDateTimeBoxElementInUAWidget();
+
+  
+
+
+
+
   Element* GetDateTimeBoxElement();
 
   

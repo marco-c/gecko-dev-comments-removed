@@ -80,7 +80,6 @@ class nsDateTimeControlFrame final : public nsContainerFrame,
   void OnMinMaxStepAttrChanged();
   void HandleFocusEvent();
   void HandleBlurEvent();
-  bool HasBadInput();
 
  private:
   class SyncDisabledStateEvent;
@@ -108,8 +107,6 @@ class nsDateTimeControlFrame final : public nsContainerFrame,
 
 
   void SyncDisabledState();
-
-  mozilla::dom::Element* GetInputAreaContentAsElement();
 
   
   

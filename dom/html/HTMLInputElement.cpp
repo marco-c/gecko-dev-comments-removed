@@ -2057,12 +2057,26 @@ void HTMLInputElement::GetDateTimeInputBoxValue(DateTimeValue& aValue) {
   aValue = *mDateTimeInputBoxValue;
 }
 
+Element* HTMLInputElement::GetDateTimeBoxElementInUAWidget() {
+  if (GetShadowRoot()) {
+    
+    
+    MOZ_ASSERT(GetShadowRoot()->IsUAWidget());
+    MOZ_ASSERT(1 >= GetShadowRoot()->GetChildCount());
+    if (nsIContent* inputAreaContent = GetShadowRoot()->GetFirstChild()) {
+      return inputAreaContent->AsElement();
+    }
+  }
+
+  return nullptr;
+}
+
 Element* HTMLInputElement::GetDateTimeBoxElement() {
   nsDateTimeControlFrame* frame = do_QueryFrame(GetPrimaryFrame());
   if (frame && frame->GetInputAreaContent()) {
     return frame->GetInputAreaContent()->AsElement();
   }
-  return nullptr;
+  return GetDateTimeBoxElementInUAWidget();
 }
 
 void HTMLInputElement::OpenDateTimePicker(const DateTimeValue& aInitialValue) {
@@ -2620,9 +2634,17 @@ nsresult HTMLInputElement::SetValueInternal(const nsAString& aValue,
                     mType == NS_FORM_INPUT_DATE) &&
                    !IsExperimentalMobileType(mType) &&
                    !(aFlags & nsTextEditorState::eSetValue_BySetUserInput)) {
-          nsDateTimeControlFrame* frame = do_QueryFrame(GetPrimaryFrame());
-          if (frame) {
-            frame->OnValueChanged();
+          if (Element* dateTimeBoxElement = GetDateTimeBoxElementInUAWidget()) {
+            AsyncEventDispatcher* dispatcher = new AsyncEventDispatcher(
+                dateTimeBoxElement,
+                NS_LITERAL_STRING("MozDateTimeValueChanged"), CanBubble::eNo,
+                ChromeOnlyDispatch::eNo);
+            dispatcher->RunDOMEventWhenSafe();
+          } else {
+            nsDateTimeControlFrame* frame = do_QueryFrame(GetPrimaryFrame());
+            if (frame) {
+              frame->OnValueChanged();
+            }
           }
         }
         if (mDoneCreating) {
@@ -2909,10 +2931,18 @@ void HTMLInputElement::Blur(ErrorResult& aError) {
 
   if ((mType == NS_FORM_INPUT_TIME || mType == NS_FORM_INPUT_DATE) &&
       !IsExperimentalMobileType(mType)) {
-    nsDateTimeControlFrame* frame = do_QueryFrame(GetPrimaryFrame());
-    if (frame) {
-      frame->HandleBlurEvent();
+    if (Element* dateTimeBoxElement = GetDateTimeBoxElementInUAWidget()) {
+      AsyncEventDispatcher* dispatcher = new AsyncEventDispatcher(
+          dateTimeBoxElement, NS_LITERAL_STRING("MozBlurInnerTextBox"),
+          CanBubble::eNo, ChromeOnlyDispatch::eNo);
+      dispatcher->RunDOMEventWhenSafe();
       return;
+    } else {
+      nsDateTimeControlFrame* frame = do_QueryFrame(GetPrimaryFrame());
+      if (frame) {
+        frame->HandleBlurEvent();
+        return;
+      }
     }
   }
 
@@ -2935,10 +2965,18 @@ void HTMLInputElement::Focus(ErrorResult& aError) {
 
   if ((mType == NS_FORM_INPUT_TIME || mType == NS_FORM_INPUT_DATE) &&
       !IsExperimentalMobileType(mType)) {
-    nsDateTimeControlFrame* frame = do_QueryFrame(GetPrimaryFrame());
-    if (frame) {
-      frame->HandleFocusEvent();
+    if (Element* dateTimeBoxElement = GetDateTimeBoxElementInUAWidget()) {
+      AsyncEventDispatcher* dispatcher = new AsyncEventDispatcher(
+          dateTimeBoxElement, NS_LITERAL_STRING("MozFocusInnerTextBox"),
+          CanBubble::eNo, ChromeOnlyDispatch::eNo);
+      dispatcher->RunDOMEventWhenSafe();
       return;
+    } else {
+      nsDateTimeControlFrame* frame = do_QueryFrame(GetPrimaryFrame());
+      if (frame) {
+        frame->HandleFocusEvent();
+        return;
+      }
     }
   }
 
@@ -3247,9 +3285,16 @@ void HTMLInputElement::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
       aVisitor.mEvent->mOriginalTarget == this) {
     
     
-    nsDateTimeControlFrame* frame = do_QueryFrame(GetPrimaryFrame());
-    if (frame) {
-      frame->HandleFocusEvent();
+    if (Element* dateTimeBoxElement = GetDateTimeBoxElementInUAWidget()) {
+      AsyncEventDispatcher* dispatcher = new AsyncEventDispatcher(
+          dateTimeBoxElement, NS_LITERAL_STRING("MozFocusInnerTextBox"),
+          CanBubble::eNo, ChromeOnlyDispatch::eNo);
+      dispatcher->RunDOMEventWhenSafe();
+    } else {
+      nsDateTimeControlFrame* frame = do_QueryFrame(GetPrimaryFrame());
+      if (frame) {
+        frame->HandleFocusEvent();
+      }
     }
   }
 
