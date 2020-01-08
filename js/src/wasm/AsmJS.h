@@ -50,8 +50,7 @@ class FullParseHandler;
 
 }  
 
-template <typename Unit>
-using AsmJSParser = frontend::Parser<frontend::FullParseHandler, Unit>;
+using AsmJSParser = frontend::Parser<frontend::FullParseHandler, char16_t>;
 
 
 
@@ -60,8 +59,7 @@ using AsmJSParser = frontend::Parser<frontend::FullParseHandler, Unit>;
 
 
 
-extern MOZ_MUST_USE bool CompileAsmJS(JSContext* cx,
-                                      AsmJSParser<char16_t>& parser,
+extern MOZ_MUST_USE bool CompileAsmJS(JSContext* cx, AsmJSParser& parser,
                                       frontend::ParseNode* stmtList,
                                       bool* validated);
 
