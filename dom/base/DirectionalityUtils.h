@@ -17,6 +17,7 @@ class nsTextNode;
 namespace mozilla {
 namespace dom {
 class Element;
+class HTMLSlotElement;
 } 
 } 
 
@@ -75,6 +76,12 @@ void WalkDescendantsResetAutoDirection(mozilla::dom::Element* aElement);
 
 
 
+void SlotStateChanged(mozilla::dom::HTMLSlotElement* aSlot);
+
+
+
+
+
 
 
 
@@ -87,7 +94,7 @@ void WalkDescendantsSetDirAuto(mozilla::dom::Element* aElement,
 
 
 
-void WalkDescendantsClearAncestorDirAuto(mozilla::dom::Element* aElement);
+void WalkDescendantsClearAncestorDirAuto(nsIContent* aContent);
 
 
 
