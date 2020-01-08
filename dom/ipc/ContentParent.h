@@ -593,10 +593,6 @@ class ContentParent final : public PContentParent,
   virtual bool DeallocPURLClassifierParent(
       PURLClassifierParent* aActor) override;
 
-  virtual mozilla::ipc::IPCResult RecvClassifyLocal(
-      const URIParams& aURI, const nsCString& aTables, nsresult* aRv,
-      nsTArray<nsCString>* aResults) override;
-
   
   void PaintTabWhileInterruptingJS(TabParent* aTabParent, bool aForceRepaint,
                                    const layers::LayersObserverEpoch& aEpoch);
