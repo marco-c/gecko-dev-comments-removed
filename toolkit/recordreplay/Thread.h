@@ -128,6 +128,9 @@ private:
   FileHandle mNotifyfd;
 
   
+  Atomic<bool, SequentiallyConsistent, Behavior::DontPreserve> mShouldIdle;
+
+  
   Atomic<bool, SequentiallyConsistent, Behavior::DontPreserve> mIdle;
 
   
@@ -289,6 +292,13 @@ public:
   
   
   static void ResumeIdleThreads();
+
+  
+  static void ResumeSingleIdleThread(size_t aId);
+
+  
+  
+  bool IsIdle() { return mIdle; }
 };
 
 
