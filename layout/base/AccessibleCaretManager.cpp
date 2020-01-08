@@ -18,7 +18,7 @@
 #include "mozilla/dom/TreeWalker.h"
 #include "mozilla/IMEStateManager.h"
 #include "mozilla/IntegerPrintfMacros.h"
-#include "mozilla/Preferences.h"
+#include "mozilla/StaticPrefs.h"
 #include "nsCaret.h"
 #include "nsContainerFrame.h"
 #include "nsContentUtils.h"
@@ -72,22 +72,6 @@ std::ostream& operator<<(std::ostream& aStream,
 }
 #undef AC_PROCESS_ENUM_TO_STREAM
 
- bool
-AccessibleCaretManager::sCaretShownWhenLongTappingOnEmptyContent = false;
- bool
-AccessibleCaretManager::sCaretsAlwaysTilt = false;
- int32_t
-AccessibleCaretManager::sCaretsScriptUpdates =
-    AccessibleCaretManager::kScriptAlwaysHide;
- bool
-AccessibleCaretManager::sCaretsAllowDraggingAcrossOtherCaret = true;
- bool
-AccessibleCaretManager::sHapticFeedback = false;
- bool
-AccessibleCaretManager::sExtendSelectionForPhoneNumber = false;
- bool
-AccessibleCaretManager::sHideCaretsForMouseInput = true;
-
 AccessibleCaretManager::AccessibleCaretManager(nsIPresShell* aPresShell)
   : mPresShell(aPresShell)
 {
@@ -97,25 +81,6 @@ AccessibleCaretManager::AccessibleCaretManager(nsIPresShell* aPresShell)
 
   mFirstCaret = MakeUnique<AccessibleCaret>(mPresShell);
   mSecondCaret = MakeUnique<AccessibleCaret>(mPresShell);
-
-  static bool addedPrefs = false;
-  if (!addedPrefs) {
-    Preferences::AddBoolVarCache(&sCaretShownWhenLongTappingOnEmptyContent,
-      "layout.accessiblecaret.caret_shown_when_long_tapping_on_empty_content");
-    Preferences::AddBoolVarCache(&sCaretsAlwaysTilt,
-                                 "layout.accessiblecaret.always_tilt");
-    Preferences::AddIntVarCache(&sCaretsScriptUpdates,
-      "layout.accessiblecaret.script_change_update_mode");
-    Preferences::AddBoolVarCache(&sCaretsAllowDraggingAcrossOtherCaret,
-      "layout.accessiblecaret.allow_dragging_across_other_caret", true);
-    Preferences::AddBoolVarCache(&sHapticFeedback,
-                                 "layout.accessiblecaret.hapticfeedback");
-    Preferences::AddBoolVarCache(&sExtendSelectionForPhoneNumber,
-      "layout.accessiblecaret.extend_selection_for_phone_number");
-    Preferences::AddBoolVarCache(&sHideCaretsForMouseInput,
-      "layout.accessiblecaret.hide_carets_for_mouse_input");
-    addedPrefs = true;
-  }
 }
 
 AccessibleCaretManager::~AccessibleCaretManager()
@@ -153,8 +118,10 @@ AccessibleCaretManager::OnSelectionChanged(nsIDocument* aDoc,
 
   
   if (aReason == nsISelectionListener::NO_REASON) {
-    if (sCaretsScriptUpdates == kScriptAlwaysShow ||
-        (sCaretsScriptUpdates == kScriptUpdateVisible &&
+    auto mode = static_cast<ScriptUpdateMode>(
+      StaticPrefs::layout_accessiblecaret_script_change_update_mode());
+    if (mode == kScriptAlwaysShow ||
+        (mode == kScriptUpdateVisible &&
          (mFirstCaret->IsLogicallyVisible() ||
           mSecondCaret->IsLogicallyVisible()))) {
         UpdateCarets();
@@ -186,7 +153,7 @@ AccessibleCaretManager::OnSelectionChanged(nsIDocument* aDoc,
   }
 
   
-  if (sHideCaretsForMouseInput &&
+  if (StaticPrefs::layout_accessiblecaret_hide_carets_for_mouse_input() &&
       mLastInputSource == MouseEvent_Binding::MOZ_SOURCE_MOUSE) {
     HideCarets();
     return NS_OK;
@@ -194,7 +161,7 @@ AccessibleCaretManager::OnSelectionChanged(nsIDocument* aDoc,
 
   
   
-  if (sHideCaretsForMouseInput &&
+  if (StaticPrefs::layout_accessiblecaret_hide_carets_for_mouse_input() &&
       mLastInputSource == MouseEvent_Binding::MOZ_SOURCE_KEYBOARD &&
       (aReason & nsISelectionListener::SELECTALL_REASON)) {
     HideCarets();
@@ -296,7 +263,7 @@ AccessibleCaretManager::UpdateCaretsForCursorMode(const UpdateCaretsHintSet& aHi
       if (aHints == UpdateCaretsHint::Default) {
         if (HasNonEmptyTextContent(GetEditingHostForFrame(frame))) {
           mFirstCaret->SetAppearance(Appearance::Normal);
-        } else if (sCaretShownWhenLongTappingOnEmptyContent) {
+        } else if (StaticPrefs::layout_accessiblecaret_caret_shown_when_long_tapping_on_empty_content()) {
           if (mFirstCaret->IsLogicallyVisible()) {
             
             
@@ -392,7 +359,7 @@ AccessibleCaretManager::UpdateCaretsForSelectionMode(const UpdateCaretsHintSet& 
   if (aHints == UpdateCaretsHint::Default) {
     
     
-    if (sCaretsAlwaysTilt) {
+    if (StaticPrefs::layout_accessiblecaret_always_tilt()) {
       UpdateCaretsForAlwaysTilt(startFrame, endFrame);
     } else {
       UpdateCaretsForOverlappingTilt();
@@ -455,7 +422,7 @@ AccessibleCaretManager::UpdateCaretsForAlwaysTilt(nsIFrame* aStartFrame,
 void
 AccessibleCaretManager::ProvideHapticFeedback()
 {
-  if (sHapticFeedback) {
+  if (StaticPrefs::layout_accessiblecaret_hapticfeedback()) {
     nsCOMPtr<nsIHapticFeedback> haptic =
       do_GetService("@mozilla.org/widget/hapticfeedback;1");
     haptic->PerformSimpleAction(haptic->LongPress);
@@ -592,7 +559,7 @@ AccessibleCaretManager::SelectWordOrShortcut(const nsPoint& aPoint)
       !HasNonEmptyTextContent(newFocusEditingHost)) {
     ChangeFocusToOrClearOldFocus(focusableFrame);
 
-    if (sCaretShownWhenLongTappingOnEmptyContent) {
+    if (StaticPrefs::layout_accessiblecaret_caret_shown_when_long_tapping_on_empty_content()) {
       mFirstCaret->SetAppearance(Appearance::Normal);
     }
     
@@ -670,7 +637,7 @@ AccessibleCaretManager::OnScrollEnd()
   }
 
   
-  if (sHideCaretsForMouseInput &&
+  if (StaticPrefs::layout_accessiblecaret_hide_carets_for_mouse_input() &&
       mLastInputSource == MouseEvent_Binding::MOZ_SOURCE_MOUSE) {
     AC_LOG("%s: HideCarets()", __FUNCTION__);
     HideCarets();
@@ -880,7 +847,7 @@ AccessibleCaretManager::SelectWord(nsIFrame* aFrame, const nsPoint& aPoint) cons
   ClearMaintainedSelection();
 
   
-  if (sExtendSelectionForPhoneNumber) {
+  if (StaticPrefs::layout_accessiblecaret_extend_selection_for_phone_number()) {
     SelectMoreIfPhoneNumber();
   }
 
@@ -1157,7 +1124,7 @@ AccessibleCaretManager::RestrictCaretDraggingOffsets(
     aOffsets.secondaryOffset = limit.mContentOffset;
   };
 
-  if (!sCaretsAllowDraggingAcrossOtherCaret) {
+  if (!StaticPrefs::layout_accessiblecaret_allow_dragging_across_other_caret()) {
     if ((mActiveCaret == mFirstCaret.get() && cmpToLimit == 1) ||
         (mActiveCaret == mSecondCaret.get() && cmpToLimit == -1)) {
       
@@ -1323,7 +1290,7 @@ AccessibleCaretManager::AdjustDragBoundary(const nsPoint& aPoint) const
   }
 
   if (GetCaretMode() == CaretMode::Selection &&
-      !sCaretsAllowDraggingAcrossOtherCaret) {
+      !StaticPrefs::layout_accessiblecaret_allow_dragging_across_other_caret()) {
     
     
     
