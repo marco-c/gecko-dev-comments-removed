@@ -34,6 +34,9 @@
 #include "js/TracingAPI.h"
 
 namespace mozilla {
+
+class PromiseJobRunnable;
+
 namespace dom {
 
 #define DOM_CALLBACKOBJECT_IID \
@@ -81,6 +84,7 @@ public:
     Init(aCallback, aCallbackGlobal, aAsyncStack, aIncumbentGlobal);
   }
 
+  
   
   
   
@@ -236,6 +240,16 @@ private:
     InitNoHold(aCallback, aCallbackGlobal, aCreationStack, aIncumbentGlobal);
     mozilla::HoldJSObjects(this);
   }
+
+  
+  
+  
+  
+  void Reset()
+  {
+    ClearJSReferences();
+  }
+  friend class mozilla::PromiseJobRunnable;
 
   inline void ClearJSReferences()
   {
