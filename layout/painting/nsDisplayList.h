@@ -6710,10 +6710,6 @@ class nsDisplayTransform : public nsDisplayHitTestInfoItem {
 
   void WriteDebugInfo(std::stringstream& aStream) override;
 
-  
-  
-  void SetNoExtendContext() { mNoExtendContext = true; }
-
   void DoUpdateBoundsPreserves3D(nsDisplayListBuilder* aBuilder) override {
     MOZ_ASSERT(mFrame->Combines3DTransformWithAncestors() ||
                IsTransformSeparator());
@@ -6799,8 +6795,6 @@ class nsDisplayTransform : public nsDisplayHitTestInfoItem {
   
   
   
-  
-  bool mNoExtendContext;
   
   
   bool mIsTransformSeparator;
