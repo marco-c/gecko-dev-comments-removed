@@ -13,29 +13,6 @@ function testFilePath(container, expectedFilePath) {
   is(filePath.previousElementSibling.textContent, "Location", "file path has label");
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 add_task(async function testWebExtension() {
   const addonId = "test-devtools-webextension-nobg@mozilla.org";
   const addonName = "test-devtools-webextension-nobg";
@@ -57,7 +34,6 @@ add_task(async function testWebExtension() {
     document,
     file: addonFile,
     name: addonName,
-    isWebExtension: true,
   });
 
   const container = document.querySelector(`[data-addon-id="${addonId}"]`);
@@ -95,7 +71,6 @@ add_task(async function testTemporaryWebExtension() {
     document,
     file: addonFile,
     name: addonName,
-    isWebExtension: true,
   });
 
   const addons =
@@ -138,7 +113,6 @@ add_task(async function testUnknownManifestProperty() {
     document,
     file: addonFile,
     name: addonName,
-    isWebExtension: true,
   });
 
   info("Wait until the addon appears in about:debugging");

@@ -12,34 +12,6 @@ function getRemoveButton(document, id) {
   return document.querySelector(`[data-addon-id="${id}"] .uninstall-button`);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 add_task(async function removeWebextension() {
   const addonID = "test-devtools-webextension@mozilla.org";
   const addonName = "test-devtools-webextension";
@@ -62,7 +34,6 @@ add_task(async function removeWebextension() {
     document,
     file: addonFile,
     name: addonName,
-    isWebExtension: true,
   });
 
   ok(getTargetEl(document, addonID), "add-on is shown");
@@ -81,6 +52,7 @@ add_task(async function onlyTempInstalledAddonsCanBeRemoved() {
   const { AboutDebugging } = window;
   await waitForInitialAddonList(document);
 
+  
   
   
   const onListUpdated = waitForNEvents(AboutDebugging, "addons-updated", 2);

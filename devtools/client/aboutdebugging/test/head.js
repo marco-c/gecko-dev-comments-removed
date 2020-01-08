@@ -166,7 +166,7 @@ function getTabList(document) {
     document.querySelector("#tabs.targets");
 }
 
-async function installAddon({document, path, file, name, isWebExtension}) {
+async function installAddon({document, path, file, name}) {
   
   const MockFilePicker = SpecialPowers.MockFilePicker;
   MockFilePicker.init(window);
@@ -177,32 +177,27 @@ async function installAddon({document, path, file, name, isWebExtension}) {
     MockFilePicker.setFiles([file]);
   }
 
-  let onAddonInstalled;
+  const onAddonInstalled = new Promise(done => {
+    Management.on("startup", function listener(event, extension) {
+      if (extension.name != name) {
+        return;
+      }
 
-  if (isWebExtension) {
-    onAddonInstalled = new Promise(done => {
-      Management.on("startup", function listener(event, extension) {
-        if (extension.name != name) {
-          return;
-        }
-
-        Management.off("startup", listener);
-        done();
-      });
+      Management.off("startup", listener);
+      done();
     });
-  } else {
-    
-    onAddonInstalled = new Promise(done => {
-      Services.obs.addObserver(function listener() {
-        Services.obs.removeObserver(listener, "test-devtools");
+  });
+  const AboutDebugging = document.defaultView.AboutDebugging;
 
-        done();
-      }, "test-devtools");
-    });
-  }
+  
+  
+  
+  const onListUpdated = waitForNEvents(AboutDebugging, "addons-updated", 2);
+
   
   document.getElementById("load-addon-from-file").click();
 
+  await onListUpdated;
   await onAddonInstalled;
   ok(true, "Addon installed and running its bootstrap.js file");
 
@@ -367,7 +362,6 @@ async function setupTestAboutDebuggingWebExtension(name, file) {
     document,
     file,
     name,
-    isWebExtension: true,
   });
 
   

@@ -96,10 +96,6 @@ class TempWebExt {
 
 
 
-
-
-
-
 add_task(async function reloadButtonRefreshesMetadata() {
   const { tab, document, window } = await openAboutDebugging("addons");
   const { AboutDebugging } = window;
@@ -121,6 +117,7 @@ add_task(async function reloadButtonRefreshesMetadata() {
 
   
   
+  
   let onListUpdated = waitForNEvents(AboutDebugging, "addons-updated", 2);
   const onInstalled = promiseAddonEvent("onInstalled");
   await AddonManager.installTemporaryAddon(tempExt.sourceDir);
@@ -135,6 +132,7 @@ add_task(async function reloadButtonRefreshesMetadata() {
   const newName = "Temporary web extension (updated)";
   tempExt.writeManifest(Object.assign({}, manifestBase, {name: newName}));
 
+  
   
   
   onListUpdated = waitForNEvents(AboutDebugging, "addons-updated", 2);
@@ -162,6 +160,7 @@ add_task(async function onlyTempInstalledAddonsCanBeReloaded() {
   const { AboutDebugging } = window;
   await waitForInitialAddonList(document);
 
+  
   
   
   const onListUpdated = waitForNEvents(AboutDebugging, "addons-updated", 2);
