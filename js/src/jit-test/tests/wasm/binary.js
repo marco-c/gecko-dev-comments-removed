@@ -283,6 +283,8 @@ var reservedMisc =
       
       0x08: true, 0x09: true, 0x0a: true, 0x0b: true, 0x0c: true, 0x0d: true, 0x0e: true,
       
+      0x0f: true, 0x10: true, 0x11: true, 0x12: true,
+      
       0x50: true, 0x51: true, 0x52: true, 0x53: true };
 
 for (let i = 0; i < 256; i++) {

@@ -24,9 +24,13 @@ new WebAssembly.Module(wasmTextToBinary(
     `(module
       (gc_feature_opt_in 1))`));
 
+new WebAssembly.Module(wasmTextToBinary(
+    `(module
+      (gc_feature_opt_in 1))`));
+
 assertErrorMessage(() => new WebAssembly.Module(wasmTextToBinary(
     `(module
-      (gc_feature_opt_in 2))`)),
+      (gc_feature_opt_in 3))`)),
                    WebAssembly.CompileError,
                    /unsupported version of the gc feature/);
 

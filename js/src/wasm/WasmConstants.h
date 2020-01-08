@@ -401,6 +401,12 @@ enum class MiscOp
     TableCopy                            = 0x0e,
 
     
+    TableGrow                            = 0x0f,
+    TableGet                             = 0x10,
+    TableSet                             = 0x11,
+    TableSize                            = 0x12,
+
+    
     StructNew                            = 0x50,
     StructGet                            = 0x51,
     StructSet                            = 0x52,

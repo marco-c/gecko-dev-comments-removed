@@ -931,6 +931,16 @@ DecodeFunctionBodyExprs(const ModuleEnvironment& env, const FuncType& funcType,
                                               &unusedSegIndex, &nothing, &nothing, &nothing));
               }
 #endif
+#ifdef ENABLE_WASM_GENERALIZED_TABLES
+              case uint16_t(MiscOp::TableGet):
+                CHECK(iter.readTableGet(&nothing));
+              case uint16_t(MiscOp::TableGrow):
+                CHECK(iter.readTableGrow(&nothing, &nothing));
+              case uint16_t(MiscOp::TableSet):
+                CHECK(iter.readTableSet(&nothing, &nothing));
+              case uint16_t(MiscOp::TableSize):
+                CHECK(iter.readTableSize());
+#endif
 #ifdef ENABLE_WASM_GC
               case uint16_t(MiscOp::StructNew): {
                 if (env.gcTypesEnabled() == HasGcTypes::False) {
@@ -1432,7 +1442,11 @@ DecodeGCFeatureOptInSection(Decoder& d, ModuleEnvironment* env)
     
     
 
-    if (version != 1) {
+    switch (version) {
+      case 1:
+      case 2:
+        break;
+      default:
         return d.fail("unsupported version of the gc feature");
     }
 

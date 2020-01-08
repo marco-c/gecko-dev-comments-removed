@@ -130,7 +130,7 @@ Table::trace(JSTracer* trc)
 void**
 Table::internalArray() const
 {
-    MOZ_ASSERT(!external_ && kind_ == TableKind::AnyFunction);
+    MOZ_ASSERT(!external_ && isFunction());
     return (void**)array_.get();
 }
 
@@ -167,7 +167,7 @@ Table::objectArray() const
 void
 Table::setAnyFunc(uint32_t index, void* code, const Instance* instance)
 {
-    MOZ_ASSERT(kind_ == TableKind::AnyFunction);
+    MOZ_ASSERT(isFunction());
 
     if (external_) {
         ExternalTableElem& elem = externalArray()[index];
@@ -281,9 +281,16 @@ Table::grow(uint32_t delta, JSContext* cx)
         }
         length_ = newLength.value();
     } else {
+        void** newArray = rt->pod_realloc(internalArray(), length_, newLength.value());
+        if (!newArray) {
+            return -1;
+        }
+        Unused << array_.release();
+        array_.reset((uint8_t*)newArray);
+
         
-        
-        MOZ_CRASH("Should not happen");
+        PodZero(newArray + length_, delta);
+        length_ = newLength.value();
     }
 
     for (InstanceSet::Range r = observers_.all(); !r.empty(); r.popFront()) {
