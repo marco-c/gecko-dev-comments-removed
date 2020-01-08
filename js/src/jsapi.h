@@ -3460,9 +3460,13 @@ extern JS_PUBLIC_API bool RejectPromise(JSContext* cx,
 
 
 
+
+
 extern JS_PUBLIC_API JSObject* CallOriginalPromiseThen(
-    JSContext* cx, JS::HandleObject promise, JS::HandleObject onResolve,
-    JS::HandleObject onReject);
+    JSContext* cx, JS::HandleObject promise, JS::HandleObject onFulfilled,
+    JS::HandleObject onRejected);
+
+
 
 
 
@@ -3477,8 +3481,8 @@ extern JS_PUBLIC_API JSObject* CallOriginalPromiseThen(
 
 extern JS_PUBLIC_API bool AddPromiseReactions(JSContext* cx,
                                               JS::HandleObject promise,
-                                              JS::HandleObject onResolve,
-                                              JS::HandleObject onReject);
+                                              JS::HandleObject onFulfilled,
+                                              JS::HandleObject onRejected);
 
 
 
