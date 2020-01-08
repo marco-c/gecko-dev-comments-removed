@@ -721,7 +721,7 @@ HTMLEditor::InsertTableRowsWithTransaction(int32_t aNumberOfRowsToInsert,
         continue;
       }
 
-      if (cellData.mFirst.mRow < cellData.mCurrent.mRow) {
+      if (cellData.IsSpannedFromOtherRow()) {
         
         
         
@@ -765,7 +765,7 @@ HTMLEditor::InsertTableRowsWithTransaction(int32_t aNumberOfRowsToInsert,
       }
 
       
-      if (!cellForRowParent && cellData.mFirst.mRow == cellData.mCurrent.mRow) {
+      if (!cellForRowParent && !cellData.IsSpannedFromOtherRow()) {
         cellForRowParent = std::move(cellData.mElement);
       }
     }
@@ -1695,7 +1695,7 @@ HTMLEditor::DeleteTableRowWithTransaction(Element& aTableElement,
 
     
     
-    if (cellData.mFirst.mRow < cellData.mCurrent.mRow) {
+    if (cellData.IsSpannedFromOtherRow()) {
       
       
       
@@ -1914,7 +1914,7 @@ HTMLEditor::SelectBlockOfCells(Element* aStartCell,
       
       
       if (!isSelected && cellData.mElement &&
-          cellData.mCurrent.mRow == cellData.mFirst.mRow &&
+          !cellData.IsSpannedFromOtherRow() &&
           cellData.mCurrent.mColumn == currentColIndex) {
         rv = AppendNodeToSelectionAsRange(cellData.mElement);
         if (NS_FAILED(rv)) {
@@ -1988,7 +1988,7 @@ HTMLEditor::SelectAllTableCells()
       
       
       if (cellData.mElement &&
-          cellData.mCurrent.mRow == cellData.mFirst.mRow &&
+          !cellData.IsSpannedFromOtherRow() &&
           cellData.mCurrent.mColumn == currentColIndex) {
         rv =  AppendNodeToSelectionAsRange(cellData.mElement);
         if (NS_FAILED(rv)) {
@@ -2081,7 +2081,7 @@ HTMLEditor::SelectTableRow()
     
     
     if (cellData.mElement &&
-        cellData.mFirst.mRow == cellData.mCurrent.mRow &&
+        !cellData.IsSpannedFromOtherRow() &&
         currentColIndex == cellData.mCurrent.mColumn) {
       rv = AppendNodeToSelectionAsRange(cellData.mElement);
       if (NS_FAILED(rv)) {
@@ -2169,7 +2169,7 @@ HTMLEditor::SelectTableColumn()
     
     
     if (cellData.mElement &&
-        cellData.mFirst.mRow == cellData.mCurrent.mRow &&
+        !cellData.IsSpannedFromOtherRow() &&
         currentColIndex == cellData.mCurrent.mColumn) {
       rv = AppendNodeToSelectionAsRange(cellData.mElement);
       if (NS_FAILED(rv)) {
@@ -2413,8 +2413,7 @@ HTMLEditor::SplitCellIntoRows(Element* aTable,
 
     
     if (cellDataAtInsertionPoint.mElement &&
-        cellDataAtInsertionPoint.mFirst.mRow ==
-          cellDataAtInsertionPoint.mCurrent.mRow) {
+        !cellDataAtInsertionPoint.IsSpannedFromOtherRow()) {
       if (!insertAfter) {
         
         
@@ -2728,7 +2727,7 @@ HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents)
             
             
             
-            NS_ASSERTION(cellData.mFirst.mRow == cellData.mCurrent.mRow,
+            NS_ASSERTION(!cellData.IsSpannedFromOtherRow(),
                          "JoinTableCells: StartRowIndex is in row above");
 
             if (actualColSpan2 > 1) {
@@ -2878,7 +2877,7 @@ HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents)
     
     
     rv = MergeCells(leftCellData.mElement, rightCellData.mElement,
-                    rightCellData.mFirst.mRow == rightCellData.mCurrent.mRow &&
+                    !rightCellData.IsSpannedFromOtherRow() &&
                     (effectiveRowSpan2 >= actualRowSpan));
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
@@ -3022,7 +3021,7 @@ HTMLEditor::FixBadRowSpan(Element* aTable,
     }
 
     if (rowSpan > 0 &&
-        cellData.mFirst.mRow == cellData.mCurrent.mRow &&
+        !cellData.IsSpannedFromOtherRow() &&
         (rowSpan < minRowSpan || minRowSpan == -1)) {
       minRowSpan = rowSpan;
     }
@@ -3051,7 +3050,7 @@ HTMLEditor::FixBadRowSpan(Element* aTable,
       
       
       if (cellData.mElement && rowSpan > 0 &&
-          cellData.mFirst.mRow == cellData.mCurrent.mRow &&
+          !cellData.IsSpannedFromOtherRow() &&
           startColIndex == cellData.mCurrent.mColumn) {
         nsresult rv = SetRowSpan(cellData.mElement, rowSpan-rowsReduced);
         if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -3142,7 +3141,7 @@ HTMLEditor::FixBadColSpan(Element* aTable,
       
       if (cellData.mElement && colSpan > 0 &&
           startColIndex == cellData.mCurrent.mColumn &&
-          cellData.mFirst.mRow == cellData.mCurrent.mRow) {
+          !cellData.IsSpannedFromOtherRow()) {
         nsresult rv = SetColSpan(cellData.mElement, colSpan-colsReduced);
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
@@ -3253,7 +3252,7 @@ HTMLEditor::NormalizeTable(Selection& aSelection,
 
       if (cellData.mElement) {
         
-        if (cellData.mFirst.mRow == cellData.mCurrent.mRow) {
+        if (!cellData.IsSpannedFromOtherRow()) {
           previousCellElementInRow = std::move(cellData.mElement);
         }
         continue;
@@ -3407,7 +3406,7 @@ HTMLEditor::GetNumberOfCellsInRow(Element& aTableElement,
 
     if (cellData.mElement) {
       
-      if (cellData.mFirst.mRow == cellData.mCurrent.mRow) {
+      if (!cellData.IsSpannedFromOtherRow()) {
         numberOfCells++;
       }
       
