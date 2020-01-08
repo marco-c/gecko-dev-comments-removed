@@ -59,6 +59,7 @@ add_task(async function test_contentscript_xrays() {
     
     
     let doc = window.frames[0].document;
+    
     doc.domain = doc.domain;
 
     browser.test.notifyPass("contentScriptAdoptionWithXrays");

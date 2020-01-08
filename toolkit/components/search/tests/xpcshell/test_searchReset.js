@@ -97,6 +97,7 @@ add_task(async function test_promptURLs() {
 
   
   
+  
   Services.search.currentEngine = Services.search.currentEngine;
   Assert.equal(url("foo", "searchbar"),
                "http://www.google.com/search?q=foo&ie=utf-8&oe=utf-8&aq=t");

@@ -72,6 +72,7 @@ function record(result) {
 function keepCurrentEngine() {
   
   
+  
   Services.search.currentEngine = Services.search.currentEngine;
   record(TELEMETRY_RESULT_ENUM.KEPT_CURRENT);
   savePref("declined");
