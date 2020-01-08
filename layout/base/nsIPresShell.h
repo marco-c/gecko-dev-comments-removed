@@ -1375,8 +1375,13 @@ class nsIPresShell : public nsStubDocumentObserver {
 
 
 
+  enum class ChangeOrigin : uint8_t {
+    eApz,
+    eRestore,
+    eOther,
+  };
   virtual nsresult SetResolutionAndScaleTo(float aResolution,
-                                           nsAtom* aOrigin) = 0;
+                                           ChangeOrigin aOrigin) = 0;
   float GetResolution() const { return mResolution.valueOr(1.0); }
   virtual float GetCumulativeResolution() = 0;
 
