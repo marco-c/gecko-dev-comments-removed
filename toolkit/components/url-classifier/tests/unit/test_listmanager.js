@@ -276,7 +276,7 @@ function run_test() {
       
       
       
-      run_next_test();
+      waitForUpdateSuccess(run_next_test);
       return;
     }
 
@@ -296,6 +296,13 @@ function run_test() {
 
   gHttpServV4.start(5555);
 
+  registerCleanupFunction(function() {
+    return (async function() {
+      await Promise.all([gHttpServ.stop(),
+                         gHttpServV4.stop()]);
+    })();
+  });
+
   run_next_test();
 }
 
@@ -314,16 +321,11 @@ function disableAllUpdates() {
   gListManager.disableUpdate(TEST_TABLE_DATA_V4.tableName);
 }
 
-
-
 function waitForUpdateSuccess(callback) {
-  let nextupdatetime = parseInt(Services.prefs.getCharPref(PREF_NEXTUPDATETIME));
-  info("nextupdatetime: " + nextupdatetime);
-  if (nextupdatetime !== 1) {
+  Services.obs.addObserver(function listener() {
+    Services.obs.removeObserver(listener, "safebrowsing-update-finished");
     callback();
-    return;
-  }
-  do_timeout(1000, waitForUpdateSuccess.bind(null, callback));
+  }, "safebrowsing-update-finished");
 }
 
 
