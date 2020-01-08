@@ -250,7 +250,7 @@ WorkletThread::WorkletThread()
   : nsThread(MakeNotNull<ThreadEventQueue<mozilla::EventQueue>*>(
                MakeUnique<mozilla::EventQueue>()),
              nsThread::NOT_MAIN_THREAD, kWorkletStackSize)
-  , mJSContext(nullptr)
+  , mExitLoop(false)
   , mIsTerminating(false)
 {
   MOZ_ASSERT(NS_IsMainThread());
@@ -260,7 +260,7 @@ WorkletThread::WorkletThread()
 WorkletThread::~WorkletThread()
 {
   
-  MOZ_ASSERT(!mJSContext);
+  MOZ_ASSERT(mExitLoop);
 }
 
 
@@ -343,13 +343,9 @@ WorkletThread::RunEventLoop(JSRuntime* aParentRuntime)
     return;
   }
 
-  mJSContext = context->Context();
-
-  while (mJSContext) {
+  while (!mExitLoop) {
     MOZ_ALWAYS_TRUE(NS_ProcessNextEvent(this,  true));
   }
-
-  MOZ_ASSERT(mJSContext == nullptr);
 }
 
 void
@@ -376,7 +372,7 @@ WorkletThread::TerminateInternal()
 {
   AssertIsOnWorkletThread();
 
-  mJSContext = nullptr;
+  mExitLoop = true;
 
   nsCOMPtr<nsIRunnable> runnable =
     NewRunnableMethod("WorkletThread::Shutdown", this,
