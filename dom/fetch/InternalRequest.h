@@ -476,6 +476,18 @@ public:
     }
   }
 
+  void
+  SetBodyLocalPath(PathString& aLocalPath)
+  {
+    mBodyLocalPath = aLocalPath;
+  }
+
+  const PathString&
+  BodyLocalPath() const
+  {
+    return mBodyLocalPath;
+  }
+
   
   already_AddRefed<InternalRequest>
   GetRequestConstructorCopy(nsIGlobalObject* aGlobal, ErrorResult& aRv) const;
@@ -570,6 +582,7 @@ private:
   
   nsTArray<nsCString> mURLList;
   RefPtr<InternalHeaders> mHeaders;
+  PathString mBodyLocalPath;
   nsCOMPtr<nsIInputStream> mBodyStream;
   int64_t mBodyLength;
 
