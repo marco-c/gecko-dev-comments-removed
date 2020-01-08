@@ -40,6 +40,9 @@ class ServiceWorkerRegistrationProxy final : public ServiceWorkerRegistrationLis
   void
   UpdateStateOnBGThread(const ServiceWorkerRegistrationDescriptor& aDescriptor);
 
+  void
+  FireUpdateFoundOnBGThread();
+
   
   void
   InitOnMainThread();
@@ -53,6 +56,9 @@ class ServiceWorkerRegistrationProxy final : public ServiceWorkerRegistrationLis
   
   void
   UpdateState(const ServiceWorkerRegistrationDescriptor& aDescriptor) override;
+
+  void
+  FireUpdateFound() override;
 
   void
   RegistrationRemoved() override;
