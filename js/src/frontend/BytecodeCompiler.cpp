@@ -211,7 +211,11 @@ BytecodeCompiler::canLazilyParse()
            !cx->realm()->behaviors().disableLazyParsing() &&
            !cx->realm()->behaviors().discardSource() &&
            !options.sourceIsLazy &&
-           !cx->lcovEnabled();
+           !cx->lcovEnabled() &&
+           
+           
+           
+           !mozilla::recordreplay::IsRecordingOrReplaying();
 }
 
 bool
