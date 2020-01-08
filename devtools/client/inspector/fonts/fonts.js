@@ -559,11 +559,11 @@ class FontInspector {
 
 
   logTelemetryProbesOnNewNode() {
-    const { fontData, fontEditor } = this.store.getState();
+    const { fontEditor } = this.store.getState();
     const { telemetry } = this.inspector;
 
     
-    const nbOfFontsRendered = fontData.fonts.length;
+    const nbOfFontsRendered = fontEditor.fonts.length;
     if (nbOfFontsRendered) {
       telemetry.getHistogramById(HISTOGRAM_N_FONTS_RENDERED).add(nbOfFontsRendered);
     }
@@ -897,10 +897,9 @@ class FontInspector {
     }
 
     let allFonts = [];
-    let fonts = [];
 
     if (!this.isSelectedNodeValid()) {
-      this.store.dispatch(updateFonts(fonts, allFonts));
+      this.store.dispatch(updateFonts(allFonts));
       return;
     }
 
@@ -909,39 +908,24 @@ class FontInspector {
 
     const options = {
       includePreviews: true,
+      
+      includeVariations: !!this.pageStyle.supportsFontVariations,
       previewText,
       previewFillStyle: getColor("body-color"),
     };
 
     
-    if (this.pageStyle.supportsFontVariations) {
-      options.includeVariations = true;
-    }
-
-    const node = this.inspector.selection.nodeFront;
-    fonts = await this.getFontsForNode(node, options);
     allFonts = await this.getAllFonts(options);
 
-    if (!fonts.length) {
-      
-      if (this.store) {
-        this.store.dispatch(updateFonts(fonts, allFonts));
-      }
-      return;
-    }
-
+    
     for (const font of [...allFonts]) {
       font.previewUrl = await font.preview.data.string();
     }
 
     
-    if (!this.document) {
-      return;
-    }
-
-    this.store.dispatch(updateFonts(fonts, allFonts));
-
-    this.inspector.emit("fontinspector-updated");
+    this.store && this.store.dispatch(updateFonts(allFonts));
+    
+    this.inspector && this.inspector.emit("fontinspector-updated");
   }
 
   

@@ -11,14 +11,12 @@ const {
 const INITIAL_FONT_DATA = {
   
   allFonts: [],
-  
-  fonts: [],
 };
 
 const reducers = {
 
-  [UPDATE_FONTS](_, { fonts, allFonts }) {
-    return { fonts, allFonts };
+  [UPDATE_FONTS](_, { allFonts }) {
+    return { allFonts };
   },
 
 };
