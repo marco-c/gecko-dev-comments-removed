@@ -320,6 +320,7 @@ void nsView::DoResetWidgetBounds(bool aMoveOnly,
   
   
   LayoutDeviceIntRect newBounds;
+  RefPtr<nsDeviceContext> dx = mViewManager->GetDeviceContext();
 
   nsWindowType type = widget->WindowType();
 
@@ -359,8 +360,7 @@ void nsView::DoResetWidgetBounds(bool aMoveOnly,
   
   
   
-
-  DesktopToLayoutDeviceScale scale = widget->GetDesktopToDeviceScaleByScreen();
+  DesktopToLayoutDeviceScale scale = dx->GetDesktopToDeviceScale();
 
   DesktopRect deskRect = newBounds / scale;
   if (changedPos) {
