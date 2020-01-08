@@ -155,7 +155,10 @@ nsSecureBrowserUIImpl::CheckForBlockedContent()
 
   
   
-  if (mState & STATE_IS_SECURE) {
+  
+  
+  if (((mState & STATE_IS_SECURE) != 0) ||
+      ((mState & STATE_IS_BROKEN) != 0)) {
     if (docShell->GetHasMixedActiveContentLoaded()) {
       mState |= STATE_IS_BROKEN | STATE_LOADED_MIXED_ACTIVE_CONTENT;
       mState &= ~STATE_IS_SECURE;
