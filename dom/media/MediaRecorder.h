@@ -78,9 +78,9 @@ public:
   
   DOMMediaStream* Stream() const { return mDOMStream; }
   
-  void GetMimeType(nsString &aMimeType);
-  
   RecordingState State() const { return mState; }
+  
+  void GetMimeType(nsString &aMimeType);
 
   static bool IsTypeSupported(GlobalObject& aGlobal, const nsAString& aType);
   static bool IsTypeSupported(const nsAString& aType);
@@ -106,12 +106,10 @@ public:
   typedef MozPromise<size_t, size_t, true> SizeOfPromise;
   RefPtr<SizeOfPromise> SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf);
   
+  IMPL_EVENT_HANDLER(dataavailable)
+  IMPL_EVENT_HANDLER(error)
   IMPL_EVENT_HANDLER(start)
   IMPL_EVENT_HANDLER(stop)
-  IMPL_EVENT_HANDLER(dataavailable)
-  IMPL_EVENT_HANDLER(pause)
-  IMPL_EVENT_HANDLER(resume)
-  IMPL_EVENT_HANDLER(error)
   IMPL_EVENT_HANDLER(warning)
 
   NS_DECL_NSIDOCUMENTACTIVITY
