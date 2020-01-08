@@ -1264,7 +1264,7 @@ KeyframeEffect::CanThrottle() const
     
     
     Maybe<uint64_t> generation = layers::AnimationInfo::GetGenerationFromFrame(
-        GetPrimaryFrame(), record.mLayerType);
+        GetPrimaryFrame(), record.mDisplayItemType);
     
     if (!generation || effectSet->GetAnimationGeneration() != *generation) {
       return false;
