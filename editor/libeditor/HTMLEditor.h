@@ -823,9 +823,15 @@ protected:
 
 
 
+
+
+
+
+
+
   already_AddRefed<nsINode>
   GetSelectedNode(Selection& aSelection,
-                  const nsAString& aTagName,
+                  const nsAtom* aTagName,
                   ErrorResult& aRv);
 
   
