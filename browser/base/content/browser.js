@@ -398,7 +398,7 @@ const gClickAndHoldListenersOnElement = {
       return;
 
     
-    aEvent.currentTarget.firstElementChild.hidden = true;
+    aEvent.currentTarget.firstChild.hidden = true;
 
     aEvent.currentTarget.addEventListener("mouseout", this);
     aEvent.currentTarget.addEventListener("mouseup", this);
@@ -425,7 +425,7 @@ const gClickAndHoldListenersOnElement = {
 
   _openMenu(aButton) {
     this._cancelHold(aButton);
-    aButton.firstElementChild.hidden = false;
+    aButton.firstChild.hidden = false;
     aButton.open = true;
   },
 
@@ -538,7 +538,8 @@ const gStoragePressureObserver = {
       accessKey: prefStrBundle.getString("spaceAlert.learnMoreButton.accesskey"),
       callback(notificationBar, button) {
         let learnMoreURL = Services.urlFormatter.formatURLPref("app.support.baseURL") + "storage-permissions";
-        gBrowser.selectedTab = gBrowser.addTab(learnMoreURL);
+        
+        gBrowser.selectedTab = gBrowser.addTrustedTab(learnMoreURL);
       }
     });
     if (usage < USAGE_THRESHOLD_BYTES) {
@@ -753,9 +754,9 @@ var gPopupBlockerObserver = {
   },
 
   onPopupHiding(aEvent) {
-    let item = aEvent.target.lastElementChild;
+    let item = aEvent.target.lastChild;
     while (item && item.id != "blockedPopupsSeparator") {
-      let next = item.previousElementSibling;
+      let next = item.previousSibling;
       item.remove();
       item = next;
     }
@@ -2767,16 +2768,16 @@ function UpdateUrlbarSearchSplitterState() {
 
   
   if (splitter &&
-      ((splitter.nextElementSibling == searchbar && splitter.previousElementSibling == urlbar) ||
-       (splitter.nextElementSibling == urlbar && splitter.previousElementSibling == searchbar))) {
+      ((splitter.nextSibling == searchbar && splitter.previousSibling == urlbar) ||
+       (splitter.nextSibling == urlbar && splitter.previousSibling == searchbar))) {
     return;
   }
 
   var ibefore = null;
   if (urlbar && searchbar) {
-    if (urlbar.nextElementSibling == searchbar)
+    if (urlbar.nextSibling == searchbar)
       ibefore = searchbar;
-    else if (searchbar.nextElementSibling == urlbar)
+    else if (searchbar.nextSibling == urlbar)
       ibefore = urlbar;
   }
 
@@ -3971,8 +3972,11 @@ const BrowserSearch = {
 
 
 
-  _loadSearch(searchText, useNewTab, purpose) {
+  _loadSearch(searchText, useNewTab, purpose, triggeringPrincipal) {
     let engine;
+    if (!triggeringPrincipal) {
+      throw new Error("Required argument triggeringPrincipal missing within _loadSearch");
+    }
 
     
     
@@ -3996,7 +4000,8 @@ const BrowserSearch = {
                useNewTab ? "tab" : "current",
                { postData: submission.postData,
                  inBackground,
-                 relatedToCurrent: true });
+                 relatedToCurrent: true,
+                 triggeringPrincipal });
 
     return engine;
   },
@@ -4007,22 +4012,8 @@ const BrowserSearch = {
 
 
 
-  loadSearch: function BrowserSearch_search(searchText, useNewTab, purpose) {
-    let engine = BrowserSearch._loadSearch(searchText, useNewTab, purpose);
-    if (!engine) {
-      return null;
-    }
-    return engine.name;
-  },
-
-  
-
-
-
-
-
-  loadSearchFromContext(terms) {
-    let engine = BrowserSearch._loadSearch(terms, true, "contextmenu");
+  loadSearchFromContext(terms, triggeringPrincipal) {
+    let engine = BrowserSearch._loadSearch(terms, true, "contextmenu", triggeringPrincipal);
     if (engine) {
       BrowserSearch.recordSearchInTelemetry(engine, "contextmenu");
     }
@@ -4120,7 +4111,7 @@ function FillHistoryMenu(aParent) {
   }
 
   
-  let children = aParent.children;
+  let children = aParent.childNodes;
   for (var i = children.length - 1; i >= 0; --i) {
     if (children[i].hasAttribute("index"))
       aParent.removeChild(children[i]);
@@ -4204,7 +4195,7 @@ function FillHistoryMenu(aParent) {
     if (!initial) {
       let existingLength = children.length;
       while (existingIndex < existingLength) {
-        aParent.removeChild(aParent.lastElementChild);
+        aParent.removeChild(aParent.lastChild);
         existingIndex++;
       }
     }
@@ -5511,15 +5502,15 @@ function onViewToolbarsPopupShowing(aEvent, aInsertPoint) {
     return;
 
   
-  for (var i = popup.children.length - 1; i >= 0; --i) {
-    var deadItem = popup.children[i];
+  for (var i = popup.childNodes.length - 1; i >= 0; --i) {
+    var deadItem = popup.childNodes[i];
     if (deadItem.hasAttribute("toolbarId"))
       popup.removeChild(deadItem);
   }
 
-  var firstMenuItem = aInsertPoint || popup.firstElementChild;
+  var firstMenuItem = aInsertPoint || popup.firstChild;
 
-  let toolbarNodes = gNavToolbox.children;
+  let toolbarNodes = gNavToolbox.childNodes;
 
   for (let toolbar of toolbarNodes) {
     if (!toolbar.hasAttribute("toolbarname")) {
@@ -5555,7 +5546,7 @@ function onViewToolbarsPopupShowing(aEvent, aInsertPoint) {
   let toolbarItem = popup.triggerNode;
 
   if (toolbarItem && toolbarItem.localName == "toolbarpaletteitem") {
-    toolbarItem = toolbarItem.firstElementChild;
+    toolbarItem = toolbarItem.firstChild;
   } else if (toolbarItem && toolbarItem.localName != "toolbar") {
     while (toolbarItem && toolbarItem.parentNode) {
       let parent = toolbarItem.parentNode;
@@ -6239,7 +6230,7 @@ function getUnwrappedTriggerNode(popup) {
   
   let {triggerNode} = popup;
   if (triggerNode && gCustomizeMode.isWrappedToolbarItem(triggerNode)) {
-    return triggerNode.firstElementChild;
+    return triggerNode.firstChild;
   }
   return triggerNode;
 }
@@ -6336,11 +6327,11 @@ var gPageStyleMenu = {
 
   fillPopup(menuPopup) {
     let styleSheetInfo = this._getStyleSheetInfo(gBrowser.selectedBrowser);
-    var noStyle = menuPopup.firstElementChild;
-    var persistentOnly = noStyle.nextElementSibling;
-    var sep = persistentOnly.nextElementSibling;
-    while (sep.nextElementSibling)
-      menuPopup.removeChild(sep.nextElementSibling);
+    var noStyle = menuPopup.firstChild;
+    var persistentOnly = noStyle.nextSibling;
+    var sep = persistentOnly.nextSibling;
+    while (sep.nextSibling)
+      menuPopup.removeChild(sep.nextSibling);
 
     let styleSheets = styleSheetInfo.filteredStyleSheets;
     var currentStyleSheets = {};
@@ -7097,7 +7088,7 @@ function BrowserOpenAddonsMgr(aView) {
 }
 
 function BeginRecordExecution() {
-  gBrowser.selectedTab = gBrowser.addTab("about:blank", { recordExecution: "*" });
+  gBrowser.selectedTab = gBrowser.addWebTab("about:blank", { recordExecution: "*" });
 }
 
 function SaveRecordedExecution() {
@@ -7120,7 +7111,7 @@ function BeginReplayExecution() {
   fp.init(window, null, Ci.nsIFilePicker.modeOpen);
   fp.open(rv => {
     if (rv == Ci.nsIFilePicker.returnOK || rv == Ci.nsIFilePicker.returnReplace) {
-      gBrowser.selectedTab = gBrowser.addTab(null, { replayExecution: fp.file.path });
+      gBrowser.selectedTab = gBrowser.addWebTab(null, { replayExecution: fp.file.path });
     }
   });
 }
@@ -7389,7 +7380,8 @@ const gAccessibilityServiceIndicator = {
          type === "click") {
       let a11yServicesSupportURL =
         Services.urlFormatter.formatURLPref("accessibility.support.url");
-      gBrowser.selectedTab = gBrowser.addTab(a11yServicesSupportURL);
+      
+      gBrowser.selectedTab = gBrowser.addTrustedTab(a11yServicesSupportURL);
       Services.telemetry.scalarSet("a11y.indicator_acted_on", true);
     }
   },
@@ -8076,7 +8068,7 @@ TabModalPromptBox.prototype = {
     const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
     let newPrompt = document.createElementNS(XUL_NS, "tabmodalprompt");
     let browser = this.browser;
-    browser.parentNode.insertBefore(newPrompt, browser.nextElementSibling);
+    browser.parentNode.insertBefore(newPrompt, browser.nextSibling);
     browser.setAttribute("tabmodalPromptShowing", true);
 
     newPrompt.clientTop; 

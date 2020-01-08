@@ -285,7 +285,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
    
   openAboutDebugging(gBrowser, hash) {
     const url = "about:debugging" + (hash ? "#" + hash : "");
-    gBrowser.selectedTab = gBrowser.addTab(url);
+    gBrowser.selectedTab = gBrowser.addTrustedTab(url);
   },
 
   
@@ -293,7 +293,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
    
   openConnectScreen(gBrowser) {
-    gBrowser.selectedTab = gBrowser.addTab("chrome://devtools/content/framework/connect/connect.xhtml");
+    gBrowser.selectedTab = gBrowser.addTrustedTab("chrome://devtools/content/framework/connect/connect.xhtml");
   },
 
   

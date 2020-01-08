@@ -527,18 +527,8 @@ this.tabs = class extends ExtensionAPI {
             }
           }).then(window => {
             let url;
+            let principal = context.principal;
 
-            if (createProperties.url !== null) {
-              url = context.uri.resolve(createProperties.url);
-
-              if (!context.checkLoadURL(url, {dontReportErrors: true})) {
-                return Promise.reject({message: `Illegal URL: ${url}`});
-              }
-
-              if (createProperties.openInReaderMode) {
-                url = `about:reader?url=${encodeURIComponent(url)}`;
-              }
-            }
 
             if (createProperties.cookieStoreId && !extension.hasPermission("cookies")) {
               return Promise.reject({message: `No permission for cookieStoreId: ${createProperties.cookieStoreId}`});
@@ -569,6 +559,19 @@ this.tabs = class extends ExtensionAPI {
               }
             }
 
+            if (createProperties.url !== null) {
+              url = context.uri.resolve(createProperties.url);
+
+              if (!context.checkLoadURL(url, {dontReportErrors: true})) {
+                return Promise.reject({message: `Illegal URL: ${url}`});
+              }
+
+              if (createProperties.openInReaderMode) {
+                url = `about:reader?url=${encodeURIComponent(url)}`;
+              }
+            } else {
+              url = window.BROWSER_NEW_TAB_URL;
+            }
             
             
             
@@ -578,8 +581,11 @@ this.tabs = class extends ExtensionAPI {
               
               
               options.disallowInheritPrincipal = true;
-            } else {
-              options.triggeringPrincipal = context.principal;
+              
+              principal = Services.scriptSecurityManager.createCodebasePrincipal(Services.io.newURI(url), {
+                userContextId: options.userContextId,
+                privateBrowsingId: PrivateBrowsingUtils.isBrowserPrivate(window.gBrowser) ? 1 : 0,
+              });
             }
 
             tabListener.initTabReady();
@@ -618,13 +624,14 @@ this.tabs = class extends ExtensionAPI {
               return Promise.reject({message: `Title may only be set for discarded tabs.`});
             }
 
-            let nativeTab = window.gBrowser.addTab(url || window.BROWSER_NEW_TAB_URL, options);
+            options.triggeringPrincipal = principal;
+            let nativeTab = window.gBrowser.addTab(url, options);
             if (createProperties.discarded) {
               SessionStore.setTabState(nativeTab, {
                 entries: [{
                   url: url,
                   title: options.title,
-                  triggeringPrincipal_base64: Utils.serializePrincipal(context.principal),
+                  triggeringPrincipal_base64: Utils.serializePrincipal(principal),
                 }],
               });
             }
