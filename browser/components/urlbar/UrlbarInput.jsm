@@ -214,6 +214,16 @@ class UrlbarInput {
     
     
 
+    
+    
+    let result = this.view.selectedResult;
+    if (result) {
+      this.pickResult(event, result);
+      return;
+    }
+
+    
+    
     let url = this.value;
     if (!url) {
       return;
@@ -267,6 +277,8 @@ class UrlbarInput {
 
   pickResult(event, result) {
     this.setValueFromResult(result);
+
+    this.view.close();
 
     
     

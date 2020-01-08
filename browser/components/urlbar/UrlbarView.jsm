@@ -58,6 +58,19 @@ class UrlbarView {
 
 
 
+  get selectedResult() {
+    if (!this.isOpen) {
+      return null;
+    }
+
+    let resultIndex = this._selected.getAttribute("resultIndex");
+    return this._queryContext.results[resultIndex];
+  }
+
+  
+
+
+
 
 
 
@@ -303,7 +316,6 @@ class UrlbarView {
     if (result) {
       this.input.pickResult(event, result);
     }
-    this.close();
   }
 
   _on_overflow(event) {
