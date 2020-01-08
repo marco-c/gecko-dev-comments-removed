@@ -562,6 +562,7 @@ SetTreeOwnerAndChromeEventHandlerOnDocshellTree(nsIDocShellTreeItem* aItem,
   }
 }
 
+#if defined(MOZ_DIAGNOSTIC_ASSERT_ENABLED)
 static bool
 CheckDocShellType(mozilla::dom::Element* aOwnerContent,
                   nsIDocShellTreeItem* aDocShell,
@@ -586,6 +587,7 @@ CheckDocShellType(mozilla::dom::Element* aOwnerContent,
 
   return parent && parent->ItemType() == aDocShell->ItemType();
 }
+#endif 
 
 
 
