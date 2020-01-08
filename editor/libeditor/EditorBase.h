@@ -715,6 +715,16 @@ protected:
     const RefPtr<Selection>& SelectionRefPtr() const { return mSelection; }
     EditAction GetEditAction() const { return mEditAction; }
 
+    void SetTopLevelEditSubAction(EditSubAction aEditSubAction)
+    {
+      mTopLevelEditSubAction = aEditSubAction;
+    }
+    EditSubAction GetTopLevelEditSubAction() const
+    {
+      MOZ_ASSERT(CanHandle());
+      return mTopLevelEditSubAction;
+    }
+
   private:
     EditorBase& mEditorBase;
     RefPtr<Selection> mSelection;
@@ -723,6 +733,7 @@ protected:
     
     AutoEditActionDataSetter* mParentData;
     EditAction mEditAction;
+    EditSubAction mTopLevelEditSubAction;
 
     AutoEditActionDataSetter() = delete;
     AutoEditActionDataSetter(const AutoEditActionDataSetter& aOther) = delete;
@@ -765,6 +776,23 @@ protected:
   {
     return mEditActionData ? mEditActionData->GetEditAction() :
                              EditAction::eNone;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  EditSubAction GetTopLevelEditSubAction() const
+  {
+    return mEditActionData ? mEditActionData->GetTopLevelEditSubAction() :
+                             EditSubAction::eNone;
   }
 
   
@@ -2080,7 +2108,7 @@ protected:
       
       
       
-      if (!mEditorBase.mTopLevelEditSubAction) {
+      if (!mEditorBase.GetTopLevelEditSubAction()) {
         mEditorBase.OnStartToHandleTopLevelEditSubAction(aEditSubAction,
                                                          aDirection);
       } else {
@@ -2218,8 +2246,6 @@ protected:
 
   
   int32_t mPlaceholderBatch;
-  
-  EditSubAction mTopLevelEditSubAction;
 
   
   EDirection mDirection;
