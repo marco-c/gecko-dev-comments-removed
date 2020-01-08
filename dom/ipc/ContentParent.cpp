@@ -1304,7 +1304,10 @@ void ContentParent::Init() {
 
   
   
-  Preferences::AddStrongObserver(this, "");
+  for (const Pref& pref : mQueuedPrefs) {
+    Unused << NS_WARN_IF(!SendPreferenceUpdate(pref));
+  }
+  mQueuedPrefs.Clear();
 
   if (obs) {
     nsAutoString cpId;
@@ -2132,6 +2135,12 @@ void ContentParent::LaunchSubprocessInternal(
 
   
   memcpy(static_cast<char*>(shm.memory()), prefs.get(), prefs.Length());
+
+  
+  
+  
+  
+  Preferences::AddStrongObserver(this, "");
 
   
   
@@ -3041,12 +3050,11 @@ ContentParent::Observe(nsISupports* aSubject, const char* aTopic,
     NS_ASSERTION(!mSubprocess, "Close should have nulled mSubprocess");
   }
 
-  if (!IsAlive() || !mSubprocess) return NS_OK;
+  if (IsDead() || !mSubprocess) {
+    return NS_OK;
+  }
 
-  
-  if (!strcmp(aTopic, "memory-pressure")) {
-    Unused << SendFlushMemory(nsDependentString(aData));
-  } else if (!strcmp(aTopic, "nsPref:changed")) {
+  if (!strcmp(aTopic, "nsPref:changed")) {
     
 #define BLACKLIST_ENTRY(s) \
   { s, (sizeof(s) / sizeof(char16_t)) - 1 }
@@ -3079,9 +3087,24 @@ ContentParent::Observe(nsISupports* aSubject, const char* aTopic,
 
     Pref pref(strData,  false, null_t(), null_t());
     Preferences::GetPreference(&pref);
-    if (!SendPreferenceUpdate(pref)) {
-      return NS_ERROR_NOT_AVAILABLE;
+    if (IsAlive()) {
+      MOZ_ASSERT(mQueuedPrefs.IsEmpty());
+      if (!SendPreferenceUpdate(pref)) {
+        return NS_ERROR_NOT_AVAILABLE;
+      }
+    } else {
+      MOZ_ASSERT(IsLaunching());
+      mQueuedPrefs.AppendElement(pref);
     }
+  }
+
+  if (!IsAlive()) {
+    return NS_OK;
+  }
+
+  
+  if (!strcmp(aTopic, "memory-pressure")) {
+    Unused << SendFlushMemory(nsDependentString(aData));
   } else if (!strcmp(aTopic, NS_IPC_IOSERVICE_SET_OFFLINE_TOPIC)) {
     NS_ConvertUTF16toUTF8 dataStr(aData);
     const char* offline = dataStr.get();

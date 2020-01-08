@@ -364,6 +364,7 @@ class ContentParent final : public PContentParent,
     return mLifecycleState == LifecycleState::LAUNCHING;
   }
   bool IsAlive() const override;
+  bool IsDead() const { return mLifecycleState == LifecycleState::DEAD; }
 
   virtual bool IsForBrowser() const override { return mIsForBrowser; }
   virtual bool IsForJSPlugin() const override {
@@ -1323,6 +1324,11 @@ class ContentParent final : public PContentParent,
   nsTArray<nsCString> mBlobURLs;
 
   UniquePtr<mozilla::ipc::CrashReporterHost> mCrashReporter;
+
+  
+  
+  
+  nsTArray<Pref> mQueuedPrefs;
 
   static uint64_t sNextTabParentId;
   static nsDataHashtable<nsUint64HashKey, TabParent*> sNextTabParents;
