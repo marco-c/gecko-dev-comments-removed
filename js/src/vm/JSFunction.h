@@ -578,6 +578,19 @@ class JSFunction : public js::NativeObject
     
     
     
+    JSFunction* maybeCanonicalFunction() const {
+        if (hasScript()) {
+            return nonLazyScript()->functionNonDelazifying();
+        }
+        if (isInterpretedLazy() && !isSelfHostedBuiltin()) {
+            return lazyScript()->functionNonDelazifying();
+        }
+        return nullptr;
+    }
+
+    
+    
+    
     
     
     

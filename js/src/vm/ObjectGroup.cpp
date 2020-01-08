@@ -521,14 +521,7 @@ ObjectGroup::defaultNewGroup(JSContext* cx, const Class* clasp,
         if (associated->is<JSFunction>()) {
 
             
-            JSFunction* fun = &associated->as<JSFunction>();
-            if (fun->hasScript()) {
-                associated = fun->nonLazyScript()->functionNonDelazifying();
-            } else if (fun->isInterpretedLazy() && !fun->isSelfHostedBuiltin()) {
-                associated = fun->lazyScript()->functionNonDelazifying();
-            } else {
-                associated = nullptr;
-            }
+            associated = associated->as<JSFunction>().maybeCanonicalFunction();
 
             
             
