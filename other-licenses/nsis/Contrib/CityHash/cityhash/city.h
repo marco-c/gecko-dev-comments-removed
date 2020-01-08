@@ -50,7 +50,6 @@ typedef uint8_t uint8;
 typedef uint32_t uint32;
 typedef uint64_t uint64;
 
-#ifdef __cplusplus
 
 
 
@@ -66,8 +65,6 @@ inline uint64 Uint128Low64(const uint128& x) { return x.first(); }
 inline uint64 Uint128High64(const uint128& x) { return x.second(); }
 #endif
 
-extern "C" {
-#endif
 
 
 uint64 CityHash64(const char *buf, size_t len);
@@ -81,8 +78,6 @@ uint64 CityHash64WithSeed(const char *buf, size_t len, uint64 seed);
 uint64 CityHash64WithSeeds(const char *buf, size_t len,
                            uint64 seed0, uint64 seed1);
 
-#ifdef __cplusplus
-}
 
 uint128 CityHash128(const char *s, size_t len);
 
@@ -102,6 +97,5 @@ inline uint64 Hash128to64(const uint128& x) {
   b *= kMul;
   return b;
 }
-#endif
 
-#endif
+#endif  
