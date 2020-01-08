@@ -272,25 +272,34 @@ class UrlbarValueFormatter {
       return false;
     }
 
-    
-    
-    
-    
-    
     let popup = this.urlbarInput.popup;
     if (!popup) {
       
       return false;
     }
+
+    
+    
+    
+    
+    
+    if ((popup.selectedIndex < 0 &&
+         popup._previousSelectedIndex != 0) ||
+        popup.selectedIndex > 0 ||
+        popup.oneOffSearchButtons.selectedButton) {
+      return false;
+    }
     let heuristicItem = popup.richlistbox.children[0] || null;
-    let alias =
-      (popup.selectedIndex == 0 ||
-       (popup.selectedIndex < 0 &&
-        popup._previousSelectedIndex == 0)) &&
-      !popup.oneOffSearchButtons.selectedButton &&
-      heuristicItem &&
-      heuristicItem.getAttribute("actiontype") == "searchengine" &&
-      this.urlbarInput._parseActionUrl(heuristicItem.getAttribute("url")).params.alias;
+    if (!heuristicItem ||
+        heuristicItem.getAttribute("actiontype") != "searchengine") {
+      return false;
+    }
+    let url = heuristicItem.getAttribute("url");
+    let action = this.urlbarInput._parseActionUrl(url);
+    if (!action) {
+      return false;
+    }
+    let alias = action.params.alias || null;
     if (!alias) {
       return false;
     }
@@ -298,6 +307,15 @@ class UrlbarValueFormatter {
     let editor = this.urlbarInput.editor;
     let textNode = editor.rootElement.firstChild;
     let value = textNode.textContent;
+
+    
+    
+    
+    
+    
+    if (decodeURIComponent(action.params.input) != value) {
+      return false;
+    }
 
     let index = value.indexOf(alias);
     if (index < 0) {
