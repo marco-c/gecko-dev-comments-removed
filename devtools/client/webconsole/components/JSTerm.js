@@ -71,6 +71,8 @@ class JSTerm extends Component {
       
       hud: PropTypes.object.isRequired,
       
+      serviceContainer: PropTypes.object.isRequired,
+      
       onPaste: PropTypes.func,
       codeMirrorEnabled: PropTypes.bool,
       
@@ -97,6 +99,7 @@ class JSTerm extends Component {
     this._keyPress = this._keyPress.bind(this);
     this._inputEventHandler = this._inputEventHandler.bind(this);
     this._blurEventHandler = this._blurEventHandler.bind(this);
+    this.onContextMenu = this.onContextMenu.bind(this);
 
     this.SELECTED_FRAME = -1;
 
@@ -1467,6 +1470,17 @@ class JSTerm extends Component {
       .paddingLeft.replace(/[^0-9.]/g, "") - 4;
   }
 
+  onContextMenu(e) {
+    
+    
+    
+    
+    if (this.props.hud.isBrowserConsole &&
+        Services.prefs.getBoolPref("devtools.browserconsole.html")) {
+      this.props.serviceContainer.openEditContextMenu(e);
+    }
+  }
+
   destroy() {
     this.clearCompletion();
 
@@ -1509,6 +1523,7 @@ class JSTerm extends Component {
         key: "jsterm-container",
         style: {direction: "ltr"},
         "aria-live": "off",
+        onContextMenu: this.onContextMenu,
         ref: node => {
           this.node = node;
         },
@@ -1545,6 +1560,7 @@ class JSTerm extends Component {
           },
           onPaste: onPaste,
           onDrop: onPaste,
+          onContextMenu: this.onContextMenu,
         })
       )
     );
