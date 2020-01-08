@@ -88,10 +88,12 @@ class OutputStreamDriver : public FrameCaptureListener {
  protected:
   virtual ~OutputStreamDriver();
   class StreamListener;
+  class TrackListener;
 
  private:
   RefPtr<SourceMediaStream> mSourceStream;
   RefPtr<StreamListener> mStreamListener;
+  RefPtr<TrackListener> mTrackListener;
 };
 
 class CanvasCaptureMediaStream : public DOMMediaStream {
