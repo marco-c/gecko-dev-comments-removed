@@ -85,6 +85,7 @@ class LCovRealm
 {
   public:
     LCovRealm();
+    ~LCovRealm();
 
     
     void collectCodeCoverageInfo(JS::Realm* realm, JSScript* topLevel, const char* name);
