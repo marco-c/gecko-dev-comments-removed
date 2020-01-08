@@ -44,7 +44,7 @@ function getScope(scope, selectedFrame, frameScopes, why, scopeIndex) {
       vars = vars.concat((0, _utils.getFramePopVariables)(why, key));
       let thisDesc_ = selectedFrame.this;
 
-      if ("this" in bindings) {
+      if (bindings && "this" in bindings) {
         
         
         
