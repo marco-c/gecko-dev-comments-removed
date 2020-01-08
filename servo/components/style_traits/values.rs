@@ -432,7 +432,7 @@ impl_to_css_for_predefined_type!(::cssparser::RGBA);
 impl_to_css_for_predefined_type!(::cssparser::Color);
 impl_to_css_for_predefined_type!(::cssparser::UnicodeRange);
 
-#[macro_export]
+
 macro_rules! define_css_keyword_enum {
     (pub enum $name:ident { $($variant:ident = $css:expr,)+ }) => {
         #[allow(missing_docs)]
