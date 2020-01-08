@@ -121,8 +121,17 @@ SuggestAutoComplete.prototype = {
 
     
     
+    
+    
+    
+    
+    
+    var privacyMode = (searchParam.split("|")[1] == "private");
+
+    
+    
     if (Services.search.isInitialized) {
-      this._triggerSearch(searchString, formHistorySearchParam, listener);
+      this._triggerSearch(searchString, formHistorySearchParam, listener, privacyMode);
       return;
     }
 
@@ -131,16 +140,17 @@ SuggestAutoComplete.prototype = {
         Cu.reportError("Could not initialize search service, bailing out: " + aResult);
         return;
       }
-      this._triggerSearch(searchString, formHistorySearchParam, listener);
+      this._triggerSearch(searchString, formHistorySearchParam, listener, privacyMode);
     });
   },
 
   
 
 
-  _triggerSearch(searchString, searchParam, listener) {
+  _triggerSearch(searchString, searchParam, listener, privacyMode) {
     this._listener = listener;
     this._suggestionController.fetch(searchString,
+                                     privacyMode,
                                      Services.search.defaultEngine);
   },
 

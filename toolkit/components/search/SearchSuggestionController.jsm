@@ -46,8 +46,6 @@ function SearchSuggestionController(callback = null) {
 }
 
 this.SearchSuggestionController.prototype = {
-  FIRST_PARTY_DOMAIN: "search.suggestions.8c845959-a33d-4787-953c-5d55a0afd56e.mozilla",
-
   
 
 
@@ -107,9 +105,7 @@ this.SearchSuggestionController.prototype = {
 
 
 
-
-
-  fetch(searchTerm, engine, userContextId = 0, privateMode = true) {
+  fetch(searchTerm, privateMode, engine, userContextId) {
     
     
     
@@ -118,6 +114,9 @@ this.SearchSuggestionController.prototype = {
 
     if (!Services.search.isInitialized) {
       throw new Error("Search not initialized yet (how did you get here?)");
+    }
+    if (typeof privateMode === "undefined") {
+      throw new Error("The privateMode argument is required to avoid unintentional privacy leaks");
     }
     if (!(engine instanceof Ci.nsISearchEngine)) {
       throw new Error("Invalid search engine");
@@ -232,12 +231,8 @@ this.SearchSuggestionController.prototype = {
     let method = (submission.postData ? "POST" : "GET");
     this._request.open(method, submission.uri.spec, true);
 
-    this._request.setOriginAttributes({
-      userContextId,
-      privateBrowsingId: privateMode ? 1 : 0,
-      
-      firstPartyDomain: this.FIRST_PARTY_DOMAIN,
-    });
+    this._request.setOriginAttributes({userContextId,
+                                       privateBrowsingId: privateMode ? 1 : 0});
 
     this._request.mozBackgroundRequest = true; 
 
