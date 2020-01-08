@@ -536,7 +536,6 @@
     
 
 
-
     function test(func, name, properties)
     {
         var test_name = name ? name : test_environment.next_default_test_name();
@@ -566,31 +565,42 @@
 
     function promise_test(func, name, properties) {
         var test = async_test(name, properties);
+        test._is_promise_test = true;
+
         
         if (!tests.promise_tests) {
             tests.promise_tests = Promise.resolve();
         }
         tests.promise_tests = tests.promise_tests.then(function() {
-            var donePromise = new Promise(function(resolve) {
-                test._add_cleanup(resolve);
-            });
-            var promise = test.step(func, test, test);
-            test.step(function() {
-                assert_not_equals(promise, undefined);
-            });
-            Promise.resolve(promise).then(
-                    function() {
+            return new Promise(function(resolve) {
+                var promise = test.step(func, test, test);
+
+                test.step(function() {
+                    assert_not_equals(promise, undefined);
+                });
+
+                
+                
+                
+                
+                
+                
+                
+                add_test_done_callback(test, resolve);
+
+                Promise.resolve(promise)
+                    .catch(test.step_func(
+                        function(value) {
+                            if (value instanceof AssertionError) {
+                                throw value;
+                            }
+                            assert(false, "promise_test", null,
+                                   "Unhandled rejection with value: ${value}", {value:value});
+                        }))
+                    .then(function() {
                         test.done();
-                    })
-                .catch(test.step_func(
-                    function(value) {
-                        if (value instanceof AssertionError) {
-                            throw value;
-                        }
-                        assert(false, "promise_test", null,
-                               "Unhandled rejection with value: ${value}", {value:value});
-                    }));
-            return donePromise;
+                    });
+                });
         });
     }
 
@@ -723,6 +733,8 @@
             tests.set_file_is_test();
         }
         if (tests.file_is_test) {
+            
+            
             tests.tests[0].done();
         }
         tests.end_wait();
@@ -1451,7 +1463,7 @@
         }
         this.name = name;
 
-        this.phase = tests.phase === tests.phases.ABORTED ?
+        this.phase = tests.is_aborted ?
             this.phases.COMPLETE : this.phases.INITIAL;
 
         this.status = this.NOTRUN;
@@ -1470,9 +1482,11 @@
         this.stack = null;
 
         this.steps = [];
+        this._is_promise_test = false;
 
         this.cleanup_callbacks = [];
         this._user_defined_cleanup_count = 0;
+        this._done_callbacks = [];
 
         tests.push(this);
     }
@@ -1490,7 +1504,8 @@
         INITIAL:0,
         STARTED:1,
         HAS_RESULT:2,
-        COMPLETE:3
+        CLEANING:3,
+        COMPLETE:4
     };
 
     Test.prototype.structured_clone = function()
@@ -1646,9 +1661,13 @@
 
     Test.prototype.force_timeout = Test.prototype.timeout;
 
+    
+
+
+
     Test.prototype.done = function()
     {
-        if (this.phase == this.phases.COMPLETE) {
+        if (this.phase >= this.phases.CLEANING) {
             return;
         }
 
@@ -1656,14 +1675,22 @@
             this.set_status(this.PASS, null);
         }
 
-        this.phase = this.phases.COMPLETE;
-
         if (global_scope.clearTimeout) {
             clearTimeout(this.timeout_id);
         }
-        tests.result(this);
+
         this.cleanup();
     };
+
+    function add_test_done_callback(test, callback)
+    {
+        if (test.phase === test.phases.COMPLETE) {
+            callback();
+            return;
+        }
+
+        test._done_callbacks.push(callback);
+    }
 
     
 
@@ -1672,29 +1699,108 @@
 
     Test.prototype.cleanup = function() {
         var error_count = 0;
-        var total;
+        var bad_value_count = 0;
+        function on_error() {
+            error_count += 1;
+            
+            
+            tests.abort();
+        }
+        var this_obj = this;
+        var results = [];
+
+        this.phase = this.phases.CLEANING;
 
         forEach(this.cleanup_callbacks,
                 function(cleanup_callback) {
+                    var result;
+
                     try {
-                        cleanup_callback();
+                        result = cleanup_callback();
                     } catch (e) {
-                        
-                        
-                        tests.phase = tests.phases.ABORTED;
-                        error_count += 1;
+                        on_error();
+                        return;
                     }
+
+                    if (!is_valid_cleanup_result(this_obj, result)) {
+                        bad_value_count += 1;
+                        
+                        
+                        tests.abort();
+                    }
+
+                    results.push(result);
                 });
 
-        if (error_count > 0) {
-            total = this._user_defined_cleanup_count;
-            tests.status.status = tests.status.ERROR;
-            tests.status.message = "Test named '" + this.name +
-                "' specified " + total + " 'cleanup' function" +
-                (total > 1 ? "s" : "") + ", and " + error_count + " failed.";
-            tests.status.stack = null;
+        if (!this._is_promise_test) {
+            cleanup_done(this_obj, error_count, bad_value_count);
+        } else {
+            all_async(results,
+                      function(result, done) {
+                          if (result && typeof result.then === "function") {
+                              result
+                                  .then(null, on_error)
+                                  .then(done);
+                          } else {
+                              done();
+                          }
+                      },
+                      function() {
+                          cleanup_done(this_obj, error_count, bad_value_count);
+                      });
         }
     };
+
+    
+
+
+
+
+    function is_valid_cleanup_result(test, result) {
+        if (result === undefined) {
+            return true;
+        }
+
+        if (test._is_promise_test) {
+            return result && typeof result.then === "function";
+        }
+
+        return false;
+    }
+
+    function cleanup_done(test, error_count, bad_value_count) {
+        if (error_count || bad_value_count) {
+            var total = test._user_defined_cleanup_count;
+
+            tests.status.status = tests.status.ERROR;
+            tests.status.message = "Test named '" + test.name +
+                "' specified " + total +
+                " 'cleanup' function" + (total > 1 ? "s" : "");
+
+            if (error_count) {
+                tests.status.message += ", and " + error_count + " failed";
+            }
+
+            if (bad_value_count) {
+                var type = test._is_promise_test ?
+                   "non-thenable" : "non-undefined";
+                tests.status.message += ", and " + bad_value_count +
+                    " returned a " + type + " value";
+            }
+
+            tests.status.message += ".";
+
+            tests.status.stack = null;
+        }
+
+        test.phase = test.phases.COMPLETE;
+        tests.result(test);
+        forEach(test._done_callbacks,
+                function(callback) {
+                    callback();
+                });
+        test._done_callbacks.length = 0;
+    }
 
     
 
@@ -1712,6 +1818,7 @@
         this.index = null;
         this.phase = this.phases.INITIAL;
         this.update_state_from(clone);
+        this._done_callbacks = [];
         tests.push(this);
     }
 
@@ -1720,6 +1827,15 @@
         Object.keys(this).forEach(
                 (function(key) {
                     var value = this[key];
+                    
+                    
+                    
+                    
+                    
+                    
+                    if (key === '_done_callbacks' ) {
+                        return;
+                    }
 
                     if (typeof value === "object" && value !== null) {
                         clone[key] = merge({}, value);
@@ -1731,7 +1847,19 @@
         return clone;
     };
 
-    RemoteTest.prototype.cleanup = function() {};
+    
+
+
+
+
+
+
+
+
+
+    RemoteTest.prototype.cleanup = function() {
+        this.done();
+    };
     RemoteTest.prototype.phases = Test.prototype.phases;
     RemoteTest.prototype.update_state_from = function(clone) {
         this.status = clone.status;
@@ -1743,6 +1871,11 @@
     };
     RemoteTest.prototype.done = function() {
         this.phase = this.phases.COMPLETE;
+
+        forEach(this._done_callbacks,
+                function(callback) {
+                    callback();
+                });
     }
 
     
@@ -1774,6 +1907,11 @@
         this.message_target = message_target;
         this.message_handler = function(message) {
             var passesFilter = !message_filter || message_filter(message);
+            
+            
+            
+            
+            
             if (this_obj.running && message.data && passesFilter &&
                 (message.data.type in this_obj.message_handlers)) {
                 this_obj.message_handlers[message.data.type].call(this_obj, message.data);
@@ -1794,13 +1932,9 @@
         var filename = (error.filename ? " " + error.filename: "");
         
         
-        this.remote_done({
-            status: {
-                status: tests.status.ERROR,
-                message: "Error in remote" + filename + ": " + message,
-                stack: error.stack
-            }
-        });
+        tests.set_status(tests.status.ERROR,
+                         "Error in remote" + filename + ": " + message,
+                         error.stack);
 
         if (error.preventDefault) {
             error.preventDefault();
@@ -1827,10 +1961,9 @@
     RemoteContext.prototype.remote_done = function(data) {
         if (tests.status.status === null &&
             data.status.status !== data.status.OK) {
-            tests.status.status = data.status.status;
-            tests.status.message = data.status.message;
-            tests.status.stack = data.status.stack;
+            tests.set_status(data.status.status, data.status.message, data.status.sack);
         }
+
         this.message_target.removeEventListener("message", this.message_handler);
         this.running = false;
 
@@ -1902,8 +2035,7 @@
             SETUP:1,
             HAVE_TESTS:2,
             HAVE_RESULTS:3,
-            COMPLETE:4,
-            ABORTED:5
+            COMPLETE:4
         };
         this.phase = this.phases.INITIAL;
 
@@ -1993,6 +2125,13 @@
         async_test();
     };
 
+    Tests.prototype.set_status = function(status, message, stack)
+    {
+        this.status.status = status;
+        this.status.message = message;
+        this.status.stack = stack ? stack : null;
+    };
+
     Tests.prototype.set_timeout = function() {
         if (global_scope.clearTimeout) {
             var this_obj = this;
@@ -2006,9 +2145,35 @@
     };
 
     Tests.prototype.timeout = function() {
+        var test_in_cleanup = null;
+
         if (this.status.status === null) {
-            this.status.status = this.status.TIMEOUT;
+            forEach(this.tests,
+                    function(test) {
+                        
+                        
+                        if (test.phase === test.phases.CLEANING) {
+                            test_in_cleanup = test;
+                        }
+
+                        test.phase = test.phases.COMPLETE;
+                    });
+
+            
+            
+            
+            
+            
+            if (test_in_cleanup) {
+                this.status.status = this.status.ERROR;
+                this.status.message = "Timeout while running cleanup for " +
+                    "test named \"" + test_in_cleanup.name + "\".";
+                tests.status.stack = null;
+            } else {
+                this.status.status = this.status.TIMEOUT;
+            }
         }
+
         this.complete();
     };
 
@@ -2039,11 +2204,10 @@
     };
 
     Tests.prototype.all_done = function() {
-        return this.phase === this.phases.ABORTED ||
-            (this.tests.length > 0 && test_environment.all_loaded &&
-                this.num_pending === 0 && !this.wait_for_finish &&
+        return this.tests.length > 0 && test_environment.all_loaded &&
+                (this.num_pending === 0 || this.is_aborted) && !this.wait_for_finish &&
                 !this.processing_callbacks &&
-                !this.pending_remotes.some(function(w) { return w.running; }));
+                !this.pending_remotes.some(function(w) { return w.running; });
     };
 
     Tests.prototype.start = function() {
@@ -2062,10 +2226,11 @@
 
     Tests.prototype.result = function(test)
     {
-        if (this.phase > this.phases.HAVE_RESULTS) {
-            return;
+        
+        
+        if (this.phase <= this.phases.HAVE_RESULTS) {
+            this.phase = this.phases.HAVE_RESULTS;
         }
-        this.phase = this.phases.HAVE_RESULTS;
         this.num_pending--;
         this.notify_result(test);
     };
@@ -2088,19 +2253,54 @@
         if (this.phase === this.phases.COMPLETE) {
             return;
         }
-        this.phase = this.phases.COMPLETE;
         var this_obj = this;
-        this.tests.forEach(
-            function(x)
-            {
-                if (x.phase < x.phases.COMPLETE) {
-                    this_obj.notify_result(x);
-                    x.cleanup();
-                    x.phase = x.phases.COMPLETE;
-                }
-            }
-        );
-        this.notify_complete();
+        var all_complete = function() {
+            this_obj.phase = this_obj.phases.COMPLETE;
+            this_obj.notify_complete();
+        };
+        var incomplete = filter(this.tests,
+                                function(test) {
+                                    return test.phase < test.phases.COMPLETE;
+                                });
+
+        
+
+
+
+        if (incomplete.length === 0) {
+            all_complete();
+            return;
+        }
+
+        all_async(incomplete,
+                  function(test, testDone)
+                  {
+                      if (test.phase === test.phases.INITIAL) {
+                          test.phase = test.phases.COMPLETE;
+                          testDone();
+                      } else {
+                          add_test_done_callback(test, testDone);
+                          test.cleanup();
+                      }
+                  },
+                  all_complete);
+    };
+
+    
+
+
+
+
+    Tests.prototype.abort = function() {
+        this.status.status = this.status.ERROR;
+        this.is_aborted = true;
+
+        forEach(this.tests,
+                function(test) {
+                    if (test.phase === test.phases.INITIAL) {
+                        test.phase = test.phases.COMPLETE;
+                    }
+                });
     };
 
     
@@ -2866,6 +3066,57 @@
         }
     }
 
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    function all_async(values, iter_callback, done_callback)
+    {
+        var remaining = values.length;
+
+        if (remaining === 0) {
+            done_callback();
+        }
+
+        forEach(values,
+                function(element) {
+                    var invoked = false;
+                    var elDone = function() {
+                        if (invoked) {
+                            return;
+                        }
+
+                        invoked = true;
+                        remaining -= 1;
+
+                        if (remaining === 0) {
+                            done_callback();
+                        }
+                    };
+
+                    iter_callback(element, elDone);
+                });
+    }
+
     function merge(a,b)
     {
         var rv = {};
@@ -3008,6 +3259,8 @@
                 }
                 test.set_status(test.FAIL, e.message, stack);
                 test.phase = test.phases.HAS_RESULT;
+                
+                
                 test.done();
             } else if (!tests.allow_uncaught_exception) {
                 tests.status.status = tests.status.ERROR;
