@@ -1693,8 +1693,7 @@ static Result<Pref*, nsresult>
 pref_LookupForModify(const char* aPrefName,
                      const std::function<bool(const PrefWrapper&)>& aCheckFn)
 {
-  Maybe<PrefWrapper> wrapper =
-    pref_Lookup(aPrefName,  true);
+  Maybe<PrefWrapper> wrapper = pref_Lookup(aPrefName,  true);
   if (wrapper.isNothing()) {
     return Err(NS_ERROR_INVALID_ARG);
   }
@@ -1757,8 +1756,8 @@ pref_SetPref(const char* aPrefName,
   bool valueChanged = false;
   nsresult rv;
   if (aKind == PrefValueKind::Default) {
-    rv =
-      pref->SetDefaultValue(aType, aValue, aIsSticky, aIsLocked, &valueChanged);
+    rv = pref->SetDefaultValue(
+      aType, aValue, aIsSticky, aIsLocked, &valueChanged);
   } else {
     MOZ_ASSERT(!aIsLocked); 
     rv = pref->SetUserValue(aType, aValue, aFromInit, &valueChanged);
@@ -2896,8 +2895,6 @@ nsPrefBranch::DeleteBranch(const char* aStartingAt)
     nsDependentCString name(pref->Name());
     if (StringBeginsWith(name, branchName) || name.Equals(branchNameNoDot)) {
       iter.Remove();
-      
-      gCallbackPref = nullptr;
     }
   }
 
@@ -4781,41 +4778,6 @@ pref_ReadPrefFromJar(nsZipArchive* aJarReader, const char* aName)
 
 
 
-
-template<typename T>
-static T
-GetPref(const char* aName, T aDefaultValue);
-
-template<>
-bool
-GetPref<bool>(const char* aName, bool aDefaultValue)
-{
-  return Preferences::GetBool(aName, aDefaultValue);
-}
-
-template<>
-int32_t
-GetPref<int32_t>(const char* aName, int32_t aDefaultValue)
-{
-  return Preferences::GetInt(aName, aDefaultValue);
-}
-
-template<>
-uint32_t
-GetPref<uint32_t>(const char* aName, uint32_t aDefaultValue)
-{
-  return Preferences::GetInt(aName, aDefaultValue);
-}
-
-template<>
-float MOZ_MAYBE_UNUSED
-GetPref<float>(const char* aName, float aDefaultValue)
-{
-  return Preferences::GetFloat(aName, aDefaultValue);
-}
-
-
-
  Result<Ok, const char*>
 Preferences::InitInitialObjects(bool aIsStartup)
 {
@@ -4841,21 +4803,6 @@ Preferences::InitInitialObjects(bool aIsStartup)
         NotifyCallbacks(pref.Name(), PrefWrapper(pref));
       }
     }
-
-#ifdef DEBUG
-    
-    
-    
-    
-
-#define PREF(name, cpp_type, value)
-#define VARCACHE_PREF(name, id, cpp_type, value)                               \
-  MOZ_ASSERT(GetPref<StripAtomic<cpp_type>>(name, value) == StaticPrefs::id(), \
-             "Incorrect cached value for " name);
-#include "mozilla/StaticPrefList.h"
-#undef PREF
-#undef VARCACHE_PREF
-#endif
 
     return Ok();
   }
