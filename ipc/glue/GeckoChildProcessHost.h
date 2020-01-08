@@ -72,8 +72,6 @@ public:
   bool SyncLaunch(StringVector aExtraOpts=StringVector(),
                   int32_t timeoutMs=0);
 
-  virtual bool PerformAsyncLaunch(StringVector aExtraOpts=StringVector());
-
   virtual void OnProcessHandleReady(ProcessHandle aProcessHandle);
   virtual void OnProcessLaunchError();
   virtual void OnChannelConnected(int32_t peer_pid) override;
@@ -181,9 +179,12 @@ private:
   DISALLOW_EVIL_CONSTRUCTORS(GeckoChildProcessHost);
 
   
-  bool PerformAsyncLaunchInternal(std::vector<std::string>& aExtraOpts);
+  
+  bool PerformAsyncLaunch(StringVector aExtraOpts);
 
-  bool RunPerformAsyncLaunch(StringVector aExtraOpts=StringVector());
+  
+  
+  bool RunPerformAsyncLaunch(StringVector aExtraOpts);
 
   enum class BinaryPathType {
     Self,

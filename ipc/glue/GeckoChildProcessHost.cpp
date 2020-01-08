@@ -499,55 +499,6 @@ GeckoChildProcessHost::GetChildLogName(const char* origLogName,
 }
 
 bool
-GeckoChildProcessHost::PerformAsyncLaunch(std::vector<std::string> aExtraOpts)
-{
-#ifdef MOZ_GECKO_PROFILER
-  AutoSetProfilerEnvVarsForChildProcess profilerEnvironment;
-#endif
-
-  
-  
-  ++mChildCounter;
-
-  const char* origNSPRLogName = PR_GetEnv("NSPR_LOG_FILE");
-  const char* origMozLogName = PR_GetEnv("MOZ_LOG_FILE");
-
-  if (origNSPRLogName) {
-    nsAutoCString nsprLogName;
-    GetChildLogName(origNSPRLogName, nsprLogName);
-    mLaunchOptions->env_map[ENVIRONMENT_LITERAL("NSPR_LOG_FILE")]
-        = ENVIRONMENT_STRING(nsprLogName);
-  }
-  if (origMozLogName) {
-    nsAutoCString mozLogName;
-    GetChildLogName(origMozLogName, mozLogName);
-    mLaunchOptions->env_map[ENVIRONMENT_LITERAL("MOZ_LOG_FILE")]
-        = ENVIRONMENT_STRING(mozLogName);
-  }
-
-  
-  nsAutoCString childRustLog(PR_GetEnv("RUST_LOG_CHILD"));
-  if (!childRustLog.IsEmpty()) {
-    mLaunchOptions->env_map[ENVIRONMENT_LITERAL("RUST_LOG")]
-        = ENVIRONMENT_STRING(childRustLog);
-  }
-
-#if defined(XP_LINUX) && defined(MOZ_CONTENT_SANDBOX)
-  if (!mTmpDirName.IsEmpty()) {
-    
-    
-    mLaunchOptions->env_map[ENVIRONMENT_LITERAL("TMPDIR")] =
-      ENVIRONMENT_STRING(mTmpDirName);
-    
-    mLaunchOptions->env_map[ENVIRONMENT_LITERAL("MESA_GLSL_CACHE_DIR")] =
-      ENVIRONMENT_STRING(mTmpDirName);
-  }
-#endif
-
-  return PerformAsyncLaunchInternal(aExtraOpts);
-}
-
-bool
 GeckoChildProcessHost::RunPerformAsyncLaunch(std::vector<std::string> aExtraOpts)
 {
   InitializeChannel();
@@ -626,8 +577,51 @@ AddAppDirToCommandLine(std::vector<std::string>& aCmdLine)
 }
 
 bool
-GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExtraOpts)
+GeckoChildProcessHost::PerformAsyncLaunch(std::vector<std::string> aExtraOpts)
 {
+#ifdef MOZ_GECKO_PROFILER
+  AutoSetProfilerEnvVarsForChildProcess profilerEnvironment;
+#endif
+
+  
+  
+  ++mChildCounter;
+
+  const char* origNSPRLogName = PR_GetEnv("NSPR_LOG_FILE");
+  const char* origMozLogName = PR_GetEnv("MOZ_LOG_FILE");
+
+  if (origNSPRLogName) {
+    nsAutoCString nsprLogName;
+    GetChildLogName(origNSPRLogName, nsprLogName);
+    mLaunchOptions->env_map[ENVIRONMENT_LITERAL("NSPR_LOG_FILE")]
+        = ENVIRONMENT_STRING(nsprLogName);
+  }
+  if (origMozLogName) {
+    nsAutoCString mozLogName;
+    GetChildLogName(origMozLogName, mozLogName);
+    mLaunchOptions->env_map[ENVIRONMENT_LITERAL("MOZ_LOG_FILE")]
+        = ENVIRONMENT_STRING(mozLogName);
+  }
+
+  
+  nsAutoCString childRustLog(PR_GetEnv("RUST_LOG_CHILD"));
+  if (!childRustLog.IsEmpty()) {
+    mLaunchOptions->env_map[ENVIRONMENT_LITERAL("RUST_LOG")]
+        = ENVIRONMENT_STRING(childRustLog);
+  }
+
+#if defined(XP_LINUX) && defined(MOZ_CONTENT_SANDBOX)
+  if (!mTmpDirName.IsEmpty()) {
+    
+    
+    mLaunchOptions->env_map[ENVIRONMENT_LITERAL("TMPDIR")] =
+      ENVIRONMENT_STRING(mTmpDirName);
+    
+    mLaunchOptions->env_map[ENVIRONMENT_LITERAL("MESA_GLSL_CACHE_DIR")] =
+      ENVIRONMENT_STRING(mTmpDirName);
+  }
+#endif
+
   
   
   if (!GetChannel()) {
