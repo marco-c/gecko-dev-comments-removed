@@ -105,8 +105,6 @@ class WorkerPrivate;
 
 
 
-
-
 class PromiseWorkerProxy : public PromiseNativeHandler
                          , public StructuredCloneHolderBase
 {

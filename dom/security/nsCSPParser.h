@@ -149,9 +149,6 @@ class nsCSPParser {
 
 
 
-
-
-
     const char16_t*    mCurChar;
     const char16_t*    mEndChar;
     nsString           mCurValue;

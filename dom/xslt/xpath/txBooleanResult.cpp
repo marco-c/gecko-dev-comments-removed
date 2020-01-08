@@ -13,7 +13,6 @@
 
 
 
-
 BooleanResult::BooleanResult(bool boolean)
     : txAExprResult(nullptr)
 {
