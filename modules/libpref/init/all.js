@@ -1406,6 +1406,8 @@ pref("privacy.trackingprotection.enabled",  false);
 
 pref("privacy.trackingprotection.pbmode.enabled",  true);
 
+pref("privacy.trackingprotection.annotate_channels",  true);
+
 pref("privacy.firstparty.isolate",                        false);
 
 
@@ -1425,6 +1427,13 @@ pref("privacy.reduceTimerPrecision", true);
 pref("privacy.resistFingerprinting.reduceTimerPrecision.microseconds", 1000);
 
 pref("privacy.resistFingerprinting.reduceTimerPrecision.jitter", true);
+
+
+#ifdef NIGHTLY_BUILD
+pref("privacy.trackingprotection.lower_network_priority", true);
+#else
+pref("privacy.trackingprotection.lower_network_priority", false);
+#endif
 
 pref("dom.event.contextmenu.enabled",       true);
 pref("dom.event.clipboardevents.enabled",   true);
@@ -2656,6 +2665,7 @@ pref("csp.overrule_about_uris_without_csp_whitelist", false);
 pref("csp.skip_about_page_has_csp_assert", false);
 
 pref("security.allow_eval_with_system_principal", true);
+pref("security.uris_using_eval_with_system_principal", "autocomplete.xml,redux.js,react-redux.js,content-task.js,content-task.js,tree.xml,dialog.xml,preferencesbindings.js,wizard.xml,lodash.js,jszip.js,ajv-4.1.1.js,updates.js,setup,jsol.js");
 #endif
 
 
