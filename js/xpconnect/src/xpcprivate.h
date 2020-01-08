@@ -2944,11 +2944,6 @@ public:
     
     
     
-    bool isAddonCompartment;
-
-    
-    
-    
     
     
     
