@@ -2437,7 +2437,16 @@ var SessionStoreInternal = {
 
     
     
-    newTab.setAttribute("busy", "true");
+    
+    let uriObj = aTab.linkedBrowser.currentURI;
+    if (!uriObj || (uriObj && !aWindow.gBrowser.isLocalAboutURI(uriObj))) {
+      newTab.setAttribute("busy", "true");
+    }
+
+    
+    
+    
+    aWindow.gBrowser.setDefaultIcon(newTab, uriObj);
 
     
     let tabState = TabState.collect(aTab, TAB_CUSTOM_VALUES.get(aTab));
@@ -2774,7 +2783,14 @@ var SessionStoreInternal = {
 
     
     if ("image" in tabData) {
-      win.gBrowser.setIcon(tab, tabData.image, undefined, tabData.iconLoadingPrincipal);
+      
+      
+      
+      
+      
+      if (!activePageData || (activePageData && activePageData.url != "about:blank")) {
+        win.gBrowser.setIcon(tab, tabData.image, undefined, tabData.iconLoadingPrincipal);
+      }
       TabStateCache.update(browser, { image: null, iconLoadingPrincipal: null });
     }
   },
@@ -3014,9 +3030,22 @@ var SessionStoreInternal = {
       return;
     }
 
+    let uriObj;
+    try {
+      uriObj = Services.io.newURI(loadArguments.uri);
+    } catch (e) {}
+
     
     
-    tab.setAttribute("busy", "true");
+    
+    if (!uriObj || (uriObj && !window.gBrowser.isLocalAboutURI(uriObj))) {
+      tab.setAttribute("busy", "true");
+    }
+
+    
+    
+    
+    window.gBrowser.setDefaultIcon(tab, uriObj);
 
     
     TabStateFlusher.flush(browser).then(() => {

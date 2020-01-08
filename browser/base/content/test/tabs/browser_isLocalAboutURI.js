@@ -12,9 +12,9 @@ add_task(function test_URI() {
   const check = (spec, expect, description) => {
     const URI = Services.io.newURI(spec);
     try {
-      is(gBrowser._isLocalAboutURI(URI), expect, description);
+      is(gBrowser.isLocalAboutURI(URI), expect, description);
     } catch (ex) {
-      ok(false, "_isLocalAboutURI should not throw");
+      ok(false, "isLocalAboutURI should not throw");
     }
   };
   check("https://www.mozilla.org/", false, "https is not about");
@@ -30,7 +30,7 @@ add_task(function test_URI_with_resolved() {
   const check = (spec, resolvedSpec, expect, description) => {
     const URI = Services.io.newURI(spec);
     const resolvedURI = Services.io.newURI(resolvedSpec);
-    is(gBrowser._isLocalAboutURI(URI, resolvedURI), expect, description);
+    is(gBrowser.isLocalAboutURI(URI, resolvedURI), expect, description);
   };
   check("about:newtab",
     "jar:file:///Applications/Firefox.app/Contents/Resources/browser/omni.ja!/chrome/browser/res/activity-stream/prerendered/en-US/activity-stream.html",
