@@ -683,24 +683,29 @@ static bool ReadableStream_getReader(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
+  RootedValue optionsVal(cx, args.get(0));
+  if (optionsVal.isUndefined()) {
+    JSObject* emptyObj = NewBuiltinClassInstance<PlainObject>(cx);
+    if (!emptyObj) {
+      return false;
+    }
+    optionsVal.setObject(*emptyObj);
+  }
+  RootedValue modeVal(cx);
+  if (!GetProperty(cx, optionsVal, cx->names().mode, &modeVal)) {
+    return false;
+  }
+
+  
   Rooted<ReadableStream*> unwrappedStream(
       cx, UnwrapAndTypeCheckThis<ReadableStream>(cx, args, "getReader"));
   if (!unwrappedStream) {
     return false;
   }
 
+  
+  
   RootedObject reader(cx);
-
-  
-  
-  RootedValue modeVal(cx);
-  HandleValue optionsVal = args.get(0);
-  if (!optionsVal.isUndefined()) {
-    if (!GetProperty(cx, optionsVal, cx->names().mode, &modeVal)) {
-      return false;
-    }
-  }
-
   if (modeVal.isUndefined()) {
     reader = CreateReadableStreamDefaultReader(cx, unwrappedStream,
                                                ForAuthorCodeBool::Yes);
