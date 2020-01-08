@@ -1828,6 +1828,15 @@ bool BuildTextRunsScanner::ContinueTextRunAcrossFrames(nsTextFrame* aFrame1,
   }
 
   ComputedStyle* sc1 = aFrame1->Style();
+  ComputedStyle* sc2 = aFrame2->Style();
+
+  
+  
+  WritingMode wm(sc1);
+  if (wm != WritingMode(sc2)) {
+    return false;
+  }
+
   const nsStyleText* textStyle1 = sc1->StyleText();
   
   
@@ -1835,8 +1844,78 @@ bool BuildTextRunsScanner::ContinueTextRunAcrossFrames(nsTextFrame* aFrame1,
   
   
   
-  if (textStyle1->NewlineIsSignificant(aFrame1) && HasTerminalNewline(aFrame1))
+  if (textStyle1->NewlineIsSignificant(aFrame1) &&
+      HasTerminalNewline(aFrame1)) {
     return false;
+  }
+
+  if (aFrame1->GetParent()->GetContent() !=
+      aFrame2->GetParent()->GetContent()) {
+    
+    
+    auto PreventCrossBoundaryShaping = [](const nsIFrame* aFrame,
+                                          const nsIFrame* aAncestor,
+                                          Side aSide) {
+      while (aFrame != aAncestor) {
+        ComputedStyle* ctx = aFrame->Style();
+        
+        
+        
+        
+        
+        
+        
+        
+        const nsStyleCoord& margin = ctx->StyleMargin()->mMargin.Get(aSide);
+        if (!margin.ConvertsToLength() || margin.ToLength() != 0) {
+          return true;
+        }
+        const nsStyleCoord& padding = ctx->StylePadding()->mPadding.Get(aSide);
+        if (!padding.ConvertsToLength() || padding.ToLength() != 0) {
+          return true;
+        }
+        if (ctx->StyleBorder()->GetComputedBorderWidth(aSide) != 0) {
+          return true;
+        }
+
+        
+        const nsStyleCoord& coord = ctx->StyleDisplay()->mVerticalAlign;
+        if (coord.GetUnit() != eStyleUnit_Enumerated ||
+            coord.GetIntValue() != NS_STYLE_VERTICAL_ALIGN_BASELINE) {
+          return true;
+        }
+
+        
+        const uint8_t unicodeBidi = ctx->StyleTextReset()->mUnicodeBidi;
+        if (unicodeBidi == NS_STYLE_UNICODE_BIDI_ISOLATE ||
+            unicodeBidi == NS_STYLE_UNICODE_BIDI_ISOLATE_OVERRIDE) {
+          return true;
+        }
+
+        aFrame = aFrame->GetParent();
+      }
+      return false;
+    };
+
+    const nsIFrame* ancestor =
+      nsLayoutUtils::FindNearestCommonAncestorFrame(aFrame1, aFrame2);
+    MOZ_ASSERT(ancestor);
+
+    
+    
+    Side side1 = wm.PhysicalSide(eLogicalSideIEnd);
+    Side side2 = wm.PhysicalSide(eLogicalSideIStart);
+    
+    
+    if (IS_LEVEL_RTL(aFrame1->GetEmbeddingLevel()) == wm.IsBidiLTR()) {
+      Swap(side1, side2);
+    }
+
+    if (PreventCrossBoundaryShaping(aFrame1, ancestor, side1) ||
+        PreventCrossBoundaryShaping(aFrame2, ancestor, side2)) {
+      return false;
+    }
+  }
 
   if (aFrame1->GetContent() == aFrame2->GetContent() &&
       aFrame1->GetNextInFlow() != aFrame2) {
@@ -1849,7 +1928,10 @@ bool BuildTextRunsScanner::ContinueTextRunAcrossFrames(nsTextFrame* aFrame1,
     return false;
   }
 
-  ComputedStyle* sc2 = aFrame2->Style();
+  if (sc1 == sc2) {
+    return true;
+  }
+
   const nsStyleText* textStyle2 = sc2->StyleText();
   if (sc1 == sc2) return true;
 
