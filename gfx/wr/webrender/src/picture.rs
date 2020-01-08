@@ -83,6 +83,9 @@ pub const TILE_SIZE_WIDTH: i32 = 1024;
 pub const TILE_SIZE_HEIGHT: i32 = 256;
 
 
+const MAX_PICTURE_SIZE: f32 = 65536.0;
+
+
 #[derive(Debug)]
 pub struct TileTransformInfo {
     
@@ -410,6 +413,13 @@ impl TileCache {
     ) {
         
         
+        
+        if self.tile_rect.size.is_empty_or_negative() {
+            self.needs_update = true;
+        }
+
+        
+        
         let world_mapper = SpaceMapper::new_with_target(
             ROOT_SPATIAL_NODE_INDEX,
             surface_spatial_node_index,
@@ -675,6 +685,7 @@ impl TileCache {
     pub fn update_prim_dependencies(
         &mut self,
         prim_instance: &PrimitiveInstance,
+        prim_list: &PrimitiveList,
         surface_spatial_node_index: SpatialNodeIndex,
         clip_scroll_tree: &ClipScrollTree,
         resources: &FrameResources,
@@ -685,6 +696,32 @@ impl TileCache {
         image_instances: &ImageInstanceStorage,
     ) {
         if !self.needs_update {
+            return;
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        let mut in_visible_cluster = false;
+        for ci in prim_instance.cluster_range.start .. prim_instance.cluster_range.end {
+            
+            let cluster_index = prim_list.prim_cluster_map[ci as usize];
+
+            
+            let cluster = &prim_list.clusters[cluster_index.0 as usize];
+            in_visible_cluster |= cluster.is_visible;
+
+            
+            
+            if cluster.is_visible {
+                break;
+            }
+        }
+        if !in_visible_cluster {
             return;
         }
 
@@ -2017,6 +2054,7 @@ impl PicturePrimitive {
         for prim_instance in &self.prim_list.prim_instances {
             tile_cache.update_prim_dependencies(
                 prim_instance,
+                &self.prim_list,
                 surface_spatial_node_index,
                 &frame_context.clip_scroll_tree,
                 resources,
@@ -2118,8 +2156,27 @@ impl PicturePrimitive {
         
         
         
-        if let Some(ref raster_config) = self.raster_config {
+        if let Some(ref mut raster_config) = self.raster_config {
             let surface_rect = state.current_surface().rect;
+
+            
+            
+            
+            
+            
+            
+            if let Some(ref mut tile_cache) = self.tile_cache {
+                if surface_rect.size.width > MAX_PICTURE_SIZE ||
+                   surface_rect.size.height > MAX_PICTURE_SIZE ||
+                   surface_rect.size.width <= 0.0 ||
+                   surface_rect.size.height <= 0.0
+                {
+                    tile_cache.needs_update = false;
+                    tile_cache.tiles.clear();
+                    tile_cache.tile_rect = TileRect::zero();
+                    raster_config.composite_mode = PictureCompositeMode::Blit;
+                }
+            }
 
             let mut surface_rect = TypedRect::from_untyped(&surface_rect.to_untyped());
 
