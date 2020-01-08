@@ -3,11 +3,12 @@
 
 
 
-var EXPORTED_SYMBOLS = ["SelectionSourceContent"];
+var EXPORTED_SYMBOLS = ["SelectionSourceChild"];
 
+ChromeUtils.import("resource://gre/modules/ActorChild.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-var SelectionSourceContent = {
+class SelectionSourceChild extends ActorChild {
   receiveMessage(message) {
     const global = message.target;
 
@@ -19,7 +20,7 @@ var SelectionSourceContent = {
         global.sendAsyncMessage("ViewSource:GetSelectionDone", selectionDetails);
       }
     }
-  },
+  }
 
   
 
@@ -45,7 +46,7 @@ var SelectionSourceContent = {
       p = n.parentNode;
     } while (n != ancestor && p);
     return path;
-  },
+  }
 
   getSelection(global) {
     const {content} = global;
@@ -177,9 +178,9 @@ var SelectionSourceContent = {
                   + encodeURIComponent(tmpNode.innerHTML),
              drawSelection: canDrawSelection,
              baseURI: doc.baseURI };
-  },
+  }
 
   get wrapLongLines() {
     return Services.prefs.getBoolPref("view_source.wrap_long_lines");
-  },
-};
+  }
+}
