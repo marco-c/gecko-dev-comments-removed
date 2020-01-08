@@ -946,6 +946,10 @@ private:
   CSSPoint mCompositedScrollOffset;
   CSSToParentLayerScale2D mCompositedZoom;
 
+  
+  
+  UniquePtr<PlatformSpecificStateBase> mPlatformSpecificState;
+
   AxisX mX;
   AxisY mY;
 
@@ -976,10 +980,6 @@ private:
   RefPtr<AsyncPanZoomAnimation> mAnimation;
 
   UniquePtr<OverscrollEffectBase> mOverscrollEffect;
-
-  
-  
-  UniquePtr<PlatformSpecificStateBase> mPlatformSpecificState;
 
   friend class Axis;
 
