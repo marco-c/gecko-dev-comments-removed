@@ -43,9 +43,25 @@ extern int gettimeofday(struct timeval* tv);
 
 using mozilla::DebugOnly;
 
-#if defined(XP_UNIX)
+
+static int64_t PRMJ_NowImpl();
+
 int64_t
 PRMJ_Now()
+{
+    if (mozilla::TimeStamp::GetFuzzyfoxEnabled()) {
+        return mozilla::TimeStamp::NowFuzzyTime();
+    }
+
+    int64_t now = PRMJ_NowImpl();
+    
+    
+    return mozilla::TimeStamp::NowFuzzyTime() > now ? mozilla::TimeStamp::NowFuzzyTime() : now;
+}
+
+#if defined(XP_UNIX)
+static int64_t
+PRMJ_NowImpl()
 {
     struct timeval tv;
 
@@ -150,14 +166,17 @@ PRMJ_NowShutdown()
 #define MUTEX_SETSPINCOUNT(m, c) SetCriticalSectionSpinCount((m),(c))
 
 
-int64_t
-PRMJ_Now()
+static int64_t
+PRMJ_NowImpl()
 {
     if (pGetSystemTimePreciseAsFileTime) {
         
         FILETIME ft;
         pGetSystemTimePreciseAsFileTime(&ft);
-        return int64_t(FileTimeToUnixMicroseconds(ft));
+        int64_t now = int64_t(FileTimeToUnixMicroseconds(ft));
+        
+        
+        return mozilla::TimeStamp::NowFuzzyTime() > now ? mozilla::TimeStamp::NowFuzzyTime() : now;
     }
 
     bool calibrated = false;

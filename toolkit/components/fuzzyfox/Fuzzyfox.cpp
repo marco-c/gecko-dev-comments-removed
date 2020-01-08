@@ -302,6 +302,7 @@ Fuzzyfox::UpdateClocks(uint64_t aNewTime, TimeStamp aNewTimeStamp)
   mObs->NotifyObservers(mTimeUpdateWrapper, FUZZYFOX_UPDATECLOCK_OBSERVER_TOPIC, nullptr);
 
   
+  TimeStamp::UpdateFuzzyTime(aNewTime);
   TimeStamp::UpdateFuzzyTimeStamp(aNewTimeStamp);
 }
 
