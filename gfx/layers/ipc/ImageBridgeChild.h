@@ -9,6 +9,8 @@
 
 #include <stddef.h>                     
 #include <stdint.h>                     
+#include <unordered_map>
+
 #include "mozilla/Attributes.h"         
 #include "mozilla/Atomics.h"
 #include "mozilla/RefPtr.h"             
@@ -21,7 +23,6 @@
 #include "mozilla/webrender/WebRenderTypes.h"
 #include "nsIObserver.h"
 #include "nsRegion.h"                   
-#include "nsRefPtrHashtable.h"
 #include "mozilla/gfx/Rect.h"
 #include "mozilla/ReentrantMonitor.h"   
 
@@ -395,13 +396,13 @@ private:
 
 
 
-  nsRefPtrHashtable<nsUint64HashKey, TextureClient> mTexturesWaitingRecycled;
+  std::unordered_map<uint64_t, RefPtr<TextureClient>> mTexturesWaitingRecycled;
 
   
 
 
   Mutex mContainerMapLock;
-  nsRefPtrHashtable<nsUint64HashKey, ImageContainerListener> mImageContainerListeners;
+  std::unordered_map<uint64_t, RefPtr<ImageContainerListener>> mImageContainerListeners;
 
 #if defined(XP_WIN)
   

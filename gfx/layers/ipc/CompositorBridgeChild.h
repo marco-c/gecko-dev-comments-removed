@@ -17,12 +17,13 @@
 #include "mozilla/layers/PaintThread.h" 
 #include "mozilla/webrender/WebRenderTypes.h"
 #include "nsClassHashtable.h"           
-#include "nsRefPtrHashtable.h"
 #include "nsCOMPtr.h"                   
 #include "nsHashKeys.h"                 
 #include "nsISupportsImpl.h"            
 #include "ThreadSafeRefcountingWithMainThreadDestruction.h"
 #include "nsWeakReference.h"
+
+#include <unordered_map>
 
 namespace mozilla {
 
@@ -389,7 +390,7 @@ private:
 
 
 
-  nsRefPtrHashtable<nsUint64HashKey, TextureClient> mTexturesWaitingRecycled;
+  std::unordered_map<uint64_t, RefPtr<TextureClient>> mTexturesWaitingRecycled;
 
   MessageLoop* mMessageLoop;
 
