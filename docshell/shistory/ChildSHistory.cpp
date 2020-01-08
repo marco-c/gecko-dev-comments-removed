@@ -6,6 +6,7 @@
 
 #include "mozilla/dom/ChildSHistory.h"
 #include "mozilla/dom/ChildSHistoryBinding.h"
+#include "mozilla/dom/ContentFrameMessageManager.h"
 #include "nsIMessageManager.h"
 #include "nsComponentManagerUtils.h"
 #include "nsSHistory.h"
@@ -20,6 +21,7 @@ ChildSHistory::ChildSHistory(nsDocShell* aDocShell)
   : mDocShell(aDocShell)
   , mHistory(new nsSHistory())
 {
+  MOZ_ASSERT(mDocShell);
   mHistory->SetRootDocShell(mDocShell);
 }
 
@@ -132,9 +134,12 @@ ChildSHistory::GetParentObject() const
 {
   
   
-  nsCOMPtr<nsIContentFrameMessageManager> mm =
-    do_GetInterface(static_cast<nsIDocShell*>(mDocShell));
-  return mm;
+  RefPtr<ContentFrameMessageManager> mm;
+  if (mDocShell) {
+    mm = mDocShell->GetMessageManager();
+  }
+  
+  return ToSupports(mm);
 }
 
 } 
