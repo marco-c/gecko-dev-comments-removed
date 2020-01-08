@@ -3982,7 +3982,7 @@ protected:
   
   nsIDocument* GetSameTypeParentDocument();
 
-  void MaybeAllowStorageForOpener();
+  void MaybeAllowStorageForOpenerAfterUserInteraction();
 
   void MaybeStoreUserInteractionAsPermission();
 

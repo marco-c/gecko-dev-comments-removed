@@ -2251,9 +2251,8 @@ nsGlobalWindowOuter::SetOpenerWindow(nsPIDOMWindowOuter* aOpener,
   nsWeakPtr opener = do_GetWeakReference(aOpener);
   if (opener == mOpener) {
     MOZ_DIAGNOSTIC_ASSERT(
-      !aOpener || !aOpener->GetDocShell() ||
-      (GetBrowsingContext() &&
-       GetBrowsingContext()->GetOpener() == aOpener->GetBrowsingContext()));
+      !aOpener || (GetBrowsingContext() && GetBrowsingContext()->GetOpener() ==
+                                             aOpener->GetBrowsingContext()));
     return;
   }
 
@@ -7237,7 +7236,7 @@ nsGlobalWindowOuter::MaybeAllowStorageForOpenedWindow(nsIURI* aURI)
   
   Unused << AntiTrackingCommon::AddFirstPartyStorageAccessGrantedFor(principal,
                                                                      inner,
-                                                                     AntiTrackingCommon::eHeuristic);
+                                                                     AntiTrackingCommon::eOpener);
 }
 
 
