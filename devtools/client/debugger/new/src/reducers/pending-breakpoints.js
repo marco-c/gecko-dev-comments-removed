@@ -3,12 +3,14 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.initialPendingBreakpointsState = initialPendingBreakpointsState;
 exports.getPendingBreakpoints = getPendingBreakpoints;
 exports.getPendingBreakpointList = getPendingBreakpointList;
 exports.getPendingBreakpointsForSource = getPendingBreakpointsForSource;
 
 var _breakpoint = require("../utils/breakpoint/index");
 
+var _prefs = require("../utils/prefs");
 
 
 
@@ -17,7 +19,12 @@ var _breakpoint = require("../utils/breakpoint/index");
 
 
 
-function update(state = {}, action) {
+
+function initialPendingBreakpointsState() {
+  return restorePendingBreakpoints();
+}
+
+function update(state = initialPendingBreakpointsState(), action) {
   switch (action.type) {
     case "ADD_BREAKPOINT":
       {
@@ -163,6 +170,11 @@ function getPendingBreakpointList(state) {
 
 function getPendingBreakpointsForSource(state, sourceUrl) {
   return getPendingBreakpointList(state).filter(pendingBreakpoint => pendingBreakpoint.location.sourceUrl === sourceUrl);
+}
+
+function restorePendingBreakpoints() {
+  return { ..._prefs.prefs.pendingBreakpoints
+  };
 }
 
 exports.default = update;
