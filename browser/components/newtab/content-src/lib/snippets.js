@@ -393,7 +393,8 @@ export function addSnippetsSubscriber(store) {
       !snippets.initialized &&
       
       !initializing &&
-      location.href !== "about:welcome"
+      location.href !== "about:welcome" &&
+      location.hash !== "#asrouter"
     ) {
       initializing = true;
       await snippets.init({appData: state.Snippets});

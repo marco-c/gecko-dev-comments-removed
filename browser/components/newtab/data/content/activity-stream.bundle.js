@@ -93,17 +93,17 @@ __webpack_require__.r(__webpack_exports__);
 (function(global) { var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
  var content_src_lib_snippets__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(3);
  var content_src_asrouter_asrouter_content__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(4);
- var content_src_components_Base_Base__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(14);
- var content_src_lib_detect_user_session_start__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(42);
- var content_src_lib_asroutercontent__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(43);
- var content_src_lib_init_store__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(7);
- var react_redux__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(18);
+ var content_src_components_Base_Base__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(16);
+ var content_src_lib_detect_user_session_start__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(44);
+ var content_src_lib_asroutercontent__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(45);
+ var content_src_lib_init_store__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(5);
+ var react_redux__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(20);
  var react_redux__WEBPACK_IMPORTED_MODULE_7___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_7__);
- var react__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(5);
+ var react__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_8___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_8__);
- var react_dom__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(10);
+ var react_dom__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(11);
  var react_dom__WEBPACK_IMPORTED_MODULE_9___default = __webpack_require__.n(react_dom__WEBPACK_IMPORTED_MODULE_9__);
- var common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(46);
+ var common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(48);
 
 
 
@@ -890,7 +890,7 @@ function addSnippetsSubscriber(store) {
     
     if (state.Prefs.values["feeds.snippets"] && state.ASRouter.initialized && state.ASRouter.allowLegacySnippets && !state.Prefs.values.disableSnippets && state.Snippets.initialized && !snippets.initialized &&
     
-    !initializing && location.href !== "about:welcome") {
+    !initializing && location.href !== "about:welcome" && location.hash !== "#asrouter") {
       initializing = true;
       yield snippets.init({ appData: state.Snippets });
       
@@ -922,22 +922,20 @@ function addSnippetsSubscriber(store) {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 (function(global) { __webpack_require__.d(__webpack_exports__, "ASRouterUtils", function() { return ASRouterUtils; });
- __webpack_require__.d(__webpack_exports__, "convertLinks", function() { return convertLinks; });
  __webpack_require__.d(__webpack_exports__, "ASRouterUISurface", function() { return ASRouterUISurface; });
  __webpack_require__.d(__webpack_exports__, "ASRouterContent", function() { return ASRouterContent; });
- var fluent_react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(45);
- var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(2);
- var content_src_lib_init_store__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(7);
- var _components_ImpressionsWrapper_ImpressionsWrapper__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(9);
- var fluent__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(44);
- var _templates_OnboardingMessage_OnboardingMessage__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(48);
- var react__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(5);
+ var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
+ var content_src_lib_init_store__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5);
+ var _rich_text_strings__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(7);
+ var _components_ImpressionsWrapper_ImpressionsWrapper__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(8);
+ var fluent_react__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(47);
+ var _templates_OnboardingMessage_OnboardingMessage__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(50);
+ var react__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_6___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_6__);
- var react_dom__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(10);
+ var react_dom__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(11);
  var react_dom__WEBPACK_IMPORTED_MODULE_7___default = __webpack_require__.n(react_dom__WEBPACK_IMPORTED_MODULE_7__);
- var _template_utils__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(11);
- var _templates_SimpleSnippet_SimpleSnippet__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(47);
- var _templates_SubmitFormSnippet_SubmitFormSnippet__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(13);
+ var _templates_SimpleSnippet_SimpleSnippet__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(49);
+ var _templates_SubmitFormSnippet_SubmitFormSnippet__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(15);
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 
@@ -952,11 +950,10 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
 
 
-
 const SnippetComponents = {
-  simple_snippet: _templates_SimpleSnippet_SimpleSnippet__WEBPACK_IMPORTED_MODULE_9__["SimpleSnippet"],
-  newsletter_snippet: props => react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(_templates_SubmitFormSnippet_SubmitFormSnippet__WEBPACK_IMPORTED_MODULE_10__["SubmitFormSnippet"], _extends({}, props, { form_method: "POST" })),
-  fxa_signup_snippet: props => react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(_templates_SubmitFormSnippet_SubmitFormSnippet__WEBPACK_IMPORTED_MODULE_10__["SubmitFormSnippet"], _extends({}, props, { form_method: "GET" }))
+  simple_snippet: _templates_SimpleSnippet_SimpleSnippet__WEBPACK_IMPORTED_MODULE_8__["SimpleSnippet"],
+  newsletter_snippet: props => react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(_templates_SubmitFormSnippet_SubmitFormSnippet__WEBPACK_IMPORTED_MODULE_9__["SubmitFormSnippet"], _extends({}, props, { form_method: "POST" })),
+  fxa_signup_snippet: props => react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(_templates_SubmitFormSnippet_SubmitFormSnippet__WEBPACK_IMPORTED_MODULE_9__["SubmitFormSnippet"], _extends({}, props, { form_method: "GET" }))
 };
 
 const INCOMING_MESSAGE_NAME = "ASRouter:parent-to-child";
@@ -998,8 +995,8 @@ const ASRouterUtils = {
     ASRouterUtils.sendMessage({ type: "OVERRIDE_MESSAGE", data: { id } });
   },
   sendTelemetry(ping) {
-    const payload = common_Actions_jsm__WEBPACK_IMPORTED_MODULE_1__["actionCreators"].ASRouterUserEvent(ping);
-    global.RPMSendAsyncMessage(content_src_lib_init_store__WEBPACK_IMPORTED_MODULE_2__["OUTGOING_MESSAGE_NAME"], payload);
+    const payload = common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].ASRouterUserEvent(ping);
+    global.RPMSendAsyncMessage(content_src_lib_init_store__WEBPACK_IMPORTED_MODULE_1__["OUTGOING_MESSAGE_NAME"], payload);
   },
   getPreviewEndpoint() {
     if (window.location.href.includes("endpoint")) {
@@ -1020,62 +1017,6 @@ const ASRouterUtils = {
 
 function shouldSendImpressionOnUpdate(nextProps, prevProps) {
   return nextProps.message.id && (!prevProps.message || prevProps.message.id !== nextProps.message.id);
-}
-
-function generateMessages(content) {
-  const cx = new fluent__WEBPACK_IMPORTED_MODULE_4__["MessageContext"]("en-US");
-  Object.keys(content).forEach(key => {
-    cx.addMessages(`${key} = ${content[key]}`);
-  });
-  return [cx];
-}
-
-
-const ALLOWED_TAGS = {
-  b: react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement("b", null),
-  i: react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement("i", null),
-  u: react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement("u", null),
-  strong: react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement("strong", null),
-  em: react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement("em", null),
-  br: react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement("br", null)
-};
-
-
-
-
-
-function convertLinks(links, sendClick) {
-  if (links) {
-    return Object.keys(links).reduce((acc, linkTag) => {
-      const { action } = links[linkTag];
-      
-      const url = action ? false : Object(_template_utils__WEBPACK_IMPORTED_MODULE_8__["safeURI"])(links[linkTag].url);
-
-      acc[linkTag] = react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement("a", { href: url,
-        "data-metric": links[linkTag].metric,
-        "data-action": action,
-        "data-args": links[linkTag].args,
-        onClick: sendClick });
-      return acc;
-    }, {});
-  }
-
-  return null;
-}
-
-
-
-
-function RichText(props) {
-  return react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(
-    fluent_react__WEBPACK_IMPORTED_MODULE_0__["Localized"],
-    _extends({ id: props.localization_id }, ALLOWED_TAGS, convertLinks(props.links, props.sendClick)),
-    react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(
-      "span",
-      null,
-      props.text
-    )
-  );
 }
 
 class ASRouterUISurface extends react__WEBPACK_IMPORTED_MODULE_6___default.a.PureComponent {
@@ -1192,16 +1133,8 @@ class ASRouterUISurface extends react__WEBPACK_IMPORTED_MODULE_6___default.a.Pur
   }
 
   renderSnippets() {
-    let privacyNoticeRichText;
     const SnippetComponent = SnippetComponents[this.state.message.template];
     const { content } = this.state.message;
-
-    if (this.state.message.template === "newsletter_snippet") {
-      privacyNoticeRichText = react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(RichText, { text: content.scene2_privacy_html,
-        localization_id: "privacy_notice",
-        links: content.links,
-        sendClick: this.sendClick });
-    }
 
     return react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(
       _components_ImpressionsWrapper_ImpressionsWrapper__WEBPACK_IMPORTED_MODULE_3__["ImpressionsWrapper"],
@@ -1213,21 +1146,14 @@ class ASRouterUISurface extends react__WEBPACK_IMPORTED_MODULE_6___default.a.Pur
         
         , document: this.props.document },
       react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(
-        fluent_react__WEBPACK_IMPORTED_MODULE_0__["LocalizationProvider"],
-        { messages: generateMessages({
-            privacy_notice: content.scene2_privacy_html,
-            snippet_text: content.text || content.scene1_text
-          }) },
+        fluent_react__WEBPACK_IMPORTED_MODULE_4__["LocalizationProvider"],
+        { messages: Object(_rich_text_strings__WEBPACK_IMPORTED_MODULE_2__["generateMessages"])(content) },
         react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(SnippetComponent, _extends({}, this.state.message, {
-          richText: react__WEBPACK_IMPORTED_MODULE_6___default.a.createElement(RichText, { text: content.text || content.scene1_text,
-            localization_id: "snippet_text",
-            links: this.state.message.content.links,
-            sendClick: this.sendClick }),
-          privacyNoticeRichText: privacyNoticeRichText,
           UISurface: "NEWTAB_FOOTER_BAR",
           onBlock: this.onBlockById(this.state.message.id),
           onDismiss: this.onDismissById(this.state.message.id),
           onAction: ASRouterUtils.executeAction,
+          sendClick: this.sendClick,
           sendUserActionTelemetry: this.sendUserActionTelemetry }))
       )
     );
@@ -1312,18 +1238,6 @@ class ASRouterContent {
 
  }),
 
- (function(module, exports) {
-
-module.exports = React;
-
- }),
-
- (function(module, exports) {
-
-module.exports = PropTypes;
-
- }),
-
  (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -1336,7 +1250,7 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "queueEarlyMessageMiddleware", function() { return queueEarlyMessageMiddleware; });
  __webpack_require__.d(__webpack_exports__, "initStore", function() { return initStore; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var redux__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(8);
+ var redux__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(6);
  var redux__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(redux__WEBPACK_IMPORTED_MODULE_1__);
 
 
@@ -1487,10 +1401,55 @@ module.exports = Redux;
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "RICH_TEXT_KEYS", function() { return RICH_TEXT_KEYS; });
+ __webpack_require__.d(__webpack_exports__, "generateMessages", function() { return generateMessages; });
+ var fluent__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(46);
+
+
+
+
+
+
+
+const RICH_TEXT_CONFIG = {
+  "text": ["text", "scene1_text"],
+  "privacy_html": "scene2_privacy_html"
+};
+
+const RICH_TEXT_KEYS = Object.keys(RICH_TEXT_CONFIG);
+
+
+
+
+
+
+
+function generateMessages(content) {
+  const cx = new fluent__WEBPACK_IMPORTED_MODULE_0__["MessageContext"]("en-US");
+
+  RICH_TEXT_KEYS.forEach(key => {
+    const attrs = RICH_TEXT_CONFIG[key];
+    const attrsToTry = Array.isArray(attrs) ? [...attrs] : [attrs];
+    let string = "";
+    while (!string && attrsToTry.length) {
+      const attr = attrsToTry.pop();
+      string = content[attr];
+    }
+    cx.addMessages(`${key} = ${string}`);
+  });
+  return [cx];
+}
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
 (function(global) { __webpack_require__.d(__webpack_exports__, "VISIBLE", function() { return VISIBLE; });
  __webpack_require__.d(__webpack_exports__, "VISIBILITY_CHANGE_EVENT", function() { return VISIBILITY_CHANGE_EVENT; });
  __webpack_require__.d(__webpack_exports__, "ImpressionsWrapper", function() { return ImpressionsWrapper; });
- var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5);
+ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
 
 
@@ -1558,7 +1517,90 @@ ImpressionsWrapper.defaultProps = {
 
  (function(module, exports) {
 
+module.exports = React;
+
+ }),
+
+ (function(module, exports) {
+
+module.exports = PropTypes;
+
+ }),
+
+ (function(module, exports) {
+
 module.exports = ReactDOM;
+
+ }),
+
+ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, "convertLinks", function() { return convertLinks; });
+ __webpack_require__.d(__webpack_exports__, "RichText", function() { return RichText; });
+ var fluent_react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(47);
+ var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(9);
+ var react__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
+ var _rich_text_strings__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(7);
+ var _template_utils__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(13);
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+
+
+
+
+
+
+const ALLOWED_TAGS = {
+  b: react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("b", null),
+  i: react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("i", null),
+  u: react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("u", null),
+  strong: react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("strong", null),
+  em: react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("em", null),
+  br: react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("br", null)
+};
+
+
+
+
+
+function convertLinks(links, sendClick) {
+  if (links) {
+    return Object.keys(links).reduce((acc, linkTag) => {
+      const { action } = links[linkTag];
+      
+      const url = action ? false : Object(_template_utils__WEBPACK_IMPORTED_MODULE_3__["safeURI"])(links[linkTag].url);
+
+      acc[linkTag] = react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement("a", { href: url,
+        "data-metric": links[linkTag].metric,
+        "data-action": action,
+        "data-args": links[linkTag].args,
+        onClick: sendClick });
+      return acc;
+    }, {});
+  }
+
+  return null;
+}
+
+
+
+
+function RichText(props) {
+  if (!_rich_text_strings__WEBPACK_IMPORTED_MODULE_2__["RICH_TEXT_KEYS"].includes(props.localization_id)) {
+    throw new Error(`ASRouter: ${props.localization_id} is not a valid rich text property. If you want it to be processed, you need to add it to asrouter/rich-text-strings.js`);
+  }
+  return react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(
+    fluent_react__WEBPACK_IMPORTED_MODULE_0__["Localized"],
+    _extends({ id: props.localization_id }, ALLOWED_TAGS, convertLinks(props.links, props.sendClick)),
+    react__WEBPACK_IMPORTED_MODULE_1___default.a.createElement(
+      "span",
+      null,
+      props.text
+    )
+  );
+}
 
  }),
 
@@ -1586,7 +1628,7 @@ function safeURI(url) {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "SnippetBase", function() { return SnippetBase; });
- var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5);
+ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
 
 
@@ -1614,8 +1656,10 @@ class SnippetBase extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureCompo
           { className: "footer-content" },
           react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(
             "button",
-            { className: "ASRouterButton secondary", title: this.props.content.block_button_text, onClick: this.props.onDismiss },
-            this.props.content.dismiss_button_label
+            {
+              className: "ASRouterButton secondary",
+              onClick: this.props.onDismiss },
+            this.props.content.scene2_dismiss_button_text
           )
         )
       );
@@ -1649,13 +1693,15 @@ class SnippetBase extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureCompo
 "use strict";
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "SubmitFormSnippet", function() { return SubmitFormSnippet; });
- var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5);
+ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
- var _SimpleSnippet_SimpleSnippet__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(47);
- var _components_SnippetBase_SnippetBase__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(12);
+ var _components_RichText_RichText__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(12);
+ var _SimpleSnippet_SimpleSnippet__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(49);
+ var _components_SnippetBase_SnippetBase__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(14);
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
+
 
 
 
@@ -1737,7 +1783,11 @@ class SubmitFormSnippet extends react__WEBPACK_IMPORTED_MODULE_0___default.a.Pur
   }
 
   renderFormPrivacyNotice() {
-    return this.props.privacyNoticeRichText && react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(
+    const { content } = this.props;
+    if (!content.scene2_privacy_html) {
+      return null;
+    }
+    return react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(
       "label",
       { className: "privacy-notice", htmlFor: "id_privacy" },
       react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(
@@ -1747,7 +1797,10 @@ class SubmitFormSnippet extends react__WEBPACK_IMPORTED_MODULE_0___default.a.Pur
         react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(
           "span",
           null,
-          this.props.privacyNoticeRichText
+          react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_components_RichText_RichText__WEBPACK_IMPORTED_MODULE_1__["RichText"], { text: content.scene2_privacy_html,
+            localization_id: "privacy_html",
+            links: content.links,
+            sendClick: this.props.sendClick })
         )
       )
     );
@@ -1757,7 +1810,7 @@ class SubmitFormSnippet extends react__WEBPACK_IMPORTED_MODULE_0___default.a.Pur
     const message = this.state.signupSuccess ? this.props.content.success_text : this.props.content.error_text;
     const onButtonClick = !this.state.signupSuccess ? this.expandSnippet : null;
 
-    return react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_SimpleSnippet_SimpleSnippet__WEBPACK_IMPORTED_MODULE_1__["SimpleSnippet"], { className: this.props.className,
+    return react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_SimpleSnippet_SimpleSnippet__WEBPACK_IMPORTED_MODULE_2__["SimpleSnippet"], { className: this.props.className,
       onButtonClick: onButtonClick,
       provider: this.props.provider,
       content: { button_label: this.props.content.scene1_button_label, text: message } });
@@ -1767,7 +1820,7 @@ class SubmitFormSnippet extends react__WEBPACK_IMPORTED_MODULE_0___default.a.Pur
     const { content } = this.props;
 
     return react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(
-      _components_SnippetBase_SnippetBase__WEBPACK_IMPORTED_MODULE_2__["SnippetBase"],
+      _components_SnippetBase_SnippetBase__WEBPACK_IMPORTED_MODULE_3__["SnippetBase"],
       _extends({}, this.props, { className: "SubmitFormSnippet", footerDismiss: true }),
       react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(
         "div",
@@ -1813,7 +1866,7 @@ class SubmitFormSnippet extends react__WEBPACK_IMPORTED_MODULE_0___default.a.Pur
     if (this.state.expanded) {
       return this.renderSignupView();
     }
-    return react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_SimpleSnippet_SimpleSnippet__WEBPACK_IMPORTED_MODULE_1__["SimpleSnippet"], _extends({}, this.props, { content: content, onButtonClick: this.expandSnippet }));
+    return react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_SimpleSnippet_SimpleSnippet__WEBPACK_IMPORTED_MODULE_2__["SimpleSnippet"], _extends({}, this.props, { content: content, onButtonClick: this.expandSnippet }));
   }
 }
 
@@ -1827,20 +1880,20 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "BaseContent", function() { return BaseContent; });
  __webpack_require__.d(__webpack_exports__, "Base", function() { return Base; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var react_intl__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(15);
+ var react_intl__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(17);
  var react_intl__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_1__);
- var content_src_components_ASRouterAdmin_ASRouterAdmin__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(16);
- var content_src_components_ConfirmDialog_ConfirmDialog__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(17);
- var react_redux__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(18);
+ var content_src_components_ASRouterAdmin_ASRouterAdmin__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(18);
+ var content_src_components_ConfirmDialog_ConfirmDialog__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(19);
+ var react_redux__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(20);
  var react_redux__WEBPACK_IMPORTED_MODULE_4___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_4__);
- var content_src_components_ErrorBoundary_ErrorBoundary__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(19);
- var content_src_components_ManualMigration_ManualMigration__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(20);
- var common_PrerenderData_jsm__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(21);
- var react__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(5);
+ var content_src_components_ErrorBoundary_ErrorBoundary__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(21);
+ var content_src_components_ManualMigration_ManualMigration__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(22);
+ var common_PrerenderData_jsm__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(23);
+ var react__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_8___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_8__);
- var content_src_components_Search_Search__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(22);
- var content_src_components_Sections_Sections__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(24);
- var content_src_components_StartupOverlay_StartupOverlay__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(41);
+ var content_src_components_Search_Search__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(24);
+ var content_src_components_Sections_Sections__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(26);
+ var content_src_components_StartupOverlay_StartupOverlay__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(43);
 
 
 
@@ -2041,7 +2094,7 @@ module.exports = ReactIntl;
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "ASRouterAdmin", function() { return ASRouterAdmin; });
  var _asrouter_asrouter_content__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(4);
- var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5);
+ var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
 
 
@@ -2286,11 +2339,11 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "_ConfirmDialog", function() { return _ConfirmDialog; });
  __webpack_require__.d(__webpack_exports__, "ConfirmDialog", function() { return ConfirmDialog; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var react_redux__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(18);
+ var react_redux__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(20);
  var react_redux__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_1__);
- var react_intl__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(15);
+ var react_intl__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(17);
  var react_intl__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_2__);
- var react__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(5);
+ var react__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_3___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_3__);
 
 
@@ -2403,9 +2456,9 @@ module.exports = ReactRedux;
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "ErrorBoundaryFallback", function() { return ErrorBoundaryFallback; });
  __webpack_require__.d(__webpack_exports__, "ErrorBoundary", function() { return ErrorBoundary; });
- var react_intl__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(15);
+ var react_intl__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(17);
  var react_intl__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_0__);
- var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5);
+ var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
 
 
@@ -2491,11 +2544,11 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "_ManualMigration", function() { return _ManualMigration; });
  __webpack_require__.d(__webpack_exports__, "ManualMigration", function() { return ManualMigration; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var react_redux__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(18);
+ var react_redux__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(20);
  var react_redux__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_1__);
- var react_intl__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(15);
+ var react_intl__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(17);
  var react_intl__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_2__);
- var react__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(5);
+ var react__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_3___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_3__);
 
 
@@ -2667,13 +2720,13 @@ var PrerenderData = new _PrerenderData({
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "_Search", function() { return _Search; });
  __webpack_require__.d(__webpack_exports__, "Search", function() { return Search; });
- var react_intl__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(15);
+ var react_intl__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(17);
  var react_intl__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_0__);
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(2);
- var react_redux__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(18);
+ var react_redux__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(20);
  var react_redux__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_2__);
- var content_src_lib_constants__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(23);
- var react__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(5);
+ var content_src_lib_constants__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(25);
+ var react__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_4___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_4__);
 
 
@@ -2808,19 +2861,19 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "_Sections", function() { return _Sections; });
  __webpack_require__.d(__webpack_exports__, "Sections", function() { return Sections; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var content_src_components_Card_Card__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(49);
- var react_intl__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(15);
+ var content_src_components_Card_Card__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(51);
+ var react_intl__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(17);
  var react_intl__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_2__);
- var content_src_components_CollapsibleSection_CollapsibleSection__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(29);
- var content_src_components_ComponentPerfTimer_ComponentPerfTimer__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(32);
- var react_redux__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(18);
+ var content_src_components_CollapsibleSection_CollapsibleSection__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(31);
+ var content_src_components_ComponentPerfTimer_ComponentPerfTimer__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(34);
+ var react_redux__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(20);
  var react_redux__WEBPACK_IMPORTED_MODULE_5___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_5__);
- var content_src_components_MoreRecommendations_MoreRecommendations__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(34);
- var content_src_components_PocketLoggedInCta_PocketLoggedInCta__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(35);
- var react__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(5);
+ var content_src_components_MoreRecommendations_MoreRecommendations__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(36);
+ var content_src_components_PocketLoggedInCta_PocketLoggedInCta__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(37);
+ var react__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_8___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_8__);
- var content_src_components_Topics_Topics__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(36);
- var content_src_components_TopSites_TopSites__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(37);
+ var content_src_components_Topics_Topics__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(38);
+ var content_src_components_TopSites_TopSites__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(39);
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 
@@ -3362,13 +3415,13 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "_LinkMenu", function() { return _LinkMenu; });
  __webpack_require__.d(__webpack_exports__, "LinkMenu", function() { return LinkMenu; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var react_redux__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(18);
+ var react_redux__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(20);
  var react_redux__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_1__);
- var content_src_components_ContextMenu_ContextMenu__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(27);
- var react_intl__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(15);
+ var content_src_components_ContextMenu_ContextMenu__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(29);
+ var react_intl__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(17);
  var react_intl__WEBPACK_IMPORTED_MODULE_3___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_3__);
- var content_src_lib_link_menu_options__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(25);
- var react__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(5);
+ var content_src_lib_link_menu_options__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(27);
+ var react__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_5___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_5__);
 
 
@@ -3435,7 +3488,7 @@ const LinkMenu = Object(react_redux__WEBPACK_IMPORTED_MODULE_1__["connect"])(get
 __webpack_require__.r(__webpack_exports__);
 (function(global) { __webpack_require__.d(__webpack_exports__, "ContextMenu", function() { return ContextMenu; });
  __webpack_require__.d(__webpack_exports__, "ContextMenuItem", function() { return ContextMenuItem; });
- var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5);
+ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
 
 
@@ -3591,14 +3644,14 @@ const ScreenshotUtils = {
 __webpack_require__.r(__webpack_exports__);
 (function(global) { __webpack_require__.d(__webpack_exports__, "_CollapsibleSection", function() { return _CollapsibleSection; });
  __webpack_require__.d(__webpack_exports__, "CollapsibleSection", function() { return CollapsibleSection; });
- var react_intl__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(15);
+ var react_intl__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(17);
  var react_intl__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_0__);
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(2);
- var content_src_components_ErrorBoundary_ErrorBoundary__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(19);
- var react__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(5);
+ var content_src_components_ErrorBoundary_ErrorBoundary__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(21);
+ var react__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_3___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_3__);
- var content_src_components_SectionMenu_SectionMenu__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(30);
- var content_src_lib_section_menu_options__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(31);
+ var content_src_components_SectionMenu_SectionMenu__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(32);
+ var content_src_lib_section_menu_options__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(33);
 
 
 
@@ -3847,12 +3900,12 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "_SectionMenu", function() { return _SectionMenu; });
  __webpack_require__.d(__webpack_exports__, "SectionMenu", function() { return SectionMenu; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var content_src_components_ContextMenu_ContextMenu__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(27);
- var react_intl__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(15);
+ var content_src_components_ContextMenu_ContextMenu__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(29);
+ var react_intl__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(17);
  var react_intl__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_2__);
- var react__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(5);
+ var react__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_3___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_3__);
- var content_src_lib_section_menu_options__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(31);
+ var content_src_lib_section_menu_options__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(33);
 
 
 
@@ -4007,8 +4060,8 @@ const SectionMenuOptions = {
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "ComponentPerfTimer", function() { return ComponentPerfTimer; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var common_PerfService_jsm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(33);
- var react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(5);
+ var common_PerfService_jsm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(35);
+ var react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_2__);
 
 
@@ -4315,9 +4368,9 @@ var perfService = new _PerfService();
 "use strict";
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "MoreRecommendations", function() { return MoreRecommendations; });
- var react_intl__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(15);
+ var react_intl__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(17);
  var react_intl__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_0__);
- var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5);
+ var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
 
 
@@ -4344,11 +4397,11 @@ class MoreRecommendations extends react__WEBPACK_IMPORTED_MODULE_1___default.a.P
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "_PocketLoggedInCta", function() { return _PocketLoggedInCta; });
  __webpack_require__.d(__webpack_exports__, "PocketLoggedInCta", function() { return PocketLoggedInCta; });
- var react_redux__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(18);
+ var react_redux__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(20);
  var react_redux__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_0__);
- var react_intl__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(15);
+ var react_intl__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(17);
  var react_intl__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_1__);
- var react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(5);
+ var react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_2__);
 
 
@@ -4388,9 +4441,9 @@ const PocketLoggedInCta = Object(react_redux__WEBPACK_IMPORTED_MODULE_0__["conne
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "Topic", function() { return Topic; });
  __webpack_require__.d(__webpack_exports__, "Topics", function() { return Topics; });
- var react_intl__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(15);
+ var react_intl__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(17);
  var react_intl__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_0__);
- var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5);
+ var react__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_1__);
 
 
@@ -4439,19 +4492,19 @@ __webpack_require__.r(__webpack_exports__);
 (function(global) { __webpack_require__.d(__webpack_exports__, "_TopSites", function() { return _TopSites; });
  __webpack_require__.d(__webpack_exports__, "TopSites", function() { return TopSites; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(38);
- var content_src_components_CollapsibleSection_CollapsibleSection__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(29);
- var content_src_components_ComponentPerfTimer_ComponentPerfTimer__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(32);
- var react_redux__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(18);
+ var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(40);
+ var content_src_components_CollapsibleSection_CollapsibleSection__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(31);
+ var content_src_components_ComponentPerfTimer_ComponentPerfTimer__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(34);
+ var react_redux__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(20);
  var react_redux__WEBPACK_IMPORTED_MODULE_4___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_4__);
- var react_intl__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(15);
+ var react_intl__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(17);
  var react_intl__WEBPACK_IMPORTED_MODULE_5___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_5__);
- var react__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(5);
+ var react__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_6___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_6__);
- var _SearchShortcutsForm__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(39);
- var common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(46);
- var _TopSiteForm__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(50);
- var _TopSite__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(40);
+ var _SearchShortcutsForm__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(41);
+ var common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(48);
+ var _TopSiteForm__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(52);
+ var _TopSite__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(42);
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 
@@ -4667,11 +4720,11 @@ const MIN_CORNER_FAVICON_SIZE = 16;
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "SearchShortcutsForm", function() { return SearchShortcutsForm; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var react_intl__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(15);
+ var react_intl__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(17);
  var react_intl__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_1__);
- var react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(5);
+ var react__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_2__);
- var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(38);
+ var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(40);
 
 
 
@@ -4851,14 +4904,14 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "_TopSiteList", function() { return _TopSiteList; });
  __webpack_require__.d(__webpack_exports__, "TopSiteList", function() { return TopSiteList; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var react_intl__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(15);
+ var react_intl__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(17);
  var react_intl__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_1__);
- var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(38);
- var content_src_components_LinkMenu_LinkMenu__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(26);
- var react__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(5);
+ var _TopSitesConstants__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(40);
+ var content_src_components_LinkMenu_LinkMenu__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(28);
+ var react__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_4___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_4__);
- var content_src_lib_screenshot_utils__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(28);
- var common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(46);
+ var content_src_lib_screenshot_utils__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(30);
+ var common_Reducers_jsm__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(48);
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 
@@ -5391,11 +5444,11 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "_StartupOverlay", function() { return _StartupOverlay; });
  __webpack_require__.d(__webpack_exports__, "StartupOverlay", function() { return StartupOverlay; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var react_intl__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(15);
+ var react_intl__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(17);
  var react_intl__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_intl__WEBPACK_IMPORTED_MODULE_1__);
- var react_redux__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(18);
+ var react_redux__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(20);
  var react_redux__WEBPACK_IMPORTED_MODULE_2___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_2__);
- var react__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(5);
+ var react__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(9);
  var react__WEBPACK_IMPORTED_MODULE_3___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_3__);
 function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
 
@@ -5618,7 +5671,7 @@ const StartupOverlay = Object(react_redux__WEBPACK_IMPORTED_MODULE_2__["connect"
 __webpack_require__.r(__webpack_exports__);
 (function(global) { __webpack_require__.d(__webpack_exports__, "DetectUserSessionStart", function() { return DetectUserSessionStart; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
- var common_PerfService_jsm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(33);
+ var common_PerfService_jsm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(35);
 
 
 
@@ -7816,14 +7869,14 @@ __webpack_require__.d(__webpack_exports__, "ftl", function() { return ftl; });
 "use strict";
 
 
-var external_React_ = __webpack_require__(5);
+var external_React_ = __webpack_require__(9);
 
 
-var external_PropTypes_ = __webpack_require__(6);
+var external_PropTypes_ = __webpack_require__(10);
 var external_PropTypes_default = __webpack_require__.n(external_PropTypes_);
 
 
-var src = __webpack_require__(44);
+var src = __webpack_require__(46);
 
 
 
@@ -8810,7 +8863,7 @@ var reducers = { TopSites, App, ASRouter, Snippets, Prefs, Dialog, Sections, Poc
 "use strict";
 
 
-var external_React_ = __webpack_require__(5);
+var external_React_ = __webpack_require__(9);
 var external_React_default = __webpack_require__.n(external_React_);
 
 
@@ -8841,14 +8894,18 @@ const Button = props => {
   );
 };
 
-var template_utils = __webpack_require__(11);
+var RichText = __webpack_require__(12);
 
 
-var SnippetBase = __webpack_require__(12);
+var template_utils = __webpack_require__(13);
+
+
+var SnippetBase = __webpack_require__(14);
 
 
  __webpack_require__.d(__webpack_exports__, "SimpleSnippet", function() { return SimpleSnippet_SimpleSnippet; });
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 
 
 
@@ -8906,6 +8963,14 @@ class SimpleSnippet_SimpleSnippet extends external_React_default.a.PureComponent
     );
   }
 
+  renderText() {
+    const { props } = this;
+    return external_React_default.a.createElement(RichText["RichText"], { text: props.content.text,
+      localization_id: "text",
+      links: props.content.links,
+      sendClick: props.sendClick });
+  }
+
   render() {
     const { props } = this;
     const className = `SimpleSnippet${props.content.tall ? " tall" : ""}`;
@@ -8923,7 +8988,7 @@ class SimpleSnippet_SimpleSnippet extends external_React_default.a.PureComponent
         external_React_default.a.createElement(
           "p",
           { className: "body" },
-          props.richText || props.content.text
+          this.renderText()
         )
       ),
       external_React_default.a.createElement(
@@ -8942,7 +9007,7 @@ class SimpleSnippet_SimpleSnippet extends external_React_default.a.PureComponent
 "use strict";
 
 
-var external_React_ = __webpack_require__(5);
+var external_React_ = __webpack_require__(9);
 var external_React_default = __webpack_require__.n(external_React_);
 
 
@@ -9116,23 +9181,23 @@ const cardContextTypes = {
   }
 };
 
-var external_ReactRedux_ = __webpack_require__(18);
+var external_ReactRedux_ = __webpack_require__(20);
 
 
-var external_ReactIntl_ = __webpack_require__(15);
+var external_ReactIntl_ = __webpack_require__(17);
 
 
-var link_menu_options = __webpack_require__(25);
+var link_menu_options = __webpack_require__(27);
 
 
-var LinkMenu = __webpack_require__(26);
+var LinkMenu = __webpack_require__(28);
 
 
-var external_React_ = __webpack_require__(5);
+var external_React_ = __webpack_require__(9);
 var external_React_default = __webpack_require__.n(external_React_);
 
 
-var screenshot_utils = __webpack_require__(28);
+var screenshot_utils = __webpack_require__(30);
 
 
  __webpack_require__.d(__webpack_exports__, "_Card", function() { return Card_Card; });
@@ -9453,14 +9518,14 @@ const PlaceholderCard = props => external_React_default.a.createElement(Card, { 
 var Actions = __webpack_require__(2);
 
 
-var external_ReactIntl_ = __webpack_require__(15);
+var external_ReactIntl_ = __webpack_require__(17);
 
 
-var external_React_ = __webpack_require__(5);
+var external_React_ = __webpack_require__(9);
 var external_React_default = __webpack_require__.n(external_React_);
 
 
-var TopSitesConstants = __webpack_require__(38);
+var TopSitesConstants = __webpack_require__(40);
 
 
 
@@ -9538,7 +9603,7 @@ TopSiteFormInput_TopSiteFormInput.defaultProps = {
   validationError: false
 };
 
-var TopSite = __webpack_require__(40);
+var TopSite = __webpack_require__(42);
 
 
  __webpack_require__.d(__webpack_exports__, "TopSiteForm", function() { return TopSiteForm_TopSiteForm; });

@@ -49,7 +49,7 @@ this.RecipeExecutor = class RecipeExecutor {
       l2_normalize: this.l2Normalize,
       prob_normalize: this.probNormalize,
       set_default: this.setDefault,
-      lookupValue: this.lookupValue,
+      lookup_value: this.lookupValue,
       copy_to_map: this.copyToMap,
       scalar_multiply_tag: this.scalarMultiplyTag,
       apply_softmax_tags: this.applySoftmaxTags,
@@ -133,14 +133,17 @@ this.RecipeExecutor = class RecipeExecutor {
     let text = this._assembleText(item, config.fields);
     let tokens = tokenize(text);
     let tags = {};
+    let extended_tags = {};
 
     for (let nbTagger of this.nbTaggers) {
       let result = nbTagger.tagTokens(tokens);
       if ((result.label !== null) && result.confident) {
-        tags[result.label] = result;
+        extended_tags[result.label] = result;
+        tags[result.label] = Math.exp(result.logProb);
       }
     }
     item.nb_tags = tags;
+    item.nb_tags_extended = extended_tags;
     item.nb_tokens = tokens;
     return item;
   }
@@ -156,8 +159,9 @@ this.RecipeExecutor = class RecipeExecutor {
 
 
   conditionallyNmfTag(item, config) {
-    let allNmfTags = {};
+    let nestedNmfTags = {};
     let parentTags = {};
+    let parentWeights = {};
 
     if (!("nb_tags" in item) || !("nb_tokens" in item)) {
       return null;
@@ -166,16 +170,19 @@ this.RecipeExecutor = class RecipeExecutor {
     Object.keys(item.nb_tags).forEach(parentTag => {
       let nmfTagger = this.nmfTaggers[parentTag];
       if (nmfTagger !== undefined) {
+        nestedNmfTags[parentTag] = {};
+        parentWeights[parentTag] = item.nb_tags[parentTag];
         let nmfTags = nmfTagger.tagTokens(item.nb_tokens);
         Object.keys(nmfTags).forEach(nmfTag => {
-          allNmfTags[nmfTag] = nmfTags[nmfTag];
+          nestedNmfTags[parentTag][nmfTag] = nmfTags[nmfTag];
           parentTags[nmfTag] = parentTag;
         });
       }
     });
 
-    item.nmf_tags = allNmfTags;
+    item.nmf_tags = nestedNmfTags;
     item.nmf_tags_parent = parentTags;
+    item.nmf_tags_parent_weights = parentWeights;
 
     return item;
   }
@@ -337,6 +344,8 @@ this.RecipeExecutor = class RecipeExecutor {
 
 
 
+
+
   keepTopK(item, config) {
     if (!(config.field in item)) {
       return null;
@@ -347,9 +356,17 @@ this.RecipeExecutor = class RecipeExecutor {
     
     
     let sortable = [];
-    Object.keys(item[config.field]).forEach(key => {
-      sortable.push({key, value: item[config.field][key]});
+    Object.keys(item[config.field]).forEach(outerKey => {
+      let innerType = this._typeOf(item[config.field][outerKey]);
+      if (innerType === "map") {
+        Object.keys(item[config.field][outerKey]).forEach(innerKey => {
+          sortable.push({key: innerKey, value: item[config.field][outerKey][innerKey]});
+        });
+      } else {
+        sortable.push({key: outerKey, value: item[config.field][outerKey]});
+      }
     });
+
     sortable.sort((a, b) => {
       if (descending) {
         return b.value - a.value;
@@ -390,7 +407,7 @@ this.RecipeExecutor = class RecipeExecutor {
     if (!(config.field in item)) {
       return null;
     }
-    let k = this._lookupScalar(item, config.k, config.default);
+    let k = this._lookupScalar(item, config.k, config.dfault);
 
     let fieldType = this._typeOf(item[config.field]);
     if (fieldType === "number") {
@@ -419,6 +436,13 @@ this.RecipeExecutor = class RecipeExecutor {
 
 
 
+
+
+
+
+
+
+
   elementwiseMultiply(item, config) {
     if (!(config.left in item) || !(config.right in item)) {
       return null;
@@ -435,12 +459,14 @@ this.RecipeExecutor = class RecipeExecutor {
         item[config.left][i] *= item[config.right][i];
       }
     } else if (leftType === "map") {
-      Object.keys(item[config.left]).forEach(key => {
-        let r = 0;
-        if (key in item[config.right]) {
-          r = item[config.right][key];
+      Object.keys(item[config.left]).forEach(outerKey => {
+        let r = 0.0;
+        if (outerKey in item[config.right]) {
+          r = item[config.right][outerKey];
         }
-        item[config.left][key] *= r;
+        Object.keys(item[config.left][outerKey]).forEach(innerKey => {
+          item[config.left][outerKey][innerKey] *= r;
+        });
       });
     } else if (leftType === "number") {
       item[config.left] *= item[config.right];
@@ -510,7 +536,7 @@ this.RecipeExecutor = class RecipeExecutor {
 
 
   scalarAdd(item, config) {
-    let k = this._lookupScalar(item, config.k, config.default);
+    let k = this._lookupScalar(item, config.k, config.dfault);
     if (!(config.field in item)) {
       return null;
     }
@@ -524,6 +550,8 @@ this.RecipeExecutor = class RecipeExecutor {
       Object.keys(item[config.field]).forEach(key => {
         item[config.field][key] += k;
       });
+    } else if (fieldType === "number") {
+      item[config.field] += k;
     } else {
       return null;
     }
@@ -758,7 +786,7 @@ this.RecipeExecutor = class RecipeExecutor {
 
 
   setDefault(item, config) {
-    let val = this._lookupScalar(item, config.value, 0);
+    let val = this._lookupScalar(item, config.value, config.value);
     if (!(config.field in item)) {
       item[config.field] = val;
     }
@@ -815,28 +843,16 @@ this.RecipeExecutor = class RecipeExecutor {
     }
     let k = this._lookupScalar(item, config.k, 1);
     let type = this._typeOf(item[config.field]);
-    if (type === "array") {
-      for (let i = 0; i < item[config.field].length; i++) {
-        let v = item[config.field][i];
-        if (config.log_scale) {
-          v = Math.log(v + EPSILON);
-        }
-        item[config.field][i] = v * k;
-      }
-    } else if (type === "map") {
-      Object.keys(item[config.field]).forEach(key => {
-        let v = item[config.field][key];
-        if (config.log_scale) {
-          v = Math.log(v + EPSILON);
-        }
-        item[config.field][key] = v * k;
+    if (type === "map") {
+      Object.keys(item[config.field]).forEach(parentKey => {
+        Object.keys(item[config.field][parentKey]).forEach(key => {
+          let v = item[config.field][parentKey][key];
+          if (config.log_scale) {
+            v = Math.log(v + EPSILON);
+          }
+          item[config.field][parentKey][key] = v * k;
+        });
       });
-    } else if (type === "number") {
-      let v = item[config.field];
-      if (config.log_scale) {
-        v = Math.log(v + EPSILON);
-      }
-      item[config.field] = v * k;
     } else {
       return null;
     }
@@ -1038,6 +1054,7 @@ this.RecipeExecutor = class RecipeExecutor {
     if (key in left[config.left_field]) {
       leftValue = left[config.left_field][key];
     }
+
     left[config.left_field][key] = op(leftValue, rightValue);
 
     return left;
@@ -1058,7 +1075,6 @@ this.RecipeExecutor = class RecipeExecutor {
         break;
       }
     }
-
     return newItem;
   }
 
