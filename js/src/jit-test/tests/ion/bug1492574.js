@@ -1,6 +1,4 @@
-if (!('oomTest' in this)) {
-    quit();
-}
+
 
 function foo() {}
 function foooooooooooooooooooooooooooooooo() {}

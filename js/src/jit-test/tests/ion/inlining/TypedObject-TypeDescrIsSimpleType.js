@@ -17,10 +17,7 @@
 
 
 
-if (!this.TypedObject) {
-    print("No TypedObject, skipping");
-    quit();
-}
+
 
 var T = TypedObject;
 var AT = new T.ArrayType(T.uint32, 100);

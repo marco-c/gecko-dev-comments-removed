@@ -1,5 +1,4 @@
-if (!this.hasOwnProperty("TypedObject"))
-  quit();
+
 
 var T = TypedObject;
 var ST = new T.StructType({x:T.int32});

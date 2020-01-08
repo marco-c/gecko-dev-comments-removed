@@ -21,10 +21,7 @@
 
 
 
-if (!this.TypedObject) {
-    print("No TypedObject, skipping");
-    quit();
-}
+
 
 var T = TypedObject;
 var ST1 = new T.StructType({x:T.int32});

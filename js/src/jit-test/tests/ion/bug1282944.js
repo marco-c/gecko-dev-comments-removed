@@ -1,8 +1,5 @@
 
 
-if (helperThreadCount() === 0)
-  quit(0);
-
 
 
 evaluate('offThreadCompileScript("var x = -1"); runOffThreadScript()',

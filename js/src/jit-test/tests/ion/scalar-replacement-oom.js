@@ -1,5 +1,4 @@
-if (typeof oomAtAllocation !== 'function')
-    quit();
+
 
 var lfcode = new Array();
 function k(a, f_arg, b, c) {

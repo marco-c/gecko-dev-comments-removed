@@ -1,5 +1,5 @@
-if (!('oomAfterAllocations' in this))
-    quit();
+
+
 gcslice(0); 
 function f(str) {
     for (var i = 0; i < 10; i++) {

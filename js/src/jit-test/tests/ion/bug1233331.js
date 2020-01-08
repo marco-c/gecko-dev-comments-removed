@@ -1,5 +1,4 @@
-if (typeof oomTest !== 'function')
-    quit();
+
 
 x = 0;
 try {

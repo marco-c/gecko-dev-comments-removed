@@ -20,8 +20,6 @@ function canIoncompile() {
   }
 }
 
-if (!("oomAtAllocation" in this))
-  quit();
 if (canIoncompile() != true)
   quit();
 if ("gczeal" in this)

@@ -1,8 +1,5 @@
 
 
-if (!('oomAfterAllocations' in this))
-    quit();
-
 var egc = 138;
 function SwitchTest(value) {
     switch (value) {
