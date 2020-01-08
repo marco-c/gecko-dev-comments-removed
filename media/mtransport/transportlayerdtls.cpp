@@ -809,6 +809,19 @@ nsresult TransportLayerDtls::GetCipherSuite(uint16_t* cipherSuite) const {
   return NS_OK;
 }
 
+std::vector<uint16_t> TransportLayerDtls::GetDefaultSrtpCiphers() {
+  std::vector<uint16_t> ciphers;
+
+  ciphers.push_back(kDtlsSrtpAeadAes128Gcm);
+  
+  
+  ciphers.push_back(kDtlsSrtpAeadAes256Gcm);
+  ciphers.push_back(kDtlsSrtpAes128CmHmacSha1_80);
+  ciphers.push_back(kDtlsSrtpAes128CmHmacSha1_32);
+
+  return ciphers;
+}
+
 void TransportLayerDtls::StateChange(TransportLayer *layer, State state) {
   if (state <= state_) {
     MOZ_MTLOG(ML_ERROR, "Lower layer state is going backwards from ours");
