@@ -4,6 +4,9 @@
 
 "use strict";
 
+var EXPORTED_SYMBOLS = ["SelectChild"];
+
+ChromeUtils.import("resource://gre/modules/ActorChild.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 ChromeUtils.defineModuleGetter(this, "BrowserUtils",
@@ -27,10 +30,6 @@ const SUPPORTED_PROPERTIES = [
 
 
 var gOpen = false;
-
-var EXPORTED_SYMBOLS = [
-  "SelectContentHelper"
-];
 
 var SelectContentHelper = function(aElement, aOptions, aGlobal) {
   this.element = aElement;
@@ -421,4 +420,22 @@ function buildOptionListForChildren(node) {
     }
   }
   return result;
+}
+
+class SelectChild extends ActorChild {
+  handleEvent(event) {
+    if (SelectContentHelper.open) {
+      return;
+    }
+
+    switch (event.type) {
+    case "mozshowdropdown":
+      new SelectContentHelper(event.target, {isOpenedViaTouch: false}, this.mm);
+      break;
+
+    case "mozshowdropdown-sourcetouch":
+      new SelectContentHelper(event.target, {isOpenedViaTouch: true}, this.mm);
+      break;
+    }
+  }
 }
