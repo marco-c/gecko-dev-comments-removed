@@ -19,6 +19,7 @@ use style_traits::{ParseError, SpecifiedValueInfo, StyleParseErrorKind};
 use values::computed::{self, CSSPixelLength, Context, ExtremumLength};
 use values::generics::length::{MaxLength as GenericMaxLength, MozLength as GenericMozLength};
 use values::generics::NonNegative;
+use values::generics::transform::IsZeroLength;
 use values::specified::calc::CalcNode;
 use values::{Auto, CSSFloat, Either, IsAuto, Normal};
 
@@ -97,6 +98,16 @@ impl FontBaseSize {
 }
 
 impl FontRelativeLength {
+    
+    fn is_zero(&self) -> bool {
+        match *self {
+            FontRelativeLength::Em(v) |
+            FontRelativeLength::Ex(v) |
+            FontRelativeLength::Ch(v) |
+            FontRelativeLength::Rem(v) => v == 0.0,
+        }
+    }
+
     
     pub fn to_computed_value(&self, context: &Context, base_size: FontBaseSize) -> CSSPixelLength {
         use std::f32;
@@ -230,6 +241,16 @@ pub enum ViewportPercentageLength {
 }
 
 impl ViewportPercentageLength {
+    
+    fn is_zero(&self) -> bool {
+        match *self {
+            ViewportPercentageLength::Vw(v) |
+            ViewportPercentageLength::Vh(v) |
+            ViewportPercentageLength::Vmin(v) |
+            ViewportPercentageLength::Vmax(v) => v == 0.0,
+        }
+    }
+
     
     pub fn to_computed_value(&self, viewport_size: Size2D<Au>) -> CSSPixelLength {
         let (factor, length) = match *self {
@@ -484,6 +505,18 @@ impl NoCalcLength {
 }
 
 impl SpecifiedValueInfo for NoCalcLength {}
+
+impl IsZeroLength for NoCalcLength {
+    #[inline]
+    fn is_zero_length(&self) -> bool {
+        match *self {
+            NoCalcLength::Absolute(v) => v.is_zero(),
+            NoCalcLength::FontRelative(v) => v.is_zero(),
+            NoCalcLength::ViewportPercentage(v) => v.is_zero(),
+            NoCalcLength::ServoCharacterWidth(v) => v.0 == 0,
+        }
+    }
+}
 
 
 
@@ -836,6 +869,17 @@ impl LengthOrPercentage {
         allow_quirks: AllowQuirks,
     ) -> Result<Self, ParseError<'i>> {
         Self::parse_internal(context, input, AllowedNumericType::All, allow_quirks)
+    }
+}
+
+impl IsZeroLength for LengthOrPercentage {
+    #[inline]
+    fn is_zero_length(&self) -> bool {
+        match *self {
+            LengthOrPercentage::Length(l) => l.is_zero_length(),
+            LengthOrPercentage::Percentage(p) => p.0 == 0.0,
+            LengthOrPercentage::Calc(_) => false,
+        }
     }
 }
 

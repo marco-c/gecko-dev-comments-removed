@@ -610,7 +610,6 @@ impl<Number: ToCss + PartialEq> ToCss for Scale<Number> {
     SpecifiedValueInfo,
     ToAnimatedZero,
     ToComputedValue,
-    ToCss,
 )]
 
 
@@ -619,11 +618,53 @@ pub enum Translate<LengthOrPercentage, Length> {
     
     None,
     
-    TranslateX(LengthOrPercentage),
-    
     Translate(LengthOrPercentage, LengthOrPercentage),
     
     Translate3D(LengthOrPercentage, LengthOrPercentage, Length),
+}
+
+
+
+
+
+pub trait IsZeroLength {
+    
+    fn is_zero_length(&self) -> bool;
+}
+
+impl<LoP: ToCss + IsZeroLength, L: ToCss> ToCss for Translate<LoP, L> {
+    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
+    where
+        W: fmt::Write,
+    {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        match *self {
+            Translate::None => dest.write_str("none"),
+            Translate::Translate(ref x, ref y) => {
+                x.to_css(dest)?;
+                if !y.is_zero_length() {
+                    dest.write_char(' ')?;
+                    y.to_css(dest)?;
+                }
+                Ok(())
+            },
+            Translate::Translate3D(ref x, ref y, ref z) => {
+                x.to_css(dest)?;
+                dest.write_char(' ')?;
+                y.to_css(dest)?;
+                dest.write_char(' ')?;
+                z.to_css(dest)
+            },
+        }
+    }
 }
 
 #[allow(missing_docs)]
