@@ -767,33 +767,17 @@ BaselineInspector::hasSeenNonStringIterMore(jsbytecode* pc)
     return stub->toIteratorMore_Fallback()->hasNonStringResult();
 }
 
-
-
-
 bool
-BaselineInspector::hasSeenDoubleResult(jsbytecode* pc, bool defaultIfEmpty)
+BaselineInspector::hasSeenDoubleResult(jsbytecode* pc)
 {
     if (!hasBaselineScript()) {
         return false;
     }
 
     const ICEntry& entry = icEntryFromPC(pc);
-    ICFallbackStub* stub = entry.fallbackStub();
+    ICStub* stub = entry.fallbackStub();
 
     MOZ_ASSERT(stub->isUnaryArith_Fallback() || stub->isBinaryArith_Fallback());
-
-    bool hasBeenExecuted = (stub->state().numOptimizedStubs() != 0);
-    if (!hasBeenExecuted) {
-        if (stub->isUnaryArith_Fallback()) {
-            hasBeenExecuted = stub->toUnaryArith_Fallback()->hadUnoptimizableOperands();
-        } else {
-            hasBeenExecuted = stub->toBinaryArith_Fallback()->hadUnoptimizableOperands();
-        }
-    }
-
-    if (!hasBeenExecuted) {
-        return defaultIfEmpty;
-    }
 
     if (stub->isUnaryArith_Fallback()) {
         return stub->toUnaryArith_Fallback()->sawDoubleResult();
