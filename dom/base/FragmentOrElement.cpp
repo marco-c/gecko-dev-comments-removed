@@ -125,8 +125,6 @@
 #include "nsChildContentList.h"
 #include "mozilla/BloomFilter.h"
 
-#include "NodeUbiReporting.h"
-
 using namespace mozilla;
 using namespace mozilla::dom;
 
@@ -445,12 +443,6 @@ nsIContent::GetURLDataForStyleAttr(nsIPrincipal* aSubjectPrincipal) const
   
   
   return do_AddRef(OwnerDoc()->DefaultStyleAttrURLData());
-}
-
-void
-nsIContent::ConstructUbiNode(void* storage)
-{
-  JS::ubi::Concrete<nsIContent>::construct(storage, this);
 }
 
 

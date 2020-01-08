@@ -459,12 +459,6 @@ public:
 
 
 
-  virtual void ConstructUbiNode(void* storage) = 0;
-
-  
-
-
-
   static bool HasBoxQuadsSupport(JSContext* aCx, JSObject* );
 
 protected:
