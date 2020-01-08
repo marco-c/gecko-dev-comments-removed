@@ -760,7 +760,7 @@ var gIdentityHandler = {
     
     if (this._isEV) {
       let iData = this.getIdentityData();
-      host = owner = iData.subjectOrg;
+      owner = iData.subjectOrg;
       verifier = this._identityIconLabels.tooltipText;
 
       
