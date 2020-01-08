@@ -283,32 +283,18 @@ impl VariableValue {
         }
     }
 
-    fn push<'i>(
+    fn push(
         &mut self,
-        input: &Parser<'i, '_>,
         css: &str,
         css_first_token_type: TokenSerializationType,
         css_last_token_type: TokenSerializationType,
-    ) -> Result<(), ParseError<'i>> {
-        
-        
-        
-        
-        
-        
-        
-        const MAX_VALUE_LENGTH_IN_BYTES: usize = 1024 * 1024;
-
-        if self.css.len() + css.len() > MAX_VALUE_LENGTH_IN_BYTES {
-            return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
-        }
-
+    ) {
         
         
         
         
         if css.is_empty() {
-            return Ok(());
+            return;
         }
 
         self.first_token_type.set_if_nothing(css_first_token_type);
@@ -321,32 +307,21 @@ impl VariableValue {
             self.css.push_str("/**/")
         }
         self.css.push_str(css);
-        self.last_token_type = css_last_token_type;
-        Ok(())
+        self.last_token_type = css_last_token_type
     }
 
-    fn push_from<'i>(
+    fn push_from(
         &mut self,
-        input: &Parser<'i, '_>,
         position: (SourcePosition, TokenSerializationType),
+        input: &Parser,
         last_token_type: TokenSerializationType,
-    ) -> Result<(), ParseError<'i>> {
-        self.push(
-            input,
-            input.slice_from(position.0),
-            position.1,
-            last_token_type,
-        )
+    ) {
+        self.push(input.slice_from(position.0), position.1, last_token_type)
     }
 
-    fn push_variable<'i>(
-        &mut self,
-        input: &Parser<'i, '_>,
-        variable: &ComputedValue,
-    ) -> Result<(), ParseError<'i>> {
+    fn push_variable(&mut self, variable: &ComputedValue) {
         debug_assert!(variable.references.is_empty());
         self.push(
-            input,
             &variable.css,
             variable.first_token_type,
             variable.last_token_type,
@@ -752,7 +727,6 @@ fn substitute_all(custom_properties_map: &mut CustomPropertiesMap, environment: 
     
 
     
-    #[derive(Debug)]
     struct VarInfo {
         
         
@@ -767,7 +741,6 @@ fn substitute_all(custom_properties_map: &mut CustomPropertiesMap, environment: 
     }
     
     
-    #[derive(Debug)]
     struct Context<'a> {
         
         
@@ -968,7 +941,7 @@ fn substitute_references_in_value<'i>(
         environment,
     )?;
 
-    computed_value.push_from(&input, position, last_token_type)?;
+    computed_value.push_from(position, &input, last_token_type);
     Ok(computed_value)
 }
 
@@ -982,8 +955,8 @@ fn substitute_references_in_value<'i>(
 
 
 
-fn substitute_block<'i>(
-    input: &mut Parser<'i, '_>,
+fn substitute_block<'i, 't>(
+    input: &mut Parser<'i, 't>,
     position: &mut (SourcePosition, TokenSerializationType),
     partial_computed_value: &mut ComputedValue,
     custom_properties: &CustomPropertiesMap,
@@ -1018,11 +991,10 @@ fn substitute_block<'i>(
                 let is_env = name.eq_ignore_ascii_case("env");
 
                 partial_computed_value.push(
-                    input,
                     input.slice(position.0..before_this_token),
                     position.1,
                     last_token_type,
-                )?;
+                );
                 input.parse_nested_block(|input| {
                     
                     let name = {
@@ -1042,7 +1014,7 @@ fn substitute_block<'i>(
 
                     if let Some(v) = value {
                         last_token_type = v.last_token_type;
-                        partial_computed_value.push_variable(input, v)?;
+                        partial_computed_value.push_variable(v);
                         
                         
                         
@@ -1064,7 +1036,7 @@ fn substitute_block<'i>(
                             custom_properties,
                             env,
                         )?;
-                        partial_computed_value.push_from(input, position, last_token_type)?;
+                        partial_computed_value.push_from(position, input, last_token_type);
                     }
                     Ok(())
                 })?;
@@ -1124,6 +1096,6 @@ pub fn substitute<'i>(
         &custom_properties,
         env,
     )?;
-    substituted.push_from(&input, position, last_token_type)?;
+    substituted.push_from(position, &input, last_token_type);
     Ok(substituted.css)
 }
