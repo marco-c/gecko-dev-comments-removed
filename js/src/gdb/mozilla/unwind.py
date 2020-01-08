@@ -121,14 +121,13 @@ class UnwinderTypeCache(object):
             self.frame_class_types[enumval] = class_type.pointer()
 
 
-
-
-
-
-
-
-
 def parse_proc_maps():
+    
+    
+    
+    
+    
+    
     mapfile = '/proc/' + str(gdb.selected_inferior().pid) + '/maps'
     
     matcher = re.compile("^([a-fA-F0-9]+)-([a-fA-F0-9]+)\s+..x.\s+\S+\s+\S+\s+\S*(.*)$")
@@ -149,9 +148,9 @@ def parse_proc_maps():
     return mappings
 
 
-
-
 class FrameSymbol(object):
+    "A symbol/value pair as expected from gdb frame decorators."
+
     def __init__(self, sym, val):
         self.sym = sym
         self.val = val
@@ -163,11 +162,11 @@ class FrameSymbol(object):
         return self.val
 
 
-
-
-
-
 class JitFrameDecorator(FrameDecorator):
+    """This represents a single JIT frame for the purposes of display.
+    That is, the frame filter creates instances of this when it sees a
+    JIT frame in the stack."""
+
     def __init__(self, base, info, cache):
         super(JitFrameDecorator, self).__init__(base)
         self.info = info
@@ -259,9 +258,9 @@ class JitFrameDecorator(FrameDecorator):
         return result
 
 
-
-
 class SpiderMonkeyFrameFilter(object):
+    "A frame filter for SpiderMonkey."
+
     
     
     
@@ -286,30 +285,30 @@ class SpiderMonkeyFrameFilter(object):
         return imap(self.maybe_wrap_frame, frame_iter)
 
 
-
-
 class SpiderMonkeyFrameId(object):
+    "A frame id class, as specified by the gdb unwinder API."
+
     def __init__(self, sp, pc):
         self.sp = sp
         self.pc = pc
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class UnwinderState(object):
+    """This holds all the state needed during a given unwind.  Each time a
+    new unwind is done, a new instance of this class is created.  It
+    keeps track of all the state needed to unwind JIT frames.  Note that
+    this class is not directly instantiated.
+
+    This is a base class, and must be specialized for each target
+    architecture, both because we need to use arch-specific register
+    names, and because entry frame unwinding is arch-specific.
+    See https://sourceware.org/bugzilla/show_bug.cgi?id=19286 for info
+    about the register name issue.
+
+    Each subclass must define SP_REGISTER, PC_REGISTER, and
+    SENTINEL_REGISTER (see x64UnwinderState for info); and implement
+    unwind_entry_frame_registers."""
+
     def __init__(self, typecache):
         self.next_sp = None
         self.next_type = None
@@ -506,9 +505,9 @@ class UnwinderState(object):
         return self.unwind_exit_frame(pc, pending_frame)
 
 
-
-
 class x64UnwinderState(UnwinderState):
+    "The UnwinderState subclass for x86-64."
+
     SP_REGISTER = 'rsp'
     PC_REGISTER = 'rip'
 
@@ -535,11 +534,11 @@ class x64UnwinderState(UnwinderState):
                 unwind_info.add_saved_register(self.SP_REGISTER, sp)
 
 
-
-
-
-
 class SpiderMonkeyUnwinder(Unwinder):
+    """The unwinder object.  This provides the "user interface" to the JIT
+    unwinder, and also handles constructing or destroying UnwinderState
+    objects as needed."""
+
     
     UNWINDERS = [x64UnwinderState]
 
@@ -602,10 +601,10 @@ class SpiderMonkeyUnwinder(Unwinder):
         self.unwinder_state = None
 
 
-
-
-
 def register_unwinder(objfile):
+    """Register the unwinder and frame filter with |objfile|.  If |objfile|
+    is None, register them globally."""
+
     type_cache = UnwinderTypeCache()
     unwinder = None
     
