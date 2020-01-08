@@ -550,8 +550,10 @@ MediaEngineRemoteVideoSource::DeliverFrame(uint8_t* aBuffer,
     std::swap(req_ideal_width, req_ideal_height);
   }
 
-  int32_t dst_max_width = std::min(req_max_width, aProps.width());
-  int32_t dst_max_height = std::min(req_max_height, aProps.height());
+  int32_t dst_max_width = req_max_width == 0 ? aProps.width() :
+    std::min(req_max_width, aProps.width());
+  int32_t dst_max_height = req_max_height == 0 ? aProps.height() :
+    std::min(req_max_height, aProps.height());
   
   
   
