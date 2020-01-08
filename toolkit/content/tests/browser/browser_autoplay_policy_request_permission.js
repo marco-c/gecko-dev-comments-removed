@@ -8,13 +8,16 @@ ChromeUtils.import("resource:///modules/SitePermissions.jsm", this);
 
 const VIDEO_PAGE = "https://example.com/browser/toolkit/content/tests/browser/file_empty.html";
 
-add_task(() => {
+function setTestingPreferences(defaultSetting) {
+  info(`set default autoplay setting to '${defaultSetting}'`);
+  let defaultValue = defaultSetting == "blocked" ?
+    SpecialPowers.Ci.nsIAutoplay.BLOCKED : SpecialPowers.Ci.nsIAutoplay.ALLOWED;
   return SpecialPowers.pushPrefEnv({"set": [
-    ["media.autoplay.default", SpecialPowers.Ci.nsIAutoplay.BLOCKED],
+    ["media.autoplay.default", defaultValue],
     ["media.autoplay.enabled.user-gestures-needed", true],
     ["media.autoplay.block-event.enabled", true],
   ]});
-});
+}
 
 async function testAutoplayExistingPermission(args) {
   info("- Starting '" + args.name + "' -");
@@ -38,10 +41,16 @@ async function testAutoplayExistingPermission(args) {
   });
 }
 
+async function testAutoplayExistingPermissionAgainstDefaultSetting(args) {
+  await setTestingPreferences(args.defaultSetting);
+  await testAutoplayExistingPermission(args);
+}
+
 
 
 
 add_task(async () => {
+  await setTestingPreferences("blocked" );
   await testAutoplayExistingPermission({
     name: "Prexisting allow permission autoplay attribute",
     permission: SitePermissions.ALLOW,
@@ -65,5 +74,26 @@ add_task(async () => {
     permission: SitePermissions.BLOCK,
     shouldPlay: false,
     mode: "call play",
+  });
+});
+
+
+
+
+
+add_task(async () => {
+  await testAutoplayExistingPermissionAgainstDefaultSetting({
+    name: "Site has prexisting allow permission but default setting is 'blocked'",
+    permission: SitePermissions.ALLOW,
+    defaultSetting: "blocked",
+    shouldPlay: true,
+    mode: "autoplay attribute",
+  });
+  await testAutoplayExistingPermissionAgainstDefaultSetting({
+    name: "Site has prexisting block permission but default setting is 'allowed'",
+    permission: SitePermissions.BLOCK,
+    defaultSetting: "allowed",
+    shouldPlay: false,
+    mode: "autoplay attribute",
   });
 });
