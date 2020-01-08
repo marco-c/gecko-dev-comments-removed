@@ -232,7 +232,7 @@ extern "C" {
 
 
 
-#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && \
+#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && defined(_MSC_VER) && \
     (defined(VISUALC_HAS_AVX2) || defined(CLANG_HAS_AVX2))
 #define HAS_ARGB1555TOARGBROW_AVX2
 #define HAS_ARGB4444TOARGBROW_AVX2
