@@ -186,6 +186,7 @@ AltSvcMapping::AltSvcMapping(DataStorage *storage, int32_t epoch,
   , mMixedScheme(false)
   , mNPNToken(npnToken)
   , mOriginAttributes(originAttributes)
+  , mSyncOnlyOnSuccess(false)
 {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -267,6 +268,9 @@ void
 AltSvcMapping::Sync()
 {
   if (!mStorage) {
+    return;
+  }
+  if (mSyncOnlyOnSuccess && !mValidated) {
     return;
   }
   nsCString value;
@@ -379,6 +383,7 @@ AltSvcMapping::Serialize(nsCString &out)
 AltSvcMapping::AltSvcMapping(DataStorage *storage, int32_t epoch, const nsCString &str)
   : mStorage(storage)
   , mStorageEpoch(epoch)
+  , mSyncOnlyOnSuccess(false)
 {
   mValidated = false;
   nsresult code;
@@ -883,12 +888,15 @@ AltSvcCache::UpdateAltServiceMapping(AltSvcMapping *map, nsProxyInfo *pi,
       return;
     }
 
+    if (map->GetExpiresAt() < existing->GetExpiresAt()) {
+      LOG(("AltSvcCache::UpdateAltServiceMapping %p map %p ttl shorter than %p, ignoring",
+           this, map, existing.get()));
+      return;
+    }
+
     
-    LOG(("AltSvcCache::UpdateAltServiceMapping %p map %p overwrites %p\n",
+    LOG(("AltSvcCache::UpdateAltServiceMapping %p map %p may overwrite %p\n",
          this, map, existing.get()));
-    existing = nullptr;
-    mStorage->Remove(map->HashKey(),
-                     map->Private() ? DataStorage_Private : DataStorage_Persistent);
   }
 
   if (existing && !existing->Validated()) {
@@ -898,8 +906,13 @@ AltSvcCache::UpdateAltServiceMapping(AltSvcMapping *map, nsProxyInfo *pi,
   }
 
   
+  
   MOZ_ASSERT(!map->Validated());
-  map->Sync();
+  if (!existing) {
+    map->Sync();
+  } else {
+    map->SetSyncOnlyOnSuccess(true);
+  }
 
   RefPtr<nsHttpConnectionInfo> ci;
   map->GetConnectionInfo(getter_AddRefs(ci), pi, originAttributes);
