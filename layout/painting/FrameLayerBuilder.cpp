@@ -6002,6 +6002,79 @@ static nsSize ComputeDesiredDisplaySizeForAnimation(nsIFrame* aContainerFrame) {
   return presContext->GetVisibleArea().Size();
 }
 
+static Size ChooseScale(nsIFrame* aContainerFrame,
+                        nsDisplayItem* aContainerItem,
+                        const nsRect& aVisibleRect, float aXScale,
+                        float aYScale, const Matrix& aTransform2d,
+                        bool aCanDraw2D) {
+  Size scale;
+  
+  if (aCanDraw2D && !aContainerFrame->Combines3DTransformWithAncestors() &&
+      !aContainerFrame->HasPerspective()) {
+    
+    
+    if (aContainerItem &&
+        aContainerItem->GetType() == DisplayItemType::TYPE_TRANSFORM &&
+        EffectCompositor::HasAnimationsForCompositor(aContainerFrame,
+                                                     eCSSProperty_transform)) {
+      nsSize displaySize =
+          ComputeDesiredDisplaySizeForAnimation(aContainerFrame);
+      
+      
+      nsSize scaledVisibleSize = nsSize(aVisibleRect.Width() * aXScale,
+                                        aVisibleRect.Height() * aYScale);
+      scale = nsLayoutUtils::ComputeSuitableScaleForAnimation(
+          aContainerFrame, scaledVisibleSize, displaySize);
+      
+      
+      float incomingScale = std::max(aXScale, aYScale);
+      scale.width *= incomingScale;
+      scale.height *= incomingScale;
+    } else {
+      
+      
+      scale = aTransform2d.ScaleFactors(true);
+      
+      
+      
+      
+      
+      
+      Matrix frameTransform;
+      if (ActiveLayerTracker::IsScaleSubjectToAnimation(aContainerFrame)) {
+        scale.width = gfxUtils::ClampToScaleFactor(scale.width);
+        scale.height = gfxUtils::ClampToScaleFactor(scale.height);
+
+        
+        
+        nsSize maxScale(4, 4);
+        if (!aVisibleRect.IsEmpty()) {
+          nsSize displaySize =
+              ComputeDesiredDisplaySizeForAnimation(aContainerFrame);
+          maxScale = Max(maxScale, displaySize / aVisibleRect.Size());
+        }
+        if (scale.width > maxScale.width) {
+          scale.width = gfxUtils::ClampToScaleFactor(maxScale.width, true);
+        }
+        if (scale.height > maxScale.height) {
+          scale.height = gfxUtils::ClampToScaleFactor(maxScale.height, true);
+        }
+      } else {
+        
+      }
+    }
+    
+    
+    if (fabs(scale.width) < 1e-8 || fabs(scale.height) < 1e-8) {
+      scale = Size(1.0, 1.0);
+    }
+  } else {
+    scale = Size(1.0, 1.0);
+  }
+
+  return scale;
+}
+
 static bool ChooseScaleAndSetTransform(
     FrameLayerBuilder* aLayerBuilder, nsDisplayListBuilder* aDisplayListBuilder,
     nsIFrame* aContainerFrame, nsDisplayItem* aContainerItem,
@@ -6053,79 +6126,17 @@ static bool ChooseScaleAndSetTransform(
   }
 
   bool canDraw2D = transform.CanDraw2D(&transform2d);
-  Size scale;
-  
-  if (canDraw2D && !aContainerFrame->Combines3DTransformWithAncestors() &&
-      !aContainerFrame->HasPerspective()) {
-    
-    
-    if (aContainerItem &&
-        aContainerItem->GetType() == DisplayItemType::TYPE_TRANSFORM &&
-        EffectCompositor::HasAnimationsForCompositor(aContainerFrame,
-                                                     eCSSProperty_transform)) {
-      nsSize displaySize =
-          ComputeDesiredDisplaySizeForAnimation(aContainerFrame);
-      
-      
-      nsSize scaledVisibleSize =
-          nsSize(aVisibleRect.Width() * aIncomingScale.mXScale,
-                 aVisibleRect.Height() * aIncomingScale.mYScale);
-      scale = nsLayoutUtils::ComputeSuitableScaleForAnimation(
-          aContainerFrame, scaledVisibleSize, displaySize);
-      
-      
-      float incomingScale =
-          std::max(aIncomingScale.mXScale, aIncomingScale.mYScale);
-      scale.width *= incomingScale;
-      scale.height *= incomingScale;
-    } else {
-      
-      
-      scale = transform2d.ScaleFactors(true);
-      
-      
-      
-      
-      
-      
-      Matrix frameTransform;
-      if (ActiveLayerTracker::IsScaleSubjectToAnimation(aContainerFrame)) {
-        scale.width = gfxUtils::ClampToScaleFactor(scale.width);
-        scale.height = gfxUtils::ClampToScaleFactor(scale.height);
+  Size scale = ChooseScale(aContainerFrame, aContainerItem, aVisibleRect,
+                           aIncomingScale.mXScale, aIncomingScale.mYScale,
+                           transform2d, canDraw2D);
 
-        
-        
-        nsSize maxScale(4, 4);
-        if (!aVisibleRect.IsEmpty()) {
-          nsSize displaySize =
-              ComputeDesiredDisplaySizeForAnimation(aContainerFrame);
-          maxScale = Max(maxScale, displaySize / aVisibleRect.Size());
-        }
-        if (scale.width > maxScale.width) {
-          scale.width = gfxUtils::ClampToScaleFactor(maxScale.width, true);
-        }
-        if (scale.height > maxScale.height) {
-          scale.height = gfxUtils::ClampToScaleFactor(maxScale.height, true);
-        }
-      } else {
-        
-      }
-    }
-    
-    
-    if (fabs(scale.width) < 1e-8 || fabs(scale.height) < 1e-8) {
-      scale = Size(1.0, 1.0);
-    }
-    
-    
-    
-    
-    
-    if (aTransform && !gfxPrefs::LayersTilesEnabled()) {
-      RestrictScaleToMaxLayerSize(scale, aVisibleRect, aContainerFrame, aLayer);
-    }
-  } else {
-    scale = Size(1.0, 1.0);
+  
+  
+  
+  
+  
+  if (aTransform && !gfxPrefs::LayersTilesEnabled()) {
+    RestrictScaleToMaxLayerSize(scale, aVisibleRect, aContainerFrame, aLayer);
   }
 
   
