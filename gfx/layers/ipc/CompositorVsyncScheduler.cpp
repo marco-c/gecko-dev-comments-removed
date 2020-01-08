@@ -90,7 +90,8 @@ CompositorVsyncScheduler::CompositorVsyncScheduler(CompositorVsyncSchedulerOwner
   
   
   mAsapScheduling = gfxPrefs::LayersCompositionFrameRate() == 0 ||
-                    gfxPlatform::IsInLayoutAsapMode();
+                    gfxPlatform::IsInLayoutAsapMode() ||
+                    recordreplay::IsRecordingOrReplaying();
 }
 
 CompositorVsyncScheduler::~CompositorVsyncScheduler()
@@ -158,6 +159,7 @@ CompositorVsyncScheduler::ScheduleComposition()
   }
 
   if (mAsapScheduling) {
+    
     
     PostCompositeTask(TimeStamp::Now());
 #ifdef MOZ_WIDGET_ANDROID

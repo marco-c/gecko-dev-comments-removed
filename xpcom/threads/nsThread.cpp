@@ -1080,6 +1080,13 @@ nsThread::ProcessNextEvent(bool aMayWait, bool* aResult)
   
   if (recordreplay::IsRecordingOrReplaying()) {
     recordreplay::ExecuteTriggers();
+
+    
+    
+    
+    if (mIsMainThread == MAIN_THREAD) {
+      recordreplay::child::NotifyVsyncObserver();
+    }
   }
 
   
