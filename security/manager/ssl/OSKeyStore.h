@@ -18,12 +18,13 @@
 class AbstractOSKeyStore
 {
 public:
+
+  
+  virtual nsresult RetrieveSecret(const nsACString& aLabel,
+                         nsACString& aSecret) = 0;
   
   virtual nsresult StoreSecret(const nsACString& secret,
                                const nsACString& label) = 0;
-  
-  
-  virtual bool SecretAvailable(const nsACString& label) = 0;
   
   virtual nsresult DeleteSecret(const nsACString& label) = 0;
   
@@ -36,11 +37,14 @@ public:
 
   
   
+  virtual bool SecretAvailable(const nsACString& label);
+  
+  
   
   virtual nsresult EncryptDecrypt(const nsACString& label,
                                   const std::vector<uint8_t>& inBytes,
                                   std::vector<uint8_t>& outBytes,
-                                  bool encrypt) = 0;
+                                  bool encrypt);
 
   size_t GetKeyByteLength() { return mKeyByteLength; }
 

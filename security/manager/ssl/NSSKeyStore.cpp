@@ -226,3 +226,12 @@ NSSKeyStore::EncryptDecrypt(const nsACString& aLabel,
   }
   return DoCipher(symKey, inBytes, outBytes, encrypt);
 }
+
+
+
+nsresult
+NSSKeyStore::RetrieveSecret(const nsACString& aLabel,
+                   nsACString& aSecret)
+{
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
