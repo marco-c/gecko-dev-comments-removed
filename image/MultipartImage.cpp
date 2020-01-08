@@ -42,9 +42,11 @@ public:
   void BlockUntilDecodedAndFinishObserving()
   {
     
-    RefPtr<SourceSurface> surface =
-      mImage->GetFrame(imgIContainer::FRAME_CURRENT,
-                       imgIContainer::FLAG_SYNC_DECODE);
+    
+    
+    mImage->RequestDecodeForSize(gfx::IntSize(0, 0),
+                                 imgIContainer::FLAG_SYNC_DECODE);
+
 
     
     
