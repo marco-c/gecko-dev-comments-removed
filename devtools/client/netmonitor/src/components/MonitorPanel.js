@@ -33,7 +33,7 @@ const MediaQueryVert = window.matchMedia("(min-width: 700px)");
 
 
 
-const MediaQuerySingleRow = window.matchMedia("(min-width: 960px)");
+const MediaQuerySingleRow = window.matchMedia("(min-width: 1020px)");
 
 
 
