@@ -1979,58 +1979,6 @@ TransactionId WebRenderBridgeParent::FlushTransactionIdsForEpoch(
       Telemetry::Accumulate(Telemetry::CONTENT_FRAME_TIME_WITHOUT_UPLOAD,
                             fracLatencyNorm);
 
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (fracLatencyNorm < 200) {
-        
-        Telemetry::AccumulateCategorical(
-            LABELS_CONTENT_FRAME_TIME_REASON::OnTime);
-      } else {
-        if (transactionId.mVsyncId == VsyncId() ||
-            aCompositeStartId == VsyncId() ||
-            transactionId.mVsyncId >= aCompositeStartId) {
-          
-          
-          Telemetry::AccumulateCategorical(
-              LABELS_CONTENT_FRAME_TIME_REASON::NoVsync);
-        } else if (aCompositeStartId - transactionId.mVsyncId > 1) {
-          auto fullPaintTime =
-              transactionId.mSceneBuiltTime
-                  ? transactionId.mSceneBuiltTime - transactionId.mTxnStartTime
-                  : TimeDuration::FromMilliseconds(0);
-          
-          if (fullPaintTime >= TimeDuration::FromMilliseconds(20)) {
-            Telemetry::AccumulateCategorical(
-                LABELS_CONTENT_FRAME_TIME_REASON::MissedCompositeLong);
-          } else if (fullPaintTime >= TimeDuration::FromMilliseconds(10)) {
-            Telemetry::AccumulateCategorical(
-                LABELS_CONTENT_FRAME_TIME_REASON::MissedCompositeMid);
-          } else if (fullPaintTime >= TimeDuration::FromMilliseconds(5)) {
-            Telemetry::AccumulateCategorical(
-                LABELS_CONTENT_FRAME_TIME_REASON::MissedCompositeLow);
-          } else {
-            Telemetry::AccumulateCategorical(
-                LABELS_CONTENT_FRAME_TIME_REASON::MissedComposite);
-          }
-        } else {
-          
-          Telemetry::AccumulateCategorical(
-              LABELS_CONTENT_FRAME_TIME_REASON::SlowComposite);
-        }
-      }
-
       if (!(transactionId.mVsyncId == VsyncId()) &&
           transactionId.mVsyncStartTime) {
         latencyMs = (aEndTime - transactionId.mVsyncStartTime).ToMilliseconds();
@@ -2038,6 +1986,58 @@ TransactionId WebRenderBridgeParent::FlushTransactionIdsForEpoch(
         fracLatencyNorm = lround(latencyNorm * 100.0);
         Telemetry::Accumulate(Telemetry::CONTENT_FRAME_TIME_VSYNC,
                               fracLatencyNorm);
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (fracLatencyNorm < 200) {
+          
+          Telemetry::AccumulateCategorical(
+              LABELS_CONTENT_FRAME_TIME_REASON::OnTime);
+        } else {
+          if (transactionId.mVsyncId == VsyncId() ||
+              aCompositeStartId == VsyncId() ||
+              transactionId.mVsyncId >= aCompositeStartId) {
+            
+            
+            Telemetry::AccumulateCategorical(
+                LABELS_CONTENT_FRAME_TIME_REASON::NoVsync);
+          } else if (aCompositeStartId - transactionId.mVsyncId > 1) {
+            auto fullPaintTime =
+                transactionId.mSceneBuiltTime
+                    ? transactionId.mSceneBuiltTime - transactionId.mTxnStartTime
+                    : TimeDuration::FromMilliseconds(0);
+            
+            if (fullPaintTime >= TimeDuration::FromMilliseconds(20)) {
+              Telemetry::AccumulateCategorical(
+                  LABELS_CONTENT_FRAME_TIME_REASON::MissedCompositeLong);
+            } else if (fullPaintTime >= TimeDuration::FromMilliseconds(10)) {
+              Telemetry::AccumulateCategorical(
+                  LABELS_CONTENT_FRAME_TIME_REASON::MissedCompositeMid);
+            } else if (fullPaintTime >= TimeDuration::FromMilliseconds(5)) {
+              Telemetry::AccumulateCategorical(
+                  LABELS_CONTENT_FRAME_TIME_REASON::MissedCompositeLow);
+            } else {
+              Telemetry::AccumulateCategorical(
+                  LABELS_CONTENT_FRAME_TIME_REASON::MissedComposite);
+            }
+          } else {
+            
+            Telemetry::AccumulateCategorical(
+                LABELS_CONTENT_FRAME_TIME_REASON::SlowComposite);
+          }
+        }
       }
     }
 
