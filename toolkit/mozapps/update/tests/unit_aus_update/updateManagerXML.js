@@ -261,16 +261,5 @@ function run_test() {
   Assert.equal(results[1].value, "custom4 patch value",
                "the second property value" + MSG_SHOULD_EQUAL);
 
-  
-  
-  
-  gUpdateManager.cleanupActiveUpdate();
-  executeSoon(waitForUpdateXMLFiles);
-}
-
-
-
-
-function waitForUpdateXMLFilesFinished() {
   executeSoon(doTestFinish);
 }

@@ -54,13 +54,5 @@ function run_test() {
   Assert.ok(true,
             "calling showUpdateError should not attempt to open a window");
 
-  gUpdateManager.cleanupActiveUpdate();
-  executeSoon(waitForUpdateXMLFiles);
-}
-
-
-
-
-function waitForUpdateXMLFilesFinished() {
-  doTestFinish();
+  executeSoon(doTestFinish);
 }

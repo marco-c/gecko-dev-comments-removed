@@ -18,23 +18,20 @@ function run_test() {
 
   gTestFiles = gTestFilesCompleteSuccess;
   gTestDirs = gTestDirsCompleteSuccess;
-  setupUpdaterTest(FILE_COMPLETE_MAR);
+  setupUpdaterTest(FILE_COMPLETE_MAR, null, "", false);
 }
 
 
 
 
 function setupUpdaterTestFinished() {
-  stageUpdate(false);
-}
-
-
-
-
-function stageUpdateFinished() {
-  checkPostUpdateRunningFile(false);
-  checkFilesAfterUpdateSuccess(getStageDirFile, true);
-  checkUpdateLogContents(LOG_COMPLETE_SUCCESS, true);
+  let patchProps = {state: STATE_AFTER_STAGE};
+  let patches = getLocalPatchString(patchProps);
+  let updateProps = {appVersion: "0.9"};
+  let updates = getLocalUpdateString(updateProps, patches);
+  writeUpdatesToXMLFile(getLocalUpdatesXMLString(updates), true);
+  getUpdateLog(FILE_UPDATE_LOG).create(Ci.nsIFile.NORMAL_FILE_TYPE, PERMS_FILE);
+  writeStatusFile(STATE_AFTER_STAGE);
   
   
   writeVersionFile("0.9");
@@ -46,20 +43,10 @@ function stageUpdateFinished() {
 
 
 function runUpdateFinished() {
-  
-  
-  let patchProps = {state: STATE_AFTER_STAGE};
-  let patches = getLocalPatchString(patchProps);
-  let updateProps = {appVersion: "0.9"};
-  let updates = getLocalUpdateString(updateProps, patches);
-  getUpdatesXMLFile(true).remove(false);
-  writeUpdatesToXMLFile(getLocalUpdatesXMLString(updates), true);
-  reloadUpdateManagerData();
-
   standardInit();
   checkPostUpdateRunningFile(false);
   setTestFilesAndDirsForFailure();
-  checkFilesAfterUpdateFailure(getApplyDirFile, !IS_MACOSX, false);
+  checkFilesAfterUpdateFailure(getApplyDirFile);
 
   executeSoon(waitForUpdateXMLFiles);
 }

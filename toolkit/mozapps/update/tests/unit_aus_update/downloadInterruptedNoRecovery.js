@@ -44,13 +44,5 @@ function downloadListenerStop() {
   Assert.equal(gStatusResult, Cr.NS_ERROR_NET_RESET,
                "the download status result" + MSG_SHOULD_EQUAL);
   gAUS.removeDownloadListener(downloadListener);
-  executeSoon(waitForUpdateXMLFiles);
-}
-
-
-
-
-function waitForUpdateXMLFilesFinished() {
-  
   stop_httpserver(doTestFinish);
 }

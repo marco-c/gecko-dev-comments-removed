@@ -17,11 +17,7 @@ const WindowWatcher = {
         Assert.equal(aText, text,
                      "the ui string for message" + MSG_SHOULD_EQUAL);
 
-        
-        
-        
-        gUpdateManager.cleanupActiveUpdate();
-        executeSoon(waitForUpdateXMLFiles);
+        executeSoon(doTestFinish);
       },
     };
   },
@@ -63,11 +59,4 @@ function run_test() {
   let prompter = Cc["@mozilla.org/updates/update-prompt;1"].
                  createInstance(Ci.nsIUpdatePrompt);
   prompter.showUpdateError(update);
-}
-
-
-
-
-function waitForUpdateXMLFilesFinished() {
-  executeSoon(doTestFinish);
 }

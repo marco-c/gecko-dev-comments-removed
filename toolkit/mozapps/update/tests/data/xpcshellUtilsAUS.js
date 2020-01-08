@@ -730,6 +730,10 @@ var gTestDirsCommon = [
   }, {
     relPathDir: DIR_RESOURCES + "9/99/",
     dirRemoved: true,
+  }, {
+    description: "Silences 'WARNING: Failed to resolve XUL App Dir.' in debug builds",
+    relPathDir: DIR_RESOURCES + "browser",
+    dirRemoved: false,
   }];
 
 
@@ -894,13 +898,6 @@ function cleanupTestCommon() {
     gPrefRoot.removeObserver(PREF_APP_UPDATE_CHANNEL, observer);
   }
 
-  
-  
-  
-  
-  
-  gAUS.observe(null, "quit-application", "");
-
   gTestserver = null;
 
   if (IS_UNIX) {
@@ -1024,93 +1021,17 @@ function doTestFinish() {
     Services.prefs.setBoolPref(PREF_APP_UPDATE_LOG, false);
     gAUS.observe(null, "nsPref:changed", PREF_APP_UPDATE_LOG);
   }
-  executeSoon(testFinishWaitForUpdateXMLFiles);
-}
 
-
-
-
-
-
-
-function testFinishWaitForUpdateXMLFiles() {
-  
-
-
-
-  function testFinishWaitForUpdateTmpXMLFiles() {
-    let tmpActiveUpdateXML = getUpdatesRootDir();
-    tmpActiveUpdateXML.append(FILE_ACTIVE_UPDATE_XML + ".tmp");
-    if (tmpActiveUpdateXML.exists()) {
-      
-      
-      do_timeout(10, testFinishWaitForUpdateTmpXMLFiles);
-      return;
-    }
-
-    let tmpUpdatesXML = getUpdatesRootDir();
-    tmpUpdatesXML.append(FILE_UPDATES_XML + ".tmp");
-    if (tmpUpdatesXML.exists()) {
-      
-      
-      do_timeout(10, testFinishWaitForUpdateTmpXMLFiles);
-      return;
-    }
-
-    do_timeout(10, testFinishReloadUpdateXMLFiles);
-  }
+  reloadUpdateManagerData(true);
 
   
-
-
-
-  function testFinishReloadUpdateXMLFiles() {
-    try {
-      
-      writeUpdatesToXMLFile(getLocalUpdatesXMLString(""), true);
-    } catch (e) {
-      do_timeout(10, testFinishReloadUpdateXMLFiles);
-      return;
-    }
-    try {
-      
-      writeUpdatesToXMLFile(getLocalUpdatesXMLString(""), false);
-    } catch (e) {
-      do_timeout(10, testFinishReloadUpdateXMLFiles);
-      return;
-    }
-
-    reloadUpdateManagerData();
-    gUpdateManager.saveUpdates();
-    do_timeout(10, testFinishWaitForUpdateXMLFilesDelete);
-  }
-
   
+  
+  
+  
+  gAUS.observe(null, "quit-application", "");
 
-
-
-
-  function testFinishWaitForUpdateXMLFilesDelete() {
-    let activeUpdateXML = getUpdatesXMLFile(true);
-    if (activeUpdateXML.exists()) {
-      
-      
-      do_timeout(10, testFinishWaitForUpdateXMLFilesDelete);
-      return;
-    }
-
-    let updatesXML = getUpdatesXMLFile(false);
-    if (updatesXML.exists()) {
-      
-      
-      do_timeout(10, testFinishWaitForUpdateXMLFilesDelete);
-      return;
-    }
-
-    do_timeout(10, do_test_finished);
-  }
-
-  do_timeout(10, testFinishWaitForUpdateTmpXMLFiles);
+  executeSoon(do_test_finished);
 }
 
 
@@ -2883,8 +2804,11 @@ function waitForHelperExit() {
 
 
 
+
+
 function setupUpdaterTest(aMarFile, aPostUpdateAsync,
-                          aPostUpdateExeRelPathPrefix = "") {
+                          aPostUpdateExeRelPathPrefix = "",
+                          aSetupActiveUpdate = true) {
   debugDump("start - updater test setup");
   let updatesPatchDir = getUpdatesPatchDir();
   if (!updatesPatchDir.exists()) {
@@ -2971,7 +2895,9 @@ function setupUpdaterTest(aMarFile, aPostUpdateAsync,
     debugDump("finish - setup test directory: " + aTestDir.relPathDir);
   });
 
-  setupActiveUpdate();
+  if (aSetupActiveUpdate) {
+    setupActiveUpdate();
+  }
 
   if (aPostUpdateAsync !== null) {
     createUpdaterINI(aPostUpdateAsync, aPostUpdateExeRelPathPrefix);
@@ -3995,7 +3921,9 @@ function getLaunchScript() {
 function adjustGeneralPaths() {
   let dirProvider = {
     getFile: function AGP_DP_getFile(aProp, aPersistent) {
-      aPersistent.value = true;
+      
+      
+      aPersistent.value = false;
       switch (aProp) {
         case NS_GRE_DIR:
           return getApplyDirFile(DIR_RESOURCES, true);

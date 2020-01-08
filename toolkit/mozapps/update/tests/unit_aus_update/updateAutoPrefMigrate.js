@@ -37,7 +37,7 @@ async function run_test() {
 
   
   
-  debugDump(`about to remove config file`);
+  debugDump("about to remove config file");
   configFile.remove(false);
   Assert.ok(!configFile.exists(), "Pref file should have been removed");
   let configValue = await UpdateUtils.getAppUpdateAutoEnabled();
