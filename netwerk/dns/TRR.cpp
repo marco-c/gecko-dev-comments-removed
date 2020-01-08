@@ -999,6 +999,9 @@ TRR::OnStopRequest(nsIRequest *aRequest,
   channel.swap(mChannel);
 
   
+  gTRRService->TRRIsOkay(NS_SUCCEEDED(aStatusCode));
+
+  
   if (!mFailed && NS_SUCCEEDED(aStatusCode)) {
     nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aRequest);
     if (!httpChannel) {
@@ -1134,6 +1137,7 @@ TRR::Cancel()
     LOG(("TRR: %p canceling Channel %p %s %d\n", this,
          mChannel.get(), mHost.get(), mType));
     mChannel->Cancel(NS_ERROR_ABORT);
+    gTRRService->TRRIsOkay(false);
   }
 }
 

@@ -49,6 +49,7 @@ public:
   bool IsTRRBlacklisted(const nsACString &host, bool privateBrowsing, bool fullhost);
 
   bool MaybeBootstrap(const nsACString &possible, nsACString &result);
+  void TRRIsOkay(bool aWorks);
 
 private:
   virtual  ~TRRService();
@@ -74,6 +75,7 @@ private:
   Atomic<bool, Relaxed> mEarlyAAAA; 
   Atomic<bool, Relaxed> mDisableIPv6; 
   Atomic<bool, Relaxed> mDisableECS;  
+  Atomic<uint32_t, Relaxed> mDisableAfterFails;  
 
   
   RefPtr<DataStorage> mTRRBLStorage;
@@ -89,6 +91,7 @@ private:
   RefPtr<TRR> mConfirmer;
   nsCOMPtr<nsITimer> mRetryConfirmTimer;
   uint32_t mRetryConfirmInterval; 
+  Atomic<uint32_t, Relaxed> mTRRFailures;
 };
 
 extern TRRService *gTRRService;
