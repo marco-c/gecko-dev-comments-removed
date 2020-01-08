@@ -19,6 +19,10 @@ const BROWSER_SUGGEST_PREF = "browser.search.suggest.enabled";
 const REMOTE_TIMEOUT_PREF = "browser.search.suggest.timeout";
 const REMOTE_TIMEOUT_DEFAULT = 500; 
 
+XPCOMUtils.defineLazyServiceGetter(this, "UUIDGenerator",
+                                   "@mozilla.org/uuid-generator;1",
+                                   "nsIUUIDGenerator");
+
 
 
 
@@ -27,6 +31,20 @@ var gRemoteSuggestionsEnabled = Services.prefs.getBoolPref(BROWSER_SUGGEST_PREF)
 Services.prefs.addObserver(BROWSER_SUGGEST_PREF, function(aSubject, aTopic, aData) {
   gRemoteSuggestionsEnabled = Services.prefs.getBoolPref(BROWSER_SUGGEST_PREF);
 });
+
+
+
+
+
+function uuid() {
+  let uuid = UUIDGenerator.generateUUID().toString();
+  return uuid.slice(1, uuid.length - 1);
+}
+
+
+
+
+var gFirstPartyDomains = new Map();
 
 
 
@@ -98,6 +116,11 @@ this.SearchSuggestionController.prototype = {
 
 
 
+  get firstPartyDomains() {
+    return gFirstPartyDomains;
+  },
+
+  
 
 
 
@@ -105,7 +128,10 @@ this.SearchSuggestionController.prototype = {
 
 
 
-  fetch(searchTerm, privateMode, engine, userContextId) {
+
+
+
+  fetch(searchTerm, privateMode, engine, userContextId = 0) {
     
     
     
@@ -230,9 +256,27 @@ this.SearchSuggestionController.prototype = {
                                           SEARCH_RESPONSE_SUGGESTION_JSON);
     let method = (submission.postData ? "POST" : "GET");
     this._request.open(method, submission.uri.spec, true);
+    
+    this._request.channel.loadFlags = Ci.nsIChannel.LOAD_ANONYMOUS |
+                                      Ci.nsIChannel.INHIBIT_PERSISTENT_CACHING;
+    
+    
+    if (!gFirstPartyDomains.has(engine.name)) {
+      
+      
+      
+      
+      
+      gFirstPartyDomains.set(engine.name,
+        `${engine.identifier || uuid()}.search.suggestions.mozilla`);
+    }
+    let firstPartyDomain = gFirstPartyDomains.get(engine.name);
 
-    this._request.setOriginAttributes({userContextId,
-                                       privateBrowsingId: privateMode ? 1 : 0});
+    this._request.setOriginAttributes({
+      userContextId,
+      privateBrowsingId: privateMode ? 1 : 0,
+      firstPartyDomain,
+    });
 
     this._request.mozBackgroundRequest = true; 
 
