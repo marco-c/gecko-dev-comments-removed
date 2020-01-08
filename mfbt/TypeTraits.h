@@ -739,6 +739,7 @@ struct BaseOfTester<Type, const Type> : TrueType {};
 
 
 
+
 template<class Base, class Derived>
 struct IsBaseOf
   : IntegralConstant<bool, detail::BaseOfTester<Base, Derived>::value>
