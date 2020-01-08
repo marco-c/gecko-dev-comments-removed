@@ -119,7 +119,6 @@ class FlexItemSizingProperties extends PureComponent {
       mainBaseSize,
       mainFinalSize,
       lineGrowthState,
-      clampState,
     } = flexItemSizing;
 
     
@@ -138,7 +137,6 @@ class FlexItemSizingProperties extends PureComponent {
     const computedFlexGrow = computedStyle.flexGrow;
     const definedFlexShrink = properties["flex-shrink"];
     const computedFlexShrink = computedStyle.flexShrink;
-    const wasClamped = clampState !== "unclamped";
 
     const reasons = [];
 
@@ -158,35 +156,15 @@ class FlexItemSizingProperties extends PureComponent {
 
     let property = null;
 
-    if (grew) {
+    if (grew && definedFlexGrow && computedFlexGrow) {
       
-      if (definedFlexGrow) {
-        
-        property = this.renderCssProperty("flex-grow", definedFlexGrow);
-      }
-
-      if (wasClamped && clampState === "clamped_to_max") {
-        
-        reasons.push(getStr("flexbox.itemSizing.growthAttemptButMaxClamped"));
-      } else if (wasClamped && clampState === "clamped_to_min") {
-        
-        reasons.push(getStr("flexbox.itemSizing.growthAttemptButMinClamped"));
-      }
-    } else if (shrank) {
+      property = this.renderCssProperty("flex-grow", definedFlexGrow);
+    } else if (shrank && definedFlexShrink && computedFlexShrink) {
       
-      if (definedFlexShrink && computedFlexShrink) {
-        
-        property = this.renderCssProperty("flex-shrink", definedFlexShrink);
-      } else if (computedFlexShrink) {
-        
-        property = this.renderCssProperty("flex-shrink", computedFlexShrink, true);
-      }
-
-      if (wasClamped) {
-        
-        
-        reasons.push(getStr("flexbox.itemSizing.shrinkAttemptWhenClamped"));
-      }
+      property = this.renderCssProperty("flex-shrink", definedFlexShrink);
+    } else if (shrank && computedFlexShrink) {
+      
+      property = this.renderCssProperty("flex-shrink", computedFlexShrink, true);
     }
 
     
@@ -207,14 +185,24 @@ class FlexItemSizingProperties extends PureComponent {
     );
   }
 
-  renderMinimumSizeSection({ clampState, mainMinSize }, properties, dimension) {
+  renderMinimumSizeSection(flexItemSizing, properties, dimension) {
+    const { clampState, mainMinSize, mainDeltaSize } = flexItemSizing;
+    const grew = mainDeltaSize > 0;
+    const shrank = mainDeltaSize < 0;
+    const minDimensionValue = properties[`min-${dimension}`];
+
     
     
     if (clampState !== "clamped_to_min") {
       return null;
     }
 
-    const minDimensionValue = properties[`min-${dimension}`];
+    const reasons = [];
+    if (grew || shrank) {
+      
+      
+      reasons.push(getStr("flexbox.itemSizing.clampedToMin"));
+    }
 
     return (
       dom.li({ className: "section min" },
@@ -222,17 +210,26 @@ class FlexItemSizingProperties extends PureComponent {
           getStr("flexbox.itemSizing.minSizeSectionHeader"),
           this.renderCssProperty(`min-${dimension}`, minDimensionValue)
         ),
-        this.renderSize(mainMinSize)
+        this.renderSize(mainMinSize),
+        this.renderReasons(reasons)
       )
     );
   }
 
-  renderMaximumSizeSection({ clampState, mainMaxSize }, properties, dimension) {
+  renderMaximumSizeSection(flexItemSizing, properties, dimension) {
+    const { clampState, mainMaxSize, mainDeltaSize } = flexItemSizing;
+    const grew = mainDeltaSize > 0;
+    const maxDimensionValue = properties[`max-${dimension}`];
+
     if (clampState !== "clamped_to_max") {
       return null;
     }
 
-    const maxDimensionValue = properties[`max-${dimension}`];
+    const reasons = [];
+    if (grew) {
+      
+      reasons.push(getStr("flexbox.itemSizing.clampedToMax"));
+    }
 
     return (
       dom.li({ className: "section max" },
@@ -240,7 +237,8 @@ class FlexItemSizingProperties extends PureComponent {
           getStr("flexbox.itemSizing.maxSizeSectionHeader"),
           this.renderCssProperty(`max-${dimension}`, maxDimensionValue)
         ),
-        this.renderSize(mainMaxSize)
+        this.renderSize(mainMaxSize),
+        this.renderReasons(reasons)
       )
     );
   }
