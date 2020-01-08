@@ -166,6 +166,12 @@ BinASTParser<Tok>::buildFunctionBox(GeneratorKind generatorKind,
         atom = name->name();
     }
 
+    if (parseContext_ && syntax == FunctionSyntaxKind::Statement) {
+        auto ptr = parseContext_->varScope().lookupDeclaredName(atom);
+        MOZ_ASSERT(ptr);
+        ptr->value()->alterKind(DeclarationKind::BodyLevelFunction);
+    }
+
     
     RootedFunction fun(cx_);
     BINJS_TRY_VAR(fun, AllocNewFunction(cx_, atom, syntax, generatorKind, functionAsyncKind, nullptr));
