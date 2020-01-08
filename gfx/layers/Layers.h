@@ -286,7 +286,7 @@ public:
 
 
 
-  virtual bool BeginTransaction() = 0;
+  virtual bool BeginTransaction(const nsCString& aURL = nsCString()) = 0;
   
 
 
@@ -294,7 +294,7 @@ public:
 
 
 
-  virtual bool BeginTransactionWithTarget(gfxContext* aTarget) = 0;
+  virtual bool BeginTransactionWithTarget(gfxContext* aTarget, const nsCString& aURL = nsCString()) = 0;
 
   enum EndTransactionFlags {
     END_DEFAULT = 0,

@@ -570,6 +570,7 @@ RenderThread::FrameRenderingComplete(wr::WindowId aWindowId)
   }
   info->mPendingCount--;
   info->mRenderingCount--;
+
   
   
   

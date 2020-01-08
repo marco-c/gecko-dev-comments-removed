@@ -178,7 +178,7 @@ ClientLayerManager::CreateReadbackLayer()
 }
 
 bool
-ClientLayerManager::BeginTransactionWithTarget(gfxContext* aTarget)
+ClientLayerManager::BeginTransactionWithTarget(gfxContext* aTarget, const nsCString &aURL)
 {
 #ifdef MOZ_DUMP_PAINTING
   
@@ -198,6 +198,7 @@ ClientLayerManager::BeginTransactionWithTarget(gfxContext* aTarget)
 
   mInTransaction = true;
   mTransactionStart = TimeStamp::Now();
+  mURL = aURL;
 
 #ifdef MOZ_LAYERS_HAVE_LOG
   MOZ_LAYERS_LOG(("[----- BeginTransaction"));
@@ -262,9 +263,9 @@ ClientLayerManager::BeginTransactionWithTarget(gfxContext* aTarget)
 }
 
 bool
-ClientLayerManager::BeginTransaction()
+ClientLayerManager::BeginTransaction(const nsCString &aURL)
 {
-  return BeginTransactionWithTarget(nullptr);
+  return BeginTransactionWithTarget(nullptr, aURL);
 }
 
 bool
@@ -396,7 +397,7 @@ ClientLayerManager::EndTransaction(DrawPaintedLayerCallback aCallback,
     
     
     TimeStamp transactionStart = mTransactionStart;
-    if (BeginTransaction()) {
+    if (BeginTransaction(mURL)) {
       mTransactionStart = transactionStart;
       ClientLayerManager::EndTransaction(aCallback, aCallbackData, aFlags);
     }
@@ -732,7 +733,7 @@ ClientLayerManager::ForwardTransaction(bool aScheduleComposite)
   bool ok = mForwarder->EndTransaction(
     mRegionToClear, mLatestTransactionId, aScheduleComposite,
     mPaintSequenceNumber, mIsRepeatTransaction,
-    refreshStart, mTransactionStart,
+    refreshStart, mTransactionStart, mURL,
     &sent);
   if (ok) {
     if (sent) {
