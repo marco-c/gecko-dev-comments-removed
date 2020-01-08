@@ -1042,6 +1042,15 @@ PaymentRequest::DispatchMerchantValidationEvent(const nsAString& aType)
   return rv.StealNSResult();
 }
 
+nsresult
+PaymentRequest::DispatchPaymentMethodChangeEvent(const nsAString& aMethodName,
+                                                 const ChangeDetails& aMethodDetails)
+{
+  MOZ_ASSERT(ReadyForUpdate());
+  
+  return NS_OK;
+}
+
 already_AddRefed<PaymentAddress>
 PaymentRequest::GetShippingAddress() const
 {
@@ -1096,6 +1105,13 @@ PaymentRequest::UpdateShippingOption(const nsAString& aShippingOption)
 
   
   return DispatchUpdateEvent(NS_LITERAL_STRING("shippingoptionchange"));
+}
+
+nsresult
+PaymentRequest::UpdatePaymentMethod(const nsAString& aMethodName,
+                                    const ChangeDetails& aMethodDetails)
+{
+  return DispatchPaymentMethodChangeEvent(aMethodName, aMethodDetails);
 }
 
 void
