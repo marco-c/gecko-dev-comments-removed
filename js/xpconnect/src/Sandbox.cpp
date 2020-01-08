@@ -1066,7 +1066,11 @@ nsresult xpc::CreateSandboxObject(JSContext* cx, MutableHandleValue vp,
   priv->isWebExtensionContentScript = options.isWebExtensionContentScript;
   priv->isContentXBLCompartment = options.isContentXBLScope;
   priv->isUAWidgetCompartment = options.isUAWidgetScope;
-  priv->isSandboxCompartment = true;
+
+  
+  if (principal != nsXPConnect::SystemPrincipal()) {
+    priv->hasExclusiveExpandos = true;
+  }
 
   
   

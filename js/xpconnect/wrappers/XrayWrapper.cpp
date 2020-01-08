@@ -1124,7 +1124,9 @@ XrayTraits* GetXrayTraits(JSObject* obj) {
 
 
 static inline bool CompartmentHasExclusiveExpandos(JSObject* obj) {
-  return IsInSandboxCompartment(obj);
+  JS::Compartment* comp = js::GetObjectCompartment(obj);
+  CompartmentPrivate* priv = CompartmentPrivate::Get(comp);
+  return priv && priv->hasExclusiveExpandos;
 }
 
 static inline JSObject* GetCachedXrayExpando(JSObject* wrapper);

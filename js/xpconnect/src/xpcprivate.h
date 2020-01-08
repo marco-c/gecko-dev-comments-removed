@@ -2789,7 +2789,7 @@ class CompartmentPrivate {
   bool isUAWidgetCompartment;
 
   
-  bool isSandboxCompartment;
+  bool hasExclusiveExpandos;
 
   
   
