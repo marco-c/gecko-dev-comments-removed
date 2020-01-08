@@ -30,7 +30,7 @@ rich-select:focus-within > select {
 rich-select > select {
   
 
-  color: transparent;
+  color: transparent !important;
   position: absolute;
   top: 0;
   left: 0;
