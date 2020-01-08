@@ -3,11 +3,9 @@
 
 
 
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
-
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-
-XPCOMUtils.defineLazyModuleGetter(this, "RuntimePermissions", "resource://gre/modules/RuntimePermissions.jsm");
+ChromeUtils.defineModuleGetter(this, "RuntimePermissions", "resource://gre/modules/RuntimePermissions.jsm");
 
 add_task(async function test_snackbar_api() {
   RuntimePermissions.waitForPermissions([

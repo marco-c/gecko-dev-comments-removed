@@ -4,11 +4,9 @@
 
 "use strict";
 
-
-
-Cu.import("resource://gre/modules/Services.jsm");
-Cu.import("resource://gre/modules/Messaging.jsm");
-Cu.import("resource://gre/modules/Geometry.jsm");
+ChromeUtils.import("resource://gre/modules/Services.jsm");
+ChromeUtils.import("resource://gre/modules/Messaging.jsm");
+ChromeUtils.import("resource://gre/modules/Geometry.jsm");
 
 const ACCESSIBLECARET_PREF = "layout.accessiblecaret.enabled";
 const BASE_TEST_URL = "http://mochi.test:8888/tests/robocop/testAccessibleCarets.html";
@@ -46,10 +44,8 @@ function do_promiseTabChangeEvent(tabId, eventType) {
 
 
 function isInputOrTextarea(element) {
-  
-  
-  return (element.namespaceURI === "http://www.w3.org/1999/xhtml" &&
-         (element.localName === "input" || element.localName === "textarea"));
+  return (ChromeUtils.getClassName(element) === "HTMLInputElement" ||
+          ChromeUtils.getClassName(element) === "HTMLTextAreaElement");
 }
 
 

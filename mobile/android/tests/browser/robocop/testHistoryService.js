@@ -5,10 +5,8 @@
 
 "use strict";
 
-
-
-Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-Cu.import("resource://gre/modules/Services.jsm");
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 var gTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);

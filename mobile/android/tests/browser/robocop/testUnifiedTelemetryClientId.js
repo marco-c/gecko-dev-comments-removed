@@ -1,6 +1,4 @@
-
-
-Cu.import("resource://gre/modules/ClientID.jsm");
+ChromeUtils.import("resource://gre/modules/ClientID.jsm");
 
 var java = new JavaBridge(this);
 do_register_cleanup(() => {
