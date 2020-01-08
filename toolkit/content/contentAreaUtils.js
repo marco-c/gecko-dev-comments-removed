@@ -162,6 +162,25 @@ function saveBrowser(aBrowser, aSkipPrompt, aOuterWindowID = 0) {
     throw "Must have a browser when calling saveBrowser";
   }
   let persistable = aBrowser.frameLoader;
+  
+  
+  if (aBrowser.contentPrincipal.URI &&
+      aBrowser.contentPrincipal.URI.spec == "resource://pdf.js/web/viewer.html" &&
+      aBrowser.currentURI.schemeIs("file")) {
+    let correctPrincipal = Services.scriptSecurityManager.createCodebasePrincipal(
+        aBrowser.currentURI, aBrowser.contentPrincipal.originAttributes);
+    internalSave(aBrowser.currentURI.spec,
+                 null , null ,
+                 null ,
+                 "application/pdf", false ,
+                 null , null ,
+                 null ,
+                 null , aSkipPrompt ,
+                 null ,
+                 PrivateBrowsingUtils.isWindowPrivate(aBrowser.ownerGlobal),
+                 correctPrincipal);
+    return;
+  }
   let stack = Components.stack.caller;
   persistable.startPersistence(aOuterWindowID, {
     onDocumentReady(document) {
