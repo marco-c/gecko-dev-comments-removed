@@ -49,6 +49,7 @@ public:
   
   
   HRESULT GetOutputMediaType(RefPtr<IMFMediaType>& aMediaType);
+  const GUID& GetOutputMediaSubType() const { return mOutputSubType; }
 
   
   
@@ -105,6 +106,7 @@ private:
   RefPtr<IMFTransform> mDecoder;
 
   RefPtr<IMFMediaType> mOutputType;
+  GUID mOutputSubType;
 
   
   bool mMFTProvidesOutputSamples = false;
