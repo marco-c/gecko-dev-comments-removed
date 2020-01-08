@@ -4,8 +4,8 @@
 
 
 
-use values::computed::{Integer, Number};
-use values::generics::easing;
+use crate::values::computed::{Integer, Number};
+use crate::values::generics::easing;
 
 
 pub type ComputedTimingFunction = easing::TimingFunction<Integer, Number>;

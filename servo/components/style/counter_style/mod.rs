@@ -6,22 +6,22 @@
 
 
 
+use crate::error_reporting::ContextualParseError;
+use crate::parser::{Parse, ParserContext};
+use crate::shared_lock::{SharedRwLockReadGuard, ToCssWithGuard};
+use crate::str::CssStringWriter;
+use crate::values::specified::Integer;
+use crate::values::CustomIdent;
+use crate::Atom;
 use cssparser::{AtRuleParser, DeclarationListParser, DeclarationParser};
 use cssparser::{CowRcStr, Parser, SourceLocation, Token};
-use error_reporting::ContextualParseError;
-use parser::{Parse, ParserContext};
 use selectors::parser::SelectorParseErrorKind;
-use shared_lock::{SharedRwLockReadGuard, ToCssWithGuard};
 use std::fmt::{self, Write};
 use std::mem;
 use std::num::Wrapping;
 use std::ops::Range;
-use str::CssStringWriter;
 use style_traits::{Comma, CssWriter, OneOrMoreSeparated, ParseError};
 use style_traits::{StyleParseErrorKind, ToCss};
-use values::specified::Integer;
-use values::CustomIdent;
-use Atom;
 
 
 
@@ -370,7 +370,7 @@ impl Parse for System {
             "symbolic" => Ok(System::Symbolic),
             "additive" => Ok(System::Additive),
             "fixed" => {
-                let first_symbol_value = input.try(|i| Integer::parse(context, i)).ok();
+                let first_symbol_value = input.r#try(|i| Integer::parse(context, i)).ok();
                 Ok(System::Fixed { first_symbol_value: first_symbol_value })
             }
             "extends" => {
@@ -457,23 +457,23 @@ impl Parse for Negative {
     ) -> Result<Self, ParseError<'i>> {
         Ok(Negative(
             Symbol::parse(context, input)?,
-            input.try(|input| Symbol::parse(context, input)).ok(),
+            input.r#try(|input| Symbol::parse(context, input)).ok(),
         ))
     }
 }
 
-
-
-
+/// <https://drafts.csswg.org/css-counter-styles/#counter-style-range>
+///
+/// Empty Vec represents 'auto'
 #[derive(Clone, Debug)]
 pub struct Ranges(pub Vec<Range<CounterBound>>);
 
-
+/// A bound found in `Ranges`.
 #[derive(Clone, Copy, Debug, ToCss)]
 pub enum CounterBound {
-    
+    /// An integer bound.
     Integer(Integer),
-    
+    /// The infinite bound.
     Infinite,
 }
 
@@ -483,7 +483,7 @@ impl Parse for Ranges {
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
         if input
-            .try(|input| input.expect_ident_matching("auto"))
+            .r#try(|input| input.expect_ident_matching("auto"))
             .is_ok()
         {
             Ok(Ranges(Vec::new()))
@@ -512,7 +512,7 @@ fn parse_bound<'i, 't>(
     context: &ParserContext,
     input: &mut Parser<'i, 't>,
 ) -> Result<CounterBound, ParseError<'i>> {
-    if let Ok(integer) = input.try(|input| Integer::parse(context, input)) {
+    if let Ok(integer) = input.r#try(|input| Integer::parse(context, input)) {
         return Ok(CounterBound::Integer(integer));
     }
     input.expect_ident_matching("infinite")?;
@@ -547,7 +547,7 @@ where
     range.end.to_css(dest)
 }
 
-
+/// <https://drafts.csswg.org/css-counter-styles/#counter-style-pad>
 #[derive(Clone, Debug, ToCss)]
 pub struct Pad(pub Integer, pub Symbol);
 
@@ -556,14 +556,14 @@ impl Parse for Pad {
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        let pad_with = input.try(|input| Symbol::parse(context, input));
+        let pad_with = input.r#try(|input| Symbol::parse(context, input));
         let min_length = Integer::parse_non_negative(context, input)?;
         let pad_with = pad_with.or_else(|_| Symbol::parse(context, input))?;
         Ok(Pad(min_length, pad_with))
     }
 }
 
-
+/// <https://drafts.csswg.org/css-counter-styles/#counter-style-fallback>
 #[derive(Clone, Debug, ToCss)]
 pub struct Fallback(pub CustomIdent);
 
@@ -576,7 +576,7 @@ impl Parse for Fallback {
     }
 }
 
-
+/// <https://drafts.csswg.org/css-counter-styles/#descdef-counter-style-symbols>
 #[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[derive(Clone, Debug, Eq, PartialEq, ToComputedValue, ToCss)]
 pub struct Symbols(#[css(iterable)] pub Vec<Symbol>);
@@ -588,7 +588,7 @@ impl Parse for Symbols {
     ) -> Result<Self, ParseError<'i>> {
         let mut symbols = Vec::new();
         loop {
-            if let Ok(s) = input.try(|input| Symbol::parse(context, input)) {
+            if let Ok(s) = input.r#try(|input| Symbol::parse(context, input)) {
                 symbols.push(s)
             } else {
                 if symbols.is_empty() {
@@ -601,7 +601,7 @@ impl Parse for Symbols {
     }
 }
 
-
+/// <https://drafts.csswg.org/css-counter-styles/#descdef-counter-style-additive-symbols>
 #[derive(Clone, Debug, ToCss)]
 pub struct AdditiveSymbols(pub Vec<AdditiveTuple>);
 
@@ -611,7 +611,7 @@ impl Parse for AdditiveSymbols {
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
         let tuples = Vec::<AdditiveTuple>::parse(context, input)?;
-        
+        // FIXME maybe? https://github.com/w3c/csswg-drafts/issues/1220
         if tuples
             .windows(2)
             .any(|window| window[0].weight <= window[1].weight)
@@ -622,12 +622,12 @@ impl Parse for AdditiveSymbols {
     }
 }
 
-
+/// <integer> && <symbol>
 #[derive(Clone, Debug, ToCss)]
 pub struct AdditiveTuple {
-    
+    /// <integer>
     pub weight: Integer,
-    
+    /// <symbol>
     pub symbol: Symbol,
 }
 
@@ -640,7 +640,7 @@ impl Parse for AdditiveTuple {
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        let symbol = input.try(|input| Symbol::parse(context, input));
+        let symbol = input.r#try(|input| Symbol::parse(context, input));
         let weight = Integer::parse_non_negative(context, input)?;
         let symbol = symbol.or_else(|_| Symbol::parse(context, input))?;
         Ok(AdditiveTuple {
@@ -650,20 +650,20 @@ impl Parse for AdditiveTuple {
     }
 }
 
-
+/// <https://drafts.csswg.org/css-counter-styles/#counter-style-speak-as>
 #[derive(Clone, Debug, ToCss)]
 pub enum SpeakAs {
-    
+    /// auto
     Auto,
-    
+    /// bullets
     Bullets,
-    
+    /// numbers
     Numbers,
-    
+    /// words
     Words,
-    
-    
-    
+    // /// spell-out, not supported, see bug 1024178
+    // SpellOut,
+    /// <counter-style-name>
     Other(CustomIdent),
 }
 
@@ -673,7 +673,7 @@ impl Parse for SpeakAs {
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
         let mut is_spell_out = false;
-        let result = input.try(|input| {
+        let result = input.r#try(|input| {
             let ident = input.expect_ident().map_err(|_| ())?;
             match_ignore_ascii_case! { &*ident,
                 "auto" => Ok(SpeakAs::Auto),

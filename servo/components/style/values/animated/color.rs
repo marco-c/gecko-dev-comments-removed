@@ -4,9 +4,9 @@
 
 
 
-use values::animated::{Animate, Procedure, ToAnimatedZero};
-use values::distance::{ComputeSquaredDistance, SquaredDistance};
-use values::generics::color::{Color as GenericColor, ComplexColorRatios};
+use crate::values::animated::{Animate, Procedure, ToAnimatedZero};
+use crate::values::distance::{ComputeSquaredDistance, SquaredDistance};
+use crate::values::generics::color::{Color as GenericColor, ComplexColorRatios};
 
 
 

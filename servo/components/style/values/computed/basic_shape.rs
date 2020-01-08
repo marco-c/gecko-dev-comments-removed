@@ -7,14 +7,14 @@
 
 
 
+use crate::values::computed::url::ComputedUrl;
+use crate::values::computed::{Image, LengthOrPercentage};
+use crate::values::generics::basic_shape as generic;
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ToCss};
-use values::computed::url::ComputedUrl;
-use values::computed::{Image, LengthOrPercentage};
-use values::generics::basic_shape as generic;
 
 
-pub use values::generics::basic_shape::FillRule;
+pub use crate::values::generics::basic_shape::FillRule;
 
 
 pub type ClippingShape = generic::ClippingShape<BasicShape, ComputedUrl>;

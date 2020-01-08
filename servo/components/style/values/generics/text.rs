@@ -5,11 +5,11 @@
 
 
 use app_units::Au;
+use crate::parser::ParserContext;
+use crate::values::animated::{Animate, Procedure, ToAnimatedZero};
+use crate::values::distance::{ComputeSquaredDistance, SquaredDistance};
 use cssparser::Parser;
-use parser::ParserContext;
 use style_traits::ParseError;
-use values::animated::{Animate, Procedure, ToAnimatedZero};
-use values::distance::{ComputeSquaredDistance, SquaredDistance};
 
 
 #[derive(
@@ -58,13 +58,13 @@ impl<Value> Spacing<Value> {
     where
         F: FnOnce(&ParserContext, &mut Parser<'i, 't>) -> Result<Value, ParseError<'i>>,
     {
-        if input.try(|i| i.expect_ident_matching("normal")).is_ok() {
+        if input.r#try(|i| i.expect_ident_matching("normal")).is_ok() {
             return Ok(Spacing::Normal);
         }
         parse(context, input).map(Spacing::Value)
     }
 
-    
+    /// Returns the spacing value, if not `normal`.
     #[inline]
     pub fn value(&self) -> Option<&Value> {
         match *self {
@@ -113,7 +113,7 @@ where
     }
 }
 
-
+/// A generic value for the `line-height` property.
 #[derive(
     Animate,
     Clone,
@@ -127,9 +127,9 @@ where
     ToCss,
 )]
 pub enum LineHeight<Number, LengthOrPercentage> {
-    
+    /// `normal`
     Normal,
-    
+    /// `-moz-block-height`
     #[cfg(feature = "gecko")]
     MozBlockHeight,
     

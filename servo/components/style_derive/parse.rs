@@ -2,11 +2,11 @@
 
 
 
-use cg;
+use crate::cg;
+use crate::to_css::CssVariantAttrs;
 use quote::Tokens;
 use syn::{DeriveInput, Path};
 use synstructure;
-use to_css::CssVariantAttrs;
 
 #[darling(attributes(parse), default)]
 #[derive(Default, FromVariant)]

@@ -6,11 +6,11 @@
 
 
 
-use bloom::StyleBloom;
-use context::{SelectorFlagsMap, SharedStyleContext};
-use dom::TElement;
+use crate::bloom::StyleBloom;
+use crate::context::{SelectorFlagsMap, SharedStyleContext};
+use crate::dom::TElement;
+use crate::sharing::{StyleSharingCandidate, StyleSharingTarget};
 use selectors::NthIndexCache;
-use sharing::{StyleSharingCandidate, StyleSharingTarget};
 
 
 

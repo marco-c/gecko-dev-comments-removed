@@ -2,7 +2,7 @@
 
 
 
-use cg;
+use crate::cg;
 use quote;
 use syn::DeriveInput;
 use synstructure::BindStyle;

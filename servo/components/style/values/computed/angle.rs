@@ -4,14 +4,14 @@
 
 
 
+use crate::values::distance::{ComputeSquaredDistance, SquaredDistance};
+use crate::values::CSSFloat;
 use num_traits::Zero;
 use std::f64::consts::PI;
 use std::fmt::{self, Write};
 use std::ops::Add;
 use std::{f32, f64};
 use style_traits::{CssWriter, ToCss};
-use values::distance::{ComputeSquaredDistance, SquaredDistance};
-use values::CSSFloat;
 
 
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]

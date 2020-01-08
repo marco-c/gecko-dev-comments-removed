@@ -2,11 +2,11 @@
 
 
 
-use attr::CaseSensitivity;
-use bloom::BloomFilter;
-use nth_index_cache::NthIndexCache;
-use parser::SelectorImpl;
-use tree::{Element, OpaqueElement};
+use crate::attr::CaseSensitivity;
+use crate::bloom::BloomFilter;
+use crate::nth_index_cache::NthIndexCache;
+use crate::parser::SelectorImpl;
+use crate::tree::{Element, OpaqueElement};
 
 
 

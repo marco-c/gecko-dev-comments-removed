@@ -5,13 +5,13 @@
 
 
 
+use crate::media_queries::MediaList;
+use crate::parser::ParserContext;
+use crate::shared_lock::{Locked, SharedRwLock};
+use crate::stylesheets::import_rule::ImportRule;
+use crate::values::CssUrl;
 use cssparser::SourceLocation;
-use media_queries::MediaList;
-use parser::ParserContext;
 use servo_arc::Arc;
-use shared_lock::{Locked, SharedRwLock};
-use stylesheets::import_rule::ImportRule;
-use values::CssUrl;
 
 
 

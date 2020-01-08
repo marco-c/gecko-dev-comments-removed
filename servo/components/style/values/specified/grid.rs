@@ -5,16 +5,16 @@
 
 
 
+use crate::parser::{Parse, ParserContext};
+use crate::values::computed::{self, Context, ToComputedValue};
+use crate::values::generics::grid::{GridTemplateComponent, RepeatCount, TrackBreadth};
+use crate::values::generics::grid::{LineNameList, TrackKeyword, TrackRepeat, TrackSize};
+use crate::values::generics::grid::{TrackList, TrackListType, TrackListValue};
+use crate::values::specified::{Integer, LengthOrPercentage};
+use crate::values::{CSSFloat, CustomIdent};
 use cssparser::{ParseError as CssParseError, Parser, Token};
-use parser::{Parse, ParserContext};
 use std::mem;
 use style_traits::{ParseError, StyleParseErrorKind};
-use values::computed::{self, Context, ToComputedValue};
-use values::generics::grid::{GridTemplateComponent, RepeatCount, TrackBreadth};
-use values::generics::grid::{LineNameList, TrackKeyword, TrackRepeat, TrackSize};
-use values::generics::grid::{TrackList, TrackListType, TrackListValue};
-use values::specified::{Integer, LengthOrPercentage};
-use values::{CSSFloat, CustomIdent};
 
 
 pub fn parse_flex<'i, 't>(input: &mut Parser<'i, 't>) -> Result<CSSFloat, ParseError<'i>> {
@@ -36,11 +36,11 @@ impl Parse for TrackBreadth<LengthOrPercentage> {
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        if let Ok(lop) = input.try(|i| LengthOrPercentage::parse_non_negative(context, i)) {
+        if let Ok(lop) = input.r#try(|i| LengthOrPercentage::parse_non_negative(context, i)) {
             return Ok(TrackBreadth::Breadth(lop));
         }
 
-        if let Ok(f) = input.try(parse_flex) {
+        if let Ok(f) = input.r#try(parse_flex) {
             return Ok(TrackBreadth::Fr(f));
         }
 
@@ -53,14 +53,17 @@ impl Parse for TrackSize<LengthOrPercentage> {
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        if let Ok(b) = input.try(|i| TrackBreadth::parse(context, i)) {
+        if let Ok(b) = input.r#try(|i| TrackBreadth::parse(context, i)) {
             return Ok(TrackSize::Breadth(b));
         }
 
-        if input.try(|i| i.expect_function_matching("minmax")).is_ok() {
+        if input
+            .r#try(|i| i.expect_function_matching("minmax"))
+            .is_ok()
+        {
             return input.parse_nested_block(|input| {
                 let inflexible_breadth =
-                    match input.try(|i| LengthOrPercentage::parse_non_negative(context, i)) {
+                    match input.r#try(|i| LengthOrPercentage::parse_non_negative(context, i)) {
                         Ok(lop) => TrackBreadth::Breadth(lop),
                         Err(..) => {
                             let keyword = TrackKeyword::parse(input)?;
@@ -83,16 +86,16 @@ impl Parse for TrackSize<LengthOrPercentage> {
     }
 }
 
-
-
-
+/// Parse the grid line names into a vector of owned strings.
+///
+/// <https://drafts.csswg.org/css-grid/#typedef-line-names>
 pub fn parse_line_names<'i, 't>(
     input: &mut Parser<'i, 't>,
 ) -> Result<Box<[CustomIdent]>, ParseError<'i>> {
     input.expect_square_bracket_block()?;
     input.parse_nested_block(|input| {
         let mut values = vec![];
-        while let Ok((loc, ident)) = input.try(|i| -> Result<_, CssParseError<()>> {
+        while let Ok((loc, ident)) = input.r#try(|i| -> Result<_, CssParseError<()>> {
             Ok((i.current_source_location(), i.expect_ident_cloned()?))
         }) {
             let ident = CustomIdent::from_ident(loc, &ident, &["span", "auto"])?;
@@ -103,17 +106,17 @@ pub fn parse_line_names<'i, 't>(
     })
 }
 
-
-
-
+/// The type of `repeat` function (only used in parsing).
+///
+/// <https://drafts.csswg.org/css-grid/#typedef-track-repeat>
 #[derive(Clone, Copy, Debug, PartialEq, SpecifiedValueInfo)]
 #[cfg_attr(feature = "servo", derive(MallocSizeOf))]
 enum RepeatType {
-    
+    /// [`<auto-repeat>`](https://drafts.csswg.org/css-grid/#typedef-auto-repeat)
     Auto,
-    
+    /// [`<track-repeat>`](https://drafts.csswg.org/css-grid/#typedef-track-repeat)
     Normal,
-    
+    /// [`<fixed-repeat>`](https://drafts.csswg.org/css-grid/#typedef-fixed-repeat)
     Fixed,
 }
 
@@ -123,7 +126,7 @@ impl TrackRepeat<LengthOrPercentage, Integer> {
         input: &mut Parser<'i, 't>,
     ) -> Result<(Self, RepeatType), ParseError<'i>> {
         input
-            .try(|i| i.expect_function_matching("repeat").map_err(|e| e.into()))
+            .r#try(|i| i.expect_function_matching("repeat").map_err(|e| e.into()))
             .and_then(|_| {
                 input.parse_nested_block(|input| {
                     let count = RepeatCount::parse(context, input)?;
@@ -133,7 +136,7 @@ impl TrackRepeat<LengthOrPercentage, Integer> {
                     let mut repeat_type = if is_auto {
                         RepeatType::Auto
                     } else {
-                        
+                        // <fixed-size> is a subset of <track-size>, so it should work for both
                         RepeatType::Fixed
                     };
 
@@ -143,47 +146,47 @@ impl TrackRepeat<LengthOrPercentage, Integer> {
 
                     loop {
                         current_names = input
-                            .try(parse_line_names)
+                            .r#try(parse_line_names)
                             .unwrap_or(vec![].into_boxed_slice());
-                        if let Ok(track_size) = input.try(|i| TrackSize::parse(context, i)) {
+                        if let Ok(track_size) = input.r#try(|i| TrackSize::parse(context, i)) {
                             if !track_size.is_fixed() {
                                 if is_auto {
-                                    
+                                    // should be <fixed-size> for <auto-repeat>
                                     return Err(input
                                         .new_custom_error(StyleParseErrorKind::UnspecifiedError));
                                 }
 
                                 if repeat_type == RepeatType::Fixed {
-                                    repeat_type = RepeatType::Normal 
+                                    repeat_type = RepeatType::Normal // <track-size> for sure
                                 }
                             }
 
                             values.push(track_size);
                             names.push(current_names);
                             if is_auto {
-                                
-                                
-                                
-                                
-                                
-                                
+                                // FIXME: In the older version of the spec
+                                // (https://www.w3.org/TR/2015/WD-css-grid-1-20150917/#typedef-auto-repeat),
+                                // if the repeat type is `<auto-repeat>` we shouldn't try to parse more than
+                                // one `TrackSize`. But in current version of the spec, this is deprecated
+                                // but we are adding this for gecko parity. We should remove this when
+                                // gecko implements new spec.
                                 names.push(
                                     input
-                                        .try(parse_line_names)
+                                        .r#try(parse_line_names)
                                         .unwrap_or(vec![].into_boxed_slice()),
                                 );
                                 break;
                             }
                         } else {
                             if values.is_empty() {
-                                
+                                // expecting at least one <track-size>
                                 return Err(
                                     input.new_custom_error(StyleParseErrorKind::UnspecifiedError)
                                 );
                             }
 
-                            names.push(current_names); 
-                            break; 
+                            names.push(current_names); // final `<line-names>`
+                            break; // no more <track-size>, breaking
                         }
                     }
 
@@ -208,29 +211,29 @@ impl Parse for TrackList<LengthOrPercentage, Integer> {
         let mut names = vec![];
         let mut values = vec![];
 
-        
+        // assume it's the simplest case.
         let mut list_type = TrackListType::Explicit;
-        
+        // holds <auto-repeat> value. It can only be only one in a TrackList.
         let mut auto_repeat = None;
-        
-        
-        
-        
-        
+        // if there is any <auto-repeat> the list will be of type TrackListType::Auto(idx)
+        // where idx points to the position of the <auto-repeat> in the track list. If there
+        // is any repeat before <auto-repeat>, we need to take the number of repetitions into
+        // account to set the position of <auto-repeat> so it remains the same while computing
+        // values.
         let mut auto_offset = 0;
-        
+        // assume that everything is <fixed-size>. This flag is useful when we encounter <auto-repeat>
         let mut atleast_one_not_fixed = false;
         loop {
             current_names.extend_from_slice(
                 &mut input
-                    .try(parse_line_names)
+                    .r#try(parse_line_names)
                     .unwrap_or(vec![].into_boxed_slice()),
             );
-            if let Ok(track_size) = input.try(|i| TrackSize::parse(context, i)) {
+            if let Ok(track_size) = input.r#try(|i| TrackSize::parse(context, i)) {
                 if !track_size.is_fixed() {
                     atleast_one_not_fixed = true;
                     if auto_repeat.is_some() {
-                        
+                        // <auto-track-list> only accepts <fixed-size> and <fixed-repeat>
                         return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
                     }
                 }
@@ -239,17 +242,17 @@ impl Parse for TrackList<LengthOrPercentage, Integer> {
                 names.push(vec.into_boxed_slice());
                 values.push(TrackListValue::TrackSize(track_size));
             } else if let Ok((repeat, type_)) =
-                input.try(|i| TrackRepeat::parse_with_repeat_type(context, i))
+                input.r#try(|i| TrackRepeat::parse_with_repeat_type(context, i))
             {
                 if list_type == TrackListType::Explicit {
-                    list_type = TrackListType::Normal; 
+                    list_type = TrackListType::Normal; // <explicit-track-list> doesn't contain repeat()
                 }
 
                 match type_ {
                     RepeatType::Normal => {
                         atleast_one_not_fixed = true;
                         if auto_repeat.is_some() {
-                            
+                            // only <fixed-repeat>
                             return Err(
                                 input.new_custom_error(StyleParseErrorKind::UnspecifiedError)
                             );
@@ -257,7 +260,7 @@ impl Parse for TrackList<LengthOrPercentage, Integer> {
                     },
                     RepeatType::Auto => {
                         if auto_repeat.is_some() || atleast_one_not_fixed {
-                            
+                            // We've either seen <auto-repeat> earlier, or there's at least one non-fixed value
                             return Err(
                                 input.new_custom_error(StyleParseErrorKind::UnspecifiedError)
                             );
@@ -302,15 +305,15 @@ impl ToComputedValue for TrackList<LengthOrPercentage, Integer> {
 
     #[inline]
     fn to_computed_value(&self, context: &Context) -> Self::ComputedValue {
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        // Merge the line names while computing values. The resulting values will
+        // all be bunch of `<track-size>` and one <auto-repeat>.
+        //
+        // For example,
+        // `[a b] 100px [c d] repeat(1, 30px [g]) [h]` will be merged as `[a b] 100px [c d] 30px [g h]`
+        //  whereas, `[a b] repeat(2, [c] 50px [d]) [e f] repeat(auto-fill, [g] 12px) 10px [h]` will be merged as
+        // `[a b c] 50px [d c] 50px [d e f] repeat(auto-fill, [g] 12px) 10px [h]`, with the `<auto-repeat>` value
+        // set in the `auto_repeat` field, and the `idx` in TrackListType::Auto pointing to the values after
+        // `<auto-repeat>` (in this case, `10px [h]`).
         let mut prev_names = vec![];
         let mut line_names = Vec::with_capacity(self.line_names.len() + 1);
         let mut values = Vec::with_capacity(self.values.len() + 1);
@@ -329,7 +332,7 @@ impl ToComputedValue for TrackList<LengthOrPercentage, Integer> {
                     values.push(TrackListValue::TrackSize(size.to_computed_value(context)));
                 },
                 TrackListValue::TrackRepeat(ref repeat) => {
-                    
+                    // If the repeat count is numeric, we expand and merge the values.
                     let mut repeat = repeat.expand();
                     let mut repeat_names_iter = repeat.line_names.iter();
                     for (size, repeat_names) in
@@ -396,12 +399,12 @@ fn allow_grid_template_subgrids() -> bool {
 }
 
 impl Parse for GridTemplateComponent<LengthOrPercentage, Integer> {
-    
+    // FIXME: Derive Parse (probably with None_)
     fn parse<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        if input.try(|i| i.expect_ident_matching("none")).is_ok() {
+        if input.r#try(|i| i.expect_ident_matching("none")).is_ok() {
             return Ok(GridTemplateComponent::None);
         }
 
@@ -416,7 +419,7 @@ impl GridTemplateComponent<LengthOrPercentage, Integer> {
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
         if allow_grid_template_subgrids() {
-            if let Ok(t) = input.try(|i| LineNameList::parse(context, i)) {
+            if let Ok(t) = input.r#try(|i| LineNameList::parse(context, i)) {
                 return Ok(GridTemplateComponent::Subgrid(t));
             }
         }

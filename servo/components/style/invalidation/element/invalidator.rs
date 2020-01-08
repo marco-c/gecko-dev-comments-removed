@@ -5,9 +5,9 @@
 
 
 
-use context::StackLimitChecker;
-use dom::{TElement, TNode, TShadowRoot};
-use selector_parser::SelectorImpl;
+use crate::context::StackLimitChecker;
+use crate::dom::{TElement, TNode, TShadowRoot};
+use crate::selector_parser::SelectorImpl;
 use selectors::matching::matches_compound_selector_from;
 use selectors::matching::{CompoundSelectorMatchingResult, MatchingContext};
 use selectors::parser::{Combinator, Component, Selector};

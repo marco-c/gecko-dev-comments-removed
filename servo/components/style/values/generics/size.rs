@@ -4,12 +4,12 @@
 
 
 
+use crate::parser::ParserContext;
+use crate::values::animated::ToAnimatedValue;
 use cssparser::Parser;
 use euclid::Size2D;
-use parser::ParserContext;
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ParseError, SpecifiedValueInfo, ToCss};
-use values::animated::ToAnimatedValue;
 
 
 
@@ -55,7 +55,7 @@ impl<L> Size<L> {
     {
         let first = parse_one(context, input)?;
         let second = input
-            .try(|i| parse_one(context, i))
+            .r#try(|i| parse_one(context, i))
             .unwrap_or_else(|_| first.clone());
         Ok(Self::new(first, second))
     }

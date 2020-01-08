@@ -6,9 +6,9 @@
 
 use app_units::Au;
 use byteorder::{BigEndian, ReadBytesExt};
+use crate::parser::{Parse, ParserContext};
 use cssparser::Parser;
 use num_traits::One;
-use parser::{Parse, ParserContext};
 use std::fmt::{self, Write};
 use std::io::Cursor;
 use style_traits::{CssWriter, KeywordsCollectFn, ParseError};
@@ -85,7 +85,7 @@ impl<T: Parse> Parse for FontSettings<T> {
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        if input.try(|i| i.expect_ident_matching("normal")).is_ok() {
+        if input.r#try(|i| i.expect_ident_matching("normal")).is_ok() {
             return Ok(Self::normal());
         }
 
@@ -97,12 +97,12 @@ impl<T: Parse> Parse for FontSettings<T> {
     }
 }
 
-
-
-
-
-
-
+/// A font four-character tag, represented as a u32 for convenience.
+///
+/// See:
+///   https://drafts.csswg.org/css-fonts-4/#font-variation-settings-def
+///   https://drafts.csswg.org/css-fonts-4/#descdef-font-face-font-feature-settings
+///
 #[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue)]
 pub struct FontTag(pub u32);
 
@@ -128,7 +128,7 @@ impl Parse for FontTag {
         let location = input.current_source_location();
         let tag = input.expect_string()?;
 
-        
+        // allowed strings of length 4 containing chars: <U+20, U+7E>
         if tag.len() != 4 || tag.as_bytes().iter().any(|c| *c < b' ' || *c > b'~') {
             return Err(location.new_custom_error(StyleParseErrorKind::UnspecifiedError));
         }
@@ -150,14 +150,14 @@ impl Parse for FontTag {
     ToAnimatedZero,
     ToCss,
 )]
-
+/// Additional information for keyword-derived font sizes.
 pub struct KeywordInfo<Length> {
-    
+    /// The keyword used
     pub kw: KeywordSize,
-    
+    /// A factor to be multiplied by the computed size of the keyword
     #[css(skip)]
     pub factor: f32,
-    
+    /// An additional Au offset to add to the kw*factor in the case of calcs
     #[css(skip)]
     pub offset: Length,
 }
@@ -166,7 +166,7 @@ impl<L> KeywordInfo<L>
 where
     Au: Into<L>,
 {
-    
+    /// KeywordInfo value for font-size: medium
     pub fn medium() -> Self {
         KeywordSize::Medium.into()
     }
@@ -191,7 +191,7 @@ impl<L> SpecifiedValueInfo for KeywordInfo<L> {
     }
 }
 
-
+/// CSS font keywords
 #[derive(
     Animate,
     Clone,
@@ -217,14 +217,14 @@ pub enum KeywordSize {
     XLarge,
     #[css(keyword = "xx-large")]
     XXLarge,
-    
-    
+    // This is not a real font keyword and will not parse
+    // HTML font-size 7 corresponds to this value
     #[css(skip)]
     XXXLarge,
 }
 
 impl KeywordSize {
-    
+    /// Convert to an HTML <font size> value
     #[inline]
     pub fn html_size(self) -> u8 {
         self as u8
@@ -237,9 +237,9 @@ impl Default for KeywordSize {
     }
 }
 
-
-
-
+/// A generic value for the `font-style` property.
+///
+/// https://drafts.csswg.org/css-fonts-4/#font-style-prop
 #[allow(missing_docs)]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[derive(

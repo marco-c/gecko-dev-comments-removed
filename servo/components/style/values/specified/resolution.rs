@@ -6,10 +6,10 @@
 
 
 
+use crate::parser::{Parse, ParserContext};
+use crate::values::CSSFloat;
 use cssparser::{Parser, Token};
-use parser::{Parse, ParserContext};
 use style_traits::{ParseError, StyleParseErrorKind};
-use values::CSSFloat;
 
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss)]

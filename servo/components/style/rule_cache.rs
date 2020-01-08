@@ -5,15 +5,15 @@
 
 
 
+use crate::logical_geometry::WritingMode;
+use crate::properties::{ComputedValues, StyleBuilder};
+use crate::rule_tree::StrongRuleNode;
+use crate::selector_parser::PseudoElement;
+use crate::shared_lock::StylesheetGuards;
+use crate::values::computed::NonNegativeLength;
 use fxhash::FxHashMap;
-use logical_geometry::WritingMode;
-use properties::{ComputedValues, StyleBuilder};
-use rule_tree::StrongRuleNode;
-use selector_parser::PseudoElement;
 use servo_arc::Arc;
-use shared_lock::StylesheetGuards;
 use smallvec::SmallVec;
-use values::computed::NonNegativeLength;
 
 
 #[derive(Clone, Debug, Default)]

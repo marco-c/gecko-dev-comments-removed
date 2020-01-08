@@ -4,10 +4,10 @@
 
 
 
+use crate::parser::{Parse, ParserContext};
+use crate::values::specified::SVGPathData;
 use cssparser::Parser;
-use parser::{Parse, ParserContext};
 use style_traits::{ParseError, StyleParseErrorKind};
-use values::specified::SVGPathData;
 
 
 
@@ -50,11 +50,11 @@ impl Parse for OffsetPath {
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
         
-        if input.try(|i| i.expect_ident_matching("none")).is_ok() {
+        if input.r#try(|i| i.expect_ident_matching("none")).is_ok() {
             return Ok(OffsetPath::none());
         }
 
-        
+        // Parse possible functions.
         let location = input.current_source_location();
         let function = input.expect_function()?.clone();
         input.parse_nested_block(move |i| {

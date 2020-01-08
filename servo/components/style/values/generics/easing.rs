@@ -5,8 +5,8 @@
 
 
 
-use parser::ParserContext;
-use values::CSSFloat;
+use crate::parser::ParserContext;
+use crate::values::CSSFloat;
 
 
 #[derive(

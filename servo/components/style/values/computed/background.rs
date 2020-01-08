@@ -4,13 +4,13 @@
 
 
 
+use crate::values::computed::length::NonNegativeLengthOrPercentageOrAuto;
+use crate::values::computed::{Context, ToComputedValue};
+use crate::values::generics::background::BackgroundSize as GenericBackgroundSize;
+use crate::values::specified::background::BackgroundRepeat as SpecifiedBackgroundRepeat;
+use crate::values::specified::background::BackgroundRepeatKeyword;
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ToCss};
-use values::computed::length::NonNegativeLengthOrPercentageOrAuto;
-use values::computed::{Context, ToComputedValue};
-use values::generics::background::BackgroundSize as GenericBackgroundSize;
-use values::specified::background::BackgroundRepeat as SpecifiedBackgroundRepeat;
-use values::specified::background::BackgroundRepeatKeyword;
 
 
 pub type BackgroundSize = GenericBackgroundSize<NonNegativeLengthOrPercentageOrAuto>;

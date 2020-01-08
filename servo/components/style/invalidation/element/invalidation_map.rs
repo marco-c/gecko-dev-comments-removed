@@ -4,18 +4,18 @@
 
 
 
-use context::QuirksMode;
-use element_state::{DocumentState, ElementState};
+use crate::context::QuirksMode;
+use crate::element_state::{DocumentState, ElementState};
+use crate::selector_map::{MaybeCaseInsensitiveHashMap, SelectorMap, SelectorMapEntry};
+use crate::selector_parser::SelectorImpl;
+use crate::{Atom, LocalName, Namespace};
 use fallible::FallibleVec;
 use hashglobe::FailedAllocationError;
-use selector_map::{MaybeCaseInsensitiveHashMap, SelectorMap, SelectorMapEntry};
-use selector_parser::SelectorImpl;
 use selectors::attr::NamespaceConstraint;
 use selectors::parser::{Combinator, Component};
 use selectors::parser::{Selector, SelectorIter, Visit};
 use selectors::visitor::SelectorVisitor;
 use smallvec::SmallVec;
-use {Atom, LocalName, Namespace};
 
 
 
