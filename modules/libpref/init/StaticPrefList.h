@@ -1929,6 +1929,13 @@ VARCACHE_PREF(
 )
 
 
+VARCACHE_PREF(
+  "dom.reporting.delivering.maxReports",
+   dom_reporting_delivering_maxReports,
+  uint32_t, 100
+)
+
+
 
 
 
