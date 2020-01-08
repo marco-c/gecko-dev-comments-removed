@@ -84,11 +84,6 @@ public class MmaDelegate {
 
     public static void init(final Activity activity,
                             final MmaVariablesChangedListener remoteVariablesListener) {
-        ThreadUtils.postToUiThread(() -> {
-            if (isActivityAlive(activity)) {
-                registerInstalledPackagesReceiver(activity);
-            }
-        });
         applicationContext = activity.getApplicationContext();
         
         
@@ -106,6 +101,7 @@ public class MmaDelegate {
         mmaHelper.event(MmaDelegate.LAUNCH_BROWSER);
 
         activityName = activity.getLocalClassName();
+        registerInstalledPackagesReceiver(activity);
         notifyAboutPreviouslyInstalledPackages(activity);
 
         ThreadUtils.postToUiThread(new Runnable() {
@@ -304,30 +300,18 @@ public class MmaDelegate {
 
     private static void unregisterInstalledPackagesReceiver(@NonNull final Activity activity) {
         if (packageAddedReceiver != null) {
-            activity.unregisterReceiver(packageAddedReceiver);
+            try {
+                
+                activity.unregisterReceiver(packageAddedReceiver);
+            } catch (IllegalArgumentException e) {
+                if (AppConstants.RELEASE_OR_BETA) {
+                    Log.w(TAG, "bug 1505685", e);
+                } else {
+                   throw e;
+                }
+            }
             packageAddedReceiver = null;
         }
-    }
-
-    
-
-
-
-
-
-
-
-
-
-    private static boolean isActivityAlive(@NonNull final Activity activity) throws IllegalThreadStateException {
-        
-        ThreadUtils.assertOnUiThread();
-
-        if (activity.isFinishing()) {
-            return false;
-        }
-
-        return true;
     }
 
     public interface MmaVariablesChangedListener {

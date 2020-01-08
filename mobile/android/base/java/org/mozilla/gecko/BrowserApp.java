@@ -894,6 +894,7 @@ public class BrowserApp extends GeckoApp
             @Override
             protected Void doInBackground(Void... params) {
                 super.doInBackground(params);
+                SwitchBoard.loadConfig(context, serverUrl, configStatuslistener);
                 if (GeckoPreferences.isMmaAvailableAndEnabled(context)) {
                     
                     MmaDelegate.init(BrowserApp.this, variablesChangedListener);
