@@ -304,6 +304,11 @@ button > hbox > label {
 }
 
 
+#homepageGroup > .groupbox-title {
+  
+
+  margin-top: 6px;
+}
 #homepageGroup menulist,
 #homepageGroup textbox {
   margin: 5px 0;
