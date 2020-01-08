@@ -222,6 +222,12 @@ HTMLImageElement::Y()
   return GetXY().y;
 }
 
+void
+HTMLImageElement::GetDecoding(nsAString& aValue)
+{
+  GetEnumAttr(nsGkAtoms::decoding, kDecodingTableDefault->tag, aValue);
+}
+
 bool
 HTMLImageElement::ParseAttribute(int32_t aNamespaceID,
                                  nsAtom* aAttribute,
@@ -236,6 +242,10 @@ HTMLImageElement::ParseAttribute(int32_t aNamespaceID,
     if (aAttribute == nsGkAtoms::crossorigin) {
       ParseCORSValue(aValue, aResult);
       return true;
+    }
+    if (aAttribute == nsGkAtoms::decoding) {
+      return aResult.ParseEnumValue(aValue, kDecodingTable, false,
+                                    kDecodingTableDefault);
     }
     if (ParseImageAttribute(aAttribute, aValue, aResult)) {
       return true;
@@ -378,6 +388,12 @@ HTMLImageElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
     mUseUrgentStartForChannel = EventStateManager::IsHandlingUserInput();
 
     PictureSourceSizesChanged(this, attrVal.String(), aNotify);
+  } else if (aName == nsGkAtoms::decoding &&
+             aNameSpaceID == kNameSpaceID_None) {
+    
+    SetSyncDecodingHint(aValue &&
+                        static_cast<ImageDecodingType>(aValue->GetEnumValue()) ==
+                          ImageDecodingType::Sync);
   }
 
   return nsGenericHTMLElement::AfterSetAttr(aNameSpaceID, aName,
@@ -797,14 +813,15 @@ HTMLImageElement::NaturalWidth()
 }
 
 nsresult
-HTMLImageElement::CopyInnerTo(HTMLImageElement* aDest)
+HTMLImageElement::CopyInnerTo(Element* aDest, bool aPreallocateChildren)
 {
   bool destIsStatic = aDest->OwnerDoc()->IsStaticDocument();
+  auto dest = static_cast<HTMLImageElement*>(aDest);
   if (destIsStatic) {
-    CreateStaticImageClone(aDest);
+    CreateStaticImageClone(dest);
   }
 
-  nsresult rv = nsGenericHTMLElement::CopyInnerTo(aDest);
+  nsresult rv = nsGenericHTMLElement::CopyInnerTo(aDest, aPreallocateChildren);
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -814,16 +831,16 @@ HTMLImageElement::CopyInnerTo(HTMLImageElement* aDest)
     
     
     
-    if (!aDest->InResponsiveMode() &&
-        aDest->HasAttr(kNameSpaceID_None, nsGkAtoms::src) &&
-        aDest->OwnerDoc()->ShouldLoadImages()) {
+    if (!dest->InResponsiveMode() &&
+        dest->HasAttr(kNameSpaceID_None, nsGkAtoms::src) &&
+        dest->OwnerDoc()->ShouldLoadImages()) {
       
       
       mUseUrgentStartForChannel = EventStateManager::IsHandlingUserInput();
 
       nsContentUtils::AddScriptRunner(
         NewRunnableMethod<bool>("dom::HTMLImageElement::MaybeLoadImage",
-                                aDest,
+                                dest,
                                 &HTMLImageElement::MaybeLoadImage,
                                 false));
     }
