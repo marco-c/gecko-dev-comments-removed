@@ -2918,6 +2918,11 @@ void RestyleManager::DoProcessPendingRestyles(ServoTraversalFlags aFlags) {
   
   
   
+  presContext->PresShell()->FlushDirtyScrollAnchorContainers();
+
+  
+  
+  
   AnimationsWithDestroyedFrame animationsWithDestroyedFrame(this);
 
   ServoStyleSet* styleSet = StyleSet();

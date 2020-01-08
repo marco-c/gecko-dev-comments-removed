@@ -454,6 +454,9 @@ class nsIPresShell : public nsStubDocumentObserver {
 
   virtual nsCanvasFrame* GetCanvasFrame() const = 0;
 
+  virtual void PostDirtyScrollAnchorContainer(nsIScrollableFrame* aFrame) = 0;
+  virtual void FlushDirtyScrollAnchorContainers() = 0;
+
   
 
 
