@@ -435,6 +435,12 @@ class UrlbarInput {
     this._untrimmedValue = value;
     this.window.gBrowser.userTypedValue = value;
 
+    if (value) {
+      this.setAttribute("usertyping", "true");
+    } else {
+      this.removeAttribute("usertyping");
+    }
+
     
     this.controller.startQuery(new QueryContext({
       searchString: value,
