@@ -1322,15 +1322,10 @@ impl TextRunPrimitive {
         
         
         
-        if !allow_subpixel_aa && self.used_font.bg_color.a == 0 {
+        if (!allow_subpixel_aa && self.used_font.bg_color.a == 0) ||
+            
+            !transform_glyphs {
             self.used_font.disable_subpixel_aa();
-        }
-
-        
-        
-        if !transform_glyphs {
-            self.used_font.disable_subpixel_aa();
-            self.used_font.disable_subpixel_position();
         }
 
         cache_dirty

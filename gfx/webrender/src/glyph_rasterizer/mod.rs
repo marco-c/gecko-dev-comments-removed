@@ -287,8 +287,7 @@ impl FontInstance {
         let max_size = self.size.to_f64_px() * x_scale.max(y_scale);
         if max_size > FONT_SIZE_LIMIT &&
            self.transform.is_identity() &&
-           self.render_mode != FontRenderMode::Subpixel &&
-           !self.use_subpixel_position()
+           self.render_mode != FontRenderMode::Subpixel
         {
             max_size / FONT_SIZE_LIMIT
         } else {
