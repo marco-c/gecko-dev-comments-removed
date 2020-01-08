@@ -3050,23 +3050,10 @@ Toolbox.prototype = {
       return promise.resolve();
     }
 
-    if (this._performanceFrontConnection) {
-      return this._performanceFrontConnection;
-    }
+    this._performance =  await this.target.getFront("performance");
+    this._performance.on("console-profile-start", this._onPerformanceFrontEvent);
 
-    let resolvePerformance;
-    this._performanceFrontConnection = new Promise(function(resolve) {
-      resolvePerformance = resolve;
-    });
-
-    this._performance = await this.target.getFront("performance");
-
-    
-    this.emit("profiler-connected");
-
-    this.performance.on("*", this._onPerformanceFrontEvent);
-    resolvePerformance(this.performance);
-    return this._performanceFrontConnection;
+    return this._performance;
   },
 
   
@@ -3080,10 +3067,7 @@ Toolbox.prototype = {
     }
     
     
-    if (this._performanceFrontConnection) {
-      await this._performanceFrontConnection;
-    }
-    this.performance.off("*", this._onPerformanceFrontEvent);
+    this.performance.off("console-profile-start", this._onPerformanceFrontEvent);
     await this.performance.destroy();
     this._performance = null;
   },
@@ -3112,34 +3096,23 @@ Toolbox.prototype = {
 
 
 
-  async _onPerformanceFrontEvent(eventName, recording) {
+  async _onPerformanceFrontEvent(recording) {
+    this.performance.off("console-profile-start", this._onPerformanceFrontEvent);
     if (this.getPanel("performance")) {
-      this.performance.off("*", this._onPerformanceFrontEvent);
+      
+      
+      this.performance.flushQueuedRecordings();
       return;
     }
 
-    this._performanceQueuedRecordings = this._performanceQueuedRecordings || [];
-    const recordings = this._performanceQueuedRecordings;
-
     
     
     
     
-    if (eventName === "console-profile-start" && !this._performanceToolOpenedViaConsole) {
-      this._performanceToolOpenedViaConsole = this.loadTool("performance");
-      const panel = await this._performanceToolOpenedViaConsole;
-      await panel.open();
-
-      panel.panelWin.PerformanceController.populateWithRecordings(recordings);
-      this.performance.off("*", this._onPerformanceFrontEvent);
-    }
-
-    
-    
-    
-    if (eventName === "recording-started") {
-      recordings.push(recording);
-    }
+    const panel = await this.loadTool("performance");
+    const recordings = this.performance.flushQueuedRecordings();
+    panel.panelWin.PerformanceController.populateWithRecordings(recordings);
+    await panel.open();
   },
 
   
