@@ -233,6 +233,17 @@ defineLazyGetter(exports.modules, "Debugger", () => {
   return sandbox.Debugger;
 });
 
+defineLazyGetter(exports.modules, "RecordReplayControl", () => {
+  
+  const sandbox = Cu.Sandbox(CC("@mozilla.org/systemprincipal;1", "nsIPrincipal")());
+  Cu.evalInSandbox(
+    "Components.utils.import('resource://gre/modules/jsdebugger.jsm');" +
+    "addDebuggerToGlobal(this);",
+    sandbox
+  );
+  return sandbox.RecordReplayControl;
+});
+
 defineLazyGetter(exports.modules, "Timer", () => {
   const {setTimeout, clearTimeout} = require("resource://gre/modules/Timer.jsm");
   
