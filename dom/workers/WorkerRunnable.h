@@ -541,6 +541,9 @@ class WorkerDebuggeeRunnable : public WorkerRunnable
     : WorkerRunnable(aWorkerPrivate, aBehavior)
   { }
 
+  bool
+  PreDispatch(WorkerPrivate* aWorkerPrivate) override;
+
  private:
   
   
@@ -549,6 +552,18 @@ class WorkerDebuggeeRunnable : public WorkerRunnable
   {
     return true;
   }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<ThreadSafeWorkerRef> mSender;
 };
 
 } 

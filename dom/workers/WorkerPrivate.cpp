@@ -1588,6 +1588,10 @@ WorkerPrivate::Dispatch(already_AddRefed<WorkerRunnable> aRunnable,
     if (aSyncLoopTarget) {
       rv = aSyncLoopTarget->Dispatch(runnable.forget(), NS_DISPATCH_NORMAL);
     } else {
+      
+      
+      
+      
       rv = mThread->DispatchAnyThread(WorkerThreadFriendKey(), runnable.forget());
     }
 
@@ -1761,12 +1765,6 @@ WorkerPrivate::Notify(WorkerStatus aStatus)
     return true;
   }
 
-  NS_ASSERTION(aStatus != Canceling || mQueuedRunnables.IsEmpty(),
-               "Shouldn't have anything queued!");
-
-  
-  mQueuedRunnables.Clear();
-
   
   if (mCancelingTimer) {
     mCancelingTimer->Cancel();
@@ -1812,6 +1810,21 @@ WorkerPrivate::Freeze(nsPIDOMWindowInner* aWindow)
   }
 
   mParentFrozen = true;
+
+  
+  
+  
+  
+  
+  
+  if (aWindow) {
+    
+    
+    if (mMainThreadDebuggeeEventTarget) {
+      
+      MOZ_ALWAYS_SUCCEEDS(mMainThreadDebuggeeEventTarget->SetIsPaused(true));
+    }
+  }
 
   {
     MutexAutoLock lock(mMutex);
@@ -1870,6 +1883,21 @@ WorkerPrivate::Thaw(nsPIDOMWindowInner* aWindow)
 
   mParentFrozen = false;
 
+  
+  
+  
+  
+  
+  if (aWindow) {
+    
+    
+    
+    
+    
+    
+    Unused << mMainThreadDebuggeeEventTarget->SetIsPaused(IsParentWindowPaused());
+  }
+
   {
     MutexAutoLock lock(mMutex);
 
@@ -1879,19 +1907,6 @@ WorkerPrivate::Thaw(nsPIDOMWindowInner* aWindow)
   }
 
   EnableDebugger();
-
-  
-  
-  if (!IsParentWindowPaused() && !mQueuedRunnables.IsEmpty()) {
-    MOZ_ASSERT(IsDedicatedWorker());
-
-    nsTArray<nsCOMPtr<nsIRunnable>> runnables;
-    mQueuedRunnables.SwapElements(runnables);
-
-    for (uint32_t index = 0; index < runnables.Length(); index++) {
-      runnables[index]->Run();
-    }
-  }
 
   RefPtr<ThawRunnable> runnable = new ThawRunnable(this);
   if (!runnable->Dispatch()) {
@@ -1907,6 +1922,13 @@ WorkerPrivate::ParentWindowPaused()
   AssertIsOnMainThread();
   MOZ_ASSERT_IF(IsDedicatedWorker(), mParentWindowPausedDepth == 0);
   mParentWindowPausedDepth += 1;
+
+  
+  
+  if (mMainThreadDebuggeeEventTarget) {
+    
+    MOZ_ALWAYS_SUCCEEDS(mMainThreadDebuggeeEventTarget->SetIsPaused(true));
+  }
 }
 
 void
@@ -1931,16 +1953,11 @@ WorkerPrivate::ParentWindowResumed()
 
   
   
-  if (!IsFrozen() && !mQueuedRunnables.IsEmpty()) {
-    MOZ_ASSERT(IsDedicatedWorker());
-
-    nsTArray<nsCOMPtr<nsIRunnable>> runnables;
-    mQueuedRunnables.SwapElements(runnables);
-
-    for (uint32_t index = 0; index < runnables.Length(); index++) {
-      runnables[index]->Run();
-    }
-  }
+  
+  
+  
+  
+  Unused << mMainThreadDebuggeeEventTarget->SetIsPaused(IsFrozen());
 }
 
 void
@@ -2714,6 +2731,7 @@ WorkerPrivate::WorkerPrivate(WorkerPrivate* aParent,
   
   if (aParent) {
     mMainThreadEventTarget = aParent->mMainThreadEventTarget;
+    mMainThreadDebuggeeEventTarget = aParent->mMainThreadDebuggeeEventTarget;
     return;
   }
 
@@ -2728,6 +2746,10 @@ WorkerPrivate::WorkerPrivate(WorkerPrivate* aParent,
   
   
   mMainThreadEventTarget = ThrottledEventQueue::Create(target);
+  mMainThreadDebuggeeEventTarget = ThrottledEventQueue::Create(target);
+  if (IsParentWindowPaused() || IsFrozen()) {
+    MOZ_ALWAYS_SUCCEEDS(mMainThreadDebuggeeEventTarget->SetIsPaused(true));
+  }
 }
 
 WorkerPrivate::~WorkerPrivate()
@@ -3303,7 +3325,9 @@ WorkerPrivate::DoRunLoop(JSContext* aCx)
     
     
     
-    if (mMainThreadEventTarget->Length() > 5000) {
+    size_t queuedEvents = mMainThreadEventTarget->Length() +
+                          mMainThreadDebuggeeEventTarget->Length();
+    if (queuedEvents > 5000) {
       mMainThreadEventTarget->AwaitIdle();
     }
   }
@@ -3356,6 +3380,13 @@ WorkerPrivate::DispatchToMainThread(already_AddRefed<nsIRunnable> aRunnable,
                                     uint32_t aFlags)
 {
   return mMainThreadEventTarget->Dispatch(std::move(aRunnable), aFlags);
+}
+
+nsresult
+WorkerPrivate::DispatchDebuggeeToMainThread(already_AddRefed<WorkerDebuggeeRunnable> aRunnable,
+                                            uint32_t aFlags)
+{
+  return mMainThreadDebuggeeEventTarget->Dispatch(std::move(aRunnable), aFlags);
 }
 
 nsISerialEventTarget*

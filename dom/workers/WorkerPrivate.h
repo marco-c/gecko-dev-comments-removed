@@ -53,6 +53,7 @@ class WorkerErrorReport;
 class WorkerEventTarget;
 class WorkerGlobalScope;
 class WorkerRunnable;
+class WorkerDebuggeeRunnable;
 class WorkerThread;
 
 
@@ -534,6 +535,10 @@ public:
   nsresult
   DispatchToMainThread(already_AddRefed<nsIRunnable> aRunnable,
                        uint32_t aFlags = NS_DISPATCH_NORMAL);
+
+  nsresult
+  DispatchDebuggeeToMainThread(already_AddRefed<WorkerDebuggeeRunnable> aRunnable,
+                               uint32_t aFlags = NS_DISPATCH_NORMAL);
 
   
   
@@ -1068,13 +1073,6 @@ public:
     mLoadingWorkerScript = aLoadingWorkerScript;
   }
 
-  void
-  QueueRunnable(nsIRunnable* aRunnable)
-  {
-    AssertIsOnParentThread();
-    mQueuedRunnables.AppendElement(aRunnable);
-  }
-
   bool
   RegisterSharedWorker(SharedWorker* aSharedWorker, MessagePort* aPort);
 
@@ -1375,6 +1373,10 @@ private:
   RefPtr<WorkerEventTarget> mWorkerControlEventTarget;
   RefPtr<WorkerEventTarget> mWorkerHybridEventTarget;
 
+  
+  
+  RefPtr<ThrottledEventQueue> mMainThreadDebuggeeEventTarget;
+
   struct SyncLoopInfo
   {
     explicit SyncLoopInfo(EventTarget* aEventTarget);
@@ -1407,9 +1409,6 @@ private:
   RefPtr<PerformanceStorage> mPerformanceStorage;
 
   RefPtr<WorkerCSPEventListener> mCSPEventListener;
-
-  
-  nsTArray<nsCOMPtr<nsIRunnable>> mQueuedRunnables;
 
   
   nsTArray<RefPtr<WorkerRunnable>> mPreStartRunnables;

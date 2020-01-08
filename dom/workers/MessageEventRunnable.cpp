@@ -114,12 +114,17 @@ MessageEventRunnable::WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate)
       return true;
     }
 
-    if (aWorkerPrivate->IsFrozen() ||
-        aWorkerPrivate->IsParentWindowPaused()) {
-      MOZ_ASSERT(!IsDebuggerRunnable());
-      aWorkerPrivate->QueueRunnable(this);
-      return true;
-    }
+    
+    
+    
+    
+    
+    
+    MOZ_ASSERT(!aWorkerPrivate->IsFrozen());
+
+    
+    
+    MOZ_ASSERT(!aWorkerPrivate->IsParentWindowPaused());
 
     aWorkerPrivate->AssertInnerWindowIsCorrect();
 
