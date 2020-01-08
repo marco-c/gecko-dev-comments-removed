@@ -236,6 +236,17 @@ public final class GeckoRuntimeSettings implements Parcelable {
             mSettings.mConsoleOutput.set(enabled);
             return this;
         }
+
+        
+
+
+
+
+
+        public @NonNull Builder displayDensityOverride(float density) {
+            mSettings.mDisplayDensityOverride = density;
+            return this;
+        }
     }
 
      GeckoRuntime runtime;
@@ -299,6 +310,7 @@ public final class GeckoRuntimeSettings implements Parcelable {
      boolean mJavaCrashReporting;
      int mCrashReportingJobId;
      boolean mDebugPause;
+     float mDisplayDensityOverride = -1.0f;
 
     private final Pref<?>[] mPrefs = new Pref<?>[] {
         mCookieBehavior, mCookieLifetime, mConsoleOutput,
@@ -338,6 +350,7 @@ public final class GeckoRuntimeSettings implements Parcelable {
         mJavaCrashReporting = settings.mJavaCrashReporting;
         mCrashReportingJobId = settings.mCrashReportingJobId;
         mDebugPause = settings.mDebugPause;
+        mDisplayDensityOverride = settings.mDisplayDensityOverride;
     }
 
      void flush() {
@@ -464,6 +477,18 @@ public final class GeckoRuntimeSettings implements Parcelable {
 
 
     public boolean getPauseForDebuggerEnabled() { return mDebugPause; }
+
+    
+
+
+
+
+    public Float getDisplayDensityOverride() {
+        if (mDisplayDensityOverride > 0.0f) {
+            return new Float(mDisplayDensityOverride);
+        }
+        return null;
+    }
 
     
     @Retention(RetentionPolicy.SOURCE)
@@ -623,6 +648,7 @@ public final class GeckoRuntimeSettings implements Parcelable {
         ParcelableUtils.writeBoolean(out, mJavaCrashReporting);
         out.writeInt(mCrashReportingJobId);
         ParcelableUtils.writeBoolean(out, mDebugPause);
+        out.writeFloat(mDisplayDensityOverride);
     }
 
     
@@ -642,6 +668,7 @@ public final class GeckoRuntimeSettings implements Parcelable {
         mJavaCrashReporting = ParcelableUtils.readBoolean(source);
         mCrashReportingJobId = source.readInt();
         mDebugPause = ParcelableUtils.readBoolean(source);
+        mDisplayDensityOverride = source.readFloat();
     }
 
     public static final Parcelable.Creator<GeckoRuntimeSettings> CREATOR
