@@ -75,6 +75,7 @@ var PaymentDialogUtils = {
           {fieldId: "address-level2"},
         ],
         postalCodePattern: "\\d{5}",
+        countryRequiredFields: ["street-address", "address-level2", "postal-code"],
       };
     }
 
@@ -94,6 +95,9 @@ var PaymentDialogUtils = {
       
       
       postalCodePattern: country == "US" ? "(\\d{5})(?:[ \\-](\\d{4}))?" : "[ABCEGHJKLMNPRSTVXY]\\d[ABCEGHJ-NPRSTV-Z] ?\\d[ABCEGHJ-NPRSTV-Z]\\d",
+      countryRequiredFields: country == "US" || country == "CA" ?
+        ["street-address", "address-level2", "address-level1", "postal-code"] :
+        ["street-address", "address-level2", "postal-code"],
     };
   },
   getDefaultPreferences() {

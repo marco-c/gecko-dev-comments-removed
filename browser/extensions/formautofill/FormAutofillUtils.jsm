@@ -452,6 +452,19 @@ this.FormAutofillUtils = {
   },
 
   
+  
+  FIELDS_LOOKUP: {
+    N: "name",
+    O: "organization",
+    A: "street-address",
+    S: "address-level1",
+    C: "address-level2",
+    D: "address-level3",
+    Z: "postal-code",
+    n: "newLine",
+  },
+
+  
 
 
 
@@ -468,22 +481,10 @@ this.FormAutofillUtils = {
     if (!fmt) {
       throw new Error("fmt string is missing.");
     }
-    
-    
-    const fieldsLookup = {
-      N: "name",
-      O: "organization",
-      A: "street-address",
-      S: "address-level1",
-      C: "address-level2",
-      D: "address-level3",
-      Z: "postal-code",
-      n: "newLine",
-    };
 
     return fmt.match(/%[^%]/g).reduce((parsed, part) => {
       
-      let fieldId = fieldsLookup[part[1]];
+      let fieldId = this.FIELDS_LOOKUP[part[1]];
       
       if (!fieldId) {
         return parsed;
@@ -498,6 +499,23 @@ this.FormAutofillUtils = {
       }
       return parsed.concat({fieldId});
     }, []);
+  },
+
+  
+
+
+
+
+
+
+
+
+  parseRequireString(requireString) {
+    if (!requireString) {
+      throw new Error("requireString string is missing.");
+    }
+
+    return requireString.split("").map(fieldId => this.FIELDS_LOOKUP[fieldId]);
   },
 
   
@@ -811,13 +829,12 @@ this.FormAutofillUtils = {
       
       
       addressLevel3Label: dataset.sublocality_name_type || "suburb",
-      
-      
       addressLevel2Label: dataset.locality_name_type || "city",
       addressLevel1Label: dataset.state_name_type || "province",
       postalCodeLabel: dataset.zip_name_type || "postalCode",
-      fieldsOrder: this.parseAddressFormat(dataset.fmt || "%N%n%O%n%A%n%C, %S %Z"),
+      fieldsOrder: this.parseAddressFormat(dataset.fmt || "%N%n%O%n%A%n%C"),
       postalCodePattern: dataset.zip,
+      countryRequiredFields: this.parseRequireString(dataset.require || "AC"),
     };
   },
 
