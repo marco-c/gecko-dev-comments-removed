@@ -2072,34 +2072,6 @@ exports.ChromeDebuggerActor = ChromeDebuggerActor;
 
 
 
-
-
-
-function AddonThreadActor(connection, parent) {
-  ThreadActor.prototype.initialize.call(this, parent);
-}
-
-AddonThreadActor.prototype = Object.create(ThreadActor.prototype);
-
-Object.assign(AddonThreadActor.prototype, {
-  constructor: AddonThreadActor,
-
-  
-  actorPrefix: "addonThread",
-});
-
-exports.AddonThreadActor = AddonThreadActor;
-
-
-
-
-
-
-
-
-
-
-
 var oldReportError = reportError;
 this.reportError = function(error, prefix = "") {
   assert(error instanceof Error, "Must pass Error objects to reportError");
