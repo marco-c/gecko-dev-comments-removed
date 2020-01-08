@@ -97,6 +97,7 @@ function isInaccessible(wnd, message) {
 
 
 
+
 function xpcEnumerateContentWindows(callback) {
 
   var Ci = SpecialPowers.Ci;
@@ -127,6 +128,7 @@ function xpcEnumerateContentWindows(callback) {
   while (contentWindows.length > 0)
     callback(contentWindows.pop());
 }
+
 
 
 function xpcGetFramesByName(name) {
@@ -207,4 +209,3 @@ function xpcWaitForFinishedFrames(callback, numFrames) {
 
   var frameWaitInterval = setInterval(poll, 500);
 }
-
