@@ -5428,7 +5428,9 @@ pref("dom.vr.poseprediction.enabled", true);
 
 pref("dom.vr.require-gesture", true);
 
+#if defined(XP_WIN)
 pref("dom.vr.process.enabled", false);
+#endif
 
 pref("dom.vr.puppet.enabled", false);
 
