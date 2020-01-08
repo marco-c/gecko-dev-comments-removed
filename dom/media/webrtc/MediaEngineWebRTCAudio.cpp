@@ -473,16 +473,19 @@ nsresult MediaEngineWebRTCMicrophoneSource::Deallocate(
 
   if (mStream && IsTrackIDExplicit(mTrackID)) {
     RefPtr<MediaStream> sourceStream = mStream;
-    RefPtr<MediaStreamGraphImpl> graphImpl = mStream->GraphImpl();
     RefPtr<AudioInputProcessing> inputProcessing = mInputProcessing;
     NS_DispatchToMainThread(media::NewRunnableFrom(
-        [graph = std::move(graphImpl), stream = std::move(sourceStream),
+        [stream = std::move(sourceStream),
          audioInputProcessing = std::move(inputProcessing),
          trackID = mTrackID]() mutable {
-          if (graph) {
-            graph->AppendMessage(MakeUnique<EndTrackMessage>(
-                stream, audioInputProcessing, trackID));
+          if (stream->IsDestroyed()) {
+            
+            
+            return NS_OK;
           }
+          MOZ_ASSERT(stream->GraphImpl());
+          stream->GraphImpl()->AppendMessage(MakeUnique<EndTrackMessage>(
+              stream, audioInputProcessing, trackID));
           return NS_OK;
         }));
   }
