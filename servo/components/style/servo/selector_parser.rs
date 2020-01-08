@@ -137,6 +137,10 @@ impl PseudoElement {
 
     
     #[inline]
+    pub fn is_unknown_webkit_pseudo_element(&self) -> bool { false }
+
+    
+    #[inline]
     pub fn is_before(&self) -> bool {
         *self == PseudoElement::Before
     }

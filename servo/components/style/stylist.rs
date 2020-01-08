@@ -1948,7 +1948,7 @@ pub struct CascadeData {
     
     
     
-    attribute_dependencies: PrecomputedHashSet<Atom>,
+    attribute_dependencies: PrecomputedHashSet<LocalName>,
 
     
     
@@ -1964,7 +1964,7 @@ pub struct CascadeData {
     
     
     
-    mapped_ids: PrecomputedHashSet<LocalName>,
+    mapped_ids: PrecomputedHashSet<Atom>,
 
     
     
