@@ -75,7 +75,11 @@ enum class EditAction
   eCommitComposition,
 
   
-  eEndComposition,
+  eCancelComposition,
+
+  
+  
+  eDeleteByComposition,
 
   
   eUndo,

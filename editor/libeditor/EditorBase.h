@@ -700,6 +700,11 @@ protected:
                              EditAction aEditAction);
     ~AutoEditActionDataSetter();
 
+    void UpdateEditAction(EditAction aEditAction)
+    {
+      mEditAction = aEditAction;
+    }
+
     bool CanHandle() const
     {
       return mSelection && mEditorBase.IsInitialized();
