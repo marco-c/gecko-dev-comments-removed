@@ -1172,10 +1172,8 @@ MediaPipeline::RtcpPacketReceived(TransportLayer* aLayer, MediaPacket& packet)
   
   
   
-  if (mFilter && !mFilter->FilterSenderReport(packet.data(), packet.len())) {
-    CSFLogWarn(LOGTAG, "Dropping incoming RTCP packet; filtered out");
-    return;
-  }
+  
+  
 
   CSFLogDebug(LOGTAG, "%s received RTCP packet.", mDescription.c_str());
   IncrementRtcpPacketsReceived();

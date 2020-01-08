@@ -53,10 +53,6 @@ class MediaPipelineFilter {
   
   bool Filter(const webrtc::RTPHeader& header, uint32_t correlator = 0);
 
-  
-  
-  bool FilterSenderReport(const unsigned char* data, size_t len) const;
-
   void AddRemoteSSRC(uint32_t ssrc);
   void AddRemoteRtpStreamId(const std::string& rtp_strm_id);
 
@@ -65,9 +61,6 @@ class MediaPipelineFilter {
   void SetCorrelator(uint32_t correlator);
 
   void Update(const MediaPipelineFilter& filter_update);
-
-  
-  static const uint8_t SENDER_REPORT_T = 200;
 
  private:
   
