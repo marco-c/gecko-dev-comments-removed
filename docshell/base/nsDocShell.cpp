@@ -9803,28 +9803,17 @@ nsresult nsDocShell::DoURILoad(
   }
 
   if (IsFrame()) {
-    bool doesNotReturnData = false;
-    NS_URIChainHasFlags(aURI, nsIProtocolHandler::URI_DOES_NOT_RETURN_DATA,
-                        &doesNotReturnData);
-
-    if (doesNotReturnData) {
-      
-      
-      
-      nsCOMPtr<nsIDocShellTreeItem> parent;
-      GetSameTypeParent(getter_AddRefs(parent));
-      MOZ_ASSERT(parent);
-
-      nsIDocument* parentDocument = parent->GetDocument();
-      if (parentDocument) {
-        parentDocument->SetDocumentAndPageUseCounter(
-            eUseCounter_custom_no_data_URL);
-      }
-    }
-
     MOZ_ASSERT(aContentPolicyType == nsIContentPolicy::TYPE_INTERNAL_IFRAME ||
                    aContentPolicyType == nsIContentPolicy::TYPE_INTERNAL_FRAME,
                "DoURILoad thinks this is a frame and InternalLoad does not");
+
+    
+    bool doesNotReturnData = false;
+    NS_URIChainHasFlags(aURI, nsIProtocolHandler::URI_DOES_NOT_RETURN_DATA,
+                        &doesNotReturnData);
+    if (doesNotReturnData) {
+      return NS_ERROR_UNKNOWN_PROTOCOL;
+    }
 
     
     
