@@ -80,10 +80,7 @@ public:
   }
 
 protected:
-  virtual ~SVGRootRenderingObserver()
-  {
-    StopObserving();
-  }
+  virtual ~SVGRootRenderingObserver() = default; 
 
   Element* GetReferencedElementWithoutObserving() override
   {
