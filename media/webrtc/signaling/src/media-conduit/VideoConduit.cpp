@@ -602,7 +602,6 @@ WebrtcVideoConduit::VideoStreamFactory::CreateEncoderStreams(int width, int heig
   
   
   
-  auto& simulcastEncoding = mConduit->mCurSendCodecConfig->mSimulcastEncodings[0];
 #if 0
   
   if (simulcastEncoding.constraints.scaleDownBy > 1.0) {
@@ -639,7 +638,7 @@ WebrtcVideoConduit::VideoStreamFactory::CreateEncoderStreams(int width, int heig
     
     video_stream.max_framerate = mConduit->mSendingFramerate;
 
-    simulcastEncoding = mConduit->mCurSendCodecConfig->mSimulcastEncodings[idx];
+    auto& simulcastEncoding = mConduit->mCurSendCodecConfig->mSimulcastEncodings[idx];
     MOZ_ASSERT(simulcastEncoding.constraints.scaleDownBy >= 1.0);
 
     
@@ -1631,6 +1630,7 @@ static ResolutionAndBitrateLimits kResolutionAndBitrateLimits[] = {
   {MB_OF(1920, 1200), KBPS(1500), KBPS(2000), KBPS(10000)}, 
   {MB_OF(1280, 720), KBPS(1200), KBPS(1500), KBPS(5000)}, 
   {MB_OF(800, 480), KBPS(600), KBPS(800), KBPS(2500)}, 
+  {MB_OF(480, 270), KBPS(300), KBPS(500), KBPS(2000)},
   {tl::Max<MB_OF(400, 240), MB_OF(352, 288)>::value, KBPS(200), KBPS(300), KBPS(1300)}, 
   {MB_OF(176, 144), KBPS(100), KBPS(150), KBPS(500)}, 
   {0 , KBPS(40), KBPS(80), KBPS(250)} 
