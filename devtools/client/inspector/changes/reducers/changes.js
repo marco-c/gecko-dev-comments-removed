@@ -216,18 +216,30 @@ const reducers = {
         
         
         const addIndex = rule.add.findIndex(addDecl => {
-          return addDecl.index === decl.index;
+          return addDecl.index === decl.index &&
+                 addDecl.property === decl.property &&
+                 addDecl.value === decl.value;
         });
 
         
         
         
-        if (addIndex < 0) {
+        const removeIndex = rule.remove.findIndex(removeDecl => {
+          return removeDecl.index === decl.index &&
+                 removeDecl.property === decl.property &&
+                 removeDecl.value === decl.value;
+        });
+
+        
+        
+        
+        
+        if (addIndex < 0 && removeIndex < 0) {
           rule.remove.push(decl);
         }
 
         
-        if (rule.add[addIndex] && rule.add[addIndex].value === decl.value) {
+        if (rule.add[addIndex]) {
           rule.add.splice(addIndex, 1);
         }
 
@@ -258,18 +270,19 @@ const reducers = {
         
         
         const removeIndex = rule.remove.findIndex(removeDecl => {
-          return removeDecl.index === decl.index;
+          return removeDecl.index === decl.index &&
+                 removeDecl.value === decl.value &&
+                 removeDecl.property === decl.property;
         });
 
         
         
         const addIndex = rule.add.findIndex(addDecl => {
-          return addDecl.index === decl.index;
+          return addDecl.index === decl.index &&
+                 addDecl.property === decl.property;
         });
 
-        if (rule.remove[removeIndex] &&
-            rule.remove[removeIndex].value === decl.value &&
-            rule.remove[removeIndex].property === decl.property) {
+        if (rule.remove[removeIndex]) {
           
           rule.remove.splice(removeIndex, 1);
         } else if (rule.add[addIndex]) {
