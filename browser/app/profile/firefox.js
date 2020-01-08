@@ -1516,12 +1516,6 @@ pref("network.cookie.cookieBehavior", 4 );
 pref("browser.contentblocking.allowlist.storage.enabled", true);
 
 #ifdef NIGHTLY_BUILD
-pref("browser.contentblocking.global-toggle.enabled", true);
-#else
-pref("browser.contentblocking.global-toggle.enabled", false);
-#endif
-
-#ifdef NIGHTLY_BUILD
 
 pref("dom.storage_access.enabled", true);
 #endif
