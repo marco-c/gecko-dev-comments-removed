@@ -1951,7 +1951,6 @@ ScrollFrameHelper::ScrollFrameHelper(nsContainerFrame* aOuter, bool aIsRoot)
       mAsyncScroll(nullptr),
       mAsyncSmoothMSDScroll(nullptr),
       mLastScrollOrigin(nsGkAtoms::other),
-      mAllowScrollOriginDowngrade(false),
       mLastSmoothScrollOrigin(nullptr),
       mScrollGeneration(++sScrollGenerationCounter),
       mDestination(0, 0),
@@ -1960,9 +1959,10 @@ ScrollFrameHelper::ScrollFrameHelper(nsContainerFrame* aOuter, bool aIsRoot)
       mApzScrollPos(0, 0),
       mScrollPosForLayerPixelAlignment(-1, -1),
       mLastUpdateFramesPos(-1, -1),
-      mHadDisplayPortAtLastFrameUpdate(false),
       mDisplayPortAtLastFrameUpdate(),
       mScrollParentID(mozilla::layers::ScrollableLayerGuid::NULL_SCROLL_ID),
+      mAllowScrollOriginDowngrade(false),
+      mHadDisplayPortAtLastFrameUpdate(false),
       mNeverHasVerticalScrollbar(false),
       mNeverHasHorizontalScrollbar(false),
       mHasVerticalScrollbar(false),
@@ -5466,8 +5466,6 @@ bool ScrollFrameHelper::ReflowFinished() {
   mUpdateScrollbarAttributes = false;
 
   
-  nsPresContext* presContext = mOuter->PresContext();
-
   if (mMayHaveDirtyFixedChildren) {
     mMayHaveDirtyFixedChildren = false;
     nsIFrame* parentFrame = mOuter->GetParent();
@@ -5475,8 +5473,8 @@ bool ScrollFrameHelper::ReflowFinished() {
              parentFrame->GetChildList(nsIFrame::kFixedList).FirstChild();
          fixedChild; fixedChild = fixedChild->GetNextSibling()) {
       
-      presContext->PresShell()->FrameNeedsReflow(
-          fixedChild, nsIPresShell::eResize, NS_FRAME_HAS_DIRTY_CHILDREN);
+      mOuter->PresShell()->FrameNeedsReflow(fixedChild, nsIPresShell::eResize,
+                                            NS_FRAME_HAS_DIRTY_CHILDREN);
     }
   }
 
@@ -6164,7 +6162,7 @@ void ScrollFrameHelper::RestoreState(PresState* aState) {
   if (mIsRoot) {
     nsIPresShell* presShell = mOuter->PresShell();
     presShell->SetResolutionAndScaleTo(aState->resolution(),
-                                       nsGkAtoms::restore);
+                                       nsIPresShell::ChangeOrigin::eMainThread);
   }
 }
 

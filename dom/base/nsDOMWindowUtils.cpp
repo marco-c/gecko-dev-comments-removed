@@ -549,7 +549,8 @@ nsDOMWindowUtils::SetResolutionAndScaleTo(float aResolution) {
     return NS_ERROR_FAILURE;
   }
 
-  presShell->SetResolutionAndScaleTo(aResolution, nsGkAtoms::other);
+  presShell->SetResolutionAndScaleTo(aResolution,
+                                     nsIPresShell::ChangeOrigin::eMainThread);
 
   return NS_OK;
 }
@@ -577,18 +578,6 @@ nsDOMWindowUtils::GetResolution(float* aResolution) {
   }
 
   *aResolution = presShell->GetResolution();
-
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsDOMWindowUtils::GetIsResolutionSet(bool* aIsResolutionSet) {
-  nsIPresShell* presShell = GetPresShell();
-  if (!presShell) {
-    return NS_ERROR_FAILURE;
-  }
-
-  *aIsResolutionSet = presShell->IsResolutionSet();
 
   return NS_OK;
 }
