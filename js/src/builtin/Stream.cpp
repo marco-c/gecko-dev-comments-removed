@@ -3147,7 +3147,7 @@ CreateReadableByteStreamController(JSContext* cx, Handle<ReadableStream*> stream
             JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                       JSMSG_READABLEBYTESTREAMCONTROLLER_BAD_CHUNKSIZE);
             return nullptr;
-    }
+        }
     }
 
     
@@ -3642,8 +3642,8 @@ ReadableByteStreamControllerHandleQueueDrain(JSContext* cx,
     
     
     if (controller->queueTotalSize() == 0 && controller->closeRequested()) {
-      
-      return ReadableStreamCloseInternal(cx, stream);
+        
+        return ReadableStreamCloseInternal(cx, stream);
     }
 
     
@@ -3710,16 +3710,16 @@ js::ByteLengthQueuingStrategy::constructor(JSContext* cx, unsigned argc, Value* 
 
     RootedObject argObj(cx, ToObject(cx, args.get(0)));
     if (!argObj) {
-      return false;
+        return false;
     }
 
     RootedValue highWaterMark(cx);
     if (!GetProperty(cx, argObj, argObj, cx->names().highWaterMark, &highWaterMark)) {
-      return false;
+        return false;
     }
 
     if (!SetProperty(cx, strategy, cx->names().highWaterMark, highWaterMark)) {
-      return false;
+        return false;
     }
 
     args.rval().setObject(*strategy);
@@ -3760,16 +3760,16 @@ js::CountQueuingStrategy::constructor(JSContext* cx, unsigned argc, Value* vp)
 
     RootedObject argObj(cx, ToObject(cx, args.get(0)));
     if (!argObj) {
-      return false;
+        return false;
     }
 
     RootedValue highWaterMark(cx);
     if (!GetProperty(cx, argObj, argObj, cx->names().highWaterMark, &highWaterMark)) {
-      return false;
+        return false;
     }
 
     if (!SetProperty(cx, strategy, cx->names().highWaterMark, highWaterMark)) {
-      return false;
+        return false;
     }
 
     args.rval().setObject(*strategy);
