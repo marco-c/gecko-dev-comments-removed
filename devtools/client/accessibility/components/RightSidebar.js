@@ -5,6 +5,7 @@
 
 
 const { Component, createFactory } = require("devtools/client/shared/vendor/react");
+const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const { div } = require("devtools/client/shared/vendor/react-dom-factories");
 
 const { L10N } = require("../utils/l10n");
@@ -12,12 +13,19 @@ const Accessible = createFactory(require("./Accessible"));
 
 
 class RightSidebar extends Component {
+  static get propTypes() {
+    return {
+      walker: PropTypes.object.isRequired
+    };
+  }
+
   
 
 
 
   render() {
     const headerID = "accessibility-right-sidebar-header";
+    const { walker } = this.props;
     return (
       div({
         className: "right-sidebar",
@@ -31,7 +39,7 @@ class RightSidebar extends Component {
         div({
           className: "_content accessible",
           role: "presentation"
-        }, Accessible({ labelledby: headerID }))
+        }, Accessible({ walker, labelledby: headerID }))
       )
     );
   }

@@ -183,6 +183,33 @@ async function checkTreeState(doc, expected) {
 
 
 
+
+
+function relationsMatch(relations, expected) {
+  for (const relationType in expected) {
+    let expTargets = expected[relationType];
+    expTargets = Array.isArray(expTargets) ? expTargets : [expTargets];
+
+    let targets = relations[relationType];
+    targets = Array.isArray(targets) ? targets : [targets];
+
+    for (const index in expTargets) {
+      if (expTargets[index].name !== targets[index].name ||
+          expTargets[index].role !== targets[index].role) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
+
+
+
+
+
+
 async function checkSidebarState(store, expectedState) {
   info("Checking sidebar state.");
   await waitUntilState(store, ({ details }) => {
@@ -192,7 +219,11 @@ async function checkSidebarState(store, expectedState) {
         continue;
       }
 
-      if (EXPANDABLE_PROPS.includes(key)) {
+      if (key === "relations") {
+        if (!relationsMatch(details.relations, expected)) {
+          return false;
+        }
+      } else if (EXPANDABLE_PROPS.includes(key)) {
         if (JSON.stringify(details.accessible[key]) !== JSON.stringify(expected)) {
           return false;
         }
@@ -204,6 +235,54 @@ async function checkSidebarState(store, expectedState) {
     ok(true, "Sidebar state is correct.");
     return true;
   });
+}
+
+
+
+
+
+
+
+
+async function focusAccessibleProperties(doc) {
+  const tree = doc.querySelector(".tree");
+  if (doc.activeElement !== tree) {
+    tree.focus();
+    await BrowserTestUtils.waitForCondition(() =>
+      tree.querySelector(".node.focused"), "Tree selected.");
+  }
+}
+
+
+
+
+
+
+
+async function selectProperty(doc, id) {
+  const win = doc.defaultView;
+  let selected = false;
+  let node;
+
+  await focusAccessibleProperties(doc);
+  await BrowserTestUtils.waitForCondition(() => {
+    node = doc.getElementById(`${id}`);
+    if (node) {
+      if (selected) {
+        return node.firstChild.classList.contains("focused");
+      }
+
+      EventUtils.sendMouseEvent({ type: "click" }, node, win);
+      selected = true;
+    } else {
+      const tree = doc.querySelector(".tree");
+      tree.scrollTop = parseFloat(win.getComputedStyle(tree).height);
+    }
+
+    return false;
+  });
+
+  return node;
 }
 
 
