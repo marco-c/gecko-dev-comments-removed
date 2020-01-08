@@ -134,16 +134,10 @@ var ContentBlocking = {
   PREF_ANIMATIONS_ENABLED: "toolkit.cosmeticAnimations.enabled",
   PREF_REPORT_BREAKAGE_ENABLED: "browser.contentblocking.reportBreakage.enabled",
   PREF_REPORT_BREAKAGE_URL: "browser.contentblocking.reportBreakage.url",
-  PREF_INTRO_COUNT_CB: "browser.contentblocking.introCount",
-  PREF_INTRO_COUNT_TP: "privacy.trackingprotection.introCount",
   content: null,
   icon: null,
   activeTooltipText: null,
   disabledTooltipText: null,
-
-  get prefIntroCount() {
-    return this.contentBlockingUIEnabled ? this.PREF_INTRO_COUNT_CB : this.PREF_INTRO_COUNT_TP;
-  },
 
   get appMenuLabel() {
     delete this.appMenuLabel;
@@ -418,13 +412,11 @@ var ContentBlocking = {
     }
 
     
-    let hasException = false;
-    if (PrivateBrowsingUtils.isBrowserPrivate(gBrowser.selectedBrowser)) {
-      hasException = PrivateBrowsingUtils.existsInTrackingAllowlist(baseURI);
-    } else {
-      hasException = Services.perms.testExactPermission(baseURI,
-        "trackingprotection") == Services.perms.ALLOW_ACTION;
-    }
+    let type = PrivateBrowsingUtils.isBrowserPrivate(gBrowser.selectedBrowser) ?
+                 "trackingprotection-pb" :
+                 "trackingprotection";
+    let hasException = Services.perms.testExactPermission(baseURI, type) ==
+      Services.perms.ALLOW_ACTION;
 
     this.content.toggleAttribute("detected", detected);
     this.content.toggleAttribute("hasException", hasException);
@@ -437,11 +429,14 @@ var ContentBlocking = {
     } else if (active && webProgress.isTopLevel) {
       this.iconBox.setAttribute("animate", "true");
 
-      let introCount = Services.prefs.getIntPref(this.prefIntroCount);
-      if (introCount < this.MAX_INTROS) {
-        Services.prefs.setIntPref(this.prefIntroCount, ++introCount);
-        Services.prefs.savePrefFile(null);
-        this.showIntroPanel();
+      
+      if (TrackingProtection.enabledGlobally) {
+        let introCount = Services.prefs.getIntPref("privacy.trackingprotection.introCount");
+        if (introCount < this.MAX_INTROS) {
+          Services.prefs.setIntPref("privacy.trackingprotection.introCount", ++introCount);
+          Services.prefs.savePrefFile(null);
+          this.showIntroPanel();
+        }
       }
     }
 
@@ -498,8 +493,11 @@ var ContentBlocking = {
   },
 
   dontShowIntroPanelAgain() {
-    if (!PrivateBrowsingUtils.isBrowserPrivate(gBrowser.selectedBrowser)) {
-      Services.prefs.setIntPref(this.prefIntroCount, this.MAX_INTROS);
+    
+    
+    if (TrackingProtection.enabledGlobally) {
+      Services.prefs.setIntPref("privacy.trackingprotection.introCount",
+                                this.MAX_INTROS);
       Services.prefs.savePrefFile(null);
     }
   },
@@ -508,39 +506,13 @@ var ContentBlocking = {
     let brandBundle = document.getElementById("bundle_brand");
     let brandShortName = brandBundle.getString("brandShortName");
 
-    let introTitle;
-    let introDescription;
-    
-    
-    let variation;
-
-    if (this.contentBlockingUIEnabled) {
-      introTitle = gNavigatorBundle.getFormattedString("contentBlocking.intro.title",
-                                                       [brandShortName]);
-      
-      
-      if (TrackingProtection.enabledGlobally) {
-        introDescription = gNavigatorBundle.getString("contentBlocking.intro.v2.description");
-        variation = 2;
-      } else {
-        introDescription = gNavigatorBundle.getFormattedString("contentBlocking.intro.v1.description",
-                                                               [brandShortName]);
-        variation = 1;
-      }
-    } else {
-      introTitle = gNavigatorBundle.getString("trackingProtection.intro.title");
-      introDescription = gNavigatorBundle.getFormattedString("trackingProtection.intro.description2",
-                                                             [brandShortName]);
-      variation = 0;
-    }
-
     let openStep2 = () => {
       
       
       this.dontShowIntroPanelAgain();
 
       let nextURL = Services.urlFormatter.formatURLPref("privacy.trackingprotection.introURL") +
-                    `?step=2&newtab=true&variation=${variation}`;
+                    "?step=2&newtab=true";
       switchToTabHavingURI(nextURL, true, {
         
         
@@ -564,7 +536,11 @@ var ContentBlocking = {
 
     let panelTarget = await UITour.getTarget(window, "trackingProtection");
     UITour.initForBrowser(gBrowser.selectedBrowser, window);
-    UITour.showInfo(window, panelTarget, introTitle, introDescription, undefined, buttons,
+    UITour.showInfo(window, panelTarget,
+                    gNavigatorBundle.getString("trackingProtection.intro.title"),
+                    gNavigatorBundle.getFormattedString("trackingProtection.intro.description2",
+                                                        [brandShortName]),
+                    undefined, buttons,
                     { closeButtonCallback: () => this.dontShowIntroPanelAgain() });
   },
 };
