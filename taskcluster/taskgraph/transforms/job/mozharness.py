@@ -312,6 +312,16 @@ def mozharness_on_generic_worker(config, job, taskdesc):
                 head_rev=env['COMM_HEAD_REV'],
                 path=r'.\build\src\comm'))
 
+    fetch_commands = []
+    if 'MOZ_FETCHES' in env:
+        
+        
+        fetch_commands.append(' '.join([
+            r'c:\mozilla-build\python3\python3.exe',
+            r'build\src\taskcluster\scripts\misc\fetch-content',
+            'task-artifacts',
+        ]))
+
     worker['command'] = []
     if taskdesc.get('needs-sccache'):
         worker['command'].extend([
@@ -329,6 +339,7 @@ def mozharness_on_generic_worker(config, job, taskdesc):
         ])
 
     worker['command'].extend(hg_commands)
+    worker['command'].extend(fetch_commands)
     worker['command'].extend([
         ' '.join(mh_command)
     ])
