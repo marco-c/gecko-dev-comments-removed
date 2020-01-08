@@ -32,3 +32,6 @@ pref("dom.push.enabled", false);
 
 
 pref("layout.scroll.root-frame-containers", 2);
+
+
+pref("intl.locale.requested", "");
