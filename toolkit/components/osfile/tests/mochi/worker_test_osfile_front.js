@@ -444,7 +444,7 @@ function test_info() {
     
     
     
-  });
+  })();
 
   let change = stat.lastModificationDate;
   info("Testing lastModificationDate: " + change);
