@@ -624,6 +624,64 @@ TokenStreamChars<char16_t, AnyCharsAccess>::ungetCodePointIgnoreEOL(uint32_t cod
 
 template<>
 size_t
+SourceUnits<char16_t>::findWindowStart(size_t offset)
+{
+    
+    
+
+    const char16_t* const earliestPossibleStart = codeUnitPtrAt(startOffset_);
+
+    const char16_t* const initial = codeUnitPtrAt(offset);
+    const char16_t* p = initial;
+
+    auto HalfWindowSize = [&p, &initial]() { return PointerRangeSize(p, initial); };
+
+    while (true) {
+        MOZ_ASSERT(earliestPossibleStart <= p);
+        MOZ_ASSERT(HalfWindowSize() <= WindowRadius);
+        if (p <= earliestPossibleStart || HalfWindowSize() >= WindowRadius)
+            break;
+
+        char16_t c = p[-1];
+
+        
+        
+        
+        if (isRawEOLChar(c))
+            break;
+
+        
+        
+        
+
+        if (MOZ_UNLIKELY(unicode::IsLeadSurrogate(c)))
+            break;
+
+        
+        p--;
+
+        
+        if (MOZ_LIKELY(!unicode::IsTrailSurrogate(c)))
+            continue;
+
+        
+        if (HalfWindowSize() >= WindowRadius ||
+            p <= earliestPossibleStart || 
+            !unicode::IsLeadSurrogate(p[-1])) 
+        {
+            p++;
+            break;
+        }
+
+        p--;
+    }
+
+    MOZ_ASSERT(HalfWindowSize() <= WindowRadius);
+    return offset - HalfWindowSize();
+}
+
+template<>
+size_t
 SourceUnits<char16_t>::findWindowEnd(size_t offset)
 {
     const char16_t* const initial = codeUnitPtrAt(offset);
@@ -821,6 +879,47 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::currentLineAndColumn(uint32_t* line,
     anyChars.srcCoords.lineNumAndColumnIndex(offset, line, column);
 }
 
+template<>
+bool
+TokenStreamCharsBase<Utf8Unit>::addLineOfContext(JSContext* cx, ErrorMetadata* err,
+                                                 uint32_t offset)
+{
+    
+    
+    
+    
+    return true;
+}
+
+template<>
+bool
+TokenStreamCharsBase<char16_t>::addLineOfContext(JSContext* cx, ErrorMetadata* err,
+                                                 uint32_t offset)
+{
+    size_t windowStart = sourceUnits.findWindowStart(offset);
+    size_t windowEnd = sourceUnits.findWindowEnd(offset);
+
+    size_t windowLength = windowEnd - windowStart;
+    MOZ_ASSERT(windowLength <= SourceUnits::WindowRadius * 2);
+
+    
+    
+    StringBuffer windowBuf(cx);
+    if (!windowBuf.append(sourceUnits.codeUnitPtrAt(windowStart), windowLength) ||
+        !windowBuf.append('\0'))
+    {
+        return false;
+    }
+
+    err->lineOfContext.reset(windowBuf.stealChars());
+    if (!err->lineOfContext)
+        return false;
+
+    err->lineLength = windowLength;
+    err->tokenOffset = offset - windowStart;
+    return true;
+}
+
 template<typename CharT, class AnyCharsAccess>
 bool
 TokenStreamSpecific<CharT, AnyCharsAccess>::computeErrorMetadata(ErrorMetadata* err,
@@ -841,59 +940,6 @@ TokenStreamSpecific<CharT, AnyCharsAccess>::computeErrorMetadata(ErrorMetadata* 
     
     return internalComputeLineOfContext(err, offset);
 }
-
-template<typename CharT, class AnyCharsAccess>
-bool
-GeneralTokenStreamChars<CharT, AnyCharsAccess>::internalComputeLineOfContext(ErrorMetadata* err,
-                                                                             uint32_t offset)
-{
-    TokenStreamAnyChars& anyChars = anyCharsAccess();
-
-    
-    
-    
-    
-    if (err->lineNumber != anyChars.lineno)
-        return true;
-
-    constexpr size_t windowRadius = SourceUnits::WindowRadius;
-
-    
-    
-    MOZ_ASSERT(offset >= anyChars.linebase);
-    size_t windowStart = (offset - anyChars.linebase > windowRadius) ?
-                         offset - windowRadius :
-                         anyChars.linebase;
-
-    
-    
-    if (windowStart < this->sourceUnits.startOffset())
-        windowStart = this->sourceUnits.startOffset();
-
-    
-    
-    size_t windowEnd = this->sourceUnits.findWindowEnd(offset);
-    size_t windowLength = windowEnd - windowStart;
-    MOZ_ASSERT(windowLength <= windowRadius * 2);
-
-    
-    
-    StringBuffer windowBuf(anyChars.cx);
-    if (!windowBuf.append(this->sourceUnits.codeUnitPtrAt(windowStart), windowLength) ||
-        !windowBuf.append('\0'))
-    {
-        return false;
-    }
-
-    err->lineOfContext.reset(windowBuf.stealChars());
-    if (!err->lineOfContext)
-        return false;
-
-    err->lineLength = windowLength;
-    err->tokenOffset = offset - windowStart;
-    return true;
-}
-
 
 template<typename CharT, class AnyCharsAccess>
 bool

@@ -1157,6 +1157,14 @@ class SourceUnits
 
 
 
+    size_t findWindowStart(size_t offset);
+
+    
+
+
+
+
+
     size_t findWindowEnd(size_t offset);
 
   private:
@@ -1313,6 +1321,21 @@ class TokenStreamCharsBase
 
     MOZ_MUST_USE bool fillCharBufferWithTemplateStringContents(const CharT* cur, const CharT* end);
 
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    MOZ_MUST_USE bool addLineOfContext(JSContext* cx, ErrorMetadata* err, uint32_t offset);
+
   protected:
     
     SourceUnits sourceUnits;
@@ -1450,6 +1473,11 @@ class GeneralTokenStreamChars
     using CharsBase = TokenStreamCharsBase<CharT>;
     using SpecializedCharsBase = SpecializedTokenStreamCharsBase<CharT>;
 
+  private:
+    using CharsBase::addLineOfContext;
+    
+
+  private:
     Token* newTokenInternal(TokenKind kind, TokenStart start, TokenKind* out);
 
     
@@ -1579,7 +1607,18 @@ class GeneralTokenStreamChars
 
 
 
-    MOZ_MUST_USE bool internalComputeLineOfContext(ErrorMetadata* err, uint32_t offset);
+    MOZ_MUST_USE bool internalComputeLineOfContext(ErrorMetadata* err, uint32_t offset) {
+        TokenStreamAnyChars& anyChars = anyCharsAccess();
+
+        
+        
+        
+        
+        if (err->lineNumber != anyChars.lineno)
+            return true;
+
+        return addLineOfContext(anyChars.cx, err, offset);
+    }
 
   public:
     JSAtom* getRawTemplateStringAtom() {
