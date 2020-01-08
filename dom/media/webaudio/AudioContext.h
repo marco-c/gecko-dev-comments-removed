@@ -309,9 +309,7 @@ public:
   
   void UnregisterActiveNode(AudioNode* aNode);
 
-  void UnregisterAudioBufferSourceNode(AudioBufferSourceNode* aNode);
   void UnregisterPannerNode(PannerNode* aNode);
-  void UpdatePannerSource();
 
   uint32_t MaxChannelCount() const;
 
@@ -371,9 +369,6 @@ private:
   nsTHashtable<nsRefPtrHashKey<AudioNode> > mActiveNodes;
   
   nsTHashtable<nsPtrHashKey<AudioNode> > mAllNodes;
-  
-  
-  nsTHashtable<nsPtrHashKey<PannerNode> > mPannerNodes;
   
   RefPtr<BasicWaveFormCache> mBasicWaveFormCache;
   
