@@ -44,11 +44,13 @@ struct SYSTEM_HANDLE_INFORMATION_EX {
   SYSTEM_HANDLE_TABLE_ENTRY_INFO_EX mHandles[1];
 };
 
+#ifndef __MINGW32__
 enum UndocObjectInformationClass { ObjectNameInformation = 1 };
 
 struct OBJECT_NAME_INFORMATION {
   UNICODE_STRING mName;
 };
+#endif
 
 
 
