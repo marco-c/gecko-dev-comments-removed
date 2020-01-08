@@ -196,15 +196,6 @@ protected:
 
 
 
-  nsresult UseAsPrimaryRequest(imgRequestProxy* aRequest, bool aNotify,
-                               ImageLoadType aImageLoadType);
-
-  
-
-
-
-
-
 
 
   void DestroyImageLoadingContent();

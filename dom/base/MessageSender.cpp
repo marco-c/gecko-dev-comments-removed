@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/MessageSender.h"
+#include "mozilla/dom/MessageBroadcaster.h"
 
 namespace mozilla {
 namespace dom {
