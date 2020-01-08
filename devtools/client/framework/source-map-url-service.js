@@ -61,7 +61,7 @@ SourceMapURLService.prototype._getLoadingPromise = function() {
       this._stylesheetsFront.on("stylesheet-added", this._onNewStyleSheet);
       const styleSheetsLoadingPromise =
           this._stylesheetsFront.getStyleSheets().then(sheets => {
-            sheets.forEach(this._onNewStyleSheet);
+            sheets.forEach(this._registerNewStyleSheet, this);
           }, () => {
             
           });
@@ -71,7 +71,7 @@ SourceMapURLService.prototype._getLoadingPromise = function() {
         
         
         for (const source of sources) {
-          this._onSourceUpdated({source});
+          this._registerNewSource(source);
         }
       }, e => {
         
@@ -92,6 +92,7 @@ SourceMapURLService.prototype.reset = function() {
   this._urls.clear();
   this._subscriptions.clear();
   this._idMap.clear();
+  this._loadingPromise = null;
 };
 
 
@@ -114,12 +115,28 @@ SourceMapURLService.prototype.destroy = function() {
 
 
 SourceMapURLService.prototype._onSourceUpdated = function(sourceEvent) {
+  const url = this._registerNewSource(sourceEvent.source);
+
+  if (url) {
+    
+    
+    this._dispatchSubscribersForURL(url);
+  }
+};
+
+
+
+
+
+
+
+
+SourceMapURLService.prototype._registerNewSource = function(source) {
   
   if (!this._urls) {
     return;
   }
 
-  const { source } = sourceEvent;
   const { generatedUrl, url, actor: id, sourceMapURL } = source;
 
   
@@ -127,6 +144,8 @@ SourceMapURLService.prototype._onSourceUpdated = function(sourceEvent) {
   const seenUrl = generatedUrl || url;
   this._urls.set(seenUrl, { id, url: seenUrl, sourceMapURL });
   this._idMap.set(id, seenUrl);
+
+  return seenUrl;
 };
 
 
@@ -136,6 +155,23 @@ SourceMapURLService.prototype._onSourceUpdated = function(sourceEvent) {
 
 
 SourceMapURLService.prototype._onNewStyleSheet = function(sheet) {
+  const url = this._registerNewStyleSheet(sheet);
+
+  if (url) {
+    
+    
+    this._dispatchSubscribersForURL(url);
+  }
+};
+
+
+
+
+
+
+
+
+SourceMapURLService.prototype._registerNewStyleSheet = function(sheet) {
   
   if (!this._urls) {
     return;
@@ -145,6 +181,8 @@ SourceMapURLService.prototype._onNewStyleSheet = function(sheet) {
   const url = href || nodeHref;
   this._urls.set(url, { id, url, sourceMapURL});
   this._idMap.set(id, url);
+
+  return url;
 };
 
 
@@ -167,17 +205,26 @@ SourceMapURLService.prototype.sourceMapChanged = function(id, newUrl) {
     
     this._urls.set(urlKey, { id, url: newUrl, sourceMapURL: "" });
 
-    
-    
-    
-    
-    for (const [, subscriptionEntry] of this._subscriptions) {
-      if (subscriptionEntry.url === urlKey) {
-        
-        subscriptionEntry.promise = null;
-        for (const callback of subscriptionEntry.callbacks) {
-          this._callOneCallback(subscriptionEntry, callback);
-        }
+    this._dispatchSubscribersForURL(urlKey);
+  }
+};
+
+
+
+
+
+
+SourceMapURLService.prototype._dispatchSubscribersForURL = function(urlKey) {
+  
+  
+  
+  
+  for (const [, subscriptionEntry] of this._subscriptions) {
+    if (subscriptionEntry.url === urlKey) {
+      
+      subscriptionEntry.promise = null;
+      for (const callback of subscriptionEntry.callbacks) {
+        this._callOneCallback(subscriptionEntry, callback);
       }
     }
   }
