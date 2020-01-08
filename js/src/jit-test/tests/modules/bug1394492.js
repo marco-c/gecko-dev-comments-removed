@@ -2,5 +2,5 @@
 let m = parseModule(`
   throw i => { return 5; }, m-1;
 `);
-instantiateModule(m);
-evaluateModule(m);
+m.declarationInstantiation();
+m.evaluation();

@@ -488,14 +488,8 @@ OffThreadJob::waitUntilDone(JSContext* cx)
     return token;
 }
 
-using ScriptObjectMap = JS::WeakCache<js::GCHashMap<HeapPtr<JSScript*>,
-                                                    HeapPtr<JSObject*>,
-                                                    MovableCellHasher<HeapPtr<JSScript*>>,
-                                                    SystemAllocPolicy>>;
-
 struct ShellCompartmentPrivate {
     GCPtrObject grayRoot;
-    UniquePtr<ScriptObjectMap> moduleLoaderScriptObjectMap;
 };
 
 struct MOZ_STACK_CLASS EnvironmentPreparer : public js::ScriptEnvironmentPreparer {
@@ -3842,13 +3836,6 @@ EnsureGeckoProfilingStackInstalled(JSContext* cx, ShellContext* sc)
     return true;
 }
 
-static void
-DestroyShellCompartmentPrivate(JSFreeOp* fop, JS::Compartment* compartment)
-{
-    auto priv = static_cast<ShellCompartmentPrivate*>(JS_GetCompartmentPrivate(compartment));
-    js_delete(priv);
-}
-
 struct WorkerInput
 {
     JSRuntime* parentRuntime;
@@ -3861,6 +3848,13 @@ struct WorkerInput
 
     ~WorkerInput() = default;
 };
+
+static void
+DestroyShellCompartmentPrivate(JSFreeOp* fop, JS::Compartment* compartment)
+{
+    auto priv = static_cast<ShellCompartmentPrivate*>(JS_GetCompartmentPrivate(compartment));
+    js_delete(priv);
+}
 
 static void SetWorkerContextOptions(JSContext* cx);
 static bool ShellBuildId(JS::BuildIdCharVector* buildId);
@@ -4406,9 +4400,8 @@ SetJitCompilerOption(JSContext* cx, unsigned argc, Value* vp)
     }
 
     JSFlatString* strArg = JS_FlattenString(cx, args[0].toString());
-    if (!strArg) {
+    if (!strArg)
         return false;
-    }
 
 #define JIT_COMPILER_MATCH(key, string)                 \
     else if (JS_FlatStringEqualsAscii(strArg, string))  \
@@ -4425,9 +4418,8 @@ SetJitCompilerOption(JSContext* cx, unsigned argc, Value* vp)
     }
 
     int32_t number = args[1].toInt32();
-    if (number < 0) {
+    if (number < 0)
         number = -1;
-    }
 
     
     
@@ -4622,83 +4614,6 @@ EnsureShellCompartmentPrivate(JSContext* cx)
     return priv;
 }
 
-static ScriptObjectMap*
-EnsureModuleLoaderScriptObjectMap(JSContext* cx)
-{
-    auto priv = EnsureShellCompartmentPrivate(cx);
-    if (!priv) {
-        return nullptr;
-    }
-
-    if (priv->moduleLoaderScriptObjectMap) {
-        return priv->moduleLoaderScriptObjectMap.get();
-    }
-
-    JS::Zone* zone = cx->zone();
-    auto* map = cx->new_<ScriptObjectMap>(zone);
-    if (!map) {
-        return nullptr;
-    }
-
-    priv->moduleLoaderScriptObjectMap.reset(map);
-    return map;
-}
-
-
-
-class ShellScriptObject : public NativeObject
-{
-  public:
-    static const Class class_;
-
-    enum {
-        ScriptSlot = 0
-    };
-
-    static JSObject* get(JSContext* cx, HandleScript script);
-
-    JSScript* script() const;
-};
-
-const Class ShellScriptObject::class_ = {
-    "ShellScriptObject",
-    JSCLASS_HAS_RESERVED_SLOTS(1)
-};
-
- JSObject*
-ShellScriptObject::get(JSContext* cx, HandleScript script)
-{
-    auto map = EnsureModuleLoaderScriptObjectMap(cx);
-    if (!map) {
-        return nullptr;
-    }
-
-    auto ptr = map->lookup(script);
-    if (ptr) {
-        return ptr->value();
-    }
-
-    JSObject* obj = NewObjectWithGivenProto(cx, &class_, nullptr);
-    if (!obj) {
-        return nullptr;
-    }
-
-    obj->as<NativeObject>().setReservedSlot(ScriptSlot, PrivateGCThingValue(script));
-
-    if (!map->put(script, obj)) {
-        ReportOutOfMemory(cx);
-        return nullptr;
-    }
-
-    return obj;
-}
-
-JSScript*
-ShellScriptObject::script() const
-{
-    return getReservedSlot(ScriptSlot).toGCThing()->as<JSScript>();
-}
-
 static bool
 ParseModule(JSContext* cx, unsigned argc, Value* vp)
 {
@@ -4754,71 +4669,8 @@ ParseModule(JSContext* cx, unsigned argc, Value* vp)
         return false;
     }
 
-    JSObject* obj = ShellScriptObject::get(cx, script);
-    if (!obj) {
-        return false;
-    }
-
-    args.rval().setObject(*obj);
+    args.rval().setObject(*script->module());
     return true;
-}
-
-static bool
-ReportArgumentTypeError(JSContext* cx, HandleValue value, const char* expected)
-{
-    const char* typeName = InformalValueTypeName(value);
-    JS_ReportErrorASCII(cx, "Expected %s, got %s", expected, typeName);
-    return false;
-}
-
-static bool
-InstantiateModule(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    if (args.length() != 1) {
-        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_MORE_ARGS_NEEDED,
-                                  "instantiateModule", "0", "s");
-        return false;
-    }
-
-    if (!args[0].isObject() || !args[0].toObject().is<ShellScriptObject>()) {
-        return ReportArgumentTypeError(cx, args[0], "ShellScriptObject");
-    }
-
-    JSScript* script = args[0].toObject().as<ShellScriptObject>().script();
-    RootedModuleObject module(cx, script->module());
-    if (!module) {
-        JS_ReportErrorASCII(cx, "Expected a module script");
-        return false;
-    }
-
-    args.rval().setUndefined();
-    return ModuleObject::Instantiate(cx, module);
-}
-
-static bool
-EvaluateModule(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    if (args.length() != 1) {
-        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_MORE_ARGS_NEEDED,
-                                  "evaluateModule", "0", "s");
-        return false;
-    }
-
-    if (!args[0].isObject() || !args[0].toObject().is<ShellScriptObject>()) {
-        return ReportArgumentTypeError(cx, args[0], "ShellScriptObject");
-    }
-
-    JSScript* script = args[0].toObject().as<ShellScriptObject>().script();
-    RootedModuleObject module(cx, script->module());
-    if (!module) {
-        JS_ReportErrorASCII(cx, "Expected a module script");
-        return false;
-    }
-
-    args.rval().setUndefined();
-    return ModuleObject::Evaluate(cx, module);
 }
 
 static bool
@@ -4880,13 +4732,8 @@ CallModuleResolveHook(JSContext* cx, HandleScript script, HandleString specifier
     }
     MOZ_ASSERT(hookValue.toObject().is<JSFunction>());
 
-    JSObject* obj = ShellScriptObject::get(cx, script);
-    if (!obj) {
-        return nullptr;
-    }
-
     JS::AutoValueArray<2> args(cx);
-    args[0].setObject(*obj);
+    args[0].setObject(*script->module());
     args[1].setString(specifier);
 
     RootedValue result(cx);
@@ -4894,12 +4741,12 @@ CallModuleResolveHook(JSContext* cx, HandleScript script, HandleString specifier
         return nullptr;
     }
 
-    if (!result.isObject() || !result.toObject().is<ShellScriptObject>()) {
-         JS_ReportErrorASCII(cx, "Module resolve hook did not return script object");
+    if (!result.isObject() || !result.toObject().is<ModuleObject>()) {
+         JS_ReportErrorASCII(cx, "Module resolve hook did not return Module object");
          return nullptr;
     }
 
-    return result.toObject().as<ShellScriptObject>().script();
+    return result.toObject().as<ModuleObject>().script();
 }
 
 static bool
@@ -4940,133 +4787,6 @@ GetModuleLoadPath(JSContext* cx, unsigned argc, Value* vp)
     return true;
 }
 
-static ModuleEnvironmentObject*
-GetModuleEnvironment(JSContext* cx, HandleValue scriptValue)
-{
-    JSScript* script = scriptValue.toObject().as<ShellScriptObject>().script();
-    RootedModuleObject module(cx, script->module());
-    if (!module) {
-        JS_ReportErrorASCII(cx, "Expecting a module script");
-        return nullptr;
-    }
-
-    if (module->hadEvaluationError()) {
-        JS_ReportErrorASCII(cx, "Module environment unavailable");
-        return nullptr;
-    }
-
-    
-    
-    RootedModuleEnvironmentObject env(cx, &module->initialEnvironment());
-    MOZ_ASSERT(env);
-    return env;
-}
-
-static bool
-GetModuleEnvironmentNames(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    if (args.length() != 1) {
-        JS_ReportErrorASCII(cx, "Wrong number of arguments");
-        return false;
-    }
-
-    if (!args[0].isObject() || !args[0].toObject().is<ShellScriptObject>()) {
-        JS_ReportErrorASCII(cx, "First argument should be a ShellScriptObject");
-        return false;
-    }
-
-    RootedModuleEnvironmentObject env(cx, GetModuleEnvironment(cx, args[0]));
-    if (!env) {
-        return false;
-    }
-
-    Rooted<IdVector> ids(cx, IdVector(cx));
-    if (!JS_Enumerate(cx, env, &ids)) {
-        return false;
-    }
-
-    uint32_t length = ids.length();
-    RootedArrayObject array(cx, NewDenseFullyAllocatedArray(cx, length));
-    if (!array) {
-        return false;
-    }
-
-    array->setDenseInitializedLength(length);
-    for (uint32_t i = 0; i < length; i++) {
-        array->initDenseElement(i, StringValue(JSID_TO_STRING(ids[i])));
-    }
-
-    args.rval().setObject(*array);
-    return true;
-}
-
-static bool
-GetModuleEnvironmentValue(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    if (args.length() != 2) {
-        JS_ReportErrorASCII(cx, "Wrong number of arguments");
-        return false;
-    }
-
-    if (!args[0].isObject() || !args[0].toObject().is<ShellScriptObject>()) {
-        JS_ReportErrorASCII(cx, "First argument should be a ShellScriptObject");
-        return false;
-    }
-
-    RootedModuleEnvironmentObject env(cx, GetModuleEnvironment(cx, args[0]));
-    if (!env) {
-        return false;
-    }
-
-    RootedString name(cx, JS::ToString(cx, args[1]));
-    if (!name) {
-        return false;
-    }
-
-    RootedId id(cx);
-    if (!JS_StringToId(cx, name, &id)) {
-        return false;
-    }
-
-    if (!GetProperty(cx, env, env, id, args.rval())) {
-        return false;
-    }
-
-    if (args.rval().isMagic(JS_UNINITIALIZED_LEXICAL)) {
-        ReportRuntimeLexicalError(cx, JSMSG_UNINITIALIZED_LEXICAL, id);
-        return false;
-    }
-
-    return true;
-}
-
-static bool
-GetModuleObject(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    if (args.length() != 1) {
-        JS_ReportErrorASCII(cx, "Wrong number of arguments");
-        return false;
-    }
-
-    if (!args[0].isObject() || !args[0].toObject().is<ShellScriptObject>()) {
-        JS_ReportErrorASCII(cx, "First argument should be a ShellScriptObject");
-        return false;
-    }
-
-    JSScript* script = args[0].toObject().as<ShellScriptObject>().script();
-    RootedModuleObject module(cx, script->module());
-    if (!module) {
-        JS_ReportErrorASCII(cx, "Expecting a module script");
-        return false;
-    }
-
-    args.rval().setObject(*module);
-    return true;
-}
-
 #if defined(JS_BUILD_BINAST)
 
 using js::frontend::BinASTParser;
@@ -5089,9 +4809,8 @@ ParseBinASTData(JSContext* cx, uint8_t* buf_data, uint32_t buf_length,
 
     JS::Result<ParseNode*> parsed = reader.parse(globalsc, buf_data, buf_length);
 
-    if (parsed.isErr()) {
+    if (parsed.isErr())
         return false;
-    }
 
 #ifdef DEBUG
     Fprinter out(stderr);
@@ -5580,12 +5299,7 @@ FinishOffThreadModule(JSContext* cx, unsigned argc, Value* vp)
         return false;
     }
 
-    JSObject* obj = ShellScriptObject::get(cx, script);
-    if (!obj) {
-        return false;
-    }
-
-    args.rval().setObject(*obj);
+    args.rval().setObject(*script->module());
     return true;
 }
 
@@ -8248,15 +7962,7 @@ static const JSFunctionSpecWithHelp shell_functions[] = {
 
     JS_FN_HELP("parseModule", ParseModule, 1, 0,
 "parseModule(code)",
-"  Parses source text as a module and returns a script object."),
-
-    JS_FN_HELP("instantiateModule", InstantiateModule, 1, 0,
-"instantiateModule(moduleScript)",
-"  Instantiate a module script graph."),
-
-    JS_FN_HELP("evaluateModule", EvaluateModule, 1, 0,
-"evaluateModule(moduleScript)",
-"  Evaluate a previously instantiated module script graph."),
+"  Parses source text as a module and returns a Module object."),
 
     JS_FN_HELP("setModuleLoadHook", SetModuleLoadHook, 1, 0,
 "setModuleLoadHook(function(path))",
@@ -8274,18 +7980,6 @@ static const JSFunctionSpecWithHelp shell_functions[] = {
 "getModuleLoadPath()",
 "  Return any --module-load-path argument passed to the shell.  Used by the\n"
 "  module loader.\n"),
-
-    JS_FN_HELP("getModuleEnvironmentNames", GetModuleEnvironmentNames, 1, 0,
-"getModuleEnvironmentNames(module)",
-"  Get the list of a module environment's bound names for a specified module.\n"),
-
-    JS_FN_HELP("getModuleEnvironmentValue", GetModuleEnvironmentValue, 2, 0,
-"getModuleEnvironmentValue(module, name)",
-"  Get the value of a bound name in a module environment.\n"),
-
-    JS_FN_HELP("getModuleObject", GetModuleObject, 1, 0,
-"getModuleObject(module)",
-"  Get the internal JS object that holds module metadata for a module script.\n"),
 
 #if defined(JS_BUILD_BINAST)
 
