@@ -62,7 +62,7 @@ public:
 
   
   
-  static nsCString GetPrefs();
+  static nsPrintfCString GetPrefs();
   static void SetPrefs(const char* aPrefs);
 
   static bool IsSchedulerEnabled();

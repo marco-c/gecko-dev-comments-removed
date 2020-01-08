@@ -2221,7 +2221,7 @@ ContentParent::LaunchSubprocess(ProcessPriority aInitialPriority )
 
   
   
-  nsCString schedulerPrefs = Scheduler::GetPrefs();
+  nsPrintfCString schedulerPrefs = Scheduler::GetPrefs();
   extraArgs.push_back("-schedulerPrefs");
   extraArgs.push_back(schedulerPrefs.get());
 

@@ -780,7 +780,7 @@ Scheduler::Shutdown()
   }
 }
 
- nsCString
+ nsPrintfCString
 Scheduler::GetPrefs()
 {
   MOZ_ASSERT(XRE_IsParentProcess());
