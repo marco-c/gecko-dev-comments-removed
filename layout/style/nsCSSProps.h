@@ -14,7 +14,7 @@
 
 #include <limits>
 #include <type_traits>
-#include "nsStringFwd.h"
+#include "nsString.h"
 #include "nsCSSPropertyID.h"
 #include "nsStyleStructFwd.h"
 #include "nsCSSKeywords.h"
@@ -36,6 +36,7 @@ class ComputedStyle;
 extern "C" {
   nsCSSPropertyID Servo_ResolveLogicalProperty(nsCSSPropertyID,
                                                const mozilla::ComputedStyle*);
+  nsCSSPropertyID Servo_Property_LookupEnabledForAllContent(const nsACString*);
 }
 
 struct nsCSSKTableEntry
@@ -80,8 +81,20 @@ public:
   
   
   
-  static nsCSSPropertyID LookupProperty(const nsAString& aProperty,
-                                      EnabledState aEnabled);
+  
+  
+  
+  static nsCSSPropertyID LookupProperty(const nsACString& aProperty)
+  {
+    return Servo_Property_LookupEnabledForAllContent(&aProperty);
+  }
+
+  static nsCSSPropertyID LookupProperty(const nsAString& aProperty)
+  {
+    NS_ConvertUTF16toUTF8 utf8(aProperty);
+    return LookupProperty(utf8);
+  }
+
   
   
   static nsCSSPropertyID LookupPropertyByIDLName(

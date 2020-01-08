@@ -1192,8 +1192,7 @@ MappedAttrParser::ParseMappedAttrValue(nsAtom* aMappedAttrName,
 
   
   nsCSSPropertyID propertyID =
-    nsCSSProps::LookupProperty(nsDependentAtomString(aMappedAttrName),
-                               CSSEnabledState::eForAllContent);
+    nsCSSProps::LookupProperty(nsDependentAtomString(aMappedAttrName));
   if (propertyID != eCSSProperty_UNKNOWN) {
     bool changed = false; 
     NS_ConvertUTF16toUTF8 value(aMappedAttrValue);
