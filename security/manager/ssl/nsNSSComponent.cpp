@@ -1686,6 +1686,40 @@ AttemptToRenameBothPKCS11ModuleDBVersions(const nsACString& profilePath)
 
 
 
+static nsresult
+GetFileIfExists(const nsACString& path, const nsACString& filename,
+                 nsIFile** result)
+{
+  MOZ_ASSERT(result);
+  if (!result) {
+    return NS_ERROR_INVALID_ARG;
+  }
+  *result = nullptr;
+  nsCOMPtr<nsIFile> file = do_CreateInstance("@mozilla.org/file/local;1");
+  if (!file) {
+    return NS_ERROR_FAILURE;
+  }
+  nsresult rv = file->InitWithNativePath(path);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  rv = file->AppendNative(filename);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  bool exists;
+  rv = file->Exists(&exists);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  if (exists) {
+    file.forget(result);
+  }
+  return NS_OK;
+}
+
+
+
 
 
 
@@ -1711,22 +1745,32 @@ MaybeCleanUpOldNSSFiles(const nsACString& profilePath)
   if (!hasPassword) {
     return;
   }
-  nsCOMPtr<nsIFile> dbFile = do_CreateInstance("@mozilla.org/file/local;1");
-  if (!dbFile) {
-    return;
-  }
-  nsresult rv = dbFile->InitWithNativePath(profilePath);
-  if (NS_FAILED(rv)) {
-    return;
-  }
-  NS_NAMED_LITERAL_CSTRING(keyDBFilename, "key3.db");
-  rv = dbFile->AppendNative(keyDBFilename);
+  NS_NAMED_LITERAL_CSTRING(newKeyDBFilename, "key4.db");
+  nsCOMPtr<nsIFile> newDBFile;
+  nsresult rv = GetFileIfExists(profilePath, newKeyDBFilename,
+                                getter_AddRefs(newDBFile));
   if (NS_FAILED(rv)) {
     return;
   }
   
   
-  Unused << dbFile->Remove(false);
+  
+  if (!newDBFile) {
+    return;
+  }
+  NS_NAMED_LITERAL_CSTRING(oldKeyDBFilename, "key3.db");
+  nsCOMPtr<nsIFile> oldDBFile;
+  rv = GetFileIfExists(profilePath, oldKeyDBFilename,
+                       getter_AddRefs(oldDBFile));
+  if (NS_FAILED(rv)) {
+    return;
+  }
+  if (!oldDBFile) {
+    return;
+  }
+  
+  
+  Unused << oldDBFile->Remove(false);
 }
 #endif 
 
