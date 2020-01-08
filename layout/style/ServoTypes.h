@@ -14,11 +14,8 @@
 
 
 
-class nsWindowSizes;
 struct ServoNodeData;
 namespace mozilla {
-
-class SizeOfState;
 
 
 
