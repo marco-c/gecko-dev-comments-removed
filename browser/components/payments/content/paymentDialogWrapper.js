@@ -665,7 +665,9 @@ var paymentDialogWrapper = {
         
         
         
-        let preserveOldProperties = collectionName == "creditCards";
+        
+        
+        let preserveOldProperties = true;
         await collection.update(guid, record, preserveOldProperties);
       } else {
         responseMessage.guid = await collection.add(record);

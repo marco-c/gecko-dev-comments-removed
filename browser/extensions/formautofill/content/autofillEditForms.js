@@ -52,12 +52,25 @@ class EditAutofillForm {
 
 
   buildFormObject() {
+    let initialObject = {};
+    if (this.hasMailingAddressFields) {
+      
+      
+      initialObject = {
+        "street-address": "",
+        "address-level3": "",
+        "address-level2": "",
+        "address-level1": "",
+        "postal-code": "",
+      };
+    }
+
     return Array.from(this._elements.form.elements).reduce((obj, input) => {
       if (!input.disabled) {
         obj[input.id] = input.value;
       }
       return obj;
-    }, {});
+    }, initialObject);
   }
 
   
@@ -158,6 +171,11 @@ class EditAddress extends EditAutofillForm {
     this.formatForm(record.country);
   }
 
+  get hasMailingAddressFields() {
+    let {addressFields} = this._elements.form.dataset;
+    return !addressFields || addressFields.trim().split(/\s+/).includes("mailing-address");
+  }
+
   
 
 
@@ -239,7 +257,11 @@ class EditAddress extends EditAutofillForm {
 
 
   arrangeFields(fieldsOrder, requiredFields) {
+    
+
+
     let fields = [
+      
       "name",
       "organization",
       "street-address",
