@@ -597,7 +597,9 @@ bool IsMacbookOrMacbookAir()
         return true;
       }
     }
-    return false;
+    
+    
+    return true;
   }
 #endif
   return false;
