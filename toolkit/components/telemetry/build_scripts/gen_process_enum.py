@@ -6,7 +6,7 @@
 
 
 from __future__ import print_function
-from shared_telemetry_utils import ParserError, load_yaml_file
+from parsers.shared_telemetry_utils import ParserError, load_yaml_file
 
 import sys
 import collections
