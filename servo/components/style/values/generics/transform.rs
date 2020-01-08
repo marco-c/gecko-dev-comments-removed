@@ -569,7 +569,7 @@ pub fn get_normalized_vector_and_angle<T: Zero>(
         
         (0., 0., 1., T::zero())
     } else {
-        let vector = vector.normalize();
+        let vector = vector.robust_normalize();
         (vector.x, vector.y, vector.z, angle)
     }
 }
