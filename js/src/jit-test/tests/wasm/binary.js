@@ -283,9 +283,8 @@ for (let i = 0x4f; i < 0x100; i++)
 
 
 
-
 for (let i = 0; i < 256; i++) {
-    if (i <= 0x07 || i == 0x40 || i == 0x41)
+    if (i <= 0x07 || (i >= 0x08 && i <= 0x0e))
         continue;
     checkIllegalPrefixed(MiscPrefix, i);
 }

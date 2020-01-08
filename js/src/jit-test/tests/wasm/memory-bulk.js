@@ -115,10 +115,9 @@ function checkMiscPrefixed(opcode, expect_failure) {
 
 
 
-checkMiscPrefixed(0x3f, true);  
-checkMiscPrefixed(0x40, false); 
-checkMiscPrefixed(0x41, false); 
-checkMiscPrefixed(0x42, true);  
+checkMiscPrefixed(0x0a, false); 
+checkMiscPrefixed(0x0b, false); 
+checkMiscPrefixed(0x0f, true);  
 
 
 
