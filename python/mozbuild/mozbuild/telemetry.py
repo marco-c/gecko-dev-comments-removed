@@ -177,7 +177,9 @@ def get_system_info():
         import psutil
 
         info['logical_cores'] = psutil.cpu_count()
-        info['physical_cores'] = psutil.cpu_count(logical=False)
+        physical_cores = psutil.cpu_count(logical=False)
+        if physical_cores is not None:
+            info['physical_cores'] = physical_cores
         
         
         
