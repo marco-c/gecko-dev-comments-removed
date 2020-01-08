@@ -76,11 +76,7 @@ add_task(async function() {
 
   
   const message = "secrets";
-  const reply = await client.request({
-    to: "root",
-    type: "echo",
-    message
-  });
+  const reply = await client.mainRoot.echo({ message });
   equal(reply.message, message, "Encrypted echo matches");
 
   client.removeListener("closed", onUnexpectedClose);

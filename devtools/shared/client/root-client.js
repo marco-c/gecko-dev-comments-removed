@@ -314,6 +314,26 @@ RootClient.prototype = {
 
 
 
+  requestTypes: DebuggerClient.requester({ type: "requestTypes" }),
+
+  
+
+
+
+
+
+  echo(object) {
+    const packet = Object.assign(object, {
+      to: this.actor,
+      type: "echo",
+    });
+    return this.request(packet);
+  },
+
+  
+
+
+
   get _transport() {
     return this._client._transport;
   },
