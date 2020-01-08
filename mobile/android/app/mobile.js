@@ -581,15 +581,10 @@ pref("media.mediasource.enabled", true);
 
 pref("media.mediadrm-widevinecdm.visible", true);
 
-#ifdef NIGHTLY_BUILD
 
 pref("media.autoplay.enabled.user-gestures-needed", true);
 
 pref("media.autoplay.default", 1); 
-#else
-pref("media.autoplay.default", 0); 
-pref("media.autoplay.enabled.user-gestures-needed", false);
-#endif
 
 
 pref("media.webspeech.synth.enabled", true);
