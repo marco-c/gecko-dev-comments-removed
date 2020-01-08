@@ -81,9 +81,13 @@ public:
 
 
 
+
+
   void IncrementDispatchCounter(DispatchCategory aCategory);
 
   
+
+
 
 
 
@@ -108,11 +112,6 @@ public:
 
 
   uint64_t GetTotalDispatchCount();
-
-  
-
-
-  void ResetPerformanceCounters();
 
 private:
   ~PerformanceCounter() {}

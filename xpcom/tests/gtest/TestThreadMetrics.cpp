@@ -106,19 +106,7 @@ protected:
     mDispatchCount = (uint32_t)TaskCategory::Other + 1;
   }
 
-  void resetCounters() {
-    
-    mCounter->ResetPerformanceCounters();
-    for (uint32_t i = 0; i < mDispatchCount; i++) {
-      ASSERT_EQ(mCounter->GetDispatchCounter()[i], 0u);
-    }
-    ASSERT_EQ(mCounter->GetExecutionDuration(), 0u);
-  }
-
   virtual void TearDown() {
-    
-    resetCounters();
-
     
     mDocGroup->RemoveDocument(nullptr);
     mDocGroup = nullptr;
