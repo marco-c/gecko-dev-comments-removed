@@ -2643,7 +2643,7 @@ toolbar#nav-bar {
             print("4 INFO Mode:    %s" % e10s_mode)
             print("5 INFO SimpleTest FINISHED")
 
-        if not result and self.countfail:
+        if not result and not self.countpass:
             
             result = 1
 
