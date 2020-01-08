@@ -116,6 +116,11 @@ public class WebAppActivity extends AppCompatActivity
             }
 
             @Override
+            public void onProgressChange(GeckoSession session, int progress) {
+
+            }
+
+            @Override
             public void onSecurityChange(GeckoSession session, SecurityInformation security) {
                 
                 if (mIsFirstLoad && security.origin.startsWith("moz-nullprincipal:")) {

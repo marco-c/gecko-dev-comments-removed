@@ -271,6 +271,7 @@ public class GeckoSession extends LayerSession
             new String[]{
                 "GeckoView:PageStart",
                 "GeckoView:PageStop",
+                "GeckoView:ProgressChanged",
                 "GeckoView:SecurityChanged"
             }
         ) {
@@ -285,6 +286,9 @@ public class GeckoSession extends LayerSession
                 } else if ("GeckoView:PageStop".equals(event)) {
                     delegate.onPageStop(GeckoSession.this,
                                         message.getBoolean("success"));
+                } else if ("GeckoView:ProgressChanged".equals(event)) {
+                    delegate.onProgressChange(GeckoSession.this,
+                                              message.getInt("progress"));
                 } else if ("GeckoView:SecurityChanged".equals(event)) {
                     final GeckoBundle identity = message.getBundle("identity");
                     delegate.onSecurityChange(GeckoSession.this, new ProgressDelegate.SecurityInformation(identity));
@@ -1885,6 +1889,13 @@ public class GeckoSession extends LayerSession
 
 
         void onPageStop(GeckoSession session, boolean success);
+
+        
+
+
+
+
+        void onProgressChange(GeckoSession session, int progress);
 
         
 
