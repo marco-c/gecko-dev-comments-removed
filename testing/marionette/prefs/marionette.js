@@ -23,7 +23,6 @@ pref("marionette.log.level", "Info");
 
 
 
-
 pref("marionette.log.truncate", true);
 
 
