@@ -29,14 +29,6 @@ this.startBackground = (function() {
     "background/main.js"
   ];
 
-  browser.pageAction.onClicked.addListener(tab => {
-    loadIfNecessary().then(() => {
-      main.onClicked(tab);
-    }).catch(error => {
-      console.error("Error loading Screenshots:", error);
-    });
-  });
-
   browser.contextMenus.create({
     id: "create-screenshot",
     title: browser.i18n.getMessage("contextMenuLabel"),
@@ -60,6 +52,9 @@ this.startBackground = (function() {
     });
     return true;
   });
+
+  let photonPageActionPort = null;
+  initPhotonPageAction();
 
   let loadedPromise;
 
@@ -86,6 +81,43 @@ this.startBackground = (function() {
       });
     });
     return loadedPromise;
+  }
+
+  function initPhotonPageAction() {
+    
+    
+    
+    photonPageActionPort = browser.runtime.connect({ name: "photonPageActionPort" });
+    photonPageActionPort.onMessage.addListener((message) => {
+      switch (message.type) {
+      case "click":
+        loadIfNecessary().then(() => {
+          return browser.tabs.get(message.tab.id);
+        }).then((tab) => {
+          main.onClicked(tab);
+        }).catch((error) => {
+          console.error("Error loading Screenshots:", error);
+        });
+        break;
+      default:
+        console.error("Unrecognized message:", message);
+        break;
+      }
+    });
+    photonPageActionPort.postMessage({
+      type: "setProperties",
+      title: browser.i18n.getMessage("contextMenuLabel")
+    });
+
+    
+    Object.defineProperties(exports, {
+      "photonPageActionPort": {
+        enumerable: true,
+        get() {
+          return photonPageActionPort;
+        }
+      }
+    });
   }
 
   return exports;
