@@ -155,6 +155,13 @@ export default class PaymentDialog extends PaymentStateSubscriberMixin(HTMLEleme
         };
         state.changesPrevented = false;
         break;
+      case "": {
+        
+        
+        
+        state.changesPrevented = false;
+        break;
+      }
     }
     return state;
   }

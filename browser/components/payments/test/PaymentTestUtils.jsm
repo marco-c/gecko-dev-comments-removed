@@ -1,5 +1,7 @@
 "use strict";
 
+
+
 var EXPORTED_SYMBOLS = ["PaymentTestUtils"];
 
 var PaymentTestUtils = {
@@ -22,6 +24,7 @@ var PaymentTestUtils = {
       try {
         await response.complete(result);
       } catch (ex) {
+        info(`Complete error: ${ex}`);
         completeException = {
           name: ex.name,
           message: ex.message,
@@ -29,6 +32,34 @@ var PaymentTestUtils = {
       }
       return {
         completeException,
+        response: response.toJSON(),
+        
+        methodDetails: response.details,
+      };
+    },
+
+    
+
+
+
+    addRetryHandler: async ({validationErrors, delayMs = 0}) => {
+      let response = await content.showPromise;
+      let retryException;
+
+      
+      await new Promise(resolve => content.setTimeout(resolve, delayMs));
+
+      try {
+        await response.retry(Cu.cloneInto(validationErrors, content));
+      } catch (ex) {
+        info(`Retry error: ${ex}`);
+        retryException = {
+          name: ex.name,
+          message: ex.message,
+        };
+      }
+      return {
+        retryException,
         response: response.toJSON(),
         
         methodDetails: response.details,
