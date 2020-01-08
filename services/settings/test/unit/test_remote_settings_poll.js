@@ -472,8 +472,9 @@ add_task(async function test_syncs_clients_with_local_database() {
   
   
   
-  await (new Kinto.adapters.IDB("blocklists/addons")).saveLastModified(42);
-  await (new Kinto.adapters.IDB("main/recipes")).saveLastModified(43);
+  const dbName = "remote-settings";
+  await (new Kinto.adapters.IDB("blocklists/addons", { dbName })).saveLastModified(42);
+  await (new Kinto.adapters.IDB("main/recipes", { dbName })).saveLastModified(43);
 
   let error;
   try {

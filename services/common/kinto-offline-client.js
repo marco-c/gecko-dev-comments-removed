@@ -36,8 +36,7 @@ var EXPORTED_SYMBOLS = ["Kinto"];
 
 
 
-(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.Kinto = f()}})(function(){var define,module,exports;return (function(){function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s}return e})()({1:[function(require,module,exports){
-
+(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.Kinto = f()}})(function(){var define,module,exports;return (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
 
 
 
@@ -57,18 +56,13 @@ var EXPORTED_SYMBOLS = ["Kinto"];
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.default = void 0;
 
-var _KintoBase = require("../src/KintoBase");
+var _KintoBase = _interopRequireDefault(require("../src/KintoBase"));
 
-var _KintoBase2 = _interopRequireDefault(_KintoBase);
+var _base = _interopRequireDefault(require("../src/adapters/base"));
 
-var _base = require("../src/adapters/base");
-
-var _base2 = _interopRequireDefault(_base);
-
-var _IDB = require("../src/adapters/IDB");
-
-var _IDB2 = _interopRequireDefault(_IDB);
+var _IDB = _interopRequireDefault(require("../src/adapters/IDB"));
 
 var _utils = require("../src/utils");
 
@@ -77,31 +71,36 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 ChromeUtils.import("resource://gre/modules/Timer.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 XPCOMUtils.defineLazyGlobalGetters(global, ["fetch", "indexedDB"]);
+const {
+  EventEmitter
+} = ChromeUtils.import("resource://gre/modules/EventEmitter.jsm", {});
+const {
+  generateUUID
+} = Cc["@mozilla.org/uuid-generator;1"].getService(Ci.nsIUUIDGenerator); 
 
-const { EventEmitter } = ChromeUtils.import("resource://gre/modules/EventEmitter.jsm", {});
-const { generateUUID } = Cc["@mozilla.org/uuid-generator;1"].getService(Ci.nsIUUIDGenerator);
+const {
+  KintoHttpClient
+} = ChromeUtils.import("resource://services-common/kinto-http-client.js");
 
-
-const { KintoHttpClient } = ChromeUtils.import("resource://services-common/kinto-http-client.js");
-
-class Kinto extends _KintoBase2.default {
+class Kinto extends _KintoBase.default {
   static get adapters() {
     return {
-      BaseAdapter: _base2.default,
-      IDB: _IDB2.default
+      BaseAdapter: _base.default,
+      IDB: _IDB.default
     };
   }
 
   constructor(options = {}) {
     const events = {};
     EventEmitter.decorate(events);
-
     const defaults = {
-      adapter: _IDB2.default,
+      adapter: _IDB.default,
       events,
       ApiClass: KintoHttpClient
     };
-    super({ ...defaults, ...options });
+    super({ ...defaults,
+      ...options
+    });
   }
 
   collection(collName, options = {}) {
@@ -109,16 +108,23 @@ class Kinto extends _KintoBase2.default {
       validate(id) {
         return typeof id == "string" && _utils.RE_RECORD_ID.test(id);
       },
+
       generate() {
         return generateUUID().toString().replace(/[{}]/g, "");
       }
+
     };
-    return super.collection(collName, { idSchema, ...options });
+    return super.collection(collName, {
+      idSchema,
+      ...options
+    });
   }
-}
 
-exports.default = Kinto; 
+} 
 
+
+
+exports.default = Kinto;
 
 if (typeof module === "object") {
   module.exports = Kinto;
@@ -132,14 +138,11 @@ if (typeof module === "object") {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.default = void 0;
 
-var _collection = require("./collection");
+var _collection = _interopRequireDefault(require("./collection"));
 
-var _collection2 = _interopRequireDefault(_collection);
-
-var _base = require("./adapters/base");
-
-var _base2 = _interopRequireDefault(_base);
+var _base = _interopRequireDefault(require("./adapters/base"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -159,11 +162,12 @@ class KintoBase {
 
   static get adapters() {
     return {
-      BaseAdapter: _base2.default
+      BaseAdapter: _base.default
     };
   }
-
   
+
+
 
 
 
@@ -173,10 +177,10 @@ class KintoBase {
 
 
   static get syncStrategy() {
-    return _collection2.default.strategy;
+    return _collection.default.strategy;
   }
-
   
+
 
 
 
@@ -199,7 +203,10 @@ class KintoBase {
       remote: DEFAULT_REMOTE,
       retry: DEFAULT_RETRY
     };
-    this._options = { ...defaults, ...options };
+    this._options = { ...defaults,
+      ...options
+    };
+
     if (!this._options.adapter) {
       throw new Error("No adapter provided");
     }
@@ -212,11 +219,10 @@ class KintoBase {
       requestMode,
       retry,
       timeout
-    } = this._options;
+    } = this._options; 
 
     
 
-    
 
 
 
@@ -231,10 +237,12 @@ class KintoBase {
 
 
 
+
     this.events = this._options.events;
   }
-
   
+
+
 
 
 
@@ -250,24 +258,34 @@ class KintoBase {
     if (!collName) {
       throw new Error("missing collection name");
     }
-    const { bucket, events, adapter, adapterOptions, dbPrefix } = {
-      ...this._options,
+
+    const {
+      bucket,
+      events,
+      adapter,
+      adapterOptions
+    } = { ...this._options,
       ...options
     };
-    const { idSchema, remoteTransformers, hooks, localFields } = options;
-
-    return new _collection2.default(bucket, collName, this.api, {
+    const {
+      idSchema,
+      remoteTransformers,
+      hooks,
+      localFields
+    } = options;
+    return new _collection.default(bucket, collName, this.api, {
       events,
       adapter,
       adapterOptions,
-      dbPrefix,
       idSchema,
       remoteTransformers,
       hooks,
       localFields
     });
   }
+
 }
+
 exports.default = KintoBase;
 
 },{"./adapters/base":5,"./collection":6}],4:[function(require,module,exports){
@@ -276,10 +294,11 @@ exports.default = KintoBase;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.open = open;
+exports.execute = execute;
+exports.default = void 0;
 
-var _base = require("./base.js");
-
-var _base2 = _interopRequireDefault(_base);
+var _base = _interopRequireDefault(require("./base.js"));
 
 var _utils = require("../utils");
 
@@ -291,15 +310,117 @@ const INDEXED_FIELDS = ["id", "_status", "last_modified"];
 
 
 
+
+
+
+
+
+async function open(dbname, {
+  version,
+  onupgradeneeded
+}) {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(dbname, version);
+
+    request.onupgradeneeded = event => {
+      const db = event.target.result;
+
+      db.onerror = event => reject(event.target.error);
+
+      return onupgradeneeded(event);
+    };
+
+    request.onerror = event => {
+      reject(event.target.error);
+    };
+
+    request.onsuccess = event => {
+      const db = event.target.result;
+      resolve(db);
+    };
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function execute(db, name, callback, options = {}) {
+  const {
+    mode
+  } = options;
+  return new Promise((resolve, reject) => {
+    
+    
+    const transaction = mode ? db.transaction([name], mode) : db.transaction([name]);
+    const store = transaction.objectStore(name); 
+
+    const abort = e => {
+      transaction.abort();
+      reject(e);
+    }; 
+
+
+    let result;
+
+    try {
+      result = callback(store, abort);
+    } catch (e) {
+      abort(e);
+    }
+
+    transaction.onerror = event => reject(event.target.error);
+
+    transaction.oncomplete = event => resolve(result);
+  });
+}
+
+
+
+
+
+
+
+
+async function deleteDatabase(dbName) {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.deleteDatabase(dbName);
+
+    request.onsuccess = event => resolve(event.target);
+
+    request.onerror = event => reject(event.target.error);
+  });
+}
+
+
+
+
+
+
 const cursorHandlers = {
   all(filters, done) {
     const results = [];
-    return function (event) {
+    return event => {
       const cursor = event.target.result;
+
       if (cursor) {
-        if ((0, _utils.filterObject)(filters, cursor.value)) {
-          results.push(cursor.value);
+        const {
+          value
+        } = cursor;
+
+        if ((0, _utils.filterObject)(filters, value)) {
+          results.push(value);
         }
+
         cursor.continue();
       } else {
         done(results);
@@ -307,36 +428,49 @@ const cursorHandlers = {
     };
   },
 
-  in(values, done) {
-    if (values.length === 0) {
-      return done([]);
-    }
-    const sortedValues = [].slice.call(values).sort();
+  in(values, filters, done) {
     const results = [];
     return function (event) {
       const cursor = event.target.result;
+
       if (!cursor) {
         done(results);
         return;
       }
-      const { key, value } = cursor;
-      let i = 0;
-      while (key > sortedValues[i]) {
+
+      const {
+        key,
+        value
+      } = cursor; 
+
+      let i = 0; 
+      
+
+      while (key > values[i]) {
         
         ++i;
-        if (i === sortedValues.length) {
+
+        if (i === values.length) {
           done(results); 
+
           return;
         }
       }
-      if (key === sortedValues[i]) {
-        results.push(value);
+
+      const isEqual = Array.isArray(key) ? (0, _utils.arrayEqual)(key, values[i]) : key === values[i];
+
+      if (isEqual) {
+        if ((0, _utils.filterObject)(filters, value)) {
+          results.push(value);
+        }
+
         cursor.continue();
       } else {
-        cursor.continue(sortedValues[i]);
+        cursor.continue(values[i]);
       }
     };
   }
+
 };
 
 
@@ -346,45 +480,44 @@ const cursorHandlers = {
 
 
 
-function findIndexedField(filters) {
-  const filteredFields = Object.keys(filters);
-  const indexedFields = filteredFields.filter(field => {
+
+
+
+
+
+function createListRequest(cid, store, filters, done) {
+  
+  const indexField = Object.keys(filters).find(field => {
     return INDEXED_FIELDS.includes(field);
   });
-  return indexedFields[0];
-}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-function createListRequest(store, indexField, value, filters, done) {
   if (!indexField) {
     
-    const request = store.openCursor();
+    const request = store.index("cid").openCursor(IDBKeyRange.only(cid));
     request.onsuccess = cursorHandlers.all(filters, done);
     return request;
-  }
+  } 
 
-  
+
+  const remainingFilters = (0, _utils.omitKeys)(filters, indexField); 
+
+  const value = filters[indexField]; 
+
   if (Array.isArray(value)) {
-    const request = store.index(indexField).openCursor();
-    request.onsuccess = cursorHandlers.in(value, done);
-    return request;
-  }
+    if (value.length === 0) {
+      return done([]);
+    }
 
-  
-  const request = store.index(indexField).openCursor(IDBKeyRange.only(value));
-  request.onsuccess = cursorHandlers.all(filters, done);
+    const values = value.map(i => [cid, i]).sort();
+    const range = IDBKeyRange.bound(values[0], values[values.length - 1]);
+    const request = store.index(indexField).openCursor(range);
+    request.onsuccess = cursorHandlers.in(values, remainingFilters, done);
+    return request;
+  } 
+
+
+  const request = store.index(indexField).openCursor(IDBKeyRange.only([cid, value]));
+  request.onsuccess = cursorHandlers.all(remainingFilters, done);
   return request;
 }
 
@@ -393,7 +526,8 @@ function createListRequest(store, indexField, value, filters, done) {
 
 
 
-class IDB extends _base2.default {
+
+class IDB extends _base.default {
   
 
 
@@ -401,17 +535,13 @@ class IDB extends _base2.default {
 
 
 
-  constructor(storeName, options = {}) {
+
+  constructor(cid, options = {}) {
     super();
+    this.cid = cid;
+    this.dbName = options.dbName || "KintoDB";
+    this._options = options;
     this._db = null;
-    
-    
-
-
-
-    this.storeName = storeName;
-    const { dbname = storeName } = options;
-    this.dbname = dbname;
   }
 
   _handleError(method, err) {
@@ -419,48 +549,66 @@ class IDB extends _base2.default {
     error.stack = err.stack;
     throw error;
   }
-
   
 
 
 
 
 
-  open() {
+
+
+  async open() {
     if (this._db) {
-      return Promise.resolve(this);
-    }
-    return new Promise((resolve, reject) => {
-      const request = indexedDB.open(this.dbname, 1);
-      request.onupgradeneeded = event => {
-        
-        const db = event.target.result;
-        
-        const collStore = db.createObjectStore(this.storeName, {
-          keyPath: "id"
-        });
-        
-        collStore.createIndex("id", "id", { unique: true });
-        
-        collStore.createIndex("_status", "_status");
-        
-        collStore.createIndex("last_modified", "last_modified");
+      return this;
+    } 
+    
+    
+    
 
+
+    const dataToMigrate = this._options.migrateOldData ? await migrationRequired(this.cid) : null;
+    this._db = await open(this.dbName, {
+      version: 1,
+      onupgradeneeded: event => {
+        const db = event.target.result; 
+
+        const recordsStore = db.createObjectStore("records", {
+          keyPath: ["_cid", "id"]
+        }); 
+
+        recordsStore.createIndex("cid", "_cid"); 
         
-        const metaStore = db.createObjectStore("__meta__", {
-          keyPath: "name"
+
+        recordsStore.createIndex("id", ["_cid", "id"]); 
+
+        recordsStore.createIndex("_status", ["_cid", "_status"]); 
+
+        recordsStore.createIndex("last_modified", ["_cid", "last_modified"]); 
+
+        db.createObjectStore("timestamps", {
+          keyPath: "cid"
         });
-        metaStore.createIndex("name", "name", { unique: true });
-      };
-      request.onerror = event => reject(event.target.error);
-      request.onsuccess = event => {
-        this._db = event.target.result;
-        resolve(this);
-      };
+      }
     });
-  }
 
+    if (dataToMigrate) {
+      const {
+        records,
+        timestamp
+      } = dataToMigrate;
+      await this.loadDump(records);
+      await this.saveLastModified(timestamp);
+      console.log(`${this.cid}: data was migrated successfully.`); 
+
+      await deleteDatabase(this.cid);
+      console.warn(`${this.cid}: old database was deleted.`);
+    }
+
+    return this;
+  }
   
+
+
 
 
 
@@ -469,11 +617,13 @@ class IDB extends _base2.default {
   close() {
     if (this._db) {
       this._db.close(); 
+
+
       this._db = null;
     }
+
     return Promise.resolve();
   }
-
   
 
 
@@ -486,16 +636,17 @@ class IDB extends _base2.default {
 
 
 
-  prepare(mode = undefined, name = null) {
-    const storeName = name || this.storeName;
-    
-    
-    const transaction = mode ? this._db.transaction([storeName], mode) : this._db.transaction([storeName]);
-    const store = transaction.objectStore(storeName);
-    return { transaction, store };
+
+
+
+
+  async prepare(name, callback, options) {
+    await this.open();
+    await execute(this._db, name, callback, options);
   }
-
   
+
+
 
 
 
@@ -503,18 +654,27 @@ class IDB extends _base2.default {
 
   async clear() {
     try {
-      await this.open();
-      return new Promise((resolve, reject) => {
-        const { transaction, store } = this.prepare("readwrite");
-        store.clear();
-        transaction.onerror = event => reject(new Error(event.target.error));
-        transaction.oncomplete = () => resolve();
+      await this.prepare("records", store => {
+        const range = IDBKeyRange.only(this.cid);
+        const request = store.index("cid").openKeyCursor(range);
+
+        request.onsuccess = event => {
+          const cursor = event.target.result;
+
+          if (cursor) {
+            store.delete(cursor.primaryKey);
+            cursor.continue();
+          }
+        };
+
+        return request;
+      }, {
+        mode: "readwrite"
       });
     } catch (e) {
       this._handleError("clear", e);
     }
   }
-
   
 
 
@@ -546,7 +706,9 @@ class IDB extends _base2.default {
 
 
 
-  async execute(callback, options = { preload: [] }) {
+  async execute(callback, options = {
+    preload: []
+  }) {
     
     
     
@@ -557,40 +719,53 @@ class IDB extends _base2.default {
     
     
     
-    await this.open();
-    return new Promise((resolve, reject) => {
-      
-      const { transaction, store } = this.prepare("readwrite");
-      
-      const ids = options.preload;
-      store.index("id").openCursor().onsuccess = cursorHandlers.in(ids, records => {
+    let result;
+    await this.prepare("records", (store, abort) => {
+      const runCallback = (preloaded = []) => {
+        
+        const proxy = transactionProxy(this, store, preloaded); 
+
+        try {
+          const returned = callback(proxy);
+
+          if (returned instanceof Promise) {
+            
+            throw new Error("execute() callback should not return a Promise.");
+          } 
+
+
+          result = returned;
+        } catch (e) {
+          
+          abort(e);
+        }
+      }; 
+
+
+      if (!options.preload.length) {
+        return runCallback();
+      } 
+
+
+      const filters = {
+        id: options.preload
+      };
+      createListRequest(this.cid, store, filters, records => {
         
         const preloaded = records.reduce((acc, record) => {
-          acc[record.id] = record;
+          acc[record.id] = (0, _utils.omitKeys)(record, ["_cid"]);
           return acc;
         }, {});
-        
-        const proxy = transactionProxy(store, preloaded);
-        
-        let result;
-        try {
-          result = callback(proxy);
-        } catch (e) {
-          transaction.abort();
-          reject(e);
-        }
-        if (result instanceof Promise) {
-          
-          reject(new Error("execute() callback should not return a Promise."));
-        }
-        
-        transaction.onerror = event => reject(new Error(event.target.error));
-        transaction.oncomplete = event => resolve(result);
+        runCallback(preloaded);
       });
+    }, {
+      mode: "readwrite"
     });
+    return result;
   }
-
   
+
+
 
 
 
@@ -599,18 +774,15 @@ class IDB extends _base2.default {
 
   async get(id) {
     try {
-      await this.open();
-      return new Promise((resolve, reject) => {
-        const { transaction, store } = this.prepare();
-        const request = store.get(id);
-        transaction.onerror = event => reject(new Error(event.target.error));
-        transaction.oncomplete = () => resolve(request.result);
+      let record;
+      await this.prepare("records", store => {
+        store.get([this.cid, id]).onsuccess = e => record = e.target.result;
       });
+      return record;
     } catch (e) {
       this._handleError("get", e);
     }
   }
-
   
 
 
@@ -618,36 +790,34 @@ class IDB extends _base2.default {
 
 
 
-  async list(params = { filters: {} }) {
-    const { filters } = params;
-    const indexField = findIndexedField(filters);
-    const value = filters[indexField];
+
+
+  async list(params = {
+    filters: {}
+  }) {
+    const {
+      filters
+    } = params;
+
     try {
-      await this.open();
-      const results = await new Promise((resolve, reject) => {
-        let results = [];
-        
-        const remainingFilters = (0, _utils.omitKeys)(filters, indexField);
-
-        const { transaction, store } = this.prepare();
-        createListRequest(store, indexField, value, remainingFilters, _results => {
+      let results = [];
+      await this.prepare("records", store => {
+        createListRequest(this.cid, store, filters, _results => {
           
           
-          results = _results;
+          results = _results.map(r => (0, _utils.omitKeys)(r, ["_cid"]));
         });
-        transaction.onerror = event => reject(new Error(event.target.error));
-        transaction.oncomplete = event => resolve(results);
-      });
+      }); 
+      
 
-      
-      
       return params.order ? (0, _utils.sortObjects)(params.order, results) : results;
     } catch (e) {
       this._handleError("list", e);
     }
   }
-
   
+
+
 
 
 
@@ -656,34 +826,41 @@ class IDB extends _base2.default {
 
   async saveLastModified(lastModified) {
     const value = parseInt(lastModified, 10) || null;
-    await this.open();
-    return new Promise((resolve, reject) => {
-      const { transaction, store } = this.prepare("readwrite", "__meta__");
-      store.put({ name: `${this.storeName}-lastModified`, value: value });
-      transaction.onerror = event => reject(event.target.error);
-      transaction.oncomplete = event => resolve(value);
-    });
-  }
 
+    try {
+      await this.prepare("timestamps", store => store.put({
+        cid: this.cid,
+        value
+      }), {
+        mode: "readwrite"
+      });
+      return value;
+    } catch (e) {
+      this._handleError("saveLastModified", e);
+    }
+  }
   
+
+
 
 
 
 
 
   async getLastModified() {
-    await this.open();
-    return new Promise((resolve, reject) => {
-      const { transaction, store } = this.prepare(undefined, "__meta__");
-      const request = store.get(`${this.storeName}-lastModified`);
-      transaction.onerror = event => reject(event.target.error);
-      transaction.oncomplete = event => {
-        resolve(request.result && request.result.value || null);
-      };
-    });
+    try {
+      let entry = null;
+      await this.prepare("timestamps", store => {
+        store.get(this.cid).onsuccess = e => entry = e.target.result;
+      });
+      return entry ? entry.value : null;
+    } catch (e) {
+      this._handleError("getLastModified", e);
+    }
   }
-
   
+
+
 
 
 
@@ -697,17 +874,19 @@ class IDB extends _base2.default {
       });
       const previousLastModified = await this.getLastModified();
       const lastModified = Math.max(...records.map(record => record.last_modified));
+
       if (lastModified > previousLastModified) {
         await this.saveLastModified(lastModified);
       }
+
       return records;
     } catch (e) {
       this._handleError("loadDump", e);
     }
   }
+
 }
 
-exports.default = IDB; 
 
 
 
@@ -716,24 +895,98 @@ exports.default = IDB;
 
 
 
-function transactionProxy(store, preloaded = []) {
+
+
+exports.default = IDB;
+
+function transactionProxy(adapter, store, preloaded = []) {
+  const _cid = adapter.cid;
   return {
     create(record) {
-      store.add(record);
+      store.add({ ...record,
+        _cid
+      });
     },
 
     update(record) {
-      store.put(record);
+      store.put({ ...record,
+        _cid
+      });
     },
 
     delete(id) {
-      store.delete(id);
+      store.delete([_cid, id]);
     },
 
     get(id) {
       return preloaded[id];
     }
+
   };
+}
+
+
+
+
+
+
+
+async function migrationRequired(dbName) {
+  let exists = true;
+  const db = await open(dbName, {
+    version: 1,
+    onupgradeneeded: event => {
+      exists = false;
+    }
+  }); 
+  
+
+  exists &= db.objectStoreNames.contains("__meta__") && db.objectStoreNames.contains(dbName);
+
+  if (!exists) {
+    db.close(); 
+
+    await deleteDatabase(dbName);
+    return null;
+  }
+
+  console.warn(`${dbName}: old IndexedDB database found.`);
+
+  try {
+    
+    let records;
+    await execute(db, dbName, store => {
+      store.openCursor().onsuccess = cursorHandlers.all({}, res => records = res);
+    });
+    console.log(`${dbName}: found ${records.length} records.`); 
+
+    let timestamp = null;
+    await execute(db, "__meta__", store => {
+      store.get(`${dbName}-lastModified`).onsuccess = e => {
+        timestamp = e.target.result ? e.target.result.value : null;
+      };
+    }); 
+
+    if (!timestamp) {
+      await execute(db, "__meta__", store => {
+        store.get("lastModified").onsuccess = e => {
+          timestamp = e.target.result ? e.target.result.value : null;
+        };
+      });
+    }
+
+    console.log(`${dbName}: ${timestamp ? "found" : "no"} timestamp.`); 
+
+    return {
+      records,
+      timestamp
+    };
+  } catch (e) {
+    console.error("Error occured during migration", e);
+    return null;
+  } finally {
+    db.close();
+  }
 }
 
 },{"../utils":7,"./base.js":5}],5:[function(require,module,exports){
@@ -744,10 +997,11 @@ function transactionProxy(store, preloaded = []) {
 
 
 
-
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.default = void 0;
+
 class BaseAdapter {
   
 
@@ -758,7 +1012,6 @@ class BaseAdapter {
   clear() {
     throw new Error("Not Implemented.");
   }
-
   
 
 
@@ -767,11 +1020,16 @@ class BaseAdapter {
 
 
 
-  execute(callback, options = { preload: [] }) {
+
+
+  execute(callback, options = {
+    preload: []
+  }) {
     throw new Error("Not Implemented.");
   }
-
   
+
+
 
 
 
@@ -781,7 +1039,6 @@ class BaseAdapter {
   get(id) {
     throw new Error("Not Implemented.");
   }
-
   
 
 
@@ -789,11 +1046,17 @@ class BaseAdapter {
 
 
 
-  list(params = { filters: {}, order: "" }) {
+
+
+  list(params = {
+    filters: {},
+    order: ""
+  }) {
     throw new Error("Not Implemented.");
   }
-
   
+
+
 
 
 
@@ -803,8 +1066,9 @@ class BaseAdapter {
   saveLastModified(lastModified) {
     throw new Error("Not Implemented.");
   }
-
   
+
+
 
 
 
@@ -813,8 +1077,9 @@ class BaseAdapter {
   getLastModified() {
     throw new Error("Not Implemented.");
   }
-
   
+
+
 
 
 
@@ -824,7 +1089,9 @@ class BaseAdapter {
   loadDump(records) {
     throw new Error("Not Implemented.");
   }
+
 }
+
 exports.default = BaseAdapter;
 
 },{}],6:[function(require,module,exports){
@@ -833,16 +1100,12 @@ exports.default = BaseAdapter;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.CollectionTransaction = exports.SyncResultObject = undefined;
 exports.recordsEqual = recordsEqual;
+exports.CollectionTransaction = exports.default = exports.SyncResultObject = void 0;
 
-var _base = require("./adapters/base");
+var _base = _interopRequireDefault(require("./adapters/base"));
 
-var _base2 = _interopRequireDefault(_base);
-
-var _IDB = require("./adapters/IDB");
-
-var _IDB2 = _interopRequireDefault(_IDB);
+var _IDB = _interopRequireDefault(require("./adapters/IDB"));
 
 var _utils = require("./utils");
 
@@ -863,9 +1126,12 @@ const AVAILABLE_HOOKS = ["incoming-changes"];
 
 function recordsEqual(a, b, localFields = []) {
   const fieldsToClean = RECORD_FIELDS_TO_CLEAN.concat(["last_modified"]).concat(localFields);
+
   const cleanLocal = r => (0, _utils.omitKeys)(r, fieldsToClean);
+
   return (0, _utils.deepEqual)(cleanLocal(a), cleanLocal(b));
 }
+
 
 
 
@@ -889,8 +1155,9 @@ class SyncResultObject {
       resolved: []
     };
   }
-
   
+
+
 
 
   constructor() {
@@ -902,8 +1169,9 @@ class SyncResultObject {
     this.ok = true;
     Object.assign(this, SyncResultObject.defaults);
   }
-
   
+
+
 
 
 
@@ -914,13 +1182,16 @@ class SyncResultObject {
     if (!Array.isArray(this[type])) {
       return;
     }
+
     if (!Array.isArray(entries)) {
       entries = [entries];
-    }
+    } 
     
-    
+
+
     const recordsWithoutId = new Set();
     const recordsById = new Map();
+
     function addOneRecord(record) {
       if (!record.id) {
         recordsWithoutId.add(record);
@@ -928,15 +1199,16 @@ class SyncResultObject {
         recordsById.set(record.id, record);
       }
     }
+
     this[type].forEach(addOneRecord);
     entries.forEach(addOneRecord);
-
     this[type] = Array.from(recordsById.values()).concat(Array.from(recordsWithoutId));
     this.ok = this.errors.length + this.conflicts.length === 0;
     return this;
   }
-
   
+
+
 
 
 
@@ -947,9 +1219,11 @@ class SyncResultObject {
     this.ok = this.errors.length + this.conflicts.length === 0;
     return this;
   }
+
 }
 
 exports.SyncResultObject = SyncResultObject;
+
 function createUUIDSchema() {
   return {
     generate() {
@@ -959,11 +1233,14 @@ function createUUIDSchema() {
     validate(id) {
       return typeof id == "string" && _utils.RE_RECORD_ID.test(id);
     }
+
   };
 }
 
 function markStatus(record, status) {
-  return { ...record, _status: status };
+  return { ...record,
+    _status: status
+  };
 }
 
 function markDeleted(record) {
@@ -982,35 +1259,58 @@ function markSynced(record) {
 
 
 
+
 function importChange(transaction, remote, localFields) {
   const local = transaction.get(remote.id);
+
   if (!local) {
     
     
     if (remote.deleted) {
-      return { type: "skipped", data: remote };
+      return {
+        type: "skipped",
+        data: remote
+      };
     }
+
     const synced = markSynced(remote);
     transaction.create(synced);
-    return { type: "created", data: synced };
-  }
-  
-  const isIdentical = recordsEqual(local, remote, localFields);
-  
-  const synced = { ...local, ...markSynced(remote) };
-  
+    return {
+      type: "created",
+      data: synced
+    };
+  } 
+
+
+  const isIdentical = recordsEqual(local, remote, localFields); 
+
+  const synced = { ...local,
+    ...markSynced(remote)
+  }; 
+
   if (local._status !== "synced") {
     
     if (local._status === "deleted") {
-      return { type: "skipped", data: local };
+      return {
+        type: "skipped",
+        data: local
+      };
     }
+
     if (isIdentical) {
       
       
       
       transaction.update(synced);
-      return { type: "updated", data: { old: local, new: synced } };
+      return {
+        type: "updated",
+        data: {
+          old: local,
+          new: synced
+        }
+      };
     }
+
     if (local.last_modified !== undefined && local.last_modified === remote.last_modified) {
       
       
@@ -1019,24 +1319,43 @@ function importChange(transaction, remote, localFields) {
       
       
       
-      return { type: "void" };
+      return {
+        type: "void"
+      };
     }
+
     return {
       type: "conflicts",
-      data: { type: "incoming", local: local, remote: remote }
+      data: {
+        type: "incoming",
+        local: local,
+        remote: remote
+      }
     };
-  }
-  
+  } 
+
+
   if (remote.deleted) {
     transaction.delete(remote.id);
-    return { type: "deleted", data: local };
-  }
-  
-  transaction.update(synced);
-  
+    return {
+      type: "deleted",
+      data: local
+    };
+  } 
+
+
+  transaction.update(synced); 
+
   const type = isIdentical ? "void" : "updated";
-  return { type, data: { old: local, new: synced } };
+  return {
+    type,
+    data: {
+      old: local,
+      new: synced
+    }
+  };
 }
+
 
 
 
@@ -1054,23 +1373,25 @@ class Collection {
 
 
 
-
   constructor(bucket, name, api, options = {}) {
     this._bucket = bucket;
     this._name = name;
     this._lastModified = null;
+    const DBAdapter = options.adapter || _IDB.default;
 
-    const DBAdapter = options.adapter || _IDB2.default;
     if (!DBAdapter) {
       throw new Error("No adapter provided");
     }
-    const dbPrefix = options.dbPrefix || "";
-    const db = new DBAdapter(`${dbPrefix}${bucket}/${name}`, options.adapterOptions);
-    if (!(db instanceof _base2.default)) {
+
+    const db = new DBAdapter(`${bucket}/${name}`, options.adapterOptions);
+
+    if (!(db instanceof _base.default)) {
       throw new Error("Unsupported adapter.");
-    }
+    } 
+
     
-    
+
+
 
 
 
@@ -1079,8 +1400,10 @@ class Collection {
 
 
 
+
     this.api = api;
     
+
 
 
 
@@ -1089,8 +1412,10 @@ class Collection {
 
 
 
+
     this.idSchema = this._validateIdSchema(options.idSchema);
     
+
 
 
 
@@ -1099,39 +1424,45 @@ class Collection {
 
 
 
+
     this.hooks = this._validateHooks(options.hooks);
     
 
 
 
+
     this.localFields = options.localFields || [];
   }
-
   
+
+
 
 
 
   get name() {
     return this._name;
   }
-
   
+
+
 
 
 
   get bucket() {
     return this._bucket;
   }
-
   
+
+
 
 
 
   get lastModified() {
     return this._lastModified;
   }
-
   
+
+
 
 
 
@@ -1147,8 +1478,9 @@ class Collection {
       MANUAL: "manual"
     };
   }
-
   
+
+
 
 
 
@@ -1158,6 +1490,7 @@ class Collection {
     if (typeof idSchema === "undefined") {
       return createUUIDSchema();
     }
+
     if (typeof idSchema !== "object") {
       throw new Error("idSchema must be an object.");
     } else if (typeof idSchema.generate !== "function") {
@@ -1165,10 +1498,12 @@ class Collection {
     } else if (typeof idSchema.validate !== "function") {
       throw new Error("idSchema must provide a validate function.");
     }
+
     return idSchema;
   }
-
   
+
+
 
 
 
@@ -1178,9 +1513,11 @@ class Collection {
     if (typeof remoteTransformers === "undefined") {
       return [];
     }
+
     if (!Array.isArray(remoteTransformers)) {
       throw new Error("remoteTransformers should be an array.");
     }
+
     return remoteTransformers.map(transformer => {
       if (typeof transformer !== "object") {
         throw new Error("A transformer must be an object.");
@@ -1189,11 +1526,13 @@ class Collection {
       } else if (typeof transformer.decode !== "function") {
         throw new Error("A transformer must provide a decode function.");
       }
+
       return transformer;
     });
   }
-
   
+
+
 
 
 
@@ -1203,15 +1542,18 @@ class Collection {
     if (!Array.isArray(hook)) {
       throw new Error("A hook definition should be an array of functions.");
     }
+
     return hook.map(fn => {
       if (typeof fn !== "function") {
         throw new Error("A hook definition should be an array of functions.");
       }
+
       return fn;
     });
   }
-
   
+
+
 
 
 
@@ -1221,9 +1563,11 @@ class Collection {
     if (typeof hooks === "undefined") {
       return {};
     }
+
     if (Array.isArray(hooks)) {
       throw new Error("hooks should be an object, not an array.");
     }
+
     if (typeof hooks !== "object") {
       throw new Error("hooks should be an object.");
     }
@@ -1234,12 +1578,15 @@ class Collection {
       if (!AVAILABLE_HOOKS.includes(hook)) {
         throw new Error("The hook should be one of " + AVAILABLE_HOOKS.join(", "));
       }
+
       validatedHooks[hook] = this._validateHook(hooks[hook]);
     }
+
     return validatedHooks;
   }
-
   
+
+
 
 
 
@@ -1248,10 +1595,14 @@ class Collection {
   async clear() {
     await this.db.clear();
     await this.db.saveLastModified(null);
-    return { data: [], permissions: {} };
+    return {
+      data: [],
+      permissions: {}
+    };
   }
-
   
+
+
 
 
 
@@ -1262,12 +1613,14 @@ class Collection {
     if (!this[`${type}Transformers`].length) {
       return Promise.resolve(record);
     }
+
     return (0, _utils.waterfall)(this[`${type}Transformers`].map(transformer => {
       return record => transformer.encode(record);
     }), record);
   }
-
   
+
+
 
 
 
@@ -1278,11 +1631,11 @@ class Collection {
     if (!this[`${type}Transformers`].length) {
       return Promise.resolve(record);
     }
+
     return (0, _utils.waterfall)(this[`${type}Transformers`].reverse().map(transformer => {
       return record => transformer.decode(record);
     }), record);
   }
-
   
 
 
@@ -1302,38 +1655,48 @@ class Collection {
 
 
 
-  create(record, options = { useRecordId: false, synced: false }) {
+
+
+  create(record, options = {
+    useRecordId: false,
+    synced: false
+  }) {
     
     
     
     const reject = msg => Promise.reject(new Error(msg));
+
     if (typeof record !== "object") {
       return reject("Record is not an object.");
     }
+
     if ((options.synced || options.useRecordId) && !record.hasOwnProperty("id")) {
       return reject("Missing required Id; synced and useRecordId options require one");
     }
+
     if (!options.synced && !options.useRecordId && record.hasOwnProperty("id")) {
       return reject("Extraneous Id; can't create a record having one set.");
     }
-    const newRecord = {
-      ...record,
+
+    const newRecord = { ...record,
       id: options.synced || options.useRecordId ? record.id : this.idSchema.generate(record),
       _status: options.synced ? "synced" : "created"
     };
+
     if (!this.idSchema.validate(newRecord.id)) {
       return reject(`Invalid Id: ${newRecord.id}`);
     }
+
     return this.execute(txn => txn.create(newRecord), {
       preloadIds: [newRecord.id]
     }).catch(err => {
       if (options.useRecordId) {
         throw new Error("Couldn't create record. It may have been virtually deleted.");
       }
+
       throw err;
     });
   }
-
   
 
 
@@ -1346,16 +1709,23 @@ class Collection {
 
 
 
-  update(record, options = { synced: false, patch: false }) {
+
+
+  update(record, options = {
+    synced: false,
+    patch: false
+  }) {
     
     
     
     if (typeof record !== "object") {
       return Promise.reject(new Error("Record is not an object."));
     }
+
     if (!record.hasOwnProperty("id")) {
       return Promise.reject(new Error("Cannot update a record missing id."));
     }
+
     if (!this.idSchema.validate(record.id)) {
       return Promise.reject(new Error(`Invalid Id: ${record.id}`));
     }
@@ -1364,8 +1734,9 @@ class Collection {
       preloadIds: [record.id]
     });
   }
-
   
+
+
 
 
 
@@ -1378,16 +1749,19 @@ class Collection {
     if (typeof record !== "object") {
       return Promise.reject(new Error("Record is not an object."));
     }
+
     if (!record.hasOwnProperty("id")) {
       return Promise.reject(new Error("Cannot update a record missing id."));
     }
+
     if (!this.idSchema.validate(record.id)) {
       return Promise.reject(new Error(`Invalid Id: ${record.id}`));
     }
 
-    return this.execute(txn => txn.upsert(record), { preloadIds: [record.id] });
+    return this.execute(txn => txn.upsert(record), {
+      preloadIds: [record.id]
+    });
   }
-
   
 
 
@@ -1398,20 +1772,28 @@ class Collection {
 
 
 
-  get(id, options = { includeDeleted: false }) {
-    return this.execute(txn => txn.get(id, options), { preloadIds: [id] });
-  }
 
+
+  get(id, options = {
+    includeDeleted: false
+  }) {
+    return this.execute(txn => txn.get(id, options), {
+      preloadIds: [id]
+    });
+  }
   
+
+
 
 
 
 
 
   getAny(id) {
-    return this.execute(txn => txn.getAny(id), { preloadIds: [id] });
+    return this.execute(txn => txn.getAny(id), {
+      preloadIds: [id]
+    });
   }
-
   
 
 
@@ -1423,26 +1805,40 @@ class Collection {
 
 
 
-  delete(id, options = { virtual: true }) {
+
+
+  delete(id, options = {
+    virtual: true
+  }) {
     return this.execute(transaction => {
       return transaction.delete(id, options);
-    }, { preloadIds: [id] });
+    }, {
+      preloadIds: [id]
+    });
   }
-
   
+
+
 
 
 
 
   async deleteAll() {
-    const { data } = await this.list({}, { includeDeleted: false });
+    const {
+      data
+    } = await this.list({}, {
+      includeDeleted: false
+    });
     const recordIds = data.map(record => record.id);
     return this.execute(transaction => {
       return transaction.deleteAll(recordIds);
-    }, { preloadIds: recordIds });
+    }, {
+      preloadIds: recordIds
+    });
   }
-
   
+
+
 
 
 
@@ -1450,9 +1846,10 @@ class Collection {
 
 
   deleteAny(id) {
-    return this.execute(txn => txn.deleteAny(id), { preloadIds: [id] });
+    return this.execute(txn => txn.deleteAny(id), {
+      preloadIds: [id]
+    });
   }
-
   
 
 
@@ -1467,17 +1864,31 @@ class Collection {
 
 
 
-  async list(params = {}, options = { includeDeleted: false }) {
-    params = { order: "-last_modified", filters: {}, ...params };
+
+
+  async list(params = {}, options = {
+    includeDeleted: false
+  }) {
+    params = {
+      order: "-last_modified",
+      filters: {},
+      ...params
+    };
     const results = await this.db.list(params);
     let data = results;
+
     if (!options.includeDeleted) {
       data = results.filter(record => record._status !== "deleted");
     }
-    return { data, permissions: {} };
-  }
 
+    return {
+      data,
+      permissions: {}
+    };
+  }
   
+
+
 
 
 
@@ -1489,20 +1900,31 @@ class Collection {
   async importChanges(syncResultObject, decodedChanges, strategy = Collection.strategy.MANUAL) {
     
     try {
-      const { imports, resolved } = await this.db.execute(transaction => {
+      const {
+        imports,
+        resolved
+      } = await this.db.execute(transaction => {
         const imports = decodedChanges.map(remote => {
           
           return importChange(transaction, remote, this.localFields);
         });
         const conflicts = imports.filter(i => i.type === "conflicts").map(i => i.data);
+
         const resolved = this._handleConflicts(transaction, conflicts, strategy);
-        return { imports, resolved };
-      }, { preload: decodedChanges.map(record => record.id) });
 
-      
-      imports.forEach(({ type, data }) => syncResultObject.add(type, data));
+        return {
+          imports,
+          resolved
+        };
+      }, {
+        preload: decodedChanges.map(record => record.id)
+      }); 
 
-      
+      imports.forEach(({
+        type,
+        data
+      }) => syncResultObject.add(type, data)); 
+
       if (resolved.length > 0) {
         syncResultObject.reset("conflicts").add("resolved", resolved);
       }
@@ -1511,15 +1933,16 @@ class Collection {
         type: "incoming",
         message: err.message,
         stack: err.stack
-      };
-      
+      }; 
+
       syncResultObject.add("errors", data);
     }
 
     return syncResultObject;
   }
-
   
+
+
 
 
 
@@ -1532,33 +1955,43 @@ class Collection {
   async _applyPushedResults(syncResultObject, toApplyLocally, conflicts, strategy = Collection.strategy.MANUAL) {
     const toDeleteLocally = toApplyLocally.filter(r => r.deleted);
     const toUpdateLocally = toApplyLocally.filter(r => !r.deleted);
-
-    const { published, resolved } = await this.db.execute(transaction => {
+    const {
+      published,
+      resolved
+    } = await this.db.execute(transaction => {
       const updated = toUpdateLocally.map(record => {
         const synced = markSynced(record);
         transaction.update(synced);
         return synced;
       });
       const deleted = toDeleteLocally.map(record => {
-        transaction.delete(record.id);
-        
-        return { id: record.id, deleted: true };
-      });
-      const published = updated.concat(deleted);
-      
-      const resolved = this._handleConflicts(transaction, conflicts, strategy);
-      return { published, resolved };
-    });
+        transaction.delete(record.id); 
 
+        return {
+          id: record.id,
+          deleted: true
+        };
+      });
+      const published = updated.concat(deleted); 
+
+      const resolved = this._handleConflicts(transaction, conflicts, strategy);
+
+      return {
+        published,
+        resolved
+      };
+    });
     syncResultObject.add("published", published);
 
     if (resolved.length > 0) {
       syncResultObject.reset("conflicts").reset("resolved").add("resolved", resolved);
     }
+
     return syncResultObject;
   }
-
   
+
+
 
 
 
@@ -1570,10 +2003,12 @@ class Collection {
     if (strategy === Collection.strategy.MANUAL) {
       return [];
     }
+
     return conflicts.map(conflict => {
       const resolution = strategy === Collection.strategy.CLIENT_WINS ? conflict.local : conflict.remote;
       const rejected = strategy === Collection.strategy.CLIENT_WINS ? conflict.remote : conflict.local;
       let accepted, status, id;
+
       if (resolution === null) {
         
         
@@ -1582,22 +2017,28 @@ class Collection {
         
         
         transaction.delete(conflict.local.id);
-        accepted = null;
+        accepted = null; 
         
-        
+
         status = "synced";
         id = conflict.local.id;
       } else {
         const updated = this._resolveRaw(conflict, resolution);
+
         transaction.update(updated);
         accepted = updated;
         status = updated._status;
         id = updated.id;
       }
-      return { rejected, accepted, id, _status: status };
+
+      return {
+        rejected,
+        accepted,
+        id,
+        _status: status
+      };
     });
   }
-
   
 
 
@@ -1620,7 +2061,11 @@ class Collection {
 
 
 
-  execute(doOperations, { preloadIds = [] } = {}) {
+
+
+  execute(doOperations, {
+    preloadIds = []
+  } = {}) {
     for (const id of preloadIds) {
       if (!this.idSchema.validate(id)) {
         return Promise.reject(Error(`Invalid Id: ${id}`));
@@ -1632,9 +2077,10 @@ class Collection {
       const result = doOperations(txn);
       txn.emitEvents();
       return result;
-    }, { preload: preloadIds });
+    }, {
+      preload: preloadIds
+    });
   }
-
   
 
 
@@ -1644,8 +2090,17 @@ class Collection {
 
 
 
+
+
   async resetSyncStatus() {
-    const unsynced = await this.list({ filters: { _status: ["deleted", "synced"] }, order: "" }, { includeDeleted: true });
+    const unsynced = await this.list({
+      filters: {
+        _status: ["deleted", "synced"]
+      },
+      order: ""
+    }, {
+      includeDeleted: true
+    });
     await this.db.execute(transaction => {
       unsynced.data.forEach(record => {
         if (record._status === "deleted") {
@@ -1653,8 +2108,7 @@ class Collection {
           transaction.delete(record.id);
         } else {
           
-          transaction.update({
-            ...record,
+          transaction.update({ ...record,
             last_modified: undefined,
             _status: "created"
           });
@@ -1665,8 +2119,9 @@ class Collection {
     await this.db.saveLastModified(null);
     return unsynced.data.length;
   }
-
   
+
+
 
 
 
@@ -1676,15 +2131,24 @@ class Collection {
 
   async gatherLocalChanges() {
     const unsynced = await this.list({
-      filters: { _status: ["created", "updated"] },
+      filters: {
+        _status: ["created", "updated"]
+      },
       order: ""
     });
-    const deleted = await this.list({ filters: { _status: "deleted" }, order: "" }, { includeDeleted: true });
-
+    const deleted = await this.list({
+      filters: {
+        _status: "deleted"
+      },
+      order: ""
+    }, {
+      includeDeleted: true
+    });
     return await Promise.all(unsynced.data.concat(deleted.data).map(this._encodeRecord.bind(this, "remote")));
   }
-
   
+
+
 
 
 
@@ -1703,26 +2167,31 @@ class Collection {
     }
 
     const since = this.lastModified ? this.lastModified : await this.db.getLastModified();
-
     options = {
       strategy: Collection.strategy.MANUAL,
       lastModified: since,
       headers: {},
       ...options
-    };
+    }; 
+    
 
-    
-    
     let filters;
+
     if (options.exclude) {
       
       
       
       const exclude_id = options.exclude.slice(0, 50).map(r => r.id).join(",");
-      filters = { exclude_id };
-    }
-    
-    const { data, last_modified } = await client.listRecords({
+      filters = {
+        exclude_id
+      };
+    } 
+
+
+    const {
+      data,
+      last_modified
+    } = await client.listRecords({
       
       since: options.lastModified ? `${options.lastModified}` : undefined,
       headers: options.headers,
@@ -1730,37 +2199,39 @@ class Collection {
       
       pages: Infinity,
       filters
-    });
+    }); 
     
     
-    
-    const unquoted = last_modified ? parseInt(last_modified, 10) : undefined;
 
+    const unquoted = last_modified ? parseInt(last_modified, 10) : undefined; 
     
     
-    
+
     const localSynced = options.lastModified;
     const serverChanged = unquoted > options.lastModified;
     const emptyCollection = data.length === 0;
+
     if (!options.exclude && localSynced && serverChanged && emptyCollection) {
       throw Error("Server has been flushed.");
     }
 
-    syncResultObject.lastModified = unquoted;
+    syncResultObject.lastModified = unquoted; 
 
-    
     const decodedChanges = await Promise.all(data.map(change => {
       return this._decodeRecord("remote", change);
-    }));
-    
-    const payload = { lastModified: unquoted, changes: decodedChanges };
-    const afterHooks = await this.applyHook("incoming-changes", payload);
+    })); 
 
-    
+    const payload = {
+      lastModified: unquoted,
+      changes: decodedChanges
+    };
+    const afterHooks = await this.applyHook("incoming-changes", payload); 
+
     if (afterHooks.changes.length > 0) {
       
       await this.importChanges(syncResultObject, afterHooks.changes, options.strategy);
     }
+
     return syncResultObject;
   }
 
@@ -1768,20 +2239,24 @@ class Collection {
     if (typeof this.hooks[hookName] == "undefined") {
       return Promise.resolve(payload);
     }
+
     return (0, _utils.waterfall)(this.hooks[hookName].map(hook => {
       return record => {
         const result = hook(payload, this);
         const resultThenable = result && typeof result.then === "function";
         const resultChanges = result && result.hasOwnProperty("changes");
+
         if (!(resultThenable || resultChanges)) {
           throw new Error(`Invalid return value for hook: ${JSON.stringify(result)} has no 'then()' or 'changes' properties`);
         }
+
         return result;
       };
     }), payload);
   }
-
   
+
+
 
 
 
@@ -1797,11 +2272,11 @@ class Collection {
     if (!syncResultObject.ok) {
       return syncResultObject;
     }
+
     const safe = !options.strategy || options.strategy !== Collection.CLIENT_WINS;
     const toDelete = changes.filter(r => r._status == "deleted");
-    const toSync = changes.filter(r => r._status != "deleted");
+    const toSync = changes.filter(r => r._status != "deleted"); 
 
-    
     const synced = await client.batch(batch => {
       toDelete.forEach(r => {
         
@@ -1812,6 +2287,7 @@ class Collection {
       toSync.forEach(r => {
         
         const published = this.cleanLocalFields(r);
+
         if (r._status === "created") {
           batch.createRecord(published);
         } else {
@@ -1823,53 +2299,64 @@ class Collection {
       retry: options.retry,
       safe,
       aggregate: true
-    });
+    }); 
 
-    
-    syncResultObject.add("errors", synced.errors.map(e => ({ ...e, type: "outgoing" })));
+    syncResultObject.add("errors", synced.errors.map(e => ({ ...e,
+      type: "outgoing"
+    }))); 
 
-    
     const conflicts = [];
-    for (const { type, local, remote } of synced.conflicts) {
+
+    for (const {
+      type,
+      local,
+      remote
+    } of synced.conflicts) {
       
       
-      const safeLocal = local && local.data || { id: remote.id };
-      const realLocal = await this._decodeRecord("remote", safeLocal);
+      const safeLocal = local && local.data || {
+        id: remote.id
+      };
+      const realLocal = await this._decodeRecord("remote", safeLocal); 
       
       
-      
+
       const realRemote = remote && (await this._decodeRecord("remote", remote));
-      const conflict = { type, local: realLocal, remote: realRemote };
+      const conflict = {
+        type,
+        local: realLocal,
+        remote: realRemote
+      };
       conflicts.push(conflict);
     }
-    syncResultObject.add("conflicts", conflicts);
 
+    syncResultObject.add("conflicts", conflicts); 
     
-    
-    const missingRemotely = synced.skipped.map(r => ({ ...r, deleted: true }));
 
+    const missingRemotely = synced.skipped.map(r => ({ ...r,
+      deleted: true
+    })); 
     
     
     
-    
+
     const published = synced.published.map(c => c.data);
-    const toApplyLocally = published.concat(missingRemotely);
+    const toApplyLocally = published.concat(missingRemotely); 
 
-    
     const decoded = await Promise.all(toApplyLocally.map(record => {
       return this._decodeRecord("remote", record);
-    }));
+    })); 
+    
 
-    
-    
     if (decoded.length > 0 || conflicts.length > 0) {
       await this._applyPushedResults(syncResultObject, decoded, conflicts, options.strategy);
     }
 
     return syncResultObject;
   }
-
   
+
+
 
 
 
@@ -1879,8 +2366,9 @@ class Collection {
     const localKeys = RECORD_FIELDS_TO_CLEAN.concat(this.localFields);
     return (0, _utils.omitKeys)(record, localKeys);
   }
-
   
+
+
 
 
 
@@ -1892,28 +2380,33 @@ class Collection {
   resolve(conflict, resolution) {
     return this.db.execute(transaction => {
       const updated = this._resolveRaw(conflict, resolution);
+
       transaction.update(updated);
-      return { data: updated, permissions: {} };
+      return {
+        data: updated,
+        permissions: {}
+      };
     });
   }
-
   
+
+
 
 
   _resolveRaw(conflict, resolution) {
-    const resolved = {
-      ...resolution,
+    const resolved = { ...resolution,
       
       last_modified: conflict.remote && conflict.remote.last_modified
-    };
+    }; 
     
     
-    
+
     const synced = (0, _utils.deepEqual)(resolved, conflict.remote);
     return markStatus(resolved, synced ? "synced" : "updated");
   }
-
   
+
+
 
 
 
@@ -1943,77 +2436,88 @@ class Collection {
     collection: null,
     remote: null
   }) {
-    options = {
-      ...options,
+    options = { ...options,
       bucket: options.bucket || this.bucket,
       collection: options.collection || this.name
     };
-
     const previousRemote = this.api.remote;
+
     if (options.remote) {
       
       this.api.remote = options.remote;
     }
+
     if (!options.ignoreBackoff && this.api.backoff > 0) {
       const seconds = Math.ceil(this.api.backoff / 1000);
       return Promise.reject(new Error(`Server is asking clients to back off; retry in ${seconds}s or use the ignoreBackoff option.`));
     }
 
     const client = this.api.bucket(options.bucket).collection(options.collection);
-
     const result = new SyncResultObject();
+
     try {
       
       await this.pullChanges(client, result, options);
-      const { lastModified } = result;
+      const {
+        lastModified
+      } = result; 
 
-      
-      const toSync = await this.gatherLocalChanges();
+      const toSync = await this.gatherLocalChanges(); 
 
-      
-      await this.pushChanges(client, toSync, result, options);
+      await this.pushChanges(client, toSync, result, options); 
 
-      
       const resolvedUnsynced = result.resolved.filter(r => r._status !== "synced");
+
       if (resolvedUnsynced.length > 0) {
         const resolvedEncoded = await Promise.all(resolvedUnsynced.map(resolution => {
           let record = resolution.accepted;
+
           if (record === null) {
-            record = { id: resolution.id, _status: resolution._status };
+            record = {
+              id: resolution.id,
+              _status: resolution._status
+            };
           }
+
           return this._encodeRecord("remote", record);
         }));
         await this.pushChanges(client, resolvedEncoded, result, options);
-      }
+      } 
       
-      
+
+
       if (result.published.length > 0) {
         
-        const pullOpts = {
-          ...options,
+        const pullOpts = { ...options,
           lastModified,
           exclude: result.published
         };
         await this.pullChanges(client, result, pullOpts);
-      }
+      } 
 
-      
+
       if (result.ok) {
         
         this._lastModified = await this.db.saveLastModified(result.lastModified);
       }
     } catch (e) {
-      this.events.emit("sync:error", { ...options, error: e });
+      this.events.emit("sync:error", { ...options,
+        error: e
+      });
       throw e;
     } finally {
       
       this.api.remote = previousRemote;
     }
-    this.events.emit("sync:success", { ...options, result });
+
+    this.events.emit("sync:success", { ...options,
+      result
+    });
     return result;
   }
-
   
+
+
 
 
 
@@ -2035,76 +2539,90 @@ class Collection {
       if (!record.last_modified) {
         throw new Error("Record has no last_modified value: " + JSON.stringify(record));
       }
-    }
-
+    } 
     
     
 
-    
 
-    const { data } = await this.list({}, { includeDeleted: true });
+    const {
+      data
+    } = await this.list({}, {
+      includeDeleted: true
+    });
     const existingById = data.reduce((acc, record) => {
       acc[record.id] = record;
       return acc;
     }, {});
-
     const newRecords = records.filter(record => {
       const localRecord = existingById[record.id];
-      const shouldKeep =
-      
-      localRecord === undefined ||
-      
-      localRecord._status === "synced" &&
-      
-      localRecord.last_modified !== undefined &&
-      
+      const shouldKeep = 
+      localRecord === undefined || 
+      localRecord._status === "synced" && 
+      localRecord.last_modified !== undefined && 
       record.last_modified > localRecord.last_modified;
       return shouldKeep;
     });
-
     return await this.db.loadDump(newRecords.map(markSynced));
   }
+
 }
 
-exports.default = Collection; 
 
 
 
 
 
 
+
+
+exports.default = Collection;
 
 class CollectionTransaction {
   constructor(collection, adapterTransaction) {
     this.collection = collection;
     this.adapterTransaction = adapterTransaction;
-
     this._events = [];
   }
 
   _queueEvent(action, payload) {
-    this._events.push({ action, payload });
+    this._events.push({
+      action,
+      payload
+    });
   }
-
   
+
+
 
 
 
   emitEvents() {
-    for (const { action, payload } of this._events) {
+    for (const {
+      action,
+      payload
+    } of this._events) {
       this.collection.events.emit(action, payload);
     }
+
     if (this._events.length > 0) {
-      const targets = this._events.map(({ action, payload }) => ({
+      const targets = this._events.map(({
+        action,
+        payload
+      }) => ({
         action,
         ...payload
       }));
-      this.collection.events.emit("change", { targets });
+
+      this.collection.events.emit("change", {
+        targets
+      });
     }
+
     this._events = [];
   }
-
   
+
+
 
 
 
@@ -2115,9 +2633,11 @@ class CollectionTransaction {
 
   getAny(id) {
     const record = this.adapterTransaction.get(id);
-    return { data: record, permissions: {} };
+    return {
+      data: record,
+      permissions: {}
+    };
   }
-
   
 
 
@@ -2128,15 +2648,19 @@ class CollectionTransaction {
 
 
 
-  get(id, options = { includeDeleted: false }) {
+
+
+  get(id, options = {
+    includeDeleted: false
+  }) {
     const res = this.getAny(id);
+
     if (!res.data || !options.includeDeleted && res.data._status === "deleted") {
       throw new Error(`Record with id=${id} not found.`);
     }
 
     return res;
   }
-
   
 
 
@@ -2148,25 +2672,39 @@ class CollectionTransaction {
 
 
 
-  delete(id, options = { virtual: true }) {
+
+
+  delete(id, options = {
+    virtual: true
+  }) {
     
     const existing = this.adapterTransaction.get(id);
     const alreadyDeleted = existing && existing._status == "deleted";
+
     if (!existing || alreadyDeleted && options.virtual) {
       throw new Error(`Record with id=${id} not found.`);
-    }
-    
+    } 
+
+
     if (options.virtual) {
       this.adapterTransaction.update(markDeleted(existing));
     } else {
       
       this.adapterTransaction.delete(id);
     }
-    this._queueEvent("delete", { data: existing });
-    return { data: existing, permissions: {} };
-  }
 
+    this._queueEvent("delete", {
+      data: existing
+    });
+
+    return {
+      data: existing,
+      permissions: {}
+    };
+  }
   
+
+
 
 
 
@@ -2179,11 +2717,18 @@ class CollectionTransaction {
       this.delete(id);
     });
 
-    this._queueEvent("deleteAll", { data: existingRecords });
-    return { data: existingRecords, permissions: {} };
-  }
+    this._queueEvent("deleteAll", {
+      data: existingRecords
+    });
 
+    return {
+      data: existingRecords,
+      permissions: {}
+    };
+  }
   
+
+
 
 
 
@@ -2192,14 +2737,27 @@ class CollectionTransaction {
 
   deleteAny(id) {
     const existing = this.adapterTransaction.get(id);
+
     if (existing) {
       this.adapterTransaction.update(markDeleted(existing));
-      this._queueEvent("delete", { data: existing });
-    }
-    return { data: { id, ...existing }, deleted: !!existing, permissions: {} };
-  }
 
+      this._queueEvent("delete", {
+        data: existing
+      });
+    }
+
+    return {
+      data: {
+        id,
+        ...existing
+      },
+      deleted: !!existing,
+      permissions: {}
+    };
+  }
   
+
+
 
 
 
@@ -2210,18 +2768,26 @@ class CollectionTransaction {
     if (typeof record !== "object") {
       throw new Error("Record is not an object.");
     }
+
     if (!record.hasOwnProperty("id")) {
       throw new Error("Cannot create a record missing id");
     }
+
     if (!this.collection.idSchema.validate(record.id)) {
       throw new Error(`Invalid Id: ${record.id}`);
     }
 
     this.adapterTransaction.create(record);
-    this._queueEvent("create", { data: record });
-    return { data: record, permissions: {} };
-  }
 
+    this._queueEvent("create", {
+      data: record
+    });
+
+    return {
+      data: record,
+      permissions: {}
+    };
+  }
   
 
 
@@ -2234,28 +2800,49 @@ class CollectionTransaction {
 
 
 
-  update(record, options = { synced: false, patch: false }) {
+
+
+  update(record, options = {
+    synced: false,
+    patch: false
+  }) {
     if (typeof record !== "object") {
       throw new Error("Record is not an object.");
     }
+
     if (!record.hasOwnProperty("id")) {
       throw new Error("Cannot update a record missing id.");
     }
+
     if (!this.collection.idSchema.validate(record.id)) {
       throw new Error(`Invalid Id: ${record.id}`);
     }
 
     const oldRecord = this.adapterTransaction.get(record.id);
+
     if (!oldRecord) {
       throw new Error(`Record with id=${record.id} not found.`);
     }
-    const newRecord = options.patch ? { ...oldRecord, ...record } : record;
-    const updated = this._updateRaw(oldRecord, newRecord, options);
-    this.adapterTransaction.update(updated);
-    this._queueEvent("update", { data: updated, oldRecord });
-    return { data: updated, oldRecord, permissions: {} };
-  }
 
+    const newRecord = options.patch ? { ...oldRecord,
+      ...record
+    } : record;
+
+    const updated = this._updateRaw(oldRecord, newRecord, options);
+
+    this.adapterTransaction.update(updated);
+
+    this._queueEvent("update", {
+      data: updated,
+      oldRecord
+    });
+
+    return {
+      data: updated,
+      oldRecord,
+      permissions: {}
+    };
+  }
   
 
 
@@ -2264,23 +2851,30 @@ class CollectionTransaction {
 
 
 
-  _updateRaw(oldRecord, newRecord, { synced = false } = {}) {
-    const updated = { ...newRecord };
-    
+
+
+  _updateRaw(oldRecord, newRecord, {
+    synced = false
+  } = {}) {
+    const updated = { ...newRecord
+    }; 
+
     if (oldRecord && oldRecord.last_modified && !updated.last_modified) {
       updated.last_modified = oldRecord.last_modified;
-    }
+    } 
     
     
-    
+
+
     const isIdentical = oldRecord && recordsEqual(oldRecord, updated, this.localFields);
     const keepSynced = isIdentical && oldRecord._status == "synced";
     const neverSynced = !oldRecord || oldRecord && oldRecord._status == "created";
     const newStatus = keepSynced || synced ? "synced" : neverSynced ? "created" : "updated";
     return markStatus(updated, newStatus);
   }
-
   
+
+
 
 
 
@@ -2295,27 +2889,45 @@ class CollectionTransaction {
     if (typeof record !== "object") {
       throw new Error("Record is not an object.");
     }
+
     if (!record.hasOwnProperty("id")) {
       throw new Error("Cannot update a record missing id.");
     }
+
     if (!this.collection.idSchema.validate(record.id)) {
       throw new Error(`Invalid Id: ${record.id}`);
     }
+
     let oldRecord = this.adapterTransaction.get(record.id);
+
     const updated = this._updateRaw(oldRecord, record);
-    this.adapterTransaction.update(updated);
-    
+
+    this.adapterTransaction.update(updated); 
+
     if (oldRecord && oldRecord._status == "deleted") {
       oldRecord = undefined;
     }
+
     if (oldRecord) {
-      this._queueEvent("update", { data: updated, oldRecord });
+      this._queueEvent("update", {
+        data: updated,
+        oldRecord
+      });
     } else {
-      this._queueEvent("create", { data: updated });
+      this._queueEvent("create", {
+        data: updated
+      });
     }
-    return { data: updated, oldRecord, permissions: {} };
+
+    return {
+      data: updated,
+      oldRecord,
+      permissions: {}
+    };
   }
+
 }
+
 exports.CollectionTransaction = CollectionTransaction;
 
 },{"./adapters/IDB":4,"./adapters/base":5,"./utils":7,"uuid":2}],7:[function(require,module,exports){
@@ -2330,16 +2942,21 @@ exports.filterObjects = filterObjects;
 exports.waterfall = waterfall;
 exports.deepEqual = deepEqual;
 exports.omitKeys = omitKeys;
-const RE_RECORD_ID = exports.RE_RECORD_ID = /^[a-zA-Z0-9][a-zA-Z0-9_-]*$/;
+exports.arrayEqual = arrayEqual;
+exports.RE_RECORD_ID = void 0;
+const RE_RECORD_ID = /^[a-zA-Z0-9][a-zA-Z0-9_-]*$/;
 
 
 
 
 
+
+exports.RE_RECORD_ID = RE_RECORD_ID;
 
 function _isUndefined(value) {
   return typeof value === "undefined";
 }
+
 
 
 
@@ -2356,12 +2973,15 @@ function sortObjects(order, list) {
     if (a[field] && _isUndefined(b[field])) {
       return direction;
     }
+
     if (b[field] && _isUndefined(a[field])) {
       return -direction;
     }
+
     if (_isUndefined(a[field]) && _isUndefined(b[field])) {
       return 0;
     }
+
     return a[field] > b[field] ? direction : -direction;
   });
 }
@@ -2373,15 +2993,19 @@ function sortObjects(order, list) {
 
 
 
+
 function filterObject(filters, entry) {
   return Object.keys(filters).every(filter => {
     const value = filters[filter];
+
     if (Array.isArray(value)) {
       return value.some(candidate => candidate === entry[filter]);
     }
+
     return entry[filter] === value;
   });
 }
+
 
 
 
@@ -2404,10 +3028,12 @@ function filterObjects(filters, list) {
 
 
 
+
 function waterfall(fns, init) {
   if (!fns.length) {
     return Promise.resolve(init);
   }
+
   return fns.reduce((promise, nextFn) => {
     return promise.then(nextFn);
   }, Promise.resolve(init));
@@ -2421,26 +3047,33 @@ function waterfall(fns, init) {
 
 
 
+
 function deepEqual(a, b) {
   if (a === b) {
     return true;
   }
+
   if (typeof a !== typeof b) {
     return false;
   }
+
   if (!(a && typeof a == "object") || !(b && typeof b == "object")) {
     return false;
   }
+
   if (Object.keys(a).length !== Object.keys(b).length) {
     return false;
   }
+
   for (const k in a) {
     if (!deepEqual(a[k], b[k])) {
       return false;
     }
   }
+
   return true;
 }
+
 
 
 
@@ -2454,9 +3087,25 @@ function omitKeys(obj, keys = []) {
     if (!keys.includes(key)) {
       acc[key] = obj[key];
     }
+
     return acc;
   }, {});
 }
 
+function arrayEqual(a, b) {
+  if (a.length !== b.length) {
+    return false;
+  }
+
+  for (let i = a.length; i--;) {
+    if (a[i] !== b[i]) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 },{}]},{},[1])(1)
 });
+

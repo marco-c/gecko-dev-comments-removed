@@ -297,7 +297,11 @@ class RemoteSettingsClient {
 
   async openCollection() {
     if (!this._kinto) {
-      this._kinto = new Kinto();
+      this._kinto = new Kinto({
+        bucket: this.bucketName,
+        adapter: Kinto.adapters.IDB,
+        adapterOptions: { dbName: "remote-settings", migrateOldData: false },
+      });
     }
     const options = {
       localFields: this.localFields,
@@ -575,25 +579,10 @@ class RemoteSettingsClient {
 
 
 
-
-async function databaseExists(bucket, collection) {
-  
-  
-  const dbname = `${bucket}/${collection}`;
-  try {
-    await new Promise((resolve, reject) => {
-      const request = indexedDB.open(dbname, 1);
-      request.onupgradeneeded = event => {
-        event.target.transaction.abort();
-        reject(event.target.error);
-      };
-      request.onerror = event => reject(event.target.error);
-      request.onsuccess = event => resolve(event.target.result);
-    });
-    return true;
-  } catch (e) {
-    return false;
-  }
+async function hasLocalData(client) {
+  const kintoCol = await client.openCollection();
+  const timestamp = await kintoCol.db.getLastModified();
+  return timestamp !== null;
 }
 
 
@@ -658,25 +647,21 @@ function remoteSettingsFunction() {
     
     
     const client = _clients.get(collectionName);
-
-    if (client) {
-      
-      
-      if (client.bucketName == bucketName) {
-        return client;
-      }
-
+    if (client && client.bucketName == bucketName) {
+      return client;
+    }
     
     
     
     
-    } else if (bucketName == Services.prefs.getCharPref(PREF_SETTINGS_DEFAULT_BUCKET)) {
+    if (bucketName == Services.prefs.getCharPref(PREF_SETTINGS_DEFAULT_BUCKET)) {
+      const c = new RemoteSettingsClient(collectionName, defaultOptions);
       const [dbExists, localDump] = await Promise.all([
-        databaseExists(bucketName, collectionName),
+        hasLocalData(c),
         hasLocalDump(bucketName, collectionName),
       ]);
       if (dbExists || localDump) {
-        return new RemoteSettingsClient(collectionName, defaultOptions);
+        return c;
       }
     }
     
