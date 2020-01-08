@@ -67,6 +67,7 @@ TextComposition::TextComposition(nsPresContext* aPresContext,
   , mIsRequestingCommit(false)
   , mIsRequestingCancel(false)
   , mRequestedToCommitOrCancel(false)
+  , mHasDispatchedDOMTextEvent(false)
   , mHasReceivedCommitEvent(false)
   , mWasNativeCompositionEndEventDiscarded(false)
   , mAllowControlCharacters(
@@ -108,6 +109,13 @@ TextComposition::MaybeDispatchCompositionUpdate(
     return false;
   }
 
+  
+  
+  
+  
+  
+  
+  
   if (mLastData == aCompositionEvent->mData) {
     return true;
   }
@@ -357,9 +365,14 @@ TextComposition::DispatchCompositionEvent(
   
   
   
+  
+  
+  
+  
   if (dispatchDOMTextEvent &&
       aCompositionEvent->mMessage != eCompositionChange &&
-      !mIsComposing && mLastData == aCompositionEvent->mData) {
+      !mIsComposing && mHasDispatchedDOMTextEvent &&
+      mLastData == aCompositionEvent->mData) {
     dispatchEvent = dispatchDOMTextEvent = false;
   }
 
@@ -387,10 +400,14 @@ TextComposition::DispatchCompositionEvent(
     
     if (dispatchDOMTextEvent &&
         aCompositionEvent->mMessage != eCompositionChange) {
+      mHasDispatchedDOMTextEvent = true;
       aCompositionEvent->mFlags =
         CloneAndDispatchAs(aCompositionEvent, eCompositionChange,
                            aStatus, aCallBack);
     } else {
+      if (aCompositionEvent->mMessage == eCompositionChange) {
+        mHasDispatchedDOMTextEvent = true;
+      }
       DispatchEvent(aCompositionEvent, aStatus, aCallBack);
     }
   } else {

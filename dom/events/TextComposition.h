@@ -370,6 +370,9 @@ private:
   bool mRequestedToCommitOrCancel;
 
   
+  bool mHasDispatchedDOMTextEvent;
+
+  
   
   bool mHasReceivedCommitEvent;
 
