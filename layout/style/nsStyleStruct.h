@@ -1971,6 +1971,27 @@ private:
   nsStyleCorners mRadius;
 };
 
+struct StyleSVGPath final
+{
+  const nsTArray<StylePathCommand>& Path() const
+  {
+    return mPath;
+  }
+
+  bool operator==(const StyleSVGPath& aOther) const
+  {
+    return mPath == aOther.mPath;
+  }
+
+  bool operator!=(const StyleSVGPath& aOther) const
+  {
+    return !(*this == aOther);
+  }
+
+private:
+  nsTArray<StylePathCommand> mPath;
+};
+
 struct StyleShapeSource final
 {
   StyleShapeSource();
@@ -2035,6 +2056,13 @@ struct StyleShapeSource final
 
   void SetReferenceBox(StyleGeometryBox aReferenceBox);
 
+  const StyleSVGPath* GetPath() const
+  {
+    MOZ_ASSERT(mType == StyleShapeSourceType::Path, "Wrong shape source type!");
+    return mSVGPath.get();
+  }
+  void SetPath(UniquePtr<StyleSVGPath> aPath);
+
 private:
   void* operator new(size_t) = delete;
 
@@ -2044,11 +2072,39 @@ private:
   union {
     mozilla::UniquePtr<StyleBasicShape> mBasicShape;
     mozilla::UniquePtr<nsStyleImage> mShapeImage;
-    
+    mozilla::UniquePtr<StyleSVGPath> mSVGPath;
     
   };
   StyleShapeSourceType mType = StyleShapeSourceType::None;
   StyleGeometryBox mReferenceBox = StyleGeometryBox::NoBox;
+};
+
+struct StyleMotion final
+{
+  bool operator==(const StyleMotion& aOther) const
+  {
+    return mOffsetPath == aOther.mOffsetPath;
+  }
+
+  bool operator!=(const StyleMotion& aOther) const
+  {
+    return !(*this == aOther);
+  }
+
+  const StyleShapeSource& OffsetPath() const
+  {
+    return mOffsetPath;
+  }
+
+  bool HasPath() const
+  {
+    
+    
+    return mOffsetPath.GetType() == StyleShapeSourceType::Path;
+  }
+
+private:
+  StyleShapeSource mOffsetPath;
 };
 
 } 
@@ -2125,6 +2181,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
   RefPtr<nsCSSValueSharedList> mSpecifiedRotate;
   RefPtr<nsCSSValueSharedList> mSpecifiedTranslate;
   RefPtr<nsCSSValueSharedList> mSpecifiedScale;
+  mozilla::UniquePtr<mozilla::StyleMotion> mMotion;
 
   
   
@@ -2380,7 +2437,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
     return mSpecifiedTransform || mSpecifiedRotate || mSpecifiedTranslate ||
            mSpecifiedScale ||
            mTransformStyle == NS_STYLE_TRANSFORM_STYLE_PRESERVE_3D ||
-           (mWillChangeBitField & NS_STYLE_WILL_CHANGE_TRANSFORM);
+           (mWillChangeBitField & NS_STYLE_WILL_CHANGE_TRANSFORM) ||
+           (mMotion && mMotion->HasPath());
   }
 
   bool HasIndividualTransform() const {

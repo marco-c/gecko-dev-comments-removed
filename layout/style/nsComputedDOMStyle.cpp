@@ -5048,6 +5048,11 @@ nsComputedDOMStyle::GetShapeSource(
       SetValueToStyleImage(*aShapeSource.GetShapeImage(), val);
       return val.forget();
     }
+    case StyleShapeSourceType::Path: {
+      
+      
+      MOZ_ASSERT_UNREACHABLE("Unexpected SVG Path type.");
+    }
   }
   return nullptr;
 }

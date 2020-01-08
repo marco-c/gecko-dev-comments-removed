@@ -198,6 +198,7 @@ enum class StyleShapeSourceType : uint8_t {
   Image, 
   Shape,
   Box,
+  Path,  
 };
 
 
