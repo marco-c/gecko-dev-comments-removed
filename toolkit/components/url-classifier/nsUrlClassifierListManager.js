@@ -170,7 +170,6 @@ PROT_ListManager.prototype.getUpdateUrl = function(tableName) {
 
 
 
-
 PROT_ListManager.prototype.enableUpdate = function(tableName) {
   var table = this.tablesData[tableName];
   if (table) {
@@ -191,6 +190,15 @@ PROT_ListManager.prototype.updatesNeeded_ = function(updateUrl) {
     }
   }
   return updatesNeeded;
+};
+
+
+
+
+PROT_ListManager.prototype.disableAllUpdates = function() {
+  for (const tableName of Object.keys(this.tablesData)) {
+    this.disableUpdate(tableName);
+  }
 };
 
 
