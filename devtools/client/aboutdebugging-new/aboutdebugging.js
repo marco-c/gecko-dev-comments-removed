@@ -72,6 +72,9 @@ const AboutDebugging = {
 
     adbAddon.on("update", this.onAdbAddonUpdated);
     this.onAdbAddonUpdated();
+
+    
+    await adbAddon.uninstallUnsupportedExtensions();
   },
 
   onAdbAddonUpdated() {

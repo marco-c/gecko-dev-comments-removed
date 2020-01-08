@@ -43,10 +43,6 @@ class ADBAddon extends EventEmitter {
 
     this._status = ADB_ADDON_STATES.UNKNOWN;
 
-    
-    
-    this.uninstallUnsupportedExtensions();
-
     const addonsListener = {};
     addonsListener.onEnabled =
     addonsListener.onDisabled =
@@ -140,6 +136,10 @@ class ADBAddon extends EventEmitter {
     const addon = await this._getAddon();
     addon.uninstall();
   }
+
+  
+
+
 
   async uninstallUnsupportedExtensions() {
     const [adbHelperAddon, valenceAddon] = await Promise.all([
