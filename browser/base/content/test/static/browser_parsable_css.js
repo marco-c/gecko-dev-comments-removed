@@ -91,12 +91,23 @@ if (!Services.prefs.getBoolPref("full-screen-api.unprefix.enabled")) {
   });
 }
 
+if (!Services.prefs.getBoolPref("layout.css.scrollbar-width.enabled")) {
+  whitelist.push({
+    sourceName: /(?:res|gre-resources)\/forms\.css$/i,
+    errorMessage: /Unknown property .*\bscrollbar-width\b/i,
+    isFromDevTools: false,
+  });
+}
+
 let propNameWhitelist = [
   
   
   
   {propName: "--in-content-category-text-active",
    isFromDevTools: false},
+  
+  {propName: "--theme-search-overlays-semitransparent",
+   isFromDevTools: true},
   
   
   
