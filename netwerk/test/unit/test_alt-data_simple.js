@@ -154,15 +154,23 @@ function readAltContent(request, buffer)
 
   cc.getOriginalInputStream({
     onInputStreamReady: function(aInputStream) {
-      executeSoon(function() {
-        
-        
-        let originalData = read_stream(aInputStream, responseContent.length);
-        Assert.equal(originalData, responseContent);
-        requestAgain();
-      });
+      executeSoon(() => readOriginalInputStream(aInputStream));
     }
   });
+}
+
+function readOriginalInputStream(aInputStream)
+{
+  
+  
+  try {
+    let originalData = read_stream(aInputStream, responseContent.length);
+    Assert.equal(originalData, responseContent);
+    requestAgain();
+  } catch (e) {
+    equal(e.result, Cr.NS_BASE_STREAM_WOULD_BLOCK);
+    executeSoon(() => readOriginalInputStream(aInputStream));
+  }
 }
 
 function requestAgain()
