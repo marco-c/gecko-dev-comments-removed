@@ -1594,7 +1594,7 @@ public class GeckoSession implements Parcelable {
 
 
     @AnyThread
-    public static final class FinderResult {
+    public static class FinderResult {
         
         public final boolean found;
         
