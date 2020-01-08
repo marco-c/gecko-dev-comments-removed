@@ -46,7 +46,12 @@ inline Atomic32 NoBarrier_AtomicIncrement(volatile Atomic32* ptr,
 
 inline void MemoryBarrier() {
   
+  
+#if defined(_M_ARM64)
+  MemoryBarrierARM64();
+#else
   ::MemoryBarrier();
+#endif
 }
 
 inline Atomic32 Acquire_CompareAndSwap(volatile Atomic32* ptr,

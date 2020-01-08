@@ -98,6 +98,20 @@ Atomic32 Release_CompareAndSwap(volatile Atomic32* ptr,
                                 Atomic32 old_value,
                                 Atomic32 new_value);
 
+
+
+
+
+
+
+#if defined(_M_ARM64) && defined(MemoryBarrier)
+static inline void
+MemoryBarrierARM64()
+{
+  MemoryBarrier();
+}
+#undef MemoryBarrier
+#endif
 void MemoryBarrier();
 void NoBarrier_Store(volatile Atomic32* ptr, Atomic32 value);
 void Acquire_Store(volatile Atomic32* ptr, Atomic32 value);
@@ -135,6 +149,9 @@ Atomic64 Release_Load(volatile const Atomic64* ptr);
 
 
 #if defined(OS_WIN) && defined(ARCH_CPU_X86_FAMILY)
+#include "base/atomicops_internals_x86_msvc.h"
+#elif defined(OS_WIN) && defined(ARCH_CPU_AARCH64_FAMILY)
+
 #include "base/atomicops_internals_x86_msvc.h"
 #elif defined(OS_MACOSX) && defined(ARCH_CPU_X86_FAMILY)
 #include "base/atomicops_internals_x86_macosx.h"
