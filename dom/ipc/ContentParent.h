@@ -19,6 +19,7 @@
 #include "mozilla/MemoryReportingProcess.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/Variant.h"
 #include "mozilla/UniquePtr.h"
 
 #include "nsDataHashtable.h"
@@ -131,10 +132,13 @@ public:
 
   virtual bool IsContentParent() const override { return true; }
 
+  using LaunchError = GeckoChildProcessHost::LaunchError;
+  using LaunchPromise = GeckoChildProcessHost::LaunchPromise<RefPtr<ContentParent>>;
+
   
 
 
-  static already_AddRefed<ContentParent> PreallocateProcess();
+  static RefPtr<LaunchPromise> PreallocateProcess();
 
   
 
@@ -797,7 +801,20 @@ private:
 
   
   
-  bool LaunchSubprocess(hal::ProcessPriority aInitialPriority = hal::PROCESS_PRIORITY_FOREGROUND);
+  
+  bool LaunchSubprocessSync(hal::ProcessPriority aInitialPriority);
+
+  
+  
+  
+  
+  
+  RefPtr<LaunchPromise> LaunchSubprocessAsync(hal::ProcessPriority aInitialPriority);
+
+  
+  void LaunchSubprocessInternal(
+    hal::ProcessPriority aInitialPriority,
+    mozilla::Variant<bool*, RefPtr<LaunchPromise>*>&& aRetval);
 
   
   void InitInternal(ProcessPriority aPriority);

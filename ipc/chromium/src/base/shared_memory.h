@@ -44,6 +44,9 @@ class SharedMemory {
   }
 
   
+  SharedMemory(SharedMemory&& other);
+
+  
   ~SharedMemory();
 
   
