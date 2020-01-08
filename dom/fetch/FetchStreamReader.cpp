@@ -99,11 +99,15 @@ FetchStreamReader::FetchStreamReader(nsIGlobalObject* aGlobal)
   , mStreamClosed(false)
 {
   MOZ_ASSERT(aGlobal);
+
+  mozilla::HoldJSObjects(this);
 }
 
 FetchStreamReader::~FetchStreamReader()
 {
   CloseAndRelease(nullptr, NS_BASE_STREAM_CLOSED);
+
+  mozilla::DropJSObjects(this);
 }
 
 
