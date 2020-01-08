@@ -1349,7 +1349,11 @@ TEST_F(TransportTest, TestSrtpErrorClientSendsUnevenList) {
 TEST_F(TransportTest, OnlyServerSendsSrtpXtn) {
   p1_->SetupSrtp();
   SetDtlsPeer();
-  ConnectSocketExpectState(TransportLayer::TS_ERROR, TransportLayer::TS_CLOSED);
+  
+  
+  ConnectSocket();
+  ASSERT_NE(TLS_NULL_WITH_NULL_NULL, p1_->cipherSuite());
+  ASSERT_EQ(0, p1_->srtpCipher());
 }
 
 TEST_F(TransportTest, OnlyClientSendsSrtpXtn) {
@@ -1357,8 +1361,9 @@ TEST_F(TransportTest, OnlyClientSendsSrtpXtn) {
   SetDtlsPeer();
   
   
-  
-  ConnectSocketExpectState(TransportLayer::TS_CLOSED, TransportLayer::TS_ERROR);
+  ConnectSocket();
+  ASSERT_NE(TLS_NULL_WITH_NULL_NULL, p1_->cipherSuite());
+  ASSERT_EQ(0, p1_->srtpCipher());
 }
 
 class TransportSrtpParameterTest

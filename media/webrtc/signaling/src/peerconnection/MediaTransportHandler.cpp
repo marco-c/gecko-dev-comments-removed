@@ -501,6 +501,8 @@ void MediaTransportHandler::SendPacket(const std::string& aTransportId,
 
 TransportLayer::State MediaTransportHandler::GetState(
     const std::string& aTransportId, bool aRtcp) const {
+  
+  
   RefPtr<TransportFlow> flow = GetTransportFlow(aTransportId, aRtcp);
   if (flow) {
     return flow->GetLayer(TransportLayerDtls::ID())->state();
