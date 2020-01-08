@@ -954,30 +954,13 @@ CodeGenerator::visitCompareBAndBranch(LCompareBAndBranch* lir)
 void
 CodeGenerator::visitCompareBitwise(LCompareBitwise* lir)
 {
-    MCompare* mir = lir->mir();
-    Assembler::Condition cond = JSOpToCondition(mir->compareType(), mir->jsop());
-    const ValueOperand lhs = ToValue(lir, LCompareBitwise::LhsInput);
-    const ValueOperand rhs = ToValue(lir, LCompareBitwise::RhsInput);
-    const Register output = ToRegister(lir->output());
-
-    MOZ_ASSERT(IsEqualityOp(mir->jsop()));
-
-    masm.cmpPtrSet(cond, lhs.valueReg(), rhs.valueReg(), output);
+    MOZ_CRASH("visitCompareBitwise");
 }
 
 void
 CodeGenerator::visitCompareBitwiseAndBranch(LCompareBitwiseAndBranch* lir)
 {
-    MCompare* mir = lir->cmpMir();
-    Assembler::Condition cond = JSOpToCondition(mir->compareType(), mir->jsop());
-    const ValueOperand lhs = ToValue(lir, LCompareBitwiseAndBranch::LhsInput);
-    const ValueOperand rhs = ToValue(lir, LCompareBitwiseAndBranch::RhsInput);
-
-    MOZ_ASSERT(mir->jsop() == JSOP_EQ || mir->jsop() == JSOP_STRICTEQ ||
-               mir->jsop() == JSOP_NE || mir->jsop() == JSOP_STRICTNE);
-
-    masm.cmpPtr(lhs.valueReg(), rhs.valueReg());
-    emitBranch(cond, lir->ifTrue(), lir->ifFalse());
+    MOZ_CRASH("visitCompareBitwiseAndBranch");
 }
 
 void
@@ -1039,9 +1022,6 @@ CodeGeneratorARM64::generateInvalidateEpilogue()
     }
 
     masm.bind(&invalidate_);
-
-    
-    masm.push(lr);
 
     
     invalidateEpilogueData_ = masm.pushWithPatch(ImmWord(uintptr_t(-1)));
