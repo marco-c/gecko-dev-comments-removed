@@ -3,167 +3,53 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 use std::{str, fmt, hash};
-use std::ops::{Add, Sub, AddAssign, SubAssign};
-use oldtime::Duration as OldDuration;
+use std::ops::{Add, Sub};
 
 use Timelike;
 use div::div_mod_floor;
+use duration::Duration;
 use format::{Item, Numeric, Pad, Fixed};
 use format::{parse, Parsed, ParseError, ParseResult, DelayedFormat, StrftimeItems};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -178,6 +64,24 @@ pub struct NaiveTime {
 }
 
 impl NaiveTime {
+    
+    
+    #[cfg(feature = "rustc-serialize")]
+    fn from_serialized(secs: u32, frac: u32) -> Option<NaiveTime> {
+        
+        if secs >= 86400 { return None; }
+        if frac >= 2_000_000_000 { return None; }
+
+        let time = NaiveTime { secs: secs, frac: frac };
+        Some(time)
+    }
+
+    
+    #[cfg(feature = "rustc-serialize")]
+    fn to_serialized(&self) -> (u32, u32) {
+        (self.secs, self.frac)
+    }
+
     
     
     
@@ -201,7 +105,6 @@ impl NaiveTime {
         NaiveTime::from_hms_opt(hour, min, sec).expect("invalid time")
     }
 
-    
     
     
     
@@ -249,7 +152,6 @@ impl NaiveTime {
         NaiveTime::from_hms_milli_opt(hour, min, sec, milli).expect("invalid time")
     }
 
-    
     
     
     
@@ -321,7 +223,6 @@ impl NaiveTime {
     
     
     
-    
     #[inline]
     pub fn from_hms_micro_opt(hour: u32, min: u32, sec: u32, micro: u32) -> Option<NaiveTime> {
         micro.checked_mul(1_000)
@@ -351,7 +252,6 @@ impl NaiveTime {
         NaiveTime::from_hms_nano_opt(hour, min, sec, nano).expect("invalid time")
     }
 
-    
     
     
     
@@ -422,19 +322,12 @@ impl NaiveTime {
     
     
     
-    
     #[inline]
     pub fn from_num_seconds_from_midnight_opt(secs: u32, nano: u32) -> Option<NaiveTime> {
-        if secs >= 86_400 || nano >= 2_000_000_000 { return None; }
+        if secs >= 86400 || nano >= 2_000_000_000 { return None; }
         Some(NaiveTime { secs: secs, frac: nano })
     }
 
-    
-    
-    
-    
-    
-    
     
     
     
@@ -513,232 +406,12 @@ impl NaiveTime {
     
     
     
-    
-    
-    
-    
-    
-    #[cfg_attr(feature = "cargo-clippy", allow(cyclomatic_complexity))]
-    pub fn overflowing_add_signed(&self, mut rhs: OldDuration) -> (NaiveTime, i64) {
-        let mut secs = self.secs;
-        let mut frac = self.frac;
-
-        
-        
-        
-        if frac >= 1_000_000_000 {
-            let rfrac = 2_000_000_000 - frac;
-            if rhs >= OldDuration::nanoseconds(i64::from(rfrac)) {
-                rhs = rhs - OldDuration::nanoseconds(i64::from(rfrac));
-                secs += 1;
-                frac = 0;
-            } else if rhs < OldDuration::nanoseconds(-i64::from(frac)) {
-                rhs = rhs + OldDuration::nanoseconds(i64::from(frac));
-                frac = 0;
-            } else {
-                frac = (i64::from(frac) + rhs.num_nanoseconds().unwrap()) as u32;
-                debug_assert!(frac < 2_000_000_000);
-                return (NaiveTime { secs: secs, frac: frac }, 0);
-            }
-        }
-        debug_assert!(secs <= 86_400);
-        debug_assert!(frac < 1_000_000_000);
-
-        let rhssecs = rhs.num_seconds();
-        let rhsfrac = (rhs - OldDuration::seconds(rhssecs)).num_nanoseconds().unwrap();
-        debug_assert_eq!(OldDuration::seconds(rhssecs) + OldDuration::nanoseconds(rhsfrac), rhs);
-        let rhssecsinday = rhssecs % 86_400;
-        let mut morerhssecs = rhssecs - rhssecsinday;
-        let rhssecs = rhssecsinday as i32;
-        let rhsfrac = rhsfrac as i32;
-        debug_assert!(-86_400 < rhssecs && rhssecs < 86_400);
-        debug_assert_eq!(morerhssecs % 86_400, 0);
-        debug_assert!(-1_000_000_000 < rhsfrac && rhsfrac < 1_000_000_000);
-
-        let mut secs = secs as i32 + rhssecs;
-        let mut frac = frac as i32 + rhsfrac;
-        debug_assert!(-86_400 < secs && secs < 2 * 86_400);
-        debug_assert!(-1_000_000_000 < frac && frac < 2_000_000_000);
-
-        if frac < 0 {
-            frac += 1_000_000_000;
-            secs -= 1;
-        } else if frac >= 1_000_000_000 {
-            frac -= 1_000_000_000;
-            secs += 1;
-        }
-        debug_assert!(-86_400 <= secs && secs < 2 * 86_400);
-        debug_assert!(0 <= frac && frac < 1_000_000_000);
-
-        if secs < 0 {
-            secs += 86_400;
-            morerhssecs -= 86_400;
-        } else if secs >= 86_400 {
-            secs -= 86_400;
-            morerhssecs += 86_400;
-        }
-        debug_assert!(0 <= secs && secs < 86_400);
-
-        (NaiveTime { secs: secs as u32, frac: frac as u32 }, morerhssecs)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn overflowing_sub_signed(&self, rhs: OldDuration) -> (NaiveTime, i64) {
-        let (time, rhs) = self.overflowing_add_signed(-rhs);
-        (time, -rhs) 
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn signed_duration_since(self, rhs: NaiveTime) -> OldDuration {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-
-        use std::cmp::Ordering;
-
-        let secs = i64::from(self.secs) - i64::from(rhs.secs);
-        let frac = i64::from(self.frac) - i64::from(rhs.frac);
-
-        
-        let adjust = match self.secs.cmp(&rhs.secs) {
-            Ordering::Greater => if rhs.frac >= 1_000_000_000 { 1 } else { 0 },
-            Ordering::Equal => 0,
-            Ordering::Less => if self.frac >= 1_000_000_000 { -1 } else { 0 },
-        };
-
-        OldDuration::seconds(secs + adjust) + OldDuration::nanoseconds(frac)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     #[inline]
     pub fn format_with_items<'a, I>(&self, items: I) -> DelayedFormat<I>
             where I: Iterator<Item=Item<'a>> + Clone {
-        DelayedFormat::new(None, Some(*self), items)
+        DelayedFormat::new(None, Some(self.clone()), items)
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -981,7 +654,6 @@ impl Timelike for NaiveTime {
 
 
 
-#[cfg_attr(feature = "cargo-clippy", allow(derive_hash_xor_eq))]
 impl hash::Hash for NaiveTime {
     fn hash<H: hash::Hasher>(&self, state: &mut H) {
         self.secs.hash(state);
@@ -989,237 +661,58 @@ impl hash::Hash for NaiveTime {
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-impl Add<OldDuration> for NaiveTime {
+impl Add<Duration> for NaiveTime {
     type Output = NaiveTime;
 
-    #[inline]
-    fn add(self, rhs: OldDuration) -> NaiveTime {
-        self.overflowing_add_signed(rhs).0
+    fn add(self, rhs: Duration) -> NaiveTime {
+        
+        
+        let mut rhssecs = rhs.num_seconds();
+        let mut rhs2 = rhs - Duration::seconds(rhssecs);
+        if rhs2 < Duration::zero() { 
+            rhssecs -= 1;
+            rhs2 = rhs2 + Duration::seconds(1);
+        }
+        debug_assert!(rhs2 >= Duration::zero());
+        let mut secs = self.secs + (rhssecs % 86400 + 86400) as u32;
+        let mut nanos = self.frac + rhs2.num_nanoseconds().unwrap() as u32;
+
+        
+        let maxnanos = if self.frac >= 1_000_000_000 {2_000_000_000} else {1_000_000_000};
+
+        if nanos >= maxnanos {
+            nanos -= maxnanos;
+            secs += 1;
+        }
+        NaiveTime { secs: secs % 86400, frac: nanos }
     }
 }
-
-impl AddAssign<OldDuration> for NaiveTime {
-    #[inline]
-    fn add_assign(&mut self, rhs: OldDuration) {
-        *self = self.add(rhs);
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-impl Sub<OldDuration> for NaiveTime {
-    type Output = NaiveTime;
-
-    #[inline]
-    fn sub(self, rhs: OldDuration) -> NaiveTime {
-        self.overflowing_sub_signed(rhs).0
-    }
-}
-
-impl SubAssign<OldDuration> for NaiveTime {
-    #[inline]
-    fn sub_assign(&mut self, rhs: OldDuration) {
-        *self = self.sub(rhs);
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 impl Sub<NaiveTime> for NaiveTime {
-    type Output = OldDuration;
+    type Output = Duration;
 
-    #[inline]
-    fn sub(self, rhs: NaiveTime) -> OldDuration {
-        self.signed_duration_since(rhs)
+    fn sub(self, rhs: NaiveTime) -> Duration {
+        
+        let secs = self.secs as i64 - rhs.secs as i64 - 1;
+
+        
+        let maxnanos = if rhs.frac >= 1_000_000_000 {2_000_000_000} else {1_000_000_000};
+        let nanos1 = maxnanos - rhs.frac;
+
+        
+        let lastfrac = if self.frac >= 1_000_000_000 {1_000_000_000} else {0};
+        let nanos2 = self.frac - lastfrac;
+
+        Duration::seconds(secs) + Duration::nanoseconds(nanos1 as i64 + nanos2 as i64)
     }
 }
 
+impl Sub<Duration> for NaiveTime {
+    type Output = NaiveTime;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    #[inline]
+    fn sub(self, rhs: Duration) -> NaiveTime { self.add(-rhs) }
+}
 
 impl fmt::Debug for NaiveTime {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -1243,56 +736,9 @@ impl fmt::Debug for NaiveTime {
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 impl fmt::Display for NaiveTime {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { fmt::Debug::fmt(self, f) }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 impl str::FromStr for NaiveTime {
     type Err = ParseError;
@@ -1313,167 +759,201 @@ impl str::FromStr for NaiveTime {
     }
 }
 
-#[cfg(all(test, any(feature = "rustc-serialize", feature = "serde")))]
-fn test_encodable_json<F, E>(to_string: F)
-    where F: Fn(&NaiveTime) -> Result<String, E>, E: ::std::fmt::Debug
-{
-    assert_eq!(to_string(&NaiveTime::from_hms(0, 0, 0)).ok(),
-               Some(r#""00:00:00""#.into()));
-    assert_eq!(to_string(&NaiveTime::from_hms_milli(0, 0, 0, 950)).ok(),
-               Some(r#""00:00:00.950""#.into()));
-    assert_eq!(to_string(&NaiveTime::from_hms_milli(0, 0, 59, 1_000)).ok(),
-               Some(r#""00:00:60""#.into()));
-    assert_eq!(to_string(&NaiveTime::from_hms(0, 1, 2)).ok(),
-               Some(r#""00:01:02""#.into()));
-    assert_eq!(to_string(&NaiveTime::from_hms_nano(3, 5, 7, 98765432)).ok(),
-               Some(r#""03:05:07.098765432""#.into()));
-    assert_eq!(to_string(&NaiveTime::from_hms(7, 8, 9)).ok(),
-               Some(r#""07:08:09""#.into()));
-    assert_eq!(to_string(&NaiveTime::from_hms_micro(12, 34, 56, 789)).ok(),
-               Some(r#""12:34:56.000789""#.into()));
-    assert_eq!(to_string(&NaiveTime::from_hms_nano(23, 59, 59, 1_999_999_999)).ok(),
-               Some(r#""23:59:60.999999999""#.into()));
-}
-
-#[cfg(all(test, any(feature = "rustc-serialize", feature = "serde")))]
-fn test_decodable_json<F, E>(from_str: F)
-    where F: Fn(&str) -> Result<NaiveTime, E>, E: ::std::fmt::Debug
-{
-    assert_eq!(from_str(r#""00:00:00""#).ok(),
-               Some(NaiveTime::from_hms(0, 0, 0)));
-    assert_eq!(from_str(r#""0:0:0""#).ok(),
-               Some(NaiveTime::from_hms(0, 0, 0)));
-    assert_eq!(from_str(r#""00:00:00.950""#).ok(),
-               Some(NaiveTime::from_hms_milli(0, 0, 0, 950)));
-    assert_eq!(from_str(r#""0:0:0.95""#).ok(),
-               Some(NaiveTime::from_hms_milli(0, 0, 0, 950)));
-    assert_eq!(from_str(r#""00:00:60""#).ok(),
-               Some(NaiveTime::from_hms_milli(0, 0, 59, 1_000)));
-    assert_eq!(from_str(r#""00:01:02""#).ok(),
-               Some(NaiveTime::from_hms(0, 1, 2)));
-    assert_eq!(from_str(r#""03:05:07.098765432""#).ok(),
-               Some(NaiveTime::from_hms_nano(3, 5, 7, 98765432)));
-    assert_eq!(from_str(r#""07:08:09""#).ok(),
-               Some(NaiveTime::from_hms(7, 8, 9)));
-    assert_eq!(from_str(r#""12:34:56.000789""#).ok(),
-               Some(NaiveTime::from_hms_micro(12, 34, 56, 789)));
-    assert_eq!(from_str(r#""23:59:60.999999999""#).ok(),
-               Some(NaiveTime::from_hms_nano(23, 59, 59, 1_999_999_999)));
-    assert_eq!(from_str(r#""23:59:60.9999999999997""#).ok(), // excess digits are ignored
-               Some(NaiveTime::from_hms_nano(23, 59, 59, 1_999_999_999)));
-
-    
-    assert!(from_str(r#""""#).is_err());
-    assert!(from_str(r#""000000""#).is_err());
-    assert!(from_str(r#""00:00:61""#).is_err());
-    assert!(from_str(r#""00:60:00""#).is_err());
-    assert!(from_str(r#""24:00:00""#).is_err());
-    assert!(from_str(r#""23:59:59,1""#).is_err());
-    assert!(from_str(r#""012:34:56""#).is_err());
-    assert!(from_str(r#""hh:mm:ss""#).is_err());
-    assert!(from_str(r#"0"#).is_err());
-    assert!(from_str(r#"86399"#).is_err());
-    assert!(from_str(r#"{}"#).is_err());
-    
-    assert!(from_str(r#"{"secs":0,"frac":0}"#).is_err());
-    assert!(from_str(r#"null"#).is_err());
-}
-
 #[cfg(feature = "rustc-serialize")]
 mod rustc_serialize {
     use super::NaiveTime;
     use rustc_serialize::{Encodable, Encoder, Decodable, Decoder};
 
+    
+    
+    
+    
+
     impl Encodable for NaiveTime {
         fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
-            format!("{:?}", self).encode(s)
+            let (secs, frac) = self.to_serialized();
+            s.emit_struct("NaiveTime", 2, |s| {
+                try!(s.emit_struct_field("secs", 0, |s| secs.encode(s)));
+                try!(s.emit_struct_field("frac", 1, |s| frac.encode(s)));
+                Ok(())
+            })
         }
     }
 
     impl Decodable for NaiveTime {
         fn decode<D: Decoder>(d: &mut D) -> Result<NaiveTime, D::Error> {
-            d.read_str()?.parse().map_err(|_| d.error("invalid time"))
+            d.read_struct("NaiveTime", 2, |d| {
+                let secs = try!(d.read_struct_field("secs", 0, Decodable::decode));
+                let frac = try!(d.read_struct_field("frac", 1, Decodable::decode));
+                NaiveTime::from_serialized(secs, frac).ok_or_else(|| d.error("invalid time"))
+            })
         }
     }
 
-    #[cfg(test)] use rustc_serialize::json;
-
     #[test]
     fn test_encodable() {
-        super::test_encodable_json(json::encode);
+        use rustc_serialize::json::encode;
+
+        assert_eq!(encode(&NaiveTime::from_hms(0, 0, 0)).ok(),
+                   Some(r#"{"secs":0,"frac":0}"#.into()));
+        assert_eq!(encode(&NaiveTime::from_hms_milli(0, 0, 0, 950)).ok(),
+                   Some(r#"{"secs":0,"frac":950000000}"#.into()));
+        assert_eq!(encode(&NaiveTime::from_hms_milli(0, 0, 59, 1_000)).ok(),
+                   Some(r#"{"secs":59,"frac":1000000000}"#.into()));
+        assert_eq!(encode(&NaiveTime::from_hms(0, 1, 2)).ok(),
+                   Some(r#"{"secs":62,"frac":0}"#.into()));
+        assert_eq!(encode(&NaiveTime::from_hms(7, 8, 9)).ok(),
+                   Some(r#"{"secs":25689,"frac":0}"#.into()));
+        assert_eq!(encode(&NaiveTime::from_hms_micro(12, 34, 56, 789)).ok(),
+                   Some(r#"{"secs":45296,"frac":789000}"#.into()));
+        assert_eq!(encode(&NaiveTime::from_hms_nano(23, 59, 59, 1_999_999_999)).ok(),
+                   Some(r#"{"secs":86399,"frac":1999999999}"#.into()));
     }
 
     #[test]
     fn test_decodable() {
-        super::test_decodable_json(json::decode);
+        use rustc_serialize::json;
+
+        let decode = |s: &str| json::decode::<NaiveTime>(s);
+
+        assert_eq!(decode(r#"{"secs":0,"frac":0}"#).ok(),
+                   Some(NaiveTime::from_hms(0, 0, 0)));
+        assert_eq!(decode(r#"{"frac":950000000,"secs":0}"#).ok(),
+                   Some(NaiveTime::from_hms_milli(0, 0, 0, 950)));
+        assert_eq!(decode(r#"{"secs":59,"frac":1000000000}"#).ok(),
+                   Some(NaiveTime::from_hms_milli(0, 0, 59, 1_000)));
+        assert_eq!(decode(r#"{"frac": 0,
+                              "secs": 62}"#).ok(),
+                   Some(NaiveTime::from_hms(0, 1, 2)));
+        assert_eq!(decode(r#"{"secs":25689,"frac":0}"#).ok(),
+                   Some(NaiveTime::from_hms(7, 8, 9)));
+        assert_eq!(decode(r#"{"secs":45296,"frac":789000}"#).ok(),
+                   Some(NaiveTime::from_hms_micro(12, 34, 56, 789)));
+        assert_eq!(decode(r#"{"secs":86399,"frac":1999999999}"#).ok(),
+                   Some(NaiveTime::from_hms_nano(23, 59, 59, 1_999_999_999)));
+
+        
+        assert!(decode(r#"{"secs":0,"frac":-1}"#).is_err());
+        assert!(decode(r#"{"secs":-1,"frac":0}"#).is_err());
+        assert!(decode(r#"{"secs":86400,"frac":0}"#).is_err());
+        assert!(decode(r#"{"secs":0,"frac":2000000000}"#).is_err());
+        assert!(decode(r#"{"secs":0}"#).is_err());
+        assert!(decode(r#"{"frac":0}"#).is_err());
+        assert!(decode(r#"{"secs":0.3,"frac":0}"#).is_err());
+        assert!(decode(r#"{"secs":0,"frac":0.4}"#).is_err());
+        assert!(decode(r#"{}"#).is_err());
+        assert!(decode(r#"0"#).is_err());
+        assert!(decode(r#"86399"#).is_err());
+        assert!(decode(r#""string""#).is_err());
+        assert!(decode(r#""12:34:56""#).is_err()); 
+        assert!(decode(r#""12:34:56.789""#).is_err()); 
+        assert!(decode(r#"null"#).is_err());
     }
 }
 
 #[cfg(feature = "serde")]
 mod serde {
-    use std::fmt;
     use super::NaiveTime;
-    use serdelib::{ser, de};
+    use serde::{ser, de};
 
     
     
 
     impl ser::Serialize for NaiveTime {
-        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        fn serialize<S>(&self, serializer: &mut S) -> Result<(), S::Error>
             where S: ser::Serializer
         {
-            serializer.collect_str(&self)
+            serializer.serialize_str(&format!("{:?}", self))
         }
     }
 
     struct NaiveTimeVisitor;
 
-    impl<'de> de::Visitor<'de> for NaiveTimeVisitor {
+    impl de::Visitor for NaiveTimeVisitor {
         type Value = NaiveTime;
 
-        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result 
-        {
-            write!(formatter, "a formatted time string")
-        }
-
-        fn visit_str<E>(self, value: &str) -> Result<NaiveTime, E>
+        fn visit_str<E>(&mut self, value: &str) -> Result<NaiveTime, E>
             where E: de::Error
         {
             value.parse().map_err(|err| E::custom(format!("{}", err)))
         }
     }
 
-    impl<'de> de::Deserialize<'de> for NaiveTime {
-        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-            where D: de::Deserializer<'de>
+    impl de::Deserialize for NaiveTime {
+        fn deserialize<D>(deserializer: &mut D) -> Result<Self, D::Error>
+            where D: de::Deserializer
         {
-            deserializer.deserialize_str(NaiveTimeVisitor)
+            deserializer.deserialize(NaiveTimeVisitor)
         }
     }
 
     #[cfg(test)] extern crate serde_json;
-    #[cfg(test)] extern crate bincode;
 
     #[test]
     fn test_serde_serialize() {
-        super::test_encodable_json(self::serde_json::to_string);
+        use self::serde_json::to_string;
+
+        assert_eq!(to_string(&NaiveTime::from_hms(0, 0, 0)).ok(),
+                   Some(r#""00:00:00""#.into()));
+        assert_eq!(to_string(&NaiveTime::from_hms_milli(0, 0, 0, 950)).ok(),
+                   Some(r#""00:00:00.950""#.into()));
+        assert_eq!(to_string(&NaiveTime::from_hms_milli(0, 0, 59, 1_000)).ok(),
+                   Some(r#""00:00:60""#.into()));
+        assert_eq!(to_string(&NaiveTime::from_hms(0, 1, 2)).ok(),
+                   Some(r#""00:01:02""#.into()));
+        assert_eq!(to_string(&NaiveTime::from_hms_nano(3, 5, 7, 98765432)).ok(),
+                   Some(r#""03:05:07.098765432""#.into()));
+        assert_eq!(to_string(&NaiveTime::from_hms(7, 8, 9)).ok(),
+                   Some(r#""07:08:09""#.into()));
+        assert_eq!(to_string(&NaiveTime::from_hms_micro(12, 34, 56, 789)).ok(),
+                   Some(r#""12:34:56.000789""#.into()));
+        assert_eq!(to_string(&NaiveTime::from_hms_nano(23, 59, 59, 1_999_999_999)).ok(),
+                   Some(r#""23:59:60.999999999""#.into()));
     }
 
     #[test]
     fn test_serde_deserialize() {
-        super::test_decodable_json(|input| self::serde_json::from_str(&input));
-    }
+        use self::serde_json::from_str;
 
-    #[test]
-    fn test_serde_bincode() {
-        
-        
-        use self::bincode::{Infinite, serialize, deserialize};
+        let from_str = |s: &str| serde_json::from_str::<NaiveTime>(s);
 
-        let t = NaiveTime::from_hms_nano(3, 5, 7, 98765432);
-        let encoded = serialize(&t, Infinite).unwrap();
-        let decoded: NaiveTime = deserialize(&encoded).unwrap();
-        assert_eq!(t, decoded);
+        assert_eq!(from_str(r#""00:00:00""#).ok(),
+                   Some(NaiveTime::from_hms(0, 0, 0)));
+        assert_eq!(from_str(r#""0:0:0""#).ok(),
+                   Some(NaiveTime::from_hms(0, 0, 0)));
+        assert_eq!(from_str(r#""00:00:00.950""#).ok(),
+                   Some(NaiveTime::from_hms_milli(0, 0, 0, 950)));
+        assert_eq!(from_str(r#""0:0:0.95""#).ok(),
+                   Some(NaiveTime::from_hms_milli(0, 0, 0, 950)));
+        assert_eq!(from_str(r#""00:00:60""#).ok(),
+                   Some(NaiveTime::from_hms_milli(0, 0, 59, 1_000)));
+        assert_eq!(from_str(r#""00:01:02""#).ok(),
+                   Some(NaiveTime::from_hms(0, 1, 2)));
+        assert_eq!(from_str(r#""03:05:07.098765432""#).ok(),
+                   Some(NaiveTime::from_hms_nano(3, 5, 7, 98765432)));
+        assert_eq!(from_str(r#""07:08:09""#).ok(),
+                   Some(NaiveTime::from_hms(7, 8, 9)));
+        assert_eq!(from_str(r#""12:34:56.000789""#).ok(),
+                   Some(NaiveTime::from_hms_micro(12, 34, 56, 789)));
+        assert_eq!(from_str(r#""23:59:60.999999999""#).ok(),
+                   Some(NaiveTime::from_hms_nano(23, 59, 59, 1_999_999_999)));
+        assert_eq!(from_str(r#""23:59:60.9999999999997""#).ok(), // excess digits are ignored
+                   Some(NaiveTime::from_hms_nano(23, 59, 59, 1_999_999_999)));
+
+        
+        assert!(from_str(r#""""#).is_err());
+        assert!(from_str(r#""000000""#).is_err());
+        assert!(from_str(r#""00:00:61""#).is_err());
+        assert!(from_str(r#""00:60:00""#).is_err());
+        assert!(from_str(r#""24:00:00""#).is_err());
+        assert!(from_str(r#""23:59:59,1""#).is_err());
+        assert!(from_str(r#""012:34:56""#).is_err());
+        assert!(from_str(r#""hh:mm:ss""#).is_err());
+        assert!(from_str(r#"0"#).is_err());
+        assert!(from_str(r#"86399"#).is_err());
+        assert!(from_str(r#"{}"#).is_err());
+        assert!(from_str(r#"{"secs":0,"frac":0}"#).is_err()); 
+        assert!(from_str(r#"null"#).is_err());
     }
 }
 
@@ -1481,8 +961,8 @@ mod serde {
 mod tests {
     use super::NaiveTime;
     use Timelike;
+    use duration::Duration;
     use std::u32;
-    use oldtime::Duration;
 
     #[test]
     fn test_time_from_hms_milli() {
@@ -1541,95 +1021,46 @@ mod tests {
 
     #[test]
     fn test_time_add() {
-        macro_rules! check {
-            ($lhs:expr, $rhs:expr, $sum:expr) => ({
-                assert_eq!($lhs + $rhs, $sum);
-                //assert_eq!($rhs + $lhs, $sum);
-            })
+        fn check(lhs: NaiveTime, rhs: Duration, sum: NaiveTime) {
+            assert_eq!(lhs + rhs, sum);
+            
         }
 
         let hmsm = |h,m,s,mi| NaiveTime::from_hms_milli(h, m, s, mi);
 
-        check!(hmsm(3, 5, 7, 900), Duration::zero(), hmsm(3, 5, 7, 900));
-        check!(hmsm(3, 5, 7, 900), Duration::milliseconds(100), hmsm(3, 5, 8, 0));
-        check!(hmsm(3, 5, 7, 1_300), Duration::milliseconds(-1800), hmsm(3, 5, 6, 500));
-        check!(hmsm(3, 5, 7, 1_300), Duration::milliseconds(-800), hmsm(3, 5, 7, 500));
-        check!(hmsm(3, 5, 7, 1_300), Duration::milliseconds(-100), hmsm(3, 5, 7, 1_200));
-        check!(hmsm(3, 5, 7, 1_300), Duration::milliseconds(100), hmsm(3, 5, 7, 1_400));
-        check!(hmsm(3, 5, 7, 1_300), Duration::milliseconds(800), hmsm(3, 5, 8, 100));
-        check!(hmsm(3, 5, 7, 1_300), Duration::milliseconds(1800), hmsm(3, 5, 9, 100));
-        check!(hmsm(3, 5, 7, 900), Duration::seconds(86399), hmsm(3, 5, 6, 900)); 
-        check!(hmsm(3, 5, 7, 900), Duration::seconds(-86399), hmsm(3, 5, 8, 900));
-        check!(hmsm(3, 5, 7, 900), Duration::days(12345), hmsm(3, 5, 7, 900));
-        check!(hmsm(3, 5, 7, 1_300), Duration::days(1), hmsm(3, 5, 7, 300));
-        check!(hmsm(3, 5, 7, 1_300), Duration::days(-1), hmsm(3, 5, 8, 300));
+        check(hmsm(3, 5, 7, 900), Duration::zero(), hmsm(3, 5, 7, 900));
+        check(hmsm(3, 5, 7, 900), Duration::milliseconds(100), hmsm(3, 5, 8, 0));
+        check(hmsm(3, 5, 7, 1_300), Duration::milliseconds(800), hmsm(3, 5, 8, 100));
+        check(hmsm(3, 5, 7, 900), Duration::seconds(86399), hmsm(3, 5, 6, 900)); 
+        check(hmsm(3, 5, 7, 900), Duration::seconds(-86399), hmsm(3, 5, 8, 900));
+        check(hmsm(3, 5, 7, 900), Duration::days(12345), hmsm(3, 5, 7, 900));
 
         
-        check!(hmsm(0, 0, 0, 0), Duration::milliseconds(-990), hmsm(23, 59, 59, 10));
-        check!(hmsm(0, 0, 0, 0), Duration::milliseconds(-9990), hmsm(23, 59, 50, 10));
-    }
-
-    #[test]
-    fn test_time_overflowing_add() {
-        let hmsm = NaiveTime::from_hms_milli;
-
-        assert_eq!(hmsm(3, 4, 5, 678).overflowing_add_signed(Duration::hours(11)),
-                   (hmsm(14, 4, 5, 678), 0));
-        assert_eq!(hmsm(3, 4, 5, 678).overflowing_add_signed(Duration::hours(23)),
-                   (hmsm(2, 4, 5, 678), 86_400));
-        assert_eq!(hmsm(3, 4, 5, 678).overflowing_add_signed(Duration::hours(-7)),
-                   (hmsm(20, 4, 5, 678), -86_400));
-
-        
-        assert_eq!(hmsm(3, 4, 5, 1_678).overflowing_add_signed(Duration::days(1)),
-                   (hmsm(3, 4, 5, 678), 86_400));
-        assert_eq!(hmsm(3, 4, 5, 1_678).overflowing_add_signed(Duration::days(-1)),
-                   (hmsm(3, 4, 6, 678), -86_400));
-    }
-
-    #[test]
-    fn test_time_addassignment() {
-        let hms = NaiveTime::from_hms;
-        let mut time = hms(12, 12, 12);
-        time += Duration::hours(10);
-        assert_eq!(time, hms(22, 12, 12));
-        time += Duration::hours(10);
-        assert_eq!(time, hms(8, 12, 12));
-    }
-
-    #[test]
-    fn test_time_subassignment() {
-        let hms = NaiveTime::from_hms;
-        let mut time = hms(12, 12, 12);
-        time -= Duration::hours(10);
-        assert_eq!(time, hms(2, 12, 12));
-        time -= Duration::hours(10);
-        assert_eq!(time, hms(16, 12, 12));
+        check(hmsm(0, 0, 0, 0), Duration::milliseconds(-990), hmsm(23, 59, 59, 10));
+        check(hmsm(0, 0, 0, 0), Duration::milliseconds(-9990), hmsm(23, 59, 50, 10));
     }
 
     #[test]
     fn test_time_sub() {
-        macro_rules! check {
-            ($lhs:expr, $rhs:expr, $diff:expr) => ({
-                // `time1 - time2 = duration` is equivalent to `time2 - time1 = -duration`
-                assert_eq!($lhs.signed_duration_since($rhs), $diff);
-                assert_eq!($rhs.signed_duration_since($lhs), -$diff);
-            })
+        fn check(lhs: NaiveTime, rhs: NaiveTime, diff: Duration) {
+            
+            assert_eq!(lhs - rhs, diff);
+            assert_eq!(rhs - lhs, -diff);
         }
 
         let hmsm = |h,m,s,mi| NaiveTime::from_hms_milli(h, m, s, mi);
 
-        check!(hmsm(3, 5, 7, 900), hmsm(3, 5, 7, 900), Duration::zero());
-        check!(hmsm(3, 5, 7, 900), hmsm(3, 5, 7, 600), Duration::milliseconds(300));
-        check!(hmsm(3, 5, 7, 200), hmsm(2, 4, 6, 200), Duration::seconds(3600 + 60 + 1));
-        check!(hmsm(3, 5, 7, 200), hmsm(2, 4, 6, 300),
-               Duration::seconds(3600 + 60) + Duration::milliseconds(900));
+        check(hmsm(3, 5, 7, 900), hmsm(3, 5, 7, 900), Duration::zero());
+        check(hmsm(3, 5, 7, 900), hmsm(3, 5, 7, 600), Duration::milliseconds(300));
+        check(hmsm(3, 5, 7, 200), hmsm(2, 4, 6, 200), Duration::seconds(3600 + 60 + 1));
+        check(hmsm(3, 5, 7, 200), hmsm(2, 4, 6, 300),
+                   Duration::seconds(3600 + 60) + Duration::milliseconds(900));
 
         
         
-        check!(hmsm(3, 5, 7, 200), hmsm(3, 5, 6, 1_800), Duration::milliseconds(400));
-        check!(hmsm(3, 5, 7, 1_200), hmsm(3, 5, 6, 1_800), Duration::milliseconds(1400));
-        check!(hmsm(3, 5, 7, 1_200), hmsm(3, 5, 6, 800), Duration::milliseconds(1400));
+        check(hmsm(3, 5, 7, 200), hmsm(3, 5, 6, 1_800), Duration::milliseconds(400));
+        check(hmsm(3, 5, 7, 1_200), hmsm(3, 5, 6, 1_800), Duration::milliseconds(400));
+        check(hmsm(3, 5, 7, 1_200), hmsm(3, 5, 6, 800), Duration::milliseconds(400));
 
         
         

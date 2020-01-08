@@ -28,7 +28,7 @@ impl System {
 pub const DEFAULT_VERSION: u8 = 46;
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct ZipFileData
 {
     
@@ -66,20 +66,9 @@ impl ZipFileData {
         let no_null_filename = match self.file_name.find('\0') {
             Some(index) => &self.file_name[0..index],
             None => &self.file_name,
-        }.to_string();
-
-        
-        
-        
-        let separator = ::std::path::MAIN_SEPARATOR;
-        let opposite_separator = match separator {
-            '/' => '\\',
-            '\\' | _ => '/',
         };
-        let filename =
-            no_null_filename.replace(&opposite_separator.to_string(), &separator.to_string());
 
-        ::std::path::Path::new(&filename)
+        ::std::path::Path::new(no_null_filename)
             .components()
             .filter(|component| match *component {
                 ::std::path::Component::Normal(..) => true,

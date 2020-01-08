@@ -5,6 +5,7 @@
 
 
 
+
 use Weekday;
 use super::{ParseResult, TOO_SHORT, INVALID, OUT_OF_RANGE};
 
@@ -36,8 +37,7 @@ pub fn number(s: &str, min: usize, max: usize) -> ParseResult<(&str, i64)> {
     if window.len() > max { window = &window[..max]; }
 
     
-    let upto = window.iter().position(|&c| c < b'0' || b'9' < c)
-        .unwrap_or_else(|| window.len());
+    let upto = window.iter().position(|&c| c < b'0' || b'9' < c).unwrap_or(window.len());
     if upto < min {
         return Err(if window.is_empty() {TOO_SHORT} else {INVALID});
     }
@@ -62,20 +62,6 @@ pub fn nanosecond(s: &str) -> ParseResult<(&str, i64)> {
 
     
     let s = s.trim_left_matches(|c: char| '0' <= c && c <= '9');
-
-    Ok((s, v))
-}
-
-
-
-pub fn nanosecond_fixed(s: &str, digits: usize) -> ParseResult<(&str, i64)> {
-    
-    let (s, v) = try!(number(s, digits, digits));
-
-    
-    static SCALE: [i64; 10] = [0, 100_000_000, 10_000_000, 1_000_000, 100_000, 10_000,
-                               1_000, 100, 10, 1];
-    let v = try!(v.checked_mul(SCALE[digits]).ok_or(OUT_OF_RANGE));
 
     Ok((s, v))
 }
@@ -185,15 +171,8 @@ pub fn colon_or_space(s: &str) -> ParseResult<&str> {
 
 
 
-pub fn timezone_offset<F>(s: &str, consume_colon: F) -> ParseResult<(&str, i32)>
+pub fn timezone_offset<F>(mut s: &str, mut colon: F) -> ParseResult<(&str, i32)>
         where F: FnMut(&str) -> ParseResult<&str> {
-    timezone_offset_internal(s, consume_colon, false)
-}
-
-fn timezone_offset_internal<F>(mut s: &str, mut consume_colon: F, allow_missing_minutes: bool)
--> ParseResult<(&str, i32)>
-    where F: FnMut(&str) -> ParseResult<&str>
-{
     fn digits(s: &str) -> ParseResult<(u8, u8)> {
         let b = s.as_bytes();
         if b.len() < 2 {
@@ -212,42 +191,29 @@ fn timezone_offset_internal<F>(mut s: &str, mut consume_colon: F, allow_missing_
 
     
     let hours = match try!(digits(s)) {
-        (h1 @ b'0'...b'9', h2 @ b'0'...b'9') => i32::from((h1 - b'0') * 10 + (h2 - b'0')),
+        (h1 @ b'0'...b'9', h2 @ b'0'...b'9') => ((h1 - b'0') * 10 + (h2 - b'0')) as i32,
         _ => return Err(INVALID),
     };
     s = &s[2..];
 
     
-    s = try!(consume_colon(s));
+    s = try!(colon(s));
 
     
-    
-    let minutes = if let Ok(ds) = digits(s) {
-        match ds {
-            (m1 @ b'0'...b'5', m2 @ b'0'...b'9') => i32::from((m1 - b'0') * 10 + (m2 - b'0')),
-            (b'6'...b'9', b'0'...b'9') => return Err(OUT_OF_RANGE),
-            _ => return Err(INVALID),
-        }
-    } else if allow_missing_minutes {
-        0
-    } else {
-        return Err(TOO_SHORT);
+    let minutes = match try!(digits(s)) {
+        (m1 @ b'0'...b'5', m2 @ b'0'...b'9') => ((m1 - b'0') * 10 + (m2 - b'0')) as i32,
+        (b'6'...b'9', b'0'...b'9') => return Err(OUT_OF_RANGE),
+        _ => return Err(INVALID),
     };
-    s = match s.len() {
-        len if len >= 2 => &s[2..],
-        len if len == 0 => s,
-        _ => return Err(TOO_SHORT),
-    };
+    s = &s[2..];
 
     let seconds = hours * 3600 + minutes * 60;
     Ok((s, if negative {-seconds} else {seconds}))
 }
 
 
-pub fn timezone_offset_zulu<F>(s: &str, colon: F)
--> ParseResult<(&str, i32)>
-    where F: FnMut(&str) -> ParseResult<&str>
-{
+pub fn timezone_offset_zulu<F>(s: &str, colon: F) -> ParseResult<(&str, i32)>
+        where F: FnMut(&str) -> ParseResult<&str> {
     match s.as_bytes().first() {
         Some(&b'z') | Some(&b'Z') => Ok((&s[1..], 0)),
         _ => timezone_offset(s, colon),
@@ -256,45 +222,37 @@ pub fn timezone_offset_zulu<F>(s: &str, colon: F)
 
 
 
-pub fn timezone_offset_permissive<F>(s: &str, colon: F)
--> ParseResult<(&str, i32)>
-    where F: FnMut(&str) -> ParseResult<&str>
-{
-    match s.as_bytes().first() {
-        Some(&b'z') | Some(&b'Z') => Ok((&s[1..], 0)),
-        _ => timezone_offset_internal(s, colon, true),
-    }
-}
-
-
-
 pub fn timezone_offset_2822(s: &str) -> ParseResult<(&str, Option<i32>)> {
     
     let upto = s.as_bytes().iter().position(|&c| match c { b'a'...b'z' | b'A'...b'Z' => false,
-                                                           _ => true })
-        .unwrap_or_else(|| s.len());
+                                                           _ => true }).unwrap_or(s.len());
     if upto > 0 {
         let name = &s[..upto];
         let s = &s[upto..];
-        let offset_hours = |o| Ok((s, Some(o * 3600)));
         if equals(name, "gmt") || equals(name, "ut") {
-            offset_hours(0)
+            Ok((s, Some(0)))
+        } else if equals(name, "est") {
+            Ok((s, Some(-5 * 3600)))
         } else if equals(name, "edt") {
-            offset_hours(-4)
-        } else if equals(name, "est") || equals(name, "cdt") {
-            offset_hours(-5)
-        } else if equals(name, "cst") || equals(name, "mdt") {
-            offset_hours(-6)
-        } else if equals(name, "mst") || equals(name, "pdt") {
-            offset_hours(-7)
+            Ok((s, Some(-4 * 3600)))
+        } else if equals(name, "cst") {
+            Ok((s, Some(-6 * 3600)))
+        } else if equals(name, "cdt") {
+            Ok((s, Some(-5 * 3600)))
+        } else if equals(name, "mst") {
+            Ok((s, Some(-7 * 3600)))
+        } else if equals(name, "mdt") {
+            Ok((s, Some(-6 * 3600)))
         } else if equals(name, "pst") {
-            offset_hours(-8)
+            Ok((s, Some(-8 * 3600)))
+        } else if equals(name, "pdt") {
+            Ok((s, Some(-7 * 3600)))
         } else {
             Ok((s, None)) 
         }
     } else {
         let (s_, offset) = try!(timezone_offset(s, |s| Ok(s)));
-        if offset == 0 && s.starts_with('-') { 
+        if offset == 0 && s.starts_with("-") { 
             Ok((s_, None))
         } else {
             Ok((s_, Some(offset)))

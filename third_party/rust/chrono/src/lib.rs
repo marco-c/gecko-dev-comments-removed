@@ -320,126 +320,29 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#![doc(html_root_url = "https://docs.rs/chrono/latest/")]
+#![doc(html_root_url = "https://lifthrasiir.github.io/rust-chrono/")]
 
 #![cfg_attr(bench, feature(test))] 
 #![deny(missing_docs)]
-#![deny(missing_debug_implementations)]
 
-
-
-
-
-
-
-
-
-
-
-#![cfg_attr(feature = "cargo-clippy", allow(
-    const_static_lifetime,
-    redundant_field_names,
-    trivially_copy_pass_by_ref,
-))]
-
-#[cfg(feature="clock")]
-extern crate time as oldtime;
-extern crate num_integer;
-extern crate num_traits;
+extern crate time as stdtime;
+extern crate num;
 #[cfg(feature = "rustc-serialize")]
 extern crate rustc_serialize;
 #[cfg(feature = "serde")]
-extern crate serde as serdelib;
+extern crate serde;
 
-
-pub use oldtime::Duration;
-
-#[cfg(feature="clock")]
-#[doc(no_inline)] pub use offset::Local;
-#[doc(no_inline)] pub use offset::{TimeZone, Offset, LocalResult, Utc, FixedOffset};
-#[doc(no_inline)] pub use naive::{NaiveDate, IsoWeek, NaiveTime, NaiveDateTime};
-pub use date::{Date, MIN_DATE, MAX_DATE};
-pub use datetime::{DateTime, SecondsFormat};
-#[cfg(feature = "rustc-serialize")]
-pub use datetime::rustc_serialize::TsSeconds;
+pub use duration::Duration;
+pub use offset::{TimeZone, Offset, LocalResult};
+pub use offset::utc::UTC;
+pub use offset::fixed::FixedOffset;
+pub use offset::local::Local;
+pub use naive::date::NaiveDate;
+pub use naive::time::NaiveTime;
+pub use naive::datetime::NaiveDateTime;
+pub use date::Date;
+pub use datetime::DateTime;
 pub use format::{ParseError, ParseResult};
-pub use round::SubsecRound;
-
-
-pub mod prelude {
-    #[doc(no_inline)] pub use {Datelike, Timelike, Weekday};
-    #[doc(no_inline)] pub use {TimeZone, Offset};
-    #[cfg(feature="clock")]
-    #[doc(no_inline)] pub use Local;
-    #[doc(no_inline)] pub use {Utc, FixedOffset};
-    #[doc(no_inline)] pub use {NaiveDate, NaiveTime, NaiveDateTime};
-    #[doc(no_inline)] pub use Date;
-    #[doc(no_inline)] pub use {DateTime, SecondsFormat};
-    #[doc(no_inline)] pub use SubsecRound;
-}
 
 
 macro_rules! try_opt {
@@ -447,8 +350,13 @@ macro_rules! try_opt {
 }
 
 mod div;
-#[cfg(not(feature="clock"))]
-mod oldtime;
+pub mod duration {
+    
+    
+    
+    
+    pub use stdtime::Duration;
+}
 pub mod offset;
 pub mod naive {
     
@@ -456,59 +364,20 @@ pub mod naive {
     
     
     
-
-    mod internals;
-    mod date;
-    mod isoweek;
-    mod time;
-    mod datetime;
-
-    pub use self::date::{NaiveDate, MIN_DATE, MAX_DATE};
-    pub use self::isoweek::IsoWeek;
-    pub use self::time::NaiveTime;
-    pub use self::datetime::NaiveDateTime;
-    #[cfg(feature = "rustc-serialize")]
-    #[allow(deprecated)]
-    pub use self::datetime::rustc_serialize::TsSeconds;
-
-
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg(feature = "serde")]
-    pub mod serde {
-        pub use super::datetime::serde::*;
-    }
+    pub mod date;
+    pub mod time;
+    pub mod datetime;
 }
-mod date;
-mod datetime;
+pub mod date;
+pub mod datetime;
 pub mod format;
-mod round;
 
 
 
 
 
 
-
-
-
-#[cfg(feature = "serde")]
-pub mod serde {
-    pub use super::datetime::serde::*;
-}
-
-
-
-
-
-
-#[derive(PartialEq, Eq, Copy, Clone, Debug, Hash)]
+#[derive(PartialEq, Eq, Copy, Clone, Debug)]
 #[cfg_attr(feature = "rustc-serialize", derive(RustcEncodable, RustcDecodable))]
 pub enum Weekday {
     
@@ -640,7 +509,7 @@ impl Weekday {
 
 
 
-impl num_traits::FromPrimitive for Weekday {
+impl num::traits::FromPrimitive for Weekday {
     #[inline]
     fn from_i64(n: i64) -> Option<Weekday> {
         match n {
@@ -670,127 +539,6 @@ impl num_traits::FromPrimitive for Weekday {
     }
 }
 
-use std::fmt;
-
-
-#[derive(Clone, PartialEq)]
-pub struct ParseWeekdayError {
-    _dummy: (),
-}
-
-impl fmt::Debug for ParseWeekdayError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "ParseWeekdayError {{ .. }}")
-    }
-}
-
-
-
-#[cfg(feature = "serde")]
-mod weekday_serde {
-    use super::Weekday;
-    use std::fmt;
-    use serdelib::{ser, de};
-
-    impl ser::Serialize for Weekday {
-        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-            where S: ser::Serializer
-        {
-            serializer.serialize_str(&format!("{:?}", self))
-        }
-    }
-
-    struct WeekdayVisitor;
-
-    impl<'de> de::Visitor<'de> for WeekdayVisitor {
-        type Value = Weekday;
-
-        fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
-            write!(f, "Weekday")
-        }
-
-        fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
-            where E: de::Error
-        {
-            value.parse().map_err(|_| E::custom("short or long weekday names expected"))
-        }
-    }
-
-    impl<'de> de::Deserialize<'de> for Weekday {
-        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-            where D: de::Deserializer<'de>
-        {
-            deserializer.deserialize_str(WeekdayVisitor)
-        }
-    }
-
-    #[cfg(test)]
-    extern crate serde_json;
-
-    #[test]
-    fn test_serde_serialize() {
-        use self::serde_json::to_string;
-        use Weekday::*;
-
-        let cases: Vec<(Weekday, &str)> = vec![
-            (Mon, "\"Mon\""),
-            (Tue, "\"Tue\""),
-            (Wed, "\"Wed\""),
-            (Thu, "\"Thu\""),
-            (Fri, "\"Fri\""),
-            (Sat, "\"Sat\""),
-            (Sun, "\"Sun\""),
-        ];
-
-        for (weekday, expected_str) in cases {
-            let string = to_string(&weekday).unwrap();
-            assert_eq!(string, expected_str);
-        }
-    }
-
-    #[test]
-    fn test_serde_deserialize() {
-        use self::serde_json::from_str;
-        use Weekday::*;
-
-        let cases: Vec<(&str, Weekday)> = vec![
-            ("\"mon\"", Mon),
-            ("\"MONDAY\"", Mon),
-            ("\"MonDay\"", Mon),
-            ("\"mOn\"", Mon),
-            ("\"tue\"", Tue),
-            ("\"tuesday\"", Tue),
-            ("\"wed\"", Wed),
-            ("\"wednesday\"", Wed),
-            ("\"thu\"", Thu),
-            ("\"thursday\"", Thu),
-            ("\"fri\"", Fri),
-            ("\"friday\"", Fri),
-            ("\"sat\"", Sat),
-            ("\"saturday\"", Sat),
-            ("\"sun\"", Sun),
-            ("\"sunday\"", Sun),
-        ];
-
-        for (str, expected_weekday) in cases {
-            let weekday = from_str::<Weekday>(str).unwrap();
-            assert_eq!(weekday, expected_weekday);
-        }
-
-        let errors: Vec<&str> = vec![
-            "\"not a weekday\"",
-            "\"monDAYs\"",
-            "\"mond\"",
-            "mon",
-            "\"thur\"",
-            "\"thurs\"",
-        ];
-
-        for str in errors {
-            from_str::<Weekday>(str).unwrap_err();
-        }
-    }
-}
 
 
 pub trait Datelike: Sized {
@@ -843,7 +591,8 @@ pub trait Datelike: Sized {
     fn weekday(&self) -> Weekday;
 
     
-    fn iso_week(&self) -> IsoWeek;
+    
+    fn isoweekdate(&self) -> (i32, u32, Weekday);
 
     
     
@@ -881,15 +630,6 @@ pub trait Datelike: Sized {
     fn with_ordinal0(&self, ordinal0: u32) -> Option<Self>;
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
     fn num_days_from_ce(&self) -> i32 {
         
         let mut year = self.year() - 1;
@@ -897,7 +637,7 @@ pub trait Datelike: Sized {
         if year < 0 {
             let excess = 1 + (-year) / 400;
             year += excess * 400;
-            ndays -= excess * 146_097;
+            ndays -= excess * 146097;
         }
         let div_100 = year / 100;
         ndays += ((year * 1461) >> 2) - div_100 + (div_100 >> 2);
@@ -964,13 +704,11 @@ pub trait Timelike: Sized {
     }
 }
 
-#[cfg(test)] extern crate num_iter;
-
 #[test]
 fn test_readme_doomsday() {
-    use num_iter::range_inclusive;
+    use num::iter::range_inclusive;
 
-    for y in range_inclusive(naive::MIN_DATE.year(), naive::MAX_DATE.year()) {
+    for y in range_inclusive(naive::date::MIN.year(), naive::date::MAX.year()) {
         
         let d4 = NaiveDate::from_ymd(y, 4, 4);
         let d6 = NaiveDate::from_ymd(y, 6, 6);

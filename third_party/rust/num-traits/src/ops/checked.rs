@@ -1,8 +1,8 @@
-use core::ops::{Add, Div, Mul, Rem, Shl, Shr, Sub};
+use core::ops::{Add, Sub, Mul, Div, Shl, Shr};
 
 
 
-pub trait CheckedAdd: Sized + Add<Self, Output = Self> {
+pub trait CheckedAdd: Sized + Add<Self, Output=Self> {
     
     
     fn checked_add(&self, v: &Self) -> Option<Self>;
@@ -16,7 +16,7 @@ macro_rules! checked_impl {
                 <$t>::$method(*self, *v)
             }
         }
-    };
+    }
 }
 
 checked_impl!(CheckedAdd, checked_add, u8);
@@ -24,19 +24,15 @@ checked_impl!(CheckedAdd, checked_add, u16);
 checked_impl!(CheckedAdd, checked_add, u32);
 checked_impl!(CheckedAdd, checked_add, u64);
 checked_impl!(CheckedAdd, checked_add, usize);
-#[cfg(has_i128)]
-checked_impl!(CheckedAdd, checked_add, u128);
 
 checked_impl!(CheckedAdd, checked_add, i8);
 checked_impl!(CheckedAdd, checked_add, i16);
 checked_impl!(CheckedAdd, checked_add, i32);
 checked_impl!(CheckedAdd, checked_add, i64);
 checked_impl!(CheckedAdd, checked_add, isize);
-#[cfg(has_i128)]
-checked_impl!(CheckedAdd, checked_add, i128);
 
 
-pub trait CheckedSub: Sized + Sub<Self, Output = Self> {
+pub trait CheckedSub: Sized + Sub<Self, Output=Self> {
     
     
     fn checked_sub(&self, v: &Self) -> Option<Self>;
@@ -47,20 +43,16 @@ checked_impl!(CheckedSub, checked_sub, u16);
 checked_impl!(CheckedSub, checked_sub, u32);
 checked_impl!(CheckedSub, checked_sub, u64);
 checked_impl!(CheckedSub, checked_sub, usize);
-#[cfg(has_i128)]
-checked_impl!(CheckedSub, checked_sub, u128);
 
 checked_impl!(CheckedSub, checked_sub, i8);
 checked_impl!(CheckedSub, checked_sub, i16);
 checked_impl!(CheckedSub, checked_sub, i32);
 checked_impl!(CheckedSub, checked_sub, i64);
 checked_impl!(CheckedSub, checked_sub, isize);
-#[cfg(has_i128)]
-checked_impl!(CheckedSub, checked_sub, i128);
 
 
 
-pub trait CheckedMul: Sized + Mul<Self, Output = Self> {
+pub trait CheckedMul: Sized + Mul<Self, Output=Self> {
     
     
     fn checked_mul(&self, v: &Self) -> Option<Self>;
@@ -71,20 +63,16 @@ checked_impl!(CheckedMul, checked_mul, u16);
 checked_impl!(CheckedMul, checked_mul, u32);
 checked_impl!(CheckedMul, checked_mul, u64);
 checked_impl!(CheckedMul, checked_mul, usize);
-#[cfg(has_i128)]
-checked_impl!(CheckedMul, checked_mul, u128);
 
 checked_impl!(CheckedMul, checked_mul, i8);
 checked_impl!(CheckedMul, checked_mul, i16);
 checked_impl!(CheckedMul, checked_mul, i32);
 checked_impl!(CheckedMul, checked_mul, i64);
 checked_impl!(CheckedMul, checked_mul, isize);
-#[cfg(has_i128)]
-checked_impl!(CheckedMul, checked_mul, i128);
 
 
 
-pub trait CheckedDiv: Sized + Div<Self, Output = Self> {
+pub trait CheckedDiv: Sized + Div<Self, Output=Self> {
     
     
     fn checked_div(&self, v: &Self) -> Option<Self>;
@@ -95,108 +83,15 @@ checked_impl!(CheckedDiv, checked_div, u16);
 checked_impl!(CheckedDiv, checked_div, u32);
 checked_impl!(CheckedDiv, checked_div, u64);
 checked_impl!(CheckedDiv, checked_div, usize);
-#[cfg(has_i128)]
-checked_impl!(CheckedDiv, checked_div, u128);
 
 checked_impl!(CheckedDiv, checked_div, i8);
 checked_impl!(CheckedDiv, checked_div, i16);
 checked_impl!(CheckedDiv, checked_div, i32);
 checked_impl!(CheckedDiv, checked_div, i64);
 checked_impl!(CheckedDiv, checked_div, isize);
-#[cfg(has_i128)]
-checked_impl!(CheckedDiv, checked_div, i128);
 
 
-
-pub trait CheckedRem: Sized + Rem<Self, Output = Self> {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn checked_rem(&self, v: &Self) -> Option<Self>;
-}
-
-checked_impl!(CheckedRem, checked_rem, u8);
-checked_impl!(CheckedRem, checked_rem, u16);
-checked_impl!(CheckedRem, checked_rem, u32);
-checked_impl!(CheckedRem, checked_rem, u64);
-checked_impl!(CheckedRem, checked_rem, usize);
-#[cfg(has_i128)]
-checked_impl!(CheckedRem, checked_rem, u128);
-
-checked_impl!(CheckedRem, checked_rem, i8);
-checked_impl!(CheckedRem, checked_rem, i16);
-checked_impl!(CheckedRem, checked_rem, i32);
-checked_impl!(CheckedRem, checked_rem, i64);
-checked_impl!(CheckedRem, checked_rem, isize);
-#[cfg(has_i128)]
-checked_impl!(CheckedRem, checked_rem, i128);
-
-macro_rules! checked_impl_unary {
-    ($trait_name:ident, $method:ident, $t:ty) => {
-        impl $trait_name for $t {
-            #[inline]
-            fn $method(&self) -> Option<$t> {
-                <$t>::$method(*self)
-            }
-        }
-    };
-}
-
-
-pub trait CheckedNeg: Sized {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn checked_neg(&self) -> Option<Self>;
-}
-
-checked_impl_unary!(CheckedNeg, checked_neg, u8);
-checked_impl_unary!(CheckedNeg, checked_neg, u16);
-checked_impl_unary!(CheckedNeg, checked_neg, u32);
-checked_impl_unary!(CheckedNeg, checked_neg, u64);
-checked_impl_unary!(CheckedNeg, checked_neg, usize);
-#[cfg(has_i128)]
-checked_impl_unary!(CheckedNeg, checked_neg, u128);
-
-checked_impl_unary!(CheckedNeg, checked_neg, i8);
-checked_impl_unary!(CheckedNeg, checked_neg, i16);
-checked_impl_unary!(CheckedNeg, checked_neg, i32);
-checked_impl_unary!(CheckedNeg, checked_neg, i64);
-checked_impl_unary!(CheckedNeg, checked_neg, isize);
-#[cfg(has_i128)]
-checked_impl_unary!(CheckedNeg, checked_neg, i128);
-
-
-pub trait CheckedShl: Sized + Shl<u32, Output = Self> {
+pub trait CheckedShl: Sized + Shl<u32, Output=Self> {
     
     
     
@@ -221,7 +116,7 @@ macro_rules! checked_shift_impl {
                 <$t>::$method(*self, rhs)
             }
         }
-    };
+    }
 }
 
 checked_shift_impl!(CheckedShl, checked_shl, u8);
@@ -229,19 +124,15 @@ checked_shift_impl!(CheckedShl, checked_shl, u16);
 checked_shift_impl!(CheckedShl, checked_shl, u32);
 checked_shift_impl!(CheckedShl, checked_shl, u64);
 checked_shift_impl!(CheckedShl, checked_shl, usize);
-#[cfg(has_i128)]
-checked_shift_impl!(CheckedShl, checked_shl, u128);
 
 checked_shift_impl!(CheckedShl, checked_shl, i8);
 checked_shift_impl!(CheckedShl, checked_shl, i16);
 checked_shift_impl!(CheckedShl, checked_shl, i32);
 checked_shift_impl!(CheckedShl, checked_shl, i64);
 checked_shift_impl!(CheckedShl, checked_shl, isize);
-#[cfg(has_i128)]
-checked_shift_impl!(CheckedShl, checked_shl, i128);
 
 
-pub trait CheckedShr: Sized + Shr<u32, Output = Self> {
+pub trait CheckedShr: Sized + Shr<u32, Output=Self> {
     
     
     
@@ -263,13 +154,9 @@ checked_shift_impl!(CheckedShr, checked_shr, u16);
 checked_shift_impl!(CheckedShr, checked_shr, u32);
 checked_shift_impl!(CheckedShr, checked_shr, u64);
 checked_shift_impl!(CheckedShr, checked_shr, usize);
-#[cfg(has_i128)]
-checked_shift_impl!(CheckedShr, checked_shr, u128);
 
 checked_shift_impl!(CheckedShr, checked_shr, i8);
 checked_shift_impl!(CheckedShr, checked_shr, i16);
 checked_shift_impl!(CheckedShr, checked_shr, i32);
 checked_shift_impl!(CheckedShr, checked_shr, i64);
 checked_shift_impl!(CheckedShr, checked_shr, isize);
-#[cfg(has_i128)]
-checked_shift_impl!(CheckedShr, checked_shr, i128);

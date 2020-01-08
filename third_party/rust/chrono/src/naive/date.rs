@@ -3,19 +3,63 @@
 
 
 
-use std::{str, fmt};
-use std::ops::{Add, Sub, AddAssign, SubAssign};
-use num_traits::ToPrimitive;
-use oldtime::Duration as OldDuration;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+use std::{str, fmt, hash};
+use std::ops::{Add, Sub};
+use num::traits::ToPrimitive;
 
 use {Weekday, Datelike};
 use div::div_mod_floor;
-use naive::{NaiveTime, NaiveDateTime, IsoWeek};
+use duration::Duration;
+use naive::time::NaiveTime;
+use naive::datetime::NaiveDateTime;
 use format::{Item, Numeric, Pad};
 use format::{parse, Parsed, ParseError, ParseResult, DelayedFormat, StrftimeItems};
 
-use super::isoweek;
-use super::internals::{self, DateImpl, Of, Mdf, YearFlags};
+use self::internals::{DateImpl, Of, Mdf, YearFlags};
 
 const MAX_YEAR: i32 = internals::MAX_YEAR;
 const MIN_YEAR: i32 = internals::MIN_YEAR;
@@ -42,84 +86,29 @@ const MIN_DAYS_FROM_YEAR_0: i32 = (MIN_YEAR + 400_000) * 365 +
                                   (MIN_YEAR + 400_000) / 100 +
                                   (MIN_YEAR + 400_000) / 400 - 146097_000;
 
-#[cfg(test)] 
-const MAX_BITS: usize = 44;
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[derive(PartialEq, Eq, Hash, PartialOrd, Ord, Copy, Clone)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Copy, Clone)]
 pub struct NaiveDate {
     ymdf: DateImpl, 
 }
 
 
-pub const MIN_DATE: NaiveDate = NaiveDate { ymdf: (MIN_YEAR << 13) | (1 << 4) | 0o07  };
+pub const MIN: NaiveDate = NaiveDate { ymdf: (MIN_YEAR << 13) | (1 << 4) | 0o07  };
 
-pub const MAX_DATE: NaiveDate = NaiveDate { ymdf: (MAX_YEAR << 13) | (365 << 4) | 0o17  };
-
+pub const MAX: NaiveDate = NaiveDate { ymdf: (MAX_YEAR << 13) | (365 << 4) | 0o17  };
 
 
 #[test]
 fn test_date_bounds() {
     let calculated_min = NaiveDate::from_ymd(MIN_YEAR, 1, 1);
     let calculated_max = NaiveDate::from_ymd(MAX_YEAR, 12, 31);
-    assert!(MIN_DATE == calculated_min,
-            "`MIN_DATE` should have a year flag {:?}", calculated_min.of().flags());
-    assert!(MAX_DATE == calculated_max,
-            "`MAX_DATE` should have a year flag {:?}", calculated_max.of().flags());
-
-    
-    
-    let maxsecs = MAX_DATE.signed_duration_since(MIN_DATE).num_seconds();
-    let maxsecs = maxsecs + 86401; 
-    assert!(maxsecs < (1 << MAX_BITS),
-            "The entire `NaiveDate` range somehow exceeds 2^{} seconds", MAX_BITS);
+    assert!(MIN == calculated_min,
+            "`MIN` should have a year flag {:?}", calculated_min.of().flags());
+    assert!(MAX == calculated_max,
+            "`MAX` should have a year flag {:?}", calculated_max.of().flags());
 }
 
 impl NaiveDate {
@@ -140,6 +129,24 @@ impl NaiveDate {
 
     
     
+    #[cfg(feature = "rustc-serialize")]
+    fn from_serialized(ymdf: i32) -> Option<NaiveDate> {
+        
+        if (ymdf & 0b1111) as u8 != YearFlags::from_year(ymdf >> 13).0 { return None; }
+
+        
+        let date = NaiveDate { ymdf: ymdf };
+        if !date.of().valid() { return None; }
+
+        Some(date)
+    }
+
+    
+    #[cfg(feature = "rustc-serialize")]
+    fn to_serialized(&self) -> i32 {
+        self.ymdf
+    }
+
     
     
     
@@ -162,7 +169,6 @@ impl NaiveDate {
         NaiveDate::from_ymd_opt(year, month, day).expect("invalid or out-of-range date")
     }
 
-    
     
     
     
@@ -204,13 +210,10 @@ impl NaiveDate {
     
     
     
-    
-    
     pub fn from_yo(year: i32, ordinal: u32) -> NaiveDate {
         NaiveDate::from_yo_opt(year, ordinal).expect("invalid or out-of-range date")
     }
 
-    
     
     
     
@@ -235,8 +238,6 @@ impl NaiveDate {
         NaiveDate::from_of(year, Of::new(ordinal, flags))
     }
 
-    
-    
     
     
     
@@ -371,8 +372,6 @@ impl NaiveDate {
     
     
     
-    
-    
     #[inline]
     pub fn from_num_days_from_ce(days: i32) -> NaiveDate {
         NaiveDate::from_num_days_from_ce_opt(days).expect("out-of-range date")
@@ -396,22 +395,15 @@ impl NaiveDate {
     
     
     
-    
-    
     pub fn from_num_days_from_ce_opt(days: i32) -> Option<NaiveDate> {
         let days = days + 365; 
-        let (year_div_400, cycle) = div_mod_floor(days, 146_097);
+        let (year_div_400, cycle) = div_mod_floor(days, 146097);
         let (year_mod_400, ordinal) = internals::cycle_to_yo(cycle as u32);
         let flags = YearFlags::from_year_mod_400(year_mod_400 as i32);
         NaiveDate::from_of(year_div_400 * 400 + year_mod_400 as i32,
                            Of::new(ordinal, flags))
     }
 
-    
-    
-    
-    
-    
     
     
     
@@ -471,7 +463,7 @@ impl NaiveDate {
     
     #[inline]
     pub fn and_time(&self, time: NaiveTime) -> NaiveDateTime {
-        NaiveDateTime::new(*self, time)
+        NaiveDateTime::new(self.clone(), time)
     }
 
     
@@ -683,7 +675,7 @@ impl NaiveDate {
     
     #[inline]
     fn of(&self) -> Of {
-        Of((self.ymdf & 0b1_1111_1111_1111) as u32)
+        Of((self.ymdf & 0b1111_11111_1111) as u32)
     }
 
     
@@ -701,7 +693,7 @@ impl NaiveDate {
     fn with_of(&self, of: Of) -> Option<NaiveDate> {
         if of.valid() {
             let Of(of) = of;
-            Some(NaiveDate { ymdf: (self.ymdf & !0b1_1111_1111_1111) | of as DateImpl })
+            Some(NaiveDate { ymdf: (self.ymdf & !0b111111111_1111) | of as DateImpl })
         } else {
             None
         }
@@ -798,17 +790,12 @@ impl NaiveDate {
     
     
     
-    
-    
-    
-    
-    
-    pub fn checked_add_signed(self, rhs: OldDuration) -> Option<NaiveDate> {
+    pub fn checked_add(self, rhs: Duration) -> Option<NaiveDate> {
         let year = self.year();
         let (mut year_div_400, year_mod_400) = div_mod_floor(year, 400);
         let cycle = internals::yo_to_cycle(year_mod_400 as u32, self.of().ordinal());
         let cycle = try_opt!((cycle as i32).checked_add(try_opt!(rhs.num_days().to_i32())));
-        let (cycle_div_400y, cycle) = div_mod_floor(cycle, 146_097);
+        let (cycle_div_400y, cycle) = div_mod_floor(cycle, 146097);
         year_div_400 += cycle_div_400y;
 
         let (year_mod_400, ordinal) = internals::cycle_to_yo(cycle as u32);
@@ -834,17 +821,12 @@ impl NaiveDate {
     
     
     
-    
-    
-    
-    
-    
-    pub fn checked_sub_signed(self, rhs: OldDuration) -> Option<NaiveDate> {
+    pub fn checked_sub(self, rhs: Duration) -> Option<NaiveDate> {
         let year = self.year();
         let (mut year_div_400, year_mod_400) = div_mod_floor(year, 400);
         let cycle = internals::yo_to_cycle(year_mod_400 as u32, self.of().ordinal());
         let cycle = try_opt!((cycle as i32).checked_sub(try_opt!(rhs.num_days().to_i32())));
-        let (cycle_div_400y, cycle) = div_mod_floor(cycle, 146_097);
+        let (cycle_div_400y, cycle) = div_mod_floor(cycle, 146097);
         year_div_400 += cycle_div_400y;
 
         let (year_mod_400, ordinal) = internals::cycle_to_yo(cycle as u32);
@@ -853,52 +835,6 @@ impl NaiveDate {
                            Of::new(ordinal, flags))
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn signed_duration_since(self, rhs: NaiveDate) -> OldDuration {
-        let year1 = self.year();
-        let year2 = rhs.year();
-        let (year1_div_400, year1_mod_400) = div_mod_floor(year1, 400);
-        let (year2_div_400, year2_mod_400) = div_mod_floor(year2, 400);
-        let cycle1 = i64::from(internals::yo_to_cycle(year1_mod_400 as u32, self.of().ordinal()));
-        let cycle2 = i64::from(internals::yo_to_cycle(year2_mod_400 as u32, rhs.of().ordinal()));
-        OldDuration::days((i64::from(year1_div_400) - i64::from(year2_div_400)) * 146_097 +
-                          (cycle1 - cycle2))
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -919,18 +855,9 @@ impl NaiveDate {
     #[inline]
     pub fn format_with_items<'a, I>(&self, items: I) -> DelayedFormat<I>
             where I: Iterator<Item=Item<'a>> + Clone {
-        DelayedFormat::new(Some(*self), None, items)
+        DelayedFormat::new(Some(self.clone()), None, items)
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -1138,9 +1065,21 @@ impl Datelike for NaiveDate {
         self.of().weekday()
     }
 
-    #[inline]
-    fn iso_week(&self) -> IsoWeek {
-        isoweek::iso_week_from_yof(self.year(), self.of())
+    fn isoweekdate(&self) -> (i32, u32, Weekday) {
+        let of = self.of();
+        let year = self.year();
+        let (rawweek, weekday) = of.isoweekdate_raw();
+        if rawweek < 1 { 
+            let prevlastweek = YearFlags::from_year(year - 1).nisoweeks();
+            (year - 1, prevlastweek, weekday)
+        } else {
+            let lastweek = of.flags().nisoweeks();
+            if rawweek > lastweek { 
+                (year + 1, 1, weekday)
+            } else {
+                (year, rawweek, weekday)
+            }
+        }
     }
 
     
@@ -1303,6 +1242,12 @@ impl Datelike for NaiveDate {
 }
 
 
+impl hash::Hash for NaiveDate {
+    fn hash<H: hash::Hasher>(&self, state: &mut H) {
+        
+        self.ymdf.hash(state);
+    }
+}
 
 
 
@@ -1325,73 +1270,14 @@ impl Datelike for NaiveDate {
 
 
 
-
-
-impl Add<OldDuration> for NaiveDate {
+impl Add<Duration> for NaiveDate {
     type Output = NaiveDate;
 
     #[inline]
-    fn add(self, rhs: OldDuration) -> NaiveDate {
-        self.checked_add_signed(rhs).expect("`NaiveDate + Duration` overflowed")
+    fn add(self, rhs: Duration) -> NaiveDate {
+        self.checked_add(rhs).expect("`NaiveDate + Duration` overflowed")
     }
 }
-
-impl AddAssign<OldDuration> for NaiveDate {
-    #[inline]
-    fn add_assign(&mut self, rhs: OldDuration) {
-        *self = self.add(rhs);
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-impl Sub<OldDuration> for NaiveDate {
-    type Output = NaiveDate;
-
-    #[inline]
-    fn sub(self, rhs: OldDuration) -> NaiveDate {
-        self.checked_sub_signed(rhs).expect("`NaiveDate - Duration` overflowed")
-    }
-}
-
-impl SubAssign<OldDuration> for NaiveDate {
-    #[inline]
-    fn sub_assign(&mut self, rhs: OldDuration) {
-        *self = self.sub(rhs);
-    }
-}
-
-
-
-
-
-
-
-
 
 
 
@@ -1413,14 +1299,48 @@ impl SubAssign<OldDuration> for NaiveDate {
 
 
 impl Sub<NaiveDate> for NaiveDate {
-    type Output = OldDuration;
+    type Output = Duration;
 
-    #[inline]
-    fn sub(self, rhs: NaiveDate) -> OldDuration {
-        self.signed_duration_since(rhs)
+    fn sub(self, rhs: NaiveDate) -> Duration {
+        let year1 = self.year();
+        let year2 = rhs.year();
+        let (year1_div_400, year1_mod_400) = div_mod_floor(year1, 400);
+        let (year2_div_400, year2_mod_400) = div_mod_floor(year2, 400);
+        let cycle1 = internals::yo_to_cycle(year1_mod_400 as u32, self.of().ordinal()) as i64;
+        let cycle2 = internals::yo_to_cycle(year2_mod_400 as u32, rhs.of().ordinal()) as i64;
+        Duration::days((year1_div_400 as i64 - year2_div_400 as i64) * 146097 + (cycle1 - cycle2))
     }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+impl Sub<Duration> for NaiveDate {
+    type Output = NaiveDate;
+
+    #[inline]
+    fn sub(self, rhs: Duration) -> NaiveDate {
+        self.checked_sub(rhs).expect("`NaiveDate - Duration` overflowed")
+    }
+}
 
 
 
@@ -1477,11 +1397,9 @@ impl fmt::Debug for NaiveDate {
 
 
 
-
 impl fmt::Display for NaiveDate {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { fmt::Debug::fmt(self, f) }
 }
-
 
 
 
@@ -1517,172 +1435,183 @@ impl str::FromStr for NaiveDate {
     }
 }
 
-#[cfg(all(test, any(feature = "rustc-serialize", feature = "serde")))]
-fn test_encodable_json<F, E>(to_string: F)
-    where F: Fn(&NaiveDate) -> Result<String, E>, E: ::std::fmt::Debug
-{
-    assert_eq!(to_string(&NaiveDate::from_ymd(2014, 7, 24)).ok(),
-               Some(r#""2014-07-24""#.into()));
-    assert_eq!(to_string(&NaiveDate::from_ymd(0, 1, 1)).ok(),
-               Some(r#""0000-01-01""#.into()));
-    assert_eq!(to_string(&NaiveDate::from_ymd(-1, 12, 31)).ok(),
-               Some(r#""-0001-12-31""#.into()));
-    assert_eq!(to_string(&MIN_DATE).ok(),
-               Some(r#""-262144-01-01""#.into()));
-    assert_eq!(to_string(&MAX_DATE).ok(),
-               Some(r#""+262143-12-31""#.into()));
-}
-
-#[cfg(all(test, any(feature = "rustc-serialize", feature = "serde")))]
-fn test_decodable_json<F, E>(from_str: F)
-    where F: Fn(&str) -> Result<NaiveDate, E>, E: ::std::fmt::Debug
-{
-    use std::{i32, i64};
-
-    assert_eq!(from_str(r#""2016-07-08""#).ok(), Some(NaiveDate::from_ymd(2016, 7, 8)));
-    assert_eq!(from_str(r#""2016-7-8""#).ok(), Some(NaiveDate::from_ymd(2016, 7, 8)));
-    assert_eq!(from_str(r#""+002016-07-08""#).ok(), Some(NaiveDate::from_ymd(2016, 7, 8)));
-    assert_eq!(from_str(r#""0000-01-01""#).ok(), Some(NaiveDate::from_ymd(0, 1, 1)));
-    assert_eq!(from_str(r#""0-1-1""#).ok(), Some(NaiveDate::from_ymd(0, 1, 1)));
-    assert_eq!(from_str(r#""-0001-12-31""#).ok(), Some(NaiveDate::from_ymd(-1, 12, 31)));
-    assert_eq!(from_str(r#""-262144-01-01""#).ok(), Some(MIN_DATE));
-    assert_eq!(from_str(r#""+262143-12-31""#).ok(), Some(MAX_DATE));
-
-    
-    assert!(from_str(r#""""#).is_err());
-    assert!(from_str(r#""20001231""#).is_err());
-    assert!(from_str(r#""2000-00-00""#).is_err());
-    assert!(from_str(r#""2000-02-30""#).is_err());
-    assert!(from_str(r#""2001-02-29""#).is_err());
-    assert!(from_str(r#""2002-002-28""#).is_err());
-    assert!(from_str(r#""yyyy-mm-dd""#).is_err());
-    assert!(from_str(r#"0"#).is_err());
-    assert!(from_str(r#"20.01"#).is_err());
-    assert!(from_str(&i32::MIN.to_string()).is_err());
-    assert!(from_str(&i32::MAX.to_string()).is_err());
-    assert!(from_str(&i64::MIN.to_string()).is_err());
-    assert!(from_str(&i64::MAX.to_string()).is_err());
-    assert!(from_str(r#"{}"#).is_err());
-    
-    assert!(from_str(r#"{"ymdf":20}"#).is_err());
-    assert!(from_str(r#"null"#).is_err());
-}
-
 #[cfg(feature = "rustc-serialize")]
 mod rustc_serialize {
     use super::NaiveDate;
     use rustc_serialize::{Encodable, Encoder, Decodable, Decoder};
 
+    
+    
+    
+    
+
     impl Encodable for NaiveDate {
         fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
-            format!("{:?}", self).encode(s)
+            let ymdf = self.to_serialized();
+            s.emit_struct("NaiveDate", 1, |s| {
+                try!(s.emit_struct_field("ymdf", 0, |s| ymdf.encode(s)));
+                Ok(())
+            })
         }
     }
 
     impl Decodable for NaiveDate {
         fn decode<D: Decoder>(d: &mut D) -> Result<NaiveDate, D::Error> {
-            d.read_str()?.parse().map_err(|_| d.error("invalid date"))
+            d.read_struct("NaiveDate", 1, |d| {
+                let ymdf = try!(d.read_struct_field("ymdf", 0, Decodable::decode));
+                NaiveDate::from_serialized(ymdf).ok_or_else(|| d.error("invalid date"))
+            })
         }
     }
 
-    #[cfg(test)] use rustc_serialize::json;
-
     #[test]
     fn test_encodable() {
-        super::test_encodable_json(json::encode);
+        use rustc_serialize::json::encode;
+
+        assert_eq!(encode(&NaiveDate::from_ymd(2016, 7, 8)).ok(),
+                   Some(r#"{"ymdf":16518115}"#.into()));
+        assert_eq!(encode(&NaiveDate::from_ymd(0, 1, 1)).ok(),
+                   Some(r#"{"ymdf":20}"#.into()));
+        assert_eq!(encode(&NaiveDate::from_ymd(-1, 12, 31)).ok(),
+                   Some(r#"{"ymdf":-2341}"#.into()));
+        assert_eq!(encode(&super::MIN).ok(),
+                   Some(r#"{"ymdf":-2147483625}"#.into()));
+        assert_eq!(encode(&super::MAX).ok(),
+                   Some(r#"{"ymdf":2147481311}"#.into()));
     }
 
     #[test]
     fn test_decodable() {
-        super::test_decodable_json(json::decode);
+        use rustc_serialize::json;
+        use std::{i32, i64};
+
+        let decode = |s: &str| json::decode::<NaiveDate>(s);
+
+        assert_eq!(decode(r#"{"ymdf":16518115}"#).ok(), Some(NaiveDate::from_ymd(2016, 7, 8)));
+        assert_eq!(decode(r#"{"ymdf":20}"#).ok(), Some(NaiveDate::from_ymd(0, 1, 1)));
+        assert_eq!(decode(r#"{"ymdf":-2341}"#).ok(), Some(NaiveDate::from_ymd(-1, 12, 31)));
+        assert_eq!(decode(r#"{"ymdf":-2147483625}"#).ok(), Some(super::MIN));
+        assert_eq!(decode(r#"{"ymdf":2147481311}"#).ok(), Some(super::MAX));
+
+        
+        assert!(decode(r#"{"ymdf":0}"#).is_err());
+        assert!(decode(r#"{"ymdf":1}"#).is_err());
+        assert!(decode(r#"{"ymdf":-1}"#).is_err());
+        assert!(decode(&format!(r#"{{"ymdf":{}}}"#, i32::MIN)).is_err());
+        assert!(decode(&format!(r#"{{"ymdf":{}}}"#, i32::MAX)).is_err());
+        assert!(decode(&format!(r#"{{"ymdf":{}}}"#, i64::MIN)).is_err());
+        assert!(decode(&format!(r#"{{"ymdf":{}}}"#, i64::MAX)).is_err());
+
+        
+        assert!(decode(r#"{"ymdf":20.01}"#).is_err());
+        assert!(decode(r#"{"ymdf":"string"}"#).is_err());
+        assert!(decode(r#"{"ymdf":null}"#).is_err());
+        assert!(decode(r#"{}"#).is_err());
+        assert!(decode(r#"{"date":20}"#).is_err());
+        assert!(decode(r#"20"#).is_err());
+        assert!(decode(r#""string""#).is_err());
+        assert!(decode(r#""2016-07-08""#).is_err()); 
+        assert!(decode(r#"null"#).is_err());
     }
 }
 
 #[cfg(feature = "serde")]
 mod serde {
-    use std::fmt;
     use super::NaiveDate;
-    use serdelib::{ser, de};
+    use serde::{ser, de};
 
     
 
     impl ser::Serialize for NaiveDate {
-        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        fn serialize<S>(&self, serializer: &mut S) -> Result<(), S::Error>
             where S: ser::Serializer
         {
-            struct FormatWrapped<'a, D: 'a> {
-                inner: &'a D
-            }
-
-            impl<'a, D: fmt::Debug> fmt::Display for FormatWrapped<'a, D> {
-                fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-                    self.inner.fmt(f)
-                }
-            }
-
-            serializer.collect_str(&FormatWrapped { inner: &self })
+            serializer.serialize_str(&format!("{:?}", self))
         }
     }
 
     struct NaiveDateVisitor;
 
-    impl<'de> de::Visitor<'de> for NaiveDateVisitor {
+    impl de::Visitor for NaiveDateVisitor {
         type Value = NaiveDate;
 
-        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result 
-        {
-            write!(formatter, "a formatted date string")
-        }
-
-        fn visit_str<E>(self, value: &str) -> Result<NaiveDate, E>
+        fn visit_str<E>(&mut self, value: &str) -> Result<NaiveDate, E>
             where E: de::Error
         {
             value.parse().map_err(|err| E::custom(format!("{}", err)))
         }
     }
 
-    impl<'de> de::Deserialize<'de> for NaiveDate {
-        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-            where D: de::Deserializer<'de>
+    impl de::Deserialize for NaiveDate {
+        fn deserialize<D>(deserializer: &mut D) -> Result<Self, D::Error>
+            where D: de::Deserializer
         {
-            deserializer.deserialize_str(NaiveDateVisitor)
+            deserializer.deserialize(NaiveDateVisitor)
         }
     }
 
     #[cfg(test)] extern crate serde_json;
-    #[cfg(test)] extern crate bincode;
 
     #[test]
     fn test_serde_serialize() {
-        super::test_encodable_json(self::serde_json::to_string);
+        use self::serde_json::to_string;
+
+        assert_eq!(to_string(&NaiveDate::from_ymd(2014, 7, 24)).ok(),
+                   Some(r#""2014-07-24""#.into()));
+        assert_eq!(to_string(&NaiveDate::from_ymd(0, 1, 1)).ok(),
+                   Some(r#""0000-01-01""#.into()));
+        assert_eq!(to_string(&NaiveDate::from_ymd(-1, 12, 31)).ok(),
+                   Some(r#""-0001-12-31""#.into()));
+        assert_eq!(to_string(&super::MIN).ok(),
+                   Some(r#""-262144-01-01""#.into()));
+        assert_eq!(to_string(&super::MAX).ok(),
+                   Some(r#""+262143-12-31""#.into()));
     }
 
     #[test]
     fn test_serde_deserialize() {
-        super::test_decodable_json(|input| self::serde_json::from_str(&input));
-    }
+        use self::serde_json;
+        use std::{i32, i64};
 
-    #[test]
-    fn test_serde_bincode() {
-        
-        
-        use self::bincode::{Infinite, serialize, deserialize};
+        let from_str = |s: &str| serde_json::from_str::<NaiveDate>(s);
 
-        let d = NaiveDate::from_ymd(2014, 7, 24);
-        let encoded = serialize(&d, Infinite).unwrap();
-        let decoded: NaiveDate = deserialize(&encoded).unwrap();
-        assert_eq!(d, decoded);
+        assert_eq!(from_str(r#""2016-07-08""#).ok(), Some(NaiveDate::from_ymd(2016, 7, 8)));
+        assert_eq!(from_str(r#""2016-7-8""#).ok(), Some(NaiveDate::from_ymd(2016, 7, 8)));
+        assert_eq!(from_str(r#""+002016-07-08""#).ok(), Some(NaiveDate::from_ymd(2016, 7, 8)));
+        assert_eq!(from_str(r#""0000-01-01""#).ok(), Some(NaiveDate::from_ymd(0, 1, 1)));
+        assert_eq!(from_str(r#""0-1-1""#).ok(), Some(NaiveDate::from_ymd(0, 1, 1)));
+        assert_eq!(from_str(r#""-0001-12-31""#).ok(), Some(NaiveDate::from_ymd(-1, 12, 31)));
+        assert_eq!(from_str(r#""-262144-01-01""#).ok(), Some(super::MIN));
+        assert_eq!(from_str(r#""+262143-12-31""#).ok(), Some(super::MAX));
+
+        
+        assert!(from_str(r#""""#).is_err());
+        assert!(from_str(r#""20001231""#).is_err());
+        assert!(from_str(r#""2000-00-00""#).is_err());
+        assert!(from_str(r#""2000-02-30""#).is_err());
+        assert!(from_str(r#""2001-02-29""#).is_err());
+        assert!(from_str(r#""2002-002-28""#).is_err());
+        assert!(from_str(r#""yyyy-mm-dd""#).is_err());
+        assert!(from_str(r#"0"#).is_err());
+        assert!(from_str(r#"20.01"#).is_err());
+        assert!(from_str(&i32::MIN.to_string()).is_err());
+        assert!(from_str(&i32::MAX.to_string()).is_err());
+        assert!(from_str(&i64::MIN.to_string()).is_err());
+        assert!(from_str(&i64::MAX.to_string()).is_err());
+        assert!(from_str(r#"{}"#).is_err());
+        assert!(from_str(r#"{"ymdf":20}"#).is_err()); 
+        assert!(from_str(r#"null"#).is_err());
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::NaiveDate;
-    use super::{MIN_DATE, MIN_YEAR, MIN_DAYS_FROM_YEAR_0};
-    use super::{MAX_DATE, MAX_YEAR, MAX_DAYS_FROM_YEAR_0};
+    use super::{MIN, MIN_YEAR, MIN_DAYS_FROM_YEAR_0};
+    use super::{MAX, MAX_YEAR, MAX_DAYS_FROM_YEAR_0};
     use {Datelike, Weekday};
+    use duration::Duration;
     use std::{i32, u32};
-    use oldtime::Duration;
 
     #[test]
     fn test_date_from_ymd() {
@@ -1760,7 +1689,7 @@ mod tests {
     }
 
     #[test]
-    fn test_date_from_isoywd_and_iso_week() {
+    fn test_date_from_isoymd_and_isoweekdate() {
         for year in 2000..2401 {
             for week in 1..54 {
                 for &weekday in [Weekday::Mon, Weekday::Tue, Weekday::Wed, Weekday::Thu,
@@ -1769,9 +1698,10 @@ mod tests {
                     if d.is_some() {
                         let d = d.unwrap();
                         assert_eq!(d.weekday(), weekday);
-                        let w = d.iso_week();
-                        assert_eq!(w.year(), year);
-                        assert_eq!(w.week(), week);
+                        let (year_, week_, weekday_) = d.isoweekdate();
+                        assert_eq!(year_, year);
+                        assert_eq!(week_, week);
+                        assert_eq!(weekday_, weekday);
                     }
                 }
             }
@@ -1783,8 +1713,8 @@ mod tests {
                     let d = NaiveDate::from_ymd_opt(year, month, day);
                     if d.is_some() {
                         let d = d.unwrap();
-                        let w = d.iso_week();
-                        let d_ = NaiveDate::from_isoywd(w.year(), w.week(), d.weekday());
+                        let (year_, week_, weekday_) = d.isoweekdate();
+                        let d_ = NaiveDate::from_isoywd(year_, week_, weekday_);
                         assert_eq!(d, d_);
                     }
                 }
@@ -1817,10 +1747,10 @@ mod tests {
             assert_eq!(from_ndays_from_ce(days).map(|d| d.num_days_from_ce()), Some(days));
         }
 
-        assert_eq!(from_ndays_from_ce(MIN_DATE.num_days_from_ce()), Some(MIN_DATE));
-        assert_eq!(from_ndays_from_ce(MIN_DATE.num_days_from_ce() - 1), None);
-        assert_eq!(from_ndays_from_ce(MAX_DATE.num_days_from_ce()), Some(MAX_DATE));
-        assert_eq!(from_ndays_from_ce(MAX_DATE.num_days_from_ce() + 1), None);
+        assert_eq!(from_ndays_from_ce(MIN.num_days_from_ce()), Some(MIN));
+        assert_eq!(from_ndays_from_ce(MIN.num_days_from_ce() - 1), None);
+        assert_eq!(from_ndays_from_ce(MAX.num_days_from_ce()), Some(MAX));
+        assert_eq!(from_ndays_from_ce(MAX.num_days_from_ce() + 1), None);
     }
 
     #[test]
@@ -1926,7 +1856,7 @@ mod tests {
         assert_eq!(ymd(2014, 5, 31).succ_opt(), Some(ymd(2014, 6, 1)));
         assert_eq!(ymd(2014, 12, 31).succ_opt(), Some(ymd(2015, 1, 1)));
         assert_eq!(ymd(2016, 2, 28).succ_opt(), Some(ymd(2016, 2, 29)));
-        assert_eq!(ymd(MAX_DATE.year(), 12, 31).succ_opt(), None);
+        assert_eq!(ymd(MAX.year(), 12, 31).succ_opt(), None);
     }
 
     #[test]
@@ -1936,7 +1866,7 @@ mod tests {
         assert_eq!(ymd(2015, 1, 1).pred_opt(), Some(ymd(2014, 12, 31)));
         assert_eq!(ymd(2014, 6, 1).pred_opt(), Some(ymd(2014, 5, 31)));
         assert_eq!(ymd(2014, 5, 7).pred_opt(), Some(ymd(2014, 5, 6)));
-        assert_eq!(ymd(MIN_DATE.year(), 1, 1).pred_opt(), None);
+        assert_eq!(ymd(MIN.year(), 1, 1).pred_opt(), None);
     }
 
     #[test]
@@ -1944,8 +1874,8 @@ mod tests {
         fn check((y1,m1,d1): (i32, u32, u32), rhs: Duration, ymd: Option<(i32, u32, u32)>) {
             let lhs = NaiveDate::from_ymd(y1, m1, d1);
             let sum = ymd.map(|(y,m,d)| NaiveDate::from_ymd(y, m, d));
-            assert_eq!(lhs.checked_add_signed(rhs), sum);
-            assert_eq!(lhs.checked_sub_signed(-rhs), sum);
+            assert_eq!(lhs.checked_add(rhs), sum);
+            assert_eq!(lhs.checked_sub(-rhs), sum);
         }
 
         check((2014, 1, 1), Duration::zero(), Some((2014, 1, 1)));
@@ -1974,8 +1904,8 @@ mod tests {
         fn check((y1,m1,d1): (i32, u32, u32), (y2,m2,d2): (i32, u32, u32), diff: Duration) {
             let lhs = NaiveDate::from_ymd(y1, m1, d1);
             let rhs = NaiveDate::from_ymd(y2, m2, d2);
-            assert_eq!(lhs.signed_duration_since(rhs), diff);
-            assert_eq!(rhs.signed_duration_since(lhs), -diff);
+            assert_eq!(lhs - rhs, diff);
+            assert_eq!(rhs - lhs, -diff);
         }
 
         check((2014, 1, 1), (2014, 1, 1), Duration::zero());
@@ -1987,26 +1917,6 @@ mod tests {
 
         check((MAX_YEAR, 12, 31), (0, 1, 1), Duration::days(MAX_DAYS_FROM_YEAR_0 as i64));
         check((MIN_YEAR, 1, 1), (0, 1, 1), Duration::days(MIN_DAYS_FROM_YEAR_0 as i64));
-    }
-
-    #[test]
-    fn test_date_addassignment() {
-        let ymd = NaiveDate::from_ymd;
-        let mut date = ymd(2016, 10, 1);
-        date += Duration::days(10);
-        assert_eq!(date,  ymd(2016, 10, 11));
-        date += Duration::days(30);
-        assert_eq!(date, ymd(2016, 11, 10));
-    }
-
-    #[test]
-    fn test_date_subassignment() {
-        let ymd = NaiveDate::from_ymd;
-        let mut date = ymd(2016, 10, 11);
-        date -= Duration::days(10);
-        assert_eq!(date,  ymd(2016, 10, 1));
-        date -= Duration::days(2);
-        assert_eq!(date, ymd(2016, 9, 29));
     }
 
     #[test]
@@ -2116,6 +2026,781 @@ mod tests {
                    "2008,08,53,53,01");
         assert_eq!(NaiveDate::from_ymd(2010, 1, 3).format("%G,%g,%U,%W,%V").to_string(),
                    "2009,09,01,00,53");
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+#[allow(dead_code)] 
+mod internals {
+    use std::{i32, fmt};
+    use num::traits::FromPrimitive;
+    use Weekday;
+    use div::{div_rem, mod_floor};
+
+    
+    pub type DateImpl = i32;
+
+    pub const MAX_YEAR: DateImpl = i32::MAX >> 13;
+    pub const MIN_YEAR: DateImpl = i32::MIN >> 13;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    #[derive(PartialEq, Eq, Copy, Clone)]
+    pub struct YearFlags(pub u8);
+
+    pub const A: YearFlags = YearFlags(0o15); pub const AG: YearFlags = YearFlags(0o05);
+    pub const B: YearFlags = YearFlags(0o14); pub const BA: YearFlags = YearFlags(0o04);
+    pub const C: YearFlags = YearFlags(0o13); pub const CB: YearFlags = YearFlags(0o03);
+    pub const D: YearFlags = YearFlags(0o12); pub const DC: YearFlags = YearFlags(0o02);
+    pub const E: YearFlags = YearFlags(0o11); pub const ED: YearFlags = YearFlags(0o01);
+    pub const F: YearFlags = YearFlags(0o17); pub const FE: YearFlags = YearFlags(0o07);
+    pub const G: YearFlags = YearFlags(0o16); pub const GF: YearFlags = YearFlags(0o06);
+
+    static YEAR_TO_FLAGS: [YearFlags; 400] = [
+        BA, G, F, E, DC, B, A, G, FE, D, C, B, AG, F, E, D, CB, A, G, F,
+        ED, C, B, A, GF, E, D, C, BA, G, F, E, DC, B, A, G, FE, D, C, B,
+        AG, F, E, D, CB, A, G, F, ED, C, B, A, GF, E, D, C, BA, G, F, E,
+        DC, B, A, G, FE, D, C, B, AG, F, E, D, CB, A, G, F, ED, C, B, A,
+        GF, E, D, C, BA, G, F, E, DC, B, A, G, FE, D, C, B, AG, F, E, D, 
+        C,  B, A, G, FE, D, C, B, AG, F, E, D, CB, A, G, F, ED, C, B, A,
+        GF, E, D, C, BA, G, F, E, DC, B, A, G, FE, D, C, B, AG, F, E, D,
+        CB, A, G, F, ED, C, B, A, GF, E, D, C, BA, G, F, E, DC, B, A, G,
+        FE, D, C, B, AG, F, E, D, CB, A, G, F, ED, C, B, A, GF, E, D, C,
+        BA, G, F, E, DC, B, A, G, FE, D, C, B, AG, F, E, D, CB, A, G, F, 
+        E,  D, C, B, AG, F, E, D, CB, A, G, F, ED, C, B, A, GF, E, D, C,
+        BA, G, F, E, DC, B, A, G, FE, D, C, B, AG, F, E, D, CB, A, G, F,
+        ED, C, B, A, GF, E, D, C, BA, G, F, E, DC, B, A, G, FE, D, C, B,
+        AG, F, E, D, CB, A, G, F, ED, C, B, A, GF, E, D, C, BA, G, F, E,
+        DC, B, A, G, FE, D, C, B, AG, F, E, D, CB, A, G, F, ED, C, B, A, 
+        G,  F, E, D, CB, A, G, F, ED, C, B, A, GF, E, D, C, BA, G, F, E,
+        DC, B, A, G, FE, D, C, B, AG, F, E, D, CB, A, G, F, ED, C, B, A,
+        GF, E, D, C, BA, G, F, E, DC, B, A, G, FE, D, C, B, AG, F, E, D,
+        CB, A, G, F, ED, C, B, A, GF, E, D, C, BA, G, F, E, DC, B, A, G,
+        FE, D, C, B, AG, F, E, D, CB, A, G, F, ED, C, B, A, GF, E, D, C, 
+    ];
+
+    static YEAR_DELTAS: [u8; 401] = [
+         0,  1,  1,  1,  1,  2,  2,  2,  2,  3,  3,  3,  3,  4,  4,  4,  4,  5,  5,  5,
+         5,  6,  6,  6,  6,  7,  7,  7,  7,  8,  8,  8,  8,  9,  9,  9,  9, 10, 10, 10,
+        10, 11, 11, 11, 11, 12, 12, 12, 12, 13, 13, 13, 13, 14, 14, 14, 14, 15, 15, 15,
+        15, 16, 16, 16, 16, 17, 17, 17, 17, 18, 18, 18, 18, 19, 19, 19, 19, 20, 20, 20,
+        20, 21, 21, 21, 21, 22, 22, 22, 22, 23, 23, 23, 23, 24, 24, 24, 24, 25, 25, 25, 
+        25, 25, 25, 25, 25, 26, 26, 26, 26, 27, 27, 27, 27, 28, 28, 28, 28, 29, 29, 29,
+        29, 30, 30, 30, 30, 31, 31, 31, 31, 32, 32, 32, 32, 33, 33, 33, 33, 34, 34, 34,
+        34, 35, 35, 35, 35, 36, 36, 36, 36, 37, 37, 37, 37, 38, 38, 38, 38, 39, 39, 39,
+        39, 40, 40, 40, 40, 41, 41, 41, 41, 42, 42, 42, 42, 43, 43, 43, 43, 44, 44, 44,
+        44, 45, 45, 45, 45, 46, 46, 46, 46, 47, 47, 47, 47, 48, 48, 48, 48, 49, 49, 49, 
+        49, 49, 49, 49, 49, 50, 50, 50, 50, 51, 51, 51, 51, 52, 52, 52, 52, 53, 53, 53,
+        53, 54, 54, 54, 54, 55, 55, 55, 55, 56, 56, 56, 56, 57, 57, 57, 57, 58, 58, 58,
+        58, 59, 59, 59, 59, 60, 60, 60, 60, 61, 61, 61, 61, 62, 62, 62, 62, 63, 63, 63,
+        63, 64, 64, 64, 64, 65, 65, 65, 65, 66, 66, 66, 66, 67, 67, 67, 67, 68, 68, 68,
+        68, 69, 69, 69, 69, 70, 70, 70, 70, 71, 71, 71, 71, 72, 72, 72, 72, 73, 73, 73, 
+        73, 73, 73, 73, 73, 74, 74, 74, 74, 75, 75, 75, 75, 76, 76, 76, 76, 77, 77, 77,
+        77, 78, 78, 78, 78, 79, 79, 79, 79, 80, 80, 80, 80, 81, 81, 81, 81, 82, 82, 82,
+        82, 83, 83, 83, 83, 84, 84, 84, 84, 85, 85, 85, 85, 86, 86, 86, 86, 87, 87, 87,
+        87, 88, 88, 88, 88, 89, 89, 89, 89, 90, 90, 90, 90, 91, 91, 91, 91, 92, 92, 92,
+        92, 93, 93, 93, 93, 94, 94, 94, 94, 95, 95, 95, 95, 96, 96, 96, 96, 97, 97, 97, 97 
+    ];
+
+    pub fn cycle_to_yo(cycle: u32) -> (u32, u32) {
+        let (mut year_mod_400, mut ordinal0) = div_rem(cycle, 365);
+        let delta = YEAR_DELTAS[year_mod_400 as usize] as u32;
+        if ordinal0 < delta {
+            year_mod_400 -= 1;
+            ordinal0 += 365 - YEAR_DELTAS[year_mod_400 as usize] as u32;
+        } else {
+            ordinal0 -= delta;
+        }
+        (year_mod_400, ordinal0 + 1)
+    }
+
+    pub fn yo_to_cycle(year_mod_400: u32, ordinal: u32) -> u32 {
+        year_mod_400 * 365 + YEAR_DELTAS[year_mod_400 as usize] as u32 + ordinal - 1
+    }
+
+    impl YearFlags {
+        #[inline]
+        pub fn from_year(year: i32) -> YearFlags {
+            let year = mod_floor(year, 400);
+            YearFlags::from_year_mod_400(year)
+        }
+
+        #[inline]
+        pub fn from_year_mod_400(year: i32) -> YearFlags {
+            YEAR_TO_FLAGS[year as usize]
+        }
+
+        #[inline]
+        pub fn ndays(&self) -> u32 {
+            let YearFlags(flags) = *self;
+            366 - (flags >> 3) as u32
+        }
+
+        #[inline]
+        pub fn isoweek_delta(&self) -> u32 {
+            let YearFlags(flags) = *self;
+            let mut delta = flags as u32 & 0b111;
+            if delta < 3 { delta += 7; }
+            delta
+        }
+
+        #[inline]
+        pub fn nisoweeks(&self) -> u32 {
+            let YearFlags(flags) = *self;
+            52 + ((0b00000100_00000110 >> flags as usize) & 1)
+        }
+    }
+
+    impl fmt::Debug for YearFlags {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            let YearFlags(flags) = *self;
+            match flags {
+                0o15 => "A".fmt(f),  0o05 => "AG".fmt(f),
+                0o14 => "B".fmt(f),  0o04 => "BA".fmt(f),
+                0o13 => "C".fmt(f),  0o03 => "CB".fmt(f),
+                0o12 => "D".fmt(f),  0o02 => "DC".fmt(f),
+                0o11 => "E".fmt(f),  0o01 => "ED".fmt(f),
+                0o10 => "F?".fmt(f), 0o00 => "FE?".fmt(f), 
+                0o17 => "F".fmt(f),  0o07 => "FE".fmt(f),
+                0o16 => "G".fmt(f),  0o06 => "GF".fmt(f),
+                _ => write!(f, "YearFlags({})", flags),
+            }
+        }
+    }
+
+    pub const MIN_OL: u32 = 1 << 1;
+    pub const MAX_OL: u32 = 366 << 1; 
+    pub const MIN_MDL: u32 = (1 << 6) | (1 << 1);
+    pub const MAX_MDL: u32 = (12 << 6) | (31 << 1) | 1;
+
+    const XX: i8 = -128;
+    static MDL_TO_OL: [i8; (MAX_MDL as usize + 1)] = [
+         XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX,
+         XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX,
+         XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX,
+         XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, XX, 
+         XX, XX, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
+         64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
+         64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
+         64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 
+         XX, XX, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66,
+         66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66,
+         66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66,
+         66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, XX, XX, XX, XX, XX, 
+         XX, XX, 72, 74, 72, 74, 72, 74, 72, 74, 72, 74, 72, 74, 72, 74,
+         72, 74, 72, 74, 72, 74, 72, 74, 72, 74, 72, 74, 72, 74, 72, 74,
+         72, 74, 72, 74, 72, 74, 72, 74, 72, 74, 72, 74, 72, 74, 72, 74,
+         72, 74, 72, 74, 72, 74, 72, 74, 72, 74, 72, 74, 72, 74, 72, 74, 
+         XX, XX, 74, 76, 74, 76, 74, 76, 74, 76, 74, 76, 74, 76, 74, 76,
+         74, 76, 74, 76, 74, 76, 74, 76, 74, 76, 74, 76, 74, 76, 74, 76,
+         74, 76, 74, 76, 74, 76, 74, 76, 74, 76, 74, 76, 74, 76, 74, 76,
+         74, 76, 74, 76, 74, 76, 74, 76, 74, 76, 74, 76, 74, 76, XX, XX, 
+         XX, XX, 78, 80, 78, 80, 78, 80, 78, 80, 78, 80, 78, 80, 78, 80,
+         78, 80, 78, 80, 78, 80, 78, 80, 78, 80, 78, 80, 78, 80, 78, 80,
+         78, 80, 78, 80, 78, 80, 78, 80, 78, 80, 78, 80, 78, 80, 78, 80,
+         78, 80, 78, 80, 78, 80, 78, 80, 78, 80, 78, 80, 78, 80, 78, 80, 
+         XX, XX, 80, 82, 80, 82, 80, 82, 80, 82, 80, 82, 80, 82, 80, 82,
+         80, 82, 80, 82, 80, 82, 80, 82, 80, 82, 80, 82, 80, 82, 80, 82,
+         80, 82, 80, 82, 80, 82, 80, 82, 80, 82, 80, 82, 80, 82, 80, 82,
+         80, 82, 80, 82, 80, 82, 80, 82, 80, 82, 80, 82, 80, 82, XX, XX, 
+         XX, XX, 84, 86, 84, 86, 84, 86, 84, 86, 84, 86, 84, 86, 84, 86,
+         84, 86, 84, 86, 84, 86, 84, 86, 84, 86, 84, 86, 84, 86, 84, 86,
+         84, 86, 84, 86, 84, 86, 84, 86, 84, 86, 84, 86, 84, 86, 84, 86,
+         84, 86, 84, 86, 84, 86, 84, 86, 84, 86, 84, 86, 84, 86, 84, 86, 
+         XX, XX, 86, 88, 86, 88, 86, 88, 86, 88, 86, 88, 86, 88, 86, 88,
+         86, 88, 86, 88, 86, 88, 86, 88, 86, 88, 86, 88, 86, 88, 86, 88,
+         86, 88, 86, 88, 86, 88, 86, 88, 86, 88, 86, 88, 86, 88, 86, 88,
+         86, 88, 86, 88, 86, 88, 86, 88, 86, 88, 86, 88, 86, 88, 86, 88, 
+         XX, XX, 88, 90, 88, 90, 88, 90, 88, 90, 88, 90, 88, 90, 88, 90,
+         88, 90, 88, 90, 88, 90, 88, 90, 88, 90, 88, 90, 88, 90, 88, 90,
+         88, 90, 88, 90, 88, 90, 88, 90, 88, 90, 88, 90, 88, 90, 88, 90,
+         88, 90, 88, 90, 88, 90, 88, 90, 88, 90, 88, 90, 88, 90, XX, XX, 
+         XX, XX, 92, 94, 92, 94, 92, 94, 92, 94, 92, 94, 92, 94, 92, 94,
+         92, 94, 92, 94, 92, 94, 92, 94, 92, 94, 92, 94, 92, 94, 92, 94,
+         92, 94, 92, 94, 92, 94, 92, 94, 92, 94, 92, 94, 92, 94, 92, 94,
+         92, 94, 92, 94, 92, 94, 92, 94, 92, 94, 92, 94, 92, 94, 92, 94, 
+         XX, XX, 94, 96, 94, 96, 94, 96, 94, 96, 94, 96, 94, 96, 94, 96,
+         94, 96, 94, 96, 94, 96, 94, 96, 94, 96, 94, 96, 94, 96, 94, 96,
+         94, 96, 94, 96, 94, 96, 94, 96, 94, 96, 94, 96, 94, 96, 94, 96,
+         94, 96, 94, 96, 94, 96, 94, 96, 94, 96, 94, 96, 94, 96, XX, XX, 
+         XX, XX, 98,100, 98,100, 98,100, 98,100, 98,100, 98,100, 98,100,
+         98,100, 98,100, 98,100, 98,100, 98,100, 98,100, 98,100, 98,100,
+         98,100, 98,100, 98,100, 98,100, 98,100, 98,100, 98,100, 98,100,
+         98,100, 98,100, 98,100, 98,100, 98,100, 98,100, 98,100, 98,100, 
+    ];
+
+    static OL_TO_MDL: [u8; (MAX_OL as usize + 1)] = [
+          0,  0,                                                         
+         64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
+         64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
+         64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
+         64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64,         
+         66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66,
+         66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66,
+         66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66,
+         66, 66, 66, 66, 66, 66, 66, 66, 66,                             
+             74, 72, 74, 72, 74, 72, 74, 72, 74, 72, 74, 72, 74, 72, 74,
+         72, 74, 72, 74, 72, 74, 72, 74, 72, 74, 72, 74, 72, 74, 72, 74,
+         72, 74, 72, 74, 72, 74, 72, 74, 72, 74, 72, 74, 72, 74, 72, 74,
+         72, 74, 72, 74, 72, 74, 72, 74, 72, 74, 72, 74, 72, 74, 72,     
+             76, 74, 76, 74, 76, 74, 76, 74, 76, 74, 76, 74, 76, 74, 76,
+         74, 76, 74, 76, 74, 76, 74, 76, 74, 76, 74, 76, 74, 76, 74, 76,
+         74, 76, 74, 76, 74, 76, 74, 76, 74, 76, 74, 76, 74, 76, 74, 76,
+         74, 76, 74, 76, 74, 76, 74, 76, 74, 76, 74, 76, 74,             
+             80, 78, 80, 78, 80, 78, 80, 78, 80, 78, 80, 78, 80, 78, 80,
+         78, 80, 78, 80, 78, 80, 78, 80, 78, 80, 78, 80, 78, 80, 78, 80,
+         78, 80, 78, 80, 78, 80, 78, 80, 78, 80, 78, 80, 78, 80, 78, 80,
+         78, 80, 78, 80, 78, 80, 78, 80, 78, 80, 78, 80, 78, 80, 78,     
+             82, 80, 82, 80, 82, 80, 82, 80, 82, 80, 82, 80, 82, 80, 82,
+         80, 82, 80, 82, 80, 82, 80, 82, 80, 82, 80, 82, 80, 82, 80, 82,
+         80, 82, 80, 82, 80, 82, 80, 82, 80, 82, 80, 82, 80, 82, 80, 82,
+         80, 82, 80, 82, 80, 82, 80, 82, 80, 82, 80, 82, 80,             
+             86, 84, 86, 84, 86, 84, 86, 84, 86, 84, 86, 84, 86, 84, 86,
+         84, 86, 84, 86, 84, 86, 84, 86, 84, 86, 84, 86, 84, 86, 84, 86,
+         84, 86, 84, 86, 84, 86, 84, 86, 84, 86, 84, 86, 84, 86, 84, 86,
+         84, 86, 84, 86, 84, 86, 84, 86, 84, 86, 84, 86, 84, 86, 84,     
+             88, 86, 88, 86, 88, 86, 88, 86, 88, 86, 88, 86, 88, 86, 88,
+         86, 88, 86, 88, 86, 88, 86, 88, 86, 88, 86, 88, 86, 88, 86, 88,
+         86, 88, 86, 88, 86, 88, 86, 88, 86, 88, 86, 88, 86, 88, 86, 88,
+         86, 88, 86, 88, 86, 88, 86, 88, 86, 88, 86, 88, 86, 88, 86,     
+             90, 88, 90, 88, 90, 88, 90, 88, 90, 88, 90, 88, 90, 88, 90,
+         88, 90, 88, 90, 88, 90, 88, 90, 88, 90, 88, 90, 88, 90, 88, 90,
+         88, 90, 88, 90, 88, 90, 88, 90, 88, 90, 88, 90, 88, 90, 88, 90,
+         88, 90, 88, 90, 88, 90, 88, 90, 88, 90, 88, 90, 88,             
+             94, 92, 94, 92, 94, 92, 94, 92, 94, 92, 94, 92, 94, 92, 94,
+         92, 94, 92, 94, 92, 94, 92, 94, 92, 94, 92, 94, 92, 94, 92, 94,
+         92, 94, 92, 94, 92, 94, 92, 94, 92, 94, 92, 94, 92, 94, 92, 94,
+         92, 94, 92, 94, 92, 94, 92, 94, 92, 94, 92, 94, 92, 94, 92,     
+             96, 94, 96, 94, 96, 94, 96, 94, 96, 94, 96, 94, 96, 94, 96,
+         94, 96, 94, 96, 94, 96, 94, 96, 94, 96, 94, 96, 94, 96, 94, 96,
+         94, 96, 94, 96, 94, 96, 94, 96, 94, 96, 94, 96, 94, 96, 94, 96,
+         94, 96, 94, 96, 94, 96, 94, 96, 94, 96, 94, 96, 94,             
+            100, 98,100, 98,100, 98,100, 98,100, 98,100, 98,100, 98,100,
+         98,100, 98,100, 98,100, 98,100, 98,100, 98,100, 98,100, 98,100,
+         98,100, 98,100, 98,100, 98,100, 98,100, 98,100, 98,100, 98,100,
+         98,100, 98,100, 98,100, 98,100, 98,100, 98,100, 98,100, 98,     
+    ];
+
+    
+    
+    
+    
+    #[derive(PartialEq, PartialOrd, Copy, Clone)]
+    pub struct Of(pub u32);
+
+    impl Of {
+        #[inline]
+        fn clamp_ordinal(ordinal: u32) -> u32 {
+            if ordinal > 366 {0} else {ordinal}
+        }
+
+        #[inline]
+        pub fn new(ordinal: u32, YearFlags(flags): YearFlags) -> Of {
+            let ordinal = Of::clamp_ordinal(ordinal);
+            Of((ordinal << 4) | (flags as u32))
+        }
+
+        #[inline]
+        pub fn from_mdf(Mdf(mdf): Mdf) -> Of {
+            let mdl = mdf >> 3;
+            match MDL_TO_OL.get(mdl as usize) {
+                Some(&v) => Of(mdf.wrapping_sub((v as i32 as u32 & 0x3ff) << 3)),
+                None => Of(0)
+            }
+        }
+
+        #[inline]
+        pub fn valid(&self) -> bool {
+            let Of(of) = *self;
+            let ol = of >> 3;
+            MIN_OL <= ol && ol <= MAX_OL
+        }
+
+        #[inline]
+        pub fn ordinal(&self) -> u32 {
+            let Of(of) = *self;
+            of >> 4
+        }
+
+        #[inline]
+        pub fn with_ordinal(&self, ordinal: u32) -> Of {
+            let ordinal = Of::clamp_ordinal(ordinal);
+            let Of(of) = *self;
+            Of((of & 0b1111) | (ordinal << 4))
+        }
+
+        #[inline]
+        pub fn flags(&self) -> YearFlags {
+            let Of(of) = *self;
+            YearFlags((of & 0b1111) as u8)
+        }
+
+        #[inline]
+        pub fn with_flags(&self, YearFlags(flags): YearFlags) -> Of {
+            let Of(of) = *self;
+            Of((of & !0b1111) | (flags as u32))
+        }
+
+        #[inline]
+        pub fn weekday(&self) -> Weekday {
+            let Of(of) = *self;
+            Weekday::from_u32(((of >> 4) + (of & 0b111)) % 7).unwrap()
+        }
+
+        #[inline]
+        pub fn isoweekdate_raw(&self) -> (u32, Weekday) {
+            
+            let Of(of) = *self;
+            let weekord = (of >> 4).wrapping_add(self.flags().isoweek_delta());
+            (weekord / 7, Weekday::from_u32(weekord % 7).unwrap())
+        }
+
+        #[inline]
+        pub fn to_mdf(&self) -> Mdf {
+            Mdf::from_of(*self)
+        }
+
+        #[inline]
+        pub fn succ(&self) -> Of {
+            let Of(of) = *self;
+            Of(of + (1 << 4))
+        }
+
+        #[inline]
+        pub fn pred(&self) -> Of {
+            let Of(of) = *self;
+            Of(of - (1 << 4))
+        }
+    }
+
+    impl fmt::Debug for Of {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            let Of(of) = *self;
+            write!(f, "Of(({} << 4) | {:#04o} /*{:?}*/)",
+                   of >> 4, of & 0b1111, YearFlags((of & 0b1111) as u8))
+        }
+    }
+
+    
+    
+    
+    
+    
+    #[derive(PartialEq, PartialOrd, Copy, Clone)]
+    pub struct Mdf(pub u32);
+
+    impl Mdf {
+        #[inline]
+        fn clamp_month(month: u32) -> u32 {
+            if month > 12 {0} else {month}
+        }
+
+        #[inline]
+        fn clamp_day(day: u32) -> u32 {
+            if day > 31 {0} else {day}
+        }
+
+        #[inline]
+        pub fn new(month: u32, day: u32, YearFlags(flags): YearFlags) -> Mdf {
+            let month = Mdf::clamp_month(month);
+            let day = Mdf::clamp_day(day);
+            Mdf((month << 9) | (day << 4) | (flags as u32))
+        }
+
+        #[inline]
+        pub fn from_of(Of(of): Of) -> Mdf {
+            let ol = of >> 3;
+            match OL_TO_MDL.get(ol as usize) {
+                Some(&v) => Mdf(of + ((v as u32) << 3)),
+                None => Mdf(0)
+            }
+        }
+
+        #[inline]
+        pub fn valid(&self) -> bool {
+            let Mdf(mdf) = *self;
+            let mdl = mdf >> 3;
+            match MDL_TO_OL.get(mdl as usize) {
+                Some(&v) => v >= 0,
+                None => false
+            }
+        }
+
+        #[inline]
+        pub fn month(&self) -> u32 {
+            let Mdf(mdf) = *self;
+            mdf >> 9
+        }
+
+        #[inline]
+        pub fn with_month(&self, month: u32) -> Mdf {
+            let month = Mdf::clamp_month(month);
+            let Mdf(mdf) = *self;
+            Mdf((mdf & 0b11111_1111) | (month << 9))
+        }
+
+        #[inline]
+        pub fn day(&self) -> u32 {
+            let Mdf(mdf) = *self;
+            (mdf >> 4) & 0b11111
+        }
+
+        #[inline]
+        pub fn with_day(&self, day: u32) -> Mdf {
+            let day = Mdf::clamp_day(day);
+            let Mdf(mdf) = *self;
+            Mdf((mdf & !0b11111_0000) | (day << 4))
+        }
+
+        #[inline]
+        pub fn flags(&self) -> YearFlags {
+            let Mdf(mdf) = *self;
+            YearFlags((mdf & 0b1111) as u8)
+        }
+
+        #[inline]
+        pub fn with_flags(&self, YearFlags(flags): YearFlags) -> Mdf {
+            let Mdf(mdf) = *self;
+            Mdf((mdf & !0b1111) | (flags as u32))
+        }
+
+        #[inline]
+        pub fn to_of(&self) -> Of {
+            Of::from_mdf(*self)
+        }
+    }
+
+    impl fmt::Debug for Mdf {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            let Mdf(mdf) = *self;
+            write!(f, "Mdf(({} << 9) | ({} << 4) | {:#04o} /*{:?}*/)",
+                   mdf >> 9, (mdf >> 4) & 0b11111, mdf & 0b1111, YearFlags((mdf & 0b1111) as u8))
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        #[cfg(bench)] extern crate test;
+
+        use Weekday;
+        use super::{Of, Mdf};
+        use super::{YearFlags, A, B, C, D, E, F, G, AG, BA, CB, DC, ED, FE, GF};
+        use num::iter::range_inclusive;
+        use std::u32;
+
+        const NONLEAP_FLAGS: [YearFlags; 7] = [A, B, C, D, E, F, G];
+        const LEAP_FLAGS: [YearFlags; 7] = [AG, BA, CB, DC, ED, FE, GF];
+        const FLAGS: [YearFlags; 14] = [A, B, C, D, E, F, G, AG, BA, CB, DC, ED, FE, GF];
+
+        #[test]
+        fn test_year_flags_ndays_from_year() {
+            assert_eq!(YearFlags::from_year(2014).ndays(), 365);
+            assert_eq!(YearFlags::from_year(2012).ndays(), 366);
+            assert_eq!(YearFlags::from_year(2000).ndays(), 366);
+            assert_eq!(YearFlags::from_year(1900).ndays(), 365);
+            assert_eq!(YearFlags::from_year(1600).ndays(), 366);
+            assert_eq!(YearFlags::from_year(   1).ndays(), 365);
+            assert_eq!(YearFlags::from_year(   0).ndays(), 366); 
+            assert_eq!(YearFlags::from_year(  -1).ndays(), 365); 
+            assert_eq!(YearFlags::from_year(  -4).ndays(), 366); 
+            assert_eq!(YearFlags::from_year( -99).ndays(), 365); 
+            assert_eq!(YearFlags::from_year(-100).ndays(), 365); 
+            assert_eq!(YearFlags::from_year(-399).ndays(), 365); 
+            assert_eq!(YearFlags::from_year(-400).ndays(), 366); 
+        }
+
+        #[test]
+        fn test_year_flags_nisoweeks() {
+            assert_eq!(A.nisoweeks(), 52);
+            assert_eq!(B.nisoweeks(), 52);
+            assert_eq!(C.nisoweeks(), 52);
+            assert_eq!(D.nisoweeks(), 53);
+            assert_eq!(E.nisoweeks(), 52);
+            assert_eq!(F.nisoweeks(), 52);
+            assert_eq!(G.nisoweeks(), 52);
+            assert_eq!(AG.nisoweeks(), 52);
+            assert_eq!(BA.nisoweeks(), 52);
+            assert_eq!(CB.nisoweeks(), 52);
+            assert_eq!(DC.nisoweeks(), 53);
+            assert_eq!(ED.nisoweeks(), 53);
+            assert_eq!(FE.nisoweeks(), 52);
+            assert_eq!(GF.nisoweeks(), 52);
+        }
+
+        #[cfg(bench)]
+        #[bench]
+        fn bench_year_flags_from_year(bh: &mut test::Bencher) {
+            bh.iter(|| {
+                for year in -999i32..1000 {
+                    YearFlags::from_year(year);
+                }
+            });
+        }
+
+        #[test]
+        fn test_of() {
+            fn check(expected: bool, flags: YearFlags, ordinal1: u32, ordinal2: u32) {
+                for ordinal in range_inclusive(ordinal1, ordinal2) {
+                    let of = Of::new(ordinal, flags);
+                    assert!(of.valid() == expected,
+                            "ordinal {} = {:?} should be {} for dominical year {:?}",
+                            ordinal, of, if expected {"valid"} else {"invalid"}, flags);
+                }
+            }
+
+            for &flags in NONLEAP_FLAGS.iter() {
+                check(false, flags, 0, 0);
+                check(true, flags, 1, 365);
+                check(false, flags, 366, 1024);
+                check(false, flags, u32::MAX, u32::MAX);
+            }
+
+            for &flags in LEAP_FLAGS.iter() {
+                check(false, flags, 0, 0);
+                check(true, flags, 1, 366);
+                check(false, flags, 367, 1024);
+                check(false, flags, u32::MAX, u32::MAX);
+            }
+        }
+
+        #[test]
+        fn test_mdf_valid() {
+            fn check(expected: bool, flags: YearFlags, month1: u32, day1: u32,
+                     month2: u32, day2: u32) {
+                for month in range_inclusive(month1, month2) {
+                    for day in range_inclusive(day1, day2) {
+                        let mdf = Mdf::new(month, day, flags);
+                        assert!(mdf.valid() == expected,
+                                "month {} day {} = {:?} should be {} for dominical year {:?}",
+                                month, day, mdf, if expected {"valid"} else {"invalid"}, flags);
+                    }
+                }
+            }
+
+            for &flags in NONLEAP_FLAGS.iter() {
+                check(false, flags, 0, 0, 0, 1024);
+                check(false, flags, 0, 0, 16, 0);
+                check(true, flags,  1, 1,  1, 31); check(false, flags,  1, 32,  1, 1024);
+                check(true, flags,  2, 1,  2, 28); check(false, flags,  2, 29,  2, 1024);
+                check(true, flags,  3, 1,  3, 31); check(false, flags,  3, 32,  3, 1024);
+                check(true, flags,  4, 1,  4, 30); check(false, flags,  4, 31,  4, 1024);
+                check(true, flags,  5, 1,  5, 31); check(false, flags,  5, 32,  5, 1024);
+                check(true, flags,  6, 1,  6, 30); check(false, flags,  6, 31,  6, 1024);
+                check(true, flags,  7, 1,  7, 31); check(false, flags,  7, 32,  7, 1024);
+                check(true, flags,  8, 1,  8, 31); check(false, flags,  8, 32,  8, 1024);
+                check(true, flags,  9, 1,  9, 30); check(false, flags,  9, 31,  9, 1024);
+                check(true, flags, 10, 1, 10, 31); check(false, flags, 10, 32, 10, 1024);
+                check(true, flags, 11, 1, 11, 30); check(false, flags, 11, 31, 11, 1024);
+                check(true, flags, 12, 1, 12, 31); check(false, flags, 12, 32, 12, 1024);
+                check(false, flags, 13, 0, 16, 1024);
+                check(false, flags, u32::MAX, 0, u32::MAX, 1024);
+                check(false, flags, 0, u32::MAX, 16, u32::MAX);
+                check(false, flags, u32::MAX, u32::MAX, u32::MAX, u32::MAX);
+            }
+
+            for &flags in LEAP_FLAGS.iter() {
+                check(false, flags, 0, 0, 0, 1024);
+                check(false, flags, 0, 0, 16, 0);
+                check(true, flags,  1, 1,  1, 31); check(false, flags,  1, 32,  1, 1024);
+                check(true, flags,  2, 1,  2, 29); check(false, flags,  2, 30,  2, 1024);
+                check(true, flags,  3, 1,  3, 31); check(false, flags,  3, 32,  3, 1024);
+                check(true, flags,  4, 1,  4, 30); check(false, flags,  4, 31,  4, 1024);
+                check(true, flags,  5, 1,  5, 31); check(false, flags,  5, 32,  5, 1024);
+                check(true, flags,  6, 1,  6, 30); check(false, flags,  6, 31,  6, 1024);
+                check(true, flags,  7, 1,  7, 31); check(false, flags,  7, 32,  7, 1024);
+                check(true, flags,  8, 1,  8, 31); check(false, flags,  8, 32,  8, 1024);
+                check(true, flags,  9, 1,  9, 30); check(false, flags,  9, 31,  9, 1024);
+                check(true, flags, 10, 1, 10, 31); check(false, flags, 10, 32, 10, 1024);
+                check(true, flags, 11, 1, 11, 30); check(false, flags, 11, 31, 11, 1024);
+                check(true, flags, 12, 1, 12, 31); check(false, flags, 12, 32, 12, 1024);
+                check(false, flags, 13, 0, 16, 1024);
+                check(false, flags, u32::MAX, 0, u32::MAX, 1024);
+                check(false, flags, 0, u32::MAX, 16, u32::MAX);
+                check(false, flags, u32::MAX, u32::MAX, u32::MAX, u32::MAX);
+            }
+        }
+
+        #[test]
+        fn test_of_fields() {
+            for &flags in FLAGS.iter() {
+                for ordinal in range_inclusive(1u32, 366) {
+                    let of = Of::new(ordinal, flags);
+                    if of.valid() {
+                        assert_eq!(of.ordinal(), ordinal);
+                    }
+                }
+            }
+        }
+
+        #[test]
+        fn test_of_with_fields() {
+            fn check(flags: YearFlags, ordinal: u32) {
+                let of = Of::new(ordinal, flags);
+
+                for ordinal in range_inclusive(0u32, 1024) {
+                    let of = of.with_ordinal(ordinal);
+                    assert_eq!(of.valid(), Of::new(ordinal, flags).valid());
+                    if of.valid() {
+                        assert_eq!(of.ordinal(), ordinal);
+                    }
+                }
+            }
+
+            for &flags in NONLEAP_FLAGS.iter() {
+                check(flags, 1);
+                check(flags, 365);
+            }
+            for &flags in LEAP_FLAGS.iter() {
+                check(flags, 1);
+                check(flags, 366);
+            }
+        }
+
+        #[test]
+        fn test_of_weekday() {
+            assert_eq!(Of::new(1, A).weekday(), Weekday::Sun);
+            assert_eq!(Of::new(1, B).weekday(), Weekday::Sat);
+            assert_eq!(Of::new(1, C).weekday(), Weekday::Fri);
+            assert_eq!(Of::new(1, D).weekday(), Weekday::Thu);
+            assert_eq!(Of::new(1, E).weekday(), Weekday::Wed);
+            assert_eq!(Of::new(1, F).weekday(), Weekday::Tue);
+            assert_eq!(Of::new(1, G).weekday(), Weekday::Mon);
+            assert_eq!(Of::new(1, AG).weekday(), Weekday::Sun);
+            assert_eq!(Of::new(1, BA).weekday(), Weekday::Sat);
+            assert_eq!(Of::new(1, CB).weekday(), Weekday::Fri);
+            assert_eq!(Of::new(1, DC).weekday(), Weekday::Thu);
+            assert_eq!(Of::new(1, ED).weekday(), Weekday::Wed);
+            assert_eq!(Of::new(1, FE).weekday(), Weekday::Tue);
+            assert_eq!(Of::new(1, GF).weekday(), Weekday::Mon);
+
+            for &flags in FLAGS.iter() {
+                let mut prev = Of::new(1, flags).weekday();
+                for ordinal in range_inclusive(2u32, flags.ndays()) {
+                    let of = Of::new(ordinal, flags);
+                    let expected = prev.succ();
+                    assert_eq!(of.weekday(), expected);
+                    prev = expected;
+                }
+            }
+        }
+
+        #[test]
+        fn test_mdf_fields() {
+            for &flags in FLAGS.iter() {
+                for month in range_inclusive(1u32, 12) {
+                    for day in range_inclusive(1u32, 31) {
+                        let mdf = Mdf::new(month, day, flags);
+                        if mdf.valid() {
+                            assert_eq!(mdf.month(), month);
+                            assert_eq!(mdf.day(), day);
+                        }
+                    }
+                }
+            }
+        }
+
+        #[test]
+        fn test_mdf_with_fields() {
+            fn check(flags: YearFlags, month: u32, day: u32) {
+                let mdf = Mdf::new(month, day, flags);
+
+                for month in range_inclusive(0u32, 16) {
+                    let mdf = mdf.with_month(month);
+                    assert_eq!(mdf.valid(), Mdf::new(month, day, flags).valid());
+                    if mdf.valid() {
+                        assert_eq!(mdf.month(), month);
+                        assert_eq!(mdf.day(), day);
+                    }
+                }
+
+                for day in range_inclusive(0u32, 1024) {
+                    let mdf = mdf.with_day(day);
+                    assert_eq!(mdf.valid(), Mdf::new(month, day, flags).valid());
+                    if mdf.valid() {
+                        assert_eq!(mdf.month(), month);
+                        assert_eq!(mdf.day(), day);
+                    }
+                }
+            }
+
+            for &flags in NONLEAP_FLAGS.iter() {
+                check(flags, 1, 1);
+                check(flags, 1, 31);
+                check(flags, 2, 1);
+                check(flags, 2, 28);
+                check(flags, 2, 29);
+                check(flags, 12, 31);
+            }
+            for &flags in LEAP_FLAGS.iter() {
+                check(flags, 1, 1);
+                check(flags, 1, 31);
+                check(flags, 2, 1);
+                check(flags, 2, 29);
+                check(flags, 2, 30);
+                check(flags, 12, 31);
+            }
+        }
+
+        #[test]
+        fn test_of_isoweekdate_raw() {
+            for &flags in FLAGS.iter() {
+                
+                let (week, _) = Of::new(4 , flags).isoweekdate_raw();
+                assert_eq!(week, 1);
+            }
+        }
+
+        #[test]
+        fn test_of_to_mdf() {
+            for i in range_inclusive(0u32, 8192) {
+                let of = Of(i);
+                assert_eq!(of.valid(), of.to_mdf().valid());
+            }
+        }
+
+        #[test]
+        fn test_mdf_to_of() {
+            for i in range_inclusive(0u32, 8192) {
+                let mdf = Mdf(i);
+                assert_eq!(mdf.valid(), mdf.to_of().valid());
+            }
+        }
+
+        #[test]
+        fn test_of_to_mdf_to_of() {
+            for i in range_inclusive(0u32, 8192) {
+                let of = Of(i);
+                if of.valid() {
+                    assert_eq!(of, of.to_mdf().to_of());
+                }
+            }
+        }
+
+        #[test]
+        fn test_mdf_to_of_to_mdf() {
+            for i in range_inclusive(0u32, 8192) {
+                let mdf = Mdf(i);
+                if mdf.valid() {
+                    assert_eq!(mdf, mdf.to_of().to_mdf());
+                }
+            }
+        }
     }
 }
 
