@@ -87,7 +87,7 @@ var UI = {
     
     const autoinstallADBExtension = Services.prefs.getBoolPref("devtools.webide.autoinstallADBExtension");
     if (autoinstallADBExtension) {
-      adbAddon.install();
+      adbAddon.install("webide");
     }
 
     Services.prefs.setBoolPref("devtools.webide.autoinstallADBExtension", false);

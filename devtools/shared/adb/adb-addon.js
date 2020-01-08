@@ -72,7 +72,14 @@ ADBAddon.prototype = {
     }
   },
 
-  install: async function() {
+  
+
+
+
+
+
+
+  install: async function(source) {
     const addon = await AddonManager.getAddonByID(ADB_ADDON_ID);
     if (addon && !addon.userDisabled) {
       this.status = "installed";
@@ -86,7 +93,7 @@ ADBAddon.prototype = {
         this.xpiLink,
         "application/x-xpinstall",
         null, null, null, null, null,
-        { source: "webide" }
+        { source }
       );
       install.addListener(this);
       install.install();
