@@ -66,6 +66,7 @@ class VideoStreamTrack;
 } 
 } 
 
+class AudioDeviceInfo;
 class nsIChannel;
 class nsIHttpChannel;
 class nsILoadGroup;
@@ -825,6 +826,17 @@ public:
   nsISerialEventTarget* MainThreadEventTarget()
   {
     return mMainThreadEventTarget;
+  }
+
+  
+  
+  already_AddRefed<Promise> SetSinkId(const nsAString& aSinkId, ErrorResult& aRv);
+  
+  
+  void GetSinkId(nsString& aSinkId)
+  {
+    MOZ_ASSERT(NS_IsMainThread());
+    aSinkId = mSink.first();
   }
 
 protected:
@@ -1893,6 +1905,14 @@ private:
 
   
   void AttachAndSetUAShadowRoot();
+
+  
+  
+  
+  
+  
+  
+  Pair<nsString, RefPtr<AudioDeviceInfo>> mSink;
 };
 
 
