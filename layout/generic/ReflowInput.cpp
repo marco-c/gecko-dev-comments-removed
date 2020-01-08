@@ -1238,7 +1238,9 @@ ReflowInput::CalculateBorderPaddingMargin(
     
     if (eStyleUnit_Auto == mStyleMargin->mMargin.GetUnit(startSide)) {
       
-      start = 0;  
+      
+      
+      start = 0;
     } else {
       start = nsLayoutUtils::
         ComputeCBDependentValue(aContainingBlockSize,
@@ -1246,7 +1248,9 @@ ReflowInput::CalculateBorderPaddingMargin(
     }
     if (eStyleUnit_Auto == mStyleMargin->mMargin.GetUnit(endSide)) {
       
-      end = 0;  
+      
+      
+      end = 0;
     } else {
       end = nsLayoutUtils::
         ComputeCBDependentValue(aContainingBlockSize,
@@ -1765,6 +1769,10 @@ ReflowInput::InitAbsoluteConstraints(nsPresContext* aPresContext,
     ComputedLogicalBorderPadding().ConvertTo(cbwm, wm);
 
   bool iSizeIsAuto = eStyleUnit_Auto == mStylePosition->ISize(cbwm).GetUnit();
+  bool marginIStartIsAuto = false;
+  bool marginIEndIsAuto = false;
+  bool marginBStartIsAuto = false;
+  bool marginBEndIsAuto = false;
   if (iStartIsAuto) {
     
     
@@ -1835,9 +1843,9 @@ ReflowInput::InitAbsoluteConstraints(nsPresContext* aPresContext,
     nscoord availMarginSpace =
       aCBSize.ISize(cbwm) - offsets.IStartEnd(cbwm) - margin.IStartEnd(cbwm) -
       borderPadding.IStartEnd(cbwm) - computedSize.ISize(cbwm);
-    bool marginIStartIsAuto =
+    marginIStartIsAuto =
       eStyleUnit_Auto == mStyleMargin->mMargin.GetIStartUnit(cbwm);
-    bool marginIEndIsAuto =
+    marginIEndIsAuto =
       eStyleUnit_Auto == mStyleMargin->mMargin.GetIEndUnit(cbwm);
 
     if (marginIStartIsAuto) {
@@ -1923,9 +1931,9 @@ ReflowInput::InitAbsoluteConstraints(nsPresContext* aPresContext,
     
     
     nscoord availMarginSpace = autoBSize - computedSize.BSize(cbwm);
-    bool marginBStartIsAuto =
+    marginBStartIsAuto =
       eStyleUnit_Auto == mStyleMargin->mMargin.GetBStartUnit(cbwm);
-    bool marginBEndIsAuto =
+    marginBEndIsAuto =
       eStyleUnit_Auto == mStyleMargin->mMargin.GetBEndUnit(cbwm);
 
     if (marginBStartIsAuto) {
@@ -1954,7 +1962,19 @@ ReflowInput::InitAbsoluteConstraints(nsPresContext* aPresContext,
   ComputedISize() = computedSize.ConvertTo(wm, cbwm).ISize(wm);
 
   SetComputedLogicalOffsets(offsets.ConvertTo(wm, cbwm));
-  SetComputedLogicalMargin(margin.ConvertTo(wm, cbwm));
+
+  LogicalMargin marginInOurWM = margin.ConvertTo(wm, cbwm);
+  SetComputedLogicalMargin(marginInOurWM);
+
+  
+  
+  if (marginIStartIsAuto || marginIEndIsAuto ||
+      marginBStartIsAuto || marginBEndIsAuto) {
+    nsMargin* propValue = mFrame->GetProperty(nsIFrame::UsedMarginProperty());
+    MOZ_ASSERT(propValue, "UsedMarginProperty should have been created "
+                          "by InitOffsets.");
+    *propValue = marginInOurWM.GetPhysicalMargin(wm);
+  }
 }
 
 
