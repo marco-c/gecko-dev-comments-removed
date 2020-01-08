@@ -66,6 +66,8 @@ public:
   bool IsJSPlugin() const;
   int32_t JSPluginId() const;
 
+  uint64_t ChromeOuterWindowID() const;
+
   
 
 
@@ -105,6 +107,7 @@ protected:
   void SetPrivateBrowsingAttributes(bool aIsPrivateBrowsing);
 
   bool SetTabContext(bool aIsMozBrowserElement,
+                     uint64_t aChromeOuterWindowID,
                      UIStateChangeType aShowAccelerators,
                      UIStateChangeType aShowFocusRings,
                      const OriginAttributes& aOriginAttributes,
@@ -143,6 +146,11 @@ private:
 
   bool mIsMozBrowserElement;
 
+  
+
+
+  uint64_t mChromeOuterWindowID;
+
   int32_t mJSPluginID;
 
   
@@ -177,12 +185,14 @@ public:
 
   bool
   SetTabContext(bool aIsMozBrowserElement,
+                uint64_t aChromeOuterWindowID,
                 UIStateChangeType aShowAccelerators,
                 UIStateChangeType aShowFocusRings,
                 const OriginAttributes& aOriginAttributes,
                 const nsAString& aPresentationURL = EmptyString())
   {
     return TabContext::SetTabContext(aIsMozBrowserElement,
+                                     aChromeOuterWindowID,
                                      aShowAccelerators,
                                      aShowFocusRings,
                                      aOriginAttributes,
