@@ -589,6 +589,8 @@ SetDocumentStateCommand::GetCommandStateParams(const char* aCommandName,
 
 
 
+
+
 NS_IMETHODIMP
 DocumentStateCommand::IsCommandEnabled(const char* aCommandName,
                                        nsISupports* refCon,

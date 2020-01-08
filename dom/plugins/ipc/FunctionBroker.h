@@ -147,6 +147,12 @@
 
 
 
+
+
+
+
+
+
 namespace mozilla {
 namespace plugins {
 

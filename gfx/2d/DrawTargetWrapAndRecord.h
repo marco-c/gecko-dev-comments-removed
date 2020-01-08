@@ -323,6 +323,7 @@ private:
 
 
 
+
   DrawTargetWrapAndRecord(const DrawTargetWrapAndRecord *aDT,
                       DrawTarget *aSimilarDT);
 

@@ -22,6 +22,7 @@ public:
     {
         
         
+        
         CGLPixelFormatAttribute attribs[1];
         attribs[0] = static_cast<CGLPixelFormatAttribute>(0);
         GLint num_pixel_formats = 0;
