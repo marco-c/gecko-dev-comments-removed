@@ -24,9 +24,6 @@ class nsIFrame;
 
 #define OBSERVER_SVC_CID "@mozilla.org/observer-service;1"
 
-
-#undef GetCurrentTime
-
 namespace mozilla {
 namespace dom {
 class SVGSVGElement;
@@ -110,7 +107,7 @@ class SVGDocumentWrapper final : public nsIStreamListener,
   void StartAnimation();
   void StopAnimation();
   void ResetAnimation();
-  float GetCurrentTime();
+  float GetCurrentTimeAsFloat();
   void SetCurrentTime(float aTime);
   void TickRefreshDriver();
 

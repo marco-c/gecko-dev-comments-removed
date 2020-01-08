@@ -95,7 +95,7 @@ void nsSMILTimeContainer::Resume(uint32_t aType) {
   }
 }
 
-nsSMILTime nsSMILTimeContainer::GetCurrentTime() const {
+nsSMILTime nsSMILTimeContainer::GetCurrentTimeAsSMILTime() const {
   
   
   
@@ -139,7 +139,7 @@ void nsSMILTimeContainer::SetCurrentTime(nsSMILTime aSeekTo) {
 }
 
 nsSMILTime nsSMILTimeContainer::GetParentTime() const {
-  if (mParent) return mParent->GetCurrentTime();
+  if (mParent) return mParent->GetCurrentTimeAsSMILTime();
 
   return 0L;
 }

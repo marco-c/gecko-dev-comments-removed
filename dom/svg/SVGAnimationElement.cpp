@@ -109,12 +109,12 @@ float SVGAnimationElement::GetStartTime(ErrorResult& rv) {
   return float(double(startTime.GetMillis()) / PR_MSEC_PER_SEC);
 }
 
-float SVGAnimationElement::GetCurrentTime() {
+float SVGAnimationElement::GetCurrentTimeAsFloat() {
   
 
   nsSMILTimeContainer* root = GetTimeContainer();
   if (root) {
-    return float(double(root->GetCurrentTime()) / PR_MSEC_PER_SEC);
+    return float(double(root->GetCurrentTimeAsSMILTime()) / PR_MSEC_PER_SEC);
   }
 
   return 0.0f;

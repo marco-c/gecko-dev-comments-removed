@@ -83,7 +83,7 @@ class nsSMILTimeContainer {
 
 
 
-  nsSMILTime GetCurrentTime() const;
+  nsSMILTime GetCurrentTimeAsSMILTime() const;
 
   
 

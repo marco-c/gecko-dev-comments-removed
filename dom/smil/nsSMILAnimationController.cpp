@@ -471,7 +471,7 @@ void nsSMILAnimationController::DoMilestoneSamples() {
     
     
     
-    nsSMILMilestone nextMilestone(GetCurrentTime() + 1, true);
+    nsSMILMilestone nextMilestone(GetCurrentTimeAsSMILTime() + 1, true);
     for (auto iter = mChildContainerTable.Iter(); !iter.Done(); iter.Next()) {
       nsSMILTimeContainer* container = iter.Get()->GetKey();
       if (container->IsPausedByType(nsSMILTimeContainer::PAUSE_BEGIN)) {
@@ -485,7 +485,7 @@ void nsSMILAnimationController::DoMilestoneSamples() {
       }
     }
 
-    if (nextMilestone.mTime > GetCurrentTime()) {
+    if (nextMilestone.mTime > GetCurrentTimeAsSMILTime()) {
       break;
     }
 
@@ -553,7 +553,7 @@ void nsSMILAnimationController::DoMilestoneSamples() {
   
   if (!aActiveContainers->GetEntry(timeContainer)) return;
 
-  nsSMILTime containerTime = timeContainer->GetCurrentTime();
+  nsSMILTime containerTime = timeContainer->GetCurrentTimeAsSMILTime();
 
   MOZ_ASSERT(!timeContainer->IsSeeking(),
              "Doing a regular sample but the time container is still seeking");
