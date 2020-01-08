@@ -920,7 +920,8 @@ function threadClientTest(test, options = {}) {
 
     
     
-    const debuggee = Cu.Sandbox(principal);
+    
+    const debuggee = Cu.Sandbox(principal, {freshZone: true});
     const scriptName = "debuggee.js";
     debuggee.__name = scriptName;
     server.addTestGlobal(debuggee);
