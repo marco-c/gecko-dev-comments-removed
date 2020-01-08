@@ -221,52 +221,60 @@ HTMLEditor::InsertTableCell(int32_t aNumber,
 }
 
 NS_IMETHODIMP
-HTMLEditor::GetFirstRow(Element* aTableElement,
-                        nsINode** aRowNode)
+HTMLEditor::GetFirstRow(Element* aTableOrElementInTable,
+                        Element** aFirstRowElement)
 {
-  if (NS_WARN_IF(!aTableElement) || NS_WARN_IF(!aRowNode)) {
+  if (NS_WARN_IF(!aTableOrElementInTable) || NS_WARN_IF(!aFirstRowElement)) {
     return NS_ERROR_INVALID_ARG;
   }
+  ErrorResult error;
+  RefPtr<Element> firstRowElement =
+    GetFirstTableRowElement(*aTableOrElementInTable, error);
+  if (NS_WARN_IF(error.Failed())) {
+    return error.StealNSResult();
+  }
+  firstRowElement.forget(aFirstRowElement);
+  return NS_OK;
+}
 
-  *aRowNode = nullptr;
+Element*
+HTMLEditor::GetFirstTableRowElement(Element& aTableOrElementInTable,
+                                    ErrorResult& aRv) const
+{
+  MOZ_ASSERT(!aRv.Failed());
 
   Element* tableElement =
-    GetElementOrParentByTagNameInternal(*nsGkAtoms::table, *aTableElement);
+    GetElementOrParentByTagNameInternal(*nsGkAtoms::table,
+                                        aTableOrElementInTable);
+  
   if (NS_WARN_IF(!tableElement)) {
-    return NS_ERROR_FAILURE;
+    aRv.Throw(NS_ERROR_FAILURE);
+    return nullptr;
   }
 
-  nsCOMPtr<nsIContent> tableChild = tableElement->GetFirstChild();
-  while (tableChild) {
+  for (nsIContent* tableChild = tableElement->GetFirstChild();
+       tableChild;
+       tableChild = tableChild->GetNextSibling()) {
     if (tableChild->IsHTMLElement(nsGkAtoms::tr)) {
       
-      tableChild.forget(aRowNode);
-      return NS_OK;
+      return tableChild->AsElement();
     }
+    
     
     if (tableChild->IsAnyOfHTMLElements(nsGkAtoms::tbody,
                                         nsGkAtoms::thead,
                                         nsGkAtoms::tfoot)) {
-      nsCOMPtr<nsIContent> rowNode = tableChild->GetFirstChild();
-
-      
-      while (rowNode && !HTMLEditUtils::IsTableRow(rowNode)) {
-        rowNode = rowNode->GetNextSibling();
-      }
-
-      if (rowNode) {
-        rowNode.forget(aRowNode);
-        return NS_OK;
+      for (nsIContent* tableSectionChild = tableChild->GetFirstChild();
+           tableSectionChild;
+           tableSectionChild = tableSectionChild->GetNextSibling()) {
+        if (tableSectionChild->IsHTMLElement(nsGkAtoms::tr)) {
+          return tableSectionChild->AsElement();
+        }
       }
     }
-    
-    
-    
-    
-    tableChild = tableChild->GetNextSibling();
   }
   
-  return NS_SUCCESS_EDITOR_ELEMENT_NOT_FOUND;
+  return nullptr;
 }
 
 NS_IMETHODIMP
@@ -442,9 +450,10 @@ HTMLEditor::InsertTableColumn(int32_t aNumber,
     } else {
       
       if (!rowIndex) {
-        rv = GetFirstRow(table, getter_AddRefs(rowNode));
-        if (NS_WARN_IF(NS_FAILED(rv))) {
-          return rv;
+        ErrorResult error;
+        rowNode = GetFirstTableRowElement(*table, error);
+        if (NS_WARN_IF(error.Failed())) {
+          return error.StealNSResult();
         }
       } else {
         nsCOMPtr<nsINode> nextRow;
