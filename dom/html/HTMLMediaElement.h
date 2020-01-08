@@ -1886,6 +1886,9 @@ private:
 
   
   void AssertReadyStateIsNothing();
+
+  
+  void AttachAndSetUAShadowRoot();
 };
 
 

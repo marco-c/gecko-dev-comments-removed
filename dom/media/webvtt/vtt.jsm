@@ -1012,8 +1012,14 @@ ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
     var controlBar;
     var controlBarShown;
     if (controls) {
-      controlBar = controls.ownerDocument.getAnonymousElementByAttribute(
-        controls, "anonid", "controlBar");
+      if (controls.localName == "videocontrols") {
+        
+        controlBar = controls.ownerDocument.getAnonymousElementByAttribute(
+          controls, "anonid", "controlBar");
+      } else {
+        
+        controlBar = controls.parentNode.getElementById("controlBar");
+      }
       controlBarShown = controlBar ? !!controlBar.clientHeight : false;
     }
 

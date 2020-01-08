@@ -4510,6 +4510,17 @@ HTMLMediaElement::AfterSetAttr(int32_t aNameSpaceID,
       if (mDecoder) {
         mDecoder->SetLooping(!!aValue);
       }
+    } else if (nsContentUtils::IsUAWidgetEnabled() &&
+               aName == nsGkAtoms::controls &&
+               IsInComposedDoc()) {
+      AsyncEventDispatcher* dispatcher =
+        new AsyncEventDispatcher(this,
+                                 NS_LITERAL_STRING("UAWidgetAttributeChanged"),
+                                 CanBubble::eYes,
+                                 ChromeOnlyDispatch::eYes);
+      
+      
+      dispatcher->RunDOMEventWhenSafe();
     }
   }
 
@@ -4554,6 +4565,34 @@ HTMLMediaElement::BindToTree(nsIDocument* aDocument,
 {
   nsresult rv = nsGenericHTMLElement::BindToTree(
     aDocument, aParent, aBindingParent);
+
+  if (nsContentUtils::IsUAWidgetEnabled() && IsInComposedDoc()) {
+    
+    AttachAndSetUAShadowRoot();
+#ifdef ANDROID
+    AsyncEventDispatcher* dispatcher =
+      new AsyncEventDispatcher(this,
+                               NS_LITERAL_STRING("UAWidgetBindToTree"),
+                               CanBubble::eYes,
+                               ChromeOnlyDispatch::eYes);
+    dispatcher->RunDOMEventWhenSafe();
+#else
+    
+    
+    
+    
+    
+    
+    if (Controls()) {
+      AsyncEventDispatcher* dispatcher =
+        new AsyncEventDispatcher(this,
+                                 NS_LITERAL_STRING("UAWidgetBindToTree"),
+                                 CanBubble::eYes,
+                                 ChromeOnlyDispatch::eYes);
+      dispatcher->RunDOMEventWhenSafe();
+    }
+#endif
+  }
 
   mUnboundFromTree = false;
 
@@ -4804,6 +4843,13 @@ HTMLMediaElement::UnbindFromTree(bool aDeep, bool aNullParent)
   MOZ_ASSERT(IsHidden());
   NotifyDecoderActivityChanges();
 
+  AsyncEventDispatcher* dispatcher =
+    new AsyncEventDispatcher(this,
+                             NS_LITERAL_STRING("UAWidgetUnbindFromTree"),
+                             CanBubble::eYes,
+                             ChromeOnlyDispatch::eYes);
+  dispatcher->RunDOMEventWhenSafe();
+
   RefPtr<HTMLMediaElement> self(this);
   nsCOMPtr<nsIRunnable> task =
     NS_NewRunnableFunction("dom::HTMLMediaElement::UnbindFromTree", [self]() {
@@ -4890,6 +4936,17 @@ HTMLMediaElement::AssertReadyStateIsNothing()
     MOZ_CRASH_UNSAFE_PRINTF("ReadyState should be HAVE_NOTHING! %s", buf);
   }
 #endif
+}
+
+void
+HTMLMediaElement::AttachAndSetUAShadowRoot()
+{
+  if (GetShadowRoot()) {
+    return;
+  }
+
+  
+  AttachShadowWithoutNameChecks(ShadowRootMode::Closed);
 }
 
 nsresult

@@ -146,9 +146,11 @@ nsVideoFrame::CreateAnonymousContent(nsTArray<ContentInfo>& aElements)
                                           nsINode::ELEMENT_NODE);
   NS_ENSURE_TRUE(nodeInfo, NS_ERROR_OUT_OF_MEMORY);
 
-  NS_TrustedNewXULElement(getter_AddRefs(mVideoControls), nodeInfo.forget());
-  if (!aElements.AppendElement(mVideoControls))
-    return NS_ERROR_OUT_OF_MEMORY;
+  if (!nsContentUtils::IsUAWidgetEnabled()) {
+    NS_TrustedNewXULElement(getter_AddRefs(mVideoControls), nodeInfo.forget());
+    if (!aElements.AppendElement(mVideoControls))
+      return NS_ERROR_OUT_OF_MEMORY;
+  }
 
   return NS_OK;
 }
@@ -168,6 +170,19 @@ nsVideoFrame::AppendAnonymousContentTo(nsTArray<nsIContent*>& aElements,
   if (mCaptionDiv) {
     aElements.AppendElement(mCaptionDiv);
   }
+}
+
+nsIContent*
+nsVideoFrame::GetVideoControls()
+{
+  if (mVideoControls) {
+    return mVideoControls;
+  }
+  if (mContent->GetShadowRoot()) {
+    
+    return mContent->GetShadowRoot()->GetFirstChild();
+  }
+  return nullptr;
 }
 
 void
@@ -306,6 +321,8 @@ nsVideoFrame::Reflow(nsPresContext* aPresContext,
 
   nsMargin borderPadding = aReflowInput.ComputedPhysicalBorderPadding();
 
+  nsIContent* videoControlsDiv = GetVideoControls();
+
   
   
   
@@ -349,7 +366,7 @@ nsVideoFrame::Reflow(nsPresContext* aPresContext,
                         posterRenderRect.x, posterRenderRect.y, 0);
 
     } else if (child->GetContent() == mCaptionDiv ||
-               child->GetContent() == mVideoControls) {
+               child->GetContent() == videoControlsDiv) {
       
       WritingMode wm = child->GetWritingMode();
       LogicalSize availableSize = aReflowInput.ComputedSize(wm);
@@ -366,7 +383,7 @@ nsVideoFrame::Reflow(nsPresContext* aPresContext,
                  "We gave our child unconstrained available block-size, "
                  "so it should be complete!");
 
-      if (child->GetContent() == mVideoControls && isBSizeShrinkWrapping) {
+      if (child->GetContent() == videoControlsDiv && isBSizeShrinkWrapping) {
         
         contentBoxBSize = myWM.IsOrthogonalTo(wm) ?
           kidDesiredSize.ISize(wm) : kidDesiredSize.BSize(wm);
@@ -375,11 +392,14 @@ nsVideoFrame::Reflow(nsPresContext* aPresContext,
       FinishReflowChild(child, aPresContext,
                         kidDesiredSize, &kidReflowInput,
                         borderPadding.left, borderPadding.top, 0);
-    }
 
-    if (child->GetContent() == mVideoControls && child->GetSize() != oldChildSize) {
-      RefPtr<Runnable> event = new DispatchResizeToControls(child->GetContent());
-      nsContentUtils::AddScriptRunner(event);
+      if (child->GetContent() == videoControlsDiv && child->GetSize() != oldChildSize) {
+        RefPtr<Runnable> event = new DispatchResizeToControls(child->GetContent());
+        nsContentUtils::AddScriptRunner(event);
+      }
+    } else {
+      MOZ_ASSERT_UNREACHABLE("Extra child frame found in nsVideoFrame. "
+                             "Possibly from stray whitespace around the videocontrols container element.");
     }
   }
 
@@ -409,6 +429,23 @@ nsVideoFrame::Reflow(nsPresContext* aPresContext,
 
   MOZ_ASSERT(aStatus.IsEmpty(), "This type of frame can't be split.");
   NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aMetrics);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+bool
+nsVideoFrame::IsLeafDynamic() const
+{
+  return !nsContentUtils::IsUAWidgetEnabled();
 }
 
 class nsDisplayVideo : public nsDisplayItem {
