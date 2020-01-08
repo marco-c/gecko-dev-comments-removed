@@ -585,7 +585,7 @@ class UserScript extends Script {
 
     
     
-    ExtensionTelemetry.contentScriptInjection.stopwatchStart(extension, context);
+    ExtensionTelemetry.userScriptInjection.stopwatchStart(extension, context);
     try {
       let userScriptSandbox = this.sandboxes.get(context);
 
@@ -607,7 +607,7 @@ class UserScript extends Script {
         script.executeInGlobal(userScriptSandbox);
       }
     } finally {
-      ExtensionTelemetry.contentScriptInjection.stopwatchFinish(extension, context);
+      ExtensionTelemetry.userScriptInjection.stopwatchFinish(extension, context);
     }
   }
 
