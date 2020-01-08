@@ -395,11 +395,10 @@ nsDocLoader::OnStartRequest(nsIRequest* request, nsISupports* aCtxt) {
     if (loadFlags & nsIChannel::LOAD_DOCUMENT_URI) {
       
       
-      
-      
-      NS_ASSERTION(
-          (loadFlags & nsIChannel::LOAD_REPLACE) || !(mDocumentRequest.get()),
-          "Overwriting an existing document channel!");
+      if (!(loadFlags & nsIChannel::LOAD_REPLACE) && mDocumentRequest) {
+        mDocumentRequest->Cancel(NS_ERROR_ABORT);
+        mDocumentRequest = nullptr;
+      }
 
       
       mDocumentRequest = request;
