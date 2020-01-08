@@ -94,6 +94,24 @@ class HighlightersOverlay {
 
 
 
+
+
+
+
+  canGridHighlighterToggle(node) {
+    const maxGridHighlighters =
+      Services.prefs.getIntPref("devtools.gridinspector.maxHighlighters");
+    return maxGridHighlighters === 1 ||
+           this.gridHighlighters.size < maxGridHighlighters ||
+           this.gridHighlighters.has(node);
+  }
+
+  
+
+
+
+
+
   isRuleView(node) {
     return !!node.closest("#ruleview-panel");
   }
