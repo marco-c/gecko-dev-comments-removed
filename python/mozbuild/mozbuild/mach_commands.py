@@ -2813,9 +2813,9 @@ class StaticAnalysis(MachCommandBase):
         return path_list
 
     def _run_clang_format_in_console(self, clang_format, paths, assume_filename):
-        path_list = self._generate_path_list(paths, False)
+        path_list = self._generate_path_list(assume_filename, False)
 
-        if path_list == [] and paths[0].endswith(self._format_include_extensions):
+        if path_list == []:
             
             with open(paths[0], 'r') as fin:
                 sys.stdout.write(fin.read().decode('utf8'))
@@ -2827,7 +2827,7 @@ class StaticAnalysis(MachCommandBase):
         args = [clang_format, "-assume-filename={}".format(assume_filename[0])]
 
         process = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-        with open(path_list[0], 'r') as fin:
+        with open(paths[0], 'r') as fin:
             process.stdin.write(fin.read())
             output = process.communicate()[0]
             process.stdin.close()
