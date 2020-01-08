@@ -3661,13 +3661,6 @@ nsStyleDisplay::FinishStyle(
   if (mShapeOutside.GetType() == StyleShapeSourceType::Image) {
     const UniquePtr<nsStyleImage>& shapeImage = mShapeOutside.GetShapeImage();
     if (shapeImage) {
-      
-      
-      
-      if (shapeImage->GetType() == eStyleImageType_Image) {
-        shapeImage->ImageRequest()->GetImageValue()->SetCORSMode(
-          CORSMode::CORS_ANONYMOUS);
-      }
       const nsStyleImage* oldShapeImage =
         (aOldStyle &&
          aOldStyle->mShapeOutside.GetType() == StyleShapeSourceType::Image)

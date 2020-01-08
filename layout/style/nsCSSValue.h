@@ -105,11 +105,13 @@ protected:
   
   
   URLValueData(ServoRawOffsetArc<RustString> aString,
-               already_AddRefed<URLExtraData> aExtraData);
+               already_AddRefed<URLExtraData> aExtraData,
+               CORSMode aCORSMode);
   
   URLValueData(already_AddRefed<nsIURI> aURI,
                ServoRawOffsetArc<RustString> aString,
-               already_AddRefed<URLExtraData> aExtraData);
+               already_AddRefed<URLExtraData> aExtraData,
+               CORSMode aCORSMode);
 
 public:
   
@@ -187,16 +189,11 @@ protected:
   
   
   bool mLoadedImage = false;
-  CORSMode mCORSMode = CORSMode::CORS_NONE;
+  const CORSMode mCORSMode;
 
   virtual ~URLValueData();
 
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
-
-public:
-  void SetCORSMode(CORSMode aCORSMode) {
-    mCORSMode = aCORSMode;
-  }
 
 private:
   URLValueData(const URLValueData& aOther) = delete;
@@ -209,7 +206,7 @@ struct URLValue final : public URLValueData
 {
   URLValue(ServoRawOffsetArc<RustString> aString,
            already_AddRefed<URLExtraData> aExtraData)
-    : URLValueData(aString, std::move(aExtraData))
+    : URLValueData(aString, std::move(aExtraData), CORSMode::CORS_NONE)
   { }
 
   URLValue(const URLValue&) = delete;
