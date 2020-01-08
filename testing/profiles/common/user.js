@@ -41,3 +41,8 @@ user_pref("security.turn_off_all_security_so_that_viruses_can_take_over_this_com
 user_pref("xpinstall.signatures.required", false);
 
 user_pref("services.settings.server", "http://localhost/remote-settings-dummy/v1");
+
+user_pref("media.autoplay.default", 0); 
+user_pref("media.autoplay.enabled.user-gestures-needed", true);
+user_pref("media.autoplay.ask-permission", false);
+user_pref("media.autoplay.block-webaudio", false);

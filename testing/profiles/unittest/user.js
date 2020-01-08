@@ -190,7 +190,6 @@ user_pref("lightweightThemes.selectedThemeID", "");
 
 
 user_pref("marionette.prefs.recommended", false);
-user_pref("media.autoplay.enabled", true);
 user_pref("media.cache_size", 1000);
 user_pref("media.dormant-on-pause-timeout-ms", 0); 
 
