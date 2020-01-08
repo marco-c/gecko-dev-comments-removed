@@ -26,5 +26,8 @@ config = {
 
     "download_minidump_stackwalk": True,
 
+    
+    "geckodriver": "%(test_install_path)s/bin/geckodriver",
+
     "per_test_category": "web-platform",
 }

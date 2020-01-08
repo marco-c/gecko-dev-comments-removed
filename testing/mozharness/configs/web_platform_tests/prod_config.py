@@ -3,6 +3,7 @@
 
 
 
+
 config = {
     "options": [
         "--prefs-root=%(test_path)s/prefs",
@@ -17,8 +18,7 @@ config = {
     "download_minidump_stackwalk": True,
 
     
-    "geckodriver": "%(abs_test_bin_dir)s/geckodriver",
+    "geckodriver": "%(test_install_path)s/bin/geckodriver",
 
     "per_test_category": "web-platform",
 }
-
