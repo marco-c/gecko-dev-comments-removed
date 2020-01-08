@@ -1090,11 +1090,20 @@ MarkupView.prototype = {
         continue;
       }
 
-      if (type === "attributes" || type === "characterData"
-        || type === "events" || type === "pseudoClassLock") {
+      if (
+        type === "attributes" ||
+        type === "characterData" ||
+        type === "customElementDefined" ||
+        type === "events" ||
+        type === "pseudoClassLock"
+      ) {
         container.update();
-      } else if (type === "childList" || type === "nativeAnonymousChildList"
-        || type === "slotchange" || type === "shadowRootAttached") {
+      } else if (
+        type === "childList" ||
+        type === "nativeAnonymousChildList" ||
+        type === "slotchange" ||
+        type === "shadowRootAttached"
+      ) {
         container.childrenDirty = true;
         
         
