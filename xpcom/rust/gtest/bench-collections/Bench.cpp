@@ -224,10 +224,12 @@ static const size_t VALS_LEN = 131072;
 const Params gParamsList[] = {
   
   
+  
   { "succ_lookups",  1024,     5000,      0,       0,          false },
   { "fail_lookups",  1024,     0,         5000,    0,          false },
   { "insert_remove", VALS_LEN, 0,         0,       0,          true  },
   { "iterate",       1024,     0,         0,       5000,       false },
+  
 };
 
 class BenchCollections : public ::testing::Test

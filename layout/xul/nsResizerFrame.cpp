@@ -492,18 +492,23 @@ nsResizerFrame::RestoreOriginalSize(nsIContent* aContent)
 nsResizerFrame::Direction
 nsResizerFrame::GetDirection()
 {
-  static const Element::AttrValuesArray strings[] =
-    {nsGkAtoms::topleft,    nsGkAtoms::top,    nsGkAtoms::topright,
+  static const Element::AttrValuesArray strings[] = {
+    
+     nsGkAtoms::topleft,    nsGkAtoms::top,    nsGkAtoms::topright,
      nsGkAtoms::left,                          nsGkAtoms::right,
      nsGkAtoms::bottomleft, nsGkAtoms::bottom, nsGkAtoms::bottomright,
      nsGkAtoms::bottomstart,                   nsGkAtoms::bottomend,
-     nullptr};
+     nullptr
+     
+    };
 
-  static const Direction directions[] =
-    {{-1, -1}, {0, -1}, {1, -1},
+  static const Direction directions[] = {
+    
+     {-1, -1}, {0, -1}, {1, -1},
      {-1,  0},          {1,  0},
      {-1,  1}, {0,  1}, {1,  1},
      {-1,  1},          {1,  1}
+     
     };
 
   if (!GetContent()) {

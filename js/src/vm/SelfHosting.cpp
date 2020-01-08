@@ -2381,6 +2381,7 @@ intrinsic_CopyDataPropertiesOrGetOwnKeys(JSContext* cx, unsigned argc, Value* vp
 
 
 static const JSFunctionSpec intrinsic_functions[] = {
+    
     JS_INLINABLE_FN("std_Array",                 array_construct,              1,0, Array),
     JS_INLINABLE_FN("std_Array_join",            array_join,                   1,0, ArrayJoin),
     JS_INLINABLE_FN("std_Array_push",            array_push,                   1,0, ArrayPush),
@@ -2774,6 +2775,7 @@ static const JSFunctionSpec intrinsic_functions[] = {
     JS_FN("PromiseResolve", intrinsic_PromiseResolve, 2, 0),
 
     JS_FS_END
+    
 };
 
 void

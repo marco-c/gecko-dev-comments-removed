@@ -281,6 +281,7 @@ Sprinter::jsprintf(const char* format, ...)
 }
 
 const char js_EscapeMap[] = {
+     
     '\b', 'b',
     '\f', 'f',
     '\n', 'n',
@@ -291,6 +292,7 @@ const char js_EscapeMap[] = {
     '\'', '\'',
     '\\', '\\',
     '\0'
+    
 };
 
 template <typename CharT>

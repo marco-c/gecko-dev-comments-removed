@@ -57,15 +57,19 @@ struct MimeTypeAssociation
 };
 
 static const ProtocolAssociation appProtocols[] = {
+  
   { "http",   true     },
   { "https",  true     },
   { "ftp",    false },
   { "chrome", false }
+  
 };
 
 static const MimeTypeAssociation appTypes[] = {
+  
   { "text/html",             "htm html shtml" },
   { "application/xhtml+xml", "xhtml xht"      }
+  
 };
 
 

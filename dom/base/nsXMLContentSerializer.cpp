@@ -1181,6 +1181,7 @@ static const uint16_t kGTVal = 62;
 
 
 static const uint8_t kEntities[] = {
+  
   _, _, _, _, _, _, _, _, _, _,
   _, _, _, _, _, _, _, _, _, _,
   _, _, _, _, _, _, _, _, _, _,
@@ -1188,10 +1189,12 @@ static const uint8_t kEntities[] = {
   _, _, _, _, _, _, _, _, _, _,
   _, _, _, _, _, _, _, _, _, _,
   3, _, 4
+  
 };
 
 
 static const uint8_t kAttrEntities[] = {
+  
   _, _, _, _, _, _, _, _, _, 5,
   6, _, _, 7, _, _, _, _, _, _,
   _, _, _, _, _, _, _, _, _, _,
@@ -1199,6 +1202,7 @@ static const uint8_t kAttrEntities[] = {
   _, _, _, _, _, _, _, _, _, _,
   _, _, _, _, _, _, _, _, _, _,
   3, _, 4
+  
 };
 
 #undef _

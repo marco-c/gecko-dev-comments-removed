@@ -23,6 +23,7 @@ struct VMFlagString
 };
 
 static const VMFlagString sVMFlagStrings[] = {
+  
   {"ac", "Accountable",   VMFlag::Accountable},
   {"ar", "ArchSpecific",  VMFlag::ArchSpecific},
   {"dc", "NoFork",        VMFlag::NoFork},
@@ -51,6 +52,7 @@ static const VMFlagString sVMFlagStrings[] = {
   {"sh", "Shared",        VMFlag::Shared},
   {"sr", "Sequential",    VMFlag::Sequential},
   {"wr", "Writable",      VMFlag::Writable},
+  
 };
 } 
 
@@ -59,6 +61,7 @@ constexpr size_t kVMFlags = size_t(-1);
 
 
 const MemoryMapping::Field MemoryMapping::sFields[] = {
+  
   {"AnonHugePages",   offsetof(MemoryMapping, mAnonHugePages)},
   {"Anonymous",       offsetof(MemoryMapping, mAnonymous)},
   {"KernelPageSize",  offsetof(MemoryMapping, mKernelPageSize)},
@@ -83,6 +86,7 @@ const MemoryMapping::Field MemoryMapping::sFields[] = {
   
   
   {"VmFlags",         kVMFlags},
+  
 };
 
 template <typename T, int n>

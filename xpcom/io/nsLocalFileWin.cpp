@@ -2899,6 +2899,7 @@ nsLocalFile::IsExecutable(bool* aResult)
 
     
     static const char* const executableExts[] = {
+      
       "ad",
       "ade",         
       "adp",
@@ -2974,6 +2975,7 @@ nsLocalFile::IsExecutable(bool* aResult)
       "wsc",
       "wsf",
       "wsh"
+      
     };
     nsDependentSubstring ext = Substring(path, dotIdx + 1);
     for (size_t i = 0; i < ArrayLength(executableExts); ++i) {

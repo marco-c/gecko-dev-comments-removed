@@ -57,6 +57,7 @@ InfallibleQuote(RangedPtr<const SrcCharT> srcBegin, RangedPtr<const SrcCharT> sr
     
     
     static const Latin1Char escapeLookup[256] = {
+        
         'u', 'u', 'u', 'u', 'u', 'u', 'u', 'u', 'b', 't',
         'n', 'u', 'f', 'r', 'u', 'u', 'u', 'u', 'u', 'u',
         'u', 'u', 'u', 'u', 'u', 'u', 'u', 'u', 'u', 'u',
@@ -67,6 +68,7 @@ InfallibleQuote(RangedPtr<const SrcCharT> srcBegin, RangedPtr<const SrcCharT> sr
         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
         0,   0,  '\\', 
+        
     };
 
     
@@ -1103,10 +1105,12 @@ json_stringify(JSContext* cx, unsigned argc, Value* vp)
 }
 
 static const JSFunctionSpec json_static_methods[] = {
+    
     JS_FN(js_toSource_str,  json_toSource,      0, 0),
     JS_FN("parse",          json_parse,         2, 0),
     JS_FN("stringify",      json_stringify,     3, 0),
     JS_FS_END
+    
 };
 
 JSObject*

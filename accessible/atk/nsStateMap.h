@@ -53,6 +53,7 @@ struct AtkStateMap {
 
 
 static const AtkStateMap gAtkStateMap[] = {                     
+  
   { kNone,                                    kMapOpposite },   
   { ATK_STATE_SELECTED,                       kMapDirectly },   
   { ATK_STATE_FOCUSED,                        kMapDirectly },   
@@ -102,6 +103,7 @@ static const AtkStateMap gAtkStateMap[] = {
   { ATK_STATE_EXPANDABLE,                     kMapDirectly },   
   { kNone,                                    kMapDirectly },   
   { ATK_STATE_ACTIVE,                         kMapDirectly }    
+  
 };
 
 static const auto gAtkStateMapLen = std::extent<decltype(gAtkStateMap)>::value;

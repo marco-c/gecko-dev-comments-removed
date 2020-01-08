@@ -34,6 +34,7 @@ using namespace mozilla::dom;
 
 
 const nsStaticAtom* const kElementsHTML[] = {
+  
   nsGkAtoms::a,
   nsGkAtoms::abbr,
   nsGkAtoms::acronym,
@@ -146,9 +147,11 @@ const nsStaticAtom* const kElementsHTML[] = {
   nsGkAtoms::video,
   nsGkAtoms::wbr,
   nullptr
+  
 };
 
 const nsStaticAtom* const kAttributesHTML[] = {
+  
   nsGkAtoms::abbr,
   nsGkAtoms::accept,
   nsGkAtoms::acceptcharset,
@@ -254,9 +257,11 @@ const nsStaticAtom* const kAttributesHTML[] = {
   nsGkAtoms::width,
   nsGkAtoms::wrap,
   nullptr
+  
 };
 
 const nsStaticAtom* const kPresAttributesHTML[] = {
+  
   nsGkAtoms::align,
   nsGkAtoms::background,
   nsGkAtoms::bgcolor,
@@ -273,9 +278,11 @@ const nsStaticAtom* const kPresAttributesHTML[] = {
   nsGkAtoms::valign,
   nsGkAtoms::vspace,
   nullptr
+  
 };
 
 const nsStaticAtom* const kURLAttributesHTML[] = {
+  
   nsGkAtoms::action,
   nsGkAtoms::href,
   nsGkAtoms::src,
@@ -283,6 +290,7 @@ const nsStaticAtom* const kURLAttributesHTML[] = {
   nsGkAtoms::cite,
   nsGkAtoms::background,
   nullptr
+  
 };
 
 const nsStaticAtom* const kElementsSVG[] = {
@@ -921,12 +929,14 @@ const nsStaticAtom* const kAttributesMathML[] = {
 };
 
 const nsStaticAtom* const kURLAttributesMathML[] = {
+  
   nsGkAtoms::href,
   nsGkAtoms::src,
   nsGkAtoms::cdgroup_,
   nsGkAtoms::altimg_,
   nsGkAtoms::definitionURL_,
   nullptr
+  
 };
 
 nsTreeSanitizer::AtomsTable* nsTreeSanitizer::sElementsHTML = nullptr;

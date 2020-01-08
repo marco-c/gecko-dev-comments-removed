@@ -1146,9 +1146,12 @@ JSFlatString::isIndexSlow(const char16_t* s, size_t length, uint32_t* indexp);
 
 
 
+
 #define FROM_SMALL_CHAR(c) Latin1Char((c) + ((c) < 10 ? '0' :      \
                                              (c) < 36 ? 'a' - 10 : \
                                              'A' - 36))
+
+
 
 
 
@@ -1159,6 +1162,7 @@ JSFlatString::isIndexSlow(const char16_t* s, size_t length, uint32_t* indexp);
                           (c) >= 'a' && (c) <= 'z' ? (c) - 'a' + 10 :         \
                           (c) >= 'A' && (c) <= 'Z' ? (c) - 'A' + 36 :         \
                           StaticStrings::INVALID_SMALL_CHAR)
+
 
 #define R TO_SMALL_CHAR
 const StaticStrings::SmallChar StaticStrings::toSmallChar[] = { R7(0) };

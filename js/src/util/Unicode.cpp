@@ -55,6 +55,7 @@ using namespace js::unicode;
 
 
 const CharacterInfo unicode::js_charinfo[] = {
+    
     { 0, 0, 0 },
     { 0, 0, 1 },
     { 0, 0, 4 },
@@ -225,9 +226,11 @@ const CharacterInfo unicode::js_charinfo[] = {
     { 0, 928, 2 },
     { 64608, 0, 2 },
     { 26672, 0, 2 },
+    
 };
 
 const uint8_t unicode::index1[] = {
+    
       0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  10,  11,  12,  13,  14,  15,  16,  17,
      18,  19,  20,  21,  22,  23,  24,  25,  26,  27,  28,  29,  30,  31,  32,  33,  34,  35,
      36,  37,  38,  39,  40,  41,  42,  43,  44,  45,  46,  47,  48,  49,  50,  51,  52,  53,
@@ -285,9 +288,11 @@ const uint8_t unicode::index1[] = {
      94,  94,  94,  94,  94,  94,  94,  94,  94,  94,  94,  94,  94,  94,  94,  94,  94,  94,
      94,  94,  94,  94,  94,  94,  26,  26,  26,  26,  26, 162,  26, 163, 164, 165, 166, 167,
      26,  26,  26,  26, 168, 169, 170, 171, 172, 173,  26, 174, 175, 176, 177, 178,
+     
 };
 
 const uint8_t unicode::index2[] = {
+      
       0,   0,   0,   0,   0,   0,   0,   0,   0,   1,   1,   1,   1,   1,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   1,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   2,   2,   2,   2,   2,   2,
@@ -925,9 +930,11 @@ const uint8_t unicode::index2[] = {
       5,   5,   5,   5,   0,   0,   5,   5,   5,   0,   0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
+      
 };
 
 const CodepointsWithSameUpperCaseInfo unicode::js_codepoints_with_same_upper_info[] = {
+    
     { 0, 0, 0 },
     { 32, 0, 0 },
     { 32, 232, 0 },
@@ -1063,9 +1070,11 @@ const CodepointsWithSameUpperCaseInfo unicode::js_codepoints_with_same_upper_inf
     { 23254, 0, 0 },
     { 23275, 0, 0 },
     { 928, 0, 0 },
+    
 };
 
 const uint8_t unicode::codepoints_with_same_upper_index1[] = {
+     
       0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   0,   0,   0,  10,  11,  12,  13,  14,
      15,  16,  17,  18,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
@@ -1123,9 +1132,11 @@ const uint8_t unicode::codepoints_with_same_upper_index1[] = {
       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  44,   0,   0,   0,
+      
 };
 
 const uint8_t unicode::codepoints_with_same_upper_index2[] = {
+      
       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
@@ -1286,9 +1297,11 @@ const uint8_t unicode::codepoints_with_same_upper_index2[] = {
       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,
       1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   0,   0,   0,   0,   0,
+      
 };
 
 const FoldingInfo unicode::js_foldinfo[] = {
+    
     { 0, 0, 0, 0 },
     { 32, 0, 0, 0 },
     { 32, 8415, 0, 0 },
@@ -1503,9 +1516,11 @@ const FoldingInfo unicode::js_foldinfo[] = {
     { 928, 0, 0, 0 },
     { 0, 64608, 0, 0 },
     { 26672, 0, 0, 0 },
+    
 };
 
 const uint8_t unicode::folding_index1[] = {
+     
       0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  10,   0,   0,  11,  12,  13,  14,  15,
      16,  17,  18,  19,  20,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
@@ -1563,9 +1578,11 @@ const uint8_t unicode::folding_index1[] = {
       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,  50,  51,   0,   0,
+      
 };
 
 const uint8_t unicode::folding_index2[] = {
+      
       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
@@ -1751,11 +1768,13 @@ const uint8_t unicode::folding_index2[] = {
       4,   4,   4,   4,   4,   4,   4,   4,   4,   4,   4,   4,   4,   4,   4,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+      
 };
 
 bool
 js::unicode::IsIdentifierStartNonBMP(uint32_t codePoint)
 {
+    
     if (codePoint >= 0x10000 && codePoint <= 0x1000B) { 
         return true;
     }
@@ -2408,11 +2427,13 @@ js::unicode::IsIdentifierStartNonBMP(uint32_t codePoint)
         return true;
     }
     return false;
+    
 }
 
 bool
 js::unicode::IsIdentifierPartNonBMP(uint32_t codePoint)
 {
+    
     if (codePoint >= 0x10000 && codePoint <= 0x1000B) { 
         return true;
     }
@@ -3230,6 +3251,7 @@ js::unicode::IsIdentifierPartNonBMP(uint32_t codePoint)
         return true;
     }
     return false;
+    
 }
 
 bool
@@ -3294,6 +3316,7 @@ size_t
 js::unicode::LengthUpperCaseSpecialCasing(char16_t ch)
 {
     switch(ch) {
+      
       case 0x00DF: return 2; 
       case 0x0149: return 2; 
       case 0x01F0: return 2; 
@@ -3396,6 +3419,7 @@ js::unicode::LengthUpperCaseSpecialCasing(char16_t ch)
       case 0xFB15: return 2; 
       case 0xFB16: return 2; 
       case 0xFB17: return 2; 
+      
     }
 
     MOZ_ASSERT_UNREACHABLE("Bad character input.");
@@ -3846,6 +3870,7 @@ js::unicode::AppendUpperCaseSpecialCasing(char16_t ch, char16_t* elements, size_
 
 const bool unicode::js_isidstart[] = {
 
+
  ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
  ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
  ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
@@ -3859,6 +3884,7 @@ const bool unicode::js_isidstart[] = {
  true, true, true, true, true, true, true, true, true, true,
  true, true, true, true, true, true, true, true, true, true,
  true, true, true, ____, ____, ____, ____, ____,
+
 };
 
 
@@ -3870,6 +3896,7 @@ const bool unicode::js_isidstart[] = {
 
 
 const bool unicode::js_isident[] = {
+
 
  ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
  ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
@@ -3884,10 +3911,12 @@ const bool unicode::js_isident[] = {
  true, true, true, true, true, true, true, true, true, true,
  true, true, true, true, true, true, true, true, true, true,
  true, true, true, ____, ____, ____, ____, ____,
+
 };
 
 
 const bool unicode::js_isspace[] = {
+
 
  ____, ____, ____, ____, ____, ____, ____, ____, ____, true,
  true, true, true, true, ____, ____, ____, ____, ____, ____,
@@ -3902,6 +3931,7 @@ const bool unicode::js_isspace[] = {
  ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
  ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
  ____, ____, ____, ____, ____, ____, ____, ____,
+
 };
 
 #undef ____

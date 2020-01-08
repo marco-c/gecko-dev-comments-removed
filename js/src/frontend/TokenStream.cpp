@@ -2066,6 +2066,7 @@ enum FirstCharKind {
 #define _______     Other
 static const uint8_t firstCharKinds[] = {
 
+
  _______, _______, _______, _______, _______, _______, _______, _______, _______,   Space,
      EOL,   Space,   Space,     EOL, _______, _______, _______, _______, _______, _______,
  _______, _______, _______, _______, _______, _______, _______, _______, _______, _______,
@@ -2079,6 +2080,7 @@ static const uint8_t firstCharKinds[] = {
    Ident,   Ident,   Ident,   Ident,   Ident,   Ident,   Ident,   Ident,   Ident,   Ident,
    Ident,   Ident,   Ident,   Ident,   Ident,   Ident,   Ident,   Ident,   Ident,   Ident,
    Ident,   Ident,   Ident,    T_LC, _______,    T_RC,T_BITNOT, _______
+
 };
 #undef T_COMMA
 #undef T_COLON

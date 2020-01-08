@@ -376,6 +376,7 @@ str_uneval(JSContext* cx, unsigned argc, Value* vp)
 }
 
 static const JSFunctionSpec string_functions[] = {
+    
     JS_FN(js_escape_str,             str_escape,                1, JSPROP_RESOLVING),
     JS_FN(js_unescape_str,           str_unescape,              1, JSPROP_RESOLVING),
     JS_FN(js_uneval_str,             str_uneval,                1, JSPROP_RESOLVING),
@@ -385,6 +386,7 @@ static const JSFunctionSpec string_functions[] = {
     JS_FN(js_encodeURIComponent_str, str_encodeURI_Component,   1, JSPROP_RESOLVING),
 
     JS_FS_END
+    
 };
 
 static const unsigned STRING_ELEMENT_ATTRS = JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT;
@@ -3375,6 +3377,7 @@ js::str_concat(JSContext* cx, unsigned argc, Value* vp)
 }
 
 static const JSFunctionSpec string_methods[] = {
+    
     JS_FN(js_toSource_str,     str_toSource,          0,0),
 
     
@@ -3438,6 +3441,7 @@ static const JSFunctionSpec string_methods[] = {
 
     JS_SELF_HOSTED_SYM_FN(iterator, "String_iterator", 0,0),
     JS_FS_END
+    
 };
 
 
@@ -3696,6 +3700,7 @@ js::str_fromCodePoint(JSContext* cx, unsigned argc, Value* vp)
 }
 
 static const JSFunctionSpec string_static_methods[] = {
+    
     JS_INLINABLE_FN("fromCharCode", js::str_fromCharCode, 1, 0, StringFromCharCode),
     JS_INLINABLE_FN("fromCodePoint", js::str_fromCodePoint, 1, 0, StringFromCodePoint),
 
@@ -3730,6 +3735,7 @@ static const JSFunctionSpec string_static_methods[] = {
 
     JS_SELF_HOSTED_FN("localeCompare",   "String_static_localeCompare", 2,0),
     JS_FS_END
+    
 };
 
  Shape*
@@ -3823,6 +3829,7 @@ js::InitStringClass(JSContext* cx, Handle<GlobalObject*> global)
 
 static const bool js_isUriReservedPlusPound[] = {
 
+
  ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
  ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
  ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
@@ -3836,6 +3843,7 @@ static const bool js_isUriReservedPlusPound[] = {
  ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
  ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
  ____, ____, ____, ____, ____, ____, ____, ____
+
 };
 
 
@@ -3855,6 +3863,7 @@ static const bool js_isUriReservedPlusPound[] = {
 
 static const bool js_isUriUnescaped[] = {
 
+
  ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
  ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
  ____, ____, ____, ____, ____, ____, ____, ____, ____, ____,
@@ -3868,6 +3877,7 @@ static const bool js_isUriUnescaped[] = {
  true, true, true, true, true, true, true, true, true, true,
  true, true, true, true, true, true, true, true, true, true,
  true, true, true, ____, ____, ____, true, ____
+
 };
 
 #undef ____

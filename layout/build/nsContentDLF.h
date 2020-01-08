@@ -67,6 +67,7 @@ private:
 nsresult
 NS_NewContentDocumentLoaderFactory(nsIDocumentLoaderFactory** aResult);
 
+
 #ifdef MOZ_WEBM
 #define CONTENTDLF_WEBM_CATEGORIES \
     { "Gecko-Content-Viewers", VIDEO_WEBM, "@mozilla.org/content/document-loader-factory;1" }, \

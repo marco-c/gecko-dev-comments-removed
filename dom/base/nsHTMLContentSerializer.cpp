@@ -394,6 +394,7 @@ static const uint16_t kValNBSP = 160;
 
 
 static const uint8_t kEntities[] = {
+  
   _, _, _, _, _, _, _, _, _, _,
   _, _, _, _, _, _, _, _, _, _,
   _, _, _, _, _, _, _, _, _, _,
@@ -411,10 +412,12 @@ static const uint8_t kEntities[] = {
   _, _, _, _, _, _, _, _, _, _,
   _, _, _, _, _, _, _, _, _, _,
   5
+  
 };
 
 
 static const uint8_t kAttrEntities[] = {
+  
   _, _, _, _, _, _, _, _, _, _,
   _, _, _, _, _, _, _, _, _, _,
   _, _, _, _, _, _, _, _, _, _,
@@ -432,6 +435,7 @@ static const uint8_t kAttrEntities[] = {
   _, _, _, _, _, _, _, _, _, _,
   _, _, _, _, _, _, _, _, _, _,
   5
+  
 };
 
 #undef _
