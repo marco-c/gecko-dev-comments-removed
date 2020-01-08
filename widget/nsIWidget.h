@@ -1851,7 +1851,7 @@ public:
 
 
 
-    virtual NativeIMEContext GetNativeIMEContext();
+    virtual NativeIMEContext GetNativeIMEContext() = 0;
 
     
 

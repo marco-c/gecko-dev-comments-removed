@@ -1933,6 +1933,22 @@ nsBaseWidget::EnsureTextEventDispatcher()
   mTextEventDispatcher = new TextEventDispatcher(this);
 }
 
+nsIWidget::NativeIMEContext
+nsBaseWidget::GetNativeIMEContext()
+{
+  if (mTextEventDispatcher && mTextEventDispatcher->GetPseudoIMEContext()) {
+    
+    
+    
+    
+    NativeIMEContext pseudoIMEContext;
+    pseudoIMEContext.InitWithRawNativeIMEContext(
+                       mTextEventDispatcher->GetPseudoIMEContext());
+    return pseudoIMEContext;
+  }
+  return NativeIMEContext(this);
+}
+
 nsIWidget::TextEventDispatcher*
 nsBaseWidget::GetTextEventDispatcher()
 {
@@ -2440,12 +2456,6 @@ nsBaseWidget::DefaultFillScrollCapture(DrawTarget* aSnapshotDrawTarget)
   aSnapshotDrawTarget->Flush();
 }
 #endif
-
-nsIWidget::NativeIMEContext
-nsIWidget::GetNativeIMEContext()
-{
-  return NativeIMEContext(this);
-}
 
 const IMENotificationRequests&
 nsIWidget::IMENotificationRequestsRef()
