@@ -150,6 +150,16 @@ class IMContextWrapper final : public TextEventDispatcherListener {
 
   nsDependentCSubstring GetIMName() const;
 
+  
+
+
+
+
+
+  static guint16 GetWaitingSynthesizedKeyPressHardwareKeyCode() {
+    return sWaitingSynthesizedKeyPressHardwareKeyCode;
+  }
+
  protected:
   ~IMContextWrapper();
 
@@ -291,6 +301,8 @@ class IMContextWrapper final : public TextEventDispatcherListener {
   
   
   GdkEventKeyQueue mPostingKeyEvents;
+
+  static guint16 sWaitingSynthesizedKeyPressHardwareKeyCode;
 
   struct Range {
     uint32_t mOffset;
