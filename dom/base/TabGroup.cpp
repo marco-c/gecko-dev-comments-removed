@@ -85,12 +85,7 @@ TabGroup::EnsureThrottledEventQueues()
   for (size_t i = 0; i < size_t(TaskCategory::Count); i++) {
     TaskCategory category = static_cast<TaskCategory>(i);
     if (category == TaskCategory::Worker || category == TaskCategory::Timer) {
-      nsCOMPtr<nsISerialEventTarget> target = ThrottledEventQueue::Create(mEventTargets[i]);
-      if (target) {
-        
-        
-        mEventTargets[i] = target;
-      }
+      mEventTargets[i] = ThrottledEventQueue::Create(mEventTargets[i]);
     }
   }
 }
