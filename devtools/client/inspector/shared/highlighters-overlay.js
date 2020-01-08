@@ -285,8 +285,9 @@ class HighlightersOverlay {
 
     
     
-    this.emit("flexbox-highlighter-hidden", this.flexboxHighlighterShown);
+    const nodeFront = this.flexboxHighlighterShown;
     this.flexboxHighlighterShown = null;
+    this.emit("flexbox-highlighter-hidden", nodeFront);
 
     
     this.state.flexbox = null;
