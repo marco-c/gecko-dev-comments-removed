@@ -29,6 +29,14 @@
   setFocusToVideoElement();
 
   
+  let observer = new MutationObserver(
+    () => {
+      observer.disconnect();
+      document.removeEventListener("focus", setFocusToVideoElement, true);
+    });
+  observer.observe(document.documentElement, { childList: true, subtree: true });
+
+  
   document.addEventListener("keypress", ev => {
     
     
