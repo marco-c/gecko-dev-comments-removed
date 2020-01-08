@@ -4581,27 +4581,6 @@ HTMLEditor::GetElementOrigin(Element& aElement,
   return NS_OK;
 }
 
-nsresult
-HTMLEditor::EndUpdateViewBatch()
-{
-  nsresult rv = EditorBase::EndUpdateViewBatch();
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  if (mUpdateCount) {
-    return NS_OK;
-  }
-
-  
-  
-  
-  
-  
-  
-  RefPtr<Selection> selection = GetSelection();
-  NS_ENSURE_TRUE(selection, NS_ERROR_NOT_INITIALIZED);
-  return CheckSelectionStateForAnonymousButtons(selection);
-}
-
 Element*
 HTMLEditor::GetSelectionContainer()
 {

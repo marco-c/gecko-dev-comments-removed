@@ -4136,27 +4136,45 @@ EditorBase::BeginUpdateViewBatch()
   mUpdateCount++;
 }
 
-nsresult
+void
 EditorBase::EndUpdateViewBatch()
 {
   MOZ_ASSERT(mUpdateCount > 0, "bad state");
 
   if (mUpdateCount <= 0) {
     mUpdateCount = 0;
-    return NS_ERROR_FAILURE;
+    return;
   }
 
-  mUpdateCount--;
-
-  if (!mUpdateCount) {
-    
-    RefPtr<Selection> selection = GetSelection();
-    if (selection) {
-      selection->EndBatchChanges();
-    }
+  if (--mUpdateCount) {
+    return;
   }
 
-  return NS_OK;
+  
+  RefPtr<Selection> selection = GetSelection();
+  if (selection) {
+    selection->EndBatchChanges();
+  }
+
+  HTMLEditor* htmlEditor = AsHTMLEditor();
+  if (!htmlEditor) {
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  if (NS_WARN_IF(!selection)) {
+    return;
+  }
+
+  DebugOnly<nsresult> rv =
+    htmlEditor->CheckSelectionStateForAnonymousButtons(selection);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+    "CheckSelectionStateForAnonymousButtons() failed");
 }
 
 TextComposition*

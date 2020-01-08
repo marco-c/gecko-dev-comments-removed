@@ -752,8 +752,6 @@ protected:
     EditSubAction aEditSubAction, nsIEditor::EDirection aDirection) override;
   virtual void OnEndHandlingTopLevelEditSubAction() override;
 
-  virtual nsresult EndUpdateViewBatch() override;
-
 protected: 
   virtual ~HTMLEditor();
 

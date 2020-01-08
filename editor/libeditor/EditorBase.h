@@ -1665,7 +1665,7 @@ protected:
   void EndPlaceholderTransaction();
 
   void BeginUpdateViewBatch();
-  virtual nsresult EndUpdateViewBatch();
+  void EndUpdateViewBatch();
 
 protected: 
   
