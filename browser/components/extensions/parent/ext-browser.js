@@ -189,6 +189,12 @@ global.TabContext = class extends EventEmitter {
   }
 
   onLocationChange(browser, webProgress, request, locationURI, flags) {
+    if (!webProgress.isTopLevel) {
+      
+      
+      
+      return;
+    }
     let gBrowser = browser.ownerGlobal.gBrowser;
     let tab = gBrowser.getTabForBrowser(browser);
     
