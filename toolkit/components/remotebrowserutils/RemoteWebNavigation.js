@@ -82,7 +82,8 @@ RemoteWebNavigation.prototype = {
         let principal = aTriggeringPrincipal;
         
         
-        if (!principal) {
+        
+        if (!principal || principal.isSystemPrincipal) {
           let attrs = {
             userContextId: this._browser.getAttribute("usercontextid") || 0,
             privateBrowsingId: PrivateBrowsingUtils.isBrowserPrivate(this._browser) ? 1 : 0
