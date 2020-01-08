@@ -7474,7 +7474,7 @@ js::CompileAsmJS(JSContext* cx, AsmJSParser& parser, ParseNode* stmtList, bool* 
     
     
     MOZ_ASSERT(funbox->function()->isInterpreted());
-    funbox->object = moduleFun;
+    funbox->clobberFunction(moduleFun);
 
     
     *validated = true;

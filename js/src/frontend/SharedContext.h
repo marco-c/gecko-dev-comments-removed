@@ -403,7 +403,7 @@ class FunctionBox : public ObjectBox, public SharedContext
     
     bool hasInnerFunctions_:1;
 
-    FunctionBox(JSContext* cx, ObjectBox* traceListHead, JSFunction* fun,
+    FunctionBox(JSContext* cx, TraceListNode* traceListHead, JSFunction* fun,
                 uint32_t toStringStart, Directives directives, bool extraWarnings,
                 GeneratorKind generatorKind, FunctionAsyncKind asyncKind);
 
@@ -437,7 +437,8 @@ class FunctionBox : public ObjectBox, public SharedContext
     void setEnclosingScopeForInnerLazyFunction(Scope* enclosingScope);
     void finish();
 
-    JSFunction* function() const { return &object->as<JSFunction>(); }
+    JSFunction* function() const { return &object()->as<JSFunction>(); }
+    void clobberFunction(JSFunction* function) { gcThing = function; }
 
     Scope* compilationEnclosingScope() const override {
         

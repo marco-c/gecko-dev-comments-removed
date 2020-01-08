@@ -57,6 +57,9 @@ enum {
     JOF_REGEXP          = 16,       
     JOF_DOUBLE          = 17,       
     JOF_SCOPE           = 18,       
+#ifdef ENABLE_BIGINT
+    JOF_BIGINT          = 19,       
+#endif
     JOF_TYPEMASK        = 0x001f,   
 
     JOF_NAME            = 1 << 5,   

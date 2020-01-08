@@ -131,6 +131,20 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_AS)
         return new_<NumericLiteral>(value, decimalPoint, pos);
     }
 
+#ifdef ENABLE_BIGINT
+    
+    
+    
+    template <class Boxer>
+    BigIntLiteralType newBigInt(BigInt* bi, const TokenPos& pos, Boxer& boxer) {
+        BigIntBox* box = boxer.newBigIntBox(bi);
+        if (!box) {
+            return null();
+        }
+        return new_<BigIntLiteral>(box, pos);
+    }
+#endif
+
     BooleanLiteralType newBooleanLiteral(bool cond, const TokenPos& pos) {
         return new_<BooleanLiteral>(cond, pos);
     }

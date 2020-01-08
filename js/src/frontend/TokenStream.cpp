@@ -2272,8 +2272,11 @@ TokenStreamSpecific<Unit, AnyCharsAccess>::decimalNumber(int32_t unit, TokenStar
 
     
     double dval;
+#ifdef ENABLE_BIGINT
+    bool isBigInt = false;
+#endif
     DecimalPoint decimalPoint = NoDecimal;
-    if (unit != '.' && unit != 'e' && unit != 'E') {
+    if (unit != '.' && unit != 'e' && unit != 'E' && IF_BIGINT(unit != 'n', true)) {
         
         ungetCodeUnit(unit);
 
@@ -2284,7 +2287,14 @@ TokenStreamSpecific<Unit, AnyCharsAccess>::decimalNumber(int32_t unit, TokenStar
         {
             return false;
         }
-    } else {
+    }
+#ifdef ENABLE_BIGINT
+    else if (unit == 'n') {
+        isBigInt = true;
+        unit = peekCodeUnit();
+    }
+#endif
+    else {
         
         if (unit == '.') {
             decimalPoint = HasDecimal;
@@ -2346,6 +2356,13 @@ TokenStreamSpecific<Unit, AnyCharsAccess>::decimalNumber(int32_t unit, TokenStar
     }
 
     noteBadToken.release();
+
+#ifdef ENABLE_BIGINT
+    if (isBigInt) {
+        return bigIntLiteral(start, modifier, out);
+    }
+#endif
+
     newNumberToken(dval, decimalPoint, start, modifier, out);
     return true;
 }
@@ -2475,6 +2492,35 @@ TokenStreamSpecific<Unit, AnyCharsAccess>::regexpLiteral(TokenStart start, Token
     newRegExpToken(reflags, start, out);
     return true;
 }
+
+#ifdef ENABLE_BIGINT
+template<typename Unit, class AnyCharsAccess>
+MOZ_MUST_USE bool
+TokenStreamSpecific<Unit, AnyCharsAccess>::bigIntLiteral(TokenStart start,
+                                                         Modifier modifier,
+                                                         TokenKind* out)
+{
+    MOZ_ASSERT(this->sourceUnits.previousCodeUnit() == toUnit('n'));
+    MOZ_ASSERT(this->sourceUnits.offset() > start.offset());
+    uint32_t length = this->sourceUnits.offset() - start.offset();
+    MOZ_ASSERT(length >= 2);
+    this->charBuffer.clear();
+    mozilla::Range<const Unit> chars(this->sourceUnits.codeUnitPtrAt(start.offset()),
+                                     length);
+    for (uint32_t idx = 0; idx < length - 1; idx++) {
+        int32_t unit = CodeUnitValue(chars[idx]);
+        
+        
+        
+        MOZ_ASSERT(isAsciiCodePoint(unit));
+        if (!this->appendCodePointToCharBuffer(unit)) {
+            return false;
+        }
+    }
+    newBigIntToken(start, modifier, out);
+    return true;
+}
+#endif
 
 template<typename Unit, class AnyCharsAccess>
 MOZ_MUST_USE bool
@@ -2640,8 +2686,11 @@ TokenStreamSpecific<Unit, AnyCharsAccess>::getTokenInternal(TokenKind* const ttp
         
         if (c1kind == ZeroDigit) {
             TokenStart start(this->sourceUnits, -1);
-
             int radix;
+#ifdef ENABLE_BIGINT
+            bool isLegacyOctalOrNoctal = false;
+            bool isBigInt = false;
+#endif
             const Unit* numStart;
             unit = getCodeUnit();
             if (unit == 'x' || unit == 'X') {
@@ -2694,6 +2743,9 @@ TokenStreamSpecific<Unit, AnyCharsAccess>::getTokenInternal(TokenKind* const ttp
                 }
             } else if (IsAsciiDigit(unit)) {
                 radix = 8;
+#ifdef ENABLE_BIGINT
+                isLegacyOctalOrNoctal = true;
+#endif
                 
                 numStart = this->sourceUnits.addressOfNextCodeUnit() - 1;
 
@@ -2728,7 +2780,20 @@ TokenStreamSpecific<Unit, AnyCharsAccess>::getTokenInternal(TokenKind* const ttp
                 return decimalNumber(unit, start, numStart, modifier, ttp);
             }
 
+#ifdef ENABLE_BIGINT
+            if (unit == 'n') {
+                if (isLegacyOctalOrNoctal) {
+                    error(JSMSG_BIGINT_INVALID_SYNTAX);
+                    return badToken();
+                }
+                isBigInt = true;
+                unit = peekCodeUnit();
+            } else {
+                ungetCodeUnit(unit);
+            }
+#else
             ungetCodeUnit(unit);
+#endif
 
             
             
@@ -2747,6 +2812,12 @@ TokenStreamSpecific<Unit, AnyCharsAccess>::getTokenInternal(TokenKind* const ttp
                     return badToken();
                 }
             }
+
+#ifdef ENABLE_BIGINT
+            if (isBigInt) {
+                return bigIntLiteral(start, modifier, ttp);
+            }
+#endif
 
             double dval;
             if (!GetFullInteger(anyCharsAccess().cx, numStart,

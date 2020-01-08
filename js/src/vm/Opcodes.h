@@ -2498,14 +2498,22 @@
 
 
  \
-    macro(JSOP_DYNAMIC_IMPORT, 233, "call-import", NULL, 1, 1, 1, JOF_BYTE)
+    macro(JSOP_DYNAMIC_IMPORT, 233, "call-import", NULL, 1, 1, 1, JOF_BYTE) \
+    
+
+
+
+
+
+ \
+    IF_BIGINT(macro(JSOP_BIGINT, 234, "bigint", NULL, 5, 0, 1, JOF_BIGINT),)
 
 
 
 
 
 #define FOR_EACH_TRAILING_UNUSED_OPCODE(macro) \
-    macro(234) \
+    IF_BIGINT(,macro(234)) \
     macro(235) \
     macro(236) \
     macro(237) \
