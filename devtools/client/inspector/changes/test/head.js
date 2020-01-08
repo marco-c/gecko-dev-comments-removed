@@ -29,3 +29,34 @@ registerCleanupFunction(() => {
   Services.prefs.clearUserPref("devtools.inspector.changes.enabled");
   Services.prefs.clearUserPref("devtools.inspector.three-pane-enabled");
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+function getDeclarations(panelDoc, selector = "") {
+  const els = panelDoc.querySelectorAll(`#sidebar-panel-changes .declaration${selector}`);
+
+  return [...els].map(el => {
+    return {
+      property: el.querySelector(".declaration-name").textContent,
+      value: el.querySelector(".declaration-value").textContent,
+    };
+  });
+}
+
+function getAddedDeclarations(panelDoc) {
+  return getDeclarations(panelDoc, ".diff-add");
+}
+
+function getRemovedDeclarations(panelDoc) {
+  return getDeclarations(panelDoc, ".diff-remove");
+}

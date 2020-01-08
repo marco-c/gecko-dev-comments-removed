@@ -376,6 +376,34 @@ var setProperty = async function(view, textProp, value,
 
 
 
+var renameProperty = async function(view, textProp, name) {
+  await focusEditableField(view, textProp.editor.nameSpan);
+
+  const onNameDone = view.once("ruleview-changed");
+  info(`Rename the property to ${name}`);
+  EventUtils.sendString(name, view.styleWindow);
+  EventUtils.synthesizeKey("VK_RETURN", {}, view.styleWindow);
+  info("Wait for property name.");
+  await onNameDone;
+  
+  
+  
+  const onValueDone = view.once("ruleview-changed");
+  EventUtils.synthesizeKey("VK_ESCAPE", {}, view.styleWindow);
+  info("Wait for property value.");
+  await onValueDone;
+};
+
+
+
+
+
+
+
+
+
+
+
 
 
 var removeProperty = async function(view, textProp,
