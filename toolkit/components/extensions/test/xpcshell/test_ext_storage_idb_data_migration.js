@@ -5,6 +5,9 @@
 
 
 
+AddonTestUtils.init(this);
+AddonTestUtils.createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "42");
+
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/ExtensionStorage.jsm");
 ChromeUtils.import("resource://gre/modules/TelemetryController.jsm");
@@ -19,14 +22,9 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 });
 
 const {
-  createAppInfo,
   promiseShutdownManager,
   promiseStartupManager,
 } = AddonTestUtils;
-
-AddonTestUtils.init(this);
-
-createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "42");
 
 const {
   IDB_MIGRATED_PREF_BRANCH,
