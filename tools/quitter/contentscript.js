@@ -2,34 +2,12 @@
 
 
 
+"use strict";
 
 
-function Quitter() {
-}
 
-Quitter.prototype = {
-  toString() { return "[Quitter]"; },
-  quit() { sendSyncMessage("Quitter.Quit", {}); },
+const Quitter = {
+  quit() { browser.runtime.sendMessage("quit"); },
 };
 
-
-
-
-
-
-function QuitterManager() {
-  addEventListener("DOMWindowCreated", this, false);
-}
-
-QuitterManager.prototype = {
-  handleEvent: function handleEvent(aEvent) {
-    var quitter = new Quitter(window);
-    var window = aEvent.target.defaultView;
-    window.wrappedJSObject.Quitter = Cu.cloneInto({
-      toString: quitter.toString.bind(quitter),
-      quit: quitter.quit.bind(quitter),
-    }, window, {cloneFunctions: true});
-  },
-};
-
-var quittermanager = new QuitterManager();
+window.wrappedJSObject.Quitter = cloneInto(Quitter, window, {cloneFunctions: true});

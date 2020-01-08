@@ -617,7 +617,8 @@ MozDocumentMatcher::Matches(const DocInfo& aDoc) const
   
   
   if (mMatchAboutBlank && aDoc.IsTopLevel() &&
-      aDoc.URL().Spec().EqualsLiteral("about:blank") &&
+      (aDoc.URL().Spec().EqualsLiteral("about:blank") ||
+       aDoc.URL().Scheme() == nsGkAtoms::data) &&
       aDoc.Principal() && aDoc.Principal()->GetIsNullPrincipal()) {
     return true;
   }

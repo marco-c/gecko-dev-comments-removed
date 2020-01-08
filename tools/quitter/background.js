@@ -1,0 +1,9 @@
+"use strict";
+
+
+
+browser.runtime.onMessage.addListener(msg => {
+  if (msg === "quit") {
+    browser.quitter.quit();
+  }
+});
