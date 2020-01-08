@@ -98,17 +98,8 @@ add_task(async function startup() {
       
     },
     "extensions.getAddons.cache.enabled": {
-      min: 6,
+      min: 5,
       max: 55,
-    },
-
-    
-    
-    
-    
-    "chrome.override_package.global": {
-      min: 0,
-      max: 70,
     },
   };
 
