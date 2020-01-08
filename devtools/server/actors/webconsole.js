@@ -23,8 +23,11 @@ loader.lazyRequireGetter(this, "NetworkMonitorActor", "devtools/server/actors/ne
 loader.lazyRequireGetter(this, "ConsoleProgressListener", "devtools/shared/webconsole/network-monitor", true);
 loader.lazyRequireGetter(this, "StackTraceCollector", "devtools/shared/webconsole/network-monitor", true);
 loader.lazyRequireGetter(this, "JSPropertyProvider", "devtools/shared/webconsole/js-property-provider", true);
+loader.lazyRequireGetter(this, "Parser", "resource://devtools/shared/Parser.jsm", true);
 loader.lazyRequireGetter(this, "NetUtil", "resource://gre/modules/NetUtil.jsm", true);
+loader.lazyRequireGetter(this, "WebConsoleCommands", "devtools/server/actors/webconsole/utils", true);
 loader.lazyRequireGetter(this, "addWebConsoleCommands", "devtools/server/actors/webconsole/utils", true);
+loader.lazyRequireGetter(this, "formatCommand", "devtools/server/actors/webconsole/commands", true);
 loader.lazyRequireGetter(this, "isCommand", "devtools/server/actors/webconsole/commands", true);
 loader.lazyRequireGetter(this, "validCommands", "devtools/server/actors/webconsole/commands", true);
 loader.lazyRequireGetter(this, "createMessageManagerMocks", "devtools/server/actors/webconsole/message-manager-mock", true);
@@ -32,8 +35,6 @@ loader.lazyRequireGetter(this, "CONSOLE_WORKER_IDS", "devtools/server/actors/web
 loader.lazyRequireGetter(this, "WebConsoleUtils", "devtools/server/actors/webconsole/utils", true);
 loader.lazyRequireGetter(this, "EnvironmentActor", "devtools/server/actors/environment", true);
 loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
-+loader.lazyRequireGetter(this, "evalWithDebugger",
-                          "devtools/server/actors/webconsole/eval-with-debugger", true);
 
 
 
@@ -1014,7 +1015,7 @@ WebConsoleActor.prototype =
       selectedObjectActor: request.selectedObjectActor,
     };
 
-    const evalInfo = evalWithDebugger(input, evalOptions, this);
+    const evalInfo = this.evalWithDebugger(input, evalOptions);
     const evalResult = evalInfo.result;
     const helperResult = evalInfo.helperResult;
 
@@ -1341,6 +1342,322 @@ WebConsoleActor.prototype =
     }
     return this._webConsoleCommandsCache;
   },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  evalWithDebugger: function(string, options = {}) {
+    const trimmedString = string.trim();
+    
+    if (trimmedString == "help" || trimmedString == "?") {
+      string = "help()";
+    }
+
+    const isCmd = isCommand(string);
+    
+    if (isCmd) {
+      try {
+        string = formatCommand(string);
+      } catch (e) {
+        string = `throw "${e.message || e}"`;
+      }
+    }
+
+    
+    if (trimmedString == "console.mihai()" || trimmedString == "console.mihai();") {
+      string = "\"http://incompleteness.me/blog/2015/02/09/console-dot-mihai/\"";
+    }
+
+    
+    let frame = null, frameActor = null;
+    if (options.frameActor) {
+      frameActor = this.conn.getActor(options.frameActor);
+      if (frameActor) {
+        frame = frameActor.frame;
+      } else {
+        DevToolsUtils.reportException("evalWithDebugger",
+          Error("The frame actor was not found: " + options.frameActor));
+      }
+    }
+
+    
+    
+    
+    
+    
+    
+    const dbg = frame ? frameActor.threadActor.dbg : this.dbg;
+
+    
+    
+    if (dbg.replaying) {
+      let result;
+      if (frame) {
+        try {
+          result = frame.eval(string);
+        } catch (e) {
+          result = { "throw": e };
+        }
+      } else {
+        result = { "throw": "Cannot evaluate while replaying without a frame" };
+      }
+      return {
+        result: result,
+        helperResult: null,
+        dbg: dbg,
+        frame: frame,
+        window: null,
+      };
+    }
+
+    let dbgWindow = dbg.makeGlobalObjectReference(this.evalWindow);
+
+    
+    
+    let bindSelf = null;
+    if (options.bindObjectActor || options.selectedObjectActor) {
+      const objActor = this.getActorByID(options.bindObjectActor ||
+                                       options.selectedObjectActor);
+      if (objActor) {
+        const jsVal = objActor.rawValue();
+
+        if (isObject(jsVal)) {
+          
+          
+          
+          
+          bindSelf = dbgWindow.makeDebuggeeValue(jsVal);
+          if (options.bindObjectActor) {
+            const global = Cu.getGlobalForObject(jsVal);
+            try {
+              const _dbgWindow = dbg.makeGlobalObjectReference(global);
+              dbgWindow = _dbgWindow;
+            } catch (err) {
+              
+            }
+          }
+        } else {
+          bindSelf = jsVal;
+        }
+      }
+    }
+
+    
+    const helpers = this._getWebConsoleCommands(dbgWindow);
+    const bindings = helpers.sandbox;
+    if (bindSelf) {
+      bindings._self = bindSelf;
+    }
+
+    if (options.selectedNodeActor) {
+      const actor = this.conn.getActor(options.selectedNodeActor);
+      if (actor) {
+        helpers.selectedNode = actor.rawNode;
+      }
+    }
+
+    
+    
+    
+    
+    const availableHelpers = [...WebConsoleCommands._originalCommands.keys()]
+      .filter(h => h !== "print");
+
+    let helpersToDisable = [];
+    const helperCache = {};
+
+    
+    
+    if (!isCmd) {
+      if (frame) {
+        const env = frame.environment;
+        if (env) {
+          helpersToDisable = availableHelpers.filter(name => !!env.find(name));
+        }
+      } else {
+        helpersToDisable = availableHelpers.filter(name =>
+          !!dbgWindow.getOwnPropertyDescriptor(name));
+      }
+      
+      helpersToDisable.push("screenshot");
+    }
+
+    for (const helper of helpersToDisable) {
+      helperCache[helper] = bindings[helper];
+      delete bindings[helper];
+    }
+
+    
+    helpers.evalInput = string;
+
+    let evalOptions;
+    if (typeof options.url == "string") {
+      evalOptions = { url: options.url };
+    }
+
+    
+    
+    
+    
+    if (this._lastConsoleInputEvaluation) {
+      this._lastConsoleInputEvaluation = dbg.adoptDebuggeeValue(
+        this._lastConsoleInputEvaluation
+      );
+    }
+
+    let result;
+
+    if (frame) {
+      result = frame.evalWithBindings(string, bindings, evalOptions);
+    } else {
+      result = dbgWindow.executeInGlobalWithBindings(string, bindings, evalOptions);
+      
+      
+      
+      if ("throw" in result) {
+        let ast;
+        
+        
+        
+        try {
+          ast = Parser.reflectionAPI.parse(string);
+        } catch (ex) {
+          ast = {"body": []};
+        }
+        for (const line of ast.body) {
+          
+          
+          if (!(line.kind == "let" || line.kind == "const")) {
+            continue;
+          }
+
+          const identifiers = [];
+          for (const decl of line.declarations) {
+            switch (decl.id.type) {
+              case "Identifier":
+                
+                identifiers.push(decl.id.name);
+                break;
+              case "ArrayPattern":
+                
+                
+                for (const e of decl.id.elements) {
+                  if (e.type == "Identifier") {
+                    identifiers.push(e.name);
+                  } else if (e.type == "AssignmentExpression") {
+                    identifiers.push(e.left.name);
+                  }
+                }
+                break;
+              case "ObjectPattern":
+                
+                
+                
+                for (const prop of decl.id.properties) {
+                  
+                  if (prop.key.type == "Identifier") {
+                    identifiers.push(prop.key.name);
+                  }
+                  
+                  if (prop.value.type == "Identifier") {
+                    identifiers.push(prop.value.name);
+                  } else if (prop.value.type == "AssignmentExpression") {
+                    identifiers.push(prop.value.left.name);
+                  }
+                }
+                break;
+            }
+          }
+
+          for (const name of identifiers) {
+            dbgWindow.forceLexicalInitializationByName(name);
+          }
+        }
+      }
+    }
+
+    const helperResult = helpers.helperResult;
+    delete helpers.evalInput;
+    delete helpers.helperResult;
+    delete helpers.selectedNode;
+
+    for (const [helperName, helper] of Object.entries(helperCache)) {
+      bindings[helperName] = helper;
+    }
+
+    if (bindings._self) {
+      delete bindings._self;
+    }
+
+    return {
+      result: result,
+      helperResult: helperResult,
+      dbg: dbg,
+      frame: frame,
+      window: dbgWindow,
+    };
+  },
+  
 
   
 
