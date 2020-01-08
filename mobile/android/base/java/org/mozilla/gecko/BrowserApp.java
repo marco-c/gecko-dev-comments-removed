@@ -1869,7 +1869,14 @@ public class BrowserApp extends GeckoApp
                 if (message.getBoolean("shutdown", false)) {
                     
                     
-                    finishAndShutdown( false);
+                    
+
+                    
+                    
+                    
+                    if (!mDumpProfileOnShutdown) {
+                        finishAndShutdown( false);
+                    }
                 }
                 break;
 
@@ -3150,6 +3157,7 @@ public class BrowserApp extends GeckoApp
         
         final SharedPreferences prefs = GeckoSharedPrefs.forProfile(this);
         final boolean visible = HardwareUtils.isTelevision() ||
+                                mDumpProfileOnShutdown ||
                                 prefs.getBoolean(GeckoPreferences.PREFS_SHOW_QUIT_MENU, false) ||
                                 !PrefUtils.getStringSet(prefs,
                                                         ClearOnShutdownPref.PREF,
