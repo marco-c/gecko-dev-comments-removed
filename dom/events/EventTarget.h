@@ -290,7 +290,11 @@ protected:
 
 
 
+
+
+
   bool ComputeWantsUntrusted(const Nullable<bool>& aWantsUntrusted,
+                             const AddEventListenerOptionsOrBoolean* aOptions,
                              ErrorResult& aRv);
 
   
