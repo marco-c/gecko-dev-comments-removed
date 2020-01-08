@@ -453,6 +453,17 @@ var BrowserPageActions = {
       urlbarNode: node,
     });
     action.onPlacedInUrlbar(node);
+
+    
+    
+    
+    
+    if (!node.hasAttribute("tooltiptext")) {
+      let panelNode = this.panelButtonNodeForActionID(action.id);
+      if (panelNode) {
+        node.setAttribute("tooltiptext", panelNode.getAttribute("label"));
+      }
+    }
   },
 
   _makeUrlbarButtonNode(action) {
@@ -575,14 +586,7 @@ var BrowserPageActions = {
       panelNode.setAttribute("label", title);
     }
     if (urlbarNode) {
-      
-      
-      
-      
-      
-      if (urlbarNode.nodeName != "hbox") {
-        urlbarNode.setAttribute("aria-label", title);
-      }
+      urlbarNode.setAttribute("aria-label", title);
       
       let tooltip = action.getTooltip(window);
       if (!tooltip && title) {
@@ -963,7 +967,7 @@ BrowserPageActions.bookmark = {
 
 
 BrowserPageActions.copyURL = {
-  onBeforePlacedInWindow(browserWindow) {
+  onPlacedInPanel(buttonNode) {
     let action = PageActions.actionForID("copyURL");
     BrowserPageActions.takeActionTitleFromPanel(action);
   },
@@ -980,7 +984,7 @@ BrowserPageActions.copyURL = {
 
 
 BrowserPageActions.emailLink = {
-  onBeforePlacedInWindow(browserWindow) {
+  onPlacedInPanel(buttonNode) {
     let action = PageActions.actionForID("emailLink");
     BrowserPageActions.takeActionTitleFromPanel(action);
   },
@@ -993,7 +997,7 @@ BrowserPageActions.emailLink = {
 
 
 BrowserPageActions.sendToDevice = {
-  onBeforePlacedInWindow(browserWindow) {
+  onPlacedInPanel(buttonNode) {
     let action = PageActions.actionForID("sendToDevice");
     BrowserPageActions.takeActionTitleFromPanel(action);
   },
@@ -1162,7 +1166,7 @@ BrowserPageActions.addSearchEngine = {
   },
 
   _installEngine(uri, image) {
-    Services.search.addEngine(uri, null, image, false, {
+    Services.search.addEngine(uri, image, false, {
       onSuccess: engine => {
         showBrowserPageActionFeedback(this.action);
       },
@@ -1194,7 +1198,7 @@ BrowserPageActions.shareURL = {
     this._cached = false;
   },
 
-  onBeforePlacedInWindow(browserWindow) {
+  onPlacedInPanel(buttonNode) {
     let action = PageActions.actionForID("shareURL");
     BrowserPageActions.takeActionTitleFromPanel(action);
   },
