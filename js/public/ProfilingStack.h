@@ -474,12 +474,16 @@ class GeckoProfilerThread
   public:
     GeckoProfilerThread();
 
-    uint32_t stackPointer() { MOZ_ASSERT(installed()); return profilingStack_->stackPointer; }
+    uint32_t stackPointer() { MOZ_ASSERT(infraInstalled()); return profilingStack_->stackPointer; }
     ProfilingStackFrame* stack() { return profilingStack_->frames; }
     ProfilingStack* getProfilingStack() { return profilingStack_; }
 
     
-    bool installed() { return profilingStack_ != nullptr; }
+
+
+
+
+    bool infraInstalled() { return profilingStack_ != nullptr; }
 
     void setProfilingStack(ProfilingStack* profilingStack);
     void trace(JSTracer* trc);
