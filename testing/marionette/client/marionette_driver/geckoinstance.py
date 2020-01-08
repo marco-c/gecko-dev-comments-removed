@@ -501,6 +501,10 @@ class DesktopInstance(GeckoInstance):
         "app.update.enabled": False,
 
         
+        
+        "browser.contentblocking.introCount": 99,
+
+        
         "browser.dom.window.dump.enabled": True,
 
         
