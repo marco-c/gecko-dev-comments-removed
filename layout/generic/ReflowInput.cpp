@@ -2590,7 +2590,7 @@ SizeComputationInput::InitOffsets(WritingMode aWM,
   else if (aPadding) { 
     ComputedPhysicalPadding() = *aPadding;
     needPaddingProp = mFrame->StylePadding()->IsWidthDependent() ||
-	  (mFrame->GetStateBits() & NS_FRAME_REFLOW_ROOT);
+    (mFrame->GetStateBits() & NS_FRAME_REFLOW_ROOT);
   }
   else {
     needPaddingProp = ComputePadding(aWM, aPercentBasis, aFrameType);
