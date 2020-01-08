@@ -79,7 +79,8 @@ class TelemetryTestCase(PuppeteerMixin, MarionetteTestCase):
             'datareporting.policy.dataSubmissionPolicyBypassNotification': True,
             'toolkit.telemetry.log.level': 'Trace',
             'toolkit.telemetry.log.dump': True,
-            'toolkit.telemetry.send.overrideOfficialCheck': True
+            'toolkit.telemetry.send.overrideOfficialCheck': True,
+            'toolkit.telemetry.testing.disableFuzzingDelay': True,
         }
 
         
