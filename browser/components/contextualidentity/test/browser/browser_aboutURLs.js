@@ -18,6 +18,7 @@ add_task(async function() {
     "downloads",
     
     "debugging",
+    "debugging-new",
   ];
 
   for (let cid in Cc) {
