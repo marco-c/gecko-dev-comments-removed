@@ -410,6 +410,7 @@ class WrapperMap {
 class JS::Compartment {
   JS::Zone* zone_;
   JSRuntime* runtime_;
+  bool invisibleToDebugger_;
 
   js::WrapperMap crossCompartmentWrappers;
 
@@ -464,6 +465,12 @@ class JS::Compartment {
   
   JSRuntime* runtimeFromAnyThread() const { return runtime_; }
 
+  
+  
+  
+  
+  bool invisibleToDebugger() const { return invisibleToDebugger_; }
+
   RealmVector& realms() { return realms_; }
 
   
@@ -493,7 +500,7 @@ class JS::Compartment {
                           js::MutableHandleObject obj);
 
  public:
-  explicit Compartment(JS::Zone* zone);
+  explicit Compartment(JS::Zone* zone, bool invisibleToDebugger);
 
   void destroy(js::FreeOp* fop);
 

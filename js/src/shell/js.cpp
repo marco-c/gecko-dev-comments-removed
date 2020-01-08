@@ -6188,6 +6188,15 @@ static bool NewGlobal(JSContext* cx, unsigned argc, Value* vp) {
                           "same compartment");
       return false;
     }
+
+    
+    
+    if (creationOptions.invisibleToDebugger() != comp->invisibleToDebugger()) {
+      JS_ReportErrorASCII(cx,
+                          "All the realms in a compartment must have "
+                          "the same debugger visibility");
+      return false;
+    }
   }
 
   RootedObject global(cx, NewGlobalObject(cx, options, principals));

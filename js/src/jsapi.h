@@ -1553,6 +1553,11 @@ class JS_PUBLIC_API RealmCreationOptions {
   
   
   
+  
+  
+  
+  
+  
   bool invisibleToDebugger() const { return invisibleToDebugger_; }
   RealmCreationOptions& setInvisibleToDebugger(bool flag) {
     invisibleToDebugger_ = flag;

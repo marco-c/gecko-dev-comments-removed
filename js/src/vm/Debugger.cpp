@@ -11435,7 +11435,7 @@ double DebuggerObject::promiseTimeToResolution() const {
   
   
   
-  if (unwrapped->deprecatedRealm()->creationOptions().invisibleToDebugger()) {
+  if (unwrapped->compartment()->invisibleToDebugger()) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_DEBUG_INVISIBLE_COMPARTMENT);
     return false;
