@@ -11,7 +11,6 @@ import android.util.Log;
 
 import org.mozilla.gecko.EventDispatcher;
 import org.mozilla.gecko.util.GeckoBundle;
-import org.mozilla.gecko.util.EventCallback;
 
 
 
@@ -41,24 +40,20 @@ public final class RuntimeTelemetry {
 
 
 
-    public void getSnapshots(
-          final boolean clear,
-          final @NonNull GeckoResponse<GeckoBundle> response) {
+    public @NonNull GeckoResult<GeckoBundle> getSnapshots(final boolean clear) {
         final GeckoBundle msg = new GeckoBundle(1);
         msg.putBoolean("clear", clear);
 
-        mEventDispatcher.dispatch("GeckoView:TelemetrySnapshots", msg,
-            new EventCallback() {
+        final GeckoSession.CallbackResult<GeckoBundle> result =
+            new GeckoSession.CallbackResult<GeckoBundle>() {
                 @Override
-                public void sendSuccess(final Object result) {
-                    response.respond((GeckoBundle) result);
+                public void sendSuccess(final Object value) {
+                    complete((GeckoBundle) value);
                 }
+            };
 
-                @Override
-                public void sendError(final Object error) {
-                    Log.e(LOGTAG, "getSnapshots failed: " + error);
-                    response.respond(null);
-                }
-            });
+        mEventDispatcher.dispatch("GeckoView:TelemetrySnapshots", msg, result);
+
+        return result;
     }
 }
