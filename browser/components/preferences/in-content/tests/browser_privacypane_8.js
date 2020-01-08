@@ -8,9 +8,18 @@ if (jar) {
 Services.scriptloader.loadSubScript(rootDir + "privacypane_tests_perwindow.js", this);
 
 run_test_subset([
-  test_custom_retention("rememberHistory", "remember"),
-  test_custom_retention("rememberHistory", "custom"),
-  test_custom_retention("rememberForms", "custom"),
-  test_custom_retention("rememberForms", "custom"),
+  
+  test_historymode_retention("remember", undefined),
+
+  
+  test_custom_retention("acceptCookies", "remember"),
+
+  
+  test_historymode_retention("dontremember", "custom"),
+
+  
   test_historymode_retention("remember", "custom"),
+
+  
+  test_historymode_retention("remember", "remember"),
 ]);
