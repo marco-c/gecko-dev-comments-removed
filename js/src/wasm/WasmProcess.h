@@ -40,6 +40,11 @@ LookupCode(const void* pc, const CodeRange** codeRange = nullptr);
 
 
 
+bool
+InCompiledCode(void* pc);
+
+
+
 
 extern mozilla::Atomic<bool> CodeExists;
 

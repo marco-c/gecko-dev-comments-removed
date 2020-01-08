@@ -38,6 +38,7 @@
 #include "js/ProfilingFrameIterator.h"
 #include "threading/Thread.h"
 #include "vm/MutexIDs.h"
+#include "wasm/WasmSignalHandlers.h"
 
 namespace js {
 
@@ -160,7 +161,7 @@ class Simulator {
     };
 
     
-    static Simulator* Create(JSContext* cx);
+    static Simulator* Create();
 
     static void Destroy(Simulator* simulator);
 
@@ -317,8 +318,21 @@ class Simulator {
     JS::ProfilingFrameIterator::RegisterState registerState();
 
     
-    bool handleWasmFault(uint64_t addr, unsigned numBytes);
-    bool handleWasmTrapFault();
+    
+    bool MOZ_ALWAYS_INLINE handleWasmSegFault(uint64_t addr, unsigned numBytes) {
+        if (MOZ_LIKELY(!js::wasm::CodeExists)) {
+            return false;
+        }
+
+        uint8_t* newPC;
+        if (!js::wasm::MemoryAccessTraps(registerState(), (uint8_t*)addr, numBytes, &newPC)) {
+            return false;
+        }
+
+        LLBit_ = false;
+        set_pc(int64_t(newPC));
+        return true;
+    }
 
     
     void instructionDecode(SimInstruction* instr);

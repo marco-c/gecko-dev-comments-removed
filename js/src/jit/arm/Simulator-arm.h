@@ -39,7 +39,7 @@
 #include "js/ProfilingFrameIterator.h"
 #include "threading/Thread.h"
 #include "vm/MutexIDs.h"
-#include "wasm/WasmCode.h"
+#include "wasm/WasmSignalHandlers.h"
 
 namespace js {
 namespace jit {
@@ -105,12 +105,12 @@ class Simulator
     };
 
     
-    static Simulator* Create(JSContext* cx);
+    static Simulator* Create();
 
     static void Destroy(Simulator* simulator);
 
     
-    explicit Simulator(JSContext* cx);
+    Simulator();
     ~Simulator();
 
     static bool supportsAtomics() { return HasLDSTREXBHD(); }
@@ -289,8 +289,20 @@ class Simulator
     JS::ProfilingFrameIterator::RegisterState registerState();
 
     
-    bool handleWasmSegFault(int32_t addr, unsigned numBytes);
-    bool handleWasmIllFault();
+    
+    bool MOZ_ALWAYS_INLINE handleWasmSegFault(int32_t addr, unsigned numBytes) {
+        if (MOZ_LIKELY(!wasm::CodeExists)) {
+            return false;
+        }
+
+        uint8_t* newPC;
+        if (!wasm::MemoryAccessTraps(registerState(), (uint8_t*)addr, numBytes, &newPC)) {
+            return false;
+        }
+
+        set_pc(int32_t(newPC));
+        return true;
+    }
 
     
     inline uint8_t readBU(int32_t addr);
@@ -381,8 +393,6 @@ class Simulator
     void setVFPRegister(int reg_index, const InputType& value);
 
     void callInternal(uint8_t* entry);
-
-    JSContext* const cx_;
 
     
     

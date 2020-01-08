@@ -1476,6 +1476,24 @@ struct TrapSiteVectorArray : EnumeratedArray<Trap, Trap::Limit, TrapSiteVector>
 
 
 
+struct TrapData
+{
+    
+    
+    void* resumePC;
+
+    
+    
+    
+    
+    void* unwoundPC;
+
+    Trap trap;
+    uint32_t bytecodeOffset;
+};
+
+
+
 
 struct Offsets
 {

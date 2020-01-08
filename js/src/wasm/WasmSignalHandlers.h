@@ -25,12 +25,14 @@
 # include <mach/mach.h>
 #endif
 
-#include "js/TypeDecls.h"
+#include "js/ProfilingFrameIterator.h"
 #include "threading/Thread.h"
-#include "wasm/WasmTypes.h"
+#include "wasm/WasmProcess.h"
 
 namespace js {
 namespace wasm {
+
+typedef JS::ProfilingFrameIterator::RegisterState RegisterState;
 
 
 
@@ -42,6 +44,17 @@ EnsureSignalHandlers(JSContext* cx);
 
 bool
 HaveSignalHandlers();
+
+
+
+
+bool
+MemoryAccessTraps(const RegisterState& regs, uint8_t* addr, uint32_t numBytes, uint8_t** newPC);
+
+
+
+bool
+HandleIllegalInstruction(const RegisterState& regs, uint8_t** newPC);
 
 #if defined(XP_DARWIN)
 
@@ -66,16 +79,6 @@ class MachExceptionHandler
     bool install(JSContext* cx);
 };
 #endif
-
-
-
-struct TrapData
-{
-    void* resumePC;
-    void* unwoundPC;
-    Trap trap;
-    uint32_t bytecodeOffset;
-};
 
 } 
 } 

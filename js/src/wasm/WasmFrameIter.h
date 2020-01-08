@@ -45,6 +45,8 @@ struct CallableOffsets;
 struct FuncOffsets;
 struct Frame;
 
+typedef JS::ProfilingFrameIterator::RegisterState RegisterState;
+
 
 
 
@@ -189,7 +191,7 @@ class ProfilingFrameIterator
     
     
     ProfilingFrameIterator(const jit::JitActivation& activation,
-                           const JS::ProfilingFrameIterator::RegisterState& state);
+                           const RegisterState& state);
 
     void operator++();
     bool done() const { return !codeRange_ && exitReason_.isNone(); }
@@ -230,17 +232,6 @@ GenerateFunctionEpilogue(jit::MacroAssembler& masm, unsigned framePushed, FuncOf
 
 
 
-
-Instance*
-LookupFaultingInstance(const ModuleSegment& codeSegment, void* pc, void* fp);
-
-
-
-bool
-InCompiledCode(void* pc);
-
-
-
 struct UnwindState
 {
     Frame* fp;
@@ -249,8 +240,6 @@ struct UnwindState
     const CodeRange* codeRange;
     UnwindState() : fp(nullptr), pc(nullptr), code(nullptr), codeRange(nullptr) {}
 };
-
-typedef JS::ProfilingFrameIterator::RegisterState RegisterState;
 
 
 
