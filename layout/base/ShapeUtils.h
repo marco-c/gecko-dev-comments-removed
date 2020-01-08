@@ -37,61 +37,57 @@ struct ShapeUtils final
   
   
   
-  static nsPoint ComputeCircleOrEllipseCenter(
-    const UniquePtr<StyleBasicShape>& aBasicShape,
-    const nsRect& aRefBox);
+  static nsPoint ComputeCircleOrEllipseCenter(const StyleBasicShape&,
+                                              const nsRect& aRefBox);
 
   
   
   
   
-  static nscoord ComputeCircleRadius(
-    const UniquePtr<StyleBasicShape>& aBasicShape,
-    const nsPoint& aCenter, const nsRect& aRefBox);
-
-  
-  
-  
-  
-  
-  static nsSize ComputeEllipseRadii(
-    const UniquePtr<StyleBasicShape>& aBasicShape,
-    const nsPoint& aCenter, const nsRect& aRefBox);
+  static nscoord ComputeCircleRadius(const StyleBasicShape&,
+                                     const nsPoint& aCenter,
+                                     const nsRect& aRefBox);
 
   
   
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  static nsRect ComputeInsetRect(
-    const UniquePtr<StyleBasicShape>& aBasicShape,
-    const nsRect& aRefBox);
+  static nsSize ComputeEllipseRadii(const StyleBasicShape&,
+                                    const nsPoint& aCenter,
+                                    const nsRect& aRefBox);
 
   
   
   
   
   
-  static bool ComputeInsetRadii(
-    const UniquePtr<StyleBasicShape>& aBasicShape,
-    const nsRect& aInsetRect,
-    const nsRect& aRefBox,
-    nscoord aRadii[8]);
+  
+  
+  
+  
+  
+  
+  
+  static nsRect ComputeInsetRect(const StyleBasicShape&,
+                                 const nsRect& aRefBox);
 
   
   
   
   
-  static nsTArray<nsPoint> ComputePolygonVertices(
-    const UniquePtr<StyleBasicShape>& aBasicShape,
-    const nsRect& aRefBox);
+  
+  static bool ComputeInsetRadii(const StyleBasicShape&,
+                                const nsRect& aInsetRect,
+                                const nsRect& aRefBox,
+                                nscoord aRadii[8]);
+
+  
+  
+  
+  
+  static nsTArray<nsPoint> ComputePolygonVertices(const StyleBasicShape&,
+                                                  const nsRect& aRefBox);
 };
 
 } 
