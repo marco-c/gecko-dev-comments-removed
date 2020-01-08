@@ -42,6 +42,8 @@ public:
   void AddListener(dom::VREventObserver* aObserver);
   
   void RemoveListener(dom::VREventObserver* aObserver);
+  void StartActivity();
+  void StopActivity();
 
   bool GetVRDisplays(nsTArray<RefPtr<VRDisplayClient> >& aDisplays);
   bool RefreshVRDisplaysWithCallback(uint64_t aWindowId);
