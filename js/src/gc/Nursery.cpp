@@ -249,6 +249,8 @@ js::Nursery::disable()
     freeChunksFrom(0);
     maxChunkCount_ = 0;
 
+    
+    
     currentEnd_ = 0;
     currentStringEnd_ = 0;
     runtime()->gc.storeBuffer().disable();
