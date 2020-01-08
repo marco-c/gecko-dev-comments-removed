@@ -4,8 +4,8 @@
 
 
 
-use values::computed::PositiveInteger;
-use values::generics::column::ColumnCount as GenericColumnCount;
+use crate::values::computed::PositiveInteger;
+use crate::values::generics::column::ColumnCount as GenericColumnCount;
 
 
 pub type ColumnCount = GenericColumnCount<PositiveInteger>;

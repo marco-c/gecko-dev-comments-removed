@@ -2,7 +2,7 @@
 
 
 
-use cg;
+use crate::cg;
 use darling::util::IdentList;
 use quote::Tokens;
 use syn::{DeriveInput, Path};

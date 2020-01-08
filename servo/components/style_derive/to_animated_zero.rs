@@ -2,8 +2,8 @@
 
 
 
-use animate::{AnimationFieldAttrs, AnimationInputAttrs, AnimationVariantAttrs};
-use cg;
+use crate::animate::{AnimationFieldAttrs, AnimationInputAttrs, AnimationVariantAttrs};
+use crate::cg;
 use quote;
 use syn;
 use synstructure;

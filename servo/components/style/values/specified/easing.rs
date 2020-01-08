@@ -4,14 +4,14 @@
 
 
 
+use crate::parser::{Parse, ParserContext};
+use crate::values::computed::easing::TimingFunction as ComputedTimingFunction;
+use crate::values::generics::easing::TimingFunction as GenericTimingFunction;
+use crate::values::generics::easing::{StepPosition, TimingKeyword};
+use crate::values::specified::{Integer, Number};
 use cssparser::Parser;
-use parser::{Parse, ParserContext};
 use selectors::parser::SelectorParseErrorKind;
 use style_traits::{ParseError, StyleParseErrorKind};
-use values::computed::easing::TimingFunction as ComputedTimingFunction;
-use values::generics::easing::TimingFunction as GenericTimingFunction;
-use values::generics::easing::{StepPosition, TimingKeyword};
-use values::specified::{Integer, Number};
 
 
 pub type TimingFunction = GenericTimingFunction<Integer, Number>;
@@ -21,10 +21,10 @@ impl Parse for TimingFunction {
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        if let Ok(keyword) = input.try(TimingKeyword::parse) {
+        if let Ok(keyword) = input.r#try(TimingKeyword::parse) {
             return Ok(GenericTimingFunction::Keyword(keyword));
         }
-        if let Ok(ident) = input.try(|i| i.expect_ident_cloned()) {
+        if let Ok(ident) = input.r#try(|i| i.expect_ident_cloned()) {
             let position = match_ignore_ascii_case! { &ident,
                 "step-start" => StepPosition::Start,
                 "step-end" => StepPosition::End,
@@ -57,17 +57,17 @@ impl Parse for TimingFunction {
                 },
                 "steps" => {
                     let steps = Integer::parse_positive(context, i)?;
-                    let position = i.try(|i| {
+                    let position = i.r#try(|i| {
                         i.expect_comma()?;
                         StepPosition::parse(context, i)
                     }).unwrap_or(StepPosition::End);
 
-                    // jump-none accepts a positive integer greater than 1.
-                    // FIXME(emilio): The spec asks us to avoid rejecting it at parse
-                    // time except until computed value time.
-                    //
-                    // It's not totally clear it's worth it though, and no other browser
-                    // does this.
+                    
+                    
+                    
+                    
+                    
+                    
                     if position == StepPosition::JumpNone && 2 > steps.value() {
                         return Err(i.new_custom_error(StyleParseErrorKind::UnspecifiedError));
                     }

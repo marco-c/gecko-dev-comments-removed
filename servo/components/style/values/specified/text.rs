@@ -4,27 +4,29 @@
 
 
 
+use crate::parser::{Parse, ParserContext};
+use crate::properties::longhands::writing_mode::computed_value::T as SpecifiedWritingMode;
+use crate::values::computed::text::LineHeight as ComputedLineHeight;
+use crate::values::computed::text::TextEmphasisKeywordValue as ComputedTextEmphasisKeywordValue;
+use crate::values::computed::text::TextEmphasisStyle as ComputedTextEmphasisStyle;
+use crate::values::computed::text::TextOverflow as ComputedTextOverflow;
+use crate::values::computed::{Context, ToComputedValue};
+use crate::values::generics::text::InitialLetter as GenericInitialLetter;
+use crate::values::generics::text::LineHeight as GenericLineHeight;
+use crate::values::generics::text::MozTabSize as GenericMozTabSize;
+use crate::values::generics::text::Spacing;
+use crate::values::specified::length::{
+    FontRelativeLength, Length, LengthOrPercentage, NoCalcLength,
+};
+use crate::values::specified::length::{NonNegativeLength, NonNegativeLengthOrPercentage};
+use crate::values::specified::{AllowQuirks, Integer, NonNegativeNumber, Number};
 use cssparser::{Parser, Token};
-use parser::{Parse, ParserContext};
-use properties::longhands::writing_mode::computed_value::T as SpecifiedWritingMode;
 use selectors::parser::SelectorParseErrorKind;
 use std::fmt::{self, Write};
 use style_traits::values::SequenceWriter;
 use style_traits::{CssWriter, KeywordsCollectFn, ParseError};
 use style_traits::{SpecifiedValueInfo, StyleParseErrorKind, ToCss};
 use unicode_segmentation::UnicodeSegmentation;
-use values::computed::text::LineHeight as ComputedLineHeight;
-use values::computed::text::TextEmphasisKeywordValue as ComputedTextEmphasisKeywordValue;
-use values::computed::text::TextEmphasisStyle as ComputedTextEmphasisStyle;
-use values::computed::text::TextOverflow as ComputedTextOverflow;
-use values::computed::{Context, ToComputedValue};
-use values::generics::text::InitialLetter as GenericInitialLetter;
-use values::generics::text::LineHeight as GenericLineHeight;
-use values::generics::text::MozTabSize as GenericMozTabSize;
-use values::generics::text::Spacing;
-use values::specified::length::{FontRelativeLength, Length, LengthOrPercentage, NoCalcLength};
-use values::specified::length::{NonNegativeLength, NonNegativeLengthOrPercentage};
-use values::specified::{AllowQuirks, Integer, NonNegativeNumber, Number};
 
 
 pub type InitialLetter = GenericInitialLetter<Number, Integer>;
@@ -43,11 +45,11 @@ impl Parse for InitialLetter {
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        if input.try(|i| i.expect_ident_matching("normal")).is_ok() {
+        if input.r#try(|i| i.expect_ident_matching("normal")).is_ok() {
             return Ok(GenericInitialLetter::Normal);
         }
         let size = Number::parse_at_least_one(context, input)?;
-        let sink = input.try(|i| Integer::parse_positive(context, i)).ok();
+        let sink = input.r#try(|i| Integer::parse_positive(context, i)).ok();
         Ok(GenericInitialLetter::Specified(size, sink))
     }
 }
@@ -79,10 +81,10 @@ impl Parse for LineHeight {
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        if let Ok(number) = input.try(|i| NonNegativeNumber::parse(context, i)) {
+        if let Ok(number) = input.r#try(|i| NonNegativeNumber::parse(context, i)) {
             return Ok(GenericLineHeight::Number(number));
         }
-        if let Ok(nlop) = input.try(|i| NonNegativeLengthOrPercentage::parse(context, i)) {
+        if let Ok(nlop) = input.r#try(|i| NonNegativeLengthOrPercentage::parse(context, i)) {
             return Ok(GenericLineHeight::Length(nlop));
         }
         let location = input.current_source_location();
@@ -107,8 +109,8 @@ impl ToComputedValue for LineHeight {
 
     #[inline]
     fn to_computed_value(&self, context: &Context) -> Self::ComputedValue {
-        use values::computed::Length as ComputedLength;
-        use values::specified::length::FontBaseSize;
+        use crate::values::computed::Length as ComputedLength;
+        use crate::values::specified::length::FontBaseSize;
         match *self {
             GenericLineHeight::Normal => GenericLineHeight::Normal,
             #[cfg(feature = "gecko")]
@@ -162,14 +164,14 @@ impl ToComputedValue for LineHeight {
     }
 }
 
-
+/// A generic value for the `text-overflow` property.
 #[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
 pub enum TextOverflowSide {
-    
+    /// Clip inline content.
     Clip,
-    
+    /// Render ellipsis to represent clipped inline content.
     Ellipsis,
-    
+    /// Render a given string to represent clipped inline content.
     String(Box<str>),
 }
 
@@ -198,11 +200,11 @@ impl Parse for TextOverflowSide {
 }
 
 #[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
-
+/// text-overflow. Specifies rendering when inline content overflows its line box edge.
 pub struct TextOverflow {
-    
+    /// First value. Applies to end line box edge if no second is supplied; line-left edge otherwise.
     pub first: TextOverflowSide,
-    
+    /// Second value. Applies to the line-right edge if supplied.
     pub second: Option<TextOverflowSide>,
 }
 
@@ -213,7 +215,7 @@ impl Parse for TextOverflow {
     ) -> Result<TextOverflow, ParseError<'i>> {
         let first = TextOverflowSide::parse(context, input)?;
         let second = input
-            .try(|input| TextOverflowSide::parse(context, input))
+            .r#try(|input| TextOverflowSide::parse(context, input))
             .ok();
         Ok(TextOverflow { first, second })
     }
@@ -293,14 +295,14 @@ macro_rules! impl_text_decoration_line {
             ) -> Result<TextDecorationLine, ParseError<'i>> {
                 let mut result = TextDecorationLine::NONE;
                 if input
-                    .try(|input| input.expect_ident_matching("none"))
+                    .r#try(|input| input.expect_ident_matching("none"))
                     .is_ok()
                 {
                     return Ok(result);
                 }
 
                 loop {
-                    let result = input.try(|input| {
+                    let result = input.r#try(|input| {
                         let ident = input.expect_ident().map_err(|_| ())?;
                         match_ignore_ascii_case! { ident,
                             $(
@@ -372,13 +374,13 @@ impl_bitflags_conversions!(TextDecorationLine);
 
 impl TextDecorationLine {
     #[inline]
-    
+    /// Returns the initial value of text-decoration-line
     pub fn none() -> Self {
         TextDecorationLine::NONE
     }
 }
 
-
+/// Specified value of text-align keyword value.
 #[derive(
     Clone,
     Copy,
@@ -418,19 +420,19 @@ pub enum TextAlignKeyword {
     Char,
 }
 
-
+/// Specified value of text-align property.
 #[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, SpecifiedValueInfo, ToCss)]
 pub enum TextAlign {
-    
+    /// Keyword value of text-align property.
     Keyword(TextAlignKeyword),
-    
-    
+    /// `match-parent` value of text-align property. It has a different handling
+    /// unlike other keywords.
     #[cfg(feature = "gecko")]
     MatchParent,
-    
-    
-    
+    /// `MozCenterOrInherit` value of text-align property. It cannot be parsed,
+    /// only set directly on the elements and it has a different handling
+    /// unlike other values.
     #[cfg(feature = "gecko")]
     #[css(skip)]
     MozCenterOrInherit,
@@ -441,8 +443,8 @@ impl Parse for TextAlign {
         _context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        
-        if let Ok(key) = input.try(TextAlignKeyword::parse) {
+        // MozCenterOrInherit cannot be parsed, only set directly on the elements
+        if let Ok(key) = input.r#try(TextAlignKeyword::parse) {
             return Ok(TextAlign::Keyword(key));
         }
         #[cfg(feature = "gecko")]
@@ -458,7 +460,7 @@ impl Parse for TextAlign {
 }
 
 impl TextAlign {
-    
+    /// Convert an enumerated value coming from Gecko to a `TextAlign`.
     #[cfg(feature = "gecko")]
     pub fn from_gecko_keyword(kw: u32) -> Self {
         TextAlign::Keyword(TextAlignKeyword::from_gecko_keyword(kw))
@@ -474,12 +476,12 @@ impl ToComputedValue for TextAlign {
             TextAlign::Keyword(key) => key,
             #[cfg(feature = "gecko")]
             TextAlign::MatchParent => {
-                
-                
-                
-                
-                
-                
+                // on the root <html> element we should still respect the dir
+                // but the parent dir of that element is LTR even if it's <html dir=rtl>
+                // and will only be RTL if certain prefs have been set.
+                // In that case, the default behavior here will set it to left,
+                // but we want to set it to right -- instead set it to the default (`start`),
+                // which will do the right thing in this case (but not the general case)
                 if _context.is_root_element {
                     return TextAlignKeyword::Start;
                 }
@@ -517,25 +519,25 @@ impl ToComputedValue for TextAlign {
     }
 }
 
-
+/// Specified value of text-emphasis-style property.
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
 pub enum TextEmphasisStyle {
-    
+    /// <fill> <shape>
     Keyword(TextEmphasisKeywordValue),
-    
+    /// `none`
     None,
-    
+    /// String (will be used only first grapheme cluster) for the text-emphasis-style property
     String(String),
 }
 
-
+/// Keyword value for the text-emphasis-style property
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
 pub enum TextEmphasisKeywordValue {
-    
+    /// <fill>
     Fill(TextEmphasisFillMode),
-    
+    /// <shape>
     Shape(TextEmphasisShapeKeyword),
-    
+    /// <fill> <shape>
     FillAndShape(TextEmphasisFillMode, TextEmphasisShapeKeyword),
 }
 
@@ -557,32 +559,32 @@ impl TextEmphasisKeywordValue {
     }
 }
 
-
+/// Fill mode for the text-emphasis-style property
 #[derive(Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss)]
 pub enum TextEmphasisFillMode {
-    
+    /// `filled`
     Filled,
-    
+    /// `open`
     Open,
 }
 
-
+/// Shape keyword for the text-emphasis-style property
 #[derive(Clone, Copy, Debug, Eq, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss)]
 pub enum TextEmphasisShapeKeyword {
-    
+    /// `dot`
     Dot,
-    
+    /// `circle`
     Circle,
-    
+    /// `double-circle`
     DoubleCircle,
-    
+    /// `triangle`
     Triangle,
-    
+    /// `sesame`
     Sesame,
 }
 
 impl TextEmphasisShapeKeyword {
-    
+    /// converts fill mode to a unicode char
     pub fn char(&self, fill: TextEmphasisFillMode) -> &str {
         let fill = fill == TextEmphasisFillMode::Filled;
         match *self {
@@ -632,8 +634,8 @@ impl ToComputedValue for TextEmphasisStyle {
     fn to_computed_value(&self, context: &Context) -> Self::ComputedValue {
         match *self {
             TextEmphasisStyle::Keyword(ref keyword) => {
-                
-                
+                // FIXME(emilio): This should set the rule_cache_conditions
+                // properly.
                 let default_shape = if context.style().get_inherited_box().clone_writing_mode() ==
                     SpecifiedWritingMode::HorizontalTb
                 {
@@ -648,8 +650,8 @@ impl ToComputedValue for TextEmphasisStyle {
             },
             TextEmphasisStyle::None => ComputedTextEmphasisStyle::None,
             TextEmphasisStyle::String(ref s) => {
-                
-                
+                // Passing `true` to iterate over extended grapheme clusters, following
+                // recommendation at http://www.unicode.org/reports/tr29/#Grapheme_Cluster_Boundaries
                 let string = s.graphemes(true).next().unwrap_or("").to_string();
                 ComputedTextEmphasisStyle::String(string)
             },
@@ -676,25 +678,25 @@ impl Parse for TextEmphasisStyle {
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
         if input
-            .try(|input| input.expect_ident_matching("none"))
+            .r#try(|input| input.expect_ident_matching("none"))
             .is_ok()
         {
             return Ok(TextEmphasisStyle::None);
         }
 
-        if let Ok(s) = input.try(|i| i.expect_string().map(|s| s.as_ref().to_owned())) {
-            
+        if let Ok(s) = input.r#try(|i| i.expect_string().map(|s| s.as_ref().to_owned())) {
+            // Handle <string>
             return Ok(TextEmphasisStyle::String(s));
         }
 
-        
-        let mut shape = input.try(TextEmphasisShapeKeyword::parse).ok();
-        let fill = input.try(TextEmphasisFillMode::parse).ok();
+        // Handle a pair of keywords
+        let mut shape = input.r#try(TextEmphasisShapeKeyword::parse).ok();
+        let fill = input.r#try(TextEmphasisFillMode::parse).ok();
         if shape.is_none() {
-            shape = input.try(TextEmphasisShapeKeyword::parse).ok();
+            shape = input.r#try(TextEmphasisShapeKeyword::parse).ok();
         }
 
-        
+        // At least one of shape or fill must be handled
         let keyword_value = match (fill, shape) {
             (Some(fill), Some(shape)) => TextEmphasisKeywordValue::FillAndShape(fill, shape),
             (Some(fill), None) => TextEmphasisKeywordValue::Fill(fill),
@@ -705,7 +707,7 @@ impl Parse for TextEmphasisStyle {
     }
 }
 
-
+/// The allowed horizontal values for the `text-emphasis-position` property.
 #[derive(
     Clone,
     Copy,
@@ -719,13 +721,13 @@ impl Parse for TextEmphasisStyle {
     ToCss,
 )]
 pub enum TextEmphasisHorizontalWritingModeValue {
-    
+    /// Draw marks over the text in horizontal writing mode.
     Over,
-    
+    /// Draw marks under the text in horizontal writing mode.
     Under,
 }
 
-
+/// The allowed vertical values for the `text-emphasis-position` property.
 #[derive(
     Clone,
     Copy,
@@ -739,13 +741,13 @@ pub enum TextEmphasisHorizontalWritingModeValue {
     ToCss,
 )]
 pub enum TextEmphasisVerticalWritingModeValue {
-    
+    /// Draws marks to the right of the text in vertical writing mode.
     Right,
-    
+    /// Draw marks to the left of the text in vertical writing mode.
     Left,
 }
 
-
+/// Specified value of `text-emphasis-position` property.
 #[derive(
     Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToCss,
 )]
@@ -756,7 +758,7 @@ pub struct TextEmphasisPosition(
 
 impl TextEmphasisPosition {
     #[inline]
-    
+    /// Returns the initial value of `text-emphasis-position`
     pub fn over_right() -> Self {
         TextEmphasisPosition(
             TextEmphasisHorizontalWritingModeValue::Over,
@@ -765,7 +767,7 @@ impl TextEmphasisPosition {
     }
 
     #[cfg(feature = "gecko")]
-    
+    /// Converts an enumerated value coming from Gecko to a `TextEmphasisPosition`.
     pub fn from_gecko_keyword(kw: u32) -> Self {
         use gecko_bindings::structs;
 
@@ -791,7 +793,7 @@ impl Parse for TextEmphasisPosition {
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
         if let Ok(horizontal) =
-            input.try(|input| TextEmphasisHorizontalWritingModeValue::parse(input))
+            input.r#try(|input| TextEmphasisHorizontalWritingModeValue::parse(input))
         {
             let vertical = TextEmphasisVerticalWritingModeValue::parse(input)?;
             Ok(TextEmphasisPosition(horizontal, vertical))
@@ -843,7 +845,7 @@ impl Parse for MozTabSize {
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        if let Ok(number) = input.try(|i| NonNegativeNumber::parse(context, i)) {
+        if let Ok(number) = input.r#try(|i| NonNegativeNumber::parse(context, i)) {
             
             
             return Ok(GenericMozTabSize::Number(number));

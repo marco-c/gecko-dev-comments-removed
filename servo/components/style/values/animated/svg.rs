@@ -5,13 +5,13 @@
 
 
 use super::{Animate, Procedure, ToAnimatedZero};
-use properties::animated_properties::ListAnimation;
-use values::animated::color::Color as AnimatedColor;
-use values::computed::url::ComputedUrl;
-use values::computed::{LengthOrPercentage, Number, NumberOrPercentage};
-use values::distance::{ComputeSquaredDistance, SquaredDistance};
-use values::generics::svg::{SVGLength, SVGPaint, SvgLengthOrPercentageOrNumber};
-use values::generics::svg::{SVGOpacity, SVGStrokeDashArray};
+use crate::properties::animated_properties::ListAnimation;
+use crate::values::animated::color::Color as AnimatedColor;
+use crate::values::computed::url::ComputedUrl;
+use crate::values::computed::{LengthOrPercentage, Number, NumberOrPercentage};
+use crate::values::distance::{ComputeSquaredDistance, SquaredDistance};
+use crate::values::generics::svg::{SVGLength, SVGPaint, SvgLengthOrPercentageOrNumber};
+use crate::values::generics::svg::{SVGOpacity, SVGStrokeDashArray};
 
 
 pub type IntermediateSVGPaint = SVGPaint<AnimatedColor, ComputedUrl>;

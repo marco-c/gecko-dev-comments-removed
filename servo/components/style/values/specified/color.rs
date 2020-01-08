@@ -5,21 +5,21 @@
 
 
 use super::AllowQuirks;
+use crate::parser::{Parse, ParserContext};
+use crate::values::computed::{Color as ComputedColor, Context, ToComputedValue};
+use crate::values::generics::color::Color as GenericColor;
+use crate::values::specified::calc::CalcNode;
 use cssparser::{AngleOrNumber, Color as CSSParserColor, Parser, Token, RGBA};
 use cssparser::{BasicParseErrorKind, NumberOrPercentage, ParseErrorKind};
 #[cfg(feature = "gecko")]
 use gecko_bindings::structs::nscolor;
 use itoa;
-use parser::{Parse, ParserContext};
 #[cfg(feature = "gecko")]
 use properties::longhands::system_colors::SystemColor;
 use std::fmt::{self, Write};
 use std::io::Write as IoWrite;
 use style_traits::{CssType, CssWriter, KeywordsCollectFn, ParseError, StyleParseErrorKind};
 use style_traits::{SpecifiedValueInfo, ToCss, ValueParseErrorKind};
-use values::computed::{Color as ComputedColor, Context, ToComputedValue};
-use values::generics::color::Color as GenericColor;
-use values::specified::calc::CalcNode;
 
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq)]
@@ -73,7 +73,7 @@ impl<'a, 'b: 'a, 'i: 'a> ::cssparser::ColorComponentParser<'i> for ColorComponen
         &self,
         input: &mut Parser<'i, 't>,
     ) -> Result<AngleOrNumber, ParseError<'i>> {
-        use values::specified::Angle;
+        use crate::values::specified::Angle;
 
         let location = input.current_source_location();
         let token = input.next()?.clone();
@@ -99,13 +99,13 @@ impl<'a, 'b: 'a, 'i: 'a> ::cssparser::ColorComponentParser<'i> for ColorComponen
     }
 
     fn parse_percentage<'t>(&self, input: &mut Parser<'i, 't>) -> Result<f32, ParseError<'i>> {
-        use values::specified::Percentage;
+        use crate::values::specified::Percentage;
 
         Ok(Percentage::parse(self.0, input)?.get())
     }
 
     fn parse_number<'t>(&self, input: &mut Parser<'i, 't>) -> Result<f32, ParseError<'i>> {
-        use values::specified::Number;
+        use crate::values::specified::Number;
 
         Ok(Number::parse(self.0, input)?.get())
     }
@@ -142,7 +142,7 @@ impl Parse for Color {
         input.reset(&start);
 
         let compontent_parser = ColorComponentParser(&*context);
-        match input.try(|i| CSSParserColor::parse_with(&compontent_parser, i)) {
+        match input.r#try(|i| CSSParserColor::parse_with(&compontent_parser, i)) {
             Ok(value) => Ok(match value {
                 CSSParserColor::CurrentColor => Color::CurrentColor,
                 CSSParserColor::RGBA(rgba) => Color::Numeric {
@@ -202,11 +202,11 @@ impl ToCss for Color {
     }
 }
 
-
-
-
-
-
+/// A wrapper of cssparser::Color::parse_hash.
+///
+/// That function should never return CurrentColor, so it makes no sense to
+/// handle a cssparser::Color here. This should really be done in cssparser
+/// directly rather than here.
 fn parse_hash_color(value: &[u8]) -> Result<RGBA, ()> {
     CSSParserColor::parse_hash(value).map(|color| match color {
         CSSParserColor::RGBA(rgba) => rgba,
@@ -215,20 +215,20 @@ fn parse_hash_color(value: &[u8]) -> Result<RGBA, ()> {
 }
 
 impl Color {
-    
+    /// Returns currentcolor value.
     #[inline]
     pub fn currentcolor() -> Color {
         Color::CurrentColor
     }
 
-    
+    /// Returns transparent value.
     #[inline]
     pub fn transparent() -> Color {
-        
+        // We should probably set authored to "transparent", but maybe it doesn't matter.
         Color::rgba(RGBA::transparent())
     }
 
-    
+    /// Returns a numeric RGBA color value.
     #[inline]
     pub fn rgba(rgba: RGBA) -> Self {
         Color::Numeric {
@@ -237,15 +237,15 @@ impl Color {
         }
     }
 
-    
-    
-    
+    /// Parse a color, with quirks.
+    ///
+    /// <https://quirks.spec.whatwg.org/#the-hashless-hex-color-quirk>
     pub fn parse_quirky<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
         allow_quirks: AllowQuirks,
     ) -> Result<Self, ParseError<'i>> {
-        input.try(|i| Self::parse(context, i)).or_else(|e| {
+        input.r#try(|i| Self::parse(context, i)).or_else(|e| {
             if !allow_quirks.allowed(context.quirks_mode) {
                 return Err(e);
             }
@@ -255,9 +255,9 @@ impl Color {
         })
     }
 
-    
-    
-    
+    /// Parse a <quirky-color> value.
+    ///
+    /// <https://quirks.spec.whatwg.org/#the-hashless-hex-color-quirk>
     fn parse_quirky_color<'i, 't>(input: &mut Parser<'i, 't>) -> Result<RGBA, ParseError<'i>> {
         let location = input.current_source_location();
         let (value, unit) = match *input.next()? {
@@ -317,8 +317,8 @@ impl Color {
             .map_err(|()| location.new_custom_error(StyleParseErrorKind::UnspecifiedError))
     }
 
-    
-    
+    /// Returns true if the color is completely transparent, and false
+    /// otherwise.
     pub fn is_transparent(&self) -> bool {
         match *self {
             Color::Numeric { ref parsed, .. } => parsed.alpha == 0,
@@ -334,10 +334,10 @@ fn convert_nscolor_to_computedcolor(color: nscolor) -> ComputedColor {
 }
 
 impl Color {
-    
-    
-    
-    
+    /// Converts this Color into a ComputedColor.
+    ///
+    /// If `context` is `None`, and the specified color requires data from
+    /// the context to resolve, then `None` is returned.
     pub fn to_computed_color(&self, _context: Option<&Context>) -> Option<ComputedColor> {
         match *self {
             Color::CurrentColor => Some(ComputedColor::currentcolor()),
@@ -392,8 +392,8 @@ impl ToComputedValue for Color {
     }
 }
 
-
-
+/// Specified color value, but resolved to just RGBA for computed value
+/// with value from color property at the same context.
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
 pub struct RGBAColor(pub Color);
 
@@ -430,17 +430,17 @@ impl SpecifiedValueInfo for Color {
     const SUPPORTED_TYPES: u8 = CssType::COLOR;
 
     fn collect_completion_keywords(f: KeywordsCollectFn) {
-        
-        
-        
-        
-        
+        // We are not going to insert all the color names here. Caller and
+        // devtools should take care of them. XXX Actually, transparent
+        // should probably be handled that way as well.
+        // XXX `currentColor` should really be `currentcolor`. But let's
+        // keep it consistent with the old system for now.
         f(&["rgb", "rgba", "hsl", "hsla", "currentColor", "transparent"]);
     }
 }
 
-
-
+/// Specified value for the "color" property, which resolves the `currentcolor`
+/// keyword to the parent color instead of self's color.
 #[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[derive(Clone, Debug, PartialEq, SpecifiedValueInfo, ToCss)]
 pub struct ColorPropertyValue(pub Color);

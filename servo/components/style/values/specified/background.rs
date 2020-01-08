@@ -4,12 +4,12 @@
 
 
 
+use crate::parser::{Parse, ParserContext};
+use crate::values::generics::background::BackgroundSize as GenericBackgroundSize;
+use crate::values::specified::length::NonNegativeLengthOrPercentageOrAuto;
 use cssparser::Parser;
-use parser::{Parse, ParserContext};
 use selectors::parser::SelectorParseErrorKind;
 use style_traits::ParseError;
-use values::generics::background::BackgroundSize as GenericBackgroundSize;
-use values::specified::length::NonNegativeLengthOrPercentageOrAuto;
 
 
 pub type BackgroundSize = GenericBackgroundSize<NonNegativeLengthOrPercentageOrAuto>;
@@ -19,9 +19,9 @@ impl Parse for BackgroundSize {
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        if let Ok(width) = input.try(|i| NonNegativeLengthOrPercentageOrAuto::parse(context, i)) {
+        if let Ok(width) = input.r#try(|i| NonNegativeLengthOrPercentageOrAuto::parse(context, i)) {
             let height = input
-                .try(|i| NonNegativeLengthOrPercentageOrAuto::parse(context, i))
+                .r#try(|i| NonNegativeLengthOrPercentageOrAuto::parse(context, i))
                 .unwrap_or(NonNegativeLengthOrPercentageOrAuto::auto());
             return Ok(GenericBackgroundSize::Explicit { width, height });
         }
@@ -33,7 +33,7 @@ impl Parse for BackgroundSize {
 }
 
 impl BackgroundSize {
-    
+    /// Returns `auto auto`.
     pub fn auto() -> Self {
         GenericBackgroundSize::Explicit {
             width: NonNegativeLengthOrPercentageOrAuto::auto(),
@@ -42,7 +42,7 @@ impl BackgroundSize {
     }
 }
 
-
+/// One of the keywords for `background-repeat`.
 #[derive(
     Clone,
     Copy,
@@ -63,21 +63,21 @@ pub enum BackgroundRepeatKeyword {
     NoRepeat,
 }
 
-
-
-
+/// The specified value for the `background-repeat` property.
+///
+/// https://drafts.csswg.org/css-backgrounds/#the-background-repeat
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
 pub enum BackgroundRepeat {
-    
+    /// `repeat-x`
     RepeatX,
-    
+    /// `repeat-y`
     RepeatY,
-    
+    /// `[repeat | space | round | no-repeat]{1,2}`
     Keywords(BackgroundRepeatKeyword, Option<BackgroundRepeatKeyword>),
 }
 
 impl BackgroundRepeat {
-    
+    /// Returns the `repeat` value.
     #[inline]
     pub fn repeat() -> Self {
         BackgroundRepeat::Keywords(BackgroundRepeatKeyword::Repeat, None)
@@ -106,7 +106,7 @@ impl Parse for BackgroundRepeat {
             },
         };
 
-        let vertical = input.try(BackgroundRepeatKeyword::parse).ok();
+        let vertical = input.r#try(BackgroundRepeatKeyword::parse).ok();
         Ok(BackgroundRepeat::Keywords(horizontal, vertical))
     }
 }

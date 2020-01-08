@@ -10,18 +10,18 @@
 
 pub use cssparser::{serialize_identifier, serialize_name, CowRcStr, Parser};
 pub use cssparser::{SourceLocation, Token, RGBA};
-use parser::{Parse, ParserContext};
+use crate::Atom;
+use crate::parser::{Parse, ParserContext};
+use crate::values::distance::{ComputeSquaredDistance, SquaredDistance};
 use selectors::parser::SelectorParseErrorKind;
 use std::fmt::{self, Debug, Write};
 use std::hash;
 use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
-use values::distance::{ComputeSquaredDistance, SquaredDistance};
-use Atom;
 
+#[cfg(feature = "servo")]
+pub use crate::servo::url::CssUrl;
 #[cfg(feature = "gecko")]
 pub use gecko::url::CssUrl;
-#[cfg(feature = "servo")]
-pub use servo::url::CssUrl;
 
 pub mod animated;
 pub mod computed;
@@ -155,7 +155,7 @@ impl<A: Parse, B: Parse> Parse for Either<A, B> {
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Either<A, B>, ParseError<'i>> {
-        if let Ok(v) = input.try(|i| A::parse(context, i)) {
+        if let Ok(v) = input.r#try(|i| A::parse(context, i)) {
             Ok(Either::First(v))
         } else {
             B::parse(context, input).map(Either::Second)
@@ -163,12 +163,12 @@ impl<A: Parse, B: Parse> Parse for Either<A, B> {
     }
 }
 
-
+/// <https://drafts.csswg.org/css-values-4/#custom-idents>
 #[derive(Clone, Debug, Eq, Hash, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue)]
 pub struct CustomIdent(pub Atom);
 
 impl CustomIdent {
-    
+    /// Parse an already-tokenizer identifier
     pub fn from_ident<'i>(
         location: SourceLocation,
         ident: &CowRcStr<'i>,
@@ -200,17 +200,17 @@ impl ToCss for CustomIdent {
     }
 }
 
-
+/// <https://drafts.csswg.org/css-animations/#typedef-keyframes-name>
 #[derive(Clone, Debug, MallocSizeOf, SpecifiedValueInfo, ToComputedValue)]
 pub enum KeyframesName {
-    
+    /// <custom-ident>
     Ident(CustomIdent),
-    
+    /// <string>
     QuotedString(Atom),
 }
 
 impl KeyframesName {
-    
+    /// <https://drafts.csswg.org/css-animations/#dom-csskeyframesrule-name>
     pub fn from_ident(value: &str) -> Self {
         let location = SourceLocation { line: 0, column: 0 };
         let custom_ident = CustomIdent::from_ident(location, &value.into(), &["none"]).ok();
@@ -220,18 +220,18 @@ impl KeyframesName {
         }
     }
 
-    
+    /// Create a new KeyframesName from Atom.
     #[cfg(feature = "gecko")]
     pub fn from_atom(atom: Atom) -> Self {
         debug_assert_ne!(atom, atom!(""));
 
-        
-        
-        
+        // FIXME: We might want to preserve <string>, but currently Gecko
+        // stores both of <custom-ident> and <string> into nsAtom, so
+        // we can't tell it.
         KeyframesName::Ident(CustomIdent(atom))
     }
 
-    
+    /// The name as an Atom
     pub fn as_atom(&self) -> &Atom {
         match *self {
             KeyframesName::Ident(ref ident) => &ident.0,
@@ -242,10 +242,10 @@ impl KeyframesName {
 
 impl Eq for KeyframesName {}
 
-
-
+/// A trait that returns whether a given type is the `auto` value or not. So far
+/// only needed for background-size serialization, which special-cases `auto`.
 pub trait IsAuto {
-    
+    /// Returns whether the value is the `auto` value.
     fn is_auto(&self) -> bool;
 }
 

@@ -2,8 +2,8 @@
 
 
 
+use crate::parser::SelectorImpl;
 use cssparser::ToCss;
-use parser::SelectorImpl;
 use std::fmt;
 
 #[derive(Clone, Eq, PartialEq)]

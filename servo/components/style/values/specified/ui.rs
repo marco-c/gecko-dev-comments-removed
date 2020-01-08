@@ -4,16 +4,16 @@
 
 
 
+use crate::parser::{Parse, ParserContext};
+use crate::values::generics::ui as generics;
+use crate::values::specified::color::Color;
+use crate::values::specified::url::SpecifiedImageUrl;
+use crate::values::specified::Number;
+use crate::values::{Auto, Either};
 use cssparser::Parser;
-use parser::{Parse, ParserContext};
 use std::fmt::{self, Write};
 use style_traits::cursor::CursorKind;
 use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
-use values::generics::ui as generics;
-use values::specified::color::Color;
-use values::specified::url::SpecifiedImageUrl;
-use values::specified::Number;
-use values::{Auto, Either};
 
 
 pub type ColorOrAuto = Either<Color, Auto>;
@@ -32,7 +32,7 @@ impl Parse for Cursor {
     ) -> Result<Self, ParseError<'i>> {
         let mut images = vec![];
         loop {
-            match input.try(|input| CursorImage::parse(context, input)) {
+            match input.r#try(|input| CursorImage::parse(context, input)) {
                 Ok(image) => images.push(image),
                 Err(_) => break,
             }
@@ -64,7 +64,7 @@ impl Parse for CursorImage {
     ) -> Result<Self, ParseError<'i>> {
         Ok(Self {
             url: SpecifiedImageUrl::parse(context, input)?,
-            hotspot: match input.try(|input| Number::parse(context, input)) {
+            hotspot: match input.r#try(|input| Number::parse(context, input)) {
                 Ok(number) => Some((number, Number::parse(context, input)?)),
                 Err(_) => None,
             },
@@ -72,12 +72,12 @@ impl Parse for CursorImage {
     }
 }
 
-
+/// Specified value of `-moz-force-broken-image-icon`
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue)]
 pub struct MozForceBrokenImageIcon(pub bool);
 
 impl MozForceBrokenImageIcon {
-    
+    /// Return initial value of -moz-force-broken-image-icon which is false.
     #[inline]
     pub fn false_value() -> MozForceBrokenImageIcon {
         MozForceBrokenImageIcon(false)
@@ -89,7 +89,7 @@ impl Parse for MozForceBrokenImageIcon {
         _context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<MozForceBrokenImageIcon, ParseError<'i>> {
-        
+        // We intentionally don't support calc values here.
         match input.expect_integer()? {
             0 => Ok(MozForceBrokenImageIcon(false)),
             1 => Ok(MozForceBrokenImageIcon(true)),
@@ -123,7 +123,7 @@ impl From<MozForceBrokenImageIcon> for u8 {
     }
 }
 
-
+/// A specified value for `scrollbar-color` property
 pub type ScrollbarColor = generics::ScrollbarColor<Color>;
 
 impl Parse for ScrollbarColor {
@@ -131,7 +131,7 @@ impl Parse for ScrollbarColor {
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        if input.try(|i| i.expect_ident_matching("auto")).is_ok() {
+        if input.r#try(|i| i.expect_ident_matching("auto")).is_ok() {
             return Ok(generics::ScrollbarColor::Auto);
         }
         Ok(generics::ScrollbarColor::Colors {
