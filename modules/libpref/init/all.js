@@ -1364,6 +1364,9 @@ pref("content.sink.pending_event_mode", 0);
 pref("privacy.popups.disable_from_plugins", 3);
 
 
+pref("privacy.restrict3rdpartystorage.partitionedHosts", "accounts.google.com/o/oauth2/");
+
+
 
 
 
@@ -1568,9 +1571,6 @@ pref("javascript.options.streams", true);
 #else
 pref("javascript.options.streams", false);
 #endif
-
-
-pref("javascript.options.bigint", false);
 
 
 pref("advanced.mailftp",                    false);

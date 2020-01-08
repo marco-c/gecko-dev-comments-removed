@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_SessionStorage_h
-#define mozilla_dom_SessionStorage_h
+#ifndef mozilla_dom_PartitionedLocalStorage_h
+#define mozilla_dom_PartitionedLocalStorage_h
 
 #include "Storage.h"
 
@@ -15,29 +15,20 @@ namespace mozilla {
 namespace dom {
 
 class SessionStorageCache;
-class SessionStorageManager;
 
-class SessionStorage final : public Storage
+
+
+
+class PartitionedLocalStorage final : public Storage
 {
 public:
   NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(SessionStorage, Storage)
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(PartitionedLocalStorage, Storage)
 
-  SessionStorage(nsPIDOMWindowInner* aWindow,
-                 nsIPrincipal* aPrincipal,
-                 SessionStorageCache* aCache,
-                 SessionStorageManager* aManager,
-                 const nsAString& aDocumentURI,
-                 bool aIsPrivate);
+  PartitionedLocalStorage(nsPIDOMWindowInner* aWindow,
+                          nsIPrincipal* aPrincipal);
 
-  StorageType Type() const override { return eSessionStorage; }
-
-  SessionStorageManager* Manager() const { return mManager; }
-
-  SessionStorageCache* Cache() const { return mCache; }
-
-  already_AddRefed<SessionStorage>
-  Clone() const;
+  StorageType Type() const override { return ePartitionedLocalStorage; }
 
   int64_t GetOriginQuotaUsage() const override;
 
@@ -69,18 +60,9 @@ public:
              ErrorResult& aRv) override;
 
 private:
-  ~SessionStorage();
-
-  void
-  BroadcastChangeNotification(const nsAString& aKey,
-                              const nsAString& aOldValue,
-                              const nsAString& aNewValue);
+  ~PartitionedLocalStorage();
 
   RefPtr<SessionStorageCache> mCache;
-  RefPtr<SessionStorageManager> mManager;
-
-  nsString mDocumentURI;
-  bool mIsPrivate;
 };
 
 } 

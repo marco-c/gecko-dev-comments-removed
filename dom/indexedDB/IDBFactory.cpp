@@ -319,7 +319,7 @@ IDBFactory::AllowedForWindowInternal(nsPIDOMWindowInner* aWindow,
   
   
   
-  if (access == nsContentUtils::StorageAccess::eDeny) {
+  if (access <= nsContentUtils::StorageAccess::eDeny) {
     return NS_ERROR_DOM_SECURITY_ERR;
   }
 

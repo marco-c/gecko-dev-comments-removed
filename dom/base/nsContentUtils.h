@@ -1210,6 +1210,12 @@ public:
                                             size_t* aMaxBufferSize,
                                             size_t* aUsedBufferSize);
 
+  
+  
+  
+  static bool
+  IsURIInPrefList(nsIURI* aURI, const char* aPrefName);
+
 private:
   
 
@@ -2057,25 +2063,6 @@ public:
                                       const nsAString &viewportInfo);
 
   static JSContext *GetCurrentJSContext();
-
-  
-
-
-  static bool EqualsIgnoreASCIICase(nsAtom* aAtom1, nsAtom* aAtom2)
-  {
-    if (aAtom1 == aAtom2) {
-      return true;
-    }
-
-    
-    
-    if (aAtom1->IsAsciiLowercase() && aAtom2->IsAsciiLowercase()) {
-      return false;
-    }
-
-    return EqualsIgnoreASCIICase(nsDependentAtomString(aAtom1),
-                                 nsDependentAtomString(aAtom2));
-  }
 
   
 
@@ -2966,6 +2953,9 @@ public:
   
   
   enum class StorageAccess {
+    
+    
+    ePartitionedOrDeny = -1,
     
     eDeny = 0,
     
