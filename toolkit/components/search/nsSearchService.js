@@ -4547,7 +4547,10 @@ SearchService.prototype = {
         
         
         
-        this._asyncReInit();
+        
+        if (!Services.startup.shuttingDown) {
+          this._asyncReInit();
+        }
         break;
     }
   },
