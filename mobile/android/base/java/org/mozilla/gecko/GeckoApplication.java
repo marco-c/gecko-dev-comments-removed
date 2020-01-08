@@ -16,6 +16,7 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Parcelable;
 import android.os.Process;
 import android.os.SystemClock;
 import android.provider.MediaStore;
@@ -26,6 +27,7 @@ import android.support.multidex.MultiDex;
 import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
+import android.util.SparseArray;
 
 import com.squareup.leakcanary.LeakCanary;
 import com.squareup.leakcanary.RefWatcher;
@@ -80,6 +82,10 @@ public class GeckoApplication extends Application
     private boolean mIsInitialResume;
 
     private LightweightTheme mLightweightTheme;
+
+    
+    
+    private SparseArray<Parcelable> mSavedState;
 
     private RefWatcher mRefWatcher;
 
@@ -639,6 +645,14 @@ public class GeckoApplication extends Application
 
     public void prepareLightweightTheme() {
         mLightweightTheme = new LightweightTheme(this);
+    }
+
+     void setSavedState(SparseArray<Parcelable> savedState) {
+        mSavedState = savedState;
+    }
+
+     SparseArray<Parcelable> getSavedState() {
+        return mSavedState;
     }
 
     public static void createShortcut() {

@@ -63,6 +63,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Parcelable;
 import android.os.StrictMode;
 import android.provider.ContactsContract;
 import android.support.annotation.NonNull;
@@ -71,6 +72,7 @@ import android.support.design.widget.Snackbar;
 import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.util.SparseArray;
 import android.util.SparseBooleanArray;
 import android.util.SparseIntArray;
 import android.view.KeyEvent;
@@ -136,6 +138,7 @@ public abstract class GeckoApp extends GeckoActivity
 
     public static final String INTENT_REGISTER_STUMBLER_LISTENER = "org.mozilla.gecko.STUMBLER_REGISTER_LOCAL_LISTENER";
 
+    private static final String GECKOVIEW_STATE_BUNDLE     = "geckoViewState";
     public static final String EXTRA_STATE_BUNDLE          = "stateBundle";
 
     public static final String PREFS_ALLOW_STATE_BUNDLE    = "allowStateBundle";
@@ -658,6 +661,16 @@ public abstract class GeckoApp extends GeckoActivity
         }
 
         outState.putBoolean(SAVED_STATE_IN_BACKGROUND, isApplicationInBackground());
+
+        
+        
+        
+        
+        
+        SparseArray<Parcelable> geckoViewState = new SparseArray<>();
+        mLayerView.saveHierarchyState(geckoViewState);
+        outState.putSparseParcelableArray(GECKOVIEW_STATE_BUNDLE, geckoViewState);
+        getGeckoApplication().setSavedState(geckoViewState);
     }
 
     public void addTab(int flags) { }
@@ -696,7 +709,7 @@ public abstract class GeckoApp extends GeckoActivity
               rec.recordGeckoStartupTime(mGeckoReadyStartupTimer.getElapsed());
             }
 
-            ((GeckoApplication) getApplicationContext()).onDelayedStartup();
+            getGeckoApplication().onDelayedStartup();
 
             
             ThreadUtils.postDelayedToBackgroundThread(new Runnable() {
@@ -977,6 +990,11 @@ public abstract class GeckoApp extends GeckoActivity
     @Override
     public void onCreate(Bundle savedInstanceState) {
         
+        
+        
+        final boolean receivedSavedInstanceState = (savedInstanceState != null);
+
+        
         if ("default".equals(AppConstants.MOZ_UPDATE_CHANNEL)) {
             enableStrictMode();
         }
@@ -1106,6 +1124,9 @@ public abstract class GeckoApp extends GeckoActivity
         mGeckoLayout = (RelativeLayout) findViewById(R.id.gecko_layout);
         mMainLayout = (RelativeLayout) findViewById(R.id.main_layout);
         mLayerView = (GeckoView) findViewById(R.id.layer_view);
+        
+        
+        mLayerView.setSaveFromParentEnabled(false);
 
         final GeckoSession session = new GeckoSession(
                 new GeckoSessionSettings.Builder()
@@ -1119,6 +1140,9 @@ public abstract class GeckoApp extends GeckoActivity
         }
         mLayerView.setSession(session, GeckoApplication.getRuntime());
         mLayerView.setOverScrollMode(View.OVER_SCROLL_NEVER);
+        if (mIsRestoringActivity && !receivedSavedInstanceState) {
+            restoreGeckoViewState(getGeckoApplication().getSavedState());
+        }
 
         getAppEventDispatcher().registerGeckoThreadListener(this,
             "Locale:Set",
@@ -1311,6 +1335,26 @@ public abstract class GeckoApp extends GeckoActivity
         }
 
         mWasFirstTabShownAfterActivityUnhidden = false; 
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+
+        final SparseArray<Parcelable> stateToRestore =
+                savedInstanceState.getSparseParcelableArray(GECKOVIEW_STATE_BUNDLE);
+        restoreGeckoViewState(stateToRestore);
+    }
+
+    
+
+
+
+    private void restoreGeckoViewState(final SparseArray<Parcelable> state) {
+        if (state != null) {
+            mLayerView.restoreHierarchyState(state);
+        }
+        getGeckoApplication().setSavedState(null);
     }
 
     @Override
@@ -2532,6 +2576,10 @@ public abstract class GeckoApp extends GeckoActivity
 
     public GeckoView getGeckoView() {
         return mLayerView;
+    }
+
+    protected GeckoApplication getGeckoApplication() {
+        return (GeckoApplication) getApplicationContext();
     }
 
     @Override
