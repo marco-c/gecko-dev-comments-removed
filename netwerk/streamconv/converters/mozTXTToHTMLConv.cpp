@@ -341,6 +341,10 @@ bool mozTXTToHTMLConv::ShouldLinkify(const nsCString& aURL) {
   nsresult rv = mIOService->ExtractScheme(aURL, scheme);
   if (NS_FAILED(rv)) return false;
 
+  if (scheme == "http" || scheme == "https" || scheme == "mailto") {
+    return true;
+  }
+
   
   nsCOMPtr<nsIProtocolHandler> handler;
   rv = mIOService->GetProtocolHandler(scheme.get(), getter_AddRefs(handler));
