@@ -34,56 +34,6 @@ using namespace js;
 using namespace js::jit;
 using namespace js::wasm;
 
-template <class DecoderT>
-static bool
-DecodeFunctionBody(DecoderT& d, ModuleGenerator& mg, uint32_t funcIndex)
-{
-    uint32_t bodySize;
-    if (!d.readVarU32(&bodySize))
-        return d.fail("expected number of function body bytes");
-
-    if (bodySize > MaxFunctionBytes)
-        return d.fail("function body too big");
-
-    const size_t offsetInModule = d.currentOffset();
-
-    
-    const uint8_t* bodyBegin;
-    if (!d.readBytes(bodySize, &bodyBegin))
-        return d.fail("function body length too big");
-
-    return mg.compileFuncDef(funcIndex, offsetInModule, bodyBegin, bodyBegin + bodySize);
-}
-
-template <class DecoderT>
-static bool
-DecodeCodeSection(const ModuleEnvironment& env, DecoderT& d, ModuleGenerator& mg)
-{
-    if (!env.codeSection) {
-        if (env.numFuncDefs() != 0)
-            return d.fail("expected code section");
-
-        return mg.finishFuncDefs();
-    }
-
-    uint32_t numFuncDefs;
-    if (!d.readVarU32(&numFuncDefs))
-        return d.fail("expected function body count");
-
-    if (numFuncDefs != env.numFuncDefs())
-        return d.fail("function body count does not match function signature count");
-
-    for (uint32_t funcDefIndex = 0; funcDefIndex < numFuncDefs; funcDefIndex++) {
-        if (!DecodeFunctionBody(d, mg, env.numFuncImports() + funcDefIndex))
-            return false;
-    }
-
-    if (!d.finishSection(*env.codeSection, "code"))
-        return false;
-
-    return mg.finishFuncDefs();
-}
-
 bool
 CompileArgs::initFromContext(JSContext* cx, ScriptedCaller&& scriptedCaller)
 {
@@ -96,7 +46,7 @@ CompileArgs::initFromContext(JSContext* cx, ScriptedCaller&& scriptedCaller)
     baselineEnabled = cx->options().wasmBaseline() || gcEnabled;
     ionEnabled = cx->options().wasmIon() && !gcEnabled;
     sharedMemoryEnabled = cx->realm()->creationOptions().getSharedMemoryAndAtomicsEnabled();
-    gcTypesEnabled = gcEnabled ? HasGcTypes::True : HasGcTypes::False;
+    gcTypesConfigured = gcEnabled ? HasGcTypes::True : HasGcTypes::False;
     testTiering = (cx->options().testWasmAwaitTier2() || JitOptions.wasmDelayTier2) && !gcEnabled;
 
     
@@ -419,6 +369,56 @@ InitialCompileFlags(const CompileArgs& args, Decoder& d, CompileMode* mode, Tier
     *debug = debugEnabled ? DebugEnabled::True : DebugEnabled::False;
 }
 
+template <class DecoderT>
+static bool
+DecodeFunctionBody(DecoderT& d, ModuleGenerator& mg, uint32_t funcIndex)
+{
+    uint32_t bodySize;
+    if (!d.readVarU32(&bodySize))
+        return d.fail("expected number of function body bytes");
+
+    if (bodySize > MaxFunctionBytes)
+        return d.fail("function body too big");
+
+    const size_t offsetInModule = d.currentOffset();
+
+    
+    const uint8_t* bodyBegin;
+    if (!d.readBytes(bodySize, &bodyBegin))
+        return d.fail("function body length too big");
+
+    return mg.compileFuncDef(funcIndex, offsetInModule, bodyBegin, bodyBegin + bodySize);
+}
+
+template <class DecoderT>
+static bool
+DecodeCodeSection(const ModuleEnvironment& env, DecoderT& d, ModuleGenerator& mg)
+{
+    if (!env.codeSection) {
+        if (env.numFuncDefs() != 0)
+            return d.fail("expected code section");
+
+        return mg.finishFuncDefs();
+    }
+
+    uint32_t numFuncDefs;
+    if (!d.readVarU32(&numFuncDefs))
+        return d.fail("expected function body count");
+
+    if (numFuncDefs != env.numFuncDefs())
+        return d.fail("function body count does not match function signature count");
+
+    for (uint32_t funcDefIndex = 0; funcDefIndex < numFuncDefs; funcDefIndex++) {
+        if (!DecodeFunctionBody(d, mg, env.numFuncImports() + funcDefIndex))
+            return false;
+    }
+
+    if (!d.finishSection(*env.codeSection, "code"))
+        return false;
+
+    return mg.finishFuncDefs();
+}
+
 SharedModule
 wasm::CompileBuffer(const CompileArgs& args, const ShareableBytes& bytecode, UniqueChars* error,
                     UniqueCharsVector* warnings)
@@ -432,7 +432,7 @@ wasm::CompileBuffer(const CompileArgs& args, const ShareableBytes& bytecode, Uni
     DebugEnabled debug;
     InitialCompileFlags(args, d, &mode, &tier, &debug);
 
-    ModuleEnvironment env(mode, tier, debug, args.gcTypesEnabled,
+    ModuleEnvironment env(mode, tier, debug, args.gcTypesConfigured,
                           args.sharedMemoryEnabled ? Shareable::True : Shareable::False);
     if (!DecodeModuleEnvironment(d, &env))
         return nullptr;
@@ -458,7 +458,7 @@ wasm::CompileTier2(const CompileArgs& args, Module& module, Atomic<bool>* cancel
     UniqueChars error;
     Decoder d(module.bytecode().bytes, 0, &error);
 
-    MOZ_ASSERT(args.gcTypesEnabled == HasGcTypes::False, "can't ion-compile with gc types yet");
+    MOZ_ASSERT(args.gcTypesConfigured == HasGcTypes::False, "can't ion-compile with gc types yet");
 
     ModuleEnvironment env(CompileMode::Tier2, Tier::Ion, DebugEnabled::False, HasGcTypes::False,
                           args.sharedMemoryEnabled ? Shareable::True : Shareable::False);
@@ -587,7 +587,7 @@ wasm::CompileStreaming(const CompileArgs& args,
         DebugEnabled debug;
         InitialCompileFlags(args, d, &mode, &tier, &debug);
 
-        env.emplace(mode, tier, debug, args.gcTypesEnabled,
+        env.emplace(mode, tier, debug, args.gcTypesConfigured,
                     args.sharedMemoryEnabled ? Shareable::True : Shareable::False);
         if (!DecodeModuleEnvironment(d, env.ptr()))
             return nullptr;
