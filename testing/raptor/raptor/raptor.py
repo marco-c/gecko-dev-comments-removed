@@ -180,6 +180,14 @@ class Raptor(object):
         if test.get('type') == "benchmark":
             self.benchmark = Benchmark(self.config, test)
             benchmark_port = int(self.benchmark.port)
+
+            
+            if self.config['app'] in ['geckoview', 'fennec'] and \
+                    self.config['host'] in ('localhost', '127.0.0.1'):
+                self.log.info("making the raptor benchmarks server port available to device")
+                _tcp_port = "tcp:%s" % benchmark_port
+                self.device.create_socket_connection('reverse', _tcp_port, _tcp_port)
+
         else:
             benchmark_port = 0
 
@@ -190,13 +198,6 @@ class Raptor(object):
                         host=self.config['host'],
                         b_port=benchmark_port,
                         debug_mode=1 if self.debug_mode else 0)
-
-        
-        if self.config['app'] in ['geckoview', 'fennec'] and \
-                self.config['host'] in ('localhost', '127.0.0.1'):
-            self.log.info("making the raptor benchmarks server port available to device")
-            _tcp_port = "tcp:%s" % benchmark_port
-            self.device.create_socket_connection('reverse', _tcp_port, _tcp_port)
 
         
         
@@ -231,8 +232,8 @@ class Raptor(object):
 
         
         if test.get('playback', None) is not None:
-            self.get_playback_config(test)
             
+            self.get_playback_config(test)
             self.playback = get_playback(self.config, self.device)
 
             
