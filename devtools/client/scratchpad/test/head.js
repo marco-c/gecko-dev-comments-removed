@@ -11,8 +11,6 @@ const {require} = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {}
 const {gDevTools} = require("devtools/client/framework/devtools");
 const Services = require("Services");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
-const promise = require("promise");
-const defer = require("devtools/shared/defer");
 
 var gScratchpadWindow; 
 
@@ -81,7 +79,7 @@ function openScratchpad(aReadyCallback, aOptions = {}) {
 function openTabAndScratchpad(aOptions = {}) {
   waitForExplicitFinish();
   
-  return new promise(resolve => {
+  return new Promise(resolve => {
     gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
     const {selectedBrowser} = gBrowser;
     BrowserTestUtils.browserLoaded(selectedBrowser).then(function() {
@@ -143,26 +141,24 @@ function createTempFile(aName, aContent, aCallback = function() {}) {
 
 
 
-function runAsyncTests(aScratchpad, aTests) {
-  const deferred = defer();
-
-  (function runTest() {
-    if (aTests.length) {
-      const test = aTests.shift();
-      aScratchpad.setText(test.code);
-      aScratchpad[test.method]().then(function success() {
-        is(aScratchpad.getText(), test.result, test.label);
-        runTest();
-      }, function failure(error) {
-        ok(false, error.stack + " " + test.label);
-        runTest();
-      });
-    } else {
-      deferred.resolve();
-    }
-  })();
-
-  return deferred.promise;
+function runAsyncTests(scratchpad, tests) {
+  return new Promise(resolve => {
+    (function runTest() {
+      if (tests.length) {
+        const test = tests.shift();
+        scratchpad.setText(test.code);
+        scratchpad[test.method]().then(function success() {
+          is(scratchpad.getText(), test.result, test.label);
+          runTest();
+        }, function failure(error) {
+          ok(false, error.stack + " " + test.label);
+          runTest();
+        });
+      } else {
+        resolve();
+      }
+    })();
+  });
 }
 
 
