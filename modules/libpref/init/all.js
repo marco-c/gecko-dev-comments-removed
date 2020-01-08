@@ -5896,7 +5896,8 @@ pref("browser.fastblock.enabled", false);
 pref("browser.fastblock.timeout", 5000);
 
 
-pref("dom.events.asyncClipboard", false);
+pref("dom.events.asyncClipboard", true);
+
 pref("dom.events.asyncClipboard.dataTransfer", false);
 
 pref("dom.events.testing.asyncClipboard", false);
