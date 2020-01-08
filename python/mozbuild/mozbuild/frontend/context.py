@@ -411,12 +411,6 @@ class LinkFlags(BaseCompileFlags):
                 not self._context.config.substs.get('GNU_CC'),
                 not self._context.config.substs.get('MOZ_DEBUG')]):
 
-            
-            
-            
-            if self._context.config.substs.get('MOZ_DEBUG_SYMBOLS'):
-                flags.append('-DEBUG')
-
             if self._context.config.substs.get('MOZ_OPTIMIZE'):
                 flags.append('-OPT:REF,ICF')
 
