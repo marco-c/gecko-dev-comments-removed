@@ -272,6 +272,19 @@ AddChecked(nscoord aFirst, nscoord aSecond)
 
 
 
+static inline bool
+IsAutoOrEnumOnBSize(const nsStyleCoord& aSize, bool aIsInline) {
+  return aSize.GetUnit() == eStyleUnit_Auto ||
+         (!aIsInline && aSize.GetUnit() == eStyleUnit_Enumerated);
+}
+
+
+
+
+
+
+
+
 
 
 #define GET_MAIN_COMPONENT_LOGICAL(axisTracker_, wm_, isize_, bsize_)  \
@@ -2145,8 +2158,9 @@ FlexItem::CheckForMinSizeAuto(const ReflowInput& aFlexItemReflowInput,
   
   
   
-  mNeedsMinSizeAutoResolution = (mainMinSize.GetUnit() == eStyleUnit_Auto &&
-                                 disp->mOverflowX == NS_STYLE_OVERFLOW_VISIBLE);
+  mNeedsMinSizeAutoResolution =
+    IsAutoOrEnumOnBSize(mainMinSize, IsInlineAxisMainAxis()) &&
+    disp->mOverflowX == NS_STYLE_OVERFLOW_VISIBLE;
 }
 
 nscoord
@@ -4440,7 +4454,7 @@ nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
   const nsStyleCoord& bsize = stylePos->BSize(wm);
   if (bsize.HasPercent() ||
       (StyleDisplay()->IsAbsolutelyPositionedStyle() &&
-       eStyleUnit_Auto == bsize.GetUnit() &&
+       bsize.IsAutoOrEnum() &&
        eStyleUnit_Auto != stylePos->mOffset.GetBStartUnit(wm) &&
        eStyleUnit_Auto != stylePos->mOffset.GetBEndUnit(wm))) {
     AddStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE);
