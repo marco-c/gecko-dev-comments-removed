@@ -294,8 +294,15 @@ var NotificationDB = {
     var notifications = [];
     
     if (this.notifications[origin]) {
-      for (var i in this.notifications[origin]) {
-        notifications.push(this.notifications[origin][i]);
+      if (data.tag) {
+        let n;
+        if ((n = this.byTag[origin][data.tag])) {
+          notifications.push(n);
+        }
+      } else {
+        for (var i in this.notifications[origin]) {
+          notifications.push(this.notifications[origin][i]);
+        }
       }
     }
     return Promise.resolve(notifications);
