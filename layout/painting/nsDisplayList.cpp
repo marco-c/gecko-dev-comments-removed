@@ -8907,7 +8907,7 @@ nsDisplayTransform::CreateWebRenderCommands(
 
   nsTArray<mozilla::wr::WrFilterOp> filters;
   Maybe<nsDisplayTransform*> deferredTransformItem;
-  if (!mFrame->HasPerspective()) {
+  if (!mFrame->ChildrenHavePerspective()) {
     
     
     
@@ -8947,7 +8947,7 @@ nsDisplayTransform::UpdateScrollData(
   mozilla::layers::WebRenderScrollData* aData,
   mozilla::layers::WebRenderLayerScrollData* aLayerData)
 {
-  if (!mFrame->HasPerspective()) {
+  if (!mFrame->ChildrenHavePerspective()) {
     
     
     return false;
