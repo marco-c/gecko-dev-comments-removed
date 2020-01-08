@@ -1033,7 +1033,16 @@ nsIFrame::MarkNeedsDisplayItemRebuild()
   }
 
   RetainedDisplayListData* data = GetOrSetRetainedDisplayListData(rootFrame);
-  data->Flags(this) |= RetainedDisplayListData::FrameFlags::Modified;
+
+  if (data->ModifiedFramesCount() > gfxPrefs::LayoutRebuildFrameLimit()) {
+    
+    
+    data->AddModifiedFrame(rootFrame);
+    rootFrame->SetFrameIsModified(true);
+    return;
+  }
+
+  data->AddModifiedFrame(this);
   SetFrameIsModified(true);
 
   MOZ_ASSERT(

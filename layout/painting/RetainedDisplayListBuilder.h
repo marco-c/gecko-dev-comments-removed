@@ -33,10 +33,20 @@ struct RetainedDisplayListData
     HadWillChange = 1 << 2
   };
 
+  RetainedDisplayListData()
+    : mModifiedFramesCount(0)
+  {
+  }
+
   
 
 
-  void Clear() { mFrames.Clear(); }
+  void AddModifiedFrame(nsIFrame* aFrame);
+
+  
+
+
+  void Clear() { mFrames.Clear(); mModifiedFramesCount = 0; }
 
   
 
@@ -59,10 +69,16 @@ struct RetainedDisplayListData
   
 
 
+  uint32_t ModifiedFramesCount() const { return mModifiedFramesCount; }
+
+  
+
+
   bool Remove(nsIFrame* aFrame) { return mFrames.Remove(aFrame); }
 
 private:
   nsDataHashtable<nsPtrHashKey<nsIFrame>, FrameFlags> mFrames;
+  uint32_t mModifiedFramesCount;
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(RetainedDisplayListData::FrameFlags)
