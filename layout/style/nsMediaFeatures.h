@@ -12,113 +12,12 @@
 #include <stdint.h>
 #include "nsCSSProps.h"
 
-class nsAtom;
-class nsIDocument;
-class nsCSSValue;
-class nsStaticAtom;
-
-struct nsCSSKeywordAndBoolTableEntry : public nsCSSKTableEntry {
-  constexpr nsCSSKeywordAndBoolTableEntry(nsCSSKeyword aKeyword, int16_t aValue)
-    : nsCSSKTableEntry(aKeyword, aValue)
-    , mValueInBooleanContext(true)
-  {
-  }
-
-  template<typename T,
-           typename = typename std::enable_if<std::is_enum<T>::value>::type>
-  constexpr nsCSSKeywordAndBoolTableEntry(
-      nsCSSKeyword aKeyword,
-      T aValue,
-      bool aValueInBooleanContext)
-    : nsCSSKTableEntry(aKeyword, aValue)
-    , mValueInBooleanContext(aValueInBooleanContext)
-  {
-  }
-
-  bool mValueInBooleanContext;
-};
-
-struct nsMediaFeature;
-typedef void (*nsMediaFeatureValueGetter)(nsIDocument* aDocument,
-                                          const nsMediaFeature* aFeature,
-                                          nsCSSValue& aResult);
-
-struct nsMediaFeature
-{
-  nsStaticAtom** mName; 
-
-  enum RangeType { eMinMaxAllowed, eMinMaxNotAllowed };
-  RangeType mRangeType;
-
-  enum ValueType {
-    
-    
-    eLength,         
-    eInteger,        
-    eFloat,          
-    eBoolInteger,    
-    eIntRatio,       
-    eResolution,     
-                     
-                     
-    eEnumerated,     
-    eBoolEnumerated, 
-                     
-    eIdent           
-    
-    
-    
-    
-  };
-  ValueType mValueType;
-
-  enum RequirementFlags : uint8_t {
-    
-    
-    eNoRequirements = 0,
-    eHasWebkitPrefix = 1 << 0, 
-                               
-
-    
-    
-    
-    eWebkitDevicePixelRatioPrefEnabled = 1 << 1,
-    
-    eUserAgentAndChromeOnly = 1 << 2,
-  };
-  uint8_t mReqFlags;
-
-  union {
-    
-    
-    
-    const void* mInitializer_;
-    
-    
-    const nsCSSKTableEntry* mKeywordTable;
-    
-    
-    const nsCSSKeywordAndBoolTableEntry* mKeywordAndBoolTable;
-    
-    
-    nsAtom * const * mMetric;
-  } mData;
-
-  
-  
-  
-  nsMediaFeatureValueGetter mGetter;
-};
-
 class nsMediaFeatures
 {
 public:
   static void InitSystemMetrics();
   static void FreeSystemMetrics();
   static void Shutdown();
-
-  
-  static const nsMediaFeature features[];
 };
 
 #endif 

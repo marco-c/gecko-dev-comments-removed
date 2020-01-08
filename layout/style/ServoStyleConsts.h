@@ -305,4 +305,12 @@ enum class StyleDisplay : uint8_t {
   MozPopup,
 };
 
+
+enum class StyleDisplayMode : uint8_t {
+  Browser = 0,
+  MinimalUi,
+  Standalone,
+  Fullscreen,
+};
+
 } 
