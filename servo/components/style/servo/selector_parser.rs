@@ -11,7 +11,7 @@ use attr::{AttrIdentifier, AttrValue};
 use cssparser::{serialize_identifier, CowRcStr, Parser as CssParser, SourceLocation, ToCss};
 use dom::{OpaqueNode, TElement, TNode};
 use element_state::{DocumentState, ElementState};
-use fxhash::FxHashMap;
+use fnv::FnvHashMap;
 use invalidation::element::document_state::InvalidationMatchingData;
 use invalidation::element::element_wrapper::ElementSnapshot;
 use properties::{ComputedValues, PropertyFlags};
@@ -617,12 +617,12 @@ impl SelectorImpl {
 
 
 #[derive(Debug)]
-pub struct SnapshotMap(FxHashMap<OpaqueNode, ServoElementSnapshot>);
+pub struct SnapshotMap(FnvHashMap<OpaqueNode, ServoElementSnapshot>);
 
 impl SnapshotMap {
     
     pub fn new() -> Self {
-        SnapshotMap(FxHashMap::default())
+        SnapshotMap(FnvHashMap::default())
     }
 
     
@@ -632,7 +632,7 @@ impl SnapshotMap {
 }
 
 impl Deref for SnapshotMap {
-    type Target = FxHashMap<OpaqueNode, ServoElementSnapshot>;
+    type Target = FnvHashMap<OpaqueNode, ServoElementSnapshot>;
 
     fn deref(&self) -> &Self::Target {
         &self.0

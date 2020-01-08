@@ -7,7 +7,7 @@
 
 
 
-use fxhash;
+use fnv;
 
 #[cfg(feature = "gecko")]
 pub use hashglobe::hash_map::HashMap;
@@ -26,6 +26,6 @@ pub mod map {
 }
 
 
-pub type FxHashMap<K, V> = HashMap<K, V, fxhash::FxBuildHasher>;
+pub type FnvHashMap<K, V> = HashMap<K, V, fnv::FnvBuildHasher>;
 
-pub type FxHashSet<T> = HashSet<T, fxhash::FxBuildHasher>;
+pub type FnvHashSet<T> = HashSet<T, fnv::FnvBuildHasher>;
