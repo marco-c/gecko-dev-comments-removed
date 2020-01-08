@@ -1668,7 +1668,7 @@ gfxPlatform::GetDefaultFontName(const nsACString& aLangGroup,
       fontFamily->LocalizedName(result);
     } 
 
-    return std::move(result);
+    return result;
 }
 
 bool
