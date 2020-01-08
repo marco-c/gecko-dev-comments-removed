@@ -5,6 +5,28 @@
 
 
 
+
+
+function xr_promise_test(func, name, properties) {
+  promise_test(async (t) => {
+    
+
+    if (window.XRTest === undefined) {
+      
+      await loadChromiumResources;
+    }
+
+    return func(t);
+  }, name, properties);
+}
+
+
+
+
+
+
+
+
 function forEachWebxrObject(callback) {
   callback(window.navigator.xr, 'navigator.xr');
   callback(window.XRDevice, 'XRDevice');
@@ -26,3 +48,31 @@ function forEachWebxrObject(callback) {
   callback(window.XRSessionEvent, 'XRSessionEvent');
   callback(window.XRCoordinateSystemEvent, 'XRCoordinateSystemEvent');
 }
+
+
+let loadChromiumResources = Promise.resolve().then(() => {
+  if (!MojoInterfaceInterceptor) {
+    
+    
+    return;
+  }
+
+  let chain = Promise.resolve();
+  ['/gen/layout_test_data/mojo/public/js/mojo_bindings.js',
+   '/gen/ui/gfx/geometry/mojo/geometry.mojom.js',
+   '/gen/mojo/public/mojom/base/time.mojom.js',
+   '/gen/device/vr/public/mojom/vr_service.mojom.js',
+   '/resources/chromium/webxr-test.js', '/resources/testdriver.js',
+   '/resources/testdriver-vendor.js',
+  ].forEach(path => {
+    let script = document.createElement('script');
+    script.src = path;
+    script.async = false;
+    chain = chain.then(() => new Promise(resolve => {
+                         script.onload = () => resolve();
+                       }));
+    document.head.appendChild(script);
+  });
+
+  return chain;
+});
