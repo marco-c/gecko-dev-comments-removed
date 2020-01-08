@@ -1123,11 +1123,19 @@ VARCACHE_PREF(
 )
 
 
+# if defined(ANDROID)
+#  define PREF_VALUE false // Bug 1509316
+# else
+#  define PREF_VALUE true
+# endif
+
 VARCACHE_PREF(
   "media.navigator.mediadatadecoder_h264_enabled",
    MediaNavigatorMediadatadecoderH264Enabled,
-  bool, false
+  RelaxedAtomicBool, PREF_VALUE
 )
+#undef PREF_VALUE
+
 #endif 
 
 #ifdef MOZ_OMX
