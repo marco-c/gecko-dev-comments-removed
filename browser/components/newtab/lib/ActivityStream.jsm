@@ -461,7 +461,7 @@ this.ActivityStream = class ActivityStream {
       
       
       if (prefConfig.value !== undefined && prefConfig.value !== newValue) {
-        this._defaultPrefs.setDefaultPref(pref, newValue);
+        this._defaultPrefs.set(pref, newValue);
       }
 
       prefConfig.value = newValue;

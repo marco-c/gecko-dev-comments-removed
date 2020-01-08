@@ -5,7 +5,6 @@
 
 ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 ChromeUtils.import("resource://gre/modules/Preferences.jsm");
-ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const ACTIVITY_STREAM_PREF_BRANCH = "browser.newtabpage.activity-stream.";
 
@@ -16,12 +15,7 @@ this.Prefs = class Prefs extends Preferences {
 
   constructor(branch = ACTIVITY_STREAM_PREF_BRANCH) {
     super({branch});
-    this._branchName = branch;
     this._branchObservers = new Map();
-  }
-
-  get branchName() {
-    return this._branchName;
   }
 
   ignoreBranch(listener) {
@@ -39,7 +33,7 @@ this.Prefs = class Prefs extends Preferences {
   }
 };
 
-this.DefaultPrefs = class DefaultPrefs {
+this.DefaultPrefs = class DefaultPrefs extends Preferences {
   
 
 
@@ -50,28 +44,11 @@ this.DefaultPrefs = class DefaultPrefs {
 
 
   constructor(config, branch = ACTIVITY_STREAM_PREF_BRANCH) {
+    super({
+      branch,
+      defaultBranch: true,
+    });
     this._config = config;
-    this.branch = Services.prefs.getDefaultBranch(branch);
-  }
-
-  
-
-
-
-
-
-  setDefaultPref(key, val) {
-    switch (typeof val) {
-      case "boolean":
-        this.branch.setBoolPref(key, val);
-        break;
-      case "number":
-        this.branch.setIntPref(key, val);
-        break;
-      case "string":
-        this.branch.setStringPref(key, val);
-        break;
-    }
   }
 
   
@@ -82,6 +59,17 @@ this.DefaultPrefs = class DefaultPrefs {
     const IS_UNOFFICIAL_BUILD = !AppConstants.MOZILLA_OFFICIAL;
 
     for (const pref of this._config.keys()) {
+      try {
+        
+        
+        if (this.get(pref) !== undefined) {
+          continue;
+        }
+      } catch (ex) {
+        
+        
+      }
+
       const prefConfig = this._config.get(pref);
       let value;
       if (IS_UNOFFICIAL_BUILD && "value_local_dev" in prefConfig) {
@@ -89,16 +77,13 @@ this.DefaultPrefs = class DefaultPrefs {
       } else {
         value = prefConfig.value;
       }
-      this.setDefaultPref(pref, value);
-    }
-  }
 
-  
-
-
-  reset() {
-    for (const name of this._config.keys()) {
-      this.branch.clearUserPref(name);
+      try {
+        this.set(pref, value);
+      } catch (ex) {
+        
+        
+      }
     }
   }
 };

@@ -42,13 +42,14 @@ module.exports = function(config) {
       "sinon", 
     ],
     reporters: [
-      "coverage", 
+      "coverage-istanbul", 
       "mocha", 
     ],
-    coverageReporter: {
+    coverageIstanbulReporter: {
+      reports: ["html", "text-summary"],
       dir: PATHS.coverageReportingPath,
       
-      check: !isTDD && {
+      thresholds: !isTDD && {
         global: {
           statements: 100,
           lines: 100,
@@ -56,11 +57,6 @@ module.exports = function(config) {
           branches: 90,
         },
       },
-      reporters: [
-        {type: "html", subdir: "report-html"},
-        {type: "text", subdir: ".", file: "text.txt"},
-        {type: "text-summary", subdir: ".", file: "text-summary.txt"},
-      ],
     },
     files: [PATHS.testEntryFile],
     preprocessors,

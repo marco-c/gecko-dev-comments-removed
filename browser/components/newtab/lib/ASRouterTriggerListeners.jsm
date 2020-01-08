@@ -73,7 +73,11 @@ this.ASRouterTriggerListeners = new Map([
 
     onLocationChange(aBrowser, aWebProgress, aRequest, aLocationURI, aFlags) {
       const location = aLocationURI ? aLocationURI.spec : "";
-      if (location && aWebProgress.isTopLevel) {
+      
+      
+      
+      const isSameDocument = !!(aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT);
+      if (location && aWebProgress.isTopLevel && !isSameDocument) {
         try {
           const host = (new URL(location)).hostname;
           if (this._hosts.has(host)) {
