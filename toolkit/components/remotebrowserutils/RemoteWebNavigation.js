@@ -65,15 +65,7 @@ RemoteWebNavigation.prototype = {
   gotoIndex(aIndex) {
     this._sendMessage("WebNavigation:GotoIndex", {index: aIndex});
   },
-  loadURI(aURI, aLoadFlags, aReferrer, aPostData, aHeaders,
-          aTriggeringPrincipal) {
-    this.loadURIWithOptions(aURI, aLoadFlags, aReferrer,
-                            Ci.nsIHttpChannel.REFERRER_POLICY_UNSET,
-                            aPostData, aHeaders, null,
-                            aTriggeringPrincipal);
-  },
-  loadURIWithOptions(aURI, aLoadFlags, aReferrer, aReferrerPolicy,
-                     aPostData, aHeaders, aBaseURI, aTriggeringPrincipal) {
+  loadURI(aURI, aLoadURIOptions) {
     
     
     
@@ -81,7 +73,7 @@ RemoteWebNavigation.prototype = {
     if (aURI.startsWith("http:") || aURI.startsWith("https:")) {
       try {
         let uri = makeURI(aURI);
-        let principal = aTriggeringPrincipal;
+        let principal = aLoadURIOptions.triggeringPrincipal;
         
         
         
@@ -101,14 +93,14 @@ RemoteWebNavigation.prototype = {
 
     this._sendMessage("WebNavigation:LoadURI", {
       uri: aURI,
-      flags: aLoadFlags,
-      referrer: aReferrer ? aReferrer.spec : null,
-      referrerPolicy: aReferrerPolicy,
-      postData: aPostData ? Utils.serializeInputStream(aPostData) : null,
-      headers: aHeaders ? Utils.serializeInputStream(aHeaders) : null,
-      baseURI: aBaseURI ? aBaseURI.spec : null,
+      flags: aLoadURIOptions.loadFlags,
+      referrer: aLoadURIOptions.referrerURI ? aLoadURIOptions.referrerURI.spec : null,
+      referrerPolicy: aLoadURIOptions.referrerPolicy,
+      postData: aLoadURIOptions.postData ? Utils.serializeInputStream(aLoadURIOptions.postData) : null,
+      headers: aLoadURIOptions.headers ? Utils.serializeInputStream(aLoadURIOptions.headers) : null,
+      baseURI: aLoadURIOptions.baseURI ? aLoadURIOptions.baseURI.spec : null,
       triggeringPrincipal: Utils.serializePrincipal(
-          aTriggeringPrincipal || Services.scriptSecurityManager.createNullPrincipal({})),
+          aLoadURIOptions.triggeringPrincipal || Services.scriptSecurityManager.createNullPrincipal({})),
       requestTime: Services.telemetry.msSystemNow(),
     });
   },
@@ -138,8 +130,10 @@ RemoteWebNavigation.prototype = {
   },
   set currentURI(aURI) {
     
-    let systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
-    this.loadURI(aURI.spec, null, null, null, systemPrincipal);
+    let loadURIOptions = {
+      triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+    };
+    this.loadURI(aURI.spec, loadURIOptions);
   },
 
   referringURI: null,

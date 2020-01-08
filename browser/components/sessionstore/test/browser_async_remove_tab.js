@@ -117,8 +117,7 @@ add_task(async function save_worthy_tabs_remote_final() {
 
   
   let snippet = 'webNavigation.loadURI("https://example.com/",\
-                                       null, null, null, null,\
-                                       Services.scriptSecurityManager.getSystemPrincipal())';
+    {triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal()})';
   await promiseNewLocationAndHistoryEntryReplaced(browser, snippet);
 
   

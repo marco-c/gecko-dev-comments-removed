@@ -204,19 +204,24 @@ ContentRestoreInternal.prototype = {
         if (loadArguments.userContextId) {
           webNavigation.setOriginAttributesBeforeLoading({ userContextId: loadArguments.userContextId });
         }
-
-        webNavigation.loadURIWithOptions(loadArguments.uri, loadArguments.flags,
-                                         referrer, referrerPolicy, postData,
-                                         null, null, triggeringPrincipal);
+        let loadURIOptions = {
+          triggeringPrincipal,
+          loadFlags: loadArguments.flags,
+          referrerURI: referrer,
+          referrerPolicy,
+          postData,
+        };
+        webNavigation.loadURI(loadArguments.uri, loadURIOptions);
       } else if (tabData.userTypedValue && tabData.userTypedClear) {
         
         
         
         
-        webNavigation.loadURI(tabData.userTypedValue,
-                              Ci.nsIWebNavigation.LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP,
-                              null, null, null,
-                              Services.scriptSecurityManager.getSystemPrincipal());
+        let loadURIOptions = {
+          triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+          loadFlags: Ci.nsIWebNavigation.LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP,
+        };
+        webNavigation.loadURI(tabData.userTypedValue, loadURIOptions);
       } else if (tabData.entries.length) {
         
         let activeIndex = tabData.index - 1;
@@ -230,10 +235,11 @@ ContentRestoreInternal.prototype = {
         history.reloadCurrentEntry();
       } else {
         
-        webNavigation.loadURI("about:blank",
-                              Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_HISTORY,
-                              null, null, null,
-                              Services.scriptSecurityManager.getSystemPrincipal());
+        let loadURIOptions = {
+          triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+          loadFlags: Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_HISTORY,
+        };
+        webNavigation.loadURI("about:blank", loadURIOptions);
       }
 
       return true;
@@ -377,9 +383,11 @@ HistoryListener.prototype = {
     
     
     let flags = Ci.nsIWebNavigation.LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP;
-    this.webNavigation.loadURI(newURI.spec, flags,
-                               null, null, null,
-                               Services.scriptSecurityManager.getSystemPrincipal());
+    let loadURIOptions = {
+      triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+      loadFlags: flags,
+    };
+    this.webNavigation.loadURI(newURI.spec, loadURIOptions);
   },
 
   OnHistoryReload(reloadURI, reloadFlags) {
