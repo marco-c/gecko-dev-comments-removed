@@ -437,7 +437,15 @@ public:
 
 
 
-     eIntID_SystemUsesDarkTheme
+     eIntID_SystemUsesDarkTheme,
+
+     
+
+
+
+
+
+     eIntID_PrefersReducedMotion,
   };
 
   
