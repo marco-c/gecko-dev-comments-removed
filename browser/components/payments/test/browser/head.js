@@ -428,11 +428,12 @@ async function navigateToAddAddressPage(frame, aOptions = {
   }, aOptions);
 }
 
-async function fillInBillingAddressForm(frame, aAddress) {
+async function fillInBillingAddressForm(frame, aAddress, aOptions) {
   
   
   return fillInShippingAddressForm(frame, aAddress, {
     expectedSelectedStateKey: ["basic-card-page", "billingAddressGUID"],
+    ...aOptions,
   });
 }
 

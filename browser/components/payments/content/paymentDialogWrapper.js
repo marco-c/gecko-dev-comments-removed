@@ -211,9 +211,7 @@ var paymentDialogWrapper = {
       throw new Error(`PaymentRequest not found: ${requestId}`);
     }
 
-    this.frameWeakRef = Cu.getWeakReference(frame);
-    this.mm = frame.frameLoader.messageManager;
-    this.mm.addMessageListener("paymentContentToChrome", this);
+    this._attachToFrame(frame);
     this.mm.loadFrameScript("chrome://payments/content/paymentDialogFrameScript.js", true);
     
     
@@ -233,6 +231,34 @@ var paymentDialogWrapper = {
     } catch (ex) {
       
     }
+  },
+
+  
+
+
+
+
+
+
+
+
+  _attachToFrame(frame) {
+    this.frameWeakRef = Cu.getWeakReference(frame);
+    this.mm = frame.frameLoader.messageManager;
+    this.mm.addMessageListener("paymentContentToChrome", this);
+    Services.obs.addObserver(this, "message-manager-close", true);
+  },
+
+  
+
+
+
+
+  changeAttachedFrame(frame) {
+    this.mm.removeMessageListener("paymentContentToChrome", this);
+    this._attachToFrame(frame);
+    
+    Services.obs.addObserver(this, "formautofill-storage-changed", true);
   },
 
   createShowResponse({
@@ -460,8 +486,9 @@ var paymentDialogWrapper = {
   },
 
   async initializeFrame() {
+    
+    
     Services.obs.addObserver(this, "formautofill-storage-changed", true);
-    Services.obs.addObserver(this, "message-manager-close", true);
 
     let requestSerialized = this._serializeRequest(this.request);
     let chromeWindow = this.frameWeakRef.get().ownerGlobal;
@@ -641,6 +668,7 @@ var paymentDialogWrapper = {
       }
     } catch (ex) {
       responseMessage.error = true;
+      Cu.reportError(ex);
     } finally {
       this.sendMessageToContent("updateAutofillRecord:Response", responseMessage);
     }

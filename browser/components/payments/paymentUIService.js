@@ -62,6 +62,7 @@ PaymentUIService.prototype = {
     let pdwGlobal = {};
     Services.scriptloader.loadSubScript("chrome://payments/content/paymentDialogWrapper.js",
                                         pdwGlobal);
+
     paymentsBrowser.paymentDialogWrapper = pdwGlobal.paymentDialogWrapper;
 
     
@@ -76,6 +77,8 @@ PaymentUIService.prototype = {
     
     paymentsBrowser.paymentDialogWrapper.init(requestId, paymentsBrowser);
 
+    this._attachBrowserEventListeners(merchantBrowser);
+
     
     paymentsBrowser.addEventListener("tabmodaldialogready", function readyToShow() {
       if (!container) {
@@ -83,17 +86,8 @@ PaymentUIService.prototype = {
         return;
       }
       container.hidden = false;
-
-      
-      merchantBrowser.setAttribute("tabmodalPromptShowing", "true");
-
-      
-      let tabModalBackground = chromeWindow.document.createXULElement("box");
-      tabModalBackground.classList.add("tabModalBackground", "paymentDialogBackground");
-      
-      merchantBrowser.parentNode.insertBefore(tabModalBackground,
-                                              merchantBrowser.nextElementSibling);
-    }, {
+      this._showDialog(merchantBrowser);
+    }.bind(this), {
       once: true,
     });
   },
@@ -182,6 +176,23 @@ PaymentUIService.prototype = {
     return frame;
   },
 
+  _attachBrowserEventListeners(merchantBrowser) {
+    merchantBrowser.addEventListener("SwapDocShells", this);
+  },
+
+  _showDialog(merchantBrowser) {
+    let chromeWindow = merchantBrowser.ownerGlobal;
+    
+    merchantBrowser.setAttribute("tabmodalPromptShowing", "true");
+
+    
+    let tabModalBackground = chromeWindow.document.createXULElement("box");
+    tabModalBackground.classList.add("tabModalBackground", "paymentDialogBackground");
+    
+    merchantBrowser.parentNode.insertBefore(tabModalBackground,
+                                            merchantBrowser.nextElementSibling);
+  },
+
   
 
 
@@ -198,6 +209,8 @@ PaymentUIService.prototype = {
     this.log.debug(`closing: ${requestId}`);
     paymentFrame.paymentDialogWrapper.uninit();
     dialogContainer.remove();
+    browser.removeEventListener("SwapDocShells", this);
+
     if (!dialogContainer.hidden) {
       
       
@@ -208,6 +221,11 @@ PaymentUIService.prototype = {
       }
     }
     return true;
+  },
+
+  getDialogContainerForMerchantBrowser(merchantBrowser) {
+    return merchantBrowser.ownerGlobal.gBrowser.getBrowserContainer(merchantBrowser)
+                          .querySelector(".paymentDialogContainer");
   },
 
   findDialog(requestId) {
@@ -237,6 +255,49 @@ PaymentUIService.prototype = {
     this.log.error("findBrowserByOuterWindowId: No browser found for outerWindowId:",
                    outerWindowId);
     return null;
+  },
+
+  _moveDialogToNewBrowser(oldBrowser, newBrowser) {
+    
+    newBrowser.addEventListener("SwapDocShells", this);
+
+    let dialogContainer = this.getDialogContainerForMerchantBrowser(oldBrowser);
+    let newBrowserContainer = newBrowser.ownerGlobal.gBrowser.getBrowserContainer(newBrowser);
+
+    
+    let newDialogContainer = newBrowserContainer.ownerDocument.importNode(dialogContainer, true);
+
+    let oldFrame = dialogContainer.querySelector(".paymentDialogContainerFrame");
+    let newFrame = newDialogContainer.querySelector(".paymentDialogContainerFrame");
+
+    
+    
+    newFrame.setAttribute("src", "about:blank");
+    newFrame.setAttribute("nodefaultsrc", "true");
+
+    newBrowserContainer.prepend(newDialogContainer);
+
+    
+    
+    
+    newFrame.clientTop;
+
+    
+    newFrame.swapFrameLoaders(oldFrame);
+    newFrame.paymentDialogWrapper = oldFrame.paymentDialogWrapper;
+    newFrame.paymentDialogWrapper.changeAttachedFrame(newFrame);
+    dialogContainer.remove();
+
+    this._showDialog(newBrowser);
+  },
+
+  handleEvent(event) {
+    switch (event.type) {
+      case "SwapDocShells": {
+        this._moveDialogToNewBrowser(event.target, event.detail);
+        break;
+      }
+    }
   },
 };
 
