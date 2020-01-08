@@ -33,7 +33,7 @@
 using namespace std;
 using namespace cdm;
 
-ClearKeySessionManager::ClearKeySessionManager(Host_9* aHost)
+ClearKeySessionManager::ClearKeySessionManager(Host_10* aHost)
     : mDecryptionManager(ClearKeyDecryptionManager::Get()) {
   CK_LOGD("ClearKeySessionManager ctor %p", this);
   AddRef();
@@ -57,6 +57,11 @@ void ClearKeySessionManager::Init(bool aDistinctiveIdentifierAllowed,
       self->mDeferredInitialize.pop();
 
       func();
+    }
+    if (self->mHost) {
+      
+      
+      self->mHost->OnInitialized(true);
     }
   };
 
@@ -529,7 +534,7 @@ void ClearKeySessionManager::SetServerCertificate(uint32_t aPromiseId,
                          nullptr , 0 );
 }
 
-Status ClearKeySessionManager::Decrypt(const InputBuffer_1& aBuffer,
+Status ClearKeySessionManager::Decrypt(const InputBuffer_2& aBuffer,
                                        DecryptedBlock* aDecryptedBlock) {
   CK_LOGD("ClearKeySessionManager::Decrypt");
 
