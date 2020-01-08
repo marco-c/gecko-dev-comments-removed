@@ -134,6 +134,11 @@ enum class DrawStringFlags {
 };
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(DrawStringFlags)
 
+enum class ReparentingDirection {
+  Backwards,
+  Forwards
+};
+
 
 
 
