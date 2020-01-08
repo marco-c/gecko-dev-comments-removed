@@ -1066,6 +1066,13 @@ VARCACHE_PREF(
    MediaNavigatorMediadatadecoderEnabled,
   bool, false
 )
+
+
+VARCACHE_PREF(
+  "media.navigator.mediadatadecoder_h264_enabled",
+   MediaNavigatorMediadatadecoderH264Enabled,
+  bool, false
+)
 #endif 
 
 #ifdef MOZ_OMX
