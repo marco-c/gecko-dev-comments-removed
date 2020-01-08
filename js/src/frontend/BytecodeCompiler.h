@@ -132,6 +132,7 @@ TraceParser(JSTracer* trc, JS::AutoGCRooter* parser);
 #if defined(JS_BUILD_BINAST)
 
 
+
 void
 TraceBinParser(JSTracer* trc, JS::AutoGCRooter* parser);
 

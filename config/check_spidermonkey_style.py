@@ -113,7 +113,7 @@ included_inclnames_to_ignore = set([
 
 oddly_ordered_inclnames = set([
     'ctypes/typedefs.h',        
-    'frontend/BinSource-auto.h',  
+    'frontend/BinASTParser.h',  
     
     'frontend/ReservedWordsGenerated.h',
     'gc/StatsPhasesGenerated.h',         

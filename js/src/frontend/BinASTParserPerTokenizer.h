@@ -4,8 +4,8 @@
 
 
 
-#ifndef frontend_BinSource_h
-#define frontend_BinSource_h
+#ifndef frontend_BinASTParserPerTokenizer_h
+#define frontend_BinASTParserPerTokenizer_h
 
 
 
@@ -129,7 +129,7 @@ class BinASTParser : public BinASTParserBase, public ErrorReporter, public BCEPa
     };
 
     
-#include "frontend/BinSource-auto.h"
+#include "frontend/BinASTParser.h"
 
     
 

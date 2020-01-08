@@ -4,7 +4,7 @@
 
 
 
-#include "frontend/BinSource.h"
+#include "frontend/BinASTParserPerTokenizer.h"
 
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Casting.h"
