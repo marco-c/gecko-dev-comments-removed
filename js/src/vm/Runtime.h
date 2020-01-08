@@ -361,6 +361,11 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
     js::MainThreadData<JSSizeOfIncludingThisCompartmentCallback> sizeOfIncludingThisCompartmentCallback;
 
     
+
+
+    void (*constructUbiNodeForDOMObjectCallback) (void*, JSObject*) = nullptr;
+
+    
     js::MainThreadData<JS::DestroyRealmCallback> destroyRealmCallback;
 
     
