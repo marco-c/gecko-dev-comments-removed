@@ -108,6 +108,7 @@
 #include "mozilla/ServoStyleSet.h"
 #include "mozilla/ServoStyleSetInlines.h"
 #include "mozilla/css/ImageLoader.h"
+#include "mozilla/dom/TouchEvent.h"
 #include "mozilla/gfx/Tools.h"
 #include "mozilla/layers/WebRenderUserData.h"
 #include "nsPrintfCString.h"
@@ -11257,54 +11258,60 @@ nsIFrame::GetCompositorHitTestInfo(nsDisplayListBuilder* aBuilder)
     }
   }
 
-  
-  
-  
-  
-  
-  CompositorHitTestInfo inheritedTouchAction = CompositorHitTestInfo::eInvisibleToHitTest;
-  if (nsDisplayCompositorHitTestInfo* parentInfo = aBuilder->GetCompositorHitTestInfo()) {
-    inheritedTouchAction = (parentInfo->HitTestInfo() & CompositorHitTestInfo::eTouchActionMask);
+  nsIDocShell* docShell = nullptr;
+  if (PresShell()->GetDocument()) {
+    docShell = PresShell()->GetDocument()->GetDocShell();
   }
-
-  nsIFrame* touchActionFrame = this;
-  if (nsIScrollableFrame* scrollFrame = nsLayoutUtils::GetScrollableFrameFor(this)) {
-    touchActionFrame = do_QueryFrame(scrollFrame);
+  if (dom::TouchEvent::PrefEnabled(docShell)) {
     
     
     
     
     
-    CompositorHitTestInfo panMask = CompositorHitTestInfo::eTouchActionPanXDisabled
-                                  | CompositorHitTestInfo::eTouchActionPanYDisabled;
-    inheritedTouchAction &= ~panMask;
-  }
-
-  result |= inheritedTouchAction;
-
-  const uint32_t touchAction = nsLayoutUtils::GetTouchActionFromFrame(touchActionFrame);
-  
-  
-  if (touchAction == NS_STYLE_TOUCH_ACTION_AUTO) {
-    
-  } else if (touchAction & NS_STYLE_TOUCH_ACTION_MANIPULATION) {
-    result |= CompositorHitTestInfo::eTouchActionDoubleTapZoomDisabled;
-  } else {
-    
-    
-    result |= CompositorHitTestInfo::eTouchActionPinchZoomDisabled
-            | CompositorHitTestInfo::eTouchActionDoubleTapZoomDisabled;
-
-    if (!(touchAction & NS_STYLE_TOUCH_ACTION_PAN_X)) {
-      result |= CompositorHitTestInfo::eTouchActionPanXDisabled;
+    CompositorHitTestInfo inheritedTouchAction = CompositorHitTestInfo::eInvisibleToHitTest;
+    if (nsDisplayCompositorHitTestInfo* parentInfo = aBuilder->GetCompositorHitTestInfo()) {
+      inheritedTouchAction = (parentInfo->HitTestInfo() & CompositorHitTestInfo::eTouchActionMask);
     }
-    if (!(touchAction & NS_STYLE_TOUCH_ACTION_PAN_Y)) {
-      result |= CompositorHitTestInfo::eTouchActionPanYDisabled;
-    }
-    if (touchAction & NS_STYLE_TOUCH_ACTION_NONE) {
+
+    nsIFrame* touchActionFrame = this;
+    if (nsIScrollableFrame* scrollFrame = nsLayoutUtils::GetScrollableFrameFor(this)) {
+      touchActionFrame = do_QueryFrame(scrollFrame);
       
-      MOZ_ASSERT((result & CompositorHitTestInfo::eTouchActionMask)
-               == CompositorHitTestInfo::eTouchActionMask);
+      
+      
+      
+      
+      CompositorHitTestInfo panMask = CompositorHitTestInfo::eTouchActionPanXDisabled
+                                    | CompositorHitTestInfo::eTouchActionPanYDisabled;
+      inheritedTouchAction &= ~panMask;
+    }
+
+    result |= inheritedTouchAction;
+
+    const uint32_t touchAction = nsLayoutUtils::GetTouchActionFromFrame(touchActionFrame);
+    
+    
+    if (touchAction == NS_STYLE_TOUCH_ACTION_AUTO) {
+      
+    } else if (touchAction & NS_STYLE_TOUCH_ACTION_MANIPULATION) {
+      result |= CompositorHitTestInfo::eTouchActionDoubleTapZoomDisabled;
+    } else {
+      
+      
+      result |= CompositorHitTestInfo::eTouchActionPinchZoomDisabled
+              | CompositorHitTestInfo::eTouchActionDoubleTapZoomDisabled;
+
+      if (!(touchAction & NS_STYLE_TOUCH_ACTION_PAN_X)) {
+        result |= CompositorHitTestInfo::eTouchActionPanXDisabled;
+      }
+      if (!(touchAction & NS_STYLE_TOUCH_ACTION_PAN_Y)) {
+        result |= CompositorHitTestInfo::eTouchActionPanYDisabled;
+      }
+      if (touchAction & NS_STYLE_TOUCH_ACTION_NONE) {
+        
+        MOZ_ASSERT((result & CompositorHitTestInfo::eTouchActionMask)
+                 == CompositorHitTestInfo::eTouchActionMask);
+      }
     }
   }
 
