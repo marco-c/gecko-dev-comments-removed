@@ -753,13 +753,15 @@ class MediaDecoderStateMachine::DecodingState
 class MediaDecoderStateMachine::LoopingDecodingState
     : public MediaDecoderStateMachine::DecodingState {
  public:
-  explicit LoopingDecodingState(Master* aPtr) : DecodingState(aPtr) {
+  explicit LoopingDecodingState(Master* aPtr)
+      : DecodingState(aPtr), mIsReachingAudioEOS(!mMaster->IsAudioDecoding()) {
     MOZ_ASSERT(mMaster->mLooping);
   }
 
   void Enter() {
-    if (!mMaster->IsAudioDecoding()) {
+    if (mIsReachingAudioEOS) {
       SLOG("audio has ended, request the data again.");
+      UpdatePlaybackPositionToZeroIfNeeded();
       RequestAudioDataFromStartPosition();
     }
     DecodingState::Enter();
@@ -794,6 +796,7 @@ class MediaDecoderStateMachine::LoopingDecodingState
   }
 
   void HandleEndOfAudio() override {
+    mIsReachingAudioEOS = true;
     
     
     
@@ -828,6 +831,7 @@ class MediaDecoderStateMachine::LoopingDecodingState
                      ->RequestAudioData()
                      ->Then(OwnerThread(), __func__,
                             [this](RefPtr<AudioData> aAudio) {
+                              mIsReachingAudioEOS = false;
                               mAudioDataRequest.Complete();
                               SLOG(
                                   "got audio decoded sample "
@@ -847,6 +851,23 @@ class MediaDecoderStateMachine::LoopingDecodingState
                  HandleError(aReject.mError);
                })
         ->Track(mAudioSeekRequest);
+  }
+
+  void UpdatePlaybackPositionToZeroIfNeeded() {
+    MOZ_ASSERT(mIsReachingAudioEOS);
+    MOZ_ASSERT(mAudioLoopingOffset == media::TimeUnit::Zero());
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!mMaster->mMediaSink->IsStarted() &&
+        mMaster->mCurrentPosition.Ref() > mMaster->mDecodedAudioEndTime) {
+      mMaster->UpdatePlaybackPositionInternal(TimeUnit::Zero());
+    }
   }
 
   void HandleError(const MediaResult& aError) {
@@ -913,6 +934,7 @@ class MediaDecoderStateMachine::LoopingDecodingState
            ShouldDiscardLoopedAudioData();
   }
 
+  bool mIsReachingAudioEOS;
   media::TimeUnit mAudioLoopingOffset = media::TimeUnit::Zero();
   MozPromiseRequestHolder<MediaFormatReader::SeekPromise> mAudioSeekRequest;
   MozPromiseRequestHolder<AudioDataPromise> mAudioDataRequest;
