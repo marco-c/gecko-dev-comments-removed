@@ -40,6 +40,7 @@ function appUpdater(options = {}) {
 
   this.options = options;
   this.updateDeck = document.getElementById("updateDeck");
+  this.promiseAutoUpdateSetting = null;
 
   
   
@@ -80,6 +81,9 @@ function appUpdater(options = {}) {
     
     return;
   }
+
+  
+  this.promiseAutoUpdateSetting = this.aus.getAutoUpdateIsEnabled();
 
   
   
@@ -134,14 +138,6 @@ appUpdater.prototype =
   get backgroundUpdateEnabled() {
     return !this.updateDisabledByPolicy &&
            gAppUpdater.aus.canStageUpdates;
-  },
-
-  
-  get updateAuto() {
-    try {
-      return Services.prefs.getBoolPref("app.update.auto");
-    } catch (e) { }
-    return true; 
   },
 
   
@@ -260,10 +256,16 @@ appUpdater.prototype =
         return;
       }
 
-      if (gAppUpdater.updateAuto) 
-        gAppUpdater.startDownload();
-      else 
-        gAppUpdater.selectPanel("downloadAndInstall");
+      if (this.promiseAutoUpdateSetting == null) {
+        this.promiseAutoUpdateSetting = this.aus.getAutoUpdateIsEnabled();
+      }
+      this.promiseAutoUpdateSetting.then(updateAuto => {
+        if (updateAuto) { 
+          gAppUpdater.startDownload();
+        } else { 
+          gAppUpdater.selectPanel("downloadAndInstall");
+        }
+      });
     },
 
     
