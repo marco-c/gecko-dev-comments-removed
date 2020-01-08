@@ -773,3 +773,15 @@ where
         }
     }
 }
+
+
+
+pub fn recycle_vec<T>(vec: &mut Vec<T>) {
+    if vec.capacity() > 2 * vec.len() {
+        
+        
+        
+        vec.shrink_to_fit();
+    }
+    vec.clear();
+}
