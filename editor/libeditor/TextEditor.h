@@ -324,11 +324,9 @@ protected:
 
 
 
-
   template<typename PT, typename CT>
   already_AddRefed<Element>
   InsertBrElementWithTransaction(
-    Selection& aSelection,
     const EditorDOMPointBase<PT, CT>& aPointToInsert,
     EDirection aSelect = eNone);
 
@@ -337,8 +335,7 @@ protected:
 
 
 
-  nsresult ExtendSelectionForDelete(Selection* aSelection,
-                                    nsIEditor::EDirection* aAction);
+  nsresult ExtendSelectionForDelete(nsIEditor::EDirection* aAction);
 
   
 
@@ -369,7 +366,7 @@ protected:
   
 
 
-  virtual nsresult SelectEntireDocument(Selection* aSelection) override;
+  virtual nsresult SelectEntireDocument() override;
 
   
 

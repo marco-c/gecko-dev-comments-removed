@@ -252,11 +252,7 @@ public:
     }
 
     mIsObjectResizingEnabled = aEnable;
-    RefPtr<Selection> selection = GetSelection();
-    if (NS_WARN_IF(!selection)) {
-      return;
-    }
-    RefereshEditingUI(*selection);
+    RefereshEditingUI();
   }
   bool IsObjectResizerEnabled() const
   {
@@ -280,11 +276,7 @@ public:
     }
 
     mIsInlineTableEditingEnabled = aEnable;
-    RefPtr<Selection> selection = GetSelection();
-    if (NS_WARN_IF(!selection)) {
-      return;
-    }
-    RefereshEditingUI(*selection);
+    RefereshEditingUI();
   }
   bool IsInlineTableEditorEnabled() const
   {
@@ -309,11 +301,7 @@ public:
     }
 
     mIsAbsolutelyPositioningEnabled = aEnable;
-    RefPtr<Selection> selection = GetSelection();
-    if (NS_WARN_IF(!selection)) {
-      return;
-    }
-    RefereshEditingUI(*selection);
+    RefereshEditingUI();
   }
   bool IsAbsolutePositionEditorEnabled() const
   {
@@ -609,10 +597,9 @@ protected:
 
 
 
-  Element* GetSelectionContainerElement(Selection& aSelection) const;
+  Element* GetSelectionContainerElement() const;
 
   
-
 
 
 
@@ -631,11 +618,9 @@ protected:
 
 
   already_AddRefed<Element>
-  GetFirstSelectedTableCellElement(Selection& aSelection,
-                                   ErrorResult& aRv) const;
+  GetFirstSelectedTableCellElement(ErrorResult& aRv) const;
 
   
-
 
 
 
@@ -657,8 +642,7 @@ protected:
 
 
   already_AddRefed<Element>
-  GetNextSelectedTableCellElement(Selection& aSelection,
-                                  ErrorResult& aRv) const;
+  GetNextSelectedTableCellElement(ErrorResult& aRv) const;
 
   
 
@@ -1022,20 +1006,15 @@ protected:
 
 
 
-
-
-  nsresult SelectContentInternal(Selection& aSelection,
-                                 nsIContent& aContentToSelect);
+  nsresult SelectContentInternal(nsIContent& aContentToSelect);
 
   
 
 
 
-  nsresult CollapseSelectionAfter(Selection& aSelection,
-                                  Element& aElement);
+  nsresult CollapseSelectionAfter(Element& aElement);
 
   
-
 
 
 
@@ -1052,8 +1031,7 @@ protected:
 
 
   Element*
-  GetElementOrParentByTagNameAtSelection(Selection& aSelection,
-                                         const nsAtom& aTagName) const;
+  GetElementOrParentByTagNameAtSelection(const nsAtom& aTagName) const;
 
   
 
@@ -1107,10 +1085,8 @@ protected:
 
 
 
-
   already_AddRefed<Element>
-  GetSelectedElement(Selection& aSelection,
-                     const nsAtom* aTagName,
+  GetSelectedElement(const nsAtom* aTagName,
                      ErrorResult& aRv);
 
   
@@ -1525,8 +1501,7 @@ protected:
 
 
   already_AddRefed<Element>
-  GetSelectedOrParentTableElement(Selection& aSelection,
-                                  ErrorResult& aRv,
+  GetSelectedOrParentTableElement(ErrorResult& aRv,
                                   bool* aIsCellSelected = nullptr) const;
 
   
@@ -1649,13 +1624,12 @@ protected:
   nsresult SetHTMLBackgroundColorWithTransaction(const nsAString& aColor);
 
   virtual void
-  InitializeSelectionAncestorLimit(Selection& aSelection,
-                                   nsIContent& aAncestorLimit) override;
+  InitializeSelectionAncestorLimit(nsIContent& aAncestorLimit) override;
 
   
 
 
-  virtual nsresult SelectEntireDocument(Selection* aSelection) override;
+  virtual nsresult SelectEntireDocument() override;
 
   
 
@@ -1664,9 +1638,7 @@ protected:
 
 
 
-
-  void CollapseSelectionToDeepestNonTableFirstChild(Selection* aSelection,
-                                                    nsINode* aNode);
+  void CollapseSelectionToDeepestNonTableFirstChild(nsINode* aNode);
 
   
 
@@ -1982,10 +1954,8 @@ protected:
 
 
 
-
   nsresult
-  DeleteTableElementAndChildrenWithTransaction(Selection& aSelection,
-                                               Element& aTableElement);
+  DeleteTableElementAndChildrenWithTransaction(Element& aTableElement);
 
   nsresult SetColSpan(Element* aCell, int32_t aColSpan);
   nsresult SetRowSpan(Element* aCell, int32_t aRowSpan);
@@ -2026,7 +1996,7 @@ protected:
 
 
 
-  nsresult GetCellContext(Selection** aSelection, Element** aTable,
+  nsresult GetCellContext(Element** aTable,
                           Element** aCell, nsINode** aCellParent,
                           int32_t* aCellOffset, int32_t* aRowIndex,
                           int32_t* aColIndex);
@@ -2065,15 +2035,13 @@ protected:
 
 
 
-
-  nsresult NormalizeTable(Selection& aSelection,
-                          Element& aTableOrElementInTable);
+  nsresult NormalizeTableInternal(Element& aTableOrElementInTable);
 
   
 
 
 
-  nsresult SetSelectionAtDocumentStart(Selection* aSelection);
+  nsresult SetSelectionAtDocumentStart();
 
   static Element* GetEnclosingTable(nsINode* aNode);
 
@@ -2299,7 +2267,7 @@ protected:
 
 
 
-  nsresult RefereshEditingUI(Selection& aSelection);
+  nsresult RefereshEditingUI();
 
   
 

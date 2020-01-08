@@ -160,7 +160,7 @@ TextEditRules::Init(TextEditor* aTextEditor)
   
   
   if (!SelectionRef().RangeCount()) {
-    rv = TextEditorRef().CollapseSelectionToEnd(&SelectionRef());
+    rv = TextEditorRef().CollapseSelectionToEnd();
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -263,7 +263,7 @@ TextEditRules::AfterEdit(EditSubAction aEditSubAction,
     AutoSafeEditorData setData(*this, *mTextEditor, *selection);
 
     nsresult rv =
-      TextEditorRef().HandleInlineSpellCheck(aEditSubAction, *selection,
+      TextEditorRef().HandleInlineSpellCheck(aEditSubAction,
                                              mCachedSelectionNode,
                                              mCachedSelectionOffset,
                                              nullptr, 0, nullptr, 0);
@@ -505,7 +505,7 @@ TextEditRules::CollapseSelectionToTrailingBRIfNeeded()
   
   
   if (!SelectionRef().RangeCount()) {
-    TextEditorRef().CollapseSelectionToEnd(&SelectionRef());
+    TextEditorRef().CollapseSelectionToEnd();
     if (NS_WARN_IF(!CanHandleEditAction())) {
       return NS_ERROR_EDITOR_DESTROYED;
     }
@@ -514,7 +514,7 @@ TextEditRules::CollapseSelectionToTrailingBRIfNeeded()
   
   
   EditorRawDOMPoint selectionStartPoint(
-                      EditorBase::GetStartPoint(&SelectionRef()));
+                      EditorBase::GetStartPoint(SelectionRef()));
   if (NS_WARN_IF(!selectionStartPoint.IsSet())) {
     return NS_ERROR_FAILURE;
   }
@@ -561,7 +561,7 @@ TextEditRules::GetTextNodeAroundSelectionStartContainer()
   MOZ_ASSERT(IsEditorDataAvailable());
 
   EditorRawDOMPoint selectionStartPoint(
-                      EditorBase::GetStartPoint(&SelectionRef()));
+                      EditorBase::GetStartPoint(SelectionRef()));
   if (NS_WARN_IF(!selectionStartPoint.IsSet())) {
     return nullptr;
   }
@@ -979,8 +979,7 @@ TextEditRules::WillSetText(bool* aCancel,
 
   
   
-  rv = TextEditorRef().SetTextImpl(SelectionRef(), tString,
-                                   *curNode->GetAsText());
+  rv = TextEditorRef().SetTextImpl(tString, *curNode->GetAsText());
   if (NS_WARN_IF(!CanHandleEditAction())) {
     return NS_ERROR_EDITOR_DESTROYED;
   }
@@ -1080,9 +1079,7 @@ TextEditRules::DeleteSelectionWithTransaction(
   nsAutoScriptBlocker scriptBlocker;
 
   if (IsPasswordEditor()) {
-    nsresult rv =
-      TextEditorRef().ExtendSelectionForDelete(&SelectionRef(),
-                                               &aCollapsedAction);
+    nsresult rv = TextEditorRef().ExtendSelectionForDelete(&aCollapsedAction);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -1123,7 +1120,7 @@ TextEditRules::DeleteSelectionWithTransaction(
     }
   } else {
     EditorRawDOMPoint selectionStartPoint(
-                        EditorBase::GetStartPoint(&SelectionRef()));
+                        EditorBase::GetStartPoint(SelectionRef()));
     if (NS_WARN_IF(!selectionStartPoint.IsSet())) {
       return NS_ERROR_FAILURE;
     }
@@ -1142,8 +1139,7 @@ TextEditRules::DeleteSelectionWithTransaction(
       return NS_OK;
     }
 
-    rv = TextEditorRef().ExtendSelectionForDelete(&SelectionRef(),
-                                                  &aCollapsedAction);
+    rv = TextEditorRef().ExtendSelectionForDelete(&aCollapsedAction);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -1170,7 +1166,7 @@ TextEditRules::DidDeleteSelection()
   MOZ_ASSERT(IsEditorDataAvailable());
 
   EditorRawDOMPoint selectionStartPoint(
-                      EditorBase::GetStartPoint(&SelectionRef()));
+                      EditorBase::GetStartPoint(SelectionRef()));
   if (NS_WARN_IF(!selectionStartPoint.IsSet())) {
     return NS_ERROR_FAILURE;
   }
@@ -1817,8 +1813,7 @@ TextEditRules::CreateBRInternal(
   }
 
   RefPtr<Element> brElement =
-    TextEditorRef().InsertBrElementWithTransaction(SelectionRef(),
-                                                   aPointToInsert);
+    TextEditorRef().InsertBrElementWithTransaction(aPointToInsert);
   if (NS_WARN_IF(!CanHandleEditAction())) {
     return CreateElementResult(NS_ERROR_EDITOR_DESTROYED);
   }

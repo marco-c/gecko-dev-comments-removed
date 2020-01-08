@@ -164,7 +164,7 @@ HTMLEditorEventListener::MouseDown(MouseEvent* aMouseEvent)
     }
     
     
-    htmlEditor->CheckSelectionStateForAnonymousButtons(selection);
+    htmlEditor->CheckSelectionStateForAnonymousButtons();
 
     
     

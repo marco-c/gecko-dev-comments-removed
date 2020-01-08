@@ -803,8 +803,7 @@ protected:
                                         Text& aTextNode, int32_t aOffset,
                                         bool aSuppressIME = false);
 
-  nsresult SetTextImpl(Selection& aSelection,
-                       const nsAString& aString,
+  nsresult SetTextImpl(const nsAString& aString,
                        Text& aTextNode);
 
   
@@ -1316,11 +1315,7 @@ protected:
   EditorDOMPoint JoinNodesDeepWithTransaction(nsIContent& aLeftNode,
                                               nsIContent& aRightNode);
 
-  
-
-
-  nsresult DoTransaction(Selection* aSelection,
-                         nsITransaction* aTxn);
+  nsresult DoTransactionInternal(nsITransaction* aTxn);
 
   virtual bool IsBlockNode(nsINode* aNode);
 
@@ -1602,16 +1597,16 @@ protected:
   }
   static nsIContent* GetNodeAtRangeOffsetPoint(const RawRangeBoundary& aPoint);
 
-  static EditorRawDOMPoint GetStartPoint(Selection* aSelection);
-  static EditorRawDOMPoint GetEndPoint(Selection* aSelection);
+  static EditorRawDOMPoint GetStartPoint(const Selection& aSelection);
+  static EditorRawDOMPoint GetEndPoint(const Selection& aSelection);
 
-  static nsresult GetEndChildNode(Selection* aSelection,
+  static nsresult GetEndChildNode(const Selection& aSelection,
                                   nsIContent** aEndNode);
 
   
 
 
-  nsresult CollapseSelectionToEnd(Selection* aSelection);
+  nsresult CollapseSelectionToEnd();
 
   
 
@@ -1644,7 +1639,6 @@ protected:
   }
 
   nsresult HandleInlineSpellCheck(EditSubAction aEditSubAction,
-                                  Selection& aSelection,
                                   nsINode* previousSelectedNode,
                                   uint32_t previousSelectedOffset,
                                   nsINode* aStartContainer,
@@ -1720,8 +1714,8 @@ protected:
 
 
   bool ArePreservingSelection();
-  void PreserveSelectionAcrossActions(Selection* aSel);
-  nsresult RestorePreservedSelection(Selection* aSel);
+  void PreserveSelectionAcrossActions();
+  nsresult RestorePreservedSelection();
   void StopPreservingSelection();
 
   
@@ -1802,7 +1796,7 @@ protected:
   
 
 
-  virtual nsresult SelectEntireDocument(Selection* aSelection);
+  virtual nsresult SelectEntireDocument();
 
   
 
@@ -1914,9 +1908,7 @@ protected:
 
 
 
-
-  virtual void InitializeSelectionAncestorLimit(Selection& aSelection,
-                                                nsIContent& aAncestorLimit);
+  virtual void InitializeSelectionAncestorLimit(nsIContent& aAncestorLimit);
 
   
 
@@ -2051,9 +2043,8 @@ protected:
 
 
 
-    AutoSelectionRestorer(Selection& aSelection,
-                          EditorBase& aEditorBase
-                          MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
+    explicit AutoSelectionRestorer(EditorBase& aEditorBase
+                                   MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
 
     
 
@@ -2066,7 +2057,6 @@ protected:
     void Abort();
 
   protected:
-    RefPtr<Selection> mSelection;
     EditorBase* mEditorBase;
     MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
   };
