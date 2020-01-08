@@ -2072,6 +2072,10 @@ function getUserContextIdForCookieStoreId(extension, cookieStoreId, isPrivateBro
   }
 
   if (isContainerCookieStoreId(cookieStoreId)) {
+    if (PrivateBrowsingUtils.permanentPrivateBrowsing) {
+      
+      throw new ExtensionError(`Contextual identities are unavailable in permanent private browsing mode`);
+    }
     let userContextId = getContainerForCookieStoreId(cookieStoreId);
     if (!userContextId) {
       throw new ExtensionError(`No cookie store exists with ID ${cookieStoreId}`);
