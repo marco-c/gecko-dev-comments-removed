@@ -1,6 +1,7 @@
 add_task(async function() {
   const kPrefName_AutoScroll = "general.autoScroll";
   Services.prefs.setBoolPref(kPrefName_AutoScroll, true);
+  registerCleanupFunction(() => Services.prefs.clearUserPref(kPrefName_AutoScroll));
 
   const kNoKeyEvents   = 0;
   const kKeyDownEvent  = 1;
@@ -61,55 +62,52 @@ add_task(async function() {
 
   var dataUri = 'data:text/html,<body style="height:10000px;"></body>';
 
-  let loadedPromise = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
-  BrowserTestUtils.loadURI(gBrowser, dataUri);
-  await loadedPromise;
+  await BrowserTestUtils.withNewTab(dataUri, async function(browser) {
+    info("Loaded data URI in new tab");
+    await SimpleTest.promiseFocus(browser);
+    info("Focused selected browser");
 
-  await SimpleTest.promiseFocus(gBrowser.selectedBrowser);
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("keypress", onKey);
+    window.addEventListener("keyup", onKey);
+    registerCleanupFunction(() => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("keypress", onKey);
+      window.removeEventListener("keyup", onKey);
+    });
 
-  window.addEventListener("keydown", onKey);
-  window.addEventListener("keypress", onKey);
-  window.addEventListener("keyup", onKey);
+    
+    expectedKeyEvents = kAllKeyEvents;
+    sendChar("A");
 
-  
-  expectedKeyEvents = kAllKeyEvents;
-  sendChar("A");
+    
+    info("Creating popup shown promise");
+    let shownPromise = BrowserTestUtils.waitForEvent(window, "popupshown", false,
+                         event => event.originalTarget.className == "autoscroller");
+    await BrowserTestUtils.synthesizeMouseAtPoint(10, 10, { button: 1 },
+                                                  gBrowser.selectedBrowser);
+    info("Waiting for autoscroll popup to show");
+    await shownPromise;
 
-  
-  let shownPromise = BrowserTestUtils.waitForEvent(window, "popupshown", false,
-                       event => event.originalTarget.className == "autoscroller");
-  await BrowserTestUtils.synthesizeMouseAtPoint(10, 10, { button: 1 },
-                                                gBrowser.selectedBrowser);
-  await shownPromise;
+    
+    expectedKeyEvents = kNoKeyEvents;
+    sendChar("A");
+    sendKey("DOWN");
+    sendKey("RETURN");
+    sendKey("RETURN");
+    sendKey("HOME");
+    sendKey("END");
+    sendKey("TAB");
+    sendKey("RETURN");
 
-  
-  expectedKeyEvents = kNoKeyEvents;
-  sendChar("A");
-  sendKey("DOWN");
-  sendKey("RETURN");
-  sendKey("RETURN");
-  sendKey("HOME");
-  sendKey("END");
-  sendKey("TAB");
-  sendKey("RETURN");
+    
+    
+    
+    expectedKeyEvents = kKeyUpEvent;
+    sendKey("ESCAPE");
 
-  
-  
-  
-  expectedKeyEvents = kKeyUpEvent;
-  sendKey("ESCAPE");
-
-  
-  expectedKeyEvents = kAllKeyEvents;
-  sendChar("A");
-
-  window.removeEventListener("keydown", onKey);
-  window.removeEventListener("keypress", onKey);
-  window.removeEventListener("keyup", onKey);
-
-  
-  if (Services.prefs.prefHasUserValue(kPrefName_AutoScroll))
-    Services.prefs.clearUserPref(kPrefName_AutoScroll);
-
-  finish();
+    
+    expectedKeyEvents = kAllKeyEvents;
+    sendChar("A");
+  });
 });
