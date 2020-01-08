@@ -50,7 +50,7 @@ if (typeof Mozilla == "undefined") {
 
   function _registerInternalPolicyHandler() {
     
-    _initPromise = new Promise(function(resolveInit, rejectInit) {
+    var setupPromise = new Promise(function(resolveInit, rejectInit) {
       
       function policyChangeHandler(updatedPref) {
         if (!("detail" in updatedPref) ||
@@ -68,6 +68,19 @@ if (typeof Mozilla == "undefined") {
                                 () => rejectInit(new Error("Origin not trusted or HCT disabled.")),
                                 {once: true});
     });
+
+    
+    
+    
+    
+    
+    var timeoutPromise = new Promise((resolve, reject) => {
+      setTimeout(reject, 3000);
+    });
+
+    
+    
+    _initPromise = Promise.race([setupPromise, timeoutPromise]);
 
     
     _sendMessageToChrome("init");
