@@ -342,7 +342,12 @@ public class GeckoView extends FrameLayout {
         if (!mSession.isOpen()) {
             mSession.open(mRuntime);
         }
-        mRuntime.orientationChanged();
+        
+        
+        
+        if (mRuntime != null) {
+            mRuntime.orientationChanged();
+        }
 
         super.onAttachedToWindow();
     }
