@@ -444,13 +444,9 @@ struct JSContext : public JS::RootingContext,
     }
 #endif
 
-  private:
-    
-    js::ThreadData<js::InterpreterStack> interpreterStack_;
-
   public:
     js::InterpreterStack& interpreterStack() {
-        return interpreterStack_.ref();
+        return runtime()->interpreterStack();
     }
 
     

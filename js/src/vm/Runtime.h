@@ -230,7 +230,14 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
     friend class js::jit::JitActivation;
     friend class js::jit::CompileRuntime;
 
+    
+    js::MainThreadData<js::InterpreterStack> interpreterStack_;
+
   public:
+    js::InterpreterStack& interpreterStack() {
+        return interpreterStack_.ref();
+    }
+
     
 
 
