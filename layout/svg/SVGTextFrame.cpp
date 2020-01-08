@@ -2926,7 +2926,7 @@ SVGTextDrawPathCallbacks::SetupContext()
   
   
   switch (mFrame->StyleText()->mTextRendering) {
-  case NS_STYLE_TEXT_RENDERING_OPTIMIZESPEED:
+  case StyleTextRendering::Optimizespeed:
     mContext.SetAntialiasMode(AntialiasMode::NONE);
     break;
   default:
@@ -5550,7 +5550,7 @@ SVGTextFrame::UpdateFontSizeScaleFactor()
       
       
       geometricPrecision = f->StyleText()->mTextRendering ==
-                             NS_STYLE_TEXT_RENDERING_GEOMETRICPRECISION;
+                             StyleTextRendering::Geometricprecision;
     }
     nscoord size = f->StyleFont()->mFont.size;
     if (size) {
