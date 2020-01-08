@@ -143,21 +143,21 @@ impl<T, U> Polygon<T, U> where
         rect: TypedRect<T, V>,
         transform: TypedTransform3D<T, V, U>,
         anchor: usize,
-    ) -> Self
+    ) -> Option<Self>
     where
         T: Trig + ops::Neg<Output=T>,
     {
         let points = [
-            transform.transform_point3d(&rect.origin.to_3d()),
-            transform.transform_point3d(&rect.top_right().to_3d()),
-            transform.transform_point3d(&rect.bottom_right().to_3d()),
-            transform.transform_point3d(&rect.bottom_left().to_3d()),
+            transform.transform_point3d(&rect.origin.to_3d())?,
+            transform.transform_point3d(&rect.top_right().to_3d())?,
+            transform.transform_point3d(&rect.bottom_right().to_3d())?,
+            transform.transform_point3d(&rect.bottom_left().to_3d())?,
         ];
 
         
         
         
-        Self::from_points(points, anchor)
+        Some(Self::from_points(points, anchor))
     }
 
     
