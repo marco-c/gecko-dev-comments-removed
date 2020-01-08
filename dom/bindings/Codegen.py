@@ -102,6 +102,9 @@ def idlTypeNeedsCycleCollection(type):
         raise CycleCollectionUnsupported("Don't know whether to cycle-collect type %s" % type)
 
 
+
+
+
 def wantsAddProperty(desc):
     return (desc.concrete and desc.wrapperCache and not desc.isGlobal())
 
@@ -1683,6 +1686,10 @@ class CGAddPropertyHook(CGAbstractClassHook):
 
     def generate_code(self):
         assert self.descriptor.wrapperCache
+        
+        
+        
+        
         return dedent("""
             // We don't want to preserve if we don't have a wrapper, and we
             // obviously can't preserve if we're not initialized.

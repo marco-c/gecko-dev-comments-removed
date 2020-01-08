@@ -1152,6 +1152,9 @@ TryPreserveWrapper(JS::Handle<JSObject*> obj)
 {
   MOZ_ASSERT(IsDOMObject(obj));
 
+  
+  
+  
   if (nsISupports* native = UnwrapDOMObjectToISupports(obj)) {
     nsWrapperCache* cache = nullptr;
     CallQueryInterface(native, &cache);
@@ -1163,9 +1166,23 @@ TryPreserveWrapper(JS::Handle<JSObject*> obj)
 
   
   
-  
   const DOMJSClass* domClass = GetDOMClass(obj);
-  return domClass && !domClass->mParticipant;
+  const JSClass* clasp = domClass->ToJSClass();
+  JSAddPropertyOp addProperty = clasp->getAddProperty();
+
+  
+  MOZ_RELEASE_ASSERT(!js::Valueify(clasp)->isProxy(), "Should not call addProperty for proxies.");
+
+  
+  MOZ_RELEASE_ASSERT(bool(domClass->mParticipant) == bool(addProperty));
+
+  if (!addProperty) {
+    return true;
+  }
+
+  JS::Rooted<jsid> dummyId(RootingCx());
+  JS::Rooted<JS::Value> dummyValue(RootingCx());
+  return addProperty(nullptr, obj, dummyId, dummyValue);
 }
 
 
