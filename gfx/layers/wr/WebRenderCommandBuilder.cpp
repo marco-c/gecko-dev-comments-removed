@@ -555,9 +555,9 @@ struct DIGroup
             IntRect transformedRect = ToDeviceSpace(combined.GetBounds(), aMatrix, appUnitsPerDevPixel, mLayerBounds.TopLeft());
             
             
-            MOZ_RELEASE_ASSERT(mInvalidRect.Contains(aData->mRect));
+            InvalidateRect(aData->mRect);
             aData->mRect = transformedRect.Intersect(mImageBounds);
-            MOZ_RELEASE_ASSERT(mInvalidRect.Contains(aData->mRect));
+            InvalidateRect(aData->mRect);
             GP("ContainerLayer image rect bounds change\n");
           } else {
             
@@ -575,9 +575,9 @@ struct DIGroup
           IntRect transformedRect = ToDeviceSpace(combined.GetBounds(), aMatrix, appUnitsPerDevPixel, mLayerBounds.TopLeft());
           
           
-          MOZ_RELEASE_ASSERT(mInvalidRect.Contains(aData->mRect));
+          InvalidateRect(aData->mRect);
           aData->mRect = transformedRect.Intersect(mImageBounds);
-          MOZ_RELEASE_ASSERT(mInvalidRect.Contains(aData->mRect));
+          InvalidateRect(aData->mRect);
           GP("image rect bounds change\n");
         } else {
           
