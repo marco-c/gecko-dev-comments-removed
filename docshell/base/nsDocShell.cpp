@@ -11751,7 +11751,10 @@ nsDocShell::AddState(JS::Handle<JS::Value> aData, const nsAString& aTitle,
   
   
   
-  if (!equalURIs) {
+  
+  
+  
+  if (!equalURIs && !mIsBeingDestroyed) {
     document->SetDocumentURI(newURI);
     
     
