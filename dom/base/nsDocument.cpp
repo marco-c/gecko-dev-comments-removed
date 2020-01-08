@@ -13725,7 +13725,7 @@ nsIDocument::RequestStorageAccess(mozilla::ErrorResult& aRv)
 
   
   nsPIDOMWindowInner* inner = GetInnerWindow();
-  nsGlobalWindowOuter* outer = nullptr;
+  RefPtr<nsGlobalWindowOuter> outer;
   if (inner) {
     outer = nsGlobalWindowOuter::Cast(inner->GetOuterWindow());
     if (outer->HasStorageAccess()) {
@@ -13819,16 +13819,17 @@ nsIDocument::RequestStorageAccess(mozilla::ErrorResult& aRv)
   
   
   if (granted && inner) {
-    outer->SetHasStorageAccess(true);
     if (isTrackingWindow) {
       AntiTrackingCommon::AddFirstPartyStorageAccessGrantedFor(NodePrincipal(),
                                                                inner,
                                                                AntiTrackingCommon::eStorageAccessAPI)
         ->Then(GetCurrentThreadSerialEventTarget(), __func__,
-               [promise] (bool) {
+               [outer, promise] (bool) {
+                 outer->SetHasStorageAccess(true);
                  promise->MaybeResolveWithUndefined();
                },
-               [promise] (bool) {
+               [outer, promise] (bool) {
+                 outer->SetHasStorageAccess(false);
                  promise->MaybeRejectWithUndefined();
                });
     } else {
