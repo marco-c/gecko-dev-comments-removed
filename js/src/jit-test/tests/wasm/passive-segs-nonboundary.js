@@ -356,21 +356,21 @@ function checkMiscPrefixed(opcode, expect_failure) {
                 [funcBody(
                     {locals:[],
                      body:[0x41, 0x0, 0x41, 0x0, 0x41, 0x0, 
-                           MiscPrefix, opcode]})])]);
+                           MiscPrefix, ...opcode]})])]);
     if (expect_failure) {
         assertErrorMessage(() => new WebAssembly.Module(binary),
                            WebAssembly.CompileError, /unrecognized opcode/);
     } else {
-        assertEq(true, WebAssembly.validate(binary));
+        assertEq(WebAssembly.validate(binary), true);
     }
 }
 
 
 
 
-checkMiscPrefixed(0x0a, false); 
-checkMiscPrefixed(0x0b, false); 
-checkMiscPrefixed(0x0f, true);  
+checkMiscPrefixed([0x0a, 0x00], false); 
+checkMiscPrefixed([0x0b, 0x00], false); 
+checkMiscPrefixed([0x0f], true);        
 
 
 
