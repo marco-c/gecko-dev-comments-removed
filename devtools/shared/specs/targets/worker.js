@@ -28,6 +28,19 @@ const workerTargetSpec = generateActorSpec({
       response: RetVal("json")
     },
   },
+
+  events: {
+    
+    
+    close: {
+      type: "close",
+    },
+    
+    
+    newSource: {
+      type: "newSource",
+    }
+  }
 });
 
 exports.workerTargetSpec = workerTargetSpec;
