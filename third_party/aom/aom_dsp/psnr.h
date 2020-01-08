@@ -9,8 +9,8 @@
 
 
 
-#ifndef AOM_DSP_PSNR_H_
-#define AOM_DSP_PSNR_H_
+#ifndef AOM_AOM_DSP_PSNR_H_
+#define AOM_AOM_DSP_PSNR_H_
 
 #include "aom_scale/yv12config.h"
 

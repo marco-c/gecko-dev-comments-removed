@@ -9,8 +9,8 @@
 
 
 
-#ifndef AOM_PORTS_MEM_OPS_ALIGNED_H_
-#define AOM_PORTS_MEM_OPS_ALIGNED_H_
+#ifndef AOM_AOM_PORTS_MEM_OPS_ALIGNED_H_
+#define AOM_AOM_PORTS_MEM_OPS_ALIGNED_H_
 
 #include "aom/aom_integer.h"
 

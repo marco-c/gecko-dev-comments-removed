@@ -9,8 +9,8 @@
 
 
 
-#ifndef AOM_DSP_MIPS_MACROS_MSA_H_
-#define AOM_DSP_MIPS_MACROS_MSA_H_
+#ifndef AOM_AOM_DSP_MIPS_MACROS_MSA_H_
+#define AOM_AOM_DSP_MIPS_MACROS_MSA_H_
 
 #include <msa.h>
 
@@ -2055,4 +2055,4 @@
                                                                 \
     tmp1_m;                                                     \
   })
-#endif 
+#endif  

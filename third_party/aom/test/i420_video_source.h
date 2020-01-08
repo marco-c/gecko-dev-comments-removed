@@ -8,8 +8,8 @@
 
 
 
-#ifndef TEST_I420_VIDEO_SOURCE_H_
-#define TEST_I420_VIDEO_SOURCE_H_
+#ifndef AOM_TEST_I420_VIDEO_SOURCE_H_
+#define AOM_TEST_I420_VIDEO_SOURCE_H_
 #include <cstdio>
 #include <cstdlib>
 #include <string>

@@ -9,8 +9,8 @@
 
 
 
-#ifndef TEST_UTIL_H_
-#define TEST_UTIL_H_
+#ifndef AOM_TEST_UTIL_H_
+#define AOM_TEST_UTIL_H_
 
 #include <stdio.h>
 #include <math.h>

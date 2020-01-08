@@ -8,8 +8,8 @@
 
 
 
-#ifndef AV1_ENCODER_CORNER_MATCH_H_
-#define AV1_ENCODER_CORNER_MATCH_H_
+#ifndef AOM_AV1_ENCODER_CORNER_MATCH_H_
+#define AOM_AV1_ENCODER_CORNER_MATCH_H_
 
 #include <stdio.h>
 #include <stdlib.h>

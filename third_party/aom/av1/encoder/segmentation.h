@@ -9,8 +9,8 @@
 
 
 
-#ifndef AV1_ENCODER_SEGMENTATION_H_
-#define AV1_ENCODER_SEGMENTATION_H_
+#ifndef AOM_AV1_ENCODER_SEGMENTATION_H_
+#define AOM_AV1_ENCODER_SEGMENTATION_H_
 
 #include "av1/common/blockd.h"
 #include "av1/encoder/encoder.h"

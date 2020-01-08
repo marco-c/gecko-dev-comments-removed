@@ -9,8 +9,8 @@
 
 
 
-#ifndef AOM_PORTS_X86_H_
-#define AOM_PORTS_X86_H_
+#ifndef AOM_AOM_PORTS_X86_H_
+#define AOM_AOM_PORTS_X86_H_
 #include <stdlib.h>
 
 #if defined(_MSC_VER)

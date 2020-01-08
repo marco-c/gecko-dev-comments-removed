@@ -9,8 +9,8 @@
 
 
 
-#ifndef AOM_DSP_TXFM_COMMON_H_
-#define AOM_DSP_TXFM_COMMON_H_
+#ifndef AOM_AOM_DSP_TXFM_COMMON_H_
+#define AOM_AOM_DSP_TXFM_COMMON_H_
 
 #include "aom_dsp/aom_dsp_common.h"
 #include "av1/common/enums.h"

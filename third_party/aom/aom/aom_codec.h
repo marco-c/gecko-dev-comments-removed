@@ -36,8 +36,8 @@
 
 
 
-#ifndef AOM_AOM_CODEC_H_
-#define AOM_AOM_CODEC_H_
+#ifndef AOM_AOM_AOM_CODEC_H_
+#define AOM_AOM_AOM_CODEC_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -259,12 +259,6 @@ typedef enum aom_superblock_size {
 
 
 int aom_codec_version(void);
-#define AOM_VERSION_MAJOR(v) \
-  ((v >> 16) & 0xff) /**< extract major from packed version */
-#define AOM_VERSION_MINOR(v) \
-  ((v >> 8) & 0xff) /**< extract minor from packed version */
-#define AOM_VERSION_PATCH(v) \
-  ((v >> 0) & 0xff) /**< extract patch from packed version */
 
 
 #define aom_codec_version_major() ((aom_codec_version() >> 16) & 0xff)

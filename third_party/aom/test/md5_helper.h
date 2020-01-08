@@ -9,8 +9,8 @@
 
 
 
-#ifndef TEST_MD5_HELPER_H_
-#define TEST_MD5_HELPER_H_
+#ifndef AOM_TEST_MD5_HELPER_H_
+#define AOM_TEST_MD5_HELPER_H_
 
 #include "aom/aom_decoder.h"
 #include "common/md5_utils.h"

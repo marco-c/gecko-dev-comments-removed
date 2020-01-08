@@ -9,34 +9,11 @@
 
 
 
-#ifndef AV1_DECODER_OBU_H
-#define AV1_DECODER_OBU_H
+#ifndef AOM_AV1_DECODER_OBU_H_
+#define AOM_AV1_DECODER_OBU_H_
 
 #include "aom/aom_codec.h"
 #include "av1/decoder/decoder.h"
-
-typedef struct {
-  size_t size;  
-                
-  OBU_TYPE type;
-  int has_size_field;
-  int has_extension;
-  
-  
-  int temporal_layer_id;
-  int spatial_layer_id;
-} ObuHeader;
-
-aom_codec_err_t aom_read_obu_header(uint8_t *buffer, size_t buffer_length,
-                                    size_t *consumed, ObuHeader *header,
-                                    int is_annexb);
-
-aom_codec_err_t aom_read_obu_header_and_size(const uint8_t *data,
-                                             size_t bytes_available,
-                                             int is_annexb,
-                                             ObuHeader *obu_header,
-                                             size_t *const payload_size,
-                                             size_t *const bytes_read);
 
 
 
@@ -51,4 +28,4 @@ aom_codec_err_t aom_get_num_layers_from_operating_point_idc(
     int operating_point_idc, unsigned int *num_spatial_layers,
     unsigned int *num_temporal_layers);
 
-#endif
+#endif  

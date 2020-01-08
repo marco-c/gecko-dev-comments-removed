@@ -9,8 +9,8 @@
 
 
 
-#ifndef AOMSTATS_H_
-#define AOMSTATS_H_
+#ifndef AOM_STATS_AOMSTATS_H_
+#define AOM_STATS_AOMSTATS_H_
 
 #include <stdio.h>
 

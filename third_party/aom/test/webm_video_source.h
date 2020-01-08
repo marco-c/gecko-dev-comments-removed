@@ -8,8 +8,8 @@
 
 
 
-#ifndef TEST_WEBM_VIDEO_SOURCE_H_
-#define TEST_WEBM_VIDEO_SOURCE_H_
+#ifndef AOM_TEST_WEBM_VIDEO_SOURCE_H_
+#define AOM_TEST_WEBM_VIDEO_SOURCE_H_
 #include <cstdarg>
 #include <cstdio>
 #include <cstdlib>

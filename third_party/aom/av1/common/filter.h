@@ -9,8 +9,8 @@
 
 
 
-#ifndef AV1_COMMON_FILTER_H_
-#define AV1_COMMON_FILTER_H_
+#ifndef AOM_AV1_COMMON_FILTER_H_
+#define AOM_AV1_COMMON_FILTER_H_
 
 #include <assert.h>
 
@@ -139,6 +139,17 @@ static const InterpFilterParams
         BILINEAR }
     };
 
+
+
+DECLARE_ALIGNED(256, static const int16_t, av1_intrabc_bilinear_filter[2]) = {
+  64,
+  64,
+};
+
+static const InterpFilterParams av1_intrabc_filter_params = {
+  av1_intrabc_bilinear_filter, 2, 0, BILINEAR
+};
+
 DECLARE_ALIGNED(256, static const InterpKernel,
                 av1_sub_pel_filters_4[SUBPEL_SHIFTS]) = {
   { 0, 0, 0, 128, 0, 0, 0, 0 },     { 0, 0, -4, 126, 8, -2, 0, 0 },
@@ -179,6 +190,11 @@ av1_get_interp_filter_params_with_block_size(const InterpFilter interp_filter,
                                              const int w) {
   if (w <= 4) return &av1_interp_4tap[interp_filter];
   return &av1_interp_filter_params_list[interp_filter];
+}
+
+static INLINE const InterpFilterParams *av1_get_4tap_interp_filter_params(
+    const InterpFilter interp_filter) {
+  return &av1_interp_4tap[interp_filter];
 }
 
 static INLINE const int16_t *av1_get_interp_filter_kernel(

@@ -9,8 +9,8 @@
 
 
 
-#ifndef AOM_DSP_X86_CONVOLVE_SSE2_H_
-#define AOM_DSP_X86_CONVOLVE_SSE2_H_
+#ifndef AOM_AOM_DSP_X86_CONVOLVE_SSE2_H_
+#define AOM_AOM_DSP_X86_CONVOLVE_SSE2_H_
 
 
 
@@ -118,4 +118,4 @@ static INLINE __m128i highbd_convolve_rounding_sse2(
   return res_round;
 }
 
-#endif
+#endif  

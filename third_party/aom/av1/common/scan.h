@@ -9,8 +9,8 @@
 
 
 
-#ifndef AV1_COMMON_SCAN_H_
-#define AV1_COMMON_SCAN_H_
+#ifndef AOM_AV1_COMMON_SCAN_H_
+#define AOM_AV1_COMMON_SCAN_H_
 
 #include "aom/aom_integer.h"
 #include "aom_ports/mem.h"

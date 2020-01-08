@@ -9,8 +9,8 @@
 
 
 
-#ifndef AV1_ENCODER_RESIZE_H_
-#define AV1_ENCODER_RESIZE_H_
+#ifndef AOM_AV1_COMMON_RESIZE_H_
+#define AOM_AV1_COMMON_RESIZE_H_
 
 #include <stdio.h>
 #include "aom/aom_integer.h"

@@ -9,8 +9,8 @@
 
 
 
-#ifndef AOM_DSP_SSIM_H_
-#define AOM_DSP_SSIM_H_
+#ifndef AOM_AOM_DSP_SSIM_H_
+#define AOM_AOM_DSP_SSIM_H_
 
 #define MAX_SSIM_DB 100.0;
 

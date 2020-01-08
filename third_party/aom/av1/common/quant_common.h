@@ -9,8 +9,8 @@
 
 
 
-#ifndef AV1_COMMON_QUANT_COMMON_H_
-#define AV1_COMMON_QUANT_COMMON_H_
+#ifndef AOM_AV1_COMMON_QUANT_COMMON_H_
+#define AOM_AV1_COMMON_QUANT_COMMON_H_
 
 #include "aom/aom_codec.h"
 #include "av1/common/seg_common.h"

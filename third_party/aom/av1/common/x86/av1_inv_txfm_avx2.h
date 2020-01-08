@@ -8,8 +8,8 @@
 
 
 
-#ifndef AV1_COMMON_X86_AV1_INV_TXFM_AVX2_H_
-#define AV1_COMMON_X86_AV1_INV_TXFM_AVX2_H_
+#ifndef AOM_AV1_COMMON_X86_AV1_INV_TXFM_AVX2_H_
+#define AOM_AV1_COMMON_X86_AV1_INV_TXFM_AVX2_H_
 
 #include <immintrin.h>
 

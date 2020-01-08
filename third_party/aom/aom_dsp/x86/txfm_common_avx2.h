@@ -9,8 +9,8 @@
 
 
 
-#ifndef AOM_DSP_X86_TXFM_COMMON_AVX2_H_
-#define AOM_DSP_X86_TXFM_COMMON_AVX2_H_
+#ifndef AOM_AOM_DSP_X86_TXFM_COMMON_AVX2_H_
+#define AOM_AOM_DSP_X86_TXFM_COMMON_AVX2_H_
 
 #include <emmintrin.h>
 #include "aom/aom_integer.h"

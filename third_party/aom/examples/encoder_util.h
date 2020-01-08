@@ -11,8 +11,8 @@
 
 
 
-#ifndef EXAMPLES_ENCODER_UTIL_H_
-#define EXAMPLES_ENCODER_UTIL_H_
+#ifndef AOM_EXAMPLES_ENCODER_UTIL_H_
+#define AOM_EXAMPLES_ENCODER_UTIL_H_
 
 #include "aom/aom_image.h"
 

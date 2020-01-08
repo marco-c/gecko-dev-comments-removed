@@ -8,8 +8,8 @@
 
 
 
-#ifndef AOM_ACCOUNTING_H_
-#define AOM_ACCOUNTING_H_
+#ifndef AOM_AV1_DECODER_ACCOUNTING_H_
+#define AOM_AV1_DECODER_ACCOUNTING_H_
 #include <stdlib.h>
 #include "aom/aomdx.h"
 

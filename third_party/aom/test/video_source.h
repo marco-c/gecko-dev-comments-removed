@@ -8,8 +8,8 @@
 
 
 
-#ifndef TEST_VIDEO_SOURCE_H_
-#define TEST_VIDEO_SOURCE_H_
+#ifndef AOM_TEST_VIDEO_SOURCE_H_
+#define AOM_TEST_VIDEO_SOURCE_H_
 
 #if defined(_WIN32)
 #undef NOMINMAX

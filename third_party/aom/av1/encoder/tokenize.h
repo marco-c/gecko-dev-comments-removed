@@ -9,8 +9,8 @@
 
 
 
-#ifndef AV1_ENCODER_TOKENIZE_H_
-#define AV1_ENCODER_TOKENIZE_H_
+#ifndef AOM_AV1_ENCODER_TOKENIZE_H_
+#define AOM_AV1_ENCODER_TOKENIZE_H_
 
 #include "av1/common/entropy.h"
 #include "av1/encoder/block.h"

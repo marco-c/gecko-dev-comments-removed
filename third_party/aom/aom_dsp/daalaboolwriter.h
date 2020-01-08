@@ -9,8 +9,8 @@
 
 
 
-#ifndef AOM_DSP_DAALABOOLWRITER_H_
-#define AOM_DSP_DAALABOOLWRITER_H_
+#ifndef AOM_AOM_DSP_DAALABOOLWRITER_H_
+#define AOM_AOM_DSP_DAALABOOLWRITER_H_
 
 #include <stdio.h>
 
@@ -75,4 +75,4 @@ static INLINE void daala_write_symbol(daala_writer *w, int symb,
 }  
 #endif
 
-#endif
+#endif  

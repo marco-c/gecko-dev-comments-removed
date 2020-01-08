@@ -9,8 +9,8 @@
 
 
 
-#ifndef AV1_FWD_TXFM1D_H_
-#define AV1_FWD_TXFM1D_H_
+#ifndef AOM_AV1_ENCODER_AV1_FWD_TXFM1D_H_
+#define AOM_AV1_ENCODER_AV1_FWD_TXFM1D_H_
 
 #include "av1/common/av1_txfm.h"
 

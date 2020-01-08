@@ -9,8 +9,8 @@
 
 
 
-#ifndef AOM_SCALE_AOM_SCALE_H_
-#define AOM_SCALE_AOM_SCALE_H_
+#ifndef AOM_AOM_SCALE_AOM_SCALE_H_
+#define AOM_AOM_SCALE_AOM_SCALE_H_
 
 #include "aom_scale/yv12config.h"
 

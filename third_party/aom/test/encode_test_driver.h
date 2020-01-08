@@ -8,8 +8,8 @@
 
 
 
-#ifndef TEST_ENCODE_TEST_DRIVER_H_
-#define TEST_ENCODE_TEST_DRIVER_H_
+#ifndef AOM_TEST_ENCODE_TEST_DRIVER_H_
+#define AOM_TEST_ENCODE_TEST_DRIVER_H_
 
 #include <string>
 #include <vector>

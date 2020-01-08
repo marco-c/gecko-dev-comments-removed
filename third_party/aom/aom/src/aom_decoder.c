@@ -101,9 +101,7 @@ aom_codec_err_t aom_codec_decode(aom_codec_ctx_t *ctx, const uint8_t *data,
                                  size_t data_sz, void *user_priv) {
   aom_codec_err_t res;
 
-  
-  
-  if (!ctx || (!data && data_sz) || (data && !data_sz))
+  if (!ctx)
     res = AOM_CODEC_INVALID_PARAM;
   else if (!ctx->iface || !ctx->priv)
     res = AOM_CODEC_ERROR;

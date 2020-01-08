@@ -9,8 +9,8 @@
 
 
 
-#if !defined(_entenc_H)
-#define _entenc_H (1)
+#ifndef AOM_AOM_DSP_ENTENC_H_
+#define AOM_AOM_DSP_ENTENC_H_
 #include <stddef.h>
 #include "aom_dsp/entcode.h"
 
@@ -82,4 +82,4 @@ void od_ec_enc_rollback(od_ec_enc *dst, const od_ec_enc *src);
 }  
 #endif
 
-#endif
+#endif  

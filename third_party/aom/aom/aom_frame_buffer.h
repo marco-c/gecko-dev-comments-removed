@@ -9,8 +9,8 @@
 
 
 
-#ifndef AOM_AOM_FRAME_BUFFER_H_
-#define AOM_AOM_FRAME_BUFFER_H_
+#ifndef AOM_AOM_AOM_FRAME_BUFFER_H_
+#define AOM_AOM_AOM_FRAME_BUFFER_H_
 
 
 

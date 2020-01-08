@@ -9,8 +9,8 @@
 
 
 
-#ifndef VIDEO_READER_H_
-#define VIDEO_READER_H_
+#ifndef AOM_COMMON_VIDEO_READER_H_
+#define AOM_COMMON_VIDEO_READER_H_
 
 #include "common/video_common.h"
 

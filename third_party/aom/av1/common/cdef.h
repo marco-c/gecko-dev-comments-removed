@@ -8,8 +8,8 @@
 
 
 
-#ifndef AV1_COMMON_CDEF_H_
-#define AV1_COMMON_CDEF_H_
+#ifndef AOM_AV1_COMMON_CDEF_H_
+#define AOM_AV1_COMMON_CDEF_H_
 
 #define CDEF_STRENGTH_BITS 6
 

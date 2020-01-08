@@ -9,12 +9,11 @@
 
 
 
-#ifndef AV1_COMMON_SCALE_H_
-#define AV1_COMMON_SCALE_H_
+#ifndef AOM_AV1_COMMON_SCALE_H_
+#define AOM_AV1_COMMON_SCALE_H_
 
 #include "av1/common/convolve.h"
 #include "av1/common/mv.h"
-#include "aom_dsp/aom_convolve.h"
 
 #ifdef __cplusplus
 extern "C" {

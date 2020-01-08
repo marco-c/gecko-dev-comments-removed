@@ -9,8 +9,8 @@
 
 
 
-#ifndef AV1_COMMON_CFL_H_
-#define AV1_COMMON_CFL_H_
+#ifndef AOM_AV1_COMMON_CFL_H_
+#define AOM_AV1_COMMON_CFL_H_
 
 #include "av1/common/blockd.h"
 #include "av1/common/onyxc_int.h"

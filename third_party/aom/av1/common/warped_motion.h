@@ -9,8 +9,8 @@
 
 
 
-#ifndef AV1_COMMON_WARPED_MOTION_H_
-#define AV1_COMMON_WARPED_MOTION_H_
+#ifndef AOM_AV1_COMMON_WARPED_MOTION_H_
+#define AOM_AV1_COMMON_WARPED_MOTION_H_
 
 #include <stdio.h>
 #include <stdlib.h>

@@ -60,6 +60,7 @@ static void od_ec_enc_normalize(od_ec_enc *enc, od_ec_window low,
   int s;
   c = enc->cnt;
   assert(rng <= 65535U);
+  
   d = 16 - OD_ILOG_NZ(rng);
   s = c + d;
   

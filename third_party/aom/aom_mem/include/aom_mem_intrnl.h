@@ -9,8 +9,8 @@
 
 
 
-#ifndef AOM_MEM_INCLUDE_AOM_MEM_INTRNL_H_
-#define AOM_MEM_INCLUDE_AOM_MEM_INTRNL_H_
+#ifndef AOM_AOM_MEM_INCLUDE_AOM_MEM_INTRNL_H_
+#define AOM_AOM_MEM_INCLUDE_AOM_MEM_INTRNL_H_
 
 #include "config/aom_config.h"
 

@@ -9,8 +9,8 @@
 
 
 
-#ifndef AV1_COMMON_ALLOCCOMMON_H_
-#define AV1_COMMON_ALLOCCOMMON_H_
+#ifndef AOM_AV1_COMMON_ALLOCCOMMON_H_
+#define AOM_AV1_COMMON_ALLOCCOMMON_H_
 
 #define INVALID_IDX -1  // Invalid buffer index.
 

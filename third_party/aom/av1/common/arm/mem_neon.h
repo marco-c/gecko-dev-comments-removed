@@ -8,8 +8,8 @@
 
 
 
-#ifndef AV1_COMMON_ARM_MEM_NEON_H_
-#define AV1_COMMON_ARM_MEM_NEON_H_
+#ifndef AOM_AV1_COMMON_ARM_MEM_NEON_H_
+#define AOM_AV1_COMMON_ARM_MEM_NEON_H_
 
 #include <arm_neon.h>
 #include <string.h>
@@ -360,6 +360,15 @@ static INLINE void load_unaligned_u8_4x4(const uint8_t *buf, int stride,
   *tu1 = vset_lane_u32(a, *tu1, 0);
   memcpy(&a, buf, 4);
   *tu1 = vset_lane_u32(a, *tu1, 1);
+}
+
+static INLINE void load_unaligned_u8_4x1(const uint8_t *buf, int stride,
+                                         uint32x2_t *tu0) {
+  uint32_t a;
+
+  memcpy(&a, buf, 4);
+  buf += stride;
+  *tu0 = vset_lane_u32(a, *tu0, 0);
 }
 
 static INLINE void load_unaligned_u8_4x2(const uint8_t *buf, int stride,

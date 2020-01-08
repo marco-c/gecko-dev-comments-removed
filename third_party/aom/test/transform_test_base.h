@@ -9,8 +9,8 @@
 
 
 
-#ifndef TEST_TRANSFORM_TEST_BASE_H_
-#define TEST_TRANSFORM_TEST_BASE_H_
+#ifndef AOM_TEST_TRANSFORM_TEST_BASE_H_
+#define AOM_TEST_TRANSFORM_TEST_BASE_H_
 
 #include "config/aom_config.h"
 

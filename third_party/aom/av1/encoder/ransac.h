@@ -9,8 +9,8 @@
 
 
 
-#ifndef AV1_ENCODER_RANSAC_H_
-#define AV1_ENCODER_RANSAC_H_
+#ifndef AOM_AV1_ENCODER_RANSAC_H_
+#define AOM_AV1_ENCODER_RANSAC_H_
 
 #include <stdio.h>
 #include <stdlib.h>

@@ -8,8 +8,8 @@
 
 
 
-#ifndef TOOLS_COMMON_H_
-#define TOOLS_COMMON_H_
+#ifndef AOM_COMMON_TOOLS_COMMON_H_
+#define AOM_COMMON_TOOLS_COMMON_H_
 
 #include <stdio.h>
 

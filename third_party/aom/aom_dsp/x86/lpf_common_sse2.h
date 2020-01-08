@@ -9,8 +9,8 @@
 
 
 
-#ifndef _AOM_DSP_X86_LPF_COMMON_X86_H
-#define _AOM_DSP_X86_LPF_COMMON_X86_H
+#ifndef AOM_AOM_DSP_X86_LPF_COMMON_SSE2_H_
+#define AOM_AOM_DSP_X86_LPF_COMMON_SSE2_H_
 
 #include <emmintrin.h>  
 

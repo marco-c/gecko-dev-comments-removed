@@ -8,8 +8,8 @@
 
 
 
-#ifndef WARNINGS_H_
-#define WARNINGS_H_
+#ifndef AOM_COMMON_WARNINGS_H_
+#define AOM_COMMON_WARNINGS_H_
 
 #ifdef __cplusplus
 extern "C" {

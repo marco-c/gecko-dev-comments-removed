@@ -9,8 +9,8 @@
 
 
 
-#ifndef AOM_UTIL_DEBUG_UTIL_H_
-#define AOM_UTIL_DEBUG_UTIL_H_
+#ifndef AOM_AOM_UTIL_DEBUG_UTIL_H_
+#define AOM_AOM_UTIL_DEBUG_UTIL_H_
 
 #include "config/aom_config.h"
 

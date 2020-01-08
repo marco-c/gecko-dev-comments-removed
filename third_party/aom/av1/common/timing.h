@@ -9,8 +9,8 @@
 
 
 
-#ifndef AOM_TIMING_H_
-#define AOM_TIMING_H_
+#ifndef AOM_AV1_COMMON_TIMING_H_
+#define AOM_AV1_COMMON_TIMING_H_
 
 #include "aom/aom_integer.h"
 #include "av1/common/enums.h"

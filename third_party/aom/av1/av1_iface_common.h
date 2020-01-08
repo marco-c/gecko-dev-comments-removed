@@ -8,10 +8,11 @@
 
 
 
-#ifndef AV1_AV1_IFACE_COMMON_H_
-#define AV1_AV1_IFACE_COMMON_H_
+#ifndef AOM_AV1_AV1_IFACE_COMMON_H_
+#define AOM_AV1_AV1_IFACE_COMMON_H_
 
 #include "aom_ports/mem.h"
+#include "aom_scale/yv12config.h"
 
 static void yuvconfig2image(aom_image_t *img, const YV12_BUFFER_CONFIG *yv12,
                             void *user_priv) {

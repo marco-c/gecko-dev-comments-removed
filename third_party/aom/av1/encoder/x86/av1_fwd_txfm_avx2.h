@@ -9,8 +9,8 @@
 
 
 
-#ifndef AV1_FWD_TXFM_AVX2_H_
-#define AV1_FWD_TXFM_AVX2_H_
+#ifndef AOM_AV1_ENCODER_X86_AV1_FWD_TXFM_AVX2_H_
+#define AOM_AV1_ENCODER_X86_AV1_FWD_TXFM_AVX2_H_
 #include <immintrin.h>
 
 static INLINE __m256i av1_round_shift_32_avx2(__m256i vec, int bit) {

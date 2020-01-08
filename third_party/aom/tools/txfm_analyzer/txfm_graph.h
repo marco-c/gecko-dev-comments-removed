@@ -9,8 +9,8 @@
 
 
 
-#ifndef TOOLS_TXFM_ANALYZER_H_
-#define TOOLS_TXFM_ANALYZER_H_
+#ifndef AOM_TOOLS_TXFM_ANALYZER_TXFM_GRAPH_H_
+#define AOM_TOOLS_TXFM_ANALYZER_TXFM_GRAPH_H_
 
 struct Node {
   Node *inNode[2];

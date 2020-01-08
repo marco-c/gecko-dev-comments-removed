@@ -9,8 +9,8 @@
 
 
 
-#ifndef AOM_DSP_BITWRITER_H_
-#define AOM_DSP_BITWRITER_H_
+#ifndef AOM_AOM_DSP_BITWRITER_H_
+#define AOM_AOM_DSP_BITWRITER_H_
 
 #include <assert.h>
 

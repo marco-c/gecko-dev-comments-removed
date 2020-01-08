@@ -9,7 +9,6 @@
 
 
 
-#include <stdio.h>
 #include <tmmintrin.h>
 
 #include "config/aom_config.h"

@@ -9,8 +9,8 @@
 
 
 
-#ifndef AOM_DSP_BITREADER_BUFFER_H_
-#define AOM_DSP_BITREADER_BUFFER_H_
+#ifndef AOM_AOM_DSP_BITREADER_BUFFER_H_
+#define AOM_AOM_DSP_BITREADER_BUFFER_H_
 
 #include <limits.h>
 
@@ -40,6 +40,8 @@ int aom_rb_read_literal(struct aom_read_bit_buffer *rb, int bits);
 uint32_t aom_rb_read_unsigned_literal(struct aom_read_bit_buffer *rb, int bits);
 
 int aom_rb_read_inv_signed_literal(struct aom_read_bit_buffer *rb, int bits);
+
+uint32_t aom_rb_read_uvlc(struct aom_read_bit_buffer *rb);
 
 #ifdef __cplusplus
 }  

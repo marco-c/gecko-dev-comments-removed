@@ -8,8 +8,8 @@
 
 
 
-#ifndef WEBMENC_H_
-#define WEBMENC_H_
+#ifndef AOM_COMMON_WEBMENC_H_
+#define AOM_COMMON_WEBMENC_H_
 
 #include <stdio.h>
 #include <stdlib.h>

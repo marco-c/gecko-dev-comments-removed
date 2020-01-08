@@ -8,8 +8,8 @@
 
 
 
-#ifndef WEBMDEC_H_
-#define WEBMDEC_H_
+#ifndef AOM_COMMON_WEBMDEC_H_
+#define AOM_COMMON_WEBMDEC_H_
 
 #include "common/tools_common.h"
 

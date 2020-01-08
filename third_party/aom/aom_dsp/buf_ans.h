@@ -9,8 +9,8 @@
 
 
 
-#ifndef AOM_DSP_BUF_ANS_H_
-#define AOM_DSP_BUF_ANS_H_
+#ifndef AOM_AOM_DSP_BUF_ANS_H_
+#define AOM_AOM_DSP_BUF_ANS_H_
 
 
 

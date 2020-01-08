@@ -9,8 +9,8 @@
 
 
 
-#ifndef AOM_MEM_AOM_MEM_H_
-#define AOM_MEM_AOM_MEM_H_
+#ifndef AOM_AOM_MEM_AOM_MEM_H_
+#define AOM_AOM_MEM_AOM_MEM_H_
 
 #include "aom/aom_integer.h"
 #include "config/aom_config.h"

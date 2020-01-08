@@ -41,8 +41,8 @@
 
 
 
-#ifndef AOM_INTERNAL_AOM_CODEC_INTERNAL_H_
-#define AOM_INTERNAL_AOM_CODEC_INTERNAL_H_
+#ifndef AOM_AOM_INTERNAL_AOM_CODEC_INTERNAL_H_
+#define AOM_AOM_INTERNAL_AOM_CODEC_INTERNAL_H_
 #include "../aom_decoder.h"
 #include "../aom_encoder.h"
 #include <stdarg.h>

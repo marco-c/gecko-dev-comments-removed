@@ -8,8 +8,8 @@
 
 
 
-#ifndef TEST_IVF_VIDEO_SOURCE_H_
-#define TEST_IVF_VIDEO_SOURCE_H_
+#ifndef AOM_TEST_IVF_VIDEO_SOURCE_H_
+#define AOM_TEST_IVF_VIDEO_SOURCE_H_
 
 #include <cstdio>
 #include <cstdlib>

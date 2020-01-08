@@ -9,8 +9,8 @@
 
 
 
-#ifndef AV1_ENCODER_HYBRID_FWD_TXFM_H_
-#define AV1_ENCODER_HYBRID_FWD_TXFM_H_
+#ifndef AOM_AV1_ENCODER_HYBRID_FWD_TXFM_H_
+#define AOM_AV1_ENCODER_HYBRID_FWD_TXFM_H_
 
 #include "config/aom_config.h"
 

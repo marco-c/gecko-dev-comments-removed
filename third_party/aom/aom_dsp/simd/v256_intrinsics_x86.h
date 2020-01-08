@@ -9,8 +9,8 @@
 
 
 
-#ifndef _V256_INTRINSICS_H
-#define _V256_INTRINSICS_H
+#ifndef AOM_AOM_DSP_SIMD_V256_INTRINSICS_X86_H_
+#define AOM_AOM_DSP_SIMD_V256_INTRINSICS_X86_H_
 
 #if !defined(__AVX2__)
 
@@ -747,4 +747,4 @@ SIMD_INLINE uint64_t v256_ssd_s16_sum(ssd256_internal_s16 s) {
 
 #endif
 
-#endif 
+#endif  

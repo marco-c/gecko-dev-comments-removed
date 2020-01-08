@@ -9,8 +9,8 @@
 
 
 
-#ifndef AV1_COMMON_ENTROPYMODE_H_
-#define AV1_COMMON_ENTROPYMODE_H_
+#ifndef AOM_AV1_COMMON_ENTROPYMODE_H_
+#define AOM_AV1_COMMON_ENTROPYMODE_H_
 
 #include "av1/common/entropy.h"
 #include "av1/common/entropymv.h"
@@ -185,6 +185,8 @@ void av1_set_default_ref_deltas(int8_t *ref_deltas);
 void av1_set_default_mode_deltas(int8_t *mode_deltas);
 void av1_setup_frame_contexts(struct AV1Common *cm);
 void av1_setup_past_independence(struct AV1Common *cm);
+
+
 
 static INLINE int av1_ceil_log2(int n) {
   if (n < 2) return 0;

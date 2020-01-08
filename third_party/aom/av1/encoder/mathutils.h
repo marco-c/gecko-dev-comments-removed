@@ -9,6 +9,9 @@
 
 
 
+#ifndef AOM_AV1_ENCODER_MATHUTILS_H_
+#define AOM_AV1_ENCODER_MATHUTILS_H_
+
 #include <memory.h>
 #include <math.h>
 #include <stdio.h>
@@ -352,3 +355,5 @@ static INLINE int SVD(double *U, double *W, double *V, double *matx, int M,
 
   return 0;
 }
+
+#endif  

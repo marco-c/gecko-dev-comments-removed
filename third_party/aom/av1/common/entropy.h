@@ -9,8 +9,8 @@
 
 
 
-#ifndef AV1_COMMON_ENTROPY_H_
-#define AV1_COMMON_ENTROPY_H_
+#ifndef AOM_AV1_COMMON_ENTROPY_H_
+#define AOM_AV1_COMMON_ENTROPY_H_
 
 #include "config/aom_config.h"
 

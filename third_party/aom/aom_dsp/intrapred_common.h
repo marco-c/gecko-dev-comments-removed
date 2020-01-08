@@ -9,8 +9,8 @@
 
 
 
-#ifndef _AOM_DSP_INTRAPRED_COMMON_H
-#define _AOM_DSP_INTRAPRED_COMMON_H
+#ifndef AOM_AOM_DSP_INTRAPRED_COMMON_H_
+#define AOM_AOM_DSP_INTRAPRED_COMMON_H_
 
 #include "config/aom_config.h"
 

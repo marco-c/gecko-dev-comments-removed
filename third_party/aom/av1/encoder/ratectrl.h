@@ -9,8 +9,8 @@
 
 
 
-#ifndef AV1_ENCODER_RATECTRL_H_
-#define AV1_ENCODER_RATECTRL_H_
+#ifndef AOM_AV1_ENCODER_RATECTRL_H_
+#define AOM_AV1_ENCODER_RATECTRL_H_
 
 #include "aom/aom_codec.h"
 #include "aom/aom_integer.h"
@@ -25,13 +25,27 @@ extern "C" {
 #define BPER_MB_NORMBITS 9
 
 #define CUSTOMIZED_GF 1
-#define FIX_GF_INTERVAL_LENGTH 0
 
-#if FIX_GF_INTERVAL_LENGTH
+#if CONFIG_FIX_GF_LENGTH
 #define FIXED_GF_LENGTH 16
+#define MAX_PYRAMID_LVL 4
+
+
+
+
+
+
+
+#define MAX_PYRAMID_SIZE 24
 #define USE_SYMM_MULTI_LAYER 1
+#define REDUCE_LAST_ALT_BOOST 1
+#define REDUCE_LAST_GF_LENGTH 1
+#define MULTI_LVL_BOOST_VBR_CQ 1
 #else
 #define USE_SYMM_MULTI_LAYER 0
+#define REDUCE_LAST_ALT_BOOST 0
+#define REDUCE_LAST_GF_LENGTH 0
+#define MULTI_LVL_BOOST_VBR_CQ 0
 #endif
 
 #if USE_SYMM_MULTI_LAYER
@@ -159,6 +173,9 @@ typedef struct {
 
   
   int rf_level_maxq[RATE_FACTOR_LEVELS];
+  float_t arf_boost_factor;
+  
+  int arf_q;
 } RATE_CONTROL;
 
 struct AV1_COMP;
@@ -228,7 +245,7 @@ void av1_rc_compute_frame_size_bounds(const struct AV1_COMP *cpi,
                                       int *frame_over_shoot_limit);
 
 
-int av1_rc_pick_q_and_bounds(const struct AV1_COMP *cpi, int width, int height,
+int av1_rc_pick_q_and_bounds(struct AV1_COMP *cpi, int width, int height,
                              int *bottom_index, int *top_index);
 
 

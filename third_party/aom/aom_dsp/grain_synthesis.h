@@ -13,8 +13,8 @@
 
 
 
-#ifndef AOM_AOM_GRAIN_SYNTHESIS_H_
-#define AOM_AOM_GRAIN_SYNTHESIS_H_
+#ifndef AOM_AOM_DSP_GRAIN_SYNTHESIS_H_
+#define AOM_AOM_DSP_GRAIN_SYNTHESIS_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -94,11 +94,13 @@ typedef struct {
 
 
 
-void av1_add_film_grain_run(const aom_film_grain_t *grain_params, uint8_t *luma,
-                            uint8_t *cb, uint8_t *cr, int height, int width,
-                            int luma_stride, int chroma_stride,
-                            int use_high_bit_depth, int chroma_subsamp_y,
-                            int chroma_subsamp_x, int mc_identity);
+
+
+int av1_add_film_grain_run(const aom_film_grain_t *grain_params, uint8_t *luma,
+                           uint8_t *cb, uint8_t *cr, int height, int width,
+                           int luma_stride, int chroma_stride,
+                           int use_high_bit_depth, int chroma_subsamp_y,
+                           int chroma_subsamp_x, int mc_identity);
 
 
 
@@ -108,8 +110,10 @@ void av1_add_film_grain_run(const aom_film_grain_t *grain_params, uint8_t *luma,
 
 
 
-void av1_add_film_grain(const aom_film_grain_t *grain_params,
-                        const aom_image_t *src, aom_image_t *dst);
+
+
+int av1_add_film_grain(const aom_film_grain_t *grain_params,
+                       const aom_image_t *src, aom_image_t *dst);
 
 #ifdef __cplusplus
 }  

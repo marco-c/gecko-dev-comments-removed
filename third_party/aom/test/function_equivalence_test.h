@@ -9,8 +9,8 @@
 
 
 
-#ifndef TEST_FUNCTION_EQUIVALENCE_TEST_H_
-#define TEST_FUNCTION_EQUIVALENCE_TEST_H_
+#ifndef AOM_TEST_FUNCTION_EQUIVALENCE_TEST_H_
+#define AOM_TEST_FUNCTION_EQUIVALENCE_TEST_H_
 
 #include "third_party/googletest/src/googletest/include/gtest/gtest.h"
 #include "test/acm_random.h"

@@ -8,8 +8,8 @@
 
 
 
-#ifndef TEST_CLEAR_SYSTEM_STATE_H_
-#define TEST_CLEAR_SYSTEM_STATE_H_
+#ifndef AOM_TEST_CLEAR_SYSTEM_STATE_H_
+#define AOM_TEST_CLEAR_SYSTEM_STATE_H_
 
 #include "config/aom_config.h"
 

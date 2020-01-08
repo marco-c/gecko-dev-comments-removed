@@ -14,8 +14,8 @@
 
 
 
-#ifndef AOM_THREAD_H_
-#define AOM_THREAD_H_
+#ifndef AOM_AOM_UTIL_AOM_THREAD_H_
+#define AOM_AOM_UTIL_AOM_THREAD_H_
 
 #include "config/aom_config.h"
 

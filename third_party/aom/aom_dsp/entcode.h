@@ -9,8 +9,8 @@
 
 
 
-#ifndef AOM_DSP_ENTCODE_H_
-#define AOM_DSP_ENTCODE_H_
+#ifndef AOM_AOM_DSP_ENTCODE_H_
+#define AOM_AOM_DSP_ENTCODE_H_
 
 #include <limits.h>
 #include <stddef.h>

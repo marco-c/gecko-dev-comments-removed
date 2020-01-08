@@ -9,8 +9,8 @@
 
 
 
-#ifndef TEST_HIPREC_CONVOLVE_TEST_UTIL_H_
-#define TEST_HIPREC_CONVOLVE_TEST_UTIL_H_
+#ifndef AOM_TEST_AV1_CONVOLVE_2D_TEST_UTIL_H_
+#define AOM_TEST_AV1_CONVOLVE_2D_TEST_UTIL_H_
 
 #include "config/av1_rtcd.h"
 #include "config/aom_dsp_rtcd.h"

@@ -9,8 +9,8 @@
 
 
 
-#ifndef AV1_COMMON_SEG_COMMON_H_
-#define AV1_COMMON_SEG_COMMON_H_
+#ifndef AOM_AV1_COMMON_SEG_COMMON_H_
+#define AOM_AV1_COMMON_SEG_COMMON_H_
 
 #include "aom_dsp/prob.h"
 

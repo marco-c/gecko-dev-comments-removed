@@ -9,8 +9,8 @@
 
 
 
-#ifndef AOM_PORTS_SYSTEM_STATE_H_
-#define AOM_PORTS_SYSTEM_STATE_H_
+#ifndef AOM_AOM_PORTS_SYSTEM_STATE_H_
+#define AOM_AOM_PORTS_SYSTEM_STATE_H_
 
 #include "config/aom_config.h"
 

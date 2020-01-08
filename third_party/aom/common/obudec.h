@@ -8,8 +8,8 @@
 
 
 
-#ifndef OBUDEC_H_
-#define OBUDEC_H_
+#ifndef AOM_COMMON_OBUDEC_H_
+#define AOM_COMMON_OBUDEC_H_
 
 #include "common/tools_common.h"
 

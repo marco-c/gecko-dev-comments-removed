@@ -9,8 +9,8 @@
 
 
 
-#if !defined(_entdec_H)
-#define _entdec_H (1)
+#ifndef AOM_AOM_DSP_ENTDEC_H_
+#define AOM_AOM_DSP_ENTDEC_H_
 #include <limits.h>
 #include "aom_dsp/entcode.h"
 
@@ -80,4 +80,4 @@ OD_WARN_UNUSED_RESULT uint32_t od_ec_dec_tell_frac(const od_ec_dec *dec)
 }  
 #endif
 
-#endif
+#endif  

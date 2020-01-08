@@ -9,8 +9,8 @@
 
 
 
-#ifndef TOOLS_OBU_PARSER_H_
-#define TOOLS_OBU_PARSER_H_
+#ifndef AOM_TOOLS_OBU_PARSER_H_
+#define AOM_TOOLS_OBU_PARSER_H_
 
 #include <cstdint>
 

@@ -9,8 +9,8 @@
 
 
 
-#ifndef AOM_SCALE_YV12CONFIG_H_
-#define AOM_SCALE_YV12CONFIG_H_
+#ifndef AOM_AOM_SCALE_YV12CONFIG_H_
+#define AOM_AOM_SCALE_YV12CONFIG_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,7 +28,11 @@ extern "C" {
 
 
 
+#if CONFIG_REDUCED_ENCODER_BORDER
+#define AOM_BORDER_IN_PIXELS 160
+#else
 #define AOM_BORDER_IN_PIXELS 288
+#endif  
 
 typedef struct yv12_buffer_config {
   union {

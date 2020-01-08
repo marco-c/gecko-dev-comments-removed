@@ -8,8 +8,8 @@
 
 
 
-#ifndef IVFENC_H_
-#define IVFENC_H_
+#ifndef AOM_COMMON_IVFENC_H_
+#define AOM_COMMON_IVFENC_H_
 
 #include "common/tools_common.h"
 

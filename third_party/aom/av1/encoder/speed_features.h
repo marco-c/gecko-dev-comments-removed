@@ -9,8 +9,8 @@
 
 
 
-#ifndef AV1_ENCODER_SPEED_FEATURES_H_
-#define AV1_ENCODER_SPEED_FEATURES_H_
+#ifndef AOM_AV1_ENCODER_SPEED_FEATURES_H_
+#define AOM_AV1_ENCODER_SPEED_FEATURES_H_
 
 #include "av1/common/enums.h"
 
@@ -54,25 +54,6 @@ enum {
               (1 << NEWMV) | (1 << NEAREST_NEARESTMV) | (1 << NEAR_NEARMV) |
               (1 << NEW_NEWMV) | (1 << NEAREST_NEWMV) | (1 << NEAR_NEWMV) |
               (1 << NEW_NEARMV) | (1 << NEW_NEARESTMV) | (1 << GLOBAL_GLOBALMV),
-  INTER_NEAREST = (1 << NEARESTMV) | (1 << NEAREST_NEARESTMV) |
-                  (1 << NEW_NEARESTMV) | (1 << NEAREST_NEWMV),
-  INTER_NEAREST_NEW = (1 << NEARESTMV) | (1 << NEWMV) |
-                      (1 << NEAREST_NEARESTMV) | (1 << NEW_NEWMV) |
-                      (1 << NEW_NEARESTMV) | (1 << NEAREST_NEWMV) |
-                      (1 << NEW_NEARMV) | (1 << NEAR_NEWMV),
-  INTER_NEAREST_ZERO = (1 << NEARESTMV) | (1 << GLOBALMV) |
-                       (1 << NEAREST_NEARESTMV) | (1 << GLOBAL_GLOBALMV) |
-                       (1 << NEAREST_NEWMV) | (1 << NEW_NEARESTMV),
-  INTER_NEAREST_NEW_ZERO = (1 << NEARESTMV) | (1 << GLOBALMV) | (1 << NEWMV) |
-                           (1 << NEAREST_NEARESTMV) | (1 << GLOBAL_GLOBALMV) |
-                           (1 << NEW_NEWMV) | (1 << NEW_NEARESTMV) |
-                           (1 << NEAREST_NEWMV) | (1 << NEW_NEARMV) |
-                           (1 << NEAR_NEWMV),
-  INTER_NEAREST_NEAR_NEW = (1 << NEARESTMV) | (1 << NEARMV) | (1 << NEWMV) |
-                           (1 << NEAREST_NEARESTMV) | (1 << NEW_NEWMV) |
-                           (1 << NEW_NEARESTMV) | (1 << NEAREST_NEWMV) |
-                           (1 << NEW_NEARMV) | (1 << NEAR_NEWMV) |
-                           (1 << NEAR_NEARMV),
   INTER_NEAREST_NEAR_ZERO = (1 << NEARESTMV) | (1 << NEARMV) | (1 << GLOBALMV) |
                             (1 << NEAREST_NEARESTMV) | (1 << GLOBAL_GLOBALMV) |
                             (1 << NEAREST_NEWMV) | (1 << NEW_NEARESTMV) |
@@ -133,11 +114,6 @@ typedef enum {
 } SUBPEL_SEARCH_METHODS;
 
 typedef enum {
-  NO_MOTION_THRESHOLD = 0,
-  LOW_MOTION_THRESHOLD = 7
-} MOTION_THRESHOLD;
-
-typedef enum {
   USE_FULL_RD = 0,
   USE_FAST_RD,
   USE_LARGESTALL,
@@ -179,12 +155,6 @@ typedef enum {
 } MODE_SEARCH_SKIP_LOGIC;
 
 typedef enum {
-  FLAG_SKIP_EIGHTTAP_REGULAR = 1 << EIGHTTAP_REGULAR,
-  FLAG_SKIP_EIGHTTAP_SMOOTH = 1 << EIGHTTAP_SMOOTH,
-  FLAG_SKIP_MULTITAP_SHARP = 1 << MULTITAP_SHARP,
-} INTERP_FILTER_MASK;
-
-typedef enum {
   NO_PRUNE = 0,
   
   PRUNE_ONE = 1,
@@ -224,16 +194,6 @@ typedef enum {
   REFERENCE_PARTITION
 } PARTITION_SEARCH_TYPE;
 
-typedef enum {
-  
-  
-  TWO_LOOP = 0,
-
-  
-  
-  ONE_LOOP_REDUCED = 1
-} FAST_COEFF_UPDATE;
-
 typedef struct MV_SPEED_FEATURES {
   
   SEARCH_METHODS search_method;
@@ -257,9 +217,6 @@ typedef struct MV_SPEED_FEATURES {
 
   
   int subpel_force_stop;
-
-  
-  int fullpel_search_step_param;
 } MV_SPEED_FEATURES;
 
 #define MAX_MESH_STEP 4
@@ -333,13 +290,6 @@ typedef struct SPEED_FEATURES {
   int adaptive_rd_thresh;
 
   
-  int coeff_prob_appx_step;
-
-  
-  
-  MOTION_THRESHOLD lf_motion_threshold;
-
-  
   
   
   TX_SIZE_SEARCH_METHOD tx_size_search_method;
@@ -354,11 +304,6 @@ typedef struct SPEED_FEATURES {
   
   
   int tx_size_search_lgr_block;
-
-  
-  
-  
-  int mode_skip_start;
 
   PARTITION_SEARCH_TYPE partition_search_type;
 
@@ -398,6 +343,9 @@ typedef struct SPEED_FEATURES {
   int prune_ext_partition_types_search_level;
 
   
+  int ml_prune_rect_partition;
+
+  
   int ml_prune_ab_partition;
 
   
@@ -414,10 +362,14 @@ typedef struct SPEED_FEATURES {
 
   
   
-  int less_rectangular_check;
+  
+  int less_rectangular_check_level;
 
   
   BLOCK_SIZE use_square_partition_only_threshold;
+
+  
+  int prune_ref_frame_for_rect_partitions;
 
   
   
@@ -434,10 +386,6 @@ typedef struct SPEED_FEATURES {
   
   
   int adjust_partitioning_from_last_frame;
-
-  
-  
-  int last_partitioning_redo_frequency;
 
   
   
@@ -461,8 +409,6 @@ typedef struct SPEED_FEATURES {
   
   MESH_PATTERN mesh_patterns[MAX_MESH_STEP];
 
-  int schedule_mode_search;
-
   
   
   
@@ -472,19 +418,9 @@ typedef struct SPEED_FEATURES {
   
   int adaptive_mode_search;
 
-  
-  int cb_pred_filter_search;
-
   int cb_partition_search;
 
   int alt_ref_search_fp;
-
-  
-  
-  int force_frame_boost;
-
-  
-  int max_delta_qindex;
 
   
   
@@ -507,20 +443,7 @@ typedef struct SPEED_FEATURES {
   int intra_uv_mode_mask[TX_SIZES];
 
   
-  
-  
-  int use_rd_breakout;
-
-  
   LPF_PICK_METHOD lpf_pick;
-
-  
-  
-  FAST_COEFF_UPDATE use_fast_coef_updates;
-
-  
-  
-  int inter_mode_mask[BLOCK_SIZES_ALL];
 
   
   
@@ -536,26 +459,11 @@ typedef struct SPEED_FEATURES {
   BLOCK_SIZE max_intra_bsize;
 
   
-  
-  int search_type_check_frequency;
-
-  
-  
-  
-  int reuse_inter_pred_sby;
-
-  
-  InterpFilter default_interp_filter;
-
-  
-  int adaptive_interp_filter_search;
-
-  
-  INTERP_FILTER_MASK interp_filter_search_mask;
-
-  
   int64_t partition_search_breakout_dist_thr;
   int partition_search_breakout_rate_thr;
+
+  
+  int ml_partition_search_breakout_thresh[PARTITION_BLOCK_SIZES];
 
   
   int allow_partition_search_skip;
@@ -576,6 +484,9 @@ typedef struct SPEED_FEATURES {
   int use_transform_domain_distortion;
 
   GM_SEARCH_TYPE gm_search_type;
+
+  
+  int gm_disable_recode;
 
   
   
@@ -624,6 +535,25 @@ typedef struct SPEED_FEATURES {
 
   
   int inter_mode_rd_model_estimation;
+
+  
+  
+  
+  
+  
+  int prune_comp_search_by_single_result;
+
+  
+  
+  int reuse_inter_intra_mode;
+
+  
+  
+  
+  int obmc_full_pixel_search_level;
+
+  
+  int skip_repeated_newmv;
 } SPEED_FEATURES;
 
 struct AV1_COMP;

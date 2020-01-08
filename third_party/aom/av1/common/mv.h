@@ -9,8 +9,8 @@
 
 
 
-#ifndef AV1_COMMON_MV_H_
-#define AV1_COMMON_MV_H_
+#ifndef AOM_AV1_COMMON_MV_H_
+#define AOM_AV1_COMMON_MV_H_
 
 #include "av1/common/common.h"
 #include "av1/common/common_data.h"
@@ -56,7 +56,7 @@ typedef struct mv32 {
 #define WARPEDDIFF_PREC_BITS (WARPEDMODEL_PREC_BITS - WARPEDPIXEL_PREC_BITS)
 
 
-typedef enum {
+typedef enum ATTRIBUTE_PACKED {
   IDENTITY = 0,      
   TRANSLATION = 1,   
   ROTZOOM = 2,       

@@ -9,8 +9,8 @@
 
 
 
-#ifndef _V64_INTRINSICS_C_H
-#define _V64_INTRINSICS_C_H
+#ifndef AOM_AOM_DSP_SIMD_V64_INTRINSICS_C_H_
+#define AOM_AOM_DSP_SIMD_V64_INTRINSICS_C_H_
 
 
 
@@ -965,4 +965,4 @@ SIMD_INLINE c_v64 c_v64_shr_n_s32(c_v64 a, unsigned int c) {
   return c_v64_shr_s32(a, c);
 }
 
-#endif 
+#endif  

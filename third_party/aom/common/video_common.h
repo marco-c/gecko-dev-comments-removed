@@ -9,8 +9,8 @@
 
 
 
-#ifndef VIDEO_COMMON_H_
-#define VIDEO_COMMON_H_
+#ifndef AOM_COMMON_VIDEO_COMMON_H_
+#define AOM_COMMON_VIDEO_COMMON_H_
 
 #include "common/tools_common.h"
 

@@ -9,8 +9,8 @@
 
 
 
-#ifndef AV1_ENCODER_EXTEND_H_
-#define AV1_ENCODER_EXTEND_H_
+#ifndef AOM_AV1_ENCODER_EXTEND_H_
+#define AOM_AV1_ENCODER_EXTEND_H_
 
 #include "aom_scale/yv12config.h"
 #include "aom/aom_integer.h"

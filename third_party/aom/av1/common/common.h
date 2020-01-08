@@ -9,8 +9,8 @@
 
 
 
-#ifndef AV1_COMMON_COMMON_H_
-#define AV1_COMMON_COMMON_H_
+#ifndef AOM_AV1_COMMON_COMMON_H_
+#define AOM_AV1_COMMON_COMMON_H_
 
 
 

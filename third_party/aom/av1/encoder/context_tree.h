@@ -9,8 +9,8 @@
 
 
 
-#ifndef AV1_ENCODER_CONTEXT_TREE_H_
-#define AV1_ENCODER_CONTEXT_TREE_H_
+#ifndef AOM_AV1_ENCODER_CONTEXT_TREE_H_
+#define AOM_AV1_ENCODER_CONTEXT_TREE_H_
 
 #include "av1/common/blockd.h"
 #include "av1/encoder/block.h"
@@ -56,6 +56,8 @@ typedef struct {
   int hybrid_pred_diff;
   int comp_pred_diff;
   int single_pred_diff;
+  
+  int skip_ref_frame_mask;
 
   
   
@@ -109,4 +111,4 @@ void av1_copy_tree_context(PICK_MODE_CONTEXT *dst_ctx,
 }  
 #endif
 
-#endif 
+#endif  

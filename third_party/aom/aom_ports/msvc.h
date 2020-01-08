@@ -9,8 +9,8 @@
 
 
 
-#ifndef AOM_PORTS_MSVC_H_
-#define AOM_PORTS_MSVC_H_
+#ifndef AOM_AOM_PORTS_MSVC_H_
+#define AOM_AOM_PORTS_MSVC_H_
 #ifdef _MSC_VER
 
 #include "config/aom_config.h"

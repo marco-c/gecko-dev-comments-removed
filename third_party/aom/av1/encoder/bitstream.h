@@ -9,8 +9,8 @@
 
 
 
-#ifndef AV1_ENCODER_BITSTREAM_H_
-#define AV1_ENCODER_BITSTREAM_H_
+#ifndef AOM_AV1_ENCODER_BITSTREAM_H_
+#define AOM_AV1_ENCODER_BITSTREAM_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,7 +20,12 @@ extern "C" {
 
 struct aom_write_bit_buffer;
 
-void write_sequence_header(AV1_COMP *cpi, struct aom_write_bit_buffer *wb);
+
+
+
+uint32_t write_sequence_header_obu(AV1_COMP *cpi, uint8_t *const dst);
+
+
 
 uint32_t write_obu_header(OBU_TYPE obu_type, int obu_extension,
                           uint8_t *const dst);
@@ -32,8 +37,7 @@ int av1_pack_bitstream(AV1_COMP *const cpi, uint8_t *dest, size_t *size);
 
 static INLINE int av1_preserve_existing_gf(AV1_COMP *cpi) {
   
-  return !cpi->multi_arf_allowed && cpi->rc.is_src_frame_alt_ref &&
-         !cpi->rc.is_src_frame_ext_arf;
+  return cpi->rc.is_src_frame_alt_ref && !cpi->rc.is_src_frame_ext_arf;
 }
 
 void av1_write_tx_type(const AV1_COMMON *const cm, const MACROBLOCKD *xd,

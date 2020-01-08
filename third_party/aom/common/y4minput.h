@@ -12,8 +12,8 @@
 
 
 
-#ifndef Y4MINPUT_H_
-#define Y4MINPUT_H_
+#ifndef AOM_COMMON_Y4MINPUT_H_
+#define AOM_COMMON_Y4MINPUT_H_
 
 #include <stdio.h>
 #include "aom/aom_image.h"

@@ -9,8 +9,8 @@
 
 
 
-#ifndef AV1_DECODER_DECODEMV_H_
-#define AV1_DECODER_DECODEMV_H_
+#ifndef AOM_AV1_DECODER_DECODEMV_H_
+#define AOM_AV1_DECODER_DECODEMV_H_
 
 #include "aom_dsp/bitreader.h"
 

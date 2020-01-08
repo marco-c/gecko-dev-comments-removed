@@ -8,8 +8,8 @@
 
 
 
-#ifndef AV1_COMMON_ARM_CONVOLVE_NEON_H_
-#define AV1_COMMON_ARM_CONVOLVE_NEON_H_
+#ifndef AOM_AV1_COMMON_ARM_CONVOLVE_NEON_H_
+#define AOM_AV1_COMMON_ARM_CONVOLVE_NEON_H_
 
 #include <arm_neon.h>
 

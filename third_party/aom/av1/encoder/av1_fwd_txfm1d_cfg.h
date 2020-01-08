@@ -9,8 +9,8 @@
 
 
 
-#ifndef AV1_FWD_TXFM2D_CFG_H_
-#define AV1_FWD_TXFM2D_CFG_H_
+#ifndef AOM_AV1_ENCODER_AV1_FWD_TXFM1D_CFG_H_
+#define AOM_AV1_ENCODER_AV1_FWD_TXFM1D_CFG_H_
 #include "av1/common/enums.h"
 #include "av1/encoder/av1_fwd_txfm1d.h"
 extern const int8_t *fwd_txfm_shift_ls[TX_SIZES_ALL];

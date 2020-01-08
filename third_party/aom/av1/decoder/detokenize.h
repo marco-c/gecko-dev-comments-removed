@@ -9,8 +9,8 @@
 
 
 
-#ifndef AV1_DECODER_DETOKENIZE_H_
-#define AV1_DECODER_DETOKENIZE_H_
+#ifndef AOM_AV1_DECODER_DETOKENIZE_H_
+#define AOM_AV1_DECODER_DETOKENIZE_H_
 
 #include "config/aom_config.h"
 

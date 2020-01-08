@@ -9,8 +9,8 @@
 
 
 
-#ifndef AOM_DSP_NOISE_UTIL_H_
-#define AOM_DSP_NOISE_UTIL_H_
+#ifndef AOM_AOM_DSP_NOISE_UTIL_H_
+#define AOM_AOM_DSP_NOISE_UTIL_H_
 
 #ifdef __cplusplus
 extern "C" {

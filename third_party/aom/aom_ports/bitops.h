@@ -9,12 +9,13 @@
 
 
 
-#ifndef AOM_PORTS_BITOPS_H_
-#define AOM_PORTS_BITOPS_H_
+#ifndef AOM_AOM_PORTS_BITOPS_H_
+#define AOM_AOM_PORTS_BITOPS_H_
 
 #include <assert.h>
 
 #include "aom_ports/msvc.h"
+#include "config/aom_config.h"
 
 #ifdef _MSC_VER
 #if defined(_M_X64) || defined(_M_IX86)
@@ -26,6 +27,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+
 
 
 
@@ -49,7 +52,6 @@ static INLINE int get_msb(unsigned int n) {
 }
 #undef USE_MSC_INTRINSICS
 #else
-
 static INLINE int get_msb(unsigned int n) {
   int log = 0;
   unsigned int value = n;

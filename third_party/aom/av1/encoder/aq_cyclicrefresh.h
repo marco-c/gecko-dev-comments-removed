@@ -9,8 +9,8 @@
 
 
 
-#ifndef AV1_ENCODER_AQ_CYCLICREFRESH_H_
-#define AV1_ENCODER_AQ_CYCLICREFRESH_H_
+#ifndef AOM_AV1_ENCODER_AQ_CYCLICREFRESH_H_
+#define AOM_AV1_ENCODER_AQ_CYCLICREFRESH_H_
 
 #include "av1/common/blockd.h"
 

@@ -9,8 +9,8 @@
 
 
 
-#ifndef DECODETXB_H_
-#define DECODETXB_H_
+#ifndef AOM_AV1_DECODER_DECODETXB_H_
+#define AOM_AV1_DECODER_DECODETXB_H_
 
 #include "config/aom_config.h"
 

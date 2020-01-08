@@ -9,8 +9,8 @@
 
 
 
-#ifndef AOM_DSP_BLEND_H_
-#define AOM_DSP_BLEND_H_
+#ifndef AOM_AOM_DSP_BLEND_H_
+#define AOM_AOM_DSP_BLEND_H_
 
 #include "aom_ports/mem.h"
 

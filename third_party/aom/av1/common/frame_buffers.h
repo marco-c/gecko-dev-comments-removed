@@ -9,8 +9,8 @@
 
 
 
-#ifndef AV1_COMMON_FRAME_BUFFERS_H_
-#define AV1_COMMON_FRAME_BUFFERS_H_
+#ifndef AOM_AV1_COMMON_FRAME_BUFFERS_H_
+#define AOM_AV1_COMMON_FRAME_BUFFERS_H_
 
 #include "aom/aom_frame_buffer.h"
 #include "aom/aom_integer.h"
@@ -35,6 +35,12 @@ int av1_alloc_internal_frame_buffers(InternalFrameBufferList *list);
 
 
 void av1_free_internal_frame_buffers(InternalFrameBufferList *list);
+
+
+
+
+
+void av1_zero_unused_internal_frame_buffers(InternalFrameBufferList *list);
 
 
 

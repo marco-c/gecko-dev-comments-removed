@@ -9,8 +9,8 @@
 
 
 
-#ifndef TEST_TEST_VECTORS_H_
-#define TEST_TEST_VECTORS_H_
+#ifndef AOM_TEST_TEST_VECTORS_H_
+#define AOM_TEST_TEST_VECTORS_H_
 
 #include "config/aom_config.h"
 

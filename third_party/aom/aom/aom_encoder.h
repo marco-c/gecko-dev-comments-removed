@@ -8,8 +8,8 @@
 
 
 
-#ifndef AOM_AOM_ENCODER_H_
-#define AOM_AOM_ENCODER_H_
+#ifndef AOM_AOM_AOM_ENCODER_H_
+#define AOM_AOM_AOM_ENCODER_H_
 
 
 
@@ -56,13 +56,6 @@ extern "C" {
 
 
 
-
-
-
-#define AOM_CODEC_CAP_OUTPUT_PARTITION 0x20000
-
-
-
 #define AOM_CODEC_CAP_HIGHBITDEPTH 0x40000
 
 
@@ -74,7 +67,6 @@ extern "C" {
 
 #define AOM_CODEC_USE_PSNR 0x10000 /**< Calculate PSNR on each frame */
 
-#define AOM_CODEC_USE_OUTPUT_PARTITION 0x20000
 #define AOM_CODEC_USE_HIGHBITDEPTH 0x40000 /**< Use high bitdepth */
 
 
@@ -119,11 +111,6 @@ typedef uint32_t aom_codec_frame_flags_t;
 typedef uint32_t aom_codec_er_flags_t;
 
 #define AOM_ERROR_RESILIENT_DEFAULT 0x1
-
-
-
-
-#define AOM_ERROR_RESILIENT_PARTITIONS 0x2
 
 
 
@@ -845,6 +832,18 @@ aom_codec_err_t aom_codec_enc_config_default(aom_codec_iface_t *iface,
 
 aom_codec_err_t aom_codec_enc_config_set(aom_codec_ctx_t *ctx,
                                          const aom_codec_enc_cfg_t *cfg);
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

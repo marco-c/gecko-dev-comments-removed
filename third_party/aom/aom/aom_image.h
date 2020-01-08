@@ -13,8 +13,8 @@
 
 
 
-#ifndef AOM_AOM_IMAGE_H_
-#define AOM_AOM_IMAGE_H_
+#ifndef AOM_AOM_AOM_IMAGE_H_
+#define AOM_AOM_AOM_IMAGE_H_
 
 #ifdef __cplusplus
 extern "C" {

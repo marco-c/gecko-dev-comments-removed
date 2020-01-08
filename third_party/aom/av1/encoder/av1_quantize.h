@@ -9,8 +9,8 @@
 
 
 
-#ifndef AV1_ENCODER_QUANTIZE_H_
-#define AV1_ENCODER_QUANTIZE_H_
+#ifndef AOM_AV1_ENCODER_AV1_QUANTIZE_H_
+#define AOM_AV1_ENCODER_AV1_QUANTIZE_H_
 
 #include "config/aom_config.h"
 

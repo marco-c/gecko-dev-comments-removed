@@ -9,8 +9,8 @@
 
 
 
-#ifndef ARGS_H_
-#define ARGS_H_
+#ifndef AOM_COMMON_ARGS_H_
+#define AOM_COMMON_ARGS_H_
 #include <stdio.h>
 
 #ifdef __cplusplus

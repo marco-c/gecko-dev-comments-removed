@@ -28,8 +28,8 @@
 
 
 
-#ifndef AOM_AOM_H_
-#define AOM_AOM_H_
+#ifndef AOM_AOM_AOM_H_
+#define AOM_AOM_AOM_H_
 
 #include "aom/aom_codec.h"
 #include "aom/aom_image.h"

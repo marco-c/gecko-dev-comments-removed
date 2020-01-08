@@ -9,8 +9,8 @@
 
 
 
-#ifndef AV1_ENCODER_FIRSTPASS_H_
-#define AV1_ENCODER_FIRSTPASS_H_
+#ifndef AOM_AV1_ENCODER_FIRSTPASS_H_
+#define AOM_AV1_ENCODER_FIRSTPASS_H_
 
 #include "av1/common/enums.h"
 #include "av1/common/onyxc_int.h"
@@ -47,15 +47,7 @@ typedef struct {
 
 #define BFG_INTERVAL 2
 
-
-
-#define USE_GF16_MULTI_LAYER 0
-
-#if USE_GF16_MULTI_LAYER
-#define MAX_EXT_ARFS (REF_FRAMES - BWDREF_FRAME)
-#else  
 #define MAX_EXT_ARFS (REF_FRAMES - BWDREF_FRAME - 1)
-#endif  
 
 #define MIN_EXT_ARF_INTERVAL 4
 
@@ -126,6 +118,7 @@ typedef struct {
   unsigned char arf_pos_in_gf[(MAX_LAG_BUFFERS * 2) + 1];
   unsigned char pyramid_level[(MAX_LAG_BUFFERS * 2) + 1];
   unsigned char pyramid_height;
+  unsigned char pyramid_lvl_nodes[MAX_PYRAMID_LVL];
 #endif
   unsigned char brf_src_offset[(MAX_LAG_BUFFERS * 2) + 1];
   unsigned char bidir_pred_enabled[(MAX_LAG_BUFFERS * 2) + 1];
@@ -196,10 +189,6 @@ void av1_configure_buffer_updates_firstpass(struct AV1_COMP *cpi,
 
 
 void av1_twopass_postencode_update(struct AV1_COMP *cpi);
-
-#if USE_GF16_MULTI_LAYER
-void av1_ref_frame_map_idx_updates(struct AV1_COMP *cpi, int gf_frame_index);
-#endif  
 
 static INLINE int get_number_of_extra_arfs(int interval, int arf_pending) {
   if (arf_pending && MAX_EXT_ARFS > 0)

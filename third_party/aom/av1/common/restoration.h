@@ -9,8 +9,8 @@
 
 
 
-#ifndef AV1_COMMON_RESTORATION_H_
-#define AV1_COMMON_RESTORATION_H_
+#ifndef AOM_AV1_COMMON_RESTORATION_H_
+#define AOM_AV1_COMMON_RESTORATION_H_
 
 #include "aom_ports/mem.h"
 #include "config/aom_config.h"
@@ -120,6 +120,7 @@ extern "C" {
 
 
 #define WIENER_WIN_CHROMA (WIENER_WIN - 2)
+#define WIENER_WIN2_CHROMA ((WIENER_WIN_CHROMA) * (WIENER_WIN_CHROMA))
 
 #define WIENER_FILT_PREC_BITS 7
 #define WIENER_FILT_STEP (1 << WIENER_FILT_PREC_BITS)

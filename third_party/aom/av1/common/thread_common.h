@@ -9,8 +9,8 @@
 
 
 
-#ifndef AV1_COMMON_LOOPFILTER_THREAD_H_
-#define AV1_COMMON_LOOPFILTER_THREAD_H_
+#ifndef AOM_AV1_COMMON_THREAD_COMMON_H_
+#define AOM_AV1_COMMON_THREAD_COMMON_H_
 
 #include "config/aom_config.h"
 

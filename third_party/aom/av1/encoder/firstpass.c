@@ -31,6 +31,7 @@
 #include "av1/encoder/aq_variance.h"
 #include "av1/encoder/av1_quantize.h"
 #include "av1/encoder/block.h"
+#include "av1/encoder/dwt.h"
 #include "av1/encoder/encodeframe.h"
 #include "av1/encoder/encodemb.h"
 #include "av1/encoder/encodemv.h"
@@ -39,7 +40,7 @@
 #include "av1/encoder/firstpass.h"
 #include "av1/encoder/mcomp.h"
 #include "av1/encoder/rd.h"
-#include "av1/encoder/dwt.h"
+#include "av1/encoder/reconinter_enc.h"
 
 #define OUTPUT_FPF 0
 #define ARF_STATS_OUTPUT 0
@@ -51,9 +52,10 @@
 #define FACTOR_PT_LOW 0.70
 #define FACTOR_PT_HIGH 0.90
 #define FIRST_PASS_Q 10.0
-#define GF_MAX_BOOST 96.0
+#define GF_MAX_BOOST 90.0
 #define INTRA_MODE_PENALTY 1024
-#define KF_MAX_BOOST 128.0
+#define KF_MIN_FRAME_BOOST 80.0
+#define KF_MAX_FRAME_BOOST 128.0
 #define MIN_ARF_GF_BOOST 240
 #define MIN_DECAY_FACTOR 0.01
 #define MIN_KF_BOOST 300
@@ -62,6 +64,7 @@
 #define DEFAULT_GRP_WEIGHT 1.0
 #define RC_FACTOR_MIN 0.75
 #define RC_FACTOR_MAX 1.75
+#define MIN_FWD_KF_INTERVAL 8
 
 #define NCOUNT_INTRA_THRESH 8192
 #define NCOUNT_INTRA_FACTOR 3
@@ -1562,576 +1565,9 @@ static int calculate_boost_bits(int frame_count, int boost,
                 0);
 }
 
-#if USE_GF16_MULTI_LAYER
-
-#define GF_INTERVAL_16 16
-#define GF_FRAME_PARAMS (REF_FRAMES + 5)
-
-
-
-
-
-
-
-static const unsigned char gf16_multi_layer_params[][GF_FRAME_PARAMS] = {
-  
-  
-  {
-      
-      OVERLAY_UPDATE,  
-      0,               
-      0,               
-      
-      LAST_FRAME,     
-      LAST2_FRAME,    
-      LAST3_FRAME,    
-      GOLDEN_FRAME,   
-      BWDREF_FRAME,   
-      ALTREF2_FRAME,  
-      ALTREF_FRAME,   
-      REF_FRAMES,     
-      
-      ALTREF_FRAME,  
-      GOLDEN_FRAME   
-  },
-  {
-      
-      ARF_UPDATE,          
-      GF_INTERVAL_16 - 1,  
-      0,                   
-      
-      LAST_FRAME,     
-      LAST2_FRAME,    
-      LAST3_FRAME,    
-      ALTREF_FRAME,   
-      BWDREF_FRAME,   
-      ALTREF2_FRAME,  
-      GOLDEN_FRAME,   
-      REF_FRAMES,     
-      
-      ALTREF_FRAME,  
-      ALTREF_FRAME   
-  },
-  {
-      
-      INTNL_ARF_UPDATE,           
-      (GF_INTERVAL_16 >> 1) - 1,  
-      0,                          
-      
-      LAST_FRAME,     
-      LAST2_FRAME,    
-      LAST3_FRAME,    
-      GOLDEN_FRAME,   
-      BWDREF_FRAME,   
-      ALTREF2_FRAME,  
-      ALTREF_FRAME,   
-      REF_FRAMES,     
-      
-      ALTREF2_FRAME,  
-      ALTREF2_FRAME   
-  },
-  {
-      
-      INTNL_ARF_UPDATE,           
-      (GF_INTERVAL_16 >> 2) - 1,  
-      0,                          
-      
-      LAST_FRAME,     
-      LAST2_FRAME,    
-      LAST3_FRAME,    
-      GOLDEN_FRAME,   
-      ALTREF2_FRAME,  
-                      
-      BWDREF_FRAME,   
-                      
-      ALTREF_FRAME,   
-      REF_FRAMES,     
-      
-      ALTREF2_FRAME,  
-      ALTREF2_FRAME   
-  },
-  {
-      
-      BRF_UPDATE,  
-      0,           
-      1,           
-      
-      LAST_FRAME,     
-      LAST2_FRAME,    
-      LAST3_FRAME,    
-      GOLDEN_FRAME,   
-      ALTREF2_FRAME,  
-                      
-      BWDREF_FRAME,   
-                      
-      ALTREF_FRAME,   
-      REF_FRAMES,     
-      
-      REF_FRAMES,   
-      BWDREF_FRAME  
-  },
-  {
-      
-      LAST_BIPRED_UPDATE,  
-      0,                   
-      0,                   
-      
-      LAST_FRAME,     
-      LAST2_FRAME,    
-      LAST3_FRAME,    
-      GOLDEN_FRAME,   
-      REF_FRAMES,     
-      BWDREF_FRAME,   
-      ALTREF2_FRAME,  
-      ALTREF_FRAME,   
-      
-      LAST3_FRAME,  
-      LAST_FRAME    
-  },
-  {
-      
-      LF_UPDATE,  
-      0,          
-      0,          
-      
-      BWDREF_FRAME,   
-                      
-      LAST3_FRAME,    
-                      
-      LAST_FRAME,     
-                      
-      GOLDEN_FRAME,   
-      ALTREF2_FRAME,  
-      ALTREF_FRAME,   
-      REF_FRAMES,     
-      LAST2_FRAME,    
-                      
-      
-      LAST3_FRAME,  
-      LAST_FRAME    
-  },
-  {
-      
-      INTNL_OVERLAY_UPDATE,  
-      0,                     
-      0,                     
-      
-      LAST3_FRAME,    
-                      
-      LAST_FRAME,     
-                      
-      LAST2_FRAME,    
-                      
-      GOLDEN_FRAME,   
-      BWDREF_FRAME,   
-      ALTREF2_FRAME,  
-      ALTREF_FRAME,   
-      REF_FRAMES,     
-      
-      BWDREF_FRAME,  
-      ALTREF2_FRAME  
-  },
-  {
-      
-      BRF_UPDATE,  
-      0,           
-      1,           
-      
-      BWDREF_FRAME,   
-                      
-      LAST_FRAME,     
-                      
-      LAST2_FRAME,    
-                      
-      GOLDEN_FRAME,   
-      ALTREF2_FRAME,  
-      LAST3_FRAME,    
-                      
-      ALTREF_FRAME,   
-      REF_FRAMES,     
-      
-      ALTREF2_FRAME,  
-      BWDREF_FRAME    
-  },
-  {
-      
-      LAST_BIPRED_UPDATE,  
-      0,                   
-      0,                   
-      
-      LAST_FRAME,     
-      LAST2_FRAME,    
-      LAST3_FRAME,    
-      GOLDEN_FRAME,   
-      ALTREF2_FRAME,  
-      BWDREF_FRAME,   
-      ALTREF_FRAME,   
-      REF_FRAMES,     
-      
-      LAST3_FRAME,  
-      LAST_FRAME    
-  },
-  {
-      
-      LF_UPDATE,  
-      0,          
-      0,          
-      
-      BWDREF_FRAME,   
-                      
-      LAST3_FRAME,    
-                      
-      LAST_FRAME,     
-                      
-      GOLDEN_FRAME,   
-      ALTREF2_FRAME,  
-      LAST2_FRAME,    
-                      
-      ALTREF_FRAME,   
-      REF_FRAMES,     
-      
-      LAST3_FRAME,  
-      LAST_FRAME    
-  },
-  {
-      
-      INTNL_OVERLAY_UPDATE,  
-      0,                     
-      0,                     
-      
-      LAST3_FRAME,    
-                      
-      LAST_FRAME,     
-                      
-      LAST2_FRAME,    
-                      
-      GOLDEN_FRAME,   
-      BWDREF_FRAME,   
-      ALTREF2_FRAME,  
-      ALTREF_FRAME,   
-      REF_FRAMES,     
-      
-      BWDREF_FRAME,  
-      ALTREF2_FRAME  
-  },
-  {
-      
-      INTNL_ARF_UPDATE,           
-      (GF_INTERVAL_16 >> 2) - 1,  
-      0,                          
-      
-      BWDREF_FRAME,   
-                      
-      LAST_FRAME,     
-                      
-      LAST2_FRAME,    
-                      
-      GOLDEN_FRAME,   
-      LAST3_FRAME,    
-                      
-      ALTREF2_FRAME,  
-      ALTREF_FRAME,   
-      REF_FRAMES,     
-      
-      ALTREF2_FRAME,  
-      ALTREF2_FRAME   
-  },
-  {
-      
-      BRF_UPDATE,  
-      0,           
-      1,           
-      
-      LAST_FRAME,     
-      LAST2_FRAME,    
-      LAST3_FRAME,    
-      GOLDEN_FRAME,   
-      ALTREF2_FRAME,  
-      BWDREF_FRAME,   
-      ALTREF_FRAME,   
-      REF_FRAMES,     
-      
-      ALTREF2_FRAME,  
-      BWDREF_FRAME    
-  },
-  {
-      
-      LAST_BIPRED_UPDATE,  
-      0,                   
-      0,                   
-      
-      LAST_FRAME,     
-      LAST2_FRAME,    
-      LAST3_FRAME,    
-      GOLDEN_FRAME,   
-      ALTREF2_FRAME,  
-      BWDREF_FRAME,   
-      ALTREF_FRAME,   
-      REF_FRAMES,     
-      
-      LAST3_FRAME,  
-      LAST_FRAME    
-  },
-  {
-      
-      LF_UPDATE,  
-      0,          
-      0,          
-      
-      BWDREF_FRAME,   
-                      
-      LAST3_FRAME,    
-                      
-      LAST_FRAME,     
-                      
-      GOLDEN_FRAME,   
-      ALTREF2_FRAME,  
-      LAST2_FRAME,    
-                      
-      ALTREF_FRAME,   
-      REF_FRAMES,     
-      
-      LAST3_FRAME,  
-      LAST_FRAME    
-  },
-  {
-      
-      INTNL_OVERLAY_UPDATE,  
-      0,                     
-      0,                     
-      
-      LAST3_FRAME,    
-                      
-      LAST_FRAME,     
-                      
-      LAST2_FRAME,    
-                      
-      GOLDEN_FRAME,   
-      BWDREF_FRAME,   
-      ALTREF2_FRAME,  
-      ALTREF_FRAME,   
-      REF_FRAMES,     
-      
-      BWDREF_FRAME,  
-      ALTREF2_FRAME  
-  },
-  {
-      
-      BRF_UPDATE,  
-      0,           
-      1,           
-      
-      BWDREF_FRAME,   
-                      
-      LAST_FRAME,     
-                      
-      LAST2_FRAME,    
-                      
-      GOLDEN_FRAME,   
-      LAST3_FRAME,    
-                      
-      ALTREF2_FRAME,  
-      ALTREF_FRAME,   
-      REF_FRAMES,     
-      
-      BWDREF_FRAME,  
-      BWDREF_FRAME   
-  },
-  {
-      
-      LAST_BIPRED_UPDATE,  
-      0,                   
-      0,                   
-      
-      LAST_FRAME,     
-      LAST2_FRAME,    
-      LAST3_FRAME,    
-      GOLDEN_FRAME,   
-      BWDREF_FRAME,   
-      ALTREF2_FRAME,  
-      ALTREF_FRAME,   
-      REF_FRAMES,     
-      
-      LAST3_FRAME,  
-      LAST_FRAME    
-  },
-  {
-      
-      LF_UPDATE,  
-      0,          
-      0,          
-      
-      BWDREF_FRAME,   
-                      
-      LAST3_FRAME,    
-                      
-      LAST_FRAME,     
-                      
-      GOLDEN_FRAME,   
-      LAST2_FRAME,    
-                      
-      ALTREF2_FRAME,  
-      ALTREF_FRAME,   
-      REF_FRAMES,     
-      
-      LAST3_FRAME,  
-      LAST_FRAME    
-  },
-  {
-      
-      
-      OVERLAY_UPDATE,  
-      0,               
-      0,               
-      
-      LAST3_FRAME,    
-                      
-      LAST_FRAME,     
-                      
-      LAST2_FRAME,    
-                      
-      GOLDEN_FRAME,   
-      BWDREF_FRAME,   
-      ALTREF2_FRAME,  
-      ALTREF_FRAME,   
-      REF_FRAMES,     
-      
-      ALTREF_FRAME,  
-      GOLDEN_FRAME   
-  }
-};
-
-
-static void define_gf_group_structure_16(AV1_COMP *cpi) {
-  RATE_CONTROL *const rc = &cpi->rc;
-  TWO_PASS *const twopass = &cpi->twopass;
-  GF_GROUP *const gf_group = &twopass->gf_group;
-  const int key_frame = cpi->common.frame_type == KEY_FRAME;
-
-  assert(rc->baseline_gf_interval == GF_INTERVAL_16);
-
-  
-  
-  
-  
-  
-
-  const int gf_update_frames = rc->baseline_gf_interval + MAX_EXT_ARFS + 2;
-
-  for (int frame_index = 0; frame_index < gf_update_frames; ++frame_index) {
-    int param_idx = 0;
-
-    
-    if (frame_index == 0 && key_frame) {
-      gf_group->update_type[frame_index] = KF_UPDATE;
-
-      gf_group->rf_level[frame_index] = KF_STD;
-      gf_group->arf_src_offset[frame_index] = 0;
-      gf_group->brf_src_offset[frame_index] = 0;
-      gf_group->bidir_pred_enabled[frame_index] = 0;
-      for (int ref_idx = 0; ref_idx < REF_FRAMES; ++ref_idx)
-        gf_group->ref_fb_idx_map[frame_index][ref_idx] = ref_idx;
-      gf_group->refresh_idx[frame_index] = cpi->ref_fb_idx[LAST_FRAME - 1];
-      gf_group->refresh_flag[frame_index] = cpi->ref_fb_idx[LAST_FRAME - 1];
-
-      continue;
-    }
-
-    
-    gf_group->update_type[frame_index] =
-        gf16_multi_layer_params[frame_index][param_idx++];
-
-    
-    
-    switch (gf_group->update_type[frame_index]) {
-      case LF_UPDATE: gf_group->rf_level[frame_index] = INTER_NORMAL; break;
-      case ARF_UPDATE: gf_group->rf_level[frame_index] = GF_ARF_LOW; break;
-      case OVERLAY_UPDATE:
-        gf_group->rf_level[frame_index] = INTER_NORMAL;
-        break;
-      case BRF_UPDATE: gf_group->rf_level[frame_index] = GF_ARF_LOW; break;
-      case LAST_BIPRED_UPDATE:
-        gf_group->rf_level[frame_index] = INTER_NORMAL;
-        break;
-      case BIPRED_UPDATE: gf_group->rf_level[frame_index] = INTER_NORMAL; break;
-      case INTNL_ARF_UPDATE:
-        gf_group->rf_level[frame_index] = GF_ARF_LOW;
-        break;
-      case INTNL_OVERLAY_UPDATE:
-        gf_group->rf_level[frame_index] = INTER_NORMAL;
-        break;
-      default: gf_group->rf_level[frame_index] = INTER_NORMAL; break;
-    }
-
-    
-    gf_group->arf_src_offset[frame_index] =
-        gf16_multi_layer_params[frame_index][param_idx++];
-
-    
-    gf_group->brf_src_offset[frame_index] =
-        gf16_multi_layer_params[frame_index][param_idx++];
-
-    
-    
-    gf_group->bidir_pred_enabled[frame_index] =
-        gf_group->brf_src_offset[frame_index] ? 1 : 0;
-
-    
-    for (int ref_idx = 0; ref_idx < REF_FRAMES; ++ref_idx)
-      gf_group->ref_fb_idx_map[frame_index][ref_idx] =
-          gf16_multi_layer_params[frame_index][param_idx++];
-
-    
-    gf_group->refresh_idx[frame_index] =
-        gf16_multi_layer_params[frame_index][param_idx++];
-
-    
-    gf_group->refresh_flag[frame_index] =
-        gf16_multi_layer_params[frame_index][param_idx];
-  }
-
-  
-  
-  
-  
-  
-  
-
-  const int num_arfs_in_gf = cpi->num_extra_arfs + 1;
-  const int sub_arf_interval = rc->baseline_gf_interval / num_arfs_in_gf;
-
-  
-  for (int arf_idx = 0; arf_idx < num_arfs_in_gf; arf_idx++) {
-    const int prior_num_arfs =
-        (arf_idx <= 1) ? num_arfs_in_gf : (num_arfs_in_gf - 1);
-    cpi->arf_pos_for_ovrly[arf_idx] =
-        sub_arf_interval * (num_arfs_in_gf - arf_idx) + prior_num_arfs;
-  }
-
-  
-  cpi->arf_pos_in_gf[0] = 1;
-  cpi->arf_pos_in_gf[1] = cpi->arf_pos_for_ovrly[2] + 1;
-  cpi->arf_pos_in_gf[2] = 2;
-  cpi->arf_pos_in_gf[3] = 3;
-
-  
-  
-  
-  
-  int start_frame_index = 0;
-  for (int arf_idx = (num_arfs_in_gf - 1); arf_idx >= 0; --arf_idx) {
-    const int end_frame_index = cpi->arf_pos_for_ovrly[arf_idx];
-    for (int frame_index = start_frame_index; frame_index <= end_frame_index;
-         ++frame_index) {
-      gf_group->arf_update_idx[frame_index] = arf_idx;
-      gf_group->arf_ref_idx[frame_index] = arf_idx;
-    }
-    start_frame_index = end_frame_index + 1;
-  }
-}
-#endif  
-
 #if USE_SYMM_MULTI_LAYER
+
+#ifdef CHCEK_GF_PARAMETER
 void check_frame_params(GF_GROUP *const gf_group, int gf_interval,
                         int frame_nums) {
   static const char *update_type_strings[] = {
@@ -2149,9 +1585,15 @@ void check_frame_params(GF_GROUP *const gf_group, int gf_interval,
             gf_group->arf_src_offset[i], gf_group->arf_pos_in_gf[i],
             gf_group->arf_update_idx[i], gf_group->pyramid_level[i]);
   }
+
+  fprintf(fid, "number of nodes in each level: \n");
+  for (int i = 0; i < MAX_PYRAMID_LVL; ++i) {
+    fprintf(fid, "lvl %d: %d ", i, gf_group->pyramid_lvl_nodes[i]);
+  }
+  fprintf(fid, "\n");
   fclose(fid);
 }
-
+#endif  
 static int update_type_2_rf_level(FRAME_UPDATE_TYPE update_type) {
   
   switch (update_type) {
@@ -2169,14 +1611,17 @@ static int update_type_2_rf_level(FRAME_UPDATE_TYPE update_type) {
 
 static void set_multi_layer_params(GF_GROUP *const gf_group, int l, int r,
                                    int *frame_ind, int arf_ind, int level) {
-  if (r - l == 2) {
-    
-    gf_group->update_type[*frame_ind] = LF_UPDATE;
-    gf_group->arf_src_offset[*frame_ind] = 0;
-    gf_group->arf_pos_in_gf[*frame_ind] = 0;
-    gf_group->arf_update_idx[*frame_ind] = arf_ind;
-    gf_group->pyramid_level[*frame_ind] = level;
-    ++(*frame_ind);
+  if (r - l < 4) {
+    while (++l < r) {
+      
+      gf_group->update_type[*frame_ind] = LF_UPDATE;
+      gf_group->arf_src_offset[*frame_ind] = 0;
+      gf_group->arf_pos_in_gf[*frame_ind] = 0;
+      gf_group->arf_update_idx[*frame_ind] = arf_ind;
+      gf_group->pyramid_level[*frame_ind] = 0;
+      ++gf_group->pyramid_lvl_nodes[0];
+      ++(*frame_ind);
+    }
   } else {
     int m = (l + r) / 2;
     int arf_pos_in_gf = *frame_ind;
@@ -2186,6 +1631,7 @@ static void set_multi_layer_params(GF_GROUP *const gf_group, int l, int r,
     gf_group->arf_pos_in_gf[*frame_ind] = 0;
     gf_group->arf_update_idx[*frame_ind] = 1;  
     gf_group->pyramid_level[*frame_ind] = level;
+    ++gf_group->pyramid_lvl_nodes[level];
     ++(*frame_ind);
 
     
@@ -2209,13 +1655,17 @@ static INLINE unsigned char get_pyramid_height(int pyramid_width) {
   assert(pyramid_width <= 16 && pyramid_width >= 4 &&
          "invalid gf interval for pyramid structure");
 
-  return pyramid_width == 16 ? 4 : (pyramid_width >= 8 ? 3 : 2);
+  return pyramid_width > 12 ? 4 : (pyramid_width > 6 ? 3 : 2);
 }
 
 static int construct_multi_layer_gf_structure(GF_GROUP *const gf_group,
                                               const int gf_interval) {
   int frame_index = 0;
   gf_group->pyramid_height = get_pyramid_height(gf_interval);
+
+  assert(gf_group->pyramid_height <= MAX_PYRAMID_LVL);
+
+  av1_zero_array(gf_group->pyramid_lvl_nodes, MAX_PYRAMID_LVL);
 
   
   gf_group->update_type[frame_index] = OVERLAY_UPDATE;
@@ -2236,9 +1686,6 @@ static int construct_multi_layer_gf_structure(GF_GROUP *const gf_group,
   
   set_multi_layer_params(gf_group, 0, gf_interval, &frame_index, 0,
                          gf_group->pyramid_height - 1);
-
-  
-
   return frame_index;
 }
 
@@ -2248,8 +1695,8 @@ void define_customized_gf_group_structure(AV1_COMP *cpi) {
   GF_GROUP *const gf_group = &twopass->gf_group;
   const int key_frame = cpi->common.frame_type == KEY_FRAME;
 
-  assert(rc->baseline_gf_interval == 4 || rc->baseline_gf_interval == 8 ||
-         rc->baseline_gf_interval == 16);
+  assert(rc->baseline_gf_interval >= 4 &&
+         rc->baseline_gf_interval <= MAX_PYRAMID_SIZE);
 
   const int gf_update_frames =
       construct_multi_layer_gf_structure(gf_group, rc->baseline_gf_interval);
@@ -2305,8 +1752,9 @@ void define_customized_gf_group_structure(AV1_COMP *cpi) {
 
   
   gf_group->arf_ref_idx[frame_index] = 0;
-
+#ifdef CHCEK_GF_PARAMETER
   check_frame_params(gf_group, rc->baseline_gf_interval, gf_update_frames);
+#endif
 }
 
 
@@ -2447,16 +1895,10 @@ static int define_gf_group_structure_4(AV1_COMP *cpi) {
 static void define_gf_group_structure(AV1_COMP *cpi) {
   RATE_CONTROL *const rc = &cpi->rc;
 
-#if USE_GF16_MULTI_LAYER
-  if (rc->baseline_gf_interval == 16) {
-    define_gf_group_structure_16(cpi);
-    return;
-  }
-#endif  
 #if USE_SYMM_MULTI_LAYER
-  const int valid_customized_gf_length = rc->baseline_gf_interval == 4 ||
-                                         rc->baseline_gf_interval == 8 ||
-                                         rc->baseline_gf_interval == 16;
+  const int valid_customized_gf_length =
+      rc->baseline_gf_interval >= 4 &&
+      rc->baseline_gf_interval <= MAX_PYRAMID_SIZE;
   
   if (valid_customized_gf_length && rc->source_alt_ref_pending &&
       cpi->extra_arf_allowed > 0) {
@@ -2685,6 +2127,18 @@ static void define_gf_group_structure(AV1_COMP *cpi) {
   gf_group->brf_src_offset[frame_index] = 0;
 }
 
+#if USE_SYMM_MULTI_LAYER
+#define LEAF_REDUCTION_FACTOR 0.75f
+#define LVL_3_BOOST_FACTOR 0.8f
+#define LVL_2_BOOST_FACTOR 0.3f
+
+static float_t lvl_budget_factor[MAX_PYRAMID_LVL - 1][MAX_PYRAMID_LVL - 1] = {
+  { 1, 0, 0 },
+  { LVL_3_BOOST_FACTOR, 0, 0 },  
+  { LVL_3_BOOST_FACTOR, (1 - LVL_3_BOOST_FACTOR) * LVL_2_BOOST_FACTOR,
+    (1 - LVL_3_BOOST_FACTOR) * (1 - LVL_2_BOOST_FACTOR) }
+};
+#endif  
 static void allocate_gf_group_bits(AV1_COMP *cpi, int64_t gf_group_bits,
                                    double group_error, int gf_arf_bits) {
   RATE_CONTROL *const rc = &cpi->rc;
@@ -2771,20 +2225,39 @@ static void allocate_gf_group_bits(AV1_COMP *cpi, int64_t gf_group_bits,
       
       gf_group->bit_allocation[frame_index] = target_frame_size;
 #if USE_SYMM_MULTI_LAYER
-    } else if (cpi->new_bwdref_update_rule == 1 &&
+    } else if (cpi->new_bwdref_update_rule &&
                gf_group->update_type[frame_index] == INTNL_OVERLAY_UPDATE) {
+      assert(gf_group->pyramid_height <= MAX_PYRAMID_LVL &&
+             gf_group->pyramid_height >= 0 &&
+             "non-valid height for a pyramid structure");
+
       int arf_pos = gf_group->arf_pos_in_gf[frame_index];
       gf_group->bit_allocation[frame_index] = 0;
 
-      
-      
-      
       gf_group->bit_allocation[arf_pos] = target_frame_size;
+#if MULTI_LVL_BOOST_VBR_CQ
+      const int pyr_h = gf_group->pyramid_height - 2;
+      const int this_lvl = gf_group->pyramid_level[arf_pos];
+      const int dist2top = gf_group->pyramid_height - 1 - this_lvl;
+
+      const float_t budget =
+          LEAF_REDUCTION_FACTOR * gf_group->pyramid_lvl_nodes[0];
+      const float_t lvl_boost = budget * lvl_budget_factor[pyr_h][dist2top] /
+                                gf_group->pyramid_lvl_nodes[this_lvl];
+
+      gf_group->bit_allocation[arf_pos] += (int)(target_frame_size * lvl_boost);
+#endif  
 #endif
     } else {
       assert(gf_group->update_type[frame_index] == LF_UPDATE ||
              gf_group->update_type[frame_index] == INTNL_OVERLAY_UPDATE);
       gf_group->bit_allocation[frame_index] = target_frame_size;
+#if MULTI_LVL_BOOST_VBR_CQ
+      if (cpi->new_bwdref_update_rule) {
+        gf_group->bit_allocation[frame_index] -=
+            (int)(target_frame_size * LEAF_REDUCTION_FACTOR);
+      }
+#endif  
     }
 
     ++frame_index;
@@ -2833,9 +2306,11 @@ static void define_gf_group(AV1_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   int i;
 
   double boost_score = 0.0;
-#if !FIX_GF_INTERVAL_LENGTH
+#if !CONFIG_FIX_GF_LENGTH
   double old_boost_score = 0.0;
   double mv_ratio_accumulator_thresh;
+  int active_max_gf_interval;
+  int active_min_gf_interval;
 #endif
   double gf_group_err = 0.0;
 #if GROUP_ADAPTIVE_MAXQ
@@ -2862,8 +2337,6 @@ static void define_gf_group(AV1_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   int f_boost = 0;
   int b_boost = 0;
   int flash_detected;
-  int active_max_gf_interval;
-  int active_min_gf_interval;
   int64_t gf_group_bits;
   double gf_group_error_left;
   int gf_arf_bits;
@@ -2898,11 +2371,10 @@ static void define_gf_group(AV1_COMP *cpi, FIRSTPASS_STATS *this_frame) {
     gf_group_skip_pct -= this_frame->intra_skip_pct;
     gf_group_inactive_zone_rows -= this_frame->inactive_zone_rows;
   }
-#if !FIX_GF_INTERVAL_LENGTH
+#if !CONFIG_FIX_GF_LENGTH
   
   mv_ratio_accumulator_thresh =
       (cpi->initial_height + cpi->initial_width) / 4.0;
-#endif
   
   
   {
@@ -2915,23 +2387,19 @@ static void define_gf_group(AV1_COMP *cpi, FIRSTPASS_STATS *this_frame) {
     if (active_min_gf_interval > rc->max_gf_interval)
       active_min_gf_interval = rc->max_gf_interval;
 
-    if (cpi->multi_arf_allowed) {
+    
+    
+    
+    
+    active_max_gf_interval = 12 + AOMMIN(4, (int_lbq / 6));
+
+    
+    if (active_max_gf_interval < active_min_gf_interval)
+      active_max_gf_interval = active_min_gf_interval;
+    else if (active_max_gf_interval > rc->max_gf_interval)
       active_max_gf_interval = rc->max_gf_interval;
-    } else {
-      
-      
-      
-      
-      active_max_gf_interval = 12 + AOMMIN(4, (int_lbq / 6));
-
-      
-      if (active_max_gf_interval < active_min_gf_interval)
-        active_max_gf_interval = active_min_gf_interval;
-      else if (active_max_gf_interval > rc->max_gf_interval)
-        active_max_gf_interval = rc->max_gf_interval;
-    }
   }
-
+#endif  
   double avg_sr_coded_error = 0;
   double avg_raw_err_stdev = 0;
   int non_zero_stdev_count = 0;
@@ -2990,7 +2458,7 @@ static void define_gf_group(AV1_COMP *cpi, FIRSTPASS_STATS *this_frame) {
     boost_score +=
         decay_accumulator *
         calc_frame_boost(cpi, &next_frame, this_frame_mv_in_out, GF_MAX_BOOST);
-#if FIX_GF_INTERVAL_LENGTH
+#if CONFIG_FIX_GF_LENGTH
     if (i == (FIXED_GF_LENGTH + 1)) break;
 #else
     
@@ -3030,31 +2498,6 @@ static void define_gf_group(AV1_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   assert(num_mbs > 0);
   if (i) avg_sr_coded_error /= i;
 
-  
-  if (allow_alt_ref && (i < cpi->oxcf.lag_in_frames) &&
-      (i >= rc->min_gf_interval)) {
-    
-    rc->gfu_boost =
-        calc_arf_boost(cpi, 0, (i - 1), (i - 1), &f_boost, &b_boost);
-    rc->source_alt_ref_pending = 1;
-  } else {
-    rc->gfu_boost = AOMMAX((int)boost_score, MIN_ARF_GF_BOOST);
-    rc->source_alt_ref_pending = 0;
-  }
-
-  
-  if (cpi->oxcf.fwd_kf_enabled) {
-    
-    if ((rc->frames_to_key - i < rc->min_gf_interval) &&
-        (rc->frames_to_key != i)) {
-      rc->baseline_gf_interval = AOMMIN(rc->frames_to_key - rc->min_gf_interval,
-                                        rc->static_scene_max_gf_interval);
-    } else {
-      rc->baseline_gf_interval = i;
-    }
-  } else {
-    rc->baseline_gf_interval = i - (is_key_frame || rc->source_alt_ref_pending);
-  }
   if (non_zero_stdev_count) avg_raw_err_stdev /= non_zero_stdev_count;
 
   
@@ -3068,6 +2511,103 @@ static void define_gf_group(AV1_COMP *cpi, FIRSTPASS_STATS *this_frame) {
        avg_raw_err_stdev < MAX_RAW_ERR_VAR);
 
   if (disable_bwd_extarf) cpi->extra_arf_allowed = 0;
+
+#define REDUCE_GF_LENGTH_THRESH 4
+#define REDUCE_GF_LENGTH_TO_KEY_THRESH 9
+#define REDUCE_GF_LENGTH_BY 1
+  int alt_offset = 0;
+#if REDUCE_LAST_GF_LENGTH
+  
+  
+  
+
+  int allow_gf_length_reduction =
+      cpi->oxcf.rc_mode == AOM_Q || cpi->extra_arf_allowed == 0;
+
+  
+  
+  if (allow_alt_ref && allow_gf_length_reduction &&
+      (i < cpi->oxcf.lag_in_frames) && (i >= rc->min_gf_interval) &&
+      !is_lossless_requested(&cpi->oxcf)) {
+    
+    
+    
+
+    
+    const int next_gf_len = rc->frames_to_key - i;
+    const int single_overlay_left =
+        next_gf_len == 0 && i > REDUCE_GF_LENGTH_THRESH;
+    
+    
+    const int unbalanced_gf =
+        i > REDUCE_GF_LENGTH_TO_KEY_THRESH &&
+        next_gf_len + 1 < REDUCE_GF_LENGTH_TO_KEY_THRESH &&
+        next_gf_len + 1 >= rc->min_gf_interval;
+
+    if (single_overlay_left || unbalanced_gf) {
+      
+      
+      const int roll_back = REDUCE_GF_LENGTH_BY;
+      alt_offset = -roll_back;
+      i -= roll_back;
+    }
+  }
+#endif
+
+  
+  if (allow_alt_ref && (i < cpi->oxcf.lag_in_frames) &&
+      (i >= rc->min_gf_interval)) {
+    
+    rc->gfu_boost =
+        calc_arf_boost(cpi, alt_offset, (i - 1), (i - 1), &f_boost, &b_boost);
+    rc->source_alt_ref_pending = 1;
+
+    
+    cpi->preserve_arf_as_gld = 1;
+  } else {
+    rc->gfu_boost = AOMMAX((int)boost_score, MIN_ARF_GF_BOOST);
+    rc->source_alt_ref_pending = 0;
+    cpi->preserve_arf_as_gld = 0;
+  }
+
+  
+  
+  
+  if (cpi->oxcf.fwd_kf_enabled &&
+      ((twopass->stats_in - i + rc->frames_to_key) < twopass->stats_in_end)) {
+    if (i == rc->frames_to_key) {
+      rc->baseline_gf_interval = i;
+      
+    } else if ((rc->frames_to_key - i <
+                AOMMAX(MIN_FWD_KF_INTERVAL, rc->min_gf_interval)) &&
+               (rc->frames_to_key != i)) {
+      
+      if (rc->frames_to_key <= MAX_PYRAMID_SIZE) {
+        rc->baseline_gf_interval = rc->frames_to_key;
+        
+        
+      } else {
+        rc->baseline_gf_interval = rc->frames_to_key - MIN_FWD_KF_INTERVAL;
+      }
+    } else {
+      rc->baseline_gf_interval =
+          i - (is_key_frame || rc->source_alt_ref_pending);
+    }
+  } else {
+    rc->baseline_gf_interval = i - (is_key_frame || rc->source_alt_ref_pending);
+  }
+
+#if REDUCE_LAST_ALT_BOOST
+#define LAST_ALR_BOOST_FACTOR 0.2f
+  rc->arf_boost_factor = 1.0;
+  if (rc->source_alt_ref_pending && !is_lossless_requested(&cpi->oxcf)) {
+    
+    if (rc->frames_to_key - i == REDUCE_GF_LENGTH_BY ||
+        rc->frames_to_key - i == 0) {
+      rc->arf_boost_factor = LAST_ALR_BOOST_FACTOR;
+    }
+  }
+#endif
 
   if (!cpi->extra_arf_allowed) {
     cpi->num_extra_arfs = 0;
@@ -3439,6 +2979,11 @@ static void find_next_key_frame(AV1_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   
   decay_accumulator = 1.0;
   boost_score = 0.0;
+  const double kf_max_boost =
+      cpi->oxcf.rc_mode == AOM_Q
+          ? AOMMIN(AOMMAX(rc->frames_to_key * 2.0, KF_MIN_FRAME_BOOST),
+                   KF_MAX_FRAME_BOOST)
+          : KF_MAX_FRAME_BOOST;
   for (i = 0; i < (rc->frames_to_key - 1); ++i) {
     if (EOF == input_stats(twopass, &next_frame)) break;
 
@@ -3450,7 +2995,7 @@ static void find_next_key_frame(AV1_COMP *cpi, FIRSTPASS_STATS *this_frame) {
     if ((i <= rc->max_gf_interval) ||
         ((i <= (rc->max_gf_interval * 4)) && (decay_accumulator > 0.5))) {
       const double frame_boost =
-          calc_frame_boost(cpi, this_frame, 0, KF_MAX_BOOST);
+          calc_frame_boost(cpi, this_frame, 0, kf_max_boost);
 
       
       if (!detect_flash(twopass, 0)) {
@@ -3513,147 +3058,6 @@ static void find_next_key_frame(AV1_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   twopass->modified_error_left -= kf_group_err;
 }
 
-#if USE_GF16_MULTI_LAYER
-
-void av1_ref_frame_map_idx_updates(AV1_COMP *cpi, int gf_frame_index) {
-  TWO_PASS *const twopass = &cpi->twopass;
-  GF_GROUP *const gf_group = &twopass->gf_group;
-
-  int ref_fb_idx_prev[REF_FRAMES];
-  int ref_fb_idx_curr[REF_FRAMES];
-
-  for (int ref_frame = 0; ref_frame < REF_FRAMES; ++ref_frame) {
-    ref_fb_idx_prev[ref_frame] = cpi->ref_fb_idx[ref_frame];
-  }
-
-  
-  for (int ref_idx = 0; ref_idx < REF_FRAMES; ++ref_idx) {
-    int ref_frame = gf_group->ref_fb_idx_map[gf_frame_index][ref_idx];
-    ref_fb_idx_curr[ref_idx] = ref_fb_idx_prev[ref_frame - LAST_FRAME];
-  }
-
-  for (int ref_frame = 0; ref_frame < REF_FRAMES; ++ref_frame) {
-    cpi->ref_fb_idx[ref_frame] = ref_fb_idx_curr[ref_frame];
-  }
-}
-
-
-static void configure_buffer_updates_16(AV1_COMP *cpi) {
-  TWO_PASS *const twopass = &cpi->twopass;
-  GF_GROUP *const gf_group = &twopass->gf_group;
-
-  if (gf_group->update_type[gf_group->index] == KF_UPDATE) {
-    cpi->refresh_fb_idx = 0;
-
-    cpi->refresh_last_frame = 1;
-    cpi->refresh_golden_frame = 1;
-    cpi->refresh_bwd_ref_frame = 1;
-    cpi->refresh_alt2_ref_frame = 1;
-    cpi->refresh_alt_ref_frame = 1;
-
-    return;
-  }
-
-  
-  av1_ref_frame_map_idx_updates(cpi, gf_group->index);
-
-  
-  switch (gf_group->refresh_idx[gf_group->index]) {
-    case LAST_FRAME:
-      cpi->refresh_fb_idx = cpi->ref_fb_idx[LAST_FRAME - LAST_FRAME];
-      break;
-
-    case LAST2_FRAME:
-      cpi->refresh_fb_idx = cpi->ref_fb_idx[LAST2_FRAME - LAST_FRAME];
-      break;
-
-    case LAST3_FRAME:
-      cpi->refresh_fb_idx = cpi->ref_fb_idx[LAST3_FRAME - LAST_FRAME];
-      break;
-
-    case GOLDEN_FRAME:
-      cpi->refresh_fb_idx = cpi->ref_fb_idx[GOLDEN_FRAME - 1];
-      break;
-
-    case BWDREF_FRAME:
-      cpi->refresh_fb_idx = cpi->ref_fb_idx[BWDREF_FRAME - 1];
-      break;
-
-    case ALTREF2_FRAME:
-      cpi->refresh_fb_idx = cpi->ref_fb_idx[ALTREF2_FRAME - 1];
-      break;
-
-    case ALTREF_FRAME:
-      cpi->refresh_fb_idx = cpi->ref_fb_idx[ALTREF_FRAME - 1];
-      break;
-
-    case REF_FRAMES:
-      cpi->refresh_fb_idx = cpi->ref_fb_idx[REF_FRAMES - 1];
-      break;
-
-    default: assert(0); break;
-  }
-
-  
-  switch (gf_group->refresh_flag[gf_group->index]) {
-    case LAST_FRAME:
-      cpi->refresh_last_frame = 1;
-      cpi->refresh_golden_frame = 0;
-      cpi->refresh_bwd_ref_frame = 0;
-      cpi->refresh_alt2_ref_frame = 0;
-      cpi->refresh_alt_ref_frame = 0;
-      break;
-
-    case GOLDEN_FRAME:
-      cpi->refresh_last_frame = 0;
-      cpi->refresh_golden_frame = 1;
-      cpi->refresh_bwd_ref_frame = 0;
-      cpi->refresh_alt2_ref_frame = 0;
-      cpi->refresh_alt_ref_frame = 0;
-      break;
-
-    case BWDREF_FRAME:
-      cpi->refresh_last_frame = 0;
-      cpi->refresh_golden_frame = 0;
-      cpi->refresh_bwd_ref_frame = 1;
-      cpi->refresh_alt2_ref_frame = 0;
-      cpi->refresh_alt_ref_frame = 0;
-      break;
-
-    case ALTREF2_FRAME:
-      cpi->refresh_last_frame = 0;
-      cpi->refresh_golden_frame = 0;
-      cpi->refresh_bwd_ref_frame = 0;
-      cpi->refresh_alt2_ref_frame = 1;
-      cpi->refresh_alt_ref_frame = 0;
-      break;
-
-    case ALTREF_FRAME:
-      cpi->refresh_last_frame = 0;
-      cpi->refresh_golden_frame = 0;
-      cpi->refresh_bwd_ref_frame = 0;
-      cpi->refresh_alt2_ref_frame = 0;
-      cpi->refresh_alt_ref_frame = 1;
-      break;
-
-    default: assert(0); break;
-  }
-
-  switch (gf_group->update_type[gf_group->index]) {
-    case BRF_UPDATE: cpi->rc.is_bwd_ref_frame = 1; break;
-
-    case LAST_BIPRED_UPDATE: cpi->rc.is_last_bipred_frame = 1; break;
-
-    case BIPRED_UPDATE: cpi->rc.is_bipred_frame = 1; break;
-
-    case INTNL_OVERLAY_UPDATE: cpi->rc.is_src_frame_ext_arf = 1;
-    case OVERLAY_UPDATE: cpi->rc.is_src_frame_alt_ref = 1; break;
-
-    default: break;
-  }
-}
-#endif  
-
 
 static void configure_buffer_updates(AV1_COMP *cpi) {
   TWO_PASS *const twopass = &cpi->twopass;
@@ -3666,14 +3070,6 @@ static void configure_buffer_updates(AV1_COMP *cpi) {
   cpi->rc.is_last_bipred_frame = 0;
   cpi->rc.is_bipred_frame = 0;
   cpi->rc.is_src_frame_ext_arf = 0;
-
-#if USE_GF16_MULTI_LAYER
-  RATE_CONTROL *const rc = &cpi->rc;
-  if (rc->baseline_gf_interval == 16) {
-    configure_buffer_updates_16(cpi);
-    return;
-  }
-#endif  
 
   switch (twopass->gf_group.update_type[twopass->gf_group.index]) {
     case KF_UPDATE:
@@ -3979,8 +3375,7 @@ void av1_rc_get_second_pass_params(AV1_COMP *cpi) {
                             : cpi->common.MBs;
     
     
-    twopass->mb_av_energy =
-        log(((this_frame.intra_error * 256.0) / num_mbs) + 1.0);
+    twopass->mb_av_energy = log((this_frame.intra_error / num_mbs) + 1.0);
     twopass->frame_avg_haar_energy =
         log((this_frame.frame_avg_wavelet_energy / num_mbs) + 1.0);
   }
@@ -4019,9 +3414,6 @@ void av1_twopass_postencode_update(AV1_COMP *cpi) {
     twopass->last_kfgroup_zeromotion_pct = twopass->kf_zeromotion_pct;
   }
   twopass->kf_group_bits = AOMMAX(twopass->kf_group_bits, 0);
-
-  
-  ++twopass->gf_group.index;
 
   
   if ((cpi->oxcf.rc_mode != AOM_Q) &&

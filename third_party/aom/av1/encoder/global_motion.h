@@ -9,8 +9,8 @@
 
 
 
-#ifndef AV1_ENCODER_GLOBAL_MOTION_H_
-#define AV1_ENCODER_GLOBAL_MOTION_H_
+#ifndef AOM_AV1_ENCODER_GLOBAL_MOTION_H_
+#define AOM_AV1_ENCODER_GLOBAL_MOTION_H_
 
 #include "aom/aom_integer.h"
 #include "aom_scale/yv12config.h"

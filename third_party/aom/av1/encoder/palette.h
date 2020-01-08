@@ -9,8 +9,8 @@
 
 
 
-#ifndef AV1_ENCODER_PALETTE_H_
-#define AV1_ENCODER_PALETTE_H_
+#ifndef AOM_AV1_ENCODER_PALETTE_H_
+#define AOM_AV1_ENCODER_PALETTE_H_
 
 #include "av1/common/blockd.h"
 
@@ -93,4 +93,4 @@ int av1_palette_color_cost_uv(const PALETTE_MODE_INFO *const pmi,
 }  
 #endif
 
-#endif 
+#endif  

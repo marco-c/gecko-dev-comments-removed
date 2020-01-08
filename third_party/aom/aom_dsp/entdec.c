@@ -112,6 +112,7 @@ static int od_ec_dec_normalize(od_ec_dec *dec, od_ec_window dif, unsigned rng,
                                int ret) {
   int d;
   assert(rng <= 65535U);
+  
   d = 16 - OD_ILOG_NZ(rng);
   dec->cnt -= d;
   

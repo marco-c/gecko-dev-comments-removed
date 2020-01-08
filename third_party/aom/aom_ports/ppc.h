@@ -9,8 +9,8 @@
 
 
 
-#ifndef AOM_PORTS_PPC_H_
-#define AOM_PORTS_PPC_H_
+#ifndef AOM_AOM_PORTS_PPC_H_
+#define AOM_AOM_PORTS_PPC_H_
 #include <stdlib.h>
 
 #include "config/aom_config.h"

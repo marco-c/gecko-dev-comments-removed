@@ -9,8 +9,8 @@
 
 
 
-#ifndef AOM_PORTS_AOM_TIMER_H_
-#define AOM_PORTS_AOM_TIMER_H_
+#ifndef AOM_AOM_PORTS_AOM_TIMER_H_
+#define AOM_AOM_PORTS_AOM_TIMER_H_
 
 #include "config/aom_config.h"
 

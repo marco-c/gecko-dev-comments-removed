@@ -8,8 +8,8 @@
 
 
 
-#ifndef AOM_INSPECTION_H_
-#define AOM_INSPECTION_H_
+#ifndef AOM_AV1_DECODER_INSPECTION_H_
+#define AOM_AV1_DECODER_INSPECTION_H_
 
 #ifdef __cplusplus
 extern "C" {

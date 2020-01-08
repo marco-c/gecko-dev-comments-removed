@@ -9,8 +9,8 @@
 
 
 
-#ifndef AOM_COMMON_MIPS_DSPR2_H_
-#define AOM_COMMON_MIPS_DSPR2_H_
+#ifndef AOM_AOM_DSP_MIPS_COMMON_DSPR2_H_
+#define AOM_AOM_DSP_MIPS_COMMON_DSPR2_H_
 
 #include <assert.h>
 

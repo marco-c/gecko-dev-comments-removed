@@ -9,8 +9,8 @@
 
 
 
-#ifndef AOM_DSP_AOM_AOM_SIMD_H_
-#define AOM_DSP_AOM_AOM_SIMD_H_
+#ifndef AOM_AOM_DSP_AOM_SIMD_H_
+#define AOM_AOM_DSP_AOM_SIMD_H_
 
 #include <stdint.h>
 

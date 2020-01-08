@@ -9,8 +9,8 @@
 
 
 
-#ifndef AV1_COMMON_COMMON_DATA_H_
-#define AV1_COMMON_COMMON_DATA_H_
+#ifndef AOM_AV1_COMMON_COMMON_DATA_H_
+#define AOM_AV1_COMMON_COMMON_DATA_H_
 
 #include "av1/common/enums.h"
 #include "aom/aom_integer.h"
@@ -21,20 +21,26 @@ extern "C" {
 #endif
 
 
+
 static const uint8_t mi_size_wide_log2[BLOCK_SIZES_ALL] = {
   0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 0, 2, 1, 3, 2, 4
 };
+
 static const uint8_t mi_size_high_log2[BLOCK_SIZES_ALL] = {
   0, 1, 0, 1, 2, 1, 2, 3, 2, 3, 4, 3, 4, 5, 4, 5, 2, 0, 3, 1, 4, 2
 };
+
+
 
 static const uint8_t mi_size_wide[BLOCK_SIZES_ALL] = {
   1, 1, 2, 2, 2, 4, 4, 4, 8, 8, 8, 16, 16, 16, 32, 32, 1, 4, 2, 8, 4, 16
 };
 
+
 static const uint8_t mi_size_high[BLOCK_SIZES_ALL] = {
   1, 2, 1, 2, 4, 2, 4, 8, 4, 8, 16, 8, 16, 32, 16, 32, 4, 1, 8, 2, 16, 4
 };
+
 
 
 static const uint8_t block_size_wide[BLOCK_SIZES_ALL] = {
@@ -42,10 +48,13 @@ static const uint8_t block_size_wide[BLOCK_SIZES_ALL] = {
   64, 64, 64, 128, 128, 4,  16, 8,  32, 16, 64
 };
 
+
 static const uint8_t block_size_high[BLOCK_SIZES_ALL] = {
   4,  8,  4,   8,  16,  8,  16, 32, 16, 32, 64,
   32, 64, 128, 64, 128, 16, 4,  32, 8,  64, 16
 };
+
+
 
 
 static const uint8_t size_group_lookup[BLOCK_SIZES_ALL] = {
@@ -55,6 +64,8 @@ static const uint8_t size_group_lookup[BLOCK_SIZES_ALL] = {
 static const uint8_t num_pels_log2_lookup[BLOCK_SIZES_ALL] = {
   4, 5, 5, 6, 7, 7, 8, 9, 9, 10, 11, 11, 12, 13, 13, 14, 6, 6, 8, 8, 10, 10
 };
+
+
 
 
 static const BLOCK_SIZE subsize_lookup[EXT_PARTITION_TYPES][SQR_BLOCK_SIZES] = {
@@ -352,32 +363,34 @@ static const TX_SIZE tx_mode_to_biggest_tx_size[TX_MODES] = {
 };
 
 
+
 static const BLOCK_SIZE ss_size_lookup[BLOCK_SIZES_ALL][2][2] = {
   
   
-  { { BLOCK_4X4, BLOCK_4X4 }, { BLOCK_4X4, BLOCK_4X4 } },
-  { { BLOCK_4X8, BLOCK_4X4 }, { BLOCK_4X4, BLOCK_4X4 } },
-  { { BLOCK_8X4, BLOCK_4X4 }, { BLOCK_4X4, BLOCK_4X4 } },
-  { { BLOCK_8X8, BLOCK_8X4 }, { BLOCK_4X8, BLOCK_4X4 } },
-  { { BLOCK_8X16, BLOCK_8X8 }, { BLOCK_4X16, BLOCK_4X8 } },
-  { { BLOCK_16X8, BLOCK_16X4 }, { BLOCK_8X8, BLOCK_8X4 } },
-  { { BLOCK_16X16, BLOCK_16X8 }, { BLOCK_8X16, BLOCK_8X8 } },
-  { { BLOCK_16X32, BLOCK_16X16 }, { BLOCK_8X32, BLOCK_8X16 } },
-  { { BLOCK_32X16, BLOCK_32X8 }, { BLOCK_16X16, BLOCK_16X8 } },
-  { { BLOCK_32X32, BLOCK_32X16 }, { BLOCK_16X32, BLOCK_16X16 } },
-  { { BLOCK_32X64, BLOCK_32X32 }, { BLOCK_16X64, BLOCK_16X32 } },
-  { { BLOCK_64X32, BLOCK_64X16 }, { BLOCK_32X32, BLOCK_32X16 } },
-  { { BLOCK_64X64, BLOCK_64X32 }, { BLOCK_32X64, BLOCK_32X32 } },
-  { { BLOCK_64X128, BLOCK_64X64 }, { BLOCK_INVALID, BLOCK_32X64 } },
-  { { BLOCK_128X64, BLOCK_INVALID }, { BLOCK_64X64, BLOCK_64X32 } },
-  { { BLOCK_128X128, BLOCK_128X64 }, { BLOCK_64X128, BLOCK_64X64 } },
-  { { BLOCK_4X16, BLOCK_4X8 }, { BLOCK_4X16, BLOCK_4X8 } },
-  { { BLOCK_16X4, BLOCK_16X4 }, { BLOCK_8X4, BLOCK_8X4 } },
-  { { BLOCK_8X32, BLOCK_8X16 }, { BLOCK_INVALID, BLOCK_4X16 } },
-  { { BLOCK_32X8, BLOCK_INVALID }, { BLOCK_16X8, BLOCK_16X4 } },
-  { { BLOCK_16X64, BLOCK_16X32 }, { BLOCK_INVALID, BLOCK_8X32 } },
-  { { BLOCK_64X16, BLOCK_INVALID }, { BLOCK_32X16, BLOCK_32X8 } }
+  { { BLOCK_4X4,     BLOCK_4X4 },     { BLOCK_4X4,     BLOCK_4X4 } },
+  { { BLOCK_4X8,     BLOCK_4X4 },     { BLOCK_INVALID, BLOCK_4X4 } },
+  { { BLOCK_8X4,     BLOCK_INVALID }, { BLOCK_4X4,     BLOCK_4X4 } },
+  { { BLOCK_8X8,     BLOCK_8X4 },     { BLOCK_4X8,     BLOCK_4X4 } },
+  { { BLOCK_8X16,    BLOCK_8X8 },     { BLOCK_INVALID, BLOCK_4X8 } },
+  { { BLOCK_16X8,    BLOCK_INVALID }, { BLOCK_8X8,     BLOCK_8X4 } },
+  { { BLOCK_16X16,   BLOCK_16X8 },    { BLOCK_8X16,    BLOCK_8X8 } },
+  { { BLOCK_16X32,   BLOCK_16X16 },   { BLOCK_INVALID, BLOCK_8X16 } },
+  { { BLOCK_32X16,   BLOCK_INVALID }, { BLOCK_16X16,   BLOCK_16X8 } },
+  { { BLOCK_32X32,   BLOCK_32X16 },   { BLOCK_16X32,   BLOCK_16X16 } },
+  { { BLOCK_32X64,   BLOCK_32X32 },   { BLOCK_INVALID, BLOCK_16X32 } },
+  { { BLOCK_64X32,   BLOCK_INVALID }, { BLOCK_32X32,   BLOCK_32X16 } },
+  { { BLOCK_64X64,   BLOCK_64X32 },   { BLOCK_32X64,   BLOCK_32X32 } },
+  { { BLOCK_64X128,  BLOCK_64X64 },   { BLOCK_INVALID, BLOCK_32X64 } },
+  { { BLOCK_128X64,  BLOCK_INVALID }, { BLOCK_64X64,   BLOCK_64X32 } },
+  { { BLOCK_128X128, BLOCK_128X64 },  { BLOCK_64X128,  BLOCK_64X64 } },
+  { { BLOCK_4X16,    BLOCK_4X8 },     { BLOCK_INVALID, BLOCK_4X8 } },
+  { { BLOCK_16X4,    BLOCK_INVALID }, { BLOCK_8X4,     BLOCK_8X4 } },
+  { { BLOCK_8X32,    BLOCK_8X16 },    { BLOCK_INVALID, BLOCK_4X16 } },
+  { { BLOCK_32X8,    BLOCK_INVALID }, { BLOCK_16X8,    BLOCK_16X4 } },
+  { { BLOCK_16X64,   BLOCK_16X32 },   { BLOCK_INVALID, BLOCK_8X32 } },
+  { { BLOCK_64X16,   BLOCK_INVALID }, { BLOCK_32X16,   BLOCK_32X8 } }
 };
+
 
 
 

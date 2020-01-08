@@ -9,8 +9,8 @@
 
 
 
-#ifndef AV1_INV_TXFM1D_H_
-#define AV1_INV_TXFM1D_H_
+#ifndef AOM_AV1_COMMON_AV1_INV_TXFM1D_H_
+#define AOM_AV1_COMMON_AV1_INV_TXFM1D_H_
 
 #include "av1/common/av1_txfm.h"
 
