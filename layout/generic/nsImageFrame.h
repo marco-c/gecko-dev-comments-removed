@@ -185,13 +185,19 @@ public:
   enum class Kind : uint8_t
   {
     
+    
     ImageElement,
     
-    ContentProperty,
-    
-    
-    ContentPropertyAtIndex,
+    NonGeneratedContentProperty,
   };
+
+  
+  
+  bool IsForNonGeneratedImageElement() const
+  {
+    return mKind == Kind::ImageElement &&
+      !HasAnyStateBits(NS_FRAME_GENERATED_CONTENT);
+  }
 
   
   nsImageFrame* CreateContinuingFrame(nsIPresShell*, ComputedStyle*) const;
@@ -199,7 +205,6 @@ public:
 private:
   friend nsIFrame* NS_NewImageFrame(nsIPresShell*, ComputedStyle*);
   friend nsIFrame* NS_NewImageFrameForContentProperty(nsIPresShell*, ComputedStyle*);
-  friend nsIFrame* NS_NewImageFrameForGeneratedContentIndex(nsIPresShell*, ComputedStyle*);
 
   nsImageFrame(ComputedStyle* aStyle, Kind aKind)
     : nsImageFrame(aStyle, kClassID, aKind)
