@@ -958,7 +958,7 @@ void GatherBaselineRequirementsTelemetry(const UniqueCERTCertList& certList) {
       
       
       if (!net_IsValidHostName(altNameWithoutWildcard) ||
-          net_IsValidIPv4Addr(altName.get(), altName.Length()) ||
+          net_IsValidIPv4Addr(altName) ||
           net_IsValidIPv6Addr(altName.get(), altName.Length())) {
         MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
                 ("BR telemetry: DNSName '%s' not valid (for '%s')\n",

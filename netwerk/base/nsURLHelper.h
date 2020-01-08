@@ -235,7 +235,7 @@ bool net_IsValidHostName(const nsACString &host);
 
 
 
-bool net_IsValidIPv4Addr(const char *addr, int32_t addrLen);
+bool net_IsValidIPv4Addr(const nsACString &aAddr);
 
 
 
