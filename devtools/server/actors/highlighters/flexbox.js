@@ -730,6 +730,10 @@ class FlexboxHighlighter extends AutoRefreshHighlighter {
 
 
 function getFlexData(flex, win) {
+  if (!flex) {
+    return null;
+  }
+
   return {
     lines: flex.getLines().map(line => {
       return {
