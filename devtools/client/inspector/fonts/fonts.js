@@ -214,14 +214,26 @@ class FontInspector {
     }
 
     if (unit === "%") {
-      computedStyle = await this.pageStyle.getComputed(node.parentNode());
+      computedStyle =
+        await this.pageStyle.getComputed(node.parentNode()).catch(console.error);
+
+      if (!computedStyle) {
+        return value;
+      }
+
       out = fromPx
         ? value * 100 / parseFloat(computedStyle["font-size"].value)
         : value / 100 * parseFloat(computedStyle["font-size"].value);
     }
 
     if (unit === "em") {
-      computedStyle = await this.pageStyle.getComputed(node.parentNode());
+      computedStyle =
+        await this.pageStyle.getComputed(node.parentNode()).catch(console.error);
+
+      if (!computedStyle) {
+        return value;
+      }
+
       out = fromPx
         ? value / parseFloat(computedStyle["font-size"].value)
         : value * parseFloat(computedStyle["font-size"].value);
@@ -229,7 +241,12 @@ class FontInspector {
 
     if (unit === "rem") {
       const document = await this.inspector.walker.documentElement();
-      computedStyle = await this.pageStyle.getComputed(document);
+      computedStyle = await this.pageStyle.getComputed(document).catch(console.error);
+
+      if (!computedStyle) {
+        return value;
+      }
+
       out = fromPx
         ? value / parseFloat(computedStyle["font-size"].value)
         : value * parseFloat(computedStyle["font-size"].value);
@@ -429,23 +446,14 @@ class FontInspector {
 
 
 
-
-
-
-  getTextProperty(name, value) {
+  getTextProperty(name) {
     if (!this.selectedRule) {
       return null;
     }
 
-    let textProperty =
-      this.selectedRule.textProps.find(prop =>
-        prop.name === name && prop.enabled && !prop.overridden
-      );
-    if (!textProperty) {
-      textProperty = this.selectedRule.editor.addProperty(name, value, "", true);
-    }
-
-    return textProperty;
+    return this.selectedRule.textProps.find(prop =>
+      prop.name === name && prop.enabled && !prop.overridden
+    );
   }
 
   
@@ -775,7 +783,9 @@ class FontInspector {
 
 
   async onRulePropertyUpdated(eventData) {
-    if (!FONT_PROPERTIES.includes(eventData.property)) {
+    if (!this.selectedRule ||
+        !this.selectedRule.matches({ rule: eventData.rule.domRule }) ||
+        !FONT_PROPERTIES.includes(eventData.property)) {
       return;
     }
 
@@ -882,10 +892,21 @@ class FontInspector {
     const node = this.inspector.selection.nodeFront;
     const fonts = await this.getFontsForNode(node, options);
 
-    
-    this.nodeComputedStyle = await this.pageStyle.getComputed(node, {
-      filterProperties: FONT_PROPERTIES
-    });
+    try {
+      
+      this.nodeComputedStyle = await this.pageStyle.getComputed(node, {
+        filterProperties: FONT_PROPERTIES
+      });
+    } catch (e) {
+      
+      
+      
+      if (!this.document) {
+        return;
+      }
+
+      throw e;
+    }
 
     if (!this.nodeComputedStyle || !fonts.length) {
       this.store.dispatch(resetFontEditor());
@@ -1037,20 +1058,21 @@ class FontInspector {
 
 
   updatePropertyValue(name, value) {
-    const textProperty = this.getTextProperty(name, value);
-    if (!textProperty || textProperty.value === value) {
+    const textProperty = this.getTextProperty(name);
+
+    if (!textProperty) {
+      this.selectedRule.createProperty(name, value, "", true);
+      return;
+    }
+
+    if (textProperty.value === value) {
       return;
     }
 
     
     this.ruleView.off("property-value-updated", this.onRulePropertyUpdated);
     
-
-    try {
-      textProperty.rule.previewPropertyValue(textProperty, value, "");
-    } catch (e) {
-      
-    }
+    textProperty.rule.previewPropertyValue(textProperty, value, "");
 
     
     this.syncChanges(name, value);
