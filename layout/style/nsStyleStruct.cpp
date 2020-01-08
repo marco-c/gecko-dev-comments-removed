@@ -3222,27 +3222,6 @@ nsStyleImageLayers::Layer::CalcDifference(const nsStyleImageLayers::Layer& aNewL
   if (!DefinitelyEqualURIs(mImage.GetURLValue(),
                            aNewLayer.mImage.GetURLValue())) {
     hint |= nsChangeHint_RepaintFrame | nsChangeHint_UpdateEffects;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    bool maybeSVGMask = false;
-    if (mImage.GetURLValue()) {
-      maybeSVGMask = mImage.GetURLValue()->MightHaveRef();
-    }
-
-    if (!maybeSVGMask && aNewLayer.mImage.GetURLValue()) {
-      maybeSVGMask = aNewLayer.mImage.GetURLValue()->MightHaveRef();
-    }
   } else if (mAttachment != aNewLayer.mAttachment ||
              mClip != aNewLayer.mClip ||
              mOrigin != aNewLayer.mOrigin ||

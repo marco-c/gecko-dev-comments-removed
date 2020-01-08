@@ -139,14 +139,6 @@ public:
 
   bool HasRef() const;
 
-  
-  
-  
-  
-  
-  
-  bool MightHaveRef() const;
-
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(URLValueData)
 
   
@@ -180,7 +172,6 @@ private:
 
   
   mutable Maybe<bool> mIsLocalRef;
-  mutable Maybe<bool> mMightHaveRef;
 
   mozilla::ServoRawOffsetArc<RustString> mString;
 
