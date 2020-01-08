@@ -418,15 +418,8 @@ var BrowserApp = {
     });
 
     window.addEventListener("fullscreenchange", (e) => {
-      
-      
-      
-      
-      
-      let doc = e.target;
       WindowEventDispatcher.sendRequest({
-        type: doc.fullscreenElement ? "DOMFullScreen:Start" : "DOMFullScreen:Stop",
-        rootElement: doc.fullscreenElement == doc.documentElement
+        type: document.fullscreenElement ? "DOMFullScreen:Start" : "DOMFullScreen:Stop"
       });
 
       if (this.fullscreenTransitionTab) {
