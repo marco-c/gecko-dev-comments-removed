@@ -2444,6 +2444,11 @@ static nsresult ExecuteCompiledScript(JSContext* aCx,
                                       ScriptLoadRequest* aRequest,
                                       nsJSUtils::ExecutionContext& aExec) {
   JS::Rooted<JSScript*> script(aCx, aExec.GetScript());
+  if (!script) {
+    
+    
+    return NS_OK;
+  }
 
   
   RefPtr<ClassicScript> classicScript =
