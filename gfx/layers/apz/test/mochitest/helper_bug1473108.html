@@ -38,7 +38,7 @@
 
   waitUntilApzStable().then(() => {
     let target = document.getElementById("target");
-    target.addEventListener('click', function(e) {
+    target.addEventListener("click", function(e) {
       is(e.target, target, `Clicked on at (${e.clientX}, ${e.clientY})`);
       subtestDone();
     });
