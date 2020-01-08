@@ -62,86 +62,29 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #![doc(html_logo_url = "https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
        html_favicon_url = "https://www.rust-lang.org/favicon.ico",
        html_root_url = "https://doc.rust-lang.org/uuid/")]
 
-#![deny(warnings)]
-#![no_std]
+#![cfg_attr(test, deny(warnings))]
 
-#[cfg(feature = "v3")]
-extern crate md5;
-#[cfg(any(feature = "v4",
-          feature = "v1"))]
-extern crate rand;
-#[cfg(feature = "v5")]
-extern crate sha1;
-
-use core::fmt;
-use core::hash;
-use core::str::FromStr;
-
-
-
-#[cfg(any(feature = "use_std",
-          feature = "rustc-serialize",
-          feature = "serde"))]
-mod std_support;
-#[cfg(feature = "rustc-serialize")]
-mod rustc_serialize;
+extern crate rustc_serialize;
 #[cfg(feature = "serde")]
-mod serde;
+extern crate serde;
+extern crate rand;
 
-#[cfg(feature = "v1")]
-use core::sync::atomic::{AtomicUsize, Ordering};
+use std::default::Default;
+use std::error::Error;
+use std::fmt;
+use std::hash;
+use std::iter::repeat;
+use std::mem::{transmute, transmute_copy};
+use std::str::FromStr;
 
-#[cfg(feature = "v1")]
-use rand::{Rand};
-
-#[cfg(any(feature = "v4",
-          feature = "v1"))]
-use rand::{Rng};
-
-#[cfg(feature = "v5")]
-use sha1::Sha1;
+use rand::Rng;
+use rustc_serialize::{Encoder, Encodable, Decoder, Decodable};
+#[cfg(feature = "serde")]
+use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 
 
 pub type UuidBytes = [u8; 16];
@@ -175,89 +118,29 @@ pub enum UuidVariant {
 }
 
 
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Copy, Clone)]
 pub struct Uuid {
     
     bytes: UuidBytes,
 }
 
-
-pub struct Simple<'a> {
-    inner: &'a Uuid,
-}
-
-
-pub struct Hyphenated<'a> {
-    inner: &'a Uuid,
-}
-
-
-pub const NAMESPACE_DNS: Uuid = Uuid {
-    bytes: [0x6b, 0xa7, 0xb8, 0x10, 0x9d, 0xad, 0x11, 0xd1,
-            0x80, 0xb4, 0x00, 0xc0, 0x4f, 0xd4, 0x30, 0xc8]
-};
-
-
-pub const NAMESPACE_URL: Uuid = Uuid {
-    bytes: [0x6b, 0xa7, 0xb8, 0x11, 0x9d, 0xad, 0x11, 0xd1,
-            0x80, 0xb4, 0x00, 0xc0, 0x4f, 0xd4, 0x30, 0xc8]
-};
-
-
-pub const NAMESPACE_OID: Uuid = Uuid {
-    bytes: [0x6b, 0xa7, 0xb8, 0x12, 0x9d, 0xad, 0x11, 0xd1,
-            0x80, 0xb4, 0x00, 0xc0, 0x4f, 0xd4, 0x30, 0xc8]
-};
-
-
-pub const NAMESPACE_X500: Uuid = Uuid {
-    bytes: [0x6b, 0xa7, 0xb8, 0x14, 0x9d, 0xad, 0x11, 0xd1,
-            0x80, 0xb4, 0x00, 0xc0, 0x4f, 0xd4, 0x30, 0xc8]
-};
-
-
-
-#[cfg(feature = "v1")]
-const UUID_TICKS_BETWEEN_EPOCHS : u64 = 0x01B21DD213814000;
-
-
-pub struct Urn<'a> {
-    inner: &'a Uuid,
-}
-
-
-#[cfg(feature = "v1")]
-pub struct UuidV1Context {
-    count: AtomicUsize,
-}
-
-#[cfg(feature = "v1")]
-impl UuidV1Context {
-
-    
-    
-    
-    
-    
-    
-    pub fn new(count : u16) -> UuidV1Context {
-        UuidV1Context {
-            count: AtomicUsize::new(count as usize)
-        }
+impl hash::Hash for Uuid {
+    fn hash<S: hash::Hasher>(&self, state: &mut S) {
+        self.bytes.hash(state)
     }
 }
 
-#[cfg(feature = "v1")]
-impl Rand for UuidV1Context {
 
+#[derive(Copy, Clone)]
+struct UuidFields {
     
+    data1: u32,
     
+    data2: u16,
     
-    fn rand<R: Rng>(rng: &mut R) -> Self {
-        UuidV1Context {
-            count: AtomicUsize::new(rng.gen())
-        }
-    }
+    data3: u16,
+    
+    data4: [u8; 8],
 }
 
 
@@ -270,38 +153,37 @@ pub enum ParseError {
     InvalidGroupLength(usize, usize, u8),
 }
 
-const SIMPLE_LENGTH: usize = 32;
-const HYPHENATED_LENGTH: usize = 36;
-
 
 impl fmt::Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            ParseError::InvalidLength(found) => {
+            ParseError::InvalidLength(found) =>
                 write!(f,
-                       "Invalid length; expecting {} or {} chars, found {}",
-                       SIMPLE_LENGTH, HYPHENATED_LENGTH, found)
-            }
-            ParseError::InvalidCharacter(found, pos) => {
+                       "Invalid length; expecting 32 or 36 chars, found {}",
+                       found),
+            ParseError::InvalidCharacter(found, pos) =>
                 write!(f,
                        "Invalid character; found `{}` (0x{:02x}) at offset {}",
                        found,
                        found as usize,
-                       pos)
-            }
-            ParseError::InvalidGroups(found) => {
+                       pos),
+            ParseError::InvalidGroups(found) =>
                 write!(f,
                        "Malformed; wrong number of groups: expected 1 or 5, found {}",
-                       found)
-            }
-            ParseError::InvalidGroupLength(group, found, expecting) => {
+                       found),
+            ParseError::InvalidGroupLength(group, found, expecting) =>
                 write!(f,
                        "Malformed; length of group {} was {}, expecting {}",
                        group,
                        found,
-                       expecting)
-            }
+                       expecting),
         }
+    }
+}
+
+impl Error for ParseError {
+    fn description(&self) -> &str {
+        "UUID parse error"
     }
 }
 
@@ -310,169 +192,32 @@ const GROUP_LENS: [u8; 5] = [8, 4, 4, 4, 12];
 
 const ACC_GROUP_LENS: [u8; 5] = [8, 12, 16, 20, 32];
 
+
 impl Uuid {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     pub fn nil() -> Uuid {
         Uuid { bytes: [0; 16] }
     }
 
     
-    
-    
-    
-    
-    
-    
     pub fn new(v: UuidVersion) -> Option<Uuid> {
         match v {
-            #[cfg(feature = "v4")]
             UuidVersion::Random => Some(Uuid::new_v4()),
             _ => None,
         }
     }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg(feature = "v1")]
-    pub fn new_v1(context: &UuidV1Context, seconds: u64, nsecs: u32, node: &[u8]) -> Result<Uuid, ParseError> {
-        if node.len() != 6 {
-            return Err(ParseError::InvalidLength(node.len()))
-        }
-        let count = (context.count.fetch_add(1, Ordering::SeqCst) & 0xffff) as u16;
-        let timestamp = seconds * 10_000_000 + (nsecs / 100) as u64;
-        let uuidtime = timestamp + UUID_TICKS_BETWEEN_EPOCHS; 
-        let time_low : u32 = (uuidtime & 0xFFFFFFFF) as u32;
-        let time_mid : u16 = ((uuidtime >> 32) & 0xFFFF) as u16; 
-        let time_hi_and_ver : u16 = (((uuidtime >> 48) & 0x0FFF) as u16) | (1 << 12);
-        let mut d4 = [0_u8; 8];
-        d4[0] = (((count & 0x3F00) >> 8) as u8) | 0x80;
-        d4[1] = (count & 0xFF) as u8;
-        d4[2..].copy_from_slice(node);
-        Uuid::from_fields(time_low, time_mid, time_hi_and_ver, &d4)
-    }
-
 
     
     
     
     
     
-    
-    
-    
-    
-    
-    
-    #[cfg(feature = "v3")]
-    pub fn new_v3(namespace: &Uuid, name: &str) -> Uuid {
-        let mut ctx = md5::Context::new();
-        ctx.consume(namespace.as_bytes());
-        ctx.consume(name.as_bytes());
-        let digest = ctx.compute();
-        let mut uuid = Uuid { bytes: [0; 16] };
-        copy_memory(&mut uuid.bytes, &digest[..16]);
-        uuid.set_variant(UuidVariant::RFC4122);
-        uuid.set_version(UuidVersion::Md5);
-        uuid
-    }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg(feature = "v4")]
     pub fn new_v4() -> Uuid {
-        rand::thread_rng().gen()
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg(feature = "v5")]
-    pub fn new_v5(namespace: &Uuid, name: &str) -> Uuid {
-        let mut hash = Sha1::new();
-        hash.update(namespace.as_bytes());
-        hash.update(name.as_bytes());
-        let buffer = hash.digest().bytes();
+        let ub = rand::thread_rng().gen_iter::<u8>().take(16).collect::<Vec<_>>();
         let mut uuid = Uuid { bytes: [0; 16] };
-        copy_memory(&mut uuid.bytes, &buffer[..16]);
+        copy_memory(&mut uuid.bytes, &ub);
         uuid.set_variant(UuidVariant::RFC4122);
-        uuid.set_version(UuidVersion::Sha1);
+        uuid.set_version(UuidVersion::Random);
         uuid
     }
 
@@ -483,110 +228,38 @@ impl Uuid {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn from_fields(d1: u32,
-                       d2: u16,
-                       d3: u16,
-                       d4: &[u8]) -> Result<Uuid, ParseError>  {
-        if d4.len() != 8 {
-            return Err(ParseError::InvalidLength(d4.len()))
-        }
+    pub fn from_fields(d1: u32, d2: u16, d3: u16, d4: &[u8]) -> Uuid {
+        
+        let mut fields = UuidFields {
+            data1: 0,
+            data2: 0,
+            data3: 0,
+            data4: [0; 8],
+        };
 
-        Ok(Uuid {
-            bytes: [
-                (d1 >> 24) as u8,
-                (d1 >> 16) as u8,
-                (d1 >>  8) as u8,
-                (d1 >>  0) as u8,
-                (d2 >>  8) as u8,
-                (d2 >>  0) as u8,
-                (d3 >>  8) as u8,
-                (d3 >>  0) as u8,
-                d4[0], d4[1], d4[2], d4[3], d4[4], d4[5], d4[6], d4[7]
-            ],
-        })
+        fields.data1 = d1.to_be();
+        fields.data2 = d2.to_be();
+        fields.data3 = d3.to_be();
+        copy_memory(&mut fields.data4, d4);
+
+        unsafe { transmute(fields) }
     }
 
     
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn from_bytes(b: &[u8]) -> Result<Uuid, ParseError> {
-        let len = b.len();
-        if len != 16 {
-            return Err(ParseError::InvalidLength(len));
+    pub fn from_bytes(b: &[u8]) -> Option<Uuid> {
+        if b.len() != 16 {
+            return None
         }
 
         let mut uuid = Uuid { bytes: [0; 16] };
         copy_memory(&mut uuid.bytes, b);
-        Ok(uuid)
+        Some(uuid)
     }
 
     
-    #[allow(dead_code)]
     fn set_variant(&mut self, v: UuidVariant) {
         
         self.bytes[8] = match v {
@@ -614,7 +287,6 @@ impl Uuid {
     }
 
     
-    #[allow(dead_code)]
     fn set_version(&mut self, v: UuidVersion) {
         self.bytes[6] = (self.bytes[6] & 0xF) | ((v as u8) << 4);
     }
@@ -650,96 +322,59 @@ impl Uuid {
     }
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn as_bytes(&self) -> &[u8; 16] {
+    pub fn as_bytes<'a>(&'a self) -> &'a [u8] {
         &self.bytes
     }
 
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn simple(&self) -> Simple {
-        Simple { inner: self }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn hyphenated(&self) -> Hyphenated {
-        Hyphenated { inner: self }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn urn(&self) -> Urn {
-        Urn { inner: self }
-    }
-
-
-    
-    
-    
-    pub fn to_timestamp(&self) -> Option<(u64, u16)> {
-
-        if self.get_version().map(|v| v != UuidVersion::Mac).unwrap_or(true) {
-            return None;
+    pub fn to_simple_string(&self) -> String {
+        let mut s = repeat(0u8).take(32).collect::<Vec<_>>();
+        for i in 0..16 {
+            let digit = format!("{:02x}", self.bytes[i] as usize);
+            s[i * 2 + 0] = digit.as_bytes()[0];
+            s[i * 2 + 1] = digit.as_bytes()[1];
         }
-
-        let ts : u64 = (((self.bytes[6] & 0x0F) as u64) << 56)
-                     |  ((self.bytes[7] as u64) << 48)
-                     |  ((self.bytes[4] as u64) << 40)
-                     |  ((self.bytes[5] as u64) << 32)
-                     |  ((self.bytes[0] as u64) << 24)
-                     |  ((self.bytes[1] as u64) << 16)
-                     |  ((self.bytes[2] as u64) << 8)
-                     |    self.bytes[3] as u64;
-
-        let count : u16 = (((self.bytes[8] & 0x3F) as u16) << 8) | self.bytes[9] as u16;
-
-        Some((ts, count))
+        String::from_utf8(s).unwrap()
     }
 
+    
+    
+    
+    pub fn to_hyphenated_string(&self) -> String {
+        
+        
+        let mut uf: UuidFields;
+        unsafe {
+            uf = transmute_copy(&self.bytes);
+        }
+        uf.data1 = uf.data1.to_be();
+        uf.data2 = uf.data2.to_be();
+        uf.data3 = uf.data3.to_be();
+        let s = format!("{:08x}-{:04x}-{:04x}-{:02x}{:02x}-{:02x}{:02x}{:02x}{:02x}{:02x}{:02x}",
+                        uf.data1,
+                        uf.data2,
+                        uf.data3,
+                        uf.data4[0],
+                        uf.data4[1],
+                        uf.data4[2],
+                        uf.data4[3],
+                        uf.data4[4],
+                        uf.data4[5],
+                        uf.data4[6],
+                        uf.data4[7]);
+        s
+    }
+
+    
+    
+    
+    
+    
+    pub fn to_urn_string(&self) -> String {
+        format!("urn:uuid:{}", self.to_hyphenated_string())
+    }
 
     
     
@@ -748,9 +383,9 @@ impl Uuid {
     pub fn parse_str(mut input: &str) -> Result<Uuid, ParseError> {
         
         let len = input.len();
-        if len == (HYPHENATED_LENGTH + 9) && input.starts_with("urn:uuid:") {
+        if len == 45 && input.starts_with("urn:uuid:") {
             input = &input[9..];
-        } else if len != SIMPLE_LENGTH && len != HYPHENATED_LENGTH {
+        } else if len != 32 && len != 36 {
             return Err(ParseError::InvalidLength(len));
         }
 
@@ -760,23 +395,16 @@ impl Uuid {
         let mut acc = 0;
         let mut buffer = [0u8; 16];
 
-        for (i_char, chr) in input.bytes().enumerate() {
-            if digit as usize >= SIMPLE_LENGTH && group != 4 {
-                if group == 0 {
-                    return Err(ParseError::InvalidLength(len));
-                }
-                return Err(ParseError::InvalidGroups(group + 1));
-            }
-
+        for (i_char, chr) in input.chars().enumerate() {
             if digit % 2 == 0 {
                 
                 match chr {
                     
-                    b'0'...b'9' => acc = chr - b'0',
-                    b'a'...b'f' => acc = chr - b'a' + 10,
-                    b'A'...b'F' => acc = chr - b'A' + 10,
+                    '0'...'9' => acc = chr as u8 - '0' as u8,
+                    'a'...'f' => acc = chr as u8 - 'a' as u8 + 10,
+                    'A'...'F' => acc = chr as u8 - 'A' as u8 + 10,
                     
-                    b'-' => {
+                    '-' => {
                         if ACC_GROUP_LENS[group] != digit {
                             
                             let found = if group > 0 {
@@ -792,16 +420,16 @@ impl Uuid {
                         group += 1;
                         digit -= 1;
                     }
-                    _ => return Err(ParseError::InvalidCharacter(input[i_char..].chars().next().unwrap(), i_char)),
+                    _ => return Err(ParseError::InvalidCharacter(chr, i_char)),
                 }
             } else {
                 
                 acc *= 16;
                 match chr {
-                    b'0'...b'9' => acc += chr - b'0',
-                    b'a'...b'f' => acc += chr - b'a' + 10,
-                    b'A'...b'F' => acc += chr - b'A' + 10,
-                    b'-' => {
+                    '0'...'9' => acc += chr as u8 - '0' as u8,
+                    'a'...'f' => acc += chr as u8 - 'a' as u8 + 10,
+                    'A'...'F' => acc += chr as u8 - 'A' as u8 + 10,
+                    '-' => {
                         
                         let found = if group > 0 {
                             digit - ACC_GROUP_LENS[group - 1]
@@ -812,7 +440,7 @@ impl Uuid {
                                                                   found as usize,
                                                                   GROUP_LENS[group]));
                     }
-                    _ => return Err(ParseError::InvalidCharacter(input[i_char..].chars().next().unwrap(), i_char)),
+                    _ => return Err(ParseError::InvalidCharacter(chr, i_char)),
                 }
                 buffer[(digit / 2) as usize] = acc;
             }
@@ -820,7 +448,9 @@ impl Uuid {
         }
 
         
-        if ACC_GROUP_LENS[4] != digit {
+        if group != 0 && group != 4 {
+            return Err(ParseError::InvalidGroups(group + 1));
+        } else if ACC_GROUP_LENS[4] != digit {
             return Err(ParseError::InvalidGroupLength(group,
                                                       (digit - ACC_GROUP_LENS[3]) as usize,
                                                       GROUP_LENS[4]));
@@ -860,75 +490,82 @@ impl FromStr for Uuid {
     }
 }
 
+
 impl fmt::Debug for Uuid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Uuid(\"{}\")", self.hyphenated())
+        write!(f, "Uuid(\"{}\")", self.to_hyphenated_string())
     }
 }
+
 
 impl fmt::Display for Uuid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.hyphenated().fmt(f)
+        write!(f, "{}", self.to_hyphenated_string())
     }
 }
 
-impl hash::Hash for Uuid {
-    fn hash<S: hash::Hasher>(&self, state: &mut S) {
-        self.bytes.hash(state)
+
+
+
+impl PartialEq for Uuid {
+    fn eq(&self, other: &Uuid) -> bool {
+        self.bytes == other.bytes
     }
 }
 
-impl<'a> fmt::Display for Simple<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        for byte in self.inner.bytes.iter() {
-            try!(write!(f, "{:02x}", byte));
+impl Eq for Uuid {}
+
+
+impl Encodable for Uuid {
+    
+    fn encode<E: Encoder>(&self, e: &mut E) -> Result<(), E::Error> {
+        e.emit_str(&self.to_hyphenated_string())
+    }
+}
+
+impl Decodable for Uuid {
+    
+    fn decode<D: Decoder>(d: &mut D) -> Result<Uuid, D::Error> {
+        let string = try!(d.read_str());
+        string.parse().map_err(|err| d.error(&format!("{}", err)))
+    }
+}
+
+#[cfg(feature = "serde")]
+impl Serialize for Uuid {
+    fn serialize<S: Serializer>(&self, serializer: &mut S) -> Result<(), S::Error> {
+        serializer.visit_str(&self.to_hyphenated_string())
+    }
+}
+
+#[cfg(feature = "serde")]
+impl Deserialize for Uuid {
+    fn deserialize<D: Deserializer>(deserializer: &mut D) -> Result<Self, D::Error> {
+        struct UuidVisitor;
+
+        impl de::Visitor for UuidVisitor {
+            type Value = Uuid;
+
+            fn visit_str<E: de::Error>(&mut self, value: &str) -> Result<Uuid, E> {
+                value.parse().map_err(|err| E::syntax(&format!("{}", err)))
+            }
+
+            fn visit_bytes<E: de::Error>(&mut self, value: &[u8]) -> Result<Uuid, E> {
+                Uuid::from_bytes(value).ok_or(E::syntax("Expected 16 bytes."))
+            }
         }
-        Ok(())
-    }
-}
 
-impl<'a> fmt::Display for Hyphenated<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let data1 = ((self.inner.bytes[0] as u32) << 24) |
-                    ((self.inner.bytes[1] as u32) << 16) |
-                    ((self.inner.bytes[2] as u32) <<  8) |
-                    ((self.inner.bytes[3] as u32) <<  0);
-        let data2 = ((self.inner.bytes[4] as u16) <<  8) |
-                    ((self.inner.bytes[5] as u16) <<  0);
-        let data3 = ((self.inner.bytes[6] as u16) <<  8) |
-                    ((self.inner.bytes[7] as u16) <<  0);
-
-        write!(f, "{:08x}-\
-                   {:04x}-\
-                   {:04x}-\
-                   {:02x}{:02x}-\
-                   {:02x}{:02x}{:02x}{:02x}{:02x}{:02x}",
-               data1,
-               data2,
-               data3,
-               self.inner.bytes[8],
-               self.inner.bytes[9],
-               self.inner.bytes[10],
-               self.inner.bytes[11],
-               self.inner.bytes[12],
-               self.inner.bytes[13],
-               self.inner.bytes[14],
-               self.inner.bytes[15])
-    }
-}
-
-impl<'a> fmt::Display for Urn<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "urn:uuid:{}", self.inner.hyphenated())
+        deserializer.visit(UuidVisitor)
     }
 }
 
 
-#[cfg(feature = "v4")]
 impl rand::Rand for Uuid {
+    #[inline]
     fn rand<R: rand::Rng>(rng: &mut R) -> Uuid {
+        let ub = rng.gen_iter::<u8>().take(16).collect::<Vec<_>>();
         let mut uuid = Uuid { bytes: [0; 16] };
-        rng.fill_bytes(&mut uuid.bytes);
+        copy_memory(&mut uuid.bytes, &ub);
         uuid.set_variant(UuidVariant::RFC4122);
         uuid.set_version(UuidVersion::Random);
         uuid
@@ -937,69 +574,13 @@ impl rand::Rand for Uuid {
 
 #[cfg(test)]
 mod tests {
-    extern crate std;
-
-    use self::std::prelude::v1::*;
-
-    use super::{NAMESPACE_DNS, NAMESPACE_URL, NAMESPACE_OID, NAMESPACE_X500};
     use super::{Uuid, UuidVariant, UuidVersion};
-
-    #[cfg(feature = "v4")]
     use rand;
-
-    fn new() -> Uuid {
-        Uuid::parse_str("F9168C5E-CEB2-4FAA-B6BF-329BF39FA1E4").unwrap()
-    }
-
-    fn new2() -> Uuid {
-        Uuid::parse_str("F9168C5E-CEB2-4FAB-B6BF-329BF39FA1E4").unwrap()
-    }
-
-    #[cfg(feature = "v3")]
-    static FIXTURE_V3: &'static [(&'static Uuid, &'static str, &'static str)] = &[
-        (&NAMESPACE_DNS, "example.org",    "04738bdf-b25a-3829-a801-b21a1d25095b"),
-        (&NAMESPACE_DNS, "rust-lang.org",  "c6db027c-615c-3b4d-959e-1a917747ca5a"),
-        (&NAMESPACE_DNS, "42",             "5aab6e0c-b7d3-379c-92e3-2bfbb5572511"),
-        (&NAMESPACE_DNS, "lorem ipsum",    "4f8772e9-b59c-3cc9-91a9-5c823df27281"),
-        (&NAMESPACE_URL, "example.org",    "39682ca1-9168-3da2-a1bb-f4dbcde99bf9"),
-        (&NAMESPACE_URL, "rust-lang.org",  "7ed45aaf-e75b-3130-8e33-ee4d9253b19f"),
-        (&NAMESPACE_URL, "42",             "08998a0c-fcf4-34a9-b444-f2bfc15731dc"),
-        (&NAMESPACE_URL, "lorem ipsum",    "e55ad2e6-fb89-34e8-b012-c5dde3cd67f0"),
-        (&NAMESPACE_OID, "example.org",    "f14eec63-2812-3110-ad06-1625e5a4a5b2"),
-        (&NAMESPACE_OID, "rust-lang.org",  "6506a0ec-4d79-3e18-8c2b-f2b6b34f2b6d"),
-        (&NAMESPACE_OID, "42",             "ce6925a5-2cd7-327b-ab1c-4b375ac044e4"),
-        (&NAMESPACE_OID, "lorem ipsum",    "5dd8654f-76ba-3d47-bc2e-4d6d3a78cb09"),
-        (&NAMESPACE_X500, "example.org",   "64606f3f-bd63-363e-b946-fca13611b6f7"),
-        (&NAMESPACE_X500, "rust-lang.org", "bcee7a9c-52f1-30c6-a3cc-8c72ba634990"),
-        (&NAMESPACE_X500, "42",            "c1073fa2-d4a6-3104-b21d-7a6bdcf39a23"),
-        (&NAMESPACE_X500, "lorem ipsum",   "02f09a3f-1624-3b1d-8409-44eff7708208"),
-    ];
-
-
-    #[cfg(feature = "v5")]
-    static FIXTURE_V5: &'static [(&'static Uuid, &'static str, &'static str)] = &[
-        (&NAMESPACE_DNS, "example.org",    "aad03681-8b63-5304-89e0-8ca8f49461b5"),
-        (&NAMESPACE_DNS, "rust-lang.org",  "c66bbb60-d62e-5f17-a399-3a0bd237c503"),
-        (&NAMESPACE_DNS, "42",             "7c411b5e-9d3f-50b5-9c28-62096e41c4ed"),
-        (&NAMESPACE_DNS, "lorem ipsum",    "97886a05-8a68-5743-ad55-56ab2d61cf7b"),
-        (&NAMESPACE_URL, "example.org",    "54a35416-963c-5dd6-a1e2-5ab7bb5bafc7"),
-        (&NAMESPACE_URL, "rust-lang.org",  "c48d927f-4122-5413-968c-598b1780e749"),
-        (&NAMESPACE_URL, "42",             "5c2b23de-4bad-58ee-a4b3-f22f3b9cfd7d"),
-        (&NAMESPACE_URL, "lorem ipsum",    "15c67689-4b85-5253-86b4-49fbb138569f"),
-        (&NAMESPACE_OID, "example.org",    "34784df9-b065-5094-92c7-00bb3da97a30"),
-        (&NAMESPACE_OID, "rust-lang.org",  "8ef61ecb-977a-5844-ab0f-c25ef9b8d5d6"),
-        (&NAMESPACE_OID, "42",             "ba293c61-ad33-57b9-9671-f3319f57d789"),
-        (&NAMESPACE_OID, "lorem ipsum",    "6485290d-f79e-5380-9e64-cb4312c7b4a6"),
-        (&NAMESPACE_X500, "example.org",   "e3635e86-f82b-5bbc-a54a-da97923e5c76"),
-        (&NAMESPACE_X500, "rust-lang.org", "26c9c3e9-49b7-56da-8b9f-a0fb916a71a3"),
-        (&NAMESPACE_X500, "42",            "e4b88014-47c6-5fe0-a195-13710e5f6e27"),
-        (&NAMESPACE_X500, "lorem ipsum",   "b11f79a5-1e6d-57ce-a4b5-ba8531ea03d0"),
-    ];
 
     #[test]
     fn test_nil() {
         let nil = Uuid::nil();
-        let not_nil = new();
+        let not_nil = Uuid::new_v4();
 
         assert!(nil.is_nil());
         assert!(!not_nil.is_nil());
@@ -1007,15 +588,12 @@ mod tests {
 
     #[test]
     fn test_new() {
-        if cfg!(feature = "v4") {
-            let uuid1 = Uuid::new(UuidVersion::Random).unwrap();
-            let s = uuid1.simple().to_string();
+        
+        let uuid1 = Uuid::new(UuidVersion::Random).unwrap();
+        let s = uuid1.to_simple_string();
 
-            assert!(s.len() == 32);
-            assert!(uuid1.get_version().unwrap() == UuidVersion::Random);
-        } else {
-            assert!(Uuid::new(UuidVersion::Random).is_none());
-        }
+        assert!(s.len() == 32);
+        assert!(uuid1.get_version().unwrap() == UuidVersion::Random);
 
         
         assert!(Uuid::new(UuidVersion::Mac) == None);
@@ -1023,40 +601,8 @@ mod tests {
         assert!(Uuid::new(UuidVersion::Md5) == None);
         assert!(Uuid::new(UuidVersion::Sha1) == None);
     }
-    
-    #[cfg(feature = "v1")]
-    #[test]
-    fn test_new_v1() {
-        use UuidV1Context;
-        let time : u64 = 1_496_854_535;
-        let timefrac : u32 = 812_946_000;
-        let node = [1,2,3,4,5,6];
-        let ctx = UuidV1Context::new(0);
-        let uuid = Uuid::new_v1(&ctx, time, timefrac, &node[..]).unwrap();
-        assert!(uuid.get_version().unwrap() == UuidVersion::Mac);
-        assert!(uuid.get_variant().unwrap() == UuidVariant::RFC4122);
-        assert_eq!(uuid.hyphenated().to_string(), "20616934-4ba2-11e7-8000-010203040506");
-        let uuid2 = Uuid::new_v1(&ctx, time, timefrac, &node[..]).unwrap();
-        assert_eq!(uuid2.hyphenated().to_string(), "20616934-4ba2-11e7-8001-010203040506");
-
-        let ts = uuid.to_timestamp().unwrap();
-        assert_eq!(ts.0 - 0x01B21DD213814000, 1_496_854_535_812_946_0);
-        assert_eq!(ts.1, 0);
-        assert_eq!(uuid2.to_timestamp().unwrap().1, 1);
-    }
-
-    #[cfg(feature = "v3")]
-    #[test]
-    fn test_new_v3() {
-        for &(ref ns, ref name, _) in FIXTURE_V3 {
-            let uuid = Uuid::new_v3(*ns, *name);
-            assert!(uuid.get_version().unwrap() == UuidVersion::Md5);
-            assert!(uuid.get_variant().unwrap() == UuidVariant::RFC4122);
-        }
-    }
 
     #[test]
-    #[cfg(feature = "v4")]
     fn test_new_v4() {
         let uuid1 = Uuid::new_v4();
 
@@ -1064,58 +610,17 @@ mod tests {
         assert!(uuid1.get_variant().unwrap() == UuidVariant::RFC4122);
     }
 
-    #[cfg(feature = "v5")]
     #[test]
-    fn test_new_v5() {
-        for &(ref ns, ref name, _) in FIXTURE_V5 {
-            let uuid = Uuid::new_v5(*ns, *name);
-            assert!(uuid.get_version().unwrap() == UuidVersion::Sha1);
-            assert!(uuid.get_variant().unwrap() == UuidVariant::RFC4122);
-        }
-    }
-
-    #[test]
-    fn test_predefined_namespaces() {
-        assert_eq!(NAMESPACE_DNS.hyphenated().to_string(),
-                   "6ba7b810-9dad-11d1-80b4-00c04fd430c8");
-        assert_eq!(NAMESPACE_URL.hyphenated().to_string(),
-                   "6ba7b811-9dad-11d1-80b4-00c04fd430c8");
-        assert_eq!(NAMESPACE_OID.hyphenated().to_string(),
-                   "6ba7b812-9dad-11d1-80b4-00c04fd430c8");
-        assert_eq!(NAMESPACE_X500.hyphenated().to_string(),
-                   "6ba7b814-9dad-11d1-80b4-00c04fd430c8");
-    }
-
-    #[cfg(feature = "v3")]
-    #[test]
-    fn test_get_version_v3() {
-        let uuid = Uuid::new_v3(&NAMESPACE_DNS, "rust-lang.org");
-
-        assert!(uuid.get_version().unwrap() == UuidVersion::Md5);
-        assert_eq!(uuid.get_version_num(), 3);
-    }
-
-    #[test]
-    #[cfg(feature = "v4")]
-    fn test_get_version_v4() {
+    fn test_get_version() {
         let uuid1 = Uuid::new_v4();
 
         assert!(uuid1.get_version().unwrap() == UuidVersion::Random);
-        assert_eq!(uuid1.get_version_num(), 4);
-    }
-
-    #[cfg(feature = "v5")]
-    #[test]
-    fn test_get_version_v5() {
-        let uuid2 = Uuid::new_v5(&NAMESPACE_DNS, "rust-lang.org");
-
-        assert!(uuid2.get_version().unwrap() == UuidVersion::Sha1);
-        assert_eq!(uuid2.get_version_num(), 5);
+        assert!(uuid1.get_version_num() == 4);
     }
 
     #[test]
     fn test_get_variant() {
-        let uuid1 = new();
+        let uuid1 = Uuid::new_v4();
         let uuid2 = Uuid::parse_str("550e8400-e29b-41d4-a716-446655440000").unwrap();
         let uuid3 = Uuid::parse_str("67e55044-10b1-426f-9247-bb680e5fe0c8").unwrap();
         let uuid4 = Uuid::parse_str("936DA01F9ABD4d9dC0C702AF85C822A8").unwrap();
@@ -1143,10 +648,6 @@ mod tests {
                    Err(InvalidLength(35)));
         assert_eq!(Uuid::parse_str("F9168C5E-CEB2-4faa-BGBF-329BF39FA1E4"),
                    Err(InvalidCharacter('G', 20)));
-        assert_eq!(Uuid::parse_str("F9168C5E-CEB2F4faaFB6BFF329BF39FA1E4"),
-                   Err(InvalidGroups(2)));
-        assert_eq!(Uuid::parse_str("F9168C5E-CEB2-4faaFB6BFF329BF39FA1E4"),
-                   Err(InvalidGroups(3)));
         assert_eq!(Uuid::parse_str("F9168C5E-CEB2-4faa-B6BFF329BF39FA1E4"),
                    Err(InvalidGroups(4)));
         assert_eq!(Uuid::parse_str("F9168C5E-CEB2-4faa"),
@@ -1165,8 +666,6 @@ mod tests {
                    Err(InvalidLength(33)));
         assert_eq!(Uuid::parse_str("67e5504410b1426%9247bb680e5fe0c8"),
                    Err(InvalidCharacter('%', 15)));
-        assert_eq!(Uuid::parse_str("231231212212423424324323477343246663"),
-                   Err(InvalidLength(36)));
 
         
         assert!(Uuid::parse_str("00000000000000000000000000000000").is_ok());
@@ -1182,7 +681,7 @@ mod tests {
         assert!(Uuid::parse_str("00000000-0000-0000-0000-000000000000").unwrap() == nil);
 
         
-        let uuid_orig = new();
+        let uuid_orig = Uuid::new_v4();
         let orig_str = uuid_orig.to_string();
         let uuid_out = Uuid::parse_str(&orig_str).unwrap();
         assert!(uuid_orig == uuid_out);
@@ -1200,8 +699,8 @@ mod tests {
 
     #[test]
     fn test_to_simple_string() {
-        let uuid1 = new();
-        let s = uuid1.simple().to_string();
+        let uuid1 = Uuid::new_v4();
+        let s = uuid1.to_simple_string();
 
         assert!(s.len() == 32);
         assert!(s.chars().all(|c| c.is_digit(16)));
@@ -1209,52 +708,26 @@ mod tests {
 
     #[test]
     fn test_to_string() {
-        let uuid1 = new();
+        let uuid1 = Uuid::new_v4();
         let s = uuid1.to_string();
 
         assert!(s.len() == 36);
         assert!(s.chars().all(|c| c.is_digit(16) || c == '-'));
-    }
-
-    #[test]
-    fn test_display() {
-        let uuid1 = new();
-        let s = uuid1.to_string();
-
-        assert_eq!(s, uuid1.hyphenated().to_string());
     }
 
     #[test]
     fn test_to_hyphenated_string() {
-        let uuid1 = new();
-        let s = uuid1.hyphenated().to_string();
+        let uuid1 = Uuid::new_v4();
+        let s = uuid1.to_hyphenated_string();
 
         assert!(s.len() == 36);
         assert!(s.chars().all(|c| c.is_digit(16) || c == '-'));
     }
 
-    #[cfg(feature = "v3")]
-    #[test]
-    fn test_v3_to_hypenated_string() {
-        for &(ref ns, ref name, ref expected) in FIXTURE_V3 {
-            let uuid = Uuid::new_v3(*ns, *name);
-            assert_eq!(uuid.hyphenated().to_string(), *expected);
-        }
-    }
-    
-    #[cfg(feature = "v5")]
-    #[test]
-    fn test_v5_to_hypenated_string() {
-        for &(ref ns, ref name, ref expected) in FIXTURE_V5 {
-            let uuid = Uuid::new_v5(*ns, *name);
-            assert_eq!(uuid.hyphenated().to_string(), *expected);
-        }
-    }
-
     #[test]
     fn test_to_urn_string() {
-        let uuid1 = new();
-        let ss = uuid1.urn().to_string();
+        let uuid1 = Uuid::new_v4();
+        let ss = uuid1.to_urn_string();
         let s = &ss[9..];
 
         assert!(ss.starts_with("urn:uuid:"));
@@ -1264,10 +737,10 @@ mod tests {
 
     #[test]
     fn test_to_simple_string_matching() {
-        let uuid1 = new();
+        let uuid1 = Uuid::new_v4();
 
-        let hs = uuid1.hyphenated().to_string();
-        let ss = uuid1.simple().to_string();
+        let hs = uuid1.to_hyphenated_string();
+        let ss = uuid1.to_simple_string();
 
         let hsn = hs.chars().filter(|&c| c != '-').collect::<String>();
 
@@ -1276,21 +749,21 @@ mod tests {
 
     #[test]
     fn test_string_roundtrip() {
-        let uuid = new();
+        let uuid = Uuid::new_v4();
 
-        let hs = uuid.hyphenated().to_string();
+        let hs = uuid.to_hyphenated_string();
         let uuid_hs = Uuid::parse_str(&hs).unwrap();
-        assert_eq!(uuid_hs, uuid);
+        assert!(uuid_hs == uuid);
 
         let ss = uuid.to_string();
         let uuid_ss = Uuid::parse_str(&ss).unwrap();
-        assert_eq!(uuid_ss, uuid);
+        assert!(uuid_ss == uuid);
     }
 
     #[test]
     fn test_compare() {
-        let uuid1 = new();
-        let uuid2 = new2();
+        let uuid1 = Uuid::new_v4();
+        let uuid2 = Uuid::new_v4();
 
         assert!(uuid1 == uuid1);
         assert!(uuid2 == uuid2);
@@ -1303,32 +776,46 @@ mod tests {
         let d1: u32 = 0xa1a2a3a4;
         let d2: u16 = 0xb1b2;
         let d3: u16 = 0xc1c2;
-        let d4 = [0xd1, 0xd2, 0xd3, 0xd4, 0xd5, 0xd6, 0xd7, 0xd8];
+        let d4: Vec<u8> = vec!(0xd1, 0xd2, 0xd3, 0xd4, 0xd5, 0xd6, 0xd7, 0xd8);
 
-        let u = Uuid::from_fields(d1, d2, d3, &d4).unwrap();
+        let u = Uuid::from_fields(d1, d2, d3, &d4);
 
-        let expected = "a1a2a3a4b1b2c1c2d1d2d3d4d5d6d7d8";
-        let result = u.simple().to_string();
-        assert_eq!(result, expected);
+        let expected = "a1a2a3a4b1b2c1c2d1d2d3d4d5d6d7d8".to_string();
+        let result = u.to_simple_string();
+        assert!(result == expected);
     }
 
     #[test]
     fn test_from_bytes() {
-        let b = [0xa1, 0xa2, 0xa3, 0xa4, 0xb1, 0xb2, 0xc1, 0xc2, 0xd1, 0xd2,
-                 0xd3, 0xd4, 0xd5, 0xd6, 0xd7, 0xd8];
+        let b = vec!(0xa1,
+                     0xa2,
+                     0xa3,
+                     0xa4,
+                     0xb1,
+                     0xb2,
+                     0xc1,
+                     0xc2,
+                     0xd1,
+                     0xd2,
+                     0xd3,
+                     0xd4,
+                     0xd5,
+                     0xd6,
+                     0xd7,
+                     0xd8);
 
         let u = Uuid::from_bytes(&b).unwrap();
-        let expected = "a1a2a3a4b1b2c1c2d1d2d3d4d5d6d7d8";
+        let expected = "a1a2a3a4b1b2c1c2d1d2d3d4d5d6d7d8".to_string();
 
-        assert_eq!(u.simple().to_string(), expected);
+        assert!(u.to_simple_string() == expected);
     }
 
     #[test]
     fn test_as_bytes() {
-        let u = new();
+        let u = Uuid::new_v4();
         let ub = u.as_bytes();
 
-        assert_eq!(ub.len(), 16);
+        assert!(ub.len() == 16);
         assert!(!ub.iter().all(|&b| b == 0));
     }
 
@@ -1346,9 +833,9 @@ mod tests {
 
     #[test]
     fn test_operator_eq() {
-        let u1 = new();
+        let u1 = Uuid::new_v4();
         let u2 = u1.clone();
-        let u3 = new2();
+        let u3 = Uuid::new_v4();
 
         assert!(u1 == u1);
         assert!(u1 == u2);
@@ -1361,7 +848,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "v4")]
     fn test_rand_rand() {
         let mut rng = rand::thread_rng();
         let u: Uuid = rand::Rand::rand(&mut rng);
@@ -1372,12 +858,56 @@ mod tests {
     }
 
     #[test]
+    fn test_serialize_round_trip() {
+        use rustc_serialize::json;
+
+        let u = Uuid::new_v4();
+        let s = json::encode(&u).unwrap();
+        let u2 = json::decode(&s).unwrap();
+        assert_eq!(u, u2);
+    }
+
+    #[test]
     fn test_iterbytes_impl_for_uuid() {
-        let mut set = std::collections::HashSet::new();
-        let id1 = new();
-        let id2 = new2();
+        use std::collections::HashSet;
+        let mut set = HashSet::new();
+        let id1 = Uuid::new_v4();
+        let id2 = Uuid::new_v4();
         set.insert(id1.clone());
         assert!(set.contains(&id1));
         assert!(!set.contains(&id2));
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
