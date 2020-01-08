@@ -981,7 +981,16 @@ protected:
 
   nsresult AddNewStyleSheetToList(const nsAString &aURL,
                                   StyleSheet* aStyleSheet);
-  nsresult RemoveStyleSheetFromList(const nsAString &aURL);
+
+  
+
+
+
+
+
+
+
+  already_AddRefed<StyleSheet> RemoveStyleSheetFromList(const nsAString& aURL);
 
   
 
@@ -989,6 +998,15 @@ protected:
 
 
   nsresult AddOverrideStyleSheetInternal(const nsAString& aURL);
+
+  
+
+
+
+
+
+
+  nsresult RemoveOverrideStyleSheetInternal(const nsAString& aURL);
 
   
 
