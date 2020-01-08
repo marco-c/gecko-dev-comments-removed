@@ -1,9 +1,8 @@
 use std::ops::Deref;
-use std::string::ToString;
 
-use syn::{Ident, Meta, NestedMeta};
+use syn::{Ident, NestedMeta, Meta};
 
-use {Error, FromMeta, Result};
+use {FromMetaItem, Result, Error};
 
 
 
@@ -26,8 +25,8 @@ impl IdentList {
     }
 
     
-    pub fn to_strings(&self) -> Vec<String> {
-        self.0.iter().map(ToString::to_string).collect()
+    pub fn as_strs<'a>(&'a self) -> Vec<&'a str> {
+        self.iter().map(|i| i.as_ref()).collect()
     }
 }
 
@@ -45,14 +44,14 @@ impl From<Vec<Ident>> for IdentList {
     }
 }
 
-impl FromMeta for IdentList {
+impl FromMetaItem for IdentList {
     fn from_list(v: &[NestedMeta]) -> Result<Self> {
         let mut idents = Vec::with_capacity(v.len());
         for nmi in v {
             if let NestedMeta::Meta(Meta::Word(ref ident)) = *nmi {
                 idents.push(ident.clone());
             } else {
-                return Err(Error::unexpected_type("non-word"));
+                return Err(Error::unexpected_type("non-word"))
             }
         }
 

@@ -1299,25 +1299,26 @@ impl BreakBetween {
     
     
     #[inline]
-    pub fn parse_legacy<'i>(input: &mut Parser<'i, '_>) -> Result<Self, ParseError<'i>> {
+    pub fn parse_legacy<'i>(
+        input: &mut Parser<'i, '_>,
+    ) -> Result<Self, ParseError<'i>> {
         let location = input.current_source_location();
         let ident = input.expect_ident()?;
         let break_value = match BreakBetween::from_ident(ident) {
             Ok(v) => v,
-            Err(()) => {
-                return Err(location
-                    .new_custom_error(SelectorParseErrorKind::UnexpectedIdent(ident.clone())))
-            },
+            Err(()) => return Err(location.new_custom_error(
+                SelectorParseErrorKind::UnexpectedIdent(ident.clone())
+            )),
         };
         match break_value {
             BreakBetween::Always => Ok(BreakBetween::Page),
-            BreakBetween::Auto | BreakBetween::Avoid | BreakBetween::Left | BreakBetween::Right => {
-                Ok(break_value)
-            },
+            BreakBetween::Auto |
+            BreakBetween::Avoid |
+            BreakBetween::Left |
+            BreakBetween::Right => Ok(break_value),
             BreakBetween::Page => {
-                Err(location
-                    .new_custom_error(SelectorParseErrorKind::UnexpectedIdent(ident.clone())))
-            },
+                Err(location.new_custom_error(SelectorParseErrorKind::UnexpectedIdent(ident.clone())))
+            }
         }
     }
 
@@ -1329,9 +1330,10 @@ impl BreakBetween {
         W: Write,
     {
         match *self {
-            BreakBetween::Auto | BreakBetween::Avoid | BreakBetween::Left | BreakBetween::Right => {
-                self.to_css(dest)
-            },
+            BreakBetween::Auto |
+            BreakBetween::Avoid |
+            BreakBetween::Left |
+            BreakBetween::Right => self.to_css(dest),
             BreakBetween::Page => dest.write_str("always"),
             BreakBetween::Always => Ok(()),
         }

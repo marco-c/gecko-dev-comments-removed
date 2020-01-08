@@ -196,19 +196,8 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 use std::cell::Cell;
-use std::fmt::{self, Debug, Display};
+use std::fmt::Display;
 use std::marker::PhantomData;
 use std::mem;
 use std::ops::Deref;
@@ -278,33 +267,6 @@ impl<'a> Drop for ParseBuffer<'a> {
         }
     }
 }
-
-impl<'a> Display for ParseBuffer<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        Display::fmt(&self.cursor().token_stream(), f)
-    }
-}
-
-impl<'a> Debug for ParseBuffer<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        Debug::fmt(&self.cursor().token_stream(), f)
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -396,8 +358,7 @@ fn skip(input: ParseStream) -> bool {
             } else {
                 Ok((false, *cursor))
             }
-        })
-        .unwrap()
+        }).unwrap()
 }
 
 impl private {
@@ -701,7 +662,6 @@ impl<'a> ParseBuffer<'a> {
     
     
     
-    
     pub fn is_empty(&self) -> bool {
         self.cursor().eof()
     }
@@ -929,20 +889,6 @@ impl<'a> ParseBuffer<'a> {
         error::new_at(self.scope, self.cursor(), message)
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     

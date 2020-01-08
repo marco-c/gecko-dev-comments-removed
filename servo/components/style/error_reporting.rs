@@ -1,8 +1,8 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-//! Types used to report parsing errors.
+
+
+
+
 
 #![deny(missing_docs)]
 
@@ -11,42 +11,42 @@ use cssparser::{BasicParseErrorKind, ParseErrorKind, SourceLocation, Token};
 use std::fmt;
 use style_traits::ParseError;
 
-/// Errors that can be encountered while parsing CSS.
+
 #[derive(Debug)]
 pub enum ContextualParseError<'a> {
-    /// A property declaration was not recognized.
+    
     UnsupportedPropertyDeclaration(&'a str, ParseError<'a>),
-    /// A font face descriptor was not recognized.
+    
     UnsupportedFontFaceDescriptor(&'a str, ParseError<'a>),
-    /// A font feature values descriptor was not recognized.
+    
     UnsupportedFontFeatureValuesDescriptor(&'a str, ParseError<'a>),
-    /// A keyframe rule was not valid.
+    
     InvalidKeyframeRule(&'a str, ParseError<'a>),
-    /// A font feature values rule was not valid.
+    
     InvalidFontFeatureValuesRule(&'a str, ParseError<'a>),
-    /// A keyframe property declaration was not recognized.
+    
     UnsupportedKeyframePropertyDeclaration(&'a str, ParseError<'a>),
-    /// A rule was invalid for some reason.
+    
     InvalidRule(&'a str, ParseError<'a>),
-    /// A rule was not recognized.
+    
     UnsupportedRule(&'a str, ParseError<'a>),
-    /// A viewport descriptor declaration was not recognized.
+    
     UnsupportedViewportDescriptorDeclaration(&'a str, ParseError<'a>),
-    /// A counter style descriptor declaration was not recognized.
+    
     UnsupportedCounterStyleDescriptorDeclaration(&'a str, ParseError<'a>),
-    /// A counter style rule had no symbols.
+    
     InvalidCounterStyleWithoutSymbols(String),
-    /// A counter style rule had less than two symbols.
+    
     InvalidCounterStyleNotEnoughSymbols(String),
-    /// A counter style rule did not have additive-symbols.
+    
     InvalidCounterStyleWithoutAdditiveSymbols,
-    /// A counter style rule had extends with symbols.
+    
     InvalidCounterStyleExtendsWithSymbols,
-    /// A counter style rule had extends with additive-symbols.
+    
     InvalidCounterStyleExtendsWithAdditiveSymbols,
-    /// A media rule was invalid for some reason.
+    
     InvalidMediaRule(&'a str, ParseError<'a>),
-    /// A value was not recognized.
+    
     UnsupportedValue(&'a str, ParseError<'a>),
 }
 
@@ -208,12 +208,12 @@ impl<'a> fmt::Display for ContextualParseError<'a> {
     }
 }
 
-/// A generic trait for an error reporter.
+
 pub trait ParseErrorReporter {
-    /// Called when the style engine detects an error.
-    ///
-    /// Returns the current input being parsed, the source location it was
-    /// reported from, and a message.
+    
+    
+    
+    
     fn report_error(
         &self,
         url: &UrlExtraData,
@@ -222,12 +222,12 @@ pub trait ParseErrorReporter {
     );
 }
 
-/// An error reporter that uses [the `log` crate](https://github.com/rust-lang-nursery/log)
-/// at `info` level.
-///
-/// This logging is silent by default, and can be enabled with a `RUST_LOG=style=info`
-/// environment variable.
-/// (See [`env_logger`](https://rust-lang-nursery.github.io/log/env_logger/).)
+
+
+
+
+
+
 #[cfg(feature = "servo")]
 pub struct RustLogReporter;
 

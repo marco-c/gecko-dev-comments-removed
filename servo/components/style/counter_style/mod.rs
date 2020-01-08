@@ -1,10 +1,10 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-//! The [`@counter-style`][counter-style] at-rule.
-//!
-//! [counter-style]: https://drafts.csswg.org/css-counter-styles/
+
+
+
+
+
+
 
 use crate::error_reporting::ContextualParseError;
 use crate::parser::{Parse, ParserContext};
@@ -23,9 +23,9 @@ use std::ops::Range;
 use style_traits::{Comma, CssWriter, OneOrMoreSeparated, ParseError};
 use style_traits::{StyleParseErrorKind, ToCss};
 
-/// Parse a counter style name reference.
-///
-/// This allows the reserved counter style names "decimal" and "disc".
+
+
+
 pub fn parse_counter_style_name<'i, 't>(
     input: &mut Parser<'i, 't>,
 ) -> Result<CustomIdent, ParseError<'i>> {
@@ -59,7 +59,7 @@ fn is_valid_name_definition(ident: &CustomIdent) -> bool {
     ident.0 != atom!("decimal") && ident.0 != atom!("disc")
 }
 
-/// Parse the prelude of an @counter-style rule
+
 pub fn parse_counter_style_name_definition<'i, 't>(
     input: &mut Parser<'i, 't>,
 ) -> Result<CustomIdent, ParseError<'i>> {
@@ -72,7 +72,7 @@ pub fn parse_counter_style_name_definition<'i, 't>(
     })
 }
 
-/// Parse the body (inside `{}`) of an @counter-style rule
+
 pub fn parse_counter_style_body<'i, 't>(
     name: CustomIdent,
     context: &ParserContext,
@@ -142,7 +142,7 @@ struct CounterStyleRuleParser<'a, 'b: 'a> {
     rule: &'a mut CounterStyleRuleData,
 }
 
-/// Default methods reject all at rules.
+
 impl<'a, 'b, 'i> AtRuleParser<'i> for CounterStyleRuleParser<'a, 'b> {
     type PreludeNoBlock = ();
     type PreludeBlock = ();
@@ -280,20 +280,20 @@ counter_style_descriptors! {
     "speak-as" speak_as / set_speak_as [_]: SpeakAs,
 }
 
-// Implements the special checkers for some setters.
-// See <https://drafts.csswg.org/css-counter-styles/#the-csscounterstylerule-interface>
+
+
 impl CounterStyleRuleData {
-    /// Check that the system is effectively not changed. Only params
-    /// of system descriptor is changeable.
+    
+    
     fn check_system(&self, value: &System) -> bool {
         mem::discriminant(self.resolved_system()) == mem::discriminant(value)
     }
 
     fn check_symbols(&self, value: &Symbols) -> bool {
         match *self.resolved_system() {
-            // These two systems require at least two symbols.
+            
             System::Numeric | System::Alphabetic => value.0.len() >= 2,
-            // No symbols should be set for extends system.
+            
             System::Extends(_) => false,
             _ => true,
         }
@@ -301,7 +301,7 @@ impl CounterStyleRuleData {
 
     fn check_additive_symbols(&self, _value: &AdditiveSymbols) -> bool {
         match *self.resolved_system() {
-            // No additive symbols should be set for extends system.
+            
             System::Extends(_) => false,
             _ => true,
         }
@@ -309,25 +309,25 @@ impl CounterStyleRuleData {
 }
 
 impl CounterStyleRuleData {
-    /// Get the name of the counter style rule.
+    
     pub fn name(&self) -> &CustomIdent {
         &self.name
     }
 
-    /// Set the name of the counter style rule. Caller must ensure that
-    /// the name is valid.
+    
+    
     pub fn set_name(&mut self, name: CustomIdent) {
         debug_assert!(is_valid_name_definition(&name));
         self.name = name;
     }
 
-    /// Get the current generation of the counter style rule.
+    
     pub fn generation(&self) -> u32 {
         self.generation.0
     }
 
-    /// Get the system of this counter style rule, default to
-    /// `symbolic` if not specified.
+    
+    
     pub fn resolved_system(&self) -> &System {
         match self.system {
             Some(ref system) => system,
@@ -336,25 +336,25 @@ impl CounterStyleRuleData {
     }
 }
 
-/// <https://drafts.csswg.org/css-counter-styles/#counter-style-system>
+
 #[derive(Clone, Debug)]
 pub enum System {
-    /// 'cyclic'
+    
     Cyclic,
-    /// 'numeric'
+    
     Numeric,
-    /// 'alphabetic'
+    
     Alphabetic,
-    /// 'symbolic'
+    
     Symbolic,
-    /// 'additive'
+    
     Additive,
-    /// 'fixed <integer>?'
+    
     Fixed {
-        /// '<integer>?'
+        
         first_symbol_value: Option<Integer>,
     },
-    /// 'extends <counter-style-name>'
+    
     Extends(CustomIdent),
 }
 
@@ -408,17 +408,17 @@ impl ToCss for System {
     }
 }
 
-/// <https://drafts.csswg.org/css-counter-styles/#typedef-symbol>
+
 #[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[derive(Clone, Debug, Eq, PartialEq, ToComputedValue, ToCss)]
 pub enum Symbol {
-    /// <string>
+    
     String(String),
-    /// <custom-ident>
+    
     Ident(CustomIdent),
-    // Not implemented:
-    // /// <image>
-    // Image(Image),
+    
+    
+    
 }
 
 impl Parse for Symbol {
@@ -436,17 +436,17 @@ impl Parse for Symbol {
 }
 
 impl Symbol {
-    /// Returns whether this symbol is allowed in symbols() function.
+    
     pub fn is_allowed_in_symbols(&self) -> bool {
         match self {
-            // Identifier is not allowed.
+            
             &Symbol::Ident(_) => false,
             _ => true,
         }
     }
 }
 
-/// <https://drafts.csswg.org/css-counter-styles/#counter-style-negative>
+
 #[derive(Clone, Debug, ToCss)]
 pub struct Negative(pub Symbol, pub Option<Symbol>);
 
@@ -462,18 +462,18 @@ impl Parse for Negative {
     }
 }
 
-/// <https://drafts.csswg.org/css-counter-styles/#counter-style-range>
-///
-/// Empty Vec represents 'auto'
+
+
+
 #[derive(Clone, Debug)]
 pub struct Ranges(pub Vec<Range<CounterBound>>);
 
-/// A bound found in `Ranges`.
+
 #[derive(Clone, Copy, Debug, ToCss)]
 pub enum CounterBound {
-    /// An integer bound.
+    
     Integer(Integer),
-    /// The infinite bound.
+    
     Infinite,
 }
 
@@ -547,7 +547,7 @@ where
     range.end.to_css(dest)
 }
 
-/// <https://drafts.csswg.org/css-counter-styles/#counter-style-pad>
+
 #[derive(Clone, Debug, ToCss)]
 pub struct Pad(pub Integer, pub Symbol);
 
@@ -563,7 +563,7 @@ impl Parse for Pad {
     }
 }
 
-/// <https://drafts.csswg.org/css-counter-styles/#counter-style-fallback>
+
 #[derive(Clone, Debug, ToCss)]
 pub struct Fallback(pub CustomIdent);
 
@@ -576,7 +576,7 @@ impl Parse for Fallback {
     }
 }
 
-/// <https://drafts.csswg.org/css-counter-styles/#descdef-counter-style-symbols>
+
 #[cfg_attr(feature = "gecko", derive(MallocSizeOf))]
 #[derive(Clone, Debug, Eq, PartialEq, ToComputedValue, ToCss)]
 pub struct Symbols(#[css(iterable)] pub Vec<Symbol>);
@@ -601,7 +601,7 @@ impl Parse for Symbols {
     }
 }
 
-/// <https://drafts.csswg.org/css-counter-styles/#descdef-counter-style-additive-symbols>
+
 #[derive(Clone, Debug, ToCss)]
 pub struct AdditiveSymbols(pub Vec<AdditiveTuple>);
 
@@ -611,7 +611,7 @@ impl Parse for AdditiveSymbols {
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
         let tuples = Vec::<AdditiveTuple>::parse(context, input)?;
-        // FIXME maybe? https://github.com/w3c/csswg-drafts/issues/1220
+        
         if tuples
             .windows(2)
             .any(|window| window[0].weight <= window[1].weight)
@@ -622,12 +622,12 @@ impl Parse for AdditiveSymbols {
     }
 }
 
-/// <integer> && <symbol>
+
 #[derive(Clone, Debug, ToCss)]
 pub struct AdditiveTuple {
-    /// <integer>
+    
     pub weight: Integer,
-    /// <symbol>
+    
     pub symbol: Symbol,
 }
 
@@ -650,20 +650,20 @@ impl Parse for AdditiveTuple {
     }
 }
 
-/// <https://drafts.csswg.org/css-counter-styles/#counter-style-speak-as>
+
 #[derive(Clone, Debug, ToCss)]
 pub enum SpeakAs {
-    /// auto
+    
     Auto,
-    /// bullets
+    
     Bullets,
-    /// numbers
+    
     Numbers,
-    /// words
+    
     Words,
-    // /// spell-out, not supported, see bug 1024178
-    // SpellOut,
-    /// <counter-style-name>
+    
+    
+    
     Other(CustomIdent),
 }
 
@@ -688,8 +688,8 @@ impl Parse for SpeakAs {
             }
         });
         if is_spell_out {
-            // spell-out is not supported, but don’t parse it as a <counter-style-name>.
-            // See bug 1024178.
+            
+            
             return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
         }
         result.or_else(|_| Ok(SpeakAs::Other(parse_counter_style_name(input)?)))

@@ -1,11 +1,10 @@
-use proc_macro2::TokenStream;
+use quote::Tokens;
 use syn::{Generics, Ident, Path, WherePredicate};
 
-use ast::{Data, Fields};
-use codegen::error::{ErrorCheck, ErrorDeclaration};
+use codegen::{DefaultExpression, Field, Variant, FieldsGen};
 use codegen::field;
-use codegen::{DefaultExpression, Field, FieldsGen, Variant};
-use usage::{CollectTypeParams, IdentSet, Purpose};
+use codegen::error::{ErrorCheck, ErrorDeclaration};
+use ast::Data;
 
 #[derive(Debug)]
 pub struct TraitImpl<'a> {
@@ -15,64 +14,6 @@ pub struct TraitImpl<'a> {
     pub default: Option<DefaultExpression<'a>>,
     pub map: Option<&'a Path>,
     pub bound: Option<&'a [WherePredicate]>,
-}
-
-impl<'a> TraitImpl<'a> {
-    
-    pub fn declared_type_params(&self) -> IdentSet {
-        self.generics
-            .type_params()
-            .map(|tp| tp.ident.clone())
-            .collect()
-    }
-
-    
-    pub fn used_type_params(&self) -> IdentSet {
-        self.type_params_matching(|f| !f.skip, |v| !v.skip)
-    }
-
-    
-    pub fn skipped_type_params(&self) -> IdentSet {
-        self.type_params_matching(|f| f.skip, |v| v.skip)
-    }
-
-    fn type_params_matching<'b, F, V>(&'b self, field_filter: F, variant_filter: V) -> IdentSet
-    where
-        F: Fn(&&Field) -> bool,
-        V: Fn(&&Variant) -> bool,
-    {
-        let declared = self.declared_type_params();
-        match self.data {
-            Data::Struct(ref v) => self.type_params_in_fields(v, &field_filter, &declared),
-            Data::Enum(ref v) => v.iter().filter(variant_filter).fold(
-                Default::default(),
-                |mut state, variant| {
-                    state.extend(self.type_params_in_fields(
-                        &variant.data,
-                        &field_filter,
-                        &declared,
-                    ));
-                    state
-                },
-            ),
-        }
-    }
-
-    
-    fn type_params_in_fields<'b, F>(
-        &'b self,
-        fields: &'b Fields<Field<'a>>,
-        field_filter: F,
-        declared: &IdentSet,
-    ) -> IdentSet
-    where
-        F: Fn(&&'b Field) -> bool,
-    {
-        fields
-            .iter()
-            .filter(field_filter)
-            .collect_type_params_cloned(&Purpose::BoundImpl.into(), declared)
-    }
 }
 
 impl<'a> TraitImpl<'a> {
@@ -87,7 +28,7 @@ impl<'a> TraitImpl<'a> {
     }
 
     
-    pub(in codegen) fn local_declarations(&self) -> TokenStream {
+    pub(in codegen) fn local_declarations(&self) -> Tokens {
         if let Data::Struct(ref vd) = self.data {
             let vdr = vd.as_ref().map(Field::as_declaration);
             let decls = vdr.fields.as_slice();
@@ -98,7 +39,7 @@ impl<'a> TraitImpl<'a> {
     }
 
     
-    pub(in codegen) fn immutable_declarations(&self) -> TokenStream {
+    pub(in codegen) fn immutable_declarations(&self) -> Tokens {
         if let Data::Struct(ref vd) = self.data {
             let vdr = vd.as_ref().map(|f| field::Declaration::new(f, false));
             let decls = vdr.fields.as_slice();
@@ -108,17 +49,17 @@ impl<'a> TraitImpl<'a> {
         }
     }
 
-    pub(in codegen) fn map_fn(&self) -> Option<TokenStream> {
+    pub(in codegen) fn map_fn(&self) -> Option<Tokens> {
         self.map.as_ref().map(|path| quote!(.map(#path)))
     }
 
     
-    pub(in codegen) fn fallback_decl(&self) -> TokenStream {
+    pub(in codegen) fn fallback_decl(&self) -> Tokens {
         let default = self.default.as_ref().map(DefaultExpression::as_declaration);
         quote!(#default)
     }
 
-    pub fn require_fields(&self) -> TokenStream {
+    pub fn require_fields(&self) -> Tokens {
         if let Data::Struct(ref vd) = self.data {
             let check_nones = vd.as_ref().map(Field::as_presence_check);
             let checks = check_nones.fields.as_slice();
@@ -128,20 +69,24 @@ impl<'a> TraitImpl<'a> {
         }
     }
 
-    pub(in codegen) fn initializers(&self) -> TokenStream {
+    pub(in codegen) fn initializers(&self) -> Tokens {
         let foo = match self.data {
             Data::Enum(_) => panic!("Core loop on enums isn't supported"),
-            Data::Struct(ref data) => FieldsGen(data),
+            Data::Struct(ref data) => {
+                FieldsGen(data)
+            }
         };
 
         foo.initializers()
     }
 
     
-    pub(in codegen) fn core_loop(&self) -> TokenStream {
+    pub(in codegen) fn core_loop(&self) -> Tokens {
         let foo = match self.data {
             Data::Enum(_) => panic!("Core loop on enums isn't supported"),
-            Data::Struct(ref data) => FieldsGen(data),
+            Data::Struct(ref data) => {
+                FieldsGen(data)
+            }
         };
 
         foo.core_loop()

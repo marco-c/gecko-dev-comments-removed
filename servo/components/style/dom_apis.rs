@@ -1,9 +1,9 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-//! Generic implementations of some DOM APIs so they can be shared between Servo
-//! and Gecko.
+
+
+
+
+
 
 use crate::context::QuirksMode;
 use crate::dom::{TDocument, TElement, TNode, TShadowRoot};
@@ -17,7 +17,7 @@ use selectors::{Element, NthIndexCache, SelectorList};
 use smallvec::SmallVec;
 use std::borrow::Borrow;
 
-/// <https://dom.spec.whatwg.org/#dom-element-matches>
+
 pub fn element_matches<E>(
     element: &E,
     selector_list: &SelectorList<E::Impl>,
@@ -32,7 +32,7 @@ where
     matching::matches_selector_list(selector_list, element, &mut context)
 }
 
-/// <https://dom.spec.whatwg.org/#dom-element-closest>
+
 pub fn element_closest<E>(
     element: E,
     selector_list: &SelectorList<E::Impl>,
@@ -63,26 +63,26 @@ where
     return None;
 }
 
-/// A selector query abstraction, in order to be generic over QuerySelector and
-/// QuerySelectorAll.
+
+
 pub trait SelectorQuery<E: TElement> {
-    /// The output of the query.
+    
     type Output;
 
-    /// Whether the query should stop after the first element has been matched.
+    
     fn should_stop_after_first_match() -> bool;
 
-    /// Append an element matching after the first query.
+    
     fn append_element(output: &mut Self::Output, element: E);
 
-    /// Returns true if the output is empty.
+    
     fn is_empty(output: &Self::Output) -> bool;
 }
 
-/// The result of a querySelectorAll call.
+
 pub type QuerySelectorAllResult<E> = SmallVec<[E; 128]>;
 
-/// A query for all the elements in a subtree.
+
 pub struct QueryAll;
 
 impl<E: TElement> SelectorQuery<E> for QueryAll {
@@ -101,7 +101,7 @@ impl<E: TElement> SelectorQuery<E> for QueryAll {
     }
 }
 
-/// A query for the first in-tree match of all the elements in a subtree.
+
 pub struct QueryFirst;
 
 impl<E: TElement> SelectorQuery<E> for QueryFirst {
@@ -150,19 +150,19 @@ where
         descendant_invalidations: &mut DescendantInvalidationLists<'a>,
         _sibling_invalidations: &mut InvalidationVector<'a>,
     ) -> bool {
-        // TODO(emilio): If the element is not a root element, and
-        // selector_list has any descendant combinator, we need to do extra work
-        // in order to handle properly things like:
-        //
-        //   <div id="a">
-        //     <div id="b">
-        //       <div id="c"></div>
-        //     </div>
-        //   </div>
-        //
-        // b.querySelector('#a div'); // Should return "c".
-        //
-        // For now, assert it's a root element.
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         debug_assert!(element.parent_element().is_none());
 
         let target_vector = if self.matching_context.scope_element.is_some() {
@@ -221,15 +221,15 @@ where
     }
 }
 
-/// Returns whether a given element connected to `root` is descendant of `root`.
-///
-/// NOTE(emilio): if root == element, this returns false.
+
+
+
 fn connected_element_is_descendant_of<E>(element: E, root: E::ConcreteNode) -> bool
 where
     E: TElement,
 {
-    // Optimize for when the root is a document or a shadow root and the element
-    // is connected to that root.
+    
+    
     if root.as_document().is_some() {
         debug_assert!(element.as_node().is_in_document(), "Not connected?");
         debug_assert_eq!(
@@ -260,8 +260,8 @@ where
     false
 }
 
-/// Fast path for iterating over every element with a given id in the document
-/// or shadow root that `root` is connected to.
+
+
 fn fast_connected_elements_with_id<'a, N>(
     root: N,
     id: &Atom,
@@ -290,7 +290,7 @@ where
     Err(())
 }
 
-/// Collects elements with a given id under `root`, that pass `filter`.
+
 fn collect_elements_with_id<E, Q, F>(
     root: E::ConcreteNode,
     id: &Atom,
@@ -316,8 +316,8 @@ fn collect_elements_with_id<E, Q, F>(
     };
 
     for element in elements {
-        // If the element is not an actual descendant of the root, even though
-        // it's connected, we don't really care about it.
+        
+        
         if !connected_element_is_descendant_of(*element, root) {
             continue;
         }
@@ -349,7 +349,7 @@ where
     }
 }
 
-/// Fast paths for querySelector with a single simple selector.
+
 fn query_selector_single_query<E, Q>(
     root: E::ConcreteNode,
     component: &Component<E::Impl>,
@@ -378,7 +378,7 @@ where
                 local_name_matches(element, local_name)
             })
         },
-        // TODO(emilio): More fast paths?
+        
         _ => return Err(()),
     }
 
@@ -390,15 +390,15 @@ enum SimpleFilter<'a, Impl: SelectorImpl> {
     LocalName(&'a LocalName<Impl>),
 }
 
-/// Fast paths for a given selector query.
-///
-/// When there's only one component, we go directly to
-/// `query_selector_single_query`, otherwise, we try to optimize by looking just
-/// at the subtrees rooted at ids in the selector, and otherwise we try to look
-/// up by class name or local name in the rightmost compound.
-///
-/// FIXME(emilio, nbp): This may very well be a good candidate for code to be
-/// replaced by HolyJit :)
+
+
+
+
+
+
+
+
+
 fn query_selector_fast<E, Q>(
     root: E::ConcreteNode,
     selector_list: &SelectorList<E::Impl>,
@@ -409,8 +409,8 @@ where
     E: TElement,
     Q: SelectorQuery<E>,
 {
-    // We need to return elements in document order, and reordering them
-    // afterwards is kinda silly.
+    
+    
     if selector_list.0.len() > 1 {
         return Err(());
     }
@@ -418,7 +418,7 @@ where
     let selector = &selector_list.0[0];
     let quirks_mode = matching_context.quirks_mode();
 
-    // Let's just care about the easy cases for now.
+    
     if selector.len() == 1 {
         return query_selector_single_query::<E, Q>(
             root,
@@ -431,9 +431,9 @@ where
     let mut iter = selector.iter();
     let mut combinator: Option<Combinator> = None;
 
-    // We want to optimize some cases where there's no id involved whatsoever,
-    // like `.foo .bar`, but we don't want to make `#foo .bar` slower because of
-    // that.
+    
+    
+    
     let mut simple_filter = None;
 
     'selector_loop: loop {
@@ -443,8 +443,8 @@ where
             match *component {
                 Component::ID(ref id) => {
                     if combinator.is_none() {
-                        // In the rightmost compound, just find descendants of
-                        // root that match the selector list with that id.
+                        
+                        
                         collect_elements_with_id::<E, Q, _>(root, id, results, quirks_mode, |e| {
                             matching::matches_selector_list(selector_list, &e, matching_context)
                         });
@@ -457,26 +457,26 @@ where
                         return Ok(());
                     }
 
-                    // Results need to be in document order. Let's not bother
-                    // reordering or deduplicating nodes, which we would need to
-                    // do if one element with the given id were a descendant of
-                    // another element with that given id.
+                    
+                    
+                    
+                    
                     if !Q::should_stop_after_first_match() && elements.len() > 1 {
                         continue;
                     }
 
                     for element in elements {
-                        // If the element is not a descendant of the root, then
-                        // it may have descendants that match our selector that
-                        // _are_ descendants of the root, and other descendants
-                        // that match our selector that are _not_.
-                        //
-                        // So we can't just walk over the element's descendants
-                        // and match the selector against all of them, nor can
-                        // we skip looking at this element's descendants.
-                        //
-                        // Give up on trying to optimize based on this id and
-                        // keep walking our selector.
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
                         if !connected_element_is_descendant_of(*element, root) {
                             continue 'component_loop;
                         }
@@ -502,8 +502,8 @@ where
                 },
                 Component::LocalName(ref local_name) => {
                     if combinator.is_none() {
-                        // Prefer to look at class rather than local-name if
-                        // both are present.
+                        
+                        
                         if let Some(SimpleFilter::Class(..)) = simple_filter {
                             continue;
                         }
@@ -520,11 +520,11 @@ where
                 Some(c) => c,
             };
 
-            // We don't want to scan stuff affected by sibling combinators,
-            // given we scan the subtree of elements with a given id (and we
-            // don't want to care about scanning the siblings' subtrees).
+            
+            
+            
             if next_combinator.is_sibling() {
-                // Advance to the next combinator.
+                
                 for _ in &mut iter {}
                 continue;
             }
@@ -534,8 +534,8 @@ where
         }
     }
 
-    // We got here without finding any ID or such that we could handle. Try to
-    // use one of the simple filters.
+    
+    
     let simple_filter = match simple_filter {
         Some(f) => f,
         None => return Err(()),
@@ -560,7 +560,7 @@ where
     Ok(())
 }
 
-// Slow path for a given selector query.
+
 fn query_selector_slow<E, Q>(
     root: E::ConcreteNode,
     selector_list: &SelectorList<E::Impl>,
@@ -575,16 +575,16 @@ fn query_selector_slow<E, Q>(
     });
 }
 
-/// Whether the invalidation machinery should be used for this query.
+
 #[derive(PartialEq)]
 pub enum MayUseInvalidation {
-    /// We may use it if we deem it useful.
+    
     Yes,
-    /// Don't use it.
+    
     No,
 }
 
-/// <https://dom.spec.whatwg.org/#dom-parentnode-queryselector>
+
 pub fn query_selector<E, Q>(
     root: E::ConcreteNode,
     selector_list: &SelectorList<E::Impl>,
@@ -620,18 +620,18 @@ pub fn query_selector<E, Q>(
         return;
     }
 
-    // Slow path: Use the invalidation machinery if we're a root, and tree
-    // traversal otherwise.
-    //
-    // See the comment in collect_invalidations to see why only if we're a root.
-    //
-    // The invalidation mechanism is only useful in presence of combinators.
-    //
-    // We could do that check properly here, though checking the length of the
-    // selectors is a good heuristic.
-    //
-    // A selector with a combinator needs to have a length of at least 3: A
-    // simple selector, a combinator, and another simple selector.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     let invalidation_may_be_useful = may_use_invalidation == MayUseInvalidation::Yes &&
         selector_list.0.iter().any(|s| s.len() > 2);
 
@@ -646,7 +646,7 @@ pub fn query_selector<E, Q>(
 
         for node in root.dom_children() {
             if let Some(e) = node.as_element() {
-                TreeStyleInvalidator::new(e, /* stack_limit_checker = */ None, &mut processor)
+                TreeStyleInvalidator::new(e,  None, &mut processor)
                     .invalidate();
             }
         }

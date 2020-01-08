@@ -1,8 +1,8 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-//! Parsing stylesheets from bytes (not `&str`).
+
+
+
+
 
 extern crate encoding_rs;
 
@@ -45,16 +45,16 @@ fn decode_stylesheet_bytes<'a>(
         environment_encoding,
     );
     let (result, _used_encoding, _) = fallback_encoding.decode(&css);
-    // FIXME record used encoding for environment encoding of @import
+    
     result
 }
 
 impl Stylesheet {
-    /// Parse a stylesheet from a set of bytes, potentially received over the
-    /// network.
-    ///
-    /// Takes care of decoding the network bytes and forwards the resulting
-    /// string to `Stylesheet::from_str`.
+    
+    
+    
+    
+    
     pub fn from_bytes(
         bytes: &[u8],
         url_data: UrlExtraData,
@@ -81,8 +81,8 @@ impl Stylesheet {
         )
     }
 
-    /// Updates an empty stylesheet with a set of bytes that reached over the
-    /// network.
+    
+    
     pub fn update_from_bytes(
         existing: &Stylesheet,
         bytes: &[u8],

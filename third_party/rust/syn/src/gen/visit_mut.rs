@@ -1,5 +1,6 @@
 
 
+#![cfg_attr(feature = "cargo-clippy", allow(match_same_arms))]
 #[cfg(any(feature = "full", feature = "derive"))]
 use gen::helper::visit_mut::*;
 use proc_macro2::Span;
