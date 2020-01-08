@@ -51,6 +51,30 @@ function deepClone(obj) {
 
 
 
+
+
+async function fillField(field, value) {
+  field.focus();
+  if (field.localName == "select") {
+    if (field.value == value) {
+      
+      return;
+    }
+    field.value = value;
+    field.dispatchEvent(new Event("input"));
+    field.dispatchEvent(new Event("change"));
+    return;
+  }
+  while (field.value) {
+    sendKey("BACK_SPACE");
+  }
+  sendString(value);
+}
+
+
+
+
+
 let filterFunction = null;
 function registerConsoleFilter(filterFn) {
   filterFunction = filterFn;

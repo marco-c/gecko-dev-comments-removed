@@ -118,14 +118,66 @@ class EditAddress extends EditAutofillForm {
 
 
 
+
+  computeVisibleFields(mailingFieldsOrder) {
+    let addressFields = this._elements.form.dataset.addressFields;
+    if (addressFields) {
+      let requestedFieldClasses = addressFields.trim().split(/\s+/);
+      let fieldClasses = [];
+      if (requestedFieldClasses.includes("mailing-address")) {
+        fieldClasses = fieldClasses.concat(mailingFieldsOrder);
+        
+        requestedFieldClasses.splice(requestedFieldClasses.indexOf("mailing-address"), 1,
+                                     "country");
+      }
+
+      for (let fieldClassName of requestedFieldClasses) {
+        fieldClasses.push({
+          fieldId: fieldClassName,
+          newLine: fieldClassName == "name",
+        });
+      }
+      return fieldClasses;
+    }
+
+    
+    return mailingFieldsOrder.concat([
+      {
+        fieldId: "country",
+      },
+      {
+        fieldId: "tel",
+      },
+      {
+        fieldId: "email",
+        newLine: true,
+      },
+    ]);
+  }
+
+  
+
+
+
+
   formatForm(country) {
-    const {addressLevel1Label, postalCodeLabel, fieldsOrder, postalCodePattern} =
-      this.getFormFormat(country);
+    const {
+      addressLevel1Label,
+      postalCodeLabel,
+      fieldsOrder: mailingFieldsOrder,
+      postalCodePattern,
+    } = this.getFormFormat(country);
     this._elements.addressLevel1Label.dataset.localization = addressLevel1Label;
     this._elements.postalCodeLabel.dataset.localization = postalCodeLabel;
-    this.arrangeFields(fieldsOrder);
+    let fieldClasses = this.computeVisibleFields(mailingFieldsOrder);
+    this.arrangeFields(fieldClasses);
     this.updatePostalCodeValidation(postalCodePattern);
   }
+
+  
+
+
+
 
   arrangeFields(fieldsOrder) {
     let fields = [
@@ -135,6 +187,9 @@ class EditAddress extends EditAutofillForm {
       "address-level2",
       "address-level1",
       "postal-code",
+      "country",
+      "tel",
+      "email",
     ];
     let inputs = [];
     for (let i = 0; i < fieldsOrder.length; i++) {

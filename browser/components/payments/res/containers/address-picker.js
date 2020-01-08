@@ -31,14 +31,14 @@ export default class AddressPicker extends RichPicker {
 
   get fieldNames() {
     if (this.hasAttribute("address-fields")) {
-      let names = this.getAttribute("address-fields").split(/\s+/);
+      let names = this.getAttribute("address-fields").trim().split(/\s+/);
       if (names.length) {
         return names;
       }
     }
 
     return [
-      "address-level1",
+      
       "address-level2",
       "country",
       "name",
