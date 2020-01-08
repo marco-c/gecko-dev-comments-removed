@@ -37,16 +37,10 @@ namespace css {
 
 
 
-
-
-
-
-
 enum SheetParsingMode : uint8_t {
   eAuthorSheetFeatures = 0,
   eUserSheetFeatures,
   eAgentSheetFeatures,
-  eSafeAgentSheetFeatures,
 };
 
 }  
