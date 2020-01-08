@@ -65,6 +65,12 @@ DocumentL10n::Init(nsTArray<nsString>& aResourceIds)
   
   uint32_t ret;
   mDOMLocalization->AddResourceIds(aResourceIds, true, &ret);
+
+  
+  
+  
+  
+  mDOMLocalization->RegisterObservers();
   return true;
 }
 
