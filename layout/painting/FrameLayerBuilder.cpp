@@ -138,6 +138,17 @@ struct DisplayItemEntry {
 
 
 static bool
+IsEffectStartMarker(DisplayItemEntryType aType)
+{
+  return aType == DisplayItemEntryType::PUSH_OPACITY ||
+         aType == DisplayItemEntryType::PUSH_OPACITY_WITH_BG ||
+         aType == DisplayItemEntryType::PUSH_TRANSFORM;
+}
+
+
+
+
+static bool
 IsEffectEndMarker(DisplayItemEntryType aType)
 {
   return aType == DisplayItemEntryType::POP_OPACITY ||
@@ -6582,70 +6593,6 @@ FrameLayerBuilder::RecomputeVisibilityForItems(std::vector<AssignedDisplayItem>&
 
 
 
-static void
-PushOpacity(gfxContext* aContext,
-            const nsRect& aPaintRect,
-            AssignedDisplayItem& aItem,
-            const int32_t aAUPDP)
-{
-  MOZ_ASSERT(aItem.mType == DisplayItemEntryType::PUSH_OPACITY ||
-             aItem.mType == DisplayItemEntryType::PUSH_OPACITY_WITH_BG);
-  MOZ_ASSERT(aItem.mItem->GetType() == DisplayItemType::TYPE_OPACITY);
-
-  aContext->Save();
-
-  DisplayItemClip clip;
-  clip.SetTo(aPaintRect);
-  clip.IntersectWith(aItem.mItem->GetClip());
-  clip.ApplyTo(aContext, aAUPDP);
-
-  nsDisplayOpacity* opacityItem = static_cast<nsDisplayOpacity*>(aItem.mItem);
-  const float opacity = opacityItem->GetOpacity();
-
-  if (aItem.mType == DisplayItemEntryType::PUSH_OPACITY_WITH_BG) {
-    aContext->PushGroupAndCopyBackground(gfxContentType::COLOR_ALPHA, opacity);
-  } else {
-    aContext->PushGroupForBlendBack(gfxContentType::COLOR_ALPHA, opacity);
-  }
-}
-
-static void
-PushTransform(gfxContext* aContext,
-              nsDisplayListBuilder* aBuilder,
-              AssignedDisplayItem& aItem,
-              const int32_t aAUPDP,
-              MatrixStack4x4& aMatrixStack,
-              const Matrix4x4Flagged& aBaseMatrix)
-{
-  MOZ_ASSERT(aItem.mType == DisplayItemEntryType::PUSH_TRANSFORM);
-  MOZ_ASSERT(aItem.mItem->GetType() == DisplayItemType::TYPE_TRANSFORM);
-
-  nsDisplayTransform* transform = static_cast<nsDisplayTransform*>(aItem.mItem);
-
-  if (transform->ShouldSkipTransform(aBuilder)) {
-    aMatrixStack.Push(Matrix4x4Flagged());
-  } else {
-    aMatrixStack.Push(transform->GetTransformForRendering());
-  }
-
-  gfx::Matrix4x4Flagged matrix = aMatrixStack.CurrentMatrix() * aBaseMatrix;
-  gfx::Matrix matrix2d;
-  DebugOnly<bool> ok = matrix.CanDraw2D(&matrix2d);
-  MOZ_ASSERT(ok);
-
-  aContext->Save();
-
-  const DisplayItemClip& itemClip = aItem.mItem->GetClip();
-  if (itemClip.HasClip()) {
-    itemClip.ApplyTo(aContext, aAUPDP);
-  }
-
-  aContext->SetMatrix(matrix2d);
-}
-
-
-
-
 struct ItemClipTracker {
   explicit ItemClipTracker(gfxContext* aContext,
                            const int32_t aAppUnitsPerDevPixel)
@@ -6719,6 +6666,183 @@ private:
   DisplayItemClip mCurrentClip;
 };
 
+
+
+
+
+
+struct ClipStack {
+  explicit ClipStack(gfxContext* aContext,
+                     const int32_t aAppUnitsPerDevPixel)
+    : mContext(aContext)
+    , mAppUnitsPerDevPixel(aAppUnitsPerDevPixel)
+    , mDeferredPopClip(false)
+  {}
+
+  ~ClipStack()
+  {
+    MOZ_ASSERT(!mDeferredPopClip);
+    MOZ_ASSERT(!HasClips());
+  }
+
+  
+
+
+  bool HasClips() const
+  {
+    return mClips.Length() > 0;
+  }
+
+  
+
+
+  const DisplayItemClip& TopClip() const
+  {
+    MOZ_ASSERT(HasClips());
+    return mClips.LastElement();
+  }
+
+  
+
+
+  bool TopClipMatches(const DisplayItemClip& aClip) {
+    return HasClips() && TopClip() == aClip;
+  }
+
+  
+
+
+
+
+
+  void PopClip(bool aDeferPopClip)
+  {
+    MOZ_ASSERT(HasClips());
+
+    if (aDeferPopClip) {
+      
+      MOZ_ASSERT(!mDeferredPopClip);
+      mDeferredPopClip = true;
+      return;
+    }
+
+    if (TopClip().HasClip()) {
+      mContext->Restore();
+    }
+
+    mClips.RemoveLastElement();
+    mDeferredPopClip = false;
+  }
+
+  
+
+
+  void PopDeferredClip()
+  {
+    if (mDeferredPopClip) {
+      PopClip(false);
+    }
+  }
+
+  
+
+
+  void PushClip(const DisplayItemClip& aClip)
+  {
+    if (mDeferredPopClip && TopClipMatches(aClip)) {
+      
+      
+      mDeferredPopClip = false;
+      return;
+    }
+
+    PopDeferredClip();
+
+    mClips.AppendElement(aClip);
+
+    
+    if (aClip.HasClip()) {
+      mContext->Save();
+      aClip.ApplyTo(mContext, mAppUnitsPerDevPixel);
+      mContext->NewPath();
+    }
+  }
+
+private:
+  gfxContext* mContext;
+  const int32_t mAppUnitsPerDevPixel;
+  AutoTArray<DisplayItemClip, 2> mClips;
+  bool mDeferredPopClip;
+};
+
+
+
+
+
+
+static const DisplayItemClip*
+GetItemClip(const nsDisplayItem* aItem, DisplayItemClip& aOutClip)
+{
+  const DisplayItemClip& clip = aItem->GetClip();
+
+  if (!clip.HasClip()) {
+    return nullptr;
+  }
+
+  if (clip.GetRoundedRectCount() > 0 &&
+      !clip.IsRectClippedByRoundedCorner(aItem->GetPaintRect())) {
+    aOutClip.SetTo(clip.GetClipRect());
+    return &aOutClip;
+  }
+
+  return &clip;
+}
+
+
+
+
+static void
+PushOpacity(gfxContext* aContext,
+            AssignedDisplayItem& aItem)
+{
+  MOZ_ASSERT(aItem.mType == DisplayItemEntryType::PUSH_OPACITY ||
+             aItem.mType == DisplayItemEntryType::PUSH_OPACITY_WITH_BG);
+  MOZ_ASSERT(aItem.mItem->GetType() == DisplayItemType::TYPE_OPACITY);
+  nsDisplayOpacity* item = static_cast<nsDisplayOpacity*>(aItem.mItem);
+
+  const float opacity = item->GetOpacity();
+  if (aItem.mType == DisplayItemEntryType::PUSH_OPACITY_WITH_BG) {
+    aContext->PushGroupAndCopyBackground(gfxContentType::COLOR_ALPHA, opacity);
+  } else {
+    aContext->PushGroupForBlendBack(gfxContentType::COLOR_ALPHA, opacity);
+  }
+}
+
+static void
+PushTransform(gfxContext* aContext,
+              AssignedDisplayItem& aItem,
+              nsDisplayListBuilder* aBuilder,
+              MatrixStack4x4& aMatrixStack,
+              const Matrix4x4Flagged& aBaseMatrix)
+{
+  MOZ_ASSERT(aItem.mType == DisplayItemEntryType::PUSH_TRANSFORM);
+  MOZ_ASSERT(aItem.mItem->GetType() == DisplayItemType::TYPE_TRANSFORM);
+
+  nsDisplayTransform* item = static_cast<nsDisplayTransform*>(aItem.mItem);
+  if (item->ShouldSkipTransform(aBuilder)) {
+    aMatrixStack.Push(Matrix4x4Flagged());
+  } else {
+    aMatrixStack.Push(item->GetTransformForRendering());
+  }
+
+  gfx::Matrix4x4Flagged matrix = aMatrixStack.CurrentMatrix() * aBaseMatrix;
+  gfx::Matrix matrix2d;
+  DebugOnly<bool> ok = matrix.CanDraw2D(&matrix2d);
+  MOZ_ASSERT(ok);
+
+  aContext->SetMatrix(matrix2d);
+}
+
 static void
 UpdateEffectTracking(int& aOpacityLevel,
                      int& aTransformLevel,
@@ -6745,25 +6869,6 @@ UpdateEffectTracking(int& aOpacityLevel,
   MOZ_ASSERT(aOpacityLevel >= 0 && aTransformLevel >= 0);
 }
 
-static const DisplayItemClip*
-GetItemClip(const nsDisplayItem* aItem, DisplayItemClip& aOutClip)
-{
-  const DisplayItemClip& clip = aItem->GetClip();
-
-  if (!clip.HasClip()) {
-    return nullptr;
-  }
-
-  if (clip.GetRoundedRectCount() > 0 &&
-      !clip.IsRectClippedByRoundedCorner(aItem->GetPaintRect())) {
-    aOutClip = clip;
-    aOutClip.RemoveRoundedCorners();
-    return &aOutClip;
-  }
-
-  return &clip;
-}
-
 void
 FrameLayerBuilder::PaintItems(std::vector<AssignedDisplayItem>& aItems,
                               const nsIntRect& aRect,
@@ -6775,7 +6880,7 @@ FrameLayerBuilder::PaintItems(std::vector<AssignedDisplayItem>& aItems,
 {
   DrawTarget& aDrawTarget = *aContext->GetDrawTarget();
 
-  int32_t appUnitsPerDevPixel = aPresContext->AppUnitsPerDevPixel();
+  int32_t appUnitsPerDevPixel  = aPresContext->AppUnitsPerDevPixel();
   nsRect boundRect = ToAppUnits(aRect, appUnitsPerDevPixel);
   boundRect.MoveBy(NSIntPixelsToAppUnits(aOffset.x, appUnitsPerDevPixel),
                    NSIntPixelsToAppUnits(aOffset.y, appUnitsPerDevPixel));
@@ -6794,7 +6899,18 @@ FrameLayerBuilder::PaintItems(std::vector<AssignedDisplayItem>& aItems,
 
   
   DisplayItemClip temporaryClip;
+
+  
+  
+  
   ItemClipTracker itemClipTracker(aContext, appUnitsPerDevPixel);
+
+  
+  
+  
+  
+  
+  ClipStack effectClipStack(aContext, appUnitsPerDevPixel);
 
   MatrixStack4x4 matrixStack;
   const Matrix4x4Flagged base = Matrix4x4::From2D(aContext->CurrentMatrix());
@@ -6802,6 +6918,11 @@ FrameLayerBuilder::PaintItems(std::vector<AssignedDisplayItem>& aItems,
   for (uint32_t i = 0; i < aItems.size(); ++i) {
     AssignedDisplayItem& cdi = aItems[i];
     nsDisplayItem* item = cdi.mItem;
+
+    const auto NextItemStartsEffect = [&]() {
+      const uint32_t next = i + 1;
+      return next < aItems.size() && IsEffectStartMarker(aItems[next].mType);
+    };
 
     if (!item) {
       MOZ_ASSERT(cdi.mType == DisplayItemEntryType::ITEM);
@@ -6831,6 +6952,10 @@ FrameLayerBuilder::PaintItems(std::vector<AssignedDisplayItem>& aItems,
       
       
       UpdateEffectTracking(emptyEffectLevel, emptyEffectLevel, cdi.mType);
+
+      
+      
+      effectClipStack.PopDeferredClip();
       continue;
     }
 
@@ -6854,24 +6979,40 @@ FrameLayerBuilder::PaintItems(std::vector<AssignedDisplayItem>& aItems,
 
     if (cdi.mType == DisplayItemEntryType::PUSH_OPACITY ||
         cdi.mType == DisplayItemEntryType::PUSH_OPACITY_WITH_BG) {
-      PushOpacity(aContext, item->GetPaintRect(), cdi, appUnitsPerDevPixel);
+      DisplayItemClip effectClip;
+      effectClip.SetTo(item->GetPaintRect());
+      effectClip.IntersectWith(item->GetClip());
+      effectClipStack.PushClip(effectClip);
+      PushOpacity(aContext, cdi);
     }
 
     if (cdi.mType == DisplayItemEntryType::POP_OPACITY) {
-      MOZ_ASSERT(item->GetType() == DisplayItemType::TYPE_OPACITY);
       MOZ_ASSERT(opacityLevel > 0);
       aContext->PopGroupAndBlend();
-      aContext->Restore();
     }
 
     if (cdi.mType == DisplayItemEntryType::PUSH_TRANSFORM) {
-      PushTransform(aContext, aBuilder, cdi, appUnitsPerDevPixel,
-                    matrixStack, base);
+      effectClipStack.PushClip(item->GetClip());
+      aContext->Save();
+      PushTransform(aContext, cdi, aBuilder, matrixStack, base);
     }
 
     if (cdi.mType == DisplayItemEntryType::POP_TRANSFORM) {
+      MOZ_ASSERT(transformLevel > 0);
       matrixStack.Pop();
       aContext->Restore();
+    }
+
+    if (IsEffectEndMarker(cdi.mType)) {
+      
+      MOZ_ASSERT(effectClipStack.HasClips());
+
+      
+      
+      
+      
+      
+      effectClipStack.PopClip(NextItemStartsEffect());
     }
 
     if (cdi.mType != DisplayItemEntryType::ITEM) {
