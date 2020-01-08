@@ -54,6 +54,7 @@ class Raptor(object):
         self.control_server = None
         self.playback = None
         self.benchmark = None
+        self.post_startup_delay = 30000  
 
         
         if self.config['app'] == 'geckoview':
@@ -139,6 +140,7 @@ class Raptor(object):
         gen_test_config(self.config['app'],
                         test['name'],
                         self.control_server.port,
+                        self.post_startup_delay,
                         benchmark_port)
 
         
@@ -232,6 +234,9 @@ class Raptor(object):
 
         
         timeout = int(timeout / 1000) * int(test['page_cycles'])
+        
+        timeout += int(self.post_startup_delay / 1000)
+
         try:
             elapsed_time = 0
             while not self.control_server._finished:
