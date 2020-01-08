@@ -41,14 +41,11 @@
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Unused.h"
 #include "mozilla/dom/ScriptSettings.h"
-#include "nsICrashReporter.h"
 #include "nsThreadSyncDispatch.h"
 #include "nsServiceManagerUtils.h"
 #include "GeckoProfiler.h"
 #include "InputEventStatistics.h"
 #include "ThreadEventTarget.h"
-
-#include "mozilla/dom/ContentChild.h"
 
 #ifdef XP_LINUX
 #ifdef __GLIBC__
@@ -592,71 +589,6 @@ nsThread::InitCommon()
 }
 
 
-
-
-
-
-
-
-
-
-bool
-nsThread::SaveMemoryReportNearOOM(ShouldSaveMemoryReport aShouldSave)
-{
-  
-  
-  const size_t kLowMemoryCheckSeconds = 30;
-  const size_t kLowMemorySaveSeconds = 3 * 60;
-
-  static TimeStamp nextCheck = TimeStamp::NowLoRes()
-    + TimeDuration::FromSeconds(kLowMemoryCheckSeconds);
-  static bool recentlySavedReport = false; 
-                                           
-
-  
-  TimeStamp now = TimeStamp::NowLoRes();
-  if ((aShouldSave == ShouldSaveMemoryReport::kMaybeReport ||
-      recentlySavedReport) && now < nextCheck) {
-    return false;
-  }
-
-  bool needMemoryReport = (aShouldSave == ShouldSaveMemoryReport::kForceReport);
-#ifdef XP_WIN 
-  
-  if (aShouldSave != ShouldSaveMemoryReport::kForceReport) {
-    const size_t LOWMEM_THRESHOLD_VIRTUAL = 200 * 1024 * 1024;
-    MEMORYSTATUSEX statex;
-    statex.dwLength = sizeof(statex);
-    if (GlobalMemoryStatusEx(&statex)) {
-      if (statex.ullAvailVirtual < LOWMEM_THRESHOLD_VIRTUAL) {
-        needMemoryReport = true;
-      }
-    }
-  }
-#endif
-
-  if (needMemoryReport) {
-    if (XRE_IsContentProcess()) {
-      dom::ContentChild* cc = dom::ContentChild::GetSingleton();
-      if (cc) {
-        cc->SendNotifyLowMemory();
-      }
-    } else {
-      nsCOMPtr<nsICrashReporter> cr =
-        do_GetService("@mozilla.org/toolkit/crash-reporter;1");
-      if (cr) {
-        cr->SaveMemoryReport();
-      }
-    }
-    recentlySavedReport = true;
-    nextCheck = now + TimeDuration::FromSeconds(kLowMemorySaveSeconds);
-  } else {
-    recentlySavedReport = false;
-    nextCheck = now + TimeDuration::FromSeconds(kLowMemoryCheckSeconds);
-  }
-
-  return recentlySavedReport;
-}
 
 #ifdef MOZ_CANARY
 int sCanaryOutputFD = -1;
@@ -1424,10 +1356,6 @@ nsThread::DoMainThreadSpecificProcessing(bool aReallyWait)
         NS_WARNING("Can't get observer service!");
       }
     }
-  }
-
-  if (!ShuttingDown()) {
-    SaveMemoryReportNearOOM(ShouldSaveMemoryReport::kMaybeReport);
   }
 }
 
