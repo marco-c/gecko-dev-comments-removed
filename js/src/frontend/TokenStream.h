@@ -946,7 +946,7 @@ class TokenStreamAnyChars : public TokenStreamShared {
   MOZ_MUST_USE bool compileWarning(ErrorMetadata&& metadata,
                                    UniquePtr<JSErrorNotes> notes,
                                    unsigned flags, unsigned errorNumber,
-                                   va_list args);
+                                   va_list* args);
 
   
   void computeErrorMetadataNoOffset(ErrorMetadata* err);
@@ -956,7 +956,7 @@ class TokenStreamAnyChars : public TokenStreamShared {
   
   
   void reportErrorNoOffset(unsigned errorNumber, ...);
-  void reportErrorNoOffsetVA(unsigned errorNumber, va_list args);
+  void reportErrorNoOffsetVA(unsigned errorNumber, va_list* args);
 
   const JS::ReadOnlyCompileOptions& options() const { return options_; }
 
@@ -2500,7 +2500,7 @@ class MOZ_STACK_CLASS TokenStreamSpecific
 
   bool hasTokenizationStarted() const final;
 
-  void reportErrorNoOffsetVA(unsigned errorNumber, va_list args) final {
+  void reportErrorNoOffsetVA(unsigned errorNumber, va_list* args) final {
     anyCharsAccess().reportErrorNoOffsetVA(errorNumber, args);
   }
 

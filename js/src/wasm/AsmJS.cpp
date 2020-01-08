@@ -1931,7 +1931,7 @@ class MOZ_STACK_CLASS JS_HAZ_ROOTED ModuleValidator
     if (ts.computeErrorMetadata(&metadata, offset)) {
       if (ts.anyCharsAccess().options().throwOnAsmJSValidationFailureOption) {
         ReportCompileError(cx_, std::move(metadata), nullptr, JSREPORT_ERROR,
-                           JSMSG_USE_ASM_TYPE_FAIL, args);
+                           JSMSG_USE_ASM_TYPE_FAIL, &args);
       } else {
         
         
@@ -1943,7 +1943,7 @@ class MOZ_STACK_CLASS JS_HAZ_ROOTED ModuleValidator
         
         Unused << ts.anyCharsAccess().compileWarning(
             std::move(metadata), nullptr, JSREPORT_WARNING,
-            JSMSG_USE_ASM_TYPE_FAIL, args);
+            JSMSG_USE_ASM_TYPE_FAIL, &args);
       }
     }
 
