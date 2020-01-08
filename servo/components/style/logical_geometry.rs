@@ -79,7 +79,7 @@ impl WritingMode {
 
         #[cfg(feature = "gecko")]
         {
-            use properties::longhands::text_orientation::computed_value::T as TextOrientation;
+            use crate::properties::longhands::text_orientation::computed_value::T as TextOrientation;
 
             
             

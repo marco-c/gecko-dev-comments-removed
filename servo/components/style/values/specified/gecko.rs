@@ -4,18 +4,18 @@
 
 
 
+use crate::gecko::values::GeckoStyleCoordConvertible;
+use crate::gecko_bindings::sugar::ns_style_coord::{CoordData, CoordDataMut};
+use crate::parser::{Parse, ParserContext};
+use crate::values::computed;
+use crate::values::computed::length::CSSPixelLength;
+use crate::values::generics::gecko::ScrollSnapPoint as GenericScrollSnapPoint;
+use crate::values::generics::rect::Rect;
+use crate::values::specified::length::LengthOrPercentage;
 use cssparser::{Parser, Token};
-use gecko::values::GeckoStyleCoordConvertible;
-use gecko_bindings::sugar::ns_style_coord::{CoordData, CoordDataMut};
-use parser::{Parse, ParserContext};
 use std::fmt;
 use style_traits::values::SequenceWriter;
 use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
-use values::computed;
-use values::computed::length::CSSPixelLength;
-use values::generics::gecko::ScrollSnapPoint as GenericScrollSnapPoint;
-use values::generics::rect::Rect;
-use values::specified::length::LengthOrPercentage;
 
 
 pub type ScrollSnapPoint = GenericScrollSnapPoint<LengthOrPercentage>;
@@ -25,7 +25,7 @@ impl Parse for ScrollSnapPoint {
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        if input.try(|i| i.expect_ident_matching("none")).is_ok() {
+        if input.r#try(|i| i.expect_ident_matching("none")).is_ok() {
             return Ok(GenericScrollSnapPoint::None);
         }
         input.expect_function_matching("repeat")?;
@@ -35,12 +35,12 @@ impl Parse for ScrollSnapPoint {
     }
 }
 
-
+/// A component of an IntersectionObserverRootMargin.
 #[derive(Clone, Copy, Debug, PartialEq, ToCss)]
 pub enum PixelOrPercentage {
-    
+    /// An absolute length in pixels (px)
     Pixel(CSSPixelLength),
-    
+    /// A percentage (%)
     Percentage(computed::Percentage),
 }
 
@@ -87,12 +87,12 @@ impl GeckoStyleCoordConvertible for PixelOrPercentage {
     }
 }
 
-
-
-
-
-
-
+/// The value of an IntersectionObserver's rootMargin property.
+///
+/// Only bare px or percentage values are allowed. Other length units and
+/// calc() values are not allowed.
+///
+/// <https://w3c.github.io/IntersectionObserver/#parse-a-root-margin>
 pub struct IntersectionObserverRootMargin(pub Rect<PixelOrPercentage>);
 
 impl Parse for IntersectionObserverRootMargin {
@@ -105,17 +105,17 @@ impl Parse for IntersectionObserverRootMargin {
     }
 }
 
-
-
-
-
+// Strictly speaking this is not ToCss. It's serializing for DOM. But
+// we can just reuse the infrastructure of this.
+//
+// <https://w3c.github.io/IntersectionObserver/#dom-intersectionobserver-rootmargin>
 impl ToCss for IntersectionObserverRootMargin {
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
     where
         W: fmt::Write,
     {
-        
-        
+        // We cannot use the ToCss impl of Rect, because that would
+        // merge items when they are equal. We want to list them all.
         let mut writer = SequenceWriter::new(dest, " ");
         let rect = &self.0;
         writer.item(&rect.0)?;

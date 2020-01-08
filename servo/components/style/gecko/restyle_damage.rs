@@ -4,11 +4,11 @@
 
 
 
-use gecko_bindings::bindings;
-use gecko_bindings::structs;
-use gecko_bindings::structs::nsChangeHint;
-use matching::{StyleChange, StyleDifference};
-use properties::ComputedValues;
+use crate::gecko_bindings::bindings;
+use crate::gecko_bindings::structs;
+use crate::gecko_bindings::structs::nsChangeHint;
+use crate::matching::{StyleChange, StyleDifference};
+use crate::properties::ComputedValues;
 use std::ops::{BitAnd, BitOr, BitOrAssign, Not};
 
 

@@ -4,8 +4,8 @@
 
 
 
-use gecko_bindings::bindings;
-use gecko_bindings::structs::{nsTArray, nsTArrayHeader};
+use crate::gecko_bindings::bindings;
+use crate::gecko_bindings::structs::{nsTArray, nsTArrayHeader};
 use std::mem;
 use std::ops::{Deref, DerefMut};
 use std::slice;

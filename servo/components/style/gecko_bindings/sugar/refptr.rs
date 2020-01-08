@@ -4,13 +4,13 @@
 
 
 
-use gecko_bindings::sugar::ownership::HasArcFFI;
-use gecko_bindings::{bindings, structs};
+use crate::gecko_bindings::sugar::ownership::HasArcFFI;
+use crate::gecko_bindings::{bindings, structs};
+use crate::Atom;
 use servo_arc::Arc;
 use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
 use std::{fmt, mem, ptr};
-use Atom;
 
 
 
