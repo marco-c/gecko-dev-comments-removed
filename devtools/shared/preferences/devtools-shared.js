@@ -38,8 +38,6 @@ pref("devtools.debugger.remote-websocket", false);
 
 pref("devtools.debugger.force-local", true);
 
-pref("devtools.debugger.forbid-certified-apps", true);
-
 
 
 
