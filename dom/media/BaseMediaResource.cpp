@@ -7,6 +7,7 @@
 #include "mozilla/dom/BlobImpl.h"
 #include "mozilla/dom/BlobURLProtocolHandler.h"
 #include "mozilla/dom/HTMLMediaElement.h"
+#include "mozilla/InputStreamLengthHelper.h"
 #include "nsDebug.h"
 #include "nsError.h"
 #include "nsICloneableInputStream.h"
@@ -63,18 +64,19 @@ already_AddRefed<BaseMediaResource> BaseMediaResource::Create(
     
     
     
-    uint64_t size = blobImpl->GetSize(rv);
-    if (NS_WARN_IF(rv.Failed())) {
-      return nullptr;
+    int64_t length;
+    if (InputStreamLengthHelper::GetSyncLength(stream, &length) &&
+        length >= 0) {
+      RefPtr<BaseMediaResource> resource =
+          new FileMediaResource(aCallback, aChannel, uri, length);
+      return resource.forget();
     }
 
     
     
-    nsCOMPtr<nsISeekableStream> seekableStream = do_QueryInterface(stream);
-    if (seekableStream) {
-      RefPtr<BaseMediaResource> resource =
-          new FileMediaResource(aCallback, aChannel, uri, size);
-      return resource.forget();
+    uint64_t size = blobImpl->GetSize(rv);
+    if (NS_WARN_IF(rv.Failed())) {
+      return nullptr;
     }
 
     
