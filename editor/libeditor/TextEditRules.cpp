@@ -905,8 +905,11 @@ TextEditRules::WillSetText(bool* aCancel,
   *aHandled = false;
   *aCancel = false;
 
-  if (!IsPlaintextEditor() || TextEditorRef().IsIMEComposing() ||
+  if (!IsPlaintextEditor() ||
+      TextEditorRef().IsIMEComposing() ||
+      TextEditorRef().IsUndoRedoEnabled() ||
       aMaxLength != -1) {
+    
     
     return NS_OK;
   }

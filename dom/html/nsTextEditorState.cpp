@@ -2425,10 +2425,24 @@ nsTextEditorState::SetValue(const nsAString& aValue, const nsAString* aOldValue,
           bool notifyValueChanged = !!(aFlags & eSetValue_Notify);
           mTextListener->SetValueChanged(notifyValueChanged);
 
-          
-          
-          
-          if (aFlags & (eSetValue_BySetUserInput | eSetValue_ForXUL)) {
+          if (aFlags & eSetValue_BySetUserInput) {
+            
+            
+            
+            
+            DebugOnly<nsresult> rv = textEditor->ReplaceTextAsAction(newValue);
+            NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+              "Failed to set the new value");
+          } else if (aFlags & eSetValue_ForXUL) {
+            
+            
+            
+            
+            
+            
+            
+            
+            
             nsCOMPtr<nsISelectionController> kungFuDeathGrip = mSelCon.get();
             uint32_t currentLength = currentValue.Length();
             uint32_t newlength = newValue.Length();
@@ -2457,6 +2471,9 @@ nsTextEditorState::SetValue(const nsAString& aValue, const nsAString* aOldValue,
                 "Failed to insert the new value");
             }
           } else {
+            
+            
+            
             AutoDisableUndo disableUndo(textEditor);
             if (selection) {
               

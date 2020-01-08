@@ -164,6 +164,14 @@ public:
 
 
 
+
+
+  nsresult ReplaceTextAsAction(const nsAString& aString);
+
+  
+
+
+
   nsresult OnInputParagraphSeparator();
 
   
@@ -262,6 +270,14 @@ protected:
   virtual nsresult
   DeleteSelectionWithTransaction(EDirection aAction,
                                  EStripWrappers aStripWrappers);
+
+  
+
+
+
+
+
+  nsresult SetTextAsSubAction(const nsAString& aString);
 
   
 
