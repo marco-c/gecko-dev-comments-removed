@@ -661,13 +661,9 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
   case ePointerDown:
     if (aEvent->mMessage == ePointerDown) {
       PointerEventHandler::ImplicitlyCapturePointer(aTargetFrame, aEvent);
-#ifndef MOZ_WIDGET_ANDROID
-      
-      
-      
-      
-      NotifyTargetUserActivation(aEvent, aTargetContent);
-#endif
+      if (mouseEvent->inputSource != MouseEvent_Binding::MOZ_SOURCE_TOUCH) {
+        NotifyTargetUserActivation(aEvent, aTargetContent);
+      }
     }
     MOZ_FALLTHROUGH;
   case ePointerMove: {
