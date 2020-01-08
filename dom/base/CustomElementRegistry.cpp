@@ -773,9 +773,6 @@ CustomElementRegistry::Define(JSContext* aCx,
                               const ElementDefinitionOptions& aOptions,
                               ErrorResult& aRv)
 {
-  
-  
-  
   JS::Rooted<JSObject*> constructor(aCx, aFunctionConstructor.CallableOrNull());
 
   JS::Rooted<JSObject*> constructorUnwrapped(aCx, js::CheckedUnwrap(constructor));
