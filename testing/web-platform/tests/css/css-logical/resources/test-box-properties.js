@@ -115,7 +115,8 @@
       physical[physicalSide] = isInset ? physicalSide : property.replace("*", physicalSide);
       prerequisites += makeDeclaration(descriptor.prerequisites, physicalSide);
     }
-    return {name, logical, physical, type: descriptor.type, prerequisites, property};
+    const type = [].concat(descriptor.type);
+    return {name, logical, physical, type, prerequisites, property};
   };
 
   
@@ -134,7 +135,7 @@
         horizontal: `${prefix}width`,
         vertical: `${prefix}height`,
       },
-      type: "length",
+      type: ["length"],
       prerequisites: makeDeclaration({display: "block"}),
       property: (prefix ? prefix.slice(0, -1) + " " : "") + "sizing",
     };
@@ -147,7 +148,9 @@
 
 
   exports.runTests = function(group) {
-    const values = testValues[group.type];
+    const values = testValues[group.type[0]].map(function(_, i) {
+      return group.type.map(type => testValues[type][i]).join(" ");
+    });
     const logicals = Object.values(group.logical);
     const physicals = Object.values(group.physical);
 
@@ -158,8 +161,8 @@
         expected.push([logicalProp, values[i]]);
       }
       testCSSValues("logical properties in inline style", testElement.style, expected);
-      testElement.style.cssText = "";
     }, `Test that logical ${group.property} properties are supported.`);
+    testElement.style.cssText = "";
 
     for (const writingMode of writingModes) {
       for (const style of writingMode.styles) {
