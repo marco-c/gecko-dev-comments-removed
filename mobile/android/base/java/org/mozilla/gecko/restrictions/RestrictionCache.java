@@ -9,9 +9,9 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.StrictMode;
 import android.os.UserManager;
 
+import org.mozilla.gecko.util.StrictModeContext;
 import org.mozilla.gecko.util.ThreadUtils;
 
 
@@ -58,21 +58,18 @@ public class RestrictionCache {
         }
     }
 
+    @SuppressWarnings("try")
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
     private static void readRestrictions(Context context) {
         final UserManager mgr = (UserManager) context.getSystemService(Context.USER_SERVICE);
 
         
-        final StrictMode.ThreadPolicy policy = StrictMode.allowThreadDiskReads();
-
-        try {
+        try (StrictModeContext unused = StrictModeContext.allowDiskReads()) {
             Bundle appRestrictions = mgr.getApplicationRestrictions(context.getPackageName());
             migrateRestrictionsIfNeeded(appRestrictions);
 
             cachedAppRestrictions = appRestrictions;
             cachedUserRestrictions = mgr.getUserRestrictions(); 
-        } finally {
-            StrictMode.setThreadPolicy(policy);
         }
     }
 
