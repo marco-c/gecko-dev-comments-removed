@@ -1,22 +1,33 @@
 
 
 
-BootstrapMonitor.init();
-
 const updatesDir = FileUtils.getDir("ProfD", ["features"]);
 
+AddonTestUtils.usePrivilegedSignatures = id => "system";
 
-var dir = FileUtils.getDir("ProfD", ["sysfeatures", "app1"], true);
-do_get_file("data/system_addons/system1_1.xpi").copyTo(dir, "system1@tests.mozilla.org.xpi");
-do_get_file("data/system_addons/system2_1.xpi").copyTo(dir, "system2@tests.mozilla.org.xpi");
+add_task(async function setup() {
+  
+  let dir = FileUtils.getDir("ProfD", ["sysfeatures", "app1"], true);
+  let xpi = await getSystemAddonXPI(1, "1.0");
+  xpi.copyTo(dir, "system1@tests.mozilla.org.xpi");
 
-dir = FileUtils.getDir("ProfD", ["sysfeatures", "app2"], true);
-do_get_file("data/system_addons/system1_2.xpi").copyTo(dir, "system1@tests.mozilla.org.xpi");
-do_get_file("data/system_addons/system3_1.xpi").copyTo(dir, "system3@tests.mozilla.org.xpi");
+  xpi = await getSystemAddonXPI(2, "1.0");
+  xpi.copyTo(dir, "system2@tests.mozilla.org.xpi");
 
-dir = FileUtils.getDir("ProfD", ["sysfeatures", "app3"], true);
-do_get_file("data/system_addons/system1_1_badcert.xpi").copyTo(dir, "system1@tests.mozilla.org.xpi");
-do_get_file("data/system_addons/system3_1.xpi").copyTo(dir, "system3@tests.mozilla.org.xpi");
+  dir = FileUtils.getDir("ProfD", ["sysfeatures", "app2"], true);
+  xpi = await getSystemAddonXPI(1, "2.0");
+  xpi.copyTo(dir, "system1@tests.mozilla.org.xpi");
+
+  xpi = await getSystemAddonXPI(3, "1.0");
+  xpi.copyTo(dir, "system3@tests.mozilla.org.xpi");
+
+  dir = FileUtils.getDir("ProfD", ["sysfeatures", "app3"], true);
+  xpi = await getSystemAddonXPI(1, "1.0");
+  xpi.copyTo(dir, "system1@tests.mozilla.org.xpi");
+
+  xpi = await getSystemAddonXPI(3, "1.0");
+  xpi.copyTo(dir, "system3@tests.mozilla.org.xpi");
+});
 
 const distroDir = FileUtils.getDir("ProfD", ["sysfeatures", "app0"], true);
 registerDirectory("XREAppFeat", distroDir);
@@ -71,24 +82,12 @@ async function check_installed(conditions) {
       if (isUpgrade) {
         Assert.equal(addon.signedState, AddonManager.SIGNEDSTATE_SYSTEM);
       }
-
+    } else if (isUpgrade) {
       
-      BootstrapMonitor.checkAddonStarted(id, version);
+      Assert.equal(addon, null);
     } else {
-      if (isUpgrade) {
-        
-        Assert.equal(addon, null);
-      } else {
-        
-        Assert.ok(!addon || !addon.isActive);
-      }
-
-      BootstrapMonitor.checkAddonNotStarted(id);
-
-      if (addon)
-        BootstrapMonitor.checkAddonInstalled(id);
-      else
-        BootstrapMonitor.checkAddonNotInstalled(id);
+      
+      Assert.ok(!addon || !addon.isActive);
     }
   }
 }
@@ -179,9 +178,9 @@ add_task(async function test_updated() {
   updatesDir.append(dirname);
 
   
-  let file = do_get_file("data/system_addons/system2_2.xpi");
+  let file = await getSystemAddonXPI(2, "2.0");
   file.copyTo(updatesDir, "system2@tests.mozilla.org.xpi");
-  file = do_get_file("data/system_addons/system3_2.xpi");
+  file = await getSystemAddonXPI(3, "2.0");
   file.copyTo(updatesDir, "system3@tests.mozilla.org.xpi");
 
   
@@ -251,7 +250,7 @@ add_task(async function normal_mode_enabled() {
 
 add_task(async function test_skips_additional() {
   
-  let file = do_get_file("data/system_addons/system4_1.xpi");
+  let file = await getSystemAddonXPI(4, "1.0");
   file.copyTo(updatesDir, "system4@tests.mozilla.org.xpi");
 
   await overrideBuiltIns({ "system": ["system1@tests.mozilla.org", "system2@tests.mozilla.org", "system3@tests.mozilla.org", "system5@tests.mozilla.org"] });
@@ -272,9 +271,6 @@ add_task(async function test_skips_additional() {
 add_task(async function test_revert() {
   manuallyUninstall(updatesDir, "system2@tests.mozilla.org");
 
-  
-  BootstrapMonitor.clear("system2@tests.mozilla.org");
-
   await overrideBuiltIns({ "system": ["system1@tests.mozilla.org", "system2@tests.mozilla.org", "system3@tests.mozilla.org", "system5@tests.mozilla.org"] });
   await promiseStartupManager();
 
@@ -293,7 +289,7 @@ add_task(async function test_revert() {
 
 
 add_task(async function test_reuse() {
-  let file = do_get_file("data/system_addons/system2_2.xpi");
+  let file = await getSystemAddonXPI(2, "2.0");
   file.copyTo(updatesDir, "system2@tests.mozilla.org.xpi");
 
   await overrideBuiltIns({ "system": ["system1@tests.mozilla.org", "system2@tests.mozilla.org", "system3@tests.mozilla.org", "system5@tests.mozilla.org"] });
@@ -330,7 +326,7 @@ add_task(async function test_corrupt_pref() {
 
 
 add_task(async function test_bad_profile_cert() {
-  let file = do_get_file("data/system_addons/system1_1_badcert.xpi");
+  let file = await getSystemAddonXPI(1, "1.0");
   file.copyTo(updatesDir, "system1@tests.mozilla.org.xpi");
 
   
@@ -369,6 +365,11 @@ add_task(async function test_bad_profile_cert() {
 add_task(async function test_bad_app_cert() {
   gAppInfo.version = "3";
   distroDir.leafName = "app3";
+
+  AddonTestUtils.usePrivilegedSignatures = id => {
+    return (id === "system1@tests.mozilla.org") ? false : "system";
+  };
+
   await overrideBuiltIns({ "system": ["system1@tests.mozilla.org", "system2@tests.mozilla.org", "system3@tests.mozilla.org", "system5@tests.mozilla.org"] });
   await promiseStartupManager();
 
@@ -390,6 +391,8 @@ add_task(async function test_bad_app_cert() {
   await check_installed(conditions);
 
   await promiseShutdownManager();
+
+  AddonTestUtils.usePrivilegedSignatures = id => "system";
 });
 
 
@@ -400,9 +403,9 @@ add_task(async function test_updated_bad_update_set() {
   updatesDir.append(dirname);
 
   
-  let file = do_get_file("data/system_addons/system2_2.xpi");
+  let file = await getSystemAddonXPI(2, "2.0");
   file.copyTo(updatesDir, "system2@tests.mozilla.org.xpi");
-  file = do_get_file("data/system_addons/system_failed_update.xpi");
+  file = await getSystemAddonXPI("failed_update", "1.0");
   file.copyTo(updatesDir, "system_failed_update@tests.mozilla.org.xpi");
 
   
