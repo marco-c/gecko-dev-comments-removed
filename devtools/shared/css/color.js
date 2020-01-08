@@ -1197,10 +1197,6 @@ function blendColors(foregroundColor, backgroundColor = [ 255, 255, 255, 1 ]) {
 
 
 function calculateContrastRatio(backgroundColor, textColor) {
-  
-  backgroundColor = Array.from(backgroundColor);
-  textColor = Array.from(textColor);
-
   backgroundColor = blendColors(backgroundColor);
   textColor = blendColors(textColor, backgroundColor);
 
