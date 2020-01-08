@@ -16,7 +16,7 @@ const TESTS = [
 function promiseTestOpenCloseWindow(aIsPrivate, aTest) {
   return (async function() {
     let win = await BrowserTestUtils.openNewBrowserWindow({ "private": aIsPrivate });
-    win.gBrowser.selectedBrowser.loadURI(aTest.url);
+    BrowserTestUtils.loadURI(win.gBrowser.selectedBrowser, aTest.url);
     await promiseBrowserLoaded(win.gBrowser.selectedBrowser, true, aTest.url);
     
     ss.setWindowValue(win, aTest.key, aTest.value);

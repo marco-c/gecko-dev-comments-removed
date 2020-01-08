@@ -55,7 +55,7 @@ var tests = [
     loadTabInWindow(window, function(tab) {
       
       
-      tab.linkedBrowser.loadURI("http://test1.example.com");
+      BrowserTestUtils.loadURI(tab.linkedBrowser, "http://test1.example.com");
       tab.linkedBrowser.stop();
       is(gURLBar.textValue, "example.com", "URL bar had user/pass stripped after load error");
       gBrowser.removeTab(tab);
