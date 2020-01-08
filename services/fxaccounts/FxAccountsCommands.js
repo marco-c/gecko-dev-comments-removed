@@ -272,7 +272,11 @@ class SendTab {
       publicKey: sendTabKeys.publicKey,
       authSecret: sendTabKeys.authSecret,
     };
-    const {kSync, kXCS} = await this._fxAccounts.getKeys();
+    
+    
+    
+    
+    const {kSync, kXCS} = await this._fxAccounts.getSignedInUser();
     if (!kSync || !kXCS) {
       return null;
     }
