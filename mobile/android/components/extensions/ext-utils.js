@@ -6,7 +6,6 @@ ChromeUtils.defineModuleGetter(this, "PrivateBrowsingUtils",
                                "resource://gre/modules/PrivateBrowsingUtils.jsm");
 
 
-
 ChromeUtils.import("resource://gre/modules/Messaging.jsm");
 
 ChromeUtils.import("resource://gre/modules/ExtensionCommon.jsm");
