@@ -46,6 +46,14 @@
 
 
 
+typedef struct Dav1dUserData {
+    const uint8_t *data; 
+    struct Dav1dRef *ref; 
+} Dav1dUserData;
+
+
+
+
 
 
 
@@ -56,6 +64,7 @@ typedef struct Dav1dDataProps {
     int64_t duration; 
     int64_t offset; 
     size_t size; 
+    struct Dav1dUserData user_data; 
 } Dav1dDataProps;
 
 #endif 

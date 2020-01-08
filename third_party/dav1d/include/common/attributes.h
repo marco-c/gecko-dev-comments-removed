@@ -38,10 +38,11 @@
 #define ATTR_ALIAS
 #endif
 
-#if ARCH_X86
+#if ARCH_X86_64
+
 #define ALIGN_32_VAL 32
 #define ALIGN_16_VAL 16
-#elif ARCH_ARM || ARCH_AARCH64
+#elif ARCH_X86_32 || ARCH_ARM || ARCH_AARCH64
 
 #define ALIGN_32_VAL 16
 #define ALIGN_16_VAL 16

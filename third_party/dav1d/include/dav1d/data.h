@@ -65,8 +65,39 @@ DAV1D_API uint8_t * dav1d_data_create(Dav1dData *data, size_t sz);
 
 
 DAV1D_API int dav1d_data_wrap(Dav1dData *data, const uint8_t *buf, size_t sz,
-                              void (*free_callback)(const uint8_t *buf, void *user_data),
-                              void *user_data);
+                              void (*free_callback)(const uint8_t *buf, void *cookie),
+                              void *cookie);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+DAV1D_API int dav1d_data_wrap_user_data(Dav1dData *data,
+                                        const uint8_t *user_data,
+                                        void (*free_callback)(const uint8_t *user_data,
+                                                              void *cookie),
+                                        void *cookie);
+
+
+
+
 
 
 
