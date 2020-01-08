@@ -36,10 +36,18 @@ use std::boxed::Box;
 use std::env;
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
+#[cfg(target_os = "android")]
+use std::os::raw::c_int;
+#[cfg(target_os = "android")]
+use log::Level;
+#[cfg(not(target_os = "android"))]
+use log::Log;
 use std::panic;
 
 extern "C" {
     fn gfx_critical_note(msg: *const c_char);
+    #[cfg(target_os = "android")]
+    fn __android_log_write(prio: c_int, tag: *const c_char, text: *const c_char) -> c_int;
 }
 
 struct GeckoLogger {
@@ -84,6 +92,29 @@ impl GeckoLogger {
             }
         }
     }
+
+    #[cfg(not(target_os = "android"))]
+    fn log_out(&self, record: &log::Record) {
+        self.logger.log(record);
+    }
+
+    #[cfg(target_os = "android")]
+    fn log_out(&self, record: &log::Record) {
+        let msg = CString::new(format!("{}", record.args())).unwrap();
+        let tag = CString::new(record.module_path().unwrap()).unwrap();
+        let prio = match record.metadata().level() {
+            Level::Error => 6 ,
+            Level::Warn => 5 ,
+            Level::Info => 4 ,
+            Level::Debug => 3 ,
+            Level::Trace => 2 ,
+        };
+        
+        
+        unsafe {
+            __android_log_write(prio, tag.as_ptr(), msg.as_ptr());
+        }
+    }
 }
 
 impl log::Log for GeckoLogger {
@@ -94,7 +125,7 @@ impl log::Log for GeckoLogger {
     fn log(&self, record: &log::Record) {
         
         self.maybe_log_to_gfx_critical_note(record);
-        self.logger.log(record);
+        self.log_out(record);
     }
 
     fn flush(&self) { }
