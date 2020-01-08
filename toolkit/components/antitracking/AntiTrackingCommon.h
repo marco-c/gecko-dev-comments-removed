@@ -109,6 +109,7 @@ public:
   
   
   
+  
   static void
   NotifyRejection(nsIChannel* aChannel, uint32_t aRejectedReason);
 
