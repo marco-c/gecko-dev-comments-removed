@@ -122,7 +122,7 @@ private:
   
   
   std::vector<gfx::Tile> mPaintTiles;
-  std::vector<RefPtr<CapturedTiledPaintState>> mPaintStates;
+  std::vector<RefPtr<PaintTask>> mPaintTasks;
 
   
 
