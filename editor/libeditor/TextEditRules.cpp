@@ -956,6 +956,7 @@ TextEditRules::WillSetText(bool* aCancel,
   if (!IsPlaintextEditor() ||
       TextEditorRef().IsIMEComposing() ||
       TextEditorRef().IsUndoRedoEnabled() ||
+      TextEditorRef().GetEditAction() == EditAction::eReplaceText ||
       aMaxLength != -1) {
     
     
