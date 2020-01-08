@@ -951,9 +951,19 @@ void
 MediaStreamGraphImpl::NotifyOutputData(AudioDataValue* aBuffer, size_t aFrames,
                                        TrackRate aRate, uint32_t aChannels)
 {
+#ifdef ANDROID
+  
+  
+  
+  
+  if (!mInputDeviceUsers.GetValue(mInputDeviceID)) {
+    return;
+  }
+#else
   if (!mInputDeviceID) {
     return;
   }
+#endif
   
   
   nsTArray<RefPtr<AudioDataListener>>* listeners = mInputDeviceUsers.GetValue(mInputDeviceID);
@@ -967,6 +977,11 @@ void
 MediaStreamGraphImpl::NotifyInputData(const AudioDataValue* aBuffer, size_t aFrames,
                                       TrackRate aRate, uint32_t aChannels)
 {
+#ifdef ANDROID
+  if (!mInputDeviceUsers.GetValue(mInputDeviceID)) {
+    return;
+  }
+#else
 #ifdef DEBUG
   {
     MonitorAutoLock lock(mMonitor);
@@ -979,6 +994,7 @@ MediaStreamGraphImpl::NotifyInputData(const AudioDataValue* aBuffer, size_t aFra
   if (!mInputDeviceID) {
     return;
   }
+#endif
   nsTArray<RefPtr<AudioDataListener>>* listeners = mInputDeviceUsers.GetValue(mInputDeviceID);
   MOZ_ASSERT(listeners);
   for (auto& listener : *listeners) {
@@ -990,9 +1006,15 @@ void MediaStreamGraphImpl::DeviceChangedImpl()
 {
   MOZ_ASSERT(OnGraphThread());
 
+#ifdef ANDROID
+  if (!mInputDeviceUsers.GetValue(mInputDeviceID)) {
+    return;
+  }
+#else
   if (!mInputDeviceID) {
     return;
   }
+#endif
 
   nsTArray<RefPtr<AudioDataListener>>* listeners =
     mInputDeviceUsers.GetValue(mInputDeviceID);
