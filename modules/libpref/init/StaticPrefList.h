@@ -301,6 +301,13 @@ VARCACHE_PREF(
   RelaxedAtomicBool, false
 )
 
+
+VARCACHE_PREF(
+  "dom.streams.enabled",
+   dom_streams_enabled,
+  RelaxedAtomicBool, false
+)
+
 #if !defined(MOZ_WIDGET_ANDROID)
 # define PREF_VALUE true
 #else
@@ -652,17 +659,11 @@ VARCACHE_PREF(
 )
 
 
-#ifdef EARLY_BETA_OR_EARLIER
-#define PREF_VALUE true
-#else
-#define PREF_VALUE false
-#endif
 VARCACHE_PREF(
   "layout.css.webkit-appearance.enabled",
    layout_css_webkit_appearance_enabled,
-  bool, PREF_VALUE
+  bool, true
 )
-#undef PREF_VALUE
 
 
 VARCACHE_PREF(
@@ -829,14 +830,6 @@ VARCACHE_PREF(
    javascript_options_mem_notify,
   bool, false
 )
-
-
-VARCACHE_PREF(
-  "javascript.options.streams",
-   javascript_options_streams,
-  RelaxedAtomicBool, false
-)
-
 
 
 
