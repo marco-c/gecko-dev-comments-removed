@@ -80,6 +80,38 @@ class MozXULElement extends XULElement {
 
 
 
+  static insertFTLIfNeeded(path) {
+    let container = document.head || document.querySelector("linkset");
+    if (!container) {
+      if (document.contentType != "application/vnd.mozilla.xul+xml") {
+        throw new Error("Attempt to inject localization link before document.head is available");
+      }
+      container = document.createXULElement("linkset");
+      document.documentElement.appendChild(container);
+    }
+
+    for (let link of container.querySelectorAll("link")) {
+      if (link.getAttribute("href") == path) {
+        return;
+      }
+    }
+
+    let link = document.createElement("link");
+    link.setAttribute("rel", "localization");
+    link.setAttribute("href", path);
+
+    container.appendChild(link);
+  }
+
+  
+
+
+
+
+
+
+
+
 
 
 

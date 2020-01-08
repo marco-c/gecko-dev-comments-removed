@@ -3361,7 +3361,7 @@ nsIDocument::LocalizationLinkAdded(Element* aLinkElement)
     AutoTArray<nsString, 1> resourceIds;
     resourceIds.AppendElement(href);
     mDocumentL10n->AddResourceIds(resourceIds);
-  } else if (mReadyState == READYSTATE_COMPLETE) {
+  } else if (mReadyState >= READYSTATE_INTERACTIVE) {
     
     
     AutoTArray<nsString, 1> resourceIds;
