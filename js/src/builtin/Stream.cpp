@@ -160,14 +160,14 @@ enum BYOBRequestSlots {
 };
 
 template<class T>
-MOZ_ALWAYS_INLINE bool
+bool
 Is(const HandleValue v)
 {
     return v.isObject() && v.toObject().is<T>();
 }
 
 template<class T>
-MOZ_ALWAYS_INLINE bool
+bool
 IsMaybeWrapped(const HandleValue v)
 {
     if (!v.isObject()) {
@@ -305,7 +305,7 @@ JSObject::is<ReadableStreamReader>() const
 
 
 template<class T>
-static MOZ_ALWAYS_INLINE T*
+static T*
 ToUnwrapped(JSContext* cx, JSObject* obj)
 {
     if (IsWrapper(obj)) {
@@ -323,7 +323,7 @@ ToUnwrapped(JSContext* cx, JSObject* obj)
 
 
 template<class T>
-static MOZ_ALWAYS_INLINE T*
+static T*
 ToUnwrapped(JSContext* cx, JSObject* obj, const char* description)
 {
     if (IsWrapper(obj)) {
@@ -351,7 +351,7 @@ ToUnwrapped(JSContext* cx, JSObject* obj, const char* description)
 
 
 template<class T>
-static MOZ_ALWAYS_INLINE T*
+static T*
 ToUnwrapped(JSContext* cx, JSObject* obj, const char* className, const char* methodName)
 {
     if (IsWrapper(obj)) {
@@ -382,7 +382,7 @@ ToUnwrapped(JSContext* cx, JSObject* obj, const char* className, const char* met
 
 
 template<class T>
-static MOZ_ALWAYS_INLINE T*
+static T*
 ToUnwrapped(JSContext* cx,
             HandleValue val,
             const char* className = "",
@@ -409,7 +409,7 @@ ToUnwrapped(JSContext* cx,
 
 
 
-MOZ_ALWAYS_INLINE static MOZ_MUST_USE ReadableStream*
+static MOZ_MUST_USE ReadableStream*
 StreamFromReader(JSContext *maybeCx, const ReadableStreamReader* reader)
 {
     MOZ_ASSERT(ReaderHasStream(reader));
@@ -444,7 +444,7 @@ StreamFromReader(JSContext *maybeCx, const ReadableStreamReader* reader)
 
 
 
-MOZ_ALWAYS_INLINE static MOZ_MUST_USE ReadableStreamReader*
+static MOZ_MUST_USE ReadableStreamReader*
 ReaderFromStream(JSContext* maybeCx, const ReadableStream* stream)
 {
     JSObject* readerObj = &stream->getFixedSlot(StreamSlot_Reader).toObject();
