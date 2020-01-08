@@ -186,7 +186,7 @@ nsHttpNTLMAuth::ChallengeReceived(nsIHttpAuthenticableChannel *channel,
     
     
     if (PL_strcasecmp(challenge, "NTLM") == 0) {
-        nsCOMPtr<nsISupports> module;
+        nsCOMPtr<nsIAuthModule> module;
 
         
         
@@ -201,7 +201,7 @@ nsHttpNTLMAuth::ChallengeReceived(nsIHttpAuthenticableChannel *channel,
                 
                 
                 
-                module = do_CreateInstance(NS_AUTH_MODULE_CONTRACTID_PREFIX "sys-ntlm");
+                module = nsIAuthModule::CreateInstance("sys-ntlm");
             }
 #ifdef XP_WIN
             else {
@@ -210,7 +210,7 @@ nsHttpNTLMAuth::ChallengeReceived(nsIHttpAuthenticableChannel *channel,
                 
                 
                 
-                module = do_CreateInstance(NS_AUTH_MODULE_CONTRACTID_PREFIX "sys-ntlm");
+                module = nsIAuthModule::CreateInstance("sys-ntlm");
                 *identityInvalid = true;
             }
 #endif 
@@ -238,7 +238,7 @@ nsHttpNTLMAuth::ChallengeReceived(nsIHttpAuthenticableChannel *channel,
             
             
             LOG(("Trying to fall back on internal ntlm auth.\n"));
-            module = do_CreateInstance(NS_AUTH_MODULE_CONTRACTID_PREFIX "ntlm");
+            module = nsIAuthModule::CreateInstance("ntlm");
 
             mUseNative = false;
 
@@ -254,7 +254,7 @@ nsHttpNTLMAuth::ChallengeReceived(nsIHttpAuthenticableChannel *channel,
 
         
         
-        module.swap(*continuationState);
+        module.forget(continuationState);
     }
     return NS_OK;
 }
