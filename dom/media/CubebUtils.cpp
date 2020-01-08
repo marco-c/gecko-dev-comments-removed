@@ -39,6 +39,8 @@
 #define PREF_CUBEB_LATENCY_PLAYBACK "media.cubeb_latency_playback_ms"
 #define PREF_CUBEB_LATENCY_MSG "media.cubeb_latency_msg_frames"
 
+#define PREF_CUBEB_MAX_INPUT_STREAMS "media.cubeb_max_input_streams"
+
 
 #define PREF_CUBEB_FORCE_SAMPLE_RATE "media.cubeb.force_sample_rate"
 #define PREF_CUBEB_LOGGING_LEVEL "media.cubeb.logging_level"
@@ -127,6 +129,9 @@ cubeb* sCubebContext;
 double sVolumeScale = 1.0;
 uint32_t sCubebPlaybackLatencyInMilliseconds = 100;
 uint32_t sCubebMSGLatencyInFrames = 512;
+
+
+uint32_t sCubebMaxInputStreams = 1;
 
 
 
@@ -231,6 +236,9 @@ void PrefChanged(const char* aPref, void* aClosure)
     
     
     sCubebMSGLatencyInFrames = std::min<uint32_t>(std::max<uint32_t>(value, 128), 1e6);
+  } else if (strcmp(aPref, PREF_CUBEB_MAX_INPUT_STREAMS) == 0) {
+    StaticMutexAutoLock lock(sMutex);
+    sCubebMaxInputStreams = Preferences::GetUint(aPref);
   } else if (strcmp(aPref, PREF_CUBEB_FORCE_SAMPLE_RATE) == 0) {
     StaticMutexAutoLock lock(sMutex);
     sCubebForcedSampleRate = Preferences::GetUint(aPref);
@@ -551,12 +559,19 @@ uint32_t GetCubebMSGLatencyInFrames(cubeb_stream_params * params)
 #endif
 }
 
+uint32_t GetMaxInputStreams()
+{
+  StaticMutexAutoLock lock(sMutex);
+  return sCubebMaxInputStreams;
+}
+
 static const char* gInitCallbackPrefs[] = {
   PREF_VOLUME_SCALE,           PREF_CUBEB_OUTPUT_DEVICE,
   PREF_CUBEB_LATENCY_PLAYBACK, PREF_CUBEB_LATENCY_MSG,
   PREF_CUBEB_BACKEND,          PREF_CUBEB_FORCE_NULL_CONTEXT,
   PREF_CUBEB_SANDBOX,          PREF_AUDIOIPC_POOL_SIZE,
-  PREF_AUDIOIPC_STACK_SIZE,    nullptr,
+  PREF_CUBEB_MAX_INPUT_STREAMS, PREF_AUDIOIPC_STACK_SIZE,
+  nullptr,
 };
 static const char* gCallbackPrefs[] = {
   PREF_CUBEB_FORCE_SAMPLE_RATE,
