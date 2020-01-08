@@ -1388,8 +1388,8 @@ class nsIPresShell : public nsStubDocumentObserver {
 
 
 
-  virtual bool IsResolutionUpdated() const = 0;
-  virtual void SetResolutionUpdated(bool aUpdated) = 0;
+  bool IsResolutionUpdated() const { return mResolutionUpdated; }
+  void SetResolutionUpdated(bool aUpdated) { mResolutionUpdated = aUpdated; }
 
   
 
@@ -1866,6 +1866,10 @@ class nsIPresShell : public nsStubDocumentObserver {
   
   
   bool mIsNeverPainting : 1;
+
+  
+  
+  bool mResolutionUpdated : 1;
 
   uint32_t mPresShellId;
 

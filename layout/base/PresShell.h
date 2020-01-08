@@ -197,10 +197,6 @@ class PresShell final : public nsIPresShell,
 
   nsresult SetResolutionAndScaleTo(float aResolution,
                                    ChangeOrigin aOrigin) override;
-  bool IsResolutionUpdated() const override { return mResolutionUpdated; }
-  void SetResolutionUpdated(bool aUpdated) override {
-    mResolutionUpdated = aUpdated;
-  }
   float GetCumulativeResolution() override;
   float GetCumulativeNonRootScaleResolution() override;
   void SetRestoreResolution(float aResolution,
@@ -826,10 +822,6 @@ class PresShell final : public nsIPresShell,
 
   
   bool mHasHandledUserInput : 1;
-
-  
-  
-  bool mResolutionUpdated : 1;
 
   
   
