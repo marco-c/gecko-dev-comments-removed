@@ -2991,6 +2991,13 @@ void WorkerPrivate::ShutdownGCTimers() {
 bool WorkerPrivate::InterruptCallback(JSContext* aCx) {
   MOZ_ACCESS_THREAD_BOUND(mWorkerThreadAccessible, data);
 
+  
+  
+  
+  
+  
+  
+
   MOZ_ASSERT(!JS_IsExceptionPending(aCx));
 
   bool mayContinue = true;
@@ -3004,9 +3011,17 @@ bool WorkerPrivate::InterruptCallback(JSContext* aCx) {
     }
 
     bool mayFreeze = data->mFrozen;
-    if (mayFreeze) {
+
+    {
       MutexAutoLock lock(mMutex);
-      mayFreeze = mStatus <= Running;
+
+      if (mayFreeze) {
+        mayFreeze = mStatus <= Running;
+      }
+
+      if (mStatus >= Canceling) {
+        mayContinue = false;
+      }
     }
 
     if (!mayContinue || !mayFreeze) {
@@ -3511,9 +3526,10 @@ bool WorkerPrivate::RunCurrentSyncLoop() {
         auto result = ProcessAllControlRunnablesLocked();
         if (result != ProcessAllControlRunnablesResult::Nothing) {
           
-
           
-          normalRunnablesPending = NS_HasPendingEvents(mThread);
+          normalRunnablesPending =
+              result == ProcessAllControlRunnablesResult::MayContinue &&
+              NS_HasPendingEvents(mThread);
 
           
           
