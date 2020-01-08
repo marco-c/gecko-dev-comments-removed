@@ -325,7 +325,7 @@ define(function(require, exports, module) {
       
       
       const allTabsMenu = this.state.overflow ? (
-        dom.div({
+        dom.button({
           className: "all-tabs-menu",
           onClick: this.props.onAllTabsMenuClick,
         })
