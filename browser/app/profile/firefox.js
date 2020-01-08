@@ -1271,11 +1271,7 @@ pref("browser.library.activity-stream.enabled", true);
 pref("browser.newtabpage.activity-stream.fxaccounts.endpoint", "https://accounts.firefox.com/");
 
 
-#ifdef EARLY_BETA_OR_EARLIER
 pref("browser.newtabpage.activity-stream.improvesearch.topSiteSearchShortcuts", true);
-#else
-pref("browser.newtabpage.activity-stream.improvesearch.topSiteSearchShortcuts", false);
-#endif
 
 
 #if defined(NIGHTLY_BUILD)
