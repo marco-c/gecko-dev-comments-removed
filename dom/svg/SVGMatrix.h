@@ -37,7 +37,7 @@
 #ifndef mozilla_dom_SVGMatrix_h
 #define mozilla_dom_SVGMatrix_h
 
-#include "mozilla/dom/SVGTransform.h"
+#include "mozilla/dom/DOMSVGTransform.h"
 #include "gfxMatrix.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsWrapperCache.h"
@@ -57,7 +57,7 @@ class SVGMatrix final : public nsWrapperCache {
   
 
 
-  explicit SVGMatrix(SVGTransform& aTransform) : mTransform(&aTransform) {}
+  explicit SVGMatrix(DOMSVGTransform& aTransform) : mTransform(&aTransform) {}
 
   
 
@@ -72,7 +72,7 @@ class SVGMatrix final : public nsWrapperCache {
   }
 
   
-  SVGTransform* GetParentObject() const;
+  DOMSVGTransform* GetParentObject() const;
   virtual JSObject* WrapObject(JSContext* aCx,
                                JS::Handle<JSObject*> aGivenProto) override;
 
@@ -117,8 +117,9 @@ class SVGMatrix final : public nsWrapperCache {
     return mTransform ? mTransform->IsAnimVal() : false;
   }
 
-  RefPtr<SVGTransform> mTransform;
+  RefPtr<DOMSVGTransform> mTransform;
 
+  
   
   
   gfxMatrix mMatrix;

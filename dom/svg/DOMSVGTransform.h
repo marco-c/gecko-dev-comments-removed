@@ -28,41 +28,41 @@ class SVGMatrix;
 
 
 
-class SVGTransform final : public nsWrapperCache {
+class DOMSVGTransform final : public nsWrapperCache {
   friend class AutoChangeTransformNotifier;
 
  public:
-  NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(SVGTransform)
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_NATIVE_CLASS(SVGTransform)
+  NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(DOMSVGTransform)
+  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_NATIVE_CLASS(DOMSVGTransform)
 
   
 
 
-  SVGTransform(DOMSVGTransformList* aList, uint32_t aListIndex,
-               bool aIsAnimValItem);
-
-  
-
-
-
-
-
-
-  explicit SVGTransform();
-  explicit SVGTransform(const gfxMatrix& aMatrix);
-
-  
-
-
-  explicit SVGTransform(const nsSVGTransform& aMatrix);
+  DOMSVGTransform(DOMSVGTransformList* aList, uint32_t aListIndex,
+                  bool aIsAnimValItem);
 
   
 
 
 
-  SVGTransform* Clone() {
+
+
+
+  explicit DOMSVGTransform();
+  explicit DOMSVGTransform(const gfxMatrix& aMatrix);
+
+  
+
+
+  explicit DOMSVGTransform(const nsSVGTransform& aMatrix);
+
+  
+
+
+
+  DOMSVGTransform* Clone() {
     NS_ASSERTION(mList, "unexpected caller");
-    return new SVGTransform(InternalItem());
+    return new DOMSVGTransform(InternalItem());
   }
 
   bool IsInList() const { return !!mList; }
@@ -118,7 +118,7 @@ class SVGTransform final : public nsWrapperCache {
   void SetSkewY(float angle, ErrorResult& rv);
 
  protected:
-  ~SVGTransform();
+  ~DOMSVGTransform();
 
   
   friend class dom::SVGMatrix;
