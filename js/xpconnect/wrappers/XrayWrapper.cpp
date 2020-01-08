@@ -488,6 +488,11 @@ TryResolvePropertyFromSpecs(JSContext* cx, HandleId id, HandleObject holder,
 static bool
 ShouldResolveStaticProperties(JSProtoKey key)
 {
+    if (!IsJSXraySupported(key)) {
+        
+        return false;
+    }
+
     
     
     
