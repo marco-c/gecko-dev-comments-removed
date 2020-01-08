@@ -248,7 +248,6 @@ private:
   already_AddRefed<CSSValue> DoGetMaxWidth();
   already_AddRefed<CSSValue> DoGetMinHeight();
   already_AddRefed<CSSValue> DoGetMinWidth();
-  already_AddRefed<CSSValue> DoGetObjectPosition();
   already_AddRefed<CSSValue> DoGetLeft();
   already_AddRefed<CSSValue> DoGetTop();
   already_AddRefed<CSSValue> DoGetRight();
@@ -259,7 +258,6 @@ private:
 
   
   already_AddRefed<CSSValue> DoGetOsxFontSmoothing();
-  already_AddRefed<CSSValue> DoGetFontVariant();
 
   
   already_AddRefed<CSSValue> DoGetGridAutoFlow();
@@ -277,11 +275,7 @@ private:
   already_AddRefed<CSSValue> DoGetImageLayerPosition(const nsStyleImageLayers& aLayers);
 
   
-  already_AddRefed<CSSValue> DoGetBackgroundPosition();
-
-  
   already_AddRefed<CSSValue> DoGetMask();
-  already_AddRefed<CSSValue> DoGetMaskPosition();
 
   
   already_AddRefed<CSSValue> DoGetPaddingTop();
@@ -314,8 +308,6 @@ private:
 
   
   already_AddRefed<CSSValue> DoGetBoxShadow();
-
-  
 
   
   already_AddRefed<CSSValue> DoGetMarginTopWidth();
@@ -351,15 +343,10 @@ private:
   already_AddRefed<CSSValue> DoGetWebkitTextStrokeWidth();
 
   
-
-  
-
-  
   already_AddRefed<CSSValue> DoGetBinding();
   already_AddRefed<CSSValue> DoGetDisplay();
   already_AddRefed<CSSValue> DoGetContain();
   already_AddRefed<CSSValue> DoGetWillChange();
-  already_AddRefed<CSSValue> DoGetOverflow();
   already_AddRefed<CSSValue> DoGetOverflowY();
   already_AddRefed<CSSValue> DoGetOverflowClipBoxBlock();
   already_AddRefed<CSSValue> DoGetOverflowClipBoxInline();
@@ -374,8 +361,6 @@ private:
   already_AddRefed<CSSValue> DoGetScrollSnapTypeY();
   already_AddRefed<CSSValue> DoGetScrollSnapPointsX();
   already_AddRefed<CSSValue> DoGetScrollSnapPointsY();
-  already_AddRefed<CSSValue> DoGetScrollSnapDestination();
-  already_AddRefed<CSSValue> DoGetScrollSnapCoordinate();
   already_AddRefed<CSSValue> DoGetScrollbarColor();
 
   

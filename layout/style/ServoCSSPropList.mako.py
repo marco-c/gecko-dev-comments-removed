@@ -105,6 +105,7 @@ SERIALIZED_PREDEFINED_TYPES = [
     "OffsetPath",
     "Opacity",
     "OverflowWrap",
+    "Position",
     "Quotes",
     "Resize",
     "Rotate",
@@ -126,9 +127,11 @@ def serialized_by_servo(prop):
     
     if "GETCS_NEEDS_LAYOUT_FLUSH" in prop.flags:
         return False
-    
     if prop.type() == "shorthand":
-        return False
+        
+        
+        
+        return prop.name != "text-decoration" and prop.name != "mask"
     
     
     if prop.keyword and prop.name != "-moz-osx-font-smoothing":
@@ -161,8 +164,8 @@ def flags(prop):
         result.append("CanAnimateOnCompositor")
     if exposed_on_getcs(prop):
         result.append("ExposedOnGetCS")
-    if serialized_by_servo(prop):
-        result.append("SerializedByServo")
+        if serialized_by_servo(prop):
+            result.append("SerializedByServo")
     if prop.type() == "longhand" and prop.logical:
         result.append("IsLogical")
     return ", ".join('"{}"'.format(flag) for flag in result)
