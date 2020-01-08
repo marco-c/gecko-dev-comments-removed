@@ -93,6 +93,7 @@
 #define mozilla_JSONWriter_h
 
 #include "double-conversion/double-conversion.h"
+#include "mozilla/Assertions.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/PodOperations.h"
 #include "mozilla/Sprintf.h"
@@ -326,6 +327,7 @@ protected:
   
   void EndCollection(const char* aEndChar)
   {
+    MOZ_ASSERT(mDepth > 0);
     if (mNeedNewlines[mDepth]) {
       mWriter->Write("\n");
       mDepth--;
