@@ -637,6 +637,10 @@ CUBEB_EXPORT int cubeb_device_collection_destroy(cubeb * context,
 
 
 
+
+
+
+
 CUBEB_EXPORT int cubeb_register_device_collection_changed(cubeb * context,
                                                           cubeb_device_type devtype,
                                                           cubeb_device_collection_changed_callback callback,
