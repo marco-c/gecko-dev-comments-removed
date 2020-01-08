@@ -92,22 +92,5 @@ module.exports = {
       }, {});
 
     return axes;
-  },
-
-  
-
-
-
-
-
-
-
-
-  toFixed(number, decimals = 1) {
-    if (typeof number !== "number") {
-      return number;
-    }
-
-    return Math.floor(number * Math.pow(10, decimals)) / Math.pow(10, decimals);
   }
 };
