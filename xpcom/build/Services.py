@@ -44,6 +44,8 @@ service('HistoryService', 'mozilla::IHistory',
         "@mozilla.org/browser/history;1")
 service('ThirdPartyUtil', 'mozIThirdPartyUtil',
         "@mozilla.org/thirdpartyutil;1")
+service('URIFixup', 'nsIURIFixup',
+        "@mozilla.org/docshell/urifixup;1")
 
 
 
@@ -74,6 +76,7 @@ CPP_INCLUDES = """
 #include "nsIAsyncShutdown.h"
 #include "nsIUUIDGenerator.h"
 #include "nsIGfxInfo.h"
+#include "nsIURIFixup.h"
 """
 
 
