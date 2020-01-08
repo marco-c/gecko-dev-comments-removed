@@ -83,13 +83,10 @@ function attachThread(toolbox) {
     };
 
     if (target.activeTab) {
-      
       target.activeTab.attachThread(threadOptions).then(handleResponse);
-    } else if (target.isAddon) {
+    } else {
       
-      target.client.attachAddon(target.form.actor).then(([res]) => {
-        target.client.attachThread(res.threadActor).then(handleResponse);
-      });
+      throw new Error("Target is missing an activeTab attribute");
     }
   });
 }
