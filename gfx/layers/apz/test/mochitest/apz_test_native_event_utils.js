@@ -79,11 +79,28 @@ function nativeMouseUpEventMsg() {
 }
 
 
+function windowForTarget(aTarget) {
+  if (aTarget instanceof Window) {
+    return aTarget;
+  }
+  return aTarget.ownerDocument.defaultView;
+}
 
-function coordinatesRelativeToScreen(aX, aY, aElement) {
-  var targetWindow = aElement.ownerDocument.defaultView;
+
+
+
+
+
+
+
+
+
+function coordinatesRelativeToScreen(aX, aY, aTarget) {
+  var targetWindow = windowForTarget(aTarget);
   var scale = targetWindow.devicePixelRatio;
-  var rect = aElement.getBoundingClientRect();
+  var rect = (aTarget instanceof Window)
+    ? {left: 0, top: 0} 
+    : aTarget.getBoundingClientRect();
   return {
     x: (targetWindow.mozInnerScreenX + rect.left + aX) * scale,
     y: (targetWindow.mozInnerScreenY + rect.top + aY) * scale
@@ -187,9 +204,9 @@ function synthesizeNativeMouseMoveAndWaitForMoveEvent(aElement, aX, aY, aCallbac
 
 
 
-function synthesizeNativeTouch(aElement, aX, aY, aType, aObserver = null, aTouchId = 0) {
-  var pt = coordinatesRelativeToScreen(aX, aY, aElement);
-  var utils = SpecialPowers.getDOMWindowUtils(aElement.ownerDocument.defaultView);
+function synthesizeNativeTouch(aTarget, aX, aY, aType, aObserver = null, aTouchId = 0) {
+  var pt = coordinatesRelativeToScreen(aX, aY, aTarget);
+  var utils = SpecialPowers.getDOMWindowUtils(windowForTarget(aTarget));
   utils.sendNativeTouchPoint(aTouchId, aType, pt.x, pt.y, 1, 90, aObserver);
   return true;
 }
@@ -212,7 +229,7 @@ function synthesizeNativeTouch(aElement, aX, aY, aType, aObserver = null, aTouch
 
 
 
-function* synthesizeNativeTouchSequences(aElement, aPositions, aObserver = null, aTouchIds = [0]) {
+function* synthesizeNativeTouchSequences(aTarget, aPositions, aObserver = null, aTouchIds = [0]) {
   
   
   var lastNonNullValue = -1;
@@ -268,11 +285,11 @@ function* synthesizeNativeTouchSequences(aElement, aPositions, aObserver = null,
           
           var thisIndex = ((i - yields) * aTouchIds.length) + j;
           var observer = (lastSynthesizeCall == thisIndex) ? aObserver : null;
-          synthesizeNativeTouch(aElement, currentPositions[j].x, currentPositions[j].y, SpecialPowers.DOMWindowUtils.TOUCH_REMOVE, observer, aTouchIds[j]);
+          synthesizeNativeTouch(aTarget, currentPositions[j].x, currentPositions[j].y, SpecialPowers.DOMWindowUtils.TOUCH_REMOVE, observer, aTouchIds[j]);
           currentPositions[j] = null;
         }
       } else {
-        synthesizeNativeTouch(aElement, aPositions[i][j].x, aPositions[i][j].y, SpecialPowers.DOMWindowUtils.TOUCH_CONTACT, null, aTouchIds[j]);
+        synthesizeNativeTouch(aTarget, aPositions[i][j].x, aPositions[i][j].y, SpecialPowers.DOMWindowUtils.TOUCH_CONTACT, null, aTouchIds[j]);
         currentPositions[j] = aPositions[i][j];
       }
     }
@@ -283,7 +300,7 @@ function* synthesizeNativeTouchSequences(aElement, aPositions, aObserver = null,
 
 
 
-function synthesizeNativeTouchDrag(aElement, aX, aY, aDeltaX, aDeltaY, aObserver = null, aTouchId = 0) {
+function synthesizeNativeTouchDrag(aTarget, aX, aY, aDeltaX, aDeltaY, aObserver = null, aTouchId = 0) {
   var steps = Math.max(Math.abs(aDeltaX), Math.abs(aDeltaY));
   var positions = new Array();
   positions.push([{ x: aX, y: aY }]);
@@ -294,7 +311,7 @@ function synthesizeNativeTouchDrag(aElement, aX, aY, aDeltaX, aDeltaY, aObserver
     positions.push([pos]);
   }
   positions.push([{ x: aX + aDeltaX, y: aY + aDeltaY }]);
-  var continuation = synthesizeNativeTouchSequences(aElement, positions, aObserver, [aTouchId]);
+  var continuation = synthesizeNativeTouchSequences(aTarget, positions, aObserver, [aTouchId]);
   var yielded = continuation.next();
   while (!yielded.done) {
     yielded = continuation.next();
