@@ -141,8 +141,11 @@ private:
   void GetId(const nsAutoHandle& aFile)
   {
     if (IsWin8OrLater()) {
-      ::GetFileInformationByHandleEx(aFile.get(), FileIdInfo, &mId, sizeof(mId));
-      return;
+      if (::GetFileInformationByHandleEx(aFile.get(), FileIdInfo, &mId, sizeof(mId))) {
+        return;
+      }
+      
+      
     }
 
     BY_HANDLE_FILE_INFORMATION info = {};
