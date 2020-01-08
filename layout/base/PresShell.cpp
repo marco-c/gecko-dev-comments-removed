@@ -2768,8 +2768,16 @@ PresShell::FrameNeedsReflow(nsIFrame *aFrame, IntrinsicDirty aIntrinsicDirty,
       
       for (nsIFrame *a = subtreeRoot;
            a && !FRAME_IS_REFLOW_ROOT(a);
-           a = a->GetParent())
+           a = a->GetParent()) {
         a->MarkIntrinsicISizesDirty();
+        if (a->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW) &&
+            a->IsAbsolutelyPositioned()) {
+          
+          
+          
+          break;
+        }
+      }
     }
 
     if (aIntrinsicDirty == eStyleChange) {
