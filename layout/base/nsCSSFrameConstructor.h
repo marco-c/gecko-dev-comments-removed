@@ -46,6 +46,7 @@ class ComputedStyle;
 namespace dom {
 
 class CharacterData;
+class Text;
 class FlattenedChildIterator;
 
 } 
@@ -57,6 +58,7 @@ public:
   typedef mozilla::ComputedStyle ComputedStyle;
   typedef mozilla::CSSPseudoElementType CSSPseudoElementType;
   typedef mozilla::dom::Element Element;
+  typedef mozilla::dom::Text Text;
 
   
   friend class mozilla::RestyleManager;
@@ -808,6 +810,26 @@ private:
                                             ComputedStyle&,
                                             uint32_t aFlags);
 
+  const FrameConstructionData* FindDataForContent(nsIContent&,
+                                                  ComputedStyle&,
+                                                  nsIFrame* aParentFrame,
+                                                  nsAtom* aTag,
+                                                  uint32_t aFlags);
+
+  
+  static const FrameConstructionData* FindTextData(const Text&,
+                                                   nsIFrame* aParentFrame);
+  const FrameConstructionData* FindElementData(const Element&,
+                                               ComputedStyle&,
+                                               nsIFrame* aParentFrame,
+                                               nsAtom* aTag,
+                                               uint32_t aFlags);
+  const FrameConstructionData* FindElementTagData(const Element&,
+                                                  ComputedStyle&,
+                                                  nsIFrame* aParentFrame,
+                                                  nsAtom* aTag,
+                                                  uint32_t aFlags);
+
   
 
 
@@ -1413,11 +1435,6 @@ private:
                                   const nsStyleDisplay* aStyleDisplay,
                                   nsFrameItems& aFrameItems);
 
-  
-  
-  static const FrameConstructionData* FindTextData(nsIFrame* aParentFrame,
-                                                   nsIContent* aTextContent);
-
   void ConstructTextFrame(const FrameConstructionData* aData,
                           nsFrameConstructorState& aState,
                           nsIContent*              aContent,
@@ -1537,7 +1554,6 @@ private:
   
   static const FrameConstructionData* FindXULTagData(const Element&,
                                                      nsAtom* aTag,
-                                                     int32_t aNameSpaceID,
                                                      ComputedStyle&);
   
 #ifdef MOZ_XUL

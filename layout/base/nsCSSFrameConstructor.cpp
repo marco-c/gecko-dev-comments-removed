@@ -3405,10 +3405,9 @@ FindAncestorWithGeneratedContentPseudo(nsIFrame* aFrame)
 
 
 const nsCSSFrameConstructor::FrameConstructionData*
-nsCSSFrameConstructor::FindTextData(nsIFrame* aParentFrame,
-                                    nsIContent* aTextContent)
+nsCSSFrameConstructor::FindTextData(const Text& aTextContent,
+                                    nsIFrame* aParentFrame)
 {
-  MOZ_ASSERT(aTextContent, "How?");
   if (aParentFrame && IsFrameForSVG(aParentFrame)) {
     nsIFrame* ancestorFrame =
       nsSVGUtils::GetFirstNonAAncestorFrame(aParentFrame);
@@ -3419,7 +3418,7 @@ nsCSSFrameConstructor::FindTextData(nsIFrame* aParentFrame,
     
     
     
-    if (aParentFrame->GetContent() != aTextContent->GetParent()) {
+    if (aParentFrame->GetContent() != aTextContent.GetParent()) {
       return nullptr;
     }
 
@@ -3553,12 +3552,7 @@ nsCSSFrameConstructor::FindHTMLData(const Element& aElement,
                                     nsIFrame* aParentFrame,
                                     ComputedStyle& aStyle)
 {
-  
-  
-  
-  if (!aElement.IsHTMLElement()) {
-    return nullptr;
-  }
+  MOZ_ASSERT(aElement.IsHTMLElement());
 
   nsAtom* tag = aElement.NodeInfo()->NameAtom();
   NS_ASSERTION(!aParentFrame ||
@@ -4195,12 +4189,9 @@ nsIFrame* NS_NewGridBoxFrame(nsIPresShell* aPresShell,
 const nsCSSFrameConstructor::FrameConstructionData*
 nsCSSFrameConstructor::FindXULTagData(const Element& aElement,
                                       nsAtom* aTag,
-                                      int32_t aNameSpaceID,
                                       ComputedStyle& aStyle)
 {
-  if (aNameSpaceID != kNameSpaceID_XUL) {
-    return nullptr;
-  }
+  MOZ_ASSERT(aElement.IsXULElement());
 
   static const FrameConstructionDataByTag sXULTagData[] = {
 #ifdef MOZ_XUL
@@ -4928,10 +4919,7 @@ const nsCSSFrameConstructor::FrameConstructionData*
 nsCSSFrameConstructor::FindMathMLData(const Element& aElement,
                                       ComputedStyle& aStyle)
 {
-  
-  if (!aElement.IsMathMLElement()) {
-    return nullptr;
-  }
+  MOZ_ASSERT(aElement.IsMathMLElement());
 
   nsAtom* tag = aElement.NodeInfo()->NameAtom();
 
@@ -5116,9 +5104,7 @@ nsCSSFrameConstructor::FindSVGData(const Element& aElement,
                                    bool aAllowsTextPathChild,
                                    ComputedStyle& aStyle)
 {
-  if (!aElement.IsSVGElement()) {
-    return nullptr;
-  }
+  MOZ_ASSERT(aElement.IsSVGElement());
 
   static const FrameConstructionData sSuppressData = SUPPRESS_FCDATA();
   static const FrameConstructionData sContainerData =
@@ -5493,6 +5479,91 @@ ShouldSuppressFrameInNonOpenDetails(const HTMLDetailsElement* aDetails,
   return true;
 }
 
+const nsCSSFrameConstructor::FrameConstructionData*
+nsCSSFrameConstructor::FindDataForContent(nsIContent& aContent,
+                                          ComputedStyle& aStyle,
+                                          nsIFrame* aParentFrame,
+                                          nsAtom* aTag,
+                                          uint32_t aFlags)
+{
+  MOZ_ASSERT(aStyle.StyleDisplay()->mDisplay != StyleDisplay::None &&
+             aStyle.StyleDisplay()->mDisplay != StyleDisplay::Contents,
+             "These two special display values should be handled earlier");
+
+  if (auto* text = Text::FromNode(aContent)) {
+    return FindTextData(*text, aParentFrame);
+  }
+
+  return FindElementData(*aContent.AsElement(),
+                         aStyle,
+                         aParentFrame,
+                         aTag,
+                         aFlags);
+}
+
+const nsCSSFrameConstructor::FrameConstructionData*
+nsCSSFrameConstructor::FindElementData(const Element& aElement,
+                                       ComputedStyle& aStyle,
+                                       nsIFrame* aParentFrame,
+                                       nsAtom* aTag,
+                                       uint32_t aFlags)
+{
+  
+  if (!aElement.IsSVGElement()) {
+    if (aParentFrame && IsFrameForSVG(aParentFrame) &&
+        !aParentFrame->IsFrameOfType(nsIFrame::eSVGForeignObject)) {
+      return nullptr;
+    }
+    if (aFlags & ITEM_IS_WITHIN_SVG_TEXT) {
+      return nullptr;
+    }
+  }
+
+  if (auto* data = FindElementTagData(aElement, aStyle, aParentFrame, aTag, aFlags)) {
+    return data;
+  }
+
+  
+  
+  if (ShouldCreateImageFrameForContent(aElement, aStyle)) {
+    static const FrameConstructionData sImgData =
+      SIMPLE_FCDATA(NS_NewImageFrameForContentProperty);
+    return &sImgData;
+  }
+
+  const auto& display = *aStyle.StyleDisplay();
+  if (auto* data = FindXULDisplayData(display, aElement)) {
+    return data;
+  }
+
+  return FindDisplayData(display, aElement);
+}
+
+const nsCSSFrameConstructor::FrameConstructionData*
+nsCSSFrameConstructor::FindElementTagData(const Element& aElement,
+                                          ComputedStyle& aStyle,
+                                          nsIFrame* aParentFrame,
+                                          nsAtom* aTag,
+                                          uint32_t aFlags)
+{
+  switch (aElement.GetNameSpaceID()) {
+    case kNameSpaceID_XHTML:
+      return FindHTMLData(aElement, aParentFrame, aStyle);
+    case kNameSpaceID_MathML:
+      return FindMathMLData(aElement, aStyle);
+    case kNameSpaceID_SVG:
+      return FindSVGData(aElement,
+                         aParentFrame,
+                         aFlags & ITEM_IS_WITHIN_SVG_TEXT,
+                         aFlags & ITEM_ALLOWS_TEXT_PATH_CHILD,
+                         aStyle);
+    case kNameSpaceID_XUL:
+      return FindXULTagData(aElement, aTag, aStyle);
+    default:
+      return nullptr;
+  }
+}
+
 nsCSSFrameConstructor::XBLBindingLoadInfo::XBLBindingLoadInfo(
   already_AddRefed<ComputedStyle> aStyle,
   mozilla::UniquePtr<PendingBinding> aPendingBinding,
@@ -5661,80 +5732,26 @@ nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState
     return;
   }
 
+  const FrameConstructionData* data =
+    FindDataForContent(*aContent, *style, aParentFrame, tag, aFlags);
+  if (!data || data->mBits & FCDATA_SUPPRESS_FRAME) {
+    return;
+  }
+
   bool isPopup = false;
-  const bool isText = !aContent->IsElement();
-  
-  const FrameConstructionData* data;
-  if (isText) {
-    data = FindTextData(aParentFrame, aContent);
-    if (!data) {
-      
-      return;
-    }
-  } else {
-    Element& element = *aContent->AsElement();
-
-    
-    if (namespaceId != kNameSpaceID_SVG &&
-        ((aParentFrame &&
-          IsFrameForSVG(aParentFrame) &&
-          !aParentFrame->IsFrameOfType(nsIFrame::eSVGForeignObject)) ||
-         (aFlags & ITEM_IS_WITHIN_SVG_TEXT))) {
-      return;
-    }
-
-    data = FindHTMLData(element, aParentFrame, *style);
-    if (!data) {
-      data = FindXULTagData(element, tag, namespaceId, *style);
-    }
-    if (!data) {
-      data = FindMathMLData(element, *style);
-    }
-    if (!data) {
-      data = FindSVGData(element,
-                         aParentFrame,
-                         aFlags & ITEM_IS_WITHIN_SVG_TEXT,
-                         aFlags & ITEM_ALLOWS_TEXT_PATH_CHILD,
-                         *style);
-    }
-
-    
-    
-    if (!data && ShouldCreateImageFrameForContent(element, *style)) {
-      static const FrameConstructionData sImgData =
-        SIMPLE_FCDATA(NS_NewImageFrameForContentProperty);
-      data = &sImgData;
-    }
-
-    
-    if (!data) {
-      data = FindXULDisplayData(display, element);
-    }
-
-    
-    if (!data) {
-      data = FindDisplayData(display, element);
-    }
-
-    MOZ_ASSERT(data, "Should have frame construction data now");
-
-    if (data->mBits & FCDATA_SUPPRESS_FRAME) {
-      return;
-    }
 
 #ifdef MOZ_XUL
-    if ((data->mBits & FCDATA_IS_POPUP) &&
-        (!aParentFrame || 
-         !aParentFrame->IsMenuFrame())) {
-      if (!aState.mPopupItems.containingBlock &&
-          !aState.mHavePendingPopupgroup) {
-        return;
-      }
-
-      isPopup = true;
+  if ((data->mBits & FCDATA_IS_POPUP) &&
+      (!aParentFrame || 
+       !aParentFrame->IsMenuFrame())) {
+    if (!aState.mPopupItems.containingBlock &&
+        !aState.mHavePendingPopupgroup) {
+      return;
     }
-#endif 
+
+    isPopup = true;
   }
+#endif 
 
   uint32_t bits = data->mBits;
 
@@ -5771,7 +5788,7 @@ nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState
                              style.forget(),
                              aSuppressWhiteSpaceOptimizations);
   }
-  item->mIsText = isText;
+  item->mIsText = !aContent->IsElement();
   item->mIsGeneratedContent = isGeneratedContent;
   item->mIsAnonymousContentCreatorContent =
     aFlags & ITEM_IS_ANONYMOUSCONTENTCREATOR_CONTENT;
@@ -5781,14 +5798,14 @@ nsCSSFrameConstructor::AddFrameConstructionItemsInternal(nsFrameConstructorState
     item->mContent->AddRef();
   }
   item->mIsRootPopupgroup =
-    namespaceId == kNameSpaceID_XUL && tag == nsGkAtoms::popupgroup &&
-    aContent->IsRootOfNativeAnonymousSubtree();
+    aContent->IsRootOfNativeAnonymousSubtree() &&
+    aContent->IsXULElement() &&
+    tag == nsGkAtoms::popupgroup;
   if (item->mIsRootPopupgroup) {
     aState.mHavePendingPopupgroup = true;
   }
   item->mIsPopup = isPopup;
-  item->mIsForSVGAElement = namespaceId == kNameSpaceID_SVG &&
-                            tag == nsGkAtoms::a;
+  item->mIsForSVGAElement = aContent->IsSVGElement(nsGkAtoms::a);
 
   if (canHavePageBreak && display.mBreakAfter) {
     AddPageBreakItem(aContent, aItems);
