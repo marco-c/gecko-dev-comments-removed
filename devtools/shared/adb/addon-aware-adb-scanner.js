@@ -22,14 +22,25 @@ loader.lazyRequireGetter(this, "ADBScanner", "devtools/shared/adb/adb-scanner", 
 
 
 class AddonAwareADBScanner extends EventEmitter {
-  constructor() {
+  
+
+
+
+
+
+
+
+
+  constructor(scanner = new ADBScanner(), addon = adbAddon) {
     super();
 
     this._onScannerListUpdated = this._onScannerListUpdated.bind(this);
     this._onAddonUpdate = this._onAddonUpdate.bind(this);
 
-    this._scanner = new ADBScanner();
+    this._scanner = scanner;
     this._scanner.on("runtime-list-updated", this._onScannerListUpdated);
+
+    this._addon = addon;
   }
 
   
@@ -37,21 +48,21 @@ class AddonAwareADBScanner extends EventEmitter {
 
 
   enable() {
-    if (adbAddon.status === "installed") {
+    if (this._addon.status === "installed") {
       this._scanner.enable();
     }
 
     
     
-    adbAddon.off("update", this._onAddonUpdate);
+    this._addon.off("update", this._onAddonUpdate);
 
-    adbAddon.on("update", this._onAddonUpdate);
+    this._addon.on("update", this._onAddonUpdate);
   }
 
   disable() {
     this._scanner.disable();
 
-    adbAddon.off("update", this._onAddonUpdate);
+    this._addon.off("update", this._onAddonUpdate);
   }
 
   
@@ -73,7 +84,7 @@ class AddonAwareADBScanner extends EventEmitter {
   }
 
   _onAddonUpdate() {
-    if (adbAddon.status === "installed") {
+    if (this._addon.status === "installed") {
       this._scanner.enable();
     } else {
       this._scanner.disable();
