@@ -97,6 +97,13 @@ class CompositorVsyncScheduler {
 
 
 
+  const TimeStamp& GetLastVsyncTime() const;
+  const VsyncId& GetLastVsyncId() const;
+
+  
+
+
+
 
   void UpdateLastComposeTime();
 
@@ -139,6 +146,8 @@ class CompositorVsyncScheduler {
 
   CompositorVsyncSchedulerOwner* mVsyncSchedulerOwner;
   TimeStamp mLastCompose;
+  TimeStamp mLastVsync;
+  VsyncId mLastVsyncId;
 
   bool mAsapScheduling;
   bool mIsObservingVsync;
