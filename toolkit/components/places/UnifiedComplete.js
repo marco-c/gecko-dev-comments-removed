@@ -1114,7 +1114,7 @@ Search.prototype = {
     return true;
   },
 
-  async _matchSearchEngineTokenAlias() {
+  async _matchSearchEngineTokenAliasForAutofill() {
     
     if (this._searchTokens.length != 1) {
       return false;
@@ -1152,6 +1152,17 @@ Search.prototype = {
             icon: engine.iconURI ? engine.iconURI.spec : null,
           });
           this._result.setDefaultIndex(0);
+
+          
+          
+          
+          this._searchEngineAliasMatch = {
+            engine,
+            alias: aliasPreservingUserCase,
+            query: "",
+            isTokenAlias: true,
+          };
+
           return true;
         }
       }
@@ -1224,7 +1235,7 @@ Search.prototype = {
     }
 
     if (this.pending && shouldAutofill) {
-      let matched = await this._matchSearchEngineTokenAlias();
+      let matched = await this._matchSearchEngineTokenAliasForAutofill();
       if (matched) {
         return true;
       }

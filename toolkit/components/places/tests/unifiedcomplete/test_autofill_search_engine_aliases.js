@@ -24,6 +24,14 @@ add_task(async function init() {
 
 
 add_task(async function basic() {
+  
+  
+  
+  await PlacesTestUtils.addVisits({
+    uri: "http://example.com/",
+    title: TEST_ENGINE_ALIAS,
+  });
+
   let autofilledValue = TEST_ENGINE_ALIAS + " ";
   let completedURL = PlacesUtils.mozActionURI("searchengine", {
     engineName: TEST_ENGINE_NAME,
@@ -49,6 +57,14 @@ add_task(async function basic() {
 
 
 add_task(async function preserveCase() {
+  
+  
+  
+  await PlacesTestUtils.addVisits({
+    uri: "http://example.com/",
+    title: TEST_ENGINE_ALIAS,
+  });
+
   let search =
     TEST_ENGINE_ALIAS.toUpperCase()
     .substr(0, Math.round(TEST_ENGINE_ALIAS.length / 2));
