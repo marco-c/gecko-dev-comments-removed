@@ -2069,27 +2069,27 @@ public class GeckoSession extends LayerSession
     
 
 
-    public class WebResponseInfo {
+    static public class WebResponseInfo {
         
 
 
-        public final String uri;
-
-        
-
-
-        public final String contentType;
+        @NonNull public final String uri;
 
         
 
 
-        public final long contentLength;
+        @Nullable public final String contentType;
+
+        
+
+
+        @Nullable public final long contentLength;
 
         
 
 
 
-        public final String filename;
+        @Nullable public final String filename;
 
          WebResponseInfo(GeckoBundle message) {
             uri = message.getString("uri");
