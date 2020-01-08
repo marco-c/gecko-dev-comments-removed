@@ -224,7 +224,7 @@ impl IsVisible for Picture {
 }
 
 #[test]
-#[cfg(target_os = "linux")]
+#[cfg(target_pointer_width = "64")]
 fn test_struct_sizes() {
     use std::mem;
     
@@ -234,6 +234,6 @@ fn test_struct_sizes() {
     
     
     assert_eq!(mem::size_of::<Picture>(), 84, "Picture size changed");
-    assert_eq!(mem::size_of::<PictureTemplate>(), 56, "PictureTemplate size changed");
+    assert_eq!(mem::size_of::<PictureTemplate>(), 36, "PictureTemplate size changed");
     assert_eq!(mem::size_of::<PictureKey>(), 112, "PictureKey size changed");
 }

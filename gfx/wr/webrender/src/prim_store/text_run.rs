@@ -328,6 +328,7 @@ impl TextRunPrimitive {
     }
 }
 
+
 #[test]
 #[cfg(target_os = "linux")]
 fn test_struct_sizes() {
@@ -339,7 +340,7 @@ fn test_struct_sizes() {
     
     
     assert_eq!(mem::size_of::<TextRun>(), 112, "TextRun size changed");
-    assert_eq!(mem::size_of::<TextRunTemplate>(), 160, "TextRunTemplate size changed");
+    assert_eq!(mem::size_of::<TextRunTemplate>(), 144, "TextRunTemplate size changed");
     assert_eq!(mem::size_of::<TextRunKey>(), 136, "TextRunKey size changed");
     assert_eq!(mem::size_of::<TextRunPrimitive>(), 88, "TextRunPrimitive size changed");
 }

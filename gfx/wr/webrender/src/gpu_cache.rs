@@ -31,13 +31,28 @@ use profiler::GpuCacheProfileCounters;
 use render_backend::FrameId;
 use renderer::MAX_VERTEX_TEXTURE_WIDTH;
 use std::{mem, u16, u32};
+use std::num::NonZeroU32;
 use std::ops::Add;
 use std::os::raw::c_void;
+use std::time::{Duration, Instant};
 
 
-pub const GPU_CACHE_INITIAL_HEIGHT: i32 = 512;
+
+
+
+pub const GPU_CACHE_INITIAL_HEIGHT: i32 = 20;
+const NEW_ROWS_PER_RESIZE: i32 = 10;
+
+
 const FRAMES_BEFORE_EVICTION: usize = 10;
-const NEW_ROWS_PER_RESIZE: i32 = 512;
+
+
+
+const RECLAIM_THRESHOLD: f32 = 0.2;
+
+
+
+const RECLAIM_DELAY_S: u64 = 5;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -131,7 +146,7 @@ impl GpuCacheHandle {
 
 
 
-#[derive(Copy, Debug, Clone)]
+#[derive(Copy, Debug, Clone, Eq, PartialEq)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct GpuCacheAddress {
@@ -174,30 +189,66 @@ struct Block {
     
     address: GpuCacheAddress,
     
+    epoch: Epoch,
+    
     
     
     next: Option<BlockIndex>,
-    
-    epoch: Epoch,
     
     last_access_time: FrameId,
 }
 
 impl Block {
-    fn new(address: GpuCacheAddress, next: Option<BlockIndex>, frame_id: FrameId) -> Self {
+    fn new(
+        address: GpuCacheAddress,
+        next: Option<BlockIndex>,
+        frame_id: FrameId,
+        epoch: Epoch,
+    ) -> Self {
         Block {
             address,
             next,
             last_access_time: frame_id,
-            epoch: Epoch(0),
+            epoch,
         }
     }
+
+    fn advance_epoch(&mut self, max_epoch: &mut Epoch) {
+        self.epoch.next();
+        if max_epoch.0 < self.epoch.0 {
+            max_epoch.0 = self.epoch.0;
+        }
+    }
+
+    
+    pub const INVALID: Block = Block {
+        address: GpuCacheAddress { u: 0, v: 0 },
+        epoch: Epoch(0),
+        next: None,
+        last_access_time: FrameId::INVALID,
+    };
 }
+
+
+
+
+
 
 #[derive(Debug, Copy, Clone)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-struct BlockIndex(usize);
+struct BlockIndex(NonZeroU32);
+
+impl BlockIndex {
+    fn new(idx: usize) -> Self {
+        debug_assert!(idx <= u32::MAX as usize);
+        BlockIndex(NonZeroU32::new(idx as u32).expect("Index zero forbidden"))
+    }
+
+    fn get(&self) -> usize {
+        self.0.get() as usize
+    }
+}
 
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -232,10 +283,19 @@ pub enum GpuCacheUpdate {
     },
 }
 
-pub struct GpuDebugChunk {
+
+
+pub enum GpuCacheDebugCmd {
+    
+    Alloc(GpuCacheDebugChunk),
+    
+    Free(GpuCacheAddress),
+}
+
+#[derive(Clone)]
+pub struct GpuCacheDebugChunk {
     pub address: GpuCacheAddress,
-    pub tag: u8,
-    pub size: u16,
+    pub size: usize,
 }
 
 #[must_use]
@@ -254,7 +314,7 @@ pub struct GpuCacheUpdateList {
     pub blocks: Vec<GpuBlockData>,
     
     #[cfg_attr(feature = "serde", serde(skip))]
-    pub debug_chunks: Vec<GpuDebugChunk>,
+    pub debug_commands: Vec<GpuCacheDebugCmd>,
 }
 
 
@@ -270,7 +330,10 @@ struct FreeBlockLists {
     free_list_32: Option<BlockIndex>,
     free_list_64: Option<BlockIndex>,
     free_list_128: Option<BlockIndex>,
-    free_list_large: Option<BlockIndex>,
+    free_list_256: Option<BlockIndex>,
+    free_list_341: Option<BlockIndex>,
+    free_list_512: Option<BlockIndex>,
+    free_list_1024: Option<BlockIndex>,
 }
 
 impl FreeBlockLists {
@@ -284,7 +347,10 @@ impl FreeBlockLists {
             free_list_32: None,
             free_list_64: None,
             free_list_128: None,
-            free_list_large: None,
+            free_list_256: None,
+            free_list_341: None,
+            free_list_512: None,
+            free_list_1024: None,
         }
     }
 
@@ -294,6 +360,12 @@ impl FreeBlockLists {
     ) -> (usize, &mut Option<BlockIndex>) {
         
         
+        
+        
+        
+        
+        
+        debug_assert_eq!(MAX_VERTEX_TEXTURE_WIDTH, 1024, "Need to update bucketing");
         match block_count {
             0 => panic!("Can't allocate zero sized blocks!"),
             1 => (1, &mut self.free_list_1),
@@ -304,7 +376,10 @@ impl FreeBlockLists {
             17...32 => (32, &mut self.free_list_32),
             33...64 => (64, &mut self.free_list_64),
             65...128 => (128, &mut self.free_list_128),
-            129...MAX_VERTEX_TEXTURE_WIDTH => (MAX_VERTEX_TEXTURE_WIDTH, &mut self.free_list_large),
+            129...256 => (256, &mut self.free_list_256),
+            257...341 => (341, &mut self.free_list_341),
+            342...512 => (512, &mut self.free_list_512),
+            513...1024 => (1024, &mut self.free_list_1024),
             _ => panic!("Can't allocate > MAX_VERTEX_TEXTURE_WIDTH per resource!"),
         }
     }
@@ -321,6 +396,12 @@ struct Texture {
     
     rows: Vec<Row>,
     
+    base_epoch: Epoch,
+    
+    
+    
+    max_epoch: Epoch,
+    
     
     
     free_lists: FreeBlockLists,
@@ -335,19 +416,39 @@ struct Texture {
     updates: Vec<GpuCacheUpdate>,
     
     allocated_block_count: usize,
+    
+    
+    #[cfg_attr(feature = "serde", serde(skip))]
+    reached_reclaim_threshold: Option<Instant>,
+    
+    
+    #[cfg_attr(feature = "serde", serde(skip))]
+    debug_commands: Vec<GpuCacheDebugCmd>,
+    
+    debug_flags: DebugFlags,
 }
 
 impl Texture {
-    fn new() -> Self {
+    fn new(base_epoch: Epoch, debug_flags: DebugFlags) -> Self {
+        
+        
+        
+        let blocks = vec![Block::INVALID];
+
         Texture {
             height: GPU_CACHE_INITIAL_HEIGHT,
-            blocks: Vec::new(),
+            blocks,
             rows: Vec::new(),
+            base_epoch,
+            max_epoch: base_epoch,
             free_lists: FreeBlockLists::new(),
             pending_blocks: Vec::new(),
             updates: Vec::new(),
             occupied_list_head: None,
             allocated_block_count: 0,
+            reached_reclaim_threshold: None,
+            debug_commands: Vec::new(),
+            debug_flags,
         }
     }
 
@@ -393,8 +494,8 @@ impl Texture {
             let mut prev_block_index = None;
             for i in 0 .. items_per_row {
                 let address = GpuCacheAddress::new(i * alloc_size, row_index);
-                let block_index = BlockIndex(self.blocks.len());
-                let block = Block::new(address, prev_block_index, frame_id);
+                let block_index = BlockIndex::new(self.blocks.len());
+                let block = Block::new(address, prev_block_index, frame_id, self.base_epoch);
                 self.blocks.push(block);
                 prev_block_index = Some(block_index);
             }
@@ -406,7 +507,7 @@ impl Texture {
         
         
         let free_block_index = free_list.take().unwrap();
-        let block = &mut self.blocks[free_block_index.0 as usize];
+        let block = &mut self.blocks[free_block_index.get()];
         *free_list = block.next;
 
         
@@ -423,6 +524,18 @@ impl Texture {
                 block_count,
                 address: block.address,
             });
+        }
+
+        
+        
+        
+        
+        
+        if self.debug_flags.contains(DebugFlags::GPU_CACHE_DBG) {
+            self.debug_commands.push(GpuCacheDebugCmd::Alloc(GpuCacheDebugChunk {
+                address: block.address,
+                size: block_count,
+            }));
         }
 
         CacheLocation {
@@ -442,7 +555,7 @@ impl Texture {
 
         while let Some(index) = current_block {
             let (next_block, should_unlink) = {
-                let block = &mut self.blocks[index.0 as usize];
+                let block = &mut self.blocks[index.get()];
 
                 let next_block = block.next;
                 let mut should_unlink = false;
@@ -461,11 +574,16 @@ impl Texture {
                     let (_, free_list) = self.free_lists
                         .get_actual_block_count_and_free_list(row.block_count_per_item);
 
-                    block.epoch.next();
+                    block.advance_epoch(&mut self.max_epoch);
                     block.next = *free_list;
                     *free_list = Some(index);
 
                     self.allocated_block_count -= row.block_count_per_item;
+
+                    if self.debug_flags.contains(DebugFlags::GPU_CACHE_DBG) {
+                        let cmd = GpuCacheDebugCmd::Free(block.address);
+                        self.debug_commands.push(cmd);
+                    }
                 };
 
                 (next_block, should_unlink)
@@ -476,7 +594,7 @@ impl Texture {
             if should_unlink {
                 match prev_block {
                     Some(prev_block) => {
-                        self.blocks[prev_block.0 as usize].next = next_block;
+                        self.blocks[prev_block.get()].next = next_block;
                     }
                     None => {
                         self.occupied_list_head = next_block;
@@ -488,6 +606,15 @@ impl Texture {
 
             current_block = next_block;
         }
+    }
+
+    
+    fn utilization(&self) -> f32 {
+        let total_blocks = self.rows.len() * MAX_VERTEX_TEXTURE_WIDTH;
+        debug_assert!(total_blocks > 0);
+        let ratio = self.allocated_block_count as f32 / total_blocks as f32;
+        debug_assert!(0.0 <= ratio && ratio <= 1.0, "Bad ratio: {}", ratio);
+        ratio
     }
 }
 
@@ -546,12 +673,23 @@ pub struct GpuCache {
 
 impl GpuCache {
     pub fn new() -> Self {
+        let debug_flags = DebugFlags::empty();
         GpuCache {
             frame_id: FrameId::INVALID,
-            texture: Texture::new(),
+            texture: Texture::new(Epoch(0), debug_flags),
             saved_block_count: 0,
-            debug_flags: DebugFlags::empty(),
+            debug_flags,
         }
+    }
+
+    
+    
+    pub fn clear(&mut self) {
+        assert!(self.texture.updates.is_empty(), "Clearing with pending updates");
+        let mut next_base_epoch = self.texture.max_epoch;
+        next_base_epoch.next();
+        self.texture = Texture::new(next_base_epoch, self.debug_flags);
+        self.saved_block_count = 0;
     }
 
     
@@ -567,10 +705,11 @@ impl GpuCache {
     
     pub fn invalidate(&mut self, handle: &GpuCacheHandle) {
         if let Some(ref location) = handle.location {
-            let block = &mut self.texture.blocks[location.block_index.0];
             
-            if block.epoch == location.epoch {
-                block.epoch.next();
+            if let Some(block) = self.texture.blocks.get_mut(location.block_index.get()) {
+                if block.epoch == location.epoch {
+                    block.advance_epoch(&mut self.texture.max_epoch);
+                }
             }
         }
     }
@@ -581,15 +720,16 @@ impl GpuCache {
         let mut max_block_count = MAX_VERTEX_TEXTURE_WIDTH;
         
         if let Some(ref location) = handle.location {
-            let block = &mut self.texture.blocks[location.block_index.0];
-            max_block_count = self.texture.rows[block.address.v as usize].block_count_per_item;
-            if block.epoch == location.epoch {
-                if block.last_access_time != self.frame_id {
-                    
-                    block.last_access_time = self.frame_id;
-                    self.saved_block_count += max_block_count;
+            if let Some(block) = self.texture.blocks.get_mut(location.block_index.get()) {
+                if block.epoch == location.epoch {
+                    max_block_count = self.texture.rows[block.address.v as usize].block_count_per_item;
+                    if block.last_access_time != self.frame_id {
+                        
+                        block.last_access_time = self.frame_id;
+                        self.saved_block_count += max_block_count;
+                    }
+                    return None;
                 }
-                return None;
             }
         }
 
@@ -631,7 +771,7 @@ impl GpuCache {
     
     
     pub fn end_frame(
-        &self,
+        &mut self,
         profile_counters: &mut GpuCacheProfileCounters,
     ) -> FrameId {
         profile_counters
@@ -643,7 +783,24 @@ impl GpuCache {
         profile_counters
             .saved_blocks
             .set(self.saved_block_count);
+
+        let reached_threshold =
+            self.texture.rows.len() > (GPU_CACHE_INITIAL_HEIGHT as usize) &&
+            self.texture.utilization() < RECLAIM_THRESHOLD;
+        if reached_threshold {
+            self.texture.reached_reclaim_threshold.get_or_insert_with(Instant::now);
+        } else {
+            self.texture.reached_reclaim_threshold = None;
+        }
+
         self.frame_id
+    }
+
+    
+    
+    pub fn should_reclaim_memory(&self) -> bool {
+        self.texture.reached_reclaim_threshold
+            .map_or(false, |t| t.elapsed() > Duration::from_secs(RECLAIM_DELAY_S))
     }
 
     
@@ -651,20 +808,7 @@ impl GpuCache {
         GpuCacheUpdateList {
             frame_id: self.frame_id,
             height: self.texture.height,
-            debug_chunks: if self.debug_flags.contains(DebugFlags::GPU_CACHE_DBG) {
-                self.texture.updates
-                    .iter()
-                    .map(|update| match *update {
-                        GpuCacheUpdate::Copy { address, block_index: _, block_count } => GpuDebugChunk {
-                            address,
-                            tag: 0, 
-                            size: block_count.min(0xFFFF) as u16,
-                        }
-                    })
-                    .collect()
-            } else {
-                Vec::new()
-            },
+            debug_commands: mem::replace(&mut self.texture.debug_commands, Vec::new()),
             updates: mem::replace(&mut self.texture.updates, Vec::new()),
             blocks: mem::replace(&mut self.texture.pending_blocks, Vec::new()),
         }
@@ -673,6 +817,7 @@ impl GpuCache {
     
     pub fn set_debug_flags(&mut self, flags: DebugFlags) {
         self.debug_flags = flags;
+        self.texture.debug_flags = flags;
     }
 
     
@@ -681,7 +826,7 @@ impl GpuCache {
     
     pub fn get_address(&self, id: &GpuCacheHandle) -> GpuCacheAddress {
         let location = id.location.expect("handle not requested or allocated!");
-        let block = &self.texture.blocks[location.block_index.0];
+        let block = &self.texture.blocks[location.block_index.get()];
         debug_assert_eq!(block.epoch, location.epoch);
         debug_assert_eq!(block.last_access_time, self.frame_id);
         block.address
@@ -691,4 +836,13 @@ impl GpuCache {
     pub fn malloc_size_of(&self, op: VoidPtrToSizeFn) -> usize {
         self.texture.malloc_size_of(op)
     }
+}
+
+#[test]
+#[cfg(target_pointer_width = "64")]
+fn test_struct_sizes() {
+    use std::mem;
+    
+    
+    assert_eq!(mem::size_of::<Block>(), 24, "Block size changed");
 }
