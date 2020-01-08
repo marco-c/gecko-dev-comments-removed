@@ -17,13 +17,14 @@ namespace mozilla { namespace ct {
 
 
 template <size_t length, typename T>
-pkix::Result ReadUint(Reader& in, T& out);
+mozilla::pkix::Result ReadUint(mozilla::pkix::Reader& in, T& out);
 
 
 
 
 template <size_t prefixLength>
-pkix::Result ReadVariableBytes(Reader& in, Input& out);
+mozilla::pkix::Result ReadVariableBytes(mozilla::pkix::Reader& in,
+                                        mozilla::pkix::Input& out);
 
 } } 
 
