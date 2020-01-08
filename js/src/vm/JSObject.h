@@ -1181,13 +1181,10 @@ extern bool
 FromPropertyDescriptorToObject(JSContext* cx, Handle<JS::PropertyDescriptor> desc,
                                MutableHandleValue vp);
 
-extern bool
-IsDelegate(JSContext* cx, HandleObject obj, const Value& v, bool* result);
-
 
 
 extern bool
-IsDelegateOfObject(JSContext* cx, HandleObject protoObj, JSObject* obj, bool* result);
+IsPrototypeOf(JSContext* cx, HandleObject protoObj, JSObject* obj, bool* result);
 
 
 extern JSObject*

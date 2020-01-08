@@ -12035,16 +12035,9 @@ CodeGenerator::visitInstanceOfV(LInstanceOfV* ins)
     emitInstanceOf(ins, ins->mir()->prototypeObject());
 }
 
-
-static bool
-IsDelegateObject(JSContext* cx, HandleObject protoObj, HandleObject obj, bool* res)
-{
-    return IsDelegateOfObject(cx, protoObj, obj, res);
-}
-
-typedef bool (*IsDelegateObjectFn)(JSContext*, HandleObject, HandleObject, bool*);
-static const VMFunction IsDelegateObjectInfo =
-    FunctionInfo<IsDelegateObjectFn>(IsDelegateObject, "IsDelegateObject");
+typedef bool (*IsPrototypeOfFn)(JSContext*, HandleObject, JSObject*, bool*);
+static const VMFunction IsPrototypeOfInfo =
+    FunctionInfo<IsPrototypeOfFn>(IsPrototypeOf, "IsPrototypeOf");
 
 void
 CodeGenerator::emitInstanceOf(LInstruction* ins, JSObject* prototypeObject)
@@ -12105,7 +12098,7 @@ CodeGenerator::emitInstanceOf(LInstruction* ins, JSObject* prototypeObject)
     
     
 
-    OutOfLineCode* ool = oolCallVM(IsDelegateObjectInfo, ins,
+    OutOfLineCode* ool = oolCallVM(IsPrototypeOfInfo, ins,
                                    ArgList(ImmGCPtr(prototypeObject), objReg),
                                    StoreRegisterTo(output));
 

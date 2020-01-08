@@ -772,10 +772,10 @@ JS::OrdinaryHasInstance(JSContext* cx, HandleObject objArg, HandleValue v, bool*
 
     
     RootedObject pobj(cx, &pval.toObject());
-    bool isDelegate;
-    if (!IsDelegate(cx, pobj, v, &isDelegate))
+    bool isPrototype;
+    if (!IsPrototypeOf(cx, pobj, &v.toObject(), &isPrototype))
         return false;
-    *bp = isDelegate;
+    *bp = isPrototype;
     return true;
 }
 
