@@ -133,6 +133,7 @@ this.browserAction = class extends ExtensionAPI {
       label: this.defaults.title || this.extension.name,
       tooltiptext: this.defaults.title || "",
       defaultArea: this.defaults.area,
+      showInPrivateBrowsing: this.extension.privateBrowsingAllowed,
 
       
       
