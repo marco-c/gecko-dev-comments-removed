@@ -437,7 +437,15 @@ let BrowserUsageTelemetry = {
       if (!KNOWN_SEARCH_SOURCES.includes(source)) {
         throw new Error("Unknown source for search: " + source);
       }
-      Services.telemetry.getKeyedHistogramById("SEARCH_COUNTS").add(countId);
+      let histogram = Services.telemetry.getKeyedHistogramById("SEARCH_COUNTS");
+      histogram.add(countId);
+
+      if (details.alias &&
+          engine.wrappedJSObject._internalAliases.includes(details.alias)) {
+        let aliasCountId =
+          [getSearchEngineId(engine), details.alias, source].join(".");
+        histogram.add(aliasCountId);
+      }
     }
 
     
@@ -509,7 +517,7 @@ let BrowserUsageTelemetry = {
       
       this._recordSearch(engine, sourceName, "suggestion");
       return;
-    } else if (details.isAlias) {
+    } else if (details.alias) {
       
       this._recordSearch(engine, sourceName, "alias");
       return;
