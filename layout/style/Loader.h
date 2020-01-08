@@ -443,10 +443,6 @@ public:
   
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
-  
-  
-  nsresult ObsoleteSheet(nsIURI* aURI);
-
 private:
   friend class SheetLoadData;
   friend class StreamLoader;
