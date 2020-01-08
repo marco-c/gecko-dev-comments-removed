@@ -1,5 +1,4 @@
-if (!WasmHelpers.isSingleStepProfilingEnabled)
-    quit();
+
 
 const Module = WebAssembly.Module;
 const Instance = WebAssembly.Instance;

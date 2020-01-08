@@ -2,8 +2,6 @@
 
 
 
-if (!wasmIsSupported())
-    quit(6);
 
 var tbl = new WebAssembly.Table({initial:1, element:"anyfunc"});
 

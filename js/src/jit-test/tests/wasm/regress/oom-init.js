@@ -1,8 +1,5 @@
 
 
-if (typeof oomTest !== 'function' || !wasmIsSupported())
-    quit();
-
 Object.getOwnPropertyNames(this);
 s = newGlobal();
 evalcx("\

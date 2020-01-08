@@ -1,8 +1,5 @@
 
 
-if (typeof oomTest === 'undefined')
-    quit();
-
 
 if (typeof wasmCompileMode === 'undefined' || wasmCompileMode() != 'baseline')
     quit();

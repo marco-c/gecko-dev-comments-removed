@@ -1,5 +1,4 @@
-if (!wasmGcEnabled())
-    quit();
+
 
 var conf = getBuildConfiguration();
 

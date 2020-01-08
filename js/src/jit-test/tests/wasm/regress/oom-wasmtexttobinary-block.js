@@ -1,5 +1,4 @@
-if (typeof oomTest === 'undefined')
-    quit();
+
 
 try {
     oomTest((function () {

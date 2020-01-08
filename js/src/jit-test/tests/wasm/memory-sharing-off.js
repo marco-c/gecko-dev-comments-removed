@@ -1,8 +1,5 @@
 
 
-if (!wasmThreadsSupported())
-    quit(0);
-
 
 
 

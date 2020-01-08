@@ -1,5 +1,4 @@
-if (!wasmGcEnabled())
-    quit(0);
+
 
 
 

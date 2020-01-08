@@ -1,6 +1,4 @@
-if (!wasmGcEnabled()) {
-    quit();
-}
+
 
 wasmEvalText(`
     (module

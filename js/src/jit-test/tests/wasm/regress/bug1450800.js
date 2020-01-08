@@ -1,5 +1,4 @@
-if (!this.gczeal || !WebAssembly.Global)
-    quit();
+
 
 gczeal(9, 10);
 function wasmEvalText(str, imports) {

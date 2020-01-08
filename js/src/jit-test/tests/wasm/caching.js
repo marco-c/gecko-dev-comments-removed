@@ -1,5 +1,4 @@
-if (!wasmStreamingIsSupported())
-    quit();
+
 
 const {Module, Instance, compileStreaming} = WebAssembly;
 

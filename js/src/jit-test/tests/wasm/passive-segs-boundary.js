@@ -1,6 +1,4 @@
 
-if (!wasmBulkMemSupported())
-    quit(0);
 
 
 

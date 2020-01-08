@@ -1,5 +1,4 @@
-if (!wasmThreadsSupported())
-    quit(0);
+
 
 const oob = /index out of bounds/;
 const unaligned = /unaligned memory access/;

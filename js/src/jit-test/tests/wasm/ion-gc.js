@@ -1,9 +1,7 @@
+
+
+
 const options = getJitCompilerOptions();
-
-
-if (!options['baseline.enable'])
-    quit();
-
 const TRIGGER = options['baseline.warmup.trigger'] + 10;
 const ITER = 2 * TRIGGER;
 const EXCEPTION_ITER = TRIGGER + 5;

@@ -1,8 +1,5 @@
-const options = getJitCompilerOptions();
 
 
-if (!options['baseline.enable'])
-    quit();
 
 const { assertStackTrace, startProfiling, endProfiling, assertEqPreciseStacks } = WasmHelpers;
 

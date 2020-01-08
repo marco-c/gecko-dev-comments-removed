@@ -1,5 +1,4 @@
-if (!wasmThreadsSupported())
-    quit(0);
+
 
 const WASMPAGE = 65536;
 

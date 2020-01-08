@@ -1,8 +1,5 @@
 
 
-if (!wasmGcEnabled()) {
-    quit(0);
-}
 
 
 function Baguette(calories) {

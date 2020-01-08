@@ -2,8 +2,6 @@
 
 
 
-if (!wasmIsSupported())
-    quit(6);
 
 load(libdir + "asm.js");
 

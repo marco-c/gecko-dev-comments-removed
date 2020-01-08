@@ -2,8 +2,6 @@
 
 
 
-if (!wasmIsSupported())
-    quit(6);
 
 var code = wasmTextToBinary(`(module
     (func (export "iloop")

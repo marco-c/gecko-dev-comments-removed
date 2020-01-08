@@ -1,6 +1,4 @@
-if (!wasmGcEnabled() || typeof WebAssembly.Global !== 'function') {
-    quit(0);
-}
+
 
 
 function Baguette(calories) {

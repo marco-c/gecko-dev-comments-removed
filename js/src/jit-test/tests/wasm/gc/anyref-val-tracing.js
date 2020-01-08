@@ -1,6 +1,4 @@
-if (!wasmGcEnabled()) {
-    quit(0);
-}
+
 
 gczeal(14, 1);
 let { exports } = wasmEvalText(`(module

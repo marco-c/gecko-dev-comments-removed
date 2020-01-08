@@ -1,6 +1,4 @@
-if (!wasmGcEnabled()) {
-    quit(0);
-}
+
 
 enableShellAllocationMetadataBuilder();
 gczeal(9, 1);

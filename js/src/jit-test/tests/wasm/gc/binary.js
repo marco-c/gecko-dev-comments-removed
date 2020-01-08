@@ -1,6 +1,4 @@
-if (!wasmGcEnabled()) {
-    quit(0);
-}
+
 
 load(libdir + "wasm-binary.js");
 

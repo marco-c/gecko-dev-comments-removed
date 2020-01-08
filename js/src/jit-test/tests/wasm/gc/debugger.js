@@ -1,6 +1,4 @@
-if (!wasmGcEnabled() || !wasmDebuggingIsSupported()) {
-    quit(0);
-}
+
 
 (function() {
     let g = newGlobal();

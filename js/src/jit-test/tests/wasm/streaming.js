@@ -1,5 +1,4 @@
-if (!wasmStreamingIsSupported())
-    quit();
+
 
 function testInstantiate(source, importObj, exportName, expectedValue) {
     var result;
