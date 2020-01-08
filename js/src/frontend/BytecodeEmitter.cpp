@@ -2660,8 +2660,11 @@ BytecodeEmitter::emitSwitch(SwitchStatement* switchStmt)
 
                 NumericLiteral* literal = &caseValue->as<NumericLiteral>();
 #ifdef DEBUG
+                
+                
+                
                 int32_t v;
-                MOZ_ASSERT(mozilla::NumberIsInt32(literal->value(), &v));
+                MOZ_ASSERT(mozilla::NumberEqualsInt32(literal->value(), &v));
 #endif
                 int32_t i = int32_t(literal->value());
 
