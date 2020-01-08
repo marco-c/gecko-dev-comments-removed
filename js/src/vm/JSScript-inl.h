@@ -119,6 +119,10 @@ inline js::GlobalObject& JSScript::global() const {
   return *realm()->maybeGlobal();
 }
 
+inline bool JSScript::hasGlobal(const js::GlobalObject *global) const {
+  return global == realm()->unsafeUnbarrieredMaybeGlobal();
+}
+
 inline js::LexicalScope* JSScript::maybeNamedLambdaScope() const {
   
   
