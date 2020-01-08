@@ -100,7 +100,7 @@ struct FrameMetrics {
         mRootCompositionSize(0, 0),
         mDisplayPortMargins(0, 0, 0, 0),
         mPresShellId(-1),
-        mViewport(0, 0, 0, 0),
+        mLayoutViewport(0, 0, 0, 0),
         mExtraResolution(),
         mPaintRequestTime(),
         mScrollUpdateType(eNone),
@@ -129,7 +129,7 @@ struct FrameMetrics {
            mRootCompositionSize == aOther.mRootCompositionSize &&
            mDisplayPortMargins == aOther.mDisplayPortMargins &&
            mPresShellId == aOther.mPresShellId &&
-           mViewport.IsEqualEdges(aOther.mViewport) &&
+           mLayoutViewport.IsEqualEdges(aOther.mLayoutViewport) &&
            mExtraResolution == aOther.mExtraResolution &&
            mPaintRequestTime == aOther.mPaintRequestTime &&
            mScrollUpdateType == aOther.mScrollUpdateType &&
@@ -437,9 +437,11 @@ struct FrameMetrics {
 
   void SetPresShellId(uint32_t aPresShellId) { mPresShellId = aPresShellId; }
 
-  void SetViewport(const CSSRect& aViewport) { mViewport = aViewport; }
+  void SetLayoutViewport(const CSSRect& aLayoutViewport) {
+    mLayoutViewport = aLayoutViewport;
+  }
 
-  const CSSRect& GetViewport() const { return mViewport; }
+  const CSSRect& GetLayoutViewport() const { return mLayoutViewport; }
 
   CSSRect GetVisualViewport() const {
     return CSSRect(mScrollOffset, CalculateCompositedSizeInCssPixels());
@@ -483,7 +485,7 @@ struct FrameMetrics {
   
   
   
-  void RecalculateViewportOffset();
+  void RecalculateLayoutViewportOffset();
 
   
   
@@ -625,7 +627,7 @@ struct FrameMetrics {
   
   
   
-  CSSRect mViewport;
+  CSSRect mLayoutViewport;
 
   
   
