@@ -7,11 +7,10 @@
 #ifndef __FFmpegDecoderModule_h__
 #define __FFmpegDecoderModule_h__
 
-#include "FFmpegAudioDecoder.h"
-#include "FFmpegLibWrapper.h"
-#include "FFmpegVideoDecoder.h"
 #include "PlatformDecoderModule.h"
-#include "VPXDecoder.h"
+#include "FFmpegLibWrapper.h"
+#include "FFmpegAudioDecoder.h"
+#include "FFmpegVideoDecoder.h"
 #include "mozilla/StaticPrefs.h"
 
 namespace mozilla {
@@ -38,12 +37,8 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
     if (aParams.VideoConfig().HasAlpha()) {
       return nullptr;
     }
-    if (VPXDecoder::IsVPX(aParams.mConfig.mMimeType) &&
-        aParams.mOptions.contains(CreateDecoderParams::Option::LowLatency) &&
+    if (aParams.mOptions.contains(CreateDecoderParams::Option::LowLatency) &&
         !StaticPrefs::MediaFfmpegLowLatencyEnabled()) {
-      
-      
-      
       return nullptr;
     }
     RefPtr<MediaDataDecoder> decoder = new FFmpegVideoDecoder<V>(
