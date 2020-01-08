@@ -286,6 +286,7 @@ void nsStandardURL::ShutdownGlobalObjects() {
     
     
     
+    StaticMutexAutoLock lock(gAllURLsMutex);
     static DumpLeakedURLs d;
   }
 #endif
