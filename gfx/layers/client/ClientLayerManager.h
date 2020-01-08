@@ -327,6 +327,7 @@ private:
   bool mCompositorMightResample;
   bool mNeedsComposite;
   bool mQueuedAsyncPaints;
+  bool mNotifyingWidgetListener;
 
   
   
