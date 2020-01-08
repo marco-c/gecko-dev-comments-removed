@@ -868,11 +868,14 @@ public:
 
 
 
-
-
-
-
   inline nsContainerFrame* GetInFlowParent() const;
+
+  
+
+
+
+
+  inline nsIFrame* GetClosestFlattenedTreeAncestorPrimaryFrame() const;
 
   
 
