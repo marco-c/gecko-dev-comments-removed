@@ -1269,12 +1269,7 @@ Inspector.prototype = {
 
 
 
-  async onHostChanged() {
-    
-    
-    
-    
-    await this._onLazyPanelResize();
+  onHostChanged: function() {
     if (!this.is3PaneModeEnabled) {
       return;
     }
