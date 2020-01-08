@@ -825,6 +825,12 @@ ProcessHasSignalHandlers()
     
     
 #if defined(XP_WIN)
+
+# if defined(_M_ARM64)
+    
+    return false;
+# endif
+
 # if defined(MOZ_ASAN)
     
     
