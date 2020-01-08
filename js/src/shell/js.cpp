@@ -120,7 +120,6 @@
 #include "vm/TypedArrayObject.h"
 #include "vm/WrapperObject.h"
 #include "wasm/WasmJS.h"
-#include "wasm/WasmModule.h"
 
 #include "vm/Compartment-inl.h"
 #include "vm/ErrorObject-inl.h"
@@ -6562,7 +6561,7 @@ struct SharedObjectMailbox
             SharedArrayRawBuffer* buffer;
             uint32_t              length;
         } sarb;
-        const wasm::Module*       module;
+        JS::WasmModule*           module;
         double                    number;
     };
 
@@ -6683,8 +6682,7 @@ GetSharedObject(JSContext* cx, unsigned argc, Value* vp)
 
             
             
-            RootedObject proto(cx, &cx->global()->getPrototype(JSProto_WasmModule).toObject());
-            newObj = WasmModuleObject::create(cx, *mbx->val.module, proto);
+            newObj = mbx->val.module->createObject(cx);
             if (!newObj) {
                 return false;
             }
@@ -6738,10 +6736,9 @@ SetSharedObject(JSContext* cx, unsigned argc, Value* vp)
                 JS_ReportErrorASCII(cx, "Invalid argument to SetSharedObject");
                 return false;
             }
-        } else if (obj->is<WasmModuleObject>()) {
+        } else if (JS::IsWasmModuleObject(obj)) {
             tag = MailboxTag::WasmModule;
-            value.module = &obj->as<WasmModuleObject>().module();
-            value.module->AddRef();
+            value.module = JS::GetWasmModule(obj).forget().take();
         } else {
             JS_ReportErrorASCII(cx, "Invalid argument to SetSharedObject");
             return false;
