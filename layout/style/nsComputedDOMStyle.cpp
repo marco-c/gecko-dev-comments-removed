@@ -576,21 +576,25 @@ nsComputedDOMStyle::DoGetComputedStyleNoFlush(Element* aElement,
   if (inDocWithShell &&
       aStyleType == eAll &&
       !aElement->IsHTMLElement(nsGkAtoms::area)) {
-    nsIFrame* frame = nullptr;
+    Element* element = nullptr;
     if (aPseudo == nsCSSPseudoElements::before()) {
-      frame = nsLayoutUtils::GetBeforeFrame(aElement);
+      element = nsLayoutUtils::GetBeforePseudo(aElement);
     } else if (aPseudo == nsCSSPseudoElements::after()) {
-      frame = nsLayoutUtils::GetAfterFrame(aElement);
+      element = nsLayoutUtils::GetAfterPseudo(aElement);
     } else if (!aPseudo) {
-      frame = nsLayoutUtils::GetStyleFrame(aElement);
+      element = aElement;
     }
-    if (frame) {
-      ComputedStyle* result = frame->Style();
-      
-      
-      if (!MustReresolveStyle(result)) {
-        RefPtr<ComputedStyle> ret = result;
-        return ret.forget();
+
+    if (element) {
+      nsIFrame* primaryFrame = element->GetPrimaryFrame();
+      if (nsIFrame* styleFrame = nsLayoutUtils::GetStyleFrame(element)) {
+        ComputedStyle* result = styleFrame->Style();
+        
+        
+        if (!MustReresolveStyle(result)) {
+          RefPtr<ComputedStyle> ret = result;
+          return ret.forget();
+        }
       }
     }
   }
