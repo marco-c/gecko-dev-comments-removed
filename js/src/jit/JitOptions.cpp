@@ -158,12 +158,14 @@ DefaultJitOptions::DefaultJitOptions()
 
     
     
+    
     SET_DEFAULT(baselineWarmUpThreshold, 10);
 
     
     
     SET_DEFAULT(exceptionBailoutThreshold, 10);
 
+    
     
     
     SET_DEFAULT(frequentBailoutThreshold, 10);
