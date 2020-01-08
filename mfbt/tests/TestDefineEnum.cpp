@@ -35,6 +35,7 @@ static_assert(kTestEnum2Count == 3, "Incorrect enumerator count");
 
 
 struct TestClass {
+  
   MOZ_DEFINE_ENUM_AT_CLASS_SCOPE(
     TestEnum3, (
       EnumeratorA,
@@ -48,6 +49,7 @@ struct TestClass {
       B,
       C
   ));
+  
 
   static_assert(EnumeratorA == 0, "Unexpected enumerator value");
   static_assert(EnumeratorB == 1, "Unexpected enumerator value");

@@ -54,6 +54,7 @@ struct FrameMetrics {
 
   typedef ScrollableLayerGuid::ViewID ViewID;
 public:
+  
   MOZ_DEFINE_ENUM_WITH_BASE_AT_CLASS_SCOPE(
     ScrollOffsetUpdateType, uint8_t, (
       eNone,          
@@ -65,7 +66,9 @@ public:
                       
                       
                       
+                      
   ));
+  
 
   FrameMetrics()
     : mScrollId(ScrollableLayerGuid::NULL_SCROLL_ID)
@@ -838,12 +841,14 @@ struct ScrollSnapInfo {
   nsTArray<nsPoint> mScrollSnapCoordinates;
 };
 
+
 MOZ_DEFINE_ENUM_CLASS_WITH_BASE(
   OverscrollBehavior, uint8_t, (
     Auto,
     Contain,
     None
 ));
+
 
 struct OverscrollBehaviorInfo {
   OverscrollBehaviorInfo()

@@ -52,6 +52,7 @@ public:
 
 
 
+  
   MOZ_DEFINE_ENUM_CLASS_AT_CLASS_SCOPE(
     TapType, (
       eSingleTap,
@@ -60,6 +61,7 @@ public:
       eLongTap,
       eLongTapUp
   ));
+  
 
   
 
@@ -109,6 +111,7 @@ public:
 
   virtual void DispatchToRepaintThread(already_AddRefed<Runnable> aTask) = 0;
 
+  
   MOZ_DEFINE_ENUM_CLASS_AT_CLASS_SCOPE(
     APZStateChange, (
       
@@ -134,6 +137,7 @@ public:
 
       eEndTouch
   ));
+  
 
   
 

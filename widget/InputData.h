@@ -33,6 +33,7 @@ namespace dom {
 class Touch;
 } 
 
+
 MOZ_DEFINE_ENUM(
   InputType, (
     MULTITOUCH_INPUT,
@@ -43,6 +44,7 @@ MOZ_DEFINE_ENUM(
     SCROLLWHEEL_INPUT,
     KEYBOARD_INPUT
 ));
+
 
 class MultiTouchInput;
 class MouseInput;
@@ -188,6 +190,7 @@ public:
 class MultiTouchInput : public InputData
 {
 public:
+  
   MOZ_DEFINE_ENUM_AT_CLASS_SCOPE(
     MultiTouchType, (
       MULTITOUCH_START,
@@ -195,6 +198,7 @@ public:
       MULTITOUCH_END,
       MULTITOUCH_CANCEL
   ));
+  
 
   MultiTouchInput(MultiTouchType aType, uint32_t aTime, TimeStamp aTimeStamp,
                   Modifiers aModifiers);
@@ -236,6 +240,7 @@ protected:
 
 public:
 
+  
   MOZ_DEFINE_ENUM_AT_CLASS_SCOPE(
     MouseType, (
       MOUSE_NONE,
@@ -256,6 +261,7 @@ public:
       RIGHT_BUTTON,
       NONE
   ));
+  
 
   MouseInput(MouseType aType, ButtonType aButtonType, uint16_t aInputSource,
              int16_t aButtons, const ScreenPoint& aPoint, uint32_t aTime,
@@ -291,6 +297,7 @@ protected:
   PanGestureInput();
 
 public:
+  
   MOZ_DEFINE_ENUM_AT_CLASS_SCOPE(
     PanGestureType, (
       
@@ -336,6 +343,7 @@ public:
       
       PANGESTURE_MOMENTUMEND
   ));
+  
 
   PanGestureInput(PanGestureType aType,
                   uint32_t aTime,
@@ -411,12 +419,14 @@ protected:
   PinchGestureInput();
 
 public:
+  
   MOZ_DEFINE_ENUM_AT_CLASS_SCOPE(
     PinchGestureType, (
       PINCHGESTURE_START,
       PINCHGESTURE_SCALE,
       PINCHGESTURE_END
   ));
+  
 
   
   
@@ -494,6 +504,7 @@ protected:
   TapGestureInput();
 
 public:
+  
   MOZ_DEFINE_ENUM_AT_CLASS_SCOPE(
     TapGestureType, (
       TAPGESTURE_LONG,
@@ -504,6 +515,7 @@ public:
       TAPGESTURE_SECOND, 
       TAPGESTURE_CANCEL
   ));
+  
 
   
   
@@ -543,6 +555,7 @@ protected:
   ScrollWheelInput();
 
 public:
+  
   MOZ_DEFINE_ENUM_AT_CLASS_SCOPE(
     ScrollDeltaType, (
       
@@ -558,6 +571,7 @@ public:
       SCROLLMODE_SMOOTH
     )
   );
+  
 
   ScrollWheelInput(uint32_t aTime, TimeStamp aTimeStamp, Modifiers aModifiers,
                    ScrollMode aScrollMode, ScrollDeltaType aDeltaType,

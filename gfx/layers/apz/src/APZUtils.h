@@ -40,6 +40,7 @@ operator|(CancelAnimationFlags a, CancelAnimationFlags b)
 
 typedef EnumSet<ScrollDirection> ScrollDirections;
 
+
 enum class ScrollSource {
   
   DOM,
@@ -58,6 +59,7 @@ MOZ_DEFINE_ENUM_CLASS_WITH_BASE(APZWheelAction, uint8_t, (
     Scroll,
     PinchZoom
 ))
+
 
 
 

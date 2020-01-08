@@ -308,12 +308,14 @@ private:
 
 class WatchdogManager;
 
+
 MOZ_DEFINE_ENUM(WatchdogTimestampCategory, (
     TimestampWatchdogWakeup,
     TimestampWatchdogHibernateStart,
     TimestampWatchdogHibernateStop,
     TimestampContextStateChange
 ));
+
 
 class AsyncFreeSnowWhite;
 

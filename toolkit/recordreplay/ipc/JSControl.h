@@ -37,6 +37,7 @@ namespace js {
 
 struct BreakpointPosition
 {
+  
   MOZ_DEFINE_ENUM_AT_CLASS_SCOPE(Kind, (
     Invalid,
 
@@ -63,6 +64,7 @@ struct BreakpointPosition
     
     WarpTarget
   ));
+  
 
   Kind mKind;
 

@@ -195,12 +195,14 @@ enum class SurfaceMode : int8_t {
   SURFACE_COMPONENT_ALPHA
 };
 
+
 MOZ_DEFINE_ENUM_CLASS_WITH_BASE(
   ScaleMode, int8_t, (
     SCALE_NONE,
     STRETCH
 
 ));
+
 
 struct EventRegions {
   
@@ -456,10 +458,12 @@ private:
   uint64_t mHandle;
 };
 
+
 MOZ_DEFINE_ENUM_CLASS_WITH_BASE(ScrollDirection, uint32_t, (
   eVertical,
   eHorizontal
 ));
+
 
 } 
 } 
