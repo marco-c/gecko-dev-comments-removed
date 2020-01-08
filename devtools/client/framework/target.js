@@ -20,6 +20,7 @@ const promiseTargets = new WeakMap();
 
 
 const TargetFactory = exports.TargetFactory = {
+
   
 
 
@@ -27,13 +28,68 @@ const TargetFactory = exports.TargetFactory = {
 
 
 
-  forTab: function(tab) {
+
+
+  forTab: async function(tab) {
     let target = targets.get(tab);
-    if (target == null) {
-      target = new TabTarget(tab);
-      targets.set(tab, target);
+    if (target) {
+      return target;
     }
+    const promise = this.createTargetForTab(tab);
+    
+    targets.set(tab, promise);
+    target = await promise;
+    
+    targets.set(tab, target);
     return target;
+  },
+
+  
+
+
+
+
+
+
+
+  async createTargetForTab(tab) {
+    function createLocalServer() {
+      
+      
+      DebuggerServer.init();
+
+      
+      
+      
+      
+      
+      
+      DebuggerServer.registerAllActors();
+      
+      DebuggerServer.allowChromeProcess = true;
+    }
+
+    function createLocalClient() {
+      return new DebuggerClient(DebuggerServer.connectPipe());
+    }
+
+    createLocalServer();
+    const client = createLocalClient();
+
+    
+    await client.connect();
+
+    
+    const response = await client.getTab({ tab });
+
+    return new TabTarget({
+      client,
+      form: response.tab,
+      
+      chrome: false,
+      isBrowsingContext: true,
+      tab,
+    });
   },
 
   
@@ -114,29 +170,49 @@ const TargetFactory = exports.TargetFactory = {
 
 
 
-function TabTarget(tab) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function TabTarget({ form, client, chrome, isBrowsingContext = true, tab = null }) {
   EventEmitter.decorate(this);
   this.destroy = this.destroy.bind(this);
   this.activeTab = this.activeConsole = null;
+
+  this._form = form;
+  this._url = form.url;
+  this._title = form.title;
+
+  this._client = client;
+  this._chrome = chrome;
+
   
   
-  if (tab && !["client", "form", "chrome"].every(tab.hasOwnProperty, tab)) {
+  
+  
+  if (tab) {
     this._tab = tab;
     this._setupListeners();
-  } else {
-    this._form = tab.form;
-    this._url = this._form.url;
-    this._title = this._form.title;
+  }
 
-    this._client = tab.client;
-    this._chrome = tab.chrome;
-  }
   
-  if (typeof tab.isBrowsingContext == "boolean") {
-    this._isBrowsingContext = tab.isBrowsingContext;
-  } else {
-    this._isBrowsingContext = true;
-  }
+  this._isBrowsingContext = isBrowsingContext;
+
   
   
   this.fronts = new Map();
@@ -389,26 +465,8 @@ TabTarget.prototype = {
       return this._remote;
     }
 
-    if (this.isLocalTab) {
-      
-      
-      DebuggerServer.init();
-
-      
-      
-      
-      
-      
-      
-      DebuggerServer.registerAllActors();
-      
-      DebuggerServer.allowChromeProcess = true;
-
-      this._client = new DebuggerClient(DebuggerServer.connectPipe());
-      
-      this._chrome = false;
-    } else if (this._form.isWebExtension &&
-          this.client.mainRoot.traits.webExtensionAddonConnect) {
+    if (this._form.isWebExtension &&
+        this.client.mainRoot.traits.webExtensionAddonConnect) {
       
       
       
@@ -457,17 +515,7 @@ TabTarget.prototype = {
           });
       };
 
-      if (this.isLocalTab) {
-        this._client.connect()
-          .then(() => this._client.getTab({tab: this.tab}))
-          .then(response => {
-            this._form = response.tab;
-            this._url = this._form.url;
-            this._title = this._form.title;
-
-            attachTab();
-          }, e => reject(e));
-      } else if (this.isBrowsingContext) {
+      if (this.isBrowsingContext) {
         
         
         attachTab();
@@ -494,7 +542,9 @@ TabTarget.prototype = {
 
 
   _teardownListeners: function() {
-    this._tab.ownerDocument.defaultView.removeEventListener("unload", this);
+    if (this._tab.ownerDocument.defaultView) {
+      this._tab.ownerDocument.defaultView.removeEventListener("unload", this);
+    }
     this._tab.removeEventListener("TabClose", this);
     this._tab.removeEventListener("TabRemotenessChange", this);
   },
@@ -598,14 +648,14 @@ TabTarget.prototype = {
 
     
     const tab = this._tab;
-    const onToolboxDestroyed = target => {
+    const onToolboxDestroyed = async (target) => {
       if (target != this) {
         return;
       }
       gDevTools.off("toolbox-destroyed", target);
 
       
-      const newTarget = TargetFactory.forTab(tab);
+      const newTarget = await TargetFactory.forTab(tab);
       gDevTools.showToolbox(newTarget);
     };
     gDevTools.on("toolbox-destroyed", onToolboxDestroyed);

@@ -13,7 +13,7 @@ add_task(async function() {
   
   
   const tabAdded = addTab(TESTCASE_URI);
-  const target = TargetFactory.forTab(gBrowser.selectedTab);
+  const target = await TargetFactory.forTab(gBrowser.selectedTab);
   const styleEditorLoaded = gDevTools.showToolbox(target, "styleeditor");
 
   await Promise.all([tabAdded, styleEditorLoaded]);
