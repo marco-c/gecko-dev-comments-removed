@@ -65,9 +65,6 @@ ChildSHistory::CanGo(int32_t aOffset)
 void
 ChildSHistory::Go(int32_t aOffset, ErrorResult& aRv)
 {
-  
-  
-  
   CheckedInt<int32_t> index = Index();
   index += aOffset;
   if (!index.isValid()) {

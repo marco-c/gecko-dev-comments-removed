@@ -140,8 +140,6 @@ static LazyLogModule gSHistoryLog("nsSHistory");
 
 enum HistCmd
 {
-  HIST_CMD_BACK,
-  HIST_CMD_FORWARD,
   HIST_CMD_GOTOINDEX,
   HIST_CMD_RELOAD
 };
@@ -1667,15 +1665,7 @@ nsSHistory::LoadEntry(int32_t aIndex, long aLoadType, uint32_t aHistCmd)
 
   
   bool canNavigate = true;
-  if (aHistCmd == HIST_CMD_BACK) {
-    
-    NOTIFY_LISTENERS_CANCELABLE(OnHistoryGoBack, canNavigate,
-                                (nextURI, &canNavigate));
-  } else if (aHistCmd == HIST_CMD_FORWARD) {
-    
-    NOTIFY_LISTENERS_CANCELABLE(OnHistoryGoForward, canNavigate,
-                                (nextURI, &canNavigate));
-  } else if (aHistCmd == HIST_CMD_GOTOINDEX) {
+  if (aHistCmd == HIST_CMD_GOTOINDEX) {
     
     NOTIFY_LISTENERS_CANCELABLE(OnHistoryGotoIndex, canNavigate,
                                 (aIndex, nextURI, &canNavigate));
