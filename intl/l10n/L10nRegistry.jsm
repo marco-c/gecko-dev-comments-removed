@@ -79,6 +79,12 @@ const isParentProcess = appinfo.processType === appinfo.PROCESS_TYPE_DEFAULT;
 
 
 
+
+
+
+
+
+
 class L10nRegistryService {
   constructor() {
     this.sources = new Map();
@@ -105,11 +111,46 @@ class L10nRegistryService {
 
 
 
+
+
+
   async* generateBundles(requestedLangs, resourceIds) {
     const sourcesOrder = Array.from(this.sources.keys()).reverse();
     const pseudoNameFromPref = Services.prefs.getStringPref("intl.l10n.pseudo", "");
     for (const locale of requestedLangs) {
       for await (const dataSets of generateResourceSetsForLocale(locale, sourcesOrder, resourceIds)) {
+        const bundle = new FluentBundle(locale, {
+          ...MSG_CONTEXT_OPTIONS,
+          transform: PSEUDO_STRATEGIES[pseudoNameFromPref],
+        });
+        for (const data of dataSets) {
+          if (data === null) {
+            return;
+          }
+          bundle.addResource(data);
+        }
+        yield bundle;
+      }
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  * generateBundlesSync(requestedLangs, resourceIds) {
+    const sourcesOrder = Array.from(this.sources.keys()).reverse();
+    const pseudoNameFromPref = Services.prefs.getStringPref("intl.l10n.pseudo", "");
+    for (const locale of requestedLangs) {
+      for (const dataSets of generateResourceSetsForLocaleSync(locale, sourcesOrder, resourceIds)) {
         const bundle = new FluentBundle(locale, {
           ...MSG_CONTEXT_OPTIONS,
           transform: PSEUDO_STRATEGIES[pseudoNameFromPref],
@@ -236,6 +277,9 @@ class L10nRegistryService {
 
 
 
+
+
+
 async function* generateResourceSetsForLocale(locale, sourcesOrder, resourceIds, resolvedOrder = []) {
   const resolvedLength = resolvedOrder.length;
   const resourcesLength = resourceIds.length;
@@ -280,6 +324,65 @@ async function* generateResourceSetsForLocale(locale, sourcesOrder, resourceIds,
       
       
       yield * generateResourceSetsForLocale(locale, sourcesOrder, resourceIds, order);
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function* generateResourceSetsForLocaleSync(locale, sourcesOrder, resourceIds, resolvedOrder = []) {
+  const resolvedLength = resolvedOrder.length;
+  const resourcesLength = resourceIds.length;
+
+  
+  
+  
+  for (const sourceName of sourcesOrder) {
+    const order = resolvedOrder.concat(sourceName);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    for (let [idx, sourceName] of order.entries()) {
+      if (L10nRegistry.sources.get(sourceName).hasFile(locale, resourceIds[idx]) === false) {
+        if (idx === order.length - 1) {
+          continue;
+        } else {
+          return;
+        }
+      }
+    }
+
+    
+    
+    if (resolvedLength + 1 === resourcesLength) {
+      let dataSet = generateResourceSetSync(locale, order, resourceIds);
+      
+      
+      if (!dataSet.includes(false)) {
+        yield dataSet;
+      }
+    } else if (resolvedLength < resourcesLength) {
+      
+      
+      yield * generateResourceSetsForLocaleSync(locale, sourcesOrder, resourceIds, order);
     }
   }
 }
@@ -410,10 +513,29 @@ const PSEUDO_STRATEGIES = {
 
 
 
+
+
+
 async function generateResourceSet(locale, sourcesOrder, resourceIds) {
   return Promise.all(resourceIds.map((resourceId, i) => {
     return L10nRegistry.sources.get(sourcesOrder[i]).fetchFile(locale, resourceId);
   }));
+}
+
+
+
+
+
+
+
+
+
+
+
+function generateResourceSetSync(locale, sourcesOrder, resourceIds) {
+  return resourceIds.map((resourceId, i) => {
+    return L10nRegistry.sources.get(sourcesOrder[i]).fetchFile(locale, resourceId, {sync: true});
+  });
 }
 
 
@@ -482,7 +604,7 @@ class FileSource {
     return true;
   }
 
-  fetchFile(locale, path) {
+  fetchFile(locale, path, options = {sync: false}) {
     if (!this.locales.includes(locale)) {
       return false;
     }
@@ -499,8 +621,21 @@ class FileSource {
         return this.cache[fullPath];
       }
     } else if (this.indexed) {
-        return false;
+      return false;
+    }
+    if (options.sync) {
+      let data = L10nRegistry.loadSync(fullPath);
+
+      if (data === false) {
+        this.cache[fullPath] = false;
+      } else {
+        this.cache[fullPath] = FluentResource.fromString(data);
       }
+
+      return this.cache[fullPath];
+    }
+
+    
     return this.cache[fullPath] = L10nRegistry.load(fullPath).then(
       data => {
         return this.cache[fullPath] = FluentResource.fromString(data);
@@ -557,6 +692,28 @@ this.L10nRegistry.load = function(url) {
     }
     return response.text();
   });
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+this.L10nRegistry.loadSync = function(uri) {
+  try {
+    let url = Services.io.newURI(uri);
+    let data = Cu.readUTF8URI(url);
+    return data;
+  } catch (e) {
+    return false;
+  }
 };
 
 this.FileSource = FileSource;
