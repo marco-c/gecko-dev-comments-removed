@@ -1487,21 +1487,37 @@ PrepareAndExecuteRegExp(JSContext* cx, MacroAssembler& masm, Register regexp, Re
         masm.branch32(Assembler::AboveOrEqual, lastIndex, temp2, &done);
 
         
-        masm.loadStringChars(input, temp2, CharEncoding::TwoByte);
-        masm.computeEffectiveAddress(BaseIndex(temp2, lastIndex, TimesTwo), temp3);
-        masm.load16ZeroExtend(Address(temp3, 0), temp3);
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
 
-        masm.branch32(Assembler::Below, temp3, Imm32(unicode::TrailSurrogateMin), &done);
-        masm.branch32(Assembler::Above, temp3, Imm32(unicode::TrailSurrogateMax), &done);
+        constexpr char16_t SurrogateMask = 0xFC00;
 
         
-        masm.move32(lastIndex, temp3);
-        masm.sub32(Imm32(1), temp3);
-        masm.computeEffectiveAddress(BaseIndex(temp2, temp3, TimesTwo), temp3);
-        masm.load16ZeroExtend(Address(temp3, 0), temp3);
+        masm.loadStringChars(input, temp2, CharEncoding::TwoByte);
+        masm.load16ZeroExtend(BaseIndex(temp2, lastIndex, TimesTwo), temp3);
 
-        masm.branch32(Assembler::Below, temp3, Imm32(unicode::LeadSurrogateMin), &done);
-        masm.branch32(Assembler::Above, temp3, Imm32(unicode::LeadSurrogateMax), &done);
+        masm.and32(Imm32(SurrogateMask), temp3);
+        masm.branch32(Assembler::NotEqual, temp3, Imm32(unicode::TrailSurrogateMin), &done);
+
+        
+        masm.load16ZeroExtend(BaseIndex(temp2, lastIndex, TimesTwo, -int32_t(sizeof(char16_t))),
+                              temp3);
+
+        masm.and32(Imm32(SurrogateMask), temp3);
+        masm.branch32(Assembler::NotEqual, temp3, Imm32(unicode::LeadSurrogateMin), &done);
 
         
         masm.subPtr(Imm32(1), lastIndex);
@@ -3691,7 +3707,7 @@ CodeGenerator::visitElements(LElements* lir)
     masm.loadPtr(elements, ToRegister(lir->output()));
 }
 
-typedef bool (*ConvertElementsToDoublesFn)(JSContext*, uintptr_t);
+typedef void (*ConvertElementsToDoublesFn)(JSContext*, uintptr_t);
 static const VMFunction ConvertElementsToDoublesInfo =
     FunctionInfo<ConvertElementsToDoublesFn>(ObjectElements::ConvertElementsToDoubles,
                                              "ObjectElements::ConvertElementsToDoubles");
@@ -7581,7 +7597,6 @@ CodeGenerator::visitSignDI(LSignDI* ins)
 
     
     
-    Label isNegInf;
     masm.loadConstantDouble(1.0, temp);
     masm.divDouble(input, temp);
     masm.branchDouble(Assembler::DoubleLessThan, temp, input, &bailout);
@@ -12450,14 +12465,12 @@ CodeGenerator::emitIsCallableOrConstructor(Register object, Register output, Lab
     if (mode == Callable) {
         masm.move32(Imm32(1), output);
     } else {
-        Label notConstructor;
+        static_assert(mozilla::IsPowerOfTwo(unsigned(JSFunction::CONSTRUCTOR)),
+                      "JSFunction::CONSTRUCTOR has only one bit set");
+
         masm.load16ZeroExtend(Address(object, JSFunction::offsetOfFlags()), output);
-        masm.and32(Imm32(JSFunction::CONSTRUCTOR), output);
-        masm.branchTest32(Assembler::Zero, output, output, &notConstructor);
-        masm.move32(Imm32(1), output);
-        masm.jump(&done);
-        masm.bind(&notConstructor);
-        masm.move32(Imm32(0), output);
+        masm.rshift32(Imm32(mozilla::FloorLog2(JSFunction::CONSTRUCTOR)), output);
+        masm.and32(Imm32(1), output);
     }
     masm.jump(&done);
 

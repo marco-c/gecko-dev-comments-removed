@@ -76,7 +76,7 @@ NativeObject::canHaveNonEmptyElements()
 
 #endif 
 
- bool
+ void
 ObjectElements::ConvertElementsToDoubles(JSContext* cx, uintptr_t elementsPtr)
 {
     
@@ -100,7 +100,6 @@ ObjectElements::ConvertElementsToDoubles(JSContext* cx, uintptr_t elementsPtr)
     }
 
     header->setShouldConvertDoubleElements();
-    return true;
 }
 
  bool
