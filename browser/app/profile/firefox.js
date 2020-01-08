@@ -1262,11 +1262,7 @@ pref("toolkit.startup.max_resumed_crashes", 3);
 
 
 #if defined(XP_WIN)
-#if defined(NIGHTLY_BUILD)
 pref("toolkit.winRegisterApplicationRestart", true);
-#else
-pref("toolkit.winRegisterApplicationRestart", false);
-#endif
 #endif
 
 
