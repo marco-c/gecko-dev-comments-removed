@@ -176,10 +176,6 @@ private:
   mozilla::ServoRawOffsetArc<RustString> mString;
 
 protected:
-  
-  
-  
-  bool mLoadedImage = false;
   const CORSMode mCORSMode;
 
   virtual ~URLValueData();
@@ -239,17 +235,26 @@ struct ImageValue final : public URLValueData
   ImageValue(const ImageValue&) = delete;
   ImageValue& operator=(const ImageValue&) = delete;
 
-  void Initialize(nsIDocument* aDocument);
+  imgRequestProxy* LoadImage(nsIDocument* aDocument);
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
+
+  uint64_t LoadID() const { return mLoadID; }
 
 protected:
   ~ImageValue();
 
-public:
+private:
   
-
-  nsRefPtrHashtable<nsPtrHashKey<nsIDocument>, imgRequestProxy> mRequests;
+  
+  
+  
+  
+  
+  
+  
+  
+  uint64_t mLoadID = 0;
 };
 
 struct GridNamedArea {

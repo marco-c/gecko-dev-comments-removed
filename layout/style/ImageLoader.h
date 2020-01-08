@@ -33,9 +33,16 @@ namespace css {
 
 struct ImageValue;
 
+
+
+
+
 class ImageLoader final : public imgINotificationObserver
 {
 public:
+  static void Init();
+  static void Shutdown();
+
   
   
   typedef uint32_t FrameFlags;
@@ -58,8 +65,7 @@ public:
 
   void DropDocumentReference();
 
-  void MaybeRegisterCSSImage(Image* aImage);
-  void DeregisterCSSImage(Image* aImage);
+  imgRequestProxy* RegisterCSSImage(Image* aImage);
 
   void AssociateRequestToFrame(imgIRequest* aRequest,
                                nsIFrame* aFrame,
@@ -77,11 +83,19 @@ public:
   
   void ClearFrames(nsPresContext* aPresContext);
 
-  void LoadImage(nsIURI* aURI, nsIPrincipal* aPrincipal, nsIURI* aReferrer,
-                 mozilla::net::ReferrerPolicy aPolicy, Image* aCSSValue,
-                 CORSMode aCorsMode);
+  static void LoadImage(nsIURI* aURI,
+                        nsIPrincipal* aPrincipal,
+                        nsIURI* aReferrer,
+                        mozilla::net::ReferrerPolicy aPolicy,
+                        nsIDocument* aDocument,
+                        Image* aCSSValue,
+                        CORSMode aCorsMode);
 
-  void DestroyRequest(imgIRequest* aRequest);
+  
+  
+  
+  
+  static void DeregisterCSSImageFromAllLoaders(Image* aImage);
 
   void FlushUseCounters();
 
@@ -139,14 +153,10 @@ private:
 
   typedef nsTArray<FrameWithFlags> FrameSet;
   typedef nsTArray<nsCOMPtr<imgIRequest> > RequestSet;
-  typedef nsTHashtable<nsPtrHashKey<Image> > ImageHashSet;
   typedef nsClassHashtable<nsISupportsHashKey,
                            FrameSet> RequestToFrameMap;
   typedef nsClassHashtable<nsPtrHashKey<nsIFrame>,
                            RequestSet> FrameToRequestMap;
-
-  void AddImage(Image* aCSSImage);
-  void RemoveImage(Image* aCSSImage);
 
   nsPresContext* GetPresContext();
 
@@ -166,6 +176,9 @@ private:
   void RemoveFrameToRequestMapping(imgIRequest* aRequest, nsIFrame* aFrame);
 
   
+  static void DeregisterCSSImageFromAllLoaders(uint64_t aLoadID);
+
+  
   RequestToFrameMap mRequestToFrameMap;
 
   
@@ -177,10 +190,38 @@ private:
   
   
   
-  ImageHashSet mImages;
+  
+  
+  
+  nsRefPtrHashtable<nsUint64HashKey, imgRequestProxy> mRegisteredImages;
 
   
   bool mInClone;
+
+  
+  
+  struct ImageTableEntry
+  {
+    
+    nsTHashtable<nsPtrHashKey<ImageLoader>> mImageLoaders;
+
+    
+    
+    
+    
+    
+    
+    RefPtr<imgRequestProxy> mCanonicalRequest;
+  };
+
+  
+  
+  
+  
+  
+  
+  
+  static nsClassHashtable<nsUint64HashKey, ImageTableEntry>* sImages;
 };
 
 } 
