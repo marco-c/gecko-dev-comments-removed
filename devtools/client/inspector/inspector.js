@@ -263,24 +263,13 @@ Inspector.prototype = {
   },
 
   _deferredOpen: async function() {
-    this.breadcrumbs = new HTMLBreadcrumbs(this);
-
     this.walker.on("new-root", this.onNewRoot);
     this.toolbox.on("host-changed", this.onHostChanged);
     this.selection.on("new-node-front", this.onNewSelection);
     this.selection.on("detached-front", this.onDetached);
 
-    if (this.target.isLocalTab) {
-      this.target.on("thread-paused", this._updateDebuggerPausedWarning);
-      this.target.on("thread-resumed", this._updateDebuggerPausedWarning);
-      this.toolbox.on("select", this._updateDebuggerPausedWarning);
-      this._updateDebuggerPausedWarning();
-    }
-
     this._initMarkup();
     this.isReady = false;
-
-    this.setupSearchBox();
 
     
     
@@ -292,7 +281,6 @@ Inspector.prototype = {
     this.panelDoc.getElementById("inspector-main-content").style.visibility = "visible";
 
     this.setupSidebar();
-    this.setupExtensionSidebars();
 
     await this.once("markuploaded");
     this.isReady = true;
@@ -306,7 +294,17 @@ Inspector.prototype = {
     }
 
     
+    this.breadcrumbs = new HTMLBreadcrumbs(this);
+    this.setupExtensionSidebars();
+    this.setupSearchBox();
     await this.setupToolbar();
+
+    if (this.target.isLocalTab) {
+      this.target.on("thread-paused", this._updateDebuggerPausedWarning);
+      this.target.on("thread-resumed", this._updateDebuggerPausedWarning);
+      this.toolbox.on("select", this._updateDebuggerPausedWarning);
+      this._updateDebuggerPausedWarning();
+    }
 
     
     
