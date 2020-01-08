@@ -6,10 +6,12 @@ add_task(async function boookmarks_tree_cache() {
   
   
   
-  let id = PlacesUtils.bookmarks.insertBookmark(PlacesUtils.unfiledBookmarksFolderId,
-                                                uri("http://example.com"),
-                                                PlacesUtils.bookmarks.DEFAULT_INDEX,
-                                                "A title");
+  let id = PlacesUtils.bookmarks.insertBookmark(
+    await PlacesUtils.promiseItemId(PlacesUtils.bookmarks.unfiledGuid),
+    uri("http://example.com"),
+    PlacesUtils.bookmarks.DEFAULT_INDEX,
+    "A title");
+
   await PlacesUtils.promiseBookmarksTree();
 
   PlacesUtils.bookmarks.removeItem(id);
