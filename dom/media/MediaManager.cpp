@@ -2427,6 +2427,13 @@ RefPtr<MediaManager::StreamPromise> MediaManager::GetUserMedia(
   }
 
   
+  if (principal->GetIsNullPrincipal()) {
+    return StreamPromise::CreateAndReject(
+        MakeRefPtr<MediaMgrError>(MediaMgrError::Name::NotAllowedError),
+        __func__);
+  }
+
+  
   
   ipc::PrincipalInfo principalInfo;
   rv = PrincipalToPrincipalInfo(principal, &principalInfo);
