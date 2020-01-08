@@ -755,6 +755,12 @@ class DOMLocalization extends Localization {
       return undefined;
     }
 
+    
+    
+    for (let element of elements) {
+      this.pendingElements.delete(element);
+    }
+
     const keys = elements.map(this.getKeysForElement);
     const translations = await this.formatMessages(keys);
     return this.applyTranslations(elements, translations);
