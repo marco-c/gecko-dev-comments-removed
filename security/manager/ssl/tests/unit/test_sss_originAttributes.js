@@ -39,7 +39,7 @@ let uri = Services.io.newURI("https://" + host);
 
 
 
-let sslStatus = new FakeSSLStatus(constructCertFromFile(
+let secInfo = new FakeTransportSecurityInfo(constructCertFromFile(
   "test_pinning_dynamic/a.pinning2.example.com-pinningroot.pem"));
 
 
@@ -53,7 +53,7 @@ function doTest(originAttributes1, originAttributes2, shouldShare) {
       header += VALID_PIN + BACKUP_PIN;
     }
     
-    sss.processHeader(type, uri, header, sslStatus, 0,
+    sss.processHeader(type, uri, header, secInfo, 0,
                       Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST,
                       originAttributes1);
     ok(sss.isSecureURI(type, uri, 0, originAttributes1),
@@ -101,7 +101,7 @@ function testInvalidOriginAttributes(originAttributes) {
     }
 
     let callbacks = [
-      () => sss.processHeader(type, uri, header, sslStatus, 0,
+      () => sss.processHeader(type, uri, header, secInfo, 0,
                               Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST,
                               originAttributes),
       () => sss.isSecureURI(type, uri, 0, originAttributes),

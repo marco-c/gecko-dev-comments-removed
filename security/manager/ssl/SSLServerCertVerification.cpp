@@ -126,7 +126,6 @@
 #include "nsNSSCertificate.h"
 #include "nsNSSComponent.h"
 #include "nsNSSIOLayer.h"
-#include "nsSSLStatus.h"
 #include "nsServiceManagerUtils.h"
 #include "nsString.h"
 #include "nsURLHelper.h"
@@ -618,7 +617,7 @@ CertErrorRunnable::CheckCertOverrides()
         nsIInterfaceRequestor* csi
           = static_cast<nsIInterfaceRequestor*>(mInfoObject);
         bool suppressMessage = false; 
-        Unused << bcl->NotifyCertProblem(csi, mInfoObject->SSLStatus(),
+        Unused << bcl->NotifyCertProblem(csi, mInfoObject,
                                          hostWithPortString, &suppressMessage);
       }
     }
@@ -828,17 +827,16 @@ BlockServerCertChangeForSpdy(nsNSSSocketInfo* infoObject,
   
   nsCOMPtr<nsIX509Cert> cert;
 
-  RefPtr<nsSSLStatus> status(infoObject->SSLStatus());
-  if (!status) {
-    
+  if (!infoObject->IsHandshakeCompleted()) {
     
     
     return SECSuccess;
   }
 
-  status->GetServerCert(getter_AddRefs(cert));
+  infoObject->GetServerCert(getter_AddRefs(cert));
   if (!cert) {
-    MOZ_ASSERT_UNREACHABLE("nsSSLStatus must have a cert implementing nsIX509Cert");
+    MOZ_ASSERT_UNREACHABLE(
+             "TransportSecurityInfo must have a cert implementing nsIX509Cert");
     PR_SetError(SEC_ERROR_LIBRARY_FAILURE, 0);
     return SECFailure;
   }
@@ -1441,21 +1439,11 @@ AuthCertificate(CertVerifier& certVerifier,
     
     
     RememberCertErrorsTable::GetInstance().RememberCertHasError(infoObject,
-                                                                nullptr,
                                                                 SECSuccess);
     GatherSuccessfulValidationTelemetry(builtCertChain);
     GatherCertificateTransparencyTelemetry(builtCertChain,
                                    evOidPolicy != SEC_OID_UNKNOWN,
                                            certificateTransparencyInfo);
-
-    
-    
-    
-    RefPtr<nsSSLStatus> status(infoObject->SSLStatus());
-    if (!status) {
-      status = new nsSSLStatus();
-      infoObject->SetSSLStatus(status);
-    }
 
     EVStatus evStatus;
     if (evOidPolicy == SEC_OID_UNKNOWN) {
@@ -1465,13 +1453,13 @@ AuthCertificate(CertVerifier& certVerifier,
     }
 
     RefPtr<nsNSSCertificate> nsc = nsNSSCertificate::Create(cert.get());
-    status->SetServerCert(nsc, evStatus);
+    infoObject->SetServerCert(nsc, evStatus);
 
-    status->SetSucceededCertChain(std::move(builtCertChain));
+    infoObject->SetSucceededCertChain(std::move(builtCertChain));
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
             ("AuthCertificate setting NEW cert %p", nsc.get()));
 
-    status->SetCertificateTransparencyInfo(certificateTransparencyInfo);
+    infoObject->SetCertificateTransparencyInfo(certificateTransparencyInfo);
   }
 
   if (rv != Success) {

@@ -95,13 +95,13 @@ const SecurityInfo = {
 
     securityInfo.QueryInterface(Ci.nsITransportSecurityInfo);
 
-    const SSLStatus = securityInfo.SSLStatus;
     if (NSSErrorsService.isNSSErrorCode(securityInfo.errorCode)) {
       
       info.state = "broken";
       info.errorMessage = securityInfo.errorMessage;
-      if (options.certificateChain && SSLStatus.failedCertChain) {
-        info.certificates = this.getCertificateChain(SSLStatus.failedCertChain, options);
+      if (options.certificateChain && securityInfo.failedCertChain) {
+        info.certificates = this.getCertificateChain(
+          securityInfo.failedCertChain, options);
       }
       return info;
     }
@@ -133,32 +133,33 @@ const SecurityInfo = {
     }
 
     
-    info.cipherSuite = SSLStatus.cipherName;
+    info.cipherSuite = securityInfo.cipherName;
 
     
-    if (SSLStatus.keaGroupName !== "none") {
-      info.keaGroupName = SSLStatus.keaGroupName;
+    if (securityInfo.keaGroupName !== "none") {
+      info.keaGroupName = securityInfo.keaGroupName;
     }
 
     
-    if (SSLStatus.signatureSchemeName !== "none") {
-      info.signatureSchemeName = SSLStatus.signatureSchemeName;
+    if (securityInfo.signatureSchemeName !== "none") {
+      info.signatureSchemeName = securityInfo.signatureSchemeName;
     }
 
-    info.isDomainMismatch = SSLStatus.isDomainMismatch;
-    info.isExtendedValidation = SSLStatus.isExtendedValidation;
-    info.isNotValidAtThisTime = SSLStatus.isNotValidAtThisTime;
-    info.isUntrusted = SSLStatus.isUntrusted;
+    info.isDomainMismatch = securityInfo.isDomainMismatch;
+    info.isExtendedValidation = securityInfo.isExtendedValidation;
+    info.isNotValidAtThisTime = securityInfo.isNotValidAtThisTime;
+    info.isUntrusted = securityInfo.isUntrusted;
 
-    info.certificateTransparencyStatus = this.getTransparencyStatus(SSLStatus.certificateTransparencyStatus);
+    info.certificateTransparencyStatus = this.getTransparencyStatus(
+      securityInfo.certificateTransparencyStatus);
 
     
-    info.protocolVersion = this.formatSecurityProtocol(SSLStatus.protocolVersion);
+    info.protocolVersion = this.formatSecurityProtocol(securityInfo.protocolVersion);
 
-    if (options.certificateChain && SSLStatus.succeededCertChain) {
-      info.certificates = this.getCertificateChain(SSLStatus.succeededCertChain, options);
+    if (options.certificateChain && securityInfo.succeededCertChain) {
+      info.certificates = this.getCertificateChain(securityInfo.succeededCertChain, options);
     } else {
-      info.certificates = [this.parseCertificateInfo(SSLStatus.serverCert, options)];
+      info.certificates = [this.parseCertificateInfo(securityInfo.serverCert, options)];
     }
 
     
@@ -235,13 +236,13 @@ const SecurityInfo = {
   
   getTransparencyStatus(status) {
     switch (status) {
-      case Ci.nsISSLStatus.CERTIFICATE_TRANSPARENCY_NOT_APPLICABLE:
+      case Ci.nsITransportSecurityInfo.CERTIFICATE_TRANSPARENCY_NOT_APPLICABLE:
         return "not_applicable";
-      case Ci.nsISSLStatus.CERTIFICATE_TRANSPARENCY_POLICY_COMPLIANT:
+      case Ci.nsITransportSecurityInfo.CERTIFICATE_TRANSPARENCY_POLICY_COMPLIANT:
         return "policy_compliant";
-      case Ci.nsISSLStatus.CERTIFICATE_TRANSPARENCY_POLICY_NOT_ENOUGH_SCTS:
+      case Ci.nsITransportSecurityInfo.CERTIFICATE_TRANSPARENCY_POLICY_NOT_ENOUGH_SCTS:
         return "policy_not_enough_scts";
-      case Ci.nsISSLStatus.CERTIFICATE_TRANSPARENCY_POLICY_NOT_DIVERSE_SCTS:
+      case Ci.nsITransportSecurityInfo.CERTIFICATE_TRANSPARENCY_POLICY_NOT_DIVERSE_SCTS:
         return "policy_not_diverse_scts";
     }
     return "unknown";
@@ -259,13 +260,13 @@ const SecurityInfo = {
 
   formatSecurityProtocol(version) {
     switch (version) {
-      case Ci.nsISSLStatus.TLS_VERSION_1:
+      case Ci.nsITransportSecurityInfo.TLS_VERSION_1:
         return "TLSv1";
-      case Ci.nsISSLStatus.TLS_VERSION_1_1:
+      case Ci.nsITransportSecurityInfo.TLS_VERSION_1_1:
         return "TLSv1.1";
-      case Ci.nsISSLStatus.TLS_VERSION_1_2:
+      case Ci.nsITransportSecurityInfo.TLS_VERSION_1_2:
         return "TLSv1.2";
-      case Ci.nsISSLStatus.TLS_VERSION_1_3:
+      case Ci.nsITransportSecurityInfo.TLS_VERSION_1_3:
         return "TLSv1.3";
     }
     return "unknown";
