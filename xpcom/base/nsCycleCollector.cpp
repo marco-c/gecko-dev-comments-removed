@@ -2728,7 +2728,9 @@ public:
   bool
   Visit(nsPurpleBuffer& aBuffer, nsPurpleBufferEntry* aEntry)
   {
-    if (mBudget) {
+    
+    
+    if (mBudget && !recordreplay::IsRecordingOrReplaying()) {
       if (mBudget->isOverBudget()) {
         return false;
       }
