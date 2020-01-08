@@ -378,7 +378,12 @@ class OSXBootstrapper(BaseBootstrapper):
                             'GeckoView/Firefox for Android.')
 
         
+        
+        os.environ['PATH'] = \
+            '{}{}{}'.format('/Library/Java/Home/bin', os.pathsep, os.environ['PATH'])
+        self.ensure_java()
         from mozboot import android
+
         android.ensure_android('macosx', artifact_mode=artifact_mode,
                                no_interactive=self.no_interactive)
 
@@ -445,18 +450,13 @@ class OSXBootstrapper(BaseBootstrapper):
         ]
         self._ensure_macports_packages(packages)
 
-        
-        if not self.which('java') or not self.which('javac'):
-            raise Exception('You need to have Java version 1.7 or later installed. '
-                            'Please visit http://www.java.com/en/download/mac_download.jsp '
-                            'to get the latest version.')
-
         is_64bits = sys.maxsize > 2**32
         if not is_64bits:
             raise Exception('You need a 64-bit version of Mac OS X to build '
                             'GeckoView/Firefox for Android.')
 
         
+        self.ensure_java()
         from mozboot import android
         android.ensure_android('macosx', artifact_mode=artifact_mode,
                                no_interactive=self.no_interactive)

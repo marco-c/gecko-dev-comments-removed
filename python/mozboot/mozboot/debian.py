@@ -78,10 +78,8 @@ class DebianBootstrapper(NodeInstall, StyloInstall, ClangStaticAnalysisInstall,
     
     
     MOBILE_ANDROID_COMMON_PACKAGES = [
-        'default-jdk',
+        'openjdk-8-jdk-headless',  
         'wget',  
-        'libncurses5:i386',  
-        'libstdc++6:i386',
     ]
 
     
@@ -139,18 +137,10 @@ class DebianBootstrapper(NodeInstall, StyloInstall, ClangStaticAnalysisInstall,
         
         
         
-
-        
-        
-        
-        
-        
-        self.run_as_root(['dpkg', '--add-architecture', 'i386'])
-        
-        self.apt_update()
         self.apt_install(*self.mobile_android_packages)
 
         
+        self.ensure_java()
         from mozboot import android
         android.ensure_android('linux', artifact_mode=artifact_mode,
                                no_interactive=self.no_interactive)
