@@ -47,6 +47,7 @@ using mozilla::DecodeOneUtf8CodePoint;
 using mozilla::IsAscii;
 using mozilla::IsAsciiAlpha;
 using mozilla::IsAsciiDigit;
+using mozilla::IsTrailingUnit;
 using mozilla::MakeScopeExit;
 using mozilla::Maybe;
 using mozilla::PointerRangeSize;
@@ -932,6 +933,69 @@ SourceUnits<char16_t>::findWindowStart(size_t offset) const
         }
 
         p--;
+    }
+
+    MOZ_ASSERT(HalfWindowSize() <= WindowRadius);
+    return offset - HalfWindowSize();
+}
+
+template<>
+size_t
+SourceUnits<Utf8Unit>::findWindowStart(size_t offset) const
+{
+    
+    
+
+    const Utf8Unit* const earliestPossibleStart = codeUnitPtrAt(startOffset_);
+
+    const Utf8Unit* const initial = codeUnitPtrAt(offset);
+    const Utf8Unit* p = initial;
+
+    auto HalfWindowSize = [&p, &initial]() { return PointerRangeSize(p, initial); };
+
+    while (true) {
+        MOZ_ASSERT(earliestPossibleStart <= p);
+        MOZ_ASSERT(HalfWindowSize() <= WindowRadius);
+        if (p <= earliestPossibleStart || HalfWindowSize() >= WindowRadius)
+            break;
+
+        
+        uint8_t prev = p[-1].toUint8();
+
+        
+        if (prev == '\r' || prev == '\n')
+            break;
+
+        
+        
+        
+        
+        if (MOZ_UNLIKELY((prev == 0xA8 || prev == 0xA9) &&
+                         p[-2].toUint8() == 0x80 &&
+                         p[-3].toUint8() == 0xE2))
+        {
+            break;
+        }
+
+        
+        
+        while (IsTrailingUnit(*--p))
+            continue;
+
+        MOZ_ASSERT(earliestPossibleStart <= p);
+
+        
+        if (HalfWindowSize() > WindowRadius) {
+            static_assert(WindowRadius > 3,
+                          "skipping over non-lead code units below must not "
+                          "advance past |offset|");
+
+            while (IsTrailingUnit(*++p))
+                continue;
+
+            MOZ_ASSERT(HalfWindowSize() < WindowRadius);
+            break;
+        }
     }
 
     MOZ_ASSERT(HalfWindowSize() <= WindowRadius);

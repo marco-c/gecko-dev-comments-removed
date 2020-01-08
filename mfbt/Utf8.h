@@ -220,6 +220,16 @@ IsValidUtf8(const void* aCodeUnits, size_t aCount);
 
 
 
+inline bool
+IsTrailingUnit(Utf8Unit aUnit)
+{
+  return (aUnit.toUint8() & 0b1100'0000) == 0b1000'0000;
+}
+
+
+
+
+
 
 
 
@@ -299,11 +309,11 @@ DecodeOneUtf8CodePointInline(const Utf8Unit aLeadUnit,
   }
 
   for (uint8_t i = 0; i < remaining; i++) {
-    uint8_t unit = Utf8Unit(*(*aIter)++).toUint8();
+    const Utf8Unit unit(*(*aIter)++);
 
     
     
-    if (MOZ_UNLIKELY((unit & 0b1100'0000) != 0b1000'0000)) {
+    if (MOZ_UNLIKELY(!IsTrailingUnit(unit))) {
       uint8_t unitsObserved = i + 1 + 1;
       *aIter -= unitsObserved;
       aOnBadTrailingUnit(unitsObserved);
@@ -312,7 +322,7 @@ DecodeOneUtf8CodePointInline(const Utf8Unit aLeadUnit,
 
     
     
-    n = (n << 6) | (unit & 0b0011'1111);
+    n = (n << 6) | (unit.toUint8() & 0b0011'1111);
   }
 
   
