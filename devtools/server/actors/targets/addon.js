@@ -183,6 +183,10 @@ AddonTargetActor.prototype = {
       });
   },
 
+  
+  loadIconDataURL() {
+  },
+
   preNest: function() {
     for (const {windowUtils} of Services.wm.getEnumerator(null)) {
       windowUtils.suppressEventHandling(true);
@@ -248,4 +252,3 @@ AddonTargetActor.prototype.requestTypes = {
   "detach": AddonTargetActor.prototype.onDetach,
   "reload": AddonTargetActor.prototype.onReload,
 };
-

@@ -400,7 +400,17 @@ RootActor.prototype = {
     this._parameters.tabList.onListChanged = null;
   },
 
-  onListAddons: function() {
+  
+
+
+
+
+
+
+
+
+
+  onListAddons: async function(option) {
     const addonList = this._parameters.addonList;
     if (!addonList) {
       return { from: this.actorID, error: "noAddons",
@@ -410,22 +420,25 @@ RootActor.prototype = {
     
     addonList.onListChanged = this._onAddonListChanged;
 
-    return addonList.getList().then((addonTargetActors) => {
-      const addonTargetActorPool = new Pool(this.conn);
-      for (const addonTargetActor of addonTargetActors) {
-        addonTargetActorPool.manage(addonTargetActor);
+    const addonTargetActors = await addonList.getList();
+    const addonTargetActorPool = new Pool(this.conn);
+    for (const addonTargetActor of addonTargetActors) {
+      if (option.iconDataURL) {
+        await addonTargetActor.loadIconDataURL();
       }
 
-      if (this._addonTargetActorPool) {
-        this._addonTargetActorPool.destroy();
-      }
-      this._addonTargetActorPool = addonTargetActorPool;
+      addonTargetActorPool.manage(addonTargetActor);
+    }
 
-      return {
-        "from": this.actorID,
-        "addons": addonTargetActors.map(addonTargetActor => addonTargetActor.form()),
-      };
-    });
+    if (this._addonTargetActorPool) {
+      this._addonTargetActorPool.destroy();
+    }
+    this._addonTargetActorPool = addonTargetActorPool;
+
+    return {
+      "from": this.actorID,
+      "addons": addonTargetActors.map(addonTargetActor => addonTargetActor.form()),
+    };
   },
 
   onAddonListChanged: function() {

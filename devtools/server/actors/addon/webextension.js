@@ -78,6 +78,8 @@ const WebExtensionActor = protocol.ActorClassWithSpec(webExtensionSpec, {
       id: this.addonId,
       name: this.addon.name,
       url: this.addon.sourceURI ? this.addon.sourceURI.spec : undefined,
+      
+      iconDataURL: this._iconDataURL,
       iconURL: this.addon.iconURL,
       isSystem: this.addon.isSystem,
       debuggable: this.addon.isDebuggable,
@@ -110,6 +112,45 @@ const WebExtensionActor = protocol.ActorClassWithSpec(webExtensionSpec, {
     this._destroyProxy = () => proxy.destroy();
 
     return this._childFormPromise;
+  },
+
+  
+  
+  async loadIconDataURL() {
+    this._iconDataURL = await this.getIconDataURL();
+  },
+
+  async getIconDataURL() {
+    if (!this.addon.iconURL) {
+      return null;
+    }
+
+    const xhr = new XMLHttpRequest();
+    xhr.responseType = "blob";
+    xhr.open("GET", this.addon.iconURL, true);
+
+    if (this.addon.iconURL.toLowerCase().endsWith(".svg")) {
+      
+      xhr.overrideMimeType("image/svg+xml");
+    }
+
+    try {
+      const blob = await new Promise((resolve, reject) => {
+        xhr.onload = () => resolve(xhr.response);
+        xhr.onerror = reject;
+        xhr.send();
+      });
+
+      const reader = new FileReader();
+      return await new Promise((resolve, reject) => {
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch (_) {
+      console.warn(`Failed to create data url from [${ this.addon.iconURL }]`);
+      return null;
+    }
   },
 
   
