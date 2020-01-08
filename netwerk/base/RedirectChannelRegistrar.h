@@ -26,6 +26,13 @@ class RedirectChannelRegistrar final : public nsIRedirectChannelRegistrar
 private:
   ~RedirectChannelRegistrar() = default;
 
+public:
+  
+  static already_AddRefed<nsIRedirectChannelRegistrar> GetOrCreate();
+
+  
+  static void Shutdown();
+
 protected:
   typedef nsInterfaceHashtable<nsUint32HashKey, nsIChannel>
           ChannelHashtable;
