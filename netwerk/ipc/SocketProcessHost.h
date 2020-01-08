@@ -14,6 +14,7 @@
 namespace mozilla {
 namespace net {
 
+class OfflineObserver;
 class SocketProcessParent;
 
 
@@ -101,6 +102,8 @@ class SocketProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   
   bool mShutdownRequested;
   bool mChannelClosed;
+
+  RefPtr<OfflineObserver> mOfflineObserver;
 };
 
 class SocketProcessMemoryReporter : public MemoryReportingProcess {
