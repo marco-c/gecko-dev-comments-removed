@@ -351,13 +351,9 @@ bool TenuredCell::isInsideZone(JS::Zone* zone) const {
   MOZ_ASSERT(!CurrentThreadIsIonCompiling());
   MOZ_ASSERT(thing);
   MOZ_ASSERT(CurrentThreadCanAccessZone(thing->zoneFromAnyThread()));
-
   
-  
-  
-  
-  
-  
+  MOZ_ASSERT_IF(CurrentThreadCanAccessRuntime(thing->runtimeFromAnyThread()),
+                !JS::RuntimeHeapIsCollecting());
 
   JS::shadow::Zone* shadowZone = thing->shadowZoneFromAnyThread();
   if (shadowZone->needsIncrementalBarrier()) {
