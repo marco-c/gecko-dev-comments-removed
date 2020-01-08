@@ -32,7 +32,7 @@ const runtimeTransportDetails = {
 
 const runtimeDetails = {
   
-  client: PropTypes.instanceOf(ClientWrapper).isRequired,
+  clientWrapper: PropTypes.instanceOf(ClientWrapper).isRequired,
 
   
   connectionPromptEnabled: PropTypes.bool.isRequired,
