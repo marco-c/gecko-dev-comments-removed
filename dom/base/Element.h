@@ -949,23 +949,12 @@ public:
 
 
 
-  const nsAttrValue* GetClasses() const {
-    if (MayHaveClass()) {
-      return DoGetClasses();
-    }
-    return nullptr;
-  }
-
-  
-
-
-
-
-
-
-  const nsAttrValue* DoGetClasses() const
+  const nsAttrValue* GetClasses() const
   {
-    MOZ_ASSERT(MayHaveClass(), "Unexpected call");
+    if (!MayHaveClass()) {
+      return nullptr;
+    }
+
     if (IsSVGElement()) {
       if (const nsAttrValue* value = GetSVGAnimatedClass()) {
         return value;

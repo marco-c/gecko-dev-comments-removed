@@ -263,7 +263,7 @@ impl fmt::Display for WeakAtom {
 
 impl Atom {
     
-    pub unsafe fn with<F, R>(ptr: *mut nsAtom, callback: F) -> R
+    pub unsafe fn with<F, R>(ptr: *const nsAtom, callback: F) -> R
     where
         F: FnOnce(&Atom) -> R,
     {
