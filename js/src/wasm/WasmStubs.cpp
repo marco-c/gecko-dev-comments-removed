@@ -53,12 +53,6 @@ AssertStackAlignment(MacroAssembler& masm, uint32_t alignment, uint32_t addBefor
     masm.assertStackAlignment(alignment, addBeforeAssert);
 }
 
-static unsigned
-StackDecrementForCall(MacroAssembler& masm, uint32_t alignment, unsigned bytesToPush)
-{
-    return StackDecrementForCall(alignment, sizeof(Frame) + masm.framePushed(), bytesToPush);
-}
-
 template <class VectorT>
 static unsigned
 StackArgBytes(const VectorT& args)
@@ -67,14 +61,6 @@ StackArgBytes(const VectorT& args)
     while (!iter.done())
         iter++;
     return iter.stackBytesConsumedSoFar();
-}
-
-template <class VectorT>
-static unsigned
-StackDecrementForCall(MacroAssembler& masm, uint32_t alignment, const VectorT& args,
-                      unsigned extraBytes = 0)
-{
-    return StackDecrementForCall(masm, alignment, StackArgBytes(args) + extraBytes);
 }
 
 static void
@@ -563,7 +549,9 @@ GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex, const FuncExport&
 
     
     
-    unsigned frameSize = StackDecrementForCall(WasmStackAlignment, 0, bytesNeeded);
+    unsigned frameSize = StackDecrementForCall(WasmStackAlignment,
+                                               masm.framePushed(),
+                                               bytesNeeded);
 
 #ifdef ENABLE_WASM_GC
     unsigned savedTlsOffset = frameSize - sizeof(void*);
@@ -998,7 +986,10 @@ GenerateImportFunction(jit::MacroAssembler& masm, const FuncImport& fi, FuncType
 
     GenerateFunctionPrologue(masm, funcTypeId, Nothing(), offsets);
 
-    unsigned framePushed = StackDecrementForCall(masm, WasmStackAlignment, fi.funcType().args());
+    MOZ_ASSERT(masm.framePushed() == 0);
+    unsigned framePushed = StackDecrementForCall(WasmStackAlignment,
+                                                 sizeof(Frame),  
+                                                 StackArgBytes(fi.funcType().args()));
     masm.wasmReserveStackChecked(framePushed, BytecodeOffset(0));
     MOZ_ASSERT(masm.framePushed() == framePushed);
 
@@ -1085,7 +1076,9 @@ GenerateImportInterpExit(MacroAssembler& masm, const FuncImport& fi, uint32_t fu
     
     unsigned argOffset = AlignBytes(StackArgBytes(invokeArgTypes), sizeof(double));
     unsigned argBytes = Max<size_t>(1, fi.funcType().args().length()) * sizeof(Value);
-    unsigned framePushed = StackDecrementForCall(masm, ABIStackAlignment, argOffset + argBytes);
+    unsigned framePushed = StackDecrementForCall(ABIStackAlignment,
+                                                 sizeof(Frame),  
+                                                 argOffset + argBytes);
 
     GenerateExitPrologue(masm, framePushed, ExitReason::Fixed::ImportInterp, offsets);
 
@@ -1198,14 +1191,14 @@ GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi, Label* throwLa
     
     
     
-    
-    
     static_assert(WasmStackAlignment >= JitStackAlignment, "subsumes");
     const unsigned sizeOfRetAddr = sizeof(void*);
     const unsigned sizeOfPreFrame = WasmToJSJitFrameLayout::Size() - sizeOfRetAddr;
     const unsigned sizeOfThisAndArgs = (1 + fi.funcType().args().length()) * sizeof(Value);
     const unsigned totalJitFrameBytes = sizeOfRetAddr + sizeOfPreFrame + sizeOfThisAndArgs;
-    const unsigned jitFramePushed = StackDecrementForCall(masm, JitStackAlignment, totalJitFrameBytes) -
+    const unsigned jitFramePushed = StackDecrementForCall(JitStackAlignment,
+                                                          sizeof(Frame),  
+                                                          totalJitFrameBytes) -
                                     sizeOfRetAddr;
     const unsigned sizeOfThisAndArgsAndPadding = jitFramePushed - sizeOfPreFrame;
 
@@ -1460,7 +1453,9 @@ wasm::GenerateBuiltinThunk(MacroAssembler& masm, ABIFunctionType abiType, ExitRe
     masm.setFramePushed(0);
 
     ABIFunctionArgs args(abiType);
-    uint32_t framePushed = StackDecrementForCall(masm, ABIStackAlignment, args);
+    uint32_t framePushed = StackDecrementForCall(ABIStackAlignment,
+                                                 sizeof(Frame),  
+                                                 StackArgBytes(args));
 
     GenerateExitPrologue(masm, framePushed, exitReason, offsets);
 
