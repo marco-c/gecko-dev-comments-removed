@@ -21,6 +21,7 @@
 #include <chrono>
 #include <thread>
 
+#include "builtin/TypedObject.h"
 #include "jit/JitOptions.h"
 #include "threading/LockGuard.h"
 #include "util/NSPR.h"
@@ -1081,6 +1082,150 @@ CreateExportObject(JSContext* cx,
     return true;
 }
 
+static bool
+MakeStructField(JSContext* cx, const ValType& v, bool isMutable, const char* format,
+                uint32_t fieldNo, AutoIdVector* ids, AutoValueVector* fieldTypeObjs,
+                Vector<StructFieldProps>* fieldProps)
+{
+    char buf[20];
+    sprintf(buf, format, fieldNo);
+    RootedString str(cx, JS_AtomizeAndPinString(cx, buf));
+    if (!str) {
+        return false;
+    }
+
+    StructFieldProps props;
+    props.isMutable = isMutable;
+
+    Rooted<TypeDescr*> t(cx);
+    switch (v.code()) {
+      case ValType::I32:
+        t = GlobalObject::getOrCreateScalarTypeDescr(cx, cx->global(), Scalar::Int32);
+        break;
+      case ValType::I64:
+        
+        
+        
+        props.alignAsInt64 = true;
+        t = GlobalObject::getOrCreateScalarTypeDescr(cx, cx->global(), Scalar::Int32);
+        break;
+      case ValType::F32:
+        t = GlobalObject::getOrCreateScalarTypeDescr(cx, cx->global(), Scalar::Float32);
+        break;
+      case ValType::F64:
+        t = GlobalObject::getOrCreateScalarTypeDescr(cx, cx->global(), Scalar::Float64);
+        break;
+      case ValType::Ref:
+      case ValType::AnyRef:
+        t = GlobalObject::getOrCreateReferenceTypeDescr(cx, cx->global(),
+                                                        ReferenceType::TYPE_OBJECT);
+        break;
+      default:
+        MOZ_CRASH("Bad field type");
+    }
+    MOZ_ASSERT(t != nullptr);
+
+    if (!ids->append(INTERNED_STRING_TO_JSID(cx, str))) {
+        return false;
+    }
+
+    if (!fieldTypeObjs->append(ObjectValue(*t))) {
+        return false;
+    }
+
+    if (!fieldProps->append(props)) {
+        return false;
+    }
+
+    return true;
+}
+
+
+bool
+Module::makeStructTypeDescrs(JSContext* cx,
+                             MutableHandle<StructTypeDescrVector> structTypeDescrs) const
+{
+    
+    RootedObject typedObjectModule(cx, GlobalObject::getOrCreateTypedObjectModule(cx,
+                                                                                  cx->global()));
+    if (!typedObjectModule) {
+       return false;
+    }
+
+    RootedNativeObject toModule(cx, &typedObjectModule->as<NativeObject>());
+    RootedObject prototype(cx, &toModule->getReservedSlot(
+                                   TypedObjectModuleObject::StructTypePrototype).toObject());
+
+    for (const StructType& structType : structTypes_) {
+        AutoIdVector ids(cx);
+        AutoValueVector fieldTypeObjs(cx);
+        Vector<StructFieldProps> fieldProps(cx);
+        bool allowConstruct = true;
+
+        uint32_t k = 0;
+        for (StructField sf : structType.fields_) {
+            const ValType& v = sf.type;
+            if (v.code() == ValType::I64) {
+                
+                
+                
+                
+                
+                
+                sf.isMutable = false;
+                allowConstruct = false;
+
+                if (!MakeStructField(cx, ValType::I64, sf.isMutable, "_%d_low", k, &ids,
+                                     &fieldTypeObjs, &fieldProps))
+                {
+                    return false;
+                }
+                if (!MakeStructField(cx, ValType::I32, sf.isMutable, "_%d_high", k++, &ids,
+                                     &fieldTypeObjs, &fieldProps))
+                {
+                    return false;
+                }
+            } else {
+                
+                
+                
+                
+                
+                
+                if (v.isRef()) {
+                    sf.isMutable = false;
+                    allowConstruct = false;
+                }
+
+                if (!MakeStructField(cx, v, sf.isMutable, "_%d", k++, &ids, &fieldTypeObjs,
+                                     &fieldProps))
+                {
+                    return false;
+                }
+            }
+        }
+
+        
+        
+        
+
+        Rooted<StructTypeDescr*>
+            structTypeDescr(cx, StructMetaTypeDescr::createFromArrays(cx,
+                                                                      prototype,
+                                                                       true,
+                                                                      allowConstruct,
+                                                                      ids,
+                                                                      fieldTypeObjs,
+                                                                      fieldProps));
+
+        if (!structTypeDescr || !structTypeDescrs.append(structTypeDescr)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 bool
 Module::instantiate(JSContext* cx,
                     Handle<FunctionVector> funcImports,
@@ -1134,6 +1279,13 @@ Module::instantiate(JSContext* cx,
         code = code_;
     }
 
+    
+
+    Rooted<StructTypeDescrVector> structTypeDescrs(cx);
+    if (!makeStructTypeDescrs(cx, &structTypeDescrs)) {
+        return false;
+    }
+
     instance.set(WasmInstanceObject::create(cx,
                                             code,
                                             dataSegments_,
@@ -1141,6 +1293,7 @@ Module::instantiate(JSContext* cx,
                                             std::move(tlsData),
                                             memory,
                                             std::move(tables),
+                                            std::move(structTypeDescrs.get()),
                                             funcImports,
                                             metadata().globals,
                                             globalImportValues,

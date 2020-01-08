@@ -5788,26 +5788,38 @@ class BaseCompiler final : public BaseCompilerInterface
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
-    void emitPostBarrier(const Maybe<RegPtr>& object, RegPtr otherScratch, RegPtr valueAddr, RegPtr setValue) {
-        Label skipBarrier;
+    
+    
 
+    void emitPostBarrierGuard(const Maybe<RegPtr>& object, RegPtr otherScratch, RegPtr setValue,
+                              Label* skipBarrier)
+    {
         
-        
-        sync();
-
-        
-        masm.branchTestPtr(Assembler::Zero, setValue, setValue, &skipBarrier);
+        masm.branchTestPtr(Assembler::Zero, setValue, setValue, skipBarrier);
 
         
         if (object) {
-            masm.branchPtrInNurseryChunk(Assembler::Equal, *object, otherScratch, &skipBarrier);
+            masm.branchPtrInNurseryChunk(Assembler::Equal, *object, otherScratch, skipBarrier);
         }
 
         
-        masm.branchPtrInNurseryChunk(Assembler::NotEqual, setValue, otherScratch, &skipBarrier);
+        masm.branchPtrInNurseryChunk(Assembler::NotEqual, setValue, otherScratch, skipBarrier);
+    }
 
-        
+    
+
+    void emitPostBarrier(RegPtr valueAddr) {
         uint32_t bytecodeOffset = iter_.lastOpcodeOffset();
 
         
@@ -5820,16 +5832,21 @@ class BaseCompiler final : public BaseCompilerInterface
         pushI32(RegI32(valueAddr));
         emitInstanceCall(bytecodeOffset, SigPI_, ExprType::Void, SymbolicAddress::PostBarrier);
 # endif
-
-        masm.bind(&skipBarrier);
     }
 
     void emitBarrieredStore(const Maybe<RegPtr>& object, RegPtr valueAddr, RegPtr value) {
         emitPreBarrier(valueAddr); 
         masm.storePtr(value, Address(valueAddr, 0));
+
+        Label skipBarrier;
+        sync();
+
         RegPtr otherScratch = needRef();
-        emitPostBarrier(object, otherScratch, valueAddr, value); 
+        emitPostBarrierGuard(object, otherScratch, value, &skipBarrier);
         freeRef(otherScratch);
+
+        emitPostBarrier(valueAddr);
+        masm.bind(&skipBarrier);
     }
 #endif 
 
@@ -6145,6 +6162,9 @@ class BaseCompiler final : public BaseCompilerInterface
     MOZ_MUST_USE bool emitMemOrTableDrop(bool isMem);
     MOZ_MUST_USE bool emitMemFill();
     MOZ_MUST_USE bool emitMemOrTableInit(bool isMem);
+#endif
+#ifdef ENABLE_WASM_GC
+    MOZ_MUST_USE bool emitStructNew();
 #endif
 };
 
@@ -9734,6 +9754,144 @@ BaseCompiler::emitMemOrTableInit(bool isMem)
 }
 #endif
 
+#ifdef ENABLE_WASM_GC
+bool
+BaseCompiler::emitStructNew()
+{
+    uint32_t lineOrBytecode = readCallSiteLineOrBytecode();
+
+    uint32_t typeIndex;
+    BaseOpIter::ValueVector args;
+    if (!iter_.readStructNew(&typeIndex, &args)) {
+        return false;
+    }
+
+    if (deadCode_) {
+        return true;
+    }
+
+    
+    
+
+    const StructType& structType = env_.types[typeIndex].structType();
+
+    pushI32(structType.moduleIndex_);
+    emitInstanceCall(lineOrBytecode, SigPI_, ExprType::AnyRef, SymbolicAddress::StructNew);
+
+    
+
+    Label ok;
+    masm.branchTestPtr(Assembler::NotEqual, ReturnReg, ReturnReg, &ok);
+    trap(Trap::ThrowReported);
+    masm.bind(&ok);
+
+    
+
+    MOZ_ASSERT(args.length() == structType.fields_.length());
+
+    
+    
+    
+    
+    
+
+    RegPtr rp = popRef();
+    RegPtr rdata = rp;
+
+    if (!structType.isInline_) {
+        rdata = needRef();
+        masm.loadPtr(Address(rp, OutlineTypedObject::offsetOfData()), rdata);
+    }
+
+    
+    
+    
+
+    uint32_t fieldNo = structType.fields_.length();
+    while (fieldNo-- > 0) {
+        uint32_t offs = structType.fields_[fieldNo].offset;
+        switch (structType.fields_[fieldNo].type.code()) {
+          case ValType::I32: {
+            RegI32 r = popI32();
+            masm.store32(r, Address(rdata, offs));
+            freeI32(r);
+            break;
+          }
+          case ValType::I64: {
+            RegI64 r = popI64();
+            masm.store64(r, Address(rdata, offs));
+            freeI64(r);
+            break;
+          }
+          case ValType::F32: {
+            RegF32 r = popF32();
+            masm.storeFloat32(r, Address(rdata, offs));
+            freeF32(r);
+            break;
+          }
+          case ValType::F64: {
+            RegF64 r = popF64();
+            masm.storeDouble(r, Address(rdata, offs));
+            freeF64(r);
+            break;
+          }
+          case ValType::Ref:
+          case ValType::AnyRef: {
+            RegPtr value = popRef();
+            masm.storePtr(value, Address(rdata, offs));
+
+            
+            
+            
+
+            Label skipBarrier;
+
+            sync();
+
+            RegPtr rowner = rp;
+            if (!structType.isInline_) {
+                rowner = needRef();
+                masm.loadPtr(Address(rp, OutlineTypedObject::offsetOfOwner()), rowner);
+            }
+
+            RegPtr otherScratch = needRef();
+            emitPostBarrierGuard(Some(rowner), otherScratch, value, &skipBarrier);
+            freeRef(otherScratch);
+
+            if (!structType.isInline_) {
+                freeRef(rowner);
+            }
+
+            freeRef(value);
+
+            pushRef(rp);                
+            RegPtr valueAddr = needRef();
+            masm.computeEffectiveAddress(Address(rdata, offs), valueAddr);
+            emitPostBarrier(valueAddr); 
+            popRef(rp);                 
+            if (!structType.isInline_) {
+                masm.loadPtr(Address(rp, OutlineTypedObject::offsetOfData()), rdata);
+            }
+
+            masm.bind(&skipBarrier);
+            break;
+          }
+          default: {
+            MOZ_CRASH("Unexpected field type");
+          }
+        }
+    }
+
+    if (!structType.isInline_) {
+        freeRef(rdata);
+    }
+
+    pushRef(rp);
+
+    return true;
+}
+#endif
+
 bool
 BaseCompiler::emitBody()
 {
@@ -10387,6 +10545,13 @@ BaseCompiler::emitBody()
               case uint16_t(MiscOp::TableInit):
                 CHECK_NEXT(emitMemOrTableInit(false));
 #endif 
+#ifdef ENABLE_WASM_GC
+              case uint16_t(MiscOp::StructNew):
+                if (env_.gcTypesEnabled() == HasGcTypes::False) {
+                  return iter_.unrecognizedOpcode(&op);
+                }
+                CHECK_NEXT(emitStructNew());
+#endif
               default:
                 break;
             } 

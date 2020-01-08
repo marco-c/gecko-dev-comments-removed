@@ -403,6 +403,13 @@ class ArrayTypeDescr : public ComplexTypeDescr
     }
 };
 
+struct StructFieldProps
+{
+    StructFieldProps() : isMutable(0), alignAsInt64(0) {}
+    uint32_t isMutable:1;
+    uint32_t alignAsInt64:1;
+};
+
 
 
 
@@ -424,7 +431,7 @@ class StructMetaTypeDescr : public NativeObject
                                              bool allowConstruct,
                                              AutoIdVector& ids,
                                              AutoValueVector& fieldTypeObjs,
-                                             Vector<bool>& fieldMutabilities);
+                                             Vector<StructFieldProps>& fieldProps);
 
     
     
@@ -506,6 +513,11 @@ class TypedObjectModuleObject : public NativeObject {
     enum Slot {
         ArrayTypePrototype,
         StructTypePrototype,
+        Int32Desc,
+        Int64Desc,
+        Float32Desc,
+        Float64Desc,
+        ObjectDesc,
         SlotCount
     };
 

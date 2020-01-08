@@ -277,14 +277,16 @@ for (let i = 0x4f; i < 0x100; i++)
 
 
 
-
-
-
-
-
+var reservedMisc =
+    { 
+      0x00: true, 0x01: true, 0x02: true, 0x03: true, 0x04: true, 0x05: true, 0x06: true, 0x07: true,
+      
+      0x08: true, 0x09: true, 0x0a: true, 0x0b: true, 0x0c: true, 0x0d: true, 0x0e: true,
+      
+      0x50: true };
 
 for (let i = 0; i < 256; i++) {
-    if (i <= 0x07 || (i >= 0x08 && i <= 0x0e))
+    if (reservedMisc.hasOwnProperty(i))
         continue;
     checkIllegalPrefixed(MiscPrefix, i);
 }

@@ -74,6 +74,9 @@ class WasmGlobalObject;
 typedef GCVector<WasmGlobalObject*, 0, SystemAllocPolicy> WasmGlobalObjectVector;
 typedef Rooted<WasmGlobalObject*> RootedWasmGlobalObject;
 
+class StructTypeDescr;
+typedef GCVector<HeapPtr<StructTypeDescr*>, 0, SystemAllocPolicy> StructTypeDescrVector;
+
 namespace wasm {
 
 using mozilla::ArrayEqual;
@@ -846,13 +849,20 @@ typedef Vector<StructField, 0, SystemAllocPolicy> StructFieldVector;
 class StructType
 {
   public:
-    StructFieldVector fields_;
-
+    StructFieldVector fields_; 
+    uint32_t moduleIndex_;     
+    bool isInline_;            
+                               
+                               
+                               
+                               
   public:
-    StructType() : fields_() {}
+    StructType() : fields_(), moduleIndex_(0), isInline_(true) {}
 
-    explicit StructType(StructFieldVector&& fields)
-      : fields_(std::move(fields))
+    StructType(StructFieldVector&& fields, uint32_t index, bool isInline)
+      : fields_(std::move(fields)),
+        moduleIndex_(index),
+        isInline_(isInline)
     {}
 
     bool hasPrefix(const StructType& other) const;
@@ -1876,6 +1886,7 @@ enum class SymbolicAddress
 #ifdef ENABLE_WASM_GC
     PostBarrier,
 #endif
+    StructNew,
 #if defined(JS_CODEGEN_MIPS32)
     js_jit_gAtomic64Lock,
 #endif
