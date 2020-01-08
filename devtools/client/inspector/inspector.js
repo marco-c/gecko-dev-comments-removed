@@ -620,14 +620,17 @@ Inspector.prototype = {
     if (window.closed) {
       return;
     }
+
     
     
     const useLandscapeMode = await window.top.promiseDocumentFlushed(() => {
       return this.useLandscapeMode();
     });
+
     if (window.closed) {
       return;
     }
+
     this.splitBox.setState({ vert: useLandscapeMode });
     this.emit("inspector-resize");
   },
@@ -637,6 +640,10 @@ Inspector.prototype = {
 
 
   onPanelWindowResize: function() {
+    if (this.toolbox.currentToolId !== "inspector") {
+      return;
+    }
+
     if (!this._lazyResizeHandler) {
       this._lazyResizeHandler = new DeferredTask(this._onLazyPanelResize.bind(this),
                                                  LAZY_RESIZE_INTERVAL_MS, 0);
