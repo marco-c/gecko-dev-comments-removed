@@ -319,7 +319,10 @@ private:
     nsCOMPtr<nsIChromeRegistry> mChromeReg;
     nsCOMPtr<nsIFile> mProfD;
 
-    nsCOMPtr<nsIThread> mReaderThread;
+    
+    
+    
+    RefPtr<nsIThread> mReaderThread;
 
     
     
