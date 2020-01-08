@@ -158,11 +158,8 @@ public:
 
 
 
-
-
   virtual mozilla::Result<Update, nsresult>
-    UpdateStyleSheet(nsICSSLoaderObserver* aObserver,
-                     ForceUpdate = ForceUpdate::No) = 0;
+    UpdateStyleSheet(nsICSSLoaderObserver* aObserver) = 0;
 
   
 
