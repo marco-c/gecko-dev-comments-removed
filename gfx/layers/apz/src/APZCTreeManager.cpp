@@ -22,6 +22,9 @@
 #include "mozilla/gfx/GPUParent.h"      
 #include "mozilla/gfx/Logging.h"        
 #include "mozilla/gfx/Point.h"          
+#ifdef MOZ_WIDGET_ANDROID
+#include "mozilla/jni/Utils.h"          
+#endif
 #include "mozilla/layers/APZSampler.h"  
 #include "mozilla/layers/APZThreadUtils.h"  
 #include "mozilla/layers/APZUpdater.h"  
@@ -262,7 +265,9 @@ APZCTreeManager::APZCTreeManager(LayersId aRootLayersId)
   AsyncPanZoomController::InitializeGlobalState();
   mApzcTreeLog.ConditionOnPrefFunction(gfxPrefs::APZPrintTree);
 #if defined(MOZ_WIDGET_ANDROID)
-  mToolbarAnimator = new AndroidDynamicToolbarAnimator(this);
+  if (jni::IsFennec()) {
+    mToolbarAnimator = new AndroidDynamicToolbarAnimator(this);
+  }
 #endif 
 }
 
@@ -1162,22 +1167,23 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
   AutoFocusSequenceNumberSetter focusSetter(mFocusState, aEvent);
 
 #if defined(MOZ_WIDGET_ANDROID)
-  MOZ_ASSERT(mToolbarAnimator);
-  ScreenPoint scrollOffset;
-  {
-    RecursiveMutexAutoLock lock(mTreeLock);
-    RefPtr<AsyncPanZoomController> apzc = FindRootContentOrRootApzc();
-    if (apzc) {
-      scrollOffset = ViewAs<ScreenPixel>(apzc->GetCurrentAsyncScrollOffset(AsyncPanZoomController::eForHitTesting),
-                                         PixelCastJustification::ScreenIsParentLayerForRoot);
+  if (mToolbarAnimator) {
+    ScreenPoint scrollOffset;
+    {
+      RecursiveMutexAutoLock lock(mTreeLock);
+      RefPtr<AsyncPanZoomController> apzc = FindRootContentOrRootApzc();
+      if (apzc) {
+        scrollOffset = ViewAs<ScreenPixel>(apzc->GetCurrentAsyncScrollOffset(AsyncPanZoomController::eForHitTesting),
+                                           PixelCastJustification::ScreenIsParentLayerForRoot);
+      }
     }
-  }
-  RefPtr<APZCTreeManager> self = this;
-  nsEventStatus isConsumed = mToolbarAnimator->ReceiveInputEvent(self, aEvent, scrollOffset);
-  
-  if (isConsumed == nsEventStatus_eConsumeNoDefault) {
-    APZCTM_LOG("Dynamic toolbar consumed event");
-    return isConsumed;
+    RefPtr<APZCTreeManager> self = this;
+    nsEventStatus isConsumed = mToolbarAnimator->ReceiveInputEvent(self, aEvent, scrollOffset);
+    
+    if (isConsumed == nsEventStatus_eConsumeNoDefault) {
+      APZCTM_LOG("Dynamic toolbar consumed event");
+      return isConsumed;
+    }
   }
 #endif 
 
@@ -2189,7 +2195,9 @@ APZCTreeManager::ClearTree()
   AssertOnUpdaterThread();
 
 #if defined(MOZ_WIDGET_ANDROID)
-  mToolbarAnimator->ClearTreeManager();
+  if (mToolbarAnimator) {
+    mToolbarAnimator->ClearTreeManager();
+  }
 #endif
 
   

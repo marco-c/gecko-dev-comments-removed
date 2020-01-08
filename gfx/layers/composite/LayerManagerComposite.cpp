@@ -58,13 +58,13 @@
 #if defined(MOZ_WIDGET_ANDROID)
 #include <android/log.h>
 #include <android/native_window.h>
+#include "mozilla/jni/Utils.h"
 #include "mozilla/widget/AndroidCompositorWidget.h"
 #include "opengl/CompositorOGL.h"
 #include "GLConsts.h"
 #include "GLContextEGL.h"
 #include "GLContextProvider.h"
 #include "mozilla/Unused.h"
-#include "mozilla/widget/AndroidCompositorWidget.h"
 #include "ScopedGLHelpers.h"
 #endif
 #include "GeckoProfiler.h"
@@ -992,7 +992,9 @@ LayerManagerComposite::Render(const nsIntRegion& aInvalidRegion, const nsIntRegi
 #if defined(MOZ_WIDGET_ANDROID)
   
   
-  RenderToolbar();
+  if (jni::IsFennec()) {
+    RenderToolbar();
+  }
   HandlePixelsTarget();
 #endif 
 
@@ -1013,24 +1015,6 @@ LayerManagerComposite::Render(const nsIntRegion& aInvalidRegion, const nsIntRegi
 }
 
 #if defined(MOZ_WIDGET_ANDROID)
-class ScopedCompositorProjMatrix {
-public:
-  ScopedCompositorProjMatrix(CompositorOGL* aCompositor, const Matrix4x4& aProjMatrix):
-    mCompositor(aCompositor),
-    mOriginalProjMatrix(mCompositor->GetProjMatrix())
-  {
-    mCompositor->SetProjMatrix(aProjMatrix);
-  }
-
-  ~ScopedCompositorProjMatrix()
-  {
-    mCompositor->SetProjMatrix(mOriginalProjMatrix);
-  }
-private:
-  CompositorOGL* const mCompositor;
-  const Matrix4x4 mOriginalProjMatrix;
-};
-
 class ScopedCompostitorSurfaceSize {
 public:
   ScopedCompostitorSurfaceSize(CompositorOGL* aCompositor, const gfx::IntSize& aSize) :
@@ -1178,6 +1162,11 @@ ScreenCoord
 LayerManagerComposite::GetContentShiftForToolbar()
 {
   ScreenCoord result(0.0f);
+  
+  
+  if (!jni::IsFennec()) {
+    return result;
+  }
   
   if (mCompositor->GetTargetContext() != nullptr) {
     return result;

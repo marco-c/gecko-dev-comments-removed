@@ -1016,10 +1016,11 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
                 Compositor* compositor = mLayerManager->GetCompositor();
                 if (CompositorBridgeParent* bridge = compositor->GetCompositorBridgeParent()) {
                   AndroidDynamicToolbarAnimator* animator = bridge->GetAndroidDynamicToolbarAnimator();
-                  MOZ_ASSERT(animator);
                   if (mIsFirstPaint) {
-                    animator->UpdateRootFrameMetrics(metrics);
-                    animator->FirstPaint();
+                    if (animator) {
+                      animator->UpdateRootFrameMetrics(metrics);
+                      animator->FirstPaint();
+                    }
                     LayersId rootLayerTreeId = bridge->RootLayerTreeId();
                     if (RefPtr<UiCompositorControllerParent> uiController = UiCompositorControllerParent::GetFromRootLayerTreeId(rootLayerTreeId)) {
                       uiController->NotifyFirstPaint();
@@ -1035,7 +1036,7 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
                   }
                   
                   
-                  if (!metrics.IsRootContent()) {
+                  if (animator && !metrics.IsRootContent()) {
                     animator->MaybeUpdateCompositionSizeAndRootFrameMetrics(metrics);
                   }
                 }
@@ -1320,9 +1321,9 @@ AsyncCompositionManager::TransformShadowTree(
 #if defined(MOZ_WIDGET_ANDROID)
   Compositor* compositor = mLayerManager->GetCompositor();
   if (CompositorBridgeParent* bridge = compositor->GetCompositorBridgeParent()) {
-    AndroidDynamicToolbarAnimator* animator = bridge->GetAndroidDynamicToolbarAnimator();
-    MOZ_ASSERT(animator);
-    wantNextFrame |= animator->UpdateAnimation(nextFrame);
+    if (AndroidDynamicToolbarAnimator* animator = bridge->GetAndroidDynamicToolbarAnimator()) {
+      wantNextFrame |= animator->UpdateAnimation(nextFrame);
+    }
   }
 #endif 
 

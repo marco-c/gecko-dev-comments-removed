@@ -304,6 +304,7 @@ UiCompositorControllerParent::Initialize()
   AndroidDynamicToolbarAnimator* animator = state->mParent->GetAndroidDynamicToolbarAnimator();
   
   
+  
   if (animator) {
     animator->Initialize(mRootLayerTreeId);
   }
