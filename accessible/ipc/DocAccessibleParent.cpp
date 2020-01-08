@@ -838,5 +838,27 @@ DocAccessibleParent::RecvFocusEvent(const uint64_t& aID,
 
 #endif 
 
+#if !defined(XP_WIN)
+mozilla::ipc::IPCResult
+DocAccessibleParent::RecvBatch(const uint64_t& aBatchType, nsTArray<BatchData>&& aData)
+{
+  
+  
+#if defined(ANDROID)
+  nsTArray<ProxyAccessible*> proxies(aData.Length());
+  for (size_t i = 0; i < aData.Length(); i++) {
+    DocAccessibleParent* doc = static_cast<DocAccessibleParent*>(
+      aData.ElementAt(i).Document().get_PDocAccessibleParent());
+    MOZ_ASSERT(doc);
+    ProxyAccessible* proxy = doc->GetAccessible(aData.ElementAt(i).ID());
+    MOZ_ASSERT(proxy);
+    proxies.AppendElement(proxy);
+  }
+  ProxyBatch(this, aBatchType, proxies, aData);
+#endif 
+  return IPC_OK();
+}
+#endif 
+
 } 
 } 
