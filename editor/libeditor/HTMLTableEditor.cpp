@@ -278,55 +278,83 @@ HTMLEditor::GetFirstTableRowElement(Element& aTableOrElementInTable,
 }
 
 NS_IMETHODIMP
-HTMLEditor::GetNextRow(nsINode* aCurrentRowNode,
-                       nsINode** aRowNode)
+HTMLEditor::GetNextRow(Element* aTableRowElement,
+                       Element** aNextTableRowElement)
 {
-  NS_ENSURE_TRUE(aRowNode, NS_ERROR_NULL_POINTER);
+  if (NS_WARN_IF(!aTableRowElement) || NS_WARN_IF(!aNextTableRowElement)) {
+    return NS_ERROR_INVALID_ARG;
+  }
+  ErrorResult error;
+  RefPtr<Element> nextRowElement =
+    GetNextTableRowElement(*aTableRowElement, error);
+  if (NS_WARN_IF(error.Failed())) {
+    return error.StealNSResult();
+  }
+  nextRowElement.forget(aNextTableRowElement);
+  return NS_OK;
+}
 
-  *aRowNode = nullptr;
+Element*
+HTMLEditor::GetNextTableRowElement(Element& aTableRowElement,
+                                   ErrorResult& aRv) const
+{
+  MOZ_ASSERT(!aRv.Failed());
 
-  NS_ENSURE_TRUE(aCurrentRowNode, NS_ERROR_NULL_POINTER);
-
-  if (!HTMLEditUtils::IsTableRow(aCurrentRowNode)) {
-    return NS_ERROR_FAILURE;
+  if (NS_WARN_IF(!aTableRowElement.IsHTMLElement(nsGkAtoms::tr))) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    return nullptr;
   }
 
-  nsIContent* nextRow = aCurrentRowNode->GetNextSibling();
-
-  
-  while (nextRow && !HTMLEditUtils::IsTableRow(nextRow)) {
-    nextRow = nextRow->GetNextSibling();
-  }
-  if (nextRow) {
-    *aRowNode = do_AddRef(nextRow).take();
-    return NS_OK;
-  }
-
-  
-  nsINode* rowParent = aCurrentRowNode->GetParentNode();
-  NS_ENSURE_TRUE(rowParent, NS_ERROR_NULL_POINTER);
-
-  nsIContent* parentSibling = rowParent->GetNextSibling();
-
-  while (parentSibling) {
-    nextRow = parentSibling->GetFirstChild();
-
-    
-    while (nextRow && !HTMLEditUtils::IsTableRow(nextRow)) {
-      nextRow = nextRow->GetNextSibling();
+  for (nsIContent* maybeNextRow = aTableRowElement.GetNextSibling();
+       maybeNextRow;
+       maybeNextRow = maybeNextRow->GetNextSibling()) {
+    if (maybeNextRow->IsHTMLElement(nsGkAtoms::tr)) {
+      return maybeNextRow->AsElement();
     }
-    if (nextRow) {
-      *aRowNode = do_AddRef(nextRow).take();
-      return NS_OK;
-    }
+  }
 
+  
+  
+  Element* parentElementOfRow = aTableRowElement.GetParentElement();
+  if (NS_WARN_IF(!parentElementOfRow)) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    return nullptr;
+  }
+
+  
+  
+  
+  if (parentElementOfRow->IsHTMLElement(nsGkAtoms::table)) {
+    
+    return nullptr;
+  }
+
+  for (nsIContent* maybeNextTableSection = parentElementOfRow->GetNextSibling();
+       maybeNextTableSection;
+       maybeNextTableSection = maybeNextTableSection->GetNextSibling()) {
+    
+    
+    if (maybeNextTableSection->IsAnyOfHTMLElements(nsGkAtoms::tbody,
+                                                   nsGkAtoms::thead,
+                                                   nsGkAtoms::tfoot)) {
+      for (nsIContent* maybeNextRow = maybeNextTableSection->GetFirstChild();
+           maybeNextRow;
+           maybeNextRow = maybeNextRow->GetNextSibling()) {
+        if (maybeNextRow->IsHTMLElement(nsGkAtoms::tr)) {
+          return maybeNextRow->AsElement();
+        }
+      }
+    }
     
     
     
-    parentSibling = parentSibling->GetNextSibling();
+    else if (maybeNextTableSection->IsHTMLElement(nsGkAtoms::tr)) {
+      return maybeNextTableSection->AsElement();
+    }
   }
   
-  return NS_SUCCESS_EDITOR_ELEMENT_NOT_FOUND;
+  
+  return nullptr;
 }
 
 nsresult
@@ -417,7 +445,8 @@ HTMLEditor::InsertTableColumn(int32_t aNumber,
     NormalizeTable(table);
   }
 
-  nsCOMPtr<nsINode> rowNode;
+  ErrorResult error;
+  RefPtr<Element> rowElement;
   for (rowIndex = 0; rowIndex < rowCount; rowIndex++) {
     if (startColIndex < colCount) {
       
@@ -450,25 +479,31 @@ HTMLEditor::InsertTableColumn(int32_t aNumber,
     } else {
       
       if (!rowIndex) {
-        ErrorResult error;
-        rowNode = GetFirstTableRowElement(*table, error);
+        rowElement = GetFirstTableRowElement(*table, error);
         if (NS_WARN_IF(error.Failed())) {
           return error.StealNSResult();
         }
       } else {
-        nsCOMPtr<nsINode> nextRow;
-        rv = GetNextRow(rowNode, getter_AddRefs(nextRow));
+        if (NS_WARN_IF(!rowElement)) {
+          
+          
+          return NS_ERROR_FAILURE;
+        }
+        rowElement = GetNextTableRowElement(*rowElement, error);
+        if (NS_WARN_IF(error.Failed())) {
+          return error.StealNSResult();
+        }
+      }
+
+      if (rowElement) {
+        nsCOMPtr<nsINode> lastCell;
+        rv = GetLastCellInRow(rowElement, getter_AddRefs(lastCell));
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
-        rowNode = nextRow;
-      }
-
-      if (rowNode) {
-        nsCOMPtr<nsINode> lastCell;
-        rv = GetLastCellInRow(rowNode, getter_AddRefs(lastCell));
-        NS_ENSURE_SUCCESS(rv, rv);
-        NS_ENSURE_TRUE(lastCell, NS_ERROR_FAILURE);
+        if (NS_WARN_IF(!lastCell)) {
+          return NS_ERROR_FAILURE;
+        }
 
         curCell = lastCell->AsElement();
         

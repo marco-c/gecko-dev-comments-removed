@@ -1000,6 +1000,20 @@ protected:
 
 
 
+
+
+  Element*
+  GetNextTableRowElement(Element& aTableRowElement,
+                         ErrorResult& aRv) const;
+
+  
+
+
+
+
+
+
+
   nsresult PasteInternal(int32_t aClipboardType);
 
   
