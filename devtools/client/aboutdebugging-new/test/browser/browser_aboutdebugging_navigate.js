@@ -25,12 +25,6 @@ add_task(async function() {
   ok(isSidebarItemSelected(thisFirefoxSidebarItem),
     "ThisFirefox sidebar item is selected by default");
 
-  
-  
-  
-  
-  await waitUntil(() => findDebugTargetByText("about:debugging", document));
-
   info("Open a new background tab TAB1");
   const backgroundTab1 = await addTab(TAB_URL_1, { background: true });
 
@@ -77,9 +71,4 @@ add_task(async function() {
 
 function isSidebarItemSelected(item) {
   return item.classList.contains("js-sidebar-item-selected");
-}
-
-function findDebugTargetByText(text, document) {
-  const targets = [...document.querySelectorAll(".js-debug-target-item")];
-  return targets.find(target => target.textContent.includes(text));
 }
