@@ -278,7 +278,7 @@ Inspector.prototype = {
       
       
       this.changesFront = this.toolbox.target.getFront("changes");
-      await this.changesFront.allChanges();
+      this.changesFront.allChanges();
     }
 
     

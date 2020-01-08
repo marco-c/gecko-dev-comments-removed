@@ -127,6 +127,24 @@ function openComputedView() {
 
 
 
+function openChangesView() {
+  return openInspectorSidebarTab("changesview").then(data => {
+    return {
+      toolbox: data.toolbox,
+      inspector: data.inspector,
+      testActor: data.testActor,
+      view: data.inspector.changesView,
+    };
+  });
+}
+
+
+
+
+
+
+
+
 function openLayoutView() {
   return openInspectorSidebarTab("layoutview").then(data => {
     
@@ -174,6 +192,18 @@ function selectRuleView(inspector) {
 function selectComputedView(inspector) {
   inspector.sidebar.select("computedview");
   return inspector.getPanel("computedview").computedView;
+}
+
+
+
+
+
+
+
+
+function selectChangesView(inspector) {
+  inspector.sidebar.select("changesview");
+  return inspector.changesView;
 }
 
 
