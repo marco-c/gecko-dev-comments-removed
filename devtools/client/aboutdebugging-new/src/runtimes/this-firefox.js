@@ -1,0 +1,16 @@
+
+
+
+
+"use strict";
+
+const Runtime = require("./runtime");
+
+
+
+
+
+class ThisFirefox extends Runtime {
+}
+
+module.exports = ThisFirefox;
