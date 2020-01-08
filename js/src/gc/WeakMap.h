@@ -100,6 +100,10 @@ class WeakMapBase : public mozilla::LinkedListElement<WeakMapBase> {
   static bool checkMarkingForZone(JS::Zone* zone);
 #endif
 
+  static JSObject* getDelegate(JSObject* key);
+  static JSObject* getDelegate(JSScript* script);
+  static JSObject* getDelegate(LazyScript* script);
+
  protected:
   
   
@@ -191,10 +195,6 @@ class WeakMap
 
 
 
-
-  JSObject* getDelegate(JSObject* key) const;
-  JSObject* getDelegate(JSScript* script) const;
-  JSObject* getDelegate(LazyScript* script) const;
 
  private:
   void exposeGCThingToActiveJS(const JS::Value& v) const {
