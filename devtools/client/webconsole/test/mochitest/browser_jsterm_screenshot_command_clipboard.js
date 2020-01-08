@@ -14,6 +14,7 @@ const dpr = "--dpr 1";
 
 add_task(async function() {
   
+  await pushPref("devtools.webconsole.jsterm.codeMirror", false);
   await performTests();
   
   await pushPref("devtools.webconsole.jsterm.codeMirror", true);

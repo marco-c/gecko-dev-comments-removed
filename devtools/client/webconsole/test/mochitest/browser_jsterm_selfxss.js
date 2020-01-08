@@ -18,6 +18,7 @@ const stringToCopy = "EvilCommand";
 
 add_task(async function() {
   
+  await pushPref("devtools.webconsole.jsterm.codeMirror", false);
   await performTest();
   
   await pushPref("devtools.webconsole.jsterm.codeMirror", true);

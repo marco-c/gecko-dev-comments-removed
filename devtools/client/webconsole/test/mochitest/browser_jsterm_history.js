@@ -17,6 +17,7 @@ const {
 
 add_task(async function() {
   
+  await pushPref("devtools.webconsole.jsterm.codeMirror", false);
   await testHistory();
   
   await pushPref("devtools.webconsole.jsterm.codeMirror", true);
