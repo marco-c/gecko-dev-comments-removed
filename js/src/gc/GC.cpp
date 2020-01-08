@@ -672,7 +672,6 @@ static inline bool FinalizeTypedArenas(FreeOp* fop, Arena** src,
 
 
 
-
 static bool FinalizeArenas(FreeOp* fop, Arena** src, SortedArenaList& dest,
                            AllocKind thingKind, SliceBudget& budget,
                            ArenaLists::KeepArenasEnum keepArenas) {
