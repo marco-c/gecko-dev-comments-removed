@@ -147,6 +147,9 @@ function runUpdateTest(updateParams, checkAttempts, steps) {
         [PREF_APP_UPDATE_IDLETIME, 0],
         [PREF_APP_UPDATE_URL_MANUAL, URL_MANUAL_UPDATE],
         [PREF_APP_UPDATE_LOG, DEBUG_AUS_TEST],
+        
+        
+        ["services.sync.autoconnectDelay", 600000],
       ]});
 
     await setupTestUpdater();
