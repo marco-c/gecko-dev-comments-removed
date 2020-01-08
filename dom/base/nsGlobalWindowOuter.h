@@ -964,6 +964,15 @@ public:
 
   bool IsInModalState();
 
+  bool HasStorageAccess() const
+  {
+    return mHasStorageAccess;
+  }
+  void SetHasStorageAccess(bool aHasStorageAccess)
+  {
+    mHasStorageAccess = aHasStorageAccess;
+  }
+
   
   
   
@@ -1087,6 +1096,9 @@ protected:
   bool                   mAllowScriptsToClose : 1;
 
   bool mTopLevelOuterContentWindow : 1;
+
+  
+  bool mHasStorageAccess : 1;
 
   nsCOMPtr<nsIScriptContext>    mContext;
   nsWeakPtr                     mOpener;

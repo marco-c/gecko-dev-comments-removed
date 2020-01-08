@@ -1238,6 +1238,11 @@ public:
 
   mozilla::dom::Selection* GetSelection(mozilla::ErrorResult& aRv);
 
+  already_AddRefed<mozilla::dom::Promise>
+    HasStorageAccess(mozilla::ErrorResult& aRv);
+  already_AddRefed<mozilla::dom::Promise>
+    RequestStorageAccess(mozilla::ErrorResult& aRv);
+
   
 
 
