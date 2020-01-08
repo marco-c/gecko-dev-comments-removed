@@ -38,33 +38,39 @@ NameOpEmitter::emitGet()
 
     switch (loc_.kind()) {
       case NameLocation::Kind::Dynamic:
-        if (!bce_->emitAtomOp(name_, JSOP_GETNAME)) { 
+        if (!bce_->emitAtomOp(name_, JSOP_GETNAME)) {
+            
             return false;
         }
         break;
       case NameLocation::Kind::Global:
         if (!bce_->emitAtomOp(name_, JSOP_GETGNAME)) {
+            
             return false;
         }
         break;
       case NameLocation::Kind::Intrinsic:
         if (!bce_->emitAtomOp(name_, JSOP_GETINTRINSIC)) {
-            return false;                             
+            
+            return false;
         }
         break;
       case NameLocation::Kind::NamedLambdaCallee:
-        if (!bce_->emit1(JSOP_CALLEE)) {              
+        if (!bce_->emit1(JSOP_CALLEE)) {
+            
             return false;
         }
         break;
       case NameLocation::Kind::Import:
         if (!bce_->emitAtomOp(name_, JSOP_GETIMPORT)) {
-            return false;                             
+            
+            return false;
         }
         break;
       case NameLocation::Kind::ArgumentSlot:
         if (!bce_->emitArgOp(JSOP_GETARG, loc_.argumentSlot())) {
-            return false;                             
+            
+            return false;
         }
         break;
       case NameLocation::Kind::FrameSlot:
@@ -74,7 +80,8 @@ NameOpEmitter::emitGet()
             }
         }
         if (!bce_->emitLocalOp(JSOP_GETLOCAL, loc_.frameSlot())) {
-            return false;                             
+            
+            return false;
         }
         break;
       case NameLocation::Kind::EnvironmentCoordinate:
@@ -84,7 +91,8 @@ NameOpEmitter::emitGet()
             }
         }
         if (!bce_->emitEnvCoordOp(JSOP_GETALIASEDVAR, loc_.environmentCoordinate())) {
-            return false;                             
+            
+            return false;
         }
         break;
       case NameLocation::Kind::DynamicAnnexBVar:
@@ -95,14 +103,16 @@ NameOpEmitter::emitGet()
         switch (loc_.kind()) {
           case NameLocation::Kind::Dynamic: {
             JSOp thisOp = bce_->needsImplicitThis() ? JSOP_IMPLICITTHIS : JSOP_GIMPLICITTHIS;
-            if (!bce_->emitAtomOp(name_, thisOp)) {   
+            if (!bce_->emitAtomOp(name_, thisOp)) {
+                
                 return false;
             }
             break;
           }
           case NameLocation::Kind::Global:
             if (!bce_->emitAtomOp(name_, JSOP_GIMPLICITTHIS)) {
-                return false;                         
+                
+                return false;
             }
             break;
           case NameLocation::Kind::Intrinsic:
@@ -111,7 +121,8 @@ NameOpEmitter::emitGet()
           case NameLocation::Kind::ArgumentSlot:
           case NameLocation::Kind::FrameSlot:
           case NameLocation::Kind::EnvironmentCoordinate:
-            if (!bce_->emit1(JSOP_UNDEFINED)) {       
+            if (!bce_->emit1(JSOP_UNDEFINED)) {
+                
                 return false;
             }
             break;
@@ -142,12 +153,14 @@ NameOpEmitter::prepareForRhs()
             
             
             
-            if (!bce_->emit1(JSOP_BINDVAR)) {         
+            if (!bce_->emit1(JSOP_BINDVAR)) {
+                
                 return false;
             }
         } else {
             if (!bce_->emitIndexOp(JSOP_BINDNAME, atomIndex_)) {
-                return false;                         
+                
+                return false;
             }
         }
         emittedBindOp_ = true;
@@ -162,7 +175,8 @@ NameOpEmitter::prepareForRhs()
             MOZ_ASSERT(bce_->innermostScope()->is<GlobalScope>());
         } else {
             if (!bce_->emitIndexOp(JSOP_BINDGNAME, atomIndex_)) {
-                return false;                         
+                
+                return false;
             }
             emittedBindOp_ = true;
         }
@@ -202,14 +216,17 @@ NameOpEmitter::prepareForRhs()
             
             
             
-            if (!bce_->emit1(JSOP_DUP)) {             
+            if (!bce_->emit1(JSOP_DUP)) {
+                
                 return false;
             }
             if (!bce_->emitAtomOp(name_, JSOP_GETBOUNDNAME)) {
-                return false;                         
+                
+                return false;
             }
         } else {
-            if (!emitGet()) {                         
+            if (!emitGet()) {
+                
                 return false;
             }
         }
@@ -340,36 +357,45 @@ NameOpEmitter::emitIncDec()
     MOZ_ASSERT(state_ == State::Start);
 
     JSOp binOp = isInc() ? JSOP_ADD : JSOP_SUB;
-    if (!prepareForRhs()) {                           
+    if (!prepareForRhs()) {
+        
         return false;
     }
-    if (!bce_->emit1(JSOP_POS)) {                     
+    if (!bce_->emit1(JSOP_POS)) {
+        
         return false;
     }
     if (isPostIncDec()) {
-        if (!bce_->emit1(JSOP_DUP)) {                 
+        if (!bce_->emit1(JSOP_DUP)) {
+            
             return false;
         }
     }
-    if (!bce_->emit1(JSOP_ONE)) {                     
+    if (!bce_->emit1(JSOP_ONE)) {
+        
         return false;
     }
-    if (!bce_->emit1(binOp)) {                        
+    if (!bce_->emit1(binOp)) {
+        
         return false;
     }
     if (isPostIncDec() && emittedBindOp()) {
-        if (!bce_->emit2(JSOP_PICK, 2)) {             
+        if (!bce_->emit2(JSOP_PICK, 2)) {
+            
             return false;
         }
-        if (!bce_->emit1(JSOP_SWAP)) {                
+        if (!bce_->emit1(JSOP_SWAP)) {
+            
             return false;
         }
     }
-    if (!emitAssignment()) {                          
+    if (!emitAssignment()) {
+        
         return false;
     }
     if (isPostIncDec()) {
-        if (!bce_->emit1(JSOP_POP)) {                 
+        if (!bce_->emit1(JSOP_POP)) {
+            
             return false;
         }
     }

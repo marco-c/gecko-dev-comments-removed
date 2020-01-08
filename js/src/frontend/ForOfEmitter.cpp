@@ -51,11 +51,13 @@ ForOfEmitter::emitInitialize(const Maybe<uint32_t>& forPos)
     tdzCacheForIteratedValue_.reset();
 
     if (iterKind_ == IteratorKind::Async) {
-        if (!bce_->emitAsyncIterator()) {             
+        if (!bce_->emitAsyncIterator()) {
+            
             return false;
         }
     } else {
-        if (!bce_->emitIterator()) {                  
+        if (!bce_->emitIterator()) {
+            
             return false;
         }
     }
@@ -65,7 +67,8 @@ ForOfEmitter::emitInitialize(const Maybe<uint32_t>& forPos)
     
     
     
-    if (!bce_->emit1(JSOP_UNDEFINED)) {               
+    if (!bce_->emit1(JSOP_UNDEFINED)) {
+        
         return false;
     }
 
@@ -76,11 +79,13 @@ ForOfEmitter::emitInitialize(const Maybe<uint32_t>& forPos)
         return false;
     }
 
-    if (!loopInfo_->emitEntryJump(bce_)) {            
+    if (!loopInfo_->emitEntryJump(bce_)) {
+        
         return false;
     }
 
-    if (!loopInfo_->emitLoopHead(bce_, Nothing())) {  
+    if (!loopInfo_->emitLoopHead(bce_, Nothing())) {
+        
         return false;
     }
 
@@ -97,7 +102,8 @@ ForOfEmitter::emitInitialize(const Maybe<uint32_t>& forPos)
 
         if (headLexicalEmitterScope_->hasEnvironment()) {
             if (!bce_->emit1(JSOP_RECREATELEXICALENV)) {
-                return false;                         
+                
+                return false;
             }
         }
 
@@ -118,45 +124,55 @@ ForOfEmitter::emitInitialize(const Maybe<uint32_t>& forPos)
         }
     }
 
-    if (!bce_->emit1(JSOP_POP)) {                     
+    if (!bce_->emit1(JSOP_POP)) {
+        
         return false;
     }
-    if (!bce_->emit1(JSOP_DUP2)) {                    
+    if (!bce_->emit1(JSOP_DUP2)) {
+        
         return false;
     }
 
     if (!bce_->emitIteratorNext(forPos, iterKind_, allowSelfHostedIter_)) {
-        return false;                                 
+        
+        return false;
     }
 
-    if (!bce_->emit1(JSOP_DUP)) {                     
+    if (!bce_->emit1(JSOP_DUP)) {
+        
         return false;
     }
     if (!bce_->emitAtomOp(bce_->cx->names().done, JSOP_GETPROP)) {
-        return false;                                 
+        
+        return false;
     }
 
     InternalIfEmitter ifDone(bce_);
 
-    if (!ifDone.emitThen()) {                         
+    if (!ifDone.emitThen()) {
+        
         return false;
     }
 
     
-    if (!bce_->emit1(JSOP_POP)) {                     
+    if (!bce_->emit1(JSOP_POP)) {
+        
         return false;
     }
-    if (!bce_->emit1(JSOP_UNDEFINED)) {               
+    if (!bce_->emit1(JSOP_UNDEFINED)) {
+        
         return false;
     }
 
     
     
-    if (!loopInfo_->emitSpecialBreakForDone(bce_)) {  
+    if (!loopInfo_->emitSpecialBreakForDone(bce_)) {
+        
         return false;
     }
 
-    if (!ifDone.emitEnd()) {                          
+    if (!ifDone.emitEnd()) {
+        
         return false;
     }
 
@@ -165,7 +181,8 @@ ForOfEmitter::emitInitialize(const Maybe<uint32_t>& forPos)
     
     
     if (!bce_->emitAtomOp(bce_->cx->names().value, JSOP_GETPROP)) {
-        return false;                                 
+        
+        return false;
     }
 
     if (!loopInfo_->emitBeginCodeNeedingIteratorClose(bce_)) {
@@ -188,10 +205,12 @@ ForOfEmitter::emitBody()
                "operation");
 
     
-    if (!bce_->emit1(JSOP_POP)) {                     
+    if (!bce_->emit1(JSOP_POP)) {
+        
         return false;
     }
-    if (!bce_->emit1(JSOP_UNDEFINED)) {               
+    if (!bce_->emit1(JSOP_UNDEFINED)) {
+        
         return false;
     }
 
@@ -223,10 +242,12 @@ ForOfEmitter::emitEnd(const Maybe<uint32_t>& iteratedPos)
         return false;
     }
 
-    if (!bce_->emit1(JSOP_FALSE)) {                   
+    if (!bce_->emit1(JSOP_FALSE)) {
+        
         return false;
     }
-    if (!loopInfo_->emitLoopEnd(bce_, JSOP_IFEQ)) {   
+    if (!loopInfo_->emitLoopEnd(bce_, JSOP_IFEQ)) {
+        
         return false;
     }
 
@@ -249,7 +270,8 @@ ForOfEmitter::emitEnd(const Maybe<uint32_t>& iteratedPos)
         return false;
     }
 
-    if (!bce_->emitPopN(3)) {                         
+    if (!bce_->emitPopN(3)) {
+        
         return false;
     }
 

@@ -36,12 +36,14 @@ ElemOpEmitter::prepareForKey()
     MOZ_ASSERT(state_ == State::Obj);
 
     if (!isSuper() && isIncDec()) {
-        if (!bce_->emit1(JSOP_CHECKOBJCOERCIBLE)) {   
+        if (!bce_->emit1(JSOP_CHECKOBJCOERCIBLE)) {
+            
             return false;
         }
     }
     if (isCall()) {
-        if (!bce_->emit1(JSOP_DUP)) {                 
+        if (!bce_->emit1(JSOP_DUP)) {
+            
             
             
             
@@ -61,7 +63,8 @@ ElemOpEmitter::emitGet()
     MOZ_ASSERT(state_ == State::Key);
 
     if (isIncDec() || isCompoundAssignment()) {
-        if (!bce_->emit1(JSOP_TOID)) {                
+        if (!bce_->emit1(JSOP_TOID)) {
+            
             
             
             
@@ -69,7 +72,8 @@ ElemOpEmitter::emitGet()
         }
     }
     if (isSuper()) {
-        if (!bce_->emit1(JSOP_SUPERBASE)) {           
+        if (!bce_->emit1(JSOP_SUPERBASE)) {
+            
             return false;
         }
     }
@@ -77,17 +81,21 @@ ElemOpEmitter::emitGet()
         if (isSuper()) {
             
             
-            if (!bce_->emitDupAt(2)) {                
+            if (!bce_->emitDupAt(2)) {
+                
                 return false;
             }
-            if (!bce_->emitDupAt(2)) {                
+            if (!bce_->emitDupAt(2)) {
+                
                 return false;
             }
-            if (!bce_->emitDupAt(2)) {                
+            if (!bce_->emitDupAt(2)) {
+                
                 return false;
             }
         } else {
-            if (!bce_->emit1(JSOP_DUP2)) {            
+            if (!bce_->emit1(JSOP_DUP2)) {
+                
                 return false;
             }
         }
@@ -101,8 +109,7 @@ ElemOpEmitter::emitGet()
     } else {
         op = JSOP_GETELEM;
     }
-    if (!bce_->emitElemOpBase(op)) {                  
-        
+    if (!bce_->emitElemOpBase(op)) {
         
         
         
@@ -114,7 +121,8 @@ ElemOpEmitter::emitGet()
         return false;
     }
     if (isCall()) {
-        if (!bce_->emit1(JSOP_SWAP)) {                
+        if (!bce_->emit1(JSOP_SWAP)) {
+            
             return false;
         }
     }
@@ -135,7 +143,8 @@ ElemOpEmitter::prepareForRhs()
     if (isSimpleAssignment()) {
         
         if (isSuper()) {
-            if (!bce_->emit1(JSOP_SUPERBASE)) {           
+            if (!bce_->emit1(JSOP_SUPERBASE)) {
+                
                 return false;
             }
         }
@@ -166,26 +175,31 @@ ElemOpEmitter::emitDelete()
     MOZ_ASSERT(isDelete());
 
     if (isSuper()) {
-        if (!bce_->emit1(JSOP_TOID)) {                
+        if (!bce_->emit1(JSOP_TOID)) {
+            
             return false;
         }
-        if (!bce_->emit1(JSOP_SUPERBASE)) {           
+        if (!bce_->emit1(JSOP_SUPERBASE)) {
+            
             return false;
         }
 
         
         if (!bce_->emitUint16Operand(JSOP_THROWMSG, JSMSG_CANT_DELETE_SUPER)) {
-            return false;                             
+            
+            return false;
         }
 
         
         
-        if (!bce_->emitPopN(2)) {                     
+        if (!bce_->emitPopN(2)) {
+            
             return false;
         }
     } else {
         JSOp op = bce_->sc->strict() ? JSOP_STRICTDELELEM : JSOP_DELELEM;
-        if (!bce_->emitElemOpBase(op)){              
+        if (!bce_->emitElemOpBase(op)) {
+            
             return false;
         }
     }
@@ -205,7 +219,8 @@ ElemOpEmitter::emitAssignment()
     JSOp setOp = isSuper()
                  ? bce_->sc->strict() ? JSOP_STRICTSETELEM_SUPER : JSOP_SETELEM_SUPER
                  : bce_->sc->strict() ? JSOP_STRICTSETELEM : JSOP_SETELEM;
-    if (!bce_->emitElemOpBase(setOp)) {               
+    if (!bce_->emitElemOpBase(setOp)) {
+        
         return false;
     }
 
@@ -221,49 +236,65 @@ ElemOpEmitter::emitIncDec()
     MOZ_ASSERT(state_ == State::Key);
     MOZ_ASSERT(isIncDec());
 
-    if (!emitGet()) {                                 
+    if (!emitGet()) {
+        
         return false;
     }
 
     MOZ_ASSERT(state_ == State::Get);
 
     JSOp binOp = isInc() ? JSOP_ADD : JSOP_SUB;
-    if (!bce_->emit1(JSOP_POS)) {                     
+    if (!bce_->emit1(JSOP_POS)) {
+        
         return false;
     }
     if (isPostIncDec()) {
-        if (!bce_->emit1(JSOP_DUP)) {                 
+        if (!bce_->emit1(JSOP_DUP)) {
+            
             return false;
         }
     }
-    if (!bce_->emit1(JSOP_ONE)) {                     
+    if (!bce_->emit1(JSOP_ONE)) {
+        
         return false;
     }
-    if (!bce_->emit1(binOp)) {                        
+    if (!bce_->emit1(binOp)) {
+        
         return false;
     }
     if (isPostIncDec()) {
-        if (isSuper()) {                              
-            if (!bce_->emit2(JSOP_PICK, 4)) {         
+        if (isSuper()) {
+            
+
+            if (!bce_->emit2(JSOP_PICK, 4)) {
+                
                 return false;
             }
-            if (!bce_->emit2(JSOP_PICK, 4)) {         
+            if (!bce_->emit2(JSOP_PICK, 4)) {
+                
                 return false;
             }
-            if (!bce_->emit2(JSOP_PICK, 4)) {         
+            if (!bce_->emit2(JSOP_PICK, 4)) {
+                
                 return false;
             }
-            if (!bce_->emit2(JSOP_PICK, 3)) {         
+            if (!bce_->emit2(JSOP_PICK, 3)) {
+                
                 return false;
             }
-        } else {                                      
-            if (!bce_->emit2(JSOP_PICK, 3)) {         
+        } else {
+            
+
+            if (!bce_->emit2(JSOP_PICK, 3)) {
+                
                 return false;
             }
-            if (!bce_->emit2(JSOP_PICK, 3)) {         
+            if (!bce_->emit2(JSOP_PICK, 3)) {
+                
                 return false;
             }
-            if (!bce_->emit2(JSOP_PICK, 2)) {         
+            if (!bce_->emit2(JSOP_PICK, 2)) {
+                
                 return false;
             }
         }
@@ -272,11 +303,13 @@ ElemOpEmitter::emitIncDec()
     JSOp setOp = isSuper()
                  ? (bce_->sc->strict() ? JSOP_STRICTSETELEM_SUPER : JSOP_SETELEM_SUPER)
                  : (bce_->sc->strict() ? JSOP_STRICTSETELEM : JSOP_SETELEM);
-    if (!bce_->emitElemOpBase(setOp)) {               
+    if (!bce_->emitElemOpBase(setOp)) {
+        
         return false;
     }
     if (isPostIncDec()) {
-        if (!bce_->emit1(JSOP_POP)) {                 
+        if (!bce_->emit1(JSOP_POP)) {
+            
             return false;
         }
     }

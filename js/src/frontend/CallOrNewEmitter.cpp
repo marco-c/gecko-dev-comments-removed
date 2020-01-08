@@ -52,7 +52,8 @@ CallOrNewEmitter::emitNameCallee(JSAtom* name)
                       isCall()
                       ? NameOpEmitter::Kind::Call
                       : NameOpEmitter::Kind::Get);
-    if (!noe.emitGet()) {                             
+    if (!noe.emitGet()) {
+        
         return false;
     }
 
@@ -120,10 +121,12 @@ CallOrNewEmitter::emitSuperCallee()
 {
     MOZ_ASSERT(state_ == State::Start);
 
-    if (!bce_->emit1(JSOP_SUPERFUN)) {                
+    if (!bce_->emit1(JSOP_SUPERFUN)) {
+        
         return false;
     }
-    if (!bce_->emit1(JSOP_IS_CONSTRUCTING)) {         
+    if (!bce_->emit1(JSOP_IS_CONSTRUCTING)) {
+        
         return false;
     }
 
@@ -182,11 +185,13 @@ CallOrNewEmitter::emitThis()
     }
     if (needsThis) {
         if (isNew() || isSuperCall()) {
-            if (!bce_->emit1(JSOP_IS_CONSTRUCTING)) { 
+            if (!bce_->emit1(JSOP_IS_CONSTRUCTING)) {
+                
                 return false;
             }
         } else {
-            if (!bce_->emit1(JSOP_UNDEFINED)) {       
+            if (!bce_->emit1(JSOP_UNDEFINED)) {
+                
                 return false;
             }
         }
@@ -246,18 +251,23 @@ CallOrNewEmitter::emitSpreadArgumentsTest()
         
         
 
-        ifNotOptimizable_.emplace(bce_);
         
-        if (!bce_->emit1(JSOP_OPTIMIZE_SPREADCALL)) { 
+
+        ifNotOptimizable_.emplace(bce_);
+        if (!bce_->emit1(JSOP_OPTIMIZE_SPREADCALL)) {
+            
             return false;
         }
-        if (!bce_->emit1(JSOP_NOT)) {                 
+        if (!bce_->emit1(JSOP_NOT)) {
+            
             return false;
         }
-        if (!ifNotOptimizable_->emitThen()) {         
+        if (!ifNotOptimizable_->emitThen()) {
+            
             return false;
         }
-        if (!bce_->emit1(JSOP_POP)) {                 
+        if (!bce_->emit1(JSOP_POP)) {
+            
             return false;
         }
     }
@@ -272,7 +282,8 @@ CallOrNewEmitter::emitEnd(uint32_t argc, const Maybe<uint32_t>& beginPos)
     MOZ_ASSERT(state_ == State::Arguments);
 
     if (isSingleSpreadRest()) {
-        if (!ifNotOptimizable_->emitEnd()) {          
+        if (!ifNotOptimizable_->emitEnd()) {
+            
             return false;
         }
 
@@ -280,19 +291,22 @@ CallOrNewEmitter::emitEnd(uint32_t argc, const Maybe<uint32_t>& beginPos)
     }
     if (isNew() || isSuperCall()) {
         if (isSuperCall()) {
-            if (!bce_->emit1(JSOP_NEWTARGET)) {       
+            if (!bce_->emit1(JSOP_NEWTARGET)) {
+                
                 return false;
             }
         } else {
             
             uint32_t effectiveArgc = isSpread() ? 1 : argc;
             if (!bce_->emitDupAt(effectiveArgc + 1)) {
-                return false;                         
+                
+                return false;
             }
         }
     }
     if (!isSpread()) {
-        if (!bce_->emitCall(op_, argc, beginPos)) {   
+        if (!bce_->emitCall(op_, argc, beginPos)) {
+            
             return false;
         }
     } else {
@@ -301,7 +315,8 @@ CallOrNewEmitter::emitEnd(uint32_t argc, const Maybe<uint32_t>& beginPos)
                 return false;
             }
         }
-        if (!bce_->emit1(op_)) {                      
+        if (!bce_->emit1(op_)) {
+            
             return false;
         }
     }

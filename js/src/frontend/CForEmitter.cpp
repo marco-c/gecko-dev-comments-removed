@@ -75,6 +75,7 @@ CForEmitter::emitBody(Cond cond, const Maybe<uint32_t>& bodyPos)
         return false;
     }
     if (!bce_->emit1(JSOP_NOP)) {
+        
         return false;
     }
 
@@ -88,11 +89,13 @@ CForEmitter::emitBody(Cond cond, const Maybe<uint32_t>& bodyPos)
     }
 
     if (!loopInfo_->emitLoopHead(bce_, bodyPos)) {
+        
         return false;
     }
 
     if (cond_ == Cond::Missing) {
         if (!loopInfo_->emitLoopEntry(bce_, bodyPos)) {
+            
             return false;
         }
     }
@@ -157,7 +160,10 @@ CForEmitter::emitCond(const Maybe<uint32_t>& forPos,
     MOZ_ASSERT(state_ == State::Update);
 
     if (update_ == Update::Present) {
-        if (!bce_->emit1(JSOP_POP)) {                 
+        
+
+        if (!bce_->emit1(JSOP_POP)) {
+            
             return false;
         }
 
@@ -183,6 +189,7 @@ CForEmitter::emitCond(const Maybe<uint32_t>& forPos,
 
     if (cond_ == Cond::Present) {
         if (!loopInfo_->emitLoopEntry(bce_, condPos)) {
+            
             return false;
         }
     } else if (update_ == Update::Missing) {
@@ -221,7 +228,8 @@ CForEmitter::emitEnd()
 
     
     if (!loopInfo_->emitLoopEnd(bce_, cond_ == Cond::Present ? JSOP_IFNE : JSOP_GOTO)) {
-        return false;                                 
+        
+        return false;
     }
 
     
@@ -239,6 +247,7 @@ CForEmitter::emitEnd()
     }
 
     if (!loopInfo_->patchBreaksAndContinues(bce_)) {
+        
         return false;
     }
 

@@ -51,7 +51,8 @@ PropOpEmitter::emitGet(JSAtom* prop)
         return false;
     }
     if (isCall()) {
-        if (!bce_->emit1(JSOP_DUP)) {                 
+        if (!bce_->emit1(JSOP_DUP)) {
+            
             
             
             
@@ -59,17 +60,20 @@ PropOpEmitter::emitGet(JSAtom* prop)
         }
     }
     if (isSuper()) {
-        if (!bce_->emit1(JSOP_SUPERBASE)) {           
+        if (!bce_->emit1(JSOP_SUPERBASE)) {
+            
             return false;
         }
     }
     if (isIncDec() || isCompoundAssignment()) {
         if (isSuper()) {
-            if (!bce_->emit1(JSOP_DUP2)) {            
+            if (!bce_->emit1(JSOP_DUP2)) {
+                
                 return false;
             }
         } else {
-            if (!bce_->emit1(JSOP_DUP)) {             
+            if (!bce_->emit1(JSOP_DUP)) {
+                
                 return false;
             }
         }
@@ -83,8 +87,7 @@ PropOpEmitter::emitGet(JSAtom* prop)
     } else {
         op = isLength_ ? JSOP_LENGTH : JSOP_GETPROP;
     }
-    if (!bce_->emitAtomOp(propAtomIndex_, op)) {      
-        
+    if (!bce_->emitAtomOp(propAtomIndex_, op)) {
         
         
         
@@ -96,7 +99,8 @@ PropOpEmitter::emitGet(JSAtom* prop)
         return false;
     }
     if (isCall()) {
-        if (!bce_->emit1(JSOP_SWAP)) {                
+        if (!bce_->emit1(JSOP_SWAP)) {
+            
             return false;
         }
     }
@@ -117,7 +121,8 @@ PropOpEmitter::prepareForRhs()
     if (isSimpleAssignment()) {
         
         if (isSuper()) {
-            if (!bce_->emit1(JSOP_SUPERBASE)) {       
+            if (!bce_->emit1(JSOP_SUPERBASE)) {
+                
                 return false;
             }
         }
@@ -152,23 +157,27 @@ PropOpEmitter::emitDelete(JSAtom* prop)
         return false;
     }
     if (isSuper()) {
-        if (!bce_->emit1(JSOP_SUPERBASE)) {           
+        if (!bce_->emit1(JSOP_SUPERBASE)) {
+            
             return false;
         }
 
         
         if (!bce_->emitUint16Operand(JSOP_THROWMSG, JSMSG_CANT_DELETE_SUPER)) {
-            return false;                             
+            
+            return false;
         }
 
         
         
-        if (!bce_->emit1(JSOP_POP)) {                 
+        if (!bce_->emit1(JSOP_POP)) {
+            
             return false;
         }
     } else {
         JSOp op = bce_->sc->strict() ? JSOP_STRICTDELPROP : JSOP_DELPROP;
-        if (!bce_->emitAtomOp(propAtomIndex_, op)) {  
+        if (!bce_->emitAtomOp(propAtomIndex_, op)) {
+            
             return false;
         }
     }
@@ -194,7 +203,8 @@ PropOpEmitter::emitAssignment(JSAtom* prop)
     JSOp setOp = isSuper()
                  ? bce_->sc->strict() ? JSOP_STRICTSETPROP_SUPER : JSOP_SETPROP_SUPER
                  : bce_->sc->strict() ? JSOP_STRICTSETPROP : JSOP_SETPROP;
-    if (!bce_->emitAtomOp(propAtomIndex_, setOp)) {   
+    if (!bce_->emitAtomOp(propAtomIndex_, setOp)) {
+        
         return false;
     }
 
@@ -218,39 +228,51 @@ PropOpEmitter::emitIncDec(JSAtom* prop)
 
     JSOp binOp = isInc() ? JSOP_ADD : JSOP_SUB;
 
-    if (!bce_->emit1(JSOP_POS)) {                     
+    if (!bce_->emit1(JSOP_POS)) {
+        
         return false;
     }
     if (isPostIncDec()) {
-        if (!bce_->emit1(JSOP_DUP)) {                 
+        if (!bce_->emit1(JSOP_DUP)) {
+            
             return false;
         }
     }
-    if (!bce_->emit1(JSOP_ONE)) {                     
+    if (!bce_->emit1(JSOP_ONE)) {
+        
         return false;
     }
-    if (!bce_->emit1(binOp)) {                        
+    if (!bce_->emit1(binOp)) {
+        
         return false;
     }
     if (isPostIncDec()) {
-        if (isSuper()) {                              
-            if (!bce_->emit2(JSOP_PICK, 3)) {         
+        if (isSuper()) {
+            
+            if (!bce_->emit2(JSOP_PICK, 3)) {
+                
                 return false;
             }
-            if (!bce_->emit1(JSOP_SWAP)) {            
+            if (!bce_->emit1(JSOP_SWAP)) {
+                
                 return false;
             }
-            if (!bce_->emit2(JSOP_PICK, 3)) {         
+            if (!bce_->emit2(JSOP_PICK, 3)) {
+                
                 return false;
             }
-            if (!bce_->emit1(JSOP_SWAP)) {            
+            if (!bce_->emit1(JSOP_SWAP)) {
+                
                 return false;
             }
-        } else {                                      
-            if (!bce_->emit2(JSOP_PICK, 2)) {         
+        } else {
+            
+            if (!bce_->emit2(JSOP_PICK, 2)) {
+                
                 return false;
             }
-            if (!bce_->emit1(JSOP_SWAP)) {            
+            if (!bce_->emit1(JSOP_SWAP)) {
+                
                 return false;
             }
         }
@@ -259,11 +281,13 @@ PropOpEmitter::emitIncDec(JSAtom* prop)
     JSOp setOp = isSuper()
                  ? bce_->sc->strict() ? JSOP_STRICTSETPROP_SUPER : JSOP_SETPROP_SUPER
                  : bce_->sc->strict() ? JSOP_STRICTSETPROP : JSOP_SETPROP;
-    if (!bce_->emitAtomOp(propAtomIndex_, setOp)) {   
+    if (!bce_->emitAtomOp(propAtomIndex_, setOp)) {
+        
         return false;
     }
     if (isPostIncDec()) {
-        if (!bce_->emit1(JSOP_POP)) {                 
+        if (!bce_->emit1(JSOP_POP)) {
+            
             return false;
         }
     }
