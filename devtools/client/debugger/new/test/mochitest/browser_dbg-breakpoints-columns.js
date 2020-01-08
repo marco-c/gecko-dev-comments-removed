@@ -46,7 +46,7 @@ function removeBreakpointViaContext(dbg, index) {
 
 add_task(async function() {
   const dbg = await initDebugger("doc-scripts.html", "simple1");
-  await pushPref("devtools.debugger.features.column-breakpoints", true);
+  await pushPref("devtools.debugger.features.column-breakpoints", false);
 
   if(!Services.prefs.getBoolPref("devtools.debugger.features.column-breakpoints")) {
     ok(true, "This test only applies when column breakpoints are on");
