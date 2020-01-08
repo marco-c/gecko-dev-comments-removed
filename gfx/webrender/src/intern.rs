@@ -173,28 +173,29 @@ impl<S, T, M> ops::IndexMut<Handle<M>> for DataStore<S, T, M> {
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct Interner<S : Eq + Hash + Clone + Debug, M> {
+pub struct Interner<S : Eq + Hash + Clone + Debug, D, M> {
     
     map: FastHashMap<S, Handle<M>>,
     
     free_list: Vec<usize>,
     
-    next_index: usize,
-    
     updates: Vec<Update<S>>,
     
     current_epoch: Epoch,
+    
+    
+    local_data: Vec<Item<D>>,
 }
 
-impl<S, M> Interner<S, M> where S: Eq + Hash + Clone + Debug, M: Copy + Debug {
+impl<S, D, M> Interner<S, D, M> where S: Eq + Hash + Clone + Debug, M: Copy + Debug {
     
     pub fn new() -> Self {
         Interner {
             map: FastHashMap::default(),
             free_list: Vec::new(),
-            next_index: 0,
             updates: Vec::new(),
             current_epoch: Epoch(1),
+            local_data: Vec::new(),
         }
     }
 
@@ -202,10 +203,14 @@ impl<S, M> Interner<S, M> where S: Eq + Hash + Clone + Debug, M: Copy + Debug {
     
     
     
-    pub fn intern(
+    
+    
+    
+    pub fn intern<F>(
         &mut self,
         data: &S,
-    ) -> Handle<M> {
+        f: F,
+    ) -> Handle<M> where F: FnOnce() -> D {
         
         
         
@@ -218,7 +223,8 @@ impl<S, M> Interner<S, M> where S: Eq + Hash + Clone + Debug, M: Copy + Debug {
                 self.updates.push(Update {
                     index: handle.index,
                     kind: UpdateKind::UpdateEpoch,
-                })
+                });
+                self.local_data[handle.index].epoch = self.current_epoch;
             }
             handle.epoch = self.current_epoch;
             return *handle;
@@ -229,11 +235,7 @@ impl<S, M> Interner<S, M> where S: Eq + Hash + Clone + Debug, M: Copy + Debug {
         
         let index = match self.free_list.pop() {
             Some(index) => index,
-            None => {
-                let index = self.next_index;
-                self.next_index += 1;
-                index
-            }
+            None => self.local_data.len(),
         };
 
         
@@ -252,6 +254,18 @@ impl<S, M> Interner<S, M> where S: Eq + Hash + Clone + Debug, M: Copy + Debug {
         
         
         self.map.insert(data.clone(), handle);
+
+        
+        
+        let local_item = Item {
+            epoch: self.current_epoch,
+            data: f(),
+        };
+        if self.local_data.len() == index {
+            self.local_data.push(local_item);
+        } else {
+            self.local_data[index] = local_item;
+        }
 
         handle
     }
@@ -297,5 +311,15 @@ impl<S, M> Interner<S, M> where S: Eq + Hash + Clone + Debug, M: Copy + Debug {
         self.current_epoch = Epoch(self.current_epoch.0 + 1);
 
         updates
+    }
+}
+
+
+impl<S, D, M> ops::Index<Handle<M>> for Interner<S, D, M> where S: Eq + Clone + Hash + Debug, M: Copy + Debug {
+    type Output = D;
+    fn index(&self, handle: Handle<M>) -> &D {
+        let item = &self.local_data[handle.index];
+        assert_eq!(item.epoch, handle.epoch);
+        &item.data
     }
 }

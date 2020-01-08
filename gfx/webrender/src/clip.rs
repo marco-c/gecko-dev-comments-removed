@@ -102,7 +102,7 @@ pub struct ClipDataMarker;
 pub type ClipDataStore = intern::DataStore<ClipItemKey, ClipNode, ClipDataMarker>;
 pub type ClipDataHandle = intern::Handle<ClipDataMarker>;
 pub type ClipDataUpdateList = intern::UpdateList<ClipItemKey>;
-pub type ClipDataInterner = intern::Interner<ClipItemKey, ClipDataMarker>;
+pub type ClipDataInterner = intern::Interner<ClipItemKey, ClipItemSceneData, ClipDataMarker>;
 
 
 #[derive(Debug)]
@@ -750,6 +750,20 @@ impl ClipRegion<Option<ComplexClipRegion>> {
             complex_clips: None,
         }
     }
+}
+
+
+
+
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct ClipItemSceneData {
+    
+    
+    
+    
+    
+    
 }
 
 
