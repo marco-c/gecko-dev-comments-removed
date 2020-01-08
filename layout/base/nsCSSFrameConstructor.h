@@ -742,7 +742,7 @@ private:
     FrameFullConstructor mFullConstructor;
     
     
-    nsICSSAnonBoxPseudo * const * const mAnonBoxPseudo;
+    nsICSSAnonBoxPseudo* const mAnonBoxPseudo;
   };
 
   
@@ -752,7 +752,7 @@ private:
   struct FrameConstructionDataByTag {
     
     
-    const nsStaticAtom * const * const mTag;
+    const nsStaticAtom* const* mTag;
     const FrameConstructionData mData;
   };
 
@@ -783,7 +783,7 @@ private:
 
   struct PseudoParentData {
     const FrameConstructionData mFCData;
-    nsICSSAnonBoxPseudo * const * const mPseudoType;
+    nsICSSAnonBoxPseudo * const* mPseudoType;
   };
   
 
