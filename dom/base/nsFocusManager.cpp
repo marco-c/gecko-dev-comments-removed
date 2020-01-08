@@ -2866,7 +2866,7 @@ nsFocusManager::DetermineElementToMoveFocus(nsPIDOMWindowOuter* aWindow,
   
   
   
-  if (forDocumentNavigation && doc->IsXULDocument()) {
+  if (forDocumentNavigation && nsContentUtils::IsChromeDoc(doc)) {
     nsAutoString retarget;
 
     if (rootContent->GetAttr(kNameSpaceID_None,
@@ -4047,7 +4047,7 @@ nsFocusManager::FocusFirst(Element* aRootElement, nsIContent** aNextContent)
 
   nsIDocument* doc = aRootElement->GetComposedDoc();
   if (doc) {
-    if (doc->IsXULDocument()) {
+    if (nsContentUtils::IsChromeDoc(doc)) {
       
       
       
