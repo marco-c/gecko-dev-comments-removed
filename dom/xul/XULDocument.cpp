@@ -82,6 +82,7 @@
 #include "mozilla/dom/ProcessingInstruction.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/XULDocumentBinding.h"
+#include "mozilla/dom/XULPersist.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/LoadInfo.h"
 #include "mozilla/Preferences.h"
@@ -127,7 +128,6 @@ namespace dom {
 XULDocument::XULDocument(void)
     : XMLDocument("application/vnd.mozilla.xul+xml"),
       mNextSrcLoadWaiter(nullptr),
-      mApplyingPersistedAttrs(false),
       mIsWritingFastLoad(false),
       mDocumentLoaded(false),
       mStillWalking(false),
@@ -201,12 +201,10 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(XULDocument, XMLDocument)
 
     NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mCurrentPrototype)
     NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPrototypes)
-    NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mLocalStore)
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(XULDocument, XMLDocument)
-    NS_IMPL_CYCLE_COLLECTION_UNLINK(mLocalStore)
     
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
@@ -423,58 +421,6 @@ XULDocument::OnPrototypeLoadDone(bool aResumeWalk)
     return rv;
 }
 
-static bool
-ShouldPersistAttribute(Element* aElement, nsAtom* aAttribute)
-{
-    if (aElement->IsXULElement(nsGkAtoms::window)) {
-        
-        
-        if (aElement->OwnerDoc()->GetParentDocument()) {
-            return true;
-        }
-        
-        
-        if (aAttribute == nsGkAtoms::screenX ||
-            aAttribute == nsGkAtoms::screenY ||
-            aAttribute == nsGkAtoms::width ||
-            aAttribute == nsGkAtoms::height ||
-            aAttribute == nsGkAtoms::sizemode) {
-            return false;
-        }
-    }
-    return true;
-}
-
-void
-XULDocument::AttributeChanged(Element* aElement, int32_t aNameSpaceID,
-                              nsAtom* aAttribute, int32_t aModType,
-                              const nsAttrValue* aOldValue)
-{
-    NS_ASSERTION(aElement->OwnerDoc() == this, "unexpected doc");
-
-    
-    nsCOMPtr<nsIMutationObserver> kungFuDeathGrip(this);
-
-    
-    
-    
-    nsAutoString persist;
-    aElement->GetAttr(kNameSpaceID_None, nsGkAtoms::persist, persist);
-    
-    if (ShouldPersistAttribute(aElement, aAttribute) && !persist.IsEmpty() &&
-        
-        persist.Find(nsDependentAtomString(aAttribute)) >= 0) {
-      nsContentUtils::AddScriptRunner(
-        NewRunnableMethod<Element*, int32_t, nsAtom*>(
-          "dom::XULDocument::Persist",
-          this,
-          &XULDocument::Persist,
-          aElement,
-          kNameSpaceID_None,
-          aAttribute));
-    }
-}
-
 void
 XULDocument::ContentAppended(nsIContent* aFirstNewContent)
 {
@@ -512,58 +458,6 @@ XULDocument::ContentRemoved(nsIContent* aChild, nsIContent* aPreviousSibling)
 
 
 
-
-
-void
-XULDocument::Persist(Element* aElement, int32_t aNameSpaceID,
-                     nsAtom* aAttribute)
-{
-    
-    if (!nsContentUtils::IsSystemPrincipal(NodePrincipal()))
-        return;
-
-    if (!mLocalStore) {
-        mLocalStore = do_GetService("@mozilla.org/xul/xulstore;1");
-        if (NS_WARN_IF(!mLocalStore)) {
-            return;
-        }
-    }
-
-    nsAutoString id;
-
-    aElement->GetAttr(kNameSpaceID_None, nsGkAtoms::id, id);
-    nsAtomString attrstr(aAttribute);
-
-    nsAutoString valuestr;
-    aElement->GetAttr(kNameSpaceID_None, aAttribute, valuestr);
-
-    nsAutoCString utf8uri;
-    nsresult rv = mDocumentURI->GetSpec(utf8uri);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-        return;
-    }
-    NS_ConvertUTF8toUTF16 uri(utf8uri);
-
-    bool hasAttr;
-    rv = mLocalStore->HasValue(uri, id, attrstr, &hasAttr);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-        return;
-    }
-
-    if (hasAttr && valuestr.IsEmpty()) {
-        mLocalStore->RemoveValue(uri, id, attrstr);
-        return;
-    }
-
-    
-    if (aElement->IsXULElement(nsGkAtoms::window)) {
-        if (nsCOMPtr<nsIXULWindow> win = GetXULWindowIfToplevelChrome()) {
-           return;
-        }
-    }
-
-    mLocalStore->SetValue(uri, id, attrstr, valuestr);
-}
 
 void
 XULDocument::AddElementToDocumentPost(Element* aElement)
@@ -720,145 +614,6 @@ XULDocument::PrepareToLoadPrototype(nsIURI* aURI, const char* aCommand,
     return NS_OK;
 }
 
-
-nsresult
-XULDocument::ApplyPersistentAttributes()
-{
-    
-    if (!nsContentUtils::IsSystemPrincipal(NodePrincipal()))
-        return NS_ERROR_NOT_AVAILABLE;
-
-    
-    
-    if (!mLocalStore) {
-        mLocalStore = do_GetService("@mozilla.org/xul/xulstore;1");
-        if (NS_WARN_IF(!mLocalStore)) {
-            return NS_ERROR_NOT_INITIALIZED;
-        }
-    }
-
-    mApplyingPersistedAttrs = true;
-    ApplyPersistentAttributesInternal();
-    mApplyingPersistedAttrs = false;
-
-    return NS_OK;
-}
-
-
-nsresult
-XULDocument::ApplyPersistentAttributesInternal()
-{
-    nsCOMArray<Element> elements;
-
-    nsAutoCString utf8uri;
-    nsresult rv = mDocumentURI->GetSpec(utf8uri);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-    }
-    NS_ConvertUTF8toUTF16 uri(utf8uri);
-
-    
-    nsCOMPtr<nsIStringEnumerator> ids;
-    rv = mLocalStore->GetIDsEnumerator(uri, getter_AddRefs(ids));
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-    }
-
-    while (1) {
-        bool hasmore = false;
-        ids->HasMore(&hasmore);
-        if (!hasmore) {
-            break;
-        }
-
-        nsAutoString id;
-        ids->GetNext(id);
-
-        nsIdentifierMapEntry* entry = mIdentifierMap.GetEntry(id);
-        if (!entry) {
-            continue;
-        }
-
-        
-        
-        elements.Clear();
-        elements.SetCapacity(entry->GetIdElements().Length());
-        for (Element* element : entry->GetIdElements()) {
-            elements.AppendObject(element);
-        }
-        if (elements.IsEmpty()) {
-            continue;
-        }
-
-        rv = ApplyPersistentAttributesToElements(id, elements);
-        if (NS_WARN_IF(NS_FAILED(rv))) {
-            return rv;
-        }
-    }
-
-    return NS_OK;
-}
-
-nsresult
-XULDocument::ApplyPersistentAttributesToElements(const nsAString &aID,
-                                                 nsCOMArray<Element>& aElements)
-{
-    nsAutoCString utf8uri;
-    nsresult rv = mDocumentURI->GetSpec(utf8uri);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-    }
-    NS_ConvertUTF8toUTF16 uri(utf8uri);
-
-    
-    nsCOMPtr<nsIStringEnumerator> attrs;
-    rv = mLocalStore->GetAttributeEnumerator(uri, aID, getter_AddRefs(attrs));
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-    }
-
-    while (1) {
-        bool hasmore = PR_FALSE;
-        attrs->HasMore(&hasmore);
-        if (!hasmore) {
-            break;
-        }
-
-        nsAutoString attrstr;
-        attrs->GetNext(attrstr);
-
-        nsAutoString value;
-        rv = mLocalStore->GetValue(uri, aID, attrstr, value);
-        if (NS_WARN_IF(NS_FAILED(rv))) {
-            return rv;
-        }
-
-        RefPtr<nsAtom> attr = NS_Atomize(attrstr);
-        if (NS_WARN_IF(!attr)) {
-            return NS_ERROR_OUT_OF_MEMORY;
-        }
-
-        uint32_t cnt = aElements.Count();
-        for (int32_t i = int32_t(cnt) - 1; i >= 0; --i) {
-            RefPtr<Element> element = aElements.SafeObjectAt(i);
-            if (!element) {
-                 continue;
-            }
-
-            
-            
-            if (element->IsXULElement(nsGkAtoms::window)) {
-                if (nsCOMPtr<nsIXULWindow> win = GetXULWindowIfToplevelChrome()) {
-                    continue;
-                }
-            }
-
-            Unused << element->SetAttr(kNameSpaceID_None, attr, value, true);
-        }
-    }
-
-    return NS_OK;
-}
 
 void
 XULDocument::TraceProtos(JSTracer* aTrc)
@@ -1282,7 +1037,8 @@ XULDocument::ResumeWalk()
     
     
 
-    ApplyPersistentAttributes();
+    mXULPersist = new XULPersist(this);
+    mXULPersist->Init();
 
     mStillWalking = false;
     if (mPendingSheets == 0) {

@@ -149,6 +149,7 @@ class AnonymousContent;
 class Attr;
 class BoxObject;
 class XULBroadcastManager;
+class XULPersist;
 class ClientInfo;
 class ClientState;
 class CDATASection;
@@ -4756,6 +4757,7 @@ protected:
   nsCOMPtr<nsIDOMXULCommandDispatcher> mCommandDispatcher; 
 
   RefPtr<mozilla::dom::XULBroadcastManager> mXULBroadcastManager;
+  RefPtr<mozilla::dom::XULPersist> mXULPersist;
 
   
   
