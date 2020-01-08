@@ -567,20 +567,35 @@ class MOZ_STACK_CLASS AutoPointerEventTargetUpdater final {
   nsIContent** mTargetContent;
 };
 
-void nsIPresShell::DirtyRootsList::AppendElement(nsIFrame* aFrame) {
-  mList.AppendElement(aFrame);
+void nsIPresShell::DirtyRootsList::Add(nsIFrame* aFrame) {
+  
+  
+  
+  if (mList.Contains(aFrame)) {
+    
+    MOZ_ASSERT(aFrame->GetDepthInFrameTree() ==
+               mList[mList.IndexOf(aFrame)].mDepth);
+    return;
+  }
+
+  mList.InsertElementSorted(
+      FrameAndDepth{aFrame, aFrame->GetDepthInFrameTree()},
+      FrameAndDepth::CompareByReverseDepth{});
 }
 
-void nsIPresShell::DirtyRootsList::RemoveElement(nsIFrame* aFrame) {
+void nsIPresShell::DirtyRootsList::Remove(nsIFrame* aFrame) {
   mList.RemoveElement(aFrame);
 }
 
-void nsIPresShell::DirtyRootsList::RemoveElements(nsIFrame* aFrame) {
-  mList.RemoveElementsBy([&](nsIFrame* aRoot) { return aRoot == aFrame; });
-}
-
-void nsIPresShell::DirtyRootsList::RemoveElementAt(size_t aIndex) {
-  return mList.RemoveElementAt(aIndex);
+nsIFrame* nsIPresShell::DirtyRootsList::PopShallowestRoot() {
+  
+  
+  const FrameAndDepth& lastFAD = mList.LastElement();
+  nsIFrame* frame = lastFAD.mFrame;
+  
+  MOZ_ASSERT(frame->GetDepthInFrameTree() == lastFAD.mDepth);
+  mList.RemoveLastElement();
+  return frame;
 }
 
 void nsIPresShell::DirtyRootsList::Clear() { mList.Clear(); }
@@ -591,7 +606,24 @@ bool nsIPresShell::DirtyRootsList::Contains(nsIFrame* aFrame) const {
 
 bool nsIPresShell::DirtyRootsList::IsEmpty() const { return mList.IsEmpty(); }
 
-size_t nsIPresShell::DirtyRootsList::Length() const { return mList.Length(); }
+bool nsIPresShell::DirtyRootsList::FrameIsAncestorOfDirtyRoot(
+    nsIFrame* aFrame) const {
+  MOZ_ASSERT(aFrame);
+
+  
+  
+  
+  for (nsIFrame* dirtyFrame : mList) {
+    do {
+      if (dirtyFrame == aFrame) {
+        return true;
+      }
+      dirtyFrame = dirtyFrame->GetParent();
+    } while (dirtyFrame);
+  }
+
+  return false;
+}
 
 bool PresShell::sDisableNonTestMouseEvents = false;
 
@@ -1936,7 +1968,7 @@ nsresult PresShell::ResizeReflowIgnoreOverride(nscoord aWidth, nscoord aHeight,
         AUTO_LAYOUT_PHASE_ENTRY_POINT(GetPresContext(), Reflow);
         nsViewManager::AutoDisableRefresh refreshBlocker(viewManager);
 
-        mDirtyRoots.RemoveElement(rootFrame);
+        mDirtyRoots.Remove(rootFrame);
         DoReflow(rootFrame, true, nullptr);
 
         if (shrinkToFit) {
@@ -2066,7 +2098,7 @@ void PresShell::NotifyDestroyingFrame(nsIFrame* aFrame) {
 
     mFrameConstructor->NotifyDestroyingFrame(aFrame);
 
-    mDirtyRoots.RemoveElements(aFrame);
+    mDirtyRoots.Remove(aFrame);
 
     
     aFrame->DeleteAllProperties();
@@ -2644,7 +2676,7 @@ void PresShell::FrameNeedsReflow(nsIFrame* aFrame,
       if (FRAME_IS_REFLOW_ROOT(f) || !f->GetParent()) {
         
         if (!wasDirty) {
-          mDirtyRoots.AppendElement(f);
+          mDirtyRoots.Add(f);
           SetNeedLayoutFlush();
         }
 #ifdef DEBUG
@@ -4297,22 +4329,7 @@ void PresShell::NotifyCounterStylesAreDirty() {
 }
 
 bool nsIPresShell::FrameIsAncestorOfDirtyRoot(nsIFrame* aFrame) const {
-  MOZ_ASSERT(aFrame);
-
-  
-  
-  
-  for (nsIFrame* dirtyFrame : mDirtyRoots) {
-    while (dirtyFrame) {
-      if (dirtyFrame == aFrame) {
-        return true;
-      }
-
-      dirtyFrame = dirtyFrame->GetParent();
-    }
-  }
-
-  return false;
+  return mDirtyRoots.FrameIsAncestorOfDirtyRoot(aFrame);
 }
 
 void PresShell::ReconstructFrames() {
@@ -8575,7 +8592,7 @@ bool PresShell::DoReflow(nsIFrame* target, bool aInterruptible,
     }
 
     NS_ASSERTION(NS_SUBTREE_DIRTY(target), "Why is the target not dirty?");
-    mDirtyRoots.AppendElement(target);
+    mDirtyRoots.Add(target);
     SetNeedLayoutFlush();
 
     
@@ -8667,9 +8684,7 @@ bool PresShell::ProcessReflowCommands(bool aInterruptible) {
 
       do {
         
-        int32_t idx = mDirtyRoots.Length() - 1;
-        nsIFrame* target = mDirtyRoots[idx];
-        mDirtyRoots.RemoveElementAt(idx);
+        nsIFrame* target = mDirtyRoots.PopShallowestRoot();
 
         if (!NS_SUBTREE_DIRTY(target)) {
           
