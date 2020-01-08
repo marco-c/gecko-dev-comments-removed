@@ -50,7 +50,7 @@ copyright = u'2012, Erik Rose'
 
 
 
-version = '4.2.0'
+version = '4.3.0'
 
 release = version
 
@@ -123,6 +123,11 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 
 html_static_path = ['_static']
+
+html_context = {
+    
+    'css_files': ['_static/theme_overrides.css'],
+}
 
 
 
