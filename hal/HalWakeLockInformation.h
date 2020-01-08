@@ -3,19 +3,16 @@
 
 
 
-#ifndef mozilla_dom_power_Types_h
-#define mozilla_dom_power_Types_h
+#ifndef mozilla_HalWakeLockInformation_h
+#define mozilla_HalWakeLockInformation_h
+
+#include "mozilla/Observer.h"
 
 namespace mozilla {
 namespace hal {
 class WakeLockInformation;
-} 
-
-template <class T>
-class Observer;
-
 typedef Observer<hal::WakeLockInformation> WakeLockObserver;
-
+} 
 } 
 
 #endif 

@@ -10,12 +10,12 @@
 #include "base/basictypes.h"
 #include "base/platform_thread.h"
 #include "nsTArray.h"
-#include "mozilla/dom/power/Types.h"
 #include "mozilla/dom/ScreenOrientation.h"
 #include "mozilla/hal_sandbox/PHal.h"
 #include "mozilla/HalBatteryInformation.h"
 #include "mozilla/HalNetworkInformation.h"
 #include "mozilla/HalScreenConfiguration.h"
+#include "mozilla/HalWakeLockInformation.h"
 #include "mozilla/HalTypes.h"
 #include "mozilla/Types.h"
 
@@ -184,13 +184,13 @@ void DisableWakeLockNotifications();
 
 
 
-void RegisterWakeLockObserver(WakeLockObserver* aObserver);
+void RegisterWakeLockObserver(hal::WakeLockObserver* aObserver);
 
 
 
 
 
-void UnregisterWakeLockObserver(WakeLockObserver* aObserver);
+void UnregisterWakeLockObserver(hal::WakeLockObserver* aObserver);
 
 
 
