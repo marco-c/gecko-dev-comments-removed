@@ -90,10 +90,11 @@ ABIArgGenerator::next(MIRType type)
             stackOffset_ += sizeof(uint64_t);
             break;
         }
-        if (type == MIRType::Float32)
+        if (type == MIRType::Float32) {
             current_ = ABIArg(FloatArgRegs[floatRegIndex_++].asSingle());
-        else
+        } else {
             current_ = ABIArg(FloatArgRegs[floatRegIndex_++]);
+        }
         break;
       case MIRType::Int8x16:
       case MIRType::Int16x8:
@@ -140,8 +141,9 @@ Assembler::addPendingJump(JmpSrc src, ImmPtr target, RelocationKind reloc)
 
     
     
-    if (reloc == RelocationKind::JITCODE)
+    if (reloc == RelocationKind::JITCODE) {
         writeRelocation(src, reloc);
+    }
     enoughMemory_ &= jumps_.append(RelativePatch(src.offset(), target.value, reloc));
 }
 
@@ -181,8 +183,9 @@ Assembler::PatchJumpEntry(uint8_t* entry, uint8_t* target)
 void
 Assembler::finish()
 {
-    if (oom())
+    if (oom()) {
         return;
+    }
 
     if (!jumps_.length()) {
         
@@ -200,8 +203,9 @@ Assembler::finish()
     
     
     MOZ_ASSERT_IF(jumpRelocations_.length(), jumpRelocations_.length() >= sizeof(uint32_t));
-    if (jumpRelocations_.length())
+    if (jumpRelocations_.length()) {
         *(uint32_t*)jumpRelocations_.buffer() = extendedJumpTable_;
+    }
 
     
     for (size_t i = 0; i < jumps_.length(); i++) {
@@ -270,8 +274,9 @@ class RelocationIterator
     }
 
     bool read() {
-        if (!reader_.more())
+        if (!reader_.more()) {
             return false;
+        }
         offset_ = reader_.readUnsigned();
         extOffset_ = reader_.readUnsigned();
         return true;
