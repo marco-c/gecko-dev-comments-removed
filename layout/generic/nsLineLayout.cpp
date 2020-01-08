@@ -719,7 +719,7 @@ HasPercentageUnitSide(const nsStyleSides& aSides)
 }
 
 static bool
-IsPercentageAware(const nsIFrame* aFrame)
+IsPercentageAware(const nsIFrame* aFrame, WritingMode aWM)
 {
   NS_ASSERTION(aFrame, "null frame is not allowed");
 
@@ -748,16 +748,16 @@ IsPercentageAware(const nsIFrame* aFrame)
 
   const nsStylePosition* pos = aFrame->StylePosition();
 
-  if ((pos->WidthDependsOnContainer() &&
-       pos->mWidth.GetUnit() != eStyleUnit_Auto) ||
-      pos->MaxWidthDependsOnContainer() ||
-      pos->MinWidthDependsOnContainer() ||
-      pos->OffsetHasPercent(eSideRight) ||
-      pos->OffsetHasPercent(eSideLeft)) {
+  if ((pos->ISizeDependsOnContainer(aWM) &&
+       pos->ISize(aWM).GetUnit() != eStyleUnit_Auto) ||
+      pos->MaxISizeDependsOnContainer(aWM) ||
+      pos->MinISizeDependsOnContainer(aWM) ||
+      pos->OffsetHasPercent(aWM.IsVertical() ? eSideBottom : eSideRight) ||
+      pos->OffsetHasPercent(aWM.IsVertical() ? eSideTop : eSideLeft)) {
     return true;
   }
 
-  if (eStyleUnit_Auto == pos->mWidth.GetUnit()) {
+  if (eStyleUnit_Auto == pos->ISize(aWM).GetUnit()) {
     
     
     const nsStyleDisplay* disp = aFrame->StyleDisplay();
@@ -780,7 +780,7 @@ IsPercentageAware(const nsIFrame* aFrame)
     nsIFrame *f = const_cast<nsIFrame*>(aFrame);
     if (f->GetIntrinsicRatio() != nsSize(0, 0) &&
         
-        pos->mHeight.GetUnit() != eStyleUnit_Coord) {
+        pos->BSize(aWM).GetUnit() != eStyleUnit_Coord) {
       const IntrinsicSize &intrinsicSize = f->GetIntrinsicSize();
       if (intrinsicSize.width.GetUnit() == eStyleUnit_None &&
           intrinsicSize.height.GetUnit() == eStyleUnit_None) {
@@ -906,7 +906,7 @@ nsLineLayout::ReflowFrame(nsIFrame* aFrame,
   
   
   
-  if (mGotLineBox && IsPercentageAware(aFrame)) {
+  if (mGotLineBox && IsPercentageAware(aFrame, lineWM)) {
     mLineBox->DisableResizeReflowOptimization();
   }
 

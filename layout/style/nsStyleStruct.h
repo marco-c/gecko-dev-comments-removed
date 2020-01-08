@@ -1462,50 +1462,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition
   nsStyleCoord    mColumnGap;       
   nsStyleCoord    mRowGap;          
 
-  
-  
-  
-  
-
-  bool WidthDependsOnContainer() const
-    {
-      return mWidth.GetUnit() == eStyleUnit_Auto ||
-        WidthCoordDependsOnContainer(mWidth);
-    }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  bool MinWidthDependsOnContainer() const
-    { return WidthCoordDependsOnContainer(mMinWidth); }
-  bool MaxWidthDependsOnContainer() const
-    { return WidthCoordDependsOnContainer(mMaxWidth); }
-
-  
-  
-  
-  
-  
-  
-  
-  bool HeightDependsOnContainer() const
-    {
-      return mHeight.GetUnit() == eStyleUnit_Auto || 
-        HeightCoordDependsOnContainer(mHeight);
-    }
-
-  
-  
-  bool MinHeightDependsOnContainer() const
-    { return HeightCoordDependsOnContainer(mMinHeight); }
-  bool MaxHeightDependsOnContainer() const
-    { return HeightCoordDependsOnContainer(mMaxHeight); }
-
   bool OffsetHasPercent(mozilla::Side aSide) const
   {
     return mOffset.Get(aSide).HasPercent();
@@ -1538,9 +1494,17 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition
   const nsStyleGridTemplate& GridTemplateRows() const;
 
 private:
-  static bool WidthCoordDependsOnContainer(const nsStyleCoord &aCoord);
-  static bool HeightCoordDependsOnContainer(const nsStyleCoord &aCoord)
-    { return aCoord.HasPercent(); }
+  static bool ISizeCoordDependsOnContainer(const nsStyleCoord &aCoord)
+  {
+    return aCoord.HasPercent() ||
+           (aCoord.GetUnit() == eStyleUnit_Enumerated &&
+            (aCoord.GetIntValue() == NS_STYLE_WIDTH_FIT_CONTENT ||
+             aCoord.GetIntValue() == NS_STYLE_WIDTH_AVAILABLE));
+  }
+  static bool BSizeCoordDependsOnContainer(const nsStyleCoord &aCoord)
+  {
+    return aCoord.HasPercent();
+  }
 };
 
 struct nsStyleTextOverflowSide

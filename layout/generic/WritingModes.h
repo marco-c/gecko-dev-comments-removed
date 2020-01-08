@@ -2153,38 +2153,51 @@ nsStylePosition::MaxBSize(mozilla::WritingMode aWM) const
 inline bool
 nsStylePosition::ISizeDependsOnContainer(mozilla::WritingMode aWM) const
 {
-  return aWM.IsVertical() ? HeightDependsOnContainer()
-                          : WidthDependsOnContainer();
+  const auto& iSize = aWM.IsVertical() ? mHeight : mWidth;
+  return iSize.GetUnit() == eStyleUnit_Auto ||
+         ISizeCoordDependsOnContainer(iSize);
 }
 inline bool
 nsStylePosition::MinISizeDependsOnContainer(mozilla::WritingMode aWM) const
 {
-  return aWM.IsVertical() ? MinHeightDependsOnContainer()
-                          : MinWidthDependsOnContainer();
+  
+  
+  
+  
+  
+  
+  
+  
+  return ISizeCoordDependsOnContainer(MinISize(aWM));
 }
 inline bool
 nsStylePosition::MaxISizeDependsOnContainer(mozilla::WritingMode aWM) const
 {
-  return aWM.IsVertical() ? MaxHeightDependsOnContainer()
-                          : MaxWidthDependsOnContainer();
+  
+  
+  return ISizeCoordDependsOnContainer(MaxISize(aWM));
 }
+
+
+
+
+
+
 inline bool
 nsStylePosition::BSizeDependsOnContainer(mozilla::WritingMode aWM) const
 {
-  return aWM.IsVertical() ? WidthDependsOnContainer()
-                          : HeightDependsOnContainer();
+  const auto& bSize = aWM.IsVertical() ? mWidth : mHeight;
+  return bSize.IsAutoOrEnum() || BSizeCoordDependsOnContainer(bSize);
 }
 inline bool
 nsStylePosition::MinBSizeDependsOnContainer(mozilla::WritingMode aWM) const
 {
-  return aWM.IsVertical() ? MinWidthDependsOnContainer()
-                          : MinHeightDependsOnContainer();
+  return BSizeCoordDependsOnContainer(MinBSize(aWM));
 }
 inline bool
 nsStylePosition::MaxBSizeDependsOnContainer(mozilla::WritingMode aWM) const
 {
-  return aWM.IsVertical() ? MaxWidthDependsOnContainer()
-                          : MaxHeightDependsOnContainer();
+  return BSizeCoordDependsOnContainer(MaxBSize(aWM));
 }
 
 inline bool
