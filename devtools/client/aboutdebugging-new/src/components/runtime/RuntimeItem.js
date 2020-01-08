@@ -1,0 +1,38 @@
+
+
+
+
+"use strict";
+
+const { PureComponent } = require("devtools/client/shared/vendor/react");
+const dom = require("devtools/client/shared/vendor/react-dom-factories");
+const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
+
+
+
+
+class RuntimeItem extends PureComponent {
+  static get propTypes() {
+    return {
+      icon: PropTypes.string.isRequired,
+      name: PropTypes.string.isRequired,
+    };
+  }
+
+  render() {
+    const { icon, name } = this.props;
+
+    return dom.li(
+      {
+        className: "runtime-item",
+      },
+      dom.img({
+        className: "runtime-item__icon",
+        src: icon,
+      }),
+      name
+    );
+  }
+}
+
+module.exports = RuntimeItem;

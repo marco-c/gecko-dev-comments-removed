@@ -8,6 +8,23 @@
 
 
 class Runtime {
+  
+
+
+
+
+  getIcon() {
+    throw new Error("Subclass of Runtime should override getIcon()");
+  }
+
+  
+
+
+
+
+  getName() {
+    throw new Error("Subclass of Runtime should override getName()");
+  }
 }
 
 module.exports = Runtime;
