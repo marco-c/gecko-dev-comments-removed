@@ -89,14 +89,14 @@ class MockDevice {
   
   
   notifyClientOfDisplay() {
-    let displayPtr = new device.mojom.VRDisplayHostPtr();
-    let displayRequest = mojo.makeRequest(displayPtr);
-    let displayBinding =
-        new mojo.Binding(device.mojom.VRDisplayHost, this, displayRequest);
+    let devicePtr = new device.mojom.XRDevicePtr();
+    let deviceRequest = mojo.makeRequest(devicePtr);
+    let deviceBinding =
+        new mojo.Binding(device.mojom.XRDevice, this, deviceRequest);
 
     let clientRequest = mojo.makeRequest(this.displayClient_);
     this.service_.client_.onDisplayConnected(
-        displayPtr, clientRequest, this.displayInfo_);
+        devicePtr, clientRequest, this.displayInfo_);
   }
 
   
