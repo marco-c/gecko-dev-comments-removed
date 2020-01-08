@@ -66,6 +66,10 @@ js::ExecutionPoint TimeWarpTargetExecutionPoint(ProgressCounter aTarget);
 
 
 
+void Repaint(size_t* aWidth, size_t* aHeight);
+
+
+
 void BeforeCheckpoint();
 
 

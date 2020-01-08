@@ -198,6 +198,7 @@ ListenForCheckpointThreadMain(void*)
   }
 }
 
+
 void* gGraphicsShmem;
 
 void
@@ -411,7 +412,7 @@ SetVsyncObserver(VsyncObserver* aObserver)
   gVsyncObserver = aObserver;
 }
 
-void
+static void
 NotifyVsyncObserver()
 {
   if (gVsyncObserver) {
@@ -427,16 +428,27 @@ NotifyVsyncObserver()
 
 
 static Maybe<PaintMessage> gPaintMessage;
-static bool gPendingPaint;
+static size_t gNumPendingPaints;
 
 
 static void* gDrawTargetBuffer;
 static size_t gDrawTargetBufferSize;
 
+
+static Atomic<size_t, SequentiallyConsistent, Behavior::DontPreserve> gCompositorThreadId;
+
 already_AddRefed<gfx::DrawTarget>
 DrawTargetForRemoteDrawing(LayoutDeviceIntSize aSize)
 {
   MOZ_RELEASE_ASSERT(!NS_IsMainThread());
+
+  
+  size_t threadId = Thread::Current()->Id();
+  if (gCompositorThreadId) {
+    MOZ_RELEASE_ASSERT(threadId == gCompositorThreadId);
+  } else {
+    gCompositorThreadId = threadId;
+  }
 
   if (aSize.IsEmpty()) {
     return nullptr;
@@ -466,25 +478,34 @@ DrawTargetForRemoteDrawing(LayoutDeviceIntSize aSize)
   return drawTarget.forget();
 }
 
+static void
+FinishInProgressPaint(MonitorAutoLock&)
+{
+  while (gNumPendingPaints) {
+    gMonitor->Wait();
+  }
+}
+
 void
 NotifyPaintStart()
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
-  NewCheckpoint( false);
-
-  gPendingPaint = true;
+  MonitorAutoLock lock(*gMonitor);
+  gNumPendingPaints++;
 }
 
-void
-WaitForPaintToComplete()
+static void
+PaintFromMainThread()
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
-  MonitorAutoLock lock(*gMonitor);
-  while (gPendingPaint) {
-    gMonitor->Wait();
+  
+  {
+    MonitorAutoLock lock(*gMonitor);
+    FinishInProgressPaint(lock);
   }
+
   if (IsActiveChild() && gPaintMessage.isSome()) {
     memcpy(gGraphicsShmem, gDrawTargetBuffer, gDrawTargetBufferSize);
     gChannel->SendMessage(gPaintMessage.ref());
@@ -494,12 +515,68 @@ WaitForPaintToComplete()
 void
 NotifyPaintComplete()
 {
-  MOZ_RELEASE_ASSERT(!NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(Thread::Current()->Id() == gCompositorThreadId);
 
+  
+  {
+    MonitorAutoLock lock(*gMonitor);
+    MOZ_RELEASE_ASSERT(gNumPendingPaints);
+    if (--gNumPendingPaints == 0) {
+      gMonitor->Notify();
+    }
+  }
+
+  
+  NS_DispatchToMainThread(NewRunnableFunction("PaintFromMainThread", PaintFromMainThread));
+}
+
+void
+Repaint(size_t* aWidth, size_t* aHeight)
+{
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(HasDivergedFromRecording());
+
+  
+  if (!gCompositorThreadId) {
+    *aWidth = 0;
+    *aHeight = 0;
+    return;
+  }
+
+  
+  
+  NotifyVsyncObserver();
+
+  {
+    MonitorAutoLock lock(*gMonitor);
+
+    if (gNumPendingPaints) {
+      
+      
+      
+      Thread::GetById(gCompositorThreadId)->SetShouldDivergeFromRecording();
+
+      FinishInProgressPaint(lock);
+    }
+  }
+
+  if (gPaintMessage.isSome()) {
+    memcpy(gGraphicsShmem, gDrawTargetBuffer, gDrawTargetBufferSize);
+    *aWidth = gPaintMessage.ref().mWidth;
+    *aHeight = gPaintMessage.ref().mHeight;
+  } else {
+    *aWidth = 0;
+    *aHeight = 0;
+  }
+}
+
+static bool
+CompositorCanPerformMiddlemanCalls()
+{
+  
+  
   MonitorAutoLock lock(*gMonitor);
-  MOZ_RELEASE_ASSERT(gPendingPaint);
-  gPendingPaint = false;
-  gMonitor->Notify();
+  return gNumPendingPaints != 0;
 }
 
 

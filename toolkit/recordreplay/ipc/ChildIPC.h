@@ -39,27 +39,12 @@ void CreateCheckpoint();
 
 
 
-
-
-
-
-
-
-
-
-
 void SetVsyncObserver(VsyncObserver* aObserver);
-void NotifyVsyncObserver();
-
-
-
-
 
 
 
 
 void NotifyPaintStart();
-void WaitForPaintToComplete();
 void NotifyPaintComplete();
 
 
