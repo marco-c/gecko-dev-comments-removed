@@ -122,11 +122,13 @@ private:
   
   struct ItemClips {
     ItemClips(const ActiveScrolledRoot* aASR,
-              const DisplayItemClipChain* aChain);
+              const DisplayItemClipChain* aChain,
+              bool aSeparateLeaf);
 
     
     const ActiveScrolledRoot* mASR;
     const DisplayItemClipChain* mChain;
+    bool mSeparateLeaf;
 
     
     Maybe<wr::WrClipId> mScrollId;
@@ -135,7 +137,8 @@ private:
     
     bool mApplied;
 
-    void Apply(wr::DisplayListBuilder* aBuilder);
+    void Apply(wr::DisplayListBuilder* aBuilder,
+               int32_t aAppUnitsPerDevPixel);
     void Unapply(wr::DisplayListBuilder* aBuilder);
     bool HasSameInputs(const ItemClips& aOther);
     void CopyOutputsFrom(const ItemClips& aOther);
