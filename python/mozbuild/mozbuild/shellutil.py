@@ -41,7 +41,7 @@ ESCAPED_NEWLINES_RE = re.compile(r'\\\n')
 
 
 
-SHELL_QUOTE_RE = re.compile(r'[\\\t\r\n \'\"#<>&|`~(){}$;\*\?]')
+SHELL_QUOTE_RE = re.compile(r'[\\\t\r\n \'\"#<>&|`(){}$;\*\?]')
 
 
 class MetaCharacterException(Exception):
@@ -184,7 +184,7 @@ def _quote(s):
         return '%d' % s
 
     
-    if s and not SHELL_QUOTE_RE.search(s):
+    if s and not SHELL_QUOTE_RE.search(s) and not s.startswith('~'):
         return s
 
     
