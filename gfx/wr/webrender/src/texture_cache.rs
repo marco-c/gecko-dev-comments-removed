@@ -853,7 +853,21 @@ impl TextureCache {
                 match entry.eviction {
                     Eviction::Manual => false,
                     Eviction::Auto => threshold.should_evict(entry.last_access),
-                    Eviction::Eager => entry.last_access < self.now,
+                    Eviction::Eager => {
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        let mut entry_frame_id = entry.last_access.frame_id();
+                        entry_frame_id.advance();
+
+                        entry_frame_id < self.now.frame_id()
+                    }
                 }
             };
             if evict {

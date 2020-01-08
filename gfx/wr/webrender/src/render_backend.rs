@@ -103,7 +103,7 @@ impl FrameId {
     }
 
     
-    fn advance(&mut self) {
+    pub fn advance(&mut self) {
         self.0 += 1;
     }
 
