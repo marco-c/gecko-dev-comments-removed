@@ -550,8 +550,9 @@ wasm::CompileBuffer(const CompileArgs& args, const ShareableBytes& bytecode, Uni
     {
         
         
-        if (!ValidateForCranelift(bytecode, error))
+        if (!ValidateForCranelift(bytecode, error)) {
            return nullptr;
+        }
     }
 #endif
 

@@ -4286,8 +4286,9 @@ GCRuntime::purgeRuntime()
 
     
     
-    if (!rt->parentRuntime)
+    if (!rt->parentRuntime) {
         HelperThreadState().triggerFreeUnusedMemory();
+    }
 }
 
 bool

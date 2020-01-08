@@ -956,8 +956,9 @@ ModuleGenerator::finishCodeTier()
     
     
 
-    if (!deferredValidationState_.lock()->performDeferredValidation(*env_, error_))
+    if (!deferredValidationState_.lock()->performDeferredValidation(*env_, error_)) {
         return nullptr;
+    }
 
     
 

@@ -463,8 +463,9 @@ Instance::memFill(Instance* instance, uint32_t byteOffset, uint32_t value, uint3
 
     if (len == 0) {
         
-        if (byteOffset < memLen)
+        if (byteOffset < memLen) {
             return 0;
+        }
     } else {
         
         CheckedU32 highestOffset = CheckedU32(byteOffset) + CheckedU32(len - 1);
@@ -546,8 +547,9 @@ Instance::tableCopy(Instance* instance, uint32_t dstOffset, uint32_t srcOffset, 
     if (len == 0) {
         
         
-        if (dstOffset < tableLen && srcOffset < tableLen)
+        if (dstOffset < tableLen && srcOffset < tableLen) {
             return 0;
+        }
     } else {
         
         CheckedU32 lenMinus1 = CheckedU32(len - 1);
@@ -561,11 +563,13 @@ Instance::tableCopy(Instance* instance, uint32_t dstOffset, uint32_t srcOffset, 
             
             
             if (dstOffset > srcOffset) {
-                for (uint32_t i = len; i > 0; i--)
+                for (uint32_t i = len; i > 0; i--) {
                     table->copy(dstOffset + (i - 1), srcOffset + (i - 1));
+                }
             } else if (dstOffset < srcOffset) {
-                for (uint32_t i = 0; i < len; i++)
+                for (uint32_t i = 0; i < len; i++) {
                     table->copy(dstOffset + i, srcOffset + i);
+                }
             }
 
             return 0;

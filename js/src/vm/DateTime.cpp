@@ -677,8 +677,9 @@ ReadTimeZoneLink(const char* tz)
     constexpr size_t linkNameLen = mozilla::ArrayLength(linkName) - 1; 
 
     
-    if (std::strlen(tz) > linkNameLen)
+    if (std::strlen(tz) > linkNameLen) {
         return icu::UnicodeString();
+    }
 
     std::strcpy(linkName, tz);
 
@@ -691,13 +692,15 @@ ReadTimeZoneLink(const char* tz)
     const char* timeZoneWithZoneInfo;
     while (!(timeZoneWithZoneInfo = std::strstr(linkName, ZoneInfoPath))) {
         
-        if (++depth > FollowDepthLimit)
+        if (++depth > FollowDepthLimit) {
             return icu::UnicodeString();
+        }
 
         
         ssize_t slen = readlink(linkName, linkTarget, linkTargetLen);
-        if (slen < 0 || size_t(slen) >= linkTargetLen)
+        if (slen < 0 || size_t(slen) >= linkTargetLen) {
             return icu::UnicodeString();
+        }
 
         
         
@@ -725,8 +728,9 @@ ReadTimeZoneLink(const char* tz)
         separator[1] = '\0';
 
         
-        if (std::strlen(linkName) + len > linkNameLen)
+        if (std::strlen(linkName) + len > linkNameLen) {
             return icu::UnicodeString();
+        }
 
         
         std::strcat(linkName, linkTarget);
@@ -744,12 +748,14 @@ ReadTimeZoneLink(const char* tz)
         
         
         
-        if (mozilla::IsAsciiAlphanumeric(c) || c == '_' || c == '-' || c == '+')
+        if (mozilla::IsAsciiAlphanumeric(c) || c == '_' || c == '-' || c == '+') {
             continue;
+        }
 
         
-        if (c == '/' && i > 0 && i + 1 < timeZoneLen && timeZone[i + 1] != '/')
+        if (c == '/' && i > 0 && i + 1 < timeZoneLen && timeZone[i + 1] != '/') {
             continue;
+        }
 
         return icu::UnicodeString();
     }
@@ -787,8 +793,9 @@ js::ResyncICUDefaultTimeZone()
             
             
             
-            if (const char* tzlink = TZContainsAbsolutePath(tz))
+            if (const char* tzlink = TZContainsAbsolutePath(tz)) {
                 tzid.setTo(ReadTimeZoneLink(tzlink));
+            }
 #endif 
 
             if (!tzid.isEmpty()) {

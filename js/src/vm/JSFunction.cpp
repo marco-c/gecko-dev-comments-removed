@@ -1805,8 +1805,9 @@ JSFunction::createScriptForLazilyInterpretedFunction(JSContext* cx, HandleFuncti
             UncompressedSourceCache::AutoHoldEntry holder;
             ScriptSource::PinnedChars chars(cx, lazy->scriptSource(), holder,
                                             lazy->sourceStart(), lazyLength);
-            if (!chars.get())
+            if (!chars.get()) {
                 return false;
+            }
 
             if (!frontend::CompileLazyFunction(cx, lazy, chars.get(), lazyLength)) {
 		
