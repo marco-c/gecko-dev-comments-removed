@@ -36,7 +36,6 @@
 #include "PlatformMacros.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Atomics.h"
-#include "mozilla/Printf.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Vector.h"
 #include "GeckoProfiler.h"
@@ -2972,35 +2971,44 @@ profiler_get_start_params(int* aCapacity, Maybe<double>* aDuration, double* aInt
   }
 }
 
-namespace mozilla {
-
-void
-GetProfilerEnvVarsForChildProcess(
-  std::function<void(const char* key, const char* value)>&& aSetEnv)
+AutoSetProfilerEnvVarsForChildProcess::AutoSetProfilerEnvVarsForChildProcess(
+  MOZ_GUARD_OBJECT_NOTIFIER_ONLY_PARAM_IN_IMPL)
+  : mSetCapacity()
+  , mSetInterval()
+  , mSetFeaturesBitfield()
+  , mSetFilters()
 {
+  MOZ_GUARD_OBJECT_NOTIFIER_INIT;
+
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
   PSAutoLock lock(gPSMutex);
 
   if (!ActivePS::Exists(lock)) {
-    aSetEnv("MOZ_PROFILER_STARTUP", "");
+    PR_SetEnv("MOZ_PROFILER_STARTUP=");
     return;
   }
 
-  aSetEnv("MOZ_PROFILER_STARTUP", "1");
-  auto capacityString = Smprintf("%d", ActivePS::Capacity(lock));
-  aSetEnv("MOZ_PROFILER_STARTUP_ENTRIES", capacityString.get());
+  PR_SetEnv("MOZ_PROFILER_STARTUP=1");
+  SprintfLiteral(mSetCapacity, "MOZ_PROFILER_STARTUP_ENTRIES=%d",
+                 ActivePS::Capacity(lock));
+  PR_SetEnv(mSetCapacity);
 
   
   
   
   
-  nsCString intervalString;
-  intervalString.AppendFloat(ActivePS::Interval(lock));
-  aSetEnv("MOZ_PROFILER_STARTUP_INTERVAL", intervalString.get());
+  nsCString setInterval;
+  setInterval.AppendLiteral("MOZ_PROFILER_STARTUP_INTERVAL=");
+  setInterval.AppendFloat(ActivePS::Interval(lock));
+  strncpy(mSetInterval, setInterval.get(), MOZ_ARRAY_LENGTH(mSetInterval));
+  mSetInterval[MOZ_ARRAY_LENGTH(mSetInterval) - 1] = '\0';
+  PR_SetEnv(mSetInterval);
 
-  auto featuresString = Smprintf("%d", ActivePS::Features(lock));
-  aSetEnv("MOZ_PROFILER_STARTUP_FEATURES_BITFIELD", featuresString.get());
+  SprintfLiteral(mSetFeaturesBitfield,
+                 "MOZ_PROFILER_STARTUP_FEATURES_BITFIELD=%d",
+                 ActivePS::Features(lock));
+  PR_SetEnv(mSetFeaturesBitfield);
 
   std::string filtersString;
   const Vector<std::string>& filters = ActivePS::Filters(lock);
@@ -3010,10 +3018,23 @@ GetProfilerEnvVarsForChildProcess(
       filtersString += ",";
     }
   }
-  aSetEnv("MOZ_PROFILER_STARTUP_FILTERS", filtersString.c_str());
+  SprintfLiteral(mSetFilters, "MOZ_PROFILER_STARTUP_FILTERS=%s",
+                 filtersString.c_str());
+  PR_SetEnv(mSetFilters);
 }
 
-} 
+AutoSetProfilerEnvVarsForChildProcess::~AutoSetProfilerEnvVarsForChildProcess()
+{
+  
+  
+  
+  
+  PR_SetEnv("MOZ_PROFILER_STARTUP=");
+  PR_SetEnv("MOZ_PROFILER_STARTUP_ENTRIES=");
+  PR_SetEnv("MOZ_PROFILER_STARTUP_INTERVAL=");
+  PR_SetEnv("MOZ_PROFILER_STARTUP_FEATURES_BITFIELD=");
+  PR_SetEnv("MOZ_PROFILER_STARTUP_FILTERS=");
+}
 
 static void
 locked_profiler_save_profile_to_file(PSLockRef aLock, const char* aFilename,
