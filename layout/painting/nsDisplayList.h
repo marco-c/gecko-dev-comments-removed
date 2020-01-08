@@ -2630,7 +2630,7 @@ public:
 
 
 
-  virtual nsDisplayList* GetSameCoordinateSystemChildren() const
+  virtual RetainedDisplayList* GetSameCoordinateSystemChildren() const
   {
     return nullptr;
   }
@@ -3273,92 +3273,6 @@ private:
   bool mForceTransparentSurface;
 };
 
-class FlattenedDisplayItemIterator
-{
-public:
-  FlattenedDisplayItemIterator(nsDisplayListBuilder* aBuilder,
-                               nsDisplayList* aList,
-                               const bool aResolveFlattening = true)
-    : mBuilder(aBuilder)
-    , mNext(aList->GetBottom())
-  {
-    if (aResolveFlattening) {
-      
-      
-      ResolveFlattening();
-    }
-  }
-
-  virtual ~FlattenedDisplayItemIterator()
-  {
-    MOZ_ASSERT(!HasNext());
-  }
-
-  nsDisplayItem* GetNext()
-  {
-    nsDisplayItem* next = mNext;
-
-    
-    if (next) {
-      mNext = mNext->GetAbove();
-      ResolveFlattening();
-    }
-    return next;
-  }
-
-  bool HasNext() const
-  {
-    return mNext || !mStack.IsEmpty();
-  }
-
-  nsDisplayItem* PeekNext()
-  {
-    return mNext;
-  }
-
-protected:
-  bool AtEndOfNestedList() const
-  {
-    return !mNext && mStack.Length() > 0;
-  }
-
-  virtual bool ShouldFlattenNextItem()
-  {
-    return mNext && mNext->ShouldFlattenAway(mBuilder);
-  }
-
-  void ResolveFlattening()
-  {
-    
-    
-    
-    while (AtEndOfNestedList() || ShouldFlattenNextItem()) {
-      if (AtEndOfNestedList()) {
-        
-        mNext = mStack.LastElement();
-        EndNested(mNext);
-        mStack.RemoveElementAt(mStack.Length() - 1);
-        
-        mNext = mNext->GetAbove();
-      } else {
-        
-        
-        mStack.AppendElement(mNext);
-        StartNested(mNext);
-        nsDisplayList* childItems = mNext->GetSameCoordinateSystemChildren();
-        mNext = childItems->GetBottom();
-      }
-    }
-  }
-
-  virtual void EndNested(nsDisplayItem* aItem) {}
-  virtual void StartNested(nsDisplayItem* aItem) {}
-
-  nsDisplayListBuilder* mBuilder;
-  nsDisplayItem* mNext;
-  AutoTArray<nsDisplayItem*, 10> mStack;
-};
-
 
 
 
@@ -3533,6 +3447,97 @@ public:
   
   
   nsTArray<OldItemInfo> mOldItems;
+};
+
+class FlattenedDisplayItemIterator
+{
+public:
+  FlattenedDisplayItemIterator(nsDisplayListBuilder* aBuilder,
+                               nsDisplayList* aList,
+                               const bool aResolveFlattening = true)
+    : mBuilder(aBuilder)
+    , mNext(aList->GetBottom())
+  {
+    if (aResolveFlattening) {
+      
+      
+      ResolveFlattening();
+    }
+  }
+
+  virtual ~FlattenedDisplayItemIterator()
+  {
+    MOZ_ASSERT(!HasNext());
+  }
+
+  nsDisplayItem* GetNext()
+  {
+    nsDisplayItem* next = mNext;
+
+    
+    if (next) {
+      mNext = mNext->GetAbove();
+      ResolveFlattening();
+    }
+    return next;
+  }
+
+  bool HasNext() const
+  {
+    return mNext || !mStack.IsEmpty();
+  }
+
+  nsDisplayItem* PeekNext()
+  {
+    return mNext;
+  }
+
+protected:
+  bool AtEndOfNestedList() const
+  {
+    return !mNext && mStack.Length() > 0;
+  }
+
+  virtual bool ShouldFlattenNextItem()
+  {
+    return mNext && mNext->ShouldFlattenAway(mBuilder);
+  }
+
+  void ResolveFlattening()
+  {
+    
+    
+    
+    while (AtEndOfNestedList() || ShouldFlattenNextItem()) {
+      if (AtEndOfNestedList()) {
+        
+        mNext = mStack.LastElement();
+        EndNested(mNext);
+        mStack.RemoveElementAt(mStack.Length() - 1);
+        
+        mNext = mNext->GetAbove();
+      } else {
+        
+        
+        mStack.AppendElement(mNext);
+        StartNested(mNext);
+
+        nsDisplayList* childItems =
+          mNext->GetType() != DisplayItemType::TYPE_TRANSFORM
+          ? mNext->GetSameCoordinateSystemChildren()
+          : mNext->GetChildren();
+
+        mNext = childItems->GetBottom();
+      }
+    }
+  }
+
+  virtual void EndNested(nsDisplayItem* aItem) {}
+  virtual void StartNested(nsDisplayItem* aItem) {}
+
+  nsDisplayListBuilder* mBuilder;
+  nsDisplayItem* mNext;
+  AutoTArray<nsDisplayItem*, 10> mStack;
 };
 
 class nsDisplayImageContainer : public nsDisplayItem {
@@ -5043,7 +5048,7 @@ public:
 
   virtual nsRect GetComponentAlphaBounds(nsDisplayListBuilder* aBuilder) const override;
 
-  virtual nsDisplayList* GetSameCoordinateSystemChildren() const override
+  virtual RetainedDisplayList* GetSameCoordinateSystemChildren() const override
   {
     NS_ASSERTION(mListPtr->IsEmpty() || !ReferenceFrame() ||
                  !mListPtr->GetBottom()->ReferenceFrame() ||
@@ -6374,12 +6379,6 @@ public:
     return mStoredList.GetChildren();
   }
 
-  virtual RetainedDisplayList* GetSameCoordinateSystemChildren() const override
-  {
-    return mShouldFlatten ? mStoredList.GetChildren()
-                          : nullptr;
-  }
-
   virtual bool ShouldFlattenAway(nsDisplayListBuilder* aBuilder) override;
 
   virtual void SetActiveScrolledRoot(const ActiveScrolledRoot* aActiveScrolledRoot) override
@@ -6808,7 +6807,7 @@ public:
     return true;
   }
 
-  virtual nsDisplayList* GetSameCoordinateSystemChildren() const override
+  virtual RetainedDisplayList* GetSameCoordinateSystemChildren() const override
   {
     return mList.GetChildren();
   }
