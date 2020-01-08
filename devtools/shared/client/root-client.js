@@ -6,6 +6,7 @@
 
 const { Ci } = require("chrome");
 const { arg, DebuggerClient } = require("devtools/shared/client/debugger-client");
+loader.lazyRequireGetter(this, "getFront", "devtools/shared/protocol", true);
 
 
 
@@ -42,6 +43,10 @@ function RootClient(client, greeting) {
     },
     configurable: true
   });
+
+  
+  
+  this.fronts = new Map();
 }
 exports.RootClient = RootClient;
 
@@ -267,6 +272,21 @@ RootClient.prototype = {
     };
 
     return this.request(packet);
+  },
+
+  
+
+
+
+  async getFront(typeName) {
+    let front = this.fronts.get(typeName);
+    if (front) {
+      return front;
+    }
+    const rootForm = await this.rootForm;
+    front = getFront(this._client, typeName, rootForm);
+    this.fronts.set(typeName, front);
+    return front;
   },
 
   

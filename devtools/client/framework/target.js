@@ -13,6 +13,7 @@ loader.lazyRequireGetter(this, "DebuggerClient",
   "devtools/shared/client/debugger-client", true);
 loader.lazyRequireGetter(this, "gDevTools",
   "devtools/client/framework/devtools", true);
+loader.lazyRequireGetter(this, "getFront", "devtools/shared/protocol", true);
 
 const targets = new WeakMap();
 const promiseTargets = new WeakMap();
@@ -138,6 +139,9 @@ function TabTarget(tab) {
   } else {
     this._isBrowsingContext = true;
   }
+  
+  
+  this.fronts = new Map();
 }
 
 exports.TabTarget = TabTarget;
@@ -276,6 +280,16 @@ TabTarget.prototype = {
     return this.client.mainRoot.rootForm;
   },
 
+  
+  
+  getFront(typeName) {
+    let front = this.fronts.get(typeName);
+    if (front) {
+      return front;
+    }
+    front = getFront(this.client, typeName, this.form);
+    this.fronts.set(typeName, front);
+    return front;
   },
 
   get client() {
@@ -626,9 +640,13 @@ TabTarget.prototype = {
       return this._destroyer;
     }
 
-    this._destroyer = new Promise(resolve => {
+    this._destroyer = new Promise(async (resolve) => {
       
       this.emit("close");
+
+      for (const [, front] of this.fronts) {
+        await front.destroy();
+      }
 
       if (this._tab) {
         this._teardownListeners();

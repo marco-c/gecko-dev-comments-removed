@@ -92,12 +92,21 @@ function test() {
     const target = await getTarget(client);
     await runTools(target);
 
+    const rootFronts = [...client.mainRoot.fronts.values()];
+
     
     
     for (const pool of client.__pools) {
       if (!pool.__poolMap) {
         continue;
       }
+
+      
+      
+      if (rootFronts.includes(pool)) {
+        continue;
+      }
+
       for (const actor of pool.__poolMap.keys()) {
         
         
