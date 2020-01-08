@@ -9443,6 +9443,44 @@ nsIFrame::FinishAndStoreOverflow(nsOverflowAreas& aOverflowAreas,
 #endif
   }
 
+  nsSize oldSize = mRect.Size();
+  bool sizeChanged = ((aOldSize ? *aOldSize : oldSize) != aNewSize);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  SetSize(aNewSize, false);
+
+  const bool applyOverflowClipping =
+    nsFrame::ShouldApplyOverflowClipping(this, disp);
+
+  if (ChildrenHavePerspective(disp) && sizeChanged) {
+    RecomputePerspectiveChildrenOverflow(this);
+
+    if (!applyOverflowClipping) {
+      aOverflowAreas.SetAllTo(bounds);
+      DebugOnly<bool> ok = ComputeCustomOverflow(aOverflowAreas);
+
+      
+      
+      MOZ_ASSERT(ok, "FrameMaintainsOverflow() != ComputeCustomOverflow()");
+
+      UnionChildOverflow(aOverflowAreas);
+    }
+  }
+
   
   
   
@@ -9467,7 +9505,7 @@ nsIFrame::FinishAndStoreOverflow(nsOverflowAreas& aOverflowAreas,
   NS_ASSERTION((disp->mOverflowY == NS_STYLE_OVERFLOW_CLIP) ==
                (disp->mOverflowX == NS_STYLE_OVERFLOW_CLIP),
                "If one overflow is clip, the other should be too");
-  if (nsFrame::ShouldApplyOverflowClipping(this, disp)) {
+  if (applyOverflowClipping) {
     
     aOverflowAreas.SetAllTo(bounds);
   }
@@ -9501,26 +9539,6 @@ nsIFrame::FinishAndStoreOverflow(nsOverflowAreas& aOverflowAreas,
 
   ComputeAndIncludeOutlineArea(this, aOverflowAreas, aNewSize);
 
-  nsSize oldSize = mRect.Size();
-  bool sizeChanged = ((aOldSize ? *aOldSize : oldSize) != aNewSize);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  SetSize(aNewSize, false);
-
   
   aOverflowAreas.VisualOverflow() =
     ComputeEffectsRect(this, aOverflowAreas.VisualOverflow(), aNewSize);
@@ -9537,11 +9555,6 @@ nsIFrame::FinishAndStoreOverflow(nsOverflowAreas& aOverflowAreas,
   }
 
   
-  if (ChildrenHavePerspective(disp) && sizeChanged) {
-    nsRect newBounds(nsPoint(0, 0), aNewSize);
-    RecomputePerspectiveChildrenOverflow(this);
-  }
-
   if (hasTransform) {
     SetProperty(nsIFrame::PreTransformOverflowAreasProperty(),
                 new nsOverflowAreas(aOverflowAreas));
