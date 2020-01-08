@@ -1690,19 +1690,16 @@ class JSScript : public js::gc::TenuredCell
         IsLikelyConstructorWrapper = 1 << 17,
 
         
-        HideScriptFromDebugger = 1 << 18,
+        IsGenerator = 1 << 18,
 
         
-        IsGenerator = 1 << 19,
+        IsAsync = 1 << 19,
 
         
-        IsAsync = 1 << 20,
+        HasRest = 1 << 20,
 
         
-        HasRest = 1 << 21,
-
-        
-        ArgsHasVarBinding = 1 << 22,
+        ArgsHasVarBinding = 1 << 21,
     };
     uint32_t immutableFlags_ = 0;
 
@@ -1768,6 +1765,9 @@ class JSScript : public js::gc::TenuredCell
         
         NeedsArgsAnalysis = 1 << 17,
         NeedsArgsObj = 1 << 18,
+
+        
+        HideScriptFromDebugger = 1 << 19,
     };
     uint32_t mutableFlags_ = 0;
 
@@ -2171,10 +2171,10 @@ class JSScript : public js::gc::TenuredCell
     }
 
     bool hideScriptFromDebugger() const {
-        return hasFlag(ImmutableFlags::HideScriptFromDebugger);
+        return hasFlag(MutableFlags::HideScriptFromDebugger);
     }
     void clearHideScriptFromDebugger() {
-        clearFlag(ImmutableFlags::HideScriptFromDebugger);
+        clearFlag(MutableFlags::HideScriptFromDebugger);
     }
 
     bool needsHomeObject() const {
