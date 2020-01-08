@@ -146,7 +146,7 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   void AddTimerAdjustmentObserver(nsATimerAdjustmentObserver* aObserver);
   void RemoveTimerAdjustmentObserver(nsATimerAdjustmentObserver* aObserver);
 
-  void PostScrollEvent(mozilla::Runnable* aScrollEvent);
+  void PostScrollEvent(mozilla::Runnable* aScrollEvent, bool aDelayed = false);
   void DispatchScrollEvents();
 
   
@@ -177,15 +177,21 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   
 
 
-  void AddResizeEventFlushObserver(nsIPresShell* aShell) {
-    MOZ_DIAGNOSTIC_ASSERT(!mResizeEventFlushObservers.Contains(aShell),
+  void AddResizeEventFlushObserver(nsIPresShell* aShell, bool aDelayed = false) {
+    MOZ_DIAGNOSTIC_ASSERT(!mResizeEventFlushObservers.Contains(aShell) &&
+                          !mDelayedResizeEventFlushObservers.Contains(aShell),
                           "Double-adding resize event flush observer");
-    mResizeEventFlushObservers.AppendElement(aShell);
-    EnsureTimerStarted();
+    if (aDelayed) {
+      mDelayedResizeEventFlushObservers.AppendElement(aShell);
+    } else {
+      mResizeEventFlushObservers.AppendElement(aShell);
+      EnsureTimerStarted();
+    }
   }
 
   void RemoveResizeEventFlushObserver(nsIPresShell* aShell) {
     mResizeEventFlushObservers.RemoveElement(aShell);
+    mDelayedResizeEventFlushObservers.RemoveElement(aShell);
   }
 
   
@@ -400,6 +406,9 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
 
   void NotifyDOMContentLoaded();
 
+  
+  void RunDelayedEventsSoon();
+
  private:
   typedef nsTObserverArray<nsARefreshObserver*> ObserverArray;
   typedef nsTArray<RefPtr<mozilla::Runnable>> ScrollEventArray;
@@ -526,7 +535,11 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   AutoTArray<nsCOMPtr<nsIRunnable>, 16> mEarlyRunners;
   ScrollEventArray mScrollEvents;
 
+  
+  ScrollEventArray mDelayedScrollEvents;
+
   AutoTArray<nsIPresShell*, 16> mResizeEventFlushObservers;
+  AutoTArray<nsIPresShell*, 16> mDelayedResizeEventFlushObservers;
   AutoTArray<nsIPresShell*, 16> mStyleFlushObservers;
   AutoTArray<nsIPresShell*, 16> mLayoutFlushObservers;
   

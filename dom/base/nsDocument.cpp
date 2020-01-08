@@ -1320,6 +1320,7 @@ nsIDocument::nsIDocument()
 #ifdef DEBUG
       mWillReparent(false),
 #endif
+      mHasDelayedRefreshEvent(false),
       mPendingFullscreenRequests(0),
       mXMLDeclarationBits(0),
       mOnloadBlockCount(0),
@@ -8588,6 +8589,18 @@ void nsIDocument::UnsuppressEventHandlingAndFireEvents(bool aFireEvents) {
     mSuspendedQueues.SwapElements(queues);
     for (net::ChannelEventQueue* queue : queues) {
       queue->Resume();
+    }
+
+    
+    
+    
+    if (mHasDelayedRefreshEvent) {
+      mHasDelayedRefreshEvent = false;
+
+      if (mPresShell) {
+        nsRefreshDriver* rd = mPresShell->GetPresContext()->RefreshDriver();
+        rd->RunDelayedEventsSoon();
+      }
     }
   }
 }

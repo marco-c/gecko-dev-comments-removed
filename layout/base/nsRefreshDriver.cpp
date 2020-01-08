@@ -1144,9 +1144,13 @@ void nsRefreshDriver::RemoveTimerAdjustmentObserver(
   mTimerAdjustmentObservers.RemoveElement(aObserver);
 }
 
-void nsRefreshDriver::PostScrollEvent(mozilla::Runnable* aScrollEvent) {
-  mScrollEvents.AppendElement(aScrollEvent);
-  EnsureTimerStarted();
+void nsRefreshDriver::PostScrollEvent(mozilla::Runnable* aScrollEvent, bool aDelayed) {
+  if (aDelayed) {
+    mDelayedScrollEvents.AppendElement(aScrollEvent);
+  } else {
+    mScrollEvents.AppendElement(aScrollEvent);
+    EnsureTimerStarted();
+  }
 }
 
 void nsRefreshDriver::DispatchScrollEvents() {
@@ -1208,6 +1212,21 @@ void nsRefreshDriver::NotifyDOMContentLoaded() {
   } else {
     mNotifyDOMContentFlushed = true;
   }
+}
+
+void nsRefreshDriver::RunDelayedEventsSoon() {
+  
+  
+  
+  
+
+  mScrollEvents.AppendElements(mDelayedScrollEvents);
+  mDelayedScrollEvents.Clear();
+
+  mResizeEventFlushObservers.AppendElements(mDelayedResizeEventFlushObservers);
+  mDelayedResizeEventFlushObservers.Clear();
+
+  EnsureTimerStarted();
 }
 
 void nsRefreshDriver::EnsureTimerStarted(EnsureTimerStartedFlags aFlags) {

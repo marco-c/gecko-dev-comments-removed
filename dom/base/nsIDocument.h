@@ -2456,6 +2456,10 @@ class nsIDocument : public nsINode,
 
   void AddSuspendedChannelEventQueue(mozilla::net::ChannelEventQueue* aQueue);
 
+  void SetHasDelayedRefreshEvent() {
+    mHasDelayedRefreshEvent = true;
+  }
+
   
 
 
@@ -3920,6 +3924,10 @@ class nsIDocument : public nsINode,
 
  protected:
 #endif
+
+  
+  
+  bool mHasDelayedRefreshEvent : 1;
 
   uint8_t mPendingFullscreenRequests;
 

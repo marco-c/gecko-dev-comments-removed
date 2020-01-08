@@ -2030,6 +2030,18 @@ void PresShell::FireResizeEvent() {
     return;
   }
 
+  
+  
+  
+  if (mDocument->EventHandlingSuppressed()) {
+    if (MOZ_LIKELY(!mDocument->GetBFCacheEntry())) {
+      mDocument->SetHasDelayedRefreshEvent();
+      mPresContext->RefreshDriver()->AddResizeEventFlushObserver
+          (this,  true);
+    }
+    return;
+  }
+
   mResizeEventPending = false;
 
   
@@ -5563,11 +5575,11 @@ void PresShell::MarkFramesInSubtreeApproximatelyVisible(
   bool preserves3DChildren = aFrame->Extend3DContext();
 
   
-  const nsIFrame::ChildListIDs skip = {nsIFrame::kPopupList,
-                                       nsIFrame::kSelectPopupList};
+  const nsIFrame::ChildListIDs skip(nsIFrame::kPopupList |
+                                    nsIFrame::kSelectPopupList);
   for (nsIFrame::ChildListIterator childLists(aFrame); !childLists.IsDone();
        childLists.Next()) {
-    if (skip.contains(childLists.CurrentID())) {
+    if (skip.Contains(childLists.CurrentID())) {
       continue;
     }
 
