@@ -8,6 +8,7 @@
 
 
 
+#include "mozilla/Atomics.h"
 #include "mozilla/TimeStamp.h"
 #include <stdio.h>
 #include <string.h>
@@ -44,6 +45,33 @@ struct TimeStampInitialization
     TimeStamp::Shutdown();
   };
 };
+
+static bool sFuzzyfoxEnabled;
+
+ bool
+TimeStamp::GetFuzzyfoxEnabled()
+{
+  return sFuzzyfoxEnabled;
+}
+
+ void
+TimeStamp::SetFuzzyfoxEnabled(bool aValue)
+{
+  sFuzzyfoxEnabled = aValue;
+}
+
+
+
+
+
+
+#ifdef XP_WIN
+static Atomic<uint64_t> sCanonicalGTC;
+static Atomic<uint64_t> sCanonicalQPC;
+static Atomic<bool> sCanonicalHasQPC;
+#else
+static Atomic<uint64_t> sCanonicalNow;
+#endif
 
 static TimeStampInitialization sInitOnce;
 
@@ -92,6 +120,41 @@ void
 TimeStamp::RecordProcessRestart()
 {
   sInitOnce.mProcessCreation = TimeStamp();
+}
+
+MFBT_API TimeStamp
+TimeStamp::NowFuzzy(TimeStampValue aValue)
+{
+#ifdef XP_WIN
+  TimeStampValue canonicalNow = TimeStampValue(sCanonicalGTC, sCanonicalQPC, sCanonicalHasQPC, true);
+#else
+  TimeStampValue canonicalNow = TimeStampValue(sCanonicalNowTimeStamp);
+#endif
+
+  if (TimeStamp::GetFuzzyfoxEnabled()) {
+    if(MOZ_LIKELY(!canonicalNow.IsNull())) {
+      return TimeStamp(canonicalNow);
+    }
+  }
+  
+  
+  else if (MOZ_UNLIKELY(canonicalNow > aValue)) {
+    return TimeStamp(canonicalNow);
+  }
+
+  return TimeStamp(aValue);
+}
+
+MFBT_API void
+TimeStamp::UpdateFuzzyTimeStamp(TimeStamp aValue)
+{
+#ifdef XP_WIN
+  sCanonicalGTC = aValue.mValue.mGTC;
+  sCanonicalQPC = aValue.mValue.mQPC;
+  sCanonicalHasQPC = aValue.mValue.mHasQPC;
+#else
+  sCanonicalNowTimeStamp = aValue.mValue.mTimeStamp;
+#endif
 }
 
 } 
