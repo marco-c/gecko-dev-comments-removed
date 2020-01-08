@@ -434,28 +434,6 @@ public:
 
 
 
-  iterator& BeginWriting(iterator& aIter)
-  {
-    char_type* data = BeginWriting();
-    aIter.mStart = data;
-    aIter.mEnd = data + base_string_type::mLength;
-    aIter.mPosition = aIter.mStart;
-    return aIter;
-  }
-
-  iterator& EndWriting(iterator& aIter)
-  {
-    char_type* data = BeginWriting();
-    aIter.mStart = data;
-    aIter.mEnd = data + base_string_type::mLength;
-    aIter.mPosition = aIter.mEnd;
-    return aIter;
-  }
-
-  
-
-
-
   void NS_FASTCALL Assign(char_type aChar);
   MOZ_MUST_USE bool NS_FASTCALL Assign(char_type aChar, const fallible_t&);
 
