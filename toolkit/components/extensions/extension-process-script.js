@@ -56,7 +56,6 @@ var extensions = new DefaultWeakMap(policy => {
   return extension;
 });
 
-var DocumentManager;
 var ExtensionManager;
 
 class ExtensionGlobal {
@@ -104,33 +103,11 @@ class ExtensionGlobal {
   }
 }
 
-
-
-DocumentManager = {
-  globals: new Map(),
-
-  
-  
-  earlyInit() {
-    
-    Services.obs.addObserver((subject) => this.initGlobal(subject),
-                             "tab-content-frameloader-created");
-  },
-
-  
-  
-  initGlobal(global) {
-    this.globals.set(global, new ExtensionGlobal(global));
-    
-    global.addEventListener("unload", () => {
-      this.globals.delete(global);
-    });
-  },
-};
-
 ExtensionManager = {
   
   registeredContentScripts: new DefaultWeakMap((policy) => new Map()),
+
+  globals: new WeakMap(),
 
   init() {
     MessageChannel.setupMessageManagers([Services.cpmm]);
@@ -140,6 +117,11 @@ ExtensionManager = {
     Services.cpmm.addMessageListener("Extension:FlushJarCache", this);
     Services.cpmm.addMessageListener("Extension:RegisterContentScript", this);
     Services.cpmm.addMessageListener("Extension:UnregisterContentScripts", this);
+
+    
+    Services.obs.addObserver(
+      global => this.globals.set(global, new ExtensionGlobal(global)),
+      "tab-content-frameloader-created");
 
     for (let id of sharedData.get("extensions/activeIDs") || []) {
       this.initExtension(getData({id}));
@@ -291,7 +273,7 @@ ExtensionProcessScript.prototype = {
   extensions,
 
   getFrameData(global, force) {
-    let extGlobal = DocumentManager.globals.get(global);
+    let extGlobal = ExtensionManager.globals.get(global);
     return extGlobal && extGlobal.getFrameData(force);
   },
 
@@ -326,5 +308,4 @@ ExtensionProcessScript.prototype = {
 
 this.NSGetFactory = XPCOMUtils.generateNSGetFactory([ExtensionProcessScript]);
 
-DocumentManager.earlyInit();
 ExtensionManager.init();
