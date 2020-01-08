@@ -1725,6 +1725,7 @@ impl PrimitiveStore {
                     frame_context.device_pixel_scale,
                     &frame_context.world_rect,
                     &clip_node_collector,
+                    frame_state.clip_data_store,
                 );
 
             let clip_chain = match clip_chain {
@@ -2074,16 +2075,17 @@ fn write_brush_segment_description(
     
     let mut local_clip_count = 0;
     for i in 0 .. clip_chain.clips_range.count {
-        let (clip_node, flags, _) = frame_state
+        let clip_instance = frame_state
             .clip_store
-            .get_node_from_range(&clip_chain.clips_range, i);
+            .get_instance_from_range(&clip_chain.clips_range, i);
+        let clip_node = &frame_state.clip_data_store[clip_instance.handle];
 
         
         
         
         
         
-        if !flags.contains(ClipNodeFlags::SAME_SPATIAL_NODE) {
+        if !clip_instance.flags.contains(ClipNodeFlags::SAME_SPATIAL_NODE) {
             continue;
         }
 
@@ -2243,6 +2245,7 @@ impl Primitive {
                     frame_context.device_pixel_scale,
                     &frame_context.world_rect,
                     clip_node_collector,
+                    frame_state.clip_data_store,
                 );
 
             match segment_clip_chain {
@@ -2275,6 +2278,7 @@ impl Primitive {
                         frame_state.gpu_cache,
                         frame_state.resource_cache,
                         frame_state.render_tasks,
+                        frame_state.clip_data_store,
                     );
 
                     let clip_task_id = frame_state.render_tasks.add(clip_task);
@@ -2812,6 +2816,7 @@ impl Primitive {
                     frame_state.gpu_cache,
                     frame_state.resource_cache,
                     frame_state.render_tasks,
+                    frame_state.clip_data_store,
                 );
 
                 let clip_task_id = frame_state.render_tasks.add(clip_task);
