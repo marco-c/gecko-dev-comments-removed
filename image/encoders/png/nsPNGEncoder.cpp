@@ -9,6 +9,7 @@
 #include "nsStreamUtils.h"
 #include "nsString.h"
 #include "prprf.h"
+#include "mozilla/CheckedInt.h"
 
 using namespace mozilla;
 
@@ -703,28 +704,53 @@ nsPNGEncoder::WriteCallback(png_structp png, png_bytep data,
     return;
   }
 
-  if (that->mImageBufferUsed + size > that->mImageBufferSize) {
+  CheckedUint32 sizeNeeded = CheckedUint32(that->mImageBufferUsed) + size;
+  if (!sizeNeeded.isValid()) {
     
     
     ReentrantMonitorAutoEnter autoEnter(that->mReentrantMonitor);
 
-    
-    that->mImageBufferSize *= 2;
-    uint8_t* newBuf = (uint8_t*)realloc(that->mImageBuffer,
-                                        that->mImageBufferSize);
-    if (!newBuf) {
-      
-      free(that->mImageBuffer);
-      that->mImageBuffer = nullptr;
-      that->mImageBufferSize = 0;
-      that->mImageBufferUsed = 0;
-      return;
-    }
-    that->mImageBuffer = newBuf;
+    that->NullOutImageBuffer();
+    return;
   }
+
+  if (sizeNeeded.value() > that->mImageBufferSize) {
+    
+    
+    ReentrantMonitorAutoEnter autoEnter(that->mReentrantMonitor);
+
+    while (sizeNeeded.value() > that->mImageBufferSize) {
+      
+      CheckedUint32 bufferSize = CheckedUint32(that->mImageBufferSize) * 2;
+      if (!bufferSize.isValid()) {
+        that->NullOutImageBuffer();
+        return;
+      }
+      that->mImageBufferSize *= 2;
+      uint8_t* newBuf = (uint8_t*)realloc(that->mImageBuffer,
+                                          that->mImageBufferSize);
+      if (!newBuf) {
+        
+        that->NullOutImageBuffer();
+        return;
+      }
+      that->mImageBuffer = newBuf;
+    }
+  }
+
   memcpy(&that->mImageBuffer[that->mImageBufferUsed], data, size);
   that->mImageBufferUsed += size;
   that->NotifyListener();
+}
+
+void nsPNGEncoder::NullOutImageBuffer()
+{
+  mReentrantMonitor.AssertCurrentThreadIn();
+
+  free(mImageBuffer);
+  mImageBuffer = nullptr;
+  mImageBufferSize = 0;
+  mImageBufferUsed = 0;
 }
 
 void
