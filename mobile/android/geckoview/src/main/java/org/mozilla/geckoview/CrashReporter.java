@@ -68,9 +68,10 @@ public class CrashReporter {
 
 
 
-    public static void sendCrashReport(Context context, Intent intent, String appName)
+
+    public static GeckoResult<String> sendCrashReport(Context context, Intent intent, String appName)
             throws IOException, URISyntaxException {
-        sendCrashReport(context, intent.getExtras(), appName);
+        return sendCrashReport(context, intent.getExtras(), appName);
     }
 
     
@@ -89,13 +90,14 @@ public class CrashReporter {
 
 
 
-    public static void sendCrashReport(Context context, Bundle intentExtras, String appName)
+
+    public static GeckoResult<String> sendCrashReport(Context context, Bundle intentExtras, String appName)
             throws IOException, URISyntaxException {
         final File dumpFile = new File(intentExtras.getString(GeckoRuntime.EXTRA_MINIDUMP_PATH));
         final File extrasFile = new File(intentExtras.getString(GeckoRuntime.EXTRA_EXTRAS_PATH));
         final boolean success = intentExtras.getBoolean(GeckoRuntime.EXTRA_MINIDUMP_SUCCESS, false);
 
-        sendCrashReport(context, dumpFile, extrasFile, success, appName);
+        return sendCrashReport(context, dumpFile, extrasFile, success, appName);
     }
 
     
@@ -116,7 +118,8 @@ public class CrashReporter {
 
 
 
-    public static void sendCrashReport(Context context, File minidumpFile, File extrasFile,
+
+    public static GeckoResult<String> sendCrashReport(Context context, File minidumpFile, File extrasFile,
                                        boolean success, String appName) throws IOException, URISyntaxException {
         
         computeMinidumpHash(extrasFile, minidumpFile);
@@ -124,7 +127,7 @@ public class CrashReporter {
         
         HashMap<String, String> extrasMap = readStringsFromFile(extrasFile.getPath());
 
-        sendCrashReport(context, minidumpFile, extrasMap, success, appName);
+        return sendCrashReport(context, minidumpFile, extrasMap, success, appName);
     }
 
     
@@ -141,14 +144,15 @@ public class CrashReporter {
 
 
 
-    public static void sendCrashReport(Context context, File minidumpFile,
+
+    public static GeckoResult<String> sendCrashReport(Context context, File minidumpFile,
                                        Map<String, String> extras, boolean success,
                                        String appName) throws IOException, URISyntaxException {
         Log.d(LOGTAG, "Sending crash report: " + minidumpFile.getPath());
 
         String spec = extras.get(SERVER_URL_KEY);
         if (spec == null) {
-            return;
+            return GeckoResult.fromException(new Exception("No server url present"));
         }
 
         extras.put(PRODUCT_NAME_KEY, appName);
@@ -216,25 +220,32 @@ public class CrashReporter {
                     String crashid = responseMap.get("CrashID");
                     if (crashid != null) {
                         Log.i(LOGTAG, "Successfully sent crash report: " + crashid);
+                        return GeckoResult.fromValue(crashid);
                     } else {
                         Log.i(LOGTAG, "Server rejected crash report");
                     }
                 } else {
                     Log.w(LOGTAG, "Received failure HTTP response code from server: " + conn.getResponseCode());
                 }
+            } catch (Exception e) {
+                return GeckoResult.fromException(new Exception("Failed to submit crash report", e));
             } finally {
                 try {
                     if (br != null) {
                         br.close();
                     }
                 } catch (IOException e) {
+                    return GeckoResult.fromException(new Exception("Failed to submit crash report", e));
                 }
             }
+        } catch (Exception e) {
+            return GeckoResult.fromException(new Exception("Failed to submit crash report", e));
         } finally {
             if (conn != null) {
                 conn.disconnect();
             }
         }
+        return GeckoResult.fromException(new Exception("Failed to submit crash report"));
     }
 
     private static void computeMinidumpHash(File extraFile, File minidump) {
