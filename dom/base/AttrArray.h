@@ -46,7 +46,7 @@ public:
     return NonMappedAttrCount() + MappedAttrCount();
   }
 
-  const nsAttrValue* GetAttr(nsAtom* aLocalName,
+  const nsAttrValue* GetAttr(const nsAtom* aLocalName,
                              int32_t aNamespaceID = kNameSpaceID_None) const;
   
   
@@ -79,7 +79,7 @@ public:
   const nsAttrName* GetSafeAttrNameAt(uint32_t aPos) const;
 
   const nsAttrName* GetExistingAttrNameFromQName(const nsAString& aName) const;
-  int32_t IndexOfAttr(nsAtom* aLocalName, int32_t aNamespaceID = kNameSpaceID_None) const;
+  int32_t IndexOfAttr(const nsAtom* aLocalName, int32_t aNamespaceID = kNameSpaceID_None) const;
 
   
   

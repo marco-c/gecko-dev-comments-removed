@@ -643,7 +643,7 @@ protected:
 
   union {
     
-    nsAtom* mARIAAttrOldValue;
+    const nsAtom* mARIAAttrOldValue;
 
     
     bool mStateBitWasOn;

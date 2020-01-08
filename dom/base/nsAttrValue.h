@@ -219,7 +219,7 @@ public:
   bool Equals(const nsAttrValue& aOther) const;
   
   bool Equals(const nsAString& aValue, nsCaseTreatment aCaseSensitive) const;
-  bool Equals(nsAtom* aValue, nsCaseTreatment aCaseSensitive) const;
+  bool Equals(const nsAtom* aValue, nsCaseTreatment aCaseSensitive) const;
 
   
 
