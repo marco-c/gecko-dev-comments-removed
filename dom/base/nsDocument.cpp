@@ -9801,6 +9801,13 @@ nsIDocument::DoUpdateSVGUseElementShadowTrees()
     }
 
     for (auto& useElement : useElementsToUpdate) {
+      if (MOZ_UNLIKELY(!useElement->IsInComposedDoc())) {
+        
+        
+        
+        MOZ_ASSERT(useElementsToUpdate.Length() > 1);
+        continue;
+      }
       useElement->UpdateShadowTree();
     }
   } while (!mSVGUseElementsNeedingShadowTreeUpdate.IsEmpty());
