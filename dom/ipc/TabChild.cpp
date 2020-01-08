@@ -2293,6 +2293,21 @@ TabChild::RecvActivateFrameEvent(const nsString& aType, const bool& capture)
   return IPC_OK();
 }
 
+
+
+static bool
+LoadScriptInMiddleman(const nsString& aURL)
+{
+  return 
+         StringBeginsWith(aURL, NS_LITERAL_STRING("resource://devtools/"))
+         
+         
+      || aURL.EqualsLiteral("chrome://global/content/browser-child.js")
+         
+         
+      || aURL.EqualsLiteral("chrome://browser/content/content-sessionStore.js");
+}
+
 mozilla::ipc::IPCResult
 TabChild::RecvLoadRemoteScript(const nsString& aURL, const bool& aRunInGlobalScope)
 {
@@ -2304,6 +2319,11 @@ TabChild::RecvLoadRemoteScript(const nsString& aURL, const bool& aRunInGlobalSco
   JS::Rooted<JSObject*> global(RootingCx(), mTabChildGlobal->GetWrapper());
   if (!global) {
     
+    return IPC_OK();
+  }
+
+  
+  if (recordreplay::IsMiddleman() && !LoadScriptInMiddleman(aURL)) {
     return IPC_OK();
   }
 
