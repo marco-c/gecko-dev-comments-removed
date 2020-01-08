@@ -1215,15 +1215,18 @@ nsresult nsHttpChannel::SetupTransaction() {
   return rv;
 }
 
+enum class Report { Error, Warning };
 
 
-void ReportTypeBlocking(nsHttpChannel *aChannel, const char *aMessageName,
-                        nsIURI *aURI, const nsACString &aContentType) {
+
+void ReportMimeTypeMismatch(nsHttpChannel *aChannel, const char *aMessageName,
+                            nsIURI *aURI, const nsACString &aContentType,
+                            Report report) {
   NS_ConvertUTF8toUTF16 spec(aURI->GetSpecOrDefault());
   NS_ConvertUTF8toUTF16 contentType(aContentType);
 
-  aChannel->LogMimeTypeMismatch(nsCString(aMessageName), false, spec,
-                                contentType);
+  aChannel->LogMimeTypeMismatch(nsCString(aMessageName),
+                                report == Report::Warning, spec, contentType);
 }
 
 
@@ -1283,7 +1286,8 @@ nsresult ProcessXCTO(nsHttpChannel *aChannel, nsIURI *aURI,
     if (contentType.EqualsLiteral(TEXT_CSS)) {
       return NS_OK;
     }
-    ReportTypeBlocking(aChannel, "MimeTypeMismatch2", aURI, contentType);
+    ReportMimeTypeMismatch(aChannel, "MimeTypeMismatch2", aURI, contentType,
+                           Report::Error);
     return NS_ERROR_CORRUPTED_CONTENT;
   }
 
@@ -1293,7 +1297,8 @@ nsresult ProcessXCTO(nsHttpChannel *aChannel, nsIURI *aURI,
             NS_ConvertUTF8toUTF16(contentType))) {
       return NS_OK;
     }
-    ReportTypeBlocking(aChannel, "MimeTypeMismatch2", aURI, contentType);
+    ReportMimeTypeMismatch(aChannel, "MimeTypeMismatch2", aURI, contentType,
+                           Report::Error);
     return NS_ERROR_CORRUPTED_CONTENT;
   }
   return NS_OK;
@@ -1433,8 +1438,8 @@ nsresult EnsureMIMEOfScript(nsHttpChannel *aChannel, nsIURI *aURI,
       return NS_OK;
     }
 
-    ReportTypeBlocking(aChannel, "BlockScriptWithWrongMimeType2", aURI,
-                       contentType);
+    ReportMimeTypeMismatch(aChannel, "BlockScriptWithWrongMimeType2", aURI,
+                           contentType, Report::Error);
     return NS_ERROR_CORRUPTED_CONTENT;
   }
 
@@ -1501,6 +1506,32 @@ nsresult EnsureMIMEOfScript(nsHttpChannel *aChannel, nsIURI *aURI,
   return NS_OK;
 }
 
+
+
+void WarnWrongMIMEOfScript(nsHttpChannel *aChannel, nsIURI *aURI,
+                           nsHttpResponseHead *aResponseHead,
+                           nsILoadInfo *aLoadInfo) {
+  if (!aURI || !aResponseHead || !aLoadInfo) {
+    
+    
+    return;
+  }
+
+  if (aLoadInfo->GetExternalContentPolicyType() !=
+      nsIContentPolicy::TYPE_SCRIPT) {
+    
+    return;
+  }
+
+  nsAutoCString contentType;
+  aResponseHead->ContentType(contentType);
+  NS_ConvertUTF8toUTF16 typeString(contentType);
+  if (!nsContentUtils::IsJavascriptMIMEType(typeString)) {
+    ReportMimeTypeMismatch(aChannel, "WarnScriptWithWrongMimeType", aURI,
+                           contentType, Report::Error);
+  }
+}
+
 nsresult nsHttpChannel::CallOnStartRequest() {
   LOG(("nsHttpChannel::CallOnStartRequest [this=%p]", this));
 
@@ -1546,6 +1577,8 @@ nsresult nsHttpChannel::CallOnStartRequest() {
 
   rv = ProcessXCTO(this, mURI, mResponseHead, mLoadInfo);
   NS_ENSURE_SUCCESS(rv, rv);
+
+  WarnWrongMIMEOfScript(this, mURI, mResponseHead, mLoadInfo);
 
   
   if (mLoadFlags & LOAD_CALL_CONTENT_SNIFFERS) {
