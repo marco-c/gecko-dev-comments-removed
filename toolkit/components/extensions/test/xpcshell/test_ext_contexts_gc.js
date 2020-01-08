@@ -29,6 +29,7 @@ async function reloadTopContext(contentPage) {
 async function assertContextReleased(contentPage, description) {
   await contentPage.spawn(description, async assertionDescription => {
     
+    
     let gcCount = 0;
     while (gcCount < 30 && this.contextWeakRef.get() !== null) {
       ++gcCount;
