@@ -45,7 +45,6 @@ protected:
 
   bool mSuppressed; 
   int32_t mCurrentIndex; 
-  RefPtr<nsTreeColumn> mCurrentColumn;
   int32_t mShiftSelectPivot; 
 
   nsTreeRange* mFirstRange; 
