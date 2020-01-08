@@ -259,6 +259,13 @@ pref("dom.script_loader.binast_encoding.enabled", false);
 #endif
 
 
+#ifdef NIGHTLY_BUILD
+pref("dom.window.event.enabled", true);
+#else
+pref("dom.window.event.enabled", false);
+#endif
+
+
 
 pref("browser.sessionhistory.max_total_viewers", -1);
 
