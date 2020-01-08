@@ -25,7 +25,6 @@ import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -45,11 +44,13 @@ import com.leanplum.internal.Constants.Methods;
 import com.leanplum.internal.Constants.Params;
 import com.leanplum.internal.JsonConverter;
 import com.leanplum.internal.LeanplumInternal;
+import com.leanplum.internal.LeanplumManifestHelper;
 import com.leanplum.internal.Log;
 import com.leanplum.internal.Request;
 import com.leanplum.internal.Util;
 import com.leanplum.internal.VarCache;
 import com.leanplum.utils.BitmapUtil;
+import com.leanplum.utils.BuildUtil;
 import com.leanplum.utils.SharedPreferencesUtil;
 
 import org.json.JSONException;
@@ -71,6 +72,26 @@ public class LeanplumPushService {
 
 
   public static final String LEANPLUM_SENDER_ID = "44059457771";
+  
+
+
+  public static final String LEANPLUM_NOTIFICATION = "LP_NOTIFICATION";
+  
+
+
+
+  public static final String LEANPLUM_ACTION_PARAM = "lp_action_param";
+  
+
+
+
+  public static final String LEANPLUM_MESSAGE_PARAM = "lp_message_param";
+  
+
+
+
+  public static final String LEANPLUM_MESSAGE_ID = "lp_message_id";
+
   private static final String LEANPLUM_PUSH_FCM_LISTENER_SERVICE_CLASS =
       "com.leanplum.LeanplumPushFcmListenerService";
   private static final String PUSH_FIREBASE_MESSAGING_SERVICE_CLASS =
@@ -80,32 +101,14 @@ public class LeanplumPushService {
   private static final String LEANPLUM_PUSH_LISTENER_SERVICE_CLASS =
       "com.leanplum.LeanplumPushListenerService";
   private static final String GCM_RECEIVER_CLASS = "com.google.android.gms.gcm.GcmReceiver";
-
-  private static Class<? extends Activity> callbackClass;
-  private static LeanplumCloudMessagingProvider provider;
-  private static boolean isFirebaseEnabled = false;
   private static final int NOTIFICATION_ID = 1;
-
   private static final String OPEN_URL = "Open URL";
   private static final String URL = "URL";
   private static final String OPEN_ACTION = "Open";
+  private static final int MAX_ONE_LINE_TEXT_LENGTH = 37;
+  private static Class<? extends Activity> callbackClass;
+  private static LeanplumCloudMessagingProvider provider;
   private static LeanplumPushNotificationCustomizer customizer;
-
-  
-
-
-  public static void enableFirebase() {
-    LeanplumPushService.isFirebaseEnabled = true;
-  }
-
-  
-
-
-
-
-  static boolean isFirebaseEnabled() {
-    return isFirebaseEnabled;
-  }
 
   
 
@@ -192,19 +195,18 @@ public class LeanplumPushService {
               @Override
               public void response(JSONObject response) {
                 try {
-                  JSONObject getVariablesResponse = Request.getLastResponse(response);
-                  if (getVariablesResponse == null) {
+                  if (response == null) {
                     Log.e("No response received from the server. Please contact us to " +
                         "investigate.");
                   } else {
                     Map<String, Object> values = JsonConverter.mapFromJson(
-                        getVariablesResponse.optJSONObject(Constants.Keys.VARS));
+                        response.optJSONObject(Constants.Keys.VARS));
                     Map<String, Object> messages = JsonConverter.mapFromJson(
-                        getVariablesResponse.optJSONObject(Constants.Keys.MESSAGES));
+                        response.optJSONObject(Constants.Keys.MESSAGES));
                     Map<String, Object> regions = JsonConverter.mapFromJson(
-                        getVariablesResponse.optJSONObject(Constants.Keys.REGIONS));
+                        response.optJSONObject(Constants.Keys.REGIONS));
                     List<Map<String, Object>> variants = JsonConverter.listFromJson(
-                        getVariablesResponse.optJSONArray(Constants.Keys.VARIANTS));
+                        response.optJSONArray(Constants.Keys.VARIANTS));
                     if (!Constants.canDownloadContentMidSessionInProduction ||
                         VarCache.getDiffs().equals(values)) {
                       values = null;
@@ -282,8 +284,29 @@ public class LeanplumPushService {
   
 
 
-  private static void showNotification(Context context, Bundle message) {
-    NotificationManager notificationManager = (NotificationManager)
+  private static void showNotification(Context context, final Bundle message) {
+    if (context == null || message == null) {
+      return;
+    }
+
+    int defaultIconId = 0;
+    
+    
+    
+    if (!LeanplumNotificationHelper.isApplicationIconValid(context)) {
+      defaultIconId = LeanplumNotificationHelper.getDefaultPushNotificationIconResourceId(context);
+      if (defaultIconId == 0) {
+        Log.e("You are using adaptive icons without having a fallback icon for push" +
+            " notifications on Android Oreo. \n" + "This can cause a factory reset of the device" +
+            " on Android Version 26. Please add regular icon with name " +
+            "\"leanplum_default_push_icon.png\" to your \"drawable\" folder.\n" + "Google issue: " +
+            "https://issuetracker.google.com/issues/68716460"
+        );
+        return;
+      }
+    }
+
+    final NotificationManager notificationManager = (NotificationManager)
         context.getSystemService(Context.NOTIFICATION_SERVICE);
 
     Intent intent = new Intent(context, LeanplumPushReceiver.class);
@@ -297,22 +320,41 @@ public class LeanplumPushService {
     if (message.getString("title") != null) {
       title = message.getString("title");
     }
-    NotificationCompat.Builder builder = new NotificationCompat.Builder(context)
-        .setSmallIcon(context.getApplicationInfo().icon)
-        .setContentTitle(title)
+    final NotificationCompat.Builder notificationCompatBuilder =
+        LeanplumNotificationHelper.getNotificationCompatBuilder(context, message);
+
+    if (notificationCompatBuilder == null) {
+      return;
+    }
+    final String messageText = message.getString(Keys.PUSH_MESSAGE_TEXT);
+
+    if (defaultIconId == 0) {
+      notificationCompatBuilder.setSmallIcon(context.getApplicationInfo().icon);
+    } else {
+      notificationCompatBuilder.setSmallIcon(defaultIconId);
+    }
+
+    notificationCompatBuilder.setContentTitle(title)
         .setStyle(new NotificationCompat.BigTextStyle()
-            .bigText(message.getString(Keys.PUSH_MESSAGE_TEXT)))
-        .setContentText(message.getString(Keys.PUSH_MESSAGE_TEXT));
+            .bigText(messageText))
+        .setContentText(messageText);
 
     String imageUrl = message.getString(Keys.PUSH_MESSAGE_IMAGE_URL);
+    Notification.Builder notificationBuilder = null;
     
     if (!TextUtils.isEmpty(imageUrl) && Build.VERSION.SDK_INT >= 16) {
       Bitmap bigPicture = BitmapUtil.getScaledBitmap(context, imageUrl);
       if (bigPicture != null) {
-        builder.setStyle(new NotificationCompat.BigPictureStyle()
-            .bigPicture(bigPicture)
-            .setBigContentTitle(title)
-            .setSummaryText(message.getString(Keys.PUSH_MESSAGE_TEXT)));
+        if ((messageText != null && messageText.length() < MAX_ONE_LINE_TEXT_LENGTH) ||
+            customizer != null) {
+          notificationCompatBuilder.setStyle(new NotificationCompat.BigPictureStyle()
+              .bigPicture(bigPicture)
+              .setBigContentTitle(title)
+              .setSummaryText(messageText));
+        } else {
+          notificationBuilder = LeanplumNotificationHelper.getNotificationBuilder(context, message,
+              contentIntent, title, messageText, bigPicture, defaultIconId);
+        }
       } else {
         Log.w(String.format("Image download failed for push notification with big picture. " +
             "No image will be included with the push notification. Image URL: %s.", imageUrl));
@@ -320,14 +362,22 @@ public class LeanplumPushService {
     }
 
     
-    if (Build.VERSION.SDK_INT >= 16) {
-      builder.setPriority(Notification.PRIORITY_MAX);
+    
+    
+    if (Build.VERSION.SDK_INT >= 16 && !BuildUtil.isNotificationChannelSupported(context)) {
+      
+      notificationCompatBuilder.setPriority(Notification.PRIORITY_MAX);
     }
-    builder.setAutoCancel(true);
-    builder.setContentIntent(contentIntent);
+    notificationCompatBuilder.setAutoCancel(true);
+    notificationCompatBuilder.setContentIntent(contentIntent);
 
     if (LeanplumPushService.customizer != null) {
-      LeanplumPushService.customizer.customize(builder, message);
+      try {
+        LeanplumPushService.customizer.customize(notificationCompatBuilder, message);
+      } catch (Throwable t) {
+        Log.e("Unable to customize push notification: ", Log.getStackTraceString(t));
+        return;
+      }
     }
 
     int notificationId = LeanplumPushService.NOTIFICATION_ID;
@@ -346,13 +396,43 @@ public class LeanplumPushService {
         notificationId = value.hashCode();
       }
     }
-    notificationManager.notify(notificationId, builder.build());
+
+    try {
+      
+      if (ActionContext.shouldForceContentUpdateForChainedMessage(
+          JsonConverter.fromJson(message.getString(Keys.PUSH_MESSAGE_ACTION)))) {
+        final int currentNotificationId = notificationId;
+        final Notification.Builder currentNotificationBuilder = notificationBuilder;
+        Leanplum.forceContentUpdate(new VariablesChangedCallback() {
+          @Override
+          public void variablesChanged() {
+            if (currentNotificationBuilder != null) {
+              notificationManager.notify(currentNotificationId, currentNotificationBuilder.build());
+            } else {
+              notificationManager.notify(currentNotificationId, notificationCompatBuilder.build());
+            }
+          }
+        });
+      } else {
+        if (notificationBuilder != null) {
+          notificationManager.notify(notificationId, notificationBuilder.build());
+        } else {
+          notificationManager.notify(notificationId, notificationCompatBuilder.build());
+        }
+      }
+    } catch (NullPointerException e) {
+      Log.e("Unable to show push notification.", e);
+    } catch (Throwable t) {
+      Log.e("Unable to show push notification.", t);
+      Util.handleException(t);
+    }
   }
 
-  static void openNotification(Context context, final Bundle notification) {
+  static void openNotification(Context context, Intent intent) {
     Log.d("Opening push notification action.");
+    
+    Bundle notification = preHandlePushNotification(context, intent);
     if (notification == null) {
-      Log.i("Received null Bundle.");
       return;
     }
 
@@ -364,24 +444,88 @@ public class LeanplumPushService {
     
     Class<? extends Activity> callbackClass = LeanplumPushService.getCallbackClass();
     boolean shouldStartActivity = true;
-    if (LeanplumActivityHelper.currentActivity != null &&
-        !LeanplumActivityHelper.isActivityPaused) {
+    Activity currentActivity = LeanplumActivityHelper.currentActivity;
+    if (currentActivity != null && !LeanplumActivityHelper.isActivityPaused) {
       if (callbackClass == null) {
         shouldStartActivity = false;
-      } else if (callbackClass.isInstance(LeanplumActivityHelper.currentActivity)) {
+      } else if (callbackClass.isInstance(currentActivity)) {
         shouldStartActivity = false;
       }
     }
 
     if (shouldStartActivity) {
       Intent actionIntent = getActionIntent(context);
+      if (actionIntent == null) {
+        return;
+      }
       actionIntent.putExtras(notification);
-      actionIntent.addFlags(
-          Intent.FLAG_ACTIVITY_CLEAR_TOP |
-              Intent.FLAG_ACTIVITY_NEW_TASK);
+      actionIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
       context.startActivity(actionIntent);
     }
+    
+    postHandlePushNotification(context, intent);
+  }
 
+  
+
+
+
+
+
+
+
+  public static Map<String, Object> parseNotificationBundle(Bundle notificationBundle) {
+    try {
+      String notificationActions = notificationBundle.getString(Keys.PUSH_MESSAGE_ACTION);
+      String notificationMessage = notificationBundle.getString(Keys.PUSH_MESSAGE_TEXT);
+      String notificationMessageId = LeanplumPushService.getMessageId(notificationBundle);
+
+      Map<String, Object> arguments = new HashMap<>();
+      arguments.put(LEANPLUM_ACTION_PARAM, JsonConverter.fromJson(notificationActions));
+      arguments.put(LEANPLUM_MESSAGE_PARAM, notificationMessage);
+      arguments.put(LEANPLUM_MESSAGE_ID, notificationMessageId);
+
+      return arguments;
+    } catch (Throwable ignored) {
+      Log.i("Failed to parse notification bundle.");
+    }
+    return null;
+  }
+
+  
+
+
+
+
+
+
+
+  public static Bundle preHandlePushNotification(Context context, Intent intent) {
+    if (intent == null) {
+      Log.i("Unable to pre handle push notification, Intent is null.");
+      return null;
+    }
+    Bundle notification = intent.getExtras();
+    if (notification == null) {
+      Log.i("Unable to pre handle push notification, extras are null.");
+      return null;
+    }
+    return notification;
+  }
+
+  
+
+
+
+
+
+
+  public static void postHandlePushNotification(Context context, Intent intent) {
+    final Bundle notification = intent.getExtras();
+    if (notification == null) {
+      Log.i("Could not post handle push notification, extras are null.");
+      return;
+    }
     
     LeanplumActivityHelper.queueActionUponActive(new VariablesChangedCallback() {
       @Override
@@ -396,8 +540,8 @@ public class LeanplumPushService {
               Map<String, Object> args = new HashMap<>();
               args.put(actionName, JsonConverter.fromJson(
                   notification.getString(Keys.PUSH_MESSAGE_ACTION)));
-              ActionContext context = new ActionContext(
-                  ActionManager.PUSH_NOTIFICATION_ACTION_NAME, args, messageId);
+              ActionContext context = new ActionContext(ActionManager.PUSH_NOTIFICATION_ACTION_NAME,
+                  args, messageId);
               context.preventRealtimeUpdating();
               context.update();
               context.runTrackedActionNamed(actionName);
@@ -475,21 +619,13 @@ public class LeanplumPushService {
 
 
   private static Boolean activityHasIntent(Context context, Intent deepLinkIntent) {
-    final int flag;
-    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-      flag = PackageManager.MATCH_ALL;
-    } else {
-      flag = 0;
-    }
     List<ResolveInfo> resolveInfoList =
-            context.getPackageManager().queryIntentActivities(deepLinkIntent, flag);
+        context.getPackageManager().queryIntentActivities(deepLinkIntent, 0);
     if (resolveInfoList != null && !resolveInfoList.isEmpty()) {
       for (ResolveInfo resolveInfo : resolveInfoList) {
         if (resolveInfo != null && resolveInfo.activityInfo != null &&
             resolveInfo.activityInfo.name != null) {
-          
-          
-          if (resolveInfo.activityInfo.packageName.equals(context.getPackageName())) {
+          if (resolveInfo.activityInfo.name.contains(context.getPackageName())) {
             
             
             deepLinkIntent.setPackage(resolveInfo.activityInfo.packageName);
@@ -564,15 +700,21 @@ public class LeanplumPushService {
     } catch (LeanplumException e) {
       Log.e("There was an error registering for push notifications.\n" +
           Log.getStackTraceString(e));
+    } catch (Throwable ignored) {
     }
   }
 
+  
+
+
   private static void initPushService() {
-    if (!enableServices()) {
+    if (!enableGcmServices()) {
+      Log.w("Failed to initialize GCM services.");
       return;
     }
     provider = new LeanplumGcmProvider();
-    if (!provider.isInitialized()) {
+
+    if (!provider.isInitialized() || !provider.isManifestSetup()) {
       return;
     }
     if (hasAppIDChanged(Request.appId())) {
@@ -581,39 +723,44 @@ public class LeanplumPushService {
     registerInBackground();
   }
 
-
   
 
 
 
 
-  private static boolean enableServices() {
+  private static boolean enableGcmServices() {
     Context context = Leanplum.getContext();
     if (context == null) {
+      Log.i("Failed to enable FCM services, context is null.");
       return false;
     }
 
     PackageManager packageManager = context.getPackageManager();
     if (packageManager == null) {
+      Log.i("Failed to enable FCM services, PackageManager is null.");
       return false;
     }
 
-    if (isFirebaseEnabled) {
-      Class fcmListenerClass = getClassForName(LEANPLUM_PUSH_FCM_LISTENER_SERVICE_CLASS);
-      if (fcmListenerClass == null) {
-        return false;
-      }
+    Class gcm = LeanplumManifestHelper.getClassForName(LEANPLUM_PUSH_INSTANCE_ID_SERVICE_CLASS);
+    if (gcm == null) {
+      Log.e("Failed to setup GCM, please compile GCM library.");
+      return false;
+    }
+    
+    
+    if (!LeanplumManifestHelper.wasComponentEnabled(context, packageManager, gcm)) {
+      
+      disableFcmServices();
+      LeanplumManifestHelper.enableComponent(context, packageManager, gcm);
 
-      if (!wasComponentEnabled(context, packageManager, fcmListenerClass)) {
-        if (!enableServiceAndStart(context, packageManager, PUSH_FIREBASE_MESSAGING_SERVICE_CLASS)
-            || !enableServiceAndStart(context, packageManager, fcmListenerClass)) {
-          return false;
-        }
+      
+      Class gcmReceiver = LeanplumManifestHelper.getClassForName(GCM_RECEIVER_CLASS);
+      if (gcmReceiver != null) {
+        LeanplumManifestHelper.enableComponent(context, packageManager, gcmReceiver);
       }
-    } else {
-      Class gcmPushInstanceIDClass = getClassForName(LEANPLUM_PUSH_INSTANCE_ID_SERVICE_CLASS);
-      if (gcmPushInstanceIDClass == null) {
-        return false;
+      Class pushListener = LeanplumManifestHelper.getClassForName(LEANPLUM_PUSH_LISTENER_SERVICE_CLASS);
+      if (pushListener != null) {
+        LeanplumManifestHelper.enableComponent(context, packageManager, pushListener);
       }
     }
     return true;
@@ -622,125 +769,43 @@ public class LeanplumPushService {
   
 
 
-
-
-
-  private static Class getClassForName(String className) {
-    try {
-      return Class.forName(className);
-    } catch (Throwable t) {
-      if (isFirebaseEnabled) {
-        Log.e("Please compile FCM library.");
-      } else {
-        Log.e("Please compile GCM library.");
-      }
-      return null;
+  private static void disableFcmServices() {
+    Context context = Leanplum.getContext();
+    if (context == null) {
+      return;
     }
+
+    PackageManager packageManager = context.getPackageManager();
+    if (packageManager == null) {
+      return;
+    }
+
+    LeanplumManifestHelper.disableComponent(context, packageManager,
+        LEANPLUM_PUSH_FCM_LISTENER_SERVICE_CLASS);
+    LeanplumManifestHelper.disableComponent(context, packageManager,
+        PUSH_FIREBASE_MESSAGING_SERVICE_CLASS);
   }
 
   
 
 
-
-
-
-
-
-  private static boolean enableServiceAndStart(Context context, PackageManager packageManager,
-      String className) {
-    Class clazz;
-    try {
-      clazz = Class.forName(className);
-    } catch (Throwable t) {
-      return false;
-    }
-    return enableServiceAndStart(context, packageManager, clazz);
-  }
-
-  
-
-
-
-
-
-
-
-  private static boolean enableServiceAndStart(Context context, PackageManager packageManager,
-      Class clazz) {
-    if (!enableComponent(context, packageManager, clazz)) {
-      return false;
-    }
-    try {
-      context.startService(new Intent(context, clazz));
-    } catch (Throwable t) {
-      Log.w("Could not start service " + clazz.getName());
-      return false;
-    }
-    return true;
-  }
-
-  
-
-
-
-
-
-
-
-  private static boolean enableComponent(Context context, PackageManager packageManager,
-      String className) {
-    try {
-      Class clazz = Class.forName(className);
-      return enableComponent(context, packageManager, clazz);
-    } catch (Throwable t) {
-      return false;
-    }
-  }
-
-  
-
-
-
-
-
-
-
-  private static boolean enableComponent(Context context, PackageManager packageManager,
-      Class clazz) {
-    if (clazz == null || context == null || packageManager == null) {
-      return false;
+  private static void disableGcmServices() {
+    Context context = Leanplum.getContext();
+    if (context == null) {
+      return;
     }
 
-    try {
-      packageManager.setComponentEnabledSetting(new ComponentName(context, clazz),
-          PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP);
-    } catch (Throwable t) {
-      Log.w("Could not enable component " + clazz.getName());
-      return false;
+    PackageManager packageManager = context.getPackageManager();
+    if (packageManager == null) {
+      return;
     }
-    return true;
-  }
 
-  
-
-
-
-
-
-
-
-  private static boolean wasComponentEnabled(Context context, PackageManager packageManager,
-      Class clazz) {
-    if (clazz == null || context == null || packageManager == null) {
-      return false;
-    }
-    int componentStatus = packageManager.getComponentEnabledSetting(new ComponentName(context,
-        clazz));
-    if (PackageManager.COMPONENT_ENABLED_STATE_DEFAULT == componentStatus ||
-        PackageManager.COMPONENT_ENABLED_STATE_DISABLED == componentStatus) {
-      return false;
-    }
-    return true;
+    LeanplumManifestHelper.disableComponent(context, packageManager,
+        LEANPLUM_PUSH_INSTANCE_ID_SERVICE_CLASS);
+    LeanplumManifestHelper.disableComponent(context, packageManager,
+        GCM_RECEIVER_CLASS);
+    LeanplumManifestHelper.disableComponent(context, packageManager,
+        LEANPLUM_PUSH_LISTENER_SERVICE_CLASS);
   }
 
   

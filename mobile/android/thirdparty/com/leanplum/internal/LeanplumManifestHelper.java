@@ -21,27 +21,19 @@
 
 package com.leanplum.internal;
 
+import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.ComponentInfo;
 import android.content.pm.PackageManager;
-import android.text.TextUtils;
+import android.content.pm.ResolveInfo;
+import android.os.Bundle;
 
 import com.leanplum.Leanplum;
+import com.leanplum.LeanplumPushService;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.jar.JarFile;
-import java.util.zip.ZipEntry;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 
 
 
@@ -49,302 +41,38 @@ import javax.xml.parsers.DocumentBuilderFactory;
 
 
 public class LeanplumManifestHelper {
-  private static final String MANIFEST = "manifest";
-  private static final String APPLICATION = "application";
-  private static final String SERVICE = "service";
-  private static final String ACTIVITY = "activity";
-  private static final String ACTIVITY_ALIAS = "activity-alias";
-  private static final String RECEIVER = "receiver";
-  private static final String PROVIDER = "provider";
-  private static final String ANDROID_NAME = "android:name";
-  private static final String ANDROID_SCHEME = "android:scheme";
-  private static final String ACTION = "action";
-  private static final String CATEGORY = "category";
-  private static final String DATA = "data";
-  private static final String ANDROID_HOST = "android:host";
-  private static final String ANDROID_PORT = "android:port";
-  private static final String ANDROID_PATH = "android:path";
-  private static final String ANDROID_PATH_PATTERN = "android:pathPattern";
-  private static final String ANDROID_PATH_PREFIX = "android:pathPrefix";
-  private static final String ANDROID_MIME_TYPE = "android:mimeType";
-  private static final String ANDROID_TYPE = "android:type";
-  private static final String INTENT_FILTER = "intent-filter";
-  private static final String ANDROID_PERMISSION = "android:permission";
-  private static final String ANDROID_MANIFEST = "AndroidManifest.xml";
-  private static final String VERSION_NAME = "versionName";
-
-  private static ManifestData manifestData;
+  
+  public static final String GCM_SEND_PERMISSION = "com.google.android.c2dm.permission.SEND";
+  public static final String GCM_RECEIVE_PERMISSION = "com.google.android.c2dm.permission.RECEIVE";
+  public static final String GCM_RECEIVE_ACTION = "com.google.android.c2dm.intent.RECEIVE";
+  public static final String GCM_REGISTRATION_ACTION = "com.google.android.c2dm.intent.REGISTRATION";
+  public static final String GCM_INSTANCE_ID_ACTION = "com.google.android.gms.iid.InstanceID";
+  public static final String GCM_RECEIVER = "com.google.android.gms.gcm.GcmReceiver";
 
   
+  public static final String FCM_INSTANCE_ID_EVENT = "com.google.firebase.INSTANCE_ID_EVENT";
+  public static final String FCM_MESSAGING_EVENT = "com.google.firebase.MESSAGING_EVENT";
 
-
-  private static void parseManifestNodeChildren() {
-    manifestData = new ManifestData();
-    byte[] manifestXml = getByteArrayOfManifest();
-    Document manifestDocument = getManifestDocument(manifestXml);
-    parseManifestDocument(manifestDocument);
-  }
+  
+  public static final String LP_PUSH_INSTANCE_ID_SERVICE = "com.leanplum.LeanplumPushInstanceIDService";
+  public static final String LP_PUSH_LISTENER_SERVICE = "com.leanplum.LeanplumPushListenerService";
+  public static final String LP_PUSH_FCM_LISTENER_SERVICE = "com.leanplum.LeanplumPushFcmListenerService";
+  public static final String LP_PUSH_FCM_MESSAGING_SERVICE = "com.leanplum.LeanplumPushFirebaseMessagingService";
+  public static final String LP_PUSH_REGISTRATION_SERVICE = "com.leanplum.LeanplumPushRegistrationService";
+  public static final String LP_PUSH_RECEIVER = "com.leanplum.LeanplumPushReceiver";
 
   
 
 
 
 
-  private static byte[] getByteArrayOfManifest() {
-    Context context = Leanplum.getContext();
-    if (context == null) {
-      Log.e("Context is null. Cannot parse " + ANDROID_MANIFEST + " file.");
+
+  public static Class getClassForName(String className) {
+    try {
+      return Class.forName(className);
+    } catch (Throwable t) {
       return null;
     }
-    byte[] manifestXml = null;
-    try {
-      JarFile jarFile = new JarFile(context.getPackageResourcePath());
-      ZipEntry entry = jarFile.getEntry(ANDROID_MANIFEST);
-      manifestXml = new byte[(int) entry.getSize()];
-      DataInputStream dataInputStream = new DataInputStream(jarFile.getInputStream(entry));
-      dataInputStream.readFully(manifestXml);
-      dataInputStream.close();
-    } catch (Exception e) {
-      Log.e("Cannot parse " + ANDROID_MANIFEST + " file: " + e.getMessage());
-    }
-    return manifestXml;
-  }
-
-  
-
-
-
-
-
-  private static Document getManifestDocument(byte[] manifestXml) {
-    Document document = null;
-    try {
-      DocumentBuilderFactory builderFactory = DocumentBuilderFactory.newInstance();
-      DocumentBuilder builder = builderFactory.newDocumentBuilder();
-      document = builder.parse(new ByteArrayInputStream(
-          LeanplumManifestParser.decompressXml(manifestXml).getBytes("UTF-8")));
-    } catch (Exception e) {
-      Log.e("Cannot parse " + ANDROID_MANIFEST + " file: " + e.getMessage());
-    }
-    return document;
-  }
-
-  
-
-
-
-
-  private static void parseManifestDocument(Document document) {
-    if (document == null) {
-      return;
-    }
-    parseManifestNode(document.getElementsByTagName(MANIFEST).item(0));
-  }
-
-  private static void parseManifestNode(Node manifestNode) {
-    if (manifestNode == null) {
-      return;
-    }
-    manifestData.appVersionName = getAttribute(manifestNode.getAttributes(), VERSION_NAME);
-    NodeList manifestChildren = manifestNode.getChildNodes();
-    if (manifestChildren == null) {
-      return;
-    }
-    for (int i = 0; i < manifestChildren.getLength(); i++) {
-      Node currentNode = manifestChildren.item(i);
-      if (currentNode == null) {
-        continue;
-      }
-      String currentNodeName = currentNode.getNodeName();
-      if (APPLICATION.equals(currentNodeName)) {
-        parseChildNodeList(currentNode.getChildNodes());
-      }
-    }
-  }
-
-  private static void parseChildNodeList(NodeList childrenList) {
-    if (childrenList == null) {
-      return;
-    }
-    for (int j = 0; j < childrenList.getLength(); j++) {
-      parseChildNode(childrenList.item(j));
-    }
-  }
-
-  private static void parseChildNode(Node child) {
-    if (child == null) {
-      return;
-    }
-    String childName = child.getNodeName();
-    if (childName == null) {
-      return;
-    }
-    switch (childName) {
-      case SERVICE:
-        manifestData.services.add(parseManifestComponent(child,
-            ManifestComponent.ApplicationComponent.SERVICE));
-        break;
-      case RECEIVER:
-        manifestData.receivers.add(parseManifestComponent(child,
-            ManifestComponent.ApplicationComponent.RECEIVER));
-        break;
-      case ACTIVITY:
-      case ACTIVITY_ALIAS:
-        manifestData.activities.add(parseManifestComponent(child,
-            ManifestComponent.ApplicationComponent.ACTIVITY));
-        break;
-      case PROVIDER:
-        manifestData.providers.add(parseManifestComponent(child,
-            ManifestComponent.ApplicationComponent.PROVIDER));
-        break;
-      default:
-        break;
-    }
-  }
-
-  
-
-
-
-
-
-
-  private static ManifestComponent parseManifestComponent(Node node,
-      ManifestComponent.ApplicationComponent type) {
-    ManifestComponent manifestComponent = new ManifestComponent(type);
-    NamedNodeMap attributes = node.getAttributes();
-    manifestComponent.name = getAttribute(attributes, ANDROID_NAME);
-    manifestComponent.permission = getAttribute(attributes, ANDROID_PERMISSION);
-    List<ManifestIntentFilter> intentFilters = new ArrayList<>();
-    NodeList childrenList = node.getChildNodes();
-    for (int i = 0; i < childrenList.getLength(); i++) {
-      Node child = childrenList.item(i);
-      String childName = child.getNodeName();
-      if (INTENT_FILTER.equals(childName)) {
-        ManifestIntentFilter intentFilter = parseManifestIntentFilter(child);
-        if (intentFilter != null) {
-          intentFilters.add(intentFilter);
-        }
-      }
-    }
-    manifestComponent.intentFilters = intentFilters;
-    return manifestComponent;
-  }
-
-  
-
-
-
-
-
-
-  private static ManifestIntentFilter parseManifestIntentFilter(Node intentNode) {
-    if (intentNode == null) {
-      return null;
-    }
-
-    NodeList intentChildren = intentNode.getChildNodes();
-    if (intentChildren == null) {
-      return null;
-    }
-
-    ManifestIntentFilter intentFilter = new ManifestIntentFilter();
-    intentFilter.attributes = intentNode.getAttributes();
-    for (int j = 0; j < intentChildren.getLength(); j++) {
-      Node intentChild = intentChildren.item(j);
-      String intentChildName = intentChild.getNodeName();
-      NamedNodeMap intentChildAttributes = intentChild.getAttributes();
-      switch (intentChildName) {
-        case ACTION:
-          intentFilter.actions.add(getAttribute(intentChildAttributes, ANDROID_NAME));
-          break;
-        case CATEGORY:
-          intentFilter.categories.add(getAttribute(intentChildAttributes, ANDROID_NAME));
-          break;
-        case DATA:
-          String scheme = getAttribute(intentChildAttributes, ANDROID_SCHEME);
-          String host = getAttribute(intentChildAttributes, ANDROID_HOST);
-          String port = getAttribute(intentChildAttributes, ANDROID_PORT);
-          String path = getAttribute(intentChildAttributes, ANDROID_PATH);
-          String pathPattern = getAttribute(intentChildAttributes, ANDROID_PATH_PATTERN);
-          String pathPrefix = getAttribute(intentChildAttributes, ANDROID_PATH_PREFIX);
-          String mimeType = getAttribute(intentChildAttributes, ANDROID_MIME_TYPE);
-          String type = getAttribute(intentChildAttributes, ANDROID_TYPE);
-          intentFilter.dataList.add(new ManifestIntentFilter.IntentData(scheme, host, port, path,
-              pathPattern, pathPrefix, mimeType, type));
-          break;
-        default:
-          break;
-      }
-    }
-    return intentFilter;
-  }
-
-  
-
-
-  private static String getAttribute(NamedNodeMap namedNodeMap, String name) {
-    Node node = namedNodeMap.getNamedItem(name);
-    if (node == null) {
-      if (name.startsWith("android:")) {
-        name = name.substring("android:".length());
-      }
-      node = namedNodeMap.getNamedItem(name);
-      if (node == null) {
-        return null;
-      }
-    }
-    return node.getNodeValue();
-  }
-
-  
-
-
-  public static List<ManifestComponent> getServices() {
-    if (manifestData == null) {
-      parseManifestNodeChildren();
-    }
-    return manifestData.services;
-  }
-
-  
-
-
-  static List<ManifestComponent> getActivities() {
-    if (manifestData == null) {
-      parseManifestNodeChildren();
-    }
-    return manifestData.activities;
-  }
-
-  
-
-
-  static List<ManifestComponent> getProviders() {
-    if (manifestData == null) {
-      parseManifestNodeChildren();
-    }
-    return manifestData.providers;
-  }
-
-  
-
-
-  public static List<ManifestComponent> getReceivers() {
-    if (manifestData == null) {
-      parseManifestNodeChildren();
-    }
-    return manifestData.receivers;
-  }
-
-  
-
-
-  public static String getAppVersionName() {
-    if (manifestData == null) {
-      parseManifestNodeChildren();
-    }
-    return manifestData.appVersionName;
   }
 
   
@@ -355,75 +83,18 @@ public class LeanplumManifestHelper {
 
 
 
-
-
-
-
-
-  public static boolean checkComponent(List<ManifestComponent> componentsList,
-      String name, boolean exported, String permission, List<String> actions, String packageName) {
-    boolean hasComponent = hasComponent(componentsList, name, permission, actions);
-    if (!hasComponent && !componentsList.isEmpty()) {
-      Log.e(getComponentError(componentsList.get(0).type, name, exported, permission, actions,
-          packageName));
-    }
-    return hasComponent;
-  }
-
-  
-
-
-
-
-
-
-
-
-  private static boolean hasComponent(List<ManifestComponent> componentsList, String className,
-      String permission, List<String> actions) {
-    for (ManifestComponent component : componentsList) {
-      if (isInstance(component, className)) {
-        if (hasPermission(component, permission, actions)) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  
-
-
-
-
-
-
-  private static boolean isInstance(ManifestComponent component, String className) {
-    try {
-      if (component.name.equals(className)) {
-        return true;
-      } else {
-        Class clazz = null;
-        try {
-          clazz = Class.forName(component.name);
-        } catch (Throwable ignored) {
-        }
-        if (clazz == null) {
-          Log.w("Cannot find class with name: " + component.name);
-          return false;
-        }
-        while (clazz != Object.class) {
-          clazz = clazz.getSuperclass();
-          if (clazz.getName().equals(className)) {
-            return true;
-          }
-        }
-      }
-      return false;
-    } catch (Exception e) {
-      Util.handleException(e);
+  public static boolean enableServiceAndStart(Context context, PackageManager packageManager,
+      Class clazz) {
+    if (!enableComponent(context, packageManager, clazz)) {
       return false;
     }
+    try {
+      context.startService(new Intent(context, clazz));
+    } catch (Throwable t) {
+      Log.w("Could not start service " + clazz.getName());
+      return false;
+    }
+    return true;
   }
 
   
@@ -434,21 +105,20 @@ public class LeanplumManifestHelper {
 
 
 
-  private static boolean hasPermission(ManifestComponent component, String permission,
-      List<String> actions) {
-    Boolean hasPermissions = TextUtils.equals(component.permission, permission);
-    if (hasPermissions && actions != null) {
-      HashSet<String> actionsToCheck = new HashSet<>(actions);
-      for (ManifestIntentFilter intentFilter : component.intentFilters) {
-        actionsToCheck.removeAll(intentFilter.actions);
-      }
-      if (actionsToCheck.isEmpty()) {
-        return true;
-      }
-    } else if (hasPermissions) {
-      return true;
+  public static boolean enableComponent(Context context, PackageManager packageManager,
+      Class clazz) {
+    if (clazz == null || context == null || packageManager == null) {
+      return false;
     }
-    return false;
+
+    try {
+      packageManager.setComponentEnabledSetting(new ComponentName(context, clazz),
+          PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP);
+    } catch (Throwable t) {
+      Log.w("Could not enable component " + clazz.getName());
+      return false;
+    }
+    return true;
   }
 
   
@@ -458,31 +128,18 @@ public class LeanplumManifestHelper {
 
 
 
-  private static String getComponentError(ManifestComponent.ApplicationComponent componentType,
-      String name, boolean exported, String permission, List<String> actions, String packageName) {
-    StringBuilder errorMessage = new StringBuilder("Push notifications requires you to add the " +
-        componentType.name().toLowerCase() + " " + name + " to your AndroidManifest.xml file." +
-        "Add this code within the <application> section:\n");
-    errorMessage.append("<").append(componentType.name().toLowerCase()).append("\n");
-    errorMessage.append("    android:name=\"").append(name).append("\"\n");
-    errorMessage.append("    android:exported=\"").append(Boolean.toString(exported)).append("\"");
-    if (permission != null) {
-      errorMessage.append("\n    android:permission=\"").append(permission).append("\"");
+
+  public static boolean disableComponent(Context context, PackageManager packageManager, String className) {
+    if (context == null || packageManager == null || className == null) {
+      return false;
     }
-    errorMessage.append(">\n");
-    if (actions != null) {
-      errorMessage.append("    <intent-filter>\n");
-      for (String action : actions) {
-        errorMessage.append("        <action android:name=\"").append(action).append("\" />\n");
-      }
-      if (packageName != null) {
-        errorMessage.append("        <category android:name=\"").append(packageName)
-            .append("\" />\n");
-      }
-      errorMessage.append("    </intent-filter>\n");
+    try {
+      packageManager.setComponentEnabledSetting(new ComponentName(context, className),
+          PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP);
+    } catch (Throwable t) {
+      return false;
     }
-    errorMessage.append("</").append(componentType.name().toLowerCase()).append(">");
-    return errorMessage.toString();
+    return true;
   }
 
   
@@ -492,6 +149,37 @@ public class LeanplumManifestHelper {
 
 
 
+
+  public static boolean wasComponentEnabled(Context context, PackageManager packageManager,
+      Class clazz) {
+    if (clazz == null || context == null || packageManager == null) {
+      return false;
+    }
+    int componentStatus = packageManager.getComponentEnabledSetting(new ComponentName(context,
+        clazz));
+    if (PackageManager.COMPONENT_ENABLED_STATE_DEFAULT == componentStatus ||
+        PackageManager.COMPONENT_ENABLED_STATE_DISABLED == componentStatus) {
+      return false;
+    }
+    return true;
+  }
+
+  
+
+
+
+
+  public static String parseNotificationMetadata() {
+    try {
+      Context context = Leanplum.getContext();
+      ApplicationInfo app = context.getPackageManager().getApplicationInfo(context.getPackageName(),
+          PackageManager.GET_META_DATA);
+      Bundle bundle = app.metaData;
+      return bundle.getString(LeanplumPushService.LEANPLUM_NOTIFICATION);
+    } catch (Throwable ignored) {
+    }
+    return null;
+  }
 
   public static boolean checkPermission(String permission, boolean definesPermission,
       boolean logError) {
@@ -499,7 +187,8 @@ public class LeanplumManifestHelper {
     if (context == null) {
       return false;
     }
-    if (context.checkCallingOrSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
+    int result = context.checkCallingOrSelfPermission(permission);
+    if (result != PackageManager.PERMISSION_GRANTED) {
       String definition;
       if (definesPermission) {
         definition = "<permission android:name=\"" + permission +
@@ -521,63 +210,104 @@ public class LeanplumManifestHelper {
   
 
 
-  private static class ManifestData {
-    private List<ManifestComponent> services = new ArrayList<>();
-    private List<ManifestComponent> activities = new ArrayList<>();
-    private List<ManifestComponent> receivers = new ArrayList<>();
-    private List<ManifestComponent> providers = new ArrayList<>();
-    private String appVersionName;
-  }
-
-  
 
 
-  private static class ManifestComponent {
-    enum ApplicationComponent {SERVICE, RECEIVER, ACTIVITY, PROVIDER}
 
-    ApplicationComponent type;
-    String name;
-    String permission;
-    List<ManifestIntentFilter> intentFilters = new ArrayList<>();
 
-    ManifestComponent(ApplicationComponent type) {
-      this.type = type;
+
+
+
+
+
+
+  public static boolean checkComponent(ApplicationComponent componentType, String name,
+      boolean exported, String permission, List<String> actions, String packageName) {
+    Context context = Leanplum.getContext();
+    if (context == null) {
+      return false;
     }
-  }
-
-  
-
-
-  private static class ManifestIntentFilter {
-    final List<String> actions = new ArrayList<>();
-    final List<String> categories = new ArrayList<>();
-    final List<IntentData> dataList = new ArrayList<>();
-    public NamedNodeMap attributes;
-
-    
-
-
-    static class IntentData {
-      final String scheme;
-      final String host;
-      final String port;
-      final String path;
-      final String pathPattern;
-      final String pathPrefix;
-      final String mimeType;
-      final String type;
-
-      IntentData(String scheme, String host, String port, String path, String pathPattern,
-          String pathPrefix, String mimeType, String type) {
-        this.scheme = scheme;
-        this.host = host;
-        this.port = port;
-        this.path = path;
-        this.pathPattern = pathPattern;
-        this.pathPrefix = pathPrefix;
-        this.mimeType = mimeType;
-        this.type = type;
+    if (actions != null) {
+      for (String action : actions) {
+        List<ResolveInfo> components = (componentType == ApplicationComponent.RECEIVER)
+            ? context.getPackageManager().queryBroadcastReceivers(new Intent(action), 0)
+            : context.getPackageManager().queryIntentServices(new Intent(action), 0);
+        if (components == null) {
+          return false;
+        }
+        boolean foundComponent = false;
+        for (ResolveInfo component : components) {
+          if (component == null) {
+            continue;
+          }
+          ComponentInfo componentInfo = (componentType == ApplicationComponent.RECEIVER)
+              ? component.activityInfo : component.serviceInfo;
+          if (componentInfo != null && componentInfo.name.equals(name)) {
+            
+            if (componentInfo.packageName != null && componentInfo.packageName.equals(packageName)) {
+              foundComponent = true;
+            }
+          }
+        }
+        if (!foundComponent) {
+          Log.e(getComponentError(componentType, name, exported,
+              permission, actions, packageName));
+          return false;
+        }
+      }
+    } else {
+      try {
+        if (componentType == ApplicationComponent.RECEIVER) {
+          context.getPackageManager().getReceiverInfo(
+              new ComponentName(context.getPackageName(), name), 0);
+        } else {
+          context.getPackageManager().getServiceInfo(
+              new ComponentName(context.getPackageName(), name), 0);
+        }
+      } catch (PackageManager.NameNotFoundException e) {
+        Log.e(getComponentError(componentType, name, exported,
+            permission, actions, packageName));
+        return false;
       }
     }
+    return true;
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+  private static String getComponentError(ApplicationComponent componentType, String name,
+      boolean exported, String permission, List<String> actions, String packageName) {
+    StringBuilder errorMessage = new StringBuilder("Push notifications requires you to add the " +
+        componentType.name().toLowerCase() + " " + name + " to your AndroidManifest.xml file." +
+        "Add this code within the <application> section:\n");
+    errorMessage.append("<").append(componentType.name().toLowerCase()).append("\n");
+    errorMessage.append("    ").append("android:name=\"").append(name).append("\"\n");
+    errorMessage.append("    android:exported=\"").append(Boolean.toString(exported)).append("\"");
+    if (permission != null) {
+      errorMessage.append("\n    android:permission=\"").append(permission).append("\"");
+    }
+    errorMessage.append(">\n");
+    if (actions != null) {
+      errorMessage.append("    <intent-filter>\n");
+      for (String action : actions) {
+        errorMessage.append("        <action android:name=\"").append(action).append("\" />\n");
+      }
+      if (packageName != null) {
+        errorMessage.append("        <category android:name=\"").append(packageName).append("\" />\n");
+      }
+      errorMessage.append("    </intent-filter>\n");
+    }
+    errorMessage.append("</").append(componentType.name().toLowerCase()).append(">");
+    return errorMessage.toString();
+  }
+
+  public enum ApplicationComponent {SERVICE, RECEIVER}
 }

@@ -30,11 +30,12 @@ import com.leanplum.callbacks.NewsfeedChangedCallback;
 
 
 public class Newsfeed extends LeanplumInbox {
-
+  private static Newsfeed instance = new Newsfeed();
   
 
 
-  Newsfeed() {
+  private Newsfeed() {
+      super();
   }
 
   

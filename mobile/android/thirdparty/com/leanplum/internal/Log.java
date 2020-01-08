@@ -22,7 +22,6 @@
 package com.leanplum.internal;
 
 
-
 import java.util.HashMap;
 
 

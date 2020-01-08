@@ -33,10 +33,23 @@ import com.leanplum.utils.SharedPreferencesUtil;
 
 
 abstract class LeanplumCloudMessagingProvider {
-  static final String PUSH_REGISTRATION_SERVICE = "com.leanplum.LeanplumPushRegistrationService";
-  static final String PUSH_RECEIVER = "com.leanplum.LeanplumPushReceiver";
-
   private static String registrationId;
+
+  
+
+
+
+
+  static String getCurrentRegistrationId() {
+    return registrationId;
+  }
+
+  
+
+
+  private static void sendRegistrationIdToBackend(String registrationId) {
+    Leanplum.setRegistrationId(registrationId);
+  }
 
   
 
@@ -50,18 +63,25 @@ abstract class LeanplumCloudMessagingProvider {
 
 
 
-  public abstract boolean isManifestSetUp();
-
   public abstract boolean isInitialized();
+
+  
+
+
+
+
+  public abstract boolean isManifestSetup();
 
   
 
 
   public abstract void unregister();
 
-  static String getCurrentRegistrationId() {
-    return registrationId;
-  }
+  
+
+
+
+
 
   void onRegistrationIdReceived(Context context, String registrationId) {
     if (registrationId == null) {
@@ -75,16 +95,8 @@ abstract class LeanplumCloudMessagingProvider {
         context, Constants.Defaults.LEANPLUM_PUSH, Constants.Defaults.PROPERTY_REGISTRATION_ID))) {
       Log.i("Device registered for push notifications with registration token", registrationId);
       storePreferences(context.getApplicationContext());
+      sendRegistrationIdToBackend(LeanplumCloudMessagingProvider.registrationId);
     }
-    
-    sendRegistrationIdToBackend(LeanplumCloudMessagingProvider.registrationId);
-  }
-
-  
-
-
-  private static void sendRegistrationIdToBackend(String registrationId) {
-    Leanplum.setRegistrationId(registrationId);
   }
 
   

@@ -26,6 +26,10 @@ import android.app.Activity;
 
 
 
+
+
+
+@Deprecated
 public interface LeanplumUIEditor {
   
 

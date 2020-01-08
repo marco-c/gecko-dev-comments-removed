@@ -43,6 +43,8 @@ import java.util.Set;
 
 
 
+
+@SuppressWarnings("deprecation")
 public class LeanplumResources extends Resources {
   public LeanplumResources(Resources base) {
     super(base.getAssets(), base.getDisplayMetrics(), base.getConfiguration());

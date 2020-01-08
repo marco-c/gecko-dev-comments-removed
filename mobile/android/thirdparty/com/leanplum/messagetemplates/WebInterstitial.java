@@ -43,15 +43,6 @@ public class WebInterstitial extends BaseMessageDialog {
     this.webOptions = options;
   }
 
-  
-
-
-  @Deprecated
-  @SuppressWarnings("unused")
-  public static void register(Context currentContext) {
-    register();
-  }
-
   public static void register() {
     Leanplum.defineAction(NAME, Leanplum.ACTION_KIND_MESSAGE | Leanplum.ACTION_KIND_ACTION,
         WebInterstitialOptions.toArgs(), new ActionCallback() {

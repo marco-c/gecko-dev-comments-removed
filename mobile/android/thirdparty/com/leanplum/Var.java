@@ -516,17 +516,7 @@ public class Var<T> {
 
 
 
-  @Deprecated
   public int count() {
-    return countInternal();
-  }
-
-  
-
-
-
-
-  private int countInternal() {
     try {
       warnIfNotStarted();
       Object result = VarCache.getMergedValueFromComponentArray(nameComponents);
@@ -547,17 +537,7 @@ public class Var<T> {
 
 
 
-  @Deprecated
   public Number numberValue() {
-    return numberValueInternal();
-  }
-
-  
-
-
-
-
-  private Number numberValueInternal() {
     warnIfNotStarted();
     return numberValue;
   }
