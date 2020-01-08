@@ -691,38 +691,13 @@ WebrtcVideoConduit::ConfigureSendMediaCodec(const VideoCodecConfig* codecConfig)
   
   mSendingFramerate = SelectSendFrameRate(codecConfig,
                                           max_framerate,
-                                          mSendingWidth,
-                                          mSendingHeight);
+                                          mLastWidth,
+                                          mLastHeight);
 
   
   mNegotiatedMaxBitrate = codecConfig->mTias;
 
-  
-  
-
-  if (mSendingWidth != 0) {
-    
-    
-    bool resolutionChanged;
-    {
-      MutexAutoLock lock(mCodecMutex);
-      resolutionChanged = !mCurSendCodecConfig->ResolutionEquals(*codecConfig);
-    }
-
-    if (resolutionChanged) {
-      
-      
-      
-      mLastWidth = 0;
-      mLastHeight = 0;
-      mSendingWidth = 0;
-      mSendingHeight = 0;
-    } else {
-      
-      
-      
-    }
-  } else if (mMinBitrateEstimate) {
+  if (mLastWidth == 0 && mMinBitrateEstimate) {
     
     
     webrtc::Call::Config::BitrateConfig config;
@@ -1691,8 +1666,6 @@ WebrtcVideoConduit::SelectSendResolution(unsigned short width,
   mCodecMutex.AssertCurrentThreadOwns();
   
 
-  mLastWidth = width;
-  mLastHeight = height;
   
   if (mCurSendCodecConfig) {
     uint16_t max_width = mCurSendCodecConfig->mEncodingConstraints.maxWidth;
@@ -1715,22 +1688,10 @@ WebrtcVideoConduit::SelectSendResolution(unsigned short width,
     }
   }
 
-  
-  
-  if (mSendingWidth != width || mSendingHeight != height) {
-    CSFLogDebug(LOGTAG, "%s: resolution changing to %ux%u (from %ux%u)",
-                __FUNCTION__, width, height, mSendingWidth, mSendingHeight);
-    
-    
-    
-    mSendingWidth = width;
-    mSendingHeight = height;
-  }
-
   unsigned int framerate = SelectSendFrameRate(mCurSendCodecConfig,
                                                mSendingFramerate,
-                                               mSendingWidth,
-                                               mSendingHeight);
+                                               width,
+                                               height);
   if (mSendingFramerate != framerate) {
     CSFLogDebug(LOGTAG, "%s: framerate changing to %u (from %u)",
                 __FUNCTION__, framerate, mSendingFramerate);
@@ -1843,87 +1804,55 @@ WebrtcVideoConduit::SendVideoFrame(const webrtc::VideoFrame& frame)
 
   CSFLogVerbose(LOGTAG, "%s (send SSRC %u (0x%x))", __FUNCTION__,
                 mSendStreamConfig.rtp.ssrcs.front(), mSendStreamConfig.rtp.ssrcs.front());
+
+  if (frame.width() != mLastWidth || frame.height() != mLastHeight) {
   
-  
-  {
+    CSFLogVerbose(LOGTAG, "%s: call SelectSendResolution with %ux%u",
+                  __FUNCTION__, frame.width(), frame.height());
+    MOZ_ASSERT(frame.width() != 0 && frame.height() != 0);
     
-    
-    if (frame.width() != mLastWidth || frame.height() != mLastHeight) {
-      CSFLogVerbose(LOGTAG, "%s: call SelectSendResolution with %ux%u",
-                    __FUNCTION__, frame.width(), frame.height());
-      MOZ_ASSERT(frame.width() != 0 && frame.height() != 0);
-      
 
-      MutexAutoLock lock(mCodecMutex);
-      SelectSendResolution(frame.width(), frame.height());
-    }
-
-    
-    if (!mVideoBroadcaster.frame_wanted()) {
-      return kMediaConduitNoError;
-    }
-
-    int adapted_width;
-    int adapted_height;
-    int crop_width;
-    int crop_height;
-    int crop_x;
-    int crop_y;
-    if (!mVideoAdapter->AdaptFrameResolution(
-          frame.width(), frame.height(),
-          frame.timestamp_us() * rtc::kNumNanosecsPerMicrosec,
-          &crop_width, &crop_height, &adapted_width, &adapted_height)) {
-      
-      return kMediaConduitNoError;
-    }
-    crop_x = (frame.width() - crop_width) / 2;
-    crop_y = (frame.height() - crop_height) / 2;
-
-    rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer;
-    if (adapted_width == frame.width() && adapted_height == frame.height()) {
-      
-      buffer = frame.video_frame_buffer();
-      
-#ifdef WEBRTC_MAC
-      
-    } else if (frame.video_frame_buffer()->native_handle()) {
-      
-      buffer = new rtc::RefCountedObject<webrtc::CoreVideoFrameBuffer>(
-        static_cast<CVPixelBufferRef>(frame.video_frame_buffer()->native_handle()), adapted_width, adapted_height,
-        crop_width, crop_height, crop_x, crop_y);
-#elif WEBRTC_WIN
-      
-#elif WEBRTC_LINUX
-      
-#elif WEBRTC_ANDROID
-      
-#endif
-    } else {
-      
-      
-      rtc::scoped_refptr<webrtc::I420Buffer> i420_buffer =
-        webrtc::I420Buffer::Create(adapted_width, adapted_height);
-      i420_buffer->CropAndScaleFrom(*frame.video_frame_buffer(), crop_x, crop_y, crop_width, crop_height);
-      buffer = i420_buffer;
-    }
-
-#if 0
-    
-    
-    
-    
-    
-    
-    webrtc::VideoRotation rotation = static_cast<webrtc::VideoRotation>(frame.rotation);
-    if (apply_rotation() && rotation != kVideoRotation_0) {
-      buffer = I420Buffer::Rotate(*buffer->NativeToI420Buffer(), rotation);
-      rotation = kVideoRotation_0;
-    }
-#endif
-
-    mVideoBroadcaster.OnFrame(webrtc::VideoFrame(buffer, webrtc::kVideoRotation_0,
-                                                  frame.timestamp_us()));
+    MutexAutoLock lock(mCodecMutex);
+    mLastWidth = frame.width();
+    mLastHeight = frame.height();
+    SelectSendResolution(frame.width(), frame.height());
   }
+
+  
+  if (!mVideoBroadcaster.frame_wanted()) {
+    return kMediaConduitNoError;
+  }
+
+  int cropWidth;
+  int cropHeight;
+  int adaptedWidth;
+  int adaptedHeight;
+  if (!mVideoAdapter->AdaptFrameResolution(
+        frame.width(), frame.height(),
+        frame.timestamp_us() * rtc::kNumNanosecsPerMicrosec,
+        &cropWidth, &cropHeight, &adaptedWidth, &adaptedHeight)) {
+    
+    return kMediaConduitNoError;
+  }
+
+  int cropX = (frame.width() - cropWidth) / 2;
+  int cropY = (frame.height() - cropHeight) / 2;
+
+  rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer;
+  if (adaptedWidth == frame.width() && adaptedHeight == frame.height()) {
+    
+    buffer = frame.video_frame_buffer();
+  } else {
+    
+    
+    rtc::scoped_refptr<webrtc::I420Buffer> i420Buffer =
+      webrtc::I420Buffer::Create(adaptedWidth, adaptedHeight);
+    i420Buffer->CropAndScaleFrom(*frame.video_frame_buffer(), cropX, cropY, cropWidth, cropHeight);
+    buffer = i420Buffer;
+  }
+
+  mVideoBroadcaster.OnFrame(webrtc::VideoFrame(
+      buffer, frame.timestamp(), frame.render_time_ms(), frame.rotation()));
 
   mSendStreamStats.FrameDeliveredToEncoder();
   return kMediaConduitNoError;
