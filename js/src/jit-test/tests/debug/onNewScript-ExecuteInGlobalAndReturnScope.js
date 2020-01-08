@@ -1,7 +1,7 @@
 
 
-var g = newGlobal();
-var g2 = newGlobal();
+var g = newGlobal({newCompartment: true});
+var g2 = newGlobal({newCompartment: true});
 var dbg = new Debugger(g, g2);
 var log = '';
 var canary = 42;

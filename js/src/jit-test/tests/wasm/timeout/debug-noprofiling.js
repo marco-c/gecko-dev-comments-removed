@@ -3,7 +3,7 @@
 
 
 
-newGlobal().Debugger().addDebuggee(this);
+newGlobal({newCompartment: true}).Debugger().addDebuggee(this);
 
 var t = new WebAssembly.Table({
     initial: 1,

@@ -1,6 +1,6 @@
 
 
-const g = newGlobal();
+const g = newGlobal({newCompartment: true});
 g.eval("setLazyParsingDisabled(true)");
 g.eval("setJitCompilerOption('ion.warmup.trigger', 1000)");
 

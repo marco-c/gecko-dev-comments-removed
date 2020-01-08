@@ -1,7 +1,7 @@
 
 
-var g = newGlobal();
-var h = newGlobal();
+var g = newGlobal({newCompartment: true});
+var h = newGlobal({newCompartment: true});
 var dbg = new Debugger;
 var gw = dbg.addDebuggee(g);
 var hw = dbg.addDebuggee(h);

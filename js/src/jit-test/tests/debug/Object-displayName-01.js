@@ -1,6 +1,6 @@
 
 
-var g = newGlobal();
+var g = newGlobal({newCompartment: true});
 var dbg = Debugger(g);
 var name;
 dbg.onDebuggerStatement = function (frame) { name = frame.callee.displayName; };

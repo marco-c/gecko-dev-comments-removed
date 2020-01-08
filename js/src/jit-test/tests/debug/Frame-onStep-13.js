@@ -2,7 +2,7 @@
 
 
 
-var g = newGlobal();
+var g = newGlobal({newCompartment: true});
 g.eval(`function f() {        // 1
   var a,c;                    // 2
   debugger;                   // 3

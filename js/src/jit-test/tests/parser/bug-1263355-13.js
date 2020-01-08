@@ -3,7 +3,7 @@
 
 gczeal(9);
 for (var i in function(){});
-s = newGlobal();
+s = newGlobal({newCompartment: true});
 aa = f();
 function f(x) {
     evalcx(x, s)
@@ -13,7 +13,7 @@ function h(x) {
 }
 
 h("\
-    var g = newGlobal();\
+    var g = newGlobal({newCompartment: true});\
     g.debuggeeGlobal = this;\
     g.eval(\"(\" + function() {\
         var dbg = Debugger(debuggeeGlobal);\

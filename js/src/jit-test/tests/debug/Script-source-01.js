@@ -2,7 +2,7 @@
 
 
 
-let g = newGlobal();
+let g = newGlobal({newCompartment: true});
 let dbg = new Debugger(g);
 
 let count = 0;

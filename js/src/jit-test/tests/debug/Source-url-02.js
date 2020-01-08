@@ -1,6 +1,6 @@
 
 
-var g = newGlobal();
+var g = newGlobal({newCompartment: true});
 g.eval('var double = Function("x", "return 2*x;");');
 
 var dbg = new Debugger;

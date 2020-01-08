@@ -1,6 +1,6 @@
 
 
-var global = newGlobal();
+var global = newGlobal({newCompartment: true});
 var dbg = new Debugger(global);
 
 dbg.onNewScript = function (s) {

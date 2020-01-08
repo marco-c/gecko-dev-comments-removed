@@ -1,7 +1,7 @@
 
 
 gczeal(0);
-let g = newGlobal();
+let g = newGlobal({newCompartment: true});
 evalcx("function f(x) { return {x: x}; }", g);
 gc();
 let initial = gcparam("gcNumber");

@@ -5,7 +5,7 @@
 
 
 
-let g = newGlobal();
+let g = newGlobal({newCompartment: true});
 g.eval(`\
     function* gen(x) {  // line 1
         x++;            // 2

@@ -1,7 +1,7 @@
 
 
 
-var g = newGlobal();
+var g = newGlobal({newCompartment: true});
 g.f = function () { return dbg.getNewestFrame(); };
 var dbg = new Debugger;
 var gw = dbg.addDebuggee(g);

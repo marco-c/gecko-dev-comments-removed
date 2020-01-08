@@ -1,6 +1,6 @@
 
 
-var g = newGlobal();
+var g = newGlobal({newCompartment: true});
 var dbg = Debugger(g);
 var seen = new WeakMap();
 var hits = 0;
@@ -38,7 +38,7 @@ assertEq(hits, 1);
 
 
 fn = g.evaluate("(function(a) { return 5 + a; })");
-var g2 = newGlobal();
+var g2 = newGlobal({newCompartment: true});
 dbg.addDebuggee(g2, dbg);
 hits = 0;
 g2.clone(fn);

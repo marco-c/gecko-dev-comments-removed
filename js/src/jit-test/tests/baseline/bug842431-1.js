@@ -1,5 +1,5 @@
 
-var g = newGlobal();
+var g = newGlobal({newCompartment: true});
 g.eval('function f() { var y; debugger; }');
 
 var dbg = new Debugger(g);

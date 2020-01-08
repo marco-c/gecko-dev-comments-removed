@@ -1,5 +1,5 @@
 
-g = newGlobal()
+g = newGlobal({newCompartment: true})
 g.parent = this
 g.eval("new Debugger(parent).onExceptionUnwind = function(){}");
 var depth = 0;

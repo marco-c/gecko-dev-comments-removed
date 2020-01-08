@@ -1,7 +1,7 @@
 
 
 function testResumptionVal(resumptionVal, turnOffDebugMode) {
-  var g = newGlobal();
+  var g = newGlobal({newCompartment: true});
   var dbg = new Debugger;
   g.log = "";
   g.resumptionVal = resumptionVal;

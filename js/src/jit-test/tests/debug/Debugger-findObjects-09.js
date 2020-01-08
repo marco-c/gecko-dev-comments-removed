@@ -2,7 +2,7 @@
 
 
 var dbg = new Debugger();
-var g = newGlobal();
+var g = newGlobal({newCompartment: true});
 var gw = dbg.addDebuggee(g);
 
 assertEq(dbg.findObjects({ class: "Objec" }).length, 0);

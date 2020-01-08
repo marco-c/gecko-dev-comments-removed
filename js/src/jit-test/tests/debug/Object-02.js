@@ -1,6 +1,6 @@
 
 
-var g = newGlobal();
+var g = newGlobal({newCompartment: true});
 g.f = function (a, b) { return a + "/" + b; };
 var dbg = Debugger(g);
 var hits = 0;

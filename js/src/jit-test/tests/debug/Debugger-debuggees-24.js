@@ -1,9 +1,9 @@
 
 
 
-var g1 = newGlobal();
-var g2 = newGlobal();
-var g3 = newGlobal();
+var g1 = newGlobal({newCompartment: true});
+var g2 = newGlobal({newCompartment: true});
+var g3 = newGlobal({newCompartment: true});
 
 g1.eval("" + function f() {
   var name = "f";

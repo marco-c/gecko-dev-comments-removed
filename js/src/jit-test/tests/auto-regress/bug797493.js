@@ -4,7 +4,7 @@
 
 
 
-var g = newGlobal();
+var g = newGlobal({newCompartment: true});
 var dbg = new Debugger(g);
 dbg.onDebuggerStatement = function handleDebugger(frame) {
     frame.onPop = function handlePop(c) {

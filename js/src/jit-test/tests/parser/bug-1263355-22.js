@@ -1,7 +1,7 @@
 
 
 
-var g = newGlobal();
+var g = newGlobal({newCompartment: true});
 var dbg = new Debugger(g);
 dbg.onEnterFrame = function(f) {
     (f.environment.getVariable("e") == 0);

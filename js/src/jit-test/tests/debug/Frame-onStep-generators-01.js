@@ -1,6 +1,6 @@
 
 
-let g = newGlobal();
+let g = newGlobal({newCompartment: true});
 g.eval(`\
 function* nums() {      // line 1
     yield 1;            //  2

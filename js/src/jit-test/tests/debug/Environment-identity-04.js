@@ -1,6 +1,6 @@
 
 
-var g = newGlobal();
+var g = newGlobal({newCompartment: true});
 g.eval("function f(a, obj) { with (obj) return function () { return a; }; }");
 var dbg = Debugger(g);
 var hits = 0;

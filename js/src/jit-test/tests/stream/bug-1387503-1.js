@@ -1,7 +1,7 @@
 
 
 
-let g = newGlobal();
+let g = newGlobal({newCompartment: true});
 g.parent = this;
 g.hit = false;
 g.eval(`

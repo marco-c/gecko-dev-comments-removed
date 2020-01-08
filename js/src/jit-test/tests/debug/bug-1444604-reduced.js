@@ -1,6 +1,6 @@
 
 
-const g = newGlobal();
+const g = newGlobal({newCompartment: true});
 const dbg = new Debugger();
 const gDO = dbg.addDebuggee(g);
 

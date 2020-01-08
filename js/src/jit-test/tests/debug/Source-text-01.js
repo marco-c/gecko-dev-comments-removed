@@ -3,7 +3,7 @@
 
 
 
-let g = newGlobal();
+let g = newGlobal({newCompartment: true});
 let dbg = new Debugger(g);
 
 var count = 0;

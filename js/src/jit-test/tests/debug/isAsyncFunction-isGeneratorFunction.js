@@ -1,7 +1,7 @@
 
 
 
-var g = newGlobal();
+var g = newGlobal({newCompartment: true});
 var dbg = new Debugger();
 var gDO = dbg.addDebuggee(g);
 g.non_debuggee = function non_debuggee () {}

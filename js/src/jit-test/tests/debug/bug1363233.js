@@ -1,5 +1,5 @@
 
-g = newGlobal();
+g = newGlobal({newCompartment: true});
 dbg = new Debugger;
 setInterruptCallback(function () {
     dbg.addDebuggee(g);

@@ -1,6 +1,6 @@
 
 
-var g = newGlobal();
+var g = newGlobal({newCompartment: true});
 var dbg = Debugger(g);
 dbg.onExceptionUnwind = function (frame, exc) {
     return { return:"sproon" };

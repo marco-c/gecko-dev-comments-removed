@@ -1,7 +1,7 @@
 
 
 
-let g = newGlobal();
+let g = newGlobal({newCompartment: true});
 g.eval(`
     async function af() {
         try {

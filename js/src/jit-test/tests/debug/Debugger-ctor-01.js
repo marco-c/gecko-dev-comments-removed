@@ -15,7 +15,7 @@ assertThrowsInstanceOf(function () { new Debugger(function () {}); }, TypeError)
 assertThrowsInstanceOf(function () { new Debugger(this); }, TypeError);
 
 
-var g = newGlobal();
+var g = newGlobal({newCompartment: true});
 var dbg = new Debugger(g);
 assertEq(dbg instanceof Debugger, true);
 assertEq(Object.getPrototypeOf(dbg), Debugger.prototype);

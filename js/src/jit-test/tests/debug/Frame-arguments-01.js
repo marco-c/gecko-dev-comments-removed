@@ -1,6 +1,6 @@
 
 
-var g = newGlobal();
+var g = newGlobal({newCompartment: true});
 g.args = null;
 var dbg = new Debugger(g);
 var hits;

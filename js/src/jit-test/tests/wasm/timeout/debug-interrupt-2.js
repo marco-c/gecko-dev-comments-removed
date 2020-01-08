@@ -3,7 +3,7 @@
 
 
 
-var g = newGlobal();
+var g = newGlobal({newCompartment: true});
 g.parent = this;
 g.eval("Debugger(parent).onEnterFrame = function() {};");
 timeout(0.01);

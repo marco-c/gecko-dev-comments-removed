@@ -7,7 +7,7 @@
 
 
 
-let g = newGlobal();
+let g = newGlobal({newCompartment: true});
 let dbg = new Debugger(g);
 
 function test(source) {

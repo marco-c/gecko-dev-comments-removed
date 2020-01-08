@@ -1,7 +1,7 @@
 
 
 
-var g = newGlobal();
+var g = newGlobal({newCompartment: true});
 g.eval(
     "function f(x) { return {q: x}; }\n" +
     "var n = f('').q;\n");

@@ -1,6 +1,6 @@
 
 
-var g = newGlobal();
+var g = newGlobal({newCompartment: true});
 g.eval("function f(x) {\n" +
        "    var a = x * x;\n" +
        "    return a;\n" +

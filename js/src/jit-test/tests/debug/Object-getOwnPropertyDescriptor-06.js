@@ -1,7 +1,7 @@
 
 
-var g1 = newGlobal();
-var g2 = newGlobal();
+var g1 = newGlobal({newCompartment: true});
+var g2 = newGlobal({newCompartment: true});
 g1.next = g2;
 
 

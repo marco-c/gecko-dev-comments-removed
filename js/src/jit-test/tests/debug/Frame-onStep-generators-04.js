@@ -1,7 +1,7 @@
 
 
 
-var g = newGlobal();
+var g = newGlobal({newCompartment: true});
 g.log = "";
 g.eval(`
 function* range(stop) {               // line 2

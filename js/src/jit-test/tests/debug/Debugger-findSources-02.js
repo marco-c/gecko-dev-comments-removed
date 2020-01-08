@@ -1,6 +1,6 @@
 
 
-const g = newGlobal();
+const g = newGlobal({newCompartment: true});
 
 g.evaluate(`function fa() {}`, { fileName: "a.js" });
 g.evaluate(`function fb() {}`, { fileName: "b.js" });

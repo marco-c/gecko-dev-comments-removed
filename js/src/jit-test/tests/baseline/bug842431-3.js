@@ -3,7 +3,7 @@
 
 
 
-var g = newGlobal();
+var g = newGlobal({newCompartment: true});
 var dbg = new Debugger(g);
 
 g.eval('function f() { try { var y; throw 123; } catch(e) { assertEq(0, 1); } }');

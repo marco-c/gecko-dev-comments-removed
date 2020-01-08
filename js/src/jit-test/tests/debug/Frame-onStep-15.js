@@ -1,6 +1,6 @@
 
 
-let g = newGlobal();
+let g = newGlobal({newCompartment: true});
 
 
 

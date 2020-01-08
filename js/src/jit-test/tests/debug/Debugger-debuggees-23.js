@@ -2,7 +2,7 @@
 
 
 (function testCCW() {
-  var g = newGlobal();
+  var g = newGlobal({newCompartment: true});
   var dbg = new Debugger;
   g.dbg = dbg;
   g.GLOBAL = g;
@@ -26,7 +26,7 @@
 
 
 (function testGetter() {
-  var g = newGlobal();
+  var g = newGlobal({newCompartment: true});
   g.dbg = new Debugger;
   g.GLOBAL = g;
 
@@ -42,7 +42,7 @@
 
 
 (function testSetter() {
-  var g = newGlobal();
+  var g = newGlobal({newCompartment: true});
   g.dbg = new Debugger;
   g.GLOBAL = g;
 
@@ -58,7 +58,7 @@
 
 
 (function testToString() {
-  var g = newGlobal();
+  var g = newGlobal({newCompartment: true});
   g.dbg = new Debugger;
   g.GLOBAL = g;
 
@@ -74,7 +74,7 @@
 
 
 (function testValueOf() {
-  var g = newGlobal();
+  var g = newGlobal({newCompartment: true});
   g.dbg = new Debugger;
   g.GLOBAL = g;
 
@@ -90,7 +90,7 @@
 
 
 (function testProxyTrap() {
-  var g = newGlobal();
+  var g = newGlobal({newCompartment: true});
   g.dbg = new Debugger;
   g.GLOBAL = g;
 

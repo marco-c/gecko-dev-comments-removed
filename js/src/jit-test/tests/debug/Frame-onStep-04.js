@@ -1,7 +1,7 @@
 
 
 
-var g = newGlobal();
+var g = newGlobal({newCompartment: true});
 g.eval("function f(x) {\n" +
        "    if (x > 0)\n" +
        "        f(x - 1);\n" +

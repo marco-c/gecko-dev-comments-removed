@@ -1,6 +1,6 @@
 
 
-var g = newGlobal();
+var g = newGlobal({newCompartment: true});
 var src = ("var line0 = Error().lineNumber;\n" +
            "function gcd(a, b) {\n" +       
            "    if (a > b)\n" +             

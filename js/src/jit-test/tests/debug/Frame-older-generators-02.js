@@ -3,7 +3,7 @@
 
 
 
-let g = newGlobal();
+let g = newGlobal({newCompartment: true});
 g.eval(`
     function f() {
         attach();

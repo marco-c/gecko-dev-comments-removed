@@ -66,7 +66,7 @@ function checkGetOffsetsCoverage(fun) {
 
   
   
-  var g = newGlobal();
+  var g = newGlobal({newCompartment: true});
   var dbg = Debugger(g);
   dbg.collectCoverageInfo = true;
 

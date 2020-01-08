@@ -1,7 +1,7 @@
 
 
 
-var g = newGlobal();
+var g = newGlobal({newCompartment: true});
 g.eval(`
     // Create a few promises.
     var promises = [], resolvers = [];

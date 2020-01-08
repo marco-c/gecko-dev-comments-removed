@@ -1,6 +1,6 @@
 
 
-var g = newGlobal();
+var g = newGlobal({newCompartment: true});
 g.eval("function f(a, b) {\n" +
        "    for (var i = 0; i < arguments.length; i++)\n" +
        "        arguments[i] = i;\n" +

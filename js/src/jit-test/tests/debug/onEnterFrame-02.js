@@ -1,6 +1,6 @@
 
 
-var g = newGlobal();
+var g = newGlobal({newCompartment: true});
 var N = g.N = 9;
 g.eval("function f(i) { if (i < N) f(i + 1); }");
 

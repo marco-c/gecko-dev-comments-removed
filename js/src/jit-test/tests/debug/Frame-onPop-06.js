@@ -1,6 +1,6 @@
 
 
-var g = newGlobal();
+var g = newGlobal({newCompartment: true});
 g.eval("function f() { debugger; }");
 g.eval("function g() { f(); }");
 g.eval("function h() { g(); }");

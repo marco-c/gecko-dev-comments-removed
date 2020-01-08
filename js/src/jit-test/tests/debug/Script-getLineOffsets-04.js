@@ -1,6 +1,6 @@
 
 
-var g = newGlobal();
+var g = newGlobal({newCompartment: true});
 g.line0 = null;
 var dbg = Debugger(g);
 var where;

@@ -1,4 +1,4 @@
-let g = newGlobal();
+let g = newGlobal({newCompartment: true});
 let dbg = Debugger(g);
 dbg.onDebuggerStatement = function() {
     

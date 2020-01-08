@@ -7,4 +7,4 @@ if (globalPrototypeChainIsMutable()) {
 }
 
 
-Debugger(newGlobal()).memory.takeCensus();
+Debugger(newGlobal({newCompartment: true})).memory.takeCensus();

@@ -1,7 +1,7 @@
 
 
 
-var g = newGlobal();
+var g = newGlobal({newCompartment: true});
 var hits, frame;
 var dbg = Debugger(g);
 dbg.onDebuggerStatement = function (f) {

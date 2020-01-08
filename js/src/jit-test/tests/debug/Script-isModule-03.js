@@ -1,6 +1,6 @@
 
 
-const g = newGlobal();
+const g = newGlobal({newCompartment: true});
 const dbg = Debugger(g);
 let count = 0;
 dbg.onNewScript = function (script) {

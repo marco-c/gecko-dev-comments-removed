@@ -1,11 +1,11 @@
 
 
 
-let g1 = newGlobal();
+let g1 = newGlobal({newCompartment: true});
 let p1 = new g1.Promise((_resolve, _reject) => {});
 
 
-let g2 = newGlobal();
+let g2 = newGlobal({newCompartment: true});
 let p2 = g2.Promise.prototype.then.call(p1, g2.eval(`value => {}`));
 
 

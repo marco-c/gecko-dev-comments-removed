@@ -1,6 +1,6 @@
 
 
-var sandbox = newGlobal();
+var sandbox = newGlobal({newCompartment: true});
 var dbg = new Debugger(sandbox);
 var counter = 0;
 dbg.onExceptionUnwind = (frame, value) => {

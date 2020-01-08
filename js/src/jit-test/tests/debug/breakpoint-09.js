@@ -2,7 +2,7 @@
 
 
 
-var g = newGlobal();
+var g = newGlobal({newCompartment: true});
 var dbg = Debugger(g);
 g.eval("function f() { return eval('2+2'); }");
 var s;
