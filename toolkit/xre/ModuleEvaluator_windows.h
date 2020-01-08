@@ -28,7 +28,8 @@ enum class ModuleTrustFlags : uint32_t {
   FirefoxDirectoryAndVersion = 0x10,
   SystemDirectory = 0x20,
   KeyboardLayout = 0x40,
-  JitPI = 0x80
+  JitPI = 0x80,
+  WinSxSDirectory = 0x100,
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(ModuleTrustFlags);
@@ -92,8 +93,9 @@ class ModuleLoadEvent {
 
 class ModuleEvaluator {
   Maybe<uint64_t> mExeVersion;  
-  nsString mExeDirectory;       
-  nsString mSysDirectory;       
+  nsString mExeDirectory;
+  nsString mSysDirectory;
+  nsString mWinSxSDirectory;
   Vector<nsString, 0, InfallibleAllocPolicy> mKeyboardLayoutDlls;
 
  public:
