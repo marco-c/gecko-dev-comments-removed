@@ -2124,7 +2124,7 @@ BinASTParser<Tok>::parseInterfaceAssertedBoundName(const size_t start, const Bin
 #endif 
 
     RootedAtom name(cx_);
-    MOZ_TRY_VAR(name, tokenizer_->readAtom());
+    MOZ_TRY_VAR(name, tokenizer_->readIdentifierName());
 
     BINJS_MOZ_TRY_DECL(isCaptured, tokenizer_->readBool());
     ParseContext::Scope* scope;
@@ -2230,7 +2230,7 @@ BinASTParser<Tok>::parseInterfaceAssertedDeclaredName(const size_t start, const 
 #endif 
 
     RootedAtom name(cx_);
-    MOZ_TRY_VAR(name, tokenizer_->readAtom());
+    MOZ_TRY_VAR(name, tokenizer_->readIdentifierName());
 
     BINJS_MOZ_TRY_DECL(kind_, parseAssertedDeclaredKind());
 
@@ -2257,7 +2257,7 @@ BinASTParser<Tok>::parseInterfaceAssertedParameterName(const size_t start, const
 #endif 
 
     RootedAtom name(cx_);
-    MOZ_TRY_VAR(name, tokenizer_->readAtom());
+    MOZ_TRY_VAR(name, tokenizer_->readIdentifierName());
 
     BINJS_MOZ_TRY_DECL(isCaptured, tokenizer_->readBool());
     ParseContext::Scope* scope;
@@ -2344,7 +2344,7 @@ BinASTParser<Tok>::parseInterfaceAssertedPositionalParameterName(const size_t st
     BINJS_MOZ_TRY_DECL(index, tokenizer_->readUnsignedLong());
 
     RootedAtom name(cx_);
-    MOZ_TRY_VAR(name, tokenizer_->readAtom());
+    MOZ_TRY_VAR(name, tokenizer_->readIdentifierName());
     
     
     
@@ -2378,7 +2378,7 @@ BinASTParser<Tok>::parseInterfaceAssertedRestParameterName(const size_t start, c
 #endif 
 
     RootedAtom name(cx_);
-    MOZ_TRY_VAR(name, tokenizer_->readAtom());
+    MOZ_TRY_VAR(name, tokenizer_->readIdentifierName());
 
     BINJS_MOZ_TRY_DECL(isCaptured, tokenizer_->readBool());
     ParseContext::Scope* scope;
@@ -2552,7 +2552,7 @@ BinASTParser<Tok>::parseInterfaceAssignmentTargetIdentifier(const size_t start, 
 #endif 
 
     RootedAtom name(cx_);
-    MOZ_TRY_VAR(name, tokenizer_->readAtom());
+    MOZ_TRY_VAR(name, tokenizer_->readIdentifierName());
 
     if (!IsIdentifier(name)) {
         return raiseError("Invalid identifier");
@@ -2735,7 +2735,7 @@ BinASTParser<Tok>::parseInterfaceBindingIdentifier(const size_t start, const Bin
 #endif 
 
     RootedAtom name(cx_);
-    MOZ_TRY_VAR(name, tokenizer_->readAtom());
+    MOZ_TRY_VAR(name, tokenizer_->readIdentifierName());
 
     if (!IsIdentifier(name)) {
         return raiseError("Invalid identifier");
@@ -4013,7 +4013,7 @@ BinASTParser<Tok>::parseInterfaceIdentifierExpression(const size_t start, const 
 #endif 
 
     RootedAtom name(cx_);
-    MOZ_TRY_VAR(name, tokenizer_->readAtom());
+    MOZ_TRY_VAR(name, tokenizer_->readIdentifierName());
 
     if (!IsIdentifier(name)) {
         return raiseError("Invalid identifier");
@@ -4600,7 +4600,7 @@ BinASTParser<Tok>::parseInterfaceStaticMemberAssignmentTarget(const size_t start
     RootedAtom property(cx_);
     {
         nameStart = tokenizer_->offset();
-        MOZ_TRY_VAR(property, tokenizer_->readAtom());
+        MOZ_TRY_VAR(property, tokenizer_->readPropertyKey());
 
     }
 
@@ -4625,7 +4625,7 @@ BinASTParser<Tok>::parseInterfaceStaticMemberExpression(const size_t start, cons
     RootedAtom property(cx_);
     {
         nameStart = tokenizer_->offset();
-        MOZ_TRY_VAR(property, tokenizer_->readAtom());
+        MOZ_TRY_VAR(property, tokenizer_->readPropertyKey());
 
     }
 
