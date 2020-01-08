@@ -158,7 +158,6 @@ def taskgraph_decision(options, parameters=None):
     write_artifact('full-task-graph.json', full_task_json)
 
     
-    write_artifact('runnable-jobs.json.gz', full_task_graph_to_runnable_jobs(full_task_json))
     write_artifact('runnable-jobs.json', full_task_graph_to_runnable_jobs(full_task_json))
 
     
