@@ -4870,10 +4870,13 @@ DoUnaryArithFallback(JSContext* cx, BaselineFrame* frame, ICUnaryArith_Fallback*
         res.setInt32(result);
         break;
       }
-      case JSOP_NEG:
-        if (!NegOperation(cx, val, res))
+      case JSOP_NEG: {
+        
+        RootedValue valCopy(cx, val);
+        if (!NegOperation(cx, &valCopy, res))
             return false;
         break;
+      }
       default:
         MOZ_CRASH("Unexpected op");
     }
