@@ -448,6 +448,25 @@ VARCACHE_PREF(
 
 
 
+
+VARCACHE_PREF(
+  "layout.accessiblecaret.enabled",
+   layout_accessiblecaret_enabled,
+  bool, false
+)
+
+
+
+
+
+VARCACHE_PREF(
+  "layout.accessiblecaret.enabled_on_touch",
+   layout_accessiblecaret_enabled_on_touch,
+  bool, false
+)
+
+
+
 VARCACHE_PREF(
   "layout.accessiblecaret.width",
    layout_accessiblecaret_width,

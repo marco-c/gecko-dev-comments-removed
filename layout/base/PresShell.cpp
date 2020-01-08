@@ -23,6 +23,7 @@
 #include "mozilla/Logging.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/Sprintf.h"
+#include "mozilla/StaticPrefs.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/TouchEvents.h"
@@ -725,25 +726,18 @@ nsIPresShell::FrameSelection()
 
 static bool sSynthMouseMove = true;
 static uint32_t sNextPresShellId;
-static bool sAccessibleCaretEnabled = false;
-static bool sAccessibleCaretOnTouch = false;
 
  bool
 PresShell::AccessibleCaretEnabled(nsIDocShell* aDocShell)
 {
-  static bool initialized = false;
-  if (!initialized) {
-    Preferences::AddBoolVarCache(&sAccessibleCaretEnabled, "layout.accessiblecaret.enabled");
-    Preferences::AddBoolVarCache(&sAccessibleCaretOnTouch, "layout.accessiblecaret.enabled_on_touch");
-    initialized = true;
-  }
   
-  if (sAccessibleCaretEnabled) {
+  if (StaticPrefs::layout_accessiblecaret_enabled()) {
     return true;
   }
   
   
-  if (sAccessibleCaretOnTouch && dom::TouchEvent::PrefEnabled(aDocShell)) {
+  if (StaticPrefs::layout_accessiblecaret_enabled_on_touch() &&
+      dom::TouchEvent::PrefEnabled(aDocShell)) {
     return true;
   }
   

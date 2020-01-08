@@ -5515,17 +5515,6 @@ pref("plugins.flashBlock.enabled", false);
 pref("snav.enabled", false);
 
 
-
-
-pref("layout.accessiblecaret.enabled", false);
-
-
-
-
-
-pref("layout.accessiblecaret.enabled_on_touch", true);
-
-
 pref("layout.accessiblecaret.caret_shown_when_long_tapping_on_empty_content", false);
 
 
