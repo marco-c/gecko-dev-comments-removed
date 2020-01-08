@@ -1,0 +1,550 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
+#include "aes_icm_ext.h"
+#include "crypto_types.h"
+#include "err.h" 
+#include "alloc.h"
+#include "cipher_types.h"
+#include <nss.h>
+
+srtp_debug_module_t srtp_mod_aes_icm = {
+    0,            
+    "aes icm nss" 
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static srtp_err_status_t srtp_aes_icm_nss_alloc(srtp_cipher_t **c,
+                                                int key_len,
+                                                int tlen)
+{
+    srtp_aes_icm_ctx_t *icm;
+
+    debug_print(srtp_mod_aes_icm, "allocating cipher with key length %d",
+                key_len);
+
+    
+
+
+    if (key_len != SRTP_AES_ICM_128_KEY_LEN_WSALT &&
+        key_len != SRTP_AES_ICM_192_KEY_LEN_WSALT &&
+        key_len != SRTP_AES_ICM_256_KEY_LEN_WSALT) {
+        return srtp_err_status_bad_param;
+    }
+
+    
+    if (!NSS_IsInitialized() && NSS_NoDB_Init(NULL) != SECSuccess) {
+        return (srtp_err_status_cipher_fail);
+    }
+
+    
+    *c = (srtp_cipher_t *)srtp_crypto_alloc(sizeof(srtp_cipher_t));
+    if (*c == NULL) {
+        return srtp_err_status_alloc_fail;
+    }
+
+    icm = (srtp_aes_icm_ctx_t *)srtp_crypto_alloc(sizeof(srtp_aes_icm_ctx_t));
+    if (icm == NULL) {
+        srtp_crypto_free(*c);
+        *c = NULL;
+        return srtp_err_status_alloc_fail;
+    }
+
+    icm->key = NULL;
+    icm->ctx = NULL;
+
+    
+    (*c)->state = icm;
+
+    
+    switch (key_len) {
+    case SRTP_AES_ICM_128_KEY_LEN_WSALT:
+        (*c)->algorithm = SRTP_AES_ICM_128;
+        (*c)->type = &srtp_aes_icm_128;
+        icm->key_size = SRTP_AES_128_KEY_LEN;
+        break;
+    case SRTP_AES_ICM_192_KEY_LEN_WSALT:
+        (*c)->algorithm = SRTP_AES_ICM_192;
+        (*c)->type = &srtp_aes_icm_192;
+        icm->key_size = SRTP_AES_192_KEY_LEN;
+        break;
+    case SRTP_AES_ICM_256_KEY_LEN_WSALT:
+        (*c)->algorithm = SRTP_AES_ICM_256;
+        (*c)->type = &srtp_aes_icm_256;
+        icm->key_size = SRTP_AES_256_KEY_LEN;
+        break;
+    }
+
+    
+    (*c)->key_len = key_len;
+
+    return srtp_err_status_ok;
+}
+
+
+
+
+static srtp_err_status_t srtp_aes_icm_nss_dealloc(srtp_cipher_t *c)
+{
+    srtp_aes_icm_ctx_t *ctx;
+
+    ctx = (srtp_aes_icm_ctx_t *)c->state;
+    if (ctx) {
+        
+        if (ctx->key) {
+            PK11_FreeSymKey(ctx->key);
+            ctx->key = NULL;
+        }
+
+        if (ctx->ctx) {
+            PK11_DestroyContext(ctx->ctx, PR_TRUE);
+            ctx->ctx = NULL;
+        }
+
+        
+        octet_string_set_to_zero(ctx, sizeof(srtp_aes_icm_ctx_t));
+        srtp_crypto_free(ctx);
+    }
+
+    
+    srtp_crypto_free(c);
+
+    return (srtp_err_status_ok);
+}
+
+
+
+
+
+
+
+
+
+
+static srtp_err_status_t srtp_aes_icm_nss_context_init(void *cv,
+                                                       const uint8_t *key)
+{
+    srtp_aes_icm_ctx_t *c = (srtp_aes_icm_ctx_t *)cv;
+
+    
+
+
+
+    v128_set_to_zero(&c->counter);
+    v128_set_to_zero(&c->offset);
+    memcpy(&c->counter, key + c->key_size, SRTP_SALT_LEN);
+    memcpy(&c->offset, key + c->key_size, SRTP_SALT_LEN);
+
+    
+    c->offset.v8[SRTP_SALT_LEN] = c->offset.v8[SRTP_SALT_LEN + 1] = 0;
+    c->counter.v8[SRTP_SALT_LEN] = c->counter.v8[SRTP_SALT_LEN + 1] = 0;
+
+    debug_print(srtp_mod_aes_icm, "key:  %s",
+                srtp_octet_string_hex_string(key, c->key_size));
+    debug_print(srtp_mod_aes_icm, "offset: %s", v128_hex_string(&c->offset));
+
+    if (c->key) {
+        PK11_FreeSymKey(c->key);
+        c->key = NULL;
+    }
+
+    PK11SlotInfo *slot = PK11_GetBestSlot(CKM_AES_CTR, NULL);
+    if (!slot) {
+        return srtp_err_status_bad_param;
+    }
+
+    SECItem keyItem = { siBuffer, (unsigned char *)key, c->key_size };
+    c->key = PK11_ImportSymKey(slot, CKM_AES_CTR, PK11_OriginUnwrap,
+                               CKA_ENCRYPT, &keyItem, NULL);
+    PK11_FreeSlot(slot);
+
+    if (!c->key) {
+        return srtp_err_status_cipher_fail;
+    }
+
+    return (srtp_err_status_ok);
+}
+
+
+
+
+
+static srtp_err_status_t srtp_aes_icm_nss_set_iv(void *cv,
+                                                 uint8_t *iv,
+                                                 srtp_cipher_direction_t dir)
+{
+    srtp_aes_icm_ctx_t *c = (srtp_aes_icm_ctx_t *)cv;
+    v128_t nonce;
+
+    
+    v128_copy_octet_string(&nonce, iv);
+
+    debug_print(srtp_mod_aes_icm, "setting iv: %s", v128_hex_string(&nonce));
+
+    v128_xor(&c->counter, &c->offset, &nonce);
+
+    debug_print(srtp_mod_aes_icm, "set_counter: %s",
+                v128_hex_string(&c->counter));
+
+    
+    CK_AES_CTR_PARAMS param;
+    param.ulCounterBits = 16;
+    memcpy(param.cb, &c->counter, 16);
+
+    if (!c->key) {
+        return srtp_err_status_bad_param;
+    }
+
+    if (c->ctx) {
+        PK11_DestroyContext(c->ctx, PR_TRUE);
+    }
+
+    SECItem paramItem = { siBuffer, (unsigned char *)&param,
+                          sizeof(CK_AES_CTR_PARAMS) };
+    c->ctx = PK11_CreateContextBySymKey(CKM_AES_CTR, CKA_ENCRYPT, c->key,
+                                        &paramItem);
+    if (!c->ctx) {
+        return srtp_err_status_cipher_fail;
+    }
+
+    return srtp_err_status_ok;
+}
+
+
+
+
+
+
+
+
+
+static srtp_err_status_t srtp_aes_icm_nss_encrypt(void *cv,
+                                                  unsigned char *buf,
+                                                  unsigned int *enc_len)
+{
+    srtp_aes_icm_ctx_t *c = (srtp_aes_icm_ctx_t *)cv;
+
+    if (!c->ctx) {
+        return srtp_err_status_bad_param;
+    }
+
+    int rv =
+        PK11_CipherOp(c->ctx, buf, (int *)enc_len, *enc_len, buf, *enc_len);
+
+    srtp_err_status_t status = (srtp_err_status_ok);
+    if (rv != SECSuccess) {
+        status = (srtp_err_status_cipher_fail);
+    }
+
+    return status;
+}
+
+
+
+
+static const char srtp_aes_icm_128_nss_description[] =
+    "AES-128 counter mode using NSS";
+static const char srtp_aes_icm_192_nss_description[] =
+    "AES-192 counter mode using NSS";
+static const char srtp_aes_icm_256_nss_description[] =
+    "AES-256 counter mode using NSS";
+
+
+
+
+
+
+static const uint8_t srtp_aes_icm_128_test_case_0_key[SRTP_AES_ICM_128_KEY_LEN_WSALT] = {
+    0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6,
+    0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c,
+    0xf0, 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7,
+    0xf8, 0xf9, 0xfa, 0xfb, 0xfc, 0xfd
+};
+
+
+
+static uint8_t srtp_aes_icm_128_test_case_0_nonce[16] = {
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+};
+
+
+
+static const uint8_t srtp_aes_icm_128_test_case_0_plaintext[32] =  {
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+};
+
+
+
+static const uint8_t srtp_aes_icm_128_test_case_0_ciphertext[32] = {
+    0xe0, 0x3e, 0xad, 0x09, 0x35, 0xc9, 0x5e, 0x80,
+    0xe1, 0x66, 0xb1, 0x6d, 0xd9, 0x2b, 0x4e, 0xb4,
+    0xd2, 0x35, 0x13, 0x16, 0x2b, 0x02, 0xd0, 0xf7,
+    0x2a, 0x43, 0xa2, 0xfe, 0x4a, 0x5f, 0x97, 0xab
+};
+
+
+static const srtp_cipher_test_case_t srtp_aes_icm_128_test_case_0 = {
+    SRTP_AES_ICM_128_KEY_LEN_WSALT,          
+    srtp_aes_icm_128_test_case_0_key,        
+    srtp_aes_icm_128_test_case_0_nonce,      
+    32,                                      
+    srtp_aes_icm_128_test_case_0_plaintext,  
+    32,                                      
+    srtp_aes_icm_128_test_case_0_ciphertext, 
+    0,                                       
+    NULL,                                    
+    0,                                       
+    NULL                                     
+};
+
+
+
+
+
+
+static const uint8_t srtp_aes_icm_192_test_case_0_key[SRTP_AES_ICM_192_KEY_LEN_WSALT] = {
+    0xea, 0xb2, 0x34, 0x76, 0x4e, 0x51, 0x7b, 0x2d,
+    0x3d, 0x16, 0x0d, 0x58, 0x7d, 0x8c, 0x86, 0x21,
+    0x97, 0x40, 0xf6, 0x5f, 0x99, 0xb6, 0xbc, 0xf7,
+    0xf0, 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7,
+    0xf8, 0xf9, 0xfa, 0xfb, 0xfc, 0xfd
+};
+
+
+
+static uint8_t srtp_aes_icm_192_test_case_0_nonce[16] = {
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+};
+
+
+
+static const uint8_t srtp_aes_icm_192_test_case_0_plaintext[32] =  {
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+};
+
+
+
+static const uint8_t srtp_aes_icm_192_test_case_0_ciphertext[32] = {
+    0x35, 0x09, 0x6c, 0xba, 0x46, 0x10, 0x02, 0x8d,
+    0xc1, 0xb5, 0x75, 0x03, 0x80, 0x4c, 0xe3, 0x7c,
+    0x5d, 0xe9, 0x86, 0x29, 0x1d, 0xcc, 0xe1, 0x61,
+    0xd5, 0x16, 0x5e, 0xc4, 0x56, 0x8f, 0x5c, 0x9a
+};
+
+
+static const srtp_cipher_test_case_t srtp_aes_icm_192_test_case_0 = {
+    SRTP_AES_ICM_192_KEY_LEN_WSALT,          
+    srtp_aes_icm_192_test_case_0_key,        
+    srtp_aes_icm_192_test_case_0_nonce,      
+    32,                                      
+    srtp_aes_icm_192_test_case_0_plaintext,  
+    32,                                      
+    srtp_aes_icm_192_test_case_0_ciphertext, 
+    0,                                       
+    NULL,                                    
+    0,                                       
+    NULL                                     
+};
+
+
+
+
+
+
+static const uint8_t srtp_aes_icm_256_test_case_0_key[SRTP_AES_ICM_256_KEY_LEN_WSALT] = {
+    0x57, 0xf8, 0x2f, 0xe3, 0x61, 0x3f, 0xd1, 0x70,
+    0xa8, 0x5e, 0xc9, 0x3c, 0x40, 0xb1, 0xf0, 0x92,
+    0x2e, 0xc4, 0xcb, 0x0d, 0xc0, 0x25, 0xb5, 0x82,
+    0x72, 0x14, 0x7c, 0xc4, 0x38, 0x94, 0x4a, 0x98,
+    0xf0, 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7,
+    0xf8, 0xf9, 0xfa, 0xfb, 0xfc, 0xfd
+};
+
+
+
+static uint8_t srtp_aes_icm_256_test_case_0_nonce[16] = {
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+};
+
+
+
+static const uint8_t srtp_aes_icm_256_test_case_0_plaintext[32] =  {
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+};
+
+
+
+static const uint8_t srtp_aes_icm_256_test_case_0_ciphertext[32] = {
+    0x92, 0xbd, 0xd2, 0x8a, 0x93, 0xc3, 0xf5, 0x25,
+    0x11, 0xc6, 0x77, 0xd0, 0x8b, 0x55, 0x15, 0xa4,
+    0x9d, 0xa7, 0x1b, 0x23, 0x78, 0xa8, 0x54, 0xf6,
+    0x70, 0x50, 0x75, 0x6d, 0xed, 0x16, 0x5b, 0xac
+};
+
+
+static const srtp_cipher_test_case_t srtp_aes_icm_256_test_case_0 = {
+    SRTP_AES_ICM_256_KEY_LEN_WSALT,          
+    srtp_aes_icm_256_test_case_0_key,        
+    srtp_aes_icm_256_test_case_0_nonce,      
+    32,                                      
+    srtp_aes_icm_256_test_case_0_plaintext,  
+    32,                                      
+    srtp_aes_icm_256_test_case_0_ciphertext, 
+    0,                                       
+    NULL,                                    
+    0,                                       
+    NULL                                     
+};
+
+
+
+
+
+const srtp_cipher_type_t srtp_aes_icm_128 = {
+    srtp_aes_icm_nss_alloc,           
+    srtp_aes_icm_nss_dealloc,         
+    srtp_aes_icm_nss_context_init,    
+    0,                                
+    srtp_aes_icm_nss_encrypt,         
+    srtp_aes_icm_nss_encrypt,         
+    srtp_aes_icm_nss_set_iv,          
+    0,                                
+    srtp_aes_icm_128_nss_description, 
+    &srtp_aes_icm_128_test_case_0,    
+    SRTP_AES_ICM_128                  
+};
+
+
+
+
+
+const srtp_cipher_type_t srtp_aes_icm_192 = {
+    srtp_aes_icm_nss_alloc,           
+    srtp_aes_icm_nss_dealloc,         
+    srtp_aes_icm_nss_context_init,    
+    0,                                
+    srtp_aes_icm_nss_encrypt,         
+    srtp_aes_icm_nss_encrypt,         
+    srtp_aes_icm_nss_set_iv,          
+    0,                                
+    srtp_aes_icm_192_nss_description, 
+    &srtp_aes_icm_192_test_case_0,    
+    SRTP_AES_ICM_192                  
+};
+
+
+
+
+
+const srtp_cipher_type_t srtp_aes_icm_256 = {
+    srtp_aes_icm_nss_alloc,           
+    srtp_aes_icm_nss_dealloc,         
+    srtp_aes_icm_nss_context_init,    
+    0,                                
+    srtp_aes_icm_nss_encrypt,         
+    srtp_aes_icm_nss_encrypt,         
+    srtp_aes_icm_nss_set_iv,          
+    0,                                
+    srtp_aes_icm_256_nss_description, 
+    &srtp_aes_icm_256_test_case_0,    
+    SRTP_AES_ICM_256                  
+};

@@ -44,38 +44,41 @@
 
 
 
-const srtp_cipher_type_t srtp_null_cipher;
-const srtp_cipher_type_t srtp_aes_icm_128;
-const srtp_cipher_type_t srtp_aes_icm_256;
-#ifdef OPENSSL
-const srtp_cipher_type_t srtp_aes_icm_192;
-const srtp_cipher_type_t srtp_aes_gcm_128_openssl;
-const srtp_cipher_type_t srtp_aes_gcm_256_openssl;
+extern const srtp_cipher_type_t srtp_null_cipher;
+extern const srtp_cipher_type_t srtp_aes_icm_128;
+extern const srtp_cipher_type_t srtp_aes_icm_256;
+#ifdef GCM
+extern const srtp_cipher_type_t srtp_aes_icm_192;
+extern const srtp_cipher_type_t srtp_aes_gcm_128;
+extern const srtp_cipher_type_t srtp_aes_gcm_256;
 #endif
 
 
 
 
 
-const srtp_auth_type_t srtp_null_auth;
-const srtp_auth_type_t srtp_hmac;
+extern const srtp_auth_type_t srtp_null_auth;
+extern const srtp_auth_type_t srtp_hmac;
 
 
 
 
 
-srtp_debug_module_t srtp_mod_auth;
-srtp_debug_module_t srtp_mod_cipher;
-srtp_debug_module_t mod_stat;
-srtp_debug_module_t mod_alloc;
+extern srtp_debug_module_t srtp_mod_auth;
+extern srtp_debug_module_t srtp_mod_cipher;
+extern srtp_debug_module_t srtp_mod_stat;
+extern srtp_debug_module_t srtp_mod_alloc;
 
 
-srtp_debug_module_t srtp_mod_aes_icm;
+extern srtp_debug_module_t srtp_mod_aes_icm;
 #ifdef OPENSSL
-srtp_debug_module_t srtp_mod_aes_gcm;
+extern srtp_debug_module_t srtp_mod_aes_gcm;
+#endif
+#ifdef NSS
+extern srtp_debug_module_t srtp_mod_aes_gcm;
 #endif
 
 
-srtp_debug_module_t srtp_mod_hmac;
+extern srtp_debug_module_t srtp_mod_hmac;
 
 #endif
