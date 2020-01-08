@@ -598,10 +598,11 @@ AddAnimationsForProperty(nsIFrame* aFrame,
   
   
   
+  
+  
+  EffectSet* effects = EffectSet::GetEffectSet(styleFrame);
   uint64_t animationGeneration =
-    
-    
-    RestyleManager::GetAnimationGenerationForFrame(styleFrame);
+    effects ? effects->GetAnimationGeneration() : 0;
   aAnimationInfo.SetAnimationGeneration(animationGeneration);
 
   EffectCompositor::ClearIsRunningOnCompositor(styleFrame, aProperty);
@@ -674,7 +675,6 @@ AddAnimationsForProperty(nsIFrame* aFrame,
     nsCSSProps::PropHasFlags(aProperty, CSSPropFlags::CanAnimateOnCompositor),
     "inconsistent property flags");
 
-  EffectSet* effects = EffectSet::GetEffectSet(styleFrame);
   
   for (size_t animIdx = 0; animIdx < compositorAnimations.Length(); animIdx++) {
     dom::Animation* anim = compositorAnimations[animIdx];
