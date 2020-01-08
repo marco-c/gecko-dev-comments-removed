@@ -2954,6 +2954,13 @@ ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange, nsAtom* aOrig
   if (mIsRoot && nsLayoutUtils::CanScrollOriginClobberApz(mLastScrollOrigin)) {
     content->SetProperty(nsGkAtoms::apzCallbackTransform, new CSSPoint(),
                          nsINode::DeleteProperty<CSSPoint>);
+
+    
+    
+    
+    
+    
+    presContext->PresShell()->SetVisualViewportOffset(pt);
   }
 
   ScrollVisual();
