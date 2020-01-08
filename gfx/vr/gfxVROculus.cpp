@@ -176,16 +176,16 @@ static const uint32_t kNumOculusButton = static_cast<uint32_t>
                                          NumButtonType);
 static const uint32_t kNumOculusHaptcs = 1;
 
-ovrFovPort
-ToFovPort(const VRFieldOfView& aFOV)
-{
-  ovrFovPort fovPort;
-  fovPort.LeftTan = tan(aFOV.leftDegrees * M_PI / 180.0);
-  fovPort.RightTan = tan(aFOV.rightDegrees * M_PI / 180.0);
-  fovPort.UpTan = tan(aFOV.upDegrees * M_PI / 180.0);
-  fovPort.DownTan = tan(aFOV.downDegrees * M_PI / 180.0);
-  return fovPort;
-}
+
+
+
+
+
+
+
+
+
+
 
 VRFieldOfView
 FromFovPort(const ovrFovPort& aFOV)
@@ -1321,13 +1321,13 @@ VRControllerOculus::VRControllerOculus(dom::GamepadHand aHand, uint32_t aDisplay
 
   VRControllerState& state = mControllerInfo.mControllerState;
 
-  char* touchID = (char*)"";
+  const char* touchID = "";
   switch (aHand) {
     case dom::GamepadHand::Left:
-      touchID = (char*)"Oculus Touch (Left)";
+      touchID = "Oculus Touch (Left)";
       break;
     case dom::GamepadHand::Right:
-      touchID = (char*)"Oculus Touch (Right)";
+      touchID = "Oculus Touch (Right)";
       break;
     default:
       MOZ_ASSERT(false);
@@ -1808,13 +1808,6 @@ VRSystemManagerOculus::HandleButtonPress(uint32_t aControllerIdx,
     
     
     
-    if (MOZ_UNLIKELY(aButton >= controller->GetControllerInfo().GetNumButtons())) {
-      
-      MOZ_CRASH_UNSAFE_PRINTF("Oculus handleButton(aButton = %d, length = %d, controller: %s.)",
-                              aButton,
-                              controller->GetControllerInfo().GetNumButtons(),
-                              controller->GetControllerInfo().GetControllerName());
-    }
     NewButtonEvent(aControllerIdx, aButton, aButtonMask & aButtonPressed,
                    aButtonMask & aButtonTouched,
                    (aButtonMask & aButtonPressed) ? 1.0L : 0.0L);
@@ -1841,13 +1834,6 @@ VRSystemManagerOculus::HandleIndexTriggerPress(uint32_t aControllerIdx,
   
   if (oldValue != aValue ||
       touchedDiff & aTouchMask) {
-    if (MOZ_UNLIKELY(aButton >= controller->GetControllerInfo().GetNumButtons())) {
-      
-      MOZ_CRASH_UNSAFE_PRINTF("Oculus handleIndexTrigger(aButton = %d, length = %d, controller: %s.)",
-                              aButton,
-                              controller->GetControllerInfo().GetNumButtons(),
-                              controller->GetControllerInfo().GetControllerName());
-    }
     NewButtonEvent(aControllerIdx, aButton, aValue > threshold,
                    aButtonTouched & aTouchMask, aValue);
     controller->SetIndexTrigger(aValue);
@@ -1869,13 +1855,6 @@ VRSystemManagerOculus::HandleHandTriggerPress(uint32_t aControllerIdx,
 
   
   if (oldValue != aValue) {
-    if (MOZ_UNLIKELY(aButton >= controller->GetControllerInfo().GetNumButtons())) {
-      
-      MOZ_CRASH_UNSAFE_PRINTF("Oculus handleHandTrigger(aButton = %d, length = %d, controller: %s.)",
-                              aButton,
-                              controller->GetControllerInfo().GetNumButtons(),
-                              controller->GetControllerInfo().GetControllerName());
-    }
     NewButtonEvent(aControllerIdx, aButton, aValue > threshold,
                    aValue > threshold, aValue);
     controller->SetHandTrigger(aValue);
@@ -1891,13 +1870,6 @@ VRSystemManagerOculus::HandleTouchEvent(uint32_t aControllerIdx, uint32_t aButto
   const uint64_t touchedDiff = (controller->GetButtonTouched() ^ aButtonTouched);
 
   if (touchedDiff & aTouchMask) {
-    if (MOZ_UNLIKELY(aButton >= controller->GetControllerInfo().GetNumButtons())) {
-      
-      MOZ_CRASH_UNSAFE_PRINTF("Oculus HandleTouchEvent(aButton = %d, length = %d, controller: %s.)",
-                               aButton,
-                               controller->GetControllerInfo().GetNumButtons(),
-                               controller->GetControllerInfo().GetControllerName());
-    }
     NewButtonEvent(aControllerIdx, aButton, false, aTouchMask & aButtonTouched, 0.0f);
   }
 }
@@ -1915,13 +1887,6 @@ VRSystemManagerOculus::HandleAxisMove(uint32_t aControllerIdx, uint32_t aAxis,
   }
 
   if (controller->GetAxisMove(aAxis) != value) {
-    if (MOZ_UNLIKELY(aAxis >= controller->GetControllerInfo().GetNumAxes())) {
-      
-      MOZ_CRASH_UNSAFE_PRINTF("Oculus HandleAxisMove(aAxis = %d, length = %d, controller: %s.)",
-                               aAxis,
-                               controller->GetControllerInfo().GetNumAxes(),
-                               controller->GetControllerInfo().GetControllerName());
-    }
     NewAxisMove(aControllerIdx, aAxis, value);
     controller->SetAxisMove(aAxis, value);
   }
@@ -2030,7 +1995,7 @@ VRSystemManagerOculus::ScanForControllers()
           hand = GamepadHand::Right;
           break;
         default:
-          continue;
+          break;
       }
       RefPtr<VRControllerOculus> oculusController = new VRControllerOculus(hand,
                                                       mDisplay->GetDisplayInfo().GetDisplayID());
