@@ -537,6 +537,7 @@ ReadableStream::createStream(JSContext* cx, HandleObject proto )
     
     
     
+    
     stream->initStateBits(Readable);
 
     return stream;
@@ -788,6 +789,7 @@ ReadableStream_getReader(JSContext* cx, unsigned argc, Value* vp)
         }
 
         
+        
         int32_t notByob;
         if (!CompareStrings(cx, mode, cx->names().byob, &notByob)) {
             return false;
@@ -810,6 +812,10 @@ ReadableStream_getReader(JSContext* cx, unsigned argc, Value* vp)
     args.rval().setObject(*reader);
     return true;
 }
+
+
+
+
 
 
 
@@ -869,6 +875,10 @@ static const JSPropertySpec ReadableStream_properties[] = {
 };
 
 CLASS_SPEC(ReadableStream, 0, SlotCount, 0, 0, JS_NULL_CLASS_OPS);
+
+
+
+
 
 
 
@@ -1659,6 +1669,8 @@ ReadableStreamErrorInternal(JSContext* cx, Handle<ReadableStream*> unwrappedStre
 
 
 
+
+
 static MOZ_MUST_USE bool
 ReadableStreamFulfillReadOrReadIntoRequest(JSContext* cx,
                                            Handle<ReadableStream*> unwrappedStream,
@@ -1803,6 +1815,7 @@ ReadableStreamDefaultReader::constructor(JSContext* cx, unsigned argc, Value* vp
         return false;
     }
 
+    
     
     Rooted<ReadableStream*> unwrappedStream(cx,
         UnwrapAndTypeCheckArgument<ReadableStream>(cx,
@@ -2011,6 +2024,7 @@ ReadableStreamReaderGenericCancel(JSContext* cx,
     
     return ::ReadableStreamCancel(cx, unwrappedStream, reason);
 }
+
 
 
 
@@ -2232,6 +2246,8 @@ ControllerStartHandler(JSContext* cx, unsigned argc, Value* vp)
     
     
     
+    
+    
     if (!ReadableStreamControllerCallPullIfNeeded(cx, controller)) {
         return false;
     }
@@ -2286,6 +2302,7 @@ ValidateAndNormalizeQueuingStrategy(JSContext* cx,
                                     HandleValue size,
                                     HandleValue highWaterMarkVal,
                                     double* highWaterMark);
+
 
 
 
@@ -2704,6 +2721,7 @@ ReadableStreamDefaultControllerPullSteps(JSContext* cx,
         }
 
         
+        
         else {
             if (!ReadableStreamControllerCallPullIfNeeded(cx, unwrappedController)) {
                 return nullptr;
@@ -2772,6 +2790,7 @@ ControllerPullHandler(JSContext* cx, unsigned argc, Value* vp)
     
     if (pullAgain) {
         
+        
         if (!ReadableStreamControllerCallPullIfNeeded(cx, controller)) {
             return false;
         }
@@ -2819,6 +2838,8 @@ ReadableStreamControllerGetDesiredSizeUnchecked(ReadableStreamController* unwrap
 
 
 
+
+
 inline static MOZ_MUST_USE bool
 ReadableStreamControllerCallPullIfNeeded(JSContext* cx,
                                          Handle<ReadableStreamController*> unwrappedController)
@@ -2847,6 +2868,7 @@ ReadableStreamControllerCallPullIfNeeded(JSContext* cx,
     
     unwrappedController->setPulling();
 
+    
     
     
     RootedObject wrappedController(cx, unwrappedController);
@@ -2906,6 +2928,8 @@ ReadableStreamControllerCallPullIfNeeded(JSContext* cx,
 
 
 
+
+
 static bool
 ReadableStreamControllerShouldCallPull(ReadableStreamController* unwrappedController)
 {
@@ -2938,6 +2962,7 @@ ReadableStreamControllerShouldCallPull(ReadableStreamController* unwrappedContro
     }
 
     
+    
     double desiredSize = ReadableStreamControllerGetDesiredSizeUnchecked(unwrappedController);
 
     
@@ -2966,6 +2991,7 @@ ReadableStreamDefaultControllerClose(JSContext* cx,
     unwrappedController->setCloseRequested();
 
     
+    
     RootedNativeObject unwrappedQueue(cx, unwrappedController->queue());
     if (unwrappedQueue->getDenseInitializedLength() == 0) {
         return ReadableStreamCloseInternal(cx, unwrappedStream);
@@ -2979,6 +3005,7 @@ EnqueueValueWithSize(JSContext* cx,
                      Handle<ReadableStreamController*> unwrappedContainer,
                      HandleValue value,
                      HandleValue sizeVal);
+
 
 
 
@@ -3016,6 +3043,7 @@ ReadableStreamDefaultControllerEnqueue(JSContext* cx,
         RootedValue strategySize(cx, unwrappedController->strategySize());
         if (!strategySize.isUndefined()) {
             
+            
             if (!cx->compartment()->wrap(cx, &strategySize)) {
                 return false;
             }
@@ -3052,6 +3080,7 @@ ReadableStreamDefaultControllerEnqueue(JSContext* cx,
         }
     }
 
+    
     
     
     return ReadableStreamControllerCallPullIfNeeded(cx, unwrappedController);
@@ -3101,6 +3130,7 @@ ReadableStreamControllerError(JSContext* cx,
 
 
 
+
 static MOZ_MUST_USE bool
 ReadableStreamDefaultControllerErrorIfNeeded(JSContext* cx,
                                              Handle<ReadableStreamDefaultController*> unwrappedController,
@@ -3115,6 +3145,8 @@ ReadableStreamDefaultControllerErrorIfNeeded(JSContext* cx,
     }
     return true;
 }
+
+
 
 
 
@@ -3137,6 +3169,7 @@ ReadableStreamControllerGetDesiredSizeUnchecked(ReadableStreamController* contro
 
 
 #if 0 
+
 
 
 
@@ -3448,6 +3481,7 @@ ReadableByteStreamControllerPullSteps(JSContext* cx,
             
             
             
+            
             RootedNativeObject unwrappedQueue(cx, unwrappedController->queue());
             Rooted<ByteStreamChunk*> unwrappedEntry(cx,
                 ToUnwrapped<ByteStreamChunk>(cx, ShiftFromList<JSObject>(cx, unwrappedQueue)));
@@ -3457,6 +3491,8 @@ ReadableByteStreamControllerPullSteps(JSContext* cx,
 
             queueTotalSize = queueTotalSize - unwrappedEntry->byteLength();
 
+            
+            
             
             
             
@@ -3508,6 +3544,7 @@ ReadableByteStreamControllerPullSteps(JSContext* cx,
         double autoAllocateChunkSize = val.toNumber();
 
         
+        
         JSObject* bufferObj = JS_NewArrayBuffer(cx, autoAllocateChunkSize);
 
         
@@ -3524,6 +3561,7 @@ ReadableByteStreamControllerPullSteps(JSContext* cx,
         
         
         
+        
         RootedObject pullIntoDescriptor(cx,
             PullIntoDescriptor::create(cx, buffer, 0,
                                        autoAllocateChunkSize, 0, 1,
@@ -3533,6 +3571,7 @@ ReadableByteStreamControllerPullSteps(JSContext* cx,
             return PromiseRejectedWithPendingError(cx);
         }
 
+        
         
         if (!AppendToListAtSlot(cx,
                                 unwrappedController,
@@ -3591,9 +3630,11 @@ ReadableStreamControllerPullSteps(JSContext* cx, Handle<ReadableStreamController
 
 
 
+
 static MOZ_MUST_USE bool
 ReadableByteStreamControllerInvalidateBYOBRequest(JSContext* cx,
                                                   Handle<ReadableByteStreamController*> unwrappedController);
+
 
 
 
@@ -3602,6 +3643,7 @@ static MOZ_MUST_USE bool
 ReadableByteStreamControllerClearPendingPullIntos(JSContext* cx,
                                                   Handle<ReadableByteStreamController*> unwrappedController)
 {
+    
     
     if (!ReadableByteStreamControllerInvalidateBYOBRequest(cx, unwrappedController)) {
         return false;
@@ -3683,6 +3725,8 @@ ReadableByteStreamControllerClose(JSContext* cx,
 
 
 
+
+
 static MOZ_MUST_USE bool
 ReadableByteStreamControllerHandleQueueDrain(JSContext* cx,
                                              Handle<ReadableStreamController*> unwrappedController)
@@ -3690,12 +3734,14 @@ ReadableByteStreamControllerHandleQueueDrain(JSContext* cx,
     MOZ_ASSERT(unwrappedController->is<ReadableByteStreamController>());
 
     
+    
     Rooted<ReadableStream*> unwrappedStream(cx, unwrappedController->stream());
     MOZ_ASSERT(unwrappedStream->readable());
 
     
     
     if (unwrappedController->queueTotalSize() == 0 && unwrappedController->closeRequested()) {
+        
         
         return ReadableStreamCloseInternal(cx, unwrappedStream);
     }
@@ -3710,6 +3756,7 @@ enum BYOBRequestSlots {
     BYOBRequestSlot_View,
     BYOBRequestSlotCount
 };
+
 
 
 
@@ -3732,6 +3779,7 @@ ReadableByteStreamControllerInvalidateBYOBRequest(JSContext* cx,
 
     
     
+    
     unwrappedBYOBRequest->setFixedSlot(BYOBRequestSlot_Controller, UndefinedValue());
 
     
@@ -3742,6 +3790,7 @@ ReadableByteStreamControllerInvalidateBYOBRequest(JSContext* cx,
 
     return true;
 }
+
 
 
 
@@ -4070,6 +4119,7 @@ ValidateAndNormalizeHighWaterMark(JSContext* cx, HandleValue highWaterMarkVal, d
 }
 
 
+
 static MOZ_MUST_USE bool
 ValidateAndNormalizeQueuingStrategy(JSContext* cx, HandleValue size,
                                     HandleValue highWaterMarkVal, double* highWaterMark)
@@ -4082,6 +4132,7 @@ ValidateAndNormalizeQueuingStrategy(JSContext* cx, HandleValue size,
         return false;
     }
 
+    
     
     if (!ValidateAndNormalizeHighWaterMark(cx, highWaterMarkVal, highWaterMark)) {
         return false;
@@ -4421,6 +4472,7 @@ JS::ReadableStreamUpdateDataAvailableFromSource(JSContext* cx, JS::HandleObject 
 
         
         
+        
         JSObject* viewObj = JS_NewUint8Array(cx, availableData);
         if (!viewObj) {
             return false;
@@ -4446,6 +4498,8 @@ JS::ReadableStreamUpdateDataAvailableFromSource(JSContext* cx, JS::HandleObject 
         }
 
         
+        
+        
         RootedValue chunk(cx, ObjectValue(*transferredView));
         if (!ReadableStreamFulfillReadOrReadIntoRequest(cx, unwrappedStream, chunk, false)) {
             return false;
@@ -4457,9 +4511,6 @@ JS::ReadableStreamUpdateDataAvailableFromSource(JSContext* cx, JS::HandleObject 
         
         MOZ_ASSERT(!unwrappedStream->locked());
 
-        
-        
-        
         
         
         
