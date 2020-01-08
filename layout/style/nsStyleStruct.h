@@ -968,13 +968,6 @@ private:
   ((l) == 0) ? 0 : std::max((tpp), (l) / (tpp) * (tpp))
 
 
-
-#define NS_ROUND_OFFSET_TO_PIXELS(l,tpp) \
-  (((l) == 0) ? 0 : \
-    ((l) > 0) ? std::max( (tpp), ((l) + ((tpp) / 2)) / (tpp) * (tpp)) : \
-                std::min(-(tpp), ((l) - ((tpp) / 2)) / (tpp) * (tpp)))
-
-
 static bool IsVisibleBorderStyle(uint8_t aStyle)
 {
   return (aStyle != NS_STYLE_BORDER_STYLE_NONE &&
@@ -2899,10 +2892,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleColumn
   uint8_t      mColumnRuleStyle;  
   mozilla::StyleColumnFill mColumnFill = mozilla::StyleColumnFill::Balance;
   mozilla::StyleColumnSpan mColumnSpan = mozilla::StyleColumnSpan::None;
-
-  void SetColumnRuleWidth(nscoord aWidth) {
-    mColumnRuleWidth = NS_ROUND_BORDER_TO_PIXELS(aWidth, mTwipsPerPixel);
-  }
 
   nscoord GetComputedColumnRuleWidth() const {
     return (IsVisibleBorderStyle(mColumnRuleStyle) ? mColumnRuleWidth : 0);
