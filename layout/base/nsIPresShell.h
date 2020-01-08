@@ -1660,13 +1660,13 @@ public:
   
   static void ClearMouseCapture(nsIFrame* aFrame);
 
-  void SetScrollPositionClampingScrollPortSize(nscoord aWidth, nscoord aHeight);
-  bool IsScrollPositionClampingScrollPortSizeSet() {
-    return mScrollPositionClampingScrollPortSizeSet;
+  void SetVisualViewportSize(nscoord aWidth, nscoord aHeight);
+  bool IsVisualViewportSizeSet() {
+    return mVisualViewportSizeSet;
   }
-  nsSize GetScrollPositionClampingScrollPortSize() {
-    NS_ASSERTION(mScrollPositionClampingScrollPortSizeSet, "asking for scroll port when its not set?");
-    return mScrollPositionClampingScrollPortSize;
+  nsSize GetVisualViewportSize() {
+    NS_ASSERTION(mVisualViewportSizeSet, "asking for visual viewport size when its not set?");
+    return mVisualViewportSize;
   }
 
   void SetVisualViewportOffset(const nsPoint& aScrollOffset) {
@@ -1753,7 +1753,7 @@ protected:
   
   uint64_t                  mPaintCount;
 
-  nsSize                    mScrollPositionClampingScrollPortSize;
+  nsSize                    mVisualViewportSize;
 
   nsPoint                   mVisualViewportOffset;
 
@@ -1813,7 +1813,7 @@ protected:
 
   
   bool                      mWasLastReflowInterrupted : 1;
-  bool                      mScrollPositionClampingScrollPortSizeSet : 1;
+  bool                      mVisualViewportSizeSet : 1;
 
   
   bool mNeedLayoutFlush : 1;
