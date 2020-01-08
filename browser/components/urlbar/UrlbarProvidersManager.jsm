@@ -32,6 +32,11 @@ var localProviderModules = {
 
 
 
+const CHUNK_MATCHES_DELAY_MS = 16;
+
+
+
+
 
 
 class ProvidersManager {
@@ -84,7 +89,7 @@ class ProvidersManager {
 
   async startQuery(queryContext, controller) {
     logger.info(`Query start ${queryContext.searchString}`);
-    let query = Object.seal(new Query(queryContext, controller, this.providers));
+    let query = new Query(queryContext, controller, this.providers);
     this.queries.set(queryContext, query);
     await query.start();
   }
@@ -148,9 +153,6 @@ class Query {
     this.context.results = [];
     this.controller = controller;
     this.providers = providers;
-    
-    this.sleepResolve = Promise.resolve();
-    this.sleepTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
     this.started = false;
     this.canceled = false;
     this.complete = false;
@@ -174,11 +176,11 @@ class Query {
       promises.push(provider.startQuery(this.context, this.add));
     }
 
-    await new Promise(resolve => {
-      let time = UrlbarPrefs.get("delay");
-      this.sleepResolve = resolve;
-      this.sleepTimer.initWithCallback(resolve, time, Ci.nsITimer.TYPE_ONE_SHOT);
-    });
+    
+    
+    
+    this._sleepTimer = new SkippableTimer(() => {}, UrlbarPrefs.get("delay"));
+    await this._sleepTimer.promise;
 
     for (let providerType of [UrlbarUtils.PROVIDER_TYPE.NETWORK,
                               UrlbarUtils.PROVIDER_TYPE.PROFILE,
@@ -192,6 +194,11 @@ class Query {
     }
 
     await Promise.all(promises.map(p => p.catch(Cu.reportError)));
+
+    if (this._chunkTimer) {
+      
+      await this._chunkTimer.fire();
+    }
 
     
     
@@ -207,13 +214,17 @@ class Query {
       return;
     }
     this.canceled = true;
-    this.sleepTimer.cancel();
     for (let providers of this.providers.values()) {
       for (let provider of providers.values()) {
         provider.cancelQuery(this.context);
       }
     }
-    this.sleepResolve();
+    if (this._chunkTimer) {
+      this._chunkTimer.cancel().catch(Cu.reportError);
+    }
+    if (this._sleepTimer) {
+      this._sleepTimer.fire().catch(Cu.reportError);
+    }
   }
 
   
@@ -226,12 +237,83 @@ class Query {
     if (this.canceled) {
       return;
     }
-    
-    
-    
-    
-    
     this.context.results.push(match);
-    this.controller.receiveResults(this.context);
+
+
+    let notifyResults = () => {
+      if (this._chunkTimer) {
+        this._chunkTimer.cancel().catch(Cu.reportError);
+        delete this._chunkTimer;
+      }
+      
+      
+      this.controller.receiveResults(this.context);
+    };
+
+    
+    
+    if (provider.type == UrlbarUtils.PROVIDER_TYPE.IMMEDIATE) {
+      notifyResults();
+    } else if (!this._chunkTimer) {
+      this._chunkTimer = new SkippableTimer(notifyResults, CHUNK_MATCHES_DELAY_MS);
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+class SkippableTimer {
+  
+
+
+
+
+  constructor(callback, time) {
+    let timerPromise = new Promise(resolve => {
+      this._timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+      this._timer.initWithCallback(() => {
+        logger.debug(`Elapsed ${time}ms timer`);
+        resolve();
+      }, time, Ci.nsITimer.TYPE_ONE_SHOT);
+      logger.debug(`Started ${time}ms timer`);
+    });
+
+    let firePromise = new Promise(resolve => {
+      this.fire = () => {
+        logger.debug(`Skipped ${time}ms timer`);
+        resolve();
+        return this.promise;
+      };
+    });
+
+    this.promise = Promise.race([timerPromise, firePromise]).then(() => {
+      
+      if (this._timer) {
+        callback();
+      }
+    });
+  }
+
+  
+
+
+
+
+
+  cancel() {
+    logger.debug(`Canceling timer for ${this._timer.delay}ms`);
+    this._timer.cancel();
+    delete this._timer;
+    return this.fire();
   }
 }
