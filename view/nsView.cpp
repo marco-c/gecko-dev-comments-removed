@@ -234,17 +234,6 @@ bool nsView::IsEffectivelyVisible()
   return true;
 }
 
-uint32_t nsView::GetParentWindowScaleFactor()
-{
-  uint32_t scaleFactor = 1;
-  nsIWidget* parentWidget =
-    GetParent() ? GetParent()->GetNearestWidget(nullptr) : nullptr;
-  if (parentWidget) {
-    scaleFactor = parentWidget->RoundsWidgetCoordinatesTo();
-  }
-  return scaleFactor;
-}
-
 LayoutDeviceIntRect nsView::CalcWidgetBounds(nsWindowType aType)
 {
   int32_t p2a = mViewManager->AppUnitsPerDevPixel();
@@ -331,9 +320,7 @@ void nsView::DoResetWidgetBounds(bool aMoveOnly,
   
   
   LayoutDeviceIntRect newBounds;
-#if !defined(MOZ_WIDGET_GTK)
   RefPtr<nsDeviceContext> dx = mViewManager->GetDeviceContext();
-#endif
 
   nsWindowType type = widget->WindowType();
 
@@ -373,15 +360,7 @@ void nsView::DoResetWidgetBounds(bool aMoveOnly,
   
   
   
-#if defined(MOZ_WIDGET_GTK)
-  
-  
-  
-  DesktopToLayoutDeviceScale scale = mozilla::DesktopToLayoutDeviceScale(
-    GetParentWindowScaleFactor());
-#else
   DesktopToLayoutDeviceScale scale = dx->GetDesktopToDeviceScale();
-#endif
 
   DesktopRect deskRect = newBounds / scale;
   if (changedPos) {
