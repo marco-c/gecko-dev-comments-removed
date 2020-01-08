@@ -4,6 +4,7 @@
 
 
 
+#include "js/JSON.h"
 #include "nsArrayUtils.h"
 #include "PaymentRequestUtils.h"
 #include "nsIMutableArray.h"
