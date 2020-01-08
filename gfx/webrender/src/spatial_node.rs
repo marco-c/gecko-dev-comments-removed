@@ -273,36 +273,38 @@ impl SpatialNode {
                 self.world_content_transform = self.world_viewport_transform;
 
                 info.invertible = self.world_viewport_transform.is_invertible();
-                if !info.invertible {
-                    return;
+
+                if info.invertible {
+                    
+                    
+                    match ScaleOffset::from_transform(&relative_transform) {
+                        Some(ref scale_offset) => {
+                            self.coordinate_system_relative_scale_offset =
+                                state.coordinate_system_relative_scale_offset.accumulate(scale_offset);
+                        }
+                        None => {
+                            
+                            
+                            self.coordinate_system_relative_scale_offset = ScaleOffset::identity();
+
+                            let transform = state.coordinate_system_relative_scale_offset
+                                                 .to_transform()
+                                                 .pre_mul(&relative_transform);
+
+                            
+                            let coord_system = CoordinateSystem {
+                                transform,
+                                parent: Some(state.current_coordinate_system_id),
+                            };
+                            state.current_coordinate_system_id = CoordinateSystemId(coord_systems.len() as u32);
+                            coord_systems.push(coord_system);
+                        }
+                    }
                 }
 
                 
                 
-                match ScaleOffset::from_transform(&relative_transform) {
-                    Some(ref scale_offset) => {
-                        self.coordinate_system_relative_scale_offset =
-                            state.coordinate_system_relative_scale_offset.accumulate(scale_offset);
-                    }
-                    None => {
-                        
-                        
-                        self.coordinate_system_relative_scale_offset = ScaleOffset::identity();
-
-                        let transform = state.coordinate_system_relative_scale_offset
-                                             .to_transform()
-                                             .pre_mul(&relative_transform);
-
-                        
-                        let coord_system = CoordinateSystem {
-                            transform,
-                            parent: Some(state.current_coordinate_system_id),
-                        };
-                        state.current_coordinate_system_id = CoordinateSystemId(coord_systems.len() as u32);
-                        coord_systems.push(coord_system);
-                    }
-                }
-
+                
                 self.coordinate_system_id = state.current_coordinate_system_id;
             }
             _ => {
