@@ -1235,7 +1235,7 @@ nsDataHashtable<nsStringHashKey, nsMessageManagerScriptHolder*>*
 StaticRefPtr<nsScriptCacheCleaner> nsMessageManagerScriptExecutor::sScriptCacheCleaner;
 
 void
-nsMessageManagerScriptExecutor::DidCreateGlobal()
+nsMessageManagerScriptExecutor::DidCreateScriptLoader()
 {
   if (!sCachedScripts) {
     sCachedScripts =
@@ -1271,9 +1271,9 @@ nsMessageManagerScriptExecutor::Shutdown()
 }
 
 void
-nsMessageManagerScriptExecutor::LoadScriptInternal(JS::Handle<JSObject*> aGlobal,
+nsMessageManagerScriptExecutor::LoadScriptInternal(JS::Handle<JSObject*> aMessageManager,
                                                    const nsAString& aURL,
-                                                   bool aRunInGlobalScope)
+                                                   bool aRunInUniqueScope)
 {
   AUTO_PROFILER_LABEL_DYNAMIC_LOSSY_NSSTRING(
     "nsMessageManagerScriptExecutor::LoadScriptInternal", OTHER, aURL);
@@ -1286,29 +1286,30 @@ nsMessageManagerScriptExecutor::LoadScriptInternal(JS::Handle<JSObject*> aGlobal
   JS::Rooted<JSScript*> script(rcx);
 
   nsMessageManagerScriptHolder* holder = sCachedScripts->Get(aURL);
-  if (holder && holder->WillRunInGlobalScope() == aRunInGlobalScope) {
+  if (holder) {
     script = holder->mScript;
   } else {
-    
-    
-    bool shouldCache = !holder;
-    TryCacheLoadAndCompileScript(aURL, aRunInGlobalScope,
-                                 shouldCache, aGlobal, &script);
+    TryCacheLoadAndCompileScript(aURL, aRunInUniqueScope, true,
+                                 aMessageManager, &script);
   }
 
-  AutoEntryScript aes(aGlobal, "message manager script load");
+  AutoEntryScript aes(aMessageManager, "message manager script load");
   JSContext* cx = aes.cx();
   if (script) {
-    if (aRunInGlobalScope) {
-      JS::RootedValue rval(cx);
-      JS::CloneAndExecuteScript(cx, script, &rval);
-    } else {
+    if (aRunInUniqueScope) {
       JS::Rooted<JSObject*> scope(cx);
-      bool ok = js::ExecuteInFrameScriptEnvironment(cx, aGlobal, script, &scope);
+      bool ok = js::ExecuteInFrameScriptEnvironment(cx, aMessageManager, script, &scope);
       if (ok) {
         
         mAnonymousGlobalScopes.AppendElement(scope);
       }
+    } else {
+      JS::RootedValue rval(cx);
+      JS::AutoObjectVector envChain(cx);
+      if (!envChain.append(aMessageManager)) {
+        return;
+      }
+      JS::CloneAndExecuteScript(cx, envChain, script, &rval);
     }
   }
 }
@@ -1316,9 +1317,9 @@ nsMessageManagerScriptExecutor::LoadScriptInternal(JS::Handle<JSObject*> aGlobal
 void
 nsMessageManagerScriptExecutor::TryCacheLoadAndCompileScript(
   const nsAString& aURL,
-  bool aRunInGlobalScope,
+  bool aRunInUniqueScope,
   bool aShouldCache,
-  JS::Handle<JSObject*> aGlobal,
+  JS::Handle<JSObject*> aMessageManager,
   JS::MutableHandle<JSScript*> aScriptp)
 {
   nsCString url = NS_ConvertUTF16toUTF8(aURL);
@@ -1347,7 +1348,7 @@ nsMessageManagerScriptExecutor::TryCacheLoadAndCompileScript(
   
   
   AutoJSAPI jsapi;
-  if (!jsapi.Init(isRunOnce ? aGlobal : xpc::CompilationScope())) {
+  if (!jsapi.Init(isRunOnce ? aMessageManager : xpc::CompilationScope())) {
     return;
   }
   JSContext* cx = jsapi.cx();
@@ -1397,12 +1398,7 @@ nsMessageManagerScriptExecutor::TryCacheLoadAndCompileScript(
     options.setFileAndLine(url.get(), 1);
     options.setNoScriptRval(true);
 
-    if (aRunInGlobalScope) {
-      if (!JS::Compile(cx, options, srcBuf, &script)) {
-        return;
-      }
-    
-    } else if (!JS::CompileForNonSyntacticScope(cx, options, srcBuf, &script)) {
+    if (!JS::CompileForNonSyntacticScope(cx, options, srcBuf, &script)) {
       return;
     }
   }
@@ -1420,7 +1416,7 @@ nsMessageManagerScriptExecutor::TryCacheLoadAndCompileScript(
     
     if (!isRunOnce) {
       
-      auto* holder = new nsMessageManagerScriptHolder(cx, script, aRunInGlobalScope);
+      auto* holder = new nsMessageManagerScriptHolder(cx, script);
       sCachedScripts->Put(aURL, holder);
     }
   }
@@ -1441,31 +1437,9 @@ nsMessageManagerScriptExecutor::Unlink()
 }
 
 bool
-nsMessageManagerScriptExecutor::InitChildGlobalInternal(const nsACString& aID)
+nsMessageManagerScriptExecutor::Init()
 {
-  AutoSafeJSContext cx;
-  if (!SystemBindingInitIds(cx)) {
-    return false;
-  }
-
-  nsContentUtils::GetSecurityManager()->GetSystemPrincipal(getter_AddRefs(mPrincipal));
-
-  JS::RealmOptions options;
-  options.creationOptions().setNewCompartmentInSystemZone();
-
-  xpc::InitGlobalObjectOptions(options, mPrincipal);
-  JS::Rooted<JSObject*> global(cx);
-  if (!WrapGlobalObject(cx, options, &global)) {
-    return false;
-  }
-
-  xpc::InitGlobalObject(cx, global, 0);
-
-  
-  
-  xpc::SetLocationForGlobal(global, aID);
-
-  DidCreateGlobal();
+  DidCreateScriptLoader();
   return true;
 }
 
