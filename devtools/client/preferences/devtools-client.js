@@ -278,9 +278,6 @@ pref("devtools.webconsole.sidebarToggle", false);
 pref("devtools.webconsole.jsterm.codeMirror", true);
 
 
-pref("devtools.webconsole.jsterm.reverse-search", true);
-
-
 pref("devtools.performance.new-panel-enabled", false);
 
 
