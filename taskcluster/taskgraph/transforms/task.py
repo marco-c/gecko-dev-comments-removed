@@ -382,6 +382,9 @@ task_description_schema = Schema({
         Optional('os-groups'): [basestring],
 
         
+        Optional('run-as-administrator'): bool,
+
+        
         Required('chain-of-trust'): bool,
         Optional('taskcluster-proxy'): bool,
 
@@ -1037,6 +1040,9 @@ def build_generic_worker_payload(config, task, task_def):
 
     if worker.get('taskcluster-proxy'):
         features['taskclusterProxy'] = True
+
+    if worker.get('run-as-administrator', False):
+        features['runAsAdministrator'] = True
 
     if features:
         task_def['payload']['features'] = features

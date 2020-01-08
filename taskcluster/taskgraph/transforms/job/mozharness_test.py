@@ -213,6 +213,20 @@ def mozharness_test_on_generic_worker(config, job, taskdesc):
 
     worker['os-groups'] = test['os-groups']
 
+    
+    
+    
+    
+    
+    
+    if test.get('run-as-administrator', False):
+        if job['worker-type'].startswith('aws-provisioner-v1/gecko-t-win10-64'):
+            taskdesc['scopes'].extend(
+                ['generic-worker:run-as-administrator:{}'.format(job['worker-type'])])
+            worker['run-as-administrator'] = True
+        else:
+            raise Exception('run-as-administrator not supported on {}'.format(job['worker-type']))
+
     if test['reboot']:
         raise Exception('reboot: {} not supported on generic-worker'.format(test['reboot']))
 
