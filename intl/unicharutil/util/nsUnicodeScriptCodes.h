@@ -47,9 +47,6 @@
 #ifndef NS_UNICODE_SCRIPT_CODES
 #define NS_UNICODE_SCRIPT_CODES
 
-#pragma pack(1)
-
-
 struct nsCharProps2 {
   
   
@@ -57,8 +54,6 @@ struct nsCharProps2 {
   unsigned char mVertOrient:2;
   unsigned char mIdType:2;
 };
-
-#pragma pack()
 
 namespace mozilla {
 namespace unicode {
