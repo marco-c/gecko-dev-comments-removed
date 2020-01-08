@@ -442,10 +442,6 @@ class JSObject : public js::gc::Cell {
   JS::Realm* maybeCCWRealm() const { return group_->realm(); }
 
   
-  
-  JS::Realm* deprecatedRealm() const { return group_->realm(); }
-
-  
 
 
 
