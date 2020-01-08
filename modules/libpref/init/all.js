@@ -2299,6 +2299,9 @@ pref("network.cookie.maxNumber", 3000);
 pref("network.cookie.maxPerHost", 180);
 
 
+pref("network.cookie.quotaPerHost", 150);
+
+
 pref("network.proxy.autoconfig_url", "");
 
 pref("network.proxy.autoconfig_url.include_path", false);
