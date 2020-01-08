@@ -266,7 +266,7 @@ const downloadQuery = query => {
   
   
 
-  const totalBytesGreater = query.totalBytesGreater || 0;
+  const totalBytesGreater = query.totalBytesGreater;
   const totalBytesLess = query.totalBytesLess != null ? query.totalBytesLess : Number.MAX_VALUE;
 
   
