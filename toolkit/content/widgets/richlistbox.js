@@ -1,14 +1,12 @@
 
 
 
-
 "use strict";
 
 
 
-{
 
-class MozRichListBox extends MozElements.BaseControl {
+MozElements.RichListBox = class RichListBox extends MozElements.BaseControl {
   constructor() {
     super();
 
@@ -818,13 +816,11 @@ class MozRichListBox extends MozElements.BaseControl {
   ensureSelectedElementIsVisible() {
     return this.ensureElementIsVisible(this.selectedItem);
   }
-}
+};
 
-MozXULElement.implementCustomInterface(MozRichListBox, [
+MozXULElement.implementCustomInterface(MozElements.RichListBox, [
   Ci.nsIDOMXULSelectControlElement,
   Ci.nsIDOMXULMultiSelectControlElement,
 ]);
 
-customElements.define("richlistbox", MozRichListBox);
-
-}
+customElements.define("richlistbox", MozElements.RichListBox);
