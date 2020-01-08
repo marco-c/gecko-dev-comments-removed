@@ -1,10 +1,18 @@
+
+
+
+
+
 package org.mozilla.geckoview.test.util;
+
+import org.mozilla.geckoview.GeckoResult;
 
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.os.MessageQueue;
 import android.os.SystemClock;
+import android.support.annotation.NonNull;
 import android.util.Log;
 
 import java.lang.reflect.InvocationTargetException;
@@ -70,6 +78,52 @@ public class UiThreadUtils {
         }
 
         return new RuntimeException(cause != null ? cause : e);
+    }
+
+    
+
+
+
+
+
+
+
+    public static <T> T waitForResult(@NonNull GeckoResult<T> result, long timeout) throws Throwable {
+        final ResultHolder<T> holder = new ResultHolder<>(result);
+
+        while (!holder.isComplete) {
+            loopUntilIdle(timeout);
+        }
+
+        if (holder.error != null) {
+            throw holder.error;
+        }
+
+        return holder.value;
+    }
+
+    private static class ResultHolder<T> {
+        public T value;
+        public Throwable error;
+        public boolean isComplete;
+
+        public ResultHolder(GeckoResult<T> result) {
+            result.then(new GeckoResult.OnValueListener<T, Void>() {
+                @Override
+                public GeckoResult<Void> onValue(T value) {
+                    ResultHolder.this.value = value;
+                    isComplete = true;
+                    return null;
+                }
+            }, new GeckoResult.OnExceptionListener<Void>() {
+                @Override
+                public GeckoResult<Void> onException(Throwable error) {
+                    ResultHolder.this.error = error;
+                    isComplete = true;
+                    return null;
+                }
+            });
+        }
     }
 
     public static void loopUntilIdle(final long timeout) {
