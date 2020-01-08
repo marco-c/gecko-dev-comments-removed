@@ -14,8 +14,6 @@ var BrowserActions = {
 
   _initialized: false,
 
-  _nextMenuId: 0,
-
   
 
 
@@ -53,7 +51,7 @@ var BrowserActions = {
 
     let browserAction = this._browserActions[data.item];
     if (!browserAction) {
-      throw new Error(`No browser action found with id ${data.item}`);
+      throw new Error(`No browser action found with UUID ${data.item}`);
     }
     browserAction.onClicked();
   },
@@ -65,7 +63,6 @@ var BrowserActions = {
   register(browserAction) {
     EventDispatcher.instance.sendRequest({
       type: "Menu:AddBrowserAction",
-      id: this._nextMenuId++,
       uuid: browserAction.uuid,
       name: browserAction.defaults.name,
     });
