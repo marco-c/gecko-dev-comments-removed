@@ -244,6 +244,17 @@ class Nursery {
   void* allocateBufferSameLocation(JSObject* obj, size_t nbytes);
 
   
+
+
+  void* allocateZeroedBuffer(JS::Zone* zone, size_t nbytes);
+
+  
+
+
+
+  void* allocateZeroedBuffer(JSObject* obj, size_t nbytes);
+
+  
   void* reallocateBuffer(JSObject* obj, void* oldBuffer, size_t oldBytes,
                          size_t newBytes);
 
