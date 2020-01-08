@@ -113,13 +113,13 @@ public:
   {
     
     MOZ_ASSERT(aInput.ChannelCount() <= 2);
-    aOutput->AllocateChannels(2);
     bool monoToStereo = aInput.ChannelCount() == 1;
 
     if (aInput.IsNull()) {
       
-      SetToSilentStereoBlock(aOutput);
+      aOutput->SetNull(WEBAUDIO_BLOCK_SIZE);
     } else if (mPan.HasSimpleValue()) {
+      aOutput->AllocateChannels(2);
       float panning = mPan.GetValue();
       
       
@@ -138,6 +138,7 @@ public:
                            panning <= 0);
       }
     } else {
+      aOutput->AllocateChannels(2);
       float computedGain[2*WEBAUDIO_BLOCK_SIZE + 4];
       bool onLeft[WEBAUDIO_BLOCK_SIZE];
 
