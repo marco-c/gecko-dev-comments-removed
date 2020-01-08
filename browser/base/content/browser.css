@@ -624,7 +624,7 @@ html|input.urlbar-input {
 
 
 
-#PopupAutoCompleteRichResult > richlistbox > scrollbox {
+#PopupAutoCompleteRichResult > richlistbox {
   overflow: hidden !important;
 }
 

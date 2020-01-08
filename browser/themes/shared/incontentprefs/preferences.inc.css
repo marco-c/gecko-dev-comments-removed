@@ -150,11 +150,8 @@ button > hbox > label {
 
 
 
-#categories > scrollbox {
+#categories {
   overflow: visible !important; 
-}
-
-#categories > scrollbox > box {
   padding: 1px; 
 }
 
