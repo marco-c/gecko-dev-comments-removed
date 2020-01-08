@@ -1116,11 +1116,18 @@ PREF("media.navigator.hardware.vp8_decode.acceleration_enabled", bool, false)
 
 
 
+
+#if defined(NIGHTLY_BUILD) && !defined(ANDROID)
+# define PREF_VALUE true
+#else
+# define PREF_VALUE false
+#endif
 VARCACHE_PREF(
   "media.navigator.mediadatadecoder_vpx_enabled",
    MediaNavigatorMediadatadecoderVPXEnabled,
-  RelaxedAtomicBool, false
+  RelaxedAtomicBool, PREF_VALUE
 )
+#undef PREF_VALUE
 
 
 
