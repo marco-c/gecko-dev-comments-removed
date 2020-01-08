@@ -2,7 +2,6 @@
 
 
 
-import HandleEventMixin from "../mixins/HandleEventMixin.js";
 import PaymentStateSubscriberMixin from "../mixins/PaymentStateSubscriberMixin.js";
 import paymentRequest from "../paymentRequest.js";
 
@@ -27,7 +26,7 @@ import "./shipping-option-picker.js";
 
 
 
-export default class PaymentDialog extends HandleEventMixin(PaymentStateSubscriberMixin(HTMLElement)) {
+export default class PaymentDialog extends PaymentStateSubscriberMixin(HTMLElement) {
   constructor() {
     super();
     this._template = document.getElementById("payment-dialog-template");
@@ -78,20 +77,22 @@ export default class PaymentDialog extends HandleEventMixin(PaymentStateSubscrib
     super.disconnectedCallback();
   }
 
-  onClick(event) {
-    switch (event.currentTarget) {
-      case this._viewAllButton:
-        let orderDetailsShowing = !this.requestStore.getState().orderDetailsShowing;
-        this.requestStore.setState({ orderDetailsShowing });
-        break;
-      case this._payButton:
-        this.pay();
-        break;
-      case this._manageText:
-        if (event.target instanceof HTMLAnchorElement) {
-          this.openPreferences(event);
-        }
-        break;
+  handleEvent(event) {
+    if (event.type == "click") {
+      switch (event.currentTarget) {
+        case this._viewAllButton:
+          let orderDetailsShowing = !this.requestStore.getState().orderDetailsShowing;
+          this.requestStore.setState({ orderDetailsShowing });
+          break;
+        case this._payButton:
+          this.pay();
+          break;
+        case this._manageText:
+          if (event.target instanceof HTMLAnchorElement) {
+            this.openPreferences(event);
+          }
+          break;
+      }
     }
   }
 

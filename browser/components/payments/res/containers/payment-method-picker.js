@@ -4,7 +4,6 @@
 
 import BasicCardOption from "../components/basic-card-option.js";
 import CscInput from "../components/csc-input.js";
-import HandleEventMixin from "../mixins/HandleEventMixin.js";
 import RichPicker from "./rich-picker.js";
 import paymentRequest from "../paymentRequest.js";
 
@@ -15,8 +14,7 @@ import paymentRequest from "../paymentRequest.js";
 
 
 
-
-export default class PaymentMethodPicker extends HandleEventMixin(RichPicker) {
+export default class PaymentMethodPicker extends RichPicker {
   constructor() {
     super();
     this.dropdown.setAttribute("option-type", "basic-card-option");
@@ -117,12 +115,18 @@ export default class PaymentMethodPicker extends HandleEventMixin(RichPicker) {
     return this.getAttribute("selected-state-key");
   }
 
-  onInput(event) {
-    onInputOrChange(event);
-  }
-
-  onChange(event) {
-    onInputOrChange(event);
+  handleEvent(event) {
+    switch (event.type) {
+      case "input":
+      case "change": {
+        this.onInputOrChange(event);
+        break;
+      }
+      case "click": {
+        this.onClick(event);
+        break;
+      }
+    }
   }
 
   onInputOrChange({currentTarget}) {

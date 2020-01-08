@@ -2,7 +2,6 @@
 
 
 
-import HandleEventMixin from "../mixins/HandleEventMixin.js";
 import ObservedPropertiesMixin from "../mixins/ObservedPropertiesMixin.js";
 import RichOption from "./rich-option.js";
 
@@ -14,7 +13,7 @@ import RichOption from "./rich-option.js";
 
 
 
-export default class RichSelect extends HandleEventMixin(ObservedPropertiesMixin(HTMLElement)) {
+export default class RichSelect extends ObservedPropertiesMixin(HTMLElement) {
   static get observedAttributes() {
     return [
       "disabled",
@@ -58,10 +57,15 @@ export default class RichSelect extends HandleEventMixin(ObservedPropertiesMixin
     return this.popupBox.querySelector(`:scope > [value="${CSS.escape(value)}"]`);
   }
 
-  onChange(event) {
-    
-    
-    this.render();
+  handleEvent(event) {
+    switch (event.type) {
+      case "change": {
+        
+        
+        this.render();
+        break;
+      }
+    }
   }
 
   render() {
