@@ -5,8 +5,15 @@
 
 
 #include "VisualViewport.h"
+
+#include "mozilla/EventDispatcher.h"
 #include "nsIScrollableFrame.h"
 #include "nsIDocShell.h"
+#include "nsPresContext.h"
+#include "nsRefreshDriver.h"
+
+#define VVP_LOG(...)
+
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -14,7 +21,15 @@ using namespace mozilla::dom;
 VisualViewport::VisualViewport(nsPIDOMWindowInner* aWindow)
     : DOMEventTargetHelper(aWindow) {}
 
-VisualViewport::~VisualViewport() {}
+VisualViewport::~VisualViewport() {
+  if (mResizeEvent) {
+    mResizeEvent->Revoke();
+  }
+
+  if (mScrollEvent) {
+    mScrollEvent->Revoke();
+  }
+}
 
 
 JSObject* VisualViewport::WrapObject(JSContext* aCx,
@@ -105,4 +120,97 @@ nsIPresShell* VisualViewport::GetPresShell() const {
   }
 
   return docShell->GetPresShell();
+}
+
+nsPresContext* VisualViewport::GetPresContext() const {
+  nsIPresShell* presShell = GetPresShell();
+  if (!presShell) {
+    return nullptr;
+  }
+
+  return presShell->GetPresContext();
+}
+
+
+
+void VisualViewport::PostResizeEvent() {
+  VVP_LOG("%p: PostResizeEvent\n", this);
+  if (mResizeEvent) {
+    return;
+  }
+
+  
+  if (nsPresContext* presContext = GetPresContext()) {
+    mResizeEvent = new VisualViewportResizeEvent(this, presContext);
+    VVP_LOG("%p: PostResizeEvent, created new event\n", this);
+  }
+}
+
+VisualViewport::VisualViewportResizeEvent::VisualViewportResizeEvent(
+    VisualViewport* aViewport, nsPresContext* aPresContext)
+    : Runnable("VisualViewport::VisualViewportResizeEvent"),
+      mViewport(aViewport) {
+  aPresContext->RefreshDriver()->PostVisualViewportResizeEvent(this);
+}
+
+NS_IMETHODIMP
+VisualViewport::VisualViewportResizeEvent::Run() {
+  if (mViewport) {
+    mViewport->FireResizeEvent();
+  }
+  return NS_OK;
+}
+
+void VisualViewport::FireResizeEvent() {
+  MOZ_ASSERT(mResizeEvent);
+  mResizeEvent->Revoke();
+  mResizeEvent = nullptr;
+
+  VVP_LOG("%p, FireResizeEvent, fire VisualViewport resize\n", this);
+  WidgetEvent event(true, eResize);
+  event.mFlags.mBubbles = false;
+  event.mFlags.mCancelable = false;
+  EventDispatcher::Dispatch(this, GetPresContext(), &event);
+}
+
+
+
+void VisualViewport::PostScrollEvent() {
+  VVP_LOG("%p: PostScrollEvent\n", this);
+  if (mScrollEvent) {
+    return;
+  }
+
+  
+  if (nsPresContext* presContext = GetPresContext()) {
+    mScrollEvent = new VisualViewportScrollEvent(this, presContext);
+    VVP_LOG("%p: PostScrollEvent, created new event\n", this);
+  }
+}
+
+VisualViewport::VisualViewportScrollEvent::VisualViewportScrollEvent(
+    VisualViewport* aViewport, nsPresContext* aPresContext)
+    : Runnable("VisualViewport::VisualViewportScrollEvent"),
+      mViewport(aViewport) {
+  aPresContext->RefreshDriver()->PostVisualViewportScrollEvent(this);
+}
+
+NS_IMETHODIMP
+VisualViewport::VisualViewportScrollEvent::Run() {
+  if (mViewport) {
+    mViewport->FireScrollEvent();
+  }
+  return NS_OK;
+}
+
+void VisualViewport::FireScrollEvent() {
+  MOZ_ASSERT(mScrollEvent);
+  mScrollEvent->Revoke();
+  mScrollEvent = nullptr;
+
+  VVP_LOG("%p, FireScrollEvent, fire VisualViewport scroll\n", this);
+  WidgetGUIEvent event(true, eScroll, nullptr);
+  event.mFlags.mBubbles = false;
+  event.mFlags.mCancelable = false;
+  EventDispatcher::Dispatch(this, GetPresContext(), &event);
 }

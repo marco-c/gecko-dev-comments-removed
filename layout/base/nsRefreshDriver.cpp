@@ -1144,6 +1144,23 @@ void nsRefreshDriver::RemoveTimerAdjustmentObserver(
   mTimerAdjustmentObservers.RemoveElement(aObserver);
 }
 
+void nsRefreshDriver::PostVisualViewportResizeEvent(
+    VVPResizeEvent* aResizeEvent) {
+  mVisualViewportResizeEvents.AppendElement(aResizeEvent);
+  EnsureTimerStarted();
+}
+
+void nsRefreshDriver::DispatchVisualViewportResizeEvents() {
+  
+  
+  
+  VisualViewportResizeEventArray events;
+  events.SwapElements(mVisualViewportResizeEvents);
+  for (auto& event : events) {
+    event->Run();
+  }
+}
+
 void nsRefreshDriver::PostScrollEvent(mozilla::Runnable* aScrollEvent, bool aDelayed) {
   if (aDelayed) {
     mDelayedScrollEvents.AppendElement(aScrollEvent);
@@ -1160,6 +1177,24 @@ void nsRefreshDriver::DispatchScrollEvents() {
   
   ScrollEventArray events;
   events.SwapElements(mScrollEvents);
+  for (auto& event : events) {
+    event->Run();
+  }
+}
+
+void nsRefreshDriver::PostVisualViewportScrollEvent(
+    VVPScrollEvent* aScrollEvent) {
+  mVisualViewportScrollEvents.AppendElement(aScrollEvent);
+  EnsureTimerStarted();
+}
+
+void nsRefreshDriver::DispatchVisualViewportScrollEvents() {
+  
+  
+  
+  
+  VisualViewportScrollEventArray events;
+  events.SwapElements(mVisualViewportScrollEvents);
   for (auto& event : events) {
     event->Run();
   }
@@ -1734,6 +1769,7 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime) {
     }
     shell->FireResizeEvent();
   }
+  DispatchVisualViewportResizeEvents();
 
   
 
@@ -1757,6 +1793,7 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime) {
       
 
       DispatchScrollEvents();
+      DispatchVisualViewportScrollEvents();
       DispatchAnimationEvents();
       RunFullscreenSteps();
       RunFrameRequestCallbacks(aNowTime);
