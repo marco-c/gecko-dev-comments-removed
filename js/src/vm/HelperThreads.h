@@ -690,8 +690,6 @@ struct ParseTask : public mozilla::LinkedListElement<ParseTask>, public JS::OffT
     ParseTaskKind kind;
     JS::OwningCompileOptions options;
 
-    LifoAlloc alloc;
-
     
     JSObject* parseGlobal;
 
