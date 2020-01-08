@@ -3010,14 +3010,35 @@ HTMLEditor::GetSelectedElement(const nsAtom* aTagName,
   iter->Init(firstRange);
 
   RefPtr<Element> lastElementInRange;
-  for (; !iter->IsDone(); iter->Next()) {
+  for (nsINode* lastNodeInRange = nullptr; !iter->IsDone(); iter->Next()) {
     if (lastElementInRange) {
       
       
       return nullptr;
     }
 
-    lastElementInRange = Element::FromNodeOrNull(iter->GetCurrentNode());
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    nsINode* currentNode = iter->GetCurrentNode();
+    MOZ_ASSERT(currentNode);
+    if (lastNodeInRange &&
+        lastNodeInRange->GetParentNode() != currentNode &&
+        lastNodeInRange->GetNextSibling() != currentNode) {
+      return nullptr;
+    }
+
+    lastNodeInRange = currentNode;
+
+    lastElementInRange = Element::FromNodeOrNull(lastNodeInRange);
     if (!lastElementInRange) {
       continue;
     }
