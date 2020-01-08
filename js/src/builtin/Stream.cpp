@@ -489,11 +489,11 @@ const Class cls::protoClass_ = { \
 
 
 static MOZ_MUST_USE ReadableStreamDefaultController*
-CreateReadableStreamDefaultController(JSContext* cx,
-                                      Handle<ReadableStream*> stream,
-                                      HandleValue underlyingSource,
-                                      HandleValue size,
-                                      double highWaterMarkVal);
+SetUpReadableStreamDefaultController(JSContext* cx,
+                                     Handle<ReadableStream*> stream,
+                                     HandleValue underlyingSource,
+                                     HandleValue size,
+                                     double highWaterMarkVal);
 
 
 
@@ -518,8 +518,8 @@ ReadableStream::createDefaultStream(JSContext* cx, HandleValue underlyingSource,
     
     
     ReadableStreamDefaultController* controller =
-        CreateReadableStreamDefaultController(cx, stream, underlyingSource, size,
-                                              highWaterMark);
+        SetUpReadableStreamDefaultController(cx, stream, underlyingSource, size,
+                                             highWaterMark);
     if (!controller) {
         return nullptr;
     }
@@ -2296,89 +2296,6 @@ ControllerStartFailedHandler(JSContext* cx, unsigned argc, Value* vp)
 
 
 
-
-
-
-
-static MOZ_MUST_USE ReadableStreamDefaultController*
-CreateReadableStreamDefaultController(JSContext* cx,
-                                      Handle<ReadableStream*> stream,
-                                      HandleValue underlyingSource,
-                                      HandleValue size,
-                                      double highWaterMark)
-{
-    cx->check(stream, underlyingSource, size);
-    MOZ_ASSERT(highWaterMark >= 0);
-    MOZ_ASSERT(size.isUndefined() || IsCallable(size));
-
-    Rooted<ReadableStreamDefaultController*> controller(cx,
-        NewBuiltinClassInstance<ReadableStreamDefaultController>(cx));
-    if (!controller) {
-        return nullptr;
-    }
-
-    
-    controller->setStream(stream);
-
-    
-    controller->setUnderlyingSource(underlyingSource);
-
-    
-    if (!ResetQueue(cx, controller)) {
-        return nullptr;
-    }
-
-    
-    
-    controller->setFlags(0);
-
-    
-    
-    
-
-    
-    
-    controller->setStrategySize(size);
-    controller->setStrategyHWM(highWaterMark);
-
-    
-
-    
-    
-    RootedValue startResult(cx);
-    RootedValue controllerVal(cx, ObjectValue(*controller));
-    if (!InvokeOrNoop(cx, underlyingSource, cx->names().start, controllerVal, &startResult)) {
-        return nullptr;
-    }
-
-    
-    RootedObject startPromise(cx, PromiseObject::unforgeableResolve(cx, startResult));
-    if (!startPromise) {
-        return nullptr;
-    }
-
-    RootedObject onStartFulfilled(cx, NewHandler(cx, ControllerStartHandler, controller));
-    if (!onStartFulfilled) {
-        return nullptr;
-    }
-
-    RootedObject onStartRejected(cx, NewHandler(cx, ControllerStartFailedHandler, controller));
-    if (!onStartRejected) {
-        return nullptr;
-    }
-
-    if (!JS::AddPromiseReactions(cx, startPromise, onStartFulfilled, onStartRejected)) {
-        return nullptr;
-    }
-
-    return controller;
-}
-
-
-
-
-
-
 bool
 ReadableStreamDefaultController::constructor(JSContext* cx, unsigned argc, Value* vp)
 {
@@ -3151,6 +3068,89 @@ ReadableStreamControllerGetDesiredSizeUnchecked(ReadableStreamController* contro
 
     
     return controller->strategyHWM() - controller->queueTotalSize();
+}
+
+
+
+
+
+
+
+
+
+
+static MOZ_MUST_USE ReadableStreamDefaultController*
+SetUpReadableStreamDefaultController(JSContext* cx,
+                                     Handle<ReadableStream*> stream,
+                                     HandleValue underlyingSource,
+                                     HandleValue size,
+                                     double highWaterMark)
+{
+    cx->check(stream, underlyingSource, size);
+    MOZ_ASSERT(highWaterMark >= 0);
+    MOZ_ASSERT(size.isUndefined() || IsCallable(size));
+
+    Rooted<ReadableStreamDefaultController*> controller(cx,
+        NewBuiltinClassInstance<ReadableStreamDefaultController>(cx));
+    if (!controller) {
+        return nullptr;
+    }
+
+    
+    controller->setStream(stream);
+
+    
+    controller->setUnderlyingSource(underlyingSource);
+
+    
+    if (!ResetQueue(cx, controller)) {
+        return nullptr;
+    }
+
+    
+    
+    controller->setFlags(0);
+
+    
+    
+    
+
+    
+    
+    controller->setStrategySize(size);
+    controller->setStrategyHWM(highWaterMark);
+
+    
+
+    
+    
+    RootedValue startResult(cx);
+    RootedValue controllerVal(cx, ObjectValue(*controller));
+    if (!InvokeOrNoop(cx, underlyingSource, cx->names().start, controllerVal, &startResult)) {
+        return nullptr;
+    }
+
+    
+    RootedObject startPromise(cx, PromiseObject::unforgeableResolve(cx, startResult));
+    if (!startPromise) {
+        return nullptr;
+    }
+
+    RootedObject onStartFulfilled(cx, NewHandler(cx, ControllerStartHandler, controller));
+    if (!onStartFulfilled) {
+        return nullptr;
+    }
+
+    RootedObject onStartRejected(cx, NewHandler(cx, ControllerStartFailedHandler, controller));
+    if (!onStartRejected) {
+        return nullptr;
+    }
+
+    if (!JS::AddPromiseReactions(cx, startPromise, onStartFulfilled, onStartRejected)) {
+        return nullptr;
+    }
+
+    return controller;
 }
 
 
