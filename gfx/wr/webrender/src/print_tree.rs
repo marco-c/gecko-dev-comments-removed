@@ -2,15 +2,23 @@
 
 
 
+use std::io::{stdout, Stdout, Write};
 
 
-pub struct PrintTree {
+
+pub struct PrintTree<W>
+where
+    W: Write
+{
     
     level: u32,
 
     
     
     queued_item: Option<String>,
+
+    
+    sink: W,
 }
 
 
@@ -22,37 +30,50 @@ pub trait PrintTreePrinter {
     fn add_item(&mut self, text: String);
 }
 
-impl PrintTree {
-    pub fn new(title: &str) -> PrintTree {
-        println!("\u{250c} {}", title);
+impl PrintTree<Stdout> {
+    pub fn new(title: &str) -> Self {
+        PrintTree::new_with_sink(title, stdout())
+    }
+}
+
+impl<W> PrintTree<W>
+where
+    W: Write
+{
+    pub fn new_with_sink(title: &str, mut sink: W) -> Self {
+        writeln!(sink, "\u{250c} {}", title).unwrap();
         PrintTree {
             level: 1,
             queued_item: None,
+            sink,
         }
     }
 
-    fn print_level_prefix(&self) {
+    fn print_level_prefix(&mut self) {
         for _ in 0 .. self.level {
-            print!("\u{2502}  ");
+            write!(self.sink, "\u{2502}  ").unwrap();
         }
     }
 
     fn flush_queued_item(&mut self, prefix: &str) {
         if let Some(queued_item) = self.queued_item.take() {
             self.print_level_prefix();
-            println!("{} {}", prefix, queued_item);
+            writeln!(self.sink, "{} {}", prefix, queued_item).unwrap();
         }
     }
 }
 
 
-impl PrintTreePrinter for PrintTree {
+impl<W> PrintTreePrinter for PrintTree<W>
+where
+    W: Write
+{
     
     fn new_level(&mut self, title: String) {
         self.flush_queued_item("\u{251C}\u{2500}");
 
         self.print_level_prefix();
-        println!("\u{251C}\u{2500} {}", title);
+        writeln!(self.sink, "\u{251C}\u{2500} {}", title).unwrap();
 
         self.level = self.level + 1;
     }
@@ -70,7 +91,10 @@ impl PrintTreePrinter for PrintTree {
     }
 }
 
-impl Drop for PrintTree {
+impl<W> Drop for PrintTree<W>
+where
+    W: Write
+{
     fn drop(&mut self) {
         self.flush_queued_item("\u{9492}\u{9472}");
     }
