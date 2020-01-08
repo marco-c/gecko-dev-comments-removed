@@ -223,4 +223,14 @@ struct GMPCodecSpecificInfo
   GMPCodecSpecificInfoUnion mCodecSpecific;
 };
 
+
+
+enum class GMPEncryptionScheme : uint8_t
+{
+  kGMPEncryptionNone = 0,
+  kGMPEncryptionCenc = 1,
+  kGMPEncryptionCbcs = 2,
+  kGMPEncryptionInvalid = 3,
+};
+
 #endif 
