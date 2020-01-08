@@ -1,36 +1,22 @@
 
 
 
-
-
 "use strict";
 
 
-Services.scriptloader.loadSubScript(
-  CHROME_URL_ROOT + "mocks/head-usb-runtimes-mock.js", this);
+Services.scriptloader.loadSubScript(CHROME_URL_ROOT + "head-mocks.js", this);
 
 
 add_task(async function() {
-  const usbRuntimesMock = createUsbRuntimesMock();
-  const observerMock = addObserverMock(usbRuntimesMock);
-  enableUsbRuntimesMock(usbRuntimesMock);
-
-  
-  registerCleanupFunction(() => {
-    disableUsbRuntimesMock();
-  });
+  const mocks = new Mocks();
 
   const { document, tab } = await openAboutDebugging();
 
-  usbRuntimesMock.getUSBRuntimes = function() {
-    return [{
-      id: "test_device_id",
-      _socketPath: "test/path",
-      deviceName: "test device name",
-      shortName: "testshort",
-    }];
-  };
-  observerMock.emit("runtime-list-updated");
+  mocks.createUSBRuntime("test_device_id", {
+    deviceName: "test device name",
+    shortName: "testshort",
+  });
+  mocks.emitUSBUpdate();
 
   info("Wait until the USB sidebar item appears");
   await waitUntil(() => findSidebarItemByText("test device name", document));
@@ -38,10 +24,8 @@ add_task(async function() {
   ok(usbRuntimeSidebarItem.textContent.includes("testshort"),
     "The short name of the usb runtime is visible");
 
-  usbRuntimesMock.getUSBRuntimes = function() {
-    return [];
-  };
-  observerMock.emit("runtime-list-updated");
+  mocks.removeUSBRuntime("test_device_id");
+  mocks.emitUSBUpdate();
 
   info("Wait until the USB sidebar item disappears");
   await waitUntil(() => !findSidebarItemByText("test device name", document));
