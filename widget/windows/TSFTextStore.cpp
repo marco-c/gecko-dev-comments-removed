@@ -4619,14 +4619,26 @@ TSFTextStore::MaybeHackNoErrorLayoutBugs(LONG& aACPStart,
              mComposition.EndOffset() ==
                mContentForTSF.LatestCompositionEndOffset());
 
-  bool dontReturnNoLayoutError = false;
-  const Selection& selectionForTSF = SelectionForTSFRef();
   
   
   
   
   const bool kIsMSOfficeJapaneseIME2010 =
     TSFStaticSink::IsMSOfficeJapaneseIME2010Active();
+
+  
+  
+  
+  
+  static const bool sTSFHasTheBug = !IsWindows10BuildOrLater(17643);
+  if (!sTSFHasTheBug &&
+      !kIsMSOfficeJapaneseIME2010 &&
+      !TSFStaticSink::IsJapanist10Active()) {
+    return false;
+  }
+
+  bool dontReturnNoLayoutError = false;
+  const Selection& selectionForTSF = SelectionForTSFRef();
   
   
   
@@ -4680,6 +4692,7 @@ TSFTextStore::MaybeHackNoErrorLayoutBugs(LONG& aACPStart,
            aACPEnd <= mContentForTSF.LatestCompositionEndOffset()) {
     dontReturnNoLayoutError = true;
   }
+  
   
   
   
