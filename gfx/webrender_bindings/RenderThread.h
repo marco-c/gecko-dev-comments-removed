@@ -126,7 +126,7 @@ public:
   
 
   
-  void NewFrameReady(wr::WindowId aWindowId);
+  void HandleFrame(wr::WindowId aWindowId, bool aRender);
 
   
   void WakeUp(wr::WindowId aWindowId);
@@ -138,7 +138,7 @@ public:
   void RunEvent(wr::WindowId aWindowId, UniquePtr<RendererEvent> aCallBack);
 
   
-  void UpdateAndRender(wr::WindowId aWindowId, const TimeStamp& aStartTime, bool aReadback = false);
+  void UpdateAndRender(wr::WindowId aWindowId, const TimeStamp& aStartTime, bool aRender, bool aReadback);
 
   void Pause(wr::WindowId aWindowId);
   bool Resume(wr::WindowId aWindowId);
