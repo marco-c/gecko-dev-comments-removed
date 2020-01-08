@@ -159,6 +159,10 @@ protected:
                          nsIFrame* aFrame,
                          nsReflowStatus& aStatus);
 
+  
+  
+  static bool HasFramesToPull(nsInlineFrame* aNextInFlow);
+
   virtual nsIFrame* PullOneFrame(nsPresContext*, InlineReflowInput&);
 
   virtual void PushFrames(nsPresContext* aPresContext,
