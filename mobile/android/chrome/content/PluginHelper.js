@@ -73,8 +73,7 @@ var PluginHelper = {
   },
 
   playAllPlugins: function(aContentWindow) {
-    let cwu = aContentWindow.QueryInterface(Ci.nsIInterfaceRequestor)
-                            .getInterface(Ci.nsIDOMWindowUtils);
+    let cwu = aContentWindow.windowUtils;
     
     let plugins = cwu.plugins;
     if (!plugins || !plugins.length)

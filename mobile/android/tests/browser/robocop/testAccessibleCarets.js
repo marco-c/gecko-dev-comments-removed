@@ -109,8 +109,7 @@ function getCharPressPoint(doc, element, char, expected) {
 
 
 function getLongPressResult(browser, midPoint) {
-  let domWinUtils = browser.contentWindow.
-    QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindowUtils);
+  let domWinUtils = browser.contentWindow.windowUtils;
 
   
   domWinUtils.sendTouchEventToWindow("touchstart", [0], [midPoint.x], [midPoint.y],

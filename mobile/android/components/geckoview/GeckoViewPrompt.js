@@ -365,8 +365,7 @@ PromptDelegate.prototype = {
     }
     
     try {
-      let winUtils = this._domWin.QueryInterface(Ci.nsIInterfaceRequestor)
-                                 .getInterface(Ci.nsIDOMWindowUtils);
+      let winUtils = this._domWin.windowUtils;
       if (!aEntering) {
         winUtils.leaveModalState();
       }
