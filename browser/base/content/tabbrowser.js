@@ -130,7 +130,7 @@ window._gBrowser = {
   _browserBindingProperties: [
     "canGoBack", "canGoForward", "goBack", "goForward", "permitUnload",
     "reload", "reloadWithFlags", "stop", "loadURI",
-    "gotoIndex", "currentURI", "documentURI",
+    "gotoIndex", "currentURI", "documentURI", "remoteType",
     "preferences", "imageDocument", "isRemoteBrowser", "messageManager",
     "getTabBrowser", "finder", "fastFind", "sessionHistory", "contentTitle",
     "characterSet", "fullZoom", "textZoom", "webProgress",
@@ -1990,6 +1990,22 @@ window._gBrowser = {
               gBrowser._insertBrowser(aTab);
             };
           break;
+        case "remoteType":
+          getter = () => {
+            let url = SessionStore.getLazyTabValue(aTab, "url");
+            
+            let uri;
+            if (browser._cachedCurrentURI) {
+              uri = browser._cachedCurrentURI;
+            } else {
+              uri = browser._cachedCurrentURI = Services.io.newURI(url);
+            }
+            return E10SUtils.getRemoteTypeForURI(url,
+                                                 gMultiProcessBrowser,
+                                                 undefined,
+                                                 uri);
+          };
+          break;
         case "userTypedValue":
         case "userTypedClear":
           getter = () => SessionStore.getLazyTabValue(aTab, name);
@@ -3179,7 +3195,10 @@ window._gBrowser = {
     var isPending = aOtherTab.hasAttribute("pending");
 
     let otherTabListener = remoteBrowser._tabListeners.get(aOtherTab);
-    let stateFlags = otherTabListener.mStateFlags;
+    let stateFlags = 0;
+    if (otherTabListener) {
+      stateFlags = otherTabListener.mStateFlags;
+    }
 
     
     if (aOtherTab._soundPlayingAttrRemovalTimer) {
@@ -3582,7 +3601,6 @@ window._gBrowser = {
     let inactiveTabs = tabs.filter(t => t != activeTab);
     let activeTabNewIndex = tabs.indexOf(activeTab);
 
-
     
     
     if (this.animationsEnabled) {
@@ -3594,7 +3612,8 @@ window._gBrowser = {
 
     let win;
     let firstInactiveTab = inactiveTabs[0];
-    firstInactiveTab.linkedBrowser.addEventListener("EndSwapDocShells", function() {
+
+    let adoptRemainingTabs = () => {
       for (let i = 1; i < inactiveTabs.length; i++) {
         win.gBrowser.adoptTab(inactiveTabs[i], i);
       }
@@ -3608,7 +3627,14 @@ window._gBrowser = {
       let winTabLength = winVisibleTabs.length;
       win.gBrowser.addRangeToMultiSelectedTabs(winVisibleTabs[0],
                                                winVisibleTabs[winTabLength - 1]);
-    }, { once: true });
+    };
+
+    
+    if (firstInactiveTab.hasAttribute("pending")) {
+      firstInactiveTab.addEventListener("TabClose", adoptRemainingTabs, {once: true});
+    } else {
+      firstInactiveTab.linkedBrowser.addEventListener("EndSwapDocShells", adoptRemainingTabs, {once: true});
+    }
 
     win = this.replaceTabWithWindow(firstInactiveTab, aOptions);
     return win;
