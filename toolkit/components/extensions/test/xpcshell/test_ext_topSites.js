@@ -5,6 +5,9 @@ ChromeUtils.import("resource://gre/modules/NewTabUtils.jsm");
 ChromeUtils.import("resource://testing-common/PlacesTestUtils.jsm");
 
 
+Services.prefs.setBoolPref("browser.newtabpage.activity-stream.improvesearch.topSiteSearchShortcuts", false);
+
+
 const IMAGE_1x1 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACklEQVQI12NgAAAAAgAB4iG8MwAAAABJRU5ErkJggg==";
 
 add_task(async function test_topSites() {
