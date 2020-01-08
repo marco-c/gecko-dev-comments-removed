@@ -51,6 +51,10 @@ window._gBrowser = {
       messageManager.addMessageListener("DOMWindowClose", this);
       window.messageManager.addMessageListener("contextmenu", this);
       messageManager.addMessageListener("Browser:Init", this);
+
+      
+      
+      this.tabpanels.classList.add("tabbrowser-tabpanels");
     } else {
       this._outerWindowIDBrowserMap.set(this.selectedBrowser.outerWindowID,
         this.selectedBrowser);
@@ -1324,6 +1328,7 @@ window._gBrowser = {
     var aReferrerPolicy;
     var aFromExternal;
     var aRelatedToCurrent;
+    var aAllowInheritPrincipal;
     var aAllowMixedContent;
     var aSkipAnimation;
     var aForceNotRemote;
@@ -1351,6 +1356,7 @@ window._gBrowser = {
       aAllowThirdPartyFixup = params.allowThirdPartyFixup;
       aFromExternal = params.fromExternal;
       aRelatedToCurrent = params.relatedToCurrent;
+      aAllowInheritPrincipal = !!params.allowInheritPrincipal;
       aAllowMixedContent = params.allowMixedContent;
       aSkipAnimation = params.skipAnimation;
       aForceNotRemote = params.forceNotRemote;
@@ -1378,6 +1384,7 @@ window._gBrowser = {
       charset: aCharset,
       postData: aPostData,
       ownerTab: owner,
+      allowInheritPrincipal: aAllowInheritPrincipal,
       allowThirdPartyFixup: aAllowThirdPartyFixup,
       fromExternal: aFromExternal,
       relatedToCurrent: aRelatedToCurrent,
@@ -2128,7 +2135,7 @@ window._gBrowser = {
     bulkOrderedOpen,
     charset,
     createLazyBrowser,
-    disallowInheritPrincipal,
+    allowInheritPrincipal,
     eventDetail,
     focusUrlBar,
     forceNotRemote,
@@ -2417,7 +2424,7 @@ window._gBrowser = {
 
     
     
-    if (!usingPreloadedContent && (!uriIsAboutBlank || disallowInheritPrincipal)) {
+    if (!usingPreloadedContent && (!uriIsAboutBlank || !allowInheritPrincipal)) {
       
       
       if (aURI && !gInitialPages.includes(aURI)) {
@@ -2435,7 +2442,7 @@ window._gBrowser = {
       if (allowMixedContent) {
         flags |= Ci.nsIWebNavigation.LOAD_FLAGS_ALLOW_MIXED_CONTENT;
       }
-      if (disallowInheritPrincipal) {
+      if (!allowInheritPrincipal) {
         flags |= Ci.nsIWebNavigation.LOAD_FLAGS_DISALLOW_INHERIT_PRINCIPAL;
       }
       try {
@@ -3405,7 +3412,7 @@ window._gBrowser = {
     }
 
     
-    return window.openDialog(AppConstants.BROWSER_CHROME_URL, "_blank", options, aTab);
+    return window.openDialog(getBrowserURL(), "_blank", options, aTab);
   },
 
   
@@ -4180,18 +4187,6 @@ window._gBrowser = {
   },
 
   _setupEventListeners() {
-    this.tabpanels.addEventListener("select", event => {
-      if (event.target == this.tabpanels) {
-        this.updateCurrentBrowser();
-      }
-    });
-
-    this.tabpanels.addEventListener("preselect", event => {
-      if (gMultiProcessBrowser) {
-        this._getSwitcher().requestTab(event.detail);
-      }
-    });
-
     this.addEventListener("DOMWindowClose", (event) => {
       if (!event.isTrusted)
         return;

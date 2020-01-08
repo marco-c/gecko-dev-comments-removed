@@ -48,6 +48,10 @@ function isBlankPageURL(aURL) {
          aURL == BROWSER_NEW_TAB_URL;
 }
 
+function getBrowserURL() {
+  return "chrome://browser/content/browser.xul";
+}
+
 function getTopWin(skipPopups) {
   
   
@@ -278,10 +282,10 @@ function openLinkIn(url, where, params) {
   var aReferrerPolicy       = ("referrerPolicy" in params ?
       params.referrerPolicy : Ci.nsIHttpChannel.REFERRER_POLICY_UNSET);
   var aRelatedToCurrent     = params.relatedToCurrent;
+  var aAllowInheritPrincipal = !!params.allowInheritPrincipal;
   var aAllowMixedContent    = params.allowMixedContent;
   var aForceAllowDataURI    = params.forceAllowDataURI;
   var aInBackground         = params.inBackground;
-  var aDisallowInheritPrincipal = params.disallowInheritPrincipal;
   var aInitiatingDoc        = params.initiatingDoc;
   var aIsPrivate            = params.private;
   var aSkipTabAnimation     = params.skipTabAnimation;
@@ -423,7 +427,7 @@ function openLinkIn(url, where, params) {
       };
       Services.obs.addObserver(delayedStartupObserver, "browser-delayed-startup-finished");
     }
-    win = Services.ww.openWindow(sourceWindow, AppConstants.BROWSER_CHROME_URL, null, features, sa);
+    win = Services.ww.openWindow(sourceWindow, getBrowserURL(), null, features, sa);
     return;
   }
 
@@ -478,12 +482,10 @@ function openLinkIn(url, where, params) {
       flags |= Ci.nsIWebNavigation.LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP;
       flags |= Ci.nsIWebNavigation.LOAD_FLAGS_FIXUP_SCHEME_TYPOS;
     }
-
     
     
     
-    
-    if (aDisallowInheritPrincipal && !(uriObj && uriObj.schemeIs("javascript"))) {
+    if (!aAllowInheritPrincipal) {
       flags |= Ci.nsIWebNavigation.LOAD_FLAGS_DISALLOW_INHERIT_PRINCIPAL;
     }
 
@@ -541,6 +543,7 @@ function openLinkIn(url, where, params) {
       userContextId: aUserContextId,
       originPrincipal: aPrincipal,
       triggeringPrincipal: aTriggeringPrincipal,
+      allowInheritPrincipal: aAllowInheritPrincipal,
       focusUrlBar,
     });
     targetBrowser = tabUsedForLoad.linkedBrowser;
@@ -843,7 +846,7 @@ function openPreferences(paneID, extraArgs) {
     supportsStringPrefURL.data = preferencesURL;
     windowArguments.appendElement(supportsStringPrefURL);
 
-    win = Services.ww.openWindow(null, AppConstants.BROWSER_CHROME_URL,
+    win = Services.ww.openWindow(null, Services.prefs.getCharPref("browser.chromeURL"),
       "_blank", "chrome,dialog=no,all", windowArguments);
   } else {
     let shouldReplaceFragment = friendlyCategoryName ? "whenComparingAndReplace" : "whenComparing";

@@ -3480,6 +3480,8 @@ var SessionStoreInternal = {
         let createLazyBrowser = restoreTabsLazily && !select && !tabData.pinned;
 
         let url = "about:blank";
+        let triggeringPrincipal;
+
         if (createLazyBrowser && tabData.entries && tabData.entries.length) {
           
           
@@ -3487,6 +3489,7 @@ var SessionStoreInternal = {
           
           activeIndex = Math.min(activeIndex, tabData.entries.length - 1);
           activeIndex = Math.max(activeIndex, 0);
+          triggeringPrincipal = Utils.deserializePrincipal(tabData.entries[activeIndex].triggeringPrincipal_base64);
           url = tabData.entries[activeIndex].url;
         }
 
@@ -3495,6 +3498,8 @@ var SessionStoreInternal = {
         
         tab = tabbrowser.addTab(url,
                                 { createLazyBrowser,
+                                  triggeringPrincipal: triggeringPrincipal || Services.scriptSecurityManager.createNullPrincipal({ userContextId }),
+                                  allowInheritPrincipal: true,
                                   skipAnimation: true,
                                   noInitialLabel: true,
                                   userContextId,
@@ -4389,7 +4394,7 @@ var SessionStoreInternal = {
     }
 
     var window =
-      Services.ww.openWindow(null, AppConstants.BROWSER_CHROME_URL,
+      Services.ww.openWindow(null, this._prefBranch.getCharPref("chromeURL"),
                              "_blank", features, argString);
 
     this._updateWindowRestoreState(window, aState);

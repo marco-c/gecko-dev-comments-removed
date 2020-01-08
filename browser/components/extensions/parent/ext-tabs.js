@@ -567,10 +567,6 @@ this.tabs = class extends ExtensionAPI {
               }
             }
 
-            
-            
-            options.disallowInheritPrincipal = true;
-
             tabListener.initTabReady();
             let currentTab = window.gBrowser.selectedTab;
 

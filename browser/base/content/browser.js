@@ -1697,7 +1697,10 @@ var gBrowserInit = {
                 window.arguments[4] || false, referrerPolicy, userContextId,
                 
                 
-                window.arguments[7], !!window.arguments[7], window.arguments[8]);
+                window.arguments[7], !!window.arguments[7], window.arguments[8],
+                
+                
+                true);
         window.focus();
       } else {
         
@@ -2183,8 +2186,8 @@ function BrowserGoHome(aEvent) {
 
 function loadOneOrMoreURIs(aURIString, aTriggeringPrincipal) {
   
-  if (window.location.href != AppConstants.BROWSER_CHROME_URL) {
-    window.openDialog(AppConstants.BROWSER_CHROME_URL, "_blank", "all,dialog=no", aURIString);
+  if (window.location.href != getBrowserURL()) {
+    window.openDialog(getBrowserURL(), "_blank", "all,dialog=no", aURIString);
     return;
   }
 
@@ -2234,7 +2237,7 @@ function focusAndSelectUrlBar(userInitiatedFocus = false) {
 }
 
 function openLocation() {
-  if (window.location.href == AppConstants.BROWSER_CHROME_URL) {
+  if (window.location.href == getBrowserURL()) {
     focusAndSelectUrlBar(true);
     return;
   }
@@ -2248,7 +2251,7 @@ function openLocation() {
   }
 
   
-  window.openDialog(AppConstants.BROWSER_CHROME_URL, "_blank",
+  window.openDialog("chrome://browser/content/", "_blank",
                     "chrome,all,dialog=no", BROWSER_NEW_TAB_URL);
 }
 
@@ -2355,7 +2358,7 @@ function BrowserOpenFileWindow() {
 
 function BrowserCloseTabOrWindow(event) {
   
-  if (window.location.href != AppConstants.BROWSER_CHROME_URL) {
+  if (window.location.href != getBrowserURL()) {
     closeWindow(true);
     return;
   }
@@ -2388,7 +2391,7 @@ function BrowserTryToCloseWindow() {
 
 function loadURI(uri, referrer, postData, allowThirdPartyFixup, referrerPolicy,
                  userContextId, originPrincipal, forceAboutBlankViewerInCurrent,
-                 triggeringPrincipal) {
+                 triggeringPrincipal, allowInheritPrincipal = false) {
   try {
     openLinkIn(uri, "current",
                { referrerURI: referrer,
@@ -2399,6 +2402,7 @@ function loadURI(uri, referrer, postData, allowThirdPartyFixup, referrerPolicy,
                  originPrincipal,
                  triggeringPrincipal,
                  forceAboutBlankViewerInCurrent,
+                 allowInheritPrincipal,
                });
   } catch (e) {}
 }
@@ -3590,6 +3594,9 @@ var newTabButtonObserver = {
         let data = await getShortcutOrURIAndPostData(link.url);
         
         openNewTabWith(data.url, shiftKey, {
+          
+          
+          allowInheritPrincipal: true,
           postData: data.postData,
           allowThirdPartyFixup: true,
           triggeringPrincipal,
@@ -3622,6 +3629,9 @@ var newWindowButtonObserver = {
         let data = await getShortcutOrURIAndPostData(link.url);
         
         openNewWindowWith(data.url, {
+          
+          
+          allowInheritPrincipal: true,
           postData: data.postData,
           allowThirdPartyFixup: true,
           triggeringPrincipal,
@@ -3930,7 +3940,7 @@ const BrowserSearch = {
 
 
   webSearch: function BrowserSearch_webSearch() {
-    if (window.location.href != AppConstants.BROWSER_CHROME_URL) {
+    if (window.location.href != getBrowserURL()) {
       var win = getTopWin();
       if (win) {
         
@@ -3944,7 +3954,7 @@ const BrowserSearch = {
             Services.obs.removeObserver(observer, "browser-delayed-startup-finished");
           }
         };
-        win = window.openDialog(AppConstants.BROWSER_CHROME_URL, "_blank",
+        win = window.openDialog(getBrowserURL(), "_blank",
                                 "chrome,all,dialog=no", "about:blank");
         Services.obs.addObserver(observer, "browser-delayed-startup-finished");
       }
@@ -4319,10 +4329,10 @@ function OpenBrowserWindow(options) {
     let charsetArg = "charset=" + DocCharset;
 
     
-    win = window.openDialog(AppConstants.BROWSER_CHROME_URL, "_blank", "chrome,all,dialog=no" + extraFeatures, defaultArgs, charsetArg);
+    win = window.openDialog("chrome://browser/content/", "_blank", "chrome,all,dialog=no" + extraFeatures, defaultArgs, charsetArg);
   } else {
     
-    win = window.openDialog(AppConstants.BROWSER_CHROME_URL, "_blank", "chrome,all,dialog=no" + extraFeatures, defaultArgs);
+    win = window.openDialog("chrome://browser/content/", "_blank", "chrome,all,dialog=no" + extraFeatures, defaultArgs);
   }
 
   win.addEventListener("MozAfterPaint", () => {
@@ -5445,7 +5455,7 @@ nsBrowserAccess.prototype = {
         }
         
         
-        newWindow = openDialog(AppConstants.BROWSER_CHROME_URL, "_blank", features, url, null, null, null);
+        newWindow = openDialog(getBrowserURL(), "_blank", features, url, null, null, null);
         break;
       case Ci.nsIBrowserDOMWindow.OPEN_NEWTAB :
         
@@ -6133,7 +6143,7 @@ function middleMousePaste(event) {
         lastLocationChange == gBrowser.selectedBrowser.lastLocationChange) {
       openUILink(data.url, event,
                  { ignoreButton: true,
-                   disallowInheritPrincipal: !data.mayInheritPrincipal,
+                   allowInheritPrincipal: data.mayInheritPrincipal,
                    triggeringPrincipal: gBrowser.selectedBrowser.contentPrincipal,
                  });
     }
@@ -7417,7 +7427,7 @@ var gPrivateBrowsingUI = {
     
     document.getElementById("Tools:Sanitize").setAttribute("disabled", "true");
 
-    if (window.location.href == AppConstants.BROWSER_CHROME_URL) {
+    if (window.location.href == getBrowserURL()) {
       
       let docElement = document.documentElement;
       if (!PrivateBrowsingUtils.permanentPrivateBrowsing) {

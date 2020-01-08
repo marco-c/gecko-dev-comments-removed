@@ -753,7 +753,7 @@ var BrowserTestUtils = {
     }
 
     let win = Services.ww.openWindow(
-      opener, AppConstants.BROWSER_CHROME_URL, "_blank",
+      opener, Services.prefs.getCharPref("browser.chromeURL"), "_blank",
       features, argString);
 
     
@@ -1784,6 +1784,9 @@ var BrowserTestUtils = {
   addTab(tabbrowser, uri, params = {}, beforeLoadFunc = null) {
     if (!params.triggeringPrincipal) {
       params.triggeringPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
+    }
+    if (!params.allowInheritPrincipal) {
+      params.allowInheritPrincipal = true;
     }
     if (beforeLoadFunc) {
       let window = tabbrowser.ownerGlobal;
