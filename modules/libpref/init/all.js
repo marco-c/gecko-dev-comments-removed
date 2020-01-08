@@ -1371,6 +1371,14 @@ pref("content.sink.pending_event_mode", 0);
 pref("privacy.popups.disable_from_plugins", 3);
 
 
+
+
+
+
+
+pref("privacy.popups.maxReported", 100);
+
+
 pref("privacy.donottrackheader.enabled",    false);
 
 

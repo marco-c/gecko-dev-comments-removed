@@ -14,10 +14,33 @@ function clearAllPermissionsByPrefix(aPrefix) {
   }
 }
 
-add_task(async function test_opening_blocked_popups() {
+add_task(async function setup() {
   
   await SpecialPowers.pushPrefEnv({set: [["dom.disable_open_during_load", true]]});
+});
 
+
+
+add_task(async function test_maximum_reported_blocks() {
+  Services.prefs.setIntPref("privacy.popups.maxReported", 5);
+
+  
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, baseURL + "popup_blocker_10_popups.html");
+
+  
+  let notification = await BrowserTestUtils.waitForCondition(() =>
+    gBrowser.getNotificationBox().getNotificationWithValue("popup-blocked"));
+
+  
+  ok(notification.label.includes("more than"), "Notification label has 'more than'");
+  ok(notification.label.includes("5"), "Notification label shows the maximum number of popups");
+
+  gBrowser.removeTab(tab);
+
+  Services.prefs.clearUserPref("privacy.popups.maxReported");
+});
+
+add_task(async function test_opening_blocked_popups() {
   
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, baseURL + "popup_blocker.html");
 
