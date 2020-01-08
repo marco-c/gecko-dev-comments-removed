@@ -122,16 +122,6 @@ public:
                           std::function<void(bool)>&& aCallback,
                           bool aAsync);
 
-  
-  
-  
-  
-  
-  static void NotifyCrashService(
-    GeckoProcessType aProcessType,
-    const nsString& aChildDumpID,
-    const AnnotationTable& aNotes);
-
   void AddAnnotation(CrashReporter::Annotation aKey, bool aValue);
   void AddAnnotation(CrashReporter::Annotation aKey, int aValue);
   void AddAnnotation(CrashReporter::Annotation aKey, unsigned int aValue);
@@ -148,6 +138,18 @@ public:
 private:
   static void AsyncAddCrash(int32_t aProcessType, int32_t aCrashType,
                             const nsString& aChildDumpID);
+
+  
+  int32_t GetCrashType(const CrashReporter::AnnotationTable& aAnnotations);
+
+  
+  
+  
+  
+  static void NotifyCrashService(
+    GeckoProcessType aProcessType,
+    int32_t aCrashType,
+    const nsString& aChildDumpID);
 
 private:
   CallbackWrapper<bool> mCreateMinidumpCallback;
