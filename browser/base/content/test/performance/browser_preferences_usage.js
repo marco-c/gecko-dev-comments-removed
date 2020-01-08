@@ -1,8 +1,6 @@
 
 
 
-const DEFAULT_PROCESS_COUNT = Services.prefs.getDefaultBranch(null).getIntPref("dom.ipc.processCount");
-
 
 
 
@@ -122,10 +120,7 @@ add_task(async function startup() {
 
 
 add_task(async function open_10_tabs() {
-  
-  
-  
-  const max = 4 * DEFAULT_PROCESS_COUNT;
+  let max = 15;
 
   let whitelist = {
     "layout.css.dpi": {
@@ -150,6 +145,10 @@ add_task(async function open_10_tabs() {
     "security.insecure_connection_text.pbmode.enabled": {
       min: 10,
       max: 18,
+    },
+    "dom.ipc.processCount": {
+      min: 10,
+      max: 15,
     },
     "browser.startup.record": {
       max: 20,

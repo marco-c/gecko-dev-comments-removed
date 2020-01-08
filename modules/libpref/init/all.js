@@ -3284,11 +3284,7 @@ pref("dom.ipc.plugins.asyncdrawing.enabled", true);
 pref("dom.ipc.plugins.forcedirect.enabled", true);
 
 
-#if defined(NIGHTLY_BUILD)
-pref("dom.ipc.processCount", 8);
-#else
 pref("dom.ipc.processCount", 4);
-#endif
 
 
 pref("dom.ipc.processCount.file", 1);

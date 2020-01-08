@@ -2,8 +2,6 @@
 
 "use strict";
 
-const DEFAULT_PROCESS_COUNT = Services.prefs.getDefaultBranch(null).getIntPref("dom.ipc.processCount");
-
 add_task(async function test_slow_content_script() {
   
   
@@ -17,7 +15,7 @@ add_task(async function test_slow_content_script() {
 
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["dom.ipc.processCount", DEFAULT_PROCESS_COUNT * 2],
+      ["dom.ipc.processCount", 8],
       ["dom.ipc.processPrelaunch.enabled", false],
       ["dom.ipc.reportProcessHangs", true],
     ],

@@ -5,11 +5,14 @@ const CONTENT_CREATED = "ipc:content-created";
 
 
 async function spawnNewAndTest(recur, pids) {
+  let processCreated = TestUtils.topicObserved(CONTENT_CREATED);
   await BrowserTestUtils.withNewTab({ gBrowser, url: "about:blank", forceNewProcess: true },
                                     async function(browser) {
       
+      
+      await processCreated;
       let newPid = browser.frameLoader.tabParent.osPid;
-      ok(!pids.has(newPid), "new tab is in its own process: " + recur);
+      ok(!pids.has(newPid), "new tab is in its own process");
       pids.add(newPid);
 
       if (recur) {
