@@ -1093,11 +1093,14 @@ pref("security.sandbox.pledge.content", "stdio rpath wpath cpath inet recvfd sen
 #endif
 #endif
 
-#if defined(MOZ_SANDBOX) && defined(MOZ_CONTENT_SANDBOX)
+#if defined(MOZ_SANDBOX)
+#if defined(MOZ_CONTENT_SANDBOX)
 
 
 
 pref("security.sandbox.content.tempDirSuffix", "");
+#endif
+pref("security.sandbox.plugin.tempDirSuffix", "");
 #endif
 
 #if defined(MOZ_SANDBOX)
