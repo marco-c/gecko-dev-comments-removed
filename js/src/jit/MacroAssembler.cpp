@@ -780,13 +780,10 @@ MacroAssembler::nurseryAllocateObject(Register result, Register temp, gc::AllocK
     size_t totalSize = thingSize + nDynamicSlots * sizeof(HeapSlot);
     MOZ_ASSERT(totalSize < INT32_MAX);
     MOZ_ASSERT(totalSize % gc::CellAlignBytes == 0);
-    void *ptrNurseryPosition = zone->addressOfNurseryPosition();
-    loadPtr(AbsoluteAddress(ptrNurseryPosition), result);
-    computeEffectiveAddress(Address(result, totalSize), temp);
-    const void *ptrNurseryCurrentEnd = zone->addressOfNurseryCurrentEnd();
-    branchPtr(Assembler::Below, AbsoluteAddress(ptrNurseryCurrentEnd), temp,
-        fail);
-    storePtr(temp, AbsoluteAddress(ptrNurseryPosition));
+
+    bumpPointerAllocate(result, temp, fail,
+        zone->addressOfNurseryPosition(),
+        zone->addressOfNurseryCurrentEnd(), totalSize, totalSize);
 
     if (nDynamicSlots) {
         computeEffectiveAddress(Address(result, thingSize), temp);
@@ -969,23 +966,33 @@ MacroAssembler::nurseryAllocateString(Register result, Register temp, gc::AllocK
         "Nursery allocation too large");
     MOZ_ASSERT(totalSize % gc::CellAlignBytes == 0);
 
-    
-    
-    
-    void* nurseryPosAddr = zone->addressOfStringNurseryPosition();
-    const void* nurseryEndAddr = zone->addressOfStringNurseryCurrentEnd();
+    bumpPointerAllocate(result, temp, fail,
+        zone->addressOfStringNurseryPosition(),
+        zone->addressOfStringNurseryCurrentEnd(), totalSize, thingSize);
+    storePtr(ImmPtr(zone), Address(result, -js::Nursery::stringHeaderSize()));
+}
 
-    movePtr(ImmPtr(nurseryPosAddr), temp);
+void
+MacroAssembler::bumpPointerAllocate(Register result, Register temp, Label* fail,
+    void* posAddr, const void* curEndAddr, uint32_t totalSize, uint32_t size)
+{
+    
+    
+    
+    
+    
+    
+    
+    movePtr(ImmPtr(posAddr), temp);
     loadPtr(Address(temp, 0), result);
     addPtr(Imm32(totalSize), result);
-    CheckedInt<int32_t> endOffset = (CheckedInt<uintptr_t>(uintptr_t(nurseryEndAddr)) -
-        CheckedInt<uintptr_t>(uintptr_t(nurseryPosAddr))).toChecked<int32_t>();
+    CheckedInt<int32_t> endOffset = (CheckedInt<uintptr_t>(uintptr_t(curEndAddr)) -
+        CheckedInt<uintptr_t>(uintptr_t(posAddr))).toChecked<int32_t>();
     MOZ_ASSERT(endOffset.isValid(),
         "Position and end pointers must be nearby");
     branchPtr(Assembler::Below, Address(temp, endOffset.value()), result, fail);
     storePtr(result, Address(temp, 0));
-    subPtr(Imm32(thingSize), result);
-    storePtr(ImmPtr(zone), Address(result, -js::Nursery::stringHeaderSize()));
+    subPtr(Imm32(size), result);
 }
 
 
