@@ -1113,7 +1113,11 @@ MediaStreamGraphImpl::ShouldUpdateMainThread()
   }
 
   TimeStamp now = TimeStamp::Now();
-  if ((now - mLastMainThreadUpdate).ToMilliseconds() > CurrentDriver()->IterationDuration()) {
+  
+  
+  if (!mNeedAnotherIteration ||
+      ((now - mLastMainThreadUpdate).ToMilliseconds() >
+       CurrentDriver()->IterationDuration())) {
     mLastMainThreadUpdate = now;
     return true;
   }
