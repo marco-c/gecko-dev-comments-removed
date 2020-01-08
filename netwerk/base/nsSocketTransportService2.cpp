@@ -576,7 +576,16 @@ nsSocketTransportService::Poll(TimeDuration *pollDuration,
     SOCKET_LOG(("    timeout = %i milliseconds\n",
          PR_IntervalToMilliseconds(pollTimeout)));
 
-    int32_t rv = PR_Poll(pollList, pollCount, pollTimeout);
+    int32_t rv = [&]() {
+        if (pollTimeout != PR_INTERVAL_NO_WAIT) {
+            
+            
+            AUTO_PROFILER_LABEL("nsSocketTransportService::Poll", IDLE);
+            AUTO_PROFILER_THREAD_SLEEP;
+            return PR_Poll(pollList, pollCount, pollTimeout);
+        }
+        return PR_Poll(pollList, pollCount, pollTimeout);
+    }();
 
     if (mTelemetryEnabledPref && !pollStart.IsNull()) {
         *pollDuration = TimeStamp::NowLoRes() - pollStart;
