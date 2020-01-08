@@ -791,6 +791,6 @@ impl TableInfo {
     pub fn entry_size(&self) -> i64 {
         
         
-        native_pointer_size() as i64 * 2
+        i64::from(native_pointer_size()) * 2
     }
 }
