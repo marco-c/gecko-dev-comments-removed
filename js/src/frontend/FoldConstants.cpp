@@ -1490,8 +1490,15 @@ FoldCall(JSContext* cx, BinaryNode* node, PerHandlerParser<FullParseHandler>& pa
     
     
     
+    
+    
+    
+    
     ParseNode* callee = node->left();
-    if (node->isKind(ParseNodeKind::New) || !callee->isInParens()) {
+    if (node->isKind(ParseNodeKind::New) ||
+        !callee->isInParens() ||
+        callee->isKind(ParseNodeKind::Function))
+    {
         if (!Fold(cx, node->unsafeLeftReference(), parser)) {
             return false;
         }
