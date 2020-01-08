@@ -646,7 +646,7 @@ XULTreeGridCellAccessible::Selected()
 already_AddRefed<nsIPersistentProperties>
 XULTreeGridCellAccessible::NativeAttributes()
 {
-  nsCOMPtr<nsIPersistentProperties> attributes = new nsPersistentProperties();
+  RefPtr<nsPersistentProperties> attributes = new nsPersistentProperties();
 
   
   TableAccessible* table = Table();
