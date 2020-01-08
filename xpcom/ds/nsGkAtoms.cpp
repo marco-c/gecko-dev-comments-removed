@@ -50,7 +50,7 @@ extern constexpr GkAtoms gGkAtoms = {
     
     #define GK_ATOM(name_, value_, hash_, type_, atom_type_)                   \
       nsStaticAtom(                                                            \
-        u"" value_, sizeof(value_) - 1, hash_,                                 \
+        sizeof(value_) - 1, hash_,                                             \
         offsetof(GkAtoms,                                                      \
                  mAtoms[static_cast<size_t>(GkAtoms::Atoms::name_)]) -         \
         offsetof(GkAtoms, name_##_string)),
