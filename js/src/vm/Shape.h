@@ -497,11 +497,6 @@ class BaseShape : public gc::TenuredCell
     
     ShapeTable*      table_;
 
-#if JS_BITS_PER_WORD == 32
-    
-    uint32_t padding_;
-#endif
-
     BaseShape(const BaseShape& base) = delete;
     BaseShape& operator=(const BaseShape& other) = delete;
 

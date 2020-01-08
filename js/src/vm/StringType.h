@@ -1198,9 +1198,8 @@ namespace js {
 
 class NormalAtom : public JSAtom
 {
-  protected: 
+  protected:
     HashNumber hash_;
-    uint32_t padding_; 
 
   public:
     HashNumber hash() const {
@@ -1220,7 +1219,6 @@ class FatInlineAtom : public JSAtom
   protected: 
     char inlineStorage_[sizeof(JSFatInlineString) - sizeof(JSString)];
     HashNumber hash_;
-    uint32_t padding_; 
 
   public:
     HashNumber hash() const {

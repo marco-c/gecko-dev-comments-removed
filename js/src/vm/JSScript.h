@@ -1004,8 +1004,6 @@ class JSScript : public js::gc::TenuredCell
     
     
     uint32_t vtuneMethodId_ = 0;
-    
-    uint32_t __vtune_unused_padding_;
 #endif
 
     
@@ -1183,13 +1181,6 @@ class JSScript : public js::gc::TenuredCell
         
         bool hideScriptFromDebugger_ : 1;
     } bitFields_;
-
-    
-    
-  protected:
-#if JS_BITS_PER_WORD == 32
-    uint32_t padding_;
-#endif
 
     
     
@@ -2245,13 +2236,6 @@ class LazyScript : public gc::TenuredCell
 
     
     void* table_;
-
-    
-    
-  protected:
-#if JS_BITS_PER_WORD == 32
-    uint32_t padding;
-#endif
 
   private:
     static const uint32_t NumClosedOverBindingsBits = 20;
