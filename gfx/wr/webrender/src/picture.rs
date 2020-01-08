@@ -115,6 +115,9 @@ pub struct Tile {
     valid_rect: WorldRect,
     
     
+    visible_rect: Option<WorldRect>,
+    
+    
     descriptor: TileDescriptor,
     
     pub handle: TextureCacheHandle,
@@ -136,6 +139,7 @@ impl Tile {
             local_rect: LayoutRect::zero(),
             world_rect: WorldRect::zero(),
             valid_rect: WorldRect::zero(),
+            visible_rect: None,
             handle: TextureCacheHandle::invalid(),
             descriptor: TileDescriptor::new(),
             is_valid: false,
@@ -491,6 +495,17 @@ impl TileCache {
             .intersection(&device_world_rect)
             .expect("todo: handle clipped device rect");
 
+        
+        
+        
+        
+        
+        
+        let needed_device_rect = needed_device_rect.inflate(
+            0.0,
+            3.0 * TILE_SIZE_HEIGHT as f32,
+        );
+
         let p0 = needed_device_rect.origin;
         let p1 = needed_device_rect.bottom_right();
 
@@ -554,6 +569,8 @@ impl TileCache {
                     .unmap(&tile.world_rect)
                     .expect("bug: can't unmap world rect");
 
+                tile.visible_rect = tile.world_rect.intersection(&frame_context.screen_world_rect);
+
                 self.tiles.push(tile);
             }
         }
@@ -610,7 +627,6 @@ impl TileCache {
         resource_cache: &ResourceCache,
         opacity_binding_store: &OpacityBindingStorage,
         image_instances: &ImageInstanceStorage,
-        screen_world_rect: &WorldRect,
     ) {
         if !self.needs_update {
             return;
@@ -766,10 +782,13 @@ impl TileCache {
                         );
 
                         if let Some(clip_world_rect) = self.map_local_to_world.map(&local_rect) {
-                            world_clip_rect = match world_clip_rect.intersection(&clip_world_rect) {
-                                Some(rect) => rect,
-                                None => return,
-                            };
+                            
+                            
+                            
+                            
+                            world_clip_rect = world_clip_rect
+                                .intersection(&clip_world_rect)
+                                .unwrap_or(WorldRect::zero());
                         }
 
                         false
@@ -823,10 +842,27 @@ impl TileCache {
                 
                 
                 
-                let needed_rect = match world_clip_rect.intersection(&tile.world_rect).and_then(|r| r.intersection(screen_world_rect)) {
-                    Some(rect) => rect.translate(&-tile.world_rect.origin.to_vector()),
-                    None => continue,
+                
+                let visible_rect = match tile.visible_rect {
+                    Some(visible_rect) => visible_rect,
+                    None => WorldRect::zero(),
                 };
+
+                
+                
+                
+                
+
+                
+                
+                
+                
+                let needed_rect = world_clip_rect
+                    .intersection(&visible_rect)
+                    .map(|rect| {
+                        rect.translate(&-tile.world_rect.origin.to_vector())
+                    })
+                    .unwrap_or(WorldRect::zero());
 
                 tile.descriptor.needed_rects.push(needed_rect);
 
@@ -930,10 +966,7 @@ impl TileCache {
                 tile.is_valid = false;
             }
 
-            let visible_rect = match tile
-                .world_rect
-                .intersection(&frame_context.screen_world_rect)
-            {
+            let visible_rect = match tile.visible_rect {
                 Some(rect) => rect,
                 None => continue,
             };
@@ -2010,7 +2043,6 @@ impl PicturePrimitive {
                 resource_cache,
                 opacity_binding_store,
                 image_instances,
-                &frame_context.screen_world_rect,
             );
         }
     }
