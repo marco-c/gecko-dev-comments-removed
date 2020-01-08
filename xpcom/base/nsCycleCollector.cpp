@@ -4389,6 +4389,7 @@ nsCycleCollector_shutdown(bool aDoCollect)
       
       
       data->mContext->ProcessStableStateQueue();
+      data->mContext->PerformMicroTaskCheckPoint(true);
     }
     if (!data->mContext) {
       delete data;
