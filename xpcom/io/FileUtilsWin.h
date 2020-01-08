@@ -17,35 +17,25 @@ namespace mozilla {
 inline bool
 EnsureLongPath(nsAString& aDosPath)
 {
-  uint32_t aDosPathOriginalLen = aDosPath.Length();
-  auto inputPath = PromiseFlatString(aDosPath);
-  
-  DWORD longPathLen = GetLongPathNameW(inputPath.get(),
-                                       reinterpret_cast<wchar_t*>(aDosPath.BeginWriting()),
-                                       aDosPathOriginalLen);
-  if (longPathLen == 0) {
-    return false;
+  nsAutoString inputPath(aDosPath);
+  while (true) {
+    DWORD requiredLength = GetLongPathNameW(inputPath.get(),
+                                            reinterpret_cast<wchar_t*>(aDosPath.BeginWriting()),
+                                            aDosPath.Length());
+    if (!requiredLength) {
+      return false;
+    }
+    if (requiredLength < aDosPath.Length()) {
+      
+      
+      
+      
+      
+      aDosPath.Truncate(requiredLength);
+      return true;
+    }
+    aDosPath.SetLength(requiredLength);
   }
-  aDosPath.SetLength(longPathLen);
-  if (longPathLen <= aDosPathOriginalLen) {
-    
-    return true;
-  }
-  
-  longPathLen = GetLongPathNameW(inputPath.get(),
-                                 reinterpret_cast<wchar_t*>(aDosPath.BeginWriting()), aDosPath.Length());
-  if (longPathLen == 0) {
-    return false;
-  }
-  
-  
-  
-  if (longPathLen < aDosPath.Length()) {
-    aDosPath.SetLength(longPathLen);
-    return true;
-  }
-  
-  return false;
 }
 
 inline bool
@@ -67,24 +57,32 @@ NtPathToDosPath(const nsAString& aNtPath, nsAString& aDosPath)
     return true;
   }
   nsAutoString logicalDrives;
-  DWORD len = 0;
   while (true) {
-    len = GetLogicalDriveStringsW(
-      len, reinterpret_cast<wchar_t*>(logicalDrives.BeginWriting()));
-    if (!len) {
+    DWORD requiredLength = GetLogicalDriveStringsW(
+      logicalDrives.Length(), reinterpret_cast<wchar_t*>(logicalDrives.BeginWriting()));
+    if (!requiredLength) {
       return false;
-    } else if (len > logicalDrives.Length()) {
-      logicalDrives.SetLength(len);
-    } else {
+    }
+    if (requiredLength < logicalDrives.Length()) {
+      
+      
+      
+      
+      
+      logicalDrives.Truncate(requiredLength);
+      
+      
       break;
     }
+    logicalDrives.SetLength(requiredLength);
   }
+
   const char16_t* cur = logicalDrives.BeginReading();
   const char16_t* end = logicalDrives.EndReading();
   nsString targetPath;
   targetPath.SetLength(MAX_PATH);
   wchar_t driveTemplate[] = L" :";
-  do {
+  while (cur < end) {
     
     
     driveTemplate[0] = *cur;
@@ -114,8 +112,15 @@ NtPathToDosPath(const nsAString& aNtPath, nsAString& aDosPath)
       }
     }
     
-    while (*cur++);
-  } while (cur != end);
+    while (*cur) {
+      
+      
+      cur++;
+    }
+    
+    
+    cur++;
+  }
   
   
   NS_NAMED_LITERAL_STRING(uncPrefix, "\\\\");
