@@ -215,21 +215,64 @@ class UrlbarView {
 
     let title = this._createElement("span");
     title.className = "urlbarView-title";
-    title.textContent = result.title || result.payload.url;
+    this._addTextContentWithHighlights(
+      title,
+      ...(result.title ?
+          [result.title, result.titleHighlights] :
+          [result.payload.url || "", result.payloadHighlights.url || []])
+    );
     content.appendChild(title);
 
     let secondary = this._createElement("span");
     secondary.className = "urlbarView-secondary";
     if (result.type == UrlbarUtils.MATCH_TYPE.TAB_SWITCH) {
       secondary.classList.add("urlbarView-action");
-      secondary.textContent = "Switch to Tab";
+      this._addTextContentWithHighlights(secondary, "Switch to Tab", []);
     } else {
       secondary.classList.add("urlbarView-url");
-      secondary.textContent = result.payload.url;
+      this._addTextContentWithHighlights(secondary, result.payload.url || "",
+                                         result.payloadHighlights.url || []);
     }
     content.appendChild(secondary);
 
     this._rows.appendChild(item);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  _addTextContentWithHighlights(parentNode, textContent, highlights) {
+    if (!textContent) {
+      return;
+    }
+    highlights = (highlights || []).concat([[textContent.length, 0]]);
+    let index = 0;
+    for (let [highlightIndex, highlightLength] of highlights) {
+      if (highlightIndex - index > 0) {
+        parentNode.appendChild(
+          this.document.createTextNode(
+            textContent.substring(index, highlightIndex)
+          )
+        );
+      }
+      if (highlightLength > 0) {
+        let strong = this._createElement("strong");
+        strong.textContent = textContent.substring(
+          highlightIndex,
+          highlightIndex + highlightLength
+        );
+        parentNode.appendChild(strong);
+      }
+      index = highlightIndex + highlightLength;
+    }
   }
 
   
