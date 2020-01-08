@@ -4,12 +4,14 @@
 
 
 #include "Image.h"
+#include "gfxPrefs.h"
 #include "Layers.h"               
 #include "nsRefreshDriver.h"
 #include "nsContentUtils.h"
 #include "mozilla/SizeOfState.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Tuple.h"        
+#include "mozilla/layers/SharedSurfacesChild.h"
 
 namespace mozilla {
 namespace image {
@@ -71,7 +73,7 @@ ImageResource::GetSpecTruncatedTo1k(nsCString& aSpec) const
 void
 ImageResource::SetCurrentImage(ImageContainer* aContainer,
                                SourceSurface* aSurface,
-                               bool aInTransaction)
+                               const Maybe<IntRect>& aDirtyRect)
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aContainer);
@@ -97,10 +99,25 @@ ImageResource::SetCurrentImage(ImageContainer* aContainer,
                                                          mLastFrameID++,
                                                          mImageProducerID));
 
-  if (aInTransaction) {
+  if (aDirtyRect) {
     aContainer->SetCurrentImagesInTransaction(imageList);
   } else {
     aContainer->SetCurrentImages(imageList);
+  }
+
+  
+  
+  
+  if (gfxPrefs::ImageAnimatedGenerateFullFrames() &&
+      mProgressTracker->GetProgress() & FLAG_IS_ANIMATED) {
+    if (aDirtyRect) {
+      layers::SharedSurfacesChild::UpdateAnimation(aContainer, aSurface,
+                                                   aDirtyRect.ref());
+    } else {
+      IntRect dirtyRect(IntPoint(0, 0), aSurface->GetSize());
+      layers::SharedSurfacesChild::UpdateAnimation(aContainer, aSurface,
+                                                   dirtyRect);
+    }
   }
 }
 
@@ -253,14 +270,14 @@ ImageResource::GetImageContainerImpl(LayerManager* aManager,
     }
   }
 
-  SetCurrentImage(container, surface, true);
+  SetCurrentImage(container, surface, Nothing());
   entry->mLastDrawResult = drawResult;
   container.forget(aOutContainer);
   return drawResult;
 }
 
 void
-ImageResource::UpdateImageContainer()
+ImageResource::UpdateImageContainer(const Maybe<IntRect>& aDirtyRect)
 {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -278,7 +295,12 @@ ImageResource::UpdateImageContainer()
       
       
       
-      SetCurrentImage(container, surface, false);
+      if (aDirtyRect) {
+        SetCurrentImage(container, surface, aDirtyRect);
+      } else {
+        IntRect dirtyRect(IntPoint(0, 0), bestSize);
+        SetCurrentImage(container, surface, Some(dirtyRect));
+      }
     } else {
       
       mImageContainers.RemoveElementAt(i);
