@@ -36,10 +36,6 @@ const PREF_SIDEBAR_ENABLED = "devtools.webconsole.sidebarToggle";
 
 
 
-
-
-
-
 function WebConsoleFrame(webConsoleOwner) {
   this.owner = webConsoleOwner;
   this.hudId = this.owner.hudId;
@@ -236,10 +232,8 @@ WebConsoleFrame.prototype = {
 
     const toolbox = gDevTools.getToolbox(this.owner.target);
 
-    
-    const Wrapper = this.owner.WebConsoleOutputWrapper || this.window.WebConsoleOutput;
-    this.consoleOutput =
-      new Wrapper(this.outputNode, this, toolbox, this.owner, this.document);
+    this.consoleOutput = new this.window.WebConsoleOutput(
+      this.outputNode, this, toolbox, this.owner, this.document);
     
     Services.prefs.addObserver(PREF_MESSAGE_TIMESTAMP, this._onToolboxPrefChanged);
     this._onToolboxPrefChanged();
