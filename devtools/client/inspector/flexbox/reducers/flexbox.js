@@ -17,6 +17,8 @@ const INITIAL_FLEXBOX = {
   
   color: "",
   
+  flexItems: [],
+  
   highlighted: false,
   
   nodeFront: null,

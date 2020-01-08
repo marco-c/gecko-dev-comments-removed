@@ -315,14 +315,14 @@ class FlexboxInspector {
       return;
     }
 
-    let nodeFront = flexboxFront.containerNodeFront;
+    let containerNodeFront = flexboxFront.containerNodeFront;
 
     
     
     
-    if (!nodeFront) {
+    if (!containerNodeFront) {
       try {
-        nodeFront = await this.walker.getNodeFromActor(flexboxFront.actorID,
+        containerNodeFront = await this.walker.getNodeFromActor(flexboxFront.actorID,
           ["containerEl"]);
       } catch (e) {
         
@@ -332,7 +332,30 @@ class FlexboxInspector {
     }
 
     const highlighted = this._highlighters &&
-      nodeFront == this.highlighters.flexboxHighlighterShown;
+      containerNodeFront == this.highlighters.flexboxHighlighterShown;
+
+    
+    const flexItems = [];
+    const flexItemFronts = await flexboxFront.getFlexItems();
+
+    for (const item of flexItemFronts) {
+      let itemNodeFront = item.nodeFront;
+
+      if (!itemNodeFront) {
+        try {
+          itemNodeFront = await this.walker.getNodeFromActor(item.actorID, ["element"]);
+        } catch (e) {
+          
+          
+          return;
+        }
+      }
+
+      flexItems.push({
+        actorID: item.actorID,
+        nodeFront: itemNodeFront,
+      });
+    }
 
     const currentUrl = this.inspector.target.url;
     
@@ -344,8 +367,9 @@ class FlexboxInspector {
     this.store.dispatch(updateFlexbox({
       actorID: flexboxFront.actorID,
       color,
+      flexItems,
       highlighted,
-      nodeFront,
+      nodeFront: containerNodeFront,
       properties: flexboxFront.properties,
     }));
   }

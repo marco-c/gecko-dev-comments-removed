@@ -6,6 +6,22 @@
 
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 
+
+
+
+const flexItem = exports.flexItem = {
+
+  
+  actorID: PropTypes.string,
+
+  
+  nodeFront: PropTypes.object,
+
+};
+
+
+
+
 exports.flexbox = {
 
   
@@ -13,6 +29,9 @@ exports.flexbox = {
 
   
   color: PropTypes.string,
+
+  
+  flexItems: PropTypes.arrayOf(PropTypes.shape(flexItem)),
 
   
   highlighted: PropTypes.bool,
