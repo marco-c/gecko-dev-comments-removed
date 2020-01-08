@@ -786,6 +786,13 @@ protected:
 
 
 
+  nsresult CollapseSelectionAfter(Selection& aSelection,
+                                  Element& aElement);
+
+  
+
+
+
 
 
 
