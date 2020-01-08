@@ -575,7 +575,8 @@ int do_relocation_section(Elf *elf, unsigned int rel_type, unsigned int rel_type
     std::vector<Rel_Type> new_rels;
     Elf_RelHack relhack_entry;
     relhack_entry.r_offset = relhack_entry.r_info = 0;
-    size_t init_array_reloc = 0;
+    std::vector<Rel_Type> init_array_relocs;
+    size_t init_array_insert = 0;
     for (typename std::vector<Rel_Type>::iterator i = section->rels.begin();
          i != section->rels.end(); ++i) {
         
@@ -613,13 +614,10 @@ int do_relocation_section(Elf *elf, unsigned int rel_type, unsigned int rel_type
             }
         }
         
-        if (init_array && i->r_offset == init_array->getAddr()) {
-            if (init_array_reloc) {
-                fprintf(stderr, "Found multiple relocations for the first init_array entry. Skipping\n");
-                return -1;
-            }
-            new_rels.push_back(*i);
-            init_array_reloc = new_rels.size();
+        if (init_array && i->r_offset >= init_array->getAddr() &&
+            i->r_offset < init_array->getAddr() + init_array->getSize()) {
+            init_array_relocs.push_back(*i);
+            init_array_insert = new_rels.size();
         } else if (!(loc.getSection()->getFlags() & SHF_WRITE) || (ELF32_R_TYPE(i->r_info) != rel_type)) {
             
             
@@ -656,49 +654,75 @@ int do_relocation_section(Elf *elf, unsigned int rel_type, unsigned int rel_type
     relhack_entry.r_offset = relhack_entry.r_info = 0;
     relhack->push_back(relhack_entry);
 
-    if (init_array && !init_array_reloc) {
+    if (init_array) {
         
         
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        std::sort(init_array_relocs.begin(), init_array_relocs.end(),
+                  [](Rel_Type& a, Rel_Type& b) { return a.r_offset < b.r_offset; });
+        size_t expected = init_array->getAddr();
         const size_t zero = 0;
         const size_t all = SIZE_MAX;
         const char *data = init_array->getData();
         size_t length = Elf_Addr::size(elf->getClass());
-        bool empty = true;
-        for (size_t off = 0; off < init_array->getSize(); off += length) {
-            if (memcmp(data + off, &zero, length) &&
-                memcmp(data + off, &all, length)) {
-                empty = false;
+	size_t off = 0;
+	for (; off < init_array_relocs.size(); off++) {
+            auto& r = init_array_relocs[off];
+            if (r.r_offset >= expected + length &&
+                (memcmp(data + off * length, &zero, length) == 0 ||
+                 memcmp(data + off * length, &all, length) == 0)) {
+                
+                while (off) {
+                    auto& p = init_array_relocs[--off];
+                    if (ELF32_R_TYPE(p.r_info) == rel_type) {
+                        unsigned int addend = get_addend(&p, elf);
+                        p.r_offset += length;
+                        set_relative_reloc(&p, elf, addend);
+                    } else {
+                        fprintf(stderr, "Unsupported relocation type in DT_INIT_ARRAY. Skipping\n");
+                        return -1;
+                    }
+                }
                 break;
             }
+            expected = r.r_offset + length;
         }
-	
-	
-	
-	
-	
-        if (empty) {
-            new_rels.emplace_back();
-            init_array_reloc = new_rels.size();
-            Rel_Type *rel = &new_rels[init_array_reloc - 1];
-            rel->r_offset = init_array->getAddr();
+
+        if (off == 0) {
+            
+            
+            
+            
+            
+            Rel_Type rel;
+            rel.r_offset = init_array->getAddr();
+            init_array_relocs.insert(init_array_relocs.begin(), rel);
         } else {
-            fprintf(stderr, "Didn't find relocation for DT_INIT_ARRAY's first entry. Skipping\n");
-            return -1;
+            
+            
+            auto& rel = init_array_relocs[0];
+            unsigned int addend = get_addend(&rel, elf);
+            if (ELF32_R_TYPE(rel.r_info) == rel_type) {
+                original_init = addend;
+            } else if (ELF32_R_TYPE(rel.r_info) == rel_type2) {
+                ElfSymtab_Section *symtab = (ElfSymtab_Section *)section->getLink();
+                original_init = symtab->syms[ELF32_R_SYM(rel.r_info)].value.getValue() + addend;
+            } else {
+                fprintf(stderr, "Unsupported relocation type for DT_INIT_ARRAY's first entry. Skipping\n");
+                return -1;
+            }
         }
-    } else if (init_array) {
-        Rel_Type *rel = &new_rels[init_array_reloc - 1];
-        unsigned int addend = get_addend(rel, elf);
-        
-        
-        if (ELF32_R_TYPE(rel->r_info) == rel_type) {
-            original_init = addend;
-        } else if (ELF32_R_TYPE(rel->r_info) == rel_type2) {
-            ElfSymtab_Section *symtab = (ElfSymtab_Section *)section->getLink();
-            original_init = symtab->syms[ELF32_R_SYM(rel->r_info)].value.getValue() + addend;
-        } else {
-            fprintf(stderr, "Unsupported relocation type for DT_INIT_ARRAY's first entry. Skipping\n");
-            return -1;
-        }
+
+        new_rels.insert(std::next(new_rels.begin(), init_array_insert), init_array_relocs.begin(), init_array_relocs.end());
     }
 
     unsigned int mprotect_cb = 0;
@@ -826,9 +850,9 @@ int do_relocation_section(Elf *elf, unsigned int rel_type, unsigned int rel_type
         
         
         
-        Rel_Type *rel = &section->rels[init_array_reloc - 1];
+        Rel_Type *rel = &section->rels[init_array_insert];
         rel->r_info = ELF32_R_INFO(0, rel_type); 
-        set_relative_reloc(&section->rels[init_array_reloc - 1], elf, init->getValue());
+        set_relative_reloc(rel, elf, init->getValue());
     } else if (!dyn->setValueForType(DT_INIT, init)) {
         fprintf(stderr, "Can't grow .dynamic section to set DT_INIT. Skipping\n");
         return -1;
