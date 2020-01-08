@@ -230,6 +230,10 @@ def bootstrap(topsrcdir, mozilla_dir=None):
             return
 
         
+        if os.environ.get('DISABLE_TELEMETRY') == '1':
+            return
+
+        
         if not context.settings.build.telemetry:
             return
 
