@@ -548,8 +548,9 @@ nsXPCWrappedJSClass::DelegatedQueryInterface(nsXPCWrappedJS* self,
     
     
     
+    RootedObject obj(RootingCx(), self->GetJSObject());
     nsIGlobalObject* nativeGlobal =
-      NativeGlobal(js::GetGlobalForObjectCrossCompartment(self->GetJSObject()));
+      NativeGlobal(JS::GetNonCCWObjectGlobal(js::UncheckedUnwrap(obj)));
     NS_ENSURE_TRUE(nativeGlobal, NS_ERROR_FAILURE);
     NS_ENSURE_TRUE(nativeGlobal->GetGlobalJSObject(), NS_ERROR_FAILURE);
     AutoEntryScript aes(nativeGlobal, "XPCWrappedJS QueryInterface",
@@ -559,6 +560,12 @@ nsXPCWrappedJSClass::DelegatedQueryInterface(nsXPCWrappedJS* self,
         *aInstancePtr = nullptr;
         return NS_NOINTERFACE;
     }
+
+    
+    
+    
+    
+    JSAutoRealm ar(aes.cx(), obj);
 
     
     
@@ -594,7 +601,6 @@ nsXPCWrappedJSClass::DelegatedQueryInterface(nsXPCWrappedJS* self,
     const nsXPTInterfaceInfo* info = nsXPTInterfaceInfo::ByIID(aIID);
     if (info && info->IsFunction()) {
         RefPtr<nsXPCWrappedJS> wrapper;
-        RootedObject obj(RootingCx(), self->GetJSObject());
         nsresult rv = nsXPCWrappedJS::GetNewOrUsed(obj, aIID, getter_AddRefs(wrapper));
 
         
@@ -607,8 +613,7 @@ nsXPCWrappedJSClass::DelegatedQueryInterface(nsXPCWrappedJS* self,
     
 
     
-    RootedObject jsobj(ccx, CallQueryInterfaceOnJSObject(ccx, self->GetJSObject(),
-                                                         aIID));
+    RootedObject jsobj(ccx, CallQueryInterfaceOnJSObject(ccx, obj, aIID));
     if (jsobj) {
         
         
@@ -635,7 +640,6 @@ nsXPCWrappedJSClass::DelegatedQueryInterface(nsXPCWrappedJS* self,
     
     
     if (aIID.Equals(NS_GET_IID(nsINamed))) {
-        RootedObject obj(RootingCx(), self->GetJSObject());
         nsCString name = GetFunctionName(ccx, obj);
         RefPtr<WrappedJSNamed> named = new WrappedJSNamed(name);
         *aInstancePtr = named.forget().take();
@@ -940,8 +944,9 @@ nsXPCWrappedJSClass::CallMethod(nsXPCWrappedJS* wrapper, uint16_t methodIndex,
     
     
     
+    RootedObject obj(RootingCx(), wrapper->GetJSObject());
     nsIGlobalObject* nativeGlobal =
-      NativeGlobal(js::GetGlobalForObjectCrossCompartment(wrapper->GetJSObject()));
+      NativeGlobal(JS::GetNonCCWObjectGlobal(js::UncheckedUnwrap(obj)));
     AutoEntryScript aes(nativeGlobal, "XPCWrappedJS method call",
                          true);
     XPCCallContext ccx(aes.cx());
@@ -955,6 +960,12 @@ nsXPCWrappedJSClass::CallMethod(nsXPCWrappedJS* wrapper, uint16_t methodIndex,
 
     
     
+    
+    
+    JSAutoRealm ar(cx, obj);
+
+    
+    
     if (info->WantsOptArgc()) {
         const char* str = "IDL methods marked with [optional_argc] may not "
                           "be implemented in JS";
@@ -965,10 +976,7 @@ nsXPCWrappedJSClass::CallMethod(nsXPCWrappedJS* wrapper, uint16_t methodIndex,
     }
 
     RootedValue fval(cx);
-    RootedObject obj(cx, wrapper->GetJSObject());
     RootedObject thisObj(cx, obj);
-
-    JSAutoRealm ar(cx, obj);
 
     AutoValueVector args(cx);
     AutoScriptEvaluate scriptEval(cx);
