@@ -7143,20 +7143,6 @@ class MUnaryCache
     TRIVIAL_NEW_WRAPPERS
 };
 
-class MNullarySharedStub
-  : public MNullaryInstruction
-{
-    explicit MNullarySharedStub()
-      : MNullaryInstruction(classOpcode)
-    {
-        setResultType(MIRType::Value);
-    }
-
-  public:
-    INSTRUCTION_HEADER(NullarySharedStub)
-    TRIVIAL_NEW_WRAPPERS
-};
-
 
 class MCheckOverRecursed
   : public MNullaryInstruction
