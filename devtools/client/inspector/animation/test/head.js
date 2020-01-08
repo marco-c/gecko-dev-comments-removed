@@ -580,29 +580,6 @@ function _afterDispatchDone(store, type) {
 
 
 
-
-
-
-
-
-
-
-
-async function waitForDispatch(inspector, type, repeat) {
-  let count = 0;
-
-  while (count < repeat()) {
-    await _afterDispatchDone(inspector.store, type);
-    count++;
-  }
-}
-
-
-
-
-
-
-
 const waitForAnimationDetail = async function(animationInspector) {
   if (animationInspector.state.selectedAnimation &&
       animationInspector.state.detailVisibility) {
