@@ -111,6 +111,15 @@ public:
 
   bool IsSessionOnly() const { return mIsSessionOnly; }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
   static void
   NotifyChange(Storage* aStorage, nsIPrincipal* aPrincipal,
                const nsAString& aKey, const nsAString& aOldValue,

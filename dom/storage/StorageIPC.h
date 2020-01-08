@@ -7,6 +7,8 @@
 #ifndef mozilla_dom_StorageIPC_h
 #define mozilla_dom_StorageIPC_h
 
+#include "mozilla/dom/PBackgroundLocalStorageCacheChild.h"
+#include "mozilla/dom/PBackgroundLocalStorageCacheParent.h"
 #include "mozilla/dom/PBackgroundStorageChild.h"
 #include "mozilla/dom/PBackgroundStorageParent.h"
 #include "StorageDBThread.h"
@@ -19,10 +21,64 @@ namespace mozilla {
 
 class OriginAttributesPattern;
 
+namespace ipc {
+
+class BackgroundChildImpl;
+class PrincipalInfo;
+
+} 
+
 namespace dom {
 
 class LocalStorageManager;
 class PBackgroundStorageParent;
+
+class LocalStorageCacheChild final
+  : public PBackgroundLocalStorageCacheChild
+{
+  friend class mozilla::ipc::BackgroundChildImpl;
+  friend class LocalStorageCache;
+  friend class LocalStorageManager;
+
+  
+  
+  
+  
+  
+  LocalStorageCache* MOZ_NON_OWNING_REF mCache;
+
+  NS_DECL_OWNINGTHREAD
+
+public:
+  void
+  AssertIsOnOwningThread() const
+  {
+    NS_ASSERT_OWNINGTHREAD(LocalStorageCacheChild);
+  }
+
+private:
+  
+  explicit LocalStorageCacheChild(LocalStorageCache* aCache);
+
+  
+  ~LocalStorageCacheChild();
+
+  
+  void
+  SendDeleteMeInternal();
+
+  
+  void
+  ActorDestroy(ActorDestroyReason aWhy) override;
+
+  mozilla::ipc::IPCResult
+  RecvObserve(const PrincipalInfo& aPrincipalInfo,
+              const uint32_t& aPrivateBrowsingId,
+              const nsString& aDocumentURI,
+              const nsString& aKey,
+              const nsString& aOldValue,
+              const nsString& aNewValue) override;
+};
 
 
 
@@ -126,6 +182,39 @@ private:
   bool mIPCOpen;
 };
 
+class LocalStorageCacheParent final
+  : public PBackgroundLocalStorageCacheParent
+{
+  const PrincipalInfo mPrincipalInfo;
+  const nsCString mOriginKey;
+  uint32_t mPrivateBrowsingId;
+  bool mActorDestroyed;
+
+public:
+  
+  LocalStorageCacheParent(const PrincipalInfo& aPrincipalInfo,
+                          const nsACString& aOriginKey,
+                          uint32_t aPrivateBrowsingId);
+
+  NS_INLINE_DECL_REFCOUNTING(mozilla::dom::LocalStorageCacheParent)
+
+private:
+  
+  ~LocalStorageCacheParent();
+
+  
+  void
+  ActorDestroy(ActorDestroyReason aWhy) override;
+
+  mozilla::ipc::IPCResult
+  RecvDeleteMe() override;
+
+  mozilla::ipc::IPCResult
+  RecvNotify(const nsString& aDocumentURI,
+             const nsString& aKey,
+             const nsString& aOldValue,
+             const nsString& aNewValue) override;
+};
 
 
 
@@ -282,6 +371,24 @@ private:
   
   bool mIPCOpen;
 };
+
+PBackgroundLocalStorageCacheParent*
+AllocPBackgroundLocalStorageCacheParent(
+                              const mozilla::ipc::PrincipalInfo& aPrincipalInfo,
+                              const nsCString& aOriginKey,
+                              const uint32_t& aPrivateBrowsingId);
+
+mozilla::ipc::IPCResult
+RecvPBackgroundLocalStorageCacheConstructor(
+                              mozilla::ipc::PBackgroundParent* aBackgroundActor,
+                              PBackgroundLocalStorageCacheParent* aActor,
+                              const mozilla::ipc::PrincipalInfo& aPrincipalInfo,
+                              const nsCString& aOriginKey,
+                              const uint32_t& aPrivateBrowsingId);
+
+bool
+DeallocPBackgroundLocalStorageCacheParent(
+                                    PBackgroundLocalStorageCacheParent* aActor);
 
 PBackgroundStorageParent*
 AllocPBackgroundStorageParent(const nsString& aProfilePath);

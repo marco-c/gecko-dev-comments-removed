@@ -36,6 +36,12 @@ public:
     return mCache;
   }
 
+  const nsString&
+  DocumentURI() const
+  {
+    return mDocumentURI;
+  }
+
   bool PrincipalEquals(nsIPrincipal* aPrincipal);
 
   LocalStorage(nsPIDOMWindowInner* aWindow,
@@ -77,24 +83,6 @@ public:
 
   bool IsPrivate() const { return mIsPrivate; }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  static void
-  DispatchStorageEvent(const nsAString& aDocumentURI,
-                       const nsAString& aKey,
-                       const nsAString& aOldValue,
-                       const nsAString& aNewValue,
-                       nsIPrincipal* aPrincipal,
-                       bool aIsPrivate,
-                       Storage* aStorage,
-                       bool aImmediateDispatch);
-
   void
   ApplyEvent(StorageEvent* aStorageEvent);
 
@@ -115,9 +103,9 @@ private:
   
   bool mIsPrivate : 1;
 
-  void BroadcastChangeNotification(const nsAString& aKey,
-                                   const nsAString& aOldValue,
-                                   const nsAString& aNewValue);
+  void OnChange(const nsAString& aKey,
+                const nsAString& aOldValue,
+                const nsAString& aNewValue);
 };
 
 } 

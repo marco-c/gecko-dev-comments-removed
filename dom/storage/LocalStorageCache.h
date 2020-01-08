@@ -21,6 +21,7 @@ namespace mozilla {
 namespace dom {
 
 class LocalStorage;
+class LocalStorageCacheChild;
 class LocalStorageManager;
 class StorageUsage;
 class StorageDBBridge;
@@ -76,6 +77,23 @@ protected:
 class LocalStorageCache : public LocalStorageCacheBridge
 {
 public:
+  void
+  AssertIsOnOwningThread() const
+  {
+    NS_ASSERT_OWNINGTHREAD(LocalStorage);
+  }
+
+  void
+  SetActor(LocalStorageCacheChild* aActor);
+
+  void
+  ClearActor()
+  {
+    AssertIsOnOwningThread();
+
+    mActor = nullptr;
+  }
+
   NS_IMETHOD_(void) Release(void) override;
 
   enum MutationSource {
@@ -182,6 +200,13 @@ private:
   Data& DataSet(const LocalStorage* aStorage);
 
   
+  
+  void NotifyObservers(const LocalStorage* aStorage,
+                       const nsString& aKey,
+                       const nsString& aOldValue,
+                       const nsString& aNewValue);
+
+  
   bool Persist(const LocalStorage* aStorage) const;
 
   
@@ -209,6 +234,14 @@ private:
   
   
   RefPtr<StorageUsage> mUsage;
+
+  
+  
+  
+  
+  
+  
+  LocalStorageCacheChild* mActor;
 
   
   nsCString mOriginNoSuffix;
