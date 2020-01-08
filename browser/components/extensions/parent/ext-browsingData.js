@@ -113,6 +113,46 @@ const clearLocalStorage = async function(options) {
     return Promise.reject(
       {message: "Firefox does not support clearing localStorage with 'since'."});
   }
+
+  if (Services.lsm.nextGenLocalStorageEnabled) {
+    
+    
+    
+    
+
+    let promises = [];
+
+    await new Promise((resolve, reject) => {
+      quotaManagerService.getUsage(request => {
+        if (request.resultCode != Cr.NS_OK) {
+          reject({message: "Clear localStorage failed"});
+          return;
+        }
+
+        for (let item of request.result) {
+          let principal = Services.scriptSecurityManager.createCodebasePrincipalFromOrigin(item.origin);
+          let host = principal.URI.hostPort;
+          if (!options.hostnames || options.hostnames.includes(host)) {
+            promises.push(new Promise((resolve, reject) => {
+              let clearRequest = quotaManagerService.clearStoragesForPrincipal(principal, "default", "ls");
+              clearRequest.callback = () => {
+                if (clearRequest.resultCode == Cr.NS_OK) {
+                  resolve();
+                } else {
+                  reject({message: "Clear localStorage failed"});
+                }
+              };
+            }));
+          }
+        }
+
+        resolve();
+      });
+    });
+
+    return Promise.all(promises);
+  }
+
   if (options.hostnames) {
     for (let hostname of options.hostnames) {
       Services.obs.notifyObservers(null, "extension:purge-localStorage", hostname);
