@@ -75,21 +75,6 @@ using mozilla::Maybe;
 using mozilla::PodCopy;
 
 
-
-
-static void
-CheckScriptDataIntegrity(JSScript* script)
-{
-    ScopeArray* sa = script->scopes();
-    uint8_t* ptr = reinterpret_cast<uint8_t*>(sa->vector);
-
-    
-    
-    MOZ_RELEASE_ASSERT(ptr >= script->data &&
-                       ptr + sa->length <= script->data + script->dataSize(),
-                       "Corrupt JSScript::data");
-}
-
 template<XDRMode mode>
 XDRResult
 js::XDRScriptConst(XDRState<mode>* xdr, MutableHandleValue vp)
@@ -369,8 +354,6 @@ js::XDRScript(XDRState<mode>* xdr, HandleScope scriptEnclosingScope,
     if (mode == XDR_ENCODE) {
         script = scriptp.get();
         MOZ_ASSERT(script->functionNonDelazifying() == fun);
-
-        CheckScriptDataIntegrity(script);
 
         if (!fun && script->treatAsRunOnce() && script->hasRunOnce()) {
             
@@ -890,8 +873,6 @@ js::XDRScript(XDRState<mode>* xdr, HandleScope scriptEnclosingScope,
     }
 
     if (mode == XDR_DECODE) {
-        CheckScriptDataIntegrity(script);
-
         scriptp.set(script);
 
         
@@ -3457,8 +3438,6 @@ js::detail::CopyScript(JSContext* cx, HandleScript src, HandleScript dst,
     }
 
     
-
-    CheckScriptDataIntegrity(src);
 
     
     MOZ_ASSERT(!src->sourceObject()->isMarkedGray());
