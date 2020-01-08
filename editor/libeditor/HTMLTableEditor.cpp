@@ -365,8 +365,22 @@ HTMLEditor::GetLastCellInRow(nsINode* aRowNode,
 }
 
 NS_IMETHODIMP
-HTMLEditor::InsertTableColumn(int32_t aNumber,
-                              bool aAfter)
+HTMLEditor::InsertTableColumn(int32_t aNumberOfColumnsToInsert,
+                              bool aInsertAfterSelectedCell)
+{
+  nsresult rv =
+    InsertTableColumnsWithTransaction(aNumberOfColumnsToInsert,
+      aInsertAfterSelectedCell ? InsertPosition::eAfterSelectedCell :
+                                 InsertPosition::eBeforeSelectedCell);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return NS_ERROR_FAILURE;
+  }
+  return NS_OK;
+}
+
+nsresult
+HTMLEditor::InsertTableColumnsWithTransaction(int32_t aNumberOfColumnsToInsert,
+                                              InsertPosition aInsertPosition)
 {
   RefPtr<Selection> selection;
   RefPtr<Element> table;
@@ -377,20 +391,38 @@ HTMLEditor::InsertTableColumn(int32_t aNumber,
                                getter_AddRefs(curCell),
                                nullptr, nullptr,
                                &startRowIndex, &startColIndex);
-  NS_ENSURE_SUCCESS(rv, rv);
-  
-  NS_ENSURE_TRUE(curCell, NS_SUCCESS_EDITOR_ELEMENT_NOT_FOUND);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  if (NS_WARN_IF(!curCell)) {
+    
+    return NS_OK;
+  }
 
   
-  int32_t curStartRowIndex, curStartColIndex, rowSpan, colSpan, actualRowSpan, actualColSpan;
-  bool    isSelected;
+  int32_t curStartRowIndex = 0, curStartColIndex = 0;
+  int32_t rowSpan = 0, colSpan = 0;
+  int32_t actualRowSpan = 0, actualColSpan = 0;
+  bool isSelected = false;
   rv = GetCellDataAt(table, startRowIndex, startColIndex,
                      getter_AddRefs(curCell),
                      &curStartRowIndex, &curStartColIndex,
                      &rowSpan, &colSpan,
                      &actualRowSpan, &actualColSpan, &isSelected);
-  NS_ENSURE_SUCCESS(rv, rv);
-  NS_ENSURE_TRUE(curCell, NS_ERROR_FAILURE);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  if (NS_WARN_IF(!curCell)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  ErrorResult error;
+  TableSize tableSize(*this, *table, error);
+  if (NS_WARN_IF(error.Failed())) {
+    return error.StealNSResult();
+  }
+  
+  MOZ_ASSERT(!tableSize.IsEmpty());
 
   AutoPlaceholderBatch beginBatching(this);
   
@@ -398,22 +430,22 @@ HTMLEditor::InsertTableColumn(int32_t aNumber,
                                       *this, EditSubAction::eInsertNode,
                                       nsIEditor::eNext);
 
-  
-  if (aAfter) {
-    startColIndex += actualColSpan;
-    
-    
-    
-    
-    if (!colSpan) {
-      SetColSpan(curCell, actualColSpan);
-    }
-  }
+  switch (aInsertPosition) {
+    case InsertPosition::eBeforeSelectedCell:
+      break;
+    case InsertPosition::eAfterSelectedCell:
+      
+      startColIndex += actualColSpan;
 
-  ErrorResult error;
-  TableSize tableSize(*this, *table, error);
-  if (NS_WARN_IF(error.Failed())) {
-    return error.StealNSResult();
+      
+      
+      
+      if (!colSpan) {
+        SetColSpan(curCell, actualColSpan);
+      }
+      break;
+    default:
+      MOZ_ASSERT_UNREACHABLE("Invalid InsertPosition");
   }
 
   
@@ -423,6 +455,8 @@ HTMLEditor::InsertTableColumn(int32_t aNumber,
   
   AutoTransactionsConserveSelection dontChangeSelection(*this);
 
+  
+  
   
   
   
@@ -438,71 +472,91 @@ HTMLEditor::InsertTableColumn(int32_t aNumber,
   for (int32_t rowIndex = 0; rowIndex < tableSize.mRowCount; rowIndex++) {
     if (startColIndex < tableSize.mColumnCount) {
       
+      int32_t curStartRowIndex = 0, curStartColIndex = 0;
+      int32_t rowSpan = 0, colSpan = 0;
+      int32_t actualRowSpan = 0, actualColSpan = 0;
+      bool isSelected = false;
       rv = GetCellDataAt(table, rowIndex, startColIndex,
                          getter_AddRefs(curCell),
                          &curStartRowIndex, &curStartColIndex,
                          &rowSpan, &colSpan,
                          &actualRowSpan, &actualColSpan, &isSelected);
-      NS_ENSURE_SUCCESS(rv, rv);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
 
       
       
-      if (curCell) {
-        if (curStartColIndex < startColIndex) {
-          
-          
-          
-          
-          if (colSpan > 0) {
-            SetColSpan(curCell, colSpan+aNumber);
-          }
-        } else {
-          
-          
-          
-          selection->Collapse(curCell, 0);
-          rv = InsertTableCell(aNumber, false);
+      if (!curCell) {
+        continue;
+      }
+
+      if (curStartColIndex < startColIndex) {
+        
+        
+        
+        
+        if (colSpan > 0) {
+          SetColSpan(curCell, colSpan + aNumberOfColumnsToInsert);
         }
+        continue;
+      }
+
+      
+      
+      IgnoredErrorResult ignoredError;
+      selection->Collapse(RawRangeBoundary(curCell, 0), ignoredError);
+      NS_WARNING_ASSERTION(!ignoredError.Failed(),
+        "Failed to collapse Selection into the cell");
+      rv = InsertTableCell(aNumberOfColumnsToInsert, false);
+      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to insert a cell element");
+      continue;
+    }
+
+    
+    if (!rowIndex) {
+      rowElement = GetFirstTableRowElement(*table, error);
+      if (NS_WARN_IF(error.Failed())) {
+        return error.StealNSResult();
+      }
+      if (NS_WARN_IF(!rowElement)) {
+        continue;
       }
     } else {
-      
-      if (!rowIndex) {
-        rowElement = GetFirstTableRowElement(*table, error);
-        if (NS_WARN_IF(error.Failed())) {
-          return error.StealNSResult();
-        }
-      } else {
-        if (NS_WARN_IF(!rowElement)) {
-          
-          
-          return NS_ERROR_FAILURE;
-        }
-        rowElement = GetNextTableRowElement(*rowElement, error);
-        if (NS_WARN_IF(error.Failed())) {
-          return error.StealNSResult();
-        }
+      if (NS_WARN_IF(!rowElement)) {
+        
+        
+        return NS_ERROR_FAILURE;
       }
-
-      if (rowElement) {
-        nsCOMPtr<nsINode> lastCell;
-        rv = GetLastCellInRow(rowElement, getter_AddRefs(lastCell));
-        if (NS_WARN_IF(NS_FAILED(rv))) {
-          return rv;
-        }
-        if (NS_WARN_IF(!lastCell)) {
-          return NS_ERROR_FAILURE;
-        }
-
-        curCell = lastCell->AsElement();
-        
-        
-        
-        
-        
-        selection->Collapse(curCell, 0);
-        rv = InsertTableCell(aNumber, true);
+      rowElement = GetNextTableRowElement(*rowElement, error);
+      if (NS_WARN_IF(error.Failed())) {
+        return error.StealNSResult();
+      }
+      if (NS_WARN_IF(!rowElement)) {
+        continue;
       }
     }
+
+    nsCOMPtr<nsINode> lastCell;
+    rv = GetLastCellInRow(rowElement, getter_AddRefs(lastCell));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+    if (NS_WARN_IF(!lastCell)) {
+      return NS_ERROR_FAILURE;
+    }
+
+    curCell = lastCell->AsElement();
+    
+    
+    
+    
+    IgnoredErrorResult ignoredError;
+    selection->Collapse(RawRangeBoundary(curCell, 0), ignoredError);
+    NS_WARNING_ASSERTION(!ignoredError.Failed(),
+      "Failed to collapse Selection into the cell");
+    rv = InsertTableCell(aNumberOfColumnsToInsert, true);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to insert a cell element");
   }
   
   return rv;
