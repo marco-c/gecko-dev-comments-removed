@@ -31,6 +31,8 @@ namespace gcstats {
 
 #include "gc/StatsPhasesGenerated.h"
 
+
+
 enum Count {
     COUNT_NEW_CHUNK,
     COUNT_DESTROY_CHUNK,
@@ -44,6 +46,14 @@ enum Count {
     COUNT_ARENA_RELOCATED,
 
     COUNT_LIMIT
+};
+
+
+enum Stat {
+    
+    STAT_OBJECT_GROUPS_PRETENURED,
+
+    STAT_LIMIT
 };
 
 struct ZoneGCStats
@@ -185,6 +195,14 @@ struct Statistics
 
     uint32_t getCount(Count s) const {
         return uint32_t(counts[s]);
+    }
+
+    void setStat(Stat s, uint32_t value) {
+        stats[s] = value;
+    }
+
+    uint32_t getStat(Stat s) const {
+        return stats[s];
     }
 
     void recordTrigger(double amount, double threshold) {
@@ -336,6 +354,11 @@ struct Statistics
                     COUNT_LIMIT,
                     mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire,
                                     mozilla::recordreplay::Behavior::DontPreserve>> counts;
+
+    
+    EnumeratedArray<Stat,
+                    STAT_LIMIT,
+                    uint32_t> stats;
 
     
 
