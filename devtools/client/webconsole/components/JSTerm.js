@@ -1579,7 +1579,13 @@ class JSTerm extends Component {
   }
 
   onContextMenu(e) {
-    this.props.serviceContainer.openEditContextMenu(e);
+    
+    
+    
+    
+    if (this.props.hud.isBrowserConsole) {
+      this.props.serviceContainer.openEditContextMenu(e);
+    }
   }
 
   destroy() {
