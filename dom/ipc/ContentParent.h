@@ -558,11 +558,10 @@ class ContentParent final : public PContentParent,
 
   
   virtual PURLClassifierParent* AllocPURLClassifierParent(
-      const Principal& aPrincipal, const bool& aUseTrackingProtection,
-      bool* aSuccess) override;
+      const Principal& aPrincipal, bool* aSuccess) override;
   virtual mozilla::ipc::IPCResult RecvPURLClassifierConstructor(
       PURLClassifierParent* aActor, const Principal& aPrincipal,
-      const bool& aUseTrackingProtection, bool* aSuccess) override;
+      bool* aSuccess) override;
 
   
   virtual PURLClassifierLocalParent* AllocPURLClassifierLocalParent(
