@@ -1907,7 +1907,6 @@ class StaticAnalysis(MachCommandBase):
         self.TOOLS_CHECKER_RESULT_FILE_NOT_FOUND = 5
         self.TOOLS_CHECKER_DIFF_FAILED = 6
         self.TOOLS_CHECKER_NOT_FOUND = 7
-        self.TOOLS_CHECKER_FAILED_FILE = 8
 
         
         if intree_tool:
@@ -1990,21 +1989,12 @@ class StaticAnalysis(MachCommandBase):
                     continue
                 futures.append(executor.submit(self._verify_checker, item))
 
-            error_code = self.TOOLS_SUCCESS
             for future in concurrent.futures.as_completed(futures):
-                
                 ret_val = future.result()
                 if ret_val != self.TOOLS_SUCCESS:
                     
-                    
-                    
-                    error_code = ret_val
-
-            if error_code != self.TOOLS_SUCCESS:
-                self.log(logging.INFO, 'static-analysis', {}, "FAIL: clang-tidy some tests failed.")
-                
-                shutil.rmtree(self._compilation_commands_path)
-                return error_code
+                    shutil.rmtree(self._compilation_commands_path)
+                    return ret_val
 
         self.log(logging.INFO, 'static-analysis', {}, "SUCCESS: clang-tidy all tests passed.")
         
@@ -2128,45 +2118,42 @@ class StaticAnalysis(MachCommandBase):
 
         cmd = self._get_clang_tidy_command(
             checks='-*,' + check, header_filter='', sources=[test_file_path_cpp], jobs=1, fix=False)
-        try:
-            clang_output = subprocess.check_output(
-                cmd, stderr=subprocess.STDOUT).decode('utf-8')
-        except subprocess.CalledProcessError as e:
-            print(e.output)
-            return self.TOOLS_CHECKER_FAILED_FILE
-        else:
-            issues = self._parse_issues(clang_output)
 
-            
-            if not issues:
+        clang_output = subprocess.check_output(
+            cmd, stderr=subprocess.STDOUT).decode('utf-8')
+
+        issues = self._parse_issues(clang_output)
+
+        
+        if not issues:
+            self.log(
+                logging.ERROR, 'static-analysis', {},
+                "ERROR: clang-tidy checker {0} did not find any issues in it\'s associated test suite.".
+                format(check))
+            return self.CHECKER_RETURNED_NO_ISSUES
+
+        if self._dump_results:
+            self._build_autotest_result(test_file_path_json, issues)
+        else:
+            if not os.path.exists(test_file_path_json):
+                
                 self.log(
                     logging.ERROR, 'static-analysis', {},
-                    "ERROR: clang-tidy checker {0} did not find any issues in its associated test file.".
-                    format(check))
-                return self.CHECKER_RETURNED_NO_ISSUES
+                    "ERROR: clang-tidy result file not found for checker {0}".format(
+                        check))
+                return self.TOOLS_CHECKER_RESULT_FILE_NOT_FOUND
+            
+            baseline_issues = self._get_autotest_stored_issues(test_file_path_json)
 
-            if self._dump_results:
-                self._build_autotest_result(test_file_path_json, issues)
-            else:
-                if not os.path.exists(test_file_path_json):
-                    
-                    self.log(
-                        logging.ERROR, 'static-analysis', {},
-                        "ERROR: clang-tidy result file not found for checker {0}".format(
-                            check))
-                    return self.TOOLS_CHECKER_RESULT_FILE_NOT_FOUND
-                
-                baseline_issues = self._get_autotest_stored_issues(test_file_path_json)
-
-                
-                if issues != baseline_issues:
-                    print("Clang output: {}".format(clang_output))
-                    self.log(
-                        logging.ERROR, 'static-analysis', {},
-                        "ERROR: clang-tidy auto-test failed for checker {0} Expected: {1} Got: {2}".
-                        format(check, baseline_issues, issues))
-                    return self.TOOLS_CHECKER_DIFF_FAILED
-            return self.TOOLS_SUCCESS
+            
+            if issues != baseline_issues:
+                print("Clang output: {}".format(clang_output))
+                self.log(
+                    logging.ERROR, 'static-analysis', {},
+                    "ERROR: clang-tidy auto-test failed for checker {0} Expected: {1} Got: {2}".
+                    format(check, baseline_issues, issues))
+                return self.TOOLS_CHECKER_DIFF_FAILED
+        return self.TOOLS_SUCCESS
 
     def _build_autotest_result(self, file, issues):
         with open(file, 'w') as f:
@@ -2727,9 +2714,12 @@ class Repackage(MachCommandBase):
         help='Mar binary path')
     @CommandArgument('--output', '-o', type=str, required=True,
         help='Output filename')
-    def repackage_mar(self, input, mar, output):
+    @CommandArgument('--format', type=str, default='lzma',
+        choices=('lzma', 'bz2'),
+        help='Mar format')
+    def repackage_mar(self, input, mar, output, format):
         from mozbuild.repackaging.mar import repackage_mar
-        repackage_mar(self.topsrcdir, input, mar, output)
+        repackage_mar(self.topsrcdir, input, mar, output, format)
 
 @CommandProvider
 class Analyze(MachCommandBase):
