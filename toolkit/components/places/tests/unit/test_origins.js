@@ -1243,6 +1243,10 @@ function expectedOriginFrecency(urls) {
 
 
 async function checkDB(expectedOrigins) {
+  
+  
+  await PlacesTestUtils.promiseAsyncUpdates();
+
   let db = await PlacesUtils.promiseDBConnection();
   let rows = await db.execute(`
     SELECT prefix, host, frecency
