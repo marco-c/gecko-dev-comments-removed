@@ -979,7 +979,9 @@ TeeReaderReadHandler(JSContext* cx, unsigned argc, Value* vp)
     
     
     
-    MOZ_ASSERT(!unwrappedTeeState->cloneForBranch2(), "tee(cloneForBranch2=true) should not be exposed");
+    
+    
+    MOZ_ASSERT(!unwrappedTeeState->cloneForBranch2());
 
     
     
