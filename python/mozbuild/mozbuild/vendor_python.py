@@ -5,7 +5,6 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import os
-import shutil
 import subprocess
 
 import mozfile
@@ -17,7 +16,7 @@ from mozpack.files import FileFinder
 
 class VendorPython(MozbuildObject):
 
-    def vendor(self, packages=None, with_windows_wheel=False):
+    def vendor(self, packages=None):
         self.populate_logger()
         self.log_manager.enable_unstructured()
 
@@ -25,8 +24,6 @@ class VendorPython(MozbuildObject):
             self.topsrcdir, os.path.join('third_party', 'python'))
 
         packages = packages or []
-        if with_windows_wheel and len(packages) != 1:
-            raise Exception('--with-windows-wheel is only supported for a single package!')
         pipenv = self.ensure_pipenv()
 
         for package in packages:
@@ -54,21 +51,6 @@ class VendorPython(MozbuildObject):
                     '--dest', tmp,
                     '--no-binary', ':all:',
                     '--disable-pip-version-check'])
-                if with_windows_wheel:
-                    
-                    
-                    
-                    self.virtualenv_manager._run_pip([
-                        'download',
-                        '--dest', tmp,
-                        '--no-deps',
-                        '--only-binary', ':all:',
-                        '--platform', 'win_amd64',
-                        '--implementation', 'cp',
-                        '--python-version', '27',
-                        '--abi', 'none',
-                        '--disable-pip-version-check',
-                        packages[0]])
                 self._extract(tmp, vendor_dir)
 
         self.repository.add_remove_files(vendor_dir)
@@ -77,31 +59,8 @@ class VendorPython(MozbuildObject):
         """extract source distribution into vendor directory"""
         finder = FileFinder(src)
         for path, _ in finder.find('*'):
-            base, ext = os.path.splitext(path)
-            if ext == '.whl':
-                
-                
-                
-                
-                bits = base.split('-')
-
-                
-                bits.pop(1)
-                target = os.path.join(dest, '-'.join(bits))
-                mozfile.remove(target)  
-                os.mkdir(target)
-                mozfile.extract(os.path.join(finder.base, path), target)
-            else:
-                
-                tld = mozfile.extract(os.path.join(finder.base, path), dest)[0]
-                target = os.path.join(dest, tld.rpartition('-')[0])
-                mozfile.remove(target)  
-                mozfile.move(tld, target)
             
-            
-            link_finder = FileFinder(target)
-            for _, f in link_finder.find('**'):
-                if os.path.islink(f.path):
-                    link_target = os.path.realpath(f.path)
-                    os.unlink(f.path)
-                    shutil.copyfile(link_target, f.path)
+            tld = mozfile.extract(os.path.join(finder.base, path), dest)[0]
+            target = os.path.join(dest, tld.rpartition('-')[0])
+            mozfile.remove(target)  
+            mozfile.move(tld, target)
