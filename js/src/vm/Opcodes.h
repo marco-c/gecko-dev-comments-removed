@@ -82,10 +82,7 @@
 
 
 
-
-
 #define FOR_EACH_OPCODE(macro)
-
 
 
 
@@ -94,7 +91,6 @@
 
  \
     macro(JSOP_NOP, 0, "nop", NULL, 1, 0, 0, JOF_BYTE) \
-    /* Long-standing JavaScript bytecodes. */ \
     /*
      * Pushes 'undefined' onto the stack.
      *
@@ -214,7 +210,6 @@
 
  \
     macro(JSOP_POPN, 11, "popn", NULL, 3, -1, 0, JOF_UINT16) \
-     \
     
 
 
@@ -723,7 +718,6 @@
 
  \
     macro(JSOP_RUNONCE, 71, "runonce", NULL, 1, 0, 0, JOF_BYTE) \
-     \
     
 
 
@@ -886,7 +880,6 @@
 
  \
     macro(JSOP_UINT16, 88, "uint16", NULL, 3, 0, 1, JOF_UINT16) \
-     \
     
 
 
@@ -1139,7 +1132,6 @@
 
  \
     macro(JSOP_LOOPHEAD, 109, "loophead", NULL, 1, 0, 0, JOF_BYTE) \
-     \
     
 
 
@@ -1161,7 +1153,6 @@
 
  \
     macro(JSOP_SETNAME, 111, "setname", NULL, 5, 2, 1, JOF_ATOM|JOF_NAME|JOF_PROPSET|JOF_DETECTING|JOF_CHECKSLOPPY|JOF_IC) \
-     \
     
 
 
@@ -1235,7 +1226,6 @@
 
  \
     macro(JSOP_RETSUB, 117, "retsub", NULL, 1, 2, 0, JOF_BYTE) \
-     \
     
 
 
@@ -1314,7 +1304,6 @@
 
  \
     macro(JSOP_DEFAULT, 122, "default", NULL, 5, 1, 0, JOF_JUMP) \
-     \
     
 
 
@@ -1328,7 +1317,6 @@
 
  \
     macro(JSOP_EVAL, 123, "eval", NULL, 3, -1, 1, JOF_UINT16|JOF_INVOKE|JOF_TYPESET|JOF_CHECKSLOPPY|JOF_IC) \
-     \
     
 
 
@@ -2149,7 +2137,6 @@
 
  \
     macro(JSOP_TYPEOFEXPR, 196, "typeofexpr", NULL, 1, 1, 1, JOF_BYTE|JOF_DETECTING|JOF_IC) \
-     \
     
 
 
