@@ -64,6 +64,7 @@ function testOneFile(uri) {
                                           wantGlobalProperties: ["ChromeUtils"] });
 
   
+  testScope.SpecialPowers = SpecialPowers;
   testScope.Components = SpecialPowers.Components;
   testScope._TEST_FILE = uri;
 
