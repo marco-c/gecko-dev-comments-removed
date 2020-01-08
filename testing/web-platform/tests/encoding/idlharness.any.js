@@ -2,13 +2,14 @@
 
 
 
-promise_test(async() => {
-  const text = await (await fetch('/interfaces/encoding.idl')).text();
-  const idl_array = new IdlArray();
-  idl_array.add_idls(text);
-  idl_array.add_objects({
-    TextEncoder: ['new TextEncoder()'],
-    TextDecoder: ['new TextDecoder()']
-  });
-  idl_array.test();
-}, 'Encoding Standard IDL');
+idl_test(
+  ['encoding'],
+  [], 
+  idl_array => {
+    idl_array.add_objects({
+      TextEncoder: ['new TextEncoder()'],
+      TextDecoder: ['new TextDecoder()']
+    });
+  },
+  'Encoding Standard IDL'
+);
