@@ -1235,10 +1235,10 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     return res ? res : {};
   },
 
-  onSources: function(request) {
-    for (const source of this.dbg.findSources()) {
+  onSources: async function(request) {
+    await Promise.all(this.dbg.findSources().map(source => {
       this.sources.createSourceActor(source);
-    }
+    }));
 
     
     
