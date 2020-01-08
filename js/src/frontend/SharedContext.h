@@ -456,8 +456,9 @@ class FunctionBox : public ObjectBox, public SharedContext
         
         
         
-        if (isLazyFunctionWithoutEnclosingScope())
+        if (isLazyFunctionWithoutEnclosingScope()) {
             return nullptr;
+        }
 
         return enclosingScope_;
     }

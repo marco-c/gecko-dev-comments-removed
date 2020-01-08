@@ -26,8 +26,9 @@ TryEmitter::TryEmitter(BytecodeEmitter* bce, Kind kind, ControlKind controlKind)
   , state_(State::Start)
 #endif
 {
-    if (controlKind_ == ControlKind::Syntactic)
+    if (controlKind_ == ControlKind::Syntactic) {
         controlInfo_.emplace(bce_, hasFinally() ? StatementKind::Finally : StatementKind::Try);
+    }
     finallyStart_.offset = 0;
 }
 
@@ -36,8 +37,9 @@ TryEmitter::TryEmitter(BytecodeEmitter* bce, Kind kind, ControlKind controlKind)
 bool
 TryEmitter::emitJumpOverCatchAndFinally()
 {
-    if (!bce_->emitJump(JSOP_GOTO, &catchAndFinallyJump_))
+    if (!bce_->emitJump(JSOP_GOTO, &catchAndFinallyJump_)) {
         return false;
+    }
     return true;
 }
 
@@ -56,10 +58,12 @@ TryEmitter::emitTry()
     depth_ = bce_->stackDepth;
 
     
-    if (!bce_->newSrcNote(SRC_TRY, &noteIndex_))
+    if (!bce_->newSrcNote(SRC_TRY, &noteIndex_)) {
         return false;
-    if (!bce_->emit1(JSOP_TRY))
+    }
+    if (!bce_->emit1(JSOP_TRY)) {
         return false;
+    }
     tryStart_ = bce_->offset();
 
 #ifdef DEBUG
@@ -76,8 +80,9 @@ TryEmitter::emitTryEnd()
 
     
     if (hasFinally() && controlInfo_) {
-        if (!bce_->emitJump(JSOP_GOSUB, &controlInfo_->gosubs))
+        if (!bce_->emitJump(JSOP_GOSUB, &controlInfo_->gosubs)) {
             return false;
+        }
     }
 
     
@@ -88,11 +93,13 @@ TryEmitter::emitTryEnd()
     }
 
     
-    if (!bce_->emitJump(JSOP_GOTO, &catchAndFinallyJump_))
+    if (!bce_->emitJump(JSOP_GOTO, &catchAndFinallyJump_)) {
         return false;
+    }
 
-    if (!bce_->emitJumpTarget(&tryEnd_))
+    if (!bce_->emitJumpTarget(&tryEnd_)) {
         return false;
+    }
 
     return true;
 }
@@ -101,8 +108,9 @@ bool
 TryEmitter::emitCatch()
 {
     MOZ_ASSERT(state_ == State::Try);
-    if (!emitTryEnd())
+    if (!emitTryEnd()) {
         return false;
+    }
 
     MOZ_ASSERT(bce_->stackDepth == depth_);
 
@@ -111,10 +119,12 @@ TryEmitter::emitCatch()
         
         
         
-        if (!bce_->emit1(JSOP_UNDEFINED))
+        if (!bce_->emit1(JSOP_UNDEFINED)) {
             return false;
-        if (!bce_->emit1(JSOP_SETRVAL))
+        }
+        if (!bce_->emit1(JSOP_SETRVAL)) {
             return false;
+        }
     }
 
 #ifdef DEBUG
@@ -128,18 +138,21 @@ TryEmitter::emitCatchEnd()
 {
     MOZ_ASSERT(state_ == State::Catch);
 
-    if (!controlInfo_)
+    if (!controlInfo_) {
         return true;
+    }
 
     
     if (hasFinally()) {
-        if (!bce_->emitJump(JSOP_GOSUB, &controlInfo_->gosubs))
+        if (!bce_->emitJump(JSOP_GOSUB, &controlInfo_->gosubs)) {
             return false;
+        }
         MOZ_ASSERT(bce_->stackDepth == depth_);
 
         
-        if (!bce_->emitJump(JSOP_GOTO, &catchAndFinallyJump_))
+        if (!bce_->emitJump(JSOP_GOTO, &catchAndFinallyJump_)) {
             return false;
+        }
     }
 
     return true;
@@ -155,26 +168,30 @@ TryEmitter::emitFinally(const Maybe<uint32_t>& finallyPos )
     
     
     if (!controlInfo_) {
-        if (kind_ == Kind::TryCatch)
+        if (kind_ == Kind::TryCatch) {
             kind_ = Kind::TryCatchFinally;
+        }
     } else {
         MOZ_ASSERT(hasFinally());
     }
 
     if (!hasCatch()) {
         MOZ_ASSERT(state_ == State::Try);
-        if (!emitTryEnd())
+        if (!emitTryEnd()) {
             return false;
+        }
     } else {
         MOZ_ASSERT(state_ == State::Catch);
-        if (!emitCatchEnd())
+        if (!emitCatchEnd()) {
             return false;
+        }
     }
 
     MOZ_ASSERT(bce_->stackDepth == depth_);
 
-    if (!bce_->emitJumpTarget(&finallyStart_))
+    if (!bce_->emitJumpTarget(&finallyStart_)) {
         return false;
+    }
 
     if (controlInfo_) {
         
@@ -185,24 +202,29 @@ TryEmitter::emitFinally(const Maybe<uint32_t>& finallyPos )
         controlInfo_->setEmittingSubroutine();
     }
     if (finallyPos) {
-        if (!bce_->updateSourceCoordNotes(finallyPos.value()))
+        if (!bce_->updateSourceCoordNotes(finallyPos.value())) {
             return false;
+        }
     }
-    if (!bce_->emit1(JSOP_FINALLY))
+    if (!bce_->emit1(JSOP_FINALLY)) {
         return false;
+    }
 
     if (controlKind_ == ControlKind::Syntactic) {
-        if (!bce_->emit1(JSOP_GETRVAL))
+        if (!bce_->emit1(JSOP_GETRVAL)) {
             return false;
+        }
 
         
         
         
         
-        if (!bce_->emit1(JSOP_UNDEFINED))
+        if (!bce_->emit1(JSOP_UNDEFINED)) {
             return false;
-        if (!bce_->emit1(JSOP_SETRVAL))
+        }
+        if (!bce_->emit1(JSOP_SETRVAL)) {
             return false;
+        }
     }
 
 #ifdef DEBUG
@@ -217,12 +239,14 @@ TryEmitter::emitFinallyEnd()
     MOZ_ASSERT(state_ == State::Finally);
 
     if (controlKind_ == ControlKind::Syntactic) {
-        if (!bce_->emit1(JSOP_SETRVAL))
+        if (!bce_->emit1(JSOP_SETRVAL)) {
             return false;
+        }
     }
 
-    if (!bce_->emit1(JSOP_RETSUB))
+    if (!bce_->emit1(JSOP_RETSUB)) {
         return false;
+    }
 
     bce_->hasTryFinally = true;
     return true;
@@ -233,38 +257,44 @@ TryEmitter::emitEnd()
 {
     if (!hasFinally()) {
         MOZ_ASSERT(state_ == State::Catch);
-        if (!emitCatchEnd())
+        if (!emitCatchEnd()) {
             return false;
+        }
     } else {
         MOZ_ASSERT(state_ == State::Finally);
-        if (!emitFinallyEnd())
+        if (!emitFinallyEnd()) {
             return false;
+        }
     }
 
     MOZ_ASSERT(bce_->stackDepth == depth_);
 
     
     
-    if (!bce_->emit1(JSOP_NOP))
+    if (!bce_->emit1(JSOP_NOP)) {
         return false;
+    }
 
     
-    if (!bce_->emitJumpTargetAndPatch(catchAndFinallyJump_))
+    if (!bce_->emitJumpTargetAndPatch(catchAndFinallyJump_)) {
         return false;
+    }
 
     
     
     if (hasCatch()) {
-        if (!bce_->tryNoteList.append(JSTRY_CATCH, depth_, tryStart_, tryEnd_.offset))
+        if (!bce_->tryNoteList.append(JSTRY_CATCH, depth_, tryStart_, tryEnd_.offset)) {
             return false;
+        }
     }
 
     
     
     
     if (hasFinally()) {
-        if (!bce_->tryNoteList.append(JSTRY_FINALLY, depth_, tryStart_, finallyStart_.offset))
+        if (!bce_->tryNoteList.append(JSTRY_FINALLY, depth_, tryStart_, finallyStart_.offset)) {
             return false;
+        }
     }
 
 #ifdef DEBUG

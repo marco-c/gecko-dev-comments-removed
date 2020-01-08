@@ -516,8 +516,9 @@ class MOZ_STACK_CLASS PerHandlerParser
         
         
         
-        if (handler.canSkipLazyClosedOverBindings())
+        if (handler.canSkipLazyClosedOverBindings()) {
             return true;
+        }
 
         return ParserBase::noteUsedNameInternal(name);
     }
@@ -1618,8 +1619,9 @@ class MOZ_STACK_CLASS AutoAwaitIsKeyword
 
         
         
-        if (oldAwaitHandling_ != AwaitIsModuleKeyword)
+        if (oldAwaitHandling_ != AwaitIsModuleKeyword) {
             parser_->setAwaitHandling(awaitHandling);
+        }
     }
 
     ~AutoAwaitIsKeyword() {

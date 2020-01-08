@@ -170,12 +170,15 @@ class SyntaxParseHandler
 
     Node newName(PropertyName* name, const TokenPos& pos, JSContext* cx) {
         lastAtom = name;
-        if (name == cx->names().arguments)
+        if (name == cx->names().arguments) {
             return NodeArgumentsName;
-        if (pos.begin + strlen("async") == pos.end && name == cx->names().async)
+        }
+        if (pos.begin + strlen("async") == pos.end && name == cx->names().async) {
             return NodePotentialAsyncKeyword;
-        if (name == cx->names().eval)
+        }
+        if (name == cx->names().eval) {
             return NodeEvalName;
+        }
         return NodeName;
     }
 
@@ -411,8 +414,9 @@ class SyntaxParseHandler
     }
 
     Node newDeclarationList(ParseNodeKind kind, const TokenPos& pos) {
-        if (kind == ParseNodeKind::Var)
+        if (kind == ParseNodeKind::Var) {
             return NodeVarDeclaration;
+        }
         MOZ_ASSERT(kind == ParseNodeKind::Let || kind == ParseNodeKind::Const);
         return NodeLexicalDeclaration;
     }
@@ -475,10 +479,12 @@ class SyntaxParseHandler
         
         
         
-        if (node == NodeUnparenthesizedArray)
+        if (node == NodeUnparenthesizedArray) {
             return NodeParenthesizedArray;
-        if (node == NodeUnparenthesizedObject)
+        }
+        if (node == NodeUnparenthesizedObject) {
             return NodeParenthesizedObject;
+        }
 
         
         
@@ -490,8 +496,9 @@ class SyntaxParseHandler
         }
 
         
-        if (node == NodePotentialAsyncKeyword)
+        if (node == NodePotentialAsyncKeyword) {
             return NodeName;
+        }
 
         
         
@@ -527,8 +534,9 @@ class SyntaxParseHandler
         
         
         
-        if (node != NodeDottedProperty)
+        if (node != NodeDottedProperty) {
             return nullptr;
+        }
         return lastAtom->asPropertyName();
     }
 
