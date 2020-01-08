@@ -905,10 +905,9 @@ nsTableCellMap::ResetBStartStart(LogicalSide aSide,
                                  nsCellMap&  aCellMap,
                                  uint32_t    aRowGroupStart,
                                  uint32_t    aRowIndex,
-                                 uint32_t    aColIndex,
-                                 bool        aIsBEndIEnd)
+                                 uint32_t    aColIndex)
 {
-  if (!mBCInfo || aIsBEndIEnd) ABORT0();
+  if (!mBCInfo) ABORT0();
 
   BCCellData* cellData;
   BCData* bcData = nullptr;
