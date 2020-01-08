@@ -271,8 +271,6 @@
 
 #include "mozilla/DocLoadingTimelineMarker.h"
 
-#include "mozilla/dom/WindowGlobalChild.h"
-
 #include "nsISpeculativeConnect.h"
 
 #include "mozilla/MediaManager.h"
@@ -2898,13 +2896,6 @@ void nsIDocument::SetDocumentURI(nsIURI* aURI) {
   
   if (!equalBases) {
     RefreshLinkHrefs();
-  }
-
-  
-  nsPIDOMWindowInner* inner = GetInnerWindow();
-  WindowGlobalChild* wgc = inner ? inner->GetWindowGlobalChild() : nullptr;
-  if (wgc) {
-    Unused << wgc->SendUpdateDocumentURI(mDocumentURI);
   }
 }
 

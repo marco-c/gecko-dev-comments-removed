@@ -260,8 +260,6 @@
 #include "mozilla/dom/ClientSource.h"
 #include "mozilla/dom/ClientState.h"
 
-#include "mozilla/dom/WindowGlobalChild.h"
-
 
 #ifdef check
 class nsIScriptTimeoutHandler;
@@ -1268,11 +1266,6 @@ void nsGlobalWindowInner::FreeInnerObjects(bool aForDocumentOpen) {
     }
   }
 
-  if (mWindowGlobalChild && !mWindowGlobalChild->IsClosed()) {
-    mWindowGlobalChild->Send__delete__(mWindowGlobalChild);
-  }
-  mWindowGlobalChild = nullptr;
-
   mIntlUtils = nullptr;
 }
 
@@ -1641,15 +1634,6 @@ void nsGlobalWindowInner::InnerSetNewDocument(JSContext* aCx,
   
   
   ClearDocumentDependentSlots(aCx);
-
-  
-  
-  
-  MOZ_DIAGNOSTIC_ASSERT(!mWindowGlobalChild,
-                        "Shouldn't have created WindowGlobalChild yet!");
-  if (XRE_IsParentProcess() || mTabChild) {
-    mWindowGlobalChild = WindowGlobalChild::Create(this);
-  }
 
 #ifdef DEBUG
   mLastOpenedURI = aDocument->GetDocumentURI();

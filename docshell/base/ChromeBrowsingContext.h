@@ -4,22 +4,18 @@
 
 
 
-#ifndef mozilla_dom_ChromeBrowsingContext_h
-#define mozilla_dom_ChromeBrowsingContext_h
+#ifndef ChromeBrowsingContext_h
+#define ChromeBrowsingContext_h
 
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/RefPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsWrapperCache.h"
-#include "nsTHashtable.h"
-#include "nsHashKeys.h"
 
 class nsIDocShell;
 
 namespace mozilla {
 namespace dom {
-
-class WindowGlobalParent;
 
 
 
@@ -35,24 +31,9 @@ class ChromeBrowsingContext final : public BrowsingContext {
     return mProcessId == aProcessId;
   }
 
-  void GetWindowGlobals(nsTArray<RefPtr<WindowGlobalParent>>& aWindows);
-
-  
-  void RegisterWindowGlobal(WindowGlobalParent* aGlobal);
-  void UnregisterWindowGlobal(WindowGlobalParent* aGlobal);
-
-  
-  WindowGlobalParent* GetCurrentWindowGlobal() const {
-    return mCurrentWindowGlobal;
-  }
-  void SetCurrentWindowGlobal(WindowGlobalParent* aGlobal);
-
-  JSObject* WrapObject(JSContext* aCx,
-                       JS::Handle<JSObject*> aGivenProto) override;
-
  protected:
-  void Traverse(nsCycleCollectionTraversalCallback& cb);
-  void Unlink();
+  void Traverse(nsCycleCollectionTraversalCallback& cb) {}
+  void Unlink() {}
 
   using Type = BrowsingContext::Type;
   ChromeBrowsingContext(BrowsingContext* aParent, BrowsingContext* aOpener,
@@ -65,13 +46,8 @@ class ChromeBrowsingContext final : public BrowsingContext {
   
   
   uint64_t mProcessId;
-
-  
-  nsTHashtable<nsRefPtrHashKey<WindowGlobalParent>> mWindowGlobals;
-  RefPtr<WindowGlobalParent> mCurrentWindowGlobal;
 };
 
 }  
 }  
-
-#endif  
+#endif

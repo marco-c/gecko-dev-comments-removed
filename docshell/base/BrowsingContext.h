@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_BrowsingContext_h
-#define mozilla_dom_BrowsingContext_h
+#ifndef BrowsingContext_h
+#define BrowsingContext_h
 
 #include "mozilla/LinkedList.h"
 #include "mozilla/Maybe.h"
@@ -112,8 +112,8 @@ class BrowsingContext : public nsWrapperCache,
       nsTArray<RefPtr<BrowsingContext>>& aBrowsingContexts);
 
   nsISupports* GetParentObject() const;
-  JSObject* WrapObject(JSContext* aCx,
-                       JS::Handle<JSObject*> aGivenProto) override;
+  virtual JSObject* WrapObject(JSContext* aCx,
+                               JS::Handle<JSObject*> aGivenProto) override;
 
   MOZ_DECLARE_WEAKREFERENCE_TYPENAME(BrowsingContext)
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(BrowsingContext)
@@ -143,5 +143,4 @@ class BrowsingContext : public nsWrapperCache,
 
 }  
 }  
-
-#endif  
+#endif

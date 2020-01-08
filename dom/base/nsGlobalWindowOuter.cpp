@@ -68,7 +68,6 @@
 #include "mozilla/intl/LocaleService.h"
 #include "WindowDestroyedEvent.h"
 #include "nsDocShellLoadState.h"
-#include "mozilla/dom/WindowGlobalChild.h"
 
 
 #include "nsJSUtils.h"
@@ -1962,10 +1961,6 @@ nsresult nsGlobalWindowOuter::SetNewDocument(nsIDocument* aDocument,
   if (handleDocumentOpen) {
     newInnerWindow->MigrateStateForDocumentOpen(currentInner);
   }
-
-  
-  
-  mInnerWindow->GetWindowGlobalChild()->SendBecomeCurrentWindowGlobal();
 
   
   

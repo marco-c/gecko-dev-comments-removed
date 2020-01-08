@@ -122,7 +122,6 @@
 #include "mozilla/Telemetry.h"
 #include "nsDocShellLoadState.h"
 #include "nsWebBrowser.h"
-#include "mozilla/dom/WindowGlobalChild.h"
 
 #ifdef XP_WIN
 #include "mozilla/plugins/PluginWidgetChild.h"
@@ -537,11 +536,6 @@ nsresult TabChild::Init(mozIDOMWindowProxy* aParent) {
   loadContext->SetPrivateBrowsing(OriginAttributesRef().mPrivateBrowsingId > 0);
   loadContext->SetRemoteTabs(mChromeFlags &
                              nsIWebBrowserChrome::CHROME_REMOTE_WINDOW);
-
-  
-  RefPtr<BrowsingContext> browsingContext =
-      nsDocShell::Cast(docShell)->GetBrowsingContext();
-  SendRootBrowsingContext(BrowsingContextId(browsingContext->Id()));
 
   
   
@@ -3140,17 +3134,6 @@ PPaymentRequestChild* TabChild::AllocPPaymentRequestChild() {
 
 bool TabChild::DeallocPPaymentRequestChild(PPaymentRequestChild* actor) {
   delete actor;
-  return true;
-}
-
-PWindowGlobalChild* TabChild::AllocPWindowGlobalChild(const WindowGlobalInit&) {
-  MOZ_CRASH("We should never be manually allocating PWindowGlobalChild actors");
-  return nullptr;
-}
-
-bool TabChild::DeallocPWindowGlobalChild(PWindowGlobalChild* aActor) {
-  
-  static_cast<WindowGlobalChild*>(aActor)->Release();
   return true;
 }
 

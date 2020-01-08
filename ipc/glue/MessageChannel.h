@@ -165,15 +165,6 @@ class MessageChannel : HasResultCodes, MessageLoop::DestructionObserver {
             Side aSide);
 
   
-  
-  
-  
-  
-  
-  
-  bool OpenOnSameThread(MessageChannel* aTargetChan, Side aSide);
-
-  
   void Close();
 
   
@@ -543,15 +534,6 @@ class MessageChannel : HasResultCodes, MessageLoop::DestructionObserver {
   
   
   void AssertLinkThread() const {
-    if (mIsSameThreadChannel) {
-      
-      
-      AssertWorkerThread();
-      return;
-    }
-
-    
-    
     MOZ_ASSERT(mWorkerThread, "Channel hasn't been opened yet");
     MOZ_RELEASE_ASSERT(mWorkerThread != GetCurrentVirtualThread(),
                        "on worker thread but should not be!");
@@ -845,10 +827,6 @@ class MessageChannel : HasResultCodes, MessageLoop::DestructionObserver {
   std::vector<UniquePtr<Message>> mPostponedSends;
 
   bool mBuildIDsConfirmedMatch;
-
-  
-  
-  bool mIsSameThreadChannel;
 };
 
 void CancelCPOWs();
