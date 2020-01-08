@@ -110,7 +110,7 @@ protected:
 
 
 
-  MOZ_MUST_USE bool EnsureCommitCompoisition();
+  MOZ_MUST_USE bool EnsureCommitComposition();
 
   EditorBase* mEditorBase; 
   RefPtr<nsCaret> mCaret;

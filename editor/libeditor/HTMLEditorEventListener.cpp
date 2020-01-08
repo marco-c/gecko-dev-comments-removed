@@ -72,7 +72,7 @@ HTMLEditorEventListener::MouseDown(MouseEvent* aMouseEvent)
   
   
   
-  if (!EnsureCommitCompoisition()) {
+  if (!EnsureCommitComposition()) {
     return NS_OK;
   }
 
