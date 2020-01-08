@@ -1390,17 +1390,22 @@ WebRenderBridgeParent::UpdateWebRender(CompositorVsyncScheduler* aScheduler,
 mozilla::ipc::IPCResult
 WebRenderBridgeParent::RecvScheduleComposite()
 {
+  ScheduleGenerateFrame();
+  return IPC_OK();
+}
+
+void
+WebRenderBridgeParent::ScheduleForcedGenerateFrame()
+{
   if (mDestroyed) {
-    return IPC_OK();
+    return;
   }
 
-  
   wr::TransactionBuilder fastTxn( false);
   fastTxn.InvalidateRenderedFrame();
   mApi->SendTransaction(fastTxn);
 
   ScheduleGenerateFrame();
-  return IPC_OK();
 }
 
 mozilla::ipc::IPCResult

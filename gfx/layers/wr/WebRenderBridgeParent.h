@@ -186,6 +186,14 @@ public:
 
   void ScheduleGenerateFrame();
 
+  
+
+
+
+
+
+  void ScheduleForcedGenerateFrame();
+
   wr::Epoch UpdateWebRender(CompositorVsyncScheduler* aScheduler,
                             wr::WebRenderAPI* aApi,
                             AsyncImagePipelineManager* aImageMgr,

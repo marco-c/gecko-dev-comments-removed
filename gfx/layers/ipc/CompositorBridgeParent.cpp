@@ -645,7 +645,7 @@ mozilla::ipc::IPCResult
 CompositorBridgeParent::RecvForcePresent()
 {
   if (mWrBridge) {
-    mWrBridge->ScheduleGenerateFrame();
+    mWrBridge->ScheduleForcedGenerateFrame();
   }
   
   if (mLayerManager) {
