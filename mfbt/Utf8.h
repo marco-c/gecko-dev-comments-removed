@@ -199,6 +199,13 @@ public:
 };
 
 
+inline bool
+IsAscii(Utf8Unit aUnit)
+{
+  return IsAscii(aUnit.toUint8());
+}
+
+
 
 
 
