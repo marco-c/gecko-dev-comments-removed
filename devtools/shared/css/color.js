@@ -1172,7 +1172,35 @@ function calculateLuminance(rgba) {
 
 
 
+function blendColors(foregroundColor, backgroundColor = [ 255, 255, 255, 1 ]) {
+  const [ fgR, fgG, fgB, fgA ] = foregroundColor;
+  const [ bgR, bgG, bgB, bgA ] = backgroundColor;
+  if (fgA === 1) {
+    return foregroundColor;
+  }
+
+  return [
+    (1 - fgA) * bgR + fgA * fgR,
+    (1 - fgA) * bgG + fgA * fgG,
+    (1 - fgA) * bgB + fgA * fgB,
+    fgA + bgA * (1 - fgA)
+  ];
+}
+
+
+
+
+
+
+
+
+
+
+
 function calculateContrastRatio(backgroundColor, textColor) {
+  backgroundColor = blendColors(backgroundColor);
+  textColor = blendColors(textColor, backgroundColor);
+
   const backgroundLuminance = calculateLuminance(backgroundColor);
   const textLuminance = calculateLuminance(textColor);
   const ratio = (textLuminance + 0.05) / (backgroundLuminance + 0.05);

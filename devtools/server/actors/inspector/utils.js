@@ -6,6 +6,7 @@
 
 const {Cu} = require("chrome");
 
+loader.lazyRequireGetter(this, "colorUtils", "devtools/shared/css/color", true);
 loader.lazyRequireGetter(this, "AsyncUtils", "devtools/shared/async-utils");
 loader.lazyRequireGetter(this, "flags", "devtools/shared/flags");
 loader.lazyRequireGetter(this, "DevToolsUtils", "devtools/shared/DevToolsUtils");
@@ -13,6 +14,8 @@ loader.lazyRequireGetter(this, "nodeFilterConstants", "devtools/shared/dom-node-
 
 loader.lazyRequireGetter(this, "isNativeAnonymous", "devtools/shared/layout/utils", true);
 loader.lazyRequireGetter(this, "isXBLAnonymous", "devtools/shared/layout/utils", true);
+
+loader.lazyRequireGetter(this, "CssLogic", "devtools/server/actors/inspector/css-logic", true);
 
 const XHTML_NS = "http://www.w3.org/1999/xhtml";
 const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
@@ -245,8 +248,67 @@ const imageToImageData = async function(node, maxDim) {
   };
 };
 
+
+
+
+
+
+
+
+
+
+function getClosestBackgroundColor(node) {
+  let current = node;
+
+  while (current) {
+    const computedStyle = CssLogic.getComputedStyle(current);
+    if (computedStyle) {
+      const currentStyle = computedStyle.getPropertyValue("background-color");
+      if (colorUtils.isValidCSSColor(currentStyle)) {
+        const currentCssColor = new colorUtils.CssColor(currentStyle);
+        if (!currentCssColor.isTransparent()) {
+          return currentCssColor.rgba;
+        }
+      }
+    }
+
+    current = current.parentNode;
+  }
+
+  return "rgba(255, 255, 255, 1)";
+}
+
+
+
+
+
+
+
+
+
+
+function getClosestBackgroundImage(node) {
+  let current = node;
+
+  while (current.ownerDocument) {
+    const computedStyle = CssLogic.getComputedStyle(current);
+    if (computedStyle) {
+      const currentBackgroundImage = computedStyle.getPropertyValue("background-image");
+      if (currentBackgroundImage !== "none") {
+        return currentBackgroundImage;
+      }
+    }
+
+    current = current.parentNode;
+  }
+
+  return "none";
+}
+
 module.exports = {
   allAnonymousContentTreeWalkerFilter,
+  getClosestBackgroundColor,
+  getClosestBackgroundImage,
   getNodeDisplayName,
   imageToImageData,
   isNodeDead,
