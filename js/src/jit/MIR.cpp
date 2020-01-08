@@ -98,7 +98,7 @@ MDefinition::PrintOpcodeName(GenericPrinter& out, Opcode op)
 #endif
 
 static MConstant*
-EvaluateConstantOperands(TempAllocator& alloc, MBinaryInstruction* ins, bool* ptypeChange = nullptr)
+EvaluateConstantOperands(TempAllocator& alloc, MBinaryInstruction* ins)
 {
     MDefinition* left = ins->getOperand(0);
     MDefinition* right = ins->getOperand(1);
@@ -189,9 +189,6 @@ EvaluateConstantOperands(TempAllocator& alloc, MBinaryInstruction* ins, bool* pt
     
     MOZ_ASSERT(ins->type() == MIRType::Int32);
     if (!retVal.isInt32()) {
-        if (ptypeChange) {
-            *ptypeChange = true;
-        }
         return nullptr;
     }
 
@@ -2722,7 +2719,8 @@ MUrsh::infer(BaselineInspector* inspector, jsbytecode* pc)
         return;
     }
 
-    if (inspector->hasSeenDoubleResult(pc)) {
+    
+    if (inspector->hasSeenDoubleResult(pc,  true)) {
         specialization_ = MIRType::Double;
         setResultType(MIRType::Double);
         return;
@@ -2940,7 +2938,8 @@ MBinaryArithInstruction::setNumberSpecialization(TempAllocator& alloc, BaselineI
 
     
     if (getOperand(0)->type() == MIRType::Int32 && getOperand(1)->type() == MIRType::Int32) {
-        bool seenDouble = inspector->hasSeenDoubleResult(pc);
+        
+        bool seenDouble = inspector->hasSeenDoubleResult(pc,  true);
 
         
         
@@ -2953,9 +2952,8 @@ MBinaryArithInstruction::setNumberSpecialization(TempAllocator& alloc, BaselineI
 bool
 MBinaryArithInstruction::constantDoubleResult(TempAllocator& alloc)
 {
-    bool typeChange = false;
-    EvaluateConstantOperands(alloc, this, &typeChange);
-    return typeChange;
+    MConstant* constantResult = EvaluateConstantOperands(alloc, this);
+    return constantResult != nullptr && constantResult->type() == MIRType::Double;
 }
 
 MDefinition*
