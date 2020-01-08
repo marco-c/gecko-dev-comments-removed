@@ -749,18 +749,29 @@ MarkupContainer.prototype = {
   },
 
   _onToggle: function(event) {
+    event.stopPropagation();
+
     
     
     if (event.target.dataset.event || event.target.dataset.display) {
-      event.stopPropagation();
       return;
     }
 
+    this.expandContainer(event.altKey);
+  },
+
+  
+
+
+
+
+
+  expandContainer: function(applyToDescendants) {
     this.markup.navigate(this);
+
     if (this.hasChildren) {
-      this.markup.setNodeExpanded(this.node, !this.expanded, event.altKey);
+      this.markup.setNodeExpanded(this.node, !this.expanded, applyToDescendants);
     }
-    event.stopPropagation();
   },
 
   
