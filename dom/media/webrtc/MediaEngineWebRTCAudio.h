@@ -258,8 +258,7 @@ private:
 
   
   
-  
-  nsTArray<Allocation> mAllocations;
+  UniquePtr<Allocation> mAllocation;
 
   
   
