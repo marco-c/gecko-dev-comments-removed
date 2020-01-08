@@ -22,7 +22,7 @@
 
 class nsFrameSelection;
 class nsIContent;
-
+class nsIDocument;
 class nsIPresShell;
 struct nsPoint;
 
@@ -104,7 +104,7 @@ class AccessibleCaretManager {
 
   
   MOZ_CAN_RUN_SCRIPT
-  virtual nsresult OnSelectionChanged(dom::Document* aDoc, dom::Selection* aSel,
+  virtual nsresult OnSelectionChanged(nsIDocument* aDoc, dom::Selection* aSel,
                                       int16_t aReason);
   
   MOZ_CAN_RUN_SCRIPT
@@ -317,6 +317,10 @@ class AccessibleCaretManager {
 
   
   bool mFlushingLayout = false;
+
+  
+  
+  bool mAllowFlushingLayout = true;
 
   static const int32_t kAutoScrollTimerDelay = 30;
 
