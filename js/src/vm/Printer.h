@@ -225,6 +225,10 @@ QuoteString(JSContext* cx, JSString* str, char quote = '\0');
 extern bool
 QuoteString(Sprinter* sp, JSString* str, char quote = '\0');
 
+
+extern bool
+JSONQuoteString(Sprinter* sp, JSString* str);
+
 } 
 
 #endif 
