@@ -82,6 +82,7 @@ public:
 #define COUNTER_CANARY 0xDEADBEEF
 #ifdef DEBUG
       mCanary = COUNTER_CANARY;
+      mPrevNumber = 0;
 #endif
       
     }
@@ -97,6 +98,10 @@ public:
 
     aCounter = *mCounter;
     aNumber = mNumber ? *mNumber : 0;
+#ifdef DEBUG
+    MOZ_ASSERT(aNumber >= mPrevNumber);
+    mPrevNumber = aNumber;
+#endif
   }
 
   
@@ -122,6 +127,7 @@ public:
 
 #ifdef DEBUG
   uint32_t mCanary;
+  uint64_t mPrevNumber; 
 #endif
 };
 

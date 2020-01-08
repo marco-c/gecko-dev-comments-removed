@@ -30,6 +30,8 @@
 
 class ProfilerMarker;
 
+
+
 #define FOR_EACH_PROFILE_BUFFER_ENTRY_KIND(macro) \
   macro(Category,              int) \
   macro(CollectionStart,       double) \
@@ -42,12 +44,17 @@ class ProfilerMarker;
   macro(NativeLeafAddr,        void*) \
   macro(Marker,                ProfilerMarker*) \
   macro(Pause,                 double) \
-  macro(ResidentMemory,        double) \
   macro(Responsiveness,        double) \
   macro(Resume,                double) \
   macro(ThreadId,              int) \
   macro(Time,                  double) \
-  macro(UnsharedMemory,        double)
+  macro(ResidentMemory,        uint64_t) \
+  macro(UnsharedMemory,        uint64_t) \
+  macro(CounterId,             void*) \
+  macro(CounterKey,            uint64_t) \
+  macro(Number,                uint64_t) \
+  macro(Count,                 int64_t)
+
 
 
 #if !defined(GP_ARCH_arm)
@@ -78,6 +85,8 @@ private:
   ProfileBufferEntry(Kind aKind, void *aPtr);
   ProfileBufferEntry(Kind aKind, ProfilerMarker *aMarker);
   ProfileBufferEntry(Kind aKind, double aDouble);
+  ProfileBufferEntry(Kind aKind, int64_t aInt64);
+  ProfileBufferEntry(Kind aKind, uint64_t aUint64);
   ProfileBufferEntry(Kind aKind, int aInt);
 
 public:
@@ -110,6 +119,8 @@ private:
     ProfilerMarker* mMarker;
     double          mDouble;
     int             mInt;
+    int64_t         mInt64;
+    uint64_t        mUint64;
   } u;
 };
 
@@ -326,6 +337,60 @@ private:
 
   nsTArray<JITFrameInfoForBufferRange> mJITInfoRanges;
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

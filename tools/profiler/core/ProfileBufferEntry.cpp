@@ -68,6 +68,18 @@ ProfileBufferEntry::ProfileBufferEntry(Kind aKind, int aInt)
   u.mInt = aInt;
 }
 
+ProfileBufferEntry::ProfileBufferEntry(Kind aKind, int64_t aInt64)
+  : mKind(aKind)
+{
+  u.mInt64 = aInt64;
+}
+
+ProfileBufferEntry::ProfileBufferEntry(Kind aKind, uint64_t aUint64)
+  : mKind(aKind)
+{
+  u.mUint64 = aUint64;
+}
+
 
 
 
@@ -179,7 +191,15 @@ class MOZ_RAII AutoArraySchemaWriter
 public:
   AutoArraySchemaWriter(SpliceableJSONWriter& aWriter, UniqueJSONStrings& aStrings)
     : mJSONWriter(aWriter)
-    , mStrings(aStrings)
+    , mStrings(&aStrings)
+    , mNextFreeIndex(0)
+  {
+    mJSONWriter.StartArrayElement(SpliceableJSONWriter::SingleLineStyle);
+  }
+
+  explicit AutoArraySchemaWriter(SpliceableJSONWriter& aWriter)
+    : mJSONWriter(aWriter)
+    , mStrings(nullptr)
     , mNextFreeIndex(0)
   {
     mJSONWriter.StartArrayElement(SpliceableJSONWriter::SingleLineStyle);
@@ -189,7 +209,7 @@ public:
     mJSONWriter.EndArray();
   }
 
-  void IntElement(uint32_t aIndex, uint32_t aValue) {
+  void IntElement(uint64_t aIndex, uint64_t aValue) {
     FillUpTo(aIndex);
     mJSONWriter.IntElement(aValue);
   }
@@ -200,16 +220,18 @@ public:
   }
 
   void StringElement(uint32_t aIndex, const char* aValue) {
+    MOZ_RELEASE_ASSERT(mStrings);
     FillUpTo(aIndex);
-    mStrings.WriteElement(mJSONWriter, aValue);
+    mStrings->WriteElement(mJSONWriter, aValue);
   }
 
   
   
   template<typename LambdaT>
   void FreeFormElement(uint32_t aIndex, LambdaT aCallback) {
+    MOZ_RELEASE_ASSERT(mStrings);
     FillUpTo(aIndex);
-    aCallback(mJSONWriter, mStrings);
+    aCallback(mJSONWriter, *mStrings);
   }
 
 private:
@@ -220,7 +242,7 @@ private:
   }
 
   SpliceableJSONWriter& mJSONWriter;
-  UniqueJSONStrings& mStrings;
+  UniqueJSONStrings* mStrings;
   uint32_t mNextFreeIndex;
 };
 
@@ -900,22 +922,33 @@ private:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define ERROR_AND_CONTINUE(msg) \
+  { \
+    fprintf(stderr, "ProfileBuffer parse error: %s", msg); \
+    MOZ_ASSERT(false, msg); \
+    continue; \
+  }
+
 void
 ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
                                    double aSinceTime,
                                    UniqueStacks& aUniqueStacks) const
 {
   UniquePtr<char[]> strbuf = MakeUnique<char[]>(kMaxFrameKeyLength);
-
-  
-  
-  
-  #define ERROR_AND_CONTINUE(msg) \
-    { \
-      fprintf(stderr, "ProfileBuffer parse error: %s", msg); \
-      MOZ_ASSERT(false, msg); \
-      continue; \
-    }
 
   EntryGetter e(*this);
 
@@ -1097,8 +1130,6 @@ ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
 
     WriteSample(aWriter, *aUniqueStacks.mUniqueStrings, sample);
   }
-
-  #undef ERROR_AND_CONTINUE
 }
 
 void
@@ -1170,6 +1201,239 @@ ProfileBuffer::StreamMarkersToJSON(SpliceableJSONWriter& aWriter,
     e.Next();
   }
 }
+
+
+struct CounterKeyedSample
+{
+  double mTime;
+  uint64_t mNumber;
+  int64_t mCount;
+};
+
+typedef nsTArray<CounterKeyedSample> CounterKeyedSamples;
+
+
+typedef nsDataHashtable<nsUint64HashKey, CounterKeyedSamples> CounterMap;
+
+void
+ProfileBuffer::StreamCountersToJSON(SpliceableJSONWriter& aWriter,
+                                    const TimeStamp& aProcessStartTime,
+                                    double aSinceTime) const
+{
+  
+  
+  
+
+  EntryGetter e(*this);
+  enum Schema : uint32_t {
+    TIME = 0,
+    NUMBER = 1,
+    COUNT = 2
+  };
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  nsDataHashtable<nsVoidPtrHashKey, CounterMap> counters;
+
+  while (e.Has()) {
+    
+    if (e.Get().IsCounterId()) {
+      void* id = e.Get().u.mPtr;
+      CounterMap& counter = counters.GetOrInsert(id);
+      e.Next();
+      if (!e.Has() || !e.Get().IsTime()) {
+        ERROR_AND_CONTINUE("expected a Time entry");
+      }
+      double time = e.Get().u.mDouble;
+      if (time >= aSinceTime) {
+        e.Next();
+        while (e.Has() && e.Get().IsCounterKey()) {
+          uint64_t key = e.Get().u.mUint64;
+          CounterKeyedSamples& data = counter.GetOrInsert(key);
+          e.Next();
+          if (!e.Has() || !e.Get().IsCount()) {
+            ERROR_AND_CONTINUE("expected a Count entry");
+          }
+          int64_t count = e.Get().u.mUint64;
+          e.Next();
+          uint64_t number;
+          if (!e.Has() || !e.Get().IsNumber()) {
+            number = 0;
+          } else {
+            number = e.Get().u.mInt64;
+          }
+          CounterKeyedSample sample = {time, number, count};
+          data.AppendElement(sample);
+        }
+      } else {
+        
+        
+      }
+    }
+    e.Next();
+  }
+  
+  if (counters.Count() == 0) {
+    return;
+  }
+
+  aWriter.StartArrayProperty("counters");
+  for (auto iter = counters.Iter(); !iter.Done(); iter.Next()) {
+    CounterMap& counter = iter.Data();
+    const BaseProfilerCount* base_counter = static_cast<const BaseProfilerCount*>(iter.Key());
+
+    aWriter.Start();
+    aWriter.StringProperty("name", base_counter->mLabel);
+    aWriter.StringProperty("category", base_counter->mCategory);
+    aWriter.StringProperty("description", base_counter->mDescription);
+
+    aWriter.StartObjectProperty("sample_groups");
+    for (auto counter_iter = counter.Iter(); !counter_iter.Done(); counter_iter.Next()) {
+      CounterKeyedSamples& samples = counter_iter.Data();
+      uint64_t key = counter_iter.Key();
+
+      size_t size = samples.Length();
+      if (size == 0) {
+        continue;
+      }
+      aWriter.IntProperty("id", static_cast<int64_t>(key));
+      aWriter.StartObjectProperty("samples");
+      {
+        
+        JSONSchemaWriter schema(aWriter);
+        schema.WriteField("time");
+        schema.WriteField("number");
+        schema.WriteField("count");
+      }
+
+      aWriter.StartArrayProperty("data");
+      uint64_t previousNumber = 0;
+      int64_t previousCount = 0;
+      for (size_t i = 0; i < size; i++) {
+        
+        if (i == 0 || samples[i].mNumber != previousNumber || samples[i].mCount != previousCount) {
+          MOZ_ASSERT(i == 0 ||
+                     samples[i].mTime >= samples[i - 1].mTime);
+          MOZ_ASSERT(samples[i].mNumber >= previousNumber);
+
+          aWriter.StartArrayElement(SpliceableJSONWriter::SingleLineStyle);
+          aWriter.DoubleElement(samples[i].mTime);
+          aWriter.IntElement(samples[i].mNumber - previousNumber); 
+          aWriter.IntElement(samples[i].mCount - previousCount); 
+          aWriter.EndArray();
+          previousNumber = samples[i].mNumber;
+          previousCount = samples[i].mCount;
+        }
+      }
+      aWriter.EndArray(); 
+      aWriter.EndObject(); 
+    }
+    aWriter.EndObject(); 
+    aWriter.End(); 
+  }
+  aWriter.EndArray(); 
+}
+
+void
+ProfileBuffer::StreamMemoryToJSON(SpliceableJSONWriter& aWriter,
+                                  const TimeStamp& aProcessStartTime,
+                                  double aSinceTime) const
+{
+  enum Schema : uint32_t {
+    TIME = 0,
+    RSS = 1,
+    USS = 2
+  };
+
+  EntryGetter e(*this);
+
+  aWriter.StartObjectProperty("memory");
+  
+  
+  aWriter.IntProperty("initial_heap", 0); 
+  aWriter.StartObjectProperty("samples");
+  {
+    JSONSchemaWriter schema(aWriter);
+    schema.WriteField("time");
+    schema.WriteField("rss");
+    schema.WriteField("uss");
+  }
+
+  aWriter.StartArrayProperty("data");
+  int64_t previous_rss = 0;
+  int64_t previous_uss = 0;
+  while (e.Has()) {
+    
+    if (e.Get().IsResidentMemory()) {
+      int64_t rss = e.Get().u.mInt64;
+      int64_t uss = 0;
+      e.Next();
+      if (e.Has()) {
+        if (e.Get().IsUnsharedMemory()) {
+          uss = e.Get().u.mDouble;
+          e.Next();
+          if (!e.Has()) {
+            break;
+          }
+        }
+        if (e.Get().IsTime()) {
+          double time = e.Get().u.mDouble;
+          if (time >= aSinceTime &&
+              (previous_rss != rss || previous_uss != uss)) {
+            aWriter.StartArrayElement(SpliceableJSONWriter::SingleLineStyle);
+            aWriter.DoubleElement(time);
+            aWriter.IntElement(rss); 
+            if (uss != 0) {
+              aWriter.IntElement(uss); 
+            }
+            aWriter.EndArray();
+            previous_rss = rss;
+            previous_uss = uss;
+          }
+        } else {
+          ERROR_AND_CONTINUE("expected a Time entry");
+        }
+      }
+    }
+    e.Next();
+  }
+  aWriter.EndArray(); 
+  aWriter.EndObject(); 
+  aWriter.EndObject(); 
+}
+#undef ERROR_AND_CONTINUE
 
 static void
 AddPausedRange(SpliceableJSONWriter& aWriter, const char* aReason,
@@ -1266,6 +1530,26 @@ ProfileBuffer::DuplicateLastSample(int aThreadId,
           (TimeStamp::Now() - aProcessStartTime).ToMilliseconds()));
         break;
       case ProfileBufferEntry::Kind::Marker:
+      case ProfileBufferEntry::Kind::ResidentMemory:
+      case ProfileBufferEntry::Kind::UnsharedMemory:
+      case ProfileBufferEntry::Kind::CounterKey:
+      case ProfileBufferEntry::Kind::Number:
+      case ProfileBufferEntry::Kind::Count:
+      case ProfileBufferEntry::Kind::Responsiveness:
+        
+        break;
+      case ProfileBufferEntry::Kind::CounterId:
+        
+        
+        
+        
+        
+        e.Next();
+        if (e.Has() && e.Get().GetKind() != ProfileBufferEntry::Kind::Time) {
+          
+          
+          continue;
+        }
         
         break;
       default: {
@@ -1279,7 +1563,6 @@ ProfileBuffer::DuplicateLastSample(int aThreadId,
   }
   return true;
 }
-
 
 
 
