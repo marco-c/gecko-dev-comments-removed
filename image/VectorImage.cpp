@@ -563,13 +563,20 @@ void VectorImage::SendInvalidationNotifications() {
   
   
 
+  SurfaceCache::RemoveImage(ImageKey(this));
+
+  if (UpdateImageContainer(Nothing())) {
+    
+    
+    
+    MOZ_ASSERT(mRenderingObserver, "Should have a rendering observer by now");
+    mRenderingObserver->ResumeHonoringInvalidations();
+  }
+
   if (mProgressTracker) {
-    SurfaceCache::RemoveImage(ImageKey(this));
     mProgressTracker->SyncNotifyProgress(FLAG_FRAME_COMPLETE,
                                          GetMaxSizedIntRect());
   }
-
-  UpdateImageContainer(Nothing());
 }
 
 NS_IMETHODIMP_(IntRect)
