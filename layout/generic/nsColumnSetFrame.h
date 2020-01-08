@@ -173,7 +173,6 @@ protected:
                      nsReflowStatus& aReflowStatus,
                      ReflowConfig& aConfig,
                      bool aLastColumnUnbounded,
-                     nsCollapsingMargin* aCarriedOutBEndMargin,
                      ColumnBalanceData& aColData);
 
   
@@ -208,14 +207,11 @@ protected:
 
 
 
-
-
   void FindBestBalanceBSize(const ReflowInput& aReflowInput,
                             nsPresContext* aPresContext,
                             ReflowConfig& aConfig,
                             ColumnBalanceData& aColData,
                             ReflowOutput& aDesiredSize,
-                            nsCollapsingMargin& aOutMargin,
                             bool& aUnboundedLastColumn,
                             bool& aRunWasFeasible,
                             nsReflowStatus& aStatus);
@@ -228,7 +224,6 @@ protected:
                         nsReflowStatus& aStatus,
                         const ReflowConfig& aConfig,
                         bool aLastColumnUnbounded,
-                        nsCollapsingMargin* aCarriedOutBEndMargin,
                         ColumnBalanceData& aColData);
 
   void ForEachColumnRule(const std::function<void(const nsRect& lineRect)>& aSetLineRect,
