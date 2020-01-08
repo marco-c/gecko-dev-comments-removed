@@ -904,7 +904,7 @@ EventDispatcher::Dispatch(nsISupports* aTarget,
       
       
       
-      NS_ERROR("This is unsafe! Fix the caller!");
+      MOZ_CRASH("This is unsafe! Fix the caller!");
     } else {
       
       
@@ -920,7 +920,7 @@ EventDispatcher::Dispatch(nsISupports* aTarget,
         if (nsContentUtils::IsChromeDoc(doc)) {
           NS_WARNING("Fix the caller!");
         } else {
-          NS_ERROR("This is unsafe! Fix the caller!");
+          MOZ_CRASH("This is unsafe! Fix the caller!");
         }
       }
     }
