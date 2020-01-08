@@ -150,9 +150,9 @@ WSRunObject::PrepareToDeleteRange(HTMLEditor* aHTMLEditor,
   NS_ENSURE_TRUE(aHTMLEditor && aStartNode && *aStartNode && aStartOffset &&
                  aEndNode && *aEndNode && aEndOffset, NS_ERROR_NULL_POINTER);
 
-  AutoTrackDOMPoint trackerStart(aHTMLEditor->mRangeUpdater,
+  AutoTrackDOMPoint trackerStart(aHTMLEditor->RangeUpdaterRef(),
                                  aStartNode, aStartOffset);
-  AutoTrackDOMPoint trackerEnd(aHTMLEditor->mRangeUpdater,
+  AutoTrackDOMPoint trackerEnd(aHTMLEditor->RangeUpdaterRef(),
                                aEndNode, aEndOffset);
 
   WSRunObject leftWSObj(aHTMLEditor, *aStartNode, *aStartOffset);
@@ -185,7 +185,7 @@ WSRunObject::PrepareToSplitAcrossBlocks(HTMLEditor* aHTMLEditor,
   NS_ENSURE_TRUE(aHTMLEditor && aSplitNode && *aSplitNode && aSplitOffset,
                  NS_ERROR_NULL_POINTER);
 
-  AutoTrackDOMPoint tracker(aHTMLEditor->mRangeUpdater,
+  AutoTrackDOMPoint tracker(aHTMLEditor->RangeUpdaterRef(),
                             aSplitNode, aSplitOffset);
 
   WSRunObject wsObj(aHTMLEditor, *aSplitNode, *aSplitOffset);
@@ -214,7 +214,7 @@ WSRunObject::InsertBreak(Selection& aSelection,
   {
     
     
-    AutoTrackDOMPoint tracker(mHTMLEditor->mRangeUpdater, &pointToInsert);
+    AutoTrackDOMPoint tracker(mHTMLEditor->RangeUpdaterRef(), &pointToInsert);
 
     
     if (!afterRun || (afterRun->mType & WSType::trailingWS)) {
@@ -308,7 +308,7 @@ WSRunObject::InsertText(nsIDocument& aDocument,
   {
     
     
-    AutoTrackDOMPoint tracker(mHTMLEditor->mRangeUpdater, &pointToInsert);
+    AutoTrackDOMPoint tracker(mHTMLEditor->RangeUpdaterRef(), &pointToInsert);
 
     
     if (!afterRun || afterRun->mType & WSType::trailingWS) {

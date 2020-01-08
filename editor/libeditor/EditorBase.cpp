@@ -211,7 +211,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(EditorBase)
  NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocStateListeners)
  NS_IMPL_CYCLE_COLLECTION_UNLINK(mEventTarget)
  NS_IMPL_CYCLE_COLLECTION_UNLINK(mPlaceholderTransaction)
- NS_IMPL_CYCLE_COLLECTION_UNLINK(mRangeUpdater);
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(EditorBase)
@@ -235,7 +234,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(EditorBase)
  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mEventTarget)
  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mEventListener)
  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPlaceholderTransaction)
- NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mRangeUpdater);
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(EditorBase)
@@ -953,7 +951,7 @@ EditorBase::BeginPlaceholderTransaction(nsAtom* aTransactionName)
     
     
     if (mPlaceholderName == nsGkAtoms::IMETxnName) {
-      mRangeUpdater.RegisterSelectionState(*mSelState);
+      RangeUpdaterRef().RegisterSelectionState(*mSelState);
     }
   }
   mPlaceholderBatch++;
@@ -990,7 +988,7 @@ EditorBase::EndPlaceholderTransaction()
       
       
       if (mPlaceholderName == nsGkAtoms::IMETxnName) {
-        mRangeUpdater.DropSelectionState(*mSelState);
+        RangeUpdaterRef().DropSelectionState(*mSelState);
       }
       mSelState.reset();
     }
@@ -1427,7 +1425,7 @@ EditorBase::CreateNodeWithTransaction(
   nsresult rv = DoTransactionInternal(transaction);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     
-    mRangeUpdater.SelAdjCreateNode(aPointToInsert);
+    RangeUpdaterRef().SelAdjCreateNode(aPointToInsert);
   } else {
     newElement = transaction->GetNewNode();
     MOZ_ASSERT(newElement);
@@ -1438,9 +1436,9 @@ EditorBase::CreateNodeWithTransaction(
     
     
     
-    mRangeUpdater.SelAdjCreateNode(
-                    EditorRawDOMPoint(aPointToInsert.GetContainer(),
-                                      aPointToInsert.Offset()));
+    RangeUpdaterRef().SelAdjCreateNode(
+                        EditorRawDOMPoint(aPointToInsert.GetContainer(),
+                                          aPointToInsert.Offset()));
   }
 
   if (mRules && mRules->AsHTMLEditRules() && newElement) {
@@ -1505,7 +1503,7 @@ EditorBase::InsertNodeWithTransaction(
     InsertNodeTransaction::Create(*this, aContentToInsert, aPointToInsert);
   nsresult rv = DoTransactionInternal(transaction);
 
-  mRangeUpdater.SelAdjInsertNode(aPointToInsert);
+  RangeUpdaterRef().SelAdjInsertNode(aPointToInsert);
 
   if (mRules && mRules->AsHTMLEditRules()) {
     RefPtr<HTMLEditRules> htmlEditRules = mRules->AsHTMLEditRules();
@@ -1581,8 +1579,8 @@ EditorBase::SplitNodeWithTransaction(
 
   
   
-  mRangeUpdater.SelAdjSplitNode(*aStartOfRightNode.GetContainerAsContent(),
-                                newNode);
+  RangeUpdaterRef().SelAdjSplitNode(*aStartOfRightNode.GetContainerAsContent(),
+                                    newNode);
 
   if (mRules && mRules->AsHTMLEditRules() && newNode) {
     RefPtr<HTMLEditRules> htmlEditRules = mRules->AsHTMLEditRules();
@@ -1660,8 +1658,8 @@ EditorBase::JoinNodesWithTransaction(nsINode& aLeftNode,
 
   
   
-  mRangeUpdater.SelAdjJoinNodes(aLeftNode, aRightNode, *parent, offset,
-                                (int32_t)oldLeftNodeLen);
+  RangeUpdaterRef().SelAdjJoinNodes(aLeftNode, aRightNode, *parent, offset,
+                                    static_cast<int32_t>(oldLeftNodeLen));
 
   if (mRules && mRules->AsHTMLEditRules()) {
     RefPtr<HTMLEditRules> htmlEditRules = mRules->AsHTMLEditRules();
@@ -1749,6 +1747,8 @@ EditorBase::ReplaceContainerWithTransactionInternal(
               const nsAString& aAttributeValue,
               bool aCloneAllAttributes)
 {
+  MOZ_ASSERT(IsEditActionDataAvailable());
+
   EditorDOMPoint atOldContainer(&aOldContainer);
   if (NS_WARN_IF(!atOldContainer.IsSet())) {
     return nullptr;
@@ -1775,8 +1775,8 @@ EditorBase::ReplaceContainerWithTransactionInternal(
   
   
   
-  AutoReplaceContainerSelNotify selStateNotify(mRangeUpdater, &aOldContainer,
-                                               newContainer);
+  AutoReplaceContainerSelNotify selStateNotify(RangeUpdaterRef(),
+                                               &aOldContainer, newContainer);
   {
     AutoTransactionsConserveSelection conserveSelection(*this);
     
@@ -1819,13 +1819,15 @@ EditorBase::ReplaceContainerWithTransactionInternal(
 nsresult
 EditorBase::RemoveContainerWithTransaction(Element& aElement)
 {
+  MOZ_ASSERT(IsEditActionDataAvailable());
+
   EditorDOMPoint pointToInsertChildren(&aElement);
   if (NS_WARN_IF(!pointToInsertChildren.IsSet())) {
     return NS_ERROR_FAILURE;
   }
 
   
-  AutoRemoveContainerSelNotify selNotify(mRangeUpdater, &aElement,
+  AutoRemoveContainerSelNotify selNotify(RangeUpdaterRef(), &aElement,
                                          pointToInsertChildren.GetContainer(),
                                          pointToInsertChildren.Offset(),
                                          aElement.GetChildCount());
@@ -1898,7 +1900,7 @@ EditorBase::InsertContainerWithTransactionInternal(
   }
 
   
-  AutoInsertContainerSelNotify selNotify(mRangeUpdater);
+  AutoInsertContainerSelNotify selNotify(RangeUpdaterRef());
 
   
   nsresult rv = DeleteNodeWithTransaction(aContent);
@@ -1944,7 +1946,7 @@ EditorBase::MoveNodeWithTransaction(
 
   
   EditorDOMPoint newPoint(aPointToInsert);
-  AutoMoveNodeSelNotify selNotify(mRangeUpdater, oldPoint, newPoint);
+  AutoMoveNodeSelNotify selNotify(RangeUpdaterRef(), oldPoint, newPoint);
 
   
   nsresult rv = DeleteNodeWithTransaction(aContent);
@@ -2304,7 +2306,7 @@ EditorBase::PreserveSelectionAcrossActions()
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   SavedSelectionRef().SaveSelection(SelectionRefPtr());
-  mRangeUpdater.RegisterSelectionState(SavedSelectionRef());
+  RangeUpdaterRef().RegisterSelectionState(SavedSelectionRef());
 }
 
 nsresult
@@ -2325,7 +2327,7 @@ EditorBase::StopPreservingSelection()
 {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
-  mRangeUpdater.DropSelectionState(SavedSelectionRef());
+  RangeUpdaterRef().DropSelectionState(SavedSelectionRef());
   SavedSelectionRef().MakeEmpty();
 }
 
@@ -2936,8 +2938,8 @@ EditorBase::SetTextImpl(const nsAString& aString,
                  "Selection could not be collapsed after insert");
   }
 
-  mRangeUpdater.SelAdjDeleteText(&aCharData, 0, length);
-  mRangeUpdater.SelAdjInsertText(aCharData, 0, aString);
+  RangeUpdaterRef().SelAdjDeleteText(&aCharData, 0, length);
+  RangeUpdaterRef().SelAdjInsertText(aCharData, 0, aString);
 
   if (mRules && mRules->AsHTMLEditRules()) {
     RefPtr<HTMLEditRules> htmlEditRules = mRules->AsHTMLEditRules();
