@@ -56,11 +56,11 @@ class TestUpdateWizard(PuppeteerMixin, MarionetteTestCase):
 
         
         self.assertEqual(self.wizard.checking.progress.get_property('localName'),
-                         'progressmeter')
+                         'progress')
 
         
         self.assertEqual(self.wizard.downloading.progress.get_property('localName'),
-                         'progressmeter')
+                         'progress')
 
         
         self.assertIsInstance(self.wizard.selected_index, int)

@@ -172,6 +172,10 @@
   background: #fff;
 }
 
+#addon-progress-notification-progressmeter {
+  margin: 2px 4px;
+}
+
 
 
 :root {

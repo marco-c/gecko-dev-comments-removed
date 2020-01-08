@@ -1,10 +1,4 @@
 
-#updates:not([currentpageid="checking"]) #checkingProgress,
-#updates:not([currentpageid="downloading"]) #downloadProgress {
-  display: none;
-}
-
-
 
 
 .wizard-header {
@@ -23,6 +17,10 @@ updateheader {
   -moz-binding: url("chrome://mozapps/content/update/updates.xml#updateheader");
   display: -moz-box;
   -moz-box-orient: horizontal;
+}
+
+#downloadProgress {
+  -moz-box-flex: 1;
 }
 
 
