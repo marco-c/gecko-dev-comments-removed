@@ -3,7 +3,7 @@
 
 
 import { groupBy, get, sortedUniqBy } from "lodash";
-import { createSelector } from "../utils/createSelector";
+import { createSelector } from "reselect";
 
 import { getViewport } from "../selectors";
 import { getVisibleBreakpoints } from "./visibleBreakpoints";
