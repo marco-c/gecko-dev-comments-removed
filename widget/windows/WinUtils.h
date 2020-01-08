@@ -516,20 +516,58 @@ public:
 
 
 
-  static bool SanitizePath(const wchar_t* aInputPath, nsAString& aOutput);
+
+  static bool CanonicalizePath(nsAString& aPath);
+
+  
+
+
+
+
+
+  static bool MakeLongPath(nsAString& aPath);
+
+  
+
+
+
+
+
+  static bool UnexpandEnvVars(nsAString& aPath);
 
   
 
 
   static bool GetAppInitDLLs(nsAString& aOutput);
 
+  enum class PathTransformFlags : uint32_t
+  {
+    Canonicalize = 1,
+    Lengthen = 2,
+    UnexpandEnvVars = 4,
+    Default = 7,
+  };
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  static bool PreparePathForTelemetry(nsAString& aPath,
+      PathTransformFlags aFlags = PathTransformFlags::Default);
+
+  static const nsTArray<Pair<nsString, nsDependentString>>& GetWhitelistedPaths();
+
 #ifdef ACCESSIBILITY
   static a11y::Accessible* GetRootAccessibleForHWND(HWND aHwnd);
 #endif
-
-private:
-  static void GetWhitelistedPaths(
-      nsTArray<mozilla::Pair<nsString,nsDependentString>>& aOutput);
 };
 
 #ifdef MOZ_PLACES
@@ -620,6 +658,8 @@ public:
 
   static int32_t GetICOCacheSecondsTimeout();
 };
+
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(WinUtils::PathTransformFlags);
 
 } 
 } 
