@@ -147,7 +147,7 @@ function run_test() {
         }
       });
 
-  makeTest(2, {"blocked-uri": "http://blocked.test"}, false,
+  makeTest(2, {"blocked-uri": "http://blocked.test/foo.js"}, false,
       function(csp) {
         
         csp.shouldLoad(Ci.nsIContentPolicy.TYPE_SCRIPT,
@@ -226,7 +226,7 @@ function run_test() {
       });
 
   
-  makeTest(8, {"blocked-uri": "ftp://blocked.test"}, false,
+  makeTest(8, {"blocked-uri": "ftp://blocked.test/profile.png"}, false,
     function(csp) {
       
       csp.shouldLoad(Ci.nsIContentPolicy.TYPE_SCRIPT,
