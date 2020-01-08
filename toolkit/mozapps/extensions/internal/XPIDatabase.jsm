@@ -114,7 +114,7 @@ const PROP_JSON_FIELDS = ["id", "syncGUID", "version", "type",
                           "softDisabled", "foreignInstall",
                           "strictCompatibility", "locales", "targetApplications",
                           "targetPlatforms", "signedState",
-                          "seen", "dependencies", "hasEmbeddedWebExtension",
+                          "seen", "dependencies",
                           "userPermissions", "icons", "iconURL",
                           "blocklistState", "blocklistURL", "startupData",
                           "previewImage", "hidden", "installTelemetryInfo"];
@@ -301,7 +301,6 @@ class AddonInternal {
 
 
     this.dependencies = EMPTY_ARRAY;
-    this.hasEmbeddedWebExtension = false;
 
     if (addonData) {
       copyProperties(addonData, PROP_JSON_FIELDS, this);
@@ -710,10 +709,6 @@ AddonWrapper = class {
     return addonFor(this).seen;
   }
 
-  get hasEmbeddedWebExtension() {
-    return addonFor(this).hasEmbeddedWebExtension;
-  }
-
   markAsSeen() {
     addonFor(this).seen = true;
     XPIDatabase.saveChanges();
@@ -757,7 +752,7 @@ AddonWrapper = class {
 
     let addon = addonFor(this);
     if (addon.optionsURL) {
-      if (this.isWebExtension || this.hasEmbeddedWebExtension) {
+      if (this.isWebExtension) {
         
         
         

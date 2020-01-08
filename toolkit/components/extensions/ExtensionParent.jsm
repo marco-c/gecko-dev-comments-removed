@@ -402,8 +402,7 @@ ProxyMessenger = {
       }
     }
 
-
-    if (!(extension.isEmbedded || recipient.toProxyScript) || !extension.remote) {
+    if (!(recipient.toProxyScript && extension.remote)) {
       return promise1;
     }
 
