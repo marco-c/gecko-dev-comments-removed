@@ -3,8 +3,8 @@
 
 
 
-#ifndef ContentPrincipal_h
-#define ContentPrincipal_h
+#ifndef mozilla_ContentPrincipal_h
+#define mozilla_ContentPrincipal_h
 
 #include "nsCOMPtr.h"
 #include "nsJSPrincipals.h"
@@ -16,7 +16,9 @@
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/extensions/WebExtensionPolicy.h"
 
-class ContentPrincipal final : public mozilla::BasePrincipal
+namespace mozilla {
+
+class ContentPrincipal final : public BasePrincipal
 {
 public:
   NS_DECL_NSISERIALIZABLE
@@ -35,7 +37,7 @@ public:
 
   
   nsresult Init(nsIURI* aCodebase,
-                const mozilla::OriginAttributes& aOriginAttributes,
+                const OriginAttributes& aOriginAttributes,
                 const nsACString& aOriginNoSuffix);
 
   virtual nsresult GetScriptLocation(nsACString& aStr) override;
@@ -43,7 +45,7 @@ public:
   static nsresult
   GenerateOriginNoSuffixFromURI(nsIURI* aURI, nsACString& aOrigin);
 
-  mozilla::extensions::WebExtensionPolicy* AddonPolicy();
+  extensions::WebExtensionPolicy* AddonPolicy();
 
   nsCOMPtr<nsIURI> mDomain;
   nsCOMPtr<nsIURI> mCodebase;
@@ -56,8 +58,10 @@ protected:
   bool MayLoadInternal(nsIURI* aURI) override;
 
 private:
-  mozilla::Maybe<mozilla::WeakPtr<mozilla::extensions::WebExtensionPolicy>> mAddon;
+  Maybe<WeakPtr<extensions::WebExtensionPolicy>> mAddon;
 };
+
+} 
 
 #define NS_PRINCIPAL_CONTRACTID "@mozilla.org/principal;1"
 #define NS_PRINCIPAL_CID \
