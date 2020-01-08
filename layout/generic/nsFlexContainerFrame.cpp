@@ -1457,6 +1457,11 @@ nsFlexContainerFrame::GenerateFlexItemForChild(
   
   if (isFixedSizeWidget || (flexGrow == 0.0f && flexShrink == 0.0f)) {
     item->Freeze();
+    if (flexBaseSize < mainMinSize) {
+      item->SetWasMinClamped();
+    } else if (flexBaseSize > mainMaxSize) {
+      item->SetWasMaxClamped();
+    }
   }
 
   
@@ -2608,6 +2613,11 @@ FlexLine::FreezeItemsEarly(bool aIsUsingFlexGrow,
       if (shouldFreeze) {
         
         item->Freeze();
+        if (item->GetFlexBaseSize() < item->GetMainSize()) {
+          item->SetWasMinClamped();
+        } else if (item->GetFlexBaseSize() > item->GetMainSize()) {
+          item->SetWasMaxClamped();
+        }
         mNumFrozenItems++;
       }
     }
@@ -2647,9 +2657,11 @@ FlexLine::FreezeOrRestoreEachFlexibleSize(const nscoord aTotalViolation,
       MOZ_ASSERT(!item->HadMinViolation() || !item->HadMaxViolation(),
                  "Can have either min or max violation, but not both");
 
+      bool hadMinViolation = item->HadMinViolation();
+      bool hadMaxViolation = item->HadMaxViolation();
       if (eFreezeEverything == freezeType ||
-          (eFreezeMinViolations == freezeType && item->HadMinViolation()) ||
-          (eFreezeMaxViolations == freezeType && item->HadMaxViolation())) {
+          (eFreezeMinViolations == freezeType && hadMinViolation) ||
+          (eFreezeMaxViolations == freezeType && hadMaxViolation)) {
 
         MOZ_ASSERT(item->GetMainSize() >= item->GetMainMinSize(),
                    "Freezing item at a size below its minimum");
@@ -2657,6 +2669,11 @@ FlexLine::FreezeOrRestoreEachFlexibleSize(const nscoord aTotalViolation,
                    "Freezing item at a size above its maximum");
 
         item->Freeze();
+        if (hadMinViolation) {
+          item->SetWasMinClamped();
+        } else if (hadMaxViolation) {
+          item->SetWasMaxClamped();
+        }
         mNumFrozenItems++;
       } else if (MOZ_UNLIKELY(aIsFinalIteration)) {
         
@@ -4865,6 +4882,28 @@ nsFlexContainerFrame::DoFlexLayout(nsPresContext*           aPresContext,
                                      &containerInfo->mLines[lineIndex] :
                                      nullptr;
     line->ResolveFlexibleLengths(aContentBoxMainSize, lineInfo);
+  }
+
+  
+  if (containerInfo) {
+    uint32_t lineIndex = 0;
+    for (const FlexLine* line = lines.getFirst(); line;
+         line = line->getNext(), ++lineIndex) {
+      ComputedFlexLineInfo* lineInfo = &containerInfo->mLines[lineIndex];
+
+      uint32_t itemIndex = 0;
+      for (const FlexItem* item = line->GetFirstItem(); item;
+           item = item->getNext(), ++itemIndex) {
+        ComputedFlexItemInfo* itemInfo = &lineInfo->mItems[itemIndex];
+
+        itemInfo->mClampState =
+          item->WasMinClamped() ?
+          mozilla::dom::FlexItemClampState::Clamped_to_min :
+          (item->WasMaxClamped() ?
+           mozilla::dom::FlexItemClampState::Clamped_to_max :
+           mozilla::dom::FlexItemClampState::Unclamped);
+      }
+    }
   }
 
   
