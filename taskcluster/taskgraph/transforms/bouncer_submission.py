@@ -137,12 +137,7 @@ def make_task_worker(config, jobs):
         del job['bouncer-products']
 
         if job['worker']['entries']:
-            
-            
-            
-            
-            if config.params['release_type'] == 'rc' or job['name'] != 'firefox-rc':
-                yield job
+            yield job
         else:
             logger.warn('No bouncer entries defined in bouncer submission task for "{}". \
 Job deleted.'.format(job['name']))
