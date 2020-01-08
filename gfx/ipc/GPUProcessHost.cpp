@@ -160,14 +160,13 @@ GPUProcessHost::Shutdown()
   mListener = nullptr;
 
   if (mGPUChild) {
-    mGPUChild->SendShutdownVR();
-
     
     
     mShutdownRequested = true;
 
     
     if (!mChannelClosed) {
+      mGPUChild->SendShutdownVR();
       mGPUChild->Close();
     }
 
