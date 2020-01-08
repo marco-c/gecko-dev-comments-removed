@@ -4,9 +4,6 @@
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-ChromeUtils.defineModuleGetter(this, "Bookmarks",
-                               "resource://gre/modules/Bookmarks.jsm");
-
 var {
   DefaultMap,
   ExtensionError,
@@ -868,72 +865,6 @@ MenuItem.prototype = {
 
 
 
-const libraryTracker = {
-  libraryWindowType: "Places:Organizer",
-
-  isLibraryWindow(window) {
-    let winType = window.document.documentElement.getAttribute("windowtype");
-    return winType === this.libraryWindowType;
-  },
-
-  init(listener) {
-    this._listener = listener;
-    Services.ww.registerNotification(this);
-
-    
-    
-    for (let window of Services.wm.getEnumerator("")) {
-      if (window.document.readyState === "complete") {
-        if (this.isLibraryWindow(window)) {
-          this.notify(window);
-        }
-      } else {
-        window.addEventListener("load", this, {once: true});
-      }
-    }
-  },
-
-  
-  uninit(cleanupWindow) {
-    Services.ww.unregisterNotification(this);
-
-    for (let window of Services.wm.getEnumerator(this.libraryWindowType)) {
-      try {
-        window.removeEventListener("load", this);
-        cleanupWindow(window);
-      } catch (e) {
-        Cu.reportError(e);
-      }
-    }
-  },
-
-  
-  
-  observe(window, topic) {
-    if (topic === "domwindowopened") {
-      window.addEventListener("load", this, {once: true});
-    }
-  },
-
-  
-  handleEvent(event) {
-    let window = event.target.defaultView;
-    if (this.isLibraryWindow(window)) {
-      this.notify(window);
-    }
-  },
-
-  notify(window) {
-    try {
-      this._listener.call(null, window);
-    } catch (e) {
-      Cu.reportError(e);
-    }
-  },
-};
-
-
-
 const menuTracker = {
   menuIds: ["placesContext", "menu_ToolsPopup", "tabContextMenu"],
 
@@ -943,16 +874,17 @@ const menuTracker = {
       this.onWindowOpen(window);
     }
     windowTracker.addOpenListener(this.onWindowOpen);
-    libraryTracker.init(this.onLibraryOpen);
   },
 
   unregister() {
     Services.obs.removeObserver(this, "on-build-contextmenu");
     for (const window of windowTracker.browserWindows()) {
-      this.cleanupWindow(window);
+      for (const id of this.menuIds) {
+        const menu = window.document.getElementById(id);
+        menu.removeEventListener("popupshowing", this);
+      }
     }
     windowTracker.removeOpenListener(this.onWindowOpen);
-    libraryTracker.uninit(this.cleanupLibrary);
   },
 
   observe(subject, topic, data) {
@@ -965,54 +897,10 @@ const menuTracker = {
       const menu = window.document.getElementById(id);
       menu.addEventListener("popupshowing", menuTracker);
     }
-
-    const sidebarHeader = window.document.getElementById("sidebar-switcher-target");
-    sidebarHeader.addEventListener("SidebarShown", menuTracker.onSidebarShown);
-    if (window.SidebarUI.currentID === "viewBookmarksSidebar") {
-      menuTracker.onSidebarShown({currentTarget: window.SidebarUI.browser});
-    }
-  },
-
-  cleanupWindow(window) {
-    for (const id of this.menuIds) {
-      const menu = window.document.getElementById(id);
-      menu.removeEventListener("popupshowing", this);
-    }
-
-    const sidebarHeader = window.document.getElementById("sidebar-switcher-target");
-    sidebarHeader.removeEventListener("SidebarShown", this.onSidebarShown);
-
-    if (window.SidebarUI.currentID === "viewBookmarksSidebar") {
-      const menu = window.SidebarUI.browser.contentDocument
-                         .getElementById("placesContext");
-      menu.removeEventListener("popupshowing", this.onBookmarksContextMenu);
-    }
-  },
-
-  onSidebarShown(event) {
-    
-    
-    const window = event.currentTarget.ownerGlobal;
-    if (window.SidebarUI.currentID === "viewBookmarksSidebar") {
-      const menu = window.SidebarUI.browser.contentDocument
-                         .getElementById("placesContext");
-      menu.addEventListener("popupshowing", menuTracker.onBookmarksContextMenu);
-    }
-  },
-
-  onLibraryOpen(window) {
-    const menu = window.document.getElementById("placesContext");
-    menu.addEventListener("popupshowing", menuTracker.onBookmarksContextMenu);
-  },
-
-  cleanupLibrary(window) {
-    const menu = window.document.getElementById("placesContext");
-    menu.removeEventListener("popupshowing", menuTracker.onBookmarksContextMenu);
   },
 
   handleEvent(event) {
     const menu = event.target;
-
     if (menu.id === "placesContext") {
       const trigger = menu.triggerNode;
       if (!trigger._placesNode) {
@@ -1036,23 +924,6 @@ const menuTracker = {
       const pageUrl = tab.linkedBrowser.currentURI.spec;
       gMenuBuilder.build({menu, tab, pageUrl, onTab: true});
     }
-  },
-
-  onBookmarksContextMenu(event) {
-    const menu = event.target;
-    const tree = menu.triggerNode.parentElement;
-    const cell = tree.boxObject.getCellAt(event.x, event.y);
-    const node = tree.view.nodeForTreeIndex(cell.row);
-
-    if (!node.bookmarkGuid || Bookmarks.isVirtualRootItem(node.bookmarkGuid)) {
-      return;
-    }
-
-    gMenuBuilder.build({
-      menu,
-      bookmarkId: node.bookmarkGuid,
-      onBookmark: true,
-    });
   },
 };
 
