@@ -12,6 +12,7 @@
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/AutoRestore.h"
+#include "mozilla/ContentIterator.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/EventStateManager.h"
 #include "mozilla/EventStates.h"
@@ -40,7 +41,6 @@
 #include "nsContentList.h"
 #include "nsPresContext.h"
 #include "nsIContent.h"
-#include "nsIContentIterator.h"
 #include "nsIPresShellInlines.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/PointerEventHandler.h"
@@ -178,7 +178,6 @@
 #include "mozilla/layers/FocusTarget.h"
 #include "mozilla/layers/WebRenderLayerManager.h"
 #include "mozilla/layers/WebRenderUserData.h"
-#include "mozilla/layout/ScrollAnchorContainer.h"
 #include "mozilla/ServoBindings.h"
 #include "mozilla/ServoStyleSet.h"
 #include "mozilla/StyleSheet.h"
@@ -1312,7 +1311,6 @@ void PresShell::Destroy() {
   }
 
   mFramesToDirty.Clear();
-  mDirtyScrollAnchorContainers.Clear();
 
   if (mViewManager) {
     
@@ -2140,11 +2138,6 @@ void PresShell::NotifyDestroyingFrame(nsIFrame* aFrame) {
     }
 
     mFramesToDirty.RemoveEntry(aFrame);
-
-    nsIScrollableFrame* scrollableFrame = do_QueryFrame(aFrame);
-    if (scrollableFrame) {
-      mDirtyScrollAnchorContainers.RemoveEntry(scrollableFrame);
-    }
   }
 }
 
@@ -2565,19 +2558,6 @@ void PresShell::VerifyHasDirtyRootAncestor(nsIFrame* aFrame) {
       "reflowed?");
 }
 #endif
-
-void PresShell::PostDirtyScrollAnchorContainer(nsIScrollableFrame* aFrame) {
-  mDirtyScrollAnchorContainers.PutEntry(aFrame);
-}
-
-void PresShell::FlushDirtyScrollAnchorContainers() {
-  for (auto iter = mDirtyScrollAnchorContainers.Iter(); !iter.Done();
-       iter.Next()) {
-    nsIScrollableFrame* scroll = iter.Get()->GetKey();
-    scroll->GetAnchor()->SelectAnchor();
-  }
-  mDirtyScrollAnchorContainers.Clear();
-}
 
 void PresShell::FrameNeedsReflow(nsIFrame* aFrame,
                                  IntrinsicDirty aIntrinsicDirty,
@@ -4684,8 +4664,8 @@ UniquePtr<RangePaintInfo> PresShell::CreateRangePaintInfo(
   }
   info->mBuilder.EnterPresShell(ancestorFrame);
 
-  nsCOMPtr<nsIContentIterator> iter = NS_NewContentSubtreeIterator();
-  nsresult rv = iter->Init(aRange);
+  RefPtr<ContentSubtreeIterator> subtreeIter = new ContentSubtreeIterator();
+  nsresult rv = subtreeIter->Init(aRange);
   if (NS_FAILED(rv)) {
     return nullptr;
   }
@@ -4706,8 +4686,8 @@ UniquePtr<RangePaintInfo> PresShell::CreateRangePaintInfo(
   if (startContainer->NodeType() == nsINode::TEXT_NODE) {
     BuildDisplayListForNode(startContainer);
   }
-  for (; !iter->IsDone(); iter->Next()) {
-    nsCOMPtr<nsINode> node = iter->GetCurrentNode();
+  for (; !subtreeIter->IsDone(); subtreeIter->Next()) {
+    nsCOMPtr<nsINode> node = subtreeIter->GetCurrentNode();
     BuildDisplayListForNode(node);
   }
   if (endContainer != startContainer &&
@@ -8498,8 +8478,6 @@ bool PresShell::DoReflow(nsIFrame* target, bool aInterruptible,
   mReflowCause = nullptr;
 #endif
 
-  FlushDirtyScrollAnchorContainers();
-
   if (mReflowContinueTimer) {
     mReflowContinueTimer->Cancel();
     mReflowContinueTimer = nullptr;
@@ -8619,10 +8597,6 @@ bool PresShell::DoReflow(nsIFrame* target, bool aInterruptible,
                                          nsContainerFrame::SET_ASYNC);
 
   target->DidReflow(mPresContext, nullptr);
-  if (target->IsInScrollAnchorChain()) {
-    ScrollAnchorContainer* container = ScrollAnchorContainer::FindFor(target);
-    container->ApplyAdjustments();
-  }
   if (isRoot && size.BSize(wm) == NS_UNCONSTRAINEDSIZE) {
     mPresContext->SetVisibleArea(boundsRelativeToTarget);
   }
@@ -10033,8 +10007,7 @@ void PresShell::AddSizeOfIncludingThis(nsWindowSizes& aSizes) const {
   }
   aSizes.mLayoutPresShellSize +=
       mApproximatelyVisibleFrames.ShallowSizeOfExcludingThis(mallocSizeOf) +
-      mFramesToDirty.ShallowSizeOfExcludingThis(mallocSizeOf) +
-      mDirtyScrollAnchorContainers.ShallowSizeOfExcludingThis(mallocSizeOf);
+      mFramesToDirty.ShallowSizeOfExcludingThis(mallocSizeOf);
 
   StyleSet()->AddSizeOfIncludingThis(aSizes);
 

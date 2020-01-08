@@ -6,6 +6,7 @@
 #include "mozilla/HTMLEditor.h"
 
 #include "mozilla/ComposerCommandsUpdater.h"
+#include "mozilla/ContentIterator.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/EditAction.h"
 #include "mozilla/EditorDOMPoint.h"
@@ -34,7 +35,6 @@
 #include "mozilla/css/Loader.h"
 
 #include "nsIContent.h"
-#include "nsIContentIterator.h"
 #include "nsIMutableArray.h"
 #include "nsContentUtils.h"
 #include "nsIDocumentEncoder.h"
@@ -3778,18 +3778,18 @@ nsresult HTMLEditor::CollapseAdjacentTextNodes(nsRange* aInRange) {
   
 
   
-  nsCOMPtr<nsIContentIterator> iter = NS_NewContentSubtreeIterator();
+  RefPtr<ContentSubtreeIterator> subtreeIter = new ContentSubtreeIterator();
 
-  iter->Init(aInRange);
+  subtreeIter->Init(aInRange);
 
-  while (!iter->IsDone()) {
-    nsINode* node = iter->GetCurrentNode();
+  while (!subtreeIter->IsDone()) {
+    nsINode* node = subtreeIter->GetCurrentNode();
     if (node->NodeType() == nsINode::TEXT_NODE &&
         IsEditable(node->AsContent())) {
       textNodes.AppendElement(node);
     }
 
-    iter->Next();
+    subtreeIter->Next();
   }
 
   
@@ -4440,19 +4440,20 @@ nsresult HTMLEditor::SetCSSBackgroundColorWithTransaction(
         
         
 
-        OwningNonNull<nsIContentIterator> iter = NS_NewContentSubtreeIterator();
+        RefPtr<ContentSubtreeIterator> subtreeIter =
+            new ContentSubtreeIterator();
 
         nsTArray<OwningNonNull<nsINode>> arrayOfNodes;
         nsCOMPtr<nsINode> node;
 
         
-        rv = iter->Init(range);
+        rv = subtreeIter->Init(range);
         
         
         
         if (NS_SUCCEEDED(rv)) {
-          for (; !iter->IsDone(); iter->Next()) {
-            node = iter->GetCurrentNode();
+          for (; !subtreeIter->IsDone(); subtreeIter->Next()) {
+            node = subtreeIter->GetCurrentNode();
             NS_ENSURE_TRUE(node, NS_ERROR_FAILURE);
 
             if (IsEditable(node)) {
