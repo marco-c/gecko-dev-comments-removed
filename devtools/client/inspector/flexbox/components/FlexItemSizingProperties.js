@@ -156,14 +156,6 @@ class FlexItemSizingProperties extends PureComponent {
     const reasons = [];
 
     
-    
-    if (lineGrowthState === "growing") {
-      reasons.push(getStr("flexbox.itemSizing.extraRoomOnLine"));
-    } else if (lineGrowthState === "shrinking") {
-      reasons.push(getStr("flexbox.itemSizing.notEnoughRoomOnLine"));
-    }
-
-    
     if (nonZeroFlexGrowDefined && lineGrowthState !== "shrinking") {
       reasons.push(getStr("flexbox.itemSizing.setToGrow"));
     }
