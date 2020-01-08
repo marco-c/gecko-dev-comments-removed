@@ -1,0 +1,20 @@
+
+
+
+'use strict';
+
+
+
+idl_test(
+  ['selection-api'],
+  ['dom', 'html'],
+  idlArray => {
+    idlArray.add_objects({
+      Window: ['window'],
+      Document: ['document'],
+      Selection: ['getSelection()'],
+      GlobalEventHandlers: ['self'],
+    });
+  },
+  'selection-api interfaces'
+);
