@@ -48,6 +48,7 @@ DrawTargetD2D1::DrawTargetD2D1()
   : mPushedLayers(1)
   , mSnapshotLock(make_shared<Mutex>("DrawTargetD2D1::mSnapshotLock"))
   , mUsedCommandListsSincePurge(0)
+  , mTransformedGlyphsSinceLastPurge(0)
   , mComplexBlendsWithListInList(0)
   , mDeviceSeq(0)
 {
@@ -164,6 +165,9 @@ DrawTargetD2D1::IntoLuminanceSource(LuminanceType aLuminanceType, float aOpacity
 
 
 static const uint32_t kPushedLayersBeforePurge = 25;
+
+
+static const uint32_t kTransformedGlyphsBeforePurge = 1000;
 
 void
 DrawTargetD2D1::Flush()
@@ -730,6 +734,10 @@ DrawTargetD2D1::FillGlyphs(ScaledFont *aFont,
     mDC->DrawGlyphRun(D2D1::Point2F(), &autoRun, brush);
   }
 
+  if (mTransform.HasNonTranslation()) {
+    mTransformedGlyphsSinceLastPurge += aBuffer.mNumGlyphs;
+  }
+
   if (needsRepushedLayers) {
     PopClipsFromDC(mDC);
 
@@ -1285,7 +1293,8 @@ void
 DrawTargetD2D1::FlushInternal(bool aHasDependencyMutex )
 {
   if (IsDeviceContextValid()) {
-    if ((mUsedCommandListsSincePurge >= kPushedLayersBeforePurge) &&
+    if ((mUsedCommandListsSincePurge >= kPushedLayersBeforePurge ||
+         mTransformedGlyphsSinceLastPurge >= kTransformedGlyphsBeforePurge) &&
       mPushedLayers.size() == 1) {
       
       
@@ -1293,6 +1302,7 @@ DrawTargetD2D1::FlushInternal(bool aHasDependencyMutex )
       
       PopAllClips();
       mUsedCommandListsSincePurge = 0;
+      mTransformedGlyphsSinceLastPurge = 0;
       mDC->EndDraw();
       mDC->BeginDraw();
     }

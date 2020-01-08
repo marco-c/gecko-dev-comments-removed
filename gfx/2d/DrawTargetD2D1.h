@@ -289,6 +289,7 @@ private:
   TargetSet mDependingOnTargets;
 
   uint32_t mUsedCommandListsSincePurge;
+  uint32_t mTransformedGlyphsSinceLastPurge;
   
   
   
