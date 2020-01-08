@@ -33,6 +33,11 @@ DocumentEventsListener.prototype = {
 
   onWindowReady({ window, isTopLevel }) {
     
+    if (!this.console.conn) {
+      return;
+    }
+
+    
     if (!isTopLevel) {
       return;
     }
@@ -51,6 +56,11 @@ DocumentEventsListener.prototype = {
   },
 
   onContentLoaded(event) {
+    
+    if (!this.console.conn) {
+      return;
+    }
+
     const window = event.target.defaultView;
     const packet = {
       from: this.console.actorID,
@@ -65,6 +75,11 @@ DocumentEventsListener.prototype = {
   },
 
   onLoad(event) {
+    
+    if (!this.console.conn) {
+      return;
+    }
+
     const window = event.target.defaultView;
     const packet = {
       from: this.console.actorID,
