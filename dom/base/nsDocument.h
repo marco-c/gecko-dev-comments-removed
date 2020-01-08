@@ -53,7 +53,6 @@
 #include "nsDataHashtable.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/LinkedList.h"
 #include "CustomElementRegistry.h"
 #include "mozilla/dom/Performance.h"
 #include "mozilla/Maybe.h"
@@ -85,33 +84,6 @@ struct LifecycleCallbacks;
 class CallbackFunction;
 class DOMIntersectionObserver;
 class Performance;
-
-struct FullscreenRequest : public LinkedListElement<FullscreenRequest>
-{
-  FullscreenRequest(Element* aElement, CallerType aCallerType);
-  FullscreenRequest(const FullscreenRequest&) = delete;
-  ~FullscreenRequest();
-
-  Element* GetElement() const { return mElement; }
-  nsIDocument* GetDocument() const { return mDocument; }
-
-private:
-  RefPtr<Element> mElement;
-  RefPtr<nsIDocument> mDocument;
-
-public:
-  
-  
-  const CallerType mCallerType;
-  
-  
-  
-  
-  
-  
-  bool mShouldNotifyNewOrigin = true;
-};
-
 } 
 } 
 
