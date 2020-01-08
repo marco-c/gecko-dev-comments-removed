@@ -497,6 +497,7 @@ IsTypeofKind(ParseNodeKind kind)
 
 
 
+
 enum ParseNodeArity
 {
     PN_NULLARY,                         
@@ -525,7 +526,9 @@ enum ParseNodeArity
     \
     macro(TernaryNode, TernaryNodeType, asTernary) \
     macro(ClassNode, ClassNodeType, asClass) \
-    macro(ConditionalExpression, ConditionalExpressionType, asConditionalExpression)
+    macro(ConditionalExpression, ConditionalExpressionType, asConditionalExpression) \
+    macro(UnaryNode, UnaryNodeType, asUnary) \
+    macro(ThisLiteral, ThisLiteralType, asThisLiteral)
 
 class LoopControlStatement;
 class BreakStatement;
@@ -650,9 +653,10 @@ class ParseNode
             };
         } binary;
         struct {                        
+          private:
+            friend class UnaryNode;
             ParseNode*  kid;
             bool        prologue;       
-
         } unary;
         struct {                        
             union {
@@ -680,8 +684,6 @@ class ParseNode
 #define pn_objbox       pn_u.name.objbox
 #define pn_funbox       pn_u.name.funbox
 #define pn_body         pn_u.name.expr
-#define pn_kid          pn_u.unary.kid
-#define pn_prologue     pn_u.unary.prologue
 #define pn_atom         pn_u.name.atom
 #define pn_objbox       pn_u.name.objbox
 #define pn_expr         pn_u.name.expr
@@ -740,30 +742,6 @@ class ParseNode
     }
 
     
-
-
-
-
-
-
-
-
-
-
-
-
-    JSAtom* isStringExprStatement() const {
-        if (getKind() == ParseNodeKind::ExpressionStatement) {
-            MOZ_ASSERT(pn_arity == PN_UNARY);
-            ParseNode* kid = pn_kid;
-            if (kid->getKind() == ParseNodeKind::String && !kid->pn_parens) {
-                return kid->pn_atom;
-            }
-        }
-        return nullptr;
-    }
-
-    
     bool isLiteral() const {
         return isKind(ParseNodeKind::Number) ||
                isKind(ParseNodeKind::String) ||
@@ -772,9 +750,6 @@ class ParseNode
                isKind(ParseNodeKind::Null) ||
                isKind(ParseNodeKind::RawUndefined);
     }
-
-    
-    bool isDirectivePrologueMember() const { return pn_prologue; }
 
     
     inline bool isForLoopDeclaration() const;
@@ -844,12 +819,13 @@ struct NullaryNode : public ParseNode
 #endif
 };
 
-struct UnaryNode : public ParseNode
+class UnaryNode : public ParseNode
 {
+  public:
     UnaryNode(ParseNodeKind kind, const TokenPos& pos, ParseNode* kid)
       : ParseNode(kind, JSOP_NOP, PN_UNARY, pos)
     {
-        pn_kid = kid;
+        pn_u.unary.kid = kid;
     }
 
     static bool test(const ParseNode& node) {
@@ -859,6 +835,47 @@ struct UnaryNode : public ParseNode
 #ifdef DEBUG
     void dump(GenericPrinter& out, int indent);
 #endif
+
+    ParseNode* kid() const {
+        return pn_u.unary.kid;
+    }
+
+    
+    bool isDirectivePrologueMember() const {
+        return pn_u.unary.prologue;
+    }
+
+    void setIsDirectivePrologueMember() {
+        pn_u.unary.prologue = true;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+    JSAtom* isStringExprStatement() const {
+        if (isKind(ParseNodeKind::ExpressionStatement)) {
+            if (kid()->isKind(ParseNodeKind::String) && !kid()->isInParens()) {
+                return kid()->pn_atom;
+            }
+        }
+        return nullptr;
+    }
+
+    
+    ParseNode** unsafeKidReference() {
+        return &pn_u.unary.kid;
+    }
 };
 
 class BinaryNode : public ParseNode
@@ -1546,6 +1563,12 @@ class ThisLiteral : public UnaryNode
     ThisLiteral(const TokenPos& pos, ParseNode* thisName)
       : UnaryNode(ParseNodeKind::This, pos, thisName)
     { }
+
+    static bool test(const ParseNode& node) {
+        bool match = node.isKind(ParseNodeKind::This);
+        MOZ_ASSERT_IF(match, node.is<UnaryNode>());
+        return match;
+    }
 };
 
 class NullLiteral : public ParseNode
