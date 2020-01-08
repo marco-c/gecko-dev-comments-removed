@@ -14,6 +14,7 @@
 #include "mozilla/gfx/Types.h"          
 #include "mozilla/layers/CompositorTypes.h"  
 #include "mozilla/layers/WebRenderLayersLogging.h"
+#include "mozilla/layers/ZoomConstraints.h"
 #include "nsAString.h"
 #include "nsPrintfCString.h"            
 #include "nsRegion.h"                   

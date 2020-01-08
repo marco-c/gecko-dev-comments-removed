@@ -11,6 +11,8 @@
 #include "mozilla/ComputedStyle.h"
 #include "SVGObserverUtils.h"
 
+using namespace mozilla;
+
 
 
 

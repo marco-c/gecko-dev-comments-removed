@@ -13,6 +13,8 @@
 #include "nsIPresShell.h"
 #include "mozilla/HashFunctions.h"
 
+using namespace mozilla;
+
 
 
 SpanningCellSorter::SpanningCellSorter()

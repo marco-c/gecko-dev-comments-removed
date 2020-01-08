@@ -5,10 +5,12 @@
 
 
 #include "nsPrintObject.h"
+
 #include "nsIContentViewer.h"
 #include "nsContentUtils.h" 
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsPIDOMWindow.h"
+#include "nsPresContext.h"
 #include "nsGkAtoms.h"
 #include "nsComponentManagerUtils.h"
 #include "nsIDocShellTreeItem.h"
@@ -17,6 +19,10 @@
 #include "nsDocShell.h"
 
 #include "mozilla/dom/BrowsingContext.h"
+#include "mozilla/dom/Element.h"
+
+using mozilla::dom::BrowsingContext;
+using mozilla::dom::Element;
 
 
 
@@ -62,8 +68,7 @@ nsPrintObject::Init(nsIDocShell* aDocShell, nsIDocument* aDoc,
 
     
     RefPtr<BrowsingContext> bc = BrowsingContext::Create(
-       nullptr,
-       nullptr,
+      nullptr,
       EmptyString(),
       aDocShell->ItemType() == nsIDocShellTreeItem::typeContent
         ? BrowsingContext::Type::Content

@@ -5,11 +5,14 @@
 
 
 
+#include "ComputedStyle.h"
 #include "nsContainerFrame.h"
 #include "nsFrame.h"
 #include "nsGkAtoms.h"
 #include "SVGObserverUtils.h"
 #include "nsSVGFilters.h"
+
+using namespace mozilla;
 
 
 

@@ -4,7 +4,11 @@
 
 
 
-#include "mozilla/MappedDeclarations.h"
+#include "MappedDeclarations.h"
+
+#include "nsAttrValue.h"
+#include "nsIDocument.h"
+#include "nsPresContext.h"
 
 namespace mozilla {
 

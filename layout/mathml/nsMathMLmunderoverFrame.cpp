@@ -12,6 +12,8 @@
 #include "gfxContext.h"
 #include "gfxMathTable.h"
 
+using namespace mozilla;
+
 
 
 

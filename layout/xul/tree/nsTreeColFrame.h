@@ -5,12 +5,13 @@
 
 
 #include "mozilla/Attributes.h"
+#include "mozilla/ComputedStyle.h"
 #include "nsBoxFrame.h"
 
 class nsITreeBoxObject;
 
 nsIFrame* NS_NewTreeColFrame(nsIPresShell* aPresShell,
-                             ComputedStyle* aStyle);
+                             mozilla::ComputedStyle* aStyle);
 
 class nsTreeColFrame final : public nsBoxFrame
 {

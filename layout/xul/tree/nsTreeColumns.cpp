@@ -18,6 +18,7 @@
 #include "mozilla/dom/TreeColumnsBinding.h"
 
 using namespace mozilla;
+using namespace mozilla::dom;
 
 
 nsTreeColumn::nsTreeColumn(nsTreeColumns* aColumns, dom::Element* aElement)

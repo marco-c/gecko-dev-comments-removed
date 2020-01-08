@@ -5,6 +5,8 @@
 
 
 #include "nsLegendFrame.h"
+
+#include "ComputedStyle.h"
 #include "nsIContent.h"
 #include "nsGenericHTMLElement.h"
 #include "nsAttrValueInlines.h"
@@ -12,6 +14,9 @@
 #include "nsGkAtoms.h"
 #include "nsStyleConsts.h"
 #include "nsCheckboxRadioFrame.h"
+#include "WritingModes.h"
+
+using namespace mozilla;
 
 nsIFrame*
 NS_NewLegendFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle)
