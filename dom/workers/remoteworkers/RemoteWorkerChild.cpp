@@ -329,16 +329,13 @@ RemoteWorkerChild::ExecWorkerOnMainThread(const RemoteWorkerData& aData)
   
   
   rv = ChannelFromScriptURLMainThread(info.mLoadingPrincipal,
-                                      info.mBaseURI,
                                       nullptr ,
                                       info.mLoadGroup,
-                                      EmptyString(),
                                       info.mResolvedScriptURI,
                                       clientInfo,
                                       aData.isSharedWorker()
                                         ? nsIContentPolicy::TYPE_INTERNAL_SHARED_WORKER
                                         : nsIContentPolicy::TYPE_INTERNAL_SERVICE_WORKER,
-                                      false ,
                                       getter_AddRefs(info.mChannel));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
