@@ -172,14 +172,9 @@ var AssociatedToNode = class {
     return this.node.ownerGlobal;
   }
 
-  
-
-
-  get _dwu() {
-    if (this.__dwu)
-      return this.__dwu;
-    return this.__dwu = this.window.windowUtils;
-  }
+  _getBoundsWithoutFlushing(element) {
+    return this.window.windowUtils.getBoundsWithoutFlushing(element);
+  }   
 
   
 
@@ -423,8 +418,7 @@ var PanelMultiView = class extends AssociatedToNode {
     this._panel.removeEventListener("popuphidden", this);
     this.window.removeEventListener("keydown", this);
     this.node = this._openPopupPromise = this._openPopupCancelCallback =
-      this._viewContainer = this._viewStack = this.__dwu =
-      this._transitionDetails = null;
+      this._viewContainer = this._viewStack = this._transitionDetails = null;
   }
 
   
@@ -574,7 +568,7 @@ var PanelMultiView = class extends AssociatedToNode {
 
     
     
-    let subviews = Array.from(this._viewStack.children);
+    let subviews = Array.from(this._viewStack.childNodes);
     let viewCache = this.document.getElementById(viewCacheId);
     for (let subview of subviews) {
       viewCache.appendChild(subview);
@@ -875,10 +869,10 @@ var PanelMultiView = class extends AssociatedToNode {
       nextPanelView.visible = true;
       
       
-      let header = viewNode.firstElementChild;
+      let header = viewNode.firstChild;
       if (header && header.classList.contains("panel-header")) {
         viewRect.height += await window.promiseDocumentFlushed(() => {
-          return this._dwu.getBoundsWithoutFlushing(header).height;
+          return this._getBoundsWithoutFlushing(header).height;
         });
       }
       await nextPanelView.descriptionHeightWorkaround();
@@ -892,7 +886,7 @@ var PanelMultiView = class extends AssociatedToNode {
       await nextPanelView.descriptionHeightWorkaround();
 
       viewRect = await window.promiseDocumentFlushed(() => {
-        return this._dwu.getBoundsWithoutFlushing(viewNode);
+        return this._getBoundsWithoutFlushing(viewNode);
       });
       
       if (!nextPanelView.isOpenIn(this)) {
@@ -1203,7 +1197,7 @@ var PanelView = class extends AssociatedToNode {
 
   set headerText(value) {
     
-    let header = this.node.firstElementChild;
+    let header = this.node.firstChild;
     if (header && header.classList.contains("panel-header")) {
       if (value) {
         header.querySelector("label").setAttribute("value", value);
@@ -1257,7 +1251,7 @@ var PanelView = class extends AssociatedToNode {
 
 
   captureKnownSize() {
-    let rect = this._dwu.getBoundsWithoutFlushing(this.node);
+    let rect = this._getBoundsWithoutFlushing(this.node);
     this.knownWidth = rect.width;
     this.knownHeight = rect.height;
   }
@@ -1370,7 +1364,6 @@ var PanelView = class extends AssociatedToNode {
 
     let navigableElements = Array.from(this.node.querySelectorAll(
       ":-moz-any(button,toolbarbutton,menulist,.text-link):not([disabled])"));
-    let dwu = this._dwu;
     return this.__navigableElements = navigableElements.filter(element => {
       
       if (!element.hasAttribute("tabindex")) {
@@ -1379,7 +1372,7 @@ var PanelView = class extends AssociatedToNode {
       if (element.hasAttribute("disabled")) {
         return false;
       }
-      let bounds = dwu.getBoundsWithoutFlushing(element);
+      let bounds = this._getBoundsWithoutFlushing(element);
       return bounds.width > 0 && bounds.height > 0;
     });
   }
