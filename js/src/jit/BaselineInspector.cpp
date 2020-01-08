@@ -1091,6 +1091,7 @@ static bool AddCacheIRGetPropFunction(
   
   
   
+  
 
   CacheIRReader reader(stub->stubInfo());
 
@@ -1106,10 +1107,15 @@ static bool AddCacheIRGetPropFunction(
         reader.guardClassKind() != GuardClassKind::WindowProxy) {
       return false;
     }
-    if (!reader.matchOp(CacheOp::LoadObject)) {
+
+    if (!reader.matchOp(CacheOp::LoadWrapperTarget, objId)) {
       return false;
     }
     objId = reader.objOperandId();
+
+    if (!reader.matchOp(CacheOp::GuardSpecificObject, objId)) {
+      return false;
+    }
     DebugOnly<JSObject*> obj =
         stub->stubInfo()
             ->getStubField<JSObject*>(stub, reader.stubOffset())

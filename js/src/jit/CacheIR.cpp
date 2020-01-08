@@ -1143,6 +1143,8 @@ bool js::jit::IsWindowProxyForScriptGlobal(JSScript* script, JSObject* obj) {
 static ObjOperandId GuardAndLoadWindowProxyWindow(CacheIRWriter& writer,
                                                   ObjOperandId objId,
                                                   GlobalObject* windowObj) {
+  
+  
   writer.guardClass(objId, GuardClassKind::WindowProxy);
   ObjOperandId windowObjId = writer.loadWrapperTarget(objId);
   writer.guardSpecificObject(windowObjId, windowObj);
