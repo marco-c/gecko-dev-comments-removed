@@ -213,6 +213,25 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
     }
   },
 
+  _findDebuggeeScripts(query = null) {
+    query = { ...query };
+    assert(
+      !("url" in query) && !("source" in query),
+      "Debuggee source and URL are set automatically"
+    );
+
+    
+    
+    
+    
+    if (this.source) {
+      query.source = this.source;
+    } else {
+      query.url = this.url;
+    }
+    return this.dbg.findScripts(query);
+  },
+
   _mapSourceToAddon: function() {
     let nsuri;
     try {
@@ -363,7 +382,7 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
 
   getExecutableLines: async function() {
     const offsetsLines = new Set();
-    for (const s of this.dbg.findScripts({ source: this.source })) {
+    for (const s of this._findDebuggeeScripts()) {
       for (const offset of s.getAllColumnOffsets()) {
         offsetsLines.add(offset.lineNumber);
       }
@@ -551,17 +570,7 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
     if (!this._setBreakpointAtGeneratedLocation(actor, generatedLocation) &&
         !noSliding &&
         !isWasm) {
-      const query = { line: generatedLine };
-      
-      
-      
-      
-      if (this.source) {
-        query.source = this.source;
-      } else {
-        query.url = this.url;
-      }
-      const scripts = this.dbg.findScripts(query);
+      const scripts = this._findDebuggeeScripts({ line: generatedLine });
 
       
       
@@ -672,13 +681,9 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
 
     
     
-    const query = { line: generatedLine };
-    if (generatedSourceActor.source) {
-      query.source = generatedSourceActor.source;
-    } else {
-      query.url = generatedSourceActor.url;
-    }
-    let scripts = this.dbg.findScripts(query);
+    let scripts = generatedSourceActor._findDebuggeeScripts(
+      { line: generatedLine }
+    );
 
     scripts = scripts.filter((script) => !actor.hasScript(script));
 
