@@ -21,7 +21,6 @@ loader.lazyRequireGetter(this, "AppConstants", "resource://gre/modules/AppConsta
 const ZoomKeys = require("devtools/client/shared/zoom-keys");
 
 const PREF_MESSAGE_TIMESTAMP = "devtools.webconsole.timestampMessages";
-const PREF_PERSISTLOG = "devtools.webconsole.persistlog";
 const PREF_SIDEBAR_ENABLED = "devtools.webconsole.sidebarToggle";
 
 
@@ -55,19 +54,6 @@ WebConsoleFrame.prototype = {
 
   get webConsoleClient() {
     return this.proxy ? this.proxy.webConsoleClient : null;
-  },
-
-  
-
-
-
-  get persistLog() {
-    
-    
-    
-    
-    return this.isBrowserConsole ||
-           Services.prefs.getBoolPref(PREF_PERSISTLOG);
   },
 
   
@@ -395,14 +381,7 @@ WebConsoleFrame.prototype = {
   },
 
   handleTabWillNavigate: function(packet) {
-    if (this.persistLog) {
-      
-      packet._type = true;
-      this.consoleOutput.dispatchMessageAdd(packet);
-    } else {
-      this.clearOutput(false);
-    }
-
+    this.consoleOutput.dispatchTabWillNavigate(packet);
     if (packet.url) {
       this.onLocationChange(packet.url, packet.title);
     }

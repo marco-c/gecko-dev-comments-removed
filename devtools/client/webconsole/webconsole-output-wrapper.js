@@ -22,6 +22,7 @@ const EventEmitter = require("devtools/shared/event-emitter");
 const App = createFactory(require("devtools/client/webconsole/components/App"));
 const ObjectClient = require("devtools/shared/client/object-client");
 const LongStringClient = require("devtools/shared/client/long-string-client");
+loader.lazyRequireGetter(this, "Constants", "devtools/client/webconsole/constants");
 
 let store = null;
 
@@ -366,6 +367,7 @@ WebConsoleOutputWrapper.prototype = {
     this.queuedMessageUpdates = [];
     this.queuedRequestUpdates = [];
     store.dispatch(actions.messagesClear());
+    this.hud.emit("messages-cleared");
   },
 
   dispatchPrivateMessagesClear: function() {
@@ -462,6 +464,26 @@ WebConsoleOutputWrapper.prototype = {
   dispatchSplitConsoleCloseButtonToggle: function() {
     store.dispatch(actions.splitConsoleCloseButtonToggle(
       this.toolbox && this.toolbox.currentToolId !== "webconsole"));
+  },
+
+  dispatchTabWillNavigate: function(packet) {
+    const { ui } = store.getState();
+
+    
+    
+    
+    
+    if (ui.persistLogs || this.hud.isBrowserConsole) {
+      
+      packet._type = true;
+      this.dispatchMessageAdd(packet);
+    } else {
+      this.hud.webConsoleClient.clearNetworkRequests();
+      this.dispatchMessagesClear();
+      store.dispatch({
+        type: Constants.WILL_NAVIGATE,
+      });
+    }
   },
 
   batchedMessageUpdates: function(info) {
