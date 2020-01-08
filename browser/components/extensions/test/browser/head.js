@@ -595,6 +595,23 @@ async function startIncognitoMonitorExtension(failOnIncognitoEvent = true) {
       await testTabInfo(addedTabId, "onReplaced");
       await testTabInfo(removedTabId, "onReplaced");
     });
+    browser.windows.onCreated.addListener(window => {
+      browser.test.assertEq(window.incognito, expectIncognito, `monitor extension got expected incognito value`);
+    });
+    browser.windows.onRemoved.addListener(async (windowId) => {
+      try {
+        let window = await browser.windows.get(windowId);
+        browser.test.assertEq(window.incognito, expectIncognito, `monitor extension got expected incognito value`);
+      } catch (e) {
+        
+        browser.test.log(`onRemoved received late ${e}`);
+      }
+    });
+    browser.windows.onFocusChanged.addListener(async (windowId) => {
+      
+      let window = await browser.windows.get(windowId);
+      browser.test.assertEq(window.incognito, expectIncognito, `monitor extesion got unexpected window onFocusChanged event`);
+    });
   }
 
   let extension = ExtensionTestUtils.loadExtension({
