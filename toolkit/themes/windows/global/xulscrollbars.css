@@ -55,13 +55,6 @@ thumb[orient="horizontal"] {
 
 
 
-scrollbarbutton {
-  min-width: 16px;
-  min-height: 16px;
-}
-
-
-
 scrollcorner {
   -moz-appearance: scrollcorner;
   width: 16px;
