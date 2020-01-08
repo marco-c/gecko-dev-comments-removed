@@ -658,10 +658,10 @@ import android.view.inputmethod.EditorInfo;
         mIcRunHandler = mIcPostHandler = ThreadUtils.getUiHandler();
     }
 
-    public void setDefaultEditableChild(final IGeckoEditableChild child) {
+    @Override 
+    public void setDefaultChild(final IGeckoEditableChild child) {
         if (DEBUG) {
             
-            ThreadUtils.assertOnUiThread();
             Log.d(LOGTAG, "setDefaultEditableChild " + child);
         }
         mDefaultChild = child;

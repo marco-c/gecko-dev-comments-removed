@@ -72,11 +72,14 @@ public final class GeckoEditableChild extends JNIObject implements IGeckoEditabl
 
     private final IGeckoEditableParent mEditableParent;
     private final IGeckoEditableChild mEditableChild;
+    private final boolean mIsDefault;
 
     private int mCurrentTextLength; 
 
     @WrapForJNI(calledFrom = "gecko")
-    public GeckoEditableChild(final IGeckoEditableParent editableParent) {
+    private GeckoEditableChild(final IGeckoEditableParent editableParent,
+                               final boolean isDefault) {
+        mIsDefault = isDefault;
         mEditableParent = editableParent;
 
         final IBinder binder = editableParent.asBinder();
@@ -86,6 +89,15 @@ public final class GeckoEditableChild extends JNIObject implements IGeckoEditabl
         } else {
             
             mEditableChild = new RemoteChild();
+        }
+
+        if (mIsDefault) {
+            
+            try {
+                editableParent.setDefaultChild(mEditableChild);
+            } catch (final RemoteException e) {
+                Log.e(LOGTAG, "Failed to set default child", e);
+            }
         }
     }
 
