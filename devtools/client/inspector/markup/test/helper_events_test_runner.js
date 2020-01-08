@@ -120,7 +120,8 @@ async function checkEventsForNode(test, inspector, testActor) {
     
     header.scrollIntoView();
 
-    EventUtils.synthesizeMouseAtCenter(header, {}, type.ownerGlobal);
+    
+    EventUtils.synthesizeMouse(header, 2, 2, {}, type.ownerGlobal);
     await tooltip.once("event-tooltip-ready");
 
     is(header.classList.contains("content-expanded"), true,

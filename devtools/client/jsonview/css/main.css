@@ -39,10 +39,6 @@
   font-family: var(--monospace-font-family);
 }
 
-:root[platform="linux"] .treeTable {
-  font-size: 80%; 
-}
-
 
 .panelContent .treeTable .treeLabelCell {
   padding-right: 17px;
