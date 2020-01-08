@@ -96,7 +96,8 @@ class GeckoEditableSupport final
     RefPtr<TextRangeArray> mIMERanges;
     int32_t mIMEMaskEventsCount; 
     int32_t mIMEFocusCount; 
-    int32_t mIMEActiveReplaceTextCount; 
+    bool mIMEDelaySynchronizeReply; 
+    int32_t mIMEActiveSynchronizeCount; 
     bool mIMESelectionChanged;
     bool mIMETextChangedDuringFlush;
     bool mIMEMonitorCursor;
@@ -122,7 +123,7 @@ class GeckoEditableSupport final
     virtual ~GeckoEditableSupport() {}
 
     RefPtr<TextComposition> GetComposition() const;
-    void RemoveComposition(
+    bool RemoveComposition(
             RemoveCompositionFlag aFlag = COMMIT_IME_COMPOSITION);
     void SendIMEDummyKeyEvent(nsIWidget* aWidget, EventMessage msg);
     void AddIMETextChange(const IMETextChange& aChange);
@@ -132,6 +133,7 @@ class GeckoEditableSupport final
     void AsyncNotifyIME(int32_t aNotification);
     void UpdateCompositionRects();
     bool DoReplaceText(int32_t aStart, int32_t aEnd, jni::String::Param aText);
+    bool DoUpdateComposition(int32_t aStart, int32_t aEnd, int32_t aFlags);
     void NotifyIMEContext(const InputContext& aContext,
                           const InputContextAction& aAction);
 
@@ -181,7 +183,8 @@ public:
         , mIMERanges(new TextRangeArray())
         , mIMEMaskEventsCount(1) 
         , mIMEFocusCount(0)
-        , mIMEActiveReplaceTextCount(0)
+        , mIMEDelaySynchronizeReply(false)
+        , mIMEActiveSynchronizeCount(0)
         , mIMESelectionChanged(false)
         , mIMETextChangedDuringFlush(false)
         , mIMEMonitorCursor(false)
