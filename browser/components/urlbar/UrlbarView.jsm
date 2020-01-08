@@ -29,7 +29,7 @@ class UrlbarView {
     this._mainContainer = this.panel.querySelector(".urlbarView-body-inner");
     this._rows = this.panel.querySelector(".urlbarView-results");
 
-    this._rows.addEventListener("click", this);
+    this._rows.addEventListener("mouseup", this);
 
     
     
@@ -346,7 +346,12 @@ class UrlbarView {
     }
   }
 
-  _on_click(event) {
+  _on_mouseup(event) {
+    if (event.button == 2) {
+      
+      return;
+    }
+
     let row = event.target;
     while (!row.classList.contains("urlbarView-row")) {
       row = row.parentNode;
