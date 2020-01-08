@@ -2328,7 +2328,7 @@ Toolbox.prototype = {
   onSelectFrame: function(frameId) {
     
     
-    this.target.activeTab.switchToFrame(frameId);
+    this.target.activeTab.switchToFrame({ windowId: frameId });
   },
 
   
