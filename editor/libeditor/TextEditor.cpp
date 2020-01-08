@@ -414,7 +414,7 @@ TextEditor::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent)
         return NS_OK;
       }
       aKeyboardEvent->PreventDefault();
-      return InsertLineBreakAsAction();
+      return OnInputParagraphSeparator();
   }
 
   if (!aKeyboardEvent->IsInputtingText()) {
@@ -443,17 +443,17 @@ TextEditor::OnInputText(const nsAString& aStringToInsert)
 }
 
 nsresult
-TextEditor::InsertLineBreakAsAction()
+TextEditor::OnInputParagraphSeparator()
 {
-  AutoEditActionDataSetter editActionData(*this, EditAction::eInsertLineBreak);
+  AutoEditActionDataSetter editActionData(
+                             *this,
+                             EditAction::eInsertParagraphSeparator);
   if (NS_WARN_IF(!editActionData.CanHandle())) {
     return NS_ERROR_NOT_INITIALIZED;
   }
 
-  
-  
   AutoPlaceholderBatch treatAsOneTransaction(*this, *nsGkAtoms::TypingTxnName);
-  nsresult rv = InsertLineBreakAsSubAction();
+  nsresult rv = InsertParagraphSeparatorAsAction();
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -1070,21 +1070,18 @@ TextEditor::InsertTextAsSubAction(const nsAString& aStringToInsert)
 NS_IMETHODIMP
 TextEditor::InsertLineBreak()
 {
-  AutoEditActionDataSetter editActionData(*this, EditAction::eInsertLineBreak);
+  AutoEditActionDataSetter editActionData(
+                             *this,
+                             EditAction::eInsertParagraphSeparator);
   if (NS_WARN_IF(!editActionData.CanHandle())) {
     return NS_ERROR_NOT_INITIALIZED;
   }
 
-  AutoPlaceholderBatch treatAsOneTransaction(*this);
-  nsresult rv = InsertLineBreakAsSubAction();
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-  return NS_OK;
+  return InsertParagraphSeparatorAsAction();
 }
 
 nsresult
-TextEditor::InsertLineBreakAsSubAction()
+TextEditor::InsertParagraphSeparatorAsAction()
 {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
@@ -1095,27 +1092,87 @@ TextEditor::InsertLineBreakAsSubAction()
   
   RefPtr<TextEditRules> rules(mRules);
 
+  AutoPlaceholderBatch treatAsOneTransaction(*this);
   AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
                                       *this,
-                                      EditSubAction::eInsertLineBreak,
+                                      EditSubAction::eInsertParagraphSeparator,
                                       nsIEditor::eNext);
 
-  EditSubActionInfo subActionInfo(EditSubAction::eInsertLineBreak);
+  EditSubActionInfo subActionInfo(EditSubAction::eInsertParagraphSeparator);
   subActionInfo.maxLength = mMaxTextLength;
   bool cancel, handled;
   nsresult rv = rules->WillDoAction(subActionInfo, &cancel, &handled);
-  if (cancel) {
-    return rv; 
-  }
-  
-  
-  
-  
-  rv = rules->DidDoAction(subActionInfo, rv);
   if (NS_WARN_IF(NS_FAILED(rv))) {
+    
+    
+    
+    
     return rv;
   }
-  return NS_OK;
+
+  if (!cancel && !handled) {
+    
+    nsRange* firstRange = SelectionRefPtr()->GetRangeAt(0);
+    if (NS_WARN_IF(!firstRange)) {
+      return NS_ERROR_FAILURE;
+    }
+
+    EditorRawDOMPoint pointToInsert(firstRange->StartRef());
+    if (NS_WARN_IF(!pointToInsert.IsSet())) {
+      return NS_ERROR_FAILURE;
+    }
+    MOZ_ASSERT(pointToInsert.IsSetAndValid());
+
+    
+    if (!pointToInsert.IsInTextNode() &&
+        !CanContainTag(*pointToInsert.GetContainer(),
+                       *nsGkAtoms::textTagName)) {
+      return NS_ERROR_FAILURE;
+    }
+
+    
+    nsCOMPtr<nsIDocument> doc = GetDocument();
+    if (NS_WARN_IF(!doc)) {
+      return NS_ERROR_NOT_INITIALIZED;
+    }
+
+    
+    AutoTransactionsConserveSelection dontChangeMySelection(*this);
+
+    
+    EditorRawDOMPoint pointAfterInsertedLineBreak;
+    rv = InsertTextWithTransaction(*doc, NS_LITERAL_STRING("\n"), pointToInsert,
+                                   &pointAfterInsertedLineBreak);
+    if (NS_WARN_IF(!pointAfterInsertedLineBreak.IsSet())) {
+      rv = NS_ERROR_NULL_POINTER; 
+    }
+    if (NS_SUCCEEDED(rv)) {
+      
+      MOZ_ASSERT(!pointAfterInsertedLineBreak.GetChild(),
+        "After inserting text into a text node, pointAfterInsertedLineBreak."
+        "GetChild() should be nullptr");
+      rv = SelectionRefPtr()->Collapse(pointAfterInsertedLineBreak);
+      if (NS_SUCCEEDED(rv)) {
+        
+        EditorRawDOMPoint endPoint(EditorBase::GetEndPoint(*SelectionRefPtr()));
+        if (endPoint == pointAfterInsertedLineBreak) {
+          
+          
+          
+          
+          SelectionRefPtr()->SetInterlinePosition(true, IgnoreErrors());
+        }
+      }
+    }
+  }
+
+  if (!cancel) {
+    
+    rv = rules->DidDoAction(subActionInfo, rv);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                         "TextEditRules::DidDoAction() failed");
+  }
+  return rv;
 }
 
 nsresult

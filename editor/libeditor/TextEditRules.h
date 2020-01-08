@@ -188,8 +188,10 @@ protected:
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  MOZ_MUST_USE EditActionResult WillInsertLineBreak(int32_t aMaxLength);
+
+
+  MOZ_MUST_USE nsresult
+  WillInsertBreak(bool* aCancel, bool* aHandled, int32_t aMaxLength);
 
   
 

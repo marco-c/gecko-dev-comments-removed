@@ -100,7 +100,6 @@ public:
                               nsIEditor::EDirection aDirection) override;
   virtual nsresult AfterEdit(EditSubAction aEditSubAction,
                              nsIEditor::EDirection aDirection) override;
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   virtual nsresult WillDoAction(EditSubActionInfo& aInfo,
                                 bool* aCancel,
                                 bool* aHandled) override;
@@ -217,8 +216,10 @@ protected:
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  MOZ_MUST_USE EditActionResult WillInsertParagraphSeparator();
+
+
+
+  nsresult WillInsertBreak(bool* aCancel, bool* aHandled);
 
   
 
@@ -244,8 +245,10 @@ protected:
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  MOZ_MUST_USE EditActionResult SplitMailCites();
+
+
+
+  MOZ_MUST_USE nsresult SplitMailCites(bool* aHandled);
 
   
 

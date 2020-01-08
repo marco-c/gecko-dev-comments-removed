@@ -85,7 +85,6 @@ static bool
 IsStyleCachePreservingSubAction(EditSubAction aEditSubAction)
 {
   return aEditSubAction == EditSubAction::eDeleteSelectedContent ||
-         aEditSubAction == EditSubAction::eInsertLineBreak ||
          aEditSubAction == EditSubAction::eInsertParagraphSeparator ||
          aEditSubAction == EditSubAction::eCreateOrChangeList ||
          aEditSubAction == EditSubAction::eIndent ||
@@ -562,7 +561,6 @@ HTMLEditRules::AfterEditInner(EditSubAction aEditSubAction,
     if (aEditSubAction == EditSubAction::eInsertText ||
         aEditSubAction == EditSubAction::eInsertTextComingFromIME ||
         aEditSubAction == EditSubAction::eDeleteSelectedContent ||
-        aEditSubAction == EditSubAction::eInsertLineBreak ||
         aEditSubAction == EditSubAction::eInsertParagraphSeparator ||
         aEditSubAction == EditSubAction::ePasteHTMLContent ||
         aEditSubAction == EditSubAction::eInsertHTMLSource) {
@@ -599,7 +597,6 @@ HTMLEditRules::AfterEditInner(EditSubAction aEditSubAction,
     if (aEditSubAction == EditSubAction::eInsertText ||
         aEditSubAction == EditSubAction::eInsertTextComingFromIME ||
         aEditSubAction == EditSubAction::eDeleteSelectedContent ||
-        aEditSubAction == EditSubAction::eInsertLineBreak ||
         aEditSubAction == EditSubAction::eInsertParagraphSeparator ||
         aEditSubAction == EditSubAction::ePasteHTMLContent ||
         aEditSubAction == EditSubAction::eInsertHTMLSource) {
@@ -719,17 +716,9 @@ HTMLEditRules::WillDoAction(EditSubActionInfo& aInfo,
                             aInfo.maxLength);
     case EditSubAction::eInsertHTMLSource:
       return WillLoadHTML();
-    case EditSubAction::eInsertParagraphSeparator: {
+    case EditSubAction::eInsertParagraphSeparator:
       UndefineCaretBidiLevel();
-      EditActionResult result = WillInsertParagraphSeparator();
-      if (NS_WARN_IF(result.Failed())) {
-        return result.Rv();
-      }
-      *aCancel = result.Canceled();
-      *aHandled = result.Handled();
-      MOZ_ASSERT(!result.Ignored());
-      return NS_OK;
-    }
+      return WillInsertBreak(aCancel, aHandled);
     case EditSubAction::eDeleteSelectedContent:
       return WillDeleteSelection(aInfo.collapsedAction, aInfo.stripWrappers,
                                  aCancel, aHandled);
@@ -791,7 +780,6 @@ HTMLEditRules::DidDoAction(EditSubActionInfo& aInfo,
 
   switch (aInfo.mEditSubAction) {
     case EditSubAction::eInsertText:
-    case EditSubAction::eInsertLineBreak:
     case EditSubAction::eInsertParagraphSeparator:
     case EditSubAction::eInsertTextComingFromIME:
       return NS_OK;
@@ -1708,10 +1696,15 @@ HTMLEditRules::CanContainParagraph(Element& aElement) const
   return false;
 }
 
-EditActionResult
-HTMLEditRules::WillInsertParagraphSeparator()
+nsresult
+HTMLEditRules::WillInsertBreak(bool* aCancel,
+                               bool* aHandled)
 {
   MOZ_ASSERT(IsEditorDataAvailable());
+
+  MOZ_ASSERT(aCancel && aHandled);
+  *aCancel = false;
+  *aHandled = false;
 
   
   if (!SelectionRefPtr()->IsCollapsed()) {
@@ -1719,47 +1712,48 @@ HTMLEditRules::WillInsertParagraphSeparator()
       HTMLEditorRef().DeleteSelectionAsSubAction(nsIEditor::eNone,
                                                  nsIEditor::eStrip);
     if (NS_WARN_IF(!CanHandleEditAction())) {
-      return EditActionIgnored(NS_ERROR_EDITOR_DESTROYED);
+      return NS_ERROR_EDITOR_DESTROYED;
     }
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      return EditActionIgnored(rv);
+      return rv;
     }
   }
 
   
   nsresult rv = WillInsert();
   if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
-    return EditActionIgnored(NS_ERROR_EDITOR_DESTROYED);
+    return NS_ERROR_EDITOR_DESTROYED;
   }
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "WillInsert() failed");
 
   
   
   if (IsMailEditor()) {
-    EditActionResult result = SplitMailCites();
-    if (NS_WARN_IF(result.Failed())) {
-      return result;
+    nsresult rv = SplitMailCites(aHandled);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
     }
-    if (result.Handled()) {
-      return result;
+    if (*aHandled) {
+      return NS_OK;
     }
   }
 
   
   nsRange* firstRange = SelectionRefPtr()->GetRangeAt(0);
   if (NS_WARN_IF(!firstRange)) {
-    return EditActionIgnored(NS_ERROR_FAILURE);
+    return NS_ERROR_FAILURE;
   }
 
   EditorDOMPoint atStartOfSelection(firstRange->StartRef());
   if (NS_WARN_IF(!atStartOfSelection.IsSet())) {
-    return EditActionIgnored(NS_ERROR_FAILURE);
+    return NS_ERROR_FAILURE;
   }
   MOZ_ASSERT(atStartOfSelection.IsSetAndValid());
 
   
   if (!HTMLEditorRef().IsModifiableNode(*atStartOfSelection.GetContainer())) {
-    return EditActionCanceled();
+    *aCancel = true;
+    return NS_OK;
   }
 
   
@@ -1767,7 +1761,7 @@ HTMLEditRules::WillInsertParagraphSeparator()
   
   RefPtr<Element> host = HTMLEditorRef().GetActiveEditingHost();
   if (NS_WARN_IF(!host)) {
-    return EditActionIgnored(NS_ERROR_FAILURE);
+    return NS_ERROR_FAILURE;
   }
 
   
@@ -1813,9 +1807,10 @@ HTMLEditRules::WillInsertParagraphSeparator()
   if (insertBRElement) {
     nsresult rv = InsertBRElement(atStartOfSelection);
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      return EditActionIgnored(rv);
+      return rv;
     }
-    return EditActionHandled();
+    *aHandled = true;
+    return NS_OK;
   }
 
   if (host == blockParent && separator != ParagraphSeparator::br) {
@@ -1828,7 +1823,7 @@ HTMLEditRules::WillInsertParagraphSeparator()
     nsresult rv = MakeBasicBlock(ParagraphSeparatorElement(separator));
     if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED) ||
         NS_WARN_IF(!CanHandleEditAction())) {
-      return EditActionIgnored(NS_ERROR_EDITOR_DESTROYED);
+      return NS_ERROR_EDITOR_DESTROYED;
     }
     
     
@@ -1837,27 +1832,28 @@ HTMLEditRules::WillInsertParagraphSeparator()
 
     firstRange = SelectionRefPtr()->GetRangeAt(0);
     if (NS_WARN_IF(!firstRange)) {
-      return EditActionIgnored(NS_ERROR_FAILURE);
+      return NS_ERROR_FAILURE;
     }
 
     atStartOfSelection = firstRange->StartRef();
     if (NS_WARN_IF(!atStartOfSelection.IsSet())) {
-      return EditActionIgnored(NS_ERROR_FAILURE);
+      return NS_ERROR_FAILURE;
     }
     MOZ_ASSERT(atStartOfSelection.IsSetAndValid());
 
     blockParent =
       HTMLEditor::GetBlock(*atStartOfSelection.GetContainer(), host);
     if (NS_WARN_IF(!blockParent)) {
-      return EditActionIgnored(NS_ERROR_UNEXPECTED);
+      return NS_ERROR_UNEXPECTED;
     }
     if (NS_WARN_IF(blockParent == host)) {
       
       rv = InsertBRElement(atStartOfSelection);
       if (NS_WARN_IF(NS_FAILED(rv))) {
-        return EditActionIgnored(rv);
+        return rv;
       }
-      return EditActionHandled();
+      *aHandled = true;
+      return NS_OK;
     }
     
     
@@ -1880,10 +1876,10 @@ HTMLEditRules::WillInsertParagraphSeparator()
     RefPtr<Element> brElement =
       HTMLEditorRef().InsertBrElementWithTransaction(endOfBlockParent);
     if (NS_WARN_IF(!CanHandleEditAction())) {
-      return EditActionIgnored(NS_ERROR_EDITOR_DESTROYED);
+      return NS_ERROR_EDITOR_DESTROYED;
     }
     if (NS_WARN_IF(!brElement)) {
-      return EditActionIgnored(NS_ERROR_FAILURE);
+      return NS_ERROR_FAILURE;
     }
   }
 
@@ -1893,11 +1889,12 @@ HTMLEditRules::WillInsertParagraphSeparator()
       ReturnInListItem(*listItem, *atStartOfSelection.GetContainer(),
                        atStartOfSelection.Offset());
     if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
-      return EditActionIgnored(NS_ERROR_EDITOR_DESTROYED);
+      return NS_ERROR_EDITOR_DESTROYED;
     }
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
       "Failed to insert break into list item");
-    return EditActionHandled();
+    *aHandled = true;
+    return NS_OK;
   }
 
   if (HTMLEditUtils::IsHeader(*blockParent)) {
@@ -1906,11 +1903,12 @@ HTMLEditRules::WillInsertParagraphSeparator()
       ReturnInHeader(*blockParent, *atStartOfSelection.GetContainer(),
                      atStartOfSelection.Offset());
     if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
-      return EditActionIgnored(NS_ERROR_EDITOR_DESTROYED);
+      return NS_ERROR_EDITOR_DESTROYED;
     }
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
       "Failed to handle insertParagraph in the heading element");
-    return EditActionHandled();
+    *aHandled = true;
+    return NS_OK;
   }
 
   
@@ -1928,27 +1926,31 @@ HTMLEditRules::WillInsertParagraphSeparator()
     
     EditActionResult result = ReturnInParagraph(*blockParent);
     if (NS_WARN_IF(result.Failed())) {
-      return result;
+      return result.Rv();
     }
+    *aHandled = result.Handled();
+    *aCancel = result.Canceled();
     if (result.Handled()) {
       
       
       
       lockOffset.Cancel();
-      return result;
+      return NS_OK;
     }
     
-    MOZ_ASSERT(!result.Canceled(),
-               "ReturnInParagraph canceled this edit action, "
-               "WillInsertBreak() needs to handle such case");
+    MOZ_ASSERT(!*aCancel, "ReturnInParagraph canceled this edit action, "
+                          "WillInsertBreak() needs to handle such case");
   }
 
   
+  MOZ_ASSERT(!*aHandled, "Reached last resort of WillInsertBreak() "
+                         "after the edit action is handled");
   rv = InsertBRElement(atStartOfSelection);
+  *aHandled = true;
   if (NS_WARN_IF(NS_FAILED(rv))) {
-    return EditActionIgnored(rv);
+    return rv;
   }
-  return EditActionHandled();
+  return NS_OK;
 }
 
 nsresult
@@ -2099,20 +2101,24 @@ HTMLEditRules::InsertBRElement(const EditorDOMPoint& aPointToBreak)
   return NS_OK;
 }
 
-EditActionResult
-HTMLEditRules::SplitMailCites()
+nsresult
+HTMLEditRules::SplitMailCites(bool* aHandled)
 {
   MOZ_ASSERT(IsEditorDataAvailable());
 
+  if (NS_WARN_IF(!aHandled)) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
   EditorRawDOMPoint pointToSplit(EditorBase::GetStartPoint(*SelectionRefPtr()));
   if (NS_WARN_IF(!pointToSplit.IsSet())) {
-    return EditActionIgnored(NS_ERROR_FAILURE);
+    return NS_ERROR_FAILURE;
   }
 
   RefPtr<Element> citeNode =
     GetTopEnclosingMailCite(*pointToSplit.GetContainer());
   if (!citeNode) {
-    return EditActionIgnored();
+    return NS_OK;
   }
 
   
@@ -2139,7 +2145,7 @@ HTMLEditRules::SplitMailCites()
   }
 
   if (NS_WARN_IF(!pointToSplit.GetContainerAsContent())) {
-    return EditActionIgnored(NS_ERROR_FAILURE);
+    return NS_ERROR_FAILURE;
   }
 
   SplitNodeResult splitCiteNodeResult =
@@ -2147,10 +2153,10 @@ HTMLEditRules::SplitMailCites()
                       *citeNode, pointToSplit,
                       SplitAtEdges::eDoNotCreateEmptyContainer);
   if (NS_WARN_IF(!CanHandleEditAction())) {
-    return EditActionIgnored(NS_ERROR_EDITOR_DESTROYED);
+    return NS_ERROR_EDITOR_DESTROYED;
   }
   if (NS_WARN_IF(splitCiteNodeResult.Failed())) {
-    return EditActionIgnored(splitCiteNodeResult.Rv());
+    return splitCiteNodeResult.Rv();
   }
   pointToSplit.Clear();
 
@@ -2180,7 +2186,7 @@ HTMLEditRules::SplitMailCites()
         HTMLEditorRef().InsertBrElementWithTransaction(
                           endOfPreviousNodeOfSplitPoint);
       if (NS_WARN_IF(!CanHandleEditAction())) {
-        return EditActionIgnored(NS_ERROR_EDITOR_DESTROYED);
+        return NS_ERROR_EDITOR_DESTROYED;
       }
       NS_WARNING_ASSERTION(invisibleBrElement,
         "Failed to create an invisible <br> element");
@@ -2194,10 +2200,10 @@ HTMLEditRules::SplitMailCites()
   RefPtr<Element> brElement =
     HTMLEditorRef().InsertBrElementWithTransaction(pointToInsertBrNode);
   if (NS_WARN_IF(!CanHandleEditAction())) {
-    return EditActionIgnored(NS_ERROR_EDITOR_DESTROYED);
+    return NS_ERROR_EDITOR_DESTROYED;
   }
   if (NS_WARN_IF(!brElement)) {
-    return EditActionIgnored(NS_ERROR_FAILURE);
+    return NS_ERROR_FAILURE;
   }
   
   pointToInsertBrNode.Clear();
@@ -2213,10 +2219,10 @@ HTMLEditRules::SplitMailCites()
   SelectionRefPtr()->Collapse(atBrNode, error);
   if (NS_WARN_IF(!CanHandleEditAction())) {
     error.SuppressException();
-    return EditActionIgnored(NS_ERROR_EDITOR_DESTROYED);
+    return NS_ERROR_EDITOR_DESTROYED;
   }
   if (NS_WARN_IF(error.Failed())) {
-    return EditActionIgnored(error.StealNSResult());
+    return error.StealNSResult();
   }
 
   
@@ -2248,10 +2254,10 @@ HTMLEditRules::SplitMailCites()
           HTMLEditorRef().InsertBrElementWithTransaction(
                             pointToCreateNewBrNode);
         if (NS_WARN_IF(!CanHandleEditAction())) {
-          return EditActionIgnored(NS_ERROR_EDITOR_DESTROYED);
+          return NS_ERROR_EDITOR_DESTROYED;
         }
         if (NS_WARN_IF(!brElement)) {
-          return EditActionIgnored(NS_ERROR_FAILURE);
+          return NS_ERROR_FAILURE;
         }
         
         pointToCreateNewBrNode.Clear();
@@ -2267,15 +2273,15 @@ HTMLEditRules::SplitMailCites()
       HTMLEditorRef().IsEmptyNode(previousNodeOfSplitPoint, &bEmptyCite,
                                   true, false);
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      return EditActionIgnored(rv);
+      return rv;
     }
     if (bEmptyCite) {
       rv = HTMLEditorRef().DeleteNodeWithTransaction(*previousNodeOfSplitPoint);
       if (NS_WARN_IF(!CanHandleEditAction())) {
-        return EditActionIgnored(NS_ERROR_EDITOR_DESTROYED);
+        return NS_ERROR_EDITOR_DESTROYED;
       }
       if (NS_WARN_IF(NS_FAILED(rv))) {
-        return EditActionIgnored(rv);
+        return rv;
       }
     }
   }
@@ -2284,20 +2290,21 @@ HTMLEditRules::SplitMailCites()
     nsresult rv =
       HTMLEditorRef().IsEmptyNode(citeNode, &bEmptyCite, true, false);
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      return EditActionIgnored(rv);
+      return rv;
     }
     if (bEmptyCite) {
       rv = HTMLEditorRef().DeleteNodeWithTransaction(*citeNode);
       if (NS_WARN_IF(!CanHandleEditAction())) {
-        return EditActionIgnored(NS_ERROR_EDITOR_DESTROYED);
+        return NS_ERROR_EDITOR_DESTROYED;
       }
       if (NS_WARN_IF(NS_FAILED(rv))) {
-        return EditActionIgnored(rv);
+        return rv;
       }
     }
   }
 
-  return EditActionHandled();
+  *aHandled = true;
+  return NS_OK;
 }
 
 
@@ -7008,7 +7015,6 @@ HTMLEditRules::GetPromotedPoint(RulesEndpoint aWhere,
   
   if (aEditSubAction == EditSubAction::eInsertText ||
       aEditSubAction == EditSubAction::eInsertTextComingFromIME ||
-      aEditSubAction == EditSubAction::eInsertLineBreak ||
       aEditSubAction == EditSubAction::eInsertParagraphSeparator ||
       aEditSubAction == EditSubAction::eDeleteText) {
     bool isSpace, isNBSP;
@@ -7259,7 +7265,6 @@ HTMLEditRules::PromoteRange(nsRange& aRange,
 
   if (aEditSubAction == EditSubAction::eInsertText ||
       aEditSubAction == EditSubAction::eInsertTextComingFromIME ||
-      aEditSubAction == EditSubAction::eInsertLineBreak ||
       aEditSubAction == EditSubAction::eInsertParagraphSeparator ||
       aEditSubAction == EditSubAction::eDeleteText) {
      if (!startNode->IsContent() ||

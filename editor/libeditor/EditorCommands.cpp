@@ -1178,11 +1178,11 @@ InsertParagraphCommand::DoCommand(const char* aCommandName,
     return NS_ERROR_FAILURE;
   }
 
-  HTMLEditor* htmlEditor = editor->AsHTMLEditor();
-  if (!htmlEditor) {
-    return NS_OK; 
-  }
-  return htmlEditor->InsertParagraphSeparatorAsAction();
+  TextEditor* textEditor = editor->AsTextEditor();
+  MOZ_ASSERT(textEditor);
+  
+  
+  return textEditor->OnInputParagraphSeparator();
 }
 
 NS_IMETHODIMP
@@ -1244,7 +1244,9 @@ InsertLineBreakCommand::DoCommand(const char* aCommandName,
   if (!htmlEditor) {
     return NS_ERROR_FAILURE;
   }
-  return htmlEditor->InsertLineBreakAsAction();
+  
+  
+  return htmlEditor->OnInputLineBreak();
 }
 
 NS_IMETHODIMP

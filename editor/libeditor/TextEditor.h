@@ -190,7 +190,7 @@ public:
 
 
 
-  virtual nsresult InsertLineBreakAsAction();
+  nsresult OnInputParagraphSeparator();
 
   
 
@@ -379,7 +379,10 @@ protected:
 
 
 
-  nsresult InsertLineBreakAsSubAction();
+
+
+
+  nsresult InsertParagraphSeparatorAsAction();
 
   nsresult InsertTextAt(const nsAString& aStringToInsert,
                         nsINode* aDestinationNode,
