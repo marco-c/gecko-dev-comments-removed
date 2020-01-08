@@ -221,16 +221,6 @@ public:
 
     return LAYER_INACTIVE;
   }
-
-  
-  
-  virtual bool IsContentful() const override
-  {
-    nsHTMLCanvasFrame* f = static_cast<nsHTMLCanvasFrame*>(Frame());
-    HTMLCanvasElement* canvas =
-      HTMLCanvasElement::FromNode(f->GetContent());
-    return canvas->MaybeModified();
-  }
 };
 
 

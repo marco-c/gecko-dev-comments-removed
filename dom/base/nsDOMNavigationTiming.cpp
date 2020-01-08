@@ -52,8 +52,6 @@ nsDOMNavigationTiming::Clear()
   mDOMContentLoadedEventStart = TimeStamp();
   mDOMContentLoadedEventEnd = TimeStamp();
   mDOMComplete = TimeStamp();
-  mContentfulPaint = TimeStamp();
-  mNonBlankPaint = TimeStamp();
 
   mDocShellHasBeenActiveSinceNavigationStart = false;
 }
@@ -310,7 +308,7 @@ nsDOMNavigationTiming::TTITimeout(nsITimer* aTimer)
 {
   
   TimeStamp now = TimeStamp::Now();
-  MOZ_RELEASE_ASSERT(!mContentfulPaint.IsNull(), "TTI timeout with no contentful-paint?");
+  MOZ_RELEASE_ASSERT(!mNonBlankPaint.IsNull(), "TTI timeout with no non-blank-paint?");
 
   nsCOMPtr<nsIThread> mainThread = do_GetMainThread();
   TimeStamp lastLongTaskEnded;
@@ -329,6 +327,7 @@ nsDOMNavigationTiming::TTITimeout(nsITimer* aTimer)
   
   
   
+  
 
   
   
@@ -342,7 +341,7 @@ nsDOMNavigationTiming::TTITimeout(nsITimer* aTimer)
     mTTFI = MaxWithinWindowBeginningAtMin(lastLongTaskEnded, mDOMContentLoadedEventEnd,
                                           TimeDuration::FromMilliseconds(TTI_WINDOW_SIZE_MS));
     if (mTTFI.IsNull()) {
-      mTTFI = mContentfulPaint;
+      mTTFI = mNonBlankPaint;
     }
   }
   
@@ -400,6 +399,15 @@ nsDOMNavigationTiming::NotifyNonBlankPaintForRootContentDocument()
   }
 #endif
 
+  if (!mTTITimer) {
+    mTTITimer = NS_NewTimer();
+  }
+
+  
+  mTTITimer->InitWithNamedFuncCallback(TTITimeoutCallback, this, TTI_WINDOW_SIZE_MS,
+                                       nsITimer::TYPE_ONE_SHOT_LOW_PRIORITY,
+                                       "nsDOMNavigationTiming::TTITimeout");
+
   if (mDocShellHasBeenActiveSinceNavigationStart) {
     if (net::nsHttp::IsBeforeLastActiveTabLoadOptimization(mNavigationStart)) {
       Telemetry::AccumulateTimeDelta(Telemetry::TIME_TO_NON_BLANK_PAINT_NETOPT_MS,
@@ -415,42 +423,6 @@ nsDOMNavigationTiming::NotifyNonBlankPaintForRootContentDocument()
                                    mNavigationStart,
                                    mNonBlankPaint);
   }
-}
-
-void
-nsDOMNavigationTiming::NotifyContentfulPaintForRootContentDocument()
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(!mNavigationStart.IsNull());
-
-  if (!mContentfulPaint.IsNull()) {
-    return;
-  }
-
-  mContentfulPaint = TimeStamp::Now();
-
-#ifdef MOZ_GECKO_PROFILER
-  if (profiler_is_active()) {
-    TimeDuration elapsed = mContentfulPaint - mNavigationStart;
-    nsAutoCString spec;
-    if (mLoadedURI) {
-      mLoadedURI->GetSpec(spec);
-    }
-    nsPrintfCString marker("Contentful paint after %dms for URL %s, %s",
-                           int(elapsed.ToMilliseconds()), spec.get(),
-                           mDocShellHasBeenActiveSinceNavigationStart ? "foreground tab" : "this tab was inactive some of the time between navigation start and first non-blank paint");
-    profiler_add_marker(marker.get());
-  }
-#endif
-
-  if (!mTTITimer) {
-    mTTITimer = NS_NewTimer();
-  }
-
-  
-  mTTITimer->InitWithNamedFuncCallback(TTITimeoutCallback, this, TTI_WINDOW_SIZE_MS,
-                                       nsITimer::TYPE_ONE_SHOT_LOW_PRIORITY,
-                                       "nsDOMNavigationTiming::TTITimeout");
 }
 
 void
