@@ -256,6 +256,7 @@
 #ifdef MOZ_XUL
 #include "mozilla/dom/ListBoxObject.h"
 #include "mozilla/dom/MenuBoxObject.h"
+#include "mozilla/dom/ScrollBoxObject.h"
 #include "mozilla/dom/TreeBoxObject.h"
 #include "nsIXULWindow.h"
 #include "nsIDocShellTreeOwner.h"
@@ -3274,6 +3275,16 @@ nsIDocument::GetAllowPlugins()
   }
 
   return true;
+}
+
+bool
+nsDocument::IsElementAnimateEnabled(JSContext* aCx, JSObject* )
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  return nsContentUtils::IsSystemCaller(aCx) ||
+         nsContentUtils::AnimationsAPICoreEnabled() ||
+         nsContentUtils::AnimationsAPIElementAnimateEnabled();
 }
 
 bool
@@ -6317,6 +6328,8 @@ nsIDocument::GetBoxObjectFor(Element* aElement, ErrorResult& aRv)
       boxObject = new TreeBoxObject();
     } else if (tag == nsGkAtoms::listbox) {
       boxObject = new ListBoxObject();
+    } else if (tag == nsGkAtoms::scrollbox) {
+      boxObject = new ScrollBoxObject();
     } else {
       boxObject = new BoxObject();
     }
@@ -6755,7 +6768,7 @@ nsDOMAttributeMap::BlastSubtreeToPieces(nsINode* aNode)
   if (Element* element = Element::FromNode(aNode)) {
     if (const nsDOMAttributeMap* map = element->GetAttributeMap()) {
       while (true) {
-        nsCOMPtr<nsIAttribute> attr;
+        RefPtr<Attr> attr;
         {
           
           
@@ -6767,8 +6780,6 @@ nsDOMAttributeMap::BlastSubtreeToPieces(nsINode* aNode)
           }
           attr = iter.UserData();
         }
-        NS_ASSERTION(attr.get(),
-                     "non-nsIAttribute somehow made it into the hashmap?!");
 
         BlastSubtreeToPieces(attr);
 
