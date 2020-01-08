@@ -263,6 +263,9 @@ class FindLastHitPhase final : public NavigationPhase
   Maybe<ExecutionPoint> mEnd;
 
   
+  bool mIncludeEnd;
+
+  
   size_t mCounter;
 
   
@@ -283,11 +286,12 @@ class FindLastHitPhase final : public NavigationPhase
   InfallibleVector<TrackedPosition, 4, UntrackedAllocPolicy> mTrackedPositions;
 
   const TrackedPosition& FindTrackedPosition(const BreakpointPosition& aPos);
+  void CheckForRegionEnd(const ExecutionPoint& aPoint);
   void OnRegionEnd();
 
 public:
   
-  void Enter(const CheckpointId& aStart, const Maybe<ExecutionPoint>& aEnd);
+  void Enter(const CheckpointId& aStart, const Maybe<ExecutionPoint>& aEnd, bool aIncludeEnd);
 
   void ToString(nsAutoCString& aStr) override {
     aStr.AppendPrintf("FindLastHit");
@@ -571,13 +575,13 @@ PausedPhase::Resume(bool aForward)
       MOZ_RELEASE_ASSERT(start.mTemporary);
       start.mTemporary--;
     }
-    gNavigation->mFindLastHitPhase.Enter(start, Some(mPoint));
+    gNavigation->mFindLastHitPhase.Enter(start, Some(mPoint),  false);
   } else {
     
     MOZ_RELEASE_ASSERT(mPoint.mCheckpoint != CheckpointId::First);
 
     CheckpointId start(mPoint.mCheckpoint - 1);
-    gNavigation->mFindLastHitPhase.Enter(start, Nothing());
+    gNavigation->mFindLastHitPhase.Enter(start, Nothing(),  false);
   }
   Unreachable();
 }
@@ -907,12 +911,14 @@ ReachBreakpointPhase::PositionHit(const ExecutionPoint& aPoint)
 
 
 void
-FindLastHitPhase::Enter(const CheckpointId& aStart, const Maybe<ExecutionPoint>& aEnd)
+FindLastHitPhase::Enter(const CheckpointId& aStart, const Maybe<ExecutionPoint>& aEnd,
+                        bool aIncludeEnd)
 {
   MOZ_RELEASE_ASSERT(aEnd.isNothing() || aEnd.ref().HasPosition());
 
   mStart = aStart;
   mEnd = aEnd;
+  mIncludeEnd = aIncludeEnd;
   mCounter = 0;
   mTrackedPositions.clear();
 
@@ -962,9 +968,8 @@ FindLastHitPhase::AfterCheckpoint(const CheckpointId& aCheckpoint)
 void
 FindLastHitPhase::PositionHit(const ExecutionPoint& aPoint)
 {
-  if (mEnd.isSome() && mEnd.ref() == aPoint) {
-    OnRegionEnd();
-    Unreachable();
+  if (!mIncludeEnd) {
+    CheckForRegionEnd(aPoint);
   }
 
   ++mCounter;
@@ -975,6 +980,19 @@ FindLastHitPhase::PositionHit(const ExecutionPoint& aPoint)
       tracked.mLastHitCount = mCounter;
       break;
     }
+  }
+
+  if (mIncludeEnd) {
+    CheckForRegionEnd(aPoint);
+  }
+}
+
+void
+FindLastHitPhase::CheckForRegionEnd(const ExecutionPoint& aPoint)
+{
+  if (mEnd.isSome() && mEnd.ref() == aPoint) {
+    OnRegionEnd();
+    Unreachable();
   }
 }
 
@@ -1020,7 +1038,10 @@ FindLastHitPhase::OnRegionEnd()
       start.mTemporary--;
       ExecutionPoint end = gNavigation->LastTemporaryCheckpointLocation();
       if (end.HasPosition()) {
-        gNavigation->mFindLastHitPhase.Enter(start, Some(end));
+        
+        
+        
+        gNavigation->mFindLastHitPhase.Enter(start, Some(end),  true);
         Unreachable();
       } else {
         
