@@ -1,7 +1,9 @@
+
+
 load(libdir + "asm.js");
 
 setCachingEnabled(true);
-if (!isAsmJSCompilationAvailable() || !isCachingEnabled())
+if (!isCachingEnabled())
     quit();
 
 
