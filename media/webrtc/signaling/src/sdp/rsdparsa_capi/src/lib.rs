@@ -159,7 +159,6 @@ pub unsafe extern "C" fn sdp_add_media_section(session: *mut SdpSession,
         38 => SdpProtocolValue::UdpDtlsSctp,     
         39 => SdpProtocolValue::TcpDtlsSctp,     
         _ => {
-            println!("INVALID PROTOCOL");
           return NS_ERROR_INVALID_ARG;
       }
     };
