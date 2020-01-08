@@ -70,7 +70,7 @@ public:
   bool OnNotifyTrackingProtectionDisabled();
 
   
-  bool OnNotifyTrackingCookieBlocked();
+  bool OnNotifyTrackingCookieBlocked(uint32_t aRejectedReason);
 
   
   bool OnNotifyTrackingResource(bool aIsThirdParty);

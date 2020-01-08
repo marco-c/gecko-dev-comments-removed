@@ -592,7 +592,6 @@ nsHttpChannel::OnBeforeConnect()
     mConnectionInfo->SetBeConservative((mCaps & NS_HTTP_BE_CONSERVATIVE) || mBeConservative);
     mConnectionInfo->SetTlsFlags(mTlsFlags);
     mConnectionInfo->SetTrrUsed(mTRR);
-    mConnectionInfo->SetTrrDisabled(mCaps & NS_HTTP_DISABLE_TRR);
 
     
     gHttpHandler->OnBeforeConnect(this);
@@ -3898,7 +3897,7 @@ nsHttpChannel::OpenCacheEntryInternal(bool isHttps,
         extension.Append("TRR");
     }
 
-    if (!AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(this, mURI)) {
+    if (!AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(this, mURI, nullptr)) {
         nsCOMPtr<nsIURI> topWindowURI;
         rv = GetTopWindowURI(getter_AddRefs(topWindowURI));
         bool isDocument = false;

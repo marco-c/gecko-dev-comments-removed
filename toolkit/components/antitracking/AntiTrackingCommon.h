@@ -33,9 +33,17 @@ public:
   
   
   
+  
+  
+  
+  
+  
+  
+  
   static bool
   IsFirstPartyStorageAccessGrantedFor(nsPIDOMWindowInner* a3rdPartyTrackingWindow,
-                                      nsIURI* aURI);
+                                      nsIURI* aURI,
+                                      uint32_t* aRejectedReason);
 
   
   
@@ -49,8 +57,11 @@ public:
 
   
   
+  
+  
   static bool
-  IsFirstPartyStorageAccessGrantedFor(nsIHttpChannel* aChannel, nsIURI* aURI);
+  IsFirstPartyStorageAccessGrantedFor(nsIHttpChannel* aChannel, nsIURI* aURI,
+                                      uint32_t* aRejectedReason);
 
   
   
@@ -92,11 +103,17 @@ public:
   
   
   
+  
+  
+  
+  
+  
+  
   static void
-  NotifyRejection(nsIChannel* aChannel);
+  NotifyRejection(nsIChannel* aChannel, uint32_t aRejectedReason);
 
   static void
-  NotifyRejection(nsPIDOMWindowInner* aWindow);
+  NotifyRejection(nsPIDOMWindowInner* aWindow, uint32_t aRejectedReason);
 };
 
 } 

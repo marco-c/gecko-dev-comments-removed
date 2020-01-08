@@ -166,7 +166,8 @@ CookieServiceParent::TrackCookieLoad(nsIChannel *aChannel)
     
     if (isForeign &&
         AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(httpChannel,
-                                                                uri)) {
+                                                                uri,
+                                                                nullptr)) {
       storageAccessGranted = true;
     }
   }
