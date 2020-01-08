@@ -11,8 +11,6 @@
 
 namespace js {
 
-namespace jit { class CacheIRCompiler; }
-
 
 
 
@@ -59,8 +57,6 @@ class ShapedObject : public JSObject
   private:
     
     friend class js::jit::MacroAssembler;
-
-    friend class js::jit::CacheIRCompiler;
 
     static constexpr size_t offsetOfShape() {
         static_assert(offsetOfShapeOrExpando() == offsetof(shadow::Object, shape),

@@ -1622,10 +1622,6 @@ bool
 SetPropertyOnProto(JSContext* cx, HandleObject obj, HandleId id, HandleValue v,
                    HandleValue receiver, ObjectOpResult& result);
 
-bool
-AddOrUpdateSparseElementHelper(JSContext* cx, HandleArrayObject obj, int32_t int_id,
-                               HandleValue v, bool strict);
-
 
 
 
