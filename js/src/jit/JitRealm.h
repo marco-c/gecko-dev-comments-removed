@@ -623,12 +623,6 @@ void FinishInvalidation(FreeOp* fop, JSScript* script);
 
 
 
-#ifdef XP_WIN
-const unsigned WINDOWS_BIG_FRAME_TOUCH_INCREMENT = 4096 - 1;
-#endif
-
-
-
 
 
 
