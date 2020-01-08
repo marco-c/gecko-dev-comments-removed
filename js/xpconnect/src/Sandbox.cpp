@@ -586,8 +586,7 @@ SandboxCallableProxyHandler::call(JSContext* cx, JS::Handle<JSObject*> proxy,
 
     
     
-    RootedObject sandboxGlobal(cx,
-      js::GetGlobalForObjectCrossCompartment(sandboxProxy));
+    RootedObject sandboxGlobal(cx, JS::GetNonCCWObjectGlobal(sandboxProxy));
     MOZ_ASSERT(IsSandbox(sandboxGlobal));
 
     
