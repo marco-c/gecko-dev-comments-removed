@@ -17,8 +17,8 @@
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
-ChromeUtils.defineModuleGetter(this, "ContentWebRTC",
-  "resource:///modules/ContentWebRTC.jsm");
+ChromeUtils.defineModuleGetter(this, "WebRTCChild",
+  "resource:///actors/WebRTCChild.jsm");
 
 var gEMEUIObserver = function(subject, topic, data) {
   let win = subject.top;
@@ -52,7 +52,7 @@ const kWebRTCObserverTopics = ["getUserMedia:request",
                                "recording-window-ended"];
 
 function webRTCObserve(aSubject, aTopic, aData) {
-  ContentWebRTC.observe(aSubject, aTopic, aData);
+  WebRTCChild.observe(aSubject, aTopic, aData);
 }
 
 for (let topic of kWebRTCObserverTopics) {
