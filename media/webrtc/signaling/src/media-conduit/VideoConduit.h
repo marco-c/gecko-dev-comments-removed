@@ -144,7 +144,7 @@ public:
 
 
    MediaConduitErrorCode ConfigureRecvMediaCodecs(
-       const std::vector<VideoCodecConfig* >& codecConfigList) override;
+       const std::vector<UniquePtr<VideoCodecConfig>>& codecConfigList) override;
 
   
 

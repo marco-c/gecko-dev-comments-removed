@@ -447,7 +447,7 @@ public:
 
 
   virtual MediaConduitErrorCode ConfigureRecvMediaCodecs(
-      const std::vector<VideoCodecConfig* >& recvCodecConfigList) = 0;
+      const std::vector<UniquePtr<VideoCodecConfig>>& recvCodecConfigList) = 0;
 
   
 
@@ -564,7 +564,7 @@ public:
 
 
   virtual MediaConduitErrorCode ConfigureRecvMediaCodecs(
-                                const std::vector<AudioCodecConfig* >& recvCodecConfigList) = 0;
+      const std::vector<UniquePtr<AudioCodecConfig>>& recvCodecConfigList) = 0;
 
   virtual bool SetDtmfPayloadType(unsigned char type, int freq) = 0;
 

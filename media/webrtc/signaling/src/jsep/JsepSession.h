@@ -119,7 +119,7 @@ public:
   
   
   
-  virtual std::vector<JsepCodecDescription*>& Codecs() = 0;
+  virtual std::vector<UniquePtr<JsepCodecDescription>>& Codecs() = 0;
 
   template <class UnaryFunction>
   void ForEachCodec(UnaryFunction& function)

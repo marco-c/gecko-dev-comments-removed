@@ -626,8 +626,8 @@ class CompareCodecPriority {
       mPreferredCodec = os.str();
     }
 
-    bool operator()(JsepCodecDescription* lhs,
-                    JsepCodecDescription* rhs) const {
+    bool operator()(const UniquePtr<JsepCodecDescription>& lhs,
+                    const UniquePtr<JsepCodecDescription>& rhs) const {
       if (!mPreferredCodec.empty() &&
           lhs->mDefaultPt == mPreferredCodec &&
           rhs->mDefaultPt != mPreferredCodec) {
@@ -707,7 +707,7 @@ class ConfigureCodec {
       branch->GetBoolPref("media.peerconnection.dtmf.enabled", &mDtmfEnabled);
     }
 
-    void operator()(JsepCodecDescription* codec) const
+    void operator()(UniquePtr<JsepCodecDescription>& codec) const
     {
       switch (codec->mType) {
         case SdpMediaSection::kAudio:
@@ -809,7 +809,7 @@ class ConfigureRedCodec {
       
     }
 
-    void operator()(JsepCodecDescription* codec) const
+    void operator()(UniquePtr<JsepCodecDescription>& codec) const
     {
       if (codec->mType == SdpMediaSection::kVideo &&
           codec->mEnabled == false) {
@@ -855,20 +855,14 @@ PeerConnectionImpl::ConfigureJsepSessionCodecs() {
   mJsepSession->ForEachCodec(configurer);
 
   
-  std::vector<JsepCodecDescription*>& codecs = mJsepSession->Codecs();
-  JsepVideoCodecDescription* redCodec = nullptr;
-  for (auto codec : codecs) {
-    
-    
+  for (auto& codec : mJsepSession->Codecs()) {
     if (codec->mName == "red" && codec->mEnabled) {
-      redCodec = static_cast<JsepVideoCodecDescription*>(codec);
+      JsepVideoCodecDescription* redCodec =
+        static_cast<JsepVideoCodecDescription*>(codec.get());
+      ConfigureRedCodec configureRed(branch, &(redCodec->mRedundantEncodings));
+      mJsepSession->ForEachCodec(configureRed);
       break;
     }
-  }
-  
-  if (redCodec) {
-    ConfigureRedCodec configureRed(branch, &(redCodec->mRedundantEncodings));
-    mJsepSession->ForEachCodec(configureRed);
   }
 
   
@@ -948,7 +942,7 @@ PeerConnectionImpl::GetDatachannelParameters(
         return NS_ERROR_FAILURE;
       }
 
-      for (const JsepCodecDescription* codec : encoding.GetCodecs()) {
+      for (const auto& codec : encoding.GetCodecs()) {
         if (codec->mType != SdpMediaSection::kApplication) {
           CSFLogError(LOGTAG, "%s: Codec type for m=application was %u, this "
                               "is a bug.",
@@ -971,14 +965,12 @@ PeerConnectionImpl::GetDatachannelParameters(
         } else {
           *channels = WEBRTC_DATACHANNEL_STREAMS_DEFAULT;
         }
-        *localport =
-          static_cast<const JsepApplicationCodecDescription*>(codec)->mLocalPort;
-        *remoteport =
-          static_cast<const JsepApplicationCodecDescription*>(codec)->mRemotePort;
-        *remotemaxmessagesize = static_cast<const JsepApplicationCodecDescription*>
-          (codec)->mRemoteMaxMessageSize;
-        *mmsset = static_cast<const JsepApplicationCodecDescription*>
-          (codec)->mRemoteMMSSet;
+        const JsepApplicationCodecDescription* appCodec =
+          static_cast<const JsepApplicationCodecDescription*>(codec.get());
+        *localport = appCodec->mLocalPort;
+        *remoteport = appCodec->mRemotePort;
+        *remotemaxmessagesize = appCodec->mRemoteMaxMessageSize;
+        *mmsset = appCodec->mRemoteMMSSet;
         MOZ_ASSERT(!transceiver->mTransport.mTransportId.empty());
         *transportId = transceiver->mTransport.mTransportId;
         *client =

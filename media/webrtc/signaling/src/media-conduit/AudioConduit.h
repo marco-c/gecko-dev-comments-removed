@@ -94,7 +94,7 @@ public:
 
 
   virtual MediaConduitErrorCode ConfigureRecvMediaCodecs(
-    const std::vector<AudioCodecConfig* >& codecConfigList) override;
+    const std::vector<UniquePtr<AudioCodecConfig>>& codecConfigList) override;
 
   MediaConduitErrorCode
   SetLocalRTPExtensions(MediaSessionConduitLocalDirection aDirection,

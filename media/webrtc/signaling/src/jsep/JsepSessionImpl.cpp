@@ -129,8 +129,8 @@ JsepSessionImpl::AddTransceiver(RefPtr<JsepTransceiver> transceiver)
 #endif
   }
 
-  transceiver->mSendTrack.PopulateCodecs(mSupportedCodecs.values);
-  transceiver->mRecvTrack.PopulateCodecs(mSupportedCodecs.values);
+  transceiver->mSendTrack.PopulateCodecs(mSupportedCodecs);
+  transceiver->mRecvTrack.PopulateCodecs(mSupportedCodecs);
   
 
   mTransceivers.push_back(transceiver);
@@ -2076,7 +2076,7 @@ JsepSessionImpl::SetupDefaultCodecs()
   
   
   
-  mSupportedCodecs.values.push_back(new JsepAudioCodecDescription(
+  mSupportedCodecs.emplace_back(new JsepAudioCodecDescription(
       "109",
       "opus",
       48000,
@@ -2086,7 +2086,7 @@ JsepSessionImpl::SetupDefaultCodecs()
       40000
       ));
 
-  mSupportedCodecs.values.push_back(new JsepAudioCodecDescription(
+  mSupportedCodecs.emplace_back(new JsepAudioCodecDescription(
       "9",
       "G722",
       8000,
@@ -2096,7 +2096,7 @@ JsepSessionImpl::SetupDefaultCodecs()
 
   
   
-  mSupportedCodecs.values.push_back(
+  mSupportedCodecs.emplace_back(
       new JsepAudioCodecDescription("0",
                                     "PCMU",
                                     8000,
@@ -2105,7 +2105,7 @@ JsepSessionImpl::SetupDefaultCodecs()
                                     8 * 8000 * 1 
                                     ));
 
-  mSupportedCodecs.values.push_back(
+  mSupportedCodecs.emplace_back(
       new JsepAudioCodecDescription("8",
                                     "PCMA",
                                     8000,
@@ -2117,7 +2117,7 @@ JsepSessionImpl::SetupDefaultCodecs()
   
   
   
-  mSupportedCodecs.values.push_back(
+  mSupportedCodecs.emplace_back(
       new JsepAudioCodecDescription("101",
                                     "telephone-event",
                                     8000,
@@ -2128,70 +2128,69 @@ JsepSessionImpl::SetupDefaultCodecs()
 
   
   
-  JsepVideoCodecDescription* vp8 = new JsepVideoCodecDescription(
+  UniquePtr<JsepVideoCodecDescription> vp8(new JsepVideoCodecDescription(
       "120",
       "VP8",
       90000
-      );
+      ));
   
   vp8->mConstraints.maxFs = 12288; 
   vp8->mConstraints.maxFps = 60;
-  mSupportedCodecs.values.push_back(vp8);
+  mSupportedCodecs.push_back(std::move(vp8));
 
-  JsepVideoCodecDescription* vp9 = new JsepVideoCodecDescription(
+  UniquePtr<JsepVideoCodecDescription> vp9(new JsepVideoCodecDescription(
       "121",
       "VP9",
       90000
-      );
+      ));
   
   vp9->mConstraints.maxFs = 12288; 
   vp9->mConstraints.maxFps = 60;
-  mSupportedCodecs.values.push_back(vp9);
+  mSupportedCodecs.push_back(std::move(vp9));
 
-  JsepVideoCodecDescription* h264_1 = new JsepVideoCodecDescription(
+  UniquePtr<JsepVideoCodecDescription> h264_1(new JsepVideoCodecDescription(
       "126",
       "H264",
       90000
-      );
+      ));
   h264_1->mPacketizationMode = 1;
   
   h264_1->mProfileLevelId = 0x42E00D;
-  mSupportedCodecs.values.push_back(h264_1);
+  mSupportedCodecs.push_back(std::move(h264_1));
 
-  JsepVideoCodecDescription* h264_0 = new JsepVideoCodecDescription(
+  UniquePtr<JsepVideoCodecDescription> h264_0(new JsepVideoCodecDescription(
       "97",
       "H264",
       90000
-      );
+      ));
   h264_0->mPacketizationMode = 0;
   
   h264_0->mProfileLevelId = 0x42E00D;
-  mSupportedCodecs.values.push_back(h264_0);
+  mSupportedCodecs.push_back(std::move(h264_0));
 
-  JsepVideoCodecDescription* red = new JsepVideoCodecDescription(
-      "122", 
-      "red", 
-      90000  
-      );
-  mSupportedCodecs.values.push_back(red);
-
-  JsepVideoCodecDescription* ulpfec = new JsepVideoCodecDescription(
+  UniquePtr<JsepVideoCodecDescription> ulpfec(new JsepVideoCodecDescription(
       "123",    
       "ulpfec", 
       90000     
-      );
-  mSupportedCodecs.values.push_back(ulpfec);
+      ));
+  mSupportedCodecs.push_back(std::move(ulpfec));
 
-  mSupportedCodecs.values.push_back(new JsepApplicationCodecDescription(
+  mSupportedCodecs.emplace_back(new JsepApplicationCodecDescription(
       "webrtc-datachannel",
       WEBRTC_DATACHANNEL_STREAMS_DEFAULT,
       WEBRTC_DATACHANNEL_PORT_DEFAULT,
       WEBRTC_DATACHANNEL_MAX_MESSAGE_SIZE_LOCAL
       ));
 
+  UniquePtr<JsepVideoCodecDescription> red(new JsepVideoCodecDescription(
+      "122", 
+      "red", 
+      90000  
+      ));
   
   
-  red->UpdateRedundantEncodings(mSupportedCodecs.values);
+  red->UpdateRedundantEncodings(mSupportedCodecs);
+  mSupportedCodecs.push_back(std::move(red));
 }
 
 void
