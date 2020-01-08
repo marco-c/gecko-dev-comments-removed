@@ -5,20 +5,33 @@ var cacheName = 'urls-' + self.registration.scope;
 
 var waitUntilPromiseList = [];
 
-self.addEventListener('message', function(event) {
-    var urls;
-    event.waitUntil(Promise.all(waitUntilPromiseList).then(function() {
-      waitUntilPromiseList = [];
-      return caches.open(cacheName);
-    }).then(function(cache) {
-      return cache.keys();
-    }).then(function(requestList) {
-      urls = requestList.map(function(request) { return request.url; });
-      return caches.delete(cacheName);
-    }).then(function() {
-      event.data.port.postMessage({urls: urls});
-    }));
-  });
+async function getRequestInfos(event) {
+  
+  await Promise.all(waitUntilPromiseList);
+  waitUntilPromiseList = [];
+
+  
+  const cache = await caches.open(cacheName);
+  const requestList = await cache.keys();
+  const requestInfos = [];
+  for (let i = 0; i < requestList.length; i++) {
+    requestInfos[i] = {
+      url: requestList[i].url,
+    };
+  }
+  await caches.delete(cacheName);
+
+  event.data.port.postMessage({requestInfos});
+}
+
+self.addEventListener('message', async function(event) {
+  if (event.data.command == 'getRequestInfos') {
+    event.waitUntil(getRequestInfos(event));
+    return;
+  }
+
+  
+});
 
 function get_query_params(url) {
   var search = (new URL(url)).search;
