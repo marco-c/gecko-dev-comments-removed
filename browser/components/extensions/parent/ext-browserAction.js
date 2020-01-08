@@ -72,7 +72,8 @@ this.browserAction = class extends ExtensionAPI {
       enabled: true,
       title: options.default_title || extension.name,
       badgeText: "",
-      badgeBackgroundColor: null,
+      badgeBackgroundColor: [0xd9, 0, 0, 255],
+      badgeDefaultColor: [255, 255, 255, 255],
       badgeTextColor: null,
       popup: options.default_popup || "",
       area: browserAreas[options.default_area || "navbar"],
@@ -442,21 +443,11 @@ this.browserAction = class extends ExtensionAPI {
         node.setAttribute("disabled", "true");
       }
 
-      let {badgeBackgroundColor, badgeTextColor} = tabData;
-      let badgeStyle = [];
-      if (badgeBackgroundColor) {
-        let [r, g, b, a] = badgeBackgroundColor;
-        badgeStyle.push(`background-color: rgba(${r}, ${g}, ${b}, ${a / 255})`);
-      }
-      if (badgeTextColor) {
-        let [r, g, b, a] = badgeTextColor;
-        badgeStyle.push(`color: rgba(${r}, ${g}, ${b}, ${a / 255})`);
-      }
-      if (badgeStyle.length) {
-        node.setAttribute("badgeStyle", badgeStyle.join("; "));
-      } else {
-        node.removeAttribute("badgeStyle");
-      }
+      let serializeColor = ([r, g, b, a]) => `rgba(${r}, ${g}, ${b}, ${a / 255})`;
+      node.setAttribute("badgeStyle", [
+        `background-color: ${serializeColor(tabData.badgeBackgroundColor)}`,
+        `color: ${serializeColor(this.getTextColor(tabData))}`,
+      ].join("; "));
 
       let style = this.iconData.get(tabData.icon);
       node.setAttribute("style", style);
@@ -574,6 +565,8 @@ this.browserAction = class extends ExtensionAPI {
 
 
 
+
+
   setProperty(details, prop, value) {
     let {target, values} = this.getContextData(details);
     if (value === null) {
@@ -583,6 +576,54 @@ this.browserAction = class extends ExtensionAPI {
     }
 
     this.updateOnChange(target);
+    return values;
+  }
+
+  
+
+
+
+
+
+
+  getTextColor(values) {
+    
+    let {badgeTextColor} = values;
+    if (badgeTextColor) {
+      return badgeTextColor;
+    }
+
+    
+    let {badgeDefaultColor} = values;
+    if (badgeDefaultColor) {
+      return badgeDefaultColor;
+    }
+
+    
+    
+    let [r, g, b] = values.badgeBackgroundColor.slice(0, 3).map(function(channel) {
+      channel /= 255;
+      if (channel <= 0.03928) {
+        return channel / 12.92;
+      }
+      return ((channel + 0.055) / 1.055) ** 2.4;
+    });
+    let lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+
+    
+    
+    
+    
+    
+    let channel = 1.05 * 0.05 < (lum + 0.05) ** 2 ? 0 : 255;
+    let result = [channel, channel, channel, 255];
+
+    
+    while (!Object.getOwnPropertyDescriptor(values, "badgeDefaultColor")) {
+      values = Object.getPrototypeOf(values);
+    }
+    values.badgeDefaultColor = result;
+    return result;
   }
 
   
@@ -692,12 +733,18 @@ this.browserAction = class extends ExtensionAPI {
 
         setBadgeBackgroundColor: function(details) {
           let color = parseColor(details.color, "background");
-          browserAction.setProperty(details, "badgeBackgroundColor", color);
+          let values = browserAction.setProperty(details, "badgeBackgroundColor", color);
+          if (color === null) {
+            
+            delete values.badgeDefaultColor;
+          } else {
+            
+            values.badgeDefaultColor = null;
+          }
         },
 
         getBadgeBackgroundColor: function(details, callback) {
-          let color = browserAction.getProperty(details, "badgeBackgroundColor");
-          return color || [0xd9, 0, 0, 255];
+          return browserAction.getProperty(details, "badgeBackgroundColor");
         },
 
         setBadgeTextColor: function(details) {
@@ -705,9 +752,9 @@ this.browserAction = class extends ExtensionAPI {
           browserAction.setProperty(details, "badgeTextColor", color);
         },
 
-        getBadgeTextColor: function(details, callback) {
-          let color = browserAction.getProperty(details, "badgeTextColor");
-          return color || [255, 255, 255, 255];
+        getBadgeTextColor: function(details) {
+          let {values} = browserAction.getContextData(details);
+          return browserAction.getTextColor(values);
         },
 
         openPopup: function() {
