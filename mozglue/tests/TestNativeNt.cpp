@@ -4,7 +4,7 @@
 
 
 
-#include "NativeNt.h"
+#include "mozilla/NativeNt.h"
 #include "mozilla/UniquePtr.h"
 
 #include <stdio.h>
