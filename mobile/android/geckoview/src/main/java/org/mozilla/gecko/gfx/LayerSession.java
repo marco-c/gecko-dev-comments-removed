@@ -152,7 +152,6 @@ public class LayerSession {
     protected final Compositor mCompositor = new Compositor();
 
     
-    private final GeckoDisplay mDisplay = new GeckoDisplay(this);
     private PanZoomController mNPZC;
     private OverscrollEdgeEffect mOverscroll;
     private DynamicToolbarAnimator mToolbar;
@@ -172,13 +171,6 @@ public class LayerSession {
     private float mViewportLeft;
     private float mViewportTop;
     private float mViewportZoom = 1.0f;
-
-     GeckoDisplay getDisplay() {
-        if (DEBUG) {
-            ThreadUtils.assertOnUiThread();
-        }
-        return mDisplay;
-    }
 
     
 
@@ -535,7 +527,7 @@ public class LayerSession {
         }
     }
 
-     void onSurfaceChanged(final Surface surface, final int width,
+    public void onSurfaceChanged(final Surface surface, final int width,
                                         final int height) {
         ThreadUtils.assertOnUiThread();
 
@@ -556,7 +548,7 @@ public class LayerSession {
         onWindowBoundsChanged();
     }
 
-     void onSurfaceDestroyed() {
+    public void onSurfaceDestroyed() {
         ThreadUtils.assertOnUiThread();
 
         if (mCompositorReady) {
@@ -569,7 +561,7 @@ public class LayerSession {
         mSurface = null;
     }
 
-     void onScreenOriginChanged(final int left, final int top) {
+    public void onScreenOriginChanged(final int left, final int top) {
         ThreadUtils.assertOnUiThread();
 
         if (mLeft == left && mTop == top) {
@@ -579,35 +571,5 @@ public class LayerSession {
         mLeft = left;
         mTop = top;
         onWindowBoundsChanged();
-    }
-
-    
-
-
-
-
-
-
-
-    public @NonNull GeckoDisplay acquireDisplay() {
-        ThreadUtils.assertOnUiThread();
-
-        return mDisplay;
-    }
-
-    
-
-
-
-
-
-
-
-    public void releaseDisplay(final @NonNull GeckoDisplay display) {
-        ThreadUtils.assertOnUiThread();
-
-        if (display != mDisplay) {
-            throw new IllegalArgumentException("Display not attached");
-        }
     }
 }

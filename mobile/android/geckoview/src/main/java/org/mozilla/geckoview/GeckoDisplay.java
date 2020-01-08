@@ -1,0 +1,62 @@
+
+
+
+
+
+
+package org.mozilla.geckoview;
+
+import android.view.Surface;
+
+
+
+
+
+
+
+public class GeckoDisplay {
+    private final GeckoSession session;
+
+     GeckoDisplay(final GeckoSession session) {
+        this.session = session;
+    }
+
+    
+
+
+
+
+
+
+
+
+    public void surfaceChanged(Surface surface, int width, int height) {
+        if (session.getDisplay() == this) {
+            session.onSurfaceChanged(surface, width, height);
+        }
+    }
+
+    
+
+
+
+
+    public void surfaceDestroyed() {
+        if (session.getDisplay() == this) {
+            session.onSurfaceDestroyed();
+        }
+    }
+
+    
+
+
+
+
+
+
+    public void screenOriginChanged(final int left, final int top) {
+        if (session.getDisplay() == this) {
+            session.onScreenOriginChanged(left, top);
+        }
+    }
+}
