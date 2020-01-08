@@ -21,6 +21,9 @@ import java.io.Closeable;
 
 
 
+
+
+
 public final class StrictModeContext implements Closeable {
     private final StrictMode.ThreadPolicy mThreadPolicy;
     private final StrictMode.VmPolicy mVmPolicy;
@@ -50,6 +53,7 @@ public final class StrictModeContext implements Closeable {
     }
 
     
+
 
 
     public static StrictModeContext allowDiskWrites() {
