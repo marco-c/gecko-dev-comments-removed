@@ -1,5 +1,7 @@
 
 
+from __future__ import absolute_import, print_function
+
 import argparse
 import difflib
 import hashlib
@@ -19,37 +21,44 @@ The 'channel_prefix' list controls which channels a transform may be used for, w
 One or more:
 A 'deletion' specifies a start of line to match on, removing the whole line
 A 'substitution' is a list of full string to match and its replacement
-
-Future note - this may need to move into the tree to make staging releases or release-on-try easier
 """
 TRANSFORMS = [
     
     {
         
         
-        'files': ['defaults/pref/channel-prefs.js', 'Contents/Resources/defaults/pref/channel-prefs.js'],
+        'files': [
+            'defaults/pref/channel-prefs.js',
+            'Contents/Resources/defaults/pref/channel-prefs.js',
+        ],
         'channel_prefix': ['aurora', 'beta', 'release', 'esr'],
         'side': 'source',
         'deletion': '//@line 6 "',
     },
     {
         
-        'files': ['defaults/pref/channel-prefs.js', 'Contents/Resources/defaults/pref/channel-prefs.js'],
+        'files': [
+            'defaults/pref/channel-prefs.js',
+            'Contents/Resources/defaults/pref/channel-prefs.js',
+        ],
         'channel_prefix': ['beta'],
         'side': 'target',
         'substitution': [
             'pref("app.update.channel", "release");\n',
-            'pref("app.update.channel", "beta");\n'
+            'pref("app.update.channel", "beta");\n',
         ],
     },
     {
         
-        'files': ['defaults/pref/channel-prefs.js', 'Contents/Resources/defaults/pref/channel-prefs.js'],
+        'files': [
+            'defaults/pref/channel-prefs.js',
+            'Contents/Resources/defaults/pref/channel-prefs.js',
+        ],
         'channel_prefix': ['beta'],
         'side': 'source',
         'substitution': [
             'pref("app.update.channel", "release");\n',
-            'pref("app.update.channel", "beta");\n'
+            'pref("app.update.channel", "beta");\n',
         ],
     },
     
@@ -62,7 +71,7 @@ TRANSFORMS = [
         'side': 'target',
         'substitution': [
             'ACCEPTED_MAR_CHANNEL_IDS=firefox-mozilla-release\n',
-            'ACCEPTED_MAR_CHANNEL_IDS=firefox-mozilla-beta,firefox-mozilla-release\n'
+            'ACCEPTED_MAR_CHANNEL_IDS=firefox-mozilla-beta,firefox-mozilla-release\n',
         ],
     },
     {
@@ -74,11 +83,10 @@ TRANSFORMS = [
         'side': 'source',
         'substitution': [
             'ACCEPTED_MAR_CHANNEL_IDS=firefox-mozilla-release\n',
-            'ACCEPTED_MAR_CHANNEL_IDS=firefox-mozilla-beta,firefox-mozilla-release\n'
+            'ACCEPTED_MAR_CHANNEL_IDS=firefox-mozilla-beta,firefox-mozilla-release\n',
         ],
     },
 ]
-
 
 
 def walk_dir(path):
@@ -140,9 +148,13 @@ def compare_common_files(files, channel, source_dir, target_dir):
                 'target': open(target_file).readlines(),
             }
 
-            transforms = [t for t in TRANSFORMS if filename in t['files'] and
-                          channel.startswith(tuple(t['channel_prefix']))]
-            logging.debug('Got {} transform(s) to consider for {}'.format(len(transforms), filename))
+            transforms = [
+                t for t in TRANSFORMS
+                if filename in t['files']
+                and channel.startswith(tuple(t['channel_prefix']))
+            ]
+            logging.debug(
+                'Got {} transform(s) to consider for {}'.format(len(transforms), filename))
             for transform in transforms:
                 side = transform['side']
 
@@ -170,7 +182,8 @@ def compare_common_files(files, channel, source_dir, target_dir):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser('Compare two directories recursively, with transformations for expected diffs')
+    parser = argparse.ArgumentParser(
+        'Compare two directories recursively, with transformations for expected diffs')
     parser.add_argument('source', help='Directory containing updated Firefox')
     parser.add_argument('target', help='Directory containing expected Firefox')
     parser.add_argument('channel', help='Update channel used')
@@ -194,12 +207,14 @@ if __name__ == '__main__':
 
     dir_list_diff = compare_listings(source_dirs, target_dirs, 'Directories', source, target)
     file_list_diff = compare_listings(source_files, target_files, 'Files', source, target)
-    file_diff = compare_common_files(set(source_files) & set(target_files), args.channel, source, target)
+    file_diff = compare_common_files(
+        set(source_files) & set(target_files), args.channel, source, target)
 
     if file_diff:
         
         sys.exit(2)
     elif dir_list_diff or file_list_diff:
+        
         
         sys.exit(2)
     else:
