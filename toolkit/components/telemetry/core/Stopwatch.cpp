@@ -230,6 +230,12 @@ Timers::Timers()
 
   mTimers = JS::NewMapObject(jsapi.cx());
   MOZ_RELEASE_ASSERT(mTimers);
+
+  
+  
+  if (recordreplay::IsRecordingOrReplaying()) {
+    mSuppressErrors = true;
+  }
 }
 
 JSObject*
