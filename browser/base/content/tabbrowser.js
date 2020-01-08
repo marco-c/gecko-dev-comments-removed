@@ -149,8 +149,6 @@ window._gBrowser = {
 
   _clearMultiSelectionLocked: false,
 
-  _clearMultiSelectionLockedOnce: false,
-
   
 
 
@@ -456,22 +454,18 @@ window._gBrowser = {
 
   _setFindbarData() {
     
-    let initialProcessData = Services.ppmm.initialProcessData;
-    if (!initialProcessData.findBarShortcutData) {
+    let {sharedData} = Services.ppmm;
+    if (!sharedData.has("Findbar:Shortcut")) {
       let keyEl = document.getElementById("key_find");
       let mods = keyEl.getAttribute("modifiers")
         .replace(/accel/i, AppConstants.platform == "macosx" ? "meta" : "control");
-      initialProcessData.findBarShortcutData = {
+      sharedData.set("Findbar:Shortcut", {
         key: keyEl.getAttribute("key"),
-        modifiers: {
-          shiftKey: mods.includes("shift"),
-          ctrlKey: mods.includes("control"),
-          altKey: mods.includes("alt"),
-          metaKey: mods.includes("meta"),
-        },
-      };
-      Services.ppmm.broadcastAsyncMessage("Findbar:ShortcutData",
-        initialProcessData.findBarShortcutData);
+        shiftKey: mods.includes("shift"),
+        ctrlKey: mods.includes("control"),
+        altKey: mods.includes("alt"),
+        metaKey: mods.includes("meta"),
+      });
     }
   },
 
@@ -3690,10 +3684,6 @@ window._gBrowser = {
 
   clearMultiSelectedTabs(updatePositionalAttributes) {
     if (this._clearMultiSelectionLocked) {
-      if (this._clearMultiSelectionLockedOnce) {
-        this._clearMultiSelectionLockedOnce = false;
-        this._clearMultiSelectionLocked = false;
-      }
       return;
     }
 
@@ -3710,11 +3700,6 @@ window._gBrowser = {
     if (updatePositionalAttributes) {
       this.tabContainer._setPositionalAttributes();
     }
-  },
-
-  lockClearMultiSelectionOnce() {
-    this._clearMultiSelectionLockedOnce = true;
-    this._clearMultiSelectionLocked = true;
   },
 
   
