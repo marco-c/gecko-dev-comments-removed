@@ -79,6 +79,11 @@ public:
   
 
 
+  bool IsTestMode();
+
+  
+
+
   nsPIDOMWindowOuter* GetFocusedWindow() const { return mFocusedWindow; }
 
   
