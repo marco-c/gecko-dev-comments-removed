@@ -76,7 +76,7 @@ ImageBlockingPolicy.prototype = {
         }
 
         
-        return Ci.nsIContentPolicy.REJECT;
+        return Ci.nsIContentPolicy.REJECT_REQUEST;
       }
     }
 
