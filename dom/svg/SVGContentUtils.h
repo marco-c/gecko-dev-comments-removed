@@ -36,8 +36,6 @@ class SVGSVGElement;
 class SVGViewportElement;
 }  
 
-}  
-
 #define SVG_ZERO_LENGTH_PATH_FIX_FACTOR 512
 
 
@@ -75,20 +73,15 @@ enum SVGTransformTypes {
 
 class SVGContentUtils {
  public:
-  typedef mozilla::ComputedStyle ComputedStyle;
   typedef mozilla::gfx::Float Float;
   typedef mozilla::gfx::Matrix Matrix;
   typedef mozilla::gfx::Rect Rect;
   typedef mozilla::gfx::StrokeOptions StrokeOptions;
-  typedef mozilla::SVGAnimatedPreserveAspectRatio
-      SVGAnimatedPreserveAspectRatio;
-  typedef mozilla::SVGPreserveAspectRatio SVGPreserveAspectRatio;
 
   
 
 
-  static mozilla::dom::SVGSVGElement* GetOuterSVGElement(
-      nsSVGElement* aSVGElement);
+  static dom::SVGSVGElement* GetOuterSVGElement(nsSVGElement* aSVGElement);
 
   
 
@@ -343,5 +336,7 @@ class SVGContentUtils {
 
   static bool ShapeTypeHasNoCorners(const nsIContent* aContent);
 };
+
+}  
 
 #endif
