@@ -55,6 +55,7 @@ class ObjectBox;
     F(PostIncrement) \
     F(PreDecrement) \
     F(PostDecrement) \
+    F(PropertyName) \
     F(Dot) \
     F(Elem) \
     F(Array) \
@@ -434,6 +435,7 @@ IsTypeofKind(ParseNodeKind kind)
 
 
 
+
 enum ParseNodeArity
 {
     PN_NULLARY,                         
@@ -571,7 +573,6 @@ class ParseNode
                 FunctionBox* funbox;    
             };
             ParseNode*  expr;           
-
 
         } name;
         struct {
@@ -1176,30 +1177,33 @@ class RegExpLiteral : public NullaryNode
     }
 };
 
-class PropertyAccess : public ParseNode
+class PropertyAccess : public BinaryNode
 {
   public:
-    PropertyAccess(ParseNode* lhs, PropertyName* name, uint32_t begin, uint32_t end)
-      : ParseNode(ParseNodeKind::Dot, JSOP_NOP, PN_NAME, TokenPos(begin, end))
+    
+
+
+
+    PropertyAccess(ParseNode* lhs, ParseNode* name, uint32_t begin, uint32_t end)
+      : BinaryNode(ParseNodeKind::Dot, JSOP_NOP, TokenPos(begin, end), lhs, name)
     {
         MOZ_ASSERT(lhs != nullptr);
         MOZ_ASSERT(name != nullptr);
-        pn_u.name.expr = lhs;
-        pn_u.name.atom = name;
     }
 
     static bool test(const ParseNode& node) {
         bool match = node.isKind(ParseNodeKind::Dot);
-        MOZ_ASSERT_IF(match, node.isArity(PN_NAME));
+        MOZ_ASSERT_IF(match, node.isArity(PN_BINARY));
+        MOZ_ASSERT_IF(match, node.pn_right->isKind(ParseNodeKind::PropertyName));
         return match;
     }
 
     ParseNode& expression() const {
-        return *pn_u.name.expr;
+        return *pn_u.binary.left;
     }
 
     PropertyName& name() const {
-        return *pn_u.name.atom->asPropertyName();
+        return *pn_u.binary.right->pn_atom->asPropertyName();
     }
 
     bool isSuper() const {

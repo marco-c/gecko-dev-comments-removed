@@ -347,6 +347,7 @@ ContainsHoistedDeclaration(JSContext* cx, ParseNode* node, bool* result)
       case ParseNodeKind::Comma:
       case ParseNodeKind::Array:
       case ParseNodeKind::Object:
+      case ParseNodeKind::PropertyName:
       case ParseNodeKind::Dot:
       case ParseNodeKind::Elem:
       case ParseNodeKind::Arguments:
@@ -1254,7 +1255,8 @@ FoldElement(JSContext* cx, ParseNode** nodePtr, PerHandlerParser<FullParseHandle
 
     
     
-    ParseNode* dottedAccess = parser.newPropertyAccess(expr, name, node->pn_pos.end);
+    ParseNode* nameNode = parser.newPropertyName(name, key->pn_pos);
+    ParseNode* dottedAccess = parser.newPropertyAccess(expr, nameNode);
     if (!dottedAccess)
         return false;
     dottedAccess->setInParens(node->isInParens());
@@ -1500,14 +1502,14 @@ static bool
 FoldDottedProperty(JSContext* cx, ParseNode* node, PerHandlerParser<FullParseHandler>& parser)
 {
     MOZ_ASSERT(node->isKind(ParseNodeKind::Dot));
-    MOZ_ASSERT(node->isArity(PN_NAME));
+    MOZ_ASSERT(node->isArity(PN_BINARY));
 
     
     
-    ParseNode** nested = &node->pn_expr;
+    ParseNode** nested = &node->pn_left;
     while ((*nested)->isKind(ParseNodeKind::Dot)) {
-        MOZ_ASSERT((*nested)->isArity(PN_NAME));
-        nested = &(*nested)->pn_expr;
+        MOZ_ASSERT((*nested)->isArity(PN_BINARY));
+        nested = &(*nested)->pn_left;
     }
 
     return Fold(cx, nested, parser);
@@ -1797,6 +1799,9 @@ Fold(JSContext* cx, ParseNode** pnp, PerHandlerParser<FullParseHandler>& parser)
       case ParseNodeKind::Label:
         MOZ_ASSERT(pn->isArity(PN_NAME));
         return Fold(cx, &pn->pn_expr, parser);
+
+      case ParseNodeKind::PropertyName:
+        MOZ_CRASH("unreachable, handled by ::Dot");
 
       case ParseNodeKind::Dot:
         return FoldDottedProperty(cx, pn, parser);
