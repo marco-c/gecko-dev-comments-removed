@@ -193,6 +193,11 @@ private:
 
   wr::usize mBuilderDumpIndex;
   wr::usize mDumpIndent;
+
+  
+  
+  Maybe<wr::WrAnimationProperty> mZoomProp;
+
 public:
   
   
