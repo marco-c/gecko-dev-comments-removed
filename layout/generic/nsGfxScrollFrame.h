@@ -395,9 +395,9 @@ class ScrollFrameHelper : public nsIReflowCallback {
   
   
   
-  void AdjustScrollbarRectForResizer(nsIFrame* aFrame,
-                                     nsPresContext* aPresContext, nsRect& aRect,
-                                     bool aHasResizer, bool aVertical);
+  void AdjustScrollbarRectForResizer(
+      nsIFrame* aFrame, nsPresContext* aPresContext, nsRect& aRect,
+      bool aHasResizer, mozilla::layers::ScrollDirection aDirection);
   
   bool HasResizer() { return mResizerBox && !mCollapsedResizer; }
   void LayoutScrollbars(nsBoxLayoutState& aState, const nsRect& aContentArea,
