@@ -149,7 +149,7 @@ impl Generics {
         
         if self.where_clause.is_none() {
             self.where_clause = Some(WhereClause {
-                where_token: Default::default(),
+                where_token: <Token![where]>::default(),
                 predicates: Punctuated::new(),
             });
         }

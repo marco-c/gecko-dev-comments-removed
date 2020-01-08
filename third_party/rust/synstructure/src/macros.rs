@@ -4,9 +4,11 @@
 
 
 pub use syn::{parse_str, parse, DeriveInput};
-pub use quote::Tokens;
 pub use proc_macro::TokenStream as TokenStream;
 pub use proc_macro2::TokenStream as TokenStream2;
+
+
+
 
 
 
@@ -100,6 +102,7 @@ macro_rules! decl_derive {
 
 
 
+
 #[macro_export]
 macro_rules! test_derive {
     ($name:path { $($i:tt)* } expands to { $($o:tt)* }) => {
@@ -126,10 +129,8 @@ macro_rules! test_derive {
             let expected = stringify!( $($o)* )
                 .parse::<$crate::macros::TokenStream2>()
                 .expect("output should be a valid TokenStream");
-            let mut expected_toks = $crate::macros::Tokens::new();
-            expected_toks.append_all(expected);
-
-            if res != expected_toks {
+            let mut expected_toks = $crate::macros::TokenStream2::from(expected);
+            if res.to_string() != expected_toks.to_string() {
                 panic!("\
 test_derive failed:
 expected:
@@ -149,6 +150,9 @@ got:
         }
     };
 }
+
+
+
 
 
 
@@ -378,7 +382,7 @@ macro_rules! simple_derive {
             ]
         )*]
     ) => {
-        fn $iname(mut st: $crate::Structure) -> $crate::macros::Tokens {
+        fn $iname(mut st: $crate::Structure) -> $crate::macros::TokenStream2 {
             let _ = &mut st; // Silence the unused mut warning
 
             // Filter/transform the `Structure` object before cloning it for
