@@ -1071,20 +1071,26 @@ class JSTerm extends Component {
     const {editor, inputNode} = this;
     const frameActor = this.getFrameActor(this.SELECTED_FRAME);
 
+    const cursor = this.getSelectionStart();
+
+    
+    
+    
+    
     
     if (
       !inputValue ||
       (inputNode && inputNode.selectionStart != inputNode.selectionEnd) ||
       (editor && editor.getSelection()) ||
-      (this.lastInputValue === inputValue && frameActor === this._lastFrameActorId)
+      (this.lastInputValue === inputValue && frameActor === this._lastFrameActorId) ||
+      /^[a-zA-Z0-9_$]/.test(inputValue.substring(cursor))
     ) {
       this.clearCompletion();
       this.emit("autocomplete-updated");
       return;
     }
 
-    const cursor = this.getSelectionStart();
-    const input = inputValue.substring(0, cursor);
+    const input = this.getInputValueBeforeCursor();
 
     
     
