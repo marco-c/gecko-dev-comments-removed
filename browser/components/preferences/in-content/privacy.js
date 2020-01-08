@@ -212,6 +212,13 @@ var gPrivacyPane = {
       Services.obs.notifyObservers(window, "privacy-pane-tp-ui-updated");
     }
 
+    
+    
+    
+    let defaults = Services.prefs.getDefaultBranch("");
+    document.getElementById("contentBlockingCategories").toggleAttribute("fallback-ui",
+      defaults.getIntPref("network.cookie.cookieBehavior") === Ci.nsICookieService.BEHAVIOR_ACCEPT);
+
     if (isLocked) {
       
       hideControllingExtension(TRACKING_PROTECTION_KEY);
