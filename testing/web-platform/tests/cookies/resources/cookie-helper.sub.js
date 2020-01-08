@@ -184,23 +184,9 @@ return credFetch(origin + "/cookies/resources/dropSecure.py")
 
 
 
-function create_cookie_from_js(name, value, days, secure_flag) {
-  if (days) {
-    var date = new Date();
-    date.setTime(date.getTime()+(days*24*60*60*1000));
-    var expires = "; expires="+date.toGMTString();
-  }
-  else var expires = "";
-
-  var secure = "";
-  if (secure_flag == true) {
-    secure = "secure; ";
-  }
-  document.cookie = name+"="+value+expires+"; "+secure+"path=/";
-}
-
-
 function erase_cookie_from_js(name) {
-  create_cookie_from_js(name,"",-1);
-  assert_dom_cookie(name, "", false);
+  let secure = self.location.protocol == "https:" ? "Secure" : "";
+  document.cookie = `${name}=0; path=/; expires=${new Date(0).toUTCString()}; ${secure}`;
+  var re = new RegExp("(?:^|; )" + name);
+  assert_equals(re.test(document.cookie), false, "Sanity check: " + name + " has been deleted.");
 }
