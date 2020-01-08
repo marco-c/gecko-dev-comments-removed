@@ -146,6 +146,7 @@ var UpdateListener = {
         break;
       case "check-attempts-exceeded":
       case "unknown":
+      case "bad-perms":
         
         
         this.clearCallbacks();

@@ -190,6 +190,9 @@ const APPID_TO_TOPIC = {
 var gSaveUpdateXMLDelay = 2000;
 var gUpdateMutexHandle = null;
 
+
+var gUpdateDirPermissionFixAttempted = false;
+
 ChromeUtils.defineModuleGetter(this, "UpdateUtils",
                                "resource://gre/modules/UpdateUtils.jsm");
 ChromeUtils.defineModuleGetter(this, "WindowsRegistry",
@@ -660,7 +663,10 @@ function readStatusFile(dir) {
 function writeStatusFile(dir, state) {
   let statusFile = dir.clone();
   statusFile.append(FILE_UPDATE_STATUS);
-  writeStringToFile(statusFile, state);
+  let success = writeStringToFile(statusFile, state);
+  if (!success) {
+    handleCriticalWriteFailure(statusFile.path);
+  }
 }
 
 
@@ -681,7 +687,10 @@ function writeStatusFile(dir, state) {
 function writeVersionFile(dir, version) {
   let versionFile = dir.clone();
   versionFile.append(FILE_UPDATE_VERSION);
-  writeStringToFile(versionFile, version);
+  let success = writeStringToFile(versionFile, version);
+  if (!success) {
+    handleCriticalWriteFailure(versionFile.path);
+  }
 }
 
 
@@ -814,11 +823,19 @@ function cleanupActiveUpdate() {
 
 
 
+
+
+
 function writeStringToFile(file, text) {
-  let fos = FileUtils.openSafeFileOutputStream(file);
-  text += "\n";
-  fos.write(text, text.length);
-  FileUtils.closeSafeFileOutputStream(fos);
+  try {
+    let fos = FileUtils.openSafeFileOutputStream(file);
+    text += "\n";
+    fos.write(text, text.length);
+    FileUtils.closeSafeFileOutputStream(fos);
+  } catch (e) {
+    return false;
+  }
+  return true;
 }
 
 function readStringFromInputStream(inputStream) {
@@ -1026,6 +1043,8 @@ function pingStateAndStatusCodes(aUpdate, aStartup, aStatus) {
       case STATE_PENDING_ELEVATE:
         stateCode = 13;
         break;
+      
+      
       default:
         stateCode = 1;
     }
@@ -1039,6 +1058,101 @@ function pingStateAndStatusCodes(aUpdate, aStartup, aStatus) {
     }
   }
   AUSTLMY.pingStateCode(suffix, stateCode);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function handleCriticalWriteFailure(path) {
+  LOG("Unable to write to critical update file: " + path);
+
+  let updateManager = Cc["@mozilla.org/updates/update-manager;1"].
+                      getService(Ci.nsIUpdateManager);
+
+  let update = updateManager.activeUpdate;
+  if (update) {
+    let patch = update.selectedPatch;
+    let patchType = AUSTLMY.PATCH_UNKNOWN;
+    if (patch.type == "complete") {
+      patchType = AUSTLMY.PATCH_COMPLETE;
+    } else if (patch.type == "partial") {
+      patchType = AUSTLMY.PATCH_PARTIAL;
+    }
+    if (update.state == STATE_DOWNLOADING) {
+      if (!patch.downloadWriteFailureTelemetrySent) {
+        AUSTLMY.pingDownloadCode(patchType, AUSTLMY.DWNLD_ERR_WRITE_FAILURE);
+        patch.downloadWriteFailureTelemetrySent = true;
+      }
+    } else if (!patch.applyWriteFailureTelemetrySent) {
+      
+      
+      
+      
+      
+      let suffix = patchType + "_" + AUSTLMY.STARTUP;
+      AUSTLMY.pingStateCode(suffix, AUSTLMY.STATE_WRITE_FAILURE);
+      patch.applyWriteFailureTelemetrySent = true;
+    }
+  } else {
+    let updateServiceInstance = UpdateServiceFactory.createInstance();
+    let request = updateServiceInstance.backgroundChecker._request;
+    if (!request.checkWriteFailureTelemetrySent) {
+      let pingSuffix = updateServiceInstance._pingSuffix;
+      AUSTLMY.pingCheckCode(pingSuffix, AUSTLMY.CHK_ERR_WRITE_FAILURE);
+      request.checkWriteFailureTelemetrySent = true;
+    }
+  }
+
+  if (!gUpdateDirPermissionFixAttempted) {
+    
+    
+    if (AppConstants.platform != "win") {
+      LOG("There is currently no implementation for fixing update directory " +
+          "permissions on this platform");
+      return false;
+    }
+    LOG("Attempting to fix update directory permissions");
+    try {
+      Cc["@mozilla.org/updates/update-processor;1"].
+        createInstance(Ci.nsIUpdateProcessor).
+        fixUpdateDirectoryPerms(shouldUseService());
+    } catch (e) {
+      LOG("Attempt to fix update directory permissions failed. Exception: " + e);
+      return false;
+    }
+    gUpdateDirPermissionFixAttempted = true;
+    return true;
+  }
+  return false;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function handleCriticalWriteResult(wroteSuccessfully, path) {
+  if (!wroteSuccessfully) {
+    handleCriticalWriteFailure(path);
+  }
 }
 
 
@@ -2551,9 +2665,15 @@ UpdateManager.prototype = {
       return updates;
     }
 
-    var fileStream = Cc["@mozilla.org/network/file-input-stream;1"].
+    let fileStream = Cc["@mozilla.org/network/file-input-stream;1"].
                      createInstance(Ci.nsIFileInputStream);
-    fileStream.init(file, FileUtils.MODE_RDONLY, FileUtils.PERMS_FILE, 0);
+    try {
+      fileStream.init(file, FileUtils.MODE_RDONLY, FileUtils.PERMS_FILE, 0);
+    } catch (e) {
+      LOG("UpdateManager:_loadXMLFileIntoArray - error initializing file " +
+          "stream. Exception: " + e);
+      return updates;
+    }
     try {
       var parser = new DOMParser();
       var doc = parser.parseFromStream(fileStream, "UTF-8",
@@ -2651,13 +2771,27 @@ UpdateManager.prototype = {
 
 
 
+
   _writeUpdatesToXMLFile: async function UM__writeUpdatesToXMLFile(updates, fileName) {
-    let file = getUpdateFile([fileName]);
+    let file;
+    try {
+      file = getUpdateFile([fileName]);
+    } catch (e) {
+      LOG("UpdateManager:_writeUpdatesToXMLFile - Unable to get XML file - " +
+          "Exception: " + e);
+      return false;
+    }
     if (updates.length == 0) {
       LOG("UpdateManager:_writeUpdatesToXMLFile - no updates to write. " +
           "removing file: " + file.path);
-      await OS.File.remove(file.path, {ignoreAbsent: true});
-      return;
+      try {
+        await OS.File.remove(file.path, {ignoreAbsent: true});
+      } catch (e) {
+        LOG("UpdateManager:_writeUpdatesToXMLFile - Delete file exception: " +
+            e);
+        return false;
+      }
+      return true;
     }
 
     const EMPTY_UPDATES_DOCUMENT_OPEN = "<?xml version=\"1.0\"?><updates xmlns=\"http://www.mozilla.org/2005/app-update\">";
@@ -2677,7 +2811,9 @@ UpdateManager.prototype = {
       await OS.File.setPermissions(file.path, {unixMode: FileUtils.PERMS_FILE});
     } catch (e) {
       LOG("UpdateManager:_writeUpdatesToXMLFile - Exception: " + e);
+      return false;
     }
+    return true;
   },
 
   _updatesXMLSaver: null,
@@ -2713,13 +2849,19 @@ UpdateManager.prototype = {
     
     
     this._writeUpdatesToXMLFile(this._activeUpdate ? [this._activeUpdate] : [],
-                                FILE_ACTIVE_UPDATE_XML);
+                                FILE_ACTIVE_UPDATE_XML).then(
+      wroteSuccessfully => handleCriticalWriteResult(wroteSuccessfully,
+                                                     FILE_ACTIVE_UPDATE_XML)
+    );
     
     
     
     if (this._updatesDirty) {
       this._updatesDirty = false;
-      this._writeUpdatesToXMLFile(this._updates, FILE_UPDATES_XML);
+      this._writeUpdatesToXMLFile(this._updates, FILE_UPDATES_XML).then(
+        wroteSuccessfully => handleCriticalWriteResult(wroteSuccessfully,
+                                                       FILE_UPDATES_XML)
+      );
     }
   },
 
@@ -3525,6 +3667,7 @@ Downloader.prototype = {
 
 
 
+   
   onStopRequest: function Downloader_onStopRequest(request, context, status) {
     if (request instanceof Ci.nsIIncrementalDownload)
       LOG("Downloader:onStopRequest - original URI spec: " + request.URI.spec +
@@ -3545,6 +3688,7 @@ Downloader.prototype = {
                                             DEFAULT_SOCKET_MAX_ERRORS);
     
     maxFail = Math.min(maxFail, 20);
+    let permissionFixingInProgress = false;
     LOG("Downloader:onStopRequest - status: " + status + ", " +
         "current fail: " + this.updateService._consecutiveSocketErrors + ", " +
         "max fail: " + maxFail + ", " +
@@ -3619,7 +3763,18 @@ Downloader.prototype = {
       deleteActiveUpdate = false;
     } else if (status != Cr.NS_BINDING_ABORTED &&
                status != Cr.NS_ERROR_ABORT) {
-      LOG("Downloader:onStopRequest - non-verification failure");
+      if (status == Cr.NS_ERROR_FILE_ACCESS_DENIED ||
+          status == Cr.NS_ERROR_FILE_READ_ONLY) {
+        LOG("Downloader:onStopRequest - permission error");
+        
+        
+        let patchFile = getUpdatesDir().clone();
+        patchFile.append(FILE_UPDATE_MAR);
+        permissionFixingInProgress = handleCriticalWriteFailure(patchFile.path);
+      } else {
+        LOG("Downloader:onStopRequest - non-verification failure");
+      }
+
       let dwnldCode = AUSTLMY.DWNLD_ERR_BINDING_ABORTED;
       if (status == Cr.NS_ERROR_ABORT) {
         dwnldCode = AUSTLMY.DWNLD_ERR_ABORT;
@@ -3682,7 +3837,7 @@ Downloader.prototype = {
         }
       }
 
-      if (allFailed) {
+      if (allFailed && !permissionFixingInProgress) {
         if (Services.prefs.getBoolPref(PREF_APP_UPDATE_DOORHANGER, false)) {
           let downloadAttempts = Services.prefs.getIntPref(PREF_APP_UPDATE_DOWNLOAD_ATTEMPTS, 0);
           downloadAttempts++;
@@ -3713,7 +3868,8 @@ Downloader.prototype = {
                          createInstance(Ci.nsIUpdatePrompt);
           prompter.showUpdateError(this._update);
         }
-
+      }
+      if (allFailed) {
         
         this._update = null;
       }

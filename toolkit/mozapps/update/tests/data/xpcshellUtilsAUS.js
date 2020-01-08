@@ -840,6 +840,8 @@ function setupTestCommon() {
   
   
   adjustGeneralPaths();
+  createWorldWritableAppUpdateDir();
+
   
   
   debugDump("Updates Directory (UpdRootD) Path: " + getMockUpdRootD().path);
@@ -1596,6 +1598,15 @@ XPCOMUtils.defineLazyGetter(this, "gLocalAppDataDir", function test_gLADD() {
   return getSpecialFolderDir(CSIDL_LOCAL_APPDATA);
 });
 
+XPCOMUtils.defineLazyGetter(this, "gCommonAppDataDir", function test_gCDD() {
+  if (!IS_WIN) {
+    do_throw("Windows only function called by a different platform!");
+  }
+
+  const CSIDL_COMMON_APPDATA = 0x0023;
+  return getSpecialFolderDir(CSIDL_COMMON_APPDATA);
+});
+
 XPCOMUtils.defineLazyGetter(this, "gProgFilesDir", function test_gPFD() {
   if (!IS_WIN) {
     do_throw("Windows only function called by a different platform!");
@@ -1611,9 +1622,13 @@ XPCOMUtils.defineLazyGetter(this, "gProgFilesDir", function test_gPFD() {
 
 
 
-function getMockUpdRootD() {
+
+
+
+
+function getMockUpdRootD(aGetOldLocation = false) {
   if (IS_WIN) {
-    return getMockUpdRootDWin();
+    return getMockUpdRootDWin(aGetOldLocation);
   }
 
   if (IS_MACOSX) {
@@ -1629,12 +1644,17 @@ function getMockUpdRootD() {
 
 
 
-function getMockUpdRootDWin() {
+function getMockUpdRootDWin(aGetOldLocation) {
   if (!IS_WIN) {
     do_throw("Windows only function called by a different platform!");
   }
 
-  let localAppDataDir = gLocalAppDataDir.clone();
+  let dataDirectory;
+  if (aGetOldLocation) {
+    dataDirectory = gLocalAppDataDir.clone();
+  } else {
+    dataDirectory = gCommonAppDataDir.clone();
+  }
   let progFilesDir = gProgFilesDir.clone();
   let appDir = Services.dirsvc.get(XRE_EXECUTABLE_FILE, Ci.nsIFile).parent;
 
@@ -1669,8 +1689,17 @@ function getMockUpdRootDWin() {
 
   let updatesDir = Cc["@mozilla.org/file/local;1"].
                    createInstance(Ci.nsIFile);
-  updatesDir.initWithPath(localAppDataDir.path + "\\" + relPathUpdates);
+  updatesDir.initWithPath(dataDirectory.path + "\\" + relPathUpdates);
   return updatesDir;
+}
+
+function createWorldWritableAppUpdateDir() {
+  
+  if (IS_WIN) {
+    let installDir = Services.dirsvc.get(XRE_EXECUTABLE_FILE, Ci.nsIFile).parent;
+    let exitValue = runTestHelperSync(["create-update-dir", installDir.path]);
+    Assert.equal(exitValue, 0, "The helper process exit value should be 0");
+  }
 }
 
 XPCOMUtils.defineLazyGetter(this, "gUpdatesRootDir", function test_gURD() {
@@ -3926,8 +3955,8 @@ function getProcessArgs(aExtraArgs) {
               scriptContents);
     args = [launchScript.path];
   } else {
-    args = ["/D", "/Q", "/C", appBinPath, "-no-remote", "-test-process-updates"].
-           concat(aExtraArgs).concat([PIPE_TO_NULL]);
+    args = ["/D", "/Q", "/C", appBinPath, "-no-remote", "-test-process-updates",
+            "-wait-for-browser"].concat(aExtraArgs).concat([PIPE_TO_NULL]);
   }
   return args;
 }
@@ -3981,6 +4010,8 @@ function adjustGeneralPaths() {
           return getApplyDirFile(DIR_MACOS + FILE_APP_BIN, true);
         case XRE_UPDATE_ROOT_DIR:
           return getMockUpdRootD();
+        case XRE_OLD_UPDATE_ROOT_DIR:
+          return getMockUpdRootD(true);
       }
       return null;
     },

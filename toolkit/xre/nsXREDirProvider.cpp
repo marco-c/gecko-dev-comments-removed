@@ -43,11 +43,11 @@
 #include "mozilla/Telemetry.h"
 
 #include <stdlib.h>
-#include "city.h"
 
 #ifdef XP_WIN
 #include <windows.h>
 #include <shlobj.h>
+#include "commonupdatedir.h"
 #endif
 #ifdef XP_MACOSX
 #include "nsILocalFileMac.h"
@@ -434,6 +434,9 @@ nsXREDirProvider::GetFile(const char* aProperty, bool* aPersistent,
 #endif
   else if (!strcmp(aProperty, XRE_UPDATE_ROOT_DIR)) {
     rv = GetUpdateRootDir(getter_AddRefs(file));
+  }
+  else if (!strcmp(aProperty, XRE_OLD_UPDATE_ROOT_DIR)) {
+    rv = GetUpdateRootDir(getter_AddRefs(file), true);
   }
   else if (!strcmp(aProperty, NS_APP_APPLICATION_REGISTRY_FILE)) {
     rv = GetUserAppDataDirectory(getter_AddRefs(file));
@@ -1256,100 +1259,52 @@ GetRegWindowsAppDataFolder(bool aLocal, nsAString& _retval)
 
   return NS_OK;
 }
-
-static bool
-GetCachedHash(HKEY rootKey, const nsAString &regPath, const nsAString &path,
-              nsAString &cachedHash)
-{
-  HKEY baseKey;
-  if (RegOpenKeyExW(rootKey, reinterpret_cast<const wchar_t*>(regPath.BeginReading()), 0, KEY_READ, &baseKey) !=
-      ERROR_SUCCESS) {
-    return false;
-  }
-
-  wchar_t cachedHashRaw[512];
-  DWORD bufferSize = sizeof(cachedHashRaw);
-  LONG result = RegQueryValueExW(baseKey, reinterpret_cast<const wchar_t*>(path.BeginReading()), 0, nullptr,
-                                 (LPBYTE)cachedHashRaw, &bufferSize);
-  RegCloseKey(baseKey);
-  if (result == ERROR_SUCCESS) {
-    cachedHash.Assign(cachedHashRaw);
-  }
-  return ERROR_SUCCESS == result;
-}
-
 #endif
-
 
 nsresult
 nsXREDirProvider::GetInstallHash(nsAString & aPathHash)
 {
-  return GetInstallHash(aPathHash, false);
-}
-
-
-
-
-nsresult
-nsXREDirProvider::GetInstallHash(nsAString & aPathHash, bool aUseCompatibilityMode)
-{
-  nsCOMPtr<nsIFile> updRoot;
+  nsCOMPtr<nsIFile> installDir;
   nsCOMPtr<nsIFile> appFile;
   bool per = false;
   nsresult rv = GetFile(XRE_EXECUTABLE_FILE, &per, getter_AddRefs(appFile));
   NS_ENSURE_SUCCESS(rv, rv);
-  rv = appFile->GetParent(getter_AddRefs(updRoot));
+  rv = appFile->GetParent(getter_AddRefs(installDir));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  nsAutoString appDirPath;
-  rv = updRoot->GetPath(appDirPath);
+  nsAutoString installPath;
+  rv = installDir->GetPath(installPath);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  aPathHash.Truncate();
+  const char* vendor = GetAppVendor();
+  if (vendor && vendor[0] == '\0') {
+    vendor = nullptr;
+  }
 
+  mozilla::UniquePtr<NS_tchar[]> hash;
+  rv = ::GetInstallHash(PromiseFlatString(installPath).get(), vendor, hash);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  
 #ifdef XP_WIN
-  
-  
-  
-  bool hasVendor = GetAppVendor() && strlen(GetAppVendor()) != 0;
-  wchar_t regPath[1024] = { L'\0' };
-  swprintf_s(regPath, mozilla::ArrayLength(regPath), L"SOFTWARE\\%S\\%S\\TaskBarIDs",
-              (hasVendor ? GetAppVendor() : "Mozilla"), MOZ_APP_BASENAME);
-
-  
-  if (GetCachedHash(HKEY_LOCAL_MACHINE, nsDependentString(regPath), appDirPath,
-                    aPathHash)) {
-    return NS_OK;
-  }
-
-  if (GetCachedHash(HKEY_CURRENT_USER, nsDependentString(regPath), appDirPath,
-                    aPathHash)) {
-    return NS_OK;
-  }
+  aPathHash.Assign(hash.get());
+#else
+  aPathHash.AssignASCII(hash.get());
 #endif
-
-  
-  void* buffer = appDirPath.BeginWriting();
-  uint32_t length = appDirPath.Length() * sizeof(nsAutoString::char_type);
-  uint64_t hash = CityHash64(static_cast<const char*>(buffer), length);
-  if (aUseCompatibilityMode) {
-    aPathHash.AppendInt((int)(hash >> 32), 16);
-    aPathHash.AppendInt((int)hash, 16);
-    
-    
-    
-    
-    ToUpperCase(aPathHash);
-  } else {
-    aPathHash.AppendPrintf("%" PRIX64, hash);
-  }
-
   return NS_OK;
 }
 
 nsresult
-nsXREDirProvider::GetUpdateRootDir(nsIFile* *aResult)
+nsXREDirProvider::GetUpdateRootDir(nsIFile** aResult, bool aGetOldLocation)
 {
+#ifndef XP_WIN
+  
+  
+  if (aGetOldLocation) {
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
+#endif
   nsCOMPtr<nsIFile> updRoot;
   nsCOMPtr<nsIFile> appFile;
   bool per = false;
@@ -1394,74 +1349,36 @@ nsXREDirProvider::GetUpdateRootDir(nsIFile* *aResult)
   return NS_OK;
 
 #elif XP_WIN
-  nsAutoString pathHash;
-  rv = GetInstallHash(pathHash, true);
+  nsAutoString installPath;
+  rv = updRoot->GetPath(installPath);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
-  
-  
-  
-  
-  nsCOMPtr<nsIFile> localDir;
-  bool hasVendor = GetAppVendor() && strlen(GetAppVendor()) != 0;
-  if ((hasVendor || GetAppName()) &&
-      NS_SUCCEEDED(GetUserDataDirectoryHome(getter_AddRefs(localDir), true)) &&
-      NS_SUCCEEDED(localDir->AppendNative(nsDependentCString(hasVendor ?
-                                          GetAppVendor() : GetAppName()))) &&
-      NS_SUCCEEDED(localDir->Append(NS_LITERAL_STRING("updates"))) &&
-      NS_SUCCEEDED(localDir->Append(pathHash))) {
-    localDir.forget(aResult);
-    return NS_OK;
+  const char* vendor = GetAppVendor();
+  if (vendor && vendor[0] == '\0') {
+    vendor = nullptr;
+  }
+  const char* appName = GetAppName();
+  if (appName && appName[0] == '\0') {
+    appName = nullptr;
   }
 
-  nsAutoString appPath;
-  rv = updRoot->GetPath(appPath);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  
-  nsString longPath;
-  wchar_t* buf;
-
-  uint32_t bufLength = longPath.GetMutableData(&buf, MAXPATHLEN);
-  NS_ENSURE_TRUE(bufLength >= MAXPATHLEN, NS_ERROR_OUT_OF_MEMORY);
-
-  DWORD len = GetLongPathNameW(appPath.get(), buf, bufLength);
-
-  
-  if (len <= 0 || len >= bufLength)
-    longPath.Assign(appPath);
-  else
-    longPath.SetLength(len);
-
-  
-  
-  
-  nsAutoString programFiles;
-  rv = GetShellFolderPath(FOLDERID_ProgramFiles, programFiles);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  programFiles.Append('\\');
-  uint32_t programFilesLen = programFiles.Length();
-
-  nsAutoString programName;
-  if (_wcsnicmp(programFiles.get(), longPath.get(), programFilesLen) == 0) {
-    programName = Substring(longPath, programFilesLen);
+  mozilla::UniquePtr<wchar_t[]> updatePath;
+  HRESULT hrv;
+  if (aGetOldLocation) {
+    hrv = GetUserUpdateDirectory(PromiseFlatString(installPath).get(), vendor,
+                                 appName, updatePath);
   } else {
-    
-    
-    
-    
-    programName.AssignASCII(MOZ_APP_NAME);
+    hrv = GetCommonUpdateDirectory(PromiseFlatString(installPath).get(), vendor,
+                                   appName,
+                                   SetPermissionsOf::BaseDirIfNotExists,
+                                   updatePath);
   }
-
-  rv = GetUserLocalDataDirectory(getter_AddRefs(updRoot));
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  rv = updRoot->AppendRelativePath(programName);
-  NS_ENSURE_SUCCESS(rv, rv);
-
+  if (FAILED(hrv)) {
+    return NS_ERROR_FAILURE;
+  }
+  nsAutoString updatePathStr;
+  updatePathStr.Assign(updatePath.get());
+  updRoot->InitWithPath(updatePathStr);
 #endif 
   updRoot.forget(aResult);
   return NS_OK;

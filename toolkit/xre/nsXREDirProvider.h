@@ -81,14 +81,16 @@ public:
   
 
 
-  nsresult GetInstallHash(nsAString & aPathHash, bool aUseCompatibilityMode);
-
-  
 
 
 
 
-  nsresult GetUpdateRootDir(nsIFile* *aResult);
+
+
+
+
+
+  nsresult GetUpdateRootDir(nsIFile** aResult, bool aGetOldLocation = false);
 
   
 

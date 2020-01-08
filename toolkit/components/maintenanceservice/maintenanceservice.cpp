@@ -282,7 +282,7 @@ SvcMain(DWORD argc, LPWSTR *argv)
   
   
   
-  ExecuteServiceCommand(argc, argv);
+  BOOL success = ExecuteServiceCommand(argc, argv);
   LogFinish();
 
   SetEvent(gWorkDoneEvent);
@@ -291,7 +291,7 @@ SvcMain(DWORD argc, LPWSTR *argv)
   
   
   if (!gServiceControlStopping) {
-    ReportSvcStatus(SERVICE_STOPPED, NO_ERROR, 0);
+    ReportSvcStatus(SERVICE_STOPPED, success ? NO_ERROR : 1, 0);
     StartTerminationThread();
   }
 }

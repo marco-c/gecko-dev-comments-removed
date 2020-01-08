@@ -25,18 +25,6 @@
 #include <objbase.h>
 #include <objidl.h>
 
-namespace {
-
-struct LocalFreeDeleter
-{
-  void operator()(void* aPtr)
-  {
-    ::LocalFree(aPtr);
-  }
-};
-
-} 
-
 
 extern "C" void __cdecl SetOaNoCache(void);
 
