@@ -80,6 +80,10 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     
     this._hiddenBreakpoints = new Map();
 
+    
+    
+    this._onLoadBreakpointURLs = new Set();
+
     this.global = global;
 
     this._allEventsListener = this._allEventsListener.bind(this);
@@ -96,9 +100,12 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     this._onOpeningRequest = this._onOpeningRequest.bind(this);
     EventEmitter.on(this._parent, "window-ready", this._onWindowReady);
 
-    
-    
-    this.wrappedJSObject = this;
+    if (Services.obs) {
+      
+      
+      this.wrappedJSObject = this;
+      Services.obs.notifyObservers(this, "devtools-thread-instantiated");
+    }
   },
 
   
@@ -304,6 +311,17 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       reportError(e);
       return { error: "notAttached", message: e.toString() };
     }
+  },
+
+  
+
+
+
+
+
+
+  setBreakpointOnLoad(urls) {
+    this._onLoadBreakpointURLs = new Set(urls);
   },
 
   _findXHRBreakpointIndex(p, m) {
@@ -2015,6 +2033,12 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
           );
         }
       }
+    }
+
+    if (this._onLoadBreakpointURLs.has(source.url)) {
+      this.unsafeSynchronize(
+        sourceActor.setBreakpoint(1, undefined, undefined, undefined, true)
+      );
     }
 
     this._debuggerSourcesSeen.add(source);
