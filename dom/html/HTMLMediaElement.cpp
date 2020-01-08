@@ -7866,6 +7866,12 @@ HTMLMediaElement::CreateDOMPromise(ErrorResult& aRv) const
 void
 HTMLMediaElement::AsyncResolvePendingPlayPromises()
 {
+  
+  
+  
+  
+  mAutoplayPermissionRequest.DisconnectIfExists();
+
   if (mShuttingDown) {
     return;
   }
