@@ -6,41 +6,121 @@
 
 
 
-
-
-(function(factory) {
-  if (this.module && module.id.includes("transport")) {
-    
-    factory.call(this, require, exports);
-  } else if (this.require) {
-    
-    factory.call(this, require, this);
-  } else {
-    
-    const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
-    factory.call(this, require, this);
-  }
-}).call(this, function(require, exports) {
-  const { Cc, Cr, CC } = require("chrome");
-  const DevToolsUtils = require("devtools/shared/DevToolsUtils");
-  const { dumpn, dumpv } = DevToolsUtils;
-  const flags = require("devtools/shared/flags");
-  const StreamUtils = require("devtools/shared/transport/stream-utils");
-  const { Packet, JSONPacket, BulkPacket } =
+const { Cc, Cr, CC } = require("chrome");
+const DevToolsUtils = require("devtools/shared/DevToolsUtils");
+const { dumpn, dumpv } = DevToolsUtils;
+const flags = require("devtools/shared/flags");
+const StreamUtils = require("devtools/shared/transport/stream-utils");
+const { Packet, JSONPacket, BulkPacket } =
   require("devtools/shared/transport/packets");
-  const promise = require("promise");
-  const defer = require("devtools/shared/defer");
+const promise = require("promise");
+const defer = require("devtools/shared/defer");
 
-  DevToolsUtils.defineLazyGetter(this, "Pipe", () => {
-    return CC("@mozilla.org/pipe;1", "nsIPipe", "init");
-  });
+loader.lazyGetter(this, "Pipe", () => {
+  return CC("@mozilla.org/pipe;1", "nsIPipe", "init");
+});
 
-  DevToolsUtils.defineLazyGetter(this, "ScriptableInputStream", () => {
-    return CC("@mozilla.org/scriptableinputstream;1",
-            "nsIScriptableInputStream", "init");
-  });
+loader.lazyGetter(this, "ScriptableInputStream", () => {
+  return CC("@mozilla.org/scriptableinputstream;1",
+          "nsIScriptableInputStream", "init");
+});
 
-  const PACKET_HEADER_MAX = 200;
+const PACKET_HEADER_MAX = 200;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function DebuggerTransport(input, output) {
+  this._input = input;
+  this._scriptableInput = new ScriptableInputStream(input);
+  this._output = output;
+
+  
+  
+  this._incomingHeader = "";
+  
+  this._incoming = null;
+  
+  this._outgoing = [];
+
+  this.hooks = null;
+  this.active = false;
+
+  this._incomingEnabled = true;
+  this._outgoingEnabled = true;
+
+  this.close = this.close.bind(this);
+}
+
+DebuggerTransport.prototype = {
+  
+
+
+
+
+
+
+
+  send: function(object) {
+    const packet = new JSONPacket(this);
+    packet.object = object;
+    this._outgoing.push(packet);
+    this._flushOutgoing();
+  },
 
   
 
@@ -83,427 +163,184 @@
 
 
 
+  startBulkSend: function(header) {
+    const packet = new BulkPacket(this);
+    packet.header = header;
+    this._outgoing.push(packet);
+    this._flushOutgoing();
+    return packet.streamReadyForWriting;
+  },
+
+  
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-  function DebuggerTransport(input, output) {
-    this._input = input;
-    this._scriptableInput = new ScriptableInputStream(input);
-    this._output = output;
-
-    
-    
-    this._incomingHeader = "";
-    
-    this._incoming = null;
-    
-    this._outgoing = [];
-
-    this.hooks = null;
+  close: function(reason) {
     this.active = false;
+    this._input.close();
+    this._scriptableInput.close();
+    this._output.close();
+    this._destroyIncoming();
+    this._destroyAllOutgoing();
+    if (this.hooks) {
+      this.hooks.onClosed(reason);
+      this.hooks = null;
+    }
+    if (reason) {
+      dumpn("Transport closed: " + DevToolsUtils.safeErrorString(reason));
+    } else {
+      dumpn("Transport closed.");
+    }
+  },
 
-    this._incomingEnabled = true;
+  
+
+
+  get _currentOutgoing() {
+    return this._outgoing[0];
+  },
+
+  
+
+
+
+  _flushOutgoing: function() {
+    if (!this._outgoingEnabled || this._outgoing.length === 0) {
+      return;
+    }
+
+    
+    if (this._currentOutgoing.done) {
+      this._finishCurrentOutgoing();
+    }
+
+    if (this._outgoing.length > 0) {
+      const threadManager = Cc["@mozilla.org/thread-manager;1"].getService();
+      this._output.asyncWait(this, 0, 0, threadManager.currentThread);
+    }
+  },
+
+  
+
+
+
+
+  pauseOutgoing: function() {
+    this._outgoingEnabled = false;
+  },
+
+  
+
+
+  resumeOutgoing: function() {
     this._outgoingEnabled = true;
+    this._flushOutgoing();
+  },
 
-    this.close = this.close.bind(this);
-  }
-
-  DebuggerTransport.prototype = {
-    
-
+  
+  
 
 
 
 
+  onOutputStreamReady: DevToolsUtils.makeInfallible(function(stream) {
+    if (!this._outgoingEnabled || this._outgoing.length === 0) {
+      return;
+    }
 
-
-    send: function(object) {
-      const packet = new JSONPacket(this);
-      packet.object = object;
-      this._outgoing.push(packet);
-      this._flushOutgoing();
-    },
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    startBulkSend: function(header) {
-      const packet = new BulkPacket(this);
-      packet.header = header;
-      this._outgoing.push(packet);
-      this._flushOutgoing();
-      return packet.streamReadyForWriting;
-    },
-
-    
-
-
-
-
-
-    close: function(reason) {
-      this.active = false;
-      this._input.close();
-      this._scriptableInput.close();
-      this._output.close();
-      this._destroyIncoming();
-      this._destroyAllOutgoing();
-      if (this.hooks) {
-        this.hooks.onClosed(reason);
-        this.hooks = null;
+    try {
+      this._currentOutgoing.write(stream);
+    } catch (e) {
+      if (e.result != Cr.NS_BASE_STREAM_WOULD_BLOCK) {
+        this.close(e.result);
+        return;
       }
-      if (reason) {
-        dumpn("Transport closed: " + DevToolsUtils.safeErrorString(reason));
+      throw e;
+    }
+
+    this._flushOutgoing();
+  }, "DebuggerTransport.prototype.onOutputStreamReady"),
+
+  
+
+
+  _finishCurrentOutgoing: function() {
+    if (this._currentOutgoing) {
+      this._currentOutgoing.destroy();
+      this._outgoing.shift();
+    }
+  },
+
+  
+
+
+  _destroyAllOutgoing: function() {
+    for (const packet of this._outgoing) {
+      packet.destroy();
+    }
+    this._outgoing = [];
+  },
+
+  
+
+
+
+
+  ready: function() {
+    this.active = true;
+    this._waitForIncoming();
+  },
+
+  
+
+
+
+  _waitForIncoming: function() {
+    if (this._incomingEnabled) {
+      const threadManager = Cc["@mozilla.org/thread-manager;1"].getService();
+      this._input.asyncWait(this, 0, 0, threadManager.currentThread);
+    }
+  },
+
+  
+
+
+
+
+  pauseIncoming: function() {
+    this._incomingEnabled = false;
+  },
+
+  
+
+
+  resumeIncoming: function() {
+    this._incomingEnabled = true;
+    this._flushIncoming();
+    this._waitForIncoming();
+  },
+
+  
+  
+
+
+  onInputStreamReady: DevToolsUtils.makeInfallible(function(stream) {
+    try {
+      while (stream.available() && this._incomingEnabled &&
+             this._processIncoming(stream, stream.available())) {
+         
+      }
+      this._waitForIncoming();
+    } catch (e) {
+      if (e.result != Cr.NS_BASE_STREAM_WOULD_BLOCK) {
+        this.close(e.result);
       } else {
-        dumpn("Transport closed.");
-      }
-    },
-
-    
-
-
-    get _currentOutgoing() {
-      return this._outgoing[0];
-    },
-
-    
-
-
-
-    _flushOutgoing: function() {
-      if (!this._outgoingEnabled || this._outgoing.length === 0) {
-        return;
-      }
-
-      
-      if (this._currentOutgoing.done) {
-        this._finishCurrentOutgoing();
-      }
-
-      if (this._outgoing.length > 0) {
-        const threadManager = Cc["@mozilla.org/thread-manager;1"].getService();
-        this._output.asyncWait(this, 0, 0, threadManager.currentThread);
-      }
-    },
-
-    
-
-
-
-
-    pauseOutgoing: function() {
-      this._outgoingEnabled = false;
-    },
-
-    
-
-
-    resumeOutgoing: function() {
-      this._outgoingEnabled = true;
-      this._flushOutgoing();
-    },
-
-    
-    
-
-
-
-
-    onOutputStreamReady: DevToolsUtils.makeInfallible(function(stream) {
-      if (!this._outgoingEnabled || this._outgoing.length === 0) {
-        return;
-      }
-
-      try {
-        this._currentOutgoing.write(stream);
-      } catch (e) {
-        if (e.result != Cr.NS_BASE_STREAM_WOULD_BLOCK) {
-          this.close(e.result);
-          return;
-        }
         throw e;
       }
-
-      this._flushOutgoing();
-    }, "DebuggerTransport.prototype.onOutputStreamReady"),
-
-    
-
-
-    _finishCurrentOutgoing: function() {
-      if (this._currentOutgoing) {
-        this._currentOutgoing.destroy();
-        this._outgoing.shift();
-      }
-    },
-
-    
-
-
-    _destroyAllOutgoing: function() {
-      for (const packet of this._outgoing) {
-        packet.destroy();
-      }
-      this._outgoing = [];
-    },
-
-    
-
-
-
-
-    ready: function() {
-      this.active = true;
-      this._waitForIncoming();
-    },
-
-    
-
-
-
-    _waitForIncoming: function() {
-      if (this._incomingEnabled) {
-        const threadManager = Cc["@mozilla.org/thread-manager;1"].getService();
-        this._input.asyncWait(this, 0, 0, threadManager.currentThread);
-      }
-    },
-
-    
-
-
-
-
-    pauseIncoming: function() {
-      this._incomingEnabled = false;
-    },
-
-    
-
-
-    resumeIncoming: function() {
-      this._incomingEnabled = true;
-      this._flushIncoming();
-      this._waitForIncoming();
-    },
-
-    
-    
-
-
-    onInputStreamReady: DevToolsUtils.makeInfallible(function(stream) {
-      try {
-        while (stream.available() && this._incomingEnabled &&
-               this._processIncoming(stream, stream.available())) {
-           
-        }
-        this._waitForIncoming();
-      } catch (e) {
-        if (e.result != Cr.NS_BASE_STREAM_WOULD_BLOCK) {
-          this.close(e.result);
-        } else {
-          throw e;
-        }
-      }
-    }, "DebuggerTransport.prototype.onInputStreamReady"),
-
-    
-
-
-
-
-
-
-
-
-
-    _processIncoming: function(stream, count) {
-      dumpv("Data available: " + count);
-
-      if (!count) {
-        dumpv("Nothing to read, skipping");
-        return false;
-      }
-
-      try {
-        if (!this._incoming) {
-          dumpv("Creating a new packet from incoming");
-
-          if (!this._readHeader(stream)) {
-            
-            return false;
-          }
-
-          
-          
-          this._incoming = Packet.fromHeader(this._incomingHeader, this);
-          if (!this._incoming) {
-            throw new Error("No packet types for header: " +
-                          this._incomingHeader);
-          }
-        }
-
-        if (!this._incoming.done) {
-          
-          dumpv("Existing packet incomplete, keep reading");
-          this._incoming.read(stream, this._scriptableInput);
-        }
-      } catch (e) {
-        const msg = "Error reading incoming packet: (" + e + " - " + e.stack + ")";
-        dumpn(msg);
-
-        
-        this.close();
-        return false;
-      }
-
-      if (!this._incoming.done) {
-        
-        dumpv("Packet not done, wait for more");
-        return true;
-      }
-
-      
-      this._flushIncoming();
-      return true;
-    },
-
-    
-
-
-
-
-
-
-    _readHeader: function() {
-      const amountToRead = PACKET_HEADER_MAX - this._incomingHeader.length;
-      this._incomingHeader +=
-      StreamUtils.delimitedRead(this._scriptableInput, ":", amountToRead);
-      if (flags.wantVerbose) {
-        dumpv("Header read: " + this._incomingHeader);
-      }
-
-      if (this._incomingHeader.endsWith(":")) {
-        if (flags.wantVerbose) {
-          dumpv("Found packet header successfully: " + this._incomingHeader);
-        }
-        return true;
-      }
-
-      if (this._incomingHeader.length >= PACKET_HEADER_MAX) {
-        throw new Error("Failed to parse packet header!");
-      }
-
-      
-      return false;
-    },
-
-    
-
-
-    _flushIncoming: function() {
-      if (!this._incoming.done) {
-        return;
-      }
-      if (flags.wantLogging) {
-        dumpn("Got: " + this._incoming);
-      }
-      this._destroyIncoming();
-    },
-
-    
-
-
-
-    _onJSONObjectReady: function(object) {
-      DevToolsUtils.executeSoon(DevToolsUtils.makeInfallible(() => {
-      
-        if (this.active) {
-          this.hooks.onPacket(object);
-        }
-      }, "DebuggerTransport instance's this.hooks.onPacket"));
-    },
-
-    
-
-
-
-
-
-    _onBulkReadReady: function(...args) {
-      DevToolsUtils.executeSoon(DevToolsUtils.makeInfallible(() => {
-      
-        if (this.active) {
-          this.hooks.onBulkPacket(...args);
-        }
-      }, "DebuggerTransport instance's this.hooks.onBulkPacket"));
-    },
-
-    
-
-
-
-    _destroyIncoming: function() {
-      if (this._incoming) {
-        this._incoming.destroy();
-      }
-      this._incomingHeader = "";
-      this._incoming = null;
     }
-
-  };
-
-  exports.DebuggerTransport = DebuggerTransport;
+  }, "DebuggerTransport.prototype.onInputStreamReady"),
 
   
 
@@ -515,402 +352,549 @@
 
 
 
+  _processIncoming: function(stream, count) {
+    dumpv("Data available: " + count);
 
-  function LocalDebuggerTransport(other) {
-    this.other = other;
-    this.hooks = null;
+    if (!count) {
+      dumpv("Nothing to read, skipping");
+      return false;
+    }
 
-    
-    
-    this._serial = this.other ? this.other._serial : { count: 0 };
-    this.close = this.close.bind(this);
-  }
+    try {
+      if (!this._incoming) {
+        dumpv("Creating a new packet from incoming");
 
-  LocalDebuggerTransport.prototype = {
-    
+        if (!this._readHeader(stream)) {
+          
+          return false;
+        }
 
-
-
-    send: function(packet) {
-      const serial = this._serial.count++;
-      if (flags.wantLogging) {
         
-        if (packet.from) {
-          dumpn("Packet " + serial + " sent from " + uneval(packet.from));
-        } else if (packet.to) {
-          dumpn("Packet " + serial + " sent to " + uneval(packet.to));
+        
+        this._incoming = Packet.fromHeader(this._incomingHeader, this);
+        if (!this._incoming) {
+          throw new Error("No packet types for header: " +
+                        this._incomingHeader);
         }
       }
-      this._deepFreeze(packet);
-      const other = this.other;
-      if (other) {
-        DevToolsUtils.executeSoon(DevToolsUtils.makeInfallible(() => {
-          
-          if (flags.wantLogging) {
-            dumpn("Received packet " + serial + ": " + JSON.stringify(packet, null, 2));
-          }
-          if (other.hooks) {
-            other.hooks.onPacket(packet);
-          }
-        }, "LocalDebuggerTransport instance's this.other.hooks.onPacket"));
-      }
-    },
 
+      if (!this._incoming.done) {
+        
+        dumpv("Existing packet incomplete, keep reading");
+        this._incoming.read(stream, this._scriptableInput);
+      }
+    } catch (e) {
+      const msg = "Error reading incoming packet: (" + e + " - " + e.stack + ")";
+      dumpn(msg);
+
+      
+      this.close();
+      return false;
+    }
+
+    if (!this._incoming.done) {
+      
+      dumpv("Packet not done, wait for more");
+      return true;
+    }
+
+    
+    this._flushIncoming();
+    return true;
+  },
+
+  
+
+
+
+
+
+
+  _readHeader: function() {
+    const amountToRead = PACKET_HEADER_MAX - this._incomingHeader.length;
+    this._incomingHeader +=
+    StreamUtils.delimitedRead(this._scriptableInput, ":", amountToRead);
+    if (flags.wantVerbose) {
+      dumpv("Header read: " + this._incomingHeader);
+    }
+
+    if (this._incomingHeader.endsWith(":")) {
+      if (flags.wantVerbose) {
+        dumpv("Found packet header successfully: " + this._incomingHeader);
+      }
+      return true;
+    }
+
+    if (this._incomingHeader.length >= PACKET_HEADER_MAX) {
+      throw new Error("Failed to parse packet header!");
+    }
+
+    
+    return false;
+  },
+
+  
+
+
+  _flushIncoming: function() {
+    if (!this._incoming.done) {
+      return;
+    }
+    if (flags.wantLogging) {
+      dumpn("Got: " + this._incoming);
+    }
+    this._destroyIncoming();
+  },
+
+  
+
+
+
+  _onJSONObjectReady: function(object) {
+    DevToolsUtils.executeSoon(DevToolsUtils.makeInfallible(() => {
+    
+      if (this.active) {
+        this.hooks.onPacket(object);
+      }
+    }, "DebuggerTransport instance's this.hooks.onPacket"));
+  },
+
+  
+
+
+
+
+
+  _onBulkReadReady: function(...args) {
+    DevToolsUtils.executeSoon(DevToolsUtils.makeInfallible(() => {
+    
+      if (this.active) {
+        this.hooks.onBulkPacket(...args);
+      }
+    }, "DebuggerTransport instance's this.hooks.onBulkPacket"));
+  },
+
+  
+
+
+
+  _destroyIncoming: function() {
+    if (this._incoming) {
+      this._incoming.destroy();
+    }
+    this._incomingHeader = "";
+    this._incoming = null;
+  }
+
+};
+
+exports.DebuggerTransport = DebuggerTransport;
+
+
+
+
+
+
+
+
+
+
+
+
+function LocalDebuggerTransport(other) {
+  this.other = other;
+  this.hooks = null;
+
+  
+  
+  this._serial = this.other ? this.other._serial : { count: 0 };
+  this.close = this.close.bind(this);
+}
+
+LocalDebuggerTransport.prototype = {
+  
+
+
+
+  send: function(packet) {
+    const serial = this._serial.count++;
+    if (flags.wantLogging) {
+      
+      if (packet.from) {
+        dumpn("Packet " + serial + " sent from " + uneval(packet.from));
+      } else if (packet.to) {
+        dumpn("Packet " + serial + " sent to " + uneval(packet.to));
+      }
+    }
+    this._deepFreeze(packet);
+    const other = this.other;
+    if (other) {
+      DevToolsUtils.executeSoon(DevToolsUtils.makeInfallible(() => {
+        
+        if (flags.wantLogging) {
+          dumpn("Received packet " + serial + ": " + JSON.stringify(packet, null, 2));
+        }
+        if (other.hooks) {
+          other.hooks.onPacket(packet);
+        }
+      }, "LocalDebuggerTransport instance's this.other.hooks.onPacket"));
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+  startBulkSend: function({actor, type, length}) {
+    const serial = this._serial.count++;
+
+    dumpn("Sent bulk packet " + serial + " for actor " + actor);
+    if (!this.other) {
+      const error = new Error("startBulkSend: other side of transport missing");
+      return promise.reject(error);
+    }
+
+    const pipe = new Pipe(true, true, 0, 0, null);
+
+    DevToolsUtils.executeSoon(DevToolsUtils.makeInfallible(() => {
+      dumpn("Received bulk packet " + serial);
+      if (!this.other.hooks) {
+        return;
+      }
+
+      
+      const deferred = defer();
+      const packet = {
+        actor: actor,
+        type: type,
+        length: length,
+        copyTo: (output) => {
+          const copying =
+          StreamUtils.copyStream(pipe.inputStream, output, length);
+          deferred.resolve(copying);
+          return copying;
+        },
+        stream: pipe.inputStream,
+        done: deferred
+      };
+
+      this.other.hooks.onBulkPacket(packet);
+
+      
+      deferred.promise.then(() => pipe.inputStream.close(), this.close);
+    }, "LocalDebuggerTransport instance's this.other.hooks.onBulkPacket"));
+
+    
+    const sendDeferred = defer();
+
+    
+    
+    DevToolsUtils.executeSoon(() => {
+      const copyDeferred = defer();
+
+      sendDeferred.resolve({
+        copyFrom: (input) => {
+          const copying =
+          StreamUtils.copyStream(input, pipe.outputStream, length);
+          copyDeferred.resolve(copying);
+          return copying;
+        },
+        stream: pipe.outputStream,
+        done: copyDeferred
+      });
+
+      
+      copyDeferred.promise.then(() => pipe.outputStream.close(), this.close);
+    });
+
+    return sendDeferred.promise;
+  },
+
+  
+
+
+  close: function() {
+    if (this.other) {
+      
+      
+      const other = this.other;
+      this.other = null;
+      other.close();
+    }
+    if (this.hooks) {
+      try {
+        this.hooks.onClosed();
+      } catch (ex) {
+        console.error(ex);
+      }
+      this.hooks = null;
+    }
+  },
+
+  
+
+
+  ready: function() {},
+
+  
+
+
+  _deepFreeze: function(object) {
+    Object.freeze(object);
+    for (const prop in object) {
+      
+      
+      
+      
+      if (object.hasOwnProperty(prop) && typeof object === "object" &&
+          !Object.isFrozen(object)) {
+        this._deepFreeze(object[prop]);
+      }
+    }
+  }
+};
+
+exports.LocalDebuggerTransport = LocalDebuggerTransport;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function ChildDebuggerTransport(mm, prefix) {
+  this._mm = mm;
+  this._messageName = "debug:" + prefix + ":packet";
+}
+
+
+
+
+
+
+ChildDebuggerTransport.prototype = {
+  constructor: ChildDebuggerTransport,
+
+  hooks: null,
+
+  _addListener() {
+    this._mm.addMessageListener(this._messageName, this);
+  },
+
+  _removeListener() {
+    try {
+      this._mm.removeMessageListener(this._messageName, this);
+    } catch (e) {
+      if (e.result != Cr.NS_ERROR_NULL_POINTER) {
+        throw e;
+      }
+      
+      
+      
+    }
+  },
+
+  ready: function() {
+    this._addListener();
+  },
+
+  close: function() {
+    this._removeListener();
+    this.hooks.onClosed();
+  },
+
+  receiveMessage: function({data}) {
+    this.hooks.onPacket(data);
+  },
+
+  
+
+
+
+
+  _canBeSerialized: function(object) {
+    try {
+      const holder = new StructuredCloneHolder(object);
+      holder.deserialize(this);
+    } catch (e) {
+      return false;
+    }
+    return true;
+  },
+
+  pathToUnserializable: function(object) {
+    for (const key in object) {
+      const value = object[key];
+      if (!this._canBeSerialized(value)) {
+        if (typeof value == "object") {
+          return [key].concat(this.pathToUnserializable(value));
+        }
+        return [key];
+      }
+    }
+    return [];
+  },
+
+  send: function(packet) {
+    if (flags.testing && !this._canBeSerialized(packet)) {
+      const attributes = this.pathToUnserializable(packet);
+      let msg = "Following packet can't be serialized: " + JSON.stringify(packet);
+      msg += "\nBecause of attributes: " + attributes.join(", ") + "\n";
+      msg += "Did you pass a function or an XPCOM object in it?";
+      throw new Error(msg);
+    }
+    try {
+      this._mm.sendAsyncMessage(this._messageName, packet);
+    } catch (e) {
+      if (e.result != Cr.NS_ERROR_NULL_POINTER) {
+        throw e;
+      }
+      
+      
+      
+    }
+  },
+
+  startBulkSend: function() {
+    throw new Error("Can't send bulk data to child processes.");
+  },
+
+  swapBrowser(mm) {
+    this._removeListener();
+    this._mm = mm;
+    this._addListener();
+  },
+};
+
+exports.ChildDebuggerTransport = ChildDebuggerTransport;
+
+
+
+
+
+
+
+
+
+
+
+if (!this.isWorker) {
+  
+  (function() {
     
 
 
 
+    function WorkerDebuggerTransport(dbg, id) {
+      this._dbg = dbg;
+      this._id = id;
+      this.onMessage = this._onMessage.bind(this);
+    }
 
+    WorkerDebuggerTransport.prototype = {
+      constructor: WorkerDebuggerTransport,
 
+      ready: function() {
+        this._dbg.addListener(this);
+      },
 
+      close: function() {
+        this._dbg.removeListener(this);
+        if (this.hooks) {
+          this.hooks.onClosed();
+        }
+      },
 
+      send: function(packet) {
+        this._dbg.postMessage(JSON.stringify({
+          type: "message",
+          id: this._id,
+          message: packet
+        }));
+      },
 
-    startBulkSend: function({actor, type, length}) {
-      const serial = this._serial.count++;
+      startBulkSend: function() {
+        throw new Error("Can't send bulk data from worker threads!");
+      },
 
-      dumpn("Sent bulk packet " + serial + " for actor " + actor);
-      if (!this.other) {
-        const error = new Error("startBulkSend: other side of transport missing");
-        return promise.reject(error);
-      }
-
-      const pipe = new Pipe(true, true, 0, 0, null);
-
-      DevToolsUtils.executeSoon(DevToolsUtils.makeInfallible(() => {
-        dumpn("Received bulk packet " + serial);
-        if (!this.other.hooks) {
+      _onMessage: function(message) {
+        const packet = JSON.parse(message);
+        if (packet.type !== "message" || packet.id !== this._id) {
           return;
         }
 
-        
-        const deferred = defer();
-        const packet = {
-          actor: actor,
-          type: type,
-          length: length,
-          copyTo: (output) => {
-            const copying =
-            StreamUtils.copyStream(pipe.inputStream, output, length);
-            deferred.resolve(copying);
-            return copying;
-          },
-          stream: pipe.inputStream,
-          done: deferred
-        };
-
-        this.other.hooks.onBulkPacket(packet);
-
-        
-        deferred.promise.then(() => pipe.inputStream.close(), this.close);
-      }, "LocalDebuggerTransport instance's this.other.hooks.onBulkPacket"));
-
-      
-      const sendDeferred = defer();
-
-      
-      
-      DevToolsUtils.executeSoon(() => {
-        const copyDeferred = defer();
-
-        sendDeferred.resolve({
-          copyFrom: (input) => {
-            const copying =
-            StreamUtils.copyStream(input, pipe.outputStream, length);
-            copyDeferred.resolve(copying);
-            return copying;
-          },
-          stream: pipe.outputStream,
-          done: copyDeferred
-        });
-
-        
-        copyDeferred.promise.then(() => pipe.outputStream.close(), this.close);
-      });
-
-      return sendDeferred.promise;
-    },
-
-    
-
-
-    close: function() {
-      if (this.other) {
-        
-        
-        const other = this.other;
-        this.other = null;
-        other.close();
-      }
-      if (this.hooks) {
-        try {
-          this.hooks.onClosed();
-        } catch (ex) {
-          console.error(ex);
-        }
-        this.hooks = null;
-      }
-    },
-
-    
-
-
-    ready: function() {},
-
-    
-
-
-    _deepFreeze: function(object) {
-      Object.freeze(object);
-      for (const prop in object) {
-        
-        
-        
-        
-        if (object.hasOwnProperty(prop) && typeof object === "object" &&
-            !Object.isFrozen(object)) {
-          this._deepFreeze(object[prop]);
+        if (this.hooks) {
+          this.hooks.onPacket(packet.message);
         }
       }
+    };
+
+    exports.WorkerDebuggerTransport = WorkerDebuggerTransport;
+  }).call(this);
+} else {
+  
+  (function() {
+    
+
+
+
+    function WorkerDebuggerTransport(scope, id) {
+      this._scope = scope;
+      this._id = id;
+      this._onMessage = this._onMessage.bind(this);
     }
-  };
 
-  exports.LocalDebuggerTransport = LocalDebuggerTransport;
+    WorkerDebuggerTransport.prototype = {
+      constructor: WorkerDebuggerTransport,
 
-  
+      ready: function() {
+        this._scope.addEventListener("message", this._onMessage);
+      },
 
-
-
-
-
-
-
-
-
-
-
-
-
-  function ChildDebuggerTransport(mm, prefix) {
-    this._mm = mm;
-    this._messageName = "debug:" + prefix + ":packet";
-  }
-
-  
-
-
-
-
-  ChildDebuggerTransport.prototype = {
-    constructor: ChildDebuggerTransport,
-
-    hooks: null,
-
-    _addListener() {
-      this._mm.addMessageListener(this._messageName, this);
-    },
-
-    _removeListener() {
-      try {
-        this._mm.removeMessageListener(this._messageName, this);
-      } catch (e) {
-        if (e.result != Cr.NS_ERROR_NULL_POINTER) {
-          throw e;
+      close: function() {
+        this._scope.removeEventListener("message", this._onMessage);
+        if (this.hooks) {
+          this.hooks.onClosed();
         }
-        
-        
-        
-      }
-    },
+      },
 
-    ready: function() {
-      this._addListener();
-    },
+      send: function(packet) {
+        this._scope.postMessage(JSON.stringify({
+          type: "message",
+          id: this._id,
+          message: packet
+        }));
+      },
 
-    close: function() {
-      this._removeListener();
-      this.hooks.onClosed();
-    },
+      startBulkSend: function() {
+        throw new Error("Can't send bulk data from worker threads!");
+      },
 
-    receiveMessage: function({data}) {
-      this.hooks.onPacket(data);
-    },
+      _onMessage: function(event) {
+        const packet = JSON.parse(event.data);
+        if (packet.type !== "message" || packet.id !== this._id) {
+          return;
+        }
 
-    
-
-
-
-
-    _canBeSerialized: function(object) {
-      try {
-        const holder = new StructuredCloneHolder(object);
-        holder.deserialize(this);
-      } catch (e) {
-        return false;
-      }
-      return true;
-    },
-
-    pathToUnserializable: function(object) {
-      for (const key in object) {
-        const value = object[key];
-        if (!this._canBeSerialized(value)) {
-          if (typeof value == "object") {
-            return [key].concat(this.pathToUnserializable(value));
-          }
-          return [key];
+        if (this.hooks) {
+          this.hooks.onPacket(packet.message);
         }
       }
-      return [];
-    },
+    };
 
-    send: function(packet) {
-      if (flags.testing && !this._canBeSerialized(packet)) {
-        const attributes = this.pathToUnserializable(packet);
-        let msg = "Following packet can't be serialized: " + JSON.stringify(packet);
-        msg += "\nBecause of attributes: " + attributes.join(", ") + "\n";
-        msg += "Did you pass a function or an XPCOM object in it?";
-        throw new Error(msg);
-      }
-      try {
-        this._mm.sendAsyncMessage(this._messageName, packet);
-      } catch (e) {
-        if (e.result != Cr.NS_ERROR_NULL_POINTER) {
-          throw e;
-        }
-        
-        
-        
-      }
-    },
-
-    startBulkSend: function() {
-      throw new Error("Can't send bulk data to child processes.");
-    },
-
-    swapBrowser(mm) {
-      this._removeListener();
-      this._mm = mm;
-      this._addListener();
-    },
-  };
-
-  exports.ChildDebuggerTransport = ChildDebuggerTransport;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  if (!this.isWorker) {
-    
-    (function() {
-      
-
-
-
-      function WorkerDebuggerTransport(dbg, id) {
-        this._dbg = dbg;
-        this._id = id;
-        this.onMessage = this._onMessage.bind(this);
-      }
-
-      WorkerDebuggerTransport.prototype = {
-        constructor: WorkerDebuggerTransport,
-
-        ready: function() {
-          this._dbg.addListener(this);
-        },
-
-        close: function() {
-          this._dbg.removeListener(this);
-          if (this.hooks) {
-            this.hooks.onClosed();
-          }
-        },
-
-        send: function(packet) {
-          this._dbg.postMessage(JSON.stringify({
-            type: "message",
-            id: this._id,
-            message: packet
-          }));
-        },
-
-        startBulkSend: function() {
-          throw new Error("Can't send bulk data from worker threads!");
-        },
-
-        _onMessage: function(message) {
-          const packet = JSON.parse(message);
-          if (packet.type !== "message" || packet.id !== this._id) {
-            return;
-          }
-
-          if (this.hooks) {
-            this.hooks.onPacket(packet.message);
-          }
-        }
-      };
-
-      exports.WorkerDebuggerTransport = WorkerDebuggerTransport;
-    }).call(this);
-  } else {
-    
-    (function() {
-      
-
-
-
-      function WorkerDebuggerTransport(scope, id) {
-        this._scope = scope;
-        this._id = id;
-        this._onMessage = this._onMessage.bind(this);
-      }
-
-      WorkerDebuggerTransport.prototype = {
-        constructor: WorkerDebuggerTransport,
-
-        ready: function() {
-          this._scope.addEventListener("message", this._onMessage);
-        },
-
-        close: function() {
-          this._scope.removeEventListener("message", this._onMessage);
-          if (this.hooks) {
-            this.hooks.onClosed();
-          }
-        },
-
-        send: function(packet) {
-          this._scope.postMessage(JSON.stringify({
-            type: "message",
-            id: this._id,
-            message: packet
-          }));
-        },
-
-        startBulkSend: function() {
-          throw new Error("Can't send bulk data from worker threads!");
-        },
-
-        _onMessage: function(event) {
-          const packet = JSON.parse(event.data);
-          if (packet.type !== "message" || packet.id !== this._id) {
-            return;
-          }
-
-          if (this.hooks) {
-            this.hooks.onPacket(packet.message);
-          }
-        }
-      };
-
-      exports.WorkerDebuggerTransport = WorkerDebuggerTransport;
-    }).call(this);
-  }
-});
+    exports.WorkerDebuggerTransport = WorkerDebuggerTransport;
+  }).call(this);
+}
