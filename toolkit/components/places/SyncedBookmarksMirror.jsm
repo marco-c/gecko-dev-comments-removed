@@ -462,13 +462,6 @@ class SyncedBookmarksMirror {
       throw ex;
     }
 
-    MirrorLog.debug("Replaying recorded observer notifications");
-    try {
-      await observersToNotify.notifyAll();
-    } catch (ex) {
-      MirrorLog.warn("Error notifying Places observers", ex);
-    }
-
     return changeRecords;
   }
 
@@ -601,7 +594,19 @@ class SyncedBookmarksMirror {
         "Merged tree doesn't mention all items from remote tree");
     }
 
-    return this.db.executeTransaction(async () => {
+    let mergeStatesParams = [];
+    for await (let param of yieldingIterator(mergedRoot.mergeStatesParams())) {
+      mergeStatesParams.push(param);
+    }
+    let deletions = [];
+    for await (let deletion of yieldingIterator(merger.deletions())) {
+      deletions.push(deletion);
+    }
+
+    
+    
+    
+    await this.db.executeTransaction(async () => {
       if (totalSyncChanges != PlacesUtils.bookmarks.totalSyncChanges) {
         throw new SyncedBookmarksMirror.MergeConflictError(
           "Local tree changed during merge");
@@ -609,28 +614,9 @@ class SyncedBookmarksMirror {
 
       await withTiming(
         "Applying merged tree",
-        async () => {
-          let deletions = [];
-          for await (let deletion of yieldingIterator(merger.deletions())) {
-            deletions.push(deletion);
-          }
-          await this.updateLocalItemsInPlaces(mergedRoot, deletions);
-        },
+        () => this.updateLocalItemsInPlaces(mergeStatesParams, deletions),
         time => this.recordTelemetryEvent("mirror", "apply",
           "updateLocalItemsInPlaces", { flowID, time })
-      );
-
-      
-      
-      
-      
-      
-
-      await withTiming(
-        "Recording observer notifications",
-        () => this.noteObserverChanges(observersToNotify),
-        time => this.recordTelemetryEvent("mirror", "apply",
-          "noteObserverChanges", { flowID, time })
       );
 
       await withTiming(
@@ -640,33 +626,51 @@ class SyncedBookmarksMirror {
           "stageItemsToUpload", { flowID, time })
       );
 
-      let changeRecords = await withTiming(
-        "Fetching records for local items to upload",
-        () => this.fetchLocalChangeRecords(),
-        (time, records) => this.recordTelemetryEvent("mirror", "apply",
-          "fetchLocalChangeRecords", { flowID,
-            count: Object.keys(records).length })
-      );
+      await this.db.execute(`DELETE FROM mergeStates`);
+      await this.db.execute(`DELETE FROM idsToWeaklyUpload`);
+    });
 
-      await withTiming(
-        "Cleaning up merge tables",
-        async () => {
-          await this.db.execute(`DELETE FROM mergeStates`);
+    
+    
+
+    await withTiming(
+      "Notifying Places observers",
+      async () => {
+        try {
+          
+          
+          
+          
+          await observersToNotify.notifyAll();
+        } catch (ex) {
+          MirrorLog.warn("Error notifying Places observers", ex);
+        } finally {
           await this.db.execute(`DELETE FROM itemsAdded`);
           await this.db.execute(`DELETE FROM guidsChanged`);
           await this.db.execute(`DELETE FROM itemsChanged`);
           await this.db.execute(`DELETE FROM itemsRemoved`);
           await this.db.execute(`DELETE FROM itemsMoved`);
           await this.db.execute(`DELETE FROM annosChanged`);
-          await this.db.execute(`DELETE FROM idsToWeaklyUpload`);
-          await this.db.execute(`DELETE FROM itemsToUpload`);
-        },
-        time => this.recordTelemetryEvent("mirror", "apply", "cleanup",
-          { flowID, time })
-      );
+        }
+      },
+      time => this.recordTelemetryEvent("mirror", "apply",
+        "notifyObservers", { flowID, time })
+    );
 
-      return changeRecords;
-    });
+    return withTiming(
+      "Fetching records for local items to upload",
+      async () => {
+        try {
+          let changeRecords = await this.fetchLocalChangeRecords();
+          return changeRecords;
+        } finally {
+          await this.db.execute(`DELETE FROM itemsToUpload`);
+        }
+      },
+      (time, records) => this.recordTelemetryEvent("mirror", "apply",
+        "fetchLocalChangeRecords", { flowID,
+          count: Object.keys(records).length })
+    );
   }
 
   
@@ -1344,19 +1348,22 @@ class SyncedBookmarksMirror {
 
 
 
-  async updateLocalItemsInPlaces(mergedRoot, deletions) {
+
+  async updateLocalItemsInPlaces(mergeStatesParams, deletions) {
     MirrorLog.trace("Setting up merge states table");
-    let mergeStatesParams = [];
-    for await (let param of yieldingIterator(mergedRoot.mergeStatesParams())) {
-      mergeStatesParams.push(param);
-    }
-    if (mergeStatesParams.length) {
+    for (let chunk of PlacesSyncUtils.chunkArray(mergeStatesParams,
+      Math.floor(SQLITE_MAX_VARIABLE_NUMBER / 3))) {
+
       await this.db.execute(`
         INSERT INTO mergeStates(localGuid, mergedGuid, parentGuid, level,
                                 position, valueState, structureState)
-        VALUES(IFNULL(:localGuid, :mergedGuid), :mergedGuid, :parentGuid,
-               :level, :position, :valueState, :structureState)`,
-        mergeStatesParams);
+        VALUES ${chunk.map(param =>
+          `(?, ?, ?, ${param.level}, ${param.position}, ${param.valueState}, ${
+            param.structureState})`
+        ).join(",")}`,
+        chunk.flatMap(param => [param.localGuid, param.mergedGuid,
+                                param.parentGuid])
+      );
     }
 
     MirrorLog.trace("Inserting new URLs into Places");
@@ -1407,171 +1414,6 @@ class SyncedBookmarksMirror {
 
     MirrorLog.trace("Removing remotely deleted items from Places");
     await this.db.execute(`DELETE FROM itemsToRemove`);
-  }
-
-  
-
-
-
-
-
-  async noteObserverChanges(observersToNotify) {
-    MirrorLog.trace("Recording observer notifications for removed items");
-    
-    
-    
-    
-    let removedItemRows = await this.db.execute(`
-      SELECT v.itemId AS id, v.parentId, v.parentGuid, v.position, v.type,
-             h.url, v.guid, v.isUntagging
-      FROM itemsRemoved v
-      LEFT JOIN moz_places h ON h.id = v.placeId
-      ORDER BY v.level DESC, v.parentId, v.position`);
-    for await (let row of yieldingIterator(removedItemRows)) {
-      let info = {
-        id: row.getResultByName("id"),
-        parentId: row.getResultByName("parentId"),
-        position: row.getResultByName("position"),
-        type: row.getResultByName("type"),
-        urlHref: row.getResultByName("url"),
-        guid: row.getResultByName("guid"),
-        parentGuid: row.getResultByName("parentGuid"),
-        isUntagging: row.getResultByName("isUntagging"),
-      };
-      observersToNotify.noteItemRemoved(info);
-    }
-
-    MirrorLog.trace("Recording observer notifications for changed GUIDs");
-    let changedGuidRows = await this.db.execute(`
-      SELECT b.id, b.lastModified, b.type, b.guid AS newGuid,
-             c.oldGuid, p.id AS parentId, p.guid AS parentGuid
-      FROM guidsChanged c
-      JOIN moz_bookmarks b ON b.id = c.itemId
-      JOIN moz_bookmarks p ON p.id = b.parent
-      ORDER BY c.level, p.id, b.position`);
-    for await (let row of yieldingIterator(changedGuidRows)) {
-      let info = {
-        id: row.getResultByName("id"),
-        lastModified: row.getResultByName("lastModified"),
-        type: row.getResultByName("type"),
-        newGuid: row.getResultByName("newGuid"),
-        oldGuid: row.getResultByName("oldGuid"),
-        parentId: row.getResultByName("parentId"),
-        parentGuid: row.getResultByName("parentGuid"),
-      };
-      observersToNotify.noteGuidChanged(info);
-    }
-
-    MirrorLog.trace("Recording observer notifications for new items");
-    let newItemRows = await this.db.execute(`
-      SELECT b.id, p.id AS parentId, b.position, b.type, h.url,
-             IFNULL(b.title, "") AS title, b.dateAdded, b.guid,
-             p.guid AS parentGuid, n.isTagging
-      FROM itemsAdded n
-      JOIN moz_bookmarks b ON b.guid = n.guid
-      JOIN moz_bookmarks p ON p.id = b.parent
-      LEFT JOIN moz_places h ON h.id = b.fk
-      ORDER BY n.level, p.id, b.position`);
-    for await (let row of yieldingIterator(newItemRows)) {
-      let info = {
-        id: row.getResultByName("id"),
-        parentId: row.getResultByName("parentId"),
-        position: row.getResultByName("position"),
-        type: row.getResultByName("type"),
-        urlHref: row.getResultByName("url"),
-        title: row.getResultByName("title"),
-        dateAdded: row.getResultByName("dateAdded"),
-        guid: row.getResultByName("guid"),
-        parentGuid: row.getResultByName("parentGuid"),
-        isTagging: row.getResultByName("isTagging"),
-      };
-      observersToNotify.noteItemAdded(info);
-    }
-
-    MirrorLog.trace("Recording observer notifications for moved items");
-    let movedItemRows = await this.db.execute(`
-      SELECT b.id, b.guid, b.type, p.id AS newParentId, c.oldParentId,
-             p.guid AS newParentGuid, c.oldParentGuid,
-             b.position AS newPosition, c.oldPosition, h.url
-      FROM itemsMoved c
-      JOIN moz_bookmarks b ON b.id = c.itemId
-      JOIN moz_bookmarks p ON p.id = b.parent
-      LEFT JOIN moz_places h ON h.id = b.fk
-      ORDER BY c.level, newParentId, newPosition`);
-    for await (let row of yieldingIterator(movedItemRows)) {
-      let info = {
-        id: row.getResultByName("id"),
-        guid: row.getResultByName("guid"),
-        type: row.getResultByName("type"),
-        newParentId: row.getResultByName("newParentId"),
-        oldParentId: row.getResultByName("oldParentId"),
-        newParentGuid: row.getResultByName("newParentGuid"),
-        oldParentGuid: row.getResultByName("oldParentGuid"),
-        newPosition: row.getResultByName("newPosition"),
-        oldPosition: row.getResultByName("oldPosition"),
-        urlHref: row.getResultByName("url"),
-      };
-      observersToNotify.noteItemMoved(info);
-    }
-
-    MirrorLog.trace("Recording observer notifications for changed items");
-    let changedItemRows = await this.db.execute(`
-      SELECT b.id, b.guid, b.lastModified, b.type,
-             IFNULL(b.title, "") AS newTitle,
-             IFNULL(c.oldTitle, "") AS oldTitle,
-             h.url AS newURL, i.url AS oldURL,
-             p.id AS parentId, p.guid AS parentGuid
-      FROM itemsChanged c
-      JOIN moz_bookmarks b ON b.id = c.itemId
-      JOIN moz_bookmarks p ON p.id = b.parent
-      LEFT JOIN moz_places h ON h.id = b.fk
-      LEFT JOIN moz_places i ON i.id = c.oldPlaceId
-      ORDER BY c.level, p.id, b.position`);
-    for await (let row of yieldingIterator(changedItemRows)) {
-      let info = {
-        id: row.getResultByName("id"),
-        guid: row.getResultByName("guid"),
-        lastModified: row.getResultByName("lastModified"),
-        type: row.getResultByName("type"),
-        newTitle: row.getResultByName("newTitle"),
-        oldTitle: row.getResultByName("oldTitle"),
-        newURLHref: row.getResultByName("newURL"),
-        oldURLHref: row.getResultByName("oldURL"),
-        parentId: row.getResultByName("parentId"),
-        parentGuid: row.getResultByName("parentGuid"),
-      };
-      observersToNotify.noteItemChanged(info);
-    }
-
-    MirrorLog.trace("Recording observer notifications for changed annos");
-    let annoRows = await this.db.execute(`
-      SELECT b.id, b.guid, b.lastModified, b.type, p.id AS parentId,
-             p.guid AS parentGuid, c.annoName, c.wasRemoved
-      FROM annosChanged c
-      JOIN moz_bookmarks b ON b.id = c.itemId
-      JOIN moz_bookmarks p ON p.id = b.parent
-      LEFT JOIN moz_places h ON h.id = b.fk
-      ORDER BY p.id, b.position, c.wasRemoved <> 1`);
-    for await (let row of yieldingIterator(annoRows)) {
-      observersToNotify.noteAnnoChanged({
-        id: row.getResultByName("id"),
-        name: row.getResultByName("annoName"),
-        wasRemoved: !!row.getResultByName("wasRemoved"),
-        guid: row.getResultByName("guid"),
-        lastModified: row.getResultByName("lastModified"),
-        type: row.getResultByName("type"),
-        parentId: row.getResultByName("parentId"),
-        parentGuid: row.getResultByName("parentGuid"),
-      });
-    }
-
-    MirrorLog.trace("Recording notifications for changed keywords");
-    let keywordsChangedRows = await this.db.execute(`
-      SELECT EXISTS(SELECT 1 FROM itemsAdded WHERE keywordChanged) OR
-             EXISTS(SELECT 1 FROM itemsChanged WHERE keywordChanged)
-             AS keywordsChanged`);
-    observersToNotify.shouldInvalidateKeywords =
-      !!keywordsChangedRows[0].getResultByName("keywordsChanged");
   }
 
   
@@ -2445,6 +2287,9 @@ async function initializeTempMirrorEntities(db) {
             id = OLD.newPlaceId AND
             frecency > 0;
 
+      /* Trigger frecency updates for all affected origins. */
+      DELETE FROM moz_updateoriginsupdate_temp;
+
       /* Insert a new keyword for the new URL, if one is set. */
       INSERT OR IGNORE INTO moz_keywords(keyword, place_id, post_data)
       SELECT OLD.newKeyword, OLD.newPlaceId, ''
@@ -3300,7 +3145,8 @@ class MergedBookmarkNode {
     for (let position = 0; position < this.mergedChildren.length; ++position) {
       let mergedChild = this.mergedChildren[position];
       let mergeStateParam = {
-        localGuid: mergedChild.localNode ? mergedChild.localNode.guid : null,
+        localGuid: mergedChild.localNode ? mergedChild.localNode.guid :
+                   mergedChild.guid,
         
         
         mergedGuid: mergedChild.guid,
@@ -4569,14 +4415,6 @@ BookmarkMerger.STRUCTURE = {
 
 
 
-
-
-
-
-
-
-
-
 class BookmarkObserverRecorder {
   constructor(db, { maxFrecenciesToRecalculate }) {
     this.db = db;
@@ -4591,6 +4429,7 @@ class BookmarkObserverRecorder {
 
 
   async notifyAll() {
+    await this.noteAllChanges();
     if (this.shouldInvalidateKeywords) {
       await PlacesUtils.keywords.invalidateCachedKeywords();
     }
@@ -4611,6 +4450,172 @@ class BookmarkObserverRecorder {
         LIMIT :limit
       )`,
       { limit: this.maxFrecenciesToRecalculate });
+
+    
+    await this.db.execute(`DELETE FROM moz_updateoriginsupdate_temp`);
+  }
+
+  
+
+
+
+  async noteAllChanges() {
+    MirrorLog.trace("Recording observer notifications for removed items");
+    
+    
+    
+    
+    let removedItemRows = await this.db.execute(`
+      SELECT v.itemId AS id, v.parentId, v.parentGuid, v.position, v.type,
+             h.url, v.guid, v.isUntagging
+      FROM itemsRemoved v
+      LEFT JOIN moz_places h ON h.id = v.placeId
+      ORDER BY v.level DESC, v.parentId, v.position`);
+    for await (let row of yieldingIterator(removedItemRows)) {
+      let info = {
+        id: row.getResultByName("id"),
+        parentId: row.getResultByName("parentId"),
+        position: row.getResultByName("position"),
+        type: row.getResultByName("type"),
+        urlHref: row.getResultByName("url"),
+        guid: row.getResultByName("guid"),
+        parentGuid: row.getResultByName("parentGuid"),
+        isUntagging: row.getResultByName("isUntagging"),
+      };
+      this.noteItemRemoved(info);
+    }
+
+    MirrorLog.trace("Recording observer notifications for changed GUIDs");
+    let changedGuidRows = await this.db.execute(`
+      SELECT b.id, b.lastModified, b.type, b.guid AS newGuid,
+             c.oldGuid, p.id AS parentId, p.guid AS parentGuid
+      FROM guidsChanged c
+      JOIN moz_bookmarks b ON b.id = c.itemId
+      JOIN moz_bookmarks p ON p.id = b.parent
+      ORDER BY c.level, p.id, b.position`);
+    for await (let row of yieldingIterator(changedGuidRows)) {
+      let info = {
+        id: row.getResultByName("id"),
+        lastModified: row.getResultByName("lastModified"),
+        type: row.getResultByName("type"),
+        newGuid: row.getResultByName("newGuid"),
+        oldGuid: row.getResultByName("oldGuid"),
+        parentId: row.getResultByName("parentId"),
+        parentGuid: row.getResultByName("parentGuid"),
+      };
+      this.noteGuidChanged(info);
+    }
+
+    MirrorLog.trace("Recording observer notifications for new items");
+    let newItemRows = await this.db.execute(`
+      SELECT b.id, p.id AS parentId, b.position, b.type, h.url,
+             IFNULL(b.title, "") AS title, b.dateAdded, b.guid,
+             p.guid AS parentGuid, n.isTagging
+      FROM itemsAdded n
+      JOIN moz_bookmarks b ON b.guid = n.guid
+      JOIN moz_bookmarks p ON p.id = b.parent
+      LEFT JOIN moz_places h ON h.id = b.fk
+      ORDER BY n.level, p.id, b.position`);
+    for await (let row of yieldingIterator(newItemRows)) {
+      let info = {
+        id: row.getResultByName("id"),
+        parentId: row.getResultByName("parentId"),
+        position: row.getResultByName("position"),
+        type: row.getResultByName("type"),
+        urlHref: row.getResultByName("url"),
+        title: row.getResultByName("title"),
+        dateAdded: row.getResultByName("dateAdded"),
+        guid: row.getResultByName("guid"),
+        parentGuid: row.getResultByName("parentGuid"),
+        isTagging: row.getResultByName("isTagging"),
+      };
+      this.noteItemAdded(info);
+    }
+
+    MirrorLog.trace("Recording observer notifications for moved items");
+    let movedItemRows = await this.db.execute(`
+      SELECT b.id, b.guid, b.type, p.id AS newParentId, c.oldParentId,
+             p.guid AS newParentGuid, c.oldParentGuid,
+             b.position AS newPosition, c.oldPosition, h.url
+      FROM itemsMoved c
+      JOIN moz_bookmarks b ON b.id = c.itemId
+      JOIN moz_bookmarks p ON p.id = b.parent
+      LEFT JOIN moz_places h ON h.id = b.fk
+      ORDER BY c.level, newParentId, newPosition`);
+    for await (let row of yieldingIterator(movedItemRows)) {
+      let info = {
+        id: row.getResultByName("id"),
+        guid: row.getResultByName("guid"),
+        type: row.getResultByName("type"),
+        newParentId: row.getResultByName("newParentId"),
+        oldParentId: row.getResultByName("oldParentId"),
+        newParentGuid: row.getResultByName("newParentGuid"),
+        oldParentGuid: row.getResultByName("oldParentGuid"),
+        newPosition: row.getResultByName("newPosition"),
+        oldPosition: row.getResultByName("oldPosition"),
+        urlHref: row.getResultByName("url"),
+      };
+      this.noteItemMoved(info);
+    }
+
+    MirrorLog.trace("Recording observer notifications for changed items");
+    let changedItemRows = await this.db.execute(`
+      SELECT b.id, b.guid, b.lastModified, b.type,
+             IFNULL(b.title, "") AS newTitle,
+             IFNULL(c.oldTitle, "") AS oldTitle,
+             h.url AS newURL, i.url AS oldURL,
+             p.id AS parentId, p.guid AS parentGuid
+      FROM itemsChanged c
+      JOIN moz_bookmarks b ON b.id = c.itemId
+      JOIN moz_bookmarks p ON p.id = b.parent
+      LEFT JOIN moz_places h ON h.id = b.fk
+      LEFT JOIN moz_places i ON i.id = c.oldPlaceId
+      ORDER BY c.level, p.id, b.position`);
+    for await (let row of yieldingIterator(changedItemRows)) {
+      let info = {
+        id: row.getResultByName("id"),
+        guid: row.getResultByName("guid"),
+        lastModified: row.getResultByName("lastModified"),
+        type: row.getResultByName("type"),
+        newTitle: row.getResultByName("newTitle"),
+        oldTitle: row.getResultByName("oldTitle"),
+        newURLHref: row.getResultByName("newURL"),
+        oldURLHref: row.getResultByName("oldURL"),
+        parentId: row.getResultByName("parentId"),
+        parentGuid: row.getResultByName("parentGuid"),
+      };
+      this.noteItemChanged(info);
+    }
+
+    MirrorLog.trace("Recording observer notifications for changed annos");
+    let annoRows = await this.db.execute(`
+      SELECT b.id, b.guid, b.lastModified, b.type, p.id AS parentId,
+             p.guid AS parentGuid, c.annoName, c.wasRemoved
+      FROM annosChanged c
+      JOIN moz_bookmarks b ON b.id = c.itemId
+      JOIN moz_bookmarks p ON p.id = b.parent
+      LEFT JOIN moz_places h ON h.id = b.fk
+      ORDER BY p.id, b.position, c.wasRemoved <> 1`);
+    for await (let row of yieldingIterator(annoRows)) {
+      this.noteAnnoChanged({
+        id: row.getResultByName("id"),
+        name: row.getResultByName("annoName"),
+        wasRemoved: !!row.getResultByName("wasRemoved"),
+        guid: row.getResultByName("guid"),
+        lastModified: row.getResultByName("lastModified"),
+        type: row.getResultByName("type"),
+        parentId: row.getResultByName("parentId"),
+        parentGuid: row.getResultByName("parentGuid"),
+      });
+    }
+
+    MirrorLog.trace("Recording notifications for changed keywords");
+    let keywordsChangedRows = await this.db.execute(`
+      SELECT EXISTS(SELECT 1 FROM itemsAdded WHERE keywordChanged) OR
+             EXISTS(SELECT 1 FROM itemsChanged WHERE keywordChanged)
+             AS keywordsChanged`);
+    this.shouldInvalidateKeywords =
+      !!keywordsChangedRows[0].getResultByName("keywordsChanged");
   }
 
   noteItemAdded(info) {
