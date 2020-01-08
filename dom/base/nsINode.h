@@ -1141,12 +1141,6 @@ public:
 
 
     mozilla::UniquePtr<mozilla::LinkedList<nsRange>> mCommonAncestorRanges;
-
-    
-
-
-
-    uint32_t mEditableDescendantCount;
   };
 
   
@@ -1182,28 +1176,11 @@ public:
     nsWrapperCache::UnsetFlags(aFlagsToUnset);
   }
 
-  void ChangeEditableDescendantCount(int32_t aDelta);
-
-  
-
-
-
-  uint32_t EditableDescendantCount();
-
-  
-
-
-
-
-
-  void ResetEditableDescendantCount();
-
   void SetEditableFlag(bool aEditable)
   {
     if (aEditable) {
       SetFlags(NODE_IS_EDITABLE);
-    }
-    else {
+    } else {
       UnsetFlags(NODE_IS_EDITABLE);
     }
   }

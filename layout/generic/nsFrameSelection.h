@@ -75,6 +75,12 @@ class nsIPresShell;
 
 struct MOZ_STACK_CLASS nsPeekOffsetStruct
 {
+  enum class ForceEditableRegion
+  {
+    No,
+    Yes,
+  };
+
   nsPeekOffsetStruct(nsSelectionAmount aAmount,
                      nsDirection aDirection,
                      int32_t aStartOffset,
@@ -84,6 +90,7 @@ struct MOZ_STACK_CLASS nsPeekOffsetStruct
                      bool aIsKeyboardSelect,
                      bool aVisual,
                      bool aExtend,
+                     ForceEditableRegion = ForceEditableRegion::No,
                      mozilla::EWordMovementType aWordMovementType = mozilla::eDefaultBehavior);
 
   
@@ -143,13 +150,17 @@ struct MOZ_STACK_CLASS nsPeekOffsetStruct
   bool mExtend;
 
   
+  
+  const bool mForceEditableRegion;
+
+  
 
   
   nsCOMPtr<nsIContent> mResultContent;
 
   
   
-  nsIFrame *mResultFrame;
+  nsIFrame* mResultFrame;
 
   
   int32_t mContentOffset;

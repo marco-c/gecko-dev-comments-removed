@@ -1639,21 +1639,6 @@ Element::GetElementsWithGrid(nsTArray<RefPtr<Element>>& aElements)
   }
 }
 
-
-
-
-
-static uint32_t
-EditableInclusiveDescendantCount(nsIContent* aContent)
-{
-  auto htmlElem = nsGenericHTMLElement::FromNode(aContent);
-  if (htmlElem) {
-    return htmlElem->EditableInclusiveDescendantCount();
-  }
-
-  return aContent->EditableDescendantCount();
-}
-
 nsresult
 Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
                     nsIContent* aBindingParent)
@@ -1802,8 +1787,6 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
     SetDirOnBind(this, aParent);
   }
 
-  uint32_t editableDescendantCount = 0;
-
   UpdateEditableState(false);
 
   
@@ -1826,30 +1809,6 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
        child = child->GetNextSibling()) {
     rv = child->BindToTree(aDocument, this, aBindingParent);
     NS_ENSURE_SUCCESS(rv, rv);
-
-    editableDescendantCount += EditableInclusiveDescendantCount(child);
-  }
-
-  if (aDocument) {
-    
-    
-    MOZ_ASSERT(EditableDescendantCount() == 0);
-    ChangeEditableDescendantCount(editableDescendantCount);
-
-    if (!hadParent) {
-      uint32_t editableDescendantChange = EditableInclusiveDescendantCount(this);
-      if (editableDescendantChange != 0) {
-        
-        
-        
-        
-        nsIContent* parent = GetParent();
-        while (parent && parent->IsElement()) {
-          parent->ChangeEditableDescendantCount(editableDescendantChange);
-          parent = parent->GetParent();
-        }
-      }
-    }
   }
 
   nsNodeUtils::ParentChainChanged(this);
@@ -1991,19 +1950,6 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
   }
 
   if (aNullParent) {
-    if (GetParent() && GetParent()->IsInUncomposedDoc()) {
-      
-      
-      int32_t editableDescendantChange = -1 * EditableInclusiveDescendantCount(this);
-      if (editableDescendantChange != 0) {
-        nsIContent* parent = GetParent();
-        while (parent) {
-          parent->ChangeEditableDescendantCount(editableDescendantChange);
-          parent = parent->GetParent();
-        }
-      }
-    }
-
     if (IsRootOfNativeAnonymousSubtree()) {
       nsNodeUtils::NativeAnonymousChildListChange(this, true);
     }
@@ -2057,10 +2003,6 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
       }
     }
   }
-
-  
-  
-  ResetEditableDescendantCount();
 
   if (aNullParent || !mParent->IsInShadowTree()) {
     UnsetFlags(NODE_IS_IN_SHADOW_TREE);
