@@ -1,19 +1,19 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef MOZILLA_GFX_COMPOSITORMANAGERPARENT_H
 #define MOZILLA_GFX_COMPOSITORMANAGERPARENT_H
 
-#include <stdint.h>                     // for uint32_t
-#include "mozilla/Attributes.h"         // for override
-#include "mozilla/StaticPtr.h"          // for StaticRefPtr
-#include "mozilla/StaticMutex.h"        // for StaticMutex
-#include "mozilla/RefPtr.h"             // for already_AddRefed
+#include <stdint.h>                     
+#include "mozilla/Attributes.h"         
+#include "mozilla/StaticPtr.h"          
+#include "mozilla/StaticMutex.h"        
+#include "mozilla/RefPtr.h"             
 #include "mozilla/layers/PCompositorManagerParent.h"
-#include "nsTArray.h"                   // for AutoTArray
+#include "nsTArray.h"                   
 
 namespace mozilla {
 namespace layers {
@@ -46,8 +46,6 @@ public:
 
   virtual mozilla::ipc::IPCResult RecvNotifyMemoryPressure() override;
 
-  virtual mozilla::ipc::IPCResult RecvReportMemory(ReportMemoryResolver&&) override;
-
   void BindComplete();
   void ActorDestroy(ActorDestroyReason aReason) override;
 
@@ -77,7 +75,7 @@ private:
   AutoTArray<RefPtr<CompositorBridgeParent>, 1> mPendingCompositorBridges;
 };
 
-} // namespace layers
-} // namespace mozilla
+} 
+} 
 
 #endif

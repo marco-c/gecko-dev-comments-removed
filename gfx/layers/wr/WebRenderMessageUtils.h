@@ -177,12 +177,6 @@ struct ParamTraits<mozilla::wr::WebRenderError>
 {
 };
 
-template<>
-struct ParamTraits<mozilla::wr::MemoryReport>
-  : public PlainOldDataSerializer<mozilla::wr::MemoryReport>
-{
-};
-
 } 
 
 #endif 

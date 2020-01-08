@@ -120,12 +120,12 @@ impl WrVecU8 {
         unsafe { Vec::from_raw_parts(self.data, self.length, self.capacity) }
     }
 
-    // Equivalent to `to_vec` but clears self instead of consuming the value.
+    
     fn flush_into_vec(&mut self) -> Vec<u8> {
         self.convert_into_vec::<u8>()
     }
 
-    // Like flush_into_vec, but also does an unsafe conversion to the desired type.
+    
     fn convert_into_vec<T>(&mut self) -> Vec<T> {
         let vec = unsafe {
             Vec::from_raw_parts(
@@ -159,8 +159,8 @@ impl WrVecU8 {
 
 #[repr(C)]
 pub struct FfiVec<T> {
-    // We use a *const instead of a *mut because we don't want the C++ side
-    // to be mutating this. It is strictly read-only from C++
+    
+    
     data: *const T,
     length: usize,
     capacity: usize,
@@ -180,7 +180,7 @@ impl<T> FfiVec<T> {
 
 impl<T> Drop for FfiVec<T> {
     fn drop(&mut self) {
-        // turn the stuff back into a Vec and let it be freed normally
+        
         let _ = unsafe {
             Vec::from_raw_parts(
                 self.data as *mut T,
@@ -331,15 +331,15 @@ enum WrExternalImageType {
 struct WrExternalImage {
     image_type: WrExternalImageType,
 
-    // external texture handle
+    
     handle: u32,
-    // external texture coordinate
+    
     u0: f32,
     v0: f32,
     u1: f32,
     v1: f32,
 
-    // external image buffer
+    
     buff: *const u8,
     size: usize,
 }
@@ -413,10 +413,10 @@ pub enum WrFilterOpType {
 #[derive(Copy, Clone)]
 pub struct WrFilterOp {
     filter_type: WrFilterOpType,
-    argument: c_float, // holds radius for DropShadow; value for other filters
-    offset: LayoutVector2D, // only used for DropShadow
-    color: ColorF, // only used for DropShadow
-    matrix: [f32;20], // only used in ColorMatrix
+    argument: c_float, 
+    offset: LayoutVector2D, 
+    color: ColorF, 
+    matrix: [f32;20], 
 }
 
 /// cbindgen:derive-eq=false
@@ -455,7 +455,7 @@ fn get_proc_address(glcontext_ptr: *mut c_void,
     let symbol = unsafe { get_proc_address_from_glcontext(glcontext_ptr, symbol_name.as_ptr()) };
 
     if symbol.is_null() {
-        // XXX Bug 1322949 Make whitelist for extensions
+        
         warn!("Could not find symbol {:?} by glcontext", symbol_name);
     }
 
@@ -475,16 +475,16 @@ extern "C" {
     fn is_in_main_thread() -> bool;
     fn is_glcontext_egl(glcontext_ptr: *mut c_void) -> bool;
     fn is_glcontext_angle(glcontext_ptr: *mut c_void) -> bool;
-    // Enables binary recording that can be used with `wrench replay`
-    // Outputs a wr-record-*.bin file for each window that is shown
-    // Note: wrench will panic if external images are used, they can
-    // be disabled in WebRenderBridgeParent::ProcessWebRenderCommands
-    // by commenting out the path that adds an external image ID
+    
+    
+    
+    
+    
     fn gfx_use_wrench() -> bool;
     fn gfx_wr_resource_path_override() -> *const c_char;
-    // TODO: make gfx_critical_error() work.
-    // We still have problem to pass the error message from render/render_backend
-    // thread to main thread now.
+    
+    
+    
     #[allow(dead_code)]
     fn gfx_critical_error(msg: *const c_char);
     fn gfx_critical_note(msg: *const c_char);
@@ -583,7 +583,7 @@ pub extern "C" fn wr_renderer_render(renderer: &mut Renderer,
     }
 }
 
-// Call wr_renderer_render() before calling this function.
+
 #[no_mangle]
 pub unsafe extern "C" fn wr_renderer_readback(renderer: &mut Renderer,
                                               width: u32,
@@ -635,17 +635,11 @@ pub extern "C" fn wr_renderer_current_epoch(renderer: &mut Renderer,
 pub unsafe extern "C" fn wr_renderer_delete(renderer: *mut Renderer) {
     let renderer = Box::from_raw(renderer);
     renderer.deinit();
-    // let renderer go out of scope and get dropped
+    
 }
 
-#[no_mangle]
-pub unsafe extern "C" fn wr_renderer_accumulate_memory_report(renderer: &mut Renderer,
-                                                              report: &mut MemoryReport) {
-    *report += renderer.report_memory();
-}
 
-// cbindgen doesn't support tuples, so we have a little struct instead, with
-// an Into implementation to convert from the tuple to the struct.
+
 #[repr(C)]
 pub struct WrPipelineEpoch {
     pipeline_id: WrPipelineId,
@@ -663,17 +657,17 @@ impl From<(WrPipelineId, WrEpoch)> for WrPipelineEpoch {
 
 #[repr(C)]
 pub struct WrPipelineInfo {
-    // This contains an entry for each pipeline that was rendered, along with
-    // the epoch at which it was rendered. Rendered pipelines include the root
-    // pipeline and any other pipelines that were reachable via IFrame display
-    // items from the root pipeline.
+    
+    
+    
+    
     epochs: FfiVec<WrPipelineEpoch>,
-    // This contains an entry for each pipeline that was removed during the
-    // last transaction. These pipelines would have been explicitly removed by
-    // calling remove_pipeline on the transaction object; the pipeline showing
-    // up in this array means that the data structures have been torn down on
-    // the webrender side, and so any remaining data structures on the caller
-    // side can now be torn down also.
+    
+    
+    
+    
+    
+    
     removed_pipelines: FfiVec<PipelineId>,
 }
 
@@ -695,24 +689,24 @@ pub unsafe extern "C" fn wr_renderer_flush_pipeline_info(renderer: &mut Renderer
 /// cbindgen:postfix=WR_DESTRUCTOR_SAFE_FUNC
 #[no_mangle]
 pub unsafe extern "C" fn wr_pipeline_info_delete(_info: WrPipelineInfo) {
-    // _info will be dropped here, and the drop impl on FfiVec will free
-    // the underlying vec memory
+    
+    
 }
 
-#[allow(improper_ctypes)] // this is needed so that rustc doesn't complain about passing the &mut Transaction to an extern function
+#[allow(improper_ctypes)] 
 extern "C" {
-    // These callbacks are invoked from the scene builder thread (aka the APZ
-    // updater thread)
+    
+    
     fn apz_register_updater(window_id: WrWindowId);
     fn apz_pre_scene_swap(window_id: WrWindowId);
-    // This function takes ownership of the pipeline_info and is responsible for
-    // freeing it via wr_pipeline_info_delete.
+    
+    
     fn apz_post_scene_swap(window_id: WrWindowId, pipeline_info: WrPipelineInfo);
     fn apz_run_updater(window_id: WrWindowId);
     fn apz_deregister_updater(window_id: WrWindowId);
 
-    // These callbacks are invoked from the render backend thread (aka the APZ
-    // sampler thread)
+    
+    
     fn apz_register_sampler(window_id: WrWindowId);
     fn apz_sample_transforms(window_id: WrWindowId, transaction: &mut Transaction);
     fn apz_deregister_sampler(window_id: WrWindowId);
@@ -749,9 +743,9 @@ impl SceneBuilderHooks for APZCallbacks {
             apz_post_scene_swap(self.window_id, info);
         }
 
-        // After a scene swap we should schedule a render for the next vsync,
-        // otherwise there's no guarantee that the new scene will get rendered
-        // anytime soon
+        
+        
+        
         unsafe { wr_schedule_render(self.window_id) }
     }
 
@@ -788,7 +782,7 @@ impl AsyncPropertySampler for SamplerCallback {
     fn sample(&self) -> Vec<FrameMsg> {
         let mut transaction = Transaction::new();
         unsafe { apz_sample_transforms(self.window_id, &mut transaction) };
-        // TODO: also omta_sample_transforms(...)
+        
         transaction.get_frame_ops()
     }
 
@@ -814,7 +808,7 @@ impl ThreadListener for GeckoProfilerThreadListener {
     fn thread_started(&self, thread_name: &str) {
         let name = CString::new(thread_name).unwrap();
         unsafe {
-            // gecko_profiler_register_thread copies the passed name here.
+            
             gecko_profiler_register_thread(name.as_ptr());
         }
     }
@@ -890,12 +884,12 @@ pub extern "C" fn wr_renderer_update_program_cache(renderer: &mut Renderer, prog
     renderer.update_program_cache(program_cache);
 }
 
-// This matches IsEnvSet in gfxEnv.h
+
 fn env_var_to_bool(key: &'static str) -> bool {
     env::var(key).ok().map_or(false, |v| !v.is_empty())
 }
 
-// Call MakeCurrent before this.
+
 #[no_mangle]
 pub extern "C" fn wr_window_new(window_id: WrWindowId,
                                 window_width: u32,
@@ -903,7 +897,6 @@ pub extern "C" fn wr_window_new(window_id: WrWindowId,
                                 support_low_priority_transactions: bool,
                                 gl_context: *mut c_void,
                                 thread_pool: *mut WrThreadPool,
-                                size_of_op: VoidPtrToSizeFn,
                                 out_handle: &mut *mut DocumentHandle,
                                 out_renderer: &mut *mut Renderer,
                                 out_max_texture_size: *mut u32)
@@ -947,7 +940,6 @@ pub extern "C" fn wr_window_new(window_id: WrWindowId,
         blob_image_handler: Some(Box::new(Moz2dBlobImageHandler::new(workers.clone()))),
         workers: Some(workers.clone()),
         thread_listener: Some(Box::new(GeckoProfilerThreadListener::new())),
-        size_of_op: Some(size_of_op),
         resource_override_path: unsafe {
             let override_charptr = gfx_wr_resource_path_override();
             if override_charptr.is_null() {
@@ -963,7 +955,7 @@ pub extern "C" fn wr_window_new(window_id: WrWindowId,
         upload_method,
         scene_builder_hooks: Some(Box::new(APZCallbacks::new(window_id))),
         sampler: Some(Box::new(SamplerCallback::new(window_id))),
-        max_texture_size: Some(8192), // Moz2D doesn't like textures bigger than this
+        max_texture_size: Some(8192), 
         clear_color: Some(ColorF::new(0.0, 0.0, 0.0, 0.0)),
         precache_shaders: env_var_to_bool("MOZ_WR_PRECACHE_SHADERS"),
         ..Default::default()
@@ -1049,14 +1041,6 @@ pub unsafe extern "C" fn wr_api_notify_memory_pressure(dh: &mut DocumentHandle) 
     dh.api.notify_memory_pressure();
 }
 
-#[no_mangle]
-pub unsafe extern "C" fn wr_api_accumulate_memory_report(
-    dh: &mut DocumentHandle,
-    report: &mut MemoryReport
-) {
-    *report += dh.api.report_memory();
-}
-
 /// cbindgen:postfix=WR_DESTRUCTOR_SAFE_FUNC
 #[no_mangle]
 pub unsafe extern "C" fn wr_api_clear_all_caches(dh: &mut DocumentHandle) {
@@ -1065,9 +1049,9 @@ pub unsafe extern "C" fn wr_api_clear_all_caches(dh: &mut DocumentHandle) {
 
 fn make_transaction(do_async: bool) -> Transaction {
     let mut transaction = Transaction::new();
-    // Ensure that we either use async scene building or not based on the
-    // gecko pref, regardless of what the default is. We can remove this once
-    // the scene builder thread is enabled everywhere and working well.
+    
+    
+    
     if do_async {
         transaction.use_scene_builder_thread();
     } else {
@@ -1136,9 +1120,9 @@ pub extern "C" fn wr_transaction_set_display_list(
 ) {
     let color = if background.a == 0.0 { None } else { Some(background) };
 
-    // See the documentation of set_display_list in api.rs. I don't think
-    // it makes a difference in gecko at the moment(until APZ is figured out)
-    // but I suppose it is a good default.
+    
+    
+    
     let preserve_frame_state = true;
 
     let dl_vec = dl_data.flush_into_vec();
@@ -1583,16 +1567,16 @@ pub unsafe extern "C" fn wr_api_flush_scene_builder(dh: &mut DocumentHandle) {
     dh.api.flush_scene_builder();
 }
 
-// RenderThread WIP notes:
-// In order to separate the compositor thread (or ipc receiver) and the render
-// thread, some of the logic below needs to be rewritten. In particular
-// the WrWindowState and Notifier implementations aren't designed to work with
-// a separate render thread.
-// As part of that I am moving the bindings closer to WebRender's API boundary,
-// and moving more of the logic in C++ land.
-// This work is tracked by bug 1328602.
-//
-// See RenderThread.h for some notes about how the pieces fit together.
+
+
+
+
+
+
+
+
+
+
 
 pub struct WebRenderFrameBuilder {
     pub root_pipeline_id: WrPipelineId,
@@ -1723,10 +1707,10 @@ pub extern "C" fn wr_dp_push_stacking_context(state: &mut WrState,
         match anim.effect_type {
             WrAnimationType::Opacity => {
                 filters.push(FilterOp::Opacity(PropertyBinding::Binding(PropertyBindingKey::new(anim.id),
-                                                                        // We have to set the static opacity value as
-                                                                        // the value for the case where the animation is
-                                                                        // in not in-effect (e.g. in the delay phase
-                                                                        // with no corresponding fill mode).
+                                                                        
+                                                                        
+                                                                        
+                                                                        
                                                                         opacity_ref.cloned().unwrap_or(1.0)),
                                                                         1.0));
                 has_opacity_animation = true;
@@ -1734,7 +1718,7 @@ pub extern "C" fn wr_dp_push_stacking_context(state: &mut WrState,
             WrAnimationType::Transform => {
                 transform_binding =
                     Some(PropertyBinding::Binding(PropertyBindingKey::new(anim.id),
-                                                  // Same as above opacity case.
+                                                  
                                                   transform_ref.cloned().unwrap_or(LayoutTransform::identity())));
             },
         }
@@ -2013,7 +1997,7 @@ pub extern "C" fn wr_dp_push_image(state: &mut WrState,
                      color);
 }
 
-/// Push a 3 planar yuv image.
+
 #[no_mangle]
 pub extern "C" fn wr_dp_push_yuv_planar_image(state: &mut WrState,
                                               bounds: LayoutRect,
@@ -2037,7 +2021,7 @@ pub extern "C" fn wr_dp_push_yuv_planar_image(state: &mut WrState,
                          image_rendering);
 }
 
-/// Push a 2 planar NV12 image.
+
 #[no_mangle]
 pub extern "C" fn wr_dp_push_yuv_NV12_image(state: &mut WrState,
                                             bounds: LayoutRect,
@@ -2060,7 +2044,7 @@ pub extern "C" fn wr_dp_push_yuv_NV12_image(state: &mut WrState,
                          image_rendering);
 }
 
-/// Push a yuv interleaved image.
+
 #[no_mangle]
 pub extern "C" fn wr_dp_push_yuv_interleaved_image(state: &mut WrState,
                                                    bounds: LayoutRect,
@@ -2453,9 +2437,9 @@ pub extern "C" fn wr_api_hit_test(dh: &mut DocumentHandle,
                                   out_hit_info: &mut u16) -> bool {
     let result = dh.api.hit_test(dh.document_id, None, point, HitTestFlags::empty());
     for item in &result.items {
-        // For now we should never be getting results back for which the tag is
-        // 0 (== CompositorHitTestInfo::eInvisibleToHitTest). In the future if
-        // we allow this, we'll want to |continue| on the loop in this scenario.
+        
+        
+        
         debug_assert!(item.tag.1 != 0);
         *out_pipeline_id = item.pipeline;
         *out_scroll_id = item.tag.0;
@@ -2479,11 +2463,11 @@ pub unsafe extern "C" fn wr_dec_ref_arc(arc: *const VecU8) {
     Arc::from_raw(arc);
 }
 
-// TODO: nical
-// Update for the new blob image interface changes.
-//
+
+
+
 extern "C" {
-     // TODO: figure out the API for tiled blob images.
+     
      pub fn wr_moz2d_render_cb(blob: ByteSlice,
                                width: u32,
                                height: u32,
@@ -2497,8 +2481,8 @@ extern "C" {
 
 #[no_mangle]
 pub extern "C" fn wr_root_scroll_node_id() -> usize {
-    // The PipelineId doesn't matter here, since we just want the numeric part of the id
-    // produced for any given root reference frame.
+    
+    
     pack_clip_id(ClipId::root_scroll_node(PipelineId(0, 0)))
 }
 

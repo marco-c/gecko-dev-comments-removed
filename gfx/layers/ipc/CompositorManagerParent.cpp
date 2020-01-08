@@ -6,7 +6,6 @@
 
 #include "mozilla/layers/CompositorManagerParent.h"
 #include "mozilla/gfx/GPUParent.h"
-#include "mozilla/webrender/RenderThread.h"
 #include "mozilla/layers/CompositorBridgeParent.h"
 #include "mozilla/layers/CrossProcessCompositorBridgeParent.h"
 #include "mozilla/layers/CompositorThread.h"
@@ -297,38 +296,6 @@ CompositorManagerParent::RecvNotifyMemoryPressure()
   for (auto bridge : compositorBridges) {
     static_cast<CompositorBridgeParentBase*>(bridge)->NotifyMemoryPressure();
   }
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult
-CompositorManagerParent::RecvReportMemory(ReportMemoryResolver&& aResolver)
-{
-  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
-  MemoryReport aggregate;
-  PodZero(&aggregate);
-
-  
-  nsTArray<PCompositorBridgeParent*> compositorBridges;
-  ManagedPCompositorBridgeParent(compositorBridges);
-  for (auto bridge : compositorBridges) {
-    static_cast<CompositorBridgeParentBase*>(bridge)->AccumulateMemoryReport(&aggregate);
-  }
-
-  
-  
-  
-  
-  
-  wr::RenderThread::AccumulateMemoryReport(aggregate)->Then(
-    CompositorThreadHolder::Loop()->SerialEventTarget(), __func__,
-    [resolver = std::move(aResolver)](MemoryReport aReport) {
-      resolver(aReport);
-    },
-    [](bool) {
-      MOZ_ASSERT_UNREACHABLE();
-    }
-  );
-
   return IPC_OK();
 }
 
