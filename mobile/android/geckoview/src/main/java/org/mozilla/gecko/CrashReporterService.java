@@ -1,15 +1,21 @@
 package org.mozilla.gecko;
 
+import android.app.Service;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.os.Build;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.v4.app.JobIntentService;
+import android.util.Log;
+
 import org.mozilla.gecko.mozglue.GeckoLoader;
 import org.mozilla.gecko.mozglue.MinidumpAnalyzer;
 import org.mozilla.gecko.util.INIParser;
 import org.mozilla.gecko.util.INISection;
 import org.mozilla.gecko.util.ProxySelector;
-
-import android.app.IntentService;
-import android.content.Intent;
-import android.os.Build;
-import android.util.Log;
+import org.mozilla.geckoview.GeckoRuntime;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -33,7 +39,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.GZIPOutputStream;
 
-public class CrashReporterService extends IntentService {
+public class CrashReporterService extends JobIntentService {
     private static final String LOGTAG = "CrashReporter";
     private static final String ACTION_REPORT_CRASH = "org.mozilla.gecko.reportCrash";
     private static final String PASSED_MINI_DUMP_KEY = "minidumpPath";
@@ -52,13 +58,9 @@ public class CrashReporterService extends IntentService {
     private HashMap<String, String> mExtrasStringMap;
     private boolean mMinidumpSucceeded;
 
-    public CrashReporterService() {
-        super("CrashReporterService");
-    }
-
     @Override
-    protected void onHandleIntent(Intent intent) {
-        if (intent == null || !intent.getAction().equals(ACTION_REPORT_CRASH)) {
+    protected void onHandleWork(Intent intent) {
+        if (intent == null || intent.getAction() == null || !intent.getAction().equals(ACTION_REPORT_CRASH)) {
             Log.d(LOGTAG, "Invalid or unknown action");
             return;
         }
@@ -72,6 +74,32 @@ public class CrashReporterService extends IntentService {
         }
 
         submitCrash(intent);
+    }
+
+    @Override
+    public int onStartCommand(@Nullable Intent intent, int flags, int startId) {
+        
+        
+        if (Build.VERSION.SDK_INT >= 26) {
+            
+            
+            enqueueWork(this, intent);
+        }
+
+        return Service.START_NOT_STICKY;
+    }
+
+    @Override
+    public boolean onStopCurrentWork() {
+        
+        return false;
+    }
+
+    static void enqueueWork(@NonNull final Context context, @NonNull final Intent intent) {
+        
+        final int jobId = intent.getIntExtra("jobId", 1024);
+
+        enqueueWork(context, CrashReporterService.class, jobId, intent);
     }
 
     private Class<?> getFennecReporterActivity() {
