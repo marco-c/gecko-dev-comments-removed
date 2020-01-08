@@ -50,8 +50,7 @@ enum nsMenuType {
 
 enum nsMenuListType {
   eNotMenuList,      
-  eReadonlyMenuList, 
-  eEditableMenuList  
+  eReadonlyMenuList  
 };
 
 class nsMenuFrame;

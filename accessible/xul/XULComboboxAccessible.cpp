@@ -35,10 +35,7 @@ XULComboboxAccessible::
   
   
   
-  if (!mContent->NodeInfo()->Equals(nsGkAtoms::textbox, kNameSpaceID_XUL) &&
-      !mContent->AsElement()->AttrValueIs(kNameSpaceID_None,
-                                          nsGkAtoms::editable, nsGkAtoms::_true,
-                                          eIgnoreCase)) {
+  if (!mContent->NodeInfo()->Equals(nsGkAtoms::textbox, kNameSpaceID_XUL)) {
     mStateFlags |= eNoXBLKids;
   }
 }
