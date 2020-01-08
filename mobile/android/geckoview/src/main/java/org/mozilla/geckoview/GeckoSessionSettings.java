@@ -27,6 +27,11 @@ public final class GeckoSessionSettings implements Parcelable {
     public static final int DISPLAY_MODE_STANDALONE = 2;
     public static final int DISPLAY_MODE_FULLSCREEN = 3;
 
+    
+    public static final int USER_AGENT_MODE_MOBILE = 0;
+    public static final int USER_AGENT_MODE_DESKTOP = 1;
+    public static final int USER_AGENT_MODE_VR = 2;
+
     public static class Key<T> {
          final String name;
          final boolean initOnly;
@@ -79,8 +84,9 @@ public final class GeckoSessionSettings implements Parcelable {
     
 
 
-    public static final Key<Boolean> USE_DESKTOP_MODE =
-        new Key<Boolean>("useDesktopMode");
+    public static final Key<Integer> USER_AGENT_MODE =
+        new Key<Integer>("userAgentMode",  false,
+                         Arrays.asList(USER_AGENT_MODE_MOBILE, USER_AGENT_MODE_DESKTOP, USER_AGENT_MODE_VR));
 
     
 
@@ -116,7 +122,7 @@ public final class GeckoSessionSettings implements Parcelable {
         mBundle.putBoolean(USE_TRACKING_PROTECTION.name, false);
         mBundle.putBoolean(USE_PRIVATE_MODE.name, false);
         mBundle.putBoolean(USE_MULTIPROCESS.name, true);
-        mBundle.putBoolean(USE_DESKTOP_MODE.name, false);
+        mBundle.putInt(USER_AGENT_MODE.name, USER_AGENT_MODE_MOBILE);
         mBundle.putInt(DISPLAY_MODE.name, DISPLAY_MODE_BROWSER);
     }
 
