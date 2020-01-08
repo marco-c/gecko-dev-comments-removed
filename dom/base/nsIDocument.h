@@ -992,7 +992,8 @@ public:
 
   bool GetHasTrackingContentBlocked()
   {
-    return mHasTrackingContentBlocked;
+    return mContentBlockingLog.HasBlockedAnyOfType(
+        nsIWebProgressListener::STATE_BLOCKED_TRACKING_CONTENT);
   }
 
   
@@ -1000,7 +1001,8 @@ public:
 
   bool GetHasSlowTrackingContentBlocked()
   {
-    return mHasSlowTrackingContentBlocked;
+    return mContentBlockingLog.HasBlockedAnyOfType(
+        nsIWebProgressListener::STATE_BLOCKED_SLOW_TRACKING_CONTENT);
   }
 
   
@@ -1008,7 +1010,8 @@ public:
 
   bool GetHasAllCookiesBlocked()
   {
-    return mHasAllCookiesBlocked;
+    return mContentBlockingLog.HasBlockedAnyOfType(
+        nsIWebProgressListener::STATE_COOKIES_BLOCKED_ALL);
   }
 
   
@@ -1016,7 +1019,8 @@ public:
 
   bool GetHasTrackingCookiesBlocked()
   {
-    return mHasTrackingCookiesBlocked;
+    return mContentBlockingLog.HasBlockedAnyOfType(
+        nsIWebProgressListener::STATE_COOKIES_BLOCKED_TRACKER);
   }
 
   
@@ -1024,7 +1028,8 @@ public:
 
   bool GetHasForeignCookiesBlocked()
   {
-    return mHasForeignCookiesBlocked;
+    return mContentBlockingLog.HasBlockedAnyOfType(
+        nsIWebProgressListener::STATE_COOKIES_BLOCKED_FOREIGN);
   }
 
   
@@ -1032,7 +1037,8 @@ public:
 
   bool GetHasCookiesBlockedByPermission()
   {
-    return mHasCookiesBlockedByPermission;
+    return mContentBlockingLog.HasBlockedAnyOfType(
+        nsIWebProgressListener::STATE_COOKIES_BLOCKED_BY_PERMISSION);
   }
 
   
@@ -1041,7 +1047,6 @@ public:
   void SetHasTrackingContentBlocked(bool aHasTrackingContentBlocked,
                                     const nsAString& aOriginBlocked)
   {
-    mHasTrackingContentBlocked = aHasTrackingContentBlocked;
     RecordContentBlockingLog(aOriginBlocked,
                              nsIWebProgressListener::STATE_BLOCKED_TRACKING_CONTENT,
                              aHasTrackingContentBlocked);
@@ -1053,7 +1058,6 @@ public:
   void SetHasSlowTrackingContentBlocked(bool aHasSlowTrackingContentBlocked,
                                         const nsAString& aOriginBlocked)
   {
-    mHasSlowTrackingContentBlocked = aHasSlowTrackingContentBlocked;
     RecordContentBlockingLog(aOriginBlocked,
                              nsIWebProgressListener::STATE_BLOCKED_SLOW_TRACKING_CONTENT,
                              aHasSlowTrackingContentBlocked);
@@ -1065,7 +1069,6 @@ public:
   void SetHasAllCookiesBlocked(bool aHasAllCookiesBlocked,
                                const nsAString& aOriginBlocked)
   {
-    mHasAllCookiesBlocked = aHasAllCookiesBlocked;
     RecordContentBlockingLog(aOriginBlocked,
                              nsIWebProgressListener::STATE_COOKIES_BLOCKED_ALL,
                              aHasAllCookiesBlocked);
@@ -1077,7 +1080,6 @@ public:
   void SetHasTrackingCookiesBlocked(bool aHasTrackingCookiesBlocked,
                                     const nsAString& aOriginBlocked)
   {
-    mHasTrackingCookiesBlocked = aHasTrackingCookiesBlocked;
     RecordContentBlockingLog(aOriginBlocked,
                              nsIWebProgressListener::STATE_COOKIES_BLOCKED_TRACKER,
                              aHasTrackingCookiesBlocked);
@@ -1089,7 +1091,6 @@ public:
   void SetHasForeignCookiesBlocked(bool aHasForeignCookiesBlocked,
                                    const nsAString& aOriginBlocked)
   {
-    mHasForeignCookiesBlocked = aHasForeignCookiesBlocked;
     RecordContentBlockingLog(aOriginBlocked,
                              nsIWebProgressListener::STATE_COOKIES_BLOCKED_FOREIGN,
                              aHasForeignCookiesBlocked);
@@ -1101,7 +1102,6 @@ public:
   void SetHasCookiesBlockedByPermission(bool aHasCookiesBlockedByPermission,
                                         const nsAString& aOriginBlocked)
   {
-    mHasCookiesBlockedByPermission = aHasCookiesBlockedByPermission;
     RecordContentBlockingLog(aOriginBlocked,
                              nsIWebProgressListener::STATE_COOKIES_BLOCKED_BY_PERMISSION,
                              aHasCookiesBlockedByPermission);
@@ -4189,24 +4189,6 @@ protected:
 
   
   bool mHasUnsafeInlineCSP : 1;
-
-  
-  bool mHasTrackingContentBlocked : 1;
-
-  
-  bool mHasSlowTrackingContentBlocked : 1;
-
-  
-  bool mHasAllCookiesBlocked : 1;
-
-  
-  bool mHasTrackingCookiesBlocked : 1;
-
-  
-  bool mHasForeignCookiesBlocked : 1;
-
-  
-  bool mHasCookiesBlockedByPermission : 1;
 
   
   bool mHasTrackingContentLoaded : 1;
