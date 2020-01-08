@@ -1,5 +1,10 @@
+if (typeof getBuildConfiguration === "undefined") {
+  var getBuildConfiguration = SpecialPowers.Cu.getJSTestingFunctions().getBuildConfiguration;
+}
 
-var functionDeclarationsConfigurable = typeof document !== "undefined";
+
+var functionDeclarationsConfigurable = typeof document !== "undefined" &&
+                                       !getBuildConfiguration().release_or_beta;
 
 var o = { f: "string-f" };
 with (o) {
