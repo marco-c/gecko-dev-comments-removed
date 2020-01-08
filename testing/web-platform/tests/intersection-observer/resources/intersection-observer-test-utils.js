@@ -20,59 +20,9 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 function waitForNotification(t, f) {
   requestAnimationFrame(function() {
-    requestAnimationFrame(function() { t.step_timeout(f); });
+    t.step_timeout(function() { t.step_timeout(f); });
   });
 }
 

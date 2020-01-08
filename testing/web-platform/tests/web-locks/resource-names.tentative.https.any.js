@@ -1,6 +1,5 @@
 
 
-
 'use strict';
 
 function code_points(s) {
