@@ -4495,12 +4495,6 @@ nsresult XREMain::XRE_mainRun() {
     
     PR_SetEnv(saved.release());
   }
-
-#if defined(MOZ_SANDBOX)
-  
-  
-  SandboxBroker::GeckoDependentInitialize();
-#endif
 #endif
 
   SaveStateForAppInitiatedRestart();

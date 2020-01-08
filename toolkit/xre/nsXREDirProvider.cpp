@@ -67,6 +67,7 @@
 #include "nsIUUIDGenerator.h"
 #include "mozilla/Unused.h"
 #if defined(XP_WIN)
+#include "sandboxBroker.h"
 #include "WinUtils.h"
 #endif
 #endif
@@ -991,6 +992,17 @@ nsXREDirProvider::DoStartup() {
         policies->Observe(nullptr, "policies-startup", nullptr);
       }
     }
+
+#if defined(MOZ_SANDBOX) && defined(XP_WIN)
+    
+    
+    
+    
+    
+    
+    
+    mozilla::SandboxBroker::GeckoDependentInitialize();
+#endif
 
     
     nsCOMPtr<nsIObserver> em =
