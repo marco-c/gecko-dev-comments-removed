@@ -274,9 +274,10 @@ browser.Context = class {
 
     
     
-    let modals = br.parentNode.getElementsByTagNameNS(
+    let modalElements = br.parentNode.getElementsByTagNameNS(
         XUL_NS, "tabmodalprompt");
-    return modals[0].ui;
+
+    return br.tabModalPromptBox.prompts.get(modalElements[0]).ui;
   }
 
   

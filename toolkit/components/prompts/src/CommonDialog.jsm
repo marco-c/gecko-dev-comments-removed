@@ -138,6 +138,7 @@ CommonDialog.prototype = {
         if (label) {
             
             this.ui.checkboxContainer.hidden = false;
+            this.ui.checkboxContainer.clientTop; 
             this.setLabelForNode(this.ui.checkbox, label);
             this.ui.checkbox.checked = this.args.checked;
         }
@@ -162,6 +163,11 @@ CommonDialog.prototype = {
             button.setAttribute("default", "true");
 
         
+        if (!xulDialog) {
+            this.ui.prompt.ensureXBLBindingAttached();
+        }
+
+        
         this.setDefaultFocus(true);
 
         if (this.args.enableDelay) {
@@ -183,10 +189,13 @@ CommonDialog.prototype = {
             Cu.reportError("Couldn't play common dialog event sound: " + e);
         }
 
-        let topic = "common-dialog-loaded";
-        if (!xulDialog)
-            topic = "tabmodal-dialog-loaded";
-        Services.obs.notifyObservers(this.ui.prompt, topic);
+        if (xulDialog) {
+            
+            Services.obs.notifyObservers(this.ui.prompt, "common-dialog-loaded");
+        } else {
+            
+            Services.obs.notifyObservers(this.ui.promptContainer, "tabmodal-dialog-loaded");
+        }
     },
 
     setLabelForNode(aNode, aLabel) {

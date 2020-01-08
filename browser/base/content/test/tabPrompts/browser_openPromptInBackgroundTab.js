@@ -30,16 +30,15 @@ add_task(async function() {
   
   await BrowserTestUtils.switchTab(gBrowser, openedTab);
   
-  let prompts = openedTab.linkedBrowser.parentNode.querySelectorAll("tabmodalprompt");
-  is(prompts.length, 1, "There should be 1 prompt");
-  let ourPrompt = prompts[0];
-  let row = ourPrompt.querySelector("row");
-  ok(row, "Should have found the row with our checkbox");
-  let checkbox = row.querySelector("checkbox[label*='example.com']");
+  let promptElements = openedTab.linkedBrowser.parentNode.querySelectorAll("tabmodalprompt");
+  is(promptElements.length, 1, "There should be 1 prompt");
+  let ourPromptElement = promptElements[0];
+  let checkbox = ourPromptElement.querySelector("checkbox[label*='example.com']");
   ok(checkbox, "The checkbox should be there");
   ok(!checkbox.checked, "Checkbox shouldn't be checked");
   
   checkbox.checked = true;
+  let ourPrompt = openedTab.linkedBrowser.tabModalPromptBox.prompts.get(ourPromptElement);
   ourPrompt.onButtonClick(0);
   
   await new Promise(function(resolve) {
