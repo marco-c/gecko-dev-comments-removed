@@ -118,7 +118,7 @@ WebGLContextOptions::operator==(const WebGLContextOptions& r) const
 }
 
 WebGLContext::WebGLContext()
-    : WebGLContextUnchecked(nullptr)
+    : gl(mGL_OnlyClearInDestroyResourcesAndContext) 
     , mMaxPerfWarnings(gfxPrefs::WebGLMaxPerfWarnings())
     , mNumPerfWarnings(0)
     , mMaxAcceptableFBStatusInvals(gfxPrefs::WebGLMaxAcceptableFBStatusInvals())
@@ -601,8 +601,16 @@ WebGLContext::CreateAndInitGL(bool forceEnabled,
     {
         const gfx::IntSize dummySize(1, 1);
         nsCString failureId;
-        const RefPtr<GLContext> gl = pfnCreateOffscreen(dummySize, surfaceCaps, flags,
-                                                        &failureId);
+        RefPtr<GLContext> gl = pfnCreateOffscreen(dummySize, surfaceCaps, flags,
+                                                  &failureId);
+        if (gl && gl->IsCoreProfile() &&
+            !(flags & gl::CreateContextFlags::REQUIRE_COMPAT_PROFILE) &&
+            !gl->IsSupported(gl::GLFeature::gpu_shader5))
+        {
+            
+            const auto compatFlags = flags | gl::CreateContextFlags::REQUIRE_COMPAT_PROFILE;
+            gl = pfnCreateOffscreen(dummySize, surfaceCaps, compatFlags, &failureId);
+        }
         if (!gl) {
             out_failReasons->push_back(WebGLContext::FailureReason(failureId, info));
         }

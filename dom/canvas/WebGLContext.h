@@ -33,7 +33,6 @@
 
 #include "CacheInvalidator.h"
 #include "WebGLContextLossHandler.h"
-#include "WebGLContextUnchecked.h"
 #include "WebGLObjectModel.h"
 #include "WebGLStrongTypes.h"
 
@@ -282,7 +281,6 @@ public:
 class WebGLContext
     : public nsICanvasRenderingContextInternal
     , public nsSupportsWeakReference
-    , public WebGLContextUnchecked
     , public nsWrapperCache
 {
     friend class ScopedDrawCallWrapper;
@@ -327,6 +325,16 @@ class WebGLContext
         UNMASKED_RENDERER_WEBGL = 0x9246
     };
 
+private:
+    
+    
+    
+    RefPtr<gl::GLContext> mGL_OnlyClearInDestroyResourcesAndContext;
+public:
+    
+    const decltype(mGL_OnlyClearInDestroyResourcesAndContext)& gl;
+
+protected:
     const uint32_t mMaxPerfWarnings;
     mutable uint64_t mNumPerfWarnings;
     const uint32_t mMaxAcceptableFBStatusInvals;
