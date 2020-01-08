@@ -4,73 +4,114 @@
 
 "use strict";
 
-const { PureComponent } = require("devtools/client/shared/vendor/react");
+const { createFactory, PureComponent } = require("devtools/client/shared/vendor/react");
 const dom = require("devtools/client/shared/vendor/react-dom-factories");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const { connect } = require("devtools/client/shared/vendor/react-redux");
 
+const CSSDeclaration = createFactory(require("./CSSDeclaration"));
+
 class ChangesApp extends PureComponent {
   static get propTypes() {
     return {
+      
       changes: PropTypes.object.isRequired,
     };
   }
 
-  renderMutations(remove = {}, add = {}) {
-    const removals = Object.entries(remove).map(([prop, value]) => {
-      return dom.div(
-        { className: "line diff-remove"},
-        `${prop}: ${value};`
-      );
+  constructor(props) {
+    super(props);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    this.renderedRules = [];
+  }
+
+  renderDeclarations(remove = {}, add = {}) {
+    const removals = Object.entries(remove).map(([property, value]) => {
+      return CSSDeclaration({ className: "level diff-remove", property, value });
     });
 
-    const additions = Object.entries(add).map(([prop, value]) => {
-      return dom.div(
-        { className: "line diff-add"},
-        `${prop}: ${value};`
-      );
+    const additions = Object.entries(add).map(([property, value]) => {
+      return CSSDeclaration({ className: "level diff-add", property, value });
     });
 
     return [removals, additions];
   }
 
-  renderSelectors(selectors = {}) {
-    return Object.keys(selectors).map(sel => {
-      return dom.details(
-        { className: "selector", open: true },
-        dom.summary(
-          {
-            title: sel,
-          },
-          sel),
-        this.renderMutations(selectors[sel].remove, selectors[sel].add)
-      );
-    });
+  renderRule(ruleId, rule, rules) {
+    const selector = rule.selector;
+
+    if (this.renderedRules.includes(ruleId)) {
+      return null;
+    }
+
+    
+    this.renderedRules.push(ruleId);
+
+    return dom.div(
+      {
+        className: "rule",
+      },
+      dom.div(
+        {
+          className: "level selector",
+          title: selector,
+        },
+        selector,
+        dom.span({ className: "bracket-open" }, "{")
+      ),
+      
+      rule.children.length > 0 && rule.children.map(childRuleId => {
+        return this.renderRule(childRuleId, rules[childRuleId], rules);
+      }),
+      
+      this.renderDeclarations(rule.remove, rule.add),
+      dom.span({ className: "level bracket-close" }, "}")
+    );
   }
 
-  renderDiff(diff = {}) {
+  renderDiff(changes = {}) {
     
-    return Object.keys(diff).map(href => {
+    return Object.entries(changes).map(([sourceId, source]) => {
+      const href = source.href || `inline stylesheet #${source.index}`;
+      const rules = source.rules;
+
       return dom.details(
-        { className: "source", open: true },
+        {
+          className: "source devtools-monospace",
+          open: true,
+        },
         dom.summary(
           {
+            className: "href",
             title: href,
           },
           href),
         
-        this.renderSelectors(diff[href])
+        Object.entries(rules).map(([ruleId, rule]) => {
+          return this.renderRule(ruleId, rule, rules);
+        })
       );
     });
   }
 
   render() {
+    
+    this.renderedRules = [];
+
     return dom.div(
       {
         className: "theme-sidebar inspector-tabpanel",
         id: "sidebar-panel-changes",
       },
-      this.renderDiff(this.props.changes.diff)
+      this.renderDiff(this.props.changes)
     );
   }
 }
