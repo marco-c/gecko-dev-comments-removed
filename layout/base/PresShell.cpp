@@ -1514,22 +1514,31 @@ void PresShell::AddUserSheet(StyleSheet* aSheet) {
   
   
   
-  
-  nsCOMPtr<nsIStyleSheetService> dummy =
-      do_GetService(NS_STYLESHEETSERVICE_CONTRACTID);
 
-  nsStyleSheetService* sheetService = nsStyleSheetService::gInstance;
+  nsStyleSheetService* sheetService = nsStyleSheetService::GetInstance();
   nsTArray<RefPtr<StyleSheet>>& userSheets = *sheetService->UserStyleSheets();
+
   
   
-  for (StyleSheet* sheet : userSheets) {
-    mStyleSet->RemoveStyleSheet(SheetType::User, sheet);
+  
+  
+  
+  MOZ_ASSERT(aSheet);
+  MOZ_ASSERT(userSheets.LastElement() == aSheet);
+
+  size_t index = userSheets.Length() - 1;
+
+  
+  
+  for (size_t i = 0; i < index; ++i) {
+    MOZ_ASSERT(mStyleSet->StyleSheetAt(SheetType::User, i) == userSheets[i]);
   }
 
-  
-  
-  for (StyleSheet* sheet : Reversed(userSheets)) {
-    mStyleSet->PrependStyleSheet(SheetType::User, sheet);
+  if (index == static_cast<size_t>(mStyleSet->SheetCount(SheetType::User))) {
+    mStyleSet->AppendStyleSheet(SheetType::User, aSheet);
+  } else {
+    StyleSheet* ref = mStyleSet->StyleSheetAt(SheetType::User, index);
+    mStyleSet->InsertStyleSheetBefore(SheetType::User, aSheet, ref);
   }
 
   ApplicableStylesChanged();
