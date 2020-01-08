@@ -3,7 +3,7 @@
 
 
 use api::{BorderRadius, BoxShadowClipMode, ClipMode, ColorF, DeviceIntSize, LayoutPrimitiveInfo};
-use api::{LayoutRect, LayoutSize, LayoutVector2D};
+use api::{LayoutRect, LayoutSize, LayoutVector2D, MAX_BLUR_RADIUS};
 use clip::ClipItemKey;
 use display_list_flattener::DisplayListFlattener;
 use gpu_cache::GpuCacheHandle;
@@ -44,10 +44,6 @@ pub struct BoxShadowClipSource {
 
 
 pub const BLUR_SAMPLE_SCALE: f32 = 3.0;
-
-
-
-pub const MAX_BLUR_RADIUS : f32 = 300.;
 
 
 

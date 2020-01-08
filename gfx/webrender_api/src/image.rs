@@ -91,6 +91,8 @@ pub enum ImageFormat {
     
     R8 = 1,
     
+    R16 = 2,
+    
     BGRA8 = 3,
     
     RGBAF32 = 4,
@@ -106,10 +108,43 @@ impl ImageFormat {
     pub fn bytes_per_pixel(self) -> u32 {
         match self {
             ImageFormat::R8 => 1,
+            ImageFormat::R16 => 2,
             ImageFormat::BGRA8 => 4,
             ImageFormat::RGBAF32 => 16,
             ImageFormat::RG8 => 2,
             ImageFormat::RGBAI32 => 16,
+        }
+    }
+}
+
+
+#[repr(u8)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
+pub enum ColorDepth {
+    
+    Color8,
+    
+    Color10,
+    
+    Color12,
+}
+
+impl ColorDepth {
+    
+    pub fn bit_depth(self) -> u32 {
+        match self {
+            ColorDepth::Color8 => 8,
+            ColorDepth::Color10 => 10,
+            ColorDepth::Color12 => 12,
+        }
+    }
+    
+    
+    pub fn rescaling_factor(self) -> f32 {
+        match self {
+            ColorDepth::Color8 => 1.0,
+            ColorDepth::Color10 => 64.0,
+            ColorDepth::Color12 => 16.0,
         }
     }
 }

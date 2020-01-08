@@ -173,6 +173,7 @@ fn is_image_opaque(format: ImageFormat, bytes: &[u8]) -> bool {
         }
         ImageFormat::RG8 => true,
         ImageFormat::R8 => false,
+        ImageFormat::R16 => false,
         ImageFormat::RGBAF32 |
         ImageFormat::RGBAI32 => unreachable!(),
     }
@@ -1018,6 +1019,7 @@ impl YamlFrameReader {
         info: &mut LayoutPrimitiveInfo,
     ) {
         
+        let color_depth = ColorDepth::Color8;
         let color_space = YuvColorSpace::Rec709;
 
         let yuv_data = match item["format"].as_str().expect("no format supplied") {
@@ -1062,6 +1064,7 @@ impl YamlFrameReader {
         dl.push_yuv_image(
             &info,
             yuv_data,
+            color_depth,
             color_space,
             ImageRendering::Auto,
         );
