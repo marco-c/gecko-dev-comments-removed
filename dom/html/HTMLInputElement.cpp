@@ -115,6 +115,7 @@
 #include "nsIMIMEInfo.h"
 #include "nsFrameSelection.h"
 #include "nsBaseCommandController.h"
+#include "nsXULControllers.h"
 
 
 #include "js/Date.h"
@@ -122,8 +123,6 @@
 NS_IMPL_NS_NEW_HTML_ELEMENT_CHECK_PARSER(Input)
 
 
-
-static NS_DEFINE_CID(kXULControllersCID,  NS_XULCONTROLLERS_CID);
 
 namespace mozilla {
 namespace dom {
@@ -5798,10 +5797,9 @@ HTMLInputElement::GetControllers(ErrorResult& aRv)
   {
     if (!mControllers)
     {
-      nsresult rv;
-      mControllers = do_CreateInstance(kXULControllersCID, &rv);
-      if (NS_FAILED(rv)) {
-        aRv.Throw(rv);
+      mControllers = NS_NewXULControllers();
+      if (!mControllers) {
+        aRv.Throw(NS_ERROR_FAILURE);
         return nullptr;
       }
 
