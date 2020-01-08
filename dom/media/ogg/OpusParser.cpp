@@ -15,6 +15,8 @@ extern "C" {
 #include "opus/opus_multistream.h"
 }
 
+#include <cmath>
+
 namespace mozilla {
 
 extern LazyLogModule gMediaDecoderLog;
@@ -80,7 +82,8 @@ bool OpusParser::DecodeHeader(unsigned char* aData, size_t aLength)
       mCoupledStreams = mChannels - 1;
       mMappingTable[0] = 0;
       mMappingTable[1] = 1;
-    } else if (mChannelMapping == 1 || mChannelMapping == 255) {
+    } else if (mChannelMapping == 1 || mChannelMapping == 2 ||
+               mChannelMapping == 255) {
       
       if (mChannelMapping == 1 && mChannels > 8) {
         OPUS_LOG(LogLevel::Debug,
@@ -89,20 +92,48 @@ bool OpusParser::DecodeHeader(unsigned char* aData, size_t aLength)
                   mChannels));
         return false;
       }
+      if (mChannelMapping == 2) {
+        
+        
+        
+        
+        
+        
+        
+        
+
+        
+        
+        double val = sqrt(mChannels);
+        if (val == 0 || val > 15) {
+          return false;
+        }
+        if (val != int32_t(val)) {
+          if (val * val + 2 != mChannels) {
+            
+            return false;
+          }
+        }
+      }
       if (aLength > static_cast<unsigned>(20 + mChannels)) {
         mStreams = aData[19];
         mCoupledStreams = aData[20];
         int i;
-        for (i=0; i<mChannels; i++)
-          mMappingTable[i] = aData[21+i];
+        for (i = 0; i < mChannels; i++) {
+          mMappingTable[i] = aData[21 + i];
+        }
       } else {
-        OPUS_LOG(LogLevel::Debug, ("Invalid Opus file: channel mapping %d,"
-                           " but no channel mapping table", mChannelMapping));
+        OPUS_LOG(LogLevel::Debug,
+                 ("Invalid Opus file: channel mapping %d,"
+                  " but no channel mapping table",
+                  mChannelMapping));
         return false;
       }
     } else {
-      OPUS_LOG(LogLevel::Debug, ("Invalid Opus file: unsupported channel mapping "
-                         "family %d", mChannelMapping));
+      OPUS_LOG(LogLevel::Debug,
+               ("Invalid Opus file: unsupported channel mapping "
+                "family %d",
+                mChannelMapping));
       return false;
     }
     if (mStreams < 1) {
