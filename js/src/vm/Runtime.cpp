@@ -572,24 +572,6 @@ JSRuntime::traceSharedIntlData(JSTracer* trc)
     sharedIntlData.ref().trace(trc);
 }
 
-void
-JSContext::triggerActivityCallback(bool active)
-{
-    if (!activityCallback)
-        return;
-
-    
-
-
-
-
-
-
-    AutoSuppressGC suppress(this);
-
-    activityCallback(activityCallbackArg, active);
-}
-
 FreeOp::FreeOp(JSRuntime* maybeRuntime)
   : JSFreeOp(maybeRuntime)
 {
