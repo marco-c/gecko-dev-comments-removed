@@ -64,6 +64,7 @@ const TemporaryPermissions = {
       entry[prePath] = {};
     }
     entry[prePath][id] = {timeStamp: Date.now(), state};
+    this.notifyWhenTemporaryPermissionChanged(browser, id, prePath, state);
   },
 
   
@@ -75,6 +76,7 @@ const TemporaryPermissions = {
     let prePath = browser.currentURI.prePath;
     if (entry && entry[prePath]) {
       delete entry[prePath][id];
+      this.notifyWhenTemporaryPermissionChanged(browser, id, prePath, SitePermissions.UNKNOWN);
     }
   },
 
@@ -114,9 +116,27 @@ const TemporaryPermissions = {
 
   
   
+  getAllPermissionIds(browser) {
+    let permissions = new Set();
+    let entry = this._stateByBrowser.get(browser);
+    for (let prePath in entry) {
+      for (let id in entry[prePath]) {
+        permissions.add(id);
+      }
+    }
+    return permissions;
+  },
+
+  
+  
   
   clear(browser) {
+    let permissions = this.getAllPermissionIds(browser);
     this._stateByBrowser.delete(browser);
+    for (let permission of permissions) {
+      this.notifyWhenTemporaryPermissionChanged(browser, permission, null,
+                                                SitePermissions.UNKNOWN);
+    }
   },
 
   
@@ -126,6 +146,20 @@ const TemporaryPermissions = {
     if (entry) {
       this._stateByBrowser.set(newBrowser, entry);
     }
+  },
+
+  
+  
+  notifyWhenTemporaryPermissionChanged(browser, id, prePath, state) {
+    if (!(id in gPermissionObject) ||
+        !gPermissionObject[id].notifyWhenTemporaryPermissionChanged) {
+      return;
+    }
+    browser.messageManager
+           .sendAsyncMessage("TemporaryPermissionChanged",
+                             { permission: id,
+                               prePath,
+                               state });
   },
 };
 
@@ -722,6 +756,7 @@ var gPermissionObject = {
     exactHostMatch: true,
     showGloballyBlocked: true,
     permitTemporaryAllow: true,
+    notifyWhenTemporaryPermissionChanged: true,
     getDefault() {
       let state = Services.prefs.getIntPref("media.autoplay.default",
                                             Ci.nsIAutoplay.PROMPT);
