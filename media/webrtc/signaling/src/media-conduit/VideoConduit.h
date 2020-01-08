@@ -40,9 +40,17 @@
 
 namespace mozilla {
 
+
+#define KBPS(kbps) kbps * 1000
+
+const int kViEMinCodecBitrate_bps = KBPS(30);
 const unsigned int kVideoMtu = 1200;
 const int kQpMax = 56;
 
+template<typename T>
+T MinIgnoreZero(const T& a, const T& b);
+
+class VideoStreamFactory;
 class WebrtcAudioConduit;
 class nsThread;
 
@@ -68,14 +76,6 @@ class WebrtcVideoConduit : public VideoSessionConduit
                          , public rtc::VideoSourceInterface<webrtc::VideoFrame>
 {
 public:
-  struct ResolutionAndBitrateLimits
-  {
-    int resolution_in_mb;
-    int min_bitrate_bps;
-    int start_bitrate_bps;
-    int max_bitrate_bps;
-  };
-
   
   static const unsigned int CODEC_PLNAME_SIZE;
 
@@ -421,8 +421,6 @@ private:
 
 
 
-  class VideoStreamFactory;
-
   class VideoEncoderConfigBuilder {
   public:
     
@@ -434,7 +432,7 @@ private:
       double jsScaleDownBy=1.0; 
     };
     void SetEncoderSpecificSettings(rtc::scoped_refptr<webrtc::VideoEncoderConfig::EncoderSpecificSettings> aSettings);
-    void SetVideoStreamFactory(rtc::scoped_refptr<WebrtcVideoConduit::VideoStreamFactory> aFactory);
+    void SetVideoStreamFactory(rtc::scoped_refptr<VideoStreamFactory> aFactory);
     void SetMinTransmitBitrateBps(int aXmitMinBps);
     void SetContentType(webrtc::VideoEncoderConfig::ContentType aContentType);
     void SetResolutionDivisor(unsigned char aDivisor);
@@ -455,65 +453,6 @@ private:
 
   
   void DumpCodecDB() const;
-
-  
-  class VideoStreamFactory : public webrtc::VideoEncoderConfig::VideoStreamFactoryInterface
-  {
-  public:
-    VideoStreamFactory(VideoCodecConfig aConfig,
-                       webrtc::VideoCodecMode aCodecMode,
-                       int aMinBitrate, int aStartBitrate,
-                       int aPrefMaxBitrate, int aNegotiatedMaxBitrate,
-                       unsigned int aSendingFramerate)
-      : mCodecMode(aCodecMode)
-      , mSendingFramerate(aSendingFramerate)
-      , mCodecConfig(std::forward<VideoCodecConfig>(aConfig))
-      , mMinBitrate(aMinBitrate)
-      , mStartBitrate(aStartBitrate)
-      , mPrefMaxBitrate(aPrefMaxBitrate)
-      , mNegotiatedMaxBitrate(aNegotiatedMaxBitrate)
-      , mSimulcastAdapter(MakeUnique<cricket::VideoAdapter>())
-    {}
-
-    void SetCodecMode(webrtc::VideoCodecMode aCodecMode)
-    {
-      MOZ_ASSERT(NS_IsMainThread());
-      mCodecMode = aCodecMode;
-    }
-
-    void SetSendingFramerate(unsigned int aSendingFramerate)
-    {
-      MOZ_ASSERT(NS_IsMainThread());
-      mSendingFramerate = aSendingFramerate;
-    }
-
-  private:
-    
-    
-    std::vector<webrtc::VideoStream>
-      CreateEncoderStreams(int width, int height,
-                           const webrtc::VideoEncoderConfig& config) override;
-
-    
-    Atomic<webrtc::VideoCodecMode> mCodecMode;
-
-    
-    Atomic<unsigned int> mSendingFramerate;
-
-    
-    const VideoCodecConfig mCodecConfig;
-
-    
-    const int mMinBitrate = 0;
-    const int mStartBitrate = 0;
-    const int mPrefMaxBitrate = 0;
-    const int mNegotiatedMaxBitrate = 0;
-
-    
-    
-    
-    UniquePtr<cricket::VideoAdapter> mSimulcastAdapter;
-  };
 
   
   void VideoLatencyUpdate(uint64_t new_sample);
