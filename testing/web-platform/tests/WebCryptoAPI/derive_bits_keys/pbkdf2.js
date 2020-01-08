@@ -1,4 +1,4 @@
-function run_test() {
+function run_test(testPasswordSize, testSaltSize) {
     
     var subtle = self.crypto.subtle;
 
@@ -27,13 +27,15 @@ function run_test() {
         
         
         Object.keys(derivations).forEach(function(passwordSize) {
+            if (typeof testPasswordSize != 'undefined' && testPasswordSize != passwordSize) return;
             Object.keys(derivations[passwordSize]).forEach(function(saltSize) {
+                if (typeof testSaltSize != 'undefined' && testSaltSize != saltSize) return;
                 Object.keys(derivations[passwordSize][saltSize]).forEach(function(hashName) {
                     Object.keys(derivations[passwordSize][saltSize][hashName]).forEach(function(iterations) {
                         var testName = passwordSize + " password, " + saltSize + " salt, " + hashName + ", with " + iterations + " iterations";
 
                         
-                        subsetTest(promise_test, function(test) {
+                        promise_test(function(test) {
                             return subtle.deriveBits({name: "PBKDF2", salt: salts[saltSize], hash: hashName, iterations: parseInt(iterations)}, baseKeys[passwordSize], 256)
                             .then(function(derivation) {
                                 assert_true(equalBuffers(derivation, derivations[passwordSize][saltSize][hashName][iterations]), "Derived correct key");
@@ -52,7 +54,7 @@ function run_test() {
                             testName += " using " + passwordSize + " password, " + saltSize + " salt, " + hashName + ", with " + iterations + " iterations";
 
                             
-                            subsetTest(promise_test, function(test) {
+                            promise_test(function(test) {
                                 return subtle.deriveKey({name: "PBKDF2", salt: salts[saltSize], hash: hashName, iterations: parseInt(iterations)}, baseKeys[passwordSize], derivedKeyType.algorithm, true, derivedKeyType.usages)
                                 .then(function(key) {
                                     
@@ -72,7 +74,7 @@ function run_test() {
 
                             
                             var badHash = hashName.substring(0, 3) + hashName.substring(4);
-                            subsetTest(promise_test, function(test) {
+                            promise_test(function(test) {
                                 return subtle.deriveKey({name: "PBKDF2", salt: salts[saltSize], hash: badHash, iterations: parseInt(iterations)}, baseKeys[passwordSize], derivedKeyType.algorithm, true, derivedKeyType.usages)
                                 .then(function(key) {
                                     assert_unreached("bad hash name should have thrown an NotSupportedError");
@@ -82,7 +84,7 @@ function run_test() {
                             }, testName + " with bad hash name " + badHash);
 
                             
-                            subsetTest(promise_test, function(test) {
+                            promise_test(function(test) {
                                 return subtle.deriveKey({name: "PBKDF2", salt: salts[saltSize], hash: hashName, iterations: parseInt(iterations)}, noKey[passwordSize], derivedKeyType.algorithm, true, derivedKeyType.usages)
                                 .then(function(key) {
                                     assert_unreached("missing deriveKey usage should have thrown an InvalidAccessError");
@@ -92,7 +94,7 @@ function run_test() {
                             }, testName + " with missing deriveKey usage");
 
                             
-                            subsetTest(promise_test, function(test) {
+                            promise_test(function(test) {
                                 return subtle.deriveKey({name: "PBKDF2", salt: salts[saltSize], hash: hashName, iterations: parseInt(iterations)}, wrongKey, derivedKeyType.algorithm, true, derivedKeyType.usages)
                                 .then(function(key) {
                                     assert_unreached("wrong (ECDH) key should have thrown an InvalidAccessError");
@@ -105,7 +107,7 @@ function run_test() {
 
                         
                         
-                        subsetTest(promise_test, function(test) {
+                        promise_test(function(test) {
                             return subtle.deriveBits({name: "PBKDF2", salt: salts[saltSize], hash: hashName, iterations: parseInt(iterations)}, baseKeys[passwordSize], null)
                             .then(function(derivation) {
                                 assert_unreached("null length should have thrown an OperationError");
@@ -115,7 +117,7 @@ function run_test() {
                         }, testName + " with null length");
 
                         
-                        subsetTest(promise_test, function(test) {
+                        promise_test(function(test) {
                             return subtle.deriveBits({name: "PBKDF2", salt: salts[saltSize], hash: hashName, iterations: parseInt(iterations)}, baseKeys[passwordSize], 0)
                             .then(function(derivation) {
                                 assert_unreached("0 length should have thrown an OperationError");
@@ -125,7 +127,7 @@ function run_test() {
                         }, testName + " with 0 length");
 
                         
-                        subsetTest(promise_test, function(test) {
+                        promise_test(function(test) {
                             return subtle.deriveBits({name: "PBKDF2", salt: salts[saltSize], hash: hashName, iterations: parseInt(iterations)}, baseKeys[passwordSize], 44)
                             .then(function(derivation) {
                                 assert_unreached("non-multiple of 8 length should have thrown an OperationError");
@@ -136,7 +138,7 @@ function run_test() {
 
                         
                         var badHash = hashName.substring(0, 3) + hashName.substring(4);
-                        subsetTest(promise_test, function(test) {
+                        promise_test(function(test) {
                             return subtle.deriveBits({name: "PBKDF2", salt: salts[saltSize], hash: badHash, iterations: parseInt(iterations)}, baseKeys[passwordSize], 256)
                             .then(function(derivation) {
                                 assert_unreached("bad hash name should have thrown an NotSupportedError");
@@ -146,7 +148,7 @@ function run_test() {
                         }, testName + " with bad hash name " + badHash);
 
                         
-                        subsetTest(promise_test, function(test) {
+                        promise_test(function(test) {
                             return subtle.deriveBits({name: "PBKDF2", salt: salts[saltSize], hash: hashName, iterations: parseInt(iterations)}, noBits[passwordSize], 256)
                             .then(function(derivation) {
                                 assert_unreached("missing deriveBits usage should have thrown an InvalidAccessError");
@@ -156,7 +158,7 @@ function run_test() {
                         }, testName + " with missing deriveBits usage");
 
                         
-                        subsetTest(promise_test, function(test) {
+                        promise_test(function(test) {
                             return subtle.deriveBits({name: "PBKDF2", salt: salts[saltSize], hash: hashName, iterations: parseInt(iterations)}, wrongKey, 256)
                             .then(function(derivation) {
                                 assert_unreached("wrong (ECDH) key should have thrown an InvalidAccessError");
@@ -167,7 +169,7 @@ function run_test() {
                     });
 
                     
-                    subsetTest(promise_test, function(test) {
+                    promise_test(function(test) {
                         return subtle.deriveBits({name: "PBKDF2", salt: salts[saltSize], hash: hashName, iterations: 0}, baseKeys[passwordSize], 256)
                         .then(function(derivation) {
                             assert_unreached("0 iterations should have thrown an error");
@@ -183,7 +185,7 @@ function run_test() {
                         });
                         testName += " using " + passwordSize + " password, " + saltSize + " salt, " + hashName + ", with 0 iterations";
 
-                        subsetTest(promise_test, function(test) {
+                        promise_test(function(test) {
                             return subtle.deriveKey({name: "PBKDF2", salt: salts[saltSize], hash: hashName, iterations: 0}, baseKeys[passwordSize], derivedKeyType.algorithm, true, derivedKeyType.usages)
                             .then(function(derivation) {
                                 assert_unreached("0 iterations should have thrown an error");
@@ -199,7 +201,7 @@ function run_test() {
                 [1, 1000, 100000].forEach(function(iterations) {
                     var testName = passwordSize + " password, " + saltSize + " salt, " + nonDigestHash + ", with " + iterations + " iterations";
 
-                    subsetTest(promise_test, function(test) {
+                    promise_test(function(test) {
                         return subtle.deriveBits({name: "PBKDF2", salt: salts[saltSize], hash: nonDigestHash, iterations: parseInt(iterations)}, baseKeys[passwordSize], 256)
                         .then(function(derivation) {
                             assert_unreached("non-digest algorithm should have thrown an NotSupportedError");
@@ -215,7 +217,7 @@ function run_test() {
                         });
                         testName += " using " + passwordSize + " password, " + saltSize + " salt, " + nonDigestHash + ", with " + iterations + " iterations";
 
-                        subsetTest(promise_test, function(test) {
+                        promise_test(function(test) {
                             return subtle.deriveKey({name: "PBKDF2", salt: salts[saltSize], hash: nonDigestHash, iterations: parseInt(iterations)}, baseKeys[passwordSize], derivedKeyType.algorithm, true, derivedKeyType.usages)
                             .then(function(derivation) {
                                 assert_unreached("non-digest algorithm should have thrown an NotSupportedError");
@@ -232,7 +234,7 @@ function run_test() {
 
         done();
     }, function(err) {
-        subsetTest(test, function(test) {
+        test(function(test) {
             assert_unreached("setUpBaseKeys failed with error '" + err.message + "'");
         }, "setUpBaseKeys");
         done();
