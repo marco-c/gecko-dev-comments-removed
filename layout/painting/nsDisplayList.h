@@ -2470,7 +2470,20 @@ public:
 
 
 
+  virtual bool CanPaintWithClip(const DisplayItemClip& aClip) { return false; }
+
+  
+
+
+
+
   virtual void Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) {}
+
+  
+
+
+
+  virtual void PaintWithClip(nsDisplayListBuilder* aBuilder, gfxContext* aCtx, const DisplayItemClip& aClip) {}
 
 #ifdef MOZ_DUMP_PAINTING
   
@@ -4413,6 +4426,7 @@ public:
                                    LayerManager* aManager,
                                    const ContainerLayerParameters& aParameters) override;
   virtual void Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) override;
+  virtual void PaintWithClip(nsDisplayListBuilder* aBuilder, gfxContext* aCtx, const DisplayItemClip& aClip) override;
   virtual already_AddRefed<Layer> BuildLayer(nsDisplayListBuilder* aBuilder,
                                              LayerManager* aManager,
                                              const ContainerLayerParameters& aContainerParameters) override;
@@ -4437,6 +4451,18 @@ public:
   {
     *aSnap = true;
     return mBackgroundRect;
+  }
+
+  virtual bool CanPaintWithClip(const DisplayItemClip& aClip) override
+  {
+    mozilla::StyleGeometryBox clip = mBackgroundStyle->StyleBackground()->mImage.mLayers[0].mClip;
+    if (clip == mozilla::StyleGeometryBox::Text) {
+      return false;
+    }
+    if (aClip.GetRoundedRectCount() > 1) {
+      return false;
+    }
+    return true;
   }
 
   virtual nsDisplayItemGeometry* AllocateGeometry(nsDisplayListBuilder* aBuilder) override
