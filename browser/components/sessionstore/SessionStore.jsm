@@ -1982,6 +1982,7 @@ var SessionStoreInternal = {
       state: tabState,
       title: tabTitle,
       image: tabbrowser.getIcon(aTab),
+      iconLoadingPrincipal: Utils.serializePrincipal(aTab.linkedBrowser.contentPrincipal),
       pos: aTab._tPos,
       closedAt: Date.now()
     };
@@ -2778,7 +2779,9 @@ var SessionStoreInternal = {
 
     
     if ("image" in tabData) {
-      win.gBrowser.setIcon(tab, tabData.image, undefined, tabData.iconLoadingPrincipal);
+      
+      let loadingPrincipal = Utils.deserializePrincipal(tabData.iconLoadingPrincipal);
+      win.gBrowser.setIcon(tab, tabData.image, loadingPrincipal);
       TabStateCache.update(browser, { image: null, iconLoadingPrincipal: null });
     }
   },
