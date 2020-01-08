@@ -368,12 +368,6 @@ struct HelperThread
     bool terminate;
 
     
-
-
-
-    bool registered;
-
-    
     mozilla::Maybe<HelperTaskUnion> currentTask;
 
     bool idle() const {
@@ -420,6 +414,25 @@ struct HelperThread
     void unregisterWithProfilerIfNeeded();
 
   private:
+    struct AutoProfilerLabel
+    {
+        AutoProfilerLabel(HelperThread* helperThread, const char* label,
+                          uint32_t line,
+                          ProfilingStackFrame::Category category);
+        ~AutoProfilerLabel();
+
+    private:
+        ProfilingStack* profilingStack;
+    };
+
+    
+
+
+
+
+
+    ProfilingStack* profilingStack;
+
     struct TaskSpec
     {
         using Selector = bool(GlobalHelperThreadState::*)(const AutoLockHelperThreadState&);
