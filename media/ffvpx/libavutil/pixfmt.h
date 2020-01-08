@@ -74,6 +74,11 @@ enum AVPixelFormat {
     AV_PIX_FMT_YUVJ420P,  
     AV_PIX_FMT_YUVJ422P,  
     AV_PIX_FMT_YUVJ444P,  
+#if FF_API_XVMC
+    AV_PIX_FMT_XVMC_MPEG2_MC,
+    AV_PIX_FMT_XVMC_MPEG2_IDCT,
+    AV_PIX_FMT_XVMC = AV_PIX_FMT_XVMC_MPEG2_IDCT,
+#endif 
     AV_PIX_FMT_UYVY422,   
     AV_PIX_FMT_UYYVYY411, 
     AV_PIX_FMT_BGR8,      
@@ -95,6 +100,13 @@ enum AVPixelFormat {
     AV_PIX_FMT_YUV440P,   
     AV_PIX_FMT_YUVJ440P,  
     AV_PIX_FMT_YUVA420P,  
+#if FF_API_VDPAU
+    AV_PIX_FMT_VDPAU_H264,
+    AV_PIX_FMT_VDPAU_MPEG1,
+    AV_PIX_FMT_VDPAU_MPEG2,
+    AV_PIX_FMT_VDPAU_WMV3,
+    AV_PIX_FMT_VDPAU_VC1, 
+#endif
     AV_PIX_FMT_RGB48BE,   
     AV_PIX_FMT_RGB48LE,   
 
@@ -130,6 +142,9 @@ enum AVPixelFormat {
     AV_PIX_FMT_YUV422P16BE,  
     AV_PIX_FMT_YUV444P16LE,  
     AV_PIX_FMT_YUV444P16BE,  
+#if FF_API_VDPAU
+    AV_PIX_FMT_VDPAU_MPEG4,  
+#endif
     AV_PIX_FMT_DXVA2_VLD,    
 
     AV_PIX_FMT_RGB444LE,  
@@ -161,6 +176,7 @@ enum AVPixelFormat {
     AV_PIX_FMT_YUV444P10LE,
     AV_PIX_FMT_YUV422P9BE, 
     AV_PIX_FMT_YUV422P9LE, 
+    AV_PIX_FMT_VDA_VLD,    
     AV_PIX_FMT_GBRP,      
     AV_PIX_FMT_GBR24P = AV_PIX_FMT_GBRP, 
     AV_PIX_FMT_GBRP9BE,   
@@ -205,6 +221,8 @@ enum AVPixelFormat {
 
     AV_PIX_FMT_YVYU422,   
 
+    AV_PIX_FMT_VDA,          
+
     AV_PIX_FMT_YA16BE,       
     AV_PIX_FMT_YA16LE,       
 
@@ -230,7 +248,7 @@ enum AVPixelFormat {
 
     AV_PIX_FMT_CUDA,
 
-    AV_PIX_FMT_0RGB,        
+    AV_PIX_FMT_0RGB=0x123+4,
     AV_PIX_FMT_RGB0,        
     AV_PIX_FMT_0BGR,        
     AV_PIX_FMT_BGR0,        
@@ -265,9 +283,9 @@ enum AVPixelFormat {
     AV_PIX_FMT_BAYER_GBRG16BE, 
     AV_PIX_FMT_BAYER_GRBG16LE, 
     AV_PIX_FMT_BAYER_GRBG16BE, 
-
+#if !FF_API_XVMC
     AV_PIX_FMT_XVMC,
-
+#endif 
     AV_PIX_FMT_YUV440P10LE, 
     AV_PIX_FMT_YUV440P10BE, 
     AV_PIX_FMT_YUV440P12LE, 
@@ -322,13 +340,6 @@ enum AVPixelFormat {
 
 
     AV_PIX_FMT_DRM_PRIME,
-    
-
-
-
-
-
-    AV_PIX_FMT_OPENCL,
 
     AV_PIX_FMT_NB         
 };

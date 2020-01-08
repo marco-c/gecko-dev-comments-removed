@@ -158,7 +158,7 @@ static av_always_inline av_const int64_t av_clip64_c(int64_t a, int64_t amin, in
 
 static av_always_inline av_const uint8_t av_clip_uint8_c(int a)
 {
-    if (a&(~0xFF)) return (~a)>>31;
+    if (a&(~0xFF)) return (-a)>>31;
     else           return a;
 }
 
@@ -180,7 +180,7 @@ static av_always_inline av_const int8_t av_clip_int8_c(int a)
 
 static av_always_inline av_const uint16_t av_clip_uint16_c(int a)
 {
-    if (a&(~0xFFFF)) return (~a)>>31;
+    if (a&(~0xFFFF)) return (-a)>>31;
     else             return a;
 }
 
@@ -228,7 +228,7 @@ static av_always_inline av_const int av_clip_intp2_c(int a, int p)
 
 static av_always_inline av_const unsigned av_clip_uintp2_c(int a, int p)
 {
-    if (a & ~((1<<p) - 1)) return (~a) >> 31 & ((1<<p) - 1);
+    if (a & ~((1<<p) - 1)) return -a >> 31 & ((1<<p) - 1);
     else                   return  a;
 }
 
@@ -265,30 +265,6 @@ static av_always_inline int av_sat_add32_c(int a, int b)
 static av_always_inline int av_sat_dadd32_c(int a, int b)
 {
     return av_sat_add32(a, av_sat_add32(b, b));
-}
-
-
-
-
-
-
-
-
-static av_always_inline int av_sat_sub32_c(int a, int b)
-{
-    return av_clipl_int32((int64_t)a - b);
-}
-
-
-
-
-
-
-
-
-static av_always_inline int av_sat_dsub32_c(int a, int b)
-{
-    return av_sat_sub32(a, av_sat_add32(b, b));
 }
 
 
@@ -536,12 +512,6 @@ static av_always_inline av_const int av_parity_c(uint32_t v)
 #endif
 #ifndef av_sat_dadd32
 #   define av_sat_dadd32    av_sat_dadd32_c
-#endif
-#ifndef av_sat_sub32
-#   define av_sat_sub32     av_sat_sub32_c
-#endif
-#ifndef av_sat_dsub32
-#   define av_sat_dsub32    av_sat_dsub32_c
 #endif
 #ifndef av_clipf
 #   define av_clipf         av_clipf_c

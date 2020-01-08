@@ -5,7 +5,6 @@
 
 
 #include "avutil.h"
-#include "hwcontext.h"
 
 
 int ff_get_cpu_flags_aarch64(void) { return 0; }
@@ -22,6 +21,7 @@ void ff_float_dsp_init_mips(AVFloatDSPContext *fdsp) {}
 #if !defined(__arm__)
 void ff_float_dsp_init_arm(AVFloatDSPContext *fdsp) {}
 #endif
+int av_hwframe_get_buffer(struct AVBufferRef* hwframe_ref, struct AVFrame* frame, int flags) { return 0; }
 
 
 size_t ff_get_cpu_max_align_aarch64() { return 0; }
