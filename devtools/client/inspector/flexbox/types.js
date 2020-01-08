@@ -20,4 +20,7 @@ exports.flexbox = {
   
   nodeFront: PropTypes.object,
 
+  
+  properties: PropTypes.object,
+
 };

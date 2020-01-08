@@ -20,6 +20,8 @@ const INITIAL_FLEXBOX = {
   highlighted: false,
   
   nodeFront: null,
+  
+  properties: {},
 };
 
 const reducers = {
