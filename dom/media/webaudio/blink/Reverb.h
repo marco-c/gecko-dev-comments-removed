@@ -44,8 +44,12 @@ public:
     enum { MaxFrameSize = 256 };
 
     
+    
+    
+    
     Reverb(const mozilla::AudioChunk& impulseResponseBuffer, size_t maxFFTSize,
-           bool useBackgroundThreads, bool normalize, float sampleRate);
+           bool useBackgroundThreads, bool normalize, float sampleRate,
+           bool* aAllocationFailure);
 
     void process(const mozilla::AudioBlock* sourceBus,
                  mozilla::AudioBlock* destinationBus);
