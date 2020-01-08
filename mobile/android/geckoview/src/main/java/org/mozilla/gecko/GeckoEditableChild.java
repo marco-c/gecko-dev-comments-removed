@@ -70,17 +70,16 @@ public final class GeckoEditableChild extends JNIObject implements IGeckoEditabl
         }
     }
 
-    private final IGeckoEditableParent mEditableParent;
     private final IGeckoEditableChild mEditableChild;
     private final boolean mIsDefault;
 
+    private IGeckoEditableParent mEditableParent;
     private int mCurrentTextLength; 
 
     @WrapForJNI(calledFrom = "gecko")
     private GeckoEditableChild(final IGeckoEditableParent editableParent,
                                final boolean isDefault) {
         mIsDefault = isDefault;
-        mEditableParent = editableParent;
 
         final IBinder binder = editableParent.asBinder();
         if (binder.queryLocalInterface(IGeckoEditableParent.class.getName()) != null) {
@@ -90,6 +89,13 @@ public final class GeckoEditableChild extends JNIObject implements IGeckoEditabl
             
             mEditableChild = new RemoteChild();
         }
+
+        setParent(editableParent);
+    }
+
+    @WrapForJNI(calledFrom = "gecko")
+    private void setParent(final IGeckoEditableParent editableParent) {
+        mEditableParent = editableParent;
 
         if (mIsDefault) {
             
@@ -175,7 +181,8 @@ public final class GeckoEditableChild extends JNIObject implements IGeckoEditabl
         }
 
         try {
-            mEditableParent.notifyIMEContext(state, typeHint, modeHint, actionHint, flags);
+            mEditableParent.notifyIMEContext(mEditableChild.asBinder(), state, typeHint,
+                                             modeHint, actionHint, flags);
         } catch (final RemoteException e) {
             Log.e(LOGTAG, "Remote call failed", e);
         }

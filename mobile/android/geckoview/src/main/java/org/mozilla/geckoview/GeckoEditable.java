@@ -1292,7 +1292,7 @@ import android.view.inputmethod.EditorInfo;
     }
 
     @Override 
-    public void notifyIMEContext(final int state, final String typeHint,
+    public void notifyIMEContext(final IBinder token, final int state, final String typeHint,
                                  final String modeHint, final String actionHint,
                                  final int flags) {
         
@@ -1306,7 +1306,12 @@ import android.view.inputmethod.EditorInfo;
 
         
         
-        ThreadUtils.assertOnGeckoThread();
+        
+        
+        if (token != mDefaultChild.asBinder() &&
+            !binderCheckToken(token,  false)) {
+            return;
+        }
 
         mIcPostHandler.post(new Runnable() {
             @Override

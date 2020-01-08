@@ -16,6 +16,7 @@
 #include "mozilla/TextComposition.h"
 #include "mozilla/TextEventDispatcherListener.h"
 #include "mozilla/TextEvents.h"
+#include "mozilla/dom/TabChild.h"
 
 #include <android/api-level.h>
 #include <android/input.h>
@@ -1425,27 +1426,34 @@ GeckoEditableSupport::SetInputContext(const InputContext& aContext,
         return;
     }
 
-    const bool inPrivateBrowsing = mInputContext.mInPrivateBrowsing;
+    
+    nsAppShell::PostEvent([this, self = RefPtr<GeckoEditableSupport>(this),
+                           context = mInputContext, action = aAction] {
+        nsCOMPtr<nsIWidget> widget = GetWidget();
+
+        if (!widget || widget->Destroyed()) {
+            return;
+        }
+        NotifyIMEContext(context, action);
+    });
+}
+
+void
+GeckoEditableSupport::NotifyIMEContext(const InputContext& aContext,
+                                       const InputContextAction& aAction)
+{
+    const bool inPrivateBrowsing = aContext.mInPrivateBrowsing;
     const bool isUserAction =
             aAction.IsHandlingUserInput() || aContext.mHasHandledUserInput;
     const int32_t flags =
             (inPrivateBrowsing ? EditableListener::IME_FLAG_PRIVATE_BROWSING : 0) |
             (isUserAction ? EditableListener::IME_FLAG_USER_ACTION : 0);
 
-    
-    nsAppShell::PostEvent([this, self = RefPtr<GeckoEditableSupport>(this),
-                           flags, context = mInputContext] {
-        nsCOMPtr<nsIWidget> widget = GetWidget();
-
-        if (!widget || widget->Destroyed()) {
-            return;
-        }
-        mEditable->NotifyIMEContext(context.mIMEState.mEnabled,
-                                    context.mHTMLInputType,
-                                    context.mHTMLInputInputmode,
-                                    context.mActionHint,
-                                    flags);
-    });
+    mEditable->NotifyIMEContext(aContext.mIMEState.mEnabled,
+                                aContext.mHTMLInputType,
+                                aContext.mHTMLInputInputmode,
+                                aContext.mActionHint,
+                                flags);
 }
 
 InputContext
@@ -1454,6 +1462,58 @@ GeckoEditableSupport::GetInputContext()
     InputContext context = mInputContext;
     context.mIMEState.mOpen = IMEState::OPEN_STATE_NOT_SUPPORTED;
     return context;
+}
+
+void
+GeckoEditableSupport::SetOnTabChild(dom::TabChild* aTabChild)
+{
+    MOZ_ASSERT(!XRE_IsParentProcess());
+    NS_ENSURE_TRUE_VOID(aTabChild);
+
+    const dom::ContentChild* const contentChild =
+            dom::ContentChild::GetSingleton();
+    RefPtr<widget::PuppetWidget> widget(aTabChild->WebWidget());
+    NS_ENSURE_TRUE_VOID(contentChild && widget);
+
+    
+    
+    
+    const uint64_t contentId = contentChild->GetID();
+    const uint64_t tabId = aTabChild->GetTabId();
+    NS_ENSURE_TRUE_VOID(contentId && tabId);
+
+    auto editableParent = java::GeckoServiceChildProcess::GetEditableParent(
+            contentId, tabId);
+    NS_ENSURE_TRUE_VOID(editableParent);
+
+    RefPtr<widget::TextEventDispatcherListener> listener =
+            widget->GetNativeTextEventDispatcherListener();
+
+    if (!listener || listener.get() ==
+            static_cast<widget::TextEventDispatcherListener*>(widget)) {
+        
+        auto editableChild = java::GeckoEditableChild::New(editableParent,
+                                                            false);
+        RefPtr<widget::GeckoEditableSupport> editableSupport =
+                new widget::GeckoEditableSupport(editableChild);
+
+        
+        widget->SetNativeTextEventDispatcherListener(editableSupport);
+        return;
+    }
+
+    
+
+    
+    
+    
+    RefPtr<widget::GeckoEditableSupport> dummy =
+            new widget::GeckoEditableSupport( nullptr);
+    NS_ENSURE_TRUE_VOID(*reinterpret_cast<const uintptr_t*>(listener.get()) ==
+            *reinterpret_cast<const uintptr_t*>(dummy.get()));
+
+    static_cast<widget::GeckoEditableSupport*>(
+            listener.get())->TransferParent(editableParent);
 }
 
 } 
