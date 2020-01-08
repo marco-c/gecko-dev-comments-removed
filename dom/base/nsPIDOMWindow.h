@@ -282,16 +282,6 @@ public:
 
   
   
-  
-  
-  
-  
-  
-  void Freeze();
-  void Thaw();
-
-  
-  
   void SyncStateFromParentWindow();
 
   
@@ -341,9 +331,6 @@ public:
   mozilla::Maybe<mozilla::dom::ClientState> GetClientState() const;
   mozilla::Maybe<mozilla::dom::ServiceWorkerDescriptor> GetController() const;
 
-  RefPtr<mozilla::dom::ServiceWorker>
-  GetOrCreateServiceWorker(const mozilla::dom::ServiceWorkerDescriptor& aDescriptor);
-
   void NoteCalledRegisterForServiceWorkerScope(const nsACString& aScope);
 
   void NoteDOMContentLoaded();
@@ -358,12 +345,6 @@ public:
   virtual nsPIDOMWindowOuter* GetScriptableTop() = 0;
   virtual nsPIDOMWindowOuter* GetScriptableParent() = 0;
   virtual already_AddRefed<nsPIWindowRoot> GetTopWindowRoot() = 0;
-
-  
-
-
-
-  virtual nsPIDOMWindowOuter* GetScriptableParentOrNull() = 0;
 
   mozilla::dom::EventTarget* GetChromeEventHandler() const
   {
