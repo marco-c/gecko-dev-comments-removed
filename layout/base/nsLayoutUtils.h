@@ -3057,6 +3057,12 @@ public:
   
 
 
+
+  static bool ShouldHandleMetaViewport(nsIDocument* aDocument);
+
+  
+
+
   template<bool clampNegativeResultToZero>
   static nscoord ResolveToLength(const nsStyleCoord& aCoord,
                                  nscoord aPercentageBasis)
