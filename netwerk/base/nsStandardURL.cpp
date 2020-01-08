@@ -91,57 +91,93 @@ nsStandardURL::nsSegmentEncoder::nsSegmentEncoder(const Encoding* encoding)
 }
 
 int32_t nsStandardURL::
-nsSegmentEncoder::EncodeSegmentCount(const char *str,
-                                     const URLSegment &seg,
-                                     int16_t mask,
-                                     nsCString& result,
-                                     bool &appended,
-                                     uint32_t extraLen)
+nsSegmentEncoder::EncodeSegmentCount(const char *aStr,
+                                     const URLSegment& aSeg,
+                                     int16_t aMask,
+                                     nsCString& aOut,
+                                     bool &aAppended,
+                                     uint32_t aExtraLen)
 {
     
     
     
-    appended = false;
-    if (!str)
+    if (!aStr || aSeg.mLen <= 0) {
+        
+        aAppended = false;
         return 0;
-    int32_t len = 0;
-    if (seg.mLen > 0) {
-        uint32_t pos = seg.mPos;
-        len = seg.mLen;
-
-        
-        
-        
-        nsAutoCString encBuf;
-        if (mEncoding && !nsCRT::IsAscii(str + pos, len)) {
-          
-          nsresult rv;
-          const Encoding* ignored;
-          Tie(rv, ignored) =
-            mEncoding->Encode(Substring(str + pos, str + pos + len), encBuf);
-          if (NS_SUCCEEDED(rv)) {
-            str = encBuf.get();
-            pos = 0;
-            len = encBuf.Length();
-          }
-          
-        }
-
-        uint32_t initLen = result.Length();
-
-        
-        if (NS_EscapeURL(str + pos, len, mask, result)) {
-            len = result.Length() - initLen;
-            appended = true;
-        }
-        else if (str == encBuf.get()) {
-            result += encBuf; 
-            len = encBuf.Length();
-            appended = true;
-        }
-        len += extraLen;
     }
-    return len;
+
+    uint32_t origLen = aOut.Length();
+
+    Span<const char> span = MakeSpan(aStr + aSeg.mPos, aSeg.mLen);
+
+    
+    
+    
+    if (mEncoding) {
+        size_t upTo = Encoding::ASCIIValidUpTo(AsBytes(span));
+        if (upTo != span.Length()) {
+            
+            char bufferArr[512];
+            Span<char> buffer = MakeSpan(bufferArr);
+
+            auto encoder = mEncoding->NewEncoder();
+
+            nsAutoCString valid; 
+            if (MOZ_UNLIKELY(!IsUTF8(span.From(upTo)))) {
+                MOZ_ASSERT_UNREACHABLE("Invalid UTF-8 passed to nsStandardURL.");
+                
+                
+                
+                
+                UTF_8_ENCODING->Decode(
+                    nsDependentCSubstring(span.Elements(), span.Length()), valid);
+                
+                
+                
+                
+                span = valid;
+            }
+
+            size_t totalRead = 0;
+            for (;;) {
+                uint32_t encoderResult;
+                size_t read;
+                size_t written;
+                Tie(encoderResult, read, written) =
+                    encoder->EncodeFromUTF8WithoutReplacement(
+                        AsBytes(span.From(totalRead)), AsWritableBytes(buffer), true);
+                totalRead += read;
+                auto bufferWritten = buffer.To(written);
+                if (!NS_EscapeURLSpan(bufferWritten, aMask, aOut)) {
+                    aOut.Append(bufferWritten);
+                }
+                if (encoderResult == kInputEmpty) {
+                    aAppended = true;
+                    
+                    
+                    return aOut.Length() - origLen + aExtraLen;
+                }
+                if (encoderResult == kOutputFull) {
+                    continue;
+                }
+                aOut.AppendLiteral("%26%23");
+                aOut.AppendInt(encoderResult);
+                aOut.AppendLiteral("%3B");
+            }
+            MOZ_RELEASE_ASSERT(false, "There's supposed to be no way out of the above loop except return.");
+        }
+    }
+
+    if (NS_EscapeURLSpan(span, aMask, aOut)) {
+        aAppended = true;
+        
+        
+        return aOut.Length() - origLen + aExtraLen;
+    }
+    aAppended = false;
+    
+    return span.Length() + aExtraLen;
 }
 
 const nsACString &nsStandardURL::
@@ -922,7 +958,7 @@ nsStandardURL::BuildNormalizedSpec(const char *spec,
         }
         CoalescePath(coalesceFlag, buf + mDirectory.mPos);
     }
-    mSpec.SetLength(strlen(buf));
+    mSpec.Truncate(strlen(buf));
     NS_ASSERTION(mSpec.Length() <= approxLen, "We've overflowed the mSpec buffer!");
     MOZ_ASSERT(mSpec.Length() <= (uint32_t) net_GetURLMaxLength(),
                "The spec should never be this long, we missed a check.");
