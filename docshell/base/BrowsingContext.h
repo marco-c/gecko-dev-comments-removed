@@ -66,6 +66,12 @@ public:
   
   void Detach();
 
+  
+  
+  void CacheChildren();
+
+  bool IsCached();
+
   void SetName(const nsAString& aName) { mName = aName; }
   void GetName(nsAString& aName) { aName = mName; }
   bool NameEquals(const nsAString& aName) { return mName.Equals(aName); }

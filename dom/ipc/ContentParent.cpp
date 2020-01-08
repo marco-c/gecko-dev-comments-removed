@@ -6028,7 +6028,7 @@ ContentParent::RecvAttachBrowsingContext(
   }
 
   RefPtr<BrowsingContext> child = BrowsingContext::Get(aChildId);
-  if (child) {
+  if (child && !child->IsCached()) {
     
     
     
@@ -6081,7 +6081,11 @@ ContentParent::RecvDetachBrowsingContext(const BrowsingContextId& aContextId,
     return IPC_OK();
   }
 
-  context->Detach();
+  if (aMoveToBFCache) {
+    context->CacheChildren();
+  } else {
+    context->Detach();
+  }
 
   return IPC_OK();
 }
