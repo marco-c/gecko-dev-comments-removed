@@ -5283,7 +5283,7 @@ Perpendicular(mozilla::LogicalSide aSide1,
 }
 
 
-#define BORDER_STYLE_UNSET 0xFF
+#define BORDER_STYLE_UNSET 0xF
 
 
 struct BCCornerInfo
@@ -5305,11 +5305,11 @@ struct BCCornerInfo
                             
   uint32_t  ownerSide:2;    
                             
-  uint32_t  ownerElem:3;    
-  uint32_t  ownerStyle:8;   
+  uint32_t  ownerElem:4;    
+  uint32_t  ownerStyle:4;   
   uint32_t  subSide:2;      
-  uint32_t  subElem:3;      
-  uint32_t  subStyle:8;     
+  uint32_t  subElem:4;      
+  uint32_t  subStyle:4;     
   uint32_t  hasDashDot:1;   
   uint32_t  numSegs:3;      
   uint32_t  bevel:1;        
@@ -5320,7 +5320,10 @@ void
 BCCornerInfo::Set(mozilla::LogicalSide aSide,
                   BCCellBorder  aBorder)
 {
-  ownerElem  = aBorder.owner;
+  
+  
+  ownerElem  = aBorder.owner & 0x7;
+
   ownerStyle = aBorder.style;
   ownerWidth = aBorder.width;
   ownerColor = aBorder.color;
