@@ -138,12 +138,18 @@ typedef struct VP8ThreadData {
 typedef struct VP8Frame {
     ThreadFrame tf;
     AVBufferRef *seg_map;
+
+    AVBufferRef *hwaccel_priv_buf;
+    void *hwaccel_picture_private;
 } VP8Frame;
 
 #define MAX_THREADS 8
 typedef struct VP8Context {
     VP8ThreadData *thread_data;
     AVCodecContext *avctx;
+    enum AVPixelFormat pix_fmt;
+    int actually_webp;
+
     VP8Frame *framep[4];
     VP8Frame *next_framep[4];
     VP8Frame *curframe;
@@ -172,6 +178,7 @@ typedef struct VP8Context {
         uint8_t enabled;
         uint8_t absolute_vals;
         uint8_t update_map;
+        uint8_t update_feature_data;
         int8_t base_quant[4];
         int8_t filter_level[4];     
     } segmentation;
@@ -199,8 +206,19 @@ typedef struct VP8Context {
         int16_t chroma_qmul[2];
     } qmat[4];
 
+    
+    struct {
+        int yac_qi;
+        int ydc_delta;
+        int y2dc_delta;
+        int y2ac_delta;
+        int uvdc_delta;
+        int uvac_delta;
+    } quant;
+
     struct {
         uint8_t enabled;    
+        uint8_t update;
 
         
 
@@ -227,6 +245,20 @@ typedef struct VP8Context {
     uint8_t (*top_nnz)[9];
 
     VP56RangeCoder c;   
+
+    
+
+
+
+
+    struct {
+        const uint8_t *input;
+        uint32_t range;
+        uint32_t value;
+        int bit_count;
+    } coder_state_at_header_end;
+
+    int header_partition_size;
 
     
 
@@ -265,6 +297,7 @@ typedef struct VP8Context {
 
     int num_coeff_partitions;
     VP56RangeCoder coeff_partition[8];
+    int coeff_partition_size[8];
     VideoDSPContext vdsp;
     VP8DSPContext vp8dsp;
     H264PredContext hpc;

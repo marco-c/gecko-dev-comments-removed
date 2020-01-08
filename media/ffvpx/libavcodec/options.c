@@ -30,7 +30,6 @@
 #include "libavutil/internal.h"
 #include "libavutil/mem.h"
 #include "libavutil/opt.h"
-#include <float.h>              
 #include <string.h>
 
 FF_DISABLE_DEPRECATION_WARNINGS

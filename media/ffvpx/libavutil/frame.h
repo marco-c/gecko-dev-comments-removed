@@ -141,6 +141,23 @@ enum AVFrameSideDataType {
 
 
     AV_FRAME_DATA_ICC_PROFILE,
+
+#if FF_API_FRAME_QP
+    
+
+
+
+
+
+    AV_FRAME_DATA_QP_TABLE_PROPERTIES,
+
+    
+
+
+
+
+    AV_FRAME_DATA_QP_TABLE_DATA,
+#endif
 };
 
 enum AVActiveFormatDescription {
@@ -529,6 +546,7 @@ typedef struct AVFrame {
     attribute_deprecated
     int qscale_type;
 
+    attribute_deprecated
     AVBufferRef *qp_table_buf;
 #endif
     
@@ -563,39 +581,77 @@ typedef struct AVFrame {
     
 
 
+
+    
+
+
+
+
+
+
+
+
+
+
+    AVBufferRef *private_ref;
 } AVFrame;
 
+#if FF_API_FRAME_GET_SET
 
 
 
 
+attribute_deprecated
 int64_t av_frame_get_best_effort_timestamp(const AVFrame *frame);
+attribute_deprecated
 void    av_frame_set_best_effort_timestamp(AVFrame *frame, int64_t val);
+attribute_deprecated
 int64_t av_frame_get_pkt_duration         (const AVFrame *frame);
+attribute_deprecated
 void    av_frame_set_pkt_duration         (AVFrame *frame, int64_t val);
+attribute_deprecated
 int64_t av_frame_get_pkt_pos              (const AVFrame *frame);
+attribute_deprecated
 void    av_frame_set_pkt_pos              (AVFrame *frame, int64_t val);
+attribute_deprecated
 int64_t av_frame_get_channel_layout       (const AVFrame *frame);
+attribute_deprecated
 void    av_frame_set_channel_layout       (AVFrame *frame, int64_t val);
+attribute_deprecated
 int     av_frame_get_channels             (const AVFrame *frame);
+attribute_deprecated
 void    av_frame_set_channels             (AVFrame *frame, int     val);
+attribute_deprecated
 int     av_frame_get_sample_rate          (const AVFrame *frame);
+attribute_deprecated
 void    av_frame_set_sample_rate          (AVFrame *frame, int     val);
+attribute_deprecated
 AVDictionary *av_frame_get_metadata       (const AVFrame *frame);
+attribute_deprecated
 void          av_frame_set_metadata       (AVFrame *frame, AVDictionary *val);
+attribute_deprecated
 int     av_frame_get_decode_error_flags   (const AVFrame *frame);
+attribute_deprecated
 void    av_frame_set_decode_error_flags   (AVFrame *frame, int     val);
+attribute_deprecated
 int     av_frame_get_pkt_size(const AVFrame *frame);
+attribute_deprecated
 void    av_frame_set_pkt_size(AVFrame *frame, int val);
-AVDictionary **avpriv_frame_get_metadatap(AVFrame *frame);
 #if FF_API_FRAME_QP
+attribute_deprecated
 int8_t *av_frame_get_qp_table(AVFrame *f, int *stride, int *type);
+attribute_deprecated
 int av_frame_set_qp_table(AVFrame *f, AVBufferRef *buf, int stride, int type);
 #endif
+attribute_deprecated
 enum AVColorSpace av_frame_get_colorspace(const AVFrame *frame);
+attribute_deprecated
 void    av_frame_set_colorspace(AVFrame *frame, enum AVColorSpace val);
+attribute_deprecated
 enum AVColorRange av_frame_get_color_range(const AVFrame *frame);
+attribute_deprecated
 void    av_frame_set_color_range(AVFrame *frame, enum AVColorRange val);
+#endif
 
 
 
@@ -761,6 +817,22 @@ AVBufferRef *av_frame_get_plane_buffer(AVFrame *frame, int plane);
 AVFrameSideData *av_frame_new_side_data(AVFrame *frame,
                                         enum AVFrameSideDataType type,
                                         int size);
+
+
+
+
+
+
+
+
+
+
+
+
+
+AVFrameSideData *av_frame_new_side_data_from_buf(AVFrame *frame,
+                                                 enum AVFrameSideDataType type,
+                                                 AVBufferRef *buf);
 
 
 
