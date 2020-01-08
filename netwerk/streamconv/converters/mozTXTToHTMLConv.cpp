@@ -329,7 +329,7 @@ void mozTXTToHTMLConv::CalculateURLBoundaries(
 
   
   nsAutoString temp2;
-  ScanTXT(nsDependentSubstring(aInString, descstart),
+  ScanTXT(nsDependentSubstring(&aInString[descstart], pos - descstart),
           ~kURLs  & whathasbeendone, temp2);
   replaceBefore = temp2.Length();
 }
