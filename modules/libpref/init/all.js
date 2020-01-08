@@ -461,11 +461,8 @@ pref("media.navigator.video.max_fr", 60);
 pref("media.navigator.video.h264.level", 31); 
 pref("media.navigator.video.h264.max_br", 0);
 pref("media.navigator.video.h264.max_mbps", 0);
-pref("media.navigator.mediadatadecoder_enabled", false);
-pref("media.navigator.mediadatadecoder_h264_enabled", false);
 pref("media.peerconnection.video.vp9_enabled", true);
 pref("media.peerconnection.video.vp9_preferred", false);
-pref("media.getusermedia.aec", 1);
 pref("media.getusermedia.browser.enabled", false);
 pref("media.getusermedia.channels", 0);
 #if defined(ANDROID)
@@ -504,11 +501,10 @@ pref("media.peerconnection.ice.no_host", false);
 pref("media.peerconnection.ice.default_address_only", false);
 pref("media.peerconnection.ice.proxy_only", false);
 pref("media.peerconnection.rtpsourcesapi.enabled", true);
-
-
-
-
 pref("media.peerconnection.turn.disable", false);
+
+
+
 #if defined(MOZ_WEBRTC_HARDWARE_AEC_NS)
 pref("media.getusermedia.aec_enabled", false);
 pref("media.getusermedia.noise_enabled", false);
@@ -516,10 +512,12 @@ pref("media.getusermedia.noise_enabled", false);
 pref("media.getusermedia.aec_enabled", true);
 pref("media.getusermedia.noise_enabled", true);
 #endif
+pref("media.getusermedia.use_aec_mobile", false);
+pref("media.getusermedia.aec", 1); 
 pref("media.getusermedia.aec_extended_filter", true);
-pref("media.getusermedia.noise", 1);
-pref("media.getusermedia.agc_enabled", true);
-pref("media.getusermedia.agc", 3); 
+pref("media.getusermedia.noise", 1); 
+pref("media.getusermedia.agc_enabled", false);
+pref("media.getusermedia.agc", 1); 
 
 
 
