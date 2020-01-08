@@ -23,7 +23,6 @@ AntiTracking.runTest("Image cache - should load the image three times.",
   {
     runExtraTests: false,
     cookieBehavior,
-    blockingByContentBlocking,
     blockingByContentBlockingRTUI,
     blockingByAllowList,
     callback: async _ => {
@@ -49,15 +48,11 @@ AntiTracking.runTest("Image cache - should load the image three times.",
 );
 
 
-
-let expected = blockingByContentBlocking ? 2 : 3;
-
-
 add_task(async _ => {
   await fetch("https://tracking.example.org/browser/toolkit/components/antitracking/test/browser/image.sjs?result")
     .then(r => r.text())
     .then(text => {
-      is(text, expected, "The image should be loaded correctly.");
+      is(text, 2, "The image should be loaded correctly.");
     });
 
   await new Promise(resolve => {

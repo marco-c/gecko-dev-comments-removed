@@ -42,19 +42,6 @@ public:
   
   
   
-  static bool
-  ShouldHonorContentBlockingCookieRestrictions();
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   
   static bool
   IsFirstPartyStorageAccessGrantedFor(nsPIDOMWindowInner* a3rdPartyTrackingWindow,
