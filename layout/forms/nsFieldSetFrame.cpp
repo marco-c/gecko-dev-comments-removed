@@ -273,6 +273,13 @@ nsFieldSetFrame::PaintBorder(
     
     nsRect legendRect = legend->GetNormalRect() + aPt;
 
+    
+    nscoord borderTopWidth = GetUsedBorder().top;
+    if (legendRect.height < borderTopWidth) {
+      legendRect.height = borderTopWidth;
+      legendRect.y = aPt.y;
+    }
+
     DrawTarget* drawTarget = aRenderingContext.GetDrawTarget();
     
     
