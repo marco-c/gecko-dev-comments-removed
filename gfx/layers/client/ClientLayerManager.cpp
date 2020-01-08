@@ -320,6 +320,15 @@ ClientLayerManager::EndTransactionInternal(DrawPaintedLayerCallback aCallback,
   
   
   
+  
+  
+  if (mForwarder) {
+    mForwarder->UpdateTextureLocks();
+  }
+
+  
+  
+  
   {
     PaintTelemetry::AutoRecord record(PaintTelemetry::Metric::FlushRasterization);
     FlushAsyncPaints();
