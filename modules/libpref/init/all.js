@@ -5502,7 +5502,7 @@ pref("urlclassifier.downloadBlockTable", "goog-badbinurl-proto");
 pref("urlclassifier.passwordAllowTable", "goog-passwordwhite-proto");
 
 
-#ifdef NIGHTLY_BUILD
+#ifdef EARLY_BETA_OR_EARLIER
 
 pref("urlclassifier.trackingAnnotationTable", "test-track-simple,base-track-digest256,content-track-digest256");
 #else
