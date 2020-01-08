@@ -4,6 +4,8 @@
 
 
 
+#include "mozilla/ScopeExit.h"
+
 #include "gc/PublicIterators.h"
 #include "js/Wrapper.h"
 #include "proxy/DeadObjectProxy.h"
@@ -263,62 +265,40 @@ CanReify(HandleObject obj)
     return obj->is<PropertyIteratorObject>();
 }
 
-struct AutoCloseIterator
-{
-    AutoCloseIterator(JSContext* cx, PropertyIteratorObject* obj) : obj(cx, obj) {}
-
-    ~AutoCloseIterator() {
-        if (obj)
-            CloseIterator(obj);
-    }
-
-    void clear() { obj = nullptr; }
-
-  private:
-    Rooted<PropertyIteratorObject*> obj;
-};
-
 static JSObject*
-Reify(JSContext* cx, JS::Compartment* origin, HandleObject objp)
+Reify(JSContext* cx, JS::Compartment* origin, HandleObject iter)
 {
-    Rooted<PropertyIteratorObject*> iterObj(cx, &objp->as<PropertyIteratorObject>());
-    NativeIterator* ni = iterObj->getNativeIterator();
+    
+    auto autoCloseIterator = mozilla::MakeScopeExit([=] {
+        CloseIterator(iter);
+    });
 
+    NativeIterator* ni = iter->as<PropertyIteratorObject>().getNativeIterator();
     RootedObject obj(cx, ni->objectBeingIterated());
-    {
-        AutoCloseIterator close(cx, iterObj);
 
-        
-        if (!origin->wrap(cx, &obj))
+    
+    if (!origin->wrap(cx, &obj))
+        return nullptr;
+
+    
+    size_t length = ni->numKeys();
+    AutoIdVector keys(cx);
+    if (length > 0) {
+        if (!keys.reserve(length))
             return nullptr;
-
-        
-
-
-
-
-        size_t length = ni->numKeys();
-        AutoIdVector keys(cx);
-        if (length > 0) {
-            if (!keys.reserve(length))
+        RootedId id(cx);
+        RootedValue v(cx);
+        for (size_t i = 0; i < length; ++i) {
+            v.setString(ni->propertiesBegin()[i]);
+            if (!ValueToId<CanGC>(cx, v, &id))
                 return nullptr;
-            RootedId id(cx);
-            RootedValue v(cx);
-            for (size_t i = 0; i < length; ++i) {
-                v.setString(ni->propertiesBegin()[i]);
-                if (!ValueToId<CanGC>(cx, v, &id))
-                    return nullptr;
-                cx->markId(id);
-                keys.infallibleAppend(id);
-            }
+            cx->markId(id);
+            keys.infallibleAppend(id);
         }
-
-        close.clear();
-        CloseIterator(iterObj);
-
-        obj = EnumeratedIdVectorToIterator(cx, obj, keys);
     }
-    return obj;
+
+    
+    return EnumeratedIdVectorToIterator(cx, obj, keys);
 }
 
 JSObject*
