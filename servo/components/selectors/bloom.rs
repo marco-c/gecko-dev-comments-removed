@@ -297,6 +297,9 @@ impl Clone for BloomStorageBool {
 }
 
 fn hash<T: Hash>(elem: &T) -> u32 {
+    
+    
+    
     let mut hasher = FnvHasher::default();
     elem.hash(&mut hasher);
     let hash: u64 = hasher.finish();

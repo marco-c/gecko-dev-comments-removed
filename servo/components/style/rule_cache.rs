@@ -5,7 +5,7 @@
 
 
 
-use fnv::FnvHashMap;
+use fxhash::FxHashMap;
 use logical_geometry::WritingMode;
 use properties::{ComputedValues, StyleBuilder};
 use rule_tree::StrongRuleNode;
@@ -71,14 +71,14 @@ impl RuleCacheConditions {
 
 pub struct RuleCache {
     
-    map: FnvHashMap<StrongRuleNode, SmallVec<[(RuleCacheConditions, Arc<ComputedValues>); 1]>>,
+    map: FxHashMap<StrongRuleNode, SmallVec<[(RuleCacheConditions, Arc<ComputedValues>); 1]>>,
 }
 
 impl RuleCache {
     
     pub fn new() -> Self {
         Self {
-            map: FnvHashMap::default(),
+            map: FxHashMap::default(),
         }
     }
 
