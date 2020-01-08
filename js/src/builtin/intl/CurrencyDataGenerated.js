@@ -50,6 +50,8 @@ var currencyDigits = {
     
     UYI: 0,
     
+    UYW: 4,
+    
     VND: 0,
     
     VUV: 0,
