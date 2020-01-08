@@ -21,8 +21,29 @@ function test_cert_equals() {
      " should return false");
 }
 
+function test_bad_cert_list_serialization() {
+  
+  
+  
+  
+  
+  
+  
+  const badCertListSerialization =
+    "lZ+xZWUXSH+rm9iRO+UxlwAAAAAAAAAAwAAAAAAAAEYAAAABlZ+xZWUXSH+rm9iRO+UxlwAAAAAA" +
+    "AAAAwAAAAAAAAEYAAAAA";
+  let serHelper = Cc["@mozilla.org/network/serialization-helper;1"]
+                    .getService(Ci.nsISerializationHelper);
+  throws(() => serHelper.deserializeObject(badCertListSerialization),
+         /NS_ERROR_UNEXPECTED/,
+         "deserializing a bogus nsIX509CertList should throw NS_ERROR_UNEXPECTED");
+}
+
 function test_cert_list_serialization() {
   let certList = build_cert_chain(["default-ee", "expired-ee"]);
+
+  throws(() => certList.addCert(null), /NS_ERROR_ILLEGAL_VALUE/,
+         "trying to add a null cert to an nsIX509CertList should throw");
 
   
   let serHelper = Cc["@mozilla.org/network/serialization-helper;1"]
@@ -197,6 +218,11 @@ function run_test() {
   
   add_test(function() {
     test_cert_equals();
+    run_next_test();
+  });
+
+  add_test(function() {
+    test_bad_cert_list_serialization();
     run_next_test();
   });
 
