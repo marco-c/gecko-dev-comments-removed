@@ -2635,12 +2635,9 @@ static JSObject* ReadableStreamDefaultControllerPullSteps(
     }
 
     
+    
     if (unwrappedController->closeRequested() &&
         unwrappedQueue->length() == 0) {
-      
-      ReadableStreamControllerClearAlgorithms(unwrappedController);
-
-      
       if (!ReadableStreamCloseInternal(cx, unwrappedStream)) {
         return nullptr;
       }
@@ -2947,12 +2944,10 @@ static bool ReadableStreamControllerShouldCallPull(
 static void ReadableStreamControllerClearAlgorithms(
     ReadableStreamController* controller) {
   
-  
-  
-  
   controller->setPullMethod(UndefinedHandleValue);
+
+  
   controller->setCancelMethod(UndefinedHandleValue);
-  controller->clearUnderlyingSource();
 
   
   
@@ -2981,13 +2976,9 @@ static MOZ_MUST_USE bool ReadableStreamDefaultControllerClose(
   unwrappedController->setCloseRequested();
 
   
+  
   Rooted<ListObject*> unwrappedQueue(cx, unwrappedController->queue());
   if (unwrappedQueue->length() == 0) {
-    
-    
-    ReadableStreamControllerClearAlgorithms(unwrappedController);
-
-    
     return ReadableStreamCloseInternal(cx, unwrappedStream);
   }
 
@@ -3116,11 +3107,6 @@ static MOZ_MUST_USE bool ReadableStreamControllerError(
   if (!ResetQueue(cx, unwrappedController)) {
     return false;
   }
-
-  
-  
-  
-  ReadableStreamControllerClearAlgorithms(unwrappedController);
 
   
   return ReadableStreamErrorInternal(cx, unwrappedStream, e);
@@ -3893,9 +3879,6 @@ static MOZ_MUST_USE bool ReadableByteStreamControllerClose(
   }
 
   
-  ReadableStreamControllerClearAlgorithms(unwrappedController);
-
-  
   return ReadableStreamCloseInternal(cx, unwrappedStream);
 }
 
@@ -3923,10 +3906,6 @@ static MOZ_MUST_USE bool ReadableByteStreamControllerHandleQueueDrain(
   
   if (unwrappedController->queueTotalSize() == 0 &&
       unwrappedController->closeRequested()) {
-    
-    
-    ReadableStreamControllerClearAlgorithms(unwrappedController);
-
     
     
     return ReadableStreamCloseInternal(cx, unwrappedStream);
