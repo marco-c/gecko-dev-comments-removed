@@ -297,3 +297,31 @@ VRDisplayClient::GetSubmitFrameResult(VRSubmitFrameResultInfo& aResult)
 {
   aResult = mSubmitFrameResult;
 }
+
+void
+VRDisplayClient::StartVRNavigation()
+{
+  
+
+
+
+  VRManagerChild *vm = VRManagerChild::Get();
+  vm->SendStartVRNavigation(mDisplayInfo.mDisplayID);
+}
+
+void
+VRDisplayClient::StopVRNavigation(const TimeDuration& aTimeout)
+{
+  
+
+
+
+
+
+
+
+
+
+  VRManagerChild *vm = VRManagerChild::Get();
+  vm->SendStopVRNavigation(mDisplayInfo.mDisplayID, aTimeout);
+}

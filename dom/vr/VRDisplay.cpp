@@ -499,10 +499,23 @@ VRDisplay::ResetPose()
 }
 
 void
+VRDisplay::StartVRNavigation()
+{
+  mClient->StartVRNavigation();
+}
+
+void
 VRDisplay::StartHandlingVRNavigationEvent()
 {
   mHandlingVRNavigationEventStart = TimeStamp::Now();
   ++mVRNavigationEventDepth;
+  TimeDuration timeout = TimeDuration::FromMilliseconds(gfxPrefs::VRNavigationTimeout());
+  
+  
+  
+  if (timeout.ToMilliseconds() > 0) {
+    mClient->StopVRNavigation(timeout);
+  }
 }
 
 void
@@ -510,6 +523,9 @@ VRDisplay::StopHandlingVRNavigationEvent()
 {
   MOZ_ASSERT(mVRNavigationEventDepth > 0);
   --mVRNavigationEventDepth;
+  if (mVRNavigationEventDepth == 0) {
+    mClient->StopVRNavigation(TimeDuration::FromMilliseconds(0));
+  }
 }
 
 bool
@@ -522,7 +538,7 @@ VRDisplay::IsHandlingVRNavigationEvent()
     return false;
   }
   TimeDuration timeout = TimeDuration::FromMilliseconds(gfxPrefs::VRNavigationTimeout());
-  return timeout <= TimeDuration(0) ||
+  return timeout.ToMilliseconds() <= 0 ||
     (TimeStamp::Now() - mHandlingVRNavigationEventStart) <= timeout;
 }
 

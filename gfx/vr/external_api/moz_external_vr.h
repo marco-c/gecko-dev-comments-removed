@@ -29,7 +29,7 @@ namespace dom {
 #endif 
 namespace gfx {
 
-static const int32_t kVRExternalVersion = 1;
+static const int32_t kVRExternalVersion = 2;
 
 
 
@@ -359,6 +359,8 @@ struct VRBrowserState
 #if defined(__ANDROID__)
   bool shutdown;
 #endif 
+  bool presentationActive;
+  bool navigationTransitionActive;
   VRLayerState layerState[kVRLayerMaxCount];
 };
 

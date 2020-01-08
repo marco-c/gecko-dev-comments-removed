@@ -2063,6 +2063,7 @@ nsGlobalWindowInner::PostHandleEvent(EventChainPostVisitor& aVisitor)
     
     for (const auto& display : mVRDisplays) {
       if (display->IsPresenting()) {
+        display->StartVRNavigation();
         
         
         nsGlobalWindowOuter* outer = GetOuterWindowInternal();
