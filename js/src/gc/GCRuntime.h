@@ -471,8 +471,9 @@ class GCRuntime {
 #endif
 
   
-  void freeUnusedLifoBlocksAfterSweeping(LifoAlloc* lifo);
-  void freeAllLifoBlocksAfterSweeping(LifoAlloc* lifo);
+  void queueUnusedLifoBlocksForFree(LifoAlloc* lifo);
+  void queueAllLifoBlocksForFree(LifoAlloc* lifo);
+  void queueAllLifoBlocksForFreeAfterMinorGC(LifoAlloc* lifo);
 
   
   void releaseArena(Arena* arena, const AutoLockGC& lock);
@@ -596,6 +597,7 @@ class GCRuntime {
                              const mozilla::TimeStamp& currentTime,
                              JS::gcreason::Reason reason,
                              bool canAllocateMoreCode);
+  void freeQueuedLifoBlocksAfterMinorGC();
   void traceRuntimeForMajorGC(JSTracer* trc, AutoGCSession& session);
   void traceRuntimeAtoms(JSTracer* trc, const AutoAccessAtomsZone& atomsAccess);
   void traceKeptAtoms(JSTracer* trc);
@@ -862,7 +864,8 @@ class GCRuntime {
 
 
 
-  HelperThreadLockData<LifoAlloc> blocksToFreeAfterSweeping;
+  HelperThreadLockData<LifoAlloc> lifoBlocksToFree;
+  MainThreadData<LifoAlloc> lifoBlocksToFreeAfterMinorGC;
 
   
   MainThreadData<unsigned> sweepGroupIndex;
@@ -1022,10 +1025,6 @@ class GCRuntime {
   Nursery& nursery() { return nursery_.ref(); }
   gc::StoreBuffer& storeBuffer() { return storeBuffer_.ref(); }
 
-  
-  
-  MainThreadData<LifoAlloc> blocksToFreeAfterMinorGC;
-
   void* addressOfNurseryPosition() {
     return nursery_.refNoCheck().addressOfPosition();
   }
@@ -1045,7 +1044,6 @@ class GCRuntime {
   void evictNursery(JS::gcreason::Reason reason = JS::gcreason::EVICT_NURSERY) {
     minorGC(reason, gcstats::PhaseKind::EVICT_NURSERY);
   }
-  void freeAllLifoBlocksAfterMinorGC(LifoAlloc* lifo);
 
   friend class MarkingValidator;
   friend class AutoEnterIteration;
