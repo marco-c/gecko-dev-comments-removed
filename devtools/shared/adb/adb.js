@@ -135,19 +135,12 @@ const ADB = {
   
 
 
-
   async kill() {
-    const process = Cc["@mozilla.org/process/util;1"]
-                    .createInstance(Ci.nsIProcess);
-    const adbFile = await this.adbFilePromise;
-    process.init(adbFile);
-    
-    process.startHidden = true;
-    process.noShell = true;
-    const params = ["kill-server"];
-
-    process.run(true, params, params.length);
-    dumpn("adb kill-server: " + process.exitValue);
+    try {
+      await this.runCommand("host:kill");
+    } catch (e) {
+    }
+    dumpn("adb kill-server");
     this.ready = false;
     this.didRunInitially = false;
   },
