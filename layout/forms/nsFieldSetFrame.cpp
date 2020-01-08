@@ -703,7 +703,7 @@ bool
 nsFieldSetFrame::GetVerticalAlignBaseline(WritingMode aWM,
                                           nscoord* aBaseline) const
 {
-  if (StyleDisplay()->IsContainSize()) {
+  if (StyleDisplay()->IsContainLayout()) {
     
     
     return false;
@@ -723,7 +723,7 @@ nsFieldSetFrame::GetNaturalBaselineBOffset(WritingMode          aWM,
                                            BaselineSharingGroup aBaselineGroup,
                                            nscoord*             aBaseline) const
 {
-  if (StyleDisplay()->IsContainSize()) {
+  if (StyleDisplay()->IsContainLayout()) {
     
     
     return false;

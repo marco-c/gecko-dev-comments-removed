@@ -4695,7 +4695,7 @@ nsFlexContainerFrame::DoFlexLayout(nsPresContext*           aPresContext,
                     placeholderKids, lines);
 
   if ((lines.getFirst()->IsEmpty() && !lines.getFirst()->getNext()) ||
-      aReflowInput.mStyleDisplay->IsContainSize()) {
+      aReflowInput.mStyleDisplay->IsContainLayout()) {
     
     
     
