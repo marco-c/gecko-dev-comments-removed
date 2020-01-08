@@ -19,7 +19,7 @@ let {UrlClassifierTestUtils} = ChromeUtils.import("resource://testing-common/Url
 this.AntiTracking = {
   runTest(name, callbackTracking, callbackNonTracking, cleanupFunction, extraPrefs, windowOpenTest = true, userInteractionTest = true) {
     
-    this._createTask(name, true, true, callbackTracking, extraPrefs);
+    this._createTask(name, true, true, false, callbackTracking, extraPrefs);
     this._createCleanupTask(cleanupFunction);
 
     if (callbackNonTracking) {
@@ -40,6 +40,12 @@ this.AntiTracking = {
         } else {
           options.blockingByContentBlocking = false;
         }
+        if ("blockingByAllowList" in callbackNonTracking) {
+          options.blockingByAllowList =
+            callbackNonTracking.blockingByAllowList;
+        } else {
+          options.blockingByAllowList = false;
+        }
       }
 
       
@@ -49,17 +55,22 @@ this.AntiTracking = {
         
         
         
-        this._createTask(name, false, true, callbackNonTracking);
+        
+        this._createTask(name, false, true, false, callbackNonTracking);
         this._createCleanupTask(cleanupFunction);
 
-        this._createTask(name, true, false, callbackNonTracking);
+        this._createTask(name, true, false, false, callbackNonTracking);
         this._createCleanupTask(cleanupFunction);
 
-        this._createTask(name, false, false, callbackNonTracking);
+        this._createTask(name, false, false, false, callbackNonTracking);
+        this._createCleanupTask(cleanupFunction);
+
+        this._createTask(name, true, true, true, callbackNonTracking);
         this._createCleanupTask(cleanupFunction);
       } else {
         this._createTask(name, options.blockingByCookieBehavior,
                          options.blockingByContentBlocking,
+                         options.blockingByAllowList,
                          callbackNonTracking);
         this._createCleanupTask(cleanupFunction);
       }
@@ -88,6 +99,7 @@ this.AntiTracking = {
       ["privacy.trackingprotection.enabled", false],
       ["privacy.trackingprotection.pbmode.enabled", false],
       ["privacy.trackingprotection.annotate_channels", blockingByCookieBehavior],
+      [ContentBlocking.prefIntroCount, ContentBlocking.MAX_INTROS],
     ]});
 
     if (extraPrefs && Array.isArray(extraPrefs) && extraPrefs.length) {
@@ -97,10 +109,12 @@ this.AntiTracking = {
     await UrlClassifierTestUtils.addTestTrackers();
   },
 
-  _createTask(name, blockingByCookieBehavior, blockingByContentBlocking, callback, extraPrefs) {
+  _createTask(name, blockingByCookieBehavior, blockingByContentBlocking,
+              allowList, callback, extraPrefs) {
     add_task(async function() {
       info("Starting " + (blockingByCookieBehavior ? "blocking" : "non-blocking") + " cookieBehavior and " +
-                         (blockingByContentBlocking ? "blocking" : "non-blocking") + " contentBlocking test " + name);
+                         (blockingByContentBlocking ? "blocking" : "non-blocking") + " contentBlocking with" +
+                         (allowList ? "" : "out") + " allow list test " + name);
 
       await AntiTracking._setupTest(blockingByCookieBehavior, blockingByContentBlocking, extraPrefs);
 
@@ -110,6 +124,14 @@ this.AntiTracking = {
 
       let browser = gBrowser.getBrowserForTab(tab);
       await BrowserTestUtils.browserLoaded(browser);
+
+      if (allowList) {
+        info("Disabling content blocking for this page");
+        ContentBlocking.disableForCurrentPage();
+
+        
+        await BrowserTestUtils.browserLoaded(browser);
+      }
 
       info("Creating a 3rd party content");
       await ContentTask.spawn(browser,
@@ -147,6 +169,14 @@ this.AntiTracking = {
           ifr.src = obj.page;
         });
       });
+
+      if (allowList) {
+        info("Enabling content blocking for this page");
+        ContentBlocking.enableForCurrentPage();
+
+        
+        await BrowserTestUtils.browserLoaded(browser);
+      }
 
       info("Removing the tab");
       BrowserTestUtils.removeTab(tab);

@@ -24,6 +24,7 @@ AntiTracking.runTest("Image cache - should load the image twice.",
     runExtraTests: false,
     blockingByCookieBehavior,
     blockingByContentBlocking,
+    blockingByAllowList,
     callback: async _ => {
       
       let img = document.createElement("img");
