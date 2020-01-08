@@ -13,11 +13,15 @@ loader.lazyRequireGetter(this, "AccessibleActor", "devtools/server/actors/access
 loader.lazyRequireGetter(this, "CustomHighlighterActor", "devtools/server/actors/highlighters", true);
 loader.lazyRequireGetter(this, "DevToolsUtils", "devtools/shared/DevToolsUtils");
 loader.lazyRequireGetter(this, "events", "devtools/shared/event-emitter");
+loader.lazyRequireGetter(this, "getCurrentZoom", "devtools/shared/layout/utils", true);
+loader.lazyRequireGetter(this, "InspectorUtils", "InspectorUtils");
 loader.lazyRequireGetter(this, "isDefunct", "devtools/server/actors/utils/accessibility", true);
 loader.lazyRequireGetter(this, "isTypeRegistered", "devtools/server/actors/highlighters", true);
 loader.lazyRequireGetter(this, "isWindowIncluded", "devtools/shared/layout/utils", true);
 loader.lazyRequireGetter(this, "isXUL", "devtools/server/actors/highlighters/utils/markup", true);
 loader.lazyRequireGetter(this, "register", "devtools/server/actors/highlighters", true);
+
+const kStateHover = 0x00000004; 
 
 const nsIAccessibleEvent = Ci.nsIAccessibleEvent;
 const nsIAccessibleStateChangeEvent = Ci.nsIAccessibleStateChangeEvent;
@@ -126,6 +130,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     this.setA11yServiceGetter();
     this.onPick = this.onPick.bind(this);
     this.onHovered = this.onHovered.bind(this);
+    this._preventContentEvent = this._preventContentEvent.bind(this);
     this.onKey = this.onKey.bind(this);
     this.onHighlighterEvent = this.onHighlighterEvent.bind(this);
   },
@@ -513,6 +518,24 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
   _preventContentEvent(event) {
     event.stopPropagation();
     event.preventDefault();
+
+    const target = event.originalTarget || event.target;
+    if (target !== this._currentTarget) {
+      this._resetStateAndReleaseTarget();
+      this._currentTarget = target;
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      this._currentTargetHoverState =
+        InspectorUtils.getContentState(target) & kStateHover;
+      InspectorUtils.removeContentState(target, kStateHover);
+    }
   },
 
   
@@ -521,7 +544,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
 
 
 
-  async onPick(event) {
+  onPick(event) {
     if (!this._isPicking) {
       return;
     }
@@ -535,16 +558,16 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     
     if (event.shiftKey) {
       if (!this._currentAccessible) {
-        this._currentAccessible = await this._findAndAttachAccessible(event);
+        this._currentAccessible = this._findAndAttachAccessible(event);
       }
       events.emit(this, "picker-accessible-previewed", this._currentAccessible);
       return;
     }
 
-    this._stopPickerListeners();
+    this._unsetPickerEnvironment();
     this._isPicking = false;
     if (!this._currentAccessible) {
-      this._currentAccessible = await this._findAndAttachAccessible(event);
+      this._currentAccessible = this._findAndAttachAccessible(event);
     }
     events.emit(this, "picker-accessible-picked", this._currentAccessible);
   },
@@ -555,7 +578,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
 
 
 
-  async onHovered(event) {
+  onHovered(event) {
     if (!this._isPicking) {
       return;
     }
@@ -565,7 +588,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
       return;
     }
 
-    const accessible = await this._findAndAttachAccessible(event);
+    const accessible = this._findAndAttachAccessible(event);
     if (!accessible) {
       return;
     }
@@ -626,7 +649,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
   pick: function() {
     if (!this._isPicking) {
       this._isPicking = true;
-      this._startPickerListeners();
+      this._setPickerEnvironment();
     }
   },
 
@@ -651,7 +674,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     
     try {
       let parent = accessible;
-      while (parent && parent != accessibleDocument) {
+      while (parent && parent.rawAccessible != accessibleDocument) {
         parent = parent.parentAcc;
       }
     } catch (error) {
@@ -666,35 +689,55 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
 
 
 
-
-
-
-
-  async _findAndAttachAccessible(event) {
-    let target = event.originalTarget || event.target;
-    let rawAccessible;
-    
-    
-    
-    
-    while (!rawAccessible && target) {
-      rawAccessible = this.getRawAccessibleFor(target);
-      target = target.parentNode;
+  get pixelRatio() {
+    const { contentViewer } = this.targetActor.docShell;
+    const { windowUtils } = this.rootWin;
+    const overrideDPPX = contentViewer.overrideDPPX;
+    let ratio;
+    if (overrideDPPX) {
+      contentViewer.overrideDPPX = 0;
+      ratio = windowUtils.screenPixelsPerCSSPixel;
+      contentViewer.overrideDPPX = overrideDPPX;
+    } else {
+      ratio = windowUtils.screenPixelsPerCSSPixel;
     }
 
-    const doc = await this.getDocument();
-    return this.attachAccessible(rawAccessible, doc);
+    return ratio;
   },
 
   
 
 
-  _startPickerListeners: function() {
+
+
+
+
+
+
+  _findAndAttachAccessible(event) {
+    const target = event.originalTarget || event.target;
+    const docAcc = this.getRawAccessibleFor(this.rootDoc);
+    const win = target.ownerGlobal;
+    const scale = this.pixelRatio / getCurrentZoom(win);
+    const rawAccessible = docAcc.getDeepestChildAtPoint(
+      event.screenX * scale,
+      event.screenY * scale);
+    return this.attachAccessible(rawAccessible, docAcc);
+  },
+
+  
+
+
+  _setPickerEnvironment: function() {
     const target = this.targetActor.chromeEventHandler;
     target.addEventListener("mousemove", this.onHovered, true);
     target.addEventListener("click", this.onPick, true);
     target.addEventListener("mousedown", this._preventContentEvent, true);
     target.addEventListener("mouseup", this._preventContentEvent, true);
+    target.addEventListener("mouseover", this._preventContentEvent, true);
+    target.addEventListener("mouseout", this._preventContentEvent, true);
+    target.addEventListener("mouseleave", this._preventContentEvent, true);
+    target.addEventListener("mouseenter", this._preventContentEvent, true);
     target.addEventListener("dblclick", this._preventContentEvent, true);
     target.addEventListener("keydown", this.onKey, true);
     target.addEventListener("keyup", this._preventContentEvent, true);
@@ -703,7 +746,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
   
 
 
-  _stopPickerListeners: function() {
+  _unsetPickerEnvironment: function() {
     const target = this.targetActor.chromeEventHandler;
 
     if (!target) {
@@ -714,9 +757,42 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     target.removeEventListener("click", this.onPick, true);
     target.removeEventListener("mousedown", this._preventContentEvent, true);
     target.removeEventListener("mouseup", this._preventContentEvent, true);
+    target.removeEventListener("mouseover", this._preventContentEvent, true);
+    target.removeEventListener("mouseout", this._preventContentEvent, true);
+    target.removeEventListener("mouseleave", this._preventContentEvent, true);
+    target.removeEventListener("mouseenter", this._preventContentEvent, true);
     target.removeEventListener("dblclick", this._preventContentEvent, true);
     target.removeEventListener("keydown", this.onKey, true);
     target.removeEventListener("keyup", this._preventContentEvent, true);
+
+    this._resetStateAndReleaseTarget();
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  _resetStateAndReleaseTarget() {
+    if (!this._currentTarget) {
+      return;
+    }
+
+    try {
+      if (this._currentTargetHoverState) {
+        InspectorUtils.setContentState(this._currentTarget, kStateHover);
+      }
+    } catch (e) {
+      
+    }
+
+    this._currentTarget = null;
+    this._currentTargetState = null;
   },
 
   
@@ -728,7 +804,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     }
 
     if (this._isPicking) {
-      this._stopPickerListeners();
+      this._unsetPickerEnvironment();
       this._isPicking = false;
       this._currentAccessible = null;
     }
