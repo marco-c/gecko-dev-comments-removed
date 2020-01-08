@@ -11,7 +11,7 @@
 
 
 
-this.VideoControlsPageWidget = class {
+this.VideoControlsWidget = class {
   constructor(shadowRoot) {
     this.shadowRoot = shadowRoot;
     this.element = shadowRoot.host;
@@ -19,14 +19,19 @@ this.VideoControlsPageWidget = class {
     this.window = this.document.defaultView;
 
     this.isMobile = this.window.navigator.appVersion.includes("Android");
+  }
 
+  
+
+
+  onsetup() {
     this.switchImpl();
   }
 
   
 
 
-  onattributechange() {
+  onchange() {
     this.switchImpl();
   }
 
@@ -39,9 +44,9 @@ this.VideoControlsPageWidget = class {
   switchImpl() {
     let newImpl;
     if (this.element.controls) {
-      newImpl = VideoControlsImplPageWidget;
+      newImpl = VideoControlsImplWidget;
     } else if (this.isMobile) {
-      newImpl = NoControlsImplPageWidget;
+      newImpl = NoControlsImplWidget;
     }
     
     
@@ -54,6 +59,7 @@ this.VideoControlsPageWidget = class {
     }
     if (newImpl) {
       this.impl = new newImpl(this.shadowRoot);
+      this.impl.onsetup();
     } else {
       this.impl = undefined;
     }
@@ -69,13 +75,15 @@ this.VideoControlsPageWidget = class {
   }
 };
 
-this.VideoControlsImplPageWidget = class {
+this.VideoControlsImplWidget = class {
   constructor(shadowRoot) {
     this.shadowRoot = shadowRoot;
     this.element = shadowRoot.host;
     this.document = this.element.ownerDocument;
     this.window = this.document.defaultView;
+  }
 
+  onsetup() {
     this.generateContent();
 
     this.Utils = {
@@ -2289,13 +2297,15 @@ this.VideoControlsImplPageWidget = class {
   }
 };
 
-this.NoControlsImplPageWidget = class {
+this.NoControlsImplWidget = class {
   constructor(shadowRoot) {
     this.shadowRoot = shadowRoot;
     this.element = shadowRoot.host;
     this.document = this.element.ownerDocument;
     this.window = this.document.defaultView;
+  }
 
+  onsetup() {
     this.generateContent();
 
     this.Utils = {

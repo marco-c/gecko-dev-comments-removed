@@ -13,7 +13,9 @@ this.PluginProblemWidget = class {
     this.element = shadowRoot.host;
     
     this.window = this.element.ownerDocument.defaultView; 
+  }
 
+  onsetup() {
     const parser = new this.window.DOMParser();
     let parserDoc = parser.parseFromString(`
       <!DOCTYPE bindings [
