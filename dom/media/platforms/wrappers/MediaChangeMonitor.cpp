@@ -33,6 +33,7 @@ public:
   {
     if (CanBeInstantiated()) {
       UpdateConfigFromExtraData(aInfo.mExtraData);
+      mPreviousExtraData = aInfo.mExtraData;
     }
   }
 
@@ -71,17 +72,17 @@ public:
       
       
       if (!H264::HasSPS(aSample->mExtraData) ||
-          H264::CompareExtraData(aSample->mExtraData,
-                                 mCurrentConfig.mExtraData)) {
+          H264::CompareExtraData(aSample->mExtraData, mPreviousExtraData)) {
         return NS_OK;
       }
       extra_data = aSample->mExtraData;
-    }
-
-    if (H264::CompareExtraData(extra_data, mCurrentConfig.mExtraData)) {
+    } else if (H264::CompareExtraData(extra_data, mCurrentConfig.mExtraData)) {
       return NS_OK;
     }
 
+    
+    
+    mPreviousExtraData = aSample->mExtraData;
     UpdateConfigFromExtraData(extra_data);
 
     mNeedKeyframe = true;
@@ -134,6 +135,7 @@ public:
     bool mNeedKeyframe = true;
     uint32_t mStreamID = 0;
     RefPtr<TrackInfoSharedPtr> mTrackInfo;
+    RefPtr<MediaByteBuffer> mPreviousExtraData;
 };
 
 MediaChangeMonitor::MediaChangeMonitor(PlatformDecoderModule* aPDM,
