@@ -326,18 +326,6 @@ TaggingService.prototype = {
   },
 
   
-  get allTags() {
-    var allTags = [];
-    for (var i in this._tagFolders)
-      allTags.push(this._tagFolders[i]);
-    
-    allTags.sort(function(a, b) {
-        return a.toLowerCase().localeCompare(b.toLowerCase());
-      });
-    return allTags;
-  },
-
-  
   get hasTags() {
     return this._tagFolders.length > 0;
   },
@@ -473,7 +461,6 @@ TagAutoCompleteSearch.prototype = {
 
 
   startSearch(searchString, searchParam, previousResult, listener) {
-    let searchResults = PlacesUtils.tagging.allTags;
     this._stopped = false;
 
     
@@ -503,29 +490,33 @@ TagAutoCompleteSearch.prototype = {
       return;
     }
 
-    
-    let gen = (function* () {
-      for (let i = 0; i < searchResults.length; ++i) {
-        if (this._stopped)
-          yield false;
+    (async () => {
+      let tags = (await PlacesUtils.bookmarks.fetchTags())
+        .filter(t => t.name.toLowerCase().startsWith(searchString.toLowerCase()))
+        .map(t => t.name);
 
-        if (searchResults[i].toLowerCase().startsWith(searchString.toLowerCase())) {
+      
+      let gen = (function* () {
+        for (let i = 0; i < tags.length; ++i) {
+          if (this._stopped)
+            yield false;
+
           
           count++;
-          result.appendMatch(before + searchResults[i], searchResults[i]);
-        }
+          result.appendMatch(before + tags[i], tags[i]);
 
-        
-        if ((i % 10) == 0) {
-          this.notifyResult(result, count, listener, true);
-          yield true;
+          
+          if ((i % 10) == 0) {
+            this.notifyResult(result, count, listener, true);
+            yield true;
+          }
         }
-      }
-      yield false;
-    }.bind(this))();
+        yield false;
+      }.bind(this))();
 
-    while (gen.next().value);
-    this.notifyResult(result, count, listener, false);
+      while (gen.next().value);
+      this.notifyResult(result, count, listener, false);
+    })();
   },
 
   

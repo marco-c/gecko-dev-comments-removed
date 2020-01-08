@@ -78,10 +78,10 @@ add_task(async function() {
     let selectedTag = listItem.label;
 
     
-    let promiseNotification = PlacesTestUtils.waitForNotification(
-      "onItemChanged", (id, property) => property == "tags");
+    let promise = BrowserTestUtils.waitForEvent(tagsSelector,
+                                                "BookmarkTagsSelectorUpdated");
     EventUtils.synthesizeMouseAtCenter(listItem.firstChild, {});
-    await promiseNotification;
+    await promise;
     is(scrollTop, tagsSelector.scrollTop, "Scroll position did not change");
 
     
@@ -91,10 +91,10 @@ add_task(async function() {
     is(newItem.label, selectedTag, "Correct tag is still selected");
 
     
-    promiseNotification = PlacesTestUtils.waitForNotification(
-      "onItemChanged", (id, property) => property == "tags");
+    promise = BrowserTestUtils.waitForEvent(tagsSelector,
+                                            "BookmarkTagsSelectorUpdated");
     EventUtils.synthesizeMouseAtCenter(newItem.firstChild, {});
-    await promiseNotification;
+    await promise;
     is(scrollTop, tagsSelector.scrollTop, "Scroll position did not change");
   }
 
@@ -114,10 +114,10 @@ add_task(async function() {
     ok(listItem.hasAttribute("checked"), "Item is checked " + i);
 
     
-    let promiseNotification = PlacesTestUtils.waitForNotification(
-      "onItemChanged", (id, property) => property == "tags");
+    let promise = BrowserTestUtils.waitForEvent(tagsSelector,
+                                                "BookmarkTagsSelectorUpdated");
     EventUtils.synthesizeMouseAtCenter(listItem.firstChild, {});
-    await promiseNotification;
+    await promise;
 
     
     let topItem = [...tagsSelector.children].find(e => e.label == topTag);
@@ -140,13 +140,9 @@ add_task(async function() {
 });
 
 function openTagSelector() {
-  
-  let promise = new Promise(resolve => {
-    let row = document.getElementById("editBMPanel_tagsSelectorRow");
-    row.addEventListener("DOMAttrModified", function onAttrModified() {
-      resolve();
-    }, {once: true});
-  });
+  let promise = BrowserTestUtils.waitForEvent(
+    document.getElementById("editBMPanel_tagsSelector"),
+    "BookmarkTagsSelectorUpdated");
   
   document.getElementById("editBMPanel_tagsSelectorExpander").doCommand();
   return promise;

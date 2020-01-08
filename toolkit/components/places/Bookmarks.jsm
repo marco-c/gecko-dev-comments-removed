@@ -1374,6 +1374,34 @@ var Bookmarks = Object.freeze({
 
 
 
+  async fetchTags() {
+    
+    
+    let db = await PlacesUtils.promiseDBConnection();
+    let rows = await db.executeCached(`
+      SELECT b.title AS name, count(*) AS count
+      FROM moz_bookmarks b
+      JOIN moz_bookmarks p ON b.parent = p.id
+      JOIN moz_bookmarks c ON c.parent = b.id
+      WHERE p.guid = :tagsGuid
+      GROUP BY name
+      ORDER BY name COLLATE nocase ASC 
+    `, { tagsGuid: this.tagsGuid });
+    return rows.map(r => ({
+      name: r.getResultByName("name"),
+      count: r.getResultByName("count")
+    }));
+  },
+
+  
+
+
+
+
+
+
+
+
 
 
 
