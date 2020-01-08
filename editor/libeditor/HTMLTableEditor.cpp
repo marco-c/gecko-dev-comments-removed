@@ -2590,7 +2590,7 @@ HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents)
           }
           
           lastColInRow =
-            cellData.mCurrent.mColumn + cellData.mEffectiveColSpan - 1;
+            cellData.mCurrent.mColumn + cellData.NumberOfFollowingColumns();
           cellFoundInRow = true;
         } else if (cellFoundInRow) {
           
