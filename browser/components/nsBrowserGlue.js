@@ -3046,7 +3046,7 @@ var ContentBlockingCategoriesPrefs = {
   },
 
   updateCBCategory() {
-    if (this.switchingCategory) {
+    if (this.switchingCategory || !Services.prefs.prefHasUserValue(this.PREF_CB_CATEGORY)) {
       return;
     }
     
