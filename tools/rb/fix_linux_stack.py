@@ -8,10 +8,11 @@
 
 
 
+import json
+import os
+import re
 import subprocess
 import sys
-import re
-import os
 from StringIO import StringIO
 
 objdump_section_re = re.compile(
@@ -284,7 +285,7 @@ def addressToSymbol(file, address):
 line_re = re.compile("^(.*#\d+: )(.+)\[(.+) \+(0x[0-9A-Fa-f]+)\](.*)$")
 
 
-def fixSymbols(line):
+def fixSymbols(line, jsonEscape=False):
     result = line_re.match(line)
     if result is not None:
         (before, fn, file, address, after) = result.groups()
@@ -297,6 +298,10 @@ def fixSymbols(line):
                 name = fn
             if fileline == "??:0" or fileline == "??:?":
                 fileline = file
+
+            if jsonEscape:
+                name = json.dumps(name)[1:-1]         
+                fileline = json.dumps(fileline)[1:-1]
 
             nl = '\n' if line[-1] == '\n' else ''
             return "%s%s (%s)%s%s" % (before, name, fileline, after, nl)
