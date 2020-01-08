@@ -330,14 +330,18 @@ void MobileViewportManager::UpdateResolution(
   }
 
   
-  
   if (newZoom) {
     LayoutDeviceToLayerScale resolution = ZoomToResolution(*newZoom, cssToDev);
     MVM_LOG("%p: setting resolution %f\n", this, resolution.scale);
     mPresShell->SetResolutionAndScaleTo(resolution.scale);
 
     MVM_LOG("%p: New zoom is %f\n", this, newZoom->scale);
-    UpdateVisualViewportSize(aDisplaySize, *newZoom);
+  }
+
+  
+  
+  if (newZoom || aType == UpdateType::ViewportSize) {
+    UpdateVisualViewportSize(aDisplaySize, newZoom ? *newZoom : zoom);
   }
 }
 
