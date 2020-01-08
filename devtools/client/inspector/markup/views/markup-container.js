@@ -37,6 +37,12 @@ let markupContainerID = 0;
 
 MarkupContainer.prototype = {
   
+  get undo() {
+    
+    return this.markup.undo;
+  },
+
+  
 
 
 
@@ -52,7 +58,6 @@ MarkupContainer.prototype = {
     this.markup = markupView;
     this.node = node;
     this.type = type;
-    this.undo = this.markup.undo;
     this.win = this.markup._frame.contentWindow;
     this.id = "treeitem-" + markupContainerID++;
     this.htmlElt = this.win.document.documentElement;
