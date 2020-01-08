@@ -511,10 +511,10 @@ class IDLExposureMixins():
         return 'Window' in self.exposureSet
 
     def isExposedOnMainThread(self):
-        return bool(self.exposureSet & {'Window', 'BackstagePass'})
+        return self.isExposedInWindow()
 
     def isExposedOffMainThread(self):
-        return bool(self.exposureSet - {'Window', 'BackstagePass'})
+        return len(self.exposureSet - {'Window'}) > 0
 
     def isExposedInAnyWorker(self):
         return len(self.getWorkerExposureSet()) > 0
@@ -524,9 +524,6 @@ class IDLExposureMixins():
 
     def isExposedInAnyWorklet(self):
         return len(self.getWorkletExposureSet()) > 0
-
-    def isExposedInSystemGlobals(self):
-        return 'BackstagePass' in self.exposureSet
 
     def isExposedInSomeButNotAllWorkers(self):
         """
@@ -6908,12 +6905,6 @@ class Parser(Tokenizer):
         
         self._globalScope.primaryGlobalName = "FakeTestPrimaryGlobal"
         self._globalScope.addIfaceGlobalNames("FakeTestPrimaryGlobal", ["FakeTestPrimaryGlobal"])
-
-        
-        
-        
-        
-        self._globalScope.addIfaceGlobalNames("BackstagePass", ["Window", "System"])
 
         self._installBuiltins(self._globalScope)
         self._productions = []
