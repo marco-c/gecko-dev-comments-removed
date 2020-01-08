@@ -18,6 +18,7 @@ use style_traits::values::specified::AllowedNumericType;
 use super::{AllowQuirks, Number, Percentage, ToComputedValue};
 use values::{Auto, CSSFloat, Either, Normal};
 use values::computed::{self, CSSPixelLength, Context, ExtremumLength};
+use values::generics::length::{MaxLength as GenericMaxLength, MozLength as GenericMozLength};
 use values::generics::NonNegative;
 use values::specified::calc::CalcNode;
 
@@ -1189,17 +1190,7 @@ impl LengthOrNumber {
 }
 
 
-
-
-
-
-
-#[allow(missing_docs)]
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
-pub enum MozLength {
-    LengthOrPercentageOrAuto(LengthOrPercentageOrAuto),
-    ExtremumLength(ExtremumLength),
-}
+pub type MozLength = GenericMozLength<LengthOrPercentageOrAuto>;
 
 impl Parse for MozLength {
     fn parse<'i, 't>(
@@ -1219,7 +1210,7 @@ impl MozLength {
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
         let length = LengthOrPercentageOrAuto::parse_non_negative(context, input)?;
-        Ok(MozLength::LengthOrPercentageOrAuto(length))
+        Ok(GenericMozLength::LengthOrPercentageOrAuto(length))
     }
 
     
@@ -1229,34 +1220,29 @@ impl MozLength {
         allow_quirks: AllowQuirks,
     ) -> Result<Self, ParseError<'i>> {
         if let Ok(l) = input.try(ExtremumLength::parse) {
-            return Ok(MozLength::ExtremumLength(l));
+            return Ok(GenericMozLength::ExtremumLength(l));
         }
 
         let length =
             LengthOrPercentageOrAuto::parse_non_negative_quirky(context, input, allow_quirks)?;
-        Ok(MozLength::LengthOrPercentageOrAuto(length))
+        Ok(GenericMozLength::LengthOrPercentageOrAuto(length))
     }
 
     
     #[inline]
     pub fn auto() -> Self {
-        MozLength::LengthOrPercentageOrAuto(LengthOrPercentageOrAuto::auto())
+        GenericMozLength::LengthOrPercentageOrAuto(LengthOrPercentageOrAuto::auto())
     }
 
     
     #[inline]
     pub fn zero_percent() -> Self {
-        MozLength::LengthOrPercentageOrAuto(LengthOrPercentageOrAuto::zero_percent())
+        GenericMozLength::LengthOrPercentageOrAuto(LengthOrPercentageOrAuto::zero_percent())
     }
 }
 
 
-#[allow(missing_docs)]
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss)]
-pub enum MaxLength {
-    LengthOrPercentageOrNone(LengthOrPercentageOrNone),
-    ExtremumLength(ExtremumLength),
-}
+pub type MaxLength = GenericMaxLength<LengthOrPercentageOrNone>;
 
 impl Parse for MaxLength {
     fn parse<'i, 't>(
@@ -1276,7 +1262,7 @@ impl MaxLength {
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
         let length = LengthOrPercentageOrNone::parse_non_negative(context, input)?;
-        Ok(MaxLength::LengthOrPercentageOrNone(length))
+        Ok(GenericMaxLength::LengthOrPercentageOrNone(length))
     }
 
     
@@ -1286,11 +1272,11 @@ impl MaxLength {
         allow_quirks: AllowQuirks,
     ) -> Result<Self, ParseError<'i>> {
         if let Ok(l) = input.try(ExtremumLength::parse) {
-            return Ok(MaxLength::ExtremumLength(l));
+            return Ok(GenericMaxLength::ExtremumLength(l));
         }
 
         let length =
             LengthOrPercentageOrNone::parse_non_negative_quirky(context, input, allow_quirks)?;
-        Ok(MaxLength::LengthOrPercentageOrNone(length))
+        Ok(GenericMaxLength::LengthOrPercentageOrNone(length))
     }
 }
