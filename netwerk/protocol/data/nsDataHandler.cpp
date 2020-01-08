@@ -207,7 +207,7 @@ nsDataHandler::ParsePathWithoutRef(
             
             
             
-            if (offset == mediaType.Length() || mediaType[offset] == ';') {
+            if (offset == mediaType.Length() || mediaType[offset] == ';' || mediaType[offset] == ' ') {
                 MOZ_DIAGNOSTIC_ASSERT(base64 > 0, "Did someone remove the check?");
                 
                 
