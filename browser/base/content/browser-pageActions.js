@@ -269,7 +269,9 @@ var BrowserPageActions = {
 
 
 
-  togglePanelForAction(action, panelNode = null) {
+
+
+  togglePanelForAction(action, panelNode = null, event = null) {
     let aaPanelNode = this.activatedActionPanelNode;
     if (panelNode) {
       
@@ -298,8 +300,10 @@ var BrowserPageActions = {
       anchorNode.removeAttribute("open");
     }, { once: true });
 
-    PanelMultiView.openPopup(panelNode, anchorNode, "bottomcenter topright")
-                  .catch(Cu.reportError);
+    PanelMultiView.openPopup(panelNode, anchorNode, {
+      position: "bottomcenter topright",
+      triggerEvent: event,
+    }).catch(Cu.reportError);
   },
 
   _makeActivatedActionPanelForAction(action) {
@@ -460,9 +464,11 @@ var BrowserPageActions = {
     buttonNode.classList.add("urlbar-icon", "urlbar-page-action");
     buttonNode.setAttribute("actionid", action.id);
     buttonNode.setAttribute("role", "button");
-    buttonNode.addEventListener("click", event => {
+    let commandHandler = event => {
       this.doCommandForAction(action, event, buttonNode);
-    });
+    };
+    buttonNode.addEventListener("click", commandHandler);
+    buttonNode.addEventListener("keypress", commandHandler);
     return buttonNode;
   },
 
@@ -628,6 +634,12 @@ var BrowserPageActions = {
     if (event && event.type == "click" && event.button != 0) {
       return;
     }
+    if (event && event.type == "keypress") {
+      if (event.key != " " && event.key != "Enter") {
+        return;
+      }
+      event.stopPropagation();
+    }
     PageActions.logTelemetry("used", action, buttonNode);
     
     
@@ -649,7 +661,7 @@ var BrowserPageActions = {
       action.onCommand(event, buttonNode);
     }
     if (action.getWantsSubview(window) || action.wantsIframe) {
-      this.togglePanelForAction(action);
+      this.togglePanelForAction(action, null, event);
     }
   },
 
