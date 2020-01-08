@@ -223,12 +223,10 @@ JSScript::trackRecordReplayProgress() const
     
     
     
-    
-    
     return MOZ_UNLIKELY(mozilla::recordreplay::IsRecordingOrReplaying())
         && !runtimeFromAnyThread()->parentRuntime
         && !selfHosted()
-        && !mozilla::recordreplay::IsInternalScript(filename());
+        && mozilla::recordreplay::ShouldUpdateProgressCounter(filename());
 }
 
 #endif 
