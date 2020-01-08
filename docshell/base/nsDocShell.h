@@ -534,7 +534,7 @@ private:
                      uint32_t aReferrerPolicy,
                      nsIPrincipal* aTriggeringPrincipal,
                      nsIPrincipal* aPrincipalToInherit,
-                     const char* aTypeHint,
+                     const nsACString& aTypeHint,
                      const nsAString& aFileName,
                      nsIInputStream* aPostData,
                      nsIInputStream* aHeadersData,
@@ -904,6 +904,14 @@ private:
   {
     return mCSSErrorReportingEnabled;
   }
+
+  
+  
+  
+  
+  
+  void
+  MaybeHandleSubframeHistory(nsDocShellLoadState* aLoadState);
 
 private: 
   static nsIURIFixup* sURIFixup;

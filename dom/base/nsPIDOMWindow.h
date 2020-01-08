@@ -31,7 +31,7 @@ class nsIChannel;
 class nsIContent;
 class nsICSSDeclaration;
 class nsIDocShell;
-class nsDocShellLoadInfo;
+class nsDocShellLoadState;
 class nsIDocument;
 class nsIPrincipal;
 class nsIScriptTimeoutHandler;
@@ -1126,7 +1126,7 @@ public:
   
   virtual nsresult Open(const nsAString& aUrl, const nsAString& aName,
                         const nsAString& aOptions,
-                        nsDocShellLoadInfo* aLoadInfo,
+                        nsDocShellLoadState* aLoadState,
                         bool aForceNoOpener,
                         nsPIDOMWindowOuter **_retval) = 0;
   virtual nsresult OpenDialog(const nsAString& aUrl, const nsAString& aName,

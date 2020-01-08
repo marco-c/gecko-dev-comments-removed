@@ -22,7 +22,7 @@
 #include "nsIBaseWindow.h"
 #include "nsIBrowserDOMWindow.h"
 #include "nsIDocShell.h"
-#include "nsDocShellLoadInfo.h"
+#include "nsDocShellLoadState.h"
 #include "nsIDocShellTreeItem.h"
 #include "nsIDocShellTreeOwner.h"
 #include "nsIDocumentLoader.h"
@@ -391,7 +391,7 @@ nsWindowWatcher::OpenWindow2(mozIDOMWindowProxy* aParent,
                              nsISupports* aArguments,
                              bool aIsPopupSpam,
                              bool aForceNoOpener,
-                             nsDocShellLoadInfo* aLoadInfo,
+                             nsDocShellLoadState* aLoadState,
                              mozIDOMWindowProxy** aResult)
 {
   nsCOMPtr<nsIArray> argv = ConvertArgsToArray(aArguments);
@@ -412,7 +412,7 @@ nsWindowWatcher::OpenWindow2(mozIDOMWindowProxy* aParent,
   return OpenWindowInternal(aParent, aUrl, aName, aFeatures,
                             aCalledFromScript, dialog,
                             aNavigate, argv, aIsPopupSpam,
-                            aForceNoOpener, aLoadInfo, aResult);
+                            aForceNoOpener, aLoadState, aResult);
 }
 
 
@@ -637,7 +637,7 @@ nsWindowWatcher::OpenWindowInternal(mozIDOMWindowProxy* aParent,
                                     nsIArray* aArgv,
                                     bool aIsPopupSpam,
                                     bool aForceNoOpener,
-                                    nsDocShellLoadInfo* aLoadInfo,
+                                    nsDocShellLoadState* aLoadState,
                                     mozIDOMWindowProxy** aResult)
 {
   nsresult rv = NS_OK;
@@ -821,7 +821,7 @@ nsWindowWatcher::OpenWindowInternal(mozIDOMWindowProxy* aParent,
                                      sizeSpec.PositionSpecified(),
                                      sizeSpec.SizeSpecified(),
                                      uriToLoad, name, features, aForceNoOpener,
-                                     aLoadInfo, &windowIsNew,
+                                     aLoadState, &windowIsNew,
                                      getter_AddRefs(newWindow));
 
         if (NS_SUCCEEDED(rv)) {
@@ -1118,12 +1118,12 @@ nsWindowWatcher::OpenWindowInternal(mozIDOMWindowProxy* aParent,
     }
   }
 
-  RefPtr<nsDocShellLoadInfo> loadInfo = aLoadInfo;
-  if (uriToLoad && aNavigate && !loadInfo) {
-    loadInfo = new nsDocShellLoadInfo();
+  RefPtr<nsDocShellLoadState> loadState = aLoadState;
+  if (uriToLoad && aNavigate && !loadState) {
+    loadState = new nsDocShellLoadState();
 
     if (subjectPrincipal) {
-      loadInfo->SetTriggeringPrincipal(subjectPrincipal);
+      loadState->SetTriggeringPrincipal(subjectPrincipal);
     }
 
     
@@ -1138,8 +1138,8 @@ nsWindowWatcher::OpenWindowInternal(mozIDOMWindowProxy* aParent,
     }
     if (doc) {
       
-      loadInfo->SetReferrer(doc->GetDocumentURI());
-      loadInfo->SetReferrerPolicy(doc->GetReferrerPolicy());
+      loadState->SetReferrer(doc->GetDocumentURI());
+      loadState->SetReferrerPolicy(doc->GetReferrerPolicy());
     }
   }
 
@@ -1181,13 +1181,13 @@ nsWindowWatcher::OpenWindowInternal(mozIDOMWindowProxy* aParent,
   }
 
   if (uriToLoad && aNavigate) {
-    newDocShell->LoadURI(
-      uriToLoad,
-      loadInfo,
-      windowIsNew ?
+    loadState->SetURI(uriToLoad);
+    loadState->SetLoadFlags(windowIsNew ?
         static_cast<uint32_t>(nsIWebNavigation::LOAD_FLAGS_FIRST_LOAD) :
-        static_cast<uint32_t>(nsIWebNavigation::LOAD_FLAGS_NONE),
-      true);
+                            static_cast<uint32_t>(nsIWebNavigation::LOAD_FLAGS_NONE));
+    loadState->SetFirstParty(true);
+    
+    newDocShell->LoadURI(loadState);
   }
 
   
