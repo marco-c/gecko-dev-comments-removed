@@ -29,7 +29,7 @@ fn is_context_value_enabled() -> bool {
     
     
     
-    use gecko_bindings::structs::mozilla;
+    use crate::gecko_bindings::structs::mozilla;
     unsafe { mozilla::StaticPrefs_sVarCache_gfx_font_rendering_opentype_svg_enabled }
 }
 #[cfg(not(feature = "gecko"))]

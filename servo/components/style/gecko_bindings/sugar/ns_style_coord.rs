@@ -4,9 +4,11 @@
 
 
 
-use gecko_bindings::bindings;
-use gecko_bindings::structs::{nsStyleCoord, nsStyleCoord_Calc, nsStyleCoord_CalcValue};
-use gecko_bindings::structs::{nsStyleCorners, nsStyleSides, nsStyleUnion, nsStyleUnit, nscoord};
+use crate::gecko_bindings::bindings;
+use crate::gecko_bindings::structs::{nsStyleCoord, nsStyleCoord_Calc, nsStyleCoord_CalcValue};
+use crate::gecko_bindings::structs::{
+    nsStyleCorners, nsStyleSides, nsStyleUnion, nsStyleUnit, nscoord,
+};
 use std::mem;
 
 impl nsStyleCoord {
@@ -266,7 +268,7 @@ pub unsafe trait CoordDataMut: CoordData {
     
     
     fn leaky_set_null(&mut self) {
-        use gecko_bindings::structs::nsStyleUnit::*;
+        use crate::gecko_bindings::structs::nsStyleUnit::*;
         unsafe {
             let (unit, union) = self.values_mut();
             *unit = eStyleUnit_Null;
@@ -278,7 +280,7 @@ pub unsafe trait CoordDataMut: CoordData {
     
     fn set_value(&mut self, value: CoordDataValue) {
         use self::CoordDataValue::*;
-        use gecko_bindings::structs::nsStyleUnit::*;
+        use crate::gecko_bindings::structs::nsStyleUnit::*;
         self.reset();
         unsafe {
             let (unit, union) = self.values_mut();
@@ -365,7 +367,7 @@ pub unsafe trait CoordData {
     
     fn as_value(&self) -> CoordDataValue {
         use self::CoordDataValue::*;
-        use gecko_bindings::structs::nsStyleUnit::*;
+        use crate::gecko_bindings::structs::nsStyleUnit::*;
         unsafe {
             match self.unit() {
                 eStyleUnit_Null => Null,
@@ -387,7 +389,7 @@ pub unsafe trait CoordData {
     #[inline]
     
     unsafe fn get_float(&self) -> f32 {
-        use gecko_bindings::structs::nsStyleUnit::*;
+        use crate::gecko_bindings::structs::nsStyleUnit::*;
         debug_assert!(
             self.unit() == eStyleUnit_Percent ||
                 self.unit() == eStyleUnit_Factor ||
@@ -400,7 +402,7 @@ pub unsafe trait CoordData {
     #[inline]
     
     unsafe fn get_integer(&self) -> i32 {
-        use gecko_bindings::structs::nsStyleUnit::*;
+        use crate::gecko_bindings::structs::nsStyleUnit::*;
         debug_assert!(
             self.unit() == eStyleUnit_Coord ||
                 self.unit() == eStyleUnit_Integer ||

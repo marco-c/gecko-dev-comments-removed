@@ -4,7 +4,7 @@
 
 
 
-use gecko_bindings::structs::nsCOMPtr;
+use crate::gecko_bindings::structs::nsCOMPtr;
 
 #[cfg(feature = "gecko_debug")]
 impl<T> nsCOMPtr<T> {
