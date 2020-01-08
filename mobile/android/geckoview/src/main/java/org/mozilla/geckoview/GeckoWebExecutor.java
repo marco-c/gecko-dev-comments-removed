@@ -6,6 +6,7 @@
 
 package org.mozilla.geckoview;
 
+import android.support.annotation.AnyThread;
 import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 
@@ -35,6 +36,7 @@ import org.mozilla.gecko.annotation.WrapForJNI;
 
 
 
+@AnyThread
 public class GeckoWebExecutor {
     
     
