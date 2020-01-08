@@ -60,13 +60,13 @@ add_task(async function() {
 
   
   await addBreakpoint(dbg, "simple1", 15);
-  
+
   
   await waitForElementWithSelector(dbg, ".column-breakpoint");
 
   let columnBreakpointMarkers = getColumnBreakpointElements(dbg);
   ok(
-    columnBreakpointMarkers.length === 2, 
+    columnBreakpointMarkers.length === 2,
       "2 column breakpoint markers display"
   );
 
@@ -89,7 +89,7 @@ add_task(async function() {
 
   
   await waitForElementWithSelector(dbg, ".column-breakpoint.has-condition");
-  
+
   
   removeBreakpointViaContext(dbg, 3);
 
