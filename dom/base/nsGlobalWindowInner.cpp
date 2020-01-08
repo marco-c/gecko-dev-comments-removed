@@ -3207,52 +3207,17 @@ void
 nsGlobalWindowInner::SetOpener(JSContext* aCx, JS::Handle<JS::Value> aOpener,
                                ErrorResult& aError)
 {
-  
-  
-  
-  
-  
-  
-  if (!aOpener.isNull() && !nsContentUtils::IsCallerChrome()) {
-    RedefineProperty(aCx, "opener", aOpener, aError);
+  if (aOpener.isNull()) {
+    SetOpenerWindow(nullptr, false);
     return;
   }
 
-  if (!aOpener.isObjectOrNull()) {
-    
-    aError.Throw(NS_ERROR_INVALID_ARG);
-    return;
-  }
-
-  nsPIDOMWindowInner* win = nullptr;
-  if (aOpener.isObject()) {
-    JSObject* unwrapped = js::CheckedUnwrap(&aOpener.toObject(),
-                                             false);
-    if (!unwrapped) {
-      aError.Throw(NS_ERROR_DOM_SECURITY_ERR);
-      return;
-    }
-
-    auto* globalWindow = xpc::WindowOrNull(unwrapped);
-    if (!globalWindow) {
-      
-      aError.Throw(NS_ERROR_INVALID_ARG);
-      return;
-    }
-
-    win = globalWindow;
-  }
-
-  nsPIDOMWindowOuter* outer = nullptr;
-  if (win) {
-    if (!win->IsCurrentInnerWindow()) {
-      aError.Throw(NS_ERROR_FAILURE);
-      return;
-    }
-    outer = win->GetOuterWindow();
-  }
-
-  SetOpenerWindow(outer, false);
+  
+  
+  
+  
+  
+  RedefineProperty(aCx, "opener", aOpener, aError);
 }
 
 void
