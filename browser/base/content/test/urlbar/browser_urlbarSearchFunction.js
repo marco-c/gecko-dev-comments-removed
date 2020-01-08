@@ -6,8 +6,12 @@
 "use strict";
 
 add_task(async function init() {
+  
+  
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
   let which = gURLBar._whichSearchSuggestionsNotification || undefined;
   registerCleanupFunction(async function() {
+    BrowserTestUtils.removeTab(tab);
     
     if (which === undefined) {
       delete gURLBar._whichSearchSuggestionsNotification;
