@@ -4879,6 +4879,56 @@ CompareIRGenerator::tryAttachObjectUndefined(ValOperandId lhsId, ValOperandId rh
     return true;
 }
 
+
+bool
+CompareIRGenerator::tryAttachNumberUndefined(ValOperandId lhsId, ValOperandId rhsId)
+{
+    if (!(lhsVal_.isUndefined() && rhsVal_.isNumber()) &&
+        !(rhsVal_.isUndefined() && lhsVal_.isNumber()))
+    {
+        return false;
+    }
+
+    lhsVal_.isNumber() ? writer.guardIsNumber(lhsId) : writer.guardIsUndefined(lhsId);
+    rhsVal_.isNumber() ? writer.guardIsNumber(rhsId) : writer.guardIsUndefined(rhsId);
+
+    
+    
+    writer.loadBooleanResult(op_ == JSOP_NE || op_ == JSOP_STRICTNE);
+    writer.returnFromIC();
+
+    trackAttached("NumberUndefined");
+    return true;
+}
+
+
+bool
+CompareIRGenerator::tryAttachNullUndefined(ValOperandId lhsId, ValOperandId rhsId)
+{
+    if (!lhsVal_.isNullOrUndefined() || !rhsVal_.isNullOrUndefined())
+        return false;
+
+    if (op_ == JSOP_EQ || op_ == JSOP_NE) {
+        writer.guardIsNullOrUndefined(lhsId);
+        writer.guardIsNullOrUndefined(rhsId);
+        
+        writer.loadBooleanResult(op_ == JSOP_EQ);
+        trackAttached("SloppyNullUndefined");
+    } else {
+        
+        
+        
+        MOZ_ASSERT(lhsVal_.isNull() == rhsVal_.isNull());
+        lhsVal_.isNull() ? writer.guardIsNull(lhsId) : writer.guardIsUndefined(lhsId);
+        rhsVal_.isNull() ? writer.guardIsNull(rhsId) : writer.guardIsUndefined(rhsId);
+        writer.loadBooleanResult(op_ == JSOP_STRICTEQ);
+        trackAttached("StrictNullUndefinedEquality");
+    }
+
+    writer.returnFromIC();
+    return true;
+}
+
 bool
 CompareIRGenerator::tryAttachStub()
 {
@@ -4903,7 +4953,18 @@ CompareIRGenerator::tryAttachStub()
             return true;
         if (tryAttachStrictDifferentTypes(lhsId, rhsId))
             return true;
+
+        
+        
+        if (tryAttachNullUndefined(lhsId, rhsId))
+            return true;
     }
+
+    
+    
+    
+    if (tryAttachNumberUndefined(lhsId, rhsId))
+        return true;
 
     
     
