@@ -526,7 +526,7 @@ class GCRuntime {
   void mergeRealms(JS::Realm* source, JS::Realm* target);
 
  private:
-  enum IncrementalResult { ResetIncremental = 0, ReturnToEvictNursery, Ok };
+  enum IncrementalResult { ResetIncremental = 0, Ok };
 
   
   void deleteEmptyZone(Zone* zone);
@@ -566,10 +566,8 @@ class GCRuntime {
   SliceBudget defaultBudget(JS::gcreason::Reason reason, int64_t millis);
   IncrementalResult budgetIncrementalGC(bool nonincrementalByAPI,
                                         JS::gcreason::Reason reason,
-                                        SliceBudget& budget,
-                                        AutoGCSession& session);
-  IncrementalResult resetIncrementalGC(AbortReason reason,
-                                       AutoGCSession& session);
+                                        SliceBudget& budget);
+  IncrementalResult resetIncrementalGC(AbortReason reason);
 
   
   
@@ -584,8 +582,6 @@ class GCRuntime {
                JS::gcreason::Reason reason) JS_HAZ_GC_CALL;
 
   
-
-
 
 
 
