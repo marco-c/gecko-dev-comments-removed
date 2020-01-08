@@ -32,32 +32,40 @@ using media::TimeUnit;
 
 namespace mozilla {
 
+
+
+class RenderOrReleaseOutput {
+ public:
+  RenderOrReleaseOutput(CodecProxy::Param aCodec, Sample::Param aSample)
+      : mCodec(aCodec), mSample(aSample) {}
+
+  virtual ~RenderOrReleaseOutput() { ReleaseOutput(false); }
+
+ protected:
+  void ReleaseOutput(bool aToRender) {
+    if (mCodec && mSample) {
+      mCodec->ReleaseOutput(mSample, aToRender);
+      mCodec = nullptr;
+      mSample = nullptr;
+    }
+  }
+
+ private:
+  CodecProxy::GlobalRef mCodec;
+  Sample::GlobalRef mSample;
+};
+
 class RemoteVideoDecoder : public RemoteDataDecoder {
  public:
   
   
-  class RenderOrReleaseOutput : public VideoData::Listener {
+  class CompositeListener : private RenderOrReleaseOutput,
+                            public VideoData::Listener {
    public:
-    RenderOrReleaseOutput(CodecProxy::Param aCodec, Sample::Param aSample)
-        : mCodec(aCodec), mSample(aSample) {}
+    CompositeListener(CodecProxy::Param aCodec, Sample::Param aSample)
+        : RenderOrReleaseOutput(aCodec, aSample) {}
 
-    ~RenderOrReleaseOutput() { ReleaseOutput(false); }
-
-    void OnSentToCompositor() override {
-      ReleaseOutput(true);
-      mCodec = nullptr;
-      mSample = nullptr;
-    }
-
-   private:
-    void ReleaseOutput(bool aToRender) {
-      if (mCodec && mSample) {
-        mCodec->ReleaseOutput(mSample, aToRender);
-      }
-    }
-
-    CodecProxy::GlobalRef mCodec;
-    Sample::GlobalRef mSample;
+    void OnSentToCompositor() override { ReleaseOutput(true); }
   };
 
   class InputInfo {
@@ -224,9 +232,10 @@ class RemoteVideoDecoder : public RemoteDataDecoder {
     AssertOnTaskQueue();
 
     UniquePtr<VideoData::Listener> releaseSample(
-        new RenderOrReleaseOutput(mJavaDecoder, aSample));
+        new CompositeListener(mJavaDecoder, aSample));
 
     BufferInfo::LocalRef info = aSample->Info();
+    MOZ_ASSERT(info);
 
     int32_t flags;
     bool ok = NS_SUCCEEDED(info->Flags(&flags));
@@ -386,7 +395,10 @@ class RemoteAudioDecoder : public RemoteDataDecoder {
 
     AssertOnTaskQueue();
 
+    RenderOrReleaseOutput autoRelease(mJavaDecoder, aSample);
+
     BufferInfo::LocalRef info = aSample->Info();
+    MOZ_ASSERT(info);
 
     int32_t flags;
     bool ok = NS_SUCCEEDED(info->Flags(&flags));
