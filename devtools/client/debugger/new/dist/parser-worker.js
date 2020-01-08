@@ -23172,7 +23172,8 @@ function buildMetaBindings(sourceId, node, ancestors, parentIndex = ancestors.le
   }
 
   
-  if (t.isCallExpression(parent) && t.isIdentifier(parent.callee, { name: "Object" }) && parent.arguments.length === 1 && parent.arguments[0] === node) {
+  
+  if (t.isCallExpression(parent) && (t.isIdentifier(parent.callee, { name: "Object" }) || t.isMemberExpression(parent.callee, { computed: false }) && t.isIdentifier(parent.callee.object, { name: "__webpack_require__" }) && t.isIdentifier(parent.callee.property, { name: "i" })) && parent.arguments.length === 1 && parent.arguments[0] === node) {
     return {
       type: "inherit",
       start: fromBabelLocation(parent.loc.start, sourceId),

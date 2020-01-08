@@ -207,9 +207,21 @@ async function mapImportReferenceToDescriptor({
   
   
   
+  
+  
+  
+  
+  
 
 
   if (!(0, _mappingContains.mappingContains)(range, binding.loc)) {
+    return null;
+  } 
+  
+  
+
+
+  if (binding.name === "__webpack_require__" && binding.loc.meta && binding.loc.meta.type === "member" && binding.loc.meta.property === "i") {
     return null;
   }
 
