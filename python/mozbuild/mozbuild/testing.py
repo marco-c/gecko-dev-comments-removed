@@ -300,4 +300,10 @@ def read_wpt_manifest(context, paths):
     finally:
         sys.path = old_path
         f = context._finder.get(full_path)
-        return wptmanifest.manifest.load(tests_root, f)
+        try:
+            rv = wptmanifest.manifest.load(tests_root, f)
+        except wptmanifest.manifest.ManifestVersionMismatch:
+            
+            
+            rv = wptmanifest.manifest.Manifest()
+        return rv
