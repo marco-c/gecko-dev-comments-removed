@@ -74,6 +74,11 @@ void SetBreakpoint(size_t aId, const js::BreakpointPosition& aPosition);
 
 
 
+void MaybeSwitchToReplayingChild();
+
+
+
+
 
 extern void* gGraphicsMemory;
 

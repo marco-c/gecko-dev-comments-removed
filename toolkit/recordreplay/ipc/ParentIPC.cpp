@@ -775,18 +775,6 @@ HasSavedCheckpointsInRange(ChildProcessInfo* aChild, size_t aStart, size_t aEnd)
   return true;
 }
 
-
-
-
-
-static bool
-IsUserBreakpoint(js::BreakpointPosition::Kind aKind)
-{
-  MOZ_RELEASE_ASSERT(aKind != js::BreakpointPosition::Invalid);
-  return aKind != js::BreakpointPosition::NewScript
-      && aKind != js::BreakpointPosition::ConsoleMessage;
-}
-
 static void
 MarkActiveChildExplicitPause()
 {
@@ -797,20 +785,6 @@ MarkActiveChildExplicitPause()
     
     
     FlushRecording();
-
-    
-    
-    
-    
-    
-    
-    
-    
-    if (CanRewind() && gActiveChild->IsPausedAtMatchingBreakpoint(IsUserBreakpoint)) {
-      ChildProcessInfo* child =
-        OtherReplayingChild(ReplayingChildResponsibleForSavingCheckpoint(targetCheckpoint));
-      SwitchActiveChild(child);
-    }
   } else if (CanRewind()) {
     
     
@@ -840,6 +814,18 @@ ActiveChildTargetCheckpoint()
     return Some(gActiveChild->RewindTargetCheckpoint());
   }
   return Nothing();
+}
+
+void
+MaybeSwitchToReplayingChild()
+{
+  if (gActiveChild->IsRecording() && CanRewind()) {
+    FlushRecording();
+    size_t checkpoint = gActiveChild->RewindTargetCheckpoint();
+    ChildProcessInfo* child =
+      OtherReplayingChild(ReplayingChildResponsibleForSavingCheckpoint(checkpoint));
+    SwitchActiveChild(child);
+  }
 }
 
 
