@@ -94,6 +94,7 @@ public class Leanplum {
   private static RegisterDeviceFinishedCallback registerDeviceFinishedHandler;
   private static LeanplumDeviceIdMode deviceIdMode = LeanplumDeviceIdMode.MD5_MAC_ADDRESS;
   private static String customDeviceId;
+  private static String defaultChannelId;
   private static boolean userSpecifiedDeviceId;
   private static boolean initializedMessageTemplates = false;
   private static boolean locationCollectionEnabled = true;
@@ -307,6 +308,26 @@ public class Leanplum {
       return null;
     }
     return Request.deviceId();
+  }
+
+  
+
+
+
+
+  public static void setDefaultChannelId(String defaultChannel) {
+    if (TextUtils.isEmpty(defaultChannel)) {
+      Log.w("setDefaultChannelId - Empty defaultChannel parameter provided.");
+    }
+    defaultChannelId = defaultChannel;
+  }
+
+  
+
+
+
+  public static String getDefaultChannelId() {
+    return defaultChannelId;
   }
 
   
@@ -765,6 +786,12 @@ public class Leanplum {
                   context, notificationGroups);
               LeanplumNotificationChannel.configureNotificationChannels(
                   context, notificationChannels);
+
+              if (notificationChannels == null && (defaultNotificationChannel == null
+                      || defaultNotificationChannel.isEmpty())) {
+                defaultNotificationChannel = getDefaultChannelId();
+              }
+
               LeanplumNotificationChannel.configureDefaultNotificationChannel(
                   context, defaultNotificationChannel);
             }
