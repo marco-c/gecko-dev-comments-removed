@@ -141,7 +141,23 @@ public:
 
 
 
-  static bool IsARIASelected(Accessible* aAccessible);
+  static bool IsDOMAttrTrue(const Accessible* aAccessible, nsAtom* aAttr);
+  
+  
+
+
+
+  static inline bool IsARIASelected(const Accessible* aAccessible) {
+    return IsDOMAttrTrue(aAccessible, nsGkAtoms::aria_selected);
+  }
+
+  
+
+
+
+  static inline bool IsARIAMultiSelectable(const Accessible* aAccessible) {
+    return IsDOMAttrTrue(aAccessible, nsGkAtoms::aria_multiselectable);
+  }
 
   
 
