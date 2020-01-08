@@ -777,8 +777,7 @@ WebMDemuxer::GetNextPacket(TrackInfo::TrackType aType,
       }
     }
 
-    if (packetEncryption == NESTEGG_PACKET_HAS_SIGNAL_BYTE_UNENCRYPTED ||
-        packetEncryption == NESTEGG_PACKET_HAS_SIGNAL_BYTE_ENCRYPTED ||
+    if (packetEncryption == NESTEGG_PACKET_HAS_SIGNAL_BYTE_ENCRYPTED ||
         packetEncryption == NESTEGG_PACKET_HAS_SIGNAL_BYTE_PARTITIONED) {
       UniquePtr<MediaRawDataWriter> writer(sample->CreateWriter());
       unsigned char const* iv;
@@ -788,6 +787,11 @@ WebMDemuxer::GetNextPacket(TrackInfo::TrackType aType,
       writer->mCrypto.mIVSize = ivLength;
       if (ivLength == 0) {
         
+        
+        
+        MOZ_ASSERT_UNREACHABLE(
+          "Unencrypted packets should not have the encryption bit set!");
+        WEBM_DEBUG("Unencrypted packet with encryption bit set");
         writer->mCrypto.mPlainSizes.AppendElement(length);
         writer->mCrypto.mEncryptedSizes.AppendElement(0);
       } else {
