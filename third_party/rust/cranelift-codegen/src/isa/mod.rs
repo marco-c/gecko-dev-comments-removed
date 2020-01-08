@@ -46,9 +46,8 @@
 
 
 
-pub use isa::call_conv::CallConv;
 pub use isa::constraints::{BranchRange, ConstraintKind, OperandConstraint, RecipeConstraints};
-pub use isa::encoding::{base_size, EncInfo, Encoding};
+pub use isa::encoding::{EncInfo, Encoding};
 pub use isa::registers::{regs_overlap, RegClass, RegClassIndex, RegInfo, RegUnit};
 pub use isa::stack::{StackBase, StackBaseMask, StackRef};
 
@@ -59,10 +58,10 @@ use isa::enc_tables::Encodings;
 use regalloc;
 use result::CodegenResult;
 use settings;
-use settings::SetResult;
+use settings::{CallConv, SetResult};
 use std::boxed::Box;
 use std::fmt;
-use target_lexicon::{Architecture, PointerWidth, Triple};
+use target_lexicon::{Architecture, Triple};
 use timing;
 
 #[cfg(build_riscv)]
@@ -77,7 +76,6 @@ mod arm32;
 #[cfg(build_arm64)]
 mod arm64;
 
-mod call_conv;
 mod constraints;
 mod enc_tables;
 mod encoding;
@@ -122,14 +120,12 @@ pub fn lookup(triple: Triple) -> Result<Builder, LookupError> {
 }
 
 
-#[derive(Fail, PartialEq, Eq, Copy, Clone, Debug)]
+#[derive(PartialEq, Eq, Copy, Clone, Debug)]
 pub enum LookupError {
     
-    #[fail(display = "Support for this target is disabled")]
     SupportDisabled,
 
     
-    #[fail(display = "Support for this target has not been implemented yet")]
     Unsupported,
 }
 
@@ -168,34 +164,6 @@ pub type Legalize =
 
 
 
-#[derive(Clone, Copy)]
-pub struct TargetFrontendConfig {
-    
-    pub default_call_conv: CallConv,
-
-    
-    pub pointer_width: PointerWidth,
-}
-
-impl TargetFrontendConfig {
-    
-    pub fn pointer_type(self) -> ir::Type {
-        ir::Type::int(u16::from(self.pointer_bits())).unwrap()
-    }
-
-    
-    pub fn pointer_bits(self) -> u8 {
-        self.pointer_width.bits()
-    }
-
-    
-    pub fn pointer_bytes(self) -> u8 {
-        self.pointer_width.bytes()
-    }
-}
-
-
-
 pub trait TargetIsa: fmt::Display {
     
     fn name(&self) -> &'static str;
@@ -207,36 +175,18 @@ pub trait TargetIsa: fmt::Display {
     fn flags(&self) -> &settings::Flags;
 
     
-    fn default_call_conv(&self) -> CallConv {
-        CallConv::default_for_triple(self.triple())
-    }
-
-    
     fn pointer_type(&self) -> ir::Type {
         ir::Type::int(u16::from(self.pointer_bits())).unwrap()
     }
 
     
-    fn pointer_width(&self) -> PointerWidth {
-        self.triple().pointer_width().unwrap()
-    }
-
-    
     fn pointer_bits(&self) -> u8 {
-        self.pointer_width().bits()
+        self.triple().pointer_width().unwrap().bits()
     }
 
     
     fn pointer_bytes(&self) -> u8 {
-        self.pointer_width().bytes()
-    }
-
-    
-    fn frontend_config(&self) -> TargetFrontendConfig {
-        TargetFrontendConfig {
-            default_call_conv: self.default_call_conv(),
-            pointer_width: self.pointer_width(),
-        }
+        self.triple().pointer_width().unwrap().bytes()
     }
 
     
@@ -355,10 +305,6 @@ pub trait TargetIsa: fmt::Display {
     
     
     
-    
-    
-    
-    #[cfg(feature = "testing_hooks")]
     fn emit_inst(
         &self,
         func: &ir::Function,
@@ -367,6 +313,8 @@ pub trait TargetIsa: fmt::Display {
         sink: &mut binemit::CodeSink,
     );
 
+    
+    
     
     fn emit_function_to_memory(&self, func: &ir::Function, sink: &mut binemit::MemoryCodeSink);
 }

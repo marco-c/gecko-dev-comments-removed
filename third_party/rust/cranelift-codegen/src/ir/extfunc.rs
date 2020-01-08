@@ -6,7 +6,8 @@
 
 
 use ir::{ArgumentLoc, ExternalName, SigRef, Type};
-use isa::{CallConv, RegInfo, RegUnit};
+use isa::{RegInfo, RegUnit};
+use settings::CallConv;
 use std::fmt;
 use std::str::FromStr;
 use std::vec::Vec;

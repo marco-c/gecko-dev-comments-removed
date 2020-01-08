@@ -10,9 +10,10 @@ use ir::{
     get_probestack_funcref, AbiParam, ArgumentExtension, ArgumentLoc, ArgumentPurpose, InstBuilder,
     ValueLoc,
 };
-use isa::{CallConv, RegClass, RegUnit, TargetIsa};
+use isa::{RegClass, RegUnit, TargetIsa};
 use regalloc::RegisterSet;
 use result::CodegenResult;
+use settings::CallConv;
 use stack_layout::layout_stack;
 use std::i32;
 use target_lexicon::{PointerWidth, Triple};
@@ -98,7 +99,8 @@ impl ArgAssigner for Args {
                         RU::r14
                     } else {
                         RU::rsi
-                    } as RegUnit).into()
+                    } as RegUnit)
+                        .into()
                 }
                 
                 ArgumentPurpose::SignatureId => return ArgumentLoc::Reg(RU::r10 as RegUnit).into(),
@@ -188,12 +190,12 @@ pub fn allocatable_registers(_func: &ir::Function, triple: &Triple) -> RegisterS
 }
 
 
-fn callee_saved_gprs(isa: &TargetIsa, call_conv: CallConv) -> &'static [RU] {
+fn callee_saved_gprs(isa: &TargetIsa) -> &'static [RU] {
     match isa.triple().pointer_width().unwrap() {
         PointerWidth::U16 => panic!(),
         PointerWidth::U32 => &[RU::rbx, RU::rsi, RU::rdi],
         PointerWidth::U64 => {
-            if call_conv == CallConv::WindowsFastcall {
+            if isa.flags().call_conv() == CallConv::WindowsFastcall {
                 
                 
                 
@@ -218,7 +220,7 @@ fn callee_saved_gprs(isa: &TargetIsa, call_conv: CallConv) -> &'static [RU] {
 
 fn callee_saved_gprs_used(isa: &TargetIsa, func: &ir::Function) -> RegisterSet {
     let mut all_callee_saved = RegisterSet::empty();
-    for reg in callee_saved_gprs(isa, func.signature.call_conv) {
+    for reg in callee_saved_gprs(isa) {
         all_callee_saved.free(GPR, *reg as RegUnit);
     }
 

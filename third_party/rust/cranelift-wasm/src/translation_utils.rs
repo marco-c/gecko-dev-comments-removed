@@ -14,24 +14,13 @@ pub struct DefinedFuncIndex(u32);
 entity_impl!(DefinedFuncIndex);
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
-pub struct TableIndex(u32);
-entity_impl!(TableIndex);
+pub type TableIndex = usize;
 
+pub type GlobalIndex = usize;
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
-pub struct GlobalIndex(u32);
-entity_impl!(GlobalIndex);
+pub type MemoryIndex = usize;
 
-
-#[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
-pub struct MemoryIndex(u32);
-entity_impl!(MemoryIndex);
-
-
-#[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
-pub struct SignatureIndex(u32);
-entity_impl!(SignatureIndex);
+pub type SignatureIndex = usize;
 
 
 #[derive(Debug, Clone, Copy)]
@@ -92,13 +81,13 @@ pub struct Memory {
 
 
 pub fn type_to_type(ty: wasmparser::Type) -> Result<ir::Type, ()> {
-    Ok(match ty {
-        wasmparser::Type::I32 => ir::types::I32,
-        wasmparser::Type::I64 => ir::types::I64,
-        wasmparser::Type::F32 => ir::types::F32,
-        wasmparser::Type::F64 => ir::types::F64,
-        _ => return Err(()),
-    })
+    match ty {
+        wasmparser::Type::I32 => Ok(ir::types::I32),
+        wasmparser::Type::I64 => Ok(ir::types::I64),
+        wasmparser::Type::F32 => Ok(ir::types::F32),
+        wasmparser::Type::F64 => Ok(ir::types::F64),
+        _ => Err(()),
+    }
 }
 
 

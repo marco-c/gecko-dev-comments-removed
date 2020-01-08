@@ -5,10 +5,9 @@ use std::fmt;
 enum FlagBit {
     Notrap,
     Aligned,
-    Readonly,
 }
 
-const NAMES: [&str; 3] = ["notrap", "aligned", "readonly"];
+const NAMES: [&str; 2] = ["notrap", "aligned"];
 
 
 
@@ -79,20 +78,6 @@ impl MemFlags {
     
     pub fn set_aligned(&mut self) {
         self.set(FlagBit::Aligned)
-    }
-
-    
-    
-    
-    
-    
-    pub fn readonly(self) -> bool {
-        self.read(FlagBit::Readonly)
-    }
-
-    
-    pub fn set_readonly(&mut self) {
-        self.set(FlagBit::Readonly)
     }
 }
 

@@ -47,23 +47,20 @@ pub use ir::types::Type;
 pub use ir::valueloc::{ArgumentLoc, ValueLoc};
 
 use binemit;
-use entity::{PrimaryMap, SecondaryMap};
+use entity::{EntityMap, PrimaryMap};
 use isa;
 
 
-pub type ValueLocations = SecondaryMap<Value, ValueLoc>;
+pub type ValueLocations = EntityMap<Value, ValueLoc>;
 
 
 pub type JumpTables = PrimaryMap<JumpTable, JumpTableData>;
 
 
-pub type InstEncodings = SecondaryMap<Inst, isa::Encoding>;
+pub type InstEncodings = EntityMap<Inst, isa::Encoding>;
 
 
-pub type EbbOffsets = SecondaryMap<Ebb, binemit::CodeOffset>;
+pub type EbbOffsets = EntityMap<Ebb, binemit::CodeOffset>;
 
 
-pub type JumpTableOffsets = SecondaryMap<JumpTable, binemit::CodeOffset>;
-
-
-pub type SourceLocs = SecondaryMap<Inst, SourceLoc>;
+pub type SourceLocs = EntityMap<Inst, SourceLoc>;

@@ -15,7 +15,7 @@ use dbg::DisplayList;
 use dominator_tree::DominatorTreePreorder;
 use entity::EntityRef;
 use entity::{EntityList, ListPool};
-use entity::{Keys, PrimaryMap, SecondaryMap};
+use entity::{EntityMap, Keys, PrimaryMap};
 use ir::{Function, Value};
 use packed_option::PackedOption;
 use ref_slice::ref_slice;
@@ -45,10 +45,10 @@ pub struct VirtRegs {
     unused_vregs: Vec<VirtReg>,
 
     
-    value_vregs: SecondaryMap<Value, PackedOption<VirtReg>>,
+    value_vregs: EntityMap<Value, PackedOption<VirtReg>>,
 
     
-    union_find: SecondaryMap<Value, i32>,
+    union_find: EntityMap<Value, i32>,
 
     
     
@@ -62,8 +62,8 @@ impl VirtRegs {
             pool: ListPool::new(),
             vregs: PrimaryMap::new(),
             unused_vregs: Vec::new(),
-            value_vregs: SecondaryMap::new(),
-            union_find: SecondaryMap::new(),
+            value_vregs: EntityMap::new(),
+            union_find: EntityMap::new(),
             pending_values: Vec::new(),
         }
     }
@@ -396,7 +396,7 @@ impl VirtRegs {
 }
 
 #[cfg(test)]
-mod tests {
+mod test {
     use super::*;
     use entity::EntityRef;
     use ir::Value;

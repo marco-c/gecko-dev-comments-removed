@@ -1,6 +1,6 @@
 
 
-use entity::SecondaryMap;
+use entity::EntityMap;
 use flowgraph::{BasicBlock, ControlFlowGraph};
 use ir::instructions::BranchInfo;
 use ir::{Ebb, ExpandedProgramPoint, Function, Inst, Layout, ProgramOrder, Value};
@@ -38,7 +38,7 @@ struct DomNode {
 
 
 pub struct DominatorTree {
-    nodes: SecondaryMap<Ebb, DomNode>,
+    nodes: EntityMap<Ebb, DomNode>,
 
     
     postorder: Vec<Ebb>,
@@ -217,7 +217,7 @@ impl DominatorTree {
     
     pub fn new() -> Self {
         Self {
-            nodes: SecondaryMap::new(),
+            nodes: EntityMap::new(),
             postorder: Vec::new(),
             stack: Vec::new(),
             valid: false,
@@ -345,25 +345,22 @@ impl DominatorTree {
     fn push_successors(&mut self, func: &Function, ebb: Ebb) {
         for inst in func.layout.ebb_insts(ebb) {
             match func.dfg.analyze_branch(inst) {
-                BranchInfo::SingleDest(succ, _) => self.push_if_unseen(succ),
-                BranchInfo::Table(jt, dest) => {
-                    for succ in func.jump_tables[jt].iter() {
-                        self.push_if_unseen(*succ);
+                BranchInfo::SingleDest(succ, _) => {
+                    if self.nodes[succ].rpo_number == 0 {
+                        self.nodes[succ].rpo_number = SEEN;
+                        self.stack.push(succ);
                     }
-                    if let Some(dest) = dest {
-                        self.push_if_unseen(dest);
+                }
+                BranchInfo::Table(jt) => {
+                    for (_, succ) in func.jump_tables[jt].entries() {
+                        if self.nodes[succ].rpo_number == 0 {
+                            self.nodes[succ].rpo_number = SEEN;
+                            self.stack.push(succ);
+                        }
                     }
                 }
                 BranchInfo::NotABranch => {}
             }
-        }
-    }
-
-    
-    fn push_if_unseen(&mut self, ebb: Ebb) {
-        if self.nodes[ebb].rpo_number == 0 {
-            self.nodes[ebb].rpo_number = SEEN;
-            self.stack.push(ebb);
         }
     }
 
@@ -508,7 +505,7 @@ impl DominatorTree {
 
 
 pub struct DominatorTreePreorder {
-    nodes: SecondaryMap<Ebb, ExtraNode>,
+    nodes: EntityMap<Ebb, ExtraNode>,
 
     
     stack: Vec<Ebb>,
@@ -536,7 +533,7 @@ impl DominatorTreePreorder {
     
     pub fn new() -> Self {
         Self {
-            nodes: SecondaryMap::new(),
+            nodes: EntityMap::new(),
             stack: Vec::new(),
         }
     }
@@ -669,7 +666,7 @@ impl DominatorTreePreorder {
 }
 
 #[cfg(test)]
-mod tests {
+mod test {
     use super::*;
     use cursor::{Cursor, FuncCursor};
     use flowgraph::ControlFlowGraph;

@@ -2,9 +2,9 @@
 
 use cranelift_codegen::cursor::FuncCursor;
 use cranelift_codegen::ir::{self, InstBuilder};
-use cranelift_codegen::isa::TargetFrontendConfig;
-use std::convert::From;
+use cranelift_codegen::settings::Flags;
 use std::vec::Vec;
+use target_lexicon::Triple;
 use translation_utils::{
     FuncIndex, Global, GlobalIndex, Memory, MemoryIndex, SignatureIndex, Table, TableIndex,
 };
@@ -35,11 +35,7 @@ pub enum WasmError {
     
     
     
-    #[fail(
-        display = "Invalid input WebAssembly code at offset {}: {}",
-        _1,
-        _0
-    )]
+    #[fail(display = "Invalid input WebAssembly code at offset {}: {}", _1, _0)]
     InvalidWebAssembly {
         
         message: &'static str,
@@ -63,9 +59,9 @@ pub enum WasmError {
     ImplLimitExceeded,
 }
 
-impl From<BinaryReaderError> for WasmError {
+impl WasmError {
     
-    fn from(e: BinaryReaderError) -> Self {
+    pub fn from_binary_reader_error(e: BinaryReaderError) -> Self {
         let BinaryReaderError { message, offset } = e;
         WasmError::InvalidWebAssembly { message, offset }
     }
@@ -75,33 +71,27 @@ impl From<BinaryReaderError> for WasmError {
 pub type WasmResult<T> = Result<T, WasmError>;
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Debug)]
-pub enum ReturnMode {
-    
-    NormalReturns,
-    
-    FallthroughReturn,
-}
-
-
 
 
 
 
 pub trait FuncEnvironment {
     
-    fn target_config(&self) -> TargetFrontendConfig;
+    fn triple(&self) -> &Triple;
+
+    
+    fn flags(&self) -> &Flags;
 
     
     
     
     fn pointer_type(&self) -> ir::Type {
-        ir::Type::int(u16::from(self.target_config().pointer_bits())).unwrap()
+        ir::Type::int(u16::from(self.triple().pointer_width().unwrap().bits())).unwrap()
     }
 
     
     fn pointer_bytes(&self) -> u8 {
-        self.target_config().pointer_bytes()
+        self.triple().pointer_width().unwrap().bytes()
     }
 
     
@@ -158,7 +148,6 @@ pub trait FuncEnvironment {
     
     
     
-    #[cfg_attr(feature = "cargo-clippy", allow(too_many_arguments))]
     fn translate_call_indirect(
         &mut self,
         pos: FuncCursor,
@@ -223,13 +212,6 @@ pub trait FuncEnvironment {
     fn translate_loop_header(&mut self, _pos: FuncCursor) {
         
     }
-
-    
-    
-    
-    fn return_mode(&self) -> ReturnMode {
-        ReturnMode::NormalReturns
-    }
 }
 
 
@@ -237,7 +219,7 @@ pub trait FuncEnvironment {
 
 pub trait ModuleEnvironment<'data> {
     
-    fn target_config(&self) -> &TargetFrontendConfig;
+    fn flags(&self) -> &Flags;
 
     
     fn get_func_name(&self, func_index: FuncIndex) -> ir::ExternalName;
