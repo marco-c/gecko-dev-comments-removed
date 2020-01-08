@@ -2715,13 +2715,8 @@ void gfxPlatform::InitWebRenderConfig() {
 #endif
 
 
-  } else if (wrQualifiedAll) {
-    if (featureWebRenderQualified.IsEnabled()) {
-      featureWebRender.UserEnable("Qualified enabled by pref ");
-    } else {
-      featureWebRender.ForceDisable(FeatureStatus::Blocked,
-                                    "Qualified enable blocked", failureId);
-    }
+  } else if (wrQualifiedAll && featureWebRenderQualified.IsEnabled()) {
+    featureWebRender.UserEnable("Qualified enabled by pref ");
   }
 
   
