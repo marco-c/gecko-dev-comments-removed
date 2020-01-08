@@ -1375,25 +1375,89 @@ JSStructuredCloneWriter::startObject(HandleObject obj, bool* backref)
     return true;
 }
 
-bool
-JSStructuredCloneWriter::traverseObject(HandleObject obj, ESClass cls)
+static bool
+TryAppendNativeProperties(JSContext* cx, HandleObject obj, AutoValueVector& entries, size_t* properties,
+                          bool* optimized)
 {
-    
-    
-    AutoIdVector properties(context());
-    if (!GetPropertyKeys(context(), obj, JSITER_OWNONLY, &properties))
-        return false;
+    *optimized = false;
 
-    for (size_t i = properties.length(); i > 0; --i) {
-        MOZ_ASSERT(JSID_IS_STRING(properties[i - 1]) || JSID_IS_INT(properties[i - 1]));
+    if (!obj->isNative())
+        return true;
+
+    HandleNativeObject nobj = obj.as<NativeObject>();
+    if (nobj->isIndexed() ||
+        nobj->is<TypedArrayObject>() ||
+        nobj->getClass()->getNewEnumerate() ||
+        nobj->getClass()->getEnumerate())
+    {
+        return true;
+    }
+
+    *optimized = true;
+
+    size_t count = 0;
+    
+    
+    RootedShape shape(cx, nobj->lastProperty());
+    for (Shape::Range<NoGC> r(shape); !r.empty(); r.popFront()) {
+        jsid id = r.front().propidRaw();
+
         
-        RootedValue val(context(), IdToValue(properties[i - 1]));
-        if (!entries.append(val))
+        if (!r.front().enumerable() || JSID_IS_SYMBOL(id))
+            continue;
+
+        MOZ_ASSERT(JSID_IS_STRING(id));
+        if (!entries.append(StringValue(JSID_TO_STRING(id))))
             return false;
+
+        count++;
     }
 
     
-    if (!objs.append(ObjectValue(*obj)) || !counts.append(properties.length()))
+    for (uint32_t i = nobj->getDenseInitializedLength(); i > 0; --i) {
+        if (nobj->getDenseElement(i - 1).isMagic(JS_ELEMENTS_HOLE))
+            continue;
+
+        if (!entries.append(Int32Value(i - 1)))
+            return false;
+
+        count++;
+    }
+
+    *properties = count;
+    return true;
+}
+
+bool
+JSStructuredCloneWriter::traverseObject(HandleObject obj, ESClass cls)
+{
+    size_t count;
+    bool optimized = false;
+    if (!TryAppendNativeProperties(context(), obj, entries, &count, &optimized))
+        return false;
+
+    if (!optimized) {
+        
+        
+        AutoIdVector properties(context());
+        if (!GetPropertyKeys(context(), obj, JSITER_OWNONLY, &properties))
+            return false;
+
+        for (size_t i = properties.length(); i > 0; --i) {
+            MOZ_ASSERT(JSID_IS_STRING(properties[i - 1]) || JSID_IS_INT(properties[i - 1]));
+
+            
+            RootedValue val(context(), IdToValue(properties[i - 1]));
+            if (!entries.append(val))
+                return false;
+
+        }
+
+        count = properties.length();
+    }
+
+    
+    if (!objs.append(ObjectValue(*obj)) || !counts.append(count))
         return false;
 
     checkStack();
