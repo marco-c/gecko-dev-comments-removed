@@ -8059,7 +8059,10 @@ nsWindow::DealWithPopups(HWND aWnd, UINT aMessage,
         nsWindow* prevWindow =
           WinUtils::GetNSWindowPtr(reinterpret_cast<HWND>(aLParam));
         if (prevWindow && prevWindow->IsPopup()) {
-          return false;
+          
+          
+          
+          return true;
         }
       } else if (LOWORD(aWParam) == WA_INACTIVE) {
         nsWindow* activeWindow =
@@ -8076,13 +8079,18 @@ nsWindow::DealWithPopups(HWND aWnd, UINT aMessage,
         }
         
         
+        
+        
+        
+        
+        
         if (activeWindow) {
           if (activeWindow->IsPopup()) {
-            return false;
+            return true;
           }
           nsWindow* deactiveWindow = WinUtils::GetNSWindowPtr(aWnd);
           if (deactiveWindow && deactiveWindow->IsPopup()) {
-            return false;
+            return true;
           }
         }
       } else if (LOWORD(aWParam) == WA_CLICKACTIVE) {
@@ -8099,6 +8107,24 @@ nsWindow::DealWithPopups(HWND aWnd, UINT aMessage,
     case MOZ_WM_REACTIVATE:
       
       if (::IsWindow(reinterpret_cast<HWND>(aLParam))) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         ::SetForegroundWindow(reinterpret_cast<HWND>(aLParam));
       }
       return true;
