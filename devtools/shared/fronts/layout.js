@@ -53,6 +53,13 @@ const FlexItemFront = FrontClassWithSpec(flexItemSpec, {
   
 
 
+  get flexItemSizing() {
+    return this._form.flexItemSizing;
+  },
+
+  
+
+
 
   get nodeFront() {
     if (!this._form.nodeActorID) {
@@ -60,6 +67,13 @@ const FlexItemFront = FrontClassWithSpec(flexItemSpec, {
     }
 
     return this.conn.getActor(this._form.nodeActorID);
+  },
+
+  
+
+
+  get properties() {
+    return this._form.properties;
   },
 });
 
