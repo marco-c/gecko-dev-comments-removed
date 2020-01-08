@@ -122,6 +122,7 @@
 #include "mozilla/dom/PromiseNativeHandler.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/ServiceWorkerUtils.h"
+#include "mozilla/net/AsyncUrlChannelClassifier.h"
 
 #ifdef MOZ_TASK_TRACER
 #include "GeckoTaskTracer.h"
@@ -6355,11 +6356,9 @@ nsresult nsHttpChannel::BeginConnect() {
   
   
   
-  RefPtr<nsChannelClassifier> channelClassifier =
-      GetOrCreateChannelClassifier();
   RefPtr<nsHttpChannel> self = this;
   bool willCallback = NS_SUCCEEDED(
-      channelClassifier->CheckIsTrackerWithLocalTable([self]() -> void {
+      AsyncUrlChannelClassifier::CheckChannel(this, [self]() -> void {
         nsresult rv = self->BeginConnectActual();
         if (NS_FAILED(rv)) {
           

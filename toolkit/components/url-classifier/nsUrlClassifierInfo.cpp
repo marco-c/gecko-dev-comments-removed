@@ -2,6 +2,8 @@
 
 
 
+#include "nsComponentManagerUtils.h"
+#include "nsIMutableArray.h"
 #include "nsUrlClassifierInfo.h"
 
 NS_IMPL_ISUPPORTS(nsUrlClassifierPositiveCacheEntry,

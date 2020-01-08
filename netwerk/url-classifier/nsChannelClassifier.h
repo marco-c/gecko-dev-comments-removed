@@ -9,13 +9,10 @@
 #include "nsIURIClassifier.h"
 #include "nsCOMPtr.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/Maybe.h"
 
 #include <functional>
 
 class nsIChannel;
-class nsIHttpChannelInternal;
-class nsIDocument;
 
 namespace mozilla {
 namespace net {
@@ -32,35 +29,6 @@ class nsChannelClassifier final : public nsIURIClassifierCallback,
   
   
   void Start();
-  
-  bool ShouldEnableTrackingProtection();
-  
-  bool ShouldEnableTrackingAnnotation();
-
-  
-  nsresult IsTrackerWhitelisted(nsIURI* aWhiteListURI, bool aUseTrackingTable,
-                                bool aUseAnnotationTable,
-                                nsIURIClassifierCallback* aCallback);
-
-  
-  
-  nsresult OnClassifyCompleteInternal(nsresult aErrorCode,
-                                      const nsACString& aList,
-                                      const nsACString& aProvider,
-                                      const nsACString& aFullHash);
-
-  
-  
-  
-  nsresult CheckIsTrackerWithLocalTable(std::function<void()>&& aCallback);
-
-  
-  nsresult CreateWhiteListURI(nsIURI** aURI) const;
-
-  already_AddRefed<nsIChannel> GetChannel();
-
-  
-  bool IsTrackingURLWhitelisted(nsIURI* aUri);
 
  private:
   
@@ -68,8 +36,6 @@ class nsChannelClassifier final : public nsIURIClassifierCallback,
   
   bool mSuspendedChannel;
   nsCOMPtr<nsIChannel> mChannel;
-  Maybe<bool> mTrackingProtectionEnabled;
-  Maybe<bool> mTrackingAnnotationEnabled;
 
   ~nsChannelClassifier();
   
@@ -81,13 +47,6 @@ class nsChannelClassifier final : public nsIURIClassifierCallback,
   nsresult StartInternal();
   
   bool IsHostnameWhitelisted(nsIURI* aUri, const nsACString& aWhitelisted);
-  
-  
-  
-  
-  nsresult ShouldEnableTrackingProtectionInternal(nsIChannel* aChannel,
-                                                  bool aAnnotationsOnly,
-                                                  bool* result);
 
   void AddShutdownObserver();
   void RemoveShutdownObserver();
