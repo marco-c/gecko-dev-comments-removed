@@ -20,6 +20,7 @@ class PrincipalInfo;
 
 namespace media {
 
+typedef MozPromise<nsCString, nsresult, false> PrincipalKeyPromise;
 
 
 
@@ -32,7 +33,8 @@ namespace media {
 
 
 
-already_AddRefed<Pledge<nsCString>>
+
+RefPtr<PrincipalKeyPromise>
 GetPrincipalKey(const mozilla::ipc::PrincipalInfo& aPrincipalInfo,
                 bool aPersist);
 
@@ -45,10 +47,6 @@ public:
   static Child* Get();
 
   Child();
-
-  mozilla::ipc::IPCResult
-  RecvGetPrincipalKeyResponse(const uint32_t& aRequestId,
-                              const nsCString& aKey) override;
 
   void ActorDestroy(ActorDestroyReason aWhy) override;
   virtual ~Child();
