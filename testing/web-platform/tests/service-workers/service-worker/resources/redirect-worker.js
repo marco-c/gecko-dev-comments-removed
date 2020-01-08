@@ -5,6 +5,13 @@ var cacheName = 'urls-' + self.registration.scope;
 
 var waitUntilPromiseList = [];
 
+
+
+
+
+
+
+
 async function getRequestInfos(event) {
   
   await Promise.all(waitUntilPromiseList);
@@ -15,13 +22,50 @@ async function getRequestInfos(event) {
   const requestList = await cache.keys();
   const requestInfos = [];
   for (let i = 0; i < requestList.length; i++) {
+    const response = await cache.match(requestList[i]);
+    const body = await response.json();
     requestInfos[i] = {
       url: requestList[i].url,
+      resultingClientId: body.resultingClientId
     };
   }
   await caches.delete(cacheName);
 
   event.data.port.postMessage({requestInfos});
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function getClients(event) {
+  
+  
+  const actual_ids = event.data.actual_ids;
+  const result = {}
+  for (let key of Object.keys(actual_ids)) {
+    const id = actual_ids[key];
+    const client = await self.clients.get(id);
+    if (client === undefined)
+      result[key] = {found: false};
+    else
+      result[key] = {found: true, url: client.url, id: client.id};
+  }
+  event.data.port.postMessage({clients: result});
 }
 
 self.addEventListener('message', async function(event) {
@@ -30,7 +74,10 @@ self.addEventListener('message', async function(event) {
     return;
   }
 
-  
+  if (event.data.command == 'getClients') {
+    event.waitUntil(getClients(event));
+    return;
+  }
 });
 
 function get_query_params(url) {
@@ -49,7 +96,11 @@ function get_query_params(url) {
 
 self.addEventListener('fetch', function(event) {
     var waitUntilPromise = caches.open(cacheName).then(function(cache) {
-      return cache.put(event.request, new Response());
+      const responseBody = {};
+      responseBody['resultingClientId'] = event.resultingClientId;
+      const headers = new Headers({'Content-Type': 'application/json'});
+      const response = new Response(JSON.stringify(responseBody), {headers});
+      return cache.put(event.request, response);
     });
     event.waitUntil(waitUntilPromise);
 
