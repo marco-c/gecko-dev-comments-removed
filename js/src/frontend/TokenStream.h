@@ -1423,6 +1423,35 @@ class SourceUnits
 
     size_t findWindowEnd(size_t offset) const;
 
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    inline void computeWindowOffsetAndLength(const Unit* encodeWindow,
+                                             size_t encodingSpecificTokenOffset,
+                                             size_t* utf16TokenOffset,
+                                             size_t encodingSpecificWindowLength,
+                                             size_t* utf16WindowLength);
+
   private:
     
     const Unit* base_;
