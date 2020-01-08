@@ -9,11 +9,8 @@ try {
 }
 }
 
-
 assertEq(test(x), true);
-
-
-assertEq(test({}), false);
-assertEq(test(null), false);
+assertEq(test({}), true);
+assertEq(test(null), true);
 
 reportCompare(true, true);

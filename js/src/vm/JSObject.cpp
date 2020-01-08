@@ -2686,6 +2686,17 @@ js::SetPrototype(JSContext* cx, HandleObject obj, HandleObject proto, JS::Object
     
 
 
+
+
+    if (obj->is<ArrayBufferObject>()) {
+        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_CANT_SET_PROTO_OF,
+                                  "incompatible ArrayBuffer");
+        return false;
+    }
+
+    
+
+
     if (obj->is<TypedObject>()) {
         JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_CANT_SET_PROTO_OF,
                                   "incompatible TypedObject");
