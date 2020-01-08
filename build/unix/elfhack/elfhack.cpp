@@ -1095,25 +1095,38 @@ int do_relocation_section(Elf *elf, unsigned int rel_type, unsigned int rel_type
     ElfSection* eh_frame_hdr = eh_frame_segment ? eh_frame_segment->getFirstSection() : nullptr;
     
     ElfSection* eh_frame = eh_frame_hdr ? eh_frame_hdr->getNext() : nullptr;
-    if (eh_frame_hdr && !eh_frame) {
-        throw std::runtime_error("Expected to find an .eh_frame section after .eh_frame_hdr");
+    ElfSection* first = eh_frame_hdr;
+    ElfSection* second = eh_frame;
+    if (eh_frame && strcmp(eh_frame->getName(), ".eh_frame")) {
+        
+        eh_frame = eh_frame_hdr->getPrevious();
+        first = eh_frame;
+        second = eh_frame_hdr;
     }
-    if (eh_frame && strcmp(eh_frame->getName(), ".eh_frame") == 0) {
+    if (eh_frame_hdr && (!eh_frame || strcmp(eh_frame->getName(), ".eh_frame"))) {
+        throw std::runtime_error("Expected to find an .eh_frame section adjacent to .eh_frame_hdr");
+    }
+    if (eh_frame && first->getAddr() > relhack->getAddr() && second->getAddr() < relhackcode->getAddr()) {
         
         
         
-        size_t distance = eh_frame->getAddr() - eh_frame_hdr->getAddr();
-        ElfSection* previous = eh_frame_hdr->getPrevious();
-        eh_frame_hdr->getShdr().sh_addr =
-            (previous->getAddr() + previous->getSize() + eh_frame_hdr->getAddrAlign() - 1)
-            & ~(eh_frame_hdr->getAddrAlign() - 1);
+        unsigned int distance = second->getAddr() - first->getAddr();
         unsigned int origAddr = eh_frame->getAddr();
-        eh_frame->getShdr().sh_addr =
-            (eh_frame_hdr->getAddr() + eh_frame_hdr->getSize() + eh_frame->getAddrAlign() - 1)
-            & ~(eh_frame->getAddrAlign() - 1);
+        ElfSection* previous = first->getPrevious();
+        first->getShdr().sh_addr =
+            (previous->getAddr() + previous->getSize() + first->getAddrAlign() - 1)
+            & ~(first->getAddrAlign() - 1);
+        second->getShdr().sh_addr =
+            (first->getAddr() + std::min(first->getSize(), distance) + second->getAddrAlign() - 1)
+            & ~(second->getAddrAlign() - 1);
         
-        eh_frame_hdr->getShdr().sh_addr = eh_frame->getAddr() - distance;
-        eh_frame_hdr->markDirty();
+        
+        
+        
+        
+        first->getShdr().sh_addr = second->getAddr() - distance;
+        assert(distance == second->getAddr() - first->getAddr());
+        first->markDirty();
         adjust_eh_frame(eh_frame, origAddr, elf);
     }
 
