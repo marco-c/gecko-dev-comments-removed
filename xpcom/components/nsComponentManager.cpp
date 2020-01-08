@@ -280,7 +280,7 @@ static nsTArray<const mozilla::Module*>* sExtraStaticModules;
 
 class AllStaticModules {};
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || (defined(__clang__) && defined(__MINGW32__))
 
 #  pragma section(".kPStaticModules$A", read)
 NSMODULE_ASAN_BLACKLIST __declspec(allocate(".kPStaticModules$A"), dllexport)

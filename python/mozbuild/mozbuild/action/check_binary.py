@@ -222,8 +222,11 @@ def check_nsmodules(target, binary):
     
     
     
-    if buildconfig.substs.get('_MSC_VER') and \
-            buildconfig.substs.get('DEVELOPER_OPTIONS'):
+    test_msvc = (buildconfig.substs.get('_MSC_VER') and \
+        buildconfig.substs.get('DEVELOPER_OPTIONS'))
+    test_clang = (buildconfig.substs.get('CC_TYPE') == 'clang' and \
+        buildconfig.substs.get('OS_ARCH') == 'WINNT')
+    if test_msvc or test_clang:
         sym_cmp = lambda guessed, actual: guessed <= actual
     else:
         sym_cmp = lambda guessed, actual: guessed == actual
