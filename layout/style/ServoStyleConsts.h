@@ -129,13 +129,14 @@ enum class StyleAppearance : uint8_t {
   
   
   
+  ScrollbarbuttonUp,
   ScrollbarbuttonDown,
   ScrollbarbuttonLeft,
   ScrollbarbuttonRight,
-  ScrollbarbuttonUp,
   
   ScrollbarthumbHorizontal,
   ScrollbarthumbVertical,
+  
   ScrollbartrackHorizontal,
   ScrollbartrackVertical,
   

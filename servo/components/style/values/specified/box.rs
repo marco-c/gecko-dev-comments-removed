@@ -999,10 +999,10 @@ pub enum Appearance {
     
     
     
+    ScrollbarbuttonUp,
     ScrollbarbuttonDown,
     ScrollbarbuttonLeft,
     ScrollbarbuttonRight,
-    ScrollbarbuttonUp,
     
     ScrollbarthumbHorizontal,
     ScrollbarthumbVertical,
