@@ -9,6 +9,7 @@
 
 #include "CrossProcessMutex.h"
 #include "mozilla/layers/GeckoContentController.h"
+#include "mozilla/layers/RepaintRequest.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/Monitor.h"
@@ -150,6 +151,8 @@ class AsyncPanZoomController {
 
   typedef mozilla::MonitorAutoLock MonitorAutoLock;
   typedef mozilla::gfx::Matrix4x4 Matrix4x4;
+  typedef mozilla::layers::RepaintRequest::ScrollOffsetUpdateType
+    RepaintUpdateType;
 
 public:
   enum GestureBehavior {
@@ -808,7 +811,8 @@ protected:
 
 
 
-  void RequestContentRepaint(bool aUserAction = true);
+  void RequestContentRepaint(RepaintUpdateType aUpdateType =
+                               RepaintUpdateType::eUserAction);
 
   
 
@@ -816,7 +820,8 @@ protected:
 
 
   void RequestContentRepaint(const FrameMetrics& aFrameMetrics,
-                             const ParentLayerPoint& aVelocity);
+                             const ParentLayerPoint& aVelocity,
+                             RepaintUpdateType aUpdateType);
 
   
 
@@ -934,7 +939,7 @@ private:
   ScrollMetadata mLastContentPaintMetadata;
   FrameMetrics& mLastContentPaintMetrics;  
   
-  FrameMetrics mLastPaintRequestMetrics;
+  RepaintRequest mLastPaintRequestMetrics;
   
   
   

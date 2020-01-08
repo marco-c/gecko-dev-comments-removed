@@ -10,6 +10,7 @@
 #include "InputData.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/layers/APZUtils.h"
+#include "mozilla/layers/RepaintRequest.h"
 #include "nsIDOMWindowUtils.h"
 #include "nsRefreshDriver.h"
 
@@ -65,16 +66,14 @@ public:
 
 
 
-
-    static void UpdateRootFrame(FrameMetrics& aMetrics);
+    static void UpdateRootFrame(const RepaintRequest& aRequest);
 
     
 
 
 
 
-
-    static void UpdateSubFrame(FrameMetrics& aMetrics);
+    static void UpdateSubFrame(const RepaintRequest& aRequest);
 
     
 
@@ -194,8 +193,8 @@ public:
 
     static void CancelAutoscroll(const FrameMetrics::ViewID& aScrollId);
 
-    static void
-    AdjustDisplayPortForScrollDelta(mozilla::layers::FrameMetrics& aFrameMetrics,
+    static ScreenMargin
+    AdjustDisplayPortForScrollDelta(const RepaintRequest& aRequest,
                                     const CSSPoint& aActualScrollOffset);
 
     

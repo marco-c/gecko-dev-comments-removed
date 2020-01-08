@@ -244,38 +244,36 @@ TabChildBase::DispatchMessageManagerMessage(const nsAString& aMessageName,
 }
 
 bool
-TabChildBase::UpdateFrameHandler(const FrameMetrics& aFrameMetrics)
+TabChildBase::UpdateFrameHandler(const RepaintRequest& aRequest)
 {
-  MOZ_ASSERT(aFrameMetrics.GetScrollId() != FrameMetrics::NULL_SCROLL_ID);
+  MOZ_ASSERT(aRequest.GetScrollId() != FrameMetrics::NULL_SCROLL_ID);
 
-  if (aFrameMetrics.IsRootContent()) {
+  if (aRequest.IsRootContent()) {
     if (nsCOMPtr<nsIPresShell> shell = GetPresShell()) {
       
       
-      if (aFrameMetrics.GetPresShellId() == shell->GetPresShellId()) {
-        ProcessUpdateFrame(aFrameMetrics);
+      if (aRequest.GetPresShellId() == shell->GetPresShellId()) {
+        ProcessUpdateFrame(aRequest);
         return true;
       }
     }
   } else {
     
     
-    FrameMetrics newSubFrameMetrics(aFrameMetrics);
-    APZCCallbackHelper::UpdateSubFrame(newSubFrameMetrics);
+    APZCCallbackHelper::UpdateSubFrame(aRequest);
     return true;
   }
   return true;
 }
 
 void
-TabChildBase::ProcessUpdateFrame(const FrameMetrics& aFrameMetrics)
+TabChildBase::ProcessUpdateFrame(const RepaintRequest& aRequest)
 {
-    if (!mTabChildMessageManager) {
-        return;
-    }
+  if (!mTabChildMessageManager) {
+      return;
+  }
 
-    FrameMetrics newMetrics = aFrameMetrics;
-    APZCCallbackHelper::UpdateRootFrame(newMetrics);
+  APZCCallbackHelper::UpdateRootFrame(aRequest);
 }
 
 NS_IMETHODIMP
@@ -1303,9 +1301,9 @@ TabChild::RecvSizeModeChanged(const nsSizeMode& aSizeMode)
 }
 
 bool
-TabChild::UpdateFrame(const FrameMetrics& aFrameMetrics)
+TabChild::UpdateFrame(const RepaintRequest& aRequest)
 {
-  return TabChildBase::UpdateFrameHandler(aFrameMetrics);
+  return TabChildBase::UpdateFrameHandler(aRequest);
 }
 
 mozilla::ipc::IPCResult

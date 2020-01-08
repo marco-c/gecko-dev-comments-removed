@@ -48,31 +48,31 @@ using dom::TabParent;
 
 uint64_t APZCCallbackHelper::sLastTargetAPZCNotificationInputBlock = uint64_t(-1);
 
-void
+ScreenMargin
 APZCCallbackHelper::AdjustDisplayPortForScrollDelta(
-    mozilla::layers::FrameMetrics& aFrameMetrics,
+    const RepaintRequest& aRequest,
     const CSSPoint& aActualScrollOffset)
 {
   
   
   ScreenPoint shift =
-      (aFrameMetrics.GetScrollOffset() - aActualScrollOffset) *
-      aFrameMetrics.DisplayportPixelsPerCSSPixel();
-  ScreenMargin margins = aFrameMetrics.GetDisplayPortMargins();
+      (aRequest.GetScrollOffset() - aActualScrollOffset) *
+      aRequest.DisplayportPixelsPerCSSPixel();
+  ScreenMargin margins = aRequest.GetDisplayPortMargins();
   margins.left -= shift.x;
   margins.right += shift.x;
   margins.top -= shift.y;
   margins.bottom += shift.y;
-  aFrameMetrics.SetDisplayPortMargins(margins);
+  return margins;
 }
 
-static void
-RecenterDisplayPort(mozilla::layers::FrameMetrics& aFrameMetrics)
+static ScreenMargin
+RecenterDisplayPort(const ScreenMargin& aDisplayPort)
 {
-  ScreenMargin margins = aFrameMetrics.GetDisplayPortMargins();
+  ScreenMargin margins = aDisplayPort;
   margins.right = margins.left = margins.LeftRight() / 2;
   margins.top = margins.bottom = margins.TopBottom() / 2;
-  aFrameMetrics.SetDisplayPortMargins(margins);
+  return margins;
 }
 
 static already_AddRefed<nsIPresShell>
@@ -86,12 +86,12 @@ GetPresShell(const nsIContent* aContent)
 }
 
 static CSSPoint
-ScrollFrameTo(nsIScrollableFrame* aFrame, const FrameMetrics& aMetrics, bool& aSuccessOut)
+ScrollFrameTo(nsIScrollableFrame* aFrame, const RepaintRequest& aRequest, bool& aSuccessOut)
 {
   aSuccessOut = false;
-  CSSPoint targetScrollPosition = aMetrics.IsRootContent()
-    ? aMetrics.GetViewport().TopLeft()
-    : aMetrics.GetScrollOffset();
+  CSSPoint targetScrollPosition = aRequest.IsRootContent()
+    ? aRequest.GetViewport().TopLeft()
+    : aRequest.GetScrollOffset();
 
   if (!aFrame) {
     return targetScrollPosition;
@@ -102,7 +102,7 @@ ScrollFrameTo(nsIScrollableFrame* aFrame, const FrameMetrics& aMetrics, bool& aS
   
   
   
-  if (!aMetrics.GetScrollOffsetUpdated()) {
+  if (!aRequest.GetScrollOffsetUpdated()) {
     return geckoScrollPosition;
   }
 
@@ -165,28 +165,28 @@ ScrollFrameTo(nsIScrollableFrame* aFrame, const FrameMetrics& aMetrics, bool& aS
 
 
 
-
-static void
+static ScreenMargin
 ScrollFrame(nsIContent* aContent,
-            FrameMetrics& aMetrics)
+            const RepaintRequest& aRequest)
 {
   
-  nsIScrollableFrame* sf = nsLayoutUtils::FindScrollableFrameFor(aMetrics.GetScrollId());
+  nsIScrollableFrame* sf = nsLayoutUtils::FindScrollableFrameFor(aRequest.GetScrollId());
   if (sf) {
-    sf->ResetScrollInfoIfGeneration(aMetrics.GetScrollGeneration());
-    sf->SetScrollableByAPZ(!aMetrics.IsScrollInfoLayer());
+    sf->ResetScrollInfoIfGeneration(aRequest.GetScrollGeneration());
+    sf->SetScrollableByAPZ(!aRequest.IsScrollInfoLayer());
     if (sf->IsRootScrollFrameOfDocument()) {
       if (nsCOMPtr<nsIPresShell> shell = GetPresShell(aContent)) {
-        shell->SetVisualViewportOffset(CSSPoint::ToAppUnits(aMetrics.GetScrollOffset()));
+        shell->SetVisualViewportOffset(CSSPoint::ToAppUnits(aRequest.GetScrollOffset()));
       }
     }
   }
   bool scrollUpdated = false;
-  CSSPoint apzScrollOffset = aMetrics.GetScrollOffset();
-  CSSPoint actualScrollOffset = ScrollFrameTo(sf, aMetrics, scrollUpdated);
+  ScreenMargin displayPortMargins = aRequest.GetDisplayPortMargins();
+  CSSPoint apzScrollOffset = aRequest.GetScrollOffset();
+  CSSPoint actualScrollOffset = ScrollFrameTo(sf, aRequest, scrollUpdated);
 
   if (scrollUpdated) {
-    if (aMetrics.IsScrollInfoLayer()) {
+    if (aRequest.IsScrollInfoLayer()) {
       
       
       
@@ -198,17 +198,17 @@ ScrollFrame(nsIContent* aContent,
     } else {
       
       
-      APZCCallbackHelper::AdjustDisplayPortForScrollDelta(aMetrics, actualScrollOffset);
+      displayPortMargins = APZCCallbackHelper::AdjustDisplayPortForScrollDelta(aRequest, actualScrollOffset);
     }
-  } else if (aMetrics.IsRootContent() &&
-             aMetrics.GetScrollOffset() != aMetrics.GetViewport().TopLeft()) {
+  } else if (aRequest.IsRootContent() &&
+             aRequest.GetScrollOffset() != aRequest.GetViewport().TopLeft()) {
     
     
     
     
     
     
-    APZCCallbackHelper::AdjustDisplayPortForScrollDelta(aMetrics, actualScrollOffset);
+    displayPortMargins = APZCCallbackHelper::AdjustDisplayPortForScrollDelta(aRequest, actualScrollOffset);
   } else {
     
     
@@ -216,10 +216,8 @@ ScrollFrame(nsIContent* aContent,
     
     
     
-    RecenterDisplayPort(aMetrics);
+    displayPortMargins = RecenterDisplayPort(aRequest.GetDisplayPortMargins());
   }
-
-  aMetrics.SetScrollOffset(actualScrollOffset);
 
   
   
@@ -232,35 +230,36 @@ ScrollFrame(nsIContent* aContent,
   
   
   bool mainThreadScrollChanged =
-    sf && sf->CurrentScrollGeneration() != aMetrics.GetScrollGeneration() && nsLayoutUtils::CanScrollOriginClobberApz(sf->LastScrollOrigin());
+    sf && sf->CurrentScrollGeneration() != aRequest.GetScrollGeneration() && nsLayoutUtils::CanScrollOriginClobberApz(sf->LastScrollOrigin());
   if (aContent && !mainThreadScrollChanged) {
     CSSPoint scrollDelta = apzScrollOffset - actualScrollOffset;
     aContent->SetProperty(nsGkAtoms::apzCallbackTransform, new CSSPoint(scrollDelta),
                           nsINode::DeleteProperty<CSSPoint>);
   }
+
+  return displayPortMargins;
 }
 
 static void
 SetDisplayPortMargins(nsIPresShell* aPresShell,
                       nsIContent* aContent,
-                      const FrameMetrics& aMetrics)
+                      ScreenMargin aDisplayPortMargins,
+                      CSSSize aDisplayPortBase)
 {
   if (!aContent) {
     return;
   }
 
   bool hadDisplayPort = nsLayoutUtils::HasDisplayPort(aContent);
-  ScreenMargin margins = aMetrics.GetDisplayPortMargins();
-  nsLayoutUtils::SetDisplayPortMargins(aContent, aPresShell, margins, 0);
+  nsLayoutUtils::SetDisplayPortMargins(aContent, aPresShell, aDisplayPortMargins, 0);
   if (!hadDisplayPort) {
     nsLayoutUtils::SetZeroMarginDisplayPortOnAsyncScrollableAncestors(
         aContent->GetPrimaryFrame(), nsLayoutUtils::RepaintMode::Repaint);
   }
 
-  CSSSize baseSize = aMetrics.CalculateCompositedSizeInCssPixels();
   nsRect base(0, 0,
-              baseSize.width * AppUnitsPerCSSPixel(),
-              baseSize.height * AppUnitsPerCSSPixel());
+              aDisplayPortBase.width * AppUnitsPerCSSPixel(),
+              aDisplayPortBase.height * AppUnitsPerCSSPixel());
   nsLayoutUtils::SetDisplayPortBaseIfNotSet(aContent, base);
 }
 
@@ -273,24 +272,24 @@ SetPaintRequestTime(nsIContent* aContent, const TimeStamp& aPaintRequestTime)
 }
 
 void
-APZCCallbackHelper::UpdateRootFrame(FrameMetrics& aMetrics)
+APZCCallbackHelper::UpdateRootFrame(const RepaintRequest& aRequest)
 {
-  if (aMetrics.GetScrollId() == FrameMetrics::NULL_SCROLL_ID) {
+  if (aRequest.GetScrollId() == FrameMetrics::NULL_SCROLL_ID) {
     return;
   }
-  nsIContent* content = nsLayoutUtils::FindContentFor(aMetrics.GetScrollId());
+  nsIContent* content = nsLayoutUtils::FindContentFor(aRequest.GetScrollId());
   if (!content) {
     return;
   }
 
   nsCOMPtr<nsIPresShell> shell = GetPresShell(content);
-  if (!shell || aMetrics.GetPresShellId() != shell->GetPresShellId()) {
+  if (!shell || aRequest.GetPresShellId() != shell->GetPresShellId()) {
     return;
   }
 
-  MOZ_ASSERT(aMetrics.GetUseDisplayPortMargins());
+  MOZ_ASSERT(aRequest.GetUseDisplayPortMargins());
 
-  if (gfxPrefs::APZAllowZooming() && aMetrics.GetScrollOffsetUpdated()) {
+  if (gfxPrefs::APZAllowZooming() && aRequest.GetScrollOffsetUpdated()) {
     
     
     
@@ -308,45 +307,51 @@ APZCCallbackHelper::UpdateRootFrame(FrameMetrics& aMetrics)
     
     
     
-    if (!FuzzyEqualsMultiplicative(presShellResolution, aMetrics.GetPresShellResolution())) {
+    if (!FuzzyEqualsMultiplicative(presShellResolution, aRequest.GetPresShellResolution())) {
       return;
     }
 
     
     
-    presShellResolution = aMetrics.GetPresShellResolution()
-                        * aMetrics.GetAsyncZoom().scale;
+    presShellResolution = aRequest.GetPresShellResolution()
+                        * aRequest.GetAsyncZoom().scale;
     shell->SetResolutionAndScaleTo(presShellResolution);
   }
 
   
   
-  ScrollFrame(content, aMetrics);
+  ScreenMargin displayPortMargins = ScrollFrame(content, aRequest);
 
-  SetDisplayPortMargins(shell, content, aMetrics);
-  SetPaintRequestTime(content, aMetrics.GetPaintRequestTime());
+  SetDisplayPortMargins(shell,
+    content,
+    displayPortMargins,
+    aRequest.CalculateCompositedSizeInCssPixels());
+  SetPaintRequestTime(content, aRequest.GetPaintRequestTime());
 }
 
 void
-APZCCallbackHelper::UpdateSubFrame(FrameMetrics& aMetrics)
+APZCCallbackHelper::UpdateSubFrame(const RepaintRequest& aRequest)
 {
-  if (aMetrics.GetScrollId() == FrameMetrics::NULL_SCROLL_ID) {
+  if (aRequest.GetScrollId() == FrameMetrics::NULL_SCROLL_ID) {
     return;
   }
-  nsIContent* content = nsLayoutUtils::FindContentFor(aMetrics.GetScrollId());
+  nsIContent* content = nsLayoutUtils::FindContentFor(aRequest.GetScrollId());
   if (!content) {
     return;
   }
 
-  MOZ_ASSERT(aMetrics.GetUseDisplayPortMargins());
+  MOZ_ASSERT(aRequest.GetUseDisplayPortMargins());
 
   
   
-  ScrollFrame(content, aMetrics);
+  ScreenMargin displayPortMargins = ScrollFrame(content, aRequest);
   if (nsCOMPtr<nsIPresShell> shell = GetPresShell(content)) {
-    SetDisplayPortMargins(shell, content, aMetrics);
+    SetDisplayPortMargins(shell,
+      content,
+      displayPortMargins,
+      aRequest.CalculateCompositedSizeInCssPixels());
   }
-  SetPaintRequestTime(content, aMetrics.GetPaintRequestTime());
+  SetPaintRequestTime(content, aRequest.GetPaintRequestTime());
 }
 
 bool

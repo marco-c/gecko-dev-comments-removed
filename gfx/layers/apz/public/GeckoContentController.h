@@ -13,6 +13,7 @@
 #include "mozilla/Assertions.h"         
 #include "mozilla/DefineEnum.h"         
 #include "mozilla/EventForwards.h"      
+#include "mozilla/layers/RepaintRequest.h" 
 #include "nsISupportsImpl.h"
 
 namespace mozilla {
@@ -35,7 +36,7 @@ public:
 
 
 
-  virtual void RequestContentRepaint(const FrameMetrics& aFrameMetrics) = 0;
+  virtual void RequestContentRepaint(const RepaintRequest& aRequest) = 0;
 
   
 
