@@ -49,8 +49,10 @@ WasmFrameIter::WasmFrameIter(JitActivation* activation, wasm::Frame* fp)
   
   
   
+  
+  
 
-  if (activation->isWasmTrapping()) {
+  if (activation->isWasmTrapping() && fp_ == activation->wasmExitFP()) {
     const TrapData& trapData = activation->wasmTrapData();
     void* unwoundPC = trapData.unwoundPC;
 
