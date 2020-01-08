@@ -398,8 +398,9 @@ JitRuntime::generateInvalidator(MacroAssembler& masm, Label* bailoutTail)
     masm.startDataTransferM(IsStore, sp, DB, WriteBack);
     
     
-    for (uint32_t i = 0; i < Registers::Total; i++)
+    for (uint32_t i = 0; i < Registers::Total; i++) {
         masm.transferReg(Register::FromCode(i));
+    }
     masm.finishDataTransfer();
 
     
@@ -412,8 +413,9 @@ JitRuntime::generateInvalidator(MacroAssembler& masm, Label* bailoutTail)
     }
 
     masm.startFloatTransferM(IsStore, sp, DB, WriteBack);
-    for (uint32_t i = 0; i < FloatRegisters::ActualTotalPhys(); i++)
+    for (uint32_t i = 0; i < FloatRegisters::ActualTotalPhys(); i++) {
         masm.transferFloatReg(FloatRegister(i, FloatRegister::Double));
+    }
     masm.finishFloatTransfer();
 
     masm.ma_mov(sp, r0);
@@ -578,8 +580,9 @@ PushBailoutFrame(MacroAssembler& masm, uint32_t frameClass, Register spArg)
     masm.startDataTransferM(IsStore, sp, DB, WriteBack);
     
     
-    for (uint32_t i = 0; i < Registers::Total; i++)
+    for (uint32_t i = 0; i < Registers::Total; i++) {
         masm.transferReg(Register::FromCode(i));
+    }
     masm.finishDataTransfer();
 
     ScratchRegisterScope scratch(masm);
@@ -592,8 +595,9 @@ PushBailoutFrame(MacroAssembler& masm, uint32_t frameClass, Register spArg)
         masm.ma_sub(Imm32(missingRegs * sizeof(double)), sp, scratch);
     }
     masm.startFloatTransferM(IsStore, sp, DB, WriteBack);
-    for (uint32_t i = 0; i < FloatRegisters::ActualTotalPhys(); i++)
+    for (uint32_t i = 0; i < FloatRegisters::ActualTotalPhys(); i++) {
         masm.transferFloatReg(FloatRegister(i, FloatRegister::Double));
+    }
     masm.finishFloatTransfer();
 
     
@@ -694,8 +698,9 @@ JitRuntime::generateBailoutTable(MacroAssembler& masm, Label* bailoutTail, uint3
         
         Label bailout;
         AutoForbidPools afp(&masm, BAILOUT_TABLE_SIZE);
-        for (size_t i = 0; i < BAILOUT_TABLE_SIZE; i++)
+        for (size_t i = 0; i < BAILOUT_TABLE_SIZE; i++) {
             masm.ma_bl(&bailout);
+        }
         masm.bind(&bailout);
     }
 
@@ -735,8 +740,9 @@ JitRuntime::generateVMWrapper(JSContext* cx, MacroAssembler& masm, const VMFunct
     
     
     
-    if (f.expectTailCall == NonTailCall)
+    if (f.expectTailCall == NonTailCall) {
         masm.pushReturnAddress();
+    }
 
     masm.loadJSContext(cxreg);
     masm.enterExitFrame(cxreg, regs.getAny(), &f);
@@ -788,8 +794,9 @@ JitRuntime::generateVMWrapper(JSContext* cx, MacroAssembler& masm, const VMFunct
         break;
     }
 
-    if (!generateTLEnterVM(masm, f))
+    if (!generateTLEnterVM(masm, f)) {
         return false;
+    }
 
     masm.setupUnalignedABICall(regs.getAny());
     masm.passABIArg(cxreg);
@@ -822,13 +829,15 @@ JitRuntime::generateVMWrapper(JSContext* cx, MacroAssembler& masm, const VMFunct
     }
 
     
-    if (outReg != InvalidReg)
+    if (outReg != InvalidReg) {
         masm.passABIArg(outReg);
+    }
 
     masm.callWithABI(f.wrapped, MoveOp::GENERAL, CheckUnsafeCallWithABI::DontCheckHasExitFrame);
 
-    if (!generateTLExitVM(masm, f))
+    if (!generateTLExitVM(masm, f)) {
         return false;
+    }
 
     
     switch (f.failType()) {
@@ -867,10 +876,11 @@ JitRuntime::generateVMWrapper(JSContext* cx, MacroAssembler& masm, const VMFunct
         break;
 
       case Type_Double:
-        if (cx->runtime()->jitSupportsFloatingPoint)
+        if (cx->runtime()->jitSupportsFloatingPoint) {
             masm.loadDouble(Address(sp, 0), ReturnDoubleReg);
-        else
+        } else {
             masm.assumeUnreachable("Unable to load into float reg, with no FP support.");
+        }
         masm.freeStack(sizeof(double));
         break;
 
@@ -881,8 +891,9 @@ JitRuntime::generateVMWrapper(JSContext* cx, MacroAssembler& masm, const VMFunct
 
     
     
-    if (f.returnsData() && JitOptions.spectreJitToCxxCalls)
+    if (f.returnsData() && JitOptions.spectreJitToCxxCalls) {
         masm.speculationBarrier();
+    }
 
     masm.leaveExitFrame();
     masm.retn(Imm32(sizeof(ExitFrameLayout) +
