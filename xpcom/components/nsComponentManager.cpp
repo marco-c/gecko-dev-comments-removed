@@ -484,7 +484,7 @@ AssertNotStackAllocated(T* aPtr)
   
   
   
-#ifndef XP_WIN
+#if !(defined(XP_WIN) || defined(ANDROID))
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(uintptr_t(aPtr) < uintptr_t(&aPtr));
 #endif
