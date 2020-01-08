@@ -4509,7 +4509,12 @@ void nsDisplayBackgroundColor::ApplyOpacity(nsDisplayListBuilder* aBuilder,
   IntersectClip(aBuilder, aClip, false);
 }
 
-bool nsDisplayBackgroundColor::CanApplyOpacity() const { return true; }
+bool nsDisplayBackgroundColor::CanApplyOpacity() const {
+  
+  
+  return !EffectCompositor::HasAnimationsForCompositor(
+      mFrame, eCSSProperty_background_color);
+}
 
 LayerState nsDisplayBackgroundColor::GetLayerState(
     nsDisplayListBuilder* aBuilder, LayerManager* aManager,
