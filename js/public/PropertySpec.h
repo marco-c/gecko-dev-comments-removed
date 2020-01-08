@@ -106,11 +106,9 @@ struct JSPropertySpec {
 
  private:
   void checkAccessorsAreNative() const {
-    MOZ_ASSERT(accessors.getter.native.op);
     
     
-    
-    
+    MOZ_ASSERT_IF(accessors.getter.native.info, accessors.getter.native.op);
     MOZ_ASSERT_IF(accessors.setter.native.info, accessors.setter.native.op);
   }
 
