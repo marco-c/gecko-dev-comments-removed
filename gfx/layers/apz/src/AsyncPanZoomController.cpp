@@ -3978,8 +3978,8 @@ AsyncTransform AsyncPanZoomController::GetCurrentAsyncViewportTransform(
   
   
   
-  CSSToParentLayerScale2D effectiveZoom = Metrics().LayersPixelsPerCSSPixel()
-      * LayerToParentLayerScale(1.0f);
+  CSSToParentLayerScale2D effectiveZoom =
+      Metrics().LayersPixelsPerCSSPixel() * LayerToParentLayerScale(1.0f);
   ParentLayerPoint translation =
       (currentViewportOffset - lastPaintViewport.TopLeft()) * effectiveZoom;
   LayerToParentLayerScale compositedAsyncZoom;
