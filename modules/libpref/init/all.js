@@ -2675,6 +2675,14 @@ pref("security.cert_pinning.process_headers_from_non_builtin_roots", false);
 pref("security.view-source.reachable-from-inner-protocol", false);
 
 
+
+#if !defined(RELEASE_OR_BETA) && !defined(ANDROID)
+pref("security.strict_security_checks.enabled", true);
+#else
+pref("security.strict_security_checks.enabled", false);
+#endif
+
+
 pref("services.settings.poll_interval", 86400); 
 pref("services.settings.server", "https://firefox.settings.services.mozilla.com/v1");
 pref("services.settings.changes.path", "/buckets/monitor/collections/changes/records");
