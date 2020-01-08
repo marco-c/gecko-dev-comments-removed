@@ -592,8 +592,7 @@ const gStoragePressureObserver = {
         callback(notificationBar, button) {
           
           
-          let win = gBrowser.ownerGlobal;
-          win.openPreferences("privacy-sitedata", { origin: "storagePressure" });
+          openPreferences("privacy-sitedata", { origin: "storagePressure" });
         },
       });
     }
