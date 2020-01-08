@@ -13,7 +13,7 @@
 #include "nsAttrValueInlines.h"
 #include "nsSMILParserUtils.h"
 #include "nsSVGAngle.h"
-#include "nsSVGPathDataParser.h"
+#include "SVGPathDataParser.h"
 #include "SVGMotionSMILType.h"
 #include "SVGMotionSMILPathUtils.h"
 
@@ -224,7 +224,7 @@ void SVGMotionSMILAnimationFunction::RebuildPathAndVerticesFromPathAttr() {
 
   
   SVGPathData path;
-  nsSVGPathDataParser pathParser(pathSpec, &path);
+  SVGPathDataParser pathParser(pathSpec, &path);
 
   
   

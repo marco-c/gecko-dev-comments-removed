@@ -4,15 +4,17 @@
 
 
 
-#include "nsSVGDataParser.h"
+#include "SVGDataParser.h"
 #include "nsContentUtils.h"
 #include "SVGContentUtils.h"
 
-nsSVGDataParser::nsSVGDataParser(const nsAString& aValue)
+namespace mozilla {
+
+SVGDataParser::SVGDataParser(const nsAString& aValue)
     : mIter(SVGContentUtils::GetStartRangedPtr(aValue)),
       mEnd(SVGContentUtils::GetEndRangedPtr(aValue)) {}
 
-bool nsSVGDataParser::SkipCommaWsp() {
+bool SVGDataParser::SkipCommaWsp() {
   if (!SkipWsp()) {
     
     return false;
@@ -24,7 +26,7 @@ bool nsSVGDataParser::SkipCommaWsp() {
   return SkipWsp();
 }
 
-bool nsSVGDataParser::SkipWsp() {
+bool SVGDataParser::SkipWsp() {
   while (mIter != mEnd) {
     if (!nsContentUtils::IsHTMLWhitespace(*mIter)) {
       return true;
@@ -33,3 +35,5 @@ bool nsSVGDataParser::SkipWsp() {
   }
   return false;
 }
+
+}  

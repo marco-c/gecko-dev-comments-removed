@@ -21,11 +21,11 @@
 
 #include <string.h>
 
-class nsSVGPathDataParser;  
-
 struct nsSVGMark;
 
 namespace mozilla {
+
+class SVGPathDataParser;  
 
 
 
@@ -77,7 +77,7 @@ class SVGPathData {
   friend class SVGAnimatedPathSegList;
   friend class DOMSVGPathSegList;
   friend class DOMSVGPathSeg;
-  friend class ::nsSVGPathDataParser;
+  friend class SVGPathDataParser;
   
   
 
