@@ -572,6 +572,8 @@ pub enum DebugCommand {
     
     EnableNewSceneIndicator(bool),
     
+    EnableShowOverdraw(bool),
+    
     FetchDocuments,
     
     FetchPasses,
