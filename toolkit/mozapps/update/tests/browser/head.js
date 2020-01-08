@@ -16,12 +16,9 @@ const FILE_UPDATER_BIN_BAK = FILE_UPDATER_BIN + ".bak";
 const PREF_APP_UPDATE_INTERVAL = "app.update.interval";
 const PREF_APP_UPDATE_LASTUPDATETIME = "app.update.lastUpdateTime.background-update-timer";
 
-let gRembemberedPrefs = [];
-
 const DATA_URI_SPEC =  "chrome://mochitests/content/browser/toolkit/mozapps/update/tests/browser/";
 
 var DEBUG_AUS_TEST = true;
-var gUseTestUpdater = false;
 
 const LOG_FUNCTION = info;
 
@@ -38,12 +35,6 @@ const URL_MANUAL_UPDATE = gURLData + "downloadPage.html";
 const gEnv = Cc["@mozilla.org/process/environment;1"].
              getService(Ci.nsIEnvironment);
 
-const NOTIFICATIONS = [
-  "update-available",
-  "update-manual",
-  "update-restart",
-];
-
 let gOriginalUpdateAutoValue = null;
 
 
@@ -52,8 +43,86 @@ let gOriginalUpdateAutoValue = null;
 
 
 
-function delay() {
-  return new Promise(resolve => executeSoon(resolve));
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function continueFileHandler(leafName) {
+  
+  
+  
+  let retries = undefined;
+  let continueFile;
+  if (leafName == CONTINUE_STAGING) {
+    debugDump("creating " + leafName + " file for slow update staging");
+    
+    
+    
+    
+    retries = 100;
+    continueFile = getUpdatesPatchDir();
+    continueFile.append(leafName);
+  } else {
+    debugDump("creating " + leafName + " file for slow http server requests");
+    continueFile = Services.dirsvc.get("CurWorkD", Ci.nsIFile);
+    let continuePath = REL_PATH_DATA + leafName;
+    let continuePathParts = continuePath.split("/");
+    for (let i = 0; i < continuePathParts.length; ++i) {
+      continueFile.append(continuePathParts[i]);
+    }
+  }
+  if (continueFile.exists()) {
+    throw new Error("The continue file should not exist, path: " +
+                    continueFile.path);
+  }
+  continueFile.create(Ci.nsIFile.NORMAL_FILE_TYPE, PERMS_FILE);
+  return BrowserTestUtils.waitForCondition(() =>
+    (!continueFile.exists()),
+    "Waiting for file to be deleted, path: " + continueFile.path,
+    undefined, retries);
+
+}
+
+
+
+
+
+
+
+
+
+
+function lockWriteTestFile() {
+  if (AppConstants.platform != "win") {
+    throw new Error("Windows only test function called");
+  }
+  let file = getUpdatesRootDir();
+  file.append(FILE_UPDATE_TEST);
+  file.QueryInterface(Ci.nsILocalFileWin);
+  
+  if (file.exists()) {
+    file.fileAttributesWin |= file.WFA_READWRITE;
+    file.fileAttributesWin &= ~file.WFA_READONLY;
+    file.remove(false);
+  }
+  file.create(file.NORMAL_FILE_TYPE, 0o444);
+  file.fileAttributesWin |= file.WFA_READONLY;
+  file.fileAttributesWin &= ~file.WFA_READWRITE;
+  registerCleanupFunction(() => {
+    file.fileAttributesWin |= file.WFA_READWRITE;
+    file.fileAttributesWin &= ~file.WFA_READONLY;
+    file.remove(false);
+  });
 }
 
 
@@ -323,16 +392,15 @@ function checkWhatsNewLink(win, id, url) {
 
 
 
-
 function setupTestUpdater() {
   return (async function() {
-    if (gUseTestUpdater) {
+    if (Services.prefs.getBoolPref(PREF_APP_UPDATE_STAGING_ENABLED)) {
       try {
         restoreUpdaterBackup();
       } catch (e) {
         logTestInfo("Attempt to restore the backed up updater failed... " +
                     "will try again, Exception: " + e);
-        await delay();
+        await TestUtils.waitForTick();
         await setupTestUpdater();
         return;
       }
@@ -357,7 +425,7 @@ function moveRealUpdater() {
     } catch (e) {
       logTestInfo("Attempt to move the real updater out of the way failed... " +
                   "will try again, Exception: " + e);
-      await delay();
+      await TestUtils.waitForTick();
       await moveRealUpdater();
       return;
     }
@@ -365,7 +433,6 @@ function moveRealUpdater() {
     await copyTestUpdater();
   })();
 }
-
 
 
 
@@ -391,14 +458,12 @@ function copyTestUpdater(attempt = 0) {
       if (attempt < MAX_UPDATE_COPY_ATTEMPTS) {
         logTestInfo("Attempt to copy the test updater failed... " +
                     "will try again, Exception: " + e);
-        await delay();
+        await TestUtils.waitForTick();
         await copyTestUpdater(attempt + 1);
       }
     }
   })();
 }
-
-
 
 
 
@@ -423,10 +488,9 @@ function restoreUpdaterBackup() {
 
 
 
-
 function finishTestRestoreUpdaterBackup() {
   return (async function() {
-    if (gUseTestUpdater) {
+    if (Services.prefs.getBoolPref(PREF_APP_UPDATE_STAGING_ENABLED)) {
       try {
         
         
@@ -435,9 +499,169 @@ function finishTestRestoreUpdaterBackup() {
         logTestInfo("Attempt to restore the backed up updater failed... " +
                     "will try again, Exception: " + e);
 
-        await delay();
+        await TestUtils.waitForTick();
         await finishTestRestoreUpdaterBackup();
       }
     }
+  })();
+}
+
+
+
+
+
+
+
+function waitForAboutDialog() {
+  return new Promise(resolve => {
+    var listener = {
+      onOpenWindow: aXULWindow => {
+        debugDump("About dialog shown...");
+        Services.wm.removeListener(listener);
+
+         async function aboutDialogOnLoad() {
+          domwindow.removeEventListener("load", aboutDialogOnLoad, true);
+          let chromeURI = "chrome://browser/content/aboutDialog.xul";
+          is(domwindow.document.location.href, chromeURI, "About dialog appeared");
+          resolve(domwindow);
+        }
+
+        var domwindow = aXULWindow.docShell.domWindow;
+        domwindow.addEventListener("load", aboutDialogOnLoad, true);
+      },
+      onCloseWindow: aXULWindow => {},
+    };
+
+    Services.wm.addListener(listener);
+    openAboutDialog();
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function runAboutDialogUpdateTest(updateParams, backgroundUpdate, steps) {
+  let aboutDialog;
+  function processAboutDialogStep(step) {
+    if (typeof(step) == "function") {
+      return step();
+    }
+
+    
+    function getSelectedPanel() {
+      return aboutDialog.document.getElementById("updateDeck").selectedPanel;
+    }
+
+    
+    function getSelectedPanelButton() {
+      return getSelectedPanel().querySelector("button");
+    }
+
+    
+    
+    function getSelectedLabelLink() {
+      return getSelectedPanel().querySelector("label.text-link");
+    }
+
+    const {panelId, checkActiveUpdate, continueFile} = step;
+    return (async function() {
+      await BrowserTestUtils.waitForCondition(() =>
+        (getSelectedPanel() && getSelectedPanel().id == panelId),
+        "Waiting for expected panel ID - expected \"" + panelId + "\"");
+
+      
+      if (checkActiveUpdate) {
+        ok(!!gUpdateManager.activeUpdate, "There should be an active update");
+        is(gUpdateManager.activeUpdate.state, checkActiveUpdate.state,
+           "The active update state should equal " + checkActiveUpdate.state);
+      } else {
+        ok(!gUpdateManager.activeUpdate,
+           "There should not be an active update");
+      }
+
+      if (continueFile) {
+        await continueFileHandler(continueFile);
+      }
+
+      let linkPanels = ["downloadFailed", "manualUpdate", "unsupportedSystem"];
+      if (linkPanels.includes(panelId)) {
+        
+        
+        
+        let labelLink = getSelectedLabelLink();
+        is(labelLink.href, URL_HOST,
+           "The panel's link href should equal the expected value");
+      }
+
+      let buttonPanels = ["downloadAndInstall", "apply"];
+      if (buttonPanels.includes(panelId)) {
+        let buttonEl = getSelectedPanelButton();
+        await BrowserTestUtils.waitForCondition(() =>
+          (aboutDialog.document.activeElement == buttonEl),
+          "The button should receive focus");
+        ok(!buttonEl.disabled, "The button should be enabled");
+        
+        
+        if (panelId != "apply") {
+          buttonEl.click();
+        }
+      }
+    })();
+  }
+
+  return (async function() {
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        [PREF_APP_UPDATE_SERVICE_ENABLED, false],
+        [PREF_APP_UPDATE_DISABLEDFORTESTING, false],
+        [PREF_APP_UPDATE_URL_MANUAL, URL_HOST],
+      ],
+    });
+    registerCleanupFunction(() => {
+      gEnv.set("MOZ_TEST_SLOW_SKIP_UPDATE_STAGE", "");
+      UpdateListener.reset();
+      cleanUpUpdates();
+    });
+
+    gEnv.set("MOZ_TEST_SLOW_SKIP_UPDATE_STAGE", "1");
+    setUpdateTimerPrefs();
+    removeUpdateDirsAndFiles();
+
+    await setupTestUpdater();
+
+    let url = URL_HTTP_UPDATE_SJS + "?detailsURL=" + URL_HOST +
+              updateParams + getVersionParams();
+    if (backgroundUpdate) {
+      setUpdateURL(url);
+      if (Services.prefs.getBoolPref(PREF_APP_UPDATE_STAGING_ENABLED)) {
+        
+        continueFileHandler(CONTINUE_STAGING);
+      }
+      gAUS.checkForBackgroundUpdates();
+      await waitForEvent("update-downloaded");
+    } else {
+      url += "&slowUpdateCheck=1&useSlowDownloadMar=1";
+      setUpdateURL(url);
+    }
+
+    aboutDialog = await waitForAboutDialog();
+
+    for (let step of steps) {
+      await processAboutDialogStep(step);
+    }
+
+    aboutDialog.close();
+    await finishTestRestoreUpdaterBackup();
   })();
 }
