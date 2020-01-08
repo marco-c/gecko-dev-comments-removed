@@ -158,5 +158,6 @@ class MultiLocaleBuild(LocalesMixin, MercurialScript):
         return self.run_command(**kwargs)
 
 
+
 if __name__ == '__main__':
     pass
