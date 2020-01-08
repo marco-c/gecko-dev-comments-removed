@@ -51,38 +51,6 @@ function promiseTabLoadEvent(tab, url) {
   return Promise.all([deferred.promise, loaded]);
 }
 
-function waitForCondition(condition, nextTest, errorMsg, retryTimes) {
-  retryTimes = typeof retryTimes !== "undefined" ? retryTimes : 30;
-  var tries = 0;
-  var interval = setInterval(function() {
-    if (tries >= retryTimes) {
-      ok(false, errorMsg);
-      moveOn();
-    }
-    var conditionPassed;
-    try {
-      conditionPassed = condition();
-    } catch (e) {
-      ok(false, e + "\n" + e.stack);
-      conditionPassed = false;
-    }
-    if (conditionPassed) {
-      moveOn();
-    }
-    tries++;
-  }, 100);
-  var moveOn = function() {
-    clearInterval(interval);
-    nextTest();
-  };
-}
-
-function promiseWaitForCondition(aConditionFn) {
-  return new Promise(resolve => {
-    waitForCondition(aConditionFn, resolve, "Condition didn't pass.");
-  });
-}
-
 function is_element_visible(element, msg) {
   isnot(element, null, "Element should not be null, when checking visibility");
   ok(BrowserTestUtils.is_visible(element), msg || "Element should be visible");

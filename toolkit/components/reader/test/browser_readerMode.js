@@ -50,7 +50,7 @@ add_task(async function test_reader_button() {
   info("Opening tab and waiting for reader mode button to show up");
 
   await promiseTabLoadEvent(tab, url);
-  await promiseWaitForCondition(() => !readerButton.hidden);
+  await TestUtils.waitForCondition(() => !readerButton.hidden);
 
   is_element_visible(readerButton, "Reader mode button is present on a reader-able page");
 
@@ -63,7 +63,7 @@ add_task(async function test_reader_button() {
   ok(readerUrl.startsWith("about:reader"), "about:reader loaded after clicking reader mode button");
   is_element_visible(readerButton, "Reader mode button is present on about:reader");
   let iconEl = document.getAnonymousElementByAttribute(tab, "anonid", "tab-icon-image");
-  await promiseWaitForCondition(() => iconEl.getBoundingClientRect().width != 0);
+  await TestUtils.waitForCondition(() => iconEl.getBoundingClientRect().width != 0);
   is_element_visible(iconEl, "Favicon should be visible");
   is(iconEl.src, favicon, "Correct favicon should be loaded");
 
@@ -95,12 +95,12 @@ add_task(async function test_reader_button() {
   
   let newTab = gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
   await promiseTabLoadEvent(newTab, nonReadableUrl);
-  await promiseWaitForCondition(() => readerButton.hidden);
+  await TestUtils.waitForCondition(() => readerButton.hidden);
   is_element_hidden(readerButton, "Reader mode button is not present on a non-reader-able page");
 
   
   gBrowser.removeCurrentTab();
-  await promiseWaitForCondition(() => !readerButton.hidden);
+  await TestUtils.waitForCondition(() => !readerButton.hidden);
   is_element_visible(readerButton, "Reader mode button is present on a reader-able page");
 
   
@@ -108,7 +108,7 @@ add_task(async function test_reader_button() {
   let promiseAboutReaderError = BrowserTestUtils.waitForContentEvent(newTab.linkedBrowser, "AboutReaderContentError");
   await promiseTabLoadEvent(newTab, "about:reader?url=" + nonReadableUrl);
   await promiseAboutReaderError;
-  await promiseWaitForCondition(() => !readerButton.hidden);
+  await TestUtils.waitForCondition(() => !readerButton.hidden);
   is_element_visible(readerButton, "Reader mode button is present on about:reader even in error state");
 
   
@@ -117,7 +117,7 @@ add_task(async function test_reader_button() {
   await promisePageShow;
   is(gBrowser.selectedBrowser.currentURI.spec, nonReadableUrl,
     "Back to the original non-reader-able page after clicking active reader mode button");
-  await promiseWaitForCondition(() => readerButton.hidden);
+  await TestUtils.waitForCondition(() => readerButton.hidden);
   is_element_hidden(readerButton, "Reader mode button is not present on a non-reader-able page");
 });
 
