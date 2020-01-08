@@ -692,6 +692,26 @@ template<typename T, typename... Args>
 typename detail::UniqueSelector<T>::KnownBound
 MakeUnique(Args&&... aArgs) = delete;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+template<typename T>
+typename detail::UniqueSelector<T>::SingleObject
+WrapUnique(T* aPtr)
+{
+  return UniquePtr<T>(aPtr);
+}
+
 } 
 
 #endif 
