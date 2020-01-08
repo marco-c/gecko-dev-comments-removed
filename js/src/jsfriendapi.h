@@ -2071,12 +2071,6 @@ JS_IsDetachedArrayBufferObject(JSObject* obj);
 
 
 
-JS_FRIEND_API(bool)
-JS_IsDataViewObject(JSObject* obj);
-
-
-
-
 
 
 
