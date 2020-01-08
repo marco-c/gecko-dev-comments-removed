@@ -1110,7 +1110,9 @@ ScriptLoader::StartLoad(ScriptLoadRequest* aRequest)
   
   aRequest->mCacheInfo = nullptr;
   nsCOMPtr<nsICacheInfoChannel> cic(do_QueryInterface(channel));
-  if (cic && nsContentUtils::IsBytecodeCacheEnabled()) {
+  if (cic && nsContentUtils::IsBytecodeCacheEnabled() &&
+      
+      !aRequest->IsModuleRequest()) {
     if (!aRequest->IsLoadingSource()) {
       
       
