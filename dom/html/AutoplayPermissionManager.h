@@ -48,10 +48,11 @@ public:
 
   
   
-  void ApprovePlayRequest();
+  void ApprovePlayRequestIfExists();
   
   
-  void DenyPlayRequest();
+  
+  void DenyPlayRequestIfExists();
 
 private:
   ~AutoplayPermissionManager();

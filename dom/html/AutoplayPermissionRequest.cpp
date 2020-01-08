@@ -95,7 +95,7 @@ NS_IMETHODIMP
 AutoplayPermissionRequest::Cancel()
 {
   if (mManager) {
-    mManager->DenyPlayRequest();
+    mManager->DenyPlayRequestIfExists();
     
     
     mManager = nullptr;
@@ -107,7 +107,7 @@ NS_IMETHODIMP
 AutoplayPermissionRequest::Allow(JS::HandleValue aChoices)
 {
   if (mManager) {
-    mManager->ApprovePlayRequest();
+    mManager->ApprovePlayRequestIfExists();
     
     
     mManager = nullptr;
