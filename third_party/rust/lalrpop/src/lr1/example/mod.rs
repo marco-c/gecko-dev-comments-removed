@@ -1,9 +1,9 @@
 
 
 use ascii_canvas::AsciiView;
-use message::Content;
-use message::builder::InlineBuilder;
 use grammar::repr::*;
+use message::builder::InlineBuilder;
+use message::Content;
 use std::fmt::{Debug, Error, Formatter};
 use style::Style;
 use tls::Tls;

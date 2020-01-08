@@ -21,7 +21,7 @@ use exec::{Exec, ExecNoSync};
 use expand::expand_bytes;
 use error::Error;
 use re_builder::bytes::RegexBuilder;
-use re_trait::{self, RegularExpression, Locations, SubCapturesPosIter};
+use re_trait::{self, RegularExpression, SubCapturesPosIter};
 
 
 
@@ -252,10 +252,10 @@ impl Regex {
     
     
     pub fn captures<'t>(&self, text: &'t [u8]) -> Option<Captures<'t>> {
-        let mut locs = self.locations();
-        self.read_captures_at(&mut locs, text, 0).map(|_| Captures {
+        let mut locs = self.capture_locations();
+        self.captures_read_at(&mut locs, text, 0).map(move |_| Captures {
             text: text,
-            locs: locs,
+            locs: locs.0,
             named_groups: self.0.capture_name_idx().clone(),
         })
     }
@@ -568,7 +568,6 @@ impl Regex {
     
     
     
-    #[doc(hidden)]
     pub fn shortest_match_at(
         &self,
         text: &[u8],
@@ -583,7 +582,6 @@ impl Regex {
     
     
     
-    #[doc(hidden)]
     pub fn is_match_at(&self, text: &[u8], start: usize) -> bool {
         self.shortest_match_at(text, start).is_some()
     }
@@ -594,7 +592,6 @@ impl Regex {
     
     
     
-    #[doc(hidden)]
     pub fn find_at<'t>(
         &self,
         text: &'t [u8],
@@ -610,15 +607,49 @@ impl Regex {
     
     
     
-    #[doc(hidden)]
-    pub fn read_captures_at<'t>(
+    
+    
+    
+    
+    pub fn captures_read<'t>(
         &self,
-        locs: &mut Locations,
+        locs: &mut CaptureLocations,
+        text: &'t [u8],
+    ) -> Option<Match<'t>> {
+        self.captures_read_at(locs, text, 0)
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn captures_read_at<'t>(
+        &self,
+        locs: &mut CaptureLocations,
         text: &'t [u8],
         start: usize,
     ) -> Option<Match<'t>> {
-        self.0.searcher().read_captures_at(locs, text, start)
+        self.0
+            .searcher()
+            .captures_read_at(&mut locs.0, text, start)
             .map(|(s, e)| Match::new(text, s, e))
+    }
+
+    
+    
+    
+    
+    
+    #[doc(hidden)]
+    pub fn read_captures_at<'t>(
+        &self,
+        locs: &mut CaptureLocations,
+        text: &'t [u8],
+        start: usize,
+    ) -> Option<Match<'t>> {
+        self.captures_read_at(locs, text, start)
     }
 }
 
@@ -641,9 +672,17 @@ impl Regex {
 
     
     
+    pub fn capture_locations(&self) -> CaptureLocations {
+        CaptureLocations(self.0.searcher().locations())
+    }
+
+    
+    
+    
+    
     #[doc(hidden)]
-    pub fn locations(&self) -> Locations {
-        self.0.searcher().locations()
+    pub fn locations(&self) -> CaptureLocations {
+        CaptureLocations(self.0.searcher().locations())
     }
 }
 
@@ -780,9 +819,66 @@ impl<'r> Iterator for CaptureNames<'r> {
 
 
 
+
+
+
+
+#[derive(Clone, Debug)]
+pub struct CaptureLocations(re_trait::Locations);
+
+
+
+
+
+
+#[doc(hidden)]
+pub type Locations = CaptureLocations;
+
+impl CaptureLocations {
+    
+    
+    
+    
+    #[inline]
+    pub fn get(&self, i: usize) -> Option<(usize, usize)> {
+        self.0.pos(i)
+    }
+
+    
+    
+    
+    
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    
+    
+    
+    
+    
+    #[doc(hidden)]
+    #[inline]
+    pub fn pos(&self, i: usize) -> Option<(usize, usize)> {
+        self.get(i)
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
 pub struct Captures<'t> {
     text: &'t [u8],
-    locs: Locations,
+    locs: re_trait::Locations,
     named_groups: Arc<HashMap<String, usize>>,
 }
 
