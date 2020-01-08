@@ -85,8 +85,7 @@ namespace mozilla {
 MOZ_MTLOG_MODULE("mtransport")
 
 TransportLayerIce::TransportLayerIce()
-    : stream_(nullptr), component_(0),
-      old_stream_(nullptr)
+    : stream_(nullptr), component_(0)
 {
   
 }
@@ -108,17 +107,6 @@ void TransportLayerIce::SetParameters(RefPtr<NrIceMediaStream> stream,
     return;
   }
 
-  
-  
-  
-  if (stream_ && !old_stream_ && (stream_ != stream)) {
-    
-    
-    old_stream_ = stream_;
-    MOZ_MTLOG(ML_INFO, LAYER_INFO << "SetParameters save old stream("
-                                  << old_stream_->name() << ")");
-  }
-
   stream_ = stream;
   component_ = component;
 
@@ -135,48 +123,11 @@ void TransportLayerIce::PostSetup() {
   }
 }
 
-void TransportLayerIce::ResetOldStream() {
-  if (old_stream_ == nullptr) {
-    return; 
-  }
-  
-  MOZ_MTLOG(ML_INFO, LAYER_INFO << "ResetOldStream(" << old_stream_->name()
-                                << ")");
-  old_stream_->SignalReady.disconnect(this);
-  old_stream_->SignalFailed.disconnect(this);
-  old_stream_->SignalPacketReceived.disconnect(this);
-  old_stream_ = nullptr;
-}
-
-void TransportLayerIce::RestoreOldStream() {
-  if (old_stream_ == nullptr) {
-    return; 
-  }
-  
-  MOZ_MTLOG(ML_INFO, LAYER_INFO << "RestoreOldStream(" << old_stream_->name()
-                                << ")");
-  stream_->SignalReady.disconnect(this);
-  stream_->SignalFailed.disconnect(this);
-  stream_->SignalPacketReceived.disconnect(this);
-  stream_ = old_stream_;
-  old_stream_ = nullptr;
-
-  if (stream_->state() == NrIceMediaStream::ICE_OPEN) {
-    IceReady(stream_);
-  } else if (stream_->state() == NrIceMediaStream::ICE_CLOSED) {
-    IceFailed(stream_);
-  }
-  
-  
-  
-}
-
 TransportResult TransportLayerIce::SendPacket(MediaPacket& packet) {
   CheckThread();
-  
-  nsresult res = (old_stream_?old_stream_:stream_)->SendPacket(component_,
-                                                               packet.data(),
-                                                               packet.len());
+  nsresult res = stream_->SendPacket(component_,
+                                     packet.data(),
+                                     packet.len());
 
   if (!NS_SUCCEEDED(res)) {
     return (res == NS_BASE_STREAM_WOULD_BLOCK) ?

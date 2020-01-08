@@ -101,6 +101,8 @@ public:
       mDtls.reset(orig.mDtls ? new JsepDtlsTransport(*orig.mDtls) : nullptr);
       mTransportId = orig.mTransportId;
       mComponents = orig.mComponents;
+      mLocalUfrag = orig.mLocalUfrag;
+      mLocalPwd = orig.mLocalPwd;
     }
     return *this;
   }
@@ -111,6 +113,8 @@ public:
     mTransportId.clear();
     mIce.reset();
     mDtls.reset();
+    mLocalUfrag.clear();
+    mLocalPwd.clear();
   }
 
   
@@ -122,6 +126,8 @@ public:
 
   
   size_t mComponents;
+  std::string mLocalUfrag;
+  std::string mLocalPwd;
 };
 
 } 

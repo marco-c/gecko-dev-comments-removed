@@ -58,9 +58,6 @@ class TransportLayerIce : public TransportLayer {
 
   RefPtr<NrIceMediaStream> stream_;
   int component_;
-
-  
-  RefPtr<NrIceMediaStream> old_stream_;
 };
 
 }  

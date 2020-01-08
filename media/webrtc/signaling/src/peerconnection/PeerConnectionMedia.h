@@ -28,7 +28,6 @@ class MediaStreamTrack;
 }
 }
 
-#include "nricectxhandler.h"
 #include "nriceresolver.h"
 #include "nricemediastream.h"
 
@@ -50,11 +49,6 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
  public:
   explicit PeerConnectionMedia(PeerConnectionImpl *parent);
 
-  enum IceRestartState { ICE_RESTART_NONE,
-                         ICE_RESTART_PROVISIONAL,
-                         ICE_RESTART_COMMITTED
-  };
-
   PeerConnectionImpl* GetPC() { return mParent; }
   nsresult Init(const std::vector<NrIceStunServer>& stun_servers,
                 const std::vector<NrIceTurnServer>& turn_servers,
@@ -62,12 +56,11 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   
   void SelfDestruct();
 
-  RefPtr<NrIceCtxHandler> ice_ctx_hdlr() const { return mIceCtxHdlr; }
-  RefPtr<NrIceCtx> ice_ctx() const { return mIceCtxHdlr->ctx(); }
+  RefPtr<NrIceCtx> ice_ctx() const { return mIceCtx; }
 
   RefPtr<NrIceMediaStream> ice_media_stream(
       const std::string& aTransportId) const {
-    return mIceCtxHdlr->ctx()->GetStream(aTransportId);
+    return mIceCtx->GetStream(aTransportId);
   }
 
   
@@ -80,19 +73,6 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
 
   
   void StartIceChecks(const JsepSession& session);
-
-  bool IsIceRestarting() const;
-  IceRestartState GetIceRestartState() const;
-
-  
-  void BeginIceRestart(const std::string& ufrag,
-                       const std::string& pwd);
-  
-  void CommitIceRestart();
-  
-  void FinalizeIceRestart();
-  
-  void RollbackIceRestart();
 
   
   void AddIceCandidate(const std::string& candidate,
@@ -240,8 +220,12 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
                            bool aForceIceTcp);
 
   void EnsureTransport_s(const std::string& aTransportId,
+                         const std::string& aUfrag,
+                         const std::string& aPwd,
                          size_t aComponentCount);
   void ActivateTransport_s(const std::string& aTransportId,
+                           const std::string& aLocalUfrag,
+                           const std::string& aLocalPwd,
                            size_t aComponentCount,
                            const std::string& aUfrag,
                            const std::string& aPassword,
@@ -260,9 +244,6 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
                         bool aIsIceLite,
                         const std::vector<std::string>& aIceOptionsList);
 
-  void BeginIceRestart_s(RefPtr<NrIceCtx> new_ctx);
-  void FinalizeIceRestart_s();
-  void RollbackIceRestart_s();
   bool GetPrefDefaultAddressOnly() const;
   bool GetPrefProxyOnly() const;
 
@@ -319,7 +300,7 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   std::vector<RefPtr<TransceiverImpl>> mTransceivers;
 
   
-  RefPtr<NrIceCtxHandler> mIceCtxHdlr;
+  RefPtr<NrIceCtx> mIceCtx;
 
   
   RefPtr<NrIceResolver> mDNSResolver;
@@ -353,9 +334,6 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
 
   
   UniquePtr<NrIceProxyServer> mProxyServer;
-
-  
-  IceRestartState mIceRestartState;
 
   
   RefPtr<net::StunAddrsRequestChild> mStunAddrsRequest;

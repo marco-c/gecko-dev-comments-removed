@@ -687,12 +687,6 @@ private:
       dom::MediaStreamTrack* aSendTrack,
       ErrorResult& aRv);
 
-  nsresult SetupIceRestartCredentials();
-  void BeginIceRestart();
-  nsresult ResetIceCredentials();
-  nsresult RollbackIceRestart();
-  void FinalizeIceRestart();
-
   static void GetStatsForPCObserver_s(
       const std::string& pcHandle,
       nsAutoPtr<RTCStatsQuery> query);
@@ -709,6 +703,8 @@ private:
   
   
   void RecordLongtermICEStatistics();
+
+  void RecordIceRestartStatistics(JsepSdpType type);
 
   
   
@@ -773,8 +769,6 @@ private:
   
   mozilla::UniquePtr<PCUuidGenerator> mUuidGen;
   mozilla::UniquePtr<mozilla::JsepSession> mJsepSession;
-  std::string mPreviousIceUfrag; 
-  std::string mPreviousIcePwd; 
   unsigned long mIceRestartCount;
   unsigned long mIceRollbackCount;
 

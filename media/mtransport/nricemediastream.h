@@ -137,9 +137,15 @@ struct NrIceCandidatePair {
 
 class NrIceMediaStream {
  public:
-  static RefPtr<NrIceMediaStream> Create(NrIceCtx *ctx,
-                                         const std::string& name,
-                                         int components);
+  NrIceMediaStream(NrIceCtx *ctx,
+                   const std::string& id,
+                   const std::string& name,
+                   size_t components);
+
+  nsresult SetIceCredentials(const std::string& ufrag, const std::string& pwd);
+  nsresult ConnectToPeer(const std::string& ufrag,
+                         const std::string& pwd,
+                         const std::vector<std::string>& peer_attrs);
   enum State { ICE_CONNECTING, ICE_OPEN, ICE_CLOSED};
 
   State state() const { return state_; }
@@ -148,7 +154,7 @@ class NrIceMediaStream {
   const std::string& name() const { return name_; }
 
   
-  std::vector<std::string> GetCandidates() const;
+  std::vector<std::string> GetAttributes() const;
 
   nsresult GetLocalCandidates(std::vector<NrIceCandidate>* candidates) const;
   nsresult GetRemoteCandidates(std::vector<NrIceCandidate>* candidates) const;
@@ -158,10 +164,6 @@ class NrIceMediaStream {
   nsresult GetCandidatePairs(std::vector<NrIceCandidatePair>* out_pairs) const;
 
   nsresult GetDefaultCandidate(int component, NrIceCandidate* candidate) const;
-
-  
-  nsresult ParseAttributes(std::vector<std::string>& candidates);
-  bool HasParsedAttributes() const { return has_parsed_attrs_; }
 
   
   nsresult ParseTrickleCandidate(const std::string& candidate);
@@ -182,8 +184,7 @@ class NrIceMediaStream {
   
   size_t components() const { return components_; }
 
-  
-  nr_ice_media_stream *stream() { return stream_; }
+  bool HasStream(nr_ice_media_stream *stream) const;
   
   
 
@@ -192,6 +193,7 @@ class NrIceMediaStream {
 
   
   void Ready();
+  void Failed();
 
   
   
@@ -201,8 +203,6 @@ class NrIceMediaStream {
 
   
   
-  void SetId(const std::string& id) { id_ = id; }
-
   const std::string& GetId() const { return id_; }
 
   sigslot::signal2<NrIceMediaStream *, const std::string& >
@@ -216,13 +216,11 @@ class NrIceMediaStream {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(NrIceMediaStream)
 
  private:
-  NrIceMediaStream(NrIceCtx *ctx,
-                   const std::string& name,
-                   size_t components);
-
   ~NrIceMediaStream();
 
   DISALLOW_COPY_ASSIGN(NrIceMediaStream);
+
+  void CloseStream(nr_ice_media_stream **stream);
 
   State state_;
   nr_ice_ctx *ctx_;
@@ -230,8 +228,8 @@ class NrIceMediaStream {
   const std::string name_;
   const size_t components_;
   nr_ice_media_stream *stream_;
-  std::string id_;
-  bool has_parsed_attrs_;
+  nr_ice_media_stream *old_stream_;
+  const std::string id_;
 };
 
 
