@@ -872,6 +872,7 @@ Pool.prototype = extend(EventEmitter.prototype, {
       }
     }
     this._poolMap.set(actor.actorID, actor);
+    return actor;
   },
 
   
@@ -1287,10 +1288,6 @@ var Front = function(conn = null, form = null, detail = null, context = null) {
 
   
   
-  this._frontListeners = new EventEmitter();
-
-  
-  
   
   
   if (form) {
@@ -1318,7 +1315,6 @@ Front.prototype = extend(Pool.prototype, {
     }
     Pool.prototype.destroy.call(this);
     this.actorID = null;
-    this._frontListeners = null;
   },
 
   manage: function(front) {
@@ -1326,23 +1322,7 @@ Front.prototype = extend(Pool.prototype, {
       throw new Error("Can't manage front without an actor ID.\n" +
                       "Ensure server supports " + front.typeName + ".");
     }
-    Pool.prototype.manage.call(this, front);
-
-    
-    this._frontListeners.emit(front.typeName, front);
-  },
-
-  
-  
-  onFront(typeName, callback) {
-    
-    for (const front of this.poolChildren()) {
-      if (front.typeName == typeName) {
-        callback(front);
-      }
-    }
-    
-    this._frontListeners.on(typeName, callback);
+    return Pool.prototype.manage.call(this, front);
   },
 
   toString: function() {

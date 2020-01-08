@@ -128,6 +128,18 @@ const TargetFactory = exports.TargetFactory = {
     if (target == null) {
       target = new Target({
         client: workerTargetFront.client,
+        
+        
+        get form() {
+          return {
+            actor: workerTargetFront.actorID,
+            traits: {},
+            
+            
+            
+            consoleActor: workerTargetFront.consoleActor,
+          };
+        },
         activeTab: workerTargetFront,
         chrome: false,
       });
@@ -200,7 +212,6 @@ const TargetFactory = exports.TargetFactory = {
 
 
 
-
 function Target({ form, client, chrome, activeTab = null, tab = null }) {
   EventEmitter.decorate(this);
   this.destroy = this.destroy.bind(this);
@@ -209,8 +220,8 @@ function Target({ form, client, chrome, activeTab = null, tab = null }) {
   this.activeTab = activeTab;
 
   this._form = form;
-  this._url = this.form.url;
-  this._title = this.form.title;
+  this._url = form.url;
+  this._title = form.title;
 
   this._client = client;
   this._chrome = chrome;
@@ -236,8 +247,8 @@ function Target({ form, client, chrome, activeTab = null, tab = null }) {
   
   
   
-  if (this.form.traits && ("isBrowsingContext" in this.form.traits)) {
-    this._isBrowsingContext = this.form.traits.isBrowsingContext;
+  if (this._form.traits && ("isBrowsingContext" in this._form.traits)) {
+    this._isBrowsingContext = this._form.traits.isBrowsingContext;
   } else {
     this._isBrowsingContext = !this.isLegacyAddon && !this.isContentProcess && !this.isWorkerTarget;
   }
@@ -357,9 +368,7 @@ Target.prototype = {
   },
 
   get form() {
-    
-    
-    return this._form || this.activeTab.targetForm;
+    return this._form;
   },
 
   
@@ -424,7 +433,7 @@ Target.prototype = {
 
   get name() {
     if (this.isAddon) {
-      return this.form.name;
+      return this._form.name;
     }
     return this._title;
   },
@@ -442,14 +451,14 @@ Target.prototype = {
   },
 
   get isLegacyAddon() {
-    return !!(this.form && this.form.actor &&
-      this.form.actor.match(/conn\d+\.addon(Target)?\d+/));
+    return !!(this._form && this._form.actor &&
+      this._form.actor.match(/conn\d+\.addon(Target)?\d+/));
   },
 
   get isWebExtension() {
-    return !!(this.form && this.form.actor && (
-      this.form.actor.match(/conn\d+\.webExtension(Target)?\d+/) ||
-      this.form.actor.match(/child\d+\/webExtension(Target)?\d+/)
+    return !!(this._form && this._form.actor && (
+      this._form.actor.match(/conn\d+\.webExtension(Target)?\d+/) ||
+      this._form.actor.match(/child\d+\/webExtension(Target)?\d+/)
     ));
   },
 
@@ -458,8 +467,8 @@ Target.prototype = {
     
     
     
-    return !!(this.form && this.form.actor &&
-      this.form.actor.match(/conn\d+\.(content-process\d+\/)?contentProcessTarget\d+/));
+    return !!(this._form && this._form.actor &&
+      this._form.actor.match(/conn\d+\.(content-process\d+\/)?contentProcessTarget\d+/));
   },
 
   get isLocalTab() {
@@ -525,17 +534,8 @@ Target.prototype = {
 
     
     const attachBrowsingContextTarget = async () => {
-      
-      
-      
-      
-      
-      if (!this.activeTab) {
-        const [, targetFront] = await this._client.attachTarget(this.form.actor);
-        this.activeTab = targetFront;
-      } else {
-        await this.activeTab.attach();
-      }
+      const [, targetFront] = await this._client.attachTarget(this._form.actor);
+      this.activeTab = targetFront;
 
       this.activeTab.on("tabNavigated", this._onTabNavigated);
       this._onFrameUpdate = packet => {
@@ -547,7 +547,7 @@ Target.prototype = {
     
     const attachConsole = async () => {
       const [, consoleClient] = await this._client.attachConsole(
-        this.form.consoleActor, []);
+        this._form.consoleActor, []);
       this.activeConsole = consoleClient;
 
       this._onInspectObject = packet => this.emit("inspect-object", packet);
@@ -555,7 +555,7 @@ Target.prototype = {
     };
 
     this._attach = (async () => {
-      if (this.form.isWebExtension &&
+      if (this._form.isWebExtension &&
           this.client.mainRoot.traits.webExtensionAddonConnect) {
         
         
@@ -565,12 +565,12 @@ Target.prototype = {
         
         
         const {form} = await this._client.request({
-          to: this.form.actor, type: "connect",
+          to: this._form.actor, type: "connect",
         });
 
         this._form = form;
-        this._url = this.form.url;
-        this._title = this.form.title;
+        this._url = form.url;
+        this._title = form.title;
       }
 
       
@@ -579,7 +579,7 @@ Target.prototype = {
       if (this.isBrowsingContext) {
         await attachBrowsingContextTarget();
       } else if (this.isLegacyAddon) {
-        const [, addonTargetFront] = await this._client.attachAddon(this.form);
+        const [, addonTargetFront] = await this._client.attachAddon(this._form);
         this.activeTab = addonTargetFront;
       } else if (this.isWorkerTarget || this.isContentProcess) {
         
@@ -676,7 +676,7 @@ Target.prototype = {
     } else {
       this._onTabDetached = (type, packet) => {
         
-        if (packet.from == this.form.actor) {
+        if (packet.from == this._form.actor) {
           this.destroy();
         }
       };
@@ -812,7 +812,7 @@ Target.prototype = {
     if (this._tab) {
       targets.delete(this._tab);
     } else {
-      promiseTargets.delete(this.form);
+      promiseTargets.delete(this._form);
     }
 
     this.activeTab = null;
@@ -826,7 +826,7 @@ Target.prototype = {
   },
 
   toString: function() {
-    const id = this._tab ? this._tab : (this.form && this.form.actor);
+    const id = this._tab ? this._tab : (this._form && this._form.actor);
     return `Target:${id}`;
   },
 

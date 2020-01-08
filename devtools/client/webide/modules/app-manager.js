@@ -255,9 +255,9 @@ var AppManager = exports.AppManager = {
       
       if (this.connection.client.mainRoot.traits.allowChromeProcess) {
         return this.connection.client.mainRoot.getMainProcess()
-                   .then(front => {
+                   .then(aResponse => {
                      return TargetFactory.forRemoteTab({
-                       activeTab: front,
+                       form: aResponse.form,
                        client: this.connection.client,
                        chrome: true,
                      });

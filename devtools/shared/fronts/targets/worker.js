@@ -17,10 +17,6 @@ const WorkerTargetFront = protocol.FrontClassWithSpec(workerTargetSpec, {
     this.traits = {};
 
     
-    
-    this.targetForm = form;
-
-    
     this.client = client;
 
     this._isClosed = false;
@@ -54,8 +50,7 @@ const WorkerTargetFront = protocol.FrontClassWithSpec(workerTargetSpec, {
     
     
     const connectResponse = await this.connect({});
-    
-    this.targetForm.consoleActor = connectResponse.consoleActor;
+    this.consoleActor = connectResponse.consoleActor;
     this.threadActor = connectResponse.threadActor;
 
     return response;
@@ -90,7 +85,7 @@ const WorkerTargetFront = protocol.FrontClassWithSpec(workerTargetSpec, {
       const response = [{
         type: "connected",
         threadActor: this.thread._actor,
-        consoleActor: this.targetForm.consoleActor,
+        consoleActor: this.consoleActor,
       }, this.thread];
       return response;
     }

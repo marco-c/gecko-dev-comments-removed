@@ -9,7 +9,6 @@ const protocol = require("devtools/shared/protocol");
 const {custom} = protocol;
 
 loader.lazyRequireGetter(this, "getFront", "devtools/shared/protocol", true);
-loader.lazyRequireGetter(this, "BrowsingContextTargetFront", "devtools/shared/fronts/targets/browsing-context", true);
 loader.lazyRequireGetter(this, "ContentProcessTargetFront", "devtools/shared/fronts/targets/content-process", true);
 
 const RootFront = protocol.FrontClassWithSpec(rootSpec, {
@@ -69,8 +68,12 @@ const RootFront = protocol.FrontClassWithSpec(rootSpec, {
         if (process.parent) {
           continue;
         }
-        const front = await this.getProcess(process.id);
-        const response = await front.listWorkers();
+        const { form } = await this.getProcess(process.id);
+        const processActor = form.actor;
+        const response = await this._client.request({
+          to: processActor,
+          type: "listWorkers",
+        });
         workers = workers.concat(response.workers);
       }
     } catch (e) {
@@ -144,33 +147,6 @@ const RootFront = protocol.FrontClassWithSpec(rootSpec, {
     return this.getProcess(0);
   },
 
-  getProcess: custom(async function(id) {
-    
-    
-    
-    const { form } = await this._getProcess(id);
-    let front = this.actor(form.actor);
-    if (front) {
-      return front;
-    }
-    
-    
-    
-    
-    if (form.actor.includes("contentProcessTarget")) {
-      front = new ContentProcessTargetFront(this._client, form);
-    } else {
-      
-      
-      front = new BrowsingContextTargetFront(this._client, form);
-    }
-    this.manage(front);
-
-    return front;
-  }, {
-    impl: "_getProcess",
-  }),
-
   
 
 
@@ -214,6 +190,15 @@ const RootFront = protocol.FrontClassWithSpec(rootSpec, {
   }, {
     impl: "_getTab",
   }),
+
+  attachContentProcessTarget: async function(form) {
+    let front = this.actor(form.actor);
+    if (!front) {
+      front = new ContentProcessTargetFront(this._client, form);
+      this.manage(front);
+    }
+    return front;
+  },
 
   
 

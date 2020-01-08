@@ -24,10 +24,6 @@ protocol.FrontClassWithSpec(browsingContextTargetSpec, {
 
     
     this.client = client;
-
-    
-    
-    this.targetForm = form;
   },
 
   
