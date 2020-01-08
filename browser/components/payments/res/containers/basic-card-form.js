@@ -188,6 +188,9 @@ export default class BasicCardForm extends PaymentStateSubscriberMixin(PaymentRe
         billingAddressSelect.value = Object.keys(addresses)[0];
       }
     }
+    
+    
+    this.formHandler.updatePopulatedState(billingAddressSelect);
 
     this.updateRequiredState();
     this.updateSaveButtonState();

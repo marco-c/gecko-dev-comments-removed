@@ -3,6 +3,6 @@
 
 
 
-body {
+:root[subdialog] body {
   font-size: 0.85rem;
 }
