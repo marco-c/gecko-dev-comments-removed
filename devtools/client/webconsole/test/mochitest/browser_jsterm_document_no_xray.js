@@ -7,6 +7,7 @@ const TEST_URI = "data:text/html,Test evaluating document";
 
 add_task(async function() {
   
+  await pushPref("devtools.webconsole.jsterm.codeMirror", false);
   await performTests();
   
   await pushPref("devtools.webconsole.jsterm.codeMirror", true);
