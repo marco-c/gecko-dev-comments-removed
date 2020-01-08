@@ -919,6 +919,7 @@ void gfxPlatform::Init() {
   }
 
   if (XRE_IsParentProcess() &&
+      BrowserTabsRemoteAutostart() &&  
       Preferences::GetBool("media.rdd-process.enabled", false)) {
     RDDProcessManager* rdd = RDDProcessManager::Get();
     if (rdd) {
