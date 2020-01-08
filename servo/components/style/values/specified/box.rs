@@ -885,6 +885,21 @@ pub enum Clear {
 }
 
 
+#[allow(missing_docs)]
+#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
+#[derive(Clone, Copy, Debug, Eq, Hash, MallocSizeOf, Parse, PartialEq,
+         SpecifiedValueInfo, ToCss)]
+pub enum Resize {
+    None,
+    Both,
+    Horizontal,
+    Vertical,
+    
+    Inline,
+    Block,
+}
+
+
 
 
 

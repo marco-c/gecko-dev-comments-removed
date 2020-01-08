@@ -2401,7 +2401,7 @@ var gCSSProperties = {
     
     prerequisites: { "display": "block", "overflow": "auto" },
     initial_values: [ "none" ],
-    other_values: [ "both", "horizontal", "vertical" ],
+    other_values: [ "both", "horizontal", "vertical", "inline", "block" ],
     invalid_values: []
   },
   "-moz-stack-sizing": {
