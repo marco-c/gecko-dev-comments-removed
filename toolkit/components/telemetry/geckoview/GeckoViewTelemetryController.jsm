@@ -88,19 +88,10 @@ const GeckoViewTelemetryController = {
   retrieveSnapshots(aClear, aCallback) {
     debug `retrieveSnapshots`;
 
-    
-    
-    
-    const dataset = Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN;
-
-    const rawHistograms = Services.telemetry.snapshotHistograms(dataset,
-                                                                 false,
-                                                                 false);
-    const rawKeyedHistograms =
-      Services.telemetry.snapshotKeyedHistograms(dataset,  false,
-                                                  false);
-    const scalars = Services.telemetry.snapshotScalars(dataset,  false);
-    const keyedScalars = Services.telemetry.snapshotKeyedScalars(dataset,  false);
+    const rawHistograms = Services.telemetry.getSnapshotForHistograms("main",  false);
+    const rawKeyedHistograms = Services.telemetry.getSnapshotForKeyedHistograms("main",  false);
+    const scalars = Services.telemetry.getSnapshotForScalars("main",  false);
+    const keyedScalars = Services.telemetry.getSnapshotForKeyedScalars("main",  false);
 
     const snapshots = {
       histograms: TelemetryUtils.packHistograms(rawHistograms),
