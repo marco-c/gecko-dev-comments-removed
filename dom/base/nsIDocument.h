@@ -180,6 +180,7 @@ class ServiceWorkerDescriptor;
 class StyleSheetList;
 class SVGDocument;
 class SVGSVGElement;
+class SVGUseElement;
 class Touch;
 class TouchList;
 class TreeWalker;
@@ -1908,6 +1909,15 @@ public:
 
   void FlushExternalResources(mozilla::FlushType aType);
 
+  
+  void UpdateSVGUseElementShadowTrees()
+  {
+    if (mSVGUseElementsNeedingShadowTreeUpdate.IsEmpty()) {
+      return;
+    }
+    DoUpdateSVGUseElementShadowTrees();
+  }
+
   nsBindingManager* BindingManager() const
   {
     return mNodeInfoManager->GetBindingManager();
@@ -2909,12 +2919,23 @@ public:
     mResponsiveContent.RemoveEntry(aContent);
   }
 
+  void ScheduleSVGUseElementShadowTreeUpdate(mozilla::dom::SVGUseElement&);
+  void UnscheduleSVGUseElementShadowTreeUpdate(mozilla::dom::SVGUseElement& aElement)
+  {
+    mSVGUseElementsNeedingShadowTreeUpdate.RemoveEntry(&aElement);
+  }
+
+  bool SVGUseElementNeedsShadowTreeUpdate(mozilla::dom::SVGUseElement& aElement) const
+  {
+    return mSVGUseElementsNeedingShadowTreeUpdate.GetEntry(&aElement);
+  }
+
+  using ShadowRootSet = nsTHashtable<nsPtrHashKey<mozilla::dom::ShadowRoot>>;
+
   void AddComposedDocShadowRoot(mozilla::dom::ShadowRoot& aShadowRoot)
   {
     mComposedShadowRoots.PutEntry(&aShadowRoot);
   }
-
-  using ShadowRootSet = nsTHashtable<nsPtrHashKey<mozilla::dom::ShadowRoot>>;
 
   void RemoveComposedDocShadowRoot(mozilla::dom::ShadowRoot& aShadowRoot)
   {
@@ -3541,6 +3562,8 @@ public:
   void ReportShadowDOMUsage();
 
 protected:
+  void DoUpdateSVGUseElementShadowTrees();
+
   already_AddRefed<nsIPrincipal> MaybeDowngradePrincipal(nsIPrincipal* aPrincipal);
 
   void EnsureOnloadBlocker();
@@ -3755,6 +3778,13 @@ protected:
   
   
   ShadowRootSet mComposedShadowRoots;
+
+  using SVGUseElementSet =
+    nsTHashtable<nsPtrHashKey<mozilla::dom::SVGUseElement>>;
+
+  
+  
+  SVGUseElementSet mSVGUseElementsNeedingShadowTreeUpdate;
 
   
   
@@ -4600,8 +4630,8 @@ nsINode::OwnerDocAsNode() const
 template<typename T>
 inline bool ShouldUseXBLScope(const T* aNode)
 {
-  return aNode->IsInAnonymousSubtree() &&
-         !aNode->IsAnonymousContentInSVGUseSubtree();
+  
+  return aNode->IsInAnonymousSubtree() && !aNode->IsInSVGUseShadowTree();
 }
 
 inline mozilla::dom::ParentObject

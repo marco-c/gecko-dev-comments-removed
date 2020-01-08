@@ -86,6 +86,7 @@ template<typename T> class Optional;
 class OwningNodeOrString;
 class Promise;
 template<typename> class Sequence;
+class SVGUseElement;
 class Text;
 class TextOrElementOrDocument;
 struct DOMPointInit;
@@ -1230,8 +1231,18 @@ public:
 
   bool IsInAnonymousSubtree() const;
 
-  
-  bool IsAnonymousContentInSVGUseSubtree() const;
+  bool IsInSVGUseShadowTree() const
+  {
+    return !!GetContainingSVGUseShadowHost();
+  }
+
+  mozilla::dom::SVGUseElement* GetContainingSVGUseShadowHost() const
+  {
+    if (!IsInShadowTree()) {
+      return nullptr;
+    }
+    return DoGetContainingSVGUseShadowHost();
+  }
 
   
   
@@ -1401,6 +1412,8 @@ public:
   bool UnoptimizableCCNode() const;
 
 private:
+
+  mozilla::dom::SVGUseElement* DoGetContainingSVGUseShadowHost() const;
 
   nsIDocument* GetComposedDocInternal() const;
 

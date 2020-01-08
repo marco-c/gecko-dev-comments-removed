@@ -129,11 +129,4 @@ pub trait Element: Sized + Clone + Debug {
     fn ignores_nth_child_selectors(&self) -> bool {
         false
     }
-
-    
-    
-    
-    fn blocks_ancestor_combinators(&self) -> bool {
-        false
-    }
 }

@@ -951,38 +951,35 @@ SVGObserverUtils::GetBaseURLForLocalRef(nsIContent* content, nsIURI* aDocURI)
   
   nsCOMPtr<nsIURI> baseURI = content->OwnerDoc()->GetDocumentURI();
 
-  if (content->IsInAnonymousSubtree()) {
+  nsCOMPtr<nsIURI> originalURI;
+  
+  
+  
+  
+  
+  
+  if (SVGUseElement* use = content->GetContainingSVGUseShadowHost()) {
+    originalURI = use->GetSourceDocURI();
+  } else if (content->IsInAnonymousSubtree()) {
     nsIContent* bindingParent = content->GetBindingParent();
-    nsCOMPtr<nsIURI> originalURI;
 
-    
-    
-    
-    
-    
-    
     if (bindingParent) {
-      if (content->IsAnonymousContentInSVGUseSubtree()) {
-        SVGUseElement* useElement = static_cast<SVGUseElement*>(bindingParent);
-        originalURI = useElement->GetSourceDocURI();
+      nsXBLBinding* binding = bindingParent->GetXBLBinding();
+      if (binding) {
+        originalURI = binding->GetSourceDocURI();
       } else {
-        nsXBLBinding* binding = bindingParent->GetXBLBinding();
-        if (binding) {
-          originalURI = binding->GetSourceDocURI();
-        } else {
-          MOZ_ASSERT(content->IsInNativeAnonymousSubtree(),
-                     "an non-native anonymous tree which is not from "
-                     "an XBL binding?");
-        }
+        MOZ_ASSERT(content->IsInNativeAnonymousSubtree(),
+                   "a non-native anonymous tree which is not from "
+                   "an XBL binding?");
       }
+    }
+  }
 
-      if (originalURI) {
-        bool isEqualsExceptRef = false;
-        aDocURI->EqualsExceptRef(originalURI, &isEqualsExceptRef);
-        if (isEqualsExceptRef) {
-          baseURI = originalURI;
-        }
-      }
+  if (originalURI) {
+    bool isEqualsExceptRef = false;
+    aDocURI->EqualsExceptRef(originalURI, &isEqualsExceptRef);
+    if (isEqualsExceptRef) {
+      return originalURI.forget();
     }
   }
 

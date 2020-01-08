@@ -124,7 +124,11 @@ FRAME_ID(nsSVGStopFrame, SVGStop, Leaf)
 FRAME_ID(nsSVGSwitchFrame, SVGSwitch, NotLeaf)
 FRAME_ID(nsSVGSymbolFrame, SVGSymbol, NotLeaf)
 FRAME_ID(SVGTextFrame, SVGText, NotLeaf)
-FRAME_ID(nsSVGUseFrame, SVGUse, Leaf)
+
+
+
+FRAME_ID(nsSVGUseFrame, SVGUse, NotLeaf)
+
 FRAME_ID(SVGViewFrame, SVGView, Leaf)
 FRAME_ID(nsTableCellFrame, TableCell, NotLeaf)
 FRAME_ID(nsTableColFrame, TableCol, Leaf)

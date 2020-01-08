@@ -44,8 +44,16 @@ protected:
   virtual JSObject* WrapNode(JSContext *cx, JS::Handle<JSObject*> aGivenProto) override;
 
 public:
-  
+  NS_IMPL_FROMNODE_WITH_TAG(SVGUseElement, kNameSpaceID_SVG, use)
 
+  nsresult BindToTree(nsIDocument* aDocument,
+                      nsIContent* aParent,
+                      nsIContent* aBindingParent,
+                      bool aCompileEventHandlers) override;
+  void UnbindFromTree(bool aDeep = true,
+                      bool aNullParent = true) override;
+
+  
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(SVGUseElement, SVGUseElementBase)
 
@@ -55,9 +63,6 @@ public:
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTINSERTED
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTREMOVED
   NS_DECL_NSIMUTATIONOBSERVER_NODEWILLBEDESTROYED
-
-  
-  already_AddRefed<nsIContent> CreateAnonymousContent();
 
   
   virtual gfxMatrix PrependLocalTransformsTo(
@@ -80,6 +85,10 @@ public:
   nsIURI* GetSourceDocURI();
   URLExtraData* GetContentURLData() const { return mContentURLData; }
 
+  
+  
+  void UpdateShadowTree();
+
 protected:
   
 
@@ -92,15 +101,18 @@ protected:
     explicit ElementTracker(SVGUseElement* aOwningUseElement)
       : mOwningUseElement(aOwningUseElement)
     {}
-  protected:
-    virtual void ElementChanged(Element* aFrom, Element* aTo) override {
+
+  private:
+
+    void ElementChanged(Element* aFrom, Element* aTo) override
+    {
       IDTracker::ElementChanged(aFrom, aTo);
       if (aFrom) {
         aFrom->RemoveMutationObserver(mOwningUseElement);
       }
       mOwningUseElement->TriggerReclone();
     }
-  private:
+
     SVGUseElement* mOwningUseElement;
   };
 
@@ -129,7 +141,7 @@ protected:
   static StringInfo sStringInfo[2];
 
   nsCOMPtr<nsIContent> mOriginal; 
-  ElementTracker       mReferencedElementTracker;
+  ElementTracker mReferencedElementTracker;
   RefPtr<URLExtraData> mContentURLData; 
 };
 

@@ -298,8 +298,7 @@ nsStyleLinkElement::DoUpdateStyleSheet(nsIDocument* aOldDocument,
   
   MOZ_ASSERT(thisContent);
 
-  if (thisContent->IsInAnonymousSubtree() &&
-      thisContent->IsAnonymousContentInSVGUseSubtree()) {
+  if (thisContent->IsInSVGUseShadowTree()) {
     
     
     return Update { };

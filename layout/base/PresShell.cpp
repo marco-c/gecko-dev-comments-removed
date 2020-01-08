@@ -4256,6 +4256,8 @@ PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush)
     
     mDocument->FlushPendingNotifications(FlushType::ContentAndNotify);
 
+    mDocument->UpdateSVGUseElementShadowTrees();
+
     
     
     if (!mIsDestroying) {
