@@ -61,6 +61,42 @@ function executeStatementsInTransaction(conn, stmts) {
   });
 }
 
+function HostnameGrouper_group(aURI) {
+  var group;
+
+  try {
+    
+    
+    
+    
+
+    group = aURI.host;
+    if (!group)
+      throw new Error("can't derive group from host; no host in URI");
+  } catch (ex) {
+    
+    
+    
+    
+
+    
+    
+    
+    
+
+    
+
+    try {
+      var url = aURI.QueryInterface(Ci.nsIURL);
+      group = aURI.prePath + url.filePath;
+    } catch (ex) {
+      group = aURI.spec;
+    }
+  }
+
+  return group;
+}
+
 ContentPrefService2.prototype = {
   
 
@@ -78,7 +114,6 @@ ContentPrefService2.prototype = {
     
     delete this._observers;
     delete this._genericObservers;
-    delete this.__grouper;
   },
 
 
@@ -818,14 +853,6 @@ ContentPrefService2.prototype = {
     }
   },
 
-  __grouper: null,
-  get _grouper() {
-    if (!this.__grouper)
-      this.__grouper = Cc["@mozilla.org/content-pref/hostname-grouper;1"].
-                       getService(Ci.nsIContentURIGrouper);
-    return this.__grouper;
-  },
-
   
 
 
@@ -843,7 +870,7 @@ ContentPrefService2.prototype = {
     } catch (err) {
       return groupStr;
     }
-    return this._grouper.group(groupURI);
+    return HostnameGrouper_group(groupURI);
   },
 
   _schedule: function CPS2__schedule(fn) {
@@ -1215,54 +1242,6 @@ function invalidArg(msg) {
 }
 
 
-function HostnameGrouper() {}
 
-HostnameGrouper.prototype = {
-  
-
-  classID:          Components.ID("{8df290ae-dcaa-4c11-98a5-2429a4dc97bb}"),
-  QueryInterface:   ChromeUtils.generateQI([Ci.nsIContentURIGrouper]),
-
-  
-
-  group: function HostnameGrouper_group(aURI) {
-    var group;
-
-    try {
-      
-      
-      
-      
-
-      group = aURI.host;
-      if (!group)
-        throw new Error("can't derive group from host; no host in URI");
-    } catch (ex) {
-      
-      
-      
-      
-
-      
-      
-      
-      
-
-      
-
-      try {
-        var url = aURI.QueryInterface(Ci.nsIURL);
-        group = aURI.prePath + url.filePath;
-      } catch (ex) {
-        group = aURI.spec;
-      }
-    }
-
-    return group;
-  },
-};
-
-
-
-var components = [ContentPrefService2, HostnameGrouper];
+var components = [ContentPrefService2];
 this.NSGetFactory = XPCOMUtils.generateNSGetFactory(components);
