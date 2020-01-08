@@ -212,6 +212,8 @@ const PREFS_CONFIG = new Map([
       type: "local",
       localProvider: "OnboardingMessageProvider",
       enabled: true,
+      
+      exclude: ["RETURN_TO_AMO_1"],
     }),
   }],
   
@@ -220,7 +222,7 @@ const PREFS_CONFIG = new Map([
     value: JSON.stringify({
       enabled: false,
       
-      layout_endpoint: "",
+      layout_endpoint: "https://getpocket.com/v3/newtab/layout?version=1&consumer_key=40249-e88c401e1b1f2242d9e441c4&layout_variant=dev-test-1",
     }),
   }],
 ]);

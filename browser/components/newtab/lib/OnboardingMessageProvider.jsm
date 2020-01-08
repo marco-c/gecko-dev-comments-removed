@@ -7,7 +7,7 @@ ChromeUtils.import("resource://gre/modules/FxAccountsConfig.jsm");
 ChromeUtils.import("resource:///modules/AttributionCode.jsm");
 ChromeUtils.import("resource://gre/modules/addons/AddonRepository.jsm");
 
-async function getAddonName() {
+async function getAddonInfo() {
   try {
     let {content, source} = await AttributionCode.getAttrDataAsync();
     if (!content || source !== "addons.mozilla.org") {
@@ -25,9 +25,17 @@ async function getAddonName() {
         break;
       }
     }
-    const addons = await AddonRepository.getAddonsByIDs([content]);
-    return addons[0].name;
+    const [addon] = await AddonRepository.getAddonsByIDs([content]);
+    if (addon.sourceURI.scheme !== "https") {
+      return null;
+    }
+    return {
+      name: addon.name,
+      url: addon.sourceURI.spec,
+      iconURL: addon.icons["64"] || addon.icons["32"],
+    };
   } catch (e) {
+    Cu.reportError("Failed to get the latest add-on version for Return to AMO");
     return null;
   }
 }
@@ -137,7 +145,6 @@ const ONBOARDING_MESSAGES = async () => ([
   {
     id: "FXA_1",
     template: "fxa_overlay",
-    targeting: "attributionData.campaign != 'non-fx-button' && attributionData.source != 'addons.mozilla.org'",
     trigger: {id: "firstRun"},
   },
   {
@@ -146,14 +153,14 @@ const ONBOARDING_MESSAGES = async () => ([
     content: {
       header: {string_id: "onboarding-welcome-header"},
       title: {string_id: "return-to-amo-sub-header"},
-      addon_icon: null, 
+      addon_icon: null,
       icon: "gift-extension",
-      text: {string_id: "return-to-amo-addon-header", args: {"addon-name": await getAddonName()}},
+      text: {string_id: "return-to-amo-addon-header", args: {"addon-name": null}},
       primary_button: {
         label: {string_id: "return-to-amo-extension-button"},
         action: {
           type: "INSTALL_ADDON_FROM_URL",
-          data: {url: null}, 
+          data: {url: null},
         },
       },
       secondary_button: {
@@ -191,6 +198,25 @@ const OnboardingMessageProvider = {
       if (!translatedMessage.content) {
         translatedMessages.push(translatedMessage);
         continue;
+      }
+
+      
+      
+      if (msg.template === "return_to_amo_overlay") {
+        try {
+          const {name, iconURL, url} = await getAddonInfo();
+          
+          
+          if (!name || !iconURL || !url) {
+            continue;
+          }
+
+          msg.content.text.args["addon-name"] = name;
+          msg.content.addon_icon = iconURL;
+          msg.content.primary_button.action.data.url = url;
+        } catch (e) {
+          continue;
+        }
       }
 
       const [primary_button_string, title_string, text_string] = await L10N.formatMessages([
