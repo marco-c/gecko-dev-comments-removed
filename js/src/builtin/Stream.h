@@ -13,13 +13,8 @@
 
 namespace js {
 
+class ReadableStreamReader;
 class ReadableStreamController;
-
-class ReadableStreamReader : public NativeObject
-{
-  public:
-    static const Class class_;
-};
 
 class ReadableStream : public NativeObject
 {
@@ -130,6 +125,55 @@ class ReadableStream : public NativeObject
     static const Class class_;
     static const ClassSpec protoClassSpec_;
     static const Class protoClass_;
+};
+
+class ReadableStreamReader : public NativeObject
+{
+  public:
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    enum Slots {
+        Slot_Stream,
+        Slot_Requests,
+        Slot_ClosedPromise,
+        SlotCount,
+    };
+
+    bool hasStream() const { return !getFixedSlot(Slot_Stream).isUndefined(); }
+    void setStream(JSObject* stream) { setFixedSlot(Slot_Stream, ObjectValue(*stream)); }
+    void clearStream() { setFixedSlot(Slot_Stream, UndefinedValue()); }
+    bool isClosed() { return !hasStream(); }
+
+    NativeObject* requests() const {
+        return &getFixedSlot(Slot_Requests).toObject().as<NativeObject>();
+    }
+    void clearRequests() { setFixedSlot(Slot_Requests, UndefinedValue()); }
+
+    JSObject* closedPromise() const { return &getFixedSlot(Slot_ClosedPromise).toObject(); }
+    void setClosedPromise(JSObject* wrappedPromise) {
+        setFixedSlot(Slot_ClosedPromise, ObjectValue(*wrappedPromise));
+    }
+
+    static const Class class_;
 };
 
 class ReadableStreamDefaultReader : public ReadableStreamReader
