@@ -337,9 +337,10 @@ public:
                                  const wr::LayoutRect& aContentRect, 
                                  const wr::LayoutRect& aClipRect);
 
-  void PushClipAndScrollInfo(const wr::WrClipId& aScrollId,
-                             const wr::WrClipChainId* aClipChainId);
-  void PopClipAndScrollInfo();
+  void PushClipAndScrollInfo(const wr::WrClipId* aScrollId,
+                             const wr::WrClipChainId* aClipChainId,
+                             const Maybe<wr::LayoutRect>& aClipChainLeaf);
+  void PopClipAndScrollInfo(const wr::WrClipId* aScrollId);
 
   void PushRect(const wr::LayoutRect& aBounds,
                 const wr::LayoutRect& aClip,
@@ -525,12 +526,25 @@ public:
   };
 
 protected:
+  wr::LayoutRect MergeClipLeaf(const wr::LayoutRect& aClip)
+  {
+    if (mClipChainLeaf) {
+      return wr::IntersectLayoutRect(*mClipChainLeaf, aClip);
+    }
+    return aClip;
+  }
+
   wr::WrState* mWrState;
 
   
   
   
   std::unordered_map<layers::FrameMetrics::ViewID, wr::WrClipId> mScrollIds;
+
+  
+  
+  
+  Maybe<wr::LayoutRect> mClipChainLeaf;
 
   FixedPosScrollTargetTracker* mActiveFixedPosTracker;
 
