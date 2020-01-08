@@ -55,6 +55,15 @@ SCOPE_WHITELIST = [
 ]
 
 
+def context(params):
+    
+    
+    if int(params['level']) < 3:
+        return [{'worker-implementation': 'docker-worker'}]
+    else:
+        return [{'worker-implementation': 'docker-worker', 'kind': 'test'}],
+
+
 @register_callback_action(
     title='Create Interactive Task',
     name='create-interactive',
@@ -65,10 +74,7 @@ SCOPE_WHITELIST = [
         'Create a a copy of the task that you can interact with'
     ),
     order=50,
-    context=[{'worker-implementation': 'docker-worker'}],
-    
-    
-    available=lambda params: int(params['level']) < 3,
+    context=context,
     schema={
         'type': 'object',
         'properties': {
