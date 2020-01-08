@@ -25,11 +25,13 @@ this.AntiTracking = {
       this._createCleanupTask(cleanupFunction);
 
       
+      
       if (windowOpenTest) {
         this._createWindowOpenTask(name, callbackTracking, callbackNonTracking, extraPrefs);
         this._createCleanupTask(cleanupFunction);
       }
 
+      
       
       if (userInteractionTest) {
         this._createUserInteractionTask(name, callbackTracking, callbackNonTracking, extraPrefs);
