@@ -57,7 +57,7 @@ public:
   void Update();
 
   
-  bool UpdateAndRender(const Maybe<gfx::IntSize>& aReadbackSize, const Maybe<Range<uint8_t>>& aReadbackBuffer);
+  bool UpdateAndRender(const Maybe<gfx::IntSize>& aReadbackSize, const Maybe<Range<uint8_t>>& aReadbackBuffer, bool aHadSlowFrame);
 
   
   bool RenderToTarget(gfx::DrawTarget& aTarget);

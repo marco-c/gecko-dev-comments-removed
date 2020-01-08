@@ -152,7 +152,12 @@ public:
   void RunEvent(wr::WindowId aWindowId, UniquePtr<RendererEvent> aCallBack);
 
   
-  void UpdateAndRender(wr::WindowId aWindowId, const TimeStamp& aStartTime, bool aRender, const Maybe<gfx::IntSize>& aReadbackSize, const Maybe<Range<uint8_t>>& aReadbackBuffer);
+  void UpdateAndRender(wr::WindowId aWindowId,
+                       const TimeStamp& aStartTime,
+                       bool aRender,
+                       const Maybe<gfx::IntSize>& aReadbackSize,
+                       const Maybe<Range<uint8_t>>& aReadbackBuffer,
+                       bool aHadSlowFrame);
 
   void Pause(wr::WindowId aWindowId);
   bool Resume(wr::WindowId aWindowId);
@@ -186,6 +191,8 @@ public:
   void IncRenderingFrameCount(wr::WindowId aWindowId);
   
   void FrameRenderingComplete(wr::WindowId aWindowId);
+
+  void NotifySlowFrame(wr::WindowId aWindowId);
 
   
   WebRenderThreadPool& ThreadPool() { return mThreadPool; }
@@ -241,6 +248,7 @@ private:
     
     
     std::queue<TimeStamp> mStartTimes;
+    bool mHadSlowFrame = false;
   };
 
   Mutex mFrameCountMapLock;
