@@ -59,7 +59,7 @@ add_task(async function() {
     
     ["privacy.trackingprotection.annotate_channels", false],
     
-    ["privacy.trackingprotection.introCount", ContentBlocking.MAX_INTROS],
+    [ContentBlocking.prefIntroCount, ContentBlocking.MAX_INTROS],
   ]});
 
   await UrlClassifierTestUtils.addTestTrackers();
