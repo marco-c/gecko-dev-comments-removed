@@ -39,7 +39,7 @@
   function runTests() {
     waitForFrame().then(function() {
       svg.setCurrentTime(1);
-      ok(getComputedStyle(rect).fill, 'rgb(0, 255, 0)',
+      is(getComputedStyle(rect).fill, 'rgb(0, 255, 0)',
          'The end color should be lime.');
 
       return waitForAnimationFrames(2);
