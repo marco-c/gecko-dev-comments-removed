@@ -309,7 +309,6 @@ public:
   
   
   
-  static const KTableEntry kBorderStyleKTable[];
   static const KTableEntry kShapeRadiusKTable[];
   static const KTableEntry kFilterFunctionKTable[];
   static const KTableEntry kBoxShadowTypeKTable[];
@@ -338,8 +337,6 @@ public:
   static const KTableEntry kGridTrackBreadthKTable[];
   static const KTableEntry kLineHeightKTable[];
   static const KTableEntry kContainKTable[];
-  static const KTableEntry kOutlineStyleKTable[];
-  static const KTableEntry kOverflowKTable[];
   static const KTableEntry kOverflowSubKTable[];
   static const KTableEntry kOverflowClipBoxKTable[];
   static const KTableEntry kOverscrollBehaviorKTable[];

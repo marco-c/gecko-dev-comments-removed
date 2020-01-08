@@ -39,17 +39,18 @@ use style_traits::{CssWriter, ParseError, ToCss};
     ToComputedValue,
     ToCss,
 )]
+#[repr(u8)]
 pub enum BorderStyle {
-    Hidden = -2,
-    None = -1,
-    Inset = 0,
-    Groove = 1,
-    Outset = 2,
-    Ridge = 3,
-    Dotted = 4,
-    Dashed = 5,
-    Solid = 6,
-    Double = 7,
+    Hidden,
+    None,
+    Inset,
+    Groove,
+    Outset,
+    Ridge,
+    Dotted,
+    Dashed,
+    Solid,
+    Double,
 }
 
 impl BorderStyle {
