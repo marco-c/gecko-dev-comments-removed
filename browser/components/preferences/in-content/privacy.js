@@ -23,9 +23,6 @@ ChromeUtils.import("resource://gre/modules/PrivateBrowsingUtils.jsm");
 XPCOMUtils.defineLazyPreferenceGetter(this, "contentBlockingUiEnabled",
                                       "browser.contentblocking.ui.enabled");
 
-XPCOMUtils.defineLazyPreferenceGetter(this, "contentBlockingCookiesAndSiteDataUiEnabled",
-                                      "browser.contentblocking.cookies-site-data.ui.enabled");
-
 XPCOMUtils.defineLazyPreferenceGetter(this, "contentBlockingCookiesAndSiteDataRejectTrackersRecommended",
                                       "browser.contentblocking.cookies-site-data.ui.reject-trackers.recommended");
 
@@ -511,32 +508,14 @@ var gPrivacyPane = {
     }
 
     
-    visibleState = {
-      "acceptCookies": false,
-      "blockCookies": true,
-    };
-    for (let id in visibleState) {
-      document.getElementById(id).hidden = contentBlockingCookiesAndSiteDataUiEnabled != visibleState[id];
+    let blockCookiesFromTrackers = document.getElementById("blockCookiesFromTrackers");
+    if (contentBlockingCookiesAndSiteDataRejectTrackersRecommended) {
+      document.l10n.setAttributes(blockCookiesFromTrackers, "sitedata-block-trackers-option-recommended");
     }
-    if (contentBlockingCookiesAndSiteDataUiEnabled) {
-      
-      
-      let keepUntil = document.getElementById("keepRow");
-      document.getElementById("acceptCookies").removeChild(keepUntil);
-      let blockThirdPartyRow = document.getElementById("blockThirdPartyRow");
-      document.getElementById("blockCookies").appendChild(keepUntil);
-      keepUntil.classList.remove("indent"); 
-      keepUntil.setAttribute("style", "margin-top: 1em"); 
 
-      
-      let blockCookiesFromTrackers = document.getElementById("blockCookiesFromTrackers");
-      if (contentBlockingCookiesAndSiteDataRejectTrackersRecommended) {
-        document.l10n.setAttributes(blockCookiesFromTrackers, "sitedata-block-trackers-option-recommended");
-      }
-      
-      if (!contentBlockingCookiesAndSiteDataRejectTrackersEnabled) {
-        blockCookiesFromTrackers.remove();
-      }
+    
+    if (!contentBlockingCookiesAndSiteDataRejectTrackersEnabled) {
+      blockCookiesFromTrackers.remove();
     }
   },
 
@@ -811,7 +790,6 @@ var gPrivacyPane = {
     
     
     document.getElementById("keepCookiesUntil").value = this.readKeepCookiesUntil();
-    this.readAcceptCookies();
 
     let clearDataSettings = document.getElementById("clearDataSettings");
 
@@ -1013,84 +991,6 @@ var gPrivacyPane = {
     
     
     return Ci.nsICookieService.ACCEPT_NORMALLY;
-  },
-
-  
-
-
-
-
-
-  readAcceptCookies() {
-    let pref = Preferences.get("network.cookie.cookieBehavior");
-    let acceptThirdPartyLabel = document.getElementById("acceptThirdPartyLabel");
-    let acceptThirdPartyMenu = document.getElementById("acceptThirdPartyMenu");
-    let keepUntilLabel = document.getElementById("keepUntil");
-    let keepUntilMenu = document.getElementById("keepCookiesUntil");
-
-    
-    let acceptCookies = (pref.value != 2);
-    let cookieBehaviorLocked = Services.prefs.prefIsLocked("network.cookie.cookieBehavior");
-    const acceptThirdPartyControlsDisabled = !acceptCookies || cookieBehaviorLocked;
-
-    acceptThirdPartyLabel.disabled = acceptThirdPartyMenu.disabled = acceptThirdPartyControlsDisabled;
-
-    let privateBrowsing = Preferences.get("browser.privatebrowsing.autostart").value;
-    let cookieExpirationLocked = Services.prefs.prefIsLocked("network.cookie.lifetimePolicy");
-    const keepUntilControlsDisabled = privateBrowsing || !acceptCookies || cookieExpirationLocked;
-    keepUntilLabel.disabled = keepUntilMenu.disabled = keepUntilControlsDisabled;
-
-    
-    
-    return acceptCookies ? "0" : "2";
-  },
-
-  
-
-
-
-  writeAcceptCookies() {
-    var accept = document.getElementById("acceptCookies");
-    var acceptThirdPartyMenu = document.getElementById("acceptThirdPartyMenu");
-
-    
-    if (accept.value == "0")
-      acceptThirdPartyMenu.selectedIndex = 0;
-
-    return parseInt(accept.value, 10);
-  },
-
-  
-
-
-  readAcceptThirdPartyCookies() {
-    var pref = Preferences.get("network.cookie.cookieBehavior");
-    switch (pref.value) {
-      case Ci.nsICookieService.BEHAVIOR_ACCEPT:
-        return "always";
-      case Ci.nsICookieService.BEHAVIOR_REJECT_FOREIGN:
-        return "never";
-      case Ci.nsICookieService.BEHAVIOR_REJECT:
-        return "never";
-      case Ci.nsICookieService.BEHAVIOR_LIMIT_FOREIGN:
-        return "visited";
-      default:
-        return undefined;
-    }
-  },
-
-  writeAcceptThirdPartyCookies() {
-    var accept = document.getElementById("acceptThirdPartyMenu").selectedItem;
-    switch (accept.value) {
-      case "always":
-        return Ci.nsICookieService.BEHAVIOR_ACCEPT;
-      case "visited":
-        return Ci.nsICookieService.BEHAVIOR_LIMIT_FOREIGN;
-      case "never":
-        return Ci.nsICookieService.BEHAVIOR_REJECT_FOREIGN;
-      default:
-        return undefined;
-    }
   },
 
   
