@@ -9,8 +9,13 @@
 #include "GLContext.h"                  
 #include "GLScreenBuffer.h"             
 #include "SharedSurfaceGL.h"            
+#include "gfxUtils.h"
+#include "mozilla/gfx/2D.h"
 #include "mozilla/layers/AsyncCanvasRenderer.h"
 #include "mozilla/layers/TextureClientSharedSurface.h"
+#include "mozilla/layers/CompositableForwarder.h"
+
+using namespace mozilla::gfx;
 
 namespace mozilla {
 namespace layers {
