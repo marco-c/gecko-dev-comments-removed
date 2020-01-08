@@ -4,8 +4,6 @@
 
 "use strict";
 
-const promise = require("promise");
-
 
 
 
@@ -172,22 +170,6 @@ exports.getHighlighterUtils = function(toolbox) {
     cancelPicker();
     toolbox.win.focus();
   }
-
-  
-
-
-
-
-
-
-
-
-  exported.getOrCreateHighlighterByType = requireInspector(async function(typeName) {
-    const highlighter = await toolbox.inspector.getOrCreateHighlighterByType(typeName);
-
-    return highlighter || promise.reject("The target doesn't support " +
-        `creating highlighters by types or ${typeName} is unknown`);
-  });
 
   
   return exported;
