@@ -348,6 +348,29 @@ DrawTargetTiled::PushLayer(bool aOpaque, Float aOpacity, SourceSurface* aMask,
 }
 
 void
+DrawTargetTiled::PushLayerWithBlend(bool aOpaque, Float aOpacity,
+                                    SourceSurface* aMask,
+                                    const Matrix& aMaskTransform,
+                                    const IntRect& aBounds,
+                                    bool aCopyBackground,
+                                    CompositionOp aOp)
+{
+  
+  
+  for (size_t i = 0; i < mTiles.size(); i++) {
+    if (!mTiles[i].mClippedOut) {
+      IntRect bounds = aBounds;
+      bounds.MoveBy(-mTiles[i].mTileOrigin);
+      mTiles[i].mDrawTarget->PushLayerWithBlend(aOpaque, aOpacity, aMask, aMaskTransform, bounds, aCopyBackground, aOp);
+    }
+  }
+
+  PushedLayer layer(GetPermitSubpixelAA());
+  mPushedLayers.push_back(layer);
+  SetPermitSubpixelAA(aOpaque);
+}
+
+void
 DrawTargetTiled::PopLayer()
 {
   
