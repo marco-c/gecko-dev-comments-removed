@@ -701,7 +701,9 @@ class ContextMenuChild extends ActorChild {
       let n = node;
       while (n) {
         if (n instanceof this.content.ShadowRoot) {
-          if (n.host instanceof this.content.HTMLMediaElement) {
+          if (n.host instanceof this.content.HTMLMediaElement ||
+              n.host instanceof this.content.HTMLEmbedElement ||
+              n.host instanceof this.content.HTMLObjectElement) {
             node = n.host;
             break;
           }
