@@ -38,8 +38,7 @@ class AndroidPresentor {
 
 
 
-
-  pivotChanged(aPosition, aOldPosition, aStartOffset, aEndOffset, aReason, aBoundaryType) {
+  pivotChanged(aPosition, aOldPosition, aReason, aStartOffset, aEndOffset) {
     let context = new PivotContext(
       aPosition, aOldPosition, aStartOffset, aEndOffset);
     if (!context.accessible) {
@@ -56,7 +55,7 @@ class AndroidPresentor {
       androidEvents.push({eventType: AndroidEvents.VIEW_HOVER_EXIT, text: []});
     }
 
-    if (aBoundaryType != Ci.nsIAccessiblePivot.NO_BOUNDARY) {
+    if (aReason === Ci.nsIAccessiblePivot.REASON_TEXT) {
       const adjustedText = context.textAndAdjustedOffsets;
 
       androidEvents.push({
@@ -204,6 +203,17 @@ class AndroidPresentor {
   tabStateChanged(aDocObj, aPageState) {
     return this.announce(
       UtteranceGenerator.genForTabStateChange(aDocObj, aPageState));
+  }
+
+  
+
+
+
+
+
+
+  tabSelected(aDocContext, aVCContext) {
+    return this.pivotChanged(aVCContext, Ci.nsIAccessiblePivot.REASON_NONE);
   }
 
   
