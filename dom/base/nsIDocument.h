@@ -848,6 +848,11 @@ class nsIDocument : public nsINode,
     mIsInitialDocumentInWindow = aIsInitialDocument;
   }
 
+  void SetLoadedAsData(bool aLoadedAsData) { mLoadedAsData = aLoadedAsData; }
+  void SetLoadedAsInteractiveData(bool aLoadedAsInteractiveData) {
+    mLoadedAsInteractiveData = aLoadedAsInteractiveData;
+  }
+
   
 
 
