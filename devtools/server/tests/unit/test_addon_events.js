@@ -18,7 +18,7 @@ add_task(async function testReloadExitedAddon() {
   
   
   
-  await client.listAddons();
+  await client.mainRoot.listAddons();
 
   info("Install the addon");
   const addonFile = do_get_file("addons/web-extension", false);
@@ -56,5 +56,5 @@ async function expectAddonListChanged(client, predicate) {
   const onAddonListChanged = client.mainRoot.once("addonListChanged");
   await predicate();
   await onAddonListChanged;
-  await client.listAddons();
+  await client.mainRoot.listAddons();
 }
