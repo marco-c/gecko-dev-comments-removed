@@ -72,7 +72,7 @@ impl<Impl: SelectorImpl> SelectorBuilder<Impl> {
     
     #[inline(always)]
     pub fn push_simple_selector(&mut self, ss: Component<Impl>) {
-        debug_assert!(!ss.is_combinator());
+        assert!(!ss.is_combinator());
         self.simple_selectors.push(ss);
         self.current_len += 1;
     }
