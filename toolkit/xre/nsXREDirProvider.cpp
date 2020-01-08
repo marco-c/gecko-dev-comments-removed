@@ -772,7 +772,8 @@ nsXREDirProvider::LoadPluginProcessTempDir()
 static bool
 IsContentSandboxDisabled()
 {
-  return !BrowserTabsRemoteAutostart() || (!IsContentSandboxEnabled());
+  return !mozilla::BrowserTabsRemoteAutostart() ||
+      (!mozilla::IsContentSandboxEnabled());
 }
 
 
@@ -799,7 +800,7 @@ GetProcessSandboxTempDir(GeckoProcessType type)
       "security.sandbox.plugin.tempDirSuffix";
 
   nsAutoString tempDirSuffix;
-  rv = Preferences::GetString(prefKey, tempDirSuffix);
+  rv = mozilla::Preferences::GetString(prefKey, tempDirSuffix);
   if (NS_WARN_IF(NS_FAILED(rv)) || tempDirSuffix.IsEmpty()) {
     return nullptr;
   }
@@ -839,7 +840,7 @@ CreateProcessSandboxTempDir(GeckoProcessType procType)
 
   nsresult rv;
   nsAutoString tempDirSuffix;
-  Preferences::GetString(pref, tempDirSuffix);
+  mozilla::Preferences::GetString(pref, tempDirSuffix);
   if (tempDirSuffix.IsEmpty()) {
     nsCOMPtr<nsIUUIDGenerator> uuidgen =
       do_GetService("@mozilla.org/uuid-generator;1", &rv);
@@ -863,14 +864,14 @@ CreateProcessSandboxTempDir(GeckoProcessType procType)
 #endif
 
     
-    rv = Preferences::SetString(pref, tempDirSuffix);
+    rv = mozilla::Preferences::SetString(pref, tempDirSuffix);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       
       
       return nullptr;
     }
 
-    nsCOMPtr<nsIPrefService> prefsvc = Preferences::GetService();
+    nsCOMPtr<nsIPrefService> prefsvc = mozilla::Preferences::GetService();
     if (!prefsvc || NS_FAILED((rv = prefsvc->SavePrefFile(nullptr)))) {
       
       
@@ -1035,7 +1036,7 @@ nsXREDirProvider::InitializeUserPrefs()
     
     
     
-    AutoRestore<bool> ar(mProfileNotified);
+    mozilla::AutoRestore<bool> ar(mProfileNotified);
     mProfileNotified = true;
 
     mozilla::Preferences::InitializeUserPrefs();
@@ -1166,7 +1167,7 @@ nsXREDirProvider::DoShutdown()
 
 #ifdef DEBUG
       
-      if (JSContext* cx = dom::danger::GetJSContext()) {
+      if (JSContext* cx = mozilla::dom::danger::GetJSContext()) {
         JS_GC(cx);
       }
 #endif
@@ -1180,10 +1181,10 @@ nsXREDirProvider::DoShutdown()
 
   if (XRE_IsParentProcess()) {
 #if defined(MOZ_CONTENT_SANDBOX)
-    Unused << DeleteDirIfExists(mContentProcessSandboxTempDir);
+    mozilla::Unused << DeleteDirIfExists(mContentProcessSandboxTempDir);
 #endif
 #if defined(MOZ_SANDBOX)
-    Unused << DeleteDirIfExists(mPluginProcessSandboxTempDir);
+    mozilla::Unused << DeleteDirIfExists(mPluginProcessSandboxTempDir);
 #endif
   }
 }
