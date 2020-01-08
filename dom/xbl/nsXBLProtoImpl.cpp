@@ -220,6 +220,10 @@ nsXBLProtoImpl::InitTargetObjects(nsXBLPrototypeBinding* aBinding,
 
   
   
+  MOZ_ASSERT(!js::IsWrapper(value));
+
+  
+  
   
   
   rv = aBinding->InitClass(mClassName, cx, value, aTargetClassObject, aTargetIsNew);
