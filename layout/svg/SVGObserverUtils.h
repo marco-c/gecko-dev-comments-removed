@@ -18,6 +18,7 @@
 #include "nsInterfaceHashtable.h"
 #include "nsISupportsBase.h"
 #include "nsISupportsImpl.h"
+#include "nsStringFwd.h"
 #include "nsStubMutationObserver.h"
 #include "nsSVGUtils.h"
 #include "nsTHashtable.h"
@@ -743,9 +744,25 @@ public:
   static void
   RemoveTextPathObserver(nsIFrame* aTextPathFrame);
 
-  static SVGTemplateElementObserver*
-  GetTemplateElementObserver(URLAndReferrerInfo* aURI, nsIFrame* aFrame,
-      const mozilla::FramePropertyDescriptor<SVGTemplateElementObserver>* aProperty);
+  using HrefToTemplateCallback = const std::function<void(nsAString&)>&;
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  static nsIFrame*
+  GetTemplateFrame(nsIFrame* aFrame, HrefToTemplateCallback aGetHref);
+
+  static void
+  RemoveTemplateObserver(nsIFrame* aFrame);
 
   
 

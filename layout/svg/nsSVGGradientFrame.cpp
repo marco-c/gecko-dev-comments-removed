@@ -56,7 +56,7 @@ nsSVGGradientFrame::AttributeChanged(int32_t         aNameSpaceID,
               aNameSpaceID == kNameSpaceID_None) &&
              aAttribute == nsGkAtoms::href) {
     
-    DeleteProperty(SVGObserverUtils::HrefToTemplateProperty());
+    SVGObserverUtils::RemoveTemplateObserver(this);
     mNoHRefURI = false;
     
     SVGObserverUtils::InvalidateDirectRenderingObservers(this);
@@ -336,64 +336,40 @@ nsSVGGradientFrame::GetPaintServerPattern(nsIFrame* aSource,
 
 
 
-nsSVGGradientFrame *
+nsSVGGradientFrame*
 nsSVGGradientFrame::GetReferencedGradient()
 {
-  if (mNoHRefURI)
+  if (mNoHRefURI) {
     return nullptr;
+  }
 
-  SVGTemplateElementObserver* observer =
-    GetProperty(SVGObserverUtils::HrefToTemplateProperty());
-
-  if (!observer) {
-    
+  auto GetHref = [this] (nsAString& aHref) {
     dom::SVGGradientElement* grad =
-      static_cast<dom::SVGGradientElement*>(GetContent());
-    nsAutoString href;
+      static_cast<dom::SVGGradientElement*>(this->GetContent());
     if (grad->mStringAttributes[dom::SVGGradientElement::HREF]
           .IsExplicitlySet()) {
       grad->mStringAttributes[dom::SVGGradientElement::HREF]
-        .GetAnimValue(href, grad);
+        .GetAnimValue(aHref, grad);
     } else {
       grad->mStringAttributes[dom::SVGGradientElement::XLINK_HREF]
-        .GetAnimValue(href, grad);
+        .GetAnimValue(aHref, grad);
     }
+    this->mNoHRefURI = aHref.IsEmpty();
+  };
 
-    if (href.IsEmpty()) {
-      mNoHRefURI = true;
-      return nullptr; 
+  nsIFrame* tframe = SVGObserverUtils::GetTemplateFrame(this, GetHref);
+  if (tframe) {
+    LayoutFrameType frameType = tframe->Type();
+    if (frameType == LayoutFrameType::SVGLinearGradient ||
+        frameType == LayoutFrameType::SVGRadialGradient) {
+      return static_cast<nsSVGGradientFrame*>(tframe);
     }
-
-    
-    nsCOMPtr<nsIURI> targetURI;
-    nsCOMPtr<nsIURI> base = mContent->GetBaseURI();
-    nsContentUtils::NewURIWithDocumentCharset(getter_AddRefs(targetURI), href,
-                                              mContent->GetUncomposedDoc(), base);
-
     
     
-    RefPtr<URLAndReferrerInfo> target =
-      new URLAndReferrerInfo(targetURI,
-                             mContent->OwnerDoc()->GetDocumentURI(),
-                             mContent->OwnerDoc()->GetReferrerPolicy());
-
-    observer = SVGObserverUtils::GetTemplateElementObserver(target, this,
-                 SVGObserverUtils::HrefToTemplateProperty());
-    if (!observer) {
-      return nullptr;
-    }
+    
   }
 
-  nsIFrame* result = observer->GetReferencedFrame();
-  if (!result)
-    return nullptr;
-
-  LayoutFrameType frameType = result->Type();
-  if (frameType != LayoutFrameType::SVGLinearGradient &&
-      frameType != LayoutFrameType::SVGRadialGradient)
-    return nullptr;
-
-  return static_cast<nsSVGGradientFrame*>(result);
+  return nullptr;
 }
 
 void

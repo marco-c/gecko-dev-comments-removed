@@ -58,10 +58,12 @@ public:
 #endif
 
 private:
-  
-  
-  
   friend class nsSVGFilterInstance;
+
+  
+
+
+
   nsSVGFilterFrame* GetReferencedFilter();
 
   

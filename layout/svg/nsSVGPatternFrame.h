@@ -24,10 +24,6 @@ class SVGGeometryFrame;
 class nsSVGAnimatedTransformList;
 } 
 
-
-
-
-
 class nsSVGPatternFrame final : public nsSVGPaintServerFrame
 {
   typedef mozilla::gfx::SourceSurface SourceSurface;
@@ -76,6 +72,9 @@ public:
 
 protected:
   
+
+
+
   nsSVGPatternFrame* GetReferencedPattern();
 
   
