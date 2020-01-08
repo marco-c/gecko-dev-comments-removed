@@ -16,6 +16,7 @@
 #include "mozilla/RecursiveMutex.h"     
 #include "mozilla/TimeStamp.h"          
 #include "mozilla/gfx/Point.h"          
+#include "mozilla/gfx/Types.h"          
 #include "mozilla/layers/LayersTypes.h"  
 #include "mozilla/layers/CompositorTypes.h"
 #include "mozilla/mozalloc.h"           
@@ -765,7 +766,7 @@ struct PlanarYCbCrData
   gfx::IntSize mPicSize;
   StereoMode mStereoMode;
   YUVColorSpace mYUVColorSpace;
-  uint32_t mBitDepth;
+  gfx::ColorDepth mColorDepth;
 
   gfx::IntRect GetPictureRect() const
   {
@@ -780,7 +781,7 @@ struct PlanarYCbCrData
     , mCbCrStride(0), mCbCrSize(0, 0) , mCbSkip(0), mCrSkip(0)
     , mPicX(0), mPicY(0), mPicSize(0, 0), mStereoMode(StereoMode::MONO)
     , mYUVColorSpace(YUVColorSpace::BT601)
-    , mBitDepth(8)
+    , mColorDepth(gfx::ColorDepth::COLOR_8)
   {}
 };
 

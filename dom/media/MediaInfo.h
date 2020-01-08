@@ -18,6 +18,7 @@
 #include "TimeUnits.h"
 #include "mozilla/gfx/Point.h" 
 #include "mozilla/gfx/Rect.h"  
+#include "mozilla/gfx/Types.h"  
 
 namespace mozilla {
 
@@ -227,7 +228,7 @@ public:
     , mCodecSpecificConfig(aOther.mCodecSpecificConfig)
     , mExtraData(aOther.mExtraData)
     , mRotation(aOther.mRotation)
-    , mBitDepth(aOther.mBitDepth)
+    , mColorDepth(aOther.mColorDepth)
     , mImageRect(aOther.mImageRect)
     , mAlphaPresent(aOther.mAlphaPresent)
   {
@@ -336,7 +337,7 @@ public:
   Rotation mRotation;
 
   
-  uint8_t mBitDepth = 8;
+  gfx::ColorDepth mColorDepth = gfx::ColorDepth::COLOR_8;
 
 private:
   

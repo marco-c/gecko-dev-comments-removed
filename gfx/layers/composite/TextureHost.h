@@ -453,7 +453,7 @@ public:
   
 
 
-  virtual uint32_t GetBitDepth() const { return 8; }
+  virtual gfx::ColorDepth GetColorDepth() const { return gfx::ColorDepth::COLOR_8; }
 
   
 
@@ -757,7 +757,7 @@ public:
 
   virtual YUVColorSpace GetYUVColorSpace() const override;
 
-  virtual uint32_t GetBitDepth() const override;
+  virtual gfx::ColorDepth GetColorDepth() const override;
 
   virtual gfx::IntSize GetSize() const override { return mSize; }
 

@@ -78,8 +78,8 @@ public:
   }
 
 protected:
-  bool SupportsBitDepth(const uint8_t aBitDepth,
-                        DecoderDoctorDiagnostics* aDiagnostics) const override
+  bool SupportsColorDepth(gfx::ColorDepth aColorDepth,
+                          DecoderDoctorDiagnostics* aDiagnostics) const override
   {
     
     
@@ -89,7 +89,7 @@ protected:
 #if defined(XP_LINUX) || defined(XP_MACOSX)
     return true;
 #endif
-    return aBitDepth == 8;
+    return aColorDepth == gfx::ColorDepth::COLOR_8;
   }
 
 private:

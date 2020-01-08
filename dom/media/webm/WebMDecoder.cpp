@@ -58,7 +58,8 @@ WebMDecoder::GetTracksInfo(const MediaContainerType& aType, MediaResult& aError)
         uint8_t level = 0;
         uint8_t bitDepth = 0;
         if (ExtractVPXCodecDetails(codec, profile, level, bitDepth)) {
-          trackInfo->GetAsVideoInfo()->mBitDepth = bitDepth;
+          trackInfo->GetAsVideoInfo()->mColorDepth =
+            gfx::ColorDepthForBitDepth(bitDepth);
         }
         tracks.AppendElement(std::move(trackInfo));
         continue;

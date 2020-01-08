@@ -68,8 +68,8 @@ CreateYCbCrTextureClientWithBackend(LayersBackend aLayersBackend)
                                          clientData.mCbCrSize,
                                          clientData.mCbCrStride,
                                          StereoMode::MONO,
+                                         gfx::ColorDepth::COLOR_8,
                                          YUVColorSpace::BT601,
-                                         8,
                                          TextureFlags::DEALLOCATE_CLIENT);
   }
 

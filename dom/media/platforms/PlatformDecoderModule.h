@@ -194,7 +194,7 @@ public:
       return false;
     }
     const auto videoInfo = aTrackInfo.GetAsVideoInfo();
-    return !videoInfo || SupportsBitDepth(videoInfo->mBitDepth, aDiagnostics);
+    return !videoInfo || SupportsColorDepth(videoInfo->mColorDepth, aDiagnostics);
   }
 
 protected:
@@ -208,10 +208,10 @@ protected:
 
   
   
-  virtual bool SupportsBitDepth(const uint8_t aBitDepth,
-                                DecoderDoctorDiagnostics* aDiagnostics) const
+  virtual bool SupportsColorDepth(gfx::ColorDepth aColorDepth,
+                                  DecoderDoctorDiagnostics* aDiagnostics) const
   {
-    return aBitDepth == 8;
+    return aColorDepth == gfx::ColorDepth::COLOR_8;
   }
 
   
