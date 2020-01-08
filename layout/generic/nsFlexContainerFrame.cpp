@@ -4325,6 +4325,24 @@ FlexLine::PositionItemsInCrossAxis(nscoord aLineStartPosition,
 }
 
 void
+nsFlexContainerFrame::DidReflow(nsPresContext* aPresContext,
+                                const ReflowInput* aReflowInput)
+{
+  
+  
+  
+  
+  
+  
+  if (aPresContext->HasPendingInterrupt()) {
+    for (nsIFrame* frame : mFrames) {
+      frame->DeleteProperty(CachedFlexMeasuringReflow());
+    }
+  }
+  nsContainerFrame::DidReflow(aPresContext, aReflowInput);
+}
+
+void
 nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
                              ReflowOutput& aDesiredSize,
                              const ReflowInput& aReflowInput,
