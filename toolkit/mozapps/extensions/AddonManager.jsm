@@ -551,6 +551,7 @@ var AddonManagerInternal = {
   
   telemetryDetails: {},
   upgradeListeners: new Map(),
+  externalExtensionLoaders: new Map(),
 
   recordTimestamp(name, value) {
     this.TelemetryTimestamps.add(name, value);
@@ -778,6 +779,10 @@ var AddonManagerInternal = {
           logger.error("Exception loading default provider \"" + url + "\"", e);
         }
       }
+
+      
+      ChromeUtils.import("resource://gre/modules/addons/BootstrapLoader.jsm");
+      AddonManager.addExternalExtensionLoader(BootstrapLoader);
 
       
       for (let {entry, value: url} of Services.catMan.enumerateCategory(CATEGORY_PROVIDER_MODULE)) {
@@ -2032,6 +2037,10 @@ var AddonManagerInternal = {
     }
   },
 
+  addExternalExtensionLoader(loader) {
+    this.externalExtensionLoaders.set(loader.name, loader);
+  },
+
   
 
 
@@ -2941,6 +2950,10 @@ var AddonManagerPrivate = {
     return AddonManagerInternal.upgradeListeners.get(aId);
   },
 
+  get externalExtensionLoaders() {
+    return AddonManagerInternal.externalExtensionLoaders;
+  },
+
   
 
 
@@ -3353,6 +3366,11 @@ var AddonManager = {
   removeUpgradeListener(aInstanceID) {
     return AddonManagerInternal.removeUpgradeListener(aInstanceID);
   },
+
+  addExternalExtensionLoader(types, loader) {
+    return AddonManagerInternal.addExternalExtensionLoader(types, loader);
+  },
+
   addAddonListener(aListener) {
     AddonManagerInternal.addAddonListener(aListener);
   },
