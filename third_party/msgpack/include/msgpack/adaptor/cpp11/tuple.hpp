@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+#ifndef MSGPACK_TYPE_CPP11_TUPLE_HPP
+#define MSGPACK_TYPE_CPP11_TUPLE_HPP
+
+#include "msgpack/v1/adaptor/cpp11/tuple.hpp"
+
+#endif 

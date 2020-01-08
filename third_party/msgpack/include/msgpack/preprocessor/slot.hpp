@@ -1,0 +1,17 @@
+# 
+
+
+
+
+
+
+
+#
+# 
+#
+# ifndef MSGPACK_PREPROCESSOR_SLOT_HPP
+# define MSGPACK_PREPROCESSOR_SLOT_HPP
+#
+# include <msgpack/preprocessor/slot/slot.hpp>
+#
+# endif

@@ -1,0 +1,17 @@
+# 
+
+
+
+
+
+
+
+#
+# 
+#
+# ifndef MSGPACK_PREPROCESSOR_DETAIL_NULL_HPP
+# define MSGPACK_PREPROCESSOR_DETAIL_NULL_HPP
+#
+# 
+#
+# endif

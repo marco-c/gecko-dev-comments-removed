@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+#ifndef MSGPACK_TYPE_VECTOR_BOOL_HPP
+#define MSGPACK_TYPE_VECTOR_BOOL_HPP
+
+#include "msgpack/v1/adaptor/vector_bool.hpp"
+
+#endif 

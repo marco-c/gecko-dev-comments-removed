@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+#ifndef MSGPACK_TYPE_PAIR_HPP
+#define MSGPACK_TYPE_PAIR_HPP
+
+#include "msgpack/v1/adaptor/pair.hpp"
+
+#endif 

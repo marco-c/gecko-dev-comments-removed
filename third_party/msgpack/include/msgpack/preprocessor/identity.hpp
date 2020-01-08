@@ -1,0 +1,17 @@
+# 
+
+
+
+
+
+
+
+#
+# 
+#
+# ifndef MSGPACK_PREPROCESSOR_IDENTITY_HPP
+# define MSGPACK_PREPROCESSOR_IDENTITY_HPP
+#
+# include <msgpack/preprocessor/facilities/identity.hpp>
+#
+# endif

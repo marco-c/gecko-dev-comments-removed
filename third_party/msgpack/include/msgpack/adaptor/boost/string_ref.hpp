@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+#ifndef MSGPACK_TYPE_BOOST_STRING_REF_HPP
+#define MSGPACK_TYPE_BOOST_STRING_REF_HPP
+
+#include "msgpack/v1/adaptor/boost/string_ref.hpp"
+
+#endif 

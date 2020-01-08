@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+#ifndef MSGPACK_TYPE_CPP17_OPTIONAL_HPP
+#define MSGPACK_TYPE_CPP17_OPTIONAL_HPP
+
+#include "msgpack/v1/adaptor/cpp17/optional.hpp"
+
+#endif 

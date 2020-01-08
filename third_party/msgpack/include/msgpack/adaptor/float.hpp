@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+#ifndef MSGPACK_TYPE_FLOAT_HPP
+#define MSGPACK_TYPE_FLOAT_HPP
+
+#include "msgpack/v1/adaptor/float.hpp"
+
+#endif 

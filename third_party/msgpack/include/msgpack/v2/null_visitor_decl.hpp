@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+#ifndef MSGPACK_V2_NULL_VISITOR_DECL_HPP
+#define MSGPACK_V2_NULL_VISITOR_DECL_HPP
+
+#include "msgpack/versioning.hpp"
+
+namespace msgpack {
+
+
+MSGPACK_API_VERSION_NAMESPACE(v2) {
+
+
+struct null_visitor;
+
+
+}  
+
+
+}  
+
+#endif 
