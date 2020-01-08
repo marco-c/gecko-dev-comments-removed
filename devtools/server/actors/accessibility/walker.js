@@ -482,32 +482,81 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
 
 
 
-
-
-
-
-
-
-
-  highlightAccessible(accessible, options = {}) {
-    this.unhighlight();
-    const { bounds } = accessible;
-    if (!bounds) {
-      return false;
+  loadTransitionDisablingStyleSheet(win) {
+    if (this._sheetLoaded) {
+      return;
     }
 
     
     
     
     
+    loadSheet(win, HIGHLIGHTER_STYLES_SHEET);
+    this._sheetLoaded = true;
+  },
+
+  
+
+
+
+
+
+  removeTransitionDisablingStyleSheet(win) {
+    if (!this._sheetLoaded) {
+      return;
+    }
+
+    removeSheet(win, HIGHLIGHTER_STYLES_SHEET);
+    this._sheetLoaded = false;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  async highlightAccessible(accessible, options = {}) {
+    this.unhighlight();
+    
+    if (!accessible || accessible.isDefunct || accessible.indexInParent < 0) {
+      return false;
+    }
+
+    this._highlightingAccessible = accessible;
+    const { bounds } = accessible;
+    if (!bounds) {
+      return false;
+    }
+
     const { DOMNode: rawNode } = accessible.rawAccessible;
     const win = rawNode.ownerGlobal;
-    loadSheet(win, HIGHLIGHTER_STYLES_SHEET);
-    const { audit, name, role } = accessible;
+    this.loadTransitionDisablingStyleSheet(win);
+    const audit = await accessible.audit();
+    if (this._highlightingAccessible !== accessible) {
+      if (!this._highlightingAccessible) {
+        
+        
+        this.removeTransitionDisablingStyleSheet(win);
+      }
+
+      return false;
+    }
+
+    this.removeTransitionDisablingStyleSheet(win);
+
+    const { name, role } = accessible;
     const shown = this.highlighter.show({ rawNode },
                                         { ...options, ...bounds, name, role, audit });
-    
-    removeSheet(win, HIGHLIGHTER_STYLES_SHEET);
+    this._highlightingAccessible = null;
+
     return shown;
   },
 
@@ -521,6 +570,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     }
 
     this.highlighter.hide();
+    this._highlightingAccessible = null;
   },
 
   
@@ -601,7 +651,7 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
 
 
 
-  onHovered(event) {
+  async onHovered(event) {
     if (!this._isPicking) {
       return;
     }
@@ -612,14 +662,17 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     }
 
     const accessible = this._findAndAttachAccessible(event);
-    if (!accessible) {
+    if (!accessible || this._currentAccessible === accessible) {
       return;
     }
 
-    if (this._currentAccessible !== accessible) {
-      this.highlightAccessible(accessible);
+    this._currentAccessible = accessible;
+    
+    
+    
+    const shown = await this.highlightAccessible(accessible);
+    if (this._isPicking && shown && accessible === this._currentAccessible) {
       events.emit(this, "picker-accessible-hovered", accessible);
-      this._currentAccessible = accessible;
     }
   },
 

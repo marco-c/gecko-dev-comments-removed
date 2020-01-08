@@ -398,7 +398,7 @@ const AccessibleActor = ActorClassWithSpec(accessibleSpec, {
 
 
 
-  get audit() {
+  async audit() {
     return this.isDefunct ? null : {
       contrastRatio: this._getContrastRatio(),
     };
