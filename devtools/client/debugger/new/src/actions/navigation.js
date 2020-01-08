@@ -1,32 +1,27 @@
-"use strict";
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.willNavigate = willNavigate;
-exports.navigate = navigate;
-exports.connect = connect;
-exports.navigated = navigated;
 
-var _editor = require("../utils/editor/index");
 
-var _sourceQueue = require("../utils/source-queue");
 
-var _sourceQueue2 = _interopRequireDefault(_sourceQueue);
 
-var _sources = require("../reducers/sources");
 
-var _utils = require("../utils/utils");
+import { clearDocuments } from "../utils/editor";
+import sourceQueue from "../utils/source-queue";
+import { getSources } from "../reducers/sources";
+import { waitForMs } from "../utils/utils";
 
-var _sources2 = require("./sources/index");
+import { newSources } from "./sources";
+import { updateWorkers } from "./debuggee";
 
-var _debuggee = require("./debuggee");
+import {
+  clearASTs,
+  clearSymbols,
+  clearScopes,
+  clearSources
+} from "../workers/parser";
 
-var _parser = require("../workers/parser/index");
+import { clearWasmStates } from "../utils/wasm";
 
-var _wasm = require("../utils/wasm");
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+import type { Action, ThunkArgs } from "./types";
 
 
 
@@ -37,30 +32,21 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 
 
-
-
-
-
-function willNavigate(event) {
-  return async function ({
-    dispatch,
-    getState,
-    client,
-    sourceMaps
-  }) {
+export function willNavigate(event: Object) {
+  return async function({ dispatch, getState, client, sourceMaps }: ThunkArgs) {
     await sourceMaps.clearSourceMaps();
-    (0, _wasm.clearWasmStates)();
-    (0, _editor.clearDocuments)();
-    (0, _parser.clearSymbols)();
-    (0, _parser.clearASTs)();
-    (0, _parser.clearScopes)();
-    (0, _parser.clearSources)();
+    clearWasmStates();
+    clearDocuments();
+    clearSymbols();
+    clearASTs();
+    clearScopes();
+    clearSources();
     dispatch(navigate(event.url));
   };
 }
 
-function navigate(url) {
-  _sourceQueue2.default.clear();
+export function navigate(url: string): Action {
+  sourceQueue.clear();
 
   return {
     type: "NAVIGATE",
@@ -68,16 +54,10 @@ function navigate(url) {
   };
 }
 
-function connect(url, canRewind) {
-  return async function ({
-    dispatch
-  }) {
-    await dispatch((0, _debuggee.updateWorkers)());
-    dispatch({
-      type: "CONNECT",
-      url,
-      canRewind
-    });
+export function connect(url: string, canRewind: boolean) {
+  return async function({ dispatch }: ThunkArgs) {
+    await dispatch(updateWorkers());
+    dispatch(({ type: "CONNECT", url, canRewind }: Action));
   };
 }
 
@@ -85,18 +65,12 @@ function connect(url, canRewind) {
 
 
 
-
-function navigated() {
-  return async function ({
-    dispatch,
-    getState,
-    client
-  }) {
-    await (0, _utils.waitForMs)(100);
-
-    if (Object.keys((0, _sources.getSources)(getState())).length == 0) {
+export function navigated() {
+  return async function({ dispatch, getState, client }: ThunkArgs) {
+    await waitForMs(100);
+    if (Object.keys(getSources(getState())).length == 0) {
       const sources = await client.fetchSources();
-      dispatch((0, _sources2.newSources)(sources));
+      dispatch(newSources(sources));
     }
   };
 }

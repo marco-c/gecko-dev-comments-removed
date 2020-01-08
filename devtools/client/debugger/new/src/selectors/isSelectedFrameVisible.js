@@ -1,22 +1,14 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.isSelectedFrameVisible = isSelectedFrameVisible;
-
-var _devtoolsSourceMap = require("devtools/client/shared/source-map/index.js");
-
-var _pause = require("../reducers/pause");
-
-var _sources = require("../reducers/sources");
 
 
 
+
+import { originalToGeneratedId, isOriginalId } from "devtools-source-map";
+import { getSelectedFrame } from "../reducers/pause";
+import { getSelectedLocation } from "../reducers/sources";
 
 function getGeneratedId(sourceId) {
-  if ((0, _devtoolsSourceMap.isOriginalId)(sourceId)) {
-    return (0, _devtoolsSourceMap.originalToGeneratedId)(sourceId);
+  if (isOriginalId(sourceId)) {
+    return originalToGeneratedId(sourceId);
   }
 
   return sourceId;
@@ -26,18 +18,20 @@ function getGeneratedId(sourceId) {
 
 
 
-
-function isSelectedFrameVisible(state) {
-  const selectedLocation = (0, _sources.getSelectedLocation)(state);
-  const selectedFrame = (0, _pause.getSelectedFrame)(state);
+export function isSelectedFrameVisible(state) {
+  const selectedLocation = getSelectedLocation(state);
+  const selectedFrame = getSelectedFrame(state);
 
   if (!selectedFrame || !selectedLocation) {
     return false;
   }
 
-  if ((0, _devtoolsSourceMap.isOriginalId)(selectedLocation.sourceId)) {
+  if (isOriginalId(selectedLocation.sourceId)) {
     return selectedLocation.sourceId === selectedFrame.location.sourceId;
   }
 
-  return selectedLocation.sourceId === getGeneratedId(selectedFrame.location.sourceId);
+  return (
+    selectedLocation.sourceId ===
+    getGeneratedId(selectedFrame.location.sourceId)
+  );
 }

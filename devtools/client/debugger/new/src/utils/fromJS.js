@@ -1,12 +1,3 @@
-"use strict";
-
-var _immutable = require("devtools/client/shared/vendor/immutable");
-
-var I = _interopRequireWildcard(_immutable);
-
-var _lodash = require("devtools/client/shared/vendor/lodash");
-
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
 
 
 
@@ -16,11 +7,16 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 
 
 
+
+
+
+import * as I from "immutable";
+import { isFunction } from "lodash";
 
 
 
 function hasOwnProperty(value, key) {
-  if (value.hasOwnProperty && (0, _lodash.isFunction)(value.hasOwnProperty)) {
+  if (value.hasOwnProperty && isFunction(value.hasOwnProperty)) {
     return value.hasOwnProperty(key);
   }
 
@@ -38,7 +34,6 @@ function hasOwnProperty(value, key) {
 
 
 
-
 function createMap(value) {
   const hasLength = hasOwnProperty(value, "length");
   const length = value.length;
@@ -47,7 +42,9 @@ function createMap(value) {
     value.length = `${value.length}`;
   }
 
-  let map = I.Seq(value).map(fromJS).toMap();
+  let map = I.Seq(value)
+    .map(fromJS)
+    .toMap();
 
   if (hasLength) {
     map = map.set("length", length);
@@ -58,7 +55,9 @@ function createMap(value) {
 }
 
 function createList(value) {
-  return I.Seq(value).map(fromJS).toList();
+  return I.Seq(value)
+    .map(fromJS)
+    .toList();
 }
 
 
@@ -70,35 +69,33 @@ function createList(value) {
 
 
 
-
-function fromJS(value) {
+function fromJS(value: any): any {
   if (Array.isArray(value)) {
     return createList(value);
   }
-
   if (value && value.constructor && value.constructor.meta) {
     
     
     
     
     const kind = value.constructor.meta.kind;
-
     if (kind === "struct") {
       return createMap(value);
     } else if (kind === "list") {
       return createList(value);
     }
-  } 
+  }
+
   
   
-
-
+  
   if (value == null || typeof value !== "object") {
     return value;
-  } 
-  
-  
+  }
 
+  
+  
+  
 
   return createMap(value);
 }

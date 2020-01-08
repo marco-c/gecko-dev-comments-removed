@@ -1,39 +1,39 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.getVisibleSelectedFrame = undefined;
-
-var _sources = require("../reducers/sources");
-
-var _pause = require("../reducers/pause");
-
-var _devtoolsSourceMap = require("devtools/client/shared/source-map/index.js");
-
-var _reselect = require("devtools/client/debugger/new/dist/vendors").vendored["reselect"];
 
 
 
 
-function getLocation(frame, location) {
+
+
+import { getSelectedLocation } from "../reducers/sources";
+import { getSelectedFrame } from "../reducers/pause";
+import { isOriginalId } from "devtools-source-map";
+import { createSelector } from "reselect";
+
+import type { Frame, Location } from "../types";
+
+function getLocation(frame: Frame, location?: Location) {
   if (!location) {
     return frame.location;
   }
 
-  return !(0, _devtoolsSourceMap.isOriginalId)(location.sourceId) ? frame.generatedLocation || frame.location : frame.location;
+  return !isOriginalId(location.sourceId)
+    ? frame.generatedLocation || frame.location
+    : frame.location;
 }
 
-const getVisibleSelectedFrame = exports.getVisibleSelectedFrame = (0, _reselect.createSelector)(_sources.getSelectedLocation, _pause.getSelectedFrame, (selectedLocation, selectedFrame) => {
-  if (!selectedFrame) {
-    return null;
-  }
+export const getVisibleSelectedFrame = createSelector(
+  getSelectedLocation,
+  getSelectedFrame,
+  (selectedLocation, selectedFrame) => {
+    if (!selectedFrame) {
+      return null;
+    }
 
-  const {
-    id
-  } = selectedFrame;
-  return {
-    id,
-    location: getLocation(selectedFrame, selectedLocation)
-  };
-});
+    const { id } = selectedFrame;
+
+    return {
+      id,
+      location: getLocation(selectedFrame, selectedLocation)
+    };
+  }
+);

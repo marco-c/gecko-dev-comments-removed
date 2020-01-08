@@ -1,30 +1,25 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.positionCmp = positionCmp;
-
-var _locColumn = require("./locColumn");
 
 
 
 
 
 
+import type { Position } from "../../../types";
+import { locColumn } from "./locColumn";
 
 
 
 
-function positionCmp(p1, p2) {
+
+
+export function positionCmp(p1: Position, p2: Position) {
   if (p1.line === p2.line) {
-    const l1 = (0, _locColumn.locColumn)(p1);
-    const l2 = (0, _locColumn.locColumn)(p2);
+    const l1 = locColumn(p1);
+    const l2 = locColumn(p2);
 
     if (l1 === l2) {
       return 0;
     }
-
     return l1 < l2 ? -1 : 1;
   }
 

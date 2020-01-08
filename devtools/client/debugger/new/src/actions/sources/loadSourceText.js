@@ -1,54 +1,35 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.loadSourceText = loadSourceText;
-
-var _promise = require("../utils/middleware/promise");
-
-var _selectors = require("../../selectors/index");
-
-var _parser = require("../../workers/parser/index");
-
-var parser = _interopRequireWildcard(_parser);
-
-var _source = require("../../utils/source");
-
-var _telemetry = require("devtools/client/shared/telemetry");
-
-var _telemetry2 = _interopRequireDefault(_telemetry);
-
-var _defer = require("../../utils/defer");
-
-var _defer2 = _interopRequireDefault(_defer);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
 
 
 
 
-const requests = new Map(); 
+
+
+import { PROMISE } from "../utils/middleware/promise";
+import { getGeneratedSource, getSource } from "../../selectors";
+import * as parser from "../../workers/parser";
+import { isLoaded, isOriginal } from "../../utils/source";
+import { Telemetry } from "devtools-modules";
+
+import defer from "../../utils/defer";
+import type { ThunkArgs } from "../types";
+
+import type { Source } from "../../types";
+
+const requests = new Map();
+
 
 const loadSourceHistogram = "DEVTOOLS_DEBUGGER_LOAD_SOURCE_MS";
-const telemetry = new _telemetry2.default();
+const telemetry = new Telemetry();
 
-async function loadSource(source, {
-  sourceMaps,
-  client
-}) {
-  const {
-    id
-  } = source;
-
-  if ((0, _source.isOriginal)(source)) {
+async function loadSource(source: Source, { sourceMaps, client }) {
+  const { id } = source;
+  if (isOriginal(source)) {
     return sourceMaps.getOriginalSourceText(source);
   }
 
   const response = await client.sourceContents(id);
   telemetry.finish(loadSourceHistogram, source);
+
   return {
     id,
     text: response.source,
@@ -60,40 +41,31 @@ async function loadSource(source, {
 
 
 
-
-function loadSourceText(source) {
-  return async ({
-    dispatch,
-    getState,
-    client,
-    sourceMaps
-  }) => {
+export function loadSourceText(source: ?Source) {
+  return async ({ dispatch, getState, client, sourceMaps }: ThunkArgs) => {
     if (!source) {
       return;
     }
 
-    const id = source.id; 
-
+    const id = source.id;
+    
     if (requests.has(id)) {
       return requests.get(id);
     }
 
-    if ((0, _source.isLoaded)(source)) {
+    if (isLoaded(source)) {
       return Promise.resolve();
     }
 
-    const deferred = (0, _defer2.default)();
+    const deferred = defer();
     requests.set(id, deferred.promise);
-    telemetry.start(loadSourceHistogram, source);
 
+    telemetry.start(loadSourceHistogram, source);
     try {
       await dispatch({
         type: "LOAD_SOURCE_TEXT",
         sourceId: source.id,
-        [_promise.PROMISE]: loadSource(source, {
-          sourceMaps,
-          client
-        })
+        [PROMISE]: loadSource(source, { sourceMaps, client })
       });
     } catch (e) {
       deferred.resolve();
@@ -101,24 +73,24 @@ function loadSourceText(source) {
       return;
     }
 
-    const newSource = (0, _selectors.getSource)(getState(), source.id);
-
+    const newSource = getSource(getState(), source.id);
     if (!newSource) {
       return;
     }
 
-    if ((0, _source.isOriginal)(newSource) && !newSource.isWasm) {
-      const generatedSource = (0, _selectors.getGeneratedSource)(getState(), source);
+    if (isOriginal(newSource) && !newSource.isWasm) {
+      const generatedSource = getGeneratedSource(getState(), source);
       await dispatch(loadSourceText(generatedSource));
     }
 
     if (!newSource.isWasm) {
       await parser.setSource(newSource);
-    } 
+    }
 
-
+    
     deferred.resolve();
     requests.delete(id);
+
     return source;
   };
 }

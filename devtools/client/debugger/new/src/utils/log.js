@@ -1,11 +1,3 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.log = log;
-
-var _devtoolsEnvironment = require("devtools/client/debugger/new/dist/vendors").vendored["devtools-environment"];
 
 
 
@@ -20,6 +12,7 @@ var _devtoolsEnvironment = require("devtools/client/debugger/new/dist/vendors").
 
 
 
+import { isDevelopment } from "devtools-environment";
 
 
 
@@ -28,8 +21,10 @@ var _devtoolsEnvironment = require("devtools/client/debugger/new/dist/vendors").
 
 
 
-function log(...args) {
-  if (!(0, _devtoolsEnvironment.isDevelopment)()) {
+
+
+export function log(...args: any[]) {
+  if (!isDevelopment()) {
     return;
   }
 

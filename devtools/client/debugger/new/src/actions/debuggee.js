@@ -1,24 +1,14 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.updateWorkers = updateWorkers;
 
 
 
 
-function updateWorkers() {
-  return async function ({
-    dispatch,
-    client
-  }) {
-    const {
-      workers
-    } = await client.fetchWorkers();
-    dispatch({
-      type: "SET_WORKERS",
-      workers
-    });
+
+
+import type { Action, ThunkArgs } from "./types";
+
+export function updateWorkers() {
+  return async function({ dispatch, client }: ThunkArgs) {
+    const { workers } = await client.fetchWorkers();
+    dispatch(({ type: "SET_WORKERS", workers }: Action));
   };
 }

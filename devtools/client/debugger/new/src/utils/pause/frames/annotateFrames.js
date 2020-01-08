@@ -1,75 +1,81 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.annotateFrames = annotateFrames;
-
-var _lodash = require("devtools/client/shared/vendor/lodash");
-
-var _getFrameUrl = require("./getFrameUrl");
-
-var _getLibraryFromUrl = require("./getLibraryFromUrl");
 
 
 
 
-function annotateFrames(frames) {
+
+
+import { flatMap, zip, range } from "lodash";
+
+import type { Frame } from "../../../types";
+import { getFrameUrl } from "./getFrameUrl";
+import { getLibraryFromUrl } from "./getLibraryFromUrl";
+
+type AnnotatedFrame =
+  | {|
+      ...Frame,
+      library: string
+    |}
+  | Frame;
+
+export function annotateFrames(frames: Frame[]): AnnotatedFrame[] {
   const annotatedFrames = frames.map(annotateFrame);
   return annotateBabelAsyncFrames(annotatedFrames);
 }
 
-function annotateFrame(frame) {
-  const library = (0, _getLibraryFromUrl.getLibraryFromUrl)(frame);
-
+function annotateFrame(frame: Frame): AnnotatedFrame {
+  const library = getLibraryFromUrl(frame);
   if (library) {
-    return { ...frame,
-      library
-    };
+    return { ...frame, library };
   }
 
   return frame;
 }
 
-function annotateBabelAsyncFrames(frames) {
+function annotateBabelAsyncFrames(frames: Frame[]) {
   const babelFrameIndexes = getBabelFrameIndexes(frames);
-
   const isBabelFrame = frameIndex => babelFrameIndexes.includes(frameIndex);
 
-  return frames.map((frame, frameIndex) => isBabelFrame(frameIndex) ? { ...frame,
-    library: "Babel"
-  } : frame);
-} 
+  return frames.map(
+    (frame, frameIndex) =>
+      isBabelFrame(frameIndex) ? { ...frame, library: "Babel" } : frame
+  );
+}
 
 
 
 function getBabelFrameIndexes(frames) {
   const startIndexes = frames.reduce((accumulator, frame, index) => {
-    if ((0, _getFrameUrl.getFrameUrl)(frame).match(/regenerator-runtime/i) && frame.displayName === "tryCatch") {
+    if (
+      getFrameUrl(frame).match(/regenerator-runtime/i) &&
+      frame.displayName === "tryCatch"
+    ) {
       return [...accumulator, index];
     }
-
     return accumulator;
   }, []);
+
   const endIndexes = frames.reduce((accumulator, frame, index) => {
-    if ((0, _getFrameUrl.getFrameUrl)(frame).match(/_microtask/i) && frame.displayName === "flush") {
+    if (
+      getFrameUrl(frame).match(/_microtask/i) &&
+      frame.displayName === "flush"
+    ) {
       return [...accumulator, index];
     }
-
     if (frame.displayName === "_asyncToGenerator/<") {
       return [...accumulator, index + 1];
     }
-
     return accumulator;
   }, []);
 
   if (startIndexes.length != endIndexes.length || startIndexes.length === 0) {
     return frames;
-  } 
-  
-  
-  
+  }
 
-
-  return (0, _lodash.flatMap)((0, _lodash.zip)(startIndexes, endIndexes), ([startIndex, endIndex]) => (0, _lodash.range)(startIndex, endIndex + 1));
+  
+  
+  
+  
+  return flatMap(zip(startIndexes, endIndexes), ([startIndex, endIndex]) =>
+    range(startIndex, endIndex + 1)
+  );
 }

@@ -1,15 +1,13 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.getFrameUrl = getFrameUrl;
-
-var _lodash = require("devtools/client/shared/vendor/lodash");
 
 
 
 
-function getFrameUrl(frame) {
-  return (0, _lodash.get)(frame, "source.url", "") || "";
+
+
+import { get } from "lodash";
+
+import type { Frame } from "../../../types";
+
+export function getFrameUrl(frame: Frame) {
+  return get(frame, "source.url", "") || "";
 }

@@ -1,41 +1,37 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.getFramePopVariables = getFramePopVariables;
-exports.getThisVariable = getThisVariable;
 
 
 
 
-function getFramePopVariables(why, path) {
-  const vars = [];
+
+
+import type { Why } from "../../../types";
+import type { NamedValue } from "./types";
+
+export function getFramePopVariables(why: Why, path: string): NamedValue[] {
+  const vars: Array<NamedValue> = [];
 
   if (why && why.frameFinished) {
-    const frameFinished = why.frameFinished; 
+    const frameFinished = why.frameFinished;
 
+    
     if (Object.prototype.hasOwnProperty.call(frameFinished, "throw")) {
       vars.push({
         name: "<exception>",
         path: `${path}/<exception>`,
-        contents: {
-          value: frameFinished.throw
-        }
+        contents: { value: frameFinished.throw }
       });
     }
 
     if (Object.prototype.hasOwnProperty.call(frameFinished, "return")) {
-      const returned = frameFinished.return; 
-      
+      const returned = frameFinished.return;
 
+      
+      
       if (typeof returned !== "object" || returned.type !== "undefined") {
         vars.push({
           name: "<return>",
           path: `${path}/<return>`,
-          contents: {
-            value: returned
-          }
+          contents: { value: returned }
         });
       }
     }
@@ -44,7 +40,7 @@ function getFramePopVariables(why, path) {
   return vars;
 }
 
-function getThisVariable(this_, path) {
+export function getThisVariable(this_: any, path: string): ?NamedValue {
   if (!this_) {
     return null;
   }
@@ -52,8 +48,6 @@ function getThisVariable(this_, path) {
   return {
     name: "<this>",
     path: `${path}/<this>`,
-    contents: {
-      value: this_
-    }
+    contents: { value: this_ }
   };
 }

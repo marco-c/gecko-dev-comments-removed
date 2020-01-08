@@ -1,9 +1,3 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.parse = parse;
 
 
 
@@ -25,7 +19,7 @@ const defaultUrl = {
   username: ""
 };
 
-function parse(url) {
+export function parse(url: string): URL | object {
   try {
     const urlObj = new URL(url);
     urlObj.path = urlObj.pathname + urlObj.search;
@@ -33,10 +27,7 @@ function parse(url) {
   } catch (err) {
     
     if (url) {
-      return { ...defaultUrl,
-        path: url,
-        pathname: url
-      };
+      return { ...defaultUrl, path: url, pathname: url };
     }
 
     return defaultUrl;

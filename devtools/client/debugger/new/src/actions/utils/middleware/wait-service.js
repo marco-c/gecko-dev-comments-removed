@@ -1,9 +1,3 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.waitUntilService = waitUntilService;
 
 
 
@@ -31,22 +25,21 @@ exports.waitUntilService = waitUntilService;
 
 
 
-const NAME = exports.NAME = "@@service/waitUntil";
+export const NAME = "@@service/waitUntil";
+import type { ThunkArgs } from "../../types";
 
-function waitUntilService({
-  dispatch,
-  getState
-}) {
+export function waitUntilService({ dispatch, getState }: ThunkArgs) {
   let pending = [];
 
   function checkPending(action) {
     const readyRequests = [];
-    const stillPending = []; 
-    
-    
-    
-    
+    const stillPending = [];
 
+    
+    
+    
+    
+    
     for (const request of pending) {
       if (request.predicate(action)) {
         readyRequests.push(request);
@@ -56,18 +49,16 @@ function waitUntilService({
     }
 
     pending = stillPending;
-
     for (const request of readyRequests) {
       request.run(dispatch, getState, action);
     }
   }
 
-  return next => action => {
+  return (next: Function) => (action: Object) => {
     if (action.type === NAME) {
       pending.push(action);
       return null;
     }
-
     const result = next(action);
     checkPending(action);
     return result;

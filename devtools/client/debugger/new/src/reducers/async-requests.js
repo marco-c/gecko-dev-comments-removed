@@ -1,8 +1,3 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
 
 
 
@@ -15,15 +10,12 @@ Object.defineProperty(exports, "__esModule", {
 const initialAsyncRequestState = [];
 
 function update(state = initialAsyncRequestState, action) {
-  const {
-    seqId
-  } = action;
+  const { seqId } = action;
 
   if (action.type === "NAVIGATE") {
     return initialAsyncRequestState;
   } else if (seqId) {
     let newState;
-
     if (action.status === "start") {
       newState = [...state, seqId];
     } else if (action.status === "error" || action.status === "done") {
@@ -36,4 +28,4 @@ function update(state = initialAsyncRequestState, action) {
   return state;
 }
 
-exports.default = update;
+export default update;

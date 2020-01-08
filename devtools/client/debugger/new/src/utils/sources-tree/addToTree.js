@@ -1,25 +1,37 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.addToTree = addToTree;
-
-var _utils = require("./utils");
-
-var _treeOrder = require("./treeOrder");
-
-var _getURL = require("./getURL");
 
 
 
 
-function createNodeInTree(part, path, tree, index) {
-  const node = (0, _utils.createDirectoryNode)(part, path, []); 
 
+
+import {
+  nodeHasChildren,
+  isPathDirectory,
+  isInvalidUrl,
+  partIsFile,
+  createSourceNode,
+  createDirectoryNode
+} from "./utils";
+import { createTreeNodeMatcher, findNodeInContents } from "./treeOrder";
+import { getURL } from "./getURL";
+
+import type { ParsedURL } from "./getURL";
+import type { TreeDirectory, TreeNode } from "./types";
+import type { Source } from "../../types";
+
+function createNodeInTree(
+  part: string,
+  path: string,
+  tree: TreeDirectory,
+  index: number
+): TreeDirectory {
+  const node = createDirectoryNode(part, path, []);
+
+  
   const contents = tree.contents.slice(0);
   contents.splice(index, 0, node);
   tree.contents = contents;
+
   return node;
 }
 
@@ -29,28 +41,38 @@ function createNodeInTree(part, path, tree, index) {
 
 
 
+function findOrCreateNode(
+  parts: string[],
+  subTree: TreeDirectory,
+  path: string,
+  part: string,
+  index: number,
+  url: Object,
+  debuggeeHost: ?string
+): TreeDirectory {
+  const addedPartIsFile = partIsFile(index, parts, url);
 
-function findOrCreateNode(parts, subTree, path, part, index, url, debuggeeHost) {
-  const addedPartIsFile = (0, _utils.partIsFile)(index, parts, url);
-  const {
-    found: childFound,
-    index: childIndex
-  } = (0, _treeOrder.findNodeInContents)(subTree, (0, _treeOrder.createTreeNodeMatcher)(part, !addedPartIsFile, debuggeeHost)); 
+  const { found: childFound, index: childIndex } = findNodeInContents(
+    subTree,
+    createTreeNodeMatcher(part, !addedPartIsFile, debuggeeHost)
+  );
 
+  
   if (!childFound) {
     return createNodeInTree(part, path, subTree, childIndex);
-  } 
+  }
+
   
-
-
+  
   const child = subTree.contents[childIndex];
-  const childIsFile = !(0, _utils.nodeHasChildren)(child); 
+  const childIsFile = !nodeHasChildren(child);
 
-  if (child.type === "source" || !childIsFile && addedPartIsFile) {
+  
+  if (child.type === "source" || (!childIsFile && addedPartIsFile)) {
     return createNodeInTree(part, path, subTree, childIndex);
-  } 
+  }
 
-
+  
   return child;
 }
 
@@ -58,58 +80,71 @@ function findOrCreateNode(parts, subTree, path, part, index, url, debuggeeHost) 
 
 
 
-
-function traverseTree(url, tree, debuggeeHost) {
+function traverseTree(
+  url: ParsedURL,
+  tree: TreeDirectory,
+  debuggeeHost: ?string
+): TreeNode {
   const parts = url.path.split("/").filter(p => p !== "");
   parts.unshift(url.group);
+
   let path = "";
   return parts.reduce((subTree, part, index) => {
     path = path ? `${path}/${part}` : part;
     const debuggeeHostIfRoot = index === 0 ? debuggeeHost : null;
-    return findOrCreateNode(parts, subTree, path, part, index, url, debuggeeHostIfRoot);
+    return findOrCreateNode(
+      parts,
+      subTree,
+      path,
+      part,
+      index,
+      url,
+      debuggeeHostIfRoot
+    );
   }, tree);
 }
 
 
 
 
-
-function addSourceToNode(node, url, source) {
-  const isFile = !(0, _utils.isPathDirectory)(url.path);
+function addSourceToNode(
+  node: TreeDirectory,
+  url: ParsedURL,
+  source: Source
+): Source | TreeNode[] {
+  const isFile = !isPathDirectory(url.path);
 
   if (node.type == "source") {
     throw new Error(`Unexpected type "source" at: ${node.name}`);
-  } 
+  }
+
   
-
-
+  
   if (isFile) {
     
     node.type = "source";
     return source;
   }
 
-  const {
-    filename
-  } = url;
-  const {
-    found: childFound,
-    index: childIndex
-  } = (0, _treeOrder.findNodeInContents)(node, (0, _treeOrder.createTreeNodeMatcher)(filename, false, null)); 
-  
+  const { filename } = url;
+  const { found: childFound, index: childIndex } = findNodeInContents(
+    node,
+    createTreeNodeMatcher(filename, false, null)
+  );
 
+  
+  
   if (childFound) {
     const existingNode = node.contents[childIndex];
-
     if (existingNode.type === "source") {
       existingNode.contents = source;
     }
 
     return node.contents;
-  } 
+  }
 
-
-  const newNode = (0, _utils.createSourceNode)(filename, source.url, source);
+  
+  const newNode = createSourceNode(filename, source.url, source);
   const contents = node.contents.slice(0);
   contents.splice(childIndex, 0, newNode);
   return contents;
@@ -119,15 +154,20 @@ function addSourceToNode(node, url, source) {
 
 
 
+export function addToTree(
+  tree: TreeDirectory,
+  source: Source,
+  debuggeeHost: ?string,
+  projectRoot: string
+) {
+  const url = getURL(source, debuggeeHost);
 
-function addToTree(tree, source, debuggeeHost, projectRoot) {
-  const url = (0, _getURL.getURL)(source, debuggeeHost);
-
-  if ((0, _utils.isInvalidUrl)(url, source)) {
+  if (isInvalidUrl(url, source)) {
     return;
   }
 
-  const finalNode = traverseTree(url, tree, debuggeeHost); 
+  const finalNode = traverseTree(url, tree, debuggeeHost);
 
+  
   finalNode.contents = addSourceToNode(finalNode, url, source);
 }

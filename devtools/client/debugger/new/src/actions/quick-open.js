@@ -1,37 +1,25 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.setQuickOpenQuery = setQuickOpenQuery;
-exports.openQuickOpen = openQuickOpen;
-exports.closeQuickOpen = closeQuickOpen;
 
 
 
 
-function setQuickOpenQuery(query) {
+
+
+import type { QuickOpenAction } from "./types";
+
+export function setQuickOpenQuery(query: string): QuickOpenAction {
   return {
     type: "SET_QUICK_OPEN_QUERY",
     query
   };
 }
 
-function openQuickOpen(query) {
+export function openQuickOpen(query?: string): QuickOpenAction {
   if (query != null) {
-    return {
-      type: "OPEN_QUICK_OPEN",
-      query
-    };
+    return { type: "OPEN_QUICK_OPEN", query };
   }
-
-  return {
-    type: "OPEN_QUICK_OPEN"
-  };
+  return { type: "OPEN_QUICK_OPEN" };
 }
 
-function closeQuickOpen() {
-  return {
-    type: "CLOSE_QUICK_OPEN"
-  };
+export function closeQuickOpen(): QuickOpenAction {
+  return { type: "CLOSE_QUICK_OPEN" };
 }

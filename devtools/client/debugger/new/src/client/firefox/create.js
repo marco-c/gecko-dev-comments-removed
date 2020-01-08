@@ -1,36 +1,36 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.createFrame = createFrame;
-exports.createSource = createSource;
-exports.createPause = createPause;
-exports.createBreakpointLocation = createBreakpointLocation;
 
 
 
 
 
-function createFrame(frame) {
+
+
+import type { Frame, Source, Location } from "../../types";
+import type {
+  PausedPacket,
+  FramesResponse,
+  FramePacket,
+  SourcePayload
+} from "./types";
+
+export function createFrame(frame: FramePacket): ?Frame {
   if (!frame) {
     return null;
   }
-
   let title;
-
   if (frame.type == "call") {
     const c = frame.callee;
-    title = c.name || c.userDisplayName || c.displayName || L10N.getStr("anonymous");
+    title =
+      c.name || c.userDisplayName || c.displayName || L10N.getStr("anonymous");
   } else {
     title = `(${frame.type})`;
   }
-
   const location = {
     sourceId: frame.where.source.actor,
     line: frame.where.line,
     column: frame.where.column
   };
+
   return {
     id: frame.actor,
     displayName: title,
@@ -41,9 +41,10 @@ function createFrame(frame) {
   };
 }
 
-function createSource(source, {
-  supportsWasm
-}) {
+export function createSource(
+  source: SourcePayload,
+  { supportsWasm }: { supportsWasm: boolean }
+): Source {
   const createdSource = {
     id: source.actor,
     url: source.url,
@@ -59,19 +60,28 @@ function createSource(source, {
   });
 }
 
-function createPause(packet, response) {
+export function createPause(
+  packet: PausedPacket,
+  response: FramesResponse
+): any {
   
   const frame = packet.frame || response.frames[0];
-  return { ...packet,
+
+  return {
+    ...packet,
     frame: createFrame(frame),
     frames: response.frames.map(createFrame)
   };
-} 
+}
 
 
 
 
-function createBreakpointLocation(location, actualLocation) {
+
+export function createBreakpointLocation(
+  location: Location,
+  actualLocation?: Object
+): Location {
   if (!actualLocation) {
     return location;
   }

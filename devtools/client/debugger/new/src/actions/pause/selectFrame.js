@@ -1,37 +1,30 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.selectFrame = selectFrame;
-
-var _sources = require("../sources/index");
-
-var _expressions = require("../expressions");
-
-var _fetchScopes = require("./fetchScopes");
 
 
 
 
 
 
+import { selectLocation } from "../sources";
+import { evaluateExpressions } from "../expressions";
+import { fetchScopes } from "./fetchScopes";
+
+import type { Frame } from "../../types";
+import type { ThunkArgs } from "../types";
 
 
 
-function selectFrame(frame) {
-  return async ({
-    dispatch,
-    client,
-    getState,
-    sourceMaps
-  }) => {
+
+
+export function selectFrame(frame: Frame) {
+  return async ({ dispatch, client, getState, sourceMaps }: ThunkArgs) => {
     dispatch({
       type: "SELECT_FRAME",
       frame
     });
-    dispatch((0, _sources.selectLocation)(frame.location));
-    dispatch((0, _expressions.evaluateExpressions)());
-    dispatch((0, _fetchScopes.fetchScopes)());
+
+    dispatch(selectLocation(frame.location));
+
+    dispatch(evaluateExpressions());
+    dispatch(fetchScopes());
   };
 }

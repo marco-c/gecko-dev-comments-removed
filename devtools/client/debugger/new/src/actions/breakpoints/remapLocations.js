@@ -1,23 +1,28 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = remapLocations;
 
 
 
 
-function remapLocations(breakpoints, sourceId, sourceMaps) {
-  const sourceBreakpoints = breakpoints.map(async breakpoint => {
-    if (breakpoint.location.sourceId !== sourceId) {
-      return breakpoint;
+
+
+import type { Breakpoint } from "../../types";
+import type { BreakpointsMap } from "../../selectors";
+
+export default function remapLocations(
+  breakpoints: Breakpoint[],
+  sourceId: string,
+  sourceMaps: Object
+) {
+  const sourceBreakpoints: BreakpointsMap = breakpoints.map(
+    async breakpoint => {
+      if (breakpoint.location.sourceId !== sourceId) {
+        return breakpoint;
+      }
+      const location = await sourceMaps.getOriginalLocation(
+        breakpoint.location
+      );
+      return { ...breakpoint, location };
     }
+  );
 
-    const location = await sourceMaps.getOriginalLocation(breakpoint.location);
-    return { ...breakpoint,
-      location
-    };
-  });
   return Promise.all(sourceBreakpoints.valueSeq());
 }

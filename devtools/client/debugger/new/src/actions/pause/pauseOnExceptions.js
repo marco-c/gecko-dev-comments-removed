@@ -1,30 +1,25 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.pauseOnExceptions = pauseOnExceptions;
-
-var _promise = require("../utils/middleware/promise");
-
-var _telemetry = require("../../utils/telemetry");
 
 
 
 
 
 
+import { PROMISE } from "../utils/middleware/promise";
+import { recordEvent } from "../../utils/telemetry";
+import type { ThunkArgs } from "../types";
 
 
 
 
-function pauseOnExceptions(shouldPauseOnExceptions, shouldPauseOnCaughtExceptions) {
-  return ({
-    dispatch,
-    client
-  }) => {
+
+
+export function pauseOnExceptions(
+  shouldPauseOnExceptions: boolean,
+  shouldPauseOnCaughtExceptions: boolean
+) {
+  return ({ dispatch, client }: ThunkArgs) => {
     
-    (0, _telemetry.recordEvent)("pause_on_exceptions", {
+    recordEvent("pause_on_exceptions", {
       exceptions: shouldPauseOnExceptions,
       
       caught_exceptio: shouldPauseOnCaughtExceptions
@@ -35,7 +30,10 @@ function pauseOnExceptions(shouldPauseOnExceptions, shouldPauseOnCaughtException
       type: "PAUSE_ON_EXCEPTIONS",
       shouldPauseOnExceptions,
       shouldPauseOnCaughtExceptions,
-      [_promise.PROMISE]: client.pauseOnExceptions(shouldPauseOnExceptions, shouldPauseOnCaughtExceptions)
+      [PROMISE]: client.pauseOnExceptions(
+        shouldPauseOnExceptions,
+        shouldPauseOnCaughtExceptions
+      )
     });
   };
 }

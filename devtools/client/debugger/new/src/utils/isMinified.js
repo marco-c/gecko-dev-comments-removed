@@ -1,21 +1,18 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.isMinified = isMinified;
 
 
 
+
+
+
+import type { Source } from "../types";
 
 
 const SAMPLE_SIZE = 50;
 const INDENT_COUNT_THRESHOLD = 5;
 const CHARACTER_LIMIT = 250;
-
 const _minifiedCache = new Map();
 
-function isMinified(source) {
+export function isMinified(source: Source) {
   if (_minifiedCache.has(source.id)) {
     return _minifiedCache.get(source.id);
   }
@@ -25,7 +22,6 @@ function isMinified(source) {
   }
 
   let text = source.text;
-
   if (!text) {
     return false;
   }
@@ -34,33 +30,30 @@ function isMinified(source) {
   let lineStartIndex = 0;
   let lines = 0;
   let indentCount = 0;
-  let overCharLimit = false; 
+  let overCharLimit = false;
 
+  
   text = text.replace(/\/\*[\S\s]*?\*\/|\/\/(.+|\n)/g, "");
 
   while (lines++ < SAMPLE_SIZE) {
     lineEndIndex = text.indexOf("\n", lineStartIndex);
-
     if (lineEndIndex == -1) {
       break;
     }
-
     if (/^\s+/.test(text.slice(lineStartIndex, lineEndIndex))) {
       indentCount++;
-    } 
-
-
+    }
+    
     if (lineEndIndex - lineStartIndex > CHARACTER_LIMIT) {
       overCharLimit = true;
       break;
     }
-
     lineStartIndex = lineEndIndex + 1;
   }
 
-  const minified = indentCount / lines * 100 < INDENT_COUNT_THRESHOLD || overCharLimit;
+  const minified =
+    (indentCount / lines) * 100 < INDENT_COUNT_THRESHOLD || overCharLimit;
 
   _minifiedCache.set(source.id, minified);
-
   return minified;
 }

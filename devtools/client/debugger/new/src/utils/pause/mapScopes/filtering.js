@@ -1,52 +1,50 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.filterSortedArray = filterSortedArray;
 
 
 
 
-function findInsertionLocation(array, callback) {
+
+
+function findInsertionLocation<T>(
+  array: Array<T>,
+  callback: T => number
+): number {
   let left = 0;
   let right = array.length;
-
   while (left < right) {
     const mid = Math.floor((left + right) / 2);
     const item = array[mid];
-    const result = callback(item);
 
+    const result = callback(item);
     if (result === 0) {
       left = mid;
       break;
     }
-
     if (result >= 0) {
       right = mid;
     } else {
       left = mid + 1;
     }
-  } 
+  }
 
-
+  
   let i = left;
-
   if (i < array.length) {
     while (i >= 0 && callback(array[i]) >= 0) {
       i--;
     }
-
     return i + 1;
   }
 
   return i;
 }
 
-function filterSortedArray(array, callback) {
+export function filterSortedArray<T>(
+  array: Array<T>,
+  callback: T => number
+): Array<T> {
   const start = findInsertionLocation(array, callback);
-  const results = [];
 
+  const results = [];
   for (let i = start; i < array.length && callback(array[i]) === 0; i++) {
     results.push(array[i]);
   }

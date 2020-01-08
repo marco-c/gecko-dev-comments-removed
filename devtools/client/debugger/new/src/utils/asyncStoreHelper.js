@@ -1,15 +1,10 @@
-"use strict";
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.asyncStoreHelper = asyncStoreHelper;
 
-var _asyncStorage = require("devtools/shared/async-storage");
 
-var _asyncStorage2 = _interopRequireDefault(_asyncStorage);
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+
+import { asyncStorage } from "devtools-modules";
 
 
 
@@ -20,12 +15,8 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 
 
-
-
-
-
-function asyncStoreHelper(root, mappings) {
-  let store = {};
+export function asyncStoreHelper(root: string, mappings: Object) {
+  let store: any = {};
 
   function getMappingKey(key) {
     return Array.isArray(mappings[key]) ? mappings[key][0] : mappings[key];
@@ -35,19 +26,22 @@ function asyncStoreHelper(root, mappings) {
     return Array.isArray(mappings[key]) ? mappings[key][1] : null;
   }
 
-  Object.keys(mappings).map(key => Object.defineProperty(store, key, {
-    async get() {
-      const value = await _asyncStorage2.default.getItem(`${root}.${getMappingKey(key)}`);
-      return value || getMappingDefaultValue(key);
-    },
+  Object.keys(mappings).map(key =>
+    Object.defineProperty(store, key, {
+      async get() {
+        const value = await asyncStorage.getItem(
+          `${root}.${getMappingKey(key)}`
+        );
+        return value || getMappingDefaultValue(key);
+      },
+      set(value) {
+        return asyncStorage.setItem(`${root}.${getMappingKey(key)}`, value);
+      }
+    })
+  );
 
-    set(value) {
-      return _asyncStorage2.default.setItem(`${root}.${getMappingKey(key)}`, value);
-    }
-
-  }));
   store = new Proxy(store, {
-    set: function (target, property, value, receiver) {
+    set: function(target, property, value, receiver) {
       if (!mappings.hasOwnProperty(property)) {
         throw new Error(`AsyncStore: ${property} is not defined in mappings`);
       }
@@ -56,5 +50,6 @@ function asyncStoreHelper(root, mappings) {
       return true;
     }
   });
-  return store;
+
+  return (store: { [$Keys<typeof mappings>]: any });
 }

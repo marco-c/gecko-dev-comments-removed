@@ -1,11 +1,3 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.history = undefined;
-
-var _devtoolsEnvironment = require("devtools/client/debugger/new/dist/vendors").vendored["devtools-environment"];
 
 
 
@@ -13,17 +5,21 @@ var _devtoolsEnvironment = require("devtools/client/debugger/new/dist/vendors").
 
 
 
+import { isDevelopment } from "devtools-environment";
+
+import type { ThunkArgs } from "../../types";
 
 
 
 
 
-const history = exports.history = (log = []) => ({
+
+export const history = (log: Object[] = []) => ({
   dispatch,
   getState
-}) => {
-  return next => action => {
-    if ((0, _devtoolsEnvironment.isDevelopment)()) {
+}: ThunkArgs) => {
+  return (next: Function) => (action: Object) => {
+    if (isDevelopment()) {
       log.push(action);
     }
 

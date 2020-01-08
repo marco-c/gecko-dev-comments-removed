@@ -1,8 +1,3 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
 
 
 
@@ -12,13 +7,10 @@ Object.defineProperty(exports, "__esModule", {
 
 
 
-
-
-
-const Task = exports.Task = {
+export const Task = {
   
-  async: function (task) {
-    return function () {
+  async: function(task) {
+    return function() {
       return Task.spawn(task, this, arguments);
     };
   },
@@ -28,22 +20,24 @@ const Task = exports.Task = {
 
 
 
-  spawn: function (task, scope, args) {
-    return new Promise(function (resolve, reject) {
+  spawn: function(task, scope, args) {
+    return new Promise(function(resolve, reject) {
       const iterator = task.apply(scope, args);
 
       const callNext = lastValue => {
         const iteration = iterator.next(lastValue);
-        Promise.resolve(iteration.value).then(value => {
-          if (iteration.done) {
-            resolve(value);
-          } else {
-            callNext(value);
-          }
-        }).catch(error => {
-          reject(error);
-          iterator.throw(error);
-        });
+        Promise.resolve(iteration.value)
+          .then(value => {
+            if (iteration.done) {
+              resolve(value);
+            } else {
+              callNext(value);
+            }
+          })
+          .catch(error => {
+            reject(error);
+            iterator.throw(error);
+          });
       };
 
       callNext(undefined);

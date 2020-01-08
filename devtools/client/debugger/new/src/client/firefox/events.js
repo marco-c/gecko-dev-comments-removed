@@ -1,39 +1,39 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.clientEvents = exports.setupEvents = undefined;
-
-var _create = require("./create");
-
-var _sourceQueue = require("../../utils/source-queue");
-
-var _sourceQueue2 = _interopRequireDefault(_sourceQueue);
-
-var _prefs = require("../../utils/prefs");
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 
 
+
+
+
+import type {
+  SourcePacket,
+  ResumedPacket,
+  PausedPacket,
+  ThreadClient,
+  Actions
+} from "./types";
+
+import { createPause, createSource } from "./create";
+import sourceQueue from "../../utils/source-queue";
+import { features } from "../../utils/prefs";
 
 const CALL_STACK_PAGE_SIZE = 1000;
-let threadClient;
-let actions;
-let supportsWasm;
-let isInterrupted;
 
-function setupEvents(dependencies) {
+type Dependencies = {
+  threadClient: ThreadClient,
+  actions: Actions,
+  supportsWasm: boolean
+};
+
+let threadClient: ThreadClient;
+let actions: Actions;
+let supportsWasm: boolean;
+let isInterrupted: boolean;
+
+function setupEvents(dependencies: Dependencies) {
   threadClient = dependencies.threadClient;
   actions = dependencies.actions;
   supportsWasm = dependencies.supportsWasm;
-
-  _sourceQueue2.default.initialize({
-    actions,
-    supportsWasm,
-    createSource: _create.createSource
-  });
+  sourceQueue.initialize({ actions, supportsWasm, createSource });
 
   if (threadClient) {
     Object.keys(clientEvents).forEach(eventName => {
@@ -46,48 +46,47 @@ function setupEvents(dependencies) {
       if (threadClient._parent.on) {
         threadClient._parent.on("workerListChanged", workerListChanged);
       } else {
-        threadClient._parent.addListener("workerListChanged", workerListChanged);
+        threadClient._parent.addListener(
+          "workerListChanged",
+          workerListChanged
+        );
       }
     }
   }
 }
 
-async function paused(_, packet) {
+async function paused(_: "paused", packet: PausedPacket) {
   
   
   
-  const {
-    why
-  } = packet;
-
+  const { why } = packet;
   if (why.type === "interrupted" && !packet.why.onNext) {
     isInterrupted = true;
     return;
   }
 
   let response;
-
   try {
     
     response = await threadClient.getFrames(0, CALL_STACK_PAGE_SIZE);
   } catch (e) {
     console.log(e);
     return;
-  } 
+  }
 
-
+  
   if (!response.hasOwnProperty("frames")) {
     return;
   }
 
   if (why.type != "alreadyPaused") {
-    const pause = (0, _create.createPause)(packet, response);
-    await _sourceQueue2.default.flush();
+    const pause = createPause(packet, response);
+    await sourceQueue.flush();
     actions.paused(pause);
   }
 }
 
-function resumed(_, packet) {
+function resumed(_: "resumed", packet: ResumedPacket) {
   
   
   
@@ -99,12 +98,10 @@ function resumed(_, packet) {
   actions.resumed(packet);
 }
 
-function newSource(_, {
-  source
-}) {
-  _sourceQueue2.default.queue(source);
+function newSource(_: "newSource", { source }: SourcePacket) {
+  sourceQueue.queue(source);
 
-  if (_prefs.features.eventListeners) {
+  if (features.eventListeners) {
     actions.fetchEventListeners();
   }
 }
@@ -118,5 +115,5 @@ const clientEvents = {
   resumed,
   newSource
 };
-exports.setupEvents = setupEvents;
-exports.clientEvents = clientEvents;
+
+export { setupEvents, clientEvents };

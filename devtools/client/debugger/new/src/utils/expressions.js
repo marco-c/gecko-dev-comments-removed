@@ -1,19 +1,14 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.sanitizeInput = sanitizeInput;
-exports.wrapExpression = wrapExpression;
-exports.getValue = getValue;
-
-var _indentation = require("./indentation");
 
 
 
 
 
-function sanitizeInput(input) {
+
+import { correctIndentation } from "./indentation";
+import type { Expression } from "../types";
+
+
+export function sanitizeInput(input: string) {
   return input.replace(/"/g, '"');
 }
 
@@ -23,9 +18,8 @@ function sanitizeInput(input) {
 
 
 
-
-function wrapExpression(input) {
-  return (0, _indentation.correctIndentation)(`
+export function wrapExpression(input: string) {
+  return correctIndentation(`
     try {
       ${sanitizeInput(input)}
     } catch (e) {
@@ -42,27 +36,19 @@ function isUnavailable(value) {
   return ["ReferenceError", "TypeError"].includes(value.preview.name);
 }
 
-function getValue(expression) {
+export function getValue(expression: Expression) {
   const value = expression.value;
-
   if (!value) {
     return {
       path: expression.from,
-      value: {
-        unavailable: true
-      }
+      value: { unavailable: true }
     };
   }
 
   if (value.exception) {
     if (isUnavailable(value.exception)) {
-      return {
-        value: {
-          unavailable: true
-        }
-      };
+      return { value: { unavailable: true } };
     }
-
     return {
       path: value.from,
       value: value.exception
@@ -77,24 +63,13 @@ function getValue(expression) {
   }
 
   if (value.result && value.result.class == "Error") {
-    const {
-      name,
-      message
-    } = value.result.preview;
-
+    const { name, message } = value.result.preview;
     if (isUnavailable(value.result)) {
-      return {
-        value: {
-          unavailable: true
-        }
-      };
+      return { value: { unavailable: true } };
     }
 
     const newValue = `${name}: ${message}`;
-    return {
-      path: value.input,
-      value: newValue
-    };
+    return { path: value.input, value: newValue };
   }
 
   if (typeof value.result == "object") {

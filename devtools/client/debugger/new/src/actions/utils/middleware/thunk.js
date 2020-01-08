@@ -1,9 +1,3 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.thunk = thunk;
 
 
 
@@ -12,23 +6,23 @@ exports.thunk = thunk;
 
 
 
+import type { ThunkArgs, ActionType } from "../../types";
 
 
 
 
 
 
-function thunk(makeArgs) {
-  return ({
-    dispatch,
-    getState
-  }) => {
-    const args = {
-      dispatch,
-      getState
-    };
-    return next => action => {
-      return typeof action === "function" ? action(makeArgs ? makeArgs(args, getState()) : args) : next(action);
+
+
+export function thunk(makeArgs: any) {
+  return ({ dispatch, getState }: ThunkArgs) => {
+    const args = { dispatch, getState };
+
+    return (next: Function) => (action: ActionType) => {
+      return typeof action === "function"
+        ? action(makeArgs ? makeArgs(args, getState()) : args)
+        : next(action);
     };
   };
 }

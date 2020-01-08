@@ -1,12 +1,8 @@
-"use strict";
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.sortEntireTree = sortEntireTree;
-exports.sortTree = sortTree;
 
-var _utils = require("./utils");
+
+
+import { nodeHasChildren, isExactUrlMatch } from "./utils";
 
 
 
@@ -14,18 +10,13 @@ var _utils = require("./utils");
 
 
 
-
-
-
-
-function sortEntireTree(tree, debuggeeUrl = "") {
-  if ((0, _utils.nodeHasChildren)(tree)) {
-    const contents = sortTree(tree, debuggeeUrl).map(subtree => sortEntireTree(subtree));
-    return { ...tree,
-      contents
-    };
+export function sortEntireTree(tree, debuggeeUrl = "") {
+  if (nodeHasChildren(tree)) {
+    const contents = sortTree(tree, debuggeeUrl).map(subtree =>
+      sortEntireTree(subtree)
+    );
+    return { ...tree, contents };
   }
-
   return tree;
 }
 
@@ -35,26 +26,24 @@ function sortEntireTree(tree, debuggeeUrl = "") {
 
 
 
-
-function sortTree(tree, debuggeeUrl = "") {
+export function sortTree(tree, debuggeeUrl = "") {
   return tree.contents.sort((previousNode, currentNode) => {
-    const currentNodeIsDir = (0, _utils.nodeHasChildren)(currentNode);
-    const previousNodeIsDir = (0, _utils.nodeHasChildren)(previousNode);
-
+    const currentNodeIsDir = nodeHasChildren(currentNode);
+    const previousNodeIsDir = nodeHasChildren(previousNode);
     if (currentNode.name === "(index)") {
       return 1;
     } else if (previousNode.name === "(index)") {
       return -1;
-    } else if ((0, _utils.isExactUrlMatch)(currentNode.name, debuggeeUrl)) {
+    } else if (isExactUrlMatch(currentNode.name, debuggeeUrl)) {
       return 1;
-    } else if ((0, _utils.isExactUrlMatch)(previousNode.name, debuggeeUrl)) {
-      return -1; 
+    } else if (isExactUrlMatch(previousNode.name, debuggeeUrl)) {
+      return -1;
+      
     } else if (previousNodeIsDir && !currentNodeIsDir) {
       return -1;
     } else if (!previousNodeIsDir && currentNodeIsDir) {
       return 1;
     }
-
     return previousNode.name.localeCompare(currentNode.name);
   });
 }

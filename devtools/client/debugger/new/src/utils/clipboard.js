@@ -1,9 +1,3 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.copyToTheClipboard = copyToTheClipboard;
 
 
 
@@ -13,8 +7,10 @@ exports.copyToTheClipboard = copyToTheClipboard;
 
 
 
-function copyToTheClipboard(string) {
-  const doCopy = function (e) {
+
+
+export function copyToTheClipboard(string: string) {
+  const doCopy = function(e: any) {
     e.clipboardData.setData("text/plain", string);
     e.preventDefault();
   };

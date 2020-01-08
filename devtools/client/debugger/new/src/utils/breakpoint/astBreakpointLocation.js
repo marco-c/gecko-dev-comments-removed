@@ -1,49 +1,41 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.getASTLocation = getASTLocation;
-exports.findScopeByName = findScopeByName;
-
-var _parser = require("../../workers/parser/index");
-
-var _ast = require("../ast");
 
 
 
 
-function getASTLocation(source, symbols, location) {
+
+
+import { getSymbols } from "../../workers/parser";
+import { findClosestFunction } from "../ast";
+
+import type { SymbolDeclarations } from "../../workers/parser";
+
+import type { Location, Source, ASTLocation } from "../../types";
+
+export function getASTLocation(
+  source: Source,
+  symbols: SymbolDeclarations,
+  location: Location
+): ASTLocation {
   if (source.isWasm || !symbols || symbols.loading) {
-    return {
-      name: undefined,
-      offset: location
-    };
+    return { name: undefined, offset: location };
   }
 
-  const scope = (0, _ast.findClosestFunction)(symbols, location);
-
+  const scope = findClosestFunction(symbols, location);
   if (scope) {
     
     
     const line = location.line - scope.location.start.line;
     return {
       name: scope.name,
-      offset: {
-        line,
-        column: undefined
-      }
+      offset: { line, column: undefined }
     };
   }
-
-  return {
-    name: undefined,
-    offset: location
-  };
+  return { name: undefined, offset: location };
 }
 
-async function findScopeByName(source, name) {
-  const symbols = await (0, _parser.getSymbols)(source.id);
+export async function findScopeByName(source: Source, name: ?string) {
+  const symbols = await getSymbols(source.id);
   const functions = symbols.functions;
+
   return functions.find(node => node.name === name);
 }

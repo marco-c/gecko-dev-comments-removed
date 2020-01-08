@@ -1,27 +1,20 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.recordCoverage = recordCoverage;
 
 
 
 
-function recordCoverage() {
-  return async function ({
-    dispatch,
-    getState,
-    client
-  }) {
-    const {
-      coverage
-    } = await client.recordCoverage();
-    return dispatch({
-      type: "RECORD_COVERAGE",
-      value: {
-        coverage
-      }
-    });
+
+
+import type { Action, ThunkArgs } from "./types";
+
+export function recordCoverage() {
+  return async function({ dispatch, getState, client }: ThunkArgs) {
+    const { coverage } = await client.recordCoverage();
+
+    return dispatch(
+      ({
+        type: "RECORD_COVERAGE",
+        value: { coverage }
+      }: Action)
+    );
   };
 }

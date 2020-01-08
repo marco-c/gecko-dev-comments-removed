@@ -1,16 +1,14 @@
-"use strict";
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.resumed = resumed;
 
-var _selectors = require("../../selectors/index");
 
-var _expressions = require("../expressions");
 
-var _pause = require("../../utils/pause/index");
 
+
+import { isStepping, getPauseReason } from "../../selectors";
+import { evaluateExpressions } from "../expressions";
+import { inDebuggerEval } from "../../utils/pause";
+
+import type { ThunkArgs } from "../types";
 
 
 
@@ -18,24 +16,16 @@ var _pause = require("../../utils/pause/index");
 
 
 
+export function resumed() {
+  return async ({ dispatch, client, getState }: ThunkArgs) => {
+    const why = getPauseReason(getState());
+    const wasPausedInEval = inDebuggerEval(why);
+    const wasStepping = isStepping(getState());
 
-
-
-function resumed() {
-  return async ({
-    dispatch,
-    client,
-    getState
-  }) => {
-    const why = (0, _selectors.getPauseReason)(getState());
-    const wasPausedInEval = (0, _pause.inDebuggerEval)(why);
-    const wasStepping = (0, _selectors.isStepping)(getState());
-    dispatch({
-      type: "RESUME"
-    });
+    dispatch({ type: "RESUME" });
 
     if (!wasStepping && !wasPausedInEval) {
-      await dispatch((0, _expressions.evaluateExpressions)());
+      await dispatch(evaluateExpressions());
     }
   };
 }

@@ -1,15 +1,10 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.getPauseReason = getPauseReason;
-exports.isException = isException;
-exports.isInterrupted = isInterrupted;
-exports.inDebuggerEval = inDebuggerEval;
 
 
 
+
+
+
+import type { Why } from "../../types";
 
 
 
@@ -22,6 +17,7 @@ const reasons = {
   resumeLimit: "whyPaused.resumeLimit",
   pauseOnDOMEvents: "whyPaused.pauseOnDOMEvents",
   breakpointConditionThrown: "whyPaused.breakpointConditionThrown",
+
   
   DOM: "whyPaused.breakpoint",
   EventListener: "whyPaused.pauseOnDOMEvents",
@@ -32,13 +28,12 @@ const reasons = {
   other: "whyPaused.other"
 };
 
-function getPauseReason(why) {
+export function getPauseReason(why?: Why): string | null {
   if (!why) {
     return null;
   }
 
   const reasonType = why.type;
-
   if (!reasons[reasonType]) {
     console.log("Please file an issue: reasonType=", reasonType);
   }
@@ -46,16 +41,22 @@ function getPauseReason(why) {
   return reasons[reasonType];
 }
 
-function isException(why) {
+export function isException(why: Why) {
   return why && why.type && why.type === "exception";
 }
 
-function isInterrupted(why) {
+export function isInterrupted(why: ?Why) {
   return why && why.type && why.type === "interrupted";
 }
 
-function inDebuggerEval(why) {
-  if (why && why.type === "exception" && why.exception && why.exception.preview && why.exception.preview.fileName) {
+export function inDebuggerEval(why: ?Why) {
+  if (
+    why &&
+    why.type === "exception" &&
+    why.exception &&
+    why.exception.preview &&
+    why.exception.preview.fileName
+  ) {
     return why.exception.preview.fileName === "debugger eval code";
   }
 

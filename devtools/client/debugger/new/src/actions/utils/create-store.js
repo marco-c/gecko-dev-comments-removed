@@ -1,22 +1,3 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _redux = require("devtools/client/shared/vendor/redux");
-
-var _waitService = require("./middleware/wait-service");
-
-var _log = require("./middleware/log");
-
-var _history = require("./middleware/history");
-
-var _promise = require("./middleware/promise");
-
-var _thunk = require("./middleware/thunk");
-
-var _timing = require("./middleware/timing");
 
 
 
@@ -30,6 +11,25 @@ var _timing = require("./middleware/timing");
 
 
 
+import { createStore, applyMiddleware } from "redux";
+import { waitUntilService } from "./middleware/wait-service";
+import { log } from "./middleware/log";
+import { history } from "./middleware/history";
+import { promise } from "./middleware/promise";
+import { thunk } from "./middleware/thunk";
+import { timing } from "./middleware/timing";
+
+
+
+
+
+type ReduxStoreOptions = {
+  makeThunkArgs?: Function,
+  history?: Array<Object>,
+  middleware?: Function[],
+  log?: boolean,
+  timing?: boolean
+};
 
 
 
@@ -42,15 +42,22 @@ var _timing = require("./middleware/timing");
 
 
 
-const configureStore = (opts = {}) => {
-  const middleware = [(0, _thunk.thunk)(opts.makeThunkArgs), _promise.promise, 
-  
-  
-  
-  _waitService.waitUntilService];
+
+
+const configureStore = (opts: ReduxStoreOptions = {}) => {
+  const middleware = [
+    thunk(opts.makeThunkArgs),
+    promise,
+
+    
+    
+    
+    
+    waitUntilService
+  ];
 
   if (opts.history) {
-    middleware.push((0, _history.history)(opts.history));
+    middleware.push(history(opts.history));
   }
 
   if (opts.middleware) {
@@ -58,16 +65,20 @@ const configureStore = (opts = {}) => {
   }
 
   if (opts.log) {
-    middleware.push(_log.log);
+    middleware.push(log);
   }
 
   if (opts.timing) {
-    middleware.push(_timing.timing);
-  } 
+    middleware.push(timing);
+  }
 
+  
+  const devtoolsExt =
+    typeof window === "object" && window.devToolsExtension
+      ? window.devToolsExtension()
+      : f => f;
 
-  const devtoolsExt = typeof window === "object" && window.devToolsExtension ? window.devToolsExtension() : f => f;
-  return (0, _redux.applyMiddleware)(...middleware)(devtoolsExt(_redux.createStore));
+  return applyMiddleware(...middleware)(devtoolsExt(createStore));
 };
 
-exports.default = configureStore;
+export default configureStore;

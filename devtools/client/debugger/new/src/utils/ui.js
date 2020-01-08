@@ -1,12 +1,3 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.isVisible = isVisible;
-exports.getLineNumberWidth = getLineNumberWidth;
-exports.resizeBreakpointGutter = resizeBreakpointGutter;
-exports.resizeToggleButton = resizeToggleButton;
 
 
 
@@ -17,15 +8,14 @@ exports.resizeToggleButton = resizeToggleButton;
 
 
 
-function isVisible() {
+export function isVisible() {
   const el = document.querySelector("#mount");
   return el && el.getBoundingClientRect().width;
 }
 
 
 
-
-function getLineNumberWidth(editor) {
+export function getLineNumberWidth(editor: Object) {
   const gutters = editor.display.gutters;
   const lineNumbers = gutters.querySelector(".CodeMirror-linenumbers");
   return lineNumbers && lineNumbers.clientWidth;
@@ -37,11 +27,9 @@ function getLineNumberWidth(editor) {
 
 
 
-
-function resizeBreakpointGutter(editor) {
+export function resizeBreakpointGutter(editor: Object) {
   const gutters = editor.display.gutters;
   const breakpoints = gutters.querySelector(".breakpoints");
-
   if (breakpoints) {
     breakpoints.style.width = `${getLineNumberWidth(editor)}px`;
   }
@@ -51,10 +39,10 @@ function resizeBreakpointGutter(editor) {
 
 
 
-
-function resizeToggleButton(editor) {
-  const toggleButton = document.querySelector(".source-header .toggle-button-start");
-
+export function resizeToggleButton(editor: Object) {
+  const toggleButton = document.querySelector(
+    ".source-header .toggle-button-start"
+  );
   if (toggleButton) {
     toggleButton.style.width = `${getLineNumberWidth(editor)}px`;
   }

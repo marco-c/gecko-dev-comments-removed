@@ -1,21 +1,16 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.setExpandedState = setExpandedState;
 
 
 
 
-function setExpandedState(expanded) {
-  return ({
-    dispatch,
-    getState
-  }) => {
-    dispatch({
-      type: "SET_EXPANDED_STATE",
-      expanded
-    });
+import type { Action, ThunkArgs } from "./types";
+
+export function setExpandedState(expanded) {
+  return ({ dispatch, getState }: ThunkArgs) => {
+    dispatch(
+      ({
+        type: "SET_EXPANDED_STATE",
+        expanded
+      }: Action)
+    );
   };
 }

@@ -1,33 +1,30 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.isImmutablePreview = isImmutablePreview;
-exports.isImmutable = isImmutable;
-exports.isReactComponent = isReactComponent;
-exports.isConsole = isConsole;
 
 
 
+
+
+
+import type { Grip } from "../types";
 
 const IMMUTABLE_FIELDS = ["_root", "__ownerID", "__altered", "__hash"];
 const REACT_FIELDS = ["_reactInternalInstance", "_reactInternalFiber"];
 
-function isImmutablePreview(result) {
+export function isImmutablePreview(result: ?Grip) {
   return result && isImmutable(result.preview);
 }
 
-function isImmutable(result) {
+export function isImmutable(result: ?Grip) {
   if (!result || typeof result.ownProperties != "object") {
     return;
   }
 
   const ownProperties = result.ownProperties;
-  return IMMUTABLE_FIELDS.every(field => Object.keys(ownProperties).includes(field));
+  return IMMUTABLE_FIELDS.every(field =>
+    Object.keys(ownProperties).includes(field)
+  );
 }
 
-function isReactComponent(result) {
+export function isReactComponent(result: ?Grip) {
   if (!result || typeof result.ownProperties != "object") {
     return;
   }
@@ -36,6 +33,6 @@ function isReactComponent(result) {
   return REACT_FIELDS.some(field => Object.keys(ownProperties).includes(field));
 }
 
-function isConsole(expression) {
+export function isConsole(expression: string) {
   return /^console/.test(expression);
 }

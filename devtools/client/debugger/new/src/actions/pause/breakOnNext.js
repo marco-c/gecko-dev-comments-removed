@@ -1,12 +1,10 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.breakOnNext = breakOnNext;
 
 
 
+
+
+
+import type { ThunkArgs } from "../types";
 
 
 
@@ -16,15 +14,9 @@ exports.breakOnNext = breakOnNext;
 
 
 
-
-function breakOnNext() {
-  return async ({
-    dispatch,
-    client
-  }) => {
+export function breakOnNext() {
+  return async ({ dispatch, client }: ThunkArgs) => {
     await client.breakOnNext();
-    return dispatch({
-      type: "BREAK_ON_NEXT"
-    });
+    return dispatch({ type: "BREAK_ON_NEXT" });
   };
 }

@@ -1,46 +1,37 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.getDomain = getDomain;
-exports.findNodeInContents = findNodeInContents;
-exports.createTreeNodeMatcher = createTreeNodeMatcher;
-
-var _url = require("../url");
-
-var _utils = require("./utils");
 
 
 
 
 
 
+import { parse } from "../url";
+
+import { nodeHasChildren } from "./utils";
+
+import type { TreeNode } from "./types";
 
 
-function getDomain(url) {
+
+
+export function getDomain(url?: string): ?string {
   
   if (!url) {
     return null;
   }
-
-  const {
-    host
-  } = (0, _url.parse)(url);
-
+  const { host } = parse(url);
   if (!host) {
     return null;
   }
-
   return host.startsWith("www.") ? host.substr("www.".length) : host;
 }
 
 
 
 
-
-function isExactDomainMatch(part, debuggeeHost) {
-  return part.startsWith("www.") ? part.substr("www.".length) === debuggeeHost : part === debuggeeHost;
+function isExactDomainMatch(part: string, debuggeeHost: string): boolean {
+  return part.startsWith("www.")
+    ? part.substr("www.".length) === debuggeeHost
+    : part === debuggeeHost;
 }
 
 
@@ -49,6 +40,7 @@ function isExactDomainMatch(part, debuggeeHost) {
 
 
 
+export type FindNodeInContentsMatcher = (node: TreeNode) => number;
 
 
 
@@ -57,70 +49,61 @@ function isExactDomainMatch(part, debuggeeHost) {
 
 
 
-function findNodeInContents(tree, matcher) {
+export function findNodeInContents(
+  tree: TreeNode,
+  matcher: FindNodeInContentsMatcher
+) {
   if (tree.type === "source" || tree.contents.length === 0) {
-    return {
-      found: false,
-      index: 0
-    };
+    return { found: false, index: 0 };
   }
 
   let left = 0;
   let right = tree.contents.length - 1;
-
   while (left < right) {
     const middle = Math.floor((left + right) / 2);
-
     if (matcher(tree.contents[middle]) < 0) {
       left = middle + 1;
     } else {
       right = middle;
     }
   }
-
   const result = matcher(tree.contents[left]);
-
   if (result === 0) {
-    return {
-      found: true,
-      index: left
-    };
+    return { found: true, index: left };
   }
-
-  return {
-    found: false,
-    index: result > 0 ? left : left + 1
-  };
+  return { found: false, index: result > 0 ? left : left + 1 };
 }
 
 const IndexName = "(index)";
 
-function createTreeNodeMatcherWithIndex() {
-  return node => node.name === IndexName ? 0 : 1;
+function createTreeNodeMatcherWithIndex(): FindNodeInContentsMatcher {
+  return (node: TreeNode) => (node.name === IndexName ? 0 : 1);
 }
 
-function createTreeNodeMatcherWithDebuggeeHost(debuggeeHost) {
-  return node => {
+function createTreeNodeMatcherWithDebuggeeHost(
+  debuggeeHost: string
+): FindNodeInContentsMatcher {
+  return (node: TreeNode) => {
     if (node.name === IndexName) {
       return -1;
     }
-
     return isExactDomainMatch(node.name, debuggeeHost) ? 0 : 1;
   };
 }
 
-function createTreeNodeMatcherWithNameAndOther(part, isDir, debuggeeHost) {
-  return node => {
+function createTreeNodeMatcherWithNameAndOther(
+  part: string,
+  isDir: boolean,
+  debuggeeHost: ?string
+): FindNodeInContentsMatcher {
+  return (node: TreeNode) => {
     if (node.name === IndexName) {
       return -1;
     }
-
     if (debuggeeHost && isExactDomainMatch(node.name, debuggeeHost)) {
       return -1;
     }
-
-    const nodeIsDir = (0, _utils.nodeHasChildren)(node);
-
+    const nodeIsDir = nodeHasChildren(node);
     if (nodeIsDir && !isDir) {
       return -1;
     } else if (!nodeIsDir && isDir) {
@@ -139,8 +122,11 @@ function createTreeNodeMatcherWithNameAndOther(part, isDir, debuggeeHost) {
 
 
 
-
-function createTreeNodeMatcher(part, isDir, debuggeeHost) {
+export function createTreeNodeMatcher(
+  part: string,
+  isDir: boolean,
+  debuggeeHost: ?string
+): FindNodeInContentsMatcher {
   if (part === IndexName) {
     
     return createTreeNodeMatcherWithIndex();
@@ -149,8 +135,8 @@ function createTreeNodeMatcher(part, isDir, debuggeeHost) {
   if (debuggeeHost && isExactDomainMatch(part, debuggeeHost)) {
     
     return createTreeNodeMatcherWithDebuggeeHost(debuggeeHost);
-  } 
+  }
 
-
+  
   return createTreeNodeMatcherWithNameAndOther(part, isDir, debuggeeHost);
 }

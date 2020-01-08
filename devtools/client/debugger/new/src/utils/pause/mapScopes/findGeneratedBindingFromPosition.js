@@ -1,27 +1,35 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.findGeneratedReference = findGeneratedReference;
-exports.findGeneratedImportReference = findGeneratedImportReference;
-exports.findGeneratedImportDeclaration = findGeneratedImportDeclaration;
-
-var _locColumn = require("./locColumn");
-
-var _mappingContains = require("./mappingContains");
-
-var _firefox = require("../../../client/firefox");
 
 
 
 
 
 
+import { locColumn } from "./locColumn";
+import { mappingContains } from "./mappingContains";
+
+import type { BindingContents } from "../../../types";
+
+import type { ApplicableBinding } from "./getApplicableBindingsForOriginalPosition";
+
+import { createObjectClient } from "../../../client/firefox";
+
+export type GeneratedDescriptor = {
+  name: string,
+  
+  
+  
+  desc: ?BindingContents,
+
+  expression: string
+};
 
 
 
-async function findGeneratedReference(applicableBindings) {
+
+
+export async function findGeneratedReference(
+  applicableBindings: Array<ApplicableBinding>
+): Promise<GeneratedDescriptor | null> {
   
   
   
@@ -33,30 +41,37 @@ async function findGeneratedReference(applicableBindings) {
 
   for (const applicable of applicableBindings) {
     const result = await mapBindingReferenceToDescriptor(applicable);
-
     if (result) {
       return result;
     }
   }
-
   return null;
 }
 
-async function findGeneratedImportReference(applicableBindings) {
+export async function findGeneratedImportReference(
+  applicableBindings: Array<ApplicableBinding>
+): Promise<GeneratedDescriptor | null> {
   
   
   
   applicableBindings = applicableBindings.filter((applicable, i) => {
-    if (!applicable.firstInRange || applicable.binding.loc.type !== "ref" || applicable.binding.loc.meta) {
+    if (
+      !applicable.firstInRange ||
+      applicable.binding.loc.type !== "ref" ||
+      applicable.binding.loc.meta
+    ) {
       return true;
     }
 
-    const next = i + 1 < applicableBindings.length ? applicableBindings[i + 1] : null;
-    return !next || next.binding.loc.type !== "ref" || !next.binding.loc.meta;
-  }); 
-  
-  
+    const next =
+      i + 1 < applicableBindings.length ? applicableBindings[i + 1] : null;
 
+    return !next || next.binding.loc.type !== "ref" || !next.binding.loc.meta;
+  });
+
+  
+  
+  
   if (applicableBindings.length > 2) {
     
     
@@ -65,7 +80,6 @@ async function findGeneratedImportReference(applicableBindings) {
 
   for (const applicable of applicableBindings) {
     const result = await mapImportReferenceToDescriptor(applicable);
-
     if (result) {
       return result;
     }
@@ -79,8 +93,10 @@ async function findGeneratedImportReference(applicableBindings) {
 
 
 
-
-async function findGeneratedImportDeclaration(applicableBindings, importName) {
+export async function findGeneratedImportDeclaration(
+  applicableBindings: Array<ApplicableBinding>,
+  importName: string
+): Promise<GeneratedDescriptor | null> {
   
   
   
@@ -93,19 +109,15 @@ async function findGeneratedImportDeclaration(applicableBindings, importName) {
 
   let result = null;
 
-  for (const {
-    binding
-  } of applicableBindings) {
+  for (const { binding } of applicableBindings) {
     if (binding.loc.type === "ref") {
       continue;
     }
 
     const namespaceDesc = await binding.desc();
-
     if (isPrimitiveValue(namespaceDesc)) {
       continue;
     }
-
     if (!isObjectValue(namespaceDesc)) {
       
       
@@ -143,22 +155,27 @@ async function findGeneratedImportDeclaration(applicableBindings, importName) {
 
 
 
-
 async function mapBindingReferenceToDescriptor({
   binding,
   range,
   firstInRange,
   firstOnLine
-}) {
+}: ApplicableBinding): Promise<GeneratedDescriptor | null> {
   
   
   
   
   
-  if (range.start.line === binding.loc.start.line && ( 
-  
-  
-  firstInRange || firstOnLine || (0, _locColumn.locColumn)(range.start) >= (0, _locColumn.locColumn)(binding.loc.start)) && (0, _locColumn.locColumn)(range.start) <= (0, _locColumn.locColumn)(binding.loc.end)) {
+  if (
+    range.start.line === binding.loc.start.line &&
+    
+    
+    
+    (firstInRange ||
+      firstOnLine ||
+      locColumn(range.start) >= locColumn(binding.loc.start)) &&
+    locColumn(range.start) <= locColumn(binding.loc.end)
+  ) {
     return {
       name: binding.name,
       desc: await binding.desc(),
@@ -174,14 +191,15 @@ async function mapBindingReferenceToDescriptor({
 
 
 
-
 async function mapImportReferenceToDescriptor({
   binding,
   range
-}) {
+}: ApplicableBinding): Promise<GeneratedDescriptor | null> {
   if (binding.loc.type !== "ref") {
     return null;
-  } 
+  }
+
+  
   
   
   
@@ -213,15 +231,19 @@ async function mapImportReferenceToDescriptor({
   
   
 
-
-  if (!(0, _mappingContains.mappingContains)(range, binding.loc)) {
+  if (!mappingContains(range, binding.loc)) {
     return null;
-  } 
+  }
+
   
   
-
-
-  if (binding.name === "__webpack_require__" && binding.loc.meta && binding.loc.meta.type === "member" && binding.loc.meta.property === "i") {
+  
+  if (
+    binding.name === "__webpack_require__" &&
+    binding.loc.meta &&
+    binding.loc.meta.type === "member" &&
+    binding.loc.meta.property === "i"
+  ) {
     return null;
   }
 
@@ -229,14 +251,17 @@ async function mapImportReferenceToDescriptor({
   let desc = await binding.desc();
 
   if (binding.loc.type === "ref") {
-    const {
-      meta
-    } = binding.loc; 
-    
-    
-    
+    const { meta } = binding.loc;
 
-    for (let op = meta, index = 0; op && (0, _mappingContains.mappingContains)(range, op) && desc && index < 2; index++, op = op && op.parent) {
+    
+    
+    
+    
+    for (
+      let op = meta, index = 0;
+      op && mappingContains(range, op) && desc && index < 2;
+      index++, op = op && op.parent
+    ) {
       
       
       if (op.type === "call") {
@@ -252,24 +277,33 @@ async function mapImportReferenceToDescriptor({
     }
   }
 
-  return desc ? {
-    name: binding.name,
-    desc,
-    expression
-  } : null;
+  return desc
+    ? {
+        name: binding.name,
+        desc,
+        expression
+      }
+    : null;
 }
 
-function isPrimitiveValue(desc) {
+function isPrimitiveValue(desc: ?BindingContents) {
   return desc && (!desc.value || typeof desc.value !== "object");
 }
-
-function isObjectValue(desc) {
-  return desc && !isPrimitiveValue(desc) && desc.value.type === "object" && 
-  
-  !desc.value.optimizedOut;
+function isObjectValue(desc: ?BindingContents) {
+  return (
+    desc &&
+    !isPrimitiveValue(desc) &&
+    desc.value.type === "object" &&
+    
+    
+    !desc.value.optimizedOut
+  );
 }
 
-async function readDescriptorProperty(desc, property) {
+async function readDescriptorProperty(
+  desc: ?BindingContents,
+  property: string
+): Promise<?BindingContents> {
   if (!desc) {
     return null;
   }
@@ -290,6 +324,6 @@ async function readDescriptorProperty(desc, property) {
     return desc;
   }
 
-  const objectClient = (0, _firefox.createObjectClient)(desc.value);
+  const objectClient = createObjectClient(desc.value);
   return (await objectClient.getProperty(property)).descriptor;
 }

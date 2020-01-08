@@ -1,19 +1,13 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.simplifyDisplayName = simplifyDisplayName;
-exports.formatDisplayName = formatDisplayName;
-exports.formatCopyName = formatCopyName;
-
-var _source = require("../../source");
-
-var _utils = require("../../../utils/utils");
 
 
 
 
+
+
+
+import type { LocalFrame } from "../../../components/SecondaryPanes/Frames/types";
+import { getFilename } from "../../source";
+import { endTruncateStr } from "../../../utils/utils";
 
 
 
@@ -23,17 +17,21 @@ const arrayProperty = /\[(.*?)\]$/;
 const functionProperty = /([\w\d]+)[\/\.<]*?$/;
 const annonymousProperty = /([\w\d]+)\(\^\)$/;
 
-function simplifyDisplayName(displayName) {
+export function simplifyDisplayName(displayName: string) {
   
   if (/\s/.exec(displayName)) {
     return displayName;
   }
 
-  const scenarios = [objectProperty, arrayProperty, functionProperty, annonymousProperty];
+  const scenarios = [
+    objectProperty,
+    arrayProperty,
+    functionProperty,
+    annonymousProperty
+  ];
 
   for (const reg of scenarios) {
     const match = reg.exec(displayName);
-
     if (match) {
       return match[1];
     }
@@ -55,7 +53,8 @@ const displayNameMap = {
   },
   React: {
     
-    "ReactCompositeComponent._renderValidatedComponentWithoutOwnerOrContext/renderedElement<": "Render",
+    "ReactCompositeComponent._renderValidatedComponentWithoutOwnerOrContext/renderedElement<":
+      "Render",
     _renderValidatedComponentWithoutOwnerOrContext: "Render"
   },
   VueJS: {
@@ -68,34 +67,37 @@ const displayNameMap = {
 };
 
 function mapDisplayNames(frame, library) {
-  const {
+  const { displayName } = frame;
+  return (
+    (displayNameMap[library] && displayNameMap[library][displayName]) ||
     displayName
-  } = frame;
-  return displayNameMap[library] && displayNameMap[library][displayName] || displayName;
+  );
 }
 
-function formatDisplayName(frame, {
-  shouldMapDisplayName = true,
-  maxLength = 25
-} = {}) {
-  let {
-    displayName,
-    originalDisplayName,
-    library
-  } = frame;
+type formatDisplayNameParams = {
+  shouldMapDisplayName: boolean,
+  maxLength: number
+};
+export function formatDisplayName(
+  frame: LocalFrame,
+  { shouldMapDisplayName = true, maxLength = 25 }: formatDisplayNameParams = {}
+) {
+  let { displayName, originalDisplayName, library } = frame;
   displayName = originalDisplayName || displayName;
-
   if (library && shouldMapDisplayName) {
     displayName = mapDisplayNames(frame, library);
   }
 
   displayName = simplifyDisplayName(displayName);
-  return Number.isInteger(maxLength) ? (0, _utils.endTruncateStr)(displayName, maxLength) : displayName;
+  return Number.isInteger(maxLength)
+    ? endTruncateStr(displayName, maxLength)
+    : displayName;
 }
 
-function formatCopyName(frame) {
+export function formatCopyName(frame: LocalFrame) {
   const displayName = formatDisplayName(frame);
-  const fileName = (0, _source.getFilename)(frame.source);
+  const fileName = getFilename(frame.source);
   const frameLocation = frame.location.line;
+
   return `${displayName} (${fileName}#${frameLocation})`;
 }

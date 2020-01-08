@@ -1,27 +1,20 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.getTokenLocation = getTokenLocation;
 
 
 
 
-function getTokenLocation(codeMirror, tokenEl) {
-  const {
-    left,
-    top,
-    width,
-    height
-  } = tokenEl.getBoundingClientRect();
-  const {
-    line,
-    ch
-  } = codeMirror.coordsChar({
+
+import type { ColumnPosition } from "../../types";
+
+export function getTokenLocation(
+  codeMirror: any,
+  tokenEl: HTMLElement
+): ColumnPosition {
+  const { left, top, width, height } = tokenEl.getBoundingClientRect();
+  const { line, ch } = codeMirror.coordsChar({
     left: left + width / 2,
     top: top + height / 2
   });
+
   return {
     line: line + 1,
     column: ch

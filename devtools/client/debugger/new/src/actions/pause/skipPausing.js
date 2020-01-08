@@ -1,32 +1,20 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.toggleSkipPausing = toggleSkipPausing;
-
-var _selectors = require("../../selectors/index");
 
 
 
 
 
 
+import type { ThunkArgs } from "../types";
+import { getSkipPausing } from "../../selectors";
 
 
 
-function toggleSkipPausing() {
-  return async ({
-    dispatch,
-    client,
-    getState,
-    sourceMaps
-  }) => {
-    const skipPausing = !(0, _selectors.getSkipPausing)(getState());
+
+
+export function toggleSkipPausing() {
+  return async ({ dispatch, client, getState, sourceMaps }: ThunkArgs) => {
+    const skipPausing = !getSkipPausing(getState());
     await client.setSkipPausing(skipPausing);
-    dispatch({
-      type: "TOGGLE_SKIP_PAUSING",
-      skipPausing
-    });
+    dispatch({ type: "TOGGLE_SKIP_PAUSING", skipPausing });
   };
 }

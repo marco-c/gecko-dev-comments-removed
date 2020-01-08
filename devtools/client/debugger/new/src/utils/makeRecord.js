@@ -1,14 +1,3 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _immutable = require("devtools/client/shared/vendor/immutable");
-
-var I = _interopRequireWildcard(_immutable);
-
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
 
 
 
@@ -23,6 +12,28 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 
 
 
+import * as I from "immutable";
+
+
+
+
+
+export type Record<T: Object> = {
+  equals<A>(other: A): boolean,
+  get<A>(key: $Keys<T>, notSetValue?: any): A,
+  getIn<A>(keyPath: Array<any>, notSetValue?: any): A,
+  hasIn<A>(keyPath: Array<any>): boolean,
+  set<A>(key: $Keys<T>, value: A): Record<T>,
+  setIn(keyPath: Array<any>, ...iterables: Array<any>): Record<T>,
+  merge(values: $Shape<T>): Record<T>,
+  mergeIn(keyPath: Array<any>, ...iterables: Array<any>): Record<T>,
+  delete<A>(key: $Keys<T>, value: A): Record<T>,
+  deleteIn(keyPath: Array<any>, ...iterables: Array<any>): Record<T>,
+  update<A>(key: $Keys<T>, value: A): Record<T>,
+  updateIn(keyPath: Array<any>, ...iterables: Array<any>): Record<T>,
+  remove<A>(key: $Keys<T>): Record<T>,
+  toJS(): T
+} & T;
 
 
 
@@ -30,8 +41,10 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 
 
 
-function makeRecord(spec) {
+
+
+function makeRecord<T>(spec: T & Object): (init: $Shape<T>) => Record<T> {
   return I.Record(spec);
 }
 
-exports.default = makeRecord;
+export default makeRecord;

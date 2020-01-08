@@ -1,16 +1,56 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.promise = exports.PROMISE = undefined;
-
-var _lodash = require("devtools/client/shared/vendor/lodash");
-
-var _DevToolsUtils = require("../../../utils/DevToolsUtils");
 
 
 
+
+
+
+import { fromPairs, toPairs } from "lodash";
+import { executeSoon } from "../../../utils/DevToolsUtils";
+
+import type { ThunkArgs } from "../../types";
+
+type BasePromiseAction = {|
+  +"@@dispatch/promise": Promise<mixed>
+|};
+
+export type StartPromiseAction = {|
+  ...BasePromiseAction,
+  +status: "start"
+|};
+
+export type DonePromiseAction = {|
+  ...BasePromiseAction,
+  +status: "done",
+  +value: any
+|};
+
+export type ErrorPromiseAction = {|
+  ...BasePromiseAction,
+  +status: "error",
+  +error: any
+|};
+
+export type PromiseAction<Action, Value = any> =
+  
+  | {|
+      ...BasePromiseAction,
+      ...Action,
+      +status: "start",
+      value: void
+    |}
+  | {|
+      ...BasePromiseAction,
+      ...Action,
+      +status: "done",
+      +value: Value
+    |}
+  | {|
+      ...BasePromiseAction,
+      ...Action,
+      +status: "error",
+      +error?: any,
+      value: void
+    |};
 
 let seqIdVal = 1;
 
@@ -18,52 +58,52 @@ function seqIdGen() {
   return seqIdVal++;
 }
 
-function filterAction(action) {
-  return (0, _lodash.fromPairs)((0, _lodash.toPairs)(action).filter(pair => pair[0] !== PROMISE));
+function filterAction(action: Object): Object {
+  return fromPairs(toPairs(action).filter(pair => pair[0] !== PROMISE));
 }
 
 function promiseMiddleware({
   dispatch,
   getState
-}) {
-  return next => action => {
+}: ThunkArgs): Function | Promise<mixed> {
+  return (next: Function) => (action: Object) => {
     if (!(PROMISE in action)) {
       return next(action);
     }
 
     const promiseInst = action[PROMISE];
-    const seqId = seqIdGen().toString(); 
-    
+    const seqId = seqIdGen().toString();
 
-    action = { ...filterAction(action),
-      seqId
-    };
-    dispatch({ ...action,
-      status: "start"
-    }); 
     
+    
+    action = { ...filterAction(action), seqId };
 
+    dispatch({ ...action, status: "start" });
+
+    
+    
     return new Promise((resolve, reject) => {
-      promiseInst.then(value => {
-        (0, _DevToolsUtils.executeSoon)(() => {
-          dispatch({ ...action,
-            status: "done",
-            value: value
+      promiseInst.then(
+        value => {
+          executeSoon(() => {
+            dispatch({ ...action, status: "done", value: value });
+            resolve(value);
           });
-          resolve(value);
-        });
-      }, error => {
-        (0, _DevToolsUtils.executeSoon)(() => {
-          dispatch({ ...action,
-            status: "error",
-            error: error.message || error
+        },
+        error => {
+          executeSoon(() => {
+            dispatch({
+              ...action,
+              status: "error",
+              error: error.message || error
+            });
+            reject(error);
           });
-          reject(error);
-        });
-      });
+        }
+      );
     });
   };
 }
 
-const PROMISE = exports.PROMISE = "@@dispatch/promise";
-exports.promise = promiseMiddleware;
+export const PROMISE = "@@dispatch/promise";
+export { promiseMiddleware as promise };

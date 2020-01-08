@@ -1,9 +1,3 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.getEventListeners = getEventListeners;
 
 
 
@@ -22,10 +16,9 @@ const initialEventListenersState = {
 function update(state = initialEventListenersState, action, emit) {
   switch (action.type) {
     case "UPDATE_EVENT_BREAKPOINTS":
-      state.activeEventNames = action.eventNames; 
-
+      state.activeEventNames = action.eventNames;
+      
       break;
-
     case "FETCH_EVENT_LISTENERS":
       if (action.status === "begin") {
         state.fetchingListeners = true;
@@ -33,9 +26,7 @@ function update(state = initialEventListenersState, action, emit) {
         state.fetchingListeners = false;
         state.listeners = action.listeners;
       }
-
       break;
-
     case "NAVIGATE":
       return initialEventListenersState;
   }
@@ -43,8 +34,8 @@ function update(state = initialEventListenersState, action, emit) {
   return state;
 }
 
-function getEventListeners(state) {
+export function getEventListeners(state) {
   return state.eventListeners.listeners;
 }
 
-exports.default = update;
+export default update;

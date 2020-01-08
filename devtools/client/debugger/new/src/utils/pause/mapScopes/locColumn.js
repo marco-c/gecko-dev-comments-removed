@@ -1,14 +1,12 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.locColumn = locColumn;
 
 
 
 
-function locColumn(loc) {
+
+
+import type { Position } from "../../../types";
+
+export function locColumn(loc: Position): number {
   if (typeof loc.column !== "number") {
     
     

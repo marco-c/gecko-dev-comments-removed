@@ -1,51 +1,54 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.collapseTree = collapseTree;
-
-var _utils = require("./utils");
 
 
 
 
 
 
+import { createDirectoryNode } from "./utils";
+
+import type { TreeDirectory, TreeNode } from "./types";
 
 
-function _collapseTree(node, depth) {
+
+
+function _collapseTree(node: TreeNode, depth: number): TreeNode {
   
   if (node.type === "directory") {
     if (!Array.isArray(node.contents)) {
       console.log(`Expected array at: ${node.path}`);
-    } 
+    }
 
-
+    
     if (depth > 1 && node.contents.length === 1) {
-      const next = node.contents[0]; 
-
+      const next = node.contents[0];
+      
       if (next.type === "directory") {
         if (!Array.isArray(next.contents)) {
-          console.log(`Expected array at: ${next.name} -- ${node.name} -- ${JSON.stringify(next.contents)}`);
+          console.log(
+            `Expected array at: ${next.name} -- ${
+              node.name
+            } -- ${JSON.stringify(next.contents)}`
+          );
         }
-
         const name = `${node.name}/${next.name}`;
-        const nextNode = (0, _utils.createDirectoryNode)(name, next.path, next.contents);
+        const nextNode = createDirectoryNode(name, next.path, next.contents);
         return _collapseTree(nextNode, depth + 1);
       }
-    } 
+    }
 
+    
+    return createDirectoryNode(
+      node.name,
+      node.path,
+      node.contents.map(next => _collapseTree(next, depth + 1))
+    );
+  }
 
-    return (0, _utils.createDirectoryNode)(node.name, node.path, node.contents.map(next => _collapseTree(next, depth + 1)));
-  } 
-
-
+  
   return node;
 }
 
-function collapseTree(node) {
+export function collapseTree(node: TreeDirectory): TreeDirectory {
   const tree = _collapseTree(node, 0);
-
-  return tree;
+  return ((tree: any): TreeDirectory);
 }

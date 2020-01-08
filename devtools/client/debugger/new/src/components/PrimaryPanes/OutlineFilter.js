@@ -1,64 +1,60 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _react = require("devtools/client/shared/vendor/react");
-
-var _react2 = _interopRequireDefault(_react);
-
-var _classnames = require("devtools/client/debugger/new/dist/vendors").vendored["classnames"];
-
-var _classnames2 = _interopRequireDefault(_classnames);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 
 
 
-class OutlineFilter extends _react.Component {
-  constructor(...args) {
-    var _temp;
 
-    return _temp = super(...args), this.state = {
-      focused: false
-    }, this.setFocus = shouldFocus => {
-      this.setState({
-        focused: shouldFocus
-      });
-    }, this.onChange = e => {
-      this.props.updateFilter(e.target.value);
-    }, this.onKeyDown = e => {
-      if (e.key === "Escape" && this.props.filter !== "") {
-        
-        
-        e.preventDefault();
-        this.props.updateFilter("");
-      }
-    }, _temp;
-  }
+
+import React, { Component } from "react";
+import classnames from "classnames";
+
+import "./OutlineFilter.css";
+
+type Props = {
+  filter: string,
+  updateFilter: (filter: string) => void
+};
+
+type State = {
+  focused: boolean
+};
+
+export default class OutlineFilter extends Component<Props, State> {
+  state = { focused: false };
+
+  setFocus = (shouldFocus: boolean) => {
+    this.setState({ focused: shouldFocus });
+  };
+
+  onChange = (e: SyntheticInputEvent<HTMLElement>) => {
+    this.props.updateFilter(e.target.value);
+  };
+
+  onKeyDown = (e: SyntheticKeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Escape" && this.props.filter !== "") {
+      
+      
+      e.preventDefault();
+      this.props.updateFilter("");
+    }
+  };
 
   render() {
-    const {
-      focused
-    } = this.state;
-    return _react2.default.createElement("div", {
-      className: "outline-filter"
-    }, _react2.default.createElement("form", null, _react2.default.createElement("input", {
-      className: (0, _classnames2.default)("outline-filter-input", {
-        focused
-      }),
-      onFocus: () => this.setFocus(true),
-      onBlur: () => this.setFocus(false),
-      placeholder: L10N.getStr("outline.placeholder"),
-      value: this.props.filter,
-      type: "text",
-      onChange: this.onChange,
-      onKeyDown: this.onKeyDown
-    })));
+    const { focused } = this.state;
+    return (
+      <div className="outline-filter">
+        <form>
+          <input
+            className={classnames("outline-filter-input", { focused })}
+            onFocus={() => this.setFocus(true)}
+            onBlur={() => this.setFocus(false)}
+            placeholder={L10N.getStr("outline.placeholder")}
+            value={this.props.filter}
+            type="text"
+            onChange={this.onChange}
+            onKeyDown={this.onKeyDown}
+          />
+        </form>
+      </div>
+    );
   }
-
 }
-
-exports.default = OutlineFilter;

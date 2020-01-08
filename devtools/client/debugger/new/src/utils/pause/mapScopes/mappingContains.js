@@ -1,15 +1,18 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.mappingContains = mappingContains;
-
-var _positionCmp = require("./positionCmp");
 
 
 
 
-function mappingContains(mapped, item) {
-  return (0, _positionCmp.positionCmp)(item.start, mapped.start) >= 0 && (0, _positionCmp.positionCmp)(item.end, mapped.end) <= 0;
+
+
+import type { Position } from "../../../types";
+import { positionCmp } from "./positionCmp";
+
+export function mappingContains(
+  mapped: { +start: Position, +end: Position },
+  item: { +start: Position, +end: Position }
+) {
+  return (
+    positionCmp(item.start, mapped.start) >= 0 &&
+    positionCmp(item.end, mapped.end) <= 0
+  );
 }

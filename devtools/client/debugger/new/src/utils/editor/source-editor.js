@@ -1,8 +1,3 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
 
 
 
@@ -12,57 +7,61 @@ Object.defineProperty(exports, "__esModule", {
 
 
 
-const CodeMirror = require("codemirror/index");
+const CodeMirror = require("codemirror");
 
-require("codemirror/lib/codemirror.css/index");
+require("codemirror/lib/codemirror.css");
+require("codemirror/mode/javascript/javascript");
+require("codemirror/mode/htmlmixed/htmlmixed");
+require("codemirror/mode/coffeescript/coffeescript");
+require("codemirror/mode/jsx/jsx");
+require("codemirror/mode/elm/elm");
+require("codemirror/mode/clojure/clojure");
+require("codemirror/mode/haxe/haxe");
+require("codemirror/addon/search/searchcursor");
+require("codemirror/addon/fold/foldcode");
+require("codemirror/addon/fold/brace-fold");
+require("codemirror/addon/fold/indent-fold");
+require("codemirror/addon/fold/foldgutter");
+require("codemirror/addon/runmode/runmode");
+require("codemirror/addon/selection/active-line");
+require("codemirror/addon/edit/matchbrackets");
+require("codemirror/mode/clike/clike");
+require("codemirror/mode/rust/rust");
 
-require("codemirror/mode/javascript/javascript/index");
+require("./source-editor.css");
 
-require("codemirror/mode/htmlmixed/htmlmixed/index");
 
-require("codemirror/mode/coffeescript/coffeescript/index");
-
-require("codemirror/mode/jsx/jsx/index");
-
-require("codemirror/mode/elm/elm/index");
-
-require("codemirror/mode/clojure/clojure/index");
-
-require("codemirror/mode/haxe/haxe/index");
-
-require("codemirror/addon/search/searchcursor/index");
-
-require("codemirror/addon/fold/foldcode/index");
-
-require("codemirror/addon/fold/brace-fold/index");
-
-require("codemirror/addon/fold/indent-fold/index");
-
-require("codemirror/addon/fold/foldgutter/index");
-
-require("codemirror/addon/runmode/runmode/index");
-
-require("codemirror/addon/selection/active-line/index");
-
-require("codemirror/addon/edit/matchbrackets/index");
-
-require("codemirror/mode/clike/clike/index");
-
-require("codemirror/mode/rust/rust/index");
-
-require("./source-editor.css/index"); 
-
+type Mode = string | Object;
+export type AlignOpts = "top" | "center" | "bottom";
 
 
 
 const MAX_VERTICAL_OFFSET = 3;
 
-class SourceEditor {
-  constructor(opts) {
+type SourceEditorOpts = {
+  enableCodeFolding: boolean,
+  extraKeys: Object,
+  gutters: string[],
+  foldGutter: boolean,
+  lineNumbers: boolean,
+  lineWrapping: boolean,
+  matchBrackets: boolean,
+  mode: string,
+  readOnly: boolean,
+  showAnnotationRuler: boolean,
+  theme: string,
+  value: string
+};
+
+export default class SourceEditor {
+  opts: SourceEditorOpts;
+  editor: any;
+
+  constructor(opts: SourceEditorOpts) {
     this.opts = opts;
   }
 
-  appendToLocalElement(node) {
+  appendToLocalElement(node: any) {
     this.editor = CodeMirror(node, this.opts);
   }
 
@@ -73,7 +72,7 @@ class SourceEditor {
     }
   }
 
-  get codeMirror() {
+  get codeMirror(): any {
     return this.editor;
   }
 
@@ -81,7 +80,7 @@ class SourceEditor {
     return CodeMirror;
   }
 
-  setText(str) {
+  setText(str: string) {
     this.editor.setValue(str);
   }
 
@@ -89,21 +88,19 @@ class SourceEditor {
     return this.editor.getValue();
   }
 
-  setMode(value) {
+  setMode(value: Mode) {
     this.editor.setOption("mode", value);
   }
+
   
 
 
 
-
-
-  replaceDocument(doc) {
+  replaceDocument(doc: any) {
     this.editor.swapDoc(doc);
   }
+
   
-
-
 
 
 
@@ -111,55 +108,54 @@ class SourceEditor {
   createDocument() {
     return new CodeMirror.Doc("");
   }
+
   
 
 
 
 
 
-
-
-  alignLine(line, align = "top") {
+  alignLine(line: number, align: AlignOpts = "top") {
     const cm = this.editor;
     const editorClientRect = cm.getWrapperElement().getBoundingClientRect();
-    const from = cm.lineAtHeight(editorClientRect.top, "page");
-    const to = cm.lineAtHeight(editorClientRect.height + editorClientRect.top, "page");
-    const linesVisible = to - from;
-    const halfVisible = Math.round(linesVisible / 2); 
 
+    const from = cm.lineAtHeight(editorClientRect.top, "page");
+    const to = cm.lineAtHeight(
+      editorClientRect.height + editorClientRect.top,
+      "page"
+    );
+
+    const linesVisible = to - from;
+    const halfVisible = Math.round(linesVisible / 2);
+
+    
     if (line <= to && line >= from) {
       return;
-    } 
+    }
+
     
     
-
-
+    
     const offset = Math.min(halfVisible, MAX_VERTICAL_OFFSET);
-    let topLine = {
-      center: Math.max(line - halfVisible, 0),
-      bottom: Math.max(line - linesVisible + offset, 0),
-      top: Math.max(line - offset, 0)
-    }[align || "top"] || offset; 
 
+    let topLine =
+      {
+        center: Math.max(line - halfVisible, 0),
+        bottom: Math.max(line - linesVisible + offset, 0),
+        top: Math.max(line - offset, 0)
+      }[align || "top"] || offset;
+
+    
     topLine = Math.min(topLine, cm.lineCount());
     this.setFirstVisibleLine(topLine);
   }
+
   
 
 
 
-
-
-  setFirstVisibleLine(line) {
-    const {
-      top
-    } = this.editor.charCoords({
-      line: line,
-      ch: 0
-    }, "local");
+  setFirstVisibleLine(line: number) {
+    const { top } = this.editor.charCoords({ line: line, ch: 0 }, "local");
     this.editor.scrollTo(0, top);
   }
-
 }
-
-exports.default = SourceEditor;

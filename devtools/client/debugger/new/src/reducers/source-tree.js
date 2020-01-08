@@ -1,11 +1,3 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.InitialState = InitialState;
-exports.default = update;
-exports.getExpandedState = getExpandedState;
 
 
 
@@ -15,13 +7,24 @@ exports.getExpandedState = getExpandedState;
 
 
 
-function InitialState() {
+
+
+import type { SourceTreeAction } from "../actions/types";
+
+export type SourceTreeState = {
+  expanded: Set<string> | null
+};
+
+export function InitialState(): SourceTreeState {
   return {
     expanded: null
   };
 }
 
-function update(state = InitialState(), action) {
+export default function update(
+  state: SourceTreeState = InitialState(),
+  action: SourceTreeAction
+): SourceTreeState {
   switch (action.type) {
     case "SET_EXPANDED_STATE":
       return updateExpanded(state, action);
@@ -31,11 +34,16 @@ function update(state = InitialState(), action) {
 }
 
 function updateExpanded(state, action) {
-  return { ...state,
+  return {
+    ...state,
     expanded: new Set(action.expanded)
   };
 }
 
-function getExpandedState(state) {
+type OuterState = {
+  sourceTree: SourceTreeState
+};
+
+export function getExpandedState(state: OuterState) {
   return state.sourceTree.expanded;
 }

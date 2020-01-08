@@ -1,34 +1,26 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.basename = basename;
-exports.dirname = dirname;
-exports.isURL = isURL;
-exports.isAbsolute = isAbsolute;
-exports.join = join;
 
 
 
 
-function basename(path) {
+
+
+export function basename(path: string) {
   return path.split("/").pop();
 }
 
-function dirname(path) {
+export function dirname(path: string) {
   const idx = path.lastIndexOf("/");
   return path.slice(0, idx);
 }
 
-function isURL(str) {
+export function isURL(str: string) {
   return str.indexOf("://") !== -1;
 }
 
-function isAbsolute(str) {
+export function isAbsolute(str: string) {
   return str[0] === "/";
 }
 
-function join(base, dir) {
+export function join(base: string, dir: string) {
   return `${base}/${dir}`;
 }

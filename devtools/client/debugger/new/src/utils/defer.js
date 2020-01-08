@@ -1,25 +1,16 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = defer;
 
 
 
 
-function defer() {
+
+
+export default function defer() {
   let resolve = () => {};
-
   let reject = () => {};
-
-  const promise = new Promise((_res, _rej) => {
+  const promise: Promise<any> = new Promise((_res, _rej) => {
     resolve = _res;
     reject = _rej;
   });
-  return {
-    resolve,
-    reject,
-    promise
-  };
+
+  return { resolve, reject, promise };
 }

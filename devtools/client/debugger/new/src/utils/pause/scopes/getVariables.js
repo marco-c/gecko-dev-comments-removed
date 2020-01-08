@@ -1,11 +1,3 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.getBindingVariables = getBindingVariables;
-
-var _lodash = require("devtools/client/shared/vendor/lodash");
 
 
 
@@ -13,14 +5,37 @@ var _lodash = require("devtools/client/shared/vendor/lodash");
 
 
 
+import { toPairs } from "lodash";
 
-function getBindingVariables(bindings, parentName) {
+import type { NamedValue } from "./types";
+import type { BindingContents, ScopeBindings } from "../../../types";
+
+
+type VarAndBindingsPair = [string, any];
+type VarAndBindingsPairs = Array<VarAndBindingsPair>;
+
+
+type ScopeBindingsWrapper = {
+  variables: ScopeBindings,
+  arguments: BindingContents[]
+};
+
+
+
+export function getBindingVariables(
+  bindings: ?ScopeBindingsWrapper,
+  parentName: string
+): NamedValue[] {
   if (!bindings) {
     return [];
   }
 
-  const args = bindings.arguments.map(arg => (0, _lodash.toPairs)(arg)[0]);
-  const variables = (0, _lodash.toPairs)(bindings.variables);
+  const args: VarAndBindingsPairs = bindings.arguments.map(
+    arg => toPairs(arg)[0]
+  );
+
+  const variables: VarAndBindingsPairs = toPairs(bindings.variables);
+
   return args.concat(variables).map(binding => {
     const name = binding[0];
     const contents = binding[1];

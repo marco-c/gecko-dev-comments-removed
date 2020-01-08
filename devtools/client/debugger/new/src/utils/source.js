@@ -1,57 +1,31 @@
-"use strict";
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.sourceTypes = exports.isMinified = undefined;
 
-var _isMinified = require("./isMinified");
 
-Object.defineProperty(exports, "isMinified", {
-  enumerable: true,
-  get: function () {
-    return _isMinified.isMinified;
-  }
-});
-exports.shouldPrettyPrint = shouldPrettyPrint;
-exports.isJavaScript = isJavaScript;
-exports.isPretty = isPretty;
-exports.isPrettyURL = isPrettyURL;
-exports.isThirdParty = isThirdParty;
-exports.getPrettySourceURL = getPrettySourceURL;
-exports.getRawSourceURL = getRawSourceURL;
-exports.getFormattedSourceId = getFormattedSourceId;
-exports.getFilename = getFilename;
-exports.getTruncatedFileName = getTruncatedFileName;
-exports.getDisplayPath = getDisplayPath;
-exports.getFileURL = getFileURL;
-exports.getSourcePath = getSourcePath;
-exports.getSourceLineCount = getSourceLineCount;
-exports.getMode = getMode;
-exports.isLoaded = isLoaded;
-exports.isLoading = isLoading;
-exports.getTextAtPosition = getTextAtPosition;
-exports.getSourceClassnames = getSourceClassnames;
-exports.getRelativeUrl = getRelativeUrl;
-exports.underRoot = underRoot;
-exports.isOriginal = isOriginal;
-exports.isGenerated = isGenerated;
 
-var _devtoolsSourceMap = require("devtools/client/shared/source-map/index.js");
 
-var _devtoolsModules = require("devtools/client/debugger/new/dist/vendors").vendored["devtools-modules"];
 
-var _utils = require("./utils");
 
-var _text = require("../utils/text");
 
-var _url = require("../utils/url");
 
-var _sourcesTree = require("./sources-tree/index");
 
-var _prefs = require("./prefs");
 
-const sourceTypes = exports.sourceTypes = {
+import { isOriginalId, isGeneratedId } from "devtools-source-map";
+import { getUnicodeUrl } from "devtools-modules";
+
+import { endTruncateStr } from "./utils";
+import { truncateMiddleText } from "../utils/text";
+import { parse as parseURL } from "../utils/url";
+export { isMinified } from "./isMinified";
+import { getURL, getFileExtension } from "./sources-tree";
+import { prefs } from "./prefs";
+
+import type { Source, Location } from "../types";
+import type { SourceMetaDataType } from "../reducers/ast";
+import type { SymbolDeclarations } from "../workers/parser";
+
+type transformUrlCallback = string => string;
+
+export const sourceTypes = {
   coffee: "coffeescript",
   js: "javascript",
   jsx: "react",
@@ -65,17 +39,29 @@ const sourceTypes = exports.sourceTypes = {
 
 
 
-function trimUrlQuery(url) {
+function trimUrlQuery(url: string): string {
   const length = url.length;
   const q1 = url.indexOf("?");
   const q2 = url.indexOf("&");
   const q3 = url.indexOf("#");
-  const q = Math.min(q1 != -1 ? q1 : length, q2 != -1 ? q2 : length, q3 != -1 ? q3 : length);
+  const q = Math.min(
+    q1 != -1 ? q1 : length,
+    q2 != -1 ? q2 : length,
+    q3 != -1 ? q3 : length
+  );
+
   return url.slice(0, q);
 }
 
-function shouldPrettyPrint(source) {
-  if (!source || isPretty(source) || !isJavaScript(source) || isOriginal(source) || source.sourceMapURL || !_prefs.prefs.clientSourceMapsEnabled) {
+export function shouldPrettyPrint(source: Source) {
+  if (
+    !source ||
+    isPretty(source) ||
+    !isJavaScript(source) ||
+    isOriginal(source) ||
+    source.sourceMapURL ||
+    !prefs.clientSourceMapsEnabled
+  ) {
     return false;
   }
 
@@ -92,30 +78,30 @@ function shouldPrettyPrint(source) {
 
 
 
-
-function isJavaScript(source) {
+export function isJavaScript(source: Source): boolean {
   const url = source.url;
   const contentType = source.contentType;
-  return url && /\.(jsm|js)?$/.test(trimUrlQuery(url)) || !!(contentType && contentType.includes("javascript"));
+  return (
+    (url && /\.(jsm|js)?$/.test(trimUrlQuery(url))) ||
+    !!(contentType && contentType.includes("javascript"))
+  );
 }
 
 
 
 
 
-
-function isPretty(source) {
+export function isPretty(source: Source): boolean {
   const url = source.url;
   return isPrettyURL(url);
 }
 
-function isPrettyURL(url) {
+export function isPrettyURL(url: string): boolean {
   return url ? /formatted$/.test(url) : false;
 }
 
-function isThirdParty(source) {
+export function isThirdParty(source: Source) {
   const url = source.url;
-
   if (!source || !url) {
     return false;
   }
@@ -127,12 +113,10 @@ function isThirdParty(source) {
 
 
 
-
-function getPrettySourceURL(url) {
+export function getPrettySourceURL(url: ?string): string {
   if (!url) {
     url = "";
   }
-
   return `${url}:formatted`;
 }
 
@@ -140,23 +124,24 @@ function getPrettySourceURL(url) {
 
 
 
-
-function getRawSourceURL(url) {
+export function getRawSourceURL(url: string): string {
   return url ? url.replace(/:formatted$/, "") : url;
 }
 
-function resolveFileURL(url, transformUrl = initialUrl => initialUrl, truncate = true) {
+function resolveFileURL(
+  url: string,
+  transformUrl: transformUrlCallback = initialUrl => initialUrl,
+  truncate: boolean = true
+) {
   url = getRawSourceURL(url || "");
   const name = transformUrl(url);
-
   if (!truncate) {
     return name;
   }
-
-  return (0, _utils.endTruncateStr)(name, 50);
+  return endTruncateStr(name, 50);
 }
 
-function getFormattedSourceId(id) {
+export function getFormattedSourceId(id: string) {
   const sourceId = id.split("/")[1];
   return `SOURCE${sourceId}`;
 }
@@ -168,20 +153,13 @@ function getFormattedSourceId(id) {
 
 
 
-
-function getFilename(source) {
-  const {
-    url,
-    id
-  } = source;
-
+export function getFilename(source: Source) {
+  const { url, id } = source;
   if (!getRawSourceURL(url)) {
     return getFormattedSourceId(id);
   }
 
-  const {
-    filename
-  } = (0, _sourcesTree.getURL)(source);
+  const { filename } = getURL(source);
   return getRawSourceURL(filename);
 }
 
@@ -191,9 +169,8 @@ function getFilename(source) {
 
 
 
-
-function getTruncatedFileName(source, length = 30) {
-  return (0, _text.truncateMiddleText)(getFilename(source), length);
+export function getTruncatedFileName(source: Source, length: number = 30) {
+  return truncateMiddleText(getFilename(source), length);
 }
 
 
@@ -203,24 +180,34 @@ function getTruncatedFileName(source, length = 30) {
 
 
 
-function getDisplayPath(mySource, sources) {
-  const filename = getFilename(mySource); 
-  
+export function getDisplayPath(mySource: Source, sources: Source[]) {
+  const filename = getFilename(mySource);
 
-  const similarSources = sources.filter(source => getRawSourceURL(mySource.url) != getRawSourceURL(source.url) && filename == getFilename(source));
+  
+  
+  const similarSources = sources.filter(
+    source =>
+      getRawSourceURL(mySource.url) != getRawSourceURL(source.url) &&
+      filename == getFilename(source)
+  );
 
   if (similarSources.length == 0) {
     return undefined;
-  } 
+  }
 
+  
+  const paths = [mySource, ...similarSources].map(source =>
+    getURL(source)
+      .path.split("/")
+      .reverse()
+      .slice(1)
+  );
 
-  const paths = [mySource, ...similarSources].map(source => (0, _sourcesTree.getURL)(source).path.split("/").reverse().slice(1)); 
   
   
-
+  
   let similar = true;
   const displayPath = [];
-
   for (let i = 0; similar && i < paths[0].length; i++) {
     const [dir, ...dirs] = paths.map(path => path[i]);
     displayPath.push(dir);
@@ -237,65 +224,37 @@ function getDisplayPath(mySource, sources) {
 
 
 
-
-function getFileURL(source, truncate = true) {
-  const {
-    url,
-    id
-  } = source;
-
+export function getFileURL(source: Source, truncate: boolean = true) {
+  const { url, id } = source;
   if (!url) {
     return getFormattedSourceId(id);
   }
 
-  return resolveFileURL(url, _devtoolsModules.getUnicodeUrl, truncate);
+  return resolveFileURL(url, getUnicodeUrl, truncate);
 }
 
 const contentTypeModeMap = {
-  "text/javascript": {
-    name: "javascript"
-  },
-  "text/typescript": {
-    name: "javascript",
-    typescript: true
-  },
-  "text/coffeescript": {
-    name: "coffeescript"
-  },
+  "text/javascript": { name: "javascript" },
+  "text/typescript": { name: "javascript", typescript: true },
+  "text/coffeescript": { name: "coffeescript" },
   "text/typescript-jsx": {
     name: "jsx",
-    base: {
-      name: "javascript",
-      typescript: true
-    }
+    base: { name: "javascript", typescript: true }
   },
-  "text/jsx": {
-    name: "jsx"
-  },
-  "text/x-elm": {
-    name: "elm"
-  },
-  "text/x-clojure": {
-    name: "clojure"
-  },
-  "text/wasm": {
-    name: "text"
-  },
-  "text/html": {
-    name: "htmlmixed"
-  }
+  "text/jsx": { name: "jsx" },
+  "text/x-elm": { name: "elm" },
+  "text/x-clojure": { name: "clojure" },
+  "text/wasm": { name: "text" },
+  "text/html": { name: "htmlmixed" }
 };
 
-function getSourcePath(url) {
+export function getSourcePath(url: string) {
   if (!url) {
     return "";
   }
 
-  const {
-    path,
-    href
-  } = (0, _url.parse)(url); 
-
+  const { path, href } = parseURL(url);
+  
   return path || href;
 }
 
@@ -303,19 +262,14 @@ function getSourcePath(url) {
 
 
 
-
-function getSourceLineCount(source) {
+export function getSourceLineCount(source: Source) {
   if (source.error) {
     return 0;
   }
-
   if (source.isWasm) {
-    const {
-      binary
-    } = source.text;
+    const { binary } = (source.text: any);
     return binary.length;
   }
-
   return source.text != undefined ? source.text.split("\n").length : 0;
 }
 
@@ -338,106 +292,68 @@ function getSourceLineCount(source) {
 
 
 
-function getMode(source, symbols) {
+export function getMode(
+  source: Source,
+  symbols?: SymbolDeclarations
+): { name: string } {
   if (source.isWasm) {
-    return {
-      name: "text"
-    };
+    return { name: "text" };
   }
-
-  const {
-    contentType,
-    text,
-    url
-  } = source;
-
+  const { contentType, text, url } = source;
   if (!text) {
-    return {
-      name: "text"
-    };
+    return { name: "text" };
   }
 
-  if (url && url.match(/\.jsx$/i) || symbols && symbols.hasJsx) {
+  if ((url && url.match(/\.jsx$/i)) || (symbols && symbols.hasJsx)) {
     if (symbols && symbols.hasTypes) {
-      return {
-        name: "text/typescript-jsx"
-      };
+      return { name: "text/typescript-jsx" };
     }
-
-    return {
-      name: "jsx"
-    };
+    return { name: "jsx" };
   }
 
   if (symbols && symbols.hasTypes) {
     if (symbols.hasJsx) {
-      return {
-        name: "text/typescript-jsx"
-      };
+      return { name: "text/typescript-jsx" };
     }
 
-    return {
-      name: "text/typescript"
-    };
+    return { name: "text/typescript" };
   }
 
-  const languageMimeMap = [{
-    ext: ".c",
-    mode: "text/x-csrc"
-  }, {
-    ext: ".kt",
-    mode: "text/x-kotlin"
-  }, {
-    ext: ".cpp",
-    mode: "text/x-c++src"
-  }, {
-    ext: ".m",
-    mode: "text/x-objectivec"
-  }, {
-    ext: ".rs",
-    mode: "text/x-rustsrc"
-  }, {
-    ext: ".hx",
-    mode: "text/x-haxe"
-  }]; 
+  const languageMimeMap = [
+    { ext: ".c", mode: "text/x-csrc" },
+    { ext: ".kt", mode: "text/x-kotlin" },
+    { ext: ".cpp", mode: "text/x-c++src" },
+    { ext: ".m", mode: "text/x-objectivec" },
+    { ext: ".rs", mode: "text/x-rustsrc" },
+    { ext: ".hx", mode: "text/x-haxe" }
+  ];
 
+  
   if (url) {
-    const result = languageMimeMap.find(({
-      ext
-    }) => url.endsWith(ext));
+    const result = languageMimeMap.find(({ ext }) => url.endsWith(ext));
 
     if (result !== undefined) {
-      return {
-        name: result.mode
-      };
+      return { name: result.mode };
     }
-  } 
+  }
+
   
-
-
+  
   if (url && url.match(/\.marko$/i)) {
-    return {
-      name: "javascript"
-    };
-  } 
+    return { name: "javascript" };
+  }
+
   
-
-
+  
   const isHTMLLike = text.match(/^\s*</);
-
   if (!contentType) {
     if (isHTMLLike) {
-      return {
-        name: "htmlmixed"
-      };
+      return { name: "htmlmixed" };
     }
+    return { name: "text" };
+  }
 
-    return {
-      name: "text"
-    };
-  } 
-
-
+  
   if (text.match(/^\s*(\/\/ @flow|\/\* @flow \*\/)/)) {
     return contentTypeModeMap["text/typescript"];
   }
@@ -451,33 +367,29 @@ function getMode(source, symbols) {
   }
 
   if (isHTMLLike) {
-    return {
-      name: "htmlmixed"
-    };
+    return { name: "htmlmixed" };
   }
 
-  return {
-    name: "text"
-  };
+  return { name: "text" };
 }
 
-function isLoaded(source) {
+export function isLoaded(source: Source) {
   return source.loadedState === "loaded";
 }
 
-function isLoading(source) {
+export function isLoading(source: Source) {
   return source.loadedState === "loading";
 }
 
-function getTextAtPosition(source, location) {
+export function getTextAtPosition(source: ?Source, location: Location) {
   if (!source || source.isWasm || !source.text) {
     return "";
   }
 
   const line = location.line;
   const column = location.column || 0;
-  const lineText = source.text.split("\n")[line - 1];
 
+  const lineText = source.text.split("\n")[line - 1];
   if (!lineText) {
     return "";
   }
@@ -485,7 +397,10 @@ function getTextAtPosition(source, location) {
   return lineText.slice(column, column + 100).trim();
 }
 
-function getSourceClassnames(source, sourceMetaData) {
+export function getSourceClassnames(
+  source: Object,
+  sourceMetaData?: SourceMetaDataType
+) {
   
   const defaultClassName = "file";
 
@@ -505,34 +420,30 @@ function getSourceClassnames(source, sourceMetaData) {
     return "blackBox";
   }
 
-  return sourceTypes[(0, _sourcesTree.getFileExtension)(source)] || defaultClassName;
+  return sourceTypes[getFileExtension(source)] || defaultClassName;
 }
 
-function getRelativeUrl(source, root) {
-  const {
-    group,
-    path
-  } = (0, _sourcesTree.getURL)(source);
-
+export function getRelativeUrl(source: Source, root: string) {
+  const { group, path } = getURL(source);
   if (!root) {
     return path;
-  } 
+  }
 
-
+  
   const url = group + path;
   return url.slice(url.indexOf(root) + root.length + 1);
 }
 
-function underRoot(source, root) {
+export function underRoot(source: Source, root: string) {
   return source.url && source.url.includes(root);
 }
 
-function isOriginal(source) {
+export function isOriginal(source: Source) {
   
   
-  return (0, _devtoolsSourceMap.isOriginalId)(source.id);
+  return isOriginalId(source.id);
 }
 
-function isGenerated(source) {
-  return (0, _devtoolsSourceMap.isGeneratedId)(source.id);
+export function isGenerated(source: Source) {
+  return isGeneratedId(source.id);
 }

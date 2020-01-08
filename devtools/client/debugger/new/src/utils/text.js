@@ -1,16 +1,3 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.formatKeyShortcut = formatKeyShortcut;
-exports.truncateMiddleText = truncateMiddleText;
-
-var _devtoolsServices = require("Services");
-
-var _devtoolsServices2 = _interopRequireDefault(_devtoolsServices);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 
 
@@ -20,9 +7,10 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 
 
-const {
-  appinfo
-} = _devtoolsServices2.default;
+
+import Services from "devtools-services";
+const { appinfo } = Services;
+
 const isMacOS = appinfo.OS === "Darwin";
 
 
@@ -38,12 +26,17 @@ const isMacOS = appinfo.OS === "Darwin";
 
 
 
-function formatKeyShortcut(shortcut) {
+export function formatKeyShortcut(shortcut: string): string {
   if (isMacOS) {
-    return shortcut.replace(/Shift\+/g, "\u21E7 ").replace(/Command\+|Cmd\+/g, "\u2318 ").replace(/CommandOrControl\+|CmdOrCtrl\+/g, "\u2318 ").replace(/Alt\+/g, "\u2325 ");
+    return shortcut
+      .replace(/Shift\+/g, "\u21E7 ")
+      .replace(/Command\+|Cmd\+/g, "\u2318 ")
+      .replace(/CommandOrControl\+|CmdOrCtrl\+/g, "\u2318 ")
+      .replace(/Alt\+/g, "\u2325 ");
   }
-
-  return shortcut.replace(/CommandOrControl\+|CmdOrCtrl\+/g, `${L10N.getStr("ctrl")} `).replace(/Shift\+/g, "Shift ");
+  return shortcut
+    .replace(/CommandOrControl\+|CmdOrCtrl\+/g, `${L10N.getStr("ctrl")} `)
+    .replace(/Shift\+/g, "Shift ");
 }
 
 
@@ -55,13 +48,18 @@ function formatKeyShortcut(shortcut) {
 
 
 
-
-function truncateMiddleText(sourceText, maxLength) {
+export function truncateMiddleText(
+  sourceText: string,
+  maxLength: number
+): string {
   let truncatedText = sourceText;
-
   if (sourceText.length > maxLength) {
-    truncatedText = `${sourceText.substring(0, Math.round(maxLength / 2) - 2)}…${sourceText.substring(sourceText.length - Math.round(maxLength / 2 - 1))}`;
+    truncatedText = `${sourceText.substring(
+      0,
+      Math.round(maxLength / 2) - 2
+    )}…${sourceText.substring(
+      sourceText.length - Math.round(maxLength / 2 - 1)
+    )}`;
   }
-
   return truncatedText;
 }

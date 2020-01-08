@@ -1,15 +1,13 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.getHiddenTabs = getHiddenTabs;
-exports.getFramework = getFramework;
-exports.getTabMenuItems = getTabMenuItems;
 
 
 
 
+
+
+import type { Source } from "../types";
+import type { TabList } from "../reducers";
+
+type SourcesList = Source[];
 
 
 
@@ -20,9 +18,11 @@ exports.getTabMenuItems = getTabMenuItems;
 
 
 
-function getHiddenTabs(sourceTabs, sourceTabEls) {
+export function getHiddenTabs(
+  sourceTabs: SourcesList,
+  sourceTabEls: Array<any>
+) {
   sourceTabEls = [].slice.call(sourceTabEls);
-
   function getTopOffset() {
     const topOffsets = sourceTabEls.map(t => t.getBoundingClientRect().top);
     return Math.min(...topOffsets);
@@ -41,7 +41,7 @@ function getHiddenTabs(sourceTabs, sourceTabEls) {
   });
 }
 
-function getFramework(tabs, url) {
+export function getFramework(tabs: TabList[], url: string) {
   const tab = tabs.find(t => t.url === url);
 
   if (tab) {
@@ -51,7 +51,7 @@ function getFramework(tabs, url) {
   return "";
 }
 
-function getTabMenuItems() {
+export function getTabMenuItems() {
   return {
     closeTab: {
       id: "node-menu-close-tab",

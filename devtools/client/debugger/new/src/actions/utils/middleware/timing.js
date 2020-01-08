@@ -1,9 +1,3 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.timing = timing;
 
 
 
@@ -15,10 +9,17 @@ exports.timing = timing;
 
 
 
-const mark = window.performance && window.performance.mark ? window.performance.mark.bind(window.performance) : () => {};
-const measure = window.performance && window.performance.measure ? window.performance.measure.bind(window.performance) : () => {};
+const mark =
+  window.performance && window.performance.mark
+    ? window.performance.mark.bind(window.performance)
+    : () => {};
 
-function timing(store) {
+const measure =
+  window.performance && window.performance.measure
+    ? window.performance.measure.bind(window.performance)
+    : () => {};
+
+export function timing(store) {
   return next => action => {
     mark(`${action.type}_start`);
     const result = next(action);

@@ -1,16 +1,3 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.fetchEventListeners = fetchEventListeners;
-exports.updateEventBreakpoints = updateEventBreakpoints;
-
-var _DevToolsUtils = require("../utils/DevToolsUtils");
-
-var _selectors = require("../selectors/index");
-
-var _waitService = require("./utils/middleware/wait-service");
 
 
 
@@ -23,6 +10,9 @@ var _waitService = require("./utils/middleware/wait-service");
 
 
 
+import { reportException } from "../utils/DevToolsUtils";
+import { isPaused, getSourceByURL } from "../selectors";
+import { NAME as WAIT_UNTIL } from "./utils/middleware/wait-service";
 
 
 const FETCH_EVENT_LISTENERS_DELAY = 200;
@@ -32,8 +22,8 @@ let fetchListenersTimerID;
 
 
 
-async function asPaused(state, client, func) {
-  if (!(0, _selectors.isPaused)(state)) {
+async function asPaused(state: any, client: any, func: any) {
+  if (!isPaused(state)) {
     await client.interrupt();
     let result;
 
@@ -57,13 +47,8 @@ async function asPaused(state, client, func) {
 
 
 
-
-function fetchEventListeners() {
-  return ({
-    dispatch,
-    getState,
-    client
-  }) => {
+export function fetchEventListeners() {
+  return ({ dispatch, getState, client }) => {
     
     
     if (fetchListenersTimerID) {
@@ -76,8 +61,9 @@ function fetchEventListeners() {
       
       if (getState().eventListeners.fetchingListeners) {
         dispatch({
-          type: _waitService.NAME,
-          predicate: action => action.type === "FETCH_EVENT_LISTENERS" && action.status === "done",
+          type: WAIT_UNTIL,
+          predicate: action =>
+            action.type === "FETCH_EVENT_LISTENERS" && action.status === "done",
           run: dispatch => dispatch(fetchEventListeners())
         });
         return;
@@ -87,6 +73,7 @@ function fetchEventListeners() {
         type: "FETCH_EVENT_LISTENERS",
         status: "begin"
       });
+
       asPaused(getState(), client, _getEventListeners).then(listeners => {
         dispatch({
           type: "FETCH_EVENT_LISTENERS",
@@ -103,29 +90,31 @@ function formatListeners(state, listeners) {
     return {
       selector: l.node.selector,
       type: l.type,
-      sourceId: (0, _selectors.getSourceByURL)(state, l.function.location.url).id,
+      sourceId: getSourceByURL(state, l.function.location.url).id,
       line: l.function.location.line
     };
   });
 }
 
 async function _getEventListeners(threadClient) {
-  const response = await threadClient.eventListeners(); 
+  const response = await threadClient.eventListeners();
+
   
+  
+  response.listeners.sort((a, b) => (a.type > b.type ? 1 : -1));
 
-  response.listeners.sort((a, b) => a.type > b.type ? 1 : -1); 
-
+  
   const fetchedDefinitions = new Map();
   const listeners = [];
-
   for (const listener of response.listeners) {
     let definitionSite;
-
     if (fetchedDefinitions.has(listener.function.actor)) {
       definitionSite = fetchedDefinitions.get(listener.function.actor);
     } else if (listener.function.class == "Function") {
-      definitionSite = await _getDefinitionSite(threadClient, listener.function);
-
+      definitionSite = await _getDefinitionSite(
+        threadClient,
+        listener.function
+      );
       if (!definitionSite) {
         
         
@@ -134,12 +123,11 @@ async function _getEventListeners(threadClient) {
 
       fetchedDefinitions.set(listener.function.actor, definitionSite);
     }
-
     listener.function.url = definitionSite;
     listeners.push(listener);
   }
-
   fetchedDefinitions.clear();
+
   return listeners;
 }
 
@@ -151,7 +139,7 @@ async function _getDefinitionSite(threadClient, func) {
     response = await grip.getDefinitionSite();
   } catch (e) {
     
-    (0, _DevToolsUtils.reportException)("_getDefinitionSite", e);
+    reportException("_getDefinitionSite", e);
     return null;
   }
 
@@ -163,13 +151,13 @@ async function _getDefinitionSite(threadClient, func) {
 
 
 
-
-function updateEventBreakpoints(eventNames) {
+export function updateEventBreakpoints(eventNames) {
   return dispatch => {
     setNamedTimeout("event-breakpoints-update", 0, () => {
       gThreadClient.pauseOnDOMEvents(eventNames, () => {
         
         window.emit(EVENTS.EVENT_BREAKPOINTS_UPDATED);
+
         dispatch({
           type: "UPDATE_EVENT_BREAKPOINTS",
           eventNames: eventNames

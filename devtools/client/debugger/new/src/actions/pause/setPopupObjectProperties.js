@@ -1,29 +1,21 @@
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.setPopupObjectProperties = setPopupObjectProperties;
-
-var _selectors = require("../../selectors/index");
 
 
 
 
 
 
+import { getPopupObjectProperties } from "../../selectors";
+import type { ThunkArgs } from "../types";
 
 
 
-function setPopupObjectProperties(object, properties) {
-  return ({
-    dispatch,
-    client,
-    getState
-  }) => {
+
+
+export function setPopupObjectProperties(object: any, properties: Object) {
+  return ({ dispatch, client, getState }: ThunkArgs) => {
     const objectId = object.actor || object.objectId;
 
-    if ((0, _selectors.getPopupObjectProperties)(getState(), object.actor)) {
+    if (getPopupObjectProperties(getState(), object.actor)) {
       return;
     }
 
