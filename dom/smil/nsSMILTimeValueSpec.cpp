@@ -5,13 +5,13 @@
 
 
 #include "mozilla/EventListenerManager.h"
+#include "mozilla/SMILTimeContainer.h"
 #include "mozilla/SMILTimedElement.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/SVGAnimationElement.h"
 #include "mozilla/dom/TimeEvent.h"
 #include "nsSMILTimeValueSpec.h"
 #include "nsSMILInterval.h"
-#include "nsSMILTimeContainer.h"
 #include "nsSMILTimeValue.h"
 #include "nsSMILInstanceTime.h"
 #include "nsSMILParserUtils.h"
@@ -108,7 +108,7 @@ bool nsSMILTimeValueSpec::IsEventBased() const {
 }
 
 void nsSMILTimeValueSpec::HandleNewInterval(
-    nsSMILInterval& aInterval, const nsSMILTimeContainer* aSrcContainer) {
+    nsSMILInterval& aInterval, const SMILTimeContainer* aSrcContainer) {
   const nsSMILInstanceTime& baseInstance =
       mParams.mSyncBegin ? *aInterval.Begin() : *aInterval.End();
   nsSMILTimeValue newTime =
@@ -133,8 +133,7 @@ void nsSMILTimeValueSpec::HandleTargetElementChange(Element* aNewTarget) {
 }
 
 void nsSMILTimeValueSpec::HandleChangedInstanceTime(
-    const nsSMILInstanceTime& aBaseTime,
-    const nsSMILTimeContainer* aSrcContainer,
+    const nsSMILInstanceTime& aBaseTime, const SMILTimeContainer* aSrcContainer,
     nsSMILInstanceTime& aInstanceTimeToUpdate, bool aObjectChanged) {
   
   
@@ -294,7 +293,7 @@ void nsSMILTimeValueSpec::HandleEvent(Event* aEvent) {
   
   
   
-  nsSMILTimeContainer* container = mOwner->GetTimeContainer();
+  SMILTimeContainer* container = mOwner->GetTimeContainer();
   if (!container) return;
 
   if (mParams.mType == nsSMILTimeValueSpecParams::REPEAT &&
@@ -326,13 +325,13 @@ bool nsSMILTimeValueSpec::CheckRepeatEventDetail(Event* aEvent) {
 }
 
 nsSMILTimeValue nsSMILTimeValueSpec::ConvertBetweenTimeContainers(
-    const nsSMILTimeValue& aSrcTime, const nsSMILTimeContainer* aSrcContainer) {
+    const nsSMILTimeValue& aSrcTime, const SMILTimeContainer* aSrcContainer) {
   
   
   if (!aSrcTime.IsDefinite()) return aSrcTime;
 
   
-  const nsSMILTimeContainer* dstContainer = mOwner->GetTimeContainer();
+  const SMILTimeContainer* dstContainer = mOwner->GetTimeContainer();
   if (dstContainer == aSrcContainer) return aSrcTime;
 
   

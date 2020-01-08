@@ -8,22 +8,24 @@
 #define NS_SMILTIMECONTAINER_H_
 
 #include "mozilla/dom/SVGAnimationElement.h"
+#include "mozilla/SMILMilestone.h"
 #include "nscore.h"
 #include "nsSMILTypes.h"
 #include "nsTPriorityQueue.h"
-#include "nsSMILMilestone.h"
 
 class nsSMILTimeValue;
 
+namespace mozilla {
 
 
 
 
 
-class nsSMILTimeContainer {
+
+class SMILTimeContainer {
  public:
-  nsSMILTimeContainer();
-  virtual ~nsSMILTimeContainer();
+  SMILTimeContainer();
+  virtual ~SMILTimeContainer();
 
   
 
@@ -158,7 +160,7 @@ class nsSMILTimeContainer {
 
 
 
-  nsresult SetParent(nsSMILTimeContainer* aParent);
+  nsresult SetParent(SMILTimeContainer* aParent);
 
   
 
@@ -168,7 +170,7 @@ class nsSMILTimeContainer {
 
 
 
-  bool AddMilestone(const nsSMILMilestone& aMilestone,
+  bool AddMilestone(const SMILMilestone& aMilestone,
                     mozilla::dom::SVGAnimationElement& aElement);
 
   
@@ -185,7 +187,7 @@ class nsSMILTimeContainer {
 
 
 
-  bool GetNextMilestoneInParentTime(nsSMILMilestone& aNextMilestone) const;
+  bool GetNextMilestoneInParentTime(SMILMilestone& aNextMilestone) const;
 
   typedef nsTArray<RefPtr<mozilla::dom::SVGAnimationElement> > AnimElemArray;
 
@@ -199,7 +201,7 @@ class nsSMILTimeContainer {
 
 
 
-  bool PopMilestoneElementsAtMilestone(const nsSMILMilestone& aMilestone,
+  bool PopMilestoneElementsAtMilestone(const SMILMilestone& aMilestone,
                                        AnimElemArray& aMatchedElements);
 
   
@@ -221,14 +223,14 @@ class nsSMILTimeContainer {
   
 
 
-  virtual nsresult AddChild(nsSMILTimeContainer& aChild) {
+  virtual nsresult AddChild(SMILTimeContainer& aChild) {
     return NS_ERROR_FAILURE;
   }
 
   
 
 
-  virtual void RemoveChild(nsSMILTimeContainer& aChild) {}
+  virtual void RemoveChild(SMILTimeContainer& aChild) {}
 
   
 
@@ -242,7 +244,7 @@ class nsSMILTimeContainer {
   void NotifyTimeChange();
 
   
-  nsSMILTimeContainer* mParent;
+  SMILTimeContainer* mParent;
 
   
   nsSMILTime mCurrentTime;
@@ -273,7 +275,7 @@ class nsSMILTimeContainer {
   uint32_t mPauseState;
 
   struct MilestoneEntry {
-    MilestoneEntry(const nsSMILMilestone& aMilestone,
+    MilestoneEntry(const SMILMilestone& aMilestone,
                    mozilla::dom::SVGAnimationElement& aElement)
         : mMilestone(aMilestone), mTimebase(&aElement) {}
 
@@ -281,7 +283,7 @@ class nsSMILTimeContainer {
       return mMilestone < aOther.mMilestone;
     }
 
-    nsSMILMilestone mMilestone;  
+    SMILMilestone mMilestone;  
     RefPtr<mozilla::dom::SVGAnimationElement> mTimebase;
   };
 
@@ -292,5 +294,7 @@ class nsSMILTimeContainer {
   
   nsTPriorityQueue<MilestoneEntry> mMilestoneEntries;
 };
+
+}  
 
 #endif  

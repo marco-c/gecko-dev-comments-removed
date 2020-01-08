@@ -9,6 +9,7 @@
 
 #include "mozilla/dom/Element.h"
 
+namespace mozilla {
 
 
 
@@ -22,13 +23,14 @@
 
 
 
-struct nsSMILTargetIdentifier {
-  nsSMILTargetIdentifier()
+
+struct SMILTargetIdentifier {
+  SMILTargetIdentifier()
       : mElement(nullptr),
         mAttributeName(nullptr),
         mAttributeNamespaceID(kNameSpaceID_Unknown) {}
 
-  inline bool Equals(const nsSMILTargetIdentifier& aOther) const {
+  inline bool Equals(const SMILTargetIdentifier& aOther) const {
     return (aOther.mElement == mElement &&
             aOther.mAttributeName == mAttributeName &&
             aOther.mAttributeNamespaceID == mAttributeNamespaceID);
@@ -55,14 +57,14 @@ class nsSMILWeakTargetIdentifier {
   nsSMILWeakTargetIdentifier() : mElement(nullptr), mAttributeName(nullptr) {}
 
   
-  nsSMILWeakTargetIdentifier& operator=(const nsSMILTargetIdentifier& aOther) {
+  nsSMILWeakTargetIdentifier& operator=(const SMILTargetIdentifier& aOther) {
     mElement = aOther.mElement;
     mAttributeName = aOther.mAttributeName;
     return *this;
   }
 
   
-  inline bool Equals(const nsSMILTargetIdentifier& aOther) const {
+  inline bool Equals(const SMILTargetIdentifier& aOther) const {
     return (aOther.mElement == mElement &&
             aOther.mAttributeName == mAttributeName);
   }
@@ -71,5 +73,7 @@ class nsSMILWeakTargetIdentifier {
   const nsIContent* mElement;
   const nsAtom* mAttributeName;
 };
+
+}  
 
 #endif  

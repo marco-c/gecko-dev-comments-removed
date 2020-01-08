@@ -11,6 +11,7 @@
 #include "mozilla/DebugOnly.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/SMILAnimationFunction.h"
+#include "mozilla/SMILTimeContainer.h"
 #include "mozilla/TaskCategory.h"
 #include "mozilla/dom/SVGAnimationElement.h"
 #include "nsAttrValueInlines.h"
@@ -18,7 +19,6 @@
 #include "nsSMILTimeValueSpec.h"
 #include "nsSMILInstanceTime.h"
 #include "nsSMILParserUtils.h"
-#include "nsSMILTimeContainer.h"
 #include "nsGkAtoms.h"
 #include "nsReadableUtils.h"
 #include "nsMathUtils.h"
@@ -198,7 +198,7 @@ const nsAttrValue::EnumTable SMILTimedElement::sRestartModeTable[] = {
     {"never", RESTART_NEVER},
     {nullptr, 0}};
 
-const nsSMILMilestone SMILTimedElement::sMaxMilestone(
+const SMILMilestone SMILTimedElement::sMaxMilestone(
     std::numeric_limits<nsSMILTime>::max(), false);
 
 
@@ -269,7 +269,7 @@ void SMILTimedElement::SetAnimationElement(SVGAnimationElement* aElement) {
   mAnimationElement = aElement;
 }
 
-nsSMILTimeContainer* SMILTimedElement::GetTimeContainer() {
+SMILTimeContainer* SMILTimedElement::GetTimeContainer() {
   return mAnimationElement ? mAnimationElement->GetTimeContainer() : nullptr;
 }
 
@@ -295,7 +295,7 @@ dom::Element* SMILTimedElement::GetTargetElement() {
 
 
 nsresult SMILTimedElement::BeginElementAt(double aOffsetSeconds) {
-  nsSMILTimeContainer* container = GetTimeContainer();
+  SMILTimeContainer* container = GetTimeContainer();
   if (!container) return NS_ERROR_FAILURE;
 
   nsSMILTime currentTime = container->GetCurrentTimeAsSMILTime();
@@ -303,7 +303,7 @@ nsresult SMILTimedElement::BeginElementAt(double aOffsetSeconds) {
 }
 
 nsresult SMILTimedElement::EndElementAt(double aOffsetSeconds) {
-  nsSMILTimeContainer* container = GetTimeContainer();
+  SMILTimeContainer* container = GetTimeContainer();
   if (!container) return NS_ERROR_FAILURE;
 
   nsSMILTime currentTime = container->GetCurrentTimeAsSMILTime();
@@ -503,7 +503,7 @@ void SMILTimedElement::DoSampleAt(nsSMILTime aContainerTime, bool aEndOnly) {
   
   
   
-  if (GetTimeContainer()->IsPausedByType(nsSMILTimeContainer::PAUSE_BEGIN))
+  if (GetTimeContainer()->IsPausedByType(SMILTimeContainer::PAUSE_BEGIN))
     return;
 
   
@@ -1993,12 +1993,12 @@ nsresult SMILTimedElement::AddInstanceTimeFromCurrentTime(
 }
 
 void SMILTimedElement::RegisterMilestone() {
-  nsSMILTimeContainer* container = GetTimeContainer();
+  SMILTimeContainer* container = GetTimeContainer();
   if (!container) return;
   MOZ_ASSERT(mAnimationElement,
              "Got a time container without an owning animation element");
 
-  nsSMILMilestone nextMilestone;
+  SMILMilestone nextMilestone;
   if (!GetNextMilestone(nextMilestone)) return;
 
   
@@ -2011,7 +2011,7 @@ void SMILTimedElement::RegisterMilestone() {
   mPrevRegisteredMilestone = nextMilestone;
 }
 
-bool SMILTimedElement::GetNextMilestone(nsSMILMilestone& aNextMilestone) const {
+bool SMILTimedElement::GetNextMilestone(SMILMilestone& aNextMilestone) const {
   
   
   
@@ -2086,7 +2086,7 @@ void SMILTimedElement::NotifyNewInterval() {
              "Attempting to notify dependents of a new interval but the "
              "interval is not set");
 
-  nsSMILTimeContainer* container = GetTimeContainer();
+  SMILTimeContainer* container = GetTimeContainer();
   if (container) {
     container->SyncPauseTime();
   }
@@ -2110,7 +2110,7 @@ void SMILTimedElement::NotifyChangedInterval(nsSMILInterval* aInterval,
                                              bool aEndObjectChanged) {
   MOZ_ASSERT(aInterval, "Null interval for change notification");
 
-  nsSMILTimeContainer* container = GetTimeContainer();
+  SMILTimeContainer* container = GetTimeContainer();
   if (container) {
     container->SyncPauseTime();
   }

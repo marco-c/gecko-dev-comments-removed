@@ -64,7 +64,7 @@ void nsSMILInstanceTime::Unlink() {
 }
 
 void nsSMILInstanceTime::HandleChangedInterval(
-    const nsSMILTimeContainer* aSrcContainer, bool aBeginObjectChanged,
+    const SMILTimeContainer* aSrcContainer, bool aBeginObjectChanged,
     bool aEndObjectChanged) {
   
   

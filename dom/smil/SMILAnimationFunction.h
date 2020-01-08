@@ -7,10 +7,10 @@
 #ifndef NS_SMILANIMATIONFUNCTION_H_
 #define NS_SMILANIMATIONFUNCTION_H_
 
+#include "mozilla/SMILTargetIdentifier.h"
 #include "nsISMILAttr.h"
 #include "nsGkAtoms.h"
 #include "nsString.h"
-#include "nsSMILTargetIdentifier.h"
 #include "nsSMILTimeValue.h"
 #include "nsSMILKeySpline.h"
 #include "nsSMILValue.h"
@@ -219,7 +219,7 @@ class SMILAnimationFunction {
 
 
 
-  bool UpdateCachedTarget(const nsSMILTargetIdentifier& aNewTarget);
+  bool UpdateCachedTarget(const SMILTargetIdentifier& aNewTarget);
 
   
 

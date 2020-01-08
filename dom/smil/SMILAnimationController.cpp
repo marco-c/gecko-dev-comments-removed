@@ -65,7 +65,7 @@ void SMILAnimationController::Disconnect() {
   MOZ_ASSERT(mDocument, "disconnecting when we weren't connected...?");
   MOZ_ASSERT(mRefCnt.get() == 1,
              "Expecting to disconnect when doc is sole remaining owner");
-  NS_ASSERTION(mPauseState & nsSMILTimeContainer::PAUSE_PAGEHIDE,
+  NS_ASSERTION(mPauseState & SMILTimeContainer::PAUSE_PAGEHIDE,
                "Expecting to be paused for pagehide before disconnect");
 
   StopSampling(GetRefreshDriver());
@@ -77,7 +77,7 @@ void SMILAnimationController::Disconnect() {
 
 
 void SMILAnimationController::Pause(uint32_t aType) {
-  nsSMILTimeContainer::Pause(aType);
+  SMILTimeContainer::Pause(aType);
 
   if (mPauseState) {
     mDeferredStartSampling = false;
@@ -91,7 +91,7 @@ void SMILAnimationController::Resume(uint32_t aType) {
   
   mCurrentSampleTime = mozilla::TimeStamp::Now();
 
-  nsSMILTimeContainer::Resume(aType);
+  SMILTimeContainer::Resume(aType);
 
   if (wasPaused && !mPauseState && mChildContainerTable.Count()) {
     MaybeStartSampling(GetRefreshDriver());
@@ -184,11 +184,11 @@ void SMILAnimationController::UnregisterAnimationElement(
 
 
 void SMILAnimationController::OnPageShow() {
-  Resume(nsSMILTimeContainer::PAUSE_PAGEHIDE);
+  Resume(SMILTimeContainer::PAUSE_PAGEHIDE);
 }
 
 void SMILAnimationController::OnPageHide() {
-  Pause(nsSMILTimeContainer::PAUSE_PAGEHIDE);
+  Pause(SMILTimeContainer::PAUSE_PAGEHIDE);
 }
 
 
@@ -309,12 +309,12 @@ void SMILAnimationController::DoSample(bool aSkipUnchangedContainers) {
   
   TimeContainerHashtable activeContainers(mChildContainerTable.Count());
   for (auto iter = mChildContainerTable.Iter(); !iter.Done(); iter.Next()) {
-    nsSMILTimeContainer* container = iter.Get()->GetKey();
+    SMILTimeContainer* container = iter.Get()->GetKey();
     if (!container) {
       continue;
     }
 
-    if (!container->IsPausedByType(nsSMILTimeContainer::PAUSE_BEGIN) &&
+    if (!container->IsPausedByType(SMILTimeContainer::PAUSE_BEGIN) &&
         (container->NeedsSample() || !aSkipUnchangedContainers)) {
       container->ClearMilestones();
       container->Sample();
@@ -424,7 +424,7 @@ void SMILAnimationController::DoSample(bool aSkipUnchangedContainers) {
 void SMILAnimationController::RewindElements() {
   bool rewindNeeded = false;
   for (auto iter = mChildContainerTable.Iter(); !iter.Done(); iter.Next()) {
-    nsSMILTimeContainer* container = iter.Get()->GetKey();
+    SMILTimeContainer* container = iter.Get()->GetKey();
     if (container->NeedsRewind()) {
       rewindNeeded = true;
       break;
@@ -435,7 +435,7 @@ void SMILAnimationController::RewindElements() {
 
   for (auto iter = mAnimationElementTable.Iter(); !iter.Done(); iter.Next()) {
     SVGAnimationElement* animElem = iter.Get()->GetKey();
-    nsSMILTimeContainer* timeContainer = animElem->GetTimeContainer();
+    SMILTimeContainer* timeContainer = animElem->GetTimeContainer();
     if (timeContainer && timeContainer->NeedsRewind()) {
       animElem->TimedElement().Rewind();
     }
@@ -472,13 +472,13 @@ void SMILAnimationController::DoMilestoneSamples() {
     
     
     
-    nsSMILMilestone nextMilestone(GetCurrentTimeAsSMILTime() + 1, true);
+    SMILMilestone nextMilestone(GetCurrentTimeAsSMILTime() + 1, true);
     for (auto iter = mChildContainerTable.Iter(); !iter.Done(); iter.Next()) {
-      nsSMILTimeContainer* container = iter.Get()->GetKey();
-      if (container->IsPausedByType(nsSMILTimeContainer::PAUSE_BEGIN)) {
+      SMILTimeContainer* container = iter.Get()->GetKey();
+      if (container->IsPausedByType(SMILTimeContainer::PAUSE_BEGIN)) {
         continue;
       }
-      nsSMILMilestone thisMilestone;
+      SMILMilestone thisMilestone;
       bool didGetMilestone =
           container->GetNextMilestoneInParentTime(thisMilestone);
       if (didGetMilestone && thisMilestone < nextMilestone) {
@@ -492,8 +492,8 @@ void SMILAnimationController::DoMilestoneSamples() {
 
     nsTArray<RefPtr<mozilla::dom::SVGAnimationElement>> elements;
     for (auto iter = mChildContainerTable.Iter(); !iter.Done(); iter.Next()) {
-      nsSMILTimeContainer* container = iter.Get()->GetKey();
-      if (container->IsPausedByType(nsSMILTimeContainer::PAUSE_BEGIN)) {
+      SMILTimeContainer* container = iter.Get()->GetKey();
+      if (container->IsPausedByType(SMILTimeContainer::PAUSE_BEGIN)) {
         continue;
       }
       container->PopMilestoneElementsAtMilestone(nextMilestone, elements);
@@ -515,7 +515,7 @@ void SMILAnimationController::DoMilestoneSamples() {
     for (uint32_t i = 0; i < length; ++i) {
       SVGAnimationElement* elem = elements[i].get();
       MOZ_ASSERT(elem, "nullptr animation element in list");
-      nsSMILTimeContainer* container = elem->GetTimeContainer();
+      SMILTimeContainer* container = elem->GetTimeContainer();
       if (!container)
         
         
@@ -540,7 +540,7 @@ void SMILAnimationController::DoMilestoneSamples() {
 
  void SMILAnimationController::SampleTimedElement(
     SVGAnimationElement* aElement, TimeContainerHashtable* aActiveContainers) {
-  nsSMILTimeContainer* timeContainer = aElement->GetTimeContainer();
+  SMILTimeContainer* timeContainer = aElement->GetTimeContainer();
   if (!timeContainer) return;
 
   
@@ -565,7 +565,7 @@ void SMILAnimationController::DoMilestoneSamples() {
     SVGAnimationElement* aElement, SMILCompositorTable* aCompositorTable,
     bool& aStyleFlushNeeded) {
   
-  nsSMILTargetIdentifier key;
+  SMILTargetIdentifier key;
   if (!GetTargetIdentifierForAnimation(aElement, key))
     
     return;
@@ -610,7 +610,7 @@ static inline bool IsTransformAttribute(int32_t aNamespaceID,
 
 
  bool SMILAnimationController::GetTargetIdentifierForAnimation(
-    SVGAnimationElement* aAnimElem, nsSMILTargetIdentifier& aResult) {
+    SVGAnimationElement* aAnimElem, SMILTargetIdentifier& aResult) {
   
   Element* targetElem = aAnimElem->GetTargetElementContent();
   if (!targetElem)
@@ -661,7 +661,7 @@ bool SMILAnimationController::PreTraverseInSubtree(Element* aRoot) {
   for (auto iter = mAnimationElementTable.Iter(); !iter.Done(); iter.Next()) {
     SVGAnimationElement* animElement = iter.Get()->GetKey();
 
-    nsSMILTargetIdentifier key;
+    SMILTargetIdentifier key;
     if (!GetTargetIdentifierForAnimation(animElement, key)) {
       
       continue;
@@ -693,7 +693,7 @@ bool SMILAnimationController::PreTraverseInSubtree(Element* aRoot) {
 
 
 
-nsresult SMILAnimationController::AddChild(nsSMILTimeContainer& aChild) {
+nsresult SMILAnimationController::AddChild(SMILTimeContainer& aChild) {
   TimeContainerPtrKey* key = mChildContainerTable.PutEntry(&aChild);
   NS_ENSURE_TRUE(key, NS_ERROR_OUT_OF_MEMORY);
 
@@ -705,7 +705,7 @@ nsresult SMILAnimationController::AddChild(nsSMILTimeContainer& aChild) {
   return NS_OK;
 }
 
-void SMILAnimationController::RemoveChild(nsSMILTimeContainer& aChild) {
+void SMILAnimationController::RemoveChild(SMILTimeContainer& aChild) {
   mChildContainerTable.RemoveEntry(&aChild);
 
   if (!mPauseState && mChildContainerTable.Count() == 0) {

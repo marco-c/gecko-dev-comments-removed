@@ -4,16 +4,16 @@
 
 
 
-#include "nsSMILTimeContainer.h"
+#include "SMILTimeContainer.h"
 
 #include "mozilla/AutoRestore.h"
 #include "mozilla/SMILTimedElement.h"
 #include "nsSMILTimeValue.h"
 #include <algorithm>
 
-using namespace mozilla;
+namespace mozilla {
 
-nsSMILTimeContainer::nsSMILTimeContainer()
+SMILTimeContainer::SMILTimeContainer()
     : mParent(nullptr),
       mCurrentTime(0L),
       mParentOffset(0L),
@@ -27,13 +27,13 @@ nsSMILTimeContainer::nsSMILTimeContainer()
       mPauseState(PAUSE_BEGIN) {
 }
 
-nsSMILTimeContainer::~nsSMILTimeContainer() {
+SMILTimeContainer::~SMILTimeContainer() {
   if (mParent) {
     mParent->RemoveChild(*this);
   }
 }
 
-nsSMILTimeValue nsSMILTimeContainer::ContainerToParentTime(
+nsSMILTimeValue SMILTimeContainer::ContainerToParentTime(
     nsSMILTime aContainerTime) const {
   
   if (IsPaused() && aContainerTime > mCurrentTime)
@@ -42,7 +42,7 @@ nsSMILTimeValue nsSMILTimeContainer::ContainerToParentTime(
   return nsSMILTimeValue(aContainerTime + mParentOffset);
 }
 
-nsSMILTimeValue nsSMILTimeContainer::ParentToContainerTime(
+nsSMILTimeValue SMILTimeContainer::ParentToContainerTime(
     nsSMILTime aParentTime) const {
   
   if (IsPaused() && aParentTime > mPauseStart)
@@ -51,7 +51,7 @@ nsSMILTimeValue nsSMILTimeContainer::ParentToContainerTime(
   return nsSMILTimeValue(aParentTime - mParentOffset);
 }
 
-void nsSMILTimeContainer::Begin() {
+void SMILTimeContainer::Begin() {
   Resume(PAUSE_BEGIN);
   if (mPauseState) {
     mNeedsPauseSample = true;
@@ -67,7 +67,7 @@ void nsSMILTimeContainer::Begin() {
   UpdateCurrentTime();
 }
 
-void nsSMILTimeContainer::Pause(uint32_t aType) {
+void SMILTimeContainer::Pause(uint32_t aType) {
   bool didStartPause = false;
 
   if (!mPauseState && aType) {
@@ -83,7 +83,7 @@ void nsSMILTimeContainer::Pause(uint32_t aType) {
   }
 }
 
-void nsSMILTimeContainer::Resume(uint32_t aType) {
+void SMILTimeContainer::Resume(uint32_t aType) {
   if (!mPauseState) return;
 
   mPauseState &= ~aType;
@@ -95,7 +95,7 @@ void nsSMILTimeContainer::Resume(uint32_t aType) {
   }
 }
 
-nsSMILTime nsSMILTimeContainer::GetCurrentTimeAsSMILTime() const {
+nsSMILTime SMILTimeContainer::GetCurrentTimeAsSMILTime() const {
   
   
   
@@ -106,7 +106,7 @@ nsSMILTime nsSMILTimeContainer::GetCurrentTimeAsSMILTime() const {
   return mCurrentTime;
 }
 
-void nsSMILTimeContainer::SetCurrentTime(nsSMILTime aSeekTo) {
+void SMILTimeContainer::SetCurrentTime(nsSMILTime aSeekTo) {
   
   
   aSeekTo = std::max<nsSMILTime>(0, aSeekTo);
@@ -138,13 +138,13 @@ void nsSMILTimeContainer::SetCurrentTime(nsSMILTime aSeekTo) {
   NotifyTimeChange();
 }
 
-nsSMILTime nsSMILTimeContainer::GetParentTime() const {
+nsSMILTime SMILTimeContainer::GetParentTime() const {
   if (mParent) return mParent->GetCurrentTimeAsSMILTime();
 
   return 0L;
 }
 
-void nsSMILTimeContainer::SyncPauseTime() {
+void SMILTimeContainer::SyncPauseTime() {
   if (IsPaused()) {
     nsSMILTime parentTime = GetParentTime();
     nsSMILTime extraOffset = parentTime - mPauseStart;
@@ -153,7 +153,7 @@ void nsSMILTimeContainer::SyncPauseTime() {
   }
 }
 
-void nsSMILTimeContainer::Sample() {
+void SMILTimeContainer::Sample() {
   if (!NeedsSample()) return;
 
   UpdateCurrentTime();
@@ -162,7 +162,7 @@ void nsSMILTimeContainer::Sample() {
   mNeedsPauseSample = false;
 }
 
-nsresult nsSMILTimeContainer::SetParent(nsSMILTimeContainer* aParent) {
+nsresult SMILTimeContainer::SetParent(SMILTimeContainer* aParent) {
   if (mParent) {
     mParent->RemoveChild(*this);
     
@@ -185,8 +185,8 @@ nsresult nsSMILTimeContainer::SetParent(nsSMILTimeContainer* aParent) {
   return rv;
 }
 
-bool nsSMILTimeContainer::AddMilestone(
-    const nsSMILMilestone& aMilestone,
+bool SMILTimeContainer::AddMilestone(
+    const SMILMilestone& aMilestone,
     mozilla::dom::SVGAnimationElement& aElement) {
   
   
@@ -196,34 +196,34 @@ bool nsSMILTimeContainer::AddMilestone(
   return mMilestoneEntries.Push(MilestoneEntry(aMilestone, aElement));
 }
 
-void nsSMILTimeContainer::ClearMilestones() {
+void SMILTimeContainer::ClearMilestones() {
   MOZ_ASSERT(!mHoldingEntries);
   mMilestoneEntries.Clear();
 }
 
-bool nsSMILTimeContainer::GetNextMilestoneInParentTime(
-    nsSMILMilestone& aNextMilestone) const {
+bool SMILTimeContainer::GetNextMilestoneInParentTime(
+    SMILMilestone& aNextMilestone) const {
   if (mMilestoneEntries.IsEmpty()) return false;
 
   nsSMILTimeValue parentTime =
       ContainerToParentTime(mMilestoneEntries.Top().mMilestone.mTime);
   if (!parentTime.IsDefinite()) return false;
 
-  aNextMilestone = nsSMILMilestone(parentTime.GetMillis(),
-                                   mMilestoneEntries.Top().mMilestone.mIsEnd);
+  aNextMilestone = SMILMilestone(parentTime.GetMillis(),
+                                 mMilestoneEntries.Top().mMilestone.mIsEnd);
 
   return true;
 }
 
-bool nsSMILTimeContainer::PopMilestoneElementsAtMilestone(
-    const nsSMILMilestone& aMilestone, AnimElemArray& aMatchedElements) {
+bool SMILTimeContainer::PopMilestoneElementsAtMilestone(
+    const SMILMilestone& aMilestone, AnimElemArray& aMatchedElements) {
   if (mMilestoneEntries.IsEmpty()) return false;
 
   nsSMILTimeValue containerTime = ParentToContainerTime(aMilestone.mTime);
   if (!containerTime.IsDefinite()) return false;
 
-  nsSMILMilestone containerMilestone(containerTime.GetMillis(),
-                                     aMilestone.mIsEnd);
+  SMILMilestone containerMilestone(containerTime.GetMillis(),
+                                   aMilestone.mIsEnd);
 
   MOZ_ASSERT(mMilestoneEntries.Top().mMilestone >= containerMilestone,
              "Trying to pop off earliest times but we have earlier ones that "
@@ -241,7 +241,7 @@ bool nsSMILTimeContainer::PopMilestoneElementsAtMilestone(
   return gotOne;
 }
 
-void nsSMILTimeContainer::Traverse(
+void SMILTimeContainer::Traverse(
     nsCycleCollectionTraversalCallback* aCallback) {
 #ifdef DEBUG
   AutoRestore<bool> saveHolding(mHoldingEntries);
@@ -255,18 +255,18 @@ void nsSMILTimeContainer::Traverse(
   }
 }
 
-void nsSMILTimeContainer::Unlink() {
+void SMILTimeContainer::Unlink() {
   MOZ_ASSERT(!mHoldingEntries);
   mMilestoneEntries.Clear();
 }
 
-void nsSMILTimeContainer::UpdateCurrentTime() {
+void SMILTimeContainer::UpdateCurrentTime() {
   nsSMILTime now = IsPaused() ? mPauseStart : GetParentTime();
   mCurrentTime = now - mParentOffset;
   MOZ_ASSERT(mCurrentTime >= 0, "Container has negative time");
 }
 
-void nsSMILTimeContainer::NotifyTimeChange() {
+void SMILTimeContainer::NotifyTimeChange() {
   
   
   
@@ -297,3 +297,5 @@ void nsSMILTimeContainer::NotifyTimeChange() {
     elem->TimedElement().HandleContainerTimeChange();
   }
 }
+
+}  

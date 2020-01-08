@@ -9,7 +9,7 @@
 #include "mozilla/dom/ElementInlines.h"
 #include "mozilla/SMILAnimationController.h"
 #include "mozilla/SMILAnimationFunction.h"
-#include "nsSMILTimeContainer.h"
+#include "mozilla/SMILTimeContainer.h"
 #include "nsContentUtils.h"
 #include "nsIContentInlines.h"
 #include "nsIURI.h"
@@ -110,7 +110,7 @@ float SVGAnimationElement::GetStartTime(ErrorResult& rv) {
 float SVGAnimationElement::GetCurrentTimeAsFloat() {
   
 
-  nsSMILTimeContainer* root = GetTimeContainer();
+  SMILTimeContainer* root = GetTimeContainer();
   if (root) {
     return float(double(root->GetCurrentTimeAsSMILTime()) / PR_MSEC_PER_SEC);
   }
@@ -299,7 +299,7 @@ void SVGAnimationElement::ActivateByHyperlink() {
   
   nsSMILTimeValue seekTime = mTimedElement.GetHyperlinkTime();
   if (seekTime.IsDefinite()) {
-    nsSMILTimeContainer* timeContainer = GetTimeContainer();
+    SMILTimeContainer* timeContainer = GetTimeContainer();
     if (timeContainer) {
       timeContainer->SetCurrentTime(seekTime.GetMillis());
       AnimationNeedsResample();
@@ -317,7 +317,7 @@ void SVGAnimationElement::ActivateByHyperlink() {
 
 
 
-nsSMILTimeContainer* SVGAnimationElement::GetTimeContainer() {
+SMILTimeContainer* SVGAnimationElement::GetTimeContainer() {
   SVGSVGElement* element = SVGContentUtils::GetOuterSVGElement(this);
 
   if (element) {

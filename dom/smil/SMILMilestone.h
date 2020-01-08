@@ -7,6 +7,9 @@
 #ifndef NS_SMILMILESTONE_H_
 #define NS_SMILMILESTONE_H_
 
+#include "nsSMILTypes.h"
+
+namespace mozilla {
 
 
 
@@ -32,32 +35,32 @@
 
 
 
-class nsSMILMilestone {
+
+class SMILMilestone {
  public:
-  nsSMILMilestone(nsSMILTime aTime, bool aIsEnd)
-      : mTime(aTime), mIsEnd(aIsEnd) {}
+  SMILMilestone(nsSMILTime aTime, bool aIsEnd) : mTime(aTime), mIsEnd(aIsEnd) {}
 
-  nsSMILMilestone() : mTime(0), mIsEnd(false) {}
+  SMILMilestone() : mTime(0), mIsEnd(false) {}
 
-  bool operator==(const nsSMILMilestone& aOther) const {
+  bool operator==(const SMILMilestone& aOther) const {
     return mTime == aOther.mTime && mIsEnd == aOther.mIsEnd;
   }
 
-  bool operator!=(const nsSMILMilestone& aOther) const {
+  bool operator!=(const SMILMilestone& aOther) const {
     return !(*this == aOther);
   }
 
-  bool operator<(const nsSMILMilestone& aOther) const {
+  bool operator<(const SMILMilestone& aOther) const {
     
     return mTime < aOther.mTime ||
            (mTime == aOther.mTime && mIsEnd && !aOther.mIsEnd);
   }
 
-  bool operator<=(const nsSMILMilestone& aOther) const {
+  bool operator<=(const SMILMilestone& aOther) const {
     return *this == aOther || *this < aOther;
   }
 
-  bool operator>=(const nsSMILMilestone& aOther) const {
+  bool operator>=(const SMILMilestone& aOther) const {
     return !(*this < aOther);
   }
 
@@ -66,5 +69,7 @@ class nsSMILMilestone {
   bool mIsEnd;       
                      
 };
+
+}  
 
 #endif  
