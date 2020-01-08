@@ -34,9 +34,8 @@ def docker_worker_python_test(config, job, taskdesc):
     run = job['run']
 
     
-    run['command'] = 'cd {workdir}/checkouts/gecko && ' \
-        './mach python-test --python {python-version} --subsuite {subsuite}'.format(**run)
-    run['using'] = 'run-task'
+    run['mach'] = 'python-test --python {python-version} --subsuite {subsuite}'.format(**run)
+    run['using'] = 'mach'
     del run['python-version']
     del run['subsuite']
     configure_taskdesc_for_run(config, job, taskdesc, job['worker']['implementation'])
