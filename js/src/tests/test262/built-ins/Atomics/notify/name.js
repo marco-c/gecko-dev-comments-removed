@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(Atomics.notify, 'name', {
+  value: 'notify',
+  enumerable: false,
+  writable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);

@@ -9,8 +9,7 @@
 
 
 
-
-verifyProperty(this, "global", {
+verifyProperty(this, "globalThis", {
     enumerable: false,
     writable: true,
     configurable: true,

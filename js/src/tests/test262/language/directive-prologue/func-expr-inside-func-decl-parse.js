@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function testcase() {
+  "use strict";
+  var static;
+}

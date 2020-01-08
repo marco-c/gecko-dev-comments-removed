@@ -7,6 +7,7 @@
 
 
 
+
 var target = {};
 var descriptor = {
   configurable: true,

@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+var result = Object.fromEntries([['key', 'value']]);
+verifyEnumerable(result, 'key');
+verifyWritable(result, 'key');
+verifyConfigurable(result, 'key');
+
+reportCompare(0, 0);

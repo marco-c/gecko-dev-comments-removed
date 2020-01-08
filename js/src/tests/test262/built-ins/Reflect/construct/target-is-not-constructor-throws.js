@@ -10,6 +10,7 @@
 
 
 
+
 assert.throws(TypeError, function() {
   Reflect.construct(1, []);
 });

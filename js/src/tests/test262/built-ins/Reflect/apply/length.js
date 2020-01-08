@@ -7,6 +7,7 @@
 
 
 
+
 assert.sameValue(
   Reflect.apply.length, 3,
   'The value of `Reflect.apply.length` is `3`'

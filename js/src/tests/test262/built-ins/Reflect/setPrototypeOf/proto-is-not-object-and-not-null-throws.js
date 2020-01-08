@@ -13,6 +13,7 @@
 
 
 
+
 assert.throws(TypeError, function() {
   Reflect.setPrototypeOf({}, undefined);
 });

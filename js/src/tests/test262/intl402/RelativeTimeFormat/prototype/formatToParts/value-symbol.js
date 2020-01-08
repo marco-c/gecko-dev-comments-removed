@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const rtf = new Intl.RelativeTimeFormat("en-US");
+
+assert.sameValue(typeof rtf.formatToParts, "function", "formatToParts should be supported");
+
+const symbol = Symbol();
+assert.throws(TypeError, () => rtf.formatToParts(symbol, "second"));
+
+reportCompare(0, 0);

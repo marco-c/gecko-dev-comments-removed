@@ -88,13 +88,6 @@ assert.throws = function (expectedErrorConstructor, func, message) {
   $ERROR(message);
 };
 
-assert.throws.early = function(err, code) {
-  var wrappedCode = 'function wrapperFn() { ' + code + ' }';
-  var ieval = eval;
-
-  assert.throws(err, function() { Function(wrappedCode); }, 'Function: ' + code);
-};
-
 
 
 

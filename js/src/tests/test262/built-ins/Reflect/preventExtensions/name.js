@@ -12,6 +12,7 @@
 
 
 
+
 assert.sameValue(
   Reflect.preventExtensions.name, 'preventExtensions',
   'The value of `Reflect.preventExtensions.name` is `"preventExtensions"`'

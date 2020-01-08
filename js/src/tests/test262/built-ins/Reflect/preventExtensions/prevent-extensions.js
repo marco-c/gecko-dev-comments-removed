@@ -16,6 +16,7 @@
 
 
 
+
 var o = {};
 Reflect.preventExtensions(o);
 assert.sameValue(Object.isExtensible(o), false, 'object is not extensible');

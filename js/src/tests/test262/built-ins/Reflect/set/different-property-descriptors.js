@@ -34,6 +34,7 @@
 
 
 
+
 var receiver = {};
 var fn = function() {};
 Object.defineProperty(receiver, 'p', {

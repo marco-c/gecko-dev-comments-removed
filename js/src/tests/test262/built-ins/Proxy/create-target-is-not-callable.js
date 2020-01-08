@@ -18,6 +18,7 @@
 
 
 
+
 var p = new Proxy({}, {});
 
 assert.throws(TypeError, function() {

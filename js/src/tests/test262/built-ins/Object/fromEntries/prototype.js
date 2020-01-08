@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+var result = Object.fromEntries([]);
+assert.sameValue(Object.getPrototypeOf(result), Object.prototype);
+
+reportCompare(0, 0);

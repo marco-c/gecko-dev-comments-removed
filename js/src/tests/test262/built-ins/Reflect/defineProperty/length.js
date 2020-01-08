@@ -7,6 +7,7 @@
 
 
 
+
 assert.sameValue(
   Reflect.defineProperty.length, 3,
   'The value of `Reflect.defineProperty.length` is `3`'

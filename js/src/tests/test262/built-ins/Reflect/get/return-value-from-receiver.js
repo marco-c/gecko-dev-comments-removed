@@ -29,6 +29,7 @@
 
 
 
+
 var o1 = {};
 var receiver = {
   y: 42

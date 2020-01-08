@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+var key = Symbol();
+var result = Object.fromEntries([[key, 'value']]);
+assert.sameValue(result[key], 'value');
+
+reportCompare(0, 0);

@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Object.prototype.toString.call(Intl.ListFormat.prototype), "[object Intl.ListFormat]");
+assert.sameValue(Object.prototype.toString.call(new Intl.ListFormat()), "[object Intl.ListFormat]");
+
+reportCompare(0, 0);

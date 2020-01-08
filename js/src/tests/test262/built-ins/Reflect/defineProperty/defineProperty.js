@@ -12,6 +12,7 @@
 
 
 
+
 verifyNotEnumerable(Reflect, 'defineProperty');
 verifyWritable(Reflect, 'defineProperty');
 verifyConfigurable(Reflect, 'defineProperty');

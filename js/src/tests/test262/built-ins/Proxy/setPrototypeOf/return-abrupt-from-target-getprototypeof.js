@@ -11,6 +11,7 @@
 
 
 
+
 var target = new Proxy({}, {
   getPrototypeOf: function() {
     throw new Test262Error();
