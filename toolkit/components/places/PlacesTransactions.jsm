@@ -171,9 +171,6 @@ var EXPORTED_SYMBOLS = ["PlacesTransactions"];
 
 
 
-
-
-
 const TRANSACTIONS_QUEUE_TIMEOUT_MS = 240000; 
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
