@@ -60,6 +60,9 @@ pref("devtools.remote.wifi.scan", true);
 pref("devtools.remote.tls-handshake-timeout", 10000);
 
 
+pref("devtools.remote.adb.extensionID", "adb@mozilla.org");
+
+
 pref("devtools.devices.url", "https://code.cdn.mozilla.net/devices/devices.json");
 
 

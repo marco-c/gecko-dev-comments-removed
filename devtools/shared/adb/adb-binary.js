@@ -14,9 +14,9 @@ loader.lazyRequireGetter(this, "NetUtil",
 loader.lazyGetter(this, "UNPACKED_ROOT_PATH", () => {
   return OS.Path.join(OS.Constants.Path.localProfileDir, "adb");
 });
-
-
-const EXTENSION_ID = "adb@mozilla.org";
+loader.lazyGetter(this, "EXTENSION_ID", () => {
+  return Services.prefs.getCharPref("devtools.remote.adb.extensionID");
+});
 
 async function getAdbInfo(adbUri) {
   return new Promise(resolve => {
