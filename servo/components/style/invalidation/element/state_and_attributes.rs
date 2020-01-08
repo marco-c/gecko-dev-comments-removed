@@ -159,13 +159,18 @@ where
         
         
         
-        if state_changes.intersects(ElementState::IN_VISITED_OR_UNVISITED_STATE) {
+        if state_changes.intersects(ElementState::IN_VISITED_OR_UNVISITED_STATE) &&
+            self.shared_context.visited_styles_enabled
+        {
             trace!(" > visitedness change, force subtree restyle");
             
             
             
             
-            debug_assert!(self.shared_context.visited_styles_enabled);
+            
+            
+            
+            
             
             
             self.data.hint.insert(RestyleHint::restyle_subtree());
