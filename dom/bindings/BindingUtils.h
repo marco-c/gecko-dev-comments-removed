@@ -2822,7 +2822,6 @@ public:
       js::SetProxyReservedSlot(aReflector, DOM_OBJECT_SLOT, JS::PrivateValue(aNative));
       mNative = aNative;
       mReflector = aReflector;
-      RecordReplayRegisterDeferredFinalize<T>(aNative);
     }
 
     if (size_t mallocBytes = BindingJSObjectMallocBytes(aNative)) {
@@ -2840,7 +2839,6 @@ public:
       js::SetReservedSlot(aReflector, DOM_OBJECT_SLOT, JS::PrivateValue(aNative));
       mNative = aNative;
       mReflector = aReflector;
-      RecordReplayRegisterDeferredFinalize<T>(aNative);
     }
 
     if (size_t mallocBytes = BindingJSObjectMallocBytes(aNative)) {
@@ -2851,8 +2849,10 @@ public:
   void
   InitializationSucceeded()
   {
-    void* dummy;
-    mNative.forget(&dummy);
+    T* pointer;
+    mNative.forget(&pointer);
+    RecordReplayRegisterDeferredFinalize<T>(pointer);
+
     mReflector = nullptr;
   }
 
@@ -2868,15 +2868,23 @@ private:
     OwnedNative&
     operator=(T* aNative)
     {
+      mNative = aNative;
       return *this;
     }
 
     
     
     void
-    forget(void**)
+    forget(T** aResult)
     {
+      *aResult = mNative;
+      mNative = nullptr;
     }
+
+    
+    
+    
+    T* mNative;
   };
 
   JS::Rooted<JSObject*> mReflector;
