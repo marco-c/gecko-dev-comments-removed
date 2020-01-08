@@ -50,7 +50,7 @@ add_test(function simple_callback_test() {
     }
   };
   Services.search.addEngine(gDataUrl + "engine.xml", null,
-                            false, searchCallback);
+                            null, false, searchCallback);
 });
 
 
@@ -67,7 +67,7 @@ add_test(function duplicate_failure_test() {
   };
   
   Services.search.addEngine(gDataUrl + "engine.xml", null,
-                            false, searchCallback);
+                            null, false, searchCallback);
 });
 
 
@@ -84,7 +84,7 @@ add_test(function load_failure_test() {
   };
   
   Services.search.addEngine("http://invalid/data/engine.xml", null,
-                            false, searchCallback);
+                            null, false, searchCallback);
 });
 
 function run_test() {
