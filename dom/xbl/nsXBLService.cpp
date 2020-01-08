@@ -473,6 +473,21 @@ private:
   bool* mResolveStyle;
 };
 
+static bool
+IsSystemOrChromeURLPrincipal(nsIPrincipal* aPrincipal)
+{
+  if (nsContentUtils::IsSystemPrincipal(aPrincipal)) {
+    return true;
+  }
+
+  nsCOMPtr<nsIURI> uri;
+  aPrincipal->GetURI(getter_AddRefs(uri));
+  NS_ENSURE_TRUE(uri, false);
+
+  bool isChrome = false;
+  return NS_SUCCEEDED(uri->SchemeIs("chrome", &isChrome)) && isChrome;
+}
+
 
 
 nsresult
@@ -490,6 +505,45 @@ nsXBLService::LoadBindings(Element* aElement, nsIURI* aURL,
   if (MOZ_UNLIKELY(!aURL)) {
     return NS_OK;
   }
+
+#ifdef DEBUG
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (XRE_IsContentProcess() &&
+      IsSystemOrChromeURLPrincipal(aOriginPrincipal) &&
+      aElement->OwnerDoc() && !aElement->OwnerDoc()->AllowXULXBL() &&
+      !aURL->GetSpecOrDefault().EqualsLiteral(
+       "chrome://global/content/xml/XMLPrettyPrint.xml#prettyprint")) {
+    nsAtom* tag = aElement->NodeInfo()->NameAtom();
+    MOZ_ASSERT(
+      
+      tag == nsGkAtoms::datetimebox ||
+      
+      tag == nsGkAtoms::videocontrols ||
+      
+      tag == nsGkAtoms::embed ||
+      tag == nsGkAtoms::applet ||
+      tag == nsGkAtoms::object ||
+      
+      tag == nsGkAtoms::marquee,
+      "Unexpected XBL binding used in the content process"
+    );
+  }
+#endif
 
   
   nsXBLBinding* binding = aElement->GetXBLBinding();
@@ -874,21 +928,6 @@ nsXBLService::GetBinding(nsIContent* aBoundElement, nsIURI* aURI,
   }
 
   return NS_OK;
-}
-
-static bool
-IsSystemOrChromeURLPrincipal(nsIPrincipal* aPrincipal)
-{
-  if (nsContentUtils::IsSystemPrincipal(aPrincipal)) {
-    return true;
-  }
-
-  nsCOMPtr<nsIURI> uri;
-  aPrincipal->GetURI(getter_AddRefs(uri));
-  NS_ENSURE_TRUE(uri, false);
-
-  bool isChrome = false;
-  return NS_SUCCEEDED(uri->SchemeIs("chrome", &isChrome)) && isChrome;
 }
 
 nsresult
