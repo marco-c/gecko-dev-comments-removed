@@ -332,6 +332,7 @@ DecoderFactory::CreateDecoderForICOResource(DecoderType aType,
 DecoderFactory::CreateAnonymousDecoder(DecoderType aType,
                                        NotNull<SourceBuffer*> aSourceBuffer,
                                        const Maybe<IntSize>& aOutputSize,
+                                       DecoderFlags aDecoderFlags,
                                        SurfaceFlags aSurfaceFlags)
 {
   if (aType == DecoderType::UNKNOWN) {
@@ -350,14 +351,7 @@ DecoderFactory::CreateAnonymousDecoder(DecoderType aType,
   
   DecoderFlags decoderFlags = DecoderFlags::IMAGE_IS_TRANSIENT;
 
-  
-  
-  
-  
-  
-  decoderFlags |= DecoderFlags::FIRST_FRAME_ONLY;
-
-  decoder->SetDecoderFlags(decoderFlags);
+  decoder->SetDecoderFlags(aDecoderFlags | decoderFlags);
   decoder->SetSurfaceFlags(aSurfaceFlags);
 
   

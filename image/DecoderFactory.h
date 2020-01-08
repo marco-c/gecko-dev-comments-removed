@@ -180,10 +180,12 @@ public:
 
 
 
+
   static already_AddRefed<Decoder>
   CreateAnonymousDecoder(DecoderType aType,
                          NotNull<SourceBuffer*> aSourceBuffer,
                          const Maybe<gfx::IntSize>& aOutputSize,
+                         DecoderFlags aDecoderFlags,
                          SurfaceFlags aSurfaceFlags);
 
   
