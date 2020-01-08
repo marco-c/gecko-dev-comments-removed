@@ -559,6 +559,9 @@ public:
   
   void ResetVRTelemetry(bool aUpdate);
 
+  void StartVRActivity();
+  void StopVRActivity();
+
   
   bool UpdateVRDisplays(nsTArray<RefPtr<mozilla::dom::VRDisplay>>& aDisplays);
 
