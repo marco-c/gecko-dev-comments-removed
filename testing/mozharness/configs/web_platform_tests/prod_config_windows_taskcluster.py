@@ -51,8 +51,6 @@ config = {
         }
     ],
 
-    "download_minidump_stackwalk": True,
-
     
     "geckodriver": os.path.join("%(abs_test_bin_dir)s", "geckodriver.exe"),
 
