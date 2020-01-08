@@ -244,7 +244,7 @@ public:
                               const nsTArray<gfxFontVariation>& aVariationSettings,
                               uint32_t aLanguageOverride,
                               gfxCharacterMap* aUnicodeRanges,
-                              mozilla::StyleFontDisplay aFontDisplay,
+                              uint8_t aFontDisplay,
                               RangeFlags aRangeFlags) = 0;
 
     
@@ -259,7 +259,7 @@ public:
                                const nsTArray<gfxFontVariation>& aVariationSettings,
                                uint32_t aLanguageOverride,
                                gfxCharacterMap* aUnicodeRanges,
-                               mozilla::StyleFontDisplay aFontDisplay,
+                               uint8_t aFontDisplay,
                                RangeFlags aRangeFlags);
 
     
@@ -515,7 +515,7 @@ protected:
                                    const nsTArray<gfxFontVariation>& aVariationSettings,
                                    uint32_t aLanguageOverride,
                                    gfxCharacterMap* aUnicodeRanges,
-                                   mozilla::StyleFontDisplay aFontDisplay,
+                                   uint8_t aFontDisplay,
                                    RangeFlags aRangeFlags);
 
     
@@ -566,7 +566,7 @@ public:
                      const nsTArray<gfxFontVariation>& aVariationSettings,
                      uint32_t aLanguageOverride,
                      gfxCharacterMap* aUnicodeRanges,
-                     mozilla::StyleFontDisplay aFontDisplay,
+                     uint8_t aFontDisplay,
                      RangeFlags aRangeFlags);
 
     virtual ~gfxUserFontEntry();
@@ -580,7 +580,7 @@ public:
                  const nsTArray<gfxFontVariation>& aVariationSettings,
                  uint32_t aLanguageOverride,
                  gfxCharacterMap* aUnicodeRanges,
-                 mozilla::StyleFontDisplay aFontDisplay,
+                 uint8_t aFontDisplay,
                  RangeFlags aRangeFlags);
 
     gfxFont* CreateFontInstance(const gfxFontStyle* aFontStyle) override;
@@ -617,7 +617,7 @@ public:
         return mCharacterMap.get();
     }
 
-    mozilla::StyleFontDisplay GetFontDisplay() const { return mFontDisplay; }
+    uint8_t GetFontDisplay() const { return mFontDisplay; }
 
     
     
@@ -722,8 +722,8 @@ protected:
     };
     FontDataLoadingState     mFontDataLoadingState;
 
-    bool mUnsupportedFormat;
-    mozilla::StyleFontDisplay mFontDisplay; 
+    bool                     mUnsupportedFormat;
+    uint8_t                  mFontDisplay; 
 
     RefPtr<gfxFontEntry>   mPlatformFontEntry;
     nsTArray<gfxFontFaceSrc> mSrcList;

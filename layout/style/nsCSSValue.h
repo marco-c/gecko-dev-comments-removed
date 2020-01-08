@@ -336,7 +336,9 @@ enum nsCSSUnit {
   eCSSUnit_String       = 11,     
   eCSSUnit_Ident        = 12,     
   eCSSUnit_Attr         = 14,     
-  eCSSUnit_Element      = 15,     
+  eCSSUnit_Local_Font   = 15,     
+  eCSSUnit_Font_Format  = 16,     
+  eCSSUnit_Element      = 17,     
 
   eCSSUnit_Array        = 20,     
   eCSSUnit_Counter      = 21,     
@@ -365,6 +367,10 @@ enum nsCSSUnit {
   eCSSUnit_Calc_Times_L = 33,     
   eCSSUnit_Calc_Times_R = 34,     
   eCSSUnit_Calc_Divided = 35,     
+
+  eCSSUnit_URL          = 40,     
+  eCSSUnit_GridTemplateAreas   = 44,   
+                                       
 
   eCSSUnit_Pair         = 50,     
   eCSSUnit_List         = 53,     
@@ -425,6 +431,11 @@ enum nsCSSUnit {
 
   
   eCSSUnit_FlexFraction = 4000,    
+
+  
+  eCSSUnit_FontWeight   = 5000,    
+  eCSSUnit_FontStretch  = 5001,    
+  eCSSUnit_FontSlantStyle    = 5002,    
 };
 
 struct nsCSSValuePair;
@@ -440,6 +451,8 @@ public:
   struct Array;
   friend struct Array;
 
+  friend struct mozilla::css::URLValueData;
+
   friend struct mozilla::css::ImageValue;
 
   
@@ -453,7 +466,13 @@ public:
   nsCSSValue(float aValue, nsCSSUnit aUnit);
   nsCSSValue(const nsString& aValue, nsCSSUnit aUnit);
   nsCSSValue(Array* aArray, nsCSSUnit aUnit);
+  explicit nsCSSValue(mozilla::css::URLValue* aValue);
+  explicit nsCSSValue(mozilla::css::ImageValue* aValue);
+  explicit nsCSSValue(mozilla::css::GridTemplateAreasValue* aValue);
   explicit nsCSSValue(mozilla::SharedFontList* aValue);
+  explicit nsCSSValue(mozilla::FontStretch aStretch);
+  explicit nsCSSValue(mozilla::FontSlantStyle aStyle);
+  explicit nsCSSValue(mozilla::FontWeight aWeight);
   nsCSSValue(const nsCSSValue& aCopy);
   nsCSSValue(nsCSSValue&& aOther)
     : mUnit(aOther.mUnit)
@@ -586,6 +605,12 @@ public:
     return mValue.mArray;
   }
 
+  nsIURI* GetURLValue() const
+  {
+    MOZ_ASSERT(mUnit == eCSSUnit_URL, "not a URL value");
+    return mValue.mURL->GetURI();
+  }
+
   nsCSSValueSharedList* GetSharedListValue() const
   {
     MOZ_ASSERT(mUnit == eCSSUnit_SharedList, "not a shared list value");
@@ -601,6 +626,24 @@ public:
     return mozilla::WrapNotNull(mValue.mFontFamilyList);
   }
 
+  mozilla::FontStretch GetFontStretch() const
+  {
+    MOZ_ASSERT(mUnit == eCSSUnit_FontStretch, "not a font stretch value");
+    return mValue.mFontStretch;
+  }
+
+  mozilla::FontSlantStyle GetFontSlantStyle() const
+  {
+    MOZ_ASSERT(mUnit == eCSSUnit_FontSlantStyle, "not a font style value");
+    return mValue.mFontSlantStyle;
+  }
+
+  mozilla::FontWeight GetFontWeight() const
+  {
+    MOZ_ASSERT(mUnit == eCSSUnit_FontWeight, "not a font weight value");
+    return mValue.mFontWeight;
+  }
+
   
   inline nsCSSValuePair& GetPairValue();
   inline const nsCSSValuePair& GetPairValue() const;
@@ -610,6 +653,21 @@ public:
 
   inline nsCSSValuePairList* GetPairListValue();
   inline const nsCSSValuePairList* GetPairListValue() const;
+
+  mozilla::css::URLValue* GetURLStructValue() const
+  {
+    
+    
+    MOZ_ASSERT(mUnit == eCSSUnit_URL, "not a URL value");
+    return mValue.mURL;
+  }
+
+  mozilla::css::GridTemplateAreasValue* GetGridTemplateAreas() const
+  {
+    MOZ_ASSERT(mUnit == eCSSUnit_GridTemplateAreas,
+               "not a grid-template-areas value");
+    return mValue.mGridTemplateAreas;
+  }
 
   
   
@@ -653,19 +711,49 @@ public:
   
   void SetIntegerCoordValue(nscoord aCoord);
   void SetArrayValue(nsCSSValue::Array* aArray, nsCSSUnit aUnit);
+  void SetURLValue(mozilla::css::URLValue* aURI);
+  void SetGridTemplateAreas(mozilla::css::GridTemplateAreasValue* aValue);
   void SetFontFamilyListValue(already_AddRefed<mozilla::SharedFontList> aFontListValue);
+  void SetFontStretch(mozilla::FontStretch aStretch);
+  void SetFontSlantStyle(mozilla::FontSlantStyle aStyle);
+  void SetFontWeight(mozilla::FontWeight aWeight);
   void SetPairValue(const nsCSSValuePair* aPair);
   void SetPairValue(const nsCSSValue& xValue, const nsCSSValue& yValue);
   void SetSharedListValue(nsCSSValueSharedList* aList);
+  void SetDependentListValue(nsCSSValueList* aList);
+  void SetDependentPairListValue(nsCSSValuePairList* aList);
+  void SetAutoValue();
+  void SetInheritValue();
+  void SetInitialValue();
+  void SetUnsetValue();
   void SetNoneValue();
+  void SetAllValue();
+  void SetNormalValue();
+  void SetSystemFontValue();
+  void SetDummyValue();
+  void SetDummyInheritValue();
+
+  
+  void SetCalcValue(const nsStyleCoord::CalcValue* aCalc);
 
   nsStyleCoord::CalcValue GetCalcValue() const;
-  void SetCalcValue(const nsStyleCoord::CalcValue&);
 
   
   
   nsCSSValueList* SetListValue();
   nsCSSValuePairList* SetPairListValue();
+
+  
+  void AdoptListValue(mozilla::UniquePtr<nsCSSValueList> aValue);
+  void AdoptPairListValue(mozilla::UniquePtr<nsCSSValuePairList> aValue);
+
+  void StartImageLoad(nsIDocument* aDocument,
+                      mozilla::CORSMode aCORSMode) const;  
+
+  
+  Array* InitFunction(nsCSSKeyword aFunctionId, uint32_t aNumArgs);
+  
+  bool EqualsFunction(nsCSSKeyword aFunctionId) const;
 
   
   
@@ -695,6 +783,8 @@ protected:
     nsStringBuffer* MOZ_OWNING_REF mString;
     nsAtom* MOZ_OWNING_REF mAtom;
     Array* MOZ_OWNING_REF mArray;
+    mozilla::css::URLValue* MOZ_OWNING_REF mURL;
+    mozilla::css::GridTemplateAreasValue* MOZ_OWNING_REF mGridTemplateAreas;
     nsCSSValuePair_heap* MOZ_OWNING_REF mPair;
     nsCSSValueList_heap* MOZ_OWNING_REF mList;
     nsCSSValueList* mListDependent;
@@ -702,6 +792,9 @@ protected:
     nsCSSValuePairList_heap* MOZ_OWNING_REF mPairList;
     nsCSSValuePairList* mPairListDependent;
     mozilla::SharedFontList* MOZ_OWNING_REF mFontFamilyList;
+    mozilla::FontStretch mFontStretch;
+    mozilla::FontSlantStyle mFontSlantStyle;
+    mozilla::FontWeight mFontWeight;
   } mValue;
 };
 
