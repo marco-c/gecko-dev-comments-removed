@@ -1265,17 +1265,6 @@ impl Parse for MozLength {
 
 impl MozLength {
     
-    
-    
-    pub fn parse_disallow_keyword<'i, 't>(
-        context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
-        let length = LengthOrPercentageOrAuto::parse_non_negative(context, input)?;
-        Ok(GenericMozLength::LengthOrPercentageOrAuto(length))
-    }
-
-    
     pub fn parse_quirky<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -1316,17 +1305,6 @@ impl Parse for MaxLength {
 }
 
 impl MaxLength {
-    
-    
-    
-    pub fn parse_disallow_keyword<'i, 't>(
-        context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
-        let length = LengthOrPercentageOrNone::parse_non_negative(context, input)?;
-        Ok(GenericMaxLength::LengthOrPercentageOrNone(length))
-    }
-
     
     pub fn parse_quirky<'i, 't>(
         context: &ParserContext,
