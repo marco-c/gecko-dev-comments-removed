@@ -337,8 +337,8 @@ static void DrawHexChar(uint32_t aDigit, Float aLeft, Float aTop,
       dest.height = fabs(dest.height);
     }
     
-    tdt->PushImage(key, wr::ToLayoutRect(bounds), wr::ToLayoutRect(dest),
-                   wr::ImageRendering::Pixelated, wr::ToColorF(aColor));
+    tdt->PushImage(key, bounds, dest, wr::ImageRendering::Pixelated,
+                   wr::ToColorF(aColor));
   } else {
     
     
