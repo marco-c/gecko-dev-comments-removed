@@ -81,7 +81,32 @@ protected:
 
     
     
-    AutoTArray<nsFontMetrics*,kMaxCacheEntries> mFontMetrics;
+    
+    
+    
+    
+    AutoTArray<nsFontMetrics*,kMaxCacheEntries*2> mFontMetrics;
+
+    bool mFlushPending = false;
+
+    class FlushFontMetricsTask : public mozilla::Runnable
+    {
+    public:
+        explicit FlushFontMetricsTask(nsFontCache* aCache)
+            : mozilla::Runnable("FlushFontMetricsTask")
+            , mCache(aCache)
+        { }
+        NS_IMETHOD Run() override
+        {
+            
+            
+            mCache->Flush(mCache->mFontMetrics.Length() - kMaxCacheEntries / 2);
+            mCache->mFlushPending = false;
+            return NS_OK;
+        }
+    private:
+        RefPtr<nsFontCache> mCache;
+    };
 };
 
 NS_IMPL_ISUPPORTS(nsFontCache, nsIObserver)
@@ -151,8 +176,15 @@ nsFontCache::GetMetricsFor(const nsFont& aFont,
     
     
     
-    if (n >= kMaxCacheEntries - 1) {
-        Flush(kMaxCacheEntries / 2);
+    
+    if (n >= kMaxCacheEntries - 1 && !mFlushPending) {
+        if (NS_IsMainThread()) {
+            Flush(mFontMetrics.Length() - kMaxCacheEntries / 2);
+        } else {
+            mFlushPending = true;
+            nsCOMPtr<nsIRunnable> flushTask = new FlushFontMetricsTask(this);
+            MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(flushTask));
+        }
     }
 
     nsFontMetrics::Params params = aParams;
