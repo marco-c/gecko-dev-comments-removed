@@ -1,0 +1,15 @@
+
+
+
+
+
+'use strict';
+
+idl_test(
+  ['webgl2'],
+  ['webgl1', 'dom'],
+  idl_array => {
+    
+  },
+  'webgl2 interfaces'
+);
