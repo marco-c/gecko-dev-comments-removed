@@ -751,10 +751,8 @@ class ICFallbackStub : public ICStub
 };
 
 
-template <typename T>
-class ICCacheIR_Trait
+class ICCacheIR_Regular : public ICStub
 {
-  protected:
     const CacheIRStubInfo* stubInfo_;
 
     
@@ -764,28 +762,10 @@ class ICCacheIR_Trait
     uint32_t enteredCount_;
 
   public:
-    explicit ICCacheIR_Trait(const CacheIRStubInfo* stubInfo)
-      : stubInfo_(stubInfo),
-        enteredCount_(0)
-    {}
-
-    const CacheIRStubInfo* stubInfo() const {
-        return stubInfo_;
-    }
-
-    
-    
-    uint32_t enteredCount() const { return enteredCount_; }
-    static size_t offsetOfEnteredCount() { return offsetof(T, enteredCount_); }
-};
-
-
-class ICCacheIR_Regular : public ICStub, public ICCacheIR_Trait<ICCacheIR_Regular>
-{
-  public:
     ICCacheIR_Regular(JitCode* stubCode, const CacheIRStubInfo* stubInfo)
       : ICStub(ICStub::CacheIR_Regular, stubCode),
-        ICCacheIR_Trait(stubInfo)
+        stubInfo_(stubInfo),
+        enteredCount_(0)
     {}
 
     static ICCacheIR_Regular* Clone(JSContext* cx, ICStubSpace* space, ICStub* firstMonitorStub,
@@ -798,7 +778,16 @@ class ICCacheIR_Regular : public ICStub, public ICCacheIR_Trait<ICCacheIR_Regula
         return extra_;
     }
 
+    const CacheIRStubInfo* stubInfo() const {
+        return stubInfo_;
+    }
+
     uint8_t* stubDataStart();
+
+    
+    
+    uint32_t enteredCount() const { return enteredCount_; }
+    static size_t offsetOfEnteredCount() { return offsetof(ICCacheIR_Regular, enteredCount_); }
 };
 
 
@@ -831,14 +820,15 @@ class ICMonitoredStub : public ICStub
     }
 };
 
-class ICCacheIR_Monitored : public ICMonitoredStub, public ICCacheIR_Trait<ICCacheIR_Monitored>
+class ICCacheIR_Monitored : public ICMonitoredStub
 {
+    const CacheIRStubInfo* stubInfo_;
 
   public:
     ICCacheIR_Monitored(JitCode* stubCode, ICStub* firstMonitorStub,
                         const CacheIRStubInfo* stubInfo)
       : ICMonitoredStub(ICStub::CacheIR_Monitored, stubCode, firstMonitorStub),
-        ICCacheIR_Trait(stubInfo)
+        stubInfo_(stubInfo)
     {}
 
     static ICCacheIR_Monitored* Clone(JSContext* cx, ICStubSpace* space, ICStub* firstMonitorStub,
@@ -849,6 +839,10 @@ class ICCacheIR_Monitored : public ICMonitoredStub, public ICCacheIR_Trait<ICCac
     }
     bool hasPreliminaryObject() const {
         return extra_;
+    }
+
+    const CacheIRStubInfo* stubInfo() const {
+        return stubInfo_;
     }
 
     uint8_t* stubDataStart();
@@ -923,15 +917,16 @@ class ICUpdatedStub : public ICStub
     }
 };
 
-class ICCacheIR_Updated : public ICUpdatedStub, public ICCacheIR_Trait<ICCacheIR_Updated>
+class ICCacheIR_Updated : public ICUpdatedStub
 {
+    const CacheIRStubInfo* stubInfo_;
     GCPtrObjectGroup updateStubGroup_;
     GCPtrId updateStubId_;
 
   public:
     ICCacheIR_Updated(JitCode* stubCode, const CacheIRStubInfo* stubInfo)
       : ICUpdatedStub(ICStub::CacheIR_Updated, stubCode),
-        ICCacheIR_Trait(stubInfo),
+        stubInfo_(stubInfo),
         updateStubGroup_(nullptr),
         updateStubId_(JSID_EMPTY)
     {}
@@ -951,6 +946,10 @@ class ICCacheIR_Updated : public ICUpdatedStub, public ICCacheIR_Trait<ICCacheIR
     }
     bool hasPreliminaryObject() const {
         return extra_;
+    }
+
+    const CacheIRStubInfo* stubInfo() const {
+        return stubInfo_;
     }
 
     uint8_t* stubDataStart();
@@ -2612,42 +2611,6 @@ class ICCall_IsSuspendedGenerator : public ICStub
             return newStub<ICCall_IsSuspendedGenerator>(space, getStubCode());
         }
    };
-};
-
-
-
-class ICTableSwitch : public ICStub
-{
-    friend class ICStubSpace;
-
-  protected: 
-    void** table_;
-    int32_t min_;
-    int32_t length_;
-    void* defaultTarget_;
-
-    ICTableSwitch(JitCode* stubCode, void** table,
-                  int32_t min, int32_t length, void* defaultTarget)
-      : ICStub(TableSwitch, stubCode), table_(table),
-        min_(min), length_(length), defaultTarget_(defaultTarget)
-    {}
-
-  public:
-    void fixupJumpTable(JSScript* script, BaselineScript* baseline);
-
-    class Compiler : public ICStubCompiler {
-        MOZ_MUST_USE bool generateStubCode(MacroAssembler& masm) override;
-
-        JSScript* script_;
-        jsbytecode* pc_;
-
-      public:
-        Compiler(JSContext* cx, JSScript* script, jsbytecode* pc)
-          : ICStubCompiler(cx, ICStub::TableSwitch), script_(script), pc_(pc)
-        {}
-
-        ICStub* getStub(ICStubSpace* space) override;
-    };
 };
 
 

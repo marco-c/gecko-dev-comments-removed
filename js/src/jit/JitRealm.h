@@ -128,6 +128,10 @@ class JitRuntime
     WriteOnceData<uint32_t> interpreterStubOffset_;
 
     
+    
+    WriteOnceData<uint32_t> doubleToInt32ValueStubOffset_;
+
+    
     WriteOnceData<JitCode*> debugTrapHandler_;
 
     
@@ -169,6 +173,7 @@ class JitRuntime
   private:
     void generateLazyLinkStub(MacroAssembler& masm);
     void generateInterpreterStub(MacroAssembler& masm);
+    void generateDoubleToInt32ValueStub(MacroAssembler& masm);
     void generateProfilerExitFrameTailStub(MacroAssembler& masm, Label* profilerExitTail);
     void generateExceptionTailStub(MacroAssembler& masm, void* handler, Label* profilerExitTail);
     void generateBailoutTailStub(MacroAssembler& masm, Label* bailoutTail);
@@ -288,6 +293,10 @@ class JitRuntime
     }
     TrampolinePtr interpreterStub() const {
         return trampolineCode(interpreterStubOffset_);
+    }
+
+    TrampolinePtr getDoubleToInt32ValueStub() const {
+        return trampolineCode(doubleToInt32ValueStubOffset_);
     }
 
     bool hasJitcodeGlobalTable() const {

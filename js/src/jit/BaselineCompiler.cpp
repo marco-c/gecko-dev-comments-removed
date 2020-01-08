@@ -3949,6 +3949,18 @@ BaselineCompiler::emit_JSOP_GOSUB()
     return true;
 }
 
+static void
+LoadBaselineScriptResumeEntries(MacroAssembler& masm, JSScript* script, Register dest,
+                                Register scratch)
+{
+    MOZ_ASSERT(dest != scratch);
+
+    masm.movePtr(ImmGCPtr(script), dest);
+    masm.loadPtr(Address(dest, JSScript::offsetOfBaselineScript()), dest);
+    masm.load32(Address(dest, BaselineScript::offsetOfResumeEntriesOffset()), scratch);
+    masm.addPtr(scratch, dest);
+}
+
 bool
 BaselineCompiler::emit_JSOP_RETSUB()
 {
@@ -3969,10 +3981,7 @@ BaselineCompiler::emit_JSOP_RETSUB()
     
     Register scratch1 = R2.scratchReg();
     Register scratch2 = R0.scratchReg();
-    masm.movePtr(ImmGCPtr(script), scratch1);
-    masm.loadPtr(Address(scratch1, JSScript::offsetOfBaselineScript()), scratch1);
-    masm.load32(Address(scratch1, BaselineScript::offsetOfResumeEntriesOffset()), scratch2);
-    masm.addPtr(scratch2, scratch1);
+    LoadBaselineScriptResumeEntries(masm, script, scratch1, scratch2);
     masm.unboxInt32(R1, scratch2);
     masm.loadPtr(BaseIndex(scratch1, scratch2, ScaleFromElemWidth(sizeof(uintptr_t))), scratch1);
     masm.jump(scratch1);
@@ -4488,9 +4497,44 @@ BaselineCompiler::emit_JSOP_TABLESWITCH()
 {
     frame.popRegsAndSync(1);
 
+    jsbytecode* defaultpc = pc + GET_JUMP_OFFSET(pc);
+    Label* defaultLabel = labelOf(defaultpc);
+
+    int32_t low = GET_JUMP_OFFSET(pc + 1 * JUMP_OFFSET_LEN);
+    int32_t high = GET_JUMP_OFFSET(pc + 2 * JUMP_OFFSET_LEN);
+    uint32_t firstResumeIndex = GET_RESUMEINDEX(pc + 3 * JUMP_OFFSET_LEN);
+    int32_t length = high - low + 1;
+
+    Register key = R0.scratchReg();
+    Register scratch1 = R1.scratchReg();
+    Register scratch2 = R2.scratchReg();
+
     
-    ICTableSwitch::Compiler compiler(cx, script, pc);
-    return emitOpIC(compiler.getStub(&stubSpace_));
+    
+    masm.call(cx->runtime()->jitRuntime()->getDoubleToInt32ValueStub());
+
+    
+    
+    masm.branchTestInt32(Assembler::NotEqual, R0, defaultLabel);
+    masm.unboxInt32(R0, key);
+
+    
+    if (low != 0) {
+        masm.sub32(Imm32(low), key);
+    }
+    masm.branch32(Assembler::AboveOrEqual, key, Imm32(length), defaultLabel);
+
+    
+    
+    
+    
+
+    LoadBaselineScriptResumeEntries(masm, script, scratch1, scratch2);
+    masm.loadPtr(BaseIndex(scratch1, key, ScaleFromElemWidth(sizeof(uintptr_t)),
+                           firstResumeIndex * sizeof(uintptr_t)), scratch1);
+    masm.jump(scratch1);
+
+    return true;
 }
 
 bool
