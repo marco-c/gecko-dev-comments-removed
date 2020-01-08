@@ -199,11 +199,6 @@ const TargetingGetters = {
       }
     )));
   },
-  
-  get isInExperimentCohort() {
-    const {cohort} = ASRouterPreferences.providers.find(i => i.id === "onboarding") || {};
-    return (typeof cohort === "number" ? cohort : 0);
-  },
   get providerCohorts() {
     return ASRouterPreferences.providers.reduce((prev, current) => {
       prev[current.id] = current.cohort || "";

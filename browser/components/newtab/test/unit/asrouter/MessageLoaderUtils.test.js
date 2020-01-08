@@ -252,6 +252,11 @@ describe("MessageLoaderUtils", () => {
 
       assert.calledOnce(getInstallStub);
       assert.calledOnce(installAddonStub);
+
+      
+      
+      assert.calledWithExactly(getInstallStub, "foo.com", "application/x-xpinstall", null,
+                               null, null, null, null, {source: "activitystream"});
     });
     it("should not call the Addons API on invalid URLs", async () => {
       sandbox.stub(global.Services.scriptSecurityManager, "getSystemPrincipal").throws();
