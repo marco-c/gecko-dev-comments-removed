@@ -460,18 +460,14 @@ impl TileCache {
 
         
         
+        
+        
+        
+
         let needed_world_rect = frame_context
             .screen_world_rect
-            .intersection(&pic_world_rect);
-
-        let needed_world_rect = match needed_world_rect {
-            Some(rect) => rect,
-            None => {
-                
-                self.tiles.clear();
-                return;
-            }
-        };
+            .intersection(&pic_world_rect)
+            .unwrap_or(frame_context.screen_world_rect);
 
         
         
@@ -493,7 +489,7 @@ impl TileCache {
         let pic_device_rect = pic_world_rect * frame_context.device_pixel_scale;
         let needed_device_rect = pic_device_rect
             .intersection(&device_world_rect)
-            .expect("todo: handle clipped device rect");
+            .unwrap_or(device_world_rect);
 
         
         
@@ -703,7 +699,18 @@ impl TileCache {
             resource_cache,
         );
 
-        match prim_instance.kind {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let include_clip_rect = match prim_instance.kind {
             PrimitiveInstanceKind::Picture { pic_index,.. } => {
                 
                 let pic = &pictures[pic_index.0];
@@ -712,6 +719,8 @@ impl TileCache {
                         opacity_bindings.push(key.id);
                     }
                 }
+
+                false
             }
             PrimitiveInstanceKind::Rectangle { opacity_binding_index, .. } => {
                 if opacity_binding_index != OpacityBindingIndex::INVALID {
@@ -722,6 +731,8 @@ impl TileCache {
                         }
                     }
                 }
+
+                true
             }
             PrimitiveInstanceKind::Image { data_handle, image_instance_index, .. } => {
                 let image_data = &resources.image_data_store[data_handle].kind;
@@ -738,10 +749,12 @@ impl TileCache {
                 }
 
                 image_keys.push(image_data.key);
+                true
             }
             PrimitiveInstanceKind::YuvImage { data_handle, .. } => {
                 let yuv_image_data = &resources.yuv_image_data_store[data_handle].kind;
                 image_keys.extend_from_slice(&yuv_image_data.yuv_key);
+                true
             }
             PrimitiveInstanceKind::TextRun { .. } |
             PrimitiveInstanceKind::LineDecoration { .. } |
@@ -751,8 +764,9 @@ impl TileCache {
             PrimitiveInstanceKind::RadialGradient { .. } |
             PrimitiveInstanceKind::ImageBorder { .. } => {
                 
+                true
             }
-        }
+        };
 
         
         
@@ -823,7 +837,9 @@ impl TileCache {
             current_clip_chain_id = clip_chain_node.parent_clip_chain_id;
         }
 
-        self.world_bounding_rect = self.world_bounding_rect.union(&world_clip_rect);
+        if include_clip_rect {
+            self.world_bounding_rect = self.world_bounding_rect.union(&world_clip_rect);
+        }
 
         
         
