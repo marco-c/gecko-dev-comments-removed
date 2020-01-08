@@ -3,12 +3,17 @@
 
 "use strict";
 
+const asyncStorage = require("devtools/shared/async-storage");
+
 
 
 
 const TEST_URI = URL_ROOT + "doc_flexbox_specific_cases.html";
 
 add_task(async function() {
+  
+  await asyncStorage.removeItem("flexboxInspectorHostColors");
+
   await addTab(TEST_URI);
   const { inspector, flexboxInspector, layoutView } = await openLayoutView();
   const { document: doc } = flexboxInspector;
