@@ -29,4 +29,9 @@ function oomTest(f) {
 var g = newGlobal();
 oomTest(function() { new revocable(); });
 `);
-lfGlobal.runOffThreadScript();
+try {
+    lfGlobal.runOffThreadScript();
+} catch(e) {
+    
+    assertEq(e, "out of memory");
+}

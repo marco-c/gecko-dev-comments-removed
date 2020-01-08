@@ -98,12 +98,6 @@ static const uint32_t BAILOUT_TABLE_SIZE = 16;
 
 
 
-static const uint32_t BAILOUT_RETURN_OK = 0;
-static const uint32_t BAILOUT_RETURN_FATAL_ERROR = 1;
-static const uint32_t BAILOUT_RETURN_OVERRECURSED = 2;
-
-
-
 static const uint32_t FAKE_EXITFP_FOR_BAILOUT_ADDR = 0xba2;
 static uint8_t* const FAKE_EXITFP_FOR_BAILOUT =
     reinterpret_cast<uint8_t*>(FAKE_EXITFP_FOR_BAILOUT_ADDR);
@@ -163,11 +157,13 @@ MOZ_MUST_USE bool EnsureHasEnvironmentObjects(JSContext* cx, AbstractFramePtr fp
 struct BaselineBailoutInfo;
 
 
-uint32_t Bailout(BailoutStack* sp, BaselineBailoutInfo** info);
+MOZ_MUST_USE bool
+Bailout(BailoutStack* sp, BaselineBailoutInfo** info);
 
 
-uint32_t InvalidationBailout(InvalidationBailoutStack* sp, size_t* frameSizeOut,
-                             BaselineBailoutInfo** info);
+MOZ_MUST_USE bool
+InvalidationBailout(InvalidationBailoutStack* sp, size_t* frameSizeOut,
+                    BaselineBailoutInfo** info);
 
 class ExceptionBailoutInfo
 {
@@ -210,13 +206,13 @@ class ExceptionBailoutInfo
 };
 
 
+MOZ_MUST_USE bool
+ExceptionHandlerBailout(JSContext* cx, const InlineFrameIterator& frame,
+                        ResumeFromException* rfe,
+                        const ExceptionBailoutInfo& excInfo);
 
-uint32_t ExceptionHandlerBailout(JSContext* cx, const InlineFrameIterator& frame,
-                                 ResumeFromException* rfe,
-                                 const ExceptionBailoutInfo& excInfo,
-                                 bool* overrecursed);
-
-uint32_t FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfo);
+MOZ_MUST_USE bool
+FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfo);
 
 void CheckFrequentBailouts(JSContext* cx, JSScript* script, BailoutKind bailoutKind);
 

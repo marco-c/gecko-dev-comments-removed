@@ -217,7 +217,7 @@ MacroAssemblerX86::handleFailureWithHandlerTail(void* handler, Label* profilerEx
     
     bind(&bailout);
     loadPtr(Address(esp, offsetof(ResumeFromException, bailoutInfo)), ecx);
-    movl(Imm32(BAILOUT_RETURN_OK), eax);
+    move32(Imm32(1), ReturnReg);
     jmp(Operand(esp, offsetof(ResumeFromException, target)));
 
     

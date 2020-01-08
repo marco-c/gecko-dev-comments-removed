@@ -225,7 +225,7 @@ MacroAssemblerX64::handleFailureWithHandlerTail(void* handler, Label* profilerEx
     
     bind(&bailout);
     loadPtr(Address(esp, offsetof(ResumeFromException, bailoutInfo)), r9);
-    mov(ImmWord(BAILOUT_RETURN_OK), rax);
+    move32(Imm32(1), ReturnReg);
     jmp(Operand(rsp, offsetof(ResumeFromException, target)));
 
     

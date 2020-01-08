@@ -178,7 +178,7 @@ class TryNoteIterIon : public TryNoteIter<IonFrameStackDepthOp>
 
 static void
 HandleExceptionIon(JSContext* cx, const InlineFrameIterator& frame, ResumeFromException* rfe,
-                   bool* overrecursed)
+                   bool* hitBailoutException)
 {
     if (cx->realm()->isDebuggee()) {
         
@@ -192,7 +192,7 @@ HandleExceptionIon(JSContext* cx, const InlineFrameIterator& frame, ResumeFromEx
             shouldBail = rematFrame && rematFrame->isDebuggee();
         }
 
-        if (shouldBail) {
+        if (shouldBail && !*hitBailoutException) {
             
             
             
@@ -207,13 +207,13 @@ HandleExceptionIon(JSContext* cx, const InlineFrameIterator& frame, ResumeFromEx
             
             
             ExceptionBailoutInfo propagateInfo;
-            uint32_t retval = ExceptionHandlerBailout(cx, frame, rfe, propagateInfo, overrecursed);
-            if (retval == BAILOUT_RETURN_OK) {
+            if (ExceptionHandlerBailout(cx, frame, rfe, propagateInfo)) {
                 return;
             }
+            
+            
+            *hitBailoutException = true;
         }
-
-        MOZ_ASSERT_IF(rematFrame, !Debugger::inFrameMaps(rematFrame));
     }
 
     RootedScript script(cx, frame.script());
@@ -262,11 +262,14 @@ HandleExceptionIon(JSContext* cx, const InlineFrameIterator& frame, ResumeFromEx
                 
                 script->resetWarmUpCounter();
 
+                if (*hitBailoutException) {
+                    break;
+                }
+
                 
                 jsbytecode* catchPC = script->offsetToPC(tn->start + tn->length);
                 ExceptionBailoutInfo excInfo(frame.frameNo(), catchPC, tn->stackDepth);
-                uint32_t retval = ExceptionHandlerBailout(cx, frame, rfe, excInfo, overrecursed);
-                if (retval == BAILOUT_RETURN_OK) {
+                if (ExceptionHandlerBailout(cx, frame, rfe, excInfo)) {
                     
                     
                     MOZ_ASSERT(cx->isExceptionPending());
@@ -275,8 +278,8 @@ HandleExceptionIon(JSContext* cx, const InlineFrameIterator& frame, ResumeFromEx
                     return;
                 }
 
-                
-                MOZ_ASSERT(!cx->isExceptionPending());
+                *hitBailoutException = true;                
+                MOZ_ASSERT(cx->isExceptionPending());
             }
             break;
 
@@ -692,7 +695,6 @@ HandleException(ResumeFromException* rfe)
 
         const JSJitFrameIter& frame = iter.asJSJit();
 
-        bool overrecursed = false;
         if (frame.isIonJS()) {
             
             
@@ -711,8 +713,12 @@ HandleException(ResumeFromException* rfe)
             }
 #endif
 
+            
+            
+            
+            bool hitBailoutException = false;
             for (;;) {
-                HandleExceptionIon(cx, frames, rfe, &overrecursed);
+                HandleExceptionIon(cx, frames, rfe, &hitBailoutException);
 
                 if (rfe->kind == ResumeFromException::RESUME_BAILOUT) {
                     if (invalidated) {
@@ -795,11 +801,6 @@ HandleException(ResumeFromException* rfe)
         }
 
         ++iter;
-
-        if (overrecursed) {
-            
-            ReportOverRecursed(cx);
-        }
     }
 
     

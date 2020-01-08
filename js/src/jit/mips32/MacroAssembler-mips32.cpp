@@ -2047,7 +2047,7 @@ MacroAssemblerMIPSCompat::handleFailureWithHandlerTail(void* handler, Label* pro
     
     bind(&bailout);
     loadPtr(Address(sp, offsetof(ResumeFromException, bailoutInfo)), a2);
-    ma_li(ReturnReg, Imm32(BAILOUT_RETURN_OK));
+    ma_li(ReturnReg, Imm32(1));
     loadPtr(Address(sp, offsetof(ResumeFromException, target)), a1);
     jump(a1);
 

@@ -204,7 +204,7 @@ MacroAssemblerCompat::handleFailureWithHandlerTail(void* handler, Label* profile
     bind(&bailout);
     Ldr(x2, MemOperand(GetStackPointer64(), offsetof(ResumeFromException, bailoutInfo)));
     Ldr(x1, MemOperand(GetStackPointer64(), offsetof(ResumeFromException, target)));
-    Mov(x0, BAILOUT_RETURN_OK);
+    Mov(x0, 1);
     Br(x1);
 
     

@@ -3735,7 +3735,7 @@ MacroAssemblerARMCompat::handleFailureWithHandlerTail(void* handler, Label* prof
     {
         ScratchRegisterScope scratch(asMasm());
         ma_ldr(Address(sp, offsetof(ResumeFromException, bailoutInfo)), r2, scratch);
-        ma_mov(Imm32(BAILOUT_RETURN_OK), r0);
+        ma_mov(Imm32(1), ReturnReg);
         ma_ldr(Address(sp, offsetof(ResumeFromException, target)), r1, scratch);
     }
     jump(r1);
