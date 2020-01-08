@@ -11,7 +11,6 @@ const {actionTypes: at} = ChromeUtils.import("resource://activity-stream/common/
 XPCOMUtils.defineLazyGlobalGetters(this, ["fetch"]);
 
 const PREFERENCES_LOADED_EVENT = "home-pane-loaded";
-const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
 
 
