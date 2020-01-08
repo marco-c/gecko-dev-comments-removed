@@ -413,7 +413,7 @@ class BoxModelHighlighter extends AutoRefreshHighlighter {
 
   _getOuterQuad(region) {
     const quads = this.currentQuads[region];
-    if (!quads.length) {
+    if (!quads || !quads.length) {
       return null;
     }
 
@@ -595,7 +595,14 @@ class BoxModelHighlighter extends AutoRefreshHighlighter {
 
 
   _showGuides(region) {
-    const {p1, p2, p3, p4} = this._getOuterQuad(region);
+    const quad = this._getOuterQuad(region);
+
+    if (!quad) {
+      
+      return;
+    }
+
+    const {p1, p2, p3, p4} = quad;
 
     const allX = [p1.x, p2.x, p3.x, p4.x].sort((a, b) => a - b);
     const allY = [p1.y, p2.y, p3.y, p4.y].sort((a, b) => a - b);
@@ -694,7 +701,13 @@ class BoxModelHighlighter extends AutoRefreshHighlighter {
     
     
     const zoom = getCurrentZoom(this.win);
-    const { width, height } = this._getOuterQuad("border").bounds;
+    const quad = this._getOuterQuad("border");
+
+    if (!quad) {
+      return;
+    }
+
+    const { width, height } = quad.bounds;
     const dim = parseFloat((width / zoom).toPrecision(6)) +
               " \u00D7 " +
               parseFloat((height / zoom).toPrecision(6));
