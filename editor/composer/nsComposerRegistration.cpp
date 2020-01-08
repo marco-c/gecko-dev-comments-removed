@@ -3,7 +3,6 @@
 
 
 
-#include "mozilla/EditorSpellCheck.h"   
 #include "mozilla/HTMLEditorController.h" 
 #include "mozilla/Module.h"             
 #include "mozilla/ModuleUtils.h"
@@ -22,8 +21,6 @@
 #include "nsServiceManagerUtils.h"      
 #include "nscore.h"                     
 
-using mozilla::EditorSpellCheck;
-
 class nsISupports;
 
 
@@ -32,17 +29,11 @@ class nsISupports;
 
 
 
-NS_GENERIC_FACTORY_CONSTRUCTOR(EditorSpellCheck)
-
-NS_DEFINE_NAMED_CID(NS_EDITORSPELLCHECK_CID);
-
 static const mozilla::Module::CIDEntry kComposerCIDs[] = {
-  { &kNS_EDITORSPELLCHECK_CID, false, nullptr, EditorSpellCheckConstructor },
   { nullptr }
 };
 
 static const mozilla::Module::ContractIDEntry kComposerContracts[] = {
-  { "@mozilla.org/editor/editorspellchecker;1", &kNS_EDITORSPELLCHECK_CID },
   { nullptr }
 };
 
