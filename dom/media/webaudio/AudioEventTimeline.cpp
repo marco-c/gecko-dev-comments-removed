@@ -116,7 +116,7 @@ AudioEventTimeline::GetValuesAtTimeHelper(TimeType aTime, float* aBuffer,
   MOZ_ASSERT(aSize);
 
   auto TimeOf = [](const AudioTimelineEvent& aEvent) -> TimeType {
-    return aEvent.template Time<TimeType>();
+    return aEvent.Time<TimeType>();
   };
 
   size_t eventIndex = 0;
@@ -186,7 +186,7 @@ AudioEventTimeline::GetValuesAtTimeHelper(int64_t aTime, float* aBuffer,
 template<class TimeType> float
 AudioEventTimeline::GetValueAtTimeOfEvent(const AudioTimelineEvent* aNext)
 {
-  TimeType time = aNext->template Time<TimeType>();
+  TimeType time = aNext->Time<TimeType>();
   switch (aNext->mType) {
     case AudioTimelineEvent::SetTarget:
       
@@ -221,24 +221,43 @@ AudioEventTimeline::GetValuesAtTimeHelperInternal(TimeType aTime,
      return mValue;
   }
 
+  
+  
   auto TimeOf = [](const AudioTimelineEvent* aEvent) -> TimeType {
-    return aEvent->template Time<TimeType>();
+    if (aEvent->mType == AudioTimelineEvent::SetValueCurve) {
+      return aEvent->Time<TimeType>() + aEvent->mDuration;
+    }
+    return aEvent->Time<TimeType>();
+  };
+
+  
+  
+  auto ValueOf = [](const AudioTimelineEvent* aEvent) -> float {
+    if (aEvent->mType == AudioTimelineEvent::SetValueCurve) {
+      return aEvent->mCurve[aEvent->mCurveLength - 1];
+    }
+    return aEvent->mValue;
   };
 
   
   
   if (aPrevious->mType == AudioTimelineEvent::SetTarget) {
     return ExponentialApproach(TimeOf(aPrevious),
-                               mLastComputedValue, aPrevious->mValue,
-                               aPrevious->mTimeConstant, aTime);
+                               mLastComputedValue,
+                               ValueOf(aPrevious),
+                               aPrevious->mTimeConstant,
+                               aTime);
   }
 
   
   
-  if (aPrevious->mType == AudioTimelineEvent::SetValueCurve) {
-    return ExtractValueFromCurve(TimeOf(aPrevious),
-                                 aPrevious->mCurve, aPrevious->mCurveLength,
-                                 aPrevious->mDuration, aTime);
+  if (aPrevious->mType == AudioTimelineEvent::SetValueCurve &&
+      aTime <= aPrevious->Time<TimeType>() + aPrevious->mDuration) {
+    return ExtractValueFromCurve(aPrevious->Time<TimeType>(),
+                                 aPrevious->mCurve,
+                                 aPrevious->mCurveLength,
+                                 aPrevious->mDuration,
+                                 aTime);
   }
 
   
@@ -250,9 +269,11 @@ AudioEventTimeline::GetValuesAtTimeHelperInternal(TimeType aTime,
         
         return aPrevious->mValue;
       case AudioTimelineEvent::SetValueCurve:
-        return ExtractValueFromCurve(TimeOf(aPrevious),
-                                     aPrevious->mCurve, aPrevious->mCurveLength,
-                                     aPrevious->mDuration, aTime);
+        return ExtractValueFromCurve(aPrevious->Time<TimeType>(),
+                                     aPrevious->mCurve,
+                                     aPrevious->mCurveLength,
+                                     aPrevious->mDuration,
+                                     aTime);
       case AudioTimelineEvent::SetTarget:
         MOZ_FALLTHROUGH_ASSERT("AudioTimelineEvent::SetTarget");
       case AudioTimelineEvent::SetValue:
@@ -269,15 +290,17 @@ AudioEventTimeline::GetValuesAtTimeHelperInternal(TimeType aTime,
   switch (aNext->mType) {
   case AudioTimelineEvent::LinearRamp:
     return LinearInterpolate(TimeOf(aPrevious),
-                             aPrevious->mValue,
+                             ValueOf(aPrevious),
                              TimeOf(aNext),
-                             aNext->mValue, aTime);
+                             ValueOf(aNext),
+                             aTime);
 
   case AudioTimelineEvent::ExponentialRamp:
     return ExponentialInterpolate(TimeOf(aPrevious),
-                                  aPrevious->mValue,
+                                  ValueOf(aPrevious),
                                   TimeOf(aNext),
-                                  aNext->mValue, aTime);
+                                  ValueOf(aNext),
+                                  aTime);
 
   case AudioTimelineEvent::SetValueAtTime:
   case AudioTimelineEvent::SetTarget:
@@ -298,9 +321,11 @@ AudioEventTimeline::GetValuesAtTimeHelperInternal(TimeType aTime,
     
     return aPrevious->mValue;
   case AudioTimelineEvent::SetValueCurve:
-    return ExtractValueFromCurve(TimeOf(aPrevious),
-                                 aPrevious->mCurve, aPrevious->mCurveLength,
-                                 aPrevious->mDuration, aTime);
+    return ExtractValueFromCurve(aPrevious->Time<TimeType>(),
+                                 aPrevious->mCurve,
+                                 aPrevious->mCurveLength,
+                                 aPrevious->mDuration,
+                                 aTime);
   case AudioTimelineEvent::SetTarget:
     MOZ_FALLTHROUGH_ASSERT("AudioTimelineEvent::SetTarget");
   case AudioTimelineEvent::SetValue:
@@ -328,7 +353,7 @@ AudioEventTimeline::GetPreviousEvent(double aTime) const
   const AudioTimelineEvent* next = nullptr;
 
   auto TimeOf = [](const AudioTimelineEvent& aEvent) -> double {
-    return aEvent.template Time<double>();
+    return aEvent.Time<double>();
   };
 
   bool bailOut = false;
