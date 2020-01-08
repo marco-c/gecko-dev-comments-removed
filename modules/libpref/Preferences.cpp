@@ -2092,9 +2092,6 @@ public:
     MOZ_COUNT_CTOR(PrefCallback);
   }
 
-  PrefCallback(const PrefCallback&) = delete;
-  PrefCallback(PrefCallback&&) = default;
-
   ~PrefCallback() { MOZ_COUNT_DTOR(PrefCallback); }
 
   bool KeyEquals(const PrefCallback* aKey) const

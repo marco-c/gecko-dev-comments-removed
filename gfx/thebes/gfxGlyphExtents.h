@@ -89,7 +89,9 @@ private:
         
         
         explicit HashEntry(KeyTypePointer aPtr) : nsUint32HashKey(aPtr) {}
-        HashEntry(HashEntry&& other) = default;
+        HashEntry(const HashEntry& toCopy) : nsUint32HashKey(toCopy) {
+          x = toCopy.x; y = toCopy.y; width = toCopy.width; height = toCopy.height;
+        }
 
         float x, y, width, height;
     };

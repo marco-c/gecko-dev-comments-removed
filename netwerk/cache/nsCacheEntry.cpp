@@ -502,8 +502,8 @@ nsCacheEntryHashTable::MoveEntry(PLDHashTable * ,
                                  const PLDHashEntryHdr *from,
                                  PLDHashEntryHdr       *to)
 {
-    new (KnownNotNull, to) nsCacheEntryHashTableEntry(std::move(*((nsCacheEntryHashTableEntry *)from)));
-    
+    ((nsCacheEntryHashTableEntry *)to)->cacheEntry =
+        ((nsCacheEntryHashTableEntry *)from)->cacheEntry;
 }
 
 
