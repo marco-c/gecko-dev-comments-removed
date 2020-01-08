@@ -14,12 +14,29 @@
 namespace mozilla {
 namespace a11y {
 
+
+
+
+
+
+
+
 class ProxyAccessibleWrap : public AccessibleWrap
 {
 public:
   explicit ProxyAccessibleWrap(ProxyAccessible* aProxy);
 
   virtual void Shutdown() override;
+
+  
+
+  virtual already_AddRefed<nsIPersistentProperties> Attributes() override;
+
+  
+
+  virtual void SetTextContents(const nsAString& aText) override;
+
+  virtual mozilla::java::GeckoBundle::LocalRef ToBundle() override;
 };
 
 class DocProxyAccessibleWrap : public ProxyAccessibleWrap
