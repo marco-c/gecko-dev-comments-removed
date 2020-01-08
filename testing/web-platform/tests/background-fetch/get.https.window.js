@@ -26,6 +26,7 @@ promise_test(async test => {
 backgroundFetchTest(async (test, backgroundFetch) => {
   
   await promise_rejects(test, new TypeError(), backgroundFetch.get());
+  await promise_rejects(test, new TypeError(), backgroundFetch.get(''));
 
   const registration = await backgroundFetch.get('my-id');
   assert_equals(registration, undefined);
