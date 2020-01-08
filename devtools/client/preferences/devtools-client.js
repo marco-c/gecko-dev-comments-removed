@@ -64,7 +64,7 @@ pref("devtools.new-animationinspector.enabled", true);
 
 pref("devtools.inspector.fonteditor.enabled", true);
 
-pref("devtools.inspector.fonthighlighter.enabled", false);
+pref("devtools.inspector.fonthighlighter.enabled", true);
 
 
 
