@@ -8,8 +8,6 @@
 
 
 namespace {
-const double EXN_VALUE = 3.14;
-
 static JS::PersistentRootedString gLatestMessage;
 
 
