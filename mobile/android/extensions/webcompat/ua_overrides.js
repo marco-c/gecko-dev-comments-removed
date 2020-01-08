@@ -16,12 +16,25 @@ const UAOverrides = {
     {
       matches: ["*://webcompat-addon-testcases.schub.io/*"],
       uaTransformer: (originalUA) => {
-        let prefix = originalUA.substr(0, originalUA.indexOf(")") + 1);
-        return `${prefix} AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.98 Safari/537.36`;
+        return UAHelpers.getPrefix(originalUA) + " AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.98 Safari/537.36";
       },
     },
   ],
-  desktop: [],
+  desktop: [
+    
+
+
+
+
+
+
+    {
+      matches: ["*://*.directvnow.com/*"],
+      uaTransformer: (originalUA) => {
+        return UAHelpers.getPrefix(originalUA) + " AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.110 Safari/537.36";
+      },
+    },
+  ],
   android: [
     
 
@@ -34,8 +47,7 @@ const UAOverrides = {
     {
       matches: ["*://m.imgur.com/*"],
       uaTransformer: (originalUA) => {
-        let prefix = originalUA.substr(0, originalUA.indexOf(")") + 1);
-        return prefix + " AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.85 Mobile Safari/537.36";
+        return UAHelpers.getPrefix(originalUA) + " AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.85 Mobile Safari/537.36";
       },
     },
 
@@ -67,10 +79,224 @@ const UAOverrides = {
         return originalUA + " AppleWebKit/537.36 (KHTML, like Gecko)";
       },
     },
+
+    
+
+
+
+
+
+
+    {
+      matches: ["*://weather.yahoo.co.jp/*"],
+      uaTransformer: (_) => {
+        return "Mozilla/5.0 (Linux; Android 5.0.2; Galaxy Nexus Build/IMM76B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.93 Mobile Safari/537.36";
+      },
+    },
+
+    
+
+
+
+
+
+
+    {
+      matches: ["*://*.lohaco.jp/*"],
+      uaTransformer: (_) => {
+        return "Mozilla/5.0 (Linux; Android 5.0.2; Galaxy Nexus Build/IMM76B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.93 Mobile Safari/537.36";
+      },
+    },
+
+    
+
+
+
+
+
+
+    {
+      matches: ["*://*.nhk.or.jp/*"],
+      uaTransformer: (originalUA) => {
+        return originalUA + " AppleWebKit";
+      },
+    },
+
+    
+
+
+
+
+
+
+    {
+      matches: ["*://*.uniqlo.com/*"],
+      uaTransformer: (originalUA) => {
+        return originalUA + " Mobile Safari";
+      },
+    },
+
+    
+
+
+
+
+
+
+    {
+      matches: ["*://*.directv.com/*"],
+      uaTransformer: (_) => {
+        return "Mozilla/5.0 (Linux; Android 6.0.1; SM-G920F Build/MMB29K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.91 Mobile Safari/537.36";
+      },
+    },
+
+    
+
+
+
+
+
+    {
+      matches: ["*://*.rakuten.co.jp/*"],
+      uaTransformer: (originalUA) => {
+        return originalUA.replace(/Firefox.+$/, "");
+      },
+    },
+
+    
+
+
+
+
+
+
+    {
+      matches: [
+        "*://*.ebay.at/*", "*://*.ebay.be/*", "*://*.ebay.ca/*", "*://*.ebay.ch/*",
+        "*://*.ebay.cn/*", "*://*.ebay.co.th/*", "*://*.ebay.co.uk/*", "*://*.ebay.com.au/*",
+        "*://*.ebay.com.hk/*", "*://*.ebay.com.my/*", "*://*.ebay.com.sg/*", "*://*.ebay.com.tw/*",
+        "*://*.ebay.com/*", "*://*.ebay.de/*", "*://*.ebay.es/*", "*://*.ebay.fr/*",
+        "*://*.ebay.ie/*", "*://*.ebay.in/*", "*://*.ebay.it/*", "*://*.ebay.nl/*",
+        "*://*.ebay.ph/*", "*://*.ebay.pl/*", "*://*.ebay.vn/*",
+      ],
+      uaTransformer: (_) => {
+        return "Mozilla/5.0 (Linux; Android 6.0.1; SM-G920F Build/MMB29K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.91 Mobile Safari/537.36";
+      },
+    },
+
+    
+
+
+
+
+    {
+      matches: ["*://*.mobile.de/*"],
+      uaTransformer: (_) => {
+        return "Mozilla/5.0 (Linux; Android 6.0.1; SM-G920F Build/MMB29K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.91 Mobile Safari/537.36";
+      },
+    },
+
+    
+
+
+
+
+
+
+
+    {
+      matches: ["*://mobile.bet365.com/*"],
+      uaTransformer: (_) => {
+        return "Mozilla/5.0 (Linux; Android 6.0.1; SM-G920F Build/MMB29K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.91 Mobile Safari/537.36";
+      },
+    },
+
+    
+
+
+
+
+
+
+
+    {
+      matches: ["*://*.cc.com/*"],
+      uaTransformer: (_) => {
+        return "Mozilla/5.0 (Linux; Android 6.0.1; SM-G920F Build/MMB29K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.91 Mobile Safari/537.36";
+      },
+    },
+
+    
+
+
+
+
+
+
+
+
+    {
+      matches: ["*://*.cnbc.com/*"],
+      uaTransformer: (_) => {
+        return "Mozilla/5.0 (Linux; Android 6.0.1; SM-G920F Build/MMB29K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.91 Mobile Safari/537.36";
+      },
+    },
+
+    
+
+
+
+
+
+
+
+    {
+      matches: ["*://*.cineflix.com.br/m/*"],
+      uaTransformer: (originalUA) => {
+        return UAHelpers.getPrefix(originalUA) + " AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.91 Mobile Safari/537.36";
+      },
+    },
+
+    
+
+
+
+
+
+
+
+    {
+      matches: ["*://*.redbull.com/*"],
+      uaTransformer: (originalUA) => {
+        return UAHelpers.getPrefix(originalUA) + " AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.91 Mobile Safari/537.36";
+      },
+    },
+
+    
+
+
+
+
+
+
+
+
+    {
+      matches: ["*://*.viewer.zmags.com/*"],
+      uaTransformer: (originalUA) => {
+        return UAHelpers.getPrefix(originalUA) + " AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.91 Mobile Safari/537.36";
+      },
+    },
   ],
 };
 
 
+
+const UAHelpers = {
+  getPrefix(originalUA) {
+    return originalUA.substr(0, originalUA.indexOf(")") + 1);
+  },
+};
 
 let activeListeners = [];
 function buildAndRegisterListener(matches, transformer) {
