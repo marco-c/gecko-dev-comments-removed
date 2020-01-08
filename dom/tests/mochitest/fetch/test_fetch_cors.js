@@ -180,9 +180,7 @@ function testModeCors() {
                },
 
                
-               
-               
-               { pass: 1,
+               { pass: 0,
                  method: "GET",
                  noAllowPreflight: 1,
                  password: "password",
