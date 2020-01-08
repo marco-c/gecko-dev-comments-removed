@@ -526,7 +526,8 @@ impl TextureCache {
         self.debug_flags = flags;
     }
 
-    pub fn clear(&mut self) {
+    
+    pub fn clear_standalone(&mut self) {
         let standalone_entry_handles = mem::replace(
             &mut self.handles.standalone,
             Vec::new(),
@@ -537,7 +538,10 @@ impl TextureCache {
             entry.evict();
             self.free(entry);
         }
+    }
 
+    
+    pub fn clear_shared(&mut self) {
         let shared_entry_handles = mem::replace(
             &mut self.handles.shared,
             Vec::new(),
@@ -549,9 +553,14 @@ impl TextureCache {
             self.free(entry);
         }
 
-        assert!(self.entries.len() == 0);
-
         self.shared_textures.clear(&mut self.pending_updates);
+    }
+
+    
+    
+    pub fn clear(&mut self) {
+        self.clear_standalone();
+        self.clear_shared();
     }
 
     
@@ -597,7 +606,7 @@ impl TextureCache {
         if let Some(t) = self.reached_reclaim_threshold {
             let dur = self.now.time().duration_since(t).unwrap_or(Duration::default());
             if dur >= Duration::from_secs(5) {
-                self.clear();
+                self.clear_shared();
                 self.reached_reclaim_threshold = None;
             }
         }
