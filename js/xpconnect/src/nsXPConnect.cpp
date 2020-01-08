@@ -1028,8 +1028,12 @@ ReadScriptOrFunction(nsIObjectInputStream* stream, JSContext* cx,
     
     
     
+    
+    
+    
+    JSObject* loaderGlobal = xpc::CompilationScope();
     MOZ_RELEASE_ASSERT(nsContentUtils::IsSystemCaller(cx) ||
-                       CurrentGlobalOrNull(cx) == xpc::CompilationScope());
+                       CurrentGlobalOrNull(cx) == loaderGlobal);
 
     uint32_t size;
     rv = stream->Read32(&size);
