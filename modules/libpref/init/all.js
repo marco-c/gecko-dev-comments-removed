@@ -906,6 +906,7 @@ pref("gfx.compositor.glcontext.opaque", false);
 pref("gfx.webrender.highlight-painted-layers", false);
 pref("gfx.webrender.blob-images", true);
 pref("gfx.webrender.blob.invalidation", true);
+pref("gfx.webrender.blob.paint-flashing", false);
 
 
 pref("gfx.webrender.debug.texture-cache", false);
@@ -2581,7 +2582,8 @@ pref("security.dialog_enable_delay", 1000);
 pref("security.notification_enable_delay", 500);
 
 #if defined(DEBUG) && !defined(ANDROID)
-pref("csp.content_privileged_about_uris_without_csp", "blank,printpreview,srcdoc");
+
+pref("csp.content_privileged_about_uris_without_csp", "blank,home,newtab,printpreview,srcdoc,welcome");
 #endif
 
 
