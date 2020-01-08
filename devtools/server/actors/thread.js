@@ -1235,10 +1235,10 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     return res ? res : {};
   },
 
-  onSources: async function(request) {
-    await Promise.all(this.dbg.findSources().map(source => {
+  onSources: function(request) {
+    for (const source of this.dbg.findSources()) {
       this.sources.createSourceActor(source);
-    }));
+    }
 
     
     
@@ -1871,19 +1871,25 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
 
   onNewSourceEvent: function(source) {
-    const type = "newSource";
-    this.conn.send({
-      from: this._parent.actorID,
-      type,
-      source: source.form(),
-    });
+    
+    
+    
+    
+    DevToolsUtils.executeSoon(() => {
+      const type = "newSource";
+      this.conn.send({
+        from: this._parent.actorID,
+        type,
+        source: source.form(),
+      });
 
-    
-    
-    this.conn.send({
-      from: this.actorID,
-      type,
-      source: source.form(),
+      
+      
+      this.conn.send({
+        from: this.actorID,
+        type,
+        source: source.form(),
+      });
     });
   },
 
