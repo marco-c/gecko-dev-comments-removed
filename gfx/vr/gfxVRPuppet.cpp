@@ -712,6 +712,21 @@ VRSystemManagerPuppet::Shutdown()
 }
 
 void
+VRSystemManagerPuppet::Run10msTasks()
+{
+  VRSystemManager::Run10msTasks();
+
+  
+
+
+
+
+  VRManager *vm = VRManager::Get();
+  MOZ_ASSERT(vm);
+  vm->NotifyVsync(TimeStamp::Now());
+}
+
+void
 VRSystemManagerPuppet::NotifyVSync()
 {
   VRSystemManager::NotifyVSync();

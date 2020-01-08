@@ -8,6 +8,7 @@
 #include "OpenVRSession.h"
 #include "gfxPrefs.h"
 #include "base/thread.h"                
+#include <cstring>                      
 
 using namespace mozilla;
 using namespace mozilla::gfx;
@@ -57,10 +58,13 @@ VRService::Create()
 VRService::VRService()
  : mSystemState{}
  , mBrowserState{}
+ , mBrowserGeneration(0)
  , mServiceThread(nullptr)
  , mShutdownRequested(false)
  , mAPIShmem(nullptr)
  , mTargetShmemFile(0)
+ , mLastHapticState{}
+ , mFrameStartTime{}
 {
   
   
@@ -290,6 +294,7 @@ VRService::ServiceImmersiveMode()
   MOZ_ASSERT(mSession);
 
   mSession->ProcessEvents(mSystemState);
+  UpdateHaptics();
   PushState(mSystemState);
   PullState(mBrowserState);
 
@@ -302,6 +307,7 @@ VRService::ServiceImmersiveMode()
     return;
   } else if (!IsImmersiveContentActive(mBrowserState)) {
     
+    mSession->StopAllHaptics();
     mSession->StopPresentation();
     MessageLoop::current()->PostTask(NewRunnableMethod(
       "gfx::VRService::ServiceWaitForImmersive",
@@ -318,6 +324,8 @@ VRService::ServiceImmersiveMode()
     for (int iLayer=0; iLayer < kVRLayerMaxCount; iLayer++) {
       const VRLayerState& layer = mBrowserState.layerState[iLayer];
       if (layer.type == VRLayerType::LayerType_Stereo_Immersive) {
+        
+        
         success = mSession->SubmitFrame(layer.layer_stereo_immersive);
         break;
       }
@@ -329,7 +337,12 @@ VRService::ServiceImmersiveMode()
     
     mSystemState.displayState.mLastSubmittedFrameId = newFrameId;
     mSystemState.displayState.mLastSubmittedFrameSuccessful = success;
+
+    
     mSession->StartFrame(mSystemState);
+    mSystemState.sensorState.inputFrameID++;
+    size_t historyIndex = mSystemState.sensorState.inputFrameID % ArrayLength(mFrameStartTime);
+    mFrameStartTime[historyIndex] = TimeStamp::Now();
     PushState(mSystemState);
   }
 
@@ -338,6 +351,46 @@ VRService::ServiceImmersiveMode()
     "gfx::VRService::ServiceImmersiveMode",
     this, &VRService::ServiceImmersiveMode
   ));
+}
+
+void
+VRService::UpdateHaptics()
+{
+  MOZ_ASSERT(IsInServiceThread());
+  MOZ_ASSERT(mSession);
+  
+  for (size_t i = 0; i < ArrayLength(mBrowserState.hapticState); i++) {
+    VRHapticState& state = mBrowserState.hapticState[i];
+    VRHapticState& lastState = mLastHapticState[i];
+    
+    if (memcmp(&state, &lastState, sizeof(VRHapticState)) == 0) {
+      
+      continue;
+    }
+    if (state.inputFrameID == 0) {
+      
+      mSession->StopVibrateHaptic(state.controllerIndex);
+    } else {
+      TimeStamp now;
+      if (now.IsNull()) {
+        
+        
+        
+        now = TimeStamp::Now();
+      }
+      
+      size_t historyIndex = state.inputFrameID % ArrayLength(mFrameStartTime);
+      float startOffset = (float)(now - mFrameStartTime[historyIndex]).ToSeconds();
+
+      
+      mSession->VibrateHaptic(state.controllerIndex,
+                              state.hapticIndex,
+                              state.pulseIntensity,
+                              state.pulseDuration + state.pulseStart - startOffset);
+    }
+    
+    memcpy(&lastState, &state, sizeof(VRHapticState));
+  }
 }
 
 void
@@ -385,9 +438,12 @@ VRService::PullState(mozilla::gfx::VRBrowserState& aState)
     }
 #else
   VRExternalShmem tmp;
-  memcpy(&tmp, mAPIShmem, sizeof(VRExternalShmem));
-  if (tmp.browserGenerationA == tmp.browserGenerationB && tmp.browserGenerationA != 0 && tmp.browserGenerationA != -1) {
-    memcpy(&aState, &tmp.browserState, sizeof(VRBrowserState));
+  if (mAPIShmem->browserGenerationA != mBrowserGeneration) {
+    memcpy(&tmp, mAPIShmem, sizeof(VRExternalShmem));
+    if (tmp.browserGenerationA == tmp.browserGenerationB && tmp.browserGenerationA != 0 && tmp.browserGenerationA != -1) {
+      memcpy(&aState, &tmp.browserState, sizeof(VRBrowserState));
+      mBrowserGeneration = tmp.browserGenerationA;
+    }
   }
 #endif
 }

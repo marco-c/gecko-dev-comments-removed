@@ -54,6 +54,7 @@ using namespace mozilla::dom;
 
 VRDisplayExternal::VRDisplayExternal(const VRDisplayState& aDisplayState)
   : VRDisplayHost(VRDeviceType::External)
+  , mHapticPulseRemaining{}
   , mBrowserState{}
   , mLastSensorState{}
 {
@@ -73,6 +74,7 @@ VRDisplayExternal::~VRDisplayExternal()
 void
 VRDisplayExternal::Destroy()
 {
+  StopAllHaptics();
   StopPresentation();
 }
 
@@ -82,16 +84,32 @@ VRDisplayExternal::ZeroSensor()
 }
 
 void
-VRDisplayExternal::Refresh()
+VRDisplayExternal::Run1msTasks(double aDeltaTime)
 {
+  VRDisplayHost::Run1msTasks(aDeltaTime);
+  UpdateHaptics(aDeltaTime);
+}
 
+void
+VRDisplayExternal::Run10msTasks()
+{
+  VRDisplayHost::Run10msTasks();
+  ExpireNavigationTransition();
+  PullState();
+  PushState();
+
+  
+  
+  
+}
+
+void
+VRDisplayExternal::ExpireNavigationTransition()
+{
   if (!mVRNavigationTransitionEnd.IsNull() &&
       TimeStamp::Now() > mVRNavigationTransitionEnd) {
     mBrowserState.navigationTransitionActive = false;
   }
-
-  PullState();
-  PushState();
 }
 
 VRHMDSensorState
@@ -114,46 +132,9 @@ VRDisplayExternal::StartPresentation()
   mBrowserState.layerState[0].type = VRLayerType::LayerType_Stereo_Immersive;
   PushState();
 
-#if defined(MOZ_WIDGET_ANDROID)
-  mLastSubmittedFrameId = 0;
-  mLastStartedFrame = 0;
-  
-
-
-
-
-
-  PostVRTask();
-#endif
-  
-
+  mDisplayInfo.mDisplayState.mLastSubmittedFrameId = 0;
   
 }
-
-#if defined(MOZ_WIDGET_ANDROID)
-void
-VRDisplayExternal::PostVRTask() {
-  MessageLoop * vrLoop = VRListenerThreadHolder::Loop();
-  if (!vrLoop || !mBrowserState.presentationActive) {
-    return;
-  }
-  RefPtr<Runnable> task = NewRunnableMethod(
-    "VRDisplayExternal::RunVRTask",
-    this,
-    &VRDisplayExternal::RunVRTask);
-  VRListenerThreadHolder::Loop()->PostDelayedTask(task.forget(), 50);
-}
-
-void
-VRDisplayExternal::RunVRTask() {
-  if (mBrowserState.presentationActive) {
-    VRManager *vm = VRManager::Get();
-    vm->NotifyVsync(TimeStamp::Now());
-    PostVRTask();
-  }
-}
-
-#endif 
 
 void
 VRDisplayExternal::StopPresentation()
@@ -303,6 +284,125 @@ VRDisplayExternal::SubmitFrame(const layers::SurfaceDescriptor& aTexture,
 #endif 
 
   return mDisplayInfo.mDisplayState.mLastSubmittedFrameSuccessful;
+}
+
+void
+VRDisplayExternal::VibrateHaptic(uint32_t aControllerIdx,
+                                 uint32_t aHapticIndex,
+                                 double aIntensity,
+                                 double aDuration,
+                                 const VRManagerPromise& aPromise)
+{
+  TimeStamp now = TimeStamp::Now();
+  size_t bestSlotIndex = 0;
+  
+  for (size_t i = 0; i < mozilla::ArrayLength(mBrowserState.hapticState); i++) {
+    const VRHapticState& state = mBrowserState.hapticState[i];
+    if (state.inputFrameID == 0) {
+      
+      bestSlotIndex = i;
+      break;
+    }
+    if (mHapticPulseRemaining[i] < mHapticPulseRemaining[bestSlotIndex]) {
+      
+      
+      bestSlotIndex = i;
+    }
+  }
+  
+  for (size_t i = 0; i < mozilla::ArrayLength(mBrowserState.hapticState); i++) {
+    const VRHapticState& state = mBrowserState.hapticState[i];
+    if (state.inputFrameID == 0) {
+      
+      continue;
+    }
+    if (state.controllerIndex == aControllerIdx &&
+        state.hapticIndex == aHapticIndex) {
+      
+      bestSlotIndex = i;
+    }
+  }
+  ClearHapticSlot(bestSlotIndex);
+
+  
+  size_t bufferIndex = mDisplayInfo.mFrameId % kVRMaxLatencyFrames;
+  VRHapticState& bestSlot = mBrowserState.hapticState[bestSlotIndex];
+  bestSlot.inputFrameID =
+    mDisplayInfo.mLastSensorState[bufferIndex].inputFrameID;
+  bestSlot.controllerIndex = aControllerIdx;
+  bestSlot.hapticIndex = aHapticIndex;
+  bestSlot.pulseStart =
+    (now - mDisplayInfo.mLastFrameStart[bufferIndex]).ToSeconds();
+  bestSlot.pulseDuration = aDuration;
+  bestSlot.pulseIntensity = aIntensity;
+   
+  mHapticPulseRemaining[bestSlotIndex] = aDuration * 1000.0f;
+  MOZ_ASSERT(bestSlotIndex <= mHapticPromises.Length());
+  if (bestSlotIndex == mHapticPromises.Length()) {
+    mHapticPromises.AppendElement(
+      UniquePtr<VRManagerPromise>(new VRManagerPromise(aPromise)));
+  } else {
+    mHapticPromises[bestSlotIndex] =
+      UniquePtr<VRManagerPromise>(new VRManagerPromise(aPromise));
+  }
+  PushState();
+}
+
+void
+VRDisplayExternal::ClearHapticSlot(size_t aSlot)
+{
+  MOZ_ASSERT(aSlot < mozilla::ArrayLength(mBrowserState.hapticState));
+  memset(&mBrowserState.hapticState[aSlot], 0, sizeof(VRHapticState));
+  mHapticPulseRemaining[aSlot] = 0.0f;
+  if (aSlot < mHapticPromises.Length() && mHapticPromises[aSlot]) {
+    VRManager* vm = VRManager::Get();
+    vm->NotifyVibrateHapticCompleted(*mHapticPromises[aSlot]);
+    mHapticPromises[aSlot] = nullptr;
+  }
+}
+
+void
+VRDisplayExternal::UpdateHaptics(double aDeltaTime)
+{
+  bool bNeedPush = false;
+  
+  for (size_t i = 0; i < mozilla::ArrayLength(mBrowserState.hapticState); i++) {
+    const VRHapticState& state = mBrowserState.hapticState[i];
+    if (state.inputFrameID == 0) {
+      
+      continue;
+    }
+    mHapticPulseRemaining[i] -= aDeltaTime;
+    if (mHapticPulseRemaining[i] <= 0.0f) {
+      
+      ClearHapticSlot(i);
+      bNeedPush = true;
+    }
+  }
+  if (bNeedPush) {
+    PushState();
+  }
+}
+
+void
+VRDisplayExternal::StopVibrateHaptic(uint32_t aControllerIdx)
+{
+  for (size_t i = 0; i < mozilla::ArrayLength(mBrowserState.hapticState); i++) {
+    VRHapticState& state = mBrowserState.hapticState[i];
+    if (state.controllerIndex == aControllerIdx) {
+      memset(&state, 0, sizeof(VRHapticState));
+    }
+  }
+  PushState();
+}
+
+void
+VRDisplayExternal::StopAllHaptics()
+{
+  for (size_t i = 0; i < mozilla::ArrayLength(mBrowserState.hapticState); i++) {
+    ClearHapticSlot(i);
+  }
+  PushState();
 }
 
 void
@@ -543,15 +643,14 @@ VRSystemManagerExternal::Shutdown()
 }
 
 void
-VRSystemManagerExternal::NotifyVSync()
+VRSystemManagerExternal::Run100msTasks()
 {
-  VRSystemManager::NotifyVSync();
+  VRSystemManager::Run100msTasks();
+  
+  
+  
 
   CheckForShutdown();
-
-  if (mDisplay) {
-    mDisplay->Refresh();
-  }
 }
 
 void
@@ -623,23 +722,43 @@ VRSystemManagerExternal::GetIsPresenting()
 
 void
 VRSystemManagerExternal::VibrateHaptic(uint32_t aControllerIdx,
-                                      uint32_t aHapticIndex,
-                                      double aIntensity,
-                                      double aDuration,
-                                      const VRManagerPromise& aPromise)
+                                       uint32_t aHapticIndex,
+                                       double aIntensity,
+                                       double aDuration,
+                                       const VRManagerPromise& aPromise)
 {
-  
+  if (mDisplay) {
+    
+    
+    
+    uint32_t controllerBaseIndex =
+      kVRControllerMaxCount * mDisplay->GetDisplayInfo().mDisplayID;
+    uint32_t controllerIndex = aControllerIdx - controllerBaseIndex;
+    double aDurationSeconds = aDuration * 0.001f;
+    mDisplay->VibrateHaptic(
+      controllerIndex, aHapticIndex, aIntensity, aDurationSeconds, aPromise);
+  }
 }
 
 void
 VRSystemManagerExternal::StopVibrateHaptic(uint32_t aControllerIdx)
 {
-  
+  if (mDisplay) {
+    
+    
+    
+    uint32_t controllerBaseIndex =
+      kVRControllerMaxCount * mDisplay->GetDisplayInfo().mDisplayID;
+    uint32_t controllerIndex = aControllerIdx - controllerBaseIndex;
+    mDisplay->StopVibrateHaptic(controllerIndex);
+  }
 }
 
 void
-VRSystemManagerExternal::GetControllers(nsTArray<RefPtr<VRControllerHost>>& aControllerResult)
+VRSystemManagerExternal::GetControllers(
+  nsTArray<RefPtr<VRControllerHost>>& aControllerResult)
 {
+  
   
   aControllerResult.Clear();
 }
@@ -648,9 +767,7 @@ void
 VRSystemManagerExternal::ScanForControllers()
 {
   
-  if (mDisplay) {
-    mDisplay->Refresh();
-  }
+  
   return;
 }
 
@@ -658,18 +775,19 @@ void
 VRSystemManagerExternal::HandleInput()
 {
   
-  if (mDisplay) {
-    mDisplay->Refresh();
-  }
+  
   return;
 }
 
 void
 VRSystemManagerExternal::RemoveControllers()
 {
+  if (mDisplay) {
+    mDisplay->StopAllHaptics();
+  }
+  
   
 }
-
 
 #if defined(MOZ_WIDGET_ANDROID)
 bool

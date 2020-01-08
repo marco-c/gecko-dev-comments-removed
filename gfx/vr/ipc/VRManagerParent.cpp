@@ -133,6 +133,7 @@ VRManagerParent::CreateForGPUProcess(Endpoint<PVRManagerParent>&& aEndpoint)
 
   RefPtr<VRManagerParent> vmp = new VRManagerParent(aEndpoint.OtherPid(), false);
   vmp->mVRListenerThreadHolder = VRListenerThreadHolder::GetSingleton();
+  vmp->mSelfRef = vmp;
   loop->PostTask(NewRunnableMethod<Endpoint<PVRManagerParent>&&>(
     "gfx::VRManagerParent::Bind",
     vmp,
@@ -226,7 +227,6 @@ mozilla::ipc::IPCResult
 VRManagerParent::RecvControllerListenerAdded()
 {
   
-  
   VRManager* vm = VRManager::Get();
   vm->RemoveControllers();
   mHaveControllerListener = true;
@@ -280,21 +280,43 @@ VRManagerParent::RecvCreateVRServiceTestController(const nsCString& aID, const u
 
 
 
-
-
-
-  vm->NotifyVsync(TimeStamp::Now());
-
+  const int kMaxControllerCreationTime = 1000;
   
-  vm->GetVRControllerInfo(controllerInfoArray);
-  for (auto& controllerInfo : controllerInfoArray) {
-    if (controllerInfo.GetType() == VRDeviceType::Puppet) {
-      if (controllerIdx == mControllerTestID) {
-        controllerPuppet = static_cast<impl::VRControllerPuppet*>(
-                           vm->GetController(controllerInfo.GetControllerID()).get());
-        break;
+
+
+
+
+
+
+
+
+   const int kTestInterval = 10;
+  
+
+
+
+
+
+  int testDuration = 0;
+  while (!controllerPuppet && testDuration < kMaxControllerCreationTime) {
+    testDuration += kTestInterval;
+#ifdef XP_WIN
+    Sleep(kTestInterval);
+#else
+    sleep(kTestInterval);
+#endif
+
+    
+    vm->GetVRControllerInfo(controllerInfoArray);
+    for (auto& controllerInfo : controllerInfoArray) {
+      if (controllerInfo.GetType() == VRDeviceType::Puppet) {
+        if (controllerIdx == mControllerTestID) {
+          controllerPuppet = static_cast<impl::VRControllerPuppet*>(
+                             vm->GetController(controllerInfo.GetControllerID()).get());
+          break;
+        }
+        ++controllerIdx;
       }
-      ++controllerIdx;
     }
   }
 

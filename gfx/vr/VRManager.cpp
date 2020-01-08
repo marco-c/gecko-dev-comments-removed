@@ -45,6 +45,21 @@ namespace gfx {
 
 static StaticRefPtr<VRManager> sVRManagerSingleton;
 
+ 
+
+
+
+
+const uint32_t kVRActiveTaskInterval = 1; 
+
+ 
+
+
+
+
+
+const uint32_t kVRIdleTaskInterval = 100; 
+
  void
 VRManager::ManagerInit()
 {
@@ -60,9 +75,11 @@ VRManager::ManagerInit()
 
 VRManager::VRManager()
   : mInitialized(false)
+  , mAccumulator100ms(0.0f)
   , mVRDisplaysRequested(false)
   , mVRControllersRequested(false)
   , mVRServiceStarted(false)
+  , mTaskInterval(0)
 {
   MOZ_COUNT_CTOR(VRManager);
   MOZ_ASSERT(sVRManagerSingleton == nullptr);
@@ -151,6 +168,7 @@ VRManager::~VRManager()
 void
 VRManager::Destroy()
 {
+  StopTasks();
   mVRDisplays.Clear();
   mVRControllers.Clear();
   for (uint32_t i = 0; i < mManagers.Length(); ++i) {
@@ -195,6 +213,7 @@ VRManager::Shutdown()
 void
 VRManager::Init()
 {
+  StartTasks();
   mInitialized = true;
 }
 
@@ -252,11 +271,181 @@ void
 VRManager::NotifyVsync(const TimeStamp& aVsyncTimestamp)
 {
   MOZ_ASSERT(VRListenerThreadHolder::IsInVRListenerThread());
-  UpdateRequestedDevices();
 
   for (const auto& manager : mManagers) {
     manager->NotifyVSync();
   }
+}
+
+void
+VRManager::StartTasks()
+{
+  MOZ_ASSERT(VRListenerThread());
+  if (!mTaskTimer) {
+    mTaskInterval = GetOptimalTaskInterval();
+    mTaskTimer = NS_NewTimer();
+    mTaskTimer->SetTarget(VRListenerThreadHolder::Loop()->SerialEventTarget());
+    mTaskTimer->InitWithNamedFuncCallback(
+      TaskTimerCallback,
+      this,
+      mTaskInterval,
+      nsITimer::TYPE_REPEATING_PRECISE_CAN_SKIP,
+      "VRManager::TaskTimerCallback");
+  }
+}
+
+void
+VRManager::StopTasks()
+{
+  if (mTaskTimer) {
+    MOZ_ASSERT(VRListenerThread());
+    mTaskTimer->Cancel();
+    mTaskTimer = nullptr;
+  }
+}
+
+ void
+VRManager::StopVRListenerThreadTasks()
+{
+  if (sVRManagerSingleton) {
+    sVRManagerSingleton->StopTasks();
+  }
+}
+
+ void
+VRManager::TaskTimerCallback(nsITimer* aTimer, void* aClosure)
+{
+  
+
+
+
+
+
+
+  VRManager* self = static_cast<VRManager*>(aClosure);
+  self->RunTasks();
+}
+
+void
+VRManager::RunTasks()
+{
+  MOZ_ASSERT(VRListenerThreadHolder::IsInVRListenerThread());
+
+  
+  
+  
+
+  TimeStamp now = TimeStamp::Now();
+  double lastTickMs = mAccumulator100ms;
+  double deltaTime = 0.0f;
+  if (!mLastTickTime.IsNull()) {
+    deltaTime = (now - mLastTickTime).ToMilliseconds();
+  }
+  mAccumulator100ms += deltaTime;
+  mLastTickTime = now;
+
+  if (deltaTime > 0.0f && floor(mAccumulator100ms) != floor(lastTickMs)) {
+    
+    
+    Run1msTasks(deltaTime);
+  }
+
+  if (floor(mAccumulator100ms * 0.1f) != floor(lastTickMs * 0.1f)) {
+    
+    
+     Run10msTasks();
+  }
+
+  if (mAccumulator100ms >= 100.0f) {
+    
+    
+    Run100msTasks();
+    mAccumulator100ms = fmod(mAccumulator100ms, 100.0f);
+  }
+
+  uint32_t optimalTaskInterval = GetOptimalTaskInterval();
+  if (mTaskTimer && optimalTaskInterval != mTaskInterval) {
+    mTaskTimer->SetDelay(optimalTaskInterval);
+    mTaskInterval = optimalTaskInterval;
+  }
+}
+
+uint32_t
+VRManager::GetOptimalTaskInterval()
+{
+  
+
+
+
+
+  bool wantGranularTasks = mVRDisplaysRequested ||
+                           mVRControllersRequested ||
+                           mVRDisplays.Count() ||
+                           mVRControllers.Count();
+  if (wantGranularTasks) {
+    return kVRActiveTaskInterval;
+  }
+
+  return kVRIdleTaskInterval;
+}
+
+
+
+
+
+
+
+
+void
+VRManager::Run1msTasks(double aDeltaTime)
+{
+  MOZ_ASSERT(VRListenerThreadHolder::IsInVRListenerThread());
+
+  for (const auto& manager : mManagers) {
+    manager->Run1msTasks(aDeltaTime);
+  }
+
+  for (auto iter = mVRDisplays.Iter(); !iter.Done(); iter.Next()) {
+    gfx::VRDisplayHost* display = iter.UserData();
+    display->Run1msTasks(aDeltaTime);
+  }
+}
+
+
+
+
+
+
+
+
+void
+VRManager::Run10msTasks()
+{
+  MOZ_ASSERT(VRListenerThreadHolder::IsInVRListenerThread());
+
+  UpdateRequestedDevices();
+
+  for (const auto& manager : mManagers) {
+    manager->Run10msTasks();
+  }
+
+  for (auto iter = mVRDisplays.Iter(); !iter.Done(); iter.Next()) {
+    gfx::VRDisplayHost* display = iter.UserData();
+    display->Run10msTasks();
+  }
+}
+
+
+
+
+
+
+
+
+void
+VRManager::Run100msTasks()
+{
+  MOZ_ASSERT(VRListenerThreadHolder::IsInVRListenerThread());
 
   
   
@@ -269,6 +458,15 @@ VRManager::NotifyVsync(const TimeStamp& aVsyncTimestamp)
   RefreshVRControllers();
 
   CheckForInactiveTimeout();
+
+  for (const auto& manager : mManagers) {
+    manager->Run100msTasks();
+  }
+
+  for (auto iter = mVRDisplays.Iter(); !iter.Done(); iter.Next()) {
+    gfx::VRDisplayHost* display = iter.UserData();
+    display->Run100msTasks();
+  }
 }
 
 void
@@ -311,7 +509,7 @@ VRManager::NotifyVRVsync(const uint32_t& aDisplayID)
     display->StartFrame();
   }
 
-  RefreshVRDisplays();
+  DispatchVRDisplayInfoUpdate();
 }
 
 void

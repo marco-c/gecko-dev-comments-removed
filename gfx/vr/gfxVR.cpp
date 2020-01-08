@@ -58,6 +58,24 @@ VRSystemManager::NotifyVSync()
   }
 }
 
+void
+VRSystemManager::Run1msTasks(double aDeltaTime)
+{
+  
+}
+
+void
+VRSystemManager::Run10msTasks()
+{
+  
+}
+
+void
+VRSystemManager::Run100msTasks()
+{
+  
+}
+
 
 
 

@@ -29,7 +29,7 @@ namespace dom {
 #endif 
 namespace gfx {
 
-static const int32_t kVRExternalVersion = 2;
+static const int32_t kVRExternalVersion = 3;
 
 
 
@@ -48,6 +48,7 @@ static const int kVRControllerMaxCount = 16;
 static const int kVRControllerMaxButtons = 64;
 static const int kVRControllerMaxAxis = 16;
 static const int kVRLayerMaxCount = 8;
+static const int kVRHapticsMaxCount = 32;
 
 #if defined(__ANDROID__)
 typedef uint64_t VRLayerTextureHandle;
@@ -354,6 +355,25 @@ struct VRLayerState
   };
 };
 
+struct VRHapticState
+{
+  
+  
+  uint64_t inputFrameID;
+  
+  
+  uint32_t controllerIndex;
+  
+  uint32_t hapticIndex;
+  
+  
+  float pulseStart;
+  
+  float pulseDuration;
+  
+  float pulseIntensity;
+};
+
 struct VRBrowserState
 {
 #if defined(__ANDROID__)
@@ -362,6 +382,7 @@ struct VRBrowserState
   bool presentationActive;
   bool navigationTransitionActive;
   VRLayerState layerState[kVRLayerMaxCount];
+  VRHapticState hapticState[kVRHapticsMaxCount];
 };
 
 struct VRSystemState

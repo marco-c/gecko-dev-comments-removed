@@ -19,6 +19,8 @@ namespace gfx {
 
 class VRSession;
 
+static const int kVRFrameTimingHistoryDepth = 100;
+
 class VRService
 {
 public:
@@ -51,6 +53,7 @@ private:
 
 
   VRBrowserState mBrowserState;
+  int64_t mBrowserGeneration;
 
   UniquePtr<VRSession> mSession;
   base::Thread* mServiceThread;
@@ -58,8 +61,11 @@ private:
 
   VRExternalShmem* MOZ_OWNING_REF mAPIShmem;
   base::ProcessHandle mTargetShmemFile;
+  VRHapticState mLastHapticState[kVRHapticsMaxCount];
+  TimeStamp mFrameStartTime[kVRFrameTimingHistoryDepth];
 
   bool IsInServiceThread();
+  void UpdateHaptics();
 
   
 
