@@ -1878,13 +1878,6 @@ nsXPCComponents_utils_Sandbox::CallOrConstruct(nsIXPConnectWrappedNative* wrappe
         return ThrowAndFail(rv, cx, _retval);
     }
 
-    
-    
-    
-    if (!options.wantXrays && !xpc::WrapperFactory::WaiveXrayAndWrap(cx, args.rval())) {
-        return NS_ERROR_UNEXPECTED;
-    }
-
     *_retval = true;
     return NS_OK;
 }
