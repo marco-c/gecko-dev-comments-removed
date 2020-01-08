@@ -803,6 +803,39 @@ protected:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  already_AddRefed<nsINode>
+  GetSelectedNode(Selection& aSelection,
+                  const nsAString& aTagName,
+                  ErrorResult& aRv);
+
+  
+
+
+
+
+
+
+
   nsresult PasteInternal(int32_t aClipboardType);
 
   
