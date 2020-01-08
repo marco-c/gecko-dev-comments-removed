@@ -8,6 +8,7 @@ import mozinfo
 import os
 import sys
 
+from ..application import (DefaultContext, FirefoxContext)
 from .runner import BaseRunner
 
 
@@ -23,6 +24,13 @@ class GeckoRuntimeRunner(BaseRunner):
 
         self.binary = binary
         self.cmdargs = cmdargs or []
+
+        if mozinfo.isWin and (isinstance(self.app_ctx, FirefoxContext) or
+                              isinstance(self.app_ctx, DefaultContext)):
+            
+            
+            
+            self.cmdargs.append('--wait-for-browser')
 
         
         self.env['MOZ_NO_REMOTE'] = '1'
