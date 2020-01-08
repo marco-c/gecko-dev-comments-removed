@@ -618,13 +618,11 @@ private:
       return NS_OK;
     }
 
-    ErrorResult result;
     nsCOMPtr<nsIInputStream> body;
-    result = NS_NewCStringInputStream(getter_AddRefs(body),
-                                      NS_ConvertUTF16toUTF8(aCN->Buffer()));
-    if (NS_WARN_IF(result.Failed())) {
-      MOZ_ASSERT(!result.IsErrorWithMessage());
-      return result.StealNSResult();
+    nsresult rv = NS_NewCStringInputStream(getter_AddRefs(body),
+                                           NS_ConvertUTF16toUTF8(aCN->Buffer()));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
     }
 
     RefPtr<InternalResponse> ir =
@@ -650,7 +648,9 @@ private:
     
     
     
+    ErrorResult result;
     RefPtr<Promise> cachePromise = aCache->Put(aCx, request, *response, result);
+    result.WouldReportJSException();
     if (NS_WARN_IF(result.Failed())) {
       
       MOZ_ASSERT(!result.IsJSException());

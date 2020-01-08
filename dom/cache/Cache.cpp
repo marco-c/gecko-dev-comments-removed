@@ -205,6 +205,7 @@ public:
     
     
     RefPtr<Promise> put = mCache->PutAll(aCx, mRequestList, responseList, result);
+    result.WouldReportJSException();
     if (NS_WARN_IF(result.Failed())) {
       
       mPromise->MaybeReject(result);
