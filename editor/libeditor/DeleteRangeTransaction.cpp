@@ -91,9 +91,7 @@ DeleteRangeTransaction::DoTransaction()
   }
 
   
-  bool bAdjustSelection;
-  mEditorBase->ShouldTxnSetSelection(&bAdjustSelection);
-  if (bAdjustSelection) {
+  if (mEditorBase->GetShouldTxnSetSelection()) {
     RefPtr<Selection> selection = mEditorBase->GetSelection();
     if (NS_WARN_IF(!selection)) {
       return NS_ERROR_NULL_POINTER;
