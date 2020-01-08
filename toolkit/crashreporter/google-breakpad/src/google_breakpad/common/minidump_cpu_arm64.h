@@ -66,7 +66,61 @@
 #ifndef GOOGLE_BREAKPAD_COMMON_MINIDUMP_CPU_ARM64_H__
 #define GOOGLE_BREAKPAD_COMMON_MINIDUMP_CPU_ARM64_H__
 
+#include "google_breakpad/common/breakpad_types.h"
+
 #define MD_FLOATINGSAVEAREA_ARM64_FPR_COUNT 32
+#define MD_CONTEXT_ARM64_GPR_COUNT 33
+
+typedef struct {
+  
+  uint128_struct regs[MD_FLOATINGSAVEAREA_ARM64_FPR_COUNT];
+
+  uint32_t fpcr;       
+  uint32_t fpsr;       
+} MDFloatingSaveAreaARM64;
+
+
+
+#define MD_CONTEXT_ARM64 0x00400000
+#define MD_CONTEXT_ARM64_CONTROL (MD_CONTEXT_ARM64 | 0x00000001)
+#define MD_CONTEXT_ARM64_INTEGER (MD_CONTEXT_ARM64 | 0x00000002)
+#define MD_CONTEXT_ARM64_FLOATING_POINT (MD_CONTEXT_ARM64 | 0x00000004)
+#define MD_CONTEXT_ARM64_DEBUG (MD_CONTEXT_ARM64 | 0x00000008)
+#define MD_CONTEXT_ARM64_FULL (MD_CONTEXT_ARM64_CONTROL | \
+                               MD_CONTEXT_ARM64_INTEGER | \
+                               MD_CONTEXT_ARM64_FLOATING_POINT)
+#define MD_CONTEXT_ARM64_ALL (MD_CONTEXT_ARM64_FULL | MD_CONTEXT_ARM64_DEBUG)
+
+typedef struct {
+  
+  uint32_t context_flags;
+
+  
+
+
+
+
+
+
+  uint32_t cpsr;
+
+  
+
+
+
+
+
+
+  uint64_t iregs[MD_CONTEXT_ARM64_GPR_COUNT];
+
+  
+  MDFloatingSaveAreaARM64 float_save;
+
+  uint32_t bcr[8];
+  uint64_t bvr[8];
+  uint32_t wcr[2];
+  uint64_t wvr[2];
+} MDRawContextARM64;
 
 typedef struct {
   uint32_t       fpsr;      
@@ -74,9 +128,7 @@ typedef struct {
 
   
   uint128_struct regs[MD_FLOATINGSAVEAREA_ARM64_FPR_COUNT];
-} MDFloatingSaveAreaARM64;
-
-#define MD_CONTEXT_ARM64_GPR_COUNT 33
+} MDFloatingSaveAreaARM64_Old;
 
 
 
@@ -107,9 +159,9 @@ typedef struct {
   uint32_t    cpsr;
 
   
-  MDFloatingSaveAreaARM64 float_save;
+  MDFloatingSaveAreaARM64_Old float_save;
 
-} MDRawContextARM64;
+} MDRawContextARM64_Old;
 
 #pragma pack(pop)
 
@@ -127,14 +179,14 @@ enum MDARM64RegisterNumbers {
 
 
 
-#define MD_CONTEXT_ARM64                   0x80000000
-#define MD_CONTEXT_ARM64_INTEGER           (MD_CONTEXT_ARM64 | 0x00000002)
-#define MD_CONTEXT_ARM64_FLOATING_POINT    (MD_CONTEXT_ARM64 | 0x00000004)
+#define MD_CONTEXT_ARM64_OLD                   0x80000000
+#define MD_CONTEXT_ARM64_INTEGER_OLD           (MD_CONTEXT_ARM64_OLD | 0x00000002)
+#define MD_CONTEXT_ARM64_FLOATING_POINT_OLD    (MD_CONTEXT_ARM64_OLD | 0x00000004)
 
-#define MD_CONTEXT_ARM64_FULL              (MD_CONTEXT_ARM64_INTEGER | \
-                                          MD_CONTEXT_ARM64_FLOATING_POINT)
+#define MD_CONTEXT_ARM64_FULL_OLD              (MD_CONTEXT_ARM64_INTEGER_OLD | \
+                                          MD_CONTEXT_ARM64_FLOATING_POINT_OLD)
 
-#define MD_CONTEXT_ARM64_ALL               (MD_CONTEXT_ARM64_INTEGER | \
-                                          MD_CONTEXT_ARM64_FLOATING_POINT)
+#define MD_CONTEXT_ARM64_ALL_OLD               (MD_CONTEXT_ARM64_INTEGER_OLD | \
+                                          MD_CONTEXT_ARM64_FLOATING_POINT_OLD)
 
 #endif  

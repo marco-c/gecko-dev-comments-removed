@@ -125,6 +125,7 @@ class DumpSymbols {
  private:
   
   class DumperLineToModule;
+  class DumperRangesHandler;
   class LoadCommandDumper;
 
   

@@ -782,8 +782,12 @@ TEST_F(CFI, RejectBadExpressions) {
 class StackwalkerARMFixtureIOS : public StackwalkerARMFixture {
  public:
   StackwalkerARMFixtureIOS() {
-    system_info.os = "iOS";
-    system_info.os_short = "ios";
+    
+    
+    
+    
+    system_info.os = "iOS_test";
+    system_info.os_short = "ios_test";
   }
 };
 

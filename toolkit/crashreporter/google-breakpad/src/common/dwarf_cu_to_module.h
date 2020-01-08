@@ -125,6 +125,22 @@ class DwarfCUToModule: public dwarf2reader::RootDIEHandler {
 
   
   
+  class RangesHandler {
+   public:
+    RangesHandler() { }
+    virtual ~RangesHandler() { }
+
+    
+    
+    
+    
+    
+    virtual bool ReadRanges(uint64 offset, Module::Address base_address,
+                            vector<Module::Range>* ranges) = 0;
+  };
+
+  
+  
   
   
   class LineToModuleHandler {
@@ -208,6 +224,14 @@ class DwarfCUToModule: public dwarf2reader::RootDIEHandler {
     
     virtual void UnhandledInterCUReference(uint64 offset, uint64 target);
 
+    
+    
+    virtual void MalformedRangeList(uint64 offset);
+
+    
+    
+    virtual void MissingRanges();
+
     uint64 cu_offset() const {
       return cu_offset_;
     }
@@ -235,6 +259,7 @@ class DwarfCUToModule: public dwarf2reader::RootDIEHandler {
   
   DwarfCUToModule(FileContext *file_context,
                   LineToModuleHandler *line_reader,
+                  RangesHandler *ranges_handler,
                   WarningReporter *reporter);
   ~DwarfCUToModule();
 

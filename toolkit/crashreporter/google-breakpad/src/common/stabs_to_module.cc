@@ -91,7 +91,8 @@ bool StabsToModule::StartFunction(const string &name,
                                   uint64_t address) {
   assert(!current_function_);
   Module::Function *f = new Module::Function(Demangle(name), address);
-  f->size = 0;           
+  Module::Range r(address, 0); 
+  f->ranges.push_back(r);
   f->parameter_size = 0; 
   current_function_ = f;
   boundaries_.push_back(static_cast<Module::Address>(address));
@@ -167,14 +168,14 @@ void StabsToModule::Finalize() {
     vector<Module::Address>::const_iterator boundary
         = std::upper_bound(boundaries_.begin(), boundaries_.end(), f->address);
     if (boundary != boundaries_.end())
-      f->size = *boundary - f->address;
+      f->ranges[0].size = *boundary - f->address;
     else
       
       
       
       
       
-      f->size = kFallbackSize;
+      f->ranges[0].size = kFallbackSize;
 
     
     if (!f->lines.empty()) {
@@ -185,7 +186,8 @@ void StabsToModule::Finalize() {
            line_it != last_line; line_it++)
         line_it[0].size = line_it[1].address - line_it[0].address;
       
-      last_line->size = (f->address + f->size) - last_line->address;
+      last_line->size =
+        (f->ranges[0].address + f->ranges[0].size) - last_line->address;
     }
   }
   

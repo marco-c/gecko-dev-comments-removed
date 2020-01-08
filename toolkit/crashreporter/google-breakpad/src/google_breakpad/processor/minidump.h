@@ -541,6 +541,12 @@ class MinidumpModuleList : public MinidumpStream,
 
   bool Read(uint32_t expected_size);
 
+  bool StoreRange(const MinidumpModule& module,
+                  uint64_t base_address,
+                  uint32_t module_index,
+                  uint32_t module_count,
+                  bool is_android);
+
   
   
   static uint32_t max_modules_;
@@ -1254,6 +1260,8 @@ class Minidump {
 
   bool swap() const { return valid_ ? swap_ : false; }
 
+  bool is_big_endian() const { return valid_ ? is_big_endian_ : false; }
+
   
   void Print();
 
@@ -1318,6 +1326,9 @@ class Minidump {
   
   
   bool                      swap_;
+
+  
+  bool                      is_big_endian_;
 
   
   

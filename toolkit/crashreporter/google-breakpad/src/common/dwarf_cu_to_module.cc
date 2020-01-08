@@ -44,6 +44,7 @@
 #include <stdio.h>
 
 #include <algorithm>
+#include <numeric>
 #include <utility>
 
 #include "common/dwarf_line_to_module.h"
@@ -51,6 +52,7 @@
 
 namespace google_breakpad {
 
+using std::accumulate;
 using std::map;
 using std::pair;
 using std::sort;
@@ -167,10 +169,15 @@ bool DwarfCUToModule::FileContext::IsUnhandledInterCUReference(
 
 
 struct DwarfCUToModule::CUContext {
-  CUContext(FileContext *file_context_arg, WarningReporter *reporter_arg)
+  CUContext(FileContext *file_context_arg, WarningReporter *reporter_arg,
+            RangesHandler *ranges_handler_arg)
       : file_context(file_context_arg),
         reporter(reporter_arg),
-        language(Language::CPlusPlus) {}
+        ranges_handler(ranges_handler_arg),
+        language(Language::CPlusPlus),
+        low_pc(0),
+        high_pc(0),
+        ranges(0) {}
 
   ~CUContext() {
     for (vector<Module::Function *>::iterator it = functions.begin();
@@ -186,7 +193,17 @@ struct DwarfCUToModule::CUContext {
   WarningReporter *reporter;
 
   
+  RangesHandler *ranges_handler;
+
+  
   const Language *language;
+
+  
+  
+  
+  uint64 low_pc;
+  uint64 high_pc;
+  uint64 ranges;
 
   
   
@@ -445,7 +462,7 @@ class DwarfCUToModule::FuncHandler: public GenericDIEHandler {
               uint64 offset)
       : GenericDIEHandler(cu_context, parent_context, offset),
         low_pc_(0), high_pc_(0), high_pc_form_(dwarf2reader::DW_FORM_addr),
-        abstract_origin_(NULL), inline_(false) { }
+        ranges_(0), abstract_origin_(NULL), inline_(false) { }
   void ProcessAttributeUnsigned(enum DwarfAttribute attr,
                                 enum DwarfForm form,
                                 uint64 data);
@@ -465,6 +482,7 @@ class DwarfCUToModule::FuncHandler: public GenericDIEHandler {
   string name_;
   uint64 low_pc_, high_pc_; 
   DwarfForm high_pc_form_; 
+  uint64 ranges_; 
   const AbstractOrigin* abstract_origin_;
   bool inline_;
 };
@@ -483,6 +501,9 @@ void DwarfCUToModule::FuncHandler::ProcessAttributeUnsigned(
     case dwarf2reader::DW_AT_high_pc:
       high_pc_form_ = form;
       high_pc_ = data;
+      break;
+    case dwarf2reader::DW_AT_ranges:
+      ranges_ = data;
       break;
 
     default:
@@ -537,17 +558,48 @@ bool DwarfCUToModule::FuncHandler::EndAttributes() {
   return true;
 }
 
+static bool IsEmptyRange(const vector<Module::Range>& ranges) {
+  uint64 size = accumulate(ranges.cbegin(), ranges.cend(), 0,
+    [](uint64 total, Module::Range entry) {
+      return total + entry.size;
+    }
+  );
+
+  return size == 0;
+}
+
 void DwarfCUToModule::FuncHandler::Finish() {
-  
-  if (high_pc_form_ != dwarf2reader::DW_FORM_addr) {
-    high_pc_ += low_pc_;
+  vector<Module::Range> ranges;
+
+  if (!ranges_) {
+    
+    if (high_pc_form_ != dwarf2reader::DW_FORM_addr &&
+        high_pc_form_ != dwarf2reader::DW_FORM_GNU_addr_index) {
+      high_pc_ += low_pc_;
+    }
+
+    Module::Range range(low_pc_, high_pc_ - low_pc_);
+    ranges.push_back(range);
+  } else {
+    RangesHandler *ranges_handler = cu_context_->ranges_handler;
+
+    if (ranges_handler) {
+      if (!ranges_handler->ReadRanges(ranges_, cu_context_->low_pc, &ranges)) {
+        ranges.clear();
+        cu_context_->reporter->MalformedRangeList(ranges_);
+      }
+    } else {
+      cu_context_->reporter->MissingRanges();
+    }
   }
 
   
   
   
   
-  if (low_pc_ < high_pc_) {
+  if (!IsEmptyRange(ranges)) {
+    low_pc_ = ranges.front().address;
+
     
     
     string name;
@@ -561,7 +613,7 @@ void DwarfCUToModule::FuncHandler::Finish() {
     
     
     scoped_ptr<Module::Function> func(new Module::Function(name, low_pc_));
-    func->size = high_pc_ - low_pc_;
+    func->ranges = ranges;
     func->parameter_size = 0;
     if (func->address) {
        
@@ -663,7 +715,7 @@ void DwarfCUToModule::WarningReporter::UncoveredFunction(
     return;
   UncoveredHeading();
   fprintf(stderr, "    function%s: %s\n",
-          function.size == 0 ? " (zero-length)" : "",
+          IsEmptyRange(function.ranges) ? " (zero-length)" : "",
           function.name.c_str());
 }
 
@@ -697,11 +749,25 @@ void DwarfCUToModule::WarningReporter::UnhandledInterCUReference(
                   filename_.c_str(), offset, target);
 }
 
+void DwarfCUToModule::WarningReporter::MalformedRangeList(uint64 offset) {
+  CUHeading();
+  fprintf(stderr, "%s: warning: the range list at offset 0x%llx falls out of "
+                  "the .debug_ranges section.\n",
+                  filename_.c_str(), offset);
+}
+
+void DwarfCUToModule::WarningReporter::MissingRanges() {
+  CUHeading();
+  fprintf(stderr, "%s: warning: A DW_AT_ranges attribute was encountered but "
+                  "the .debug_ranges section is missing.\n", filename_.c_str());
+}
+
 DwarfCUToModule::DwarfCUToModule(FileContext *file_context,
                                  LineToModuleHandler *line_reader,
+                                 RangesHandler *ranges_handler,
                                  WarningReporter *reporter)
     : line_reader_(line_reader),
-      cu_context_(new CUContext(file_context, reporter)),
+      cu_context_(new CUContext(file_context, reporter, ranges_handler)),
       child_context_(new DIEContext()),
       has_source_line_info_(false) {
 }
@@ -732,6 +798,16 @@ void DwarfCUToModule::ProcessAttributeUnsigned(enum DwarfAttribute attr,
     case dwarf2reader::DW_AT_language: 
       SetLanguage(static_cast<DwarfLanguage>(data));
       break;
+    case dwarf2reader::DW_AT_low_pc:
+      cu_context_->low_pc  = data;
+      break;
+    case dwarf2reader::DW_AT_high_pc:
+      cu_context_->high_pc  = data;
+      break;
+    case dwarf2reader::DW_AT_ranges:
+      cu_context_->ranges = data;
+      break;
+
     default:
       break;
   }
@@ -841,6 +917,46 @@ void DwarfCUToModule::ReadSourceLines(uint64 offset) {
 }
 
 namespace {
+class FunctionRange {
+ public:
+  FunctionRange(const Module::Range &range, Module::Function *function) :
+      address(range.address), size(range.size), function(function) { }
+
+  void AddLine(Module::Line &line) {
+    function->lines.push_back(line);
+  }
+
+  Module::Address address;
+  Module::Address size;
+  Module::Function *function;
+};
+
+
+
+
+static void FillSortedFunctionRanges(vector<FunctionRange> &dest_ranges,
+                                     vector<Module::Function *> *functions) {
+  for (vector<Module::Function *>::const_iterator func_it = functions->cbegin();
+       func_it != functions->cend();
+       func_it++)
+  {
+    Module::Function *func = *func_it;
+    vector<Module::Range> &ranges = func->ranges;
+    for (vector<Module::Range>::const_iterator ranges_it = ranges.cbegin();
+         ranges_it != ranges.cend();
+         ++ranges_it) {
+      FunctionRange range(*ranges_it, func);
+      dest_ranges.push_back(range);
+    }
+  }
+
+  sort(dest_ranges.begin(), dest_ranges.end(),
+    [](const FunctionRange &fr1, const FunctionRange &fr2) {
+      return fr1.address < fr2.address;
+    }
+  );
+}
+
 
 template <class T>
 inline bool within(const T &item, Module::Address address) {
@@ -881,38 +997,41 @@ void DwarfCUToModule::AssignLinesToFunctions() {
   const Module::Line *last_line_cited = NULL;
 
   
+  vector<FunctionRange> sorted_ranges;
+  FillSortedFunctionRanges(sorted_ranges, functions);
+
   
   
   
-  vector<Module::Function *>::iterator func_it = functions->begin();
+  vector<FunctionRange>::iterator range_it = sorted_ranges.begin();
   vector<Module::Line>::const_iterator line_it = lines_.begin();
 
   Module::Address current;
 
   
   
-  Module::Function *func;
+  FunctionRange *range;
   const Module::Line *line;
 
   
   
-  if (func_it != functions->end() && line_it != lines_.end()) {
-    func = *func_it;
+  if (range_it != sorted_ranges.end() && line_it != lines_.end()) {
+    range = &*range_it;
     line = &*line_it;
-    current = std::min(func->address, line->address);
+    current = std::min(range->address, line->address);
   } else if (line_it != lines_.end()) {
-    func = NULL;
+    range = NULL;
     line = &*line_it;
     current = line->address;
-  } else if (func_it != functions->end()) {
-    func = *func_it;
+  } else if (range_it != sorted_ranges.end()) {
+    range = &*range_it;
     line = NULL;
-    current = (*func_it)->address;
+    current = range->address;
   } else {
     return;
   }
 
-  while (func || line) {
+  while (range || line) {
     
     
     
@@ -942,7 +1061,7 @@ void DwarfCUToModule::AssignLinesToFunctions() {
     
 
     
-    assert(!func || current < func->address || within(*func, current));
+    assert(!range || current < range->address || within(*range, current));
     assert(!line || current < line->address || within(*line, current));
 
     
@@ -950,29 +1069,29 @@ void DwarfCUToModule::AssignLinesToFunctions() {
 
     
     
-    if (func && current >= func->address) {
+    if (range && current >= range->address) {
       if (line && current >= line->address) {
         
-        Module::Address func_left = func->size - (current - func->address);
+        Module::Address range_left = range->size - (current - range->address);
         Module::Address line_left = line->size - (current - line->address);
         
-        next_transition = current + std::min(func_left, line_left);
+        next_transition = current + std::min(range_left, line_left);
         Module::Line l = *line;
         l.address = current;
         l.size = next_transition - current;
-        func->lines.push_back(l);
+        range->AddLine(l);
         last_line_used = line;
       } else {
         
-        if (func != last_function_cited) {
-          reporter->UncoveredFunction(*func);
-          last_function_cited = func;
+        if (range->function != last_function_cited) {
+          reporter->UncoveredFunction(*(range->function));
+          last_function_cited = range->function;
         }
-        if (line && within(*func, line->address))
+        if (line && within(*range, line->address))
           next_transition = line->address;
         else
           
-          next_transition = func->address + func->size;
+          next_transition = range->address + range->size;
       }
     } else {
       if (line && current >= line->address) {
@@ -988,14 +1107,14 @@ void DwarfCUToModule::AssignLinesToFunctions() {
         
         
         if (line != last_line_cited
-            && !(func
+            && !(range
                  && line == last_line_used
-                 && func->address - line->address == line->size)) {
+                 && range->address - line->address == line->size)) {
           reporter->UncoveredLine(*line);
           last_line_cited = line;
         }
-        if (func && within(*line, func->address))
-          next_transition = func->address;
+        if (range && within(*line, range->address))
+          next_transition = range->address;
         else
           
           next_transition = line->address + line->size;
@@ -1004,11 +1123,11 @@ void DwarfCUToModule::AssignLinesToFunctions() {
         
         
         
-        assert(func || line);
-        if (func && line)
-          next_transition = std::min(func->address, line->address);
-        else if (func)
-          next_transition = func->address;
+        assert(range || line);
+        if (range && line)
+          next_transition = std::min(range->address, line->address);
+        else if (range)
+          next_transition = range->address;
         else
           next_transition = line->address;
       }
@@ -1025,11 +1144,11 @@ void DwarfCUToModule::AssignLinesToFunctions() {
     
     
     
-    while (func_it != functions->end()
-           && next_transition >= (*func_it)->address
-           && !within(**func_it, next_transition))
-      func_it++;
-    func = (func_it != functions->end()) ? *func_it : NULL;
+    while (range_it != sorted_ranges.end()
+           && next_transition >= range_it->address
+           && !within(*range_it, next_transition))
+      range_it++;
+    range = (range_it != sorted_ranges.end()) ? &(*range_it) : NULL;
     while (line_it != lines_.end()
            && next_transition >= line_it->address
            && !within(*line_it, next_transition))

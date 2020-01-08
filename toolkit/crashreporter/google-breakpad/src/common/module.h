@@ -86,9 +86,18 @@ class Module {
   };
 
   
+  struct Range {
+    Range(const Address address_input, const Address size_input) :
+        address(address_input), size(size_input) { }
+
+    Address address;
+    Address size;
+  };
+
+  
   struct Function {
     Function(const string &name_input, const Address &address_input) :
-        name(name_input), address(address_input), size(0), parameter_size(0) {}
+        name(name_input), address(address_input), parameter_size(0) {}
 
     
     
@@ -101,7 +110,7 @@ class Module {
 
     
     const Address address;
-    Address size;
+    vector<Range> ranges;
 
     
     Address parameter_size;

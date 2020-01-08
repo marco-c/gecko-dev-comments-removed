@@ -58,6 +58,8 @@ struct FunctionInfo {
   uint64 lowpc;
   
   uint64 highpc;
+  
+  uint64 ranges;
 };
 
 struct SourceFileInfo {

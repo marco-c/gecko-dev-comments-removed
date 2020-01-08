@@ -187,6 +187,36 @@ class LineInfoHandler {
                        uint32 file_num, uint32 line_num, uint32 column_num) { }
 };
 
+class RangeListHandler {
+ public:
+  RangeListHandler() { }
+
+  virtual ~RangeListHandler() { }
+
+  
+  virtual void AddRange(uint64 begin, uint64 end) { };
+
+  
+  virtual void SetBaseAddress(uint64 base_address) { };
+
+  
+  virtual void Finish() { };
+};
+
+class RangeListReader {
+ public:
+  RangeListReader(const uint8_t *buffer, uint64 size, ByteReader *reader,
+                  RangeListHandler *handler);
+
+  bool ReadRangeList(uint64 offset);
+
+ private:
+  const uint8_t *buffer_;
+  uint64 size_;
+  ByteReader* reader_;
+  RangeListHandler *handler_;
+};
+
 
 
 

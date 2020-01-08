@@ -40,6 +40,7 @@
 #include "google_breakpad/processor/memory_region.h"
 #include "google_breakpad/processor/source_line_resolver_interface.h"
 #include "google_breakpad/processor/stack_frame_cpu.h"
+#include "google_breakpad/processor/system_info.h"
 #include "processor/cfi_frame_info.h"
 #include "processor/logging.h"
 #include "processor/stackwalker_arm.h"
@@ -249,10 +250,14 @@ StackFrame* StackwalkerARM::GetCallerFrame(const CallStack* stack,
   scoped_ptr<StackFrameARM> frame;
 
   
-  scoped_ptr<CFIFrameInfo> cfi_frame_info(
-      frame_symbolizer_->FindCFIFrameInfo(last_frame));
-  if (cfi_frame_info.get())
-    frame.reset(GetCallerByCFIFrameInfo(frames, cfi_frame_info.get()));
+  
+  
+  if (!system_info_ || system_info_->os != "iOS") {
+    scoped_ptr<CFIFrameInfo> cfi_frame_info(
+        frame_symbolizer_->FindCFIFrameInfo(last_frame));
+    if (cfi_frame_info.get())
+      frame.reset(GetCallerByCFIFrameInfo(frames, cfi_frame_info.get()));
+  }
 
   
   
