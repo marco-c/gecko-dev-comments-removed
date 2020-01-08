@@ -124,26 +124,6 @@ MOZ_END_EXTERN_C
 #  define MOZALLOC_EXPORT_NEW
 #endif
 
-#if defined(_MSC_VER)
-
-
-
-#if _MSC_VER < 1912
-#define MOZALLOC_THROW_IF_HAS_EXCEPTIONS
-#else
-#define MOZALLOC_THROW_IF_HAS_EXCEPTIONS throw()
-#endif
-#define MOZALLOC_THROW_BAD_ALLOC_IF_HAS_EXCEPTIONS
-#else
-
-
-
-#define MOZALLOC_THROW_IF_HAS_EXCEPTIONS noexcept(true)
-#define MOZALLOC_THROW_BAD_ALLOC_IF_HAS_EXCEPTIONS noexcept(false)
-#endif
-
-#define MOZALLOC_THROW_BAD_ALLOC MOZALLOC_THROW_BAD_ALLOC_IF_HAS_EXCEPTIONS
-
 MOZALLOC_EXPORT_NEW
 #if defined(__GNUC__) && !defined(__clang__) && defined(__SANITIZE_ADDRESS__)
 
@@ -151,49 +131,49 @@ __attribute__((gnu_inline)) inline
 #else
 MOZ_ALWAYS_INLINE_EVEN_DEBUG
 #endif
-void* operator new(size_t size) MOZALLOC_THROW_BAD_ALLOC
+void* operator new(size_t size) noexcept(false)
 {
     return moz_xmalloc(size);
 }
 
 MOZALLOC_EXPORT_NEW MOZ_ALWAYS_INLINE_EVEN_DEBUG
-void* operator new(size_t size, const std::nothrow_t&) MOZALLOC_THROW_IF_HAS_EXCEPTIONS
+void* operator new(size_t size, const std::nothrow_t&) noexcept(true)
 {
     return malloc_impl(size);
 }
 
 MOZALLOC_EXPORT_NEW MOZ_ALWAYS_INLINE_EVEN_DEBUG
-void* operator new[](size_t size) MOZALLOC_THROW_BAD_ALLOC
+void* operator new[](size_t size) noexcept(false)
 {
     return moz_xmalloc(size);
 }
 
 MOZALLOC_EXPORT_NEW MOZ_ALWAYS_INLINE_EVEN_DEBUG
-void* operator new[](size_t size, const std::nothrow_t&) MOZALLOC_THROW_IF_HAS_EXCEPTIONS
+void* operator new[](size_t size, const std::nothrow_t&) noexcept(true)
 {
     return malloc_impl(size);
 }
 
 MOZALLOC_EXPORT_NEW MOZ_ALWAYS_INLINE_EVEN_DEBUG
-void operator delete(void* ptr) MOZALLOC_THROW_IF_HAS_EXCEPTIONS
+void operator delete(void* ptr) noexcept(true)
 {
     return free_impl(ptr);
 }
 
 MOZALLOC_EXPORT_NEW MOZ_ALWAYS_INLINE_EVEN_DEBUG
-void operator delete(void* ptr, const std::nothrow_t&) MOZALLOC_THROW_IF_HAS_EXCEPTIONS
+void operator delete(void* ptr, const std::nothrow_t&) noexcept(true)
 {
     return free_impl(ptr);
 }
 
 MOZALLOC_EXPORT_NEW MOZ_ALWAYS_INLINE_EVEN_DEBUG
-void operator delete[](void* ptr) MOZALLOC_THROW_IF_HAS_EXCEPTIONS
+void operator delete[](void* ptr) noexcept(true)
 {
     return free_impl(ptr);
 }
 
 MOZALLOC_EXPORT_NEW MOZ_ALWAYS_INLINE_EVEN_DEBUG
-void operator delete[](void* ptr, const std::nothrow_t&) MOZALLOC_THROW_IF_HAS_EXCEPTIONS
+void operator delete[](void* ptr, const std::nothrow_t&) noexcept(true)
 {
     return free_impl(ptr);
 }
@@ -202,13 +182,13 @@ void operator delete[](void* ptr, const std::nothrow_t&) MOZALLOC_THROW_IF_HAS_E
 
 
 MOZALLOC_EXPORT_NEW MOZ_ALWAYS_INLINE_EVEN_DEBUG
-void operator delete(void* ptr, size_t ) MOZALLOC_THROW_IF_HAS_EXCEPTIONS
+void operator delete(void* ptr, size_t ) noexcept(true)
 {
     return free_impl(ptr);
 }
 
 MOZALLOC_EXPORT_NEW MOZ_ALWAYS_INLINE_EVEN_DEBUG
-void operator delete[](void* ptr, size_t ) MOZALLOC_THROW_IF_HAS_EXCEPTIONS
+void operator delete[](void* ptr, size_t ) noexcept(true)
 {
     return free_impl(ptr);
 }
