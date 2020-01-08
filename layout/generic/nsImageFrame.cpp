@@ -1842,6 +1842,8 @@ nsDisplayImage::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilde
         updatePrevImage = true;
       }
       break;
+    case ImgDrawResult::NOT_SUPPORTED:
+      return false;
     default:
       updatePrevImage = mPrevImage != mImage;
       break;
@@ -1858,14 +1860,14 @@ nsDisplayImage::CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilde
     }
   }
 
-  if (!container) {
-    return false;
+  
+  
+  
+  if (container) {
+    aManager->CommandBuilder().PushImage(this, container, aBuilder, aResources, aSc, destRect);
   }
 
-  
-  
-  
-  aManager->CommandBuilder().PushImage(this, container, aBuilder, aResources, aSc, destRect);
+  nsDisplayItemGenericImageGeometry::UpdateDrawResult(this, drawResult);
   return true;
 }
 
