@@ -188,6 +188,7 @@ var AUSTLMY = {
 
 
 
+
   pingDownloadCode: function UT_pingDownloadCode(aIsComplete, aCode) {
     let patchType = this.PATCH_UNKNOWN;
     if (aIsComplete === true) {
