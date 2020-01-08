@@ -27,8 +27,8 @@ class MOZ_STACK_CLASS nsViewportInfo
     nsViewportInfo(const mozilla::ScreenIntSize& aDisplaySize,
                    const mozilla::CSSToScreenScale& aDefaultZoom,
                    bool aAllowZoom) :
-      mDefaultZoomValid(true),
       mDefaultZoom(aDefaultZoom),
+      mDefaultZoomValid(true),
       mAutoSize(true),
       mAllowZoom(aAllowZoom)
     {
@@ -45,11 +45,11 @@ class MOZ_STACK_CLASS nsViewportInfo
                    const mozilla::CSSSize& aSize,
                    bool aAutoSize,
                    bool aAllowZoom) :
-                     mDefaultZoomValid(true),
                      mDefaultZoom(aDefaultZoom),
                      mMinZoom(aMinZoom),
                      mMaxZoom(aMaxZoom),
                      mSize(aSize),
+                     mDefaultZoomValid(true),
                      mAutoSize(aAutoSize),
                      mAllowZoom(aAllowZoom)
     {
@@ -77,10 +77,6 @@ class MOZ_STACK_CLASS nsViewportInfo
 
     
     
-    bool mDefaultZoomValid;
-
-    
-    
     mozilla::CSSToScreenScale mDefaultZoom;
 
     
@@ -91,6 +87,10 @@ class MOZ_STACK_CLASS nsViewportInfo
 
     
     mozilla::CSSSize mSize;
+
+    
+    
+    bool mDefaultZoomValid;
 
     
     
