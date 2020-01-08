@@ -111,10 +111,9 @@ const globalMessageManager = Services.mm;
 
 
 
-
-
-this.GeckoDriver = function(appId, server) {
-  this.appId = appId;
+this.GeckoDriver = function(server) {
+  this.appId = Services.appinfo.ID;
+  this.appName = Services.appinfo.name.toLowerCase();
   this._server = server;
 
   this.sessionID = null;
@@ -1309,6 +1308,7 @@ GeckoDriver.prototype.getIdForBrowser = function(browser) {
   if (browser === null) {
     return null;
   }
+
   let permKey = browser.permanentKey;
   if (this._browserIds.has(permKey)) {
     return this._browserIds.get(permKey);
@@ -2737,6 +2737,73 @@ GeckoDriver.prototype.deleteCookie = async function(cmd) {
 
 
 
+GeckoDriver.prototype.newWindow = async function(cmd) {
+  assert.open(this.getCurrentWindow(Context.Content));
+  await this._handleUserPrompts();
+
+  let focus = false;
+  if (typeof cmd.parameters.focus != "undefined") {
+    focus = assert.boolean(cmd.parameters.focus,
+        pprint`Expected "focus" to be a boolean, got ${cmd.parameters.focus}`);
+  }
+
+  let type;
+  if (typeof cmd.parameters.type != "undefined") {
+    type = assert.string(cmd.parameters.type,
+        pprint`Expected "type" to be a string, got ${cmd.parameters.type}`);
+  }
+
+  let types = ["tab", "window"];
+  switch (this.appName) {
+    case "firefox":
+      if (typeof type == "undefined" || !types.includes(type)) {
+        type = "window";
+      }
+      break;
+    case "fennec":
+      if (typeof type == "undefined" || !types.includes(type)) {
+        type = "tab";
+      }
+      break;
+  }
+
+  let contentBrowser;
+
+  switch (type) {
+    case "tab":
+      let tab = await this.curBrowser.openTab(focus);
+      contentBrowser = browser.getBrowserForTab(tab);
+      break;
+
+    default:
+      let win = await this.curBrowser.openBrowserWindow(focus);
+      contentBrowser = browser.getTabBrowser(win).selectedBrowser;
+  }
+
+  
+  
+  
+  let windowId = await new PollPromise((resolve, reject) => {
+    let id = this.getIdForBrowser(contentBrowser);
+    this.windowHandles.includes(id) ? resolve(id) : reject();
+  });
+
+  return {"handle": windowId.toString(), type};
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -3564,6 +3631,7 @@ GeckoDriver.prototype.commands = {
   "WebDriver:MaximizeWindow": GeckoDriver.prototype.maximizeWindow,
   "WebDriver:Navigate": GeckoDriver.prototype.get,
   "WebDriver:NewSession": GeckoDriver.prototype.newSession,
+  "WebDriver:NewWindow": GeckoDriver.prototype.newWindow,
   "WebDriver:PerformActions": GeckoDriver.prototype.performActions,
   "WebDriver:Refresh":  GeckoDriver.prototype.refresh,
   "WebDriver:ReleaseActions": GeckoDriver.prototype.releaseActions,
