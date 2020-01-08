@@ -436,6 +436,12 @@ class PLDHashTable {
   }
 
   
+  const PLDHashTableOps* RecordReplayWrappedOps() const
+  {
+    return mOps;
+  }
+
+  
   
   
   uint32_t Capacity() const {
