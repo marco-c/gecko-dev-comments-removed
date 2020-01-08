@@ -48,19 +48,11 @@ GetObjectPrincipal(JSObject* obj)
     return GetRealmPrincipal(js::GetNonCCWObjectRealm(obj));
 }
 
-
-bool
-AccessCheck::subsumes(JS::Compartment* a, JS::Compartment* b)
-{
-    nsIPrincipal* aprin = GetCompartmentPrincipal(a);
-    nsIPrincipal* bprin = GetCompartmentPrincipal(b);
-    return BasePrincipal::Cast(aprin)->FastSubsumes(bprin);
-}
-
 bool
 AccessCheck::subsumes(JSObject* a, JSObject* b)
 {
-    return subsumes(js::GetObjectCompartment(a), js::GetObjectCompartment(b));
+    return CompartmentOriginInfo::Subsumes(js::GetObjectCompartment(a),
+                                           js::GetObjectCompartment(b));
 }
 
 
@@ -89,8 +81,8 @@ AccessCheck::wrapperSubsumes(JSObject* wrapper)
 {
     MOZ_ASSERT(js::IsWrapper(wrapper));
     JSObject* wrapped = js::UncheckedUnwrap(wrapper);
-    return AccessCheck::subsumes(js::GetObjectCompartment(wrapper),
-                                 js::GetObjectCompartment(wrapped));
+    return CompartmentOriginInfo::Subsumes(js::GetObjectCompartment(wrapper),
+                                           js::GetObjectCompartment(wrapped));
 }
 
 bool

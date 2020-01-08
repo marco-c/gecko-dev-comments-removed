@@ -111,7 +111,7 @@ WrapperFactory::WaiveXray(JSContext* cx, JSObject* objArg)
 WrapperFactory::AllowWaiver(JS::Compartment* target, JS::Compartment* origin)
 {
     return CompartmentPrivate::Get(target)->allowWaivers &&
-           AccessCheck::subsumes(target, origin);
+           CompartmentOriginInfo::Subsumes(target, origin);
 }
 
  bool
@@ -311,8 +311,8 @@ WrapperFactory::PrepareForWrapping(JSContext* cx, HandleObject scope,
             
             
             if (!AccessCheck::isChrome(js::GetObjectCompartment(wrapScope)) &&
-                 AccessCheck::subsumes(js::GetObjectCompartment(wrapScope),
-                                       js::GetObjectCompartment(obj)))
+                 CompartmentOriginInfo::Subsumes(js::GetObjectCompartment(wrapScope),
+                                                 js::GetObjectCompartment(obj)))
             {
                 retObj.set(waive ? WaiveXray(cx, obj) : obj);
                 return;

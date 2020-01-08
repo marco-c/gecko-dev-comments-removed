@@ -2932,6 +2932,9 @@ public:
 
     bool IsSameOrigin(nsIPrincipal* aOther) const;
 
+    
+    static bool Subsumes(JS::Compartment* aCompA, JS::Compartment* aCompB);
+
     bool MightBeWebContent() const;
 
     const mozilla::SiteIdentifier& SiteRef() const {
