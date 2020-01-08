@@ -46,6 +46,8 @@ def apply_patches():
     os.system("patch -p3 < allow_disabling_asm_avx2.patch")
     
     os.system("patch -p3 < add_H444ToARGB.patch")
+    
+    os.system("patch -p3 < aarch64-windows-noneon.patch")
 
 def update_readme(commit, commitdate):
     with open('README_MOZILLA') as f:
