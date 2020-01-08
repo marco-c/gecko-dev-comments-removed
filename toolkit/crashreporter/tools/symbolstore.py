@@ -460,19 +460,13 @@ class Dumper:
         self.s3_bucket = s3_bucket
         self.file_mapping = file_mapping or {}
         
-        target_os = buildconfig.substs['OS_ARCH']
-        rust_srcdir = None
-        if target_os == 'WINNT':
-            rust_srcdir = 'C:/projects/rust/'
-        elif target_os == 'Darwin':
-            rust_srcdir = '/Users/travis/build/rust-lang/rust/'
-        elif target_os == 'Linux':
-            rust_srcdir = '/checkout/'
-        if rust_srcdir is not None:
-            self.srcdirs.append(rust_srcdir)
-            Dumper.srcdirRepoInfo[rust_srcdir] = GitRepoInfo(rust_srcdir,
-                                                             buildconfig.substs['RUSTC_COMMIT'],
-                                                             'https://github.com/rust-lang/rust/')
+        
+        rust_sha = buildconfig.substs['RUSTC_COMMIT']
+        rust_srcdir = '/rustc/' + rust_sha
+        self.srcdirs.append(rust_srcdir)
+        Dumper.srcdirRepoInfo[rust_srcdir] = GitRepoInfo(rust_srcdir,
+                                                         rust_sha,
+                                                         'https://github.com/rust-lang/rust/')
 
     
     def ShouldProcess(self, file):
