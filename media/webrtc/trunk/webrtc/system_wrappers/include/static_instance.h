@@ -13,11 +13,6 @@
 
 #include <assert.h>
 
-#if defined(WEBRTC_ANDROID)
-#define OS_LINUX
-#endif
-#include "base/singleton.h"
-
 namespace webrtc {
 
 enum CountOperation {
@@ -36,7 +31,8 @@ template <class T>
 
 static T* GetStaticInstance(CountOperation count_operation) {
   
-  return Singleton<T>::get();
+  static T instance;
+  return &instance;
 }
 
 }  
