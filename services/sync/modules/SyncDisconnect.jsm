@@ -120,6 +120,7 @@ this.SyncDisconnectInternal = {
     
     
     let Weave = this.getWeave();
+    await Weave.Service.promiseInitialized;
     await Weave.Service.startOver();
     await fxAccounts.signOut();
     
