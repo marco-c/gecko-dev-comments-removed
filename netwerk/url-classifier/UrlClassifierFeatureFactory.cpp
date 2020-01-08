@@ -18,27 +18,16 @@
 namespace mozilla {
 namespace net {
 
- void UrlClassifierFeatureFactory::Initialize() {
-  
-  if (!XRE_IsParentProcess()) {
-    return;
-  }
-
-  UrlClassifierFeatureFlash::Initialize();
-  UrlClassifierFeatureTrackingAnnotation::Initialize();
-  UrlClassifierFeatureTrackingProtection::Initialize();
-}
-
  void UrlClassifierFeatureFactory::Shutdown() {
   
   if (!XRE_IsParentProcess()) {
     return;
   }
 
-  UrlClassifierFeatureFlash::Shutdown();
+  UrlClassifierFeatureFlash::MaybeShutdown();
   UrlClassifierFeatureLoginReputation::MaybeShutdown();
-  UrlClassifierFeatureTrackingAnnotation::Shutdown();
-  UrlClassifierFeatureTrackingProtection::Shutdown();
+  UrlClassifierFeatureTrackingAnnotation::MaybeShutdown();
+  UrlClassifierFeatureTrackingProtection::MaybeShutdown();
 }
 
  void UrlClassifierFeatureFactory::GetFeaturesFromChannel(
@@ -80,6 +69,10 @@ UrlClassifierFeatureFactory::GetFeatureLoginReputation() {
 
  already_AddRefed<nsIUrlClassifierFeature>
 UrlClassifierFeatureFactory::GetFeatureByName(const nsACString& aName) {
+  if (!XRE_IsParentProcess()) {
+    return nullptr;
+  }
+
   nsCOMPtr<nsIUrlClassifierFeature> feature;
 
   
