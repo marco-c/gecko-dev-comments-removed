@@ -283,8 +283,9 @@ class AsyncGeneratorObject : public NativeObject
     peekRequest(Handle<AsyncGeneratorObject*> asyncGenObj);
 
     bool isQueueEmpty() const {
-        if (isSingleQueue())
+        if (isSingleQueue()) {
             return isSingleQueueEmpty();
+        }
         return queue()->getDenseInitializedLength() == 0;
     }
 
@@ -301,8 +302,9 @@ class AsyncGeneratorObject : public NativeObject
     
     
     void cacheRequest(AsyncGeneratorRequest* request) {
-        if (hasCachedRequest())
+        if (hasCachedRequest()) {
             return;
+        }
 
         request->clearData();
         setFixedSlot(Slot_CachedRequest, ObjectValue(*request));
