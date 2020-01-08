@@ -37,6 +37,7 @@
 #include "gc/GC.h"
 #include "irregexp/RegExpCharacters.h"
 #include "util/StringBuffer.h"
+#include "util/Unicode.h"
 #include "vm/ErrorReporting.h"
 
 using namespace js;
@@ -263,7 +264,13 @@ RegExpParser<CharT>::SyntaxError(unsigned errorNumber, ...)
 {
     ErrorMetadata err;
 
-    ts.fillExcludingContext(&err, ts.currentToken().pos.begin);
+    
+    
+    
+    uint32_t location = ts.currentToken().pos.begin;
+    if (ts.fillExceptingContext(&err, location)) {
+        ts.lineAndColumnAt(location, &err.lineNumber, &err.columnNumber);
+    }
 
     
     

@@ -670,8 +670,8 @@ MOZ_COLD void TokenStreamChars<Utf8Unit, AnyCharsAccess>::internalEncodingError(
 
     TokenStreamAnyChars& anyChars = anyCharsAccess();
 
-    bool hasLineOfContext = anyChars.fillExcludingContext(&err, offset);
-    if (hasLineOfContext) {
+    bool canAddLineOfContext = fillExceptingContext(&err, offset);
+    if (canAddLineOfContext) {
       if (!internalComputeLineOfContext(&err, offset)) {
         break;
       }
@@ -1310,7 +1310,7 @@ void TokenStreamAnyChars::computeErrorMetadataNoOffset(ErrorMetadata* err) {
   MOZ_ASSERT(err->lineOfContext == nullptr);
 }
 
-bool TokenStreamAnyChars::fillExcludingContext(ErrorMetadata* err,
+bool TokenStreamAnyChars::fillExceptingContext(ErrorMetadata* err,
                                                uint32_t offset) {
   err->isMuted = mutedErrors;
 
@@ -1328,7 +1328,6 @@ bool TokenStreamAnyChars::fillExcludingContext(ErrorMetadata* err,
 
   
   err->filename = filename_;
-  lineAndColumnAt(offset, &err->lineNumber, &err->columnNumber);
   return true;
 }
 
@@ -1488,13 +1487,13 @@ bool TokenStreamSpecific<Unit, AnyCharsAccess>::computeErrorMetadata(
   
   
   
-  
-  if (!anyCharsAccess().fillExcludingContext(err, offset)) {
-    return true;
+  if (fillExceptingContext(err, offset)) {
+    
+    return internalComputeLineOfContext(err, offset);
   }
 
   
-  return internalComputeLineOfContext(err, offset);
+  return true;
 }
 
 template <typename Unit, class AnyCharsAccess>

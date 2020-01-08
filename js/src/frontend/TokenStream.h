@@ -932,7 +932,13 @@ class TokenStreamAnyChars : public TokenStreamShared {
 
 
 
-  bool fillExcludingContext(ErrorMetadata* err, uint32_t offset);
+
+
+
+
+
+
+  bool fillExceptingContext(ErrorMetadata* err, uint32_t offset);
 
   MOZ_ALWAYS_INLINE void updateFlagsForEOL() { flags.isDirtyLine = false; }
 
@@ -1967,6 +1973,20 @@ class GeneralTokenStreamChars : public SpecializedTokenStreamCharsBase<Unit> {
     anyCharsAccess().lineAndColumnAt(offset, line, column);
   }
 
+  
+
+
+
+
+
+  MOZ_MUST_USE bool fillExceptingContext(ErrorMetadata* err, uint32_t offset) {
+    if (anyCharsAccess().fillExceptingContext(err, offset)) {
+      computeLineAndColumn(offset, &err->lineNumber, &err->columnNumber);
+      return true;
+    }
+    return false;
+  }
+
   void newSimpleToken(TokenKind kind, TokenStart start,
                       TokenStreamShared::Modifier modifier, TokenKind* out) {
     newToken(kind, start, modifier, out);
@@ -2207,6 +2227,7 @@ class TokenStreamChars<mozilla::Utf8Unit, AnyCharsAccess>
  protected:
   using GeneralCharsBase::anyCharsAccess;
   using GeneralCharsBase::computeLineAndColumn;
+  using GeneralCharsBase::fillExceptingContext;
   using GeneralCharsBase::internalComputeLineOfContext;
   using TokenStreamCharsShared::isAsciiCodePoint;
   
@@ -2419,6 +2440,7 @@ class MOZ_STACK_CLASS TokenStreamSpecific
   using CharsBase::fillCharBufferFromSourceNormalizingAsciiLineBreaks;
   using CharsBase::matchCodeUnit;
   using CharsBase::matchLineTerminator;
+  using GeneralCharsBase::fillExceptingContext;
   using GeneralCharsBase::getCodeUnit;
   using GeneralCharsBase::getFullAsciiCodePoint;
   using GeneralCharsBase::internalComputeLineOfContext;
