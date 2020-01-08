@@ -6651,6 +6651,17 @@ nsTextFrame::DrawEmphasisMarks(gfxContext* aContext,
   }
 
   bool isTextCombined = Style()->IsTextCombined();
+  if (isTextCombined && !aWM.IsVertical()) {
+    
+    
+    
+    
+    
+    
+    
+    NS_WARNING("Give up on combined text with horizontal wm");
+    return;
+  }
   nscolor color = aDecorationOverrideColor ? *aDecorationOverrideColor :
     nsLayoutUtils::GetColor(this, &nsStyleText::mTextEmphasisColor);
   aContext->SetColor(Color::FromABGR(color));
