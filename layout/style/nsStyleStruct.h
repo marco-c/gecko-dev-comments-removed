@@ -1195,22 +1195,6 @@ protected:
 };
 
 
-
-
-
-
-
-class nsStyleQuoteValues
-{
-public:
-  typedef nsTArray<std::pair<nsString, nsString>> QuotePairArray;
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(nsStyleQuoteValues);
-  QuotePairArray mQuotePairs;
-
-private:
-  ~nsStyleQuoteValues() {}
-};
-
 struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleList
 {
   explicit nsStyleList(const nsPresContext* aContext);
@@ -1223,11 +1207,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleList
   nsChangeHint CalcDifference(const nsStyleList& aNewData,
                               const nsStyleDisplay* aOldDisplay) const;
 
-  static void Shutdown()
-  {
-    sInitialQuotes = nullptr;
-  }
-
   imgRequestProxy* GetListStyleImage() const
   {
     return mListStyleImage ? mListStyleImage->get() : nullptr;
@@ -1235,25 +1214,16 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleList
 
   already_AddRefed<nsIURI> GetListStyleImageURI() const;
 
-  const nsStyleQuoteValues::QuotePairArray& GetQuotePairs() const
-  {
-    return mQuotes->mQuotePairs;
-  }
-
   uint8_t mListStylePosition;
   RefPtr<nsStyleImageRequest> mListStyleImage;
 
   mozilla::CounterStylePtr mCounterStyle;
 
 private:
-  RefPtr<nsStyleQuoteValues> mQuotes;
   nsStyleList& operator=(const nsStyleList& aOther) = delete;
 public:
+  RefPtr<RawServoQuotes> mQuotes;
   nsRect        mImageRegion;           
-
-private:
-  
-  static mozilla::StaticRefPtr<nsStyleQuoteValues> sInitialQuotes;
 };
 
 struct nsStyleGridLine

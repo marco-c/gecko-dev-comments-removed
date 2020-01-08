@@ -8302,9 +8302,6 @@ nsLayoutUtils::Shutdown()
   }
 
   nsComputedDOMStyle::UnregisterPrefChangeCallbacks();
-
-  
-  nsStyleList::Shutdown();
 }
 
 

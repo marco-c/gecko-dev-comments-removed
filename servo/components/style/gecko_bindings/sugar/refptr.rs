@@ -213,6 +213,16 @@ impl<T: RefCounted> structs::RefPtr<T> {
 impl<T> structs::RefPtr<T> {
     
     
+    pub fn set_arc<U>(&mut self, other: Arc<U>)
+    where
+        U: HasArcFFI<FFIType = T>,
+    {
+        unsafe { U::release_opt(self.mRawPtr.as_ref()); }
+        self.set_arc_leaky(other);
+    }
+
+    
+    
     pub fn set_arc_leaky<U>(&mut self, other: Arc<U>)
     where
         U: HasArcFFI<FFIType = T>,
@@ -276,11 +286,6 @@ impl_threadsafe_refcount!(
     structs::RawGeckoURLExtraData,
     bindings::Gecko_AddRefURLExtraDataArbitraryThread,
     bindings::Gecko_ReleaseURLExtraDataArbitraryThread
-);
-impl_threadsafe_refcount!(
-    structs::nsStyleQuoteValues,
-    bindings::Gecko_AddRefQuoteValuesArbitraryThread,
-    bindings::Gecko_ReleaseQuoteValuesArbitraryThread
 );
 impl_threadsafe_refcount!(
     structs::nsCSSValueSharedList,

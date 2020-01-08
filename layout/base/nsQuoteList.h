@@ -66,7 +66,7 @@ struct nsQuoteNode : public nsGenConNode {
   }
 
   
-  const nsString* Text();
+  nsString Text();
 };
 
 class nsQuoteList : public nsGenConList {
