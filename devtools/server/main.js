@@ -878,6 +878,7 @@ var DebuggerServer = {
       const trackMessageManager = () => {
         frame.addEventListener("DevTools:BrowserSwap", onBrowserSwap);
         mm.addMessageListener("debug:setup-in-parent", onSetupInParent);
+        mm.addMessageListener("debug:spawn-actor-in-parent", onSpawnActorInParent);
         if (!actor) {
           mm.addMessageListener("debug:actor", onActorCreated);
         }
@@ -887,6 +888,7 @@ var DebuggerServer = {
       const untrackMessageManager = () => {
         frame.removeEventListener("DevTools:BrowserSwap", onBrowserSwap);
         mm.removeMessageListener("debug:setup-in-parent", onSetupInParent);
+        mm.removeMessageListener("debug:spawn-actor-in-parent", onSpawnActorInParent);
         if (!actor) {
           mm.removeMessageListener("debug:actor", onActorCreated);
         }
@@ -932,6 +934,53 @@ var DebuggerServer = {
         }
       };
 
+      const onSpawnActorInParent = function(msg) {
+        
+        
+        if (msg.json.prefix != connPrefix) {
+          return;
+        }
+
+        const { module, constructor, args, spawnedByActorID } = msg.json;
+        let m;
+
+        try {
+          m = require(module);
+
+          if (!(constructor in m)) {
+            dump(`ERROR: module '${module}' does not export '${constructor}'`);
+            return;
+          }
+
+          const Constructor = m[constructor];
+          
+          
+          
+          const instance = new Constructor(connection, ...args, mm);
+          instance.conn = connection;
+          instance.parentID = spawnedByActorID;
+
+          
+          
+          
+          const contentPrefix = spawnedByActorID.replace(connection.prefix, "")
+                                                .replace("/", "-");
+          instance.actorID = connection.allocID(contentPrefix + "/" + instance.typeName);
+          connection.addActor(instance);
+
+          mm.sendAsyncMessage("debug:spawn-actor-in-parent:actor", {
+            prefix: connPrefix,
+            actorID: instance.actorID
+          });
+        } catch (e) {
+          const errorMessage =
+            "Exception during actor module setup running in the parent process: ";
+          DevToolsUtils.reportException(errorMessage + e + "\n" + e.stack);
+          dumpn(`ERROR: ${errorMessage}\n\t module: '${module}'\n\t ` +
+                `constructor: '${constructor}'\n${DevToolsUtils.safeErrorString(e)}`);
+        }
+      };
+
       const onActorCreated = DevToolsUtils.makeInfallible(function(msg) {
         if (msg.json.prefix != prefix) {
           return;
@@ -941,6 +990,8 @@ var DebuggerServer = {
         
         childTransport = new ChildDebuggerTransport(mm, prefix);
         childTransport.hooks = {
+          
+          
           onPacket: connection.send.bind(connection),
           onClosed() {}
         };
@@ -1340,6 +1391,7 @@ function DebuggerServerConnection(prefix, transport) {
 
   this._forwardingPrefixes = new Map();
 }
+exports.DebuggerServerConnection = DebuggerServerConnection;
 
 DebuggerServerConnection.prototype = {
   _prefix: null,
@@ -1809,4 +1861,49 @@ DebuggerServerConnection.prototype = {
       setupParent: setupParent
     });
   },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  spawnActorInParentProcess(spawnedByActorID, { module, constructor, args }) {
+    if (!this.parentMessageManager) {
+      return null;
+    }
+
+    const { addMessageListener, removeMessageListener, sendAsyncMessage } =
+      this.parentMessageManager;
+
+    const onResponse = new Promise(done => {
+      const listener = msg => {
+        if (msg.json.prefix != this.prefix) {
+          return;
+        }
+        removeMessageListener("debug:spawn-actor-in-parent:actor", listener);
+        done(msg.json.actorID);
+      };
+      addMessageListener("debug:spawn-actor-in-parent:actor", listener);
+    });
+
+    sendAsyncMessage("debug:spawn-actor-in-parent", {
+      prefix: this.prefix,
+      module,
+      constructor,
+      args,
+      spawnedByActorID,
+    });
+
+    return onResponse;
+  }
 };
