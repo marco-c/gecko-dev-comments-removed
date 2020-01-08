@@ -331,6 +331,7 @@ public:
   void LoadURL(nsIURI* aURI);
 
   void InitRenderFrame();
+  void MaybeShowFrame();
 
   
   
@@ -551,10 +552,6 @@ public:
   virtual bool
   DeallocPPaymentRequestParent(PPaymentRequestParent* aActor) override;
 
-  void SetInitedByParent() { mInitedByParent = true; }
-
-  bool IsInitedByParent() const { return mInitedByParent; }
-
   bool SendLoadRemoteScript(const nsString& aURL,
                             const bool& aRunInGlobalScope);
 
@@ -578,11 +575,6 @@ public:
                              LayoutDeviceIntRect* aDragRect);
 
   layout::RenderFrameParent* GetRenderFrame();
-
-  bool SetRenderFrame();
-  bool GetRenderFrameInfo(TextureFactoryIdentifier* aTextureFactoryIdentifier,
-                          layers::LayersId* aLayersId,
-                          CompositorOptions* aCompositorOptions);
 
   mozilla::ipc::IPCResult RecvEnsureLayersConnected(CompositorOptions* aCompositorOptions) override;
 
@@ -617,8 +609,6 @@ protected:
 
   Element* mFrameElement;
   nsCOMPtr<nsIBrowserDOMWindow> mBrowserDOMWindow;
-
-  virtual mozilla::ipc::IPCResult RecvCreatePRenderFrame() override;
 
   virtual mozilla::ipc::IPCResult RecvDestroyPRenderFrame() override;
 
@@ -696,10 +686,6 @@ private:
   bool mDragValid;
   LayoutDeviceIntRect mDragRect;
   nsCString mDragPrincipalURISpec;
-
-  
-  
-  bool mInitedByParent;
 
   nsCOMPtr<nsILoadContext> mLoadContext;
 
