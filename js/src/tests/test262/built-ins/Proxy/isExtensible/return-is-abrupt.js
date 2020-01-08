@@ -13,6 +13,7 @@
 
 
 
+
 var p = new Proxy({}, {
   isExtensible: function(t) {
     throw new Test262Error();

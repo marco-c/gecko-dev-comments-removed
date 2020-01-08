@@ -11,6 +11,7 @@
 
 
 
+
 var o = {};
 assert.sameValue(
   Reflect.getPrototypeOf(o), Object.prototype,

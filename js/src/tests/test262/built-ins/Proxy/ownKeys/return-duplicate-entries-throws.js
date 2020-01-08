@@ -11,8 +11,9 @@
 
 
 
+
 var p = new Proxy({}, {
-  ownKeys() {
+  ownKeys: function() {
     return ["a", "a"];
   }
 });

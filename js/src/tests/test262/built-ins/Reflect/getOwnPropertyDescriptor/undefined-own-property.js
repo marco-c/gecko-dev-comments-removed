@@ -17,6 +17,7 @@
 
 
 
+
 var o = Object.create({
   p: 1
 });

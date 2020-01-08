@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Object.hasOwnProperty.call(Proxy, 'prototype'), false);
+
+reportCompare(0, 0);

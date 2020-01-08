@@ -12,6 +12,7 @@
 
 
 
+
 verifyNotEnumerable(Reflect, 'preventExtensions');
 verifyWritable(Reflect, 'preventExtensions');
 verifyConfigurable(Reflect, 'preventExtensions');

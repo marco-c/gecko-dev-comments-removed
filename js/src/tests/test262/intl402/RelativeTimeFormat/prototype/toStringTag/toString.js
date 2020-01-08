@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Object.prototype.toString.call(Intl.RelativeTimeFormat.prototype), "[object Intl.RelativeTimeFormat]");
+assert.sameValue(Object.prototype.toString.call(new Intl.RelativeTimeFormat("en")), "[object Intl.RelativeTimeFormat]");
+
+reportCompare(0, 0);

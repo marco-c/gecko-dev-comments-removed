@@ -11,6 +11,7 @@
 
 
 
+
 assert.throws(TypeError, function() {
   Reflect.has(1, 'p');
 });

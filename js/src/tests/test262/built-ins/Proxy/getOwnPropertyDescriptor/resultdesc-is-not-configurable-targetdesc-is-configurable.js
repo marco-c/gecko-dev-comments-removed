@@ -16,6 +16,7 @@
 
 
 
+
 var target = {
   bar: 1
 };

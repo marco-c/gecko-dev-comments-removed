@@ -12,6 +12,7 @@
 
 
 
+
 verifyNotEnumerable(Reflect, 'deleteProperty');
 verifyWritable(Reflect, 'deleteProperty');
 verifyConfigurable(Reflect, 'deleteProperty');

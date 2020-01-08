@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+var target = {};
+var p = new Proxy(target, {});
+
+assert.sameValue(Reflect.preventExtensions(p), true);
+
+reportCompare(0, 0);

@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+        function fun() {
+            test262unresolvable = null;
+            assert.sameValue(test262unresolvable, null);
+            "use strict";
+        }
+        fun();
+
+reportCompare(0, 0);

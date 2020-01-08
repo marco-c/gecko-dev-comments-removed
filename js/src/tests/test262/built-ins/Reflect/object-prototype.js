@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  Object.getPrototypeOf(Reflect),
+  Object.prototype,
+  '`Object.getPrototypeOf(Reflect)` returns `Object.prototype`'
+);
+
+reportCompare(0, 0);

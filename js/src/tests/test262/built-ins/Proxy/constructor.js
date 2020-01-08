@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Proxy, "function", "`typeof Proxy` is `'function'`");
+
+reportCompare(0, 0);

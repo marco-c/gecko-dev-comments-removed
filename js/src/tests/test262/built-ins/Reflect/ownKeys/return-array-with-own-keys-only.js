@@ -14,6 +14,7 @@
 
 
 
+
 var proto = {
   foo: 1
 };

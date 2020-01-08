@@ -12,6 +12,7 @@
 
 
 
+
 assert.sameValue(
   Reflect.getOwnPropertyDescriptor.name, 'getOwnPropertyDescriptor',
   'The value of `Reflect.getOwnPropertyDescriptor.name` is `"getOwnPropertyDescriptor"`'

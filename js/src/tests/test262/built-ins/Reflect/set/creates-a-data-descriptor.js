@@ -43,6 +43,7 @@
 
 
 
+
 var o1 = {};
 var result = Reflect.set(o1, 'p', 42);
 assert.sameValue(result, true, 'returns true on a successful setting');

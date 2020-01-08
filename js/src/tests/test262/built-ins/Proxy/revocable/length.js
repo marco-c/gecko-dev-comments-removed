@@ -22,6 +22,7 @@
 
 
 
+
 assert.sameValue(Proxy.revocable.length, 2);
 
 verifyNotEnumerable(Proxy.revocable, "length");

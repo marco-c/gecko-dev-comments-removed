@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  Reflect.apply.length, 3,
+  'The value of `Reflect.apply.length` is `3`'
+);
+
+verifyNotEnumerable(Reflect.apply, 'length');
+verifyNotWritable(Reflect.apply, 'length');
+verifyConfigurable(Reflect.apply, 'length');
+
+reportCompare(0, 0);

@@ -23,8 +23,9 @@
 
 
 
+
 var p = new Proxy({}, {
-  ownKeys() {
+  ownKeys: function() {
     return [{}];
   }
 });

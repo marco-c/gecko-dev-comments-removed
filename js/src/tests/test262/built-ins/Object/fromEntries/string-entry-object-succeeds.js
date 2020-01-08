@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+var result = Object.fromEntries([Object('ab')]);
+assert.sameValue(result['a'], 'b');
+
+reportCompare(0, 0);
