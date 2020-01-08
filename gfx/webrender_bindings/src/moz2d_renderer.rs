@@ -1,11 +1,3 @@
-#![deny(missing_docs)]
-
-
-
-
-
-
-
 use webrender::api::*;
 use bindings::{ByteSlice, MutByteSlice, wr_moz2d_render_cb, ArcVecU8};
 use rayon::ThreadPool;
@@ -30,107 +22,74 @@ use foreign_types::ForeignType;
 #[cfg(not(any(target_os = "macos", target_os = "windows")))]
 use std::ffi::CString;
 
-
 macro_rules! dlog {
     ($($e:expr),*) => { {$(let _ = $e;)*} }
     
 }
 
-
-fn dump_bounds(blob: &[u8], dirty_rect: Box2d) {
-    let mut index = BlobReader::new(blob);
-    while index.reader.has_more() {
-        let e = index.read_entry();
-        dlog!("  {:?} {}", e.bounds,
-                 if e.bounds.contained_by(&dirty_rect) {
-                    "*"
-                 } else {
-                    ""
-                 }
-        );
-    }
-}
-
-
-fn dump_index(blob: &[u8]) -> () {
-    let mut index = BlobReader::new(blob);
-    
-    
-    
-    while index.reader.has_more() {
-        let e = index.read_entry();
-        dlog!("result bounds: {} {} {:?}", e.end, e.extra_end, e.bounds);
-    }
-}
-
-
-
-
 pub struct Moz2dBlobImageHandler {
     workers: Arc<ThreadPool>,
-    blob_commands: HashMap<ImageKey, BlobCommand>,
+    blob_commands: HashMap<ImageKey, (Arc<BlobImageData>, Option<TileSize>)>,
 }
 
+fn option_to_nullable<T>(option: &Option<T>) -> *const T {
+    match option {
+        &Some(ref x) => { x as *const T }
+        &None => { ptr::null() }
+    }
+}
 
+fn to_usize(slice: &[u8]) -> usize {
+    convert_from_bytes(slice)
+}
 
-
-
-unsafe fn convert_from_bytes<T>(slice: &[u8]) -> T {
+fn convert_from_bytes<T>(slice: &[u8]) -> T {
     assert!(mem::size_of::<T>() <= slice.len());
-    ptr::read(slice.as_ptr() as *const T)
+    let mut ret: T;
+    unsafe {
+        ret = mem::uninitialized();
+        ptr::copy_nonoverlapping(slice.as_ptr(),
+                                 &mut ret as *mut T as *mut u8,
+                                 mem::size_of::<T>());
+    }
+    ret
 }
 
+use std::slice;
 
 fn convert_to_bytes<T>(x: &T) -> &[u8] {
     unsafe {
         let ip: *const T = x;
         let bp: *const u8 = ip as * const _;
-        ::std::slice::from_raw_parts(bp, mem::size_of::<T>())
+        slice::from_raw_parts(bp, mem::size_of::<T>())
     }
 }
 
 
 struct BufReader<'a> {
-    
     buf: &'a[u8],
-    
     pos: usize,
 }
 
 impl<'a> BufReader<'a> {
-    
     fn new(buf: &'a[u8]) -> BufReader<'a> {
         BufReader { buf: buf, pos: 0 }
     }
 
-    
-    
-    
-    
-    
-    
-    unsafe fn read<T>(&mut self) -> T {
+    fn read<T>(&mut self) -> T {
         let ret = convert_from_bytes(&self.buf[self.pos..]);
         self.pos += mem::size_of::<T>();
         ret
     }
 
-    
     fn read_blob_font(&mut self) -> BlobFont {
-        unsafe { self.read::<BlobFont>() }
+        self.read()
     }
 
-    
     fn read_usize(&mut self) -> usize {
-        unsafe { self.read::<usize>() }
+        self.read()
     }
 
-    
-    fn read_box(&mut self) -> Box2d {
-        unsafe { self.read::<Box2d>() }
-    }
-
-    
     fn has_more(&self) -> bool {
         self.pos < self.buf.len()
     }
@@ -163,42 +122,32 @@ impl<'a> BufReader<'a> {
 
 
 
+
 struct BlobReader<'a> {
-    
     reader: BufReader<'a>,
-    
     begin: usize,
 }
 
-
-
-
 struct Entry {
-    
     bounds: Box2d,
-    
     begin: usize,
-    
     end: usize,
-    
     extra_end: usize,
 }
 
 impl<'a> BlobReader<'a> {
-    
     fn new(buf: &'a[u8]) -> BlobReader<'a> {
         
         let index_offset_pos = buf.len()-mem::size_of::<usize>();
-        let index_offset = unsafe { convert_from_bytes::<usize>(&buf[index_offset_pos..]) };
+        let index_offset = to_usize(&buf[index_offset_pos..]);
 
         BlobReader { reader: BufReader::new(&buf[index_offset..index_offset_pos]), begin: 0 }
     }
 
-    
     fn read_entry(&mut self) -> Entry {
-        let end = self.reader.read_usize();
-        let extra_end = self.reader.read_usize();
-        let bounds = self.reader.read_box();
+        let end = self.reader.read();
+        let extra_end = self.reader.read();
+        let bounds = self.reader.read();
         let ret = Entry { begin: self.begin, end, extra_end, bounds };
         self.begin = extra_end;
         ret
@@ -207,21 +156,16 @@ impl<'a> BlobReader<'a> {
 
 
 
-
 struct BlobWriter {
-    
     data: Vec<u8>,
-    
     index: Vec<u8>
 }
 
 impl BlobWriter {
-    
     fn new() -> BlobWriter {
         BlobWriter { data: Vec::new(), index: Vec::new() }
     }
 
-    
     fn new_entry(&mut self, extra_size: usize, bounds: Box2d, data: &[u8]) {
         self.data.extend_from_slice(data);
         
@@ -236,7 +180,6 @@ impl BlobWriter {
         self.index.extend_from_slice(convert_to_bytes(&bounds.y2));
     }
 
-    
     fn finish(mut self) -> Vec<u8> {
         
         
@@ -247,22 +190,17 @@ impl BlobWriter {
     }
 }
 
-#[derive(Debug, Eq, PartialEq, Clone, Copy, Ord, PartialOrd)]
-#[repr(C)]
 
+
+#[derive(Debug, Eq, PartialEq, Clone, Copy, Ord, PartialOrd)]
 struct Box2d {
-    
     x1: u32,
-    
     y1: u32,
-    
     x2: u32,
-    
     y2: u32
 }
 
 impl Box2d {
-    
     fn contained_by(&self, other: &Box2d) -> bool {
         self.x1 >= other.x1 &&
         self.x2 <= other.x2 &&
@@ -277,36 +215,52 @@ impl From<DeviceUintRect> for Box2d {
     }
 }
 
+fn dump_blob_index(blob: &[u8], dirty_rect: Box2d) {
+    let mut index = BlobReader::new(blob);
+    while index.reader.has_more() {
+        let e = index.read_entry();
+        dlog!("  {:?} {}", e.bounds,
+                 if e.bounds.contained_by(&dirty_rect) {
+                    "*"
+                 } else {
+                    ""
+                 }
+        );
+    }
+}
 
-
-
+fn check_result(result: &[u8]) -> () {
+    let mut index = BlobReader::new(result);
+    
+    
+    
+    while index.reader.has_more() {
+        let e = index.read_entry();
+        dlog!("result bounds: {} {} {:?}", e.end, e.extra_end, e.bounds);
+    }
+}
 
 
 
 
 
 struct CachedReader<'a> {
-    
     reader: BlobReader<'a>,
-    
     cache: BTreeMap<(Box2d, u32), Entry>,
-    
     cache_index_counter: u32
 }
 
 impl<'a> CachedReader<'a> {
-    
-    pub fn new(buf: &'a[u8]) -> CachedReader {
-        CachedReader{ reader: BlobReader::new(buf), cache: BTreeMap::new(), cache_index_counter: 0 }
+    fn new(buf: &'a[u8]) -> CachedReader {
+        CachedReader{reader:BlobReader::new(buf), cache: BTreeMap::new(), cache_index_counter: 0 }
     }
 
-    
     fn take_entry_with_bounds_from_cache(&mut self, bounds: &Box2d) -> Option<Entry> {
         if self.cache.is_empty() {
             return None;
         }
 
-        let key_to_delete = match self.cache.range((Included((*bounds, 0u32)), Included((*bounds, std::u32::MAX)))).next() {
+        let key_to_delete = match self.cache. range((Included((*bounds, 0u32)), Included((*bounds, std::u32::MAX)))).next() {
             Some((&key, _)) => key,
             None => return None,
         };
@@ -314,17 +268,12 @@ impl<'a> CachedReader<'a> {
         Some(self.cache.remove(&key_to_delete).expect("We just got this key from range, it needs to be present"))
     }
 
-    
-    
-    
-    
-    pub fn next_entry_with_bounds(&mut self, bounds: &Box2d, ignore_rect: &Box2d) -> Entry {
+    fn next_entry_with_bounds(&mut self, bounds: &Box2d, ignore_rect: &Box2d) -> Entry {
         if let Some(entry) = self.take_entry_with_bounds_from_cache(bounds) {
             return entry;
         }
 
         loop {
-            
             let old = self.reader.read_entry();
             if old.bounds == *bounds {
                 return old;
@@ -343,43 +292,14 @@ impl<'a> CachedReader<'a> {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 fn merge_blob_images(old_buf: &[u8], new_buf: &[u8], dirty_rect: Box2d) -> Vec<u8> {
 
     let mut result = BlobWriter::new();
     dlog!("dirty rect: {:?}", dirty_rect);
     dlog!("old:");
-    dump_bounds(old_buf, dirty_rect);
+    dump_blob_index(old_buf, dirty_rect);
     dlog!("new:");
-    dump_bounds(new_buf, dirty_rect);
+    dump_blob_index(new_buf, dirty_rect);
 
     let mut old_reader = CachedReader::new(old_buf);
     let mut new_reader = BlobReader::new(new_buf);
@@ -400,12 +320,6 @@ fn merge_blob_images(old_buf: &[u8], new_buf: &[u8], dirty_rect: Box2d) -> Vec<u
     }
 
     
-    
-    
-    
-    
-
-    
     while old_reader.reader.reader.has_more() {
         let old = old_reader.reader.read_entry();
         dlog!("new bounds: {} {} {:?}", old.end, old.extra_end, old.bounds);
@@ -415,41 +329,24 @@ fn merge_blob_images(old_buf: &[u8], new_buf: &[u8], dirty_rect: Box2d) -> Vec<u
     assert!(old_reader.cache.is_empty());
 
     let result = result.finish();
-    dump_index(&result);
+    check_result(&result);
     result
 }
 
-
 #[repr(C)]
 struct BlobFont {
-    
     font_instance_key: FontInstanceKey,
-    
     scaled_font_ptr: u64,
 }
 
-
-#[derive(Clone)]
-struct BlobCommand {
-    
-    data: Arc<BlobImageData>,
-    
-    tile_size: Option<TileSize>,
-}
-
-
 struct Moz2dBlobRasterizer {
-    
     workers: Arc<ThreadPool>,
-    
-    blob_commands: HashMap<ImageKey, BlobCommand>,
+    blob_commands: HashMap<ImageKey, (Arc<BlobImageData>, Option<TileSize>)>,
 }
 
 impl AsyncBlobImageRasterizer for Moz2dBlobRasterizer {
 
-    fn rasterize(&mut self, requests: &[BlobImageParams]) -> Vec<(BlobImageRequest, BlobImageResult)> {
-        
-
+    fn rasterize(&mut self, requests: &[BlobImageParams], _low_priority: bool) -> Vec<(BlobImageRequest, BlobImageResult)> {
         struct Job {
             request: BlobImageRequest,
             descriptor: BlobImageDescriptor,
@@ -459,18 +356,18 @@ impl AsyncBlobImageRasterizer for Moz2dBlobRasterizer {
         }
 
         let requests: Vec<Job> = requests.into_iter().map(|params| {
-            let command = &self.blob_commands[&params.request.key];
-            let blob = Arc::clone(&command.data);
+            let commands = &self.blob_commands[&params.request.key];
+            let blob = Arc::clone(&commands.0);
             Job {
                 request: params.request,
                 descriptor: params.descriptor,
                 commands: blob,
                 dirty_rect: params.dirty_rect,
-                tile_size: command.tile_size,
+                tile_size: commands.1,
             }
         }).collect();
 
-        self.workers.install(|| {
+        self.workers.install(||{
             requests.into_par_iter().map(|item| {
                 let descriptor = item.descriptor;
                 let buf_size = (descriptor.size.width
@@ -485,9 +382,9 @@ impl AsyncBlobImageRasterizer for Moz2dBlobRasterizer {
                         descriptor.size.width,
                         descriptor.size.height,
                         descriptor.format,
-                        item.tile_size.as_ref(),
-                        item.request.tile.as_ref(),
-                        item.dirty_rect.as_ref(),
+                        option_to_nullable(&item.tile_size),
+                        option_to_nullable(&item.request.tile),
+                        option_to_nullable(&item.dirty_rect),
                         MutByteSlice::new(output.as_mut_slice()),
                     ) {
                         Ok(RasterizedBlobImage {
@@ -511,19 +408,19 @@ impl AsyncBlobImageRasterizer for Moz2dBlobRasterizer {
 }
 
 impl BlobImageHandler for Moz2dBlobImageHandler {
-    fn add(&mut self, key: ImageKey, data: Arc<BlobImageData>, tile_size: Option<TileSize>) {
+    fn add(&mut self, key: ImageKey, data: Arc<BlobImageData>, tiling: Option<TileSize>) {
         {
             let index = BlobReader::new(&data);
             assert!(index.reader.has_more());
         }
-        self.blob_commands.insert(key, BlobCommand { data: Arc::clone(&data), tile_size });
+        self.blob_commands.insert(key, (Arc::clone(&data), tiling));
     }
 
     fn update(&mut self, key: ImageKey, data: Arc<BlobImageData>, dirty_rect: Option<DeviceUintRect>) {
         match self.blob_commands.entry(key) {
             hash_map::Entry::Occupied(mut e) => {
-                let command = e.get_mut();
-                command.data = Arc::new(merge_blob_images(&command.data, &data,
+                let old_data = &mut e.get_mut().0;
+                *old_data = Arc::new(merge_blob_images(&old_data, &data,
                                                        dirty_rect.unwrap().into()));
             }
             _ => { panic!("missing image key"); }
@@ -560,7 +457,7 @@ impl BlobImageHandler for Moz2dBlobImageHandler {
     ) {
         for params in requests {
             let commands = &self.blob_commands[&params.request.key];
-            let blob = Arc::clone(&commands.data);
+            let blob = Arc::clone(&commands.0);
             self.prepare_request(&blob, resources);
         }
     }
@@ -577,8 +474,8 @@ extern "C" {
         instance_key: WrFontInstanceKey,
         font_key: WrFontKey,
         size: f32,
-        options: Option<&FontInstanceOptions>,
-        platform_options: Option<&FontInstancePlatformOptions>,
+        options: *const FontInstanceOptions,
+        platform_options: *const FontInstancePlatformOptions,
         variations: *const FontVariation,
         num_variations: usize,
     );
@@ -587,7 +484,6 @@ extern "C" {
 }
 
 impl Moz2dBlobImageHandler {
-    
     pub fn new(workers: Arc<ThreadPool>) -> Self {
         Moz2dBlobImageHandler {
             blob_commands: HashMap::new(),
@@ -595,9 +491,6 @@ impl Moz2dBlobImageHandler {
         }
     }
 
-    
-    
-    
     fn prepare_request(&self, blob: &[u8], resources: &BlobImageResources) {
         #[cfg(target_os = "windows")]
         fn process_native_font_handle(key: FontKey, handle: &NativeFontHandle) {
@@ -649,8 +542,8 @@ impl Moz2dBlobImageHandler {
                             font.font_instance_key,
                             instance.font_key,
                             instance.size.to_f32_px(),
-                            instance.options.as_ref(),
-                            instance.platform_options.as_ref(),
+                            option_to_nullable(&instance.options),
+                            option_to_nullable(&instance.platform_options),
                             instance.variations.as_ptr(),
                             instance.variations.len(),
                         );
