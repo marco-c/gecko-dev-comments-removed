@@ -133,7 +133,6 @@ public:
   bool    mOnlySystemGroupDispatchInContent : 1;
   
   
-  
   bool mHandledByAPZ : 1;
   
   
