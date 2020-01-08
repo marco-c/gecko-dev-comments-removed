@@ -301,6 +301,10 @@ public:
   nsresult
   EnsureTemporaryStorageIsInitialized();
 
+  nsresult
+  EnsureOriginDirectory(nsIFile* aDirectory,
+                        bool* aCreated);
+
   void
   OriginClearCompleted(PersistenceType aPersistenceType,
                        const nsACString& aOrigin);
@@ -522,6 +526,9 @@ private:
   DirectoryLockTable&
   GetDirectoryLockTable(PersistenceType aPersistenceType);
 
+  bool
+  IsSanitizedOriginValid(const nsACString& aSanitizedOrigin);
+
   static void
   ShutdownTimerCallback(nsITimer* aTimer, void* aClosure);
 
@@ -548,6 +555,11 @@ private:
   
   
   nsTArray<nsCString> mInitializedOrigins;
+
+  
+  
+  
+  nsDataHashtable<nsCStringHashKey, bool> mValidOrigins;
 
   
   
