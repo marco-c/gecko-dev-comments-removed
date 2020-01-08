@@ -28,33 +28,25 @@ class FlexItemSizingProperties extends PureComponent {
 
 
 
-  getRoundedDimension(value) {
+
+
+
+  renderSize(value, prependPlusSign) {
     if (value == 0) {
-      return "0";
-    }
-    return (Math.round(value * 100) / 100) + "px";
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  getFlexibilityValueString(grew, mainDeltaSize) {
-    const value = this.getRoundedDimension(mainDeltaSize);
-
-    if (grew) {
-      return "+" + value;
+      return dom.span({ className: "value" }, "0");
     }
 
-    return value;
+    value = (Math.round(value * 100) / 100);
+    if (prependPlusSign && value > 0) {
+      value = "+" + value;
+    }
+
+    return (
+      dom.span({ className: "value" },
+        value,
+        dom.span({ className: "unit" }, "px")
+      )
+    );
   }
 
   
@@ -70,14 +62,7 @@ class FlexItemSizingProperties extends PureComponent {
 
 
   renderCssProperty(name, value, isDefaultValue) {
-    return (
-      dom.span({ className: "css-property-link" },
-        dom.span({ className: "theme-fg-color5" }, name),
-        ": ",
-        dom.span({ className: "theme-fg-color1" }, value),
-        ";"
-      )
-    );
+    return dom.span({ className: "css-property-link" }, `(${name}: ${value})`);
   }
 
   
@@ -120,12 +105,10 @@ class FlexItemSizingProperties extends PureComponent {
     return (
       dom.li({ className: className + (property ? "" : " no-property") },
         dom.span({ className: "name" },
-          getStr("flexbox.itemSizing.baseSizeSectionHeader")
+          getStr("flexbox.itemSizing.baseSizeSectionHeader"),
+          property
         ),
-        dom.span({ className: "value theme-fg-color1" },
-          this.getRoundedDimension(mainBaseSize)
-        ),
-        property,
+        this.renderSize(mainBaseSize),
         reason
       )
     );
@@ -216,12 +199,10 @@ class FlexItemSizingProperties extends PureComponent {
     return (
       dom.li({ className: className + (property ? "" : " no-property") },
         dom.span({ className: "name" },
-          getStr("flexbox.itemSizing.flexibilitySectionHeader")
+          getStr("flexbox.itemSizing.flexibilitySectionHeader"),
+          property
         ),
-        dom.span({ className: "value theme-fg-color1" },
-          this.getFlexibilityValueString(grew, mainDeltaSize)
-        ),
-        property,
+        this.renderSize(mainDeltaSize, true),
         this.renderReasons(reasons)
       )
     );
@@ -239,12 +220,10 @@ class FlexItemSizingProperties extends PureComponent {
     return (
       dom.li({ className: "section min" },
         dom.span({ className: "name" },
-          getStr("flexbox.itemSizing.minSizeSectionHeader")
+          getStr("flexbox.itemSizing.minSizeSectionHeader"),
+          this.renderCssProperty(`min-${dimension}`, minDimensionValue)
         ),
-        dom.span({ className: "value theme-fg-color1" },
-          this.getRoundedDimension(mainMinSize)
-        ),
-        this.renderCssProperty(`min-${dimension}`, minDimensionValue)
+        this.renderSize(mainMinSize)
       )
     );
   }
@@ -259,12 +238,10 @@ class FlexItemSizingProperties extends PureComponent {
     return (
       dom.li({ className: "section max" },
         dom.span({ className: "name" },
-          getStr("flexbox.itemSizing.maxSizeSectionHeader")
+          getStr("flexbox.itemSizing.maxSizeSectionHeader"),
+          this.renderCssProperty(`max-${dimension}`, maxDimensionValue)
         ),
-        dom.span({ className: "value theme-fg-color1" },
-          this.getRoundedDimension(mainMaxSize)
-        ),
-        this.renderCssProperty(`max-${dimension}`, maxDimensionValue)
+        this.renderSize(mainMaxSize)
       )
     );
   }
@@ -275,9 +252,7 @@ class FlexItemSizingProperties extends PureComponent {
         dom.span({ className: "name" },
           getStr("flexbox.itemSizing.finalSizeSectionHeader")
         ),
-        dom.span({ className: "value theme-fg-color1" },
-          this.getRoundedDimension(mainFinalSize)
-        )
+        this.renderSize(mainFinalSize)
       )
     );
   }
