@@ -31,8 +31,8 @@
 #ifndef AOM_AOM_H_
 #define AOM_AOM_H_
 
-#include "./aom_codec.h"
-#include "./aom_image.h"
+#include "aom/aom_codec.h"
+#include "aom/aom_image.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -63,6 +63,8 @@ enum aom_com_control_id {
   AOM_COMMON_CTRL_ID_MAX,
 
   AV1_GET_NEW_FRAME_IMAGE = 192, 
+  AV1_COPY_NEW_FRAME_IMAGE =
+      193, 
 
   AOM_DECODER_CTRL_ID_START = 256
 };
@@ -104,8 +106,9 @@ typedef struct aom_postproc_cfg {
 
 
 typedef struct av1_ref_frame {
-  int idx;         
-  aom_image_t img; 
+  int idx;              
+  int use_external_ref; 
+  aom_image_t img;      
 } av1_ref_frame_t;
 
 
@@ -131,6 +134,8 @@ AOM_CTRL_USE_TYPE(AV1_COPY_REFERENCE, av1_ref_frame_t *)
 #define AOM_CTRL_AV1_COPY_REFERENCE
 AOM_CTRL_USE_TYPE(AV1_GET_NEW_FRAME_IMAGE, aom_image_t *)
 #define AOM_CTRL_AV1_GET_NEW_FRAME_IMAGE
+AOM_CTRL_USE_TYPE(AV1_COPY_NEW_FRAME_IMAGE, aom_image_t *)
+#define AOM_CTRL_AV1_COPY_NEW_FRAME_IMAGE
 
 
 

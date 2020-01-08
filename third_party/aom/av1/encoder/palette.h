@@ -20,22 +20,22 @@ extern "C" {
 
 #define AV1_K_MEANS_RENAME(func, dim) func##_dim##dim
 
-void AV1_K_MEANS_RENAME(av1_calc_indices, 1)(const float *data,
-                                             const float *centroids,
+void AV1_K_MEANS_RENAME(av1_calc_indices, 1)(const int *data,
+                                             const int *centroids,
                                              uint8_t *indices, int n, int k);
-void AV1_K_MEANS_RENAME(av1_calc_indices, 2)(const float *data,
-                                             const float *centroids,
+void AV1_K_MEANS_RENAME(av1_calc_indices, 2)(const int *data,
+                                             const int *centroids,
                                              uint8_t *indices, int n, int k);
-void AV1_K_MEANS_RENAME(av1_k_means, 1)(const float *data, float *centroids,
+void AV1_K_MEANS_RENAME(av1_k_means, 1)(const int *data, int *centroids,
                                         uint8_t *indices, int n, int k,
                                         int max_itr);
-void AV1_K_MEANS_RENAME(av1_k_means, 2)(const float *data, float *centroids,
+void AV1_K_MEANS_RENAME(av1_k_means, 2)(const int *data, int *centroids,
                                         uint8_t *indices, int n, int k,
                                         int max_itr);
 
 
 
-static INLINE void av1_calc_indices(const float *data, const float *centroids,
+static INLINE void av1_calc_indices(const int *data, const int *centroids,
                                     uint8_t *indices, int n, int k, int dim) {
   if (dim == 1) {
     AV1_K_MEANS_RENAME(av1_calc_indices, 1)(data, centroids, indices, n, k);
@@ -50,7 +50,7 @@ static INLINE void av1_calc_indices(const float *data, const float *centroids,
 
 
 
-static INLINE void av1_k_means(const float *data, float *centroids,
+static INLINE void av1_k_means(const int *data, int *centroids,
                                uint8_t *indices, int n, int k, int dim,
                                int max_itr) {
   if (dim == 1) {
@@ -66,9 +66,8 @@ static INLINE void av1_k_means(const float *data, float *centroids,
 
 
 
-int av1_remove_duplicates(float *centroids, int num_centroids);
+int av1_remove_duplicates(int *centroids, int num_centroids);
 
-#if CONFIG_PALETTE_DELTA_ENCODING
 
 
 
@@ -80,20 +79,14 @@ int av1_index_color_cache(const uint16_t *color_cache, int n_cache,
 
 int av1_get_palette_delta_bits_v(const PALETTE_MODE_INFO *const pmi,
                                  int bit_depth, int *zero_count, int *min_bits);
-#endif  
 
 
 int av1_palette_color_cost_y(const PALETTE_MODE_INFO *const pmi,
-#if CONFIG_PALETTE_DELTA_ENCODING
-                             uint16_t *color_cache, int n_cache,
-#endif  
-                             int bit_depth);
+                             uint16_t *color_cache, int n_cache, int bit_depth);
 
 
 int av1_palette_color_cost_uv(const PALETTE_MODE_INFO *const pmi,
-#if CONFIG_PALETTE_DELTA_ENCODING
                               uint16_t *color_cache, int n_cache,
-#endif  
                               int bit_depth);
 
 #ifdef __cplusplus

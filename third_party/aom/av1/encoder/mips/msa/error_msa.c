@@ -9,7 +9,8 @@
 
 
 
-#include "./av1_rtcd.h"
+#include "config/av1_rtcd.h"
+
 #include "aom_dsp/mips/macros_msa.h"
 
 #define BLOCK_ERROR_BLOCKSIZE_MSA(BSize)                                     \

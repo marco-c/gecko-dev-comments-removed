@@ -16,11 +16,7 @@
 extern "C" {
 #endif
 
-void av1_temporal_filter(AV1_COMP *cpi,
-#if CONFIG_BGSPRITE
-                         YV12_BUFFER_CONFIG *bg, YV12_BUFFER_CONFIG *target,
-#endif  
-                         int distance);
+void av1_temporal_filter(AV1_COMP *cpi, int distance);
 
 #ifdef __cplusplus
 }  

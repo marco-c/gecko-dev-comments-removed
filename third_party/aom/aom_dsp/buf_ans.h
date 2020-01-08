@@ -16,7 +16,8 @@
 
 
 #include <assert.h>
-#include "./aom_config.h"
+#include "config/aom_config.h"
+
 #include "aom/aom_integer.h"
 #include "aom_dsp/ans.h"
 #include "aom_dsp/answriter.h"
@@ -47,6 +48,7 @@ struct BufAnsCoder {
   int window_size;
 #endif
   int pos;  
+  uint8_t allow_update_cdf;
 };
 
 

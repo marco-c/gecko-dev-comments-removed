@@ -8,7 +8,6 @@
 
 
 
-
 #ifndef AOM_AOM_INTEGER_H_
 #define AOM_AOM_INTEGER_H_
 
@@ -61,6 +60,47 @@ typedef size_t uintptr_t;
 #include <inttypes.h>
 #endif
 
+#if !defined(INT8_MAX)
+#define INT8_MAX 127
+#endif
+
+#if !defined(INT32_MAX)
+#define INT32_MAX 2147483647
+#endif
+
+#if !defined(INT32_MIN)
+#define INT32_MIN (-2147483647 - 1)
+#endif
+
 #define NELEMENTS(x) (int)(sizeof(x) / sizeof(x[0]))
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
+
+size_t aom_uleb_size_in_bytes(uint64_t value);
+
+
+
+
+int aom_uleb_decode(const uint8_t *buffer, size_t available, uint64_t *value,
+                    size_t *length);
+
+
+int aom_uleb_encode(uint64_t value, size_t available, uint8_t *coded_value,
+                    size_t *coded_size);
+
+
+
+
+
+int aom_uleb_encode_fixed_size(uint64_t value, size_t available,
+                               size_t pad_to_size, uint8_t *coded_value,
+                               size_t *coded_size);
+
+#if defined(__cplusplus)
+}  
+#endif  
 
 #endif  

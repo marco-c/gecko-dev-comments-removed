@@ -42,7 +42,6 @@ typedef struct {
 } FIRSTPASS_MB_STATS;
 #endif
 
-#if CONFIG_EXT_REFS
 
 
 
@@ -64,7 +63,6 @@ typedef struct {
 #define MAX_SR_CODED_ERROR 40
 #define MAX_RAW_ERR_VAR 2000
 #define MIN_MV_IN_OUT 0.4
-#endif  
 
 #define VLOW_MOTION_THRESHOLD 950
 
@@ -72,6 +70,7 @@ typedef struct {
   double frame;
   double weight;
   double intra_error;
+  double frame_avg_wavelet_energy;
   double coded_error;
   double sr_coded_error;
   double pcnt_inter;
@@ -91,10 +90,8 @@ typedef struct {
   double new_mv_count;
   double duration;
   double count;
-#if CONFIG_EXT_REFS || CONFIG_BGSPRITE
   
   double raw_error_stdev;
-#endif  
 } FIRSTPASS_STATS;
 
 typedef enum {
@@ -103,16 +100,12 @@ typedef enum {
   GF_UPDATE = 2,
   ARF_UPDATE = 3,
   OVERLAY_UPDATE = 4,
-#if CONFIG_EXT_REFS
   BRF_UPDATE = 5,            
   LAST_BIPRED_UPDATE = 6,    
   BIPRED_UPDATE = 7,         
   INTNL_OVERLAY_UPDATE = 8,  
   INTNL_ARF_UPDATE = 9,      
   FRAME_UPDATE_TYPES = 10
-#else   
-  FRAME_UPDATE_TYPES = 5
-#endif  
 } FRAME_UPDATE_TYPE;
 
 #define FC_ANIMATION_THRESH 0.15
@@ -129,13 +122,11 @@ typedef struct {
   unsigned char arf_src_offset[(MAX_LAG_BUFFERS * 2) + 1];
   unsigned char arf_update_idx[(MAX_LAG_BUFFERS * 2) + 1];
   unsigned char arf_ref_idx[(MAX_LAG_BUFFERS * 2) + 1];
-#if CONFIG_EXT_REFS
   unsigned char brf_src_offset[(MAX_LAG_BUFFERS * 2) + 1];
   unsigned char bidir_pred_enabled[(MAX_LAG_BUFFERS * 2) + 1];
   unsigned char ref_fb_idx_map[(MAX_LAG_BUFFERS * 2) + 1][REF_FRAMES];
   unsigned char refresh_idx[(MAX_LAG_BUFFERS * 2) + 1];
   unsigned char refresh_flag[(MAX_LAG_BUFFERS * 2) + 1];
-#endif  
   int bit_allocation[(MAX_LAG_BUFFERS * 2) + 1];
 } GF_GROUP;
 
@@ -153,6 +144,7 @@ typedef struct {
   double modified_error_max;
   double modified_error_left;
   double mb_av_energy;
+  double frame_avg_haar_energy;
 
 #if CONFIG_FP_MB_STATS
   uint8_t *frame_mb_stats_buf;
@@ -198,7 +190,6 @@ void av1_rc_get_second_pass_params(struct AV1_COMP *cpi);
 
 void av1_twopass_postencode_update(struct AV1_COMP *cpi);
 
-#if CONFIG_EXT_REFS
 #if USE_GF16_MULTI_LAYER
 void av1_ref_frame_map_idx_updates(struct AV1_COMP *cpi, int gf_frame_index);
 #endif  
@@ -213,7 +204,6 @@ static INLINE int get_number_of_extra_arfs(int interval, int arf_pending) {
   else
     return 0;
 }
-#endif  
 
 #ifdef __cplusplus
 }  

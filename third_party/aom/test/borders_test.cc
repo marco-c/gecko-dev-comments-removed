@@ -19,12 +19,12 @@
 
 namespace {
 
-class BordersTest
+class BordersTestLarge
     : public ::libaom_test::CodecTestWithParam<libaom_test::TestMode>,
       public ::libaom_test::EncoderTest {
  protected:
-  BordersTest() : EncoderTest(GET_PARAM(0)) {}
-  virtual ~BordersTest() {}
+  BordersTestLarge() : EncoderTest(GET_PARAM(0)) {}
+  virtual ~BordersTestLarge() {}
 
   virtual void SetUp() {
     InitializeConfig();
@@ -47,7 +47,7 @@ class BordersTest
   }
 };
 
-TEST_P(BordersTest, TestEncodeHighBitrate) {
+TEST_P(BordersTestLarge, TestEncodeHighBitrate) {
   
   
   
@@ -63,7 +63,7 @@ TEST_P(BordersTest, TestEncodeHighBitrate) {
 
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
 }
-TEST_P(BordersTest, TestLowBitrate) {
+TEST_P(BordersTestLarge, TestLowBitrate) {
   
   
   
@@ -80,6 +80,6 @@ TEST_P(BordersTest, TestLowBitrate) {
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
 }
 
-AV1_INSTANTIATE_TEST_CASE(BordersTest,
+AV1_INSTANTIATE_TEST_CASE(BordersTestLarge,
                           ::testing::Values(::libaom_test::kTwoPassGood));
 }  

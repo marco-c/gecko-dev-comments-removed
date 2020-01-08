@@ -74,17 +74,13 @@
 
 
 
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "aom/aom_decoder.h"
-
-#include "../tools_common.h"
-#include "../video_reader.h"
-#include "./aom_config.h"
+#include "common/tools_common.h"
+#include "common/video_reader.h"
 
 static const char *exec_name;
 
@@ -127,7 +123,7 @@ int main(int argc, char **argv) {
     size_t frame_size = 0;
     const unsigned char *frame =
         aom_video_reader_get_frame(reader, &frame_size);
-    if (aom_codec_decode(&codec, frame, (unsigned int)frame_size, NULL, 0))
+    if (aom_codec_decode(&codec, frame, frame_size, NULL))
       die_codec(&codec, "Failed to decode frame.");
 
     while ((img = aom_codec_get_frame(&codec, &iter)) != NULL) {

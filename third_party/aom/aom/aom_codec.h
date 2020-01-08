@@ -43,37 +43,37 @@
 extern "C" {
 #endif
 
-#include "./aom_integer.h"
-#include "./aom_image.h"
+#include "aom/aom_image.h"
+#include "aom/aom_integer.h"
 
 
-#ifndef DEPRECATED
+#ifndef AOM_DEPRECATED
 #if defined(__GNUC__) && __GNUC__
-#define DEPRECATED __attribute__((deprecated))
+#define AOM_DEPRECATED __attribute__((deprecated))
 #elif defined(_MSC_VER)
-#define DEPRECATED
+#define AOM_DEPRECATED
 #else
-#define DEPRECATED
+#define AOM_DEPRECATED
 #endif
 #endif 
 
-#ifndef DECLSPEC_DEPRECATED
+#ifndef AOM_DECLSPEC_DEPRECATED
 #if defined(__GNUC__) && __GNUC__
-#define DECLSPEC_DEPRECATED
+#define AOM_DECLSPEC_DEPRECATED
 #elif defined(_MSC_VER)
 
-#define DECLSPEC_DEPRECATED __declspec(deprecated)
+#define AOM_DECLSPEC_DEPRECATED __declspec(deprecated)
 #else
-#define DECLSPEC_DEPRECATED
+#define AOM_DECLSPEC_DEPRECATED
 #endif
 #endif 
 
 
-#ifdef UNUSED
+#ifdef AOM_UNUSED
 #elif defined(__GNUC__) || defined(__clang__)
-#define UNUSED __attribute__((unused))
+#define AOM_UNUSED __attribute__((unused))
 #else
-#define UNUSED
+#define AOM_UNUSED
 #endif
 
 
@@ -433,7 +433,7 @@ aom_codec_err_t aom_codec_control_(aom_codec_ctx_t *ctx, int ctrl_id, ...);
 
 #define AOM_CTRL_USE_TYPE(id, typ)                                           \
   static aom_codec_err_t aom_codec_control_##id(aom_codec_ctx_t *, int, typ) \
-      UNUSED;                                                                \
+      AOM_UNUSED;                                                            \
                                                                              \
   static aom_codec_err_t aom_codec_control_##id(aom_codec_ctx_t *ctx,        \
                                                 int ctrl_id, typ data) {     \
@@ -450,13 +450,13 @@ aom_codec_err_t aom_codec_control_(aom_codec_ctx_t *ctx, int ctrl_id, ...);
 
 
 
-#define AOM_CTRL_USE_TYPE_DEPRECATED(id, typ)                        \
-  DECLSPEC_DEPRECATED static aom_codec_err_t aom_codec_control_##id( \
-      aom_codec_ctx_t *, int, typ) DEPRECATED UNUSED;                \
-                                                                     \
-  DECLSPEC_DEPRECATED static aom_codec_err_t aom_codec_control_##id( \
-      aom_codec_ctx_t *ctx, int ctrl_id, typ data) {                 \
-    return aom_codec_control_(ctx, ctrl_id, data);                   \
+#define AOM_CTRL_USE_TYPE_DEPRECATED(id, typ)                            \
+  AOM_DECLSPEC_DEPRECATED static aom_codec_err_t aom_codec_control_##id( \
+      aom_codec_ctx_t *, int, typ) AOM_DEPRECATED AOM_UNUSED;            \
+                                                                         \
+  AOM_DECLSPEC_DEPRECATED static aom_codec_err_t aom_codec_control_##id( \
+      aom_codec_ctx_t *ctx, int ctrl_id, typ data) {                     \
+    return aom_codec_control_(ctx, ctrl_id, data);                       \
   } /**<\hideinitializer*/
 
 
@@ -471,7 +471,7 @@ aom_codec_err_t aom_codec_control_(aom_codec_ctx_t *ctx, int ctrl_id, ...);
 
 #define AOM_CTRL_VOID(id)                                               \
   static aom_codec_err_t aom_codec_control_##id(aom_codec_ctx_t *, int) \
-      UNUSED;                                                           \
+      AOM_UNUSED;                                                       \
                                                                         \
   static aom_codec_err_t aom_codec_control_##id(aom_codec_ctx_t *ctx,   \
                                                 int ctrl_id) {          \
@@ -479,6 +479,48 @@ aom_codec_err_t aom_codec_control_(aom_codec_ctx_t *ctx, int ctrl_id, ...);
   } /**<\hideinitializer*/
 
 #endif
+
+
+typedef enum ATTRIBUTE_PACKED {
+  OBU_SEQUENCE_HEADER = 1,
+  OBU_TEMPORAL_DELIMITER = 2,
+  OBU_FRAME_HEADER = 3,
+  OBU_TILE_GROUP = 4,
+  OBU_METADATA = 5,
+  OBU_FRAME = 6,
+  OBU_REDUNDANT_FRAME_HEADER = 7,
+  OBU_TILE_LIST = 8,
+  OBU_PADDING = 15,
+} OBU_TYPE;
+
+
+typedef enum {
+  OBU_METADATA_TYPE_AOM_RESERVED_0 = 0,
+  OBU_METADATA_TYPE_HDR_CLL = 1,
+  OBU_METADATA_TYPE_HDR_MDCV = 2,
+  OBU_METADATA_TYPE_SCALABILITY = 3,
+  OBU_METADATA_TYPE_ITUT_T35 = 4,
+  OBU_METADATA_TYPE_TIMECODE = 5,
+} OBU_METADATA_TYPE;
+
+
+
+
+
+const char *aom_obu_type_to_string(OBU_TYPE type);
+
+
+
+
+
+
+typedef struct cfg_options {
+  
+
+
+
+  unsigned int ext_partition;
+} cfg_options_t;
 
 
 #ifdef __cplusplus

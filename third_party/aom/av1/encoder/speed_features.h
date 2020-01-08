@@ -20,64 +20,51 @@ extern "C" {
 
 enum {
   INTRA_ALL = (1 << DC_PRED) | (1 << V_PRED) | (1 << H_PRED) | (1 << D45_PRED) |
-              (1 << D135_PRED) | (1 << D117_PRED) | (1 << D153_PRED) |
-              (1 << D207_PRED) | (1 << D63_PRED) | (1 << SMOOTH_PRED) |
-#if CONFIG_SMOOTH_HV
-              (1 << SMOOTH_V_PRED) | (1 << SMOOTH_H_PRED) |
-#endif  
-              (1 << TM_PRED),
-#if CONFIG_CFL
-  UV_INTRA_ALL = (1 << UV_DC_PRED) | (1 << UV_V_PRED) | (1 << UV_H_PRED) |
-                 (1 << UV_D45_PRED) | (1 << UV_D135_PRED) |
-                 (1 << UV_D117_PRED) | (1 << UV_D153_PRED) |
-                 (1 << UV_D207_PRED) | (1 << UV_D63_PRED) |
-                 (1 << UV_SMOOTH_PRED) |
-#if CONFIG_SMOOTH_HV
-                 (1 << UV_SMOOTH_V_PRED) | (1 << UV_SMOOTH_H_PRED) |
-#endif  
-                 (1 << UV_TM_PRED) | (1 << UV_CFL_PRED),
+              (1 << D135_PRED) | (1 << D113_PRED) | (1 << D157_PRED) |
+              (1 << D203_PRED) | (1 << D67_PRED) | (1 << SMOOTH_PRED) |
+              (1 << SMOOTH_V_PRED) | (1 << SMOOTH_H_PRED) | (1 << PAETH_PRED),
+  UV_INTRA_ALL =
+      (1 << UV_DC_PRED) | (1 << UV_V_PRED) | (1 << UV_H_PRED) |
+      (1 << UV_D45_PRED) | (1 << UV_D135_PRED) | (1 << UV_D113_PRED) |
+      (1 << UV_D157_PRED) | (1 << UV_D203_PRED) | (1 << UV_D67_PRED) |
+      (1 << UV_SMOOTH_PRED) | (1 << UV_SMOOTH_V_PRED) |
+      (1 << UV_SMOOTH_H_PRED) | (1 << UV_PAETH_PRED) | (1 << UV_CFL_PRED),
   UV_INTRA_DC = (1 << UV_DC_PRED),
   UV_INTRA_DC_CFL = (1 << UV_DC_PRED) | (1 << UV_CFL_PRED),
-  UV_INTRA_DC_TM = (1 << UV_DC_PRED) | (1 << UV_TM_PRED),
-  UV_INTRA_DC_TM_CFL =
-      (1 << UV_DC_PRED) | (1 << UV_TM_PRED) | (1 << UV_CFL_PRED),
+  UV_INTRA_DC_TM = (1 << UV_DC_PRED) | (1 << UV_PAETH_PRED),
+  UV_INTRA_DC_PAETH_CFL =
+      (1 << UV_DC_PRED) | (1 << UV_PAETH_PRED) | (1 << UV_CFL_PRED),
   UV_INTRA_DC_H_V = (1 << UV_DC_PRED) | (1 << UV_V_PRED) | (1 << UV_H_PRED),
   UV_INTRA_DC_H_V_CFL = (1 << UV_DC_PRED) | (1 << UV_V_PRED) |
                         (1 << UV_H_PRED) | (1 << UV_CFL_PRED),
-  UV_INTRA_DC_TM_H_V = (1 << UV_DC_PRED) | (1 << UV_TM_PRED) |
-                       (1 << UV_V_PRED) | (1 << UV_H_PRED),
-  UV_INTRA_DC_TM_H_V_CFL = (1 << UV_DC_PRED) | (1 << UV_TM_PRED) |
-                           (1 << UV_V_PRED) | (1 << UV_H_PRED) |
-                           (1 << UV_CFL_PRED),
-#endif  
+  UV_INTRA_DC_PAETH_H_V = (1 << UV_DC_PRED) | (1 << UV_PAETH_PRED) |
+                          (1 << UV_V_PRED) | (1 << UV_H_PRED),
+  UV_INTRA_DC_PAETH_H_V_CFL = (1 << UV_DC_PRED) | (1 << UV_PAETH_PRED) |
+                              (1 << UV_V_PRED) | (1 << UV_H_PRED) |
+                              (1 << UV_CFL_PRED),
   INTRA_DC = (1 << DC_PRED),
-  INTRA_DC_TM = (1 << DC_PRED) | (1 << TM_PRED),
+  INTRA_DC_TM = (1 << DC_PRED) | (1 << PAETH_PRED),
   INTRA_DC_H_V = (1 << DC_PRED) | (1 << V_PRED) | (1 << H_PRED),
-  INTRA_DC_TM_H_V =
-      (1 << DC_PRED) | (1 << TM_PRED) | (1 << V_PRED) | (1 << H_PRED)
+  INTRA_DC_PAETH_H_V =
+      (1 << DC_PRED) | (1 << PAETH_PRED) | (1 << V_PRED) | (1 << H_PRED)
 };
 
 enum {
-#if CONFIG_COMPOUND_SINGLEREF
-
-
-
-#endif  
-  INTER_ALL = (1 << NEARESTMV) | (1 << NEARMV) | (1 << ZEROMV) | (1 << NEWMV) |
-              (1 << NEAREST_NEARESTMV) | (1 << NEAR_NEARMV) | (1 << NEW_NEWMV) |
-              (1 << NEAREST_NEWMV) | (1 << NEAR_NEWMV) | (1 << NEW_NEARMV) |
-              (1 << NEW_NEARESTMV) | (1 << ZERO_ZEROMV),
+  INTER_ALL = (1 << NEARESTMV) | (1 << NEARMV) | (1 << GLOBALMV) |
+              (1 << NEWMV) | (1 << NEAREST_NEARESTMV) | (1 << NEAR_NEARMV) |
+              (1 << NEW_NEWMV) | (1 << NEAREST_NEWMV) | (1 << NEAR_NEWMV) |
+              (1 << NEW_NEARMV) | (1 << NEW_NEARESTMV) | (1 << GLOBAL_GLOBALMV),
   INTER_NEAREST = (1 << NEARESTMV) | (1 << NEAREST_NEARESTMV) |
                   (1 << NEW_NEARESTMV) | (1 << NEAREST_NEWMV),
   INTER_NEAREST_NEW = (1 << NEARESTMV) | (1 << NEWMV) |
                       (1 << NEAREST_NEARESTMV) | (1 << NEW_NEWMV) |
                       (1 << NEW_NEARESTMV) | (1 << NEAREST_NEWMV) |
                       (1 << NEW_NEARMV) | (1 << NEAR_NEWMV),
-  INTER_NEAREST_ZERO = (1 << NEARESTMV) | (1 << ZEROMV) |
-                       (1 << NEAREST_NEARESTMV) | (1 << ZERO_ZEROMV) |
+  INTER_NEAREST_ZERO = (1 << NEARESTMV) | (1 << GLOBALMV) |
+                       (1 << NEAREST_NEARESTMV) | (1 << GLOBAL_GLOBALMV) |
                        (1 << NEAREST_NEWMV) | (1 << NEW_NEARESTMV),
-  INTER_NEAREST_NEW_ZERO = (1 << NEARESTMV) | (1 << ZEROMV) | (1 << NEWMV) |
-                           (1 << NEAREST_NEARESTMV) | (1 << ZERO_ZEROMV) |
+  INTER_NEAREST_NEW_ZERO = (1 << NEARESTMV) | (1 << GLOBALMV) | (1 << NEWMV) |
+                           (1 << NEAREST_NEARESTMV) | (1 << GLOBAL_GLOBALMV) |
                            (1 << NEW_NEWMV) | (1 << NEW_NEARESTMV) |
                            (1 << NEAREST_NEWMV) | (1 << NEW_NEARMV) |
                            (1 << NEAR_NEWMV),
@@ -86,8 +73,8 @@ enum {
                            (1 << NEW_NEARESTMV) | (1 << NEAREST_NEWMV) |
                            (1 << NEW_NEARMV) | (1 << NEAR_NEWMV) |
                            (1 << NEAR_NEARMV),
-  INTER_NEAREST_NEAR_ZERO = (1 << NEARESTMV) | (1 << NEARMV) | (1 << ZEROMV) |
-                            (1 << NEAREST_NEARESTMV) | (1 << ZERO_ZEROMV) |
+  INTER_NEAREST_NEAR_ZERO = (1 << NEARESTMV) | (1 << NEARMV) | (1 << GLOBALMV) |
+                            (1 << NEAREST_NEARESTMV) | (1 << GLOBAL_GLOBALMV) |
                             (1 << NEAREST_NEWMV) | (1 << NEW_NEARESTMV) |
                             (1 << NEW_NEARMV) | (1 << NEAR_NEWMV) |
                             (1 << NEAR_NEARMV),
@@ -104,6 +91,17 @@ enum {
   LAST_AND_INTRA_SPLIT_ONLY = (1 << THR_COMP_GA) | (1 << THR_COMP_LA) |
                               (1 << THR_ALTR) | (1 << THR_GOLD)
 };
+
+typedef enum {
+  TXFM_CODING_SF = 1,
+  INTER_PRED_SF = 2,
+  INTRA_PRED_SF = 4,
+  PARTITION_SF = 8,
+  LOOP_FILTER_SF = 16,
+  RD_SKIP_SF = 32,
+  RESERVE_2_SF = 64,
+  RESERVE_3_SF = 128,
+} DEV_SPEED_FEATURES;
 
 typedef enum {
   DIAMOND = 0,
@@ -141,8 +139,8 @@ typedef enum {
 
 typedef enum {
   USE_FULL_RD = 0,
+  USE_FAST_RD,
   USE_LARGESTALL,
-  USE_TX_8X8
 } TX_SIZE_SEARCH_METHOD;
 
 typedef enum {
@@ -190,10 +188,13 @@ typedef enum {
   NO_PRUNE = 0,
   
   PRUNE_ONE = 1,
-#if CONFIG_EXT_TX
   
   PRUNE_TWO = 2,
-#endif
+  
+  
+  PRUNE_2D_ACCURATE = 3,
+  
+  PRUNE_2D_FAST = 4,
 } TX_TYPE_PRUNE_MODE;
 
 typedef struct {
@@ -204,6 +205,13 @@ typedef struct {
   
   
   int use_skip_flag_prediction;
+
+  
+  int ml_tx_split_thresh;
+
+  
+  
+  int skip_tx_search;
 } TX_TYPE_SEARCH;
 
 typedef enum {
@@ -261,13 +269,29 @@ typedef struct MESH_PATTERN {
   int interval;
 } MESH_PATTERN;
 
-#if CONFIG_GLOBAL_MOTION
 typedef enum {
   GM_FULL_SEARCH,
   GM_REDUCED_REF_SEARCH,
   GM_DISABLE_SEARCH
 } GM_SEARCH_TYPE;
-#endif  
+
+typedef enum {
+  GM_ERRORADV_TR_0,
+  GM_ERRORADV_TR_1,
+  GM_ERRORADV_TR_2,
+  GM_ERRORADV_TR_TYPES,
+} GM_ERRORADV_TYPE;
+
+typedef enum {
+  NO_TRELLIS_OPT,         
+  FULL_TRELLIS_OPT,       
+  FINAL_PASS_TRELLIS_OPT  
+} TRELLIS_OPT_TYPE;
+
+typedef enum {
+  FULL_TXFM_RD,
+  LOW_TXFM_RD,
+} TXFM_RD_MODEL;
 
 typedef struct SPEED_FEATURES {
   MV_SPEED_FEATURES mv;
@@ -278,7 +302,10 @@ typedef struct SPEED_FEATURES {
   RECODE_LOOP_TYPE recode_loop;
 
   
-  int optimize_coefficients;
+  TRELLIS_OPT_TYPE optimize_coefficients;
+
+  
+  GM_ERRORADV_TYPE gm_erroradv_type;
 
   
   
@@ -286,6 +313,14 @@ typedef struct SPEED_FEATURES {
   
   
   int static_segmentation;
+
+  
+  int reduce_inter_modes;
+
+  
+  
+  
+  int selective_ref_gm;
 
   
   
@@ -312,6 +347,17 @@ typedef struct SPEED_FEATURES {
   
   
   
+  int inter_tx_size_search_init_depth_sqr;
+  int inter_tx_size_search_init_depth_rect;
+  int intra_tx_size_search_init_depth_sqr;
+  int intra_tx_size_search_init_depth_rect;
+  
+  
+  int tx_size_search_lgr_block;
+
+  
+  
+  
   int mode_skip_start;
 
   PARTITION_SEARCH_TYPE partition_search_type;
@@ -319,7 +365,49 @@ typedef struct SPEED_FEATURES {
   TX_TYPE_SEARCH tx_type_search;
 
   
+  
+  int txb_split_cap;
+
+  
+  
+  
+  
+  int adaptive_txb_search_level;
+
+  
+  
+  
+  int model_based_prune_tx_search_level;
+
+  
+  
+  
+  int model_based_post_interp_filter_breakout;
+
+  
   BLOCK_SIZE always_this_block_size;
+
+  
+  
+  
+  int selective_ref_frame;
+
+  
+  
+  
+  int prune_ext_partition_types_search_level;
+
+  
+  int ml_prune_ab_partition;
+
+  int fast_cdef_search;
+
+  
+  int two_pass_partition_search;
+
+  
+  
+  int mode_pruning_based_on_two_pass_partition_search;
 
   
   
@@ -457,10 +545,6 @@ typedef struct SPEED_FEATURES {
   InterpFilter default_interp_filter;
 
   
-  
-  int tx_size_search_breakout;
-
-  
   int adaptive_interp_filter_search;
 
   
@@ -477,15 +561,66 @@ typedef struct SPEED_FEATURES {
   int simple_model_rd_from_var;
 
   
-  int use_upsampled_references;
+  
+  int use_accurate_subpel_search;
 
+  
+  
+  
+  
   
   
   int use_transform_domain_distortion;
 
-#if CONFIG_GLOBAL_MOTION
   GM_SEARCH_TYPE gm_search_type;
-#endif  
+
+  
+  
+  int use_fast_interpolation_filter_search;
+
+  
+  
+  
+  int skip_repeat_interpolation_filter_search;
+
+  
+  
+  int use_hash_based_trellis;
+
+  
+  int drop_ref;
+
+  
+  int skip_intra_in_interframe;
+
+  
+  
+  int use_intra_txb_hash;
+
+  
+  
+  int use_inter_txb_hash;
+
+  
+  
+  int use_mb_rd_hash;
+
+  
+  int optimize_b_precheck;
+
+  
+  int jnt_comp_fast_tx_search;
+
+  
+  int jnt_comp_skip_mv_search;
+
+  
+  
+  
+  int dual_sgr_penalty_level;
+
+  
+  int inter_mode_rd_model_estimation;
 } SPEED_FEATURES;
 
 struct AV1_COMP;
