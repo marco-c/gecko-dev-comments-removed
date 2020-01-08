@@ -19,6 +19,7 @@
 #include "mozilla/dom/PerformanceNavigation.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Telemetry.h"
+#include "ProfilerMarkerPayload.h"
 
 using namespace mozilla;
 
@@ -253,6 +254,113 @@ nsDOMNavigationTiming::NotifyDOMContentLoadedEnd(nsIURI* aURI)
   }
 }
 
+
+void
+nsDOMNavigationTiming::TTITimeoutCallback(nsITimer* aTimer, void *aClosure)
+{
+  nsDOMNavigationTiming* self = static_cast<nsDOMNavigationTiming*>(aClosure);
+  self->TTITimeout(aTimer);
+}
+
+
+
+
+
+
+
+
+
+
+
+static const TimeStamp&
+MaxWithinWindowBeginningAtMin(const TimeStamp& aT1, const TimeStamp& aT2,
+                              const TimeDuration& aWindowSize)
+{
+  if (aT2.IsNull()) {
+    return aT1;
+  } else if (aT1.IsNull()) {
+    return aT2;
+  }
+  if (aT1 > aT2) {
+    if ((aT1 - aT2) > aWindowSize) {
+      return aT2;
+    }
+    return aT1;
+  }
+  if ((aT2 - aT1) > aWindowSize) {
+    return aT1;
+  }
+  return aT2;
+}
+
+#define TTI_WINDOW_SIZE_MS (5 * 1000)
+
+void
+nsDOMNavigationTiming::TTITimeout(nsITimer* aTimer)
+{
+  
+  TimeStamp now = TimeStamp::Now();
+  MOZ_RELEASE_ASSERT(!mNonBlankPaint.IsNull(), "TTI timeout with no non-blank-paint?");
+
+  nsCOMPtr<nsIThread> mainThread = do_GetMainThread();
+  TimeStamp lastLongTaskEnded;
+  mainThread->GetLastLongNonIdleTaskEnd(&lastLongTaskEnded);
+  if (!lastLongTaskEnded.IsNull()) {
+    TimeDuration delta = now - lastLongTaskEnded;
+    if (delta.ToMilliseconds() < TTI_WINDOW_SIZE_MS) {
+      
+      aTimer->InitWithNamedFuncCallback(TTITimeoutCallback, this, TTI_WINDOW_SIZE_MS,
+                                        nsITimer::TYPE_ONE_SHOT_LOW_PRIORITY,
+                                         "nsDOMNavigationTiming::TTITimeout");
+      return;
+    }
+  }
+  
+  
+  
+  
+  
+
+  
+  
+  
+
+  
+  
+  
+
+  if (mTTFI.IsNull()) {
+    mTTI = MaxWithinWindowBeginningAtMin(lastLongTaskEnded, mDOMContentLoadedEventEnd,
+                                         TimeDuration::FromMilliseconds(TTI_WINDOW_SIZE_MS));
+    if (mTTFI.IsNull()) {
+      mTTFI = mNonBlankPaint;
+    }
+  }
+  
+  
+  
+
+  mTTITimer = nullptr;
+
+#ifdef MOZ_GECKO_PROFILER
+  if (profiler_is_active()) {
+    TimeDuration elapsed = mTTFI - mNavigationStart;
+    TimeDuration elapsedLongTask = lastLongTaskEnded.IsNull() ? 0 : lastLongTaskEnded - mNavigationStart;
+    nsAutoCString spec;
+    if (mLoadedURI) {
+      mLoadedURI->GetSpec(spec);
+    }
+    nsPrintfCString marker("TTFI after %dms (LongTask after %dms) for URL %s",
+                           int(elapsed.ToMilliseconds()),
+                           int(elapsedLongTask.ToMilliseconds()),spec.get());
+
+    profiler_add_marker(
+      "TTI", MakeUnique<UserTimingMarkerPayload>(NS_ConvertASCIItoUTF16(marker), mTTFI));
+  }
+#endif
+  return;
+}
+
 void
 nsDOMNavigationTiming::NotifyNonBlankPaintForRootContentDocument()
 {
@@ -278,6 +386,15 @@ nsDOMNavigationTiming::NotifyNonBlankPaintForRootContentDocument()
     profiler_add_marker(marker.get());
   }
 #endif
+
+  if (!mTTITimer) {
+    mTTITimer = NS_NewTimer();
+  }
+
+  
+  mTTITimer->InitWithNamedFuncCallback(TTITimeoutCallback, this, TTI_WINDOW_SIZE_MS,
+                                       nsITimer::TYPE_ONE_SHOT_LOW_PRIORITY,
+                                       "nsDOMNavigationTiming::TTITimeout");
 
   if (mDocShellHasBeenActiveSinceNavigationStart) {
     if (net::nsHttp::IsBeforeLastActiveTabLoadOptimization(mNavigationStart)) {
