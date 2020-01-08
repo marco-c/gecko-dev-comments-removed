@@ -89,7 +89,7 @@ GetApplicationFromShellView(IShellView* view)
 }
 
 static bool
-ShellExecInExplorerProcess(wchar_t* path)
+ShellExecInExplorerProcess(wchar_t* path, wchar_t* args = nullptr)
 {
   bool rv = false;
   if (SUCCEEDED(CoInitialize(nullptr))) {
@@ -98,9 +98,15 @@ ShellExecInExplorerProcess(wchar_t* path)
       IShellDispatch2 *shellDispatch = GetApplicationFromShellView(desktopView);
       if (shellDispatch) {
         BSTR bstrPath = SysAllocString(path);
-        rv = SUCCEEDED(shellDispatch->ShellExecuteW(bstrPath,
-                                                    VARIANT{}, VARIANT{},
+        VARIANT vArgs;
+        VariantInit(&vArgs);
+        if (args) {
+          vArgs.vt = VT_BSTR;
+          vArgs.bstrVal = SysAllocString(args);
+        }
+        rv = SUCCEEDED(shellDispatch->ShellExecuteW(bstrPath, vArgs, VARIANT{},
                                                     VARIANT{}, VARIANT{}));
+        VariantClear(&vArgs);
         SysFreeString(bstrPath);
         shellDispatch->Release();
       }
@@ -172,11 +178,31 @@ extern "C" void __declspec(dllexport)
 Exec(HWND, int, TCHAR *, stack_t **stacktop, void *)
 {
   wchar_t path[MAX_PATH + 1];
+  wchar_t args[MAX_PATH + 1];
+  bool rv = false;
+  bool restoreArgString = false;
   
   
   path[0] = L'\0';
+  args[0] = L'\0';
   popstring(stacktop, path, MAX_PATH);
-  bool rv = ShellExecInExplorerProcess(path);
+  if (!stacktop || !*stacktop) {
+    popstring(stacktop, args, MAX_PATH);
+    
+    restoreArgString = true;
+  }
+
+  if (lstrcmpW(args, L"/cmdargs") == 0) {
+    popstring(stacktop, args, MAX_PATH);
+    rv = ShellExecInExplorerProcess(path, args);
+  } else {
+    
+    if (restoreArgString) {
+      pushstring(stacktop, args, lstrlenW(args));
+    }
+    rv = ShellExecInExplorerProcess(path);
+  }
+
   pushstring(stacktop, rv ? L"1" : L"0", 2);
 }
 
