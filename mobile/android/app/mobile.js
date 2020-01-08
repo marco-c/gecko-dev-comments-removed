@@ -623,6 +623,7 @@ pref("browser.firstrun.show.localepicker", false);
 
 
 pref("browser.dom.window.dump.enabled", true);
+pref("devtools.console.stdout.chrome", true);
 
 
 pref("device.camera.enabled", true);

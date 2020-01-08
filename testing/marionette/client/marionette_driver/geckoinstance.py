@@ -378,6 +378,7 @@ class FennecInstance(GeckoInstance):
     fennec_prefs = {
         
         "browser.dom.window.dump.enabled": True,
+        "devtools.console.stdout.chrome": True,
 
         
         "browser.snippets.enabled": False,
@@ -506,6 +507,7 @@ class DesktopInstance(GeckoInstance):
 
         
         "browser.dom.window.dump.enabled": True,
+        "devtools.console.stdout.chrome": True,
 
         
         

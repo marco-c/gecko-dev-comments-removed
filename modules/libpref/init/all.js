@@ -1096,9 +1096,13 @@ pref("toolkit.asyncshutdown.log", false);
 
 #ifdef MOZILLA_OFFICIAL
 pref("browser.dom.window.dump.enabled", false, sticky);
+pref("devtools.console.stdout.chrome", false, sticky);
 #else
 pref("browser.dom.window.dump.enabled", true, sticky);
+pref("devtools.console.stdout.chrome", true, sticky);
 #endif
+
+pref("devtools.console.stdout.content", false, sticky);
 
 
 pref("toolkit.dump.emit", false);

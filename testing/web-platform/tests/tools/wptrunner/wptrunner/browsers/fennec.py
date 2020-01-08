@@ -41,6 +41,7 @@ class FennecProfile(FirefoxProfile):
         "apz.content_response_timeout": 60000,
         
         "browser.dom.window.dump.enabled": True,
+        "devtools.console.stdout.chrome": True,
         
         "browser.safebrowsing.blockedURIs.enabled": False,
         "browser.safebrowsing.downloads.enabled": False,
