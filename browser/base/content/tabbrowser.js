@@ -1601,8 +1601,6 @@ window._gBrowser = {
       
       
       aBrowser.setAttribute("nodefaultsrc", "false");
-    } else if (aBrowser.hasAttribute("recordExecution")) {
-      aBrowser.removeAttribute("recordExecution");
     }
 
     
