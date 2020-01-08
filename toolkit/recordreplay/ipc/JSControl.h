@@ -143,8 +143,6 @@ struct ExecutionPoint
   
   
   
-  
-  
   ProgressCounter mProgress;
 
   
@@ -156,9 +154,9 @@ struct ExecutionPoint
     , mProgress(0)
   {}
 
-  explicit ExecutionPoint(size_t aCheckpoint)
+  ExecutionPoint(size_t aCheckpoint, ProgressCounter aProgress)
     : mCheckpoint(aCheckpoint)
-    , mProgress(0)
+    , mProgress(aProgress)
   {}
 
   ExecutionPoint(size_t aCheckpoint, ProgressCounter aProgress,

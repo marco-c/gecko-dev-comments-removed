@@ -358,7 +358,7 @@ public:
   bool mAlwaysSaveTemporaryCheckpoints;
 
   
-  InfallibleVector<std::pair<ProgressCounter, size_t>, 0, UntrackedAllocPolicy> mTimeWarpTargetCheckpoints;
+  InfallibleVector<ProgressCounter, 0, UntrackedAllocPolicy> mCheckpointProgress;
 
   
   NavigationState()
@@ -368,8 +368,9 @@ public:
       
       
       
-      mRecordingEndpoint = ExecutionPoint(CheckpointId::First);
+      mRecordingEndpoint = ExecutionPoint(CheckpointId::First, 0);
     }
+    mCheckpointProgress.append(0);
   }
 
   void AfterCheckpoint(const CheckpointId& aCheckpoint) {
@@ -381,12 +382,22 @@ public:
       mTemporaryCheckpoints.popBack();
     }
 
+    
+    if (!aCheckpoint.mTemporary) {
+      ProgressCounter progress = *ExecutionProgressCounter();
+      if (aCheckpoint.mNormal < mCheckpointProgress.length()) {
+        MOZ_RELEASE_ASSERT(progress == mCheckpointProgress[aCheckpoint.mNormal]);
+      } else {
+        MOZ_RELEASE_ASSERT(aCheckpoint.mNormal == mCheckpointProgress.length());
+        mCheckpointProgress.append(progress);
+      }
+    }
+
     mPhase->AfterCheckpoint(aCheckpoint);
 
     
     if (!aCheckpoint.mTemporary) {
-      ExecutionPoint point(aCheckpoint.mNormal);
-      CheckForRecordingEndpoint(point);
+      CheckForRecordingEndpoint(CheckpointExecutionPoint(aCheckpoint.mNormal));
     }
 
     MOZ_RELEASE_ASSERT(IsRecording() ||
@@ -471,6 +482,11 @@ public:
     MOZ_RELEASE_ASSERT(!mTemporaryCheckpoints.empty());
     return mTemporaryCheckpoints.back();
   }
+
+  ExecutionPoint CheckpointExecutionPoint(size_t aCheckpoint) {
+    MOZ_RELEASE_ASSERT(aCheckpoint < mCheckpointProgress.length());
+    return ExecutionPoint(aCheckpoint, mCheckpointProgress[aCheckpoint]);
+  }
 };
 
 static NavigationState* gNavigation;
@@ -533,7 +549,7 @@ PausedPhase::AfterCheckpoint(const CheckpointId& aCheckpoint)
   MOZ_RELEASE_ASSERT(!mRecoveringFromDivergence);
   if (!aCheckpoint.mTemporary) {
     
-    MOZ_RELEASE_ASSERT(mPoint == ExecutionPoint(aCheckpoint.mNormal));
+    MOZ_RELEASE_ASSERT(mPoint == gNavigation->CheckpointExecutionPoint(aCheckpoint.mNormal));
     child::HitCheckpoint(mPoint.mCheckpoint, mRecordingEndpoint);
   } else {
     
@@ -595,7 +611,7 @@ PausedPhase::Resume(bool aForward)
 void
 PausedPhase::RestoreCheckpoint(size_t aCheckpoint)
 {
-  ExecutionPoint target(aCheckpoint);
+  ExecutionPoint target = gNavigation->CheckpointExecutionPoint(aCheckpoint);
   bool rewind = target != mPoint;
   Enter(target, BreakpointVector(), rewind,  false);
 }
@@ -805,7 +821,7 @@ ForwardPhase::AfterCheckpoint(const CheckpointId& aCheckpoint)
 {
   MOZ_RELEASE_ASSERT(!aCheckpoint.mTemporary &&
                      aCheckpoint.mNormal == mPoint.mCheckpoint + 1);
-  gNavigation->mPausedPhase.Enter(ExecutionPoint(aCheckpoint.mNormal));
+  gNavigation->mPausedPhase.Enter(gNavigation->CheckpointExecutionPoint(aCheckpoint.mNormal));
 }
 
 void
@@ -1047,8 +1063,8 @@ FindLastHitPhase::OnRegionEnd()
     }
 
     
-    gNavigation->mPausedPhase.Enter(ExecutionPoint(mStart.mNormal), BreakpointVector(),
-                                     true);
+    gNavigation->mPausedPhase.Enter(gNavigation->CheckpointExecutionPoint(mStart.mNormal),
+                                    BreakpointVector(),  true);
     Unreachable();
   }
 
@@ -1099,6 +1115,10 @@ BeforeCheckpoint()
     gNavigation = new (navigationMem) NavigationState();
 
     js::SetupDevtoolsSandbox();
+
+    
+    
+    *ExecutionProgressCounter() = 0;
   }
 
   AutoDisallowThreadEvents disallow;
@@ -1226,17 +1246,6 @@ RecordReplayInterface_NewTimeWarpTarget()
   ProgressCounter progress = ++gProgressCounter;
 
   PositionHit(BreakpointPosition(BreakpointPosition::WarpTarget));
-
-  
-  
-  
-  if (gNavigation->mTimeWarpTargetCheckpoints.empty() ||
-      progress > gNavigation->mTimeWarpTargetCheckpoints.back().first)
-  {
-    size_t checkpoint = gNavigation->LastCheckpoint().mNormal;
-    gNavigation->mTimeWarpTargetCheckpoints.emplaceBack(progress, checkpoint);
-  }
-
   return progress;
 }
 
@@ -1245,16 +1254,21 @@ RecordReplayInterface_NewTimeWarpTarget()
 ExecutionPoint
 TimeWarpTargetExecutionPoint(ProgressCounter aTarget)
 {
-  Maybe<size_t> checkpoint;
-  for (auto entry : gNavigation->mTimeWarpTargetCheckpoints) {
-    if (entry.first == aTarget) {
-      checkpoint.emplace(entry.second);
+  
+  
+  
+  size_t checkpoint;
+  for (checkpoint = gNavigation->mCheckpointProgress.length() - 1;
+       checkpoint >= CheckpointId::First;
+       checkpoint--)
+  {
+    if (gNavigation->mCheckpointProgress[checkpoint] < aTarget) {
       break;
     }
   }
-  MOZ_RELEASE_ASSERT(checkpoint.isSome());
+  MOZ_RELEASE_ASSERT(checkpoint >= CheckpointId::First);
 
-  return ExecutionPoint(checkpoint.ref(), aTarget,
+  return ExecutionPoint(checkpoint, aTarget,
                         BreakpointPosition(BreakpointPosition::WarpTarget));
 }
 
