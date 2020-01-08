@@ -102,10 +102,7 @@ ExtractFinalizationEvent(JSObject *objSelf)
 void Finalize(JSFreeOp *fop, JSObject *objSelf)
 {
   RefPtr<FinalizationEvent> event = ExtractFinalizationEvent(objSelf);
-
-  
-  
-  if (event == nullptr || gShuttingDown || recordreplay::IsRecordingOrReplaying()) {
+  if (event == nullptr || gShuttingDown) {
     
     return;
   }
@@ -203,6 +200,12 @@ FinalizationWitnessService::Make(const char* aTopic,
                                  JSContext* aCx,
                                  JS::MutableHandle<JS::Value> aRetval)
 {
+  
+  
+  if (recordreplay::IsRecordingOrReplaying()) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
   JS::Rooted<JSObject*> objResult(aCx, JS_NewObject(aCx, &sWitnessClass));
   if (!objResult) {
     return NS_ERROR_OUT_OF_MEMORY;
