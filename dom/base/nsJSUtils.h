@@ -20,6 +20,7 @@
 #include "jsapi.h"
 #include "jsfriendapi.h"
 #include "js/Conversions.h"
+#include "js/SourceText.h"
 #include "js/StableStringChars.h"
 #include "nsString.h"
 
@@ -159,7 +160,7 @@ public:
 
     
     nsresult CompileAndExec(JS::CompileOptions& aCompileOptions,
-                            JS::SourceBufferHolder& aSrcBuf,
+                            JS::SourceText<char16_t>& aSrcBuf,
                             JS::MutableHandle<JSScript*> aScript);
 
     
@@ -186,7 +187,7 @@ public:
   };
 
   static nsresult CompileModule(JSContext* aCx,
-                                JS::SourceBufferHolder& aSrcBuf,
+                                JS::SourceText<char16_t>& aSrcBuf,
                                 JS::Handle<JSObject*> aEvaluationGlobal,
                                 JS::CompileOptions &aCompileOptions,
                                 JS::MutableHandle<JSObject*> aModule);

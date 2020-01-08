@@ -26,7 +26,7 @@ namespace JS {
 
 template<typename T> class AutoVector;
 
-class SourceBufferHolder;
+template<typename UnitT> class SourceText;
 
 } 
 
@@ -107,7 +107,7 @@ CloneAndExecuteScript(JSContext* cx, AutoVector<JSObject*>& envChain, Handle<JSS
 
 extern JS_PUBLIC_API(bool)
 Evaluate(JSContext* cx, const ReadOnlyCompileOptions& options,
-         SourceBufferHolder& srcBuf, MutableHandle<Value> rval);
+         SourceText<char16_t>& srcBuf, MutableHandle<Value> rval);
 
 
 
@@ -116,7 +116,7 @@ Evaluate(JSContext* cx, const ReadOnlyCompileOptions& options,
 
 extern JS_PUBLIC_API(bool)
 Evaluate(JSContext* cx, AutoVector<JSObject*>& envChain, const ReadOnlyCompileOptions& options,
-         SourceBufferHolder& srcBuf, MutableHandle<Value> rval);
+         SourceText<char16_t>& srcBuf, MutableHandle<Value> rval);
 
 
 
@@ -154,7 +154,7 @@ EvaluateUtf8Path(JSContext* cx, const ReadOnlyCompileOptions& options,
 
 extern JS_PUBLIC_API(bool)
 Compile(JSContext* cx, const ReadOnlyCompileOptions& options,
-        SourceBufferHolder& srcBuf, MutableHandle<JSScript*> script);
+        SourceText<char16_t>& srcBuf, MutableHandle<JSScript*> script);
 
 
 
@@ -202,7 +202,7 @@ CompileUtf8Path(JSContext* cx, const ReadOnlyCompileOptions& options,
 
 extern JS_PUBLIC_API(bool)
 CompileForNonSyntacticScope(JSContext* cx, const ReadOnlyCompileOptions& options,
-                            SourceBufferHolder& srcBuf, MutableHandle<JSScript*> script);
+                            SourceText<char16_t>& srcBuf, MutableHandle<JSScript*> script);
 
 
 
@@ -227,7 +227,7 @@ extern JS_PUBLIC_API(bool)
 CompileFunction(JSContext* cx, AutoVector<JSObject*>& envChain,
                 const ReadOnlyCompileOptions& options,
                 const char* name, unsigned nargs, const char* const* argnames,
-                SourceBufferHolder& srcBuf, MutableHandle<JSFunction*> fun);
+                SourceText<char16_t>& srcBuf, MutableHandle<JSFunction*> fun);
 
 
 

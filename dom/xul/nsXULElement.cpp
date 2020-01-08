@@ -19,7 +19,7 @@
 #include "mozilla/EventStates.h"
 #include "mozilla/DeclarationBlock.h"
 #include "js/CompilationAndEvaluation.h"
-#include "js/SourceBufferHolder.h"
+#include "js/SourceText.h"
 #include "nsFocusManager.h"
 #include "nsHTMLStyleSheet.h"
 #include "nsNameSpaceManager.h"
@@ -2280,7 +2280,7 @@ OffThreadScriptReceiverCallback(JS::OffThreadToken* aToken, void* aCallbackData)
 nsresult
 nsXULPrototypeScript::Compile(const char16_t* aText,
                               size_t aTextLength,
-                              JS::SourceBufferHolder::Ownership aOwnership,
+                              JS::SourceOwnership aOwnership,
                               nsIURI* aURI, uint32_t aLineNo,
                               nsIDocument* aDocument,
                               nsIOffThreadScriptReceiver *aOffThreadReceiver )
@@ -2288,7 +2288,7 @@ nsXULPrototypeScript::Compile(const char16_t* aText,
     
     AutoJSAPI jsapi;
     if (!jsapi.Init(xpc::CompilationScope())) {
-        if (aOwnership == JS::SourceBufferHolder::GiveOwnership) {
+        if (aOwnership == JS::SourceOwnership::TakeOwnership) {
             
             
             js_free(const_cast<char16_t*>(aText));
@@ -2298,7 +2298,7 @@ nsXULPrototypeScript::Compile(const char16_t* aText,
     }
     JSContext* cx = jsapi.cx();
 
-    JS::SourceBufferHolder srcBuf;
+    JS::SourceText<char16_t> srcBuf;
     if (NS_WARN_IF(!srcBuf.init(cx, aText, aTextLength, aOwnership))) {
         return NS_ERROR_FAILURE;
     }

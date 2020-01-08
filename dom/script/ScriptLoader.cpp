@@ -16,7 +16,7 @@
 #include "jsfriendapi.h"
 #include "js/CompilationAndEvaluation.h"
 #include "js/OffThreadScriptCompilation.h"
-#include "js/SourceBufferHolder.h"
+#include "js/SourceText.h"
 #include "js/Utility.h"
 #include "xpcpublic.h"
 #include "nsCycleCollectionParticipant.h"
@@ -68,7 +68,7 @@
 #include "nsIScriptError.h"
 #include "nsIOutputStream.h"
 
-using JS::SourceBufferHolder;
+using JS::SourceText;
 
 using mozilla::Telemetry::LABELS_DOM_SCRIPT_PRELOAD_RESULT;
 
@@ -1933,7 +1933,7 @@ ScriptLoader::CompileOffThreadOrProcessRequest(ScriptLoadRequest* aRequest)
   return ProcessRequest(aRequest);
 }
 
-mozilla::Maybe<SourceBufferHolder>
+mozilla::Maybe<SourceText<char16_t>>
 ScriptLoader::GetScriptSource(JSContext* aCx, ScriptLoadRequest* aRequest)
 {
   
@@ -1952,12 +1952,12 @@ ScriptLoader::GetScriptSource(JSContext* aCx, ScriptLoadRequest* aRequest)
 
     memcpy(chars.get(), inlineData.get(), nbytes);
 
-    SourceBufferHolder srcBuf;
+    SourceText<char16_t> srcBuf;
     if (!srcBuf.init(aCx, std::move(chars), inlineData.Length())) {
       return Nothing();
     }
 
-    return Some(SourceBufferHolder(std::move(srcBuf)));
+    return Some(SourceText<char16_t>(std::move(srcBuf)));
   }
 
   size_t length = aRequest->ScriptText().length();
@@ -1967,12 +1967,12 @@ ScriptLoader::GetScriptSource(JSContext* aCx, ScriptLoadRequest* aRequest)
     return Nothing();
   }
 
-  SourceBufferHolder srcBuf;
+  SourceText<char16_t> srcBuf;
   if (!srcBuf.init(aCx, std::move(chars), length)) {
     return Nothing();
   }
 
-  return Some(SourceBufferHolder(std::move(srcBuf)));
+  return Some(SourceText<char16_t>(std::move(srcBuf)));
 }
 
 nsresult
