@@ -162,6 +162,9 @@ TEST(AudioEventTimeline, InvalidEvents)
   Timeline timeline(10.0f);
 
   float curve[] = { -1.0f, 0.0f, 1.0f };
+  float badCurve1[] = { -1.0f, NaN, 1.0f };
+  float badCurve2[] = { -1.0f, Infinity, 1.0f };
+  float badCurve3[] = { -1.0f, -Infinity, 1.0f };
 
   ErrorResultMock rv;
 
