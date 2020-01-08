@@ -1243,7 +1243,7 @@ nsDocShell::GatherCharsetMenuTelemetry() {
     return NS_OK;
   }
 
-  Telemetry::Accumulate(Telemetry::CHARSET_OVERRIDE_USED, true);
+  Telemetry::ScalarSet(Telemetry::ScalarID::ENCODING_OVERRIDE_USED, true);
 
   bool isFileURL = false;
   nsIURI* url = doc->GetOriginalURI();
@@ -1255,7 +1255,8 @@ nsDocShell::GatherCharsetMenuTelemetry() {
   switch (charsetSource) {
     case kCharsetFromTopLevelDomain:
       
-      Telemetry::Accumulate(Telemetry::CHARSET_OVERRIDE_SITUATION, 7);
+      Telemetry::AccumulateCategorical(
+          Telemetry::LABELS_ENCODING_OVERRIDE_SITUATION::RemoteTld);
       break;
     case kCharsetFromFallback:
     case kCharsetFromDocTypeDefault:
@@ -1264,29 +1265,35 @@ nsDocShell::GatherCharsetMenuTelemetry() {
     case kCharsetFromHintPrevDoc:
       
       if (isFileURL) {
-        Telemetry::Accumulate(Telemetry::CHARSET_OVERRIDE_SITUATION, 0);
+        Telemetry::AccumulateCategorical(
+            Telemetry::LABELS_ENCODING_OVERRIDE_SITUATION::Local);
       } else {
-        Telemetry::Accumulate(Telemetry::CHARSET_OVERRIDE_SITUATION, 1);
+        Telemetry::AccumulateCategorical(
+            Telemetry::LABELS_ENCODING_OVERRIDE_SITUATION::RemoteNonTld);
       }
       break;
     case kCharsetFromAutoDetection:
       
       if (isFileURL) {
-        Telemetry::Accumulate(Telemetry::CHARSET_OVERRIDE_SITUATION, 2);
+        Telemetry::AccumulateCategorical(
+            Telemetry::LABELS_ENCODING_OVERRIDE_SITUATION::LocalChardet);
       } else {
-        Telemetry::Accumulate(Telemetry::CHARSET_OVERRIDE_SITUATION, 3);
+        Telemetry::AccumulateCategorical(
+            Telemetry::LABELS_ENCODING_OVERRIDE_SITUATION::RemoteChardet);
       }
       break;
     case kCharsetFromMetaPrescan:
     case kCharsetFromMetaTag:
     case kCharsetFromChannel:
       
-      Telemetry::Accumulate(Telemetry::CHARSET_OVERRIDE_SITUATION, 4);
+      Telemetry::AccumulateCategorical(
+          Telemetry::LABELS_ENCODING_OVERRIDE_SITUATION::Labeled);
       break;
     case kCharsetFromParentForced:
     case kCharsetFromUserForced:
       
-      Telemetry::Accumulate(Telemetry::CHARSET_OVERRIDE_SITUATION, 5);
+      Telemetry::AccumulateCategorical(
+          Telemetry::LABELS_ENCODING_OVERRIDE_SITUATION::AlreadyOverridden);
       break;
     case kCharsetFromIrreversibleAutoDetection:
     case kCharsetFromOtherComponent:
@@ -1294,7 +1301,8 @@ nsDocShell::GatherCharsetMenuTelemetry() {
     case kCharsetUninitialized:
     default:
       
-      Telemetry::Accumulate(Telemetry::CHARSET_OVERRIDE_SITUATION, 6);
+      Telemetry::AccumulateCategorical(
+          Telemetry::LABELS_ENCODING_OVERRIDE_SITUATION::Bug);
       break;
   }
   return NS_OK;
