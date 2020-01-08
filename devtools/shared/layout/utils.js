@@ -615,6 +615,17 @@ exports.isShadowRoot = isShadowRoot;
 
 
 
+function getShadowRootMode(node) {
+  return isShadowRoot(node) ? node.mode : null;
+}
+exports.getShadowRootMode = getShadowRootMode;
+
+
+
+
+
+
+
 
 function isShadowHost(node) {
   const shadowRoot = node.openOrClosedShadowRoot;
