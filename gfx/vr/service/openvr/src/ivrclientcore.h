@@ -8,7 +8,7 @@ class IVRClientCore
 {
 public:
 	
-	virtual EVRInitError Init( vr::EVRApplicationType eApplicationType ) = 0;
+	virtual EVRInitError Init( vr::EVRApplicationType eApplicationType, const char *pStartupInfo ) = 0;
 
 	
 	virtual void Cleanup() = 0;
@@ -29,7 +29,7 @@ public:
 	virtual const char *GetIDForVRInitError( vr::EVRInitError eError ) = 0;
 };
 
-static const char * const IVRClientCore_Version = "IVRClientCore_002";
+static const char * const IVRClientCore_Version = "IVRClientCore_003";
 
 
 }

@@ -214,7 +214,6 @@ uint32_t ReturnStdString( const std::string & sValue, char *pchBuffer, uint32_t 
 
 
 
-
 uint64_t StringToUint64( const std::string & sValue )
 {
 	return strtoull( sValue.c_str(), NULL, 0 );
