@@ -48,8 +48,9 @@ ComputeLocalTime(time_t local, struct tm* ptm)
     return localtime_r(&local, ptm);
 #else
     struct tm* otm = localtime(&local);
-    if (!otm)
+    if (!otm) {
         return false;
+    }
     *ptm = *otm;
     return true;
 #endif
@@ -64,8 +65,9 @@ ComputeUTCTime(time_t t, struct tm* ptm)
     return gmtime_r(&t, ptm);
 #else
     struct tm* otm = gmtime(&t);
-    if (!otm)
+    if (!otm) {
         return false;
+    }
     *ptm = *otm;
     return true;
 #endif
@@ -94,14 +96,16 @@ UTCToLocalStandardOffsetSeconds()
 
     
     time_t currentMaybeWithDST = time(nullptr);
-    if (currentMaybeWithDST == time_t(-1))
+    if (currentMaybeWithDST == time_t(-1)) {
         return 0;
+    }
 
     
     
     struct tm local;
-    if (!ComputeLocalTime(currentMaybeWithDST, &local))
+    if (!ComputeLocalTime(currentMaybeWithDST, &local)) {
         return 0;
+    }
 
     
     time_t currentNoDST;
@@ -123,15 +127,17 @@ UTCToLocalStandardOffsetSeconds()
         
         
         currentNoDST = mktime(&localNoDST);
-        if (currentNoDST == time_t(-1))
+        if (currentNoDST == time_t(-1)) {
             return 0;
+        }
     }
 
     
     
     struct tm utc;
-    if (!ComputeUTCTime(currentNoDST, &utc))
+    if (!ComputeUTCTime(currentNoDST, &utc)) {
         return 0;
+    }
 
     
     
@@ -140,13 +146,15 @@ UTCToLocalStandardOffsetSeconds()
     int local_secs = local.tm_hour * SecondsPerHour + local.tm_min * SecondsPerMinute;
 
     
-    if (utc.tm_mday == local.tm_mday)
+    if (utc.tm_mday == local.tm_mday) {
         return local_secs - utc_secs;
+    }
 
     
     
-    if (utc_secs > local_secs)
+    if (utc_secs > local_secs) {
         return (SecondsPerDay + local_secs) - utc_secs;
+    }
 
     
     
@@ -163,8 +171,9 @@ js::DateTimeInfo::internalUpdateTimeZoneAdjustment(ResetTimeZoneMode mode)
     utcToLocalStandardOffsetSeconds_ = UTCToLocalStandardOffsetSeconds();
 
     int32_t newTZA = utcToLocalStandardOffsetSeconds_ * msPerSecond;
-    if (mode == ResetTimeZoneMode::DontResetIfOffsetUnchanged && newTZA == localTZA_)
+    if (mode == ResetTimeZoneMode::DontResetIfOffsetUnchanged && newTZA == localTZA_) {
         return false;
+    }
 
     localTZA_ = newTZA;
 
@@ -222,14 +231,16 @@ js::DateTimeInfo::computeDSTOffsetMilliseconds(int64_t utcSeconds)
     UErrorCode status = U_ZERO_ERROR;
 
     timeZone()->getOffset(date, dateIsLocalTime, rawOffset, dstOffset, status);
-    if (U_FAILURE(status))
+    if (U_FAILURE(status)) {
         return 0;
+    }
 
     return dstOffset;
 #else
     struct tm tm;
-    if (!ComputeLocalTime(static_cast<time_t>(utcSeconds), &tm))
+    if (!ComputeLocalTime(static_cast<time_t>(utcSeconds), &tm)) {
         return 0;
+    }
 
     
     
@@ -238,10 +249,11 @@ js::DateTimeInfo::computeDSTOffsetMilliseconds(int64_t utcSeconds)
 
     int32_t diff = tmoff - dayoff;
 
-    if (diff < 0)
+    if (diff < 0) {
         diff += SecondsPerDay;
-    else if (uint32_t(diff) >= SecondsPerDay)
+    } else if (uint32_t(diff) >= SecondsPerDay) {
         diff -= SecondsPerDay;
+    }
 
     return diff * msPerSecond;
 #endif 
@@ -268,11 +280,13 @@ js::DateTimeInfo::getOrComputeValue(RangeCache& range, int64_t seconds, ComputeF
     
     MOZ_ASSERT(seconds != INT64_MIN);
 
-    if (range.startSeconds <= seconds && seconds <= range.endSeconds)
+    if (range.startSeconds <= seconds && seconds <= range.endSeconds) {
         return range.offsetMilliseconds;
+    }
 
-    if (range.oldStartSeconds <= seconds && seconds <= range.oldEndSeconds)
+    if (range.oldStartSeconds <= seconds && seconds <= range.oldEndSeconds) {
         return range.oldOffsetMilliseconds;
+    }
 
     range.oldOffsetMilliseconds = range.offsetMilliseconds;
     range.oldStartSeconds = range.startSeconds;
@@ -384,8 +398,9 @@ js::DateTimeInfo::computeUTCOffsetMilliseconds(int64_t localSeconds)
     
     auto* basicTz = static_cast<icu::BasicTimeZone*>(timeZone());
     basicTz->getOffsetFromLocal(date, skippedTime, repeatedTime, rawOffset, dstOffset, status);
-    if (U_FAILURE(status))
+    if (U_FAILURE(status)) {
         return 0;
+    }
 
     return rawOffset + dstOffset;
 }
@@ -402,8 +417,9 @@ js::DateTimeInfo::computeLocalOffsetMilliseconds(int64_t utcSeconds)
     UErrorCode status = U_ZERO_ERROR;
 
     timeZone()->getOffset(date, dateIsLocalTime, rawOffset, dstOffset, status);
-    if (U_FAILURE(status))
+    if (U_FAILURE(status)) {
         return 0;
+    }
 
     return rawOffset + dstOffset;
 }
@@ -428,8 +444,9 @@ js::DateTimeInfo::internalTimeZoneDisplayName(char16_t* buf, size_t buflen,
     
     if (!locale_ || std::strcmp(locale_.get(), locale) != 0) {
         locale_ = DuplicateString(locale);
-        if (!locale_)
+        if (!locale_) {
             return false;
+        }
 
         standardName_.reset();
         daylightSavingsName_.reset();
@@ -446,8 +463,9 @@ js::DateTimeInfo::internalTimeZoneDisplayName(char16_t* buf, size_t buflen,
 
         size_t capacity = displayName.length() + 1; 
         JS::UniqueTwoByteChars displayNameChars(js_pod_malloc<char16_t>(capacity));
-        if (!displayNameChars)
+        if (!displayNameChars) {
             return false;
+        }
 
         
         
@@ -461,10 +479,11 @@ js::DateTimeInfo::internalTimeZoneDisplayName(char16_t* buf, size_t buflen,
 
     
     size_t length = js_strlen(cachedName.get());
-    if (length < buflen)
+    if (length < buflen) {
         std::copy(cachedName.get(), cachedName.get() + length, buf);
-    else
+    } else {
         length = 0;
+    }
 
     buf[length] = '\0';
     return true;
@@ -501,8 +520,9 @@ js::InitDateTimeState()
                "we should be initializing only once");
 
     DateTimeInfo::instance = js_new<ExclusiveData<DateTimeInfo>>(mutexid::DateTimeInfoMutex);
-    if (!DateTimeInfo::instance)
+    if (!DateTimeInfo::instance) {
         return false;
+    }
 
     MOZ_ASSERT(!IcuTimeZoneState,
                "we should be initializing only once");
@@ -598,8 +618,9 @@ IsOlsonCompatibleWindowsTimeZoneId(const char* tz)
         "GMT",
     };
     for (const auto& allowedId : allowedIds) {
-        if (std::strcmp(allowedId, tz) == 0)
+        if (std::strcmp(allowedId, tz) == 0) {
             return true;
+        }
     }
     return false;
 }
@@ -774,8 +795,9 @@ js::ResyncICUDefaultTimeZone()
             }
         }
 
-        if (recreate)
+        if (recreate) {
             icu::TimeZone::recreateDefault();
+        }
         guard.get() = IcuTimeZoneStatus::Valid;
     }
 #endif
