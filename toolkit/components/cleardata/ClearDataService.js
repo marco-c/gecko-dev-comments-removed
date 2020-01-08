@@ -857,6 +857,11 @@ ClearDataService.prototype = Object.freeze({
     });
   },
 
+  deleteDataFromOriginAttributesPattern(aPattern) {
+    Services.obs.notifyObservers(null, "clear-origin-attributes-data",
+      JSON.stringify(aPattern));
+  },
+
   
   
   
