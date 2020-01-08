@@ -14,9 +14,7 @@
 
 namespace angle
 {
-
-rx::LoadFunctionMap GetLoadFunctionsMap(GLenum internalFormat, Format::ID angleFormat);
-
+rx::LoadFunctionMap GetLoadFunctionsMap(GLenum internalFormat, FormatID angleFormat);
 }  
 
 #endif  

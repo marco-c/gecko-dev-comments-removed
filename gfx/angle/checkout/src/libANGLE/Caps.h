@@ -38,7 +38,10 @@ struct TextureCaps
     bool filterable;
 
     
-    bool renderable;
+    bool textureAttachment;
+
+    
+    bool renderbuffer;
 
     
     SupportedSampleSet sampleCounts;
@@ -68,11 +71,11 @@ class TextureCapsMap final : angle::NonCopyable
     void clear();
 
     
-    const TextureCaps &get(angle::Format::ID formatID) const;
-    void set(angle::Format::ID formatID, const TextureCaps &caps);
+    const TextureCaps &get(angle::FormatID formatID) const;
+    void set(angle::FormatID formatID, const TextureCaps &caps);
 
   private:
-    TextureCaps &get(angle::Format::ID formatID);
+    TextureCaps &get(angle::FormatID formatID);
 
     
     std::array<TextureCaps, angle::kNumANGLEFormats> mFormatData;
@@ -410,12 +413,22 @@ struct Extensions
     bool pointSizeArray;
     
     bool textureCubeMap;
+    
+    bool pointSprite;
+    
+    bool drawTexture;
 
     
     
     bool explicitContextGles1;
     
     bool explicitContext;
+
+    
+    bool parallelShaderCompile;
+
+    
+    bool textureMultisampleArray;
 };
 
 struct ExtensionInfo
@@ -537,26 +550,29 @@ struct Caps
     
     
     
+    
+    
     ShaderMap<GLuint> maxShaderUniformBlocks;
     ShaderMap<GLuint> maxShaderTextureImageUnits;
     ShaderMap<GLuint> maxShaderStorageBlocks;
+    ShaderMap<GLuint> maxShaderUniformComponents;
+    ShaderMap<GLuint> maxShaderAtomicCounterBuffers;
+    ShaderMap<GLuint> maxShaderAtomicCounters;
+    ShaderMap<GLuint> maxShaderImageUniforms;
+    
+    
+    
+    
+    ShaderMap<GLuint64> maxCombinedShaderUniformComponents;
 
     
     GLuint maxVertexAttributes;
-    GLuint maxVertexUniformComponents;
     GLuint maxVertexUniformVectors;
     GLuint maxVertexOutputComponents;
-    GLuint maxVertexAtomicCounterBuffers;
-    GLuint maxVertexAtomicCounters;
-    GLuint maxVertexImageUniforms;
 
     
-    GLuint maxFragmentUniformComponents;
     GLuint maxFragmentUniformVectors;
     GLuint maxFragmentInputComponents;
-    GLuint maxFragmentAtomicCounterBuffers;
-    GLuint maxFragmentAtomicCounters;
-    GLuint maxFragmentImageUniforms;
     GLint minProgramTextureGatherOffset;
     GLuint maxProgramTextureGatherOffset;
     GLint minProgramTexelOffset;
@@ -567,19 +583,12 @@ struct Caps
     std::array<GLuint, 3> maxComputeWorkGroupSize;
     GLuint maxComputeWorkGroupInvocations;
     GLuint maxComputeSharedMemorySize;
-    GLuint maxComputeUniformComponents;
-    GLuint maxComputeAtomicCounterBuffers;
-    GLuint maxComputeAtomicCounters;
-    GLuint maxComputeImageUniforms;
-    GLuint maxCombinedComputeUniformComponents;
 
     
     GLuint maxUniformBufferBindings;
     GLuint64 maxUniformBlockSize;
     GLuint uniformBufferOffsetAlignment;
     GLuint maxCombinedUniformBlocks;
-    GLuint64 maxCombinedVertexUniformComponents;
-    GLuint64 maxCombinedFragmentUniformComponents;
     GLuint maxVaryingComponents;
     GLuint maxVaryingVectors;
     GLuint maxCombinedTextureImageUnits;
@@ -612,19 +621,11 @@ struct Caps
 
     
     
-    GLuint maxGeometryUniformComponents;
     GLuint maxGeometryInputComponents;
     GLuint maxGeometryOutputComponents;
     GLuint maxGeometryOutputVertices;
     GLuint maxGeometryTotalOutputComponents;
-    GLuint maxGeometryAtomicCounterBuffers;
-    GLuint maxGeometryAtomicCounters;
     GLuint maxGeometryShaderInvocations;
-
-    
-    
-    GLuint maxGeometryImageUniforms;
-    GLuint maxCombinedGeometryUniformComponents;
 
     
     GLuint maxMultitextureUnits;
@@ -634,6 +635,10 @@ struct Caps
     GLuint maxModelviewMatrixStackDepth;
     GLuint maxProjectionMatrixStackDepth;
     GLuint maxTextureMatrixStackDepth;
+    GLfloat minSmoothPointSize;
+    GLfloat maxSmoothPointSize;
+    GLfloat minSmoothLineWidth;
+    GLfloat maxSmoothLineWidth;
 };
 
 Caps GenerateMinimumCaps(const Version &clientVersion, const Extensions &extensions);
@@ -770,6 +775,9 @@ struct DisplayExtensions
 
     
     bool createContextExtensionsEnabled;
+
+    
+    bool presentationTime;
 };
 
 struct DeviceExtensions
@@ -816,6 +824,9 @@ struct ClientExtensions
     bool platformANGLEVulkan;
 
     
+    bool platformANGLEContextVirtualization;
+
+    
     bool deviceCreation;
 
     
@@ -829,6 +840,9 @@ struct ClientExtensions
 
     
     bool clientGetAllProcAddresses;
+
+    
+    bool debug;
 
     
     bool explicitContext;

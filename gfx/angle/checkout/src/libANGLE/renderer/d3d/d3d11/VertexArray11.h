@@ -33,8 +33,8 @@ class VertexArray11 : public VertexArrayImpl
                         const gl::VertexArray::DirtyBindingBitsArray &bindingBits) override;
 
     
-    gl::Error syncStateForDraw(const gl::Context *context,
-                               const gl::DrawCallParams &drawCallParams);
+    angle::Result syncStateForDraw(const gl::Context *context,
+                                   const gl::DrawCallParams &drawCallParams);
 
     
     bool hasActiveDynamicAttrib(const gl::Context *context);
@@ -47,11 +47,6 @@ class VertexArray11 : public VertexArrayImpl
     
     void markAllAttributeDivisorsForAdjustment(int numViews);
 
-    
-    gl::Error updateElementArrayStorage(const gl::Context *context,
-                                        const gl::DrawCallParams &drawCallParams,
-                                        bool restartEnabled);
-
     const TranslatedIndexData &getCachedIndexInfo() const;
     void updateCachedIndexInfo(const TranslatedIndexData &indexInfo);
     bool isCachedIndexInfoValid() const;
@@ -59,24 +54,25 @@ class VertexArray11 : public VertexArrayImpl
     GLenum getCachedDestinationIndexType() const;
 
   private:
-    void updateVertexAttribStorage(StateManager11 *stateManager,
-                                   size_t dirtyBit,
+    void updateVertexAttribStorage(const gl::Context *context,
+                                   StateManager11 *stateManager,
                                    size_t attribIndex);
-    gl::Error updateDirtyAttribs(const gl::Context *context,
-                                 const gl::AttributesMask &activeDirtyAttribs);
-    gl::Error updateDynamicAttribs(const gl::Context *context,
-                                   VertexDataManager *vertexDataManager,
-                                   const gl::DrawCallParams &drawCallParams,
-                                   const gl::AttributesMask &activeDynamicAttribs);
+    angle::Result updateDirtyAttribs(const gl::Context *context,
+                                     const gl::AttributesMask &activeDirtyAttribs);
+    angle::Result updateDynamicAttribs(const gl::Context *context,
+                                       VertexDataManager *vertexDataManager,
+                                       const gl::DrawCallParams &drawCallParams,
+                                       const gl::AttributesMask &activeDynamicAttribs);
+
+    angle::Result updateElementArrayStorage(const gl::Context *context,
+                                            const gl::DrawCallParams &drawCallParams,
+                                            bool restartEnabled);
 
     std::vector<VertexStorageType> mAttributeStorageTypes;
     std::vector<TranslatedAttribute> mTranslatedAttribs;
 
     
     gl::AttributesMask mDynamicAttribsMask;
-
-    
-    gl::VertexArray::DirtyBits mRelevantDirtyBitsMask;
 
     
     gl::AttributesMask mAttribsToTranslate;

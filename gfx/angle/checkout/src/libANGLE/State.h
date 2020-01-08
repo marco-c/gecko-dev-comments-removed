@@ -35,18 +35,17 @@ class VertexArray;
 class Context;
 struct Caps;
 
-class State : public angle::ObserverInterface, angle::NonCopyable
+class State : angle::NonCopyable
 {
   public:
-    State();
-    ~State() override;
+    State(bool debug,
+          bool bindGeneratesResource,
+          bool clientArraysEnabled,
+          bool robustResourceInit,
+          bool programBinaryCacheEnabled);
+    ~State();
 
-    void initialize(const Context *context,
-                    bool debug,
-                    bool bindGeneratesResource,
-                    bool clientArraysEnabled,
-                    bool robustResourceInit,
-                    bool programBinaryCacheEnabled);
+    void initialize(Context *context);
     void reset(const Context *context);
 
     
@@ -163,7 +162,10 @@ class State : public angle::ObserverInterface, angle::NonCopyable
     void setFragmentShaderDerivativeHint(GLenum hint);
 
     
-    bool isBindGeneratesResourceEnabled() const;
+    bool isBindGeneratesResourceEnabled() const
+    {
+        return mBindGeneratesResource;
+    }
 
     
     bool areClientArraysEnabled() const;
@@ -185,7 +187,9 @@ class State : public angle::ObserverInterface, angle::NonCopyable
     
     void setSamplerBinding(const Context *context, GLuint textureUnit, Sampler *sampler);
     GLuint getSamplerId(GLuint textureUnit) const;
-    Sampler *getSampler(GLuint textureUnit) const;
+
+    Sampler *getSampler(GLuint textureUnit) const { return mSamplers[textureUnit].get(); }
+
     void detachSampler(const Context *context, GLuint sampler);
 
     
@@ -199,23 +203,30 @@ class State : public angle::ObserverInterface, angle::NonCopyable
     void setDrawFramebufferBinding(Framebuffer *framebuffer);
     Framebuffer *getTargetFramebuffer(GLenum target) const;
     Framebuffer *getReadFramebuffer() const;
-    Framebuffer *getDrawFramebuffer() const;
+    Framebuffer *getDrawFramebuffer() const { return mDrawFramebuffer; }
+
     bool removeReadFramebufferBinding(GLuint framebuffer);
     bool removeDrawFramebufferBinding(GLuint framebuffer);
 
     
     void setVertexArrayBinding(const Context *context, VertexArray *vertexArray);
     GLuint getVertexArrayId() const;
-    VertexArray *getVertexArray() const;
+    VertexArray *getVertexArray() const
+    {
+        ASSERT(mVertexArray != nullptr);
+        return mVertexArray;
+    }
+
     bool removeVertexArrayBinding(const Context *context, GLuint vertexArray);
 
     
     void setProgram(const Context *context, Program *newProgram);
-    Program *getProgram() const;
+    Program *getProgram() const { return mProgram; }
 
     
     void setTransformFeedbackBinding(const Context *context, TransformFeedback *transformFeedback);
-    TransformFeedback *getCurrentTransformFeedback() const;
+    TransformFeedback *getCurrentTransformFeedback() const { return mTransformFeedback.get(); }
+
     bool isTransformFeedbackActiveUnpaused() const;
     bool removeTransformFeedbackBinding(const Context *context, GLuint transformFeedback);
 
@@ -249,7 +260,6 @@ class State : public angle::ObserverInterface, angle::NonCopyable
 
     
     void setEnableVertexAttribArray(unsigned int attribNum, bool enabled);
-    void setElementArrayBuffer(const Context *context, Buffer *buffer);
     void setVertexAttribf(GLuint index, const GLfloat values[4]);
     void setVertexAttribu(GLuint index, const GLuint values[4]);
     void setVertexAttribi(GLuint index, const GLint values[4]);
@@ -332,6 +342,10 @@ class State : public angle::ObserverInterface, angle::NonCopyable
     bool getFramebufferSRGB() const;
 
     
+    void setMaxShaderCompilerThreads(GLuint count);
+    GLuint getMaxShaderCompilerThreads() const;
+
+    
     void getBooleanv(GLenum pname, GLboolean *params);
     void getFloatv(GLenum pname, GLfloat *params);
     Error getIntegerv(const Context *context, GLenum pname, GLint *params);
@@ -340,7 +354,6 @@ class State : public angle::ObserverInterface, angle::NonCopyable
     void getInteger64i_v(GLenum target, GLuint index, GLint64 *data);
     void getBooleani_v(GLenum target, GLuint index, GLboolean *data);
 
-    bool hasMappedBuffer(BufferBinding target) const;
     bool isRobustResourceInitEnabled() const { return mRobustResourceInit; }
 
     
@@ -428,6 +441,7 @@ class State : public angle::ObserverInterface, angle::NonCopyable
         
         
         DIRTY_OBJECT_PROGRAM_TEXTURES,
+        DIRTY_OBJECT_PROGRAM,
         DIRTY_OBJECT_UNKNOWN,
         DIRTY_OBJECT_MAX = DIRTY_OBJECT_UNKNOWN,
     };
@@ -441,12 +455,9 @@ class State : public angle::ObserverInterface, angle::NonCopyable
     using DirtyObjects = angle::BitSet<DIRTY_OBJECT_MAX>;
     void clearDirtyObjects() { mDirtyObjects.reset(); }
     void setAllDirtyObjects() { mDirtyObjects.set(); }
-    Error syncDirtyObjects(const Context *context);
     Error syncDirtyObjects(const Context *context, const DirtyObjects &bitset);
     Error syncDirtyObject(const Context *context, GLenum target);
     void setObjectDirty(GLenum target);
-    void setFramebufferDirty(const Framebuffer *framebuffer) const;
-    void setVertexArrayDirty(const VertexArray *vertexArray) const;
 
     
     
@@ -462,18 +473,17 @@ class State : public angle::ObserverInterface, angle::NonCopyable
                       GLenum format);
 
     const ImageUnit &getImageUnit(GLuint unit) const;
-    const std::vector<Texture *> &getCompleteTextureCache() const { return mCompleteTextureCache; }
+    const ActiveTexturePointerArray &getActiveTexturesCache() const { return mActiveTexturesCache; }
     ComponentTypeMask getCurrentValuesTypeMask() const { return mCurrentValuesTypeMask; }
 
-    
-    void onSubjectStateChange(const Context *context,
-                              angle::SubjectIndex index,
-                              angle::SubjectMessage message) override;
+    void onActiveTextureStateChange(size_t textureIndex);
+    void onUniformBufferStateChange(size_t uniformBufferIndex);
 
     Error clearUnclearedActiveTextures(const Context *context);
 
     bool isCurrentTransformFeedback(const TransformFeedback *tf) const;
-    bool isCurrentVertexArray(const VertexArray *va) const;
+
+    bool isCurrentVertexArray(const VertexArray *va) const { return va == mVertexArray; }
 
     GLES1State &gles1() { return mGLES1State; }
     const GLES1State &gles1() const { return mGLES1State; }
@@ -511,8 +521,8 @@ class State : public angle::ObserverInterface, angle::NonCopyable
     GLenum mGenerateMipmapHint;
     GLenum mFragmentShaderDerivativeHint;
 
-    bool mBindGeneratesResource;
-    bool mClientArraysEnabled;
+    const bool mBindGeneratesResource;
+    const bool mClientArraysEnabled;
 
     Rectangle mViewport;
     float mNearZ;
@@ -550,11 +560,11 @@ class State : public angle::ObserverInterface, angle::NonCopyable
     
     
     
-    std::vector<Texture *> mCompleteTextureCache;
+    ActiveTexturePointerArray mActiveTexturesCache;
     std::vector<angle::ObserverBinding> mCompleteTextureBindings;
     InitState mCachedTexturesInitState;
-    using ActiveTextureMask = angle::BitSet<IMPLEMENTATION_MAX_ACTIVE_TEXTURES>;
-    ActiveTextureMask mActiveTexturesMask;
+
+    InitState mCachedImageTexturesInitState;
 
     using SamplerBindingVector = std::vector<BindingPointer<Sampler>>;
     SamplerBindingVector mSamplers;
@@ -601,16 +611,19 @@ class State : public angle::ObserverInterface, angle::NonCopyable
     bool mFramebufferSRGB;
 
     
-    bool mRobustResourceInit;
+    const bool mRobustResourceInit;
 
     
-    bool mProgramBinaryCacheEnabled;
+    const bool mProgramBinaryCacheEnabled;
+
+    
+    GLuint mMaxShaderCompilerThreads;
 
     
     GLES1State mGLES1State;
 
     DirtyBits mDirtyBits;
-    mutable DirtyObjects mDirtyObjects;
+    DirtyObjects mDirtyObjects;
     mutable AttributesMask mDirtyCurrentValues;
 };
 

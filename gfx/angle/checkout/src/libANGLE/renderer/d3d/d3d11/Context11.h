@@ -12,17 +12,20 @@
 
 #include "libANGLE/renderer/ContextImpl.h"
 
+#include "libANGLE/renderer/d3d/ContextD3D.h"
+
 namespace rx
 {
 class Renderer11;
 
-class Context11 : public ContextImpl
+class Context11 : public ContextD3D, public MultisampleTextureInitializer
 {
   public:
     Context11(const gl::ContextState &state, Renderer11 *renderer);
     ~Context11() override;
 
     gl::Error initialize() override;
+    void onDestroy(const gl::Context *context) override;
 
     
     CompilerImpl *createCompiler() override;
@@ -68,38 +71,38 @@ class Context11 : public ContextImpl
 
     
     gl::Error drawArrays(const gl::Context *context,
-                         GLenum mode,
+                         gl::PrimitiveMode mode,
                          GLint first,
                          GLsizei count) override;
     gl::Error drawArraysInstanced(const gl::Context *context,
-                                  GLenum mode,
+                                  gl::PrimitiveMode mode,
                                   GLint first,
                                   GLsizei count,
                                   GLsizei instanceCount) override;
 
     gl::Error drawElements(const gl::Context *context,
-                           GLenum mode,
+                           gl::PrimitiveMode mode,
                            GLsizei count,
                            GLenum type,
                            const void *indices) override;
     gl::Error drawElementsInstanced(const gl::Context *context,
-                                    GLenum mode,
+                                    gl::PrimitiveMode mode,
                                     GLsizei count,
                                     GLenum type,
                                     const void *indices,
                                     GLsizei instances) override;
     gl::Error drawRangeElements(const gl::Context *context,
-                                GLenum mode,
+                                gl::PrimitiveMode mode,
                                 GLuint start,
                                 GLuint end,
                                 GLsizei count,
                                 GLenum type,
                                 const void *indices) override;
     gl::Error drawArraysIndirect(const gl::Context *context,
-                                 GLenum mode,
+                                 gl::PrimitiveMode mode,
                                  const void *indirect) override;
     gl::Error drawElementsIndirect(const gl::Context *context,
-                                   GLenum mode,
+                                   gl::PrimitiveMode mode,
                                    GLenum type,
                                    const void *indirect) override;
 
@@ -120,17 +123,17 @@ class Context11 : public ContextImpl
     void popDebugGroup() override;
 
     
-    void syncState(const gl::Context *context, const gl::State::DirtyBits &dirtyBits) override;
+    gl::Error syncState(const gl::Context *context, const gl::State::DirtyBits &dirtyBits) override;
 
     
     GLint getGPUDisjoint() override;
     GLint64 getTimestamp() override;
 
     
-    void onMakeCurrent(const gl::Context *context) override;
+    gl::Error onMakeCurrent(const gl::Context *context) override;
 
     
-    const gl::Caps &getNativeCaps() const override;
+    gl::Caps getNativeCaps() const override;
     const gl::TextureCapsMap &getNativeTextureCaps() const override;
     const gl::Extensions &getNativeExtensions() const override;
     const gl::Limitations &getNativeLimitations() const override;
@@ -146,15 +149,32 @@ class Context11 : public ContextImpl
     gl::Error memoryBarrier(const gl::Context *context, GLbitfield barriers) override;
     gl::Error memoryBarrierByRegion(const gl::Context *context, GLbitfield barriers) override;
 
-    gl::Error triggerDrawCallProgramRecompilation(const gl::Context *context, GLenum drawMode);
+    angle::Result triggerDrawCallProgramRecompilation(const gl::Context *context,
+                                                      gl::PrimitiveMode drawMode);
+
+    angle::Result getIncompleteTexture(const gl::Context *context,
+                                       gl::TextureType type,
+                                       gl::Texture **textureOut);
+
+    gl::Error initializeMultisampleTextureToBlack(const gl::Context *context,
+                                                  gl::Texture *glTexture) override;
+
+    void handleError(HRESULT hr,
+                     const char *message,
+                     const char *file,
+                     const char *function,
+                     unsigned int line) override;
+
+    
+    void handleError(const gl::Error &error);
 
   private:
-    gl::Error prepareForDrawCall(const gl::Context *context,
-                                 const gl::DrawCallParams &drawCallParams);
+    angle::Result prepareForDrawCall(const gl::Context *context,
+                                     const gl::DrawCallParams &drawCallParams);
 
     Renderer11 *mRenderer;
+    IncompleteTextureSet mIncompleteTextures;
 };
-
 }  
 
 #endif  

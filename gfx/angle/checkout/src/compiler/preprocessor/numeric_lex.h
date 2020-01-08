@@ -9,7 +9,6 @@
 #ifndef COMPILER_PREPROCESSOR_NUMERICLEX_H_
 #define COMPILER_PREPROCESSOR_NUMERICLEX_H_
 
-#include <cmath>
 #include <sstream>
 
 namespace angle
@@ -46,22 +45,6 @@ bool numeric_lex_int(const std::string &str, IntType *value)
 
     stream >> (*value);
     return !stream.fail();
-}
-
-template <typename FloatType>
-bool numeric_lex_float(const std::string &str, FloatType *value)
-{
-    std::istringstream stream(str);
-
-
-#if !defined(ANGLE_PLATFORM_ANDROID)
-    
-    
-    stream.imbue(std::locale::classic());
-#endif
-
-    stream >> (*value);
-    return !stream.fail() && std::isfinite(*value);
 }
 
 }  

@@ -28,7 +28,7 @@ DeviceD3D::~DeviceD3D()
     if (mIsInitialized && mDeviceType == EGL_D3D11_DEVICE_ANGLE)
     {
         
-        ID3D11Device *device = reinterpret_cast<ID3D11Device *>(mDevice);
+        ID3D11Device *device = static_cast<ID3D11Device *>(mDevice);
         device->Release();
     }
 #endif
@@ -49,7 +49,7 @@ egl::Error DeviceD3D::initialize()
     if (mDeviceType == EGL_D3D11_DEVICE_ANGLE)
     {
         
-        IUnknown *iunknown = reinterpret_cast<IUnknown *>(mDevice);
+        IUnknown *iunknown = static_cast<IUnknown *>(mDevice);
 
         ID3D11Device *d3dDevice = nullptr;
         HRESULT hr =

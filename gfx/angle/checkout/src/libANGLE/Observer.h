@@ -32,6 +32,8 @@ enum class SubjectMessage
     STORAGE_CHANGED,
     BINDING_CHANGED,
     DEPENDENT_DIRTY_BITS,
+    RESOURCE_MAPPED,
+    RESOURCE_UNMAPPED,
 };
 
 

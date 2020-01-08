@@ -18,6 +18,7 @@
 
 namespace gl
 {
+class ErrorSet;
 class MemoryProgramCache;
 class Path;
 struct Workarounds;
@@ -41,39 +42,39 @@ class ContextImpl : public GLImplFactory
 
     
     virtual gl::Error drawArrays(const gl::Context *context,
-                                 GLenum mode,
+                                 gl::PrimitiveMode mode,
                                  GLint first,
-                                 GLsizei count) = 0;
+                                 GLsizei count)                  = 0;
     virtual gl::Error drawArraysInstanced(const gl::Context *context,
-                                          GLenum mode,
+                                          gl::PrimitiveMode mode,
                                           GLint first,
                                           GLsizei count,
                                           GLsizei instanceCount) = 0;
 
     virtual gl::Error drawElements(const gl::Context *context,
-                                   GLenum mode,
+                                   gl::PrimitiveMode mode,
                                    GLsizei count,
                                    GLenum type,
-                                   const void *indices) = 0;
+                                   const void *indices)        = 0;
     virtual gl::Error drawElementsInstanced(const gl::Context *context,
-                                            GLenum mode,
+                                            gl::PrimitiveMode mode,
                                             GLsizei count,
                                             GLenum type,
                                             const void *indices,
                                             GLsizei instances) = 0;
     virtual gl::Error drawRangeElements(const gl::Context *context,
-                                        GLenum mode,
+                                        gl::PrimitiveMode mode,
                                         GLuint start,
                                         GLuint end,
                                         GLsizei count,
                                         GLenum type,
-                                        const void *indices) = 0;
+                                        const void *indices)   = 0;
 
     virtual gl::Error drawArraysIndirect(const gl::Context *context,
-                                         GLenum mode,
-                                         const void *indirect) = 0;
+                                         gl::PrimitiveMode mode,
+                                         const void *indirect)   = 0;
     virtual gl::Error drawElementsIndirect(const gl::Context *context,
-                                           GLenum mode,
+                                           gl::PrimitiveMode mode,
                                            GLenum type,
                                            const void *indirect) = 0;
 
@@ -133,24 +134,25 @@ class ContextImpl : public GLImplFactory
     
     virtual void insertEventMarker(GLsizei length, const char *marker) = 0;
     virtual void pushGroupMarker(GLsizei length, const char *marker)   = 0;
-    virtual void popGroupMarker() = 0;
+    virtual void popGroupMarker()                                      = 0;
 
     
     virtual void pushDebugGroup(GLenum source, GLuint id, GLsizei length, const char *message) = 0;
     virtual void popDebugGroup()                                                               = 0;
 
     
-    virtual void syncState(const gl::Context *context, const gl::State::DirtyBits &dirtyBits) = 0;
+    virtual gl::Error syncState(const gl::Context *context,
+                                const gl::State::DirtyBits &dirtyBits) = 0;
 
     
     virtual GLint getGPUDisjoint() = 0;
     virtual GLint64 getTimestamp() = 0;
 
     
-    virtual void onMakeCurrent(const gl::Context *context) = 0;
+    virtual gl::Error onMakeCurrent(const gl::Context *context) = 0;
 
     
-    virtual const gl::Caps &getNativeCaps() const                  = 0;
+    virtual gl::Caps getNativeCaps() const                         = 0;
     virtual const gl::TextureCapsMap &getNativeTextureCaps() const = 0;
     virtual const gl::Extensions &getNativeExtensions() const      = 0;
     virtual const gl::Limitations &getNativeLimitations() const    = 0;
@@ -160,7 +162,7 @@ class ContextImpl : public GLImplFactory
     virtual gl::Error dispatchCompute(const gl::Context *context,
                                       GLuint numGroupsX,
                                       GLuint numGroupsY,
-                                      GLuint numGroupsZ) = 0;
+                                      GLuint numGroupsZ)                                     = 0;
     virtual gl::Error dispatchComputeIndirect(const gl::Context *context, GLintptr indirect) = 0;
 
     virtual gl::Error memoryBarrier(const gl::Context *context, GLbitfield barriers)         = 0;
@@ -180,9 +182,13 @@ class ContextImpl : public GLImplFactory
     
     void setMemoryProgramCache(gl::MemoryProgramCache *memoryProgramCache);
 
+    
+    void setErrorSet(gl::ErrorSet *errorSet);
+
   protected:
     const gl::ContextState &mState;
     gl::MemoryProgramCache *mMemoryProgramCache;
+    gl::ErrorSet *mErrors;
 };
 
 }  

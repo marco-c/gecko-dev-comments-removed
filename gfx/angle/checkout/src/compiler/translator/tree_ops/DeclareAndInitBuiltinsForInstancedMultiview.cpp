@@ -74,15 +74,6 @@ void InitializeViewIDAndInstanceID(const TVariable *viewID,
     initializers->push_back(viewIDInitializer);
 }
 
-void DeclareGlobalVariable(TIntermBlock *root, const TVariable *variable)
-{
-    TIntermDeclaration *declaration = new TIntermDeclaration();
-    declaration->appendDeclarator(new TIntermSymbol(variable));
-
-    TIntermSequence *globalSequence = root->getSequence();
-    globalSequence->insert(globalSequence->begin(), declaration);
-}
-
 
 
 void SelectViewIndexInVertexShader(const TVariable *viewID,

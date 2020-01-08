@@ -311,4 +311,10 @@ std::ostream &FmtHex(std::ostream &os, T value)
     ANGLE_EMPTY_STATEMENT
 #endif  
 
+#if defined(ANGLE_PLATFORM_WINDOWS)
+#define ANGLE_FUNCTION __FUNCTION__
+#else
+#define ANGLE_FUNCTION __func__
+#endif
+
 #endif   

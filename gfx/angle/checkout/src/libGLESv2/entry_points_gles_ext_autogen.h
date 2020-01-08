@@ -438,6 +438,15 @@ ANGLE_EXPORT void GL_APIENTRY GetQueryObjectui64vRobustANGLE(GLuint id,
                                                              GLuint64 *params);
 
 
+ANGLE_EXPORT void GL_APIENTRY TexStorage3DMultisampleANGLE(GLenum target,
+                                                           GLsizei samples,
+                                                           GLint sizedinternalformat,
+                                                           GLsizei width,
+                                                           GLsizei height,
+                                                           GLsizei depth,
+                                                           GLboolean fixedsamplelocations);
+
+
 ANGLE_EXPORT void GL_APIENTRY GetTranslatedShaderSourceANGLE(GLuint shader,
                                                              GLsizei bufsize,
                                                              GLsizei *length,
@@ -595,6 +604,12 @@ ANGLE_EXPORT void GL_APIENTRY QueryCounterEXT(GLuint id, GLenum target);
 ANGLE_EXPORT void GL_APIENTRY DrawBuffersEXT(GLsizei n, const GLenum *bufs);
 
 
+ANGLE_EXPORT void GL_APIENTRY FramebufferTextureEXT(GLenum target,
+                                                    GLenum attachment,
+                                                    GLuint texture,
+                                                    GLint level);
+
+
 ANGLE_EXPORT void GL_APIENTRY FlushMappedBufferRangeEXT(GLenum target,
                                                         GLintptr offset,
                                                         GLsizeiptr length);
@@ -683,6 +698,9 @@ ANGLE_EXPORT void GL_APIENTRY PushDebugGroupKHR(GLenum source,
                                                 GLuint id,
                                                 GLsizei length,
                                                 const GLchar *message);
+
+
+ANGLE_EXPORT void GL_APIENTRY MaxShaderCompilerThreadsKHR(GLuint count);
 
 
 ANGLE_EXPORT void GL_APIENTRY DeleteFencesNV(GLsizei n, const GLuint *fences);
@@ -1265,6 +1283,11 @@ ANGLE_EXPORT void GL_APIENTRY FramebufferTexture2DOESContextANGLE(GLeglContext c
                                                                   GLenum textarget,
                                                                   GLuint texture,
                                                                   GLint level);
+ANGLE_EXPORT void GL_APIENTRY FramebufferTextureEXTContextANGLE(GLeglContext ctx,
+                                                                GLenum target,
+                                                                GLenum attachment,
+                                                                GLuint texture,
+                                                                GLint level);
 ANGLE_EXPORT void GL_APIENTRY FramebufferTextureLayerContextANGLE(GLeglContext ctx,
                                                                   GLenum target,
                                                                   GLenum attachment,
@@ -1835,6 +1858,8 @@ ANGLE_EXPORT void GL_APIENTRY MatrixIndexPointerOESContextANGLE(GLeglContext ctx
                                                                 GLsizei stride,
                                                                 const void *pointer);
 ANGLE_EXPORT void GL_APIENTRY MatrixModeContextANGLE(GLeglContext ctx, GLenum mode);
+ANGLE_EXPORT void GL_APIENTRY MaxShaderCompilerThreadsKHRContextANGLE(GLeglContext ctx,
+                                                                      GLuint count);
 ANGLE_EXPORT void GL_APIENTRY MemoryBarrierContextANGLE(GLeglContext ctx, GLbitfield barriers);
 ANGLE_EXPORT void GL_APIENTRY MemoryBarrierByRegionContextANGLE(GLeglContext ctx,
                                                                 GLbitfield barriers);
@@ -3256,6 +3281,15 @@ FramebufferTextureMultiviewSideBySideANGLEContextANGLE(GLeglContext ctx,
                                                        GLint level,
                                                        GLsizei numViews,
                                                        const GLint *viewportOffsets);
+ANGLE_EXPORT void GL_APIENTRY
+TexStorage3DMultisampleANGLEContextANGLE(GLeglContext ctx,
+                                         GLenum target,
+                                         GLsizei samples,
+                                         GLint sizedinternalformat,
+                                         GLsizei width,
+                                         GLsizei height,
+                                         GLsizei depth,
+                                         GLboolean fixedsamplelocations);
 }  
 
 #endif  

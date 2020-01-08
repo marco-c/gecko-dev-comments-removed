@@ -16,6 +16,7 @@ namespace sh
 {
 
 class ImmutableString;
+class TType;
 
 
 inline float fractionalPart(float f)
@@ -68,6 +69,8 @@ class TInfoSinkBase
         return *this;
     }
     TInfoSinkBase &operator<<(const ImmutableString &str);
+
+    TInfoSinkBase &operator<<(const TType &type);
 
     
     TInfoSinkBase &operator<<(float f)

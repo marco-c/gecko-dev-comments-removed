@@ -63,11 +63,13 @@ class VertexArrayState final : angle::NonCopyable
         return mVertexAttributes[attribIndex].bindingIndex;
     }
 
-    
-    gl::AttributesMask getEnabledClientMemoryAttribsMask() const;
+    void setAttribBinding(size_t attribIndex, GLuint newBindingIndex);
 
     
     bool hasEnabledNullPointerClientArray() const;
+
+    
+    AttributesMask getBindingToAttributesMask(GLuint bindingIndex) const;
 
   private:
     friend class VertexArray;
@@ -84,9 +86,15 @@ class VertexArrayState final : angle::NonCopyable
     
     gl::AttributesMask mClientMemoryAttribsMask;
     gl::AttributesMask mNullPointerClientMemoryAttribsMask;
+
+    
+    AttributesMask mCachedMappedArrayBuffers;
+    AttributesMask mCachedEnabledMappedArrayBuffers;
 };
 
-class VertexArray final : public angle::ObserverInterface, public LabeledObject
+class VertexArray final : public angle::ObserverInterface,
+                          public LabeledObject,
+                          public angle::Subject
 {
   public:
     VertexArray(rx::GLImplFactory *factory, GLuint id, size_t maxAttribs, size_t maxAttribBindings);
@@ -167,14 +175,16 @@ class VertexArray final : public angle::ObserverInterface, public LabeledObject
         return mState.getEnabledAttributesMask();
     }
 
-    gl::AttributesMask getEnabledClientMemoryAttribsMask() const
-    {
-        return mState.getEnabledClientMemoryAttribsMask();
-    }
+    gl::AttributesMask getClientAttribsMask() const { return mState.mClientMemoryAttribsMask; }
 
     bool hasEnabledNullPointerClientArray() const
     {
         return mState.hasEnabledNullPointerClientArray();
+    }
+
+    bool hasMappedEnabledArrayBuffer() const
+    {
+        return mState.mCachedEnabledMappedArrayBuffers.any();
     }
 
     
@@ -244,8 +254,8 @@ class VertexArray final : public angle::ObserverInterface, public LabeledObject
     ComponentTypeMask getAttributesTypeMask() const { return mState.mVertexAttributesTypeMask; }
     AttributesMask getAttributesMask() const { return mState.mEnabledAttributesMask; }
 
-    void onBindingChanged(const Context *context, bool bound);
-    bool hasTransformFeedbackBindingConflict(const AttributesMask &activeAttribues) const;
+    void onBindingChanged(const Context *context, int incr);
+    bool hasTransformFeedbackBindingConflict(const gl::Context *context) const;
 
   private:
     ~VertexArray() override;
@@ -260,9 +270,9 @@ class VertexArray final : public angle::ObserverInterface, public LabeledObject
                               angle::SubjectIndex index);
 
     
-    void updateCachedVertexAttributeSize(size_t attribIndex);
-    void updateCachedBufferBindingSize(size_t bindingIndex);
+    void updateCachedBufferBindingSize(VertexBinding *binding);
     void updateCachedTransformFeedbackBindingValidation(size_t bindingIndex, const Buffer *buffer);
+    void updateCachedMappedArrayBuffers(VertexBinding *binding);
 
     GLuint mId;
 

@@ -32,6 +32,8 @@ class ImmutableStringBuilder
     
     operator ImmutableString();
 
+    void appendDecimal(const uint32_t &i);
+
     template <typename T>
     void appendHex(T number)
     {
@@ -51,20 +53,28 @@ class ImmutableStringBuilder
             mData[mPos++]  = digitChar;
             --index;
         }
-        return;
+    }
+
+    template <typename T>
+    static constexpr size_t GetHexCharCount()
+    {
+        return sizeof(T) * 2;
     }
 
   private:
     inline static char *AllocateEmptyPoolCharArray(size_t strLength)
     {
         size_t requiredSize = strLength + 1u;
-        return reinterpret_cast<char *>(GetGlobalPoolAllocator()->allocate(requiredSize));
+        return static_cast<char *>(GetGlobalPoolAllocator()->allocate(requiredSize));
     }
 
     size_t mPos;
     size_t mMaxLength;
     char *mData;
 };
+
+
+constexpr unsigned int kESSLMaxIdentifierLength = 1024u;
 
 }  
 

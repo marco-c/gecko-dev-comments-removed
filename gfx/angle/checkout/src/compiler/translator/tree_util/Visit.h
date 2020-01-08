@@ -1,0 +1,22 @@
+
+
+
+
+
+
+#ifndef COMPILER_TRANSLATOR_TREEUTIL_VISIT_H_
+#define COMPILER_TRANSLATOR_TREEUTIL_VISIT_H_
+
+namespace sh
+{
+
+enum Visit
+{
+    PreVisit,
+    InVisit,
+    PostVisit
+};
+
+}  
+
+#endif  

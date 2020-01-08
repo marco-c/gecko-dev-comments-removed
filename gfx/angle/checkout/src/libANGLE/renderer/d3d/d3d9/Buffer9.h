@@ -26,7 +26,7 @@ class Buffer9 : public BufferD3D
     
     size_t getSize() const override;
     bool supportsDirectBinding() const override;
-    gl::Error getData(const gl::Context *context, const uint8_t **outData) override;
+    angle::Result getData(const gl::Context *context, const uint8_t **outData) override;
 
     
     gl::Error setData(const gl::Context *context,
@@ -51,7 +51,7 @@ class Buffer9 : public BufferD3D
                        GLbitfield access,
                        void **mapPtr) override;
     gl::Error unmap(const gl::Context *context, GLboolean *result) override;
-    gl::Error markTransformFeedbackUsage(const gl::Context *context) override;
+    angle::Result markTransformFeedbackUsage(const gl::Context *context) override;
 
   private:
     angle::MemoryBuffer mMemory;

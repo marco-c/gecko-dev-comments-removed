@@ -1,8 +1,10 @@
-//
-// Copyright (c) 2014-2015 The ANGLE Project Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-//
+
+
+
+
+
+
+
 
 namespace rx
 {
@@ -42,14 +44,14 @@ inline void CopyNativeVertexData(const uint8_t *input, size_t stride, size_t cou
 
         if (inputComponentCount < lastNonAlphaOutputComponent)
         {
-            // Set the remaining G/B channels to 0.
+            
             size_t numComponents = (lastNonAlphaOutputComponent - inputComponentCount);
             memset(&offsetOutput[inputComponentCount], 0, numComponents * sizeof(T));
         }
 
         if (inputComponentCount < outputComponentCount && outputComponentCount == 4)
         {
-            // Set the remaining alpha channel to the defaultAlphaValue.
+            
             offsetOutput[3] = defaultAlphaValue;
         }
     }
@@ -72,13 +74,13 @@ inline void Copy8SintTo16SintVertexData(const uint8_t *input, size_t stride, siz
 
         for (size_t j = inputComponentCount; j < lastNonAlphaOutputComponent; j++)
         {
-            // Set remaining G/B channels to 0.
+            
             offsetOutput[j] = 0;
         }
 
         if (inputComponentCount < outputComponentCount && outputComponentCount == 4)
         {
-            // On integer formats, we must set the Alpha channel to 1 if it's unused.
+            
             offsetOutput[3] = 1;
         }
     }
@@ -94,8 +96,8 @@ inline void Copy8SnormTo16SnormVertexData(const uint8_t *input, size_t stride, s
 
         for (size_t j = 0; j < inputComponentCount; j++)
         {
-            // The original GLbyte value ranges from -128 to +127 (INT8_MAX).
-            // When converted to GLshort, the value must be scaled to between -32768 and +32767 (INT16_MAX).
+            
+            
             if (offsetInput[j] > 0)
             {
                 offsetOutput[j] = offsetInput[j] << 8 | offsetInput[j] << 1 | ((offsetInput[j] & 0x40) >> 6);
@@ -108,13 +110,13 @@ inline void Copy8SnormTo16SnormVertexData(const uint8_t *input, size_t stride, s
 
         for (size_t j = inputComponentCount; j < std::min<size_t>(outputComponentCount, 3); j++)
         {
-            // Set remaining G/B channels to 0.
+            
             offsetOutput[j] = 0;
         }
 
         if (inputComponentCount < outputComponentCount && outputComponentCount == 4)
         {
-            // On normalized formats, we must set the Alpha channel to the max value if it's unused.
+            
             offsetOutput[3] = INT16_MAX;
         }
     }
@@ -135,7 +137,7 @@ inline void Copy32FixedTo32FVertexData(const uint8_t *input, size_t stride, size
             offsetOutput[j] = static_cast<float>(offsetInput[j]) * divisor;
         }
 
-        // 4-component output formats would need special padding in the alpha channel.
+        
         static_assert(!(inputComponentCount < 4 && outputComponentCount == 4),
                       "An inputComponentCount less than 4 and an outputComponentCount equal to 4 is not supported.");
 
@@ -176,7 +178,7 @@ inline void CopyTo32FVertexData(const uint8_t *input, size_t stride, size_t coun
             }
         }
 
-        // This would require special padding.
+        
         static_assert(!(inputComponentCount < 4 && outputComponentCount == 4),
                       "An inputComponentCount less than 4 and an outputComponentCount equal to 4 is not supported.");
 
@@ -193,8 +195,8 @@ namespace priv
 template <bool isSigned, bool normalized, bool toFloat>
 static inline void CopyPackedRGB(uint32_t data, uint8_t *output)
 {
-    const uint32_t rgbSignMask = 0x200;       // 1 set at the 9 bit
-    const uint32_t negativeMask = 0xFFFFFC00; // All bits from 10 to 31 set to 1
+    const uint32_t rgbSignMask = 0x200;       
+    const uint32_t negativeMask = 0xFFFFFC00; 
 
     if (toFloat)
     {
@@ -214,12 +216,12 @@ static inline void CopyPackedRGB(uint32_t data, uint8_t *output)
 
             if (normalized)
             {
-                const int32_t maxValue = 0x1FF;      // 1 set in bits 0 through 8
-                const int32_t minValue = 0xFFFFFE01; // Inverse of maxValue
+                const int32_t maxValue = 0x1FF;      
+                const int32_t minValue = 0xFFFFFE01; 
 
-                // A 10-bit two's complement number has the possibility of being minValue - 1 but
-                // OpenGL's normalization rules dictate that it should be clamped to minValue in this
-                // case.
+                
+                
+                
                 if (finalValue < minValue)
                 {
                     finalValue = minValue;
@@ -237,7 +239,7 @@ static inline void CopyPackedRGB(uint32_t data, uint8_t *output)
         {
             if (normalized)
             {
-                const uint32_t maxValue = 0x3FF; // 1 set in bits 0 through 9
+                const uint32_t maxValue = 0x3FF; 
                 *floatOutput = static_cast<GLfloat>(data) / static_cast<GLfloat>(maxValue);
             }
             else
@@ -363,13 +365,13 @@ inline void CopyXYZ10W2ToXYZW32FVertexData(const uint8_t *input, size_t stride, 
     const size_t outputComponentSize = toFloat ? 4 : 2;
     const size_t componentCount = 4;
 
-    const uint32_t rgbMask = 0x3FF; // 1 set in bits 0 through 9
-    const size_t redShift = 0;    // red is bits 0 through 9
-    const size_t greenShift = 10; // green is bits 10 through 19
-    const size_t blueShift = 20;  // blue is bits 20 through 29
+    const uint32_t rgbMask = 0x3FF; 
+    const size_t redShift = 0;    
+    const size_t greenShift = 10; 
+    const size_t blueShift = 20;  
 
-    const uint32_t alphaMask = 0x3; // 1 set in bits 0 and 1
-    const size_t alphaShift = 30; // Alpha is the 30 and 31 bits
+    const uint32_t alphaMask = 0x3; 
+    const size_t alphaShift = 30; 
 
     for (size_t i = 0; i < count; i++)
     {

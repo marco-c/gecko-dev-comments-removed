@@ -10,6 +10,7 @@
 
 #include "common/utilities.h"
 #include "compiler/preprocessor/numeric_lex.h"
+#include "compiler/translator/ImmutableStringBuilder.h"
 #include "compiler/translator/SymbolTable.h"
 
 bool atoi_clamp(const char *str, unsigned int *value)
@@ -56,6 +57,10 @@ float NumericLexFloat32OutOfRangeToInfinity(const std::string &str)
 
     
     int exponentOffset = -1;
+
+    
+    int mantissaDecimalDigits = 0;
+
     while (i < str.length())
     {
         const char c = str[i];
@@ -83,6 +88,7 @@ float NumericLexFloat32OutOfRangeToInfinity(const std::string &str)
             if (decimalMantissa <= (std::numeric_limits<unsigned int>::max() - 9u) / 10u)
             {
                 decimalMantissa = decimalMantissa * 10u + digit;
+                ++mantissaDecimalDigits;
             }
             if (!decimalPointSeen)
             {
@@ -162,12 +168,7 @@ float NumericLexFloat32OutOfRangeToInfinity(const std::string &str)
     double value = decimalMantissa;
 
     
-    int normalizationExponentOffset = 0;
-    while (decimalMantissa >= 10u)
-    {
-        --normalizationExponentOffset;
-        decimalMantissa /= 10u;
-    }
+    int normalizationExponentOffset = 1 - mantissaDecimalDigits;
     
     value *= std::pow(10.0, static_cast<double>(exponent + normalizationExponentOffset));
     if (value > static_cast<double>(std::numeric_limits<float>::max()))
@@ -184,8 +185,6 @@ float NumericLexFloat32OutOfRangeToInfinity(const std::string &str)
 bool strtof_clamp(const std::string &str, float *value)
 {
     
-    bool success = angle::pp::numeric_lex_float(str, value);
-
     
     
     
@@ -193,10 +192,7 @@ bool strtof_clamp(const std::string &str, float *value)
     
     
     
-    
-    
-    if (!success)
-        *value = NumericLexFloat32OutOfRangeToInfinity(str);
+    *value = NumericLexFloat32OutOfRangeToInfinity(str);
     return !gl::isInf(*value);
 }
 
@@ -477,24 +473,25 @@ GLenum GLVariablePrecision(const TType &type)
     return GL_NONE;
 }
 
-TString ArrayString(const TType &type)
+ImmutableString ArrayString(const TType &type)
 {
-    TStringStream arrayString;
     if (!type.isArray())
-        return arrayString.str();
+        return ImmutableString("");
 
     const TVector<unsigned int> &arraySizes = *type.getArraySizes();
+    constexpr const size_t kMaxDecimalDigitsPerSize = 10u;
+    ImmutableStringBuilder arrayString(arraySizes.size() * (kMaxDecimalDigitsPerSize + 2u));
     for (auto arraySizeIter = arraySizes.rbegin(); arraySizeIter != arraySizes.rend();
          ++arraySizeIter)
     {
         arrayString << "[";
         if (*arraySizeIter > 0)
         {
-            arrayString << (*arraySizeIter);
+            arrayString.appendDecimal(*arraySizeIter);
         }
         arrayString << "]";
     }
-    return arrayString.str();
+    return arrayString;
 }
 
 ImmutableString GetTypeName(const TType &type, ShHashFunction64 hashFunction, NameMap *nameMap)
@@ -644,6 +641,15 @@ TType GetShaderVariableBasicType(const sh::ShaderVariable &var)
             return TType();
 #endif
     }
+}
+
+void DeclareGlobalVariable(TIntermBlock *root, const TVariable *variable)
+{
+    TIntermDeclaration *declaration = new TIntermDeclaration();
+    declaration->appendDeclarator(new TIntermSymbol(variable));
+
+    TIntermSequence *globalSequence = root->getSequence();
+    globalSequence->insert(globalSequence->begin(), declaration);
 }
 
 

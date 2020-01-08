@@ -10,6 +10,7 @@
 #define LIBANGLE_VERTEXATTRIBUTE_H_
 
 #include "libANGLE/Buffer.h"
+#include "libANGLE/angletypes.h"
 
 namespace gl
 {
@@ -23,6 +24,7 @@ class VertexBinding final : angle::NonCopyable
 {
   public:
     VertexBinding();
+    explicit VertexBinding(GLuint boundAttribute);
     VertexBinding(VertexBinding &&binding);
     ~VertexBinding();
     VertexBinding &operator=(VertexBinding &&binding);
@@ -39,15 +41,13 @@ class VertexBinding final : angle::NonCopyable
     const BindingPointer<Buffer> &getBuffer() const { return mBuffer; }
     void setBuffer(const gl::Context *context, Buffer *bufferIn, bool containerIsBound);
 
-    void onContainerBindingChanged(const Context *context, bool bound) const;
+    void onContainerBindingChanged(const Context *context, int incr) const;
 
-    GLuint64 getCachedBufferSizeMinusOffset() const
-    {
-        return mCachedBufferSizeMinusOffset;
-    }
+    const AttributesMask &getBoundAttributesMask() const { return mBoundAttributesMask; }
 
-    
-    void updateCachedBufferSizeMinusOffset();
+    void setBoundAttribute(size_t index) { mBoundAttributesMask.set(index); }
+
+    void resetBoundAttribute(size_t index) { mBoundAttributesMask.reset(index); }
 
   private:
     GLuint mStride;
@@ -57,7 +57,7 @@ class VertexBinding final : angle::NonCopyable
     BindingPointer<Buffer> mBuffer;
 
     
-    GLuint64 mCachedBufferSizeMinusOffset;
+    AttributesMask mBoundAttributesMask;
 };
 
 
@@ -70,7 +70,8 @@ struct VertexAttribute final : private angle::NonCopyable
     VertexAttribute &operator=(VertexAttribute &&attrib);
 
     
-    void updateCachedSizePlusRelativeOffset();
+    void updateCachedElementLimit(const VertexBinding &binding);
+    GLint64 getCachedElementLimit() const { return mCachedElementLimit; }
 
     bool enabled;  
     GLenum type;
@@ -85,7 +86,11 @@ struct VertexAttribute final : private angle::NonCopyable
     GLuint bindingIndex;
 
     
-    GLuint64 cachedSizePlusRelativeOffset;
+    static constexpr GLint64 kIntegerOverflow = std::numeric_limits<GLint64>::min();
+
+  private:
+    
+    GLint64 mCachedElementLimit;
 };
 
 size_t ComputeVertexAttributeTypeSize(const VertexAttribute &attrib);

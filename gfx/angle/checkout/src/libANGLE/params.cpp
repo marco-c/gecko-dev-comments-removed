@@ -22,7 +22,7 @@ constexpr ParamTypeInfo DrawCallParams::TypeInfo;
 
 
 
-DrawCallParams::DrawCallParams(GLenum mode,
+DrawCallParams::DrawCallParams(PrimitiveMode mode,
                                GLint firstVertex,
                                GLsizei vertexCount,
                                GLsizei instances)
@@ -39,7 +39,7 @@ DrawCallParams::DrawCallParams(GLenum mode,
 }
 
 
-DrawCallParams::DrawCallParams(GLenum mode,
+DrawCallParams::DrawCallParams(PrimitiveMode mode,
                                GLint indexCount,
                                GLenum type,
                                const void *indices,
@@ -58,7 +58,7 @@ DrawCallParams::DrawCallParams(GLenum mode,
 }
 
 
-DrawCallParams::DrawCallParams(GLenum mode, const void *indirect)
+DrawCallParams::DrawCallParams(PrimitiveMode mode, const void *indirect)
     : mMode(mode),
       mFirstVertex(0),
       mVertexCount(0),
@@ -72,7 +72,7 @@ DrawCallParams::DrawCallParams(GLenum mode, const void *indirect)
 }
 
 
-DrawCallParams::DrawCallParams(GLenum mode, GLenum type, const void *indirect)
+DrawCallParams::DrawCallParams(PrimitiveMode mode, GLenum type, const void *indirect)
     : mMode(mode),
       mFirstVertex(0),
       mVertexCount(0),
@@ -85,11 +85,6 @@ DrawCallParams::DrawCallParams(GLenum mode, GLenum type, const void *indirect)
 {
 }
 
-GLenum DrawCallParams::mode() const
-{
-    return mMode;
-}
-
 GLint DrawCallParams::firstVertex() const
 {
     
@@ -98,12 +93,6 @@ GLint DrawCallParams::firstVertex() const
     
     ASSERT(mFirstVertex == 0 || (!isDrawElements() || mIndexRange.valid()));
     return mFirstVertex;
-}
-
-size_t DrawCallParams::vertexCount() const
-{
-    ASSERT(!isDrawElements() || mIndexRange.valid());
-    return mVertexCount;
 }
 
 GLsizei DrawCallParams::indexCount() const
@@ -136,11 +125,6 @@ GLsizei DrawCallParams::instances() const
 const void *DrawCallParams::indirect() const
 {
     return mIndirect;
-}
-
-bool DrawCallParams::isDrawElements() const
-{
-    return (mType != GL_NONE);
 }
 
 bool DrawCallParams::isDrawIndirect() const
@@ -178,8 +162,36 @@ Error DrawCallParams::ensureIndexRangeResolved(const Context *context) const
     }
 
     const IndexRange &indexRange = mIndexRange.value();
-    mFirstVertex                 = mBaseVertex + static_cast<GLint>(indexRange.start);
-    mVertexCount                 = indexRange.vertexCount();
+
+    
+    
+    ASSERT(indexRange.start <= std::numeric_limits<uint32_t>::max() &&
+           indexRange.end <= std::numeric_limits<uint32_t>::max());
+
+    
+    
+    int64_t startVertexInt64 =
+        static_cast<int64_t>(mBaseVertex) + static_cast<int64_t>(indexRange.start);
+
+    
+    
+    if (startVertexInt64 < 0)
+    {
+        return gl::InternalError() << "Negative index value.";
+    }
+
+    
+    
+    
+    
+    
+    if (startVertexInt64 > std::numeric_limits<GLint>::max())
+    {
+        return gl::InternalError() << "Negative value overflow.";
+    }
+
+    mFirstVertex = static_cast<GLint>(startVertexInt64);
+    mVertexCount = indexRange.vertexCount();
 
     return NoError();
 }

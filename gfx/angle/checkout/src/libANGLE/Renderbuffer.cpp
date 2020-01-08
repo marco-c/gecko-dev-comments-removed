@@ -66,7 +66,7 @@ void RenderbufferState::update(GLsizei width,
 
 
 Renderbuffer::Renderbuffer(rx::GLImplFactory *implFactory, GLuint id)
-    : egl::ImageSibling(id),
+    : RefCountObject(id),
       mState(),
       mImplementation(implFactory->createRenderbuffer(mState)),
       mLabel()
@@ -221,8 +221,8 @@ Extents Renderbuffer::getAttachmentSize(const gl::ImageIndex & ) const
     return Extents(mState.mWidth, mState.mHeight, 1);
 }
 
-const Format &Renderbuffer::getAttachmentFormat(GLenum ,
-                                                const ImageIndex & ) const
+Format Renderbuffer::getAttachmentFormat(GLenum ,
+                                         const ImageIndex & ) const
 {
     return getFormat();
 }

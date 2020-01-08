@@ -10,19 +10,13 @@
 #define COMPILER_TRANSLATOR_TREEUTIL_INTERMTRAVERSE_H_
 
 #include "compiler/translator/IntermNode.h"
+#include "compiler/translator/tree_util/Visit.h"
 
 namespace sh
 {
 
 class TSymbolTable;
 class TSymbolUniqueId;
-
-enum Visit
-{
-    PreVisit,
-    InVisit,
-    PostVisit
-};
 
 
 
@@ -47,7 +41,6 @@ class TIntermTraverser : angle::NonCopyable
     virtual ~TIntermTraverser();
 
     virtual void visitSymbol(TIntermSymbol *node) {}
-    virtual void visitRaw(TIntermRaw *node) {}
     virtual void visitConstantUnion(TIntermConstantUnion *node) {}
     virtual bool visitSwizzle(Visit visit, TIntermSwizzle *node) { return true; }
     virtual bool visitBinary(Visit visit, TIntermBinary *node) { return true; }
@@ -70,28 +63,26 @@ class TIntermTraverser : angle::NonCopyable
     virtual bool visitDeclaration(Visit visit, TIntermDeclaration *node) { return true; }
     virtual bool visitLoop(Visit visit, TIntermLoop *node) { return true; }
     virtual bool visitBranch(Visit visit, TIntermBranch *node) { return true; }
+    virtual void visitPreprocessorDirective(TIntermPreprocessorDirective *node) {}
 
     
     
     
-    virtual void traverseSymbol(TIntermSymbol *node);
-    virtual void traverseRaw(TIntermRaw *node);
-    virtual void traverseConstantUnion(TIntermConstantUnion *node);
-    virtual void traverseSwizzle(TIntermSwizzle *node);
+
+    
+    
+    
+    template <typename T>
+    void traverse(T *node);
+
+    
+    
     virtual void traverseBinary(TIntermBinary *node);
     virtual void traverseUnary(TIntermUnary *node);
-    virtual void traverseTernary(TIntermTernary *node);
-    virtual void traverseIfElse(TIntermIfElse *node);
-    virtual void traverseSwitch(TIntermSwitch *node);
-    virtual void traverseCase(TIntermCase *node);
-    virtual void traverseFunctionPrototype(TIntermFunctionPrototype *node);
     virtual void traverseFunctionDefinition(TIntermFunctionDefinition *node);
     virtual void traverseAggregate(TIntermAggregate *node);
     virtual void traverseBlock(TIntermBlock *node);
-    virtual void traverseInvariantDeclaration(TIntermInvariantDeclaration *node);
-    virtual void traverseDeclaration(TIntermDeclaration *node);
     virtual void traverseLoop(TIntermLoop *node);
-    virtual void traverseBranch(TIntermBranch *node);
 
     int getMaxDepth() const { return mMaxDepth; }
 
@@ -136,6 +127,10 @@ class TIntermTraverser : angle::NonCopyable
         TIntermTraverser *mTraverser;
         bool mWithinDepthLimit;
     };
+    
+    friend void TIntermSymbol::traverse(TIntermTraverser *);
+    friend void TIntermConstantUnion::traverse(TIntermTraverser *);
+    friend void TIntermFunctionPrototype::traverse(TIntermTraverser *);
 
     TIntermNode *getParentNode() { return mPath.size() <= 1 ? nullptr : mPath[mPath.size() - 2u]; }
 
@@ -159,10 +154,10 @@ class TIntermTraverser : angle::NonCopyable
     
     struct NodeReplaceWithMultipleEntry
     {
-        NodeReplaceWithMultipleEntry(TIntermAggregateBase *_parent,
-                                     TIntermNode *_original,
-                                     TIntermSequence _replacements)
-            : parent(_parent), original(_original), replacements(_replacements)
+        NodeReplaceWithMultipleEntry(TIntermAggregateBase *parentIn,
+                                     TIntermNode *originalIn,
+                                     TIntermSequence replacementsIn)
+            : parent(parentIn), original(originalIn), replacements(std::move(replacementsIn))
         {
         }
 

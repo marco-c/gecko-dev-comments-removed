@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef COMPILER_TRANSLATOR_TREEOPS_REWRITESTRUCTSAMPLERS_H_
+#define COMPILER_TRANSLATOR_TREEOPS_REWRITESTRUCTSAMPLERS_H_
+
+namespace sh
+{
+class TIntermBlock;
+class TSymbolTable;
+int RewriteStructSamplers(TIntermBlock *root, TSymbolTable *symbolTable);
+}  
+
+#endif  

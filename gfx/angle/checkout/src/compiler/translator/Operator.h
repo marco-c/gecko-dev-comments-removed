@@ -242,6 +242,16 @@ enum TOperator
     EOpGroupMemoryBarrier,
 
     
+    EOpAtomicAdd,
+    EOpAtomicMin,
+    EOpAtomicMax,
+    EOpAtomicAnd,
+    EOpAtomicOr,
+    EOpAtomicXor,
+    EOpAtomicExchange,
+    EOpAtomicCompSwap,
+
+    
     EOpEmitVertex,
     EOpEndPrimitive
 };
@@ -251,5 +261,8 @@ const char *GetOperatorString(TOperator op);
 
 
 bool IsAssignment(TOperator op);
+
+
+bool IsAtomicFunction(TOperator op);
 
 #endif  

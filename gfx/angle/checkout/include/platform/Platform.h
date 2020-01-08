@@ -266,7 +266,7 @@ inline void DefaultCacheProgram(PlatformMethods *platform,
 
 struct ANGLE_PLATFORM_EXPORT PlatformMethods
 {
-    PlatformMethods();
+    PlatformMethods() {}
 
     
     
