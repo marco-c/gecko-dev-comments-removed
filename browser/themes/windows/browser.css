@@ -294,11 +294,11 @@
 
 
 
-  #titlebar:-moz-lwtheme {
+  :root:not([inDOMFullscreen]) #titlebar:-moz-lwtheme {
     visibility: hidden;
   }
-  #toolbar-menubar:-moz-lwtheme,
-  #TabsToolbar:-moz-lwtheme {
+  :root:not([inDOMFullscreen]) #toolbar-menubar:-moz-lwtheme,
+  :root:not([inDOMFullscreen]) #TabsToolbar:-moz-lwtheme {
     visibility: visible;
   }
 }

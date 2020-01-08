@@ -21,7 +21,7 @@
 
 
 @media (-moz-windows-compositor: 0) {
-  #main-window[tabsintitlebar] > #navigator-toolbox > #titlebar:-moz-lwtheme {
+  :root[tabsintitlebar]:not([inDOMFullscreen]) > #navigator-toolbox > #titlebar:-moz-lwtheme {
     visibility: visible;
   }
 
