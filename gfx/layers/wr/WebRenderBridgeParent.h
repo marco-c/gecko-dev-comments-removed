@@ -295,6 +295,11 @@ private:
   void SetAPZSampleTime();
 
   wr::Epoch GetNextWrEpoch();
+  
+  
+  
+  
+  void RollbackWrEpoch();
 
   void FlushSceneBuilds();
   void FlushFrameGeneration();

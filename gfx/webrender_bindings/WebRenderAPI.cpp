@@ -14,7 +14,6 @@
 #include "mozilla/webrender/RenderCompositor.h"
 #include "mozilla/widget/CompositorWidget.h"
 #include "mozilla/layers/SynchronousTask.h"
-#include "TextDrawTarget.h"
 
 #define WRDL_LOG(...)
 
@@ -235,6 +234,12 @@ bool
 TransactionBuilder::IsEmpty() const
 {
   return wr_transaction_is_empty(mTxn);
+}
+
+bool
+TransactionBuilder::IsResourceUpdatesEmpty() const
+{
+  return wr_transaction_resource_updates_is_empty(mTxn);
 }
 
 void
@@ -918,7 +923,7 @@ DisplayListBuilder::DefineClipChain(const Maybe<wr::WrClipChainId>& aParent,
   WRDL_LOG("DefineClipChain id=%" PRIu64 " p=%s clips=%zu\n", mWrState,
       clipchainId,
       aParent ? Stringify(aParent->id).c_str() : "(nil)",
-      aClips.Length());
+      clipIds.Length());
   return wr::WrClipChainId{ clipchainId };
 }
 
@@ -1405,27 +1410,6 @@ Maybe<layers::ScrollableLayerGuid::ViewID>
 DisplayListBuilder::FixedPosScrollTargetTracker::GetScrollTargetForASR(const ActiveScrolledRoot* aAsr)
 {
   return aAsr == mAsr ? Some(mScrollId) : Nothing();
-}
-
-already_AddRefed<gfxContext>
-DisplayListBuilder::GetTextContext(wr::IpcResourceUpdateQueue& aResources,
-                                   const layers::StackingContextHelper& aSc,
-                                   layers::WebRenderLayerManager* aManager,
-                                   nsDisplayItem* aItem,
-                                   nsRect& aBounds,
-                                   const gfx::Point& aDeviceOffset)
-{
-  if (!mCachedTextDT) {
-    mCachedTextDT = new layout::TextDrawTarget(*this, aResources, aSc, aManager, aItem, aBounds);
-    mCachedContext = gfxContext::CreateOrNull(mCachedTextDT, aDeviceOffset);
-  } else {
-    mCachedTextDT->Reinitialize(aResources, aSc, aManager, aItem, aBounds);
-    mCachedContext->SetDeviceOffset(aDeviceOffset);
-    mCachedContext->SetMatrix(Matrix());
-  }
-
-  RefPtr<gfxContext> tmp = mCachedContext;
-  return tmp.forget();
 }
 
 } 

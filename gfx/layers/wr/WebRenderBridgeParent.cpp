@@ -1085,14 +1085,14 @@ WebRenderBridgeParent::RecvEmptyTransaction(const FocusTarget& aFocusTarget,
     
     
     UpdateAPZScrollOffsets(std::move(const_cast<ScrollUpdatesMap&>(aUpdates)), aPaintSequenceNumber);
-    scheduleComposite = true;
   }
 
   wr::TransactionBuilder txn;
   txn.SetLowPriority(!IsRootWebRenderBridgeParent());
-  if (!aResourceUpdates.IsEmpty()) {
-    scheduleComposite = true;
-  }
+
+  
+  
+  Unused << GetNextWrEpoch();
 
   if (!UpdateResources(aResourceUpdates, aSmallShmems, aLargeShmems, txn)) {
     return IPC_FAIL(this, "Failed to deserialize resource updates");
@@ -1100,23 +1100,32 @@ WebRenderBridgeParent::RecvEmptyTransaction(const FocusTarget& aFocusTarget,
 
   if (!aCommands.IsEmpty()) {
     mAsyncImageManager->SetCompositionTime(TimeStamp::Now());
-    wr::Epoch wrEpoch = GetNextWrEpoch();
-    txn.UpdateEpoch(mPipelineId, wrEpoch);
     if (!ProcessWebRenderParentCommands(aCommands, txn)) {
       return IPC_FAIL(this, "Invalid parent command found");
     }
-    if (ShouldParentObserveEpoch()) {
-      txn.Notify(
-        wr::Checkpoint::SceneBuilt,
-        MakeUnique<ScheduleObserveLayersUpdate>(
-          mCompositorBridge,
-          GetLayersId(),
-          mChildLayersObserverEpoch,
-          true
-        )
-      );
-    }
+  }
 
+  if (ShouldParentObserveEpoch()) {
+    txn.Notify(
+      wr::Checkpoint::SceneBuilt,
+      MakeUnique<ScheduleObserveLayersUpdate>(
+        mCompositorBridge,
+        GetLayersId(),
+        mChildLayersObserverEpoch,
+        true
+      )
+    );
+  }
+
+  if (txn.IsResourceUpdatesEmpty()) {
+    
+    
+    
+    
+    RollbackWrEpoch();
+  } else {
+    
+    txn.UpdateEpoch(mPipelineId, mWrEpoch);
     scheduleComposite = true;
   }
 
@@ -1149,6 +1158,10 @@ WebRenderBridgeParent::RecvEmptyTransaction(const FocusTarget& aFocusTarget,
                            scheduleComposite);
 
   if (scheduleComposite) {
+    
+    
+    
+    
     ScheduleGenerateFrame();
   } else if (sendDidComposite) {
     
@@ -2229,6 +2242,13 @@ WebRenderBridgeParent::GetNextWrEpoch()
   MOZ_RELEASE_ASSERT(mWrEpoch.mHandle != UINT32_MAX);
   mWrEpoch.mHandle++;
   return mWrEpoch;
+}
+
+void
+WebRenderBridgeParent::RollbackWrEpoch()
+{
+  MOZ_RELEASE_ASSERT(mWrEpoch.mHandle != 0);
+  mWrEpoch.mHandle--;
 }
 
 void
