@@ -2163,7 +2163,8 @@ nsDocument::Init()
 
   
   
-  mIsShadowDOMEnabled = nsContentUtils::IsShadowDOMEnabled();
+  mIsShadowDOMEnabled = nsContentUtils::IsShadowDOMEnabled() ||
+    (XRE_IsParentProcess() && AllowXULXBL());
 
   
   
