@@ -50,6 +50,17 @@ struct ScrollUpdateInfo {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 struct FrameMetrics {
   friend struct IPC::ParamTraits<mozilla::layers::FrameMetrics>;
 
@@ -502,6 +513,7 @@ struct FrameMetrics {
   
   
   
+  
   float mPresShellResolution;
 
   
@@ -515,14 +527,8 @@ struct FrameMetrics {
   
   
   
-  
-  
-  
-  
   ParentLayerRect mCompositionBounds;
 
-  
-  
   
   
   
@@ -555,8 +561,6 @@ struct FrameMetrics {
   
   
   
-  
-  
   CSSRect mScrollableRect;
 
   
@@ -570,16 +574,8 @@ struct FrameMetrics {
 
   
   
-
-  
-  
-  
-  
   CSSToLayoutDeviceScale mDevPixelsPerCSSPixel;
 
-  
-  
-  
   
   
   
@@ -631,6 +627,12 @@ struct FrameMetrics {
   
   
   
+  
+  
+  
+  
+  
+  
   CSSRect mViewport;
 
   
@@ -659,6 +661,9 @@ struct FrameMetrics {
   
   bool mUseDisplayPortMargins : 1;
 
+  
+  
+  
   
   bool mIsScrollInfoLayer : 1;
 
@@ -780,6 +785,7 @@ struct LayerClip {
 };
 
 typedef Maybe<LayerClip> MaybeLayerClip;  
+
 
 
 
@@ -1001,7 +1007,6 @@ struct ScrollMetadata {
   
   OverscrollBehaviorInfo mOverscrollBehavior;
 
-  
   
   
   
