@@ -804,20 +804,15 @@ Accessible::XULElmName(DocAccessible* aDocument,
 
 
   
-  nsCOMPtr<nsIDOMXULLabeledControlElement> labeledEl = do_QueryInterface(aElm);
-  if (labeledEl) {
-    labeledEl->GetLabel(aName);
+  nsCOMPtr<nsIDOMXULSelectControlItemElement> itemEl = do_QueryInterface(aElm);
+  if (itemEl) {
+    itemEl->GetLabel(aName);
   } else {
-    nsCOMPtr<nsIDOMXULSelectControlItemElement> itemEl = do_QueryInterface(aElm);
-    if (itemEl) {
-      itemEl->GetLabel(aName);
-    } else {
-      nsCOMPtr<nsIDOMXULSelectControlElement> select = do_QueryInterface(aElm);
-      
-      
-      if (!select && aElm->IsElement()) {
-        aElm->AsElement()->GetAttribute(NS_LITERAL_STRING("label"), aName);
-      }
+    
+    
+    nsCOMPtr<nsIDOMXULSelectControlElement> select = do_QueryInterface(aElm);
+    if (!select) {
+      aElm->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::label, aName);
     }
   }
 
