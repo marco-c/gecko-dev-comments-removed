@@ -4713,9 +4713,8 @@ nsIDocument::SetScriptGlobalObject(nsIScriptGlobalObject *aScriptGlobalObject)
   }
 
   if (!mMaybeServiceWorkerControlled && mDocumentContainer && mScriptGlobalObject && GetChannel()) {
-    nsCOMPtr<nsIDocShell> docShell(mDocumentContainer);
     uint32_t loadType;
-    docShell->GetLoadType(&loadType);
+    mDocumentContainer->GetLoadType(&loadType);
 
     
     if (IsForceReloadType(loadType)) {
