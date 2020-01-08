@@ -18,79 +18,12 @@ namespace mozilla {
 namespace recordreplay {
 namespace parent {
 
-
-static StaticInfallibleVector<std::pair<int32_t, int32_t>> gProtocolManagers;
-
-
-static StaticInfallibleVector<int32_t> gDeadRoutingIds;
-
-static void
-NoteProtocolManager(int32_t aManagee, int32_t aManager)
-{
-  gProtocolManagers.emplaceBack(aManagee, aManager);
-  for (auto id : gDeadRoutingIds) {
-    if (id == aManager) {
-      gDeadRoutingIds.emplaceBack(aManagee);
-    }
-  }
-}
-
-static void
-DestroyRoutingId(int32_t aId)
-{
-  gDeadRoutingIds.emplaceBack(aId);
-  for (auto manager : gProtocolManagers) {
-    if (manager.second == aId) {
-      DestroyRoutingId(manager.first);
-    }
-  }
-}
-
-
-
-static bool
-MessageTargetIsDead(const IPC::Message& aMessage)
-{
-  
-  
-  
-  
-  
-  
-  for (int32_t id : gDeadRoutingIds) {
-    if (id == aMessage.routing_id()) {
-      return true;
-    }
-  }
-  return false;
-}
-
 static bool
 HandleMessageInMiddleman(ipc::Side aSide, const IPC::Message& aMessage)
 {
   IPC::Message::msgid_t type = aMessage.type();
 
-  
   if (aSide == ipc::ParentSide) {
-    
-    
-    
-    
-    
-    if (type == dom::PBrowser::Msg_PDocAccessibleConstructor__ID) {
-      PickleIterator iter(aMessage);
-      ipc::ActorHandle handle;
-
-      if (!IPC::ReadParam(&aMessage, &iter, &handle))
-        MOZ_CRASH("IPC::ReadParam failed");
-
-      NoteProtocolManager(handle.mId, aMessage.routing_id());
-    }
-
-    if (MessageTargetIsDead(aMessage)) {
-      PrintSpew("Suppressing %s message to dead target\n", IPC::StringFromIPCMessageType(type));
-      return true;
-    }
     return false;
   }
 
@@ -143,9 +76,6 @@ HandleMessageInMiddleman(ipc::Side aSide, const IPC::Message& aMessage)
     if (type == dom::PContent::Msg_SetXPCOMProcessAttributes__ID) {
       
       PreferencesLoaded();
-    }
-    if (type == dom::PBrowser::Msg_Destroy__ID) {
-      DestroyRoutingId(aMessage.routing_id());
     }
     if (type == dom::PBrowser::Msg_RenderLayers__ID) {
       
@@ -277,7 +207,6 @@ public:
 
   virtual Result OnMessageReceived(const Message& aMessage, Message*& aReply) override {
     MOZ_RELEASE_ASSERT(mOppositeMessageLoop);
-    MOZ_RELEASE_ASSERT(mSide == ipc::ChildSide || !MessageTargetIsDead(aMessage));
 
     Message* nMessage = new Message();
     nMessage->CopyFrom(aMessage);
@@ -314,7 +243,6 @@ public:
 
   virtual Result OnCallReceived(const Message& aMessage, Message*& aReply) override {
     MOZ_RELEASE_ASSERT(mOppositeMessageLoop);
-    MOZ_RELEASE_ASSERT(mSide == ipc::ChildSide || !MessageTargetIsDead(aMessage));
 
     Message* nMessage = new Message();
     nMessage->CopyFrom(aMessage);

@@ -44,6 +44,7 @@
 #include "mozilla/layout/RenderFrameChild.h"
 #include "mozilla/layout/RenderFrameParent.h"
 #include "mozilla/plugins/PPluginWidgetChild.h"
+#include "mozilla/recordreplay/ParentIPC.h"
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/Move.h"
@@ -340,7 +341,10 @@ private:
         }
 
         
-        if (mTabChild->IPCOpen()) {
+        
+        
+        
+        if (mTabChild->IPCOpen() && !recordreplay::parent::IsMiddlemanWithRecordingChild()) {
           Unused << PBrowserChild::Send__delete__(mTabChild);
         }
 

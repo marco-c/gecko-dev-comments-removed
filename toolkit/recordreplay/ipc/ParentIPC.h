@@ -41,6 +41,10 @@ const char* SaveAllRecordingsDirectory();
 base::ProcessId ParentProcessId();
 
 
+
+bool IsMiddlemanWithRecordingChild();
+
+
 void SaveRecording(const ipc::FileDescriptor& aFile);
 
 
