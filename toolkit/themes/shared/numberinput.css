@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+@namespace xul url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");
+@namespace html url("http://www.w3.org/1999/xhtml");
+
+html|input[type="number"] {
+  text-align: right;
+}
+
+html|input[type="number"][hidespinbuttons="true"] {
+  -moz-appearance: textfield !important;
+}
+
+
+
+xul|*:root html|input[type="number"],
+xul|*:root html|input[type="number"]::-moz-number-wrapper {
+  display: -moz-box;
+  -moz-box-align: center;
+}
+
+xul|*:root html|input[type="number"]::-moz-number-wrapper,
+xul|*:root html|input[type="number"]::-moz-number-text {
+  -moz-box-flex: 1;
+}
+
+xul|*:root html|input[type="number"]::-moz-number-wrapper {
+  width: 100%;
+}

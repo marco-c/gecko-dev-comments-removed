@@ -849,7 +849,8 @@ menulist[indicator=true] > menupopup menuitem[indicator=true]:not([image]) > .me
 
 
 .proxy-port-input {
-  width: calc(5ch + 22px); 
+  width: calc(5ch + 18px); 
+  margin-inline-start: 4px;
 }
 
 #defaultBrowserLanguage {
