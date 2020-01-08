@@ -1,9 +1,9 @@
 
+
 var test = function(isContent) {
   SimpleTest.waitForExplicitFinish();
 
-	SpecialPowers.pushPrefEnv({"set": [["security.allow_eval_with_system_principal",
-																		  true]]});
+  SpecialPowers.pushPrefEnv({"set": [["security.allow_eval_with_system_principal", true]]});
 
   let { ww } = SpecialPowers.Services;
   window.chromeWindow = ww.activeWindow;
@@ -33,6 +33,7 @@ var test = function(isContent) {
 
   
   let checkPair = function(a, b) {
+    
     is(eval(a), eval(b), a + " should be equal to " + b);
   };
 
