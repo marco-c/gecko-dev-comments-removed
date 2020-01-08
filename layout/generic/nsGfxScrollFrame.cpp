@@ -1414,7 +1414,8 @@ ScrollFrameHelper::WantAsyncScroll() const
 
 #if defined(MOZ_WIDGET_ANDROID)
   
-  bool canScrollWithoutScrollbars = IsFocused(mOuter->GetContent());
+  bool canScrollWithoutScrollbars =
+    !IsForTextControlWithNoScrollbars() || IsFocused(mOuter->GetContent());
 #else
   bool canScrollWithoutScrollbars = true;
 #endif
@@ -4634,12 +4635,28 @@ ScrollFrameHelper::ReloadChildFrames()
   }
 }
 
+bool
+ScrollFrameHelper::IsForTextControlWithNoScrollbars() const
+{
+  nsIFrame* parent = mOuter->GetParent();
+  
+  nsITextControlFrame* textFrame = do_QueryFrame(parent);
+  if (textFrame) {
+    
+    HTMLTextAreaElement* textAreaElement =
+      HTMLTextAreaElement::FromNode(parent->GetContent());
+    if (!textAreaElement) {
+      return true;
+    }
+  }
+  return false;
+}
+
 nsresult
 ScrollFrameHelper::CreateAnonymousContent(
   nsTArray<nsIAnonymousContentCreator::ContentInfo>& aElements)
 {
   nsPresContext* presContext = mOuter->PresContext();
-  nsIFrame* parent = mOuter->GetParent();
 
   
   
@@ -4692,16 +4709,9 @@ ScrollFrameHelper::CreateAnonymousContent(
     canHaveVertical = true;
   }
 
-  
-  nsITextControlFrame* textFrame = do_QueryFrame(parent);
-  if (textFrame) {
-    
-    HTMLTextAreaElement* textAreaElement =
-      HTMLTextAreaElement::FromNode(parent->GetContent());
-    if (!textAreaElement) {
-      mNeverHasVerticalScrollbar = mNeverHasHorizontalScrollbar = true;
-      return NS_OK;
-    }
+  if (IsForTextControlWithNoScrollbars()) {
+    mNeverHasVerticalScrollbar = mNeverHasHorizontalScrollbar = true;
+    return NS_OK;
   }
 
   nsNodeInfoManager* nodeInfoManager = presContext->Document()->NodeInfoManager();

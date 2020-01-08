@@ -687,6 +687,8 @@ protected:
   bool HasBgAttachmentLocal() const;
   uint8_t GetScrolledFrameDir() const;
 
+  bool IsForTextControlWithNoScrollbars() const;
+
   static void EnsureFrameVisPrefsCached();
   static bool sFrameVisPrefsCached;
   
