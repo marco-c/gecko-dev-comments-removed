@@ -106,8 +106,6 @@ struct nsXPTInterfaceInfo
                        JS::MutableHandleValue constant,
                        char** aName) const;
 
-  bool EnsureResolved() const { return true; } 
-
   
   
   
