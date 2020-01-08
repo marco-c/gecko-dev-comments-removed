@@ -505,6 +505,7 @@ nsContextMenu.prototype = {
                   !(this.isContentSelected || this.onTextInput || this.onLink ||
                     this.onImage || this.onVideo || this.onAudio ||
                     this.onCanvas || this.inWebExtBrowser));
+    bookmarkPage.setAttribute("tooltiptext", bookmarkPage.getAttribute("buttontooltiptext"));
 
     this.showItem("context-bookmarklink", (this.onLink && !this.onMailtoLink &&
                                            !this.onMozExtLink) || this.onPlainTextLink);
@@ -831,6 +832,7 @@ nsContextMenu.prototype = {
     let referrer = gContextMenuContentData.referrer;
     openLinkIn(gContextMenuContentData.docLocation, "tab",
                { charset: gContextMenuContentData.charSet,
+                 triggeringPrincipal: this.browser.contentPrincipal,
                  referrerURI: referrer ? makeURI(referrer) : null });
   },
 
