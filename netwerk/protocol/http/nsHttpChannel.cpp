@@ -1483,7 +1483,7 @@ ProcessXCTO(nsIURI* aURI, nsHttpResponseHead* aResponseHead, nsILoadInfo* aLoadI
     }
     
     
-    contentTypeOptionsHeader.StripWhitespace();
+    nsHttp::TrimHTTPWhitespace(contentTypeOptionsHeader, contentTypeOptionsHeader);
     
     
     
