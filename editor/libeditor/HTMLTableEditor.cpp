@@ -770,7 +770,17 @@ HTMLEditor::DeleteTable()
 }
 
 NS_IMETHODIMP
-HTMLEditor::DeleteTableCell(int32_t aNumber)
+HTMLEditor::DeleteTableCell(int32_t aNumberOfCellsToDelete)
+{
+  nsresult rv = DeleteTableCellWithTransaction(aNumberOfCellsToDelete);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  return NS_OK;
+}
+
+nsresult
+HTMLEditor::DeleteTableCellWithTransaction(int32_t aNumberOfCellsToDelete)
 {
   RefPtr<Selection> selection;
   RefPtr<Element> table;
@@ -789,7 +799,7 @@ HTMLEditor::DeleteTableCell(int32_t aNumber)
   }
   if (NS_WARN_IF(!table) || NS_WARN_IF(!cell)) {
     
-    return NS_SUCCESS_EDITOR_ELEMENT_NOT_FOUND;
+    return NS_OK;
   }
 
   AutoPlaceholderBatch beginBatching(this);
@@ -805,162 +815,31 @@ HTMLEditor::DeleteTableCell(int32_t aNumber)
     return error.StealNSResult();
   }
 
+  MOZ_ASSERT(selection->RangeCount());
+
   
-  if (firstSelectedCellElement && selection->RangeCount() > 1) {
-    ErrorResult error;
-    TableSize tableSize(*this, *table, error);
-    if (NS_WARN_IF(error.Failed())) {
-      return error.StealNSResult();
-    }
-
-    CellIndexes firstCellIndexes(*firstSelectedCellElement, error);
-    if (NS_WARN_IF(error.Failed())) {
-      return error.StealNSResult();
-    }
-    cell = firstSelectedCellElement;
-    startRowIndex = firstCellIndexes.mRow;
-    startColIndex = firstCellIndexes.mColumn;
-
-    
-    
-    AutoSelectionSetterAfterTableEdit setCaret(*this, table, startRowIndex,
-                                               startColIndex, ePreviousColumn,
-                                               false);
-    AutoTransactionsConserveSelection dontChangeSelection(*this);
-
-    bool    checkToDeleteRow = true;
-    bool    checkToDeleteColumn = true;
-    while (cell) {
-      bool deleteRow = false;
-      bool deleteCol = false;
-
-      if (checkToDeleteRow) {
-        
-        
-        checkToDeleteRow = false;
-
-        deleteRow =
-          AllCellsInRowSelected(table, startRowIndex, tableSize.mColumnCount);
-        if (deleteRow) {
-          
-          
-          int32_t nextRow = startRowIndex;
-          while (nextRow == startRowIndex) {
-            cell = GetNextSelectedTableCellElement(*selection, error);
-            if (NS_WARN_IF(error.Failed())) {
-              return error.StealNSResult();
-            }
-            if (!cell) {
-              break;
-            }
-            CellIndexes nextSelectedCellIndexes(*cell, error);
-            if (NS_WARN_IF(error.Failed())) {
-              return error.StealNSResult();
-            }
-            nextRow = nextSelectedCellIndexes.mRow;
-            startColIndex = nextSelectedCellIndexes.mColumn;
-          }
-          rv = DeleteTableRowWithTransaction(*table, startRowIndex);
-          if (NS_WARN_IF(NS_FAILED(rv))) {
-            return rv;
-          }
-          if (cell) {
-            
-            startRowIndex = nextRow - 1;
-            
-            checkToDeleteRow = true;
-          }
-        }
-      }
-      if (!deleteRow) {
-        if (checkToDeleteColumn) {
-          
-          
-          checkToDeleteColumn = false;
-
-          deleteCol =
-            AllCellsInColumnSelected(table, startColIndex,
-                                     tableSize.mColumnCount);
-          if (deleteCol) {
-            
-            
-            int32_t nextCol = startColIndex;
-            while (nextCol == startColIndex) {
-              cell = GetNextSelectedTableCellElement(*selection, error);
-              if (NS_WARN_IF(error.Failed())) {
-                return error.StealNSResult();
-              }
-              if (!cell) {
-                break;
-              }
-              CellIndexes nextSelectedCellIndexes(*cell, error);
-              if (NS_WARN_IF(error.Failed())) {
-                return error.StealNSResult();
-              }
-              startRowIndex = nextSelectedCellIndexes.mRow;
-              nextCol = nextSelectedCellIndexes.mColumn;
-            }
-            
-            rv = DeleteTableColumnWithTransaction(*table, startColIndex);
-            NS_ENSURE_SUCCESS(rv, rv);
-            if (cell) {
-              
-              startColIndex = nextCol - 1;
-              
-              checkToDeleteColumn = true;
-            }
-          }
-        }
-        if (!deleteCol) {
-          
-          RefPtr<Element> nextCell =
-            GetNextSelectedTableCellElement(*selection, error);
-          if (NS_WARN_IF(error.Failed())) {
-            return error.StealNSResult();
-          }
-          NS_ENSURE_SUCCESS(rv, rv);
-
-          
-          rv = DeleteNodeWithTransaction(*cell);
-          if (NS_WARN_IF(NS_FAILED(rv))) {
-            return rv;
-          }
-
-          
-          if (nextCell) {
-            CellIndexes nextCellIndexes(*nextCell, error);
-            if (NS_WARN_IF(error.Failed())) {
-              return error.StealNSResult();
-            }
-            startRowIndex = nextCellIndexes.mRow;
-            startColIndex = nextCellIndexes.mColumn;
-          }
-          cell = nextCell;
-        }
-      }
-    }
-  } else {
-    ErrorResult error;
-    for (int32_t i = 0; i < aNumber; i++) {
+  
+  
+  if (!firstSelectedCellElement || selection->RangeCount() == 1) {
+    for (int32_t i = 0; i < aNumberOfCellsToDelete; i++) {
       rv = GetCellContext(getter_AddRefs(selection),
                           getter_AddRefs(table),
                           getter_AddRefs(cell),
                           nullptr, nullptr,
                           &startRowIndex, &startColIndex);
-      NS_ENSURE_SUCCESS(rv, rv);
-      
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
       if (NS_WARN_IF(!table) || NS_WARN_IF(!cell)) {
-        return NS_SUCCESS_EDITOR_ELEMENT_NOT_FOUND;
+        
+        return NS_OK;
       }
 
-      if (GetNumberOfCellsInRow(*table, startRowIndex) == 1) {
-        Element* parentRow =
-          GetElementOrParentByTagNameInternal(*nsGkAtoms::tr, *cell);
-        if (NS_WARN_IF(!parentRow)) {
-          return NS_ERROR_FAILURE;
-        }
+      int32_t numberOfCellsInRow = GetNumberOfCellsInRow(*table, startRowIndex);
+      NS_WARNING_ASSERTION(numberOfCellsInRow >= 0,
+        "Failed to count number of cells in the row");
 
-        
+      if (numberOfCellsInRow == 1) {
         
         
         TableSize tableSize(*this, *table, error);
@@ -982,22 +861,153 @@ HTMLEditor::DeleteTableCell(int32_t aNumber)
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
-      } else {
-        
+        continue;
+      }
 
+      
+      
+      AutoSelectionSetterAfterTableEdit setCaret(*this, table, startRowIndex,
+                                                 startColIndex,
+                                                 ePreviousColumn, false);
+      AutoTransactionsConserveSelection dontChangeSelection(*this);
+
+      
+      rv = DeleteNodeWithTransaction(*cell);
+      
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+    }
+    return NS_OK;
+  }
+
+  
+  
+  TableSize tableSize(*this, *table, error);
+  if (NS_WARN_IF(error.Failed())) {
+    return error.StealNSResult();
+  }
+
+  CellIndexes firstCellIndexes(*firstSelectedCellElement, error);
+  if (NS_WARN_IF(error.Failed())) {
+    return error.StealNSResult();
+  }
+  cell = firstSelectedCellElement;
+  startRowIndex = firstCellIndexes.mRow;
+  startColIndex = firstCellIndexes.mColumn;
+
+  
+  
+  AutoSelectionSetterAfterTableEdit setCaret(*this, table, startRowIndex,
+                                             startColIndex, ePreviousColumn,
+                                             false);
+  AutoTransactionsConserveSelection dontChangeSelection(*this);
+
+  bool checkToDeleteRow = true;
+  bool checkToDeleteColumn = true;
+  while (cell) {
+    if (checkToDeleteRow) {
+      
+      
+      checkToDeleteRow = false;
+      if (AllCellsInRowSelected(table, startRowIndex, tableSize.mColumnCount)) {
         
         
-        AutoSelectionSetterAfterTableEdit setCaret(*this, table, startRowIndex,
-                                                   startColIndex, ePreviousColumn,
-                                                   false);
-        AutoTransactionsConserveSelection dontChangeSelection(*this);
-        rv = DeleteNodeWithTransaction(*cell);
-        
+        int32_t nextRow = startRowIndex;
+        while (nextRow == startRowIndex) {
+          cell = GetNextSelectedTableCellElement(*selection, error);
+          if (NS_WARN_IF(error.Failed())) {
+            return error.StealNSResult();
+          }
+          if (!cell) {
+            break;
+          }
+          CellIndexes nextSelectedCellIndexes(*cell, error);
+          if (NS_WARN_IF(error.Failed())) {
+            return error.StealNSResult();
+          }
+          nextRow = nextSelectedCellIndexes.mRow;
+          startColIndex = nextSelectedCellIndexes.mColumn;
+        }
+        rv = DeleteTableRowWithTransaction(*table, startRowIndex);
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
+        if (!cell) {
+          break;
+        }
+        
+        startRowIndex = nextRow - 1;
+        
+        checkToDeleteRow = true;
+        continue;
       }
     }
+
+    if (checkToDeleteColumn) {
+      
+      
+      checkToDeleteColumn = false;
+      if (AllCellsInColumnSelected(table, startColIndex,
+                                   tableSize.mColumnCount)) {
+        
+        
+        int32_t nextCol = startColIndex;
+        while (nextCol == startColIndex) {
+          cell = GetNextSelectedTableCellElement(*selection, error);
+          if (NS_WARN_IF(error.Failed())) {
+            return error.StealNSResult();
+          }
+          if (!cell) {
+            break;
+          }
+          CellIndexes nextSelectedCellIndexes(*cell, error);
+          if (NS_WARN_IF(error.Failed())) {
+            return error.StealNSResult();
+          }
+          startRowIndex = nextSelectedCellIndexes.mRow;
+          nextCol = nextSelectedCellIndexes.mColumn;
+        }
+        
+        rv = DeleteTableColumnWithTransaction(*table, startColIndex);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
+        if (!cell) {
+          break;
+        }
+        
+        startColIndex = nextCol - 1;
+        
+        checkToDeleteColumn = true;
+        continue;
+      }
+    }
+
+    
+    RefPtr<Element> nextCell =
+      GetNextSelectedTableCellElement(*selection, error);
+    if (NS_WARN_IF(error.Failed())) {
+      return error.StealNSResult();
+    }
+
+    
+    rv = DeleteNodeWithTransaction(*cell);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    if (!nextCell) {
+      return NS_OK;
+    }
+
+    CellIndexes nextCellIndexes(*nextCell, error);
+    if (NS_WARN_IF(error.Failed())) {
+      return error.StealNSResult();
+    }
+    startRowIndex = nextCellIndexes.mRow;
+    startColIndex = nextCellIndexes.mColumn;
+    cell = std::move(nextCell);
   }
   return NS_OK;
 }

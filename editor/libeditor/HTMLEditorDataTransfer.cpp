@@ -322,10 +322,13 @@ HTMLEditor::DoInsertHTMLWithContext(const nsAString& aInputString,
 
     
     
+    
     {
       AutoSelectionRestorer selectionRestorer(selection, this);
-      rv = DeleteTableCell(1);
-      NS_ENSURE_SUCCESS(rv, rv);
+      rv = DeleteTableCellWithTransaction(1);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
     }
     
     selection->CollapseToStart(IgnoreErrors());
