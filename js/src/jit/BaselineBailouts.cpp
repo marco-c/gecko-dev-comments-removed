@@ -1841,6 +1841,14 @@ jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfo)
     MOZ_ASSERT(numFrames > 0);
     BailoutKind bailoutKind = bailoutInfo->bailoutKind;
     bool checkGlobalDeclarationConflicts = bailoutInfo->checkGlobalDeclarationConflicts;
+    uint8_t* incomingStack = bailoutInfo->incomingStack;
+
+    
+    
+    auto guardRemoveRematerializedFramesFromDebugger = mozilla::MakeScopeExit([&] {
+        JitActivation* act = cx->activation()->asJit();
+        act->removeRematerializedFramesFromDebugger(cx, incomingStack);
+    });
 
     
     js_free(bailoutInfo);
@@ -1914,6 +1922,7 @@ jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfo)
             if (frameno == numFrames - 1) {
                 outerScript = frame->script();
                 outerFp = iter.fp();
+                MOZ_ASSERT(outerFp == incomingStack);
             }
 
             frameno++;
@@ -1932,7 +1941,7 @@ jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfo)
     
     JitActivation* act = cx->activation()->asJit();
     if (act->hasRematerializedFrame(outerFp)) {
-        JSJitFrameIter iter(cx->activation()->asJit());
+        JSJitFrameIter iter(act);
         size_t inlineDepth = numFrames;
         bool ok = true;
         while (inlineDepth > 0) {
@@ -1940,18 +1949,22 @@ jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfo)
                 
                 
                 
-                ok = CopyFromRematerializedFrame(cx, act, outerFp, --inlineDepth,
-                                                 iter.baselineFrame());
+                if (!CopyFromRematerializedFrame(cx, act, outerFp, --inlineDepth,
+                                                 iter.baselineFrame()))
+                {
+                    ok = false;
+                }
             }
             ++iter;
         }
 
-        
-        
-        act->removeRematerializedFrame(outerFp);
-
         if (!ok)
             return false;
+
+        
+        
+        guardRemoveRematerializedFramesFromDebugger.release();
+        act->removeRematerializedFrame(outerFp);
     }
 
     

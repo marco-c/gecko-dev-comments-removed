@@ -724,7 +724,12 @@ HandleException(ResumeFromException* rfe)
                 ++frames;
             }
 
+            
             activation->removeIonFrameRecovery(frame.jsFrame());
+            activation->removeRematerializedFrame(frame.fp());
+
+            
+            
             if (invalidated)
                 ionScript->decrementInvalidationCount(cx->runtime()->defaultFreeOp());
 
