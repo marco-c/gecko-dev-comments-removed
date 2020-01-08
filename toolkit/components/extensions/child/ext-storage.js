@@ -182,15 +182,25 @@ this.storage = class extends ExtensionAPI {
     const local = {};
     for (let method of ["get", "set", "remove", "clear"]) {
       local[method] = async function(...args) {
-        if (!promiseStorageLocalBackend) {
-          promiseStorageLocalBackend = getStorageLocalBackend();
-        }
-        const backend = await promiseStorageLocalBackend.catch(err => {
+        try {
+          if (!promiseStorageLocalBackend) {
+            promiseStorageLocalBackend = getStorageLocalBackend();
+          }
+          const backend = await promiseStorageLocalBackend.catch(err => {
+            
+            promiseStorageLocalBackend = null;
+            throw err;
+          });
+
           
-          promiseStorageLocalBackend = null;
-          throw err;
-        });
-        return backend[method](...args);
+          const result = await backend[method](...args);
+          return result;
+        } catch (err) {
+          
+          
+          
+          throw new ExtensionUtils.ExtensionError(String(err));
+        }
       };
     }
 

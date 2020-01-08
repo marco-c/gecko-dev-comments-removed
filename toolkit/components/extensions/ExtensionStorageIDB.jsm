@@ -12,7 +12,6 @@ ChromeUtils.import("resource://gre/modules/IndexedDB.jsm");
 XPCOMUtils.defineLazyModuleGetters(this, {
   ContextualIdentityService: "resource://gre/modules/ContextualIdentityService.jsm",
   ExtensionStorage: "resource://gre/modules/ExtensionStorage.jsm",
-  ExtensionUtils: "resource://gre/modules/ExtensionUtils.jsm",
   Services: "resource://gre/modules/Services.jsm",
   OS: "resource://gre/modules/osfile.jsm",
 });
@@ -32,6 +31,134 @@ const IDB_MIGRATE_RESULT_HISTOGRAM = "WEBEXT_STORAGE_LOCAL_IDB_MIGRATE_RESULT_CO
 
 const BACKEND_ENABLED_PREF = "extensions.webextensions.ExtensionStorageIDB.enabled";
 const IDB_MIGRATED_PREF_BRANCH = "extensions.webextensions.ExtensionStorageIDB.migrated";
+
+var DataMigrationTelemetry = {
+  initialized: false,
+
+  lazyInit() {
+    if (this.initialized) {
+      return;
+    }
+    this.initialized = true;
+
+    
+    Services.telemetry.setEventRecordingEnabled("extensions.data", true);
+
+    this.resultHistogram = Services.telemetry.getHistogramById(IDB_MIGRATE_RESULT_HISTOGRAM);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  getTrimmedString(str) {
+    if (str.length <= 80) {
+      return str;
+    }
+
+    const length = str.length;
+
+    
+    
+    
+    return `${str.slice(0, 40)}...${str.slice(length - 37, length)}`;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  getErrorName(error) {
+    if (!error) {
+      return undefined;
+    }
+
+    if (error instanceof DOMException) {
+      if (error.name.length > 80) {
+        return this.getTrimmedString(error.name);
+      }
+
+      return error.name;
+    }
+
+    return "OtherError";
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  recordResult(telemetryData) {
+    try {
+      const {
+        backend,
+        dataMigrated,
+        extensionId,
+        error,
+        hasJSONFile,
+        hasOldData,
+        histogramCategory,
+      } = telemetryData;
+
+      this.lazyInit();
+      this.resultHistogram.add(histogramCategory);
+
+      const extra = {backend};
+
+      if (dataMigrated != null) {
+        extra.data_migrated = dataMigrated ? "y" : "n";
+      }
+
+      if (hasJSONFile != null) {
+        extra.has_jsonfile = hasJSONFile ? "y" : "n";
+      }
+
+      if (hasOldData != null) {
+        extra.has_olddata = hasOldData ? "y" : "n";
+      }
+
+      if (error) {
+        extra.error_name = this.getErrorName(error);
+      }
+
+      Services.telemetry.recordEvent("extensions.data", "migrateResult", "storageLocal",
+                                     this.getTrimmedString(extensionId), extra);
+    } catch (err) {
+      
+      
+      
+      Cu.reportError(err);
+    }
+  },
+};
 
 class ExtensionStorageLocalIDB extends IndexedDB {
   onupgradeneeded(event) {
@@ -92,10 +219,7 @@ class ExtensionStorageLocalIDB extends IndexedDB {
       } catch (err) {
         transaction.abort();
 
-        
-        
-        
-        throw new ExtensionUtils.ExtensionError(String(err));
+        throw err;
       }
     }
 
@@ -238,8 +362,9 @@ async function migrateJSONFileData(extension, storagePrincipal) {
   let idbConn;
   let jsonFile;
   let hasEmptyIDB;
-  let histogram = Services.telemetry.getHistogramById(IDB_MIGRATE_RESULT_HISTOGRAM);
+  let nonFatalError;
   let dataMigrateCompleted = false;
+  let hasOldData = false;
 
   const isMigratedExtension = Services.prefs.getBoolPref(`${IDB_MIGRATED_PREF_BRANCH}.${extension.id}`, false);
   if (isMigratedExtension) {
@@ -262,7 +387,12 @@ async function migrateJSONFileData(extension, storagePrincipal) {
     extension.logWarning(
       `storage.local data migration cancelled, unable to open IDB connection: ${err.message}::${err.stack}`);
 
-    histogram.add("failure");
+    DataMigrationTelemetry.recordResult({
+      backend: "JSONFile",
+      extensionId: extension.id,
+      error: err,
+      histogramCategory: "failure",
+    });
 
     throw err;
   }
@@ -288,6 +418,7 @@ async function migrateJSONFileData(extension, storagePrincipal) {
       const data = {};
       for (let [key, value] of jsonFile.data.entries()) {
         data[key] = value;
+        hasOldData = true;
       }
 
       await idbConn.set(data);
@@ -306,18 +437,29 @@ async function migrateJSONFileData(extension, storagePrincipal) {
       
       Services.qms.clearStoragesForPrincipal(storagePrincipal);
 
-      histogram.add("failure");
+      DataMigrationTelemetry.recordResult({
+        backend: "JSONFile",
+        dataMigrated: dataMigrateCompleted,
+        extensionId: extension.id,
+        error: err,
+        hasJSONFile: oldStorageExists,
+        hasOldData,
+        histogramCategory: "failure",
+      });
 
       throw err;
     }
+
+    
+    
+    
+    nonFatalError = err;
   } finally {
     
     await ExtensionStorage.clearCachedFile(extension.id).catch(err => {
       extension.logWarning(err.message);
     });
   }
-
-  histogram.add("success");
 
   
   
@@ -331,11 +473,22 @@ async function migrateJSONFileData(extension, storagePrincipal) {
         await OS.File.move(oldStoragePath, openInfo.path);
       }
     } catch (err) {
+      nonFatalError = err;
       extension.logWarning(err.message);
     }
   }
 
   Services.prefs.setBoolPref(`${IDB_MIGRATED_PREF_BRANCH}.${extension.id}`, true);
+
+  DataMigrationTelemetry.recordResult({
+    backend: "IndexedDB",
+    dataMigrated: dataMigrateCompleted,
+    extensionId: extension.id,
+    error: nonFatalError,
+    hasJSONFile: oldStorageExists,
+    hasOldData,
+    histogramCategory: "success",
+  });
 }
 
 
