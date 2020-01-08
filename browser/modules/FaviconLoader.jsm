@@ -423,6 +423,12 @@ class IconLoader {
     }
 
     if (LOCAL_FAVICON_SCHEMES.includes(iconInfo.iconUri.scheme)) {
+      
+      
+      try {
+        Services.scriptSecurityManager.checkLoadURIWithPrincipal(
+          iconInfo.node.nodePrincipal, iconInfo.iconUri, 0);
+      } catch (ex) { return; }
       this.mm.sendAsyncMessage("Link:SetIcon", {
         pageURL: iconInfo.pageUri.spec,
         originalURL: iconInfo.iconUri.spec,
