@@ -3,6 +3,8 @@
 
 
 
+const NS_ERROR_STORAGE_BUSY = SpecialPowers.Cr.NS_ERROR_STORAGE_BUSY;
+
 var testGenerator = testSteps();
 
 function clearAllDatabases(callback)
@@ -137,6 +139,12 @@ function* testHarnessSteps()
   }
 
   info("Running test in main thread");
+
+  let script = document.createElement("script");
+  script.src = "head-shared.js";
+  script.onload = nextTestHarnessStep;
+  document.head.appendChild(script);
+  yield undefined;
 
   
   testGenerator.next();
@@ -303,4 +311,55 @@ function workerScript()
   };
 
   self.postMessage({ op: "ready" });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function getSimpleDatabase()
+{
+  let connection = SpecialPowers.Cc["@mozilla.org/dom/sdb-connection;1"]
+    .createInstance(SpecialPowers.Ci.nsISDBConnection);
+
+  let principal = SpecialPowers.wrap(document).nodePrincipal;
+
+  connection.init(principal);
+
+  return connection;
+}
+
+function* requestFinished(request) {
+  request.callback = SpecialPowers.wrapCallback(continueToNextStepSync);
+  yield undefined;
+  if (request.resultCode == SpecialPowers.Cr.NS_OK) {
+    let result = request.result;
+    if (SpecialPowers.call_Instanceof(result, SpecialPowers.Ci.nsISDBResult)) {
+      let wrapper = {};
+      for (let i in result) {
+        if (typeof result[i] == "function") {
+          wrapper[i] = SpecialPowers.unwrap(result[i]);
+        } else {
+          wrapper[i] = result[i];
+        }
+      }
+      return wrapper;
+    }
+    return result;
+  }
+  throw request.resultCode;
 }
