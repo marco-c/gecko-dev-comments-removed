@@ -230,7 +230,7 @@ typedef struct {
 #define MAX_DTLS_SRTP_CIPHER_SUITES 4
 
 
-#define MAX_SIGNATURE_SCHEMES 15
+#define MAX_SIGNATURE_SCHEMES 18
 
 typedef struct sslOptionsStr {
     
