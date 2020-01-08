@@ -161,6 +161,21 @@ def evaluate(variables, cache_variables, parsed):
                 cache_variables.append(variable)
             except ValueError:
                 variables[variable] = ' '.join(values)
+        
+        
+        
+        elif command in ['set_aom_config_var', 'set_aom_detect_var']:
+            variable = arguments[0]
+            value = arguments[1]
+            if variable not in variables:
+                variables[variable] = value
+            cache_variables.append(variable)
+        elif command == 'set_aom_option_var':
+            
+            variable = arguments[0]
+            value = arguments[2]
+            if variable not in variables:
+                variables[variable] = value
         elif command == 'add_asm_library':
             try:
                 sources.extend(variables[arguments[1]].split(' '))
