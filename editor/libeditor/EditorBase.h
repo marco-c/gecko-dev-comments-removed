@@ -787,6 +787,15 @@ protected:
       return mDirectionOfTopLevelEditSubAction;
     }
 
+    SelectionState& SavedSelectionRef()
+    {
+      return mParentData ? mParentData->SavedSelectionRef() : mSavedSelection;
+    }
+    const SelectionState& SavedSelectionRef() const
+    {
+      return mParentData ? mParentData->SavedSelectionRef() : mSavedSelection;
+    }
+
   private:
     EditorBase& mEditorBase;
     RefPtr<Selection> mSelection;
@@ -794,6 +803,10 @@ protected:
     
     
     AutoEditActionDataSetter* mParentData;
+
+    
+    SelectionState mSavedSelection;
+
     EditAction mEditAction;
     EditSubAction mTopLevelEditSubAction;
     EDirection mDirectionOfTopLevelEditSubAction;
@@ -866,6 +879,21 @@ protected:
   {
     return mEditActionData ?
        mEditActionData->GetDirectionOfTopLevelEditSubAction() : eNone;
+  }
+
+  
+
+
+
+  SelectionState& SavedSelectionRef()
+  {
+    MOZ_ASSERT(IsEditActionDataAvailable());
+    return mEditActionData->SavedSelectionRef();
+  }
+  const SelectionState& SavedSelectionRef() const
+  {
+    MOZ_ASSERT(IsEditActionDataAvailable());
+    return mEditActionData->SavedSelectionRef();
   }
 
   
@@ -2305,8 +2333,6 @@ protected:
             AutoDocumentStateListenerArray;
   AutoDocumentStateListenerArray mDocStateListeners;
 
-  
-  SelectionState mSavedSel;
   
   RangeUpdater mRangeUpdater;
 
