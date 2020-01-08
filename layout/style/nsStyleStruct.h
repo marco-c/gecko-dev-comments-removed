@@ -2014,7 +2014,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
   mozilla::StyleFloat mOriginalFloat;
 
   mozilla::StyleClear mBreakType;
-  uint8_t mBreakInside;         
+  mozilla::StyleBreakWithin mBreakInside;
   mozilla::StyleBreakBetween mPageBreakBefore;
   mozilla::StyleBreakBetween mPageBreakAfter;
   uint8_t mOverflowX;           
