@@ -217,19 +217,6 @@ function loadCallgraph(file)
     
 
     
-    
-    
-    var worklist = [];
-    for (let callee in callersOf)
-        functionLimits[callee] = LIMIT_UNVISITED;
-    for (var caller in calleesOf) {
-        if (!(caller in callersOf)) {
-            functionLimits[caller] = LIMIT_UNVISITED;
-            worklist.push([caller, LIMIT_NONE, 'root']);
-        }
-    }
-
-    
     for (var [name, limits] of Object.entries(fieldCallLimits)) {
         if (limits)
             functionLimits[name] = limits;
@@ -238,32 +225,21 @@ function loadCallgraph(file)
     
     
     
-    while (worklist.length > 0) {
-        
-        
-        const [caller, edge_limits, callercaller] = worklist.pop();
-        const prev_limits = functionLimits[caller];
-        if (prev_limits & ~edge_limits) {
-            
-            
-            
-            
-            const new_limits = prev_limits & edge_limits;
-            if (new_limits)
-                functionLimits[caller] = new_limits;
-            else
-                delete functionLimits[caller];
-            for (const {callee, limits} of (calleesOf[caller] || []))
-                worklist.push([callee, limits | edge_limits, caller]);
-        }
-    }
+    var roots = gather_simple_roots(functionLimits, callersOf);
+
+    
+    propagate_limits(roots, functionLimits, calleesOf);
 
     
     
-    for (var func in functionLimits) {
-        if (functionLimits[func] == LIMIT_UNVISITED)
-            delete functionLimits[func];
-    }
+    
+    
+    
+    
+    roots = gather_recursive_roots(roots, functionLimits, callersOf);
+
+    
+    propagate_limits(roots, functionLimits, calleesOf);
 
     
     for (var name in gcFunctions) {
@@ -321,6 +297,106 @@ function loadCallgraph(file)
     
     
     remap_ids_to_mangled_names();
+}
+
+
+
+function gather_simple_roots(functionLimits, callersOf) {
+    const roots = [];
+    for (let callee in callersOf)
+        functionLimits[callee] = LIMIT_UNVISITED;
+    for (let caller in calleesOf) {
+        if (!(caller in callersOf)) {
+            functionLimits[caller] = LIMIT_UNVISITED;
+            roots.push([caller, LIMIT_NONE, 'root']);
+        }
+    }
+
+    return roots;
+}
+
+
+
+
+function propagate_limits(worklist, functionLimits, calleesOf) {
+    let top = worklist.length;
+    while (top > 0) {
+        
+        
+        const [caller, edge_limits, callercaller] = worklist[--top];
+        const prev_limits = functionLimits[caller];
+        if (prev_limits & ~edge_limits) {
+            
+            
+            
+            
+            const new_limits = prev_limits & edge_limits;
+            if (new_limits)
+                functionLimits[caller] = new_limits;
+            else
+                delete functionLimits[caller];
+            for (const {callee, limits} of (calleesOf[caller] || []))
+                worklist[top++] = [callee, limits | edge_limits, caller];
+        }
+    }
+}
+
+
+
+function gather_recursive_roots(functionLimits, callersOf) {
+    const roots = [];
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    const seen = new Map();
+    for (var func in functionLimits) {
+        if (functionLimits[func] != LIMIT_UNVISITED)
+            continue;
+
+        
+        
+        assert(callersOf[func].length > 0);
+
+        const work = [func];
+        while (work.length > 0) {
+            const f = work.pop();
+            if (seen.has(f)) {
+                if (seen.get(f) == func) {
+                    
+                    
+                    roots.push([f, LIMIT_NONE, 'root']);
+                    print(`recursive root? ${f} = ${functionNames[f]}`);
+                } else {
+                    
+                    
+                    seen.set(f, func);
+                }
+            } else {
+                print(`retained by recursive root? ${f} = ${functionNames[f]}`);
+                work.push(...callersOf[f]);
+                seen.set(f, func);
+            }
+        }
+    }
+
+    return roots;
 }
 
 function remap_ids_to_mangled_names() {
