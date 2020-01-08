@@ -66,23 +66,17 @@ static const DWORD kDefaultTimeIncrement = 156001;
 
 
 
+static uint64_t sFrequencyPerSec = 1;
 
+namespace mozilla {
 
+MFBT_API uint64_t
+GetQueryPerformanceFrequencyPerSec()
+{
+  return sFrequencyPerSec;
+}
 
-
-
-
-
-
-
-#define ms2mt(x) ((x) * sFrequencyPerSec)
-#define mt2ms(x) ((x) / sFrequencyPerSec)
-#define mt2ms_f(x) (double(x) / sFrequencyPerSec)
-
-
-
-
-static LONGLONG sFrequencyPerSec = 1;
+}
 
 
 

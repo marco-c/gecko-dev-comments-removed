@@ -11,6 +11,24 @@
 
 namespace mozilla {
 
+
+
+
+
+
+
+
+
+
+
+
+#define ms2mt(x) ((x) * mozilla::GetQueryPerformanceFrequencyPerSec())
+#define mt2ms(x) ((x) / mozilla::GetQueryPerformanceFrequencyPerSec())
+#define mt2ms_f(x) (double(x) / mozilla::GetQueryPerformanceFrequencyPerSec())
+
+MFBT_API uint64_t
+GetQueryPerformanceFrequencyPerSec();
+
 class TimeStamp;
 
 class TimeStampValue
