@@ -791,6 +791,13 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
 
 
+  void ReportToConsole(uint32_t aErrorFlags, const char* aMsg,
+                       const char16_t** aParams = nullptr,
+                       uint32_t aParamCount = 0) const;
+
+  
+
+
 
 
   void SetPlayedOrSeeked(bool aValue);

@@ -323,7 +323,10 @@ class AudioContext final : public DOMEventTargetHelper,
   void SuspendInternal(void* aPromise);
 
   
-  void DispatchBlockedEvent();
+  
+  void ReportBlocked();
+
+  void ReportToConsole(uint32_t aErrorFlags, const char* aMsg) const;
 
  private:
   
