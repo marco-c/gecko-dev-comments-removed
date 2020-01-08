@@ -702,10 +702,10 @@ struct ParseTask : public mozilla::LinkedListElement<ParseTask>, public JS::OffT
     
     
     
-    GCVector<JSScript*, 1> scripts;
+    GCVector<JSScript*, 1, SystemAllocPolicy> scripts;
 
     
-    GCVector<ScriptSourceObject*, 1> sourceObjects;
+    GCVector<ScriptSourceObject*, 1, SystemAllocPolicy> sourceObjects;
 
     
     
