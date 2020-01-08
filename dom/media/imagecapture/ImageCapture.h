@@ -21,6 +21,7 @@ LogModule* GetICLog();
 namespace dom {
 
 class Blob;
+class MediaStreamTrack;
 class VideoStreamTrack;
 
 
@@ -50,7 +51,7 @@ public:
   void TakePhoto(ErrorResult& aResult);
 
   
-  VideoStreamTrack* GetVideoStreamTrack() const;
+  MediaStreamTrack* GetVideoStreamTrack() const;
 
   
   JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override
@@ -62,10 +63,10 @@ public:
   nsPIDOMWindowInner* GetParentObject() { return GetOwner(); }
 
   static already_AddRefed<ImageCapture> Constructor(const GlobalObject& aGlobal,
-                                                    VideoStreamTrack& aTrack,
+                                                    MediaStreamTrack& aTrack,
                                                     ErrorResult& aRv);
 
-  ImageCapture(VideoStreamTrack* aVideoStreamTrack,
+  ImageCapture(VideoStreamTrack* aTrack,
                nsPIDOMWindowInner* aOwnerWindow);
 
   
@@ -85,7 +86,7 @@ protected:
   
   nsresult TakePhotoByMediaEngine();
 
-  RefPtr<VideoStreamTrack> mVideoStreamTrack;
+  RefPtr<VideoStreamTrack> mTrack;
 };
 
 } 

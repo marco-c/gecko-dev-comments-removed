@@ -153,8 +153,6 @@ var interfaceNamesInGlobalScope =
 
     {name: "AudioScheduledSourceNode", insecureContext: true},
 
-    {name: "AudioStreamTrack", insecureContext: true},
-
     {name: "AudioWorkletNode", insecureContext: false, disabled: true},
 
     {name: "AuthenticatorAssertionResponse"},
@@ -1154,8 +1152,6 @@ var interfaceNamesInGlobalScope =
     {name: "ValidityState", insecureContext: true},
 
     {name: "VideoPlaybackQuality", insecureContext: true},
-
-    {name: "VideoStreamTrack", insecureContext: true},
 
     {name: "VisualViewport", insecureContext: true},
 
