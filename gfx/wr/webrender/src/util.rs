@@ -17,7 +17,6 @@ const NEARLY_ZERO: f32 = 1.0 / 4096.0;
 
 
 
-#[must_use]
 pub struct Allocation<'a, T: 'a> {
     vec: &'a mut Vec<T>,
     index: usize,
@@ -37,8 +36,28 @@ impl<'a, T> Allocation<'a, T> {
     }
 }
 
+
+pub enum VecEntry<'a, T: 'a> {
+    Vacant(Allocation<'a, T>),
+    Occupied(&'a mut T),
+}
+
+impl<'a, T> VecEntry<'a, T> {
+    #[inline(always)]
+    pub fn set(self, value: T) {
+        match self {
+            VecEntry::Vacant(alloc) => { alloc.init(value); }
+            VecEntry::Occupied(slot) => { *slot = value; }
+        }
+    }
+}
+
 pub trait VecHelper<T> {
+    
     fn alloc(&mut self) -> Allocation<T>;
+    
+    
+    fn entry(&mut self, index: usize) -> VecEntry<T>;
 }
 
 impl<T> VecHelper<T> for Vec<T> {
@@ -50,6 +69,17 @@ impl<T> VecHelper<T> for Vec<T> {
         Allocation {
             vec: self,
             index,
+        }
+    }
+
+    fn entry(&mut self, index: usize) -> VecEntry<T> {
+        if index < self.len() {
+            VecEntry::Occupied(unsafe {
+                self.get_unchecked_mut(index)
+            })
+        } else {
+            assert_eq!(index, self.len());
+            VecEntry::Vacant(self.alloc())
         }
     }
 }
