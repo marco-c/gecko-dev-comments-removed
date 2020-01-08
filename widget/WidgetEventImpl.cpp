@@ -503,19 +503,31 @@ WidgetEvent::IsAllowedToDispatchInSystemGroup() const
 bool
 WidgetEvent::IsBlockedForFingerprintingResistance() const
 {
-  if (mClass == eKeyboardEventClass &&
-      nsContentUtils::ShouldResistFingerprinting()) {
-    const WidgetKeyboardEvent* keyboardEvent = AsKeyboardEvent();
-
-    if (keyboardEvent->mKeyNameIndex == KEY_NAME_INDEX_Alt     ||
-        keyboardEvent->mKeyNameIndex == KEY_NAME_INDEX_Shift   ||
-        keyboardEvent->mKeyNameIndex == KEY_NAME_INDEX_Control ||
-        keyboardEvent->mKeyNameIndex == KEY_NAME_INDEX_AltGraph) {
-      return true;
-    }
+  if (!nsContentUtils::ShouldResistFingerprinting()) {
+    return false;
   }
 
-  return false;
+  switch (mClass) {
+    case eKeyboardEventClass: {
+      const WidgetKeyboardEvent* keyboardEvent = AsKeyboardEvent();
+
+      return (keyboardEvent->mKeyNameIndex == KEY_NAME_INDEX_Alt     ||
+              keyboardEvent->mKeyNameIndex == KEY_NAME_INDEX_Shift   ||
+              keyboardEvent->mKeyNameIndex == KEY_NAME_INDEX_Control ||
+              keyboardEvent->mKeyNameIndex == KEY_NAME_INDEX_AltGraph);
+    }
+    case ePointerEventClass: {
+      const WidgetPointerEvent* pointerEvent = AsPointerEvent();
+
+      
+      
+      
+      
+      return !pointerEvent->mIsPrimary;
+    }
+    default:
+      return false;
+  }
 }
 
 
