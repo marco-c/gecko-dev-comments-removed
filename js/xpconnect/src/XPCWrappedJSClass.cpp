@@ -240,7 +240,11 @@ nsXPCWrappedJSClass::CallQueryInterfaceOnJSObject(JSContext* cx,
         return nullptr;
     }
 
-    if ((id = xpc_NewIDObject(cx, jsobj, aIID))) {
+    
+    js::AssertSameCompartment(cx, jsobj);
+    RootedObject scope(cx, JS::CurrentGlobalOrNull(cx));
+
+    if ((id = xpc_NewIDObject(cx, scope, aIID))) {
         
         
         
