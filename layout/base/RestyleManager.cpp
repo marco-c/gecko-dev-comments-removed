@@ -1798,11 +1798,9 @@ RestyleManager::AddLayerChangesForAnimation(nsIFrame* aFrame,
   Maybe<nsCSSPropertyIDSet> effectiveAnimationProperties;
 
   nsChangeHint hint = nsChangeHint(0);
-  for (const LayerAnimationInfo::Record& layerInfo :
-         LayerAnimationInfo::sRecords) {
+  for (auto displayItemType : LayerAnimationInfo::sDisplayItemTypes) {
     Maybe<uint64_t> generation =
-      layers::AnimationInfo::GetGenerationFromFrame(aFrame,
-                                                    layerInfo.mDisplayItemType);
+      layers::AnimationInfo::GetGenerationFromFrame(aFrame, displayItemType);
     if (generation && frameGeneration != *generation) {
       
       
@@ -1823,7 +1821,7 @@ RestyleManager::AddLayerChangesForAnimation(nsIFrame* aFrame,
       
       
       
-      if (layerInfo.mDisplayItemType == DisplayItemType::TYPE_TRANSFORM &&
+      if (displayItemType == DisplayItemType::TYPE_TRANSFORM &&
           !aFrame->StyleDisplay()->HasTransformStyle()) {
         
         
@@ -1834,7 +1832,7 @@ RestyleManager::AddLayerChangesForAnimation(nsIFrame* aFrame,
         }
         continue;
       }
-      hint |= layerInfo.mChangeHint;
+      hint |= LayerAnimationInfo::GetChangeHintFor(displayItemType);
     }
 
     
@@ -1856,10 +1854,10 @@ RestyleManager::AddLayerChangesForAnimation(nsIFrame* aFrame,
           nsLayoutUtils::GetAnimationPropertiesForCompositor(aFrame));
       }
       const nsCSSPropertyIDSet& propertiesForDisplayItem =
-        LayerAnimationInfo::GetCSSPropertiesFor(layerInfo.mDisplayItemType);
+        LayerAnimationInfo::GetCSSPropertiesFor(displayItemType);
       if (effectiveAnimationProperties->Intersects(propertiesForDisplayItem)) {
         hint |=
-          LayerAnimationInfo::GetChangeHintFor(layerInfo.mDisplayItemType);
+          LayerAnimationInfo::GetChangeHintFor(displayItemType);
       }
     }
   }

@@ -11,6 +11,7 @@
 #include "nsCSSPropertyID.h"
 #include "nsCSSPropertyIDSet.h"
 #include "nsDisplayList.h" 
+#include "mozilla/Array.h"
 
 namespace mozilla {
 
@@ -79,6 +80,15 @@ struct LayerAnimationInfo {
         return nsChangeHint(0);
     }
   }
+
+  
+  
+  
+  
+  
+  static const Array<DisplayItemType,
+                     nsCSSPropertyIDSet::CompositorAnimatableCount()>
+    sDisplayItemTypes;
 
   static const size_t kRecords =
     nsCSSPropertyIDSet::CompositorAnimatableCount();

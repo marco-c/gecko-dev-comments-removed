@@ -19,6 +19,13 @@ namespace mozilla {
       DisplayItemType::TYPE_OPACITY,
       nsChangeHint_UpdateOpacityLayer } };
 
+ const Array<DisplayItemType,
+                         nsCSSPropertyIDSet::CompositorAnimatableCount()>
+  LayerAnimationInfo::sDisplayItemTypes = {
+    DisplayItemType::TYPE_OPACITY,
+    DisplayItemType::TYPE_TRANSFORM,
+  };
+
  DisplayItemType
 LayerAnimationInfo::GetDisplayItemTypeForProperty(nsCSSPropertyID aProperty)
 {
