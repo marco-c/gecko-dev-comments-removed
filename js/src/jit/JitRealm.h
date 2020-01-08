@@ -630,33 +630,65 @@ const unsigned WINDOWS_BIG_FRAME_TOUCH_INCREMENT = 4096 - 1;
 
 
 
-class MOZ_STACK_CLASS AutoWritableJitCode
+
+
+
+class MOZ_RAII AutoWritableJitCodeFallible
 {
     JSRuntime* rt_;
     void* addr_;
     size_t size_;
+    bool madeWritable_;
 
   public:
-    AutoWritableJitCode(JSRuntime* rt, void* addr, size_t size)
-      : rt_(rt), addr_(addr), size_(size)
+    AutoWritableJitCodeFallible(JSRuntime* rt, void* addr, size_t size)
+      : rt_(rt), addr_(addr), size_(size), madeWritable_(false)
     {
         rt_->toggleAutoWritableJitCodeActive(true);
-        if (!ExecutableAllocator::makeWritable(addr_, size_)) {
-            MOZ_CRASH();
-        }
     }
-    AutoWritableJitCode(void* addr, size_t size)
-      : AutoWritableJitCode(TlsContext.get()->runtime(), addr, size)
+
+    AutoWritableJitCodeFallible(void* addr, size_t size)
+      : AutoWritableJitCodeFallible(TlsContext.get()->runtime(), addr, size)
+    {
+    }
+
+    explicit AutoWritableJitCodeFallible(JitCode* code)
+      : AutoWritableJitCodeFallible(code->runtimeFromMainThread(), code->raw(), code->bufferSize())
     {}
-    explicit AutoWritableJitCode(JitCode* code)
-      : AutoWritableJitCode(code->runtimeFromMainThread(), code->raw(), code->bufferSize())
-    {}
-    ~AutoWritableJitCode() {
-        if (!ExecutableAllocator::makeExecutable(addr_, size_)) {
-            MOZ_CRASH();
+
+    MOZ_MUST_USE bool makeWritable() {
+        madeWritable_ = ExecutableAllocator::makeWritable(addr_, size_);
+        return madeWritable_;
+    }
+
+    ~AutoWritableJitCodeFallible() {
+        if (madeWritable_) {
+            if (!ExecutableAllocator::makeExecutable(addr_, size_)) {
+                MOZ_CRASH();
+            }
         }
         rt_->toggleAutoWritableJitCodeActive(false);
     }
+
+};
+
+
+class MOZ_RAII AutoWritableJitCode : private AutoWritableJitCodeFallible
+{
+  public:
+    AutoWritableJitCode(JSRuntime* rt, void* addr, size_t size)
+      : AutoWritableJitCodeFallible(rt, addr, size)
+    {
+        MOZ_RELEASE_ASSERT(makeWritable());
+    }
+
+    AutoWritableJitCode(void* addr, size_t size)
+      : AutoWritableJitCode(TlsContext.get()->runtime(), addr, size)
+    {}
+
+    explicit AutoWritableJitCode(JitCode* code)
+      : AutoWritableJitCode(code->runtimeFromMainThread(), code->raw(), code->bufferSize())
+    {}
 };
 
 class MOZ_STACK_CLASS MaybeAutoWritableJitCode
