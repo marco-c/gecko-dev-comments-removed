@@ -266,8 +266,11 @@ this.VideoControlsImplPageWidget = class {
 
                 
                 
+                
+                
+                
                 if (!preDefinedSize) {
-                  throw new Error("Stylesheet not loaded yet? propertyName: " + propertyName);
+                  return 0;
                 }
 
                 return parseInt(preDefinedSize, 10);
