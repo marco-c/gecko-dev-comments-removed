@@ -238,12 +238,12 @@ protected:
 
 
 
-class nsSVGFilterReference final : public SVGIDRenderingObserver
+class SVGFilterObserver final : public SVGIDRenderingObserver
 {
 public:
-  nsSVGFilterReference(nsIURI* aURI,
-                       nsIContent* aObservingContent,
-                       nsSVGFilterChainObserver* aFilterChainObserver)
+  SVGFilterObserver(nsIURI* aURI,
+                    nsIContent* aObservingContent,
+                    nsSVGFilterChainObserver* aFilterChainObserver)
     : SVGIDRenderingObserver(aURI, aObservingContent, false)
     , mFilterChainObserver(aFilterChainObserver)
   {
@@ -261,12 +261,12 @@ public:
   
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_SVGFILTEROBSERVER_IID)
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_CLASS(nsSVGFilterReference)
+  NS_DECL_CYCLE_COLLECTION_CLASS(SVGFilterObserver)
 
   void Invalidate() { OnRenderingChange(); };
 
 protected:
-  virtual ~nsSVGFilterReference() {}
+  virtual ~SVGFilterObserver() {}
 
   
   virtual void OnRenderingChange() override;
@@ -275,7 +275,8 @@ private:
   nsSVGFilterChainObserver* mFilterChainObserver;
 };
 
-NS_DEFINE_STATIC_IID_ACCESSOR(nsSVGFilterReference, NS_SVGFILTEROBSERVER_IID)
+NS_DEFINE_STATIC_IID_ACCESSOR(SVGFilterObserver, NS_SVGFILTEROBSERVER_IID)
+
 
 
 
@@ -309,14 +310,14 @@ protected:
 
 private:
 
-  void DetachReferences()
+  void DetachObservers()
   {
-    for (uint32_t i = 0; i < mReferences.Length(); i++) {
-      mReferences[i]->DetachFromChainObserver();
+    for (uint32_t i = 0; i < mObservers.Length(); i++) {
+      mObservers[i]->DetachFromChainObserver();
     }
   }
 
-  nsTArray<RefPtr<nsSVGFilterReference>> mReferences;
+  nsTArray<RefPtr<SVGFilterObserver>> mObservers;
 };
 
 class nsSVGFilterProperty : public nsSVGFilterChainObserver
