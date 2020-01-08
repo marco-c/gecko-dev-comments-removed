@@ -246,7 +246,10 @@ function main() {
   }
 
   
-  console.log(`\nIf aboutNewTabService tests are failing for unexpected locales, make sure its list is updated:\nconst ACTIVITY_STREAM_LOCALES = "${localizedLocales.join(" ")}".split(" ");`);
+  const bcp47String = localizedLocales.join(" ").replace(/(ja-JP-mac)/, "$1os");
+
+  
+  console.log(`\nIf aboutNewTabService tests are failing for unexpected locales, make sure its list is updated:\nconst ACTIVITY_STREAM_BCP47 = "${bcp47String}".split(" ");`);
 }
 
 main();

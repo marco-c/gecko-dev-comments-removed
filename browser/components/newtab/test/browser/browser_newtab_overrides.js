@@ -7,9 +7,16 @@ XPCOMUtils.defineLazyServiceGetter(this, "aboutNewTabService",
                                    "@mozilla.org/browser/aboutnewtab-service;1",
                                    "nsIAboutNewTabService");
 
-registerCleanupFunction(function() {
+registerCleanupFunction(() => {
   aboutNewTabService.resetNewTabURL();
 });
+
+function nextChangeNotificationPromise(aNewURL, testMessage) {
+  return TestUtils.topicObserved("newtab-url-changed", function observer(aSubject, aData) { 
+    Assert.equal(aData, aNewURL, testMessage);
+    return true;
+  });
+}
 
 
 
@@ -18,7 +25,7 @@ registerCleanupFunction(function() {
 add_task(async function redirector_ignores_override() {
   let overrides = [
     "chrome://browser/content/aboutRobots.xhtml",
-    "about:home",
+    "about:home"
   ];
 
   for (let overrideURL of overrides) {
@@ -30,7 +37,7 @@ add_task(async function redirector_ignores_override() {
 
     let tabOptions = {
       gBrowser,
-      url: "about:newtab",
+      url: "about:newtab"
     };
 
     
@@ -40,8 +47,8 @@ add_task(async function redirector_ignores_override() {
 
 
 
-    await BrowserTestUtils.withNewTab(tabOptions, async function(browser) {
-      await ContentTask.spawn(browser, {}, async function() {
+    await BrowserTestUtils.withNewTab(tabOptions, async browser => {
+      await ContentTask.spawn(browser, {}, async () => {
         Assert.equal(content.location.href, "about:newtab", "Got right URL");
         Assert.equal(content.document.location.href, "about:newtab", "Got right URL");
         Assert.notEqual(content.document.nodePrincipal,
@@ -59,7 +66,7 @@ add_task(async function override_loads_in_browser() {
   let overrides = [
     "chrome://browser/content/aboutRobots.xhtml",
     "about:home",
-    " about:home",
+    " about:home"
   ];
 
   for (let overrideURL of overrides) {
@@ -75,7 +82,7 @@ add_task(async function override_loads_in_browser() {
     let browser = gBrowser.selectedBrowser;
     await BrowserTestUtils.browserLoaded(browser);
 
-    await ContentTask.spawn(browser, {url: overrideURL}, async function(args) {
+    await ContentTask.spawn(browser, {url: overrideURL}, async args => {
       Assert.equal(content.location.href, args.url.trim(), "Got right URL");
       Assert.equal(content.document.location.href, args.url.trim(), "Got right URL");
     }); 
@@ -91,7 +98,7 @@ add_task(async function override_blank_loads_in_browser() {
     "",
     " ",
     "\n\t",
-    " about:blank",
+    " about:blank"
   ];
 
   for (let overrideURL of overrides) {
@@ -107,17 +114,10 @@ add_task(async function override_blank_loads_in_browser() {
     let browser = gBrowser.selectedBrowser;
     await BrowserTestUtils.browserLoaded(browser);
 
-    await ContentTask.spawn(browser, {}, async function() {
+    await ContentTask.spawn(browser, {}, async () => {
       Assert.equal(content.location.href, "about:blank", "Got right URL");
       Assert.equal(content.document.location.href, "about:blank", "Got right URL");
     }); 
     BrowserTestUtils.removeTab(gBrowser.selectedTab);
   }
 });
-
-function nextChangeNotificationPromise(aNewURL, testMessage) {
-  return TestUtils.topicObserved("newtab-url-changed", function observer(aSubject, aData) { 
-      Assert.equal(aData, aNewURL, testMessage);
-      return true;
-  });
-}

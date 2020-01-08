@@ -31,6 +31,38 @@ function cleanup() {
 
 registerCleanupFunction(cleanup);
 
+function nextChangeNotificationPromise(aNewURL, testMessage) {
+  return new Promise(resolve => {
+    Services.obs.addObserver(function observer(aSubject, aTopic, aData) { 
+      Services.obs.removeObserver(observer, aTopic);
+      Assert.equal(aData, aNewURL, testMessage);
+      resolve();
+    }, "newtab-url-changed");
+  });
+}
+
+function setBoolPrefAndWaitForChange(pref, value, testMessage) {
+  return new Promise(resolve => {
+    Services.obs.addObserver(function observer(aSubject, aTopic, aData) { 
+      Services.obs.removeObserver(observer, aTopic);
+      Assert.equal(aData, aboutNewTabService.newTabURL, testMessage);
+      resolve();
+    }, "newtab-url-changed");
+
+    Services.prefs.setBoolPref(pref, value);
+  });
+}
+
+function setupASPrerendered() {
+  if (Services.prefs.getBoolPref(ACTIVITY_STREAM_PRERENDER_PREF)) {
+    return Promise.resolve();
+  }
+
+  let notificationPromise = nextChangeNotificationPromise("about:newtab");
+  Services.prefs.setBoolPref(ACTIVITY_STREAM_PRERENDER_PREF, true);
+  return notificationPromise;
+}
+
 add_task(async function test_as_and_prerender_initialized() {
   Assert.ok(aboutNewTabService.activityStreamEnabled,
     ".activityStreamEnabled should be set to the correct initial value");
@@ -165,10 +197,8 @@ add_task(function test_locale() {
 
 
 add_task(async function test_updates() {
-  
-
-
-
+   
+   
   await setupASPrerendered();
 
   aboutNewTabService.resetNewTabURL(); 
@@ -197,36 +227,3 @@ add_task(async function test_updates() {
 
   cleanup();
 });
-
-function nextChangeNotificationPromise(aNewURL, testMessage) {
-  return new Promise(resolve => {
-    Services.obs.addObserver(function observer(aSubject, aTopic, aData) { 
-      Services.obs.removeObserver(observer, aTopic);
-      Assert.equal(aData, aNewURL, testMessage);
-      resolve();
-    }, "newtab-url-changed");
-  });
-}
-
-function setBoolPrefAndWaitForChange(pref, value, testMessage) {
-  return new Promise(resolve => {
-    Services.obs.addObserver(function observer(aSubject, aTopic, aData) { 
-      Services.obs.removeObserver(observer, aTopic);
-      Assert.equal(aData, aboutNewTabService.newTabURL, testMessage);
-      resolve();
-    }, "newtab-url-changed");
-
-    Services.prefs.setBoolPref(pref, value);
-  });
-}
-
-
-function setupASPrerendered() {
-  if (Services.prefs.getBoolPref(ACTIVITY_STREAM_PRERENDER_PREF)) {
-    return Promise.resolve();
-  }
-
-  let notificationPromise = nextChangeNotificationPromise("about:newtab");
-  Services.prefs.setBoolPref(ACTIVITY_STREAM_PRERENDER_PREF, true);
-  return notificationPromise;
-}

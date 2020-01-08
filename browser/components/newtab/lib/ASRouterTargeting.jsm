@@ -40,6 +40,11 @@ const TopFrecentSitesCache = {
       }
       resolve(this._topFrecentSites);
     });
+  },
+  
+  expire() {
+    this._lastUpdated = 0;
+    this._topFrecentSites = null;
   }
 };
 
@@ -215,4 +220,6 @@ this.ASRouterTargeting = {
   }
 };
 
-this.EXPORTED_SYMBOLS = ["ASRouterTargeting", "removeRandomItemFromArray"];
+
+this.TopFrecentSitesCache = TopFrecentSitesCache;
+this.EXPORTED_SYMBOLS = ["ASRouterTargeting", "TopFrecentSitesCache"];
