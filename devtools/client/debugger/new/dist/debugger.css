@@ -653,6 +653,14 @@ button:focus {
 
 
 
+
+.split-box > .splitter:last-child {
+  display: none;
+}
+
+
+
+
 * {
   box-sizing: border-box;
 }
