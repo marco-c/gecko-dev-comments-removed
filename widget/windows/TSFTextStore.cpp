@@ -4766,127 +4766,172 @@ TSFTextStore::MaybeHackNoErrorLayoutBugs(LONG& aACPStart,
                mContentForTSF.LatestCompositionEndOffset());
 
   
-  
-  
-  TextInputProcessorID activeTIP = TSFStaticSink::ActiveTIP();
-
-  
-  
-  
-  
-
-  
   static const bool sTSFHasTheBug = !IsWindows10BuildOrLater(17643);
-  if (!sTSFHasTheBug) {
-    switch (activeTIP) {
-      
-      
-      
-      case TextInputProcessorID::eMicrosoftOfficeIME2010ForJapanese:
-      case TextInputProcessorID::eJapanist10:
-        
-        break;
-      default:
-        return false;
-    }
-  }
 
   
   
-  bool dontReturnNoLayoutError = false;
+  
   const Selection& selectionForTSF = SelectionForTSFRef();
-  
-  
-  
-  
-  
-  if (activeTIP == TextInputProcessorID::eMicrosoftOfficeIME2010ForJapanese ||
-      ((TSFPrefs::DoNotReturnNoLayoutErrorToMSJapaneseIMEAtFirstChar() ||
-        TSFPrefs::DoNotReturnNoLayoutErrorToMSJapaneseIMEAtCaret()) &&
-       activeTIP == TextInputProcessorID::eMicrosoftIMEForJapanese)) {
+  switch (TSFStaticSink::ActiveTIP()) {
     
     
     
     
     
-    if ((activeTIP ==
-           TextInputProcessorID::eMicrosoftOfficeIME2010ForJapanese ||
-         TSFPrefs::DoNotReturnNoLayoutErrorToMSJapaneseIMEAtFirstChar()) &&
-        aACPStart < aACPEnd) {
-      aACPEnd = aACPStart;
-      dontReturnNoLayoutError = true;
-    }
+    case TextInputProcessorID::eMicrosoftIMEForJapanese:
+      if (!sTSFHasTheBug) {
+        return false;
+      }
+      
+      
+      
+      
+      
+      if (TSFPrefs::DoNotReturnNoLayoutErrorToMSJapaneseIMEAtFirstChar() &&
+          aACPStart < aACPEnd) {
+        aACPEnd = aACPStart;
+      }
+      
+      
+      
+      
+      else if (TSFPrefs::DoNotReturnNoLayoutErrorToMSJapaneseIMEAtCaret() &&
+               aACPStart == aACPEnd &&
+               selectionForTSF.IsCollapsed() &&
+               selectionForTSF.EndOffset() == aACPEnd) {
+        int32_t minOffsetOfLayoutChanged =
+          static_cast<int32_t>(mContentForTSF.MinOffsetOfLayoutChanged());
+        aACPEnd = aACPStart = std::max(minOffsetOfLayoutChanged - 1, 0);
+      } else {
+        return false;
+      }
+      break;
     
     
     
     
-    else if ((activeTIP ==
-                TextInputProcessorID::eMicrosoftOfficeIME2010ForJapanese ||
-              TSFPrefs::DoNotReturnNoLayoutErrorToMSJapaneseIMEAtCaret()) &&
-             aACPStart == aACPEnd &&
-             selectionForTSF.IsCollapsed() &&
-             selectionForTSF.EndOffset() == aACPEnd) {
-      int32_t minOffsetOfLayoutChanged =
-        static_cast<int32_t>(mContentForTSF.MinOffsetOfLayoutChanged());
-      aACPEnd = aACPStart = std::max(minOffsetOfLayoutChanged - 1, 0);
-      dontReturnNoLayoutError = true;
-    }
-  }
-  
-  
-  
-  
-  
-  
-  
-  
-  else if (TSFPrefs::DoNotReturnNoLayoutErrorToATOKOfCompositionString() &&
-           TSFStaticSink::IsATOKActive() &&
-           (!TSFStaticSink::IsATOKReferringNativeCaretActive() ||
-            !TSFPrefs::NeedToCreateNativeCaretForLegacyATOK()) &&
-           aACPStart >= mContentForTSF.LatestCompositionStartOffset() &&
-           aACPStart <= mContentForTSF.LatestCompositionEndOffset() &&
-           aACPEnd >= mContentForTSF.LatestCompositionStartOffset() &&
-           aACPEnd <= mContentForTSF.LatestCompositionEndOffset()) {
-    dontReturnNoLayoutError = true;
-  }
-  
-  
-  
-  
-  
-  else if (
-    TSFPrefs::DoNotReturnNoLayoutErrorToJapanist10OfCompositionString() &&
-    activeTIP == TextInputProcessorID::eJapanist10 &&
-    aACPStart >= mContentForTSF.LatestCompositionStartOffset() &&
-    aACPStart <= mContentForTSF.LatestCompositionEndOffset() &&
-    aACPEnd >= mContentForTSF.LatestCompositionStartOffset() &&
-    aACPEnd <= mContentForTSF.LatestCompositionEndOffset()) {
-    dontReturnNoLayoutError = true;
-  }
-  
-  
-  
-  else if (TSFPrefs::DoNotReturnNoLayoutErrorToFreeChangJie() &&
-           activeTIP == TextInputProcessorID::eFreeChangJie) {
-    aACPEnd = mContentForTSF.LatestCompositionStartOffset();
-    aACPStart = std::min(aACPStart, aACPEnd);
-    dontReturnNoLayoutError = true;
-  }
-  
-  
-  else if (IsWin8OrLater() &&
-           ((TSFPrefs::DoNotReturnNoLayoutErrorToMSTraditionalTIP() &&
-               TSFStaticSink::IsMSChangJieOrMSQuickActive()) ||
-            (TSFPrefs::DoNotReturnNoLayoutErrorToMSSimplifiedTIP() &&
-               TSFStaticSink::IsMSPinyinOrMSWubiActive()))) {
-    aACPEnd = mContentForTSF.LatestCompositionStartOffset();
-    aACPStart = std::min(aACPStart, aACPEnd);
-    dontReturnNoLayoutError = true;
-  }
-
-  if (!dontReturnNoLayoutError) {
-    return false;
+    
+    
+    
+    case TextInputProcessorID::eMicrosoftOfficeIME2010ForJapanese:
+      
+      
+      
+      
+      
+      if (aACPStart < aACPEnd) {
+        aACPEnd = aACPStart;
+      }
+      
+      
+      
+      
+      else if (aACPStart == aACPEnd &&
+               selectionForTSF.IsCollapsed() &&
+               selectionForTSF.EndOffset() == aACPEnd) {
+        int32_t minOffsetOfLayoutChanged =
+          static_cast<int32_t>(mContentForTSF.MinOffsetOfLayoutChanged());
+        aACPEnd = aACPStart = std::max(minOffsetOfLayoutChanged - 1, 0);
+      } else {
+        return false;
+      }
+      break;
+    
+    
+    
+    
+    
+    
+    
+    
+    case TextInputProcessorID::eATOK2011:
+    case TextInputProcessorID::eATOK2012:
+    case TextInputProcessorID::eATOK2013:
+    case TextInputProcessorID::eATOK2014:
+    case TextInputProcessorID::eATOK2015:
+    case TextInputProcessorID::eATOK2016:
+    case TextInputProcessorID::eATOKUnknown:
+      if (!sTSFHasTheBug) {
+        return false;
+      }
+      
+      
+      
+      if (TSFStaticSink::IsATOKReferringNativeCaretActive() &&
+          TSFPrefs::NeedToCreateNativeCaretForLegacyATOK()) {
+        return false;
+      }
+      if (!TSFPrefs::DoNotReturnNoLayoutErrorToATOKOfCompositionString()) {
+        return false;
+      }
+      
+      
+      if (aACPStart < mContentForTSF.LatestCompositionStartOffset() ||
+          aACPStart > mContentForTSF.LatestCompositionEndOffset() ||
+          aACPEnd < mContentForTSF.LatestCompositionStartOffset() ||
+          aACPEnd > mContentForTSF.LatestCompositionEndOffset()) {
+        return false;
+      }
+      break;
+    
+    
+    
+    
+    
+    case TextInputProcessorID::eJapanist10:
+      if (!TSFPrefs::DoNotReturnNoLayoutErrorToJapanist10OfCompositionString()) {
+        return false;
+      }
+      if (aACPStart < mContentForTSF.LatestCompositionStartOffset() ||
+          aACPStart > mContentForTSF.LatestCompositionEndOffset() ||
+          aACPEnd < mContentForTSF.LatestCompositionStartOffset() ||
+          aACPEnd > mContentForTSF.LatestCompositionEndOffset()) {
+        return false;
+      }
+      break;
+    
+    
+    
+    case TextInputProcessorID::eFreeChangJie:
+      if (!sTSFHasTheBug) {
+        return false;
+      }
+      if (!TSFPrefs::DoNotReturnNoLayoutErrorToFreeChangJie()) {
+        return false;
+      }
+      aACPEnd = mContentForTSF.LatestCompositionStartOffset();
+      aACPStart = std::min(aACPStart, aACPEnd);
+      break;
+    
+    
+    case TextInputProcessorID::eMicrosoftChangJie:
+    case TextInputProcessorID::eMicrosoftQuick:
+      if (!sTSFHasTheBug) {
+        return false;
+      }
+      if (!IsWin8OrLater() ||
+          !TSFPrefs::DoNotReturnNoLayoutErrorToMSTraditionalTIP()) {
+        return false;
+      }
+      aACPEnd = mContentForTSF.LatestCompositionStartOffset();
+      aACPStart = std::min(aACPStart, aACPEnd);
+      break;
+    
+    
+    case TextInputProcessorID::eMicrosoftPinyin:
+    case TextInputProcessorID::eMicrosoftWubi:
+      if (!sTSFHasTheBug) {
+        return false;
+      }
+      if (!IsWin8OrLater() ||
+          !TSFPrefs::DoNotReturnNoLayoutErrorToMSSimplifiedTIP()) {
+        return false;
+      }
+      aACPEnd = mContentForTSF.LatestCompositionStartOffset();
+      aACPStart = std::min(aACPStart, aACPEnd);
+      break;
+    default:
+      return false;
   }
 
   
