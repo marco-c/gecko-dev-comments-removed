@@ -1426,6 +1426,20 @@ WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(nsDisplayList* a
       
       
       
+      
+      
+      
+      
+      if (!forceNewLayerData &&
+          item->GetType() == DisplayItemType::TYPE_TRANSFORM &&
+          aSc.GetDeferredTransformItem() &&
+          (*aSc.GetDeferredTransformItem())->GetActiveScrolledRoot() != asr) {
+        forceNewLayerData = true;
+      }
+
+      
+      
+      
       if (forceNewLayerData) {
         mAsrStack.push_back(asr);
       }

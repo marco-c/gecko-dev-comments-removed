@@ -121,6 +121,8 @@ private:
   
   
   
+  
+  
   Maybe<nsDisplayTransform*> mDeferredTransformItem;
   Maybe<gfx::Matrix4x4> mDeferredAncestorTransform;
 
