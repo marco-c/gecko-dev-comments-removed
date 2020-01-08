@@ -246,13 +246,17 @@ class Nursery {
   
 
 
-  void* allocateZeroedBuffer(JS::Zone* zone, size_t nbytes);
+
+  void* allocateZeroedBuffer(JS::Zone* zone, size_t nbytes,
+                             arena_id_t arena = js::MallocArena);
 
   
 
 
 
-  void* allocateZeroedBuffer(JSObject* obj, size_t nbytes);
+
+  void* allocateZeroedBuffer(JSObject* obj, size_t nbytes,
+                             arena_id_t arena = js::MallocArena);
 
   
   void* reallocateBuffer(JSObject* obj, void* oldBuffer, size_t oldBytes,
