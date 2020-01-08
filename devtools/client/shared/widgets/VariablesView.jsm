@@ -2761,7 +2761,7 @@ Variable.prototype = extend(Scope.prototype, {
 
       let nodeFront = this._nodeFront;
       if (!nodeFront) {
-        nodeFront = await this.toolbox.walker.getNodeActorFromObjectActor(this._valueGrip.actor);
+        nodeFront = await this.toolbox.walker.gripToNodeFront(this._valueGrip);
       }
 
       if (nodeFront) {
@@ -2779,18 +2779,12 @@ Variable.prototype = extend(Scope.prototype, {
 
 
 
-  highlightDomNode: function() {
+  highlightDomNode: async function() {
     if (this.toolbox) {
-      if (this._nodeFront) {
-        
-        
-        this.toolbox.highlighterUtils.highlightNodeFront(this._nodeFront);
-        return;
+      if (!this._nodeFront) {
+        this.nodeFront = await this.toolbox.walker.gripToNodeFront(this._valueGrip);
       }
-
-      this.toolbox.highlighterUtils.highlightDomValueGrip(this._valueGrip).then(front => {
-        this._nodeFront = front;
-      });
+      await this.toolbox.highlighterUtils.highlightNodeFront(this._nodeFront);
     }
   },
 

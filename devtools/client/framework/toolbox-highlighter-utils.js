@@ -186,7 +186,7 @@ exports.getHighlighterUtils = function(toolbox) {
 
 
 
-  const highlightNodeFront = exported.highlightNodeFront = requireInspector(
+  exported.highlightNodeFront = requireInspector(
   async function(nodeFront, options = {}) {
     if (!nodeFront) {
       return;
@@ -196,33 +196,6 @@ exports.getHighlighterUtils = function(toolbox) {
     await toolbox.highlighter.showBoxModel(nodeFront, options);
 
     toolbox.emit("node-highlight", nodeFront);
-  });
-
-  
-
-
-
-
-
-
-  exported.highlightDomValueGrip =
-    requireInspector(async function(valueGrip, options = {}) {
-      const nodeFront = await gripToNodeFront(valueGrip);
-      if (nodeFront) {
-        await highlightNodeFront(nodeFront, options);
-      } else {
-        throw new Error("The ValueGrip passed could not be translated to a NodeFront");
-      }
-    });
-
-  
-
-
-
-
-  const gripToNodeFront = exported.gripToNodeFront = requireInspector(
-  async function(grip) {
-    return toolbox.walker.getNodeActorFromObjectActor(grip.actor);
   });
 
   
