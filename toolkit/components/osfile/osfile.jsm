@@ -16,6 +16,8 @@ if (typeof Components != "undefined") {
   var SharedAll = require("resource://gre/modules/osfile/osfile_shared_allthreads.jsm");
 
   
+
+  
   
   
   if (SharedAll.Constants.Win) {
@@ -31,6 +33,8 @@ if (typeof Components != "undefined") {
       "resource://gre/modules/osfile/osfile_unix_front.jsm"
     );
   }
+
+  
 
   OS.Path = require("resource://gre/modules/osfile/ospath.jsm");
 }
