@@ -10,8 +10,8 @@
 #include "nsIStringCharsetDetector.h"
 #include "nsICharsetDetectionObserver.h"
 #include "nsCOMPtr.h"
-
 #include "nsIFactory.h"
+#include "nsUniversalDetector.h"
 
 
 #define NS_JA_PSMDETECTOR_CID \
