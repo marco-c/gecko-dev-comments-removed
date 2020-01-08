@@ -43,8 +43,8 @@
 
 
 
-use futures::{Async, Future, Poll};
 use futures::sync::{mpsc, oneshot};
+use futures::{Async, Future, Poll};
 use std::fmt;
 use std::io;
 

@@ -40,8 +40,8 @@
 
 
 use futures::{Async, Future, Poll, Sink, Stream};
-use rpc::Handler;
 use rpc::driver::Driver;
+use rpc::Handler;
 use std::collections::VecDeque;
 use std::io;
 use tokio_core::reactor::Handle;
