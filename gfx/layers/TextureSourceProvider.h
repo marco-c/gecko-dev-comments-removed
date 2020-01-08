@@ -69,6 +69,13 @@ public:
   
   
   
+  void ReferenceUntilAfterComposition(DataTextureSource* aTextureSource);
+
+  
+  
+  
+  
+  
   
   
   
@@ -130,6 +137,9 @@ protected:
 private:
   
   nsTArray<RefPtr<TextureHost>> mUnlockAfterComposition;
+
+  
+  nsTArray<RefPtr<DataTextureSource>> mReferenceUntilAfterComposition;
 
   
   nsTArray<RefPtr<TextureHost>> mNotifyNotUsedAfterComposition;
