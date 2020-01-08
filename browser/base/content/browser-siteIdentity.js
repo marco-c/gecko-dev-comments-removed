@@ -38,7 +38,7 @@ var gIdentityHandler = {
 
 
 
-  _sslStatus: null,
+  _secInfo: null,
 
   
 
@@ -302,7 +302,7 @@ var gIdentityHandler = {
 
   getIdentityData() {
     var result = {};
-    var cert = this._sslStatus.serverCert;
+    var cert = this._secInfo.serverCert;
 
     
     result.subjectOrg = cert.organization;
@@ -347,8 +347,7 @@ var gIdentityHandler = {
     
     
     this.setURI(uri);
-    this._sslStatus = gBrowser.securityUI.secInfo &&
-                      gBrowser.securityUI.secInfo.SSLStatus;
+    this._secInfo = gBrowser.securityUI.secInfo;
 
     
     this.refreshIdentityBlock();

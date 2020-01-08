@@ -460,14 +460,14 @@ nsNSSSocketInfo::IsAcceptableForHost(const nsACString& hostname, bool* _retval)
 
   
   
-  if (!mHandshakeCompleted || !SSLStatus() || !SSLStatus()->HasServerCert()) {
+  if (!mHandshakeCompleted || !HasServerCert()) {
     return NS_OK;
   }
 
   
   
   
-  if (SSLStatus()->mHaveCertErrorBits)
+  if (mHaveCertErrorBits)
     return NS_OK;
 
   
@@ -482,7 +482,7 @@ nsNSSSocketInfo::IsAcceptableForHost(const nsACString& hostname, bool* _retval)
   UniqueCERTCertificate nssCert;
 
   nsCOMPtr<nsIX509Cert> cert;
-  if (NS_FAILED(SSLStatus()->GetServerCert(getter_AddRefs(cert)))) {
+  if (NS_FAILED(GetServerCert(getter_AddRefs(cert)))) {
     return NS_OK;
   }
   if (cert) {

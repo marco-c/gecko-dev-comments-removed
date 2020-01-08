@@ -697,11 +697,11 @@ function stopOCSPResponder(responder) {
 
 
 
-var FakeSSLStatus = function(certificate) {
+var FakeTransportSecurityInfo = function(certificate) {
   this.serverCert = certificate;
 };
 
-FakeSSLStatus.prototype = {
+FakeTransportSecurityInfo.prototype = {
   serverCert: null,
   cipherName: null,
   keyLength: 2048,
@@ -712,7 +712,7 @@ FakeSSLStatus.prototype = {
   getInterface(aIID) {
     return this.QueryInterface(aIID);
   },
-  QueryInterface: ChromeUtils.generateQI(["nsISSLStatus"]),
+  QueryInterface: ChromeUtils.generateQI(["nsITransportSecurityInfo"]),
 };
 
 
@@ -720,15 +720,14 @@ FakeSSLStatus.prototype = {
 
 
 function add_cert_override(aHost, aExpectedBits, aSecurityInfo) {
-  let sslstatus = aSecurityInfo.SSLStatus;
   let bits =
-    (sslstatus.isUntrusted ? Ci.nsICertOverrideService.ERROR_UNTRUSTED : 0) |
-    (sslstatus.isDomainMismatch ? Ci.nsICertOverrideService.ERROR_MISMATCH : 0) |
-    (sslstatus.isNotValidAtThisTime ? Ci.nsICertOverrideService.ERROR_TIME : 0);
+    (aSecurityInfo.isUntrusted ? Ci.nsICertOverrideService.ERROR_UNTRUSTED : 0) |
+    (aSecurityInfo.isDomainMismatch ? Ci.nsICertOverrideService.ERROR_MISMATCH : 0) |
+    (aSecurityInfo.isNotValidAtThisTime ? Ci.nsICertOverrideService.ERROR_TIME : 0);
 
   Assert.equal(bits, aExpectedBits,
                "Actual and expected override bits should match");
-  let cert = sslstatus.serverCert;
+  let cert = aSecurityInfo.serverCert;
   let certOverrideService = Cc["@mozilla.org/security/certoverride;1"]
                               .getService(Ci.nsICertOverrideService);
   certOverrideService.rememberValidityOverride(aHost, 8443, cert, aExpectedBits,
@@ -740,17 +739,16 @@ function add_cert_override(aHost, aExpectedBits, aSecurityInfo) {
 
 
 function add_cert_override_test(aHost, aExpectedBits, aExpectedError,
-                                aExpectedSSLStatus = undefined) {
+                                aExpectedSecInfo = undefined) {
   add_connection_test(aHost, aExpectedError, null,
                       add_cert_override.bind(this, aHost, aExpectedBits));
   add_connection_test(aHost, PRErrorCodeSuccess, null, aSecurityInfo => {
     Assert.ok(aSecurityInfo.securityState &
               Ci.nsIWebProgressListener.STATE_CERT_USER_OVERRIDDEN,
               "Cert override flag should be set on the security state");
-    if (aExpectedSSLStatus) {
-      let sslstatus = aSecurityInfo.SSLStatus;
-      if (aExpectedSSLStatus.failedCertChain) {
-        ok(aExpectedSSLStatus.failedCertChain.equals(sslstatus.failedCertChain));
+    if (aExpectedSecInfo) {
+      if (aExpectedSecInfo.failedCertChain) {
+        ok(aExpectedSecInfo.failedCertChain.equals(aSecurityInfo.failedCertChain));
       }
     }
   });
@@ -761,15 +759,14 @@ function add_cert_override_test(aHost, aExpectedBits, aExpectedError,
 
 
 function attempt_adding_cert_override(aHost, aExpectedBits, aSecurityInfo) {
-  let sslstatus = aSecurityInfo.SSLStatus;
-  if (sslstatus) {
+  if (aSecurityInfo.serverCert) {
     let bits =
-      (sslstatus.isUntrusted ? Ci.nsICertOverrideService.ERROR_UNTRUSTED : 0) |
-      (sslstatus.isDomainMismatch ? Ci.nsICertOverrideService.ERROR_MISMATCH : 0) |
-      (sslstatus.isNotValidAtThisTime ? Ci.nsICertOverrideService.ERROR_TIME : 0);
+      (aSecurityInfo.isUntrusted ? Ci.nsICertOverrideService.ERROR_UNTRUSTED : 0) |
+      (aSecurityInfo.isDomainMismatch ? Ci.nsICertOverrideService.ERROR_MISMATCH : 0) |
+      (aSecurityInfo.isNotValidAtThisTime ? Ci.nsICertOverrideService.ERROR_TIME : 0);
     Assert.equal(bits, aExpectedBits,
                  "Actual and expected override bits should match");
-    let cert = sslstatus.serverCert;
+    let cert = aSecurityInfo.serverCert;
     let certOverrideService = Cc["@mozilla.org/security/certoverride;1"]
                                 .getService(Ci.nsICertOverrideService);
     certOverrideService.rememberValidityOverride(aHost, 8443, cert, aExpectedBits,

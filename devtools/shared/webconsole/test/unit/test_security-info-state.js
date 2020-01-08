@@ -22,11 +22,9 @@ const MockSecurityInfo = {
   QueryInterface: ChromeUtils.generateQI([Ci.nsITransportSecurityInfo]),
   securityState: wpl.STATE_IS_BROKEN,
   errorCode: 0,
-  SSLStatus: {
-    
-    protocolVersion: 3,
-    cipherSuite: "TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256",
-  }
+  
+  protocolVersion: 3,
+  cipherSuite: "TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256",
 };
 
 function run_test() {

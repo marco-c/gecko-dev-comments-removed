@@ -738,17 +738,11 @@ PreliminaryHandshakeDone(PRFileDesc* fd)
     if (SSL_GetCipherSuiteInfo(channelInfo.cipherSuite, &cipherInfo,
                                sizeof cipherInfo) == SECSuccess) {
       
-      RefPtr<nsSSLStatus> status(infoObject->SSLStatus());
-      if (!status) {
-        status = new nsSSLStatus();
-        infoObject->SetSSLStatus(status);
-      }
-
-      status->mHaveCipherSuiteAndProtocol = true;
-      status->mCipherSuite = channelInfo.cipherSuite;
-      status->mProtocolVersion = channelInfo.protocolVersion & 0xFF;
-      status->mKeaGroup.Assign(getKeaGroupName(channelInfo.keaGroup));
-      status->mSignatureSchemeName.Assign(
+      infoObject->mHaveCipherSuiteAndProtocol = true;
+      infoObject->mCipherSuite = channelInfo.cipherSuite;
+      infoObject->mProtocolVersion = channelInfo.protocolVersion & 0xFF;
+      infoObject->mKeaGroup.Assign(getKeaGroupName(channelInfo.keaGroup));
+      infoObject->mSignatureSchemeName.Assign(
         getSignatureName(channelInfo.signatureScheme));
       infoObject->SetKEAUsed(channelInfo.keaType);
       infoObject->SetKEAKeyBits(channelInfo.keaKeyBits);
@@ -962,15 +956,13 @@ AccumulateCipherSuite(Telemetry::HistogramID probe, const SSLChannelInfo& channe
 
 
 static void
-RebuildVerifiedCertificateInformation(RefPtr<nsSSLStatus> sslStatus,
-                                      PRFileDesc* fd,
+RebuildVerifiedCertificateInformation(PRFileDesc* fd,
                                       nsNSSSocketInfo* infoObject)
 {
-  MOZ_ASSERT(sslStatus);
   MOZ_ASSERT(fd);
   MOZ_ASSERT(infoObject);
 
-  if (!sslStatus || !fd || !infoObject) {
+  if (!fd || !infoObject) {
     return;
   }
 
@@ -1037,19 +1029,19 @@ RebuildVerifiedCertificateInformation(RefPtr<nsSSLStatus> sslStatus,
 
   RefPtr<nsNSSCertificate> nssc(nsNSSCertificate::Create(cert.get()));
   if (rv == Success && evOidPolicy != SEC_OID_UNKNOWN) {
-    sslStatus->SetCertificateTransparencyInfo(certificateTransparencyInfo);
+    infoObject->SetCertificateTransparencyInfo(certificateTransparencyInfo);
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
             ("HandshakeCallback using NEW cert %p (is EV)", nssc.get()));
-    sslStatus->SetServerCert(nssc, EVStatus::EV);
+    infoObject->SetServerCert(nssc, EVStatus::EV);
   } else {
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
             ("HandshakeCallback using NEW cert %p (is not EV)", nssc.get()));
-    sslStatus->SetServerCert(nssc, EVStatus::NotEV);
+    infoObject->SetServerCert(nssc, EVStatus::NotEV);
   }
 
   if (rv == Success) {
-    sslStatus->SetCertificateTransparencyInfo(certificateTransparencyInfo);
-    sslStatus->SetSucceededCertChain(std::move(builtChain));
+    infoObject->SetCertificateTransparencyInfo(certificateTransparencyInfo);
+    infoObject->SetSucceededCertChain(std::move(builtChain));
   }
 }
 
@@ -1224,15 +1216,7 @@ void HandshakeCallback(PRFileDesc* fd, void* client_data) {
                              ioLayerHelpers.treatUnsafeNegotiationAsBroken();
 
 
-  
-  RefPtr<nsSSLStatus> status(infoObject->SSLStatus());
-  if (!status) {
-    status = new nsSSLStatus();
-    infoObject->SetSSLStatus(status);
-  }
-
-  RememberCertErrorsTable::GetInstance().LookupCertErrorBits(infoObject,
-                                                             status);
+  RememberCertErrorsTable::GetInstance().LookupCertErrorBits(infoObject);
 
   uint32_t state;
   if (renegotiationUnsafe) {
@@ -1249,18 +1233,19 @@ void HandshakeCallback(PRFileDesc* fd, void* client_data) {
     }
   }
 
-  if (status->HasServerCert()) {
+  if (infoObject->HasServerCert()) {
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
            ("HandshakeCallback KEEPING existing cert\n"));
   } else {
-    RebuildVerifiedCertificateInformation(status, fd, infoObject);
+    RebuildVerifiedCertificateInformation(fd, infoObject);
   }
 
   nsCOMPtr<nsIX509CertList> succeededCertChain;
   
   
   
-  Unused << status->GetSucceededCertChain(getter_AddRefs(succeededCertChain));
+  Unused << infoObject->GetSucceededCertChain(
+                          getter_AddRefs(succeededCertChain));
   bool distrustImminent;
   nsresult srv = IsCertificateDistrustImminent(succeededCertChain,
                                                distrustImminent);
@@ -1272,9 +1257,9 @@ void HandshakeCallback(PRFileDesc* fd, void* client_data) {
   bool untrusted;
   bool notValidAtThisTime;
   
-  Unused << status->GetIsDomainMismatch(&domainMismatch);
-  Unused << status->GetIsUntrusted(&untrusted);
-  Unused << status->GetIsNotValidAtThisTime(&notValidAtThisTime);
+  Unused << infoObject->GetIsDomainMismatch(&domainMismatch);
+  Unused << infoObject->GetIsUntrusted(&untrusted);
+  Unused << infoObject->GetIsNotValidAtThisTime(&notValidAtThisTime);
   
   
   if (domainMismatch || untrusted || notValidAtThisTime) {

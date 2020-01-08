@@ -5569,7 +5569,8 @@ var IdentityHandler = {
   TRACKING_MODE_CONTENT_LOADED: "tracking_content_loaded",
 
   
-  _lastStatus : null,
+  
+  _lastSecInfo : null,
   _lastLocation : null,
 
   
@@ -5578,8 +5579,7 @@ var IdentityHandler = {
 
   getIdentityData : function() {
     let result = {};
-    let status = this._lastStatus.QueryInterface(Ci.nsISSLStatus);
-    let cert = status.serverCert;
+    let cert = this._lastSecInfo.serverCert;
 
     
     result.subjectOrg = cert.organization;
@@ -5683,8 +5683,7 @@ var IdentityHandler = {
 
 
   checkIdentity: function checkIdentity(aState, aBrowser) {
-    this._lastStatus = aBrowser.securityUI.secInfo &&
-                       aBrowser.securityUI.secInfo.SSLStatus;
+    this._lastSecInfo = aBrowser.securityUI.secInfo;
 
     
     
