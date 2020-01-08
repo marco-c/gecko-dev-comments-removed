@@ -5519,12 +5519,6 @@ FrameLayerBuilder::ComputeGeometryChangeForItem(DisplayItemData* aData)
   nsPoint shift = layerData->mAnimatedGeometryRootOrigin -
                   layerData->mLastAnimatedGeometryRootOrigin;
 
-  if (aData->mTransform) {
-    
-    
-    shift = nsPoint();
-  }
-
   const DisplayItemClip& clip = item->GetClip();
   const int32_t appUnitsPerDevPixel = layerData->mAppUnitsPerDevPixel;
 
@@ -5585,6 +5579,12 @@ FrameLayerBuilder::ComputeGeometryChangeForItem(DisplayItemData* aData)
     
     const nsRegion& changedFrameInvalidations =
       aData->GetChangedFrameInvalidations();
+
+    if (aData->mTransform) {
+      
+      
+      shift = nsPoint();
+    }
 
     aData->mGeometry->MoveBy(shift);
 
