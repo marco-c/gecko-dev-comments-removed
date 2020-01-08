@@ -17,7 +17,7 @@
 namespace mozilla {
 
 class DOMSVGTransformList;
-class nsSVGAnimatedTransformList;
+class SVGAnimatedTransformList;
 
 namespace dom {
 
@@ -58,7 +58,7 @@ class DOMSVGAnimatedTransformList final : public nsWrapperCache {
 
 
   static already_AddRefed<DOMSVGAnimatedTransformList> GetDOMWrapper(
-      nsSVGAnimatedTransformList* aList, SVGElement* aElement);
+      SVGAnimatedTransformList* aList, SVGElement* aElement);
 
   
 
@@ -66,7 +66,7 @@ class DOMSVGAnimatedTransformList final : public nsWrapperCache {
 
 
   static DOMSVGAnimatedTransformList* GetDOMWrapperIfExists(
-      nsSVGAnimatedTransformList* aList);
+      SVGAnimatedTransformList* aList);
 
   
 
@@ -108,8 +108,8 @@ class DOMSVGAnimatedTransformList final : public nsWrapperCache {
   ~DOMSVGAnimatedTransformList();
 
   
-  nsSVGAnimatedTransformList& InternalAList();
-  const nsSVGAnimatedTransformList& InternalAList() const;
+  SVGAnimatedTransformList& InternalAList();
+  const SVGAnimatedTransformList& InternalAList() const;
 
   
   

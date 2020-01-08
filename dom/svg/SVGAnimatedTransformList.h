@@ -38,13 +38,13 @@ class SVGTransform;
 
 
 
-class nsSVGAnimatedTransformList {
+class SVGAnimatedTransformList {
   
   friend class dom::SVGTransform;
   friend class DOMSVGTransformList;
 
  public:
-  nsSVGAnimatedTransformList()
+  SVGAnimatedTransformList()
       : mIsAttrSet(false), mRequiresFrameReconstruction(true) {}
 
   
@@ -123,7 +123,7 @@ class nsSVGAnimatedTransformList {
 
   struct SMILAnimatedTransformList : public nsISMILAttr {
    public:
-    SMILAnimatedTransformList(nsSVGAnimatedTransformList* aVal,
+    SMILAnimatedTransformList(SVGAnimatedTransformList* aVal,
                               dom::SVGElement* aSVGElement)
         : mVal(aVal), mElement(aSVGElement) {}
 
@@ -144,7 +144,7 @@ class nsSVGAnimatedTransformList {
     
     
     
-    nsSVGAnimatedTransformList* mVal;
+    SVGAnimatedTransformList* mVal;
     dom::SVGElement* mElement;
   };
 };

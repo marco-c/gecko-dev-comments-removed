@@ -137,10 +137,10 @@ SVGPatternElement::IsAttributeMapped(const nsAtom* name) const {
 
 
 
-nsSVGAnimatedTransformList* SVGPatternElement::GetAnimatedTransformList(
+SVGAnimatedTransformList* SVGPatternElement::GetAnimatedTransformList(
     uint32_t aFlags) {
   if (!mPatternTransform && (aFlags & DO_ALLOCATE)) {
-    mPatternTransform = new nsSVGAnimatedTransformList();
+    mPatternTransform = new SVGAnimatedTransformList();
   }
   return mPatternTransform;
 }
