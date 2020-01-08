@@ -188,7 +188,7 @@ StartUpdateProcess(int argc,
   LOG(("Starting update process as the service in session 0."));
   STARTUPINFO si = {0};
   si.cb = sizeof(STARTUPINFO);
-  si.lpDesktop = L"winsta0\\Default";
+  si.lpDesktop = const_cast<LPWSTR>(L"winsta0\\Default"); 
   PROCESS_INFORMATION pi = {0};
 
   
@@ -206,7 +206,7 @@ StartUpdateProcess(int argc,
   
   if (argc >= index) {
     
-    si.lpDesktop = L"";
+    si.lpDesktop = const_cast<LPWSTR>(L""); 
     si.dwFlags |= STARTF_USESHOWWINDOW;
     si.wShowWindow = SW_HIDE;
   }

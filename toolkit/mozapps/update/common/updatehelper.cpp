@@ -134,7 +134,7 @@ StartServiceUpdate(LPCWSTR installDir)
   STARTUPINFOW si = {0};
   si.cb = sizeof(STARTUPINFOW);
   
-  si.lpDesktop = L"";
+  si.lpDesktop = const_cast<LPWSTR>(L""); 
   PROCESS_INFORMATION pi = {0};
   WCHAR cmdLine[64] = { '\0' };
   wcsncpy(cmdLine, L"dummyparam.exe upgrade",

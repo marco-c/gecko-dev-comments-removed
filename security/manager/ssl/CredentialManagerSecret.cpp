@@ -77,7 +77,7 @@ CredentialManagerSecret::StoreSecret(const nsACString& aSecret,
   const nsCString& secret = PromiseFlatCString(aSecret);
   cred.CredentialBlob = (LPBYTE)secret.get();
   cred.Persist = CRED_PERSIST_LOCAL_MACHINE;
-  cred.UserName = "";
+  cred.UserName = const_cast<char*>(""); 
 
   
   BOOL ok = CredWriteA(&cred, 0);
