@@ -13,8 +13,9 @@ using namespace js::jit;
 static void
 MoveBefore(MBasicBlock* block, MInstruction* at, MInstruction* ins)
 {
-    if (at == ins)
+    if (at == ins) {
         return;
+    }
 
     
     for (MInstructionIterator iter(block->begin(at)); *iter != ins; iter++) {
@@ -30,15 +31,18 @@ IsLastUse(MDefinition* ins, MDefinition* input, MBasicBlock* loopHeader)
 {
     
     
-    if (loopHeader && input->block()->id() < loopHeader->id())
+    if (loopHeader && input->block()->id() < loopHeader->id()) {
         return false;
+    }
     for (MUseDefIterator iter(input); iter; iter++) {
         
         
-        if (iter.def()->block()->id() > ins->block()->id())
+        if (iter.def()->block()->id() > ins->block()->id()) {
             return false;
-        if (iter.def()->id() > ins->id())
+        }
+        if (iter.def()->id() > ins->id()) {
             return false;
+        }
     }
     return true;
 }
@@ -54,19 +58,23 @@ jit::ReorderInstructions(MIRGraph& graph)
 
     for (ReversePostorderIterator block(graph.rpoBegin()); block != graph.rpoEnd(); block++) {
         
-        for (MPhiIterator iter(block->phisBegin()); iter != block->phisEnd(); iter++)
+        for (MPhiIterator iter(block->phisBegin()); iter != block->phisEnd(); iter++) {
             iter->setId(nextId++);
+        }
 
-        for (MInstructionIterator iter(block->begin()); iter != block->end(); iter++)
+        for (MInstructionIterator iter(block->begin()); iter != block->end(); iter++) {
             iter->setId(nextId++);
+        }
 
         
-        if (*block == graph.entryBlock() || *block == graph.osrBlock())
+        if (*block == graph.entryBlock() || *block == graph.osrBlock()) {
             continue;
+        }
 
         if (block->isLoopHeader()) {
-            if (!loopHeaders.append(*block))
+            if (!loopHeaders.append(*block)) {
                 return false;
+            }
         }
 
         MBasicBlock* innerLoop = loopHeaders.empty() ? nullptr : loopHeaders.back();
@@ -99,8 +107,9 @@ jit::ReorderInstructions(MIRGraph& graph)
                 iter++;
                 MInstructionIterator targetIter = block->begin();
                 while (targetIter->isConstant() || targetIter->isInterruptCheck()) {
-                    if (*targetIter == ins)
+                    if (*targetIter == ins) {
                         break;
+                    }
                     targetIter++;
                 }
                 MoveBefore(*block, *targetIter, ins);
@@ -116,8 +125,9 @@ jit::ReorderInstructions(MIRGraph& graph)
             for (size_t i = 0; i < ins->numOperands(); i++) {
                 MDefinition* input = ins->getOperand(i);
                 if (!input->isConstant() && IsLastUse(ins, input, innerLoop)) {
-                    if (!lastUsedInputs.append(input))
+                    if (!lastUsedInputs.append(input)) {
                         return false;
+                    }
                 }
             }
 
@@ -131,8 +141,9 @@ jit::ReorderInstructions(MIRGraph& graph)
             MInstruction* target = ins;
             for (MInstructionReverseIterator riter = ++block->rbegin(ins); riter != rtop; riter++) {
                 MInstruction* prev = *riter;
-                if (prev->isInterruptCheck())
+                if (prev->isInterruptCheck()) {
                     break;
+                }
 
                 
                 bool isUse = false;
@@ -142,8 +153,9 @@ jit::ReorderInstructions(MIRGraph& graph)
                         break;
                     }
                 }
-                if (isUse)
+                if (isUse) {
                     break;
+                }
 
                 
                 
@@ -171,8 +183,9 @@ jit::ReorderInstructions(MIRGraph& graph)
                         i++;
                     }
                 }
-                if (lastUsedInputs.length() < 2)
+                if (lastUsedInputs.length() < 2) {
                     break;
+                }
 
                 
                 target = prev;
@@ -182,8 +195,9 @@ jit::ReorderInstructions(MIRGraph& graph)
             MoveBefore(*block, target, ins);
         }
 
-        if (block->isLoopBackedge())
+        if (block->isLoopBackedge()) {
             loopHeaders.popBack();
+        }
     }
 
     return true;

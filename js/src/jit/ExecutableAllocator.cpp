@@ -35,8 +35,9 @@ using namespace js::jit;
 ExecutablePool::~ExecutablePool()
 {
 #ifdef DEBUG
-    for (size_t bytes : m_codeBytes)
+    for (size_t bytes : m_codeBytes) {
         MOZ_ASSERT(bytes == 0);
+    }
 #endif
 
     MOZ_ASSERT(!isMarked());
@@ -49,8 +50,9 @@ ExecutablePool::release(bool willDestroy)
 {
     MOZ_ASSERT(m_refCount != 0);
     MOZ_ASSERT_IF(willDestroy, m_refCount == 1);
-    if (--m_refCount == 0)
+    if (--m_refCount == 0) {
         js_delete(this);
+    }
 }
 
 void
@@ -95,8 +97,9 @@ ExecutablePool::available() const
 
 ExecutableAllocator::~ExecutableAllocator()
 {
-    for (size_t i = 0; i < m_smallPools.length(); i++)
+    for (size_t i = 0; i < m_smallPools.length(); i++) {
         m_smallPools[i]->release(true);
+    }
 
     
     MOZ_ASSERT_IF(TlsContext.get()->runtime()->gc.shutdownCollectedEverything(),
@@ -114,8 +117,9 @@ ExecutableAllocator::poolForSize(size_t n)
     ExecutablePool* minPool = nullptr;
     for (size_t i = 0; i < m_smallPools.length(); i++) {
         ExecutablePool* pool = m_smallPools[i];
-        if (n <= pool->available() && (!minPool || pool->available() < minPool->available()))
+        if (n <= pool->available() && (!minPool || pool->available() < minPool->available())) {
             minPool = pool;
+        }
     }
     if (minPool) {
         minPool->addRef();
@@ -123,26 +127,30 @@ ExecutableAllocator::poolForSize(size_t n)
     }
 
     
-    if (n > ExecutableCodePageSize)
+    if (n > ExecutableCodePageSize) {
         return createPool(n);
+    }
 
     
     ExecutablePool* pool = createPool(ExecutableCodePageSize);
-    if (!pool)
+    if (!pool) {
         return nullptr;
+    }
     
 
     if (m_smallPools.length() < maxSmallPools) {
         
         
-        if (m_smallPools.append(pool))
+        if (m_smallPools.append(pool)) {
             pool->addRef();
+        }
     } else {
         
         int iMin = 0;
         for (size_t i = 1; i < m_smallPools.length(); i++) {
-            if (m_smallPools[i]->available() < m_smallPools[iMin]->available())
+            if (m_smallPools[i]->available() < m_smallPools[iMin]->available()) {
                 iMin = i;
+            }
         }
 
         
@@ -162,8 +170,9 @@ ExecutableAllocator::poolForSize(size_t n)
  size_t
 ExecutableAllocator::roundUpAllocationSize(size_t request, size_t granularity)
 {
-    if ((std::numeric_limits<size_t>::max() - granularity) <= request)
+    if ((std::numeric_limits<size_t>::max() - granularity) <= request) {
         return OVERSIZE_ALLOCATION;
+    }
 
     
     size_t size = request + (granularity - 1);
@@ -176,12 +185,14 @@ ExecutablePool*
 ExecutableAllocator::createPool(size_t n)
 {
     size_t allocSize = roundUpAllocationSize(n, ExecutableCodePageSize);
-    if (allocSize == OVERSIZE_ALLOCATION)
+    if (allocSize == OVERSIZE_ALLOCATION) {
         return nullptr;
+    }
 
     ExecutablePool::Allocation a = systemAlloc(allocSize);
-    if (!a.pages)
+    if (!a.pages) {
         return nullptr;
+    }
 
     ExecutablePool* pool = js_new<ExecutablePool>(this, a);
     if (!pool) {
@@ -212,8 +223,9 @@ ExecutableAllocator::alloc(JSContext* cx, size_t n, ExecutablePool** poolp, Code
     }
 
     *poolp = poolForSize(n);
-    if (!*poolp)
+    if (!*poolp) {
         return nullptr;
+    }
 
     
     
@@ -232,8 +244,9 @@ ExecutableAllocator::releasePoolPages(ExecutablePool* pool)
     systemRelease(pool->m_allocation);
 
     
-    if (auto ptr = m_pools.lookup(pool))
+    if (auto ptr = m_pools.lookup(pool)) {
         m_pools.remove(ptr);
+    }
 }
 
 void
@@ -271,8 +284,9 @@ ExecutableAllocator::addSizeOfCode(JS::CodeSizes* sizes) const
 ExecutableAllocator::reprotectPool(JSRuntime* rt, ExecutablePool* pool, ProtectionSetting protection)
 {
     char* start = pool->m_allocation.pages;
-    if (!ReprotectRegion(start, pool->m_freePtr - start, protection))
+    if (!ReprotectRegion(start, pool->m_freePtr - start, protection)) {
         MOZ_CRASH();
+    }
 }
 
  void
@@ -282,8 +296,9 @@ ExecutableAllocator::poisonCode(JSRuntime* rt, JitPoisonRangeVector& ranges)
 
 #ifdef DEBUG
     
-    for (size_t i = 0; i < ranges.length(); i++)
+    for (size_t i = 0; i < ranges.length(); i++) {
         MOZ_ASSERT(!ranges[i].pool->isMarked());
+    }
 #endif
 
     for (size_t i = 0; i < ranges.length(); i++) {
