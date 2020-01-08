@@ -468,7 +468,6 @@ public:
     , mIsLocked(false)
     , mHasDefaultValue(false)
     , mHasUserValue(false)
-    , mHasChangedSinceInit(false)
     , mDefaultValue()
     , mUserValue()
   {
@@ -500,18 +499,7 @@ public:
   
 
   bool IsLocked() const { return mIsLocked; }
-  void SetIsLocked(bool aValue)
-  {
-    mIsLocked = aValue;
-    OnChanged();
-  }
-
-  void OnChanged()
-  {
-    if (gSharedMap) {
-      mHasChangedSinceInit = true;
-    }
-  }
+  void SetIsLocked(bool aValue) { mIsLocked = aValue; }
 
   bool IsSticky() const { return mIsSticky; }
 
@@ -538,32 +526,6 @@ public:
     } else {
       MOZ_ASSERT_UNREACHABLE("Unexpected preference type");
     }
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  bool MustSendToContentProcesses() const
-  {
-    MOZ_ASSERT(XRE_IsParentProcess());
-    return mHasChangedSinceInit;
   }
 
   
@@ -683,8 +645,6 @@ public:
       userValueChanged = true;
     }
 
-    OnChanged();
-
     if (userValueChanged || (defaultValueChanged && !mHasUserValue)) {
       *aValueChanged = true;
     }
@@ -732,7 +692,6 @@ public:
   {
     mUserValue.Clear(Type());
     mHasUserValue = false;
-    OnChanged();
   }
 
   nsresult SetDefaultValue(PrefType aType,
@@ -755,7 +714,6 @@ public:
       if (!ValueMatches(PrefValueKind::Default, aType, aValue)) {
         mDefaultValue.Replace(mHasDefaultValue, Type(), aType, aValue);
         mHasDefaultValue = true;
-        OnChanged();
         if (aIsSticky) {
           mIsSticky = true;
         }
@@ -798,36 +756,11 @@ public:
       mUserValue.Replace(mHasUserValue, Type(), aType, aValue);
       SetType(aType); 
       mHasUserValue = true;
-      OnChanged();
       if (!IsLocked()) {
         *aValueChanged = true;
       }
     }
     return NS_OK;
-  }
-
-  
-  bool UserValueToStringForSaving(nsCString& aStr)
-  {
-    
-    
-    if (mHasUserValue &&
-        (!ValueMatches(PrefValueKind::Default, Type(), mUserValue) ||
-         mIsSticky)) {
-      if (IsTypeString()) {
-        StrEscape(mUserValue.mStringVal, aStr);
-
-      } else if (IsTypeInt()) {
-        aStr.AppendInt(mUserValue.mIntVal);
-
-      } else if (IsTypeBool()) {
-        aStr = mUserValue.mBoolVal ? "true" : "false";
-      }
-      return true;
-    }
-
-    
-    return false;
   }
 
   
@@ -1005,7 +938,6 @@ private:
   uint32_t mIsLocked : 1;
   uint32_t mHasDefaultValue : 1;
   uint32_t mHasUserValue : 1;
-  uint32_t mHasChangedSinceInit : 1;
 
   PrefValue mDefaultValue;
   PrefValue mUserValue;
@@ -1160,6 +1092,30 @@ public:
 
     aResult = GetStringValue(kind);
     return NS_OK;
+  }
+
+  
+  bool UserValueToStringForSaving(nsCString& aStr)
+  {
+    
+    
+    if (HasUserValue() &&
+        (!ValueMatches(PrefValueKind::Default, Type(), GetValue()) ||
+         IsSticky())) {
+      if (IsTypeString()) {
+        StrEscape(GetStringValue().get(), aStr);
+
+      } else if (IsTypeInt()) {
+        aStr.AppendInt(GetIntValue());
+
+      } else if (IsTypeBool()) {
+        aStr = GetBoolValue() ? "true" : "false";
+      }
+      return true;
+    }
+
+    
+    return false;
   }
 
   bool Matches(PrefType aType,
@@ -1612,9 +1568,7 @@ pref_savePrefs()
 
   PrefSaveData savedPrefs(gHashTable->EntryCount());
 
-  for (auto iter = gHashTable->Iter(); !iter.Done(); iter.Next()) {
-    Pref* pref = static_cast<PrefEntry*>(iter.Get())->mPref;
-
+  for (auto& pref : PrefsIter(gHashTable, gSharedMap)) {
     nsAutoCString prefValueStr;
     if (!pref->UserValueToStringForSaving(prefValueStr)) {
       continue;
@@ -4034,7 +3988,7 @@ Preferences::SerializePreferences(nsCString& aStr)
 
   for (auto iter = gHashTable->Iter(); !iter.Done(); iter.Next()) {
     Pref* pref = static_cast<PrefEntry*>(iter.Get())->mPref;
-    if (pref->MustSendToContentProcesses() && pref->HasAdvisablySizedValues()) {
+    if (!pref->IsTypeNone() && pref->HasAdvisablySizedValues()) {
       pref->SerializeAndAppend(aStr);
     }
   }
@@ -4082,6 +4036,18 @@ Preferences::EnsureSnapshot(size_t* aSize)
     }
 
     gSharedMap = new SharedPrefMap(std::move(builder));
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    gHashTable->ClearAndPrepareForLength(kHashTableInitialLengthContent);
+    gPrefNameArena.Clear();
   }
 
   *aSize = gSharedMap->MapSize();
