@@ -546,6 +546,11 @@ ipc::IShmemAllocator* WebRenderBridgeChild::GetShmemAllocator() {
 
 RefPtr<KnowsCompositor> WebRenderBridgeChild::GetForMedia() {
   MOZ_ASSERT(NS_IsMainThread());
+
+  
+  
+  gfxPlatform::GetPlatform()->EnsureDevicesInitialized();
+
   return MakeAndAddRef<KnowsCompositorMediaProxy>(
       GetTextureFactoryIdentifier());
 }

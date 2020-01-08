@@ -424,7 +424,6 @@ void gfxWindowsPlatform::InitAcceleration() {
   DeviceManagerDx::Init();
 
   InitializeConfig();
-  InitializeDevices();
   UpdateANGLEConfig();
   UpdateRenderMode();
 
@@ -497,7 +496,9 @@ bool gfxWindowsPlatform::HandleDeviceReset() {
   gfxConfig::Reset(Feature::DIRECT2D);
 
   InitializeConfig();
-  InitializeDevices();
+  if (mInitializedDevices) {
+    InitializeDevices();
+  }
   UpdateANGLEConfig();
   return true;
 }
@@ -1470,7 +1471,25 @@ void gfxWindowsPlatform::InitializeD3D11Config() {
                         uint32_t(aDevice));
 }
 
+
+
+void gfxWindowsPlatform::EnsureDevicesInitialized() {
+  if (!mInitializedDevices) {
+    mInitializedDevices = true;
+    InitializeDevices();
+    UpdateBackendPrefs();
+  }
+}
+
+bool
+gfxWindowsPlatform::DevicesInitialized() {
+
+  return mInitializedDevices;
+}
+
 void gfxWindowsPlatform::InitializeDevices() {
+  MOZ_ASSERT(NS_IsMainThread());
+
   if (XRE_IsParentProcess()) {
     
     
@@ -2032,6 +2051,10 @@ void gfxWindowsPlatform::BuildContentDeviceData(ContentDeviceData* aOut) {
 }
 
 bool gfxWindowsPlatform::SupportsPluginDirectDXGIDrawing() {
+  
+  
+  EnsureDevicesInitialized();
+
   DeviceManagerDx* dm = DeviceManagerDx::Get();
   if (!dm->GetContentDevice() || !dm->TextureSharingWorks()) {
     return false;

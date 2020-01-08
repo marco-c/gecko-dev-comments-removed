@@ -913,6 +913,13 @@ void gfxPlatform::Init() {
 #endif
   gPlatform->InitAcceleration();
   gPlatform->InitWebRenderConfig();
+  
+  
+  
+  
+  if (!gfxVars::UseWebRender()) {
+    gPlatform->EnsureDevicesInitialized();
+  }
   gPlatform->InitOMTPConfig();
 
   if (gfxConfig::IsEnabled(Feature::GPU_PROCESS)) {

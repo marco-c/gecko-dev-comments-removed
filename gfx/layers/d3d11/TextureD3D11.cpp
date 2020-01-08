@@ -1615,7 +1615,8 @@ bool SyncObjectD3D11Host::Synchronize(bool aFallible) {
 SyncObjectD3D11Client::SyncObjectD3D11Client(SyncHandle aSyncHandle,
                                              ID3D11Device* aDevice)
     : mSyncHandle(aSyncHandle), mSyncLock("SyncObjectD3D11") {
-  if (!aDevice) {
+  if (!aDevice && !XRE_IsGPUProcess() &&
+      gfxPlatform::GetPlatform()->DevicesInitialized()) {
     mDevice = DeviceManagerDx::Get()->GetContentDevice();
     return;
   }
@@ -1664,7 +1665,17 @@ void SyncObjectD3D11Client::RegisterTexture(ID3D11Texture2D* aTexture) {
 }
 
 bool SyncObjectD3D11Client::IsSyncObjectValid() {
-  RefPtr<ID3D11Device> dev = DeviceManagerDx::Get()->GetContentDevice();
+  RefPtr<ID3D11Device> dev;
+  
+  if (gfxPlatform::GetPlatform()->DevicesInitialized()) {
+    dev = DeviceManagerDx::Get()->GetContentDevice();
+  }
+
+  
+  if (!mDevice && dev && NS_IsMainThread() && gfxVars::UseWebRender()) {
+    mDevice = dev;
+  }
+
   if (!dev || (NS_IsMainThread() && dev != mDevice)) {
     return false;
   }

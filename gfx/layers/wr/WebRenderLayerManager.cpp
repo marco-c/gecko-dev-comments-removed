@@ -665,6 +665,11 @@ void WebRenderLayerManager::SetRoot(Layer* aLayer) {
 already_AddRefed<PersistentBufferProvider>
 WebRenderLayerManager::CreatePersistentBufferProvider(
     const gfx::IntSize& aSize, gfx::SurfaceFormat aFormat) {
+
+  
+  
+  gfxPlatform::GetPlatform()->EnsureDevicesInitialized();
+
   if (gfxPrefs::PersistentBufferProviderSharedEnabled()) {
     RefPtr<PersistentBufferProvider> provider =
         PersistentBufferProviderShared::Create(aSize, aFormat,

@@ -104,6 +104,11 @@ UniquePtr<GLScreenBuffer> GLScreenBuffer::Create(GLContext* gl,
 #ifdef XP_WIN
     
     
+    
+    gfxPlatform::GetPlatform()->EnsureDevicesInitialized();
+
+    
+    
     gfx::DeviceManagerDx* dm = gfx::DeviceManagerDx::Get();
     if (gl->IsANGLE() && (gl->IsWARP() == dm->IsWARP()) &&
         dm->TextureSharingWorks()) {
