@@ -484,7 +484,7 @@ class ObjectGroupRealm::NewTable : public JS::WeakCache<js::GCHashSet<NewEntry, 
 };
 
  ObjectGroupRealm&
-ObjectGroupRealm::get(ObjectGroup* group)
+ObjectGroupRealm::get(const ObjectGroup* group)
 {
     return group->realm()->objectGroups_;
 }
@@ -1696,7 +1696,7 @@ ObjectGroup::getCopyOnWriteObject(JSScript* script, jsbytecode* pc)
 }
 
  bool
-ObjectGroup::findAllocationSite(JSContext* cx, ObjectGroup* group,
+ObjectGroup::findAllocationSite(JSContext* cx, const ObjectGroup* group,
                                 JSScript** script, uint32_t* offset)
 {
     *script = nullptr;

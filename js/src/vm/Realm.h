@@ -320,7 +320,7 @@ class JS::Realm : public JS::shadow::Realm
     
     
     js::ObjectGroupRealm objectGroups_;
-    friend js::ObjectGroupRealm& js::ObjectGroupRealm::get(js::ObjectGroup* group);
+    friend js::ObjectGroupRealm& js::ObjectGroupRealm::get(const js::ObjectGroup* group);
     friend js::ObjectGroupRealm& js::ObjectGroupRealm::getForNewObject(JSContext* cx);
 
     
