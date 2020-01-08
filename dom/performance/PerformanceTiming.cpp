@@ -287,10 +287,8 @@ PerformanceTimingData::CheckAllowedOrigin(nsIHttpChannel* aResourceChannel,
   }
 
   
-  
-  
   if (loadInfo->GetExternalContentPolicyType() == nsIContentPolicy::TYPE_DOCUMENT) {
-    return false;
+    return true;
   }
 
   nsCOMPtr<nsIPrincipal> principal = loadInfo->LoadingPrincipal();
