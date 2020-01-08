@@ -350,9 +350,12 @@ TEST(MP4Metadata, test_case_mp4) {
 }
 
 
+
+
+
+
 #if 0
-TEST(MPEG4Metadata, test_case_mp4_subsets)
-{
+TEST(MP4Metadata, test_case_mp4_subsets) {
   static const size_t step = 1u;
   for (size_t test = 0; test < ArrayLength(testFiles); ++test) {
     nsTArray<uint8_t> buffer = ReadTestFile(testFiles[test].mFilename);
@@ -434,9 +437,12 @@ TEST(MoofParser, test_case_mp4) {
 }
 
 
+
+
+
+
 #if 0
-TEST(MoofParser, test_case_mp4_subsets)
-{
+TEST(MoofParser, test_case_mp4_subsets) {
   const size_t step = 1u;
   for (size_t test = 0; test < ArrayLength(testFiles); ++test) {
     nsTArray<uint8_t> buffer = ReadTestFile(testFiles[test].mFilename);
