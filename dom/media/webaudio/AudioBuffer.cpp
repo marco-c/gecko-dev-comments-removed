@@ -255,6 +255,13 @@ static void CopyChannelDataToFloat(const AudioChunk& aChunk, uint32_t aChannel,
 }
 
 bool AudioBuffer::RestoreJSChannelData(JSContext* aJSContext) {
+  nsPIDOMWindowInner* global = GetParentObject();
+  if (!global || !global->AsGlobal()->GetGlobalJSObject()) {
+    return false;
+  }
+
+  JSAutoRealm ar(aJSContext, global->AsGlobal()->GetGlobalJSObject());
+
   for (uint32_t i = 0; i < mJSChannels.Length(); ++i) {
     if (mJSChannels[i]) {
       
@@ -382,6 +389,13 @@ void AudioBuffer::GetChannelData(JSContext* aJSContext, uint32_t aChannel,
 
 already_AddRefed<ThreadSharedFloatArrayBufferList>
 AudioBuffer::StealJSArrayDataIntoSharedChannels(JSContext* aJSContext) {
+  nsPIDOMWindowInner* global = GetParentObject();
+  if (!global || !global->AsGlobal()->GetGlobalJSObject()) {
+    return nullptr;
+  }
+
+  JSAutoRealm ar(aJSContext, global->AsGlobal()->GetGlobalJSObject());
+
   
   
   
