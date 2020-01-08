@@ -190,6 +190,19 @@ public class MediaElement {
             audioTrackCount = bundle.getInt("audioTrackCount", 0);
             videoTrackCount = bundle.getInt("videoTrackCount", 0);
         }
+
+        
+
+
+        protected Metadata() {
+            currentSource = "";
+            duration = 0;
+            width = 0;
+            height = 0;
+            isSeekable = false;
+            audioTrackCount = 0;
+            videoTrackCount = 0;
+        }
     }
 
     
@@ -200,10 +213,11 @@ public class MediaElement {
 
 
         public class TimeRange {
-             TimeRange(double start, double end) {
+            protected TimeRange(double start, double end) {
                 this.start = start;
                 this.end = end;
             }
+
             
 
 
@@ -250,6 +264,15 @@ public class MediaElement {
             for (int i = 0; i < starts.length; ++i) {
                 buffered[i] = new TimeRange(starts[i], ends[i]);
             }
+        }
+
+        
+
+
+        protected LoadProgressInfo() {
+            loadedBytes = 0;
+            totalBytes = 0;
+            buffered = null;
         }
     }
 

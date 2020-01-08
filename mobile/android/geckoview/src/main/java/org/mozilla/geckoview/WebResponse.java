@@ -29,7 +29,7 @@ public class WebResponse extends WebMessage {
 
     public final boolean redirected;
 
-     WebResponse(Builder builder) {
+    protected WebResponse(final @NonNull Builder builder) {
         super(builder);
         this.statusCode = builder.mStatusCode;
         this.redirected = builder.mRedirected;
