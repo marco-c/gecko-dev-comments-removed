@@ -1,0 +1,18 @@
+
+
+
+
+
+
+'use strict';
+
+idl_test(
+  ['event-timing'],
+  ['performance-timeline', 'hr-time', 'dom'],
+  idl_array => {
+    idl_array.add_objects({
+      Performance: ['performance'],
+      
+    });
+  }
+);
