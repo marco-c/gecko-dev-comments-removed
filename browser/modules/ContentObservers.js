@@ -37,18 +37,7 @@ var gDecoderDoctorObserver = function(subject, topic, data) {
 };
 
 function getMessageManagerForWindow(aContentWindow) {
-  let ir = aContentWindow.docShell
-                         .sameTypeRootTreeItem
-                         .QueryInterface(Ci.nsIInterfaceRequestor);
-  try {
-    
-    return ir.getInterface(Ci.nsIContentFrameMessageManager);
-  } catch (e) {
-    if (e.result == Cr.NS_NOINTERFACE) {
-      return null;
-    }
-    throw e;
-  }
+  return aContentWindow.docShell.messageManager;
 }
 
 Services.obs.addObserver(gEMEUIObserver, "mediakeys-request");

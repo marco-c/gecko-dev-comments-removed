@@ -165,14 +165,9 @@ var ContentPolicy = {
         }
       }
 
-      let ir = window.docShell.QueryInterface(Ci.nsIInterfaceRequestor);
-      try {
-        
-        mm = ir.getInterface(Ci.nsIContentFrameMessageManager);
-      } catch (e) {
-        if (e.result != Cr.NS_NOINTERFACE) {
-          throw e;
-        }
+      let windowMM = window.docShell.messageManager;
+      if (windowMM) {
+        mm = windowMM;
       }
     }
 
