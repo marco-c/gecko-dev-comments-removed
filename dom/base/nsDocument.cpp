@@ -11910,9 +11910,6 @@ nsDocument::DocAddSizeOfExcludingThis(nsWindowSizes& aWindowSizes) const
   aWindowSizes.mDOMOtherSize +=
     mStyledLinks.ShallowSizeOfExcludingThis(aWindowSizes.mState.mMallocSizeOf);
 
-  aWindowSizes.mDOMOtherSize +=
-    mIdentifierMap.SizeOfExcludingThis(aWindowSizes.mState.mMallocSizeOf);
-
   
   
   
