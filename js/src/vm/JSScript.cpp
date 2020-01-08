@@ -1705,15 +1705,22 @@ ScriptSource::units(JSContext* cx, UncompressedSourceCache::AutoHoldEntry& holde
 
     
     
-    size_t firstChunk, lastChunk;
-    size_t firstChunkOffset, lastChunkOffset;
-    MOZ_ASSERT(len > 0);
-    Compressor::toChunkOffset(begin * sizeof(Unit), &firstChunk, &firstChunkOffset);
-    Compressor::toChunkOffset((begin + len) * sizeof(Unit), &lastChunk, &lastChunkOffset);
-
+    
+    
+    
+    size_t firstChunk, firstChunkOffset, firstChunkSize;
+    size_t lastChunk, lastChunkSize;
+    Compressor::rangeToChunkAndOffset(begin * sizeof(Unit), (begin + len) * sizeof(Unit),
+                                      &firstChunk, &firstChunkOffset, &firstChunkSize,
+                                      &lastChunk, &lastChunkSize);
+    MOZ_ASSERT(firstChunk <= lastChunk);
     MOZ_ASSERT(firstChunkOffset % sizeof(Unit) == 0);
+    MOZ_ASSERT(firstChunkSize % sizeof(Unit) == 0);
+
     size_t firstUnit = firstChunkOffset / sizeof(Unit);
 
+    
+    
     if (firstChunk == lastChunk) {
         const Unit* units = chunkUnits<Unit>(cx, holder, firstChunk);
         if (!units) {
@@ -1725,38 +1732,48 @@ ScriptSource::units(JSContext* cx, UncompressedSourceCache::AutoHoldEntry& holde
 
     
     
-    
-
-    MOZ_ASSERT(firstChunk < lastChunk);
-
     EntryUnits<Unit> decompressed(js_pod_malloc<Unit>(len));
     if (!decompressed) {
         JS_ReportOutOfMemory(cx);
         return nullptr;
     }
 
-    size_t totalLengthInBytes = length() * sizeof(Unit);
-    Unit* cursor = decompressed.get();
+    Unit* cursor;
 
-    for (size_t i = firstChunk; i <= lastChunk; i++) {
+    {
+        
+        
+        
+        
+        
+        UncompressedSourceCache::AutoHoldEntry firstHolder;
+        const Unit* units = chunkUnits<Unit>(cx, firstHolder, firstChunk);
+        if (!units) {
+            return nullptr;
+        }
+
+        cursor = std::copy_n(units + firstUnit, firstChunkSize / sizeof(Unit),
+                             decompressed.get());
+    }
+
+    for (size_t i = firstChunk + 1; i < lastChunk; i++) {
         UncompressedSourceCache::AutoHoldEntry chunkHolder;
         const Unit* units = chunkUnits<Unit>(cx, chunkHolder, i);
         if (!units) {
             return nullptr;
         }
 
-        size_t numUnits = Compressor::chunkSize(totalLengthInBytes, i) / sizeof(Unit);
-        if (i == firstChunk) {
-            MOZ_ASSERT(firstUnit < numUnits);
-            units += firstUnit;
-            numUnits -= firstUnit;
-        } else if (i == lastChunk) {
-            size_t numUnitsNew = lastChunkOffset / sizeof(Unit);
-            MOZ_ASSERT(numUnitsNew <= numUnits);
-            numUnits = numUnitsNew;
+        cursor = std::copy_n(units, Compressor::CHUNK_SIZE / sizeof(Unit), cursor);
+    }
+
+    {
+        UncompressedSourceCache::AutoHoldEntry lastHolder;
+        const Unit* units = chunkUnits<Unit>(cx, lastHolder, lastChunk);
+        if (!units) {
+            return nullptr;
         }
-        mozilla::PodCopy(cursor, units, numUnits);
-        cursor += numUnits;
+
+        cursor = std::copy_n(units, lastChunkSize / sizeof(Unit), cursor);
     }
 
     MOZ_ASSERT(PointerRangeSize(decompressed.get(), cursor) == len);
