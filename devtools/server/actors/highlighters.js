@@ -381,6 +381,33 @@ exports.HighlighterActor = protocol.ActorClassWithSpec(highlighterSpec, {
     return this._walker.attachElement(node);
   },
 
+  _onSuppressedEvent(event) {
+    if (event.type == "mousemove") {
+      this._onHovered(event);
+    } else if (event.type == "mouseup") {
+      
+      
+      this._onPick(event);
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  _setSuppressedEventListener(callback) {
+    const document = this._targetActor.window.document;
+
+    
+    document.setSuppressedEventListener(callback ? { handleEvent: callback } : null);
+  },
+
   _startPickerListeners: function() {
     const target = this._highlighterEnv.pageListenerTarget;
     target.addEventListener("mousemove", this._onHovered, true);
@@ -390,6 +417,8 @@ exports.HighlighterActor = protocol.ActorClassWithSpec(highlighterSpec, {
     target.addEventListener("dblclick", this._preventContentEvent, true);
     target.addEventListener("keydown", this._onKey, true);
     target.addEventListener("keyup", this._preventContentEvent, true);
+
+    this._setSuppressedEventListener(this._onSuppressedEvent.bind(this));
   },
 
   _stopPickerListeners: function() {
@@ -406,6 +435,8 @@ exports.HighlighterActor = protocol.ActorClassWithSpec(highlighterSpec, {
     target.removeEventListener("dblclick", this._preventContentEvent, true);
     target.removeEventListener("keydown", this._onKey, true);
     target.removeEventListener("keyup", this._preventContentEvent, true);
+
+    this._setSuppressedEventListener(null);
   },
 
   _highlighterReady: function() {

@@ -164,6 +164,10 @@ EyeDropper.prototype = {
     
     this.win.focus();
 
+    
+    
+    this.win.document.setSuppressedEventListener(this);
+
     return true;
   },
 
@@ -191,6 +195,8 @@ EyeDropper.prototype = {
     this.getElement("root").removeAttribute("drawn");
 
     this.emit("hidden");
+
+    this.win.document.setSuppressedEventListener(null);
   },
 
   prepareImageCapture() {
@@ -330,7 +336,10 @@ EyeDropper.prototype = {
         
         this.moveTo(x, y);
         break;
+      
+      
       case "click":
+      case "mouseup":
         this.selectColor();
         break;
       case "keydown":
