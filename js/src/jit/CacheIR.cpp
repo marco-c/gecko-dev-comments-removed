@@ -5024,9 +5024,15 @@ CompareIRGenerator::tryAttachStub()
     static_assert(lhsIndex == 0 && rhsIndex == 1,
         "Indexes relied upon by baseline inspector");
 
-    ValOperandId lhsId(writer.setInputOperandId(0));
-    ValOperandId rhsId(writer.setInputOperandId(1));
+    ValOperandId lhsId(writer.setInputOperandId(lhsIndex));
+    ValOperandId rhsId(writer.setInputOperandId(rhsIndex));
 
+    
+    
+    
+    
+    
+    
     if (IsEqualityOp(op_)) {
         if (tryAttachString(lhsId, rhsId))
             return true;
@@ -5034,8 +5040,14 @@ CompareIRGenerator::tryAttachStub()
             return true;
         if (tryAttachSymbol(lhsId, rhsId))
             return true;
+
+        
+        
         if (tryAttachObjectUndefined(lhsId, rhsId))
             return true;
+
+        
+        
         if (tryAttachStrictDifferentTypes(lhsId, rhsId))
             return true;
 
@@ -5044,8 +5056,6 @@ CompareIRGenerator::tryAttachStub()
         if (tryAttachPrimitiveUndefined(lhsId, rhsId))
             return true;
 
-        
-        
         if (tryAttachNullUndefined(lhsId, rhsId))
             return true;
     }
