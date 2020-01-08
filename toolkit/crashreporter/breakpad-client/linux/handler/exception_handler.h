@@ -209,7 +209,7 @@ class ExceptionHandler {
   
   
   void AddMappingInfo(const string& name,
-                      const uint8_t identifier[sizeof(MDGUID)],
+                      const wasteful_vector<uint8_t>& identifier,
                       uintptr_t start_address,
                       size_t mapping_size,
                       size_t file_offset);
