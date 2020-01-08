@@ -4,7 +4,9 @@
 
 "use strict";
 
-ChromeUtils.import("resource://formautofill/FormAutofillNameUtils.jsm");
+add_task(async function() {
+  ChromeUtils.import("resource://formautofill/FormAutofillNameUtils.jsm");
+});
 
 
 
