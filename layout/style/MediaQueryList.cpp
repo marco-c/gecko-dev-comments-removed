@@ -137,7 +137,10 @@ MediaQueryList::RecomputeMatches()
     return;
   }
 
-  if (mDocument->GetParentDocument()) {
+  
+  
+  nsPresContext* presContext = mDocument->GetPresContext();
+  if (!presContext && mDocument->GetParentDocument()) {
     
     
     mDocument->GetParentDocument()->FlushPendingNotifications(FlushType::Frames);
@@ -145,9 +148,10 @@ MediaQueryList::RecomputeMatches()
     if (!mDocument) {
       return;
     }
+
+    presContext = mDocument->GetPresContext();
   }
 
-  nsPresContext* presContext = mDocument->GetPresContext();
   if (!presContext) {
     
     return;
