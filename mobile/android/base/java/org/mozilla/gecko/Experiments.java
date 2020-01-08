@@ -29,9 +29,6 @@ public class Experiments {
     public static final String DOWNLOAD_CONTENT_CATALOG_SYNC = "download-content-catalog-sync";
 
     
-    public static final String PROMOTE_ADD_TO_HOMESCREEN = "promote-add-to-homescreen";
-
-    
     public static final String TRIPLE_READERVIEW_BOOKMARK_PROMPT = "triple-readerview-bookmark-prompt";
 
     
