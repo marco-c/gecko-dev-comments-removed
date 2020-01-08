@@ -263,12 +263,19 @@ def create_dialog(session):
         assert isinstance(text, basestring), "`text` parameter must be a string"
 
         
+        
+        
+        
         session.execute_async_script("""
             let dialog_type = arguments[0];
             let text = arguments[1];
 
             setTimeout(function() {
-              window.dialog_return_value = window[dialog_type](text);
+              if (dialog_type == 'prompt') {
+                window.dialog_return_value = window[dialog_type](text, '');
+              } else {
+                window.dialog_return_value = window[dialog_type](text);
+              }
             }, 0);
             """, args=(dialog_type, text))
 
