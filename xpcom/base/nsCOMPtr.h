@@ -155,17 +155,31 @@ public:
 
 
 
-class MOZ_STACK_CLASS nsQueryInterface final
+class MOZ_STACK_CLASS nsQueryInterfaceISupports
 {
 public:
   explicit
-  nsQueryInterface(nsISupports* aRawPtr) : mRawPtr(aRawPtr) {}
+  nsQueryInterfaceISupports(nsISupports* aRawPtr) : mRawPtr(aRawPtr) {}
 
   nsresult NS_FASTCALL operator()(const nsIID& aIID, void**) const;
 
 private:
   nsISupports* MOZ_OWNING_REF mRawPtr;
 };
+
+#ifndef NSCAP_FEATURE_USE_BASE
+template<typename T>
+class MOZ_STACK_CLASS nsQueryInterface final : public nsQueryInterfaceISupports
+{
+public:
+  explicit
+  nsQueryInterface(T* aRawPtr) : nsQueryInterfaceISupports(aRawPtr) {}
+
+  nsresult NS_FASTCALL operator()(const nsIID& aIID, void** aAnswer) const {
+    return nsQueryInterfaceISupports::operator()(aIID, aAnswer);
+  }
+};
+#endif 
 
 class nsQueryInterfaceWithError final
 {
@@ -183,11 +197,32 @@ private:
   nsresult* mErrorPtr;
 };
 
-inline nsQueryInterface
+#ifdef NSCAP_FEATURE_USE_BASE
+
+inline nsQueryInterfaceISupports
 do_QueryInterface(nsISupports* aRawPtr)
 {
-  return nsQueryInterface(aRawPtr);
+  return nsQueryInterfaceISupports(aRawPtr);
 }
+
+#else
+
+namespace mozilla {
+
+
+
+template<class T>
+using PointedToType = typename mozilla::RemovePointer<decltype(&*mozilla::DeclVal<T>())>::Type;
+} 
+
+template<class T>
+inline nsQueryInterface<mozilla::PointedToType<T>>
+do_QueryInterface(T aPtr)
+{
+  return nsQueryInterface<mozilla::PointedToType<T>>(aPtr);
+}
+
+#endif 
 
 inline nsQueryInterfaceWithError
 do_QueryInterface(nsISupports* aRawPtr, nsresult* aError)
@@ -317,7 +352,7 @@ public:
   void NS_FASTCALL
   assign_with_AddRef(nsISupports*);
   void NS_FASTCALL
-  assign_from_qi(const nsQueryInterface, const nsIID&);
+  assign_from_qi(const nsQueryInterfaceISupports, const nsIID&);
   void NS_FASTCALL
   assign_from_qi_with_error(const nsQueryInterfaceWithError&, const nsIID&);
   void NS_FASTCALL
@@ -379,7 +414,8 @@ class MOZ_IS_REFPTR nsCOMPtr final
 
 private:
   void assign_with_AddRef(nsISupports*);
-  void assign_from_qi(const nsQueryInterface, const nsIID&);
+  template<typename U>
+  void assign_from_qi(const nsQueryInterface<U>, const nsIID&);
   void assign_from_qi_with_error(const nsQueryInterfaceWithError&, const nsIID&);
   void assign_from_gs_cid(const nsGetServiceByCID, const nsIID&);
   void assign_from_gs_cid_with_error(const nsGetServiceByCIDWithError&,
@@ -432,8 +468,13 @@ public:
   void Assert_NoQueryNeeded()
   {
     if (mRawPtr) {
-      nsCOMPtr<T> query_result(do_QueryInterface(mRawPtr));
-      NS_ASSERTION(query_result.get() == mRawPtr, "QueryInterface needed");
+      
+      
+      void* out = nullptr;
+      mRawPtr->QueryInterface(NS_GET_TEMPLATE_IID(T), &out);
+      T* query_result = static_cast<T*>(out);
+      MOZ_ASSERT(query_result == mRawPtr, "QueryInterface needed");
+      NS_RELEASE(query_result);
     }
   }
 
@@ -559,7 +600,12 @@ public:
   }
 
   
-  MOZ_IMPLICIT nsCOMPtr(const nsQueryInterface aQI)
+#ifdef NSCAP_FEATURE_USE_BASE
+  MOZ_IMPLICIT nsCOMPtr(const nsQueryInterfaceISupports aQI)
+#else
+  template<typename U>
+  MOZ_IMPLICIT nsCOMPtr(const nsQueryInterface<U> aQI)
+#endif 
     : NSCAP_CTOR_BASE(nullptr)
   {
     assert_validity();
@@ -711,7 +757,12 @@ public:
   }
 
   
-  nsCOMPtr<T>& operator=(const nsQueryInterface aRhs)
+#ifdef NSCAP_FEATURE_USE_BASE
+  nsCOMPtr<T>& operator=(const nsQueryInterfaceISupports aRhs)
+#else
+  template<typename U>
+  nsCOMPtr<T>& operator=(const nsQueryInterface<U> aRhs)
+#endif 
   {
     assign_from_qi(aRhs, NS_GET_TEMPLATE_IID(T));
     return *this;
@@ -943,7 +994,7 @@ public:
   }
 
   
-  MOZ_IMPLICIT nsCOMPtr(const nsQueryInterface aQI)
+  MOZ_IMPLICIT nsCOMPtr(const nsQueryInterfaceISupports aQI)
     : nsCOMPtr_base(nullptr)
   {
     NSCAP_LOG_ASSIGNMENT(this, nullptr);
@@ -1043,7 +1094,7 @@ public:
   }
 
   
-  nsCOMPtr<nsISupports>& operator=(const nsQueryInterface aRhs)
+  nsCOMPtr<nsISupports>& operator=(const nsQueryInterfaceISupports aRhs)
   {
     assign_from_qi(aRhs, NS_GET_IID(nsISupports));
     return *this;
@@ -1215,9 +1266,13 @@ nsCOMPtr<T>::assign_with_AddRef(nsISupports* aRawPtr)
 }
 
 template<class T>
+template<typename U>
 void
-nsCOMPtr<T>::assign_from_qi(const nsQueryInterface aQI, const nsIID& aIID)
+nsCOMPtr<T>::assign_from_qi(const nsQueryInterface<U> aQI, const nsIID& aIID)
 {
+  static_assert(!(mozilla::IsSame<T, U>::value ||
+                  mozilla::IsBaseOf<T, U>::value),
+                "don't use do_QueryInterface for compile-time-determinable casts");
   void* newRawPtr;
   if (NS_FAILED(aQI(aIID, &newRawPtr))) {
     newRawPtr = nullptr;
