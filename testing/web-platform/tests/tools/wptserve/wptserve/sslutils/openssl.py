@@ -6,10 +6,13 @@ import subprocess
 import tempfile
 from datetime import datetime, timedelta
 
+from six import iteritems
+
 
 
 
 CERT_EXPIRY_BUFFER = dict(hours=6)
+
 
 class OpenSSL(object):
     def __init__(self, logger, binary, base_path, conf_path, hosts, duration,
@@ -66,7 +69,7 @@ class OpenSSL(object):
         
         
         env = {}
-        for k, v in os.environ.iteritems():
+        for k, v in iteritems(os.environ):
             try:
                 env[k.encode("utf8")] = v.encode("utf8")
             except UnicodeDecodeError:
@@ -361,7 +364,7 @@ class OpenSSLEnvironment(object):
 
         hosts must be a list of all hosts to appear on the certificate, with
         the primary hostname first."""
-        hosts = tuple(sorted(hosts, key=lambda x:-len(x)))
+        hosts = tuple(sorted(hosts, key=lambda x:len(x)))
         if hosts not in self.host_certificates:
             if not self.force_regenerate:
                 key_cert = self._load_host_cert(hosts)
