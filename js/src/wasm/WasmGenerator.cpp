@@ -862,7 +862,7 @@ ModuleGenerator::finishMetadata(const ShareableBytes& bytecode)
     
 
     for (FuncExport& fe : metadataTier_->funcExports)
-        fe.initInterpCodeRangeIndex(funcToCodeRange_[fe.funcIndex()]);
+        fe.initFuncCodeRangeIndex(funcToCodeRange_[fe.funcIndex()]);
 
     for (ElemSegment& elems : env_->elemSegments) {
         Uint32Vector& codeRangeIndices = elems.elemCodeRangeIndices(tier());
