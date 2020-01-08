@@ -109,7 +109,7 @@ function delayed(aIsSelectedTab) {
 
   if (!aIsSelectedTab) {
     
-    gBrowser.selectedBrowser.loadURI(REDIRECT_FROM + "#FG");
+    BrowserTestUtils.loadURI(gBrowser.selectedBrowser, REDIRECT_FROM + "#FG");
   } else {
     
     finish();
