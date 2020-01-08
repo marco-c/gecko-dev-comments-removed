@@ -163,11 +163,8 @@ pub enum UserSelect {
     Text,
     #[parse(aliases = "-moz-none")]
     None,
+    
     All,
-    
-    
-    
-    MozAll,
     
     
     MozText,
