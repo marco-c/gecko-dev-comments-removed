@@ -27,23 +27,47 @@ FrameMetrics::RecalculateViewportOffset()
   
   
   
-  if (mViewport.Contains(visualViewport) ||
-      (mViewport.Width() < visualViewport.Width() &&
-       !FuzzyEqualsMultiplicative(mViewport.Width(), visualViewport.Width())) ||
-      (mViewport.Height() < visualViewport.Height() &&
-       !FuzzyEqualsMultiplicative(mViewport.Height(), visualViewport.Height()))) {
+  
+  if (mViewport.Contains(visualViewport) || visualViewport.Contains(mViewport)) {
     return;
   }
-  if (visualViewport.X() < mViewport.X()) {
-    mViewport.MoveToX(visualViewport.X());
-  } else if (mViewport.XMost() < visualViewport.XMost()) {
-    mViewport.MoveByX(visualViewport.XMost() - mViewport.XMost());
-  }
-  if (visualViewport.Y() < mViewport.Y()) {
-    mViewport.MoveToY(visualViewport.Y());
-  } else if (mViewport.YMost() < visualViewport.YMost()) {
-    mViewport.MoveByY(visualViewport.YMost() - mViewport.YMost());
-  }
+
+  
+  
+  
+  
+  if ((mViewport.Width() < visualViewport.Width() &&
+        !FuzzyEqualsMultiplicative(mViewport.Width(), visualViewport.Width())) ||
+       (mViewport.Height() < visualViewport.Height() &&
+        !FuzzyEqualsMultiplicative(mViewport.Height(), visualViewport.Height()))) {
+
+     if (mViewport.X() < visualViewport.X()) {
+        
+        mViewport.MoveToX(visualViewport.X());
+     } else if (visualViewport.XMost() < mViewport.XMost()) {
+        
+        mViewport.MoveByX(visualViewport.XMost() - mViewport.XMost());
+     }
+     if (mViewport.Y() < visualViewport.Y()) {
+        
+        mViewport.MoveToY(visualViewport.Y());
+     } else if (visualViewport.YMost() < mViewport.YMost()) {
+        
+        mViewport.MoveByY(visualViewport.YMost() - mViewport.YMost());
+     }
+   } else {
+
+     if (visualViewport.X() < mViewport.X()) {
+        mViewport.MoveToX(visualViewport.X());
+     } else if (mViewport.XMost() < visualViewport.XMost()) {
+        mViewport.MoveByX(visualViewport.XMost() - mViewport.XMost());
+     }
+     if (visualViewport.Y() < mViewport.Y()) {
+        mViewport.MoveToY(visualViewport.Y());
+     } else if (mViewport.YMost() < visualViewport.YMost()) {
+        mViewport.MoveByY(visualViewport.YMost() - mViewport.YMost());
+     }
+   }
 }
 
 void
