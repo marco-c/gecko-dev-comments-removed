@@ -385,6 +385,12 @@ class IconLoader {
       return;
     }
 
+    
+    this.mm.sendAsyncMessage("Link:LoadingIcon", {
+      originalURL: iconInfo.iconUri.spec,
+      canUseForTab: !iconInfo.isRichIcon,
+    });
+
     try {
       this._loader = new FaviconLoad(iconInfo);
       let { dataURL, expiration } = await this._loader.load();
