@@ -57,6 +57,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   TelemetryEnvironment: "resource://gre/modules/TelemetryEnvironment.jsm",
   TelemetryArchive: "resource://gre/modules/TelemetryArchive.jsm",
   TelemetrySession: "resource://gre/modules/TelemetrySession.jsm",
+  MemoryTelemetry: "resource://gre/modules/MemoryTelemetry.jsm",
   TelemetrySend: "resource://gre/modules/TelemetrySend.jsm",
   TelemetryReportingPolicy: "resource://gre/modules/TelemetryReportingPolicy.jsm",
   TelemetryModules: "resource://gre/modules/ModulesPing.jsm",
@@ -631,6 +632,7 @@ var Impl = {
     
     
     TelemetrySession.earlyInit(this._testMode);
+    MemoryTelemetry.earlyInit(this._testMode);
 
     
     TelemetrySend.earlyInit();
@@ -672,6 +674,7 @@ var Impl = {
 
         
         await TelemetrySession.delayedInit();
+        await MemoryTelemetry.delayedInit();
 
         if (Services.prefs.getBoolPref(TelemetryUtils.Preferences.NewProfilePingEnabled, false) &&
             !TelemetrySession.newProfilePingSent) {
@@ -728,7 +731,7 @@ var Impl = {
       this._log.trace("setupContentTelemetry - Content process recording disabled.");
       return;
     }
-    TelemetrySession.setupContent(testing);
+    MemoryTelemetry.setupContent(testing);
   },
 
   
@@ -761,6 +764,7 @@ var Impl = {
       await TelemetryHealthPing.shutdown();
 
       await TelemetrySession.shutdown();
+      await MemoryTelemetry.shutdown();
 
       
       await this._shutdownBarrier.wait();
