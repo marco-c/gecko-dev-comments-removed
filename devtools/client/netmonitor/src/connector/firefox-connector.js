@@ -317,10 +317,8 @@ class FirefoxConnector {
     };
 
     
-    const reconfigureTab = (options) => {
-      return new Promise((resolve) => {
-        this.tabTarget.activeTab.reconfigure(options, resolve);
-      });
+    const reconfigureTab = options => {
+      return this.tabTarget.activeTab.reconfigure(options);
     };
 
     

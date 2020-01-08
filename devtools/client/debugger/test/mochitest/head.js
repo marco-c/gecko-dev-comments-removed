@@ -16,7 +16,6 @@ Services.prefs.setBoolPref("devtools.debugger.log", false);
 
 var { BrowserToolboxProcess } = ChromeUtils.import("resource://devtools/client/framework/ToolboxProcess.jsm", {});
 var { DebuggerServer } = require("devtools/server/main");
-var { ActorRegistry } = require("devtools/server/actors/utils/actor-registry");
 var { DebuggerClient } = require("devtools/shared/client/debugger-client");
 var ObjectClient = require("devtools/shared/client/object-client");
 var { AddonManager } = ChromeUtils.import("resource://gre/modules/AddonManager.jsm", {});
@@ -1093,11 +1092,7 @@ function attachTarget(client, tab) {
 
 function listWorkers(tabClient) {
   info("Listing workers.");
-  return new Promise(function (resolve) {
-    tabClient.listWorkers(function (response) {
-      resolve(response);
-    });
-  });
+  return tabClient.listWorkers();
 }
 
 function findWorker(workers, url) {
