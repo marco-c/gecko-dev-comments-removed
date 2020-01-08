@@ -254,6 +254,8 @@ module.exports = {
     
     "eqeqeq": "off",
     
+    "func-call-spacing": "error",
+    
     
     
     
@@ -288,9 +290,6 @@ module.exports = {
     "new-parens": "error",
     
     "no-bitwise": "off",
-    
-    
-    "no-catch-shadow": "error",
     
     "no-console": "off",
     
@@ -342,8 +341,6 @@ module.exports = {
     
     "no-regex-spaces": "off",
     
-    "no-reserved-keys": "off",
-    
     "no-restricted-modules": "off",
     
     
@@ -356,8 +353,6 @@ module.exports = {
     
     
     "no-shadow": "error",
-    
-    "no-spaced-func": "error",
     
     "no-sync": "off",
     
@@ -399,10 +394,6 @@ module.exports = {
     
     "sort-vars": "off",
     
-    
-    
-    "space-in-brackets": "off",
-    
     "space-in-parens": ["error", "never"],
     
     
@@ -434,8 +425,6 @@ module.exports = {
     
     "guard-for-in": "off",
     
-    "newline-after-var": "off",
-    
     "no-alert": "off",
     
     "no-eq-null": "off",
@@ -455,8 +444,6 @@ module.exports = {
     "no-lone-blocks": "off",
     
     "no-loop-func": "off",
-    
-    "no-negated-in-lhs": "off",
     
     
     "no-new": "off",
@@ -480,8 +467,6 @@ module.exports = {
     "no-useless-concat": "off",
     
     "no-void": "off",
-    
-    "no-wrap-func": "off",
     
     
     "operator-assignment": "off",

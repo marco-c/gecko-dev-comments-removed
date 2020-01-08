@@ -15,6 +15,7 @@
 {
   let c = Object.getOwnPropertyDescriptor(this, "Components");
   if ((!c || !c.value || c.writable) && typeof SpecialPowers === "object")
+    
     Components = SpecialPowers.wrap(SpecialPowers.Components);
 }
 

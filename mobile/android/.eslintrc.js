@@ -10,7 +10,6 @@ module.exports = {
     
     "consistent-return": "off",
     "no-empty": "off",
-    "no-native-reassign": "off",
     "no-nested-ternary": "off",
     "no-new-object": "off",
     "no-octal": "off",

@@ -252,8 +252,7 @@ module.exports = {
     "no-fallthrough": "off",
 
     
-    
-    "no-global-assign": "off",
+    "no-global-assign": "error",
 
     
     "no-implied-eval": "error",
@@ -281,9 +280,6 @@ module.exports = {
       "ObjectExpression": true,
       "VariableDeclarator": true
     } }],
-
-    
-    "no-native-reassign": "error",
 
     
     "no-nested-ternary": "error",

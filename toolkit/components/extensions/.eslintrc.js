@@ -160,10 +160,6 @@ module.exports = {
     "no-bitwise": "off",
 
     
-    
-    "no-catch-shadow": "off",
-
-    
     "no-console": "error",
 
     
@@ -216,9 +212,6 @@ module.exports = {
 
     
     "no-proto": "error",
-
-    
-    "no-reserved-keys": "off",
 
     
     "no-restricted-modules": "off",

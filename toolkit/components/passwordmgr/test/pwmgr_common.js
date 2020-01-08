@@ -351,7 +351,7 @@ if (this.addMessageListener) {
   var SpecialPowers = { Cc, Ci, Cr, Cu };
   var ok, is;
   
-  ok = is = () => {}; 
+  ok = is = () => {};
 
   ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
   ChromeUtils.import("resource://gre/modules/LoginHelper.jsm");
