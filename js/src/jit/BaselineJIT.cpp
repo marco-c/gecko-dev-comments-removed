@@ -265,6 +265,11 @@ static MethodStatus CanEnterBaselineJIT(JSContext* cx, HandleScript script,
   }
 
   
+  if (script->incWarmUpCounter() <= JitOptions.baselineWarmUpThreshold) {
+    return Method_Skipped;
+  }
+
+  
   
   if (!CanLikelyAllocateMoreExecutableMemory()) {
     return Method_Skipped;
@@ -272,11 +277,6 @@ static MethodStatus CanEnterBaselineJIT(JSContext* cx, HandleScript script,
 
   if (!cx->realm()->ensureJitRealmExists(cx)) {
     return Method_Error;
-  }
-
-  
-  if (script->incWarmUpCounter() <= JitOptions.baselineWarmUpThreshold) {
-    return Method_Skipped;
   }
 
   
