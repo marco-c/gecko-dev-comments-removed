@@ -32,6 +32,8 @@ const OPEN_CLOSE_BODY = {
   "(": ")",
 };
 
+const NO_AUTOCOMPLETE_PREFIXES = ["var", "const", "let", "function", "class"];
+
 function hasArrayIndex(str) {
   return /\[\d+\]$/.test(str);
 }
@@ -66,6 +68,24 @@ function analyzeInputString(str) {
 
   
   const characters = Array.from(str);
+
+  const buildReturnObject = () => {
+    let isElementAccess = false;
+    if (bodyStack.length === 1 && bodyStack[0].token === "[") {
+      start = bodyStack[0].start;
+      isElementAccess = true;
+      if ([STATE_DQUOTE, STATE_QUOTE, STATE_TEMPLATE_LITERAL].includes(state)) {
+        state = STATE_NORMAL;
+      }
+    }
+
+    return {
+      state,
+      lastStatement: characters.slice(start).join(""),
+      isElementAccess,
+    };
+  };
+
   for (let i = 0; i < characters.length; i++) {
     c = characters[i];
 
@@ -78,9 +98,11 @@ function analyzeInputString(str) {
           state = STATE_QUOTE;
         } else if (c == "`") {
           state = STATE_TEMPLATE_LITERAL;
-        } else if (c == ";") {
+        } else if (";,:=<>+-*/%|&^~?!".split("").includes(c)) {
+          
           start = i + 1;
         } else if (c == " ") {
+          const currentLastStatement = characters.slice(start, i).join("");
           const before = characters.slice(0, i);
           const after = characters.slice(i + 1);
           const trimmedBefore = Array.from(before.join("").trimRight());
@@ -91,23 +113,22 @@ function analyzeInputString(str) {
           const previousNonSpaceChar = trimmedBefore[trimmedBefore.length - 1];
 
           
-          
-          if (previousNonSpaceChar === "." && !nextNonSpaceChar) {
-            break;
+          if (!nextNonSpaceChar) {
+            return buildReturnObject();
           }
 
-          if (nextNonSpaceChar) {
-            
-            
-            if (previousNonSpaceChar !== "." && nextNonSpaceChar !== ".") {
-              start = i + nextNonSpaceCharIndex;
-            }
-            
-            i = i + nextNonSpaceCharIndex;
-          } else {
-            
-            break;
+          
+          
+          
+          if (
+            previousNonSpaceChar !== "." && nextNonSpaceChar !== "."
+            && !NO_AUTOCOMPLETE_PREFIXES.includes(currentLastStatement)
+          ) {
+            start = i + nextNonSpaceCharIndex;
           }
+
+          
+          i = i + nextNonSpaceCharIndex;
         } else if (OPEN_BODY.includes(c)) {
           bodyStack.push({
             token: c,
@@ -166,20 +187,7 @@ function analyzeInputString(str) {
     }
   }
 
-  let isElementAccess = false;
-  if (bodyStack.length === 1 && bodyStack[0].token === "[") {
-    start = bodyStack[0].start;
-    isElementAccess = true;
-    if ([STATE_DQUOTE, STATE_QUOTE, STATE_TEMPLATE_LITERAL].includes(state)) {
-      state = STATE_NORMAL;
-    }
-  }
-
-  return {
-    state,
-    lastStatement: characters.slice(start).join(""),
-    isElementAccess,
-  };
+  return buildReturnObject();
 }
 
 
@@ -237,16 +245,22 @@ function JSPropertyProvider(dbgObject, anEnvironment, inputValue, cursor) {
   if (state != STATE_NORMAL) {
     return null;
   }
+
+  
+  if (lastStatement.trim() == "") {
+    return null;
+  }
+
+  if (NO_AUTOCOMPLETE_PREFIXES.some(prefix => lastStatement.startsWith(prefix + " "))) {
+    return null;
+  }
+
   const completionPart = lastStatement;
   const lastDotIndex = completionPart.lastIndexOf(".");
   const lastOpeningBracketIndex = isElementAccess ? completionPart.lastIndexOf("[") : -1;
   const lastCompletionCharIndex = Math.max(lastDotIndex, lastOpeningBracketIndex);
   const startQuoteRegex = /^('|"|`)/;
 
-  
-  if (completionPart.trim() == "") {
-    return null;
-  }
   
   
   
