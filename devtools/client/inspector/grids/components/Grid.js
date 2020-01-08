@@ -9,9 +9,18 @@ const dom = require("devtools/client/shared/vendor/react-dom-factories");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const { getStr } = require("devtools/client/inspector/layout/utils/l10n");
 
-const GridDisplaySettings = createFactory(require("./GridDisplaySettings"));
-const GridList = createFactory(require("./GridList"));
-const GridOutline = createFactory(require("./GridOutline"));
+
+
+
+loader.lazyGetter(this, "GridDisplaySettings", function() {
+  return createFactory(require("./GridDisplaySettings"));
+});
+loader.lazyGetter(this, "GridList", function() {
+  return createFactory(require("./GridList"));
+});
+loader.lazyGetter(this, "GridOutline", function() {
+  return createFactory(require("./GridOutline"));
+});
 
 const Types = require("../types");
 
