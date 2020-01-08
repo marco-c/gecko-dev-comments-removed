@@ -60,11 +60,30 @@ struct ModuleEnvironment
     const ModuleKind          kind;
     const CompileMode         mode;
     const Shareable           sharedMemoryEnabled;
-    const HasGcTypes          gcTypesEnabled;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    const HasGcTypes          gcTypesConfigured;
     const Tier                tier;
 
     
     
+#ifdef ENABLE_WASM_GC
+    
+    
+    
+    
+    
+    
+    
+    HasGcTypes                gcFeatureOptIn;
+#endif
     MemoryUsage               memoryUsage;
     uint32_t                  minMemoryLength;
     Maybe<uint32_t>           maxMemoryLength;
@@ -96,8 +115,11 @@ struct ModuleEnvironment
         kind(kind),
         mode(mode),
         sharedMemoryEnabled(sharedMemoryEnabled),
-        gcTypesEnabled(hasGcTypes),
+        gcTypesConfigured(hasGcTypes),
         tier(tier),
+#ifdef ENABLE_WASM_GC
+        gcFeatureOptIn(HasGcTypes::False),
+#endif
         memoryUsage(MemoryUsage::None),
         minMemoryLength(0)
     {}
@@ -116,6 +138,13 @@ struct ModuleEnvironment
     }
     size_t numFuncDefs() const {
         return funcTypes.length() - funcImportGlobalDataOffsets.length();
+    }
+    HasGcTypes gcTypesEnabled() const {
+#ifdef ENABLE_WASM_GC
+        if (gcTypesConfigured == HasGcTypes::True)
+            return gcFeatureOptIn;
+#endif
+        return HasGcTypes::False;
     }
     bool usesMemory() const {
         return memoryUsage != MemoryUsage::None;
@@ -329,6 +358,7 @@ class Encoder
     
 
     MOZ_MUST_USE bool startSection(SectionId id, size_t* offset) {
+        MOZ_ASSERT(uint32_t(id) < 128);
         return writeVarU32(uint32_t(id)) &&
                writePatchableVarU32(offset);
     }
