@@ -175,13 +175,24 @@ add_task({
 
   await extension.startup();
 
+  
   await ADB.start();
   ok(ADB.ready);
-
   ok(await check(), "adb is now running");
 
   await ADB.stop();
   ok(!ADB.ready);
+  ok(!(await check()), "adb is no longer running");
+
+  
+  await ADB.start();
+  await ADB.start();
+  ok(ADB.ready);
+  ok(await check(), "adb is now running");
+
+  await ADB.stop();
+  ok(!ADB.ready);
+  ok(!(await check()), "adb is no longer running");
 
   await extension.unload();
 });
