@@ -358,8 +358,4 @@ pref("devtools.aboutdebugging.collapsibilities.temporaryExtension", false);
 #endif
 
 
-#if defined(NIGHTLY_BUILD)
 pref("devtools.debugger.features.map-await-expression", true);
-#else
-pref("devtools.debugger.features.map-await-expression", false);
-#endif
