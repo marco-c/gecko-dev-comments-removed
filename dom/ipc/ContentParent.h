@@ -223,7 +223,7 @@ class ContentParent final : public PContentParent,
 
     ContentParentIterator begin() {
       
-      while (mPolicy != eAll && mCurrent && !mCurrent->mIsAlive) {
+      while (mPolicy != eAll && mCurrent && !mCurrent->IsAlive()) {
         mCurrent = mCurrent->LinkedListElement<ContentParent>::getNext();
       }
 
@@ -237,7 +237,7 @@ class ContentParent final : public PContentParent,
       MOZ_ASSERT(mCurrent);
       do {
         mCurrent = mCurrent->LinkedListElement<ContentParent>::getNext();
-      } while (mPolicy != eAll && mCurrent && !mCurrent->mIsAlive);
+      } while (mPolicy != eAll && mCurrent && !mCurrent->IsAlive());
 
       return *this;
     }
@@ -360,7 +360,9 @@ class ContentParent final : public PContentParent,
 
   void UpdateCookieStatus(nsIChannel* aChannel);
 
-  bool IsAvailable() const { return mIsAvailable; }
+  bool IsLaunching() const {
+    return mLifecycleState == LifecycleState::LAUNCHING;
+  }
   bool IsAlive() const override;
 
   virtual bool IsForBrowser() const override { return mIsForBrowser; }
@@ -1242,13 +1244,19 @@ class ContentParent final : public PContentParent,
   
   
   int32_t mNumDestroyingTabs;
+
   
   
-  bool mIsAvailable;
   
   
   
-  bool mIsAlive;
+  enum class LifecycleState : uint8_t {
+    LAUNCHING,
+    ALIVE,
+    DEAD,
+  };
+
+  LifecycleState mLifecycleState;
 
   bool mShuttingDown;
   bool mIsForBrowser;
