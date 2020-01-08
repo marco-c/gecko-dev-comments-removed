@@ -62,6 +62,9 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["filter.javascript", true],
 
   
+  ["formatting.enabled", false],
+
+  
   
   ["insertMethod", UrlbarUtils.INSERTMETHOD.MERGE_RELATED],
 
