@@ -829,6 +829,12 @@ class TupBackend(CommonBackend):
         invocations = build_plan['invocations']
         processed = set()
 
+        
+        cargo_library_flags = []
+        if (not obj.config.substs.get('DEVELOPER_OPTIONS') and
+            not obj.config.substs.get('MOZ_DEBUG_RUST')):
+            cargo_library_flags += ['-C', 'lto']
+
         rust_build_home = mozpath.join(self.environment.topobjdir,
                                        'toolkit/library/rust')
 
@@ -873,6 +879,14 @@ class TupBackend(CommonBackend):
             command.append(invocation['program'])
             command.extend(cargo_quote(a.replace('dep-info,', ''))
                            for a in invocation['args'])
+
+            
+            
+            
+            if (invocation['target_kind'][0] == 'staticlib' and
+                obj.basename == shortname):
+                command += cargo_library_flags
+
             outputs = invocation['outputs']
 
             invocation['full-deps'] = set()
