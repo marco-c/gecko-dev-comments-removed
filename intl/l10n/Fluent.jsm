@@ -196,6 +196,19 @@ const PDI = "\u2069";
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 function match(bundle, selector, key) {
   if (key === selector) {
     
@@ -221,9 +234,22 @@ function match(bundle, selector, key) {
 }
 
 
-function getDefault(env, variants, star) {
-  if (variants[star]) {
-    return Type(env, variants[star]);
+
+
+
+
+
+
+
+
+
+
+
+
+
+function DefaultMember(env, members, star) {
+  if (members[star]) {
+    return members[star];
   }
 
   const { errors } = env;
@@ -232,33 +258,175 @@ function getDefault(env, variants, star) {
 }
 
 
-function getArguments(env, args) {
-  const positional = [];
-  const named = {};
 
-  if (args) {
-    for (const arg of args) {
-      if (arg.type === "narg") {
-        named[arg.name] = Type(env, arg.value);
-      } else {
-        positional.push(Type(env, arg));
+
+
+
+
+
+
+
+
+
+
+
+function MessageReference(env, {name}) {
+  const { bundle, errors } = env;
+  const message = name.startsWith("-")
+    ? bundle._terms.get(name)
+    : bundle._messages.get(name);
+
+  if (!message) {
+    const err = name.startsWith("-")
+      ? new ReferenceError(`Unknown term: ${name}`)
+      : new ReferenceError(`Unknown message: ${name}`);
+    errors.push(err);
+    return new FluentNone(name);
+  }
+
+  return message;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function VariantExpression(env, {ref, selector}) {
+  const message = MessageReference(env, ref);
+  if (message instanceof FluentNone) {
+    return message;
+  }
+
+  const { bundle, errors } = env;
+  const sel = Type(env, selector);
+  const value = message.value || message;
+
+  function isVariantList(node) {
+    return Array.isArray(node) &&
+      node[0].type === "select" &&
+      node[0].selector === null;
+  }
+
+  if (isVariantList(value)) {
+    
+    for (const variant of value[0].variants) {
+      const key = Type(env, variant.key);
+      if (match(env.bundle, sel, key)) {
+        return variant;
       }
     }
   }
 
-  return [positional, named];
+  errors.push(
+    new ReferenceError(`Unknown variant: ${sel.toString(bundle)}`));
+  return Type(env, message);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function AttributeExpression(env, {ref, name}) {
+  const message = MessageReference(env, ref);
+  if (message instanceof FluentNone) {
+    return message;
+  }
+
+  if (message.attrs) {
+    
+    for (const attrName in message.attrs) {
+      if (name === attrName) {
+        return message.attrs[name];
+      }
+    }
+  }
+
+  const { errors } = env;
+  errors.push(new ReferenceError(`Unknown attribute: ${name}`));
+  return Type(env, message);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function SelectExpression(env, {selector, variants, star}) {
+  if (selector === null) {
+    return DefaultMember(env, variants, star);
+  }
+
+  let sel = Type(env, selector);
+  if (sel instanceof FluentNone) {
+    return DefaultMember(env, variants, star);
+  }
+
+  
+  for (const variant of variants) {
+    const key = Type(env, variant.key);
+    if (match(env.bundle, sel, key)) {
+      return variant;
+    }
+  }
+
+  return DefaultMember(env, variants, star);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 function Type(env, expr) {
   
   
-  
   if (typeof expr === "string") {
     return env.bundle._transform(expr);
   }
-
-  
   if (expr instanceof FluentNone) {
     return expr;
   }
@@ -269,21 +437,32 @@ function Type(env, expr) {
     return Pattern(env, expr);
   }
 
+
   switch (expr.type) {
-    case "str":
-      return expr.value;
     case "num":
       return new FluentNumber(expr.value);
     case "var":
       return VariableReference(env, expr);
-    case "term":
-      return TermReference({...env, args: {}}, expr);
-    case "ref":
-      return expr.args
-        ? FunctionReference(env, expr)
-        : MessageReference(env, expr);
-    case "select":
-      return SelectExpression(env, expr);
+    case "func":
+      return FunctionReference(env, expr);
+    case "call":
+      return CallExpression(env, expr);
+    case "ref": {
+      const message = MessageReference(env, expr);
+      return Type(env, message);
+    }
+    case "getattr": {
+      const attr = AttributeExpression(env, expr);
+      return Type(env, attr);
+    }
+    case "getvar": {
+      const variant = VariantExpression(env, expr);
+      return Type(env, variant);
+    }
+    case "select": {
+      const member = SelectExpression(env, expr);
+      return Type(env, member);
+    }
     case undefined: {
       
       if (expr.value !== null && expr.value !== undefined) {
@@ -300,12 +479,23 @@ function Type(env, expr) {
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
 function VariableReference(env, {name}) {
   const { args, errors } = env;
 
   if (!args || !args.hasOwnProperty(name)) {
     errors.push(new ReferenceError(`Unknown variable: ${name}`));
-    return new FluentNone(`$${name}`);
+    return new FluentNone(name);
   }
 
   const arg = args[name];
@@ -329,80 +519,26 @@ function VariableReference(env, {name}) {
       errors.push(
         new TypeError(`Unsupported variable type: ${name}, ${typeof arg}`)
       );
-      return new FluentNone(`$${name}`);
+      return new FluentNone(name);
   }
 }
 
 
-function MessageReference(env, {name, attr}) {
-  const {bundle, errors} = env;
-  const message = bundle._messages.get(name);
-  if (!message) {
-    const err = new ReferenceError(`Unknown message: ${name}`);
-    errors.push(err);
-    return new FluentNone(name);
-  }
-
-  if (attr) {
-    const attribute = message.attrs && message.attrs[attr];
-    if (attribute) {
-      return Type(env, attribute);
-    }
-    errors.push(new ReferenceError(`Unknown attribute: ${attr}`));
-    return Type(env, message);
-  }
-
-  return Type(env, message);
-}
 
 
-function TermReference(env, {name, attr, selector, args}) {
-  const {bundle, errors} = env;
-
-  const id = `-${name}`;
-  const term = bundle._terms.get(id);
-  if (!term) {
-    const err = new ReferenceError(`Unknown term: ${id}`);
-    errors.push(err);
-    return new FluentNone(id);
-  }
-
-  
-  const [, keyargs] = getArguments(env, args);
-  const local = {...env, args: keyargs};
-
-  if (attr) {
-    const attribute = term.attrs && term.attrs[attr];
-    if (attribute) {
-      return Type(local, attribute);
-    }
-    errors.push(new ReferenceError(`Unknown attribute: ${attr}`));
-    return Type(local, term);
-  }
-
-  const variantList = getVariantList(term);
-  if (selector && variantList) {
-    return SelectExpression(local, {...variantList, selector});
-  }
-
-  return Type(local, term);
-}
 
 
-function getVariantList(term) {
-  const value = term.value || term;
-  return Array.isArray(value)
-    && value[0].type === "select"
-    && value[0].selector === null
-    ? value[0]
-    : null;
-}
 
 
-function FunctionReference(env, {name, args}) {
+
+
+
+
+
+function FunctionReference(env, {name}) {
   
   
-  const {bundle: {_functions}, errors} = env;
+  const { bundle: { _functions }, errors } = env;
   const func = _functions[name] || builtins[name];
 
   if (!func) {
@@ -415,8 +551,43 @@ function FunctionReference(env, {name, args}) {
     return new FluentNone(`${name}()`);
   }
 
+  return func;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function CallExpression(env, {callee, args}) {
+  const func = FunctionReference(env, callee);
+
+  if (func instanceof FluentNone) {
+    return func;
+  }
+
+  const posargs = [];
+  const keyargs = {};
+
+  for (const arg of args) {
+    if (arg.type === "narg") {
+      keyargs[arg.name] = Type(env, arg.value);
+    } else {
+      posargs.push(Type(env, arg));
+    }
+  }
+
   try {
-    return func(...getArguments(env, args));
+    return func(posargs, keyargs);
   } catch (e) {
     
     return new FluentNone();
@@ -424,28 +595,13 @@ function FunctionReference(env, {name, args}) {
 }
 
 
-function SelectExpression(env, {selector, variants, star}) {
-  if (selector === null) {
-    return getDefault(env, variants, star);
-  }
 
-  let sel = Type(env, selector);
-  if (sel instanceof FluentNone) {
-    const variant = getDefault(env, variants, star);
-    return Type(env, variant);
-  }
 
-  
-  for (const variant of variants) {
-    const key = Type(env, variant.key);
-    if (match(env.bundle, sel, key)) {
-      return Type(env, variant);
-    }
-  }
 
-  const variant = getDefault(env, variants, star);
-  return Type(env, variant);
-}
+
+
+
+
 
 
 function Pattern(env, ptn) {
@@ -523,16 +679,17 @@ class FluentError extends Error {}
 
 
 
-const RE_MESSAGE_START = /^(-?[a-zA-Z][\w-]*) *= */mg;
+const RE_MESSAGE_START = /^(-?[a-zA-Z][a-zA-Z0-9_-]*) *= */mg;
 
 
 
-const RE_ATTRIBUTE_START = /\.([a-zA-Z][\w-]*) *= */y;
-const RE_VARIANT_START = /\*?\[/y;
+const RE_ATTRIBUTE_START = /\.([a-zA-Z][a-zA-Z0-9_-]*) *= */y;
 
+
+const RE_VARIANT_START = /\*?\[[^]*?] */y;
+
+const RE_IDENTIFIER = /(-?[a-zA-Z][a-zA-Z0-9_-]*)/y;
 const RE_NUMBER_LITERAL = /(-?[0-9]+(\.[0-9]+)?)/y;
-const RE_IDENTIFIER = /([a-zA-Z][\w-]*)/y;
-const RE_REFERENCE = /([$-])?([a-zA-Z][\w-]*)(?:\.([a-zA-Z][\w-]*))?/y;
 
 
 
@@ -540,27 +697,27 @@ const RE_REFERENCE = /([$-])?([a-zA-Z][\w-]*)(?:\.([a-zA-Z][\w-]*))?/y;
 
 
 
-const RE_TEXT_RUN = /([^{}\n\r]+)/y;
+
+const RE_TEXT_RUN = /([^\\{\n\r]+)/y;
 const RE_STRING_RUN = /([^\\"\n\r]*)/y;
 
 
+const RE_UNICODE_ESCAPE = /\\u([a-fA-F0-9]{4})/y;
 const RE_STRING_ESCAPE = /\\([\\"])/y;
-const RE_UNICODE_ESCAPE = /\\u([a-fA-F0-9]{4})|\\U([a-fA-F0-9]{6})/y;
+const RE_TEXT_ESCAPE = /\\([\\{])/y;
 
 
-const RE_LEADING_NEWLINES = /^\n+/;
-const RE_TRAILING_SPACES = / +$/;
 
-const RE_BLANK_LINES = / *\r?\n/g;
+const RE_TRAILING_SPACES = / +$/mg;
 
-const RE_INDENT = /( *)$/;
+const RE_CRLF = /\r\n/g;
 
 
 const TOKEN_BRACE_OPEN = /{\s*/y;
 const TOKEN_BRACE_CLOSE = /\s*}/y;
 const TOKEN_BRACKET_OPEN = /\[\s*/y;
-const TOKEN_BRACKET_CLOSE = /\s*] */y;
-const TOKEN_PAREN_OPEN = /\s*\(\s*/y;
+const TOKEN_BRACKET_CLOSE = /\s*]/y;
+const TOKEN_PAREN_OPEN = /\(\s*/y;
 const TOKEN_ARROW = /\s*->\s*/y;
 const TOKEN_COLON = /\s*:\s*/y;
 
@@ -662,12 +819,7 @@ class FluentResource extends Map {
         throw new FluentError(`Expected ${re.toString()}`);
       }
       cursor = re.lastIndex;
-      return result;
-    }
-
-    
-    function match1(re) {
-      return match(re)[1];
+      return result[1];
     }
 
     function parseMessage() {
@@ -675,9 +827,6 @@ class FluentResource extends Map {
       let attrs = parseAttributes();
 
       if (attrs === null) {
-        if (value === null) {
-          throw new FluentError("Expected message value or attributes");
-        }
         return value;
       }
 
@@ -686,62 +835,67 @@ class FluentResource extends Map {
 
     function parseAttributes() {
       let attrs = {};
+      let hasAttributes = false;
 
       while (test(RE_ATTRIBUTE_START)) {
-        let name = match1(RE_ATTRIBUTE_START);
-        let value = parsePattern();
-        if (value === null) {
-          throw new FluentError("Expected attribute value");
+        if (!hasAttributes) {
+          hasAttributes = true;
         }
-        attrs[name] = value;
+
+        let name = match(RE_ATTRIBUTE_START);
+        attrs[name] = parsePattern();
       }
 
-      return Object.keys(attrs).length > 0 ? attrs : null;
+      return hasAttributes ? attrs : null;
     }
 
     function parsePattern() {
       
       if (test(RE_TEXT_RUN)) {
-        var first = match1(RE_TEXT_RUN);
+        var first = match(RE_TEXT_RUN);
       }
 
       
-      if (source[cursor] === "{" || source[cursor] === "}") {
-        
-        return parsePatternElements(first ? [first] : [], Infinity);
+      
+      switch (source[cursor]) {
+        case "{":
+        case "\\":
+          return first
+            
+            ? parsePatternElements(first)
+            : parsePatternElements();
       }
 
       
       
       let indent = parseIndent();
       if (indent) {
-        if (first) {
+        return first
           
           
-          return parsePatternElements([first, indent], indent.length);
-        }
-        
-        
-        
-        indent.value = trim(indent.value, RE_LEADING_NEWLINES);
-        return parsePatternElements([indent], indent.length);
+          ? parsePatternElements(first, trim(indent))
+          
+          
+          : parsePatternElements();
       }
 
       if (first) {
         
-        return trim(first, RE_TRAILING_SPACES);
+        return trim(first);
       }
 
       return null;
     }
 
     
-    function parsePatternElements(elements = [], commonIndent) {
+    function parsePatternElements(...elements) {
       let placeableCount = 0;
+      let needsTrimming = false;
 
       while (true) {
         if (test(RE_TEXT_RUN)) {
-          elements.push(match1(RE_TEXT_RUN));
+          elements.push(match(RE_TEXT_RUN));
+          needsTrimming = true;
           continue;
         }
 
@@ -750,43 +904,35 @@ class FluentResource extends Map {
             throw new FluentError("Too many placeables");
           }
           elements.push(parsePlaceable());
+          needsTrimming = false;
           continue;
-        }
-
-        if (source[cursor] === "}") {
-          throw new FluentError("Unbalanced closing brace");
         }
 
         let indent = parseIndent();
         if (indent) {
-          elements.push(indent);
-          commonIndent = Math.min(commonIndent, indent.length);
+          elements.push(trim(indent));
+          needsTrimming = false;
+          continue;
+        }
+
+        if (source[cursor] === "\\") {
+          elements.push(parseEscapeSequence(RE_TEXT_ESCAPE));
+          needsTrimming = false;
           continue;
         }
 
         break;
       }
 
-      let lastIndex = elements.length - 1;
-      
-      if (typeof elements[lastIndex] === "string") {
-        elements[lastIndex] = trim(elements[lastIndex], RE_TRAILING_SPACES);
+      if (needsTrimming) {
+        
+        
+        
+        let lastIndex = elements.length - 1;
+        elements[lastIndex] = trim(elements[lastIndex]);
       }
 
-      let baked = [];
-      for (let element of elements) {
-        if (element.type === "indent") {
-          
-          element = element.value.slice(0, element.value.length - commonIndent);
-        } else if (element.type === "str") {
-          
-          element = element.value;
-        }
-        if (element) {
-          baked.push(element);
-        }
-      }
-      return baked;
+      return elements;
     }
 
     function parsePlaceable() {
@@ -819,20 +965,28 @@ class FluentResource extends Map {
         return parsePlaceable();
       }
 
-      if (test(RE_REFERENCE)) {
-        let [, sigil, name, attr = null] = match(RE_REFERENCE);
-        let type = {"$": "var", "-": "term"}[sigil] || "ref";
+      if (consumeChar("$")) {
+        return {type: "var", name: match(RE_IDENTIFIER)};
+      }
+
+      if (test(RE_IDENTIFIER)) {
+        let ref = {type: "ref", name: match(RE_IDENTIFIER)};
+
+        if (consumeChar(".")) {
+          let name = match(RE_IDENTIFIER);
+          return {type: "getattr", ref, name};
+        }
 
         if (source[cursor] === "[") {
-          
-          return {type, name, selector: parseVariantKey()};
+          return {type: "getvar", ref, selector: parseVariantKey()};
         }
 
         if (consumeToken(TOKEN_PAREN_OPEN)) {
-          return {type, name, attr, args: parseArguments()};
+          let callee = {...ref, type: "func"};
+          return {type: "call", callee, args: parseArguments()};
         }
 
-        return {type, name, attr, args: null};
+        return ref;
       }
 
       return parseLiteral();
@@ -881,29 +1035,18 @@ class FluentResource extends Map {
         }
 
         let key = parseVariantKey();
-        let value = parsePattern();
-        if (value === null) {
-          throw new FluentError("Expected variant value");
-        }
-        variants[count++] = {key, value};
+        cursor = RE_VARIANT_START.lastIndex;
+        variants[count++] = {key, value: parsePattern()};
       }
 
-      if (count === 0) {
-        return null;
-      }
-
-      if (star === undefined) {
-        throw new FluentError("Expected default variant");
-      }
-
-      return {variants, star};
+      return count > 0 ? {variants, star} : null;
     }
 
     function parseVariantKey() {
       consumeToken(TOKEN_BRACKET_OPEN, FluentError);
       let key = test(RE_NUMBER_LITERAL)
         ? parseNumberLiteral()
-        : match1(RE_IDENTIFIER);
+        : match(RE_IDENTIFIER);
       consumeToken(TOKEN_BRACKET_CLOSE, FluentError);
       return key;
     }
@@ -921,22 +1064,22 @@ class FluentResource extends Map {
     }
 
     function parseNumberLiteral() {
-      return {type: "num", value: match1(RE_NUMBER_LITERAL)};
+      return {type: "num", value: match(RE_NUMBER_LITERAL)};
     }
 
     function parseStringLiteral() {
       consumeChar("\"", FluentError);
       let value = "";
       while (true) {
-        value += match1(RE_STRING_RUN);
+        value += match(RE_STRING_RUN);
 
         if (source[cursor] === "\\") {
-          value += parseEscapeSequence();
+          value += parseEscapeSequence(RE_STRING_ESCAPE);
           continue;
         }
 
         if (consumeChar("\"")) {
-          return {type: "str", value};
+          return value;
         }
 
         
@@ -945,20 +1088,14 @@ class FluentResource extends Map {
     }
 
     
-    function parseEscapeSequence() {
-      if (test(RE_STRING_ESCAPE)) {
-        return match1(RE_STRING_ESCAPE);
+    function parseEscapeSequence(reSpecialized) {
+      if (test(RE_UNICODE_ESCAPE)) {
+        let sequence = match(RE_UNICODE_ESCAPE);
+        return String.fromCodePoint(parseInt(sequence, 16));
       }
 
-      if (test(RE_UNICODE_ESCAPE)) {
-        let [, codepoint4, codepoint6] = match(RE_UNICODE_ESCAPE);
-        let codepoint = parseInt(codepoint4 || codepoint6, 16);
-        return codepoint <= 0xD7FF || 0xE000 <= codepoint
-          
-          ? String.fromCodePoint(codepoint)
-          
-          
-          : "�";
+      if (test(reSpecialized)) {
+        return match(reSpecialized);
       }
 
       throw new FluentError("Unknown escape sequence");
@@ -982,7 +1119,7 @@ class FluentResource extends Map {
         case "{":
           
           
-          return makeIndent(source.slice(start, cursor));
+          return source.slice(start, cursor).replace(RE_CRLF, "\n");
       }
 
       
@@ -991,7 +1128,7 @@ class FluentResource extends Map {
       if (source[cursor - 1] === " ") {
         
         
-        return makeIndent(source.slice(start, cursor));
+        return source.slice(start, cursor).replace(RE_CRLF, "\n");
       }
 
       
@@ -1000,15 +1137,8 @@ class FluentResource extends Map {
     }
 
     
-    function trim(text, re) {
-      return text.replace(re, "");
-    }
-
-    
-    function makeIndent(blank) {
-      let value = blank.replace(RE_BLANK_LINES, "\n");
-      let length = RE_INDENT.exec(blank)[1].length;
-      return {type: "indent", value, length};
+    function trim(text) {
+      return text.replace(RE_TRAILING_SPACES, "");
     }
   }
 }
