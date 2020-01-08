@@ -282,16 +282,14 @@ nsresult nsClipboard::GetGlobalData(HGLOBAL aHGBL, void** aData,
   
   
   
-  
-  
   nsresult result = NS_ERROR_FAILURE;
   if (aHGBL != nullptr) {
     LPSTR lpStr = (LPSTR)GlobalLock(aHGBL);
     DWORD allocSize = GlobalSize(aHGBL);
-    char* data = static_cast<char*>(malloc(allocSize + 3));
+    char* data = static_cast<char*>(malloc(allocSize + sizeof(char16_t)));
     if (data) {
       memcpy(data, lpStr, allocSize);
-      data[allocSize] = data[allocSize + 1] = data[allocSize + 2]
+      data[allocSize] = data[allocSize + 1] =
           '\0';  
 
       GlobalUnlock(aHGBL);
