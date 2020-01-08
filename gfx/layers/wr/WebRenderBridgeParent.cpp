@@ -773,8 +773,15 @@ WebRenderBridgeParent::RecvSetDisplayList(const gfx::IntSize& aSize,
 
   mAsyncImageManager->SetCompositionTime(TimeStamp::Now());
 
+  
+  
+  
+  bool validTransaction = aIdNamespace == mIdNamespace;
   wr::TransactionBuilder txn;
-  wr::AutoTransactionSender sender(mApi, &txn);
+  Maybe<wr::AutoTransactionSender> sender;
+  if (validTransaction) {
+    sender.emplace(mApi, &txn);
+  }
 
   ProcessWebRenderParentCommands(aCommands, txn);
 
@@ -795,10 +802,7 @@ WebRenderBridgeParent::RecvSetDisplayList(const gfx::IntSize& aSize,
 
   wr::Vec<uint8_t> dlData(std::move(dl));
 
-  
-  
-  
-  if (mIdNamespace == aIdNamespace) {
+  if (validTransaction) {
     if (IsRootWebRenderBridgeParent()) {
       LayoutDeviceIntSize widgetSize = mWidget->GetClientSize();
       LayoutDeviceIntRect docRect(LayoutDeviceIntPoint(), widgetSize);
@@ -817,7 +821,7 @@ WebRenderBridgeParent::RecvSetDisplayList(const gfx::IntSize& aSize,
 
   HoldPendingTransactionId(wrEpoch, aTransactionId, aRefreshStartTime, aTxnStartTime, aFwdTime);
 
-  if (mIdNamespace != aIdNamespace) {
+  if (!validTransaction) {
     
     
     if (CompositorBridgeParent* cbp = GetRootCompositorBridgeParent()) {
