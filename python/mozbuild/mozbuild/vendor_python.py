@@ -5,6 +5,7 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import os
+import shutil
 import subprocess
 
 import mozfile
@@ -96,3 +97,11 @@ class VendorPython(MozbuildObject):
                 target = os.path.join(dest, tld.rpartition('-')[0])
                 mozfile.remove(target)  
                 mozfile.move(tld, target)
+            
+            
+            link_finder = FileFinder(target)
+            for _, f in link_finder.find('**'):
+                if os.path.islink(f.path):
+                    link_target = os.path.realpath(f.path)
+                    os.unlink(f.path)
+                    shutil.copyfile(link_target, f.path)
