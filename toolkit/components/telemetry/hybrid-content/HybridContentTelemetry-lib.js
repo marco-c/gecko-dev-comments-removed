@@ -50,7 +50,7 @@ if (typeof Mozilla == "undefined") {
 
   function _registerInternalPolicyHandler() {
     
-    _initPromise = new Promise(function(resolveInit) {
+    _initPromise = new Promise(function(resolveInit, rejectInit) {
       
       function policyChangeHandler(updatedPref) {
         if (!("detail" in updatedPref) ||
@@ -64,6 +64,9 @@ if (typeof Mozilla == "undefined") {
         resolveInit();
       }
       document.addEventListener("mozTelemetryPolicyChange", policyChangeHandler);
+      document.addEventListener("mozTelemetryUntrustedOrigin",
+                                () => rejectInit(new Error("Origin not trusted or HCT disabled.")),
+                                {once: true});
     });
 
     
