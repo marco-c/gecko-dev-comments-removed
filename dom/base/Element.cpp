@@ -1881,6 +1881,19 @@ RemoveFromBindingManagerRunnable::Run()
   return NS_OK;
 }
 
+static bool
+ShouldRemoveFromIdTableOnUnbind(const Element& aElement, bool aNullParent)
+{
+  if (aElement.IsInUncomposedDoc()) {
+    return true;
+  }
+
+  if (!aElement.IsInShadowTree()) {
+    return false;
+  }
+
+  return aNullParent || !aElement.GetParent()->IsInShadowTree();
+}
 
 void
 Element::UnbindFromTree(bool aDeep, bool aNullParent)
@@ -1889,7 +1902,11 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
                   "Shallow unbind won't clear document and binding parent on "
                   "kids!");
 
-  RemoveFromIdTable();
+  
+  
+  if (ShouldRemoveFromIdTableOnUnbind(*this, aNullParent)) {
+    RemoveFromIdTable();
+  }
 
   
   nsIDocument* document = GetComposedDoc();
@@ -1931,7 +1948,7 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
       }
     }
 
-    if (this->IsRootOfNativeAnonymousSubtree()) {
+    if (IsRootOfNativeAnonymousSubtree()) {
       nsNodeUtils::NativeAnonymousChildListChange(this, true);
     }
 
