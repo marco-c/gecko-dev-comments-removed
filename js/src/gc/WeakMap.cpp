@@ -4,7 +4,7 @@
 
 
 
-#include "gc/WeakMap-inl.h"
+#include "gc/WeakMap.h"
 
 #include <string.h>
 
