@@ -731,6 +731,12 @@ def enable_code_coverage(config, tests):
             if 'opt' in test['build-platform'] or 'fuzzing' in test['build-platform']:
                 test['run-on-projects'] = []
                 continue
+            
+            if 'android' in test['build-platform']:
+                test.setdefault('fetches', {}).setdefault('fetch', []).append('grcov-linux-x86_64')
+                test['mozharness'].setdefault('extra-options', []).append('--java-code-coverage')
+                yield test
+                continue
             test['mozharness'].setdefault('extra-options', []).append('--code-coverage')
             test['instance-size'] = 'xlarge'
             
