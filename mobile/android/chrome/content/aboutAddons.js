@@ -521,20 +521,33 @@ var Addons = {
       return addon.enable();
     }
 
-    let opType;
-    if (addon.type == "theme") {
+    function updateOtherThemeStateInUI(item) {
       if (aValue) {
         
-        let list = document.getElementById("addons-list");
-        let item = list.firstElementChild;
-        while (item) {
-          if (item.addon && (item.addon.type == "theme") && (item.addon.isActive)) {
-            item.addon.disable();
-            item.setAttribute("isDisabled", true);
-            break;
-          }
-          item = item.nextSibling;
+        if (item.addon.isActive) {
+          item.setAttribute("isDisabled", true);
+          return true;
         }
+      
+      } else if (item.addon.id == "default-theme@mozilla.org") {
+        item.removeAttribute("isDisabled");
+        return true;
+      }
+      return false;
+    }
+
+    let opType;
+    if (addon.type == "theme") {
+      
+      
+      let list = document.getElementById("addons-list");
+      let item = list.firstElementChild;
+      while (item) {
+        if (item.addon && (item.addon.type == "theme") &&
+            updateOtherThemeStateInUI(item)) {
+          break;
+        }
+        item = item.nextSibling;
       }
       setDisabled(addon, !aValue);
     } else if (addon.type == "locale") {
