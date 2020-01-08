@@ -147,6 +147,7 @@ class CDATASection;
 class Comment;
 struct CustomElementDefinition;
 class DocGroup;
+class DocumentL10n;
 class DocumentFragment;
 class DocumentTimeline;
 class DocumentType;
@@ -3562,6 +3563,69 @@ public:
   
   
   mozilla::dom::FlashClassification DocumentFlashClassification();
+
+  
+
+
+
+
+
+
+public:
+  
+
+
+
+  mozilla::dom::DocumentL10n* GetL10n();
+
+  
+
+
+
+
+
+
+
+
+
+  void OnL10nResourceContainerParsed();
+
+  
+
+
+
+
+  void LocalizationLinkAdded(Element* aLinkElement);
+
+  
+
+
+
+  void LocalizationLinkRemoved(Element* aLinkElement);
+
+protected:
+  
+
+
+
+
+
+
+
+
+
+
+
+  void TriggerInitialDocumentTranslation();
+
+  RefPtr<mozilla::dom::DocumentL10n> mDocumentL10n;
+
+private:
+  void InitializeLocalization(nsTArray<nsString>& aResourceIds);
+
+  nsTArray<nsString> mL10nResources;
+
+public:
   bool IsThirdParty();
 
   bool IsScopedStyleEnabled();
