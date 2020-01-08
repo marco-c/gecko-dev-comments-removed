@@ -28,7 +28,7 @@ const BOX_MODEL_SIDES = ["top", "right", "bottom", "left"];
 
 const GUIDE_STROKE_WIDTH = 1;
 
-const PSEUDO_CLASSES = [":hover", ":active", ":focus"];
+const PSEUDO_CLASSES = [":hover", ":active", ":focus", ":focus-within"];
 
 
 
