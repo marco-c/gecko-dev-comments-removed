@@ -25,30 +25,6 @@ const ssu = Cc["@mozilla.org/browser/sessionstore/utils;1"]
 
 
 
-function restoreFrameTreeData(frame, data, cb) {
-  
-  
-  if (cb(frame, data) === false) {
-    return;
-  }
-
-  if (!data.hasOwnProperty("children")) {
-    return;
-  }
-
-  
-  ssu.forEachNonDynamicChildFrame(frame, (subframe, index) => {
-    if (data.children[index]) {
-      restoreFrameTreeData(subframe, data.children[index], cb);
-    }
-  });
-}
-
-
-
-
-
-
 
 
 
@@ -312,7 +288,7 @@ ContentRestoreInternal.prototype = {
     let window = this.docShell.domWindow;
 
     
-    restoreFrameTreeData(window, formdata, (frame, data) => {
+    Utils.restoreFrameTreeData(window, formdata, (frame, data) => {
       
       
       
@@ -320,7 +296,7 @@ ContentRestoreInternal.prototype = {
     });
 
     
-    restoreFrameTreeData(window, scrollPositions, (frame, data) => {
+    Utils.restoreFrameTreeData(window, scrollPositions, (frame, data) => {
       if (data.scroll) {
         ssu.restoreScrollPosition(frame, data.scroll);
       }
