@@ -252,13 +252,6 @@ VARCACHE_PREF(
 
 
 VARCACHE_PREF(
-  "canvas.imagebitmap_extensions.enabled",
-   canvas_imagebitmap_extensions_enabled,
-  RelaxedAtomicBool, false
-)
-
-
-VARCACHE_PREF(
   "dom.caches.enabled",
    dom_caches_enabled,
   RelaxedAtomicBool, true
