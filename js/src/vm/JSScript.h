@@ -33,6 +33,7 @@
 #include "js/UbiNode.h"
 #include "js/UniquePtr.h"
 #include "js/Utility.h"
+#include "util/StructuredSpewer.h"
 #include "vm/BytecodeIterator.h"
 #include "vm/BytecodeLocation.h"
 #include "vm/BytecodeUtil.h"
@@ -1776,6 +1777,9 @@ class JSScript : public js::gc::TenuredCell
 
         
         HideScriptFromDebugger = 1 << 19,
+
+        
+        SpewEnabled = 1 << 20,
     };
   private:
     
@@ -2186,6 +2190,13 @@ class JSScript : public js::gc::TenuredCell
     }
     void clearHideScriptFromDebugger() {
         clearFlag(MutableFlags::HideScriptFromDebugger);
+    }
+
+    bool spewEnabled() const {
+        return hasFlag(MutableFlags::SpewEnabled);
+    }
+    void setSpewEnabled(bool enabled) {
+        setFlag(MutableFlags::SpewEnabled, enabled);
     }
 
     bool needsHomeObject() const {
