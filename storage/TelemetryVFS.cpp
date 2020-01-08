@@ -29,14 +29,7 @@
 
 
 
-
-
-
-
-
-
-
-#define PREF_MULTI_PROCESS_ACCESS "storage.multiProcessAccess.enabled"
+#define PREF_NFS_FILESYSTEM   "storage.nfs_filesystem"
 
 namespace {
 
@@ -872,22 +865,22 @@ const char *GetVFSName()
 sqlite3_vfs* ConstructTelemetryVFS()
 {
 #if defined(XP_WIN)
-#define EXPECTED_VFS      "win32"
-#define EXPECTED_VFS_EXCL "win32"
+#define EXPECTED_VFS     "win32"
+#define EXPECTED_VFS_NFS "win32"
 #else
-#define EXPECTED_VFS      "unix"
-#define EXPECTED_VFS_EXCL "unix-excl"
+#define EXPECTED_VFS     "unix"
+#define EXPECTED_VFS_NFS "unix-excl"
 #endif
 
   bool expected_vfs;
   sqlite3_vfs *vfs;
-  if (Preferences::GetBool(PREF_MULTI_PROCESS_ACCESS, false)) {
-    
+  if (Preferences::GetBool(PREF_NFS_FILESYSTEM)) {
+    vfs = sqlite3_vfs_find(EXPECTED_VFS_NFS);
+    expected_vfs = (vfs != nullptr);
+  }
+  else {
     vfs = sqlite3_vfs_find(nullptr);
     expected_vfs = vfs->zName && !strcmp(vfs->zName, EXPECTED_VFS);
-  } else {
-    vfs = sqlite3_vfs_find(EXPECTED_VFS_EXCL);
-    expected_vfs = (vfs != nullptr);
   }
   if (!expected_vfs) {
     return nullptr;
