@@ -2696,23 +2696,24 @@ static JSObject* ReadableStreamDefaultControllerPullSteps(
 static bool ControllerPullHandler(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
-  Rooted<ReadableStreamController*> controller(
+  Rooted<ReadableStreamController*> unwrappedController(
       cx, UnwrapCalleeSlot<ReadableStreamController>(cx, args, 0));
-  if (!controller) {
+  if (!unwrappedController) {
     return false;
   }
 
-  bool pullAgain = controller->pullAgain();
+  bool pullAgain = unwrappedController->pullAgain();
 
   
   
-  controller->clearPullFlags();
+  unwrappedController->clearPullFlags();
 
   
   if (pullAgain) {
     
     
-    if (!ReadableStreamControllerCallPullIfNeeded(cx, controller)) {
+    
+    if (!ReadableStreamControllerCallPullIfNeeded(cx, unwrappedController)) {
       return false;
     }
   }
