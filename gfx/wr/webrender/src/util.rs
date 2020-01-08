@@ -556,7 +556,7 @@ impl<U> MaxRect for TypedRect<f32, U> {
 
 
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug)]
 pub enum FastTransform<Src, Dst> {
     
     Offset(TypedVector2D<f32, Src>),
@@ -568,6 +568,14 @@ pub enum FastTransform<Src, Dst> {
         is_2d: bool,
     },
 }
+
+impl<Src, Dst> Clone for FastTransform<Src, Dst> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl<Src, Dst> Copy for FastTransform<Src, Dst> { }
 
 impl<Src, Dst> FastTransform<Src, Dst> {
     pub fn identity() -> Self {
@@ -648,6 +656,14 @@ impl<Src, Dst> FastTransform<Src, Dst> {
                 FastTransform::Offset(*offset + *other_offset),
             FastTransform::Transform { transform, .. } =>
                 FastTransform::with_transform(transform.pre_translate(other_offset.to_3d()))
+        }
+    }
+
+    #[inline(always)]
+    pub fn project_to_2d(&self) -> Self {
+        match *self {
+            FastTransform::Offset(..) => self.clone(),
+            FastTransform::Transform { ref transform, .. } => FastTransform::with_transform(transform.project_to_2d()),
         }
     }
 
