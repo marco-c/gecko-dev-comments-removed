@@ -17,7 +17,7 @@ namespace dom {
 
 
 
-typedef nsSVGFELightingElement SVGFESpecularLightingElementBase;
+typedef SVGFELightingElement SVGFESpecularLightingElementBase;
 
 class SVGFESpecularLightingElement : public SVGFESpecularLightingElementBase {
   friend nsresult(::NS_NewSVGFESpecularLightingElement(
