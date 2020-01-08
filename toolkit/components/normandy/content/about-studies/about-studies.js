@@ -1,24 +1,23 @@
 
 
 
-
 "use strict";
 
 
 
 
 
-const r = React.createElement;
 
 
 
 
-
-
-function sendPageEvent(action, data) {
-  const event = new CustomEvent("ShieldPageEvent", { bubbles: true, detail: { action, data } });
-  document.dispatchEvent(event);
-}
+const PAGES = new Map([
+  ["shieldStudies", {
+    name: "title",
+    component: ShieldStudies,
+    icon: "resource://normandy-content/about-studies/img/shield-logo.png",
+  }],
+]);
 
 
 
@@ -27,279 +26,133 @@ class AboutStudies extends React.Component {
   constructor(props) {
     super(props);
 
-    this.remoteValueNameMap = {
-      AddonStudyList: "addonStudies",
-      PreferenceStudyList: "prefStudies",
-      ShieldLearnMoreHref: "learnMoreHref",
-      StudiesEnabled: "studiesEnabled",
-      ShieldTranslations: "translations",
+    let hash = new URL(window.location).hash.slice(1);
+    if (!PAGES.has(hash)) {
+      hash = "shieldStudies";
+    }
+
+    this.state = {
+      currentPageId: hash,
     };
 
-    this.state = {};
-    for (const stateName of Object.values(this.remoteValueNameMap)) {
-      this.state[stateName] = null;
-    }
+    this.handleEvent = this.handleEvent.bind(this);
   }
 
-  componentWillMount() {
-    for (const remoteName of Object.keys(this.remoteValueNameMap)) {
-      document.addEventListener(`ReceiveRemoteValue:${remoteName}`, this);
-      sendPageEvent(`GetRemoteValue:${remoteName}`);
-    }
+  componentDidMount() {
+    remoteValues.shieldTranslations.subscribe(this);
+    window.addEventListener("hashchange", this);
   }
 
   componentWillUnmount() {
-    for (const remoteName of Object.keys(this.remoteValueNameMap)) {
-      document.removeEventListener(`ReceiveRemoteValue:${remoteName}`, this);
-    }
+    remoteValues.shieldTranslations.unsubscribe(this);
+    window.removeEventListener("hashchange", this);
   }
 
-  
-  handleEvent({ type, detail: value }) {
-    const prefix = "ReceiveRemoteValue:";
-    if (type.startsWith(prefix)) {
-      const name = type.substring(prefix.length);
-      this.setState({ [this.remoteValueNameMap[name]]: value });
-    }
-  }
-
-  render() {
-    const { translations, learnMoreHref, studiesEnabled, addonStudies, prefStudies } = this.state;
-
-    
-    
-    if (Object.values(this.state).some(v => v === null)) {
-      return null;
-    }
-
-    return (
-      r("div", { className: "about-studies-container main-content" },
-        r(WhatsThisBox, { translations, learnMoreHref, studiesEnabled }),
-        r(StudyList, { translations, addonStudies, prefStudies }),
-      )
-    );
-  }
-}
-
-
-
-
-class WhatsThisBox extends React.Component {
-  handleUpdateClick() {
-    sendPageEvent("NavigateToDataPreferences");
-  }
-
-  render() {
-    const { learnMoreHref, studiesEnabled, translations } = this.props;
-
-    return (
-      r("div", { className: "info-box" },
-        r("div", { className: "info-box-content" },
-          r("span", {},
-            studiesEnabled ? translations.enabledList : translations.disabledList,
-          ),
-          r("a", { id: "shield-studies-learn-more", href: learnMoreHref }, translations.learnMore),
-
-          r("button", { id: "shield-studies-update-preferences", onClick: this.handleUpdateClick },
-            r("div", { className: "button-box" },
-              navigator.platform.includes("Win") ? translations.updateButtonWin : translations.updateButtonUnix
-            ),
-          )
-        )
-      )
-    );
-  }
-}
-
-
-
-
-class StudyList extends React.Component {
-  render() {
-    const { addonStudies, prefStudies, translations } = this.props;
-
-    if (!addonStudies.length && !prefStudies.length) {
-      return r("p", { className: "study-list-info" }, translations.noStudies);
-    }
-
-    const activeStudies = [];
-    const inactiveStudies = [];
-
-    
-    for (const study of addonStudies) {
-      const clonedStudy = Object.assign({}, study, {type: "addon", sortDate: study.studyStartDate});
-      if (study.active) {
-        activeStudies.push(clonedStudy);
-      } else {
-        inactiveStudies.push(clonedStudy);
+  receiveRemoteValue(name, value) {
+    switch (name) {
+      case "ShieldTranslations": {
+        this.setState({ translations: value });
+        break;
+      }
+      default: {
+        console.error(`Unknown remote value ${name}`);
       }
     }
+  }
 
-    for (const study of prefStudies) {
-      const clonedStudy = Object.assign({}, study, {type: "pref", sortDate: new Date(study.lastSeen)});
-      if (study.expired) {
-        inactiveStudies.push(clonedStudy);
-      } else {
-        activeStudies.push(clonedStudy);
-      }
+  handleEvent(event) {
+    const newHash = new URL(event.newURL).hash.slice(1);
+    if (PAGES.has(newHash)) {
+      this.setState({currentPageId: newHash});
     }
-
-    activeStudies.sort((a, b) => b.sortDate - a.sortDate);
-    inactiveStudies.sort((a, b) => b.sortDate - a.sortDate);
-
-    return (
-      r("div", {},
-        r("h2", {}, translations.activeStudiesList),
-        r("ul", { className: "study-list" },
-          activeStudies.map(study => (
-            study.type === "addon"
-            ? r(AddonStudyListItem, { key: study.name, study, translations })
-            : r(PreferenceStudyListItem, { key: study.name, study, translations })
-          )),
-        ),
-        r("h2", {}, translations.completedStudiesList),
-        r("ul", { className: "study-list" },
-          inactiveStudies.map(study => (
-            study.type === "addon"
-            ? r(AddonStudyListItem, { key: study.name, study, translations })
-            : r(PreferenceStudyListItem, { key: study.name, study, translations })
-          )),
-        ),
-      )
-    );
-  }
-}
-StudyList.propTypes = {
-  addonStudies: PropTypes.array.isRequired,
-  translations: PropTypes.object.isRequired,
-};
-
-
-
-
-class AddonStudyListItem extends React.Component {
-  constructor(props) {
-    super(props);
-    this.handleClickRemove = this.handleClickRemove.bind(this);
-  }
-
-  handleClickRemove() {
-    sendPageEvent("RemoveAddonStudy", {
-      recipeId: this.props.study.recipeId,
-      reason: "individual-opt-out",
-    });
   }
 
   render() {
-    const { study, translations } = this.props;
+    const currentPageId = this.state.currentPageId;
+    const pageEntries = Array.from(PAGES.entries());
+    const currentPage = PAGES.get(currentPageId);
+    const { translations } = this.state;
+
     return (
-      r("li", {
-        className: classnames("study addon-study", { disabled: !study.active }),
-        "data-study-name": study.name,
-      },
-        r("div", { className: "study-icon" },
-          study.name.replace(/-?add-?on-?/, "").replace(/-?study-?/, "").slice(0, 1)
+      r("div", {className: "about-studies-container"},
+        translations && r(Sidebar, {},
+          pageEntries.map(([id, page]) => (
+            r(SidebarItem, {
+              key: id,
+              pageId: id,
+              selected: id === currentPageId,
+              page,
+              translations,
+            })
+          )),
         ),
-        r("div", { className: "study-details" },
-          r("div", { className: "study-header" },
-            r("span", { className: "study-name" }, study.name),
-            r("span", {}, "\u2022"), 
-            r("span", { className: "study-status" }, study.active ? translations.activeStatus : translations.completeStatus),
-          ),
-          r("div", { className: "study-description" },
-            study.description
-          ),
-        ),
-        r("div", { className: "study-actions" },
-          study.active &&
-          r("button", { className: "remove-button", onClick: this.handleClickRemove },
-            r("div", { className: "button-box" },
-              translations.removeButton
-            ),
-          )
+        r(Content, {},
+          translations && currentPage && r(currentPage.component, {translations})
         ),
       )
     );
   }
 }
-AddonStudyListItem.propTypes = {
-  study: PropTypes.shape({
-    recipeId: PropTypes.number.isRequired,
-    name: PropTypes.string.isRequired,
-    active: PropTypes.bool.isRequired,
-    description: PropTypes.string.isRequired,
-  }).isRequired,
+
+class Sidebar extends React.Component {
+  render() {
+    return r("ul", {id: "categories"}, this.props.children);
+  }
+}
+Sidebar.propTypes = {
+  children: PropTypes.node,
   translations: PropTypes.object.isRequired,
 };
 
-
-
-
-class PreferenceStudyListItem extends React.Component {
+class SidebarItem extends React.Component {
   constructor(props) {
     super(props);
-    this.handleClickRemove = this.handleClickRemove.bind(this);
+    this.handleClick = this.handleClick.bind(this);
   }
 
-  handleClickRemove() {
-    sendPageEvent("RemovePreferenceStudy", {
-      experimentName: this.props.study.name,
-      reason: "individual-opt-out",
-    });
+  handleClick() {
+    window.location = `#${this.props.pageId}`;
   }
 
   render() {
-    const { study, translations } = this.props;
-
-    
-    
-    
-    
-    const sanitizer = document.createElement("code");
-    sanitizer.textContent = study.preferenceName;
-    const sanitizedPreferenceName = sanitizer.outerHTML;
-    sanitizer.textContent = study.preferenceValue;
-    const sanitizedPreferenceValue = sanitizer.outerHTML;
-    const description = translations.preferenceStudyDescription
-      .replace(/%(?:1\$)?S/, sanitizedPreferenceName)
-      .replace(/%(?:2\$)?S/, sanitizedPreferenceValue);
-
+    const { page, selected, translations } = this.props;
     return (
       r("li", {
-        className: classnames("study pref-study", { disabled: study.expired }),
-        "data-study-name": study.name,
+        className: classnames("category", {selected}),
+        onClick: this.handleClick,
       },
-        r("div", { className: "study-icon" },
-          study.name.replace(/-?pref-?(flip|study)-?/, "").replace(/-?study-?/, "").slice(0, 1)
-        ),
-        r("div", { className: "study-details" },
-          r("div", { className: "study-header" },
-            r("span", { className: "study-name" }, study.name),
-            r("span", {}, "\u2022"), 
-            r("span", { className: "study-status" }, study.expired ? translations.completeStatus : translations.activeStatus),
-          ),
-          r("div", { className: "study-description", dangerouslySetInnerHTML: { __html: description }}),
-        ),
-        r("div", { className: "study-actions" },
-          !study.expired &&
-          r("button", { className: "remove-button", onClick: this.handleClickRemove },
-            r("div", { className: "button-box" },
-              translations.removeButton
-            ),
-          )
+        page.icon && r("img", {className: "category-icon", src: page.icon}),
+        r("span", {className: "category-name"}, translations[page.name]),
+      )
+    );
+  }
+}
+SidebarItem.propTypes = {
+  pageId: PropTypes.string.isRequired,
+  page: PropTypes.shape({
+    icon: PropTypes.string,
+    name: PropTypes.string.isRequired,
+  }).isRequired,
+  selected: PropTypes.bool,
+  translations: PropTypes.object.isRequired,
+};
+
+class Content extends React.Component {
+  render() {
+    return (
+      r("div", {className: "main-content"},
+        r("div", {className: "content-box"},
+          this.props.children,
         ),
       )
     );
   }
 }
-PreferenceStudyListItem.propTypes = {
-  study: PropTypes.shape({
-    name: PropTypes.string.isRequired,
-    expired: PropTypes.bool.isRequired,
-    preferenceName: PropTypes.string.isRequired,
-    preferenceValue: PropTypes.oneOf(PropTypes.string, PropTypes.bool, PropTypes.number).isRequired,
-  }).isRequired,
-  translations: PropTypes.object.isRequired,
+Content.propTypes = {
+  children: PropTypes.node,
 };
 
-ReactDOM.render(r(AboutStudies), document.getElementById("app"));
+ReactDOM.render(
+  r(AboutStudies),
+  document.getElementById("app"),
+);
