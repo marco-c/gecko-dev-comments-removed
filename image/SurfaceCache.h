@@ -233,7 +233,7 @@ struct SurfaceCache
 
   static LookupResult Lookup(const ImageKey    aImageKey,
                              const SurfaceKey& aSurfaceKey,
-                             bool aMarkUsed = true);
+                             bool aMarkUsed);
 
   
 
@@ -253,7 +253,7 @@ struct SurfaceCache
 
   static LookupResult LookupBestMatch(const ImageKey    aImageKey,
                                       const SurfaceKey& aSurfaceKey,
-                                      bool aMarkUsed = true);
+                                      bool aMarkUsed);
 
   
 

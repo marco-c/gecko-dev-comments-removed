@@ -293,7 +293,7 @@ private:
   LookupResult LookupFrame(const gfx::IntSize& aSize,
                            uint32_t aFlags,
                            PlaybackType aPlaybackType,
-                           bool aMarkUsed = true);
+                           bool aMarkUsed);
 
   
   LookupResult LookupFrameInternal(const gfx::IntSize& aSize,

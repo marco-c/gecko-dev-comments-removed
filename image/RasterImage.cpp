@@ -333,7 +333,7 @@ LookupResult
 RasterImage::LookupFrame(const IntSize& aSize,
                          uint32_t aFlags,
                          PlaybackType aPlaybackType,
-                         bool aMarkUsed )
+                         bool aMarkUsed)
 {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -609,7 +609,7 @@ RasterImage::GetFrameInternal(const IntSize& aSize,
   
   
   LookupResult result =
-    LookupFrame(aSize, aFlags, ToPlaybackType(aWhichFrame));
+    LookupFrame(aSize, aFlags, ToPlaybackType(aWhichFrame),  true);
 
   
   
@@ -1523,7 +1523,7 @@ RasterImage::Draw(gfxContext* aContext,
                  : aFlags & ~FLAG_HIGH_QUALITY_SCALING;
 
   LookupResult result =
-    LookupFrame(aSize, flags, ToPlaybackType(aWhichFrame));
+    LookupFrame(aSize, flags, ToPlaybackType(aWhichFrame),  true);
   if (!result) {
     
     if (mDrawStartTime.IsNull()) {
