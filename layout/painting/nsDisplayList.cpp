@@ -7118,6 +7118,12 @@ nsDisplayOwnLayer::UpdateScrollData(
       aLayerData->SetScrollbarData(mScrollbarData);
       if (IsScrollThumbLayer()) {
         aLayerData->SetScrollbarAnimationId(mWrAnimationId);
+        LayoutDeviceRect bounds = LayoutDeviceIntRect::FromAppUnits(
+            mBounds, mFrame->PresContext()->AppUnitsPerDevPixel());
+        
+        
+        LayerIntRect layerBounds = RoundedOut(bounds * LayoutDeviceToLayerScale(1.0f));
+        aLayerData->SetVisibleRegion(LayerIntRegion(layerBounds));
       }
     }
   }

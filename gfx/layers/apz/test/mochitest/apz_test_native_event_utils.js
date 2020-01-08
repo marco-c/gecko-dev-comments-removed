@@ -351,6 +351,8 @@ function moveMouseAndScrollWheelOver(element, dx, dy, testDriver, waitForScroll 
 
 
 
+
+
 function* dragVerticalScrollbar(element, testDriver, distance = 20, increment = 5) {
   var boundingClientRect = element.getBoundingClientRect();
   var verticalScrollbarWidth = boundingClientRect.width - element.clientWidth;
