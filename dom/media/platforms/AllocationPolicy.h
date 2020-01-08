@@ -100,6 +100,17 @@ public:
   }
   RefPtr<ShutdownPromise> Shutdown() override;
 
+  typedef MozPromise<RefPtr<MediaDataDecoder>,
+                     MediaResult,
+                      true>
+    AllocateDecoderPromise;
+  
+  
+  
+  
+  static RefPtr<AllocateDecoderPromise> CreateDecoder(
+    const CreateDecoderParams& aParams);
+
 private:
   RefPtr<MediaDataDecoder> mDecoder;
   RefPtr<Token> mToken;
