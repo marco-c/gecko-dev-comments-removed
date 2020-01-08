@@ -55,6 +55,7 @@ module.exports = {
     
     "PlacesObservers": false,
     "PlacesWeakCallbackWrapper": false,
+    "PrioEncoder": false,
     
     "SharedArrayBuffer": false,
     "SimpleGestureEvent": false,

@@ -87,6 +87,9 @@ const TOPIC_CYCLE_COLLECTOR_BEGIN = "cycle-collector-begin";
 
 const TOTAL_MEMORY_COLLECTOR_TIMEOUT = 200;
 
+
+const PRIO_ENABLED_PREF = "prio.enabled";
+
 var gLastMemoryPoll = null;
 
 var gWasDebuggerAttached = false;
@@ -1169,6 +1172,11 @@ var Impl = {
     payloadObj.info = info;
 
     
+    if (Services.prefs.getBoolPref(PRIO_ENABLED_PREF, false)) {
+      payloadObj.prio = protect(() => this._prioEncode());
+    }
+
+    
     if (Telemetry.canRecordExtended) {
       payloadObj.slowSQL = protect(() => Telemetry.slowSQL);
       payloadObj.fileIOReports = protect(() => Telemetry.fileIOReports);
@@ -1946,5 +1954,45 @@ var Impl = {
     this._log.trace("markNewProfilePingSent");
     this._newProfilePingSent = true;
     return TelemetryStorage.saveSessionData(this._getSessionDataObject());
+  },
+
+  
+
+
+
+
+  _prioEncode() {
+    
+    const prioEncodedHistograms = {
+      "BROWSER_IS_USER_DEFAULT": "browserIsUserDefault",
+      "NEWTAB_PAGE_ENABLED": "newTabPageEnabled",
+      "PDF_VIEWER_USED": "pdfViewerUsed",
+    };
+
+    
+    let prioParams = {};
+    for (const [histogramName, prioName] of Object.entries(prioEncodedHistograms)) {
+      try {
+        const histogram = Telemetry.getHistogramById(histogramName);
+        const firstCount = Boolean(histogram.snapshot().sum);
+        prioParams[prioName] = firstCount;
+
+      } catch (ex) {
+        this._log.error(ex);
+      }
+    }
+
+    
+    const batchID = Policy.now();
+
+    let prioEncodedData;
+
+    try {
+      prioEncodedData = PrioEncoder.encode(batchID, prioParams);
+    } catch (ex) {
+      this._log.error(ex);
+    }
+
+    return prioEncodedData;
   },
 };
