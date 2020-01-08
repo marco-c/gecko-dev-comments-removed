@@ -362,6 +362,20 @@ VARCACHE_PREF(
 )
 
 
+
+#ifdef EARLY_BETA_OR_EARLIER
+#define PREF_VALUE false
+#else
+#define PREF_VALUE true
+#endif
+VARCACHE_PREF(
+  "layout.css.xul-box-display-values.content.enabled",
+   layout_css_xul_box_display_values_content_enabled,
+  bool, PREF_VALUE
+)
+#undef PREF_VALUE
+
+
 VARCACHE_PREF(
   "layout.css.grid-template-subgrid-value.enabled",
    layout_css_grid_template_subgrid_value_enabled,
