@@ -5,8 +5,8 @@ load(libdir + "dummyModuleResolveHook.js");
 
 function parseAndEvaluate(source) {
     let m = parseModule(source);
-    m.declarationInstantiation();
-    m.evaluation();
+    instantiateModule(m);
+    evaluateModule(m);
     return m;
 }
 
@@ -15,20 +15,20 @@ parseAndEvaluate("");
 
 
 let m = parseModule("1");
-m.declarationInstantiation();
-assertEq(m.evaluation(), undefined);
-assertEq(typeof m.evaluation(), "undefined");
+instantiateModule(m);
+assertEq(evaluateModule(m), undefined);
+assertEq(typeof evaluateModule(m), "undefined");
 
 
 m = parseModule("export var x = 2 + 2;");
 assertEq(typeof getModuleEnvironmentValue(m, "x"), "undefined");
-m.declarationInstantiation();
-m.evaluation();
+instantiateModule(m);
+evaluateModule(m);
 assertEq(getModuleEnvironmentValue(m, "x"), 4);
 
 m = parseModule("export let x = 2 * 3;");
-m.declarationInstantiation();
-m.evaluation();
+instantiateModule(m);
+evaluateModule(m);
 assertEq(getModuleEnvironmentValue(m, "x"), 6);
 
 
@@ -62,20 +62,20 @@ parseAndEvaluate("export default class foo { constructor() {} };");
 
 
 m = parseModule("import a from 'a'; export { a };")
-m.declarationInstantiation();
-m.evaluation()
+instantiateModule(m);
+evaluateModule(m)
 assertEq(getModuleEnvironmentValue(m, "a"), 2);
 
 
 m = parseModule("import { x as y } from 'a'; export { y };")
-m.declarationInstantiation();
-m.evaluation();
+instantiateModule(m);
+evaluateModule(m);
 assertEq(getModuleEnvironmentValue(m, "y"), 1);
 
 
 m = parseModule("import { f } from 'a'; export let x = f(3);")
-m.declarationInstantiation();
-m.evaluation();
+instantiateModule(m);
+evaluateModule(m);
 assertEq(getModuleEnvironmentValue(m, "x"), 4);
 
 
@@ -93,7 +93,7 @@ assertDeepEq(getModuleEnvironmentValue(m, "z"), [1, 2, 1, 2]);
 
 
 m = parseModule("import { x } from 'a'; function f() { return x; }")
-m.declarationInstantiation();
-m.evaluation();
+instantiateModule(m);
+evaluateModule(m);
 let f = getModuleEnvironmentValue(m, "f");
 assertEq(f(), 1);

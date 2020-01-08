@@ -161,8 +161,8 @@ const ReflectLoader = new class {
 
     loadAndExecute(path) {
         let module = this.loadAndParse(path);
-        module.declarationInstantiation();
-        return module.evaluation();
+        instantiateModule(module);
+        return evaluateModule(module);
     }
 
     importRoot(path) {

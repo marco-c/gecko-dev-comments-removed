@@ -1,6 +1,6 @@
-
-
-
+// Prior to https://github.com/tc39/ecma262/pull/916 it was possible for a
+// module namespace object to be successfully created that was later found to be
+// erroneous. Test that this is no longer the case.
 
 "use strict";
 
@@ -14,4 +14,4 @@ moduleRepo['D'] = parseModule('export let x');
 moduleRepo['E'] = parseModule('export let x');
 
 let m = moduleRepo['A'];
-assertThrowsInstanceOf(() => m.declarationInstantiation(), SyntaxError);
+assertThrowsInstanceOf(() => instantiateModule(m), SyntaxError);
