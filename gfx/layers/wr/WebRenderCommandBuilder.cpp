@@ -8,7 +8,6 @@
 
 #include "BasicLayers.h"
 #include "mozilla/AutoRestore.h"
-#include "mozilla/DebugOnly.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/gfx/Types.h"
@@ -185,14 +184,18 @@ static void TakeExternalSurfaces(
   aRecorder->TakeExternalSurfaces(aExternalSurfaces);
 
   for (auto& surface : aExternalSurfaces) {
+    if (surface->GetType() != SurfaceType::DATA_SHARED) {
+      MOZ_ASSERT_UNREACHABLE("External surface that is not a shared surface!");
+      continue;
+    }
+
     
     
     
     
     wr::ImageKey key;
-    DebugOnly<nsresult> rv =
-        SharedSurfacesChild::Share(surface, aManager, aResources, key);
-    MOZ_ASSERT(rv != NS_ERROR_NOT_IMPLEMENTED);
+    auto sharedSurface = static_cast<SourceSurfaceSharedData*>(surface.get());
+    SharedSurfacesChild::Share(sharedSurface, aManager, aResources, key);
   }
 }
 

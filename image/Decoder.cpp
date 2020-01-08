@@ -350,7 +350,8 @@ RawAccessFrameRef Decoder::AllocateFrameInternal(
       
       bool blocked = ref.get() == mRestoreFrame.get();
       if (!blocked) {
-        blocked = NS_FAILED(ref->InitForDecoderRecycle(aAnimParams.ref()));
+        nsresult rv = ref->InitForDecoderRecycle(aAnimParams.ref());
+        blocked = NS_WARN_IF(NS_FAILED(rv));
       }
 
       if (blocked) {

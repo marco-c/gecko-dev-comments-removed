@@ -305,12 +305,7 @@ nsresult imgFrame::InitForDecoderRecycle(const AnimationParams& aAnimParams) {
   MOZ_ASSERT(mIsFullFrame);
   MOZ_ASSERT(mLockCount > 0);
   MOZ_ASSERT(mLockedSurface);
-
-  if (!mShouldRecycle) {
-    
-    
-    return NS_ERROR_NOT_AVAILABLE;
-  }
+  MOZ_ASSERT(mShouldRecycle);
 
   if (mRecycleLockCount > 0) {
     if (NS_IsMainThread()) {
@@ -629,8 +624,8 @@ bool imgFrame::Draw(gfxContext* aContext, const ImageRegion& aRegion,
     
     
     DrawTarget* drawTarget = aContext->GetDrawTarget();
-    bool recording = drawTarget->GetBackendType() == BackendType::RECORDING;
-    bool temporary = !drawTarget->IsCaptureDT() && !recording;
+    bool temporary = !drawTarget->IsCaptureDT() &&
+                     drawTarget->GetBackendType() != BackendType::RECORDING;
     RefPtr<SourceSurface> surf = GetSourceSurfaceInternal(temporary);
     if (!surf) {
       return false;
@@ -640,14 +635,6 @@ bool imgFrame::Draw(gfxContext* aContext, const ImageRegion& aRegion,
                   !(aImageFlags & imgIContainer::FLAG_CLAMP);
 
     surfaceResult = SurfaceForDrawing(doPartialDecode, doTile, region, surf);
-
-    
-    
-    
-    
-    if (recording && surfaceResult.IsValid()) {
-      mShouldRecycle = false;
-    }
   }
 
   if (surfaceResult.IsValid()) {
