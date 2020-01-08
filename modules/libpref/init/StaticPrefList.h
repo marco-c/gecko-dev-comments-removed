@@ -276,6 +276,24 @@ VARCACHE_PREF(
 #undef PREF_VALUE
 
 
+
+
+
+
+
+#ifdef RELEASE_OR_BETA
+# define PREF_VALUE false
+#else
+# define PREF_VALUE true
+#endif
+VARCACHE_PREF(
+  "layout.css.property-append-only",
+   layout_css_property_append_only,
+   bool, PREF_VALUE
+)
+#undef PREF_VALUE
+
+
 VARCACHE_PREF(
   "layout.css.visited_links_enabled",
    layout_css_visited_links_enabled,
