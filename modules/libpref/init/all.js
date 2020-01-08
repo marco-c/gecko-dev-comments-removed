@@ -568,6 +568,9 @@ pref("media.recorder.video.frame_drops", true);
 pref("media.autoplay.default", 0);
 
 
+pref("media.autoplay.block-webaudio", false);
+
+
 
 
 
