@@ -17,7 +17,7 @@ add_task(async function() {
   ok(true, "tests succeeded");
 
   
-  BrowserTestUtils.addTab(win.gBrowser, "about:blank", {skipAnimation: true});
+  win.gBrowser.addTab("about:blank", {skipAnimation: true});
 
   
   let browser = win.gBrowser.selectedBrowser;

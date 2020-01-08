@@ -1502,7 +1502,6 @@ nsContextMenu.prototype = {
 
     
     menuItem.searchTerms = selectedText;
-    menuItem.principal = this.principal;
 
     
     

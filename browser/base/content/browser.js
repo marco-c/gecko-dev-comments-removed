@@ -538,8 +538,7 @@ const gStoragePressureObserver = {
       accessKey: prefStrBundle.getString("spaceAlert.learnMoreButton.accesskey"),
       callback(notificationBar, button) {
         let learnMoreURL = Services.urlFormatter.formatURLPref("app.support.baseURL") + "storage-permissions";
-        
-        gBrowser.selectedTab = gBrowser.addTrustedTab(learnMoreURL);
+        gBrowser.selectedTab = gBrowser.addTab(learnMoreURL);
       }
     });
     if (usage < USAGE_THRESHOLD_BYTES) {
@@ -3972,11 +3971,8 @@ const BrowserSearch = {
 
 
 
-  _loadSearch(searchText, useNewTab, purpose, triggeringPrincipal) {
+  _loadSearch(searchText, useNewTab, purpose) {
     let engine;
-    if (!triggeringPrincipal) {
-      throw new Error("Required argument triggeringPrincipal missing within _loadSearch");
-    }
 
     
     
@@ -4000,8 +3996,7 @@ const BrowserSearch = {
                useNewTab ? "tab" : "current",
                { postData: submission.postData,
                  inBackground,
-                 relatedToCurrent: true,
-                 triggeringPrincipal });
+                 relatedToCurrent: true });
 
     return engine;
   },
@@ -4012,8 +4007,22 @@ const BrowserSearch = {
 
 
 
-  loadSearchFromContext(terms, triggeringPrincipal) {
-    let engine = BrowserSearch._loadSearch(terms, true, "contextmenu", triggeringPrincipal);
+  loadSearch: function BrowserSearch_search(searchText, useNewTab, purpose) {
+    let engine = BrowserSearch._loadSearch(searchText, useNewTab, purpose);
+    if (!engine) {
+      return null;
+    }
+    return engine.name;
+  },
+
+  
+
+
+
+
+
+  loadSearchFromContext(terms) {
+    let engine = BrowserSearch._loadSearch(terms, true, "contextmenu");
     if (engine) {
       BrowserSearch.recordSearchInTelemetry(engine, "contextmenu");
     }
@@ -7380,8 +7389,7 @@ const gAccessibilityServiceIndicator = {
          type === "click") {
       let a11yServicesSupportURL =
         Services.urlFormatter.formatURLPref("accessibility.support.url");
-      
-      gBrowser.selectedTab = gBrowser.addTrustedTab(a11yServicesSupportURL);
+      gBrowser.selectedTab = gBrowser.addTab(a11yServicesSupportURL);
       Services.telemetry.scalarSet("a11y.indicator_acted_on", true);
     }
   },

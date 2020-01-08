@@ -32,7 +32,7 @@ add_task(async function multiple_tabs() {
 
   
   
-  BrowserTestUtils.addTab(gBrowser);
+  gBrowser.addTab();
 
   
   const pageInfo = await waitForPageInfo(TEST_PATH);

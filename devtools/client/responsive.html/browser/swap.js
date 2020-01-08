@@ -7,7 +7,6 @@
 const { Ci } = require("chrome");
 const { E10SUtils } = require("resource://gre/modules/E10SUtils.jsm");
 const { tunnelToInnerBrowser } = require("./tunnel");
-const Services = require("Services");
 
 function debug(msg) {
   
@@ -59,10 +58,7 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
     browserWindow.addEventListener("TabOpen", event => {
       event.stopImmediatePropagation();
     }, { capture: true, once: true });
-    options.triggeringPrincipal = Services.scriptSecurityManager.createNullPrincipal({
-      userContextId: options.userContextId,
-    });
-    return gBrowser.addWebTab(uri, options);
+    return gBrowser.addTab(uri, options);
   };
 
   
