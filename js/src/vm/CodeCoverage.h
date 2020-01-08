@@ -131,13 +131,7 @@ class LCovRuntime
     void init();
 
     
-    bool isEnabled() const {
-      static bool isEnabled_ = [](){
-        const char* outDir = getenv("JS_CODE_COVERAGE_OUTPUT_DIR");
-        return outDir && *outDir != 0;
-      };
-      return isEnabled_;
-    }
+    bool isEnabled() const { return out_.isInitialized(); }
 
     
     
