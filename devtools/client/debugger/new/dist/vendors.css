@@ -292,8 +292,9 @@ html[dir="rtl"] .arrow svg,
 
 
 
-.tree {
-  overflow: auto;
+ 
+.tree:focus {
+  outline: none;
 }
 
 .tree.inline {

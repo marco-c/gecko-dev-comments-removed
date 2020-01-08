@@ -341,7 +341,7 @@ async function findGeneratedBinding(sourceMaps, client, source, name, originalBi
       },
       expression: null
     };
-  } else if (!hadApplicableBindings) {
+  } else if (!hadApplicableBindings && name !== "this") {
     
     
     

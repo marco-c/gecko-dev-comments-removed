@@ -4,6 +4,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.getHiddenTabs = getHiddenTabs;
+exports.getFramework = getFramework;
 exports.getTabMenuItems = getTabMenuItems;
 
 
@@ -38,6 +39,16 @@ function getHiddenTabs(sourceTabs, sourceTabEls) {
     const element = sourceTabEls[index];
     return element && hasTopOffset(element);
   });
+}
+
+function getFramework(tabs, url) {
+  const tab = tabs.find(t => t.url === url);
+
+  if (tab) {
+    return tab.framework;
+  }
+
+  return "";
 }
 
 function getTabMenuItems() {

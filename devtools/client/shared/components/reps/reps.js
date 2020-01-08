@@ -4465,15 +4465,7 @@ class Tree extends Component {
         if (focused || !nativeEvent || !this.treeRef) {
           return;
         }
-
-        const { explicitOriginalTarget } = nativeEvent;
-
-        
-        
-        
-        if (explicitOriginalTarget !== this.treeRef && !this.treeRef.contains(explicitOriginalTarget)) {
-          this._focus(traversal[0].item);
-        }
+        this._focus(traversal[0].item);
       },
       onBlur: this._onBlur,
       "aria-label": this.props.label,
