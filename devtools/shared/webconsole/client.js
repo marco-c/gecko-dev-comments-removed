@@ -376,9 +376,7 @@ WebConsoleClient.prototype = {
 
 
 
-
-
-  autocomplete: function(string, cursor, onResponse, frameActor) {
+  autocomplete: function(string, cursor, frameActor) {
     const packet = {
       to: this._actor,
       type: "autocomplete",
@@ -386,7 +384,7 @@ WebConsoleClient.prototype = {
       cursor: cursor,
       frameActor: frameActor,
     };
-    return this._client.request(packet, onResponse);
+    return this._client.request(packet);
   },
 
   
