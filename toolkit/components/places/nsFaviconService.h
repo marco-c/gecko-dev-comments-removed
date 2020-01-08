@@ -25,8 +25,9 @@
 #include "FaviconHelpers.h"
 
 
-static uint16_t sFaviconSizes[8] = {
-  256, 192, 144, 96, 64, 48, 32, 16
+
+static uint16_t sFaviconSizes[7] = {
+  192, 144, 96, 64, 48, 32, 16
 };
 
 
