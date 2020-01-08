@@ -9,18 +9,18 @@ use std::sync::atomic::{AtomicI32, Ordering};
 use std::time::Instant;
 use libc;
 
-#[cfg(target_arch = "x86")]
-const SYS_FUTEX: libc::c_long = 240;
-#[cfg(target_arch = "x86_64")]
-const SYS_FUTEX: libc::c_long = 202;
-#[cfg(target_arch = "arm")]
-const SYS_FUTEX: libc::c_long = 240;
-#[cfg(target_arch = "aarch64")]
-const SYS_FUTEX: libc::c_long = 98;
-
 const FUTEX_WAIT: i32 = 0;
 const FUTEX_WAKE: i32 = 1;
 const FUTEX_PRIVATE: i32 = 128;
+
+
+
+#[cfg(all(target_arch = "x86_64", target_pointer_width = "32"))]
+#[allow(non_camel_case_types)]
+type tv_nsec_t = i64;
+#[cfg(not(all(target_arch = "x86_64", target_pointer_width = "32")))]
+#[allow(non_camel_case_types)]
+type tv_nsec_t = libc::c_long;
 
 
 pub struct ThreadParker {
@@ -49,7 +49,13 @@ impl ThreadParker {
     
     pub unsafe fn park(&self) {
         while self.futex.load(Ordering::Acquire) != 0 {
-            let r = libc::syscall(SYS_FUTEX, &self.futex, FUTEX_WAIT | FUTEX_PRIVATE, 1, 0);
+            let r = libc::syscall(
+                libc::SYS_futex,
+                &self.futex,
+                FUTEX_WAIT | FUTEX_PRIVATE,
+                1,
+                0,
+            );
             debug_assert!(r == 0 || r == -1);
             if r == -1 {
                 debug_assert!(
@@ -77,9 +83,15 @@ impl ThreadParker {
             }
             let ts = libc::timespec {
                 tv_sec: diff.as_secs() as libc::time_t,
-                tv_nsec: diff.subsec_nanos() as libc::c_long,
+                tv_nsec: diff.subsec_nanos() as tv_nsec_t,
             };
-            let r = libc::syscall(SYS_FUTEX, &self.futex, FUTEX_WAIT | FUTEX_PRIVATE, 1, &ts);
+            let r = libc::syscall(
+                libc::SYS_futex,
+                &self.futex,
+                FUTEX_WAIT | FUTEX_PRIVATE,
+                1,
+                &ts,
+            );
             debug_assert!(r == 0 || r == -1);
             if r == -1 {
                 debug_assert!(
@@ -116,7 +128,7 @@ impl UnparkHandle {
     pub unsafe fn unpark(self) {
         
         
-        let r = libc::syscall(SYS_FUTEX, self.futex, FUTEX_WAKE | FUTEX_PRIVATE, 1);
+        let r = libc::syscall(libc::SYS_futex, self.futex, FUTEX_WAKE | FUTEX_PRIVATE, 1);
         debug_assert!(r == 0 || r == 1 || r == -1);
         if r == -1 {
             debug_assert_eq!(*libc::__errno_location(), libc::EFAULT);

@@ -5,24 +5,39 @@
 
 
 
-#[cfg(windows)]
-use kernel32;
 #[cfg(unix)]
 use libc;
+#[cfg(windows)]
+use winapi;
 #[cfg(not(any(windows, unix)))]
 use std::thread;
-#[cfg(not(feature = "nightly"))]
-use std::sync::atomic::{fence, Ordering};
+use std::sync::atomic::spin_loop_hint;
 
 
 #[cfg(windows)]
 #[inline]
 fn thread_yield() {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    extern "system" {
+        fn Sleep(a: winapi::shared::minwindef::DWORD);
+    }
     unsafe {
         
         
         
-        kernel32::Sleep(0);
+        Sleep(0);
     }
 }
 #[cfg(unix)]
@@ -40,41 +55,10 @@ fn thread_yield() {
 
 
 
-#[cfg(all(feature = "nightly", any(target_arch = "x86", target_arch = "x86_64")))]
 #[inline]
 fn cpu_relax(iterations: u32) {
     for _ in 0..iterations {
-        unsafe {
-            asm!("pause" ::: "memory" : "volatile");
-        }
-    }
-}
-#[cfg(all(feature = "nightly", target_arch = "aarch64"))]
-#[inline]
-fn cpu_relax(iterations: u32) {
-    for _ in 0..iterations {
-        unsafe {
-            asm!("yield" ::: "memory" : "volatile");
-        }
-    }
-}
-#[cfg(all(feature = "nightly",
-          not(any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64"))))]
-#[inline]
-fn cpu_relax(iterations: u32) {
-    for _ in 0..iterations {
-        unsafe {
-            asm!("" ::: "memory" : "volatile");
-        }
-    }
-}
-#[cfg(not(feature = "nightly"))]
-#[inline]
-fn cpu_relax(iterations: u32) {
-    
-    
-    for _ in 0..iterations {
-        fence(Ordering::SeqCst);
+        spin_loop_hint()
     }
 }
 
@@ -85,14 +69,6 @@ pub struct SpinWait {
 
 impl SpinWait {
     
-    #[cfg(feature = "nightly")]
-    #[inline]
-    pub const fn new() -> SpinWait {
-        SpinWait { counter: 0 }
-    }
-
-    
-    #[cfg(not(feature = "nightly"))]
     #[inline]
     pub fn new() -> SpinWait {
         SpinWait { counter: 0 }

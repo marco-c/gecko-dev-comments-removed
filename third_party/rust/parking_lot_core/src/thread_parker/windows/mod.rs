@@ -5,10 +5,7 @@
 
 
 
-#[cfg(feature = "nightly")]
 use std::sync::atomic::{AtomicUsize, Ordering, ATOMIC_USIZE_INIT};
-#[cfg(not(feature = "nightly"))]
-use stable::{AtomicUsize, Ordering, ATOMIC_USIZE_INIT};
 use std::time::Instant;
 
 mod keyed_event;

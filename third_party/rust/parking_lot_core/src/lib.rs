@@ -36,10 +36,9 @@
 
 
 
+
 #![warn(missing_docs)]
-#![cfg_attr(feature = "nightly", feature(const_fn, thread_local_state))]
 #![cfg_attr(all(feature = "nightly", target_os = "linux"), feature(integer_atomics))]
-#![cfg_attr(feature = "nightly", feature(asm))]
 
 extern crate rand;
 extern crate smallvec;
@@ -55,8 +54,6 @@ extern crate thread_id;
 extern crate libc;
 
 #[cfg(windows)]
-extern crate kernel32;
-#[cfg(windows)]
 extern crate winapi;
 
 #[cfg(all(feature = "nightly", target_os = "linux"))]
@@ -71,9 +68,6 @@ mod thread_parker;
 #[cfg(not(any(windows, unix)))]
 #[path = "thread_parker/generic.rs"]
 mod thread_parker;
-
-#[cfg(not(feature = "nightly"))]
-mod stable;
 
 mod util;
 mod spinwait;
