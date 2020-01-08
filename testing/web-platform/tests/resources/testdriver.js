@@ -171,6 +171,29 @@
 
         freeze: function() {
             return window.test_driver_internal.freeze();
+        },
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        action_sequence(actions) {
+            return window.test_driver_internal.action_sequence(actions);
         }
     };
 
@@ -204,6 +227,16 @@
 
 
         freeze: function() {
+            return Promise.reject(new Error("unimplemented"));
+        },
+
+        
+
+
+
+
+
+        action_sequence: function(actions) {
             return Promise.reject(new Error("unimplemented"));
         }
     };
