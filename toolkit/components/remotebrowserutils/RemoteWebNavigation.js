@@ -96,7 +96,6 @@ RemoteWebNavigation.prototype = {
         
       }
     }
-
     this._sendMessage("WebNavigation:LoadURI", {
       uri: aURI,
       flags: aLoadFlags,
@@ -107,7 +106,7 @@ RemoteWebNavigation.prototype = {
       baseURI: aBaseURI ? aBaseURI.spec : null,
       triggeringPrincipal: aTriggeringPrincipal
                            ? Utils.serializePrincipal(aTriggeringPrincipal)
-                           : Services.scriptSecurityManager.createNullPrincipal({}),
+                           : null,
       requestTime: Services.telemetry.msSystemNow(),
     });
   },

@@ -19,7 +19,7 @@ add_task(async function setup() {
 async function testUpdateNoPrompt(filename, id,
                                   initialVersion = "1.0", updateVersion = "2.0") {
   
-  BrowserTestUtils.loadURI(gBrowser.selectedBrowser, "about:robots");
+  gBrowser.selectedBrowser.loadURI("about:robots");
   await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
 
   

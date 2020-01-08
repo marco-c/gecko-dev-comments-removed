@@ -7,7 +7,7 @@ add_task(async function() {
   let notificationValue = "Protocol Registration: web+testprotocol";
   let testURI = TEST_PATH + "browser_registerProtocolHandler_notification.html";
 
-  BrowserTestUtils.loadURI(window.gBrowser.selectedBrowser, testURI);
+  window.gBrowser.selectedBrowser.loadURI(testURI);
   await TestUtils.waitForCondition(function() {
     
     let notificationBox = window.gBrowser.getNotificationBox();
