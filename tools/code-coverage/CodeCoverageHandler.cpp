@@ -27,6 +27,12 @@ using namespace mozilla;
 
 
 
+
+
+#if defined(XP_LINUX) && defined(__clang__)
+#define __gcov_flush __custom_llvm_gcov_flush
+#endif
+
 extern "C" void __gcov_flush();
 
 StaticAutoPtr<CodeCoverageHandler> CodeCoverageHandler::instance;
