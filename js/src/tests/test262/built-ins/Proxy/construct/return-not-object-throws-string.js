@@ -10,7 +10,6 @@
 
 
 
-
 function Target() {
   this.attr = "done";
 };

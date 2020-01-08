@@ -16,7 +16,7 @@
 
 
 verifyProperty(Intl.RelativeTimeFormat.prototype, Symbol.toStringTag, {
-  value: "Intl.RelativeTimeFormat",
+  value: "Object",
   writable: false,
   enumerable: false,
   configurable: true

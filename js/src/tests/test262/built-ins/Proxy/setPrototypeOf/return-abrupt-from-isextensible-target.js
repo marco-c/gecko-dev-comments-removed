@@ -11,7 +11,6 @@
 
 
 
-
 var target = new Proxy({}, {
   isExtensible: function() {
     throw new Test262Error();

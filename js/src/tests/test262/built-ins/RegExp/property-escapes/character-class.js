@@ -11,7 +11,17 @@
 
 
 /[\p{Hex}]/u;
-
+assert.throws(
+  SyntaxError,
+  () => /[\p{Hex}-\uFFFF]/u,
+  
+  'property escape at start of character class range should throw if it expands to multiple characters'
+);
+assert.throws.early(SyntaxError, "/[\\p{}]/u");
+assert.throws.early(SyntaxError, "/[\\p{invalid}]/u");
+assert.throws.early(SyntaxError, "/[\\p{]/u");
+assert.throws.early(SyntaxError, "/[\\p{]}/u");
+assert.throws.early(SyntaxError, "/[\\p}]/u");
 assert(
   /[\p{Hex}\P{Hex}]/u.test('\u{1D306}'),
   'multiple property escapes in a single character class should be supported'

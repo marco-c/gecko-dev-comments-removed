@@ -13,7 +13,6 @@
 
 
 
-
 var p = new Proxy({}, {
   set: function(t, prop, value, receiver) {
     throw new Test262Error();

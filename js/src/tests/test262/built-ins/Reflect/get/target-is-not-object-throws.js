@@ -11,7 +11,6 @@
 
 
 
-
 assert.throws(TypeError, function() {
   Reflect.get(1, 'p');
 });

@@ -11,7 +11,6 @@
 
 
 
-
 var target = {
   attr: "foo"
 };

@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(Atomics.wake, 'name', {
+  value: 'wake',
+  enumerable: false,
+  writable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);

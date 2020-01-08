@@ -8,21 +8,22 @@
 
 
 
-assert.sameValue(this, globalThis);
-assert.sameValue(globalThis.globalThis, globalThis);
 
-assert.sameValue(Array, globalThis.Array);
-assert.sameValue(Boolean, globalThis.Boolean);
-assert.sameValue(Date, globalThis.Date);
-assert.sameValue(Error, globalThis.Error);
-assert.sameValue(Function, globalThis.Function);
-assert.sameValue(JSON, globalThis.JSON);
-assert.sameValue(Math, globalThis.Math);
-assert.sameValue(Number, globalThis.Number);
-assert.sameValue(RegExp, globalThis.RegExp);
-assert.sameValue(String, globalThis.String);
+assert.sameValue(this, global);
+assert.sameValue(global.global, global);
+
+assert.sameValue(Array, global.Array);
+assert.sameValue(Boolean, global.Boolean);
+assert.sameValue(Date, global.Date);
+assert.sameValue(Error, global.Error);
+assert.sameValue(Function, global.Function);
+assert.sameValue(JSON, global.JSON);
+assert.sameValue(Math, global.Math);
+assert.sameValue(Number, global.Number);
+assert.sameValue(RegExp, global.RegExp);
+assert.sameValue(String, global.String);
 
 var globalVariable = {};
-assert.sameValue(globalVariable, globalThis.globalVariable);
+assert.sameValue(globalVariable, global.globalVariable);
 
 reportCompare(0, 0);

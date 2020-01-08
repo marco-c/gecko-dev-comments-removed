@@ -10,7 +10,6 @@
 
 
 
-
 var r = Proxy.revocable({}, {});
 
 assert.sameValue(typeof r.revoke, "function");

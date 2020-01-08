@@ -12,7 +12,6 @@
 
 
 
-
 verifyNotEnumerable(Reflect, 'isExtensible');
 verifyWritable(Reflect, 'isExtensible');
 verifyConfigurable(Reflect, 'isExtensible');

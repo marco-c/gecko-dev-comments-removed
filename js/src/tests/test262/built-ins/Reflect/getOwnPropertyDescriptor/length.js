@@ -7,7 +7,6 @@
 
 
 
-
 assert.sameValue(
   Reflect.getOwnPropertyDescriptor.length, 2,
   'The value of `Reflect.getOwnPropertyDescriptor.length` is `2`'

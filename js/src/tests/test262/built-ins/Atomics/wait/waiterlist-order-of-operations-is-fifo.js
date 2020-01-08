@@ -81,10 +81,10 @@ for (var i = 0; i < NUMAGENT; i++) {
 
 for (var i = 0; i < NUMAGENT; i++) {
   var woken = 0;
-  while ((woken = Atomics.notify(i32a, WAIT_INDEX, 1)) === 0) ;
+  while ((woken = Atomics.wake(i32a, WAIT_INDEX, 1)) === 0) ;
 
   assert.sameValue(woken, 1,
-                   'Atomics.notify(i32a, WAIT_INDEX, 1) returns 1, at index = ' + i);
+                   'Atomics.wake(i32a, WAIT_INDEX, 1) returns 1, at index = ' + i);
 
   assert.sameValue($262.agent.getReport(), 'ok',
                    '$262.agent.getReport() returns "ok", at index = ' + i);

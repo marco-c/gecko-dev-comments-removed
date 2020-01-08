@@ -12,7 +12,6 @@
 
 
 
-
 verifyNotEnumerable(Reflect, 'has');
 verifyWritable(Reflect, 'has');
 verifyConfigurable(Reflect, 'has');

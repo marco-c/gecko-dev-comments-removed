@@ -16,7 +16,6 @@
 
 
 
-
 function F() {
   this.af = _ => {
     if (new.target) {

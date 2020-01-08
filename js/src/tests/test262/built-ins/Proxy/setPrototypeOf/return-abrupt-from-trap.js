@@ -11,7 +11,6 @@
 
 
 
-
 var p = new Proxy({}, {
   setPrototypeOf: function() {
     throw new Test262Error();

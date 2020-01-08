@@ -1,0 +1,11 @@
+
+
+
+
+
+
+
+
+assert.throws.early(ReferenceError, '1 = 1;');
+
+reportCompare(0, 0);

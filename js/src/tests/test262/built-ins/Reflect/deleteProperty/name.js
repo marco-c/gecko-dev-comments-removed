@@ -12,7 +12,6 @@
 
 
 
-
 assert.sameValue(
   Reflect.deleteProperty.name, 'deleteProperty',
   'The value of `Reflect.deleteProperty.name` is `"deleteProperty"`'

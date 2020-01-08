@@ -11,7 +11,6 @@
 
 
 
-
 var p = new Proxy({}, {
   get: function() {
     throw new Test262Error();

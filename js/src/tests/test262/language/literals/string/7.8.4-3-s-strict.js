@@ -1,0 +1,16 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+
+assert.throws(SyntaxError, function() {
+    eval('var x = "a\\4";');
+});
+
+reportCompare(0, 0);

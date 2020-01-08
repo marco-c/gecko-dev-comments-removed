@@ -12,7 +12,6 @@
 
 
 
-
 var caught;
 
 try {

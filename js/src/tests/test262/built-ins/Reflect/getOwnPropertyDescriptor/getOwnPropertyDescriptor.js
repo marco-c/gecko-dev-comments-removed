@@ -12,7 +12,6 @@
 
 
 
-
 verifyNotEnumerable(Reflect, 'getOwnPropertyDescriptor');
 verifyWritable(Reflect, 'getOwnPropertyDescriptor');
 verifyConfigurable(Reflect, 'getOwnPropertyDescriptor');

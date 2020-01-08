@@ -18,7 +18,6 @@
 
 
 
-
 assert.throws(TypeError, function() {
   Reflect.apply(1, 1, []);
 });

@@ -7,7 +7,6 @@
 
 
 
-
 assert.sameValue(
   Reflect.isExtensible.length, 1,
   'The value of `Reflect.isExtensible.length` is `1`'

@@ -15,7 +15,6 @@
 
 
 
-
 var target = {};
 Object.defineProperty(target, "foo", {
   configurable: false,

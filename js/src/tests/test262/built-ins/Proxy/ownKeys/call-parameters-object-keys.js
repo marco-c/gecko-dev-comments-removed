@@ -8,7 +8,6 @@
 
 
 
-
 var _target, _handler;
 var target = {
   foo: 1,

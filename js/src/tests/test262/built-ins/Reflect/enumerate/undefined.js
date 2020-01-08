@@ -6,7 +6,6 @@
 
 
 
-
 assert.sameValue(Reflect.hasOwnProperty("enumerate"), false);
 assert.sameValue(Reflect.enumerate, undefined);
 

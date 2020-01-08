@@ -7,7 +7,6 @@
 
 
 
-
 assert.sameValue(
   Reflect.deleteProperty.length, 2,
   'The value of `Reflect.deleteProperty.length` is `2`'

@@ -1,0 +1,11 @@
+
+
+
+
+
+
+
+
+assert.throws.early(SyntaxError, 'let let');
+
+reportCompare(0, 0);

@@ -13,7 +13,6 @@
 
 
 
-
 var p = new Proxy({}, {
   preventExtensions: function(t) {
     throw new Test262Error();

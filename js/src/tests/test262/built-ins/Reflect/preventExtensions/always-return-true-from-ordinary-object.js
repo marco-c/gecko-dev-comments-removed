@@ -16,7 +16,6 @@
 
 
 
-
 var o = {};
 assert.sameValue(
   Reflect.preventExtensions(o), true,
