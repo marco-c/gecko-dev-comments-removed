@@ -8,6 +8,7 @@
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/EventStateManager.h"
 #include "mozilla/EventStates.h"
+#include "mozilla/HTMLEditor.h"
 #include "mozilla/IMEStateManager.h"
 #include "mozilla/MiscEvents.h"
 #include "mozilla/MathAlgorithms.h"
@@ -41,6 +42,7 @@
 #include "nsIContentInlines.h"
 #include "nsIDocument.h"
 #include "nsIFrame.h"
+#include "nsITextControlElement.h"
 #include "nsIWidget.h"
 #include "nsPresContext.h"
 #include "nsIPresShell.h"
@@ -5018,6 +5020,12 @@ EventStateManager::InitAndDispatchClickEvent(WidgetMouseEvent* aMouseUpEvent,
                                                   target, &status);
   
   
+  
+  
+  aMouseUpEvent->mFlags.mMultipleActionsPrevented |=
+    event.mFlags.mMultipleActionsPrevented;
+  
+  
   if (*aStatus == nsEventStatus_eConsumeNoDefault) {
     return rv;
   }
@@ -5060,11 +5068,46 @@ EventStateManager::PostHandleMouseUp(WidgetMouseEvent* aMouseUpEvent,
   }
 
   
-  nsresult rv = DispatchClickEvents(presShell, aMouseUpEvent, aStatus,
+  
+  
+  nsEventStatus status = nsEventStatus_eIgnore;
+  nsresult rv = DispatchClickEvents(presShell, aMouseUpEvent, &status,
                                     mouseUpContent, aOverrideClickTarget);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
+
+  
+  
+  
+  
+  
+  
+  if (status == nsEventStatus_eConsumeNoDefault) {
+    *aStatus = nsEventStatus_eConsumeNoDefault;
+    return NS_OK;
+  }
+
+  
+  if (aMouseUpEvent->button != WidgetMouseEventBase::eMiddleButton ||
+      !WidgetMouseEvent::IsMiddleClickPasteEnabled()) {
+    return NS_OK;
+  }
+  DebugOnly<nsresult> rvIgnored =
+    HandleMiddleClickPaste(presShell, aMouseUpEvent, &status, nullptr);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
+                       "Failed to paste for a middle click");
+
+  
+  
+  if (*aStatus != nsEventStatus_eConsumeNoDefault &&
+      (status == nsEventStatus_eConsumeNoDefault ||
+       status == nsEventStatus_eConsumeDoDefault)) {
+    *aStatus = status;
+  }
+
+  
+  
   return NS_OK;
 }
 
@@ -5130,15 +5173,35 @@ EventStateManager::HandleMiddleClickPaste(nsIPresShell* aPresShell,
 {
   MOZ_ASSERT(aPresShell);
   MOZ_ASSERT(aMouseEvent);
-  MOZ_ASSERT(aMouseEvent->mMessage == eMouseClick &&
-             aMouseEvent->button == WidgetMouseEventBase::eMiddleButton);
+  MOZ_ASSERT((aMouseEvent->mMessage == eMouseClick &&
+              aMouseEvent->button == WidgetMouseEventBase::eMiddleButton) ||
+             EventCausesClickEvents(*aMouseEvent));
   MOZ_ASSERT(aStatus);
   MOZ_ASSERT(*aStatus != nsEventStatus_eConsumeNoDefault);
-  MOZ_ASSERT(aTextEditor);
 
-  RefPtr<Selection> selection = aTextEditor->GetSelection();
-  if (NS_WARN_IF(!selection)) {
-    return NS_ERROR_FAILURE;
+  
+  
+  
+  if (aMouseEvent->mFlags.mMultipleActionsPrevented) {
+    return NS_OK;
+  }
+  aMouseEvent->mFlags.mMultipleActionsPrevented = true;
+
+  RefPtr<Selection> selection;
+  if (aTextEditor) {
+    selection = aTextEditor->GetSelection();
+    if (NS_WARN_IF(!selection)) {
+      return NS_ERROR_FAILURE;
+    }
+  } else {
+    nsIDocument* document = aPresShell->GetDocument();
+    if (NS_WARN_IF(!document)) {
+      return NS_ERROR_FAILURE;
+    }
+    nsCopySupport::GetSelectionForCopy(document, getter_AddRefs(selection));
+    if (NS_WARN_IF(!selection)) {
+      return NS_ERROR_FAILURE;
+    }
   }
 
   
@@ -5175,6 +5238,12 @@ EventStateManager::HandleMiddleClickPaste(nsIPresShell* aPresShell,
   if (!nsCopySupport::FireClipboardEvent(ePaste, clipboardType,
                                          aPresShell, selection)) {
     *aStatus = nsEventStatus_eConsumeNoDefault;
+    return NS_OK;
+  }
+
+  
+  
+  if (!aTextEditor) {
     return NS_OK;
   }
 

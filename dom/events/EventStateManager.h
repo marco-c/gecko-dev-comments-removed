@@ -375,6 +375,10 @@ public:
 
 
 
+
+
+
+
   MOZ_CAN_RUN_SCRIPT
   nsresult HandleMiddleClickPaste(nsIPresShell* aPresShell,
                                   WidgetMouseEvent* aMouseEvent,

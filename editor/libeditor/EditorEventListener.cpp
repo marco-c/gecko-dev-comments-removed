@@ -678,6 +678,16 @@ EditorEventListener::MouseClick(WidgetMouseEvent* aMouseClickEvent)
     return NS_OK;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
   if (aMouseClickEvent->button != WidgetMouseEventBase::eMiddleButton ||
       !WidgetMouseEvent::IsMiddleClickPasteEnabled()) {
     return NS_OK;
