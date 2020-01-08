@@ -553,6 +553,11 @@ var paymentDialogWrapper = {
     paymentSrv.changeShippingOption(this.request.requestId, optionID);
   },
 
+  onCloseDialogMessage() {
+    
+    window.close();
+  },
+
   async onUpdateAutofillRecord(collectionName, record, guid, {
     errorStateChange,
     preserveOldProperties,
@@ -655,6 +660,10 @@ var paymentDialogWrapper = {
       }
       case "changeShippingOption": {
         this.onChangeShippingOption(data);
+        break;
+      }
+      case "closeDialog": {
+        this.onCloseDialogMessage();
         break;
       }
       case "paymentCancel": {

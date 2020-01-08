@@ -12,10 +12,23 @@ var PaymentTestUtils = {
 
 
 
-    addCompletionHandler: async () => {
+    addCompletionHandler: async ({result, delayMs = 0}) => {
       let response = await content.showPromise;
-      response.complete();
+      let completeException;
+
+      
+      await new Promise(resolve => content.setTimeout(resolve, delayMs));
+
+      try {
+        await response.complete(result);
+      } catch (ex) {
+        completeException = {
+          name: ex.name,
+          message: ex.message,
+        };
+      }
       return {
+        completeException,
         response: response.toJSON(),
         
         methodDetails: response.details,
@@ -148,6 +161,20 @@ var PaymentTestUtils = {
       select.focus();
       
       EventUtils.synthesizeKey(option.textContent, {}, content.window);
+    },
+
+    
+
+
+
+
+
+
+    clickPrimaryButton: () => {
+      let {requestStore} = Cu.waiveXrays(content.document.querySelector("payment-dialog"));
+      let {page} = requestStore.getState();
+      let button = content.document.querySelector(`#${page.id} button.primary`);
+      button.click();
     },
 
     
