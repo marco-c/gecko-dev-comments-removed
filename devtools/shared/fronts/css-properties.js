@@ -237,7 +237,7 @@ const initCssProperties = async function(toolbox) {
 
   
   if (toolbox.target.hasActor("cssProperties")) {
-    front = CssPropertiesFront(client, toolbox.target.form);
+    front = toolbox.target.getFront("cssProperties");
     db = await front.getCSSDatabase();
   } else {
     
