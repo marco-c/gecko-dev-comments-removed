@@ -273,11 +273,10 @@ var ContentSearch = {
     let ok = SearchSuggestionController.engineOffersSuggestions(engine);
     controller.maxLocalResults = ok ? MAX_LOCAL_SUGGESTIONS : MAX_SUGGESTIONS;
     controller.maxRemoteResults = ok ? MAX_SUGGESTIONS : 0;
-    let priv = PrivateBrowsingUtils.isBrowserPrivate(browser);
     
     
     this._currentSuggestion = { controller, target: browser };
-    let suggestions = await controller.fetch(searchString, priv, engine);
+    let suggestions = await controller.fetch(searchString, engine);
     this._currentSuggestion = null;
 
     
