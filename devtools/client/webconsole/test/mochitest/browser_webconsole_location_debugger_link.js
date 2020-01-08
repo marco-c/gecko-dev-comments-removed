@@ -19,9 +19,6 @@ const TEST_URI = "http://example.com/browser/devtools/client/webconsole/" +
                  "test/mochitest/test-location-debugger-link.html";
 
 add_task(async function() {
-  
-  
-  await pushPref("devtools.debugger.new-debugger-frontend", true);
   await pushPref("devtools.webconsole.filter.error", true);
   await pushPref("devtools.webconsole.filter.log", true);
 
