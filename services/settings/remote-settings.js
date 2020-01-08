@@ -208,11 +208,12 @@ async function loadDumpFile(bucket, collection) {
 
 class RemoteSettingsClient {
 
-  constructor(collectionName, { bucketName, signerName, filterFunc = jexlFilterFunc, lastCheckTimePref }) {
+  constructor(collectionName, { bucketName, signerName, filterFunc = jexlFilterFunc, localFields = [], lastCheckTimePref }) {
     this.collectionName = collectionName;
     this.bucketName = bucketName;
     this.signerName = signerName;
     this.filterFunc = filterFunc;
+    this.localFields = localFields;
     this._lastCheckTimePref = lastCheckTimePref;
 
     this._listeners = new Map();
@@ -278,14 +279,23 @@ class RemoteSettingsClient {
 
 
 
-
-
-
-
-
-  async openCollection(options = {}) {
+  async openCollection() {
     if (!this._kinto) {
       this._kinto = new Kinto({ bucket: this.bucketName, adapter: Kinto.adapters.IDB });
+    }
+    const options = {
+      localFields: this.localFields,
+    };
+    
+    
+    const verifySignature = Services.prefs.getBoolPref(PREF_SETTINGS_VERIFY_SIGNATURE, true);
+    if (this.signerName && verifySignature) {
+      const remote = Services.prefs.getCharPref(PREF_SETTINGS_SERVER);
+      options.hooks = {
+        "incoming-changes": [(payload, collection) => {
+          return this._validateCollectionSignature(remote, payload, collection);
+        }]
+      };
     }
     return this._kinto.collection(this.collectionName, options);
   }
@@ -335,22 +345,10 @@ class RemoteSettingsClient {
   async maybeSync(lastModified, serverTime, options = { loadDump: true }) {
     const {loadDump} = options;
     const remote = Services.prefs.getCharPref(PREF_SETTINGS_SERVER);
-    const verifySignature = Services.prefs.getBoolPref(PREF_SETTINGS_VERIFY_SIGNATURE, true);
-
-    
-    
-    const colOptions = {};
-    if (this.signerName && verifySignature) {
-      colOptions.hooks = {
-        "incoming-changes": [(payload, collection) => {
-          return this._validateCollectionSignature(remote, payload, collection);
-        }]
-      };
-    }
 
     let reportStatus = null;
     try {
-      const collection = await this.openCollection(colOptions);
+      const collection = await this.openCollection();
       
       let collectionLastModified = await collection.db.getLastModified();
 
