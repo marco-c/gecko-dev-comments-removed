@@ -58,8 +58,6 @@ pub struct Annotations {
     
     
     constify_enum_variant: bool,
-    
-    derives: Vec<String>,
 }
 
 fn parse_accessor(s: &str) -> FieldAccessorKind {
@@ -81,7 +79,6 @@ impl Default for Annotations {
             private_fields: None,
             accessor_kind: None,
             constify_enum_variant: false,
-            derives: vec![],
         }
     }
 }
@@ -134,11 +131,6 @@ impl Annotations {
     }
 
     
-    pub fn derives(&self) -> &[String] {
-        &self.derives
-    }
-
-    
     pub fn disallow_copy(&self) -> bool {
         self.disallow_copy
     }
@@ -172,9 +164,6 @@ impl Annotations {
                             Some(
                                 attr.value.split("::").map(Into::into).collect(),
                             )
-                    }
-                    "derive" => {
-                        self.derives.push(attr.value)
                     }
                     "private" => {
                         self.private_fields = Some(attr.value != "false")
