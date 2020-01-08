@@ -8,6 +8,11 @@ function run_test() {
   }
 
   
+  let scope = {};
+  ChromeUtils.import("resource://gre/modules/TelemetryController.jsm", scope);
+  scope.TelemetryController.testSetup();
+
+  
   do_content_crash(function() {
                      crashType = CrashTestUtils.CRASH_MOZ_CRASH;
                      crashReporter.annotateCrashReport("TestKey", "TestValue");
@@ -15,8 +20,9 @@ function run_test() {
                    },
                    function(mdump, extra) {
                      Assert.equal(extra.TestKey, "TestValue");
-                     Assert.ok("StartupTime" in extra);
                      Assert.ok("ProcessType" in extra);
+                     Assert.ok("StartupTime" in extra);
+                     Assert.ok("TelemetrySessionId" in extra);
                      Assert.notEqual(extra.Notes.indexOf("!!!foo!!!"), -1);
                    });
 }
