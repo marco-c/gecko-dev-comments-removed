@@ -171,7 +171,7 @@ nsDragService::InvokeDragSessionImpl(nsIArray* anArrayTransferables,
   
   nsIURI *uri = nullptr;
 
-  nsCOMPtr<nsIDocument> doc(do_QueryInterface(mSourceDocument));
+  nsCOMPtr<nsIDocument> doc(mSourceDocument);
   if (doc) {
     uri = doc->GetDocumentURI();
   }
