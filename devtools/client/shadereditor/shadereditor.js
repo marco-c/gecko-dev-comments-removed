@@ -6,7 +6,6 @@
 const {XPCOMUtils} = require("resource://gre/modules/XPCOMUtils.jsm");
 const {SideMenuWidget} = require("devtools/client/shared/widgets/SideMenuWidget.jsm");
 const promise = require("promise");
-const defer = require("devtools/shared/defer");
 const {Task} = require("devtools/shared/task");
 const EventEmitter = require("devtools/shared/event-emitter");
 const { HTMLTooltip } = require("devtools/client/shared/widgets/tooltip/HTMLTooltip");
@@ -415,22 +414,21 @@ class ShadersEditorsView {
       return this._editorPromises.get(type);
     }
 
-    const deferred = defer();
-    this._editorPromises.set(type, deferred.promise);
+    const promise = new Promise(resolve =>{
+      
+      
+      const parent = $("#" + type + "-editor");
+      const editor = new Editor(DEFAULT_EDITOR_CONFIG);
+      editor.config.mode = Editor.modes[type];
 
-    
-    
-    const parent = $("#" + type + "-editor");
-    const editor = new Editor(DEFAULT_EDITOR_CONFIG);
-    editor.config.mode = Editor.modes[type];
-
-    if (this._destroyed) {
-      deferred.resolve(editor);
-    } else {
-      editor.appendTo(parent).then(() => deferred.resolve(editor));
-    }
-
-    return deferred.promise;
+      if (this._destroyed) {
+        resolve(editor);
+      } else {
+        editor.appendTo(parent).then(() => resolve(editor));
+      }
+    });
+    this._editorPromises.set(type, promise);
+    return promise;
   }
 
   
