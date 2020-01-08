@@ -3359,7 +3359,7 @@ public:
   
 
 
-  void DeleteAll(nsDisplayListBuilder* aBuilder);
+  virtual void DeleteAll(nsDisplayListBuilder* aBuilder);
 
   
 
@@ -3754,7 +3754,7 @@ public:
     return *this;
   }
 
-  void DeleteAll(nsDisplayListBuilder* aBuilder)
+  void DeleteAll(nsDisplayListBuilder* aBuilder) override
   {
     for (OldItemInfo& i : mOldItems) {
       if (i.mItem) {
