@@ -85,12 +85,6 @@ public:
 
 
 
-    static int32_t AppUnitsPerCSSPixel() { return mozilla::AppUnitsPerCSSPixel(); }
-
-    
-
-
-
 
     int32_t AppUnitsPerDevPixel() const { return mAppUnitsPerDevPixel; }
 

@@ -259,7 +259,7 @@ gfxFontMissingGlyphs::DrawMissingGlyph(uint32_t aChar,
     
     
     int32_t devPixelsPerCSSPx =
-        std::max<int32_t>(1, nsDeviceContext::AppUnitsPerCSSPixel() /
+        std::max<int32_t>(1, AppUnitsPerCSSPixel() /
                              aAppUnitsPerDevPixel);
 
     Matrix tempMat;
@@ -337,6 +337,6 @@ gfxFontMissingGlyphs::GetDesiredMinWidth(uint32_t aChar,
         HEX_CHAR_GAP + BOX_BORDER_WIDTH + BOX_HORIZONTAL_INSET;
     
     
-    width *= Float(nsDeviceContext::AppUnitsPerCSSPixel()) / aAppUnitsPerDevPixel;
+    width *= Float(AppUnitsPerCSSPixel()) / aAppUnitsPerDevPixel;
     return width;
 }
