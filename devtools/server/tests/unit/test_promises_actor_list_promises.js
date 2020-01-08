@@ -16,7 +16,6 @@ add_task(async function() {
   const parentProcessActors = await getParentProcessActors(client);
 
   
-  await attachTarget(client, parentProcessActors);
   await testListPromises(client, parentProcessActors, v =>
     new Promise(resolve => resolve(v)));
 

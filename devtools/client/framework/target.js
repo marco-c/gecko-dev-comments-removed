@@ -229,8 +229,10 @@ function TabTarget({ form, client, chrome, tab = null }) {
   } else {
     
     
+    
+    
     const isContentProcessTarget =
-      this._form.actor.match(/conn\d+\.content-process\d+\/contentProcessTarget\d+/);
+      this._form.actor.match(/conn\d+\.(content-process\d+\/)?contentProcessTarget\d+/);
     this._isBrowsingContext = !this.isLegacyAddon && !isContentProcessTarget;
   }
 

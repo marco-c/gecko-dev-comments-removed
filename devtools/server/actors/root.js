@@ -14,6 +14,10 @@ const { DebuggerServer } = require("devtools/server/main");
 
 loader.lazyRequireGetter(this, "ChromeWindowTargetActor",
   "devtools/server/actors/targets/chrome-window", true);
+loader.lazyRequireGetter(this, "ContentProcessTargetActor",
+  "devtools/server/actors/targets/content-process", true);
+loader.lazyRequireGetter(this, "ParentProcessTargetActor",
+  "devtools/server/actors/targets/parent-process", true);
 
 
 
@@ -521,16 +525,30 @@ RootActor.prototype = {
     
     
     if ((!("id" in request)) || request.id === 0) {
-      if (this._parentProcessTargetActor && (!this._parentProcessTargetActor.docShell ||
-          this._parentProcessTargetActor.docShell.isBeingDestroyed)) {
+      
+      
+      
+      
+      
+      let isXpcshell = true;
+      try {
+        isXpcshell = !Services.wm.getMostRecentWindow(null) &&
+                     !Services.appShell.hiddenDOMWindow;
+      } catch (e) {}
+
+      if (!isXpcshell && this._parentProcessTargetActor &&
+          (!this._parentProcessTargetActor.docShell ||
+            this._parentProcessTargetActor.docShell.isBeingDestroyed)) {
         this._parentProcessTargetActor.destroy();
         this._parentProcessTargetActor = null;
       }
       if (!this._parentProcessTargetActor) {
         
-        const { ParentProcessTargetActor } =
-          require("devtools/server/actors/targets/parent-process");
-        this._parentProcessTargetActor = new ParentProcessTargetActor(this.conn);
+        if (isXpcshell) {
+          this._parentProcessTargetActor = new ContentProcessTargetActor(this.conn);
+        } else {
+          this._parentProcessTargetActor = new ParentProcessTargetActor(this.conn);
+        }
         this._globalActorPool.manage(this._parentProcessTargetActor);
       }
 
