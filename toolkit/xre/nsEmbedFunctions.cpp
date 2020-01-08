@@ -363,6 +363,8 @@ XRE_InitChildProcess(int aArgc,
   NS_ENSURE_ARG_POINTER(aArgv[0]);
   MOZ_ASSERT(aChildData);
 
+  recordreplay::Initialize(aArgc, aArgv);
+
 #ifdef MOZ_ASAN_REPORTER
   
   

@@ -10,6 +10,7 @@
 #include "base/shared_memory.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Scheduler.h"
+#include "mozilla/recordreplay/ParentIPC.h"
 
 #if defined(XP_MACOSX) && defined(MOZ_CONTENT_SANDBOX)
 #include <stdlib.h>
@@ -261,30 +262,46 @@ ContentProcess::Init(int aArgc, char* aArgv[])
     return false;
   }
 
-  
-  
-  Preferences::InitSnapshot(prefMapHandle.ref(), *prefMapSize);
+  if (recordreplay::IsRecordingOrReplaying()) {
+    
+    Preferences::DeserializePreferences(recordreplay::child::PrefsShmemContents(*prefsLen),
+                                        *prefsLen);
+  } else {
+    
+    
+    Preferences::InitSnapshot(prefMapHandle.ref(), *prefMapSize);
 
-  
-  base::SharedMemory shm;
-  if (!shm.SetHandle(*prefsHandle,  true)) {
-    NS_ERROR("failed to open shared memory in the child");
-    return false;
+    
+    base::SharedMemory shm;
+    if (!shm.SetHandle(*prefsHandle,  true)) {
+      NS_ERROR("failed to open shared memory in the child");
+      return false;
+    }
+    if (!shm.Map(*prefsLen)) {
+      NS_ERROR("failed to map shared memory in the child");
+      return false;
+    }
+    Preferences::DeserializePreferences(static_cast<char*>(shm.memory()),
+                                        *prefsLen);
+    if (recordreplay::IsMiddleman()) {
+      recordreplay::parent::NotePrefsShmemContents(static_cast<char*>(shm.memory()),
+                                                   *prefsLen);
+    }
   }
-  if (!shm.Map(*prefsLen)) {
-    NS_ERROR("failed to map shared memory in the child");
-    return false;
-  }
-  Preferences::DeserializePreferences(static_cast<char*>(shm.memory()),
-                                      *prefsLen);
 
   Scheduler::SetPrefs(*schedulerPrefs);
+
+  if (recordreplay::IsMiddleman()) {
+    recordreplay::parent::InitializeMiddleman(aArgc, aArgv, ParentPid());
+  }
+
   mContent.Init(IOThreadChild::message_loop(),
                 ParentPid(),
                 *parentBuildID,
                 IOThreadChild::channel(),
                 *childID,
                 *isForBrowser);
+
   mXREEmbed.Start();
 #if (defined(XP_MACOSX)) && defined(MOZ_CONTENT_SANDBOX)
   mContent.SetProfileDir(profileDir);
