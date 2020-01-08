@@ -58,63 +58,6 @@ StorageDBThread* sStorageThread = nullptr;
 
 bool sStorageThreadDown = false;
 
-
-
-nsCString
-Scheme0Scope(LocalStorageCacheBridge* aCache)
-{
-  nsCString result;
-
-  nsCString suffix = aCache->OriginSuffix();
-
-  OriginAttributes oa;
-  if (!suffix.IsEmpty()) {
-    DebugOnly<bool> success = oa.PopulateFromSuffix(suffix);
-    MOZ_ASSERT(success);
-  }
-
-  if (oa.mAppId != nsIScriptSecurityManager::NO_APP_ID ||
-      oa.mInIsolatedMozBrowser) {
-    result.AppendInt(oa.mAppId);
-    result.Append(':');
-    result.Append(oa.mInIsolatedMozBrowser ? 't' : 'f');
-    result.Append(':');
-  }
-
-  
-  
-  
-  
-  
-  nsAutoCString remaining;
-  oa.mAppId = 0;
-  oa.mInIsolatedMozBrowser = false;
-  oa.CreateSuffix(remaining);
-  if (!remaining.IsEmpty()) {
-    MOZ_ASSERT(!suffix.IsEmpty());
-
-    if (result.IsEmpty()) {
-      
-      
-      result.AppendLiteral("0:f:");
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    result.Append(suffix);
-    result.Append(':');
-  }
-
-  result.Append(aCache->OriginNoSuffix());
-
-  return result;
-}
-
 } 
 
 
@@ -1156,7 +1099,8 @@ StorageDBThread::DBOperation::Perform(StorageDBThread* aThread)
     NS_ENSURE_SUCCESS(rv, rv);
     
     rv = stmt->BindUTF8StringByName(NS_LITERAL_CSTRING("scope"),
-                                    Scheme0Scope(mCache));
+                                    Scheme0Scope(mCache->OriginSuffix(),
+                                                 mCache->OriginNoSuffix()));
     NS_ENSURE_SUCCESS(rv, rv);
     rv = stmt->BindStringByName(NS_LITERAL_CSTRING("key"),
                                 mKey);
