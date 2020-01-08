@@ -1293,6 +1293,7 @@ impl StrongRuleNode {
         
         const IGNORED_WHEN_COLORS_DISABLED: &'static [LonghandId] = &[
             LonghandId::BackgroundImage,
+            LonghandId::BorderImageSource,
             LonghandId::BorderTopColor,
             LonghandId::BorderRightColor,
             LonghandId::BorderBottomColor,
