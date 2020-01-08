@@ -92,10 +92,14 @@ class FlexItemSizingOutline extends PureComponent {
     
     
     let sizes = [
+      { name: "basis-start", size: 0 },
       { name: "basis-end", size: mainBaseSize },
+      { name: "final-start", size: 0 },
       { name: "final-end", size: mainFinalSize },
     ];
 
+    
+    
     if (mainDeltaSize > 0) {
       sizes.push({ name: "delta-start", size: mainBaseSize });
       sizes.push({ name: "delta-end", size: mainBaseSize + mainDeltaSize });
@@ -111,9 +115,16 @@ class FlexItemSizingOutline extends PureComponent {
       sizes.push({ name: "min", size: mainMinSize });
     }
 
+    
     sizes = sizes.sort((a, b) => a.size - b.size);
 
-    let gridTemplateColumns = "[final-start basis-start";
+    
+    
+    
+    const offsetBy = sizes.reduce((acc, curr) => curr.size < acc ? curr.size : acc, 0);
+    sizes = sizes.map(entry => ({ size: entry.size - offsetBy, name: entry.name }));
+
+    let gridTemplateColumns = "[";
     let accumulatedSize = 0;
     for (const { name, size } of sizes) {
       const breadth = Math.round(size - accumulatedSize);

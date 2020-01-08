@@ -8,7 +8,7 @@
 
 
 
-const TEST_URI = URL_ROOT + "doc_flexbox_simple.html";
+const TEST_URI = URL_ROOT + "doc_flexbox_specific_cases.html";
 
 const TEST_DATA = [{
   selector: ".shrinking .item",
