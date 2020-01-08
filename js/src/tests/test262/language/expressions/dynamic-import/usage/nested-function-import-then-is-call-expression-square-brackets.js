@@ -24,7 +24,6 @@
 
 
 
-
 function f() {
   import('./dynamic-import-module_FIXTURE.js')['then'](x => x).then(imported => {
 

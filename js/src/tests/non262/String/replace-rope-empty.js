@@ -1,5 +1,3 @@
-
-
 var BUGNUMBER = 1509768;
 var summary = "String#replace with an empty string pattern on a rope should prepend the replacement string.";
 

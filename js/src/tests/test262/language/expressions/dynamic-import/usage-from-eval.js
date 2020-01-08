@@ -23,7 +23,6 @@
 
 
 
-
 const p = eval("import('./module-code_FIXTURE.js');");
 
 assert.sameValue(Promise.resolve(p), p, 'constructor is %Promise%');

@@ -17,7 +17,6 @@
 
 
 
-
 var global = fnGlobalObject();
 
 Promise.all([

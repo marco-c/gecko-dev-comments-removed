@@ -74,7 +74,6 @@
 
 
 
-
 import('./module-code_FIXTURE.js').then(ns => {
 
     assert(Symbol.toStringTag in ns, 'in: Symbol.toStringTag');

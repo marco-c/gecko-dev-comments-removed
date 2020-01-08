@@ -34,7 +34,6 @@
 
 
 
-
 function callImport(name) {
     return import('./double-error-resolution_FIXTURE.js').catch(error => {
         assert.sameValue(error, 'foo');

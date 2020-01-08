@@ -3,8 +3,6 @@
 
 
 
-
-
 var BUGNUMBER = 1463421;
 var summary = 'rogue read barrier';
 
