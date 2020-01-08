@@ -450,7 +450,7 @@ function getPageActionPopup(extension, win = window) {
   return win.document.getElementById(panelId);
 }
 
-async function clickPageAction(extension, win = window) {
+async function getPageActionButton(extension, win = window) {
   
   
   
@@ -463,8 +463,11 @@ async function clickPageAction(extension, win = window) {
 
   let pageActionId = BrowserPageActions.urlbarButtonNodeIDForActionID(makeWidgetId(extension.id));
 
-  let elem = win.document.getElementById(pageActionId);
+  return win.document.getElementById(pageActionId);
+}
 
+async function clickPageAction(extension, win = window) {
+  let elem = await getPageActionButton(extension, win);
   EventUtils.synthesizeMouseAtCenter(elem, {}, win);
   return new Promise(SimpleTest.executeSoon);
 }
