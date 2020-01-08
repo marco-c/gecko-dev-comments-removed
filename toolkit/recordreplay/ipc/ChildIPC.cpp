@@ -65,6 +65,9 @@ static IntroductionMessage* gIntroductionMessage;
 static bool gDebuggerRunsInMiddleman;
 
 
+static MiddlemanCallResponseMessage* gCallResponseMessage;
+
+
 static void
 ChannelMessageHandler(Message* aMsg)
 {
@@ -157,6 +160,14 @@ ChannelMessageHandler(Message* aMsg)
     PauseMainThreadAndInvokeCallback([=]() {
         navigation::RunToPoint(nmsg.mTarget);
       });
+    break;
+  }
+  case MessageType::MiddlemanCallResponse: {
+    MonitorAutoLock lock(*gMonitor);
+    MOZ_RELEASE_ASSERT(!gCallResponseMessage);
+    gCallResponseMessage = (MiddlemanCallResponseMessage*) aMsg;
+    aMsg = nullptr; 
+    gMonitor->NotifyAll();
     break;
   }
   default:
@@ -558,6 +569,52 @@ HitBreakpoint(bool aRecordingEndpoint, const uint32_t* aBreakpoints, size_t aNum
       gChannel->SendMessage(*msg);
       free(msg);
     });
+}
+
+bool
+SendMiddlemanCallRequest(const char* aInputData, size_t aInputSize,
+                         InfallibleVector<char>* aOutputData)
+{
+  Thread* thread = Thread::Current();
+
+  
+  
+  
+  
+  
+  
+  MOZ_RELEASE_ASSERT(thread->IsMainThread() || thread->Id() == gCompositorThreadId);
+
+  if (thread->Id() == gCompositorThreadId && !CompositorCanPerformMiddlemanCalls()) {
+    return false;
+  }
+
+  MonitorAutoLock lock(*gMonitor);
+
+  MOZ_RELEASE_ASSERT(!gCallResponseMessage);
+
+  MiddlemanCallRequestMessage* msg = MiddlemanCallRequestMessage::New(aInputData, aInputSize);
+  gChannel->SendMessage(*msg);
+  free(msg);
+
+  while (!gCallResponseMessage) {
+    gMonitor->Wait();
+  }
+
+  aOutputData->append(gCallResponseMessage->BinaryData(), gCallResponseMessage->BinaryDataSize());
+
+  free(gCallResponseMessage);
+  gCallResponseMessage = nullptr;
+
+  gMonitor->Notify();
+  return true;
+}
+
+void
+SendResetMiddlemanCalls()
+{
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  gChannel->SendMessage(ResetMiddlemanCallsMessage());
 }
 
 } 

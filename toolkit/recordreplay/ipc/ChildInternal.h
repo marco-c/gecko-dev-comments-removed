@@ -7,8 +7,10 @@
 #ifndef mozilla_recordreplay_ChildInternal_h
 #define mozilla_recordreplay_ChildInternal_h
 
+#include "Channel.h"
 #include "ChildIPC.h"
 #include "JSControl.h"
+#include "MiddlemanCall.h"
 #include "Monitor.h"
 
 namespace mozilla {
@@ -115,6 +117,11 @@ void EndIdleTime();
 
 
 bool DebuggerRunsInMiddleman();
+
+
+bool SendMiddlemanCallRequest(const char* aInputData, size_t aInputSize,
+                              InfallibleVector<char>* aOutputData);
+void SendResetMiddlemanCalls();
 
 } 
 
