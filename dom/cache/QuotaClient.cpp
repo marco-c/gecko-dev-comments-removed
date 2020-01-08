@@ -90,6 +90,14 @@ LockedGetPaddingSizeFromDB(nsIFile* aDir, const nsACString& aGroup,
   }
   if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
 
+  
+  
+  
+  
+  
+  rv = mozilla::dom::cache::db::CreateOrMigrateSchema(conn);
+  if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
+
   int64_t paddingSize = 0;
   rv = mozilla::dom::cache::
        LockedDirectoryPaddingRestore(aDir, conn,  false,
