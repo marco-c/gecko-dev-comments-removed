@@ -779,6 +779,14 @@ IonBuilder::init()
 AbortReasonOr<Ok>
 IonBuilder::build()
 {
+    
+    
+#ifdef JS_JITSPEW
+    if (!info().isAnalysis()) {
+        JitSpewBaselineICStats(script(), "To-Be-Compiled");
+    }
+#endif
+
     MOZ_TRY(init());
 
     if (script()->hasBaselineScript()) {
@@ -971,6 +979,14 @@ IonBuilder::buildInline(IonBuilder* callerBuilder, MResumePoint* callerResumePoi
                         CallInfo& callInfo)
 {
     inlineCallInfo_ = &callInfo;
+
+    
+    
+#ifdef JS_JITSPEW
+    if (!info().isAnalysis()) {
+        JitSpewBaselineICStats(script(), "To-Be-Inlined");
+    }
+#endif
 
     MOZ_TRY(init());
 
@@ -5356,14 +5372,6 @@ IonBuilder::jsop_funcall(uint32_t argc)
     TemporaryTypeSet* funTypes = current->peek(funcDepth)->resultTypeSet();
     JSFunction* target = getSingleCallTarget(funTypes);
 
-    CallInfo callInfo(alloc(), pc,  false,
-                       BytecodeIsPopped(pc));
-
-    
-    
-    
-    MOZ_TRY(callInfo.savePriorCallStack(this, current, argc + 2));
-
     
     current->shimmySlots(funcDepth - 1);
 
@@ -5378,6 +5386,8 @@ IonBuilder::jsop_funcall(uint32_t argc)
         argc -= 1;
     }
 
+    CallInfo callInfo(alloc(), pc,  false,
+                       BytecodeIsPopped(pc));
     if (!callInfo.init(current, argc)) {
         return abort(AbortReason::Alloc);
     }
