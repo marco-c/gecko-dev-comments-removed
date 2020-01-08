@@ -7404,11 +7404,8 @@ class CGCallGenerator(CGThing):
         if not static:
             call = CGWrapper(call, pre="%s->" % object)
         call = CGList([call, CGWrapper(args, pre="(", post=")")])
-        if ((returnType is None or returnType.isVoid() or
-             resultOutParam is not None) and
-            
-            
-            descriptor.name != "TreeBoxObject"):
+        if (returnType is None or returnType.isVoid() or
+            resultOutParam is not None):
             assert resultConversion is None
             call = CGList([
                 CGWrapper(
