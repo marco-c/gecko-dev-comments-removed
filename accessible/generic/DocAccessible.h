@@ -582,8 +582,6 @@ protected:
 
   static void ScrollTimerCallback(nsITimer* aTimer, void* aClosure);
 
-  void DispatchScrollingEvent(uint32_t aEventType);
-
 protected:
 
   
@@ -605,9 +603,8 @@ protected:
     mNodeToAccessibleMap;
 
   nsIDocument* mDocumentNode;
-  nsCOMPtr<nsITimer> mScrollWatchTimer;
-  uint16_t mScrollPositionChangedTicks; 
-  TimeStamp mLastScrollingDispatch;
+    nsCOMPtr<nsITimer> mScrollWatchTimer;
+    uint16_t mScrollPositionChangedTicks; 
 
   
 
