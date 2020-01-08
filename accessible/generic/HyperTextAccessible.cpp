@@ -1519,6 +1519,8 @@ HyperTextAccessible::GetCaretRect(nsIWidget** aWidget)
   LayoutDeviceIntRect caretRect = LayoutDeviceIntRect::FromUnknownRect(
     rect.ToOutsidePixels(frame->PresContext()->AppUnitsPerDevPixel()));
   
+  
+  
   caretRect.MoveBy((*aWidget)->WidgetToScreenOffset() - (*aWidget)->GetClientOffset());
 
   

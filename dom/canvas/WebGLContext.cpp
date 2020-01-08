@@ -1614,6 +1614,7 @@ WebGLContext::EnqueueUpdateContextLossStatus()
 
 
 
+
 void
 WebGLContext::UpdateContextLossStatus()
 {

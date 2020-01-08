@@ -7,6 +7,7 @@
 
 
 
+
 ROLE(NOTHING,
      "nothing",
      ATK_ROLE_UNKNOWN,
@@ -1629,3 +1630,4 @@ ROLE(FORM_LANDMARK,
      IA2_ROLE_FORM,
      java::SessionAccessibility::CLASSNAME_VIEW,
      eNoNameRule)
+

@@ -59,6 +59,9 @@ namespace mozilla {
 
 
 
+
+
+
 static bool
 ValidateExtents(WebGLContext* webgl, GLsizei width, GLsizei height,
                 GLsizei depth, GLint border, uint32_t* const out_width,

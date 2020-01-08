@@ -81,6 +81,7 @@
 
 
 
+
 class nsWindowMemoryReporter final : public nsIMemoryReporter,
                                      public nsIObserver,
                                      public nsSupportsWeakReference

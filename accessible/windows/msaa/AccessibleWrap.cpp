@@ -657,6 +657,8 @@ AccessibleWrap::get_accFocus(
   
   
   
+  
+  
   if (IsDefunct())
     return CO_E_OBJNOTCONNECTED;
 

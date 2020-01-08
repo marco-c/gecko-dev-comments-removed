@@ -613,6 +613,7 @@ TEST(ImageBitmapColorUtils, RGB24ToBGRA32)
 
 
 
+
 TEST(ImageBitmapColorUtils, RGB24ToYUV444P)
 {
   const RGB24Data srcData;

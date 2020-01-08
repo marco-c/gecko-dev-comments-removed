@@ -3656,6 +3656,8 @@ nsFocusManager::GetNextTabbableContent(nsIPresShell* aPresShell,
       
       
       
+      
+      
       int32_t tabIndex;
       frame->IsFocusable(&tabIndex, 0);
 

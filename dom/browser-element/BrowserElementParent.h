@@ -46,6 +46,9 @@ public:
 
 
 
+
+
+
   enum OpenWindowResult {
     OPEN_WINDOW_ADDED,
     OPEN_WINDOW_IGNORED,

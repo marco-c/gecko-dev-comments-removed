@@ -94,6 +94,8 @@ private:
 
 
 
+
+
   EventStates GetOptimumState() const;
 };
 

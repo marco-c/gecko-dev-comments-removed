@@ -4881,6 +4881,9 @@ CanvasRenderingContext2D::CachedSurfaceFromElement(Element* aElement)
 
 
 
+
+
+
 void
 CanvasRenderingContext2D::DrawImage(const CanvasImageSource& aImage,
                                     double aSx, double aSy, double aSw,

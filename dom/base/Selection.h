@@ -427,6 +427,7 @@ public:
 
 
 
+
   void Collapse(nsINode& aContainer, uint32_t aOffset, ErrorResult& aRv)
   {
     Collapse(RawRangeBoundary(&aContainer, aOffset), aRv);
@@ -450,6 +451,7 @@ public:
   void CollapseToEnd(mozilla::ErrorResult& aRv);
 
   
+
 
 
 
