@@ -327,10 +327,19 @@ protected:
 
   virtual nsresult InitRules();
 
-  already_AddRefed<nsIDocumentEncoder> GetAndInitDocEncoder(
-                                         const nsAString& aFormatType,
-                                         uint32_t aFlags,
-                                         const nsACString& aCharset);
+  
+
+
+
+
+
+
+
+
+  already_AddRefed<nsIDocumentEncoder>
+  GetAndInitDocEncoder(const nsAString& aFormatType,
+                       uint32_t aDocumentEncoderFlags,
+                       const nsACString& aCharset) const;
 
   
 
@@ -393,8 +402,8 @@ protected:
   virtual already_AddRefed<nsIContent> GetInputEventTargetContent() override;
 
 protected:
-  nsCOMPtr<nsIDocumentEncoder> mCachedDocumentEncoder;
-  nsString mCachedDocumentEncoderType;
+  mutable nsCOMPtr<nsIDocumentEncoder> mCachedDocumentEncoder;
+  mutable nsString mCachedDocumentEncoderType;
   int32_t mWrapColumn;
   int32_t mMaxTextLength;
   int32_t mInitTriggerCounter;
