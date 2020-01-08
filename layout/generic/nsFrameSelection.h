@@ -430,16 +430,26 @@ public:
 
 
 
-
-
-
-
-
+  nsIFrame* GetFrameToPageSelect() const;
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT
   void CommonPageMove(bool aForward,
                       bool aExtend,
-                      nsIScrollableFrame* aScrollableFrame);
+                      nsIFrame* aFrame);
 
   void SetHint(CaretAssociateHint aHintRight) { mHint = aHintRight; }
   CaretAssociateHint GetHint() const { return mHint; }

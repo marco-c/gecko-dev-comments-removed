@@ -1712,20 +1712,81 @@ nsFrameSelection::GetFrameForNodeOffset(nsIContent*        aNode,
   return returnFrame;
 }
 
+nsIFrame*
+nsFrameSelection::GetFrameToPageSelect() const
+{
+  if (NS_WARN_IF(!mShell)) {
+    return nullptr;
+  }
+
+  nsIFrame* rootFrameToSelect;
+  if (mLimiter) {
+    rootFrameToSelect = mLimiter->GetPrimaryFrame();
+    if (NS_WARN_IF(!rootFrameToSelect)) {
+      return nullptr;
+    }
+  } else if (mAncestorLimiter) {
+    rootFrameToSelect = mAncestorLimiter->GetPrimaryFrame();
+    if (NS_WARN_IF(!rootFrameToSelect)) {
+      return nullptr;
+    }
+  } else {
+    rootFrameToSelect = mShell->GetRootScrollFrame();
+    if (NS_WARN_IF(!rootFrameToSelect)) {
+      return nullptr;
+    }
+  }
+
+  nsCOMPtr<nsIContent> contentToSelect = mShell->GetContentForScrolling();
+  if (contentToSelect) {
+    
+    
+    for (nsIFrame* frame = contentToSelect->GetPrimaryFrame();
+         frame && frame != rootFrameToSelect;
+         frame = frame->GetParent()) {
+      nsIScrollableFrame* scrollableFrame = do_QueryFrame(frame);
+      if (!scrollableFrame) {
+        continue;
+      }
+      ScrollStyles scrollStyles = scrollableFrame->GetScrollStyles();
+      if (scrollStyles.mVertical == NS_STYLE_OVERFLOW_HIDDEN) {
+        continue;
+      }
+      uint32_t directions = scrollableFrame->GetPerceivedScrollingDirections();
+      if (directions & nsIScrollableFrame::VERTICAL) {
+        
+        return frame;
+      }
+    }
+  }
+  
+  
+  
+  
+  return rootFrameToSelect;
+}
+
 void
 nsFrameSelection::CommonPageMove(bool aForward,
                                  bool aExtend,
-                                 nsIScrollableFrame* aScrollableFrame)
+                                 nsIFrame* aFrame)
 {
+  MOZ_ASSERT(aFrame);
+
   
   
 
   
-
-  nsIFrame* scrolledFrame = aScrollableFrame->GetScrolledFrame();
-  if (!scrolledFrame)
+  nsIScrollableFrame* scrollableFrame = aFrame->GetScrollTargetFrame();
+  
+  
+  nsIFrame* scrolledFrame =
+    scrollableFrame ? scrollableFrame->GetScrolledFrame() : aFrame;
+  if (!scrolledFrame) {
     return;
+  }
 
+  
   
   
   Selection* domSel = GetSelection(SelectionType::eNormal);
@@ -1735,33 +1796,46 @@ nsFrameSelection::CommonPageMove(bool aForward,
 
   nsRect caretPos;
   nsIFrame* caretFrame = nsCaret::GetGeometry(domSel, &caretPos);
-  if (!caretFrame)
+  if (!caretFrame) {
     return;
+  }
 
-  
-  nsSize scrollDelta = aScrollableFrame->GetPageScrollAmount();
-
-  if (aForward)
-    caretPos.y += scrollDelta.height;
-  else
-    caretPos.y -= scrollDelta.height;
+  if (scrollableFrame) {
+    
+    
+    if (aForward) {
+      caretPos.y += scrollableFrame->GetPageScrollAmount().height;
+    } else {
+      caretPos.y -= scrollableFrame->GetPageScrollAmount().height;
+    }
+  } else {
+    
+    if (aForward) {
+      caretPos.y += scrolledFrame->GetSize().height;
+    } else {
+      caretPos.y -= scrolledFrame->GetSize().height;
+    }
+  }
 
   caretPos += caretFrame->GetOffsetTo(scrolledFrame);
 
   
   nsPoint desiredPoint;
   desiredPoint.x = caretPos.x;
-  desiredPoint.y = caretPos.y + caretPos.height/2;
+  desiredPoint.y = caretPos.y + caretPos.height / 2;
   nsIFrame::ContentOffsets offsets =
       scrolledFrame->GetContentOffsetsFromPoint(desiredPoint);
 
-  if (!offsets.content)
+  if (!offsets.content) {
     return;
+  }
 
   
-  aScrollableFrame->ScrollBy(nsIntPoint(0, aForward ? 1 : -1),
-                             nsIScrollableFrame::PAGES,
-                             nsIScrollableFrame::SMOOTH);
+  if (scrollableFrame) {
+    scrollableFrame->ScrollBy(nsIntPoint(0, aForward ? 1 : -1),
+                               nsIScrollableFrame::PAGES,
+                               nsIScrollableFrame::SMOOTH);
+  }
 
   
   HandleClick(offsets.content, offsets.offset,
