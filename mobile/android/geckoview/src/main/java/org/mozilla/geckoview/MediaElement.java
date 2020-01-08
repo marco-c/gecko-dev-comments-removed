@@ -8,6 +8,7 @@ package org.mozilla.geckoview;
 
 import android.support.annotation.IntDef;
 import android.support.annotation.Nullable;
+import android.support.annotation.UiThread;
 import android.util.Log;
 
 import org.mozilla.gecko.util.GeckoBundle;
@@ -287,6 +288,7 @@ public class MediaElement {
 
 
 
+        @UiThread
         void onPlaybackStateChange(MediaElement mediaElement, @MediaStateFlags int mediaState);
 
         
@@ -296,6 +298,7 @@ public class MediaElement {
 
 
 
+        @UiThread
         void onReadyStateChange(MediaElement mediaElement, @ReadyStateFlags int readyState);
 
         
@@ -304,6 +307,7 @@ public class MediaElement {
 
 
 
+        @UiThread
         void onMetadataChange(MediaElement mediaElement, Metadata metaData);
 
         
@@ -312,6 +316,7 @@ public class MediaElement {
 
 
 
+        @UiThread
         void onLoadProgress(MediaElement mediaElement, LoadProgressInfo progressInfo);
 
         
@@ -321,6 +326,7 @@ public class MediaElement {
 
 
 
+        @UiThread
         void onVolumeChange(MediaElement mediaElement, double volume, boolean muted);
 
         
@@ -329,6 +335,7 @@ public class MediaElement {
 
 
 
+        @UiThread
         void onTimeChange(MediaElement mediaElement, double time);
 
         
@@ -337,6 +344,7 @@ public class MediaElement {
 
 
 
+        @UiThread
         void onPlaybackRateChange(MediaElement mediaElement, double rate);
 
         
@@ -345,6 +353,7 @@ public class MediaElement {
 
 
 
+        @UiThread
         void onFullscreenChange(MediaElement mediaElement, boolean fullscreen);
 
         
@@ -354,6 +363,7 @@ public class MediaElement {
 
 
 
+        @UiThread
         void onError(MediaElement mediaElement, @MediaErrorFlags int errorCode);
     }
 

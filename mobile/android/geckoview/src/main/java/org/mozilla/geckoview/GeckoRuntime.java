@@ -302,6 +302,7 @@ public final class GeckoRuntime implements Parcelable {
 
 
 
+        @UiThread
         void onShutdown();
     }
 
