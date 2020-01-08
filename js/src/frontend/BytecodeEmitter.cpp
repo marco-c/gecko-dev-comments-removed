@@ -3434,6 +3434,11 @@ BytecodeEmitter::wrapWithDestructuringIteratorCloseTryNote(int32_t iterDepth, In
 bool
 BytecodeEmitter::emitDefault(ParseNode* defaultExpr, ParseNode* pattern)
 {
+    IfEmitter ifUndefined(this);
+    if (!ifUndefined.emitIf(Nothing())) {
+        return false;
+    }
+
     if (!emit1(JSOP_DUP)) {                               
         return false;
     }
@@ -3443,21 +3448,19 @@ BytecodeEmitter::emitDefault(ParseNode* defaultExpr, ParseNode* pattern)
     if (!emit1(JSOP_STRICTEQ)) {                          
         return false;
     }
-    
-    if (!newSrcNote(SRC_IF)) {
+
+    if (!ifUndefined.emitThen()) {                        
         return false;
     }
-    JumpList jump;
-    if (!emitJump(JSOP_IFEQ, &jump)) {                    
-        return false;
-    }
+
     if (!emit1(JSOP_POP)) {                               
         return false;
     }
-    if (!emitInitializerInBranch(defaultExpr, pattern)) { 
+    if (!emitInitializer(defaultExpr, pattern)) {         
         return false;
     }
-    if (!emitJumpTargetAndPatch(jump)) {
+
+    if (!ifUndefined.emitEnd()) {                         
         return false;
     }
     return true;
@@ -3519,13 +3522,6 @@ BytecodeEmitter::emitInitializer(ParseNode* initializer, ParseNode* pattern)
     }
 
     return true;
-}
-
-bool
-BytecodeEmitter::emitInitializerInBranch(ParseNode* initializer, ParseNode* pattern)
-{
-    TDZCheckCache tdzCache(this);
-    return emitInitializer(initializer, pattern);
 }
 
 bool
@@ -8450,34 +8446,13 @@ BytecodeEmitter::emitFunctionFormalParameters(ListNode* paramsBody)
             
             
             MOZ_ASSERT(hasParameterExprs);
-            if (!emitArgOp(JSOP_GETARG, argSlot)) {
+
+            if (!emitArgOp(JSOP_GETARG, argSlot)) {       
                 return false;
             }
-            if (!emit1(JSOP_DUP)) {
-                return false;
-            }
-            if (!emit1(JSOP_UNDEFINED)) {
-                return false;
-            }
-            if (!emit1(JSOP_STRICTEQ)) {
-                return false;
-            }
-            
-            if (!newSrcNote(SRC_IF)) {
-                return false;
-            }
-            JumpList jump;
-            if (!emitJump(JSOP_IFEQ, &jump)) {
-                return false;
-            }
-            if (!emit1(JSOP_POP)) {
-                return false;
-            }
-            if (!emitInitializerInBranch(initializer, bindingElement)) {
-                return false;
-            }
-            if (!emitJumpTargetAndPatch(jump)) {
-                return false;
+
+            if (!emitDefault(initializer, bindingElement)) {
+                return false;                             
             }
         } else if (isRest) {
             if (!emit1(JSOP_REST)) {
@@ -9436,16 +9411,6 @@ BytecodeEmitter::emitTree(ParseNode* pn, ValueUsage valueUsage ,
         }
     }
     return true;
-}
-
-bool
-BytecodeEmitter::emitTreeInBranch(ParseNode* pn,
-                                  ValueUsage valueUsage )
-{
-    
-    
-    TDZCheckCache tdzCache(this);
-    return emitTree(pn, valueUsage);
 }
 
 static bool

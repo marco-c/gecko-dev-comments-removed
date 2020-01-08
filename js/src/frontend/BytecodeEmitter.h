@@ -468,10 +468,6 @@ struct MOZ_STACK_CLASS BytecodeEmitter
                                EmitLineNumberNote emitLineNote = EMIT_LINENOTE);
 
     
-    MOZ_MUST_USE bool emitTreeInBranch(ParseNode* pn,
-                                       ValueUsage valueUsage = ValueUsage::WantValue);
-
-    
     
     MOZ_MUST_USE bool emitScript(ParseNode* body);
 
@@ -774,7 +770,6 @@ struct MOZ_STACK_CLASS BytecodeEmitter
     MOZ_MUST_USE bool setOrEmitSetFunName(ParseNode* maybeFun, HandleAtom name);
 
     MOZ_MUST_USE bool emitInitializer(ParseNode* initializer, ParseNode* pattern);
-    MOZ_MUST_USE bool emitInitializerInBranch(ParseNode* initializer, ParseNode* pattern);
 
     MOZ_MUST_USE bool emitCallSiteObject(CallSiteNode* callSiteObj);
     MOZ_MUST_USE bool emitTemplateString(ListNode* templateString);
