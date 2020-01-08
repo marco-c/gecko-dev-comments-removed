@@ -1286,7 +1286,7 @@ pref("dom.storage.enabled", true);
 
 
 #ifdef NIGHTLY_BUILD
-pref("dom.storage.next_gen", true);
+pref("dom.storage.next_gen", false);
 #else
 pref("dom.storage.next_gen", false);
 #endif
