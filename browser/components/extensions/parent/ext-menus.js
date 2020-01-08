@@ -655,11 +655,17 @@ MenuItem.prototype = {
     }
 
     if (createProperties.documentUrlPatterns != null) {
-      this.documentUrlMatchPattern = new MatchPatternSet(this.documentUrlPatterns);
+      this.documentUrlMatchPattern = new MatchPatternSet(this.documentUrlPatterns, {
+        restrictSchemes: this.extension.restrictSchemes,
+      });
     }
 
     if (createProperties.targetUrlPatterns != null) {
-      this.targetUrlMatchPattern = new MatchPatternSet(this.targetUrlPatterns, {restrictSchemes: false});
+      this.targetUrlMatchPattern = new MatchPatternSet(this.targetUrlPatterns, {
+        
+        
+        restrictSchemes: false,
+      });
     }
 
     
