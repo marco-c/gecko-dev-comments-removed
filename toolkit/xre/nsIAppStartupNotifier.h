@@ -42,8 +42,6 @@
 
 
 
-#define NS_APPSTARTUPNOTIFIER_CONTRACTID "@mozilla.org/embedcomp/appstartup-notifier;1"
-
 #define APPSTARTUP_CATEGORY "app-startup"
 #define APPSTARTUP_TOPIC    "app-startup"
 
