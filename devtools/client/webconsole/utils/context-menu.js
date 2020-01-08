@@ -171,6 +171,17 @@ function createContextMenu(hud, parentNode, {
   }));
 
   
+  menu.append(new MenuItem({
+    id: "console-menu-export-clipboard",
+    label: l10n.getStr("webconsole.menu.exportClipboard.label"),
+    disabled: false,
+    click: () => {
+      const webconsoleOutput = parentNode.querySelector(".webconsole-output");
+      clipboardHelper.copyString(webconsoleOutput.textContent);
+    },
+  }));
+
+  
   if (openSidebar) {
     menu.append(new MenuItem({
       id: "console-menu-open-sidebar",
