@@ -2999,9 +2999,9 @@ public class GeckoSession extends LayerSession
 
             private static @Type int getTypeFromString(String type) {
                 
-                if ("video".equals(type)) {
+                if ("videoinput".equals(type)) {
                     return TYPE_VIDEO;
-                } else if ("audio".equals(type)) {
+                } else if ("audioinput".equals(type)) {
                     return TYPE_AUDIO;
                 } else {
                     throw new IllegalArgumentException("String: " + type + " is not a valid media type string");
