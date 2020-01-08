@@ -3728,7 +3728,7 @@ racy_profiler_add_marker(const char* aMarkerName,
 
   RacyRegisteredThread* racyRegisteredThread =
     TLSRegisteredThread::RacyRegisteredThread();
-  if (!racyRegisteredThread) {
+  if (!racyRegisteredThread || !racyRegisteredThread->IsBeingProfiled()) {
     return;
   }
 
