@@ -88,11 +88,11 @@ function assertInput(aCond, aMsg) {
   }
 }
 
-function handleException(ex) {
-  let str = "" + ex;
+function handleException(aEx) {
+  let str = "" + aEx;
   if (str.startsWith(gAssertionFailureMsgPrefix)) {
     
-    throw ex;
+    throw aEx;
   } else {
     
     updateMainAndFooter(str, NO_TIMESTAMP, HIDE_FOOTER, "badInputWarning");
@@ -106,9 +106,9 @@ function reportAssertionFailure(aMsg) {
   }
 }
 
-function debug(x) {
+function debug(aVal) {
   let section = appendElement(document.body, "div", "section");
-  appendElementWithText(section, "div", "debug", JSON.stringify(x));
+  appendElementWithText(section, "div", "debug", JSON.stringify(aVal));
 }
 
 
@@ -264,8 +264,7 @@ function onLoad() {
   });
 
   
-  let fileInput2 =
-      appendHiddenFileInput(header, "fileInput2", function(e) {
+  let fileInput2 = appendHiddenFileInput(header, "fileInput2", function(aElem) {
     let file = this.files[0];
     
     
@@ -275,7 +274,7 @@ function onLoad() {
       
       
       
-      if (!e.skipClick) {
+      if (!aElem.skipClick) {
         this.click();
       }
     } else {
@@ -473,13 +472,13 @@ function dumpGCLogAndCCLog(aVerbose) {
                                        NO_TIMESTAMP, HIDE_FOOTER);
   let section = appendElement(gMain, "div", "section");
 
-  function displayInfo(gcLog, ccLog, isParent) {
+  function displayInfo(aGCLog, aCCLog, aIsParent) {
     appendElementWithText(section, "div", "",
-                          "Saved GC log to " + gcLog.path);
+                          "Saved GC log to " + aGCLog.path);
 
     let ccLogType = aVerbose ? "verbose" : "concise";
     appendElementWithText(section, "div", "",
-                          "Saved " + ccLogType + " CC log to " + ccLog.path);
+                          "Saved " + ccLogType + " CC log to " + aCCLog.path);
   }
 
   dumper.dumpGCAndCCLogsToFile("", aVerbose,  true,
@@ -1664,9 +1663,9 @@ function appendMrNameSpan(aP, aDescription, aUnsafeName, aIsInvalid, aNMerged,
 
 let gShowSubtreesBySafeTreeId = {};
 
-function assertClassListContains(e, className) {
-  assert(e, "undefined " + className);
-  assert(e.classList.contains(className), "classname isn't " + className);
+function assertClassListContains(aElem, aClassName) {
+  assert(aElem, "undefined " + aClassName);
+  assert(aElem.classList.contains(aClassName), "classname isn't " + aClassName);
 }
 
 function toggle(aEvent) {
@@ -1890,14 +1889,14 @@ function saveReportsToFile() {
   fp.addToRecentDocs = true;
   fp.defaultString = "memory-report.json.gz";
 
-  let fpFinish = function(file) {
+  let fpFinish = function(aFile) {
     let dumper = Cc["@mozilla.org/memory-info-dumper;1"]
                    .getService(Ci.nsIMemoryInfoDumper);
     let finishDumping = () => {
-      updateMainAndFooter("Saved memory reports to " + file.path,
+      updateMainAndFooter("Saved memory reports to " + aFile.path,
                           SHOW_TIMESTAMP, HIDE_FOOTER);
     };
-    dumper.dumpMemoryReportsToNamedFile(file.path, finishDumping, null,
+    dumper.dumpMemoryReportsToNamedFile(aFile.path, finishDumping, null,
                                         gAnonymize.checked);
   };
 
@@ -1913,8 +1912,8 @@ function saveReportsToFile() {
   } catch (ex) {
     
     
-    Downloads.getSystemDownloadsDirectory().then(function(dirPath) {
-      let file = FileUtils.File(dirPath);
+    Downloads.getSystemDownloadsDirectory().then(function(aDirPath) {
+      let file = FileUtils.File(aDirPath);
       file.append(fp.defaultString);
       fpFinish(file);
     });
