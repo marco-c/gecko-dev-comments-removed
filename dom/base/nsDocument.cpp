@@ -10777,6 +10777,16 @@ nsIDocument::ExitFullscreenInDocTree(nsIDocument* aMaybeNotARootDoc)
     new ExitFullscreenScriptRunnable(std::move(changed)));
 }
 
+static void
+DispatchFullscreenNewOriginEvent(nsIDocument* aDoc)
+{
+  RefPtr<AsyncEventDispatcher> asyncDispatcher =
+    new AsyncEventDispatcher(
+        aDoc, NS_LITERAL_STRING("MozDOMFullscreen:NewOrigin"),
+        CanBubble::eYes, ChromeOnlyDispatch::eYes);
+  asyncDispatcher->PostDOMEvent();
+}
+
 bool
 GetFullscreenLeaf(nsIDocument* aDoc, void* aData)
 {
@@ -10889,9 +10899,7 @@ nsIDocument::RestorePreviousFullScreenState()
     
     
     
-    DispatchCustomEventWithFlush(
-      newFullscreenDoc, NS_LITERAL_STRING("MozDOMFullscreen:NewOrigin"),
-       true,  true);
+    DispatchFullscreenNewOriginEvent(newFullscreenDoc);
   }
 }
 
@@ -11527,9 +11535,7 @@ nsIDocument::ApplyFullscreen(const FullscreenRequest& aRequest)
   
   if (aRequest.mShouldNotifyNewOrigin &&
       !nsContentUtils::HaveEqualPrincipals(previousFullscreenDoc, this)) {
-    DispatchCustomEventWithFlush(
-      this, NS_LITERAL_STRING("MozDOMFullscreen:NewOrigin"),
-       true,  true);
+    DispatchFullscreenNewOriginEvent(this);
   }
 
   
