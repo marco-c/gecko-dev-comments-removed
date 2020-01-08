@@ -6002,11 +6002,12 @@ static nsSize ComputeDesiredDisplaySizeForAnimation(nsIFrame* aContainerFrame) {
   return presContext->GetVisibleArea().Size();
 }
 
-static Size ChooseScale(nsIFrame* aContainerFrame,
-                        nsDisplayItem* aContainerItem,
-                        const nsRect& aVisibleRect, float aXScale,
-                        float aYScale, const Matrix& aTransform2d,
-                        bool aCanDraw2D) {
+ Size FrameLayerBuilder::ChooseScale(nsIFrame* aContainerFrame,
+                                                 nsDisplayItem* aContainerItem,
+                                                 const nsRect& aVisibleRect,
+                                                 float aXScale, float aYScale,
+                                                 const Matrix& aTransform2d,
+                                                 bool aCanDraw2D) {
   Size scale;
   
   if (aCanDraw2D && !aContainerFrame->Combines3DTransformWithAncestors() &&
@@ -6126,9 +6127,9 @@ static bool ChooseScaleAndSetTransform(
   }
 
   bool canDraw2D = transform.CanDraw2D(&transform2d);
-  Size scale = ChooseScale(aContainerFrame, aContainerItem, aVisibleRect,
-                           aIncomingScale.mXScale, aIncomingScale.mYScale,
-                           transform2d, canDraw2D);
+  Size scale = FrameLayerBuilder::ChooseScale(
+      aContainerFrame, aContainerItem, aVisibleRect, aIncomingScale.mXScale,
+      aIncomingScale.mYScale, transform2d, canDraw2D);
 
   
   
