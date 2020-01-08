@@ -143,7 +143,9 @@ SVGBBox nsSVGMarkerFrame::GetMarkBBoxContribution(
   
   
   
-  if (mInUse) return bbox;
+  if (mInUse) {
+    return bbox;
+  }
 
   AutoMarkerReferencer markerRef(this, aMarkedFrame);
 

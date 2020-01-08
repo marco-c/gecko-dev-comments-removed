@@ -281,7 +281,9 @@ int32_t nsSVGFilterInstance::GetOrCreateSourceAlphaIndex(
     nsTArray<FilterPrimitiveDescription>& aPrimitiveDescrs) {
   
   
-  if (mSourceAlphaAvailable) return mSourceAlphaIndex;
+  if (mSourceAlphaAvailable) {
+    return mSourceAlphaIndex;
+  }
 
   
   

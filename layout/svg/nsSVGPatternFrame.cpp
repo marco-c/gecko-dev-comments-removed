@@ -384,7 +384,9 @@ already_AddRefed<SourceSurface> nsSVGPatternFrame::PaintPattern(
 
 nsSVGPatternFrame *nsSVGPatternFrame::GetPatternWithChildren() {
   
-  if (!mFrames.IsEmpty()) return this;
+  if (!mFrames.IsEmpty()) {
+    return this;
+  }
 
   
 
@@ -399,7 +401,9 @@ nsSVGPatternFrame *nsSVGPatternFrame::GetPatternWithChildren() {
   }
 
   nsSVGPatternFrame *next = GetReferencedPattern();
-  if (!next) return nullptr;
+  if (!next) {
+    return nullptr;
+  }
 
   return next->GetPatternWithChildren();
 }
@@ -409,7 +413,9 @@ uint16_t nsSVGPatternFrame::GetEnumValue(uint32_t aIndex,
   nsSVGEnum &thisEnum =
       static_cast<SVGPatternElement *>(GetContent())->mEnumAttributes[aIndex];
 
-  if (thisEnum.IsExplicitlySet()) return thisEnum.GetAnimValue();
+  if (thisEnum.IsExplicitlySet()) {
+    return thisEnum.GetAnimValue();
+  }
 
   
   
@@ -458,7 +464,9 @@ nsSVGAnimatedTransformList *nsSVGPatternFrame::GetPatternTransformList(
 gfxMatrix nsSVGPatternFrame::GetPatternTransform() {
   nsSVGAnimatedTransformList *animTransformList =
       GetPatternTransformList(GetContent());
-  if (!animTransformList) return gfxMatrix();
+  if (!animTransformList) {
+    return gfxMatrix();
+  }
 
   return animTransformList->GetAnimValue().GetConsolidationMatrix();
 }
@@ -467,7 +475,9 @@ const nsSVGViewBox &nsSVGPatternFrame::GetViewBox(nsIContent *aDefault) {
   const nsSVGViewBox &thisViewBox =
       static_cast<SVGPatternElement *>(GetContent())->mViewBox;
 
-  if (thisViewBox.IsExplicitlySet()) return thisViewBox;
+  if (thisViewBox.IsExplicitlySet()) {
+    return thisViewBox;
+  }
 
   
   
@@ -489,7 +499,9 @@ const SVGAnimatedPreserveAspectRatio &nsSVGPatternFrame::GetPreserveAspectRatio(
   const SVGAnimatedPreserveAspectRatio &thisPar =
       static_cast<SVGPatternElement *>(GetContent())->mPreserveAspectRatio;
 
-  if (thisPar.IsExplicitlySet()) return thisPar;
+  if (thisPar.IsExplicitlySet()) {
+    return thisPar;
+  }
 
   
   
@@ -513,7 +525,9 @@ const nsSVGLength2 *nsSVGPatternFrame::GetLengthValue(uint32_t aIndex,
       &static_cast<SVGPatternElement *>(GetContent())
            ->mLengthAttributes[aIndex];
 
-  if (thisLength->IsExplicitlySet()) return thisLength;
+  if (thisLength->IsExplicitlySet()) {
+    return thisLength;
+  }
 
   
   

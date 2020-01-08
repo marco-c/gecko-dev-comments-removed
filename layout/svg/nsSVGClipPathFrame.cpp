@@ -333,7 +333,9 @@ bool nsSVGClipPathFrame::IsTrivial(nsSVGDisplayableFrame** aSingleChild) {
     if (svgChild) {
       
       
-      if (foundChild || svgChild->IsDisplayContainer()) return false;
+      if (foundChild || svgChild->IsDisplayContainer()) {
+        return false;
+      }
 
       
       if (SVGObserverUtils::GetAndObserveClipPath(kid, nullptr) ==

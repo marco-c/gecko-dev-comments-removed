@@ -33,7 +33,9 @@ uint16_t nsSVGFilterFrame::GetEnumValue(uint32_t aIndex, nsIContent* aDefault) {
   nsSVGEnum& thisEnum =
       static_cast<SVGFilterElement*>(GetContent())->mEnumAttributes[aIndex];
 
-  if (thisEnum.IsExplicitlySet()) return thisEnum.GetAnimValue();
+  if (thisEnum.IsExplicitlySet()) {
+    return thisEnum.GetAnimValue();
+  }
 
   
   
@@ -60,7 +62,9 @@ const nsSVGLength2* nsSVGFilterFrame::GetLengthValue(uint32_t aIndex,
   const nsSVGLength2* thisLength =
       &static_cast<SVGFilterElement*>(GetContent())->mLengthAttributes[aIndex];
 
-  if (thisLength->IsExplicitlySet()) return thisLength;
+  if (thisLength->IsExplicitlySet()) {
+    return thisLength;
+  }
 
   
   
