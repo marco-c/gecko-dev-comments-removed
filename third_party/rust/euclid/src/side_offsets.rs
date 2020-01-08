@@ -19,13 +19,15 @@ use core::marker::PhantomData;
 
 
 
-define_matrix! {
-    pub struct TypedSideOffsets2D<T, U> {
-        pub top: T,
-        pub right: T,
-        pub bottom: T,
-        pub left: T,
-    }
+#[derive(EuclidMatrix)]
+#[repr(C)]
+pub struct TypedSideOffsets2D<T, U> {
+    pub top: T,
+    pub right: T,
+    pub bottom: T,
+    pub left: T,
+    #[doc(hidden)]
+    pub _unit: PhantomData<U>,
 }
 
 impl<T: fmt::Debug, U> fmt::Debug for TypedSideOffsets2D<T, U> {
