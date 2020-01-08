@@ -2,16 +2,16 @@
 
 
 
+
+
 'use strict';
 
 
 
 promise_test(async () => {
   try {
-    const video = await loadVideo();
-    document.body.appendChild(video);
-    self.video = video;
-    self.pipw = await video.requestPictureInPicture();
+    self.video = await loadVideo();
+    self.pipw = await requestPictureInPictureWithTrustedClick(video);
   } catch (e) {
     
   }
