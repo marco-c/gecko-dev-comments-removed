@@ -2133,7 +2133,7 @@ nsresult nsHttpChannel::ProcessResponse() {
                           mConnectionInfo->EndToEndSSL());
   }
 
-  if (gHttpHandler->IsTelemetryEnabled()) {
+  if (Telemetry::CanRecordPrereleaseData()) {
     
     nsAutoCString alt_service;
     Unused << mResponseHead->GetHeader(nsHttp::Alternate_Service, alt_service);
@@ -2502,7 +2502,7 @@ nsresult nsHttpChannel::ContinueProcessResponse2(nsresult rv) {
     }
   }
 
-  if (gHttpHandler->IsTelemetryEnabled()) {
+  if (Telemetry::CanRecordPrereleaseData()) {
     CacheDisposition cacheDisposition;
     if (!mDidReval) {
       cacheDisposition = kCacheMissed;
