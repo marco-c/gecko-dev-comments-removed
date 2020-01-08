@@ -1008,10 +1008,14 @@ impl Device {
             
             
             
-            assert_ne!(gl.get_type(), gl::GlType::Gles, "gles must have compatible internal and external formats");
+            
             (
                 gl::RGBA8,
-                gl::BGRA,
+                if gl.get_type() == gl::GlType::Gles {
+                    gl::RGBA
+                } else {
+                    gl::BGRA
+                },
                 if supports_texture_storage {
                     TexStorageUsage::Always
                 } else {
