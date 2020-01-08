@@ -132,6 +132,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   SafeBrowsing: "resource://gre/modules/SafeBrowsing.jsm",
   Sanitizer: "resource:///modules/Sanitizer.jsm",
   SavantShieldStudy: "resource:///modules/SavantShieldStudy.jsm",
+  SessionStartup: "resource:///modules/sessionstore/SessionStartup.jsm",
   SessionStore: "resource:///modules/sessionstore/SessionStore.jsm",
   ShellService: "resource:///modules/ShellService.jsm",
   TabCrashHandler: "resource:///modules/ContentCrashHandlers.jsm",
@@ -702,6 +703,8 @@ BrowserGlue.prototype = {
   
   
   _beforeUIStartup: function BG__beforeUIStartup() {
+    SessionStartup.init();
+
     
     if (Services.appinfo.inSafeMode) {
       Services.ww.openWindow(null, "chrome://browser/content/safeMode.xul",
@@ -2160,13 +2163,8 @@ BrowserGlue.prototype = {
     let promptCount =
       usePromptLimit ? Services.prefs.getIntPref("browser.shell.defaultBrowserCheckCount") : 0;
 
-    let willRecoverSession = false;
-    try {
-      let ss = Cc["@mozilla.org/browser/sessionstartup;1"].
-               getService(Ci.nsISessionStartup);
-      willRecoverSession =
-        (ss.sessionType == Ci.nsISessionStartup.RECOVER_SESSION);
-    } catch (ex) {  }
+    let willRecoverSession =
+      (SessionStartup.sessionType == SessionStartup.RECOVER_SESSION);
 
     
     let isDefault = false;
