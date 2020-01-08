@@ -489,7 +489,7 @@ public:
       
       
       char Buffer[65536];
-      FILE *Fp = Lock.openFile("r");
+      FILE *Fp = Lock.openFile("rb");
       if (!Fp) {
         fprintf(stderr, "Unable to open input file %s\n", Filename.c_str());
         exit(1);
@@ -509,7 +509,7 @@ public:
 
       
       
-      Fp = Lock.openFile("w");
+      Fp = Lock.openFile("wb");
       if (!Fp) {
         fprintf(stderr, "Unable to open output file %s\n", Filename.c_str());
         exit(1);
