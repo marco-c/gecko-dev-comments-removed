@@ -491,6 +491,7 @@ public:
     uint32_t mNextsLimit;             
 
     bool mHaveRemoved;                
+    uint8_t mEntrySize;               
 
     bool IsOnNonLiveEntry() const;
     void MoveToNextEntry();
