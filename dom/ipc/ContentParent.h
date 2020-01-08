@@ -288,7 +288,7 @@ public:
 #endif
 
   
-  bool IsDestroyed() const { return !IPCOpen(); }
+  bool IsDestroyed() const { return !mIPCOpen; }
 
   virtual mozilla::ipc::IPCResult RecvCreateChildProcess(const IPCTabContext& aContext,
                                                          const hal::ProcessPriority& aPriority,
@@ -1351,6 +1351,7 @@ private:
   bool mCalledKillHard;
   bool mCreatedPairedMinidumps;
   bool mShutdownPending;
+  bool mIPCOpen;
 
   
   

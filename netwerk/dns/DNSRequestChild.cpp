@@ -215,7 +215,7 @@ public:
 
   NS_IMETHOD Run() override
   {
-    if (mDnsRequest->IPCOpen()) {
+    if (mDnsRequest->mIPCOpen) {
       
       mDnsRequest->SendCancelDNSRequest(mDnsRequest->mHost,
                                         mDnsRequest->mType,
@@ -247,6 +247,7 @@ DNSRequestChild::DNSRequestChild(const nsACString &aHost,
   , mType(aType)
   , mOriginAttributes(aOriginAttributes)
   , mFlags(aFlags)
+  , mIPCOpen(false)
 {
 }
 
@@ -277,6 +278,7 @@ DNSRequestChild::StartRequest()
   
   gNeckoChild->SendPDNSRequestConstructor(this, mHost, mOriginAttributes,
                                           mFlags);
+  mIPCOpen = true;
 
   
   AddIPDLReference();
@@ -300,6 +302,7 @@ DNSRequestChild::CallOnLookupByTypeComplete()
 mozilla::ipc::IPCResult
 DNSRequestChild::RecvLookupCompleted(const DNSRequestResponse& reply)
 {
+  mIPCOpen = false;
   MOZ_ASSERT(mListener);
 
   switch (reply.type()) {
@@ -368,6 +371,12 @@ DNSRequestChild::ReleaseIPDLReference()
   Release();
 }
 
+void
+DNSRequestChild::ActorDestroy(ActorDestroyReason why)
+{
+  mIPCOpen = false;
+}
+
 
 
 
@@ -382,7 +391,7 @@ NS_IMPL_ISUPPORTS(DNSRequestChild,
 NS_IMETHODIMP
 DNSRequestChild::Cancel(nsresult reason)
 {
-  if(IPCOpen()) {
+  if(mIPCOpen) {
     
     nsCOMPtr<nsIRunnable> runnable = new CancelDNSRequestEvent(this, reason);
     SystemGroup::Dispatch(TaskCategory::Other, runnable.forget());

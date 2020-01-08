@@ -273,113 +273,104 @@ namespace dom {
 
 class CycleCollectWithLogsChild final
   : public PCycleCollectWithLogsChild
+  , public nsICycleCollectorLogSink
 {
 public:
-  NS_INLINE_DECL_REFCOUNTING(CycleCollectWithLogsChild)
+  NS_DECL_ISUPPORTS
 
-  class Sink final : public nsICycleCollectorLogSink
+  CycleCollectWithLogsChild(const FileDescriptor& aGCLog,
+                            const FileDescriptor& aCCLog)
   {
-    NS_DECL_ISUPPORTS
+    mGCLog = FileDescriptorToFILE(aGCLog, "w");
+    mCCLog = FileDescriptorToFILE(aCCLog, "w");
+  }
 
-    Sink(CycleCollectWithLogsChild* aActor,
-         const FileDescriptor& aGCLog,
-         const FileDescriptor& aCCLog)
-    {
-      mActor = aActor;
-      mGCLog = FileDescriptorToFILE(aGCLog, "w");
-      mCCLog = FileDescriptorToFILE(aCCLog, "w");
+  NS_IMETHOD Open(FILE** aGCLog, FILE** aCCLog) override
+  {
+    if (NS_WARN_IF(!mGCLog) || NS_WARN_IF(!mCCLog)) {
+      return NS_ERROR_FAILURE;
     }
+    *aGCLog = mGCLog;
+    *aCCLog = mCCLog;
+    return NS_OK;
+  }
 
-    NS_IMETHOD Open(FILE** aGCLog, FILE** aCCLog) override
-    {
-      if (NS_WARN_IF(!mGCLog) || NS_WARN_IF(!mCCLog)) {
-        return NS_ERROR_FAILURE;
-      }
-      *aGCLog = mGCLog;
-      *aCCLog = mCCLog;
-      return NS_OK;
-    }
+  NS_IMETHOD CloseGCLog() override
+  {
+    MOZ_ASSERT(mGCLog);
+    fclose(mGCLog);
+    mGCLog = nullptr;
+    SendCloseGCLog();
+    return NS_OK;
+  }
 
-    NS_IMETHOD CloseGCLog() override
-    {
-      MOZ_ASSERT(mGCLog);
-      fclose(mGCLog);
-      mGCLog = nullptr;
-      mActor->SendCloseGCLog();
-      return NS_OK;
-    }
+  NS_IMETHOD CloseCCLog() override
+  {
+    MOZ_ASSERT(mCCLog);
+    fclose(mCCLog);
+    mCCLog = nullptr;
+    SendCloseCCLog();
+    return NS_OK;
+  }
 
-    NS_IMETHOD CloseCCLog() override
-    {
-      MOZ_ASSERT(mCCLog);
-      fclose(mCCLog);
-      mCCLog = nullptr;
-      mActor->SendCloseCCLog();
-      return NS_OK;
-    }
+  NS_IMETHOD GetFilenameIdentifier(nsAString& aIdentifier) override
+  {
+    return UnimplementedProperty();
+  }
 
-    NS_IMETHOD GetFilenameIdentifier(nsAString& aIdentifier) override
-    {
-      return UnimplementedProperty();
-    }
+  NS_IMETHOD SetFilenameIdentifier(const nsAString& aIdentifier) override
+  {
+    return UnimplementedProperty();
+  }
 
-    NS_IMETHOD SetFilenameIdentifier(const nsAString& aIdentifier) override
-    {
-      return UnimplementedProperty();
-    }
+  NS_IMETHOD GetProcessIdentifier(int32_t *aIdentifier) override
+  {
+    return UnimplementedProperty();
+  }
 
-    NS_IMETHOD GetProcessIdentifier(int32_t *aIdentifier) override
-    {
-      return UnimplementedProperty();
-    }
+  NS_IMETHOD SetProcessIdentifier(int32_t aIdentifier) override
+  {
+    return UnimplementedProperty();
+  }
 
-    NS_IMETHOD SetProcessIdentifier(int32_t aIdentifier) override
-    {
-      return UnimplementedProperty();
-    }
+  NS_IMETHOD GetGcLog(nsIFile** aPath) override
+  {
+    return UnimplementedProperty();
+  }
 
-    NS_IMETHOD GetGcLog(nsIFile** aPath) override
-    {
-      return UnimplementedProperty();
-    }
-
-    NS_IMETHOD GetCcLog(nsIFile** aPath) override
-    {
-      return UnimplementedProperty();
-    }
-
-  private:
-    ~Sink()
-    {
-      if (mGCLog) {
-        fclose(mGCLog);
-        mGCLog = nullptr;
-      }
-      if (mCCLog) {
-        fclose(mCCLog);
-        mCCLog = nullptr;
-      }
-      
-      Unused << mActor->Send__delete__(mActor);
-    }
-
-    nsresult UnimplementedProperty()
-    {
-      MOZ_ASSERT(false, "This object is a remote GC/CC logger;"
-                        " this property isn't meaningful.");
-      return NS_ERROR_UNEXPECTED;
-    }
-
-    RefPtr<CycleCollectWithLogsChild> mActor;
-    FILE* mGCLog;
-    FILE* mCCLog;
-  };
+  NS_IMETHOD GetCcLog(nsIFile** aPath) override
+  {
+    return UnimplementedProperty();
+  }
 
 private:
-  ~CycleCollectWithLogsChild() {}
+  ~CycleCollectWithLogsChild() override
+  {
+    if (mGCLog) {
+      fclose(mGCLog);
+      mGCLog = nullptr;
+    }
+    if (mCCLog) {
+      fclose(mCCLog);
+      mCCLog = nullptr;
+    }
+    
+    
+    Unused << Send__delete__(this);
+  }
+
+  nsresult UnimplementedProperty()
+  {
+    MOZ_ASSERT(false, "This object is a remote GC/CC logger;"
+                      " this property isn't meaningful.");
+    return NS_ERROR_UNEXPECTED;
+  }
+
+  FILE* mGCLog;
+  FILE* mCCLog;
 };
 
-NS_IMPL_ISUPPORTS(CycleCollectWithLogsChild::Sink, nsICycleCollectorLogSink);
+NS_IMPL_ISUPPORTS(CycleCollectWithLogsChild, nsICycleCollectorLogSink);
 
 class AlertObserver
 {
@@ -963,6 +954,9 @@ ContentChild::ProvideWindowCommon(TabChild* aTabOpener,
   TabContext newTabContext = aTabOpener ? *aTabOpener : TabContext();
   RefPtr<TabChild> newChild = new TabChild(this, tabId, tabGroup,
                                            newTabContext, aChromeFlags);
+  if (NS_FAILED(newChild->Init(aParent))) {
+    return NS_ERROR_ABORT;
+  }
 
   if (aTabOpener) {
     MOZ_ASSERT(ipcContext->type() == IPCTabContext::TPopupIPCTabContext);
@@ -977,11 +971,6 @@ ContentChild::ProvideWindowCommon(TabChild* aTabOpener,
     RefPtr<TabChild>(newChild).forget().take(),
     tabId, TabId(0), *ipcContext, aChromeFlags,
     GetID(), IsForBrowser());
-
-  
-  if (NS_FAILED(newChild->Init(aParent))) {
-    return NS_ERROR_ABORT;
-  }
 
   nsCOMPtr<nsPIDOMWindowInner> parentTopInnerWindow;
   if (aParent) {
@@ -1332,7 +1321,9 @@ ContentChild::AllocPCycleCollectWithLogsChild(const bool& aDumpAllTraces,
                                               const FileDescriptor& aGCLog,
                                               const FileDescriptor& aCCLog)
 {
-  return do_AddRef(new CycleCollectWithLogsChild()).take();
+  auto* actor = new CycleCollectWithLogsChild(aGCLog, aCCLog);
+  
+  return actor;
 }
 
 mozilla::ipc::IPCResult
@@ -1342,22 +1333,22 @@ ContentChild::RecvPCycleCollectWithLogsConstructor(PCycleCollectWithLogsChild* a
                                                    const FileDescriptor& aCCLog)
 {
   
-  
-  auto* actor = static_cast<CycleCollectWithLogsChild*>(aActor);
-  RefPtr<CycleCollectWithLogsChild::Sink> sink =
-    new CycleCollectWithLogsChild::Sink(actor, aGCLog, aCCLog);
+  RefPtr<CycleCollectWithLogsChild> sink = static_cast<CycleCollectWithLogsChild*>(aActor);
+  nsCOMPtr<nsIMemoryInfoDumper> dumper = do_GetService("@mozilla.org/memory-info-dumper;1");
+
+  dumper->DumpGCAndCCLogsToSink(aDumpAllTraces, sink);
 
   
-  nsCOMPtr<nsIMemoryInfoDumper> dumper = do_GetService("@mozilla.org/memory-info-dumper;1");
-  dumper->DumpGCAndCCLogsToSink(aDumpAllTraces, sink);
   return IPC_OK();
 }
 
 bool
-ContentChild::DeallocPCycleCollectWithLogsChild(PCycleCollectWithLogsChild* aActor)
+ContentChild::DeallocPCycleCollectWithLogsChild(PCycleCollectWithLogsChild* )
 {
-  RefPtr<CycleCollectWithLogsChild> actor =
-    dont_AddRef(static_cast<CycleCollectWithLogsChild*>(aActor));
+  
+  
+  
+  
   return true;
 }
 

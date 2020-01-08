@@ -155,6 +155,9 @@ class HangMonitorChild
   bool mShutdownDone;
 
   
+  bool mIPCOpen;
+
+  
   
   Atomic<bool> mPaintWhileInterruptingJSActive;
 };
@@ -273,6 +276,9 @@ private:
   
   bool mReportHangs;
 
+  
+  bool mIPCOpen;
+
   Monitor mMonitor;
 
   
@@ -305,6 +311,7 @@ HangMonitorChild::HangMonitorChild(ProcessHangMonitor* aMonitor)
    mPaintWhileInterruptingJS(false),
    mPaintWhileInterruptingJSForce(false),
    mShutdownDone(false),
+   mIPCOpen(true),
    mPaintWhileInterruptingJSActive(false)
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
@@ -385,6 +392,8 @@ void
 HangMonitorChild::ActorDestroy(ActorDestroyReason aWhy)
 {
   MOZ_RELEASE_ASSERT(IsOnThread());
+
+  mIPCOpen = false;
 
   
   
@@ -479,7 +488,7 @@ HangMonitorChild::NotifySlowScriptAsync(TabId aTabId,
                                         const nsCString& aFileName,
                                         const nsString& aAddonId)
 {
-  if (IPCOpen()) {
+  if (mIPCOpen) {
     Unused << SendHangEvidence(SlowScriptData(aTabId, aFileName, aAddonId));
   }
 }
@@ -565,7 +574,7 @@ HangMonitorChild::NotifyPluginHangAsync(uint32_t aPluginId)
   MOZ_RELEASE_ASSERT(IsOnThread());
 
   
-  if (IPCOpen()) {
+  if (mIPCOpen) {
     Unused << SendHangEvidence(PluginHangData(aPluginId,
                                               base::GetCurrentProcId()));
   }
@@ -597,7 +606,7 @@ HangMonitorChild::ClearHangAsync()
   MOZ_RELEASE_ASSERT(IsOnThread());
 
   
-  if (IPCOpen()) {
+  if (mIPCOpen) {
     Unused << SendClearHang();
   }
 }
@@ -606,6 +615,7 @@ HangMonitorChild::ClearHangAsync()
 
 HangMonitorParent::HangMonitorParent(ProcessHangMonitor* aMonitor)
  : mHangMonitor(aMonitor),
+   mIPCOpen(true),
    mMonitor("HangMonitorParent lock"),
    mShutdownDone(false),
    mBrowserCrashDumpHashLock("mBrowserCrashDumpIds lock"),
@@ -662,7 +672,8 @@ HangMonitorParent::ShutdownOnThread()
 
   
   
-  if (IPCOpen()) {
+  
+  if (mIPCOpen) {
     Close();
   }
 
@@ -696,7 +707,7 @@ HangMonitorParent::PaintWhileInterruptingJSOnThread(TabId aTabId,
 {
   MOZ_RELEASE_ASSERT(IsOnThread());
 
-  if (IPCOpen()) {
+  if (mIPCOpen) {
     Unused << SendPaintWhileInterruptingJS(aTabId, aForceRepaint, aEpoch);
   }
 }
@@ -705,6 +716,7 @@ void
 HangMonitorParent::ActorDestroy(ActorDestroyReason aWhy)
 {
   MOZ_RELEASE_ASSERT(IsOnThread());
+  mIPCOpen = false;
 }
 
 void
@@ -847,7 +859,7 @@ HangMonitorParent::TerminateScript(bool aTerminateGlobal)
 {
   MOZ_RELEASE_ASSERT(IsOnThread());
 
-  if (IPCOpen()) {
+  if (mIPCOpen) {
     Unused << SendTerminateScript(aTerminateGlobal);
   }
 }
@@ -857,7 +869,7 @@ HangMonitorParent::BeginStartingDebugger()
 {
   MOZ_RELEASE_ASSERT(IsOnThread());
 
-  if (IPCOpen()) {
+  if (mIPCOpen) {
     Unused << SendBeginStartingDebugger();
   }
 }
@@ -867,7 +879,7 @@ HangMonitorParent::EndStartingDebugger()
 {
   MOZ_RELEASE_ASSERT(IsOnThread());
 
-  if (IPCOpen()) {
+  if (mIPCOpen) {
     Unused << SendEndStartingDebugger();
   }
 }

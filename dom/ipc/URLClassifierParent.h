@@ -25,7 +25,7 @@ public:
                                 const nsACString& aProvider,
                                 const nsACString& aFullHash) override
   {
-    if (BaseProtocol::IPCOpen()) {
+    if (mIPCOpen) {
       ClassifierInfo info = ClassifierInfo(nsCString(aList),
                                            nsCString(aProvider),
                                            nsCString(aFullHash));
@@ -37,13 +37,14 @@ public:
   
   void ClassificationFailed()
   {
-    if (BaseProtocol::IPCOpen()) {
+    if (mIPCOpen) {
       Unused << BaseProtocol::Send__delete__(this, void_t(), NS_ERROR_FAILURE);
     }
   }
 
 protected:
   ~URLClassifierParentBase() = default;
+  bool mIPCOpen = true;
 };
 
 
@@ -59,6 +60,10 @@ public:
                                         bool* aSuccess);
 private:
   ~URLClassifierParent() = default;
+
+  
+  
+  void ActorDestroy(ActorDestroyReason aWhy) override;
 };
 
 
@@ -73,6 +78,9 @@ public:
 
 private:
   ~URLClassifierLocalParent() = default;
+
+  
+  void ActorDestroy(ActorDestroyReason aWhy) override;
 };
 
 } 

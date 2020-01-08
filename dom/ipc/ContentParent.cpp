@@ -1484,7 +1484,7 @@ ContentParent::ShutDownProcess(ShutDownMethod aMethod)
       }
     }
 
-    if (IPCOpen() && !mShutdownPending) {
+    if (mIPCOpen && !mShutdownPending) {
       
       SetInputPriorityEventEnabled(false);
       if (SendShutdown()) {
@@ -1686,6 +1686,10 @@ ContentParent::ActorDestroy(ActorDestroyReason why)
     mForceKillTimer->Cancel();
     mForceKillTimer = nullptr;
   }
+
+  
+  
+  mIPCOpen = false;
 
   if (mHangMonitorActor) {
     ProcessHangMonitor::RemoveProcess(mHangMonitorActor);
@@ -1940,7 +1944,7 @@ ContentParent::NotifyTabDestroying(const TabId& aTabId,
 void
 ContentParent::StartForceKillTimer()
 {
-  if (mForceKillTimer || !IPCOpen()) {
+  if (mForceKillTimer || !mIPCOpen) {
     return;
   }
 
@@ -2397,6 +2401,7 @@ ContentParent::ContentParent(ContentParent* aOpener,
   , mCalledKillHard(false)
   , mCreatedPairedMinidumps(false)
   , mShutdownPending(false)
+  , mIPCOpen(true)
   , mIsRemoteInputEventQueueEnabled(false)
   , mIsInputPriorityEventEnabled(false)
   , mHangMonitorActor(nullptr)
@@ -2901,7 +2906,7 @@ ContentParent::IsInputEventQueueSupported()
 void
 ContentParent::OnVarChanged(const GfxVarUpdate& aVar)
 {
-  if (!IPCOpen()) {
+  if (!mIPCOpen) {
     return;
   }
   Unused << SendVarUpdate(aVar);
@@ -3135,7 +3140,7 @@ ContentParent::Observe(nsISupports* aSubject,
     
     
     
-    SpinEventLoopUntil([&]() { return !IPCOpen() || mCalledKillHard; });
+    SpinEventLoopUntil([&]() { return !mIPCOpen || mCalledKillHard; });
     NS_ASSERTION(!mSubprocess, "Close should have nulled mSubprocess");
   }
 

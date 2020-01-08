@@ -596,9 +596,6 @@ IProtocol::SetManagerAndRegister(IProtocol* aManager)
   aManager->Register(this);
 
   mState->SetIPCChannel(aManager->GetIPCChannel());
-
-  
-  ActorOpenedInternal();
 }
 
 void
@@ -611,9 +608,6 @@ IProtocol::SetManagerAndRegister(IProtocol* aManager, int32_t aId)
   aManager->RegisterID(this, aId);
 
   mState->SetIPCChannel(aManager->GetIPCChannel());
-
-  
-  ActorOpenedInternal();
 }
 
 void
@@ -757,7 +751,6 @@ IToplevelProtocol::Open(mozilla::ipc::Transport* aTransport,
                         mozilla::ipc::Side aSide)
 {
   SetOtherProcessId(aOtherPid);
-  ActorOpenedInternal();
   return GetIPCChannel()->Open(aTransport, aThread, aSide);
 }
 
@@ -767,7 +760,6 @@ IToplevelProtocol::Open(MessageChannel* aChannel,
                         mozilla::ipc::Side aSide)
 {
   SetOtherProcessId(base::GetCurrentProcId());
-  ActorOpenedInternal();
   return GetIPCChannel()->Open(aChannel, aMessageLoop->SerialEventTarget(), aSide);
 }
 
@@ -777,7 +769,6 @@ IToplevelProtocol::Open(MessageChannel* aChannel,
                         mozilla::ipc::Side aSide)
 {
   SetOtherProcessId(base::GetCurrentProcId());
-  ActorOpenedInternal();
   return GetIPCChannel()->Open(aChannel, aEventTarget, aSide);
 }
 
@@ -786,16 +777,7 @@ IToplevelProtocol::OpenWithAsyncPid(mozilla::ipc::Transport* aTransport,
                                     MessageLoop* aThread,
                                     mozilla::ipc::Side aSide)
 {
-  ActorOpenedInternal();
   return GetIPCChannel()->Open(aTransport, aThread, aSide);
-}
-
-bool
-IToplevelProtocol::OpenOnSameThread(MessageChannel* aChannel, Side aSide)
-{
-  SetOtherProcessId(base::GetCurrentProcId());
-  ActorOpenedInternal();
-  return GetIPCChannel()->OpenOnSameThread(aChannel, aSide);
 }
 
 void
@@ -828,9 +810,6 @@ IToplevelProtocol::ToplevelState::Register(IProtocol* aRouted)
   aRouted->SetId(id);
 
   
-  aRouted->ActorOpenedInternal();
-
-  
   if (IProtocol* manager = aRouted->Manager()) {
     MutexAutoLock lock(mEventTargetMutex);
     if (nsCOMPtr<nsIEventTarget> target = mEventTargetMap.Lookup(manager->Id())) {
@@ -847,10 +826,6 @@ IToplevelProtocol::ToplevelState::RegisterID(IProtocol* aRouted,
 {
   mActorMap.AddWithID(aRouted, aId);
   aRouted->SetId(aId);
-
-  
-  aRouted->ActorOpenedInternal();
-
   return aId;
 }
 
@@ -1065,7 +1040,6 @@ IToplevelProtocol::ToplevelState::SetEventTargetForActor(IProtocol* aActor,
   
   
   int32_t id = Register(aActor);
-  
   aActor->SetId(id);
 
   MutexAutoLock lock(mEventTargetMutex);

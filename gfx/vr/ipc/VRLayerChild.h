@@ -44,8 +44,10 @@ private:
   VRLayerChild();
   virtual ~VRLayerChild();
   void ClearSurfaces();
+  virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 
   RefPtr<dom::HTMLCanvasElement> mCanvasElement;
+  bool mIPCOpen;
 
   
   

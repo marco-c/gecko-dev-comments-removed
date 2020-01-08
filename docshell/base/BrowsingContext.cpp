@@ -4,7 +4,7 @@
 
 
 
-#include "mozilla/dom/BrowsingContext.h"
+#include "BrowsingContext.h"
 
 #include "mozilla/dom/ChromeBrowsingContext.h"
 #include "mozilla/dom/BrowsingContextBinding.h"

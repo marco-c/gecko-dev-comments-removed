@@ -181,15 +181,6 @@ private:
     bool Open(MessageChannel *aTargetChan, nsIEventTarget *aEventTarget, Side aSide);
 
     
-    
-    
-    
-    
-    
-    
-    bool OpenOnSameThread(MessageChannel* aTargetChan, Side aSide);
-
-    
     void Close();
 
     
@@ -578,15 +569,6 @@ private:
     
     void AssertLinkThread() const
     {
-        if (mIsSameThreadChannel) {
-            
-            
-            AssertWorkerThread();
-            return;
-        }
-
-        
-        
         MOZ_ASSERT(mWorkerThread, "Channel hasn't been opened yet");
         MOZ_RELEASE_ASSERT(mWorkerThread != GetCurrentVirtualThread(),
                            "on worker thread but should not be!");
@@ -879,10 +861,6 @@ private:
     std::vector<UniquePtr<Message>> mPostponedSends;
 
     bool mBuildIDsConfirmedMatch;
-
-    
-    
-    bool mIsSameThreadChannel;
 };
 
 void
