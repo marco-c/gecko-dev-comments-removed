@@ -38,9 +38,12 @@ class ScrollbarActivity;
 
 struct nsTreeImageCacheEntry
 {
-  nsTreeImageCacheEntry() {}
-  nsTreeImageCacheEntry(imgIRequest *aRequest, imgINotificationObserver *aListener)
-    : request(aRequest), listener(aListener) {}
+  nsTreeImageCacheEntry() = default;
+  nsTreeImageCacheEntry(imgIRequest* aRequest,
+                        imgINotificationObserver* aListener)
+    : request(aRequest)
+    , listener(aListener)
+  { }
 
   nsCOMPtr<imgIRequest> request;
   nsCOMPtr<imgINotificationObserver> listener;

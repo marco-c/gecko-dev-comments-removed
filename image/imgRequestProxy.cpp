@@ -150,11 +150,7 @@ imgRequestProxy::~imgRequestProxy()
                                    mHadDispatch);
   }
 
-  
-  
-  while (mLockCount) {
-    UnlockImage();
-  }
+  MOZ_RELEASE_ASSERT(!mLockCount, "Someone forgot to unlock on time?");
 
   ClearAnimationConsumers();
 

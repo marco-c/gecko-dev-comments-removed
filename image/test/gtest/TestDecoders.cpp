@@ -407,6 +407,10 @@ TEST_F(ImageDecoders, AnimatedGIFWithFRAME_FIRST)
   
   image->LockImage();
 
+  auto unlock = mozilla::MakeScopeExit([&] {
+    image->UnlockImage();
+  });
+
   
   
   RefPtr<SourceSurface> surface =
