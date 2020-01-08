@@ -227,7 +227,8 @@ struct SampleDescriptionEntry {
 class Moof final : public Atom {
  public:
   Moof(Box& aBox, Trex& aTrex, Mvhd& aMvhd, Mdhd& aMdhd, Edts& aEdts,
-       Sinf& aSinf, uint64_t* aDecoderTime, bool aIsAudio);
+       Sinf& aSinf, uint64_t* aDecoderTime, bool aIsAudio,
+       bool aIsMultitrackParser);
   bool GetAuxInfo(AtomType aType, FallibleTArray<MediaByteRange>* aByteRanges);
   void FixRounding(const Moof& aMoof);
 
@@ -248,7 +249,8 @@ class Moof final : public Atom {
  private:
   
   void ParseTraf(Box& aBox, Trex& aTrex, Mvhd& aMvhd, Mdhd& aMdhd, Edts& aEdts,
-                 Sinf& aSinf, uint64_t* aDecodeTime, bool aIsAudio);
+                 Sinf& aSinf, uint64_t* aDecodeTime, bool aIsAudio,
+                 bool aIsMultitrackParser);
   
   Result<Ok, nsresult> ParseTrun(Box& aBox, Mvhd& aMvhd, Mdhd& aMdhd,
                                  Edts& aEdts, uint64_t* aDecodeTime,
@@ -267,12 +269,16 @@ DDLoggedTypeDeclName(MoofParser);
 
 class MoofParser : public DecoderDoctorLifeLogger<MoofParser> {
  public:
-  MoofParser(ByteStream* aSource, uint32_t aTrackId, bool aIsAudio)
+  MoofParser(ByteStream* aSource, uint32_t aTrackId, bool aIsAudio,
+             bool aIsMultitrackParser = false)
       : mSource(aSource),
         mOffset(0),
         mTrex(aTrackId),
         mIsAudio(aIsAudio),
-        mLastDecodeTime(0) {
+        mLastDecodeTime(0),
+        mIsMultitrackParser(aIsMultitrackParser) {
+    
+    
     
     
     DDLINKCHILD("source", aSource);
@@ -326,6 +332,7 @@ class MoofParser : public DecoderDoctorLifeLogger<MoofParser> {
   nsTArray<MediaByteRange> mMediaRanges;
   bool mIsAudio;
   uint64_t mLastDecodeTime;
+  bool mIsMultitrackParser;
 };
 }  
 
