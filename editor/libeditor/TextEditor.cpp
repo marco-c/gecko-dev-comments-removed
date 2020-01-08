@@ -1317,12 +1317,15 @@ TextEditor::GetInputEventTargetContent()
 }
 
 nsresult
-TextEditor::DocumentIsEmpty(bool* aIsEmpty)
+TextEditor::IsEmpty(bool* aIsEmpty) const
 {
-  NS_ENSURE_TRUE(mRules, NS_ERROR_NOT_INITIALIZED);
+  if (NS_WARN_IF(!mRules)) {
+    return NS_ERROR_NOT_INITIALIZED;
+  }
+
+  *aIsEmpty = true;
 
   if (mRules->HasBogusNode()) {
-    *aIsEmpty = true;
     return NS_OK;
   }
 
@@ -1330,7 +1333,7 @@ TextEditor::DocumentIsEmpty(bool* aIsEmpty)
   
   Element* rootElement = GetRoot();
   if (!rootElement) {
-    *aIsEmpty = true;
+    
     return NS_OK;
   }
 
@@ -1343,14 +1346,17 @@ TextEditor::DocumentIsEmpty(bool* aIsEmpty)
     }
   }
 
-  *aIsEmpty = true;
   return NS_OK;
 }
 
 NS_IMETHODIMP
 TextEditor::GetDocumentIsEmpty(bool* aDocumentIsEmpty)
 {
-  return DocumentIsEmpty(aDocumentIsEmpty);
+  nsresult rv = IsEmpty(aDocumentIsEmpty);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  return NS_OK;
 }
 
 NS_IMETHODIMP

@@ -98,7 +98,20 @@ public:
                         nsISelectionController* aSelCon, uint32_t aFlags,
                         const nsAString& aValue) override;
 
-  nsresult DocumentIsEmpty(bool* aIsEmpty);
+  
+
+
+
+
+  nsresult IsEmpty(bool* aIsEmpty) const;
+  bool IsEmpty() const
+  {
+    bool isEmpty = false;
+    nsresult rv = IsEmpty(&isEmpty);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+      "Checking whether the editor is empty failed");
+    return NS_SUCCEEDED(rv) && isEmpty;
+  }
 
   virtual nsresult HandleKeyPressEvent(
                      WidgetKeyboardEvent* aKeyboardEvent) override;
