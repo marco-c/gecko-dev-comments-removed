@@ -267,7 +267,6 @@ table {
   
   box-sizing: border-box;
   text-indent: 0;
-  overflow-wrap: normal;
 }
 
 table[align="left"] {
