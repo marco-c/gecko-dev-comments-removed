@@ -886,6 +886,16 @@ XML_SetParamEntityParsing(XML_Parser parser,
 
 
 
+
+
+
+XMLPARSEAPI(int)
+XML_SetHashSalt(XML_Parser parser,
+                unsigned long hash_salt);
+
+
+
+
 XMLPARSEAPI(enum XML_Error)
 XML_GetErrorCode(XML_Parser parser);
 
