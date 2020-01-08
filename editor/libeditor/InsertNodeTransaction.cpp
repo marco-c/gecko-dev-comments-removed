@@ -113,21 +113,23 @@ InsertNodeTransaction::DoTransaction()
     return error.StealNSResult();
   }
 
+  if (!mEditorBase->AllowsTransactionsToChangeSelection()) {
+    return NS_OK;
+  }
+
+  RefPtr<Selection> selection = mEditorBase->GetSelection();
+  if (NS_WARN_IF(!selection)) {
+    return NS_ERROR_FAILURE;
+  }
+
   
-  if (mEditorBase->GetShouldTxnSetSelection()) {
-    RefPtr<Selection> selection = mEditorBase->GetSelection();
-    if (NS_WARN_IF(!selection)) {
-      return NS_ERROR_FAILURE;
-    }
-    
-    EditorRawDOMPoint afterInsertedNode(mContentToInsert);
-    DebugOnly<bool> advanced = afterInsertedNode.AdvanceOffset();
-    NS_WARNING_ASSERTION(advanced,
-      "Failed to advance offset after the inserted node");
-    selection->Collapse(afterInsertedNode, error);
-    if (NS_WARN_IF(error.Failed())) {
-      error.SuppressException();
-    }
+  EditorRawDOMPoint afterInsertedNode(mContentToInsert);
+  DebugOnly<bool> advanced = afterInsertedNode.AdvanceOffset();
+  NS_WARNING_ASSERTION(advanced,
+    "Failed to advance offset after the inserted node");
+  selection->Collapse(afterInsertedNode, error);
+  if (NS_WARN_IF(error.Failed())) {
+    error.SuppressException();
   }
   return NS_OK;
 }

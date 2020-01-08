@@ -1546,7 +1546,15 @@ protected:
 
   static bool IsPreformatted(nsINode* aNode);
 
-  bool GetShouldTxnSetSelection();
+  
+
+
+
+
+  inline bool AllowsTransactionsToChangeSelection() const
+  {
+    return mAllowsTransactionsToChangeSelection;
+  }
 
   nsresult HandleInlineSpellCheck(EditSubAction aEditSubAction,
                                   Selection& aSelection,
@@ -1948,7 +1956,8 @@ protected:
   uint8_t mSpellcheckCheckboxState;
 
   
-  bool mShouldTxnSetSelection;
+  
+  bool mAllowsTransactionsToChangeSelection;
   
   bool mDidPreDestroy;
   

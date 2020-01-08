@@ -137,19 +137,19 @@ DeleteTextTransaction::DoTransaction()
   mEditorBase->RangeUpdaterRef().
                  SelAdjDeleteText(mCharData, mOffset, mLengthToDelete);
 
-  
-  if (mEditorBase->GetShouldTxnSetSelection()) {
-    RefPtr<Selection> selection = mEditorBase->GetSelection();
-    if (NS_WARN_IF(!selection)) {
-      return NS_ERROR_FAILURE;
-    }
-    ErrorResult error;
-    selection->Collapse(EditorRawDOMPoint(mCharData, mOffset), error);
-    if (NS_WARN_IF(error.Failed())) {
-      return error.StealNSResult();
-    }
+  if (!mEditorBase->AllowsTransactionsToChangeSelection()) {
+    return NS_OK;
   }
-  
+
+  RefPtr<Selection> selection = mEditorBase->GetSelection();
+  if (NS_WARN_IF(!selection)) {
+    return NS_ERROR_FAILURE;
+  }
+  ErrorResult error;
+  selection->Collapse(EditorRawDOMPoint(mCharData, mOffset), error);
+  if (NS_WARN_IF(error.Failed())) {
+    return error.StealNSResult();
+  }
   return NS_OK;
 }
 

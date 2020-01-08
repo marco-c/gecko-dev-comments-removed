@@ -105,7 +105,7 @@ CreateElementTransaction::DoTransaction()
   }
 
   
-  if (!mEditorBase->GetShouldTxnSetSelection()) {
+  if (!mEditorBase->AllowsTransactionsToChangeSelection()) {
     
     return NS_OK;
   }

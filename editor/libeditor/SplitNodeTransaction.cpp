@@ -96,27 +96,32 @@ SplitNodeTransaction::DoTransaction()
   
   mEditorBase->DoSplitNode(EditorDOMPoint(mStartOfRightNode),
                            *mNewLeftNode, error);
-  
-  
-  
-  if (mEditorBase->GetShouldTxnSetSelection()) {
-    NS_WARNING_ASSERTION(!mEditorBase->Destroyed(),
-      "The editor has gone but SplitNodeTransaction keeps trying to modify "
-      "Selection");
-    RefPtr<Selection> selection = mEditorBase->GetSelection();
-    if (NS_WARN_IF(!selection)) {
-      return NS_ERROR_FAILURE;
-    }
+
+  if (!mEditorBase->AllowsTransactionsToChangeSelection()) {
     if (NS_WARN_IF(error.Failed())) {
-      
-      error.SuppressException();
+      return error.StealNSResult();
     }
-    MOZ_ASSERT(mStartOfRightNode.Offset() == mNewLeftNode->Length());
-    EditorRawDOMPoint atEndOfLeftNode;
-    atEndOfLeftNode.SetToEndOf(mNewLeftNode);
-    selection->Collapse(atEndOfLeftNode, error);
+    return NS_OK;
   }
 
+  
+  
+  
+  NS_WARNING_ASSERTION(!mEditorBase->Destroyed(),
+    "The editor has gone but SplitNodeTransaction keeps trying to modify "
+    "Selection");
+  RefPtr<Selection> selection = mEditorBase->GetSelection();
+  if (NS_WARN_IF(!selection)) {
+    return NS_ERROR_FAILURE;
+  }
+  if (NS_WARN_IF(error.Failed())) {
+    
+    error.SuppressException();
+  }
+  MOZ_ASSERT(mStartOfRightNode.Offset() == mNewLeftNode->Length());
+  EditorRawDOMPoint atEndOfLeftNode;
+  atEndOfLeftNode.SetToEndOf(mNewLeftNode);
+  selection->Collapse(atEndOfLeftNode, error);
   if (NS_WARN_IF(error.Failed())) {
     return error.StealNSResult();
   }

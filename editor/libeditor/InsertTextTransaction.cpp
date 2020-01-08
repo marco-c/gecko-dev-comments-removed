@@ -70,7 +70,7 @@ InsertTextTransaction::DoTransaction()
   }
 
   
-  if (mEditorBase->GetShouldTxnSetSelection()) {
+  if (mEditorBase->AllowsTransactionsToChangeSelection()) {
     RefPtr<Selection> selection = mEditorBase->GetSelection();
     if (NS_WARN_IF(!selection)) {
       return NS_ERROR_FAILURE;
@@ -82,6 +82,8 @@ InsertTextTransaction::DoTransaction()
   } else {
     
   }
+  
+  
   mEditorBase->RangeUpdaterRef().
                  SelAdjInsertText(*mTextNode, mOffset, mStringToInsert);
 
