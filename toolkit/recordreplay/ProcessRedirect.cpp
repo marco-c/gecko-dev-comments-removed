@@ -468,8 +468,10 @@ MaybeInternalJumpTarget(uint8_t* aIpStart, uint8_t* aIpEnd)
          !strstr(startName, "CTRunGetPositionsPtr")) ||
         (strstr(startName, "CTRunGetStringIndices") &&
          !strstr(startName, "CTRunGetStringIndicesPtr")) ||
-        strstr(startName, "CGColorSpaceCreateDeviceGray") ||
-        strstr(startName, "CGColorSpaceCreateDeviceRGB") ||
+        (strstr(startName, "CGColorSpaceCreateDeviceGray") &&
+         !strstr(startName, "CGColorSpaceCreateDeviceGray_block_invoke")) ||
+        (strstr(startName, "CGColorSpaceCreateDeviceRGB") &&
+         !strstr(startName, "CGColorSpaceCreateDeviceRGB_block_invoke")) ||
         
         
         strstr(startName, "__workq_kernreturn") ||
