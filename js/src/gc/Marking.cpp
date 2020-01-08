@@ -325,10 +325,21 @@ static inline bool ShouldMarkCrossCompartment(GCMarker* marker, JSObject* src,
 
 
 
-    if (dst.isMarkedGray()) {
-      MOZ_ASSERT(!dstZone->isCollecting());
+
+
+
+
+
+
+
+
+
+
+
+    if (dst.isMarkedGray() && !dstZone->isGCMarking()) {
       UnmarkGrayGCThing(marker->runtime(),
                         JS::GCCellPtr(&dst, dst.getTraceKind()));
+      return false;
     }
 
     return dstZone->isGCMarking();
@@ -1609,7 +1620,6 @@ bool GCMarker::markUntilBudgetExhausted(SliceBudget& budget) {
       do {
         processMarkStackTop(budget);
         if (budget.isOverBudget()) {
-          MOZ_CRASH("Incremental gray marking NYI");
           return false;
         }
       } while (hasGrayEntries());
@@ -2475,7 +2485,7 @@ void GCMarker::pushValueArray(JSObject* obj, HeapSlot* start, HeapSlot* end) {
 
 void GCMarker::repush(JSObject* obj) {
   MOZ_ASSERT_IF(markColor() == MarkColor::Gray,
-                gc::TenuredCell::fromPointer(obj)->isMarkedGray());
+                gc::TenuredCell::fromPointer(obj)->isMarkedAny());
   MOZ_ASSERT_IF(markColor() == MarkColor::Black,
                 gc::TenuredCell::fromPointer(obj)->isMarkedBlack());
   pushTaggedPtr(obj);
@@ -3502,13 +3512,28 @@ class UnmarkGrayTracer : public JS::CallbackTracer {
 #endif
 };
 
+static bool
+IsCCTraceKindInternal(JS::TraceKind kind)
+{
+    switch (kind) {
+#define EXPAND_IS_CC_TRACE_KIND(name, _, addToCCKind)    \
+      case JS::TraceKind::name:                          \
+        return addToCCKind;
+JS_FOR_EACH_TRACEKIND(EXPAND_IS_CC_TRACE_KIND)
+      default:
+        MOZ_CRASH("Unexpected trace kind");
+    }
+}
+
 void UnmarkGrayTracer::onChild(const JS::GCCellPtr& thing) {
   Cell* cell = thing.asCell();
 
   
   
-  if (!cell->isTenured()) {
+  if (!cell->isTenured() ||
+      !IsCCTraceKindInternal(cell->asTenured().getTraceKind())) {
 #ifdef DEBUG
+    MOZ_ASSERT(!cell->isMarkedGray());
     AssertNonGrayTracer nongray(runtime());
     TraceChildren(&nongray, cell, thing.kind());
 #endif
@@ -3516,6 +3541,24 @@ void UnmarkGrayTracer::onChild(const JS::GCCellPtr& thing) {
   }
 
   TenuredCell& tenured = cell->asTenured();
+
+  
+  
+  
+  
+  Zone* zone = tenured.zone();
+  if (zone->needsIncrementalBarrier()) {
+    if (!cell->isMarkedBlack()) {
+      Cell* tmp = cell;
+      TraceManuallyBarrieredGenericPointerEdge(zone->barrierTracer(), &tmp,
+                                               "read barrier");
+      MOZ_ASSERT(tmp == cell);
+      unmarkedAny = true;
+    }
+    return;
+  }
+
+  MOZ_ASSERT(!zone->isGCMarkingBlackAndGray());
   if (!tenured.isMarkedGray()) {
     return;
   }
@@ -3556,6 +3599,7 @@ bool js::IsUnmarkGrayTracer(JSTracer* trc) {
 
 static bool UnmarkGrayGCThing(JSRuntime* rt, JS::GCCellPtr thing) {
   MOZ_ASSERT(thing);
+  MOZ_ASSERT(thing.asCell()->isMarkedGray());
 
   
   
