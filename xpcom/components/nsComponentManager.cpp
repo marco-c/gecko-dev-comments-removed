@@ -334,10 +334,6 @@ nsresult nsComponentManagerImpl::Init() {
     RegisterModule((*sExtraStaticModules)[i]);
   }
 
-  
-  
-  nsLayoutModuleInitialize();
-
   bool loadChromeManifests;
   switch (XRE_GetProcessType()) {
     
@@ -360,6 +356,10 @@ nsresult nsComponentManagerImpl::Init() {
   }
 
   if (loadChromeManifests) {
+    
+    
+    nsLayoutModuleInitialize();
+
     
     
     
