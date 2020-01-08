@@ -59,6 +59,10 @@ except Exception:
                                      '.mitmproxy', 'mitmproxy-ca-cert.cer')
 
 
+if os.name == 'nt' and '/' in DEFAULT_CERT_PATH:
+    DEFAULT_CERT_PATH = DEFAULT_CERT_PATH.replace('/', '\\')
+
+
 POLICIES_CONTENT_ON = '''{
   "policies": {
     "Certificates": {
