@@ -76,8 +76,11 @@ class ParamsPanel extends Component {
 
 
 
+
+
+
   getProperties(arr) {
-    return sortObjectKeys(arr.reduce((map, obj) => {
+    return arr.reduce((map, obj) => {
       const value = map[obj.name];
       if (value) {
         if (typeof value !== "object") {
@@ -88,7 +91,7 @@ class ParamsPanel extends Component {
         map[obj.name] = obj.value;
       }
       return map;
-    }, {}));
+    }, {});
   }
 
   render() {
