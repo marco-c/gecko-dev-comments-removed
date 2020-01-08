@@ -154,7 +154,8 @@ SetBaseURIUsingFirstBaseWithHref(nsIDocument* aDocument, nsIContent* aMustMatch)
         
         
         bool cspPermitsBaseURI = true;
-        rv = csp->Permits(newBaseURI, nsIContentSecurityPolicy::BASE_URI_DIRECTIVE,
+        rv = csp->Permits(child->AsElement(), newBaseURI,
+                          nsIContentSecurityPolicy::BASE_URI_DIRECTIVE,
                           true, &cspPermitsBaseURI);
         if (NS_FAILED(rv) || !cspPermitsBaseURI) {
           newBaseURI = nullptr;

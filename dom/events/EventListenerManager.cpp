@@ -873,16 +873,13 @@ EventListenerManager::SetEventHandler(nsAtom* aName,
       scriptSample.AppendLiteral(" attribute on ");
       scriptSample.Append(tagName);
       scriptSample.AppendLiteral(" element");
-      nsCOMPtr<nsISupportsString> sampleIString(do_CreateInstance(NS_SUPPORTS_STRING_CONTRACTID));
-      if (sampleIString) {
-        sampleIString->SetData(scriptSample);
-      }
 
       bool allowsInlineScript = true;
       rv = csp->GetAllowsInline(nsIContentPolicy::TYPE_SCRIPT,
                                 EmptyString(), 
                                 true, 
-                                sampleIString,
+                                aElement,
+                                scriptSample,
                                 0,             
                                 0,             
                                 &allowsInlineScript);

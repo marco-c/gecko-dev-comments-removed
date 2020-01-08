@@ -102,9 +102,6 @@ function run_test() {
                                ":" + REPORT_SERVER_PORT +
                                "/foo/self");
 
-  let content = Cc["@mozilla.org/supports-string;1"].
-                   createInstance(Ci.nsISupportsString);
-  content.data = "";
   
   makeTest(0, {"blocked-uri": ""}, false,
       function(csp) {
@@ -112,7 +109,8 @@ function run_test() {
         inlineOK = csp.getAllowsInline(Ci.nsIContentPolicy.TYPE_SCRIPT,
                                        "", 
                                        false, 
-                                       content, 
+                                       null, 
+                                       "", 
                                        0, 
                                        0); 
 
@@ -138,6 +136,7 @@ function run_test() {
         if (oReportViolation.value) {
           
           csp.logViolationDetails(Ci.nsIContentSecurityPolicy.VIOLATION_TYPE_EVAL,
+                                  null, 
                                   selfuri.asciiSpec,
                                   
                                   
@@ -160,13 +159,11 @@ function run_test() {
   makeTest(3, {"blocked-uri": ""}, true,
       function(csp) {
         let inlineOK = true;
-        let content = Cc["@mozilla.org/supports-string;1"].
-                         createInstance(Ci.nsISupportsString);
-        content.data = "";
         inlineOK = csp.getAllowsInline(Ci.nsIContentPolicy.TYPE_SCRIPT,
                                        "", 
                                        false, 
-                                       content, 
+                                       null, 
+                                       "", 
                                        0, 
                                        0); 
 
@@ -188,6 +185,7 @@ function run_test() {
         if (oReportViolation.value) {
           
           csp.logViolationDetails(Ci.nsIContentSecurityPolicy.VIOLATION_TYPE_INLINE_SCRIPT,
+                                  null, 
                                   selfuri.asciiSpec,
                                   "script sample",
                                   4, 

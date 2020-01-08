@@ -11951,7 +11951,8 @@ nsIDocument::InlineScriptAllowedByCSP()
     nsresult rv = csp->GetAllowsInline(nsIContentPolicy::TYPE_SCRIPT,
                                        EmptyString(), 
                                        true,          
-                                       nullptr, 
+                                       nullptr,       
+                                       EmptyString(), 
                                        0,             
                                        0,             
                                        &allowsInlineScript);
