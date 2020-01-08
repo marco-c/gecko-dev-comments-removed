@@ -2825,13 +2825,6 @@ TabParent::GetLoadContext()
   return loadContext.forget();
 }
 
-NS_IMETHODIMP
-TabParent::GetUseAsyncPanZoom(bool* useAsyncPanZoom)
-{
-  *useAsyncPanZoom = AsyncPanZoomEnabled();
-  return NS_OK;
-}
-
 
 NS_IMETHODIMP
 TabParent::SetDocShellIsActive(bool isActive)
