@@ -11,7 +11,6 @@
 #include "nsIDocument.h"
 #include "nsIInputStream.h"
 #include "nsIOutputStream.h"
-#include "nsIFileChannel.h"
 #include "nsIHttpChannel.h"
 #include "nsIHttpChannelInternal.h"
 #include "nsIScriptSecurityManager.h"
@@ -950,18 +949,6 @@ FetchDriver::OnStartRequest(nsIRequest* aRequest,
     return rv;
   }
   response->SetBody(pipeInputStream, contentLength);
-
-  
-  
-  nsCOMPtr<nsIFileChannel> fc = do_QueryInterface(aRequest);
-  if (fc) {
-    nsCOMPtr<nsIFile> file;
-    rv = fc->GetFile(getter_AddRefs(file));
-    if (!NS_WARN_IF(NS_FAILED(rv))) {
-      PathString path = file->NativePath();
-      response->SetBodyLocalPath(path);
-    }
-  }
 
   response->InitChannelInfo(channel);
 
