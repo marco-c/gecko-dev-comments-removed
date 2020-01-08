@@ -120,23 +120,13 @@ def attributeNativeName(a, getter):
     return "%s%s" % ('Get' if getter else 'Set', binaryname)
 
 
-def attributeReturnType(a, getter):
-    if a.notxpcom:
-        if getter:
-            return a.realtype.rustType('in').strip()
-        return "::libc::c_void"
-    return "::nserror::nsresult"
-
 def attributeParamName(a):
     return "a" + firstCap(a.name)
 
 
 def attributeRawParamList(iface, a, getter):
-    if getter and a.notxpcom:
-        l = []
-    else:
-        l = [(attributeParamName(a),
-              a.realtype.rustType('out' if getter else 'in'))]
+    l = [(attributeParamName(a),
+          a.realtype.rustType('out' if getter else 'in'))]
     if a.implicit_jscontext:
         raise xpidl.RustNoncompat("jscontext is unsupported")
     if a.nostdcall:
@@ -152,10 +142,9 @@ def attributeParamList(iface, a, getter):
 
 def attrAsVTableEntry(iface, m, getter):
     try:
-        return "pub %s: unsafe extern \"system\" fn (%s) -> %s" % \
+        return "pub %s: unsafe extern \"system\" fn (%s) -> ::nserror::nsresult" % \
             (attributeNativeName(m, getter),
-             attributeParamList(iface, m, getter),
-             attributeReturnType(m, getter))
+             attributeParamList(iface, m, getter))
     except xpidl.RustNoncompat as reason:
         return """\
 /// Unable to generate binding because `%s`
@@ -264,13 +253,12 @@ def attrAsWrapper(iface, m, getter):
                 'realtype': m.realtype.rustType('in'),
             }
 
-        param_list = attributeRawParamList(iface, m, getter)
-        params = ["%s: %s" % x for x in param_list]
+        rust_type = m.realtype.rustType('out' if getter else 'in')
         return method_impl_tmpl % {
             'name': attributeNativeName(m, getter),
-            'params': ', '.join(params),
-            'ret_ty': attributeReturnType(m, getter),
-            'args': '' if getter and m.notxpcom else name,
+            'params': name + ': ' + rust_type,
+            'ret_ty': '::nserror::nsresult',
+            'args': name,
         }
 
     except xpidl.RustNoncompat:
