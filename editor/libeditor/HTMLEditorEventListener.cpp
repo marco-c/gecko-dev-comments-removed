@@ -142,9 +142,8 @@ HTMLEditorEventListener::MouseDown(MouseEvent* aMouseEvent)
           selection->Collapse(parent, offset);
         } else {
           
-          RefPtr<Element> linkElement =
-            htmlEditor->GetElementOrParentByTagName(NS_LITERAL_STRING("href"),
-                                                    node);
+          Element* linkElement =
+            htmlEditor->GetElementOrParentByTagName(*nsGkAtoms::href, node);
           if (linkElement) {
             element = linkElement;
           }

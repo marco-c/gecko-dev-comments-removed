@@ -289,7 +289,9 @@ HTMLEditor::DeleteRefToAnonymousNode(ManualNACPtr aContent,
 NS_IMETHODIMP
 HTMLEditor::CheckSelectionStateForAnonymousButtons(Selection* aSelection)
 {
-  NS_ENSURE_ARG_POINTER(aSelection);
+  if (NS_WARN_IF(!aSelection)) {
+    return NS_ERROR_INVALID_ARG;
+  }
 
   
   NS_ENSURE_TRUE(mIsObjectResizingEnabled ||
@@ -326,7 +328,8 @@ HTMLEditor::CheckSelectionStateForAnonymousButtons(Selection* aSelection)
   if (mIsObjectResizingEnabled || mIsInlineTableEditingEnabled) {
     
     
-    cellElement = GetElementOrParentByTagName(NS_LITERAL_STRING("td"), nullptr);
+    cellElement =
+      GetElementOrParentByTagNameAtSelection(*aSelection, *nsGkAtoms::td);
   }
 
   if (mIsObjectResizingEnabled && cellElement) {
