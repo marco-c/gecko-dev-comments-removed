@@ -174,22 +174,6 @@ public class GeckoSession extends LayerSession
                 "GeckoView:OnNewSession"
             }
         ) {
-            
-            private int convertGeckoTarget(int geckoTarget) {
-                switch (geckoTarget) {
-                    case 0: 
-                    case 1: 
-                        return NavigationDelegate.TARGET_WINDOW_CURRENT;
-                    default: 
-                        return NavigationDelegate.TARGET_WINDOW_NEW;
-                }
-            }
-
-            
-            private int filterFlags(int flags) {
-                return flags & NavigationDelegate.LOAD_REQUEST_IS_USER_TRIGGERED;
-            }
-
             private @NavigationDelegate.LoadErrorCategory int getErrorCategory(
                     long errorModule, @NavigationDelegate.LoadError int error) {
                 
@@ -304,14 +288,17 @@ public class GeckoSession extends LayerSession
                     delegate.onCanGoForward(GeckoSession.this,
                                             message.getBoolean("canGoForward"));
                 } else if ("GeckoView:OnLoadRequest".equals(event)) {
-                    final String uri = message.getString("uri");
-                    final int where = convertGeckoTarget(message.getInt("where"));
-                    final int flags = filterFlags(message.getInt("flags"));
+                    final NavigationDelegate.LoadRequest request =
+                        new NavigationDelegate.LoadRequest(
+                              message.getString("uri"),
+                              message.getString("triggerUri"),
+                              message.getInt("where"),
+                              message.getInt("flags"));
 
-                    if (!IntentUtils.isUriSafeForScheme(uri)) {
+                    if (!IntentUtils.isUriSafeForScheme(request.uri)) {
                         callback.sendError("Blocked unsafe intent URI");
 
-                        delegate.onLoadError(GeckoSession.this, uri,
+                        delegate.onLoadError(GeckoSession.this, request.uri,
                                              NavigationDelegate.ERROR_CATEGORY_URI,
                                              NavigationDelegate.ERROR_MALFORMED_URI);
 
@@ -319,7 +306,7 @@ public class GeckoSession extends LayerSession
                     }
 
                     final GeckoResult<AllowOrDeny> result =
-                        delegate.onLoadRequest(GeckoSession.this, uri, where, flags);
+                        delegate.onLoadRequest(GeckoSession.this, request);
 
                     if (result == null) {
                         callback.sendSuccess(null);
@@ -2556,22 +2543,57 @@ public class GeckoSession extends LayerSession
         public static final int TARGET_WINDOW_CURRENT = 1;
         public static final int TARGET_WINDOW_NEW = 2;
 
-        @IntDef(flag = true,
-                value = {LOAD_REQUEST_IS_USER_TRIGGERED})
-         @interface LoadRequestFlags {}
-
-        
         
 
 
-        public static final int LOAD_REQUEST_IS_USER_TRIGGERED = 0x1000;
+        public static class LoadRequest {
+             LoadRequest(@NonNull final String uri,
+                                      @Nullable final String triggerUri,
+                                      int geckoTarget,
+                                      int flags) {
+                this.uri = uri;
+                this.triggerUri = triggerUri;
+                this.target = convertGeckoTarget(geckoTarget);
+
+                
+                this.isUserTriggered = (flags & 0x1000) != 0;
+            }
+
+            
+            private @TargetWindow int convertGeckoTarget(int geckoTarget) {
+                switch (geckoTarget) {
+                    case 0: 
+                    case 1: 
+                        return TARGET_WINDOW_CURRENT;
+                    default: 
+                        return TARGET_WINDOW_NEW;
+                }
+            }
+
+            
+
+
+            public final @NonNull String uri;
+
+            
+
+
+
+            public final @Nullable String triggerUri;
+
+            
+
+
+
+            public final @TargetWindow int target;
+
+            
+
+
+            public final boolean isUserTriggered;
+        }
 
         
-
-
-
-
-
 
 
 
@@ -2587,9 +2609,7 @@ public class GeckoSession extends LayerSession
 
 
         @Nullable GeckoResult<AllowOrDeny> onLoadRequest(@NonNull GeckoSession session,
-                                                         @NonNull String uri,
-                                                         @TargetWindow int target,
-                                                         @LoadRequestFlags int flags);
+                                                         @NonNull LoadRequest request);
 
         
 
