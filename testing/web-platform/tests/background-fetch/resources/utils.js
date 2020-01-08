@@ -3,6 +3,18 @@
 let nextBackgroundFetchId = 0;
 
 
+async function getMessageFromServiceWorker() {
+  return new Promise(resolve => {
+    function listener(event) {
+      navigator.serviceWorker.removeEventListener('message', listener);
+      resolve(event.data);
+    }
+
+    navigator.serviceWorker.addEventListener('message', listener);
+  });
+}
+
+
 
 
 
@@ -26,6 +38,10 @@ async function registerAndActivateServiceWorker(test) {
 function backgroundFetchTest(func, description) {
   promise_test(async t => {
     const serviceWorkerRegistration = await registerAndActivateServiceWorker(t);
+    serviceWorkerRegistration.active.postMessage(null );
+
+    assert_equals(await getMessageFromServiceWorker(), 'ready');
+
     return func(t, serviceWorkerRegistration.backgroundFetch);
   }, description);
 }
