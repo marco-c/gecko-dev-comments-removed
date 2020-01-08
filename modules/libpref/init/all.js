@@ -871,6 +871,7 @@ pref("gfx.compositor.glcontext.opaque", false);
 #endif
 
 pref("gfx.webrender.highlight-painted-layers", false);
+pref("gfx.webrender.async-scene-build", true);
 pref("gfx.webrender.blob-images", true);
 pref("gfx.webrender.blob.invalidation", true);
 
@@ -2228,6 +2229,7 @@ pref("network.proxy.autoconfig_url.include_path", false);
 
 pref("network.proxy.autoconfig_retry_interval_min", 5);    
 pref("network.proxy.autoconfig_retry_interval_max", 300);  
+pref("network.proxy.enable_wpad_over_dhcp", true);
 
 
 pref("network.stricttransportsecurity.preloadlist", true);
