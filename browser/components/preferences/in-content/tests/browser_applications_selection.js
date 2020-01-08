@@ -1,76 +1,195 @@
-var win;
-var feedItem;
-var container;
-
 SimpleTest.requestCompleteLog();
+ChromeUtils.import("resource://testing-common/HandlerServiceTestUtils.jsm", this);
+
+let gHandlerService = Cc["@mozilla.org/uriloader/handler-service;1"].getService(Ci.nsIHandlerService);
+
+let gOldMailHandlers = [];
+let gDummyHandlers = [];
+let gOriginalPreferredMailHandler;
+let gOriginalPreferredPDFHandler;
+
+registerCleanupFunction(function() {
+  function removeDummyHandlers(handlers) {
+    
+    for (let i = handlers.Count() - 1; i >= 0; i--) {
+      try {
+        if (gDummyHandlers.some(h => h.uriTemplate == handlers.queryElementAt(i, Ci.nsIWebHandlerApp).uriTemplate)) {
+          handlers.removeElementAt(i);
+        }
+      } catch (ex) {  }
+    }
+  }
+  
+  let mailHandlerInfo = HandlerServiceTestUtils.getHandlerInfo("mailto");
+  let mailHandlers = mailHandlerInfo.possibleApplicationHandlers;
+  for (let h of gOldMailHandlers) {
+    mailHandlers.appendElement(h);
+  }
+  removeDummyHandlers(mailHandlers);
+  mailHandlerInfo.preferredApplicationHandler = gOriginalPreferredMailHandler;
+  gHandlerService.store(mailHandlerInfo);
+
+  let pdfHandlerInfo = HandlerServiceTestUtils.getHandlerInfo("application/pdf");
+  removeDummyHandlers(pdfHandlerInfo.possibleApplicationHandlers);
+  pdfHandlerInfo.preferredApplicationHandler = gOriginalPreferredPDFHandler;
+  gHandlerService.store(pdfHandlerInfo);
+
+  gBrowser.removeCurrentTab();
+});
+
+function scrubMailtoHandlers(handlerInfo) {
+  
+  
+  let handlers = handlerInfo.possibleApplicationHandlers;
+  for (let i = handlers.Count() - 1; i >= 0; i--) {
+    try {
+      let handler = handlers.queryElementAt(i, Ci.nsIWebHandlerApp);
+      gOldMailHandlers.push(handler);
+      
+      handlers.removeElementAt(i);
+    } catch (ex) {}
+  }
+}
 
 add_task(async function setup() {
+  
+  let handler1 = Cc["@mozilla.org/uriloader/web-handler-app;1"]
+                   .createInstance(Ci.nsIWebHandlerApp);
+  handler1.name = "Handler 1";
+  handler1.uriTemplate = "https://example.com/first/%s";
+
+  let handler2 = Cc["@mozilla.org/uriloader/web-handler-app;1"]
+                     .createInstance(Ci.nsIWebHandlerApp);
+  handler2.name = "Handler 2";
+  handler2.uriTemplate = "http://example.org/second/%s";
+  gDummyHandlers.push(handler1, handler2);
+
+  function substituteWebHandlers(handlerInfo) {
+    
+    let handlers = handlerInfo.possibleApplicationHandlers;
+    handlers.appendElement(handler1);
+    handlers.appendElement(handler2);
+    gHandlerService.store(handlerInfo);
+  }
+  
+  let mailtoHandlerInfo = HandlerServiceTestUtils.getHandlerInfo("mailto");
+  scrubMailtoHandlers(mailtoHandlerInfo);
+  gOriginalPreferredMailHandler = mailtoHandlerInfo.preferredApplicationHandler;
+  substituteWebHandlers(mailtoHandlerInfo);
+
+  
+  let pdfHandlerInfo = HandlerServiceTestUtils.getHandlerInfo("application/pdf");
+  
+  gOriginalPreferredPDFHandler = pdfHandlerInfo.preferredApplicationHandler;
+  substituteWebHandlers(pdfHandlerInfo);
+
   await openPreferencesViaOpenPreferencesAPI("general", { leaveOpen: true });
   info("Preferences page opened on the general pane.");
 
   await gBrowser.selectedBrowser.contentWindow.promiseLoadHandlersList;
   info("Apps list loaded.");
-
-  registerCleanupFunction(() => {
-    gBrowser.removeCurrentTab();
-  });
 });
 
-add_task(async function getFeedItem() {
-  win = gBrowser.selectedBrowser.contentWindow;
+async function selectStandardOptions(itemToUse) {
+  async function selectItemInPopup(item) {
+    let popupShown = BrowserTestUtils.waitForEvent(popup, "popupshown");
+    
+    
+    
+    list.open = true;
+    await popupShown;
+    let popupHidden = BrowserTestUtils.waitForEvent(popup, "popuphidden");
+    if (typeof item == "function") {
+      item = item();
+    }
+    item.click();
+    popup.hidePopup();
+    await popupHidden;
+    return item;
+  }
 
-  container = win.document.getElementById("handlersView");
-  feedItem = container.querySelector("richlistitem[type='application/vnd.mozilla.maybe.feed']");
-  Assert.ok(feedItem, "feedItem is present in handlersView.");
-});
-
-add_task(async function selectInternalOptionForFeed() {
-  
-  feedItem.scrollIntoView();
-  container.selectItem(feedItem);
-  Assert.ok(feedItem.selected, "Should be able to select our item.");
-
-  let list = feedItem.querySelector(".actionsMenu");
-
-  
-  let chooseItems = list.getElementsByAttribute("action", Ci.nsIHandlerInfo.handleInternally);
-  Assert.equal(chooseItems.length, 1, "Should only be one action to handle internally");
-
-  
-  let cmdEvent = win.document.createEvent("xulcommandevent");
-  cmdEvent.initCommandEvent("command", true, true, win, 0, false, false, false, false, null, 0);
-  chooseItems[0].dispatchEvent(cmdEvent);
-
-  
-  Assert.ok(list.selectedItem, "Should have a selected item.");
-  Assert.equal(list.selectedItem.getAttribute("action"),
-               Ci.nsIHandlerInfo.handleInternally,
-               "Newly selected item should be the expected one.");
-});
-
-
-add_task(async function reselectInternalOptionForFeed() {
+  let itemType = itemToUse.getAttribute("type");
   
   
-  let anotherItem = container.querySelector("richlistitem[type='application/pdf']");
-
-  container.selectItem(anotherItem);
+  itemToUse.scrollIntoView({block: "center"});
+  itemToUse.closest("richlistbox").selectItem(itemToUse);
+  Assert.ok(itemToUse.selected, "Should be able to select our item.");
+  
+  
+  itemToUse.getBoundingClientRect().top;
+  let list = itemToUse.querySelector(".actionsMenu");
+  let popup = list.menupopup;
 
   
-  container.selectItem(feedItem);
+  list.selectedItem = list.querySelector("menuitem[label='Handler 1']");
+  let {preferredAction, alwaysAskBeforeHandling} = HandlerServiceTestUtils.getHandlerInfo(itemType);
+  Assert.notEqual(preferredAction, Ci.nsIHandlerInfo.alwaysAsk,
+      "Should have selected something other than 'always ask' (" + itemType + ")");
+  Assert.ok(!alwaysAskBeforeHandling, "Should have turned off asking before handling (" + itemType + ")");
 
-  let list = feedItem.querySelector(".actionsMenu");
+  
+  let alwaysAskItem = list.getElementsByAttribute("action", Ci.nsIHandlerInfo.alwaysAsk)[0];
+  await selectItemInPopup(alwaysAskItem);
+  Assert.equal(list.selectedItem, alwaysAskItem, "Should have selected always ask item (" + itemType + ")");
+  alwaysAskBeforeHandling = HandlerServiceTestUtils.getHandlerInfo(itemType).alwaysAskBeforeHandling;
+  Assert.ok(alwaysAskBeforeHandling, "Should have turned on asking before handling (" + itemType + ")");
 
-  Assert.ok(list.selectedItem,
-            "Should have a selected item");
-  Assert.equal(list.selectedItem.getAttribute("action"),
-               Ci.nsIHandlerInfo.handleInternally,
-               "Selected item should still be the same as the previously selected item.");
+  let useDefaultItem = list.getElementsByAttribute("action", Ci.nsIHandlerInfo.useSystemDefault);
+  useDefaultItem = useDefaultItem && useDefaultItem[0];
+  if (useDefaultItem) {
+    await selectItemInPopup(useDefaultItem);
+    Assert.equal(list.selectedItem, useDefaultItem, "Should have selected always ask item (" + itemType + ")");
+    preferredAction = HandlerServiceTestUtils.getHandlerInfo(itemType).preferredAction;
+    Assert.equal(preferredAction, Ci.nsIHandlerInfo.useSystemDefault, "Should have selected 'use default' (" + itemType + ")");
+  } else {
+    
+    
+    info("No 'Use default' item, so not testing (" + itemType + ")");
+  }
+
+  
+  let webAppItems = Array.from(popup.getElementsByAttribute("action", Ci.nsIHandlerInfo.useHelperApp));
+  webAppItems = webAppItems.filter(item => (item.handlerApp instanceof Ci.nsIWebHandlerApp));
+  Assert.equal(webAppItems.length, 2, "Should have 2 web application handler. (" + itemType + ")");
+  Assert.notEqual(webAppItems[0].label, webAppItems[1].label, "Should have 2 different web app handlers");
+  let selectedItem = await selectItemInPopup(webAppItems[0]);
+
+  Assert.equal(selectedItem.label, itemToUse.querySelector(".actionContainer label").value,
+               "Should have selected correct item (" + itemType + ")");
+  let {preferredApplicationHandler} = HandlerServiceTestUtils.getHandlerInfo(itemType);
+  preferredApplicationHandler.QueryInterface(Ci.nsIWebHandlerApp);
+  Assert.equal(selectedItem.handlerApp.uriTemplate, preferredApplicationHandler.uriTemplate,
+               "App should actually be selected in the backend. (" + itemType + ")");
+
+  
+  selectedItem = await selectItemInPopup(webAppItems[1]);
+
+  Assert.equal(selectedItem.label, itemToUse.querySelector(".actionContainer label").value,
+               "Should have selected correct item (" + itemType + ")");
+  preferredApplicationHandler = HandlerServiceTestUtils.getHandlerInfo(itemType).preferredApplicationHandler;
+  preferredApplicationHandler.QueryInterface(Ci.nsIWebHandlerApp);
+  Assert.equal(selectedItem.handlerApp.uriTemplate, preferredApplicationHandler.uriTemplate,
+               "App should actually be selected in the backend. (" + itemType + ")");
+}
+
+add_task(async function checkDropdownBehavior() {
+  let win = gBrowser.selectedBrowser.contentWindow;
+
+  let container = win.document.getElementById("handlersView");
+
+  
+  let mailItem = container.querySelector("richlistitem[type='mailto']");
+  Assert.ok(mailItem, "mailItem is present in handlersView.");
+  await selectStandardOptions(mailItem);
+
+  
+  let pdfItem = container.querySelector("richlistitem[type='application/pdf']");
+  Assert.ok(pdfItem, "pdfItem is present in handlersView.");
+  await selectStandardOptions(pdfItem);
 });
 
 add_task(async function sortingCheck() {
-  win = gBrowser.selectedBrowser.contentWindow;
-
+  let win = gBrowser.selectedBrowser.contentWindow;
   const handlerView = win.document.getElementById("handlersView");
   const typeColumn = win.document.getElementById("typeColumn");
   Assert.ok(typeColumn, "typeColumn is present in handlersView.");
