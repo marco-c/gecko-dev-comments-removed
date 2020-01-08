@@ -11,6 +11,7 @@
 #include "mozilla/BasicEvents.h"
 #include "nsCOMPtr.h"
 #include "nsAtom.h"
+#include "nsGkAtoms.h"
 #include "nsITransferable.h"
 
 namespace mozilla {
@@ -106,6 +107,7 @@ class WidgetCommandEvent : public WidgetGUIEvent
 public:
   virtual WidgetCommandEvent* AsCommandEvent() override { return this; }
 
+protected:
   WidgetCommandEvent(bool aIsTrusted, nsAtom* aEventType,
                      nsAtom* aCommand, nsIWidget* aWidget)
     : WidgetGUIEvent(aIsTrusted, eUnidentifiedEvent, aWidget,
@@ -113,6 +115,25 @@ public:
     , mCommand(aCommand)
   {
     mSpecifiedEventType = aEventType;
+  }
+
+public:
+  
+
+
+
+  WidgetCommandEvent(bool aIsTrusted, nsAtom* aCommand, nsIWidget* aWidget)
+    : WidgetCommandEvent(aIsTrusted, nsGkAtoms::onAppCommand,
+                         aCommand, aWidget)
+  {
+  }
+
+  
+
+
+  WidgetCommandEvent()
+    : WidgetCommandEvent(false, nullptr, nullptr, nullptr)
+  {
   }
 
   virtual WidgetEvent* Duplicate() const override
