@@ -74,6 +74,11 @@ Channel::ChannelImpl::ChannelImpl(const std::wstring& channel_id,
 
   if (mode == MODE_SERVER) {
     
+    
+    PipeName(channel_id, &shared_secret_);
+    waiting_for_shared_secret_ = !!shared_secret_;
+
+    
     pipe_ = server_pipe;
     EnqueueHelloMessage();
   } else {
