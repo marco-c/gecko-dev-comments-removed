@@ -60,7 +60,6 @@
 #include "nsSandboxFlags.h"
 #include "nsSimpleEnumerator.h"
 #include "mozilla/CheckedInt.h"
-#include "mozilla/NullPrincipal.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Storage.h"
@@ -1034,10 +1033,9 @@ nsWindowWatcher::OpenWindowInternal(mozIDOMWindowProxy* aParent,
   
   
   
-  
   nsCOMPtr<nsIPrincipal> subjectPrincipal =
     nsContentUtils::GetCurrentJSContext() ? nsContentUtils::SubjectPrincipal() :
-                                            nsContentUtils::GetSystemPrincipal();
+                                            nullptr;
 
   bool isPrivateBrowsingWindow = false;
 
@@ -1124,8 +1122,9 @@ nsWindowWatcher::OpenWindowInternal(mozIDOMWindowProxy* aParent,
   if (uriToLoad && aNavigate && !loadInfo) {
     loadInfo = new nsDocShellLoadInfo();
 
-    MOZ_ASSERT(subjectPrincipal, "nsWindowWatcher: triggeringPrincipal required");
-    loadInfo->SetTriggeringPrincipal(subjectPrincipal);
+    if (subjectPrincipal) {
+      loadInfo->SetTriggeringPrincipal(subjectPrincipal);
+    }
 
     
 

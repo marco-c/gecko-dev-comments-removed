@@ -100,11 +100,9 @@ const backgroundPageThumbsContent = {
     this._currentCapture.pageLoadStartDate = new Date();
 
     try {
-      
-      let triggeringPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
       this._webNav.loadURI(this._currentCapture.url,
                            Ci.nsIWebNavigation.LOAD_FLAGS_STOP_CONTENT,
-                           null, null, null, triggeringPrincipal);
+                           null, null, null);
     } catch (e) {
       this._failCurrentCapture("BAD_URI");
     }
@@ -224,10 +222,9 @@ const backgroundPageThumbsContent = {
     if (!docShell) {
       return;
     }
-    let triggeringPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
     this._webNav.loadURI("about:blank",
                          Ci.nsIWebNavigation.LOAD_FLAGS_STOP_CONTENT,
-                         null, null, null, triggeringPrincipal);
+                         null, null, null);
   },
 
   QueryInterface: ChromeUtils.generateQI([

@@ -136,9 +136,7 @@ RemoteWebNavigation.prototype = {
     return this._currentURI;
   },
   set currentURI(aURI) {
-    
-    let systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
-    this.loadURI(aURI.spec, null, null, null, systemPrincipal);
+    this.loadURI(aURI.spec, null, null, null);
   },
 
   referringURI: null,
