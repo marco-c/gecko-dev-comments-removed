@@ -3708,6 +3708,18 @@ static bool QueryOneWMIProperty(IWbemServices* aServices,
 
 
 
+
+static const char kMemoryErrorCorrectionValues[][15] = {
+  "Reserved", 
+  "Other", 
+  "Unknown", 
+  "None", 
+  "Parity", 
+  "Single-bit ECC", 
+  "Multi-bit ECC", 
+  "CRC" 
+};
+
 static void AnnotateWMIData()
 {
   RefPtr<IWbemLocator> locator;
@@ -3746,6 +3758,23 @@ static void AnnotateWMIData()
     CrashReporter::AnnotateCrashReport(
       CrashReporter::Annotation::BIOS_Manufacturer,
       NS_ConvertUTF16toUTF8(V_BSTR(&value)));
+  }
+
+  VariantClear(&value);
+
+  
+  if (QueryOneWMIProperty(services, L"Win32_PhysicalMemoryArray",
+                          L"MemoryErrorCorrection", &value) &&
+      V_VT(&value) == VT_I4) {
+    long valueInt = V_I4(&value);
+    nsCString valueString;
+    if (valueInt < 0 || valueInt >= ArrayLength(kMemoryErrorCorrectionValues)) {
+      valueString.AssignLiteral("Unexpected value");
+    } else {
+      valueString.AssignASCII(kMemoryErrorCorrectionValues[valueInt]);
+    }
+    CrashReporter::AnnotateCrashReport(
+      CrashReporter::Annotation::MemoryErrorCorrection, valueString);
   }
 
   VariantClear(&value);
