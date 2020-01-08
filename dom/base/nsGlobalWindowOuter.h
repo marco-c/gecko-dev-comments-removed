@@ -737,6 +737,12 @@ public:
     return GetExtantDoc() && GetExtantDoc()->IsInSyncOperation();
   }
 
+  void ParentWindowChanged()
+  {
+    
+    mHasStorageAccess = false;
+  }
+
 public:
   int32_t GetInnerWidthOuter(mozilla::ErrorResult& aError);
 protected:
