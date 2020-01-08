@@ -448,19 +448,6 @@ nsTransferable::RemoveDataFlavor(const char* aDataFlavor)
 
 
 
-NS_IMETHODIMP
-nsTransferable::IsLargeDataSet(bool* _retval)
-{
-  MOZ_ASSERT(mInitialized);
-
-  NS_ENSURE_ARG_POINTER(_retval);
-  *_retval = false;
-  return NS_OK;
-}
-
-
-
-
 
 NS_IMETHODIMP
 nsTransferable::SetConverter(nsIFormatConverter* aConverter)
