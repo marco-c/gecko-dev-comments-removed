@@ -578,11 +578,6 @@ protected:
   
 
 
-  static void Shutdown();
-
-  
-
-
   static void FinishShutdown();
 
   
