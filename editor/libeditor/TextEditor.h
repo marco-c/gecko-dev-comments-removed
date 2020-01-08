@@ -337,6 +337,15 @@ protected:
 
 
 
+
+
+  nsresult InsertWithQuotationsAsSubAction(const nsAString& aQuotedText);
+
+  
+
+
+
+
   bool IsSafeToInsertData(nsIDocument* aSourceDoc);
 
   virtual nsresult InitRules();

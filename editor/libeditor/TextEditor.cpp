@@ -1876,7 +1876,9 @@ TextEditor::PasteAsQuotation(int32_t aSelectionType)
         nsAutoString stuffToPaste;
         textDataObj->GetData ( stuffToPaste );
         AutoPlaceholderBatch beginBatching(this);
-        rv = InsertAsQuotation(stuffToPaste, 0);
+        rv = InsertWithQuotationsAsSubAction(stuffToPaste);
+        NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+          "Failed to insert the text with quotations");
       }
     }
   }
@@ -1888,13 +1890,21 @@ NS_IMETHODIMP
 TextEditor::InsertAsQuotation(const nsAString& aQuotedText,
                               nsINode** aNodeInserted)
 {
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+nsresult
+TextEditor::InsertWithQuotationsAsSubAction(const nsAString& aQuotedText)
+{
   
   RefPtr<TextEditRules> rules(mRules);
 
   
   nsString quotedStuff;
   nsresult rv = InternetCiter::GetCiteString(aQuotedText, quotedStuff);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
   
   
@@ -1902,15 +1912,17 @@ TextEditor::InsertAsQuotation(const nsAString& aQuotedText,
     quotedStuff.Append(char16_t('\n'));
   }
 
-  
   RefPtr<Selection> selection = GetSelection();
-  NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
+  if (NS_WARN_IF(!selection)) {
+    return NS_ERROR_FAILURE;
+  }
 
-  AutoPlaceholderBatch beginBatching(this);
   AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
                                       *this, EditSubAction::eInsertText,
                                       nsIEditor::eNext);
 
+  
+  
   
   EditSubActionInfo subActionInfo(EditSubAction::eInsertElement);
   bool cancel, handled;
@@ -1921,17 +1933,16 @@ TextEditor::InsertAsQuotation(const nsAString& aQuotedText,
   if (cancel) {
     return NS_OK; 
   }
+  MOZ_ASSERT(handled, "WillDoAction() shouldn't handle in this case");
   if (!handled) {
-    rv = InsertTextAsAction(quotedStuff);
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to insert quoted text");
-
     
-    if (aNodeInserted && NS_SUCCEEDED(rv)) {
-      *aNodeInserted = nullptr;
+    rv = InsertTextAsAction(quotedStuff);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
     }
   }
   
-  return rv;
+  return NS_OK;
 }
 
 NS_IMETHODIMP

@@ -1780,9 +1780,14 @@ HTMLEditor::InsertAsPlaintextQuotation(const nsAString& aQuotedText,
                                        bool aAddCites,
                                        nsINode** aNodeInserted)
 {
-  
+  if (aNodeInserted) {
+    *aNodeInserted = nullptr;
+  }
+
   RefPtr<Selection> selection = GetSelection();
-  NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
+  if (NS_WARN_IF(!selection)) {
+    return NS_ERROR_FAILURE;
+  }
 
   AutoPlaceholderBatch beginBatching(this);
   AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
@@ -1809,7 +1814,7 @@ HTMLEditor::InsertAsPlaintextQuotation(const nsAString& aQuotedText,
   
   
   
-  nsCOMPtr<Element> newNode =
+  RefPtr<Element> newNode =
     DeleteSelectionAndCreateElement(*nsGkAtoms::span);
 
   
@@ -1832,11 +1837,15 @@ HTMLEditor::InsertAsPlaintextQuotation(const nsAString& aQuotedText,
     }
 
     
-    selection->Collapse(newNode, 0);
+    DebugOnly<nsresult> rv = selection->Collapse(newNode, 0);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+      "Failed to collapse selection into the new node");
   }
 
   if (aAddCites) {
-    rv = TextEditor::InsertAsQuotation(aQuotedText, aNodeInserted);
+    rv = InsertWithQuotationsAsSubAction(aQuotedText);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+      "Failed to insert the text with quotations");
   } else {
     rv = InsertTextAsAction(aQuotedText);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
@@ -1847,15 +1856,16 @@ HTMLEditor::InsertAsPlaintextQuotation(const nsAString& aQuotedText,
   
 
   if (aNodeInserted && NS_SUCCEEDED(rv)) {
-    *aNodeInserted = newNode;
-    NS_IF_ADDREF(*aNodeInserted);
+    newNode.forget(aNodeInserted);
   }
 
   
   if (NS_SUCCEEDED(rv) && newNode) {
     EditorRawDOMPoint afterNewNode(newNode);
     if (afterNewNode.AdvanceOffset()) {
-      selection->Collapse(afterNewNode);
+      DebugOnly<nsresult> rv = selection->Collapse(afterNewNode);
+      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+        "Failed to collapse after the new node");
     }
   }
 
