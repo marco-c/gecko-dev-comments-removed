@@ -14,7 +14,7 @@ use api::channel::{MsgReceiver, Payload};
 use api::CaptureBits;
 #[cfg(feature = "replay")]
 use api::CapturedDocument;
-use clip_scroll_tree::{SpatialNodeIndex, ClipScrollTree};
+use clip_scroll_tree::{ClipScrollNodeIndex, ClipScrollTree};
 #[cfg(feature = "debugger")]
 use debug_server;
 use display_list_flattener::DisplayListFlattener;
@@ -313,7 +313,7 @@ impl Document {
     pub fn scroll_nearest_scrolling_ancestor(
         &mut self,
         scroll_location: ScrollLocation,
-        scroll_node_index: Option<SpatialNodeIndex>,
+        scroll_node_index: Option<ClipScrollNodeIndex>,
     ) -> bool {
         self.clip_scroll_tree.scroll_nearest_scrolling_ancestor(scroll_location, scroll_node_index)
     }
