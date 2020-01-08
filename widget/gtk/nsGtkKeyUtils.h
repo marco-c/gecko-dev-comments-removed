@@ -18,6 +18,8 @@
 #include <xkbcommon/xkbcommon.h>
 #endif
 
+class nsWindow;
+
 namespace mozilla {
 namespace widget {
 
@@ -98,19 +100,6 @@ class KeymapWrapper {
 
 
 
-
-
-
-
-
-
-
-  static bool AreModifiersActive(Modifiers aModifiers, guint aModifierState);
-
-  
-
-
-
   static uint32_t ComputeCurrentKeyModifiers();
 
   
@@ -136,6 +125,55 @@ class KeymapWrapper {
 
   static void InitKeyEvent(WidgetKeyboardEvent& aKeyEvent,
                            GdkEventKey* aGdkKeyEvent, bool aIsProcessedByIME);
+
+  
+
+
+
+
+
+
+
+
+
+
+  static bool DispatchKeyDownOrKeyUpEvent(nsWindow* aWindow,
+                                          GdkEventKey* aGdkKeyEvent,
+                                          bool aIsProcessedByIME,
+                                          bool* aIsCancelled);
+
+  
+
+
+
+
+
+
+
+
+
+  static bool DispatchKeyDownOrKeyUpEvent(nsWindow* aWindow,
+                                          WidgetKeyboardEvent& aKeyboardEvent,
+                                          bool* aIsCancelled);
+
+  
+
+
+
+
+
+
+  static void HandleKeyPressEvent(nsWindow* aWindow, GdkEventKey* aGdkKeyEvent);
+
+  
+
+
+
+
+
+
+  static bool HandleKeyReleaseEvent(nsWindow* aWindow,
+                                    GdkEventKey* aGdkKeyEvent);
 
   
 
@@ -233,6 +271,19 @@ class KeymapWrapper {
   static Modifier GetModifierForGDKKeyval(guint aGdkKeyval);
 
   static const char* GetModifierName(Modifier aModifier);
+
+  
+
+
+
+
+
+
+
+
+
+
+  static bool AreModifiersActive(Modifiers aModifiers, guint aModifierState);
 
   
 
@@ -371,6 +422,20 @@ class KeymapWrapper {
 
   static GdkFilterReturn FilterEvents(GdkXEvent* aXEvent, GdkEvent* aGdkEvent,
                                       gpointer aData);
+
+  
+
+
+
+
+
+
+
+
+
+
+  static bool MaybeDispatchContextMenuEvent(nsWindow* aWindow,
+                                            const GdkEventKey* aEvent);
 
   
 

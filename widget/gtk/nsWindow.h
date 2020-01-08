@@ -183,6 +183,11 @@ class nsWindow final : public nsBaseWidget {
 
   GdkRectangle DevicePixelsToGdkRectRoundOut(LayoutDeviceIntRect aRect);
 
+  mozilla::widget::IMContextWrapper* GetIMContext() const { return mIMContext; }
+
+  bool DispatchCommandEvent(nsAtom* aCommand);
+  bool DispatchContentCommandEvent(mozilla::EventMessage aMsg);
+
   
   gboolean OnExposeEvent(cairo_t* cr);
   gboolean OnConfigureEvent(GtkWidget* aWidget, GdkEventConfigure* aEvent);
@@ -198,18 +203,6 @@ class nsWindow final : public nsBaseWidget {
   void OnContainerFocusOutEvent(GdkEventFocus* aEvent);
   gboolean OnKeyPressEvent(GdkEventKey* aEvent);
   gboolean OnKeyReleaseEvent(GdkEventKey* aEvent);
-
-  
-
-
-
-
-
-
-
-
-
-  bool MaybeDispatchContextMenuEvent(const GdkEventKey* aEvent);
 
   void OnScrollEvent(GdkEventScroll* aEvent);
   void OnVisibilityNotifyEvent(GdkEventVisibility* aEvent);
@@ -284,30 +277,6 @@ class nsWindow final : public nsBaseWidget {
                          const LayoutDeviceIntPoint& aRefPoint, guint aTime);
   static void UpdateDragStatus(GdkDragContext* aDragContext,
                                nsIDragService* aDragService);
-  
-
-
-
-
-
-
-
-
-
-  bool DispatchKeyDownOrKeyUpEvent(GdkEventKey* aEvent, bool aProcessedByIME,
-                                   bool* aIsCancelled);
-
-  
-
-
-
-
-
-
-
-
-  bool DispatchKeyDownOrKeyUpEvent(WidgetKeyboardEvent& aEvent,
-                                   bool* aIsCancelled);
 
   WidgetEventTime GetWidgetEventTime(guint32 aEventTime);
   mozilla::TimeStamp GetEventTimeStamp(guint32 aEventTime);
@@ -471,8 +440,6 @@ class nsWindow final : public nsBaseWidget {
   void SetWindowDecoration(nsBorderStyle aStyle);
   void InitButtonEvent(mozilla::WidgetMouseEvent& aEvent,
                        GdkEventButton* aGdkEvent);
-  bool DispatchCommandEvent(nsAtom* aCommand);
-  bool DispatchContentCommandEvent(mozilla::EventMessage aMsg);
   bool CheckForRollup(gdouble aMouseX, gdouble aMouseY, bool aIsWheel,
                       bool aAlwaysRollup);
   void CheckForRollupDuringGrab() { CheckForRollup(0, 0, false, true); }
