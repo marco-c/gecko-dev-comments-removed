@@ -72,7 +72,6 @@ public:
   NS_IMETHOD Copy() override;
   NS_IMETHOD CanCopy(bool* aCanCopy) override;
   NS_IMETHOD CanDelete(bool* aCanDelete) override;
-  NS_IMETHOD Paste(int32_t aSelectionType) override;
   NS_IMETHOD CanPaste(int32_t aSelectionType, bool* aCanPaste) override;
   NS_IMETHOD PasteTransferable(nsITransferable* aTransferable) override;
 
@@ -111,6 +110,16 @@ public:
                      WidgetKeyboardEvent* aKeyboardEvent) override;
 
   virtual dom::EventTarget* GetDOMEventTarget() override;
+
+  
+
+
+
+
+
+
+
+  nsresult PasteAsAction(int32_t aClipboardType);
 
   
 
