@@ -111,7 +111,7 @@ async function testSearchEngine(engineDetails) {
       run() {
         
         
-        BrowserSearch._loadSearch("foo", false, "contextmenu", Services.scriptSecurityManager.getSystemPrincipal());
+        BrowserSearch.loadSearch("foo", false, "contextmenu");
       }
     },
     {

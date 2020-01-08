@@ -691,7 +691,7 @@ DevToolsStartup.prototype = {
     }
 
     
-    gBrowser.selectedTab = gBrowser.addTrustedTab(url, {relatedToCurrent: true});
+    gBrowser.selectedTab = gBrowser.addTab(url, {relatedToCurrent: true});
   },
 
   handleConsoleFlag: function(cmdLine) {

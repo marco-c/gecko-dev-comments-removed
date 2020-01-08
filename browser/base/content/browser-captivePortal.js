@@ -247,12 +247,7 @@ var CaptivePortalWatcher = {
 
     
     if (!tab || tab.closing || !tab.parentNode) {
-      tab = gBrowser.addWebTab(this.canonicalURL, {
-        ownerTab: gBrowser.selectedTab,
-        triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({
-          userContextId: gBrowser.contentPrincipal.userContextId,
-        }),
-      });
+      tab = gBrowser.addTab(this.canonicalURL, { ownerTab: gBrowser.selectedTab });
       this._captivePortalTab = Cu.getWeakReference(tab);
     }
 
