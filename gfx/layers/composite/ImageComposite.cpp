@@ -24,10 +24,10 @@ ImageComposite::~ImageComposite()
 {
 }
 
- TimeStamp
-ImageComposite::GetBiasedTime(const TimeStamp& aInput, ImageComposite::Bias aBias)
+TimeStamp
+ImageComposite::GetBiasedTime(const TimeStamp& aInput) const
 {
-  switch (aBias) {
+  switch (mBias) {
   case ImageComposite::BIAS_NEGATIVE:
     return aInput - TimeDuration::FromMilliseconds(BIAS_TIME_MS);
   case ImageComposite::BIAS_POSITIVE:
@@ -37,18 +37,24 @@ ImageComposite::GetBiasedTime(const TimeStamp& aInput, ImageComposite::Bias aBia
   }
 }
 
- ImageComposite::Bias
-ImageComposite::UpdateBias(const TimeStamp& aCompositionTime,
-                           const TimeStamp& aCompositedImageTime,
-                           const TimeStamp& aNextImageTime, 
-                           ImageComposite::Bias aBias)
+void
+ImageComposite::UpdateBias(size_t aImageIndex)
 {
-  if (aCompositedImageTime.IsNull()) {
-    return ImageComposite::BIAS_NONE;
+  MOZ_ASSERT(aImageIndex < ImagesCount());
+
+  TimeStamp compositionTime = GetCompositionTime();
+  TimeStamp compositedImageTime = mImages[aImageIndex].mTimeStamp;
+  TimeStamp nextImageTime = aImageIndex + 1 < ImagesCount()
+                              ? mImages[aImageIndex + 1].mTimeStamp
+                              : TimeStamp();
+
+  if (compositedImageTime.IsNull()) {
+    mBias = ImageComposite::BIAS_NONE;
+    return;
   }
   TimeDuration threshold = TimeDuration::FromMilliseconds(1.0);
-  if (aCompositionTime - aCompositedImageTime < threshold &&
-      aCompositionTime - aCompositedImageTime > -threshold) {
+  if (compositionTime - compositedImageTime < threshold &&
+      compositionTime - compositedImageTime > -threshold) {
     
     
     
@@ -59,11 +65,12 @@ ImageComposite::UpdateBias(const TimeStamp& aCompositionTime,
     
     
     
-    return ImageComposite::BIAS_NEGATIVE;
+    mBias = ImageComposite::BIAS_NEGATIVE;
+    return;
   }
-  if (!aNextImageTime.IsNull() &&
-      aNextImageTime - aCompositionTime < threshold &&
-      aNextImageTime - aCompositionTime > -threshold) {
+  if (!nextImageTime.IsNull() &&
+      nextImageTime - compositionTime < threshold &&
+      nextImageTime - compositionTime > -threshold) {
     
     
     
@@ -73,9 +80,10 @@ ImageComposite::UpdateBias(const TimeStamp& aCompositionTime,
     
     
     
-    return ImageComposite::BIAS_POSITIVE;
+    mBias = ImageComposite::BIAS_POSITIVE;
+    return;
   }
-  return ImageComposite::BIAS_NONE;
+  mBias = ImageComposite::BIAS_NONE;
 }
 
 int
@@ -100,7 +108,7 @@ ImageComposite::ChooseImageIndex() const
 
   uint32_t result = 0;
   while (result + 1 < mImages.Length() &&
-      GetBiasedTime(mImages[result + 1].mTimeStamp, mBias) <= now) {
+         GetBiasedTime(mImages[result + 1].mTimeStamp) <= now) {
     ++result;
   }
   return result;
@@ -112,10 +120,36 @@ const ImageComposite::TimedImage* ImageComposite::ChooseImage() const
   return index >= 0 ? &mImages[index] : nullptr;
 }
 
-ImageComposite::TimedImage* ImageComposite::ChooseImage()
+void
+ImageComposite::RemoveImagesWithTextureHost(TextureHost* aTexture)
 {
-  int index = ChooseImageIndex();
-  return index >= 0 ? &mImages[index] : nullptr;
+  for (int32_t i = mImages.Length() - 1; i >= 0; --i) {
+    if (mImages[i].mTextureHost == aTexture) {
+      aTexture->UnbindTextureSource();
+      mImages.RemoveElementAt(i);
+    }
+  }
+}
+
+void
+ImageComposite::ClearImages()
+{
+  mImages.Clear();
+}
+
+void
+ImageComposite::SetImages(nsTArray<TimedImage>&& aNewImages)
+{
+  mImages = std::move(aNewImages);
+}
+
+const ImageComposite::TimedImage*
+ImageComposite::GetImage(size_t aIndex) const
+{
+  if (aIndex >= mImages.Length()) {
+    return nullptr;
+  }
+  return &mImages[aIndex];
 }
 
 } 
