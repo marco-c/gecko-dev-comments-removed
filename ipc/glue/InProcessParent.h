@@ -14,7 +14,7 @@ namespace mozilla {
 namespace dom {
 class PWindowGlobalParent;
 class PWindowGlobalChild;
-} 
+}  
 
 namespace ipc {
 
@@ -28,10 +28,8 @@ class InProcessChild;
 
 
 
-class InProcessParent : public nsIObserver
-                      , public PInProcessParent
-{
-public:
+class InProcessParent : public nsIObserver, public PInProcessParent {
+ public:
   friend class InProcessChild;
 
   NS_DECL_ISUPPORTS
@@ -45,18 +43,18 @@ public:
   
   static IProtocol* ChildActorFor(IProtocol* aActor);
 
-protected:
-  virtual mozilla::dom::PWindowGlobalParent*
-  AllocPWindowGlobalParent(const WindowGlobalInit& aInit) override;
+ protected:
+  virtual mozilla::dom::PWindowGlobalParent* AllocPWindowGlobalParent(
+      const WindowGlobalInit& aInit) override;
 
-  virtual bool
-  DeallocPWindowGlobalParent(mozilla::dom::PWindowGlobalParent* aActor) override;
+  virtual bool DeallocPWindowGlobalParent(
+      mozilla::dom::PWindowGlobalParent* aActor) override;
 
-  virtual IPCResult
-  RecvPWindowGlobalConstructor(mozilla::dom::PWindowGlobalParent* aActor,
-                               const WindowGlobalInit& aInit) override;
+  virtual IPCResult RecvPWindowGlobalConstructor(
+      mozilla::dom::PWindowGlobalParent* aActor,
+      const WindowGlobalInit& aInit) override;
 
-private:
+ private:
   
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
   virtual void DeallocPInProcessParent() override;
@@ -69,8 +67,7 @@ private:
   static bool sShutdown;
 };
 
+}  
+}  
 
-} 
-} 
-
-#endif 
+#endif  

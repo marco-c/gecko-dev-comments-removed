@@ -92,8 +92,7 @@ void nsLeafBoxFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   
   DisplayBorderBackgroundOutline(aBuilder, aLists);
 
-  if (!aBuilder->IsForEventDelivery() || !IsVisibleForPainting())
-    return;
+  if (!aBuilder->IsForEventDelivery() || !IsVisibleForPainting()) return;
 
   aLists.Content()->AppendToTop(
       MakeDisplayItem<nsDisplayEventReceiver>(aBuilder, this));

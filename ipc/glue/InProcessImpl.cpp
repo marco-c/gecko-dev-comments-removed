@@ -23,9 +23,7 @@ bool InProcessParent::sShutdown = false;
 
 
 
-
- InProcessChild*
-InProcessChild::Singleton() {
+ InProcessChild* InProcessChild::Singleton() {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (!sSingleton) {
@@ -34,8 +32,7 @@ InProcessChild::Singleton() {
   return sSingleton;
 }
 
- InProcessParent*
-InProcessParent::Singleton() {
+ InProcessParent* InProcessParent::Singleton() {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (!sSingleton) {
@@ -44,9 +41,7 @@ InProcessParent::Singleton() {
   return sSingleton;
 }
 
- void
-InProcessParent::Startup()
-{
+ void InProcessParent::Startup() {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (sShutdown) {
@@ -87,10 +82,7 @@ InProcessParent::Startup()
   InProcessChild::sSingleton = child.forget();
 }
 
-
- void
-InProcessParent::Shutdown()
-{
+ void InProcessParent::Shutdown() {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (!sSingleton || sShutdown) {
@@ -109,37 +101,29 @@ InProcessParent::Shutdown()
 }
 
 NS_IMETHODIMP
-InProcessParent::Observe(nsISupports* aSubject, const char* aTopic, const char16_t* aData)
-{
+InProcessParent::Observe(nsISupports* aSubject, const char* aTopic,
+                         const char16_t* aData) {
   MOZ_ASSERT(!strcmp(aTopic, NS_XPCOM_SHUTDOWN_OBSERVER_ID));
   InProcessParent::Shutdown();
   return NS_OK;
 }
 
-void
-InProcessParent::ActorDestroy(ActorDestroyReason aWhy)
-{
+void InProcessParent::ActorDestroy(ActorDestroyReason aWhy) {
   InProcessParent::Shutdown();
 }
 
-void
-InProcessChild::ActorDestroy(ActorDestroyReason aWhy)
-{
+void InProcessChild::ActorDestroy(ActorDestroyReason aWhy) {
   InProcessParent::Shutdown();
 }
 
-void
-InProcessParent::DeallocPInProcessParent()
-{
+void InProcessParent::DeallocPInProcessParent() {
   MOZ_ASSERT(!InProcessParent::sSingleton);
-  Release(); 
+  Release();  
 }
 
-void
-InProcessChild::DeallocPInProcessChild()
-{
+void InProcessChild::DeallocPInProcessChild() {
   MOZ_ASSERT(!InProcessChild::sSingleton);
-  Release(); 
+  Release();  
 }
 
 
@@ -147,21 +131,19 @@ InProcessChild::DeallocPInProcessChild()
 
 
 
-static IProtocol*
-GetOtherInProcessActor(IProtocol* aActor)
-{
+static IProtocol* GetOtherInProcessActor(IProtocol* aActor) {
   MOZ_ASSERT(aActor->GetSide() != UnknownSide, "bad unknown side");
 
   
   IProtocol* current = aActor;
   while (current) {
     if (current->GetProtocolTypeId() == PInProcessMsgStart) {
-      break; 
+      break;  
     }
     current = current->Manager();
   }
   if (!current) {
-    return nullptr; 
+    return nullptr;  
   }
 
   MOZ_ASSERT(current->GetSide() == aActor->GetSide(), "side changed?");
@@ -194,19 +176,15 @@ GetOtherInProcessActor(IProtocol* aActor)
   return otherActor;
 }
 
- IProtocol*
-InProcessParent::ChildActorFor(IProtocol* aActor)
-{
+ IProtocol* InProcessParent::ChildActorFor(IProtocol* aActor) {
   MOZ_ASSERT(aActor && aActor->GetSide() == ParentSide);
   return GetOtherInProcessActor(aActor);
 }
 
- IProtocol*
-InProcessChild::ParentActorFor(IProtocol* aActor)
-{
+ IProtocol* InProcessChild::ParentActorFor(IProtocol* aActor) {
   MOZ_ASSERT(aActor && aActor->GetSide() == ChildSide);
   return GetOtherInProcessActor(aActor);
 }
 
-} 
-} 
+}  
+}  

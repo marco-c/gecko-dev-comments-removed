@@ -15,7 +15,7 @@ class nsGlobalWindowInner;
 class nsDocShell;
 
 namespace mozilla {
-namespace dom  {
+namespace dom {
 
 class BrowsingContext;
 class WindowGlobalParent;
@@ -24,18 +24,16 @@ class WindowGlobalParent;
 
 
 
-class WindowGlobalChild : public nsWrapperCache
-                        , public PWindowGlobalChild
-{
-public:
+class WindowGlobalChild : public nsWrapperCache, public PWindowGlobalChild {
+ public:
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(WindowGlobalChild)
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_NATIVE_CLASS(WindowGlobalChild)
 
-  static already_AddRefed<WindowGlobalChild>
-  GetByInnerWindowId(uint64_t aInnerWindowId);
+  static already_AddRefed<WindowGlobalChild> GetByInnerWindowId(
+      uint64_t aInnerWindowId);
 
-  static already_AddRefed<WindowGlobalChild>
-  GetByInnerWindowId(const GlobalObject& aGlobal, uint64_t aInnerWindowId) {
+  static already_AddRefed<WindowGlobalChild> GetByInnerWindowId(
+      const GlobalObject& aGlobal, uint64_t aInnerWindowId) {
     return GetByInnerWindowId(aInnerWindowId);
   }
 
@@ -60,17 +58,17 @@ public:
   already_AddRefed<WindowGlobalParent> GetParentActor();
 
   
-  static already_AddRefed<WindowGlobalChild>
-  Create(nsGlobalWindowInner* aWindow);
+  static already_AddRefed<WindowGlobalChild> Create(
+      nsGlobalWindowInner* aWindow);
 
   nsISupports* GetParentObject();
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 
-protected:
+ protected:
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 
-private:
+ private:
   WindowGlobalChild(nsGlobalWindowInner* aWindow, dom::BrowsingContext* aBc);
   ~WindowGlobalChild();
 
@@ -81,7 +79,7 @@ private:
   bool mIPCClosed;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -436,10 +436,7 @@ class PLDHashTable {
   }
 
   
-  const PLDHashTableOps* RecordReplayWrappedOps() const
-  {
-    return mOps;
-  }
+  const PLDHashTableOps* RecordReplayWrappedOps() const { return mOps; }
 
   
   

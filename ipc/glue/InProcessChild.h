@@ -14,7 +14,7 @@ namespace mozilla {
 namespace dom {
 class PWindowGlobalParent;
 class PWindowGlobalChild;
-} 
+}  
 
 namespace ipc {
 
@@ -28,9 +28,8 @@ class InProcessParent;
 
 
 
-class InProcessChild : public PInProcessChild
-{
-public:
+class InProcessChild : public PInProcessChild {
+ public:
   friend class InProcessParent;
 
   NS_INLINE_DECL_REFCOUNTING(InProcessChild)
@@ -43,14 +42,14 @@ public:
   
   static IProtocol* ParentActorFor(IProtocol* aActor);
 
-protected:
-  virtual mozilla::dom::PWindowGlobalChild*
-  AllocPWindowGlobalChild(const WindowGlobalInit& aInit) override;
+ protected:
+  virtual mozilla::dom::PWindowGlobalChild* AllocPWindowGlobalChild(
+      const WindowGlobalInit& aInit) override;
 
-  virtual bool
-  DeallocPWindowGlobalChild(mozilla::dom::PWindowGlobalChild* aActor) override;
+  virtual bool DeallocPWindowGlobalChild(
+      mozilla::dom::PWindowGlobalChild* aActor) override;
 
-private:
+ private:
   
   
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
@@ -60,7 +59,7 @@ private:
   static StaticRefPtr<InProcessChild> sSingleton;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

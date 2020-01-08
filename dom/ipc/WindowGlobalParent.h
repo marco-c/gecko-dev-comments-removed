@@ -16,7 +16,7 @@ class nsIURI;
 class nsFrameLoader;
 
 namespace mozilla {
-namespace dom  {
+namespace dom {
 
 class ChromeBrowsingContext;
 class WindowGlobalChild;
@@ -24,18 +24,17 @@ class WindowGlobalChild;
 
 
 
-class WindowGlobalParent final : public nsWrapperCache
-                               , public PWindowGlobalParent
-{
-public:
+class WindowGlobalParent final : public nsWrapperCache,
+                                 public PWindowGlobalParent {
+ public:
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(WindowGlobalParent)
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_NATIVE_CLASS(WindowGlobalParent)
 
-  static already_AddRefed<WindowGlobalParent>
-  GetByInnerWindowId(uint64_t aInnerWindowId);
+  static already_AddRefed<WindowGlobalParent> GetByInnerWindowId(
+      uint64_t aInnerWindowId);
 
-  static already_AddRefed<WindowGlobalParent>
-  GetByInnerWindowId(const GlobalObject& aGlobal, uint64_t aInnerWindowId) {
+  static already_AddRefed<WindowGlobalParent> GetByInnerWindowId(
+      const GlobalObject& aGlobal, uint64_t aInnerWindowId) {
     return GetByInnerWindowId(aInnerWindowId);
   }
 
@@ -85,14 +84,14 @@ public:
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 
-protected:
+ protected:
   
   mozilla::ipc::IPCResult RecvUpdateDocumentURI(nsIURI* aURI) override;
   mozilla::ipc::IPCResult RecvBecomeCurrentWindowGlobal() override;
 
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
-private:
+ private:
   ~WindowGlobalParent();
 
   
@@ -107,7 +106,7 @@ private:
   bool mIPCClosed;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

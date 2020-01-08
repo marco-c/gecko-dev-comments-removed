@@ -14,7 +14,8 @@ namespace rtc {
 
 #if defined(WEBRTC_WIN)
 
-static UINT static_reg_windows_msg = RegisterWindowMessageW(L"WebrtcWindowsUIThreadEvent");
+static UINT static_reg_windows_msg =
+    RegisterWindowMessageW(L"WebrtcWindowsUIThreadEvent");
 
 static const UINT_PTR kTimerId = 1;
 static const wchar_t kThisProperty[] = L"ThreadWindowsUIPtr";
@@ -34,9 +35,8 @@ bool PlatformUIThread::InternalInit() {
       wc.lpszClassName = kThreadWindow;
       RegisterClassW(&wc);
     }
-    hwnd_ = CreateWindowW(kThreadWindow, L"",
-                          0, 0, 0, 0, 0,
-                          NULL, NULL, hModule, NULL);
+    hwnd_ = CreateWindowW(kThreadWindow, L"", 0, 0, 0, 0, 0, NULL, NULL,
+                          hModule, NULL);
     RTC_DCHECK(hwnd_);
     SetPropW(hwnd_, kThisProperty, this);
 
@@ -89,7 +89,7 @@ void PlatformUIThread::Stop() {
 }
 
 void PlatformUIThread::Run() {
-  RTC_CHECK(InternalInit()); 
+  RTC_CHECK(InternalInit());  
   do {
     
     
@@ -123,15 +123,17 @@ void PlatformUIThread::NativeEventCallback() {
 }
 
 
-LRESULT CALLBACK
-PlatformUIThread::EventWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+LRESULT CALLBACK PlatformUIThread::EventWindowProc(HWND hwnd, UINT uMsg,
+                                                   WPARAM wParam,
+                                                   LPARAM lParam) {
   if (uMsg == WM_DESTROY) {
     RemovePropW(hwnd, kThisProperty);
     PostQuitMessage(0);
     return 0;
   }
 
-  PlatformUIThread *twui = static_cast<PlatformUIThread*>(GetPropW(hwnd, kThisProperty));
+  PlatformUIThread *twui =
+      static_cast<PlatformUIThread *>(GetPropW(hwnd, kThisProperty));
   if (!twui) {
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
   }

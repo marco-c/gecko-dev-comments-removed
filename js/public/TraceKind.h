@@ -110,12 +110,11 @@ struct MapTypeToTraceKind {
 
 
 
-inline constexpr bool IsCCTraceKind(JS::TraceKind aKind)
-{
+inline constexpr bool IsCCTraceKind(JS::TraceKind aKind) {
   switch (aKind) {
 #define JS_EXPAND_DEF(name, _, isCCTraceKind) \
-    case JS::TraceKind::name: \
-      return isCCTraceKind;
+  case JS::TraceKind::name:                   \
+    return isCCTraceKind;
     JS_FOR_EACH_TRACEKIND(JS_EXPAND_DEF);
 #undef JS_EXPAND_DEF
     default:

@@ -46,7 +46,7 @@ static const char sPrintSettingsServiceContractID[] =
 #include "nsIWebBrowserPrint.h"
 
 
-#include "imgIContainer.h"       
+#include "imgIContainer.h"  
 
 
 #include "nsIPrintProgress.h"

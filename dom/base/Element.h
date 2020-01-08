@@ -63,17 +63,6 @@ class nsDocument;
 class nsDOMStringMap;
 struct ServoNodeData;
 
-class nsIDOMXULButtonElement;
-class nsIDOMXULContainerElement;
-class nsIDOMXULContainerItemElement;
-class nsIDOMXULControlElement;
-class nsIDOMXULMenuListElement;
-class nsIDOMXULMultiSelectControlElement;
-class nsIDOMXULRelatedElement;
-class nsIDOMXULSelectControlElement;
-class nsIDOMXULSelectControlItemElement;
-class nsIBrowser;
-
 namespace mozilla {
 class DeclarationBlock;
 struct MutationClosureData;
@@ -1578,20 +1567,6 @@ class Element : public FragmentOrElement {
   bool UpdateIntersectionObservation(DOMIntersectionObserver* aObserver,
                                      int32_t threshold);
 
-  
-  
-  already_AddRefed<nsIDOMXULButtonElement> AsXULButton();
-  already_AddRefed<nsIDOMXULContainerElement> AsXULContainer();
-  already_AddRefed<nsIDOMXULContainerItemElement> AsXULContainerItem();
-  already_AddRefed<nsIDOMXULControlElement> AsXULControl();
-  already_AddRefed<nsIDOMXULMenuListElement> AsXULMenuList();
-  already_AddRefed<nsIDOMXULMultiSelectControlElement>
-  AsXULMultiSelectControl();
-  already_AddRefed<nsIDOMXULRelatedElement> AsXULRelated();
-  already_AddRefed<nsIDOMXULSelectControlElement> AsXULSelectControl();
-  already_AddRefed<nsIDOMXULSelectControlItemElement> AsXULSelectControlItem();
-  already_AddRefed<nsIBrowser> AsBrowser();
-
  protected:
   
 
@@ -1922,7 +1897,7 @@ class Element : public FragmentOrElement {
   
   mozilla::RustCell<ServoNodeData*> mServoData;
 
-protected:
+ protected:
   
   AttrArray mAttrs;
 };

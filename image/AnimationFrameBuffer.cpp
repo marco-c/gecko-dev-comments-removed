@@ -468,8 +468,8 @@ bool AnimationFrameRecyclingQueue::MarkComplete(
 
   
   
-  mFirstFrameRefreshArea = mRedecodeError ? mFirstFrame->GetRect()
-                                          : aFirstFrameRefreshArea;
+  mFirstFrameRefreshArea =
+      mRedecodeError ? mFirstFrame->GetRect() : aFirstFrameRefreshArea;
   return continueDecoding;
 }
 

@@ -1465,7 +1465,7 @@ extern JS_PUBLIC_API bool OrdinaryHasInstance(JSContext* cx,
 
 
 extern JS_PUBLIC_API bool InstanceofOperator(JSContext* cx, HandleObject obj,
-                                              HandleValue v, bool* bp);
+                                             HandleValue v, bool* bp);
 
 }  
 
