@@ -1794,3 +1794,8 @@ pref("browser.engagement.recent_visited_origins.expiry", 86400);
 #ifdef NIGHTLY_BUILD
 pref("browser.aboutConfig.showWarning", true);
 #endif
+
+#if defined(XP_WIN) && defined(MOZ_LAUNCHER_PROCESS)
+
+pref("browser.launcherProcess.enabled", false);
+#endif // defined(XP_WIN) && defined(MOZ_LAUNCHER_PROCESS)
