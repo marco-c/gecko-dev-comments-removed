@@ -1737,8 +1737,6 @@ BrowserGlue.prototype = {
     
     
     
-    
-    
 
     if (aQuitType == "restart" || aQuitType == "os-restart")
       return;
@@ -1765,11 +1763,7 @@ BrowserGlue.prototype = {
 
     
     
-    
-
-    var sessionWillBeRestored = Services.prefs.getIntPref("browser.startup.page") == 3 ||
-                                Services.prefs.getBoolPref("browser.sessionstore.resume_session_once");
-    if (sessionWillBeRestored || !Services.prefs.getBoolPref("browser.warnOnQuit") ||
+    if (!Services.prefs.getBoolPref("browser.warnOnQuit") ||
         !Services.prefs.getBoolPref("browser.tabs.warnOnClose"))
       return;
 
