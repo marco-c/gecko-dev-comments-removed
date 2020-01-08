@@ -1209,7 +1209,7 @@ impl Stylist {
         
         if matches_author_rules {
             if let Some(shadow) = rule_hash_target.shadow_root() {
-                if let Some(map) = shadow.style_data().host_rules(pseudo_element) {
+                if let Some(map) = shadow.style_data().and_then(|data| data.host_rules(pseudo_element)) {
                     context.with_shadow_host(Some(rule_hash_target), |context| {
                         map.get_all_matching_rules(
                             element,
@@ -1236,8 +1236,7 @@ impl Stylist {
 
             for slot in slots.iter().rev() {
                 let shadow = slot.containing_shadow().unwrap();
-                let styles = shadow.style_data();
-                if let Some(map) = styles.slotted_rules(pseudo_element) {
+                if let Some(map) = shadow.style_data().and_then(|data| data.slotted_rules(pseudo_element)) {
                     context.with_shadow_host(Some(shadow.host()), |context| {
                         map.get_all_matching_rules(
                             element,
@@ -1256,7 +1255,7 @@ impl Stylist {
             if let Some(containing_shadow) = rule_hash_target.containing_shadow() {
                 let cascade_data = containing_shadow.style_data();
                 let host = containing_shadow.host();
-                if let Some(map) = cascade_data.normal_rules(pseudo_element) {
+                if let Some(map) = cascade_data.and_then(|data| data.normal_rules(pseudo_element)) {
                     context.with_shadow_host(Some(host), |context| {
                         map.get_all_matching_rules(
                             element,
@@ -1271,6 +1270,11 @@ impl Stylist {
                     shadow_cascade_order += 1;
                 }
 
+                
+                
+                
+                
+                
                 
                 
                 
@@ -1434,11 +1438,15 @@ impl Stylist {
         
         
         if let Some(shadow) = element.shadow_root() {
-            try_find_in!(shadow.style_data());
+            if let Some(data) = shadow.style_data() {
+                try_find_in!(data);
+            }
         }
 
         if let Some(shadow) = element.containing_shadow() {
-            try_find_in!(shadow.style_data());
+            if let Some(data) = shadow.style_data() {
+                try_find_in!(data);
+            }
         } else {
             try_find_in!(self.cascade_data.author);
         }
