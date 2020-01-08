@@ -1262,8 +1262,6 @@ public:
   
   void MaybeEnableRemoteInputEventQueue();
 
-  void AppendSandboxParams(std::vector<std::string>& aArgs);
-
 public:
   void SendGetFilesResponseAndForget(const nsID& aID,
                                      const GetFilesResponseResult& aResult);
@@ -1389,13 +1387,6 @@ private:
 
   static uint64_t sNextTabParentId;
   static nsDataHashtable<nsUint64HashKey, TabParent*> sNextTabParents;
-
-#if defined(XP_MACOSX) && defined(MOZ_CONTENT_SANDBOX)
-  
-  
-  
-  static bool sEarlySandboxInit;
-#endif
 };
 
 } 
