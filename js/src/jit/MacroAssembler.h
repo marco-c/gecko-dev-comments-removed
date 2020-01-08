@@ -1670,7 +1670,6 @@ class MacroAssembler : public MacroAssemblerSpecific
                          Register expected, Register replacement, Register output)
         DEFINED_ON(arm, arm64, x86_shared);
 
-
     void compareExchange(Scalar::Type type, const Synchronization& sync, const Address& mem,
                          Register expected, Register replacement, Register valueTemp,
                          Register offsetTemp, Register maskTemp, Register output)
@@ -1744,30 +1743,99 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     
     
+    
 
-    void atomicEffectOp(Scalar::Type type, const Synchronization& sync, AtomicOp op, Register value,
-                        const Address& mem, Register temp)
+    void wasmCompareExchange(const wasm::MemoryAccessDesc& access, const Address& mem,
+                             Register expected, Register replacement, Register output)
         DEFINED_ON(arm, arm64, x86_shared);
 
-    void atomicEffectOp(Scalar::Type type, const Synchronization& sync, AtomicOp op, Imm32 value,
-                        const Address& mem, Register temp)
-        DEFINED_ON(x86_shared);
-
-    void atomicEffectOp(Scalar::Type type, const Synchronization& sync, AtomicOp op, Register value,
-                        const BaseIndex& mem, Register temp)
+    void wasmCompareExchange(const wasm::MemoryAccessDesc& access, const BaseIndex& mem,
+                             Register expected, Register replacement, Register output)
         DEFINED_ON(arm, arm64, x86_shared);
 
-    void atomicEffectOp(Scalar::Type type, const Synchronization& sync, AtomicOp op, Imm32 value,
-                        const BaseIndex& mem, Register temp)
+    void wasmCompareExchange(const wasm::MemoryAccessDesc& access, const Address& mem,
+                             Register expected, Register replacement, Register valueTemp,
+                             Register offsetTemp, Register maskTemp, Register output)
+        DEFINED_ON(mips_shared);
+
+    void wasmCompareExchange(const wasm::MemoryAccessDesc& access, const BaseIndex& mem,
+                             Register expected, Register replacement, Register valueTemp,
+                             Register offsetTemp, Register maskTemp, Register output)
+        DEFINED_ON(mips_shared);
+
+    void wasmAtomicExchange(const wasm::MemoryAccessDesc& access, const Address& mem,
+                            Register value, Register output)
+        DEFINED_ON(arm, arm64, x86_shared);
+
+    void wasmAtomicExchange(const wasm::MemoryAccessDesc& access, const BaseIndex& mem,
+                            Register value, Register output)
+        DEFINED_ON(arm, arm64, x86_shared);
+
+    void wasmAtomicExchange(const wasm::MemoryAccessDesc& access, const Address& mem,
+                            Register value, Register valueTemp, Register offsetTemp,
+                            Register maskTemp, Register output)
+        DEFINED_ON(mips_shared);
+
+    void wasmAtomicExchange(const wasm::MemoryAccessDesc& access, const BaseIndex& mem,
+                            Register value, Register valueTemp, Register offsetTemp,
+                            Register maskTemp, Register output)
+        DEFINED_ON(mips_shared);
+
+    void wasmAtomicFetchOp(const wasm::MemoryAccessDesc& access, AtomicOp op, Register value,
+                           const Address& mem, Register temp, Register output)
+        DEFINED_ON(arm, arm64, x86_shared);
+
+    void wasmAtomicFetchOp(const wasm::MemoryAccessDesc& access, AtomicOp op, Imm32 value,
+                           const Address& mem, Register temp, Register output)
         DEFINED_ON(x86_shared);
 
+    void wasmAtomicFetchOp(const wasm::MemoryAccessDesc& access, AtomicOp op, Register value,
+                           const BaseIndex& mem, Register temp, Register output)
+        DEFINED_ON(arm, arm64, x86_shared);
 
-    void atomicEffectOp(Scalar::Type type, const Synchronization& sync, AtomicOp op, Register value,
-                    const Address& mem, Register valueTemp, Register offsetTemp, Register maskTemp)
+    void wasmAtomicFetchOp(const wasm::MemoryAccessDesc& access, AtomicOp op, Imm32 value,
+                           const BaseIndex& mem, Register temp, Register output)
+        DEFINED_ON(x86_shared);
+
+    void wasmAtomicFetchOp(const wasm::MemoryAccessDesc& access, AtomicOp op,
+                           Register value, const Address& mem, Register valueTemp,
+                           Register offsetTemp, Register maskTemp, Register output)
         DEFINED_ON(mips_shared);
 
-    void atomicEffectOp(Scalar::Type type, const Synchronization& sync, AtomicOp op, Register value,
-                    const BaseIndex& mem, Register valueTemp, Register offsetTemp, Register maskTemp)
+    void wasmAtomicFetchOp(const wasm::MemoryAccessDesc& access, AtomicOp op,
+                           Register value, const BaseIndex& mem, Register valueTemp,
+                           Register offsetTemp, Register maskTemp, Register output)
+        DEFINED_ON(mips_shared);
+
+    
+    
+    
+    
+
+    void wasmAtomicEffectOp(const wasm::MemoryAccessDesc& access, AtomicOp op, Register value,
+                            const Address& mem, Register temp)
+        DEFINED_ON(arm, arm64, x86_shared);
+
+    void wasmAtomicEffectOp(const wasm::MemoryAccessDesc& access, AtomicOp op, Imm32 value,
+                            const Address& mem, Register temp)
+        DEFINED_ON(x86_shared);
+
+    void wasmAtomicEffectOp(const wasm::MemoryAccessDesc& access, AtomicOp op, Register value,
+                            const BaseIndex& mem, Register temp)
+        DEFINED_ON(arm, arm64, x86_shared);
+
+    void wasmAtomicEffectOp(const wasm::MemoryAccessDesc& access, AtomicOp op, Imm32 value,
+                            const BaseIndex& mem, Register temp)
+        DEFINED_ON(x86_shared);
+
+    void wasmAtomicEffectOp(const wasm::MemoryAccessDesc& access, AtomicOp op, Register value,
+                            const Address& mem, Register valueTemp, Register offsetTemp,
+                            Register maskTemp)
+        DEFINED_ON(mips_shared);
+
+    void wasmAtomicEffectOp(const wasm::MemoryAccessDesc& access, AtomicOp op, Register value,
+                            const BaseIndex& mem, Register valueTemp, Register offsetTemp,
+                            Register maskTemp)
         DEFINED_ON(mips_shared);
 
     
@@ -1779,12 +1847,12 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     
 
-    void atomicLoad64(const Synchronization& sync, const Address& mem, Register64 temp,
-                      Register64 output)
+    void wasmAtomicLoad64(const wasm::MemoryAccessDesc& access, const Address& mem,
+                          Register64 temp, Register64 output)
         DEFINED_ON(arm, mips32, x86);
 
-    void atomicLoad64(const Synchronization& sync, const BaseIndex& mem, Register64 temp,
-                      Register64 output)
+    void wasmAtomicLoad64(const wasm::MemoryAccessDesc& access, const BaseIndex& mem,
+                          Register64 temp, Register64 output)
         DEFINED_ON(arm, mips32, x86);
 
     
@@ -1793,46 +1861,54 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     
 
-    void compareExchange64(const Synchronization& sync, const Address& mem, Register64 expected,
-                           Register64 replacement, Register64 output) PER_ARCH;
+    void wasmCompareExchange64(const wasm::MemoryAccessDesc& access, const Address& mem,
+                               Register64 expected, Register64 replacement, Register64 output)
+        PER_ARCH;
 
-    void compareExchange64(const Synchronization& sync, const BaseIndex& mem, Register64 expected,
-                           Register64 replacement, Register64 output) PER_ARCH;
-
-    
-    
-    
-
-    void atomicExchange64(const Synchronization& sync, const Address& mem, Register64 value,
-                          Register64 output) PER_ARCH;
-
-    void atomicExchange64(const Synchronization& sync, const BaseIndex& mem, Register64 value,
-                          Register64 output) PER_ARCH;
+    void wasmCompareExchange64(const wasm::MemoryAccessDesc& access, const BaseIndex& mem,
+                               Register64 expected, Register64 replacement, Register64 output)
+        PER_ARCH;
 
     
     
     
+
+    void wasmAtomicExchange64(const wasm::MemoryAccessDesc& access, const Address& mem,
+                              Register64 value, Register64 output)
+        PER_ARCH;
+
+    void wasmAtomicExchange64(const wasm::MemoryAccessDesc& access, const BaseIndex& mem,
+                              Register64 value, Register64 output)
+        PER_ARCH;
+
+    
+    
+    
     
     
 
-    void atomicFetchOp64(const Synchronization& sync, AtomicOp op, Register64 value,
-                         const Address& mem, Register64 temp, Register64 output)
+    void wasmAtomicFetchOp64(const wasm::MemoryAccessDesc& access, AtomicOp op, Register64 value,
+                             const Address& mem, Register64 temp, Register64 output)
         DEFINED_ON(arm, arm64, mips32, mips64, x64);
 
-    void atomicFetchOp64(const Synchronization& sync, AtomicOp op, Register64 value,
-                         const BaseIndex& mem, Register64 temp, Register64 output)
+    void wasmAtomicFetchOp64(const wasm::MemoryAccessDesc& access, AtomicOp op, Register64 value,
+                             const BaseIndex& mem, Register64 temp, Register64 output)
         DEFINED_ON(arm, arm64, mips32, mips64, x64);
 
-    void atomicFetchOp64(const Synchronization& sync, AtomicOp op, const Address& value,
-                         const Address& mem, Register64 temp, Register64 output)
+    void wasmAtomicFetchOp64(const wasm::MemoryAccessDesc& access, AtomicOp op,
+                             const Address& value, const Address& mem, Register64 temp,
+                             Register64 output)
         DEFINED_ON(x86);
 
-    void atomicFetchOp64(const Synchronization& sync, AtomicOp op, const Address& value,
-                         const BaseIndex& mem, Register64 temp, Register64 output)
+    void wasmAtomicFetchOp64(const wasm::MemoryAccessDesc& access, AtomicOp op,
+                             const Address& value, const BaseIndex& mem, Register64 temp,
+                             Register64 output)
         DEFINED_ON(x86);
 
-    void atomicEffectOp64(const Synchronization& sync, AtomicOp op, Register64 value,
-                          const BaseIndex& mem)
+    
+
+    void wasmAtomicEffectOp64(const wasm::MemoryAccessDesc& access, AtomicOp op,
+                              Register64 value, const BaseIndex& mem)
         DEFINED_ON(x64);
 
     
