@@ -1023,8 +1023,12 @@ var View = {
   },
 
   _fragment: document.createDocumentFragment(),
-  commit() {
+  async commit() {
     let tbody = document.getElementById("dispatch-tbody");
+
+    
+    
+    await document.l10n.translateFragment(this._fragment);
 
     while (tbody.firstChild)
       tbody.firstChild.remove();
@@ -1229,6 +1233,8 @@ var Control = {
 
       
       View.DOMCache.trimTo(state.deltas);
+
+      await wait(0);
     } else {
       
       
@@ -1318,10 +1324,8 @@ var Control = {
           this._showChildren(row);
       }
 
-      View.commit();
+      await View.commit();
     }
-
-    await wait(0);
 
     
     Services.obs.notifyObservers(null, UPDATE_COMPLETE_TOPIC, mode);
