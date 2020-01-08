@@ -544,10 +544,6 @@ pref("layers.low-precision-opacity", "1.0");
 
 pref("layers.max-active", 20);
 
-
-
-pref("layout.scroll.root-frame-containers", 1);
-
 pref("notification.feature.enabled", true);
 pref("dom.webnotifications.enabled", true);
 
@@ -840,7 +836,6 @@ pref("dom.vr.enabled", true);
 pref("browser.tabs.showAudioPlayingIcon", true);
 
 pref("dom.serviceWorkers.enabled", true);
-pref("dom.serviceWorkers.interception.enabled", true);
 
 
 
