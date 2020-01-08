@@ -680,6 +680,11 @@ pub unsafe extern "C" fn wr_renderer_accumulate_memory_report(renderer: &mut Ren
     *report += renderer.report_memory();
 }
 
+#[no_mangle]
+pub unsafe extern "C" fn wr_total_gpu_bytes_allocated() -> usize {
+    ::webrender::total_gpu_bytes_allocated()
+}
+
 
 
 #[repr(C)]
