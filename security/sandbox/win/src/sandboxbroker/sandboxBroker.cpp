@@ -746,14 +746,9 @@ SandboxBroker::SetSecurityLevelForPluginProcess(int32_t aSandboxLevel)
   SANDBOX_ENSURE_SUCCESS(result,
                          "Invalid flags for SetDelayedProcessMitigations.");
 
-#ifndef NIGHTLY_BUILD
-  
-  mPolicy->SetDoNotUseRestrictingSIDs();
-#else
   
   AddCachedDirRule(mPolicy, sandbox::TargetPolicy::FILES_ALLOW_ANY,
                    sPluginTempDir, NS_LITERAL_STRING("\\*"));
-#endif
 
   if (aSandboxLevel >= 2) {
     
