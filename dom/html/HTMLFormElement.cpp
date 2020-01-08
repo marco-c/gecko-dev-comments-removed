@@ -178,13 +178,6 @@ HTMLFormElement::BeforeSetAttr(int32_t aNamespaceID, nsAtom* aName,
 {
   if (aNamespaceID == kNameSpaceID_None) {
     if (aName == nsGkAtoms::action || aName == nsGkAtoms::target) {
-      if (mPendingSubmission) {
-        
-        
-        
-        
-        FlushPendingSubmission();
-      }
       
       
       bool notifiedObservers = mNotifiedObservers;
@@ -680,15 +673,8 @@ nsresult
 HTMLFormElement::SubmitSubmission(HTMLFormSubmission* aFormSubmission)
 {
   nsresult rv;
-  Element* originatingElement = aFormSubmission->GetOriginatingElement();
 
-  
-  
-  
-  nsCOMPtr<nsIURI> actionURI;
-  rv = GetActionURL(getter_AddRefs(actionURI), originatingElement);
-  NS_ENSURE_SUBMIT_SUCCESS(rv);
-
+  nsCOMPtr<nsIURI> actionURI = aFormSubmission->GetActionURL();
   if (!actionURI) {
     mIsSubmitting = false;
     return NS_OK;
@@ -718,21 +704,6 @@ HTMLFormElement::SubmitSubmission(HTMLFormSubmission* aFormSubmission)
   if (NS_SUCCEEDED(actionURI->SchemeIs("javascript", &schemeIsJavaScript)) &&
       schemeIsJavaScript) {
     mIsSubmitting = false;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  nsAutoString target;
-  if (!(originatingElement && originatingElement->GetAttr(kNameSpaceID_None,
-                                                          nsGkAtoms::formtarget,
-                                                          target)) &&
-      !GetAttr(kNameSpaceID_None, nsGkAtoms::target, target)) {
-    GetBaseTarget(target);
   }
 
   
@@ -778,6 +749,8 @@ HTMLFormElement::SubmitSubmission(HTMLFormSubmission* aFormSubmission)
                                                actionURI);
     NS_ENSURE_SUBMIT_SUCCESS(rv);
 
+    nsAutoString target;
+    aFormSubmission->GetTarget(target);
     rv = linkHandler->OnLinkClickSync(this, actionURI,
                                       target.get(),
                                       VoidString(),

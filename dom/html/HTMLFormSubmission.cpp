@@ -92,11 +92,13 @@ public:
 
 
 
-  FSURLEncoded(NotNull<const Encoding*> aEncoding,
+  FSURLEncoded(nsIURI* aActionURL,
+               const nsAString& aTarget,
+               NotNull<const Encoding*> aEncoding,
                int32_t aMethod,
                nsIDocument* aDocument,
                Element* aOriginatingElement)
-    : EncodingFormSubmission(aEncoding, aOriginatingElement)
+    : EncodingFormSubmission(aActionURL, aTarget, aEncoding, aOriginatingElement)
     , mMethod(aMethod)
     , mDocument(aDocument)
     , mWarnedFileControl(false)
@@ -395,9 +397,11 @@ FSURLEncoded::URLEncode(const nsAString& aStr, nsACString& aEncoded)
 
 
 
-FSMultipartFormData::FSMultipartFormData(NotNull<const Encoding*> aEncoding,
+FSMultipartFormData::FSMultipartFormData(nsIURI* aActionURL,
+                                         const nsAString& aTarget,
+                                         NotNull<const Encoding*> aEncoding,
                                          Element* aOriginatingElement)
-  : EncodingFormSubmission(aEncoding, aOriginatingElement)
+  : EncodingFormSubmission(aActionURL, aTarget, aEncoding, aOriginatingElement)
 {
   mPostData =
     do_CreateInstance("@mozilla.org/io/multiplex-input-stream;1");
@@ -669,9 +673,11 @@ namespace {
 class FSTextPlain : public EncodingFormSubmission
 {
 public:
-  FSTextPlain(NotNull<const Encoding*> aEncoding,
+  FSTextPlain(nsIURI* aActionURL,
+              const nsAString& aTarget,
+              NotNull<const Encoding*> aEncoding,
               Element* aOriginatingElement)
-    : EncodingFormSubmission(aEncoding, aOriginatingElement)
+    : EncodingFormSubmission(aActionURL, aTarget, aEncoding, aOriginatingElement)
   {
   }
 
@@ -794,9 +800,11 @@ FSTextPlain::GetEncodedSubmission(nsIURI* aURI,
 
 
 EncodingFormSubmission::EncodingFormSubmission(
+  nsIURI* aActionURL,
+  const nsAString& aTarget,
   NotNull<const Encoding*> aEncoding,
   Element* aOriginatingElement)
-  : HTMLFormSubmission(aEncoding, aOriginatingElement)
+  : HTMLFormSubmission(aActionURL, aTarget, aEncoding, aOriginatingElement)
 {
   if (!aEncoding->CanEncodeEverything()) {
     nsAutoCString name;
@@ -893,13 +901,36 @@ GetEnumAttr(nsGenericHTMLElement* aContent,
 } 
 
  nsresult
-HTMLFormSubmission::GetFromForm(nsGenericHTMLElement* aForm,
+HTMLFormSubmission::GetFromForm(HTMLFormElement* aForm,
                                 nsGenericHTMLElement* aOriginatingElement,
                                 HTMLFormSubmission** aFormSubmission)
 {
   
   NS_ASSERTION(aForm->GetComposedDoc(),
                "Should have doc if we're building submission!");
+
+  nsresult rv;
+
+  
+  nsCOMPtr<nsIURI> actionURL;
+  rv = aForm->GetActionURL(getter_AddRefs(actionURL), aOriginatingElement);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  nsAutoString target;
+  if (!(aOriginatingElement && aOriginatingElement->GetAttr(kNameSpaceID_None,
+                                                            nsGkAtoms::formtarget,
+                                                            target)) &&
+      !aForm->GetAttr(kNameSpaceID_None, nsGkAtoms::target, target)) {
+    aForm->GetBaseTarget(target);
+  }
 
   
   int32_t enctype = NS_FORM_ENCTYPE_URLENCODED;
@@ -925,10 +956,10 @@ HTMLFormSubmission::GetFromForm(nsGenericHTMLElement* aForm,
   
   if (method == NS_FORM_METHOD_POST &&
       enctype == NS_FORM_ENCTYPE_MULTIPART) {
-    *aFormSubmission = new FSMultipartFormData(encoding, aOriginatingElement);
+    *aFormSubmission = new FSMultipartFormData(actionURL, target, encoding, aOriginatingElement);
   } else if (method == NS_FORM_METHOD_POST &&
              enctype == NS_FORM_ENCTYPE_TEXTPLAIN) {
-    *aFormSubmission = new FSTextPlain(encoding, aOriginatingElement);
+    *aFormSubmission = new FSTextPlain(actionURL, target, encoding, aOriginatingElement);
   } else {
     nsIDocument* doc = aForm->OwnerDoc();
     if (enctype == NS_FORM_ENCTYPE_MULTIPART ||
@@ -947,7 +978,7 @@ HTMLFormSubmission::GetFromForm(nsGenericHTMLElement* aForm,
                     &enctypeStrPtr, 1);
     }
     *aFormSubmission =
-      new FSURLEncoded(encoding, method, doc, aOriginatingElement);
+      new FSURLEncoded(actionURL, target, encoding, method, doc, aOriginatingElement);
   }
 
   return NS_OK;

@@ -23,6 +23,7 @@ namespace dom {
 
 class Blob;
 class Directory;
+class HTMLFormElement;
 
 
 
@@ -40,7 +41,7 @@ public:
 
 
   static nsresult
-  GetFromForm(nsGenericHTMLElement* aForm,
+  GetFromForm(HTMLFormElement* aForm,
               nsGenericHTMLElement* aOriginatingElement,
               HTMLFormSubmission** aFormSubmission);
 
@@ -100,6 +101,22 @@ public:
     return mOriginatingElement.get();
   }
 
+  
+
+
+  nsIURI* GetActionURL() const
+  {
+    return mActionURL;
+  }
+
+  
+
+
+  void GetTarget(nsAString& aTarget)
+  {
+    aTarget = mTarget;
+  }
+
 protected:
   
 
@@ -107,13 +124,23 @@ protected:
 
 
 
-  HTMLFormSubmission(mozilla::NotNull<const mozilla::Encoding*> aEncoding,
+  HTMLFormSubmission(nsIURI* aActionURL,
+                     const nsAString& aTarget,
+                     mozilla::NotNull<const mozilla::Encoding*> aEncoding,
                      Element* aOriginatingElement)
-    : mEncoding(aEncoding)
+    : mActionURL(aActionURL)
+    , mTarget(aTarget)
+    , mEncoding(aEncoding)
     , mOriginatingElement(aOriginatingElement)
   {
     MOZ_COUNT_CTOR(HTMLFormSubmission);
   }
+
+  
+  nsCOMPtr<nsIURI> mActionURL;
+
+  
+  nsString mTarget;
 
   
   mozilla::NotNull<const mozilla::Encoding*> mEncoding;
@@ -125,7 +152,9 @@ protected:
 class EncodingFormSubmission : public HTMLFormSubmission
 {
 public:
-  EncodingFormSubmission(mozilla::NotNull<const mozilla::Encoding*> aEncoding,
+  EncodingFormSubmission(nsIURI* aActionURL,
+                         const nsAString& aTarget,
+                         mozilla::NotNull<const mozilla::Encoding*> aEncoding,
                          Element* aOriginatingElement);
 
   virtual ~EncodingFormSubmission();
@@ -153,7 +182,9 @@ public:
   
 
 
-  FSMultipartFormData(mozilla::NotNull<const mozilla::Encoding*> aEncoding,
+  FSMultipartFormData(nsIURI* aActionURL,
+                      const nsAString& aTarget,
+                      mozilla::NotNull<const mozilla::Encoding*> aEncoding,
                       Element* aOriginatingElement);
   ~FSMultipartFormData();
 

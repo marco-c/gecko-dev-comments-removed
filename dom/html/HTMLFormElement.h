@@ -516,14 +516,6 @@ protected:
 
 
 
-  nsresult GetActionURL(nsIURI** aActionURL, Element* aOriginatingElement);
-
-  
-
-
-
-
-
 
 
 
@@ -557,6 +549,14 @@ public:
 
 
   void FlushPendingSubmission();
+
+  
+
+
+
+
+
+  nsresult GetActionURL(nsIURI** aActionURL, Element* aOriginatingElement);
 protected:
 
   
