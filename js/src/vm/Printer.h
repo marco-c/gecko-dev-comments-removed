@@ -15,6 +15,7 @@
 #include <string.h>
 
 #include "js/TypeDecls.h"
+#include "js/Utility.h"
 
 namespace js {
 
@@ -100,7 +101,7 @@ class Sprinter final : public GenericPrinter
 
     const char* string() const { return base; }
     const char* stringEnd() const { return base + offset; }
-    char* release();
+    JS::UniqueChars release();
 
     
     char* stringAt(ptrdiff_t off) const;
@@ -214,12 +215,15 @@ extern const char       js_EscapeMap[];
 
 
 
-extern JSString*
-QuoteString(JSContext* cx, JSString* str, char16_t quote);
 
-extern char*
-QuoteString(Sprinter* sp, JSString* str, char16_t quote);
 
+extern JS::UniqueChars
+QuoteString(JSContext* cx, JSString* str, char quote = 0);
+
+
+
+extern bool
+QuoteString(Sprinter* sp, JSString* str, char quote = 0);
 
 } 
 
