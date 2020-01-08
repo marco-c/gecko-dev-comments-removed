@@ -230,13 +230,21 @@ function tunnelToInnerBrowser(outer, inner) {
 
       
       inner.addEventListener("mozbrowseropenwindow", this);
+      inner.addEventListener("mozbrowsershowmodalprompt", this);
     },
 
     handleEvent(event) {
-      if (event.type != "mozbrowseropenwindow") {
-        return;
+      switch (event.type) {
+        case "mozbrowseropenwindow":
+          this.handleOpenWindowEvent(event);
+          break;
+        case "mozbrowsershowmodalprompt":
+          this.handleModalPromptEvent(event);
+          break;
       }
+    },
 
+    handleOpenWindowEvent(event) {
       
       
       
@@ -255,6 +263,29 @@ function tunnelToInnerBrowser(outer, inner) {
         .openURI(uri, null, Ci.nsIBrowserDOMWindow.OPEN_NEWTAB,
                  Ci.nsIBrowserDOMWindow.OPEN_NEW,
                  outer.contentPrincipal);
+    },
+
+    handleModalPromptEvent({ detail }) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+
+      if (!["alert", "prompt", "confirm"].includes(detail.promptType)) {
+        return;
+      }
+
+      const promptFunction = outer.contentWindow[detail.promptType];
+      
+      
+      
+      detail.returnValue = promptFunction(detail.message, detail.initialValue);
     },
 
     stop() {
@@ -289,6 +320,7 @@ function tunnelToInnerBrowser(outer, inner) {
 
       
       inner.removeEventListener("mozbrowseropenwindow", this);
+      inner.removeEventListener("mozbrowsershowmodalprompt", this);
 
       mmTunnel.destroy();
       mmTunnel = null;
