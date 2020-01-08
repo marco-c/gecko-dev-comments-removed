@@ -25,7 +25,6 @@ class AutofillEditDialog {
   }
 
   async init() {
-    this.updateSaveButtonState();
     this.attachEventListeners();
     
     
@@ -109,7 +108,13 @@ class AutofillEditDialog {
 
 
   handleInput(event) {
-    this.updateSaveButtonState();
+    
+    
+    if (Object.keys(this._elements.fieldContainer.buildFormObject()).length == 0) {
+      this._elements.save.setAttribute("disabled", true);
+    } else {
+      this._elements.save.removeAttribute("disabled");
+    }
   }
 
   
@@ -120,16 +125,6 @@ class AutofillEditDialog {
   handleKeyPress(event) {
     if (event.keyCode == KeyEvent.DOM_VK_ESCAPE) {
       window.close();
-    }
-  }
-
-  updateSaveButtonState() {
-    
-    
-    if (Object.keys(this._elements.fieldContainer.buildFormObject()).length == 0) {
-      this._elements.save.setAttribute("disabled", true);
-    } else {
-      this._elements.save.removeAttribute("disabled");
     }
   }
 
