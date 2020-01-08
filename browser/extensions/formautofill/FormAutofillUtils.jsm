@@ -307,16 +307,46 @@ this.FormAutofillUtils = {
     return parts.join(", ");
   },
 
-  toOneLineAddress(address, delimiter = "\n") {
+  
+
+
+
+
+
+
+  _toStreetAddressParts(address, delimiter = "\n") {
     let array = typeof address == "string" ? address.split(delimiter) : address;
 
     if (!Array.isArray(array)) {
-      return "";
+      return [];
     }
     return array
       .map(s => s ? s.trim() : "")
-      .filter(s => s)
-      .join(this.getAddressSeparator());
+      .filter(s => s);
+  },
+
+  
+
+
+
+
+
+  toOneLineAddress(address, delimiter = "\n") {
+    let addressParts = this._toStreetAddressParts(address, delimiter);
+    return addressParts.join(this.getAddressSeparator());
+  },
+
+  
+
+
+
+
+
+
+  compareStreetAddress(a, b, delimiter = "\n") {
+    let oneLineA = this._toStreetAddressParts(a, delimiter).map(p => p.replace(/\s/g, "")).join("");
+    let oneLineB = this._toStreetAddressParts(b, delimiter).map(p => p.replace(/\s/g, "")).join("");
+    return oneLineA == oneLineB;
   },
 
   

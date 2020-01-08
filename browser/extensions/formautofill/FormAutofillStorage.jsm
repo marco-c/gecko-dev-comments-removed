@@ -1557,7 +1557,7 @@ class Addresses extends AutofillRecords {
           
           
           if (field == "street-address" &&
-              FormAutofillUtils.toOneLineAddress(existingField) == FormAutofillUtils.toOneLineAddress(incomingField)) {
+              FormAutofillUtils.compareStreetAddress(existingField, incomingField)) {
             
             
             if (existingField.split("\n").length >= incomingField.split("\n").length) {
