@@ -1643,13 +1643,6 @@ ReadableStreamGetNumReadRequests(ReadableStream* stream)
     return reader->requests()->getDenseInitializedLength();
 }
 
-enum class ReaderMode
-{
-    None,
-    Default,
-};
-
-#if DEBUG
 
 static MOZ_MUST_USE bool
 ReadableStreamHasDefaultReader(JSContext* cx, Handle<ReadableStream*> stream, bool* result)
@@ -1669,25 +1662,6 @@ ReadableStreamHasDefaultReader(JSContext* cx, Handle<ReadableStream*> stream, bo
     }
 
     *result = reader->is<ReadableStreamDefaultReader>();
-    return true;
-}
-#endif 
-
-static MOZ_MUST_USE bool
-ReadableStreamGetReaderMode(JSContext* cx, Handle<ReadableStream*> stream, ReaderMode* mode)
-{
-    if (!stream->hasReader()) {
-        *mode = ReaderMode::None;
-        return true;
-    }
-
-    Rooted<ReadableStreamReader*> reader(cx);
-    if (!UnwrapReaderFromStream(cx, stream, &reader)) {
-        return false;
-    }
-
-    *mode = ReaderMode::Default;
-
     return true;
 }
 
@@ -4424,12 +4398,11 @@ JS::ReadableStreamUpdateDataAvailableFromSource(JSContext* cx, JS::HandleObject 
     }
 
     
-    ReaderMode readerMode;
-    if (!ReadableStreamGetReaderMode(cx, stream, &readerMode)) {
+    bool hasDefaultReader;
+    if (!ReadableStreamHasDefaultReader(cx, stream, &hasDefaultReader)) {
         return false;
     }
-
-    if (readerMode == ReaderMode::Default) {
+    if (hasDefaultReader) {
         
         
         MOZ_ASSERT(oldAvailableData == 0);
