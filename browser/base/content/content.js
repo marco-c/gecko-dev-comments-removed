@@ -34,17 +34,33 @@ addMessageListener("RemoteLogins:fillForm", function(message) {
   message.objects.inputElement = ContextMenuChild.getTarget(global, message, "inputElement");
   LoginManagerContent.receiveMessage(message, content);
 });
+
+function shouldIgnoreLoginManagerEvent(event) {
+  
+  
+  return event.target.nodePrincipal.isNullPrincipal;
+}
+
 addEventListener("DOMFormHasPassword", function(event) {
+  if (shouldIgnoreLoginManagerEvent(event)) {
+    return;
+  }
   LoginManagerContent.onDOMFormHasPassword(event, content);
   let formLike = LoginFormFactory.createFromForm(event.originalTarget);
   InsecurePasswordUtils.reportInsecurePasswords(formLike);
 });
 addEventListener("DOMInputPasswordAdded", function(event) {
+  if (shouldIgnoreLoginManagerEvent(event)) {
+    return;
+  }
   LoginManagerContent.onDOMInputPasswordAdded(event, content);
   let formLike = LoginFormFactory.createFromField(event.originalTarget);
   InsecurePasswordUtils.reportInsecurePasswords(formLike);
 });
 addEventListener("DOMAutoComplete", function(event) {
+  if (shouldIgnoreLoginManagerEvent(event)) {
+    return;
+  }
   LoginManagerContent.onUsernameInput(event);
 });
 
