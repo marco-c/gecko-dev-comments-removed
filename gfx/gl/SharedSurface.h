@@ -133,6 +133,10 @@ public:
     virtual void WaitForBufferOwnership() {}
 
     
+    
+    virtual bool IsBufferAvailable() const { return true; }
+
+    
     virtual GLenum ProdTextureTarget() const {
         MOZ_ASSERT(mAttachType == AttachmentType::GLTexture);
         return LOCAL_GL_TEXTURE_2D;
