@@ -1,6 +1,8 @@
 module.exports = {
   
+  "parser": "babel-eslint",
   "parserOptions": {
+    "ecmaVersion": 2018,
     "ecmaFeatures": {
       "jsx": true
     },
@@ -15,6 +17,11 @@ module.exports = {
     "promise", 
     "react" 
   ],
+  "settings": {
+    "react": {
+      "version": "16.2.0"
+    }
+  },
   "extends": [
     "eslint:recommended",
     "plugin:mozilla/recommended" 
