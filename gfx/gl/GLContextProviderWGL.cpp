@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 20; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "GLContextProvider.h"
 #include "GLContextWGL.h"
@@ -34,17 +34,17 @@ WGLLibrary sWGLLib;
 
 
 
-/*
-ScopedWindow::~ScopedWindow()
-{
-    if (mDC) {
-        MOZ_ALWAYS_TRUE( ReleaseDC(mDC) );
-    }
-    if (mWindow) {
-        MOZ_ALWAYS_TRUE( DestroyWindow(mWindow) );
-    }
-}
-*/
+
+
+
+
+
+
+
+
+
+
+
 static HWND
 CreateDummyWindow()
 {
@@ -57,7 +57,7 @@ CreateDummyWindow()
         wc.lpszClassName = L"GLContextWGLClass";
         if (!RegisterClassW(&wc)) {
             NS_WARNING("Failed to register GLContextWGLClass?!");
-            // er. failed to register our class?
+            
             return nullptr;
         }
     }
@@ -84,7 +84,7 @@ WGLLibrary::EnsureInitialized()
     mozilla::ScopedGfxFeatureReporter reporter("WGL");
 
     std::wstring libGLFilename = L"Opengl32.dll";
-    // SU_SPIES_DIRECTORY is for AMD CodeXL/gDEBugger
+    
     if (_wgetenv(L"SU_SPIES_DIRECTORY")) {
         libGLFilename = std::wstring(_wgetenv(L"SU_SPIES_DIRECTORY")) +
                         L"\\opengl32.dll";
@@ -129,19 +129,19 @@ WGLLibrary::EnsureInitialized()
     if (!mRootDc)
         return false;
 
-    // --
+    
 
     {
         PIXELFORMATDESCRIPTOR pfd{};
         pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
         pfd.nVersion = 1;
         pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL;
-        //pfd.iPixelType = PFD_TYPE_RGBA;
-        //pfd.cColorBits = 24;
-        //pfd.cRedBits = 8;
-        //pfd.cGreenBits = 8;
-        //pfd.cBlueBits = 8;
-        //pfd.cAlphaBits = 8;
+        
+        
+        
+        
+        
+        
         pfd.iLayerType = PFD_MAIN_PLANE;
 
         const auto pixelFormat = ChoosePixelFormat(mRootDc, &pfd);
@@ -154,15 +154,16 @@ WGLLibrary::EnsureInitialized()
             return false;
     }
 
-    // --
+    
 
-    // create rendering context
+    
     mDummyGlrc = mSymbols.fCreateContext(mRootDc);
     if (!mDummyGlrc)
         return false;
 
     const auto curCtx = mSymbols.fGetCurrentContext();
     const auto curDC = mSymbols.fGetCurrentDC();
+
     if (!mSymbols.fMakeCurrent(mRootDc, mDummyGlrc)) {
         NS_WARNING("wglMakeCurrent failed");
         return false;
@@ -173,17 +174,17 @@ WGLLibrary::EnsureInitialized()
 
     const auto lookupFunc = (GLLibraryLoader::PlatformLookupFunction)mSymbols.fGetProcAddress;
 
-    // Now we can grab all the other symbols that we couldn't without having
-    // a context current.
+    
+    
     const GLLibraryLoader::SymLoadStruct reqExtSymbols[] = {
         { (PRFuncPtr*)&mSymbols.fCreatePbuffer, { "wglCreatePbufferARB", "wglCreatePbufferEXT", nullptr } },
         { (PRFuncPtr*)&mSymbols.fDestroyPbuffer, { "wglDestroyPbufferARB", "wglDestroyPbufferEXT", nullptr } },
         { (PRFuncPtr*)&mSymbols.fGetPbufferDC, { "wglGetPbufferDCARB", "wglGetPbufferDCEXT", nullptr } },
         { (PRFuncPtr*)&mSymbols.fReleasePbufferDC, { "wglReleasePbufferDCARB", "wglReleasePbufferDCEXT", nullptr } },
-    //    { (PRFuncPtr*)&mSymbols.fBindTexImage, { "wglBindTexImageARB", "wglBindTexImageEXT", nullptr } },
-    //    { (PRFuncPtr*)&mSymbols.fReleaseTexImage, { "wglReleaseTexImageARB", "wglReleaseTexImageEXT", nullptr } },
+    
+    
         { (PRFuncPtr*)&mSymbols.fChoosePixelFormat, { "wglChoosePixelFormatARB", "wglChoosePixelFormatEXT", nullptr } },
-    //    { (PRFuncPtr*)&mSymbols.fGetPixelFormatAttribiv, { "wglGetPixelFormatAttribivARB", "wglGetPixelFormatAttribivEXT", nullptr } },
+    
         SYMBOL(GetExtensionsStringARB),
         END_OF_SYMBOLS
     };
@@ -192,13 +193,13 @@ WGLLibrary::EnsureInitialized()
         return false;
     }
 
-    // --
+    
 
     const auto extString = mSymbols.fGetExtensionsStringARB(mRootDc);
     MOZ_ASSERT(extString);
     MOZ_ASSERT(HasExtension(extString, "WGL_ARB_extensions_string"));
 
-    // --
+    
 
     if (HasExtension(extString, "WGL_ARB_create_context")) {
         const GLLibraryLoader::SymLoadStruct createContextSymbols[] = {
@@ -215,7 +216,7 @@ WGLLibrary::EnsureInitialized()
         }
     }
 
-    // --
+    
 
     bool hasDXInterop2 = HasExtension(extString, "WGL_NV_DX_interop2");
     if (gfxVars::DXInterop2Blocked() &&
@@ -242,7 +243,7 @@ WGLLibrary::EnsureInitialized()
         }
     }
 
-    // --
+    
 
     cleanup.release();
 
@@ -298,6 +299,7 @@ GLContextWGL::GLContextWGL(CreateContextFlags flags, const SurfaceCaps& caps,
 GLContextWGL::~GLContextWGL()
 {
     MarkDestroyed();
+
     (void)sWGLLib.mSymbols.fDeleteContext(mContext);
 
     if (mPBuffer) {
@@ -316,18 +318,20 @@ GLContextWGL::Init()
     if (!mDC || !mContext)
         return false;
 
+    
+    if (!sWGLLib.mSymbols.fMakeCurrent(mDC, mContext))
+        return false;
+
     SetupLookupFunction();
-    return InitWithPrefix("gl", true);
+    if (!InitWithPrefix("gl", true))
+        return false;
+
+    return true;
 }
 
 bool
 GLContextWGL::MakeCurrentImpl() const
 {
-    if (IsDestroyed()) {
-        MOZ_ALWAYS_TRUE( sWGLLib.mSymbols.fMakeCurrent(0, 0) );
-        return false;
-    }
-
     const bool succeeded = sWGLLib.mSymbols.fMakeCurrent(mDC, mContext);
     NS_ASSERTION(succeeded, "Failed to make GL context current!");
     return succeeded;
@@ -357,9 +361,9 @@ GLContextWGL::GetWSIInfo(nsCString* const out) const
 bool
 GLContextWGL::SetupLookupFunction()
 {
-    // Make sure that we have a ref to the OGL library;
-    // when run under CodeXL, wglGetProcAddress won't return
-    // the right thing for some core functions.
+    
+    
+    
     MOZ_ASSERT(mLibrary == nullptr);
 
     mLibrary = sWGLLib.GetOGLLibrary();
@@ -484,9 +488,9 @@ CreateForWidget(const HWND window, const bool isWebRender, const bool requireAcc
     if (!foundFormats)
         return nullptr;
 
-    // We need to make sure we call SetPixelFormat -after- calling
-    // EnsureInitialized, otherwise it can load/unload the dll and
-    // wglCreateContext will fail.
+    
+    
+    
 
     SetPixelFormat(dc, chosenFormat, nullptr);
     const auto context = sWGLLib.CreateContextWithFallback(dc, false);
@@ -520,7 +524,7 @@ GLContextProviderWGL::CreateForWindow(nsIWidget* aWidget, bool aWebRender, bool 
                            aForceAccelerated).forget();
 }
 
-/*static*/ already_AddRefed<GLContext>
+ already_AddRefed<GLContext>
 GLContextProviderWGL::CreateHeadless(const CreateContextFlags flags,
                                      nsACString* const out_failureId)
 {
@@ -590,7 +594,7 @@ GLContextProviderWGL::CreateHeadless(const CreateContextFlags flags,
     return RefPtr<GLContext>(gl.get()).forget();
 }
 
-/*static*/ already_AddRefed<GLContext>
+ already_AddRefed<GLContext>
 GLContextProviderWGL::CreateOffscreen(const IntSize& size,
                                       const SurfaceCaps& minCaps,
                                       CreateContextFlags flags,
@@ -608,16 +612,16 @@ GLContextProviderWGL::CreateOffscreen(const IntSize& size,
     return gl.forget();
 }
 
-/*static*/ GLContext*
+ GLContext*
 GLContextProviderWGL::GetGlobalContext()
 {
     return nullptr;
 }
 
-/*static*/ void
+ void
 GLContextProviderWGL::Shutdown()
 {
 }
 
-} /* namespace gl */
-} /* namespace mozilla */
+} 
+} 
