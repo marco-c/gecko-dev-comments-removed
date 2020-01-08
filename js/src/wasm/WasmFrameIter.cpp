@@ -132,7 +132,7 @@ WasmFrameIter::popFrame()
         MOZ_ASSERT(!LookupCode(prevFP->returnAddress));
 
         unwoundIonCallerFP_ = (uint8_t*)(uintptr_t(fp_) & ~uintptr_t(ExitOrJitEntryFPTag));
-        unwoundIonFrameType_ = FrameType::Exit;
+        unwoundIonFrameType_ = JitFrame_Exit;
 
         fp_ = nullptr;
         code_ = nullptr;
@@ -181,7 +181,7 @@ WasmFrameIter::popFrame()
         
         
         unwoundIonCallerFP_ = (uint8_t*) fp_;
-        unwoundIonFrameType_ = FrameType::JSJitToWasm;
+        unwoundIonFrameType_ = JitFrame_JSJitToWasm;
 
         fp_ = nullptr;
         code_ = nullptr;
@@ -910,6 +910,7 @@ js::wasm::StartUnwinding(const RegisterState& registers, UnwindState* unwindStat
     
     
     
+    
     DebugOnly<bool> fpWasTagged = uintptr_t(registers.fp) & ExitOrJitEntryFPTag;
     Frame* const fp = (Frame*) (intptr_t(registers.fp) & ~ExitOrJitEntryFPTag);
 
@@ -1110,6 +1111,7 @@ js::wasm::StartUnwinding(const RegisterState& registers, UnwindState* unwindStat
         fixedPC = nullptr;
 
         
+        
         if (intptr_t(fixedFP) == (FailFP & ~ExitOrJitEntryFPTag))
             return false;
         break;
@@ -1160,14 +1162,22 @@ ProfilingFrameIterator::ProfilingFrameIterator(const JitActivation& activation,
         
         
         
-        if ((uintptr_t(state.fp) & ExitOrJitEntryFPTag))
+        
+        if (unwindState.codeRange &&
+            unwindState.codeRange->isFunction() &&
+            (uintptr_t(state.fp) & ExitOrJitEntryFPTag))
+        {
             unwoundIonCallerFP_ = (uint8_t*) callerFP_;
+        }
     } else {
         callerFP_ = unwindState.fp->callerFP;
         callerPC_ = unwindState.fp->returnAddress;
         
-        if ((uintptr_t(callerFP_) & ExitOrJitEntryFPTag))
+        
+        if ((uintptr_t(callerFP_) & ExitOrJitEntryFPTag)) {
+            MOZ_ASSERT(unwindState.codeRange->isFunction());
             unwoundIonCallerFP_ = (uint8_t*)(uintptr_t(callerFP_) & ~ExitOrJitEntryFPTag);
+        }
     }
 
     if (unwindState.codeRange->isJitEntry()) {
