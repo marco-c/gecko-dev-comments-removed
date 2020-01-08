@@ -51,7 +51,7 @@ class MOZ_STACK_CLASS BytecodeCompiler
 
     
     MOZ_MUST_USE bool prepareScriptParse() {
-        return createSourceAndParser(ParseGoal::Script) && createScript();
+        return createSourceAndParser(ParseGoal::Script) && createCompleteScript();
     }
 
     JSScript* compileGlobalScript(ScopeKind scopeKind);
@@ -59,7 +59,7 @@ class MOZ_STACK_CLASS BytecodeCompiler
 
     
     MOZ_MUST_USE bool prepareModuleParse() {
-        return createSourceAndParser(ParseGoal::Module) && createScript();
+        return createSourceAndParser(ParseGoal::Module) && createCompleteScript();
     }
 
     ModuleObject* compileModule();
@@ -99,7 +99,10 @@ class MOZ_STACK_CLASS BytecodeCompiler
     
     
     
-    bool createScript();
+    bool createCompleteScript();
+
+    
+    
     bool createScript(uint32_t toStringStart, uint32_t toStringEnd);
 
     using TokenStreamPosition = frontend::TokenStreamPosition<char16_t>;
@@ -283,7 +286,7 @@ BytecodeCompiler::createSourceAndParser(ParseGoal goal,
 }
 
 bool
-BytecodeCompiler::createScript()
+BytecodeCompiler::createCompleteScript()
 {
     return createScript(0, sourceBuffer.length());
 }
