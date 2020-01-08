@@ -145,14 +145,14 @@ private:
 
   
   
-  nsresult FindTransactionForBFCache(nsIBFCacheEntry* aEntry,
-                                     nsISHEntry** aResult,
-                                     int32_t* aResultIndex);
+  nsresult FindEntryForBFCache(nsIBFCacheEntry* aBFEntry,
+                               nsISHEntry** aResult,
+                               int32_t* aResultIndex);
 
   
   
   void EvictOutOfRangeWindowContentViewers(int32_t aIndex);
-  void EvictContentViewerForTransaction(nsISHEntry* aTrans);
+  void EvictContentViewerForEntry(nsISHEntry* aEntry);
   static void GloballyEvictContentViewers();
   static void GloballyEvictAllContentViewers();
 
@@ -171,7 +171,7 @@ private:
   
   mozilla::UniquePtr<HistoryTracker> mHistoryTracker;
 
-  nsTArray<nsCOMPtr<nsISHEntry>> mTransactions; 
+  nsTArray<nsCOMPtr<nsISHEntry>> mEntries; 
   int32_t mIndex;           
   int32_t mRequestedIndex;  
 
@@ -179,7 +179,7 @@ private:
                      int32_t* aOutEndIndex);
 
   
-  int32_t Length() { return int32_t(mTransactions.Length()); }
+  int32_t Length() { return int32_t(mEntries.Length()); }
 
   
   nsAutoTObserverArray<nsWeakPtr, 2> mListeners;

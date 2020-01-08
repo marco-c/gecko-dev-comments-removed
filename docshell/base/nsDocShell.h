@@ -254,7 +254,7 @@ public:
                          LOCATION_CHANGE_SAME_DOCUMENT);
   }
 
-  nsresult HistoryTransactionRemoved(int32_t aIndex);
+  nsresult HistoryEntryRemoved(int32_t aIndex);
 
   
   
@@ -1034,8 +1034,8 @@ private:
   
   
   
-  int32_t mPreviousTransIndex;
-  int32_t mLoadedTransIndex;
+  int32_t mPreviousEntryIndex;
+  int32_t mLoadedEntryIndex;
 
   
   
