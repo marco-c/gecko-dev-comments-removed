@@ -407,7 +407,10 @@ Http2Decompressor::DecodeHeaderBlock(const uint8_t *data, uint32_t datalen,
   mData = data;
   mDataLen = datalen;
   mOutput = &output;
+  
+  
   mOutput->Truncate();
+  mOutput->SetCapacity(datalen + 512);
   mHeaderStatus.Truncate();
   mHeaderHost.Truncate();
   mHeaderScheme.Truncate();

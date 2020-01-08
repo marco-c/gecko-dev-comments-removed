@@ -1029,11 +1029,6 @@ Http2Stream::ConvertResponseHeaders(Http2Decompressor *decompressor,
                                     nsACString &aHeadersOut,
                                     int32_t &httpResponseCode)
 {
-  aHeadersOut.Truncate();
-  
-  
-  aHeadersOut.SetCapacity(aHeadersIn.Length() + 512);
-
   nsresult rv =
     decompressor->DecodeHeaderBlock(reinterpret_cast<const uint8_t *>(aHeadersIn.BeginReading()),
                                     aHeadersIn.Length(),
@@ -1114,10 +1109,6 @@ Http2Stream::ConvertPushHeaders(Http2Decompressor *decompressor,
                                 nsACString &aHeadersIn,
                                 nsACString &aHeadersOut)
 {
-  aHeadersOut.Truncate();
-  
-  
-  aHeadersOut.SetCapacity(aHeadersIn.Length() + 512);
   nsresult rv =
     decompressor->DecodeHeaderBlock(reinterpret_cast<const uint8_t *>(aHeadersIn.BeginReading()),
                                     aHeadersIn.Length(),
@@ -1159,9 +1150,6 @@ Http2Stream::ConvertResponseTrailers(Http2Decompressor *decompressor,
 {
   LOG3(("Http2Stream::ConvertResponseTrailers %p", this));
   nsAutoCString flatTrailers;
-  
-  
-  flatTrailers.SetCapacity(aTrailersIn.Length() + 512);
 
   nsresult rv =
     decompressor->DecodeHeaderBlock(reinterpret_cast<const uint8_t *>(aTrailersIn.BeginReading()),
