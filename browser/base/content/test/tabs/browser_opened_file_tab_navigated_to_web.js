@@ -2,6 +2,7 @@
 
 
 const TEST_FILE = "dummy_page.html";
+const WEB_ADDRESS = "http://example.org/";
 
 
 add_task(async function() {
@@ -35,8 +36,8 @@ add_task(async function() {
   let openedBrowser = openedTab.linkedBrowser;
 
   
-  openedBrowser.loadURI("http://example.org/");
-  let href = await BrowserTestUtils.browserLoaded(openedBrowser);
-  is(href, "http://example.org/",
+  openedBrowser.loadURI(WEB_ADDRESS);
+  let href = await BrowserTestUtils.browserLoaded(openedBrowser, false, WEB_ADDRESS);
+  is(href, WEB_ADDRESS,
      "Check that new file:// page has navigated successfully to web content");
 });
