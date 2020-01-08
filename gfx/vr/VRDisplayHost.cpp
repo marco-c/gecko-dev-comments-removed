@@ -28,6 +28,9 @@
 
 #if defined(MOZ_WIDGET_ANDROID)
 #include "mozilla/layers/CompositorThread.h"
+
+
+#define ANDROID_MAX_FRAME_DURATION 4000
 #endif 
 
 
@@ -79,6 +82,11 @@ VRDisplayHost::VRDisplayHost(VRDeviceType aType)
   mDisplayInfo.mFrameId = 0;
   mDisplayInfo.mDisplayState.mPresentingGeneration = 0;
   mDisplayInfo.mDisplayState.mDisplayName[0] = '\0';
+
+#if defined(MOZ_WIDGET_ANDROID)
+  mLastSubmittedFrameId = 0;
+  mLastStartedFrame = 0;
+#endif 
 }
 
 VRDisplayHost::~VRDisplayHost()
@@ -200,10 +208,24 @@ VRDisplayHost::StartFrame()
 {
   AUTO_PROFILER_TRACING("VR", "GetSensorState");
 
+#if defined(MOZ_WIDGET_ANDROID)
+  const bool isPresenting = mLastUpdateDisplayInfo.GetPresentingGroups() != 0;
+  TimeDuration duration = TimeStamp::Now() - mLastFrameStart;
+  
+
+
+  if (isPresenting && mLastStartedFrame > 0 && mDisplayInfo.mDisplayState.mLastSubmittedFrameId < mLastStartedFrame && duration.ToMilliseconds() < ANDROID_MAX_FRAME_DURATION) {
+    return;
+  }
+#endif 
+
   mLastFrameStart = TimeStamp::Now();
   ++mDisplayInfo.mFrameId;
   mDisplayInfo.mLastSensorState[mDisplayInfo.mFrameId % kVRMaxLatencyFrames] = GetSensorState();
   mFrameStarted = true;
+#if defined(MOZ_WIDGET_ANDROID)
+  mLastStartedFrame = mDisplayInfo.mFrameId;
+#endif 
 }
 
 void
@@ -315,6 +337,19 @@ VRDisplayHost::SubmitFrame(VRLayerParent* aLayer,
   if (!mFrameStarted || aFrameId != mDisplayInfo.mFrameId) {
     return;
   }
+
+#if defined(MOZ_WIDGET_ANDROID)
+  
+
+
+
+  if (mLastSubmittedFrameId > 0 && mLastSubmittedFrameId != mDisplayInfo.mDisplayState.mLastSubmittedFrameId) {
+    mLastStartedFrame = 0;
+    return;
+  }
+
+  mLastSubmittedFrameId = aFrameId;
+#endif 
 
   mFrameStarted = false;
 
