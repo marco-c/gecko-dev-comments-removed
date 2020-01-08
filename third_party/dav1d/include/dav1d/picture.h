@@ -85,8 +85,16 @@ typedef struct Dav1dPicAllocator {
 
 
 
+
+
+
     int (*alloc_picture_callback)(Dav1dPicture *pic, void *cookie);
     
+
+
+
+
+
 
 
 

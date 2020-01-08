@@ -81,7 +81,8 @@ enum IntraPredMode
                                       const pixel *dst, ptrdiff_t stride,
                                       const pixel *prefilter_toplevel_sb_edge,
                                       enum IntraPredMode mode, int *angle,
-                                      int tw, int th, pixel *topleft_out);
+                                      int tw, int th, pixel *topleft_out
+                                      HIGHBD_DECL_SUFFIX);
 
 
 
