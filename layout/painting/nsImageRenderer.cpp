@@ -123,13 +123,13 @@ nsImageRenderer::PrepareImage()
 
   if (!mImage->IsComplete()) {
     
-    bool frameComplete = mImage->StartDecoding();
+    mImage->StartDecoding();
 
     
     
     
     
-    if (!(frameComplete || mImage->IsComplete()) &&
+    if (!mImage->IsComplete() &&
         !ShouldTreatAsCompleteDueToSyncDecode(mImage, mFlags)) {
       mPrepareResult = ImgDrawResult::NOT_READY;
       return false;
