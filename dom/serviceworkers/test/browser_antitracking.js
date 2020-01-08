@@ -78,8 +78,7 @@ add_task(async function() {
     }
   );
 
-  
-  ok(controlled, "Should be controlled (and not crash.)");
+  ok(!controlled, "Should not be controlled!");
 
   
   
