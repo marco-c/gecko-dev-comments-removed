@@ -276,11 +276,13 @@ class MOZ_STACK_CLASS BinTokenReaderTester: public BinTokenReaderBase
     static bool equals(const Chars& left, const char (&right)[N]) {
         MOZ_ASSERT(N > 0);
         MOZ_ASSERT(right[N - 1] == 0);
-        if (left.length() + 1  != N)
+        if (left.length() + 1  != N) {
             return false;
+        }
 
-        if (!std::equal(left.begin(), left.end(), right))
+        if (!std::equal(left.begin(), left.end(), right)) {
           return false;
+        }
 
         return true;
     }
@@ -290,12 +292,14 @@ class MOZ_STACK_CLASS BinTokenReaderTester: public BinTokenReaderBase
     JS::Result<Ok, JS::Error&> checkFields(const BinKind kind, const BinFields& actual,
                                                   const BinField (&expected)[N])
     {
-        if (actual.length() != N)
+        if (actual.length() != N) {
             return raiseInvalidNumberOfFields(kind, N, actual.length());
+        }
 
         for (size_t i = 0; i < N; ++i) {
-            if (actual[i] != expected[i])
+            if (actual[i] != expected[i]) {
                 return raiseInvalidField(describeBinKind(kind), actual[i]);
+            }
         }
 
         return Ok();
@@ -304,8 +308,9 @@ class MOZ_STACK_CLASS BinTokenReaderTester: public BinTokenReaderBase
     
     JS::Result<Ok, JS::Error&> checkFields0(const BinKind kind, const BinFields& actual)
     {
-        if (actual.length() != 0)
+        if (actual.length() != 0) {
             return raiseInvalidNumberOfFields(kind, 0, actual.length());
+        }
 
         return Ok();
     }
