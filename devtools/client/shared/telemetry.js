@@ -11,7 +11,7 @@
 "use strict";
 
 const Services = require("Services");
-const { TelemetryStopwatch } = require("devtools/client/shared/TelemetryStopwatch.jsm");
+const { TelemetryStopwatch } = require("resource://gre/modules/TelemetryStopwatch.jsm");
 const { getNthPathExcluding } = require("devtools/shared/platform/stack");
 const { TelemetryEnvironment } = require("resource://gre/modules/TelemetryEnvironment.jsm");
 const WeakMapMap = require("devtools/client/shared/WeakMapMap");
@@ -89,8 +89,11 @@ class Telemetry {
 
 
 
-  start(histogramId, obj) {
-    return TelemetryStopwatch.start(histogramId, obj);
+
+
+
+  start(histogramId, obj, {inSeconds} = {}) {
+    return TelemetryStopwatch.start(histogramId, obj, {inSeconds});
   }
 
   
@@ -114,8 +117,11 @@ class Telemetry {
 
 
 
-  startKeyed(histogramId, key, obj) {
-    return TelemetryStopwatch.startKeyed(histogramId, key, obj);
+
+
+
+  startKeyed(histogramId, key, obj, {inSeconds} = {}) {
+    return TelemetryStopwatch.startKeyed(histogramId, key, obj, {inSeconds});
   }
 
   
@@ -600,7 +606,7 @@ class Telemetry {
                             "time_open", this.msSystemNow());
     }
     if (charts.timerHist) {
-      this.start(charts.timerHist, obj);
+      this.start(charts.timerHist, obj, {inSeconds: true});
     }
     if (charts.countHist) {
       this.getHistogramById(charts.countHist).add(true);
