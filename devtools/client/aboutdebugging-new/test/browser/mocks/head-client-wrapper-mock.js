@@ -18,11 +18,23 @@ const DEFAULT_PREFERENCES = {
 
 
 function createClientMock() {
+  const EventEmitter = require("devtools/shared/event-emitter");
+  const eventEmitter = {};
+  EventEmitter.decorate(eventEmitter);
+
   return {
     
-    addOneTimeListener: () => {},
     
-    addListener: () => {},
+    _eventEmitter: eventEmitter,
+    addOneTimeListener: (evt, listener) => {
+      eventEmitter.once(evt, listener);
+    },
+    addListener: (evt, listener) => {
+      eventEmitter.on(evt, listener);
+    },
+    removeListener: (evt, listener) => {
+      eventEmitter.off(evt, listener);
+    },
     
     close: () => {},
     
@@ -46,8 +58,6 @@ function createClientMock() {
       serviceWorkers: [],
       sharedWorkers: [],
     }),
-    
-    removeListener: () => {},
     
     setPreference: () => {},
   };

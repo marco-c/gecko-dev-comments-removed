@@ -40,7 +40,12 @@ class UsbMocks {
 
     
     
-    this._clients[RUNTIMES.THIS_FIREFOX] = createThisFirefoxClientMock();
+    this._thisFirefoxClient = createThisFirefoxClientMock();
+    this._clients[RUNTIMES.THIS_FIREFOX] = this._thisFirefoxClient;
+  }
+
+  get thisFirefoxClient() {
+    return this._thisFirefoxClient;
   }
 
   enableMocks() {
