@@ -465,7 +465,7 @@ public class testInputConnection extends JavascriptBridgeTest {
 
             ic.commitText("!", 1);
             
-            assertTextAndSelectionAt("Can handle hiding input", ic, "foo!", 4);
+            assertTextAndSelectionAt("Can handle hiding input", ic, "foo", 3);
 
             
             getJS().syncCall("blur_hiding_input");

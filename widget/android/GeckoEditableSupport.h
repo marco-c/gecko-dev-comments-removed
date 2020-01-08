@@ -98,6 +98,7 @@ class GeckoEditableSupport final
     int32_t mIMEFocusCount; 
     bool mIMEDelaySynchronizeReply; 
     int32_t mIMEActiveSynchronizeCount; 
+    int32_t mIMEActiveCompositionCount; 
     bool mIMESelectionChanged;
     bool mIMETextChangedDuringFlush;
     bool mIMEMonitorCursor;

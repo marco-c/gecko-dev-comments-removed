@@ -105,8 +105,11 @@ import android.view.inputmethod.EditorInfo;
     private int mIMEFlags; 
 
     private boolean mIgnoreSelectionChange; 
-    private int mLastTextChangeStart = -1; 
-    private int mLastTextChangeEnd = -1; 
+    
+    
+    private int mLastTextChangeStart = Integer.MAX_VALUE; 
+    private int mLastTextChangeOldEnd = -1; 
+    private int mLastTextChangeNewEnd = -1; 
     private boolean mLastTextChangeReplacedSelection; 
 
     
@@ -1136,14 +1139,15 @@ import android.view.inputmethod.EditorInfo;
         case Action.TYPE_REPLACE_TEXT: {
             final Spanned currentText = mText.getCurrentText();
             final int actionNewEnd = action.mStart + action.mSequence.length();
-            if (mLastTextChangeStart < 0 || mLastTextChangeEnd > currentText.length() ||
-                action.mStart < mLastTextChangeStart || actionNewEnd > mLastTextChangeEnd) {
+            if (mLastTextChangeStart > mLastTextChangeNewEnd ||
+                mLastTextChangeNewEnd > currentText.length() ||
+                action.mStart < mLastTextChangeStart || actionNewEnd > mLastTextChangeNewEnd) {
                 
                 break;
             }
 
             int indexInText = TextUtils.indexOf(currentText, action.mSequence,
-                                                action.mStart, mLastTextChangeEnd);
+                                                action.mStart, mLastTextChangeNewEnd);
             if (indexInText < 0 && action.mStart != mLastTextChangeStart) {
                 final String changedText = TextUtils.substring(
                         currentText, mLastTextChangeStart, actionNewEnd);
@@ -1157,11 +1161,16 @@ import android.view.inputmethod.EditorInfo;
                 break;
             }
 
+            final int selStart = Selection.getSelectionStart(currentText);
+            final int selEnd = Selection.getSelectionEnd(currentText);
+
             
             
             mText.currentReplace(indexInText,
                                  indexInText + action.mSequence.length(),
                                  action.mSequence);
+            
+            mText.currentSetSelection(selStart, selEnd);
 
             
             
@@ -1181,6 +1190,14 @@ import android.view.inputmethod.EditorInfo;
                     Log.d(LOGTAG, "discarding stale set span call");
                 }
                 break;
+            }
+            if ((action.mSpanObject == Selection.SELECTION_START ||
+                 action.mSpanObject == Selection.SELECTION_END) &&
+                (action.mStart < mLastTextChangeStart && action.mEnd < mLastTextChangeStart ||
+                 action.mStart > mLastTextChangeOldEnd && action.mEnd > mLastTextChangeOldEnd)) {
+                
+                
+                mLastTextChangeReplacedSelection = false;
             }
             mText.currentSetSpan(action.mSpanObject, action.mStart, action.mEnd, action.mSpanFlags);
             break;
@@ -1627,8 +1644,9 @@ import android.view.inputmethod.EditorInfo;
 
         
         
-        mLastTextChangeStart = -1;
-        mLastTextChangeEnd = -1;
+        mLastTextChangeStart = Integer.MAX_VALUE;
+        mLastTextChangeOldEnd = -1;
+        mLastTextChangeNewEnd = -1;
         mLastTextChangeReplacedSelection = false;
 
         mIcPostHandler.post(new Runnable() {
@@ -1673,8 +1691,9 @@ import android.view.inputmethod.EditorInfo;
             
             mIgnoreSelectionChange = false;
 
-            mLastTextChangeStart = -1;
-            mLastTextChangeEnd = -1;
+            mLastTextChangeStart = Integer.MAX_VALUE;
+            mLastTextChangeOldEnd = -1;
+            mLastTextChangeNewEnd = -1;
             mLastTextChangeReplacedSelection = false;
 
         } else if (!geckoIsSameText(start, oldEnd, text)) {
@@ -1694,8 +1713,9 @@ import android.view.inputmethod.EditorInfo;
             mText.currentReplace(start, oldEnd, "");
             mText.currentReplace(start, start, text);
 
-            mLastTextChangeStart = start;
-            mLastTextChangeEnd = newEnd;
+            mLastTextChangeStart = Math.min(start, mLastTextChangeStart);
+            mLastTextChangeOldEnd = Math.max(oldEnd, mLastTextChangeOldEnd);
+            mLastTextChangeNewEnd = Math.max(newEnd, mLastTextChangeNewEnd);
 
         } else {
             
@@ -1707,8 +1727,9 @@ import android.view.inputmethod.EditorInfo;
                      action.mType == Action.TYPE_SET_SPAN ||
                      action.mType == Action.TYPE_REMOVE_SPAN));
 
-            mLastTextChangeStart = start;
-            mLastTextChangeEnd = newEnd;
+            mLastTextChangeStart = Math.min(start, mLastTextChangeStart);
+            mLastTextChangeOldEnd = Math.max(oldEnd, mLastTextChangeOldEnd);
+            mLastTextChangeNewEnd = Math.max(newEnd, mLastTextChangeNewEnd);
         }
 
         
