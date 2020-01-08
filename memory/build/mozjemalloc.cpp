@@ -207,6 +207,11 @@ getenv(const char* name)
 #endif
 
 #ifndef XP_WIN
+
+
+#if defined(XP_LINUX) && defined(MADV_FREE)
+#undef MADV_FREE
+#endif
 #ifndef MADV_FREE
 #define MADV_FREE MADV_DONTNEED
 #endif
