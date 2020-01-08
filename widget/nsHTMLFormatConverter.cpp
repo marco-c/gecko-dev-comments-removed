@@ -35,25 +35,12 @@ NS_IMPL_ISUPPORTS(nsHTMLFormatConverter, nsIFormatConverter)
 
 
 
-
-
-
 NS_IMETHODIMP
-nsHTMLFormatConverter::GetInputDataFlavors(nsIArray **_retval)
+nsHTMLFormatConverter::GetInputDataFlavors(nsTArray<nsCString>& aFlavors)
 {
-  if ( !_retval )
-    return NS_ERROR_INVALID_ARG;
-
-  nsCOMPtr<nsIMutableArray> array = nsArray::Create();
-  nsresult rv = AddFlavorToList ( array, kHTMLMime );
-
-  array.forget(_retval);
-  return rv;
-
-} 
-
-
-
+  aFlavors.AppendElement(NS_LITERAL_CSTRING(kHTMLMime));
+  return NS_OK;
+}
 
 
 
@@ -64,49 +51,12 @@ nsHTMLFormatConverter::GetInputDataFlavors(nsIArray **_retval)
 
 
 NS_IMETHODIMP
-nsHTMLFormatConverter::GetOutputDataFlavors(nsIArray **_retval)
+nsHTMLFormatConverter::GetOutputDataFlavors(nsTArray<nsCString>& aFlavors)
 {
-  if ( !_retval )
-    return NS_ERROR_INVALID_ARG;
-
-  nsCOMPtr<nsIMutableArray> array = nsArray::Create();
-  nsresult rv = AddFlavorToList ( array, kHTMLMime );
-  if ( NS_FAILED(rv) )
-    return rv;
-  rv = AddFlavorToList ( array, kUnicodeMime );
-  if ( NS_FAILED(rv) )
-    return rv;
-
-  array.forget(_retval);
-  return rv;
-
-} 
-
-
-
-
-
-
-
-
-nsresult
-nsHTMLFormatConverter :: AddFlavorToList ( nsCOMPtr<nsIMutableArray>& inList, const char* inFlavor )
-{
-  nsresult rv;
-
-  nsCOMPtr<nsISupportsCString> dataFlavor =
-      do_CreateInstance(NS_SUPPORTS_CSTRING_CONTRACTID, &rv);
-  if ( dataFlavor ) {
-    dataFlavor->SetData ( nsDependentCString(inFlavor) );
-    
-    
-    nsCOMPtr<nsISupports> genericFlavor ( do_QueryInterface(dataFlavor) );
-    inList->AppendElement ( genericFlavor );
-  }
-  return rv;
-
-} 
-
+  aFlavors.AppendElement(NS_LITERAL_CSTRING(kHTMLMime));
+  aFlavors.AppendElement(NS_LITERAL_CSTRING(kUnicodeMime));
+  return NS_OK;
+}
 
 
 
