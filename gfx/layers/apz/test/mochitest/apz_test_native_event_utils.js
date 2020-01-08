@@ -42,12 +42,29 @@ function nativeHorizontalWheelEventMsg() {
 }
 
 
-function nativeScrollUnits(aElement, aDimen) {
+function windowForTarget(aTarget) {
+  if (aTarget instanceof Window) {
+    return aTarget;
+  }
+  return aTarget.ownerDocument.defaultView;
+}
+
+
+function elementForTarget(aTarget) {
+  if (aTarget instanceof Window) {
+    return aTarget.document.documentElement;
+  }
+  return aTarget;
+}
+
+
+function nativeScrollUnits(aTarget, aDimen) {
   switch (getPlatform()) {
     case "linux": {
       
-      var targetWindow = aElement.ownerDocument.defaultView;
-      var lineHeight = targetWindow.getComputedStyle(aElement)["font-size"];
+      var targetWindow = windowForTarget(aTarget);
+      var targetElement = elementForTarget(aTarget);
+      var lineHeight = targetWindow.getComputedStyle(targetElement)["font-size"];
       return aDimen / (parseInt(lineHeight) * 3);
     }
   }
@@ -82,14 +99,6 @@ function nativeMouseUpEventMsg() {
     case "android": return 6; 
   }
   throw "Native mouse-up events not supported on platform " + getPlatform();
-}
-
-
-function windowForTarget(aTarget) {
-  if (aTarget instanceof Window) {
-    return aTarget;
-  }
-  return aTarget.ownerDocument.defaultView;
 }
 
 function getBoundingClientRectRelativeToVisualViewport(aElement) {
@@ -146,16 +155,17 @@ function rectRelativeToScreen(aElement) {
 
 
 
-function synthesizeNativeWheel(aElement, aX, aY, aDeltaX, aDeltaY, aObserver) {
-  var pt = coordinatesRelativeToScreen(aX, aY, aElement);
+function synthesizeNativeWheel(aTarget, aX, aY, aDeltaX, aDeltaY, aObserver) {
+  var pt = coordinatesRelativeToScreen(aX, aY, aTarget);
   if (aDeltaX && aDeltaY) {
     throw "Simultaneous wheeling of horizontal and vertical is not supported on all platforms.";
   }
-  aDeltaX = nativeScrollUnits(aElement, aDeltaX);
-  aDeltaY = nativeScrollUnits(aElement, aDeltaY);
+  aDeltaX = nativeScrollUnits(aTarget, aDeltaX);
+  aDeltaY = nativeScrollUnits(aTarget, aDeltaY);
   var msg = aDeltaX ? nativeHorizontalWheelEventMsg() : nativeVerticalWheelEventMsg();
-  var utils = SpecialPowers.getDOMWindowUtils(aElement.ownerDocument.defaultView);
-  utils.sendNativeMouseScrollEvent(pt.x, pt.y, msg, aDeltaX, aDeltaY, 0, 0, 0, aElement, aObserver);
+  var utils = SpecialPowers.getDOMWindowUtils(windowForTarget(aTarget));
+  var element = elementForTarget(aTarget);
+  utils.sendNativeMouseScrollEvent(pt.x, pt.y, msg, aDeltaX, aDeltaY, 0, 0, 0, element, aObserver);
   return true;
 }
 
@@ -178,12 +188,13 @@ function synthesizeNativeWheelAndWaitForObserver(aElement, aX, aY, aDeltaX, aDel
 
 
 
-function synthesizeNativeWheelAndWaitForWheelEvent(aElement, aX, aY, aDeltaX, aDeltaY, aCallback) {
-  var targetWindow = aElement.ownerDocument.defaultView;
+
+function synthesizeNativeWheelAndWaitForWheelEvent(aTarget, aX, aY, aDeltaX, aDeltaY, aCallback) {
+  var targetWindow = windowForTarget(aTarget);
   targetWindow.addEventListener("wheel", function(e) {
     setTimeout(aCallback, 0);
   }, {once: true});
-  return synthesizeNativeWheel(aElement, aX, aY, aDeltaX, aDeltaY);
+  return synthesizeNativeWheel(aTarget, aX, aY, aDeltaX, aDeltaY);
 }
 
 
@@ -191,20 +202,21 @@ function synthesizeNativeWheelAndWaitForWheelEvent(aElement, aX, aY, aDeltaX, aD
 
 
 
-function synthesizeNativeWheelAndWaitForScrollEvent(aElement, aX, aY, aDeltaX, aDeltaY, aCallback) {
-  var targetWindow = aElement.ownerDocument.defaultView;
+function synthesizeNativeWheelAndWaitForScrollEvent(aTarget, aX, aY, aDeltaX, aDeltaY, aCallback) {
+  var targetWindow = windowForTarget(aTarget);
   targetWindow.addEventListener("scroll", function() {
     setTimeout(aCallback, 0);
   }, {capture: true, once: true}); 
-  return synthesizeNativeWheel(aElement, aX, aY, aDeltaX, aDeltaY);
+  return synthesizeNativeWheel(aTarget, aX, aY, aDeltaX, aDeltaY);
 }
 
 
 
-function synthesizeNativeMouseMove(aElement, aX, aY) {
-  var pt = coordinatesRelativeToScreen(aX, aY, aElement);
-  var utils = SpecialPowers.getDOMWindowUtils(aElement.ownerDocument.defaultView);
-  utils.sendNativeMouseEvent(pt.x, pt.y, nativeMouseMoveEventMsg(), 0, aElement);
+function synthesizeNativeMouseMove(aTarget, aX, aY) {
+  var pt = coordinatesRelativeToScreen(aX, aY, aTarget);
+  var utils = SpecialPowers.getDOMWindowUtils(windowForTarget(aTarget));
+  var element = elementForTarget(aTarget);
+  utils.sendNativeMouseEvent(pt.x, pt.y, nativeMouseMoveEventMsg(), 0, element);
   return true;
 }
 
@@ -213,12 +225,12 @@ function synthesizeNativeMouseMove(aElement, aX, aY) {
 
 
 
-function synthesizeNativeMouseMoveAndWaitForMoveEvent(aElement, aX, aY, aCallback) {
-  var targetWindow = aElement.ownerDocument.defaultView;
+function synthesizeNativeMouseMoveAndWaitForMoveEvent(aTarget, aX, aY, aCallback) {
+  var targetWindow = windowForTarget(aTarget);
   targetWindow.addEventListener("mousemove", function(e) {
     setTimeout(aCallback, 0);
   }, {once: true});
-  return synthesizeNativeMouseMove(aElement, aX, aY);
+  return synthesizeNativeMouseMove(aTarget, aX, aY);
 }
 
 
@@ -369,12 +381,12 @@ function synthesizeNativeClick(aElement, aX, aY, aObserver = null) {
 
 
 
-function moveMouseAndScrollWheelOver(element, dx, dy, testDriver, waitForScroll = true) {
-  return synthesizeNativeMouseMoveAndWaitForMoveEvent(element, dx, dy, function() {
+function moveMouseAndScrollWheelOver(target, dx, dy, testDriver, waitForScroll = true) {
+  return synthesizeNativeMouseMoveAndWaitForMoveEvent(target, dx, dy, function() {
     if (waitForScroll) {
-      synthesizeNativeWheelAndWaitForScrollEvent(element, dx, dy, 0, -10, testDriver);
+      synthesizeNativeWheelAndWaitForScrollEvent(target, dx, dy, 0, -10, testDriver);
     } else {
-      synthesizeNativeWheelAndWaitForWheelEvent(element, dx, dy, 0, -10, testDriver);
+      synthesizeNativeWheelAndWaitForWheelEvent(target, dx, dy, 0, -10, testDriver);
     }
   });
 }
