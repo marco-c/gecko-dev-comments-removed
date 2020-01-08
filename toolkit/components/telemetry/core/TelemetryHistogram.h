@@ -10,6 +10,7 @@
 #include "mozilla/TelemetryHistogramEnums.h"
 #include "mozilla/TelemetryProcessEnums.h"
 #include "nsXULAppAPI.h"
+#include "TelemetryCommon.h"
 
 namespace mozilla {
 
@@ -77,6 +78,11 @@ void AccumulateChildKeyed(
     mozilla::Telemetry::ProcessID aProcessType,
     const nsTArray<mozilla::Telemetry::KeyedHistogramAccumulation>&
         aAccumulations);
+
+
+
+
+nsresult GetAllStores(mozilla::Telemetry::Common::StringHashSet& set);
 
 nsresult GetHistogramById(const nsACString& name, JSContext* cx,
                           JS::MutableHandle<JS::Value> ret);

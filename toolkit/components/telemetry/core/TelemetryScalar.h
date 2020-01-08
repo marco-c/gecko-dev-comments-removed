@@ -10,6 +10,7 @@
 #include "mozilla/TelemetryProcessEnums.h"
 #include "mozilla/TelemetryScalarEnums.h"
 #include "nsTArray.h"
+#include "TelemetryCommon.h"
 
 
 
@@ -103,6 +104,12 @@ void GetDynamicScalarDefinitions(
     nsTArray<mozilla::Telemetry::DynamicScalarDefinition>&);
 void AddDynamicScalarDefinitions(
     const nsTArray<mozilla::Telemetry::DynamicScalarDefinition>&);
+
+
+
+
+
+nsresult GetAllStores(mozilla::Telemetry::Common::StringHashSet& set);
 
 
 
