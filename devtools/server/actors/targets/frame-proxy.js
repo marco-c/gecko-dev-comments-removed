@@ -124,11 +124,23 @@ FrameTargetActorProxy.prototype = {
     return this;
   },
 
+  _isZombieTab() {
+    
+    if (this._browser.hasAttribute("pending")) {
+      return true;
+    }
+
+    
+    const tabbrowser = this._tabbrowser;
+    const tab = tabbrowser ? tabbrowser.getTabForBrowser(this._browser) : null;
+    return tab && tab.hasAttribute && tab.hasAttribute("pending");
+  },
+
   
 
 
 
-  get title() {
+  _getZombieTabTitle() {
     
     if (this._browser && this._browser.__SS_restore) {
       const sessionStore = this._browser.__SS_data;
@@ -145,14 +157,15 @@ FrameTargetActorProxy.prototype = {
         return tab.label;
       }
     }
-    return "";
+
+    return null;
   },
 
   
 
 
 
-  get url() {
+  _getZombieTabUrl() {
     
     if (this._browser && this._browser.__SS_restore) {
       const sessionStore = this._browser.__SS_data;
@@ -160,19 +173,16 @@ FrameTargetActorProxy.prototype = {
       const entry = sessionStore.entries[sessionStore.index - 1];
       return entry.url;
     }
+
     return null;
   },
 
   form() {
     const form = Object.assign({}, this._form);
     
-    
-    
-    if (!form.title) {
-      form.title = this.title;
-    }
-    if (!form.url) {
-      form.url = this.url;
+    if (this._isZombieTab()) {
+      form.title = this._getZombieTabTitle() || form.title;
+      form.url = this._getZombieTabUrl() || form.url;
     }
 
     return form;
