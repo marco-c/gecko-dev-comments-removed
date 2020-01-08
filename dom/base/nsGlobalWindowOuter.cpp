@@ -6435,6 +6435,7 @@ nsGlobalWindowOuter::GetPrivateRoot()
   return top;
 }
 
+
 Location*
 nsGlobalWindowOuter::GetLocation()
 {
