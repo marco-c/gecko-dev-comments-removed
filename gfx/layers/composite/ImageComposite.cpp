@@ -18,7 +18,10 @@ ImageComposite::ImageComposite()
   : mLastFrameID(-1)
   , mLastProducerID(-1)
   , mBias(BIAS_NONE)
-{}
+  , mDroppedFrames(0)
+  , mLastChosenImageIndex(0)
+{
+}
 
 ImageComposite::~ImageComposite()
 {
@@ -87,8 +90,12 @@ ImageComposite::UpdateBias(size_t aImageIndex)
 }
 
 int
-ImageComposite::ChooseImageIndex() const
+ImageComposite::ChooseImageIndex()
 {
+  
+  
+  
+  
   if (mImages.IsEmpty()) {
     return -1;
   }
@@ -106,15 +113,22 @@ ImageComposite::ChooseImageIndex() const
     return -1;
   }
 
-  uint32_t result = 0;
+  uint32_t result = mLastChosenImageIndex;
   while (result + 1 < mImages.Length() &&
          GetBiasedTime(mImages[result + 1].mTimeStamp) <= now) {
     ++result;
   }
+  if (result - mLastChosenImageIndex > 1) {
+    
+    
+    
+    mDroppedFrames += result - mLastChosenImageIndex - 1;
+  }
+  mLastChosenImageIndex = result;
   return result;
 }
 
-const ImageComposite::TimedImage* ImageComposite::ChooseImage() const
+const ImageComposite::TimedImage* ImageComposite::ChooseImage()
 {
   int index = ChooseImageIndex();
   return index >= 0 ? &mImages[index] : nullptr;
@@ -135,11 +149,69 @@ void
 ImageComposite::ClearImages()
 {
   mImages.Clear();
+  mLastChosenImageIndex = 0;
+}
+
+uint32_t
+ImageComposite::ScanForLastFrameIndex(const nsTArray<TimedImage>& aNewImages)
+{
+  if (mImages.IsEmpty()) {
+    return 0;
+  }
+  uint32_t i = mLastChosenImageIndex;
+  uint32_t newIndex = 0;
+  uint32_t dropped = 0;
+  
+  
+  uint32_t j = 0;
+  while (i < mImages.Length() && j < aNewImages.Length()) {
+    if (mImages[i].mProducerID != aNewImages[j].mProducerID) {
+      
+      newIndex = j;
+      break;
+    }
+    int32_t oldFrameID = mImages[i].mFrameID;
+    int32_t newFrameID = aNewImages[j].mFrameID;
+    if (oldFrameID > newFrameID) {
+      
+      
+      newIndex = ++j;
+      continue;
+    }
+    if (oldFrameID < mLastFrameID) {
+      
+      i++;
+      continue;
+    }
+    if (oldFrameID < newFrameID) {
+      
+      
+      
+      for (++i; i < mImages.Length() && mImages[i].mFrameID < newFrameID &&
+                mImages[i].mProducerID == aNewImages[j].mProducerID;
+           i++) {
+        dropped++;
+      }
+      break;
+    }
+    i++;
+    j++;
+  }
+  if (dropped > 0) {
+    mDroppedFrames += dropped;
+  }
+  if (newIndex >= aNewImages.Length()) {
+    
+    
+    newIndex = aNewImages.Length() - 1;
+  }
+  return newIndex;
 }
 
 void
 ImageComposite::SetImages(nsTArray<TimedImage>&& aNewImages)
 {
+  mLastChosenImageIndex = ScanForLastFrameIndex(aNewImages);
   mImages = std::move(aNewImages);
 }
 

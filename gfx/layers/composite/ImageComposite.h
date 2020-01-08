@@ -69,8 +69,8 @@ protected:
 
 
 
-  const TimedImage* ChooseImage() const;
-  int ChooseImageIndex() const;
+  const TimedImage* ChooseImage();
+  int ChooseImageIndex();
   const TimedImage* GetImage(size_t aIndex) const;
   size_t ImagesCount() const { return mImages.Length(); }
   const nsTArray<TimedImage>& Images() const { return mImages; }
@@ -86,9 +86,17 @@ private:
   nsTArray<TimedImage> mImages;
   TimeStamp GetBiasedTime(const TimeStamp& aInput) const;
   
+  
+  
+  
+  uint32_t ScanForLastFrameIndex(const nsTArray<TimedImage>& aNewImages);
+
+  
 
 
   Bias mBias;
+  uint32_t mDroppedFrames;
+  uint32_t mLastChosenImageIndex;
 };
 
 } 
