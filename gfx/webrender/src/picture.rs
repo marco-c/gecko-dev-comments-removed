@@ -38,24 +38,74 @@ use util::{TransformedRectKind, MatrixHelpers, MaxRect};
 
 
 
-
-pub struct PictureUpdateContext {
+struct PictureInfo {
     
-    
-    pub surface_index: SurfaceIndex,
-    
-    pub parent_spatial_node_index: SpatialNodeIndex,
+    spatial_node_index: SpatialNodeIndex,
 }
 
-impl PictureUpdateContext {
-    pub fn new(
-        surface_index: SurfaceIndex,
-        parent_spatial_node_index: SpatialNodeIndex,
-    ) -> Self {
-        PictureUpdateContext {
-            surface_index,
-            parent_spatial_node_index,
+
+
+pub struct PictureUpdateState<'a> {
+    pub surfaces: &'a mut Vec<SurfaceInfo>,
+    surface_stack: Vec<SurfaceIndex>,
+    picture_stack: Vec<PictureInfo>,
+}
+
+impl<'a> PictureUpdateState<'a> {
+    pub fn new(surfaces: &'a mut Vec<SurfaceInfo>) -> Self {
+        PictureUpdateState {
+            surfaces,
+            surface_stack: vec![SurfaceIndex(0)],
+            picture_stack: Vec::new(),
         }
+    }
+
+    
+    fn current_surface(&self) -> &SurfaceInfo {
+        &self.surfaces[self.surface_stack.last().unwrap().0]
+    }
+
+    
+    fn current_surface_mut(&mut self) -> &mut SurfaceInfo {
+        &mut self.surfaces[self.surface_stack.last().unwrap().0]
+    }
+
+    
+    fn push_surface(
+        &mut self,
+        surface: SurfaceInfo,
+    ) -> SurfaceIndex {
+        let surface_index = SurfaceIndex(self.surfaces.len());
+        self.surfaces.push(surface);
+        self.surface_stack.push(surface_index);
+        surface_index
+    }
+
+    
+    fn pop_surface(
+        &mut self,
+    ) {
+        self.surface_stack.pop().unwrap();
+    }
+
+    
+    fn current_picture(&self) -> Option<&PictureInfo> {
+        self.picture_stack.last()
+    }
+
+    
+    fn push_picture(
+        &mut self,
+        info: PictureInfo,
+    ) {
+        self.picture_stack.push(info);
+    }
+
+    
+    fn pop_picture(
+        &mut self,
+    ) -> PictureInfo {
+        self.picture_stack.pop().unwrap()
     }
 }
 
@@ -243,6 +293,10 @@ pub type ClusterRange = ops::Range<u32>;
 
 
 
+pub type PictureList = SmallVec<[PictureIndex; 4]>;
+
+
+
 
 
 pub struct PrimitiveList {
@@ -250,7 +304,7 @@ pub struct PrimitiveList {
     pub prim_instances: Vec<PrimitiveInstance>,
     
     
-    pub pictures: SmallVec<[PictureIndex; 4]>,
+    pub pictures: PictureList,
     
     pub clusters: SmallVec<[PrimitiveCluster; 4]>,
     
@@ -651,6 +705,7 @@ impl PicturePrimitive {
         transforms: &TransformPalette,
         prim_instance: &PrimitiveInstance,
         original_local_rect: LayoutRect,
+        world_rect: WorldRect,
         plane_split_anchor: usize,
     ) -> bool {
         let transform = transforms
@@ -669,6 +724,7 @@ impl PicturePrimitive {
             Some(rect) => rect.cast(),
             None => return false,
         };
+        let world_rect = world_rect.cast();
 
         match transform.transform_kind() {
             TransformedRectKind::AxisAligned => {
@@ -690,7 +746,7 @@ impl PicturePrimitive {
                         plane_split_anchor,
                     ),
                     &matrix,
-                    prim_instance.clipped_world_rect.map(|r| r.to_f64()),
+                    Some(world_rect),
                 );
                 if let Ok(results) = results {
                     for poly in results {
@@ -753,10 +809,9 @@ impl PicturePrimitive {
     
     pub fn pre_update(
         &mut self,
-        context: &PictureUpdateContext,
+        state: &mut PictureUpdateState,
         frame_context: &FrameBuildingContext,
-        surfaces: &mut Vec<SurfaceInfo>,
-    ) -> Option<(PictureUpdateContext, SmallVec<[PictureIndex; 4]>)> {
+    ) -> Option<PictureList> {
         
         self.raster_config = None;
 
@@ -767,112 +822,101 @@ impl PicturePrimitive {
         }
 
         
+        state.push_picture(PictureInfo {
+            spatial_node_index: self.spatial_node_index,
+        });
+
+        
         let actual_composite_mode = match self.requested_composite_mode {
             Some(PictureCompositeMode::Filter(filter)) if filter.is_noop() => None,
             mode => mode,
         };
 
-        let surface_index = match actual_composite_mode {
-            Some(composite_mode) => {
-                
-                let parent_raster_spatial_node_index = surfaces[context.surface_index.0].raster_spatial_node_index;
-                let surface_spatial_node_index = self.spatial_node_index;
+        if let Some(composite_mode) = actual_composite_mode {
+            
+            let parent_raster_spatial_node_index = state.current_surface().raster_spatial_node_index;
+            let surface_spatial_node_index = self.spatial_node_index;
 
-                
-                
-                let xf = frame_context.clip_scroll_tree.get_relative_transform(
-                    parent_raster_spatial_node_index,
-                    surface_spatial_node_index,
-                ).expect("BUG: unable to get relative transform");
+            
+            
+            let xf = frame_context.clip_scroll_tree.get_relative_transform(
+                parent_raster_spatial_node_index,
+                surface_spatial_node_index,
+            ).expect("BUG: unable to get relative transform");
 
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                let establishes_raster_root = xf.has_perspective_component();
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            let establishes_raster_root = xf.has_perspective_component();
 
-                
-                
-                
-                
-                let raster_space = RasterSpace::Screen;
+            
+            
+            
+            
+            let raster_space = RasterSpace::Screen;
 
-                let raster_spatial_node_index = if establishes_raster_root {
-                    surface_spatial_node_index
-                } else {
-                    parent_raster_spatial_node_index
-                };
+            let raster_spatial_node_index = if establishes_raster_root {
+                surface_spatial_node_index
+            } else {
+                parent_raster_spatial_node_index
+            };
 
-                let surface_index = SurfaceIndex(surfaces.len());
-                let surface = SurfaceInfo::new(
+            let surface_index = state.push_surface(
+                SurfaceInfo::new(
                     surface_spatial_node_index,
                     raster_spatial_node_index,
                     frame_context.world_rect,
                     &frame_context.clip_scroll_tree,
+                )
+            );
+
+            self.raster_config = Some(RasterConfig {
+                composite_mode,
+                surface_index,
+            });
+
+            
+            
+            if let Some(ref mut surface_desc) = self.surface_desc {
+                surface_desc.update(
+                    surface_spatial_node_index,
+                    raster_spatial_node_index,
+                    frame_context.clip_scroll_tree,
+                    raster_space,
                 );
-                surfaces.push(surface);
-
-                self.raster_config = Some(RasterConfig {
-                    composite_mode,
-                    surface_index,
-                });
-
-                
-                
-                if let Some(ref mut surface_desc) = self.surface_desc {
-                    surface_desc.update(
-                        surface_spatial_node_index,
-                        raster_spatial_node_index,
-                        frame_context.clip_scroll_tree,
-                        raster_space,
-                    );
-                }
-
-                surface_index
             }
-            None => {
-                context.surface_index
-            }
-        };
+        }
 
-        let child_context = PictureUpdateContext::new(
-            surface_index,
-            self.spatial_node_index,
-        );
-
-        Some((child_context, mem::replace(&mut self.prim_list.pictures, SmallVec::new())))
+        Some(mem::replace(&mut self.prim_list.pictures, SmallVec::new()))
     }
 
     
     
     pub fn post_update(
         &mut self,
-        parent_context: &PictureUpdateContext,
-        this_context: &PictureUpdateContext,
-        child_pictures: SmallVec<[PictureIndex; 4]>,
-        surfaces: &mut [SurfaceInfo],
+        child_pictures: PictureList,
+        state: &mut PictureUpdateState,
         frame_context: &FrameBuildingContext,
     ) {
         
-        
-        
+        state.pop_picture();
 
         for cluster in &mut self.prim_list.clusters {
-            
-            cluster.is_visible = false;
-
             
             if !cluster.is_backface_visible {
                 let containing_block_index = match self.context_3d {
                     Picture3DContext::Out => {
-                        parent_context.parent_spatial_node_index
+                        state.current_picture().map_or(ROOT_SPATIAL_NODE_INDEX, |info| {
+                            info.spatial_node_index
+                        })
                     }
                     Picture3DContext::In { root_data: Some(_), ancestor_index } => {
                         ancestor_index
@@ -905,7 +949,7 @@ impl PicturePrimitive {
 
             
             
-            let surface = &mut surfaces[this_context.surface_index.0];
+            let surface = state.current_surface_mut();
             surface.map_local_to_surface.set_target_spatial_node(
                 cluster.spatial_node_index,
                 frame_context.clip_scroll_tree,
@@ -932,19 +976,25 @@ impl PicturePrimitive {
             }
         };
         if let Some(inflation_size) = inflation_size {
-            let surface = &mut surfaces[this_context.surface_index.0];
+            let surface = state.current_surface_mut();
             surface.rect = surface.rect.inflate(inflation_size, inflation_size);
         }
 
         
+        self.prim_list.pictures = child_pictures;
+
         
         
-        if let Some(ref raster_config) = self.raster_config {
-            let surface_rect = surfaces[raster_config.surface_index.0].rect;
+        
+        if self.raster_config.is_some() {
+            let surface_rect = state.current_surface().rect;
             let surface_rect = TypedRect::from_untyped(&surface_rect.to_untyped());
 
             
-            let parent_surface = &mut surfaces[parent_context.surface_index.0];
+            state.pop_surface();
+
+            
+            let parent_surface = state.current_surface_mut();
             parent_surface.map_local_to_surface.set_target_spatial_node(
                 self.spatial_node_index,
                 frame_context.clip_scroll_tree,
@@ -955,9 +1005,6 @@ impl PicturePrimitive {
                 parent_surface.rect = parent_surface.rect.union(&parent_surface_rect);
             }
         }
-
-        
-        self.prim_list.pictures = child_pictures;
     }
 
     pub fn prepare_for_render(
@@ -965,6 +1012,7 @@ impl PicturePrimitive {
         pic_index: PictureIndex,
         prim_instance: &PrimitiveInstance,
         prim_local_rect: &LayoutRect,
+        clipped_prim_bounding_rect: WorldRect,
         surface_index: SurfaceIndex,
         frame_context: &FrameBuildingContext,
         frame_state: &mut FrameBuildingState,
@@ -1000,16 +1048,17 @@ impl PicturePrimitive {
 
         let pic_rect = PictureRect::from_untyped(&prim_local_rect.to_untyped());
 
-        let (clipped, unclipped, transform) = match get_raster_rects(
+        let (clipped, unclipped) = match get_raster_rects(
             pic_rect,
             &map_pic_to_raster,
             &map_raster_to_world,
-            prim_instance.clipped_world_rect.expect("bug1"),
+            clipped_prim_bounding_rect,
             frame_context.device_pixel_scale,
         ) {
             Some(info) => info,
             None => return false,
         };
+        let transform = map_pic_to_raster.get_transform();
 
         
         
