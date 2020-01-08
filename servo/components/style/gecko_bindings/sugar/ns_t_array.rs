@@ -97,6 +97,8 @@ impl<T> nsTArray<T> {
     
     
     
+    
+    
     pub unsafe fn set_len_pod(&mut self, len: u32)
     where
         T: Copy,
@@ -104,5 +106,18 @@ impl<T> nsTArray<T> {
         self.ensure_capacity(len as usize);
         let header = self.header_mut();
         header.mLength = len;
+    }
+
+    
+    
+    
+    pub fn assign_from_iter_pod<I>(&mut self, iter: I)
+    where
+        T: Copy,
+        I: ExactSizeIterator + Iterator<Item = T>,
+    {
+        debug_assert!(iter.len() <= 0xFFFFFFFF);
+        unsafe { self.set_len_pod(iter.len() as u32); }
+        self.iter_mut().zip(iter).for_each(|(r, v)| *r = v);
     }
 }
