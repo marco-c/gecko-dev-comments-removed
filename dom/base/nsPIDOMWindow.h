@@ -1094,7 +1094,8 @@ public:
 
   virtual void
   NotifyContentBlockingState(unsigned aState,
-                             nsIChannel* aChannel) = 0;
+                             nsIChannel* aChannel,
+                             nsIURI* aURIHint = nullptr) = 0;
 
   
   void MarkUncollectableForCCGeneration(uint32_t aGeneration)
