@@ -567,6 +567,8 @@ class LexicalEnvironmentObject : public EnvironmentObject {
     return enclosingEnvironment().as<GlobalObject>();
   }
 
+  void setWindowProxyThisValue(JSObject* obj);
+
   
   
   bool isExtensible() const;
