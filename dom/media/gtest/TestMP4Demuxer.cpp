@@ -197,8 +197,6 @@ ToCryptoString(const CryptoSample& aCrypto)
   return res;
 }
 
-#ifndef XP_WIN 
-
 TEST(MP4Demuxer, CENCFragVideo)
 {
   const char* video[] = {
@@ -399,8 +397,6 @@ TEST(MP4Demuxer, CENCFragAudio)
         }, DO_FAIL);
   });
 }
-
-#endif
 
 TEST(MP4Demuxer, GetNextKeyframe)
 {
