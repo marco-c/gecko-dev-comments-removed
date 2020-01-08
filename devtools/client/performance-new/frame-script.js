@@ -10,8 +10,11 @@
 
 
 const TRANSFER_EVENT = "devtools:perf-html-transfer-profile";
+const SYMBOL_TABLE_REQUEST_EVENT = "devtools:perf-html-request-symbol-table";
+const SYMBOL_TABLE_RESPONSE_EVENT = "devtools:perf-html-reply-symbol-table";
 
 let gProfile = null;
+const symbolReplyPromiseMap = new Map();
 
 addMessageListener(TRANSFER_EVENT, e => {
   gProfile = e.data;
@@ -20,6 +23,20 @@ addMessageListener(TRANSFER_EVENT, e => {
   
   
   addEventListener("DOMContentLoaded", connectToPage);
+});
+
+addMessageListener(SYMBOL_TABLE_RESPONSE_EVENT, e => {
+  const { debugName, breakpadId, status, result, error } = e.data;
+  const promiseKey = [debugName, breakpadId].join(":");
+  const { resolve, reject } = symbolReplyPromiseMap.get(promiseKey);
+  symbolReplyPromiseMap.delete(promiseKey);
+
+  if (status === "success") {
+    const [addresses, index, buffer] = result;
+    resolve([addresses, index, buffer]);
+  } else {
+    reject(error);
+  }
 });
 
 function connectToPage() {
@@ -32,17 +49,14 @@ function connectToPage() {
   }
 }
 
-
-
-
 function getSymbolTable(debugName, breakpadId) {
-  
-  
-  
-  const error = {
-    message: `The DevTools' "perf" actor does not support symbolication.`
-  };
-  return Promise.reject(error);
+  return new Promise((resolve, reject) => {
+    sendAsyncMessage(SYMBOL_TABLE_REQUEST_EVENT, { debugName, breakpadId });
+    symbolReplyPromiseMap.set([debugName, breakpadId].join(":"), {
+      resolve,
+      reject,
+    });
+  });
 }
 
 
