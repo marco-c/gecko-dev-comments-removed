@@ -177,7 +177,7 @@ function openLibrary(aLeftPaneRoot) {
 
 
 function promiseButtonShown(id) {
-  let dwu = window.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindowUtils);
+  let dwu = window.windowUtils;
   return BrowserTestUtils.waitForCondition(() => {
     let target = document.getElementById(id);
     let bounds = dwu.getBoundsWithoutFlushing(target);

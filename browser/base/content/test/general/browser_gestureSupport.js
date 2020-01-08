@@ -18,8 +18,7 @@ function test() {
   
   gGestureSupport.init(false);
 
-  test_utils = window.QueryInterface(Ci.nsIInterfaceRequestor).
-    getInterface(Ci.nsIDOMWindowUtils);
+  test_utils = window.windowUtils;
 
   
   test_EnsureConstantsAreDisjoint();

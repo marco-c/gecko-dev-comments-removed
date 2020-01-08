@@ -1677,8 +1677,7 @@ function assertActivatedPageActionPanelHidden() {
 }
 
 function promiseOpenPageActionPanel() {
-  let dwu = window.QueryInterface(Ci.nsIInterfaceRequestor)
-                  .getInterface(Ci.nsIDOMWindowUtils);
+  let dwu = window.windowUtils;
   return BrowserTestUtils.waitForCondition(() => {
     
     
@@ -1748,8 +1747,7 @@ function promisePageActionViewShown() {
 
 function promisePageActionViewChildrenVisible(panelViewNode) {
   info("promisePageActionViewChildrenVisible waiting for a child node to be visible");
-  let dwu = window.QueryInterface(Ci.nsIInterfaceRequestor)
-                  .getInterface(Ci.nsIDOMWindowUtils);
+  let dwu = window.windowUtils;
   return BrowserTestUtils.waitForCondition(() => {
     let bodyNode = panelViewNode.firstChild;
     for (let childNode of bodyNode.childNodes) {

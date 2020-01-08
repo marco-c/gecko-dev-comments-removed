@@ -1299,8 +1299,7 @@ window._gBrowser = {
       return false;
     }
 
-    let dwu = window.QueryInterface(Ci.nsIInterfaceRequestor)
-                    .getInterface(Ci.nsIDOMWindowUtils);
+    let dwu = window.windowUtils;
     let isRTL = dwu.getDirectionFromText(aLabel) == Ci.nsIDOMWindowUtils.DIRECTION_RTL;
 
     aTab.setAttribute("label", aLabel);
@@ -2624,8 +2623,7 @@ window._gBrowser = {
     }
 
     var isLastTab = (this.tabs.length - this._removingTabs.length == 1);
-    let windowUtils = window.QueryInterface(Ci.nsIInterfaceRequestor)
-                            .getInterface(Ci.nsIDOMWindowUtils);
+    let windowUtils = window.windowUtils;
     
     
     
@@ -2807,9 +2805,7 @@ window._gBrowser = {
     if (aTab.linkedPanel) {
       if (!aAdoptedByTab && !gMultiProcessBrowser) {
         
-        var windowUtils = browser.contentWindow.QueryInterface(Ci.nsIInterfaceRequestor)
-                                               .getInterface(Ci.nsIDOMWindowUtils);
-        windowUtils.disableDialogs();
+        browser.contentWindow.windowUtils.disableDialogs();
       }
 
       
@@ -3053,9 +3049,7 @@ window._gBrowser = {
     let [closeWindow] = aOtherTab._endRemoveArgs;
     if (closeWindow) {
       let win = aOtherTab.ownerGlobal;
-      let dwu = win.QueryInterface(Ci.nsIInterfaceRequestor)
-                   .getInterface(Ci.nsIDOMWindowUtils);
-      dwu.suppressAnimation(true);
+      win.windowUtils.suppressAnimation(true);
       
       
       let baseWin = win.QueryInterface(Ci.nsIInterfaceRequestor)
@@ -4125,9 +4119,7 @@ window._gBrowser = {
       this._uniquePanelIDCounter = 0;
     }
 
-    let outerID = window.QueryInterface(Ci.nsIInterfaceRequestor)
-                        .getInterface(Ci.nsIDOMWindowUtils)
-                        .outerWindowID;
+    let outerID = window.windowUtils.outerWindowID;
 
     
     
@@ -4900,8 +4892,7 @@ var StatusPanel = {
       
       
       this.panel.style.minWidth =
-        window.QueryInterface(Ci.nsIInterfaceRequestor)
-              .getInterface(Ci.nsIDOMWindowUtils)
+        window.windowUtils
               .getBoundsWithoutFlushing(this.panel).width + "px";
     } else {
       this.panel.style.minWidth = "";

@@ -14,8 +14,7 @@ ChromeUtils.defineModuleGetter(this, "PlacesTestUtils",
 
 
 function dirtyFrame(win) {
-  let dwu = win.QueryInterface(Ci.nsIInterfaceRequestor)
-               .getInterface(Ci.nsIDOMWindowUtils);
+  let dwu = win.windowUtils;
   try {
     dwu.ensureDirtyRootFrame();
   } catch (e) {
@@ -235,8 +234,7 @@ function forceImmediateToolbarOverflowHandling(win) {
     overflowableToolbar._lazyResizeHandler.disarm();
     
     
-    let dwu = win.QueryInterface(Ci.nsIInterfaceRequestor)
-                 .getInterface(Ci.nsIDOMWindowUtils);
+    let dwu = win.windowUtils;
     dwu.ensureDirtyRootFrame();
     overflowableToolbar._onLazyResize();
   }

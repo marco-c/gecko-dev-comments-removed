@@ -896,8 +896,7 @@ class FormAutofillHandler {
     
 
 
-    this.winUtils = this.form.rootElement.ownerGlobal.QueryInterface(Ci.nsIInterfaceRequestor)
-      .getInterface(Ci.nsIDOMWindowUtils);
+    this.winUtils = this.form.rootElement.ownerGlobal.windowUtils;
 
     
 

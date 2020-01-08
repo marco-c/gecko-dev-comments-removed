@@ -38,9 +38,7 @@ this.TranslationDocument.prototype = {
 
 
   _init(document) {
-    let window = document.defaultView;
-    let winUtils = window.QueryInterface(Ci.nsIInterfaceRequestor)
-                         .getInterface(Ci.nsIDOMWindowUtils);
+    let winUtils = document.defaultView.windowUtils;
 
     
     

@@ -15,8 +15,7 @@ async function togglePageActionPanel() {
 }
 
 function promiseOpenPageActionPanel() {
-  const dwu = window.QueryInterface(Ci.nsIInterfaceRequestor)
-                    .getInterface(Ci.nsIDOMWindowUtils);
+  const dwu = window.windowUtils;
   return BrowserTestUtils.waitForCondition(() => {
     
     
@@ -55,8 +54,7 @@ function promisePageActionPanelEvent(eventType) {
 
 function promisePageActionViewChildrenVisible(panelViewNode) {
   info("promisePageActionViewChildrenVisible waiting for a child node to be visible");
-  const dwu = window.QueryInterface(Ci.nsIInterfaceRequestor)
-                    .getInterface(Ci.nsIDOMWindowUtils);
+  const dwu = window.windowUtils;
   return BrowserTestUtils.waitForCondition(() => {
     const bodyNode = panelViewNode.firstChild;
     for (const childNode of bodyNode.childNodes) {

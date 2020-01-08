@@ -516,9 +516,7 @@ class SessionStorageListener extends Handler {
     let {content} = this.mm;
 
     
-    let usage = content.QueryInterface(Ci.nsIInterfaceRequestor)
-                       .getInterface(Ci.nsIDOMWindowUtils)
-                       .getStorageUsage(event.storageArea);
+    let usage = content.windowUtils.getStorageUsage(event.storageArea);
 
     
     
