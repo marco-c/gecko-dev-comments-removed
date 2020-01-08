@@ -668,6 +668,10 @@ class MozFindbar extends XULElement {
       this.setAttribute("noanim", true);
     this.hidden = true;
 
+    let event = document.createEvent("Events");
+    event.initEvent("findbarclose", true, false);
+    this.dispatchEvent(event);
+
     
     
     this.browser.finder.focusContent();
