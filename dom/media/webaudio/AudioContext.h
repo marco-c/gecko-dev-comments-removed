@@ -347,6 +347,9 @@ private:
   void ResumeInternal();
   void SuspendInternal(void* aPromise);
 
+  
+  void DispatchBlockedEvent();
+
 private:
   
   
