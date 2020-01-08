@@ -2695,7 +2695,9 @@ gfxPlatform::InitWebRenderConfig()
           featureWebRenderQualified.Disable(FeatureStatus::Blocked,
                                             "Bad device id",
                                             NS_LITERAL_CSTRING("FEATURE_FAILURE_BAD_DEVICE_ID"));
-        } else if (deviceID < 1000) { 
+        } else if (deviceID < 0x6c0) {
+           
+           
           featureWebRenderQualified.Disable(FeatureStatus::Blocked,
                                             "Device too old",
                                             NS_LITERAL_CSTRING("FEATURE_FAILURE_DEVICE_TOO_OLD"));

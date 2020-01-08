@@ -126,6 +126,7 @@ class Encoding;
 class ErrorResult;
 class EventStates;
 class EventListenerManager;
+struct FullscreenRequest;
 class PendingAnimationTracker;
 class ServoStyleSet;
 template<typename> class OwningNonNull;
@@ -161,7 +162,6 @@ class Event;
 class EventTarget;
 class FontFaceSet;
 class FrameRequestCallback;
-struct FullscreenRequest;
 class ImageTracker;
 class HTMLBodyElement;
 class HTMLSharedElement;
@@ -447,9 +447,9 @@ protected:
 
 public:
   typedef nsExternalResourceMap::ExternalResourceLoad ExternalResourceLoad;
+  typedef mozilla::FullscreenRequest FullscreenRequest;
   typedef mozilla::net::ReferrerPolicy ReferrerPolicyEnum;
   typedef mozilla::dom::Element Element;
-  typedef mozilla::dom::FullscreenRequest FullscreenRequest;
 
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_IDOCUMENT_IID)
 
@@ -1757,8 +1757,8 @@ public:
 
   
   
-  bool FullscreenElementReadyCheck(Element* aElement,
-                                   mozilla::dom::CallerType aCallerType);
+  
+  bool FullscreenElementReadyCheck(const FullscreenRequest&);
 
   
   
@@ -1854,12 +1854,6 @@ public:
 
 
   static bool HandlePendingFullscreenRequests(nsIDocument* aDocument);
-
-  
-
-
-
-  void DispatchFullscreenError(const char* aMessage, nsINode* aTarget);
 
   void RequestPointerLock(Element* aElement, mozilla::dom::CallerType);
   bool SetPointerLock(Element* aElement, int aCursorStyle);
@@ -3801,7 +3795,7 @@ protected:
   
   
   
-  bool ApplyFullscreen(const FullscreenRequest& aRequest);
+  bool ApplyFullscreen(mozilla::UniquePtr<FullscreenRequest> aRequest);
 
   bool GetUseCounter(mozilla::UseCounter aUseCounter)
   {

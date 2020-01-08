@@ -506,11 +506,20 @@ class LinuxToolchainTest(BaseToolchainTest):
     DEFAULT_CLANG_RESULT = CLANG_3_6_RESULT + {'compiler': '/usr/bin/clang'}
     DEFAULT_CLANGXX_RESULT = CLANGXX_3_6_RESULT + {'compiler': '/usr/bin/clang++'}
 
-    def test_gcc(self):
+    def test_default(self):
         
+        self.do_toolchain_test(self.PATHS, {
+            'c_compiler': self.DEFAULT_CLANG_RESULT,
+            'cxx_compiler': self.DEFAULT_CLANGXX_RESULT,
+        })
+
+    def test_gcc(self):
         self.do_toolchain_test(self.PATHS, {
             'c_compiler': self.DEFAULT_GCC_RESULT,
             'cxx_compiler': self.DEFAULT_GXX_RESULT,
+        }, environ={
+            'CC': 'gcc',
+            'CXX': 'g++',
         })
 
     def test_unsupported_gcc(self):
@@ -526,6 +535,7 @@ class LinuxToolchainTest(BaseToolchainTest):
             'c_compiler': self.DEFAULT_GCC_RESULT,
             'cxx_compiler': self.GXX_4_9_RESULT,
         }, environ={
+            'CC': 'gcc',
             'CXX': 'g++-4.9',
         })
 
@@ -555,6 +565,7 @@ class LinuxToolchainTest(BaseToolchainTest):
                 'C++ compiler is version 7.3.0. Need to use the same compiler '
                 'version.'),
         }, environ={
+            'CC': 'gcc',
             'CXX': 'g++-7',
         })
 
@@ -567,28 +578,29 @@ class LinuxToolchainTest(BaseToolchainTest):
                 'C++ compiler is version 7.3.0. Need to use the same compiler '
                 'version.'),
         }, environ={
+            'CC': 'gcc',
             'HOST_CXX': 'g++-7',
         })
 
     def test_mismatched_compiler(self):
         self.do_toolchain_test(self.PATHS, {
-            'c_compiler': self.DEFAULT_GCC_RESULT,
+            'c_compiler': self.DEFAULT_CLANG_RESULT,
             'cxx_compiler': (
-                'The target C compiler is gcc, while the target C++ compiler '
-                'is clang. Need to use the same compiler suite.'),
+                'The target C compiler is clang, while the target C++ compiler '
+                'is gcc. Need to use the same compiler suite.'),
         }, environ={
-            'CXX': 'clang++',
+            'CXX': 'g++',
         })
 
         self.do_toolchain_test(self.PATHS, {
-            'c_compiler': self.DEFAULT_GCC_RESULT,
-            'cxx_compiler': self.DEFAULT_GXX_RESULT,
-            'host_c_compiler': self.DEFAULT_GCC_RESULT,
+            'c_compiler': self.DEFAULT_CLANG_RESULT,
+            'cxx_compiler': self.DEFAULT_CLANGXX_RESULT,
+            'host_c_compiler': self.DEFAULT_CLANG_RESULT,
             'host_cxx_compiler': (
-                'The host C compiler is gcc, while the host C++ compiler '
-                'is clang. Need to use the same compiler suite.'),
+                'The host C compiler is clang, while the host C++ compiler '
+                'is gcc. Need to use the same compiler suite.'),
         }, environ={
-            'HOST_CXX': 'clang++',
+            'HOST_CXX': 'g++',
         })
 
         self.do_toolchain_test(self.PATHS, {
@@ -599,11 +611,11 @@ class LinuxToolchainTest(BaseToolchainTest):
         })
 
         self.do_toolchain_test(self.PATHS, {
-            'c_compiler': self.DEFAULT_GCC_RESULT,
+            'c_compiler': self.DEFAULT_CLANG_RESULT,
             'cxx_compiler': '`%s` is not a C++ compiler.'
-            % mozpath.abspath('/usr/bin/gcc'),
+            % mozpath.abspath('/usr/bin/clang'),
         }, environ={
-            'CXX': 'gcc',
+            'CXX': 'clang',
         })
 
     def test_clang(self):
@@ -730,6 +742,8 @@ class LinuxSimpleCrossToolchainTest(BaseToolchainTest):
             },
             'host_c_compiler': self.DEFAULT_GCC_RESULT,
             'host_cxx_compiler': self.DEFAULT_GXX_RESULT,
+        }, environ={
+            'CC': 'gcc'
         })
 
     def test_cross_clang(self):
@@ -742,8 +756,6 @@ class LinuxSimpleCrossToolchainTest(BaseToolchainTest):
             },
             'host_c_compiler': self.DEFAULT_CLANG_RESULT,
             'host_cxx_compiler': self.DEFAULT_CLANGXX_RESULT,
-        }, environ={
-            'CC': 'clang',
         })
 
 
@@ -771,6 +783,8 @@ class LinuxX86_64CrossToolchainTest(BaseToolchainTest):
             },
             'host_c_compiler': self.DEFAULT_GCC_RESULT,
             'host_cxx_compiler': self.DEFAULT_GXX_RESULT,
+        }, environ={
+            'CC': 'gcc',
         })
 
     def test_cross_clang(self):
@@ -783,8 +797,6 @@ class LinuxX86_64CrossToolchainTest(BaseToolchainTest):
             },
             'host_c_compiler': self.DEFAULT_CLANG_RESULT,
             'host_cxx_compiler': self.DEFAULT_CLANGXX_RESULT,
-        }, environ={
-            'CC': 'clang',
         })
 
 
@@ -1476,6 +1488,36 @@ class OSXCrossToolchainTest(BaseToolchainTest):
                           'match --target kernel (Darwin)',
         }, environ={
             'CC': 'gcc',
+        })
+
+
+class WindowsCrossToolchainTest(BaseToolchainTest):
+    TARGET = 'x86_64-pc-mingw32'
+    DEFAULT_CLANG_RESULT = LinuxToolchainTest.DEFAULT_CLANG_RESULT
+    DEFAULT_CLANGXX_RESULT = LinuxToolchainTest.DEFAULT_CLANGXX_RESULT
+
+    def test_wsl_cross(self):
+        paths = {
+            '/usr/bin/cl': VS_2017u6 + VS_PLATFORM_X86_64,
+        }
+        paths.update(LinuxToolchainTest.PATHS)
+        self.do_toolchain_test(paths, {
+            'c_compiler': WindowsToolchainTest.VS_2017u6_RESULT,
+            'cxx_compiler': WindowsToolchainTest.VSXX_2017u6_RESULT,
+            'host_c_compiler': self.DEFAULT_CLANG_RESULT,
+            'host_cxx_compiler': self.DEFAULT_CLANGXX_RESULT,
+        })
+
+    def test_clang_cl_cross(self):
+        paths = {
+            '/usr/bin/clang-cl': CLANG_CL_3_9 + CLANG_CL_PLATFORM_X86_64,
+        }
+        paths.update(LinuxToolchainTest.PATHS)
+        self.do_toolchain_test(paths, {
+            'c_compiler': WindowsToolchainTest.CLANG_CL_3_9_RESULT,
+            'cxx_compiler': WindowsToolchainTest.CLANGXX_CL_3_9_RESULT,
+            'host_c_compiler': self.DEFAULT_CLANG_RESULT,
+            'host_cxx_compiler': self.DEFAULT_CLANGXX_RESULT,
         })
 
 
