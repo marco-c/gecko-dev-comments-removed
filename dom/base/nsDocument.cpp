@@ -13786,8 +13786,13 @@ nsIDocument::RequestStorageAccess(mozilla::ErrorResult& aRv)
       
       
       DebugOnly<bool> isOnAllowList = false;
+      
+      
+      
+      MOZ_ASSERT_IF(parent, !nsContentUtils::IsInPrivateBrowsing(parent));
       MOZ_ASSERT_IF(NS_SUCCEEDED(AntiTrackingCommon::IsOnContentBlockingAllowList(
                                    parent->GetDocumentURI(),
+                                   false,
                                    AntiTrackingCommon::eStorageChecks,
                                    isOnAllowList)),
                     !isOnAllowList);

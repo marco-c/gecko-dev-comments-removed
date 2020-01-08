@@ -138,6 +138,7 @@ public:
   
   static nsresult
   IsOnContentBlockingAllowList(nsIURI* aTopWinURI,
+                               bool aIsPrivateBrowsing,
                                ContentBlockingAllowListPurpose aPurpose,
                                bool& aIsAllowListed);
 
