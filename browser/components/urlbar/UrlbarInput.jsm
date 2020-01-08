@@ -351,7 +351,10 @@ class UrlbarInput {
 
 
 
+
+
   startQuery({
+    searchString = "",
     lastKey = null,
   } = {}) {
     this.controller.startQuery(new QueryContext({
@@ -361,7 +364,7 @@ class UrlbarInput {
       maxResults: UrlbarPrefs.get("maxRichResults"),
       muxer: "UnifiedComplete",
       providers: ["UnifiedComplete"],
-      searchString: this.textValue,
+      searchString,
     }));
   }
 
@@ -662,8 +665,8 @@ class UrlbarInput {
     }
   }
 
-  _on_input() {
-    let value = this.textValue;
+  _on_input(event) {
+    let value = event.target.value;
     this.valueIsTyped = true;
     this._untrimmedValue = value;
     this.window.gBrowser.userTypedValue = value;
@@ -676,6 +679,7 @@ class UrlbarInput {
 
     
     this.startQuery({
+      searchString: value,
       lastKey: null,
     });
   }
