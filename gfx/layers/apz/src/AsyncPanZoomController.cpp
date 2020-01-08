@@ -4256,7 +4256,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(const ScrollMetadata& aScrollMe
   
 
   bool needContentRepaint = false;
-  bool userAction = false;
+  RepaintUpdateType contentRepaintType = RepaintUpdateType::eNone;
   bool viewportUpdated = false;
 
   
@@ -4393,7 +4393,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(const ScrollMetadata& aScrollMe
         
         if (Metrics().HasPendingScroll(aLayerMetrics)) {
           needContentRepaint = true;
-          userAction = true;
+          contentRepaintType = RepaintUpdateType::eUserAction;
         }
 
         relativeDelta = Some(Metrics().ApplyRelativeScrollUpdateFrom(aLayerMetrics));
@@ -4475,11 +4475,8 @@ void AsyncPanZoomController::NotifyLayersUpdated(const ScrollMetadata& aScrollMe
 
   if (needContentRepaint) {
     
-    RepaintUpdateType updateType = RepaintUpdateType::eNone;
-    if (userAction) {
-      updateType = RepaintUpdateType::eUserAction;
-    }
-    RequestContentRepaint(updateType);
+    
+    RequestContentRepaint(contentRepaintType);
   }
   UpdateSharedCompositorFrameMetrics();
 }
