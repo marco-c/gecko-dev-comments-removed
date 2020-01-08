@@ -226,6 +226,17 @@ bool Compartment::getNonWrapperObjectForCurrentCompartment(
 
   
   
+  if (!AllowNewWrapper(this, obj)) {
+    JSObject* res = NewDeadProxyObject(cx);
+    if (!res) {
+      return false;
+    }
+    obj.set(res);
+    return true;
+  }
+
+  
+  
   
   
   

@@ -109,11 +109,6 @@ extern JS_FRIEND_API JSObject* JS_NewDeadWrapper(
 
 
 
-extern JS_FRIEND_API bool JS_IsScriptSourceObject(JSObject* obj);
-
-
-
-
 
 extern JS_FRIEND_API void JS_TraceShapeCycleCollectorChildren(
     JS::CallbackTracer* trc, JS::GCCellPtr shape);
@@ -1184,9 +1179,14 @@ struct CompartmentsWithPrincipals : public CompartmentFilter {
 };
 
 extern JS_FRIEND_API bool NukeCrossCompartmentWrappers(
-    JSContext* cx, const CompartmentFilter& sourceFilter,
-    JS::Compartment* target, NukeReferencesToWindow nukeReferencesToWindow,
+    JSContext* cx, const CompartmentFilter& sourceFilter, JS::Realm* target,
+    NukeReferencesToWindow nukeReferencesToWindow,
     NukeReferencesFromTarget nukeReferencesFromTarget);
+
+extern JS_FRIEND_API bool AllowNewWrapper(JS::Compartment* target,
+                                          JSObject* obj);
+
+extern JS_FRIEND_API bool NukedObjectRealm(JSObject* obj);
 
 
 

@@ -441,6 +441,11 @@ class JS::Realm : public JS::shadow::Realm {
   bool firedOnNewGlobalObject = false;
 #endif
 
+  
+  
+  
+  bool nukedIncomingWrappers = false;
+
  private:
   void updateDebuggerObservesFlag(unsigned flag);
 

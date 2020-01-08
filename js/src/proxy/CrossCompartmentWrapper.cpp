@@ -461,6 +461,16 @@ JS_FRIEND_API void js::NukeCrossCompartmentWrapper(JSContext* cx,
 }
 
 
+static bool NukedAllRealms(JS::Compartment* comp) {
+  for (RealmsInCompartmentIter realm(comp); !realm.done(); realm.next()) {
+    if (!realm->nukedIncomingWrappers) {
+      return false;
+    }
+  }
+  return true;
+}
+
+
 
 
 
@@ -469,11 +479,17 @@ JS_FRIEND_API void js::NukeCrossCompartmentWrapper(JSContext* cx,
 
 
 JS_FRIEND_API bool js::NukeCrossCompartmentWrappers(
-    JSContext* cx, const CompartmentFilter& sourceFilter,
-    JS::Compartment* target, js::NukeReferencesToWindow nukeReferencesToWindow,
+    JSContext* cx, const CompartmentFilter& sourceFilter, JS::Realm* target,
+    js::NukeReferencesToWindow nukeReferencesToWindow,
     js::NukeReferencesFromTarget nukeReferencesFromTarget) {
   CHECK_THREAD(cx);
   JSRuntime* rt = cx->runtime();
+
+  
+  
+  if (nukeReferencesFromTarget == NukeAllReferences) {
+    target->nukedIncomingWrappers = true;
+  }
 
   for (CompartmentsIter c(rt); !c.done(); c.next()) {
     if (!sourceFilter.match(c)) {
@@ -483,7 +499,8 @@ JS_FRIEND_API bool js::NukeCrossCompartmentWrappers(
     
     
     bool nukeAll =
-        (nukeReferencesFromTarget == NukeAllReferences && target == c.get());
+        (nukeReferencesFromTarget == NukeAllReferences &&
+         target->compartment() == c.get() && NukedAllRealms(c.get()));
 
     
     
@@ -492,9 +509,10 @@ JS_FRIEND_API bool js::NukeCrossCompartmentWrappers(
     
     mozilla::Maybe<Compartment::NonStringWrapperEnum> e;
     if (MOZ_LIKELY(!nukeAll)) {
-      e.emplace(c, target);
+      e.emplace(c, target->compartment());
     } else {
       e.emplace(c);
+      c.get()->nukedOutgoingWrappers = true;
     }
     for (; !e->empty(); e->popFront()) {
       
@@ -510,6 +528,13 @@ JS_FRIEND_API bool js::NukeCrossCompartmentWrappers(
       
       
       JSObject* wrapped = UncheckedUnwrap(k.as<JSObject*>());
+
+      
+      
+      
+      if (!nukeAll && wrapped->nonCCWRealm() != target) {
+        continue;
+      }
 
       
       
@@ -532,6 +557,31 @@ JS_FRIEND_API bool js::NukeCrossCompartmentWrappers(
   }
 
   return true;
+}
+
+JS_FRIEND_API bool js::AllowNewWrapper(JS::Compartment* target, JSObject* obj) {
+  
+  
+  
+  
+  
+
+  MOZ_ASSERT(obj->compartment() != target);
+
+  if (obj->is<ScriptSourceObject>()) {
+    return true;
+  }
+
+  if (target->nukedOutgoingWrappers ||
+      obj->nonCCWRealm()->nukedIncomingWrappers) {
+    return false;
+  }
+
+  return true;
+}
+
+JS_FRIEND_API bool js::NukedObjectRealm(JSObject* obj) {
+  return obj->nonCCWRealm()->nukedIncomingWrappers;
 }
 
 
