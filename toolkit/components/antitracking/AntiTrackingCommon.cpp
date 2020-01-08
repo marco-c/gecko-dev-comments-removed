@@ -242,26 +242,21 @@ void ReportBlockingToConsole(nsPIDOMWindowOuter* aWindow, nsIURI* aURI,
   }
 
   const char* message = nullptr;
-  nsAutoCString category;
   switch (aRejectedReason) {
     case nsIWebProgressListener::STATE_COOKIES_BLOCKED_BY_PERMISSION:
       message = "CookieBlockedByPermission";
-      category = NS_LITERAL_CSTRING("cookieBlockedPermission");
       break;
 
     case nsIWebProgressListener::STATE_COOKIES_BLOCKED_TRACKER:
       message = "CookieBlockedTracker";
-      category = NS_LITERAL_CSTRING("cookieBlockedTracker");
       break;
 
     case nsIWebProgressListener::STATE_COOKIES_BLOCKED_ALL:
       message = "CookieBlockedAll";
-      category = NS_LITERAL_CSTRING("cookieBlockedAll");
       break;
 
     case nsIWebProgressListener::STATE_COOKIES_BLOCKED_FOREIGN:
       message = "CookieBlockedForeign";
-      category = NS_LITERAL_CSTRING("cookieBlockedForeign");
       break;
 
     default:
@@ -282,9 +277,9 @@ void ReportBlockingToConsole(nsPIDOMWindowOuter* aWindow, nsIURI* aURI,
   NS_ConvertUTF8toUTF16 spec(exposableURI->GetSpecOrDefault());
   const char16_t* params[] = {spec.get()};
 
-  nsContentUtils::ReportToConsole(nsIScriptError::warningFlag, category, doc,
-                                  nsContentUtils::eNECKO_PROPERTIES, message,
-                                  params, ArrayLength(params));
+  nsContentUtils::ReportToConsole(
+      nsIScriptError::warningFlag, NS_LITERAL_CSTRING("Content Blocking"), doc,
+      nsContentUtils::eNECKO_PROPERTIES, message, params, ArrayLength(params));
 }
 
 void ReportUnblockingConsole(
@@ -928,8 +923,8 @@ bool AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(
     
     
     
-    MOZ_ASSERT(nsContentUtils::IsThirdPartyWindowOrChannel(
-                   aWindow, nullptr, aURI) == NS_SUCCEEDED(rv));
+    MOZ_ASSERT_IF(NS_SUCCEEDED(rv), nsContentUtils::IsThirdPartyWindowOrChannel(
+                                        aWindow, nullptr, aURI) == thirdParty);
   }
 #endif
 
