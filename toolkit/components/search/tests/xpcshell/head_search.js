@@ -483,10 +483,9 @@ const TELEMETRY_RESULT_ENUM = {
 function checkCountryResultTelemetry(aExpectedValue) {
   let histogram = Services.telemetry.getHistogramById("SEARCH_SERVICE_COUNTRY_FETCH_RESULT");
   let snapshot = histogram.snapshot();
-  
-  let expectedCounts = [0, 0, 0, 0, 0, 0, 0, 0, 0];
   if (aExpectedValue != null) {
-    expectedCounts[aExpectedValue] = 1;
+    equal(snapshot.values[aExpectedValue], 1);
+  } else {
+    deepEqual(snapshot.values, {});
   }
-  deepEqual(snapshot.counts, expectedCounts);
 }

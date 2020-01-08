@@ -49,7 +49,7 @@ function run_test() {
     
     let histogram = Services.telemetry.getHistogramById("SEARCH_SERVICE_COUNTRY_TIMEOUT");
     let snapshot = histogram.snapshot();
-    deepEqual(snapshot.counts, [0, 1, 0]);
+    deepEqual(snapshot.values, {0: 0, 1: 1, 2: 0});
 
     
     
