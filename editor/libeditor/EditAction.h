@@ -21,6 +21,35 @@ enum class EditAction
   
   
   eNotEditing,
+
+  
+  eSetTextDirection,
+
+  
+  
+
+  
+  
+  
+  eUnknown,
+
+  
+  eSetAttribute,
+
+  
+  eRemoveAttribute,
+
+  
+  eInsertNode,
+
+  
+  eRemoveNode,
+
+  
+  eSplitNode,
+
+  
+  eJoinNodes,
 };
 
 
