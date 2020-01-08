@@ -886,6 +886,29 @@ public:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   void NS_FASTCALL SetCapacity(size_type aNewCapacity);
   MOZ_MUST_USE bool NS_FASTCALL SetCapacity(size_type aNewCapacity,
                                             const fallible_t&);
