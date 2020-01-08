@@ -9,9 +9,6 @@
 
 #include "mozilla/dom/FontFaceBinding.h"
 #include "mozilla/FontPropertyTypes.h"
-#include "mozilla/Maybe.h"
-#include "mozilla/Pair.h"
-#include "mozilla/ServoStyleConsts.h"
 #include "gfxUserFontSet.h"
 #include "nsAutoPtr.h"
 #include "nsCSSPropertyID.h"
@@ -58,7 +55,7 @@ public:
           const nsTArray<gfxFontVariation>& aVariationSettings,
           uint32_t aLanguageOverride,
           gfxCharacterMap* aUnicodeRanges,
-          StyleFontDisplay aFontDisplay,
+          uint8_t aFontDisplay,
           RangeFlags aRangeFlags)
       : gfxUserFontEntry(aFontSet, aFontFaceSrcList, aWeight, aStretch,
                          aStyle, aFeatureSettings, aVariationSettings,
@@ -90,15 +87,7 @@ public:
 
   RawServoFontFaceRule* GetRule() { return mRule; }
 
-  bool HasLocalSrc() const;
-  Maybe<StyleComputedFontWeightRange> GetFontWeight() const;
-  Maybe<StyleComputedFontStretchRange> GetFontStretch() const;
-  Maybe<StyleComputedFontStyleDescriptor> GetFontStyle() const;
-  Maybe<StyleFontDisplay> GetFontDisplay() const;
-  void GetFontFeatureSettings(nsTArray<gfxFontFeature>&) const;
-  void GetFontVariationSettings(nsTArray<gfxFontVariation>&) const;
-  void GetSources(nsTArray<StyleFontFaceSourceListComponent>&) const;
-  Maybe<StyleFontLanguageOverride> GetFontLanguageOverride() const;
+  void GetDesc(nsCSSFontDesc aDescID, nsCSSValue& aResult) const;
 
   gfxUserFontEntry* CreateUserFontEntry();
   gfxUserFontEntry* GetUserFontEntry() const { return mUserFontEntry; }
@@ -119,7 +108,7 @@ public:
 
 
 
-  nsAtom* GetFamilyName() const;
+  bool GetFamilyName(nsCString& aResult);
 
   
 

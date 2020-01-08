@@ -51,7 +51,7 @@ protected:
   virtual ~nsFontFaceLoader();
 
   
-  mozilla::StyleFontDisplay GetFontDisplay();
+  uint8_t GetFontDisplay();
 
 private:
   RefPtr<gfxUserFontEntry>  mUserFontEntry;
