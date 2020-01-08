@@ -3190,6 +3190,22 @@ void nsWindow::OnCompositedChanged() {
   }
 }
 
+void nsWindow::OnScaleChanged(GtkAllocation *aAllocation) {
+#ifdef MOZ_WAYLAND
+  if (mContainer && moz_container_has_wl_egl_window(mContainer)) {
+    
+    moz_container_scale_changed(mContainer, aAllocation);
+  }
+#endif
+
+  
+  OnDPIChanged();
+
+  
+  
+  OnSizeAllocate(aAllocation);
+}
+
 void nsWindow::DispatchDragEvent(EventMessage aMsg,
                                  const LayoutDeviceIntPoint &aRefPoint,
                                  guint aTime) {
@@ -5565,14 +5581,10 @@ static void scale_changed_cb(GtkWidget *widget, GParamSpec *aPSpec,
   if (!window) {
     return;
   }
-  
-  window->OnDPIChanged();
 
-  
-  
   GtkAllocation allocation;
   gtk_widget_get_allocation(widget, &allocation);
-  window->OnSizeAllocate(&allocation);
+  window->OnScaleChanged(&allocation);
 }
 
 #if GTK_CHECK_VERSION(3, 4, 0)
