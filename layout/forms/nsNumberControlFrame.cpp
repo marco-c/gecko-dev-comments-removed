@@ -406,6 +406,8 @@ nsNumberControlFrame::CreateAnonymousContent(nsTArray<ContentInfo>& aElements)
     nsContentUtils::AddScriptRunner(focusJob);
   }
 
+  SyncDisabledState(); 
+
   if (StyleDisplay()->mAppearance == StyleAppearance::Textfield) {
     
     
@@ -426,10 +428,6 @@ nsNumberControlFrame::CreateAnonymousContent(nsTArray<ContentInfo>& aElements)
   mSpinDown = MakeAnonymousElement(mSpinBox,
                                    nsGkAtoms::div,
                                    CSSPseudoElementType::mozNumberSpinDown);
-
-  
-  
-  SyncDisabledState();
 
   return NS_OK;
 }
