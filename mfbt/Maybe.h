@@ -159,10 +159,6 @@ struct MaybePoisoner
 
 
 
-
-
-
-
 template<class T>
 class MOZ_NON_PARAM MOZ_INHERIT_TYPE_ANNOTATIONS_FROM_TEMPLATE_ARGS Maybe
 {
@@ -444,19 +440,19 @@ public:
   
 
   template<typename Func>
-  Maybe& apply(Func aFunc)
+  Maybe& apply(Func&& aFunc)
   {
     if (isSome()) {
-      aFunc(ref());
+      std::forward<Func>(aFunc)(ref());
     }
     return *this;
   }
 
   template<typename Func>
-  const Maybe& apply(Func aFunc) const
+  const Maybe& apply(Func&& aFunc) const
   {
     if (isSome()) {
-      aFunc(ref());
+      std::forward<Func>(aFunc)(ref());
     }
     return *this;
   }
@@ -465,28 +461,25 @@ public:
 
 
 
+
   template<typename Func>
-  auto map(Func aFunc) -> Maybe<decltype(aFunc(DeclVal<Maybe<T>>().ref()))>
+  auto map(Func&& aFunc)
   {
-    using ReturnType = decltype(aFunc(ref()));
+    Maybe<decltype(std::forward<Func>(aFunc)(ref()))> val;
     if (isSome()) {
-      Maybe<ReturnType> val;
-      val.emplace(aFunc(ref()));
-      return val;
+      val.emplace(std::forward<Func>(aFunc)(ref()));
     }
-    return Maybe<ReturnType>();
+    return val;
   }
 
   template<typename Func>
-  auto map(Func aFunc) const -> Maybe<decltype(aFunc(DeclVal<Maybe<T>>().ref()))>
+  auto map(Func&& aFunc) const
   {
-    using ReturnType = decltype(aFunc(ref()));
+    Maybe<decltype(std::forward<Func>(aFunc)(ref()))> val;
     if (isSome()) {
-      Maybe<ReturnType> val;
-      val.emplace(aFunc(ref()));
-      return val;
+      val.emplace(std::forward<Func>(aFunc)(ref()));
     }
-    return Maybe<ReturnType>();
+    return val;
   }
 
   
