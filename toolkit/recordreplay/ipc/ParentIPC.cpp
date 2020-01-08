@@ -1042,6 +1042,9 @@ void Resume(bool aForward) {
   gActiveChild->SendMessage(ResumeMessage(aForward));
 }
 
+
+static bool gTimeWarpInProgress;
+
 void TimeWarp(const js::ExecutionPoint& aTarget) {
   MOZ_RELEASE_ASSERT(gActiveChild->IsPaused());
 
@@ -1077,8 +1080,13 @@ void TimeWarp(const js::ExecutionPoint& aTarget) {
 
   if (!gActiveChild->IsPausedAtCheckpoint() ||
       gActiveChild->LastCheckpoint() != aTarget.mCheckpoint) {
+    MOZ_RELEASE_ASSERT(!gTimeWarpInProgress);
+    gTimeWarpInProgress = true;
+
     gActiveChild->SendMessage(RestoreCheckpointMessage(aTarget.mCheckpoint));
     gActiveChild->WaitUntilPaused();
+
+    gTimeWarpInProgress = false;
   }
 
   gActiveChild->SendMessage(RunToPointMessage(aTarget));
@@ -1099,6 +1107,13 @@ void ResumeBeforeWaitingForIPDLReply() {
 }
 
 static void RecvHitCheckpoint(const HitCheckpointMessage& aMsg) {
+  
+  
+  
+  if (gTimeWarpInProgress) {
+    return;
+  }
+
   UpdateCheckpointTimes(aMsg);
   MaybeUpdateGraphicsAtCheckpoint(aMsg.mCheckpointId);
 
