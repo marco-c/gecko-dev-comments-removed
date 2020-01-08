@@ -5084,6 +5084,9 @@ class TabProgressListener {
 
     if (topLevel) {
       let isSameDocument = !!(aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT);
+      let isReload = !!(aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_RELOAD);
+      let isErrorPage = !!(aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_ERROR_PAGE);
+
       
       
       
@@ -5094,8 +5097,7 @@ class TabProgressListener {
       
       
       if (this.mBrowser.didStartLoadSinceLastUserTyping() ||
-          ((aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_ERROR_PAGE) &&
-            aLocation.spec != "about:blank") ||
+          (isErrorPage && aLocation.spec != "about:blank") ||
           (isSameDocument && this.mBrowser.inLoadURI) ||
           (isSameDocument && !this.mBrowser.userTypedValue)) {
         this.mBrowser.userTypedValue = null;
@@ -5107,8 +5109,7 @@ class TabProgressListener {
       
       
       
-      if ((aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_ERROR_PAGE) &&
-          this.mTab.hasAttribute("busy")) {
+      if (isErrorPage && this.mTab.hasAttribute("busy")) {
         this.mTab.removeAttribute("busy");
         gBrowser._tabAttrModified(this.mTab, ["busy"]);
       }
@@ -5135,7 +5136,9 @@ class TabProgressListener {
         }
       }
 
-      gBrowser.setTabTitle(this.mTab);
+      if (!isReload) {
+        gBrowser.setTabTitle(this.mTab);
+      }
 
       
       
