@@ -14,6 +14,7 @@
 
 #include "vm/JSObject-inl.h"
 #include "vm/ObjectGroup-inl.h"
+#include "vm/ObjectOperations-inl.h" 
 #include "vm/TypeInference-inl.h"
 
 namespace js {
