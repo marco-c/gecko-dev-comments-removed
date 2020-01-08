@@ -256,7 +256,6 @@
 #ifdef MOZ_XUL
 #include "mozilla/dom/ListBoxObject.h"
 #include "mozilla/dom/MenuBoxObject.h"
-#include "mozilla/dom/ScrollBoxObject.h"
 #include "mozilla/dom/TreeBoxObject.h"
 #include "nsIXULWindow.h"
 #include "nsIDocShellTreeOwner.h"
@@ -2599,10 +2598,9 @@ nsIDocument::IsSynthesized() {
 }
 
 bool
-nsDocument::IsShadowDOMEnabled(JSContext* aCx, JSObject* aGlobal)
+nsDocument::IsShadowDOMEnabled(JSContext* aCx, JSObject* aObject)
 {
-  MOZ_DIAGNOSTIC_ASSERT(JS_IsGlobalObject(aGlobal));
-  nsCOMPtr<nsPIDOMWindowInner> window = xpc::WindowOrNull(aGlobal);
+  nsCOMPtr<nsPIDOMWindowInner> window = xpc::WindowGlobalOrNull(aObject);
 
   nsIDocument* doc = window ? window->GetExtantDoc() : nullptr;
   if (!doc) {
@@ -4632,7 +4630,7 @@ nsIDocument::SetScriptGlobalObject(nsIScriptGlobalObject *aScriptGlobalObject)
       JSObject *obj = GetWrapperPreserveColor();
       if (obj) {
         JSObject *newScope = aScriptGlobalObject->GetGlobalJSObject();
-        NS_ASSERTION(JS::GetNonCCWObjectGlobal(obj) == newScope,
+        NS_ASSERTION(js::GetGlobalForObjectCrossCompartment(obj) == newScope,
                      "Wrong scope, this is really bad!");
       }
     }
@@ -4714,9 +4712,12 @@ nsIDocument::SetScriptGlobalObject(nsIScriptGlobalObject *aScriptGlobalObject)
   }
 
   if (!mMaybeServiceWorkerControlled && mDocumentContainer && mScriptGlobalObject && GetChannel()) {
+    nsCOMPtr<nsIDocShell> docShell(mDocumentContainer);
+    uint32_t loadType;
+    docShell->GetLoadType(&loadType);
 
     
-    if (mDocumentContainer->IsForceReloading()) {
+    if (IsForceReloadType(loadType)) {
       NS_WARNING("Page was shift reloaded, skipping ServiceWorker control");
       return;
     }
@@ -6328,8 +6329,6 @@ nsIDocument::GetBoxObjectFor(Element* aElement, ErrorResult& aRv)
       boxObject = new TreeBoxObject();
     } else if (tag == nsGkAtoms::listbox) {
       boxObject = new ListBoxObject();
-    } else if (tag == nsGkAtoms::scrollbox) {
-      boxObject = new ScrollBoxObject();
     } else {
       boxObject = new BoxObject();
     }
@@ -12453,8 +12452,7 @@ nsIDocument::MaybeAllowStorageForOpener()
 
   
   if (!nsContentUtils::IsThirdPartyWindowOrChannel(openerInner, nullptr,
-                                                   nullptr) ||
-      !nsContentUtils::IsTrackingResourceWindow(openerInner)) {
+                                                   nullptr)) {
     return;
   }
 
@@ -12574,8 +12572,6 @@ namespace {
 struct PrefStore
 {
   PrefStore()
-    : mFlashBlockEnabled(false)
-    , mPluginsHttpOnly(false)
   {
     Preferences::AddBoolVarCache(&mFlashBlockEnabled,
                                  "plugins.flashBlock.enabled");

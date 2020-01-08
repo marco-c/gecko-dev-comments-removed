@@ -56,6 +56,7 @@
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/dom/WorkerScope.h"
 #include "mozilla/dom/XrayExpandoClass.h"
+#include "mozilla/dom/XULScrollElementBinding.h"
 #include "mozilla/jsipc/CrossProcessObjectWrappers.h"
 #include "ipc/ErrorIPCUtils.h"
 #include "mozilla/UseCounter.h"
@@ -174,11 +175,7 @@ namespace binding_danger {
 
 template<typename CleanupPolicy>
 struct TErrorResult<CleanupPolicy>::Message {
-  Message()
-    : mErrorNumber(dom::Err_Limit)
-  {
-    MOZ_COUNT_CTOR(TErrorResult::Message);
-  }
+  Message() { MOZ_COUNT_CTOR(TErrorResult::Message); }
   ~Message() { MOZ_COUNT_DTOR(TErrorResult::Message); }
 
   nsTArray<nsString> mArgs;
@@ -1649,7 +1646,7 @@ ResolvePrototypeOrConstructor(JSContext* cx, JS::Handle<JSObject*> wrapper,
                               JS::MutableHandle<JS::PropertyDescriptor> desc,
                               bool& cacheOnHolder)
 {
-  JS::Rooted<JSObject*> global(cx, JS::GetNonCCWObjectGlobal(obj));
+  JS::Rooted<JSObject*> global(cx, js::GetGlobalForObjectCrossCompartment(obj));
   {
     JSAutoRealm ar(cx, global);
     ProtoAndIfaceCache& protoAndIfaceCache = *GetProtoAndIfaceCache(global);
@@ -3056,7 +3053,7 @@ struct MaybeGlobalThisPolicy : public NormalThisPolicy
   {
     return aArgs.thisv().isObject() ?
       &aArgs.thisv().toObject() :
-      JS::GetNonCCWObjectGlobal(&aArgs.callee());
+      js::GetGlobalForObjectCrossCompartment(&aArgs.callee());
   }
 
   
@@ -3863,6 +3860,8 @@ HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
                  definition->mLocalName == nsGkAtoms::browser ||
                  definition->mLocalName == nsGkAtoms::editor) {
         cb = XULFrameElement_Binding::GetConstructorObject;
+      } else if (definition->mLocalName == nsGkAtoms::scrollbox) {
+          cb = XULScrollElement_Binding::GetConstructorObject;
       } else {
         cb = XULElement_Binding::GetConstructorObject;
       }
