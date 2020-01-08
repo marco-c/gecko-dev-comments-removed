@@ -10,9 +10,6 @@ const FirefoxDataProvider = require("./firefox-data-provider");
 const { getDisplayedTimingMarker } = require("../selectors/index");
 
 
-loader.lazyRequireGetter(this, "TimelineFront", "devtools/shared/fronts/timeline", true);
-
-
 loader.lazyRequireGetter(this, "throttlingProfiles", "devtools/client/shared/components/throttling/profiles");
 
 
@@ -26,7 +23,6 @@ class FirefoxConnector {
     this.willNavigate = this.willNavigate.bind(this);
     this.navigate = this.navigate.bind(this);
     this.displayCachedEvents = this.displayCachedEvents.bind(this);
-    this.onDocLoadingMarker = this.onDocLoadingMarker.bind(this);
     this.onDocEvent = this.onDocEvent.bind(this);
     this.sendHTTPRequest = this.sendHTTPRequest.bind(this);
     this.setPreferences = this.setPreferences.bind(this);
@@ -128,30 +124,12 @@ class FirefoxConnector {
 
     
     
-    
-    const { startedListeners } = await this.webConsoleClient.startListeners(
-      ["DocumentEvents"]);
-    
-    const supportsDocEvents = startedListeners.includes("DocumentEvents");
-
-    
-    
-    if (!supportsDocEvents && !this.timelineFront &&
-        this.tabTarget.getTrait("documentLoadingMarkers")) {
-      this.timelineFront = new TimelineFront(this.tabTarget.client, this.tabTarget.form);
-      this.timelineFront.on("doc-loading", this.onDocLoadingMarker);
-      await this.timelineFront.start({ withDocLoadingEvents: true });
-    }
+    await this.webConsoleClient.startListeners(["DocumentEvents"]);
   }
 
   async removeListeners() {
     if (this.tabTarget) {
       this.tabTarget.off("close");
-    }
-    if (this.timelineFront) {
-      this.timelineFront.off("doc-loading", this.onDocLoadingMarker);
-      await this.timelineFront.destroy();
-      this.timelineFront = null;
     }
     if (this.webConsoleClient) {
       this.webConsoleClient.off("networkEvent");
@@ -232,31 +210,6 @@ class FirefoxConnector {
   }
 
   
-
-
-
-
-
-
-  onDocLoadingMarker(marker) {
-    
-    
-    const event = {
-      name: marker.name == "document::DOMContentLoaded" ?
-            "dom-interactive" : "dom-complete",
-      time: marker.unixTime / 1000,
-    };
-
-    if (this.actions) {
-      this.actions.addTimingMarker(event);
-    }
-
-    this.emit(EVENTS.TIMELINE_EVENT, event);
-  }
-
-  
-
-
 
 
 
