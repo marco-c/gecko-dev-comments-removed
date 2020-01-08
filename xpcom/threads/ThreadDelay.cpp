@@ -26,7 +26,8 @@ DelayForChaosMode(ChaosFeature aFeature, const uint32_t aMicrosecondLimit)
 #if defined(XP_WIN)
   
   
-  ::Sleep(1);
+  
+  
 #else
   const uint32_t duration = ChaosMode::randomUint32LessThan(aMicrosecondLimit);
   ::usleep(duration);
