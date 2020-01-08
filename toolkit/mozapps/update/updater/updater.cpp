@@ -415,15 +415,11 @@ get_full_path(const NS_tchar *relpath)
 
 
 
+#ifndef XP_WIN
 static const NS_tchar*
 get_relative_path(const NS_tchar *fullpath)
 {
-  
-#ifdef XP_WIN
-  if (fullpath[1] != ':' && fullpath[2] != '\\') {
-#else
   if (fullpath[0] != '/') {
-#endif
     return fullpath;
   }
 
@@ -436,6 +432,7 @@ get_relative_path(const NS_tchar *fullpath)
 
   return fullpath + NS_tstrlen(prefix) + 1;
 }
+#endif
 
 
 

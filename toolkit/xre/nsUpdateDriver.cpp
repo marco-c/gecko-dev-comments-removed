@@ -957,8 +957,8 @@ nsUpdateProcessor::FixUpdateDirectoryPerms(bool aShouldUseService)
         
         
         mozilla::UniquePtr<wchar_t[]> updateDir;
-        HRESULT permResult = GetCommonUpdateDirectory(mInstallPath.get(), nullptr,
-                               nullptr, SetPermissionsOf::AllFilesAndDirs,
+        HRESULT permResult = GetCommonUpdateDirectory(mInstallPath.get(),
+                               SetPermissionsOf::AllFilesAndDirs,
                                updateDir);
         if (SUCCEEDED(permResult)) {
           LOG(("Successfully fixed permissions from within Firefox\n"));
