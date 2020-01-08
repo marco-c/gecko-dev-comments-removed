@@ -647,7 +647,9 @@ ChildProcessInfo::WaitUntil(const std::function<bool()>& aCallback)
   while (!aCallback()) {
     MonitorAutoLock lock(*gMonitor);
     if (!MaybeProcessPendingMessage(this)) {
-      if (gChildrenAreDebugging) {
+      if (gChildrenAreDebugging || IsRecording()) {
+        
+        
         
         gMonitor->Wait();
       } else {

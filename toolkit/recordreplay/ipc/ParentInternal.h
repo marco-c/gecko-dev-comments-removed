@@ -43,6 +43,10 @@ bool MainThreadIsWaitingForIPDLReply();
 
 
 
+void ResumeBeforeWaitingForIPDLReply();
+
+
+
 void InitializeForwarding();
 
 

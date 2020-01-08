@@ -1091,6 +1091,20 @@ ResumeForwardOrBackward()
   }
 }
 
+void
+ResumeBeforeWaitingForIPDLReply()
+{
+  MOZ_RELEASE_ASSERT(gActiveChild->IsRecording());
+
+  
+  
+  
+  if (gActiveChild->IsPaused()) {
+    MOZ_RELEASE_ASSERT(gChildExecuteForward);
+    Resume(true);
+  }
+}
+
 static void
 RecvHitCheckpoint(const HitCheckpointMessage& aMsg)
 {
