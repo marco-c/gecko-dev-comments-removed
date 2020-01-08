@@ -22,22 +22,6 @@ ActorManagerChild.attach(this, "browsers");
 
 var global = this;
 
-XPCOMUtils.defineLazyProxy(this, "LightweightThemeChildHelper",
-  "resource:///modules/LightweightThemeChildHelper.jsm");
-
-let themeablePagesWhitelist = new Set([
-  "about:home",
-  "about:newtab",
-  "about:welcome",
-]);
-
-addEventListener("pageshow", function({ originalTarget }) {
-  if (originalTarget.defaultView == content && themeablePagesWhitelist.has(content.document.documentURI)) {
-    LightweightThemeChildHelper.listen(themeablePagesWhitelist);
-    LightweightThemeChildHelper.update(chromeOuterWindowID, content);
-  }
-}, false, true);
-
 
 var trHandler = null;
 if (Services.prefs.getBoolPref("browser.translation.detectLanguage")) {
