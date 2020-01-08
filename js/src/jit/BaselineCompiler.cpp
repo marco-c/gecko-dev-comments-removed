@@ -445,16 +445,27 @@ BaselineCompiler::emitPrologue()
     
     
     
-    
     Label earlyStackCheckFailed;
     if (needsEarlyStackCheck()) {
-        if (!emitStackCheck( true)) {
-            return false;
+        
+        uint32_t slotsSize = script->nslots() * sizeof(Value);
+        Register scratch = R1.scratchReg();
+        masm.moveStackPtrTo(scratch);
+        masm.subPtr(Imm32(slotsSize), scratch);
+
+        
+        
+        
+        
+        Label stackCheckOk;
+        masm.branchPtr(Assembler::BelowOrEqual,
+                       AbsoluteAddress(cx->addressOfJitStackLimitNoInterrupt()), scratch,
+                       &stackCheckOk);
+        {
+            masm.or32(Imm32(BaselineFrame::OVER_RECURSED), frame.addressOfFlags());
+            masm.jump(&earlyStackCheckFailed);
         }
-        masm.branchTest32(Assembler::NonZero,
-                          frame.addressOfFlags(),
-                          Imm32(BaselineFrame::OVER_RECURSED),
-                          &earlyStackCheckFailed);
+        masm.bind(&stackCheckOk);
     }
 
     emitInitializeLocals();
@@ -635,13 +646,6 @@ BaselineCompiler::callVM(const VMFunction& fun, CallVMPhase phase)
         uint32_t descriptor = MakeFrameDescriptor(frameFullSize + argSize, FrameType::BaselineJS,
                                                   ExitFrameLayout::Size());
         masm.push(Imm32(descriptor));
-
-    } else if (phase == PRE_INITIALIZE) {
-        masm.store32(Imm32(frameBaseSize), frameSizeAddress);
-        uint32_t descriptor = MakeFrameDescriptor(frameBaseSize + argSize, FrameType::BaselineJS,
-                                                  ExitFrameLayout::Size());
-        masm.push(Imm32(descriptor));
-
     } else {
         MOZ_ASSERT(phase == CHECK_OVER_RECURSED);
         Label afterWrite;
@@ -687,27 +691,14 @@ BaselineCompiler::callVM(const VMFunction& fun, CallVMPhase phase)
     return appendICEntry(ICEntry::Kind_CallVM, callOffset);
 }
 
-typedef bool (*CheckOverRecursedWithExtraFn)(JSContext*, BaselineFrame*, uint32_t, uint32_t);
-static const VMFunction CheckOverRecursedWithExtraInfo =
-    FunctionInfo<CheckOverRecursedWithExtraFn>(CheckOverRecursedWithExtra,
-                                               "CheckOverRecursedWithExtra");
+typedef bool (*CheckOverRecursedBaselineFn)(JSContext*, BaselineFrame*);
+static const VMFunction CheckOverRecursedBaselineInfo =
+    FunctionInfo<CheckOverRecursedBaselineFn>(CheckOverRecursedBaseline,
+                                              "CheckOverRecursedBaseline");
 
 bool
-BaselineCompiler::emitStackCheck(bool earlyCheck)
+BaselineCompiler::emitStackCheck()
 {
-    Label skipCall;
-    uint32_t slotsSize = script->nslots() * sizeof(Value);
-    uint32_t tolerance = earlyCheck ? slotsSize : 0;
-
-    masm.moveStackPtrTo(R1.scratchReg());
-
-    
-    
-    
-    if (earlyCheck) {
-        masm.subPtr(Imm32(tolerance), R1.scratchReg());
-    }
-
     
     
     
@@ -715,41 +706,36 @@ BaselineCompiler::emitStackCheck(bool earlyCheck)
     
     
     Label forceCall;
-    if (!earlyCheck && needsEarlyStackCheck()) {
+    if (needsEarlyStackCheck()) {
         masm.branchTest32(Assembler::NonZero,
                           frame.addressOfFlags(),
                           Imm32(BaselineFrame::OVER_RECURSED),
                           &forceCall);
     }
 
-    masm.branchPtr(Assembler::BelowOrEqual,
-                   AbsoluteAddress(cx->addressOfJitStackLimit()), R1.scratchReg(),
-                   &skipCall);
+    Label skipCall;
+    masm.branchStackPtrRhs(Assembler::BelowOrEqual,
+                           AbsoluteAddress(cx->addressOfJitStackLimit()),
+                           &skipCall);
 
-    if (!earlyCheck && needsEarlyStackCheck()) {
+    if (needsEarlyStackCheck()) {
         masm.bind(&forceCall);
     }
 
     prepareVMCall();
-    pushArg(Imm32(earlyCheck));
-    pushArg(Imm32(tolerance));
     masm.loadBaselineFramePtr(BaselineFrameReg, R1.scratchReg());
     pushArg(R1.scratchReg());
 
     CallVMPhase phase = POST_INITIALIZE;
-    if (earlyCheck) {
-        phase = PRE_INITIALIZE;
-    } else if (needsEarlyStackCheck()) {
+    if (needsEarlyStackCheck()) {
         phase = CHECK_OVER_RECURSED;
     }
 
-    if (!callVMNonOp(CheckOverRecursedWithExtraInfo, phase)) {
+    if (!callVMNonOp(CheckOverRecursedBaselineInfo, phase)) {
         return false;
     }
 
-    icEntries_.back().setFakeKind(earlyCheck
-                                  ? ICEntry::Kind_EarlyStackCheck
-                                  : ICEntry::Kind_StackCheck);
+    icEntries_.back().setFakeKind(ICEntry::Kind_StackCheck);
 
     masm.bind(&skipCall);
     return true;

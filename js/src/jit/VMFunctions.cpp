@@ -151,18 +151,6 @@ InvokeFromInterpreterStub(JSContext* cx, InterpreterStubExitFrameLayout* frame)
     return true;
 }
 
-#ifdef JS_SIMULATOR
-static bool
-CheckSimulatorRecursionLimitWithExtra(JSContext* cx, uint32_t extra)
-{
-    if (cx->simulator()->overRecursedWithExtra(extra)) {
-        ReportOverRecursed(cx);
-        return false;
-    }
-    return true;
-}
-#endif
-
 bool
 CheckOverRecursed(JSContext* cx)
 {
@@ -170,8 +158,11 @@ CheckOverRecursed(JSContext* cx)
     
     
     
+
+    
 #ifdef JS_SIMULATOR
-    if (!CheckSimulatorRecursionLimitWithExtra(cx, 0)) {
+    if (cx->simulator()->overRecursedWithExtra(0)) {
+        ReportOverRecursed(cx);
         return false;
     }
 #else
@@ -179,6 +170,8 @@ CheckOverRecursed(JSContext* cx)
         return false;
     }
 #endif
+
+    
     gc::MaybeVerifyBarriers(cx);
     return cx->handleInterrupt();
 }
@@ -186,55 +179,18 @@ CheckOverRecursed(JSContext* cx)
 
 
 
-
-
-
-
-
-
 bool
-CheckOverRecursedWithExtra(JSContext* cx, BaselineFrame* frame,
-                           uint32_t extra, uint32_t earlyCheck)
+CheckOverRecursedBaseline(JSContext* cx, BaselineFrame* frame)
 {
-    MOZ_ASSERT_IF(earlyCheck, !frame->overRecursed());
-
     
-    
-    
-    uint8_t spDummy;
-    uint8_t* checkSp = (&spDummy) - extra;
-    if (earlyCheck) {
-#ifdef JS_SIMULATOR
-        (void)checkSp;
-        if (!CheckSimulatorRecursionLimitWithExtra(cx, extra)) {
-            frame->setOverRecursed();
-        }
-#else
-        if (!CheckRecursionLimitWithStackPointer(cx, checkSp)) {
-            frame->setOverRecursed();
-        }
-#endif
-        return true;
-    }
-
     
     
     if (frame->overRecursed()) {
+        ReportOverRecursed(cx);
         return false;
     }
 
-#ifdef JS_SIMULATOR
-    if (!CheckSimulatorRecursionLimitWithExtra(cx, extra)) {
-        return false;
-    }
-#else
-    if (!CheckRecursionLimitWithStackPointer(cx, checkSp)) {
-        return false;
-    }
-#endif
-
-    gc::MaybeVerifyBarriers(cx);
-    return cx->handleInterrupt();
+    return CheckOverRecursed(cx);
 }
 
 JSObject*

@@ -254,9 +254,6 @@ class ICEntry
         Kind_StackCheck,
 
         
-        Kind_EarlyStackCheck,
-
-        
         Kind_DebugTrap,
 
         

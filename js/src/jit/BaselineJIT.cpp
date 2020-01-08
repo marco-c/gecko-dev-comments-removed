@@ -742,15 +742,14 @@ BaselineScript::callVMEntryFromPCOffset(uint32_t pcOffset)
 }
 
 ICEntry&
-BaselineScript::stackCheckICEntry(bool earlyCheck)
+BaselineScript::stackCheckICEntry()
 {
     
     
     
     
-    ICEntry::Kind kind = earlyCheck ? ICEntry::Kind_EarlyStackCheck : ICEntry::Kind_StackCheck;
     for (size_t i = 0; i < numICEntries() && icEntry(i).pcOffset() == 0; i++) {
-        if (icEntry(i).kind() == kind) {
+        if (icEntry(i).kind() == ICEntry::Kind_StackCheck) {
             return icEntry(i);
         }
     }
