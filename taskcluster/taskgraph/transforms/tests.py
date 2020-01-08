@@ -388,6 +388,11 @@ test_description_schema = Schema({
         'test-platform',
         Any(basestring, None),
     ),
+
+    
+    Optional('fetches'): {
+        basestring: [basestring],
+    },
 }, required=True)
 
 
