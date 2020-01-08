@@ -43,16 +43,6 @@ class GeckoEditableSupport final
     using EditableClient = java::SessionTextInput::EditableClient;
     using EditableListener = java::SessionTextInput::EditableListener;
 
-    
-    
-    class AutoIMESynchronize
-    {
-        GeckoEditableSupport* const mGES;
-    public:
-        explicit AutoIMESynchronize(GeckoEditableSupport* ges) : mGES(ges) {}
-        ~AutoIMESynchronize() { mGES->OnImeSynchronize(); }
-    };
-
     struct IMETextChange final {
         int32_t mStart, mOldEnd, mNewEnd;
 
@@ -102,6 +92,7 @@ class GeckoEditableSupport final
     RefPtr<TextRangeArray> mIMERanges;
     int32_t mIMEMaskEventsCount; 
     int32_t mIMEFocusCount; 
+    int32_t mIMEActiveReplaceTextCount; 
     bool mIMESelectionChanged;
     bool mIMETextChangedDuringFlush;
     bool mIMEMonitorCursor;
@@ -136,6 +127,7 @@ class GeckoEditableSupport final
     void FlushIMEText(FlushChangesFlag aFlags = FLUSH_FLAG_NONE);
     void AsyncNotifyIME(int32_t aNotification);
     void UpdateCompositionRects();
+    bool DoReplaceText(int32_t aStart, int32_t aEnd, jni::String::Param aText);
 
 public:
     template<typename Functor>
@@ -181,6 +173,7 @@ public:
         , mIMERanges(new TextRangeArray())
         , mIMEMaskEventsCount(1) 
         , mIMEFocusCount(0)
+        , mIMEActiveReplaceTextCount(0)
         , mIMESelectionChanged(false)
         , mIMETextChangedDuringFlush(false)
         , mIMEMonitorCursor(false)
