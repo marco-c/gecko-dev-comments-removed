@@ -58,7 +58,7 @@ TRR::Notify(nsITimer *aTimer)
 
 
 nsresult
-TRR::DohEncode(nsCString &aBody)
+TRR::DohEncode(nsCString &aBody, bool aDisableECS)
 {
   aBody.Truncate();
   
@@ -72,8 +72,9 @@ TRR::DohEncode(nsCString &aBody)
   aBody += '\0'; 
   aBody += '\0';
   aBody += '\0'; 
-  aBody += '\0';
+
   aBody += '\0'; 
+  aBody += aDisableECS ? 1 : '\0';   
 
   
 
@@ -114,6 +115,38 @@ TRR::DohEncode(nsCString &aBody)
   aBody += '\0'; 
   aBody += kDNS_CLASS_IN;  
 
+  if (aDisableECS) {
+    
+    aBody += '\0'; 
+    aBody += '\0';
+    aBody += 41;   
+    aBody += 16;   
+    aBody += '\0'; 
+    aBody += '\0'; 
+    aBody += '\0';
+    aBody += '\0';
+    aBody += '\0';
+
+    aBody += '\0'; 
+    aBody += 8;    
+
+    
+    
+
+    aBody += '\0'; 
+    aBody += 8;    
+
+    aBody += '\0'; 
+    aBody += 4;    
+                   
+    aBody += '\0'; 
+    aBody += AF_INET; 
+
+    aBody += '\0'; 
+    aBody += '\0';
+
+    
+  }
   return NS_OK;
 }
 
@@ -163,12 +196,13 @@ TRR::SendHTTPRequest()
   bool useGet = gTRRService->UseGET();
   nsAutoCString body;
   nsCOMPtr<nsIURI> dnsURI;
+  bool disableECS = gTRRService->DisableECS();
 
   LOG(("TRR::SendHTTPRequest resolve %s type %u\n", mHost.get(), mType));
 
   if (useGet) {
     nsAutoCString tmp;
-    rv = DohEncode(tmp);
+    rv = DohEncode(tmp, disableECS);
     NS_ENSURE_SUCCESS(rv, rv);
 
     
@@ -183,7 +217,7 @@ TRR::SendHTTPRequest()
     uri.Append(body);
     rv = NS_NewURI(getter_AddRefs(dnsURI), uri);
   } else {
-    rv = DohEncode(body);
+    rv = DohEncode(body, disableECS);
     NS_ENSURE_SUCCESS(rv, rv);
 
     nsAutoCString uri;

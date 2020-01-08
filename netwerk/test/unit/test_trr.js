@@ -58,6 +58,7 @@ function resetTRRPrefs() {
   prefs.clearUserPref("network.trr.bootstrapAddress");
   prefs.clearUserPref("network.trr.blacklist-duration");
   prefs.clearUserPref("network.trr.request-timeout");
+  prefs.clearUserPref("network.trr.disable-ECS");
 }
 
 registerCleanupFunction(() => {
@@ -259,12 +260,25 @@ function test8()
 }
 
 
+function test8b()
+{
+  prefs.setIntPref("network.trr.mode", 3); 
+  prefs.setCharPref("network.trr.uri", "https://foo.example.com:" + h2Port + "/dns-ecs");
+  prefs.clearUserPref("network.trr.allow-rfc1918");
+  prefs.setBoolPref("network.trr.useGET", true);
+  prefs.setBoolPref("network.trr.disable-ECS", true);
+  test_answer = "5.5.5.5";
+  listen = dns.asyncResolve("ecs.example.com", 0, listenerFine, mainThread, defaultOriginAttributes);
+}
+
+
 function test9()
 {
   prefs.setIntPref("network.trr.mode", 3); 
   prefs.setCharPref("network.trr.uri", "https://foo.example.com:" + h2Port + "/dns-get");
   prefs.clearUserPref("network.trr.allow-rfc1918");
   prefs.setBoolPref("network.trr.useGET", true);
+  prefs.setBoolPref("network.trr.disable-ECS", false);
   test_answer = "1.2.3.4";
   listen = dns.asyncResolve("get.example.com", 0, listenerFine, mainThread, defaultOriginAttributes);
 }
@@ -275,6 +289,7 @@ function test10()
 {
   prefs.setIntPref("network.trr.mode", 3); 
   prefs.clearUserPref("network.trr.useGET");
+  prefs.clearUserPref("network.trr.disable-ECS");
   prefs.setCharPref("network.trr.uri", "https://foo.example.com:" + h2Port + "/dns-confirm");
   prefs.setCharPref("network.trr.confirmationNS", "confirm.example.com");
   test_loops = 100; 
@@ -438,6 +453,7 @@ var tests = [ test1,
               test6,
               test7,
               test8,
+              test8b,
               test9,
               test10,
               test10b,

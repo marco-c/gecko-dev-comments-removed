@@ -38,6 +38,7 @@ public:
   bool UseGET() { return mUseGET; }
   bool EarlyAAAA() { return mEarlyAAAA; }
   bool DisableIPv6() { return mDisableIPv6; }
+  bool DisableECS() { return mDisableECS; }
   nsresult GetURI(nsCString &result);
   nsresult GetCredentials(nsCString &result);
   uint32_t GetRequestTimeout() { return mTRRTimeout; }
@@ -71,6 +72,7 @@ private:
   Atomic<bool, Relaxed> mUseGET; 
   Atomic<bool, Relaxed> mEarlyAAAA; 
   Atomic<bool, Relaxed> mDisableIPv6; 
+  Atomic<bool, Relaxed> mDisableECS;  
 
   
   RefPtr<DataStorage> mTRRBLStorage;

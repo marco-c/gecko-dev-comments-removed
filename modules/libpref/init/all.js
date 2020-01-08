@@ -5379,6 +5379,8 @@ pref("network.trr.request-timeout", 3000);
 
 pref("network.trr.early-AAAA", false);
 
+pref("network.trr.disable-ECS", true);
+
 pref("captivedetect.canonicalURL", "http://detectportal.firefox.com/success.txt");
 pref("captivedetect.canonicalContent", "success\n");
 pref("captivedetect.maxWaitingTime", 5000);
