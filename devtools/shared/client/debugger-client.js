@@ -23,7 +23,7 @@ loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
 
 loader.lazyRequireGetter(this, "WebConsoleClient", "devtools/shared/webconsole/client", true);
 loader.lazyRequireGetter(this, "AddonClient", "devtools/shared/client/addon-client");
-loader.lazyRequireGetter(this, "RootClient", "devtools/shared/client/root-client");
+loader.lazyRequireGetter(this, "RootFront", "devtools/shared/fronts/root", true);
 loader.lazyRequireGetter(this, "BrowsingContextFront", "devtools/shared/fronts/targets/browsing-context", true);
 loader.lazyRequireGetter(this, "WorkerTargetFront", "devtools/shared/fronts/targets/worker", true);
 loader.lazyRequireGetter(this, "ThreadClient", "devtools/shared/client/thread-client");
@@ -80,7 +80,8 @@ function DebuggerClient(transport) {
 
   this.mainRoot = null;
   this.expectReply("root", (packet) => {
-    this.mainRoot = new RootClient(this, packet);
+    this.mainRoot = new RootFront(this, packet);
+    this._frontPool.manage(this.mainRoot);
     this.emit("connected", packet.applicationType, packet.traits);
   });
 }
@@ -801,19 +802,19 @@ DebuggerClient.prototype = {
 
     
     
-    const front = this.getActor(packet.from);
-    if (front) {
-      front.onPacket(packet);
+    
+    if (this.mainRoot &&
+        packet.from == this.mainRoot.actorID &&
+        packet.type == "forwardingCancelled") {
+      this.purgeRequests(packet.prefix);
       return;
     }
 
     
     
-    
-    if (this.mainRoot &&
-        packet.from == this.mainRoot.actor &&
-        packet.type == "forwardingCancelled") {
-      this.purgeRequests(packet.prefix);
+    const front = this.getActor(packet.from);
+    if (front) {
+      front.onPacket(packet);
       return;
     }
 

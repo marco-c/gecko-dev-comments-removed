@@ -1,119 +1,38 @@
 
 
 
-
 "use strict";
 
-const { Ci } = require("chrome");
-const { arg, DebuggerClient } = require("devtools/shared/client/debugger-client");
+const {Ci} = require("chrome");
+const {rootSpec} = require("devtools/shared/specs/root");
+const protocol = require("devtools/shared/protocol");
+const {custom} = protocol;
+
 loader.lazyRequireGetter(this, "getFront", "devtools/shared/protocol", true);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function RootClient(client, greeting) {
-  this._client = client;
-  this.actor = greeting.from;
-  this.applicationType = greeting.applicationType;
-  this.traits = greeting.traits;
-
-  
-  Object.defineProperty(this, "rootForm", {
-    get() {
-      delete this.rootForm;
-      this.rootForm = this._getRoot();
-      return this.rootForm;
-    },
-    configurable: true,
-  });
-
-  
-  
-  this.fronts = new Map();
-}
-exports.RootClient = RootClient;
-
-RootClient.prototype = {
-  constructor: RootClient,
-
-  
-
-
-
-
-  _getRoot: DebuggerClient.requester({ type: "getRoot" }),
-
-   
-
-
-
-
-
-
-
-
-  listTabs: DebuggerClient.requester({ type: "listTabs", options: arg(0) }),
-
-  
-
-
-
-
-
-  listAddons: DebuggerClient.requester({ type: "listAddons" }),
-
-  
-
-
-
-
-
-  listWorkers: DebuggerClient.requester({ type: "listWorkers" }),
-
-  
-
-
-
-
-
-  listServiceWorkerRegistrations: DebuggerClient.requester({
-    type: "listServiceWorkerRegistrations",
-  }),
-
-  
-
-
-
-
-
-  listProcesses: DebuggerClient.requester({ type: "listProcesses" }),
-
-  
-
-
-
-
-
-
-
-  getProcess: DebuggerClient.requester({ type: "getProcess", id: arg(0) }),
+const RootFront = protocol.FrontClassWithSpec(rootSpec, {
+  initialize: function(client, form) {
+    protocol.Front.prototype.initialize.call(this, client, { actor: form.from });
+
+    this.applicationType = form.applicationType;
+    this.traits = form.traits;
+
+    
+    Object.defineProperty(this, "rootForm", {
+      get() {
+        delete this.rootForm;
+        this.rootForm = this.getRoot();
+        return this.rootForm;
+      },
+      configurable: true,
+    });
+
+    
+    
+    this.fronts = new Map();
+
+    this._client = client;
+  },
 
   
 
@@ -229,12 +148,8 @@ RootClient.prototype = {
 
 
 
-  getTab: function(filter) {
-    const packet = {
-      to: this.actor,
-      type: "getTab",
-    };
-
+  getTab: custom(async function(filter) {
+    const packet = {};
     if (filter) {
       if (typeof (filter.outerWindowID) == "number") {
         packet.outerWindowID = filter.outerWindowID;
@@ -260,8 +175,10 @@ RootClient.prototype = {
       }
     }
 
-    return this.request(packet);
-  },
+    return this._getTab(packet);
+  }, {
+    impl: "_getTab",
+  }),
 
   
 
@@ -270,17 +187,8 @@ RootClient.prototype = {
 
 
 
-  getWindow: function({ outerWindowID }) {
-    if (!outerWindowID) {
-      throw new Error("Must specify outerWindowID");
-    }
-
-    const packet = {
-      to: this.actor,
-      type: "getWindow",
-      outerWindowID,
-    };
-
+  echo(packet) {
+    packet.type = "echo";
     return this.request(packet);
   },
 
@@ -301,45 +209,5 @@ RootClient.prototype = {
     this.fronts.set(typeName, front);
     return front;
   },
-
-  
-
-
-
-
-
-  protocolDescription: DebuggerClient.requester({ type: "protocolDescription" }),
-
-  
-
-
-
-  requestTypes: DebuggerClient.requester({ type: "requestTypes" }),
-
-  
-
-
-
-
-
-  echo(object) {
-    const packet = Object.assign(object, {
-      to: this.actor,
-      type: "echo",
-    });
-    return this.request(packet);
-  },
-
-  
-
-
-
-  get _transport() {
-    return this._client._transport;
-  },
-  get request() {
-    return this._client.request;
-  },
-};
-
-module.exports = RootClient;
+});
+exports.RootFront = RootFront;
