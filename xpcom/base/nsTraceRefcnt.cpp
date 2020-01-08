@@ -323,10 +323,12 @@ public:
       return false;
     }
 
+
     fprintf(aOut,
             "\n" \
             "     |<----------------Class--------------->|<-----Bytes------>|<----Objects---->|\n" \
             "     |                                      | Per-Inst   Leaked|   Total      Rem|\n");
+
 
     this->DumpTotal(aOut);
 
