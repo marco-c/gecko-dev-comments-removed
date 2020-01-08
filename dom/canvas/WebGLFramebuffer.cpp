@@ -131,7 +131,8 @@ WebGLFBAttachPoint::IsComplete(WebGLContext* webgl, nsCString* const out_info) c
         
         
         const bool complete = [&]() {
-            const auto texCompleteness = tex->CalcCompletenessInfo();
+            const bool ensureInit = false;
+            const auto texCompleteness = tex->CalcCompletenessInfo(ensureInit);
             if (!texCompleteness) 
                 return false;
             if (!texCompleteness->levels)
