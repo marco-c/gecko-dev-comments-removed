@@ -4,12 +4,13 @@
 
 "use strict";
 
-const { Ci } = require("chrome");
+const { Ci, Cu } = require("chrome");
 const { Actor, ActorClassWithSpec } = require("devtools/shared/protocol");
 const { accessibleSpec } = require("devtools/shared/specs/accessibility");
 
 loader.lazyRequireGetter(this, "getContrastRatioFor", "devtools/server/actors/utils/accessibility", true);
 loader.lazyRequireGetter(this, "isDefunct", "devtools/server/actors/utils/accessibility", true);
+loader.lazyRequireGetter(this, "findCssSelector", "devtools/shared/inspector/css-logic", true);
 
 const nsIAccessibleRelation = Ci.nsIAccessibleRelation;
 const RELATIONS_TO_IGNORE = new Set([
@@ -19,6 +20,92 @@ const RELATIONS_TO_IGNORE = new Set([
   nsIAccessibleRelation.RELATION_PARENT_WINDOW_OF,
   nsIAccessibleRelation.RELATION_SUBWINDOW_OF,
 ]);
+
+const STATE_DEFUNCT = Ci.nsIAccessibleStates.EXT_STATE_DEFUNCT;
+const CSS_TEXT_SELECTOR = "#text";
+
+
+
+
+
+
+
+
+function getNodeDescription(node) {
+  if (!node || Cu.isDeadWrapper(node)) {
+    return { nodeType: undefined, nodeCssSelector: "" };
+  }
+
+  const { nodeType } = node;
+  return {
+    nodeType,
+    
+    
+    nodeCssSelector: nodeType === Node.TEXT_NODE ?
+      `${findCssSelector(node.parentNode)}${CSS_TEXT_SELECTOR}` :
+      findCssSelector(node),
+  };
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function getSnapshot(acc, a11yService) {
+  if (isDefunct(acc)) {
+    return {
+      states: [ a11yService.getStringStates(0, STATE_DEFUNCT) ],
+    };
+  }
+
+  const actions = [];
+  for (let i = 0; i < acc.actionCount; i++) {
+    actions.push(acc.getActionDescription(i));
+  }
+
+  const attributes = {};
+  if (acc.attributes) {
+    for (const { key, value } of acc.attributes.enumerate()) {
+      attributes[key] = value;
+    }
+  }
+
+  const state = {};
+  const extState = {};
+  acc.getState(state, extState);
+  const states = [
+    ...a11yService.getStringStates(state.value, extState.value),
+  ];
+
+  const children = [];
+  for (let child = acc.firstChild; child; child = child.nextSibling) {
+    children.push(getSnapshot(child, a11yService));
+  }
+
+  const { nodeType, nodeCssSelector } = getNodeDescription(acc.DOMNode);
+  return {
+    name: acc.name,
+    role: a11yService.getStringRole(acc.role),
+    actions,
+    value: acc.value,
+    nodeCssSelector,
+    nodeType,
+    description: acc.description,
+    keyboardShortcut: acc.accessKey || acc.keyboardShortcut,
+    childCount: acc.childCount,
+    indexInParent: acc.indexInParent,
+    states,
+    children,
+    attributes,
+  };
+}
 
 
 
@@ -315,6 +402,10 @@ const AccessibleActor = ActorClassWithSpec(accessibleSpec, {
     return this.isDefunct ? null : {
       contrastRatio: this._getContrastRatio(),
     };
+  },
+
+  snapshot() {
+    return getSnapshot(this.rawAccessible, this.walker.a11yService);
   },
 });
 
