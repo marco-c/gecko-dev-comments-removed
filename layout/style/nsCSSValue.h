@@ -155,6 +155,8 @@ public:
 
   uint64_t LoadID() const { return mLoadID; }
 
+  CORSMode CorsMode() const { return mCORSMode; }
+
 private:
   
   

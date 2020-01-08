@@ -81,13 +81,7 @@ public:
   
   void ClearFrames(nsPresContext* aPresContext);
 
-  static void LoadImage(nsIURI* aURI,
-                        nsIPrincipal* aPrincipal,
-                        nsIURI* aReferrer,
-                        mozilla::net::ReferrerPolicy aPolicy,
-                        nsIDocument* aDocument,
-                        URLValue* aImage,
-                        CORSMode aCorsMode);
+  static void LoadImage(URLValue* aImage, nsIDocument* aLoadingDoc);
 
   
   

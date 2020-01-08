@@ -1005,13 +1005,7 @@ css::URLValue::LoadImage(nsIDocument* aDocument)
   }
 
   
-  ImageLoader::LoadImage(GetURI(),
-                         mExtraData->Principal(),
-                         mExtraData->GetReferrer(),
-                         mExtraData->GetReferrerPolicy(),
-                         loadingDoc,
-                         this,
-                         mCORSMode);
+  ImageLoader::LoadImage(this, loadingDoc);
 
   
   return aDocument->StyleImageLoader()->RegisterCSSImage(this);
