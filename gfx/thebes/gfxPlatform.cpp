@@ -2682,6 +2682,12 @@ gfxPlatform::InitWebRenderConfig()
   if (!XRE_IsParentProcess()) {
     
     
+    if (recordreplay::IsRecordingOrReplaying()) {
+      gfxVars::SetUseWebRender(false);
+    }
+
+    
+    
     
     if (gfxVars::UseWebRender()) {
       reporter.SetSuccessful();
