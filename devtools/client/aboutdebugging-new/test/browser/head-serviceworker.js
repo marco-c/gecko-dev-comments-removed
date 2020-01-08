@@ -2,6 +2,7 @@
 
 
 
+
 "use strict";
 
 
@@ -37,6 +38,16 @@ function onTabMessage(tab, message) {
   });
 }
 
+async function waitForServiceWorkerRunning(workerText, document) {
+  await waitUntil(() => {
+    const target = findDebugTargetByText(workerText, document);
+    const status = target && target.querySelector(".js-worker-status");
+    return status && status.textContent === "Running";
+  });
+
+  return findDebugTargetByText(workerText, document);
+}
+
 
 
 
@@ -63,11 +74,11 @@ function forwardServiceWorkerMessage(tab) {
 
 
 
-
-async function unregisterServiceWorker(tab, reference) {
-  await ContentTask.spawn(tab.linkedBrowser, reference, async function(_reference) {
+async function unregisterServiceWorker(tab) {
+  return ContentTask.spawn(tab.linkedBrowser, {}, function() {
+    const win = content.wrappedJSObject;
     
-    const registration = await content.wrappedJSObject[_reference];
-    await registration.unregister();
+    is(typeof win.getRegistration, "function", "getRegistration is a valid function");
+    win.getRegistration().unregister();
   });
 }
