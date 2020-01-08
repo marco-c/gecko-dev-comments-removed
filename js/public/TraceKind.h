@@ -68,6 +68,21 @@ enum class TraceKind
 };
 const static uintptr_t OutOfLineTraceKindMask = 0x07;
 
+
+
+
+
+
+
+inline constexpr bool IsCCTraceKind(JS::TraceKind aKind)
+{
+  return aKind == JS::TraceKind::Object ||
+         aKind == JS::TraceKind::Script ||
+         aKind == JS::TraceKind::LazyScript ||
+         aKind == JS::TraceKind::Scope ||
+         aKind == JS::TraceKind::RegExpShared;
+}
+
 #define ASSERT_TRACE_KIND(tk) \
     static_assert((uintptr_t(tk) & OutOfLineTraceKindMask) == OutOfLineTraceKindMask, \
         "mask bits are set")

@@ -163,7 +163,7 @@ NoteWeakMapChildrenTracer::onChild(const JS::GCCellPtr& aThing)
     return;
   }
 
-  if (AddToCCKind(aThing.kind())) {
+  if (JS::IsCCTraceKind(aThing.kind())) {
     mCb.NoteWeakMapping(mMap, mKey, mKeyDelegate, aThing);
     mTracedAny = true;
   } else {
@@ -198,13 +198,13 @@ NoteWeakMapsTracer::trace(JSObject* aMap, JS::GCCellPtr aKey,
   
   
   
-  MOZ_ASSERT(AddToCCKind(aKey.kind()));
+  MOZ_ASSERT(JS::IsCCTraceKind(aKey.kind()));
 
   
   
   
   
-  if (!AddToCCKind(aKey.kind())) {
+  if (!JS::IsCCTraceKind(aKey.kind())) {
     aKey = nullptr;
   }
 
@@ -213,7 +213,7 @@ NoteWeakMapsTracer::trace(JSObject* aMap, JS::GCCellPtr aKey,
     kdelegate = js::GetWeakmapKeyDelegate(&aKey.as<JSObject>());
   }
 
-  if (AddToCCKind(aValue.kind())) {
+  if (JS::IsCCTraceKind(aValue.kind())) {
     mCb.NoteWeakMapping(aMap, aKey, kdelegate, aValue);
   } else {
     mChildTracer.mTracedAny = false;
@@ -251,7 +251,7 @@ ShouldWeakMappingEntryBeBlack(JSObject* aMap, JS::GCCellPtr aKey, JS::GCCellPtr 
     return;
   }
 
-  if (!AddToCCKind(aKey.kind())) {
+  if (!JS::IsCCTraceKind(aKey.kind())) {
     aKey = nullptr;
   }
 
@@ -357,7 +357,7 @@ CheckParticipatesInCycleCollection(JS::GCCellPtr aThing, const char* aName,
     return;
   }
 
-  if (AddToCCKind(aThing.kind()) && JS::GCThingIsMarkedGray(aThing)) {
+  if (JS::IsCCTraceKind(aThing.kind()) && JS::GCThingIsMarkedGray(aThing)) {
     *cycleCollectionEnabled = true;
   }
 }
@@ -426,7 +426,7 @@ TraversalTracer::onChild(const JS::GCCellPtr& aThing)
 
 
 
-  if (AddToCCKind(aThing.kind())) {
+  if (JS::IsCCTraceKind(aThing.kind())) {
     if (MOZ_UNLIKELY(mCb.WantDebugInfo())) {
       char buffer[200];
       getTracingEdgeName(buffer, sizeof(buffer));

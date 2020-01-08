@@ -17,6 +17,7 @@
 #include "mozilla/SegmentedVector.h"
 #include "jsapi.h"
 #include "jsfriendapi.h"
+#include "js/TraceKind.h"
 
 #include "nsCycleCollectionParticipant.h"
 #include "nsDataHashtable.h"
@@ -411,21 +412,6 @@ private:
 };
 
 void TraceScriptHolder(nsISupports* aHolder, JSTracer* aTracer);
-
-
-
-
-
-
-
-inline bool AddToCCKind(JS::TraceKind aKind)
-{
-  return aKind == JS::TraceKind::Object ||
-         aKind == JS::TraceKind::Script ||
-         aKind == JS::TraceKind::LazyScript ||
-         aKind == JS::TraceKind::Scope ||
-         aKind == JS::TraceKind::RegExpShared;
-}
 
 } 
 
