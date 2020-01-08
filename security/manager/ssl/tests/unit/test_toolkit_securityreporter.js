@@ -44,6 +44,7 @@ function getReportCheck(expectReport, expectedError) {
                               function(request, response) {
       if (expectReport) {
         let report = JSON.parse(readDataFromRequest(request));
+        Assert.equal(request.getHeader("Cookie"), "", "No cookie sent.");
         Assert.equal(report.errorCode, expectedError);
         response.setStatusLine(null, 201, "Created");
         response.write("Created");
@@ -86,6 +87,15 @@ function run_test() {
                              `http://localhost:${port}/submit/sslreports`);
   
   Services.prefs.setIntPref("security.cert_pinning.enforcement_level", 2);
+
+  
+  Services.cookies.add("localhost", "/", "foo", "bar",
+                       false, false, false, Date.now() + 24000 * 60 * 60, {},
+                       Ci.nsICookie2.SAMESITE_UNSET);
+
+  registerCleanupFunction(() => {
+    Services.cookies.removeAll();
+  });
 
   
   add_tls_server_setup("BadCertServer", "bad_certs");
