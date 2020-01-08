@@ -344,10 +344,6 @@ add_task(async function setup_head() {
       
       return;
     }
-    if (msg.message && msg.message.match(/PrioEncoder is not defined/)) {
-      
-      return;
-    }
     if (msg.errorMessage == "AbortError: The operation was aborted. " &&
         msg.sourceName == "" && msg.lineNumber == 0) {
       return;
@@ -588,12 +584,22 @@ async function fillInCardForm(frame, aCard, aOptions = {}) {
         ok(false, `${key} field not found`);
       }
       ok(!field.disabled, `Field #${key} shouldn't be disabled`);
+      
+      
       field.value = "";
+      ok(!field.value, "Field value should be reset before typing");
+      field.blur();
       field.focus();
       
+      
+      
+      await ContentTaskUtils.waitForCondition(() => field == content.document.activeElement,
+                                              `Waiting for field #${key} to get focus`);
+      
       let fillValue = val.toString().padStart(2, "0");
-      EventUtils.synthesizeKey(fillValue, {}, content.window);
-      ok(field.value, fillValue, `${key} value is correct after synthesizeKey`);
+      EventUtils.synthesizeKey(fillValue, {}, Cu.waiveXrays(content.window));
+      
+      is(field.value, val.toString(), `${key} value is correct after sendString`);
     }
 
     info([...content.document.getElementById("cc-exp-year").options].map(op => op.label).join(","));
