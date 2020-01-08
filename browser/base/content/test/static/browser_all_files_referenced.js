@@ -244,13 +244,23 @@ function getBaseUriForChromeUri(chromeUri) {
   return fileUri.resolve(".");
 }
 
+function trackChromeUri(uri) {
+  gChromeMap.set(getBaseUriForChromeUri(uri), uri);
+}
+
+
+
+
+trackResourcePrefix("formautofill");
+trackChromeUri("chrome://formautofill/content/");
+
 function parseManifest(manifestUri) {
   return fetchFile(manifestUri.spec).then(data => {
     for (let line of data.split("\n")) {
       let [type, ...argv] = line.split(/\s+/);
       if (type == "content" || type == "skin" || type == "locale") {
         let chromeUri = `chrome://${argv[0]}/${type}/`;
-        gChromeMap.set(getBaseUriForChromeUri(chromeUri), chromeUri);
+        trackChromeUri(chromeUri);
       } else if (type == "override" || type == "overlay") {
         
         
@@ -269,6 +279,35 @@ function parseManifest(manifestUri) {
       }
     }
   });
+}
+
+
+
+
+async function parseJsonManifest(uri) {
+  let raw = await fetchFile(uri.spec);
+  let data;
+  try {
+    data = JSON.parse(raw);
+  } catch (ex) {
+    return uri;
+  }
+
+  
+  if (data.manifest_version !== 2) {
+    return uri;
+  }
+
+  if (data.experiment_apis) {
+    for (let api of Object.values(data.experiment_apis)) {
+      if (api.parent && api.parent.script) {
+        let script = uri.resolve(api.parent.script);
+        gReferencesFromCode.set(script, null);
+      }
+    }
+  }
+
+  return null;
 }
 
 function addCodeReference(url, fromURI) {
@@ -546,10 +585,14 @@ add_task(async function checkAllTheFiles() {
   
   
   let manifestURIs = [];
+  let jsonManifests = [];
   uris = uris.filter(uri => {
     let path = uri.pathQueryRef;
     if (path.endsWith(".manifest")) {
       manifestURIs.push(uri);
+      return false;
+    } else if (path.endsWith("/manifest.json")) {
+      jsonManifests.push(uri);
       return false;
     }
 
@@ -558,6 +601,15 @@ add_task(async function checkAllTheFiles() {
 
   
   await throttledMapPromises(manifestURIs, parseManifest);
+
+  
+  
+  
+  
+  
+  let nonWebextManifests = (await Promise.all(jsonManifests.map(parseJsonManifest)))
+                                         .filter(uri => !!uri);
+  uris.push(...nonWebextManifests);
 
   addActorModules();
 
