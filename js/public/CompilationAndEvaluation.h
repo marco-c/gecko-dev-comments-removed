@@ -223,9 +223,19 @@ extern JS_PUBLIC_API(bool)
 CompileUtf8File(JSContext* cx, const ReadOnlyCompileOptions& options,
                 FILE* file, MutableHandle<JSScript*> script);
 
+
+
+
+
+
+
+
+
+
+
 extern JS_PUBLIC_API(bool)
-Compile(JSContext* cx, const ReadOnlyCompileOptions& options,
-        const char* filename, MutableHandle<JSScript*> script);
+CompileUtf8Path(JSContext* cx, const ReadOnlyCompileOptions& options,
+                const char* filename, MutableHandle<JSScript*> script);
 
 extern JS_PUBLIC_API(bool)
 CompileForNonSyntacticScope(JSContext* cx, const ReadOnlyCompileOptions& options,
