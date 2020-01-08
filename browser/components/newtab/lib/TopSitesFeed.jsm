@@ -11,6 +11,12 @@ const {insertPinned, TOP_SITES_MAX_SITES_PER_ROW} = ChromeUtils.import("resource
 const {Dedupe} = ChromeUtils.import("resource://activity-stream/common/Dedupe.jsm", {});
 const {shortURL} = ChromeUtils.import("resource://activity-stream/lib/ShortURL.jsm", {});
 const {getDefaultOptions} = ChromeUtils.import("resource://activity-stream/lib/ActivityStreamStorage.jsm", {});
+const {
+  SEARCH_SHORTCUTS_EXPERIMENT,
+  SEARCH_SHORTCUTS_SEARCH_ENGINES_PREF,
+  SEARCH_SHORTCUTS_HAVE_PINNED_PREF,
+  getSearchProvider
+} = ChromeUtils.import("resource://activity-stream/lib/SearchShortcuts.jsm", {});
 
 ChromeUtils.defineModuleGetter(this, "filterAdult",
   "resource://activity-stream/lib/FilterAdult.jsm");
@@ -128,14 +134,83 @@ this.TopSitesFeed = class TopSitesFeed {
     if (!this.store.getState().Prefs.values[NO_DEFAULT_SEARCH_TILE_EXP_PREF]) {
       return false;
     }
+    
+    if (this.store.getState().Prefs.values[SEARCH_SHORTCUTS_EXPERIMENT] && getSearchProvider(hostname)) {
+      return false;
+    }
     if (SEARCH_FILTERS.includes(hostname) || hostname === this._currentSearchHostname) {
       return true;
     }
     return false;
   }
 
+  
+
+
+
+
+
+  async _maybeInsertSearchShortcuts(plainPinnedSites) {
+    
+    if (this.store.getState().Prefs.values[SEARCH_SHORTCUTS_EXPERIMENT]) {
+      
+      const prevInsertedShortcuts = this.store.getState().Prefs.values[SEARCH_SHORTCUTS_HAVE_PINNED_PREF]
+        .split(",").filter(s => s); 
+      const newInsertedShortcuts = [];
+
+      const shouldPin = this.store.getState().Prefs.values[SEARCH_SHORTCUTS_SEARCH_ENGINES_PREF]
+        .split(",")
+        .map(getSearchProvider)
+        .filter(s => s);
+
+      
+      if (shouldPin.every(shortcut => prevInsertedShortcuts.includes(shortcut.shortURL))) {
+        return false;
+      }
+
+      const numberOfSlots = this.store.getState().Prefs.values[ROWS_PREF] * TOP_SITES_MAX_SITES_PER_ROW;
+
+      
+      
+      
+      const pinnedSites = [...plainPinnedSites].concat(
+        Array(numberOfSlots - plainPinnedSites.length).fill(null)
+      );
+
+      await new Promise(resolve => Services.search.init(resolve));
+
+      const tryToInsertSearchShortcut = shortcut => {
+        const nextAvailable = pinnedSites.indexOf(null);
+        
+        
+        
+        if (
+          !pinnedSites.find(s => s && s.hostname === shortcut.shortURL) &&
+          !prevInsertedShortcuts.includes(shortcut.shortURL) &&
+          nextAvailable > -1 &&
+          Services.search.getEngines().find(e => e.identifier.match(shortcut.searchIdentifier))
+        ) {
+          const site = this.topSiteToSearchTopSite({url: shortcut.url});
+          this._pinSiteAt(site, nextAvailable);
+          pinnedSites[nextAvailable] = site;
+          newInsertedShortcuts.push(shortcut.shortURL);
+        }
+      };
+
+      shouldPin.forEach(shortcut => tryToInsertSearchShortcut(shortcut));
+
+      if (newInsertedShortcuts.length) {
+        this.store.dispatch(ac.SetPref(SEARCH_SHORTCUTS_HAVE_PINNED_PREF, prevInsertedShortcuts.concat(newInsertedShortcuts).join(",")));
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   async getLinksWithDefaults() {
     const numItems = this.store.getState().Prefs.values[ROWS_PREF] * TOP_SITES_MAX_SITES_PER_ROW;
+    const searchShortcutsExperiment = this.store.getState().Prefs.values[SEARCH_SHORTCUTS_EXPERIMENT];
 
     
     const frecent = (await this.frecentCache.request({
@@ -145,24 +220,44 @@ this.TopSitesFeed = class TopSitesFeed {
     .reduce((validLinks, link) => {
       const hostname = shortURL(link);
       if (!this.isExperimentOnAndLinkFilteredSearch(hostname)) {
-        validLinks.push({...link, hostname});
+        validLinks.push({
+          ...(searchShortcutsExperiment ? this.topSiteToSearchTopSite(link) : link),
+          hostname
+        });
       }
       return validLinks;
     }, []);
 
     
     const notBlockedDefaultSites = DEFAULT_TOP_SITES
-      .filter(link => {
+      .reduce((topsites, link) => {
+        const searchProvider = getSearchProvider(shortURL(link));
         if (NewTabUtils.blockedLinks.isBlocked({url: link.url})) {
-          return false;
+          return topsites;
         } else if (this.isExperimentOnAndLinkFilteredSearch(link.hostname)) {
-          return false;
+          return topsites;
+          
+          
+        } else if (searchProvider && NewTabUtils.blockedLinks.isBlocked({url: searchProvider.url})) {
+          return topsites;
         }
-        return true;
-      });
+        return [
+          ...topsites,
+          searchShortcutsExperiment ? this.topSiteToSearchTopSite(link) : link
+        ];
+      }, []);
 
     
-    const plainPinned = await this.pinnedCache.request();
+    let plainPinned = await this.pinnedCache.request();
+
+    
+    
+    
+    if (await this._maybeInsertSearchShortcuts(plainPinned)) {
+      this.pinnedCache.expire();
+      plainPinned = await this.pinnedCache.request();
+    }
+
     const pinned = await Promise.all(plainPinned.map(async link => {
       if (!link) {
         return link;
@@ -178,8 +273,12 @@ this.TopSitesFeed = class TopSitesFeed {
       }
       
       
-      const copy = Object.assign({}, frecentSite ||
-        {isDefault: !!notBlockedDefaultSites.find(finder)}, link, {hostname: shortURL(link)});
+      const copy = Object.assign(
+        {},
+        frecentSite || {isDefault: !!notBlockedDefaultSites.find(finder)},
+        link,
+        {hostname: shortURL(link)}
+      );
 
       
       if (!copy.favicon) {
@@ -216,6 +315,8 @@ this.TopSitesFeed = class TopSitesFeed {
         
         if (link.customScreenshotURL) {
           this._fetchScreenshot(link, link.customScreenshotURL);
+        } else if (link.searchTopSite && !link.isDefault) {
+          this._tippyTopProvider.processSite(link);
         } else {
           this._fetchIcon(link);
         }
@@ -257,6 +358,18 @@ this.TopSitesFeed = class TopSitesFeed {
       
       this.store.dispatch(ac.AlsoToPreloaded(newAction));
     }
+  }
+
+  topSiteToSearchTopSite(site) {
+    const searchProvider = getSearchProvider(shortURL(site));
+    if (!searchProvider) {
+      return site;
+    }
+    return {
+      ...site,
+      searchTopSite: true,
+      label: searchProvider.keyword
+    };
   }
 
   
@@ -337,13 +450,16 @@ this.TopSitesFeed = class TopSitesFeed {
 
 
 
-  async _pinSiteAt({customScreenshotURL, label, url}, index) {
+  async _pinSiteAt({customScreenshotURL, label, url, searchTopSite}, index) {
     const toPin = {url};
     if (label) {
       toPin.label = label;
     }
     if (customScreenshotURL) {
       toPin.customScreenshotURL = customScreenshotURL;
+    }
+    if (searchTopSite) {
+      toPin.searchTopSite = searchTopSite;
     }
     NewTabUtils.pinnedLinks.pin(toPin, index);
 
@@ -389,6 +505,20 @@ this.TopSitesFeed = class TopSitesFeed {
     const {site} = action.data;
     NewTabUtils.pinnedLinks.unpin(site);
     this._broadcastPinnedSitesUpdated();
+  }
+
+  disableSearchImprovements() {
+    Services.prefs.clearUserPref(`browser.newtabpage.activity-stream.${SEARCH_SHORTCUTS_HAVE_PINNED_PREF}`);
+    this.unpinAllSearchShortcuts();
+  }
+
+  unpinAllSearchShortcuts() {
+    for (let pinnedLink of NewTabUtils.pinnedLinks.links) {
+      if (pinnedLink && pinnedLink.searchTopSite) {
+        NewTabUtils.pinnedLinks.unpin(pinnedLink);
+      }
+    }
+    this.pinnedCache.expire();
   }
 
   
@@ -478,10 +608,20 @@ this.TopSitesFeed = class TopSitesFeed {
         this.refresh({broadcast: true});
         break;
       case at.PREF_CHANGED:
-        if (action.data.name === DEFAULT_SITES_PREF) {
-          this.refreshDefaults(action.data.value);
-        } else if ([ROWS_PREF, NO_DEFAULT_SEARCH_TILE_EXP_PREF].includes(action.data.name)) {
-          this.refresh({broadcast: true});
+        switch (action.data.name) {
+          case DEFAULT_SITES_PREF:
+            this.refreshDefaults(action.data.value);
+            break;
+          case ROWS_PREF:
+          case NO_DEFAULT_SEARCH_TILE_EXP_PREF:
+          case SEARCH_SHORTCUTS_SEARCH_ENGINES_PREF:
+            this.refresh({broadcast: true});
+            break;
+          case SEARCH_SHORTCUTS_EXPERIMENT:
+            if (!action.data.value) {
+              this.disableSearchImprovements();
+            }
+            this.refresh({broadcast: true});
         }
         break;
       case at.UPDATE_SECTION_PREFS:
