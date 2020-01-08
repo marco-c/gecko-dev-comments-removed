@@ -5103,7 +5103,6 @@ ContentParent::RecvCreateWindow(PBrowserParent* aThisTab,
 
   
   cwi.windowOpened() = true;
-  cwi.layersId() = LayersId{0};
   cwi.maxTouchPoints() = 0;
   cwi.hasSiblings() = false;
 
@@ -5162,8 +5161,7 @@ ContentParent::RecvCreateWindow(PBrowserParent* aThisTab,
 
   newTab->SwapFrameScriptsFrom(cwi.frameScripts());
 
-  if (!newTab->SetRenderFrame() ||
-      !newTab->GetRenderFrameInfo(&cwi.textureFactoryIdentifier(), &cwi.layersId(), &cwi.compositorOptions())) {
+  if (!newTab->SetRenderFrame()) {
     rv = NS_ERROR_FAILURE;
   }
 

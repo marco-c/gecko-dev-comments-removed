@@ -602,11 +602,7 @@ public:
   virtual ScreenIntSize GetInnerSize() override;
 
   
-  void DoFakeShow(const TextureFactoryIdentifier& aTextureFactoryIdentifier,
-                  const layers::LayersId& aLayersId,
-                  const mozilla::layers::CompositorOptions& aCompositorOptions,
-                  const bool aHasRenderFrame,
-                  const ShowInfo& aShowInfo);
+  void DoFakeShow(const ShowInfo& aShowInfo);
 
   void ContentReceivedInputBlock(const ScrollableLayerGuid& aGuid,
                                  uint64_t aInputBlockId,

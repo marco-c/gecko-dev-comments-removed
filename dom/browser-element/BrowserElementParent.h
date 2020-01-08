@@ -22,11 +22,6 @@ namespace dom {
 class TabParent;
 } 
 
-namespace layers {
-class CompositorOptions;
-struct TextureFactoryIdentifier;
-} 
-
 
 
 
@@ -94,10 +89,7 @@ public:
                 dom::TabParent* aPopupTabParent,
                 const nsAString& aURL,
                 const nsAString& aName,
-                const nsAString& aFeatures,
-                layers::TextureFactoryIdentifier* aTextureFactoryIdentifier,
-                layers::LayersId* aLayersId,
-                layers::CompositorOptions* aCompositorOptions);
+                const nsAString& aFeatures);
 
   
 
