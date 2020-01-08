@@ -582,6 +582,13 @@ class nsIWidget : public nsISupports
 
 
 
+    virtual mozilla::DesktopToLayoutDeviceScale GetDesktopToDeviceScaleByScreen() = 0;
+
+    
+
+
+
+
 
 
     mozilla::CSSToLayoutDeviceScale GetDefaultScale();

@@ -57,6 +57,7 @@
 
 #if defined(MOZ_WAYLAND)
 #include <gdk/gdkwayland.h>
+#include "nsView.h"
 #endif
 
 #include "nsGkAtoms.h"
@@ -839,6 +840,37 @@ nsWindow::GetDesktopToDeviceScale()
 
     
     return DesktopToLayoutDeviceScale(1.0);
+}
+
+DesktopToLayoutDeviceScale
+nsWindow::GetDesktopToDeviceScaleByScreen()
+{
+#ifdef MOZ_WAYLAND
+    GdkDisplay* gdkDisplay = gdk_display_get_default();
+    
+    
+    
+    
+    
+    
+    if (GDK_IS_WAYLAND_DISPLAY(gdkDisplay)) {
+        nsView* view = nsView::GetViewFor(this);
+        if (view) {
+            nsView* parentView = view->GetParent();
+            if (parentView) {
+                nsIWidget* parentWidget = parentView->GetNearestWidget(nullptr);
+                if (parentWidget) {
+                    return DesktopToLayoutDeviceScale(parentWidget->RoundsWidgetCoordinatesTo());
+                } else {
+                    NS_WARNING("Widget has no parent");
+                }
+            }
+        } else {
+            NS_WARNING("Cannot find widget view");
+        }
+    }
+#endif
+    return nsBaseWidget::GetDesktopToDeviceScale();
 }
 
 void
