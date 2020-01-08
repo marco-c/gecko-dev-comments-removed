@@ -4,7 +4,20 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["QueryContext"];
+var EXPORTED_SYMBOLS = ["QueryContext", "UrlbarController"];
+
+ChromeUtils.import("resource://gre/modules/Services.jsm");
+
+
+
+
+const ProvidersManager = {
+  queryStart(queryContext, controller) {
+    queryContext.results = [{url: queryContext.searchString}];
+    controller.receiveResults(queryContext);
+  },
+};
+
 
 
 
@@ -55,6 +68,106 @@ class QueryContext {
         throw new Error(`Missing or empty ${optionName} provided to QueryContext`);
       }
       this[optionName] = options[optionName];
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+class UrlbarController {
+  
+
+
+
+
+
+
+
+
+
+  constructor(options = {}) {
+    this.manager = options.manager || ProvidersManager;
+
+    this._listeners = new Set();
+  }
+
+  
+
+
+
+
+  handleQuery(queryContext) {
+    queryContext.autoFill = Services.prefs.getBoolPref("browser.urlbar.autoFill", true);
+
+    this.manager.queryStart(queryContext, this);
+
+    this._notify("onQueryStarted", queryContext);
+  }
+
+  
+
+
+
+
+  cancelQuery(queryContext) {
+    this.manager.queryCancel(queryContext);
+
+    this._notify("onQueryCancelled", queryContext);
+  }
+
+  
+
+
+
+
+  receiveResults(queryContext) {
+    this._notify("onQueryResults", queryContext);
+  }
+
+  
+
+
+
+
+
+  addQueryListener(listener) {
+    if (!listener || typeof listener != "object") {
+      throw new TypeError("Expected listener to be an object");
+    }
+    this._listeners.add(listener);
+  }
+
+  
+
+
+
+
+  removeQueryListener(listener) {
+    this._listeners.delete(listener);
+  }
+
+  
+
+
+
+
+
+  _notify(name, ...params) {
+    for (let listener of this._listeners) {
+      try {
+        listener[name](...params);
+      } catch (ex) {
+        Cu.reportError(ex);
+      }
     }
   }
 }

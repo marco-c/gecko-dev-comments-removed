@@ -13,5 +13,46 @@ if (commonFile) {
 
 
 
+ChromeUtils.import("resource:///modules/UrlbarController.jsm");
 ChromeUtils.defineModuleGetter(this, "UrlbarTokenizer",
                                "resource:///modules/UrlbarTokenizer.jsm");
+ChromeUtils.defineModuleGetter(this, "PlacesTestUtils",
+                               "resource://testing-common/PlacesTestUtils.jsm");
+
+
+
+
+
+function createContext(searchString = "foo") {
+  return new QueryContext({
+    searchString,
+    lastKey: searchString ? searchString[searchString.length - 1] : "",
+    maxResults: 1,
+    isPrivate: true,
+  });
+}
+
+
+
+
+
+
+
+
+
+function promiseControllerNotification(controller, notification) {
+  return new Promise(resolve => {
+    let proxifiedObserver = new Proxy({}, {
+      get: (target, name) => {
+        if (name == notification) {
+          return (...args) => {
+            controller.removeQueryListener(proxifiedObserver);
+            resolve(args);
+          };
+        }
+        return () => false;
+      },
+    });
+    controller.addQueryListener(proxifiedObserver);
+  });
+}
