@@ -32,6 +32,22 @@ const EXPECTED_REFLOWS_FIRST_OPEN = [
 
   {
     stack: [
+      "adjustHeight@chrome://global/content/bindings/autocomplete.xml",
+      "onxblpopupshown@chrome://global/content/bindings/autocomplete.xml"
+    ],
+    maxCount: 5, 
+  },
+
+  {
+    stack: [
+      "adjustHeight@chrome://global/content/bindings/autocomplete.xml",
+      "_invalidate/this._adjustHeightTimeout<@chrome://global/content/bindings/autocomplete.xml",
+    ],
+    maxCount: 6, 
+  },
+
+  {
+    stack: [
       "_handleOverflow@chrome://global/content/bindings/autocomplete.xml",
       "handleOverUnderflow@chrome://global/content/bindings/autocomplete.xml",
       "_reuseAcItem@chrome://global/content/bindings/autocomplete.xml",
@@ -67,6 +83,22 @@ const EXPECTED_REFLOWS_FIRST_OPEN = [
 
 
 const EXPECTED_REFLOWS_SECOND_OPEN = [
+  {
+    stack: [
+      "adjustHeight@chrome://global/content/bindings/autocomplete.xml",
+      "onxblpopupshown@chrome://global/content/bindings/autocomplete.xml"
+    ],
+    maxCount: 3, 
+  },
+
+  {
+    stack: [
+      "adjustHeight@chrome://global/content/bindings/autocomplete.xml",
+      "_invalidate/this._adjustHeightTimeout<@chrome://global/content/bindings/autocomplete.xml",
+    ],
+    maxCount: 6, 
+  },
+
   {
     stack: [
       "_handleOverflow@chrome://global/content/bindings/autocomplete.xml",
