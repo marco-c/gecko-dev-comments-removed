@@ -278,7 +278,7 @@ class QueryContext {
       throw new Error(`Invalid sources list`);
     }
 
-    this.autoFill = !!options.autoFill;
+    this.autofill = !!options.autofill;
   }
 
   

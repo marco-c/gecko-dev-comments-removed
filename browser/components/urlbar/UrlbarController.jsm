@@ -92,7 +92,7 @@ class UrlbarController {
     }
     this._lastQueryContext = queryContext;
 
-    queryContext.autoFill = UrlbarPrefs.get("autoFill");
+    queryContext.autofill = UrlbarPrefs.get("autoFill");
 
     queryContext.lastTelemetryResultCount = 0;
     TelemetryStopwatch.start(TELEMETRY_1ST_RESULT, queryContext);
