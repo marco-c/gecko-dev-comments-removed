@@ -2308,56 +2308,32 @@ UniquePtr<ServoStyleSet> nsDocumentViewer::CreateStyleSet(Document* aDocument) {
   }
 
   
-  sheet = cache->ScrollbarsSheet();
-  if (sheet) {
-    styleSet->PrependStyleSheet(SheetType::Agent, sheet);
-  }
+  styleSet->PrependStyleSheet(SheetType::Agent, cache->ScrollbarsSheet());
+  styleSet->PrependStyleSheet(SheetType::Agent, cache->FormsSheet());
 
-  sheet = cache->FormsSheet();
-  if (sheet) {
-    styleSet->PrependStyleSheet(SheetType::Agent, sheet);
-  }
-
+  
   if (aDocument->LoadsFullXULStyleSheetUpFront()) {
-    sheet = cache->XULSheet();
-    if (sheet) {
-      styleSet->PrependStyleSheet(SheetType::Agent, sheet);
-    }
+    styleSet->PrependStyleSheet(SheetType::Agent, cache->XULSheet());
   }
 
-  sheet = cache->MinimalXULSheet();
-  if (sheet) {
-    
-    
-    styleSet->PrependStyleSheet(SheetType::Agent, sheet);
-  }
+  
+  
+  styleSet->PrependStyleSheet(SheetType::Agent, cache->MinimalXULSheet());
 
-  sheet = cache->CounterStylesSheet();
-  if (sheet) {
-    styleSet->PrependStyleSheet(SheetType::Agent, sheet);
-  }
+  styleSet->PrependStyleSheet(SheetType::Agent, cache->CounterStylesSheet());
 
   if (nsLayoutUtils::ShouldUseNoScriptSheet(aDocument)) {
-    sheet = cache->NoScriptSheet();
-    if (sheet) {
-      styleSet->PrependStyleSheet(SheetType::Agent, sheet);
-    }
+    styleSet->PrependStyleSheet(SheetType::Agent, cache->NoScriptSheet());
   }
 
   if (nsLayoutUtils::ShouldUseNoFramesSheet(aDocument)) {
-    sheet = cache->NoFramesSheet();
-    if (sheet) {
-      styleSet->PrependStyleSheet(SheetType::Agent, sheet);
-    }
+    styleSet->PrependStyleSheet(SheetType::Agent, cache->NoFramesSheet());
   }
 
   
   
 
-  sheet = cache->HTMLSheet();
-  if (sheet) {
-    styleSet->PrependStyleSheet(SheetType::Agent, sheet);
-  }
+  styleSet->PrependStyleSheet(SheetType::Agent, cache->HTMLSheet());
 
   if (MOZ_LIKELY(mDocument->NodeInfoManager()->SVGEnabled())) {
     styleSet->PrependStyleSheet(SheetType::Agent, cache->SVGSheet());
