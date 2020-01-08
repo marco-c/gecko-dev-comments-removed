@@ -11,6 +11,7 @@
 #include "mozilla/Attributes.h" 
 #include "mozilla/Maybe.h" 
 
+#include <stddef.h> 
 #include <stdint.h> 
 
 #include "frontend/EitherParser.h" 
@@ -167,6 +168,14 @@ class MOZ_STACK_CLASS StandaloneFunctionInfo final
       : BytecodeCompiler(cx, options)
     {}
 };
+
+extern MOZ_MUST_USE bool
+CompileLazyFunction(JSContext* cx, JS::Handle<LazyScript*> lazy,
+                    const char16_t* units, size_t length);
+
+extern MOZ_MUST_USE bool
+CompileLazyFunction(JSContext* cx, JS::Handle<LazyScript*> lazy,
+                    const mozilla::Utf8Unit* units, size_t length);
 
 } 
 
