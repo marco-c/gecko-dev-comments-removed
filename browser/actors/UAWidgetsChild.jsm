@@ -26,6 +26,10 @@ class UAWidgetsChild extends ActorChild {
         this.teardownWidget(aEvent.target);
         break;
     }
+
+    
+    
+    aEvent.stopPropagation();
   }
 
   setupOrNotifyWidget(aElement) {
