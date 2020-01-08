@@ -7,7 +7,7 @@ const { combineReducers } = require("devtools/client/shared/vendor/redux");
 const { recordingState: {
   NOT_YET_KNOWN,
 }} = require("devtools/client/performance-new/utils");
-
+const { DEFAULT_WINDOW_LENGTH } = require("devtools/shared/performance-new/common");
 
 
 
@@ -88,6 +88,21 @@ function entries(state = 10000000, action) {
 
 
 
+function duration(state = DEFAULT_WINDOW_LENGTH, action) {
+  switch (action.type) {
+    case "CHANGE_DURATION":
+      return action.duration;
+    case "INITIALIZE_STORE":
+      return action.recordingSettingsFromPreferences.duration;
+    default:
+      return state;
+  }
+}
+
+
+
+
+
 function features(state = ["js", "stackwalk", "responsiveness"], action) {
   switch (action.type) {
     case "CHANGE_FEATURES":
@@ -138,13 +153,28 @@ function initializedValues(state = null, action) {
   }
 }
 
+
+
+
+
+function actorVersion(state = 0, action) {
+  switch (action.type) {
+    case "INITIALIZE_STORE":
+      return action.actorVersion;
+    default:
+      return state;
+  }
+}
+
 module.exports = combineReducers({
   recordingState,
   recordingUnexpectedlyStopped,
   isSupportedPlatform,
   interval,
   entries,
+  duration,
   features,
   threads,
   initializedValues,
+  actorVersion,
 });

@@ -165,6 +165,12 @@ RootActor.prototype = {
     
     
     webExtensionAddonConnect: true,
+    
+    
+    
+    
+    
+    perfActorVersion: 1,
   },
 
   

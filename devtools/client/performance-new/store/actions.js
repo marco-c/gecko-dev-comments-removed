@@ -9,7 +9,7 @@ const { recordingState: {
   REQUEST_TO_START_RECORDING,
   REQUEST_TO_GET_PROFILE_AND_STOP_PROFILER,
   REQUEST_TO_STOP_PROFILER,
-}} = require("devtools/client/performance-new/utils");
+}, INFINITE_WINDOW_LENGTH } = require("devtools/client/performance-new/utils");
 
 
 
@@ -76,6 +76,15 @@ exports.changeEntries = entries => _dispatchAndUpdatePreferences({
 
 
 
+exports.changeDuration = duration => _dispatchAndUpdatePreferences({
+  type: "CHANGE_DURATION",
+  duration,
+});
+
+
+
+
+
 exports.changeFeatures = features => _dispatchAndUpdatePreferences({
   type: "CHANGE_FEATURES",
   features,
@@ -107,6 +116,17 @@ exports.startRecording = () => {
   return (dispatch, getState) => {
     const recordingSettings = selectors.getRecordingSettings(getState());
     const perfFront = selectors.getPerfFront(getState());
+    
+    if (recordingSettings.duration === INFINITE_WINDOW_LENGTH) {
+      recordingSettings.duration = 0;
+    }
+    
+    
+    
+    
+    if (selectors.getActorVersion(getState()) < 1) {
+      delete recordingSettings.duration;
+    }
     perfFront.startProfiler(recordingSettings);
     dispatch(changeRecordingState(REQUEST_TO_START_RECORDING));
   };

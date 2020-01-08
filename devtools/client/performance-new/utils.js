@@ -31,6 +31,14 @@ const UNITS = ["B", "kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
 
 
 
+const INFINITE_WINDOW_LENGTH = 400;
+
+
+
+
+
+
+
 
 
 
@@ -180,4 +188,5 @@ module.exports = {
   scaleRangeWithClamping,
   calculateOverhead,
   recordingState,
+  INFINITE_WINDOW_LENGTH,
 };

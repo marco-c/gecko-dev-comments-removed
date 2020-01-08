@@ -31,14 +31,17 @@ const {
 
 
 
-async function gInit(perfFront, preferenceFront) {
+
+async function gInit(perfFront, preferenceFront, actorVersion) {
   const store = createStore(reducers);
+  actorVersion = actorVersion || 0;
 
   
   
   store.dispatch(actions.initializeStore({
     perfFront,
     receiveProfile,
+    actorVersion,
     
     
     
