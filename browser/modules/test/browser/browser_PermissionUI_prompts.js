@@ -31,13 +31,6 @@ add_task(async function test_midi_permission_prompt() {
 });
 
 
-add_task(async function test_autoplay_permission_prompt() {
-  Services.prefs.setIntPref("media.autoplay.default", Ci.nsIAutoplay.PROMPT);
-  await testPrompt(PermissionUI.AutoplayPermissionPrompt);
-  Services.prefs.clearUserPref("media.autoplay.default");
-});
-
-
 add_task(async function test_storage_access_permission_prompt() {
   Services.prefs.setBoolPref("dom.storage_access.auto_grants", false);
   await testPrompt(PermissionUI.StorageAccessPermissionPrompt);
