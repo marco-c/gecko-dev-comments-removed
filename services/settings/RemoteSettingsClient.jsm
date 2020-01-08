@@ -339,49 +339,14 @@ class RemoteSettingsClient extends EventEmitter {
           
           
           
-          const payload = await fetchRemoteRecords(collection.bucket, collection.name, expectedTimestamp);
           try {
-            await this._validateCollectionSignature(payload.data,
-                                                    payload.last_modified,
-                                                    collection,
-                                                    { expectedTimestamp, ignoreLocal: true });
+            syncResult = await this._retrySyncFromScratch(collection, expectedTimestamp);
           } catch (e) {
+            
+            
             reportStatus = UptakeTelemetry.STATUS.SIGNATURE_RETRY_ERROR;
             throw e;
           }
-
-          
-          
-          const { data: oldData } = await collection.list({ order: "" }); 
-
-          
-          syncResult = { created: [], updated: [], deleted: [] };
-
-          
-          
-          const localLastModified = await collection.db.getLastModified();
-          if (payload.last_modified >= localLastModified) {
-            const { data: newData } = payload;
-            await collection.clear();
-            await collection.loadDump(newData);
-
-            
-            const oldById = new Map(oldData.map(e => [e.id, e]));
-            for (const r of newData) {
-              const old = oldById.get(r.id);
-              if (old) {
-                if (old.last_modified != r.last_modified) {
-                  syncResult.updated.push({ old, new: r });
-                }
-                oldById.delete(r.id);
-              } else {
-                syncResult.created.push(r);
-              }
-            }
-            
-            syncResult.deleted = Array.from(oldById.values());
-          }
-
         } else {
           
           if (e.message == MISSING_SIGNATURE) {
@@ -398,24 +363,11 @@ class RemoteSettingsClient extends EventEmitter {
         }
       }
 
+      const filteredSyncResult = await this._filterSyncResult(collection, syncResult);
       
-      
-      const { created: allCreated, updated: allUpdated, deleted: allDeleted } = syncResult;
-      const [created, deleted, updatedFiltered] = await Promise.all(
-          [allCreated, allDeleted, allUpdated.map(e => e.new)].map(this._filterEntries.bind(this))
-        );
-      
-      const updatedFilteredIds = new Set(updatedFiltered.map(e => e.id));
-      const updated = allUpdated.filter(({ new: { id } }) => updatedFilteredIds.has(id));
-
-      
-      if (created.length || updated.length || deleted.length) {
-        
-        const { data: allData } = await collection.list({ order: "" }); 
-        const current = await this._filterEntries(allData);
-        const payload = { data: { current, created, updated, deleted } };
+      if (filteredSyncResult) {
         try {
-          await this.emit("sync", payload);
+          await this.emit("sync", { data: filteredSyncResult });
         } catch (e) {
           reportStatus = UptakeTelemetry.STATUS.APPLY_ERROR;
           throw e;
@@ -476,6 +428,90 @@ class RemoteSettingsClient extends EventEmitter {
                                          this.signerName)) {
       throw new Error(INVALID_SIGNATURE + ` (${bucket}/${collection})`);
     }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  async _retrySyncFromScratch(kintoCollection, expectedTimestamp) {
+    const payload = await fetchRemoteRecords(kintoCollection.bucket, kintoCollection.name, expectedTimestamp);
+    await this._validateCollectionSignature(payload.data,
+      payload.last_modified,
+      kintoCollection,
+      { expectedTimestamp, ignoreLocal: true });
+
+    
+    
+    const { data: oldData } = await kintoCollection.list({ order: "" }); 
+
+    
+    const syncResult = { created: [], updated: [], deleted: [] };
+
+    
+    
+    const localLastModified = await kintoCollection.db.getLastModified();
+    if (payload.last_modified >= localLastModified) {
+      const { data: newData } = payload;
+      await kintoCollection.clear();
+      await kintoCollection.loadDump(newData);
+
+      
+      const oldById = new Map(oldData.map(e => [e.id, e]));
+      for (const r of newData) {
+        const old = oldById.get(r.id);
+        if (old) {
+          if (old.last_modified != r.last_modified) {
+            syncResult.updated.push({ old, new: r });
+          }
+          oldById.delete(r.id);
+        } else {
+          syncResult.created.push(r);
+        }
+      }
+      
+      syncResult.deleted = Array.from(oldById.values());
+    }
+    return syncResult;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  async _filterSyncResult(kintoCollection, syncResult) {
+    
+    
+    const { created: allCreated, updated: allUpdated, deleted: allDeleted } = syncResult;
+    const [created, deleted, updatedFiltered] = await Promise.all(
+      [allCreated, allDeleted, allUpdated.map(e => e.new)].map(this._filterEntries.bind(this))
+    );
+    
+    const updatedFilteredIds = new Set(updatedFiltered.map(e => e.id));
+    const updated = allUpdated.filter(({ new: { id } }) => updatedFilteredIds.has(id));
+
+    if (!created.length && !updated.length && !deleted.length) {
+      return null;
+    }
+    
+    const { data: allData } = await kintoCollection.list({ order: "" }); 
+    const current = await this._filterEntries(allData);
+    return { created, updated, deleted, current };
   }
 
   
