@@ -46,6 +46,11 @@ class HighlightersOverlay {
     
     
     
+    this.isGridHighlighterTimerActive = false;
+
+    
+    
+    
     this.editors = {};
 
     
@@ -518,6 +523,12 @@ class HighlightersOverlay {
 
     this._toggleRuleViewIcon(node, true, ".ruleview-grid");
 
+    if (!this.isGridHighlighterTimerActive) {
+      this.telemetry.toolOpened("grid_highlighter", this.inspector.toolbox.sessionId,
+        this);
+      this.isGridHighlighterTimerActive = true;
+    }
+
     if (trigger === "grid") {
       this.telemetry.scalarAdd("devtools.grid.gridinspector.opened", 1);
     } else if (trigger === "markup") {
@@ -561,6 +572,12 @@ class HighlightersOverlay {
     this.gridHighlighters.delete(node);
 
     this._toggleRuleViewIcon(node, false, ".ruleview-grid");
+
+    if (this.isGridHighlighterTimerActive && !this.gridHighlighters.size) {
+      this.telemetry.toolClosed("grid_highlighter", this.inspector.toolbox.sessionId,
+        this);
+      this.isGridHighlighterTimerActive = false;
+    }
 
     
     
