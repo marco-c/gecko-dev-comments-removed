@@ -95,11 +95,6 @@ const PENDING_INSTALL_METADATA =
      "updateDate", "applyBackgroundUpdates", "compatibilityOverrides",
      "installTelemetryInfo"];
 
-const COMPATIBLE_BY_DEFAULT_TYPES = {
-  extension: true,
-  dictionary: true,
-};
-
 
 const PROP_JSON_FIELDS = ["id", "syncGUID", "version", "type",
                           "loader", "updateURL", "optionsURL",
@@ -445,10 +440,8 @@ class AddonInternal {
     
     
     
-    if (this.type in COMPATIBLE_BY_DEFAULT_TYPES &&
-        !this.strictCompatibility &&
-        (!AddonManager.strictCompatibility ||
-         this.type == "dictionary")) {
+    if (!this.strictCompatibility &&
+        (!AddonManager.strictCompatibility || this.type == "dictionary")) {
 
       
       
