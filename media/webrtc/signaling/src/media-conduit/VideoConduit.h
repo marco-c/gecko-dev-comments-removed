@@ -93,30 +93,30 @@ public:
 
 
 
-  virtual MediaConduitErrorCode AttachRenderer(RefPtr<mozilla::VideoRenderer> aVideoRenderer) override;
-  virtual void DetachRenderer() override;
+  MediaConduitErrorCode AttachRenderer(RefPtr<mozilla::VideoRenderer> aVideoRenderer) override;
+  void DetachRenderer() override;
 
   
 
 
 
-  virtual MediaConduitErrorCode ReceivedRTPPacket(const void* data, int len, uint32_t ssrc) override;
+  MediaConduitErrorCode ReceivedRTPPacket(const void* data, int len, uint32_t ssrc) override;
 
   
 
 
 
-  virtual MediaConduitErrorCode ReceivedRTCPPacket(const void* data, int len) override;
+  MediaConduitErrorCode ReceivedRTCPPacket(const void* data, int len) override;
 
-  virtual MediaConduitErrorCode StopTransmitting() override;
-  virtual MediaConduitErrorCode StartTransmitting() override;
-  virtual MediaConduitErrorCode StopReceiving() override;
-  virtual MediaConduitErrorCode StartReceiving() override;
+  MediaConduitErrorCode StopTransmitting() override;
+  MediaConduitErrorCode StartTransmitting() override;
+  MediaConduitErrorCode StopReceiving() override;
+  MediaConduitErrorCode StartReceiving() override;
 
   
 
 
-  virtual MediaConduitErrorCode ConfigureCodecMode(webrtc::VideoCodecMode) override;
+  MediaConduitErrorCode ConfigureCodecMode(webrtc::VideoCodecMode) override;
 
    
 
@@ -126,7 +126,7 @@ public:
 
 
 
-  virtual MediaConduitErrorCode ConfigureSendMediaCodec(const VideoCodecConfig* codecInfo) override;
+  MediaConduitErrorCode ConfigureSendMediaCodec(const VideoCodecConfig* codecInfo) override;
 
   
 
@@ -137,19 +137,18 @@ public:
 
 
 
-   virtual MediaConduitErrorCode ConfigureRecvMediaCodecs(
+   MediaConduitErrorCode ConfigureRecvMediaCodecs(
        const std::vector<VideoCodecConfig* >& codecConfigList) override;
 
   
 
 
 
-  virtual MediaConduitErrorCode SetTransmitterTransport(RefPtr<TransportInterface> aTransport) override;
+  MediaConduitErrorCode SetTransmitterTransport(RefPtr<TransportInterface> aTransport) override;
 
-  virtual MediaConduitErrorCode SetReceiverTransport(RefPtr<TransportInterface> aTransport) override;
+  MediaConduitErrorCode SetReceiverTransport(RefPtr<TransportInterface> aTransport) override;
 
   
-
 
 
 
@@ -158,7 +157,6 @@ public:
   void SelectBitrates(unsigned short width,
                       unsigned short height,
                       int cap,
-                      int32_t aLastFramerateTenths,
                       webrtc::VideoStream& aVideoStream);
 
   
@@ -189,7 +187,7 @@ public:
 
 
 
-  virtual MediaConduitErrorCode SendVideoFrame(
+  MediaConduitErrorCode SendVideoFrame(
     const webrtc::VideoFrame& frame) override;
 
   
@@ -198,7 +196,7 @@ public:
 
 
 
-  virtual bool SendRtp(const uint8_t* packet, size_t length,
+  bool SendRtp(const uint8_t* packet, size_t length,
                        const webrtc::PacketOptions& options) override;
 
   
@@ -207,14 +205,14 @@ public:
 
 
 
-  virtual bool SendRtcp(const uint8_t* packet, size_t length) override;
+  bool SendRtcp(const uint8_t* packet, size_t length) override;
 
 
   
 
 
 
-  virtual void OnFrame(const webrtc::VideoFrame& frame) override;
+  void OnFrame(const webrtc::VideoFrame& frame) override;
 
   
 
@@ -226,27 +224,14 @@ public:
 
   void OnSinkWantsChanged(const rtc::VideoSinkWants& wants);
 
-  virtual uint64_t CodecPluginID() override;
+  uint64_t CodecPluginID() override;
 
-  virtual void SetPCHandle(const std::string& aPCHandle) override {
+  void SetPCHandle(const std::string& aPCHandle) override
+  {
     mPCHandle = aPCHandle;
   }
 
-  virtual void DeleteStreams() override;
-
-  unsigned int SendingMaxFs() override {
-    if(mCurSendCodecConfig) {
-      return mCurSendCodecConfig->mEncodingConstraints.maxFs;
-    }
-    return 0;
-  }
-
-  unsigned int SendingMaxFr() override {
-    if(mCurSendCodecConfig) {
-      return mCurSendCodecConfig->mEncodingConstraints.maxFps;
-    }
-    return 0;
-  }
+  void DeleteStreams() override;
 
   bool Denoising() const {
     return mDenoising;
@@ -272,7 +257,7 @@ public:
   virtual MediaConduitErrorCode Init();
 
   std::vector<unsigned int> GetLocalSSRCs() const override;
-  bool SetLocalSSRCs(const std::vector<unsigned int> & ssrcs) override;
+  bool SetLocalSSRCs(const std::vector<unsigned int>& ssrcs) override;
   bool GetRemoteSSRC(unsigned int* ssrc) override;
   bool SetRemoteSSRC(unsigned int ssrc) override;
   bool UnsetRemoteSSRC(uint32_t ssrc) override;
@@ -509,9 +494,6 @@ private:
   unsigned short mReceivingWidth;
   unsigned short mReceivingHeight;
   unsigned int   mSendingFramerate;
-  
-  mozilla::Atomic<int32_t, mozilla::Relaxed> mLastFramerateTenths;
-  unsigned short mNumReceivingStreams;
   bool mVideoLatencyTestEnable;
   uint64_t mVideoLatencyAvg;
   

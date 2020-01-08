@@ -89,10 +89,8 @@ public:
 
 
 
-
   virtual void FrameSizeChange(unsigned int width,
-                               unsigned int height,
-                               unsigned int number_of_streams) = 0;
+                               unsigned int height) = 0;
 
   
 
@@ -428,6 +426,7 @@ public:
     const webrtc::VideoFrame& frame) = 0;
 
   virtual MediaConduitErrorCode ConfigureCodecMode(webrtc::VideoCodecMode) = 0;
+
   
 
 
@@ -448,10 +447,6 @@ public:
 
   virtual MediaConduitErrorCode ConfigureRecvMediaCodecs(
       const std::vector<VideoCodecConfig* >& recvCodecConfigList) = 0;
-
-  virtual unsigned int SendingMaxFs() = 0;
-
-  virtual unsigned int SendingMaxFr() = 0;
 
   
 
@@ -556,7 +551,6 @@ public:
   virtual bool IsSamplingFreqSupported(int freq) const = 0;
 
    
-
 
 
 
