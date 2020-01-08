@@ -2347,6 +2347,19 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
            !IsInternalTableStyleExceptCell();
   }
 
+  bool IsContainLayout() const {
+    
+    
+    
+    
+    
+    
+    
+    return (NS_STYLE_CONTAIN_LAYOUT & mContain) &&
+            !IsInternalRubyDisplayType() &&
+            !IsInternalTableStyleExceptCell();
+  }
+
   bool IsContainSize() const {
     
     
