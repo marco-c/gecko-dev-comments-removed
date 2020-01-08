@@ -29,7 +29,6 @@
 #include "mozilla/TimeStamp.h"
 
 #include "EventListenerService.h"
-#include "GeckoProfiler.h"
 #include "nsCOMArray.h"
 #include "nsCOMPtr.h"
 #include "nsContentUtils.h"
@@ -51,10 +50,6 @@
 #include "xpcpublic.h"
 #include "nsIFrame.h"
 #include "nsDisplayList.h"
-
-#ifdef MOZ_GECKO_PROFILER
-#include "ProfilerMarkerPayload.h"
-#endif
 
 namespace mozilla {
 
@@ -1249,6 +1244,7 @@ EventListenerManager::HandleEventInternal(nsPresContext* aPresContext,
             (aEvent->IsTrusted() || listener->mFlags.mAllowUntrustedEvents)) {
           if (!*aDOMEvent) {
             
+            
             nsCOMPtr<EventTarget> et = aEvent->mOriginalTarget;
             RefPtr<Event> event = EventDispatcher::CreateEvent(et, aPresContext,
                                                                aEvent,
@@ -1301,46 +1297,16 @@ EventListenerManager::HandleEventInternal(nsPresContext* aPresContext,
               hasRemovedListener = true;
             }
 
-            nsresult rv = NS_OK;
             nsCOMPtr<nsPIDOMWindowInner> innerWindow =
               WindowFromListener(listener, aItemInShadowTree);
             mozilla::dom::Event* oldWindowEvent = nullptr;
             if (innerWindow) {
               oldWindowEvent = innerWindow->SetEvent(*aDOMEvent);
             }
-#ifdef MOZ_GECKO_PROFILER
-            if (profiler_is_active()) {
-              
-              
-              
-              
-              nsAutoString typeStr;
-              (*aDOMEvent)->GetType(typeStr);
-              AUTO_PROFILER_LABEL_DYNAMIC_LOSSY_NSSTRING(
-                "EventListenerManager::HandleEventInternal", OTHER, typeStr);
 
-              uint16_t phase = (*aDOMEvent)->EventPhase();
-              profiler_add_marker(
-                "DOMEvent",
-                MakeUnique<DOMEventMarkerPayload>(typeStr, phase,
-                                                  aEvent->mTimeStamp,
-                                                  "DOMEvent",
-                                                  TRACING_INTERVAL_START));
+            nsresult rv =
+              HandleEventSubType(listener, *aDOMEvent, aCurrentTarget);
 
-              rv = HandleEventSubType(listener, *aDOMEvent, aCurrentTarget);
-
-              phase = (*aDOMEvent)->EventPhase();
-              profiler_add_marker(
-                "DOMEvent",
-                MakeUnique<DOMEventMarkerPayload>(typeStr, phase,
-                                                  aEvent->mTimeStamp,
-                                                  "DOMEvent",
-                                                  TRACING_INTERVAL_END));
-            } else
-#endif
-            {
-              rv = HandleEventSubType(listener, *aDOMEvent, aCurrentTarget);
-            }
             if (innerWindow) {
               Unused << innerWindow->SetEvent(oldWindowEvent);
             }
