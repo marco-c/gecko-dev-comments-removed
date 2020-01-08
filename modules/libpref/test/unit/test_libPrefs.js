@@ -235,9 +235,9 @@ function run_test() {
 
   
   do_check_throws(function() {
-    ps.lockPref("DefaultPref.nonexistent");}, Cr.NS_ERROR_UNEXPECTED);
+    ps.lockPref("DefaultPref.nonexistent");}, Cr.NS_ERROR_ILLEGAL_VALUE);
   do_check_throws(function() {
-    ps.unlockPref("DefaultPref.nonexistent");}, Cr.NS_ERROR_UNEXPECTED);
+    ps.unlockPref("DefaultPref.nonexistent");}, Cr.NS_ERROR_ILLEGAL_VALUE);
 
   
   Assert.ok(!ps.prefIsLocked("DefaultPref.char"));
