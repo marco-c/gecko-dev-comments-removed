@@ -73,6 +73,11 @@ bool ToJSValue(JSContext* aCx, const WindowProxyHolder& aArgument,
     windowProxy = bc->GetWindowProxy();
     if (!windowProxy) {
       nsPIDOMWindowOuter* window = bc->GetDOMWindow();
+      if (!window) {
+        
+        aValue.setNull();
+        return true;
+      }
       if (!window->EnsureInnerWindow()) {
         return Throw(aCx, NS_ERROR_UNEXPECTED);
       }
