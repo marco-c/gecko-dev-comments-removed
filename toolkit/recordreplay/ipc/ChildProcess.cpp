@@ -426,9 +426,10 @@ void ChildProcessInfo::LaunchSubprocess(
   
   
   
-  mChannel = new Channel(channelId, IsRecording(), [=](Message* aMsg) {
-    ReceiveChildMessageOnMainThread(channelId, aMsg);
-  });
+  mChannel = new Channel(channelId, IsRecording(),
+                         [=](Message::UniquePtr aMsg) {
+                           ReceiveChildMessageOnMainThread(std::move(aMsg));
+                         });
 
   MOZ_RELEASE_ASSERT(IsRecording() == aRecordingProcessData.isSome());
   if (IsRecording()) {

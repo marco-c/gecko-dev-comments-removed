@@ -11,6 +11,7 @@
 
 #include "mozilla/gfx/Types.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/UniquePtr.h"
 
 #include "File.h"
 #include "JSControl.h"
@@ -160,10 +161,13 @@ struct Message {
   }
 
  public:
-  Message* Clone() const {
-    char* res = (char*)malloc(mSize);
+  struct FreePolicy { void operator()(Message* msg) {  } };
+  typedef UniquePtr<Message, FreePolicy> UniquePtr;
+
+  UniquePtr Clone() const {
+    Message* res = static_cast<Message*>(malloc(mSize));
     memcpy(res, this, mSize);
-    return (Message*)res;
+    return UniquePtr(res);
   }
 
   const char* TypeString() const {
@@ -439,7 +443,7 @@ class Channel {
  public:
   
   
-  typedef std::function<void(Message*)> MessageHandler;
+  typedef std::function<void(Message::UniquePtr)> MessageHandler;
 
  private:
   
@@ -473,7 +477,7 @@ class Channel {
 
   
   
-  Message* WaitForMessage();
+  Message::UniquePtr WaitForMessage();
 
   
   static void ThreadMain(void* aChannel);
