@@ -809,12 +809,14 @@ StripURIForReporting(nsIURI* aURI,
   
   
   
-  bool isHttpOrFtp =
-    (NS_SUCCEEDED(aURI->SchemeIs("http", &isHttpOrFtp)) && isHttpOrFtp) ||
-    (NS_SUCCEEDED(aURI->SchemeIs("https", &isHttpOrFtp)) && isHttpOrFtp) ||
-    (NS_SUCCEEDED(aURI->SchemeIs("ftp", &isHttpOrFtp)) && isHttpOrFtp);
+  bool isHttpFtpOrWs =
+    (NS_SUCCEEDED(aURI->SchemeIs("http", &isHttpFtpOrWs)) && isHttpFtpOrWs) ||
+    (NS_SUCCEEDED(aURI->SchemeIs("https", &isHttpFtpOrWs)) && isHttpFtpOrWs) ||
+    (NS_SUCCEEDED(aURI->SchemeIs("ftp", &isHttpFtpOrWs)) && isHttpFtpOrWs) ||
+    (NS_SUCCEEDED(aURI->SchemeIs("ws", &isHttpFtpOrWs)) && isHttpFtpOrWs) ||
+    (NS_SUCCEEDED(aURI->SchemeIs("wss", &isHttpFtpOrWs)) && isHttpFtpOrWs);
 
-  if (!isHttpOrFtp) {
+  if (!isHttpFtpOrWs) {
     
     
     
