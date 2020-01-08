@@ -7,8 +7,6 @@ import traceback
 from six.moves.urllib.parse import parse_qs, quote, unquote, urljoin
 from six import iteritems
 
-from h2.events import RequestReceived, DataReceived
-
 from .constants import content_types
 from .pipes import Pipeline, template
 from .ranges import RangeParser
