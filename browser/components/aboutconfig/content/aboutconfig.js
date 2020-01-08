@@ -13,6 +13,7 @@ let gDefaultBranch = Services.prefs.getDefaultBranch("");
 
 
 let gExistingPrefs = new Map();
+let gDeletedPrefs = new Map();
 
 
 
@@ -23,6 +24,11 @@ let gElementToPrefMap = new WeakMap();
 
 
 let gPrefInEdit = null;
+
+
+
+
+let gFilterString = null;
 
 class PrefRow {
   constructor(name) {
@@ -43,8 +49,12 @@ class PrefRow {
 
     
     if (!this.exists) {
+      gExistingPrefs.delete(this.name);
+      gDeletedPrefs.set(this.name, this);
       return;
     }
+    gExistingPrefs.set(this.name, this);
+    gDeletedPrefs.delete(this.name);
 
     try {
       
@@ -68,6 +78,10 @@ class PrefRow {
 
   get exists() {
     return this.hasDefaultValue || this.hasUserValue;
+  }
+
+  get matchesFilter() {
+    return !gFilterString || this.name.includes(gFilterString);
   }
 
   _setupElement() {
@@ -220,6 +234,24 @@ class PrefRow {
   }
 }
 
+let gPrefObserver = {
+  observe(subject, topic, data) {
+    let pref = gExistingPrefs.get(data) || gDeletedPrefs.get(data);
+    if (pref) {
+      pref.refreshValue();
+      if (!pref.editing) {
+        pref.refreshElement();
+      }
+      return;
+    }
+
+    let newPref = new PrefRow(data);
+    if (newPref.matchesFilter) {
+      document.getElementById("prefs").appendChild(newPref.element);
+    }
+  },
+};
+
 document.addEventListener("DOMContentLoaded", () => {
   if (!Preferences.get("browser.aboutConfig.showWarning")) {
     loadPrefs();
@@ -244,8 +276,9 @@ function loadPrefs() {
   prefs.id = "prefs";
   document.body.appendChild(prefs);
 
-  gExistingPrefs = new Map(Services.prefs.getChildList("")
-                                   .map(name => [name, new PrefRow(name)]));
+  for (let name of Services.prefs.getChildList("")) {
+    new PrefRow(name);
+  }
 
   search.addEventListener("keypress", e => {
     if (e.key == "Enter") {
@@ -257,61 +290,58 @@ function loadPrefs() {
     if (event.target.localName != "button") {
       return;
     }
-    let prefRow = event.target.closest("tr");
-    let pref = gElementToPrefMap.get(prefRow);
+    let pref = gElementToPrefMap.get(event.target.closest("tr"));
     let button = event.target.closest("button");
-    if (button.classList.contains("button-reset")) {
-      Services.prefs.clearUserPref(pref.name);
-      pref.refreshValue();
-      pref.refreshElement();
-      pref.editButton.focus();
-    } else if (button.classList.contains("button-add")) {
+    if (button.classList.contains("button-add")) {
       Preferences.set(pref.name, pref.value);
-      pref.refreshValue();
-      pref.refreshElement();
       if (pref.type != "Boolean") {
         pref.edit();
       }
     } else if (button.classList.contains("button-toggle")) {
       Services.prefs.setBoolPref(pref.name, !pref.value);
-      pref.refreshValue();
-      pref.refreshElement();
     } else if (button.classList.contains("button-edit")) {
       pref.edit();
     } else if (button.classList.contains("button-save")) {
       pref.save();
     } else {
+      
       pref.editing = false;
       Services.prefs.clearUserPref(pref.name);
-      gExistingPrefs.delete(pref.name);
-      pref.refreshValue();
-      pref.refreshElement();
+      pref.editButton.focus();
     }
   });
 
   filterPrefs();
+
+  Services.prefs.addObserver("", gPrefObserver);
+  window.addEventListener("unload", () => {
+    Services.prefs.removeObserver("", gPrefObserver);
+  }, { once: true });
 }
 
 function filterPrefs() {
   if (gPrefInEdit) {
     gPrefInEdit.endEdit();
   }
+  gDeletedPrefs.clear();
 
-  let substring = document.getElementById("search").value.trim();
+  let searchName = document.getElementById("search").value.trim();
+  gFilterString = searchName;
   let prefArray = [...gExistingPrefs.values()];
-  if (substring) {
-    prefArray = prefArray.filter(pref => pref.name.includes(substring));
+  if (gFilterString) {
+    prefArray = prefArray.filter(pref => pref.matchesFilter);
   }
   prefArray.sort((a, b) => a.name > b.name);
+  if (searchName && !gExistingPrefs.has(searchName)) {
+    prefArray.push(new PrefRow(searchName));
+  }
+
   let prefsElement = document.getElementById("prefs");
+  prefsElement.textContent = "";
   let fragment = document.createDocumentFragment();
   for (let pref of prefArray) {
     fragment.appendChild(pref.element);
   }
-  if (substring && !gExistingPrefs.has(substring)) {
-    fragment.appendChild((new PrefRow(substring)).element);
-  }
-  prefsElement.textContent = "";
   prefsElement.appendChild(fragment);
 }
 
