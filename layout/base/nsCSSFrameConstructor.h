@@ -1155,7 +1155,7 @@ private:
       mIsAnonymousContentCreatorContent(false),
       mIsRootPopupgroup(false), mIsAllInline(false), mIsBlock(false),
       mHasInlineEnds(false), mIsPopup(false),
-      mIsLineParticipant(false), mIsForSVGAElement(false)
+      mIsLineParticipant(false)
     {
       MOZ_COUNT_CTOR(FrameConstructionItem);
     }
@@ -1246,8 +1246,6 @@ private:
     bool mIsPopup:1;
     
     bool mIsLineParticipant:1;
-    
-    bool mIsForSVGAElement:1;
 
   private:
     
