@@ -2243,9 +2243,14 @@ pref("network.cookie.thirdparty.nonsecureSessionOnly", false);
 pref("network.cookie.leave-secure-alone",   true);
 pref("network.cookie.same-site.enabled",    true); 
 pref("network.cookie.ipc.sync",             false);
-pref("network.cookie.lifetimePolicy",       0); 
-pref("network.cookie.prefsMigrated",        false);
-pref("network.cookie.lifetime.days",        90); 
+
+
+
+
+
+
+pref("network.cookie.lifetimePolicy",       0);
+
 
 
 pref("network.cookie.move.interval_sec",    10);
