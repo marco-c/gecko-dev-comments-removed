@@ -50,12 +50,6 @@ public:
   
   bool MapsTo(int aFd) const;
 
-  
-  
-  std::function<bool(int)> MapsToFunc() const {
-    return [this](int fd) { return MapsTo(fd); };
-  }
-
 private:
   nsTArray<std::pair<int, int>> mMapping;
   nsTArray<int> mTempFds;

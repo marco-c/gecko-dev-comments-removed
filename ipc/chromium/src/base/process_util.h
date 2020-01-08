@@ -128,6 +128,7 @@ struct LaunchOptions {
   };
 
   
+  
   mozilla::UniquePtr<ForkDelegate> fork_delegate = nullptr;
 #endif
 };

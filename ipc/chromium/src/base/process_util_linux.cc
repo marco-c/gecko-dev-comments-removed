@@ -37,6 +37,12 @@ bool LaunchApp(const std::vector<std::string>& argv,
   }
 
   pid_t pid = options.fork_delegate ? options.fork_delegate->Fork() : fork();
+  
+  
+  
+  
+  
+
   if (pid < 0)
     return false;
 
@@ -51,7 +57,9 @@ bool LaunchApp(const std::vector<std::string>& argv,
       }
     }
 
-    CloseSuperfluousFds(shuffle.MapsToFunc());
+    auto fdIsUsed = [&shuffle](int fd) { return shuffle.MapsTo(fd); };
+    
+    CloseSuperfluousFds(std::ref(fdIsUsed));
 
     for (size_t i = 0; i < argv.size(); i++)
       argv_cstr[i] = const_cast<char*>(argv[i].c_str());
