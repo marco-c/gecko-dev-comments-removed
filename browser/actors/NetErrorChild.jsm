@@ -26,6 +26,8 @@ XPCOMUtils.defineLazyGetter(this, "gBrandBundle", function() {
 });
 XPCOMUtils.defineLazyPreferenceGetter(this, "newErrorPagesEnabled",
   "browser.security.newcerterrorpage.enabled");
+XPCOMUtils.defineLazyPreferenceGetter(this, "mitmErrorPageEnabled",
+  "browser.security.newcerterrorpage.mitm.enabled");
 XPCOMUtils.defineLazyGetter(this, "gNSSErrorsBundle", function() {
   return Services.strings.createBundle("chrome://pipnss/locale/nsserrors.properties");
 });
@@ -124,8 +126,18 @@ class NetErrorChild extends ActorChild {
 
     if (input.data.certIsUntrusted) {
       switch (input.data.code) {
-        
         case MOZILLA_PKIX_ERROR_MITM_DETECTED:
+          if (newErrorPagesEnabled && mitmErrorPageEnabled) {
+            let brandName = gBrandBundle.GetStringFromName("brandShortName");
+            msg1 = gPipNSSBundle.GetStringFromName("certErrorMitM");
+            msg1 += "\n\n";
+            msg1 += gPipNSSBundle.formatStringFromName("certErrorMitM2", [brandName], 1);
+            msg1 += "\n\n";
+            msg1 += gPipNSSBundle.formatStringFromName("certErrorMitM3", [brandName], 1);
+            msg1 += "\n";
+            break;
+          }
+          
         case SEC_ERROR_UNKNOWN_ISSUER:
           let brandName = gBrandBundle.GetStringFromName("brandShortName");
           if (newErrorPagesEnabled) {
@@ -410,6 +422,39 @@ class NetErrorChild extends ActorChild {
         updateContainerPosition();
         break;
       case MOZILLA_PKIX_ERROR_MITM_DETECTED:
+        if (newErrorPagesEnabled && mitmErrorPageEnabled) {
+          
+          
+          
+          
+          
+          let {securityInfo} = docShell.failedChannel;
+          securityInfo.QueryInterface(Ci.nsITransportSecurityInfo);
+          let mitmName = null;
+          for (let cert of securityInfo.failedCertChain.getEnumerator()) {
+            mitmName = cert.issuerCommonName;
+          }
+          for (let span of doc.querySelectorAll(".mitm-name")) {
+            span.textContent = mitmName;
+          }
+
+          learnMoreLink.href = baseURL + "security-error";
+
+          let title = doc.getElementById("et_mitm");
+          let desc = doc.getElementById("ed_mitm");
+          doc.querySelector(".title-text").textContent = title.textContent;
+          
+          doc.getElementById("errorShortDescText").innerHTML = desc.innerHTML;
+
+          
+          es.innerHTML = errWhatToDo.innerHTML;
+          
+          est.innerHTML = errWhatToDoTitle.innerHTML;
+
+          updateContainerPosition();
+          break;
+        }
+        
       case MOZILLA_PKIX_ERROR_SELF_SIGNED_CERT:
         learnMoreLink.href = baseURL + "security-error";
         break;
