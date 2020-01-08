@@ -7138,8 +7138,7 @@ nsGlobalWindowOuter::MaybeAllowStorageForOpenedWindow(nsIURI* aURI)
   }
 
   
-  if (!nsContentUtils::IsThirdPartyWindowOrChannel(inner, nullptr, nullptr) ||
-      !nsContentUtils::IsTrackingResourceWindow(inner)) {
+  if (!nsContentUtils::IsThirdPartyWindowOrChannel(inner, nullptr, aURI)) {
     return;
   }
 

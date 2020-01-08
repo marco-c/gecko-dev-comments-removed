@@ -46,9 +46,22 @@ public:
 
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   static void
   AddFirstPartyStorageAccessGrantedFor(const nsAString& aOrigin,
-                                       nsPIDOMWindowInner* a3rdPartyTrackingWindow);
+                                       nsPIDOMWindowInner* aParentWindow);
 
   
   static void
