@@ -329,7 +329,12 @@ VRManager::TaskTimerCallback(nsITimer* aTimer, void* aClosure)
 void
 VRManager::RunTasks()
 {
-  MOZ_ASSERT(VRListenerThreadHolder::IsInVRListenerThread());
+  
+  
+  
+  if (!VRListenerThreadHolder::IsInVRListenerThread()) {
+    return;
+  }
 
   
   
