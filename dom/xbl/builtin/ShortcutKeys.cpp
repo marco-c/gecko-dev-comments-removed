@@ -1,6 +1,8 @@
 #include "mozilla/ShortcutKeys.h"
 #include "../nsXBLPrototypeHandler.h"
 #include "nsContentUtils.h"
+#include "nsAtom.h"
+#include "mozilla/TextEvents.h"
 
 namespace mozilla {
 
@@ -42,6 +44,28 @@ ShortcutKeys::GetHandlers(HandlerType aType)
   }
 
   return sInstance->EnsureHandlers(aType);
+}
+
+ nsAtom*
+ShortcutKeys::ConvertEventToDOMEventType(const WidgetKeyboardEvent* aWidgetKeyboardEvent)
+{
+  if (aWidgetKeyboardEvent->IsKeyDownOrKeyDownOnPlugin()) {
+    return nsGkAtoms::keydown;
+  }
+  if (aWidgetKeyboardEvent->IsKeyUpOrKeyUpOnPlugin()) {
+    return nsGkAtoms::keyup;
+  }
+  
+  
+  
+  
+  
+  if (aWidgetKeyboardEvent->mMessage == eKeyPress ||
+      aWidgetKeyboardEvent->mMessage == eAccessKeyNotFound) {
+    return nsGkAtoms::keypress;
+  }
+  MOZ_ASSERT_UNREACHABLE("All event messages relating to shortcut keys should be handled");
+  return nullptr;
 }
 
 nsXBLPrototypeHandler*

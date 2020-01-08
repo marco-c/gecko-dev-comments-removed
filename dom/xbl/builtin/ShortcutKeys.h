@@ -8,8 +8,11 @@
 #include "nsIObserver.h"
 
 class nsXBLPrototypeHandler;
+class nsAtom;
 
 namespace mozilla {
+
+class WidgetKeyboardEvent;
 
 typedef struct
 {
@@ -36,6 +39,9 @@ public:
 
   
   static nsXBLPrototypeHandler* GetHandlers(HandlerType aType);
+
+  
+  static nsAtom* ConvertEventToDOMEventType(const WidgetKeyboardEvent* aWidgetKeyboardEvent);
 
 protected:
   ShortcutKeys();

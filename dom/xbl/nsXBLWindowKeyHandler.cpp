@@ -137,7 +137,7 @@ nsXBLWindowKeyHandler::EnsureHandlers()
 }
 
 nsresult
-nsXBLWindowKeyHandler::WalkHandlers(KeyboardEvent* aKeyEvent, nsAtom* aEventType)
+nsXBLWindowKeyHandler::WalkHandlers(KeyboardEvent* aKeyEvent)
 {
   if (aKeyEvent->DefaultPrevented()) {
     return NS_OK;
@@ -159,7 +159,7 @@ nsXBLWindowKeyHandler::WalkHandlers(KeyboardEvent* aKeyEvent, nsAtom* aEventType
     return NS_OK;
   }
 
-  WalkHandlersInternal(aKeyEvent, aEventType, true);
+  WalkHandlersInternal(aKeyEvent, true);
 
   return NS_OK;
 }
@@ -309,30 +309,6 @@ nsXBLWindowKeyHandler::CollectKeyboardShortcuts()
   return KeyboardMap(std::move(shortcuts));
 }
 
-nsAtom*
-nsXBLWindowKeyHandler::ConvertEventToDOMEventType(
-                         const WidgetKeyboardEvent& aWidgetKeyboardEvent) const
-{
-  if (aWidgetKeyboardEvent.IsKeyDownOrKeyDownOnPlugin()) {
-    return nsGkAtoms::keydown;
-  }
-  if (aWidgetKeyboardEvent.IsKeyUpOrKeyUpOnPlugin()) {
-    return nsGkAtoms::keyup;
-  }
-  
-  
-  
-  
-  
-  if (aWidgetKeyboardEvent.mMessage == eKeyPress ||
-      aWidgetKeyboardEvent.mMessage == eAccessKeyNotFound) {
-    return nsGkAtoms::keypress;
-  }
-  MOZ_ASSERT_UNREACHABLE(
-    "All event messages which this instance listens to should be handled");
-  return nullptr;
-}
-
 NS_IMETHODIMP
 nsXBLWindowKeyHandler::HandleEvent(Event* aEvent)
 {
@@ -380,9 +356,7 @@ nsXBLWindowKeyHandler::HandleEvent(Event* aEvent)
     return NS_OK;
   }
 
-  RefPtr<nsAtom> eventTypeAtom =
-    ConvertEventToDOMEventType(*widgetKeyboardEvent);
-  return WalkHandlers(keyEvent, eventTypeAtom);
+  return WalkHandlers(keyEvent);
 }
 
 void
@@ -490,7 +464,6 @@ nsXBLWindowKeyHandler::IsHTMLEditableFieldFocused()
 
 bool
 nsXBLWindowKeyHandler::WalkHandlersInternal(KeyboardEvent* aKeyEvent,
-                                            nsAtom* aEventType,
                                             bool aExecute,
                                             bool* aOutReservedForChrome)
 {
@@ -502,8 +475,7 @@ nsXBLWindowKeyHandler::WalkHandlersInternal(KeyboardEvent* aKeyEvent,
   nativeKeyboardEvent->GetShortcutKeyCandidates(shortcutKeys);
 
   if (shortcutKeys.IsEmpty()) {
-    return WalkHandlersAndExecute(aKeyEvent, aEventType,
-                                  0, IgnoreModifierState(),
+    return WalkHandlersAndExecute(aKeyEvent, 0, IgnoreModifierState(),
                                   aExecute, aOutReservedForChrome);
   }
 
@@ -511,8 +483,7 @@ nsXBLWindowKeyHandler::WalkHandlersInternal(KeyboardEvent* aKeyEvent,
     ShortcutKeyCandidate& key = shortcutKeys[i];
     IgnoreModifierState ignoreModifierState;
     ignoreModifierState.mShift = key.mIgnoreShift;
-    if (WalkHandlersAndExecute(aKeyEvent, aEventType,
-                               key.mCharCode, ignoreModifierState,
+    if (WalkHandlersAndExecute(aKeyEvent, key.mCharCode, ignoreModifierState,
                                aExecute, aOutReservedForChrome)) {
       return true;
     }
@@ -523,7 +494,6 @@ nsXBLWindowKeyHandler::WalkHandlersInternal(KeyboardEvent* aKeyEvent,
 bool
 nsXBLWindowKeyHandler::WalkHandlersAndExecute(
                          KeyboardEvent* aKeyEvent,
-                         nsAtom* aEventType,
                          uint32_t aCharCode,
                          const IgnoreModifierState& aIgnoreModifierState,
                          bool aExecute,
@@ -538,6 +508,8 @@ nsXBLWindowKeyHandler::WalkHandlersAndExecute(
   if (NS_WARN_IF(!widgetKeyboardEvent)) {
     return false;
   }
+
+  nsAtom* eventType = ShortcutKeys::ConvertEventToDOMEventType(widgetKeyboardEvent);
 
   
   for (nsXBLPrototypeHandler* handler = mHandler;
@@ -560,7 +532,7 @@ nsXBLWindowKeyHandler::WalkHandlersAndExecute(
         }
       
       
-      } else if (!handler->EventTypeEquals(aEventType)) {
+      } else if (!handler->EventTypeEquals(eventType)) {
         continue;
       }
     } else {
@@ -571,11 +543,11 @@ nsXBLWindowKeyHandler::WalkHandlersAndExecute(
         
         
         
-        if (aEventType != nsGkAtoms::keydown &&
-            aEventType != nsGkAtoms::keypress) {
+        if (eventType != nsGkAtoms::keydown &&
+            eventType != nsGkAtoms::keypress) {
           continue;
         }
-      } else if (!handler->EventTypeEquals(aEventType)) {
+      } else if (!handler->EventTypeEquals(eventType)) {
         
         continue;
       }
@@ -601,7 +573,7 @@ nsXBLWindowKeyHandler::WalkHandlersAndExecute(
     }
 
     if (!aExecute) {
-      if (handler->EventTypeEquals(aEventType)) {
+      if (handler->EventTypeEquals(eventType)) {
         if (aOutReservedForChrome) {
           *aOutReservedForChrome = IsReservedKey(widgetKeyboardEvent, handler);
         }
@@ -612,7 +584,7 @@ nsXBLWindowKeyHandler::WalkHandlersAndExecute(
       
       
       
-      if (aEventType == nsGkAtoms::keydown &&
+      if (eventType == nsGkAtoms::keydown &&
           handler->EventTypeEquals(nsGkAtoms::keypress)) {
         if (IsReservedKey(widgetKeyboardEvent, handler)) {
           if (aOutReservedForChrome) {
@@ -661,8 +633,8 @@ nsXBLWindowKeyHandler::WalkHandlersAndExecute(
   if (!aIgnoreModifierState.mOS && widgetKeyboardEvent->IsOS()) {
     IgnoreModifierState ignoreModifierState(aIgnoreModifierState);
     ignoreModifierState.mOS = true;
-    return WalkHandlersAndExecute(aKeyEvent, aEventType,
-                                  aCharCode, ignoreModifierState, aExecute);
+    return WalkHandlersAndExecute(aKeyEvent, aCharCode, ignoreModifierState,
+                                  aExecute);
   }
 #endif
 
@@ -707,10 +679,7 @@ nsXBLWindowKeyHandler::HasHandlerForEvent(KeyboardEvent* aEvent,
     return false;
   }
 
-  RefPtr<nsAtom> eventTypeAtom =
-    ConvertEventToDOMEventType(*widgetKeyboardEvent);
-  return WalkHandlersInternal(aEvent, eventTypeAtom, false,
-                              aOutReservedForChrome);
+  return WalkHandlersInternal(aEvent, false, aOutReservedForChrome);
 }
 
 already_AddRefed<Element>
