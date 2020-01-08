@@ -95,8 +95,7 @@ RetainedDisplayListData* GetOrSetRetainedDisplayListData(nsIFrame* aRootFrame);
 struct RetainedDisplayListBuilder {
   RetainedDisplayListBuilder(nsIFrame* aReferenceFrame,
                              nsDisplayListBuilderMode aMode, bool aBuildCaret)
-      : mBuilder(aReferenceFrame, aMode, aBuildCaret, true),
-        mForEventsAndPluginsOnly(false) {}
+      : mBuilder(aReferenceFrame, aMode, aBuildCaret, true) {}
   ~RetainedDisplayListBuilder() { mList.DeleteAll(&mBuilder); }
 
   nsDisplayListBuilder* Builder() { return &mBuilder; }
@@ -123,20 +122,11 @@ struct RetainedDisplayListBuilder {
                              AnimatedGeometryRoot* aAGR,
                              uint32_t aCallerKey = 0,
                              uint32_t aNestingDepth = 0);
-
-  
-
-
-
-
-
-
-
   bool MergeDisplayLists(
       nsDisplayList* aNewList, RetainedDisplayList* aOldList,
       RetainedDisplayList* aOutList,
       mozilla::Maybe<const mozilla::ActiveScrolledRoot*>& aOutContainerASR,
-      nsDisplayItem* aOuterItem = nullptr);
+      uint32_t aOuterKey = 0);
 
   bool ComputeRebuildRegion(nsTArray<nsIFrame*>& aModifiedFrames,
                             nsRect* aOutDirty,
@@ -155,10 +145,6 @@ struct RetainedDisplayListBuilder {
   nsDisplayListBuilder mBuilder;
   RetainedDisplayList mList;
   WeakFrame mPreviousCaret;
-
-  
-  
-  bool mForEventsAndPluginsOnly;
 };
 
 #endif  

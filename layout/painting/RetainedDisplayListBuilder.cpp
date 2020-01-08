@@ -13,7 +13,6 @@
 #include "nsSubDocumentFrame.h"
 #include "nsViewManager.h"
 #include "nsCanvasFrame.h"
-#include "mozilla/AutoRestore.h"
 
 
 
@@ -318,25 +317,8 @@ class MergeState {
     MOZ_RELEASE_ASSERT(mOldItems.Length() == mOldDAG.Length());
   }
 
-  
-  
-  
-  
-  
-  
-  bool ShouldSilentlyDiscardItem(nsDisplayItem* aItem) {
-    return mBuilder->mForEventsAndPluginsOnly &&
-           (aItem->GetType() != DisplayItemType::TYPE_COMPOSITOR_HITTEST_INFO &&
-            aItem->GetType() != DisplayItemType::TYPE_PLUGIN);
-  }
-
-  Maybe<MergedListIndex> ProcessItemFromNewList(
+  MergedListIndex ProcessItemFromNewList(
       nsDisplayItem* aNewItem, const Maybe<MergedListIndex>& aPreviousItem) {
-    if (ShouldSilentlyDiscardItem(aNewItem)) {
-      aNewItem->Destroy(mBuilder->Builder());
-      return aPreviousItem;
-    }
-
     OldListIndex oldIndex;
     if (!HasModifiedFrame(aNewItem) &&
         HasMatchingItemInOldList(aNewItem, &oldIndex)) {
@@ -362,7 +344,8 @@ class MergeState {
           Maybe<const ActiveScrolledRoot*> containerASRForChildren;
           if (mBuilder->MergeDisplayLists(
                   aNewItem->GetChildren(), oldItem->GetChildren(),
-                  destItem->GetChildren(), containerASRForChildren, aNewItem)) {
+                  destItem->GetChildren(), containerASRForChildren,
+                  aNewItem->GetPerFrameKey())) {
             destItem->InvalidateCachedChildInfo();
             mResultIsModified = true;
           }
@@ -380,12 +363,12 @@ class MergeState {
         } else {
           aNewItem->Destroy(mBuilder->Builder());
         }
-        return Some(newIndex);
+        return newIndex;
       }
     }
     mResultIsModified = true;
-    return Some(AddNewNode(aNewItem, Nothing(), Span<MergedListIndex>(),
-                           aPreviousItem));
+    return AddNewNode(aNewItem, Nothing(), Span<MergedListIndex>(),
+                      aPreviousItem);
   }
 
   bool ShouldUseNewItem(nsDisplayItem* aNewItem) {
@@ -522,20 +505,16 @@ class MergeState {
   void ProcessOldNode(OldListIndex aNode,
                       nsTArray<MergedListIndex>&& aDirectPredecessors) {
     nsDisplayItem* item = mOldItems[aNode.val].mItem;
-    if (ShouldSilentlyDiscardItem(item)) {
-      
-      
-      mOldItems[aNode.val].Discard(mBuilder, std::move(aDirectPredecessors));
-    } else if (mOldItems[aNode.val].IsChanged() || HasModifiedFrame(item)) {
+    if (mOldItems[aNode.val].IsChanged() || HasModifiedFrame(item)) {
       mOldItems[aNode.val].Discard(mBuilder, std::move(aDirectPredecessors));
       mResultIsModified = true;
     } else {
       if (item->GetChildren()) {
         Maybe<const ActiveScrolledRoot*> containerASRForChildren;
         nsDisplayList empty;
-        if (mBuilder->MergeDisplayLists(&empty, item->GetChildren(),
-                                        item->GetChildren(),
-                                        containerASRForChildren, item)) {
+        if (mBuilder->MergeDisplayLists(
+                &empty, item->GetChildren(), item->GetChildren(),
+                containerASRForChildren, item->GetPerFrameKey())) {
           item->InvalidateCachedChildInfo();
           mResultIsModified = true;
         }
@@ -651,19 +630,13 @@ bool RetainedDisplayListBuilder::MergeDisplayLists(
     nsDisplayList* aNewList, RetainedDisplayList* aOldList,
     RetainedDisplayList* aOutList,
     mozilla::Maybe<const mozilla::ActiveScrolledRoot*>& aOutContainerASR,
-    nsDisplayItem* aOuterItem) {
-  MergeState merge(this, *aOldList,
-                   aOuterItem ? aOuterItem->GetPerFrameKey() : 0);
-
-  AutoRestore<bool> restoreForEventAndPluginsOnly(mForEventsAndPluginsOnly);
-  if (aOuterItem && aOuterItem->GetType() == DisplayItemType::TYPE_OPACITY &&
-      static_cast<nsDisplayOpacity*>(aOuterItem)->ForEventsAndPluginsOnly()) {
-    mForEventsAndPluginsOnly = true;
-  }
+    uint32_t aOuterKey) {
+  MergeState merge(this, *aOldList, aOuterKey);
 
   Maybe<MergedListIndex> previousItemIndex;
   while (nsDisplayItem* item = aNewList->RemoveBottom()) {
-    previousItemIndex = merge.ProcessItemFromNewList(item, previousItemIndex);
+    previousItemIndex =
+        Some(merge.ProcessItemFromNewList(item, previousItemIndex));
   }
 
   *aOutList = merge.Finalize();
@@ -1290,6 +1263,11 @@ auto RetainedDisplayListBuilder::AttemptPartialUpdate(
       modifiedDirty,
       mBuilder.RootReferenceFrame()->GetVisualOverflowRectRelativeToSelf());
 
+  PartialUpdateResult result = PartialUpdateResult::NoChange;
+  if (!modifiedDirty.IsEmpty() || !framesWithProps.IsEmpty()) {
+    result = PartialUpdateResult::Updated;
+  }
+
   mBuilder.SetDirtyRect(modifiedDirty);
   mBuilder.SetPartialUpdate(true);
 
@@ -1331,7 +1309,6 @@ auto RetainedDisplayListBuilder::AttemptPartialUpdate(
   
   
   
-  PartialUpdateResult result = PartialUpdateResult::NoChange;
   Maybe<const ActiveScrolledRoot*> dummy;
   if (MergeDisplayLists(&modifiedDL, &mList, &mList, dummy)) {
     result = PartialUpdateResult::Updated;
