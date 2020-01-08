@@ -53,8 +53,7 @@ class ResponsePanel extends Component {
       },
     };
 
-    this.updateImageDimemsions = this.updateImageDimemsions.bind(this);
-    this.isJSON = this.isJSON.bind(this);
+    this.updateImageDimensions = this.updateImageDimensions.bind(this);
   }
 
   componentDidMount() {
@@ -67,7 +66,7 @@ class ResponsePanel extends Component {
     fetchNetworkUpdatePacket(connector.requestData, request, ["responseContent"]);
   }
 
-  updateImageDimemsions({ target }) {
+  updateImageDimensions({ target }) {
     this.setState({
       imageDimensions: {
         width: target.naturalWidth,
@@ -77,19 +76,44 @@ class ResponsePanel extends Component {
   }
 
   
+
+
+
+
+
+
+
+
+  isBase64(response) {
+    try {
+      return btoa(atob(response)) == response;
+    } catch (err) {
+      return false;
+    }
+  }
+
   
-  
-  
-  
-  
+
+
+
+
+
+
+
+
   isJSON(mimeType, response) {
     let json, error;
+
     try {
       json = JSON.parse(response);
     } catch (err) {
-      try {
-        json = JSON.parse(atob(response));
-      } catch (err64) {
+      if (this.isBase64(response)) {
+        try {
+          json = JSON.parse(atob(response));
+        } catch (err64) {
+          error = err;
+        }
+      } else {
         error = err;
       }
     }
@@ -150,7 +174,7 @@ class ResponsePanel extends Component {
           img({
             className: "response-image",
             src: formDataURI(mimeType, encoding, text),
-            onLoad: this.updateImageDimemsions,
+            onLoad: this.updateImageDimensions,
           }),
           div({ className: "response-summary" },
             div({ className: "tabpanel-summary-label" }, RESPONSE_IMG_NAME),
