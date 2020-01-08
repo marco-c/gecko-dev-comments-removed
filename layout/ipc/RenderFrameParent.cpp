@@ -165,13 +165,8 @@ RenderFrameParent::BuildLayer(nsDisplayListBuilder* aBuilder,
 {
   MOZ_ASSERT(aFrame,
              "makes no sense to have a shadow tree without a frame");
-  MOZ_ASSERT(!mContainer ||
-             IsTempLayerManager(aManager) ||
-             mContainer->Manager() == aManager,
-             "retaining manager changed out from under us ... HELP!");
 
-  if (IsTempLayerManager(aManager) ||
-      (mContainer && mContainer->Manager() != aManager)) {
+  if (IsTempLayerManager(aManager)) {
     
     
     

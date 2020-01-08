@@ -113,7 +113,6 @@ private:
   CompositorOptions mCompositorOptions;
 
   RefPtr<nsFrameLoader> mFrameLoader;
-  RefPtr<ContainerLayer> mContainer;
   RefPtr<LayerManager> mLayerManager;
 
   
