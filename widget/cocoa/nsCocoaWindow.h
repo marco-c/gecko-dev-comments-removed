@@ -158,17 +158,6 @@ typedef struct _nsCocoaWindowList {
 @class ToolbarWindow;
 
 
-
-@interface TitlebarAndBackgroundColor : NSColor
-{
-  ToolbarWindow *mWindow; 
-}
-
-- (id)initWithWindow:(ToolbarWindow*)aWindow;
-
-@end
-
-
 @interface ToolbarWindow : BaseWindow
 {
   CGFloat mUnifiedToolbarHeight;
