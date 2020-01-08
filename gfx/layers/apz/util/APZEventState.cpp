@@ -219,6 +219,17 @@ bool APZEventState::FireContextmenuEvents(
   
   
   
+  
+  
+  
+  APZCCallbackHelper::DispatchSynthesizedMouseEvent(
+      eMouseMove, 0 , aPoint * aScale, aModifiers, 0 ,
+      aWidget);
+
+  
+  
+  
+  
   bool eventHandled = APZCCallbackHelper::DispatchMouseEvent(
       aPresShell, NS_LITERAL_STRING("contextmenu"), aPoint, 2, 1,
       WidgetModifiersToDOMModifiers(aModifiers), true,
