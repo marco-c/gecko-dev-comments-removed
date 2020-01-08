@@ -225,9 +225,12 @@ struct NativePtr<Impl,  NativePtrType::WEAK>
     template<class LocalRef>
     static void Set(const LocalRef& instance, Impl* ptr)
     {
+        
+        
+        const uintptr_t handle =
+                reinterpret_cast<uintptr_t>(new WeakPtr<Impl>(ptr));
         Clear(instance);
-        SetNativeHandle(instance.Env(), instance.Get(),
-                          reinterpret_cast<uintptr_t>(new WeakPtr<Impl>(ptr)));
+        SetNativeHandle(instance.Env(), instance.Get(), handle);
         MOZ_CATCH_JNI_EXCEPTION(instance.Env());
     }
 
@@ -270,9 +273,12 @@ struct NativePtr<Impl,  NativePtrType::REFPTR>
     template<class LocalRef>
     static void Set(const LocalRef& instance, Impl* ptr)
     {
+        
+        
+        const uintptr_t handle =
+                reinterpret_cast<uintptr_t>(new RefPtr<Impl>(ptr));
         Clear(instance);
-        SetNativeHandle(instance.Env(), instance.Get(),
-                        reinterpret_cast<uintptr_t>(new RefPtr<Impl>(ptr)));
+        SetNativeHandle(instance.Env(), instance.Get(), handle);
         MOZ_CATCH_JNI_EXCEPTION(instance.Env());
     }
 
