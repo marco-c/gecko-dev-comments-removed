@@ -34,6 +34,9 @@ class EventListener;
 class EventListenerOptionsOrBoolean;
 class EventHandlerNonNull;
 class GlobalObject;
+template <typename>
+struct Nullable;
+class WindowProxyHolder;
 
 
 #define NS_EVENTTARGET_IID                           \
@@ -175,7 +178,8 @@ class EventTarget : public nsISupports, public nsWrapperCache {
   
   
   
-  virtual nsPIDOMWindowOuter* GetOwnerGlobalForBindings() = 0;
+  Nullable<WindowProxyHolder> GetOwnerGlobalForBindings();
+  virtual nsPIDOMWindowOuter* GetOwnerGlobalForBindingsInternal() = 0;
 
   
   
