@@ -487,12 +487,11 @@ nsSVGUtils::DetermineMaskUsage(nsIFrame* aFrame, bool aHandleOpacity,
   nsIFrame* firstFrame =
     nsLayoutUtils::FirstContinuationOrIBSplitSibling(aFrame);
 
-  SVGObserverUtils::EffectProperties effectProperties =
-    SVGObserverUtils::GetEffectProperties(firstFrame);
   const nsStyleSVGReset *svgReset = firstFrame->StyleSVGReset();
 
-  nsTArray<nsSVGMaskFrame*> maskFrames = effectProperties.GetMaskFrames();
-
+  nsTArray<nsSVGMaskFrame*> maskFrames;
+  
+  SVGObserverUtils::GetAndObserveMasks(firstFrame, &maskFrames);
   aUsage.shouldGenerateMaskLayer = (maskFrames.Length() > 0);
 
   nsSVGClipPathFrame* clipPathFrame;
@@ -714,22 +713,21 @@ nsSVGUtils::PaintFrameWithEffects(nsIFrame *aFrame,
   
 
   nsSVGClipPathFrame* clipPathFrame;
-  SVGObserverUtils::EffectProperties effectProperties =
-    SVGObserverUtils::GetEffectProperties(aFrame);
+  nsTArray<nsSVGMaskFrame*> maskFrames;
   
   
   
-  if (effectProperties.HasInvalidEffects() ||
-      SVGObserverUtils::GetAndObserveFilters(aFrame, nullptr) ==
+  if (SVGObserverUtils::GetAndObserveFilters(aFrame, nullptr) ==
         SVGObserverUtils::eHasRefsSomeInvalid ||
       SVGObserverUtils::GetAndObserveClipPath(aFrame, &clipPathFrame) ==
+        SVGObserverUtils::eHasRefsSomeInvalid ||
+      SVGObserverUtils::GetAndObserveMasks(aFrame, &maskFrames) ==
         SVGObserverUtils::eHasRefsSomeInvalid) {
     
     return;
   }
 
-  nsTArray<nsSVGMaskFrame*> masks = effectProperties.GetMaskFrames();
-  nsSVGMaskFrame *maskFrame = masks.IsEmpty() ? nullptr : masks[0];
+  nsSVGMaskFrame* maskFrame = maskFrames.IsEmpty() ? nullptr : maskFrames[0];
 
   MixModeBlender blender(aFrame, &aContext);
   gfxContext* target = blender.ShouldCreateDrawTargetForBlend()

@@ -581,46 +581,6 @@ public:
   NS_DECLARE_FRAME_PROPERTY_DELETABLE(BackgroundImageProperty,
                                       URIObserverHashtable)
 
-  struct EffectProperties {
-    SVGMaskObserverList* mMaskObservers;
-
-    
-
-
-    nsTArray<nsSVGMaskFrame*> GetMaskFrames();
-
-    
-
-
-
-    bool HasNoOrValidEffects();
-
-    
-
-
-    bool HasInvalidEffects() {
-      return !HasNoOrValidEffects();
-    }
-
-    
-
-
-
-    bool HasNoOrValidMask();
-
-    
-
-
-    bool HasInvalidMask() {
-      return !HasNoOrValidMask();
-    }
-  };
-
-  
-
-
-  static EffectProperties GetEffectProperties(nsIFrame* aFrame);
-
   
 
 
@@ -794,6 +754,22 @@ public:
   static ReferenceState
   GetAndObserveClipPath(nsIFrame* aClippedFrame,
                         nsSVGClipPathFrame** aClipPathFrame);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  static ReferenceState
+  GetAndObserveMasks(nsIFrame* aMaskedFrame,
+                     nsTArray<nsSVGMaskFrame*>* aMaskFrames);
 
   
 
