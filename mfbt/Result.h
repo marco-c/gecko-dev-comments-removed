@@ -222,6 +222,11 @@ struct UnusedZero<T&>
 template <typename T> struct HasFreeLSB { static const bool value = false; };
 
 
+template <> struct HasFreeLSB<void*> {
+  static const bool value = false;
+};
+
+
 
 
 template <typename T> struct HasFreeLSB<T*> {
