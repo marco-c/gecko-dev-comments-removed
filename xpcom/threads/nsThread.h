@@ -150,6 +150,8 @@ public:
 
   static nsThreadEnumerator Enumerate();
 
+  static uint32_t MaxActiveThreads();
+
 private:
   void DoMainThreadSpecificProcessing(bool aReallyWait);
 
@@ -177,6 +179,15 @@ protected:
   static mozilla::OffTheBooksMutex& ThreadListMutex();
   static mozilla::LinkedList<nsThread>& ThreadList();
   static void ClearThreadList();
+
+  
+  static uint32_t sActiveThreads;
+  
+  static uint32_t sMaxActiveThreads;
+
+  void AddToThreadList();
+  void MaybeRemoveFromThreadList();
+
 
   
   
