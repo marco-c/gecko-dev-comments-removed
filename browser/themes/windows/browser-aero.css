@@ -88,7 +88,7 @@
       }
 
       @media (-moz-windows-default-theme: 0) {
-        :root {
+        :root[tabsintitlebar] {
           background-color: transparent;
           -moz-appearance: -moz-win-glass;
         }
@@ -96,7 +96,7 @@
         
 
 
-        #browser {
+        :root[tabsintitlebar] #browser {
           -moz-appearance: -moz-win-exclude-glass;
         }
       }
