@@ -2760,28 +2760,9 @@ Toolbox.prototype = {
       
       await this._initInspector;
 
-      const currentPanel = this.getCurrentPanel();
-      if (currentPanel.stopPicker) {
-        await currentPanel.stopPicker();
-      } else {
-        await this.highlighterUtils.stopPicker();
-      }
       
       
-      this._inspector.destroy();
-
-      if (this._highlighter) {
-        await this._highlighter.destroy();
-      }
-      if (this._selection) {
-        this._selection.off("new-node-front", this._onNewSelectedNodeFront);
-        this._selection.destroy();
-      }
-
-      if (this.walker) {
-        this.walker.off("highlighter-ready", this._highlighterReady);
-        this.walker.off("highlighter-hide", this._highlighterHidden);
-      }
+      await this._inspector.destroy();
 
       this._inspector = null;
       this._highlighter = null;

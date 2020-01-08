@@ -497,8 +497,13 @@ var InspectorFront = FrontClassWithSpec(inspectorSpec, {
   },
 
   destroy: function() {
+    
+    
+    this.selection.destroy();
+    
+    
+    
     this.destroyHighlighters();
-    delete this.walker;
     Front.prototype.destroy.call(this);
   },
 
