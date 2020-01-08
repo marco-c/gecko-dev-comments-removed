@@ -32,7 +32,6 @@
 #include "nsIRaceCacheWithNetwork.h"
 #include "mozilla/extensions/PStreamFilterParent.h"
 #include "mozilla/Mutex.h"
-#include "nsITabParent.h"
 
 class nsDNSPrefetch;
 class nsICancelable;
@@ -279,10 +278,6 @@ public:
     void SetTransactionObserver(TransactionObserver *arg) { mTransactionObserver = arg; }
     TransactionObserver *GetTransactionObserver() { return mTransactionObserver; }
 
-    typedef MozPromise<nsCOMPtr<nsITabParent>, nsresult, false> TabPromise;
-    already_AddRefed<TabPromise> TakeRedirectTabPromise() { return mRedirectTabPromise.forget(); }
-    uint64_t CrossProcessRedirectIdentifier() { return mCrossProcessRedirectIdentifier; }
-
 protected:
     virtual ~nsHttpChannel();
 
@@ -352,7 +347,6 @@ private:
     virtual MOZ_MUST_USE nsresult
     SetupReplacementChannel(nsIURI *, nsIChannel *, bool preserveMethod,
                             uint32_t redirectFlags) override;
-    nsresult StartCrossProcessRedirect();
 
     
     MOZ_MUST_USE nsresult ProxyFailover();
@@ -512,12 +506,6 @@ private:
     nsCOMPtr<nsIURI> mRedirectURI;
     nsCOMPtr<nsIChannel> mRedirectChannel;
     nsCOMPtr<nsIChannel> mPreflightChannel;
-
-    
-    
-    RefPtr<TabPromise> mRedirectTabPromise;
-    
-    uint64_t mCrossProcessRedirectIdentifier = 0;
 
     
     
