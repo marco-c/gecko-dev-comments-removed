@@ -318,7 +318,7 @@ public class GeckoSession extends LayerSession
                         return;
                     }
 
-                    final GeckoResult<Boolean> result =
+                    final GeckoResult<AllowOrDeny> result =
                         delegate.onLoadRequest(GeckoSession.this, uri, where, flags);
 
                     if (result == null) {
@@ -326,11 +326,17 @@ public class GeckoSession extends LayerSession
                         return;
                     }
 
-                    result.then(new GeckoResult.OnValueListener<Boolean, Void>() {
+                    result.then(new GeckoResult.OnValueListener<AllowOrDeny, Void>() {
                         @Override
-                        public GeckoResult<Void> onValue(Boolean value) throws Throwable {
+                        public GeckoResult<Void> onValue(AllowOrDeny value) throws Throwable {
                             ThreadUtils.assertOnUiThread();
-                            callback.sendSuccess(value);
+                            if (value == AllowOrDeny.ALLOW) {
+                                callback.sendSuccess(false);
+                            } else  if (value == AllowOrDeny.DENY) {
+                                callback.sendSuccess(true);
+                            } else {
+                                callback.sendError("Invalid response");
+                            }
                             return null;
                         }
                     }, new GeckoResult.OnExceptionListener<Void>() {
@@ -2041,7 +2047,7 @@ public class GeckoSession extends LayerSession
                 break;
             }
             case "popup": {
-                GeckoResult<Boolean> res = delegate.onPopupRequest(session, message.getString("targetUri"));
+                GeckoResult<AllowOrDeny> res = delegate.onPopupRequest(session, message.getString("targetUri"));
 
                 if (res == null) {
                     
@@ -2049,10 +2055,16 @@ public class GeckoSession extends LayerSession
                     return;
                 }
 
-                res.then(new GeckoResult.OnValueListener<Boolean, Void>() {
+                res.then(new GeckoResult.OnValueListener<AllowOrDeny, Void>() {
                     @Override
-                    public GeckoResult<Void> onValue(Boolean value) throws Throwable {
-                        callback.sendSuccess(value);
+                    public GeckoResult<Void> onValue(AllowOrDeny value) throws Throwable {
+                        if (value == AllowOrDeny.ALLOW) {
+                            callback.sendSuccess(true);
+                        } else if (value == AllowOrDeny.DENY) {
+                            callback.sendSuccess(false);
+                        } else {
+                            callback.sendError("Invalid response");
+                        }
                         return null;
                     }
                 }, new GeckoResult.OnExceptionListener<Void>() {
@@ -2574,10 +2586,10 @@ public class GeckoSession extends LayerSession
 
 
 
-        @Nullable GeckoResult<Boolean> onLoadRequest(@NonNull GeckoSession session,
-                                                     @NonNull String uri,
-                                                     @TargetWindow int target,
-                                                     @LoadRequestFlags int flags);
+        @Nullable GeckoResult<AllowOrDeny> onLoadRequest(@NonNull GeckoSession session,
+                                                         @NonNull String uri,
+                                                         @TargetWindow int target,
+                                                         @LoadRequestFlags int flags);
 
         
 
@@ -3145,7 +3157,7 @@ public class GeckoSession extends LayerSession
 
 
 
-        GeckoResult<Boolean> onPopupRequest(GeckoSession session, String targetUri);
+        GeckoResult<AllowOrDeny> onPopupRequest(GeckoSession session, String targetUri);
     }
 
     

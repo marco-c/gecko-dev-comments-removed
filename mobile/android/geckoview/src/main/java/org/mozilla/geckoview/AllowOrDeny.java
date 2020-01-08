@@ -1,0 +1,14 @@
+
+
+
+
+
+
+package org.mozilla.geckoview;
+
+
+
+
+public enum AllowOrDeny {
+    ALLOW, DENY;
+}

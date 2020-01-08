@@ -149,6 +149,16 @@ public class GeckoResult<T> {
         }
     }
 
+    
+
+
+    public static final GeckoResult<AllowOrDeny> ALLOW = GeckoResult.fromValue(AllowOrDeny.ALLOW);
+
+    
+
+
+    public static final GeckoResult<AllowOrDeny> DENY = GeckoResult.fromValue(AllowOrDeny.DENY);
+
     private Handler mHandler;
     private boolean mComplete;
     private T mValue;
