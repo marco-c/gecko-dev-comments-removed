@@ -198,6 +198,16 @@ impl FrameBuilder {
         self.prim_store.destroy(
             retained_tiles,
         );
+
+        
+        
+        
+        
+        
+        
+        
+        
+        retained_tiles.tiles.extend(self.pending_retained_tiles.tiles);
     }
 
     
