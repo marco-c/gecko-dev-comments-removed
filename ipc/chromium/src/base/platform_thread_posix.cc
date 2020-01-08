@@ -26,8 +26,6 @@
 #include <pthread_np.h>
 #endif
 
-#include "nsThreadUtils.h"
-
 #if defined(OS_MACOSX)
 namespace base {
 void InitThreading();
@@ -35,10 +33,6 @@ void InitThreading();
 #endif
 
 static void* ThreadFunc(void* closure) {
-  
-  
-  (void) NS_GetCurrentThread();
-
   PlatformThread::Delegate* delegate =
       static_cast<PlatformThread::Delegate*>(closure);
   delegate->ThreadMain();
@@ -101,7 +95,18 @@ void PlatformThread::SetName(const char* name) {
   
   
   
-  NS_SetCurrentThreadName(name);
+  
+  
+#if defined(OS_LINUX)
+  prctl(PR_SET_NAME, reinterpret_cast<uintptr_t>(name), 0, 0, 0); 
+#elif defined(OS_NETBSD)
+  pthread_setname_np(pthread_self(), "%s", (void *)name);
+#elif defined(OS_BSD) && !defined(__GLIBC__)
+  pthread_set_name_np(pthread_self(), name);
+#elif defined(OS_SOLARIS)
+  pthread_setname_np(pthread_self(), name);
+#else
+#endif
 }
 #endif 
 
@@ -124,9 +129,8 @@ bool CreateThread(size_t stack_size, bool joinable,
     pthread_attr_setdetachstate(&attributes, PTHREAD_CREATE_DETACHED);
   }
 
-  if (stack_size == 0)
-    stack_size = nsIThreadManager::DEFAULT_STACK_SIZE;
-  pthread_attr_setstacksize(&attributes, stack_size);
+  if (stack_size > 0)
+    pthread_attr_setstacksize(&attributes, stack_size);
 
   success = !pthread_create(thread_handle, &attributes, ThreadFunc, delegate);
 

@@ -36,7 +36,7 @@ public:
 
   
   
-  void UnregisterCurrentThread(nsThread& aThread, bool aIfExists = false);
+  void UnregisterCurrentThread(nsThread& aThread);
 
   
   
@@ -84,8 +84,6 @@ private:
   nsresult
   SpinEventLoopUntilInternal(nsINestedEventLoopCondition* aCondition,
                              bool aCheckingShutdown);
-
-  static void ReleaseThread(void* aData);
 
   nsRefPtrHashtable<nsPtrHashKey<PRThread>, nsThread> mThreadsByPRThread;
   unsigned            mCurThreadIndex;  
