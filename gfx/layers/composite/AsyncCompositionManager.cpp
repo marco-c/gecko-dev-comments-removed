@@ -1068,17 +1068,9 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
               * CompleteAsyncTransform(
                   AdjustForClip(asyncTransformWithoutOverscroll, layer));
 
-            
-            
-            
-            
-            
-            
-            if (!metrics.IsRootContent() || !gfxPrefs::APZAllowZooming()) {
-              AlignFixedAndStickyLayers(layer, layer, metrics.GetScrollId(), oldTransform,
-                                        transformWithoutOverscrollOrOmta, fixedLayerMargins,
-                                        &clipPartsCache);
-            }
+            AlignFixedAndStickyLayers(layer, layer, metrics.GetScrollId(), oldTransform,
+                                      transformWithoutOverscrollOrOmta, fixedLayerMargins,
+                                      &clipPartsCache);
 
             
             
