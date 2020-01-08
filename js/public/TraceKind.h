@@ -68,18 +68,6 @@ enum class TraceKind {
 };
 const static uintptr_t OutOfLineTraceKindMask = 0x07;
 
-
-
-
-
-
-
-inline constexpr bool IsCCTraceKind(JS::TraceKind aKind) {
-  return aKind == JS::TraceKind::Object || aKind == JS::TraceKind::Script ||
-         aKind == JS::TraceKind::LazyScript || aKind == JS::TraceKind::Scope ||
-         aKind == JS::TraceKind::RegExpShared;
-}
-
 #define ASSERT_TRACE_KIND(tk)                                             \
   static_assert(                                                          \
       (uintptr_t(tk) & OutOfLineTraceKindMask) == OutOfLineTraceKindMask, \
@@ -117,6 +105,25 @@ struct MapTypeToTraceKind {
   D(RegExpShared, js::RegExpShared, true)
 
 
+
+
+
+
+
+inline constexpr bool IsCCTraceKind(JS::TraceKind aKind)
+{
+  switch (aKind) {
+#define JS_EXPAND_DEF(name, _, isCCTraceKind) \
+    case JS::TraceKind::name: \
+      return isCCTraceKind;
+    JS_FOR_EACH_TRACEKIND(JS_EXPAND_DEF);
+#undef JS_EXPAND_DEF
+    default:
+      return false;
+  }
+}
+
+
 #define JS_EXPAND_DEF(name, type, _)                       \
   template <>                                              \
   struct MapTypeToTraceKind<type> {                        \
@@ -124,6 +131,11 @@ struct MapTypeToTraceKind {
   };
 JS_FOR_EACH_TRACEKIND(JS_EXPAND_DEF);
 #undef JS_EXPAND_DEF
+
+template <typename T>
+struct TypeParticipatesInCC {
+  static const bool value = IsCCTraceKind(MapTypeToTraceKind<T>::kind);
+};
 
 
 
