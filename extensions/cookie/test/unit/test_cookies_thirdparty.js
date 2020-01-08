@@ -7,9 +7,6 @@
 
 function run_test() {
   
-  Services.prefs.setBoolPref("browser.contentblocking.enabled", true);
-
-  
   
   var spec1 = "http://foo.com/foo.html";
   var spec2 = "http://bar.com/bar.html";
