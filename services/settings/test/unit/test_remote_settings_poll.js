@@ -5,7 +5,8 @@ ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://testing-common/httpd.js");
 
 const { UptakeTelemetry } = ChromeUtils.import("resource://services-common/uptake-telemetry.js", {});
-const { RemoteSettings } = ChromeUtils.import("resource://services-settings/remote-settings.js", {});
+const RemoteSettingsModule = ChromeUtils.import("resource://services-settings/remote-settings.js", {});
+const { RemoteSettings } = RemoteSettingsModule;
 const { Kinto } = ChromeUtils.import("resource://services-common/kinto-offline-client.js", {});
 
 const IS_ANDROID = AppConstants.platform == "android";
@@ -501,8 +502,12 @@ add_task(async function test_syncs_clients_with_local_dump() {
     last_modified: 8000,
     host: "localhost",
     bucket: "main",
-    collection: "tippytop"
+    collection: "with-dump"
   }]));
+
+  RemoteSettingsModule.hasLocalDump = async (bucket, collection) => {
+    return bucket == "main" && collection == "with-dump";
+  };
 
   let error;
   try {
@@ -516,6 +521,6 @@ add_task(async function test_syncs_clients_with_local_dump() {
   
   
   Assert.ok(/HTTP 404/.test(error.message), "server will return 404 on sync");
-  Assert.equal(error.details.collection, "tippytop");
+  Assert.equal(error.details.collection, "with-dump");
 });
 add_task(clear_state);
