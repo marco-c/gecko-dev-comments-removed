@@ -117,9 +117,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
     
     try {
       const recordReplayEnabled = Services.prefs.getBoolPref("devtools.recordreplay.enabled");
-      toggleMenuItem("menu_devtools_recordExecution", recordReplayEnabled);
-      toggleMenuItem("menu_devtools_saveRecording", recordReplayEnabled);
-      toggleMenuItem("menu_devtools_replayExecution", recordReplayEnabled);
+      toggleMenuItem("menu_webreplay", recordReplayEnabled);
     } catch (e) {
       
     }
