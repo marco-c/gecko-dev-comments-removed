@@ -43,20 +43,9 @@ var CustomizationHandler = {
 
   _customizationEnding(aDetails) {
     
-    if (aDetails.changed) {
-      gURLBar = document.getElementById("urlbar");
-
-      if (AppConstants.platform != "macosx")
-        updateEditUIVisibility();
-
-      
-      
-      
-      if (!window.__lookupGetter__("PopupNotifications")) {
-        PopupNotifications.iconBox =
-          document.getElementById("notification-popup-box");
-      }
-
+    if (aDetails.changed &&
+        AppConstants.platform != "macosx") {
+      updateEditUIVisibility();
     }
 
     PlacesToolbarHelper.customizeDone();
