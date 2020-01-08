@@ -10,13 +10,16 @@ ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/Timer.jsm");
-ChromeUtils.import("resource://gre/modules/LoginManagerContent.jsm");
 
 ChromeUtils.defineModuleGetter(this, "BrowserUtils",
                                "resource://gre/modules/BrowserUtils.jsm");
 ChromeUtils.defineModuleGetter(this, "LoginHelper",
                                "resource://gre/modules/LoginHelper.jsm");
 ChromeUtils.defineModuleGetter(this, "LoginFormFactory",
+                               "resource://gre/modules/LoginManagerContent.jsm");
+ChromeUtils.defineModuleGetter(this, "LoginManagerContent",
+                               "resource://gre/modules/LoginManagerContent.jsm");
+ChromeUtils.defineModuleGetter(this, "UserAutoCompleteResult",
                                "resource://gre/modules/LoginManagerContent.jsm");
 ChromeUtils.defineModuleGetter(this, "InsecurePasswordUtils",
                                "resource://gre/modules/InsecurePasswordUtils.jsm");
@@ -503,8 +506,25 @@ LoginManager.prototype = {
     
     
 
-    let form = LoginFormFactory.createFromField(aElement);
-    let isSecure = InsecurePasswordUtils.isFormSecure(form);
+    let {isNullPrincipal} = aElement.nodePrincipal;
+    
+    let isSecure = !isNullPrincipal;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (isSecure) {
+      let form = LoginFormFactory.createFromField(aElement);
+      isSecure = InsecurePasswordUtils.isFormSecure(form);
+    }
     let isPasswordField = aElement.type == "password";
 
     let completeSearch = (autoCompleteLookupPromise, { logins, messageManager }) => {
@@ -522,6 +542,14 @@ LoginManager.prototype = {
       });
       aCallback.onSearchCompletion(results);
     };
+
+    if (isNullPrincipal) {
+      
+      
+      let acLookupPromise = this._autoCompleteLookupPromise = Promise.resolve({ logins: [] });
+      acLookupPromise.then(completeSearch.bind(this, acLookupPromise));
+      return;
+    }
 
     if (isPasswordField && aSearchString) {
       
