@@ -106,7 +106,7 @@ public:
   mozilla::ipc::IPCResult RecvParentCommands(nsTArray<WebRenderParentCommand>&& commands) override;
   mozilla::ipc::IPCResult RecvGetSnapshot(PTextureParent* aTexture) override;
 
-  mozilla::ipc::IPCResult RecvSetLayerObserverEpoch(const uint64_t& aLayerObserverEpoch) override;
+  mozilla::ipc::IPCResult RecvSetLayersObserverEpoch(const LayersObserverEpoch& aChildEpoch) override;
 
   mozilla::ipc::IPCResult RecvClearCachedResources() override;
   mozilla::ipc::IPCResult RecvScheduleComposite() override;
@@ -231,7 +231,6 @@ private:
                                       wr::TransactionBuilder& aTxn);
 
   void ClearResources();
-  uint64_t GetChildLayerObserverEpoch() const { return mChildLayerObserverEpoch; }
   bool ShouldParentObserveEpoch();
   mozilla::ipc::IPCResult HandleShutdown();
 
@@ -307,8 +306,8 @@ private:
   
   
   
-  uint64_t mChildLayerObserverEpoch;
-  uint64_t mParentLayerObserverEpoch;
+  LayersObserverEpoch mChildLayersObserverEpoch;
+  LayersObserverEpoch mParentLayersObserverEpoch;
 
   std::queue<PendingTransactionId> mPendingTransactionIds;
   std::queue<CompositorAnimationIdsForEpoch> mCompositorAnimationsToDelete;

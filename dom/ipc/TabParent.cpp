@@ -169,7 +169,7 @@ TabParent::TabParent(nsIContentParent* aManager,
 #ifdef DEBUG
   , mActiveSupressDisplayportCount(0)
 #endif
-  , mLayerTreeEpoch(1)
+  , mLayerTreeEpoch{1}
   , mPreserveLayers(false)
   , mRenderLayers(true)
   , mHasLayers(false)
@@ -2897,7 +2897,7 @@ TabParent::SetRenderLayers(bool aEnabled)
       
       
       RefPtr<TabParent> self = this;
-      uint64_t epoch = mLayerTreeEpoch;
+      LayersObserverEpoch epoch = mLayerTreeEpoch;
       NS_DispatchToMainThread(NS_NewRunnableFunction(
         "dom::TabParent::RenderLayers",
         [self, epoch] () {
@@ -2948,7 +2948,7 @@ TabParent::SetRenderLayersInternal(bool aEnabled, bool aForceRepaint)
 {
   
   
-  mLayerTreeEpoch++;
+  mLayerTreeEpoch = mLayerTreeEpoch.Next();
 
   Unused << SendRenderLayers(aEnabled, aForceRepaint, mLayerTreeEpoch);
 
@@ -3059,7 +3059,7 @@ TabParent::GetHasBeforeUnload(bool* aResult)
 }
 
 void
-TabParent::LayerTreeUpdate(uint64_t aEpoch, bool aActive)
+TabParent::LayerTreeUpdate(const LayersObserverEpoch& aEpoch, bool aActive)
 {
   
   
@@ -3089,12 +3089,12 @@ TabParent::LayerTreeUpdate(uint64_t aEpoch, bool aActive)
 }
 
 mozilla::ipc::IPCResult
-TabParent::RecvPaintWhileInterruptingJSNoOp(const uint64_t& aLayerObserverEpoch)
+TabParent::RecvPaintWhileInterruptingJSNoOp(const LayersObserverEpoch& aEpoch)
 {
   
   
   
-  LayerTreeUpdate(aLayerObserverEpoch, true);
+  LayerTreeUpdate(aEpoch, true);
   return IPC_OK();
 }
 

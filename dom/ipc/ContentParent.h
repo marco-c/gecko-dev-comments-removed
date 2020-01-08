@@ -653,7 +653,9 @@ public:
                     nsTArray<nsCString>* aResults) override;
 
   
-  void PaintTabWhileInterruptingJS(TabParent* aTabParent, bool aForceRepaint, uint64_t aLayerObserverEpoch);
+  void PaintTabWhileInterruptingJS(TabParent* aTabParent,
+                                   bool aForceRepaint,
+                                   const layers::LayersObserverEpoch& aEpoch);
 
   
   

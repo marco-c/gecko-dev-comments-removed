@@ -419,7 +419,7 @@ TabChild::TabChild(nsIContentChild* aManager,
   , mDidLoadURLInit(false)
   , mAwaitingLA(false)
   , mSkipKeyPress(false)
-  , mLayerObserverEpoch(1)
+  , mLayersObserverEpoch{1}
 #if defined(XP_WIN) && defined(ACCESSIBILITY)
   , mNativeWindowHandle(0)
 #endif
@@ -430,7 +430,7 @@ TabChild::TabChild(nsIContentChild* aManager,
   , mPendingDocShellReceivedMessage(false)
   , mPendingRenderLayers(false)
   , mPendingRenderLayersReceivedMessage(false)
-  , mPendingLayerObserverEpoch(0)
+  , mPendingLayersObserverEpoch{0}
   , mPendingDocShellBlockers(0)
   , mWidgetNativeData(0)
 {
@@ -2551,7 +2551,7 @@ TabChild::RemovePendingDocShellBlocker()
     mPendingRenderLayersReceivedMessage = false;
     RecvRenderLayers(mPendingRenderLayers,
                      false ,
-                     mPendingLayerObserverEpoch);
+                     mPendingLayersObserverEpoch);
   }
 }
 
@@ -2582,12 +2582,12 @@ TabChild::RecvSetDocShellIsActive(const bool& aIsActive)
 }
 
 mozilla::ipc::IPCResult
-TabChild::RecvRenderLayers(const bool& aEnabled, const bool& aForceRepaint, const uint64_t& aLayerObserverEpoch)
+TabChild::RecvRenderLayers(const bool& aEnabled, const bool& aForceRepaint, const layers::LayersObserverEpoch& aEpoch)
 {
   if (mPendingDocShellBlockers > 0) {
     mPendingRenderLayersReceivedMessage = true;
     mPendingRenderLayers = aEnabled;
-    mPendingLayerObserverEpoch = aLayerObserverEpoch;
+    mPendingLayersObserverEpoch = aEpoch;
     return IPC_OK();
   }
 
@@ -2595,10 +2595,10 @@ TabChild::RecvRenderLayers(const bool& aEnabled, const bool& aForceRepaint, cons
   
   
   
-  if (mLayerObserverEpoch >= aLayerObserverEpoch) {
+  if (mLayersObserverEpoch >= aEpoch) {
     return IPC_OK();
   }
-  mLayerObserverEpoch = aLayerObserverEpoch;
+  mLayersObserverEpoch = aEpoch;
 
   auto clearPaintWhileInterruptingJS = MakeScopeExit([&] {
     
@@ -2607,7 +2607,7 @@ TabChild::RecvRenderLayers(const bool& aEnabled, const bool& aForceRepaint, cons
     
     
     if (aEnabled) {
-      ProcessHangMonitor::ClearPaintWhileInterruptingJS(mLayerObserverEpoch);
+      ProcessHangMonitor::ClearPaintWhileInterruptingJS(mLayersObserverEpoch);
     }
   });
 
@@ -2623,7 +2623,7 @@ TabChild::RecvRenderLayers(const bool& aEnabled, const bool& aForceRepaint, cons
     
     
     
-    lm->SetLayerObserverEpoch(mLayerObserverEpoch);
+    lm->SetLayersObserverEpoch(mLayersObserverEpoch);
   }
 
   if (aEnabled) {
@@ -2632,7 +2632,7 @@ TabChild::RecvRenderLayers(const bool& aEnabled, const bool& aForceRepaint, cons
       
       
       if (IPCOpen()) {
-        Unused << SendPaintWhileInterruptingJSNoOp(mLayerObserverEpoch);
+        Unused << SendPaintWhileInterruptingJSNoOp(mLayersObserverEpoch);
         return IPC_OK();
       }
     }
@@ -2838,7 +2838,7 @@ TabChild::InitRenderingState(const TextureFactoryIdentifier& aTextureFactoryIden
       InitAPZState();
       RefPtr<LayerManager> lm = mPuppetWidget->GetLayerManager();
       MOZ_ASSERT(lm);
-      lm->SetLayerObserverEpoch(mLayerObserverEpoch);
+      lm->SetLayersObserverEpoch(mLayersObserverEpoch);
     } else {
       NS_WARNING("Fallback to BasicLayerManager");
       mLayersConnected = Some(false);
@@ -3233,7 +3233,7 @@ TabChild::ReinitRendering()
   InitAPZState();
   RefPtr<LayerManager> lm = mPuppetWidget->GetLayerManager();
   MOZ_ASSERT(lm);
-  lm->SetLayerObserverEpoch(mLayerObserverEpoch);
+  lm->SetLayersObserverEpoch(mLayersObserverEpoch);
 
   nsCOMPtr<nsIDocument> doc(GetDocument());
   doc->NotifyLayerManagerRecreated();
@@ -3466,7 +3466,7 @@ TabChild::GetOuterRect()
 }
 
 void
-TabChild::PaintWhileInterruptingJS(uint64_t aLayerObserverEpoch,
+TabChild::PaintWhileInterruptingJS(const layers::LayersObserverEpoch& aEpoch,
                                    bool aForceRepaint)
 {
   if (!IPCOpen() || !mPuppetWidget || !mPuppetWidget->HasLayerManager()) {
@@ -3476,7 +3476,7 @@ TabChild::PaintWhileInterruptingJS(uint64_t aLayerObserverEpoch,
   }
 
   nsAutoScriptBlocker scriptBlocker;
-  RecvRenderLayers(true , aForceRepaint, aLayerObserverEpoch);
+  RecvRenderLayers(true , aForceRepaint, aEpoch);
 }
 
 void
