@@ -1904,7 +1904,9 @@
 
     function RemoteContext(remote, message_target, message_filter) {
         this.running = true;
+        this.started = false;
         this.tests = new Array();
+        this.early_exception = null;
 
         var this_obj = this;
         
@@ -1943,6 +1945,21 @@
     }
 
     RemoteContext.prototype.remote_error = function(error) {
+        if (error.preventDefault) {
+            error.preventDefault();
+        }
+
+        
+        
+        
+        if (!this.started) {
+            this.early_exception = error;
+        } else if (!this.allow_uncaught_exception) {
+            this.report_uncaught(error);
+        }
+    };
+
+    RemoteContext.prototype.report_uncaught = function(error) {
         var message = error.message || String(error);
         var filename = (error.filename ? " " + error.filename: "");
         
@@ -1950,9 +1967,14 @@
         tests.set_status(tests.status.ERROR,
                          "Error in remote" + filename + ": " + message,
                          error.stack);
+    };
 
-        if (error.preventDefault) {
-            error.preventDefault();
+    RemoteContext.prototype.start = function(data) {
+        this.started = true;
+        this.allow_uncaught_exception = data.properties.allow_uncaught_exception;
+
+        if (this.early_exception && !this.allow_uncaught_exception) {
+            this.report_uncaught(this.early_exception);
         }
     };
 
@@ -2002,6 +2024,7 @@
     };
 
     RemoteContext.prototype.message_handlers = {
+        start: RemoteContext.prototype.start,
         test_state: RemoteContext.prototype.test_state,
         result: RemoteContext.prototype.test_done,
         complete: RemoteContext.prototype.remote_done
