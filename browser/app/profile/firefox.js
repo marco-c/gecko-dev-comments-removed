@@ -950,7 +950,11 @@ pref("app.productInfo.baseURL", "https://www.mozilla.org/firefox/features/");
 pref("security.alternate_certificate_error_page", "certerror");
 
 
+#if defined(NIGHTLY_BUILD)
+pref("browser.security.newcerterrorpage.enabled", true);
+#else
 pref("browser.security.newcerterrorpage.enabled", false);
+#endif
 
 
 pref("browser.privatebrowsing.autostart", false);
