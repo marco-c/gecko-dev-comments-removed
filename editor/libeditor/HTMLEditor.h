@@ -1554,6 +1554,24 @@ protected:
   
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+  nsresult
+  DeleteSelectedTableRowsWithTransaction(int32_t aNumberOfRowsToDelete);
+
+  
+
+
   nsresult DeleteRow(Element* aTable, int32_t aRowIndex);
   nsresult DeleteColumn(Element* aTable, int32_t aColIndex);
   nsresult DeleteCellContents(Element* aCell);
@@ -1565,7 +1583,17 @@ protected:
                       RefPtr<Element> aCellToMerge,
                       bool aDeleteCellToMerge);
 
-  nsresult DeleteTable2(Element* aTable, Selection* aSelection);
+  
+
+
+
+
+
+
+  nsresult
+  DeleteTableElementAndChildrenWithTransaction(Selection& aSelection,
+                                               Element& aTableElement);
+
   nsresult SetColSpan(Element* aCell, int32_t aColSpan);
   nsresult SetRowSpan(Element* aCell, int32_t aRowSpan);
 
