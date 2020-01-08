@@ -1189,6 +1189,9 @@ function UpdatePatch(patch) {
   for (var i = 0; i < patch.attributes.length; ++i) {
     var attr = patch.attributes.item(i);
     switch (attr.name) {
+      case "xmlns":
+        
+        break;
       case "selected":
         this.selected = attr.value == "true";
         break;
@@ -1198,8 +1201,19 @@ function UpdatePatch(patch) {
           throw Cr.NS_ERROR_ILLEGAL_VALUE;
         }
         
+      case "type":
+      case "URL":
+      case "finalURL":
+      case "state":
+      case "errorCode":
+        this[attr.name] = attr.value;
+        break;
       default:
         this[attr.name] = attr.value;
+        
+        
+        
+        this.setProperty(attr.name, attr.value);
         break;
     }
   }
@@ -1261,15 +1275,21 @@ UpdatePatch.prototype = {
   
 
 
+
+
+
   get enumerator() {
     return this.enumerate();
   },
 
   * enumerate() {
-    for (var p in this._properties) {
-      let prop = this.properties[p].data;
-      if (prop) {
-        yield prop;
+    for (let propName in this._properties) {
+      if (this._properties[propName].present) {
+        
+        
+        yield { name: propName,
+                value: this._properties[propName].data,
+                QueryInterface: ChromeUtils.generateQI([Ci.nsIProperty])};
       }
     }
   },
@@ -1361,7 +1381,8 @@ function Update(update) {
 
   for (let i = 0; i < update.attributes.length; ++i) {
     var attr = update.attributes.item(i);
-    if (attr.value == "undefined") {
+    if (attr.name == "xmlns" || attr.value == "undefined") {
+      
       continue;
     } else if (attr.name == "detailsURL") {
       this._detailsURL = attr.value;
@@ -1578,15 +1599,21 @@ Update.prototype = {
   
 
 
+
+
+
   get enumerator() {
     return this.enumerate();
   },
 
   * enumerate() {
-    for (var p in this._properties) {
-      let prop = this.properties[p].data;
-      if (prop) {
-        yield prop;
+    for (let propName in this._properties) {
+      if (this._properties[propName].present) {
+        
+        
+        yield { name: propName,
+                value: this._properties[propName].data,
+                QueryInterface: ChromeUtils.generateQI([Ci.nsIProperty])};
       }
     }
   },
