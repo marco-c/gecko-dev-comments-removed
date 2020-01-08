@@ -971,6 +971,7 @@ function ArraySpeciesCreate(originalArray, length) {
     assert(length >= 0, "length should be a non-negative number");
 
     
+    
     if (length === -0)
         length = 0;
 
