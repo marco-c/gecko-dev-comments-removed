@@ -205,7 +205,6 @@ nsresult
 nsStreamTransportService::Init()
 {
     mPool = new nsThreadPool();
-    NS_ENSURE_STATE(mPool);
 
     
     mPool->SetName(NS_LITERAL_CSTRING("StreamTrans"));
