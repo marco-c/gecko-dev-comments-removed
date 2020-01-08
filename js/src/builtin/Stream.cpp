@@ -347,6 +347,10 @@ const Class QueueEntry::class_ = {
     JSCLASS_HAS_RESERVED_SLOTS(SlotCount)
 };
 
+
+
+
+
 class TeeState : public NativeObject
 {
   public:
@@ -1231,28 +1235,31 @@ ReadableStreamTee(JSContext* cx,
     
     
     
+    
+    
+    
+    
+    
+    
+    
     Rooted<TeeState*> teeState(cx, TeeState::create(cx, unwrappedStream));
     if (!teeState) {
         return false;
     }
 
     
-
     
     
     
     
     
     
-
-    
-    
-    
-
     
     
     
 
+    
+    
     
     RootedValue hwmValue(cx, NumberValue(1));
     RootedValue underlyingSource(cx, ObjectValue(*teeState));
@@ -1271,8 +1278,6 @@ ReadableStreamTee(JSContext* cx,
     
     
     
-
-    
     branch2Stream.set(ReadableStream::createDefaultStream(cx, underlyingSource,
                                                           UndefinedHandleValue,
                                                           hwmValue));
@@ -1284,10 +1289,6 @@ ReadableStreamTee(JSContext* cx,
     branch2 = &branch2Stream->controller()->as<ReadableStreamDefaultController>();
     branch2->setTeeBranch2();
     teeState->setBranch2(branch2);
-
-    
-    
-    
 
     
     RootedObject closedPromise(cx, reader->closedPromise());
