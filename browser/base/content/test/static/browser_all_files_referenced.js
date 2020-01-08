@@ -163,6 +163,8 @@ var whitelist = [
   
   {file: "chrome://global/content/bindings/toolbar.xml",
    platforms: ["macosx"]},
+  
+  {file: "chrome://browser/content/browser.xhtml"},
 ];
 
 whitelist = new Set(whitelist.filter(item =>
