@@ -2045,7 +2045,10 @@ nsCookieService::GetCookieStringCommon(nsIURI *aHostURI,
   if (httpChannel) {
     isTrackingResource = httpChannel->GetIsTrackingResource();
 
-    if (isForeign && isTrackingResource &&
+    
+    
+    
+    if (isForeign &&
         AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(httpChannel,
                                                                 aHostURI)) {
       firstPartyStorageAccessGranted = true;
@@ -2152,7 +2155,10 @@ nsCookieService::SetCookieStringCommon(nsIURI *aHostURI,
   if (httpChannel) {
     isTrackingResource = httpChannel->GetIsTrackingResource();
 
-    if (isForeign && isTrackingResource &&
+    
+    
+    
+    if (isForeign &&
         AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(httpChannel,
                                                                 aHostURI)) {
       firstPartyStorageAccessGranted = true;
@@ -4259,7 +4265,10 @@ nsCookieService::CheckPrefs(nsICookiePermission    *aPermissionService,
 
   
   if (aIsForeign) {
-    if (aCookieBehavior == nsICookieService::BEHAVIOR_REJECT_FOREIGN) {
+    
+    
+    if (aCookieBehavior == nsICookieService::BEHAVIOR_REJECT_FOREIGN &&
+        !aFirstPartyStorageAccessGranted) {
       COOKIE_LOGFAILURE(aCookieHeader ? SET_COOKIE : GET_COOKIE, aHostURI, aCookieHeader, "context is third party");
       return STATUS_REJECTED;
     }
@@ -4274,6 +4283,7 @@ nsCookieService::CheckPrefs(nsICookiePermission    *aPermissionService,
     MOZ_ASSERT(aCookieBehavior == nsICookieService::BEHAVIOR_ACCEPT ||
                aCookieBehavior == nsICookieService::BEHAVIOR_LIMIT_FOREIGN ||
                
+               aCookieBehavior == nsICookieService::BEHAVIOR_REJECT_FOREIGN ||
                aCookieBehavior == nsICookieService::BEHAVIOR_REJECT_TRACKER);
 
     if (aThirdPartySession)
