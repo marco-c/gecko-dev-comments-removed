@@ -306,6 +306,17 @@ class RTCStatsReport {
   makeStatsPublic(warnNullable, warnRemoteNullable, isLegacy) {
     let legacyProps = {};
     for (let key in this._report) {
+      const underlying = this._report[key];
+      
+      if (underlying.type == "local-candidate" || underlying.type == "remote-candidate") {
+            
+            underlying.ipAddress = underlying.address;
+            if (isLegacy) {
+              
+              delete underlying.address;
+            }
+      }
+
       let internal = Cu.cloneInto(this._report[key], this._win);
       if (isLegacy) {
         internal.type = this._specToLegacyFieldMapping[internal.type] || internal.type;
