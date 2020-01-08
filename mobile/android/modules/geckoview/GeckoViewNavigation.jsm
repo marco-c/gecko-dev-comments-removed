@@ -156,7 +156,7 @@ class GeckoViewNavigation extends GeckoViewModule {
                                 where=${aWhere} flags=${aFlags}`;
 
     if (LoadURIDelegate.load(this.window, this.eventDispatcher,
-                             aUri, aWhere, aFlags)) {
+                             aUri, aWhere, aFlags, aTriggeringPrincipal)) {
       
       Components.returnCode = Cr.NS_ERROR_ABORT;
       return null;
@@ -180,7 +180,8 @@ class GeckoViewNavigation extends GeckoViewModule {
                                        name=${aName}`;
 
     if (LoadURIDelegate.load(this.window, this.eventDispatcher,
-                             aUri, aWhere, aFlags)) {
+                             aUri, aWhere, aFlags,
+                             aParams.triggeringPrincipal)) {
       
       Components.returnCode = Cr.NS_ERROR_ABORT;
       return null;
@@ -201,7 +202,7 @@ class GeckoViewNavigation extends GeckoViewModule {
                           where=${aWhere} flags=${aFlags}`;
 
     if (LoadURIDelegate.load(this.window, this.eventDispatcher,
-                             aUri, aWhere, aFlags)) {
+                             aUri, aWhere, aFlags, aTriggeringPrincipal)) {
       return null;
     }
 
@@ -231,7 +232,8 @@ class GeckoViewNavigation extends GeckoViewModule {
 
   
   openURIInFrame(aUri, aParams, aWhere, aFlags, aNextTabParentId, aName) {
-    const browser = this.handleOpenUri(aUri, null, aWhere, aFlags, null,
+    const browser = this.handleOpenUri(aUri, null, aWhere, aFlags,
+                                       aParams.triggeringPrincipal,
                                        aNextTabParentId);
     return browser;
   }
