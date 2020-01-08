@@ -476,13 +476,6 @@ enum class MozOp
     OldCallDirect,
     OldCallIndirect,
 
-    
-    I32AtomicsCompareExchange,
-    I32AtomicsExchange,
-    I32AtomicsLoad,
-    I32AtomicsStore,
-    I32AtomicsBinOp,
-
     Limit
 };
 

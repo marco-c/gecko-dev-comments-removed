@@ -25,7 +25,6 @@ namespace js {
 namespace wasm {
 
 
-
 bool
 BaselineCanCompile();
 

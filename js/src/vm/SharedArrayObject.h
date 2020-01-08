@@ -45,8 +45,6 @@ class FutexWaiter;
 
 
 
-
-
 class SharedArrayRawBuffer
 {
   private:
@@ -55,7 +53,6 @@ class SharedArrayRawBuffer
     uint32_t length_;
     uint32_t maxSize_;
     size_t   mappedSize_;         
-    bool     preparedForAsmJS_;
     bool     preparedForWasm_;
 
     
@@ -70,13 +67,12 @@ class SharedArrayRawBuffer
 
   protected:
     SharedArrayRawBuffer(uint8_t* buffer, uint32_t length, uint32_t maxSize, size_t mappedSize,
-                         bool preparedForAsmJS, bool preparedForWasm)
+                         bool preparedForWasm)
       : refcount_(1),
         lock_(mutexid::SharedArrayGrow),
         length_(length),
         maxSize_(maxSize),
         mappedSize_(mappedSize),
-        preparedForAsmJS_(preparedForAsmJS),
         preparedForWasm_(preparedForWasm),
         waiters_(nullptr)
     {
@@ -135,10 +131,6 @@ class SharedArrayRawBuffer
         return mappedSize_ - wasm::GuardSize;
     }
 #endif
-
-    bool isPreparedForAsmJS() const {
-        return preparedForAsmJS_;
-    }
 
     bool isWasm() const {
         return preparedForWasm_;
@@ -237,9 +229,6 @@ class SharedArrayBufferObject : public ArrayBufferObjectMaybeShared
         return getReservedSlot(LENGTH_SLOT).toPrivateUint32();
     }
 
-    bool isPreparedForAsmJS() const {
-        return rawBufferObject()->isPreparedForAsmJS();
-    }
     bool isWasm() const {
         return rawBufferObject()->isWasm();
     }
