@@ -333,6 +333,13 @@ pref("devtools.responsive.show-setting-tooltip", false);
 pref("devtools.aboutdebugging.new-enabled", false);
 pref("devtools.aboutdebugging.network-locations", "[]");
 
+pref("devtools.aboutdebugging.collapsibilities.installedExtension", false);
+pref("devtools.aboutdebugging.collapsibilities.otherWorker", false);
+pref("devtools.aboutdebugging.collapsibilities.serviceWorker", false);
+pref("devtools.aboutdebugging.collapsibilities.sharedWorker", false);
+pref("devtools.aboutdebugging.collapsibilities.tab", false);
+pref("devtools.aboutdebugging.collapsibilities.temporaryExtension", false);
+
 
 #ifdef MOZILLA_OFFICIAL
   pref("devtools.aboutdebugging.showSystemAddons", false);
