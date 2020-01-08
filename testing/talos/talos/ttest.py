@@ -108,6 +108,8 @@ class TTest(object):
                 profile=setup.profile_dir,
                 firefox=browser_config['browser_path']
             )
+        else:
+            setup.env['MOZ_USE_PAGELOADER'] = '1'
 
         
         global_counters = {}
