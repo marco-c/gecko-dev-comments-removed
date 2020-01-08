@@ -69,6 +69,10 @@ namespace mozilla {
 
 
 
+
+
+
+
 class MallocAllocPolicy
 {
 public:
@@ -114,7 +118,8 @@ public:
     return maybe_pod_realloc<T>(aPtr, aOldSize, aNewSize);
   }
 
-  void free_(void* aPtr)
+  template <typename T>
+  void free_(T* aPtr, size_t aNumElems = 0)
   {
     free(aPtr);
   }
@@ -175,7 +180,8 @@ public:
     MOZ_CRASH("NeverAllocPolicy::pod_realloc");
   }
 
-  void free_(void* aPtr)
+  template <typename T>
+  void free_(T* aPtr, size_t aNumElems = 0)
   {
     MOZ_CRASH("NeverAllocPolicy::free_");
   }
