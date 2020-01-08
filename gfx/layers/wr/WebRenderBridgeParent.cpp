@@ -1607,6 +1607,17 @@ WebRenderBridgeParent::CompositeToTarget(gfx::DrawTarget* aTarget, const gfx::In
   MaybeGenerateFrame( false);
 }
 
+TimeDuration
+WebRenderBridgeParent::GetVsyncInterval() const
+{
+  
+  MOZ_ASSERT(IsRootWebRenderBridgeParent());
+  if (CompositorBridgeParent* cbp = GetRootCompositorBridgeParent()) {
+    return cbp->GetVsyncInterval();
+  }
+  return TimeDuration();
+}
+
 void
 WebRenderBridgeParent::MaybeGenerateFrame(bool aForceGenerateFrame)
 {
