@@ -2800,7 +2800,7 @@ function validateTag(rawTag) {
     return null;
   }
   let tag = rawTag.trim();
-  if (!tag || tag.length > Ci.nsITaggingService.MAX_TAG_LENGTH) {
+  if (!tag || tag.length > PlacesUtils.bookmarks.MAX_TAG_LENGTH) {
     
     return null;
   }

@@ -438,7 +438,7 @@ function translateTreeTypes(node) {
   if (node.tags) {
      
     node.tags = node.tags.split(",").filter(aTag =>
-      aTag.length > 0 && aTag.length <= Ci.nsITaggingService.MAX_TAG_LENGTH);
+      aTag.length > 0 && aTag.length <= PlacesUtils.bookmarks.MAX_TAG_LENGTH);
 
     
     if (!node.tags.length) {

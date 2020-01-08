@@ -127,6 +127,12 @@ var Bookmarks = Object.freeze({
 
 
 
+  MAX_TAG_LENGTH: 100,
+
+  
+
+
+
   SOURCES: {
     DEFAULT: Ci.nsINavBookmarksService.SOURCE_DEFAULT,
     SYNC: Ci.nsINavBookmarksService.SOURCE_SYNC,

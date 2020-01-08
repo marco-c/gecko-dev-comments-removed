@@ -114,7 +114,7 @@ TaggingService.prototype = {
         
         tag.__defineGetter__("name", () => this._tagFolders[tag.id]);
       } else if (typeof(idOrName) == "string" && idOrName.length > 0 &&
-               idOrName.length <= Ci.nsITaggingService.MAX_TAG_LENGTH) {
+               idOrName.length <= PlacesUtils.bookmarks.MAX_TAG_LENGTH) {
         
         tag.name = trim ? idOrName.trim() : idOrName;
         
