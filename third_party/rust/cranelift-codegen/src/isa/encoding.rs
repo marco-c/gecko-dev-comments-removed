@@ -1,7 +1,9 @@
 
 
 use binemit::CodeOffset;
+use ir::{Function, Inst};
 use isa::constraints::{BranchRange, RecipeConstraints};
+use regalloc::RegDiversions;
 use std::fmt;
 
 
@@ -78,12 +80,24 @@ impl fmt::Display for DisplayEncoding {
     }
 }
 
+type SizeCalculatorFn = fn(&RecipeSizing, Inst, &RegDiversions, &Function) -> u8;
+
+
+
+
+pub fn base_size(sizing: &RecipeSizing, _: Inst, _: &RegDiversions, _: &Function) -> u8 {
+    sizing.base_size
+}
+
 
 
 
 pub struct RecipeSizing {
     
-    pub bytes: u8,
+    pub base_size: u8,
+
+    
+    pub compute_size: SizeCalculatorFn,
 
     
     
@@ -121,10 +135,17 @@ impl EncInfo {
     
     
     
-    pub fn bytes(&self, enc: Encoding) -> CodeOffset {
-        self.sizing
-            .get(enc.recipe())
-            .map_or(0, |s| CodeOffset::from(s.bytes))
+    pub fn byte_size(
+        &self,
+        enc: Encoding,
+        inst: Inst,
+        divert: &RegDiversions,
+        func: &Function,
+    ) -> CodeOffset {
+        self.sizing.get(enc.recipe()).map_or(0, |s| {
+            let compute_size = s.compute_size;
+            CodeOffset::from(compute_size(&s, inst, divert, func))
+        })
     }
 
     

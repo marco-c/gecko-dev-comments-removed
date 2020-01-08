@@ -117,8 +117,8 @@ pub enum BinaryFormat {
 
 impl Architecture {
     
-    pub fn endianness(&self) -> Result<Endianness, ()> {
-        match *self {
+    pub fn endianness(self) -> Result<Endianness, ()> {
+        match self {
             Architecture::Unknown => Err(()),
             Architecture::Aarch64
             | Architecture::Arm
@@ -153,8 +153,8 @@ impl Architecture {
     }
 
     
-    pub fn pointer_width(&self) -> Result<PointerWidth, ()> {
-        match *self {
+    pub fn pointer_width(self) -> Result<PointerWidth, ()> {
+        match self {
             Architecture::Unknown => Err(()),
             Architecture::Msp430 => Ok(PointerWidth::U16),
             Architecture::Arm

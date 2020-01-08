@@ -4,12 +4,9 @@
 
 
 use ir::entities::Ebb;
-use packed_option::PackedOption;
 use std::fmt::{self, Display, Formatter};
-use std::iter;
-use std::slice;
+use std::slice::{Iter, IterMut};
 use std::vec::Vec;
-
 
 
 
@@ -17,26 +14,19 @@ use std::vec::Vec;
 #[derive(Clone)]
 pub struct JumpTableData {
     
-    table: Vec<PackedOption<Ebb>>,
-
-    
-    holes: usize,
+    table: Vec<Ebb>,
 }
 
 impl JumpTableData {
     
     pub fn new() -> Self {
-        Self {
-            table: Vec::new(),
-            holes: 0,
-        }
+        Self { table: Vec::new() }
     }
 
     
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
             table: Vec::with_capacity(capacity),
-            holes: 0,
         }
     }
 
@@ -46,94 +36,47 @@ impl JumpTableData {
     }
 
     
-    
-    
-    pub fn set_entry(&mut self, idx: usize, dest: Ebb) {
-        
-        if idx >= self.table.len() {
-            self.holes += idx - self.table.len();
-            self.table.resize(idx + 1, None.into());
-        } else if self.table[idx].is_none() {
-            
-            self.holes -= 1;
-        }
-        self.table[idx] = dest.into();
-    }
-
-    
     pub fn push_entry(&mut self, dest: Ebb) {
-        self.table.push(dest.into())
-    }
-
-    
-    
-    
-    
-    pub fn clear_entry(&mut self, idx: usize) {
-        if idx < self.table.len() && self.table[idx].is_some() {
-            self.holes += 1;
-            self.table[idx] = None.into();
-        }
-    }
-
-    
-    pub fn get_entry(&self, idx: usize) -> Option<Ebb> {
-        self.table.get(idx).and_then(|e| e.expand())
-    }
-
-    
-    
-    
-    pub fn entries(&self) -> Entries {
-        Entries(self.table.iter().cloned().enumerate())
+        self.table.push(dest)
     }
 
     
     pub fn branches_to(&self, ebb: Ebb) -> bool {
-        self.table
-            .iter()
-            .any(|target_ebb| target_ebb.expand() == Some(ebb))
+        self.table.iter().any(|target_ebb| *target_ebb == ebb)
     }
 
     
-    pub fn as_mut_slice(&mut self) -> &mut [PackedOption<Ebb>] {
+    pub fn as_slice(&self) -> &[Ebb] {
+        self.table.as_slice()
+    }
+
+    
+    pub fn as_mut_slice(&mut self) -> &mut [Ebb] {
         self.table.as_mut_slice()
     }
-}
 
+    
+    pub fn iter(&self) -> Iter<Ebb> {
+        self.table.iter()
+    }
 
-pub struct Entries<'a>(iter::Enumerate<iter::Cloned<slice::Iter<'a, PackedOption<Ebb>>>>);
-
-impl<'a> Iterator for Entries<'a> {
-    type Item = (usize, Ebb);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        loop {
-            if let Some((idx, dest)) = self.0.next() {
-                if let Some(ebb) = dest.expand() {
-                    return Some((idx, ebb));
-                }
-            } else {
-                return None;
-            }
-        }
+    
+    pub fn iter_mut(&mut self) -> IterMut<Ebb> {
+        self.table.iter_mut()
     }
 }
 
 impl Display for JumpTableData {
     fn fmt(&self, fmt: &mut Formatter) -> fmt::Result {
-        match self.table.first().and_then(|e| e.expand()) {
-            None => write!(fmt, "jump_table 0")?,
-            Some(first) => write!(fmt, "jump_table {}", first)?,
+        write!(fmt, "jump_table [")?;
+        match self.table.first() {
+            None => (),
+            Some(first) => write!(fmt, "{}", first)?,
         }
-
-        for dest in self.table.iter().skip(1).map(|e| e.expand()) {
-            match dest {
-                None => write!(fmt, ", 0")?,
-                Some(ebb) => write!(fmt, ", {}", ebb)?,
-            }
+        for ebb in self.table.iter().skip(1) {
+            write!(fmt, ", {}", ebb)?;
         }
-        Ok(())
+        write!(fmt, "]")
     }
 }
 
@@ -143,18 +86,17 @@ mod tests {
     use entity::EntityRef;
     use ir::Ebb;
     use std::string::ToString;
-    use std::vec::Vec;
 
     #[test]
     fn empty() {
         let jt = JumpTableData::new();
 
-        assert_eq!(jt.get_entry(0), None);
-        assert_eq!(jt.get_entry(10), None);
+        assert_eq!(jt.as_slice().get(0), None);
+        assert_eq!(jt.as_slice().get(10), None);
 
-        assert_eq!(jt.to_string(), "jump_table 0");
+        assert_eq!(jt.to_string(), "jump_table []");
 
-        let v: Vec<(usize, Ebb)> = jt.entries().collect();
+        let v = jt.as_slice();
         assert_eq!(v, []);
     }
 
@@ -165,16 +107,13 @@ mod tests {
 
         let mut jt = JumpTableData::new();
 
-        jt.set_entry(0, e1);
-        jt.set_entry(0, e2);
-        jt.set_entry(10, e1);
+        jt.push_entry(e1);
+        jt.push_entry(e2);
+        jt.push_entry(e1);
 
-        assert_eq!(
-            jt.to_string(),
-            "jump_table ebb2, 0, 0, 0, 0, 0, 0, 0, 0, 0, ebb1"
-        );
+        assert_eq!(jt.to_string(), "jump_table [ebb1, ebb2, ebb1]");
 
-        let v: Vec<(usize, Ebb)> = jt.entries().collect();
-        assert_eq!(v, [(0, e2), (10, e1)]);
+        let v = jt.as_slice();
+        assert_eq!(v, [e1, e2, e1]);
     }
 }

@@ -6,10 +6,13 @@ from cdsl.types import IntType, FloatType, BoolType, FlagsType
 
 
 b1 = BoolType(1)    
+
+
 b8 = BoolType(8)    
 b16 = BoolType(16)  
 b32 = BoolType(32)  
 b64 = BoolType(64)  
+
 
 i8 = IntType(8)     
 i16 = IntType(16)   

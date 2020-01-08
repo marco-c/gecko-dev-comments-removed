@@ -74,8 +74,8 @@ pub struct InsertBuilder<'f, IIB: InstInserterBase<'f>> {
 impl<'f, IIB: InstInserterBase<'f>> InsertBuilder<'f, IIB> {
     
     
-    pub fn new(inserter: IIB) -> InsertBuilder<'f, IIB> {
-        InsertBuilder {
+    pub fn new(inserter: IIB) -> Self {
+        Self {
             inserter,
             unused: PhantomData,
         }
@@ -185,8 +185,8 @@ pub struct ReplaceBuilder<'f> {
 
 impl<'f> ReplaceBuilder<'f> {
     
-    pub fn new(dfg: &'f mut DataFlowGraph, inst: Inst) -> ReplaceBuilder {
-        ReplaceBuilder { dfg, inst }
+    pub fn new(dfg: &'f mut DataFlowGraph, inst: Inst) -> Self {
+        Self { dfg, inst }
     }
 }
 

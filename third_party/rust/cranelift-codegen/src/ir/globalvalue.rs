@@ -1,6 +1,6 @@
 
 
-use ir::immediates::Offset32;
+use ir::immediates::{Imm64, Offset32};
 use ir::{ExternalName, GlobalValue, Type};
 use isa::TargetIsa;
 use std::fmt;
@@ -9,18 +9,15 @@ use std::fmt;
 #[derive(Clone)]
 pub enum GlobalValueData {
     
-    
-    VMContext {
-        
-        offset: Offset32,
-    },
+    VMContext,
 
     
     
     
     
     
-    Deref {
+    
+    Load {
         
         base: GlobalValue,
 
@@ -28,14 +25,38 @@ pub enum GlobalValueData {
         offset: Offset32,
 
         
-        memory_type: Type,
+        global_type: Type,
+
+        
+        readonly: bool,
+    },
+
+    
+    IAddImm {
+        
+        base: GlobalValue,
+
+        
+        offset: Imm64,
+
+        
+        global_type: Type,
     },
 
     
     
-    Sym {
+    
+    
+    
+    
+    
+    Symbol {
         
         name: ExternalName,
+
+        
+        
+        offset: Imm64,
 
         
         
@@ -48,7 +69,7 @@ impl GlobalValueData {
     
     pub fn symbol_name(&self) -> &ExternalName {
         match *self {
-            GlobalValueData::Sym { ref name, .. } => name,
+            GlobalValueData::Symbol { ref name, .. } => name,
             _ => panic!("only symbols have names"),
         }
     }
@@ -56,8 +77,11 @@ impl GlobalValueData {
     
     pub fn global_type(&self, isa: &TargetIsa) -> Type {
         match *self {
-            GlobalValueData::VMContext { .. } | GlobalValueData::Sym { .. } => isa.pointer_type(),
-            GlobalValueData::Deref { memory_type, .. } => memory_type,
+            GlobalValueData::VMContext { .. } | GlobalValueData::Symbol { .. } => {
+                isa.pointer_type()
+            }
+            GlobalValueData::IAddImm { global_type, .. }
+            | GlobalValueData::Load { global_type, .. } => global_type,
         }
     }
 }
@@ -65,20 +89,42 @@ impl GlobalValueData {
 impl fmt::Display for GlobalValueData {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            GlobalValueData::VMContext { offset } => write!(f, "vmctx{}", offset),
-            GlobalValueData::Deref {
+            GlobalValueData::VMContext => write!(f, "vmctx"),
+            GlobalValueData::Load {
                 base,
                 offset,
-                memory_type,
-            } => write!(f, "deref({}){}: {}", base, offset, memory_type),
-            GlobalValueData::Sym {
+                global_type,
+                readonly,
+            } => write!(
+                f,
+                "load.{} notrap aligned {}{}{}",
+                global_type,
+                if readonly { "readonly " } else { "" },
+                base,
+                offset
+            ),
+            GlobalValueData::IAddImm {
+                global_type,
+                base,
+                offset,
+            } => write!(f, "iadd_imm.{} {}, {}", global_type, base, offset),
+            GlobalValueData::Symbol {
                 ref name,
+                offset,
                 colocated,
             } => {
                 if colocated {
                     write!(f, "colocated ")?;
                 }
-                write!(f, "globalsym {}", name)
+                write!(f, "symbol {}", name)?;
+                let offset_val: i64 = offset.into();
+                if offset_val > 0 {
+                    write!(f, "+")?;
+                }
+                if offset_val != 0 {
+                    write!(f, "{}", offset)?;
+                }
+                Ok(())
             }
         }
     }

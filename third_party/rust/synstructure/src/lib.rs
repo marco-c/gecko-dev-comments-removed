@@ -181,7 +181,7 @@ use syn::visit::{self, Visit};
 
 #[doc(hidden)]
 pub use quote::*;
-use proc_macro2::TokenStream;
+use proc_macro2::{TokenStream, TokenTree};
 
 use unicode_xid::UnicodeXID;
 
@@ -192,6 +192,21 @@ use proc_macro2::Span;
 
 #[doc(hidden)]
 pub mod macros;
+
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub enum AddBounds {
+    
+    Both,
+    
+    Fields,
+    
+    Generics,
+    
+    None,
+    #[doc(hidden)]
+    __Nonexhaustive,
+}
 
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
@@ -541,7 +556,7 @@ impl<'a> VariantInfo<'a> {
     
     
     pub fn pat(&self) -> TokenStream {
-        let mut t = TokenStream::empty();
+        let mut t = TokenStream::new();
         if let Some(prefix) = self.prefix {
             prefix.to_tokens(&mut t);
             quote!(::).to_tokens(&mut t);
@@ -621,7 +636,7 @@ impl<'a> VariantInfo<'a> {
         F: FnMut(&Field, usize) -> T,
         T: ToTokens,
     {
-        let mut t = TokenStream::empty();
+        let mut t = TokenStream::new();
         if let Some(prefix) = self.prefix {
             quote!(#prefix ::).to_tokens(&mut t);
         }
@@ -690,7 +705,7 @@ impl<'a> VariantInfo<'a> {
         R: ToTokens,
     {
         let pat = self.pat();
-        let mut body = TokenStream::empty();
+        let mut body = TokenStream::new();
         for binding in &self.bindings {
             token::Brace::default().surround(&mut body, |body| {
                 f(binding).to_tokens(body);
@@ -956,6 +971,7 @@ pub struct Structure<'a> {
     omitted_variants: bool,
     ast: &'a DeriveInput,
     extra_impl: Vec<GenericParam>,
+    add_bounds: AddBounds,
 }
 
 impl<'a> Structure<'a> {
@@ -1013,6 +1029,7 @@ impl<'a> Structure<'a> {
             omitted_variants: false,
             ast: ast,
             extra_impl: vec![],
+            add_bounds: AddBounds::Both,
         }
     }
 
@@ -1078,7 +1095,7 @@ impl<'a> Structure<'a> {
         F: FnMut(&BindingInfo) -> R,
         R: ToTokens,
     {
-        let mut t = TokenStream::empty();
+        let mut t = TokenStream::new();
         for variant in &self.variants {
             variant.each(&mut f).to_tokens(&mut t);
         }
@@ -1132,7 +1149,7 @@ impl<'a> Structure<'a> {
         I: ToTokens,
         R: ToTokens,
     {
-        let mut t = TokenStream::empty();
+        let mut t = TokenStream::new();
         for variant in &self.variants {
             variant.fold(&init, &mut f).to_tokens(&mut t);
         }
@@ -1186,7 +1203,7 @@ impl<'a> Structure<'a> {
         F: FnMut(&VariantInfo) -> R,
         R: ToTokens,
     {
-        let mut t = TokenStream::empty();
+        let mut t = TokenStream::new();
         for variant in &self.variants {
             let pat = variant.pat();
             let body = f(variant);
@@ -1248,6 +1265,54 @@ impl<'a> Structure<'a> {
         for variant in &mut self.variants {
             variant.filter(&mut f);
         }
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn add_bounds(&mut self, mode: AddBounds) -> &mut Self {
+        self.add_bounds = mode;
         self
     }
 
@@ -1508,7 +1573,12 @@ impl<'a> Structure<'a> {
     
     
     
-    pub fn add_trait_bounds(&self, bound: &TraitBound, where_clause: &mut Option<WhereClause>) {
+    pub fn add_trait_bounds(
+        &self,
+        bound: &TraitBound,
+        where_clause: &mut Option<WhereClause>,
+        mode: AddBounds,
+    ) {
         let mut seen = HashSet::new();
         let mut pred = |ty: Type| if !seen.contains(&ty) {
             seen.insert(ty.clone());
@@ -1537,18 +1607,28 @@ impl<'a> Structure<'a> {
 
         for variant in &self.variants {
             for binding in &variant.bindings {
-                for &seen in &binding.seen_generics {
-                    if seen {
-                        pred(binding.ast().ty.clone());
-                        break;
+                match mode {
+                    AddBounds::Both | AddBounds::Fields => {
+                        for &seen in &binding.seen_generics {
+                            if seen {
+                                pred(binding.ast().ty.clone());
+                                break;
+                            }
+                        }
                     }
+                    _ => {}
                 }
 
-                for param in binding.referenced_ty_params() {
-                    pred(Type::Path(TypePath {
-                        qself: None,
-                        path: (*param).clone().into(),
-                    }));
+                match mode {
+                    AddBounds::Both | AddBounds::Generics => {
+                        for param in binding.referenced_ty_params() {
+                            pred(Type::Path(TypePath {
+                                qself: None,
+                                path: (*param).clone().into(),
+                            }));
+                        }
+                    }
+                    _ => {}
                 }
             }
         }
@@ -1624,7 +1704,7 @@ impl<'a> Structure<'a> {
             path.into_token_stream(),
             body.into_token_stream(),
             quote!(),
-            true,
+            None,
         )
     }
 
@@ -1698,7 +1778,7 @@ impl<'a> Structure<'a> {
             path.into_token_stream(),
             body.into_token_stream(),
             quote!(unsafe),
-            true,
+            None,
         )
     }
 
@@ -1762,7 +1842,7 @@ impl<'a> Structure<'a> {
             path.into_token_stream(),
             body.into_token_stream(),
             quote!(),
-            false,
+            Some(AddBounds::None),
         )
     }
 
@@ -1827,7 +1907,7 @@ impl<'a> Structure<'a> {
             path.into_token_stream(),
             body.into_token_stream(),
             quote!(unsafe),
-            false,
+            Some(AddBounds::None),
         )
     }
 
@@ -1836,8 +1916,9 @@ impl<'a> Structure<'a> {
         path: TokenStream,
         body: TokenStream,
         safety: TokenStream,
-        add_bounds: bool,
+        mode: Option<AddBounds>,
     ) -> TokenStream {
+        let mode = mode.unwrap_or(self.add_bounds);
         let name = &self.ast.ident;
         let mut gen_clone = self.ast.generics.clone();
         gen_clone.params.extend(self.extra_impl.clone().into_iter());
@@ -1848,9 +1929,7 @@ impl<'a> Structure<'a> {
             .expect("`path` argument must be a valid rust trait bound");
 
         let mut where_clause = where_clause.cloned();
-        if add_bounds {
-            self.add_trait_bounds(&bound, &mut where_clause);
-        }
+        self.add_trait_bounds(&bound, &mut where_clause, mode);
 
         let dummy_const: Ident = sanitize_ident(&format!(
             "_DERIVE_{}_FOR_{}",
@@ -2046,116 +2125,84 @@ impl<'a> Structure<'a> {
     
     
     
+    
+    
     pub fn gen_impl(&self, cfg: TokenStream) -> TokenStream {
-        use syn::buffer::{TokenBuffer, Cursor};
-        use syn::synom::PResult;
-        use proc_macro2::TokenStream;
+        use syn::parse::{Parser, ParseStream, Result};
 
         
-        fn parse_gen_impl(
-            c: Cursor,
-        ) -> PResult<
-            (
-                Option<token::Unsafe>,
-                TraitBound,
-                TokenStream,
-                syn::Generics,
-            ),
-        > {
+        let do_parse = |input: ParseStream| -> Result<TokenStream> {
             
-            let (id, c) = syn!(c, Ident)?;
-            if id != "gen" {
-                let ((), _) = reject!(c,)?;
-                unreachable!()
-            }
-
-            
-            let (unsafe_kw, c) = option!(c, keyword!(unsafe))?;
-            let (_, c) = syn!(c, token::Impl)?;
-
-            
-            
-
-            
-            let (mut generics, c) = syn!(c, Generics)
-                .expect("Expected an optional `<>` with generics after `gen impl`");
-
-            
-            let (bound, c) = syn!(c, TraitBound)
-                .expect("Expected a trait bound after `gen impl`");
-
-            
-            let (_, c) = keyword!(c, for)
-                .expect("Expected `for` after trait bound");
-            let (_, c) = do_parse!(c, syn!(Token![@]) >> keyword!(Self) >> (()))
-                .expect("Expected `@Self` after `for`");
-
-            
-            
-            
-            let c = if let Ok((where_clause, c)) = syn!(c, WhereClause) {
-                generics.where_clause = Some(where_clause);
-                c
-            } else { c };
-
-            let ((_, body), c) = braces!(c, syn!(TokenStream))
-                .expect("Expected an impl body after `@Self`");
-
-            Ok(((unsafe_kw, bound, body, generics), c))
-        }
-
-        let buf = TokenBuffer::new2(cfg.into());
-        let mut c = buf.begin();
-        let mut before = vec![];
-
-        
-        
-        let ((unsafe_kw, bound, body, mut generics), after) = {
-            let gen_impl;
-            let cursor;
-
-            loop {
-                if let Ok((gi, c2)) = parse_gen_impl(c) {
-                    gen_impl = gi;
-                    cursor = c2;
-                    break;
-                } else if let Some((tt, c2)) = c.token_tree() {
-                    c = c2;
-                    before.push(tt);
-                } else {
-                    panic!("Expected a gen impl block");
+            let parse_prefix = |input: ParseStream| -> Result<_> {
+                if input.parse::<Ident>()? != "gen" {
+                    return Err(input.error(""));
                 }
-            }
-
-            (gen_impl, cursor.token_stream())
-        };
-
-        
-        let name = &self.ast.ident;
-
-        
-        
-        merge_generics(&mut generics, &self.ast.generics);
-        self.add_trait_bounds(&bound, &mut generics.where_clause);
-        let (impl_generics, _, where_clause) = generics.split_for_impl();
-        let (_, ty_generics, _) = self.ast.generics.split_for_impl();
-
-        let dummy_const: Ident = sanitize_ident(&format!(
-            "_DERIVE_{}_FOR_{}",
-            (&bound).into_token_stream(),
-            name.into_token_stream(),
-        ));
-
-        quote! {
-            #[allow(non_upper_case_globals)]
-            const #dummy_const: () = {
-                #(#before)*
-                #unsafe_kw impl #impl_generics #bound for #name #ty_generics #where_clause {
-                    #body
-                }
-                #after
+                let safety = input.parse::<Option<Token![unsafe]>>()?;
+                let _ = input.parse::<Token![impl]>()?;
+                Ok(safety)
             };
-        }
+
+            let mut before = vec![];
+            loop {
+                if let Ok(_) = parse_prefix(&input.fork()) {
+                    break;
+                }
+                before.push(input.parse::<TokenTree>()?);
+            }
+
+            
+            let safety = parse_prefix(input)?;
+
+            
+            let mut generics = input.parse::<Generics>()?;
+
+            
+            let bound = input.parse::<TraitBound>()?;
+
+            
+            let _ = input.parse::<Token![for]>()?;
+            let _ = input.parse::<Token![@]>()?;
+            let _ = input.parse::<Token![Self]>()?;
+
+            
+            generics.where_clause = input.parse()?;
+
+            
+            let body;
+            braced!(body in input);
+            let body = body.parse::<TokenStream>()?;
+
+            
+            let after = input.parse::<TokenStream>()?;
+
+            
+            let name = &self.ast.ident;
+
+            
+            
+            merge_generics(&mut generics, &self.ast.generics);
+            self.add_trait_bounds(&bound, &mut generics.where_clause, self.add_bounds);
+            let (impl_generics, _, where_clause) = generics.split_for_impl();
+            let (_, ty_generics, _) = self.ast.generics.split_for_impl();
+
+            let dummy_const: Ident = sanitize_ident(&format!(
+                "_DERIVE_{}_FOR_{}",
+                (&bound).into_token_stream(),
+                name.into_token_stream(),
+            ));
+
+            Ok(quote! {
+                #[allow(non_upper_case_globals)]
+                const #dummy_const: () = {
+                    #(#before)*
+                    #safety impl #impl_generics #bound for #name #ty_generics #where_clause {
+                        #body
+                    }
+                    #after
+                };
+            })
+        };
+        Parser::parse2(do_parse, cfg).expect("Failed to parse gen_impl")
     }
 }
 
