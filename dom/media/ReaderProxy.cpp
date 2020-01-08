@@ -87,7 +87,10 @@ ReaderProxy::OnAudioDataRequestFailed(const MediaResult& aError)
 
   
   if (!mAudioDuration.IsValid()) {
-    mAudioDuration = mLastAudioEndTime;
+    
+    
+    
+    mAudioDuration = std::max(mLastAudioEndTime, mDuration.Ref().ref());
   }
 
   
