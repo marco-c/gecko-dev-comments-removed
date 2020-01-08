@@ -8,7 +8,151 @@
 #define nsGkAtoms_h___
 
 #include "nsAtom.h"
-#include "nsStaticAtom.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -28,14 +172,24 @@ DEFINE_STATIC_ATOM_SUBCLASS(nsICSSPseudoElement)
 namespace mozilla {
 namespace detail {
 
+
+
+
+
+
+
 struct GkAtoms
 {
-  #define GK_ATOM(name_, value_, type_, atom_type_) NS_STATIC_ATOM_DECL_STRING(name_, value_)
+  
+  #define GK_ATOM(name_, value_, type_, atom_type_) \
+    const char16_t name_##_string[sizeof(value_)];
   #include "nsGkAtomList.h"
   #undef GK_ATOM
 
+  
   enum class Atoms {
-    #define GK_ATOM(name_, value_, type_, atom_type_) NS_STATIC_ATOM_ENUM(name_)
+    #define GK_ATOM(name_, value_, type_, atom_type_) \
+      name_,
     #include "nsGkAtomList.h"
     #undef GK_ATOM
     AtomsCount
@@ -63,7 +217,12 @@ public:
     return const_cast<nsStaticAtom*>(&sAtoms[aIndex]);
   }
 
-  #define GK_ATOM(name_, value_, type_, atom_type_) NS_STATIC_ATOM_DECL_PTR(type_, name_)
+  
+  
+  
+  
+  #define GK_ATOM(name_, value_, type_, atom_type_) \
+    static type_* name_;
   #include "nsGkAtomList.h"
   #undef GK_ATOM
 };
