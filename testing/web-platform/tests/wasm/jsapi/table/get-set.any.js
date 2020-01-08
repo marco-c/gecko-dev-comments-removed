@@ -131,7 +131,9 @@ test(() => {
 
   const {fn} = functions;
 
-  assert_throws(new RangeError(), () => table.set(-1, fn));
+  
+  
+  assert_throws(new TypeError(), () => table.set(-1, fn));
   assert_throws(new RangeError(), () => table.set(5, fn));
   assert_equal_to_array(table, [null, null, null, null, null]);
 }, "Setting out-of-bounds");

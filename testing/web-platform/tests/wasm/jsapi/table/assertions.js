@@ -1,6 +1,8 @@
 function assert_equal_to_array(table, expected, message) {
   assert_equals(table.length, expected.length, `${message}: length`);
-  assert_throws(new RangeError(), () => table.get(-1), `${message}: table.get(-1)`);
+  
+  
+  assert_throws(new TypeError(), () => table.get(-1), `${message}: table.get(-1)`);
   for (let i = 0; i < expected.length; ++i) {
     assert_equals(table.get(i), expected[i], `${message}: table.get(${i} of ${expected.length})`);
   }
