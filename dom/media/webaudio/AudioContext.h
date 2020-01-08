@@ -272,7 +272,7 @@ class AudioContext final : public DOMEventTargetHelper,
   bool IsOffline() const { return mIsOffline; }
 
   MediaStreamGraph* Graph() const;
-  MediaStream* DestinationStream() const;
+  AudioNodeStream* DestinationStream() const;
 
   
   
