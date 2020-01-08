@@ -421,6 +421,12 @@ public:
 
 
 
+     eIntID_GTKCSDTransparentBackground,
+
+     
+
+
+
      eIntID_GTKCSDMinimizeButton,
 
      

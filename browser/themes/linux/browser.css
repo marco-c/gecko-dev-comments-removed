@@ -641,7 +641,8 @@ notification[value="translation"] menulist > .menulist-dropmarker {
 
 
 
-  @supports -moz-bool-pref("mozilla.widget.use-argb-visuals") {
+
+  @media (-moz-gtk-csd-transparent-background) {
     :root[tabsintitlebar]:not(:-moz-lwtheme) {
       background-color: transparent;
       -moz-appearance: none;
