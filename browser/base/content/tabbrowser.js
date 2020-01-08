@@ -285,34 +285,41 @@ window._gBrowser = {
     
     let userContextId = window.arguments && window.arguments[6];
 
+    let tabArgument = gBrowserInit.getTabToAdopt();
+
+    
+    let sameProcessAsFrameLoader;
+    
     
     
     
     
     let remoteType;
-    if (gMultiProcessBrowser && !window.hasOpenerForInitialContentBrowser) {
-      remoteType = E10SUtils.DEFAULT_REMOTE_TYPE;
-    } else {
+    if (tabArgument && tabArgument.linkedBrowser) {
+      remoteType = tabArgument.linkedBrowser.remoteType;
+      sameProcessAsFrameLoader = tabArgument.linkedBrowser.frameLoader;
+    } else if (!gMultiProcessBrowser || window.hasOpenerForInitialContentBrowser) {
       remoteType = E10SUtils.NOT_REMOTE;
-    }
-
-    
-    let sameProcessAsFrameLoader;
-    let tabArgument = gBrowserInit.getTabToAdopt();
-    if (tabArgument) {
-      
-      
-      
-      if (tabArgument.hasAttribute("usercontextid")) {
-        userContextId = parseInt(tabArgument.getAttribute("usercontextid"), 10);
-      }
-
-      let linkedBrowser = tabArgument.linkedBrowser;
-      if (linkedBrowser) {
-        remoteType = linkedBrowser.remoteType;
-        sameProcessAsFrameLoader = linkedBrowser.frameLoader;
+    } else {
+      let uriToLoad = gBrowserInit.uriToLoadPromise;
+      if (uriToLoad && typeof uriToLoad == "string") {
+        remoteType = E10SUtils.getRemoteTypeForURI(
+          uriToLoad,
+          gMultiProcessBrowser,
+          E10SUtils.DEFAULT_REMOTE_TYPE
+        );
+      } else {
+        remoteType = E10SUtils.DEFAULT_REMOTE_TYPE;
       }
     }
+
+    if (tabArgument && tabArgument.hasAttribute("usercontextid")) {
+      
+      
+      
+      userContextId = parseInt(tabArgument.getAttribute("usercontextid"), 10);
+    }
+
     let createOptions = {
       uriIsAboutBlank: false,
       userContextId,

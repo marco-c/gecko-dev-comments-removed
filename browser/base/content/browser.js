@@ -1869,9 +1869,9 @@ var gBrowserInit = {
 
   
   
-  get _uriToLoadPromise() {
-    delete this._uriToLoadPromise;
-    return this._uriToLoadPromise = function() {
+  get uriToLoadPromise() {
+    delete this.uriToLoadPromise;
+    return this.uriToLoadPromise = function() {
       
       
       
@@ -1905,11 +1905,12 @@ var gBrowserInit = {
   
   
   _callWithURIToLoad(callback) {
-    let uriToLoad = this._uriToLoadPromise;
-    if (!uriToLoad || !uriToLoad.then)
-      callback(uriToLoad);
-    else
+    let uriToLoad = this.uriToLoadPromise;
+    if (uriToLoad && uriToLoad.then) {
       uriToLoad.then(callback);
+    } else {
+      callback(uriToLoad);
+    }
   },
 
   onUnload() {
