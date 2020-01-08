@@ -16,10 +16,26 @@
 
 
 
-#ifndef asmjs_asmjs_h
-#define asmjs_asmjs_h
+#ifndef wasm_AsmJS_h
+#define wasm_AsmJS_h
 
-#include "NamespaceImports.h"
+#include "mozilla/Attributes.h"  
+
+#include <stdint.h>  
+
+#include "js/CallArgs.h"  
+
+struct JSContext;
+class JSFunction;
+
+namespace JS {
+
+union Value;
+
+template <typename T>
+class Handle;
+
+}  
 
 namespace js {
 
@@ -67,15 +83,16 @@ extern bool IsAsmJSCompilationAvailable(JSContext* cx, unsigned argc,
 extern bool IsAsmJSModule(JSContext* cx, unsigned argc, JS::Value* vp);
 
 extern bool IsAsmJSModuleLoadedFromCache(JSContext* cx, unsigned argc,
-                                         Value* vp);
+                                         JS::Value* vp);
 
 extern bool IsAsmJSFunction(JSContext* cx, unsigned argc, JS::Value* vp);
 
 
 
-extern JSString* AsmJSFunctionToString(JSContext* cx, HandleFunction fun);
+extern JSString* AsmJSFunctionToString(JSContext* cx,
+                                       JS::Handle<JSFunction*> fun);
 
-extern JSString* AsmJSModuleToString(JSContext* cx, HandleFunction fun,
+extern JSString* AsmJSModuleToString(JSContext* cx, JS::Handle<JSFunction*> fun,
                                      bool isToSource);
 
 
