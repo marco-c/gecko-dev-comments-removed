@@ -2,6 +2,7 @@
 
 
 
+from __future__ import absolute_import
 from compare_locales.mozpath import (
     relpath,
     join,

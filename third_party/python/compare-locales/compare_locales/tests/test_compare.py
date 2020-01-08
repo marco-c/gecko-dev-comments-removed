@@ -2,10 +2,11 @@
 
 
 
+from __future__ import absolute_import
 import unittest
 
 from compare_locales import compare, paths
-from cPickle import loads, dumps
+from six.moves.cPickle import loads, dumps
 
 
 class TestTree(unittest.TestCase):
