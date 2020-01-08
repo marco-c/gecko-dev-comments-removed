@@ -11037,8 +11037,10 @@ void nsCSSFrameConstructor::CreateIBSiblings(nsFrameConstructorState& aState,
       if (blockKids.NotEmpty()) {
         
         
-        AutoRestore<nsFrameState> savedStateBits(aState.mAdditionalStateBits);
-        aState.mAdditionalStateBits |= NS_FRAME_PART_OF_IBSPLIT;
+        
+        
+        
+        blockFrame->AddStateBits(NS_FRAME_PART_OF_IBSPLIT);
 
         nsFrameItems columnSpanSiblings =
             CreateColumnSpanSiblings(aState, blockFrame, blockKids,
