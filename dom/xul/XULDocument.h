@@ -13,7 +13,6 @@
 
 #include "mozilla/dom/XMLDocument.h"
 #include "mozilla/StyleSheet.h"
-#include "nsForwardReference.h"
 #include "nsIContent.h"
 #include "nsCOMArray.h"
 #include "nsIURI.h"
@@ -294,61 +293,6 @@ protected:
 
 protected:
     
-
-
-
-
-
-
-    
-
-
-
-
-    nsTArray<nsAutoPtr<nsForwardReference> > mForwardReferences;
-
-    
-    nsForwardReference::Phase mResolutionPhase;
-
-    
-
-
-    nsresult AddForwardReference(nsForwardReference* aRef);
-
-    
-
-
-    nsresult ResolveForwardReferences();
-
-    
-
-
-    class BroadcasterHookup : public nsForwardReference
-    {
-    protected:
-        XULDocument* mDocument;              
-        RefPtr<Element> mObservesElement; 
-        bool mResolved;
-
-    public:
-        BroadcasterHookup(XULDocument* aDocument,
-                          Element* aObservesElement)
-            : mDocument(aDocument),
-              mObservesElement(aObservesElement),
-              mResolved(false)
-        {
-        }
-
-        virtual ~BroadcasterHookup();
-
-        virtual Phase GetPhase() override { return eHookup; }
-        virtual Result Resolve() override;
-    };
-
-    friend class BroadcasterHookup;
-
-
-    
     
     
     
@@ -360,9 +304,7 @@ protected:
                     Element** aBroadcaster);
 
     nsresult
-    CheckBroadcasterHookup(Element* aElement,
-                           bool* aNeedsHookup,
-                           bool* aDidResolve);
+    CheckBroadcasterHookup(Element* aElement);
 
     void
     SynchronizeBroadcastListener(Element *aBroadcaster,

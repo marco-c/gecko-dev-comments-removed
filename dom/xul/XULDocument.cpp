@@ -112,17 +112,6 @@ static NS_DEFINE_CID(kParserCID,                 NS_PARSER_CID);
 
 
 
-const nsForwardReference::Phase nsForwardReference::kPasses[] = {
-    nsForwardReference::eConstruction,
-    nsForwardReference::eHookup,
-    nsForwardReference::eDone
-};
-
-
-
-
-
-
 int32_t XULDocument::gRefCnt = 0;
 
 LazyLogModule XULDocument::gXULLog("XULDocument");
@@ -160,7 +149,6 @@ XULDocument::XULDocument(void)
       mOffThreadCompiling(false),
       mOffThreadCompileStringBuf(nullptr),
       mOffThreadCompileStringLength(0),
-      mResolutionPhase(nsForwardReference::eStart),
       mBroadcasterMap(nullptr),
       mInitialLayoutComplete(false),
       mHandlingDelayedAttrChange(false),
@@ -181,10 +169,6 @@ XULDocument::~XULDocument()
 {
     NS_ASSERTION(mNextSrcLoadWaiter == nullptr,
         "unreferenced document still waiting for script source to load?");
-
-    
-    
-    mForwardReferences.Clear();
 
     
     delete mBroadcasterMap;
@@ -232,7 +216,6 @@ NS_IMPL_CYCLE_COLLECTION_CLASS(XULDocument)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(XULDocument, XMLDocument)
     NS_ASSERTION(!nsCCUncollectableMarker::InGeneration(cb, tmp->GetMarkedCCGeneration()),
                  "Shouldn't traverse XULDocument!");
-    
     
 
     NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mCurrentPrototype)
@@ -815,8 +798,7 @@ XULDocument::AttributeChanged(Element* aElement, int32_t aNameSpaceID,
     }
 
     
-    bool listener, resolved;
-    CheckBroadcasterHookup(aElement, &listener, &resolved);
+    CheckBroadcasterHookup(aElement);
 
     
     
@@ -874,75 +856,6 @@ XULDocument::ContentRemoved(nsIContent* aChild, nsIContent* aPreviousSibling)
     nsCOMPtr<nsIMutationObserver> kungFuDeathGrip(this);
 
     RemoveSubtreeFromDocument(aChild);
-}
-
-nsresult
-XULDocument::AddForwardReference(nsForwardReference* aRef)
-{
-    if (mResolutionPhase < aRef->GetPhase()) {
-        if (!mForwardReferences.AppendElement(aRef)) {
-            delete aRef;
-            return NS_ERROR_OUT_OF_MEMORY;
-        }
-    }
-    else {
-        NS_ERROR("forward references have already been resolved");
-        delete aRef;
-    }
-
-    return NS_OK;
-}
-
-nsresult
-XULDocument::ResolveForwardReferences()
-{
-    if (mResolutionPhase == nsForwardReference::eDone)
-        return NS_OK;
-
-    NS_ASSERTION(mResolutionPhase == nsForwardReference::eStart,
-                 "nested ResolveForwardReferences()");
-
-    
-    
-    
-    
-    
-
-    const nsForwardReference::Phase* pass = nsForwardReference::kPasses;
-    while ((mResolutionPhase = *pass) != nsForwardReference::eDone) {
-        uint32_t previous = 0;
-        while (mForwardReferences.Length() &&
-               mForwardReferences.Length() != previous) {
-            previous = mForwardReferences.Length();
-
-            for (uint32_t i = 0; i < mForwardReferences.Length(); ++i) {
-                nsForwardReference* fwdref = mForwardReferences[i];
-
-                if (fwdref->GetPhase() == *pass) {
-                    nsForwardReference::Result result = fwdref->Resolve();
-
-                    switch (result) {
-                    case nsForwardReference::eResolve_Succeeded:
-                    case nsForwardReference::eResolve_Error:
-                        mForwardReferences.RemoveElementAt(i);
-
-                        
-                        --i;
-                        break;
-
-                    case nsForwardReference::eResolve_Later:
-                        
-                        ;
-                    }
-                }
-            }
-        }
-
-        ++pass;
-    }
-
-    mForwardReferences.Clear();
-    return NS_OK;
 }
 
 
@@ -1020,17 +933,8 @@ XULDocument::AddElementToDocumentPre(Element* aElement)
 
     
     
-    bool listener, resolved;
-    rv = CheckBroadcasterHookup(aElement, &listener, &resolved);
+    rv = CheckBroadcasterHookup(aElement);
     if (NS_FAILED(rv)) return rv;
-
-    
-    
-    if (listener && !resolved && (mResolutionPhase != nsForwardReference::eDone)) {
-        BroadcasterHookup* hookup = new BroadcasterHookup(this, aElement);
-        rv = AddForwardReference(hookup);
-        if (NS_FAILED(rv)) return rv;
-    }
 
     return NS_OK;
 }
@@ -1797,8 +1701,6 @@ XULDocument::ResumeWalk()
 
     
     
-    rv = ResolveForwardReferences();
-    if (NS_FAILED(rv)) return rv;
 
     ApplyPersistentAttributes();
 
@@ -2350,52 +2252,6 @@ XULDocument::AddAttributes(nsXULPrototypeElement* aPrototype,
 
 
 
-
-
-
-nsForwardReference::Result
-XULDocument::BroadcasterHookup::Resolve()
-{
-    nsresult rv;
-
-    bool listener;
-    rv = mDocument->CheckBroadcasterHookup(mObservesElement, &listener, &mResolved);
-    if (NS_FAILED(rv)) return eResolve_Error;
-
-    return mResolved ? eResolve_Succeeded : eResolve_Later;
-}
-
-
-XULDocument::BroadcasterHookup::~BroadcasterHookup()
-{
-    if (MOZ_LOG_TEST(gXULLog, LogLevel::Warning) && !mResolved) {
-        
-
-        nsAutoString broadcasterID;
-        nsAutoString attribute;
-
-        if (mObservesElement->IsXULElement(nsGkAtoms::observes)) {
-            mObservesElement->GetAttr(kNameSpaceID_None, nsGkAtoms::element, broadcasterID);
-            mObservesElement->GetAttr(kNameSpaceID_None, nsGkAtoms::attribute, attribute);
-        }
-        else {
-            mObservesElement->GetAttr(kNameSpaceID_None, nsGkAtoms::observes, broadcasterID);
-            attribute.Assign('*');
-        }
-
-        nsAutoCString attributeC,broadcasteridC;
-        LossyCopyUTF16toASCII(attribute, attributeC);
-        LossyCopyUTF16toASCII(broadcasterID, broadcasteridC);
-        MOZ_LOG(gXULLog, LogLevel::Warning,
-               ("xul: broadcaster hookup failed <%s attribute='%s'> to %s",
-                nsAtomCString(mObservesElement->NodeInfo()->NameAtom()).get(),
-                attributeC.get(),
-                broadcasteridC.get()));
-    }
-}
-
-
-
 nsresult
 XULDocument::FindBroadcaster(Element* aElement,
                              Element** aListener,
@@ -2467,9 +2323,8 @@ XULDocument::FindBroadcaster(Element* aElement,
     *aBroadcaster = GetElementById(aBroadcasterID);
 
     
-    
     if (! *aBroadcaster) {
-        return NS_FINDBROADCASTER_AWAIT_OVERLAYS;
+        return NS_FINDBROADCASTER_NOT_FOUND;
     }
 
     NS_ADDREF(*aBroadcaster);
@@ -2478,16 +2333,12 @@ XULDocument::FindBroadcaster(Element* aElement,
 }
 
 nsresult
-XULDocument::CheckBroadcasterHookup(Element* aElement,
-                                    bool* aNeedsHookup,
-                                    bool* aDidResolve)
+XULDocument::CheckBroadcasterHookup(Element* aElement)
 {
     
     
     
     nsresult rv;
-
-    *aDidResolve = false;
 
     nsCOMPtr<Element> listener;
     nsAutoString broadcasterID;
@@ -2498,10 +2349,6 @@ XULDocument::CheckBroadcasterHookup(Element* aElement,
                          broadcasterID, attribute, getter_AddRefs(broadcaster));
     switch (rv) {
         case NS_FINDBROADCASTER_NOT_FOUND:
-            *aNeedsHookup = false;
-            return NS_OK;
-        case NS_FINDBROADCASTER_AWAIT_OVERLAYS:
-            *aNeedsHookup = true;
             return NS_OK;
         case NS_FINDBROADCASTER_FOUND:
             break;
@@ -2535,8 +2382,6 @@ XULDocument::CheckBroadcasterHookup(Element* aElement,
                 broadcasteridC.get()));
     }
 
-    *aNeedsHookup = false;
-    *aDidResolve = true;
     return NS_OK;
 }
 
