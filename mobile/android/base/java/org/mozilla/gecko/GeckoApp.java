@@ -1161,7 +1161,7 @@ public abstract class GeckoApp extends GeckoActivity
                         
                         
                         restoreMessage = restoreSessionTabs(isExternalURL, false);
-                    } catch (SessionRestoreException e) {
+                    } catch (SessionRestoreException | OutOfMemoryError e) {
                         
                         
                         
@@ -1174,13 +1174,13 @@ public abstract class GeckoApp extends GeckoActivity
                             
                             
                             
-                            if (getProfile().sessionFileExists()) {
+                            if (getProfile().sessionFileExists() && !(e instanceof OutOfMemoryError)) {
                                 Telemetry.addToHistogram("FENNEC_SESSIONSTORE_DAMAGED_SESSION_FILE", 1);
                             }
                             try {
                                 restoreMessage = restoreSessionTabs(isExternalURL, true);
                                 Telemetry.addToHistogram("FENNEC_SESSIONSTORE_RESTORING_FROM_BACKUP", 1);
-                            } catch (SessionRestoreException ex) {
+                            } catch (SessionRestoreException | OutOfMemoryError ex) {
                                 if (!mShouldRestore) {
                                     
                                     Telemetry.addToHistogram("FENNEC_SESSIONSTORE_RESTORING_FROM_BACKUP", 1);
@@ -1190,7 +1190,8 @@ public abstract class GeckoApp extends GeckoActivity
                                     mShouldRestore = false;
 
                                     if (!getSharedPreferencesForProfile().
-                                            getBoolean(PREFS_IS_FIRST_RUN, true)) {
+                                            getBoolean(PREFS_IS_FIRST_RUN, true) &&
+                                            !(ex instanceof OutOfMemoryError)) {
                                         
                                         
                                         
