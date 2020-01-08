@@ -554,7 +554,7 @@ SavedFrame::initFromLookup(JSContext* cx, SavedFrame::HandleLookup lookup)
 SavedFrame::create(JSContext* cx)
 {
     RootedGlobalObject global(cx, cx->global());
-    assertSameCompartment(cx, global);
+    cx->check(global);
 
     
     
@@ -564,7 +564,7 @@ SavedFrame::create(JSContext* cx)
     RootedNativeObject proto(cx, GlobalObject::getOrCreateSavedFramePrototype(cx, global));
     if (!proto)
         return nullptr;
-    assertSameCompartment(cx, proto);
+    cx->check(proto);
 
     return NewObjectWithGivenProto<SavedFrame>(cx, proto, TenuredObject);
 }
@@ -1089,7 +1089,7 @@ BuildStackString(JSContext* cx, JSPrincipals* principals, HandleObject stack,
     JSString* str = sb.finishString();
     if (!str)
         return false;
-    assertSameCompartment(cx, str);
+    cx->check(str);
     stringp.set(str);
     return true;
 }
@@ -1699,7 +1699,7 @@ SavedStacks::getLocation(JSContext* cx, const FrameIter& iter,
     
     
     MOZ_DIAGNOSTIC_ASSERT(&cx->realm()->savedStacks() == this);
-    assertSameCompartment(cx, iter.compartment());
+    cx->check(iter.compartment());
 
     
     
