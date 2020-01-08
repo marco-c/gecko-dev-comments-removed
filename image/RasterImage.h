@@ -289,14 +289,17 @@ private:
 
 
 
+
   LookupResult LookupFrame(const gfx::IntSize& aSize,
                            uint32_t aFlags,
-                           PlaybackType aPlaybackType);
+                           PlaybackType aPlaybackType,
+                           bool aMarkUsed = true);
 
   
   LookupResult LookupFrameInternal(const gfx::IntSize& aSize,
                                    uint32_t aFlags,
-                                   PlaybackType aPlaybackType);
+                                   PlaybackType aPlaybackType,
+                                   bool aMarkUsed);
 
   ImgDrawResult DrawInternal(DrawableSurface&& aFrameRef,
                           gfxContext* aContext,

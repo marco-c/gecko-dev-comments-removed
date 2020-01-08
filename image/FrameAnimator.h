@@ -323,7 +323,8 @@ public:
 
 
 
-  LookupResult GetCompositedFrame(AnimationState& aState);
+  LookupResult GetCompositedFrame(AnimationState& aState,
+                                  bool aMarkUsed);
 
   
 
