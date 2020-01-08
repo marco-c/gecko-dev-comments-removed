@@ -1051,7 +1051,7 @@ pref("security.sandbox.content.level", 3);
 
 
 
-pref("dom.ipc.plugins.sandbox-level.flash", 1);
+pref("dom.ipc.plugins.sandbox-level.flash", 2);
 
 
 pref("dom.ipc.plugins.sandbox-level.flash.legacy", 1);
@@ -1060,7 +1060,7 @@ pref("dom.ipc.plugins.sandbox-level.flash.max-legacy-os-minor", 10);
 
 
 
-pref("dom.ipc.plugins.sandbox-level.default", 1);
+pref("dom.ipc.plugins.sandbox-level.default", 2);
 #endif
 
 #if defined(XP_LINUX) && defined(MOZ_SANDBOX) && defined(MOZ_CONTENT_SANDBOX)
@@ -1488,10 +1488,13 @@ pref("browser.ping-centre.production.endpoint", "https://tiles.services.mozilla.
 pref("media.gmp-provider.enabled", true);
 
 pref("browser.contentblocking.enabled", true);
+pref("browser.contentblocking.cookies-site-data.ui.reject-trackers.recommended", true);
 #ifdef NIGHTLY_BUILD
 pref("browser.contentblocking.ui.enabled", true);
+pref("browser.contentblocking.cookies-site-data.ui.enabled", true);
 #else
 pref("browser.contentblocking.ui.enabled", false);
+pref("browser.contentblocking.cookies-site-data.ui.enabled", false);
 #endif
 #ifdef NIGHTLY_BUILD
 pref("browser.contentblocking.reportBreakage.enabled", true);
