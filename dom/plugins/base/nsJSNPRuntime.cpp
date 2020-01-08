@@ -1907,6 +1907,7 @@ nsNPObjWrapper::OnDestroy(NPObject *npobj)
 
 
 
+
 JSObject *
 nsNPObjWrapper::GetNewOrUsed(NPP npp, JSContext *cx, NPObject *npobj)
 {
