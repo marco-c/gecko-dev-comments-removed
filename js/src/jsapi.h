@@ -1324,6 +1324,24 @@ JS_updateMallocCounter(JSContext* cx, size_t nbytes);
 
 
 
+class JS_PUBLIC_API(JSMallocAllocPolicy) : public js::AllocPolicyBase
+{
+public:
+    void reportAllocOverflow() const {}
+
+    MOZ_MUST_USE bool checkSimulatedOOM() const {
+        return true;
+    }
+};
+
+
+
+
+
+
+
+
+
 
 
 
