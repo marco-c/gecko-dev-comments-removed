@@ -14,6 +14,7 @@ use cssparser::{Parser, Token};
 use context::QuirksMode;
 use num_traits::Zero;
 use parser::{Parse, ParserContext};
+use std::cmp::{PartialOrd, Ordering};
 use std::fmt::{self, Write};
 use str::{starts_with_ignore_ascii_case, string_as_ascii_lowercase};
 use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
@@ -42,6 +43,15 @@ impl ToCss for AspectRatio {
         self.0.to_css(dest)?;
         dest.write_char('/')?;
         self.1.to_css(dest)
+    }
+}
+
+impl PartialOrd for AspectRatio {
+    fn partial_cmp(&self, other: &AspectRatio) -> Option<Ordering> {
+        u64::partial_cmp(
+            &(self.0 as u64 * other.1 as u64),
+            &(self.1 as u64 * other.0 as u64),
+        )
     }
 }
 
@@ -98,6 +108,7 @@ pub enum RangeOrOperator {
 
 impl RangeOrOperator {
     
+    
     pub fn evaluate<T>(
         range_or_op: Option<Self>,
         query_value: Option<T>,
@@ -106,13 +117,22 @@ impl RangeOrOperator {
     where
         T: PartialOrd + Zero
     {
-        use std::cmp::Ordering;
+        match query_value {
+            Some(v) => Self::evaluate_with_query_value(range_or_op, v, value),
+            None => !value.is_zero(),
+        }
+    }
 
-        let query_value = match query_value {
-            Some(v) => v,
-            None => return value != Zero::zero(),
-        };
-
+    
+    
+    pub fn evaluate_with_query_value<T>(
+        range_or_op: Option<Self>,
+        query_value: T,
+        value: T,
+    ) -> bool
+    where
+        T: PartialOrd,
+    {
         let cmp = match value.partial_cmp(&query_value) {
             Some(c) => c,
             None => return false,
