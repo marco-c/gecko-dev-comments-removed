@@ -1822,10 +1822,8 @@ PeerConnectionWrapper.prototype = {
 
           if (res.ssrc) {
             
-            ok(res.ssrc.length > 0, "Ssrc has length");
-            ok(res.ssrc.length < 11, "Ssrc not lengthy");
-            ok(!/[^0-9]/.test(res.ssrc), "Ssrc numeric");
-            ok(parseInt(res.ssrc) < Math.pow(2,32), "Ssrc within limits");
+            ok(!/[^0-9]/.test(`${res.ssrc}`), "SSRC is numeric");
+            ok(parseInt(res.ssrc) < Math.pow(2,32), "SSRC is within limits");
           }
 
           if (res.type == "outbound-rtp") {
