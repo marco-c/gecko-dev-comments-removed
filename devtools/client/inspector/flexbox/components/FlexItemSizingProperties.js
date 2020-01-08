@@ -97,15 +97,20 @@ class FlexItemSizingProperties extends PureComponent {
     );
   }
 
-  renderBaseSizeSection({ mainBaseSize, clampState }, properties, dimension) {
+  renderBaseSizeSection({ mainBaseSize, mainMinSize }, properties, dimension) {
     const flexBasisValue = properties["flex-basis"];
     const dimensionValue = properties[dimension];
     const minDimensionValue = properties[`min-${dimension}`];
+    const hasMinClamping = mainMinSize && mainMinSize === mainBaseSize;
 
     let property = null;
     let reason = null;
 
-    if (flexBasisValue) {
+    if (hasMinClamping && minDimensionValue) {
+      
+      
+      property = this.renderCssProperty(`min-${dimension}`, minDimensionValue);
+    } else if (flexBasisValue && !hasMinClamping) {
       
       property = this.renderCssProperty("flex-basis", flexBasisValue);
     } else if (dimensionValue) {
@@ -138,7 +143,6 @@ class FlexItemSizingProperties extends PureComponent {
       mainBaseSize,
       mainFinalSize,
       lineGrowthState,
-      clampState,
     } = flexItemSizing;
 
     
@@ -152,7 +156,9 @@ class FlexItemSizingProperties extends PureComponent {
     const flexShrink0 = parseFloat(flexShrink) === 0;
     const grew = mainDeltaSize > 0;
     const shrank = mainDeltaSize < 0;
-    const wasClamped = clampState !== "unclamped";
+    
+    
+    const wasClamped = mainDeltaSize + mainBaseSize !== mainFinalSize;
 
     const reasons = [];
 
@@ -256,14 +262,17 @@ class FlexItemSizingProperties extends PureComponent {
     );
   }
 
-  renderMinimumSizeSection({ clampState, mainMinSize }, properties, dimension) {
+  renderMinimumSizeSection({ mainMinSize, mainFinalSize }, properties, dimension) {
     
     
-    if (clampState !== "clamped_to_min") {
+    
+    
+    
+    
+    const minDimensionValue = properties[`min-${dimension}`];
+    if (mainMinSize !== mainFinalSize || !minDimensionValue) {
       return null;
     }
-
-    const minDimensionValue = properties[`min-${dimension}`];
 
     return (
       dom.li({ className: "section min" },
@@ -278,8 +287,10 @@ class FlexItemSizingProperties extends PureComponent {
     );
   }
 
-  renderMaximumSizeSection({ clampState, mainMaxSize }, properties, dimension) {
-    if (clampState !== "clamped_to_max") {
+  renderMaximumSizeSection({ mainMaxSize, mainFinalSize }, properties, dimension) {
+    
+    
+    if (mainMaxSize !== mainFinalSize) {
       return null;
     }
 
