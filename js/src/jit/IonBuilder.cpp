@@ -4796,6 +4796,10 @@ AbortReasonOr<Ok> IonBuilder::inlineCalls(CallInfo& callInfo,
     inlineInfo.popCallStack(inlineBlock);
     inlineInfo.setFun(funcDef);
 
+    if (callInfo.constructing() && callInfo.getNewTarget() == callInfo.fun()) {
+      inlineInfo.setNewTarget(funcDef);
+    }
+
     if (maybeCache) {
       
       
