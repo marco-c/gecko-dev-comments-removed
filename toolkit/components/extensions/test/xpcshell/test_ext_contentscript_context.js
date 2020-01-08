@@ -10,7 +10,7 @@ server.registerPathHandler("/dummy", (request, response) => {
   response.write("<!DOCTYPE html><html></html>");
 });
 
-function loadExtension() {
+add_task(async function test_contentscript_context() {
   function contentScript() {
     browser.test.sendMessage("content-script-ready");
 
@@ -22,10 +22,10 @@ function loadExtension() {
     });
   }
 
-  return ExtensionTestUtils.loadExtension({
+  let extension = ExtensionTestUtils.loadExtension({
     manifest: {
       content_scripts: [{
-        "matches": ["http://example.com/dummy*"],
+        "matches": ["http://example.com/dummy"],
         "js": ["content_script.js"],
         "run_at": "document_start",
       }],
@@ -35,10 +35,7 @@ function loadExtension() {
       "content_script.js": contentScript,
     },
   });
-}
 
-add_task(async function test_contentscript_context() {
-  let extension = loadExtension();
   await extension.startup();
 
   let contentPage = await ExtensionTestUtils.loadContentPage("http://example.com/dummy");
@@ -76,139 +73,5 @@ add_task(async function test_contentscript_context() {
 
   await contentPage.close();
   await extension.awaitMessage("content-script-hide");
-  await extension.unload();
-});
-
-add_task(async function test_contentscript_context_unload_while_in_bfcache() {
-  let contentPage = await ExtensionTestUtils.loadContentPage("http://example.com/dummy?first");
-  let extension = loadExtension();
-  await extension.startup();
-  await extension.awaitMessage("content-script-ready");
-
-  
-  await contentPage.spawn(extension.id, async extensionId => {
-    let {DocumentManager} = ChromeUtils.import("resource://gre/modules/ExtensionContent.jsm", {});
-    
-    this.context = DocumentManager.getContext(extensionId, this.content);
-
-    Assert.equal(this.context.contentWindow, this.content, "Context's contentWindow property is correct");
-
-    this.contextUnloadedPromise = new Promise(resolve => {
-      this.context.callOnClose({close: resolve});
-    });
-    this.pageshownPromise = new Promise(resolve => {
-      this.content.addEventListener("pageshow", () => {
-        
-        
-        let {setTimeout} = ChromeUtils.import("resource://gre/modules/Timer.jsm", {});
-        setTimeout(resolve, 0);
-      }, {once: true, mozSystemGroup: true});
-    });
-
-    
-    this.content.location = "http://example.org/dummy?second";
-  });
-
-  await extension.awaitMessage("content-script-hide");
-
-  await extension.unload();
-  await contentPage.spawn(null, async () => {
-    await this.contextUnloadedPromise;
-    Assert.equal(this.context.unloaded, true, "Context has been unloaded");
-
-    
-    
-    
-    
-    
-    await new Promise(resolve => this.content.setTimeout(resolve, 0));
-    Assert.equal(this.context.contentWindow, null, "Context's contentWindow property is null");
-
-    
-    this.content.history.back();
-
-    await this.pageshownPromise;
-
-    Assert.equal(this.context.contentWindow, null, "Context's contentWindow property is null after restore from bfcache");
-  });
-
-  await contentPage.close();
-});
-
-add_task(async function test_contentscript_context_valid_during_execution() {
-  
-  
-  
-  
-  
-  
-  
-
-  function contentScript() {
-    browser.test.sendMessage("content-script-ready");
-    window.wrappedJSObject.checkContextIsValid("Context is valid on execution");
-
-    window.addEventListener("pagehide", () => {
-      window.wrappedJSObject.checkContextIsValid("Context is valid on pagehide");
-      browser.test.sendMessage("content-script-hide");
-    }, true);
-    window.addEventListener("pageshow", () => {
-      window.wrappedJSObject.checkContextIsValid("Context is valid on pageshow");
-
-      
-      
-      window.addEventListener("unload", () => {
-        window.wrappedJSObject.checkContextIsValid("Context is valid on unload");
-        browser.test.sendMessage("content-script-unload");
-      });
-
-      browser.test.sendMessage("content-script-show");
-    });
-  }
-
-  let extension = ExtensionTestUtils.loadExtension({
-    manifest: {
-      content_scripts: [{
-        "matches": ["http://example.com/dummy*"],
-        "js": ["content_script.js"],
-      }],
-    },
-
-    files: {
-      "content_script.js": contentScript,
-    },
-  });
-
-  let contentPage = await ExtensionTestUtils.loadContentPage("http://example.com/dummy?first");
-  await contentPage.spawn(extension.id, async extensionId => {
-    let context;
-    let checkContextIsValid = (description) => {
-      if (!context) {
-        let {DocumentManager} = ChromeUtils.import("resource://gre/modules/ExtensionContent.jsm", {});
-        context = DocumentManager.getContext(extensionId, this.content);
-      }
-      Assert.equal(context.contentWindow, this.content, `${description}: contentWindow`);
-      Assert.equal(context.active, true, `${description}: active`);
-    };
-    Cu.exportFunction(checkContextIsValid, this.content, {defineAs: "checkContextIsValid"});
-  });
-  await extension.startup();
-  await extension.awaitMessage("content-script-ready");
-
-  await contentPage.spawn(extension.id, async extensionId => {
-    
-    this.content.location = "http://example.org/dummy?second";
-  });
-
-  await extension.awaitMessage("content-script-hide");
-  await contentPage.spawn(null, async () => {
-    
-    this.content.history.back();
-  });
-
-  await extension.awaitMessage("content-script-show");
-  await contentPage.close();
-  await extension.awaitMessage("content-script-hide");
-  await extension.awaitMessage("content-script-unload");
   await extension.unload();
 });
