@@ -3502,7 +3502,7 @@ window._gBrowser = {
 
 
 
-  replaceTabsWithWindow(contextTab) {
+  replaceTabsWithWindow(contextTab, aOptions) {
     let tabs;
     if (contextTab.multiselected) {
       tabs = this.selectedTabs;
@@ -3515,7 +3515,7 @@ window._gBrowser = {
     }
 
     if (tabs.length == 1) {
-      return this.replaceTabWithWindow(tabs[0]);
+      return this.replaceTabWithWindow(tabs[0], aOptions);
     }
 
     
@@ -3553,7 +3553,7 @@ window._gBrowser = {
                                                winVisibleTabs[winTabLength - 1]);
     }, { once: true });
 
-    win = this.replaceTabWithWindow(firstInactiveTab);
+    win = this.replaceTabWithWindow(firstInactiveTab, aOptions);
     return win;
   },
 
