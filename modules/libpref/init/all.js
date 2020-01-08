@@ -2568,6 +2568,7 @@ pref("security.cert_pinning.process_headers_from_non_builtin_roots", false);
 pref("security.view-source.reachable-from-inner-protocol", false);
 
 
+pref("services.settings.poll_interval", 86400); 
 pref("services.settings.server", "https://firefox.settings.services.mozilla.com/v1");
 pref("services.settings.changes.path", "/buckets/monitor/collections/changes/records");
 pref("services.settings.default_bucket", "main");
@@ -2606,8 +2607,6 @@ pref("services.blocklist.pinning.signer", "pinning-preload.content-signature.moz
 pref("services.blocklist.gfx.collection", "gfx");
 pref("services.blocklist.gfx.checked", 0);
 pref("services.blocklist.gfx.signer", "remote-settings.content-signature.mozilla.org");
-
-pref("services.blocklist.update_enabled", true);
 
 
 

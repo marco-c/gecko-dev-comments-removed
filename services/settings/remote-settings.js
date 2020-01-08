@@ -160,11 +160,13 @@ async function fetchLatestChanges(url, lastEtag) {
     let payload;
     try {
       payload = await response.json();
-    } catch (e) {}
+    } catch (e) {
+      payload = e.message;
+    }
     if (!payload.hasOwnProperty("data")) {
       
       
-      throw new Error(`Server error response ${JSON.stringify(payload)}`);
+      throw new Error(`Server error ${response.status} ${response.statusText}: ${JSON.stringify(payload)}`);
     }
     changes = payload.data;
   }
@@ -804,19 +806,24 @@ function remoteSettingsFunction() {
     };
   };
 
+  
 
-  const broadcastID = "remote-settings/monitor_changes";
-  
-  
-  
-  
-  
-  const currentVersion = Services.prefs.getStringPref(PREF_SETTINGS_LAST_ETAG, "\"0\"");
-  const moduleInfo = {
-    moduleURI: __URI__,
-    symbolName: "remoteSettingsBroadcastHandler",
+
+  remoteSettings.init = () => {
+    
+    const broadcastID = "remote-settings/monitor_changes";
+    
+    
+    
+    
+    
+    const currentVersion = Services.prefs.getStringPref(PREF_SETTINGS_LAST_ETAG, "\"0\"");
+    const moduleInfo = {
+      moduleURI: __URI__,
+      symbolName: "remoteSettingsBroadcastHandler",
+    };
+    pushBroadcastService.addListener(broadcastID, currentVersion, moduleInfo);
   };
-  pushBroadcastService.addListener(broadcastID, currentVersion, moduleInfo);
 
   return remoteSettings;
 }
