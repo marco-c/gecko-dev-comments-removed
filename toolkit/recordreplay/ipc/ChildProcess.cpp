@@ -636,7 +636,7 @@ ChildProcessInfo::MaybeProcessPendingMessage(ChildProcessInfo* aProcess)
 
 
 
-static const size_t HangSeconds = 5;
+static const size_t HangSeconds = 30;
 
 void
 ChildProcessInfo::WaitUntil(const std::function<bool()>& aCallback)
