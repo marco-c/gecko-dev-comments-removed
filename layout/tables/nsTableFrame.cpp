@@ -4673,22 +4673,6 @@ void BCMapCellIterator::PeekBEnd(BCMapCellInfo& aRefInfo, uint32_t aColIndex,
   aAjaInfo.SetInfo(nextRow, aColIndex, cellData, this, cellMap);
 }
 
-
-
-
-static uint8_t styleToPriority[13] = {0,   
-                                      2,   
-                                      4,   
-                                      5,   
-                                      6,   
-                                      7,   
-                                      8,   
-                                      1,   
-                                      3,   
-                                      9};  
-
-
-
 #define CELL_CORNER true
 
 
@@ -4811,11 +4795,10 @@ static const BCCellBorder& CompareBorders(
   } else if (aBorder1.width < aBorder2.width) {
     firstDominates = false;
   } else if (aBorder1.width == aBorder2.width) {
-    if (styleToPriority[static_cast<uint8_t>(aBorder1.style)] <
-        styleToPriority[static_cast<uint8_t>(aBorder2.style)]) {
+    if (static_cast<uint8_t>(aBorder1.style) <
+        static_cast<uint8_t>(aBorder2.style)) {
       firstDominates = false;
-    } else if (styleToPriority[static_cast<uint8_t>(aBorder1.style)] ==
-               styleToPriority[static_cast<uint8_t>(aBorder2.style)]) {
+    } else if (aBorder1.style == aBorder2.style) {
       if (aBorder1.owner == aBorder2.owner) {
         firstDominates = !aSecondIsInlineDir;
       } else if (aBorder1.owner < aBorder2.owner) {
