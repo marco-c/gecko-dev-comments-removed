@@ -181,6 +181,11 @@ private:
     nsAttrValue mValue;
   };
 
+#ifdef _MSC_VER
+
+#pragma warning(push)
+#pragma warning(disable:4200)
+#endif
   class Impl
   {
   public:
@@ -213,6 +218,10 @@ private:
     
     InternalAttr mBuffer[0];
   };
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+
 
   mozilla::Span<InternalAttr> NonMappedAttrs()
   {
