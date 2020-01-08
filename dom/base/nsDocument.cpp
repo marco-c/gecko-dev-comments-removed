@@ -1684,15 +1684,12 @@ nsDocument::~nsDocument()
   mFirstChild = nullptr;
   mCachedRootElement = nullptr;
 
-  
-  for (StyleSheet* sheet : mStyleSheets) {
-    sheet->ClearAssociatedDocumentOrShadowRoot();
-  }
   for (auto& sheets : mAdditionalSheets) {
     for (StyleSheet* sheet : sheets) {
       sheet->ClearAssociatedDocumentOrShadowRoot();
     }
   }
+
   if (mAttrStyleSheet) {
     mAttrStyleSheet->SetOwningDocument(nullptr);
   }
