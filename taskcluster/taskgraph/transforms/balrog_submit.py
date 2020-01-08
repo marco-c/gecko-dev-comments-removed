@@ -38,8 +38,6 @@ balrog_description_schema = schema.extend({
     
     Optional('treeherder'): task_description_schema['treeherder'],
 
-    Optional('attributes'): task_description_schema['attributes'],
-
     
     Optional('shipping-product'): task_description_schema['shipping-product'],
     Optional('shipping-phase'): task_description_schema['shipping-phase'],
