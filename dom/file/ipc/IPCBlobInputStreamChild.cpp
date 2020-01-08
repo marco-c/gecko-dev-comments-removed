@@ -324,6 +324,12 @@ IPCBlobInputStreamChild::RecvStreamReady(const OptionalIPCStream& aStream)
 
   {
     MutexAutoLock lock(mMutex);
+
+    
+    if (mState == eInactive) {
+      return IPC_OK();
+    }
+
     MOZ_ASSERT(!mPendingOperations.IsEmpty());
     MOZ_ASSERT(mState == eActive);
 
@@ -391,6 +397,12 @@ IPCBlobInputStreamChild::RecvLengthReady(const int64_t& aLength)
 
   {
     MutexAutoLock lock(mMutex);
+
+    
+    if (mState == eInactive) {
+      return IPC_OK();
+    }
+
     MOZ_ASSERT(!mPendingOperations.IsEmpty());
     MOZ_ASSERT(mState == eActive);
 
