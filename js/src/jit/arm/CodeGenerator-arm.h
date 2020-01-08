@@ -68,8 +68,6 @@ class CodeGeneratorARM : public CodeGeneratorShared {
 
   bool generateOutOfLineCode();
 
-  void emitRoundDouble(FloatRegister src, Register dest, Label* fail);
-
   
   
   void emitBranch(Assembler::Condition cond, MBasicBlock* ifTrue,

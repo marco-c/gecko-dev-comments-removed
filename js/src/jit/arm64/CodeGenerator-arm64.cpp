@@ -1098,9 +1098,83 @@ void CodeGenerator::visitRoundF(LRoundF* lir) {
   masm.bind(&done);
 }
 
-void CodeGenerator::visitTrunc(LTrunc* lir) { MOZ_CRASH("visitTrunc"); }
+void CodeGenerator::visitTrunc(LTrunc* lir) {
+  const FloatRegister input = ToFloatRegister(lir->input());
+  const ARMFPRegister input64(input, 64);
+  const Register output = ToRegister(lir->output());
+  const ARMRegister output32(output, 32);
 
-void CodeGenerator::visitTruncF(LTruncF* lir) { MOZ_CRASH("visitTruncF"); }
+  Label done, zeroCase;
+
+  
+  
+  
+  masm.Fcvtzs(output32, input64);
+
+  
+  masm.branch32(Assembler::Equal, output, Imm32(0), &zeroCase);
+
+  
+  bailoutCmp32(Assembler::Equal, output, Imm32(INT_MAX), lir->snapshot());
+  bailoutCmp32(Assembler::Equal, output, Imm32(INT_MIN), lir->snapshot());
+
+  
+  masm.jump(&done);
+
+  
+  
+  
+  {
+    masm.bind(&zeroCase);
+
+    
+    
+    
+    masm.Fcmp(input64, 0.0);
+    bailoutIf(vixl::lt, lir->snapshot());
+  }
+
+  masm.bind(&done);
+}
+
+void CodeGenerator::visitTruncF(LTruncF* lir) {
+  const FloatRegister input = ToFloatRegister(lir->input());
+  const ARMFPRegister input32(input, 32);
+  const Register output = ToRegister(lir->output());
+  const ARMRegister output32(output, 32);
+
+  Label done, zeroCase;
+
+  
+  
+  
+  masm.Fcvtzs(output32, input32);
+
+  
+  masm.branch32(Assembler::Equal, output, Imm32(0), &zeroCase);
+
+  
+  bailoutCmp32(Assembler::Equal, output, Imm32(INT_MAX), lir->snapshot());
+  bailoutCmp32(Assembler::Equal, output, Imm32(INT_MIN), lir->snapshot());
+
+  
+  masm.jump(&done);
+
+  
+  
+  
+  {
+    masm.bind(&zeroCase);
+
+    
+    
+    
+    masm.Fcmp(input32, 0.0f);
+    bailoutIf(vixl::lt, lir->snapshot());
+  }
+
+  masm.bind(&done);
+}
 
 void CodeGenerator::visitClzI(LClzI* lir) {
   ARMRegister input = toWRegister(lir->input());
@@ -1112,11 +1186,6 @@ void CodeGenerator::visitCtzI(LCtzI* lir) {
   Register input = ToRegister(lir->input());
   Register output = ToRegister(lir->output());
   masm.ctz32(input, output,  false);
-}
-
-void CodeGeneratorARM64::emitRoundDouble(FloatRegister src, Register dest,
-                                         Label* fail) {
-  MOZ_CRASH("CodeGeneratorARM64::emitRoundDouble");
 }
 
 void CodeGenerator::visitTruncateDToInt32(LTruncateDToInt32* ins) {
