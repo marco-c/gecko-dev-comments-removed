@@ -8,6 +8,7 @@
 
 #include "InfallibleVector.h"
 #include "MiddlemanCall.h"
+#include "ipc/ParentInternal.h"
 #include "mozilla/Sprintf.h"
 
 #include <dlfcn.h>
@@ -97,6 +98,11 @@ RecordReplayInterceptCall(int aCallId, CallArguments* aArguments)
       if (SendCallToMiddleman(aCallId, aArguments,  true)) {
         return 0;
       }
+    }
+
+    if (parent::InRepaintStressMode()) {
+      
+      Print("Could not perform middleman call: %s\n", redirection.mName);
     }
 
     
