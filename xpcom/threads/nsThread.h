@@ -36,6 +36,9 @@ using mozilla::NotNull;
 class nsThreadEnumerator;
 
 
+#define LONGTASK_BUSY_WINDOW_MS 50
+
+
 class nsThread
   : public nsIThreadInternal
   , public nsISupportsPriority
@@ -152,6 +155,9 @@ public:
 
   static uint32_t MaxActiveThreads();
 
+  const mozilla::TimeStamp& LastLongTaskEnd() { return mLastLongTaskEnd; }
+  const mozilla::TimeStamp& LastLongNonIdleTaskEnd() { return mLastLongNonIdleTaskEnd; }
+
 private:
   void DoMainThreadSpecificProcessing(bool aReallyWait);
 
@@ -212,6 +218,9 @@ protected:
 
   uint32_t  mNestedEventLoopDepth;
   uint32_t  mCurrentEventLoopDepth;
+
+  mozilla::TimeStamp mLastLongTaskEnd;
+  mozilla::TimeStamp mLastLongNonIdleTaskEnd;
 
   mozilla::Atomic<bool> mShutdownRequired;
 
