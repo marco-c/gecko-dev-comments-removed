@@ -307,12 +307,20 @@ js::MakeDefaultConstructor(JSContext* cx, HandleScript script, jsbytecode* pc, H
     ctor->setIsClassConstructor();
 
     
-    
-    
     JSScript *ctorScript = JSFunction::getOrCreateScript(cx, ctor);
     if (!ctorScript) {
         return nullptr;
     }
+
+    
+    
+    
+    
+    ctor->clearIsSelfHosted();
+
+    
+    
+    
     uint32_t classStartOffset = GetSrcNoteOffset(classNote, 0);
     uint32_t classEndOffset = GetSrcNoteOffset(classNote, 1);
     unsigned column;

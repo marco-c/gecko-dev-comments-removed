@@ -71,6 +71,8 @@ class JSFunction : public js::NativeObject
 
         SELF_HOSTED      = 0x0080,  
 
+
+
         HAS_INFERRED_NAME = 0x0100, 
 
 
@@ -110,6 +112,11 @@ class JSFunction : public js::NativeObject
         INTERPRETED_NORMAL = INTERPRETED | CONSTRUCTOR,
         INTERPRETED_GENERATOR_OR_ASYNC = INTERPRETED,
         NO_XDR_FLAGS = RESOLVED_LENGTH | RESOLVED_NAME,
+
+        
+
+
+
 
         STABLE_ACROSS_CLONES = CONSTRUCTOR | LAMBDA | SELF_HOSTED | FUNCTION_KIND_MASK
     };
@@ -346,6 +353,10 @@ class JSFunction : public js::NativeObject
         MOZ_ASSERT(isConstructor());
 
         setKind(ClassConstructor);
+    }
+
+    void clearIsSelfHosted() {
+        flags_ &= ~SELF_HOSTED;
     }
 
     
