@@ -601,12 +601,19 @@ class GTestCommands(MachCommandBase):
 
         active_backend = config.substs.get('BUILD_BACKENDS', [None])[0]
         if 'Tup' in active_backend:
-            gtest_build_target = mozpath.join(self.topobjdir, '<gtest>')
+            gtest_build_path = mozpath.join(self.topobjdir, '<gtest>')
         else:
-            gtest_build_target = 'recurse_gtest'
+            
+            
+            gtest_build_path = mozpath.relpath(mozpath.join(self.topobjdir,
+                                                            'toolkit', 'library',
+                                                            'gtest', 'rust'),
+                                               self.topsrcdir)
 
+        os.environ[b'LINK_GTEST_DURING_COMPILE'] = b'1'
         res = self._mach_context.commands.dispatch('build', self._mach_context,
-                                                   what=[gtest_build_target])
+                                                   what=[gtest_build_path])
+        del os.environ[b'LINK_GTEST_DURING_COMPILE']
         if res:
             print("Could not build xul-gtest")
             return res
