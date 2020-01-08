@@ -35,7 +35,7 @@ test(() => {
 
 
 async function getPaymentResponse(options, id) {
-  const { response } = getPaymentRequestResponse(options, id);
+  const { response } = await getPaymentRequestResponse(options, id);
   return response;
 }
 
