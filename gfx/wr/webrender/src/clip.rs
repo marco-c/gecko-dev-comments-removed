@@ -1034,7 +1034,7 @@ impl ClipItem {
     
     
     
-    fn get_local_clip_rect(&self, local_pos: LayoutPoint) -> Option<LayoutRect> {
+    pub fn get_local_clip_rect(&self, local_pos: LayoutPoint) -> Option<LayoutRect> {
         let size = match *self {
             ClipItem::Rectangle(size, ClipMode::Clip) => Some(size),
             ClipItem::Rectangle(_, ClipMode::ClipOut) => None,
