@@ -8,86 +8,42 @@ var EXPORTED_SYMBOLS = [
 ];
 
 ChromeUtils.import("resource://formautofill/OSKeyStore.jsm", this);
-
-
-
-
-
-ChromeUtils.import("resource://testing-common/LoginTestUtils.jsm", this);
+ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
+ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://testing-common/TestUtils.jsm");
 
 var OSKeyStoreTestUtils = {
-  
-
-
+  TEST_ONLY_REAUTH: "extensions.formautofill.osKeyStore.unofficialBuildOnlyLogin",
 
   setup() {
-    
-    
-    
-
-
-
     this.ORIGINAL_STORE_LABEL = OSKeyStore.STORE_LABEL;
     OSKeyStore.STORE_LABEL = "test-" + Math.random().toString(36).substr(2);
   },
 
   async cleanup() {
-    
-    
-    
-
-
-
     await OSKeyStore.cleanup();
     OSKeyStore.STORE_LABEL = this.ORIGINAL_STORE_LABEL;
   },
 
+  
+
+
+
+
+
   canTestOSKeyStoreLogin() {
-    
-    
-    
-
-
-    return true;
+    return !AppConstants.MOZILLA_OFFICIAL;
   },
 
-  
   
   async waitForOSKeyStoreLogin(login = false) {
-    
-    
-    
+    const str = login ? "pass" : "cancel";
 
+    Services.prefs.setStringPref(this.TEST_ONLY_REAUTH, str);
 
+    await TestUtils.topicObserved("oskeystore-testonly-reauth",
+      (subject, data) => data == str);
 
-
-
-
-
-
-
-
-
-
-
-
-  },
-
-  async waitForMasterPasswordDialog(login = false) {
-    let [subject] = await TestUtils.topicObserved("common-dialog-loaded");
-
-    let dialog = subject.Dialog;
-    if (dialog.args.title !== "Password Required") {
-      throw new Error("Incorrect master password dialog title");
-    }
-
-    if (login) {
-      dialog.ui.password1Textbox.value = LoginTestUtils.masterPassword.masterPassword;
-      dialog.ui.button0.click();
-    } else {
-      dialog.ui.button1.click();
-    }
-    await TestUtils.waitForTick();
+    Services.prefs.setStringPref(this.TEST_ONLY_REAUTH, "");
   },
 };

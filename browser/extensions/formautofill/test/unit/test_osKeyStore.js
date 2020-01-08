@@ -4,9 +4,6 @@
 
 "use strict";
 
-ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
-ChromeUtils.import("resource://testing-common/MockRegistrar.jsm");
-
 let OSKeyStore;
 add_task(async function setup() {
   ({OSKeyStore} = ChromeUtils.import("resource://formautofill/OSKeyStore.jsm", {}));
@@ -14,57 +11,6 @@ add_task(async function setup() {
 
 
 do_get_profile();
-
-
-let gMockPrompter = {
-  passwordToTry: "hunter2",
-  resolve: null,
-  login: undefined,
-
-  
-  
-  
-  promptPassword(dialogTitle, text, password, checkMsg, checkValue) {
-    equal(text,
-          "Please enter your master password.",
-          "password prompt text should be as expected");
-    equal(checkMsg, null, "checkMsg should be null");
-    if (this.login) {
-      password.value = this.passwordToTry;
-    }
-    this.resolve();
-    this.resolve = null;
-
-    return this.login;
-  },
-
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIPrompt]),
-};
-
-
-
-let gWindowWatcher = {
-  getNewPrompter: () => gMockPrompter,
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIWindowWatcher]),
-};
-
-let nssToken;
-
-const TEST_ONLY_REAUTH = "extensions.formautofill.osKeyStore.unofficialBuildOnlyLogin";
-
-async function waitForReauth(login = false) {
-  if (OSKeyStore.isNSSKeyStore) {
-    gMockPrompter.login = login;
-    await new Promise(resolve => { gMockPrompter.resolve = resolve; });
-
-    return;
-  }
-
-  let value = login ? "pass" : "cancel";
-  Services.prefs.setStringPref(TEST_ONLY_REAUTH, value);
-  await TestUtils.topicObserved("oskeystore-testonly-reauth",
-    (subject, data) => data == value);
-}
 
 const testText = "test string";
 let cipherText;
@@ -79,34 +25,15 @@ add_task(async function test_encrypt_decrypt() {
   Assert.equal(testText, plainText);
 });
 
-
 add_task(async function test_reauth() {
-  let canTest = OSKeyStore.isNSSKeyStore || !AppConstants.MOZILLA_OFFICIAL;
+  let canTest = OSKeyStoreTestUtils.canTestOSKeyStoreLogin();
   if (!canTest) {
-    todo_check_false(canTest,
+    todo_check_true(canTest,
       "test_reauth: Cannot test OS key store login on official builds.");
     return;
   }
 
-  if (OSKeyStore.isNSSKeyStore) {
-    let windowWatcherCID;
-    windowWatcherCID =
-      MockRegistrar.register("@mozilla.org/embedcomp/window-watcher;1",
-                             gWindowWatcher);
-    registerCleanupFunction(() => {
-      MockRegistrar.unregister(windowWatcherCID);
-    });
-
-    
-    
-    
-    let tokenDB = Cc["@mozilla.org/security/pk11tokendb;1"]
-                    .getService(Ci.nsIPK11TokenDB);
-    nssToken = tokenDB.getInternalKeyToken();
-    nssToken.initPassword("hunter2");
-  }
-
-  let reauthObserved = waitForReauth(false);
+  let reauthObserved = OSKeyStoreTestUtils.waitForOSKeyStoreLogin(false);
   await new Promise(resolve => TestUtils.executeSoon(resolve));
   try {
     await OSKeyStore.decrypt(cipherText, true);
@@ -117,22 +44,22 @@ add_task(async function test_reauth() {
   }
   await reauthObserved;
 
-  reauthObserved = waitForReauth(false);
+  reauthObserved = OSKeyStoreTestUtils.waitForOSKeyStoreLogin(false);
   await new Promise(resolve => TestUtils.executeSoon(resolve));
   Assert.equal(await OSKeyStore.ensureLoggedIn(true), false, "Reauth cancelled.");
   await reauthObserved;
 
-  reauthObserved = waitForReauth(true);
+  reauthObserved = OSKeyStoreTestUtils.waitForOSKeyStoreLogin(true);
   await new Promise(resolve => TestUtils.executeSoon(resolve));
   let plainText2 = await OSKeyStore.decrypt(cipherText, true);
   await reauthObserved;
   Assert.equal(testText, plainText2);
 
-  reauthObserved = waitForReauth(true);
+  reauthObserved = OSKeyStoreTestUtils.waitForOSKeyStoreLogin(true);
   await new Promise(resolve => TestUtils.executeSoon(resolve));
   Assert.equal(await OSKeyStore.ensureLoggedIn(true), true, "Reauth logged in.");
   await reauthObserved;
-}).skip();
+});
 
 add_task(async function test_decryption_failure() {
   try {

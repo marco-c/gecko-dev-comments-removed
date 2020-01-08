@@ -18,6 +18,8 @@ ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.defineModuleGetter(this, "AppConstants", "resource://gre/modules/AppConstants.jsm");
 XPCOMUtils.defineLazyServiceGetter(this, "nativeOSKeyStore",
                                    "@mozilla.org/security/oskeystore;1", Ci.nsIOSKeyStore);
+XPCOMUtils.defineLazyServiceGetter(this, "osReauthenticator",
+                                   "@mozilla.org/security/osreauthenticator;1", Ci.nsIOSReauthenticator);
 
 
 const TEST_ONLY_REAUTH = "extensions.formautofill.osKeyStore.unofficialBuildOnlyLogin";
@@ -63,24 +65,14 @@ var OSKeyStore = {
 
 
 
-
-
-
-  _maybeSkipReauthForTest() {
-    
-    if (nativeOSKeyStore.isNSSKeyStore ||
-        AppConstants.MOZILLA_OFFICIAL ||
-        !this._testReauth) {
-      return true;
-    }
-
+  async _reauthInTests() {
     
     
     log.debug("_ensureReauth: _testReauth: ", this._testReauth);
     switch (this._testReauth) {
       case "pass":
         Services.obs.notifyObservers(null, "oskeystore-testonly-reauth", "pass");
-        return false;
+        break;
       case "cancel":
         Services.obs.notifyObservers(null, "oskeystore-testonly-reauth", "cancel");
         throw new Components.Exception("Simulating user cancelling login dialog", Cr.NS_ERROR_FAILURE);
@@ -105,6 +97,8 @@ var OSKeyStore = {
 
 
 
+
+
   async ensureLoggedIn(reauth = false) {
     if (this._pendingUnlockPromise) {
       log.debug("ensureLoggedIn: Has a pending unlock operation");
@@ -112,15 +106,30 @@ var OSKeyStore = {
     }
     log.debug("ensureLoggedIn: Creating new pending unlock promise. reauth: ", reauth);
 
-    
-    
-    reauth = false;
+    let unlockPromise;
 
-    let unlockPromise = Promise.resolve().then(async () => {
-      if (reauth) {
-        reauth = this._maybeSkipReauthForTest();
-      }
+    
+    if (typeof reauth == "boolean" && !reauth) {
+      unlockPromise = Promise.resolve();
+    } else if (!AppConstants.MOZILLA_OFFICIAL && this._testReauth) {
+      unlockPromise = this._reauthInTests();
+    } else if (AppConstants.platform == "win" ||
+               AppConstants.platform == "macosx") {
+      let reauthLabel = typeof reauth == "string" ? reauth : "";
+      
+      
+      unlockPromise = osReauthenticator.asyncReauthenticateUser(reauthLabel)
+        .then(reauthResult => {
+          if (typeof reauthResult == "boolean" && !reauthResult) {
+            throw new Components.Exception("User canceled OS reauth entry", Cr.NS_ERROR_FAILURE);
+          }
+        });
+    } else {
+      log.debug("ensureLoggedIn: Skipping reauth on unsupported platforms");
+      unlockPromise = Promise.resolve();
+    }
 
+    unlockPromise = unlockPromise.then(async () => {
       if (!await nativeOSKeyStore.asyncSecretAvailable(this.STORE_LABEL)) {
         log.debug("ensureLoggedIn: Secret unavailable, attempt to generate new secret.");
         let recoveryPhrase = await nativeOSKeyStore.asyncGenerateSecret(this.STORE_LABEL);
@@ -163,6 +172,8 @@ var OSKeyStore = {
   },
 
   
+
+
 
 
 
@@ -229,14 +240,6 @@ var OSKeyStore = {
 
   async cleanup() {
     return nativeOSKeyStore.asyncDeleteSecret(this.STORE_LABEL);
-  },
-
-  
-
-
-
-  get isNSSKeyStore() {
-    return nativeOSKeyStore.isNSSKeyStore;
   },
 };
 

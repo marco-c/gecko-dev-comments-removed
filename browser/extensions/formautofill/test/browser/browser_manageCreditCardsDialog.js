@@ -153,19 +153,15 @@ add_task(async function test_hasEditLoginPrompt() {
   let selRecords = win.document.querySelector(TEST_SELECTORS.selRecords);
   let btnRemove = win.document.querySelector(TEST_SELECTORS.btnRemove);
   let btnAdd = win.document.querySelector(TEST_SELECTORS.btnAdd);
-  
+  let btnEdit = win.document.querySelector(TEST_SELECTORS.btnEdit);
 
   EventUtils.synthesizeMouseAtCenter(selRecords.children[0], {}, win);
 
-  
-  
-  
-
-
-
-
-
-
+  let osKeyStoreLoginShown = OSKeyStoreTestUtils.waitForOSKeyStoreLogin(); 
+  EventUtils.synthesizeMouseAtCenter(btnEdit, {}, win);
+  await osKeyStoreLoginShown;
+  await new Promise(resolve => waitForFocus(resolve, win));
+  await new Promise(resolve => executeSoon(resolve));
 
   
   EventUtils.synthesizeMouseAtCenter(btnRemove, {}, win);
