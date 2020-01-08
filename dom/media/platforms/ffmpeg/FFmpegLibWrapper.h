@@ -5,6 +5,7 @@
 #ifndef __FFmpegLibWrapper_h__
 #define __FFmpegLibWrapper_h__
 
+#include "FFmpegRDFTTypes.h" 
 #include "mozilla/Attributes.h"
 #include "mozilla/Types.h"
 
@@ -74,6 +75,11 @@ struct MOZ_ONLY_USED_TO_AVOID_STATIC_CONSTRUCTORS FFmpegLibWrapper
   void (*avcodec_get_frame_defaults)(AVFrame* pic);
   
   void (*avcodec_free_frame)(AVFrame** frame);
+
+  
+  AvRdftInitFn av_rdft_init;
+  AvRdftCalcFn av_rdft_calc;
+  AvRdftEndFn av_rdft_end;
 
   
   void (*av_log_set_level)(int level);
