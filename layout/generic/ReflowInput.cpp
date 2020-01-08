@@ -60,6 +60,7 @@ ReflowInput::ReflowInput(nsPresContext*       aPresContext,
                                      const LogicalSize&   aAvailableSpace,
                                      uint32_t             aFlags)
   : SizeComputationInput(aFrame, aRenderingContext)
+  , mCBReflowInput(nullptr) 
   , mBlockDelta(0)
   , mOrthogonalLimit(NS_UNCONSTRAINEDSIZE)
   , mAvailableWidth(0)
@@ -182,6 +183,7 @@ ReflowInput::ReflowInput(
                      const LogicalSize*       aContainingBlockSize,
                      uint32_t                 aFlags)
   : SizeComputationInput(aFrame, aParentReflowInput.mRenderingContext)
+  , mCBReflowInput(nullptr) 
   , mBlockDelta(0)
   , mOrthogonalLimit(NS_UNCONSTRAINEDSIZE)
   , mAvailableWidth(0)
@@ -399,6 +401,8 @@ ReflowInput::Init(nsPresContext*     aPresContext,
   mStylePadding = mFrame->StylePadding();
   mStyleText = mFrame->StyleText();
 
+  InitCBReflowInput();
+
   LayoutFrameType type = mFrame->Type();
   if (type == mozilla::LayoutFrameType::Placeholder) {
     
@@ -408,7 +412,6 @@ ReflowInput::Init(nsPresContext*     aPresContext,
   }
 
   InitFrameType(type);
-  InitCBReflowInput();
 
   LogicalSize cbSize(mWritingMode, -1, -1);
   if (aContainingBlockSize) {
