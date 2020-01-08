@@ -110,18 +110,27 @@ JS::Compartment::wrap(JSContext* cx, JS::MutableHandleValue vp)
 namespace js {
 namespace detail {
 
+
+
+
+
 template <class T>
-bool
-UnwrapThisSlowPath(JSContext* cx,
-                   HandleValue val,
-                   const char* className,
-                   const char* methodName,
-                   MutableHandle<T*> unwrappedResult)
+const char *
+ClassName()
+{
+    return T::class_.name;
+}
+
+template <class T>
+MOZ_MUST_USE T*
+UnwrapAndTypeCheckThisSlowPath(JSContext* cx,
+                               HandleValue val,
+                               const char* methodName)
 {
     if (!val.isObject()) {
         JS_ReportErrorNumberLatin1(cx, GetErrorMessage, nullptr, JSMSG_INCOMPATIBLE_PROTO,
-                                   className, methodName, InformalValueTypeName(val));
-        return false;
+                                   ClassName<T>(), methodName, InformalValueTypeName(val));
+        return nullptr;
     }
 
     JSObject* obj = &val.toObject();
@@ -129,27 +138,25 @@ UnwrapThisSlowPath(JSContext* cx,
         obj = CheckedUnwrap(obj);
         if (!obj) {
             ReportAccessDenied(cx);
-            return false;
+            return nullptr;
         }
     }
 
     if (!obj->is<T>()) {
         JS_ReportErrorNumberLatin1(cx, GetErrorMessage, nullptr, JSMSG_INCOMPATIBLE_PROTO,
-                                   className, methodName, InformalValueTypeName(val));
-        return false;
+                                   ClassName<T>(), methodName, InformalValueTypeName(val));
+        return nullptr;
     }
 
-    unwrappedResult.set(&obj->as<T>());
-    return true;
+    return &obj->as<T>();
 }
 
 template <class T>
-inline bool
+MOZ_MUST_USE T*
 UnwrapAndTypeCheckArgumentSlowPath(JSContext* cx,
                                    CallArgs& args,
                                    const char* methodName,
-                                   int argIndex,
-                                   MutableHandle<T*> unwrappedResult)
+                                   int argIndex)
 {
     Value val = args.get(argIndex);
     JSObject* obj = nullptr;
@@ -159,7 +166,7 @@ UnwrapAndTypeCheckArgumentSlowPath(JSContext* cx,
             obj = CheckedUnwrap(obj);
             if (!obj) {
                 ReportAccessDenied(cx);
-                return false;
+                return nullptr;
             }
         }
     }
@@ -171,14 +178,13 @@ UnwrapAndTypeCheckArgumentSlowPath(JSContext* cx,
                                        JSMSG_WRONG_TYPE_ARG,
                                        numStr,
                                        methodName,
-                                       T::class_.name,
+                                       ClassName<T>(),
                                        InformalValueTypeName(val));
         }
-        return false;
+        return nullptr;
     }
 
-    unwrappedResult.set(&obj->as<T>());
-    return true;
+    return &obj->as<T>();
 }
 
 } 
@@ -191,79 +197,47 @@ UnwrapAndTypeCheckArgumentSlowPath(JSContext* cx,
 
 
 
-
-
-
-
-
-
-
 template <class T>
-inline bool
-UnwrapThisForNonGenericMethod(JSContext* cx,
-                              HandleValue val,
-                              const char* className,
-                              const char* methodName,
-                              MutableHandle<T*> unwrappedResult)
+inline MOZ_MUST_USE T*
+UnwrapAndTypeCheckThis(JSContext* cx,
+                       CallArgs& args,
+                       const char* methodName)
 {
     static_assert(!std::is_convertible<T*, Wrapper*>::value,
                   "T can't be a Wrapper type; this function discards wrappers");
 
-    cx->check(val);
-    if (val.isObject() && val.toObject().is<T>()) {
-        unwrappedResult.set(&val.toObject().as<T>());
-        return true;
+    HandleValue thisv = args.thisv();
+    cx->check(thisv);
+    if (thisv.isObject() && thisv.toObject().is<T>()) {
+        return &thisv.toObject().as<T>();
     }
-    return detail::UnwrapThisSlowPath(cx, val, className, methodName, unwrappedResult);
+    return detail::UnwrapAndTypeCheckThisSlowPath<T>(cx, thisv, methodName);
 }
 
 
 
 
-template <class T>
-inline bool
-UnwrapThisForNonGenericMethod(JSContext* cx,
-                              HandleValue val,
-                              const char* className,
-                              const char* methodName,
-                              Rooted<T*>* out)
-{
-    return UnwrapThisForNonGenericMethod(cx, val, className, methodName, MutableHandle<T*>(out));
-}
+
+
+
+
+
 
 template <class T>
-inline bool
+inline MOZ_MUST_USE T*
 UnwrapAndTypeCheckArgument(JSContext* cx,
                            CallArgs& args,
                            const char* methodName,
-                           int argIndex,
-                           MutableHandle<T*> unwrappedResult)
+                           int argIndex)
 {
     static_assert(!std::is_convertible<T*, Wrapper*>::value,
                   "T can't be a Wrapper type; this function discards wrappers");
 
     Value val = args.get(argIndex);
     if (val.isObject() && val.toObject().is<T>()) {
-        unwrappedResult.set(&val.toObject().as<T>());
-        return true;
+        return &val.toObject().as<T>();
     }
-    return detail::UnwrapAndTypeCheckArgumentSlowPath(cx, args, methodName, argIndex,
-                                                      unwrappedResult);
-}
-
-
-
-
-template <class T>
-inline bool
-UnwrapAndTypeCheckArgument(JSContext* cx,
-                           CallArgs& args,
-                           const char* methodName,
-                           int argIndex,
-                           Rooted<T*>* unwrappedResult)
-{
-    return UnwrapAndTypeCheckArgument(cx, args, methodName, argIndex,
-                                      MutableHandle<T*>(unwrappedResult));
+    return detail::UnwrapAndTypeCheckArgumentSlowPath<T>(cx, args, methodName, argIndex);
 }
 
 
@@ -283,6 +257,7 @@ UnwrapAndDowncastValue(JSContext* cx, const Value& value)
 {
     static_assert(!std::is_convertible<T*, Wrapper*>::value,
                   "T can't be a Wrapper type; this function discards wrappers");
+
     JSObject* result = &value.toObject();
     if (IsProxy(result)) {
         if (JS_IsDeadWrapper(result)) {
@@ -320,37 +295,17 @@ UnwrapAndDowncastValue(JSContext* cx, const Value& value)
 
 
 
-
 template <class T>
-MOZ_MUST_USE bool
-UnwrapInternalSlot(JSContext* cx,
-                   Handle<NativeObject*> unwrappedObj,
-                   uint32_t slot,
-                   MutableHandle<T*> unwrappedResult)
+inline MOZ_MUST_USE T*
+UnwrapInternalSlot(JSContext* cx, Handle<NativeObject*> unwrappedObj, uint32_t slot)
 {
     static_assert(!std::is_convertible<T*, Wrapper*>::value,
                   "T can't be a Wrapper type; this function discards wrappers");
 
-    T* result = UnwrapAndDowncastValue<T>(cx, unwrappedObj->getFixedSlot(slot));
-    if (!result) {
-        return false;
-    }
-    unwrappedResult.set(result);
-    return true;
+    return UnwrapAndDowncastValue<T>(cx, unwrappedObj->getFixedSlot(slot));
 }
 
 
-
-
-template <class T>
-inline MOZ_MUST_USE bool
-UnwrapInternalSlot(JSContext* cx,
-                   Handle<NativeObject*> obj,
-                   uint32_t slot,
-                   Rooted<T*>* unwrappedResult)
-{
-    return UnwrapInternalSlot(cx, obj, slot, MutableHandle<T*>(unwrappedResult));
-}
 
 
 
