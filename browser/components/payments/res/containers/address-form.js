@@ -4,6 +4,7 @@
 
 
 import LabelledCheckbox from "../components/labelled-checkbox.js";
+import PaymentRequestPage from "../components/payment-request-page.js";
 import PaymentStateSubscriberMixin from "../mixins/PaymentStateSubscriberMixin.js";
 import paymentRequest from "../paymentRequest.js";
 
@@ -15,11 +16,14 @@ import paymentRequest from "../paymentRequest.js";
 
 
 
-export default class AddressForm extends PaymentStateSubscriberMixin(HTMLElement) {
+
+
+
+
+export default class AddressForm extends PaymentStateSubscriberMixin(PaymentRequestPage) {
   constructor() {
     super();
 
-    this.pageTitle = document.createElement("h2");
     this.genericErrorText = document.createElement("div");
 
     this.cancelButton = document.createElement("button");
@@ -73,8 +77,7 @@ export default class AddressForm extends PaymentStateSubscriberMixin(HTMLElement
 
   connectedCallback() {
     this.promiseReady.then(form => {
-      this.appendChild(this.pageTitle);
-      this.appendChild(form);
+      this.body.appendChild(form);
 
       let record = {};
       this.formHandler = new EditAddress({
@@ -85,11 +88,12 @@ export default class AddressForm extends PaymentStateSubscriberMixin(HTMLElement
         supportedCountries: PaymentDialogUtils.supportedCountries,
       });
 
-      this.appendChild(this.persistCheckbox);
-      this.appendChild(this.genericErrorText);
-      this.appendChild(this.cancelButton);
-      this.appendChild(this.backButton);
-      this.appendChild(this.saveButton);
+      this.body.appendChild(this.persistCheckbox);
+      this.body.appendChild(this.genericErrorText);
+
+      this.footer.appendChild(this.cancelButton);
+      this.footer.appendChild(this.backButton);
+      this.footer.appendChild(this.saveButton);
       
       
       super.connectedCallback();
@@ -123,7 +127,7 @@ export default class AddressForm extends PaymentStateSubscriberMixin(HTMLElement
       this.removeAttribute("address-fields");
     }
 
-    this.pageTitle.textContent = addressPage.title;
+    this.pageTitleHeading.textContent = addressPage.title;
     this.genericErrorText.textContent = page.error;
 
     let editing = !!addressPage.guid;
@@ -161,8 +165,8 @@ export default class AddressForm extends PaymentStateSubscriberMixin(HTMLElement
 
     let shippingAddressErrors = request.paymentDetails.shippingAddressErrors;
     for (let [errorName, errorSelector] of Object.entries(this._errorFieldMap)) {
-      let container = document.querySelector(errorSelector + "-container");
-      let field = document.querySelector(errorSelector);
+      let container = this.form.querySelector(errorSelector + "-container");
+      let field = this.form.querySelector(errorSelector);
       let errorText = (shippingAddressErrors && shippingAddressErrors[errorName]) || "";
       container.classList.toggle("error", !!errorText);
       field.setCustomValidity(errorText);
