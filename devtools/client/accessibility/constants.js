@@ -63,3 +63,7 @@ exports.ACCESSIBLE_EVENTS = [
 
 exports.A11Y_SERVICE_DURATION = "DEVTOOLS_ACCESSIBILITY_SERVICE_TIME_ACTIVE_SECONDS";
 exports.A11Y_SERVICE_ENABLED_COUNT = "devtools.accessibility.service_enabled_count";
+
+
+exports.A11Y_LEARN_MORE_LINK =
+  "https://developer.mozilla.org/docs/Tools/Accessibility_inspector";
