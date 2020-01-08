@@ -1622,8 +1622,8 @@ ContentEventHandler::GetLastFrameInRangeForTextRect(const RawRange& aRawRange)
     return FrameAndNodeOffset();
   }
 
-  nsINode* endNode = aRawRange.GetEndContainer();
-  uint32_t endOffset = aRawRange.EndOffset();
+  const RangeBoundary& endPoint = aRawRange.End();
+  MOZ_ASSERT(endPoint.IsSet());
   
   
   
@@ -1641,16 +1641,17 @@ ContentEventHandler::GetLastFrameInRangeForTextRect(const RawRange& aRawRange)
   
   
   nsINode* nextNodeOfRangeEnd = nullptr;
-  if (endNode->IsText()) {
+  if (endPoint.Container()->IsText()) {
     
     
     
     
-    if (!endOffset && aRawRange.GetStartContainer() != endNode) {
-      nextNodeOfRangeEnd = endNode;
+    if (endPoint.IsStartOfContainer() &&
+        aRawRange.GetStartContainer() != endPoint.Container()) {
+      nextNodeOfRangeEnd = endPoint.Container();
     }
-  } else if (endOffset < endNode->GetChildCount()) {
-    nextNodeOfRangeEnd = endNode->GetChildAt_Deprecated(endOffset);
+  } else if (endPoint.IsSetAndValid()) {
+    nextNodeOfRangeEnd = endPoint.GetChildAtOffset();
   }
 
   for (iter->Last(); !iter->IsDone(); iter->Prev()) {
@@ -2967,43 +2968,47 @@ ContentEventHandler::AdjustCollapsedRangeMaybeIntoTextNode(RawRange& aRawRange)
     return NS_ERROR_INVALID_ARG;
   }
 
-  nsCOMPtr<nsINode> container = aRawRange.GetStartContainer();
-  int32_t offsetInParentNode = aRawRange.StartOffset();
-  if (NS_WARN_IF(!container) || NS_WARN_IF(offsetInParentNode < 0)) {
+  const RangeBoundary& startPoint = aRawRange.Start();
+  if (NS_WARN_IF(!startPoint.IsSet())) {
     return NS_ERROR_INVALID_ARG;
   }
 
   
-  if (container->IsText()) {
+  
+  if (!startPoint.Container()->HasChildren()) {
     return NS_OK;
   }
 
   
   
   
-  nsINode* childNode = nullptr;
-  int32_t offsetInChildNode = -1;
-  if (!offsetInParentNode && container->HasChildren()) {
+  if (startPoint.IsStartOfContainer()) {
     
     
-    childNode = container->GetFirstChild();
-    offsetInChildNode = 0;
-  } else if (static_cast<uint32_t>(offsetInParentNode) <
-               container->GetChildCount()) {
-    
-    
-    childNode = container->GetChildAt_Deprecated(offsetInParentNode - 1);
-    offsetInChildNode = childNode->Length();
-  }
-
-  
-  if (!childNode || !childNode->IsText() ||
-      NS_WARN_IF(offsetInChildNode < 0)) {
+    if (!startPoint.Container()->GetFirstChild()->IsText()) {
+      return NS_OK;
+    }
+    nsresult rv =
+      aRawRange.CollapseTo(
+                  RawRangeBoundary(startPoint.Container()->GetFirstChild(), 0));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
     return NS_OK;
   }
 
+  if (!startPoint.IsSetAndValid()) {
+    return NS_OK;
+  }
+
+  
+  
+  if (!startPoint.Ref()->IsText()) {
+    return NS_OK;
+  }
   nsresult rv =
-    aRawRange.CollapseTo(RawRangeBoundary(childNode, offsetInChildNode));
+    aRawRange.CollapseTo(
+                RawRangeBoundary(startPoint.Ref(), startPoint.Ref()->Length()));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
