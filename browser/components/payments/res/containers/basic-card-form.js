@@ -93,6 +93,7 @@ export default class BasicCardForm extends PaymentStateSubscriberMixin(PaymentRe
       
       
       
+      form.addEventListener("change", this);
       form.addEventListener("input", this);
       form.addEventListener("invalid", this);
 
@@ -208,6 +209,10 @@ export default class BasicCardForm extends PaymentStateSubscriberMixin(PaymentRe
 
   handleEvent(event) {
     switch (event.type) {
+      case "change": {
+        this.onChange(event);
+        break;
+      }
       case "click": {
         this.onClick(event);
         break;
@@ -221,6 +226,10 @@ export default class BasicCardForm extends PaymentStateSubscriberMixin(PaymentRe
         break;
       }
     }
+  }
+
+  onChange(evt) {
+    this.updateSaveButtonState();
   }
 
   onClick(evt) {
