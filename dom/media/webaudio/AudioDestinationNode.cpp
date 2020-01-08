@@ -8,6 +8,7 @@
 #include "AudioContext.h"
 #include "AlignmentUtils.h"
 #include "AudioContext.h"
+#include "CubebUtils.h"
 #include "mozilla/dom/AudioDestinationNodeBinding.h"
 #include "mozilla/dom/OfflineAudioCompletionEvent.h"
 #include "mozilla/dom/ScriptSettings.h"
@@ -216,6 +217,7 @@ public:
     , mVolume(1.0f)
     , mLastInputAudible(false)
     , mSuspended(false)
+    , mSampleRate(CubebUtils::PreferredSampleRate())
   {
     MOZ_ASSERT(aNode);
   }
@@ -236,9 +238,30 @@ public:
     bool isInputAudible = !aInput.IsNull() &&
                           !aInput.IsMuted() &&
                           aInput.IsAudible();
-    if (isInputAudible != mLastInputAudible) {
-      mLastInputAudible = isInputAudible;
 
+    auto shouldNotifyChanged = [&] () {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (isInputAudible && !mLastInputAudible) {
+        return true;
+      }
+      
+      if (!isInputAudible && mLastInputAudible &&
+          aFrom - mLastInputAudibleTime >= mSampleRate) {
+        return true;
+      }
+      return false;
+    };
+    if (shouldNotifyChanged()) {
+      mLastInputAudible = isInputAudible;
       RefPtr<AudioNodeStream> stream = aStream;
       auto r = [stream, isInputAudible] () -> void {
         MOZ_ASSERT(NS_IsMainThread());
@@ -252,6 +275,10 @@ public:
 
       aStream->Graph()->DispatchToMainThreadAfterStreamStateUpdate(
         NS_NewRunnableFunction("dom::WebAudioAudibleStateChangedRunnable", r));
+    }
+
+    if (isInputAudible) {
+      mLastInputAudibleTime = aFrom;
     }
   }
 
@@ -295,7 +322,9 @@ public:
 private:
   float mVolume;
   bool mLastInputAudible;
+  GraphTime mLastInputAudibleTime = 0;
   bool mSuspended;
+  int mSampleRate;
 };
 
 NS_IMPL_CYCLE_COLLECTION_INHERITED(AudioDestinationNode, AudioNode,
