@@ -2194,7 +2194,7 @@ class TokenStreamChars<mozilla::Utf8Unit, AnyCharsAccess>
 
 
 
-    MOZ_COLD void badTrailingUnit(mozilla::Utf8Unit badUnit, uint8_t unitsObserved);
+    MOZ_COLD void badTrailingUnit(uint8_t unitsObserved);
 
     
     
