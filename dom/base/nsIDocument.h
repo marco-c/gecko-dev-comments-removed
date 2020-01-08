@@ -3772,32 +3772,6 @@ public:
     --mIgnoreOpensDuringUnloadCounter;
   }
 
-  void IncrementTrackerCount()
-  {
-    MOZ_ASSERT(!GetSameTypeParentDocument());
-    ++mNumTrackersFound;
-  }
-
-  void IncrementTrackerBlockedCount()
-  {
-    MOZ_ASSERT(!GetSameTypeParentDocument());
-    ++mNumTrackersBlocked;
-  }
-
-  uint32_t NumTrackersFound()
-  {
-    MOZ_ASSERT(!GetSameTypeParentDocument() || mNumTrackersFound == 0);
-
-    return mNumTrackersFound;
-  }
-
-  uint32_t NumTrackersBlocked()
-  {
-    MOZ_ASSERT(!GetSameTypeParentDocument() || mNumTrackersBlocked == 0);
-
-    return mNumTrackersBlocked;
-  }
-
   bool AllowPaymentRequest() const
   {
     return mAllowPaymentRequest;
@@ -4761,12 +4735,6 @@ protected:
 
   RefPtr<mozilla::dom::XULBroadcastManager> mXULBroadcastManager;
   RefPtr<mozilla::dom::XULPersist> mXULPersist;
-
-  
-  
-  
-  uint32_t mNumTrackersFound;
-  uint32_t mNumTrackersBlocked;
 
   
   

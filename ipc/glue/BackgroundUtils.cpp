@@ -637,8 +637,6 @@ LoadInfoToParentLoadInfoForwarder(nsILoadInfo* aLoadInfo,
                                                      nsILoadInfo::TAINTING_BASIC,
                                                      false, 
                                                      false, 
-                                                     false, 
-                                                     false, 
                                                      false  
                                                     );
     return;
@@ -658,8 +656,6 @@ LoadInfoToParentLoadInfoForwarder(nsILoadInfo* aLoadInfo,
     ipcController,
     tainting,
     aLoadInfo->GetServiceWorkerTaintingSynthesized(),
-    aLoadInfo->GetIsTracker(),
-    aLoadInfo->GetIsTrackerBlocked(),
     aLoadInfo->GetDocumentHasUserInteracted(),
     aLoadInfo->GetDocumentHasLoaded()
   );
@@ -693,8 +689,6 @@ MergeParentLoadInfoForwarder(ParentLoadInfoForwarderArgs const& aForwarderArgs,
     aLoadInfo->MaybeIncreaseTainting(aForwarderArgs.tainting());
   }
 
-  MOZ_ALWAYS_SUCCEEDS(aLoadInfo->SetIsTracker(aForwarderArgs.isTracker()));
-  MOZ_ALWAYS_SUCCEEDS(aLoadInfo->SetIsTrackerBlocked(aForwarderArgs.isTrackerBlocked()));
   MOZ_ALWAYS_SUCCEEDS(aLoadInfo->SetDocumentHasUserInteracted(aForwarderArgs.documentHasUserInteracted()));
   MOZ_ALWAYS_SUCCEEDS(aLoadInfo->SetDocumentHasLoaded(aForwarderArgs.documentHasLoaded()));
 
