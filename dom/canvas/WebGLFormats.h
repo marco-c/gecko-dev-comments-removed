@@ -114,6 +114,18 @@ enum class EffectiveFormat : EffectiveFormatValueT {
     ATC_RGBA_INTERPOLATED_ALPHA_AMD,
 
     
+    COMPRESSED_RGBA_BPTC_UNORM,
+    COMPRESSED_SRGB_ALPHA_BPTC_UNORM,
+    COMPRESSED_RGB_BPTC_SIGNED_FLOAT,
+    COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT,
+
+    
+    COMPRESSED_RED_RGTC1,
+    COMPRESSED_SIGNED_RED_RGTC1,
+    COMPRESSED_RG_RGTC2,
+    COMPRESSED_SIGNED_RG_RGTC2,
+
+    
     COMPRESSED_RGB_S3TC_DXT1_EXT,
     COMPRESSED_RGBA_S3TC_DXT1_EXT,
     COMPRESSED_RGBA_S3TC_DXT3_EXT,
@@ -212,9 +224,11 @@ enum class ComponentType : uint8_t {
 enum class CompressionFamily : uint8_t {
     ASTC,
     ATC,
+    BPTC,
     ES3, 
     ETC1,
     PVRTC,
+    RGTC,
     S3TC,
 };
 
