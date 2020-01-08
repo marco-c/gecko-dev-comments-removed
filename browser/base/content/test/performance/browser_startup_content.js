@@ -110,17 +110,16 @@ add_task(async function() {
     Cm.QueryInterface(Ci.nsIServiceManager);
     ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
     let collectStacks = AppConstants.NIGHTLY_BUILD || AppConstants.DEBUG;
-    let loader = Cc["@mozilla.org/moz/jsloader;1"].getService(Ci.xpcIJSModuleLoader);
     let components = {};
-    for (let component of loader.loadedComponents()) {
+    for (let component of Cu.loadedComponents()) {
       
 
       components[component.replace(/.*\//, "")] =
-        collectStacks ? loader.getComponentLoadStack(component) : "";
+        collectStacks ? Cu.getComponentLoadStack(component) : "";
     }
     let modules = {};
-    for (let module of loader.loadedModules()) {
-      modules[module] = collectStacks ? loader.getModuleImportStack(module) : "";
+    for (let module of Cu.loadedModules()) {
+      modules[module] = collectStacks ? Cu.getModuleImportStack(module) : "";
     }
     let services = {};
     for (let contractID of Object.keys(Cc)) {
