@@ -621,7 +621,16 @@ AsyncImagePipelineManager::ProcessPipelineRemoved(const wr::PipelineId& aPipelin
     return;
   }
   if (auto entry = mPipelineTexturesHolders.Lookup(wr::AsUint64(aPipelineId))) {
-    if (entry.Data()->mDestroyedEpoch.isSome()) {
+    PipelineTexturesHolder* holder = entry.Data();
+    if (holder->mDestroyedEpoch.isSome()) {
+      
+      while (!holder->mExternalImages.empty()) {
+        DebugOnly<bool> released =
+          SharedSurfacesParent::Release(holder->mExternalImages.front().mImageId);
+        MOZ_ASSERT(released);
+        holder->mExternalImages.pop();
+      }
+
       
       entry.Remove();
     }
