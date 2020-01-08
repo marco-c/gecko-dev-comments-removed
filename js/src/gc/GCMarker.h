@@ -252,6 +252,15 @@ class GCMarker : public JSTracer
     template <typename S, typename T> void traverseEdge(S source, const T& target);
 
     
+    
+    template <typename S> void traverseObjectEdge(S source, JSObject* target) {
+        traverseEdge(source, target);
+    }
+    template <typename S> void traverseStringEdge(S source, JSString* target) {
+        traverseEdge(source, target);
+    }
+
+    
     template <typename T> void noteWeakEdge(T* edge);
 
     
