@@ -51,6 +51,10 @@ const INITIAL_FLEXBOX = {
   },
   
   highlighted: false,
+  
+  
+  
+  initiatedByMarkupViewSelection: false,
 };
 
 const reducers = {

@@ -226,8 +226,8 @@ class FlexboxInspector {
     const currentUrl = this.inspector.target.url;
     
     
-    const hostname = parseURL(currentUrl).hostname || parseURL(currentUrl).protocol;
-    this._overlayColor = customColors[hostname] ? customColors[hostname] : FLEXBOX_COLOR;
+    const hostName = parseURL(currentUrl).hostname || parseURL(currentUrl).protocol;
+    this._overlayColor = customColors[hostName] ? customColors[hostName] : FLEXBOX_COLOR;
     return this._overlayColor;
   }
 
@@ -305,7 +305,8 @@ class FlexboxInspector {
     if (!this.isPanelVisible() ||
         !this.store ||
         !this.selection.nodeFront ||
-        !this.hasGetCurrentFlexbox) {
+        !this.hasGetCurrentFlexbox ||
+        this._isUpdating) {
       return;
     }
 
@@ -410,12 +411,19 @@ class FlexboxInspector {
 
 
 
-  onUpdatePanel() {
+
+
+
+
+
+
+
+  onUpdatePanel(_, reason) {
     if (!this.isPanelVisible()) {
       return;
     }
 
-    this.update();
+    this.update(null, null, reason === "treepanel");
   }
 
   
@@ -452,13 +460,18 @@ class FlexboxInspector {
 
 
 
-  async update(flexContainer, flexItemContainer) {
+
+
+  async update(flexContainer, flexItemContainer, initiatedByMarkupViewSelection) {
+    this._isUpdating = true;
+
     
     
     if (!this.inspector ||
         !this.store ||
         !this.selection.nodeFront ||
         !this.hasGetCurrentFlexbox) {
+      this._isUpdating = false;
       return;
     }
 
@@ -472,6 +485,7 @@ class FlexboxInspector {
       
       if (!flexContainer) {
         this.store.dispatch(clearFlexbox());
+        this._isUpdating = false;
         return;
       }
 
@@ -489,6 +503,7 @@ class FlexboxInspector {
         flexContainer,
         flexItemContainer,
         highlighted,
+        initiatedByMarkupViewSelection,
       }));
 
       const isContainerInfoShown = !flexContainer.flexItemShown || !!flexItemContainer;
@@ -498,6 +513,8 @@ class FlexboxInspector {
       
       
     }
+
+    this._isUpdating = false;
   }
 }
 

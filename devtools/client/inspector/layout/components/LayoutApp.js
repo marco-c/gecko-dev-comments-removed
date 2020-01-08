@@ -113,42 +113,49 @@ class LayoutApp extends PureComponent {
     ];
 
     if (Services.prefs.getBoolPref(FLEXBOX_ENABLED_PREF)) {
+      const { flexContainer, flexItemContainer } = this.props.flexbox;
+      const opened = Services.prefs.getBoolPref(FLEXBOX_OPENED_PREF);
+
       
       
       items.splice(0, 0, {
+        className: `flex-accordion ${flexContainer.flexItemShown ? "item" : "container"}`,
         component: Flexbox,
         componentProps: {
           ...this.props,
-          flexContainer: this.props.flexbox.flexContainer,
+          flexContainer,
           scrollToTop: this.scrollToTop,
         },
-        header: this.getFlexboxHeader(this.props.flexbox.flexContainer),
-        opened: Services.prefs.getBoolPref(FLEXBOX_OPENED_PREF),
+        header: this.getFlexboxHeader(flexContainer),
+        opened,
         onToggled: () => {
-          const opened =  Services.prefs.getBoolPref(FLEXBOX_OPENED_PREF);
-          Services.prefs.setBoolPref(FLEXBOX_OPENED_PREF, !opened);
+          Services.prefs.setBoolPref(FLEXBOX_OPENED_PREF,
+            !Services.prefs.getBoolPref(FLEXBOX_OPENED_PREF));
         },
       });
 
       
       
       
-      if (this.props.flexbox.flexItemContainer &&
-          this.props.flexbox.flexItemContainer.actorID) {
-        
-        
-        items.splice(0, 0, {
+      
+      
+      
+      
+      
+      if (flexItemContainer && flexItemContainer.actorID) {
+        items.splice(this.props.flexbox.initiatedByMarkupViewSelection ? 1 : 0, 0, {
+          className: "flex-accordion item",
           component: Flexbox,
           componentProps: {
             ...this.props,
-            flexContainer: this.props.flexbox.flexItemContainer,
+            flexContainer: flexItemContainer,
             scrollToTop: this.scrollToTop,
           },
-          header: this.getFlexboxHeader(this.props.flexbox.flexItemContainer),
-          opened: Services.prefs.getBoolPref(FLEXBOX_OPENED_PREF),
+          header: this.getFlexboxHeader(flexItemContainer),
+          opened,
           onToggled: () => {
-            const opened =  Services.prefs.getBoolPref(FLEXBOX_OPENED_PREF);
-            Services.prefs.setBoolPref(FLEXBOX_OPENED_PREF, !opened);
+            Services.prefs.setBoolPref(FLEXBOX_OPENED_PREF,
+              !Services.prefs.getBoolPref(FLEXBOX_OPENED_PREF));
           },
         });
       }
