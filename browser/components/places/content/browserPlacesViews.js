@@ -233,9 +233,9 @@ PlacesViewBase.prototype = {
   },
 
   clearAllContents(aPopup) {
-    let kid = aPopup.firstChild;
+    let kid = aPopup.firstElementChild;
     while (kid) {
-      let next = kid.nextSibling;
+      let next = kid.nextElementSibling;
       if (!kid.classList.contains("panel-header")) {
         kid.remove();
       }
@@ -250,8 +250,8 @@ PlacesViewBase.prototype = {
     this._ensureMarkers(aPopup);
     
     let child = aPopup._startMarker;
-    while (child.nextSibling != aPopup._endMarker) {
-      let sibling = child.nextSibling;
+    while (child.nextElementSibling != aPopup._endMarker) {
+      let sibling = child.nextElementSibling;
       if (sibling._placesNode && !aDelay) {
         aPopup.removeChild(sibling);
       } else if (sibling._placesNode && aDelay) {
@@ -261,9 +261,9 @@ PlacesViewBase.prototype = {
         if (!aPopup._delayedRemovals)
           aPopup._delayedRemovals = [];
         aPopup._delayedRemovals.push(sibling);
-        child = child.nextSibling;
+        child = child.nextElementSibling;
       } else {
-        child = child.nextSibling;
+        child = child.nextElementSibling;
       }
     }
   },
@@ -322,8 +322,8 @@ PlacesViewBase.prototype = {
     if (aEmpty) {
       aPopup.setAttribute("emptyplacesresult", "true");
       
-      if (!aPopup._startMarker.previousSibling &&
-          !aPopup._endMarker.nextSibling)
+      if (!aPopup._startMarker.previousElementSibling &&
+          !aPopup._endMarker.nextElementSibling)
         aPopup.insertBefore(aPopup._emptyMenuitem, aPopup._endMarker);
     } else {
       aPopup.removeAttribute("emptyplacesresult");
@@ -485,8 +485,8 @@ PlacesViewBase.prototype = {
       let stringId = aStatus == Ci.mozILivemark.STATUS_LOADING ?
                        "bookmarksLivemarkLoading" : "bookmarksLivemarkFailed";
       statusMenuitem.setAttribute("label", PlacesUIUtils.getString(stringId));
-      if (aPopup._startMarker.nextSibling != statusMenuitem)
-        aPopup.insertBefore(statusMenuitem, aPopup._startMarker.nextSibling);
+      if (aPopup._startMarker.nextElementSibling != statusMenuitem)
+        aPopup.insertBefore(statusMenuitem, aPopup._startMarker.nextElementSibling);
     } else if (aPopup._statusMenuitem.parentNode == aPopup) {
       
       aPopup.removeChild(aPopup._statusMenuitem);
@@ -597,7 +597,7 @@ PlacesViewBase.prototype = {
       
       
       
-      if (parentElt._startMarker.nextSibling == parentElt._endMarker)
+      if (parentElt._startMarker.nextElementSibling == parentElt._endMarker)
         this._setEmptyPopupStatus(parentElt, true);
     }
   },
@@ -608,9 +608,9 @@ PlacesViewBase.prototype = {
         this.controller.hasCachedLivemarkInfo(aPlacesNode.parent)) {
       
       let popup = this._getDOMNodeForPlacesNode(aPlacesNode.parent);
-      for (let child = popup._startMarker.nextSibling;
+      for (let child = popup._startMarker.nextElementSibling;
            child != popup._endMarker;
-           child = child.nextSibling) {
+           child = child.nextElementSibling) {
         if (child._placesNode && child._placesNode.uri == aPlacesNode.uri) {
           if (aPlacesNode.accessCount)
             child.setAttribute("visited", "true");
@@ -635,10 +635,10 @@ PlacesViewBase.prototype = {
     if (!parentElt._built)
       return;
 
-    let index = Array.prototype.indexOf.call(parentElt.childNodes, parentElt._startMarker) +
+    let index = Array.prototype.indexOf.call(parentElt.children, parentElt._startMarker) +
                 aIndex + 1;
     this._insertNewItemToPopup(aPlacesNode, parentElt,
-                               parentElt.childNodes[index] || parentElt._endMarker);
+                               parentElt.children[index] || parentElt._endMarker);
     this._setEmptyPopupStatus(parentElt, false);
   },
 
@@ -665,9 +665,9 @@ PlacesViewBase.prototype = {
     if (parentElt._built) {
       
       parentElt.removeChild(elt);
-      let index = Array.prototype.indexOf.call(parentElt.childNodes, parentElt._startMarker) +
+      let index = Array.prototype.indexOf.call(parentElt.children, parentElt._startMarker) +
                   aNewIndex + 1;
-      parentElt.insertBefore(elt, parentElt.childNodes[index]);
+      parentElt.insertBefore(elt, parentElt.children[index]);
     }
   },
 
@@ -710,7 +710,7 @@ PlacesViewBase.prototype = {
   _populateLivemarkPopup: function PVB__populateLivemarkPopup(aPopup) {
     this._setLivemarkSiteURIMenuItem(aPopup);
     
-    if (aPopup._startMarker.nextSibling == aPopup._endMarker)
+    if (aPopup._startMarker.nextElementSibling == aPopup._endMarker)
       this._setLivemarkStatusMenuItem(aPopup, Ci.mozILivemark.STATUS_LOADING);
 
     PlacesUtils.livemarks.getLivemark({ id: aPopup._placesNode.itemId })
@@ -810,14 +810,14 @@ PlacesViewBase.prototype = {
     
     
     if (aPopup._placesNode.childCount > 0) {
-      let currentChild = aPopup.firstChild;
+      let currentChild = aPopup.firstElementChild;
       let numURINodes = 0;
       while (currentChild) {
         if (currentChild.localName == "menuitem" && currentChild._placesNode) {
           if (++numURINodes == 2)
             break;
         }
-        currentChild = currentChild.nextSibling;
+        currentChild = currentChild.nextElementSibling;
       }
       hasMultipleURIs = numURINodes > 1;
     }
@@ -882,7 +882,7 @@ PlacesViewBase.prototype = {
     
     aPopup._startMarker = document.createElement("menuseparator");
     aPopup._startMarker.hidden = true;
-    aPopup.insertBefore(aPopup._startMarker, aPopup.firstChild);
+    aPopup.insertBefore(aPopup._startMarker, aPopup.firstElementChild);
 
     
     
@@ -898,8 +898,8 @@ PlacesViewBase.prototype = {
 
     
     let firstNonStaticNodeFound = false;
-    for (let i = 0; i < aPopup.childNodes.length; i++) {
-      let child = aPopup.childNodes[i];
+    for (let i = 0; i < aPopup.children.length; i++) {
+      let child = aPopup.children[i];
       
       
       
@@ -1158,10 +1158,10 @@ PlacesToolbar.prototype = {
   _updateChevronPopupNodesVisibility:
   function PT__updateChevronPopupNodesVisibility() {
     
-    for (let toolbarNode = this._rootElt.firstChild,
-         node = this._chevronPopup._startMarker.nextSibling;
+    for (let toolbarNode = this._rootElt.firstElementChild,
+         node = this._chevronPopup._startMarker.nextElementSibling;
          toolbarNode && node;
-         toolbarNode = toolbarNode.nextSibling, node = node.nextSibling) {
+         toolbarNode = toolbarNode.nextElementSibling, node = node.nextElementSibling) {
       node.hidden = toolbarNode.style.visibility != "hidden";
     }
   },
@@ -1292,7 +1292,7 @@ PlacesToolbar.prototype = {
     
     
     window.requestAnimationFrame(() => {
-      for (let child of this._rootElt.childNodes) {
+      for (let child of this._rootElt.children) {
         
         if (!childOverflowed) {
           let childRect = dwu.getBoundsWithoutFlushing(child);
@@ -1328,7 +1328,7 @@ PlacesToolbar.prototype = {
   function PT_nodeInserted(aParentPlacesNode, aPlacesNode, aIndex) {
     let parentElt = this._getDOMNodeForPlacesNode(aParentPlacesNode);
     if (parentElt == this._rootElt) { 
-      let children = this._rootElt.childNodes;
+      let children = this._rootElt.children;
       
       
       if (aIndex > children.length)
@@ -1343,7 +1343,7 @@ PlacesToolbar.prototype = {
           return;
         }
         
-        this._rootElt.removeChild(this._rootElt.lastChild);
+        this._rootElt.removeChild(this._rootElt.lastElementChild);
       }
 
       let button = this._insertNewItem(aPlacesNode, this._rootElt,
@@ -1379,9 +1379,9 @@ PlacesToolbar.prototype = {
 
       let overflowed = elt.style.visibility == "hidden";
       this._removeChild(elt);
-      if (this._resultNode.childCount > this._rootElt.childNodes.length) {
+      if (this._resultNode.childCount > this._rootElt.children.length) {
         
-        this._insertNewItem(this._resultNode.getChild(this._rootElt.childNodes.length),
+        this._insertNewItem(this._resultNode.getChild(this._rootElt.children.length),
                             this._rootElt);
       }
       if (!overflowed)
@@ -1399,7 +1399,7 @@ PlacesToolbar.prototype = {
     let parentElt = this._getDOMNodeForPlacesNode(aNewParentPlacesNode);
     if (parentElt == this._rootElt) { 
       
-      let lastBuiltIndex = this._rootElt.childNodes.length - 1;
+      let lastBuiltIndex = this._rootElt.children.length - 1;
       if (aOldIndex > lastBuiltIndex && aNewIndex > lastBuiltIndex + 1)
         return;
 
@@ -1412,10 +1412,10 @@ PlacesToolbar.prototype = {
       }
 
       if (aNewIndex > lastBuiltIndex + 1) {
-        if (this._resultNode.childCount > this._rootElt.childNodes.length) {
+        if (this._resultNode.childCount > this._rootElt.children.length) {
           
           
-          this._insertNewItem(this._resultNode.getChild(this._rootElt.childNodes.length),
+          this._insertNewItem(this._resultNode.getChild(this._rootElt.children.length),
                               this._rootElt);
         }
         return;
@@ -1423,12 +1423,12 @@ PlacesToolbar.prototype = {
 
       if (!elt) {
         
-        elt = this._insertNewItem(aPlacesNode, this._rootElt, this._rootElt.childNodes[aNewIndex]);
+        elt = this._insertNewItem(aPlacesNode, this._rootElt, this._rootElt.children[aNewIndex]);
         let icon = aPlacesNode.icon;
         if (icon)
           elt.setAttribute("image", icon);
       } else {
-        this._rootElt.insertBefore(elt, this._rootElt.childNodes[aNewIndex]);
+        this._rootElt.insertBefore(elt, this._rootElt.children[aNewIndex]);
       }
 
       
@@ -1516,9 +1516,9 @@ PlacesToolbar.prototype = {
     
     
     
-    if (this._overFolder.elt && this._overFolder.elt.lastChild) {
-      if (!this._overFolder.elt.lastChild.hasAttribute("dragover")) {
-        this._overFolder.elt.lastChild.hidePopup();
+    if (this._overFolder.elt && this._overFolder.elt.lastElementChild) {
+      if (!this._overFolder.elt.lastElementChild.hasAttribute("dragover")) {
+        this._overFolder.elt.lastElementChild.hidePopup();
       }
       this._overFolder.elt.removeAttribute("dragover");
       this._overFolder.elt = null;
@@ -1549,7 +1549,7 @@ PlacesToolbar.prototype = {
     if (elt._placesNode && elt != this._rootElt &&
         elt.localName != "menupopup") {
       let eltRect = elt.getBoundingClientRect();
-      let eltIndex = Array.prototype.indexOf.call(this._rootElt.childNodes, elt);
+      let eltIndex = Array.prototype.indexOf.call(this._rootElt.children, elt);
       if (PlacesUtils.nodeIsFolder(elt._placesNode) &&
           !PlacesUIUtils.isFolderReadOnly(elt._placesNode, this)) {
         
@@ -1583,7 +1583,7 @@ PlacesToolbar.prototype = {
         } else {
           
           let beforeIndex =
-            (eltIndex == this._rootElt.childNodes.length - 1) ?
+            (eltIndex == this._rootElt.children.length - 1) ?
             -1 : eltIndex + 1;
 
           dropPoint.ip =
@@ -1613,7 +1613,7 @@ PlacesToolbar.prototype = {
         } else {
           
           let beforeIndex =
-            eltIndex == this._rootElt.childNodes.length - 1 ?
+            eltIndex == this._rootElt.children.length - 1 ?
             -1 : eltIndex + 1;
           dropPoint.ip =
             new PlacesInsertionPoint({
@@ -1658,7 +1658,7 @@ PlacesToolbar.prototype = {
       
       
       
-      this._overFolder.elt.lastChild.setAttribute("autoopened", "true");
+      this._overFolder.elt.lastElementChild.setAttribute("autoopened", "true");
       this._overFolder.elt.open = true;
       this._overFolder.openTimer = null;
     } else if (aTimer == this._overFolder.closeTimer) {
@@ -1728,7 +1728,7 @@ PlacesToolbar.prototype = {
 
       
       if (draggedElt.open) {
-        draggedElt.lastChild.hidePopup();
+        draggedElt.lastElementChild.hidePopup();
         draggedElt.open = false;
       }
     }
@@ -1782,11 +1782,11 @@ PlacesToolbar.prototype = {
       if (this.isRTL) {
         halfInd = Math.ceil(halfInd);
         translateX = 0 - this._rootElt.getBoundingClientRect().right - halfInd;
-        if (this._rootElt.firstChild) {
+        if (this._rootElt.firstElementChild) {
           if (dropPoint.beforeIndex == -1)
-            translateX += this._rootElt.lastChild.getBoundingClientRect().left;
+            translateX += this._rootElt.lastElementChild.getBoundingClientRect().left;
           else {
-            translateX += this._rootElt.childNodes[dropPoint.beforeIndex]
+            translateX += this._rootElt.children[dropPoint.beforeIndex]
                               .getBoundingClientRect().right;
           }
         }
@@ -1794,11 +1794,11 @@ PlacesToolbar.prototype = {
         halfInd = Math.floor(halfInd);
         translateX = 0 - this._rootElt.getBoundingClientRect().left +
                      halfInd;
-        if (this._rootElt.firstChild) {
+        if (this._rootElt.firstElementChild) {
           if (dropPoint.beforeIndex == -1)
-            translateX += this._rootElt.lastChild.getBoundingClientRect().right;
+            translateX += this._rootElt.lastElementChild.getBoundingClientRect().right;
           else {
-            translateX += this._rootElt.childNodes[dropPoint.beforeIndex]
+            translateX += this._rootElt.children[dropPoint.beforeIndex]
                               .getBoundingClientRect().left;
           }
         }
@@ -2053,7 +2053,7 @@ PlacesPanelMenuView.prototype = {
     if (parentElt != this._rootElt)
       return;
 
-    let children = this._rootElt.childNodes;
+    let children = this._rootElt.children;
     this._insertNewItem(aPlacesNode, this._rootElt,
       aIndex < children.length ? children[aIndex] : null);
   },
@@ -2078,7 +2078,7 @@ PlacesPanelMenuView.prototype = {
 
     let elt = this._getDOMNodeForPlacesNode(aPlacesNode);
     this._removeChild(elt);
-    this._rootElt.insertBefore(elt, this._rootElt.childNodes[aNewIndex]);
+    this._rootElt.insertBefore(elt, this._rootElt.children[aNewIndex]);
   },
 
   nodeAnnotationChanged:
@@ -2270,7 +2270,7 @@ this.PlacesPanelview = class extends PlacesViewBase {
       
       
       if (!panelview._startMarker ||
-          (!panelview._startMarker.previousSibling && !panelview._endMarker.nextSibling)) {
+          (!panelview._startMarker.previousElementSibling && !panelview._endMarker.nextElementSibling)) {
         panelview.insertBefore(panelview._emptyMenuitem, panelview._endMarker);
       }
     } else {

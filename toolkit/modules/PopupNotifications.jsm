@@ -238,7 +238,7 @@ function PopupNotifications(tabbrowser, panel,
     }
 
     
-    let notification = this.panel.firstChild;
+    let notification = this.panel.firstElementChild;
     if (!notification) {
       return;
     }
@@ -700,8 +700,8 @@ PopupNotifications.prototype = {
       }
     }
 
-    let browser = this.panel.firstChild &&
-                  this.panel.firstChild.notification.browser;
+    let browser = this.panel.firstElementChild &&
+                  this.panel.firstElementChild.notification.browser;
     this.panel.hidePopup();
     if (browser)
       browser.focus();
@@ -728,7 +728,7 @@ PopupNotifications.prototype = {
 
   _clearPanel() {
     let popupnotification;
-    while ((popupnotification = this.panel.lastChild)) {
+    while ((popupnotification = this.panel.lastElementChild)) {
       this.panel.removeChild(popupnotification);
 
       
@@ -739,9 +739,9 @@ PopupNotifications.prototype = {
 
         
         
-        let contentNode = popupnotification.lastChild;
+        let contentNode = popupnotification.lastElementChild;
         while (contentNode) {
-          let previousSibling = contentNode.previousSibling;
+          let previousSibling = contentNode.previousElementSibling;
           if (contentNode.nodeName == "menuitem" ||
               contentNode.nodeName == "menuseparator")
             popupnotification.removeChild(contentNode);
@@ -1027,7 +1027,7 @@ PopupNotifications.prototype = {
 
       
       
-      this.panel.setAttribute("popupid", this.panel.firstChild.getAttribute("popupid"));
+      this.panel.setAttribute("popupid", this.panel.firstElementChild.getAttribute("popupid"));
       notificationsToShow.forEach(function(n) {
         
         
@@ -1415,14 +1415,14 @@ PopupNotifications.prototype = {
   },
 
   _dismissOrRemoveCurrentNotifications() {
-    let browser = this.panel.firstChild &&
-                  this.panel.firstChild.notification.browser;
+    let browser = this.panel.firstElementChild &&
+                  this.panel.firstElementChild.notification.browser;
     if (!browser)
       return;
 
     let notifications = this._getNotificationsForBrowser(browser);
     
-    Array.forEach(this.panel.childNodes, function(nEl) {
+    Array.forEach(this.panel.children, function(nEl) {
       let notificationObj = nEl.notification;
       
       if (!notifications.includes(notificationObj))

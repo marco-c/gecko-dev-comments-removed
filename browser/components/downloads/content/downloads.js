@@ -401,7 +401,7 @@ var DownloadsPanel = {
     if (aEvent.keyCode == aEvent.DOM_VK_DOWN) {
       
       
-      if (richListBox.selectedItem === richListBox.lastChild ||
+      if (richListBox.selectedItem === richListBox.lastElementChild ||
           document.activeElement.parentNode.id === "downloadsFooter") {
         DownloadsFooter.focus();
         aEvent.preventDefault();
@@ -425,9 +425,9 @@ var DownloadsPanel = {
     
     if (aEvent.keyCode == aEvent.DOM_VK_UP &&
         document.activeElement.parentNode.id === "downloadsFooter" &&
-        DownloadsView.richListBox.firstChild) {
+        DownloadsView.richListBox.firstElementChild) {
       DownloadsView.richListBox.focus();
-      DownloadsView.richListBox.selectedItem = DownloadsView.richListBox.lastChild;
+      DownloadsView.richListBox.selectedItem = DownloadsView.richListBox.lastElementChild;
       aEvent.preventDefault();
       return;
     }
@@ -728,7 +728,7 @@ var DownloadsView = {
     this._visibleViewItems.set(download, viewItem);
     this._itemsForElements.set(element, viewItem);
     if (aNewest) {
-      this.richListBox.insertBefore(element, this.richListBox.firstChild);
+      this.richListBox.insertBefore(element, this.richListBox.firstElementChild);
     } else {
       this.richListBox.appendChild(element);
     }

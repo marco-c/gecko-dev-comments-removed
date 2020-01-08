@@ -30,7 +30,7 @@ var CustomizationHandler = {
   _customizationStarting() {
     
     let menubar = document.getElementById("main-menubar");
-    for (let childNode of menubar.childNodes)
+    for (let childNode of menubar.children)
       childNode.setAttribute("disabled", true);
 
     let cmd = document.getElementById("cmd_CustomizeToolbars");
@@ -69,7 +69,7 @@ var CustomizationHandler = {
 
     
     let menubar = document.getElementById("main-menubar");
-    for (let childNode of menubar.childNodes)
+    for (let childNode of menubar.children)
       childNode.setAttribute("disabled", false);
     let cmd = document.getElementById("cmd_CustomizeToolbars");
     cmd.removeAttribute("disabled");
