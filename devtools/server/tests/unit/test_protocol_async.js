@@ -105,17 +105,17 @@ function run_test() {
 
   const trace = connectPipeTracing();
   const client = new DebuggerClient(trace);
-  let rootClient;
+  let rootFront;
 
   client.connect().then(([applicationType, traits]) => {
-    rootClient = RootFront(client);
+    rootFront = RootFront(client);
 
     const calls = [];
     let sequence = 0;
 
     
     
-    calls.push(rootClient.promiseReturn(2).then(ret => {
+    calls.push(rootFront.promiseReturn(2).then(ret => {
       
       Assert.equal(sequence, 0);
       
@@ -124,21 +124,21 @@ function run_test() {
 
     
 
-    calls.push(rootClient.simpleReturn().then(ret => {
+    calls.push(rootFront.simpleReturn().then(ret => {
       
       Assert.equal(sequence, 1);
       
       Assert.equal(ret, sequence++);
     }));
 
-    calls.push(rootClient.simpleReturn().then(ret => {
+    calls.push(rootFront.simpleReturn().then(ret => {
       
       Assert.equal(sequence, 2);
       
       Assert.equal(ret, sequence++);
     }));
 
-    calls.push(rootClient.simpleThrow().then(() => {
+    calls.push(rootFront.simpleThrow().then(() => {
       Assert.ok(false, "simpleThrow shouldn't succeed!");
     }, error => {
       
@@ -150,7 +150,7 @@ function run_test() {
     
     const deferAfterRejection = defer();
 
-    calls.push(rootClient.promiseThrow().then(() => {
+    calls.push(rootFront.promiseThrow().then(() => {
       Assert.ok(false, "promiseThrow shouldn't succeed!");
     }, error => {
       
@@ -159,7 +159,7 @@ function run_test() {
       deferAfterRejection.resolve();
     }));
 
-    calls.push(rootClient.simpleReturn().then(ret => {
+    calls.push(rootFront.simpleReturn().then(ret => {
       return deferAfterRejection.promise.then(function() {
         
         Assert.equal(sequence, 5);
@@ -170,7 +170,7 @@ function run_test() {
 
     
     
-    calls.push(rootClient.promiseReturn(1).then(ret => {
+    calls.push(rootFront.promiseReturn(1).then(ret => {
       return deferAfterRejection.promise.then(function() {
         
         Assert.equal(sequence, 6);
@@ -179,7 +179,7 @@ function run_test() {
       });
     }));
 
-    calls.push(rootClient.simpleReturn().then(ret => {
+    calls.push(rootFront.simpleReturn().then(ret => {
       return deferAfterRejection.promise.then(function() {
         
         Assert.equal(sequence, 7);
