@@ -129,6 +129,10 @@ class WasmModuleObject : public NativeObject {
 
 
 
+
+
+STATIC_ASSERT_ANYREF_IS_JSOBJECT;
+
 class WasmGlobalObject : public NativeObject {
   static const unsigned TYPE_SLOT = 0;
   static const unsigned MUTABLE_SLOT = 1;
@@ -151,7 +155,8 @@ class WasmGlobalObject : public NativeObject {
     int64_t i64;
     float f32;
     double f64;
-    JSObject* ptr;
+    JSObject* ref;              
+    wasm::AnyRef anyref;
     Cell() : i64(0) {}
     ~Cell() {}
   };

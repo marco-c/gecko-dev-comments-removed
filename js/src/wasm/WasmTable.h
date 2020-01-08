@@ -34,6 +34,10 @@ namespace wasm {
 
 
 
+
+
+STATIC_ASSERT_ANYREF_IS_JSOBJECT;
+
 typedef GCVector<JS::Heap<JSObject*>, 0, SystemAllocPolicy> TableAnyRefVector;
 
 class Table : public ShareableBase<Table> {
@@ -82,8 +86,9 @@ class Table : public ShareableBase<Table> {
   const FunctionTableElem& getAnyFunc(uint32_t index) const;
   void setAnyFunc(uint32_t index, void* code, const Instance* instance);
 
-  JSObject* getAnyRef(uint32_t index) const;
-  void setAnyRef(uint32_t index, JSObject* obj);
+  AnyRef getAnyRef(uint32_t index) const;
+  const void* getAnyRefLocForCompiledCode(uint32_t index) const;
+  void setAnyRef(uint32_t index, AnyRef);
 
   void setNull(uint32_t index);
 

@@ -532,6 +532,102 @@ static inline const char* ToCString(ValType type) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class AnyRef {
+  JSObject* value_;
+
+  explicit AnyRef(JSObject* p) : value_(p) {
+    MOZ_ASSERT(((uintptr_t)p & 0x03) == 0);
+  }
+
+ public:
+  
+  static AnyRef fromCompiledCode(void* p) {
+    return AnyRef((JSObject*)p);
+  }
+
+  
+  static AnyRef fromJSObject(JSObject* p) {
+    return AnyRef(p);
+  }
+
+  
+  static AnyRef null() {
+    return AnyRef(nullptr);
+  }
+
+  bool isNull() {
+    return value_ == nullptr;
+  }
+
+  void* forCompiledCode() const {
+    return value_;
+  }
+
+  JSObject* asJSObject() {
+    return value_;
+  }
+
+  JSObject** asJSObjectAddress() {
+    return &value_;
+  }
+
+  void trace(JSTracer* trc);
+
+  
+  static constexpr uintptr_t AnyRefTagMask = 1;
+  static constexpr uintptr_t AnyRefObjTag = 0;
+};
+
+typedef Rooted<AnyRef> RootedAnyRef;
+typedef Handle<AnyRef> HandleAnyRef;
+typedef MutableHandle<AnyRef> MutableHandleAnyRef;
+
+
+
+
+
+#define ASSERT_ANYREF_IS_JSOBJECT (void)(0)
+#define STATIC_ASSERT_ANYREF_IS_JSOBJECT static_assert(1, "AnyRef is JSObject")
+
+
+
+
+bool BoxAnyRef(JSContext* cx, HandleValue val, MutableHandleAnyRef result);
+
+
+
+
+
+Value UnboxAnyRef(AnyRef val);
+
+
+
+
+
+
+
+
 enum class Tier {
   Baseline,
   Debug = Baseline,
@@ -597,11 +693,13 @@ class LitVal {
  protected:
   ValType type_;
   union U {
+    U() : i32_(0) {}
     uint32_t i32_;
     uint64_t i64_;
     float f32_;
     double f64_;
-    JSObject* ptr_;
+    JSObject* ref_;             
+    AnyRef anyref_;
   } u;
 
  public:
@@ -613,12 +711,17 @@ class LitVal {
   explicit LitVal(float f32) : type_(ValType::F32) { u.f32_ = f32; }
   explicit LitVal(double f64) : type_(ValType::F64) { u.f64_ = f64; }
 
-  explicit LitVal(ValType refType, JSObject* ptr) : type_(refType) {
-    MOZ_ASSERT(refType.isReference());
-    MOZ_ASSERT(refType != ValType::NullRef);
-    MOZ_ASSERT(ptr == nullptr,
+  explicit LitVal(AnyRef any) : type_(ValType::AnyRef) {
+    MOZ_ASSERT(any.isNull(),
                "use Val for non-nullptr ref types to get tracing");
-    u.ptr_ = ptr;
+    u.anyref_ = any;
+  }
+
+  explicit LitVal(ValType refType, JSObject* ref) : type_(refType) {
+    MOZ_ASSERT(refType.isRef());
+    MOZ_ASSERT(ref == nullptr,
+               "use Val for non-nullptr ref types to get tracing");
+    u.ref_ = ref;
   }
 
   ValType type() const { return type_; }
@@ -640,13 +743,15 @@ class LitVal {
     MOZ_ASSERT(type_ == ValType::F64);
     return u.f64_;
   }
-  JSObject* ptr() const {
-    MOZ_ASSERT(type_.isReference());
-    return u.ptr_;
+  JSObject* ref() const {
+    MOZ_ASSERT(type_.isRef());
+    return u.ref_;
+  }
+  AnyRef anyref() const {
+    MOZ_ASSERT(type_ == ValType::AnyRef);
+    return u.anyref_;
   }
 };
-
-typedef Vector<LitVal, 0, SystemAllocPolicy> LitValVector;
 
 
 
@@ -662,10 +767,12 @@ class MOZ_NON_PARAM Val : public LitVal {
   explicit Val(uint64_t i64) : LitVal(i64) {}
   explicit Val(float f32) : LitVal(f32) {}
   explicit Val(double f64) : LitVal(f64) {}
-  explicit Val(ValType type, JSObject* obj) : LitVal(type, nullptr) {
-    u.ptr_ = obj;
+  explicit Val(AnyRef val) : LitVal(AnyRef::null()) {
+    u.anyref_ = val;
   }
-  void writePayload(uint8_t* dst) const;
+  explicit Val(ValType type, JSObject* obj) : LitVal(type, (JSObject*)nullptr) {
+    u.ref_ = obj;
+  }
   void trace(JSTracer* trc);
 };
 
@@ -1956,7 +2063,7 @@ enum class SymbolicAddress {
   CallImport_I32,
   CallImport_I64,
   CallImport_F64,
-  CallImport_Ref,
+  CallImport_AnyRef,
   CoerceInPlace_ToInt32,
   CoerceInPlace_ToNumber,
   CoerceInPlace_JitEntry,
@@ -2411,6 +2518,7 @@ class DebugFrame {
     int32_t resultI32_;
     int64_t resultI64_;
     intptr_t resultRef_;
+    AnyRef resultAnyRef_;
     float resultF32_;
     double resultF64_;
   };
