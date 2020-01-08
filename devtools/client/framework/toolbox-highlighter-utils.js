@@ -303,5 +303,25 @@ exports.getHighlighterUtils = function(toolbox) {
   });
 
   
+
+
+
+
+
+
+
+
+  exported.getOrCreateHighlighterByType = requireInspector(async function(typeName) {
+    const highlighter = await toolbox.inspector.getOrCreateHighlighterByType(typeName);
+
+    return highlighter || promise.reject("The target doesn't support " +
+        `creating highlighters by types or ${typeName} is unknown`);
+  });
+
+  exported.getKnownHighlighter = function(typeName) {
+    return toolbox.inspector && toolbox.inspector.getKnownHighlighter(typeName);
+  };
+
+  
   return exported;
 };

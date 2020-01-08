@@ -154,6 +154,7 @@ function Toolbox(target, selectedTool, hostType, contentWindow, frameId,
   this._onNewSelectedNodeFront = this._onNewSelectedNodeFront.bind(this);
   this._onToolSelected = this._onToolSelected.bind(this);
   this.updateToolboxButtonsVisibility = this.updateToolboxButtonsVisibility.bind(this);
+  this.updateToolboxButtons = this.updateToolboxButtons.bind(this);
   this.selectTool = this.selectTool.bind(this);
   this._pingTelemetrySelectTool = this._pingTelemetrySelectTool.bind(this);
   this.toggleSplitConsole = this.toggleSplitConsole.bind(this);
@@ -799,9 +800,9 @@ Toolbox.prototype = {
       className,
       description,
       disabled,
-      onClick(event) {
+      async onClick(event) {
         if (typeof onClick == "function") {
-          onClick(event, toolbox);
+          await onClick(event, toolbox);
           button.emit("updatechecked");
         }
       },
@@ -1360,6 +1361,27 @@ Toolbox.prototype = {
   
 
 
+  updateToolboxButtons() {
+    const inspector = this.inspector;
+    
+    
+    const hasHighlighters = inspector &&
+        (inspector.hasHighlighter("RulersHighlighter") ||
+        inspector.hasHighlighter("MeasuringToolHighlighter"));
+    if (hasHighlighters || this.isPaintFlashing) {
+      if (this.isPaintFlashing) {
+        this.togglePaintFlashing();
+      }
+      if (hasHighlighters) {
+        inspector.destroyHighlighters();
+      }
+      this.component.setToolboxButtons(this.toolbarButtons);
+    }
+  },
+
+  
+
+
   togglePaintFlashing: function() {
     if (this.isPaintFlashing) {
       this.telemetry.toolOpened("paintflashing");
@@ -1367,7 +1389,7 @@ Toolbox.prototype = {
       this.telemetry.toolClosed("paintflashing");
     }
     this.isPaintFlashing = !this.isPaintFlashing;
-    this.target.activeTab.reconfigure({"paintFlashing": this.isPaintFlashing});
+    return this.target.activeTab.reconfigure({"paintFlashing": this.isPaintFlashing});
   },
 
   
@@ -2179,6 +2201,7 @@ Toolbox.prototype = {
 
 
   async _onWillNavigate() {
+    this.updateToolboxButtons();
     const toolId = this.currentToolId;
     
     if (toolId != "inspector" && toolId != "webconsole" && toolId != "netmonitor") {

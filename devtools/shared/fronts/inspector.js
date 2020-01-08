@@ -452,15 +452,43 @@ var InspectorFront = FrontClassWithSpec(inspectorSpec, {
   initialize: function(client, tabForm) {
     Front.prototype.initialize.call(this, client);
     this.actorID = tabForm.inspectorActor;
+    this._highlighters = new Map();
 
     
     
     this.manage(this);
   },
 
+  hasHighlighter(type) {
+    return this._highlighters.has(type);
+  },
+
   destroy: function() {
+    this.destroyHighlighters();
     delete this.walker;
     Front.prototype.destroy.call(this);
+  },
+
+  destroyHighlighters: function() {
+    for (const type of this._highlighters.keys()) {
+      if (this._highlighters.has(type)) {
+        this._highlighters.get(type).finalize();
+        this._highlighters.delete(type);
+      }
+    }
+  },
+
+  getKnownHighlighter: function(type) {
+    return this._highlighters.get(type);
+  },
+
+  getOrCreateHighlighterByType: async function(type) {
+    let front =  this._highlighters.get(type);
+    if (!front) {
+      front = await this.getHighlighterByType(type);
+      this._highlighters.set(type, front);
+    }
+    return front;
   },
 
   getWalker: custom(function(options = {}) {
