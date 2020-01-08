@@ -5478,6 +5478,14 @@ nsGlobalWindowOuter::RevisePopupAbuseLevel(PopupControlState aControl)
       abuse = openOverridden;
   }
 
+  
+  
+  if ((abuse == openAllowed || abuse == openControlled) &&
+      StaticPrefs::dom_block_multiple_popups() &&
+      !PopupWhitelisted()) {
+    nsContentUtils::PushPopupControlState(openBlocked, true);
+  }
+
   return abuse;
 }
 
