@@ -12,26 +12,32 @@ RangeContainsLatin1Equivalents(CharacterRange range, bool unicode)
 {
     if (unicode) {
         
-        if (range.Contains(0x017F))
+        if (range.Contains(0x017F)) {
             return true;
+        }
         
-        if (range.Contains(0x1E9E))
+        if (range.Contains(0x1E9E)) {
             return true;
+        }
         
-        if (range.Contains(0x212A))
+        if (range.Contains(0x212A)) {
             return true;
+        }
         
-        if (range.Contains(0x212B))
+        if (range.Contains(0x212B)) {
             return true;
+        }
     }
 
     
     
-    if (range.Contains(0x039C) || range.Contains(0x03BC))
+    if (range.Contains(0x039C) || range.Contains(0x03BC)) {
         return true;
+    }
     
-    if (range.Contains(0x0178))
+    if (range.Contains(0x0178)) {
         return true;
+    }
     return false;
 }
 
