@@ -1514,8 +1514,12 @@ window._gBrowser = {
     }
   },
 
-  updateBrowserRemoteness(aBrowser, aShouldBeRemote, aOptions) {
-    aOptions = aOptions || {};
+  updateBrowserRemoteness(aBrowser, aShouldBeRemote, {
+    newFrameloader,
+    opener,
+    remoteType,
+    sameProcessAsFrameLoader,
+  } = {}) {
     let isRemote = aBrowser.getAttribute("remote") == "true";
 
     if (!gMultiProcessBrowser && aShouldBeRemote) {
@@ -1524,26 +1528,26 @@ window._gBrowser = {
     }
 
     
-    if (!aOptions.remoteType) {
-      aOptions.remoteType = aShouldBeRemote ? E10SUtils.DEFAULT_REMOTE_TYPE : E10SUtils.NOT_REMOTE;
+    if (!remoteType) {
+      remoteType = aShouldBeRemote ? E10SUtils.DEFAULT_REMOTE_TYPE : E10SUtils.NOT_REMOTE;
     }
 
     
     
     
-    if (aOptions.opener) {
+    if (opener) {
       if (aShouldBeRemote) {
         throw new Error("Cannot set an opener on a browser which should be remote!");
       }
-      if (!isRemote && aBrowser.contentWindow.opener != aOptions.opener) {
+      if (!isRemote && aBrowser.contentWindow.opener != opener) {
         throw new Error("Cannot change opener on an already non-remote browser!");
       }
     }
 
     
-    let currentRemoteType = aBrowser.getAttribute("remoteType");
-    if (isRemote == aShouldBeRemote && !aOptions.newFrameloader &&
-        (!isRemote || currentRemoteType == aOptions.remoteType)) {
+    let oldRemoteType = aBrowser.getAttribute("remoteType");
+    if (isRemote == aShouldBeRemote && !newFrameloader &&
+        (!isRemote || oldRemoteType == remoteType)) {
       return false;
     }
 
@@ -1569,6 +1573,8 @@ window._gBrowser = {
     
     listener.destroy();
 
+    let oldDroppedLinkHandler = aBrowser.droppedLinkHandler;
+    let oldSameProcessAsFrameLoader = aBrowser.sameProcessAsFrameLoader;
     let oldUserTypedValue = aBrowser.userTypedValue;
     let hadStartedLoad = aBrowser.didStartLoadSinceLastUserTyping();
 
@@ -1576,16 +1582,11 @@ window._gBrowser = {
     aBrowser.destroy();
 
     
-    
-    let droppedLinkHandler = aBrowser.droppedLinkHandler;
-    let sameProcessAsFrameLoader = aBrowser.sameProcessAsFrameLoader;
-
-    
     let parent = aBrowser.parentNode;
     aBrowser.remove();
     if (aShouldBeRemote) {
       aBrowser.setAttribute("remote", "true");
-      aBrowser.setAttribute("remoteType", aOptions.remoteType);
+      aBrowser.setAttribute("remoteType", remoteType);
     } else {
       aBrowser.setAttribute("remote", "false");
       aBrowser.removeAttribute("remoteType");
@@ -1593,19 +1594,19 @@ window._gBrowser = {
 
     
     
-    if (aOptions.sameProcessAsFrameLoader) {
-      
-      aBrowser.sameProcessAsFrameLoader = aOptions.sameProcessAsFrameLoader;
-    } else if (!aShouldBeRemote || currentRemoteType == aOptions.remoteType) {
-      
+    if (sameProcessAsFrameLoader) {
       
       aBrowser.sameProcessAsFrameLoader = sameProcessAsFrameLoader;
+    } else if (!aShouldBeRemote || oldRemoteType == remoteType) {
+      
+      
+      aBrowser.sameProcessAsFrameLoader = oldSameProcessAsFrameLoader;
     }
 
-    if (aOptions.opener) {
+    if (opener) {
       
       
-      aBrowser.presetOpenerWindow(aOptions.opener);
+      aBrowser.presetOpenerWindow(opener);
     }
 
     parent.appendChild(aBrowser);
@@ -1615,7 +1616,7 @@ window._gBrowser = {
       aBrowser.urlbarChangeTracker.startedLoad();
     }
 
-    aBrowser.droppedLinkHandler = droppedLinkHandler;
+    aBrowser.droppedLinkHandler = oldDroppedLinkHandler;
 
     
     
@@ -1680,18 +1681,18 @@ window._gBrowser = {
     if (!gMultiProcessBrowser)
       return this.updateBrowserRemoteness(aBrowser, false);
 
-    let currentRemoteType = aBrowser.getAttribute("remoteType") || null;
+    let oldRemoteType = aBrowser.getAttribute("remoteType") || null;
 
     aOptions.remoteType =
       E10SUtils.getRemoteTypeForURI(aURL,
         gMultiProcessBrowser,
-        currentRemoteType,
+        oldRemoteType,
         aBrowser.currentURI);
 
     
     
-    if (currentRemoteType != aOptions.remoteType ||
-      aOptions.newFrameloader) {
+    if (oldRemoteType != aOptions.remoteType ||
+        aOptions.newFrameloader) {
       let remote = aOptions.remoteType != E10SUtils.NOT_REMOTE;
       return this.updateBrowserRemoteness(aBrowser, remote, aOptions);
     }
