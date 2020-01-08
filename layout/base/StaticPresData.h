@@ -96,12 +96,6 @@ public:
 
 
 
-  const nscoord* GetBorderWidthTable() { return mBorderWidthTable; }
-
-  
-
-
-
 
 
 
@@ -188,7 +182,6 @@ private:
   ~StaticPresData() {}
 
   nsLanguageAtomService* mLangService;
-  nscoord mBorderWidthTable[3];
   LangGroupFontPrefs mStaticLangGroupFontPrefs;
 };
 

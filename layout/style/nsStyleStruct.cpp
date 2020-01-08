@@ -48,6 +48,8 @@ using namespace mozilla::dom;
  const int32_t nsStyleGridLine::kMinLine;
  const int32_t nsStyleGridLine::kMaxLine;
 
+static const nscoord kMediumBorderWidth = nsPresContext::CSSPixelsToAppUnits(3);
+
 
 
 
@@ -283,8 +285,7 @@ nsStyleBorder::nsStyleBorder(const nsPresContext* aContext)
     mBorderRadius.Set(corner, nsStyleCoord(0, nsStyleCoord::CoordConstructor));
   }
 
-  nscoord medium =
-    (StaticPresData::Get()->GetBorderWidthTable())[NS_STYLE_BORDER_WIDTH_MEDIUM];
+  nscoord medium = kMediumBorderWidth;
   NS_FOR_CSS_SIDES(side) {
     mBorderImageSlice.Set(side, nsStyleCoord(1.0f, eStyleUnit_Percent));
     mBorderImageWidth.Set(side, nsStyleCoord(1.0f, eStyleUnit_Factor));
@@ -445,8 +446,7 @@ nsStyleBorder::CalcDifference(const nsStyleBorder& aNewData) const
 }
 
 nsStyleOutline::nsStyleOutline(const nsPresContext* aContext)
-  : mOutlineWidth((StaticPresData::Get()
-                     ->GetBorderWidthTable())[NS_STYLE_BORDER_WIDTH_MEDIUM])
+  : mOutlineWidth(kMediumBorderWidth)
   , mOutlineOffset(0)
   , mOutlineColor(StyleComplexColor::CurrentColor())
   , mOutlineStyle(StyleBorderStyle::None)
@@ -668,8 +668,7 @@ nsStyleColumn::nsStyleColumn(const nsPresContext* aContext)
   : mColumnWidth(eStyleUnit_Auto)
   , mColumnRuleColor(StyleComplexColor::CurrentColor())
   , mColumnRuleStyle(StyleBorderStyle::None)
-  , mColumnRuleWidth((StaticPresData::Get()
-                        ->GetBorderWidthTable())[NS_STYLE_BORDER_WIDTH_MEDIUM])
+  , mColumnRuleWidth(kMediumBorderWidth)
   , mTwipsPerPixel(aContext->AppUnitsPerDevPixel())
 {
   MOZ_COUNT_CTOR(nsStyleColumn);
