@@ -3,7 +3,7 @@ test(t => {
   t.add_cleanup(() => frame.remove());
   assert_equals(frame.contentDocument.URL, "about:blank");
   assert_equals(frame.contentWindow.location.href, "about:blank");
-  frame.contentDocument.open();
+  assert_equals(frame.contentDocument.open(), frame.contentDocument);
   assert_equals(frame.contentDocument.URL, document.URL);
   assert_equals(frame.contentWindow.location.href, document.URL);
 }, "document.open() changes document's URL (fully active document)");
@@ -26,7 +26,7 @@ async_test(t => {
 
     frame.onload = t.step_func_done(() => {
       
-      childDoc.open();
+      assert_equals(childDoc.open(), childDoc);
       assert_equals(childDoc.URL, blankURL);
       assert_equals(childWin.location.href, blankURL);
     });
@@ -39,6 +39,9 @@ test(t => {
   const frame = document.body.appendChild(document.createElement("iframe"));
   t.add_cleanup(() => frame.remove());
   const doc = frame.contentDocument;
+
+  
+  
 
   
   assert_equals(doc.URL, "about:blank");
@@ -54,6 +57,9 @@ test(t => {
 async_test(t => {
   const frame = document.createElement("iframe");
   t.add_cleanup(() => frame.remove());
+
+  
+  
 
   frame.onload = t.step_func(() => {
     const doc = frame.contentDocument;
