@@ -14,6 +14,9 @@ use values::computed::url::ComputedUrl;
 use values::generics::basic_shape as generic;
 
 
+pub use values::generics::basic_shape::FillRule;
+
+
 pub type ClippingShape = generic::ClippingShape<BasicShape, ComputedUrl>;
 
 
