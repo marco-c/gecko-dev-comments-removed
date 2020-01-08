@@ -134,6 +134,7 @@ enum class LogReason : int {
   InvalidDrawTarget,
   NativeFontResourceNotFound,
   UnscaledFontNotFound,
+  ScaledFontNotFound,
   InvalidLayerType,
   
   MustBeLessThanThis = 101,

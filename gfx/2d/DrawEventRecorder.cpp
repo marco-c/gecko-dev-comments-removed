@@ -137,7 +137,7 @@ DrawEventRecorderMemory::FlushItem(IntRect aRect)
   WriteElement(mIndex, mOutputStream.mLength);
 
   
-  mSerializeCallback(mOutputStream, mUnscaledFonts);
+  mSerializeCallback(mOutputStream, mScaledFonts);
   WriteElement(mIndex, mOutputStream.mLength);
 
   WriteElement(mIndex, aRect.x);
