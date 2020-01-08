@@ -437,10 +437,13 @@ add_task(async function test_window_swap() {
     let newWindowOpened = BrowserTestUtils.waitForNewWindow();
     gBrowser.replaceTabWithWindow(gBrowser.selectedTab);
     let newWindow = await newWindowOpened;
-    shownPromise =
-      BrowserTestUtils.waitForEvent(newWindow.PopupNotifications.panel, "popupshown");
-    TestPrompt.prompt();
-    await shownPromise;
+    
+    if (newWindow.PopupNotifications.panel.state != "open") {
+      shownPromise =
+        BrowserTestUtils.waitForEvent(newWindow.PopupNotifications.panel, "popupshown");
+      TestPrompt.prompt();
+      await shownPromise;
+    }
 
     let notification =
       newWindow.PopupNotifications.getNotification(kTestNotificationID,
