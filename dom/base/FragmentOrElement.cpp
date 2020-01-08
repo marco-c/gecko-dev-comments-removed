@@ -1464,10 +1464,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(FragmentOrElement)
 
 
 
-  
-  
-  tmp->UnsetFlags(NODE_IS_IN_SHADOW_TREE);
-
   if (ShadowRoot* shadowRoot = tmp->GetShadowRoot()) {
     for (nsIContent* child = shadowRoot->GetFirstChild();
          child;
