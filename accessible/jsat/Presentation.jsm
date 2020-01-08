@@ -38,7 +38,7 @@ class AndroidPresentor {
 
 
 
-  pivotChanged(aPosition, aOldPosition, aReason, aStartOffset, aEndOffset) {
+  pivotChanged(aPosition, aOldPosition, aReason, aStartOffset, aEndOffset, aIsUserInput) {
     let context = new PivotContext(
       aPosition, aOldPosition, aStartOffset, aEndOffset);
     if (!context.accessible) {
