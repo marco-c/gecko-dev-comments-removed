@@ -115,11 +115,11 @@ private:
 
 public:
   TimerEventAllocator()
-    : mPool()
-    , mFirstFree(nullptr)
+    : mPool(),
+      mFirstFree(nullptr),
       
       
-    , mMonitor("TimerEventAllocator", recordreplay::Behavior::DontPreserve)
+      mMonitor("TimerEventAllocator", recordreplay::Behavior::DontPreserve)
   {
   }
 

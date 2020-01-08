@@ -23,7 +23,7 @@ public:
   EmptyEnumeratorImpl() {}
 
   
-  NS_DECL_ISUPPORTS_INHERITED  
+  NS_DECL_ISUPPORTS_INHERITED
 
   
   NS_DECL_NSISIMPLEENUMERATOR
@@ -31,6 +31,7 @@ public:
   NS_DECL_NSISTRINGENUMERATORBASE
   
   
+
   NS_IMETHOD GetNext(nsAString& aResult) override;
 
   static EmptyEnumeratorImpl* GetInstance()

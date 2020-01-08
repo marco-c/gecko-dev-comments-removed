@@ -64,7 +64,8 @@ struct CycleCollectorResults
 
   bool mForcedGC;
   bool mMergedZones;
-  bool mAnyManual; 
+  
+  bool mAnyManual;
   uint32_t mVisitedRefCounted;
   uint32_t mVisitedGCed;
   uint32_t mFreedRefCounted;

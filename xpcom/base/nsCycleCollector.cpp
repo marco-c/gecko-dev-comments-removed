@@ -1249,6 +1249,7 @@ enum ccPhase
 enum ccType
 {
   SliceCC,     
+
   ManualCC,    
   ShutdownCC   
 };

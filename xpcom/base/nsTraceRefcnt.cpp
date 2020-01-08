@@ -351,8 +351,11 @@ public:
 
 protected:
   char* mClassName;
-  double mClassSize; 
-  int64_t mTotalLeaked; 
+  
+  
+  double mClassSize;
+  
+  int64_t mTotalLeaked;
   nsTraceRefcntStats mStats;
 };
 

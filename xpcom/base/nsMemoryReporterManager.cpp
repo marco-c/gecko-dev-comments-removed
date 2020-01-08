@@ -2243,18 +2243,18 @@ nsMemoryReporterManager::PendingProcessesState::PendingProcessesState(
     nsIFinishReportingCallback* aFinishReporting,
     nsISupports* aFinishReportingData,
     const nsAString& aDMDDumpIdent)
-  : mGeneration(aGeneration)
-  , mAnonymize(aAnonymize)
-  , mMinimize(aMinimize)
-  , mChildrenPending()
-  , mNumProcessesRunning(1) 
-  , mNumProcessesCompleted(0)
-  , mConcurrencyLimit(aConcurrencyLimit)
-  , mHandleReport(aHandleReport)
-  , mHandleReportData(aHandleReportData)
-  , mFinishReporting(aFinishReporting)
-  , mFinishReportingData(aFinishReportingData)
-  , mDMDDumpIdent(aDMDDumpIdent)
+  : mGeneration(aGeneration),
+    mAnonymize(aAnonymize),
+    mMinimize(aMinimize),
+    mChildrenPending(),
+    mNumProcessesRunning(1), 
+    mNumProcessesCompleted(0),
+    mConcurrencyLimit(aConcurrencyLimit),
+    mHandleReport(aHandleReport),
+    mHandleReportData(aHandleReportData),
+    mFinishReporting(aFinishReporting),
+    mFinishReportingData(aFinishReportingData),
+    mDMDDumpIdent(aDMDDumpIdent)
 {
 }
 
