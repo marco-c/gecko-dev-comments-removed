@@ -2,74 +2,9 @@ const HELPER_PAGE_URL =
   "http://example.com/browser/dom/tests/browser/page_localstorage_e10s.html";
 const HELPER_PAGE_ORIGIN = "http://example.com/";
 
-
-class KnownTab {
-  constructor(name, tab) {
-    this.name = name;
-    this.tab = tab;
-  }
-
-  cleanup() {
-    this.tab = null;
-  }
-}
-
-
-class KnownTabs {
-  constructor() {
-    this.byPid = new Map();
-    this.byName = new Map();
-  }
-
-  cleanup() {
-    this.byPid = null;
-    this.byName = null;
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-async function openTestTabInOwnProcess(name, knownTabs) {
-  let realUrl = HELPER_PAGE_URL + '?' + encodeURIComponent(name);
-  
-  let tab = await BrowserTestUtils.openNewForegroundTab({
-    gBrowser, opening: 'about:blank', forceNewProcess: true
-  });
-  let pid = tab.linkedBrowser.frameLoader.tabParent.osPid;
-  ok(!knownTabs.byName.has(name), "tab needs its own name: " + name);
-  ok(!knownTabs.byPid.has(pid), "tab needs to be in its own process: " + pid);
-
-  let knownTab = new KnownTab(name, tab);
-  knownTabs.byPid.set(pid, knownTab);
-  knownTabs.byName.set(name, knownTab);
-
-  
-  BrowserTestUtils.loadURI(tab.linkedBrowser, realUrl);
-  await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
-  is(tab.linkedBrowser.frameLoader.tabParent.osPid, pid, "still same pid");
-  return knownTab;
-}
-
-
-
-
-async function cleanupTabs(knownTabs) {
-  for (let knownTab of knownTabs.byName.values()) {
-    BrowserTestUtils.removeTab(knownTab.tab);
-    knownTab.cleanup();
-  }
-  knownTabs.cleanup();
-}
+let testDir = gTestPath.substr(0, gTestPath.lastIndexOf("/"));
+Services.scriptloader.loadSubScript(testDir + "/helper_localStorage_e10s.js",
+                                    this);
 
 
 
@@ -340,10 +275,13 @@ add_task(async function() {
 
   
   const knownTabs = new KnownTabs();
-  const writerTab = await openTestTabInOwnProcess("writer", knownTabs);
-  const listenerTab = await openTestTabInOwnProcess("listener", knownTabs);
-  const readerTab = await openTestTabInOwnProcess("reader", knownTabs);
-  const lateWriteThenListenTab = await openTestTabInOwnProcess(
+  const writerTab = await openTestTabInOwnProcess(HELPER_PAGE_URL, "writer",
+    knownTabs);
+  const listenerTab = await openTestTabInOwnProcess(HELPER_PAGE_URL, "listener",
+    knownTabs);
+  const readerTab = await openTestTabInOwnProcess(HELPER_PAGE_URL, "reader",
+    knownTabs);
+  const lateWriteThenListenTab = await openTestTabInOwnProcess(HELPER_PAGE_URL,
     "lateWriteThenListen", knownTabs);
 
   
@@ -484,8 +422,8 @@ add_task(async function() {
 
   
   info("late open preload check");
-  const lateOpenSeesPreload =
-    await openTestTabInOwnProcess("lateOpenSeesPreload", knownTabs);
+  const lateOpenSeesPreload = await openTestTabInOwnProcess(HELPER_PAGE_URL,
+    "lateOpenSeesPreload", knownTabs);
   await verifyTabPreload(lateOpenSeesPreload, true);
 
   
