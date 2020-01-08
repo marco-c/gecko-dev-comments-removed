@@ -229,9 +229,8 @@ private:
   
   
   
-  
-  nsresult
-  GetFeaturePolicyDefaultOrigin(nsIPrincipal** aDefaultOrigin) const;
+  already_AddRefed<nsIPrincipal>
+  GetFeaturePolicyDefaultOrigin() const;
 
   
 

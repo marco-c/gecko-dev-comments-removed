@@ -253,31 +253,29 @@ HTMLIFrameElement::Policy() const
   return mFeaturePolicy;
 }
 
-nsresult
-HTMLIFrameElement::GetFeaturePolicyDefaultOrigin(nsIPrincipal** aPrincipal) const
+already_AddRefed<nsIPrincipal>
+HTMLIFrameElement::GetFeaturePolicyDefaultOrigin() const
 {
   nsCOMPtr<nsIPrincipal> principal;
 
   if (HasAttr(kNameSpaceID_None, nsGkAtoms::srcdoc)) {
     principal = NodePrincipal();
+    return principal.forget();
   }
 
-  if (!principal) {
-    nsCOMPtr<nsIURI> nodeURI;
-    if (GetURIAttr(nsGkAtoms::src, nullptr, getter_AddRefs(nodeURI)) &&
-        nodeURI) {
-      principal =
-        BasePrincipal::CreateCodebasePrincipal(nodeURI,
-                                               BasePrincipal::Cast(NodePrincipal())->OriginAttributesRef());
-    }
+  nsCOMPtr<nsIURI> nodeURI;
+  if (GetURIAttr(nsGkAtoms::src, nullptr, getter_AddRefs(nodeURI)) &&
+      nodeURI) {
+    principal =
+      BasePrincipal::CreateCodebasePrincipal(nodeURI,
+                                             BasePrincipal::Cast(NodePrincipal())->OriginAttributesRef());
   }
 
   if (!principal) {
     principal = NodePrincipal();
   }
 
-  principal.forget(aPrincipal);
-  return NS_OK;
+  return principal.forget();
 }
 
 void
@@ -287,12 +285,7 @@ HTMLIFrameElement::RefreshFeaturePolicy()
   mFeaturePolicy->ResetDeclaredPolicy();
 
   
-  nsCOMPtr<nsIPrincipal> origin;
-  nsresult rv = GetFeaturePolicyDefaultOrigin(getter_AddRefs(origin));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return;
-  }
-
+  nsCOMPtr<nsIPrincipal> origin = GetFeaturePolicyDefaultOrigin();
   MOZ_ASSERT(origin);
   mFeaturePolicy->SetDefaultOrigin(origin);
 
