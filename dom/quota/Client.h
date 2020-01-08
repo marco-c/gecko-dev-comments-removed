@@ -25,6 +25,7 @@ class nsIRunnable;
 
 BEGIN_QUOTA_NAMESPACE
 
+class OriginScope;
 class QuotaManager;
 class UsageInfo;
 
@@ -166,6 +167,15 @@ public:
                     const nsACString& aOrigin,
                     const AtomicBool& aCanceled,
                     UsageInfo* aUsageInfo) = 0;
+
+  
+  
+  virtual nsresult
+  AboutToClearOrigins(const Nullable<PersistenceType>& aPersistenceType,
+                      const OriginScope& aOriginScope)
+  {
+    return NS_OK;
+  }
 
   virtual void
   OnOriginClearCompleted(PersistenceType aPersistenceType,
