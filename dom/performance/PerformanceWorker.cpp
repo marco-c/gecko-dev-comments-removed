@@ -5,8 +5,8 @@
 
 
 #include "PerformanceWorker.h"
-#include "mozilla/dom/DOMPrefs.h"
 #include "mozilla/dom/WorkerPrivate.h"
+#include "mozilla/StaticPrefs.h"
 
 namespace mozilla {
 namespace dom {
@@ -26,7 +26,7 @@ PerformanceWorker::~PerformanceWorker()
 void
 PerformanceWorker::InsertUserEntry(PerformanceEntry* aEntry)
 {
-  if (DOMPrefs::PerformanceLoggingEnabled()) {
+  if (StaticPrefs::dom_performance_enable_user_timing_logging()) {
     nsAutoCString uri;
     nsCOMPtr<nsIURI> scriptURI = mWorkerPrivate->GetResolvedScriptURI();
     if (!scriptURI || NS_FAILED(scriptURI->GetHost(uri))) {

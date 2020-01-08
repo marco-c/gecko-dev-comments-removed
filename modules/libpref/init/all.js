@@ -172,9 +172,6 @@ pref("dom.enable_resource_timing", true);
 pref("dom.enable_performance_navigation_timing", true);
 
 
-pref("dom.performance.enable_user_timing_logging", false);
-
-
 pref("dom.performance.enable_notify_performance_timing", false);
 
 

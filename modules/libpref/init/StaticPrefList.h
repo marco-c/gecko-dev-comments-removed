@@ -223,6 +223,13 @@ VARCACHE_PREF(
 )
 
 
+VARCACHE_PREF(
+  "dom.performance.enable_user_timing_logging",
+   dom_performance_enable_user_timing_logging,
+  RelaxedAtomicBool, false
+)
+
+
 
 
 
