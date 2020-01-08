@@ -929,71 +929,6 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_TYPE)
 
     ListNodeType parse();
 
-  private:
-    
-
-
-
-
-
-
-
-
-
-
-
-
-    template<typename ConditionT, typename ErrorReportT>
-    MOZ_MUST_USE bool mustMatchTokenInternal(ConditionT condition, Modifier modifier,
-                                             ErrorReportT errorReport);
-
-  public:
-    
-
-
-
-
-
-
-
-
-
-    MOZ_MUST_USE bool mustMatchToken(TokenKind expected, Modifier modifier, JSErrNum errorNumber) {
-        return mustMatchTokenInternal([expected](TokenKind actual) {
-                                          return actual == expected;
-                                      },
-                                      modifier,
-                                      [this, errorNumber](TokenKind) {
-                                          this->error(errorNumber);
-                                      });
-    }
-
-    MOZ_MUST_USE bool mustMatchToken(TokenKind excpected, JSErrNum errorNumber) {
-        return mustMatchToken(excpected, TokenStream::None, errorNumber);
-    }
-
-    template<typename ConditionT>
-    MOZ_MUST_USE bool mustMatchToken(ConditionT condition, JSErrNum errorNumber) {
-        return mustMatchTokenInternal(condition, TokenStream::None,
-                                      [this, errorNumber](TokenKind) {
-                                          this->error(errorNumber);
-                                      });
-    }
-
-    template<typename ErrorReportT>
-    MOZ_MUST_USE bool mustMatchToken(TokenKind expected, Modifier modifier,
-                                     ErrorReportT errorReport) {
-        return mustMatchTokenInternal([expected](TokenKind actual) {
-                                          return actual == expected;
-                                      },
-                                      modifier, errorReport);
-    }
-
-    template<typename ErrorReportT>
-    MOZ_MUST_USE bool mustMatchToken(TokenKind expected, ErrorReportT errorReport) {
-        return mustMatchToken(expected, TokenStream::None, errorReport);
-    }
-
     
     void error(unsigned errorNumber, ...);
     void errorWithNotes(UniquePtr<JSErrorNotes> notes, unsigned errorNumber, ...);
@@ -1420,7 +1355,6 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_TYPE)
 #if DEBUG
     using Base::checkOptionsCalled;
 #endif
-    using Base::mustMatchToken;
     using Base::error;
     using Base::errorAt;
     using Base::finishFunctionScopes;
@@ -1545,7 +1479,6 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_TYPE)
     using Base::checkOptionsCalled;
 #endif
     using Base::context;
-    using Base::mustMatchToken;
     using Base::error;
     using Base::errorAt;
     using Base::finishFunctionScopes;
