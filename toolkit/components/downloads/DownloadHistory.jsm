@@ -18,15 +18,15 @@ var EXPORTED_SYMBOLS = [
 ];
 
 ChromeUtils.import("resource://gre/modules/DownloadList.jsm");
-ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
-ChromeUtils.defineModuleGetter(this, "Downloads",
-                               "resource://gre/modules/Downloads.jsm");
-ChromeUtils.defineModuleGetter(this, "OS",
-                               "resource://gre/modules/osfile.jsm");
-ChromeUtils.defineModuleGetter(this, "PlacesUtils",
-                               "resource://gre/modules/PlacesUtils.jsm");
+XPCOMUtils.defineLazyModuleGetters(this, {
+  Downloads: "resource://gre/modules/Downloads.jsm",
+  FileUtils: "resource://gre/modules/FileUtils.jsm",
+  OS: "resource://gre/modules/osfile.jsm",
+  PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
+  Services: "resource://gre/modules/Services.jsm",
+});
 
 
 const HISTORY_PLACES_QUERY =
@@ -86,6 +86,43 @@ var DownloadHistory = {
 
   _listPromises: {},
 
+  async addDownloadToHistory(download) {
+    if (download.source.isPrivate ||
+        !PlacesUtils.history.canAddURI(PlacesUtils.toURI(download.source.url))) {
+      return;
+    }
+
+    let targetFile = new FileUtils.File(download.target.path);
+    let targetUri = Services.io.newFileURI(targetFile);
+
+    let originalPageInfo = await PlacesUtils.history.fetch(download.source.url);
+
+    let pageInfo = await PlacesUtils.history.insert({
+      url: download.source.url,
+      
+      
+      
+      
+      title: (originalPageInfo && originalPageInfo.title) || targetFile.leafName,
+      visits: [{
+        
+        date: download.startTime,
+        transition: PlacesUtils.history.TRANSITIONS.DOWNLOAD,
+        referrer: download.source.referrer,
+      }]
+    });
+
+    await PlacesUtils.history.update({
+      annotations: new Map([["downloads/destinationFileURI", targetUri.spec]]),
+      
+      
+      guid: pageInfo.guid,
+      url: pageInfo.url,
+    });
+
+    await this._updateHistoryListData(download.source.url);
+  },
+
   
 
 
@@ -97,7 +134,7 @@ var DownloadHistory = {
 
 
 
-  updateMetaData(download) {
+  async updateMetaData(download) {
     if (download.source.isPrivate || !download.stopped) {
       return;
     }
@@ -127,13 +164,21 @@ var DownloadHistory = {
     }
 
     try {
-      PlacesUtils.annotations.setPageAnnotation(
-                                 Services.io.newURI(download.source.url),
-                                 METADATA_ANNO,
-                                 JSON.stringify(metaData), 0,
-                                 PlacesUtils.annotations.EXPIRE_NEVER);
+      await PlacesUtils.history.update({
+        annotations: new Map([[METADATA_ANNO, JSON.stringify(metaData)]]),
+        url: download.source.url,
+      });
+
+      await this._updateHistoryListData(download.source.url);
     } catch (ex) {
       Cu.reportError(ex);
+    }
+  },
+
+  async _updateHistoryListData(sourceUrl) {
+    for (let key of Object.getOwnPropertyNames(this._listPromises)) {
+      let downloadHistoryList = await this._listPromises[key];
+      downloadHistoryList.updateForMetadataChange(sourceUrl);
     }
   },
 
@@ -448,7 +493,6 @@ this.DownloadHistoryList.prototype = {
     }
 
     if (this._result) {
-      PlacesUtils.annotations.removeObserver(this);
       this._result.removeObserver(this);
       this._result.root.containerOpen = false;
     }
@@ -457,10 +501,32 @@ this.DownloadHistoryList.prototype = {
 
     if (this._result) {
       this._result.root.containerOpen = true;
-      PlacesUtils.annotations.addObserver(this);
     }
   },
   _result: null,
+
+  
+
+
+
+
+
+  updateForMetadataChange(sourceUrl) {
+    let slotsForUrl = this._slotsForUrl.get(sourceUrl);
+    if (!slotsForUrl) {
+      return;
+    }
+
+    for (let slot of slotsForUrl) {
+      if (slot.sessionDownload) {
+        
+        return;
+      }
+      slot.historyDownload.updateFromMetaData(
+        DownloadHistory.getPlacesMetaDataFor(sourceUrl));
+      this._notifyAllViews("onDownloadChanged", slot.download);
+    }
+  },
 
   
 
@@ -608,35 +674,6 @@ this.DownloadHistoryList.prototype = {
   nodeMoved() {},
   nodeURIChanged() {},
   batching() {},
-
-  
-  onPageAnnotationSet(page, name) {
-    
-    
-    if (name != DESTINATIONFILEURI_ANNO && name != METADATA_ANNO) {
-      return;
-    }
-
-    let slotsForUrl = this._slotsForUrl.get(page.spec);
-    if (!slotsForUrl) {
-      return;
-    }
-
-    for (let slot of slotsForUrl) {
-      if (slot.sessionDownload) {
-        
-        return;
-      }
-      slot.historyDownload.updateFromMetaData(
-        DownloadHistory.getPlacesMetaDataFor(page.spec));
-      this._notifyAllViews("onDownloadChanged", slot.download);
-    }
-  },
-
-  
-  onItemAnnotationSet() {},
-  onPageAnnotationRemoved() {},
-  onItemAnnotationRemoved() {},
 
   
   onDownloadAdded(download) {

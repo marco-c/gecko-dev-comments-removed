@@ -749,7 +749,7 @@ DownloadsDataCtor.prototype = {
 
         
         
-        DownloadHistory.updateMetaData(download);
+        DownloadHistory.updateMetaData(download).catch(Cu.reportError);
       }
 
       if (download.succeeded ||
