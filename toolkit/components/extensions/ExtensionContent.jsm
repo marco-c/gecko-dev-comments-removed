@@ -537,17 +537,6 @@ class ContentScriptContextChild extends BaseContext {
 
     this.isExtensionPage = contentPrincipal.equals(extensionPrincipal);
 
-    let principal;
-    if (ssm.isSystemPrincipal(contentPrincipal)) {
-      
-      
-      principal = ssm.createNullPrincipal(attrs);
-    } else if (this.isExtensionPage) {
-      principal = contentPrincipal;
-    } else {
-      principal = [contentPrincipal, extensionPrincipal];
-    }
-
     if (this.isExtensionPage) {
       
       
@@ -562,6 +551,14 @@ class ContentScriptContextChild extends BaseContext {
         isWebExtensionContentScript: true,
       });
     } else {
+      let principal;
+      if (ssm.isSystemPrincipal(contentPrincipal)) {
+        
+        
+        principal = ssm.createNullPrincipal(attrs);
+      } else {
+        principal = [contentPrincipal, extensionPrincipal];
+      }
       
       
       
