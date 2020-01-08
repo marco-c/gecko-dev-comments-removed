@@ -11,6 +11,7 @@
 #include "nsIEffectiveTLDService.h"
 #include "nsIURI.h"
 #include "nsIURIWithPrincipal.h"
+#include "nsURLHelper.h"
 
 namespace mozilla {
 
@@ -55,6 +56,28 @@ OriginAttributes::SetFirstPartyDomain(const bool aIsTopLevelDocument,
   nsresult rv = tldService->GetBaseDomain(aURI, 0, baseDomain);
   if (NS_SUCCEEDED(rv)) {
     mFirstPartyDomain = NS_ConvertUTF8toUTF16(baseDomain);
+    return;
+  }
+
+  if (rv == NS_ERROR_HOST_IS_IP_ADDRESS) {
+    
+    
+    nsAutoCString ipAddr;
+    rv = aURI->GetHost(ipAddr);
+    NS_ENSURE_SUCCESS_VOID(rv);
+
+    if (net_IsValidIPv6Addr(ipAddr.BeginReading(), ipAddr.Length())) {
+      
+      
+      
+      mFirstPartyDomain.Truncate();
+      mFirstPartyDomain.AssignLiteral("[");
+      mFirstPartyDomain.Append(NS_ConvertUTF8toUTF16(ipAddr));
+      mFirstPartyDomain.AppendLiteral("]");
+    } else {
+      mFirstPartyDomain = NS_ConvertUTF8toUTF16(ipAddr);
+    }
+
     return;
   }
 
