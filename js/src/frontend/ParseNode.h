@@ -820,6 +820,18 @@ class ParseNode {
 #endif
 };
 
+
+
+
+
+
+
+
+inline void ReplaceNode(ParseNode** pnp, ParseNode* pn) {
+  pn->pn_next = (*pnp)->pn_next;
+  *pnp = pn;
+}
+
 class NullaryNode : public ParseNode {
  public:
   NullaryNode(ParseNodeKind kind, const TokenPos& pos)
