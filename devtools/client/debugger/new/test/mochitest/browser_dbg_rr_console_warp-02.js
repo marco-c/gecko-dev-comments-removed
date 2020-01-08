@@ -6,6 +6,7 @@
 
 
 
+
 function waitForThreadEvents(threadClient, eventName) {
   info(`Waiting for thread event '${eventName}' to fire.`);
 
@@ -24,7 +25,7 @@ async function test() {
   waitForExplicitFinish();
 
   const dbg = await attatchRecordingDebugger(
-    "doc_rr_error.html", 
+    "doc_rr_logs.html", 
     { waitForRecording: true }
   );
 
@@ -32,20 +33,14 @@ async function test() {
   const console = await getSplitConsole(dbg);
   const hud = console.hud;
 
-  await warpToMessage(hud, threadClient, "Number 5");
-  await threadClient.interrupt();
+  let message = await warpToMessage(hud, threadClient, "number: 1");
+  ok(!message.classList.contains("paused-before"), "paused before message is not shown");
 
-  await checkEvaluateInTopFrame(threadClient, "number", 5);
+  await stepOverToLine(threadClient, 18);
+  await reverseStepOverToLine(threadClient, 17);
 
-  
-  
-  await reverseStepOverToLine(threadClient, 19);
-  await reverseStepOverToLine(threadClient, 18);
-  await setBreakpoint(threadClient, "doc_rr_error.html", 12);
-  await rewindToLine(threadClient, 12);
-  await checkEvaluateInTopFrame(threadClient, "number", 4);
-  await resumeToLine(threadClient, 12);
-  await checkEvaluateInTopFrame(threadClient, "number", 5);
+  message = findMessage(hud, "number: 1")
+  ok(message.classList.contains("paused-before"), "paused before message is shown");
 
   await toolbox.destroy();
   await gBrowser.removeTab(tab);
