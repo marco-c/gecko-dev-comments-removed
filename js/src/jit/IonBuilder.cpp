@@ -13169,9 +13169,19 @@ IonBuilder::jsop_implicitthis(PropertyName* name)
 AbortReasonOr<Ok>
 IonBuilder::jsop_importmeta()
 {
+    if (info().analysisMode() == Analysis_ArgumentsUsage) {
+        
+        
+        MUnknownValue* unknown = MUnknownValue::New(alloc());
+        current->add(unknown);
+        current->push(unknown);
+        return Ok();
+    }
+
     ModuleObject* module = GetModuleObjectForScript(script());
     MOZ_ASSERT(module);
 
+    
     
     JSObject* metaObject = module->metaObject();
     MOZ_ASSERT(metaObject);
