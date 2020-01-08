@@ -87,6 +87,7 @@ function loadSourceMap(sourceId) {
       
       dispatch({
         type: "UPDATE_SOURCE",
+        
         source: { ...source,
           sourceMapURL: ""
         }
