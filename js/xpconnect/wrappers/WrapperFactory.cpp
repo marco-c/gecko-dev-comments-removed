@@ -639,6 +639,11 @@ JSObject* TransplantObject(JSContext* cx, JS::HandleObject origobj,
     return newIdentity;
   }
 
+  
+  if (newIdentity == origobj) {
+    return newIdentity;
+  }
+
   if (!FixWaiverAfterTransplant(cx, oldWaiver, newIdentity)) {
     return nullptr;
   }
