@@ -3024,9 +3024,6 @@ pref("layout.css.individual-transform.enabled", false);
 pref("layout.css.initial-letter.enabled", false);
 
 
-pref("layout.css.mix-blend-mode.enabled", true);
-
-
 pref("layout.css.scrollbar-color.enabled", true);
 
 
