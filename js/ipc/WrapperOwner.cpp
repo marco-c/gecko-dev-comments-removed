@@ -411,24 +411,15 @@ WrapperOwner::DOMQI(JSContext* cx, JS::HandleObject proxy, JS::CallArgs& args)
 {
     
     
-    HandleValue id = args[0];
-    if (id.isObject()) {
-        RootedObject idobj(cx, &id.toObject());
-        nsCOMPtr<nsIJSID> jsid;
+    if (Maybe<nsID> id = xpc::JSValue2ID(cx, args[0])) {
+        if (id->Equals(NS_GET_IID(nsISupports))) {
+            args.rval().set(args.thisv());
+            return true;
+        }
 
-        nsresult rv = UnwrapArg<nsIJSID>(cx, idobj, getter_AddRefs(jsid));
-        if (NS_SUCCEEDED(rv)) {
-            MOZ_ASSERT(jsid, "bad wrapJS");
-            const nsID* idptr = jsid->GetID();
-            if (idptr->Equals(NS_GET_IID(nsISupports))) {
-                args.rval().set(args.thisv());
-                return true;
-            }
-
-            
-            if (idptr->Equals(NS_GET_IID(nsIClassInfo))) {
-                return Throw(cx, NS_ERROR_NO_INTERFACE);
-            }
+        
+        if (id->Equals(NS_GET_IID(nsIClassInfo))) {
+            return Throw(cx, NS_ERROR_NO_INTERFACE);
         }
     }
 
