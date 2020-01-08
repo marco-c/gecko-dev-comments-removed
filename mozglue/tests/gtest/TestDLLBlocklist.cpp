@@ -4,7 +4,7 @@
 
 
 
-#include <Windows.h>
+#include <windows.h>
 #include <shlwapi.h>
 #include <winternl.h>
 #include "gtest/gtest.h"
