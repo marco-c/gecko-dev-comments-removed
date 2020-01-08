@@ -6,6 +6,7 @@
 #ifndef mozSpellChecker_h__
 #define mozSpellChecker_h__
 
+#include "mozilla/MozPromise.h"
 #include "nsCOMPtr.h"
 #include "nsCOMArray.h"
 #include "nsString.h"
@@ -20,6 +21,7 @@ class mozEnglishWordUtils;
 namespace mozilla {
 class RemoteSpellcheckEngineChild;
 class TextServicesDocument;
+typedef MozPromise<nsTArray<bool>, nsresult, false> CheckWordPromise;
 }  
 
 class mozSpellChecker final {
@@ -62,6 +64,13 @@ class mozSpellChecker final {
 
   nsresult CheckWord(const nsAString& aWord, bool* aIsMisspelled,
                      nsTArray<nsString>* aSuggestions);
+
+  
+
+
+
+  RefPtr<mozilla::CheckWordPromise> CheckWords(
+      const nsTArray<nsString>& aWords);
 
   
 

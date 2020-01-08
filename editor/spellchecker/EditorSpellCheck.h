@@ -6,7 +6,8 @@
 #ifndef mozilla_EditorSpellCheck_h
 #define mozilla_EditorSpellCheck_h
 
-#include "nsCOMPtr.h"  
+#include "mozilla/mozSpellChecker.h"  
+#include "nsCOMPtr.h"                 
 #include "nsCycleCollectionParticipant.h"
 #include "nsIEditorSpellCheck.h"  
 #include "nsISupportsImpl.h"
@@ -41,6 +42,19 @@ class EditorSpellCheck final : public nsIEditorSpellCheck {
   NS_DECL_NSIEDITORSPELLCHECK
 
   mozSpellChecker* GetSpellChecker();
+
+  
+
+
+
+
+
+
+
+
+
+  RefPtr<mozilla::CheckWordPromise> CheckCurrentWordsNoSuggest(
+      const nsTArray<nsString>& aSuggestedWords);
 
  protected:
   virtual ~EditorSpellCheck();
