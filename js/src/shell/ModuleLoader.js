@@ -8,6 +8,9 @@
 
 
 
+
+
+
 {
 
 const ArrayPrototypeJoin = Array.prototype.join;
@@ -22,15 +25,22 @@ const StringPrototypeStartsWith = String.prototype.startsWith;
 const StringPrototypeSubstring = String.prototype.substring;
 const ErrorClass = Error;
 
+const JAVASCRIPT_SCHEME = "javascript:";
+
 const ReflectLoader = new class {
     constructor() {
         this.registry = new Map();
         this.loadPath = getModuleLoadPath();
     }
 
+    isJavascriptURL(name) {
+        return ReflectApply(StringPrototypeStartsWith, name, [JAVASCRIPT_SCHEME]);
+    }
+
     resolve(name, referencingInfo) {
-        if (os.path.isAbsolute(name))
+        if (this.isJavascriptURL(name) || os.path.isAbsolute(name)) {
             return name;
+        }
 
         let loadPath = this.loadPath;
 
@@ -67,6 +77,10 @@ const ReflectLoader = new class {
     }
 
     normalize(path) {
+        if (this.isJavascriptURL(path)) {
+            return path;
+        }
+
 #ifdef XP_WIN
         
         
@@ -150,6 +164,10 @@ const ReflectLoader = new class {
     }
 
     fetch(path) {
+        if (this.isJavascriptURL(path)) {
+            return ReflectApply(StringPrototypeSubstring, path, [JAVASCRIPT_SCHEME.length]);
+        }
+
         return os.file.readFile(path);
     }
 
