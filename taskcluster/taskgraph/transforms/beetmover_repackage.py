@@ -19,7 +19,7 @@ from taskgraph.util.scriptworker import (get_beetmover_bucket_scope,
                                          get_worker_type_for_scope)
 from taskgraph.util.taskcluster import get_artifact_prefix
 from taskgraph.transforms.task import task_description_schema
-from voluptuous import Required, Optional
+from voluptuous import Any, Required, Optional
 
 import logging
 import re
@@ -145,6 +145,11 @@ UPSTREAM_ARTIFACT_SIGNED_MAR_PATHS = [
 
 
 task_description_schema = {str(k): v for k, v in task_description_schema.schema.iteritems()}
+
+
+taskref_or_string = Any(
+    basestring,
+    {Required('task-reference'): basestring})
 
 beetmover_description_schema = schema.extend({
     

@@ -55,9 +55,6 @@ def invalidate(cache, root):
 
 
 def generate_tasks(params, full, root):
-    
-    taskgraph.set_root_url_env()
-
     params = params or "project=mozilla-central"
 
     
