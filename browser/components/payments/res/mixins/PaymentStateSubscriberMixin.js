@@ -20,6 +20,7 @@ export let requestStore = new PaymentsStore({
   },
   "address-page": {
     guid: null,
+    selectedStateKey: null,
     title: "",
   },
   "payment-summary": {
@@ -27,7 +28,6 @@ export let requestStore = new PaymentsStore({
   page: {
     id: "payment-summary",
     previousId: null,
-    
     
     
   },
