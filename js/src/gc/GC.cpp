@@ -312,10 +312,10 @@ namespace TuningDefaults {
     static const auto HighFrequencyThreshold = 1; 
 
     
-    static const uint64_t HighFrequencyLowLimitBytes = 100 * 1024 * 1024;
+    static const size_t HighFrequencyLowLimitBytes = 100 * 1024 * 1024;
 
     
-    static const uint64_t HighFrequencyHighLimitBytes = 500 * 1024 * 1024;
+    static const size_t HighFrequencyHighLimitBytes = 500 * 1024 * 1024;
 
     
     static const float HighFrequencyHeapGrowthMax = 3.0f;
@@ -1343,7 +1343,7 @@ js::gc::DumpArenaInfo()
 
 
 
-static const uint64_t JIT_SCRIPT_RELEASE_TYPES_PERIOD = 20;
+static const unsigned JIT_SCRIPT_RELEASE_TYPES_PERIOD = 20;
 
 bool
 GCRuntime::init(uint32_t maxbytes, uint32_t maxNurseryBytes)
@@ -1500,15 +1500,15 @@ GCSchedulingTunables::setParameter(JSGCParamKey key, uint32_t value, const AutoL
         highFrequencyThreshold_ = TimeDuration::FromMilliseconds(value);
         break;
       case JSGC_HIGH_FREQUENCY_LOW_LIMIT: {
-        uint64_t newLimit = (uint64_t)value * 1024 * 1024;
-        if (newLimit == UINT64_MAX) {
+        CheckedInt<size_t> newLimit = CheckedInt<size_t>(value) * 1024 * 1024;
+        if (!newLimit.isValid()) {
             return false;
         }
-        setHighFrequencyLowLimit(newLimit);
+        setHighFrequencyLowLimit(newLimit.value());
         break;
       }
       case JSGC_HIGH_FREQUENCY_HIGH_LIMIT: {
-        uint64_t newLimit = (uint64_t)value * 1024 * 1024;
+        size_t newLimit = (size_t)value * 1024 * 1024;
         if (newLimit == 0) {
             return false;
         }
@@ -1590,7 +1590,7 @@ GCSchedulingTunables::setMaxMallocBytes(size_t value)
 }
 
 void
-GCSchedulingTunables::setHighFrequencyLowLimit(uint64_t newLimit)
+GCSchedulingTunables::setHighFrequencyLowLimit(size_t newLimit)
 {
     highFrequencyLowLimitBytes_ = newLimit;
     if (highFrequencyLowLimitBytes_ >= highFrequencyHighLimitBytes_) {
@@ -1600,7 +1600,7 @@ GCSchedulingTunables::setHighFrequencyLowLimit(uint64_t newLimit)
 }
 
 void
-GCSchedulingTunables::setHighFrequencyHighLimit(uint64_t newLimit)
+GCSchedulingTunables::setHighFrequencyHighLimit(size_t newLimit)
 {
     highFrequencyHighLimitBytes_ = newLimit;
     if (highFrequencyHighLimitBytes_ <= highFrequencyLowLimitBytes_) {
