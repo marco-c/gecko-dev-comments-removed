@@ -40,6 +40,8 @@ public:
 
     
     nsresult IsTrackerWhitelisted(nsIURI* aWhiteListURI,
+                                  bool aUseTrackingTable,
+                                  bool aUseAnnotationTable,
                                   nsIURIClassifierCallback* aCallback);
 
     
@@ -55,7 +57,7 @@ public:
     nsresult CheckIsTrackerWithLocalTable(std::function<void()>&& aCallback);
 
     
-    already_AddRefed<nsIURI> CreateWhiteListURI() const;
+    nsresult CreateWhiteListURI(nsIURI** aURI) const;
 
     already_AddRefed<nsIChannel> GetChannel();
 

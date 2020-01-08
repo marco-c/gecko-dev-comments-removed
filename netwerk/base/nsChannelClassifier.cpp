@@ -53,6 +53,7 @@ namespace net {
 
 static LazyLogModule gChannelClassifierLog("nsChannelClassifier");
 
+
 #undef LOG
 #define LOG(args) MOZ_LOG(gChannelClassifierLog, LogLevel::Info, args)
 #define LOG_DEBUG(args) MOZ_LOG(gChannelClassifierLog, LogLevel::Debug, args)
@@ -60,8 +61,10 @@ static LazyLogModule gChannelClassifierLog("nsChannelClassifier");
 #define LOG_ENABLED() MOZ_LOG_TEST(gChannelClassifierLog, LogLevel::Info)
 
 #define URLCLASSIFIER_SKIP_HOSTNAMES       "urlclassifier.skipHostnames"
-#define URLCLASSIFIER_TRACKING_WHITELIST   "urlclassifier.trackingWhitelistTable"
+#define URLCLASSIFIER_ANNOTATION_TABLE     "urlclassifier.trackingAnnotationTable"
+#define URLCLASSIFIER_ANNOTATION_WHITELIST "urlclassifier.trackingAnnotationWhitelistTable"
 #define URLCLASSIFIER_TRACKING_TABLE       "urlclassifier.trackingTable"
+#define URLCLASSIFIER_TRACKING_WHITELIST   "urlclassifier.trackingWhitelistTable"
 
 static const nsCString::size_type sMaxSpecLength = 128;
 
@@ -83,12 +86,18 @@ public:
   bool IsAllowListExample() { return sAllowListExample;}
   bool IsLowerNetworkPriority() { return sLowerNetworkPriority;}
   bool IsAnnotateChannelEnabled() { return sAnnotateChannelEnabled;}
-  nsCString GetTrackingWhiteList() { return mTrackingWhitelist; }
-  void SetTrackingWhiteList(const nsACString& aList) { mTrackingWhitelist = aList; }
-  nsCString GetSkipHostnames() { return mSkipHostnames; }
+
+  nsCString GetSkipHostnames() const { return mSkipHostnames; }
+  nsCString GetAnnotationBlackList() const { return mAnnotationBlacklist; }
+  nsCString GetAnnotationWhiteList() const { return mAnnotationWhitelist; }
+  nsCString GetTrackingBlackList() const { return mTrackingBlacklist; }
+  nsCString GetTrackingWhiteList() const { return mTrackingWhitelist; }
+
   void SetSkipHostnames(const nsACString& aHostnames) { mSkipHostnames = aHostnames; }
+  void SetAnnotationBlackList(const nsACString& aList) { mAnnotationBlacklist = aList; }
+  void SetAnnotationWhiteList(const nsACString& aList) { mAnnotationWhitelist = aList; }
   void SetTrackingBlackList(const nsACString& aList) { mTrackingBlacklist = aList; }
-  nsCString GetTrackingBlackList() { return mTrackingBlacklist; }
+  void SetTrackingWhiteList(const nsACString& aList) { mTrackingWhitelist = aList; }
 
 private:
   friend class StaticAutoPtr<CachedPrefs>;
@@ -105,9 +114,11 @@ private:
   static bool sLowerNetworkPriority;
   static bool sAllowListExample;
 
-  nsCString mTrackingWhitelist;
   nsCString mSkipHostnames;
+  nsCString mAnnotationBlacklist;
+  nsCString mAnnotationWhitelist;
   nsCString mTrackingBlacklist;
+  nsCString mTrackingWhitelist;
 
   static StaticAutoPtr<CachedPrefs> sInstance;
 };
@@ -127,6 +138,16 @@ CachedPrefs::OnPrefsChange(const char* aPref, CachedPrefs* aPrefs)
     Preferences::GetCString(URLCLASSIFIER_SKIP_HOSTNAMES, skipHostnames);
     ToLowerCase(skipHostnames);
     aPrefs->SetSkipHostnames(skipHostnames);
+  } else if (!strcmp(aPref, URLCLASSIFIER_ANNOTATION_TABLE)) {
+    nsAutoCString annotationBlacklist;
+    Preferences::GetCString(URLCLASSIFIER_ANNOTATION_TABLE,
+                            annotationBlacklist);
+    aPrefs->SetAnnotationBlackList(annotationBlacklist);
+  } else if (!strcmp(aPref, URLCLASSIFIER_ANNOTATION_WHITELIST)) {
+    nsAutoCString annotationWhitelist;
+    Preferences::GetCString(URLCLASSIFIER_ANNOTATION_WHITELIST,
+                            annotationWhitelist);
+    aPrefs->SetAnnotationWhiteList(annotationWhitelist);
   } else if (!strcmp(aPref, URLCLASSIFIER_TRACKING_WHITELIST)) {
     nsCString trackingWhitelist;
     Preferences::GetCString(URLCLASSIFIER_TRACKING_WHITELIST,
@@ -151,10 +172,13 @@ CachedPrefs::Init()
   Preferences::RegisterCallbackAndCall(CachedPrefs::OnPrefsChange,
                                        URLCLASSIFIER_SKIP_HOSTNAMES, this);
   Preferences::RegisterCallbackAndCall(CachedPrefs::OnPrefsChange,
+                                       URLCLASSIFIER_ANNOTATION_TABLE, this);
+  Preferences::RegisterCallbackAndCall(CachedPrefs::OnPrefsChange,
+                                       URLCLASSIFIER_ANNOTATION_WHITELIST, this);
+  Preferences::RegisterCallbackAndCall(CachedPrefs::OnPrefsChange,
                                        URLCLASSIFIER_TRACKING_WHITELIST, this);
   Preferences::RegisterCallbackAndCall(CachedPrefs::OnPrefsChange,
                                        URLCLASSIFIER_TRACKING_TABLE, this);
-
 }
 
 
@@ -180,6 +204,8 @@ CachedPrefs::~CachedPrefs()
   MOZ_COUNT_DTOR(CachedPrefs);
 
   Preferences::UnregisterCallback(CachedPrefs::OnPrefsChange, URLCLASSIFIER_SKIP_HOSTNAMES, this);
+  Preferences::UnregisterCallback(CachedPrefs::OnPrefsChange, URLCLASSIFIER_ANNOTATION_TABLE, this);
+  Preferences::UnregisterCallback(CachedPrefs::OnPrefsChange, URLCLASSIFIER_ANNOTATION_WHITELIST, this);
   Preferences::UnregisterCallback(CachedPrefs::OnPrefsChange, URLCLASSIFIER_TRACKING_WHITELIST, this);
   Preferences::UnregisterCallback(CachedPrefs::OnPrefsChange, URLCLASSIFIER_TRACKING_TABLE, this);
 }
@@ -878,22 +904,24 @@ public:
                                std::function<void()>&& aCallback)
     : mChannelClassifier(aChannelClassifier)
     , mChannelCallback(std::move(aCallback))
-    , mExpectWhitelistResult(false)
+    , mExpectAnnotationWhitelistResult(false)
+    , mExpectTrackingWhitelistResult(false)
   {
     MOZ_ASSERT(mChannelClassifier);
   }
 
 private:
   ~TrackingURICallback() = default;
-  nsresult OnBlacklistResult(nsresult aErrorCode);
+  nsresult OnBlacklistResult(nsresult aErrorCode, bool aInTrackingTable,
+                             bool aInAnnotationTable);
   nsresult OnWhitelistResult(nsresult aErrorCode);
   void OnTrackerFound(nsresult aErrorCode);
 
   RefPtr<nsChannelClassifier> mChannelClassifier;
   std::function<void()> mChannelCallback;
-  bool mExpectWhitelistResult;
+  bool mExpectAnnotationWhitelistResult;
+  bool mExpectTrackingWhitelistResult;
 
-  
   nsCString mList;
   nsCString mProvider;
   nsCString mFullHash;
@@ -901,26 +929,129 @@ private:
 
 NS_IMPL_ISUPPORTS(TrackingURICallback, nsIURIClassifierCallback)
 
+
+
  nsresult
 TrackingURICallback::OnClassifyComplete(nsresult aErrorCode,
                                         const nsACString& aLists,
                                         const nsACString& aProvider,
                                         const nsACString& aFullHash)
 {
-  if (!mExpectWhitelistResult) {
-    nsresult status = aLists.IsEmpty() ? NS_OK : NS_ERROR_TRACKING_URI;
+  MOZ_ASSERT(aErrorCode == NS_OK);
+
+  const bool shouldEnableTrackingProtection =
+    mChannelClassifier->ShouldEnableTrackingProtection();
+  const bool shouldEnableTrackingAnnotation =
+    mChannelClassifier->ShouldEnableTrackingAnnotation() ||
+    StaticPrefs::privacy_restrict3rdpartystorage_enabled();
+  MOZ_ASSERT(shouldEnableTrackingProtection || shouldEnableTrackingAnnotation);
+
+  LOG(("TrackingURICallback[%p]:OnClassifyComplete "
+       "shouldEnableTrackingProtection=%d, shouldEnableTrackingAnnnotation=%d",
+       mChannelClassifier.get(), shouldEnableTrackingProtection,
+       shouldEnableTrackingAnnotation));
+
+  
+  
+
+  if (!mExpectAnnotationWhitelistResult && !mExpectTrackingWhitelistResult) {
+    
+
     mList = aLists;
     mProvider = aProvider;
     mFullHash = aFullHash;
-    return OnBlacklistResult(status);
+
+    if (aLists.IsEmpty()) {
+      return OnBlacklistResult(NS_OK, false, false); 
+    }
+
+    
+
+    const nsCString annotationTable =
+      CachedPrefs::GetInstance()->GetAnnotationBlackList();
+    const nsCString trackingTable =
+      CachedPrefs::GetInstance()->GetTrackingBlackList();
+
+    bool inTrackingTable = false;
+    bool inAnnotationTable = false;
+
+    nsCCharSeparatedTokenizer tokenizer(aLists, ',');
+    while (tokenizer.hasMoreTokens()) {
+      const nsACString& list = tokenizer.nextToken();
+      if (shouldEnableTrackingProtection && !inTrackingTable &&
+          FindInReadable(list, trackingTable)) {
+        inTrackingTable = true;
+      }
+      if (shouldEnableTrackingAnnotation && !inAnnotationTable &&
+          FindInReadable(list, annotationTable)) {
+        inAnnotationTable = true;
+      }
+    }
+
+    MOZ_ASSERT(shouldEnableTrackingProtection || !inTrackingTable);
+    MOZ_ASSERT(shouldEnableTrackingAnnotation || !inAnnotationTable);
+
+    if ((shouldEnableTrackingProtection && inTrackingTable) ||
+        (shouldEnableTrackingAnnotation && inAnnotationTable)) {
+      
+      return OnBlacklistResult(NS_ERROR_MAYBE_TRACKING_URI, inTrackingTable,
+                               inAnnotationTable);
+    }
+
+    if (NS_WARN_IF(!inTrackingTable && !inAnnotationTable)) {
+      MOZ_ASSERT(false, "The matching lists should be tracking-related.");
+    }
+
+    
+    return OnBlacklistResult(NS_OK, inTrackingTable, inAnnotationTable);
   }
 
-  nsresult status = aLists.IsEmpty() ? NS_ERROR_TRACKING_URI : NS_OK;
-  return OnWhitelistResult(status);
+  
+
+  MOZ_ASSERT(shouldEnableTrackingProtection || !mExpectTrackingWhitelistResult);
+  MOZ_ASSERT(shouldEnableTrackingAnnotation || !mExpectAnnotationWhitelistResult);
+
+  bool isTracker = mExpectTrackingWhitelistResult;
+  bool isAnnotation = mExpectAnnotationWhitelistResult;
+  MOZ_ASSERT(isTracker || isAnnotation);
+
+  if (!aLists.IsEmpty()) {
+    
+
+    const nsCString annotationWhitelistTable =
+      CachedPrefs::GetInstance()->GetAnnotationWhiteList();
+    const nsCString trackingWhitelistTable =
+      CachedPrefs::GetInstance()->GetTrackingWhiteList();
+
+    nsCCharSeparatedTokenizer tokenizer(aLists, ',');
+    while (tokenizer.hasMoreTokens() && (isTracker || isAnnotation)) {
+      const nsACString& list = tokenizer.nextToken();
+      if (isTracker && FindInReadable(list, trackingWhitelistTable)) {
+        isTracker = false;
+      }
+      if (isAnnotation && FindInReadable(list, annotationWhitelistTable)) {
+        isAnnotation = false;
+      }
+    }
+  }
+
+  MOZ_ASSERT(shouldEnableTrackingProtection || !isTracker);
+  MOZ_ASSERT(shouldEnableTrackingAnnotation || !isAnnotation);
+
+  if (!isTracker && !isAnnotation) {
+    return OnWhitelistResult(NS_OK); 
+  }
+
+  
+  
+  return OnWhitelistResult(isTracker ? NS_ERROR_TRACKING_URI :
+                           NS_ERROR_TRACKING_ANNOTATION_URI);
 }
 
 nsresult
-TrackingURICallback::OnBlacklistResult(nsresult aErrorCode)
+TrackingURICallback::OnBlacklistResult(nsresult aErrorCode,
+                                       bool aInTrackingTable,
+                                       bool aInAnnotationTable)
 {
   LOG_DEBUG(("TrackingURICallback[%p]::OnBlacklistResult aErrorCode=0x%" PRIx32,
              mChannelClassifier.get(), static_cast<uint32_t>(aErrorCode)));
@@ -938,6 +1069,7 @@ TrackingURICallback::OnBlacklistResult(nsresult aErrorCode)
     mChannelCallback();
     return NS_OK;
   }
+  MOZ_ASSERT(aErrorCode == NS_ERROR_MAYBE_TRACKING_URI);
 
   if (LOG_ENABLED()) {
     nsCOMPtr<nsIChannel> channel = mChannelClassifier->GetChannel();
@@ -950,20 +1082,61 @@ TrackingURICallback::OnBlacklistResult(nsresult aErrorCode)
          mChannelClassifier.get(), channel.get(), spec.get()));
   }
 
-  nsCOMPtr<nsIURI> whitelistURI = mChannelClassifier->CreateWhiteListURI();
-
-  
-  if (NS_FAILED(mChannelClassifier->IsTrackerWhitelisted(whitelistURI, this))) {
-    LOG(("TrackingURICallback[%p]:OnBlacklistResult "
-         "IsTrackerWhitelisted has failed.",
-         mChannelClassifier.get()));
-
-    OnTrackerFound(aErrorCode);
+  nsCOMPtr<nsIURI> whitelistURI;
+  nsresult rv = mChannelClassifier->CreateWhiteListURI(getter_AddRefs(whitelistURI));
+  if (NS_FAILED(rv)) {
+    nsAutoCString errorName;
+    GetErrorName(rv, errorName);
+    NS_WARNING(nsPrintfCString("TrackingURICallback[%p]:OnBlacklistResult got "
+                               "an unexpected error (rv=%s) while trying to "
+                               "create a whitelist URI. Allowing tracker.",
+                               mChannelClassifier.get(), errorName.get()).get());
     mChannelCallback();
-  } else {
-    mExpectWhitelistResult = true;
+    return NS_OK; 
   }
 
+  if (!whitelistURI) {
+    LOG(("TrackingURICallback[%p]:OnBlacklistResult could not create a "
+         "whitelist URI. Ignoring whitelist.", mChannelClassifier.get()));
+    OnTrackerFound(aInTrackingTable ? NS_ERROR_TRACKING_URI :
+                   NS_ERROR_TRACKING_ANNOTATION_URI);
+    mChannelCallback();
+    return NS_OK;
+  }
+
+  rv = mChannelClassifier->IsTrackerWhitelisted(whitelistURI,
+                                                aInTrackingTable,
+                                                aInAnnotationTable,
+                                                this);
+  if (NS_FAILED(rv)) {
+    if (LOG_ENABLED()) {
+      nsAutoCString errorName;
+      GetErrorName(rv, errorName);
+      LOG(("TrackingURICallback[%p]:OnBlacklistResult "
+           "IsTrackerWhitelisted has failed with rv=%s.",
+           mChannelClassifier.get(), errorName.get()));
+    }
+
+    if (rv == NS_ERROR_TRACKING_URI ||
+        rv == NS_ERROR_TRACKING_ANNOTATION_URI) {
+      
+      OnTrackerFound(rv);
+    } else {
+      
+      nsAutoCString errorName;
+      GetErrorName(rv, errorName);
+      NS_WARNING(nsPrintfCString("Unexpected error (%s) received from "
+                                 "TrackingURICallback::IsTrackerWhitelisted()",
+                                 errorName.get()).get());
+    }
+    mChannelCallback();
+    return NS_OK;
+  }
+
+  
+  MOZ_ASSERT(aInTrackingTable || aInAnnotationTable);
+  mExpectTrackingWhitelistResult = aInTrackingTable;
+  mExpectAnnotationWhitelistResult = aInAnnotationTable;
   return NS_OK;
 }
 
@@ -1008,15 +1181,20 @@ void
 TrackingURICallback::OnTrackerFound(nsresult aErrorCode)
 {
   nsCOMPtr<nsIChannel> channel = mChannelClassifier->GetChannel();
-  if (mChannelClassifier->ShouldEnableTrackingProtection()) {
+  if (aErrorCode == NS_ERROR_TRACKING_URI &&
+      mChannelClassifier->ShouldEnableTrackingProtection()) {
     mChannelClassifier->SetBlockedContent(channel, aErrorCode,
                                           mList, mProvider, mFullHash);
     LOG(("TrackingURICallback[%p]::OnTrackerFound, cancelling channel[%p]",
          mChannelClassifier.get(), channel.get()));
     channel->Cancel(aErrorCode);
   } else {
+    MOZ_ASSERT(aErrorCode == NS_ERROR_TRACKING_ANNOTATION_URI);
     MOZ_ASSERT(mChannelClassifier->ShouldEnableTrackingAnnotation() ||
                StaticPrefs::privacy_restrict3rdpartystorage_enabled());
+
+    LOG(("TrackingURICallback[%p]::OnTrackerFound, annotating channel[%p]",
+         mChannelClassifier.get(), channel.get()));
 
     
     
@@ -1033,39 +1211,48 @@ TrackingURICallback::OnTrackerFound(nsresult aErrorCode)
 
 } 
 
-already_AddRefed<nsIURI>
-nsChannelClassifier::CreateWhiteListURI() const
+nsresult
+nsChannelClassifier::CreateWhiteListURI(nsIURI** aURI) const
 {
   nsresult rv;
   nsCOMPtr<nsIHttpChannelInternal> chan = do_QueryInterface(mChannel, &rv);
+  NS_ENSURE_SUCCESS(rv, rv);
   if (!chan) {
-    return nullptr;
+    return NS_ERROR_FAILURE;
   }
 
   nsCOMPtr<nsIURI> topWinURI;
   rv = chan->GetTopWindowURI(getter_AddRefs(topWinURI));
-  NS_ENSURE_SUCCESS(rv, nullptr);
+  NS_ENSURE_SUCCESS(rv, rv);
   if (!topWinURI) {
-    LOG(("nsChannelClassifier[%p]: No window URI", this));
-    return nullptr;
+    if (LOG_ENABLED()) {
+      nsresult rv;
+      nsCOMPtr<nsIHttpChannel> httpChan = do_QueryInterface(mChannel, &rv);
+      nsCOMPtr<nsIURI> uri;
+      rv = httpChan->GetURI(getter_AddRefs(uri));
+      nsAutoCString spec;
+      uri->GetAsciiSpec(spec);
+      spec.Truncate(std::min(spec.Length(), sMaxSpecLength));
+      LOG(("nsChannelClassifier[%p]: No window URI associated with %s",
+           this, spec.get()));
+    }
+    return NS_OK;
   }
 
   nsCOMPtr<nsIScriptSecurityManager> securityManager =
     do_GetService(NS_SCRIPTSECURITYMANAGER_CONTRACTID, &rv);
-  NS_ENSURE_SUCCESS(rv, nullptr);
+  NS_ENSURE_SUCCESS(rv, rv);
   nsCOMPtr<nsIPrincipal> chanPrincipal;
   rv = securityManager->GetChannelURIPrincipal(mChannel,
                                                getter_AddRefs(chanPrincipal));
-  if (NS_FAILED(rv)) {
-    return nullptr;
-  }
+  NS_ENSURE_SUCCESS(rv, rv);
 
   
   nsAutoCString pageHostname, resourceDomain;
   rv = topWinURI->GetHost(pageHostname);
-  NS_ENSURE_SUCCESS(rv, nullptr);
+  NS_ENSURE_SUCCESS(rv, rv);
   rv = chanPrincipal->GetBaseDomain(resourceDomain);
-  NS_ENSURE_SUCCESS(rv, nullptr);
+  NS_ENSURE_SUCCESS(rv, rv);
   nsAutoCString whitelistEntry = NS_LITERAL_CSTRING("http://") +
     pageHostname + NS_LITERAL_CSTRING("/?resource=") + resourceDomain;
   LOG(("nsChannelClassifier[%p]: Looking for %s in the whitelist (channel=%p)",
@@ -1073,15 +1260,21 @@ nsChannelClassifier::CreateWhiteListURI() const
 
   nsCOMPtr<nsIURI> whitelistURI;
   rv = NS_NewURI(getter_AddRefs(whitelistURI), whitelistEntry);
+  NS_ENSURE_SUCCESS(rv, rv);
 
-  return NS_SUCCEEDED(rv) ? whitelistURI.forget() : nullptr;
+  whitelistURI.forget(aURI);
+  return NS_OK;
 }
 
 nsresult
 nsChannelClassifier::IsTrackerWhitelisted(nsIURI* aWhiteListURI,
+                                          bool aUseTrackingTable,
+                                          bool aUseAnnotationTable,
                                           nsIURIClassifierCallback *aCallback)
 {
-  if (!aCallback || !aWhiteListURI) {
+  MOZ_ASSERT(aUseTrackingTable || aUseAnnotationTable);
+  MOZ_ASSERT(aWhiteListURI);
+  if (!aCallback) {
     return NS_ERROR_INVALID_ARG;
   }
 
@@ -1090,14 +1283,24 @@ nsChannelClassifier::IsTrackerWhitelisted(nsIURI* aWhiteListURI,
     do_GetService(NS_URICLASSIFIERSERVICE_CONTRACTID, &rv);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  nsCString trackingWhitelist = CachedPrefs::GetInstance()->GetTrackingWhiteList();
-  if (trackingWhitelist.IsEmpty()) {
-    LOG(("nsChannelClassifier[%p]:IsTrackerWhitelisted whitelist disabled",
-         this));
-    return NS_ERROR_TRACKING_URI;
+  nsAutoCString whitelist;
+  if (aUseAnnotationTable) {
+    whitelist += CachedPrefs::GetInstance()->GetAnnotationWhiteList();
+    whitelist += NS_LITERAL_CSTRING(",");
+  }
+  if (aUseTrackingTable) {
+    whitelist += CachedPrefs::GetInstance()->GetTrackingWhiteList();
   }
 
-  return uriClassifier->AsyncClassifyLocalWithTables(aWhiteListURI, trackingWhitelist, aCallback);
+  if (whitelist.IsEmpty()) {
+    LOG(("nsChannelClassifier[%p]:IsTrackerWhitelisted whitelist disabled",
+         this));
+    return aUseTrackingTable ? NS_ERROR_TRACKING_URI :
+      NS_ERROR_TRACKING_ANNOTATION_URI;
+  }
+
+  return uriClassifier->AsyncClassifyLocalWithTables(aWhiteListURI, whitelist,
+                                                     aCallback);
 }
 
 
@@ -1201,8 +1404,9 @@ nsChannelClassifier::CheckIsTrackerWithLocalTable(std::function<void()>&& aCallb
     return rv;
   }
 
-  if (!ShouldEnableTrackingProtection() && !ShouldEnableTrackingAnnotation() &&
-      !StaticPrefs::privacy_restrict3rdpartystorage_enabled()) {
+  const bool shouldEnableTrackingProtection = ShouldEnableTrackingProtection();
+  const bool shouldEnableTrackingAnnotation = ShouldEnableTrackingAnnotation() || StaticPrefs::privacy_restrict3rdpartystorage_enabled();
+  if (!shouldEnableTrackingProtection && !shouldEnableTrackingAnnotation) {
     return NS_ERROR_FAILURE;
   }
 
@@ -1212,13 +1416,20 @@ nsChannelClassifier::CheckIsTrackerWithLocalTable(std::function<void()>&& aCallb
     return rv;
   }
 
-  nsCString trackingBlacklist =
-    CachedPrefs::GetInstance()->GetTrackingBlackList();
-  if (trackingBlacklist.IsEmpty()) {
-    LOG_WARN(("nsChannelClassifier[%p]: CheckIsTrackerWithLocalTable blacklist is empty",
-         this));
+  nsAutoCString blacklist;
+  if (shouldEnableTrackingAnnotation) {
+    blacklist += CachedPrefs::GetInstance()->GetAnnotationBlackList();
+    blacklist += NS_LITERAL_CSTRING(",");
+  }
+  if (shouldEnableTrackingProtection) {
+    blacklist += CachedPrefs::GetInstance()->GetTrackingBlackList();
+  }
+  if (blacklist.IsEmpty()) {
+    LOG_WARN(("nsChannelClassifier[%p]:CheckIsTrackerWithLocalTable blacklist is empty",
+              this));
     return NS_ERROR_FAILURE;
   }
+  
 
   nsCOMPtr<nsIURIClassifierCallback> callback =
     new TrackingURICallback(this, std::move(aCallback));
@@ -1229,9 +1440,7 @@ nsChannelClassifier::CheckIsTrackerWithLocalTable(std::function<void()>&& aCallb
     LOG(("nsChannelClassifier[%p]: Checking blacklist for uri=%s\n",
          this, spec.get()));
   }
-  return uriClassifier->AsyncClassifyLocalWithTables(uri,
-                                                     trackingBlacklist,
-                                                     callback);
+  return uriClassifier->AsyncClassifyLocalWithTables(uri, blacklist, callback);
 }
 
 already_AddRefed<nsIChannel>

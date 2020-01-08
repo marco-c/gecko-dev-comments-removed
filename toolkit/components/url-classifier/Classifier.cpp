@@ -61,6 +61,11 @@ Classifier::SplitTables(const nsACString& str, nsTArray<nsCString>& tables)
       begin++;
     }
   }
+
+  
+  tables.Sort();
+  const auto newEnd = std::unique(tables.begin(), tables.end());
+  tables.TruncateLength(std::distance(tables.begin(), newEnd));
 }
 
 nsresult
