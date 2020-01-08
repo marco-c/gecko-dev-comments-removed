@@ -65,7 +65,7 @@ class Raptor(object):
 
     def __init__(self, app, binary, run_local=False, obj_path=None,
                  gecko_profile=False, gecko_profile_interval=None, gecko_profile_entries=None,
-                 symbols_path=None, host=None, is_release_build=False):
+                 symbols_path=None, host=None, is_release_build=False, debug_mode=False):
         self.config = {}
         self.config['app'] = app
         self.config['binary'] = binary
@@ -85,7 +85,16 @@ class Raptor(object):
         self.playback = None
         self.benchmark = None
         self.gecko_profiler = None
-        self.post_startup_delay = 30000  
+        self.post_startup_delay = 30000
+
+        
+        self.debug_mode = debug_mode if self.config['run_local'] else False
+
+        
+        if self.debug_mode:
+            self.post_startup_delay = 3000
+            self.log.info("debug-mode enabled, reducing post-browser startup pause to %d ms"
+                          % self.post_startup_delay)
 
         
         if self.config['app'] == 'geckoview':
@@ -138,7 +147,7 @@ class Raptor(object):
         return os.path.join(here, 'profile_data')
 
     def start_control_server(self):
-        self.control_server = RaptorControlServer(self.results_handler)
+        self.control_server = RaptorControlServer(self.results_handler, self.debug_mode)
         self.control_server.start()
 
         
@@ -176,7 +185,8 @@ class Raptor(object):
                         self.control_server.port,
                         self.post_startup_delay,
                         host=self.config['host'],
-                        b_port=benchmark_port)
+                        b_port=benchmark_port,
+                        debug_mode=1 if self.debug_mode else 0)
 
         
         if self.config['app'] == "geckoview" and self.config['host'] in ('localhost', '127.0.0.1'):
@@ -270,6 +280,14 @@ class Raptor(object):
                 os.environ['MOZ_DISABLE_NONLOCAL_CONNECTIONS'] = "1"
 
             
+            
+            if self.debug_mode:
+                if self.config['app'] == "firefox":
+                    self.runner.cmdargs.extend(['-jsconsole'])
+                if self.config['app'] == "chrome":
+                    self.runner.cmdargs.extend(['--auto-open-devtools-for-tabs'])
+
+            
             self.log.info("starting %s" % self.config['app'])
 
             
@@ -322,11 +340,14 @@ class Raptor(object):
             elapsed_time = 0
             while not self.control_server._finished:
                 time.sleep(1)
-                elapsed_time += 1
-                if elapsed_time > (timeout) - 5:  
-                    self.log.info("application timed out after {} seconds".format(timeout))
-                    self.control_server.wait_for_quit()
-                    break
+                
+                
+                if not self.debug_mode:
+                    elapsed_time += 1
+                    if elapsed_time > (timeout) - 5:  
+                        self.log.info("application timed out after {} seconds".format(timeout))
+                        self.control_server.wait_for_quit()
+                        break
         finally:
             if self.config['app'] != "geckoview":
                 try:
@@ -354,11 +375,18 @@ class Raptor(object):
             self.log.info("cleaning up after gecko profiling")
             self.gecko_profiler.clean()
 
-        if self.config['app'] != "geckoview":
-            if self.runner.is_running():
-                self.runner.stop()
         
-        
+        if not self.debug_mode:
+            if self.config['app'] != "geckoview":
+                if self.runner.is_running():
+                    self.runner.stop()
+            
+            
+        else:
+            
+            if self.config['run_local']:
+                self.log.info("* debug-mode enabled - please shutdown the browser manually...")
+                self.runner.wait(timeout=None)
 
     def _init_gecko_profiling(self, test):
         self.log.info("initializing gecko profiler")
@@ -462,6 +490,10 @@ def main(args=sys.argv[1:]):
     LOG = get_default_logger(component='raptor-main')
 
     LOG.info("raptor-start")
+
+    if args.debug_mode:
+        LOG.info("debug-mode enabled")
+
     LOG.info("received command line arguments: %s" % str(args))
 
     
@@ -486,7 +518,8 @@ def main(args=sys.argv[1:]):
                     gecko_profile_entries=args.gecko_profile_entries,
                     symbols_path=args.symbols_path,
                     host=args.host,
-                    is_release_build=args.is_release_build)
+                    is_release_build=args.is_release_build,
+                    debug_mode=args.debug_mode)
 
     raptor.start_control_server()
 

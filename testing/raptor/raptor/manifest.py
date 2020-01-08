@@ -178,27 +178,29 @@ def get_raptor_test_list(args, oskey):
                 tests_to_run.append(next_test)
 
     
-    if args.gecko_profile is True:
-        for next_test in tests_to_run:
+    
+    
+    for next_test in tests_to_run:
+        LOG.info("configuring settings for test %s" % next_test['name'])
+        max_page_cycles = next_test['page_cycles']
+        if args.gecko_profile is True:
             next_test['gecko_profile'] = True
-            if next_test['page_cycles'] > 3:
-                LOG.info("gecko profiling enabled, limiting pagecycles "
-                         "to 3 for test %s" % next_test['name'])
-                next_test['page_cycles'] = 3
-
-    
-    
-    
-    if args.page_cycles is not None:
-        LOG.info("setting page-cycles to %d as specified on the command line" % args.page_cycles)
-        for next_test in tests_to_run:
+            LOG.info("gecko-profiling enabled")
+            max_page_cycles = 3
+        if args.debug_mode is True:
+            next_test['debug_mode'] = True
+            LOG.info("debug-mode enabled")
+            max_page_cycles = 2
+        if args.page_cycles is not None:
             next_test['page_cycles'] = args.page_cycles
-
-    
-    
-    if args.page_timeout is not None:
-        LOG.info("setting page-timeout to %d as specified on the command line" % args.page_timeout)
-        for next_test in tests_to_run:
+            LOG.info("set page-cycles to %d as specified on cmd line" % args.page_cycles)
+        else:
+            if next_test['page_cycles'] > max_page_cycles:
+                next_test['page_cycles'] = max_page_cycles
+                LOG.info("page-cycles set to %d" % next_test['page_cycles'])
+        
+        if args.page_timeout is not None:
+            LOG.info("setting page-timeout to %d as specified on cmd line" % args.page_timeout)
             next_test['page_timeout'] = args.page_timeout
 
     

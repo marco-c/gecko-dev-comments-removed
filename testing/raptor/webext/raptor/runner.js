@@ -55,6 +55,7 @@ var geckoProfiling = false;
 var geckoInterval = 1;
 var geckoEntries = 1000000;
 var webRenderEnabled = false;
+var debugMode = 0;
 
 var results = {"name": "",
                "page": "",
@@ -471,8 +472,12 @@ function postToControlServer(msgType, msgData) {
 
 function cleanUp() {
   
-  ext.tabs.remove(testTabID);
-  console.log("closed tab " + testTabID);
+  if (debugMode != 1) {
+    ext.tabs.remove(testTabID);
+    console.log("closed tab " + testTabID);
+  } else {
+    console.log("raptor debug-mode enabled, leaving tab open");
+  }
   if (testType == "pageload") {
     
     ext.runtime.onMessage.removeListener(resultListener);
@@ -504,6 +509,7 @@ function runner() {
   benchmarkPort = config.benchmark_port;
   postStartupDelay = config.post_startup_delay;
   host = config.host;
+  debugMode = config.debug_mode;
 
   postToControlServer("status", "raptor runner.js is loaded!");
 
