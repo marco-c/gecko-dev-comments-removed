@@ -627,7 +627,10 @@ public:
 
     
     
-    if (aDisp->IsContainPaint()) {
+    
+    
+    
+    if (aDisp->IsContainPaint() && !aFrame->IsScrollFrame()) {
       return true;
     }
 
