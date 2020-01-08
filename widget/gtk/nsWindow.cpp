@@ -3174,14 +3174,6 @@ nsresult nsWindow::Create(nsIWidget *aParent, nsNativeWidget aNativeParent,
   bool needsAlphaVisual =
       (mWindowType == eWindowType_popup && aInitData->mSupportTranslucency);
 
-  
-  
-  
-  
-  if (mWindowType == eWindowType_toplevel) {
-    needsAlphaVisual = TopLevelWindowUseARGBVisual();
-  }
-
   if (aParent) {
     parentnsWindow = static_cast<nsWindow *>(aParent);
     parentGdkWindow = parentnsWindow->mGdkWindow;
@@ -3228,8 +3220,6 @@ nsresult nsWindow::Create(nsIWidget *aParent, nsNativeWidget aNativeParent,
       }
       mShell = gtk_window_new(type);
 
-      bool isSetVisual = false;
-#ifdef MOZ_X11
       
       
       Unused << gfxPlatform::GetPlatform();
@@ -3240,6 +3230,18 @@ nsresult nsWindow::Create(nsIWidget *aParent, nsNativeWidget aNativeParent,
       bool shouldAccelerate = ComputeShouldAccelerate();
       MOZ_ASSERT(shouldAccelerate | !useWebRender);
 
+      
+      
+      
+      
+      
+      if (mWindowType == eWindowType_toplevel &&
+          (shouldAccelerate || !mIsX11Display ||
+            Preferences::HasUserValue("mozilla.widget.use-argb-visuals"))) {
+          needsAlphaVisual = TopLevelWindowUseARGBVisual();
+      }
+
+      bool isSetVisual = false;
       
       
       
@@ -3263,7 +3265,6 @@ nsresult nsWindow::Create(nsIWidget *aParent, nsNativeWidget aNativeParent,
           NS_WARNING("We're missing X11 Visual!");
         }
       }
-#endif  
 
       if (!isSetVisual && needsAlphaVisual) {
         GdkScreen *screen = gtk_widget_get_screen(mShell);
