@@ -25,6 +25,7 @@
 
 #include "ds/Nestable.h"
 #include "frontend/Parser.h"
+#include "frontend/TDZCheckCache.h"
 #include "vm/BytecodeUtil.h"
 #include "vm/Debugger.h"
 #include "vm/GeneratorObject.h"
@@ -75,40 +76,6 @@ ParseNodeRequiresSpecialLineNumberNotes(ParseNode* pn)
            kind == ParseNodeKind::For ||
            kind == ParseNodeKind::Function;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class BytecodeEmitter::TDZCheckCache : public Nestable<BytecodeEmitter::TDZCheckCache>
-{
-    PooledMapPtr<CheckTDZMap> cache_;
-
-    MOZ_MUST_USE bool ensureCache(BytecodeEmitter* bce) {
-        return cache_ || cache_.acquire(bce->cx);
-    }
-
-  public:
-    explicit TDZCheckCache(BytecodeEmitter* bce)
-      : Nestable<TDZCheckCache>(&bce->innermostTDZCheckCache),
-        cache_(bce->cx->frontendCollectionPool())
-    { }
-
-    Maybe<MaybeCheckTDZ> needsTDZCheck(BytecodeEmitter* bce, JSAtom* name);
-    MOZ_MUST_USE bool noteTDZCheck(BytecodeEmitter* bce, JSAtom* name, MaybeCheckTDZ check);
-};
 
 class BytecodeEmitter::NestableControl : public Nestable<BytecodeEmitter::NestableControl>
 {
@@ -233,7 +200,7 @@ class LoopControl : public BreakableControl
 {
     
     
-    BytecodeEmitter::TDZCheckCache tdzCache_;
+    TDZCheckCache tdzCache_;
 
     
     int32_t stackDepth_;
@@ -1465,55 +1432,6 @@ BytecodeEmitter::EmitterScope::leave(BytecodeEmitter* bce, bool nonLocal)
     return true;
 }
 
-Maybe<MaybeCheckTDZ>
-BytecodeEmitter::TDZCheckCache::needsTDZCheck(BytecodeEmitter* bce, JSAtom* name)
-{
-    if (!ensureCache(bce))
-        return Nothing();
-
-    CheckTDZMap::AddPtr p = cache_->lookupForAdd(name);
-    if (p)
-        return Some(p->value().wrapped);
-
-    MaybeCheckTDZ rv = CheckTDZ;
-    for (TDZCheckCache* it = enclosing(); it; it = it->enclosing()) {
-        if (it->cache_) {
-            if (CheckTDZMap::Ptr p2 = it->cache_->lookup(name)) {
-                rv = p2->value();
-                break;
-            }
-        }
-    }
-
-    if (!cache_->add(p, name, rv)) {
-        ReportOutOfMemory(bce->cx);
-        return Nothing();
-    }
-
-    return Some(rv);
-}
-
-bool
-BytecodeEmitter::TDZCheckCache::noteTDZCheck(BytecodeEmitter* bce, JSAtom* name,
-                                             MaybeCheckTDZ check)
-{
-    if (!ensureCache(bce))
-        return false;
-
-    CheckTDZMap::AddPtr p = cache_->lookupForAdd(name);
-    if (p) {
-        MOZ_ASSERT(!check, "TDZ only needs to be checked once per binding per basic block.");
-        p->value() = check;
-    } else {
-        if (!cache_->add(p, name, check)) {
-            ReportOutOfMemory(bce->cx);
-            return false;
-        }
-    }
-
-    return true;
-}
-
 
 
 
@@ -2014,8 +1932,6 @@ class MOZ_STACK_CLASS IfEmitter
     };
 
   private:
-    using TDZCheckCache = BytecodeEmitter::TDZCheckCache;
-
     BytecodeEmitter* bce_;
 
     
@@ -4764,10 +4680,6 @@ BytecodeEmitter::emitSwitch(ParseNode* pn)
                cases->isKind(ParseNodeKind::StatementList));
 
     
-    if (!updateSourceCoordNotes(pn->pn_pos.begin))
-        return false;
-
-    
     if (!emitTree(pn->pn_left))
         return false;
 
@@ -7027,11 +6939,6 @@ BytecodeEmitter::emitIf(ParseNode* pn)
 
   if_again:
     
-    
-    if (!updateSourceCoordNotes(pn->pn_pos.begin))
-        return false;
-
-    
     if (!emitTree(pn->pn_kid1))
         return false;
 
@@ -7161,10 +7068,6 @@ BytecodeEmitter::emitLexicalScope(ParseNode* pn)
 bool
 BytecodeEmitter::emitWith(ParseNode* pn)
 {
-    
-    if (!updateSourceCoordNotes(pn->pn_pos.begin))
-        return false;
-
     if (!emitTree(pn->pn_left))
         return false;
 
@@ -8303,10 +8206,6 @@ BytecodeEmitter::emitAsyncWrapper(unsigned index, bool needsHomeObject, bool isA
 bool
 BytecodeEmitter::emitDo(ParseNode* pn)
 {
-    
-    if (!updateSourceCoordNotes(pn->pn_pos.begin))
-        return false;
-
     
     unsigned noteIndex;
     if (!newSrcNote(SRC_WHILE, &noteIndex))
@@ -10960,19 +10859,11 @@ BytecodeEmitter::emitTree(ParseNode* pn, ValueUsage valueUsage ,
         break;
 
       case ParseNodeKind::Break:
-        
-        if (!updateSourceCoordNotes(pn->pn_pos.begin))
-            return false;
-
         if (!emitBreak(pn->as<BreakStatement>().label()))
             return false;
         break;
 
       case ParseNodeKind::Continue:
-        
-        if (!updateSourceCoordNotes(pn->pn_pos.begin))
-            return false;
-
         if (!emitContinue(pn->as<ContinueStatement>().label()))
             return false;
         break;
