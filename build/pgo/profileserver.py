@@ -92,6 +92,9 @@ if __name__ == '__main__':
                     break
 
         
+        env["MOZ_OBJDIR"] = build.topobjdir
+
+        
         runner = FirefoxRunner(profile=profile,
                                binary=binary,
                                cmdargs=['data:text/html,<script>Quitter.quit()</script>'],
