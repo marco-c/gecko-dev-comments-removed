@@ -16,18 +16,25 @@ namespace mozilla {
 
 class ErrorResult;
 
+namespace ipc {
+
+class PrincipalInfo;
+
+} 
+
 namespace dom {
 
 class LSDatabase;
 class LSRequestChild;
 class LSRequestChildCallback;
 class LSRequestParams;
-class PrincipalOrQuotaInfo;
 
 class LSObject final
   : public Storage
 {
-  nsAutoPtr<PrincipalOrQuotaInfo> mInfo;
+  typedef mozilla::ipc::PrincipalInfo PrincipalInfo;
+
+  nsAutoPtr<PrincipalInfo> mPrincipalInfo;
 
   RefPtr<LSDatabase> mDatabase;
 
@@ -35,6 +42,14 @@ public:
   static nsresult
   Create(nsPIDOMWindowInner* aWindow,
          Storage** aStorage);
+
+  
+
+
+
+
+  static already_AddRefed<nsIEventTarget>
+  GetSyncLoopEventTarget();
 
   static void
   CancelSyncLoop();
