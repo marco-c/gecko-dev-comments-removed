@@ -44,6 +44,8 @@ class PanGestureInput;
 
 
 
+
+
 class SwipeTracker final : public nsARefreshObserver {
 public:
   NS_INLINE_DECL_REFCOUNTING(SwipeTracker, override)
