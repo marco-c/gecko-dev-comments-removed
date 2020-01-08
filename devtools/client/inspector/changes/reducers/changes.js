@@ -25,8 +25,8 @@ function cloneState(state = {}) {
         rules[ruleId] = {
           ...rule,
           children: rule.children.slice(0),
-          add: { ...rule.add },
-          remove: { ...rule.remove },
+          add: rule.add.slice(0),
+          remove: rule.remove.slice(0),
         };
 
         return rules;
@@ -86,7 +86,8 @@ function createRule(ruleData, rules) {
       const nextRuleId = array[index + 1];
 
       
-      rules[ruleId] = Object.assign({}, { selector, children: [] }, rules[ruleId]);
+      const defaults = { selector, add: [], remove: [], children: [] };
+      rules[ruleId] = Object.assign(defaults, rules[ruleId]);
 
       
       if (nextRuleId && !rules[ruleId].children.includes(nextRuleId)) {
@@ -154,13 +155,38 @@ const INITIAL_STATE = {};
 
 const reducers = {
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   [TRACK_CHANGE](state, { change }) {
     const defaults = {
       selector: null,
       source: {},
       ancestors: [],
-      add: {},
-      remove: {},
+      add: [],
+      remove: [],
     };
 
     change = { ...defaults, ...change };
@@ -170,9 +196,6 @@ const reducers = {
     const { selector, ancestors, ruleIndex, type: changeType } = change;
     const sourceId = getSourceHash(change.source);
     const ruleId = getRuleHash({ selector, ancestors, ruleIndex });
-    
-    const hasAdd = !!change.add;
-    const hasRemove = !!change.remove;
 
     
     const source = Object.assign({}, state[sourceId], { type, href, index });
@@ -186,45 +209,62 @@ const reducers = {
         rule.changeType = changeType;
       }
     }
-    
-    const add = Object.assign({}, rule.add);
-    
-    const remove = Object.assign({}, rule.remove);
 
-    if (hasRemove) {
-      Object.entries(change.remove).forEach(([property, value]) => {
+    if (change.remove && change.remove.length) {
+      for (const decl of change.remove) {
+        
+        
+        const addIndex = rule.add.findIndex(addDecl => {
+          return addDecl.index === decl.index;
+        });
+
         
         
         
-        if (!add[property]) {
-          remove[property] = value;
+        if (addIndex < 0) {
+          rule.remove.push(decl);
         }
 
         
-        if (add[property] === value) {
-          delete add[property];
+        if (rule.add[addIndex] && rule.add[addIndex].value === decl.value) {
+          rule.add.splice(addIndex, 1);
         }
-      });
+      }
     }
 
-    if (hasAdd) {
-      Object.entries(change.add).forEach(([property, value]) => {
-        add[property] = value;
+    if (change.add && change.add.length) {
+      for (const decl of change.add) {
+        
+        
+        const removeIndex = rule.remove.findIndex(removeDecl => {
+          return removeDecl.index === decl.index;
+        });
 
         
-        if (add[property] === remove[property]) {
-          delete add[property];
-          delete remove[property];
+        
+        const addIndex = rule.add.findIndex(addDecl => {
+          return addDecl.index === decl.index;
+        });
+
+        if (rule.remove[removeIndex] && rule.remove[removeIndex].value === decl.value) {
+          
+          rule.remove.splice(removeIndex, 1);
+        } else if (rule.add[addIndex]) {
+          
+          rule.add.splice(addIndex, 1, decl);
+        } else {
+          
+          rule.add.push(decl);
         }
-      });
+      }
     }
 
     
-    if (!Object.keys(add).length && !Object.keys(remove).length) {
+    if (!rule.add.length && !rule.remove.length) {
       removeRule(ruleId, rules);
       source.rules = { ...rules };
     } else {
-      source.rules = { ...rules, [ruleId]: { ...rule, add, remove } };
+      source.rules = { ...rules, [ruleId]: rule };
     }
 
     
