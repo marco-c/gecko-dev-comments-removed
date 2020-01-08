@@ -49,6 +49,9 @@ public:
     explicit IMContextWrapper(nsWindow* aOwnerWindow);
 
     
+    static void Shutdown();
+
+    
     
     bool IsEnabled() const;
 
@@ -64,6 +67,8 @@ public:
     
     void OnSelectionChange(nsWindow* aCaller,
                            const IMENotification& aIMENotification);
+    
+    static void OnThemeChanged();
 
     
 

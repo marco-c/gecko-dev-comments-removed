@@ -225,6 +225,113 @@ const static bool kUseSimpleContextDefault = false;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+class SelectionStyleProvider final
+{
+public:
+    static SelectionStyleProvider* GetInstance()
+    {
+        if (sHasShutDown) {
+            return nullptr;
+        }
+        if (!sInstance) {
+            sInstance = new SelectionStyleProvider();
+        }
+        return sInstance;
+    }
+
+    static void Shutdown()
+    {
+      if (sInstance) {
+          g_object_unref(sInstance->mProvider);
+      }
+      delete sInstance;
+      sInstance = nullptr;
+      sHasShutDown = true;
+    }
+
+    
+    void AttachTo(GdkWindow* aGDKWindow)
+    {
+        GtkWidget* widget = nullptr;
+        
+        
+        
+        gdk_window_get_user_data(aGDKWindow, (gpointer*)&widget);
+        if (GTK_IS_WIDGET(widget)) {
+            gtk_style_context_add_provider(
+                gtk_widget_get_style_context(widget),
+                GTK_STYLE_PROVIDER(mProvider),
+                GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+        }
+    }
+
+    void OnThemeChanged()
+    {
+        
+        
+        
+        
+        
+        nsAutoCString style(":selected{");
+        
+        nscolor selectionForegroundColor;
+        if (NS_SUCCEEDED(LookAndFeel::GetColor(
+                             LookAndFeel::eColorID_TextSelectForeground,
+                             &selectionForegroundColor))) {
+            double alpha =
+              static_cast<double>(NS_GET_A(selectionForegroundColor)) / 0xFF;
+            style.AppendPrintf("color:rgba(%u,%u,%u,%f);",
+                               NS_GET_R(selectionForegroundColor),
+                               NS_GET_G(selectionForegroundColor),
+                               NS_GET_B(selectionForegroundColor), alpha);
+        }
+        nscolor selectionBackgroundColor;
+        if (NS_SUCCEEDED(LookAndFeel::GetColor(
+                             LookAndFeel::eColorID_TextSelectBackground,
+                             &selectionBackgroundColor))) {
+            double alpha =
+              static_cast<double>(NS_GET_A(selectionBackgroundColor)) / 0xFF;
+            style.AppendPrintf("background-color:rgba(%u,%u,%u,%f);",
+                               NS_GET_R(selectionBackgroundColor),
+                               NS_GET_G(selectionBackgroundColor),
+                               NS_GET_B(selectionBackgroundColor), alpha);
+        }
+        style.AppendLiteral("}");
+        gtk_css_provider_load_from_data(mProvider, style.get(), -1, nullptr);
+    }
+
+private:
+    static SelectionStyleProvider* sInstance;
+    static bool sHasShutDown;
+    GtkCssProvider* const mProvider;
+
+    SelectionStyleProvider()
+      : mProvider(gtk_css_provider_new())
+    {
+        OnThemeChanged();
+    }
+};
+
+SelectionStyleProvider* SelectionStyleProvider::sInstance = nullptr;
+bool SelectionStyleProvider::sHasShutDown = false;
+
+
+
+
+
 IMContextWrapper* IMContextWrapper::sLastFocusedContext = nullptr;
 bool IMContextWrapper::sUseSimpleContext;
 
@@ -364,6 +471,11 @@ IMContextWrapper::Init()
 
     
     
+    
+    SelectionStyleProvider::GetInstance()->AttachTo(gdkWindow);
+
+    
+    
 
     
     mContext = gtk_im_multicontext_new();
@@ -461,6 +573,13 @@ IMContextWrapper::Init()
          mSimpleContext, mDummyContext,
          gtk_im_multicontext_get_context_id(GTK_IM_MULTICONTEXT(mContext)),
          PR_GetEnv("XMODIFIERS")));
+}
+
+
+void
+IMContextWrapper::Shutdown()
+{
+    SelectionStyleProvider::Shutdown();
 }
 
 IMContextWrapper::~IMContextWrapper()
@@ -1362,6 +1481,16 @@ IMContextWrapper::OnSelectionChange(nsWindow* aCaller,
             ResetIME();
         }
     }
+}
+
+
+void
+IMContextWrapper::OnThemeChanged()
+{
+    if (!SelectionStyleProvider::GetInstance()) {
+        return;
+    }
+    SelectionStyleProvider::GetInstance()->OnThemeChanged();
 }
 
 
