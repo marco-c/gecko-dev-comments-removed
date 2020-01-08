@@ -350,9 +350,7 @@ public:
   
 
 
-  void ContentInserted(nsIContent* aContainerNode,
-                       nsIContent* aStartChildNode,
-                       nsIContent* aEndChildNode);
+  void ContentInserted(nsIContent* aStartChildNode, nsIContent* aEndChildNode);
 
   
 

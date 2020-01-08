@@ -195,8 +195,7 @@ public:
   
 
 
-  void ScheduleContentInsertion(Accessible* aContainer,
-                                nsIContent* aStartChildNode,
+  void ScheduleContentInsertion(nsIContent* aStartChildNode,
                                 nsIContent* aEndChildNode);
 
   
