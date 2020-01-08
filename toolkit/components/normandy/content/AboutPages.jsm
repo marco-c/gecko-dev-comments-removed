@@ -20,7 +20,6 @@ var EXPORTED_SYMBOLS = ["AboutPages"];
 
 const SHIELD_LEARN_MORE_URL_PREF = "app.normandy.shieldLearnMoreUrl";
 
-const FRAME_SCRIPT = "resource://normandy-content/shield-content-frame.js";
 
 
 
@@ -62,7 +61,6 @@ AboutPage.prototype.QueryInterface = ChromeUtils.generateQI([Ci.nsIAboutModule])
 var AboutPages = {
   async init() {
     
-    Services.mm.loadFrameScript(FRAME_SCRIPT, true);
 
     
     this.aboutStudies.registerParentListeners();
@@ -70,7 +68,6 @@ var AboutPages = {
     CleanupManager.addCleanupHandler(() => {
       
       Services.ppmm.broadcastAsyncMessage("Shield:ShuttingDown");
-      Services.mm.removeDelayedFrameScript(FRAME_SCRIPT);
       Services.mm.broadcastAsyncMessage("Shield:ShuttingDown");
 
       
