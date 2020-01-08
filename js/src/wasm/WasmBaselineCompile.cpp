@@ -5655,6 +5655,12 @@ class BaseCompiler final : public BaseCompilerInterface
         masm.loadWasmTlsRegFromFrame(scratch);
         masm.loadPtr(Address(scratch, offsetof(TlsData, instance)), scratch);
         masm.loadPtr(Address(scratch, Instance::offsetOfPreBarrierCode()), scratch);
+# ifdef JS_CODEGEN_ARM64
+        
+        
+        MOZ_ASSERT(!GeneralRegisterSet::All().hasRegisterIndex(x28.asUnsized()));
+        masm.Mov(x28, sp);
+# endif
         masm.call(scratch);
 
         masm.bind(&skipBarrier);
