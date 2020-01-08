@@ -2,6 +2,10 @@
 
 "use strict";
 
+
+
+PromiseTestUtils.whitelistRejectionsGlobally(/File closed/);
+
 ChromeUtils.defineModuleGetter(this, "BrowserToolboxProcess",
                                "resource://devtools/client/framework/ToolboxProcess.jsm");
 
@@ -111,6 +115,8 @@ add_task(async function test_addon_debugging_netmonitor_panel() {
     
     
     await jsterm.execute(`testNetworkRequestReceived(${JSON.stringify(requests)});`);
+
+    await toolbox.destroy();
     
   };
 
@@ -119,11 +125,8 @@ add_task(async function test_addon_debugging_netmonitor_panel() {
     addonID: EXTENSION_ID,
   });
 
-  await extension.awaitFinish("netmonitor_request_logged");
-
   let onToolboxClose = browserToolboxProcess.once("close");
-  await browserToolboxProcess.close();
-
+  await extension.awaitFinish("netmonitor_request_logged");
   await onToolboxClose;
 
   info("Addon Toolbox closed");
