@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+import math
 import sys
 
 import webdriver
@@ -110,6 +111,28 @@ def document_dimensions(session):
         let {width, height} = document.documentElement.getBoundingClientRect();
         return [width, height];
         """))
+
+
+def center_point(element):
+    """Calculates the in-view center point of a web element."""
+    inner_width, inner_height = element.session.execute_script(
+        "return [window.innerWidth, window.innerHeight]")
+    rect = element.rect
+
+    
+    visible = {
+        "left": max(0, min(rect["x"], rect["x"] + rect["width"])),
+        "right": min(inner_width, max(rect["x"], rect["x"] + rect["width"])),
+        "top": max(0, min(rect["y"], rect["y"] + rect["height"])),
+        "bottom": min(inner_height, max(rect["y"], rect["y"] + rect["height"])),
+    }
+
+    
+    x = (visible["left"] + visible["right"]) / 2.0
+    y = (visible["top"] + visible["bottom"]) / 2.0
+
+    
+    return (math.floor(x), math.floor(y))
 
 
 def document_hidden(session):
