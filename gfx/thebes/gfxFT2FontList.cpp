@@ -518,7 +518,7 @@ nsresult FT2FontEntry::ReadCMAP(FontInfoData* aFontInfoData) {
       
       if (charmap->TestRange(sr->rangeStart, sr->rangeEnd)) {
         
-        if (hasGSUB && SupportsScriptInGSUB(sr->tags)) {
+        if (hasGSUB && SupportsScriptInGSUB(sr->tags, sr->numTags)) {
           continue;
         }
         charmap->ClearRange(sr->rangeStart, sr->rangeEnd);
