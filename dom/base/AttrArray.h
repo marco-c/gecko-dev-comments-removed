@@ -127,6 +127,12 @@ public:
   
   nsresult EnsureCapacityToClone(const AttrArray& aOther);
 
+  struct InternalAttr
+  {
+    nsAttrName mName;
+    nsAttrValue mValue;
+  };
+
 private:
   AttrArray(const AttrArray& aOther) = delete;
   AttrArray& operator=(const AttrArray& aOther) = delete;
@@ -153,8 +159,6 @@ private:
 
   bool GrowBy(uint32_t aGrowSize);
 
-  struct InternalAttr;
-
   
   
   
@@ -174,12 +178,6 @@ private:
 
 
   nsresult DoUpdateMappedAttrRuleMapper(nsMappedAttributeElement& aElement);
-
-  struct InternalAttr
-  {
-    nsAttrName mName;
-    nsAttrValue mValue;
-  };
 
 #ifdef _MSC_VER
 

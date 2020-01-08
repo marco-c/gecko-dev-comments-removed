@@ -23,23 +23,6 @@ namespace mozilla {
 
 
 
-
-struct ServoAttrSnapshot
-{
-  nsAttrName mName;
-  nsAttrValue mValue;
-
-  ServoAttrSnapshot(const nsAttrName& aName, const nsAttrValue& aValue)
-    : mName(aName)
-    , mValue(aValue)
-  {
-  }
-};
-
-
-
-
-
 enum class ServoElementSnapshotFlags : uint8_t
 {
   State = 1 << 0,
@@ -179,7 +162,7 @@ private:
   
   
   
-  nsTArray<ServoAttrSnapshot> mAttrs;
+  nsTArray<AttrArray::InternalAttr> mAttrs;
   nsAttrValue mClass;
   ServoStateType mState;
   Flags mContains;
@@ -220,7 +203,7 @@ ServoElementSnapshot::AddAttrs(const Element& aElement,
   for (uint32_t i = 0; i < attrCount; ++i) {
     const BorrowedAttrInfo info = aElement.GetAttrInfoAt(i);
     MOZ_ASSERT(info);
-    mAttrs.AppendElement(ServoAttrSnapshot { *info.mName, *info.mValue });
+    mAttrs.AppendElement(AttrArray::InternalAttr { *info.mName, *info.mValue });
   }
 
   mContains |= Flags::Attributes;
