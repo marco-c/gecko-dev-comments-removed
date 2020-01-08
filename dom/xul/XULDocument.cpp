@@ -2391,7 +2391,7 @@ XULDocument::ExecuteScript(nsXULPrototypeScript *aScript)
     NS_ENSURE_TRUE(xpc::Scriptability::Get(global).Allowed(), NS_OK);
 
     JS::ExposeObjectToActiveJS(global);
-    JSAutoRealmAllowCCW ar(cx, global);
+    JSAutoRealm ar(cx, global);
 
     
     

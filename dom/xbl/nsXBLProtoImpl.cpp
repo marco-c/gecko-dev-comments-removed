@@ -85,7 +85,7 @@ nsXBLProtoImpl::InstallImplementation(nsXBLPrototypeBinding* aPrototypeBinding,
   JS::Rooted<JSObject*> scopeObject(cx, xpc::GetXBLScopeOrGlobal(cx, globalObject));
   NS_ENSURE_TRUE(scopeObject, NS_ERROR_OUT_OF_MEMORY);
   MOZ_ASSERT(JS_IsGlobalObject(scopeObject));
-  JSAutoRealmAllowCCW ar(cx, scopeObject);
+  JSAutoRealm ar(cx, scopeObject);
 
   
   
@@ -162,7 +162,7 @@ nsXBLProtoImpl::InstallImplementation(nsXBLPrototypeBinding* aPrototypeBinding,
   }
 
   
-  JSAutoRealmAllowCCW ar2(cx, targetClassObject);
+  JSAutoRealm ar2(cx, targetClassObject);
 
   
   for (nsXBLProtoImplField* curr = mFields;
@@ -204,7 +204,7 @@ nsXBLProtoImpl::InitTargetObjects(nsXBLPrototypeBinding* aBinding,
   JS::Rooted<JSObject*> global(cx, sgo->GetGlobalJSObject());
   JS::Rooted<JS::Value> v(cx);
 
-  JSAutoRealmAllowCCW ar(cx, global);
+  JSAutoRealm ar(cx, global);
   
   
   bool defineOnGlobal = dom::XULElement_Binding::ConstructorEnabled(cx, global);
@@ -215,11 +215,12 @@ nsXBLProtoImpl::InitTargetObjects(nsXBLPrototypeBinding* aBinding,
   NS_ENSURE_SUCCESS(rv, rv);
 
   JS::Rooted<JSObject*> value(cx, &v.toObject());
-  JSAutoRealmAllowCCW ar2(cx, value);
 
   
   
   MOZ_ASSERT(!js::IsWrapper(value));
+
+  JSAutoRealm ar2(cx, value);
 
   
   
