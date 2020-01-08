@@ -10929,11 +10929,15 @@ IonBuilder::improveThisTypesForCall()
     MOZ_ASSERT(*pc == JSOP_CALLPROP || *pc == JSOP_CALLELEM);
 
     
+    
+    
     MDefinition* thisDef = current->peek(-2);
+    MDefinition* calleeDef = current->peek(-1);
     if (thisDef->type() != MIRType::Value ||
         !thisDef->mightBeType(MIRType::Object) ||
         !thisDef->resultTypeSet() ||
-        !thisDef->resultTypeSet()->objectOrSentinel())
+        !thisDef->resultTypeSet()->objectOrSentinel() ||
+        calleeDef->isPhi())
     {
         return Ok();
     }
@@ -10951,7 +10955,7 @@ IonBuilder::improveThisTypesForCall()
     
     
     
-    filter->setDependency(current->peek(-1)->toInstruction());
+    filter->setDependency(calleeDef);
     return Ok();
 }
 
