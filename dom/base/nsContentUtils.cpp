@@ -29,6 +29,7 @@
 #include "gfxPrefs.h"
 #include "ImageOps.h"
 #include "mozAutoDocUpdate.h"
+#include "mozilla/AntiTrackingCommon.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/AutoRestore.h"
@@ -8870,21 +8871,10 @@ nsContentUtils::StorageDisabledByAntiTracking(nsPIDOMWindowInner* aWindow,
   }
 
   if (aWindow) {
-    nsCOMPtr<nsIHttpChannel> httpChannel;
-    nsIDocument* document = aWindow->GetExtantDoc();
-    if (document) {
-      httpChannel = do_QueryInterface(document->GetChannel());
-    }
-
-    
-    if (!httpChannel || !httpChannel->GetIsTrackingResource()) {
-      return false;
-    }
-
-    
     nsIURI* documentURI = aURI ? aURI : aWindow->GetDocumentURI();
     if (documentURI &&
-        nsGlobalWindowInner::Cast(aWindow)->IsFirstPartyStorageAccessGrantedFor(documentURI)) {
+        AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(aWindow,
+                                                                documentURI)) {
       return false;
     }
 
@@ -8910,13 +8900,8 @@ nsContentUtils::StorageDisabledByAntiTracking(nsPIDOMWindowInner* aWindow,
     return false;
   }
 
-  nsCOMPtr<nsILoadInfo> loadInfo;
-  rv = aChannel->GetLoadInfo(getter_AddRefs(loadInfo));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return false;
-  }
-
-  return !loadInfo->IsFirstPartyStorageAccessGrantedFor(uri);
+  return AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(httpChannel,
+                                                                 uri);
 }
 
 
