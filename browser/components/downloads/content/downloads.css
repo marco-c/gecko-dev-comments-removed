@@ -13,11 +13,6 @@
   -moz-user-focus: none;
 }
 
-#downloadsListBox > richlistitem.download-state[state="1"]:not([exists]) > .downloadButtonArea,
-#downloadsListBox > richlistitem.download-state[state="1"]:not([exists]) > toolbarseparator {
-  display: none;
-}
-
 #downloadsSummary:not([inprogress]) > vbox > #downloadsSummaryProgress,
 #downloadsSummary:not([inprogress]) > vbox > #downloadsSummaryDetails,
 #downloadsFooter:not([showingsummary]) #downloadsSummary {
@@ -64,6 +59,12 @@
   -moz-user-focus: none;
 }
 
+
+
+.download-state[buttonhidden] > toolbarseparator,
+.download-state[buttonhidden] > .downloadButton {
+  display: none;
+}
 
 .download-state:not(:-moz-any([state="6"], 
                               [state="8"], 
@@ -131,47 +132,12 @@
                               [state="4"]) )
                                            .downloadCancel,
 
-
-
-.download-state:not(          [state="8"]  )
-                                           .downloadConfirmBlock,
-.download-state[state="8"]:not(.temporary-block)
-                                           .downloadConfirmBlock,
-.download-state[state="8"].temporary-block:not([verdict="Malware"])
-                                           .downloadConfirmBlock,
-
-
-
-.download-state:not(          [state="8"]  )
-                                           .downloadChooseUnblock,
-.download-state[state="8"]:not(.temporary-block)
-                                           .downloadChooseUnblock,
-.download-state[state="8"].temporary-block:not([verdict="PotentiallyUnwanted"])
-                                           .downloadChooseUnblock,
-
-
-
-.download-state:not(          [state="8"]  )
-                                           .downloadChooseOpen,
-.download-state[state="8"]:not(.temporary-block)
-                                           .downloadChooseOpen,
-.download-state[state="8"].temporary-block:not([verdict="Uncommon"])
-                                           .downloadChooseOpen,
-
 .download-state:not(:-moz-any([state="2"], 
                               [state="3"]) )
                                            .downloadRetry,
 
 .download-state:not(          [state="1"]  )
-                                           .downloadShow,
-
-.download-state:-moz-any(     [state="6"], 
-                              [state="7"], 
-                              [state="9"]) 
-                                           > toolbarseparator,
-
-
-.downloadShowBlockedInfo
+                                           .downloadShow
 {
   display: none;
 }
@@ -186,25 +152,10 @@
 
 
 
-#downloadsPanel-mainView .download-state[state="8"] .downloadCancel,
-#downloadsPanel-mainView .download-state[state="8"] .downloadConfirmBlock,
-#downloadsPanel-mainView .download-state[state="8"] .downloadChooseUnblock,
-#downloadsPanel-mainView .download-state[state="8"] .downloadChooseOpen,
-#downloadsPanel-mainView .download-state[state="8"] .downloadRetry,
-#downloadsPanel-mainView .download-state[state="8"] .downloadShow {
-  display: none;
-}
-
-
 
 #downloadsPanel-multiView > .panel-viewcontainer,
 #downloadsPanel-multiView > .panel-viewcontainer > .panel-viewstack {
   max-width: unset;
-}
-
-
-#downloadsPanel-mainView .download-state[state="8"] .downloadShowBlockedInfo {
-  display: inline;
 }
 
 

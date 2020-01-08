@@ -752,24 +752,6 @@ var DownloadsView = {
 
   
 
-  
-
-
-
-
-
-
-
-
-
-  onDownloadCommand(aEvent, aCommand) {
-    let target = aEvent.target;
-    while (target.nodeName != "richlistitem") {
-      target = target.parentNode;
-    }
-    DownloadsView.itemForElement(target).doCommand(aCommand);
-  },
-
   onDownloadClick(aEvent) {
     
     if (aEvent.button == 0 &&
@@ -785,6 +767,11 @@ var DownloadsView = {
         goDoCommand("downloadsCmd_open");
       }
     }
+  },
+
+  onDownloadButton(event) {
+    let target = event.target.closest("richlistitem");
+    DownloadsView.itemForElement(target).onButton();
   },
 
   
@@ -838,13 +825,6 @@ var DownloadsView = {
   onDownloadMouseOver(aEvent) {
     if (aEvent.originalTarget.classList.contains("downloadButton")) {
       aEvent.target.classList.add("downloadHoveringButton");
-
-      let button = aEvent.originalTarget;
-      let tooltip = button.getAttribute("tooltiptext");
-      if (tooltip) {
-        button.setAttribute("aria-label", tooltip);
-        button.removeAttribute("tooltiptext");
-      }
     }
     if (!(this.contextMenuOpen || this.subViewOpen) &&
         aEvent.target.parentNode == this.richListBox) {
@@ -937,6 +917,8 @@ function DownloadsViewItem(download, aElement) {
 
   this.element.setAttribute("type", "download");
   this.element.classList.add("download-state");
+
+  this.isPanel = true;
 
   this._updateState();
 }

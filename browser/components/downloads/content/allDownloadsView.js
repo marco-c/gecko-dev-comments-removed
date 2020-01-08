@@ -182,8 +182,8 @@ HistoryDownloadElementShell.prototype = {
 
 
 const DownloadsView = {
-  onDownloadCommand(event, command) {
-    goDoCommand(command);
+  onDownloadButton(event) {
+    event.target.closest("richlistitem")._shell.onButton();
   },
 
   onDownloadClick() {},

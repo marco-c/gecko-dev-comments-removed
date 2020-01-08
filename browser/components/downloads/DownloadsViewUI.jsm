@@ -25,6 +25,44 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
 });
 
+var gDownloadElementButtons = {
+  cancel: {
+    commandName: "downloadsCmd_cancel",
+    l10nId: "download-cancel",
+    iconClass: "downloadIconCancel",
+  },
+  retry: {
+    commandName: "downloadsCmd_retry",
+    l10nId: "download-retry",
+    iconClass: "downloadIconRetry",
+  },
+  show: {
+    commandName: "downloadsCmd_show",
+    l10nId: "download-show",
+    iconClass: "downloadIconShow",
+  },
+  subviewOpenOrRemoveFile: {
+    commandName: "downloadsCmd_showBlockedInfo",
+    l10nId: "download-open-or-remove-file",
+    iconClass: "downloadIconSubviewArrow",
+  },
+  askOpenOrRemoveFile: {
+    commandName: "downloadsCmd_chooseOpen",
+    l10nId: "download-open-or-remove-file",
+    iconClass: "downloadIconShow",
+  },
+  askRemoveFileOrAllow: {
+    commandName: "downloadsCmd_chooseUnblock",
+    l10nId: "download-remove-file-or-allow",
+    iconClass: "downloadIconShow",
+  },
+  removeFile: {
+    commandName: "downloadsCmd_confirmBlock",
+    l10nId: "download-remove-file",
+    iconClass: "downloadIconCancel",
+  },
+};
+
 var DownloadsViewUI = {
   
 
@@ -72,6 +110,17 @@ this.DownloadsViewUI.DownloadElementShell.prototype = {
 
 
   element: null,
+
+  
+
+
+
+
+  string(l10nId) {
+    
+    return this.element.ownerDocument.getElementById("downloadsStrings")
+                                     .getAttribute("string-" + l10nId);
+  },
 
   
 
@@ -145,6 +194,20 @@ this.DownloadsViewUI.DownloadElementShell.prototype = {
     return this.__progressElement;
   },
 
+  showButton(type) {
+    let { commandName, l10nId, iconClass } = gDownloadElementButtons[type];
+
+    this.buttonCommandName = commandName;
+    let labelAttribute = this.isPanel ? "buttonarialabel" : "buttontooltiptext";
+    this.element.setAttribute(labelAttribute, this.string(l10nId));
+    this.element.setAttribute("buttonclass", "downloadButton " + iconClass);
+    this.element.removeAttribute("buttonhidden");
+  },
+
+  hideButton() {
+    this.element.setAttribute("buttonhidden", "true");
+  },
+
   
 
 
@@ -155,6 +218,32 @@ this.DownloadsViewUI.DownloadElementShell.prototype = {
     this.element.setAttribute("image", this.image);
     this.element.setAttribute("state",
                               DownloadsCommon.stateOfDownload(this.download));
+
+    
+    
+    if (!this.download.stopped) {
+      this.showButton("cancel");
+    } else if (this.download.succeeded) {
+      
+      
+    } else if (this.download.error) {
+      if (this.download.error.becauseBlockedByParentalControls) {
+        this.hideButton();
+      } else if (this.download.error.becauseBlockedByReputationCheck) {
+        
+        
+      } else {
+        this.showButton("retry");
+      }
+    } else if (this.download.canceled) {
+      if (this.download.hasPartialData) {
+        this.showButton("cancel");
+      } else {
+        this.showButton("retry");
+      }
+    } else {
+      this.showButton("cancel");
+    }
 
     if (!this.download.succeeded && this.download.error &&
         this.download.error.becauseBlockedByReputationCheck) {
@@ -175,12 +264,34 @@ this.DownloadsViewUI.DownloadElementShell.prototype = {
 
 
   _updateProgress() {
+    
+    
     if (this.download.succeeded) {
-      
       if (this.download.target.exists) {
         this.element.setAttribute("exists", "true");
+        this.showButton("show");
       } else {
         this.element.removeAttribute("exists");
+        this.hideButton();
+      }
+    } else if (this.download.error &&
+               this.download.error.becauseBlockedByReputationCheck) {
+      if (!this.download.hasBlockedData) {
+        this.hideButton();
+      } else if (this.isPanel) {
+        this.showButton("subviewOpenOrRemoveFile");
+      } else {
+        switch (this.download.error.reputationCheckVerdict) {
+          case Downloads.Error.BLOCK_VERDICT_UNCOMMON:
+            this.showButton("askOpenOrRemoveFile");
+            break;
+          case Downloads.Error.BLOCK_VERDICT_POTENTIALLY_UNWANTED:
+            this.showButton("askRemoveFileOrAllow");
+            break;
+          default: 
+            this.showButton("removeFile");
+            break;
+        }
       }
     }
 
@@ -427,6 +538,10 @@ this.DownloadsViewUI.DownloadElementShell.prototype = {
     if (DownloadsViewUI.isCommandName(aCommand)) {
       this[aCommand]();
     }
+  },
+
+  onButton() {
+    this.doCommand(this.buttonCommandName);
   },
 
   downloadsCmd_cancel() {
