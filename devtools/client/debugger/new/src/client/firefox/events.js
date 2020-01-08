@@ -23,21 +23,24 @@ type Dependencies = {
   supportsWasm: boolean
 };
 
-let threadClient: ThreadClient;
 let actions: Actions;
 let supportsWasm: boolean;
 let isInterrupted: boolean;
 
+function addThreadEventListeners(client: ThreadClient) {
+  Object.keys(clientEvents).forEach(eventName => {
+    client.addListener(eventName, clientEvents[eventName].bind(null, client));
+  });
+}
+
 function setupEvents(dependencies: Dependencies) {
-  threadClient = dependencies.threadClient;
+  const threadClient = dependencies.threadClient;
   actions = dependencies.actions;
   supportsWasm = dependencies.supportsWasm;
   sourceQueue.initialize(actions);
 
   if (threadClient) {
-    Object.keys(clientEvents).forEach(eventName => {
-      threadClient.addListener(eventName, clientEvents[eventName]);
-    });
+    addThreadEventListeners(threadClient);
 
     if (threadClient._parent) {
       
@@ -54,7 +57,11 @@ function setupEvents(dependencies: Dependencies) {
   }
 }
 
-async function paused(_: "paused", packet: PausedPacket) {
+async function paused(
+  threadClient: ThreadClient,
+  _: "paused",
+  packet: PausedPacket
+) {
   
   
   
@@ -79,13 +86,17 @@ async function paused(_: "paused", packet: PausedPacket) {
   }
 
   if (why.type != "alreadyPaused") {
-    const pause = createPause(packet, response);
+    const pause = createPause(threadClient.actor, packet, response);
     await sourceQueue.flush();
     actions.paused(pause);
   }
 }
 
-function resumed(_: "resumed", packet: ResumedPacket) {
+function resumed(
+  threadClient: ThreadClient,
+  _: "resumed",
+  packet: ResumedPacket
+) {
   
   
   
@@ -97,8 +108,12 @@ function resumed(_: "resumed", packet: ResumedPacket) {
   actions.resumed(packet);
 }
 
-function newSource(_: "newSource", { source }: SourcePacket) {
-  sourceQueue.queue(createSource(source, { supportsWasm }));
+function newSource(
+  threadClient: ThreadClient,
+  _: "newSource",
+  { source }: SourcePacket
+) {
+  sourceQueue.queue(createSource(threadClient.actor, source, { supportsWasm }));
 }
 
 function workerListChanged() {
@@ -111,4 +126,4 @@ const clientEvents = {
   newSource
 };
 
-export { setupEvents, clientEvents };
+export { setupEvents, clientEvents, addThreadEventListeners };
