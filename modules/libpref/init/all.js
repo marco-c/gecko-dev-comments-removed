@@ -1198,13 +1198,30 @@ pref("extensions.spellcheck.inline.max-misspellings", 500);
 
 
 
+
+
+
+#ifdef EARLY_BETA_OR_EARLIER
+pref("editor.resizing.enabled_by_default", false);
+pref("editor.inline_table_editing.enabled_by_default", false);
+pref("editor.positioning.enabled_by_default", false);
+#else
+pref("editor.resizing.enabled_by_default", true);
+pref("editor.inline_table_editing.enabled_by_default", true);
+pref("editor.positioning.enabled_by_default", true);
+#endif
+
+
+pref("editor.use_div_for_default_newlines",  true);
+
+
+
 pref("editor.use_custom_colors", false);
 pref("editor.singleLine.pasteNewlines",      2);
 pref("editor.use_css",                       false);
 pref("editor.css.default_length_unit",       "px");
 pref("editor.resizing.preserve_ratio",       true);
 pref("editor.positioning.offset",            0);
-pref("editor.use_div_for_default_newlines",  true);
 
 
 pref("dom.disable_beforeunload",            false);
