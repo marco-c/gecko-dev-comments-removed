@@ -110,9 +110,49 @@ function fetchMissingResource(subdomain) {
 
 
 
+function getURLForCachedResource(subdomain) {
+  return _getNELResourceURL(subdomain, "cached-for-one-minute.png");
+}
+
+function fetchCachedResource(subdomain) {
+  const url = getURLForCachedResource(subdomain);
+  return fetch(url, {mode: "no-cors"});
+}
+
+
+
+
+
+function getURLForValidatedCachedResource(subdomain) {
+  return _getNELResourceURL(subdomain, "cached-with-validation.py");
+}
+
+function fetchValidatedCachedResource(subdomain) {
+  const url = getURLForValidatedCachedResource(subdomain);
+  return fetch(url, {mode: "no-cors"});
+}
+
+
+
+
+
+
+function getURLForRedirectedResource(subdomain) {
+  return _getNELResourceURL(subdomain, "redirect.py?id="+reportID);
+}
+
+function fetchRedirectedResource(subdomain) {
+  const url = getURLForRedirectedResource(subdomain);
+  return fetch(url, {mode: "no-cors"});
+}
+
+
+
+
+
 
 function getURLForClearingConfiguration(subdomain) {
-  return _getNELResourceURL(subdomain, "clear-pass.png?id="+reportID);
+  return _getNELResourceURL(subdomain, "clear-policy-pass.png?id="+reportID);
 }
 
 async function clearReportingAndNELConfigurations(subdomain) {
