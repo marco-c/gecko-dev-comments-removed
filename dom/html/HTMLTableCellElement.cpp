@@ -237,19 +237,19 @@ NS_IMETHODIMP_(bool)
 HTMLTableCellElement::IsAttributeMapped(const nsAtom* aAttribute) const
 {
   static const MappedAttributeEntry attributes[] = {
-    { &nsGkAtoms::align },
-    { &nsGkAtoms::valign },
-    { &nsGkAtoms::nowrap },
+    { nsGkAtoms::align },
+    { nsGkAtoms::valign },
+    { nsGkAtoms::nowrap },
 #if 0
     
     
-    { &nsGkAtoms::abbr },
-    { &nsGkAtoms::axis },
-    { &nsGkAtoms::headers },
-    { &nsGkAtoms::scope },
+    { nsGkAtoms::abbr },
+    { nsGkAtoms::axis },
+    { nsGkAtoms::headers },
+    { nsGkAtoms::scope },
 #endif
-    { &nsGkAtoms::width },
-    { &nsGkAtoms::height },
+    { nsGkAtoms::width },
+    { nsGkAtoms::height },
     { nullptr }
   };
 

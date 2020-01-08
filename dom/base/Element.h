@@ -834,7 +834,7 @@ public:
 
 
 
-  typedef nsStaticAtom* const* const AttrValuesArray;
+  typedef nsStaticAtom* const AttrValuesArray;
   int32_t FindAttrValueIn(int32_t aNameSpaceID,
                                   nsAtom* aName,
                                   AttrValuesArray* aValues,
@@ -984,7 +984,7 @@ public:
 
 
   struct MappedAttributeEntry {
-    nsStaticAtom** attribute;
+    const nsStaticAtom* const attribute;
   };
 
   
@@ -1001,7 +1001,7 @@ public:
     return FindAttributeDependence(aAttribute, aMaps, N);
   }
 
-  static nsStaticAtom*** HTMLSVGPropertiesToTraverseAndUnlink();
+  static nsStaticAtom* const* HTMLSVGPropertiesToTraverseAndUnlink();
 
 private:
   void DescribeAttribute(uint32_t index, nsAString& aOutDescription) const;

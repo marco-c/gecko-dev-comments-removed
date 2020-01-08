@@ -223,7 +223,7 @@ nsMenuPopupFrame::PopupLevel(bool aIsNoAutoHide) const
 
   
   static Element::AttrValuesArray strings[] =
-    {&nsGkAtoms::top, &nsGkAtoms::parent, &nsGkAtoms::floating, nullptr};
+    {nsGkAtoms::top, nsGkAtoms::parent, nsGkAtoms::floating, nullptr};
   switch (mContent->AsElement()->FindAttrValueIn(kNameSpaceID_None,
                                                  nsGkAtoms::level, strings,
                                                  eCaseMatters)) {

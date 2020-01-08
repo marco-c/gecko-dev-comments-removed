@@ -307,8 +307,8 @@ HTMLTableHeaderCellAccessible::NativeRole() const
 {
   
   static Element::AttrValuesArray scopeValues[] =
-    { &nsGkAtoms::col, &nsGkAtoms::colgroup,
-      &nsGkAtoms::row, &nsGkAtoms::rowgroup, nullptr };
+    { nsGkAtoms::col, nsGkAtoms::colgroup,
+      nsGkAtoms::row, nsGkAtoms::rowgroup, nullptr };
   int32_t valueIdx =
     mContent->AsElement()->FindAttrValueIn(kNameSpaceID_None, nsGkAtoms::scope,
                                            scopeValues, eCaseMatters);
@@ -623,7 +623,8 @@ HTMLTableAccessible::CellAt(uint32_t aRowIdx, uint32_t aColIdx)
   
   
   if (cell && cell->IsTableRow()) {
-    return CellInRowAt(cell, aColIdx);
+    Accessible* row = RowAt(aRowIdx);
+    return CellInRowAt(row, aColIdx);
   }
 
   
