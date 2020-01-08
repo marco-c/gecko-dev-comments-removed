@@ -6,6 +6,7 @@
 
 var Services = require("Services");
 var { gDevTools } = require("devtools/client/framework/devtools");
+var { getSourceText } = require("devtools/client/debugger/content/queries");
 
 
 
@@ -50,14 +51,73 @@ exports.viewSourceInStyleEditor = async function(toolbox, sourceURL,
 
 exports.viewSourceInDebugger = async function(toolbox, sourceURL, sourceLine,
                                               reason = "unknown") {
+  
+  
+  
+  const debuggerAlreadyOpen = toolbox.getPanel("jsdebugger");
   const dbg = await toolbox.loadTool("jsdebugger");
-  const source = dbg.getSource(sourceURL);
-  if (source) {
+
+  
+  if (Services.prefs.getBoolPref("devtools.debugger.new-debugger-frontend")) {
+    const source = dbg.getSource(sourceURL);
+    if (source) {
+      await toolbox.selectTool("jsdebugger", reason);
+      dbg.selectSource(sourceURL, sourceLine);
+      return true;
+    }
+
+    exports.viewSource(toolbox, sourceURL, sourceLine);
+    return false;
+  }
+
+  const win = dbg.panelWin;
+
+  
+  if (!debuggerAlreadyOpen) {
+    await win.DebuggerController.waitForSourcesLoaded();
+  }
+
+  const { DebuggerView } = win;
+  const { Sources } = DebuggerView;
+
+  const item = Sources.getItemForAttachment(a => a.source.url === sourceURL);
+  if (item) {
     await toolbox.selectTool("jsdebugger", reason);
-    dbg.selectSource(sourceURL, sourceLine);
+
+    
+    
+    
+    
+    
+    const { actor } = item.attachment.source;
+    const state = win.DebuggerController.getState();
+
+    
+    const selected = state.sources.selectedSource;
+    const isSelected = selected === actor;
+
+    
+    let isLoading = false;
+
+    
+    
+    
+    if (isSelected) {
+      const sourceTextInfo = getSourceText(state, selected);
+      isLoading = sourceTextInfo && sourceTextInfo.loading;
+    }
+
+    
+    DebuggerView.setEditorLocation(actor, sourceLine, { noDebug: true });
+
+    
+    if (!isSelected || isLoading) {
+      await win.DebuggerController.waitForSourceShown(sourceURL);
+    }
     return true;
   }
 
+  
   exports.viewSource(toolbox, sourceURL, sourceLine);
   return false;
 };

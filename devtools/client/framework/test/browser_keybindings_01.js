@@ -51,6 +51,12 @@ function setupKeyBindingsTest() {
 }
 
 add_task(async function() {
+  
+  
+  await SpecialPowers.pushPrefEnv({set: [
+    ["devtools.debugger.new-debugger-frontend", true]
+  ]});
+
   await addTab(TEST_URL);
   await new Promise(done => waitForFocus(done));
 
