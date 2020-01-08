@@ -118,6 +118,14 @@ public:
   Close(nsIPrincipal& aSubjectPrincipal, ErrorResult& aRv)
   { }
 
+  virtual void
+  BeginExplicitSnapshot(nsIPrincipal& aSubjectPrincipal, ErrorResult& aRv)
+  { }
+
+  virtual void
+  EndExplicitSnapshot(nsIPrincipal& aSubjectPrincipal, ErrorResult& aRv)
+  { }
+
   
   
   

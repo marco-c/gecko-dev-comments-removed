@@ -128,6 +128,7 @@ LSObject::LSObject(nsPIDOMWindowInner* aWindow,
                    nsIPrincipal* aPrincipal)
   : Storage(aWindow, aPrincipal)
   , mPrivateBrowsingId(0)
+  , mInExplicitSnapshot(false)
 {
   AssertIsOnOwningThread();
   MOZ_ASSERT(NextGenLocalStorageEnabled());
@@ -563,6 +564,60 @@ LSObject::Close(nsIPrincipal& aSubjectPrincipal,
   DropDatabase();
 }
 
+void
+LSObject::BeginExplicitSnapshot(nsIPrincipal& aSubjectPrincipal,
+                                ErrorResult& aError)
+{
+  AssertIsOnOwningThread();
+
+  if (!CanUseStorage(aSubjectPrincipal)) {
+    aError.Throw(NS_ERROR_DOM_SECURITY_ERR);
+    return;
+  }
+
+  if (mInExplicitSnapshot) {
+    aError.Throw(NS_ERROR_ALREADY_INITIALIZED);
+    return;
+  }
+
+  nsresult rv = EnsureDatabase();
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    aError.Throw(rv);
+    return;
+  }
+
+  rv = mDatabase->BeginExplicitSnapshot(this);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    aError.Throw(rv);
+    return;
+  }
+
+  mInExplicitSnapshot = true;
+}
+
+void
+LSObject::EndExplicitSnapshot(nsIPrincipal& aSubjectPrincipal,
+                              ErrorResult& aError)
+{
+  AssertIsOnOwningThread();
+
+  if (!CanUseStorage(aSubjectPrincipal)) {
+    aError.Throw(NS_ERROR_DOM_SECURITY_ERR);
+    return;
+  }
+
+  if (!mInExplicitSnapshot) {
+    aError.Throw(NS_ERROR_NOT_INITIALIZED);
+    return;
+  }
+
+  nsresult rv = EndExplicitSnapshotInternal();
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    aError.Throw(rv);
+    return;
+  }
+}
+
 NS_IMPL_ADDREF_INHERITED(LSObject, Storage)
 NS_IMPL_RELEASE_INHERITED(LSObject, Storage)
 
@@ -692,6 +747,11 @@ LSObject::DropDatabase()
 {
   AssertIsOnOwningThread();
 
+  if (mInExplicitSnapshot) {
+    nsresult rv = EndExplicitSnapshotInternal();
+    Unused << NS_WARN_IF(NS_FAILED(rv));
+  }
+
   mDatabase = nullptr;
 }
 
@@ -778,6 +838,38 @@ LSObject::OnChange(const nsAString& aKey,
                mDocumentURI,
                 !!mPrivateBrowsingId,
                 false);
+}
+
+nsresult
+LSObject::EndExplicitSnapshotInternal()
+{
+  AssertIsOnOwningThread();
+
+  
+  
+  MOZ_ASSERT(mInExplicitSnapshot);
+
+  
+  
+  
+  
+  
+  MOZ_ASSERT(mDatabase);
+
+  
+  
+  
+  
+  MOZ_ASSERT(!mDatabase->IsAllowedToClose());
+
+  nsresult rv = mDatabase->EndExplicitSnapshot(this);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  mInExplicitSnapshot = false;
+
+  return NS_OK;
 }
 
 void
