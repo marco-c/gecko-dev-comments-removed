@@ -452,6 +452,28 @@ public:
 
   Element* GetActiveEditingHost() const;
 
+  
+
+
+
+
+
+
+  nsresult InsertAsQuotation(const nsAString& aQuotedText,
+                             nsINode** aNodeInserted);
+
+  
+
+
+
+
+
+
+
+
+
+   nsresult InsertTextWithQuotations(const nsAString& aStringToInsert);
+
 protected: 
   
 
