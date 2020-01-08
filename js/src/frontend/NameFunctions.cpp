@@ -50,8 +50,11 @@ class NameResolver
             return buf->append('.') && buf->append(name);
 
         
-        JSString* source = QuoteString(cx, name, '"');
-        return source && buf->append('[') && buf->append(source) && buf->append(']');
+        UniqueChars source = QuoteString(cx, name, '"');
+        return source &&
+               buf->append('[') &&
+               buf->append(source.get(), strlen(source.get())) &&
+               buf->append(']');
     }
 
     
