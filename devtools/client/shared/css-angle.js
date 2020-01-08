@@ -4,16 +4,15 @@
 
 "use strict";
 
-loader.lazyRequireGetter(this, "CSS_ANGLEUNIT",
-  "devtools/shared/css/properties-db", true);
-
 const SPECIALVALUES = new Set([
   "initial",
   "inherit",
-  "unset",
+  "unset"
 ]);
 
 const {getCSSLexer} = require("devtools/shared/css/lexer");
+
+loader.lazyRequireGetter(this, "CSS_ANGLEUNIT", "devtools/shared/css/constants", true);
 
 
 
@@ -39,7 +38,7 @@ function CssAngle(angleValue) {
 
 module.exports.angleUtils = {
   CssAngle: CssAngle,
-  classifyAngle: classifyAngle,
+  classifyAngle: classifyAngle
 };
 
 CssAngle.prototype = {

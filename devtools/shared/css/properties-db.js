@@ -21,56 +21,9 @@ try {
                 `being run, then it needs to be fixed.`, error);
   db = {
     CSS_PROPERTIES: {},
-    PSEUDO_ELEMENTS: [],
+    PSEUDO_ELEMENTS: []
   };
 }
-
-
-
-
-
-
-
-exports.CSS_TYPES = {
-  "COLOR": 2,
-  "GRADIENT": 4,
-  "TIMING_FUNCTION": 10,
-};
-
-
-
-
-exports.CSS_ANGLEUNIT = {
-  "deg": "deg",
-  "rad": "rad",
-  "grad": "grad",
-  "turn": "turn",
-};
-
-
-
-
-exports.BEZIER_KEYWORDS = ["linear", "ease-in-out", "ease-in", "ease-out", "ease"];
-
-
-
-
-exports.COLOR_TAKING_FUNCTIONS = ["linear-gradient", "-moz-linear-gradient",
-                                  "repeating-linear-gradient",
-                                  "-moz-repeating-linear-gradient", "radial-gradient",
-                                  "-moz-radial-gradient", "repeating-radial-gradient",
-                                  "-moz-repeating-radial-gradient", "drop-shadow"];
-
-
-
-
-exports.ANGLE_TAKING_FUNCTIONS = ["linear-gradient", "-moz-linear-gradient",
-                                  "repeating-linear-gradient",
-                                  "-moz-repeating-linear-gradient", "rotate", "rotateX",
-                                  "rotateY", "rotateZ", "rotate3d", "skew", "skewX",
-                                  "skewY", "hue-rotate"];
-
-exports.BASIC_SHAPE_FUNCTIONS = ["polygon", "circle", "ellipse", "inset"];
 
 
 
@@ -93,5 +46,5 @@ exports.CSS_PROPERTIES = db.CSS_PROPERTIES;
 
 exports.CSS_PROPERTIES_DB = {
   properties: db.CSS_PROPERTIES,
-  pseudoElements: db.PSEUDO_ELEMENTS,
+  pseudoElements: db.PSEUDO_ELEMENTS
 };
