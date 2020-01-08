@@ -30,7 +30,6 @@ class Output(object):
 
     def summarize(self):
         suites = []
-        vals = []
         test_results = {
             'framework': {
                 'name': 'raptor',
@@ -44,6 +43,7 @@ class Output(object):
             return
 
         for test in self.results:
+            vals = []
             subtests = []
             suite = {
                 'name': test.name,
@@ -71,10 +71,10 @@ class Output(object):
                 
                 
 
-                for key, values in test.measurements.iteritems():
+                for measurement_name, replicates in test.measurements.iteritems():
                     new_subtest = {}
-                    new_subtest['name'] = test.name + "-" + key
-                    new_subtest['replicates'] = values
+                    new_subtest['name'] = test.name + "-" + measurement_name
+                    new_subtest['replicates'] = replicates
                     new_subtest['lowerIsBetter'] = test.lower_is_better
                     new_subtest['alertThreshold'] = float(test.alert_threshold)
                     new_subtest['value'] = 0
@@ -82,8 +82,8 @@ class Output(object):
 
                     filtered_values = filter.ignore_first(new_subtest['replicates'], 1)
                     new_subtest['value'] = filter.median(filtered_values)
-                    vals.append(new_subtest['value'])
 
+                    vals.append([new_subtest['value'], new_subtest['name']])
                     subtests.append(new_subtest)
 
             elif test.type == "benchmark":
@@ -97,13 +97,21 @@ class Output(object):
                     subtests, vals = self.parseWebaudioOutput(test)
                 suite['subtests'] = subtests
 
-                
-                if len(subtests) > 1:
-                    suite['value'] = self.construct_summary(vals, testname=test.name)
-
             else:
                 LOG.error("output.summarize received unsupported test results type")
                 return
+
+            
+            
+            
+            
+            
+
+            
+            
+
+            if len(subtests) > 1:
+                suite['value'] = self.construct_summary(vals, testname=test.name)
 
         self.summarized_results = test_results
 
@@ -401,6 +409,6 @@ class Output(object):
         elif testname.startswith('raptor-webaudio'):
             return self.webaudio_score(vals)
         elif len(vals) > 1:
-            return filter.geometric_mean([i for i, j in vals])
+            return round(filter.geometric_mean([i for i, j in vals]), 2)
         else:
-            return filter.mean([i for i, j in vals])
+            return round(filter.mean([i for i, j in vals]), 2)
