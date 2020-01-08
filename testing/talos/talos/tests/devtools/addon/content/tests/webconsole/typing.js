@@ -44,7 +44,7 @@ module.exports = async function() {
     const onPopupOpened = jsterm.autocompletePopup.once("popup-opened");
     jsterm.insertStringAtCursor(char);
     
-    jsterm.props.autocompleteUpdate();
+    jsterm.fetchAutocompletionProperties();
     await onPopupOpened;
   }
 

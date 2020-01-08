@@ -76,19 +76,8 @@ function configureStore(hud, options = {}) {
   };
 
   
-  const services = (options.services || {});
-
   const middleware = applyMiddleware(
-    thunk.bind(null, {
-      prefsService,
-      services,
-      
-      client: {
-        createObjectClient: services.createObjectClient,
-        createLongStringClient: services.createLongStringClient,
-        releaseActor: services.releaseActor,
-      },
-    }),
+    thunk.bind(null, {prefsService, client: (options.services || {})}),
     historyPersistence,
     eventTelemetry.bind(null, options.telemetry, options.sessionId),
   );
