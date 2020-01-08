@@ -65,6 +65,10 @@ class ReportingHeader final : public nsIObserver {
                              const nsACString& aEndpointURL,
                              const mozilla::ipc::PrincipalInfo& aPrincipalInfo);
 
+  
+
+  static bool HasReportingHeaderForOrigin(const nsACString& aOrigin);
+
  private:
   ReportingHeader();
   ~ReportingHeader();
