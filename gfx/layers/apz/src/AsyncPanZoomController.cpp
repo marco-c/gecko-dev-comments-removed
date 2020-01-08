@@ -3066,6 +3066,15 @@ ParentLayerPoint AsyncPanZoomController::AttemptFling(const FlingHandoffState& a
 
   
   
+  if (GetVelocityVector().Length() < gfxPrefs::APZFlingMinVelocityThreshold()) {
+    
+    
+    aHandoffState.mChain->SnapBackOverscrolledApzc(this);
+    return residualVelocity;
+  }
+
+  
+  
   
   ScrollSnapToDestination();
   if (mState != SMOOTH_SCROLL) {
