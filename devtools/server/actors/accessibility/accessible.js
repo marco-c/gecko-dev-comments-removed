@@ -8,7 +8,7 @@ const { Ci, Cu } = require("chrome");
 const { Actor, ActorClassWithSpec } = require("devtools/shared/protocol");
 const { accessibleSpec } = require("devtools/shared/specs/accessibility");
 
-loader.lazyRequireGetter(this, "getContrastRatioFor", "devtools/server/actors/utils/accessibility", true);
+loader.lazyRequireGetter(this, "getContrastRatioFor", "devtools/server/actors/accessibility/contrast", true);
 loader.lazyRequireGetter(this, "isDefunct", "devtools/server/actors/utils/accessibility", true);
 loader.lazyRequireGetter(this, "findCssSelector", "devtools/shared/inspector/css-logic", true);
 
@@ -380,16 +380,18 @@ const AccessibleActor = ActorClassWithSpec(accessibleSpec, {
   
 
 
-  _getContrastRatio() {
+  async _getContrastRatio() {
     if (!this._isValidTextLeaf(this.rawAccessible)) {
       return null;
     }
 
     const { DOMNode: rawNode } = this.rawAccessible;
-    return getContrastRatioFor(rawNode.parentNode, {
+    const contrastRatio = await getContrastRatioFor(rawNode.parentNode, {
       bounds: this.bounds,
       win: rawNode.ownerGlobal,
     });
+
+    return contrastRatio;
   },
 
   
@@ -399,8 +401,15 @@ const AccessibleActor = ActorClassWithSpec(accessibleSpec, {
 
 
   async audit() {
+    
+    
+    
+    const [ contrastRatio ] = await Promise.all([
+      this._getContrastRatio(),
+    ]);
+
     return this.isDefunct ? null : {
-      contrastRatio: this._getContrastRatio(),
+      contrastRatio,
     };
   },
 

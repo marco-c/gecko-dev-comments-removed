@@ -62,7 +62,9 @@
 
 
 
-  DevToolsWorker.prototype.performTask = function(task, data) {
+
+
+  DevToolsWorker.prototype.performTask = function(task, data, transfer) {
     if (this._destroyed) {
       return Promise.reject("Cannot call performTask on a destroyed DevToolsWorker");
     }
@@ -76,7 +78,7 @@
             ": " +
             JSON.stringify(payload, null, 2));
     }
-    worker.postMessage(payload);
+    worker.postMessage(payload, transfer);
 
     return new Promise((resolve, reject) => {
       const listener = ({ data: result }) => {
@@ -146,7 +148,8 @@
     const url = URL.createObjectURL(blob);
     const worker = new DevToolsWorker(url);
 
-    const wrapperFn = data => worker.performTask("workerifiedTask", data);
+    const wrapperFn = (data, transfer) =>
+      worker.performTask("workerifiedTask", data, transfer);
 
     wrapperFn.destroy = function() {
       URL.revokeObjectURL(url);
