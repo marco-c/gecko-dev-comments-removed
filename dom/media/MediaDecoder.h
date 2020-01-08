@@ -575,6 +575,9 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   double mPlaybackRate;
 
   
+  Watchable<bool> mLogicallySeeking;
+
+  
   Mirror<media::TimeIntervals> mBuffered;
 
   
@@ -607,9 +610,6 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   PlayState mNextState = PLAY_STATE_PAUSED;
 
   
-  Canonical<bool> mLogicallySeeking;
-
-  
   
   Canonical<bool> mSameOriginMedia;
 
@@ -633,9 +633,6 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   }
   AbstractCanonical<bool>* CanonicalLooping() { return &mLooping; }
   AbstractCanonical<PlayState>* CanonicalPlayState() { return &mPlayState; }
-  AbstractCanonical<bool>* CanonicalLogicallySeeking() {
-    return &mLogicallySeeking;
-  }
   AbstractCanonical<bool>* CanonicalSameOriginMedia() {
     return &mSameOriginMedia;
   }
