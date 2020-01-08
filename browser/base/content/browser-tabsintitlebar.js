@@ -3,12 +3,16 @@
 
 
 
-var TabsInTitlebar = {
+var TabsInTitlebar;
+
+{ 
+
+TabsInTitlebar = {
   init() {
     this._readPref();
     Services.prefs.addObserver(this._prefName, this);
 
-    gDragSpaceObserver.init();
+    dragSpaceObserver.init();
     this._initialized = true;
     this._update();
   },
@@ -87,20 +91,13 @@ var TabsInTitlebar = {
 
   uninit() {
     Services.prefs.removeObserver(this._prefName, this);
-    gDragSpaceObserver.uninit();
+    dragSpaceObserver.uninit();
   },
 };
 
-function onTitlebarMaxClick() {
-  if (window.windowState == window.STATE_MAXIMIZED)
-    window.restore();
-  else
-    window.maximize();
-}
 
 
-
-var gDragSpaceObserver = {
+let dragSpaceObserver = {
   pref: "browser.tabs.extraDragSpace",
 
   init() {
@@ -120,3 +117,12 @@ var gDragSpaceObserver = {
     }
   },
 };
+
+} 
+
+function onTitlebarMaxClick() {
+  if (window.windowState == window.STATE_MAXIMIZED)
+    window.restore();
+  else
+    window.maximize();
+}
