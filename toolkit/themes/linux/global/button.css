@@ -45,21 +45,8 @@ button[disabled="true"] {
 
 
 
-button[type="menu-button"] {
-  -moz-appearance: dualbutton;
-}
-
-.button-menubutton-button {
-  margin: 0;
-}
-
-.button-menu-dropmarker,
-.button-menubutton-dropmarker {
+.button-menu-dropmarker {
   -moz-appearance: toolbarbutton-dropdown !important;
-}
-
-.button-menubutton-dropmarker {
-  margin-inline-end: 3px;
 }
 
 

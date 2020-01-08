@@ -1486,14 +1486,9 @@ EventStateManager::CreateClickHoldTimer(nsPresContext* inPresContext,
 
   
   
-  if (mGestureDownContent) {
-    
-    if (nsContentUtils::HasNonEmptyAttr(mGestureDownContent, kNameSpaceID_None,
-                                        nsGkAtoms::popup))
-      return;
-
-    
-    if (mGestureDownContent->IsXULElement(nsGkAtoms::menubutton))
+  if (mGestureDownContent &&
+      nsContentUtils::HasNonEmptyAttr(mGestureDownContent, kNameSpaceID_None,
+                                      nsGkAtoms::popup)) {
       return;
   }
 

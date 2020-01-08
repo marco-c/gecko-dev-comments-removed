@@ -158,24 +158,8 @@ XULButtonAccessible::IsAcceptableChild(nsIContent* aEl) const
 {
   
   
-  
-
-  
-  if (aEl->IsXULElement(nsGkAtoms::menupopup) ||
-      aEl->IsXULElement(nsGkAtoms::popup)) {
-    return true;
-  }
-
-  
-  
-  if ((!aEl->IsXULElement(nsGkAtoms::button) &&
-       !aEl->IsXULElement(nsGkAtoms::toolbarbutton)) ||
-      aEl->IsXULElement(nsGkAtoms::dropMarker)) {
-    return false;
-  }
-
-  return mContent->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::type,
-                                            nsGkAtoms::menuButton, eCaseMatters);
+  return aEl->IsXULElement(nsGkAtoms::menupopup) ||
+         aEl->IsXULElement(nsGkAtoms::popup);
 }
 
 
@@ -184,12 +168,8 @@ XULButtonAccessible::IsAcceptableChild(nsIContent* aEl) const
 bool
 XULButtonAccessible::ContainsMenu() const
 {
-  static Element::AttrValuesArray strings[] =
-    {&nsGkAtoms::menu, &nsGkAtoms::menuButton, nullptr};
-
-  return mContent->AsElement()->FindAttrValueIn(kNameSpaceID_None,
-                                                nsGkAtoms::type,
-                                                strings, eCaseMatters) >= 0;
+  return mContent->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::type,
+                                            nsGkAtoms::menu, eCaseMatters);
 }
 
 
