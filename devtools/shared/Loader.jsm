@@ -37,8 +37,6 @@ BuiltinProvider.prototype = {
       
       "acorn/util/walk": "resource://devtools/shared/acorn/walk.js",
       
-      "source-map": "resource://devtools/shared/sourcemap/source-map.js",
-      
       
       "xpcshell-test": "resource://test",
 

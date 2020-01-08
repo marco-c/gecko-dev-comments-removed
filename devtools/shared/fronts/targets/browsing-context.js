@@ -34,7 +34,6 @@ class BrowsingContextTargetFront extends FrontClassWithSpec(browsingContextTarge
 
 
 
-
   attachThread(options = {}) {
     if (this.thread) {
       return Promise.resolve([{}, this.thread]);

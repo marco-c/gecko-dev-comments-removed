@@ -424,7 +424,6 @@ DebuggerClient.prototype = {
 
 
 
-
   attachThread: function(threadActor, options = {}) {
     if (this._clients.has(threadActor)) {
       const client = this._clients.get(threadActor);
