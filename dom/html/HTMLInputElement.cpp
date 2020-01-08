@@ -967,6 +967,7 @@ HTMLInputElement::HTMLInputElement(
       mPickerRunning(false),
       mSelectionCached(true),
       mIsPreviewEnabled(false),
+      mHasBeenTypePassword(false),
       mHasPatternAttribute(false) {
   
   
@@ -4384,6 +4385,9 @@ void HTMLInputElement::UnbindFromTree(bool aDeep, bool aNullParent) {
 void HTMLInputElement::HandleTypeChange(uint8_t aNewType, bool aNotify) {
   uint8_t oldType = mType;
   MOZ_ASSERT(oldType != aNewType);
+
+  mHasBeenTypePassword =
+      mHasBeenTypePassword || aNewType == NS_FORM_INPUT_PASSWORD;
 
   nsFocusManager* fm = nsFocusManager::GetFocusManager();
   if (fm) {
