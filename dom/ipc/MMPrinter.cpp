@@ -16,6 +16,22 @@ void MMPrinter::PrintImpl(char const* aLocation, const nsAString& aMsg,
                           ClonedMessageData const& aData) {
   NS_ConvertUTF16toUTF8 charMsg(aMsg);
 
+  
+
+
+
+
+
+
+
+
+
+  char* mmSkipLog = PR_GetEnv("MOZ_LOG_MESSAGEMANAGER_SKIP");
+
+  if (mmSkipLog && strstr(mmSkipLog, charMsg.get())) {
+    return;
+  }
+
   MOZ_LOG(MMPrinter::sMMLog, LogLevel::Debug,
           ("%s Message: %s in process type: %s", aLocation, charMsg.get(),
            XRE_ChildProcessTypeToString(XRE_GetProcessType())));
