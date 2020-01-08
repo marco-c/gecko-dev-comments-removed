@@ -4,5 +4,5 @@
 
 
 
-runTestRequests([ new AbortedRequest(true, 0),
-                  new AbortedRequest(true, TIME_DELAY) ]);
+runTestRequests([ ["AbortedRequest", true, "abort() from a 0ms timeout", 0],
+                  ["AbortedRequest", true, "aborted after TIME_DELAY", TIME_DELAY] ]);

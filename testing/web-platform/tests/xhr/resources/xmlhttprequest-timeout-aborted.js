@@ -10,6 +10,6 @@ if (this.document === undefined)
 
 
 
-runTestRequests([ new AbortedRequest(false),
-                  new AbortedRequest(true, -1),
-                  new AbortedRequest(true, TIME_NORMAL_LOAD) ]);
+runTestRequests([ ["AbortedRequest", false, "only open()ed, not aborted"],
+                  ["AbortedRequest", true, "aborted immediately after send()", -1],
+                  ["AbortedRequest", true, "call abort() after TIME_NORMAL_LOAD", TIME_NORMAL_LOAD] ]);
