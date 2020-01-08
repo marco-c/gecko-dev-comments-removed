@@ -2348,9 +2348,20 @@ BinASTParser<Tok>::parseInterfaceAssertedPositionalParameterName(const size_t st
     
     
     
-    if (index >= positionalParams.get().length()) {
-        return raiseError("AssertedPositionalParameterName.length out of range");
+    size_t prevLength = positionalParams.get().length();
+    if (index >= prevLength) {
+        
+        size_t newLength = index + 1;
+        if (newLength >= ARGNO_LIMIT) {
+            return raiseError("AssertedPositionalParameterName.index is too big");
+        }
+
+        BINJS_TRY(positionalParams.get().resize(newLength));
+        for (uint32_t i = prevLength; i < newLength; i++) {
+            positionalParams.get()[i] = nullptr;
+        }
     }
+
     if (positionalParams.get()[index]) {
         return raiseError("AssertedPositionalParameterName has duplicate entry for the same index");
     }
@@ -5481,13 +5492,14 @@ BinASTParser<Tok>::parseListOfAssertedMaybePositionalParameterName(
     MOZ_TRY(tokenizer_->enterList(length, guard));
     (void) start;
     auto result = Ok();
-    if (length >= ARGNO_LIMIT) {
-        return raiseError("Too many function parameters");
-    }
-    BINJS_TRY(positionalParams.get().resize(length));
-    for (uint32_t i = 0; i < length; i++) {
-        positionalParams.get()[i] = nullptr;
-    }
+    
+    
+    
+    
+    
+    
+    
+    
 
     for (uint32_t i = 0; i < length; ++i) {
         MOZ_TRY(parseAssertedMaybePositionalParameterName(

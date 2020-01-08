@@ -478,50 +478,73 @@ template<typename Tok> JS::Result<Ok>
 BinASTParser<Tok>::checkPositionalParameterIndices(Handle<GCVector<JSAtom*>> positionalParams,
                                                    ListNode* params)
 {
-#ifdef DEBUG
     
-    size_t paramsCount = params->count();
-    if (paramsCount > 0) {
-        if (params->last()->isKind(ParseNodeKind::Spread)) {
-            paramsCount--;
-        }
-    }
-    MOZ_ASSERT(positionalParams.get().length() == paramsCount);
-#endif
+    
 
+    
+    
+    
+
+    
+    
+    
+    
     uint32_t i = 0;
     for (ParseNode* param : params->contents()) {
         if (param->isKind(ParseNodeKind::Assign)) {
             param = param->as<AssignmentNode>().left();
         }
-        if (param->isKind(ParseNodeKind::Spread)) {
-            continue;
-        }
 
-        MOZ_ASSERT(param->isKind(ParseNodeKind::Name) ||
-                   param->isKind(ParseNodeKind::Object) ||
-                   param->isKind(ParseNodeKind::Array));
-
-        if (JSAtom* name = positionalParams.get()[i]) {
+        if (param->isKind(ParseNodeKind::Name)) {
             
-            if (param->isKind(ParseNodeKind::Object) || param->isKind(ParseNodeKind::Array)) {
-                return raiseError("AssertedPositionalParameterName: expected positional parameter, got destructuring parameter");
-            }
-            if (param->isKind(ParseNodeKind::Spread)) {
-                return raiseError("AssertedPositionalParameterName: expected positional parameter, got rest parameter");
+
+            
+            if (i >= positionalParams.get().length()) {
+                return raiseError("AssertedParameterScope.paramNames doesn't have corresponding entry to positional parameter");
             }
 
+            JSAtom* name = positionalParams.get()[i];
+            if (!name) {
+                
+                return raiseError("AssertedParameterScope.paramNames asserted destructuring/rest parameter, got positional parameter");
+            }
+
+            
             if (param->name() != name) {
+                
                 return raiseError("AssertedPositionalParameterName: name mismatch");
             }
+
+            
+            
         } else {
             
-            if (param->isKind(ParseNodeKind::Name)) {
-                return raiseError("AssertedParameterName/AssertedRestParameterName: expected destructuring/rest parameter, got positional parameter");
+
+            MOZ_ASSERT(param->isKind(ParseNodeKind::Object) ||
+                       param->isKind(ParseNodeKind::Array) ||
+                       param->isKind(ParseNodeKind::Spread));
+
+            
+            if (i >= positionalParams.get().length()) {
+                continue;
+            }
+
+            if (positionalParams.get()[i]) {
+                if (param->isKind(ParseNodeKind::Spread)) {
+                    return raiseError("AssertedParameterScope.paramNames asserted positional parameter, got rest parameter");
+                } else {
+                    return raiseError("AssertedParameterScope.paramNames asserted positional parameter, got destructuring parameter");
+                }
             }
         }
 
         i++;
+    }
+
+    
+    if (positionalParams.get().length() > params->count()) {
+        
+        return raiseError("AssertedParameterScope.paramNames has unmatching items than the actual parameters");
     }
 
     return Ok();
