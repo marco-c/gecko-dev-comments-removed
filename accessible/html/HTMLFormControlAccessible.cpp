@@ -241,8 +241,11 @@ HTMLTextFieldAccessible::NativeAttributes()
   
   
   
-  nsIContent* content = mContent->FindFirstNonChromeOnlyAccessContent();
-  if (content->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::type, type)) {
+  
+  
+  nsIContent* widgetElm = BindingParent();
+  if ((widgetElm && widgetElm->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::type, type)) ||
+      mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::type, type)) {
     nsAccUtils::SetAccAttr(attributes, nsGkAtoms::textInputType, type);
     if (!ARIARoleMap() && type.EqualsLiteral("search")) {
       nsAccUtils::SetAccAttr(attributes, nsGkAtoms::xmlroles,
@@ -261,7 +264,7 @@ HTMLTextFieldAccessible::NativeName(nsString& aName) const
     return nameFlag;
 
   
-  nsIContent* widgetElm = XULWidgetElm();
+  nsIContent* widgetElm = BindingParent();
   if (widgetElm)
     XULElmName(mDoc, widgetElm, aName);
 
@@ -302,7 +305,7 @@ HTMLTextFieldAccessible::ApplyARIAState(uint64_t* aState) const
 
   
   
-  nsIContent* widgetElm = XULWidgetElm();
+  nsIContent* widgetElm = BindingParent();
   if (widgetElm)
     aria::MapToState(aria::eARIAAutoComplete, widgetElm->AsElement(), aState);
 }
@@ -347,7 +350,7 @@ HTMLTextFieldAccessible::NativeState() const
     return state | states::SUPPORTS_AUTOCOMPLETION | states::HASPOPUP;
 
   
-  if (!XULWidgetElm() && Preferences::GetBool("browser.formfill.enable")) {
+  if (!BindingParent() && Preferences::GetBool("browser.formfill.enable")) {
     
     
     

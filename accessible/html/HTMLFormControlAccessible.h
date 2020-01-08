@@ -114,7 +114,7 @@ protected:
   
 
 
-  nsIContent* XULWidgetElm() const { return mContent->GetBindingParent(); }
+  nsIContent* BindingParent() const { return mContent->GetBindingParent(); }
 };
 
 
