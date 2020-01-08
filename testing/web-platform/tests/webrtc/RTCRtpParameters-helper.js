@@ -80,11 +80,6 @@ function validateSenderRtpParameters(param) {
 
 
 
-
-
-
-
-
 function validateReceiverRtpParameters(param) {
   validateRtpParameters(param);
 
@@ -169,38 +164,7 @@ function validateRtpParameters(param) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 function validateEncodingParameters(encoding) {
-  assert_optional_unsigned_int_field(encoding, 'ssrc');
-
-  assert_optional_dict_field(encoding, 'rtx');
-  if(encoding.rtx) {
-    assert_unsigned_int_field(encoding.rtx, 'ssrc');
-  }
-
-  assert_optional_dict_field(encoding, 'fec');
-  if(encoding.fec) {
-    assert_unsigned_int_field(encoding.fec, 'ssrc');
-  }
-
   assert_optional_enum_field(encoding, 'dtx',
     ['disabled', 'enabled']);
 
