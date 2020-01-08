@@ -94,19 +94,13 @@ WMFDecoderModule::Startup()
 already_AddRefed<MediaDataDecoder>
 WMFDecoderModule::CreateVideoDecoder(const CreateDecoderParams& aParams)
 {
-  if (aParams.mOptions.contains(CreateDecoderParams::Option::LowLatency)) {
-    
-    
-    return nullptr;
-  }
-
   nsAutoPtr<WMFVideoMFTManager> manager(new WMFVideoMFTManager(
     aParams.VideoConfig(),
     aParams.mKnowsCompositor,
     aParams.mImageContainer,
     aParams.mRate.mValue,
-    sDXVAEnabled && !aParams.mOptions.contains(
-                      CreateDecoderParams::Option::HardwareDecoderNotAllowed)));
+    aParams.mOptions,
+    sDXVAEnabled));
 
   MediaResult result = manager->Init();
   if (NS_FAILED(result)) {
