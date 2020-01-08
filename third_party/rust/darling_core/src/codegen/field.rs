@@ -1,7 +1,9 @@
-use quote::{Tokens, ToTokens};
+use proc_macro2::TokenStream;
+use quote::{TokenStreamExt, ToTokens};
 use syn::{Ident, Path, Type};
 
 use codegen::DefaultExpression;
+use usage::{self, IdentRefSet, IdentSet, UsesTypeParams};
 
 
 
@@ -9,7 +11,7 @@ use codegen::DefaultExpression;
 pub struct Field<'a> {
     
     
-    pub name_in_attr: &'a str,
+    pub name_in_attr: String,
 
     
     
@@ -42,6 +44,16 @@ impl<'a> Field<'a> {
     }
 }
 
+impl<'a> UsesTypeParams for Field<'a> {
+    fn uses_type_params<'b>(
+        &self,
+        options: &usage::Options,
+        type_set: &'b IdentSet,
+    ) -> IdentRefSet<'b> {
+        self.ty.uses_type_params(options, type_set)
+    }
+}
+
 
 pub struct Declaration<'a>(&'a Field<'a>, bool);
 
@@ -53,7 +65,7 @@ impl<'a> Declaration<'a> {
 }
 
 impl<'a> ToTokens for Declaration<'a> {
-    fn to_tokens(&self, tokens: &mut Tokens) {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
         let field: &Field = self.0;
         let ident = field.ident;
         let ty = field.ty;
@@ -73,10 +85,10 @@ impl<'a> ToTokens for Declaration<'a> {
 pub struct MatchArm<'a>(&'a Field<'a>);
 
 impl<'a> ToTokens for MatchArm<'a> {
-    fn to_tokens(&self, tokens: &mut Tokens) {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
         let field: &Field = self.0;
         if !field.skip {
-            let name_str = field.name_in_attr;
+            let name_str = &field.name_in_attr;
             let ident = field.ident;
             let with_path = &field.with_path;
 
@@ -140,7 +152,7 @@ impl<'a> ToTokens for MatchArm<'a> {
 pub struct Initializer<'a>(&'a Field<'a>);
 
 impl<'a> ToTokens for Initializer<'a> {
-    fn to_tokens(&self, tokens: &mut Tokens) {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
         let field: &Field = self.0;
         let ident = field.ident;
         tokens.append_all(if field.multiple {
@@ -170,10 +182,10 @@ impl<'a> ToTokens for Initializer<'a> {
 pub struct CheckMissing<'a>(&'a Field<'a>);
 
 impl<'a> ToTokens for CheckMissing<'a> {
-    fn to_tokens(&self, tokens: &mut Tokens) {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
         if !self.0.multiple && self.0.default_expression.is_none() {
             let ident = self.0.ident;
-            let name_in_attr = self.0.name_in_attr;
+            let name_in_attr = &self.0.name_in_attr;
 
             tokens.append_all(quote! {
                 if !#ident.0 {

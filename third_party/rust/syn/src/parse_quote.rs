@@ -38,6 +38,8 @@
 
 
 
+#[cfg_attr(not(syn_can_call_macro_by_path), doc = " #[macro_use]")]
+#[cfg_attr(not(syn_can_call_macro_by_path), doc = " extern crate quote;")]
 
 
 
@@ -74,12 +76,29 @@
 
 
 
-
-
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! parse_quote {
     ($($tt:tt)*) => {
-        $crate::parse_quote::parse($crate::export::From::from(quote!($($tt)*)))
+        $crate::parse_quote::parse($crate::export::From::from(quote_impl!($($tt)*)))
+    };
+}
+
+#[cfg(not(syn_can_call_macro_by_path))]
+#[doc(hidden)]
+#[macro_export]
+macro_rules! quote_impl {
+    ($($tt:tt)*) => {
+        // Require caller to have their own `#[macro_use] extern crate quote`.
+        quote!($($tt)*)
+    };
+}
+
+#[cfg(syn_can_call_macro_by_path)]
+#[doc(hidden)]
+#[macro_export]
+macro_rules! quote_impl {
+    ($($tt:tt)*) => {
+        $crate::export::quote::quote!($($tt)*)
     };
 }
 

@@ -93,6 +93,13 @@ impl PathArguments {
             PathArguments::Parenthesized(_) => false,
         }
     }
+
+    fn is_none(&self) -> bool {
+        match *self {
+            PathArguments::None => true,
+            PathArguments::AngleBracketed(_) | PathArguments::Parenthesized(_) => false,
+        }
+    }
 }
 
 ast_enum! {
@@ -421,6 +428,26 @@ pub mod parsing {
                     segments
                 },
             })
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        pub fn is_ident<I>(&self, ident: I) -> bool
+        where
+            Ident: PartialEq<I>,
+        {
+            self.leading_colon.is_none()
+                && self.segments.len() == 1
+                && self.segments[0].arguments.is_none()
+                && self.segments[0].ident == ident
         }
 
         fn parse_helper(input: ParseStream, expr_style: bool) -> Result<Self> {

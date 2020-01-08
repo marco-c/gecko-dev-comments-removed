@@ -37,6 +37,11 @@ pub trait ParseCallbacks: fmt::Debug + UnwindSafe {
 
     
     
+    fn str_macro(&self, _name: &str, _value: &[u8]) {
+    }
+
+    
+    
     fn enum_variant_behavior(
         &self,
         _enum_name: Option<&str>,
@@ -53,6 +58,11 @@ pub trait ParseCallbacks: fmt::Debug + UnwindSafe {
         _original_variant_name: &str,
         _variant_value: EnumVariantValue,
     ) -> Option<String> {
+        None
+    }
+
+    
+    fn item_name(&self, _original_item_name: &str) -> Option<String> {
         None
     }
 }

@@ -12,6 +12,8 @@ use ir::derive::{CanTriviallyDeriveDebug, CanTriviallyDeriveHash,
                  CanTriviallyDerivePartialEqOrPartialOrd, CanDerive};
 use parse::{ClangItemParser, ClangSubItemParser, ParseError, ParseResult};
 use quote;
+use quote::TokenStreamExt;
+use proc_macro2;
 use std::io;
 
 const RUST_DERIVE_FUNPTR_LIMIT: usize = 12;
@@ -192,7 +194,7 @@ impl Abi {
 }
 
 impl quote::ToTokens for Abi {
-    fn to_tokens(&self, tokens: &mut quote::Tokens) {
+    fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
         tokens.append_all(match *self {
             Abi::C => quote! { "C" },
             Abi::Stdcall => quote! { "stdcall" },
@@ -220,6 +222,9 @@ pub struct FunctionSig {
 
     
     is_variadic: bool,
+
+    
+    must_use: bool,
 
     
     abi: Abi,
@@ -308,14 +313,16 @@ impl FunctionSig {
     
     pub fn new(
         return_type: TypeId,
-        arguments: Vec<(Option<String>, TypeId)>,
+        argument_types: Vec<(Option<String>, TypeId)>,
         is_variadic: bool,
+        must_use: bool,
         abi: Abi,
     ) -> Self {
         FunctionSig {
-            return_type: return_type,
-            argument_types: arguments,
-            is_variadic: is_variadic,
+            return_type,
+            argument_types,
+            is_variadic,
+            must_use,
             abi: abi,
         }
     }
@@ -387,6 +394,7 @@ impl FunctionSig {
             }
         };
 
+        let must_use = cursor.has_simple_attr("warn_unused_result");
         let is_method = cursor.kind() == CXCursor_CXXMethod;
         let is_constructor = cursor.kind() == CXCursor_Constructor;
         let is_destructor = cursor.kind() == CXCursor_Destructor;
@@ -458,7 +466,7 @@ impl FunctionSig {
             warn!("Unknown calling convention: {:?}", call_conv);
         }
 
-        Ok(Self::new(ret.into(), args, ty.is_variadic(), abi))
+        Ok(Self::new(ret.into(), args, ty.is_variadic(), must_use, abi))
     }
 
     
@@ -482,6 +490,11 @@ impl FunctionSig {
         
         
         self.is_variadic && !self.argument_types.is_empty()
+    }
+
+    
+    pub fn must_use(&self) -> bool {
+        self.must_use
     }
 
     
@@ -562,11 +575,7 @@ impl ClangSubItemParser for Function {
             name.push_str("_destructor");
         }
 
-        let mut mangled_name = cursor_mangling(context, &cursor);
-        if mangled_name.as_ref() == Some(&name) {
-            mangled_name = None;
-        }
-
+        let mangled_name = cursor_mangling(context, &cursor);
         let comment = cursor.raw_comment();
 
         let function = Self::new(name, mangled_name, sig, comment, kind, linkage);

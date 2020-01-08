@@ -501,6 +501,31 @@ impl Cursor {
 
     
     
+    
+    
+    pub fn has_simple_attr(&self, attr: &str) -> bool {
+        let mut found_attr = false;
+        self.visit(|cur| {
+            if cur.kind() == CXCursor_UnexposedAttr {
+                found_attr = cur.tokens().map(|tokens| {
+                    tokens.iter().any(|t| {
+                        t.kind == CXToken_Identifier && t.spelling == attr
+                    })
+                }).unwrap_or(false);
+
+                if found_attr {
+                    return CXChildVisit_Break;
+                }
+            }
+
+            CXChildVisit_Continue
+        });
+
+        found_attr
+    }
+
+    
+    
     pub fn typedef_type(&self) -> Option<Type> {
         let inner = Type {
             x: unsafe { clang_getTypedefDeclUnderlyingType(self.x) },
