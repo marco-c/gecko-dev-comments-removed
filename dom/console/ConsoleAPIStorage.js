@@ -8,13 +8,13 @@ ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
-const MESSAGES_IN_INTERVAL = 1500
+const MESSAGES_IN_INTERVAL = 1500;
 
 const STORAGE_MAX_EVENTS = 1000;
 
 var _consoleStorage = new Map();
 
-const CONSOLEAPISTORAGE_CID = Components.ID('{96cf7855-dfa9-4c6d-8276-f9705b4890f2}');
+const CONSOLEAPISTORAGE_CID = Components.ID("{96cf7855-dfa9-4c6d-8276-f9705b4890f2}");
 
 
 
@@ -43,29 +43,25 @@ function ConsoleAPIStorageService() {
 }
 
 ConsoleAPIStorageService.prototype = {
-  classID : CONSOLEAPISTORAGE_CID,
+  classID: CONSOLEAPISTORAGE_CID,
   QueryInterface: ChromeUtils.generateQI([Ci.nsIConsoleAPIStorage,
                                           Ci.nsIObserver]),
 
-  observe: function CS_observe(aSubject, aTopic, aData)
-  {
+  observe: function CS_observe(aSubject, aTopic, aData) {
     if (aTopic == "xpcom-shutdown") {
       Services.obs.removeObserver(this, "xpcom-shutdown");
       Services.obs.removeObserver(this, "inner-window-destroyed");
       Services.obs.removeObserver(this, "memory-pressure");
-    }
-    else if (aTopic == "inner-window-destroyed") {
+    } else if (aTopic == "inner-window-destroyed") {
       let innerWindowID = aSubject.QueryInterface(Ci.nsISupportsPRUint64).data;
       this.clearEvents(innerWindowID + "");
-    }
-    else if (aTopic == "memory-pressure") {
+    } else if (aTopic == "memory-pressure") {
       this.clearEvents();
     }
   },
 
   
-  init: function CS_init()
-  {
+  init: function CS_init() {
     Services.obs.addObserver(this, "xpcom-shutdown");
     Services.obs.addObserver(this, "inner-window-destroyed");
     Services.obs.addObserver(this, "memory-pressure");
@@ -82,8 +78,7 @@ ConsoleAPIStorageService.prototype = {
 
 
 
-  getEvents: function CS_getEvents(aId)
-  {
+  getEvents: function CS_getEvents(aId) {
     if (aId != null) {
       return (_consoleStorage.get(aId) || []).slice(0);
     }
@@ -111,8 +106,7 @@ ConsoleAPIStorageService.prototype = {
 
 
 
-  recordEvent: function CS_recordEvent(aId, aOuterId, aEvent)
-  {
+  recordEvent: function CS_recordEvent(aId, aOuterId, aEvent) {
     if (!_consoleStorage.has(aId)) {
       _consoleStorage.set(aId, []);
     }
@@ -138,12 +132,10 @@ ConsoleAPIStorageService.prototype = {
 
 
 
-  clearEvents: function CS_clearEvents(aId)
-  {
+  clearEvents: function CS_clearEvents(aId) {
     if (aId != null) {
       _consoleStorage.delete(aId);
-    }
-    else {
+    } else {
       _consoleStorage.clear();
       Services.obs.notifyObservers(null, "console-storage-reset");
     }
