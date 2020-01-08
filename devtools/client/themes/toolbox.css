@@ -349,6 +349,18 @@
 
 
 
+#command-button-frames-panel > .tooltip-panel {
+  max-width: 500px;
+  overflow-y: auto;
+}
+
+#toolbox-frame-menu span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
+
 .toolbox-panel {
   display: -moz-box;
   -moz-box-flex: 1;

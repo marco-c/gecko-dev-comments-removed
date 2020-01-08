@@ -24,8 +24,6 @@ var EventEmitter = require("devtools/shared/event-emitter");
 var Telemetry = require("devtools/client/shared/telemetry");
 const { getUnicodeUrl } = require("devtools/client/shared/unicode-url");
 var { attachThread, detachThread } = require("./attach-thread");
-var Menu = require("devtools/client/framework/menu");
-var MenuItem = require("devtools/client/framework/menu-item");
 var { DOMHelpers } = require("resource://devtools/client/shared/DOMHelpers.jsm");
 const { KeyCodes } = require("devtools/client/shared/keycodes");
 var Startup = Cc["@mozilla.org/devtools/startup-clh;1"].getService(Ci.nsISupports)
@@ -128,9 +126,6 @@ function Toolbox(target, selectedTool, hostType, contentWindow, frameId,
   this._onWillNavigate = this._onWillNavigate.bind(this);
   this._refreshHostTitle = this._refreshHostTitle.bind(this);
   this.toggleNoAutohide = this.toggleNoAutohide.bind(this);
-  this.showFramesMenu = this.showFramesMenu.bind(this);
-  this.handleKeyDownOnFramesButton = this.handleKeyDownOnFramesButton.bind(this);
-  this.showFramesMenuOnKeyDown = this.showFramesMenuOnKeyDown.bind(this);
   this._updateFrames = this._updateFrames.bind(this);
   this._splitConsoleOnKeypress = this._splitConsoleOnKeypress.bind(this);
   this.destroy = this.destroy.bind(this);
@@ -1235,7 +1230,6 @@ Toolbox.prototype = {
     this.frameButton = this._createButtonState({
       id: "command-button-frames",
       description: L10N.getStr("toolbox.frames.tooltip"),
-      onClick: this.showFramesMenu,
       isTargetSupported: target => {
         return target.activeTab && target.activeTab.traits.frames;
       },
@@ -1244,7 +1238,13 @@ Toolbox.prototype = {
         const isOnOptionsPanel = this.currentToolId === "options";
         return hasFrames || isOnOptionsPanel;
       },
-      onKeyDown: this.handleKeyDownOnFramesButton
+    });
+
+    
+    this.shortcuts.on(L10N.getStr("toolbox.showFrames.key"), event => {
+      if (event.target.id === "command-button-frames") {
+        event.target.click();
+      }
     });
 
     return this.frameButton;
@@ -2288,88 +2288,6 @@ Toolbox.prototype = {
   
 
 
-  showFramesMenu: async function(event) {
-    const menu = new Menu();
-    const target = event.target;
-
-    
-    
-    await this.initInspector();
-    if (!("_supportsFrameHighlight" in this)) {
-    
-      this._supportsFrameHighlight =
-        await this.target.actorHasMethod("domwalker", "getNodeActorFromWindowID");
-    }
-
-    
-    this.frameMap.forEach(frame => {
-      
-      const checked = frame.id == this.selectedFrameId;
-
-      let label;
-      if (this.target.isWebExtension) {
-        
-        label = this.target.getExtensionPathName(frame.url);
-      } else {
-        label = getUnicodeUrl(frame.url);
-      }
-
-      
-      menu.append(new MenuItem({
-        label,
-        type: "radio",
-        checked,
-        click: () => {
-          this.onSelectFrame(frame.id);
-        },
-        hover: () => {
-          this.onHighlightFrame(frame.id);
-        }
-      }));
-    });
-
-    menu.once("open").then(() => {
-      this.frameButton.isChecked = true;
-    });
-
-    menu.once("close").then(() => {
-      this.frameButton.isChecked = false;
-      this.highlighterUtils.unhighlight();
-    });
-
-    
-    
-    
-    
-    
-    const rect = target.getBoundingClientRect();
-    const screenX = target.ownerDocument.defaultView.mozInnerScreenX;
-    const screenY = target.ownerDocument.defaultView.mozInnerScreenY;
-    menu.popupWithZoom(rect.left + screenX, rect.bottom + screenY, this);
-
-    return menu;
-  },
-
-  
-
-
-  handleKeyDownOnFramesButton: function(event) {
-    this.shortcuts.on(L10N.getStr("toolbox.showFrames.key"),
-      this.showFramesMenuOnKeyDown);
-  },
-
-  
-
-
-  showFramesMenuOnKeyDown: function(event) {
-    if (event.target.id == "command-button-frames") {
-      this.showFramesMenu(event);
-    }
-  },
-
-  
-
-
   onSelectFrame: function(frameId) {
     
     
@@ -2380,6 +2298,10 @@ Toolbox.prototype = {
 
 
   onHighlightFrame: async function(frameId) {
+    
+    
+    await this.initInspector();
+
     
     if (this._supportsFrameHighlight && this.rootFrameSelected) {
       const frameActor = await this.walker.getNodeActorFromWindowID(frameId);
@@ -2731,6 +2653,11 @@ Toolbox.prototype = {
 
           const autohide = !flags.testing;
           this._highlighter = await this._inspector.getHighlighter(autohide);
+        }
+        if (!("_supportsFrameHighlight" in this)) {
+          
+          this._supportsFrameHighlight =
+            await this.target.actorHasMethod("domwalker", "getNodeActorFromWindowID");
         }
       }.bind(this))();
     }
