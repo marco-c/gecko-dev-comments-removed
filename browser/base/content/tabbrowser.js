@@ -1205,7 +1205,12 @@ window._gBrowser = {
     };
   },
 
-  setInitialTabTitle(aTab, aTitle, aOptions) {
+  setInitialTabTitle(aTab, aTitle, aOptions = {}) {
+    
+    if (!aOptions.isContentTitle && isBlankPageURL(aTitle)) {
+      aTitle = this.tabContainer.emptyTabTitle;
+    }
+
     if (aTitle) {
       if (!aTab.getAttribute("label")) {
         aTab._labelIsInitialTitle = true;
