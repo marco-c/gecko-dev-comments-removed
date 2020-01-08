@@ -3,5 +3,7 @@
 
 
 mod gl;
+pub mod query_gl;
 
 pub use self::gl::*;
+pub use self::query_gl as query;
