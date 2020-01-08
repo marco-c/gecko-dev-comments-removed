@@ -11789,6 +11789,8 @@ nsIDocument::DocAddSizeOfExcludingThis(nsWindowSizes& aSizes) const
       mql->SizeOfExcludingThis(aSizes.mState.mMallocSizeOf);
   }
 
+  mContentBlockingLog.AddSizeOfExcludingThis(aSizes);
+
   
   
   
