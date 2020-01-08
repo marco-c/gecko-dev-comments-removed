@@ -27,9 +27,9 @@ use values::generics::{CounterStyleOrNone, NonNegative};
 use values::generics::basic_shape::ShapeRadius;
 use values::generics::box_::Perspective;
 use values::generics::flex::FlexBasis;
-use values::generics::length::{MaxLength, MozLength};
 use values::generics::gecko::ScrollSnapPoint;
 use values::generics::grid::{TrackBreadth, TrackKeyword};
+use values::generics::length::{MaxLength, MozLength};
 
 
 pub trait GeckoStyleCoordConvertible: Sized {
