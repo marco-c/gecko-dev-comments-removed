@@ -1518,7 +1518,7 @@ UpdateWrapper(T* p, void*, JSObject* obj, const JSObject* old)
 
 
 bool
-TryPreserveWrapper(JSObject* obj);
+TryPreserveWrapper(JS::Handle<JSObject*> obj);
 
 
 bool
