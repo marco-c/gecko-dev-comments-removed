@@ -18,7 +18,10 @@ const EXPECTED_TARGET_PANES = [
 ];
 
 add_task(async function() {
-  const { document } = await openAboutDebugging();
+  const { document, tab } = await openAboutDebugging();
+
+  
+  await waitUntil(() => document.querySelector(".js-runtime-page"));
 
   
   const selectedSidebarItem = document.querySelector(".js-sidebar-item-selected");
@@ -36,4 +39,6 @@ add_task(async function() {
     ok(paneTitles.includes(expectedPane),
       "Expected debug target category found: " + expectedPane);
   });
+
+  await removeTab(tab);
 });
