@@ -240,10 +240,10 @@ class ExecutePACThreadAction final : public Runnable {
     mShutdown = aShutdown;
   }
 
-  void SetupPAC(const char *text, uint32_t datalen, const nsACString &pacURI,
+  void SetupPAC(const char *data, uint32_t dataLen, const nsACString &pacURI,
                 uint32_t extraHeapSize) {
     mSetupPAC = true;
-    mSetupPACData.Assign(text, datalen);
+    mSetupPACData.Assign(data, dataLen);
     mSetupPACURI = pacURI;
     mExtraHeapSize = extraHeapSize;
   }
@@ -818,15 +818,10 @@ nsPACMan::OnStreamComplete(nsIStreamLoader *loader, nsISupports *context,
     
     
     
-    const char *text = (const char *)data;
-
     
-    
-    
-    
-
     RefPtr<ExecutePACThreadAction> pending = new ExecutePACThreadAction(this);
-    pending->SetupPAC(text, dataLen, pacURI, GetExtraJSContextHeapSize());
+    pending->SetupPAC(reinterpret_cast<const char *>(data), dataLen, pacURI,
+                      GetExtraJSContextHeapSize());
     DispatchToPAC(pending.forget());
 
     LOG(("OnStreamComplete: process the PAC contents\n"));

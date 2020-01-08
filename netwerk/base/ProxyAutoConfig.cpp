@@ -16,9 +16,12 @@
 #include "nsJSUtils.h"
 #include "jsfriendapi.h"
 #include "js/CompilationAndEvaluation.h"
+#include "js/SourceText.h"
+#include "js/Utility.h"
 #include "prnetdb.h"
 #include "nsITimer.h"
 #include "mozilla/net/DNS.h"
+#include "mozilla/Utf8.h"
 #include "nsServiceManagerUtils.h"
 #include "nsNetCID.h"
 
@@ -31,7 +34,9 @@ namespace net {
 
 
 
-static const char *sPacUtils =
+
+
+static const char sAsciiPacUtils[] =
     "function dnsDomainIs(host, domain) {\n"
     "    return (host.length >= domain.length &&\n"
     "            host.substring(host.length - domain.length) == domain);\n"
@@ -655,14 +660,28 @@ void ProxyAutoConfig::SetThreadLocalIndex(uint32_t index) {
 }
 
 nsresult ProxyAutoConfig::Init(const nsCString &aPACURI,
-                               const nsCString &aPACScript, bool aIncludePath,
-                               uint32_t aExtraHeapSize,
+                               const nsCString &aPACScriptData,
+                               bool aIncludePath, uint32_t aExtraHeapSize,
                                nsIEventTarget *aEventTarget) {
   mShutdown = false;  
 
   mPACURI = aPACURI;
-  mPACScript = sPacUtils;
-  mPACScript.Append(aPACScript);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  mConcatenatedPACData = sAsciiPacUtils;
+  mConcatenatedPACData.Append(aPACScriptData);
+
   mIncludePath = aIncludePath;
   mExtraHeapSize = aExtraHeapSize;
   mMainThreadEventTarget = aEventTarget;
@@ -680,7 +699,7 @@ nsresult ProxyAutoConfig::SetupJS() {
   delete mJSContext;
   mJSContext = nullptr;
 
-  if (mPACScript.IsEmpty()) return NS_ERROR_FAILURE;
+  if (mConcatenatedPACData.IsEmpty()) return NS_ERROR_FAILURE;
 
   NS_GetCurrentThread()->SetCanInvokeJS(true);
 
@@ -706,8 +725,25 @@ nsresult ProxyAutoConfig::SetupJS() {
     JS::CompileOptions options(cx);
     options.setFileAndLine(this->mPACURI.get(), 1);
 
-    return JS::CompileLatin1(cx, options, this->mPACScript.get(),
-                             this->mPACScript.Length(), script);
+    
+    
+    const char *scriptData = this->mConcatenatedPACData.get();
+    size_t scriptLength = this->mConcatenatedPACData.Length();
+    if (mozilla::IsValidUtf8(scriptData, scriptLength)) {
+      return JS::CompileUtf8(cx, options, scriptData, scriptLength, script);
+    }
+
+    
+    
+    NS_ConvertASCIItoUTF16 inflated(this->mConcatenatedPACData);
+
+    JS::SourceText<char16_t> source;
+    if (!source.init(cx, inflated.get(), inflated.Length(),
+                     JS::SourceOwnership::Borrowed)) {
+      return false;
+    }
+
+    return JS::Compile(cx, options, source, script);
   };
 
   JS::Rooted<JSScript *> script(cx);
@@ -735,7 +771,7 @@ nsresult ProxyAutoConfig::SetupJS() {
   PACLogToConsole(alertMessage);
 
   
-  mPACScript.Truncate();
+  mConcatenatedPACData.Truncate();
   mPACURI.Truncate();
 
   return NS_OK;
