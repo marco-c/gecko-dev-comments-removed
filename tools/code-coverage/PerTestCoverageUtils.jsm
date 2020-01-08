@@ -64,7 +64,7 @@ var PerTestCoverageUtils = class PerTestCoverageUtilsClass {
 
     
     let codeCoverageService = Cc["@mozilla.org/tools/code-coverage;1"].getService(Ci.nsICodeCoverage);
-    await codeCoverageService.resetCounters();
+    await codeCoverageService.flushCounters();
 
     
     removeDirectoryContents(gcovPrefixDir);
@@ -85,7 +85,7 @@ var PerTestCoverageUtils = class PerTestCoverageUtilsClass {
 
     
     let codeCoverageService = Cc["@mozilla.org/tools/code-coverage;1"].getService(Ci.nsICodeCoverage);
-    await codeCoverageService.dumpCounters();
+    await codeCoverageService.flushCounters();
 
     
     moveDirectoryContents(gcovPrefixDir, gcovResultsDir);
