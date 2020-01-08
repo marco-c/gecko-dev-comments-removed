@@ -559,21 +559,10 @@ AnimationHelper::SetAnimations(
     
     switch (static_cast<dom::FillMode>(animation.fillMode())) {
       case dom::FillMode::None:
-        if (animation.playbackRate() > 0) {
-          animation.fillMode() = static_cast<uint8_t>(dom::FillMode::Forwards);
-        } else if (animation.playbackRate() < 0) {
-          animation.fillMode() = static_cast<uint8_t>(dom::FillMode::Backwards);
-        }
+        animation.fillMode() = static_cast<uint8_t>(dom::FillMode::Forwards);
         break;
       case dom::FillMode::Backwards:
-        if (animation.playbackRate() > 0) {
-          animation.fillMode() = static_cast<uint8_t>(dom::FillMode::Both);
-        }
-        break;
-      case dom::FillMode::Forwards:
-        if (animation.playbackRate() < 0) {
-          animation.fillMode() = static_cast<uint8_t>(dom::FillMode::Both);
-        }
+        animation.fillMode() = static_cast<uint8_t>(dom::FillMode::Both);
         break;
       default:
         break;
