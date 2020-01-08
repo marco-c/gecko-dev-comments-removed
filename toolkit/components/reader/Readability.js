@@ -25,13 +25,6 @@
 
 
 
-
-
-
-
-
-
-
 function Readability(doc, options) {
   
   if (options && options.documentElement) {
@@ -118,8 +111,11 @@ Readability.prototype = {
   
   
   REGEXPS: {
+    
+    
     unlikelyCandidates: /-ad-|banner|breadcrumbs|combx|comment|community|cover-wrap|disqus|extra|foot|header|legends|menu|related|remark|replies|rss|shoutbox|sidebar|skyscraper|social|sponsor|supplemental|ad-break|agegate|pagination|pager|popup|yom-remote/i,
     okMaybeItsACandidate: /and|article|body|column|main|shadow/i,
+
     positive: /article|body|content|entry|hentry|h-entry|main|page|pagination|post|text|blog|story/i,
     negative: /hidden|^hid$| hid$| hid |^hid |banner|combx|comment|com-|contact|foot|footer|footnote|masthead|media|meta|outbrain|promo|related|scroll|share|shoutbox|sidebar|skyscraper|sponsor|shopping|tags|tool|widget/i,
     extraneous: /print|archive|comment|discuss|e[\-]?mail|share|reply|all|login|sign|single|utility/i,
@@ -1709,65 +1705,6 @@ Readability.prototype = {
 
   _isProbablyVisible: function(node) {
     return node.style.display != "none" && !node.hasAttribute("hidden");
-  },
-
-  
-
-
-
-
-  isProbablyReaderable: function(helperIsVisible) {
-    var nodes = this._getAllNodesWithTag(this._doc, ["p", "pre"]);
-
-    
-    
-    
-    
-    
-    
-    
-    var brNodes = this._getAllNodesWithTag(this._doc, ["div > br"]);
-    if (brNodes.length) {
-      var set = new Set();
-      [].forEach.call(brNodes, function(node) {
-        set.add(node.parentNode);
-      });
-      nodes = [].concat.apply(Array.from(set), nodes);
-    }
-
-    if (!helperIsVisible) {
-      helperIsVisible = this._isProbablyVisible;
-    }
-
-    var score = 0;
-    
-    
-    return this._someNode(nodes, function(node) {
-      if (helperIsVisible && !helperIsVisible(node))
-        return false;
-      var matchString = node.className + " " + node.id;
-
-      if (this.REGEXPS.unlikelyCandidates.test(matchString) &&
-          !this.REGEXPS.okMaybeItsACandidate.test(matchString)) {
-        return false;
-      }
-
-      if (node.matches && node.matches("li p")) {
-        return false;
-      }
-
-      var textContentLength = node.textContent.trim().length;
-      if (textContentLength < 140) {
-        return false;
-      }
-
-      score += Math.sqrt(textContentLength - 140);
-
-      if (score > 20) {
-        return true;
-      }
-      return false;
-    });
   },
 
   

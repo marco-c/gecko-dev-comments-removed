@@ -1,0 +1,10 @@
+
+
+
+
+"use strict";
+
+var EXPORTED_SYMBOLS = ["Readerable"];
+
+#include Readability-readerable.js
+#include Readerable.js
