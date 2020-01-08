@@ -68,14 +68,14 @@ class MOZ_STACK_CLASS BinTokenReaderTester: public BinTokenReaderBase
 
 
 
-    BinTokenReaderTester(JSContext* cx, const uint8_t* start, const size_t length);
+    BinTokenReaderTester(JSContext* cx, ErrorReporter* er, const uint8_t* start, const size_t length);
 
     
 
 
 
 
-    BinTokenReaderTester(JSContext* cx, const Vector<uint8_t>& chars);
+    BinTokenReaderTester(JSContext* cx, ErrorReporter* er, const Vector<uint8_t>& chars);
 
     
 
