@@ -892,9 +892,7 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin,
                     if self.per_test_coverage:
                         gcov_dir, jsvm_dir = self.set_coverage_env(env)
                         
-                        
                         if not is_baseline_test and \
-                           suite_category in ['mochitest', 'xpcshell'] and \
                            self._is_linux():
                             env['GCOV_RESULTS_DIR'] = tempfile.mkdtemp()
 
