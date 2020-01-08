@@ -1801,6 +1801,14 @@ public:
   
   void RemoveElementsAt(index_type aStart, size_type aCount);
 
+private:
+  
+  
+  
+  
+  void RemoveElementsAtUnsafe(index_type aStart, size_type aCount);
+
+public:
   
   void RemoveElementAt(index_type aIndex) { RemoveElementsAt(aIndex, 1); }
 
@@ -1894,7 +1902,7 @@ public:
       return false;
     }
 
-    RemoveElementAt(i);
+    RemoveElementsAtUnsafe(i, 1);
     return true;
   }
 
@@ -1917,7 +1925,7 @@ public:
   {
     index_type index = IndexOfFirstElementGt(aItem, aComp);
     if (index > 0 && aComp.Equals(ElementAt(index - 1), aItem)) {
-      RemoveElementAt(index - 1);
+      RemoveElementsAtUnsafe(index - 1, 1);
       return true;
     }
     return false;
@@ -2200,6 +2208,13 @@ nsTArray_Impl<E, Alloc>::RemoveElementsAt(index_type aStart, size_type aCount)
     InvalidArrayIndex_CRASH(aStart, Length());
   }
 
+  RemoveElementsAtUnsafe(aStart, aCount);
+}
+
+template<typename E, class Alloc>
+void
+nsTArray_Impl<E, Alloc>::RemoveElementsAtUnsafe(index_type aStart, size_type aCount)
+{
   DestructRange(aStart, aCount);
   this->template ShiftData<InfallibleAlloc>(aStart, aCount, 0,
                                             sizeof(elem_type),
