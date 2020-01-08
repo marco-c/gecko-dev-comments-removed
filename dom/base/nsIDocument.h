@@ -1299,6 +1299,10 @@ class nsIDocument : public nsINode,
   
   already_AddRefed<nsSimpleContentList> BlockedTrackingNodes() const;
 
+  
+  
+  bool StorageAccessSandboxed() const;
+
  protected:
   friend class nsUnblockOnloadEvent;
 

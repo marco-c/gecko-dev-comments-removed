@@ -7316,8 +7316,17 @@ void nsIDocument::Sanitize() {
         HTMLInputElement::FromNodeOrNull(nodes->Item(i));
     if (!input) continue;
 
+    bool resetValue = false;
+
     input->GetAttribute(NS_LITERAL_STRING("autocomplete"), value);
-    if (value.LowerCaseEqualsLiteral("off") || input->HasBeenTypePassword()) {
+    if (value.LowerCaseEqualsLiteral("off")) {
+      resetValue = true;
+    } else {
+      input->GetType(value);
+      if (value.LowerCaseEqualsLiteral("password")) resetValue = true;
+    }
+
+    if (resetValue) {
       input->Reset();
     }
   }
@@ -12681,7 +12690,7 @@ already_AddRefed<mozilla::dom::Promise> nsIDocument::RequestStorageAccess(
   
   
   
-  if (mSandboxFlags & SANDBOXED_STORAGE_ACCESS) {
+  if (StorageAccessSandboxed()) {
     promise->MaybeRejectWithUndefined();
     return promise.forget();
   }
@@ -12887,4 +12896,9 @@ void nsIDocument::ReportShadowDOMUsage() {
   }
 
   mHasReportedShadowDOMUsage = true;
+}
+
+bool nsIDocument::StorageAccessSandboxed() const {
+  return StaticPrefs::dom_storage_access_enabled() &&
+         (GetSandboxFlags() & SANDBOXED_STORAGE_ACCESS) != 0;
 }
