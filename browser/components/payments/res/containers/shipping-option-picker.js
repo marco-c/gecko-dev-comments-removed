@@ -2,8 +2,7 @@
 
 
 
-import PaymentStateSubscriberMixin from "../mixins/PaymentStateSubscriberMixin.js";
-import RichSelect from "../components/rich-select.js";
+import RichPicker from "./rich-picker.js";
 import ShippingOption from "../components/shipping-option.js";
 
 
@@ -12,20 +11,16 @@ import ShippingOption from "../components/shipping-option.js";
 
 
 
-export default class ShippingOptionPicker extends PaymentStateSubscriberMixin(HTMLElement) {
+export default class ShippingOptionPicker extends RichPicker {
   constructor() {
     super();
-    this.dropdown = new RichSelect();
-    this.dropdown.addEventListener("change", this);
     this.dropdown.setAttribute("option-type", "shipping-option");
   }
 
-  connectedCallback() {
-    this.appendChild(this.dropdown);
-    super.connectedCallback();
-  }
-
   render(state) {
+    this.addLink.hidden = true;
+    this.editLink.hidden = true;
+
     let {shippingOptions} = state.request.paymentDetails;
     let desiredOptions = [];
     for (let option of shippingOptions) {
