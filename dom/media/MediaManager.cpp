@@ -1520,8 +1520,8 @@ public:
       
       domStream = new nsMainThreadPtrHolder<DOMMediaStream>(
         "GetUserMediaStreamRunnable::DOMMediaStreamMainThreadHolder",
-        DOMMediaStream::CreateSourceStreamAsInput(window, msg,
-                                                  new FakeTrackSourceGetter(principal)));
+        DOMLocalMediaStream::CreateSourceStreamAsInput(window, msg,
+                                                       new FakeTrackSourceGetter(principal)));
       stream = domStream->GetInputStream()->AsSourceStream();
 
       if (mAudioDevice) {

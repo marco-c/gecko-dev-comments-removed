@@ -607,6 +607,8 @@ var interfaceNamesInGlobalScope =
 
     {name: "KeyframeEffect", insecureContext: true},
 
+    {name: "LocalMediaStream", insecureContext: true},
+
     {name: "Location", insecureContext: true},
 
     {name: "MediaCapabilities", insecureContext: true},
