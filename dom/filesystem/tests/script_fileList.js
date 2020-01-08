@@ -1,5 +1,4 @@
 
-
 Cu.importGlobalProperties(["File"]);
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 function createProfDFile() {

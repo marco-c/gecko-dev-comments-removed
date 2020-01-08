@@ -1,5 +1,7 @@
 "use strict";
 
+Cu.importGlobalProperties(["XMLHttpRequest"]);
+
 const proxy = createHttpServer();
 
 

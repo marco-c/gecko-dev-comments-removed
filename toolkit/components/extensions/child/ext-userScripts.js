@@ -7,7 +7,6 @@ var USERSCRIPT_DISABLED_ERRORMSG = `userScripts APIs are currently experimental 
 
 XPCOMUtils.defineLazyPreferenceGetter(this, "userScriptsEnabled", USERSCRIPT_PREFNAME, false);
 
-
 Cu.importGlobalProperties(["crypto", "TextEncoder"]);
 
 var {

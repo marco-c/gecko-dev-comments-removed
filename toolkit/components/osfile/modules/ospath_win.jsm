@@ -29,6 +29,7 @@
 
 
 if (typeof Components != "undefined") {
+  Cu.importGlobalProperties(["URL"]);
   
   
   

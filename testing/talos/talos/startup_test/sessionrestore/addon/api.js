@@ -58,6 +58,7 @@ this.sessionrestore = class extends ExtensionAPI {
       
       
       
+      Cu.importGlobalProperties(["URL"]);
       let url = new URL(args.queryElementAt(0, Ci.nsISupportsString).data);
       this.TalosParentProfiler.initFromURLQueryParams(url.search);
     }

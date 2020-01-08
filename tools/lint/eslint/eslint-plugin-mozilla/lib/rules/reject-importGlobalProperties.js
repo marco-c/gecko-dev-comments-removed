@@ -8,48 +8,28 @@
 
 "use strict";
 
-const privilegedGlobals = Object.keys(require("../environments/privileged.js").globals);
 
 
 
 
+module.exports = function(context) {
 
-module.exports = {
-  meta: {
-    messages: {
-      unexpectedCall: "Unexpected call to Cu.importGlobalProperties",
-      unexpectedCallWebIdl: "Unnecessary call to Cu.importGlobalProperties (webidl names are automatically imported)",
-    },
-    schema: [{
-      
-      "enum": ["everything", "allownonwebidl"],
-    }],
-    type: "problem",
-  },
+  
+  
+  
 
-  create(context) {
-    return {
-      "CallExpression": function(node) {
-        if (node.callee.type !== "MemberExpression") {
-          return;
-        }
+  return {
+    "CallExpression": function(node) {
+      if (node.callee.type === "MemberExpression") {
         let memexp = node.callee;
         if (memexp.object.type === "Identifier" &&
             
             memexp.object.name === "Cu" &&
             memexp.property.type === "Identifier" &&
             memexp.property.name === "importGlobalProperties") {
-          if (context.options.includes("allownonwebidl")) {
-            for (let element of node.arguments[0].elements) {
-              if (privilegedGlobals.includes(element.value)) {
-                context.report({ node, messageId: "unexpectedCallWebIdl"});
-              }
-            }
-          } else {
-            context.report({node, messageId: "unexpectedCall"});
-          }
+          context.report(node, "Unexpected call to Cu.importGlobalProperties");
         }
-      },
-    };
-  },
+      }
+    },
+  };
 };

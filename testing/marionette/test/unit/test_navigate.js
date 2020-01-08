@@ -2,6 +2,8 @@
 
 
 
+Cu.importGlobalProperties(["URL"]);
+
 ChromeUtils.import("chrome://marionette/content/navigate.js");
 
 add_test(function test_isLoadEventExpected() {

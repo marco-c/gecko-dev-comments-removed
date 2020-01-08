@@ -126,6 +126,8 @@ add_task(async function() {
 
     
     let fontList = await ContentTask.spawn(aBrowser, {}, async function() {
+      Cu.importGlobalProperties(["InspectorUtils"]);
+
       let window = content.window.wrappedJSObject;
       let range = window.document.createRange();
       let contentDiv = window.document.getElementById("content");

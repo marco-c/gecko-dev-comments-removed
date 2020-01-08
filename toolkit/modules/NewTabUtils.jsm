@@ -8,6 +8,7 @@ var EXPORTED_SYMBOLS = ["NewTabUtils"];
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+Cu.importGlobalProperties(["btoa", "URL"]);
 
 
 let shortURL = {};

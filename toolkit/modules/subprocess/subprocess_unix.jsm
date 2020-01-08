@@ -7,6 +7,8 @@
 
 
 
+Cu.importGlobalProperties(["TextDecoder"]);
+
 var EXPORTED_SYMBOLS = ["SubprocessImpl"];
 
 ChromeUtils.import("resource://gre/modules/ctypes.jsm");
