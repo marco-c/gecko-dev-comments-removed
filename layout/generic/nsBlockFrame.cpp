@@ -1790,8 +1790,7 @@ nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
 static void
 ConsiderBlockEndEdgeOfChildren(const WritingMode aWritingMode,
                                nscoord aBEndEdgeOfChildren,
-                               nsOverflowAreas& aOverflowAreas,
-                               const nsStyleDisplay* aDisplay)
+                               nsOverflowAreas& aOverflowAreas)
 {
   
   
@@ -1805,31 +1804,21 @@ ConsiderBlockEndEdgeOfChildren(const WritingMode aWritingMode,
   if (aWritingMode.IsVertical()) {
     if (aWritingMode.IsVerticalLR()) {
       NS_FOR_FRAME_OVERFLOW_TYPES(otype) {
-        if (!(aDisplay->IsContainLayout() && otype == eScrollableOverflow)) {
-          
-          
-          
-          
-          nsRect& o = aOverflowAreas.Overflow(otype);
-          o.width = std::max(o.XMost(), aBEndEdgeOfChildren) - o.x;
-        }
+        nsRect& o = aOverflowAreas.Overflow(otype);
+        o.width = std::max(o.XMost(), aBEndEdgeOfChildren) - o.x;
       }
     } else {
       NS_FOR_FRAME_OVERFLOW_TYPES(otype) {
-        if (!(aDisplay->IsContainLayout() && otype == eScrollableOverflow)) {
-          nsRect& o = aOverflowAreas.Overflow(otype);
-          nscoord xmost = o.XMost();
-          o.x = std::min(o.x, xmost - aBEndEdgeOfChildren);
-          o.width = xmost - o.x;
-        }
+        nsRect& o = aOverflowAreas.Overflow(otype);
+        nscoord xmost = o.XMost();
+        o.x = std::min(o.x, xmost - aBEndEdgeOfChildren);
+        o.width = xmost - o.x;
       }
     }
   } else {
     NS_FOR_FRAME_OVERFLOW_TYPES(otype) {
-      if (!(aDisplay->IsContainLayout() && otype == eScrollableOverflow)) {
-        nsRect& o = aOverflowAreas.Overflow(otype);
-        o.height = std::max(o.YMost(), aBEndEdgeOfChildren) - o.y;
-      }
+      nsRect& o = aOverflowAreas.Overflow(otype);
+      o.height = std::max(o.YMost(), aBEndEdgeOfChildren) - o.y;
     }
   }
 }
@@ -1844,34 +1833,11 @@ nsBlockFrame::ComputeOverflowAreas(const nsRect&         aBounds,
   
   
   nsOverflowAreas areas(aBounds, aBounds);
-  if (mComputedStyle->GetPseudo() == nsCSSAnonBoxes::scrolledContent &&
-      mParent->StyleDisplay()->IsContainLayout()) {
-    
-    
-    
-    
-    aDisplay = mParent->StyleDisplay();
-  }
   if (!ShouldApplyOverflowClipping(this, aDisplay)) {
     for (LineIterator line = LinesBegin(), line_end = LinesEnd();
          line != line_end;
          ++line) {
-      if (aDisplay->IsContainLayout()) {
-        
-        
-        
-        
-        
-        
-        
-        nsRect childVisualRect = line->GetVisualOverflowArea();
-        nsOverflowAreas childVisualArea = nsOverflowAreas(
-          childVisualRect,
-          nsRect());
-        areas.UnionWith(childVisualArea);
-      } else {
-        areas.UnionWith(line->GetOverflowAreas());
-      }
+      areas.UnionWith(line->GetOverflowAreas());
     }
 
     
@@ -1885,7 +1851,7 @@ nsBlockFrame::ComputeOverflowAreas(const nsRect&         aBounds,
     }
 
     ConsiderBlockEndEdgeOfChildren(GetWritingMode(),
-                                   aBEndEdgeOfChildren, areas, aDisplay);
+                                   aBEndEdgeOfChildren, areas);
   }
 
 #ifdef NOISY_COMBINED_AREA
@@ -1943,8 +1909,7 @@ nsBlockFrame::ComputeCustomOverflow(nsOverflowAreas& aOverflowAreas)
     GetProperty(BlockEndEdgeOfChildrenProperty(), &found);
   if (found) {
     ConsiderBlockEndEdgeOfChildren(GetWritingMode(),
-                                   blockEndEdgeOfChildren, aOverflowAreas,
-                                   StyleDisplay());
+                                   blockEndEdgeOfChildren, aOverflowAreas);
   }
 
   

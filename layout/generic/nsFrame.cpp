@@ -9678,32 +9678,8 @@ void
 nsFrame::ConsiderChildOverflow(nsOverflowAreas& aOverflowAreas,
                                nsIFrame* aChildFrame)
 {
-  const nsStyleDisplay* display = StyleDisplay();
-  if (mComputedStyle->GetPseudo() == nsCSSAnonBoxes::scrolledContent) {
-    
-    
-    
-    display = mParent->StyleDisplay();
-  }
-  if (display->IsContainLayout() && IsFrameOfType(eSupportsContainLayoutAndPaint)) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    nsRect childVisual = aChildFrame->GetVisualOverflowRect();
-    nsOverflowAreas combined = nsOverflowAreas(
-      childVisual,
-      nsRect());
-    aOverflowAreas.UnionWith(combined + aChildFrame->GetPosition());
-  } else {
-    aOverflowAreas.UnionWith(aChildFrame->GetOverflowAreas() +
-                             aChildFrame->GetPosition());
-  }
+  aOverflowAreas.UnionWith(aChildFrame->GetOverflowAreas() +
+                           aChildFrame->GetPosition());
 }
 
 bool
