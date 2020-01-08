@@ -131,6 +131,26 @@ ModuleEvaluator::ModuleEvaluator() {
     }
   }
 
+#ifdef _M_IX86
+  mSysWOW64Directory.SetLength(MAX_PATH);
+  UINT sysWOWlen =
+      ::GetSystemWow64DirectoryW((char16ptr_t)mSysWOW64Directory.BeginWriting(),
+                                 mSysWOW64Directory.Length());
+  if (!sysWOWlen || (sysWOWlen > mSysWOW64Directory.Length())) {
+    
+    
+    
+    
+    
+    
+    mSysWOW64Directory.Truncate();
+  } else {
+    
+    
+    mSysWOW64Directory.SetLength(sysWOWlen);
+  }
+#endif  
+
   nsCOMPtr<nsIFile> exeDir;
   if (NS_SUCCEEDED(
           NS_GetSpecialDirectory(NS_GRE_DIR, getter_AddRefs(exeDir)))) {
@@ -228,6 +248,17 @@ Maybe<bool> ModuleEvaluator::IsModuleTrusted(
     aDllInfo.mTrustFlags |= ModuleTrustFlags::SystemDirectory;
     score += 50;
   }
+
+#ifdef _M_IX86
+  
+  
+  if (!mSysWOW64Directory.IsEmpty() &&
+      StringBeginsWith(dllFullPath, mSysWOW64Directory,
+                       nsCaseInsensitiveStringComparator())) {
+    aDllInfo.mTrustFlags |= ModuleTrustFlags::SysWOW64Directory;
+    score += 50;
+  }
+#endif  
 
   
   
