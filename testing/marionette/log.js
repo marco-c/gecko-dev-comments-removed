@@ -4,15 +4,11 @@
 
 "use strict";
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
 const StdLog = ChromeUtils.import("resource://gre/modules/Log.jsm", {}).Log;
-
-const {MarionettePrefs} = ChromeUtils.import("chrome://marionette/content/prefs.js", {});
 
 this.EXPORTED_SYMBOLS = ["Log"];
 
-const isChildProcess = Services.appinfo.processType ==
-    Services.appinfo.PROCESS_TYPE_CONTENT;
+const PREF_LOG_LEVEL = "marionette.log.level";
 
 
 
@@ -24,10 +20,7 @@ const isChildProcess = Services.appinfo.processType ==
 
 
 
-
-
-
-class MarionetteLog {
+class Log {
   
 
 
@@ -40,8 +33,8 @@ class MarionetteLog {
     let logger = StdLog.repository.getLogger("Marionette");
     if (logger.ownAppenders.length == 0) {
       logger.addAppender(new StdLog.DumpAppender());
+      logger.manageLevelFromPref(PREF_LOG_LEVEL);
     }
-    logger.level = MarionettePrefs.logLevel;
     return logger;
   }
 
@@ -67,28 +60,4 @@ class MarionetteLog {
   }
 }
 
-class ParentProcessLog extends MarionetteLog {
-  static get() {
-    let logger = super.get();
-    Services.ppmm.initialProcessData["Marionette:Log"] = {level: logger.level};
-    return logger;
-  }
-}
-
-class ChildProcessLog extends MarionetteLog {
-  static get() {
-    let logger = super.get();
-
-    
-    
-    logger.level = Services.cpmm.initialProcessData["Marionette:Log"] || StdLog.Level.Info;
-
-    return logger;
-  }
-}
-
-if (isChildProcess) {
-  this.Log = ChildProcessLog;
-} else {
-  this.Log = ParentProcessLog;
-}
+this.Log = Log;

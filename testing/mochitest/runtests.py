@@ -1909,7 +1909,7 @@ toolbar#nav-bar {
             "idle.lastDailyNotification": int(time.time()),
             
             
-            "marionette.log.level": "TRACE",
+            "marionette.log.level": "Trace",
         }
 
         if options.flavor == 'browser' and options.timeout:
@@ -2643,12 +2643,9 @@ toolbar#nav-bar {
             print("4 INFO Mode:    %s" % e10s_mode)
             print("5 INFO SimpleTest FINISHED")
 
-        if not result:
-            if self.countfail or \
-               not (self.countpass or self.counttodo):
-                
-                
-                result = 1
+        if not result and self.countfail:
+            
+            result = 1
 
         return result
 

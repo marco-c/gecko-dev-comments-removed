@@ -396,7 +396,7 @@ class RefTest(object):
 
         
         
-        prefs["marionette.log.level"] = "TRACE"
+        prefs["marionette.log.level"] = "Trace"
 
         
         for v in options.extraPrefs:

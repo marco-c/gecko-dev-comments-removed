@@ -188,6 +188,8 @@ class MarionetteBranch extends Branch {
 
 
   get logLevel() {
+    
+    
     switch (this.get("log.level", "info").toLowerCase()) {
       case "fatal":
         return Log.Level.Fatal;
