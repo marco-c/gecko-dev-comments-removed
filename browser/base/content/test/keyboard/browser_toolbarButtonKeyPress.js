@@ -17,6 +17,19 @@ function forceFocus(aElem) {
   aElem.removeAttribute("tabindex");
 }
 
+function waitForLocationChange() {
+  let promise = new Promise(resolve => {
+    let wpl = {
+      onLocationChange(aWebProgress, aRequest, aLocation) {
+        gBrowser.removeProgressListener(wpl);
+        resolve();
+      },
+    };
+    gBrowser.addProgressListener(wpl);
+  });
+  return promise;
+}
+
 
 
 add_task(async function testAppMenuButtonPress() {
@@ -100,6 +113,28 @@ add_task(async function testPageActionsButtonPress() {
     let hidden = BrowserTestUtils.waitForEvent(document, "popuphidden", true);
     view.closest("panel").hidePopup();
     await hidden;
+  });
+});
+
+
+add_task(async function testBackForwardButtonPress() {
+  await BrowserTestUtils.withNewTab("https://example.com/1", async function(aBrowser) {
+    BrowserTestUtils.loadURI(aBrowser, "https://example.com/2");
+
+    await BrowserTestUtils.browserLoaded(aBrowser);
+    let backButton = document.getElementById("back-button");
+    forceFocus(backButton);
+    let onLocationChange = waitForLocationChange();
+    EventUtils.synthesizeKey(" ");
+    await onLocationChange;
+    ok(true, "Location changed after back button pressed");
+
+    let forwardButton = document.getElementById("forward-button");
+    forceFocus(forwardButton);
+    onLocationChange = waitForLocationChange();
+    EventUtils.synthesizeKey(" ");
+    await onLocationChange;
+    ok(true, "Location changed after forward button pressed");
   });
 });
 
