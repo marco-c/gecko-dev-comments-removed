@@ -10,7 +10,7 @@
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 
-function init(aEvent) {
+async function init(aEvent) {
   if (aEvent.target != document)
     return;
 
@@ -50,11 +50,10 @@ function init(aEvent) {
   }
 
   
-  let bundle = Services.strings.createBundle("chrome://browser/locale/browser.properties");
   let archResource = Services.appinfo.is64Bit
-                     ? "aboutDialog.architecture.sixtyFourBit"
-                     : "aboutDialog.architecture.thirtyTwoBit";
-  let arch = bundle.GetStringFromName(archResource);
+                     ? "aboutDialog-architecture-sixtyFourBit"
+                     : "aboutDialog-architecture-thirtyTwoBit";
+  let [arch] = await document.l10n.formatValues([{id: archResource}]);
   versionField.textContent += ` (${arch})`;
 
   
