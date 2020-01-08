@@ -135,8 +135,6 @@ protected:
     
     mozilla::TimeStamp mGraceStart;
 
-    const nsCString mOriginSuffix;
-
     mozilla::net::ResolverMode mResolverMode;
 
     uint16_t  mResolving;  
