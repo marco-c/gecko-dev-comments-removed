@@ -9,20 +9,25 @@
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
+ChromeUtils.import("resource://gre/modules/E10SUtils.jsm");
 
 ChromeUtils.defineModuleGetter(this, "AboutNewTab",
                                "resource:///modules/AboutNewTab.jsm");
 
 const TOPIC_APP_QUIT = "quit-application-granted";
 const TOPIC_LOCALES_CHANGE = "intl:app-locales-changed";
+const TOPIC_CONTENT_DOCUMENT_INTERACTIVE = "content-document-interactive";
 
 
 
 const ACTIVITY_STREAM_LOCALES = "en-US ach an ar ast az be bg bn-BD bn-IN br bs ca cak crh cs cy da de dsb el en-CA en-GB eo es-AR es-CL es-ES es-MX et eu fa ff fi fr fy-NL ga-IE gd gl gn gu-IN he hi-IN hr hsb hu hy-AM ia id it ja ja-JP-mac ka kab kk km kn ko lij lo lt ltg lv mai mk ml mr ms my nb-NO ne-NP nl nn-NO oc pa-IN pl pt-BR pt-PT rm ro ru si sk sl sq sr sv-SE ta te th tl tr uk ur uz vi zh-CN zh-TW".split(" ");
 
 const ABOUT_URL = "about:newtab";
+const BASE_URL = "resource://activity-stream/";
+const ACTIVITY_STREAM_PAGES = new Set(["home", "newtab", "welcome"]);
 
 const IS_MAIN_PROCESS = Services.appinfo.processType === Services.appinfo.PROCESS_TYPE_DEFAULT;
+const IS_PRIVILEGED_PROCESS = Services.appinfo.remoteType === E10SUtils.PRIVILEGED_REMOTE_TYPE;
 
 const IS_RELEASE_OR_BETA = AppConstants.RELEASE_OR_BETA;
 
@@ -46,6 +51,8 @@ function AboutNewTabService() {
 
   if (IS_MAIN_PROCESS) {
     AboutNewTab.init();
+  } else if (IS_PRIVILEGED_PROCESS) {
+    Services.obs.addObserver(this, TOPIC_CONTENT_DOCUMENT_INTERACTIVE);
   }
 }
 
@@ -114,10 +121,69 @@ AboutNewTabService.prototype = {
           this.notifyChange();
         }
         break;
+      case TOPIC_CONTENT_DOCUMENT_INTERACTIVE:
+        const win = subject.defaultView;
+
+        
+        
+        
+        
+        
+        if (win === null) {
+          break;
+        }
+
+        
+        
+        
+        
+        
+        
+        if (!ACTIVITY_STREAM_PAGES.has(win.location.pathname)) {
+          break;
+        }
+
+        const onLoaded = () => {
+          const debugString = this._activityStreamDebug ? "-dev" : "";
+
+          
+          const scripts = [
+            "chrome://browser/content/contentSearchUI.js",
+            "chrome://browser/content/contentTheme.js",
+            `${BASE_URL}vendor/react${debugString}.js`,
+            `${BASE_URL}vendor/react-dom${debugString}.js`,
+            `${BASE_URL}vendor/prop-types.js`,
+            `${BASE_URL}vendor/react-intl.js`,
+            `${BASE_URL}vendor/redux.js`,
+            `${BASE_URL}vendor/react-redux.js`,
+            `${BASE_URL}prerendered/${this.activityStreamLocale}/activity-stream-strings.js`,
+            `${BASE_URL}data/content/activity-stream.bundle.js`
+          ];
+
+          if (this._activityStreamPrerender) {
+            scripts.unshift(`${BASE_URL}prerendered/static/activity-stream-initial-state.js`);
+          }
+
+          for (let script of scripts) {
+            Services.scriptloader.loadSubScript(script, win); 
+          }
+        };
+        subject.addEventListener("DOMContentLoaded", onLoaded, {once: true});
+
+        
+        
+        
+        const onUnloaded = () => {
+          subject.removeEventListener("DOMContentLoaded", onLoaded);
+        };
+        subject.addEventListener("unload", onUnloaded, {once: true});
+        break;
       case TOPIC_APP_QUIT:
         this.uninit();
         if (IS_MAIN_PROCESS) {
           AboutNewTab.uninit();
+        } else if (IS_PRIVILEGED_PROCESS) {
+          Services.obs.removeObserver(this, TOPIC_CONTENT_DOCUMENT_INTERACTIVE);
         }
         break;
       case TOPIC_LOCALES_CHANGE:
@@ -187,6 +253,7 @@ AboutNewTabService.prototype = {
       "activity-stream",
       this._activityStreamPrerender ? "-prerendered" : "",
       this._activityStreamDebug ? "-debug" : "",
+      this._privilegedContentProcess ? "-noscripts" : "",
       ".html"
     ].join("");
   },
