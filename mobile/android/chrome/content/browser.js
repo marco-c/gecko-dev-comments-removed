@@ -2903,6 +2903,9 @@ var NativeWindow = {
       }
 
       
+      this._target = this._findMediaElementHostFromControls(this._target);
+
+      
       
       this._buildMenu(event.clientX, event.clientY);
       if (this._shouldShow()) {
@@ -2963,6 +2966,27 @@ var NativeWindow = {
           this.menus[context] = [];
         }
         this.menus[context] = this.menus[context].concat(items);
+    },
+
+    _findMediaElementHostFromControls(element) {
+      if (!(element instanceof HTMLMediaElement)) {
+        let n = element;
+        while (n) {
+          if (n instanceof ShadowRoot) {
+            if (n.host instanceof HTMLMediaElement) {
+              
+              return n.host;
+            }
+            
+            return element;
+          }
+          
+          n = n.parentNode;
+        }
+      }
+      
+      
+      return element;
     },
 
     
