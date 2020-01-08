@@ -4093,7 +4093,9 @@ SetPropIRGenerator::tryAttachAddOrUpdateSparseElement(HandleObject obj, ObjOpera
     }
 
     
-    if (ObjectMayHaveExtraIndexedProperties(aobj->staticPrototype())) {
+    if ((aobj->staticPrototype() != nullptr) &&
+        ObjectMayHaveExtraIndexedProperties(aobj->staticPrototype()))
+    {
         return false;
     }
 
