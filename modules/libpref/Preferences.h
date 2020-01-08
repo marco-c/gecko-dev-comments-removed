@@ -67,6 +67,54 @@ struct TypedPrefChangeFunc
   CallbackType mCallback;
 };
 
+
+
+
+
+
+
+
+
+
+typedef void(PrefChangedMethod)(const char* aPref);
+
+namespace detail {
+
+
+template<typename T>
+struct InstanceType;
+
+template<typename T, typename U>
+struct InstanceType<U T::*>
+{
+  using Type = T;
+};
+
+
+
+template<typename T, PrefChangedMethod T::*Method>
+void
+PrefChangeMethod(const char* aPref, T* aInst)
+{
+  ((*aInst).*Method)(aPref);
+}
+} 
+
+
+
+
+
+
+
+
+
+
+
+#define PREF_CHANGE_METHOD(meth)                                               \
+  (&::mozilla::detail::PrefChangeMethod<                                       \
+    ::mozilla::detail::InstanceType<decltype(&meth)>::Type,                    \
+    &meth>)
+
 class PreferenceServiceReporter;
 
 namespace dom {
