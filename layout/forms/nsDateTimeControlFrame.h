@@ -66,6 +66,8 @@ public:
               const ReflowInput& aReflowInput,
               nsReflowStatus& aStatus) override;
 
+  bool IsLeafDynamic() const override;
+
   
   nsresult CreateAnonymousContent(nsTArray<ContentInfo>& aElements) override;
   void AppendAnonymousContentTo(nsTArray<nsIContent*>& aElements,
@@ -74,7 +76,7 @@ public:
   nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
                             int32_t aModType) override;
 
-  nsIContent* GetInputAreaContent() const { return mInputAreaContent; }
+  nsIContent* GetInputAreaContent();
 
   void OnValueChanged();
   void OnMinMaxStepAttrChanged();
@@ -111,6 +113,8 @@ private:
 
 
   void SyncDisabledState();
+
+  mozilla::dom::Element* GetInputAreaContentAsElement();
 
   
   

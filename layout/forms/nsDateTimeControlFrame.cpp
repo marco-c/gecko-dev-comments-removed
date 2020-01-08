@@ -16,6 +16,7 @@
 #include "nsGkAtoms.h"
 #include "nsContentUtils.h"
 #include "nsContentCreatorFunctions.h"
+#include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/dom/MutationEventBinding.h"
 #include "nsDOMTokenList.h"
@@ -57,51 +58,119 @@ nsDateTimeControlFrame::DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aP
 void
 nsDateTimeControlFrame::OnValueChanged()
 {
-  nsCOMPtr<nsIDateTimeInputArea> inputAreaContent =
-    do_QueryInterface(mInputAreaContent);
-  if (inputAreaContent) {
-    inputAreaContent->NotifyInputElementValueChanged();
+  if (mInputAreaContent) {
+    nsCOMPtr<nsIDateTimeInputArea> inputAreaContent =
+      do_QueryInterface(mInputAreaContent);
+    if (inputAreaContent) {
+      inputAreaContent->NotifyInputElementValueChanged();
+    }
+  } else {
+    Element* inputAreaContent = GetInputAreaContentAsElement();
+    if (!inputAreaContent) {
+      return;
+    }
+
+    AsyncEventDispatcher* dispatcher =
+      new AsyncEventDispatcher(inputAreaContent,
+                               NS_LITERAL_STRING("MozDateTimeValueChanged"),
+                               CanBubble::eNo,
+                               ChromeOnlyDispatch::eNo);
+    dispatcher->RunDOMEventWhenSafe();
   }
 }
 
 void
 nsDateTimeControlFrame::OnMinMaxStepAttrChanged()
 {
-  nsCOMPtr<nsIDateTimeInputArea> inputAreaContent =
-    do_QueryInterface(mInputAreaContent);
-  if (inputAreaContent) {
-    inputAreaContent->NotifyMinMaxStepAttrChanged();
+  if (mInputAreaContent) {
+    nsCOMPtr<nsIDateTimeInputArea> inputAreaContent =
+      do_QueryInterface(mInputAreaContent);
+    if (inputAreaContent) {
+      inputAreaContent->NotifyMinMaxStepAttrChanged();
+    }
+  } else {
+    Element* inputAreaContent = GetInputAreaContentAsElement();
+    if (!inputAreaContent) {
+      return;
+    }
+
+    AsyncEventDispatcher* dispatcher =
+      new AsyncEventDispatcher(inputAreaContent,
+                               NS_LITERAL_STRING("MozNotifyMinMaxStepAttrChanged"),
+                               CanBubble::eNo,
+                               ChromeOnlyDispatch::eNo);
+    dispatcher->RunDOMEventWhenSafe();
   }
 }
 
 void
 nsDateTimeControlFrame::HandleFocusEvent()
 {
-  nsCOMPtr<nsIDateTimeInputArea> inputAreaContent =
-    do_QueryInterface(mInputAreaContent);
-  if (inputAreaContent) {
-    inputAreaContent->FocusInnerTextBox();
+  if (mInputAreaContent) {
+    nsCOMPtr<nsIDateTimeInputArea> inputAreaContent =
+      do_QueryInterface(mInputAreaContent);
+    if (inputAreaContent) {
+      inputAreaContent->FocusInnerTextBox();
+    }
+  } else {
+    Element* inputAreaContent = GetInputAreaContentAsElement();
+    if (!inputAreaContent) {
+      return;
+    }
+
+    AsyncEventDispatcher* dispatcher =
+      new AsyncEventDispatcher(inputAreaContent,
+                               NS_LITERAL_STRING("MozFocusInnerTextBox"),
+                               CanBubble::eNo,
+                               ChromeOnlyDispatch::eNo);
+    dispatcher->RunDOMEventWhenSafe();
   }
 }
 
 void
 nsDateTimeControlFrame::HandleBlurEvent()
 {
-  nsCOMPtr<nsIDateTimeInputArea> inputAreaContent =
-    do_QueryInterface(mInputAreaContent);
-  if (inputAreaContent) {
-    inputAreaContent->BlurInnerTextBox();
+  if (mInputAreaContent) {
+    nsCOMPtr<nsIDateTimeInputArea> inputAreaContent =
+      do_QueryInterface(mInputAreaContent);
+    if (inputAreaContent) {
+      inputAreaContent->BlurInnerTextBox();
+    }
+  } else {
+    Element* inputAreaContent = GetInputAreaContentAsElement();
+    if (!inputAreaContent) {
+      return;
+    }
+
+    AsyncEventDispatcher* dispatcher =
+      new AsyncEventDispatcher(inputAreaContent,
+                               NS_LITERAL_STRING("MozBlurInnerTextBox"),
+                               CanBubble::eNo,
+                               ChromeOnlyDispatch::eNo);
+    dispatcher->RunDOMEventWhenSafe();
   }
 }
 
 bool
 nsDateTimeControlFrame::HasBadInput()
 {
-  
-  Element* editWrapperElement = mInputAreaContent->GetComposedDoc()->
-    GetAnonymousElementByAttribute(mInputAreaContent,
-      nsGkAtoms::anonid, NS_LITERAL_STRING("edit-wrapper"));
+  Element* editWrapperElement = nullptr;
+  if (mInputAreaContent) {
+    
+    editWrapperElement = mInputAreaContent->GetComposedDoc()->
+      GetAnonymousElementByAttribute(mInputAreaContent,
+        nsGkAtoms::anonid, NS_LITERAL_STRING("edit-wrapper"));
+  } else if (mContent->GetShadowRoot()) {
+    
+    editWrapperElement = mContent->GetShadowRoot()->
+      GetElementById(NS_LITERAL_STRING("edit-wrapper"));
+  }
 
+  if (!editWrapperElement) {
+    return false;
+  }
+
+  
   for (Element* child = editWrapperElement->GetFirstElementChild(); child; child = child->GetNextElementSibling()) {
     if (child->ClassList()->Contains(NS_LITERAL_STRING("datetime-edit-field"))) {
       nsAutoString value;
@@ -171,7 +240,7 @@ nsDateTimeControlFrame::Reflow(nsPresContext* aPresContext,
                   aReflowInput.AvailableWidth(),
                   aReflowInput.AvailableHeight()));
 
-  NS_ASSERTION(mInputAreaContent, "The input area content must exist!");
+  NS_ASSERTION(mFrames.GetLength() <= 1, "There should be no more than 1 frames");
 
   const WritingMode myWM = aReflowInput.GetWritingMode();
 
@@ -199,9 +268,6 @@ nsDateTimeControlFrame::Reflow(nsPresContext* aPresContext,
         aReflowInput.ComputedLogicalBorderPadding().BStartEnd(myWM);
     }
   } else {
-    NS_ASSERTION(inputAreaFrame->GetContent() == mInputAreaContent,
-                 "What is this child doing here?");
-
     ReflowOutput childDesiredSize(aReflowInput);
 
     WritingMode wm = inputAreaFrame->GetWritingMode();
@@ -294,9 +360,30 @@ nsDateTimeControlFrame::Reflow(nsPresContext* aPresContext,
   NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aDesiredSize);
 }
 
+
+
+
+
+
+
+
+
+
+
+
+bool
+nsDateTimeControlFrame::IsLeafDynamic() const
+{
+  return !nsContentUtils::IsUAWidgetEnabled();
+}
+
 nsresult
 nsDateTimeControlFrame::CreateAnonymousContent(nsTArray<ContentInfo>& aElements)
 {
+  if (nsContentUtils::IsUAWidgetEnabled()) {
+    return NS_OK;
+  }
+
   
   
   nsNodeInfoManager* nodeInfoManager =
@@ -324,13 +411,26 @@ nsDateTimeControlFrame::AppendAnonymousContentTo(nsTArray<nsIContent*>& aElement
 void
 nsDateTimeControlFrame::SyncDisabledState()
 {
-  NS_ASSERTION(mInputAreaContent, "The input area content must exist!");
-  nsCOMPtr<nsIDateTimeInputArea> inputAreaContent =
-    do_QueryInterface(mInputAreaContent);
-  if (!inputAreaContent) {
-    return;
+  if (mInputAreaContent) {
+    nsCOMPtr<nsIDateTimeInputArea> inputAreaContent =
+      do_QueryInterface(mInputAreaContent);
+    if (!inputAreaContent) {
+      return;
+    }
+    inputAreaContent->UpdateEditAttributes();
+  } else {
+    Element* inputAreaContent = GetInputAreaContentAsElement();
+    if (!inputAreaContent) {
+      return;
+    }
+
+    AsyncEventDispatcher* dispatcher =
+      new AsyncEventDispatcher(inputAreaContent,
+                               NS_LITERAL_STRING("MozDateTimeAttributeChanged"),
+                               CanBubble::eNo,
+                               ChromeOnlyDispatch::eNo);
+    dispatcher->RunDOMEventWhenSafe();
   }
-  inputAreaContent->UpdateEditAttributes();
 }
 
 nsresult
@@ -338,7 +438,6 @@ nsDateTimeControlFrame::AttributeChanged(int32_t aNameSpaceID,
                                          nsAtom* aAttribute,
                                          int32_t aModType)
 {
-  NS_ASSERTION(mInputAreaContent, "The input area content must exist!");
 
   
   if (aNameSpaceID == kNameSpaceID_None) {
@@ -351,18 +450,41 @@ nsDateTimeControlFrame::AttributeChanged(int32_t aNameSpaceID,
       
       if (contentAsInputElem->ControlType() == NS_FORM_INPUT_TIME ||
           contentAsInputElem->ControlType() == NS_FORM_INPUT_DATE) {
-        nsCOMPtr<nsIDateTimeInputArea> inputAreaContent =
-          do_QueryInterface(mInputAreaContent);
-        if (aAttribute == nsGkAtoms::value) {
-          if (inputAreaContent) {
-            nsContentUtils::AddScriptRunner(NewRunnableMethod(
-              "nsIDateTimeInputArea::NotifyInputElementValueChanged",
-              inputAreaContent,
-              &nsIDateTimeInputArea::NotifyInputElementValueChanged));
+        if (mInputAreaContent) {
+          nsCOMPtr<nsIDateTimeInputArea> inputAreaContent =
+            do_QueryInterface(mInputAreaContent);
+          if (aAttribute == nsGkAtoms::value) {
+            if (inputAreaContent) {
+              nsContentUtils::AddScriptRunner(NewRunnableMethod(
+                "nsIDateTimeInputArea::NotifyInputElementValueChanged",
+                inputAreaContent,
+                &nsIDateTimeInputArea::NotifyInputElementValueChanged));
+            }
+          } else {
+            if (inputAreaContent) {
+              inputAreaContent->UpdateEditAttributes();
+            }
           }
         } else {
-          if (inputAreaContent) {
-            inputAreaContent->UpdateEditAttributes();
+          Element* inputAreaContent = GetInputAreaContentAsElement();
+          if (aAttribute == nsGkAtoms::value) {
+            if (inputAreaContent) {
+              AsyncEventDispatcher* dispatcher =
+                new AsyncEventDispatcher(inputAreaContent,
+                                         NS_LITERAL_STRING("NotifyInputElementValueChanged"),
+                                         CanBubble::eNo,
+                                         ChromeOnlyDispatch::eNo);
+              dispatcher->RunDOMEventWhenSafe();
+            }
+          } else {
+            if (inputAreaContent) {
+              AsyncEventDispatcher* dispatcher =
+                new AsyncEventDispatcher(inputAreaContent,
+                                         NS_LITERAL_STRING("MozDateTimeValueChanged"),
+                                         CanBubble::eNo,
+                                         ChromeOnlyDispatch::eNo);
+              dispatcher->RunDOMEventWhenSafe();
+            }
           }
         }
       }
@@ -371,6 +493,32 @@ nsDateTimeControlFrame::AttributeChanged(int32_t aNameSpaceID,
 
   return nsContainerFrame::AttributeChanged(aNameSpaceID, aAttribute,
                                             aModType);
+}
+
+nsIContent*
+nsDateTimeControlFrame::GetInputAreaContent()
+{
+  if (mInputAreaContent) {
+    return mInputAreaContent;
+  }
+  if (mContent->GetShadowRoot()) {
+    
+    
+    MOZ_ASSERT(mContent->GetShadowRoot()->IsUAWidget());
+    MOZ_ASSERT(1 >= mContent->GetShadowRoot()->GetChildCount());
+    return mContent->GetShadowRoot()->GetFirstChild();
+  }
+  return nullptr;
+}
+
+Element*
+nsDateTimeControlFrame::GetInputAreaContentAsElement()
+{
+  nsIContent* inputAreaContent = GetInputAreaContent();
+  if (inputAreaContent) {
+    return inputAreaContent->AsElement();
+  }
+  return nullptr;
 }
 
 void

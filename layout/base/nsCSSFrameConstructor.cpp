@@ -1795,7 +1795,9 @@ nsCSSFrameConstructor::CreateGeneratedContentItem(nsFrameConstructorState& aStat
              aPseudoElement == CSSPseudoElementType::after,
              "unexpected aPseudoElement");
 
-  if (aParentFrame && aParentFrame->IsHTMLVideoFrame()) {
+  if (aParentFrame &&
+      (aParentFrame->IsHTMLVideoFrame() || aParentFrame->IsDateTimeControlFrame())) {
+    
     
     MOZ_ASSERT(aOriginatingElement.GetShadowRoot()->IsUAWidget());
     return;
