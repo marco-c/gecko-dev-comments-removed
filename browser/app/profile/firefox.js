@@ -1500,13 +1500,6 @@ pref("browser.ping-centre.production.endpoint", "https://tiles.services.mozilla.
 pref("media.gmp-provider.enabled", true);
 
 
-#ifdef NIGHTLY_BUILD
-pref("browser.contentblocking.ui.enabled", true);
-#else
-pref("browser.contentblocking.ui.enabled", false);
-#endif
-
-
 pref("browser.contentblocking.fastblock.ui.enabled", true);
 pref("browser.contentblocking.fastblock.control-center.ui.enabled", true);
 pref("browser.contentblocking.trackingprotection.ui.enabled", true);
