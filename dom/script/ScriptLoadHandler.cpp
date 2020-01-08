@@ -312,12 +312,7 @@ nsresult ScriptLoadHandler::EnsureKnownDataType(
           TRACE_FOR_TEST(mRequest->Element(), "scriptloader_load_source");
           return NS_OK;
         }
-
-        
-        
-        
-        mRequest->SetTextSource();
-        return NS_OK;
+        return NS_ERROR_FAILURE;
       }
     }
   }
