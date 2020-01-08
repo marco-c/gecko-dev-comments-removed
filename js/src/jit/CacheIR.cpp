@@ -3597,6 +3597,10 @@ CanAttachAddElement(NativeObject* obj, bool isInit)
             return false;
 
         
+        if (proto->is<TypedArrayObject>())
+            return false;
+
+        
         
         
         
