@@ -16,8 +16,10 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -110,6 +112,7 @@ import org.mozilla.gecko.icons.decoders.FaviconDecoder;
 import org.mozilla.gecko.icons.decoders.IconDirectoryEntry;
 import org.mozilla.gecko.icons.decoders.LoadFaviconResult;
 import org.mozilla.gecko.lwt.LightweightTheme;
+import org.mozilla.gecko.media.PictureInPictureController;
 import org.mozilla.gecko.media.VideoPlayer;
 import org.mozilla.gecko.menu.GeckoMenu;
 import org.mozilla.gecko.menu.GeckoMenuItem;
@@ -237,6 +240,7 @@ public class BrowserApp extends GeckoApp
     public ViewFlipper mActionBarFlipper;
     public ActionModeCompatView mActionBar;
     private VideoPlayer mVideoPlayer;
+    private PictureInPictureController mPipController;
     private BrowserToolbar mBrowserToolbar;
     private View doorhangerOverlay;
     
@@ -269,6 +273,7 @@ public class BrowserApp extends GeckoApp
     private boolean mShowingToolbarChromeForActionBar;
 
     private SafeIntent safeStartingIntent;
+    private Intent startingIntentAfterPip;
     private boolean isInAutomation;
 
     private static class MenuItemInfo implements Parcelable {
@@ -864,6 +869,7 @@ public class BrowserApp extends GeckoApp
         }
 
         setBrowserToolbarListeners();
+        mPipController = new PictureInPictureController(this);
 
         mFindInPageBar = (FindInPageBar) findViewById(R.id.find_in_page);
         mMediaCastingBar = (MediaCastingBar) findViewById(R.id.media_casting);
@@ -1184,6 +1190,38 @@ public class BrowserApp extends GeckoApp
     }
 
     @Override
+    protected void onUserLeaveHint() {
+        super.onUserLeaveHint();
+        try {
+            mPipController.tryEnteringPictureInPictureMode();
+        } catch (IllegalStateException exception) {
+            Log.e(LOGTAG, "Cannot enter in Picture In Picture mode:\n" + exception.getMessage());
+        }
+    }
+
+    @Override
+    public void onPictureInPictureModeChanged(boolean isInPictureInPictureMode, Configuration newConfig) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig);
+
+        if (!isInPictureInPictureMode) {
+            mPipController.cleanResources();
+
+            
+            
+            if (startingIntentAfterPip != null) {
+                getApplication().startActivity(startingIntentAfterPip);
+                startingIntentAfterPip = null;
+            } else {
+                
+                
+                
+                
+                ActivityUtils.setFullScreen(this, true);
+            }
+        }
+    }
+
+    @Override
     public void onRestart() {
         super.onRestart();
         if (mIsAbortingAppLaunch) {
@@ -1237,6 +1275,12 @@ public class BrowserApp extends GeckoApp
         super.onStop();
         if (mIsAbortingAppLaunch) {
             return;
+        }
+
+        if (mPipController.isInPipMode()) {
+            
+            moveTaskToBack(true);
+            mPipController.cleanResources();
         }
 
         
@@ -4114,6 +4158,33 @@ public class BrowserApp extends GeckoApp
 
     @Override
     protected void onNewIntent(Intent externalIntent) {
+
+        
+        
+        
+        
+        
+        
+        
+        if (mPipController.isInPipMode()) {
+
+            startingIntentAfterPip = externalIntent;
+
+            
+            
+            
+            moveTaskToBack(true);
+            startingIntentAfterPip.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+
+            
+            
+            
+            
+            setRequestedOrientationForCurrentActivity(ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR);
+
+            return;
+        }
+
         final SafeIntent intent = new SafeIntent(externalIntent);
         String action = intent.getAction();
 
