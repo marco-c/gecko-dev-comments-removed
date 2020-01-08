@@ -16,6 +16,7 @@
 #include "jsfriendapi.h" 
 #include "jstypes.h" 
 
+#include "frontend/BytecodeCompilation.h" 
 #include "frontend/FullParseHandler.h" 
 #include "frontend/ParseContext.h" 
 #include "frontend/Parser.h" 
@@ -61,7 +62,8 @@ CompileSourceBuffer(JSContext* cx, const ReadOnlyCompileOptions& options,
     AssertHeapIsIdle();
     CHECK_THREAD(cx);
 
-    script.set(frontend::CompileGlobalScript(cx, scopeKind, options, srcBuf));
+    frontend::GlobalScriptInfo info(cx, options, scopeKind);
+    script.set(frontend::CompileGlobalScript(info, srcBuf));
     return !!script;
 }
 
@@ -523,15 +525,17 @@ Evaluate(JSContext* cx, ScopeKind scopeKind, HandleObject env,
     MOZ_ASSERT_IF(!IsGlobalLexicalEnvironment(env), scopeKind == ScopeKind::NonSyntactic);
 
     options.setIsRunOnce(true);
-    RootedScript script(cx, frontend::CompileGlobalScript(cx, scopeKind, options, srcBuf));
-    if (!script) {
-        return false;
+
+    RootedScript script(cx);
+    {
+        frontend::GlobalScriptInfo info(cx, options, scopeKind);
+        script = frontend::CompileGlobalScript(info, srcBuf);
+        if (!script) {
+            return false;
+        }
     }
 
-    bool result = Execute(cx, script, *env,
-                          options.noScriptRval ? nullptr : rval.address());
-
-    return result;
+    return Execute(cx, script, *env, options.noScriptRval ? nullptr : rval.address());
 }
 
 static bool

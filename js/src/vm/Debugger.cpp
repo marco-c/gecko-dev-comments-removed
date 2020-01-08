@@ -16,6 +16,7 @@
 #include "jsfriendapi.h"
 #include "jsnum.h"
 
+#include "frontend/BytecodeCompilation.h"
 #include "frontend/BytecodeCompiler.h"
 #include "frontend/Parser.h"
 #include "gc/FreeOp.h"
@@ -8927,20 +8928,22 @@ EvaluateInEnv(JSContext* cx, Handle<Env*> env, AbstractFramePtr frame,
             return false;
         }
         script = frontend::CompileEvalScript(cx, env, scope, options, srcBuf);
-        if (script) {
-            script->setActiveEval();
+        if (!script) {
+            return false;
         }
+
+        script->setActiveEval();
     } else {
         
         
         
         
         
-        script = frontend::CompileGlobalScript(cx, scopeKind, options, srcBuf);
-    }
-
-    if (!script) {
-        return false;
+        frontend::GlobalScriptInfo info(cx, options, scopeKind);
+        script = frontend::CompileGlobalScript(info, srcBuf);
+        if (!script) {
+            return false;
+        }
     }
 
     return ExecuteKernel(cx, script, *env, NullValue(), frame, rval.address());

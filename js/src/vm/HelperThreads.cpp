@@ -11,7 +11,7 @@
 #include "mozilla/Unused.h"
 
 #include "builtin/Promise.h"
-#include "frontend/BytecodeCompiler.h"
+#include "frontend/BytecodeCompilation.h"
 #include "gc/GCInternals.h"
 #include "jit/IonBuilder.h"
 #include "js/SourceText.h"
@@ -514,15 +514,26 @@ ScriptParseTask::parse(JSContext* cx)
 {
     MOZ_ASSERT(cx->helperThread());
 
+    JSScript* script;
     Rooted<ScriptSourceObject*> sourceObject(cx);
 
-    ScopeKind scopeKind = options.nonSyntacticScope ? ScopeKind::NonSyntactic : ScopeKind::Global;
+    {
+        ScopeKind scopeKind = options.nonSyntacticScope
+                              ? ScopeKind::NonSyntactic
+                              : ScopeKind::Global;
+        frontend::GlobalScriptInfo info(cx, options, scopeKind);
+        script = frontend::CompileGlobalScript(info, data,
+                                                &sourceObject.get());
+    }
 
-    JSScript* script = frontend::CompileGlobalScript(cx, scopeKind, options, data,
-                                                      &sourceObject.get());
     if (script) {
         scripts.infallibleAppend(script);
     }
+
+    
+    
+    
+    
     if (sourceObject) {
         sourceObjects.infallibleAppend(sourceObject);
     }
