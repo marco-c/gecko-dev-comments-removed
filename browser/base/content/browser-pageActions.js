@@ -453,17 +453,6 @@ var BrowserPageActions = {
       urlbarNode: node,
     });
     action.onPlacedInUrlbar(node);
-
-    
-    
-    
-    
-    if (!node.hasAttribute("tooltiptext")) {
-      let panelNode = this.panelButtonNodeForActionID(action.id);
-      if (panelNode) {
-        node.setAttribute("tooltiptext", panelNode.getAttribute("label"));
-      }
-    }
   },
 
   _makeUrlbarButtonNode(action) {
@@ -967,7 +956,7 @@ BrowserPageActions.bookmark = {
 
 
 BrowserPageActions.copyURL = {
-  onPlacedInPanel(buttonNode) {
+  onBeforePlacedInWindow(browserWindow) {
     let action = PageActions.actionForID("copyURL");
     BrowserPageActions.takeActionTitleFromPanel(action);
   },
@@ -984,7 +973,7 @@ BrowserPageActions.copyURL = {
 
 
 BrowserPageActions.emailLink = {
-  onPlacedInPanel(buttonNode) {
+  onBeforePlacedInWindow(browserWindow) {
     let action = PageActions.actionForID("emailLink");
     BrowserPageActions.takeActionTitleFromPanel(action);
   },
@@ -997,7 +986,7 @@ BrowserPageActions.emailLink = {
 
 
 BrowserPageActions.sendToDevice = {
-  onPlacedInPanel(buttonNode) {
+  onBeforePlacedInWindow(browserWindow) {
     let action = PageActions.actionForID("sendToDevice");
     BrowserPageActions.takeActionTitleFromPanel(action);
   },
@@ -1198,7 +1187,7 @@ BrowserPageActions.shareURL = {
     this._cached = false;
   },
 
-  onPlacedInPanel(buttonNode) {
+  onBeforePlacedInWindow(browserWindow) {
     let action = PageActions.actionForID("shareURL");
     BrowserPageActions.takeActionTitleFromPanel(action);
   },
