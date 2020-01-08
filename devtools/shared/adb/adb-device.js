@@ -4,7 +4,7 @@
 
 "use strict";
 
-const { ADB } = require("devtools/shared/adb/adb");
+const { shell } = require("devtools/shared/adb/commands/index");
 
 
 
@@ -19,7 +19,7 @@ class AdbDevice {
     if (this._model) {
       return this._model;
     }
-    const model = await ADB.shell("getprop ro.product.model");
+    const model = await shell("getprop ro.product.model");
     this._model = model.trim();
     return this._model;
   }
@@ -33,7 +33,7 @@ class AdbDevice {
     
     
     const query = "cat /proc/net/unix";
-    const rawSocketInfo = await ADB.shell(query);
+    const rawSocketInfo = await shell(query);
 
     
     let socketInfos = rawSocketInfo.split(/\r?\n/);
