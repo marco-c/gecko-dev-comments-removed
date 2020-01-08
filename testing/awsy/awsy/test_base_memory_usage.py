@@ -54,7 +54,12 @@ class TestMemoryUsage(AwsyTestCase):
 
         
         
+        
+        
+        
+        
         process_count = self.marionette.get_pref('dom.ipc.processCount')
+        self._pages_to_load = process_count
         self._urls = ['about:blank'] * process_count
 
         self.logger.info("areweslimyet run by %d pages, "
@@ -69,6 +74,19 @@ class TestMemoryUsage(AwsyTestCase):
         self.logger.info("tearing down!")
         AwsyTestCase.tearDown(self)
         self.logger.info("done tearing down!")
+
+    def set_preallocated_process_enabled_state(self, enabled):
+        """Sets the pref that controls whether we have a preallocated content
+        process to the given value.
+
+        This will cause the preallocated process to be destroyed or created
+        as appropriate.
+        """
+        if enabled:
+            self.logger.info('re-enabling preallocated process')
+        else:
+            self.logger.info('disabling preallocated process')
+        self.marionette.set_pref('dom.ipc.processPrelaunch.enabled', enabled)
 
     def test_open_tabs(self):
         """Marionette test entry that returns an array of checkoint arrays.
@@ -86,13 +104,19 @@ class TestMemoryUsage(AwsyTestCase):
             self.assertIsNotNone(checkpoint, "Checkpoint was recorded")
             results[iteration].append(checkpoint)
 
-        for itr in range(self.iterations()):
-            self.open_pages()
-            self.settle()
-            self.settle()
-            self.assertTrue(self.do_full_gc())
-            self.settle()
-            create_checkpoint("TabsOpenForceGC", itr)
+        
+        
+        assert self._iterations == 1
+        self.open_pages()
+        self.set_preallocated_process_enabled_state(False)
+        self.settle()
+        self.settle()
+        self.assertTrue(self.do_full_gc())
+        self.settle()
+        create_checkpoint("TabsOpenForceGC", 0)
+        self.set_preallocated_process_enabled_state(True)
+        
+        
 
         
         self.logger.info("setting results")
