@@ -1862,7 +1862,9 @@ js::StartDynamicModuleImport(JSContext* cx, HandleValue referencingPrivate, Hand
     }
 
     if (!importHook(cx, referencingPrivate, specifier, promise)) {
-        if (!RejectPromiseWithPendingError(cx, promise)) {
+        
+        
+        if (!cx->isExceptionPending() || !RejectPromiseWithPendingError(cx, promise)) {
             return nullptr;
         }
         return promise;
