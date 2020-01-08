@@ -3,7 +3,7 @@
 
 
 
-'use strict';
+"use strict";
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
@@ -22,15 +22,15 @@ WellKnownOpportunisticUtils.prototype = {
   classDescription: "Well-Known Opportunistic Utils",
   QueryInterface: ChromeUtils.generateQI([Ci.nsIWellKnownOpportunisticUtils]),
 
-    verify: function(aJSON, aOrigin, aAlternatePort) {
+    verify(aJSON, aOrigin, aAlternatePort) {
 	try {
 	  let obj = JSON.parse(aJSON.toLowerCase());
-	  let ports = obj[aOrigin.toLowerCase()]['tls-ports'];
+	  let ports = obj[aOrigin.toLowerCase()]["tls-ports"];
 	  if (!ports.includes(aAlternatePort)) {
 	    throw "invalid port";
 	  }
-	  this.lifetime = obj[aOrigin.toLowerCase()]['lifetime'];
-          this.mixed = obj[aOrigin.toLowerCase()]['mixed-scheme'];
+	  this.lifetime = obj[aOrigin.toLowerCase()].lifetime;
+          this.mixed = obj[aOrigin.toLowerCase()]["mixed-scheme"];
 	} catch (e) {
 	  return;
 	}
