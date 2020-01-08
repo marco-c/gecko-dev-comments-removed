@@ -77,14 +77,17 @@ static char*
 AllocConvertUTF16toUTF8(char16ptr_t arg)
 {
   
-  int len = wcslen(arg);
-  char *s = new char[len * 3 + 1];
+  size_t len = wcslen(arg);
+  
+  
+  size_t dstLen = len * 3 + 1;
+  char* s = new char[dstLen + 1]; 
   if (!s)
     return nullptr;
 
-  ConvertUTF16toUTF8 convert(s);
-  convert.write(arg, len);
-  convert.write_terminator();
+  int written =
+    ::WideCharToMultiByte(CP_UTF8, 0, arg, len, s, dstLen, nullptr, nullptr);
+  s[written] = 0;
   return s;
 }
 

@@ -522,7 +522,9 @@ struct MessageWindow {
         
         NS_ConvertUTF16toUTF8 utf8buffer(cmd);
         utf8buffer.Append('\0');
-        AppendUTF16toUTF8(cwd, utf8buffer);
+        WCHAR* cwdPtr = cwd;
+        AppendUTF16toUTF8(MakeStringSpan(reinterpret_cast<char16_t*>(cwdPtr)),
+                          utf8buffer);
         utf8buffer.Append('\0');
 
         

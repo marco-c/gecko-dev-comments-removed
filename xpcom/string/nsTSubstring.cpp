@@ -12,6 +12,24 @@
 
 #include "nsASCIIMask.h"
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const uint32_t kNsStringBufferShrinkingThreshold = 384;
+
 using double_conversion::DoubleToStringConverter;
 
 template <typename T>
@@ -47,45 +65,71 @@ AsAutoString(const nsTSubstring<T>* aStr)
   return static_cast<const nsTAutoString<T>*>(aStr);
 }
 
-
-
-
-
-
-
-
-template <typename T>
-bool
-nsTSubstring<T>::MutatePrep(size_type aCapacity, char_type** aOldData,
-                            DataFlags* aOldDataFlags)
+template<typename T>
+mozilla::Result<uint32_t, nsresult>
+nsTSubstring<T>::StartBulkWrite(size_type aCapacity,
+                                size_type aPrefixToPreserve,
+                                bool aAllowShrinking,
+                                size_type aSuffixLength,
+                                size_type aOldSuffixStart,
+                                size_type aNewSuffixStart)
 {
   
-  *aOldData = nullptr;
-  *aOldDataFlags = DataFlags(0);
 
+  MOZ_ASSERT(aPrefixToPreserve <= aCapacity,
+             "Requested preservation of an overlong prefix.");
+  MOZ_ASSERT(aNewSuffixStart + aSuffixLength <= aCapacity,
+             "Requesed move of suffix to out-of-bounds location.");
+  
+  
+
+  
+  
+  if (MOZ_UNLIKELY(!aCapacity)) {
+    ::ReleaseData(this->mData, this->mDataFlags);
+    SetToEmptyBuffer();
+    return 0;
+  }
+
+  
   size_type curCapacity = Capacity();
 
   
   
   
-  static_assert((sizeof(nsStringBuffer) & 0x1) == 0,
-                "bad size for nsStringBuffer");
-  if (!CheckCapacity(aCapacity)) {
-      return false;
+  
+
+  if (!aAllowShrinking && aCapacity <= curCapacity) {
+    char_traits::move(this->mData + aNewSuffixStart,
+                      this->mData + aOldSuffixStart,
+                      aSuffixLength);
+    return curCapacity;
   }
 
-  
-  
-  
+  char_type* oldData = this->mData;
+  DataFlags oldFlags = this->mDataFlags;
 
-  if (curCapacity != 0) {
-    if (aCapacity <= curCapacity) {
-      this->mDataFlags &= ~DataFlags::VOIDED;  
-      return true;
+  char_type* newData;
+  DataFlags newDataFlags;
+  size_type newCapacity;
+
+  
+  
+  if ((this->mClassFlags & ClassFlags::INLINE) &&
+      (aCapacity <= AsAutoString(this)->mInlineCapacity)) {
+    newCapacity = AsAutoString(this)->mInlineCapacity;
+    newData = (char_type*)AsAutoString(this)->mStorage;
+    newDataFlags = DataFlags::TERMINATED | DataFlags::INLINE;
+  } else {
+    
+    
+    
+    static_assert((sizeof(nsStringBuffer) & 0x1) == 0,
+                  "bad size for nsStringBuffer");
+    if (MOZ_UNLIKELY(!CheckCapacity(aCapacity))) {
+      return mozilla::Err(NS_ERROR_OUT_OF_MEMORY);
     }
-  }
 
-  if (curCapacity < aCapacity) {
     
     
     
@@ -113,77 +157,60 @@ nsTSubstring<T>::MutatePrep(size_type aCapacity, char_type** aOldData,
         mozilla::RoundUpPow2(aCapacity + neededExtraSpace) - neededExtraSpace;
     }
 
-    MOZ_ASSERT(XPCOM_MIN(temp, kMaxCapacity) >= aCapacity,
+    newCapacity = XPCOM_MIN(temp, kMaxCapacity);
+    MOZ_ASSERT(newCapacity >= aCapacity,
                "should have hit the early return at the top");
-    aCapacity = XPCOM_MIN(temp, kMaxCapacity);
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  size_type storageSize = (aCapacity + 1) * sizeof(char_type);
-
-  
-  if (this->mDataFlags & DataFlags::REFCOUNTED) {
-    nsStringBuffer* hdr = nsStringBuffer::FromData(this->mData);
-    if (!hdr->IsReadonly()) {
-      nsStringBuffer* newHdr = nsStringBuffer::Realloc(hdr, storageSize);
+    
+    
+    if ((curCapacity - newCapacity) <= kNsStringBufferShrinkingThreshold &&
+        (this->mDataFlags & DataFlags::REFCOUNTED)) {
+      MOZ_ASSERT(aAllowShrinking, "How come we didn't return earlier?");
+      
+      newData = oldData;
+    } else {
+      size_type storageSize = (newCapacity + 1) * sizeof(char_type);
+      
+      
+      
+      nsStringBuffer* newHdr = nsStringBuffer::Alloc(storageSize).take();
       if (!newHdr) {
-        return false;  
+        return mozilla::Err(NS_ERROR_OUT_OF_MEMORY); 
       }
 
-      hdr = newHdr;
-      this->mData = (char_type*)hdr->Data();
-      this->mDataFlags &= ~DataFlags::VOIDED;  
-      return true;
+      newData = (char_type*)newHdr->Data();
     }
-  }
-
-  char_type* newData;
-  DataFlags newDataFlags;
-
-  
-  
-  if ((this->mClassFlags & ClassFlags::INLINE) &&
-      (aCapacity < AsAutoString(this)->mInlineCapacity)) {
-    newData = (char_type*)AsAutoString(this)->mStorage;
-    newDataFlags = DataFlags::TERMINATED | DataFlags::INLINE;
-  } else {
-    
-    
-    
-
-    nsStringBuffer* newHdr =
-      nsStringBuffer::Alloc(storageSize).take();
-    if (!newHdr) {
-      return false;  
-    }
-
-    newData = (char_type*)newHdr->Data();
     newDataFlags = DataFlags::TERMINATED | DataFlags::REFCOUNTED;
   }
 
-  
-  *aOldData = this->mData;
-  *aOldDataFlags = this->mDataFlags;
+  this->mData = newData;
+  this->mDataFlags = newDataFlags;
 
-  
-  SetData(newData, this->mLength, newDataFlags);
+  if (oldData == newData) {
+    char_traits::move(
+      newData + aNewSuffixStart, oldData + aOldSuffixStart, aSuffixLength);
+  } else {
+    char_traits::copy(newData, oldData, aPrefixToPreserve);
+    char_traits::copy(
+      newData + aNewSuffixStart, oldData + aOldSuffixStart, aSuffixLength);
+    ::ReleaseData(oldData, oldFlags);
+  }
 
-  
-  
+  return newCapacity;
+}
 
-  return true;
+template<typename T>
+void
+nsTSubstring<T>::FinishBulkWrite(size_type aLength)
+{
+  MOZ_ASSERT(aLength != UINT32_MAX, "OOM magic value passed as length.");
+  if (aLength) {
+    this->mData[aLength] = char_type(0);
+    this->mLength = aLength;
+  } else {
+    ::ReleaseData(this->mData, this->mDataFlags);
+    SetToEmptyBuffer();
+  }
+  AssertValid();
 }
 
 template <typename T>
@@ -225,48 +252,16 @@ bool
 nsTSubstring<T>::ReplacePrepInternal(index_type aCutStart, size_type aCutLen,
                                      size_type aFragLen, size_type aNewLen)
 {
-  char_type* oldData;
-  DataFlags oldFlags;
-  if (!MutatePrep(aNewLen, &oldData, &oldFlags)) {
-    return false;  
+  size_type newSuffixStart = aCutStart + aFragLen;
+  size_type oldSuffixStart = aCutStart + aCutLen;
+  size_type suffixLength = this->mLength - oldSuffixStart;
+
+  mozilla::Result<uint32_t, nsresult> r = StartBulkWrite(
+    aNewLen, aCutStart, false, suffixLength, oldSuffixStart, newSuffixStart);
+  if (r.isErr()) {
+    return false;
   }
-
-  if (oldData) {
-    
-    
-
-    if (aCutStart > 0) {
-      
-      char_traits::copy(this->mData, oldData, aCutStart);
-    }
-
-    if (aCutStart + aCutLen < this->mLength) {
-      
-      size_type from = aCutStart + aCutLen;
-      size_type fromLen = this->mLength - from;
-      uint32_t to = aCutStart + aFragLen;
-      char_traits::copy(this->mData + to, oldData + from, fromLen);
-    }
-
-    ::ReleaseData(oldData, oldFlags);
-  } else {
-    
-
-    
-    
-    if (aFragLen != aCutLen && aCutStart + aCutLen < this->mLength) {
-      uint32_t from = aCutStart + aCutLen;
-      uint32_t fromLen = this->mLength - from;
-      uint32_t to = aCutStart + aFragLen;
-      char_traits::move(this->mData + to, this->mData + from, fromLen);
-    }
-  }
-
-  
-  
-  this->mData[aNewLen] = char_type(0);
-  this->mLength = aNewLen;
-
+  FinishBulkWrite(aNewLen);
   return true;
 }
 
@@ -553,20 +548,14 @@ nsTSubstring<T>::Assign(const substring_tuple_type& aTuple,
 
   size_type length = aTuple.Length();
 
-  
-  char_type* oldData;
-  DataFlags oldFlags;
-  if (!MutatePrep(length, &oldData, &oldFlags)) {
+  mozilla::Result<uint32_t, nsresult> r = StartBulkWrite(length);
+  if (r.isErr()) {
     return false;
   }
 
-  if (oldData) {
-    ::ReleaseData(oldData, oldFlags);
-  }
-
   aTuple.WriteTo(this->mData, length);
-  this->mData[length] = 0;
-  this->mLength = length;
+
+  FinishBulkWrite(length);
   return true;
 }
 
@@ -763,39 +752,52 @@ nsTSubstring<T>::SetCapacity(size_type aCapacity, const fallible_t&)
   
 
   
-  if (aCapacity == 0) {
-    ::ReleaseData(this->mData, this->mDataFlags);
-    SetToEmptyBuffer();
-    return true;
-  }
-
-  char_type* oldData;
-  DataFlags oldFlags;
-  if (!MutatePrep(aCapacity, &oldData, &oldFlags)) {
-    return false;  
-  }
-
   
-  size_type newLen = XPCOM_MIN(this->mLength, aCapacity);
+  
+  
+  
 
-  if (oldData) {
+  size_type preserve;
+  if (this->mDataFlags & DataFlags::REFCOUNTED) {
+    nsStringBuffer* hdr = nsStringBuffer::FromData(this->mData);
+    preserve = (hdr->StorageSize() / sizeof(char_type)) - 1;
+  } else if (this->mDataFlags & DataFlags::INLINE) {
+    preserve = AsAutoString(this)->mInlineCapacity;
+  } else {
+    preserve = this->mLength;
+  }
+
+  if (preserve > aCapacity) {
+    preserve = aCapacity;
+  }
+
+  mozilla::Result<uint32_t, nsresult> r = StartBulkWrite(aCapacity, preserve);
+  if (r.isErr()) {
+    return false;
+  }
+  if (r.unwrap()) {
     
-    if (this->mLength > 0) {
-      char_traits::copy(this->mData, oldData, newLen);
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (aCapacity < this->mLength) {
+      
+      
+      this->mLength = aCapacity;
     }
-
-    ::ReleaseData(oldData, oldFlags);
+    
+    
+    
+    this->mData[aCapacity] = char_type(0);
   }
-
-  
-  if (newLen < this->mLength) {
-    this->mLength = newLen;
-  }
-
-  
-  
-  this->mData[aCapacity] = char_type(0);
-
   return true;
 }
 

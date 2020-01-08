@@ -204,11 +204,16 @@ void txRomanCounter::appendNumber(int32_t aNumber, nsAString& aDest)
     
     posValue = aNumber / 100;
     aNumber %= 100;
-    AppendASCIItoUTF16(kTxRomanNumbers[posValue + mTableOffset], aDest);
+    AppendASCIItoUTF16(
+      mozilla::MakeStringSpan(kTxRomanNumbers[posValue + mTableOffset]), aDest);
     
     posValue = aNumber / 10;
     aNumber %= 10;
-    AppendASCIItoUTF16(kTxRomanNumbers[10 + posValue + mTableOffset], aDest);
+    AppendASCIItoUTF16(
+      mozilla::MakeStringSpan(kTxRomanNumbers[10 + posValue + mTableOffset]),
+      aDest);
     
-    AppendASCIItoUTF16(kTxRomanNumbers[20 + aNumber + mTableOffset], aDest);
+    AppendASCIItoUTF16(
+      mozilla::MakeStringSpan(kTxRomanNumbers[20 + aNumber + mTableOffset]),
+      aDest);
 }

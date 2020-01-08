@@ -42,11 +42,13 @@ NS_GetComplexLineBreaks(const char16_t* aText, uint32_t aLength,
         aBreakBefore[++u16Offset] = false; 
       ++u16Offset;
 
-      bool err;
-      uint32_t ch = UTF8CharEnumerator::NextChar(&p, end, &err);
+      
+      
+      
+      uint32_t ch = UTF8CharEnumerator::NextChar(&p, end);
       ++attr;
 
-      if (ch == 0 || err) {
+      if (!ch) {
         
         
         

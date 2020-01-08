@@ -19,9 +19,171 @@
 #include "nsTArrayForwardDeclare.h"
 
 
+
 extern "C" {
-  size_t encoding_utf8_valid_up_to(uint8_t const* buffer, size_t buffer_len);
-  size_t encoding_ascii_valid_up_to(uint8_t const* buffer, size_t buffer_len);
+  size_t
+  encoding_utf8_valid_up_to(uint8_t const* buffer, size_t buffer_len);
+
+  bool
+  encoding_mem_is_ascii(uint8_t const* buffer, size_t buffer_len);
+
+  bool
+  encoding_mem_is_basic_latin(char16_t const* buffer, size_t buffer_len);
+
+  bool
+  encoding_mem_is_utf8_latin1(uint8_t const* buffer, size_t buffer_len);
+
+  bool
+  encoding_mem_is_str_latin1(uint8_t const* buffer, size_t buffer_len);
+
+  bool
+  encoding_mem_is_utf16_latin1(char16_t const* buffer, size_t buffer_len);
+
+  void
+  encoding_mem_convert_utf16_to_latin1_lossy(const char16_t* src,
+                                             size_t src_len,
+                                             char* dst,
+                                             size_t dst_len);
+
+  size_t
+  encoding_mem_convert_utf8_to_latin1_lossy(const char* src,
+                                            size_t src_len,
+                                            char* dst,
+                                            size_t dst_len);
+
+  void
+  encoding_mem_convert_latin1_to_utf16(const char* src,
+                                       size_t src_len,
+                                       char16_t* dst,
+                                       size_t dst_len);
+
+  size_t
+  encoding_mem_convert_utf16_to_utf8(const char16_t* src,
+                                     size_t src_len,
+                                     char* dst,
+                                     size_t dst_len);
+
+  size_t
+  encoding_mem_convert_utf8_to_utf16(const char* src,
+                                     size_t src_len,
+                                     char16_t* dst,
+                                     size_t dst_len);
+}
+
+
+extern "C" {
+  bool
+  nsstring_fallible_append_utf8_impl(nsAString* aThis,
+                                     const char* aOther,
+                                     size_t aOtherLen,
+                                     size_t aOldLen);
+
+  bool
+  nsstring_fallible_append_latin1_impl(nsAString* aThis,
+                                       const char* aOther,
+                                       size_t aOtherLen,
+                                       size_t aOldLen);
+
+  bool
+  nscstring_fallible_append_utf16_to_utf8_impl(nsACString* aThis,
+                                               const char16_t*,
+                                               size_t aOtherLen,
+                                               size_t aOldLen);
+
+  bool
+  nscstring_fallible_append_utf16_to_latin1_lossy_impl(nsACString* aThis,
+                                                       const char16_t*,
+                                                       size_t aOtherLen,
+                                                       size_t aOldLen);
+
+  bool
+  nscstring_fallible_append_utf8_to_latin1_lossy_check(nsACString* aThis,
+                                                       const nsACString* aOther,
+                                                       size_t aOldLen);
+
+  bool
+  nscstring_fallible_append_latin1_to_utf8_check(nsACString* aThis,
+                                                 const nsACString* aOther,
+                                                 size_t aOldLen);
+}
+
+
+
+
+
+
+
+
+
+
+inline void
+LossyConvertUTF16toLatin1(mozilla::Span<const char16_t> aSource,
+                          mozilla::Span<char> aDest)
+{
+  encoding_mem_convert_utf16_to_latin1_lossy(
+    aSource.Elements(), aSource.Length(), aDest.Elements(), aDest.Length());
+}
+
+
+
+
+
+
+
+
+
+
+inline size_t
+LossyConvertUTF8toLatin1(mozilla::Span<const char> aSource,
+                         mozilla::Span<char> aDest)
+{
+  return encoding_mem_convert_utf8_to_latin1_lossy(
+    aSource.Elements(), aSource.Length(), aDest.Elements(), aDest.Length());
+}
+
+
+
+
+
+
+
+inline void
+ConvertLatin1toUTF16(mozilla::Span<const char> aSource,
+                     mozilla::Span<char16_t> aDest)
+{
+  encoding_mem_convert_latin1_to_utf16(
+    aSource.Elements(), aSource.Length(), aDest.Elements(), aDest.Length());
+}
+
+
+
+
+
+
+
+
+
+inline size_t
+ConvertUTF16toUTF8(mozilla::Span<const char16_t> aSource,
+                   mozilla::Span<char> aDest)
+{
+  return encoding_mem_convert_utf16_to_utf8(
+    aSource.Elements(), aSource.Length(), aDest.Elements(), aDest.Length());
+}
+
+
+
+
+
+
+
+
+inline size_t
+ConvertUTF8toUTF16(mozilla::Span<const char> aSource,
+                   mozilla::Span<char16_t> aDest)
+{
+  return encoding_mem_convert_utf8_to_utf16(
+    aSource.Elements(), aSource.Length(), aDest.Elements(), aDest.Length());
 }
 
 inline size_t
@@ -31,6 +193,7 @@ Distance(const nsReadingIterator<char16_t>& aStart,
   MOZ_ASSERT(aStart.get() <= aEnd.get());
   return static_cast<size_t>(aEnd.get() - aStart.get());
 }
+
 inline size_t
 Distance(const nsReadingIterator<char>& aStart,
          const nsReadingIterator<char>& aEnd)
@@ -39,45 +202,164 @@ Distance(const nsReadingIterator<char>& aStart,
   return static_cast<size_t>(aEnd.get() - aStart.get());
 }
 
-void LossyCopyUTF16toASCII(const nsAString& aSource, nsACString& aDest);
-void CopyASCIItoUTF16(const nsACString& aSource, nsAString& aDest);
-MOZ_MUST_USE bool CopyASCIItoUTF16(const nsACString& aSource, nsAString& aDest,
-                                   const mozilla::fallible_t&);
 
-void LossyCopyUTF16toASCII(const char16ptr_t aSource, nsACString& aDest);
-void CopyASCIItoUTF16(const char* aSource, nsAString& aDest);
 
-void CopyUTF16toUTF8(const nsAString& aSource, nsACString& aDest);
-MOZ_MUST_USE bool CopyUTF16toUTF8(const nsAString& aSource, nsACString& aDest,
-                                  const mozilla::fallible_t&);
-void CopyUTF8toUTF16(const nsACString& aSource, nsAString& aDest);
 
-void CopyUTF16toUTF8(const char16ptr_t aSource, nsACString& aDest);
-void CopyUTF8toUTF16(const char* aSource, nsAString& aDest);
+inline MOZ_MUST_USE bool
+CopyUTF8toUTF16(mozilla::Span<const char> aSource,
+                nsAString& aDest,
+                const mozilla::fallible_t&)
+{
+  return nsstring_fallible_append_utf8_impl(
+    &aDest, aSource.Elements(), aSource.Length(), 0);
+}
 
-void LossyAppendUTF16toASCII(const nsAString& aSource, nsACString& aDest);
-void AppendASCIItoUTF16(const nsACString& aSource, nsAString& aDest);
-MOZ_MUST_USE bool AppendASCIItoUTF16(const nsACString& aSource,
-                                     nsAString& aDest,
-                                     const mozilla::fallible_t&);
+inline void
+CopyUTF8toUTF16(mozilla::Span<const char> aSource, nsAString& aDest)
+{
+  if (MOZ_UNLIKELY(!CopyUTF8toUTF16(aSource, aDest, mozilla::fallible))) {
+    aDest.AllocFailed(aSource.Length());
+  }
+}
 
-void LossyAppendUTF16toASCII(const char16ptr_t aSource, nsACString& aDest);
-MOZ_MUST_USE bool AppendASCIItoUTF16(const char* aSource,
-                                     nsAString& aDest,
-                                     const mozilla::fallible_t&);
-void AppendASCIItoUTF16(const char* aSource, nsAString& aDest);
+inline MOZ_MUST_USE bool
+AppendUTF8toUTF16(mozilla::Span<const char> aSource,
+                  nsAString& aDest,
+                  const mozilla::fallible_t&)
+{
+  return nsstring_fallible_append_utf8_impl(
+    &aDest, aSource.Elements(), aSource.Length(), aDest.Length());
+}
 
-void AppendUTF16toUTF8(const nsAString& aSource, nsACString& aDest);
-MOZ_MUST_USE bool AppendUTF16toUTF8(const nsAString& aSource,
-                                    nsACString& aDest,
-                                    const mozilla::fallible_t&);
-void AppendUTF8toUTF16(const nsACString& aSource, nsAString& aDest);
-MOZ_MUST_USE bool AppendUTF8toUTF16(const nsACString& aSource,
-                                    nsAString& aDest,
-                                    const mozilla::fallible_t&);
+inline void
+AppendUTF8toUTF16(mozilla::Span<const char> aSource, nsAString& aDest)
+{
+  if (MOZ_UNLIKELY(!AppendUTF8toUTF16(aSource, aDest, mozilla::fallible))) {
+    aDest.AllocFailed(aDest.Length() + aSource.Length());
+  }
+}
 
-void AppendUTF16toUTF8(const char16ptr_t aSource, nsACString& aDest);
-void AppendUTF8toUTF16(const char* aSource, nsAString& aDest);
+
+
+
+
+
+inline MOZ_MUST_USE bool
+CopyASCIItoUTF16(mozilla::Span<const char> aSource,
+                 nsAString& aDest,
+                 const mozilla::fallible_t&)
+{
+  return nsstring_fallible_append_latin1_impl(
+    &aDest, aSource.Elements(), aSource.Length(), 0);
+}
+
+inline void
+CopyASCIItoUTF16(mozilla::Span<const char> aSource, nsAString& aDest)
+{
+  if (MOZ_UNLIKELY(!CopyASCIItoUTF16(aSource, aDest, mozilla::fallible))) {
+    aDest.AllocFailed(aSource.Length());
+  }
+}
+
+inline MOZ_MUST_USE bool
+AppendASCIItoUTF16(mozilla::Span<const char> aSource,
+                   nsAString& aDest,
+                   const mozilla::fallible_t&)
+{
+  return nsstring_fallible_append_latin1_impl(
+    &aDest, aSource.Elements(), aSource.Length(), aDest.Length());
+}
+
+inline void
+AppendASCIItoUTF16(mozilla::Span<const char> aSource, nsAString& aDest)
+{
+  if (MOZ_UNLIKELY(!AppendASCIItoUTF16(aSource, aDest, mozilla::fallible))) {
+    aDest.AllocFailed(aDest.Length() + aSource.Length());
+  }
+}
+
+
+
+
+inline MOZ_MUST_USE bool
+CopyUTF16toUTF8(mozilla::Span<const char16_t> aSource,
+                nsACString& aDest,
+                const mozilla::fallible_t&)
+{
+  return nscstring_fallible_append_utf16_to_utf8_impl(
+    &aDest, aSource.Elements(), aSource.Length(), 0);
+}
+
+inline void
+CopyUTF16toUTF8(mozilla::Span<const char16_t> aSource, nsACString& aDest)
+{
+  if (MOZ_UNLIKELY(!CopyUTF16toUTF8(aSource, aDest, mozilla::fallible))) {
+    aDest.AllocFailed(aSource.Length());
+  }
+}
+
+inline MOZ_MUST_USE bool
+AppendUTF16toUTF8(mozilla::Span<const char16_t> aSource,
+                  nsACString& aDest,
+                  const mozilla::fallible_t&)
+{
+  return nscstring_fallible_append_utf16_to_utf8_impl(
+    &aDest, aSource.Elements(), aSource.Length(), aDest.Length());
+}
+
+inline void
+AppendUTF16toUTF8(mozilla::Span<const char16_t> aSource, nsACString& aDest)
+{
+  if (MOZ_UNLIKELY(!AppendUTF16toUTF8(aSource, aDest, mozilla::fallible))) {
+    aDest.AllocFailed(aDest.Length() + aSource.Length());
+  }
+}
+
+
+
+
+
+
+
+
+
+inline MOZ_MUST_USE bool
+LossyCopyUTF16toASCII(mozilla::Span<const char16_t> aSource,
+                      nsACString& aDest,
+                      const mozilla::fallible_t&)
+{
+  return nscstring_fallible_append_utf16_to_latin1_lossy_impl(
+    &aDest, aSource.Elements(), aSource.Length(), 0);
+}
+
+inline void
+LossyCopyUTF16toASCII(mozilla::Span<const char16_t> aSource, nsACString& aDest)
+{
+  if (MOZ_UNLIKELY(!LossyCopyUTF16toASCII(aSource, aDest, mozilla::fallible))) {
+    aDest.AllocFailed(aSource.Length());
+  }
+}
+
+inline MOZ_MUST_USE bool
+LossyAppendUTF16toASCII(mozilla::Span<const char16_t> aSource,
+                        nsACString& aDest,
+                        const mozilla::fallible_t&)
+{
+  return nscstring_fallible_append_utf16_to_latin1_lossy_impl(
+    &aDest, aSource.Elements(), aSource.Length(), aDest.Length());
+}
+
+inline void
+LossyAppendUTF16toASCII(mozilla::Span<const char16_t> aSource,
+                        nsACString& aDest)
+{
+  if (MOZ_UNLIKELY(
+        !LossyAppendUTF16toASCII(aSource, aDest, mozilla::fallible))) {
+    aDest.AllocFailed(aDest.Length() + aSource.Length());
+  }
+}
+
+
 
 
 
@@ -102,7 +384,10 @@ char* ToNewCString(const nsAString& aSource);
 
 
 
+
 char* ToNewCString(const nsACString& aSource);
+
+
 
 
 
@@ -134,7 +419,14 @@ char* ToNewUTF8String(const nsAString& aSource, uint32_t* aUTF8Count = nullptr);
 
 
 
+
 char16_t* ToNewUnicode(const nsAString& aSource);
+
+
+
+
+
+
 
 
 
@@ -151,36 +443,6 @@ char16_t* ToNewUnicode(const nsAString& aSource);
 char16_t* ToNewUnicode(const nsACString& aSource);
 
 
-
-
-
-
-
-
-
-uint32_t CalcUTF8ToUnicodeLength(const nsACString& aSource);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-char16_t* UTF8ToUnicodeBuffer(const nsACString& aSource,
-                              char16_t* aBuffer,
-                              uint32_t* aUTF16Count = nullptr);
 
 
 
@@ -223,62 +485,67 @@ char16_t* CopyUnicodeTo(const nsAString& aSource,
 
 
 
-
-
-
-
-
-
-void CopyUnicodeTo(const nsAString::const_iterator& aSrcStart,
-                   const nsAString::const_iterator& aSrcEnd,
-                   nsAString& aDest);
-
-
-
-
-
-
-
-
-
-
-
-void AppendUnicodeTo(const nsAString::const_iterator& aSrcStart,
-                     const nsAString::const_iterator& aSrcEnd,
-                     nsAString& aDest);
-
-
-
-
-
-
-bool IsASCII(const nsAString& aString);
-
-
-
-
-
-
-inline bool IsASCII(const nsACString& aString)
+inline bool
+IsASCII(mozilla::Span<const char16_t> aString)
 {
   size_t length = aString.Length();
-  const uint8_t* ptr = reinterpret_cast<const uint8_t*>(aString.BeginReading());
-  
-  
+  const char16_t* ptr = aString.Elements();
   
   
   if (length < 16) {
-    size_t accu = 0;
+    char16_t accu = 0;
     for (size_t i = 0; i < length; i++) {
       accu |= ptr[i];
     }
-    return accu < 0x80;
+    return accu < 0x80U;
   }
+  return encoding_mem_is_basic_latin(ptr, length);
+}
+
+
+
+
+
+
+
+inline bool
+IsASCII(mozilla::Span<const char> aString)
+{
+  size_t length = aString.Length();
+  const uint8_t* ptr = reinterpret_cast<const uint8_t*>(aString.Elements());
   
   
+  if (length < 16) {
+    uint8_t accu = 0;
+    for (size_t i = 0; i < length; i++) {
+      accu |= ptr[i];
+    }
+    return accu < 0x80U;
+  }
+  return encoding_mem_is_ascii(ptr, length);
+}
+
+
+
+
+
+
+
+inline bool
+IsUTF16Latin1(mozilla::Span<const char16_t> aString)
+{
+  size_t length = aString.Length();
+  const char16_t* ptr = aString.Elements();
   
   
-  return length == encoding_ascii_valid_up_to(ptr, length);
+  if (length < 16) {
+    char16_t accu = 0;
+    for (size_t i = 0; i < length; i++) {
+      accu |= ptr[i];
+    }
+    return accu < 0x100U;
+  }
+  return encoding_mem_is_utf16_latin1(ptr, length);
 }
 
 
@@ -289,17 +556,79 @@ inline bool IsASCII(const nsACString& aString)
 
 
 
-inline bool IsUTF8(const nsACString& aString)
+
+inline bool
+IsUTF8Latin1(mozilla::Span<const char> aString)
 {
   size_t length = aString.Length();
-  const uint8_t* ptr = reinterpret_cast<const uint8_t*>(aString.BeginReading());
-  
-  
+  const uint8_t* ptr = reinterpret_cast<const uint8_t*>(aString.Elements());
   
   
   if (length < 16) {
     for (size_t i = 0; i < length; i++) {
-      if (ptr[i] >= 0x80) {
+      if (ptr[i] >= 0x80U) {
+        ptr += i;
+        length -= i;
+        
+        
+        
+        goto end;
+      }
+    }
+    return true;
+  }
+end:
+  return encoding_mem_is_utf8_latin1(ptr, length);
+}
+
+
+
+
+
+
+
+
+
+
+inline bool
+UnsafeIsValidUTF8Latin1(mozilla::Span<const char> aString)
+{
+  size_t length = aString.Length();
+  const uint8_t* ptr = reinterpret_cast<const uint8_t*>(aString.Elements());
+  
+  
+  if (length < 16) {
+    for (size_t i = 0; i < length; i++) {
+      if (ptr[i] >= 0x80U) {
+        ptr += i;
+        length -= i;
+        goto end;
+      }
+    }
+    return true;
+  }
+end:
+  return encoding_mem_is_str_latin1(ptr, length);
+}
+
+
+
+
+
+
+
+
+
+inline bool
+IsUTF8(mozilla::Span<const char> aString)
+{
+  size_t length = aString.Length();
+  const uint8_t* ptr = reinterpret_cast<const uint8_t*>(aString.Elements());
+  
+  
+  if (length < 16) {
+    for (size_t i = 0; i < length; i++) {
+      if (ptr[i] >= 0x80U) {
         ptr += i;
         length -= i;
         goto end;
@@ -331,6 +660,10 @@ void ToLowerCase(nsACString&);
 void ToUpperCase(const nsACString& aSource, nsACString& aDest);
 
 void ToLowerCase(const nsACString& aSource, nsACString& aDest);
+
+
+
+
 
 
 
@@ -437,8 +770,11 @@ const nsCString& VoidCString();
 
 
 
-int32_t CompareUTF8toUTF16(const nsACString& aUTF8String,
-                           const nsAString& aUTF16String);
+
+int32_t
+CompareUTF8toUTF16(const nsACString& aUTF8String,
+                   const nsAString& aUTF16String,
+                   bool* aErr = nullptr);
 
 void AppendUCS4ToUTF16(const uint32_t aSource, nsAString& aDest);
 

@@ -325,14 +325,11 @@ nsTString<T>::ReplaceSubstring(const self_type& aTarget,
   
   
   
-  char_type* oldData;
-  DataFlags oldFlags;
-  if (!this->MutatePrep(XPCOM_MAX(this->mLength, newLength.value()), &oldData, &oldFlags))
+  uint32_t oldLen = this->mLength;
+  mozilla::Result<uint32_t, nsresult> r =
+    this->StartBulkWrite(XPCOM_MAX(oldLen, newLength.value()), oldLen);
+  if (r.isErr()) {
     return false;
-  if (oldData) {
-    
-    char_traits::copy(this->mData, oldData, this->mLength);
-    ::ReleaseData(oldData, oldFlags);
   }
 
   if (aTarget.Length() >= aNewValue.Length()) {
@@ -370,8 +367,7 @@ nsTString<T>::ReplaceSubstring(const self_type& aTarget,
   }
 
   
-  this->mLength = newLength.value();
-  this->mData[this->mLength] = char_type(0);
+  this->FinishBulkWrite(newLength.value());
 
   return true;
 }

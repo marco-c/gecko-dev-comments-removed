@@ -282,36 +282,77 @@ XPCConvert::NativeData2JS(MutableHandleValue d, const void* s,
             return true;
         }
 
-        const uint32_t len = CalcUTF8ToUnicodeLength(*utf8String);
-        
-        
-        if (!len)
-            return false;
-
-        const size_t buffer_size = (len + 1) * sizeof(char16_t);
-        char16_t* buffer =
-            static_cast<char16_t*>(JS_malloc(cx, buffer_size));
-        if (!buffer)
-            return false;
-
-        uint32_t copied;
-        if (!UTF8ToUnicodeBuffer(*utf8String, buffer, &copied) ||
-            len != copied) {
-            
-            
-            JS_free(cx, buffer);
+        uint32_t len = utf8String->Length();
+        auto allocLen = CheckedUint32(len) + 1;
+        if (!allocLen.isValid()) {
             return false;
         }
 
         
         
         
-        JSString* str = JS_NewUCString(cx, buffer, len);
+
+        if (IsUTF8Latin1(*utf8String)) {
+            char* buffer = static_cast<char*>(JS_malloc(cx, allocLen.value()));
+            if (!buffer) {
+                return false;
+            }
+            size_t written =
+                LossyConvertUTF8toLatin1(*utf8String, MakeSpan(buffer, len));
+            buffer[written] = 0;
+
+            
+            
+            
+            
+            JSString* str = JS_NewLatin1String(
+                cx, reinterpret_cast<JS::Latin1Char*>(buffer), written);
+            if (!str) {
+                JS_free(cx, buffer);
+                return false;
+            }
+            d.setString(str);
+            return true;
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        allocLen *= sizeof(char16_t);
+        if (!allocLen.isValid()) {
+            return false;
+        }
+
+        char16_t* buffer =
+            static_cast<char16_t*>(JS_malloc(cx, allocLen.value()));
+        if (!buffer) {
+            return false;
+        }
+
+        
+        
+        
+        
+        
+        
+        size_t written =
+            ConvertUTF8toUTF16(*utf8String, MakeSpan(buffer, allocLen.value()));
+        MOZ_RELEASE_ASSERT(written <= len);
+        buffer[written] = 0;
+
+        
+        
+        
+        JSString* str = JS_NewUCStringDontDeflate(cx, buffer, written);
         if (!str) {
             JS_free(cx, buffer);
             return false;
         }
-
         d.setString(str);
         return true;
     }
@@ -1223,9 +1264,10 @@ JSErrorToXPCException(const char* toStringResult,
     if (report) {
         nsAutoString bestMessage;
         if (report && report->message()) {
-            CopyUTF8toUTF16(report->message().c_str(), bestMessage);
+            CopyUTF8toUTF16(mozilla::MakeStringSpan(report->message().c_str()),
+                            bestMessage);
         } else if (toStringResult) {
-            CopyUTF8toUTF16(toStringResult, bestMessage);
+            CopyUTF8toUTF16(mozilla::MakeStringSpan(toStringResult), bestMessage);
         } else {
             bestMessage.AssignLiteral("JavaScript Error");
         }

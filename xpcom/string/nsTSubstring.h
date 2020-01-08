@@ -13,6 +13,7 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/IntegerTypeTraits.h"
+#include "mozilla/Result.h"
 #include "mozilla/Span.h"
 
 #include "nsTStringRepr.h"
@@ -886,6 +887,7 @@ protected:
 
   void NS_FASTCALL Finalize();
 
+public:
   
 
 
@@ -904,8 +906,51 @@ protected:
 
 
 
-  bool NS_FASTCALL MutatePrep(size_type aCapacity,
-                              char_type** aOldData, DataFlags* aOldDataFlags);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  mozilla::Result<uint32_t, nsresult>
+  NS_FASTCALL StartBulkWrite(size_type aCapacity,
+                             size_type aPrefixToPreserve = 0,
+                             bool aAllowShrinking = true,
+                             size_type aSuffixLength = 0,
+                             size_type aOldSuffixStart = 0,
+                             size_type aNewSuffixStart = 0);
+
+protected:
+  
+
+
+
+
+
+  void NS_FASTCALL FinishBulkWrite(size_type aLength);
 
   
 
