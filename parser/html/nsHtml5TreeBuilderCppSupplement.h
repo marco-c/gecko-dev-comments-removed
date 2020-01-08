@@ -1109,7 +1109,8 @@ nsHtml5TreeBuilder::elementPopped(int32_t aNamespace,
   
   
   if (aName == nsGkAtoms::object || aName == nsGkAtoms::select ||
-      aName == nsGkAtoms::textarea || aName == nsGkAtoms::output) {
+      aName == nsGkAtoms::textarea || aName == nsGkAtoms::output ||
+      aName == nsGkAtoms::head) {
     if (mBuilder) {
       nsHtml5TreeOperation::DoneAddingChildren(
         static_cast<nsIContent*>(aElement));

@@ -30,6 +30,8 @@ public:
   }
 
   
+  virtual void DoneAddingChildren(bool aHaveNotified) override;
+
   virtual bool ParseAttribute(int32_t aNamespaceID,
                                 nsAtom* aAttribute,
                                 const nsAString& aValue,
