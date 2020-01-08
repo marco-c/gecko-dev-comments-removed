@@ -286,6 +286,12 @@ VARCACHE_PREF(
   RelaxedAtomicBool, false
 )
 
+VARCACHE_PREF(
+  "dom.testing.structuredclonetester.enabled",
+  dom_testing_structuredclonetester_enabled,
+  RelaxedAtomicBool, false
+)
+
 
 #if !defined(MOZ_WIDGET_ANDROID)
 # define PREF_VALUE true
@@ -1620,14 +1626,6 @@ VARCACHE_PREF(
   "browser.contentblocking.allowlist.annotations.enabled",
    browser_contentblocking_allowlist_annotations_enabled,
   bool, true
-)
-
-
-
-VARCACHE_PREF(
-  "browser.contentblocking.originlog.length",
-   browser_contentblocking_originlog_length,
-  uint32_t, 32
 )
 
 
