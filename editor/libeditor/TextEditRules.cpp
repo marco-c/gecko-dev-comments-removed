@@ -596,37 +596,40 @@ TextEditRules::GetTextNodeAroundSelectionStartContainer()
 #define ASSERT_PASSWORD_LENGTHS_EQUAL()
 #endif
 
-
 void
-TextEditRules::HandleNewLines(nsString& aString,
-                              int32_t aNewlineHandling)
+TextEditRules::HandleNewLines(nsString& aString)
 {
-  if (aNewlineHandling < 0) {
-    int32_t caretStyle;
-    TextEditor::GetDefaultEditorPrefs(aNewlineHandling, caretStyle);
+  static const char16_t kLF = static_cast<char16_t>('\n');
+  MOZ_ASSERT(IsEditorDataAvailable());
+  MOZ_ASSERT(aString.FindChar(static_cast<uint16_t>('\r')) == kNotFound);
+
+  
+  
+  int32_t firstLF = aString.FindChar(kLF, 0);
+  if (firstLF == kNotFound) {
+    return;
   }
 
-  switch(aNewlineHandling) {
+  switch(TextEditorRef().mNewlineHandling) {
     case nsIPlaintextEditor::eNewlinesReplaceWithSpaces:
       
-      aString.Trim(CRLF, false, true);
-      aString.ReplaceChar(CRLF, ' ');
+      
+      aString.Trim(LFSTR, false, true);
+      aString.ReplaceChar(kLF, ' ');
       break;
     case nsIPlaintextEditor::eNewlinesStrip:
-      aString.StripCRLF();
+      aString.StripChar(kLF);
       break;
     case nsIPlaintextEditor::eNewlinesPasteToFirst:
     default: {
-      int32_t firstCRLF = aString.FindCharInSet(CRLF);
-
       
       int32_t offset = 0;
-      while (firstCRLF == offset) {
+      while (firstLF == offset) {
         offset++;
-        firstCRLF = aString.FindCharInSet(CRLF, offset);
+        firstLF = aString.FindChar(kLF, offset);
       }
-      if (firstCRLF > 0) {
-        aString.Truncate(firstCRLF);
+      if (firstLF > 0) {
+        aString.Truncate(firstLF);
       }
       if (offset > 0) {
         aString.Cut(0, offset);
@@ -634,25 +637,27 @@ TextEditRules::HandleNewLines(nsString& aString,
       break;
     }
     case nsIPlaintextEditor::eNewlinesReplaceWithCommas:
-      aString.Trim(CRLF, true, true);
-      aString.ReplaceChar(CRLF, ',');
+      
+      aString.Trim(LFSTR, true, true);
+      aString.ReplaceChar(kLF, ',');
       break;
     case nsIPlaintextEditor::eNewlinesStripSurroundingWhitespace: {
       nsAutoString result;
       uint32_t offset = 0;
       while (offset < aString.Length()) {
-        int32_t nextCRLF = aString.FindCharInSet(CRLF, offset);
-        if (nextCRLF < 0) {
+        int32_t nextLF =
+          !offset ? firstLF : aString.FindChar(kLF, offset);
+        if (nextLF < 0) {
           result.Append(nsDependentSubstring(aString, offset));
           break;
         }
-        uint32_t wsBegin = nextCRLF;
+        uint32_t wsBegin = nextLF;
         
         while (wsBegin > offset && NS_IS_SPACE(aString[wsBegin - 1])) {
           --wsBegin;
         }
         result.Append(nsDependentSubstring(aString, offset, wsBegin - offset));
-        offset = nextCRLF + 1;
+        offset = nextLF + 1;
         while (offset < aString.Length() && NS_IS_SPACE(aString[offset])) {
           ++offset;
         }
@@ -662,7 +667,7 @@ TextEditRules::HandleNewLines(nsString& aString,
     }
     case nsIPlaintextEditor::eNewlinesPasteIntact:
       
-      aString.Trim(CRLF, true, true);
+      aString.Trim(LFSTR, true, true);
       break;
   }
 }
@@ -760,7 +765,15 @@ TextEditRules::WillInsertText(EditSubAction aEditSubAction,
   
   if (IsSingleLineEditor()) {
     nsAutoString tString(*outString);
-    HandleNewLines(tString, TextEditorRef().mNewlineHandling);
+    
+    
+    
+    
+    
+    
+    
+    nsContentUtils::PlatformToDOMLineBreaks(tString);
+    HandleNewLines(tString);
     outString->Assign(tString);
   }
 
@@ -885,6 +898,7 @@ TextEditRules::WillSetText(bool* aCancel,
   MOZ_ASSERT(aCancel);
   MOZ_ASSERT(aHandled);
   MOZ_ASSERT(aString);
+  MOZ_ASSERT(aString->FindChar(static_cast<char16_t>('\r')) == kNotFound);
 
   CANCEL_OPERATION_IF_READONLY_OR_DISABLED
 
@@ -923,7 +937,7 @@ TextEditRules::WillSetText(bool* aCancel,
     mPasswordText.Assign(tString);
     FillBufWithPWChars(&tString, tString.Length());
   } else if (IsSingleLineEditor()) {
-    HandleNewLines(tString, TextEditorRef().mNewlineHandling);
+    HandleNewLines(tString);
   }
 
   if (!count) {
