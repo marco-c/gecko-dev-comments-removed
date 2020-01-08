@@ -207,7 +207,7 @@ private:
   std::unordered_map<uint64_t, WindowInfo*> mWindowInfos;
 
   Mutex mRenderTextureMapLock;
-  nsRefPtrHashtable<nsUint64HashKey, RenderTextureHost> mRenderTextures;
+  std::unordered_map<uint64_t, RefPtr<RenderTextureHost>> mRenderTextures;
   
   
   
