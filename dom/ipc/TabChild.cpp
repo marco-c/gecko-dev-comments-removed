@@ -3211,6 +3211,25 @@ TabChild::InvalidateLayers()
 }
 
 void
+TabChild::SchedulePaint()
+{
+  nsCOMPtr<nsIDocShell> docShell = do_GetInterface(WebNavigation());
+  if (!docShell) {
+    return;
+  }
+
+  
+  
+  
+  
+  if (nsCOMPtr<nsIPresShell> presShell = docShell->GetPresShell()) {
+    if (nsIFrame* root = presShell->GetRootFrame()) {
+      root->SchedulePaint();
+    }
+  }
+}
+
+void
 TabChild::ReinitRendering()
 {
   MOZ_ASSERT(mLayersId.IsValid());
