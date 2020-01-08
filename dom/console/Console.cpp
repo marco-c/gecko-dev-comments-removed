@@ -644,7 +644,7 @@ private:
     
     global = js::UncheckedUnwrap(global);
 
-    JSAutoRealmAllowCCW ar(cx, global);
+    JSAutoRealm ar(cx, global);
 
     
     
@@ -762,7 +762,7 @@ protected:
     
     global = js::UncheckedUnwrap(global);
 
-    JSAutoRealmAllowCCW ar(cx, global);
+    JSAutoRealm ar(cx, global);
 
     RunConsole(cx, aWorkerPrivate, nullptr, nullptr);
   }
@@ -928,7 +928,7 @@ private:
     
     global = js::UncheckedUnwrap(global);
 
-    JSAutoRealmAllowCCW ar(cx, global);
+    JSAutoRealm ar(cx, global);
 
     
     
@@ -2726,7 +2726,7 @@ Console::RetrieveConsoleEvents(JSContext* aCx, nsTArray<JS::Value>& aEvents,
     JS::Rooted<JS::Value> value(aCx);
 
     JS::Rooted<JSObject*> sequenceScope(aCx, mCallDataStorage[i]->mGlobal);
-    JSAutoRealmAllowCCW ar(aCx, sequenceScope);
+    JSAutoRealm ar(aCx, sequenceScope);
 
     Sequence<JS::Value> sequence;
     SequenceRooter<JS::Value> arguments(aCx, &sequence);
