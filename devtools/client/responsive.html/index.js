@@ -137,7 +137,12 @@ window.addInitialViewport = ({ uri, userContextId }) => {
 
 
 window.getViewportSize = () => {
-  const { width, height } = bootstrap.store.getState().viewports[0];
+  const { viewports } = bootstrap.store.getState();
+  if (!viewports.length) {
+    return null;
+  }
+
+  const { width, height } = viewports[0];
   return { width, height };
 };
 
