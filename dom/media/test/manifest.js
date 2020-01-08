@@ -170,7 +170,6 @@ var gMediaRecorderVideoTests = [
 var gPlayTests = [
   
   { name:"vp9cake-short.webm", type:"video/webm", duration:1.00 },
-
   
   { name:"r11025_u8_c1.wav", type:"audio/x-wav", duration:1.0 },
   
@@ -320,6 +319,11 @@ var gPlayTests = [
   
   { name:"bogus.duh", type:"bogus/duh", duration:Number.NaN },
 ];
+
+if (!(manifestNavigator().userAgent.includes("Windows") &&
+      !manifestNavigator().userAgent.includes("x64"))) {
+  gPlayTests.push({ name: "av1.mp4", type:"video/mp4", duration:1.00 });
+}
 
 var gSeekToNextFrameTests = [
   
