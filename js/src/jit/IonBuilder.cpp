@@ -5468,6 +5468,13 @@ IonBuilder::testShouldDOMCall(TypeSet* inTypes, JSFunction* func, JSJitInfo::OpT
     
     
     
+    
+    if (mozilla::recordreplay::IsRecordingOrReplaying())
+        return false;
+
+    
+    
+    
     DOMInstanceClassHasProtoAtDepth instanceChecker =
         realm->runtime()->DOMcallbacks()->instanceClassMatchesProto;
 
