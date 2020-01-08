@@ -2632,7 +2632,7 @@ MediaCacheStream::ReadBlockFromCache(AutoLock& aLock,
   }
 
   if (mStreamLength >= 0 &&
-      aBuffer.Length() > uint32_t(mStreamLength - aOffset)) {
+      int64_t(aBuffer.Length()) > mStreamLength - aOffset) {
     
     aBuffer = aBuffer.First(mStreamLength - aOffset);
   }
