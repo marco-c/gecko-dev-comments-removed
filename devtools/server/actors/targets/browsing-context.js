@@ -290,7 +290,6 @@ const browsingContextTargetPrototype = {
   },
 
   _targetScopedActorPool: null,
-  _contextPool: null,
 
   
 
@@ -579,7 +578,7 @@ const browsingContextTargetPrototype = {
     }
 
     
-    this._pushContext();
+    this._createThreadActor();
 
     
     if (this.window) {
@@ -853,25 +852,16 @@ const browsingContextTargetPrototype = {
 
 
 
-  _pushContext() {
-    assert(!this._contextPool, "Can't push multiple contexts");
-
-    this._contextPool = new ActorPool(this.conn);
-    this.conn.addActorPool(this._contextPool);
-
+  _createThreadActor() {
     this.threadActor = new ThreadActor(this, this.window);
-    this._contextPool.addActor(this.threadActor);
+    this.manage(this.threadActor);
   },
 
   
 
 
 
-  _popContext() {
-    assert(!!this._contextPool, "No context to pop.");
-
-    this.conn.removeActorPool(this._contextPool);
-    this._contextPool = null;
+  _destroyThreadActor() {
     this.threadActor.exit();
     this.threadActor = null;
     this._sources = null;
@@ -905,7 +895,7 @@ const browsingContextTargetPrototype = {
       Services.obs.removeObserver(this, "webnavigation-destroy");
     }
 
-    this._popContext();
+    this._destroyThreadActor();
 
     
     this._styleSheetActors.clear();
