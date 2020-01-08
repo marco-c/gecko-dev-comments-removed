@@ -1,55 +1,28 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 "use strict";
 
-var EXPORTED_SYMBOLS = [ "FormSubmitObserver" ];
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
+
+
+
+
+var EXPORTED_SYMBOLS = ["FormSubmitChild"];
+
+ChromeUtils.import("resource://gre/modules/ActorChild.jsm");
 ChromeUtils.import("resource://gre/modules/BrowserUtils.jsm");
+ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-function FormSubmitObserver(aWindow, aTabChildGlobal) {
-  this.init(aWindow, aTabChildGlobal);
-}
+class FormSubmitChild extends ActorChild {
+  constructor(mm) {
+    super(mm);
 
-FormSubmitObserver.prototype =
-{
-  _validationMessage: "",
-  _content: null,
-  _element: null,
-
-  
-
-
-
-  init(aWindow, aTabChildGlobal) {
-    this._content = aWindow;
-    this._tab = aTabChildGlobal;
-    this._mm =
-      this._content.docShell.messageManager;
-
-    this._tab.addEventListener("pageshow", this);
-    this._tab.addEventListener("unload", this);
-  },
-
-  uninit() {
-    this._content.removeEventListener("pageshow", this);
-    this._content.removeEventListener("unload", this);
-    this._mm = null;
+    this._validationMessage = "";
     this._element = null;
-    this._content = null;
-    this._tab = null;
-  },
+
+    this.mm.addEventListener("pageshow", this);
+  }
 
   
 
@@ -57,13 +30,14 @@ FormSubmitObserver.prototype =
 
   handleEvent(aEvent) {
     switch (aEvent.type) {
+      case "MozInvalidForm":
+        aEvent.preventDefault();
+        this.notifyInvalidSubmit(aEvent.target, aEvent.detail);
+        break;
       case "pageshow":
         if (this._isRootDocumentEvent(aEvent)) {
           this._hidePopup();
         }
-        break;
-      case "unload":
-        this.uninit();
         break;
       case "input":
         this._onInput(aEvent);
@@ -72,7 +46,7 @@ FormSubmitObserver.prototype =
         this._onBlur(aEvent);
         break;
     }
-  },
+  }
 
   
 
@@ -83,7 +57,7 @@ FormSubmitObserver.prototype =
     for (let element of aInvalidElements) {
       
       
-      if (this._content != element.ownerGlobal.top.document.defaultView) {
+      if (this.content != element.ownerGlobal.top.document.defaultView) {
         return;
       }
 
@@ -120,7 +94,7 @@ FormSubmitObserver.prototype =
       this._showPopup(element);
       break;
     }
-  },
+  }
 
   
 
@@ -146,7 +120,7 @@ FormSubmitObserver.prototype =
       this._validationMessage = element.validationMessage;
       this._showPopup(element);
     }
-  },
+  }
 
   
 
@@ -157,7 +131,7 @@ FormSubmitObserver.prototype =
     aEvent.originalTarget.removeEventListener("blur", this);
     this._element = null;
     this._hidePopup();
-  },
+  }
 
   
 
@@ -189,25 +163,23 @@ FormSubmitObserver.prototype =
       } else {
         offset = parseInt(style.paddingLeft) + parseInt(style.borderLeftWidth);
       }
-      let zoomFactor = this._content.windowUtils.fullZoom;
+      let zoomFactor = this.content.windowUtils.fullZoom;
       panelData.offset = Math.round(offset * zoomFactor);
       panelData.position = "after_start";
     }
-    this._mm.sendAsyncMessage("FormValidation:ShowPopup", panelData);
-  },
+    this.mm.sendAsyncMessage("FormValidation:ShowPopup", panelData);
+  }
 
   _hidePopup() {
-    this._mm.sendAsyncMessage("FormValidation:HidePopup", {});
-  },
+    this.mm.sendAsyncMessage("FormValidation:HidePopup", {});
+  }
 
   _isRootDocumentEvent(aEvent) {
-    if (this._content == null) {
+    if (this.content == null) {
       return true;
     }
     let target = aEvent.originalTarget;
-    return (target == this._content.document ||
-            (target.ownerDocument && target.ownerDocument == this._content.document));
-  },
-
-  QueryInterface: ChromeUtils.generateQI([Ci.nsIFormSubmitObserver, Ci.nsISupportsWeakReference])
-};
+    return (target == this.content.document ||
+            (target.ownerDocument && target.ownerDocument == this.content.document));
+  }
+}
