@@ -21,7 +21,7 @@ add_task(async function() {
   is(focusedId, "checkbox", "checkbox accesskey");
 
   
-  let newButton = document.createElement("button");
+  let newButton = document.createXULElement("button");
   newButton.id = "chromebutton";
   newButton.setAttribute("accesskey", "z");
   document.documentElement.appendChild(newButton);

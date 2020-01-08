@@ -173,12 +173,12 @@ var Heartbeat = class {
     
     if (!this.options.engagementButtonLabel) {
       const numStars = this.options.engagementButtonLabel ? 0 : 5;
-      const ratingContainer = this.chromeWindow.document.createElement("hbox");
+      const ratingContainer = this.chromeWindow.document.createXULElement("hbox");
       ratingContainer.id = "star-rating-container";
 
       for (let i = 0; i < numStars; i++) {
         
-        const ratingElement = this.chromeWindow.document.createElement("toolbarbutton");
+        const ratingElement = this.chromeWindow.document.createXULElement("toolbarbutton");
 
         
         const starIndex = numStars - i;
@@ -209,7 +209,7 @@ var Heartbeat = class {
     this.messageText.classList.add("heartbeat");
 
     
-    const rightSpacer = this.chromeWindow.document.createElement("spacer");
+    const rightSpacer = this.chromeWindow.document.createXULElement("spacer");
     rightSpacer.flex = 20;
     frag.appendChild(rightSpacer);
 
@@ -220,7 +220,7 @@ var Heartbeat = class {
 
     
     if (this.options.learnMoreMessage && this.options.learnMoreUrl) {
-      const learnMore = this.chromeWindow.document.createElement("label");
+      const learnMore = this.chromeWindow.document.createXULElement("label");
       learnMore.className = "text-link";
       learnMore.href = this.options.learnMoreUrl.toString();
       learnMore.setAttribute("value", this.options.learnMoreMessage);

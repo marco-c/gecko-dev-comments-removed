@@ -11,7 +11,7 @@ var draggedItem;
 
 
 add_task(async function() {
-  draggedItem = document.createElement("toolbarbutton");
+  draggedItem = document.createXULElement("toolbarbutton");
   draggedItem.id = "test-dragEnd-after-move1";
   draggedItem.setAttribute("label", "Test");
   draggedItem.setAttribute("removable", "true");
@@ -26,7 +26,7 @@ add_task(async function() {
 
 
 add_task(async function() {
-  draggedItem = document.createElement("toolbarbutton");
+  draggedItem = document.createXULElement("toolbarbutton");
   draggedItem.id = "test-dragEnd-after-move2";
   draggedItem.setAttribute("label", "Test");
   draggedItem.setAttribute("removable", "true");

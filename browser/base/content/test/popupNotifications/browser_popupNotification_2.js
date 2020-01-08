@@ -140,10 +140,10 @@ var tests = [
   { id: "Test#6",
     run() {
       
-      this.box = document.createElement("box");
+      this.box = document.createXULElement("box");
       PopupNotifications.iconBox.appendChild(this.box);
 
-      let button = document.createElement("button");
+      let button = document.createXULElement("button");
       button.setAttribute("label", "Please click me!");
       this.box.appendChild(button);
 
