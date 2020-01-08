@@ -38,22 +38,25 @@ ServiceWorkerInterceptController::ShouldPrepareForIntercept(
     return NS_OK;
   }
 
+  nsCOMPtr<nsIPrincipal> principal = BasePrincipal::CreateCodebasePrincipal(
+      aURI, loadInfo->GetOriginAttributes());
+
+  
+  RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
+  if (!swm || !swm->IsAvailable(principal, aURI)) {
+    return NS_OK;
+  }
+
+  
+  
+  
+  
   if (nsContentUtils::StorageAllowedForChannel(aChannel) !=
       nsContentUtils::StorageAccess::eAllow) {
     return NS_OK;
   }
 
-  nsCOMPtr<nsIPrincipal> principal = BasePrincipal::CreateCodebasePrincipal(
-      aURI, loadInfo->GetOriginAttributes());
-
-  RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
-  if (!swm) {
-    return NS_OK;
-  }
-
-  
-  
-  *aShouldIntercept = swm->IsAvailable(principal, aURI);
+  *aShouldIntercept = true;
   return NS_OK;
 }
 
