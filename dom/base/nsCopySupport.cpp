@@ -97,8 +97,7 @@ SelectionCopyHelper(Selection *aSel, nsIDocument *aDoc,
   nsresult rv;
 
   nsCOMPtr<nsIDocumentEncoder> docEncoder;
-  docEncoder = do_CreateInstance(NS_HTMLCOPY_ENCODER_CONTRACTID);
-  NS_ENSURE_TRUE(docEncoder, NS_ERROR_FAILURE);
+  docEncoder = do_createHTMLCopyEncoder();
 
   
   
@@ -471,9 +470,7 @@ static nsresult AppendDOMNode(nsITransferable *aTransferable,
   nsresult rv;
 
   
-  nsCOMPtr<nsIDocumentEncoder>
-    docEncoder(do_CreateInstance(NS_HTMLCOPY_ENCODER_CONTRACTID, &rv));
-  NS_ENSURE_SUCCESS(rv, rv);
+  nsCOMPtr<nsIDocumentEncoder> docEncoder = do_createHTMLCopyEncoder();
 
   
   nsCOMPtr<nsIDocument> document = aDOMNode->OwnerDoc();
