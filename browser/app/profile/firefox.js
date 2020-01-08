@@ -70,10 +70,7 @@ pref("extensions.geckoProfiler.getSymbolRules", "localBreakpad,dump_syms.exe");
 pref("extensions.webextensions.base-content-security-policy", "script-src 'self' https://* moz-extension: blob: filesystem: 'unsafe-eval' 'unsafe-inline'; object-src 'self' https://* moz-extension: blob: filesystem:;");
 pref("extensions.webextensions.default-content-security-policy", "script-src 'self'; object-src 'self';");
 
-#if defined(XP_WIN) || defined(XP_MACOSX)
 pref("extensions.webextensions.remote", true);
-#endif
-
 pref("extensions.webextensions.background-delayed-startup", true);
 
 
@@ -474,7 +471,7 @@ pref("browser.tabs.showAudioPlayingIcon", true);
 
 pref("browser.tabs.delayHidingAudioPlayingIconMS", 3000);
 
-pref("browser.ctrlTab.recentlyUsedOrder", true);
+pref("browser.ctrlTab.previews", false);
 
 
 
@@ -1150,7 +1147,7 @@ pref("services.sync.prefs.sync.addons.ignoreUserEnabledChanges", true);
 
 
 
-pref("services.sync.prefs.sync.browser.ctrlTab.recentlyUsedOrder", true);
+pref("services.sync.prefs.sync.browser.ctrlTab.previews", true);
 pref("services.sync.prefs.sync.browser.download.useDownloadDir", true);
 pref("services.sync.prefs.sync.browser.formfill.enable", true);
 pref("services.sync.prefs.sync.browser.link.open_newwindow", true);
