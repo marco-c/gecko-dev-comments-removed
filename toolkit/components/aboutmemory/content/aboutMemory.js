@@ -56,7 +56,15 @@ document.title = gPageName;
 
 const gUnnamedProcessStr = "Main Process";
 
+const gFilterUpdateDelayMS = 300;
+
 let gIsDiff = false;
+
+let gCurrentReports = [];
+let gCurrentHasMozMallocUsableSize = false;
+let gCurrentIsDiff = false;
+
+let gFilter = "";
 
 
 
@@ -109,6 +117,14 @@ function reportAssertionFailure(aMsg) {
 function debug(aVal) {
   let section = appendElement(document.body, "div", "section");
   appendElementWithText(section, "div", "debug", JSON.stringify(aVal));
+}
+
+function stringMatchesFilter(aString, aFilter) {
+  assert(typeof aFilter == "string" || aFilter instanceof RegExp,
+         "unexpected aFilter type");
+
+  return typeof aFilter == "string" ? aString.includes(aFilter)
+                                    : aFilter.test(aString);
 }
 
 
@@ -193,10 +209,7 @@ function appendTextNode(aP, aText) {
 }
 
 function appendElement(aP, aTagName, aClassName) {
-  let e = document.createElement(aTagName);
-  if (aClassName) {
-    e.className = aClassName;
-  }
+  let e = newElement(aTagName, aClassName);
   aP.appendChild(e);
   return e;
 }
@@ -207,6 +220,14 @@ function appendElementWithText(aP, aTagName, aClassName, aText) {
   
   
   e.textContent = aText;
+  return e;
+}
+
+function newElement(aTagName, aClassName) {
+  let e = document.createElement(aTagName);
+  if (aClassName) {
+    e.className = aClassName;
+  }
   return e;
 }
 
@@ -497,27 +518,32 @@ function updateAboutMemoryFromReporters() {
   updateMainAndFooter("Measuring...", NO_TIMESTAMP, HIDE_FOOTER);
 
   try {
-    let processLiveMemoryReports =
-        function(aHandleReport, aDisplayReports) {
-      let handleReport = function(aProcess, aUnsafePath, aKind, aUnits,
-                                  aAmount, aDescription) {
-        aHandleReport(aProcess, aUnsafePath, aKind, aUnits, aAmount,
-                      aDescription,  undefined);
-      };
-
-      let displayReportsAndFooter = function() {
-        updateTitleMainAndFooter("live measurement", "", NO_TIMESTAMP,
-                                 SHOW_FOOTER);
-        aDisplayReports();
-      };
-
-      gMgr.getReports(handleReport, null, displayReportsAndFooter, null,
-                      gAnonymize.checked);
-    };
+    gCurrentReports = [];
+    gCurrentHasMozMallocUsableSize = gMgr.hasMozMallocUsableSize;
+    gCurrentIsDiff = false;
+    gFilter = "";
 
     
-    appendAboutMemoryMain(processLiveMemoryReports,
-                          gMgr.hasMozMallocUsableSize);
+    let handleReport = function(aProcess, aUnsafePath, aKind, aUnits,
+                                aAmount, aDescription) {
+      gCurrentReports.push({
+        process: aProcess,
+        path: aUnsafePath,
+        kind: aKind,
+        units: aUnits,
+        amount: aAmount,
+        description: aDescription,
+      });
+    };
+
+    let displayReports = function() {
+      updateTitleMainAndFooter("live measurement", "", NO_TIMESTAMP,
+                               SHOW_FOOTER);
+      updateAboutMemoryFromCurrentData();
+    };
+
+    gMgr.getReports(handleReport, null, displayReports, null,
+                    gAnonymize.checked);
 
   } catch (ex) {
     handleException(ex);
@@ -551,6 +577,25 @@ function parseAndUnwrapIfCrashDump(aStr) {
 
 
 
+function updateAboutMemoryFromCurrentData() {
+  function processCurrentMemoryReports(aHandleReport, aDisplayReports) {
+    for (let r of gCurrentReports) {
+      aHandleReport(r.process, r.path, r.kind, r.units, r.amount,
+                    r.description, r._presence);
+    }
+    aDisplayReports();
+  }
+
+  gIsDiff = gCurrentIsDiff;
+  appendAboutMemoryMain(processCurrentMemoryReports, gFilter,
+                        gCurrentHasMozMallocUsableSize);
+  gIsDiff = false;
+}
+
+
+
+
+
 
 
 
@@ -563,16 +608,12 @@ function updateAboutMemoryFromJSONObject(aObj) {
     assertInput(aObj.reports && aObj.reports instanceof Array,
                 "missing or non-array 'reports' property");
 
-    let processMemoryReportsFromFile =
-        function(aHandleReport, aDisplayReports) {
-      for (let r of aObj.reports) {
-        aHandleReport(r.process, r.path, r.kind, r.units, r.amount,
-                      r.description, r._presence);
-      }
-      aDisplayReports();
-    };
-    appendAboutMemoryMain(processMemoryReportsFromFile,
-                          aObj.hasMozMallocUsableSize);
+    gCurrentReports = aObj.reports.concat();
+    gCurrentHasMozMallocUsableSize = aObj.hasMozMallocUsableSize;
+    gCurrentIsDiff = gIsDiff;
+    gFilter = "";
+
+    updateAboutMemoryFromCurrentData();
   } catch (ex) {
     handleException(ex);
   }
@@ -932,8 +973,12 @@ function PColl() {
 
 
 
-function appendAboutMemoryMain(aProcessReports, aHasMozMallocUsableSize) {
+
+
+function appendAboutMemoryMain(aProcessReports, aFilter,
+                               aHasMozMallocUsableSize) {
   let pcollsByProcess = {};
+  let infoByProcess = {};
 
   function handleReport(aProcess, aUnsafePath, aKind, aUnits, aAmount,
                         aDescription, aPresence) {
@@ -949,6 +994,23 @@ function appendAboutMemoryMain(aProcessReports, aHasMozMallocUsableSize) {
            "bad presence");
 
     let process = aProcess === "" ? gUnnamedProcessStr : aProcess;
+
+    
+    
+    
+    let info = infoByProcess[process];
+    if (!info) {
+      info = infoByProcess[process] = {};
+    }
+    if (aUnsafePath == "resident") {
+      infoByProcess[process].resident = aAmount;
+    }
+
+    
+    if (!stringMatchesFilter(aUnsafePath, aFilter)) {
+      return;
+    }
+
     let unsafeNames = aUnsafePath.split("/");
     let unsafeName0 = unsafeNames[0];
     let isDegenerate = unsafeNames.length === 1;
@@ -1006,7 +1068,7 @@ function appendAboutMemoryMain(aProcessReports, aHasMozMallocUsableSize) {
 
   function displayReports() {
     
-    let processes = Object.keys(pcollsByProcess);
+    let processes = Object.keys(infoByProcess);
     processes.sort(function(aProcessA, aProcessB) {
       assert(aProcessA != aProcessB,
              `Elements of Object.keys() should be unique, but ` +
@@ -1021,11 +1083,8 @@ function appendAboutMemoryMain(aProcessReports, aHasMozMallocUsableSize) {
       }
 
       
-      let nodeA = pcollsByProcess[aProcessA]._degenerates.resident;
-      let nodeB = pcollsByProcess[aProcessB]._degenerates.resident;
-      let residentA = nodeA ? nodeA._amount : -1;
-      let residentB = nodeB ? nodeB._amount : -1;
-
+      let residentA = infoByProcess[aProcessA].resident || -1;
+      let residentB = infoByProcess[aProcessB].resident || -1;
       if (residentA > residentB) {
         return -1;
       }
@@ -1046,29 +1105,117 @@ function appendAboutMemoryMain(aProcessReports, aHasMozMallocUsableSize) {
 
     
     
-    let outputContainer = appendElement(gMain, "div", "outputContainer");
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
-    let sections = appendElement(outputContainer, "div", "sections");
+    
+    let sections = newElement("div", "sections");
+
+    for (let [i, process] of processes.entries()) {
+      let pcolls = pcollsByProcess[process];
+      if (!pcolls) {
+        continue;
+      }
+
+      let section = appendElement(sections, "div", "section");
+      appendProcessAboutMemoryElements(section, i, process,
+                                       pcolls._trees,
+                                       pcolls._degenerates,
+                                       pcolls._heapTotal,
+                                       aHasMozMallocUsableSize,
+                                       aFilter != "");
+    }
+
+    if (!sections.firstChild) {
+      appendElementWithText(sections, "div", "section", "No results found.");
+    }
+
+    
+    let indexItem = newElement("div", "sidebarItem");
+    indexItem.classList.add("indexItem");
+    appendElementWithText(indexItem, "div", "sidebarLabel", "Process index");
+    let indexList = appendElement(indexItem, "ul", "index");
+
+    for (let [i, process] of processes.entries()) {
+      let indexListItem = appendElement(indexList, "li");
+      let pcolls = pcollsByProcess[process];
+      if (pcolls) {
+        let indexLink = appendElementWithText(indexListItem, "a", "", process);
+        indexLink.href = "#start" + i;
+      } else {
+        
+        
+        
+        indexListItem.textContent = process;
+      }
+    }
+
+    
+    let outputContainer = gMain.querySelector(".outputContainer");
+    if (outputContainer) {
+      outputContainer.querySelector(".sections").replaceWith(sections);
+      outputContainer.querySelector(".indexItem").replaceWith(indexItem);
+      return;
+    }
+
+    
+    outputContainer = appendElement(gMain, "div", "outputContainer");
+    outputContainer.appendChild(sections);
+
     let sidebar = appendElement(outputContainer, "div", "sidebar");
     let sidebarContents = appendElement(sidebar, "div", "sidebarContents");
 
-    let index = appendElement(sidebarContents, "div", "index");
-    appendElementWithText(index, "div", "indexLabel", "Process index");
-    let indexList = appendElement(index, "ul", "indexList");
+    
+    let filterItem = appendElement(sidebarContents, "div", "sidebarItem");
+    filterItem.classList.add("filterItem");
+    appendElementWithText(filterItem, "div", "sidebarLabel", "Filter");
+
+    let filterInput = appendElement(filterItem, "input", "filterInput");
+    filterInput.placeholder = "Memory report path filter";
+
+    let filterOptions = appendElement(filterItem, "div");
+    let filterRegExLabel = appendElement(filterOptions, "label");
+    let filterRegExCheckbox = appendElement(filterRegExLabel, "input");
+    filterRegExCheckbox.type = "checkbox";
+    filterRegExLabel.append(" Regular expression");
 
     
-    for (let [i, process] of processes.entries()) {
-      let section = appendElement(sections, "div", "section");
-      appendProcessAboutMemoryElements(section, i, process,
-                                       pcollsByProcess[process]._trees,
-                                       pcollsByProcess[process]._degenerates,
-                                       pcollsByProcess[process]._heapTotal,
-                                       aHasMozMallocUsableSize);
+    
+    let filterUpdateTimeout;
+    let filterUpdate = function() {
+      if (filterUpdateTimeout) {
+        window.clearTimeout(filterUpdateTimeout);
+      }
+      filterUpdateTimeout = window.setTimeout(function() {
+        try {
+          gFilter = filterRegExCheckbox.checked && filterInput.value != ""
+                      ? new RegExp(filterInput.value)
+                      : filterInput.value;
+        } catch (ex) {
+          
+          gFilter = new RegExp("^$");
+        }
+        updateAboutMemoryFromCurrentData();
+      }, gFilterUpdateDelayMS);
+    };
+    filterInput.oninput = filterUpdate;
+    filterRegExCheckbox.onchange = filterUpdate;
 
-      let indexListItem = appendElement(indexList, "li");
-      let indexLink = appendElementWithText(indexListItem, "a", "", process);
-      indexLink.href = "#start" + i;
-    }
+    
+    sidebarContents.appendChild(indexItem);
   }
 
   aProcessReports(handleReport, displayReports);
@@ -1367,21 +1514,24 @@ function sortTreeAndInsertAggregateNodes(aTotalBytes, aT) {
 let gUnsafePathsWithInvalidValuesForThisProcess = [];
 
 function appendWarningElements(aP, aHasKnownHeapAllocated,
-                               aHasMozMallocUsableSize) {
-  if (!aHasKnownHeapAllocated && !aHasMozMallocUsableSize) {
+                               aHasMozMallocUsableSize,
+                               aFiltered) {
+  
+  
+  if (!aFiltered && !aHasKnownHeapAllocated && !aHasMozMallocUsableSize) {
     appendElementWithText(aP, "p", "",
       "WARNING: the 'heap-allocated' memory reporter and the " +
       "moz_malloc_usable_size() function do not work for this platform " +
       "and/or configuration.  This means that 'heap-unclassified' is not " +
       "shown and the 'explicit' tree shows much less memory than it should.\n\n");
 
-  } else if (!aHasKnownHeapAllocated) {
+  } else if (!aFiltered && !aHasKnownHeapAllocated) {
     appendElementWithText(aP, "p", "",
       "WARNING: the 'heap-allocated' memory reporter does not work for this " +
       "platform and/or configuration. This means that 'heap-unclassified' " +
       "is not shown and the 'explicit' tree shows less memory than it should.\n\n");
 
-  } else if (!aHasMozMallocUsableSize) {
+  } else if (!aFiltered && !aHasMozMallocUsableSize) {
     appendElementWithText(aP, "p", "",
       "WARNING: the moz_malloc_usable_size() function does not work for " +
       "this platform and/or configuration.  This means that much of the " +
@@ -1427,9 +1577,12 @@ function appendWarningElements(aP, aHasKnownHeapAllocated,
 
 
 
+
+
 function appendProcessAboutMemoryElements(aP, aN, aProcess, aTrees,
                                           aDegenerates, aHeapTotal,
-                                          aHasMozMallocUsableSize) {
+                                          aHasMozMallocUsableSize,
+                                          aFiltered) {
   let appendLink = function(aHere, aThere, aArrow) {
     let link = appendElementWithText(aP, "a", "upDownArrow", aArrow);
     link.href = "#" + aThere + aN;
@@ -1518,7 +1671,7 @@ function appendProcessAboutMemoryElements(aP, aN, aProcess, aTrees,
   
   if (hasExplicitTree) {
     appendWarningElements(warningsDiv, hasKnownHeapAllocated,
-                          aHasMozMallocUsableSize);
+                          aHasMozMallocUsableSize, aFiltered);
   }
 
   appendElementWithText(aP, "h3", "", "End of " + aProcess);
