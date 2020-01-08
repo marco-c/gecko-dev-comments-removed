@@ -93,7 +93,6 @@ const TargetFactory = exports.TargetFactory = {
       form: response.tab,
       
       chrome: false,
-      isBrowsingContext: true,
       tab,
     });
   },
@@ -192,10 +191,7 @@ const TargetFactory = exports.TargetFactory = {
 
 
 
-
-
-
-function TabTarget({ form, client, chrome, isBrowsingContext = true, tab = null }) {
+function TabTarget({ form, client, chrome, tab = null }) {
   EventEmitter.decorate(this);
   this.destroy = this.destroy.bind(this);
   this.activeTab = this.activeConsole = null;
@@ -217,7 +213,16 @@ function TabTarget({ form, client, chrome, isBrowsingContext = true, tab = null 
   }
 
   
-  this._isBrowsingContext = isBrowsingContext;
+  
+  
+  
+  
+  
+  
+  
+  
+  const isContentProcessTarget = this._form.actor.match(/conn\d+\.content-process\d+\/contentProcessTarget\d+/);
+  this._isBrowsingContext = !this.isLegacyAddon && !isContentProcessTarget;
 
   
   
@@ -388,8 +393,6 @@ TabTarget.prototype = {
   
   
   
-  
-  
   get isBrowsingContext() {
     return this._isBrowsingContext;
   },
@@ -410,9 +413,12 @@ TabTarget.prototype = {
   },
 
   get isAddon() {
-    const isLegacyAddon = !!(this._form && this._form.actor &&
+    return this.isLegacyAddon || this.isWebExtension;
+  },
+
+  get isLegacyAddon() {
+    return !!(this._form && this._form.actor &&
       this._form.actor.match(/conn\d+\.addon(Target)?\d+/));
-    return isLegacyAddon || this.isWebExtension;
   },
 
   get isWebExtension() {
