@@ -348,6 +348,12 @@ WebConsoleActor.prototype =
       this.networkMonitorActor = null;
     }
     if (this.networkMonitorActorId) {
+      const messageManager = this.parentActor.messageManager;
+      if (messageManager) {
+        messageManager.sendAsyncMessage("debug:destroy-network-monitor", {
+          actorId: this.networkMonitorActorId
+        });
+      }
       this.networkMonitorActorId = null;
     }
     if (this.networkMonitorChildActor) {
@@ -620,7 +626,8 @@ WebConsoleActor.prototype =
             
             
             
-            this.stackTraceCollector = new StackTraceCollector({ window });
+            this.stackTraceCollector = new StackTraceCollector({ window },
+              messageManager);
             this.stackTraceCollector.init();
 
             if (messageManager && processBoundary) {
@@ -639,10 +646,12 @@ WebConsoleActor.prototype =
               
               this.networkMonitorChildActor = new NetworkMonitorActor(this.conn,
                 { window },
-                this.actorID);
+                this.actorID,
+                null,
+                this.stackTraceCollector);
             } else {
               this.networkMonitorActor = new NetworkMonitorActor(this.conn, { window },
-                this.actorID);
+                this.actorID, null, this.stackTraceCollector);
             }
           }
           startedListeners.push(listener);
@@ -747,6 +756,12 @@ WebConsoleActor.prototype =
             this.networkMonitorActor = null;
           }
           if (this.networkMonitorActorId) {
+            const messageManager = this.parentActor.messageManager;
+            if (messageManager) {
+              messageManager.sendAsyncMessage("debug:destroy-network-monitor", {
+                actorId: this.networkMonitorActorId
+              });
+            }
             this.networkMonitorActorId = null;
           }
           if (this.networkMonitorChildActor) {

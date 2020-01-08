@@ -16,24 +16,48 @@ const NetworkMonitorActor = ActorClassWithSpec(networkMonitorSpec, {
   _networkEventActorsByURL: new Map(),
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  initialize(conn, filters, parentID) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  initialize(conn, filters, parentID, messageManager, stackTraceCollector) {
     Actor.prototype.initialize.call(this, conn);
 
     this.parentID = parentID;
+    this.messageManager = messageManager;
+    this.stackTraceCollector = stackTraceCollector;
 
     
     
     this.netMonitor = new NetworkMonitor(filters, this);
     this.netMonitor.init();
+
+    if (this.messageManager) {
+      this.stackTraces = new Map();
+      this.onStackTraceAvailable = this.onStackTraceAvailable.bind(this);
+      this.messageManager.addMessageListener("debug:request-stack-available",
+        this.onStackTraceAvailable);
+      this.destroy = this.destroy.bind(this);
+      this.messageManager.addMessageListener("debug:destroy-network-monitor",
+        this.destroy);
+    }
   },
 
   destroy() {
@@ -42,6 +66,23 @@ const NetworkMonitorActor = ActorClassWithSpec(networkMonitorSpec, {
     if (this.netMonitor) {
       this.netMonitor.destroy();
       this.netMonitor = null;
+    }
+
+    if (this.messageManager) {
+      this.stackTraces.clear();
+      this.messageManager.removeMessageListener("debug:request-stack-available",
+        this.onStackTraceAvailable);
+      this.messageManager.removeMessageListener("debug:destroy-network-monitor",
+        this.destroy);
+      this.messageManager = null;
+    }
+  },
+
+  onStackTraceAvailable(msg) {
+    if (!msg.data.stacktrace) {
+      this.stackTraces.delete(msg.data.channelId);
+    } else {
+      this.stackTraces.set(msg.data.channelId, msg.data.stacktrace);
     }
   },
 
@@ -66,6 +107,11 @@ const NetworkMonitorActor = ActorClassWithSpec(networkMonitorSpec, {
     const actor = this.getNetworkEventActor(channelId);
     this._netEvents.set(channelId, actor);
 
+    if (this.messageManager) {
+      event.cause.stacktrace = this.stackTraces.get(channelId);
+    } else {
+      event.cause.stacktrace = this.stackTraceCollector.getStackTrace(channelId);
+    }
     actor.init(event);
 
     this._networkEventActorsByURL.set(actor._request.url, actor);
