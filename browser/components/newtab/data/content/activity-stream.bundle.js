@@ -213,7 +213,7 @@ for (const type of ["ADDONS_INFO_REQUEST", "ADDONS_INFO_RESPONSE", "ARCHIVE_FROM
 
 const ASRouterActions = {};
 
-for (const type of ["OPEN_PRIVATE_BROWSER_WINDOW", "OPEN_URL", "OPEN_ABOUT_PAGE"]) {
+for (const type of ["INSTALL_ADDON_FROM_URL", "OPEN_PRIVATE_BROWSER_WINDOW", "OPEN_URL", "OPEN_ABOUT_PAGE"]) {
   ASRouterActions[type] = type;
 }
 
@@ -1132,7 +1132,7 @@ class ASRouterUISurface extends react__WEBPACK_IMPORTED_MODULE_6___default.a.Pur
 
     
     if (this.props.document.location.href === "about:welcome") {
-      ASRouterUtils.sendMessage({ type: "TRIGGER", data: { trigger: "firstRun" } });
+      ASRouterUtils.sendMessage({ type: "TRIGGER", data: { trigger: { id: "firstRun" } } });
     } else {
       ASRouterUtils.sendMessage({ type: "CONNECT_UI_REQUEST", data: { endpoint } });
     }
@@ -2751,7 +2751,7 @@ const LinkMenuOptions = {
     icon: "dismiss",
     action: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].AlsoToMain({
       type: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionTypes"].BLOCK_URL,
-      data: { url: site.url, pocket_id: site.pocket_id }
+      data: { url: site.open_url || site.url, pocket_id: site.pocket_id }
     }),
     impression: common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__["actionCreators"].ImpressionStats({
       source: eventSource,

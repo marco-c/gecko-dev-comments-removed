@@ -11,6 +11,8 @@ ChromeUtils.defineModuleGetter(this, "ShellService",
 
 const FXA_USERNAME_PREF = "services.sync.username";
 const ONBOARDING_EXPERIMENT_PREF = "browser.newtabpage.activity-stream.asrouterOnboardingCohort";
+const MOZ_JEXL_FILEPATH = "mozjexl";
+
 
 const MAX_LIFETIME_CAP = 100;
 const ONE_DAY = 24 * 60 * 60 * 1000;
@@ -141,8 +143,22 @@ const TargetingGetters = {
 this.ASRouterTargeting = {
   Environment: TargetingGetters,
 
-  isMatch(filterExpression, target, context = this.Environment) {
+  ERROR_TYPES: {
+    MALFORMED_EXPRESSION: "MALFORMED_EXPRESSION",
+    OTHER_ERROR: "OTHER_ERROR"
+  },
+
+  isMatch(filterExpression, context = this.Environment) {
     return FilterExpressions.eval(filterExpression, context);
+  },
+
+  isTriggerMatch(trigger = {}, candidateMessageTrigger = {}) {
+    if (trigger.id !== candidateMessageTrigger.id) {
+      return false;
+    } else if (!candidateMessageTrigger.params) {
+      return true;
+    }
+    return candidateMessageTrigger.params.includes(trigger.param);
   },
 
   isBelowFrequencyCap(message, impressionsForMessage) {
@@ -182,36 +198,50 @@ this.ASRouterTargeting = {
 
 
 
-  async findMatchingMessage({messages, impressions = {}, target, context}) {
-    const arrayOfItems = [...messages];
-    let match;
-    let candidate;
-
-    while (!match && arrayOfItems.length) {
-      candidate = removeRandomItemFromArray(arrayOfItems);
-      if (
-        candidate &&
-        this.isBelowFrequencyCap(candidate, impressions[candidate.id]) &&
-        !candidate.trigger &&
-        (!candidate.targeting || await this.isMatch(candidate.targeting, target, context))
-      ) {
-        match = candidate;
-      }
+  async checkMessageTargeting(message, context, onError) {
+    
+    if (!message.targeting) {
+      return true;
     }
-    return match;
+    let result;
+    try {
+      result = await this.isMatch(message.targeting, context);
+    } catch (error) {
+      Cu.reportError(error);
+      if (onError) {
+        const type = error.fileName.includes(MOZ_JEXL_FILEPATH) ? this.ERROR_TYPES.MALFORMED_EXPRESSION : this.ERROR_TYPES.OTHER_ERROR;
+        onError(type, error, message);
+      }
+      result = false;
+    }
+    return result;
   },
 
-  async findMatchingMessageWithTrigger({messages, impressions = {}, target, trigger, context}) {
+  
+
+
+
+
+
+
+
+
+
+  async findMatchingMessage({messages, impressions = {}, trigger, context, onError}) {
     const arrayOfItems = [...messages];
     let match;
     let candidate;
+
     while (!match && arrayOfItems.length) {
       candidate = removeRandomItemFromArray(arrayOfItems);
+
       if (
         candidate &&
+        (trigger ? this.isTriggerMatch(trigger, candidate.trigger) : !candidate.trigger) &&
         this.isBelowFrequencyCap(candidate, impressions[candidate.id]) &&
-        candidate.trigger === trigger &&
-        (!candidate.targeting || await this.isMatch(candidate.targeting, target, context))
+        
+        
+        await this.checkMessageTargeting(candidate, context, onError)
       ) {
         match = candidate;
       }
