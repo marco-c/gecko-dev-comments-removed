@@ -38,6 +38,14 @@ pub enum WrExternalImageBufferType {
     ExternalBuffer = 4,
 }
 
+
+#[repr(u8)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum OpacityType {
+    Opaque = 0,
+    HasAlphaChannel = 1,
+}
+
 impl WrExternalImageBufferType {
     fn to_wr(self) -> ExternalImageType {
         match self {
@@ -283,7 +291,7 @@ pub struct WrImageDescriptor {
     pub width: u32,
     pub height: u32,
     pub stride: u32,
-    pub is_opaque: bool,
+    pub opacity: OpacityType,
 }
 
 impl<'a> Into<ImageDescriptor> for &'a WrImageDescriptor {
@@ -296,7 +304,7 @@ impl<'a> Into<ImageDescriptor> for &'a WrImageDescriptor {
                 None
             },
             format: self.format,
-            is_opaque: self.is_opaque,
+            is_opaque: self.opacity == OpacityType::Opaque,
             offset: 0,
             allow_mipmaps: false,
         }
@@ -2189,7 +2197,6 @@ pub extern "C" fn wr_dp_push_border(state: &mut WrState,
                                                    top: top.into(),
                                                    bottom: bottom.into(),
                                                    radius: radius.into(),
-                                                   do_aa: true,
                                                });
     let mut prim_info = LayoutPrimitiveInfo::with_clip_rect(rect, clip.into());
     prim_info.is_backface_visible = is_backface_visible;
