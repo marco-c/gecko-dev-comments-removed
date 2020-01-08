@@ -1319,8 +1319,7 @@ OptimizeSinCos(MIRGraph &graph)
             
             
             MSinCos *insSinCos = MSinCos::New(graph.alloc(),
-                                              insFunc->input(),
-                                              insFunc->toMathFunction()->cache());
+                                              insFunc->input());
             insSinCos->setImplicitlyUsedUnchecked();
             block->insertBefore(insFunc, insSinCos);
             for (MUseDefIterator uses(insFunc->input()); uses; )
