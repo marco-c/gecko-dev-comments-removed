@@ -48,7 +48,6 @@ export default class AddressForm extends PaymentStateSubscriberMixin(PaymentRequ
       addressLine: "#street-address",
       city: "#address-level2",
       country: "#country",
-      dependentLocality: "#address-level3",
       email: "#email",
       
       
@@ -62,9 +61,6 @@ export default class AddressForm extends PaymentStateSubscriberMixin(PaymentRequ
       
       recipient: "#given-name",
       region: "#address-level1",
-      
-      
-      regionCode: "#address-level1",
     };
 
     
@@ -197,17 +193,10 @@ export default class AddressForm extends PaymentStateSubscriberMixin(PaymentRequ
     let merchantFieldErrors = AddressForm.merchantFieldErrorsForForm(state,
                                                                      addressPage.selectedStateKey);
     for (let [errorName, errorSelector] of Object.entries(this._errorFieldMap)) {
-      let errorText = "";
-      
-      if (editing && merchantFieldErrors) {
-        if (errorName == "region" || errorName == "regionCode") {
-          errorText = merchantFieldErrors.regionCode || merchantFieldErrors.region || "";
-        } else {
-          errorText = merchantFieldErrors[errorName] || "";
-        }
-      }
       let container = this.form.querySelector(errorSelector + "-container");
       let field = this.form.querySelector(errorSelector);
+      
+      let errorText = (editing && merchantFieldErrors && merchantFieldErrors[errorName]) || "";
       field.setCustomValidity(errorText);
       let span = paymentRequest.maybeCreateFieldErrorElement(container);
       span.textContent = errorText;
