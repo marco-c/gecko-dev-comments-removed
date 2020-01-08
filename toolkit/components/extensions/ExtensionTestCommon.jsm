@@ -172,13 +172,6 @@ function provide(obj, keys, value, override = false) {
 }
 
 var ExtensionTestCommon = class ExtensionTestCommon {
-  static generateManifest(manifest) {
-    provide(manifest, ["name"], "Generated extension");
-    provide(manifest, ["manifest_version"], 2);
-    provide(manifest, ["version"], "1.0");
-    return manifest;
-  }
-
   
 
 
@@ -204,16 +197,15 @@ var ExtensionTestCommon = class ExtensionTestCommon {
 
 
 
+  static generateFiles(data) {
+    let files = {};
 
+    Object.assign(files, data.files);
 
-
-  static generateXPI(data) {
     let manifest = data.manifest;
     if (!manifest) {
       manifest = {};
     }
-
-    let files = Object.assign({}, data.files);
 
     provide(manifest, ["name"], "Generated extension");
     provide(manifest, ["manifest_version"], 2);
@@ -226,8 +218,30 @@ var ExtensionTestCommon = class ExtensionTestCommon {
       files[bgScript] = data.background;
     }
 
-    provide(files, ["manifest.json"], manifest);
+    provide(files, ["manifest.json"], JSON.stringify(manifest));
 
+    for (let filename in files) {
+      let contents = files[filename];
+      if (typeof contents == "function") {
+        files[filename] = this.serializeScript(contents);
+      } else if (typeof contents != "string" && !instanceOf(contents, "ArrayBuffer")) {
+        files[filename] = JSON.stringify(contents);
+      }
+    }
+
+    return files;
+  }
+
+  
+
+
+
+
+
+
+
+  static generateXPI(data) {
+    let files = this.generateFiles(data);
     return this.generateZipFile(files);
   }
 
@@ -258,12 +272,6 @@ var ExtensionTestCommon = class ExtensionTestCommon {
 
     for (let filename in files) {
       let script = files[filename];
-      if (typeof(script) == "function") {
-        script = this.serializeScript(script);
-      } else if (instanceOf(script, "Object") || instanceOf(script, "Array")) {
-        script = JSON.stringify(script);
-      }
-
       if (!instanceOf(script, "ArrayBuffer")) {
         script = new TextEncoder("utf-8").encode(script).buffer;
       }

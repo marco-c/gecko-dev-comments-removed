@@ -4,19 +4,10 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm");
-
 
 Services.prefs.setBoolPref(PREF_EM_CHECK_UPDATE_SECURITY, false);
-Services.prefs.setBoolPref(PREF_EM_STRICT_COMPATIBILITY, false);
 
 createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "1.9.2");
-
-
-ChromeUtils.import("resource://testing-common/httpd.js");
-
-const profileDir = gProfD.clone();
-profileDir.append("extensions");
 
 
 
@@ -29,58 +20,82 @@ profileDir.append("extensions");
 
 
 function makeCancelListener() {
-  let updated = PromiseUtils.defer();
+  let resolve, reject;
+  let promise = new Promise((_resolve, _reject) => {
+    resolve = _resolve;
+    reject = _reject;
+  });
+
   return {
     onUpdateAvailable(addon, install) {
-      updated.reject("Should not have seen onUpdateAvailable notification");
+      reject("Should not have seen onUpdateAvailable notification");
     },
 
     onUpdateFinished(aAddon, aError) {
       info("onUpdateCheckFinished: " + aAddon.id + " " + aError);
-      updated.resolve(aError);
+      resolve(aError);
     },
-    promise: updated.promise,
+    promise,
   };
 }
 
+let testserver = createHttpServer({hosts: ["example.com"]});
 
-var httpReceived = PromiseUtils.defer();
-function dataHandler(aRequest, aResponse) {
-  aResponse.processAsync();
-  httpReceived.resolve([aRequest, aResponse]);
+
+let _httpResolve;
+function resetUpdateListener() {
+  return new Promise(resolve => { _httpResolve = resolve; });
 }
-var testserver = new HttpServer();
-testserver.registerPathHandler("/data/test_update.json", dataHandler);
-testserver.start(-1);
-gPort = testserver.identity.primaryPort;
 
-
-add_task(async function setup() {
-  await promiseWriteInstallRDFForExtension({
-    id: "addon1@tests.mozilla.org",
-    version: "1.0",
-    bootstrap: true,
-    updateURL: "http://localhost:" + gPort + "/data/test_update.json",
-    targetApplications: [{
-      id: "xpcshell@tests.mozilla.org",
-      minVersion: "1",
-      maxVersion: "1",
-    }],
-    name: "Test Addon 1",
-  }, profileDir);
+testserver.registerPathHandler("/data/test_update.json", (req, resp) => {
+  resp.processAsync();
+  _httpResolve([req, resp]);
 });
+
+const UPDATE_RESPONSE = {
+  addons: {
+    "addon1@tests.mozilla.org": {
+      updates: [
+        {
+          version: "2.0",
+          update_link: "http://example.com/addons/test_update.xpi",
+          applications: {
+            gecko: {
+              strict_min_version: "1",
+              strict_max_version: "1",
+            },
+          },
+        },
+      ],
+    },
+  },
+};
 
 add_task(async function cancel_during_check() {
   await promiseStartupManager();
 
+  await promiseInstallWebExtension({
+    manifest: {
+      name: "Test Addon 1",
+      version: "1.0",
+      applications: {
+        gecko: {
+          id: "addon1@tests.mozilla.org",
+          update_url: "http://example.com/data/test_update.json",
+        },
+      },
+    },
+  });
+
   let a1 = await promiseAddonByID("addon1@tests.mozilla.org");
   Assert.notEqual(a1, null);
 
+  let requestPromise = resetUpdateListener();
   let listener = makeCancelListener();
   a1.findUpdates(listener, AddonManager.UPDATE_WHEN_USER_REQUESTED);
 
   
-  let [, response] = await httpReceived.promise;
+  let [, response] = await requestPromise;
 
   
   Assert.ok(a1.cancelUpdate());
@@ -89,24 +104,18 @@ add_task(async function cancel_during_check() {
   Assert.equal(AddonManager.UPDATE_STATUS_CANCELLED, updateResult);
 
   
-  let file = do_get_cwd();
-  file.append("data");
-  file.append("test_update.json");
-  let data = new TextDecoder().decode(await OS.File.read(file.path));
-  response.write(data);
+  response.write(JSON.stringify(UPDATE_RESPONSE));
   response.finish();
 
   
   Assert.ok(!a1.cancelUpdate());
-
-  await true;
 });
 
 
 
 add_task(async function shutdown_during_check() {
   
-  httpReceived = PromiseUtils.defer();
+  let requestPromise = resetUpdateListener();
 
   let a1 = await promiseAddonByID("addon1@tests.mozilla.org");
   Assert.notEqual(a1, null);
@@ -115,7 +124,7 @@ add_task(async function shutdown_during_check() {
   a1.findUpdates(listener, AddonManager.UPDATE_WHEN_USER_REQUESTED);
 
   
-  let [, response] = await httpReceived.promise;
+  let [, response] = await requestPromise;
 
   await promiseShutdownManager();
 
@@ -123,12 +132,6 @@ add_task(async function shutdown_during_check() {
   Assert.equal(AddonManager.UPDATE_STATUS_CANCELLED, updateResult);
 
   
-  let file = do_get_cwd();
-  file.append("data");
-  file.append("test_update.json");
-  let data = await loadFile(file.path);
-  response.write(data);
+  response.write(JSON.stringify(UPDATE_RESPONSE));
   response.finish();
-
-  await testserver.stop();
 });

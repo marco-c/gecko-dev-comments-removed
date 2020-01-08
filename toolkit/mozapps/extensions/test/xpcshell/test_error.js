@@ -4,90 +4,73 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-
-const profileDir = gProfD.clone();
-profileDir.append("extensions");
-
-const ADDONS = {
-  test_bug567173: {
-    "install.rdf": {
-      "id": "bug567173",
-    },
-  },
-};
-
-async function run_test() {
-  do_test_pending();
+add_task(async function setup() {
   createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "1.9.2");
 
   await promiseStartupManager();
-
-  run_test_1();
-}
+});
 
 
-async function run_test_1() {
-  let install = await AddonManager.getInstallForFile(do_get_file("data/unsigned.xpi"));
+add_task(async function run_test_1() {
+  let xpi = await createTempWebExtensionFile({});
+  let install = await AddonManager.getInstallForFile(xpi);
   Assert.notEqual(install, null);
   Assert.equal(install.state, AddonManager.STATE_DOWNLOADED);
   Assert.equal(install.error, 0);
 
   install.cancel();
-
-  run_test_2();
-}
+});
 
 
-async function run_test_2() {
-  let install = await AddonManager.getInstallForFile(do_get_file("data/corrupt.xpi"));
+
+add_task(async function run_test_2() {
+  let xpi = AddonTestUtils.allocTempXPIFile();
+  await OS.File.writeAtomic(xpi.path, new TextEncoder().encode("this is not a zip file"));
+
+  let install = await AddonManager.getInstallForFile(xpi);
   Assert.notEqual(install, null);
   Assert.equal(install.state, AddonManager.STATE_DOWNLOAD_FAILED);
   Assert.equal(install.error, AddonManager.ERROR_CORRUPT_FILE);
-
-  run_test_3();
-}
+});
 
 
-async function run_test_3() {
-  let install = await AddonManager.getInstallForFile(do_get_file("data/empty.xpi"));
+add_task(async function run_test_3() {
+  let xpi = await createTempXPIFile({});
+  let install = await AddonManager.getInstallForFile(xpi);
   Assert.notEqual(install, null);
   Assert.equal(install.state, AddonManager.STATE_DOWNLOAD_FAILED);
   Assert.equal(install.error, AddonManager.ERROR_CORRUPT_FILE);
-
-  run_test_4();
-}
+});
 
 
-async function run_test_4() {
-  let url = Services.io.newFileURI(do_get_file("data/unsigned.xpi")).spec;
+add_task(async function run_test_4() {
+  let xpi = await createTempWebExtensionFile({});
+  let url = Services.io.newFileURI(xpi).spec;
   let install = await AddonManager.getInstallForURL(url, "application/x-xpinstall", "sha1:foo");
   Assert.notEqual(install, null);
   Assert.equal(install.state, AddonManager.STATE_DOWNLOAD_FAILED);
   Assert.equal(install.error, AddonManager.ERROR_INCORRECT_HASH);
-
-  run_test_5();
-}
+});
 
 
-async function run_test_5() {
+add_task(async function run_test_5() {
   let file = do_get_file("data");
   file.append("missing.xpi");
   let install = await AddonManager.getInstallForFile(file);
   Assert.notEqual(install, null);
   Assert.equal(install.state, AddonManager.STATE_DOWNLOAD_FAILED);
   Assert.equal(install.error, AddonManager.ERROR_NETWORK_FAILURE);
-
-  run_test_6();
-}
+});
 
 
-async function run_test_6() {
-  let xpi = await AddonTestUtils.createTempXPIFile(ADDONS.test_bug567173);
+add_task(async function run_test_6() {
+  let xpi = await createTempWebExtensionFile({
+    manifest: {
+      applications: {gecko: {id: "invalid"}},
+    },
+  });
   let install = await AddonManager.getInstallForFile(xpi);
   Assert.notEqual(install, null);
   Assert.equal(install.state, AddonManager.STATE_DOWNLOAD_FAILED);
   Assert.equal(install.error, AddonManager.ERROR_CORRUPT_FILE);
-
-  executeSoon(do_test_finished);
-}
+});

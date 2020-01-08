@@ -6,22 +6,25 @@
 
 
 
-var testserver = AddonTestUtils.createHttpServer({hosts: ["example.com"]});
+var testserver = createHttpServer({hosts: ["example.com"]});
 
 
 testserver.registerDirectory("/data/", do_get_file("data"));
 
 
 Services.prefs.setBoolPref(PREF_EM_CHECK_UPDATE_SECURITY, false);
-Services.prefs.setBoolPref(PREF_EM_STRICT_COMPATIBILITY, false);
 
 const ADDONS = {
   
   "addon3@tests.mozilla.org": {
-    "install.rdf": {
-      id: "addon3@tests.mozilla.org",
+    manifest: {
       name: "Test 3",
-      updateURL: "http://example.com/data/test_corrupt.json",
+      applications: {
+        gecko: {
+          id: "addon3@tests.mozilla.org",
+          update_url: "http://example.com/data/test_corrupt.json",
+        },
+      },
     },
     findUpdates: true,
     desiredState: {
@@ -30,18 +33,18 @@ const ADDONS = {
       appDisabled: false,
       pendingOperations: 0,
     },
-    
-    
-    afterCorruption: {},
-    afterSecondRestart: {},
   },
 
   
   "addon4@tests.mozilla.org": {
-    "install.rdf": {
-      id: "addon4@tests.mozilla.org",
+    manifest: {
       name: "Test 4",
-      updateURL: "http://example.com/data/test_corrupt.json",
+      applications: {
+        gecko: {
+          id: "addon4@tests.mozilla.org",
+          update_url: "http://example.com/data/test_corrupt.json",
+        },
+      },
     },
     initialState: {
       userDisabled: true,
@@ -53,19 +56,12 @@ const ADDONS = {
       appDisabled: false,
       pendingOperations: 0,
     },
-    
-    
-    
-    
-    afterCorruption: {},
-    afterSecondRestart: {},
   },
 
-  
   "addon5@tests.mozilla.org": {
-    "install.rdf": {
-      id: "addon5@tests.mozilla.org",
+    manifest: {
       name: "Test 5",
+      applications: {gecko: {id: "addon5@tests.mozilla.org"}},
     },
     desiredState: {
       isActive: true,
@@ -73,41 +69,12 @@ const ADDONS = {
       appDisabled: false,
       pendingOperations: 0,
     },
-    afterCorruption: {},
-    afterSecondRestart: {},
   },
 
-  
-  "addon6@tests.mozilla.org": {
-    "install.rdf": {
-      id: "addon6@tests.mozilla.org",
-      name: "Test 6",
-      targetApplications: [{
-        id: "xpcshell@tests.mozilla.org",
-        minVersion: "2",
-        maxVersion: "2",
-      }],
-    },
-    desiredState: {
-      isActive: true,
-      userDisabled: false,
-      appDisabled: false,
-      pendingOperations: 0,
-    },
-    afterCorruption: {},
-    afterSecondRestart: {},
-  },
-
-  
   "addon7@tests.mozilla.org": {
-    "install.rdf": {
-      id: "addon7@tests.mozilla.org",
+    manifest: {
       name: "Test 7",
-      targetApplications: [{
-        id: "xpcshell@tests.mozilla.org",
-        minVersion: "2",
-        maxVersion: "2",
-      }],
+      applications: { gecko: {id: "addon7@tests.mozilla.org"}},
     },
     initialState: {
       userDisabled: true,
@@ -118,8 +85,6 @@ const ADDONS = {
       appDisabled: false,
       pendingOperations: 0,
     },
-    afterCorruption: {},
-    afterSecondRestart: {},
   },
 
   
@@ -141,8 +106,6 @@ const ADDONS = {
       appDisabled: false,
       pendingOperations: 0,
     },
-    afterCorruption: {},
-    afterSecondRestart: {},
   },
 
   "theme2@tests.mozilla.org": {
@@ -166,8 +129,6 @@ const ADDONS = {
       appDisabled: false,
       pendingOperations: 0,
     },
-    afterCorruption: {},
-    afterSecondRestart: {},
   },
 };
 
@@ -180,19 +141,12 @@ function promiseUpdates(addon) {
   });
 }
 
-const profileDir = gProfD.clone();
-profileDir.append("extensions");
-
 add_task(async function setup() {
   createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "2", "2");
 
   for (let addon of Object.values(ADDONS)) {
-    if (addon["install.rdf"]) {
-      await promiseWriteInstallRDFForExtension(addon["install.rdf"], profileDir);
-    } else {
-      let webext = createTempWebExtensionFile({manifest: addon.manifest});
-      await AddonTestUtils.manuallyInstall(webext);
-    }
+    let webext = createTempWebExtensionFile({manifest: addon.manifest});
+    await AddonTestUtils.manuallyInstall(webext);
   }
 
   await promiseStartupManager();
@@ -241,8 +195,7 @@ add_task(async function test_after_corruption() {
   info("Test add-on state after corruption");
   let addons = await getAddons(IDS);
   for (let [id, addon] of Object.entries(ADDONS)) {
-    checkAddon(id, addons.get(id),
-               Object.assign({}, addon.desiredState, addon.afterCorruption));
+    checkAddon(id, addons.get(id), addon.desiredState);
   }
 
   await Assert.rejects(promiseShutdownManager(), OS.File.Error);
@@ -254,8 +207,7 @@ add_task(async function test_after_second_restart() {
   info("Test add-on state after second restart");
   let addons = await getAddons(IDS);
   for (let [id, addon] of Object.entries(ADDONS)) {
-    checkAddon(id, addons.get(id),
-               Object.assign({}, addon.desiredState, addon.afterSecondRestart));
+    checkAddon(id, addons.get(id), addon.desiredState);
   }
 
   await Assert.rejects(promiseShutdownManager(), OS.File.Error);

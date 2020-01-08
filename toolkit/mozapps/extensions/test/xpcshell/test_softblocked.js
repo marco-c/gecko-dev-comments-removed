@@ -2,42 +2,10 @@
 
 
 
-const URI_EXTENSION_BLOCKLIST_DIALOG = "chrome://mozapps/content/extensions/blocklist.xul";
-
-ChromeUtils.import("resource://testing-common/MockRegistrar.jsm");
-
-
-Services.prefs.setBoolPref("extensions.checkUpdateSecurity", false);
-
 const testserver = createHttpServer();
 gPort = testserver.identity.primaryPort;
 testserver.registerDirectory("/data/", do_get_file("data"));
 
-
-
-var WindowWatcher = {
-  openWindow(parent, url, name, features, openArgs) {
-    
-    Assert.equal(url, URI_EXTENSION_BLOCKLIST_DIALOG);
-
-    
-    var list = openArgs.wrappedJSObject.list;
-    list.forEach(function(aItem) {
-      if (!aItem.blocked)
-        aItem.disable = true;
-    });
-
-    
-    Services.obs.notifyObservers(null, "addon-blocklist-closed");
-  },
-
-  QueryInterface: ChromeUtils.generateQI(["nsIWindowWatcher"]),
-};
-
-MockRegistrar.register("@mozilla.org/embedcomp/window-watcher;1", WindowWatcher);
-
-const profileDir = gProfD.clone();
-profileDir.append("extensions");
 
 function load_blocklist(aFile) {
   return new Promise((resolve, reject) => {
@@ -54,28 +22,24 @@ function load_blocklist(aFile) {
   });
 }
 
-function run_test() {
+
+
+add_task(async function test_softblock() {
   createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "1");
-  run_next_test();
-}
-
-
-
-add_task(async function() {
-  await promiseWriteInstallRDFForExtension({
-    id: "softblock1@tests.mozilla.org",
-    version: "1.0",
-    name: "Softblocked add-on",
-    bootstrap: true,
-    targetApplications: [{
-      id: "xpcshell@tests.mozilla.org",
-      minVersion: "2",
-      maxVersion: "3",
-    }],
-  }, profileDir);
-
   await promiseStartupManager();
 
+  await promiseInstallWebExtension({
+    manifest: {
+      name: "Softblocked add-on",
+      version: "1.0",
+      applications: {
+        gecko: {
+          id: "softblock1@tests.mozilla.org",
+          strict_min_version: "2",
+          strict_max_version: "3",
+        }},
+    },
+  });
   let s1 = await promiseAddonByID("softblock1@tests.mozilla.org");
 
   
@@ -91,6 +55,7 @@ add_task(async function() {
   Assert.ok(s1.appDisabled);
   Assert.ok(!s1.isActive);
 
+  AddonTestUtils.appInfo.platformVersion = "2";
   await promiseRestartManager("2");
 
   s1 = await promiseAddonByID("softblock1@tests.mozilla.org");

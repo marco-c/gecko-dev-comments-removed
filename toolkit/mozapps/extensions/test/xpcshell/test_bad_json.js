@@ -5,28 +5,19 @@
 
 
 
-var addon1 = {
-  id: "addon1@tests.mozilla.org",
-  version: "2.0",
-  name: "Test 1",
-  bootstrap: true,
-  targetApplications: [{
-    id: "xpcshell@tests.mozilla.org",
-    minVersion: "1",
-    maxVersion: "1",
-  }],
-};
-
-const profileDir = gProfD.clone();
-profileDir.append("extensions");
-
 add_task(async function() {
   createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "1.9.2");
 
-  
-  await promiseWriteInstallRDFForExtension(addon1, profileDir);
-
   await promiseStartupManager();
+
+  const ID = "addon@tests.mozilla.org";
+  await promiseInstallWebExtension({
+    manifest: {
+      version: "2.0",
+      applications: {gecko: {id: ID}},
+    },
+  });
+
   await promiseShutdownManager();
 
   
@@ -35,14 +26,14 @@ add_task(async function() {
 
   await promiseStartupManager();
   
-  let a1 = await AddonManager.getAddonByID(addon1.id);
+  let addon = await AddonManager.getAddonByID(ID);
 
-  Assert.equal(a1.id, addon1.id);
+  Assert.equal(addon.id, ID);
 
   await promiseShutdownManager();
 
   
   let data = await loadJSON(gExtensionsJSON.path);
   Assert.ok("schemaVersion" in data);
-  Assert.equal(data.addons[0].id, addon1.id);
+  Assert.equal(data.addons[0].id, ID);
 });
