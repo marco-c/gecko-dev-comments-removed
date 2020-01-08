@@ -227,6 +227,8 @@ private:
                          recordreplay::Behavior::DontPreserve> sActiveAndFeatures;
 };
 
+bool IsThreadBeingProfiled();
+
 } 
 } 
 } 
@@ -392,6 +394,14 @@ void profiler_clear_js_context();
 inline bool profiler_is_active()
 {
   return mozilla::profiler::detail::RacyFeatures::IsActive();
+}
+
+
+
+inline bool profiler_thread_is_being_profiled()
+{
+  return profiler_is_active() &&
+         mozilla::profiler::detail::IsThreadBeingProfiled();
 }
 
 
