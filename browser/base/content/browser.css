@@ -585,10 +585,30 @@ html|input.urlbar-input[dir=ltr]:-moz-locale-dir(rtl) {
 }
 
 
-html|input.urlbar-input[textoverflow]:not([focused]) {
-  
+hbox.urlbar-input-box {
+  position: relative;
+}
+html|input.urlbar-scheme {
+  position: absolute;
+  height: 100%;
+  visibility: hidden;
+  direction: ltr;
+  pointer-events: none;
+}
 
-  mask-image: linear-gradient(to left, transparent, black 3em);
+
+
+html|input.urlbar-scheme[textoverflow="start"]:not([focused]):valid {
+  visibility: visible;
+}
+
+
+html|input.urlbar-input[textoverflow="end"]:not([focused]) {
+  mask-image: linear-gradient(to left, transparent, black 3ch);
+}
+
+html|input.urlbar-input[textoverflow="start"]:not([focused]) {
+  mask-image: linear-gradient(to right, transparent var(--urlbar-scheme-size), black calc(var(--urlbar-scheme-size) + 3ch));
 }
 
 
