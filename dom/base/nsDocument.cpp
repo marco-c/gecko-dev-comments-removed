@@ -58,7 +58,7 @@
 #include "mozilla/BasicEvents.h"
 #include "mozilla/EventListenerManager.h"
 #include "mozilla/EventStateManager.h"
-#include "mozilla/FullscreenChange.h"
+#include "mozilla/FullscreenRequest.h"
 
 #include "mozilla/dom/Attr.h"
 #include "mozilla/dom/BindingDeclarations.h"
@@ -5295,7 +5295,8 @@ AssertContentPrivilegedAboutPageHasCSP(nsIURI* aDocumentURI, nsIPrincipal* aPrin
 
   
   static StaticAutoPtr<nsTArray<nsCString>> sLegacyAboutPagesWithNoCSP;
-  if (!sLegacyAboutPagesWithNoCSP) {
+  if (!sLegacyAboutPagesWithNoCSP ||
+      Preferences::GetBool("csp.overrule_content_privileged_about_uris_without_csp_whitelist")) {
     sLegacyAboutPagesWithNoCSP = new nsTArray<nsCString>();
     nsAutoCString legacyAboutPages;
     Preferences::GetCString("csp.content_privileged_about_uris_without_csp",
@@ -5333,6 +5334,10 @@ AssertContentPrivilegedAboutPageHasCSP(nsIURI* aDocumentURI, nsIPrincipal* aPrin
      if (policyCount > 0) {
        csp->GetPolicyString(0, parsedPolicyStr);
      }
+  }
+  if (Preferences::GetBool("csp.overrule_content_privileged_about_uris_without_csp_whitelist")) {
+    NS_ASSERTION(parsedPolicyStr.Find("default-src") >= 0, "about: page must have a CSP");
+    return;
   }
   MOZ_ASSERT(parsedPolicyStr.Find("default-src") >= 0,
     "about: page must contain a CSP including default-src");
@@ -10613,109 +10618,8 @@ FullscreenRoots::IsEmpty()
   return !sInstance;
 }
 
-
-
-
-
-
-class PendingFullscreenChangeList
-{
-public:
-  PendingFullscreenChangeList() = delete;
-
-  template<typename T>
-  static void Add(UniquePtr<T> aChange)
-  {
-    sList.insertBack(aChange.release());
-  }
-
-  static const FullscreenChange* GetLast()
-  {
-    return sList.getLast();
-  }
-
-  enum IteratorOption
-  {
-    
-    
-    
-    eDocumentsWithSameRoot,
-    
-    
-    
-    eInclusiveDescendants
-  };
-
-  template<typename T>
-  class Iterator
-  {
-  public:
-    explicit Iterator(nsIDocument* aDoc, IteratorOption aOption)
-      : mCurrent(PendingFullscreenChangeList::sList.getFirst())
-      , mRootShellForIteration(aDoc->GetDocShell())
-    {
-      if (mCurrent) {
-        if (mRootShellForIteration && aOption == eDocumentsWithSameRoot) {
-          mRootShellForIteration->
-            GetRootTreeItem(getter_AddRefs(mRootShellForIteration));
-        }
-        SkipToNextMatch();
-      }
-    }
-
-    UniquePtr<T> TakeAndNext()
-    {
-      auto thisChange = TakeAndNextInternal();
-      SkipToNextMatch();
-      return thisChange;
-    }
-    bool AtEnd() const { return mCurrent == nullptr; }
-
-  private:
-    UniquePtr<T> TakeAndNextInternal()
-    {
-      FullscreenChange* thisChange = mCurrent;
-      MOZ_ASSERT(thisChange->Type() == T::kType);
-      mCurrent = mCurrent->removeAndGetNext();
-      return WrapUnique(static_cast<T*>(thisChange));
-    }
-    void SkipToNextMatch()
-    {
-      while (mCurrent) {
-        if (mCurrent->Type() == T::kType) {
-          nsCOMPtr<nsIDocShellTreeItem>
-            docShell = mCurrent->Document()->GetDocShell();
-          if (!docShell) {
-            
-            
-            UniquePtr<T> change = TakeAndNextInternal();
-            change->MayRejectPromise();
-            continue;
-          }
-          while (docShell && docShell != mRootShellForIteration) {
-            docShell->GetParent(getter_AddRefs(docShell));
-          }
-          if (docShell) {
-            break;
-          }
-        }
-        
-        
-        mCurrent = mCurrent->getNext();
-      }
-    }
-
-    FullscreenChange* mCurrent;
-    nsCOMPtr<nsIDocShellTreeItem> mRootShellForIteration;
-  };
-
-private:
-  static LinkedList<FullscreenChange> sList;
-};
-
- LinkedList<FullscreenChange> PendingFullscreenChangeList::sList;
-
 } 
+using mozilla::FullscreenRoots;
 
 nsIDocument*
 nsIDocument::GetFullscreenRoot()
@@ -10730,13 +10634,10 @@ nsIDocument::SetFullscreenRoot(nsIDocument* aRoot)
   mFullscreenRoot = do_GetWeakReference(aRoot);
 }
 
-already_AddRefed<Promise>
-nsIDocument::ExitFullscreen(ErrorResult& aRv)
+void
+nsIDocument::ExitFullscreen()
 {
-  UniquePtr<FullscreenExit> exit = FullscreenExit::Create(this, aRv);
-  RefPtr<Promise> promise = exit->GetPromise();
-  RestorePreviousFullscreenState(std::move(exit));
-  return promise.forget();
+  RestorePreviousFullscreenState();
 }
 
 static void
@@ -10908,14 +10809,6 @@ nsIDocument::ExitFullscreenInDocTree(nsIDocument* aMaybeNotARootDoc)
   
   UnlockPointer();
 
-  
-  PendingFullscreenChangeList::Iterator<FullscreenExit> iter(
-    aMaybeNotARootDoc, PendingFullscreenChangeList::eDocumentsWithSameRoot);
-  while (!iter.AtEnd()) {
-    UniquePtr<FullscreenExit> exit = iter.TakeAndNext();
-    exit->MayResolvePromise();
-  }
-
   nsCOMPtr<nsIDocument> root = aMaybeNotARootDoc->GetFullscreenRoot();
   if (!root || !root->FullscreenStackTop()) {
     
@@ -10959,13 +10852,12 @@ DispatchFullscreenNewOriginEvent(nsIDocument* aDoc)
 }
 
 void
-nsIDocument::RestorePreviousFullscreenState(UniquePtr<FullscreenExit> aExit)
+nsIDocument::RestorePreviousFullscreenState()
 {
   NS_ASSERTION(!FullscreenStackTop() || !FullscreenRoots::IsEmpty(),
     "Should have at least 1 fullscreen root when fullscreen!");
 
   if (!FullscreenStackTop() || !GetWindow() || FullscreenRoots::IsEmpty()) {
-    aExit->MayRejectPromise();
     return;
   }
 
@@ -11006,7 +10898,6 @@ nsIDocument::RestorePreviousFullscreenState(UniquePtr<FullscreenExit> aExit)
       lastDoc->mFullscreenStack.Length() == 1) {
     
     
-    PendingFullscreenChangeList::Add(std::move(aExit));
     AskWindowToExitFullscreen(this);
     return;
   }
@@ -11034,7 +10925,6 @@ nsIDocument::RestorePreviousFullscreenState(UniquePtr<FullscreenExit> aExit)
   for (Element* e : Reversed(exitElements)) {
     DispatchFullscreenChange(e->OwnerDoc(), e);
   }
-  aExit->MayResolvePromise();
 
   MOZ_ASSERT(newFullscreenDoc, "If we were going to exit from fullscreen on "
              "all documents in this doctree, we should've asked the window to "
@@ -11243,8 +11133,7 @@ nsresult nsIDocument::RemoteFrameFullscreenChanged(Element* aFrameElement)
 
 nsresult nsIDocument::RemoteFrameFullscreenReverted()
 {
-  UniquePtr<FullscreenExit> exit = FullscreenExit::CreateForRemote(this);
-  RestorePreviousFullscreenState(std::move(exit));
+  RestorePreviousFullscreenState();
   return NS_OK;
 }
 
@@ -11355,6 +11244,104 @@ nsIDocument::FullscreenElementReadyCheck(const FullscreenRequest& aRequest)
   return true;
 }
 
+
+
+
+
+
+class PendingFullscreenRequestList
+{
+public:
+  static void Add(UniquePtr<FullscreenRequest> aRequest)
+  {
+    sList.insertBack(aRequest.release());
+  }
+
+  static const FullscreenRequest* GetLast()
+  {
+    return sList.getLast();
+  }
+
+  enum IteratorOption
+  {
+    
+    
+    
+    eDocumentsWithSameRoot,
+    
+    
+    
+    eInclusiveDescendants
+  };
+
+  class Iterator
+  {
+  public:
+    explicit Iterator(nsIDocument* aDoc, IteratorOption aOption)
+      : mCurrent(PendingFullscreenRequestList::sList.getFirst())
+      , mRootShellForIteration(aDoc->GetDocShell())
+    {
+      if (mCurrent) {
+        if (mRootShellForIteration && aOption == eDocumentsWithSameRoot) {
+          mRootShellForIteration->
+            GetRootTreeItem(getter_AddRefs(mRootShellForIteration));
+        }
+        SkipToNextMatch();
+      }
+    }
+
+    UniquePtr<FullscreenRequest> TakeAndNext()
+    {
+      auto thisRequest = TakeAndNextInternal();
+      SkipToNextMatch();
+      return thisRequest;
+    }
+    bool AtEnd() const { return mCurrent == nullptr; }
+
+  private:
+    UniquePtr<FullscreenRequest> TakeAndNextInternal()
+    {
+      UniquePtr<FullscreenRequest> thisRequest(mCurrent);
+      mCurrent = mCurrent->removeAndGetNext();
+      return thisRequest;
+    }
+    void SkipToNextMatch()
+    {
+      while (mCurrent) {
+        nsCOMPtr<nsIDocShellTreeItem>
+          docShell = mCurrent->Document()->GetDocShell();
+        if (!docShell) {
+          
+          
+          UniquePtr<FullscreenRequest> request = TakeAndNextInternal();
+          request->MayRejectPromise();
+        } else {
+          while (docShell && docShell != mRootShellForIteration) {
+            docShell->GetParent(getter_AddRefs(docShell));
+          }
+          if (!docShell) {
+            
+            
+            mCurrent = mCurrent->getNext();
+          } else {
+            break;
+          }
+        }
+      }
+    }
+
+    FullscreenRequest* mCurrent;
+    nsCOMPtr<nsIDocShellTreeItem> mRootShellForIteration;
+  };
+
+private:
+  PendingFullscreenRequestList() = delete;
+
+  static LinkedList<FullscreenRequest> sList;
+};
+
+ LinkedList<FullscreenRequest> PendingFullscreenRequestList::sList;
+
 static nsCOMPtr<nsPIDOMWindowOuter>
 GetRootWindow(nsIDocument* aDoc)
 {
@@ -11386,8 +11373,8 @@ ShouldApplyFullscreenDirectly(nsIDocument* aDoc,
     
     
     
-    PendingFullscreenChangeList::Iterator<FullscreenRequest> iter(
-      aDoc, PendingFullscreenChangeList::eDocumentsWithSameRoot);
+    PendingFullscreenRequestList::Iterator
+      iter(aDoc, PendingFullscreenRequestList::eDocumentsWithSameRoot);
     if (!iter.AtEnd()) {
       return false;
     }
@@ -11430,7 +11417,7 @@ nsIDocument::RequestFullscreen(UniquePtr<FullscreenRequest> aRequest)
     return;
   }
 
-  PendingFullscreenChangeList::Add(std::move(aRequest));
+  PendingFullscreenRequestList::Add(std::move(aRequest));
   if (XRE_GetProcessType() == GeckoProcessType_Content) {
     
     
@@ -11447,8 +11434,8 @@ nsIDocument::RequestFullscreen(UniquePtr<FullscreenRequest> aRequest)
 nsIDocument::HandlePendingFullscreenRequests(nsIDocument* aDoc)
 {
   bool handled = false;
-  PendingFullscreenChangeList::Iterator<FullscreenRequest> iter(
-    aDoc, PendingFullscreenChangeList::eDocumentsWithSameRoot);
+  PendingFullscreenRequestList::Iterator iter(
+    aDoc, PendingFullscreenRequestList::eDocumentsWithSameRoot);
   while (!iter.AtEnd()) {
     UniquePtr<FullscreenRequest> request = iter.TakeAndNext();
     nsIDocument* doc = request->Document();
@@ -11462,8 +11449,8 @@ nsIDocument::HandlePendingFullscreenRequests(nsIDocument* aDoc)
 static void
 ClearPendingFullscreenRequests(nsIDocument* aDoc)
 {
-  PendingFullscreenChangeList::Iterator<FullscreenRequest> iter(
-    aDoc, PendingFullscreenChangeList::eInclusiveDescendants);
+  PendingFullscreenRequestList::Iterator iter(
+    aDoc, PendingFullscreenRequestList::eInclusiveDescendants);
   while (!iter.AtEnd()) {
     UniquePtr<FullscreenRequest> request = iter.TakeAndNext();
     request->MayRejectPromise();
