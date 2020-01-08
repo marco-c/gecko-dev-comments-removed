@@ -5,7 +5,6 @@
 from __future__ import absolute_import
 
 import os
-import shutil
 import socket
 
 from mozlog import get_proxy_logger
@@ -39,38 +38,11 @@ class Benchmark(object):
         else:
             self.bench_dir = os.path.join(self.bench_dir, 'tests', 'webkit', 'PerformanceTests')
 
-        
-        if self.config.get('run_local', False):
-            self.get_webkit_source()
-
         LOG.info("bench_dir contains:")
         LOG.info(os.listdir(self.bench_dir))
 
         
         self.start_http_server()
-
-    def get_webkit_source(self):
-        
-        
-        
-        dest = self.bench_dir
-        
-        src = os.path.join(os.environ['MOZ_DEVELOPER_REPO_DIR'], 'third_party',
-                           'webkit', 'PerformanceTests')
-
-        if os.path.exists(dest):
-            LOG.info("benchmark source already exists at: %s" % dest)
-            return
-        else:
-            
-            LOG.info("bench_dir to be used for benchmark source: %s" % self.bench_dir)
-            os.makedirs(os.path.dirname(self.bench_dir))
-
-        LOG.info("copying webkit benchmarks from %s to %s" % (src, dest))
-        try:
-            shutil.copytree(src, dest)
-        except Exception:
-            LOG.critical("error copying webkit benchmarks from %s to %s" % (src, dest))
 
     def start_http_server(self):
         self.write_server_headers()
