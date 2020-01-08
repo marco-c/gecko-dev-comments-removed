@@ -27,6 +27,7 @@
 #include "wasm/WasmInstance.h"
 
 #if defined(XP_WIN)
+# include <winternl.h>  
 # include "util/Windows.h"
 #elif defined(XP_DARWIN)
 # include <mach/exc.h>
@@ -491,9 +492,17 @@ HandleTrap(CONTEXT* context, JSContext* assertCx = nullptr)
 
 #if defined(XP_WIN)
 
+
+static const unsigned sThreadLocalArrayPointerIndex = 11;
+
 static LONG WINAPI
 WasmTrapHandler(LPEXCEPTION_POINTERS exception)
 {
+    
+    if (!NtCurrentTeb()->Reserved1[sThreadLocalArrayPointerIndex]) {
+        return EXCEPTION_CONTINUE_SEARCH;
+    }
+
     if (sAlreadyHandlingTrap.get()) {
         return EXCEPTION_CONTINUE_SEARCH;
     }
