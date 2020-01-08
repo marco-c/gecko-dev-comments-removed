@@ -135,7 +135,9 @@ static const char* kPreloadPermissions[] = {
   
   
   
-  "cookie"
+  "cookie",
+  "trackingprotection",
+  "trackingprotection-pb"
 };
 
 
