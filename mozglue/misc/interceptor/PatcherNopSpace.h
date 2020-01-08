@@ -152,8 +152,8 @@ public:
       return false;
     }
 
-    mPatchedFns.append(reinterpret_cast<void*>(readOnlyTargetFn.GetBaseAddress()));
-    return true;
+    return mPatchedFns.append(
+      reinterpret_cast<void*>(readOnlyTargetFn.GetBaseAddress()));
   }
 
   bool WriteHook(const ReadOnlyTargetFunction<MMPolicyT>& aFn,
@@ -169,7 +169,7 @@ public:
 
     
     const uint8_t nopOrBp[] = { 0x90, 0xCC };
-    if (!writableFn.VerifyValuesAreOneOf<uint8_t, 5>(nopOrBp)) {
+    if (!writableFn.template VerifyValuesAreOneOf<uint8_t, 5>(nopOrBp)) {
       return false;
     }
 
@@ -184,7 +184,8 @@ public:
 
     
     const uint16_t possibleEncodings[] = { 0xFF8B, 0xFF89 };
-    if (!writableFn.VerifyValuesAreOneOf<uint16_t, 1>(possibleEncodings, 5)) {
+    if (!writableFn.template VerifyValuesAreOneOf<uint16_t, 1>(
+            possibleEncodings, 5)) {
       return false;
     }
 
