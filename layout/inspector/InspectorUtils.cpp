@@ -206,6 +206,14 @@ bool InspectorUtils::IsIgnorableWhitespace(CharacterData& aDataNode) {
   }
 
   
+  for (auto* slot = aElement.GetAssignedSlot(); slot;
+       slot = slot->GetAssignedSlot()) {
+    if (auto* shadow = slot->GetContainingShadow()) {
+      maps.AppendElement(&shadow->ServoStyleRuleMap());
+    }
+  }
+
+  
   for (const RawServoStyleRule* rawRule : Reversed(rawRuleList)) {
     CSSStyleRule* rule = nullptr;
     for (ServoStyleRuleMap* map : maps) {
