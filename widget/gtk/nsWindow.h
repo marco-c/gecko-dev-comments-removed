@@ -491,7 +491,6 @@ private:
                                    gint* aRootX, gint* aRootY);
     void               ClearCachedResources();
     nsIWidgetListener* GetListener();
-    bool               IsComposited() const;
 
     void               UpdateClientOffsetForCSDWindow();
 
@@ -609,6 +608,9 @@ private:
     
     
     gchar*       mTransparencyBitmap;
+    
+    
+    bool         mHasAlphaVisual;
 
     
     void   InitDragEvent(mozilla::WidgetDragEvent& aEvent);
