@@ -170,7 +170,7 @@ xul|menulist {
   min-height: 32px;
   
   color: inherit !important;
-  border: none;
+  border: 1px solid transparent; 
   border-radius: 2px;
   background-color: var(--in-content-button-background);
   font-weight: 400;
@@ -198,10 +198,13 @@ html|input[type="color"]::-moz-focus-inner {
 html|select:-moz-focusring,
 html|input[type="color"]:-moz-focusring,
 xul|menulist:-moz-focusring {
-  outline: none;
-  box-shadow: 0 0 0 1px var(--in-content-border-active) inset,
-    0 0 0 1px var(--in-content-border-active),
-    0 0 0 4px var(--in-content-border-active-shadow);
+  outline: 2px solid var(--in-content-border-active);
+  
+  outline-offset: -1px;
+  
+
+  -moz-outline-radius: 3px;
+  box-shadow: 0 0 0 4px var(--in-content-border-active-shadow);
 }
 
 html|select:not([size]):not([multiple]) {
