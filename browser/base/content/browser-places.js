@@ -490,27 +490,21 @@ var PlacesCommandHook = {
 
 
   bookmarkPages(URIList) {
-    if (URIList.length > 1) {
-      PlacesUIUtils.showBookmarkDialog({ action: "add",
-                                         type: "folder",
-                                         URIList,
-                                       }, window);
-    }
-  },
-
-  
-
-
-  updateBookmarkAllTabsCommand:
-  function PCH_updateBookmarkAllTabsCommand() {
-    
-    if (window.location.href != AppConstants.BROWSER_CHROME_URL)
+    if (!URIList.length) {
       return;
+    }
 
-    
-    
-    goSetCommandEnabled("Browser:BookmarkAllTabs",
-                        this.uniqueCurrentPages.length >= 2);
+    let bookmarkDialogInfo = {action: "add"};
+    if (URIList.length > 1) {
+      bookmarkDialogInfo.type = "folder";
+      bookmarkDialogInfo.URIList = URIList;
+    } else {
+      bookmarkDialogInfo.type = "bookmark";
+      bookmarkDialogInfo.title = URIList[0].title;
+      bookmarkDialogInfo.uri = URIList[0].uri;
+    }
+
+    PlacesUIUtils.showBookmarkDialog(bookmarkDialogInfo, window);
   },
 
   
@@ -1569,7 +1563,6 @@ var BookmarkingUI = {
       return;
 
     this.updateBookmarkPageMenuItem();
-    PlacesCommandHook.updateBookmarkAllTabsCommand();
     this._initMobileBookmarks(document.getElementById("menu_mobileBookmarks"));
   },
 
