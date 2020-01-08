@@ -599,18 +599,19 @@ class NameResolver
             break;
 
           
-          case ParseNodeKind::Conditional:
-            MOZ_ASSERT(cur->isArity(PN_TERNARY));
-            if (!resolve(cur->pn_kid1, prefix)) {
+          case ParseNodeKind::Conditional: {
+            TernaryNode* condNode = &cur->as<TernaryNode>();
+            if (!resolve(condNode->kid1(), prefix)) {
                 return false;
             }
-            if (!resolve(cur->pn_kid2, prefix)) {
+            if (!resolve(condNode->kid2(), prefix)) {
                 return false;
             }
-            if (!resolve(cur->pn_kid3, prefix)) {
+            if (!resolve(condNode->kid3(), prefix)) {
                 return false;
             }
             break;
+          }
 
           
           
@@ -619,88 +620,95 @@ class NameResolver
           
           
           case ParseNodeKind::ForIn:
-          case ParseNodeKind::ForOf:
-            MOZ_ASSERT(cur->isArity(PN_TERNARY));
-            if (!resolve(cur->pn_kid1, prefix)) {
+          case ParseNodeKind::ForOf: {
+            TernaryNode* forHead = &cur->as<TernaryNode>();
+            if (!resolve(forHead->kid1(), prefix)) {
                 return false;
             }
-            MOZ_ASSERT(!cur->pn_kid2);
-            if (!resolve(cur->pn_kid3, prefix)) {
+            MOZ_ASSERT(!forHead->kid2());
+            if (!resolve(forHead->kid3(), prefix)) {
                 return false;
             }
             break;
+          }
 
           
           
-          case ParseNodeKind::ForHead:
-            MOZ_ASSERT(cur->isArity(PN_TERNARY));
-            if (ParseNode* init = cur->pn_kid1) {
+          case ParseNodeKind::ForHead: {
+            TernaryNode* forHead = &cur->as<TernaryNode>();
+            if (ParseNode* init = forHead->kid1()) {
                 if (!resolve(init, prefix)) {
                     return false;
                 }
             }
-            if (ParseNode* cond = cur->pn_kid2) {
+            if (ParseNode* cond = forHead->kid2()) {
                 if (!resolve(cond, prefix)) {
                     return false;
                 }
             }
-            if (ParseNode* step = cur->pn_kid3) {
-                if (!resolve(step, prefix)) {
+            if (ParseNode* update = forHead->kid3()) {
+                if (!resolve(update, prefix)) {
                     return false;
                 }
             }
             break;
+          }
 
           
           
           
-          case ParseNodeKind::Class:
-            MOZ_ASSERT(cur->isArity(PN_TERNARY));
-            MOZ_ASSERT_IF(cur->pn_kid1, cur->pn_kid1->isKind(ParseNodeKind::ClassNames));
-            MOZ_ASSERT_IF(cur->pn_kid1, cur->pn_kid1->isArity(PN_BINARY));
-            MOZ_ASSERT_IF(cur->pn_kid1 && cur->pn_kid1->pn_left,
-                          cur->pn_kid1->pn_left->isKind(ParseNodeKind::Name));
-            MOZ_ASSERT_IF(cur->pn_kid1 && cur->pn_kid1->pn_left,
-                          !cur->pn_kid1->pn_left->expr());
-            MOZ_ASSERT_IF(cur->pn_kid1, cur->pn_kid1->pn_right->isKind(ParseNodeKind::Name));
-            MOZ_ASSERT_IF(cur->pn_kid1, !cur->pn_kid1->pn_right->expr());
-            if (cur->pn_kid2) {
-                if (!resolve(cur->pn_kid2, prefix)) {
+          case ParseNodeKind::Class: {
+            ClassNode* classNode = &cur->as<ClassNode>();
+#ifdef DEBUG
+            if (classNode->names()) {
+                ParseNode* name = classNode->names();
+                MOZ_ASSERT(name->isKind(ParseNodeKind::ClassNames));
+                MOZ_ASSERT(name->isArity(PN_BINARY));
+                MOZ_ASSERT_IF(name->pn_left, name->pn_left->isKind(ParseNodeKind::Name));
+                MOZ_ASSERT_IF(name->pn_left, !name->pn_left->expr());
+                MOZ_ASSERT(name->pn_right->isKind(ParseNodeKind::Name));
+                MOZ_ASSERT(!name->pn_right->expr());
+            }
+#endif
+            if (ParseNode* heritage = classNode->heritage()) {
+                if (!resolve(heritage, prefix)) {
                     return false;
                 }
             }
-            if (!resolve(cur->pn_kid3, prefix)) {
+            if (!resolve(classNode->methodList(), prefix)) {
                 return false;
             }
             break;
+          }
 
           
           
-          case ParseNodeKind::If:
-            MOZ_ASSERT(cur->isArity(PN_TERNARY));
-            if (!resolve(cur->pn_kid1, prefix)) {
+          case ParseNodeKind::If: {
+            TernaryNode* ifNode = &cur->as<TernaryNode>();
+            if (!resolve(ifNode->kid1(), prefix)) {
                 return false;
             }
-            if (!resolve(cur->pn_kid2, prefix)) {
+            if (!resolve(ifNode->kid2(), prefix)) {
                 return false;
             }
-            if (cur->pn_kid3) {
-                if (!resolve(cur->pn_kid3, prefix)) {
+            if (ParseNode* alternative = ifNode->kid3()) {
+                if (!resolve(alternative, prefix)) {
                     return false;
                 }
             }
             break;
+          }
 
           
           
           
-          case ParseNodeKind::Try:
-            MOZ_ASSERT(cur->isArity(PN_TERNARY));
-            if (!resolve(cur->pn_kid1, prefix)) {
+          case ParseNodeKind::Try: {
+            TernaryNode* tryNode = &cur->as<TernaryNode>();
+            if (!resolve(tryNode->kid1(), prefix)) {
                 return false;
             }
-            MOZ_ASSERT(cur->pn_kid2 || cur->pn_kid3);
-            if (ParseNode* catchScope = cur->pn_kid2) {
+            MOZ_ASSERT(tryNode->kid2() || tryNode->kid3());
+            if (ParseNode* catchScope = tryNode->kid2()) {
                 MOZ_ASSERT(catchScope->isKind(ParseNodeKind::LexicalScope));
                 MOZ_ASSERT(catchScope->scopeBody()->isKind(ParseNodeKind::Catch));
                 MOZ_ASSERT(catchScope->scopeBody()->isArity(PN_BINARY));
@@ -708,12 +716,13 @@ class NameResolver
                     return false;
                 }
             }
-            if (ParseNode* finallyBlock = cur->pn_kid3) {
+            if (ParseNode* finallyBlock = tryNode->kid3()) {
                 if (!resolve(finallyBlock, prefix)) {
                     return false;
                 }
             }
             break;
+          }
 
           
           

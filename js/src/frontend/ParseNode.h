@@ -445,6 +445,32 @@ IsTypeofKind(ParseNodeKind kind)
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 enum ParseNodeArity
 {
     PN_NULLARY,                         
@@ -459,12 +485,15 @@ enum ParseNodeArity
 
 #define FOR_EACH_PARSENODE_SUBCLASS(macro) \
     macro(ListNode, ListNodeType, asList) \
-    macro(CallSiteNode, CallSiteNodeType, asCallSite)
+    macro(CallSiteNode, CallSiteNodeType, asCallSite) \
+    \
+    macro(TernaryNode, TernaryNodeType, asTernary) \
+    macro(ClassNode, ClassNodeType, asClass) \
+    macro(ConditionalExpression, ConditionalExpressionType, asConditionalExpression)
 
 class LoopControlStatement;
 class BreakStatement;
 class ContinueStatement;
-class ConditionalExpression;
 class PropertyAccess;
 
 #define DECLARE_CLASS(typeName, longTypeName, asMethodName) \
@@ -569,6 +598,8 @@ class ParseNode
             uint32_t    xflags;         
         } list;
         struct {                        
+          private:
+            friend class TernaryNode;
             ParseNode*  kid1;           
             ParseNode*  kid2;           
             ParseNode*  kid3;           
@@ -613,9 +644,6 @@ class ParseNode
 #define pn_objbox       pn_u.name.objbox
 #define pn_funbox       pn_u.name.funbox
 #define pn_body         pn_u.name.expr
-#define pn_kid1         pn_u.ternary.kid1
-#define pn_kid2         pn_u.ternary.kid2
-#define pn_kid3         pn_u.ternary.kid3
 #define pn_left         pn_u.binary.left
 #define pn_right        pn_u.binary.right
 #define pn_pval         pn_u.binary.pval
@@ -818,30 +846,56 @@ struct BinaryNode : public ParseNode
 #endif
 };
 
-struct TernaryNode : public ParseNode
+class TernaryNode : public ParseNode
 {
+  public:
     TernaryNode(ParseNodeKind kind, ParseNode* kid1, ParseNode* kid2, ParseNode* kid3)
-      : ParseNode(kind, JSOP_NOP, PN_TERNARY,
-                  TokenPos((kid1 ? kid1 : kid2 ? kid2 : kid3)->pn_pos.begin,
-                           (kid3 ? kid3 : kid2 ? kid2 : kid1)->pn_pos.end))
-    {
-        pn_kid1 = kid1;
-        pn_kid2 = kid2;
-        pn_kid3 = kid3;
-    }
+      : TernaryNode(kind, kid1, kid2, kid3,
+                    TokenPos((kid1 ? kid1 : kid2 ? kid2 : kid3)->pn_pos.begin,
+                             (kid3 ? kid3 : kid2 ? kid2 : kid1)->pn_pos.end))
+    {}
 
     TernaryNode(ParseNodeKind kind, ParseNode* kid1, ParseNode* kid2, ParseNode* kid3,
                 const TokenPos& pos)
       : ParseNode(kind, JSOP_NOP, PN_TERNARY, pos)
     {
-        pn_kid1 = kid1;
-        pn_kid2 = kid2;
-        pn_kid3 = kid3;
+        pn_u.ternary.kid1 = kid1;
+        pn_u.ternary.kid2 = kid2;
+        pn_u.ternary.kid3 = kid3;
+    }
+
+    static bool test(const ParseNode& node) {
+        return node.isArity(PN_TERNARY);
     }
 
 #ifdef DEBUG
     void dump(GenericPrinter& out, int indent);
 #endif
+
+    ParseNode* kid1() const {
+        return pn_u.ternary.kid1;
+    }
+
+    ParseNode* kid2() const {
+        return pn_u.ternary.kid2;
+    }
+
+    ParseNode* kid3() const {
+        return pn_u.ternary.kid3;
+    }
+
+    
+    ParseNode** unsafeKid1Reference() {
+        return &pn_u.ternary.kid1;
+    }
+
+    ParseNode** unsafeKid2Reference() {
+        return &pn_u.ternary.kid2;
+    }
+
+    ParseNode** unsafeKid3Reference() {
+        return &pn_u.ternary.kid3;
+    }
 };
 
 class ListNode : public ParseNode
@@ -1337,36 +1391,33 @@ class DebuggerStatement : public ParseNode
     { }
 };
 
-class ConditionalExpression : public ParseNode
+class ConditionalExpression : public TernaryNode
 {
   public:
     ConditionalExpression(ParseNode* condition, ParseNode* thenExpr, ParseNode* elseExpr)
-      : ParseNode(ParseNodeKind::Conditional, JSOP_NOP, PN_TERNARY,
-                  TokenPos(condition->pn_pos.begin, elseExpr->pn_pos.end))
+      : TernaryNode(ParseNodeKind::Conditional, condition, thenExpr, elseExpr,
+                    TokenPos(condition->pn_pos.begin, elseExpr->pn_pos.end))
     {
         MOZ_ASSERT(condition);
         MOZ_ASSERT(thenExpr);
         MOZ_ASSERT(elseExpr);
-        pn_u.ternary.kid1 = condition;
-        pn_u.ternary.kid2 = thenExpr;
-        pn_u.ternary.kid3 = elseExpr;
     }
 
     ParseNode& condition() const {
-        return *pn_u.ternary.kid1;
+        return *kid1();
     }
 
     ParseNode& thenExpression() const {
-        return *pn_u.ternary.kid2;
+        return *kid2();
     }
 
     ParseNode& elseExpression() const {
-        return *pn_u.ternary.kid3;
+        return *kid3();
     }
 
     static bool test(const ParseNode& node) {
         bool match = node.isKind(ParseNodeKind::Conditional);
-        MOZ_ASSERT_IF(match, node.isArity(PN_TERNARY));
+        MOZ_ASSERT_IF(match, node.is<TernaryNode>());
         MOZ_ASSERT_IF(match, node.isOp(JSOP_NOP));
         return match;
     }
@@ -1604,7 +1655,9 @@ struct ClassNames : public BinaryNode {
     }
 };
 
-struct ClassNode : public TernaryNode {
+class ClassNode : public TernaryNode
+{
+  public:
     ClassNode(ParseNode* names, ParseNode* heritage, ParseNode* methodsOrBlock,
               const TokenPos& pos)
       : TernaryNode(ParseNodeKind::Class, names, heritage, methodsOrBlock, pos)
@@ -1616,29 +1669,31 @@ struct ClassNode : public TernaryNode {
 
     static bool test(const ParseNode& node) {
         bool match = node.isKind(ParseNodeKind::Class);
-        MOZ_ASSERT_IF(match, node.isArity(PN_TERNARY));
+        MOZ_ASSERT_IF(match, node.is<TernaryNode>());
         return match;
     }
 
     ClassNames* names() const {
-        return pn_kid1 ? &pn_kid1->as<ClassNames>() : nullptr;
+        return kid1() ? &kid1()->as<ClassNames>() : nullptr;
     }
     ParseNode* heritage() const {
-        return pn_kid2;
+        return kid2();
     }
     ListNode* methodList() const {
-        if (pn_kid3->isKind(ParseNodeKind::ClassMethodList)) {
-            return &pn_kid3->as<ListNode>();
+        ParseNode* methodsOrBlock = kid3();
+        if (methodsOrBlock->isKind(ParseNodeKind::ClassMethodList)) {
+            return &methodsOrBlock->as<ListNode>();
         }
 
-        MOZ_ASSERT(pn_kid3->is<LexicalScopeNode>());
-        ListNode* list = &pn_kid3->scopeBody()->as<ListNode>();
+        MOZ_ASSERT(methodsOrBlock->is<LexicalScopeNode>());
+        ListNode* list = &methodsOrBlock->scopeBody()->as<ListNode>();
         MOZ_ASSERT(list->isKind(ParseNodeKind::ClassMethodList));
         return list;
     }
     Handle<LexicalScope::Data*> scopeBindings() const {
-        MOZ_ASSERT(pn_kid3->is<LexicalScopeNode>());
-        return pn_kid3->scopeBindings();
+        ParseNode* scope = kid3();
+        MOZ_ASSERT(scope->is<LexicalScopeNode>());
+        return scope->scopeBindings();
     }
 };
 
