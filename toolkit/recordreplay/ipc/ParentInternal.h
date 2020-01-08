@@ -78,10 +78,6 @@ void MaybeSwitchToReplayingChild();
 
 
 
-Maybe<double> GetRecordingPosition();
-
-
-
 
 
 extern void* gGraphicsMemory;
