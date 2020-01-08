@@ -274,7 +274,9 @@ var gMenuBuilder = {
       element.setAttribute("disabled", "true");
     }
 
-    element.addEventListener("command", event => { 
+    let button;
+
+    element.addEventListener("command", event => {
       if (event.target !== event.currentTarget) {
         return;
       }
@@ -304,6 +306,8 @@ var gMenuBuilder = {
         info.modifiers.push("MacCtrl");
       }
 
+      info.button = button;
+
       
       
       let actionFor = {
@@ -317,6 +321,18 @@ var gMenuBuilder = {
       }
 
       item.extension.emit("webext-menu-menuitem-click", info, contextData.tab);
+    }, {once: true});
+
+    element.addEventListener("click", event => { 
+      if (event.target !== event.currentTarget) {
+        return;
+      }
+
+      button = event.button;
+      if (event.button) {
+        element.doCommand();
+        contextData.menu.hidePopup();
+      }
     });
 
     
