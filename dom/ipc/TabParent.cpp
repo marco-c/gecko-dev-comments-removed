@@ -358,11 +358,6 @@ TabParent::DestroyInternal()
   
   Unused << SendDestroy();
 
-  if (mRenderFrame) {
-    RemoveTabParentFromTable(mRenderFrame->GetLayersId());
-    mRenderFrame->Destroy();
-  }
-
 #ifdef XP_WIN
   
   
@@ -433,7 +428,11 @@ void
 TabParent::ActorDestroy(ActorDestroyReason why)
 {
   if (mRenderFrame) {
-    mRenderFrame->ActorDestroy();
+    
+    
+    
+    RemoveTabParentFromTable(mRenderFrame->GetLayersId());
+    mRenderFrame->Destroy();
     mRenderFrame.reset(nullptr);
   }
 
@@ -2606,13 +2605,6 @@ TabParent::DeallocPColorPickerParent(PColorPickerParent* actor)
 {
   delete actor;
   return true;
-}
-
-mozilla::ipc::IPCResult
-TabParent::RecvDestroyPRenderFrame()
-{
-  mRenderFrame.reset(nullptr);
-  return IPC_OK();
 }
 
 already_AddRefed<nsFrameLoader>

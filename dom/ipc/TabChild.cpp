@@ -1023,17 +1023,11 @@ TabChild::DestroyWindow()
     if (baseWindow)
         baseWindow->Destroy();
 
-    
-    
-    
     if (mPuppetWidget) {
         mPuppetWidget->Destroy();
     }
 
-    if (IPCOpen()) {
-      SendDestroyPRenderFrame();
-      mLayersConnected = Nothing();
-    }
+    mLayersConnected = Nothing();
 
     if (mLayersId.IsValid()) {
       StaticMutexAutoLock lock(sTabChildrenMutex);
