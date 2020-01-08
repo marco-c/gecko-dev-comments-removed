@@ -4358,7 +4358,7 @@ protected:
   nsRect mBackgroundRect;
   nsRect mBounds;
   nsITheme::Transparency mThemeTransparency;
-  uint8_t mAppearance;
+  mozilla::StyleAppearance mAppearance;
 };
 
 class nsDisplayTableThemedBackground : public nsDisplayThemedBackground {

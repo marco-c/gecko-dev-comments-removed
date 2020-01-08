@@ -2073,7 +2073,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
                                            
                                            
   uint8_t mContain;             
-  uint8_t mAppearance;          
+  mozilla::StyleAppearance mAppearance;
   uint8_t mPosition;            
 
   mozilla::StyleFloat mFloat;
@@ -2222,6 +2222,11 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
   nsStyleCoord mShapeMargin;
 
   mozilla::StyleShapeSource mShapeOutside;
+
+  bool HasAppearance() const
+  {
+    return mAppearance != mozilla::StyleAppearance::None;
+  }
 
   bool IsBlockInsideStyle() const {
     return mozilla::StyleDisplay::Block == mDisplay ||

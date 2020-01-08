@@ -18,7 +18,7 @@
 #include "nsLayoutUtils.h"
 #include "nsStyleConsts.h"
 #include "nsIWidget.h"
-#include "nsThemeConstants.h"  
+#include "nsStyleConsts.h"  
 
 #include "mozilla/dom/Animation.h"
 #include "mozilla/dom/AnimationEffectBinding.h" 

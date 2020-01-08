@@ -62,7 +62,7 @@
 #include "mozilla/EventStateManager.h"
 #include "nsDisplayList.h"
 #include "mozilla/Preferences.h"
-#include "nsThemeConstants.h"
+#include "nsStyleConsts.h"
 #include "nsLayoutUtils.h"
 #include "nsSliderFrame.h"
 #include <algorithm>
@@ -1160,7 +1160,7 @@ nsBoxFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
     
     
     const nsStyleDisplay* styles = StyleDisplay();
-    if (styles && styles->mAppearance == NS_THEME_WIN_EXCLUDE_GLASS) {
+    if (styles && styles->mAppearance == StyleAppearance::MozWinExcludeGlass) {
       aBuilder->AddWindowExcludeGlassRegion(
           this,
           nsRect(aBuilder->ToReferenceFrame(this), GetSize()));

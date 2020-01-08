@@ -25,6 +25,7 @@ class nsIWidget;
 
 namespace mozilla {
 class ComputedStyle;
+enum class StyleAppearance : uint8_t;
 namespace layers {
 class StackingContextHelper;
 class WebRenderLayerManager;
@@ -58,6 +59,7 @@ class IpcResourceUpdateQueue;
 class nsITheme: public nsISupports {
 protected:
   using LayoutDeviceIntMargin = mozilla::LayoutDeviceIntMargin;
+  using WidgetType = mozilla::StyleAppearance;
 
 public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_ITHEME_IID)
@@ -72,7 +74,7 @@ public:
 
   NS_IMETHOD DrawWidgetBackground(gfxContext* aContext,
                                   nsIFrame* aFrame,
-                                  uint8_t aWidgetType,
+                                  WidgetType aWidgetType,
                                   const nsRect& aRect,
                                   const nsRect& aDirtyRect) = 0;
 
@@ -81,7 +83,7 @@ public:
 
 
   virtual nscolor GetWidgetAutoColor(mozilla::ComputedStyle* aStyle,
-                                     uint8_t aWidgetType)
+                                     WidgetType aWidgetType)
   { return NS_RGB(0, 0, 0); }
 
   
@@ -95,7 +97,7 @@ public:
                                                 const mozilla::layers::StackingContextHelper& aSc,
                                                 mozilla::layers::WebRenderLayerManager* aManager,
                                                 nsIFrame* aFrame,
-                                                uint8_t aWidgetType,
+                                                WidgetType aWidgetType,
                                                 const nsRect& aRect) { return false; }
 
   
@@ -103,7 +105,7 @@ public:
 
   virtual MOZ_MUST_USE LayoutDeviceIntMargin GetWidgetBorder(nsDeviceContext* aContext,
                                                              nsIFrame* aFrame,
-                                                             uint8_t aWidgetType) = 0;
+                                                             WidgetType aWidgetType) = 0;
 
   
 
@@ -115,9 +117,9 @@ public:
 
 
   virtual bool GetWidgetPadding(nsDeviceContext* aContext,
-                                  nsIFrame* aFrame,
-                                  uint8_t aWidgetType,
-                                  LayoutDeviceIntMargin* aResult) = 0;
+                                nsIFrame* aFrame,
+                                WidgetType aWidgetType,
+                                LayoutDeviceIntMargin* aResult) = 0;
 
   
 
@@ -134,9 +136,9 @@ public:
 
 
   virtual bool GetWidgetOverflow(nsDeviceContext* aContext,
-                                   nsIFrame* aFrame,
-                                   uint8_t aWidgetType,
-                                    nsRect* aOverflowRect)
+                                 nsIFrame* aFrame,
+                                 WidgetType aWidgetType,
+                                  nsRect* aOverflowRect)
   { return false; }
 
   
@@ -147,7 +149,7 @@ public:
 
   NS_IMETHOD GetMinimumWidgetSize(nsPresContext* aPresContext,
                                   nsIFrame* aFrame,
-                                  uint8_t aWidgetType,
+                                  WidgetType aWidgetType,
                                   mozilla::LayoutDeviceIntSize* aResult,
                                   bool* aIsOverridable)=0;
 
@@ -161,7 +163,7 @@ public:
   
 
 
-  virtual Transparency GetWidgetTransparency(nsIFrame* aFrame, uint8_t aWidgetType)
+  virtual Transparency GetWidgetTransparency(nsIFrame* aFrame, WidgetType aWidgetType)
   { return eUnknownTransparency; }
 
   
@@ -169,17 +171,16 @@ public:
 
 
 
-  NS_IMETHOD WidgetStateChanged(nsIFrame* aFrame, uint8_t aWidgetType, 
+  NS_IMETHOD WidgetStateChanged(nsIFrame* aFrame, WidgetType aWidgetType,
                                 nsAtom* aAttribute, bool* aShouldRepaint,
                                 const nsAttrValue* aOldValue)=0;
 
   NS_IMETHOD ThemeChanged()=0;
 
-  virtual bool WidgetAppearanceDependsOnWindowFocus(uint8_t aWidgetType)
+  virtual bool WidgetAppearanceDependsOnWindowFocus(WidgetType aWidgetType)
   { return false; }
 
-  virtual bool NeedToClearBackgroundBehindWidget(nsIFrame* aFrame,
-                                                 uint8_t aWidgetType)
+  virtual bool NeedToClearBackgroundBehindWidget(nsIFrame* aFrame, WidgetType aWidgetType)
   { return false; }
 
   
@@ -206,27 +207,27 @@ public:
 
 
   virtual ThemeGeometryType ThemeGeometryTypeForWidget(nsIFrame* aFrame,
-                                                       uint8_t aWidgetType)
+                                                       WidgetType aWidgetType)
   { return eThemeGeometryTypeUnknown; }
 
   
 
 
   virtual bool ThemeSupportsWidget(nsPresContext* aPresContext,
-                                     nsIFrame* aFrame,
-                                     uint8_t aWidgetType)=0;
+                                   nsIFrame* aFrame,
+                                   WidgetType aWidgetType) = 0;
 
-  virtual bool WidgetIsContainer(uint8_t aWidgetType)=0;
+  virtual bool WidgetIsContainer(WidgetType aWidgetType) = 0;
 
   
 
 
-  virtual bool ThemeDrawsFocusForWidget(uint8_t aWidgetType)=0;
+  virtual bool ThemeDrawsFocusForWidget(WidgetType aWidgetType) = 0;
   
   
 
 
-  virtual bool ThemeNeedsComboboxDropmarker()=0;
+  virtual bool ThemeNeedsComboboxDropmarker() = 0;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsITheme, NS_ITHEME_IID)

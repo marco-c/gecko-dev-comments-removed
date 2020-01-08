@@ -14,7 +14,7 @@
 #include "nsString.h"
 #include "nsNameSpaceManager.h"
 #include "nsIDOMXULMenuListElement.h"
-#include "nsThemeConstants.h"
+#include "nsStyleConsts.h"
 #include "nsIComponentManager.h"
 #include "nsPIDOMWindow.h"
 #include "nsProgressFrame.h"
@@ -51,14 +51,14 @@ nsNativeTheme::GetPresShell(nsIFrame* aFrame)
 }
 
 EventStates
-nsNativeTheme::GetContentState(nsIFrame* aFrame, uint8_t aWidgetType)
+nsNativeTheme::GetContentState(nsIFrame* aFrame, StyleAppearance aWidgetType)
 {
   if (!aFrame)
     return EventStates();
 
-  bool isXULCheckboxRadio = 
-    (aWidgetType == NS_THEME_CHECKBOX ||
-     aWidgetType == NS_THEME_RADIO) &&
+  bool isXULCheckboxRadio =
+    (aWidgetType == StyleAppearance::Checkbox ||
+     aWidgetType == StyleAppearance::Radio) &&
     aFrame->GetContent()->IsXULElement();
   if (isXULCheckboxRadio)
     aFrame = aFrame->GetParent();
@@ -77,7 +77,7 @@ nsNativeTheme::GetContentState(nsIFrame* aFrame, uint8_t aWidgetType)
 
     
     
-    if (aWidgetType == NS_THEME_NUMBER_INPUT &&
+    if (aWidgetType == StyleAppearance::NumberInput &&
         frameContent->IsHTMLElement(nsGkAtoms::input)) {
       nsNumberControlFrame *numberControlFrame = do_QueryFrame(aFrame);
       if (numberControlFrame && numberControlFrame->IsFocused()) {
@@ -94,7 +94,7 @@ nsNativeTheme::GetContentState(nsIFrame* aFrame, uint8_t aWidgetType)
     }
   }
   
-  if (isXULCheckboxRadio && aWidgetType == NS_THEME_RADIO) {
+  if (isXULCheckboxRadio && aWidgetType == StyleAppearance::Radio) {
     if (IsFocused(aFrame))
       flags |= NS_EVENT_STATE_FOCUS;
   }
@@ -104,17 +104,17 @@ nsNativeTheme::GetContentState(nsIFrame* aFrame, uint8_t aWidgetType)
   
 #if defined(XP_MACOSX)
   
-  if (aWidgetType == NS_THEME_NUMBER_INPUT ||
-      aWidgetType == NS_THEME_TEXTFIELD ||
-      aWidgetType == NS_THEME_TEXTFIELD_MULTILINE ||
-      aWidgetType == NS_THEME_SEARCHFIELD ||
-      aWidgetType == NS_THEME_LISTBOX) {
+  if (aWidgetType == StyleAppearance::NumberInput ||
+      aWidgetType == StyleAppearance::Textfield ||
+      aWidgetType == StyleAppearance::TextfieldMultiline ||
+      aWidgetType == StyleAppearance::Searchfield ||
+      aWidgetType == StyleAppearance::Listbox) {
     return flags;
   }
 #endif
 #if defined(XP_WIN)
   
-  if (aWidgetType == NS_THEME_BUTTON)
+  if (aWidgetType == StyleAppearance::Button)
     return flags;
 #endif    
 #if defined(XP_MACOSX) || defined(XP_WIN)
@@ -236,7 +236,7 @@ nsNativeTheme::IsButtonTypeMenu(nsIFrame* aFrame)
 bool
 nsNativeTheme::IsPressedButton(nsIFrame* aFrame)
 {
-  EventStates eventState = GetContentState(aFrame, NS_THEME_TOOLBARBUTTON);
+  EventStates eventState = GetContentState(aFrame, StyleAppearance::Toolbarbutton);
   if (IsDisabled(aFrame, eventState))
     return false;
 
@@ -270,7 +270,7 @@ nsNativeTheme::GetIndeterminate(nsIFrame* aFrame)
 
 bool
 nsNativeTheme::IsWidgetStyled(nsPresContext* aPresContext, nsIFrame* aFrame,
-                              uint8_t aWidgetType)
+                              StyleAppearance aWidgetType)
 {
   
   if (!aFrame)
@@ -281,7 +281,7 @@ nsNativeTheme::IsWidgetStyled(nsPresContext* aPresContext, nsIFrame* aFrame,
   
   
   
-  if (aWidgetType == NS_THEME_RESIZER) {
+  if (aWidgetType == StyleAppearance::Resizer) {
     nsIFrame* parentFrame = aFrame->GetParent();
     if (parentFrame && parentFrame->IsScrollFrame()) {
       
@@ -298,9 +298,9 @@ nsNativeTheme::IsWidgetStyled(nsPresContext* aPresContext, nsIFrame* aFrame,
 
 
 
-  if (aWidgetType == NS_THEME_PROGRESSCHUNK ||
-      aWidgetType == NS_THEME_PROGRESSBAR) {
-    nsProgressFrame* progressFrame = do_QueryFrame(aWidgetType == NS_THEME_PROGRESSCHUNK
+  if (aWidgetType == StyleAppearance::Progresschunk ||
+      aWidgetType == StyleAppearance::Progressbar) {
+    nsProgressFrame* progressFrame = do_QueryFrame(aWidgetType == StyleAppearance::Progresschunk
                                        ? aFrame->GetParent() : aFrame);
     if (progressFrame) {
       return !progressFrame->ShouldUseNativeStyle();
@@ -311,9 +311,9 @@ nsNativeTheme::IsWidgetStyled(nsPresContext* aPresContext, nsIFrame* aFrame,
 
 
 
-  if (aWidgetType == NS_THEME_METERCHUNK ||
-      aWidgetType == NS_THEME_METERBAR) {
-    nsMeterFrame* meterFrame = do_QueryFrame(aWidgetType == NS_THEME_METERCHUNK
+  if (aWidgetType == StyleAppearance::Meterchunk ||
+      aWidgetType == StyleAppearance::Meterbar) {
+    nsMeterFrame* meterFrame = do_QueryFrame(aWidgetType == StyleAppearance::Meterchunk
                                        ? aFrame->GetParent() : aFrame);
     if (meterFrame) {
       return !meterFrame->ShouldUseNativeStyle();
@@ -325,18 +325,18 @@ nsNativeTheme::IsWidgetStyled(nsPresContext* aPresContext, nsIFrame* aFrame,
 
 
 
-  if (aWidgetType == NS_THEME_RANGE ||
-      aWidgetType == NS_THEME_RANGE_THUMB) {
+  if (aWidgetType == StyleAppearance::Range ||
+      aWidgetType == StyleAppearance::RangeThumb) {
     nsRangeFrame* rangeFrame =
-      do_QueryFrame(aWidgetType == NS_THEME_RANGE_THUMB
+      do_QueryFrame(aWidgetType == StyleAppearance::RangeThumb
                       ? aFrame->GetParent() : aFrame);
     if (rangeFrame) {
       return !rangeFrame->ShouldUseNativeStyle();
     }
   }
 
-  if (aWidgetType == NS_THEME_SPINNER_UPBUTTON ||
-      aWidgetType == NS_THEME_SPINNER_DOWNBUTTON) {
+  if (aWidgetType == StyleAppearance::SpinnerUpbutton ||
+      aWidgetType == StyleAppearance::SpinnerDownbutton) {
     nsNumberControlFrame* numberControlFrame =
       nsNumberControlFrame::GetNumberControlFrameForSpinButton(aFrame);
     if (numberControlFrame) {
@@ -344,12 +344,12 @@ nsNativeTheme::IsWidgetStyled(nsPresContext* aPresContext, nsIFrame* aFrame,
     }
   }
 
-  return (aWidgetType == NS_THEME_NUMBER_INPUT ||
-          aWidgetType == NS_THEME_BUTTON ||
-          aWidgetType == NS_THEME_TEXTFIELD ||
-          aWidgetType == NS_THEME_TEXTFIELD_MULTILINE ||
-          aWidgetType == NS_THEME_LISTBOX ||
-          aWidgetType == NS_THEME_MENULIST) &&
+  return (aWidgetType == StyleAppearance::NumberInput ||
+          aWidgetType == StyleAppearance::Button ||
+          aWidgetType == StyleAppearance::Textfield ||
+          aWidgetType == StyleAppearance::TextfieldMultiline ||
+          aWidgetType == StyleAppearance::Listbox ||
+          aWidgetType == StyleAppearance::Menulist) &&
          aFrame->GetContent()->IsHTMLElement() &&
          aPresContext->HasAuthorSpecifiedRules(aFrame,
                                                NS_AUTHOR_SPECIFIED_BORDER |
@@ -811,20 +811,20 @@ nsNativeTheme::IsDarkBackground(nsIFrame* aFrame)
 }
 
 bool
-nsNativeTheme::IsWidgetScrollbarPart(uint8_t aWidgetType)
+nsNativeTheme::IsWidgetScrollbarPart(StyleAppearance aWidgetType)
 {
   switch (aWidgetType) {
-    case NS_THEME_SCROLLBAR:
-    case NS_THEME_SCROLLBAR_SMALL:
-    case NS_THEME_SCROLLBAR_VERTICAL:
-    case NS_THEME_SCROLLBAR_HORIZONTAL:
-    case NS_THEME_SCROLLBARBUTTON_UP:
-    case NS_THEME_SCROLLBARBUTTON_DOWN:
-    case NS_THEME_SCROLLBARBUTTON_LEFT:
-    case NS_THEME_SCROLLBARBUTTON_RIGHT:
-    case NS_THEME_SCROLLBARTHUMB_VERTICAL:
-    case NS_THEME_SCROLLBARTHUMB_HORIZONTAL:
-    case NS_THEME_SCROLLCORNER:
+    case StyleAppearance::Scrollbar:
+    case StyleAppearance::ScrollbarSmall:
+    case StyleAppearance::ScrollbarVertical:
+    case StyleAppearance::ScrollbarHorizontal:
+    case StyleAppearance::ScrollbarbuttonUp:
+    case StyleAppearance::ScrollbarbuttonDown:
+    case StyleAppearance::ScrollbarbuttonLeft:
+    case StyleAppearance::ScrollbarbuttonRight:
+    case StyleAppearance::ScrollbarthumbVertical:
+    case StyleAppearance::ScrollbarthumbHorizontal:
+    case StyleAppearance::Scrollcorner:
       return true;
     default:
       return false;

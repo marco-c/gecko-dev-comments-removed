@@ -47,7 +47,7 @@
 #include "nsBoxLayoutState.h"
 #include "nsTreeContentView.h"
 #include "nsTreeUtils.h"
-#include "nsThemeConstants.h"
+#include "nsStyleConsts.h"
 #include "nsITheme.h"
 #include "imgIRequest.h"
 #include "imgIContainer.h"
@@ -1990,7 +1990,7 @@ nsTreeBodyFrame::GetTwistyRect(int32_t aRowIndex,
   bool useTheme = false;
   nsITheme *theme = nullptr;
   const nsStyleDisplay* twistyDisplayData = aTwistyContext->StyleDisplay();
-  if (twistyDisplayData->mAppearance) {
+  if (twistyDisplayData->mAppearance != StyleAppearance::None) {
     theme = aPresContext->GetTheme();
     if (theme && theme->ThemeSupportsWidget(aPresContext, nullptr, twistyDisplayData->mAppearance))
       useTheme = true;
@@ -2775,7 +2775,7 @@ nsTreeBodyFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   
   
   if (selection && treeFrame && theme &&
-      treeFrame->StyleDisplay()->mAppearance == NS_THEME_MAC_SOURCE_LIST) {
+      treeFrame->StyleDisplay()->mAppearance == StyleAppearance::MozMacSourceList) {
     
     
     const auto end = std::min(mRowCount, LastVisibleRow() + 1);
@@ -2790,7 +2790,7 @@ nsTreeBodyFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
         ComputedStyle* rowContext =
           GetPseudoComputedStyle(nsCSSAnonBoxes::mozTreeRow);
         auto appearance = rowContext->StyleDisplay()->mAppearance;
-        if (appearance) {
+        if (appearance != StyleAppearance::None) {
           if (theme->ThemeSupportsWidget(PresContext(), this, appearance)) {
             nsITheme::ThemeGeometryType type =
               theme->ThemeGeometryTypeForWidget(this, appearance);
@@ -2968,7 +2968,7 @@ nsTreeBodyFrame::PaintRow(int32_t               aRowIndex,
   
   nsITheme* theme = nullptr;
   auto appearance = rowContext->StyleDisplay()->mAppearance;
-  if (appearance) {
+  if (appearance != StyleAppearance::None) {
     theme = aPresContext->GetTheme();
   }
 
@@ -3098,7 +3098,7 @@ nsTreeBodyFrame::PaintSeparator(int32_t              aRowIndex,
   bool useTheme = false;
   nsITheme *theme = nullptr;
   const nsStyleDisplay* displayData = separatorContext->StyleDisplay();
-  if ( displayData->mAppearance ) {
+  if (displayData->HasAppearance()) {
     theme = aPresContext->GetTheme();
     if (theme && theme->ThemeSupportsWidget(aPresContext, nullptr, displayData->mAppearance))
       useTheme = true;

@@ -267,9 +267,9 @@ nsImageBoxFrame::UpdateImage()
   } else {
     
     
-    uint8_t appearance = StyleDisplay()->mAppearance;
-    if (!(appearance && nsBox::gTheme &&
-          nsBox::gTheme->ThemeSupportsWidget(nullptr, this, appearance))) {
+    auto* display = StyleDisplay();
+    if (!(display->HasAppearance() && nsBox::gTheme &&
+          nsBox::gTheme->ThemeSupportsWidget(nullptr, this, display->mAppearance))) {
       
       imgRequestProxy *styleRequest = StyleList()->GetListStyleImage();
       if (styleRequest) {
@@ -661,7 +661,7 @@ nsImageBoxFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle)
 
   
   const nsStyleDisplay* disp = StyleDisplay();
-  if (disp->mAppearance && nsBox::gTheme &&
+  if (disp->HasAppearance() && nsBox::gTheme &&
       nsBox::gTheme->ThemeSupportsWidget(nullptr, this, disp->mAppearance))
     return;
 
