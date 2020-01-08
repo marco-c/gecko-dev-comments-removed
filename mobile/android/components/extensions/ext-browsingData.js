@@ -2,8 +2,6 @@
 
 "use strict";
 
-ChromeUtils.import("resource://gre/modules/Task.jsm");
-
 ChromeUtils.defineModuleGetter(this, "Sanitizer",
                                "resource://gre/modules/Sanitizer.jsm");
 ChromeUtils.defineModuleGetter(this, "Services",
