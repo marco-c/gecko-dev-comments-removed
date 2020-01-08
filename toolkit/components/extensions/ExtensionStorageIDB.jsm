@@ -31,6 +31,7 @@ const IDB_MIGRATE_RESULT_HISTOGRAM = "WEBEXT_STORAGE_LOCAL_IDB_MIGRATE_RESULT_CO
 
 
 const BACKEND_ENABLED_PREF = "extensions.webextensions.ExtensionStorageIDB.enabled";
+const IDB_MIGRATED_PREF_BRANCH = "extensions.webextensions.ExtensionStorageIDB.migrated";
 
 class ExtensionStorageLocalIDB extends IndexedDB {
   onupgradeneeded(event) {
@@ -237,9 +238,13 @@ async function migrateJSONFileData(extension, storagePrincipal) {
   let idbConn;
   let jsonFile;
   let hasEmptyIDB;
-  let oldDataRead = false;
-  let migrated = false;
   let histogram = Services.telemetry.getHistogramById(IDB_MIGRATE_RESULT_HISTOGRAM);
+  let dataMigrateCompleted = false;
+
+  const isMigratedExtension = Services.prefs.getBoolPref(`${IDB_MIGRATED_PREF_BRANCH}.${extension.id}`, false);
+  if (isMigratedExtension) {
+    return;
+  }
 
   try {
     idbConn = await ExtensionStorageLocalIDB.openForPrincipal(storagePrincipal);
@@ -250,14 +255,31 @@ async function migrateJSONFileData(extension, storagePrincipal) {
       
       
       
+      Services.prefs.setBoolPref(`${IDB_MIGRATED_PREF_BRANCH}.${extension.id}`, true);
       return;
     }
+  } catch (err) {
+    extension.logWarning(
+      `storage.local data migration cancelled, unable to open IDB connection: ${err.message}::${err.stack}`);
 
-    
-    
+    histogram.add("failure");
+
+    throw err;
+  }
+
+  try {
     oldStoragePath = ExtensionStorage.getStorageFile(extension.id);
-    oldStorageExists = await OS.File.exists(oldStoragePath);
+    oldStorageExists = await OS.File.exists(oldStoragePath).catch(fileErr => {
+      
+      
+      
+      extension.logWarning(
+        `Unable to access extension storage.local data file: ${fileErr.message}::${fileErr.stack}`);
+      return false;
+    });
 
+    
+    
     if (oldStorageExists) {
       Services.console.logStringMessage(
         `Migrating storage.local data for ${extension.policy.debugName}...`);
@@ -267,15 +289,17 @@ async function migrateJSONFileData(extension, storagePrincipal) {
       for (let [key, value] of jsonFile.data.entries()) {
         data[key] = value;
       }
-      oldDataRead = true;
+
       await idbConn.set(data);
-      migrated = true;
       Services.console.logStringMessage(
         `storage.local data successfully migrated to IDB Backend for ${extension.policy.debugName}.`);
     }
+
+    dataMigrateCompleted = true;
   } catch (err) {
-    extension.logWarning(`Error on migrating storage.local data: ${err.message}::${err.stack}`);
-    if (oldDataRead) {
+    extension.logWarning(`Error on migrating storage.local data file: ${err.message}::${err.stack}`);
+
+    if (oldStorageExists && !dataMigrateCompleted) {
       
       
       
@@ -288,24 +312,30 @@ async function migrateJSONFileData(extension, storagePrincipal) {
     }
   } finally {
     
-    
-    ExtensionStorage.clearCachedFile(extension.id);
-    if (jsonFile) {
-      jsonFile.finalize();
-    }
+    await ExtensionStorage.clearCachedFile(extension.id).catch(err => {
+      extension.logWarning(err.message);
+    });
   }
 
   histogram.add("success");
 
   
   
-  if (oldStorageExists && migrated) {
+  if (oldStorageExists && dataMigrateCompleted) {
     try {
-      await OS.File.remove(oldStoragePath);
+      
+      
+      if (await OS.File.exists(oldStoragePath)) {
+        let openInfo = await OS.File.openUnique(`${oldStoragePath}.migrated`, {humanReadable: true});
+        await openInfo.file.close();
+        await OS.File.move(oldStoragePath, openInfo.path);
+      }
     } catch (err) {
       extension.logWarning(err.message);
     }
   }
+
+  Services.prefs.setBoolPref(`${IDB_MIGRATED_PREF_BRANCH}.${extension.id}`, true);
 }
 
 
@@ -314,6 +344,7 @@ async function migrateJSONFileData(extension, storagePrincipal) {
 
 this.ExtensionStorageIDB = {
   BACKEND_ENABLED_PREF,
+  IDB_MIGRATED_PREF_BRANCH,
   IDB_MIGRATE_RESULT_HISTOGRAM,
 
   

@@ -137,8 +137,12 @@ var ExtensionStorage = {
 
 
 
-  clearCachedFile(extensionId) {
-    this.jsonFilePromises.delete(extensionId);
+  async clearCachedFile(extensionId) {
+    let promise = this.jsonFilePromises.get(extensionId);
+    if (promise) {
+      this.jsonFilePromises.delete(extensionId);
+      await promise.then(jsonFile => jsonFile.finalize());
+    }
   },
 
   
