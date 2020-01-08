@@ -1412,7 +1412,7 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
     }
 
     
-    modifications.map(mod => this.logChange(mod));
+    modifications.map(mod => this.logDeclarationChange(mod));
 
     if (this.type === ELEMENT_STYLE) {
       
@@ -1472,7 +1472,7 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
     const tempElement = document.createElementNS(XHTML_NS, "div");
 
     for (const mod of modifications) {
-      this.logChange(mod);
+      this.logDeclarationChange(mod);
       if (mod.type === "set") {
         tempElement.style.setProperty(mod.name, mod.value, mod.priority || "");
         this.rawStyle.setProperty(mod.name,
@@ -1554,7 +1554,7 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
 
 
 
-  logChange(change) {
+  logDeclarationChange(change) {
     
     
     let {
@@ -1613,6 +1613,41 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
 
 
 
+
+
+
+
+
+  logSelectorChange(oldSelector, newSelector) {
+    
+    const declarations = this._declarations.reduce((acc, decl) => {
+      acc[decl.name] = decl.priority ? decl.value + " !important" : decl.value;
+      return acc;
+    }, {});
+
+    
+    
+    
+    TrackChangeEmitter.trackChange({
+      ...this.metadata,
+      add: null,
+      remove: declarations,
+      selector: oldSelector,
+    });
+
+    TrackChangeEmitter.trackChange({
+      ...this.metadata,
+      add: declarations,
+      remove: null,
+      selector: newSelector,
+    });
+  },
+
+  
+
+
+
+
   modifySelector: function(node, value, editAuthored = false) {
     return this.modifySelector2(node, value, editAuthored);
   },
@@ -1645,11 +1680,14 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
       return { ruleProps: null, isMatching: true };
     }
 
+    
+    const oldValue = this.rawRule.selectorText;
     let selectorPromise = this._addNewSelector(value, editAuthored);
 
     if (editAuthored) {
       selectorPromise = selectorPromise.then((newCssRule) => {
         if (newCssRule) {
+          this.logSelectorChange(oldValue, value);
           const style = this.pageStyle._styleRef(newCssRule);
           
           return style.getAuthoredCssText().then(() => newCssRule);
