@@ -17,6 +17,21 @@ add_task(async function setup() {
   });
 });
 
+add_task(async function test_observe_add_user_pref_before_search() {
+  Assert.equal(Services.prefs.getPrefType(PREF_NEW),
+               Ci.nsIPrefBranch.PREF_INVALID);
+
+  await AboutConfigTest.withNewTab(async function() {
+    this.bypassWarningButton.click();
+
+    
+    
+    Preferences.set(PREF_NEW, true);
+    Assert.ok(!this.prefsTable.firstElementChild);
+    Preferences.reset(PREF_NEW);
+  }, { dontBypassWarning: true });
+});
+
 add_task(async function test_observe_add_user_pref() {
   Assert.equal(Services.prefs.getPrefType(PREF_NEW),
                Ci.nsIPrefBranch.PREF_INVALID);

@@ -243,6 +243,7 @@ class PrefRow {
   }
 }
 
+let gPrefObserverRegistered = false;
 let gPrefObserver = {
   observe(subject, topic, data) {
     let pref = gExistingPrefs.get(data) || gDeletedPrefs.get(data);
@@ -340,11 +341,6 @@ function loadPrefs() {
       pref.editButton.focus();
     }
   });
-
-  Services.prefs.addObserver("", gPrefObserver);
-  window.addEventListener("unload", () => {
-    Services.prefs.removeObserver("", gPrefObserver);
-  }, { once: true });
 }
 
 function filterPrefs() {
@@ -371,6 +367,16 @@ function filterPrefs() {
     fragment.appendChild(pref.element);
   }
   prefsElement.appendChild(fragment);
+
+  
+  
+  if (!gPrefObserverRegistered) {
+    gPrefObserverRegistered = true;
+    Services.prefs.addObserver("", gPrefObserver);
+    window.addEventListener("unload", () => {
+      Services.prefs.removeObserver("", gPrefObserver);
+    }, { once: true });
+  }
 
   document.body.classList.toggle("config-warning",
     location.href.split(":").every(l => gFilterString.includes(l)));
