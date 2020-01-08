@@ -8005,7 +8005,9 @@ IsAcceptableCaretPosition(const gfxSkipCharsIterator& aIter,
 
     if (gfxFontUtils::IsVarSelector(ch) ||
         (NS_IS_LOW_SURROGATE(ch) && offs > 0 &&
-         NS_IS_HIGH_SURROGATE(frag->CharAt(offs - 1)))) {
+         NS_IS_HIGH_SURROGATE(frag->CharAt(offs - 1))) ||
+        (!aTextRun->IsLigatureGroupStart(index) &&
+         unicode::GetEmojiPresentation(ch) == unicode::EmojiDefault)) {
       return false;
     }
 
@@ -8018,9 +8020,10 @@ IsAcceptableCaretPosition(const gfxSkipCharsIterator& aIter,
         
         
         
+        
         if (gfxFontUtils::IsVarSelector(ch) ||
-            (gfxFontUtils::IsRegionalIndicator(ch) &&
-             !aTextRun->IsLigatureGroupStart(index))) {
+            (!aTextRun->IsLigatureGroupStart(index) &&
+             unicode::GetEmojiPresentation(ch) == unicode::EmojiDefault)) {
           return false;
         }
       }
