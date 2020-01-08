@@ -20,7 +20,7 @@
 
 namespace mozilla {
 
-class MediaStream;
+class AudioNodeStream;
 
 namespace dom {
 
@@ -45,7 +45,7 @@ struct AudioTimelineEvent final
                      double aDuration = 0.0,
                      const float* aCurve = nullptr,
                      uint32_t aCurveLength = 0);
-  explicit AudioTimelineEvent(MediaStream* aStream);
+  explicit AudioTimelineEvent(AudioNodeStream* aStream);
   AudioTimelineEvent(const AudioTimelineEvent& rhs);
   ~AudioTimelineEvent();
 
@@ -81,7 +81,7 @@ struct AudioTimelineEvent final
   
   
   float* mCurve;
-  RefPtr<MediaStream> mStream;
+  RefPtr<AudioNodeStream> mStream;
   double mTimeConstant;
   double mDuration;
 #ifdef DEBUG

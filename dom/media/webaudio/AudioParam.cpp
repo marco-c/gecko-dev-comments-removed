@@ -92,18 +92,16 @@ AudioParam::Stream()
   }
 
   AudioNodeEngine* engine = new AudioNodeEngine(nullptr);
-  RefPtr<AudioNodeStream> stream =
-    AudioNodeStream::Create(mNode->Context(), engine,
-                            AudioNodeStream::NO_STREAM_FLAGS,
-                            mNode->Context()->Graph());
+  mStream = AudioNodeStream::Create(mNode->Context(), engine,
+                                    AudioNodeStream::NO_STREAM_FLAGS,
+                                    mNode->Context()->Graph());
 
   
   
-  stream->SetChannelMixingParametersImpl(1, ChannelCountMode::Explicit, ChannelInterpretation::Speakers);
+  mStream->SetChannelMixingParametersImpl(1, ChannelCountMode::Explicit,
+                                          ChannelInterpretation::Speakers);
   
-  stream->SetAudioParamHelperStream();
-
-  mStream = stream.forget();
+  mStream->SetAudioParamHelperStream();
 
   
   AudioNodeStream* nodeStream = mNode->GetStream();
@@ -185,8 +183,7 @@ AudioParamTimeline::AudioNodeInputValue(size_t aCounter) const
   
   
   float audioNodeInputValue = 0.0f;
-  const AudioBlock& lastAudioNodeChunk =
-    static_cast<AudioNodeStream*>(mStream.get())->LastChunks()[0];
+  const AudioBlock& lastAudioNodeChunk = mStream->LastChunks()[0];
   if (!lastAudioNodeChunk.IsNull()) {
     MOZ_ASSERT(lastAudioNodeChunk.GetDuration() == WEBAUDIO_BLOCK_SIZE);
     audioNodeInputValue =

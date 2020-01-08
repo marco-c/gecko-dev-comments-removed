@@ -8,8 +8,8 @@
 #define AudioParamTimeline_h_
 
 #include "AudioEventTimeline.h"
+#include "AudioNodeStream.h"
 #include "mozilla/ErrorResult.h"
-#include "MediaStreamGraph.h"
 #include "AudioSegment.h"
 
 namespace mozilla {
@@ -33,7 +33,7 @@ public:
   {
   }
 
-  MediaStream* Stream() const
+  AudioNodeStream* Stream() const
   {
     return mStream;
   }
@@ -98,7 +98,7 @@ private:
 
 protected:
   
-  RefPtr<MediaStream> mStream;
+  RefPtr<AudioNodeStream> mStream;
 };
 
 template<> inline float

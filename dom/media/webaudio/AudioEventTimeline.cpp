@@ -5,7 +5,7 @@
 
 
 #include "AudioEventTimeline.h"
-#include "MediaStreamGraph.h"
+#include "AudioNodeStream.h"
 
 #include "mozilla/ErrorResult.h"
 
@@ -76,7 +76,7 @@ AudioTimelineEvent::AudioTimelineEvent(Type aType,
   }
 }
 
-AudioTimelineEvent::AudioTimelineEvent(MediaStream* aStream)
+AudioTimelineEvent::AudioTimelineEvent(AudioNodeStream* aStream)
   : mType(Stream)
   , mCurve(nullptr)
   , mStream(aStream)
