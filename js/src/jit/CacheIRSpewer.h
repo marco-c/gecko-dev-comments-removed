@@ -27,6 +27,16 @@ class CacheIRSpewer
     mozilla::Maybe<JSONPrinter> json;
     static CacheIRSpewer cacheIRspewer;
 
+    
+    
+    
+    
+    uint32_t guardCount_;
+
+    
+    
+    uint32_t spewInterval_;
+
     CacheIRSpewer();
     ~CacheIRSpewer();
 
@@ -68,6 +78,9 @@ class CacheIRSpewer
               sp_.attached(name_);
             }
             sp_.endCache();
+            if (sp_.guardCount_++ % sp_.spewInterval_ == 0) {
+              sp_.output.flush();
+            }
             sp_.lock().unlock();
           }
         }
