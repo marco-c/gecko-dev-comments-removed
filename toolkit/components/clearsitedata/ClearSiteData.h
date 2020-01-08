@@ -40,11 +40,6 @@ private:
   ClearDataFromChannel(nsIHttpChannel* aChannel);
 
   
-  
-  bool
-  IsSecureURI(nsIURI* aURI) const;
-
-  
   uint32_t
   ParseHeader(nsIHttpChannel* aChannel, nsIURI* aURI) const;
 
