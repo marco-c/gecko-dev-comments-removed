@@ -33,6 +33,8 @@ const MessageState = overrides => Object.freeze(Object.assign({
   
   messagesById: new Map(),
   
+  replayProgressMessages: new Set(),
+  
   visibleMessages: [],
   
   filteredMessagesCount: getDefaultFiltersCounter(),
@@ -61,6 +63,7 @@ const MessageState = overrides => Object.freeze(Object.assign({
 function cloneState(state) {
   return {
     messagesById: new Map(state.messagesById),
+    replayProgressMessages: new Set(state.replayProgressMessages),
     visibleMessages: [...state.visibleMessages],
     filteredMessagesCount: {...state.filteredMessagesCount},
     messagesUiById: [...state.messagesUiById],
@@ -77,6 +80,7 @@ function cloneState(state) {
 function addMessage(state, filtersState, prefsState, newMessage) {
   const {
     messagesById,
+    replayProgressMessages,
     groupsById,
     currentGroup,
     repeatById,
@@ -85,6 +89,16 @@ function addMessage(state, filtersState, prefsState, newMessage) {
   if (newMessage.type === constants.MESSAGE_TYPE.NULL_MESSAGE) {
     
     return state;
+  }
+
+  if (newMessage.executionPoint) {
+    
+    
+    const progress = newMessage.executionPoint.progress;
+    if (replayProgressMessages.has(progress)) {
+      return state;
+    }
+    state.replayProgressMessages.add(progress);
   }
 
   if (newMessage.type === constants.MESSAGE_TYPE.END_GROUP) {

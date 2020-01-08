@@ -555,26 +555,6 @@ WebConsoleActor.prototype =
 
   
 
-
-
-
-
-  isDuplicateReplayingMessage: function(msg) {
-    if (!this.replayingMessages) {
-      this.replayingMessages = {};
-    }
-    
-    
-    const progress = msg.executionPoint.progress;
-    if (this.replayingMessages[progress]) {
-      return true;
-    }
-    this.replayingMessages[progress] = true;
-    return false;
-  },
-
-  
-
   
 
 
@@ -853,9 +833,7 @@ WebConsoleActor.prototype =
 
     let replayingMessages = [];
     if (this.dbg.replaying) {
-      replayingMessages = this.dbg.findAllConsoleMessages().filter(msg => {
-        return !this.isDuplicateReplayingMessage(msg);
-      });
+      replayingMessages = this.dbg.findAllConsoleMessages();
     }
 
     while (types.length > 0) {
@@ -1227,15 +1205,8 @@ WebConsoleActor.prototype =
         dbgObject = this.dbg.addDebuggee(this.evalWindow);
       }
 
-      const result = JSPropertyProvider({
-        dbgObject,
-        environment,
-        inputValue: request.text,
-        cursor: request.cursor,
-        invokeUnsafeGetter: false,
-        webconsoleActor: this,
-        selectedNodeActor: request.selectedNodeActor,
-      }) || {};
+      const result = JSPropertyProvider(dbgObject, environment, request.text,
+                                      request.cursor, frameActorId) || {};
 
       if (!hadDebuggee && dbgObject) {
         this.dbg.removeDebuggee(this.evalWindow);
@@ -1436,10 +1407,6 @@ WebConsoleActor.prototype =
 
 
   onReplayingMessage: function(msg) {
-    if (this.isDuplicateReplayingMessage(msg)) {
-      return;
-    }
-
     if (msg.messageType == "ConsoleAPI") {
       this.onConsoleAPICall(msg);
     }
