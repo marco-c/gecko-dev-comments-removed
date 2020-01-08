@@ -347,8 +347,12 @@ var gIdentityHandler = {
     
     
     this.setURI(uri);
-    this._sslStatus = gBrowser.securityUI.secInfo &&
-                      gBrowser.securityUI.secInfo.SSLStatus;
+    this._sslStatus = gBrowser.securityUI
+                              .QueryInterface(Ci.nsISSLStatusProvider)
+                              .SSLStatus;
+    if (this._sslStatus) {
+      this._sslStatus.QueryInterface(Ci.nsISSLStatus);
+    }
 
     
     this.refreshIdentityBlock();
