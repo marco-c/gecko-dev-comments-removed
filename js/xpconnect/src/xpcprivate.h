@@ -2938,6 +2938,12 @@ public:
 
     bool MightBeWebContent() const;
 
+    
+    
+    mozilla::BasePrincipal* GetPrincipalIgnoringDocumentDomain() const {
+        return mOrigin;
+    }
+
     const mozilla::SiteIdentifier& SiteRef() const {
         return mSite;
     }
