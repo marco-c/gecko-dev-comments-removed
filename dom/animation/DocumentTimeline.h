@@ -17,12 +17,6 @@
 
 struct JSContext;
 
-
-
-#ifdef GetCurrentTime
-#undef GetCurrentTime
-#endif
-
 namespace mozilla {
 namespace dom {
 
@@ -64,7 +58,10 @@ class DocumentTimeline final : public AnimationTimeline,
       ErrorResult& aRv);
 
   
-  virtual Nullable<TimeDuration> GetCurrentTime() const override;
+
+  
+  
+  virtual Nullable<TimeDuration> GetCurrentTimeAsDuration() const override;
 
   bool TracksWallclockTime() const override {
     nsRefreshDriver* refreshDriver = GetRefreshDriver();

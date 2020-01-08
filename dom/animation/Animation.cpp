@@ -222,13 +222,13 @@ void Animation::SetStartTime(const Nullable<TimeDuration>& aNewStartTime) {
     
     
     
-    timelineTime = mTimeline->GetCurrentTime();
+    timelineTime = mTimeline->GetCurrentTimeAsDuration();
   }
   if (timelineTime.IsNull() && !aNewStartTime.IsNull()) {
     mHoldTime.SetNull();
   }
 
-  Nullable<TimeDuration> previousCurrentTime = GetCurrentTime();
+  Nullable<TimeDuration> previousCurrentTime = GetCurrentTimeAsDuration();
 
   ApplyPendingPlaybackRate();
   mStartTime = aNewStartTime;
@@ -265,7 +265,7 @@ Nullable<TimeDuration> Animation::GetCurrentTimeForHoldTime(
   }
 
   if (mTimeline && !mStartTime.IsNull()) {
-    Nullable<TimeDuration> timelineTime = mTimeline->GetCurrentTime();
+    Nullable<TimeDuration> timelineTime = mTimeline->GetCurrentTimeAsDuration();
     if (!timelineTime.IsNull()) {
       result = CurrentTimeFromTimelineTime(timelineTime.Value(),
                                            mStartTime.Value(), mPlaybackRate);
@@ -281,7 +281,7 @@ void Animation::SetCurrentTime(const TimeDuration& aSeekTime) {
   
   
   if (mPendingState != PendingState::PausePending &&
-      Nullable<TimeDuration>(aSeekTime) == GetCurrentTime()) {
+      Nullable<TimeDuration>(aSeekTime) == GetCurrentTimeAsDuration()) {
     return;
   }
 
@@ -319,7 +319,7 @@ void Animation::SetPlaybackRate(double aPlaybackRate) {
 
   AutoMutationBatchForAnimation mb(*this);
 
-  Nullable<TimeDuration> previousTime = GetCurrentTime();
+  Nullable<TimeDuration> previousTime = GetCurrentTimeAsDuration();
   mPlaybackRate = aPlaybackRate;
   if (!previousTime.IsNull()) {
     SetCurrentTime(previousTime.Value());
@@ -383,7 +383,7 @@ void Animation::UpdatePlaybackRate(double aPlaybackRate) {
       nsNodeUtils::AnimationChanged(this);
     }
   } else if (playState == AnimationPlayState::Finished) {
-    MOZ_ASSERT(mTimeline && !mTimeline->GetCurrentTime().IsNull(),
+    MOZ_ASSERT(mTimeline && !mTimeline->GetCurrentTimeAsDuration().IsNull(),
                "If we have no active timeline, we should be idle or paused");
     if (aPlaybackRate != 0) {
       
@@ -394,11 +394,11 @@ void Animation::UpdatePlaybackRate(double aPlaybackRate) {
                  "Unconstrained current time should be resolved");
       TimeDuration unconstrainedCurrentTime =
           GetUnconstrainedCurrentTime().Value();
-      TimeDuration timelineTime = mTimeline->GetCurrentTime().Value();
+      TimeDuration timelineTime = mTimeline->GetCurrentTimeAsDuration().Value();
       mStartTime = StartTimeFromTimelineTime(
           timelineTime, unconstrainedCurrentTime, aPlaybackRate);
     } else {
-      mStartTime = mTimeline->GetCurrentTime();
+      mStartTime = mTimeline->GetCurrentTimeAsDuration();
     }
 
     ApplyPendingPlaybackRate();
@@ -421,7 +421,7 @@ void Animation::UpdatePlaybackRate(double aPlaybackRate) {
 
 
 AnimationPlayState Animation::PlayState() const {
-  Nullable<TimeDuration> currentTime = GetCurrentTime();
+  Nullable<TimeDuration> currentTime = GetCurrentTimeAsDuration();
   if (currentTime.IsNull() && !Pending()) {
     return AnimationPlayState::Idle;
   }
@@ -493,7 +493,7 @@ void Animation::Finish(ErrorResult& aRv) {
   
   TimeDuration limit =
       mPlaybackRate > 0 ? TimeDuration(EffectEnd()) : TimeDuration(0);
-  bool didChange = GetCurrentTime() != Nullable<TimeDuration>(limit);
+  bool didChange = GetCurrentTimeAsDuration() != Nullable<TimeDuration>(limit);
   SilentlySetCurrentTime(limit);
 
   
@@ -504,9 +504,9 @@ void Animation::Finish(ErrorResult& aRv) {
   
   
   if (mStartTime.IsNull() && mTimeline &&
-      !mTimeline->GetCurrentTime().IsNull()) {
-    mStartTime = StartTimeFromTimelineTime(mTimeline->GetCurrentTime().Value(),
-                                           limit, mPlaybackRate);
+      !mTimeline->GetCurrentTimeAsDuration().IsNull()) {
+    mStartTime = StartTimeFromTimelineTime(
+        mTimeline->GetCurrentTimeAsDuration().Value(), limit, mPlaybackRate);
     didChange = true;
   }
 
@@ -539,7 +539,7 @@ void Animation::Play(ErrorResult& aRv, LimitBehavior aLimitBehavior) {
 
 
 void Animation::Reverse(ErrorResult& aRv) {
-  if (!mTimeline || mTimeline->GetCurrentTime().IsNull()) {
+  if (!mTimeline || mTimeline->GetCurrentTimeAsDuration().IsNull()) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return;
   }
@@ -581,13 +581,13 @@ void Animation::SetStartTimeAsDouble(const Nullable<double>& aStartTime) {
 }
 
 Nullable<double> Animation::GetCurrentTimeAsDouble() const {
-  return AnimationUtils::TimeDurationToDouble(GetCurrentTime());
+  return AnimationUtils::TimeDurationToDouble(GetCurrentTimeAsDuration());
 }
 
 void Animation::SetCurrentTimeAsDouble(const Nullable<double>& aCurrentTime,
                                        ErrorResult& aRv) {
   if (aCurrentTime.IsNull()) {
-    if (!GetCurrentTime().IsNull()) {
+    if (!GetCurrentTimeAsDuration().IsNull()) {
       aRv.Throw(NS_ERROR_DOM_TYPE_ERR);
     }
     return;
@@ -603,12 +603,12 @@ void Animation::Tick() {
   
   if (mPendingState != PendingState::NotPending &&
       !mPendingReadyTime.IsNull() && mTimeline &&
-      !mTimeline->GetCurrentTime().IsNull()) {
+      !mTimeline->GetCurrentTimeAsDuration().IsNull()) {
     
     
     
     
-    TimeDuration currentTime = mTimeline->GetCurrentTime().Value();
+    TimeDuration currentTime = mTimeline->GetCurrentTimeAsDuration().Value();
     if (currentTime < mPendingReadyTime.Value()) {
       mPendingReadyTime.SetValue(currentTime);
     }
@@ -617,9 +617,9 @@ void Animation::Tick() {
   }
 
   if (IsPossiblyOrphanedPendingAnimation()) {
-    MOZ_ASSERT(mTimeline && !mTimeline->GetCurrentTime().IsNull(),
+    MOZ_ASSERT(mTimeline && !mTimeline->GetCurrentTimeAsDuration().IsNull(),
                "Orphaned pending animations should have an active timeline");
-    FinishPendingAt(mTimeline->GetCurrentTime().Value());
+    FinishPendingAt(mTimeline->GetCurrentTimeAsDuration().Value());
   }
 
   UpdateTiming(SeekFlag::NoSeek, SyncNotifyFlag::Async);
@@ -664,12 +664,12 @@ void Animation::TriggerNow() {
   
   
   
-  if (!mTimeline || mTimeline->GetCurrentTime().IsNull()) {
+  if (!mTimeline || mTimeline->GetCurrentTimeAsDuration().IsNull()) {
     NS_WARNING("Failed to trigger an animation with an active timeline");
     return;
   }
 
-  FinishPendingAt(mTimeline->GetCurrentTime().Value());
+  FinishPendingAt(mTimeline->GetCurrentTimeAsDuration().Value());
 }
 
 Nullable<TimeDuration> Animation::GetCurrentOrPendingStartTime() const {
@@ -758,14 +758,15 @@ TimeStamp Animation::ElapsedTimeToTimeStamp(
 
 void Animation::SilentlySetCurrentTime(const TimeDuration& aSeekTime) {
   if (!mHoldTime.IsNull() || mStartTime.IsNull() || !mTimeline ||
-      mTimeline->GetCurrentTime().IsNull() || mPlaybackRate == 0.0) {
+      mTimeline->GetCurrentTimeAsDuration().IsNull() || mPlaybackRate == 0.0) {
     mHoldTime.SetValue(aSeekTime);
-    if (!mTimeline || mTimeline->GetCurrentTime().IsNull()) {
+    if (!mTimeline || mTimeline->GetCurrentTimeAsDuration().IsNull()) {
       mStartTime.SetNull();
     }
   } else {
-    mStartTime = StartTimeFromTimelineTime(mTimeline->GetCurrentTime().Value(),
-                                           aSeekTime, mPlaybackRate);
+    mStartTime =
+        StartTimeFromTimelineTime(mTimeline->GetCurrentTimeAsDuration().Value(),
+                                  aSeekTime, mPlaybackRate);
   }
 
   mPreviousCurrentTime.SetNull();
@@ -1008,7 +1009,7 @@ void Animation::PlayNoUpdate(ErrorResult& aRv, LimitBehavior aLimitBehavior) {
 
   double effectivePlaybackRate = CurrentOrPendingPlaybackRate();
 
-  Nullable<TimeDuration> currentTime = GetCurrentTime();
+  Nullable<TimeDuration> currentTime = GetCurrentTimeAsDuration();
   if (effectivePlaybackRate > 0.0 &&
       (currentTime.IsNull() || (aLimitBehavior == LimitBehavior::AutoRewind &&
                                 (currentTime.Value() < TimeDuration() ||
@@ -1100,7 +1101,7 @@ void Animation::Pause(ErrorResult& aRv) {
   AutoMutationBatchForAnimation mb(*this);
 
   
-  if (GetCurrentTime().IsNull()) {
+  if (GetCurrentTimeAsDuration().IsNull()) {
     if (mPlaybackRate >= 0.0) {
       mHoldTime.SetValue(TimeDuration(0));
     } else {
@@ -1226,7 +1227,7 @@ void Animation::UpdateTiming(SeekFlag aSeekFlag,
 
 void Animation::UpdateFinishedState(SeekFlag aSeekFlag,
                                     SyncNotifyFlag aSyncNotifyFlag) {
-  Nullable<TimeDuration> currentTime = GetCurrentTime();
+  Nullable<TimeDuration> currentTime = GetCurrentTimeAsDuration();
   TimeDuration effectEnd = TimeDuration(EffectEnd());
 
   if (!mStartTime.IsNull() && mPendingState == PendingState::NotPending) {
@@ -1250,11 +1251,11 @@ void Animation::UpdateFinishedState(SeekFlag aSeekFlag,
         mHoldTime.SetValue(0);
       }
     } else if (mPlaybackRate != 0.0 && !currentTime.IsNull() && mTimeline &&
-               !mTimeline->GetCurrentTime().IsNull()) {
+               !mTimeline->GetCurrentTimeAsDuration().IsNull()) {
       if (aSeekFlag == SeekFlag::DidSeek && !mHoldTime.IsNull()) {
-        mStartTime =
-            StartTimeFromTimelineTime(mTimeline->GetCurrentTime().Value(),
-                                      mHoldTime.Value(), mPlaybackRate);
+        mStartTime = StartTimeFromTimelineTime(
+            mTimeline->GetCurrentTimeAsDuration().Value(), mHoldTime.Value(),
+            mPlaybackRate);
       }
       mHoldTime.SetNull();
     }
@@ -1268,7 +1269,7 @@ void Animation::UpdateFinishedState(SeekFlag aSeekFlag,
   }
   
   
-  mPreviousCurrentTime = GetCurrentTime();
+  mPreviousCurrentTime = GetCurrentTimeAsDuration();
 }
 
 void Animation::UpdateEffect() {
@@ -1390,7 +1391,7 @@ bool Animation::IsPossiblyOrphanedPendingAnimation() const {
 
   
   
-  if (!mTimeline || mTimeline->GetCurrentTime().IsNull()) {
+  if (!mTimeline || mTimeline->GetCurrentTimeAsDuration().IsNull()) {
     return false;
   }
 

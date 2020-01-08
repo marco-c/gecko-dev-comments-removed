@@ -17,12 +17,6 @@
 #include "nsIGlobalObject.h"
 #include "nsTHashtable.h"
 
-
-
-#ifdef GetCurrentTime
-#undef GetCurrentTime
-#endif
-
 class nsIDocument;
 
 namespace mozilla {
@@ -46,16 +40,16 @@ class AnimationTimeline : public nsISupports, public nsWrapperCache {
   nsIGlobalObject* GetParentObject() const { return mWindow; }
 
   
-  virtual Nullable<TimeDuration> GetCurrentTime() const = 0;
+  virtual Nullable<TimeDuration> GetCurrentTimeAsDuration() const = 0;
 
   
   
   Nullable<double> GetCurrentTimeAsDouble() const {
-    return AnimationUtils::TimeDurationToDouble(GetCurrentTime());
+    return AnimationUtils::TimeDurationToDouble(GetCurrentTimeAsDuration());
   }
 
   TimeStamp GetCurrentTimeAsTimeStamp() const {
-    Nullable<TimeDuration> currentTime = GetCurrentTime();
+    Nullable<TimeDuration> currentTime = GetCurrentTimeAsDuration();
     return !currentTime.IsNull() ? ToTimeStamp(currentTime.Value())
                                  : TimeStamp();
   }

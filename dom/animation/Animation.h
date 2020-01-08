@@ -28,12 +28,6 @@
 #undef CurrentTime
 #endif
 
-
-
-#ifdef GetCurrentTime
-#undef GetCurrentTime
-#endif
-
 struct JSContext;
 class nsCSSPropertyIDSet;
 class nsIDocument;
@@ -98,7 +92,9 @@ class Animation : public DOMEventTargetHelper,
   void SetTimeline(AnimationTimeline* aTimeline);
   Nullable<TimeDuration> GetStartTime() const { return mStartTime; }
   void SetStartTime(const Nullable<TimeDuration>& aNewStartTime);
-  Nullable<TimeDuration> GetCurrentTime() const {
+  
+  
+  Nullable<TimeDuration> GetCurrentTimeAsDuration() const {
     return GetCurrentTimeForHoldTime(mHoldTime);
   }
   void SetCurrentTime(const TimeDuration& aNewCurrentTime);
@@ -306,7 +302,7 @@ class Animation : public DOMEventTargetHelper,
 
   bool IsPlaying() const {
     return mPlaybackRate != 0.0 && mTimeline &&
-           !mTimeline->GetCurrentTime().IsNull() &&
+           !mTimeline->GetCurrentTimeAsDuration().IsNull() &&
            PlayState() == AnimationPlayState::Running;
   }
 

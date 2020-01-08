@@ -327,7 +327,7 @@ Nullable<TimeDuration> AnimationEffect::GetLocalTime() const {
   
   Nullable<TimeDuration> result;
   if (mAnimation) {
-    result = mAnimation->GetCurrentTime();
+    result = mAnimation->GetCurrentTimeAsDuration();
   }
   return result;
 }

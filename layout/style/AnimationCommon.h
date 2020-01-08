@@ -151,13 +151,8 @@ PhaseType GetAnimationPhaseWithoutEffect(const dom::Animation& aAnimation) {
   MOZ_ASSERT(!aAnimation.GetEffect(),
              "Should only be called when we do not have an effect");
 
-
-
-#ifdef GetCurrentTime
-#undef GetCurrentTime
-#endif
-
-  dom::Nullable<TimeDuration> currentTime = aAnimation.GetCurrentTime();
+  dom::Nullable<TimeDuration> currentTime =
+      aAnimation.GetCurrentTimeAsDuration();
   if (currentTime.IsNull()) {
     return PhaseType::Idle;
   }
