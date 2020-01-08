@@ -142,9 +142,8 @@ ImageCacheKey::GetSpecialCaseDocumentToken(nsIDocument* aDocument, nsIURI* aURI)
   
   
   if (!pointer && aDocument &&
-      nsContentUtils::StorageDisabledByAntiTracking(nullptr,
-                                                    aDocument->GetChannel(),
-                                                    aURI)) {
+      nsContentUtils::StorageDisabledByAntiTracking(aDocument->GetInnerWindow(),
+                                                    nullptr, aURI)) {
     pointer = aDocument;
   }
 

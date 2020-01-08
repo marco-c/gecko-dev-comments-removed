@@ -3682,6 +3682,8 @@ protected:
   
   nsIDocument* GetSameTypeParentDocument();
 
+  void MaybeAllowStorageForOpener();
+
   
   static bool MatchNameAttribute(mozilla::dom::Element* aElement,
                                  int32_t aNamespaceID,
