@@ -3,7 +3,6 @@
 
 
 const TP_PB_ENABLED_PREF = "privacy.trackingprotection.pbmode.enabled";
-const CB_ENABLED_PREF = "browser.contentblocking.enabled";
 
 
 
