@@ -1025,6 +1025,14 @@ VARCACHE_PREF(
 )
 
 
+
+VARCACHE_PREF(
+  "network.cookie.cookieBehavior",
+  network_cookie_cookieBehavior,
+  int32_t, 0
+)
+
+
 VARCACHE_PREF(
   "network.predictor.enabled",
    network_predictor_enabled,

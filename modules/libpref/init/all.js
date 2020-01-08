@@ -2230,10 +2230,6 @@ pref("network.proxy.proxy_over_tls",        true);
 pref("network.proxy.no_proxies_on",         "localhost, 127.0.0.1");
 pref("network.proxy.failover_timeout",      1800); 
 pref("network.online",                      true); 
-pref("network.cookie.cookieBehavior",       0); 
-#ifdef ANDROID
-pref("network.cookie.cookieBehavior",       0); 
-#endif
 pref("network.cookie.thirdparty.sessionOnly", false);
 pref("network.cookie.thirdparty.nonsecureSessionOnly", false);
 pref("network.cookie.leave-secure-alone",   true);
