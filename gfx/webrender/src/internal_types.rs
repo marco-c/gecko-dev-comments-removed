@@ -3,11 +3,12 @@
 
 
 use api::{DebugCommand, DeviceUintRect, DocumentId, ExternalImageData, ExternalImageId};
-use api::{ImageFormat, NotificationRequest};
+use api::{ImageFormat, WorldPixel, NotificationRequest};
 use device::TextureFilter;
 use renderer::PipelineInfo;
 use gpu_cache::GpuCacheUpdateList;
 use fxhash::FxHasher;
+use plane_split::BspSplitter;
 use profiler::BackendProfileCounters;
 use std::{usize, i32};
 use std::collections::{HashMap, HashSet};
@@ -24,6 +25,9 @@ use tiling;
 
 pub type FastHashMap<K, V> = HashMap<K, V, BuildHasherDefault<FxHasher>>;
 pub type FastHashSet<K> = HashSet<K, BuildHasherDefault<FxHasher>>;
+
+
+pub type PlaneSplitter = BspSplitter<f64, WorldPixel>;
 
 
 

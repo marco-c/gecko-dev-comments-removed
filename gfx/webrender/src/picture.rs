@@ -8,13 +8,16 @@ use api::{DevicePixelScale, PictureIntPoint, PictureIntRect, PictureIntSize, Ras
 use api::{PicturePixel, RasterPixel, WorldPixel};
 use box_shadow::{BLUR_SAMPLE_SCALE};
 use clip::ClipNodeCollector;
-use clip_scroll_tree::{ROOT_SPATIAL_NODE_INDEX, SpatialNodeIndex};
-use euclid::TypedScale;
+use clip_scroll_tree::{ROOT_SPATIAL_NODE_INDEX, ClipScrollTree, SpatialNodeIndex};
+use euclid::{TypedScale, vec3};
+use internal_types::PlaneSplitter;
 use frame_builder::{FrameBuildingContext, FrameBuildingState, PictureState};
 use frame_builder::{PictureContext, PrimitiveContext};
-use gpu_cache::{GpuCacheHandle};
-use gpu_types::UvRectKind;
-use prim_store::{PictureIndex, PrimitiveInstance, SpaceMapper, get_raster_rects};
+use gpu_cache::{GpuCacheAddress, GpuCacheHandle};
+use gpu_types::{TransformPalette, TransformPaletteId, UvRectKind};
+use plane_split::{Clipper, Polygon, Splitter};
+use prim_store::{PictureIndex, PrimitiveInstance, SpaceMapper};
+use prim_store::{get_raster_rects};
 use render_task::{ClearMode, RenderTask, RenderTaskCacheEntryHandle};
 use render_task::{RenderTaskCacheKey, RenderTaskCacheKeyKind, RenderTaskId, RenderTaskLocation};
 use scene::{FilterOpHelpers, SceneProperties};
@@ -153,11 +156,37 @@ pub struct PictureCacheKey {
     unclipped_size: DeviceIntSize,
 }
 
-#[derive(Debug)]
+
+#[derive(Clone, Debug)]
+pub enum Picture3DContext<C> {
+    
+    Out,
+    
+    In {
+        
+        root_data: Option<Vec<C>>,
+        
+        
+        
+        
+        
+        ancestor_index: SpatialNodeIndex,
+    },
+}
+
+
+
+#[derive(Clone, Debug)]
+pub struct OrderedPictureChild {
+    pub anchor: usize,
+    pub transform_id: TransformPaletteId,
+    pub gpu_address: GpuCacheAddress,
+}
+
 pub struct PicturePrimitive {
     
     pub prim_instances: Vec<PrimitiveInstance>,
-    pub state: Option<PictureState>,
+    pub state: Option<(PictureState, PictureContext)>,
 
     
     pub pipeline_id: PipelineId,
@@ -181,8 +210,8 @@ pub struct PicturePrimitive {
     pub requested_raster_space: RasterSpace,
 
     pub raster_config: Option<RasterConfig>,
-    
-    pub is_in_3d_context: bool,
+    pub context_3d: Picture3DContext<OrderedPictureChild>,
+
     
     
     
@@ -216,7 +245,7 @@ impl PicturePrimitive {
     pub fn new_image(
         id: PictureId,
         requested_composite_mode: Option<PictureCompositeMode>,
-        is_in_3d_context: bool,
+        context_3d: Picture3DContext<OrderedPictureChild>,
         pipeline_id: PipelineId,
         frame_output_pipeline_id: Option<PipelineId>,
         apply_local_clip_rect: bool,
@@ -229,7 +258,7 @@ impl PicturePrimitive {
             secondary_render_task_id: None,
             requested_composite_mode,
             raster_config: None,
-            is_in_3d_context,
+            context_3d,
             frame_output_pipeline_id,
             extra_gpu_data_handle: GpuCacheHandle::new(),
             apply_local_clip_rect,
@@ -243,6 +272,7 @@ impl PicturePrimitive {
         &mut self,
         pic_index: PictureIndex,
         prim_context: &PrimitiveContext,
+        parent_spatial_node_index: SpatialNodeIndex,
         surface_spatial_node_index: SpatialNodeIndex,
         raster_spatial_node_index: SpatialNodeIndex,
         parent_allows_subpixel_aa: bool,
@@ -304,7 +334,7 @@ impl PicturePrimitive {
 
         if has_surface {
             frame_state.clip_store
-                       .push_surface(surface_spatial_node_index);
+                .push_surface(surface_spatial_node_index);
         }
 
         let map_pic_to_world = SpaceMapper::new_with_target(
@@ -328,6 +358,23 @@ impl PicturePrimitive {
             frame_context,
         );
 
+        let (containing_block_index, plane_splitter) = match self.context_3d {
+            Picture3DContext::Out => {
+                (parent_spatial_node_index, None)
+            }
+            Picture3DContext::In { root_data: Some(_), ancestor_index } => {
+                (ancestor_index, Some(PlaneSplitter::new()))
+            }
+            Picture3DContext::In { root_data: None, ancestor_index } => {
+                (ancestor_index, None)
+            }
+        };
+
+        let map_local_to_containing_block = SpaceMapper::new(
+            containing_block_index,
+            LayoutRect::zero(), 
+        );
+
         self.raster_config = actual_composite_mode.map(|composite_mode| {
             RasterConfig {
                 composite_mode,
@@ -341,12 +388,13 @@ impl PicturePrimitive {
             has_non_root_coord_system: false,
             is_cacheable: true,
             local_rect_changed: false,
-            raster_spatial_node_index,
-            surface_spatial_node_index,
+            rect: PictureRect::zero(),
             map_local_to_pic,
             map_pic_to_world,
             map_pic_to_raster,
             map_raster_to_world,
+            map_local_to_containing_block,
+            plane_splitter,
         };
 
         
@@ -373,6 +421,9 @@ impl PicturePrimitive {
             allow_subpixel_aa,
             is_passthrough: self.raster_config.is_none(),
             raster_space,
+            local_spatial_node_index: prim_context.spatial_node_index,
+            raster_spatial_node_index,
+            surface_spatial_node_index,
         };
 
         let instances = mem::replace(&mut self.prim_instances, Vec::new());
@@ -388,9 +439,6 @@ impl PicturePrimitive {
         local_rect: Option<PictureRect>,
         frame_state: &mut FrameBuildingState,
     ) -> (LayoutRect, Option<ClipNodeCollector>) {
-        self.prim_instances = prim_instances;
-        self.state = Some(state);
-
         let local_rect = match local_rect {
             Some(local_rect) => {
                 let local_content_rect = LayoutRect::from_untyped(&local_rect.to_untyped());
@@ -431,11 +479,119 @@ impl PicturePrimitive {
             Some(frame_state.clip_store.pop_surface())
         };
 
+        self.prim_instances = prim_instances;
+        self.state = Some((state, context));
+
         (local_rect, clip_node_collector)
     }
 
-    pub fn take_state(&mut self) -> PictureState {
+    pub fn take_state_and_context(&mut self) -> (PictureState, PictureContext) {
         self.state.take().expect("bug: no state present!")
+    }
+
+    
+    
+    
+    pub fn add_split_plane(
+        splitter: &mut PlaneSplitter,
+        transforms: &TransformPalette,
+        prim_instance: &PrimitiveInstance,
+        original_local_rect: LayoutRect,
+        plane_split_anchor: usize,
+    ) -> bool {
+        let transform = transforms
+            .get_world_transform(prim_instance.spatial_node_index);
+        let matrix = transform.cast();
+
+        
+        
+        
+        
+        
+        
+        let local_rect = match original_local_rect
+            .intersection(&prim_instance.combined_local_clip_rect)
+        {
+            Some(rect) => rect.cast(),
+            None => return false,
+        };
+
+        match transform.transform_kind() {
+            TransformedRectKind::AxisAligned => {
+                let inv_transform = transforms
+                    .get_world_inv_transform(prim_instance.spatial_node_index);
+                let polygon = Polygon::from_transformed_rect_with_inverse(
+                    local_rect,
+                    &matrix,
+                    &inv_transform.cast(),
+                    plane_split_anchor,
+                ).unwrap();
+                splitter.add(polygon);
+            }
+            TransformedRectKind::Complex => {
+                let mut clipper = Clipper::new();
+                let results = clipper.clip_transformed(
+                    Polygon::from_rect(
+                        local_rect,
+                        plane_split_anchor,
+                    ),
+                    &matrix,
+                    prim_instance.clipped_world_rect.map(|r| r.to_f64()),
+                );
+                if let Ok(results) = results {
+                    for poly in results {
+                        splitter.add(poly);
+                    }
+                }
+            }
+        }
+
+        true
+    }
+
+    pub fn resolve_split_planes(
+        &mut self,
+        splitter: &mut PlaneSplitter,
+        frame_state: &mut FrameBuildingState,
+        clip_scroll_tree: &ClipScrollTree,
+    ) {
+        let ordered = match self.context_3d {
+            Picture3DContext::In { root_data: Some(ref mut list), .. } => list,
+            _ => panic!("Expected to find 3D context root"),
+        };
+        ordered.clear();
+
+        
+        
+        for poly in splitter.sort(vec3(0.0, 0.0, 1.0)) {
+            let spatial_node_index = self.prim_instances[poly.anchor].spatial_node_index;
+
+            let transform = frame_state.transforms.get_world_inv_transform(spatial_node_index);
+            let transform_id = frame_state.transforms.get_id(
+                spatial_node_index,
+                ROOT_SPATIAL_NODE_INDEX,
+                clip_scroll_tree,
+            );
+
+            let local_points = [
+                transform.transform_point3d(&poly.points[0].cast()).unwrap(),
+                transform.transform_point3d(&poly.points[1].cast()).unwrap(),
+                transform.transform_point3d(&poly.points[2].cast()).unwrap(),
+                transform.transform_point3d(&poly.points[3].cast()).unwrap(),
+            ];
+            let gpu_blocks = [
+                [local_points[0].x, local_points[0].y, local_points[1].x, local_points[1].y].into(),
+                [local_points[2].x, local_points[2].y, local_points[3].x, local_points[3].y].into(),
+            ];
+            let gpu_handle = frame_state.gpu_cache.push_per_frame_blocks(&gpu_blocks);
+            let gpu_address = frame_state.gpu_cache.get_address(&gpu_handle);
+
+            ordered.push(OrderedPictureChild {
+                anchor: poly.anchor,
+                transform_id,
+                gpu_address,
+            });
+        }
     }
 
     pub fn prepare_for_render(
@@ -447,332 +603,341 @@ impl PicturePrimitive {
         frame_context: &FrameBuildingContext,
         frame_state: &mut FrameBuildingState,
     ) -> bool {
-        let mut pic_state_for_children = self.take_state();
+        let (mut pic_state_for_children, pic_context) = self.take_state_and_context();
 
-        match self.raster_config {
-            Some(ref mut raster_config) => {
-                let (map_raster_to_world, map_pic_to_raster) = create_raster_mappers(
-                    prim_instance.spatial_node_index,
-                    raster_config.raster_spatial_node_index,
-                    frame_context,
+        if let Some(ref mut splitter) = pic_state_for_children.plane_splitter {
+            self.resolve_split_planes(
+                splitter,
+                frame_state,
+                frame_context.clip_scroll_tree,
+            );
+        }
+
+        let raster_config = match self.raster_config {
+            Some(ref mut raster_config) => raster_config,
+            None => {
+                pic_state.tasks.extend(pic_state_for_children.tasks);
+                return true
+            }
+        };
+
+        let (map_raster_to_world, map_pic_to_raster) = create_raster_mappers(
+            prim_instance.spatial_node_index,
+            raster_config.raster_spatial_node_index,
+            frame_context,
+        );
+
+        let pic_rect = PictureRect::from_untyped(&prim_local_rect.to_untyped());
+
+        let (clipped, unclipped, transform) = match get_raster_rects(
+            pic_rect,
+            &map_pic_to_raster,
+            &map_raster_to_world,
+            prim_instance.clipped_world_rect.expect("bug1"),
+            frame_context.device_pixel_scale,
+        ) {
+            Some(info) => info,
+            None => return false,
+        };
+
+        
+        
+        
+        
+        
+        
+
+        match raster_config.composite_mode {
+            PictureCompositeMode::Filter(FilterOp::Blur(blur_radius)) => {
+                let blur_std_deviation = blur_radius * frame_context.device_pixel_scale.0;
+                let blur_range = (blur_std_deviation * BLUR_SAMPLE_SCALE).ceil() as i32;
+
+                
+                
+                
+                
+                
+                
+                
+                
+                let device_rect = clipped
+                    .inflate(blur_range, blur_range)
+                    .intersection(&unclipped.to_i32())
+                    .unwrap();
+
+                let uv_rect_kind = calculate_uv_rect_kind(
+                    &pic_rect,
+                    &transform,
+                    &device_rect,
+                    frame_context.device_pixel_scale,
                 );
 
-                let pic_rect = PictureRect::from_untyped(&prim_local_rect.to_untyped());
-
-                let (clipped, unclipped, transform) = match get_raster_rects(
-                    pic_rect,
-                    &map_pic_to_raster,
-                    &map_raster_to_world,
-                    prim_instance.clipped_world_rect.expect("bug1"),
-                    frame_context.device_pixel_scale,
-                ) {
-                    Some(info) => info,
-                    None => return false,
-                };
-
                 
                 
                 
                 
                 
                 
+                let surface = if pic_state_for_children.has_non_root_coord_system ||
+                                 !pic_state_for_children.is_cacheable {
+                    let picture_task = RenderTask::new_picture(
+                        RenderTaskLocation::Dynamic(None, device_rect.size),
+                        unclipped.size,
+                        pic_index,
+                        device_rect.origin,
+                        pic_state_for_children.tasks,
+                        uv_rect_kind,
+                        pic_context.raster_spatial_node_index,
+                    );
 
-                match raster_config.composite_mode {
-                    PictureCompositeMode::Filter(FilterOp::Blur(blur_radius)) => {
-                        let blur_std_deviation = blur_radius * frame_context.device_pixel_scale.0;
-                        let blur_range = (blur_std_deviation * BLUR_SAMPLE_SCALE).ceil() as i32;
+                    let picture_task_id = frame_state.render_tasks.add(picture_task);
 
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        let device_rect = clipped
-                            .inflate(blur_range, blur_range)
-                            .intersection(&unclipped.to_i32())
-                            .unwrap();
+                    let blur_render_task = RenderTask::new_blur(
+                        blur_std_deviation,
+                        picture_task_id,
+                        frame_state.render_tasks,
+                        RenderTargetKind::Color,
+                        ClearMode::Transparent,
+                    );
 
-                        let uv_rect_kind = calculate_uv_rect_kind(
-                            &pic_rect,
-                            &transform,
-                            &device_rect,
-                            frame_context.device_pixel_scale,
-                        );
+                    let render_task_id = frame_state.render_tasks.add(blur_render_task);
 
-                        
-                        
-                        
-                        
-                        
-                        
-                        let surface = if pic_state_for_children.has_non_root_coord_system ||
-                                         !pic_state_for_children.is_cacheable {
+                    pic_state.tasks.push(render_task_id);
+
+                    PictureSurface::RenderTask(render_task_id)
+                } else {
+                    
+                    
+                    let pic_relative_render_rect = PictureIntRect::new(
+                        PictureIntPoint::new(
+                            device_rect.origin.x - unclipped.origin.x as i32,
+                            device_rect.origin.y - unclipped.origin.y as i32,
+                        ),
+                        PictureIntSize::new(
+                            device_rect.size.width,
+                            device_rect.size.height,
+                        ),
+                    );
+
+                    
+                    
+                    let cache_item = frame_state.resource_cache.request_render_task(
+                        RenderTaskCacheKey {
+                            size: device_rect.size,
+                            kind: RenderTaskCacheKeyKind::Picture(PictureCacheKey {
+                                scene_id: frame_context.scene_id,
+                                picture_id: self.id,
+                                unclipped_size: unclipped.size.to_i32(),
+                                pic_relative_render_rect,
+                            }),
+                        },
+                        frame_state.gpu_cache,
+                        frame_state.render_tasks,
+                        None,
+                        false,
+                        |render_tasks| {
+                            let child_tasks = mem::replace(&mut pic_state_for_children.tasks, Vec::new());
+
                             let picture_task = RenderTask::new_picture(
                                 RenderTaskLocation::Dynamic(None, device_rect.size),
                                 unclipped.size,
                                 pic_index,
                                 device_rect.origin,
-                                pic_state_for_children.tasks,
+                                child_tasks,
                                 uv_rect_kind,
-                                pic_state_for_children.raster_spatial_node_index,
+                                pic_context.raster_spatial_node_index,
                             );
 
-                            let picture_task_id = frame_state.render_tasks.add(picture_task);
+                            let picture_task_id = render_tasks.add(picture_task);
 
                             let blur_render_task = RenderTask::new_blur(
                                 blur_std_deviation,
                                 picture_task_id,
-                                frame_state.render_tasks,
+                                render_tasks,
                                 RenderTargetKind::Color,
                                 ClearMode::Transparent,
                             );
 
-                            let render_task_id = frame_state.render_tasks.add(blur_render_task);
+                            let render_task_id = render_tasks.add(blur_render_task);
 
                             pic_state.tasks.push(render_task_id);
 
-                            PictureSurface::RenderTask(render_task_id)
-                        } else {
-                            
-                            
-                            let pic_relative_render_rect = PictureIntRect::new(
-                                PictureIntPoint::new(
-                                    device_rect.origin.x - unclipped.origin.x as i32,
-                                    device_rect.origin.y - unclipped.origin.y as i32,
-                                ),
-                                PictureIntSize::new(
-                                    device_rect.size.width,
-                                    device_rect.size.height,
-                                ),
-                            );
-
-                            
-                            
-                            let cache_item = frame_state.resource_cache.request_render_task(
-                                RenderTaskCacheKey {
-                                    size: device_rect.size,
-                                    kind: RenderTaskCacheKeyKind::Picture(PictureCacheKey {
-                                        scene_id: frame_context.scene_id,
-                                        picture_id: self.id,
-                                        unclipped_size: unclipped.size.to_i32(),
-                                        pic_relative_render_rect,
-                                    }),
-                                },
-                                frame_state.gpu_cache,
-                                frame_state.render_tasks,
-                                None,
-                                false,
-                                |render_tasks| {
-                                    let child_tasks = mem::replace(&mut pic_state_for_children.tasks, Vec::new());
-
-                                    let picture_task = RenderTask::new_picture(
-                                        RenderTaskLocation::Dynamic(None, device_rect.size),
-                                        unclipped.size,
-                                        pic_index,
-                                        device_rect.origin,
-                                        child_tasks,
-                                        uv_rect_kind,
-                                        pic_state_for_children.raster_spatial_node_index,
-                                    );
-
-                                    let picture_task_id = render_tasks.add(picture_task);
-
-                                    let blur_render_task = RenderTask::new_blur(
-                                        blur_std_deviation,
-                                        picture_task_id,
-                                        render_tasks,
-                                        RenderTargetKind::Color,
-                                        ClearMode::Transparent,
-                                    );
-
-                                    let render_task_id = render_tasks.add(blur_render_task);
-
-                                    pic_state.tasks.push(render_task_id);
-
-                                    render_task_id
-                                }
-                            );
-
-                            PictureSurface::TextureCache(cache_item)
-                        };
-
-                        raster_config.surface = Some(surface);
-                    }
-                    PictureCompositeMode::Filter(FilterOp::DropShadow(offset, blur_radius, color)) => {
-                        let blur_std_deviation = blur_radius * frame_context.device_pixel_scale.0;
-                        let blur_range = (blur_std_deviation * BLUR_SAMPLE_SCALE).ceil() as i32;
-
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        let device_rect = clipped
-                            .inflate(blur_range, blur_range)
-                            .intersection(&unclipped.to_i32())
-                            .unwrap();
-
-                        let uv_rect_kind = calculate_uv_rect_kind(
-                            &pic_rect,
-                            &transform,
-                            &device_rect,
-                            frame_context.device_pixel_scale,
-                        );
-
-                        let mut picture_task = RenderTask::new_picture(
-                            RenderTaskLocation::Dynamic(None, device_rect.size),
-                            unclipped.size,
-                            pic_index,
-                            device_rect.origin,
-                            pic_state_for_children.tasks,
-                            uv_rect_kind,
-                            pic_state_for_children.raster_spatial_node_index,
-                        );
-                        picture_task.mark_for_saving();
-
-                        let picture_task_id = frame_state.render_tasks.add(picture_task);
-
-                        let blur_render_task = RenderTask::new_blur(
-                            blur_std_deviation.round(),
-                            picture_task_id,
-                            frame_state.render_tasks,
-                            RenderTargetKind::Color,
-                            ClearMode::Transparent,
-                        );
-
-                        self.secondary_render_task_id = Some(picture_task_id);
-
-                        let render_task_id = frame_state.render_tasks.add(blur_render_task);
-                        pic_state.tasks.push(render_task_id);
-                        raster_config.surface = Some(PictureSurface::RenderTask(render_task_id));
-
-                        
-                        
-                        
-                        
-                        if pic_state.local_rect_changed {
-                            frame_state.gpu_cache.invalidate(&mut self.extra_gpu_data_handle);
+                            render_task_id
                         }
+                    );
 
-                        if let Some(mut request) = frame_state.gpu_cache.request(&mut self.extra_gpu_data_handle) {
-                            
-                            
-                            
-                            
-                            
-                            
+                    PictureSurface::TextureCache(cache_item)
+                };
 
-                            
-                            
-                            
-                            let shadow_rect = prim_local_rect.translate(&offset);
+                raster_config.surface = Some(surface);
+            }
+            PictureCompositeMode::Filter(FilterOp::DropShadow(offset, blur_radius, color)) => {
+                let blur_std_deviation = blur_radius * frame_context.device_pixel_scale.0;
+                let blur_range = (blur_std_deviation * BLUR_SAMPLE_SCALE).ceil() as i32;
 
-                            
-                            request.push(color.premultiplied());
-                            request.push(PremultipliedColorF::WHITE);
-                            request.push([
-                                prim_local_rect.size.width,
-                                prim_local_rect.size.height,
-                                0.0,
-                                0.0,
-                            ]);
+                
+                
+                
+                
+                
+                
+                
+                
+                let device_rect = clipped
+                    .inflate(blur_range, blur_range)
+                    .intersection(&unclipped.to_i32())
+                    .unwrap();
 
-                            
-                            request.push(shadow_rect);
-                            request.push([0.0, 0.0, 0.0, 0.0]);
-                        }
-                    }
-                    PictureCompositeMode::MixBlend(..) => {
-                        let uv_rect_kind = calculate_uv_rect_kind(
-                            &pic_rect,
-                            &transform,
-                            &clipped,
-                            frame_context.device_pixel_scale,
-                        );
+                let uv_rect_kind = calculate_uv_rect_kind(
+                    &pic_rect,
+                    &transform,
+                    &device_rect,
+                    frame_context.device_pixel_scale,
+                );
 
-                        let picture_task = RenderTask::new_picture(
-                            RenderTaskLocation::Dynamic(None, clipped.size),
-                            unclipped.size,
-                            pic_index,
-                            clipped.origin,
-                            pic_state_for_children.tasks,
-                            uv_rect_kind,
-                            pic_state_for_children.raster_spatial_node_index,
-                        );
+                let mut picture_task = RenderTask::new_picture(
+                    RenderTaskLocation::Dynamic(None, device_rect.size),
+                    unclipped.size,
+                    pic_index,
+                    device_rect.origin,
+                    pic_state_for_children.tasks,
+                    uv_rect_kind,
+                    pic_context.raster_spatial_node_index,
+                );
+                picture_task.mark_for_saving();
 
-                        let readback_task_id = frame_state.render_tasks.add(
-                            RenderTask::new_readback(clipped)
-                        );
+                let picture_task_id = frame_state.render_tasks.add(picture_task);
 
-                        self.secondary_render_task_id = Some(readback_task_id);
-                        pic_state.tasks.push(readback_task_id);
+                let blur_render_task = RenderTask::new_blur(
+                    blur_std_deviation.round(),
+                    picture_task_id,
+                    frame_state.render_tasks,
+                    RenderTargetKind::Color,
+                    ClearMode::Transparent,
+                );
 
-                        let render_task_id = frame_state.render_tasks.add(picture_task);
-                        pic_state.tasks.push(render_task_id);
-                        raster_config.surface = Some(PictureSurface::RenderTask(render_task_id));
-                    }
-                    PictureCompositeMode::Filter(filter) => {
-                        if let FilterOp::ColorMatrix(m) = filter {
-                            if let Some(mut request) = frame_state.gpu_cache.request(&mut self.extra_gpu_data_handle) {
-                                for i in 0..5 {
-                                    request.push([m[i*4], m[i*4+1], m[i*4+2], m[i*4+3]]);
-                                }
-                            }
-                        }
+                self.secondary_render_task_id = Some(picture_task_id);
 
-                        let uv_rect_kind = calculate_uv_rect_kind(
-                            &pic_rect,
-                            &transform,
-                            &clipped,
-                            frame_context.device_pixel_scale,
-                        );
+                let render_task_id = frame_state.render_tasks.add(blur_render_task);
+                pic_state.tasks.push(render_task_id);
+                raster_config.surface = Some(PictureSurface::RenderTask(render_task_id));
 
-                        let picture_task = RenderTask::new_picture(
-                            RenderTaskLocation::Dynamic(None, clipped.size),
-                            unclipped.size,
-                            pic_index,
-                            clipped.origin,
-                            pic_state_for_children.tasks,
-                            uv_rect_kind,
-                            pic_state_for_children.raster_spatial_node_index,
-                        );
+                
+                
+                
+                
+                if pic_state.local_rect_changed {
+                    frame_state.gpu_cache.invalidate(&mut self.extra_gpu_data_handle);
+                }
 
-                        let render_task_id = frame_state.render_tasks.add(picture_task);
-                        pic_state.tasks.push(render_task_id);
-                        raster_config.surface = Some(PictureSurface::RenderTask(render_task_id));
-                    }
-                    PictureCompositeMode::Blit => {
-                        let uv_rect_kind = calculate_uv_rect_kind(
-                            &pic_rect,
-                            &transform,
-                            &clipped,
-                            frame_context.device_pixel_scale,
-                        );
+                if let Some(mut request) = frame_state.gpu_cache.request(&mut self.extra_gpu_data_handle) {
+                    
+                    
+                    
+                    
+                    
+                    
 
-                        let picture_task = RenderTask::new_picture(
-                            RenderTaskLocation::Dynamic(None, clipped.size),
-                            unclipped.size,
-                            pic_index,
-                            clipped.origin,
-                            pic_state_for_children.tasks,
-                            uv_rect_kind,
-                            pic_state_for_children.raster_spatial_node_index,
-                        );
+                    
+                    
+                    
+                    let shadow_rect = prim_local_rect.translate(&offset);
 
-                        let render_task_id = frame_state.render_tasks.add(picture_task);
-                        pic_state.tasks.push(render_task_id);
-                        raster_config.surface = Some(PictureSurface::RenderTask(render_task_id));
-                    }
+                    
+                    request.push(color.premultiplied());
+                    request.push(PremultipliedColorF::WHITE);
+                    request.push([
+                        prim_local_rect.size.width,
+                        prim_local_rect.size.height,
+                        0.0,
+                        0.0,
+                    ]);
+
+                    
+                    request.push(shadow_rect);
+                    request.push([0.0, 0.0, 0.0, 0.0]);
                 }
             }
-            None => {
-                pic_state.tasks.extend(pic_state_for_children.tasks);
+            PictureCompositeMode::MixBlend(..) => {
+                let uv_rect_kind = calculate_uv_rect_kind(
+                    &pic_rect,
+                    &transform,
+                    &clipped,
+                    frame_context.device_pixel_scale,
+                );
+
+                let picture_task = RenderTask::new_picture(
+                    RenderTaskLocation::Dynamic(None, clipped.size),
+                    unclipped.size,
+                    pic_index,
+                    clipped.origin,
+                    pic_state_for_children.tasks,
+                    uv_rect_kind,
+                    pic_context.raster_spatial_node_index,
+                );
+
+                let readback_task_id = frame_state.render_tasks.add(
+                    RenderTask::new_readback(clipped)
+                );
+
+                self.secondary_render_task_id = Some(readback_task_id);
+                pic_state.tasks.push(readback_task_id);
+
+                let render_task_id = frame_state.render_tasks.add(picture_task);
+                pic_state.tasks.push(render_task_id);
+                raster_config.surface = Some(PictureSurface::RenderTask(render_task_id));
+            }
+            PictureCompositeMode::Filter(filter) => {
+                if let FilterOp::ColorMatrix(m) = filter {
+                    if let Some(mut request) = frame_state.gpu_cache.request(&mut self.extra_gpu_data_handle) {
+                        for i in 0..5 {
+                            request.push([m[i*4], m[i*4+1], m[i*4+2], m[i*4+3]]);
+                        }
+                    }
+                }
+
+                let uv_rect_kind = calculate_uv_rect_kind(
+                    &pic_rect,
+                    &transform,
+                    &clipped,
+                    frame_context.device_pixel_scale,
+                );
+
+                let picture_task = RenderTask::new_picture(
+                    RenderTaskLocation::Dynamic(None, clipped.size),
+                    unclipped.size,
+                    pic_index,
+                    clipped.origin,
+                    pic_state_for_children.tasks,
+                    uv_rect_kind,
+                    pic_context.raster_spatial_node_index,
+                );
+
+                let render_task_id = frame_state.render_tasks.add(picture_task);
+                pic_state.tasks.push(render_task_id);
+                raster_config.surface = Some(PictureSurface::RenderTask(render_task_id));
+            }
+            PictureCompositeMode::Blit => {
+                let uv_rect_kind = calculate_uv_rect_kind(
+                    &pic_rect,
+                    &transform,
+                    &clipped,
+                    frame_context.device_pixel_scale,
+                );
+
+                let picture_task = RenderTask::new_picture(
+                    RenderTaskLocation::Dynamic(None, clipped.size),
+                    unclipped.size,
+                    pic_index,
+                    clipped.origin,
+                    pic_state_for_children.tasks,
+                    uv_rect_kind,
+                    pic_context.raster_spatial_node_index,
+                );
+
+                let render_task_id = frame_state.render_tasks.add(picture_task);
+                pic_state.tasks.push(render_task_id);
+                raster_config.surface = Some(PictureSurface::RenderTask(render_task_id));
             }
         }
 
