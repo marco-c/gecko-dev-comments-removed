@@ -1,8 +1,6 @@
 
 
 
-
-
 o1 = new Float32Array().buffer
 o2 = ArrayBuffer.prototype
 o3 = new Uint32Array().buffer
