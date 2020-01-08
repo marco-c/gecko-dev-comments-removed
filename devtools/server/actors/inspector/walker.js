@@ -17,7 +17,6 @@ loader.lazyRequireGetter(this, "isAfterPseudoElement", "devtools/shared/layout/u
 loader.lazyRequireGetter(this, "isAnonymous", "devtools/shared/layout/utils", true);
 loader.lazyRequireGetter(this, "isBeforePseudoElement", "devtools/shared/layout/utils", true);
 loader.lazyRequireGetter(this, "isDirectShadowHostChild", "devtools/shared/layout/utils", true);
-loader.lazyRequireGetter(this, "isNativeAnonymous", "devtools/shared/layout/utils", true);
 loader.lazyRequireGetter(this, "isShadowHost", "devtools/shared/layout/utils", true);
 loader.lazyRequireGetter(this, "isShadowRoot", "devtools/shared/layout/utils", true);
 loader.lazyRequireGetter(this, "isTemplateElement", "devtools/shared/layout/utils", true);
@@ -736,7 +735,6 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     
     const isUAWidget = shadowHost && node.rawNode.openOrClosedShadowRoot.isUAWidget();
     const hideShadowRoot = isUAWidget && !this.showUserAgentShadowRoots;
-    const showNativeAnonymousChildren = isUAWidget && this.showUserAgentShadowRoots;
 
     const templateElement = isTemplateElement(node.rawNode);
     if (templateElement) {
@@ -758,8 +756,6 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       }
     }
 
-    const useNonAnonymousWalker = shadowRoot || shadowHost || isUnslottedHostChild;
-
     
     
     const getFilteredWalker = documentWalkerNode => {
@@ -769,6 +765,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       
       const skipTo = SKIP_TO_SIBLING;
 
+      const useNonAnonymousWalker = shadowRoot || shadowHost || isUnslottedHostChild;
       if (useNonAnonymousWalker) {
         
         
@@ -810,10 +807,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       
       
       
-      if (
-        useNonAnonymousWalker &&
-        (isShadowRoot(start) || isNativeAnonymous(start))
-      ) {
+      if (isShadowRoot(start)) {
         start = firstChild;
       }
 
@@ -872,30 +866,11 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
         
         ...nodes,
         
-        ...(showNativeAnonymousChildren ?
-          this.getNativeAnonymousChildren(node.rawNode) : []),
-        
         ...(hasAfter ? [last] : []),
       ];
     }
 
     return { hasFirst, hasLast, nodes };
-  },
-
-  getNativeAnonymousChildren: function(rawNode) {
-    
-    const walker = this.getDocumentWalker(rawNode);
-    let node = walker.firstChild();
-
-    const nodes = [];
-    while (node) {
-      
-      if (isNativeAnonymous(node)) {
-        nodes.push(node);
-      }
-      node = walker.nextSibling();
-    }
-    return nodes;
   },
 
   
