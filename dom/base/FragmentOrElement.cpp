@@ -2188,8 +2188,7 @@ FragmentOrElement::GetMarkup(bool aIncludeSelf, nsAString& aMarkup)
   nsCOMPtr<nsIDocumentEncoder> docEncoder = doc->GetCachedEncoder();
   if (!docEncoder) {
     docEncoder =
-      do_CreateInstance(PromiseFlatCString(
-        nsDependentCString(NS_DOC_ENCODER_CONTRACTID_BASE) +
+      do_createDocumentEncoder(PromiseFlatCString(
         NS_ConvertUTF16toUTF8(contentType)
       ).get());
   }
@@ -2197,7 +2196,7 @@ FragmentOrElement::GetMarkup(bool aIncludeSelf, nsAString& aMarkup)
     
     
     contentType.AssignLiteral("application/xml");
-    docEncoder = do_CreateInstance(NS_DOC_ENCODER_CONTRACTID_BASE "application/xml");
+    docEncoder = do_createDocumentEncoder("application/xml");
     
     
     tryToCacheEncoder = false;
