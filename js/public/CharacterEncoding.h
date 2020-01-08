@@ -346,7 +346,7 @@ inline void JS_free(JS::UTF8CharsZ& ptr) { js_free((void*)ptr.get()); }
 
 
 extern JS_PUBLIC_API(JS::UniqueChars)
-JS_EncodeString(JSContext* cx, JSString* str);
+JS_EncodeStringToLatin1(JSContext* cx, JSString* str);
 
 
 
