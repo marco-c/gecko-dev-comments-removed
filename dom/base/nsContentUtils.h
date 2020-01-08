@@ -203,6 +203,7 @@ class nsContentUtils
   typedef mozilla::dom::Element Element;
   typedef mozilla::Cancelable Cancelable;
   typedef mozilla::CanBubble CanBubble;
+  typedef mozilla::Composed Composed;
   typedef mozilla::ChromeOnlyDispatch ChromeOnlyDispatch;
   typedef mozilla::EventMessage EventMessage;
   typedef mozilla::TimeDuration TimeDuration;
@@ -1348,12 +1349,26 @@ public:
 
 
 
+
   static nsresult DispatchTrustedEvent(nsIDocument* aDoc,
                                        nsISupports* aTarget,
                                        const nsAString& aEventName,
                                        CanBubble,
                                        Cancelable,
+                                       Composed aComposed = Composed::eDefault,
                                        bool* aDefaultAction = nullptr);
+
+  static nsresult DispatchTrustedEvent(nsIDocument* aDoc,
+                                       nsISupports* aTarget,
+                                       const nsAString& aEventName,
+                                       CanBubble aCanBubble,
+                                       Cancelable aCancelable,
+                                       bool* aDefaultAction)
+  {
+    return DispatchTrustedEvent(aDoc, aTarget, aEventName,
+                                aCanBubble, aCancelable,
+                                Composed::eDefault, aDefaultAction);
+  }
 
   
 
@@ -3339,6 +3354,7 @@ private:
                                 const nsAString& aEventName,
                                 CanBubble,
                                 Cancelable,
+                                Composed,
                                 Trusted,
                                 bool* aDefaultAction = nullptr,
                                 ChromeOnlyDispatch = ChromeOnlyDispatch::eNo);
