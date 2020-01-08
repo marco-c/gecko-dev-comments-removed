@@ -880,7 +880,11 @@ void HttpChannelChild::OnTransportAndData(const nsresult& channelStatus,
 
 bool HttpChannelChild::NeedToReportBytesRead() {
   if (mCacheNeedToReportBytesReadInitialized) {
-    return mNeedToReportBytesRead;
+    
+    
+    
+    
+    return mNeedToReportBytesRead && !mDivertingToParent;
   }
 
   
