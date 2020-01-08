@@ -325,6 +325,8 @@ SourceMapURLService.prototype._callOneCallback = async function(subscriptionEntr
 
 
 
+
+
 SourceMapURLService.prototype.subscribe = function(url, line, column, callback) {
   if (!this._subscriptions) {
     return;
@@ -348,6 +350,8 @@ SourceMapURLService.prototype.subscribe = function(url, line, column, callback) 
   if (this._prefValue) {
     this._callOneCallback(subscriptionEntry, callback);
   }
+
+  return () => this.unsubscribe(url, line, column, callback);
 };
 
 
