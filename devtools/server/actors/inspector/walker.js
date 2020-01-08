@@ -42,6 +42,8 @@ loader.lazyRequireGetter(this, "WalkerSearch", "devtools/server/actors/utils/wal
 loader.lazyServiceGetter(this, "eventListenerService",
   "@mozilla.org/eventlistenerservice;1", "nsIEventListenerService");
 
+loader.lazyRequireGetter(this, "ChromeUtils");
+
 
 const MUTATIONS_THROTTLING_DELAY = 100;
 
@@ -1844,7 +1846,15 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
   onFrameLoad: function({ window, isTopLevel }) {
     const { readyState } = window.document;
     if (readyState != "interactive" && readyState != "complete") {
-      window.addEventListener("DOMContentLoaded",
+      
+      
+      
+      
+      
+      
+      
+      const isXULDocument = (ChromeUtils.getClassName(window.document) == "XULDocument");
+      window.addEventListener(isXULDocument ? "load" : "DOMContentLoaded",
         this.onFrameLoad.bind(this, { window, isTopLevel }),
         { once: true });
       return;
