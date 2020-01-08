@@ -1707,6 +1707,8 @@ pref("extensions.formautofill.creditCards.enabled", true);
 pref("extensions.formautofill.creditCards.used", 0);
 pref("extensions.formautofill.firstTimeUse", true);
 pref("extensions.formautofill.heuristics.enabled", true);
+
+pref("extensions.formautofill.reauth.enabled", false);
 pref("extensions.formautofill.section.enabled", true);
 pref("extensions.formautofill.loglevel", "Warn");
 
