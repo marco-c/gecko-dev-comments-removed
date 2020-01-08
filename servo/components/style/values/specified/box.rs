@@ -1156,9 +1156,10 @@ pub enum Appearance {
     #[parse(condition = "in_ua_or_chrome_sheet")]
     TabScrollArrowForward,
     
-    Textfield,
+    #[parse(aliases = "textfield-multiline")]
+    Textarea,
     
-    TextfieldMultiline,
+    Textfield,
     
     #[parse(condition = "in_ua_or_chrome_sheet")]
     Toolbar,
