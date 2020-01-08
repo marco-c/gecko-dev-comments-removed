@@ -655,14 +655,8 @@ add_task(async function test_getDuplicateGuid() {
   
   
   record["cc-number"] = "358999378390" + last4Digits;
-  Assert.equal(await profileStorage.creditCards.getDuplicateGuid(record), null);
 
   
-  
-  let tokendb = Cc["@mozilla.org/security/pk11tokendb;1"].createInstance(Ci.nsIPK11TokenDB);
-  let token = tokendb.getInternalKeyToken();
-  token.reset();
-  token.initPassword("password");
   Assert.equal(await profileStorage.creditCards.getDuplicateGuid(record), guid);
 
   
