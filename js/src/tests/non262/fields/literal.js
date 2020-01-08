@@ -1,0 +1,46 @@
+
+
+source = `var y = {
+    x;
+}`;
+assertThrowsInstanceOf(() => eval(source), SyntaxError);
+
+
+
+
+
+
+
+source = `var y = {
+    #x;
+}`;
+assertThrowsInstanceOf(() => eval(source), SyntaxError);
+
+
+
+
+
+
+
+source = `var y = {
+    x = 2;
+}`;
+assertThrowsInstanceOf(() => eval(source), SyntaxError);
+
+source = `var y = {
+    x = 2
+}`;
+assertThrowsInstanceOf(() => eval(source), SyntaxError);
+
+source = `var y = {
+    #x = 2;
+}`;
+assertThrowsInstanceOf(() => eval(source), SyntaxError);
+
+source = `var y = {
+    #x = 2
+}`;
+assertThrowsInstanceOf(() => eval(source), SyntaxError);
+
+if (typeof reportCompare === "function")
+  reportCompare(true, true);

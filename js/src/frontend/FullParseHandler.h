@@ -310,11 +310,11 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_AS)
         return new_<ListNode>(ParseNodeKind::Object, TokenPos(begin, begin + 1));
     }
 
-    ClassNodeType newClass(Node name, Node heritage, Node methodBlock, const TokenPos& pos) {
-        return new_<ClassNode>(name, heritage, methodBlock, pos);
+    ClassNodeType newClass(Node name, Node heritage, Node memberBlock, const TokenPos& pos) {
+        return new_<ClassNode>(name, heritage, memberBlock, pos);
     }
-    ListNodeType newClassMethodList(uint32_t begin) {
-        return new_<ListNode>(ParseNodeKind::ClassMethodList, TokenPos(begin, begin + 1));
+    ListNodeType newClassMemberList(uint32_t begin) {
+        return new_<ListNode>(ParseNodeKind::ClassMemberList, TokenPos(begin, begin + 1));
     }
     ClassNamesType newClassNames(Node outer, Node inner, const TokenPos& pos) {
         return new_<ClassNames>(outer, inner, pos);
@@ -412,11 +412,11 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_AS)
         return true;
     }
 
-    MOZ_MUST_USE bool addClassMethodDefinition(ListNodeType methodList, Node key,
+    MOZ_MUST_USE bool addClassMethodDefinition(ListNodeType memberList, Node key,
                                                CodeNodeType funNode, AccessorType atype,
                                                bool isStatic)
     {
-        MOZ_ASSERT(methodList->isKind(ParseNodeKind::ClassMethodList));
+        MOZ_ASSERT(memberList->isKind(ParseNodeKind::ClassMemberList));
         MOZ_ASSERT(isUsableAsObjectPropertyName(key));
 
         checkAndSetIsDirectRHSAnonFunction(funNode);
@@ -426,7 +426,22 @@ FOR_EACH_PARSENODE_SUBCLASS(DECLARE_AS)
         if (!classMethod) {
             return false;
         }
-        addList( methodList,  classMethod);
+        addList( memberList,  classMethod);
+        return true;
+    }
+
+    MOZ_MUST_USE bool addClassFieldDefinition(ListNodeType memberList,
+                                              Node name, Node initializer)
+    {
+        MOZ_ASSERT(memberList->isKind(ParseNodeKind::ClassMemberList));
+        MOZ_ASSERT(isUsableAsObjectPropertyName(name));
+
+        ClassField* classField = new_<ClassField>(name, initializer);
+
+        if (!classField) {
+            return false;
+        }
+        addList( memberList,  classField);
         return true;
     }
 
