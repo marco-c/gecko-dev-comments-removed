@@ -5,18 +5,6 @@
 
 ChromeUtils.import("resource://gre/modules/Preferences.jsm", this);
 
-
-
-
-
-const PREF_BOOLEAN_DEFAULT_TRUE = "accessibility.typeaheadfind.manual";
-const PREF_BOOLEAN_USERVALUE_TRUE = "browser.dom.window.dump.enabled";
-const PREF_NUMBER_DEFAULT_ZERO = "accessibility.typeaheadfind.casesensitive";
-const PREF_STRING_DEFAULT_EMPTY = "browser.helperApps.neverAsk.openFile";
-const PREF_STRING_DEFAULT_NOTEMPTY = "accessibility.typeaheadfind.soundURL";
-const PREF_STRING_DEFAULT_NOTEMPTY_VALUE = "beep";
-const PREF_STRING_LOCALIZED_MISSING = "gecko.handlerService.schemes.irc.1.name";
-
 class AboutConfigRowTest {
   constructor(element) {
     this.element = element;
@@ -34,26 +22,8 @@ class AboutConfigRowTest {
     return this.querySelector("td.cell-value").textContent;
   }
 
-  
-
-
-  get valueInput() {
-    return this.querySelector("td.cell-value input");
-  }
-
-  
-
-
-
-  get editColumnButton() {
-    return this.querySelector("td.cell-edit > button");
-  }
-
-  
-
-
-  get resetColumnButton() {
-    return this.querySelector("td:last-child > button");
+  get firstButton() {
+    return this.querySelector("button");
   }
 
   hasClass(className) {
