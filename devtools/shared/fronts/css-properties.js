@@ -103,6 +103,7 @@ CssProperties.prototype = {
 
 
   isKnown(property) {
+    property = property.toLowerCase();
     return !!this.properties[property] || isCssVariable(property);
   },
 
@@ -197,6 +198,7 @@ CssProperties.prototype = {
 
 
   getSubproperties(name) {
+    name = name.toLowerCase();
     if (this.isKnown(name)) {
       if (this.properties[name] && this.properties[name].subproperties) {
         return this.properties[name].subproperties;
