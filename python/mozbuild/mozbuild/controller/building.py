@@ -770,7 +770,8 @@ class CCacheStats(object):
     STATS_KEYS = [
         
         
-        ('stats_zero_time', 'stats zero time'),
+        ('stats_zeroed', 'stats zero time'), 
+        ('stats_zeroed', 'stats zeroed'),
         ('stats_updated', 'stats updated'),
         ('cache_hit_direct', 'cache hit (direct)'),
         ('cache_hit_preprocessed', 'cache hit (preprocessed)'),
