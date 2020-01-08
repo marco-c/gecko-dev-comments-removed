@@ -71,6 +71,7 @@ decorate_task(
   }
 );
 
+
 decorate_task(
   AddonStudies.withStudies([
     addonStudyFactory({
@@ -199,19 +200,19 @@ decorate_task(
 
       activeAddonStudy.querySelector(".remove-button").click();
       await ContentTaskUtils.waitForCondition(() => (
-        getStudyRow(doc, addonStudies[0].name).matches(".study--disabled")
+        getStudyRow(doc, addonStudies[0].name).matches(".study.disabled")
       ));
       ok(
-        getStudyRow(doc, addonStudies[0].name).matches(".study--disabled"),
+        getStudyRow(doc, addonStudies[0].name).matches(".study.disabled"),
         "Clicking the remove button updates the UI to show that the study has been disabled."
       );
 
       activePrefStudy.querySelector(".remove-button").click();
       await ContentTaskUtils.waitForCondition(() => (
-        getStudyRow(doc, prefStudies[0].name).matches(".study--disabled")
+        getStudyRow(doc, prefStudies[0].name).matches(".study.disabled")
       ));
       ok(
-        getStudyRow(doc, prefStudies[0].name).matches(".study--disabled"),
+        getStudyRow(doc, prefStudies[0].name).matches(".study.disabled"),
         "Clicking the remove button updates the UI to show that the study has been disabled."
       );
     });
@@ -230,6 +231,7 @@ decorate_task(
   }
 );
 
+
 decorate_task(
   AddonStudies.withStudies([]),
   withAboutStudies,
@@ -247,6 +249,7 @@ decorate_task(
     });
   }
 );
+
 
 decorate_task(
   withAboutStudies,
@@ -269,4 +272,5 @@ decorate_task(
       RecipeRunner.checkPrefs();
     }
   }
-).only();
+);
+
