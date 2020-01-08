@@ -15,15 +15,12 @@ class FilterPath(object):
     def __init__(self, path, exclude=None):
         self.path = os.path.normpath(path)
         self._finder = None
-        self.exclude = exclude
 
     @property
     def finder(self):
         if self._finder:
             return self._finder
-        self._finder = FileFinder(
-            mozpath.normsep(self.path),
-            ignore=[mozpath.normsep(e) for e in self.exclude])
+        self._finder = FileFinder(mozpath.normsep(self.path))
         return self._finder
 
     @property
@@ -94,16 +91,14 @@ def filterpaths(paths, linter, **lintargs):
             path = os.path.join(root, path)
         return FilterPath(path)
 
+    
     include = map(normalize, include)
+
+    
+    
     exclude = map(normalize, exclude)
-
-    
-    
-    includepaths = [p for p in include if p.exists]
     excludepaths = [p for p in exclude if p.exists]
-
-    includeglobs = [p for p in include if not p.exists]
-    excludeglobs = [p for p in exclude if not p.exists]
+    excludeglobs = [p.path for p in exclude if not p.exists]
 
     extensions = linter.get('extensions')
     keep = set()
@@ -118,7 +113,7 @@ def filterpaths(paths, linter, **lintargs):
 
         
         
-        for inc in includepaths:
+        for inc in include:
             
             
             excs = [e for e in excludepaths if inc.contains(e)]
@@ -143,23 +138,9 @@ def filterpaths(paths, linter, **lintargs):
 
         
         
-        if path.isfile:
-            
-            
-            
-            if not path.match(includeglobs) or any(e.contains(path) for e in excludepaths):
-                continue
-
-            keep.add(path)
-        elif path.isdir:
-            
-            
-            path.exclude = [os.path.relpath(e.path, root) for e in exclude]
-            for pattern in includeglobs:
-                for p, f in path.finder.find(pattern.path):
-                    if extensions and os.path.splitext(p)[1][1:] not in extensions:
-                        continue
-                    keep.add(path.join(p))
+        for pattern in excludeglobs:
+            for p, f in path.finder.find(pattern):
+                discard.add(path.join(p))
 
     
     lintargs['exclude'] = [f.path for f in discard]
