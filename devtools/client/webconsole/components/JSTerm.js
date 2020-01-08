@@ -1465,8 +1465,6 @@ class JSTerm extends Component {
   }
 
   destroy() {
-    this.clearCompletion();
-
     this.webConsoleClient.clearNetworkRequests();
     if (this.hud.outputNode) {
       
