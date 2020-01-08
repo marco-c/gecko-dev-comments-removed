@@ -495,6 +495,14 @@ class FaviconLoader {
   }
 
   loadIcons() {
+    
+    
+    
+    
+    if (this.iconInfos.length == 0) {
+      return;
+    }
+
     let preferredWidth = PREFERRED_WIDTH * Math.ceil(this.mm.content.devicePixelRatio);
     let { richIcon, tabIcon } = selectIcons(this.iconInfos, preferredWidth);
     this.iconInfos = [];
