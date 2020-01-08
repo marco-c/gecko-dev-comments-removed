@@ -1628,6 +1628,13 @@ xpc::InnerCleanupValue(const nsXPTType& aType, void* aValue, uint32_t aArrayLen)
         case nsXPTType::T_JSVAL:
             ((JS::Value*)aValue)->setUndefined();
             break;
+
+        
+        case nsXPTType::T_VOID:
+            break;
+
+        default:
+            MOZ_CRASH("Unknown Type!");
     }
 
     
