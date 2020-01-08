@@ -40,29 +40,6 @@ var IdentityHandler = {
   MIXED_MODE_CONTENT_LOADED: 2,
 
   
-  
-
-  
-  TRACKING_MODE_UNKNOWN: 0,
-
-  
-  TRACKING_MODE_CONTENT_BLOCKED: 1,
-
-  
-  TRACKING_MODE_CONTENT_LOADED: 2,
-
-  _useTrackingProtection: false,
-  _usePrivateMode: false,
-
-  setUseTrackingProtection: function(aUse) {
-    this._useTrackingProtection = aUse;
-  },
-
-  setUsePrivateMode: function(aUse) {
-    this._usePrivateMode = aUse;
-  },
-
-  
 
 
   getIdentityMode: function getIdentityMode(aState) {
@@ -103,19 +80,6 @@ var IdentityHandler = {
     return this.MIXED_MODE_UNKNOWN;
   },
 
-  getTrackingMode: function getTrackingMode(aState) {
-    if (aState & Ci.nsIWebProgressListener.STATE_BLOCKED_TRACKING_CONTENT) {
-      return this.TRACKING_MODE_CONTENT_BLOCKED;
-    }
-
-    
-    if ((aState & Ci.nsIWebProgressListener.STATE_LOADED_TRACKING_CONTENT) && this._useTrackingProtection) {
-      return this.TRACKING_MODE_CONTENT_LOADED;
-    }
-
-    return this.TRACKING_MODE_UNKNOWN;
-  },
-
   
 
 
@@ -124,13 +88,11 @@ var IdentityHandler = {
     let identityMode = this.getIdentityMode(aState);
     let mixedDisplay = this.getMixedDisplayMode(aState);
     let mixedActive = this.getMixedActiveMode(aState);
-    let trackingMode = this.getTrackingMode(aState);
     let result = {
       mode: {
         identity: identityMode,
         mixed_display: mixedDisplay,
         mixed_active: mixedActive,
-        tracking: trackingMode,
       },
     };
 
@@ -210,9 +172,6 @@ class GeckoViewProgress extends GeckoViewModule {
   onSettingsUpdate() {
     const settings = this.settings;
     debug `onSettingsUpdate: ${settings}`;
-
-    IdentityHandler.setUseTrackingProtection(!!settings.useTrackingProtection);
-    IdentityHandler.setUsePrivateMode(!!settings.usePrivateMode);
   }
 
   onStateChange(aWebProgress, aRequest, aStateFlags, aStatus) {
