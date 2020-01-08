@@ -963,7 +963,18 @@ nsLineLayout::ReflowFrame(nsIFrame* aFrame,
       nsIFrame* outOfFlowFrame = nsLayoutUtils::GetFloatFromPlaceholder(aFrame);
       if (outOfFlowFrame) {
         if (psd->mNoWrap &&
-            !LineIsEmpty() && 
+            
+            !LineIsEmpty() &&
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            !outOfFlowFrame->IsLetterFrame() &&
             !GetOutermostLineLayout()->mBlockRI->mFlags.mCanHaveTextOverflow) {
           
           RecordNoWrapFloat(outOfFlowFrame);
