@@ -1444,9 +1444,6 @@ nsIDocument::nsIDocument()
     mDelayFrameLoaderInitialization(false),
     mSynchronousDOMContentLoaded(false),
     mMaybeServiceWorkerControlled(false),
-    mValidWidth(false),
-    mValidHeight(false),
-    mAutoSize(false),
     mAllowZoom(false),
     mValidScaleFloat(false),
     mValidMaxScale(false),
@@ -7437,28 +7434,6 @@ nsIDocument::GetViewportInfo(const ScreenIntSize& aDisplaySize)
     
     ParseWidthAndHeightInMetaViewport(widthStr, heightStr, scaleStr);
 
-    mAutoSize = false;
-    if (mMaxWidth == nsViewportInfo::DeviceSize) {
-      mAutoSize = true;
-    }
-    if (widthStr.IsEmpty() &&
-        (mMaxHeight == nsViewportInfo::DeviceSize ||
-         (mScaleFloat.scale == 1.0)))
-    {
-      mAutoSize = true;
-    }
-
-    
-    
-    mValidWidth = (!widthStr.IsEmpty() && mMaxWidth > 0);
-    mValidHeight = (!heightStr.IsEmpty() && mMaxHeight > 0);
-
-    
-    
-    if ((!mValidWidth && !widthStr.IsEmpty()) && !mValidHeight) {
-      mAutoSize = true;
-    }
-
     mAllowZoom = true;
     nsAutoString userScalable;
     GetHeaderData(nsGkAtoms::viewport_user_scalable, userScalable);
@@ -7608,7 +7583,16 @@ nsIDocument::GetViewportInfo(const ScreenIntSize& aDisplaySize)
     CSSToScreenScale scaleMinFloat = effectiveMinScale * layoutDeviceScale;
     CSSToScreenScale scaleMaxFloat = effectiveMaxScale * layoutDeviceScale;
 
-    if (mAutoSize) {
+    const bool autoSize =
+      mMaxWidth == nsViewportInfo::DeviceSize ||
+      (mWidthStrEmpty &&
+       (mMaxHeight == nsViewportInfo::DeviceSize ||
+        mScaleFloat.scale == 1.0f)) ||
+      (!mWidthStrEmpty && mMaxWidth == nsViewportInfo::Auto && mMaxHeight < 0);
+
+    
+    
+    if (autoSize) {
       size = displaySize;
     }
 
@@ -7636,7 +7620,7 @@ nsIDocument::GetViewportInfo(const ScreenIntSize& aDisplaySize)
     }
 
     return nsViewportInfo(scaleFloat, scaleMinFloat, scaleMaxFloat, size,
-                          mAutoSize, effectiveAllowZoom);
+                          autoSize, effectiveAllowZoom);
   }
 }
 
