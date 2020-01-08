@@ -47,8 +47,7 @@ public:
   EventStates IntrinsicState() const override;
 
   virtual nsresult BindToTree(nsIDocument* aDocument, nsIContent* aParent,
-                               nsIContent* aBindingParent,
-                               bool aCompileEventHandlers) override;
+                               nsIContent* aBindingParent) override;
 
   
   

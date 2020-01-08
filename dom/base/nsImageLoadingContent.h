@@ -212,7 +212,7 @@ protected:
 
   
   void BindToTree(nsIDocument* aDocument, nsIContent* aParent,
-                  nsIContent* aBindingParent, bool aCompileEventHandlers);
+                  nsIContent* aBindingParent);
   void UnbindFromTree(bool aDeep, bool aNullParent);
 
   nsresult OnLoadComplete(imgIRequest* aRequest, nsresult aStatus);

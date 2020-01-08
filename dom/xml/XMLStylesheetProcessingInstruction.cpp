@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "XMLStylesheetProcessingInstruction.h"
 #include "nsContentUtils.h"
@@ -11,7 +11,7 @@
 namespace mozilla {
 namespace dom {
 
-// nsISupports implementation
+
 
 NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED(XMLStylesheetProcessingInstruction,
                                              ProcessingInstruction,
@@ -34,17 +34,15 @@ XMLStylesheetProcessingInstruction::~XMLStylesheetProcessingInstruction()
 {
 }
 
-// nsIContent
+
 
 nsresult
 XMLStylesheetProcessingInstruction::BindToTree(nsIDocument* aDocument,
                                                nsIContent* aParent,
-                                               nsIContent* aBindingParent,
-                                               bool aCompileEventHandlers)
+                                               nsIContent* aBindingParent)
 {
   nsresult rv = ProcessingInstruction::BindToTree(aDocument, aParent,
-                                                  aBindingParent,
-                                                  aCompileEventHandlers);
+                                                  aBindingParent);
   NS_ENSURE_SUCCESS(rv, rv);
 
   void (XMLStylesheetProcessingInstruction::*update)() =
@@ -64,7 +62,7 @@ XMLStylesheetProcessingInstruction::UnbindFromTree(bool aDeep, bool aNullParent)
   Unused << UpdateStyleSheetInternal(oldDoc, nullptr);
 }
 
-// nsINode
+
 
 void
 XMLStylesheetProcessingInstruction::SetNodeValueInternal(const nsAString& aNodeValue,
@@ -76,7 +74,7 @@ XMLStylesheetProcessingInstruction::SetNodeValueInternal(const nsAString& aNodeV
   }
 }
 
-// nsStyleLinkElement
+
 
 void
 XMLStylesheetProcessingInstruction::GetCharset(nsAString& aCharset)
@@ -86,7 +84,7 @@ XMLStylesheetProcessingInstruction::GetCharset(nsAString& aCharset)
   }
 }
 
-/* virtual */ void
+ void
 XMLStylesheetProcessingInstruction::OverrideBaseURI(nsIURI* aNewBaseURI)
 {
   mOverriddenBaseURI = aNewBaseURI;
@@ -95,7 +93,7 @@ XMLStylesheetProcessingInstruction::OverrideBaseURI(nsIURI* aNewBaseURI)
 Maybe<nsStyleLinkElement::SheetInfo>
 XMLStylesheetProcessingInstruction::GetStyleSheetInfo()
 {
-  // xml-stylesheet PI is special only in prolog
+  
   if (!nsContentUtils::InProlog(this)) {
     return Nothing();
   }
@@ -118,15 +116,15 @@ XMLStylesheetProcessingInstruction::GetStyleSheetInfo()
 
   bool alternate = alternateAttr.EqualsLiteral("yes");
   if (alternate && title.IsEmpty()) {
-    // alternates must have title
+    
     return Nothing();
   }
 
   nsAutoString media;
   nsContentUtils::GetPseudoAttributeValue(data, nsGkAtoms::media, media);
 
-  // Make sure the type handling here matches
-  // nsXMLContentSink::HandleProcessingInstruction
+  
+  
   nsAutoString type;
   nsContentUtils::GetPseudoAttributeValue(data, nsGkAtoms::type, type);
 
@@ -166,5 +164,5 @@ XMLStylesheetProcessingInstruction::CloneDataNode(mozilla::dom::NodeInfo *aNodeI
   return do_AddRef(new XMLStylesheetProcessingInstruction(ni.forget(), data));
 }
 
-} // namespace dom
-} // namespace mozilla
+} 
+} 

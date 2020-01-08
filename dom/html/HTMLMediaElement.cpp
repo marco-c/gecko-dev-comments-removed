@@ -4013,7 +4013,7 @@ HTMLMediaElement::AudioChannelAgentDelayingPlayback()
 }
 
 void
-HTMLMediaElement::UpdateHadAudibleAutoplayState() const
+HTMLMediaElement::ReportAutoplayTelemetry() const
 {
   
   if ((Volume() > 0.0 && !Muted()) &&
@@ -4086,7 +4086,7 @@ HTMLMediaElement::Play(ErrorResult& aRv)
     return promise.forget();
   }
 
-  UpdateHadAudibleAutoplayState();
+  ReportAutoplayTelemetry();
 
   const bool handlingUserInput = EventStateManager::IsHandlingUserInput();
   switch (AutoplayPolicy::IsAllowedToPlay(*this)) {
@@ -4538,11 +4538,10 @@ HTMLMediaElement::AfterMaybeChangeAttr(int32_t aNamespaceID,
 nsresult
 HTMLMediaElement::BindToTree(nsIDocument* aDocument,
                              nsIContent* aParent,
-                             nsIContent* aBindingParent,
-                             bool aCompileEventHandlers)
+                             nsIContent* aBindingParent)
 {
   nsresult rv = nsGenericHTMLElement::BindToTree(
-    aDocument, aParent, aBindingParent, aCompileEventHandlers);
+    aDocument, aParent, aBindingParent);
 
   mUnboundFromTree = false;
 
@@ -6246,7 +6245,7 @@ HTMLMediaElement::CheckAutoplayDataReady()
     return;
   }
 
-  UpdateHadAudibleAutoplayState();
+  ReportAutoplayTelemetry();
   switch (AutoplayPolicy::IsAllowedToPlay(*this)) {
     case nsIAutoplay::BLOCKED:
       return;

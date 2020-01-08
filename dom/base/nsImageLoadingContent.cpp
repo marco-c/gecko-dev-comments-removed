@@ -1498,8 +1498,7 @@ nsImageLoadingContent::HaveSize(imgIRequest *aImage)
 
 void
 nsImageLoadingContent::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
-                                  nsIContent* aBindingParent,
-                                  bool aCompileEventHandlers)
+                                  nsIContent* aBindingParent)
 {
   
   
