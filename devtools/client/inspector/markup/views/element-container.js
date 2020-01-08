@@ -34,16 +34,6 @@ function MarkupElementContainer(markupView, node) {
   MarkupContainer.prototype.initialize.call(this, markupView, node,
     "elementcontainer");
 
-  this.onFlexboxHighlighterChange = this.onFlexboxHighlighterChange.bind(this);
-  this.onGridHighlighterChange = this.onGridHighlighterChange.bind(this);
-
-  this.markup.highlighters.on("flexbox-highlighter-hidden",
-    this.onFlexboxHighlighterChange);
-  this.markup.highlighters.on("flexbox-highlighter-shown",
-    this.onFlexboxHighlighterChange);
-  this.markup.highlighters.on("grid-highlighter-hidden", this.onGridHighlighterChange);
-  this.markup.highlighters.on("grid-highlighter-shown", this.onGridHighlighterChange);
-
   if (node.nodeType === nodeConstants.ELEMENT_NODE) {
     this.editor = new ElementEditor(this, node);
   } else {
@@ -54,49 +44,12 @@ function MarkupElementContainer(markupView, node) {
 }
 
 MarkupElementContainer.prototype = extend(MarkupContainer.prototype, {
-  destroy: function() {
-    this.markup.highlighters.off("flexbox-highlighter-hidden",
-      this.onFlexboxHighlighterChange);
-    this.markup.highlighters.off("flexbox-highlighter-shown",
-      this.onFlexboxHighlighterChange);
-    this.markup.highlighters.off("grid-highlighter-hidden", this.onGridHighlighterChange);
-    this.markup.highlighters.off("grid-highlighter-shown", this.onGridHighlighterChange);
-
-    MarkupContainer.prototype.destroy.call(this);
-  },
-
   onContainerClick: function(event) {
     if (!event.target.hasAttribute("data-event")) {
       return;
     }
 
     this._buildEventTooltipContent(event.target);
-  },
-
-  
-
-
-
-
-  onFlexboxHighlighterChange: function() {
-    if (!this.editor._displayBadge) {
-      return;
-    }
-    this.editor._displayBadge.classList.toggle("active",
-      this.markup.highlighters.flexboxHighlighterShown === this.node);
-  },
-
-  
-
-
-
-
-  onGridHighlighterChange: function() {
-    if (!this.editor._displayBadge) {
-      return;
-    }
-    this.editor._displayBadge.classList.toggle("active",
-      this.markup.highlighters.gridHighlighters.has(this.node));
   },
 
   async _buildEventTooltipContent(target) {
