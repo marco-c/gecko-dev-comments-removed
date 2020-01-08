@@ -214,8 +214,7 @@ var WinTaskbarJumpList =
       return;
     }
 
-    if (!await this._startBuild())
-      return;
+    await this._startBuild();
 
     if (this._showTasks)
       this._buildTasks();
@@ -240,9 +239,7 @@ var WinTaskbarJumpList =
     if (URIsToRemove.length > 0) {
       
       this._clearHistory(URIsToRemove);
-      return true;
     }
-    return false;
   },
 
   _commitBuild: function WTBJL__commitBuild() {

@@ -229,16 +229,21 @@ void JumpListBuilder::DoInitListBuild(RefPtr<Promise>&& aPromise)
   
   
   
-  if (SUCCEEDED(hr) && objArray) {
+  if (SUCCEEDED(hr)) {
     sBuildingList = true;
     RemoveIconCacheAndGetJumplistShortcutURIs(objArray, urisToRemove);
-  }
 
-  NS_DispatchToMainThread(NS_NewRunnableFunction("InitListBuildResolve",
-                                                 [urisToRemove = std::move(urisToRemove),
-                                                  promise = std::move(aPromise)]() {
-    promise->MaybeResolve(urisToRemove);
-  }));
+    NS_DispatchToMainThread(NS_NewRunnableFunction("InitListBuildResolve",
+                                                   [urisToRemove = std::move(urisToRemove),
+                                                    promise = std::move(aPromise)]() {
+      promise->MaybeResolve(urisToRemove);
+    }));
+  } else {
+    NS_DispatchToMainThread(NS_NewRunnableFunction("InitListBuildReject",
+                                                   [promise = std::move(aPromise)]() {
+      promise->MaybeReject(NS_ERROR_FAILURE);
+    }));
+  }
 }
 
 
@@ -527,6 +532,11 @@ void JumpListBuilder::RemoveIconCacheAndGetJumplistShortcutURIs(IObjectArray *aO
                                                                 nsTArray<nsString>& aURISpecs)
 {
   MOZ_ASSERT(!NS_IsMainThread());
+
+  
+  if (!aObjArray) {
+    return;
+  }
 
   uint32_t count = 0;
   aObjArray->GetCount(&count);
