@@ -403,3 +403,42 @@ for (var foldOffsets = 0; foldOffsets <= 1; foldOffsets++) {
 }
 
 setJitCompilerOption('wasm.fold-offsets', 1);
+
+
+
+{
+    function makeIt(flag, memindex) {
+        return new Uint8Array([0x00, 0x61, 0x73, 0x6d,
+                               0x01, 0x00, 0x00, 0x00,
+                               0x05,                   
+                               0x03,                   
+                               0x01,                   
+                               0x00,                   
+                               0x01,                   
+                               0x0b,                   
+                               0x0a,                   
+                               0x01,                   
+                               flag,                   
+                               memindex,               
+                               0x41,                   
+                               0x00,                   
+                               0x0b,                   
+                               0x03,                   
+                               0x01,
+                               0x02,
+                               0x03]);
+    }
+
+    
+    new WebAssembly.Module(makeIt(0x02, 0x00));
+
+    
+    assertErrorMessage(() => new WebAssembly.Module(makeIt(0x03, 0x00)),
+                       WebAssembly.CompileError,
+                       /invalid data initializer-kind/);
+
+    
+    assertErrorMessage(() => new WebAssembly.Module(makeIt(0x02, 0x01)),
+                       WebAssembly.CompileError,
+                       /memory index must be zero/);
+}
