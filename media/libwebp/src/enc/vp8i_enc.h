@@ -32,7 +32,7 @@ extern "C" {
 
 #define ENC_MAJ_VERSION 1
 #define ENC_MIN_VERSION 0
-#define ENC_REV_VERSION 0
+#define ENC_REV_VERSION 1
 
 enum { MAX_LF_LEVELS = 64,       
        MAX_VARIABLE_LEVEL = 67,  
@@ -278,7 +278,7 @@ int VP8IteratorIsDone(const VP8EncIterator* const it);
 
 
 
-void VP8IteratorImport(VP8EncIterator* const it, uint8_t* tmp_32);
+void VP8IteratorImport(VP8EncIterator* const it, uint8_t* const tmp_32);
 
 void VP8IteratorExport(const VP8EncIterator* const it);
 

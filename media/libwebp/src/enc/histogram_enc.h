@@ -44,6 +44,7 @@ typedef struct {
   double literal_cost_;      
   double red_cost_;          
   double blue_cost_;
+  uint8_t is_used_[5];       
 } VP8LHistogram;
 
 
@@ -67,7 +68,9 @@ void VP8LHistogramCreate(VP8LHistogram* const p,
 int VP8LGetHistogramSize(int palette_code_bits);
 
 
-void VP8LHistogramInit(VP8LHistogram* const p, int palette_code_bits);
+
+void VP8LHistogramInit(VP8LHistogram* const p, int palette_code_bits,
+                       int init_arrays);
 
 
 void VP8LHistogramStoreRefs(const VP8LBackwardRefs* const refs,
@@ -82,6 +85,9 @@ void VP8LFreeHistogramSet(VP8LHistogramSet* const histo);
 
 
 VP8LHistogramSet* VP8LAllocateHistogramSet(int size, int cache_bits);
+
+
+void VP8LHistogramSetClear(VP8LHistogramSet* const set);
 
 
 
@@ -113,7 +119,7 @@ double VP8LBitsEntropy(const uint32_t* const array, int n);
 
 
 
-double VP8LHistogramEstimateBits(const VP8LHistogram* const p);
+double VP8LHistogramEstimateBits(VP8LHistogram* const p);
 
 #ifdef __cplusplus
 }

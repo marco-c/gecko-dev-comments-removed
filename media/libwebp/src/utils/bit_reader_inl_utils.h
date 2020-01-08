@@ -187,4 +187,4 @@ static WEBP_INLINE int VP8GetBitAlt(VP8BitReader* const br, int prob) {
 }    
 #endif
 
-#endif   
+#endif  

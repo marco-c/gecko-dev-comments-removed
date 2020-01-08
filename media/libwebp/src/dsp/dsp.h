@@ -76,10 +76,6 @@ extern "C" {
 #define WEBP_USE_SSE41
 #endif
 
-#if defined(__AVX2__) || defined(WEBP_HAVE_AVX2)
-#define WEBP_USE_AVX2
-#endif
-
 
 
 #if (defined(__ARM_NEON__) || \

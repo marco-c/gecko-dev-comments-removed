@@ -51,4 +51,4 @@ enum { MB_FEATURE_TREE_PROBS = 3,
        NUM_PROBAS = 11
      };
 
-#endif    
+#endif  
