@@ -3173,7 +3173,7 @@ JS_CompileScript(JSContext* cx, const char* ascii, size_t length,
 
 
 extern JS_PUBLIC_API(bool)
-JS_CompileUCScript(JSContext* cx, const char16_t* chars, size_t length,
+JS_CompileUCScript(JSContext* cx, JS::SourceBufferHolder& srcBuf,
                    const JS::CompileOptions& options,
                    JS::MutableHandleScript script);
 
@@ -3588,10 +3588,6 @@ Compile(JSContext* cx, const ReadOnlyCompileOptions& options,
 
 extern JS_PUBLIC_API(bool)
 Compile(JSContext* cx, const ReadOnlyCompileOptions& options,
-        const char16_t* chars, size_t length, JS::MutableHandleScript script);
-
-extern JS_PUBLIC_API(bool)
-Compile(JSContext* cx, const ReadOnlyCompileOptions& options,
         FILE* file, JS::MutableHandleScript script);
 
 extern JS_PUBLIC_API(bool)
@@ -3605,10 +3601,6 @@ CompileForNonSyntacticScope(JSContext* cx, const ReadOnlyCompileOptions& options
 extern JS_PUBLIC_API(bool)
 CompileForNonSyntacticScope(JSContext* cx, const ReadOnlyCompileOptions& options,
                             const char* bytes, size_t length, JS::MutableHandleScript script);
-
-extern JS_PUBLIC_API(bool)
-CompileForNonSyntacticScope(JSContext* cx, const ReadOnlyCompileOptions& options,
-                            const char16_t* chars, size_t length, JS::MutableHandleScript script);
 
 extern JS_PUBLIC_API(bool)
 CompileForNonSyntacticScope(JSContext* cx, const ReadOnlyCompileOptions& options,
@@ -3694,15 +3686,6 @@ CancelMultiOffThreadScriptsDecoder(JSContext* cx, OffThreadToken* token);
 
 
 
-
-
-
-
-extern JS_PUBLIC_API(bool)
-CompileFunction(JSContext* cx, AutoObjectVector& envChain,
-                const ReadOnlyCompileOptions& options,
-                const char* name, unsigned nargs, const char* const* argnames,
-                const char16_t* chars, size_t length, JS::MutableHandleFunction fun);
 
 
 
@@ -3823,22 +3806,6 @@ Evaluate(JSContext* cx, const ReadOnlyCompileOptions& options,
 extern JS_PUBLIC_API(bool)
 Evaluate(JSContext* cx, AutoObjectVector& envChain, const ReadOnlyCompileOptions& options,
          SourceBufferHolder& srcBuf, JS::MutableHandleValue rval);
-
-
-
-
-extern JS_PUBLIC_API(bool)
-Evaluate(JSContext* cx, const ReadOnlyCompileOptions& options,
-         const char16_t* chars, size_t length, JS::MutableHandleValue rval);
-
-
-
-
-
-
-extern JS_PUBLIC_API(bool)
-Evaluate(JSContext* cx, AutoObjectVector& envChain, const ReadOnlyCompileOptions& options,
-         const char16_t* chars, size_t length, JS::MutableHandleValue rval);
 
 
 
