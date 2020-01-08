@@ -59,7 +59,7 @@ public class FxAccountDeviceRegistrator implements BundleEventListener {
   
   
   @VisibleForTesting
-  static final Integer DEVICE_REGISTRATION_VERSION = 2;
+  static final Integer DEVICE_REGISTRATION_VERSION = 3;
 
   private static FxAccountDeviceRegistrator instance;
   private final WeakReference<Context> context;
