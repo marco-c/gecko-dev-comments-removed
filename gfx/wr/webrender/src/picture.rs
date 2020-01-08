@@ -449,7 +449,14 @@ impl TileCache {
             .unmap(&world_tile_rect)
             .expect("bug: unable to get local tile size");
         self.local_tile_size = local_tile_rect.size;
-        self.local_origin = pic_rect.origin;
+
+        
+        
+        
+        
+        
+        
+        self.local_origin = pic_rect.origin.floor();
 
         
         
@@ -895,9 +902,22 @@ impl TileCache {
                 }
 
                 
+                
+                
+                
+                
+                
+                
+                
+                let origin = PointKey {
+                    x: prim_rect.origin.x - self.local_origin.x,
+                    y: prim_rect.origin.y - self.local_origin.y,
+                };
+
+                
                 tile.descriptor.prims.push(PrimitiveDescriptor {
                     prim_uid: prim_instance.uid(),
-                    origin: prim_instance.prim_origin.into(),
+                    origin,
                     first_clip: tile.descriptor.clip_uids.len() as u16,
                     clip_count: clip_chain_uids.len() as u16,
                 });
