@@ -1555,35 +1555,30 @@ Element::GetElementsByClassName(const nsAString& aClassNames)
 void
 Element::GetElementsWithGrid(nsTArray<RefPtr<Element>>& aElements)
 {
-  
-  
-  
-  auto IsDisplayGrid = [](Element* aElement) -> bool
-  {
-    RefPtr<ComputedStyle> computedStyle =
-      nsComputedDOMStyle::GetComputedStyle(aElement, nullptr);
-    if (computedStyle) {
-      const nsStyleDisplay* display = computedStyle->StyleDisplay();
-      return (display->mDisplay == StyleDisplay::Grid ||
-              display->mDisplay == StyleDisplay::InlineGrid);
-    }
-    return false;
-  };
+  nsINode* cur = this;
+  while (cur) {
+    if (cur->IsElement()) {
+      Element* elem = cur->AsElement();
 
-  GetElementsByMatching(IsDisplayGrid, aElements);
-}
+      if (elem->GetPrimaryFrame()) {
+        
+        
+        if (nsGridContainerFrame::GetGridContainerFrame(elem->GetPrimaryFrame())) {
+          aElements.AppendElement(elem);
+        }
 
-void
-Element::GetElementsByMatching(nsElementMatchFunc aFunc,
-                               nsTArray<RefPtr<Element>>& aElements)
-{
-  for (nsINode* cur = this; cur; cur = cur->GetNextNode(this)) {
-    if (cur->IsElement() && aFunc(cur->AsElement())) {
-      aElements.AppendElement(cur->AsElement());
+        
+        
+        cur = cur->GetNextNode(this);
+        continue;
+      }
     }
+
+    
+    
+    cur = cur->GetNextNonChildNode(this);
   }
 }
-
 
 
 
