@@ -134,7 +134,8 @@ RootActor.prototype = {
     
     
     noBlackBoxing: false,
-    noPrettyPrinting: false,
+    
+    noPrettyPrinting: true,
     
     
     memoryActorAllocations: true,

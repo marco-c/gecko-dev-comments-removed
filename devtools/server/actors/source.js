@@ -18,8 +18,6 @@ const { joinURI } = require("devtools/shared/path");
 const { sourceSpec } = require("devtools/shared/specs/source");
 const { findClosestScriptBySource } = require("devtools/server/actors/utils/closest-scripts");
 
-loader.lazyRequireGetter(this, "SourceMapConsumer", "source-map", true);
-loader.lazyRequireGetter(this, "SourceMapGenerator", "source-map", true);
 loader.lazyRequireGetter(this, "mapURIToAddonID", "devtools/server/actors/utils/map-uri-to-addon-id");
 loader.lazyRequireGetter(this, "arrayBufferGrip", "devtools/server/actors/array-buffer", true);
 
@@ -136,8 +134,6 @@ function resolveURIToLocalPath(uri) {
 
 
 
-
-
 const SourceActor = ActorClassWithSpec(sourceSpec, {
   typeName: "source",
 
@@ -151,27 +147,16 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
     this._isInlineSource = isInlineSource;
 
     this.onSource = this.onSource.bind(this);
-    this._invertSourceMap = this._invertSourceMap.bind(this);
-    this._encodeAndSetSourceMapURL = this._encodeAndSetSourceMapURL.bind(this);
     this._getSourceText = this._getSourceText.bind(this);
 
     this._mapSourceToAddon();
 
-    if (this.threadActor.sources.isPrettyPrinted(this.url)) {
-      this._init = this.prettyPrint(
-        this.threadActor.sources.prettyPrintIndent(this.url)
-      ).catch(error => {
-        DevToolsUtils.reportException("SourceActor", error);
-      });
-    } else {
-      this._init = null;
-    }
+    this._init = null;
   },
 
   get isSourceMapped() {
     return !!(!this.isInlineSource && (
-      this._originalURL || this._generatedSource ||
-        this.threadActor.sources.isPrettyPrinted(this.url)
+      this._originalURL || this._generatedSource
     ));
   },
 
@@ -210,10 +195,6 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
     return this._addonPath;
   },
 
-  get prettyPrintWorker() {
-    return this.threadActor.prettyPrintWorker;
-  },
-
   get isCacheEnabled() {
     if (this.threadActor._parent._getCacheDisabled) {
       return !this.threadActor._parent._getCacheDisabled();
@@ -238,7 +219,6 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
       addonID: this._addonID,
       addonPath: this._addonPath,
       isBlackBoxed: this.threadActor.sources.isBlackBoxed(this.url),
-      isPrettyPrinted: this.threadActor.sources.isPrettyPrinted(this.url),
       isSourceMapped: this.isSourceMapped,
       sourceMapURL: source ? source.sourceMapURL : null,
       introductionUrl: introductionUrl ? introductionUrl.split(" -> ").pop() : null,
@@ -514,136 +494,6 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
         throw new Error("Could not load the source for " + this.url + ".\n" +
                         DevToolsUtils.safeErrorString(error));
       });
-  },
-
-  
-
-
-  prettyPrint: function(indent) {
-    this.threadActor.sources.prettyPrint(this.url, indent);
-    return this._getSourceText()
-      .then(this._sendToPrettyPrintWorker(indent))
-      .then(this._invertSourceMap)
-      .then(this._encodeAndSetSourceMapURL)
-      .then(() => {
-        
-        
-        
-        this._init = null;
-      })
-      .then(this.onSource)
-      .catch(error => {
-        this.disablePrettyPrint();
-        throw new Error(DevToolsUtils.safeErrorString(error));
-      });
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  _sendToPrettyPrintWorker: function(indent) {
-    return ({ content }) => {
-      return this.prettyPrintWorker.performTask("pretty-print", {
-        url: this.url,
-        indent,
-        source: content,
-      });
-    };
-  },
-
-  
-
-
-
-
-
-
-
-  _invertSourceMap: function({ code, mappings }) {
-    const generator = new SourceMapGenerator({ file: this.url });
-    return DevToolsUtils.yieldingEach(mappings._array, m => {
-      const mapping = {
-        generated: {
-          line: m.originalLine,
-          column: m.originalColumn,
-        },
-      };
-      if (m.source) {
-        mapping.source = m.source;
-        mapping.original = {
-          line: m.generatedLine,
-          column: m.generatedColumn,
-        };
-        mapping.name = m.name;
-      }
-      generator.addMapping(mapping);
-    }).then(() => {
-      generator.setSourceContent(this.url, code);
-      const consumer = SourceMapConsumer.fromSourceMap(generator);
-
-      return {
-        code: code,
-        map: consumer,
-      };
-    });
-  },
-
-  
-
-
-
-
-
-  _encodeAndSetSourceMapURL: function({ map: sm }) {
-    const source = this.generatedSource || this.source;
-    const sources = this.threadActor.sources;
-
-    return sources.getSourceMap(source).then(prevMap => {
-      if (prevMap) {
-        
-        this._oldSourceMapping = {
-          url: source.sourceMapURL,
-          map: prevMap,
-        };
-
-        prevMap = SourceMapGenerator.fromSourceMap(prevMap);
-        prevMap.applySourceMap(sm, this.url);
-        sm = SourceMapConsumer.fromSourceMap(prevMap);
-      }
-
-      const actorSources = this.threadActor.sources;
-      actorSources.clearSourceMapCache(source.sourceMapURL);
-      actorSources.setSourceMapHard(source, null, sm);
-    });
-  },
-
-  
-
-
-  disablePrettyPrint: function() {
-    const source = this.generatedSource || this.source;
-    const sources = this.threadActor.sources;
-
-    sources.clearSourceMapCache(source.sourceMapURL, { hard: true });
-
-    if (this._oldSourceMapping) {
-      sources.setSourceMapHard(source,
-                               this._oldSourceMapping.url,
-                               this._oldSourceMapping.map);
-      this._oldSourceMapping = null;
-    }
-
-    this.threadActor.sources.disablePrettyPrint(this.url);
-    return this.onSource();
   },
 
   

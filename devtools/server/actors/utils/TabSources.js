@@ -25,13 +25,11 @@ function TabSources(threadActor, allowSourceFn = () => true) {
   this._thread = threadActor;
   this._useSourceMaps = true;
   this._autoBlackBox = true;
-  this._anonSourceMapId = 1;
   this.allowSource = source => {
     return !isHiddenSource(source) && allowSourceFn(source);
   };
 
   this.blackBoxedSources = new Set();
-  this.prettyPrintedSources = new Map();
   this.neverAutoBlackBoxSources = new Set();
 
   
@@ -545,39 +543,6 @@ TabSources.prototype = {
 
 
 
-
-
-
-
-  setSourceMapHard: function(source, url, map) {
-    if (!url) {
-      
-      
-      
-      
-      
-      
-      
-      url = "internal://sourcemap" + (this._anonSourceMapId++) + "/";
-    }
-    source.sourceMapURL = url;
-
-    
-    
-    this._sourceMapCache[url] = Promise.resolve(map);
-    this.emit("updatedSource", this.getSourceActor(source));
-  },
-
-  
-
-
-
-
-
-
-
-
-
   getScriptOffsetLocation: function(script, offset) {
     const {lineNumber, columnNumber} = script.getOffsetLocation(offset);
     return new GeneratedLocation(
@@ -697,53 +662,6 @@ TabSources.prototype = {
 
 
 
-
-
-  getGeneratedLocation: function(originalLocation) {
-    const { originalSourceActor } = originalLocation;
-
-    
-    
-    
-    
-    const source = originalSourceActor.source || originalSourceActor.generatedSource;
-
-    
-    return this.fetchSourceMap(source).then((map) => {
-      if (map) {
-        const {
-          originalLine,
-          originalColumn,
-        } = originalLocation;
-
-        const {
-          line: generatedLine,
-          column: generatedColumn,
-        } = map.generatedPositionFor({
-          source: originalSourceActor.url,
-          line: originalLine,
-          column: originalColumn == null ? 0 : originalColumn,
-          bias: SourceMapConsumer.LEAST_UPPER_BOUND,
-        });
-
-        return new GeneratedLocation(
-          this.createNonSourceMappedActor(source),
-          generatedLine,
-          generatedColumn
-        );
-      }
-
-      return GeneratedLocation.fromOriginalLocation(originalLocation);
-    });
-  },
-
-  
-
-
-
-
-
-
   isBlackBoxed: function(url) {
     return this.blackBoxedSources.has(url);
   },
@@ -766,43 +684,6 @@ TabSources.prototype = {
 
   unblackBox: function(url) {
     this.blackBoxedSources.delete(url);
-  },
-
-  
-
-
-
-
-
-  isPrettyPrinted: function(url) {
-    return this.prettyPrintedSources.has(url);
-  },
-
-  
-
-
-
-
-
-  prettyPrint: function(url, indent) {
-    this.prettyPrintedSources.set(url, indent);
-  },
-
-  
-
-
-  prettyPrintIndent: function(url) {
-    return this.prettyPrintedSources.get(url);
-  },
-
-  
-
-
-
-
-
-  disablePrettyPrint: function(url) {
-    this.prettyPrintedSources.delete(url);
   },
 
   iter: function() {
