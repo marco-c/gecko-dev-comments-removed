@@ -6,6 +6,8 @@
 
 package org.mozilla.gecko;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 import android.text.TextUtils;
 import android.util.Log;
@@ -18,7 +20,11 @@ import org.mozilla.gecko.util.EventCallback;
 import org.mozilla.gecko.util.GeckoBundle;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+
+import static org.mozilla.gecko.toolbar.PageActionLayout.PageAction;
+import static org.mozilla.gecko.toolbar.PageActionLayout.PageActionLayoutDelegate;
 
 
 
@@ -60,6 +66,14 @@ public class AddonUICache implements BundleEventListener {
     private int mAddonMenuNextID = ADDON_MENU_OFFSET;
     private Menu mMenu;
 
+    
+    
+    
+    private final Map<String, GeckoBundle> mPendingPageActionQueue = new LinkedHashMap<>();
+    
+    private List<PageAction> mResolvedPageActionCache;
+    private PageActionLayoutDelegate mPageActionDelegate;
+
     private boolean mInitialized;
 
     public static AddonUICache getInstance() {
@@ -77,6 +91,8 @@ public class AddonUICache implements BundleEventListener {
             "Menu:Add",
             "Menu:Update",
             "Menu:Remove",
+            "PageActions:Add",
+            "PageActions:Remove",
             null);
 
         mInitialized = true;
@@ -87,6 +103,9 @@ public class AddonUICache implements BundleEventListener {
         mAddonMenuItemsCache.clear();
         mAddonMenuNextID = ADDON_MENU_OFFSET;
         mMenu = null;
+        mPendingPageActionQueue.clear();
+        mResolvedPageActionCache = null;
+        mPageActionDelegate = null;
     }
 
     @Override
@@ -125,7 +144,57 @@ public class AddonUICache implements BundleEventListener {
                 updateAddonMenuItem(message.getString("uuid"),
                                     message.getBundle("options"));
                 break;
+
+            case "PageActions:Add":
+                if (mPageActionDelegate != null) {
+                    mPageActionDelegate.addPageAction(message);
+                } else {
+                    mPendingPageActionQueue.put(message.getString("id"), message);
+                }
+                break;
+
+            case "PageActions:Remove":
+                if (mPageActionDelegate != null) {
+                    mPageActionDelegate.removePageAction(message);
+                } else {
+                    mPendingPageActionQueue.remove(message.getString("id"));
+                }
+                break;
         }
+    }
+
+    
+
+
+
+
+
+
+
+
+
+    public void setPageActionLayoutDelegate(final @NonNull PageActionLayoutDelegate newDelegate) {
+        newDelegate.setCachedPageActions(mResolvedPageActionCache);
+        mResolvedPageActionCache = null;
+
+        for (GeckoBundle pageActionMessage : mPendingPageActionQueue.values()) {
+            newDelegate.addPageAction(pageActionMessage);
+        }
+        mPendingPageActionQueue.clear();
+
+        mPageActionDelegate = newDelegate;
+    }
+
+    
+
+
+
+
+
+
+    public void removePageActionLayoutDelegate(final @Nullable List<PageAction> pageActionsToCache) {
+        mPageActionDelegate = null;
+        mResolvedPageActionCache = pageActionsToCache;
     }
 
     
@@ -278,4 +347,5 @@ public class AddonUICache implements BundleEventListener {
 
         return null;
     }
+
 }
