@@ -2772,8 +2772,25 @@ public:
   
 
 
+  static bool IsCorsUnsafeRequestHeaderValue(const nsACString& aHeaderValue);
+
+  
+
+
+
+  static bool IsAllowedNonCorsAccept(const nsACString& aHeaderValue);
+
+  
+
+
 
   static bool IsAllowedNonCorsContentType(const nsACString& aHeaderValue);
+
+  
+
+
+
+  static bool IsAllowedNonCorsLanguage(const nsACString& aHeaderValue);
 
   
 
