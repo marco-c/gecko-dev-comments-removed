@@ -4,83 +4,22 @@
 
 "use strict";
 
-const { Cc, Ci } = require("chrome");
-loader.lazyImporter(this, "BrowserToolboxProcess",
-  "resource://devtools/client/framework/ToolboxProcess.jsm");
-loader.lazyImporter(this, "AddonManager", "resource://gre/modules/AddonManager.jsm");
 loader.lazyImporter(this, "AddonManagerPrivate", "resource://gre/modules/AddonManager.jsm");
 
-var {TargetFactory} = require("devtools/client/framework/target");
-var {Toolbox} = require("devtools/client/framework/toolbox");
-
-var {gDevTools} = require("devtools/client/framework/devtools");
-
-let browserToolboxProcess = null;
-let remoteAddonToolbox = null;
-function closeToolbox() {
-  if (browserToolboxProcess) {
-    browserToolboxProcess.close();
-  }
-
-  if (remoteAddonToolbox) {
-    remoteAddonToolbox.destroy();
-  }
-}
+const {
+  debugLocalAddon,
+  debugRemoteAddon,
+  getExtensionUuid,
+  openTemporaryExtension,
+  parseFileUri,
+  uninstallAddon,
+} = require("devtools/client/aboutdebugging-new/src/modules/extensions-helper");
 
 
 
 
 
 
-
-exports.debugLocalAddon = async function(addonID) {
-  
-  closeToolbox();
-
-  browserToolboxProcess = BrowserToolboxProcess.init({
-    addonID,
-    onClose: () => {
-      browserToolboxProcess = null;
-    }
-  });
-};
-
-
-
-
-
-
-
-
-
-exports.debugRemoteAddon = async function(addonForm, client) {
-  
-  closeToolbox();
-
-  const options = {
-    form: addonForm,
-    chrome: true,
-    client,
-    isBrowsingContext: addonForm.isWebExtension
-  };
-
-  const target = await TargetFactory.forRemoteTab(options);
-
-  const hostType = Toolbox.HostType.WINDOW;
-  remoteAddonToolbox = await gDevTools.showToolbox(target, null, hostType);
-  remoteAddonToolbox.once("destroy", () => {
-    remoteAddonToolbox = null;
-  });
-};
-
-
-
-
-
-exports.uninstallAddon = async function(addonID) {
-  const addon = await AddonManager.getAddonByID(addonID);
-  return addon && addon.uninstall();
-};
 
 exports.isTemporaryID = function(addonID) {
   return AddonManagerPrivate.isTemporaryInstallID(addonID);
@@ -99,57 +38,14 @@ exports.isLegacyTemporaryExtension = function(addonForm) {
          !addonForm.isAPIExtension;
 };
 
-exports.parseFileUri = function(url) {
-  
-  
-  
-  const windowsRegex = /^file:\/\/\/([a-zA-Z]:\/.*)/;
-  if (windowsRegex.test(url)) {
-    return windowsRegex.exec(url)[1];
-  }
-  return url.slice("file://".length);
-};
-
-exports.getExtensionUuid = function(extension) {
-  const { manifestURL } = extension;
-  
-  return manifestURL ? /moz-extension:\/\/([^/]*)/.exec(manifestURL)[1] : null;
-};
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-exports.openTemporaryExtension = function(win, message) {
-  return new Promise(resolve => {
-    const fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
-    fp.init(win, message, Ci.nsIFilePicker.modeOpen);
-    fp.open(res => {
-      if (res == Ci.nsIFilePicker.returnCancel || !fp.file) {
-        return;
-      }
-      let file = fp.file;
-      
-      
-      if (!file.isDirectory() &&
-          !file.leafName.endsWith(".xpi") && !file.leafName.endsWith(".zip")) {
-        file = file.parent;
-      }
-
-      resolve(file);
-    });
-  });
-};
+exports.debugLocalAddon = debugLocalAddon;
+exports.debugRemoteAddon = debugRemoteAddon;
+exports.getExtensionUuid = getExtensionUuid;
+exports.openTemporaryExtension = openTemporaryExtension;
+exports.parseFileUri = parseFileUri;
+exports.uninstallAddon = uninstallAddon;
