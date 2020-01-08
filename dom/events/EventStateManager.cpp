@@ -945,7 +945,8 @@ static bool IsAccessKeyTarget(nsIContent* aContent, nsIFrame* aFrame,
   if (!aFrame->IsVisibleConsideringAncestors()) return false;
 
   
-  nsCOMPtr<nsIDOMXULControlElement> control(do_QueryInterface(aContent));
+  nsCOMPtr<nsIDOMXULControlElement> control =
+      aContent->AsElement()->AsXULControl();
   if (control) return true;
 
   
@@ -3017,15 +3018,15 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
           
           suppressBlur = (ui->mUserFocus == StyleUserFocus::Ignore);
 
+          nsCOMPtr<Element> element = do_QueryInterface(aEvent->mTarget);
           if (!suppressBlur) {
-            nsCOMPtr<Element> element = do_QueryInterface(aEvent->mTarget);
             suppressBlur =
                 element && element->State().HasState(NS_EVENT_STATE_DISABLED);
           }
 
-          if (!suppressBlur) {
+          if (!suppressBlur && element) {
             nsCOMPtr<nsIDOMXULControlElement> xulControl =
-                do_QueryInterface(aEvent->mTarget);
+                element->AsXULControl();
             if (xulControl) {
               bool disabled;
               xulControl->GetDisabled(&disabled);

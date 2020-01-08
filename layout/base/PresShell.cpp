@@ -7899,7 +7899,7 @@ void PresShell::GetCurrentItemAndPositionForElement(
   
   nsCOMPtr<Element> item;
   nsCOMPtr<nsIDOMXULMultiSelectControlElement> multiSelect =
-      do_QueryInterface(aFocusedElement);
+      aFocusedElement->AsXULMultiSelectControl();
   if (multiSelect) {
     checkLineHeight = false;
 
@@ -7946,10 +7946,10 @@ void PresShell::GetCurrentItemAndPositionForElement(
   } else {
     
     nsCOMPtr<nsIDOMXULMenuListElement> menulist =
-        do_QueryInterface(aFocusedElement);
+        aFocusedElement->AsXULMenuList();
     if (!menulist) {
       nsCOMPtr<nsIDOMXULSelectControlElement> select =
-          do_QueryInterface(aFocusedElement);
+          aFocusedElement->AsXULSelectControl();
       if (select) {
         checkLineHeight = false;
         select->GetSelectedItem(getter_AddRefs(item));

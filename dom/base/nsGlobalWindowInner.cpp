@@ -6799,8 +6799,7 @@ void nsGlobalWindowInner::NotifyDefaultButtonLoaded(Element& aDefaultButton,
                                                     ErrorResult& aError) {
 #ifdef MOZ_XUL
   
-  nsCOMPtr<nsIDOMXULControlElement> xulControl =
-      do_QueryInterface(&aDefaultButton);
+  nsCOMPtr<nsIDOMXULControlElement> xulControl = aDefaultButton.AsXULControl();
   if (!xulControl) {
     aError.Throw(NS_ERROR_FAILURE);
     return;
