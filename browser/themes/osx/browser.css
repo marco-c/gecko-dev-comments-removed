@@ -230,9 +230,10 @@
 
 
 .findbar-button {
-  background: none !important;
-  box-shadow: none !important;
+  background: none;
+  box-shadow: none;
   border: none;
+  color: inherit;
 }
 
 
@@ -485,15 +486,9 @@ html|input.urlbar-input {
 #editBMPanel_folderMenuList > .menulist-dropmarker {
   -moz-appearance: none;
   display: -moz-box;
-  background-color: transparent;
-  border: 0;
-  margin: 0;
-  padding: 0;
+  -moz-box-align: center;
   padding-inline-end: 4px;
   width: 7px;
-}
-
-#editBMPanel_folderMenuList > .menulist-dropmarker > .dropmarker-icon {
   list-style-image: url("chrome://global/skin/icons/panel-dropmarker.png");
 }
 
