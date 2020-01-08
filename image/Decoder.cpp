@@ -291,7 +291,7 @@ Decoder::AllocateFrame(const gfx::IntSize& aOutputSize,
 {
   mCurrentFrame = AllocateFrameInternal(aOutputSize, aFrameRect, aFormat,
                                         aPaletteDepth, aAnimParams,
-                                        mCurrentFrame.get());
+                                        std::move(mCurrentFrame));
 
   if (mCurrentFrame) {
     mHasFrameToTake = true;
@@ -321,7 +321,7 @@ Decoder::AllocateFrameInternal(const gfx::IntSize& aOutputSize,
                                SurfaceFormat aFormat,
                                uint8_t aPaletteDepth,
                                const Maybe<AnimationParams>& aAnimParams,
-                               imgFrame* aPreviousFrame)
+                               RawAccessFrameRef&& aPreviousFrame)
 {
   if (HasError()) {
     return RawAccessFrameRef();
@@ -374,7 +374,27 @@ Decoder::AllocateFrameInternal(const gfx::IntSize& aOutputSize,
 
     
     
-    mFirstFrameRefreshArea.UnionRect(mFirstFrameRefreshArea, frame->GetRect());
+    mFirstFrameRefreshArea.UnionRect(mFirstFrameRefreshArea,
+                                     ref->GetBoundedBlendRect());
+
+    if (ShouldBlendAnimation()) {
+      if (aPreviousFrame->GetDisposalMethod() !=
+          DisposalMethod::RESTORE_PREVIOUS) {
+        
+        
+        
+        
+        mRestoreFrame = std::move(aPreviousFrame);
+        mRestoreDirtyRect.SetBox(0, 0, 0, 0);
+      } else {
+        
+        
+        
+        
+        
+        mRestoreDirtyRect = aPreviousFrame->GetBoundedBlendRect();
+      }
+    }
   }
 
   mFrameCount++;
