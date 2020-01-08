@@ -4704,8 +4704,7 @@ Tab.prototype = {
   _state: null,
   _hostChanged: false, 
 
-  onSecurityChange: function(aWebProgress, aRequest, aOldState, aState,
-                             aContentBlockingLogJSON) {
+  onSecurityChange: function(aWebProgress, aRequest, aState) {
     
     if (this._state == aState && !this._hostChanged)
       return;

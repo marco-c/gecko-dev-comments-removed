@@ -1623,14 +1623,6 @@ VARCACHE_PREF(
 )
 
 
-
-VARCACHE_PREF(
-  "browser.contentblocking.originlog.length",
-   browser_contentblocking_originlog_length,
-  uint32_t, 32
-)
-
-
 VARCACHE_PREF(
   "browser.fastblock.enabled",
   browser_fastblock_enabled,
