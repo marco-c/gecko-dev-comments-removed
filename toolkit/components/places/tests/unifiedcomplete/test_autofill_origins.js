@@ -202,8 +202,24 @@ add_task(async function groupByHost() {
   Assert.ok(httpsFrec < otherFrec, "Sanity check");
 
   
+  let db = await PlacesUtils.promiseDBConnection();
+  let rows = await db.execute(`
+    SELECT
+      IFNULL((SELECT value FROM moz_meta WHERE key = "origin_frecency_count"), 0),
+      IFNULL((SELECT value FROM moz_meta WHERE key = "origin_frecency_sum"), 0),
+      IFNULL((SELECT value FROM moz_meta WHERE key = "origin_frecency_sum_of_squares"), 0)
+  `);
+  let count = rows[0].getResultByIndex(0);
+  let sum = rows[0].getResultByIndex(1);
+  let squares = rows[0].getResultByIndex(2);
+  let stddevMultiplier =
+    Services.prefs.getFloatPref("browser.urlbar.autoFill.stddevMultiplier", 0.0);
+  let threshold =
+    (sum / count) +
+    (stddevMultiplier * Math.sqrt((squares - ((sum * sum) / count)) / count));
+
   
-  let threshold = await getOriginAutofillThreshold();
+  
   Assert.ok(httpFrec < threshold, "http origin should be < threshold");
   Assert.ok(httpsFrec < threshold, "https origin should be < threshold");
   Assert.ok(threshold <= otherFrec, "Other origin should cross threshold");
@@ -267,8 +283,22 @@ add_task(async function groupByHostNonDefaultStddevMultiplier() {
   Assert.ok(httpsFrec < otherFrec, "Sanity check");
 
   
+  let db = await PlacesUtils.promiseDBConnection();
+  let rows = await db.execute(`
+    SELECT
+      IFNULL((SELECT value FROM moz_meta WHERE key = "origin_frecency_count"), 0),
+      IFNULL((SELECT value FROM moz_meta WHERE key = "origin_frecency_sum"), 0),
+      IFNULL((SELECT value FROM moz_meta WHERE key = "origin_frecency_sum_of_squares"), 0)
+  `);
+  let count = rows[0].getResultByIndex(0);
+  let sum = rows[0].getResultByIndex(1);
+  let squares = rows[0].getResultByIndex(2);
+  let threshold =
+    (sum / count) +
+    (stddevMultiplier * Math.sqrt((squares - ((sum * sum) / count)) / count));
+
   
-  let threshold = await getOriginAutofillThreshold();
+  
   Assert.ok(httpFrec < threshold, "http origin should be < threshold");
   Assert.ok(httpsFrec < threshold, "https origin should be < threshold");
   Assert.ok(threshold <= otherFrec, "Other origin should cross threshold");
