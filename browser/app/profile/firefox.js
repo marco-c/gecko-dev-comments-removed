@@ -1765,6 +1765,12 @@ pref("app.shield.optoutstudies.enabled", false);
 
 pref("intl.multilingual.enabled", false);
 
+#ifdef RELEASE
+pref("intl.multilingual.downloadEnabled", true);
+#else
+pref("intl.multilingual.downloadEnabled", false);
+#endif
+
 
 
 
