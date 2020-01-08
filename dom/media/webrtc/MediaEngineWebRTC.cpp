@@ -11,6 +11,7 @@
 #include "CSFLog.h"
 #include "MediaEngineTabVideoSource.h"
 #include "MediaEngineRemoteVideoSource.h"
+#include "MediaEngineWebRTCAudio.h"
 #include "MediaTrackConstraints.h"
 #include "mozilla/dom/MediaDeviceInfo.h"
 #include "mozilla/Logging.h"
@@ -166,8 +167,7 @@ MediaEngineWebRTC::EnumerateVideoDevices(uint64_t aWindowId,
     aDevices->AppendElement(MakeRefPtr<MediaDevice>(
                               vSource,
                               vSource->GetName(),
-                              NS_ConvertUTF8toUTF16(vSource->GetUUID()),
-                              NS_LITERAL_STRING("")));
+                              NS_ConvertUTF8toUTF16(vSource->GetUUID())));
   }
 
   if (mHasTabVideoSource || dom::MediaSourceEnum::Browser == aMediaSource) {
@@ -175,8 +175,7 @@ MediaEngineWebRTC::EnumerateVideoDevices(uint64_t aWindowId,
     aDevices->AppendElement(MakeRefPtr<MediaDevice>(
                               tabVideoSource,
                               tabVideoSource->GetName(),
-                              NS_ConvertUTF8toUTF16(tabVideoSource->GetUUID()),
-                              NS_LITERAL_STRING("")));
+                              NS_ConvertUTF8toUTF16(tabVideoSource->GetUUID())));
   }
 }
 
@@ -220,8 +219,7 @@ MediaEngineWebRTC::EnumerateMicrophoneDevices(uint64_t aWindowId,
       RefPtr<MediaDevice> device = MakeRefPtr<MediaDevice>(
                                      source,
                                      source->GetName(),
-                                     NS_ConvertUTF8toUTF16(source->GetUUID()),
-                                     NS_LITERAL_STRING(""));
+                                     NS_ConvertUTF8toUTF16(source->GetUUID()));
       if (devices[i]->Preferred()) {
 #ifdef DEBUG
         if (!foundPreferredDevice) {
@@ -254,7 +252,10 @@ MediaEngineWebRTC::EnumerateSpeakerDevices(uint64_t aWindowId,
       
       
       uuid.Append(NS_LITERAL_STRING("_Speaker"));
-      aDevices->AppendElement(MakeRefPtr<MediaDevice>(device, uuid));
+      aDevices->AppendElement(MakeRefPtr<MediaDevice>(
+                                device->Name(),
+                                dom::MediaDeviceKind::Audiooutput,
+                                uuid));
     }
   }
 }
@@ -278,8 +279,7 @@ MediaEngineWebRTC::EnumerateDevices(uint64_t aWindowId,
     aDevices->AppendElement(MakeRefPtr<MediaDevice>(
                               audioCaptureSource,
                               audioCaptureSource->GetName(),
-                              NS_ConvertUTF8toUTF16(audioCaptureSource->GetUUID()),
-                              NS_LITERAL_STRING("")));
+                              NS_ConvertUTF8toUTF16(audioCaptureSource->GetUUID())));
   } else if (aMediaSource == dom::MediaSourceEnum::Microphone) {
     MOZ_ASSERT(aMediaSource == dom::MediaSourceEnum::Microphone);
     EnumerateMicrophoneDevices(aWindowId, aDevices);
