@@ -3185,7 +3185,7 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
 
 
   if (usingSVGEffects) {
-    MOZ_ASSERT(usingFilter ||usingMask,
+    MOZ_ASSERT(usingFilter || usingMask,
                "Beside filter & mask/clip-path, what else effect do we have?");
 
     if (clipCapturedBy == ContainerItemType::eFilter) {
