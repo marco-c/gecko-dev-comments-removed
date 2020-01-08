@@ -2700,6 +2700,7 @@ HTMLMediaElement::FastSeek(double aTime, ErrorResult& aRv)
   LOG(LogLevel::Debug, ("Reporting telemetry VIDEO_FASTSEEK_USED"));
   Telemetry::Accumulate(Telemetry::VIDEO_FASTSEEK_USED, 1);
   RefPtr<Promise> tobeDropped = Seek(aTime, SeekTarget::PrevSyncPoint, aRv);
+  aRv.SuppressException();
 }
 
 already_AddRefed<Promise>
@@ -2725,6 +2726,7 @@ HTMLMediaElement::SetCurrentTime(double aCurrentTime, ErrorResult& aRv)
   LOG(LogLevel::Debug,
       ("%p SetCurrentTime(%f) called by JS", this, aCurrentTime));
   RefPtr<Promise> tobeDropped = Seek(aCurrentTime, SeekTarget::Accurate, aRv);
+  aRv.SuppressException();
 }
 
 
@@ -2761,9 +2763,11 @@ HTMLMediaElement::Seek(double aTime,
                        ErrorResult& aRv)
 {
   
-  MOZ_ASSERT(!mozilla::IsNaN(aTime));
+  
+  
 
-  RefPtr<Promise> promise = CreateDOMPromise(aRv);
+  
+  MOZ_ASSERT(!mozilla::IsNaN(aTime));
 
   if (NS_WARN_IF(aRv.Failed())) {
     return nullptr;
@@ -2779,8 +2783,8 @@ HTMLMediaElement::Seek(double aTime,
 
   if (mSrcStream) {
     
-    promise->MaybeReject(NS_ERROR_DOM_INVALID_STATE_ERR);
-    return promise.forget();
+    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
+    return nullptr;
   }
 
   if (mPlayed && mCurrentPlayRangeStart != -1.0) {
@@ -2801,29 +2805,29 @@ HTMLMediaElement::Seek(double aTime,
 
   if (mReadyState == HAVE_NOTHING) {
     mDefaultPlaybackStartPosition = aTime;
-    promise->MaybeReject(NS_ERROR_DOM_INVALID_STATE_ERR);
-    return promise.forget();
+    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
+    return nullptr;
   }
 
   if (!mDecoder) {
     
     NS_ASSERTION(mDecoder, "SetCurrentTime failed: no decoder");
-    promise->MaybeReject(NS_ERROR_DOM_INVALID_STATE_ERR);
-    return promise.forget();
+    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
+    return nullptr;
   }
 
   
   media::TimeIntervals seekableIntervals = mDecoder->GetSeekable();
   if (seekableIntervals.IsInvalid()) {
-    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR); 
-    return promise.forget();
+    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
+    return nullptr;
   }
   RefPtr<TimeRanges> seekable =
     new TimeRanges(ToSupports(OwnerDoc()), seekableIntervals);
   uint32_t length = seekable->Length();
   if (length == 0) {
-    promise->MaybeReject(NS_ERROR_DOM_INVALID_STATE_ERR);
-    return promise.forget();
+    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
+    return nullptr;
   }
 
   
@@ -2886,9 +2890,7 @@ HTMLMediaElement::Seek(double aTime,
   AddRemoveSelfReference();
 
   
-  mSeekDOMPromise = promise;
-
-  return promise.forget();
+  return do_AddRef(mSeekDOMPromise = CreateDOMPromise(aRv));
 }
 
 double
