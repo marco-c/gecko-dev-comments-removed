@@ -147,7 +147,10 @@ Lock::Find(void* aNativeLock)
         
         
         
-        if (lock->mOwner && Thread::GetById(lock->mOwner)->ShouldIdle()) {
+        if (lock->mOwner &&
+            Thread::GetById(lock->mOwner)->ShouldIdle() &&
+            Thread::CurrentIsMainThread())
+        {
           ex.reset();
           EnsureNotDivergedFromRecording();
           Unreachable();
