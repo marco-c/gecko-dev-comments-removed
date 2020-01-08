@@ -520,9 +520,7 @@ var PlacesUIUtils = {
 
 
 
-
-
-  canUserRemove(aNode, aView) {
+  canUserRemove(aNode) {
     let parentNode = aNode.parent;
     if (!parentNode) {
       
@@ -558,7 +556,7 @@ var PlacesUIUtils = {
       return true;
 
     
-    return !this.isFolderReadOnly(parentNode, aView);
+    return !this.isFolderReadOnly(parentNode);
   },
 
   
@@ -579,22 +577,12 @@ var PlacesUIUtils = {
 
 
 
-
-
-
-  isFolderReadOnly(placesNode, view) {
+  isFolderReadOnly(placesNode) {
     if (typeof placesNode != "object" || !PlacesUtils.nodeIsFolder(placesNode)) {
       throw new Error("invalid value for placesNode");
     }
-    if (!view || typeof view != "object") {
-      throw new Error("invalid value for aView");
-    }
-    let itemId = PlacesUtils.getConcreteItemId(placesNode);
-    if (itemId == PlacesUtils.placesRootId ||
-        view.controller.hasCachedLivemarkInfo(placesNode))
-      return true;
 
-    return false;
+    return PlacesUtils.getConcreteItemId(placesNode) == PlacesUtils.placesRootId;
   },
 
   
@@ -644,25 +632,6 @@ var PlacesUIUtils = {
       replace: false,
       triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
     });
-  },
-
-  openLiveMarkNodesInTabs:
-  function PUIU_openLiveMarkNodesInTabs(aNode, aEvent, aView) {
-    let window = aView.ownerWindow;
-
-    PlacesUtils.livemarks.getLivemark({id: aNode.itemId})
-      .then(aLivemark => {
-        let urlsToOpen = [];
-
-        let nodes = aLivemark.getNodesForContainer(aNode);
-        for (let node of nodes) {
-          urlsToOpen.push({uri: node.uri, isBookmark: false});
-        }
-
-        if (OpenInTabsUtils.confirmOpenInTabs(urlsToOpen.length, window)) {
-          this._openTabset(urlsToOpen, aEvent, window);
-        }
-      }, Cu.reportError);
   },
 
   openContainerNodeInTabs:
