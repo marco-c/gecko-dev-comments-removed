@@ -17,6 +17,6 @@ function loadVideo(activeDocument, sourceUrl) {
 
 function requestPictureInPictureWithTrustedClick(videoElement) {
   return test_driver.bless(
-    'request picture in picture',
+    'request Picture-in-Picture',
     () => videoElement.requestPictureInPicture());
 }
