@@ -205,6 +205,11 @@ public class PanZoomController extends JNIObject {
         return handleMotionEvent(event);
     }
 
+    @Override
+    protected void finalize() throws Throwable {
+        setAttached(false);
+    }
+
     
 
 
