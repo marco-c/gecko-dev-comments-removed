@@ -17,15 +17,6 @@
 
 namespace webrtc {
 
-const int NumDtmfSampleRates = 5;
-const int DtmfSampleRates[NumDtmfSampleRates] = {
-  8000,
-  16000,
-  32000,
-  44100,
-  48000
-};
-
 
 class DtmfToneGenerator {
  public:
@@ -42,11 +33,10 @@ class DtmfToneGenerator {
   virtual bool initialized() const;
 
  private:
-  static const int kCoeff1[NumDtmfSampleRates][16];  
-  static const int kCoeff2[NumDtmfSampleRates][16];  
-  static const int kInitValue1[NumDtmfSampleRates][16];  
-  static const int kInitValue2[NumDtmfSampleRates][16];  
-
+  static const int kCoeff1[4][16];  
+  static const int kCoeff2[4][16];  
+  static const int kInitValue1[4][16];  
+  static const int kInitValue2[4][16];  
   static const int kAmplitude[64];  
   static const int16_t kAmpMultiplier = 23171;  
 
