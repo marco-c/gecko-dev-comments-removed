@@ -1234,9 +1234,9 @@ GlobalHelperThreadState::addSizeOfIncludingThis(JS::GlobalStats* stats,
 
     
     for (auto task : wasmWorklist_tier1_)
-        htStats.wasmCompile += task->sizeOfIncludingThis(mallocSizeOf);
+        htStats.wasmCompile += task->sizeOfExcludingThis(mallocSizeOf);
     for (auto task : wasmWorklist_tier2_)
-        htStats.wasmCompile += task->sizeOfIncludingThis(mallocSizeOf);
+        htStats.wasmCompile += task->sizeOfExcludingThis(mallocSizeOf);
 
     
     MOZ_ASSERT(htStats.idleThreadCount == 0);

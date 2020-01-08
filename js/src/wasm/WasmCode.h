@@ -685,10 +685,10 @@ class JumpTables
         return tiering_.get();
     }
 
-    size_t sizeOfMiscIncludingThis(MallocSizeOf mallocSizeOf) const {
-        return mallocSizeOf(this) +
-               2 * sizeof(void*) * numFuncs_ +
-               (tiering_ ? sizeof(void*) : numFuncs_);
+    size_t sizeOfMiscExcludingThis() const {
+        
+        
+        return sizeof(void*) * (2 + (tiering_ ? 1 : 0)) * numFuncs_;
     }
 };
 
