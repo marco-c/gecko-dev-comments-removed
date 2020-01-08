@@ -92,7 +92,7 @@ impl<T> VecHelper<T> for Vec<T> {
 
 
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, MallocSizeOf)]
 pub struct ScaleOffset {
     pub scale: Vector2D<f32>,
     pub offset: Vector2D<f32>,
@@ -556,7 +556,7 @@ impl<U> MaxRect for TypedRect<f32, U> {
 
 
 
-#[derive(Debug)]
+#[derive(Debug, MallocSizeOf)]
 pub enum FastTransform<Src, Dst> {
     
     Offset(TypedVector2D<f32, Src>),

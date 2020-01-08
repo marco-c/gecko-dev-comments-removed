@@ -6,7 +6,7 @@ use api::{BorderRadius, ClipMode, ComplexClipRegion, DeviceIntRect, DevicePixelS
 use api::{ImageRendering, LayoutRect, LayoutSize, LayoutPoint, LayoutVector2D};
 use api::{BoxShadowClipMode, LayoutToWorldScale, PicturePixel, WorldPixel};
 use api::{PictureRect, LayoutPixel, WorldPoint, WorldSize, WorldRect, LayoutToWorldTransform};
-use api::{VoidPtrToSizeFn, ImageKey};
+use api::{ImageKey};
 use app_units::Au;
 use border::{ensure_no_corner_overlap, BorderRadiusAu};
 use box_shadow::{BLUR_SAMPLE_SCALE, BoxShadowClipSource, BoxShadowCacheKey};
@@ -22,7 +22,6 @@ use prim_store::{PointKey, PrimitiveInstance, SizeKey, RectangleKey};
 use render_task::to_cache_size;
 use resource_cache::{ImageRequest, ResourceCache};
 use std::{cmp, u32};
-use std::os::raw::c_void;
 use util::{extract_inner_rect_safe, project_rect, ScaleOffset};
 
 
@@ -107,7 +106,7 @@ use util::{extract_inner_rect_safe, project_rect, ScaleOffset};
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, MallocSizeOf, PartialEq)]
 pub struct ClipDataMarker;
 
 pub type ClipDataStore = intern::DataStore<ClipItemKey, ClipNode, ClipDataMarker>;
@@ -186,6 +185,7 @@ impl From<ClipItemKey> for ClipNode {
 bitflags! {
     #[cfg_attr(feature = "capture", derive(Serialize))]
     #[cfg_attr(feature = "replay", derive(Deserialize))]
+    #[derive(MallocSizeOf)]
     pub struct ClipNodeFlags: u8 {
         const SAME_SPATIAL_NODE = 0x1;
         const SAME_COORD_SYSTEM = 0x2;
@@ -195,7 +195,7 @@ bitflags! {
 
 
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
+#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, Hash)]
 pub struct ClipChainId(pub u32);
 
 
@@ -209,7 +209,7 @@ impl ClipChainId {
 
 
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, MallocSizeOf)]
 pub struct ClipChainNode {
     pub handle: ClipDataHandle,
     pub local_pos: LayoutPoint,
@@ -223,7 +223,7 @@ pub struct ClipChainNode {
 
 
 
-#[derive(Debug)]
+#[derive(Debug, MallocSizeOf)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct ClipNodeInstance {
@@ -250,7 +250,7 @@ pub struct ClipNodeRange {
 
 
 
-#[derive(Debug)]
+#[derive(Debug, MallocSizeOf)]
 enum ClipSpaceConversion {
     Local,
     ScaleOffset(ScaleOffset),
@@ -259,6 +259,7 @@ enum ClipSpaceConversion {
 
 
 
+#[derive(MallocSizeOf)]
 struct ClipNodeInfo {
     conversion: ClipSpaceConversion,
     handle: ClipDataHandle,
@@ -435,6 +436,7 @@ impl ClipNode {
 }
 
 
+#[derive(MallocSizeOf)]
 pub struct ClipStore {
     pub clip_chain_nodes: Vec<ClipChainNode>,
     clip_node_instances: Vec<ClipNodeInstance>,
@@ -707,17 +709,6 @@ impl ClipStore {
 
     pub fn clear_old_instances(&mut self) {
         self.clip_node_instances.clear();
-    }
-
-    
-    pub fn malloc_size_of(&self, op: VoidPtrToSizeFn) -> usize {
-        let mut size = 0;
-        unsafe {
-            size += op(self.clip_chain_nodes.as_ptr() as *const c_void);
-            size += op(self.clip_node_instances.as_ptr() as *const c_void);
-            size += op(self.clip_node_info.as_ptr() as *const c_void);
-        }
-        size
     }
 }
 
@@ -1287,7 +1278,7 @@ pub fn project_inner_rect(
 
 
 
-#[derive(Debug)]
+#[derive(Debug, MallocSizeOf)]
 pub struct ClipNodeCollector {
     spatial_node_index: SpatialNodeIndex,
     clips: FastHashSet<ClipChainId>,
