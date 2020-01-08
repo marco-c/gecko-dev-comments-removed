@@ -26,6 +26,7 @@
 
 
 
+
 class ProfileBuffer final
 {
 public:
@@ -35,6 +36,19 @@ public:
   explicit ProfileBuffer(uint32_t aCapacity);
 
   ~ProfileBuffer();
+
+  uint32_t Length() { return mRangeEnd - mRangeStart; }
+
+  
+  
+  
+  bool SetMinCapacity(uint32_t aMinCapacity);
+
+  
+  
+  
+  
+  bool SetCapacityPow2(uint32_t aNewCapacity);
 
   
   void AddEntry(const ProfileBufferEntry& aEntry);
