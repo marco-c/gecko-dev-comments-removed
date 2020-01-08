@@ -1707,15 +1707,15 @@ nsAttrValue::ParseStyleAttribute(const nsAString& aString,
 {
   nsIDocument* ownerDoc = aElement->OwnerDoc();
   nsHTMLCSSStyleSheet* sheet = ownerDoc->GetInlineStyleSheet();
-  nsCOMPtr<nsIURI> baseURI = aElement->GetBaseURIForStyleAttr();
+  nsIURI* baseURI = aElement->GetBaseURIForStyleAttr();
   nsIURI* docURI = ownerDoc->GetDocumentURI();
 
   NS_ASSERTION(aElement->NodePrincipal() == ownerDoc->NodePrincipal(),
                "This is unexpected");
 
-  nsCOMPtr<nsIPrincipal> principal = (
-      aMaybeScriptedPrincipal ? aMaybeScriptedPrincipal
-                              : aElement->NodePrincipal());
+  nsIPrincipal* principal =
+    aMaybeScriptedPrincipal ? aMaybeScriptedPrincipal
+                            : aElement->NodePrincipal();
 
   
   
@@ -1724,8 +1724,9 @@ nsAttrValue::ParseStyleAttribute(const nsAString& aString,
   
   
   
-  bool cachingAllowed = (sheet && baseURI == docURI &&
-                         principal == aElement->NodePrincipal());
+  const bool cachingAllowed = sheet &&
+                              baseURI == docURI &&
+                              principal == aElement->NodePrincipal();
   if (cachingAllowed) {
     MiscContainer* cont = sheet->LookupStyleAttr(aString);
     if (cont) {
@@ -1736,12 +1737,12 @@ nsAttrValue::ParseStyleAttribute(const nsAString& aString,
     }
   }
 
-  RefPtr<URLExtraData> data = new URLExtraData(baseURI, docURI,
-                                                principal);
-  RefPtr<DeclarationBlock> decl = DeclarationBlock::
-    FromCssText(aString, data,
-                ownerDoc->GetCompatibilityMode(),
-                ownerDoc->CSSLoader());
+  RefPtr<URLExtraData> data = new URLExtraData(baseURI, docURI, principal);
+  RefPtr<DeclarationBlock> decl =
+    DeclarationBlock::FromCssText(aString,
+                                  data,
+                                  ownerDoc->GetCompatibilityMode(),
+                                  ownerDoc->CSSLoader());
   if (!decl) {
     return false;
   }
