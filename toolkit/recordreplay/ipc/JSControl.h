@@ -66,7 +66,11 @@ struct BreakpointPosition
     
     
     
-    ForcedPause
+    ForcedPause,
+
+    
+    
+    PositionChange
   ));
 
   Kind mKind;
@@ -120,6 +124,7 @@ struct BreakpointPosition
     case ConsoleMessage: return "ConsoleMessage";
     case WarpTarget: return "WarpTarget";
     case ForcedPause: return "ForcedPause";
+    case PositionChange: return "PositionChange";
     }
     MOZ_CRASH("Bad BreakpointPosition kind");
   }
