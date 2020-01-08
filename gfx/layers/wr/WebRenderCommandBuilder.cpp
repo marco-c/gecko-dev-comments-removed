@@ -90,6 +90,7 @@ struct BlobItemData
 
   
   bool mInvalid;
+  bool mInvalidRegion;
   bool mEmpty;
 
   
@@ -107,6 +108,7 @@ struct BlobItemData
     , mOpacity(0.0)
   {
     mInvalid = false;
+    mInvalidRegion = false;
     mEmpty = false;
     mDisplayItemKey = aItem->GetPerFrameKey();
     AddFrame(aItem->Frame());
@@ -411,6 +413,7 @@ struct DIGroup
     
 
 
+    aData->mInvalidRegion = false;
 
     GP("pre mInvalidRect: %s %p-%d - inv: %d %d %d %d\n", aItem->Name(), aItem->Frame(), aItem->GetPerFrameKey(),
        mInvalidRect.x, mInvalidRect.y, mInvalidRect.width, mInvalidRect.height);
@@ -489,6 +492,7 @@ struct DIGroup
         aData->mRect = transformedRect.Intersect(imageRect);
 
         aData->mInvalid = true;
+        aData->mInvalidRegion = true;
       } else {
         if (aData->mClip != clip) {
           UniquePtr<nsDisplayItemGeometry> geometry(aItem->AllocateGeometry(aBuilder));
@@ -743,9 +747,9 @@ struct DIGroup
             const Matrix4x4Flagged& t = transformItem->GetTransform();
             Matrix t2d;
             bool is2D = t.Is2D(&t2d);
-            gfxCriticalError() << "DisplayItemTransform-" << is2D << "-should-be-invalid";
+            gfxCriticalError() << "DisplayItemTransform-" << is2D << "-region-" << data->mInvalidRegion << "-should-be-invalid";
           } else {
-            gfxCriticalError() << "DisplayItem" << item->Name() << "should be invalid";
+            gfxCriticalError() << "DisplayItem" << item->Name() << "-region-" << data->mInvalidRegion << "-should be invalid";
           }
         }
         
@@ -1709,6 +1713,7 @@ PaintByLayer(nsDisplayItem* aItem,
 static bool
 PaintItemByDrawTarget(nsDisplayItem* aItem,
                       gfx::DrawTarget* aDT,
+                      const LayerRect& aImageRect,
                       const LayoutDevicePoint& aOffset,
                       nsDisplayListBuilder* aDisplayListBuilder,
                       const RefPtr<BasicLayerManager>& aManager,
@@ -1718,8 +1723,7 @@ PaintItemByDrawTarget(nsDisplayItem* aItem,
   MOZ_ASSERT(aDT);
 
   bool isInvalidated = false;
-  
-  aDT->ClearRect(Rect(aDT->GetRect()));
+  aDT->ClearRect(aImageRect.ToUnknownRect());
   RefPtr<gfxContext> context = gfxContext::CreateOrNull(aDT);
   MOZ_ASSERT(context);
 
@@ -1764,14 +1768,14 @@ PaintItemByDrawTarget(nsDisplayItem* aItem,
     
     if (aHighlight) {
       aDT->SetTransform(gfx::Matrix());
-      aDT->FillRect(Rect(aDT->GetRect()), gfx::ColorPattern(aHighlight.value()));
+      aDT->FillRect(gfx::Rect(0, 0, aImageRect.Width(), aImageRect.Height()), gfx::ColorPattern(aHighlight.value()));
     }
     if (aItem->Frame()->PresContext()->GetPaintFlashing() && isInvalidated) {
       aDT->SetTransform(gfx::Matrix());
       float r = float(rand()) / RAND_MAX;
       float g = float(rand()) / RAND_MAX;
       float b = float(rand()) / RAND_MAX;
-      aDT->FillRect(Rect(aDT->GetRect()), gfx::ColorPattern(gfx::Color(r, g, b, 0.5)));
+      aDT->FillRect(gfx::Rect(0, 0, aImageRect.Width(), aImageRect.Height()), gfx::ColorPattern(gfx::Color(r, g, b, 0.5)));
     }
   }
 
@@ -1819,10 +1823,7 @@ WebRenderCommandBuilder::GenerateFallbackData(nsDisplayItem* aItem,
   aItem->ComputeVisibility(aDisplayListBuilder, &visibleRegion);
 
   const int32_t appUnitsPerDevPixel = aItem->Frame()->PresContext()->AppUnitsPerDevPixel();
-  auto bounds = LayoutDeviceRect::FromAppUnits(paintBounds, appUnitsPerDevPixel);
-  if (bounds.IsEmpty()) {
-    return nullptr;
-  }
+  LayoutDeviceRect bounds = LayoutDeviceRect::FromAppUnits(paintBounds, appUnitsPerDevPixel);
 
   gfx::Size scale = aSc.GetInheritedScale();
   gfx::Size oldScale = fallbackData->GetScale();
@@ -1833,18 +1834,31 @@ WebRenderCommandBuilder::GenerateFallbackData(nsDisplayItem* aItem,
   bool differentScale = gfx::FuzzyEqual(scale.width, oldScale.width, 1e-6f) &&
                         gfx::FuzzyEqual(scale.height, oldScale.height, 1e-6f);
 
-  LayoutDeviceToLayerScale2D layerScale(scale.width, scale.height);
-  auto scaledBounds = bounds * layerScale;
-  auto dtRect = RoundedOut(scaledBounds);
-  auto dtSize = dtRect.Size();
+  
+  
+  LayerIntSize paintSize = RoundedToInt(LayerSize(bounds.Width() * scale.width, bounds.Height() * scale.height));
+  if (paintSize.width == 0 || paintSize.height == 0) {
+    return nullptr;
+  }
 
-  aImageRect = dtRect / layerScale;
+  
+  
+  auto scaledBounds = bounds * LayoutDeviceToLayerScale(1);
+  scaledBounds.Scale(scale.width, scale.height);
+  LayerIntSize dtSize = RoundedToInt(scaledBounds).Size();
 
-  auto offset = aImageRect.TopLeft();
-
-  nsDisplayItemGeometry* geometry = fallbackData->GetGeometry();
+  
+  
+  
+  if (dtSize.width <= 0 || dtSize.height <= 0) {
+    return nullptr;
+  }
 
   bool needPaint = true;
+  LayoutDeviceIntPoint offset = RoundedToInt(bounds.TopLeft());
+  aImageRect = LayoutDeviceRect(offset, LayoutDeviceSize(RoundedToInt(bounds).Size()));
+  LayerRect paintRect = LayerRect(LayerPoint(0, 0), LayerSize(paintSize));
+  nsDisplayItemGeometry* geometry = fallbackData->GetGeometry();
 
   
   
@@ -1908,9 +1922,9 @@ WebRenderCommandBuilder::GenerateFallbackData(nsDisplayItem* aItem,
       if (!fallbackData->mBasicLayerManager) {
         fallbackData->mBasicLayerManager = new BasicLayerManager(BasicLayerManager::BLM_INACTIVE);
       }
-      bool isInvalidated = PaintItemByDrawTarget(aItem, dt, offset, aDisplayListBuilder,
+      bool isInvalidated = PaintItemByDrawTarget(aItem, dt, paintRect, offset, aDisplayListBuilder,
                                                  fallbackData->mBasicLayerManager, scale, highlight);
-      recorder->FlushItem(IntRect({ 0, 0 }, dtSize.ToUnknownSize()));
+      recorder->FlushItem(IntRect(0, 0, paintSize.width, paintSize.height));
       TakeExternalSurfaces(recorder, fallbackData->mExternalSurfaces, mManager, aResources);
       recorder->Finish();
 
@@ -1946,7 +1960,7 @@ WebRenderCommandBuilder::GenerateFallbackData(nsDisplayItem* aItem,
           if (!fallbackData->mBasicLayerManager) {
             fallbackData->mBasicLayerManager = new BasicLayerManager(mManager->GetWidget());
           }
-          isInvalidated = PaintItemByDrawTarget(aItem, dt, offset,
+          isInvalidated = PaintItemByDrawTarget(aItem, dt, paintRect, offset,
                                                 aDisplayListBuilder,
                                                 fallbackData->mBasicLayerManager, scale,
                                                 highlight);
@@ -2004,7 +2018,7 @@ WebRenderCommandBuilder::BuildWrMaskImage(nsDisplayItem* aItem,
 
   wr::WrImageMask imageMask;
   imageMask.image = fallbackData->GetKey().value();
-  imageMask.rect = wr::ToRoundedLayoutRect(imageRect);
+  imageMask.rect = wr::ToRoundedLayoutRect(aBounds);
   imageMask.repeat = false;
   return Some(imageMask);
 }
