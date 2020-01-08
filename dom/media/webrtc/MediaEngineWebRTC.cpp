@@ -313,10 +313,19 @@ MediaEngineWebRTC::EnumerateMicrophoneDevices(uint64_t aWindowId,
 }
 
 void
+MediaEngineWebRTC::EnumerateSpeakerDevices(uint64_t aWindowId,
+                                           nsTArray<RefPtr<MediaDevice> >* aDevices)
+{
+}
+
+void
 MediaEngineWebRTC::EnumerateDevices(uint64_t aWindowId,
                                     dom::MediaSourceEnum aMediaSource,
+                                    MediaSinkEnum aMediaSink,
                                     nsTArray<RefPtr<MediaDevice> >* aDevices)
 {
+  MOZ_ASSERT(aMediaSource != dom::MediaSourceEnum::Other ||
+             aMediaSink != MediaSinkEnum::Other);
   
   MutexAutoLock lock(mMutex);
   if (MediaEngineSource::IsVideo(aMediaSource)) {
@@ -328,9 +337,13 @@ MediaEngineWebRTC::EnumerateDevices(uint64_t aWindowId,
                               audioCaptureSource,
                               audioCaptureSource->GetName(),
                               NS_ConvertUTF8toUTF16(audioCaptureSource->GetUUID())));
-  } else {
+  } else if (aMediaSource == dom::MediaSourceEnum::Microphone) {
     MOZ_ASSERT(aMediaSource == dom::MediaSourceEnum::Microphone);
     EnumerateMicrophoneDevices(aWindowId, aDevices);
+  }
+
+  if (aMediaSink == MediaSinkEnum::Speaker) {
+    EnumerateSpeakerDevices(aWindowId, aDevices);
   }
 }
 
