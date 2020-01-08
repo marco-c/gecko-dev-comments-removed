@@ -2386,10 +2386,7 @@ var SessionStoreInternal = {
     
     
     
-    let tabState = aState;
-    if (typeof tabState == "string") {
-      tabState = JSON.parse(aState);
-    }
+    let tabState = JSON.parse(aState);
     if (!tabState) {
       throw Components.Exception("Invalid state string: not JSON", Cr.NS_ERROR_INVALID_ARG);
     }
