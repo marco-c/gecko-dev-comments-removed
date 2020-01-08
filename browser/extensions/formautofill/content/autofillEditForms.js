@@ -19,7 +19,27 @@ class EditAutofillForm {
   loadRecord(record = {}) {
     for (let field of this._elements.form.elements) {
       let value = record[field.id];
-      field.value = typeof(value) == "undefined" ? "" : value;
+      value = typeof(value) == "undefined" ? "" : value;
+
+      if (record.guid) {
+        field.value = value;
+      } else if (field.localName == "select") {
+        this.setDefaultSelectedOptionByValue(field, value);
+      } else {
+        
+        
+        field.defaultValue = value;
+      }
+    }
+    if (!record.guid) {
+      
+      this._elements.form.reset();
+    }
+  }
+
+  setDefaultSelectedOptionByValue(select, value) {
+    for (let option of select.options) {
+      option.defaultSelected = option.value == value;
     }
   }
 
@@ -282,6 +302,11 @@ class EditCreditCard extends EditAutofillForm {
       
       this.generateYears();
       super.loadRecord(record);
+
+      
+      
+      
+      this._elements.ccNumber.setCustomValidity("");
     }
   }
 
