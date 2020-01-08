@@ -183,7 +183,10 @@ CookieServiceChild::TrackCookieLoad(nsIChannel *aChannel)
   nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aChannel);
   if (httpChannel) {
     isTrackingResource = httpChannel->GetIsTrackingResource();
-    if (isForeign && isTrackingResource &&
+    
+    
+    
+    if (isForeign &&
         AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(httpChannel,
                                                                 uri)) {
       firstPartyStorageAccessGranted = true;
@@ -581,7 +584,10 @@ CookieServiceChild::GetCookieStringInternal(nsIURI *aHostURI,
   nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aChannel);
   if (httpChannel) {
     isTrackingResource = httpChannel->GetIsTrackingResource();
-    if (isForeign && isTrackingResource &&
+    
+    
+    
+    if (isForeign &&
         AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(httpChannel,
                                                                 aHostURI)) {
       firstPartyStorageAccessGranted = true;
@@ -638,7 +644,10 @@ CookieServiceChild::SetCookieStringInternal(nsIURI *aHostURI,
   nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aChannel);
   if (httpChannel) {
     isTrackingResource = httpChannel->GetIsTrackingResource();
-    if (isForeign && isTrackingResource &&
+    
+    
+    
+    if (isForeign &&
         AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(httpChannel,
                                                                 aHostURI)) {
       firstPartyStorageAccessGranted = true;
