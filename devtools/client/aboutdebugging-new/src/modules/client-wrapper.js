@@ -59,7 +59,15 @@ class ClientWrapper {
 
   async getDeviceDescription() {
     const deviceFront = await this.client.mainRoot.getFront("device");
-    return deviceFront.getDescription();
+    const { brandName, channel, deviceName, version } =
+      await deviceFront.getDescription();
+    
+    return {
+      channel,
+      deviceName,
+      name: brandName,
+      version,
+    };
   }
 
   async setPreference(prefName, value) {

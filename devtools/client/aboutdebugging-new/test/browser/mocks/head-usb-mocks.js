@@ -89,7 +89,7 @@ class UsbMocks {
     const mockUsbClient = createClientMock();
     mockUsbClient.getDeviceDescription = () => {
       return {
-        brandName: runtimeInfo.appName || "TestBrand",
+        name: runtimeInfo.name || "TestBrand",
         channel: runtimeInfo.channel || "release",
         version: runtimeInfo.version || "1.0",
       };
