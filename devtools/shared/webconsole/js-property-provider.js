@@ -11,6 +11,7 @@ const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 if (!isWorker) {
   loader.lazyImporter(this, "Parser", "resource://devtools/shared/Parser.jsm");
 }
+loader.lazyRequireGetter(this, "Reflect", "resource://gre/modules/reflect.jsm", true);
 
 
 
@@ -121,8 +122,9 @@ function analyzeInputString(str) {
           
           
           if (
-            previousNonSpaceChar !== "." && nextNonSpaceChar !== "."
-            && !NO_AUTOCOMPLETE_PREFIXES.includes(currentLastStatement)
+            previousNonSpaceChar !== "." && nextNonSpaceChar !== "." &&
+            previousNonSpaceChar !== "[" && nextNonSpaceChar !== "[" &&
+            !NO_AUTOCOMPLETE_PREFIXES.includes(currentLastStatement)
           ) {
             start = i + nextNonSpaceCharIndex;
           }
@@ -479,7 +481,24 @@ function JSPropertyProvider({
       
       
       matches = wrapMatchesInQuotes(matches, elementAccessQuote);
+    } else if (!isWorker) {
+      
+      
+      
+      matches = new Set([...matches].filter(propertyName => {
+        let valid = true;
+        try {
+          
+          
+          
+          Reflect.parse(`({${propertyName}: true})`);
+        } catch (e) {
+          valid = false;
+        }
+        return valid;
+      }));
     }
+
     return {isElementAccess, matchProp, matches};
   };
 
