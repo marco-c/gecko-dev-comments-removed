@@ -14,9 +14,6 @@ ChromeUtils.defineModuleGetter(this, "NetUtil",
 XPCOMUtils.defineLazyServiceGetter(this, "serializationHelper",
                                    "@mozilla.org/network/serialization-helper;1",
                                    "nsISerializationHelper");
-XPCOMUtils.defineLazyServiceGetter(this, "ssu",
-                                   "@mozilla.org/browser/sessionstore/utils;1",
-                                   "nsISessionStoreUtils");
 XPCOMUtils.defineLazyServiceGetter(this, "eTLDService",
                                    "@mozilla.org/network/effective-tld-service;1",
                                    "nsIEffectiveTLDService");
@@ -161,22 +158,11 @@ var Utils = Object.freeze({
 
   mapFrameTree(frame, ...dataCollectors) {
     
-    let objs = dataCollectors.map(function(dataCollector) {
-      let obj = dataCollector(frame.document);
-        if (!obj || typeof(obj) == "object") {
-          return obj || {};
-        }
-        
-        
-        if (typeof(obj) == "string") {
-          return {scroll: obj};
-        }
-        return obj;
-    });
+    let objs = dataCollectors.map(dataCollector => dataCollector(frame.document) || {});
     let children = dataCollectors.map(() => []);
 
     
-    ssu.forEachNonDynamicChildFrame(frame, (subframe, index) => {
+    SessionStoreUtils.forEachNonDynamicChildFrame(frame, (subframe, index) => {
       let results = this.mapFrameTree(subframe, ...dataCollectors);
       if (!results) {
         return;
@@ -217,7 +203,7 @@ var Utils = Object.freeze({
     }
 
     
-    ssu.forEachNonDynamicChildFrame(frame, (subframe, index) => {
+    SessionStoreUtils.forEachNonDynamicChildFrame(frame, (subframe, index) => {
       if (data.children[index]) {
         this.restoreFrameTreeData(subframe, data.children[index], cb);
       }
