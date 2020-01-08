@@ -1041,6 +1041,29 @@ JSXrayTraits::createHolder(JSContext* cx, JSObject* wrapper)
     MOZ_ASSERT(key != JSProto_Null);
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (key == JSProto_Object && js::IsArgumentsObject(target)) {
+        key = JSProto_Array;
+    }
+
+    
     RootedValue v(cx);
     v.setNumber(static_cast<uint32_t>(key));
     js::SetReservedSlot(holder, SLOT_PROTOKEY, v);
