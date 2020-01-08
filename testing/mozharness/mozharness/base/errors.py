@@ -133,10 +133,15 @@ VirtualenvErrorList = [
         r'''Downloading .* \(.*\): *([0-9]+%)? *[0-9\.]+[kmKM]b'''), 'level': DEBUG},
 ] + PythonErrorList
 
+RustErrorList = [
+    {'regex': re.compile(r'''error\[E\d+\]:'''), 'level': ERROR},
+    {'substr': r'''error: Could not compile''', 'level': ERROR},
+    {'substr': r'''error: aborting due to previous error''', 'level': ERROR},
+]
 
 
 
-MakefileErrorList = BaseErrorList + PythonErrorList + [
+MakefileErrorList = BaseErrorList + PythonErrorList + RustErrorList + [
     {'substr': r'''No rule to make target ''', 'level': ERROR},
     {'regex': re.compile(r'''akefile.*was not found\.'''), 'level': ERROR},
     {'regex': re.compile(r'''Stop\.$'''), 'level': ERROR},
