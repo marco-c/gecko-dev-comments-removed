@@ -260,7 +260,12 @@ CustomElementData::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
   n += mReactionQueue.ShallowSizeOfExcludingThis(aMallocSizeOf);
 
   for (auto& reaction : mReactionQueue) {
-    n += reaction->SizeOfIncludingThis(aMallocSizeOf);
+    
+    
+    
+    if (reaction) {
+      n += reaction->SizeOfIncludingThis(aMallocSizeOf);
+    }
   }
 
   return n;
