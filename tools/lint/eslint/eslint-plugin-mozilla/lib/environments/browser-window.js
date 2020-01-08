@@ -27,12 +27,10 @@ const rootDir = helpers.rootDir;
 
 const EXTRA_SCRIPTS = [
   "browser/base/content/nsContextMenu.js",
-  "toolkit/content/contentAreaUtils.js",
-  "toolkit/content/customElements.js",
   "browser/components/places/content/editBookmark.js",
   "browser/components/downloads/content/downloads.js",
   "browser/components/downloads/content/indicator.js",
-  
+  "toolkit/content/customElements.js",
   "toolkit/content/editMenuOverlay.js",
 ];
 
@@ -53,12 +51,12 @@ const MAPPINGS = {
 };
 
 const globalScriptsRegExp =
-  /<script type=\"application\/javascript\" src=\"(.*)\"\/>|^\s*"(.*?\.js)",$/;
+  /^\s*(?:Services.scriptloader.loadSubScript\(\"(.*?)\", this\);|"(.*?\.js)",)$/;
 
-function getGlobalScriptsIncludes() {
+function getGlobalScriptIncludes(scriptPath) {
   let fileData;
   try {
-    fileData = fs.readFileSync(helpers.globalScriptsPath, {encoding: "utf8"});
+    fileData = fs.readFileSync(scriptPath, {encoding: "utf8"});
   } catch (ex) {
     
     return null;
@@ -89,9 +87,17 @@ function getGlobalScriptsIncludes() {
   return result;
 }
 
+function getGlobalScripts() {
+  let results = [];
+  for (let scriptPath of helpers.globalScriptPaths) {
+    results = results.concat(getGlobalScriptIncludes(scriptPath));
+  }
+  return results;
+}
+
 function getScriptGlobals() {
   let fileGlobals = [];
-  let scripts = getGlobalScriptsIncludes();
+  let scripts = getGlobalScripts();
   if (!scripts) {
     return [];
   }
@@ -122,7 +128,7 @@ function mapGlobals(fileGlobals) {
 function getMozillaCentralItems() {
   return {
     globals: mapGlobals(getScriptGlobals()),
-    browserjsScripts: getGlobalScriptsIncludes().concat(EXTRA_SCRIPTS),
+    browserjsScripts: getGlobalScripts().concat(EXTRA_SCRIPTS),
   };
 }
 

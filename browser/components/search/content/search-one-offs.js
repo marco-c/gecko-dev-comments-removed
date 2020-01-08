@@ -7,8 +7,6 @@
 
 
 
-{
-
 class SearchOneOffs {
   constructor(container) {
     this.container = container;
@@ -1235,6 +1233,4 @@ class SearchOneOffs {
 }
 
 window.SearchOneOffs = SearchOneOffs;
-
-}
 
