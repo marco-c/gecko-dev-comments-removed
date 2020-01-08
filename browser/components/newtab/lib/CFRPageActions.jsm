@@ -3,14 +3,17 @@
 
 "use strict";
 
+ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Localization.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm");
+XPCOMUtils.defineLazyGlobalGetters(this, ["fetch"]);
 
 ChromeUtils.defineModuleGetter(this, "PrivateBrowsingUtils",
   "resource://gre/modules/PrivateBrowsingUtils.jsm");
 
 const POPUP_NOTIFICATION_ID = "contextual-feature-recommendation";
 const SUMO_BASE_URL = Services.urlFormatter.formatURLPref("app.support.baseURL");
+const ADDONS_API_URL = "https://services.addons.mozilla.org/api/v3/addons/addon";
 
 const DELAY_BEFORE_EXPAND_MS = 1000;
 
@@ -401,11 +404,65 @@ const CFRPageActions = {
 
 
 
+  async _fetchLatestAddonVersion({id}) {
+    let url = null;
+    try {
+      const response = await fetch(`${ADDONS_API_URL}/${id}`);
+      if (response.status !== 204 && response.ok) {
+        const json = await response.json();
+        url = json.current_version.files[0].url;
+      }
+    } catch (e) {
+      Cu.reportError("Failed to get the latest add-on version for this recommendation");
+    }
+    return url;
+  },
+
+  async _maybeAddAddonInstallURL(recommendation) {
+    const {content, template} = recommendation;
+    
+    if (template !== "cfr_doorhanger") {
+      return recommendation;
+    }
+
+    const url = await this._fetchLatestAddonVersion(content.addon);
+    
+    
+    if (!url) {
+      return false;
+    }
+
+    
+    
+    return {
+      ...recommendation,
+      content: {
+        ...content,
+        buttons: {
+          ...content.buttons,
+          primary: {
+            ...content.buttons.primary,
+            action: {...content.buttons.primary.action, data: {url}},
+          },
+        },
+      },
+    };
+  },
+
+  
 
 
-  async forceRecommendation(browser, recommendation, dispatchToASRouter) {
+
+
+
+
+  async forceRecommendation(browser, originalRecommendation, dispatchToASRouter) {
     
     const win = browser.browser.ownerGlobal;
+    const recommendation = await this._maybeAddAddonInstallURL(originalRecommendation);
+    if (!recommendation) {
+      return false;
+    }
     const {id, content} = recommendation;
     RecommendationMap.set(browser.browser, {id, content});
     if (!PageActionMap.has(win)) {
@@ -423,12 +480,16 @@ const CFRPageActions = {
 
 
 
-  async addRecommendation(browser, host, recommendation, dispatchToASRouter) {
+  async addRecommendation(browser, host, originalRecommendation, dispatchToASRouter) {
     const win = browser.ownerGlobal;
     if (PrivateBrowsingUtils.isWindowPrivate(win)) {
       return false;
     }
     if (browser !== win.gBrowser.selectedBrowser || !isHostMatch(browser, host)) {
+      return false;
+    }
+    const recommendation = await this._maybeAddAddonInstallURL(originalRecommendation);
+    if (!recommendation) {
       return false;
     }
     const {id, content} = recommendation;
