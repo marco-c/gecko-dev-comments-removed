@@ -20,6 +20,8 @@
 namespace mozilla {
 namespace layers {
 
+class AsyncPanZoomController;
+
 enum CancelAnimationFlags : uint32_t {
   Default = 0x0,             
   ExcludeOverscroll = 0x1,   
@@ -96,6 +98,19 @@ struct TargetConfirmationFlags {
 
   bool mTargetConfirmed : 1;
   bool mRequiresTargetConfirmation : 1;
+};
+
+
+
+
+
+class AutoApplyAsyncTestAttributes {
+public:
+  explicit AutoApplyAsyncTestAttributes(AsyncPanZoomController*);
+  ~AutoApplyAsyncTestAttributes();
+private:
+  AsyncPanZoomController* mApzc;
+  FrameMetrics mPrevFrameMetrics;
 };
 
 namespace apz {

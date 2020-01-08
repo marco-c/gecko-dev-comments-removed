@@ -977,6 +977,11 @@ AsyncCompositionManager::ApplyAsyncContentTransformToTree(Layer *aLayer,
             if (!wrapper.GetApzc()) {
               continue;
             }
+
+            
+            
+            auto _ = sampler->ApplyAsyncTestAttributes(wrapper);
+
             const FrameMetrics& metrics = wrapper.Metrics();
             MOZ_ASSERT(metrics.IsScrollable());
 

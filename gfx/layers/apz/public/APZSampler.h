@@ -11,6 +11,7 @@
 
 #include "base/platform_thread.h" 
 #include "mozilla/layers/AsyncCompositionManager.h" 
+#include "mozilla/layers/APZUtils.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPtr.h"
 #include "nsTArray.h"
@@ -89,6 +90,13 @@ public:
 
   void MarkAsyncTransformAppliedToContent(const LayerMetricsWrapper& aLayer);
   bool HasUnusedAsyncTransform(const LayerMetricsWrapper& aLayer);
+
+  
+
+
+
+
+  UniquePtr<AutoApplyAsyncTestAttributes> ApplyAsyncTestAttributes(const LayerMetricsWrapper& aLayer);
 
   
 
