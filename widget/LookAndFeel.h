@@ -422,6 +422,12 @@ class LookAndFeel {
 
 
 
+    eIntID_GTKCSDHideTitlebarByDefault,
+
+    
+
+
+
     eIntID_GTKCSDTransparentBackground,
 
     

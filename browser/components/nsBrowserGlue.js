@@ -321,7 +321,10 @@ let ACTORS = {
                                    browserWindowFeatures, null);
 
   
-  if (Services.prefs.getBoolPref("browser.tabs.drawInTitlebar")) {
+  let hiddenTitlebar =
+    Services.prefs.getBoolPref("browser.tabs.drawInTitlebar",
+      win.matchMedia("(-moz-gtk-csd-hide-titlebar-by-default)").matches);
+  if (hiddenTitlebar) {
     win.windowUtils.setChromeMargin(0, 2, 2, 2);
   }
 

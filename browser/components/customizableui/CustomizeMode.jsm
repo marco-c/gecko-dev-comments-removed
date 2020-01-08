@@ -1582,7 +1582,8 @@ CustomizeMode.prototype = {
   },
 
   _updateTitlebarCheckbox() {
-    let drawInTitlebar = Services.prefs.getBoolPref(kDrawInTitlebarPref, true);
+    let drawInTitlebar = Services.prefs.getBoolPref(kDrawInTitlebarPref,
+      this.window.matchMedia("(-moz-gtk-csd-hide-titlebar-by-default)").matches);
     let checkbox = this.$("customization-titlebar-visibility-checkbox");
     
     
@@ -1596,7 +1597,8 @@ CustomizeMode.prototype = {
 
   _updateDragSpaceCheckbox() {
     let extraDragSpace = Services.prefs.getBoolPref(kExtraDragSpacePref);
-    let drawInTitlebar = Services.prefs.getBoolPref(kDrawInTitlebarPref, true);
+    let drawInTitlebar = Services.prefs.getBoolPref(kDrawInTitlebarPref,
+      this.window.matchMedia("(-moz-gtk-csd-hide-titlebar-by-default)").matches);
     let menuBar = this.$("toolbar-menubar");
     let menuBarEnabled = menuBar
       && AppConstants.platform != "macosx"
