@@ -58,17 +58,23 @@ pref("devtools.inspector.showUserAgentStyles", false);
 
 pref("devtools.inspector.showAllAnonymousContent", false);
 
-pref("devtools.inspector.flexboxHighlighter.enabled", false);
-
 pref("devtools.inspector.shapesHighlighter.enabled", true);
-
-pref("devtools.flexboxinspector.enabled", false);
 
 pref("devtools.new-animationinspector.enabled", true);
 
 pref("devtools.inspector.fonteditor.enabled", true);
 
-pref("devtools.inspector.fonthighlighter.enabled", true);
+pref("devtools.inspector.fonthighlighter.enabled", false);
+
+
+
+#if defined(NIGHTLY_BUILD)
+pref("devtools.inspector.flexboxHighlighter.enabled", true);
+#else
+pref("devtools.inspector.flexboxHighlighter.enabled", false);
+#endif
+
+pref("devtools.flexboxinspector.enabled", false);
 
 
 pref("devtools.gridinspector.gridOutlineMaxColumns", 50);
