@@ -42,7 +42,6 @@ function onZoomChange(event) {
   if (event.target.nodeType == event.target.DOCUMENT_NODE) {
     
     
-    let gBrowser = event.currentTarget.gBrowser;
     let topDoc = event.target.defaultView.top.document;
     if (!topDoc.documentElement) {
       
@@ -50,7 +49,7 @@ function onZoomChange(event) {
       
       return;
     }
-    browser = gBrowser.getBrowserForDocument(topDoc);
+    browser = topDoc.ownerGlobal.docShell.chromeEventHandler;
   } else {
     browser = event.originalTarget;
   }

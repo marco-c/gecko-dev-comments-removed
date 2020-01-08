@@ -457,8 +457,9 @@ var FullZoom = {
 
     
     
-    if (target.nodeType == Node.DOCUMENT_NODE)
-      return gBrowser.getBrowserForDocument(target);
+    if (target.nodeType == Node.DOCUMENT_NODE) {
+      return target.ownerGlobal.docShell.chromeEventHandler;
+    }
 
     throw new Error("Unexpected ZoomChangeUsingMouseWheel event source");
   },
