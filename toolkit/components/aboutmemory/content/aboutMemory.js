@@ -1793,12 +1793,8 @@ function appendTreeElements(aP, aRoot, aProcess, aPadText) {
 
 
 
-
-
-
   function appendTreeElements2(aP, aProcess, aUnsafeNames, aRoot, aT,
-                               aTreelineText1, aTreelineText2a,
-                               aTreelineText2b, aParentStringLength) {
+                               aTlThis, aTlKids, aParentStringLength) {
     function appendN(aS, aC, aN) {
       for (let i = 0; i < aN; i++) {
         aS += aC;
@@ -1808,14 +1804,13 @@ function appendTreeElements(aP, aRoot, aProcess, aPadText) {
 
     
     let valueText = aT.toString();
-    let extraTreelineLength =
+    let extraTlLength =
       Math.max(aParentStringLength - valueText.length, 0);
-    if (extraTreelineLength > 0) {
-      aTreelineText2a = appendN(aTreelineText2a, "─", extraTreelineLength);
-      aTreelineText2b = appendN(aTreelineText2b, " ", extraTreelineLength);
+    if (extraTlLength > 0) {
+      aTlThis = appendN(aTlThis, "─", extraTlLength);
+      aTlKids = appendN(aTlKids, " ", extraTlLength);
     }
-    let treelineText = aTreelineText1 + aTreelineText2a;
-    appendElementWithText(aP, "span", "treeline", treelineText);
+    appendElementWithText(aP, "span", "treeline", aTlThis);
 
     
     
@@ -1889,20 +1884,22 @@ function appendTreeElements(aP, aRoot, aProcess, aPadText) {
       
       d = appendElement(aP, "span", showSubtrees ? "kids" : "kids hidden");
 
-      let kidTreelineText1 = aTreelineText1 + aTreelineText2b;
+      let tlThisForMost, tlKidsForMost;
+      if (aT._kids.length > 1) {
+        tlThisForMost = aTlKids + "├──";
+        tlKidsForMost = aTlKids + "│  ";
+      }
+      let tlThisForLast = aTlKids + "└──";
+      let tlKidsForLast = aTlKids + "   ";
+
       for (let i = 0; i < aT._kids.length; i++) {
-        let kidTreelineText2a, kidTreelineText2b;
-        if (i < aT._kids.length - 1) {
-          kidTreelineText2a = "├──";
-          kidTreelineText2b = "│  ";
-        } else {
-          kidTreelineText2a = "└──";
-          kidTreelineText2b = "   ";
-        }
-        aUnsafeNames.push(aT._kids[i]._unsafeName);
-        appendTreeElements2(d, aProcess, aUnsafeNames, aRoot, aT._kids[i],
-                            kidTreelineText1, kidTreelineText2a,
-                            kidTreelineText2b, valueText.length);
+        let kid = aT._kids[i];
+        let isLast = i == aT._kids.length - 1;
+        aUnsafeNames.push(kid._unsafeName);
+        appendTreeElements2(d, aProcess, aUnsafeNames, aRoot, kid,
+                            !isLast ? tlThisForMost : tlThisForLast,
+                            !isLast ? tlKidsForMost : tlKidsForLast,
+                            valueText.length);
         aUnsafeNames.pop();
       }
     }
@@ -1910,7 +1907,7 @@ function appendTreeElements(aP, aRoot, aProcess, aPadText) {
 
   let rootStringLength = aRoot.toString().length;
   appendTreeElements2(aP, aProcess, [aRoot._unsafeName], aRoot, aRoot,
-                      aPadText, "", "", rootStringLength);
+                      aPadText, aPadText, rootStringLength);
 }
 
 
