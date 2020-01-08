@@ -62,8 +62,7 @@ function getDocShellChromeEventHandler(docShell) {
     try {
       
       
-      handler = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
-                        .getInterface(Ci.nsIDOMWindow);
+      handler = docShell.domWindow;
     } catch (e) {
       
     }
@@ -80,8 +79,7 @@ function getChildDocShells(parentDocShell) {
   const docShells = [];
   while (docShellsEnum.hasMoreElements()) {
     const docShell = docShellsEnum.getNext();
-    docShell.QueryInterface(Ci.nsIInterfaceRequestor)
-            .getInterface(Ci.nsIWebProgress);
+    docShell.QueryInterface(Ci.nsIDocShell);
     docShells.push(docShell);
   }
   return docShells;
@@ -345,9 +343,7 @@ const browsingContextTargetPrototype = {
   get window() {
     
     if (this.docShell) {
-      return this.docShell
-        .QueryInterface(Ci.nsIInterfaceRequestor)
-        .getInterface(Ci.nsIDOMWindow);
+      return this.docShell.domWindow;
     }
     return null;
   },
@@ -381,8 +377,7 @@ const browsingContextTargetPrototype = {
 
   get windows() {
     return this.docShells.map(docShell => {
-      return docShell.QueryInterface(Ci.nsIInterfaceRequestor)
-                     .getInterface(Ci.nsIDOMWindow);
+      return docShell.domWindow;
     });
   },
 
@@ -1488,8 +1483,7 @@ DebuggerProgressListener.prototype = {
     
     
     
-    const docShellWindow = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
-                                 .getInterface(Ci.nsIDOMWindow);
+    const docShellWindow = docShell.domWindow;
     this._watchedDocShells.add(docShellWindow);
 
     const webProgress = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
@@ -1511,8 +1505,7 @@ DebuggerProgressListener.prototype = {
   },
 
   unwatch(docShell) {
-    const docShellWindow = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
-                                 .getInterface(Ci.nsIDOMWindow);
+    const docShellWindow = docShell.domWindow;
     if (!this._watchedDocShells.has(docShellWindow)) {
       return;
     }
@@ -1539,8 +1532,7 @@ DebuggerProgressListener.prototype = {
 
   _getWindowsInDocShell(docShell) {
     return getChildDocShells(docShell).map(d => {
-      return d.QueryInterface(Ci.nsIInterfaceRequestor)
-              .getInterface(Ci.nsIDOMWindow);
+      return d.domWindow;
     });
   },
 

@@ -129,12 +129,7 @@ function sectionalizeObject(obj) {
 
 
 function getMainWindow() {
-  return window.QueryInterface(Ci.nsIInterfaceRequestor)
-               .getInterface(Ci.nsIWebNavigation)
-               .QueryInterface(Ci.nsIDocShellTreeItem)
-               .rootTreeItem
-               .QueryInterface(Ci.nsIInterfaceRequestor)
-               .getInterface(Ci.nsIDOMWindow);
+  return window.document.docShell.rootTreeItem.domWindow;
 }
 
 
