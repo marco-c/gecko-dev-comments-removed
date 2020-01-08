@@ -41,7 +41,7 @@ const inContentVariableMap = [
       const {r, g, b} = rgbaChannels;
       
       return `rgb(${r}, ${g}, ${b})`;
-    }
+    },
   }],
   ["--lwt-sidebar-text-color", {
     lwtProperty: "sidebar_text",
