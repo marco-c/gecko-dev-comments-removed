@@ -1,0 +1,11 @@
+
+
+
+from __future__ import absolute_import
+
+import json
+
+
+def save_profile(profile, filename):
+    with open(filename, "w") as f:
+        json.dump(profile, f)
