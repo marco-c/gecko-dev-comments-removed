@@ -418,7 +418,7 @@ enum class IntConversionInputKind {
 
 
 
-enum class MIRType
+enum class MIRType: uint8_t
 {
     Undefined,
     Null,
@@ -462,7 +462,7 @@ enum class MIRType
 static inline bool
 IsSimdType(MIRType type)
 {
-    return ((unsigned(type) >> VECTOR_SCALE_SHIFT) & VECTOR_SCALE_MASK) != 0;
+    return ((uint8_t(type) >> VECTOR_SCALE_SHIFT) & VECTOR_SCALE_MASK) != 0;
 }
 
 static inline MIRType
