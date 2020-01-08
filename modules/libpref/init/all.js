@@ -4681,6 +4681,9 @@ pref("image.mem.animated.use_heap", false);
 #endif
 
 
+pref("image.mem.debug-reporting", false);
+
+
 
 pref("image.mem.shared", true);
 
