@@ -163,7 +163,7 @@ class BinASTParser : public BinASTParserBase, public ErrorReporter, public BCEPa
 
     
     JS::Result<ParseNode*>
-    buildFunction(const size_t start, const BinKind kind, ParseNode* name, ParseNode* params,
+    buildFunction(const size_t start, const BinKind kind, ParseNode* name, ListNode* params,
         ParseNode* body, FunctionBox* funbox);
     JS::Result<FunctionBox*>
     buildFunctionBox(GeneratorKind generatorKind, FunctionAsyncKind functionAsyncKind, FunctionSyntaxKind syntax, ParseNode* name);
@@ -185,8 +185,8 @@ class BinASTParser : public BinASTParserBase, public ErrorReporter, public BCEPa
 
     
 
-    MOZ_MUST_USE JS::Result<ParseNode*> appendDirectivesToBody(ParseNode* body,
-        ParseNode* directives);
+    MOZ_MUST_USE JS::Result<ParseNode*> appendDirectivesToBody(ListNode* body,
+        ListNode* directives);
 
   private: 
     const JS::ReadOnlyCompileOptions& options_;

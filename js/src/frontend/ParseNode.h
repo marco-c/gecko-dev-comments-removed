@@ -439,6 +439,12 @@ IsTypeofKind(ParseNodeKind kind)
 
 
 
+
+
+
+
+
+
 enum ParseNodeArity
 {
     PN_NULLARY,                         
@@ -451,11 +457,20 @@ enum ParseNodeArity
     PN_SCOPE                            
 };
 
+#define FOR_EACH_PARSENODE_SUBCLASS(macro) \
+    macro(ListNode, ListNodeType, asList) \
+    macro(CallSiteNode, CallSiteNodeType, asCallSite)
+
 class LoopControlStatement;
 class BreakStatement;
 class ContinueStatement;
 class ConditionalExpression;
 class PropertyAccess;
+
+#define DECLARE_CLASS(typeName, longTypeName, asMethodName) \
+class typeName;
+FOR_EACH_PARSENODE_SUBCLASS(DECLARE_CLASS)
+#undef DECLARE_CLASS
 
 class ParseNode
 {
@@ -546,6 +561,8 @@ class ParseNode
 
     union {
         struct {                        
+          private:
+            friend class ListNode;
             ParseNode*  head;           
             ParseNode** tail;           
             uint32_t    count;          
@@ -596,10 +613,6 @@ class ParseNode
 #define pn_objbox       pn_u.name.objbox
 #define pn_funbox       pn_u.name.funbox
 #define pn_body         pn_u.name.expr
-#define pn_head         pn_u.list.head
-#define pn_tail         pn_u.list.tail
-#define pn_count        pn_u.list.count
-#define pn_xflags       pn_u.list.xflags
 #define pn_kid1         pn_u.ternary.kid1
 #define pn_kid2         pn_u.ternary.kid2
 #define pn_kid3         pn_u.ternary.kid3
@@ -654,13 +667,6 @@ class ParseNode
         pn_u.scope.body = body;
     }
 
-
-#define PNX_FUNCDEFS    0x01            /* contains top-level function statements */
-#define PNX_ARRAYHOLESPREAD 0x02        /* one or more of
-                                           1. array initialiser has holes
-                                           2. array initializer has spread node */
-#define PNX_NONCONST    0x04            /* initialiser has non-constants */
-
     bool functionIsHoisted() const {
         MOZ_ASSERT(pn_arity == PN_CODE && getKind() == ParseNodeKind::Function);
         MOZ_ASSERT(isOp(JSOP_LAMBDA) ||        
@@ -711,25 +717,7 @@ class ParseNode
     bool isDirectivePrologueMember() const { return pn_prologue; }
 
     
-    bool isForLoopDeclaration() const {
-        if (isKind(ParseNodeKind::Var) || isKind(ParseNodeKind::Let) || isKind(ParseNodeKind::Const)) {
-            MOZ_ASSERT(isArity(PN_LIST));
-            MOZ_ASSERT(pn_count > 0);
-            return true;
-        }
-
-        return false;
-    }
-
-    
-
-
-
-    ParseNode* last() const {
-        MOZ_ASSERT(pn_arity == PN_LIST);
-        MOZ_ASSERT(pn_count != 0);
-        return (ParseNode*)(uintptr_t(pn_tail) - offsetof(ParseNode, pn_next));
-    }
+    inline bool isForLoopDeclaration() const;
 
     void initNumber(double value, DecimalPoint decimalPoint) {
         MOZ_ASSERT(pn_arity == PN_NULLARY);
@@ -737,55 +725,6 @@ class ParseNode
         pn_u.number.value = value;
         pn_u.number.decimalPoint = decimalPoint;
     }
-
-    void makeEmpty() {
-        MOZ_ASSERT(pn_arity == PN_LIST);
-        pn_head = nullptr;
-        pn_tail = &pn_head;
-        pn_count = 0;
-        pn_xflags = 0;
-    }
-
-    void initList(ParseNode* pn) {
-        MOZ_ASSERT(pn_arity == PN_LIST);
-        if (pn->pn_pos.begin < pn_pos.begin) {
-            pn_pos.begin = pn->pn_pos.begin;
-        }
-        pn_pos.end = pn->pn_pos.end;
-        pn_head = pn;
-        pn_tail = &pn->pn_next;
-        pn_count = 1;
-        pn_xflags = 0;
-    }
-
-    void append(ParseNode* pn) {
-        MOZ_ASSERT(pn->pn_pos.begin >= pn_pos.begin);
-        appendWithoutOrderAssumption(pn);
-    }
-
-    void appendWithoutOrderAssumption(ParseNode* pn) {
-        MOZ_ASSERT(pn_arity == PN_LIST);
-        pn_pos.end = pn->pn_pos.end;
-        *pn_tail = pn;
-        pn_tail = &pn->pn_next;
-        pn_count++;
-    }
-
-    void prepend(ParseNode* pn) {
-        MOZ_ASSERT(pn_arity == PN_LIST);
-        pn->pn_next = pn_head;
-        pn_head = pn;
-        if (pn_tail == &pn_head) {
-            pn_tail = &pn->pn_next;
-        }
-        pn_count++;
-    }
-
-    void checkListConsistency()
-#ifndef DEBUG
-    {}
-#endif
-    ;
 
     enum AllowConstantObjects {
         DontAllowObjects = 0,
@@ -905,8 +844,39 @@ struct TernaryNode : public ParseNode
 #endif
 };
 
-struct ListNode : public ParseNode
+class ListNode : public ParseNode
 {
+  private:
+    
+
+    
+    static constexpr uint32_t hasTopLevelFunctionDeclarationsBit = 0x01;
+
+    
+    
+    
+    static constexpr uint32_t hasArrayHoleOrSpreadBit = 0x02;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    static constexpr uint32_t hasNonConstInitializerBit = 0x04;
+
+    void checkConsistency() const
+#ifndef DEBUG
+    {}
+#endif
+    ;
+
+  public:
     ListNode(ParseNodeKind kind, const TokenPos& pos)
       : ParseNode(kind, JSOP_NOP, PN_LIST, pos)
     {
@@ -922,7 +892,15 @@ struct ListNode : public ParseNode
     ListNode(ParseNodeKind kind, JSOp op, ParseNode* kid)
       : ParseNode(kind, op, PN_LIST, kid->pn_pos)
     {
-        initList(kid);
+        if (kid->pn_pos.begin < pn_pos.begin) {
+            pn_pos.begin = kid->pn_pos.begin;
+        }
+        pn_pos.end = kid->pn_pos.end;
+
+        pn_u.list.head = kid;
+        pn_u.list.tail = &kid->pn_next;
+        pn_u.list.count = 1;
+        pn_u.list.xflags = 0;
     }
 
     static bool test(const ParseNode& node) {
@@ -932,7 +910,271 @@ struct ListNode : public ParseNode
 #ifdef DEBUG
     void dump(GenericPrinter& out, int indent);
 #endif
+
+    ParseNode* head() const {
+        return pn_u.list.head;
+    }
+
+    ParseNode** tail() const {
+        return pn_u.list.tail;
+    }
+
+    uint32_t count() const {
+        return pn_u.list.count;
+    }
+
+    bool empty() const {
+        return count() == 0;
+    }
+
+    MOZ_MUST_USE bool hasTopLevelFunctionDeclarations() const {
+        MOZ_ASSERT(isKind(ParseNodeKind::StatementList));
+        return pn_u.list.xflags & hasTopLevelFunctionDeclarationsBit;
+    }
+
+    MOZ_MUST_USE bool hasArrayHoleOrSpread() const {
+        MOZ_ASSERT(isKind(ParseNodeKind::Array));
+        return pn_u.list.xflags & hasArrayHoleOrSpreadBit;
+    }
+
+    MOZ_MUST_USE bool hasNonConstInitializer() const {
+        MOZ_ASSERT(isKind(ParseNodeKind::Array) ||
+                   isKind(ParseNodeKind::Object) ||
+                   isKind(ParseNodeKind::ClassMethodList));
+        return pn_u.list.xflags & hasNonConstInitializerBit;
+    }
+
+    void setHasTopLevelFunctionDeclarations() {
+        MOZ_ASSERT(isKind(ParseNodeKind::StatementList));
+        pn_u.list.xflags |= hasTopLevelFunctionDeclarationsBit;
+    }
+
+    void setHasArrayHoleOrSpread() {
+        MOZ_ASSERT(isKind(ParseNodeKind::Array));
+        pn_u.list.xflags |= hasArrayHoleOrSpreadBit;
+    }
+
+    void setHasNonConstInitializer() {
+        MOZ_ASSERT(isKind(ParseNodeKind::Array) ||
+                   isKind(ParseNodeKind::Object) ||
+                   isKind(ParseNodeKind::ClassMethodList));
+        pn_u.list.xflags |= hasNonConstInitializerBit;
+    }
+
+    
+
+
+
+    ParseNode* last() const {
+        MOZ_ASSERT(!empty());
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        return (ParseNode*)(uintptr_t(tail()) - offsetof(ParseNode, pn_next));
+    }
+
+    void replaceLast(ParseNode* node) {
+        MOZ_ASSERT(!empty());
+        pn_pos.end = node->pn_pos.end;
+
+        ParseNode* item = head();
+        ParseNode* lastNode = last();
+        MOZ_ASSERT(item);
+        if (item == lastNode) {
+            pn_u.list.head = node;
+        } else {
+            while (item->pn_next != lastNode) {
+                MOZ_ASSERT(item->pn_next);
+                item = item->pn_next;
+            }
+            item->pn_next = node;
+        }
+        pn_u.list.tail = &node->pn_next;
+    }
+
+    void makeEmpty() {
+        pn_u.list.head = nullptr;
+        pn_u.list.tail = &pn_u.list.head;
+        pn_u.list.count = 0;
+        pn_u.list.xflags = 0;
+    }
+
+    void append(ParseNode* item) {
+        MOZ_ASSERT(item->pn_pos.begin >= pn_pos.begin);
+        appendWithoutOrderAssumption(item);
+    }
+
+    void appendWithoutOrderAssumption(ParseNode* item) {
+        pn_pos.end = item->pn_pos.end;
+        *pn_u.list.tail = item;
+        pn_u.list.tail = &item->pn_next;
+        pn_u.list.count++;
+    }
+
+    void prepend(ParseNode* item) {
+        item->pn_next = pn_u.list.head;
+        pn_u.list.head = item;
+        if (pn_u.list.tail == &pn_u.list.head) {
+            pn_u.list.tail = &item->pn_next;
+        }
+        pn_u.list.count++;
+    }
+
+    
+    
+    ParseNode** unsafeHeadReference() {
+        return &pn_u.list.head;
+    }
+
+    void unsafeReplaceTail(ParseNode** newTail) {
+        pn_u.list.tail = newTail;
+        checkConsistency();
+    }
+
+    void unsafeDecrementCount() {
+        MOZ_ASSERT(count() > 1);
+        pn_u.list.count--;
+    }
+
+  private:
+    
+    
+    
+    
+    
+    
+    
+    class iterator
+    {
+      private:
+        ParseNode* node_;
+
+        friend class ListNode;
+        explicit iterator(ParseNode* node)
+          : node_(node)
+        {}
+
+      public:
+        bool operator==(const iterator& other) const {
+            return node_ == other.node_;
+        }
+
+        bool operator!=(const iterator& other) const {
+            return !(*this == other);
+        }
+
+        iterator& operator++() {
+            node_ = node_->pn_next;
+            return *this;
+        }
+
+        ParseNode* operator*() {
+            return node_;
+        }
+
+        const ParseNode* operator*() const {
+            return node_;
+        }
+    };
+
+    class range
+    {
+      private:
+        ParseNode* begin_;
+        ParseNode* end_;
+
+        friend class ListNode;
+        range(ParseNode* begin, ParseNode* end)
+          : begin_(begin),
+            end_(end)
+        {}
+
+      public:
+        iterator begin() {
+            return iterator(begin_);
+        }
+
+        iterator end() {
+            return iterator(end_);
+        }
+
+        const iterator begin() const {
+            return iterator(begin_);
+        }
+
+        const iterator end() const {
+            return iterator(end_);
+        }
+
+        const iterator cbegin() const {
+            return begin();
+        }
+
+        const iterator cend() const {
+            return end();
+        }
+    };
+
+#ifdef DEBUG
+  MOZ_MUST_USE bool contains(ParseNode* target) const {
+      MOZ_ASSERT(target);
+      for (ParseNode* node : contents()) {
+          if (target == node) {
+              return true;
+          }
+      }
+      return false;
+  }
+#endif
+
+  public:
+    range contents() {
+        return range(head(), nullptr);
+    }
+
+    const range contents() const {
+        return range(head(), nullptr);
+    }
+
+    range contentsFrom(ParseNode* begin) {
+        MOZ_ASSERT_IF(begin, contains(begin));
+        return range(begin, nullptr);
+    }
+
+    const range contentsFrom(ParseNode* begin) const {
+        MOZ_ASSERT_IF(begin, contains(begin));
+        return range(begin, nullptr);
+    }
+
+    range contentsTo(ParseNode* end) {
+        MOZ_ASSERT_IF(end, contains(end));
+        return range(head(), end);
+    }
+
+    const range contentsTo(ParseNode* end) const {
+        MOZ_ASSERT_IF(end, contains(end));
+        return range(head(), end);
+    }
 };
+
+inline bool
+ParseNode::isForLoopDeclaration() const
+{
+    if (isKind(ParseNodeKind::Var) || isKind(ParseNodeKind::Let) || isKind(ParseNodeKind::Const)) {
+        MOZ_ASSERT(!as<ListNode>().empty());
+        return true;
+    }
+
+    return false;
+}
 
 struct CodeNode : public ParseNode
 {
@@ -1023,10 +1265,7 @@ class CaseClause : public BinaryNode
 
     ParseNode* caseExpression() const { return pn_left; }
     bool isDefault() const { return !caseExpression(); }
-    ParseNode* statementList() const { return pn_right; }
-
-    
-    CaseClause* next() const { return pn_next ? &pn_next->as<CaseClause>() : nullptr; }
+    ListNode* statementList() const { return &pn_right->as<ListNode>(); }
 
     static bool test(const ParseNode& node) {
         bool match = node.isKind(ParseNodeKind::Case);
@@ -1243,15 +1482,24 @@ class PropertyByValue : public ParseNode
 
 
 
-struct CallSiteNode : public ListNode {
+class CallSiteNode : public ListNode
+{
+  public:
     explicit CallSiteNode(uint32_t begin): ListNode(ParseNodeKind::CallSiteObj, TokenPos(begin, begin + 1)) {}
 
     static bool test(const ParseNode& node) {
-        return node.isKind(ParseNodeKind::CallSiteObj);
+        bool match = node.isKind(ParseNodeKind::CallSiteObj);
+        MOZ_ASSERT_IF(match, node.is<ListNode>());
+        return match;
     }
 
     MOZ_MUST_USE bool getRawArrayValue(JSContext* cx, MutableHandleValue vp) {
-        return pn_head->getConstantValue(cx, AllowObjects, vp);
+        return head()->getConstantValue(cx, AllowObjects, vp);
+    }
+
+    ListNode* rawNodes() const {
+        MOZ_ASSERT(head());
+        return &head()->as<ListNode>();
     }
 };
 
@@ -1292,11 +1540,11 @@ struct SwitchStatement : public BinaryNode {
     {
 #ifdef DEBUG
         MOZ_ASSERT(lexicalForCaseList->isKind(ParseNodeKind::LexicalScope));
-        ParseNode* cases = lexicalForCaseList->scopeBody();
+        ListNode* cases = &lexicalForCaseList->scopeBody()->as<ListNode>();
         MOZ_ASSERT(cases->isKind(ParseNodeKind::StatementList));
         bool found = false;
-        CaseClause* firstCase = cases->pn_head ? &cases->pn_head->as<CaseClause>() : nullptr;
-        for (CaseClause* caseNode = firstCase; caseNode; caseNode = caseNode->next()) {
+        for (ParseNode* item : cases->contents()) {
+            CaseClause* caseNode = &item->as<CaseClause>();
             if (caseNode->isDefault()) {
                 found = true;
                 break;
@@ -1378,13 +1626,13 @@ struct ClassNode : public TernaryNode {
     ParseNode* heritage() const {
         return pn_kid2;
     }
-    ParseNode* methodList() const {
+    ListNode* methodList() const {
         if (pn_kid3->isKind(ParseNodeKind::ClassMethodList)) {
-            return pn_kid3;
+            return &pn_kid3->as<ListNode>();
         }
 
         MOZ_ASSERT(pn_kid3->is<LexicalScopeNode>());
-        ParseNode* list = pn_kid3->scopeBody();
+        ListNode* list = &pn_kid3->scopeBody()->as<ListNode>();
         MOZ_ASSERT(list->isKind(ParseNodeKind::ClassMethodList));
         return list;
     }
@@ -1426,7 +1674,7 @@ ParseNode::isConstant()
         return true;
       case ParseNodeKind::Array:
       case ParseNodeKind::Object:
-        return !(pn_xflags & PNX_NONCONST);
+        return !as<ListNode>().hasNonConstInitializer();
       default:
         return false;
     }
@@ -1518,17 +1766,16 @@ static inline ParseNode*
 FunctionFormalParametersList(ParseNode* fn, unsigned* numFormals)
 {
     MOZ_ASSERT(fn->isKind(ParseNodeKind::Function));
-    ParseNode* argsBody = fn->pn_body;
+    ListNode* argsBody = &fn->pn_body->as<ListNode>();
     MOZ_ASSERT(argsBody->isKind(ParseNodeKind::ParamsBody));
-    *numFormals = argsBody->pn_count;
+    *numFormals = argsBody->count();
     if (*numFormals > 0 &&
         argsBody->last()->isKind(ParseNodeKind::LexicalScope) &&
         argsBody->last()->scopeBody()->isKind(ParseNodeKind::StatementList))
     {
         (*numFormals)--;
     }
-    MOZ_ASSERT(argsBody->isArity(PN_LIST));
-    return argsBody->pn_head;
+    return argsBody->head();
 }
 
 bool
