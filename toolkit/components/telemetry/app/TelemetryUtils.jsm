@@ -26,57 +26,6 @@ const IS_CONTENT_PROCESS = (function() {
   return runtime.processType == Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT;
 })();
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function packHistogram(hgram) {
-  let r = hgram.ranges;
-  let c = hgram.counts;
-  let retgram = {
-    range: [r[1], r[r.length - 1]],
-    bucket_count: r.length,
-    histogram_type: hgram.histogram_type,
-    values: {},
-    sum: hgram.sum,
-  };
-
-  let first = true;
-  let last = 0;
-
-  for (let i = 0; i < c.length; i++) {
-    let value = c[i];
-    if (!value)
-      continue;
-
-    
-    if (i && first) {
-      retgram.values[r[i - 1]] = 0;
-    }
-    first = false;
-    last = i + 1;
-    retgram.values[r[i]] = value;
-  }
-
-  
-  if (last && last < c.length)
-    retgram.values[r[last]] = 0;
-  return retgram;
-}
-
 var TelemetryUtils = {
   Preferences: Object.freeze({
     
@@ -325,7 +274,7 @@ var TelemetryUtils = {
       ret[process] = {};
       for (let [name, value] of Object.entries(histograms)) {
         if (testingMode || !name.startsWith("TELEMETRY_TEST_")) {
-          ret[process][name] = packHistogram(value);
+          ret[process][name] = value;
         }
       }
     }
@@ -374,7 +323,7 @@ var TelemetryUtils = {
           }
           ret[process][name] = {};
           for (let [key, hgram] of Object.entries(value)) {
-            ret[process][name][key] = packHistogram(hgram);
+            ret[process][name][key] = hgram;
           }
         }
       }
