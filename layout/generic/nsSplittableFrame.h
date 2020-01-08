@@ -21,33 +21,33 @@ class nsSplittableFrame : public nsFrame
 public:
   NS_DECL_ABSTRACT_FRAME(nsSplittableFrame)
 
-  virtual void Init(nsIContent*       aContent,
-                    nsContainerFrame* aParent,
-                    nsIFrame*         aPrevInFlow) override;
+  void Init(nsIContent*       aContent,
+            nsContainerFrame* aParent,
+            nsIFrame*         aPrevInFlow) override;
 
-  virtual nsSplittableType GetSplittableType() const override;
+  nsSplittableType GetSplittableType() const override;
 
-  virtual void DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData) override;
-
-  
-
-
-
-
-
-
+  void DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData) override;
 
   
-  virtual nsIFrame* GetPrevContinuation() const override;
-  virtual nsIFrame* GetNextContinuation() const override;
+
+
+
+
+
+
 
   
-  virtual void SetPrevContinuation(nsIFrame*) override;
-  virtual void SetNextContinuation(nsIFrame*) override;
+  nsIFrame* GetPrevContinuation() const final;
+  nsIFrame* GetNextContinuation() const final;
 
   
-  virtual nsIFrame* FirstContinuation() const override;
-  virtual nsIFrame* LastContinuation() const override;
+  void SetPrevContinuation(nsIFrame*) final;
+  void SetNextContinuation(nsIFrame*) final;
+
+  
+  nsIFrame* FirstContinuation() const final;
+  nsIFrame* LastContinuation() const final;
 
 #ifdef DEBUG
   
@@ -59,16 +59,16 @@ public:
   nsIFrame* GetPrevInFlow() const;
   nsIFrame* GetNextInFlow() const;
 
-  virtual nsIFrame* GetPrevInFlowVirtual() const override { return GetPrevInFlow(); }
-  virtual nsIFrame* GetNextInFlowVirtual() const override { return GetNextInFlow(); }
+  nsIFrame* GetPrevInFlowVirtual() const final { return GetPrevInFlow(); }
+  nsIFrame* GetNextInFlowVirtual() const final { return GetNextInFlow(); }
 
   
-  virtual void SetPrevInFlow(nsIFrame*) override;
-  virtual void SetNextInFlow(nsIFrame*) override;
+  void SetPrevInFlow(nsIFrame*) final;
+  void SetNextInFlow(nsIFrame*) final;
 
   
-  virtual nsIFrame* FirstInFlow() const override;
-  virtual nsIFrame* LastInFlow() const override;
+  nsIFrame* FirstInFlow() const final;
+  nsIFrame* LastInFlow() const final;
 
   
   
@@ -101,7 +101,7 @@ protected:
   
 
 
-  virtual LogicalSides GetLogicalSkipSides(const ReflowInput* aReflowInput = nullptr) const override;
+  LogicalSides GetLogicalSkipSides(const ReflowInput* aReflowInput = nullptr) const override;
 
   
 

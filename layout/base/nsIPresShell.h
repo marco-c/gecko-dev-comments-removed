@@ -484,7 +484,7 @@ public:
   
 
 
-  virtual void MarkFixedFramesForReflow(IntrinsicDirty aIntrinsicDirty);
+  void MarkFixedFramesForReflow(IntrinsicDirty aIntrinsicDirty);
 
   
 
@@ -1040,7 +1040,7 @@ public:
 
   static void SetVerifyReflowEnable(bool aEnabled);
 
-  virtual nsIFrame* GetAbsoluteContainingBlock(nsIFrame* aFrame);
+  nsIFrame* GetAbsoluteContainingBlock(nsIFrame* aFrame);
 
 #ifdef MOZ_REFLOW_PERF
   virtual void DumpReflows() = 0;
@@ -1653,8 +1653,8 @@ public:
   bool RemoveRefreshObserver(nsARefreshObserver* aObserver,
                              mozilla::FlushType aFlushType);
 
-  virtual bool AddPostRefreshObserver(nsAPostRefreshObserver* aObserver);
-  virtual bool RemovePostRefreshObserver(nsAPostRefreshObserver* aObserver);
+  bool AddPostRefreshObserver(nsAPostRefreshObserver* aObserver);
+  bool RemovePostRefreshObserver(nsAPostRefreshObserver* aObserver);
 
   
   
