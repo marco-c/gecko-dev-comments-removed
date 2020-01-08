@@ -502,9 +502,7 @@ nsresult AccessibleCaretManager::SelectWordOrShortcut(const nsPoint& aPoint) {
 #ifdef MOZ_WIDGET_ANDROID
   
   
-  
-  
-  options = nsLayoutUtils::FrameForPointOption::IgnoreRootScrollFrame;
+  options += nsLayoutUtils::FrameForPointOption::IgnoreRootScrollFrame;
 #endif
 
   AutoWeakFrame ptFrame =
