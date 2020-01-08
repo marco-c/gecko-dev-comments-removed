@@ -7,7 +7,6 @@
 
 
 
-const {StorageFront} = require("devtools/shared/fronts/storage");
 
 Services.scriptloader.loadSubScript("chrome://mochitests/content/browser/devtools/server/tests/browser/storage-helpers.js", this);
 
@@ -44,12 +43,9 @@ const TESTDATA = {
 };
 
 add_task(async function() {
-  await openTabAndSetupStorage(MAIN_DOMAIN + "storage-cookies-same-name.html");
+  const { target, front } =
+    await openTabAndSetupStorage(MAIN_DOMAIN + "storage-cookies-same-name.html");
 
-  initDebuggerServer();
-  const client = new DebuggerClient(DebuggerServer.connectPipe());
-  const form = await connectDebuggerClient(client);
-  const front = StorageFront(client, form);
   const data = await front.listStores();
 
   ok(data.cookies, "Cookies storage actor is present");
@@ -59,7 +55,7 @@ add_task(async function() {
 
   
   forceCollections();
-  await client.close();
+  await target.destroy();
   forceCollections();
   DebuggerServer.destroy();
   forceCollections();
