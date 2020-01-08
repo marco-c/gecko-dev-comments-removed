@@ -616,10 +616,6 @@ var interfaceNamesInGlobalScope =
 
     {name: "Location", insecureContext: true},
 
-    {name: "MediaCapabilities", insecureContext: true},
-
-    {name: "MediaCapabilitiesInfo", insecureContext: true},
-
     {name: "MediaDeviceInfo", insecureContext: true},
 
     {name: "MediaDevices", insecureContext: true},

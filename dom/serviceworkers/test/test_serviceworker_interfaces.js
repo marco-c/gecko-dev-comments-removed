@@ -160,10 +160,6 @@ var interfaceNamesInGlobalScope =
 
     "ImageData",
 
-    "MediaCapabilities",
-
-    "MediaCapabilitiesInfo",
-
     "MessageChannel",
 
     "MessageEvent",
