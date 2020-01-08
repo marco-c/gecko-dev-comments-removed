@@ -123,6 +123,11 @@ const size_t gStackSize = 8192;
 
 
 
+#define NS_TIME_BETWEEN_FORGET_SKIPPABLE_CYCLES 2000 // ms
+
+
+
+
 static const int64_t kForgetSkippableSliceDuration = 2;
 
 
@@ -160,6 +165,8 @@ static nsITimer *sFullGCTimer;
 static StaticRefPtr<IdleTaskRunner> sInterSliceGCRunner;
 
 static TimeStamp sLastCCEndTime;
+
+static TimeStamp sLastForgetSkippableCycleEndTime;
 
 static bool sCCLockedOut;
 static PRTime sCCLockedOutTime;
@@ -2014,6 +2021,10 @@ CCRunnerFired(TimeStamp aDeadline)
     
     sPreviousSuspectedCount = 0;
     nsJSContext::KillCCRunner();
+
+    if (!didDoWork) {
+      sLastForgetSkippableCycleEndTime = TimeStamp::Now();
+    }
   }
 
   return didDoWork;
@@ -2226,6 +2237,17 @@ nsJSContext::MaybePokeCC()
   uint32_t sinceLastCCEnd = TimeUntilNow(sLastCCEndTime);
   if (sinceLastCCEnd && sinceLastCCEnd < NS_CC_DELAY) {
     return;
+  }
+
+  
+  
+  if (sCleanupsSinceLastGC > NS_MAJOR_FORGET_SKIPPABLE_CALLS) {
+    uint32_t sinceLastForgetSkippableCycle =
+      TimeUntilNow(sLastForgetSkippableCycleEndTime);
+    if (sinceLastForgetSkippableCycle &&
+        sinceLastForgetSkippableCycle < NS_TIME_BETWEEN_FORGET_SKIPPABLE_CYCLES) {
+      return;
+    }
   }
 
   if (ShouldTriggerCC(nsCycleCollector_suspectedCount())) {
@@ -2490,6 +2512,7 @@ mozilla::dom::StartupJSEnvironment()
   sCCLockedOut = false;
   sCCLockedOutTime = 0;
   sLastCCEndTime = TimeStamp();
+  sLastForgetSkippableCycleEndTime = TimeStamp();
   sHasRunGC = false;
   sPendingLoadCount = 0;
   sLoadingInProgress = false;
