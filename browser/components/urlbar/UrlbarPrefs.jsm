@@ -96,6 +96,9 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["suggest.searches", false],
 
   
+  ["trimURLs", true],
+
+  
   ["usepreloadedtopurls.enabled", true],
 
   
