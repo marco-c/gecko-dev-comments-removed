@@ -602,14 +602,12 @@ class RustTests(ContextDerived):
     __slots__ = (
         'names',
         'features',
-        'output_category',
     )
 
     def __init__(self, context, names, features):
         ContextDerived.__init__(self, context)
         self.names = names
         self.features = features
-        self.output_category = 'rusttests'
 
 
 class BaseLibrary(Linkable):
@@ -1204,3 +1202,4 @@ class GnProjectData(ContextDerived):
         self.gn_input_variables = gn_dir_attrs.variables
         self.gn_sandbox_variables = gn_dir_attrs.sandbox_vars
         self.mozilla_flags = gn_dir_attrs.mozilla_flags
+        self.gn_target = gn_dir_attrs.gn_target
