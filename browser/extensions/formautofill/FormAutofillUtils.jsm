@@ -343,10 +343,11 @@ this.FormAutofillUtils = {
 
 
 
-  compareStreetAddress(a, b, delimiter = "\n") {
+
+  compareStreetAddress(a, b, collators, delimiter = "\n") {
     let oneLineA = this._toStreetAddressParts(a, delimiter).map(p => p.replace(/\s/g, "")).join("");
     let oneLineB = this._toStreetAddressParts(b, delimiter).map(p => p.replace(/\s/g, "")).join("");
-    return oneLineA == oneLineB;
+    return this.strCompare(oneLineA, oneLineB, collators);
   },
 
   
@@ -466,7 +467,7 @@ this.FormAutofillUtils = {
 
 
 
-  getCollators(country) {
+  getSearchCollators(country) {
     
     
     
@@ -475,7 +476,12 @@ this.FormAutofillUtils = {
     if (!this._collators[country]) {
       let dataset = this.getCountryAddressData(country);
       let languages = dataset.languages || [dataset.lang];
-      this._collators[country] = languages.map(lang => new Intl.Collator(lang, {sensitivity: "base", ignorePunctuation: true}));
+      let options = {
+        ignorePunctuation: true,
+        sensitivity: "base",
+        usage: "search",
+      };
+      this._collators[country] = languages.map(lang => new Intl.Collator(lang, options));
     }
     return this._collators[country];
   },
@@ -559,7 +565,7 @@ this.FormAutofillUtils = {
     let countries = countrySpecified ? [countrySpecified] : [...FormAutofill.countries.keys()];
 
     for (let country of countries) {
-      let collators = this.getCollators(country);
+      let collators = this.getSearchCollators(country);
       let metadata = this.getCountryAddressData(country);
       if (country != metadata.key) {
         
@@ -611,7 +617,7 @@ this.FormAutofillUtils = {
   getAbbreviatedSubregionName(subregionValues, country) {
     let values = Array.isArray(subregionValues) ? subregionValues : [subregionValues];
 
-    let collators = this.getCollators(country);
+    let collators = this.getSearchCollators(country);
     for (let metadata of this.getCountryAddressDataWithLocales(country)) {
       let {sub_keys: subKeys, sub_names: subNames, sub_lnames: subLnames} = metadata;
       if (!subKeys) {
@@ -662,7 +668,7 @@ this.FormAutofillUtils = {
       return null;
     }
 
-    let collators = this.getCollators(address.country);
+    let collators = this.getSearchCollators(address.country);
 
     for (let option of selectEl.options) {
       if (this.strCompare(value, option.value, collators) ||

@@ -1549,6 +1549,8 @@ class Addresses extends AutofillRecords {
     this._normalizeRecord(addressToMerge, strict);
     let hasMatchingField = false;
 
+    let country = addressFound.country || addressToMerge.country || FormAutofill.DEFAULT_REGION;
+    let collators = FormAutofillUtils.getSearchCollators(country);
     for (let field of this.VALID_FIELDS) {
       let existingField = addressFound[field];
       let incomingField = addressToMerge[field];
@@ -1557,7 +1559,7 @@ class Addresses extends AutofillRecords {
           
           
           if (field == "street-address" &&
-              FormAutofillUtils.compareStreetAddress(existingField, incomingField)) {
+              FormAutofillUtils.compareStreetAddress(existingField, incomingField, collators)) {
             
             
             if (existingField.split("\n").length >= incomingField.split("\n").length) {
@@ -1565,6 +1567,9 @@ class Addresses extends AutofillRecords {
               
               addressToMerge[field] = existingField;
             }
+          } else if (field != "street-address" &&
+                     FormAutofillUtils.strCompare(existingField, incomingField, collators)) {
+            addressToMerge[field] = existingField;
           } else {
             this.log.debug("Conflicts: field", field, "has different value.");
             return false;
