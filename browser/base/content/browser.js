@@ -1442,18 +1442,6 @@ var gBrowserInit = {
     
     OfflineApps.init();
 
-    gBrowser.addEventListener("AboutTabCrashedLoad", function(event) {
-      let ownerDoc = event.originalTarget;
-
-      if (!ownerDoc.documentURI.startsWith("about:tabcrashed")) {
-        return;
-      }
-
-      let browser = gBrowser.getBrowserForDocument(event.target);
-      
-      ZoomManager.setZoomForBrowser(browser, 1);
-    }, false, true);
-
     gBrowser.addEventListener("InsecureLoginFormsStateChange", function() {
       gIdentityHandler.refreshForInsecureLoginForms();
     }, true);
