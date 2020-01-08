@@ -542,7 +542,6 @@ VectorImage::RequestRefresh(const TimeStamp& aTime) {
   mSVGDocumentWrapper->TickRefreshDriver();
 
   if (mHasPendingInvalidation) {
-    mHasPendingInvalidation = false;
     SendInvalidationNotifications();
   }
 }
@@ -563,6 +562,8 @@ void VectorImage::SendInvalidationNotifications() {
   
   
 
+  MOZ_ASSERT(mHasPendingInvalidation);
+  mHasPendingInvalidation = false;
   SurfaceCache::RemoveImage(ImageKey(this));
 
   if (UpdateImageContainer(Nothing())) {
@@ -1472,11 +1473,37 @@ VectorImage::OnDataAvailable(nsIRequest* aRequest, nsISupports* aCtxt,
 
 
 void VectorImage::InvalidateObserversOnNextRefreshDriverTick() {
-  if (mHaveAnimations) {
-    mHasPendingInvalidation = true;
-  } else {
-    SendInvalidationNotifications();
+  if (mHasPendingInvalidation) {
+    return;
   }
+
+  mHasPendingInvalidation = true;
+
+  
+  if (mHaveAnimations) {
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIEventTarget> eventTarget;
+  if (mProgressTracker) {
+    eventTarget = mProgressTracker->GetEventTarget();
+  } else {
+    eventTarget = do_GetMainThread();
+  }
+
+  RefPtr<VectorImage> self(this);
+  nsCOMPtr<nsIRunnable> ev(NS_NewRunnableFunction(
+      "VectorImage::SendInvalidationNotifications",
+      [=]() -> void { self->SendInvalidationNotifications(); }));
+  eventTarget->Dispatch(ev.forget(), NS_DISPATCH_NORMAL);
 }
 
 void VectorImage::PropagateUseCounters(Document* aParentDocument) {
