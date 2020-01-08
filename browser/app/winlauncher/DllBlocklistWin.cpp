@@ -4,10 +4,10 @@
 
 
 
+#include "NativeNt.h"
 #include "nsWindowsDllInterceptor.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/NativeNt.h"
 #include "mozilla/Types.h"
 #include "mozilla/WindowsDllBlocklist.h"
 #include "mozilla/WinHeaderOnlyUtils.h"
