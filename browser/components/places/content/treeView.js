@@ -1312,8 +1312,7 @@ PlacesTreeView.prototype = {
           
           index = -1;
         } else if (queryOptions.excludeItems ||
-                 queryOptions.excludeQueries ||
-                 queryOptions.excludeReadOnlyFolders) {
+                 queryOptions.excludeQueries) {
           
           
           

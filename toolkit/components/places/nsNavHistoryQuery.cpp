@@ -90,7 +90,6 @@ static void SetOptionsKeyUint32(const nsCString& aValue,
 #define QUERYKEY_RESULT_TYPE "type"
 #define QUERYKEY_EXCLUDE_ITEMS "excludeItems"
 #define QUERYKEY_EXCLUDE_QUERIES "excludeQueries"
-#define QUERYKEY_EXCLUDE_READ_ONLY_FOLDERS "excludeReadOnlyFolders"
 #define QUERYKEY_EXPAND_QUERIES "expandQueries"
 #define QUERYKEY_FORCE_ORIGINAL_TITLE "originalTitle"
 #define QUERYKEY_INCLUDE_HIDDEN "includeHidden"
@@ -328,12 +327,6 @@ nsNavHistory::QueryToQueryString(nsINavHistoryQuery *aQuery,
   }
 
   
-  if (options->ExcludeReadOnlyFolders()) {
-    AppendAmpersandIfNonempty(queryString);
-    queryString += NS_LITERAL_CSTRING(QUERYKEY_EXCLUDE_READ_ONLY_FOLDERS "=1");
-  }
-
-  
   if (!options->ExpandQueries()) {
     AppendAmpersandIfNonempty(queryString);
     queryString += NS_LITERAL_CSTRING(QUERYKEY_EXPAND_QUERIES "=0");
@@ -514,11 +507,6 @@ nsNavHistory::TokensToQuery(const nsTArray<QueryKeyValuePair>& aTokens,
     } else if (kvp.key.EqualsLiteral(QUERYKEY_EXCLUDE_QUERIES)) {
       SetOptionsKeyBool(kvp.value, aOptions,
                         &nsINavHistoryQueryOptions::SetExcludeQueries);
-
-    
-    } else if (kvp.key.EqualsLiteral(QUERYKEY_EXCLUDE_READ_ONLY_FOLDERS)) {
-      SetOptionsKeyBool(kvp.value, aOptions,
-                        &nsINavHistoryQueryOptions::SetExcludeReadOnlyFolders);
 
     
     } else if (kvp.key.EqualsLiteral(QUERYKEY_EXPAND_QUERIES)) {
@@ -1039,7 +1027,6 @@ nsNavHistoryQueryOptions::nsNavHistoryQueryOptions()
 , mResultType(0)
 , mExcludeItems(false)
 , mExcludeQueries(false)
-, mExcludeReadOnlyFolders(false)
 , mExpandQueries(true)
 , mIncludeHidden(false)
 , mMaxResults(0)
@@ -1053,7 +1040,6 @@ nsNavHistoryQueryOptions::nsNavHistoryQueryOptions(const nsNavHistoryQueryOption
 , mResultType(other.mResultType)
 , mExcludeItems(other.mExcludeItems)
 , mExcludeQueries(other.mExcludeQueries)
-, mExcludeReadOnlyFolders(other.mExcludeReadOnlyFolders)
 , mExpandQueries(other.mExpandQueries)
 , mIncludeHidden(other.mIncludeHidden)
 , mMaxResults(other.mMaxResults)
@@ -1127,21 +1113,6 @@ nsNavHistoryQueryOptions::SetExcludeQueries(bool aExclude)
   mExcludeQueries = aExclude;
   return NS_OK;
 }
-
-
-NS_IMETHODIMP
-nsNavHistoryQueryOptions::GetExcludeReadOnlyFolders(bool* aExclude)
-{
-  *aExclude = mExcludeReadOnlyFolders;
-  return NS_OK;
-}
-NS_IMETHODIMP
-nsNavHistoryQueryOptions::SetExcludeReadOnlyFolders(bool aExclude)
-{
-  mExcludeReadOnlyFolders = aExclude;
-  return NS_OK;
-}
-
 
 NS_IMETHODIMP
 nsNavHistoryQueryOptions::GetExpandQueries(bool* aExpand)
