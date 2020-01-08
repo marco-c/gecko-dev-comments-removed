@@ -2819,7 +2819,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleColumn
   mozilla::StyleComplexColor mColumnRuleColor;
   uint8_t      mColumnRuleStyle;  
   mozilla::StyleColumnFill mColumnFill = mozilla::StyleColumnFill::Balance;
-  uint8_t      mColumnSpan;  
+  mozilla::StyleColumnSpan mColumnSpan = mozilla::StyleColumnSpan::None;
 
   void SetColumnRuleWidth(nscoord aWidth) {
     mColumnRuleWidth = NS_ROUND_BORDER_TO_PIXELS(aWidth, mTwipsPerPixel);
