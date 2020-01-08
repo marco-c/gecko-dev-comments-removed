@@ -281,6 +281,12 @@ class BasePopup {
 
     stack.appendChild(browser);
     viewNode.appendChild(stack);
+    if (!this.extension.remote) {
+      
+      
+      
+      browser.contentWindow; 
+    }
 
     ExtensionParent.apiManager.emit("extension-browser-inserted", browser);
 

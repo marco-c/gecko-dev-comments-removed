@@ -1191,18 +1191,14 @@ nsWebBrowser::Create()
 
   
   
-  nsCOMPtr<mozIDOMWindowProxy> domWindow;
-  rv = GetContentDOMWindow(getter_AddRefs(domWindow));
-  if (NS_SUCCEEDED(rv)) {
-    
-    
-    
-    nsCOMPtr<nsISecureBrowserUI> securityUI =
-      do_CreateInstance(NS_SECURE_BROWSER_UI_CONTRACTID, &rv);
-    if (NS_SUCCEEDED(rv)) {
-      securityUI->Init(domWindow);
-    }
+  
+  
+  nsCOMPtr<nsISecureBrowserUI> securityUI =
+    do_CreateInstance(NS_SECURE_BROWSER_UI_CONTRACTID, &rv);
+  if (NS_FAILED(rv)) {
+    return rv;
   }
+  securityUI->Init(mDocShell);
 
   mDocShellTreeOwner->AddToWatcher(); 
   mDocShellTreeOwner->AddChromeListeners();

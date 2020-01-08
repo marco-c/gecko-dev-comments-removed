@@ -148,7 +148,7 @@ BrowserElementChild.prototype = {
     
     var securityUI = Cc['@mozilla.org/secure_browser_ui;1']
                        .createInstance(Ci.nsISecureBrowserUI);
-    securityUI.init(content);
+    securityUI.init(docShell);
 
     
     
