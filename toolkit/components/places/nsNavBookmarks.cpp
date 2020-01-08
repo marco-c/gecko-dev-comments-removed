@@ -641,14 +641,12 @@ nsNavBookmarks::RemoveItem(int64_t aItemId, uint16_t aSource)
   mozStorageTransaction transaction(mDB->MainConn(), false);
 
   
-  
-  
   int64_t tagsRootId = TagsRootId();
   bool isUntagging = bookmark.grandParentId == tagsRootId;
   if (bookmark.parentId != tagsRootId && !isUntagging) {
     nsAnnotationService* annosvc = nsAnnotationService::GetAnnotationService();
     NS_ENSURE_TRUE(annosvc, NS_ERROR_OUT_OF_MEMORY);
-    rv = annosvc->RemoveItemAnnotationsWithoutNotifying(bookmark.id);
+    rv = annosvc->RemoveItemAnnotations(bookmark.id);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
