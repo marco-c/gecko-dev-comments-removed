@@ -313,7 +313,7 @@ export class SnippetsProvider {
     Object.assign(this, {
       appData: {},
       elementId: "snippets",
-      connect: true
+      connect: true,
     }, options);
 
     
@@ -381,17 +381,25 @@ export function addSnippetsSubscriber(store) {
 
   store.subscribe(async () => {
     const state = store.getState();
-    let snippetsEnabled = false;
-    try {
-      snippetsEnabled = JSON.parse(state.Prefs.values["asrouter.messageProviders"]).find(i => i.id === "snippets").enabled;
-    } catch (e) {}
-    const isASRouterEnabled = state.Prefs.values.asrouterExperimentEnabled && snippetsEnabled;
+
     
+
+
+
+
+
+
+
+
+
+
+
+
     
-    
-    if (state.Prefs.values["feeds.snippets"] &&
-      
-      !isASRouterEnabled &&
+    if (
+      state.Prefs.values["feeds.snippets"] &&
+      state.ASRouter.initialized &&
+      state.ASRouter.allowLegacySnippets &&
       !state.Prefs.values.disableSnippets &&
       state.Snippets.initialized &&
       !snippets.initialized &&
@@ -401,13 +409,27 @@ export function addSnippetsSubscriber(store) {
     ) {
       initializing = true;
       await snippets.init({appData: state.Snippets});
+      
+      if (state.Prefs.values["asrouter.devtoolsEnabled"]) {
+        console.log("Legacy snippets initialized"); 
+      }
       initializing = false;
+
+    
     } else if (
-      (state.Prefs.values["feeds.snippets"] === false ||
-        state.Prefs.values.disableSnippets === true) &&
+      (
+        state.Prefs.values["feeds.snippets"] === false ||
+        state.Prefs.values.disableSnippets === true ||
+        (state.ASRouter.initialized && !state.ASRouter.allowLegacySnippets)
+      ) &&
       snippets.initialized
     ) {
+      
       snippets.uninit();
+      
+      if (state.Prefs.values["asrouter.devtoolsEnabled"]) {
+        console.log("Legacy snippets removed"); 
+      }
     }
   });
 

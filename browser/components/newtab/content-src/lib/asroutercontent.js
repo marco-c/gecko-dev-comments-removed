@@ -1,11 +1,25 @@
 export function enableASRouterContent(store, asrouterContent) {
+  let didHideOnboarding = false;
+
   
   store.subscribe(() => {
     const state = store.getState();
-    if (state.Prefs.values.asrouterExperimentEnabled && !asrouterContent.initialized) {
+    if (!state.ASRouter.initialized) {
+      return;
+    }
+
+    if (!asrouterContent.initialized) {
       asrouterContent.init();
-    } else if (!state.Prefs.values.asrouterExperimentEnabled && asrouterContent.initialized) {
-      asrouterContent.uninit();
+    }
+
+    
+    
+    if (state.ASRouter.allowLegacyOnboarding === false && !didHideOnboarding) {
+      global.document.body.classList.add("hide-onboarding");
+      didHideOnboarding = true;
+    } else if (state.ASRouter.allowLegacyOnboarding === true && didHideOnboarding) {
+      global.document.body.classList.remove("hide-onboarding");
+      didHideOnboarding = false;
     }
   });
   

@@ -17,18 +17,18 @@ module.exports = Object.assign({}, webpackConfig, {
   output: {
     path: path.join(__dirname, "bin"),
     filename: "prerender.js",
-    libraryTarget: "commonjs2"
+    libraryTarget: "commonjs2",
   },
   externals: {
     "prop-types": "commonjs prop-types",
     "react": "commonjs react",
-    "react-dom": "commonjs react-dom"
+    "react-dom": "commonjs react-dom",
   },
   plugins: [
     new webpack.BannerPlugin(banner),
     
     
     
-    new webpack.DefinePlugin({document: {createElement: () => {}}})
-  ]
+    new webpack.DefinePlugin({document: {createElement: () => {}}}),
+  ],
 });

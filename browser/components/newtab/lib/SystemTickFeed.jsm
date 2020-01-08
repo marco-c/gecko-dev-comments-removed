@@ -3,8 +3,6 @@
 
 "use strict";
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-
 const {actionTypes: at} = ChromeUtils.import("resource://activity-stream/common/Actions.jsm", {});
 
 ChromeUtils.defineModuleGetter(this, "setInterval", "resource://gre/modules/Timer.jsm");

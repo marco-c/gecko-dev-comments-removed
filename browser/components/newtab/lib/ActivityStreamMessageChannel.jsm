@@ -19,7 +19,7 @@ const DEFAULT_OPTIONS = {
   },
   pageURL: ABOUT_NEW_TAB_URL,
   outgoingMessageName: "ActivityStream:MainToContent",
-  incomingMessageName: "ActivityStream:ContentToMain"
+  incomingMessageName: "ActivityStream:ContentToMain",
 };
 
 this.ActivityStreamMessageChannel = class ActivityStreamMessageChannel {
@@ -85,7 +85,7 @@ this.ActivityStreamMessageChannel = class ActivityStreamMessageChannel {
 
 
   onActionFromContent(action, targetId) {
-    this.dispatch(ac.AlsoToMain(action, targetId));
+    this.dispatch(ac.AlsoToMain(action, this.validatePortID(targetId)));
   }
 
   
@@ -116,9 +116,22 @@ this.ActivityStreamMessageChannel = class ActivityStreamMessageChannel {
 
 
 
+  validatePortID(id) {
+    if (typeof id !== "string" || !id.includes(":")) {
+      Cu.reportError("Invalid portID");
+    }
+
+    return id;
+  }
+
+  
+
+
+
 
 
   getTargetById(id) {
+    this.validatePortID(id);
     for (let port of this.channel.messagePorts) {
       if (port.portID === id) {
         return port;
@@ -223,7 +236,7 @@ this.ActivityStreamMessageChannel = class ActivityStreamMessageChannel {
   onNewTabInit(msg) {
     this.onActionFromContent({
       type: at.NEW_TAB_INIT,
-      data: msg.target
+      data: msg.target,
     }, msg.target.portID);
   }
 
