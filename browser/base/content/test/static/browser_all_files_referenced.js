@@ -125,10 +125,6 @@ var whitelist = [
 
   
   
-  {file: "resource://app/modules/UrlbarTokenizer.jsm"},
-
-  
-  
   {file: "chrome://browser/locale/taskbar.properties",
    platforms: ["linux", "macosx"]},
   

@@ -345,6 +345,8 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Sqlite: "resource://gre/modules/Sqlite.jsm",
   TelemetryStopwatch: "resource://gre/modules/TelemetryStopwatch.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
+  UrlbarProviderOpenTabs: "resource:///modules/UrlbarProviderOpenTabs.jsm",
+  UrlbarProvidersManager: "resource:///modules/UrlbarProvidersManager.jsm",
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
 });
 
@@ -368,121 +370,6 @@ function iconHelper(url) {
   }
   return PlacesUtils.favicons.defaultFavicon.spec;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-XPCOMUtils.defineLazyGetter(this, "SwitchToTabStorage", () => Object.seal({
-  _conn: null,
-  
-  _queue: new Map(),
-  
-  _updatingLevel: 0,
-  get updating() {
-    return this._updatingLevel > 0;
-  },
-  async initDatabase(conn) {
-    
-    
-    
-    await conn.execute(
-      `CREATE TEMP TABLE moz_openpages_temp (
-         url TEXT,
-         userContextId INTEGER,
-         open_count INTEGER,
-         PRIMARY KEY (url, userContextId)
-       )`);
-
-    
-    
-    await conn.execute(
-      `CREATE TEMPORARY TRIGGER moz_openpages_temp_afterupdate_trigger
-       AFTER UPDATE OF open_count ON moz_openpages_temp FOR EACH ROW
-       WHEN NEW.open_count = 0
-       BEGIN
-         DELETE FROM moz_openpages_temp
-         WHERE url = NEW.url
-           AND userContextId = NEW.userContextId;
-       END`);
-
-    this._conn = conn;
-
-    
-    for (let [userContextId, uris] of this._queue) {
-      for (let uri of uris) {
-        this.add(uri, userContextId).catch(Cu.reportError);
-      }
-    }
-
-    
-    this._queue.clear();
-  },
-
-  async add(uri, userContextId) {
-    if (!this._conn) {
-      if (!this._queue.has(userContextId)) {
-        this._queue.set(userContextId, new Set());
-      }
-      this._queue.get(userContextId).add(uri);
-      return;
-    }
-    try {
-      this._updatingLevel++;
-      await this._conn.executeCached(
-        `INSERT OR REPLACE INTO moz_openpages_temp (url, userContextId, open_count)
-          VALUES ( :url,
-                    :userContextId,
-                    IFNULL( ( SELECT open_count + 1
-                              FROM moz_openpages_temp
-                              WHERE url = :url
-                              AND userContextId = :userContextId ),
-                            1
-                          )
-                  )
-        `, { url: uri.spec, userContextId });
-    } finally {
-      this._updatingLevel--;
-    }
-  },
-
-  async delete(uri, userContextId) {
-    if (!this._conn) {
-      if (!this._queue.has(userContextId)) {
-        throw new Error("Unknown userContextId!");
-      }
-
-      this._queue.get(userContextId).delete(uri);
-      if (this._queue.get(userContextId).size == 0) {
-        this._queue.delete(userContextId);
-      }
-      return;
-    }
-    try {
-      this._updatingLevel++;
-      await this._conn.executeCached(
-        `UPDATE moz_openpages_temp
-         SET open_count = open_count - 1
-         WHERE url = :url
-           AND userContextId = :userContextId
-        `, { url: uri.spec, userContextId });
-    } finally {
-      this._updatingLevel--;
-    }
-  },
-
-  shutdown() {
-    this._conn = null;
-    this._queue.clear();
-  },
-}));
 
 
 
@@ -707,13 +594,13 @@ function Search(searchString, searchParam, autocompleteListener,
   for (let i = 0; previousResult && i < previousResult.matchCount; ++i) {
     let style = previousResult.getStyleAt(i);
     if (style.includes("heuristic")) {
-      this._previousSearchMatchTypes.push(UrlbarUtils.MATCHTYPE.HEURISTIC);
+      this._previousSearchMatchTypes.push(UrlbarUtils.MATCH_GROUP.HEURISTIC);
     } else if (style.includes("suggestion")) {
-      this._previousSearchMatchTypes.push(UrlbarUtils.MATCHTYPE.SUGGESTION);
+      this._previousSearchMatchTypes.push(UrlbarUtils.MATCH_GROUP.SUGGESTION);
     } else if (style.includes("extension")) {
-      this._previousSearchMatchTypes.push(UrlbarUtils.MATCHTYPE.EXTENSION);
+      this._previousSearchMatchTypes.push(UrlbarUtils.MATCH_GROUP.EXTENSION);
     } else {
-      this._previousSearchMatchTypes.push(UrlbarUtils.MATCHTYPE.GENERAL);
+      this._previousSearchMatchTypes.push(UrlbarUtils.MATCH_GROUP.GENERAL);
     }
   }
 
@@ -734,7 +621,7 @@ function Search(searchString, searchParam, autocompleteListener,
   this._usedPlaceIds = new Set();
 
   
-  this._counts = Object.values(UrlbarUtils.MATCHTYPE)
+  this._counts = Object.values(UrlbarUtils.MATCH_GROUP)
                        .reduce((o, p) => { o[p] = 0; return o; }, {});
 }
 
@@ -876,7 +763,7 @@ Search.prototype = {
     
     this.interrupt = () => {
       
-      if (!SwitchToTabStorage.updating) {
+      if (!UrlbarProvidersManager.interruptLevel) {
         conn.interrupt();
       }
     };
@@ -921,7 +808,7 @@ Search.prototype = {
     this._addingHeuristicFirstMatch = true;
     let hasHeuristic = await this._matchFirstHeuristicResult(conn);
     this._addingHeuristicFirstMatch = false;
-    this._cleanUpNonCurrentMatches(UrlbarUtils.MATCHTYPE.HEURISTIC);
+    this._cleanUpNonCurrentMatches(UrlbarUtils.MATCH_GROUP.HEURISTIC);
     if (!this.pending)
       return;
 
@@ -962,7 +849,7 @@ Search.prototype = {
         if (this.hasBehavior("restrict")) {
           
           await searchSuggestionsCompletePromise;
-          this._cleanUpNonCurrentMatches(UrlbarUtils.MATCHTYPE.SUGGESTION);
+          this._cleanUpNonCurrentMatches(UrlbarUtils.MATCH_GROUP.SUGGESTION);
           
           
           this._autocompleteSearch.finishSearch(true);
@@ -972,7 +859,7 @@ Search.prototype = {
     }
     
     searchSuggestionsCompletePromise.then(() => {
-      this._cleanUpNonCurrentMatches(UrlbarUtils.MATCHTYPE.SUGGESTION);
+      this._cleanUpNonCurrentMatches(UrlbarUtils.MATCH_GROUP.SUGGESTION);
     });
 
     
@@ -1019,15 +906,15 @@ Search.prototype = {
 
     
     
-    this._cleanUpNonCurrentMatches(UrlbarUtils.MATCHTYPE.GENERAL);
+    this._cleanUpNonCurrentMatches(UrlbarUtils.MATCH_GROUP.GENERAL);
 
     this._matchAboutPages();
 
     
     
     
-    let count = this._counts[UrlbarUtils.MATCHTYPE.GENERAL] +
-                this._counts[UrlbarUtils.MATCHTYPE.HEURISTIC];
+    let count = this._counts[UrlbarUtils.MATCH_GROUP.GENERAL] +
+                this._counts[UrlbarUtils.MATCH_GROUP.HEURISTIC];
     if (this._matchBehavior == MATCH_BOUNDARY_ANYWHERE &&
         count < UrlbarPrefs.get("maxRichResults")) {
       this._matchBehavior = MATCH_ANYWHERE;
@@ -1481,8 +1368,8 @@ Search.prototype = {
   },
 
   _addExtensionMatch(content, comment) {
-    let count = this._counts[UrlbarUtils.MATCHTYPE.EXTENSION] +
-                this._counts[UrlbarUtils.MATCHTYPE.HEURISTIC];
+    let count = this._counts[UrlbarUtils.MATCH_GROUP.EXTENSION] +
+                this._counts[UrlbarUtils.MATCH_GROUP.HEURISTIC];
     if (count >= UrlbarUtils.MAXIMUM_ALLOWED_EXTENSION_MATCHES) {
       return;
     }
@@ -1496,7 +1383,7 @@ Search.prototype = {
       icon: "chrome://browser/content/extension.svg",
       style: "action extension",
       frecency: Infinity,
-      type: UrlbarUtils.MATCHTYPE.EXTENSION,
+      type: UrlbarUtils.MATCH_GROUP.EXTENSION,
     });
   },
 
@@ -1521,7 +1408,7 @@ Search.prototype = {
     };
     if (suggestion) {
       match.style += " suggestion";
-      match.type = UrlbarUtils.MATCHTYPE.SUGGESTION;
+      match.type = UrlbarUtils.MATCH_GROUP.SUGGESTION;
     }
 
     this._addMatch(match);
@@ -1540,7 +1427,7 @@ Search.prototype = {
     
     
     
-    setTimeout(() => this._cleanUpNonCurrentMatches(UrlbarUtils.MATCHTYPE.EXTENSION), 100);
+    setTimeout(() => this._cleanUpNonCurrentMatches(UrlbarUtils.MATCH_GROUP.EXTENSION), 100);
 
     
     
@@ -1686,8 +1573,8 @@ Search.prototype = {
     }
     
     
-    let count = this._counts[UrlbarUtils.MATCHTYPE.GENERAL] +
-                this._counts[UrlbarUtils.MATCHTYPE.HEURISTIC];
+    let count = this._counts[UrlbarUtils.MATCH_GROUP.GENERAL] +
+                this._counts[UrlbarUtils.MATCH_GROUP.HEURISTIC];
     if (!this.pending || count >= UrlbarPrefs.get("maxRichResults")) {
       cancel();
     }
@@ -1727,9 +1614,9 @@ Search.prototype = {
       throw new Error("Frecency not provided");
 
     if (this._addingHeuristicFirstMatch)
-      match.type = UrlbarUtils.MATCHTYPE.HEURISTIC;
+      match.type = UrlbarUtils.MATCH_GROUP.HEURISTIC;
     else if (typeof match.type != "string")
-      match.type = UrlbarUtils.MATCHTYPE.GENERAL;
+      match.type = UrlbarUtils.MATCH_GROUP.GENERAL;
 
     
     
@@ -1769,7 +1656,7 @@ Search.prototype = {
       TelemetryStopwatch.finish(TELEMETRY_1ST_RESULT, this);
     if (this._currentMatchCount == 6)
       TelemetryStopwatch.finish(TELEMETRY_6_FIRST_RESULTS, this);
-    this.notifyResult(true, match.type == UrlbarUtils.MATCHTYPE.HEURISTIC);
+    this.notifyResult(true, match.type == UrlbarUtils.MATCH_GROUP.HEURISTIC);
   },
 
   _getInsertIndexForMatch(match) {
@@ -1794,7 +1681,7 @@ Search.prototype = {
             isDupe = true;
             
             
-            if (matchType == UrlbarUtils.MATCHTYPE.HEURISTIC &&
+            if (matchType == UrlbarUtils.MATCH_GROUP.HEURISTIC &&
                 action.type == "switchtab") {
               isDupe = false;
               
@@ -1830,7 +1717,7 @@ Search.prototype = {
     
     if (!this._buckets) {
       
-      let buckets = match.type == UrlbarUtils.MATCHTYPE.HEURISTIC &&
+      let buckets = match.type == UrlbarUtils.MATCH_GROUP.HEURISTIC &&
                     match.style.includes("searchengine") ? UrlbarPrefs.get("matchBucketsSearch")
                                                          : UrlbarPrefs.get("matchBuckets");
       
@@ -2415,13 +2302,12 @@ UnifiedComplete.prototype = {
                                         
                                         
                                         this._currentSearch = null;
-                                        SwitchToTabStorage.shutdown();
                                       });
         } catch (ex) {
           
           throw ex;
         }
-        await SwitchToTabStorage.initDatabase(conn);
+        await UrlbarProviderOpenTabs.promiseDb();
         return conn;
       })().catch(ex => {
         dump("Couldn't get database handle: " + ex + "\n");
@@ -2432,14 +2318,6 @@ UnifiedComplete.prototype = {
   },
 
   
-
-  registerOpenPage(uri, userContextId) {
-    SwitchToTabStorage.add(uri, userContextId).catch(Cu.reportError);
-  },
-
-  unregisterOpenPage(uri, userContextId) {
-    SwitchToTabStorage.delete(uri, userContextId).catch(Cu.reportError);
-  },
 
   populatePreloadedSiteStorage(json) {
     PreloadedSiteStorage.populate(json);

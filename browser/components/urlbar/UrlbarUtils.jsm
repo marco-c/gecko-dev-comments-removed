@@ -22,7 +22,15 @@ var UrlbarUtils = {
     MERGE: 2,
   },
 
-  MATCHTYPE: {
+  
+  
+  
+  
+  MAXIMUM_ALLOWED_EXTENSION_MATCHES: 6,
+
+  
+  
+  MATCH_GROUP: {
     HEURISTIC: "heuristic",
     GENERAL: "general",
     SUGGESTION: "suggestion",
@@ -30,8 +38,22 @@ var UrlbarUtils = {
   },
 
   
+  PROVIDER_TYPE: {
+    
+    
+    IMMEDIATE: 1,
+    
+    PROFILE: 2,
+    
+    NETWORK: 3,
+    
+    EXTENSION: 4,
+  },
+
   
-  
-  
-  MAXIMUM_ALLOWED_EXTENSION_MATCHES: 6,
+  MATCH_TYPE: {
+    
+    
+    TAB_SWITCH: 1,
+  },
 };
