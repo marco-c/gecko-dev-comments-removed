@@ -1621,9 +1621,11 @@ GeckoDriver.prototype.setWindowHandle = async function(
 
   } else {
     
-    
     this.curBrowser = this.browsers[winProperties.outerId];
+    this.mainFrame = this.curBrowser.window;
+    this.curFrame = null;
 
+    
     if ("tabIndex" in winProperties) {
       this.curBrowser.switchToTab(
           winProperties.tabIndex, winProperties.win, focus);
