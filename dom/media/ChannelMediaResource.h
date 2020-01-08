@@ -255,6 +255,8 @@ protected:
   bool mClosed = false;
   
   bool mIsTransportSeekable = false;
+  
+  int64_t mFirstReadLength = -1;
   RefPtr<Listener> mListener;
   
   uint32_t mLoadID = 0;

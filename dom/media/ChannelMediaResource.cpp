@@ -295,6 +295,9 @@ ChannelMediaResource::OnStartRequest(nsIRequest* aRequest,
 
   mCacheStream.NotifyDataStarted(mLoadID, startOffset, seekable, length);
   mIsTransportSeekable = seekable;
+  if (mFirstReadLength < 0) {
+    mFirstReadLength = length;
+  }
 
   mSuspendAgent.Delegate(mChannel);
 
@@ -317,7 +320,14 @@ bool
 ChannelMediaResource::IsTransportSeekable()
 {
   MOZ_ASSERT(NS_IsMainThread());
-  return mIsTransportSeekable;
+  
+  
+  
+  
+  
+  return mIsTransportSeekable ||
+         (mFirstReadLength > 0 &&
+          mFirstReadLength < MediaCacheStream::BLOCK_SIZE);
 }
 
 nsresult
