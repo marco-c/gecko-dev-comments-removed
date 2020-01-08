@@ -4587,12 +4587,6 @@ nsDisplayImageContainer::ConfigureLayer(ImageLayer* aLayer,
   
   
   
-  MOZ_ASSERT(aParameters.Offset() == LayerIntPoint(0,0));
-
-  
-  
-  
-  
   
   
   
@@ -4606,7 +4600,8 @@ nsDisplayImageContainer::ConfigureLayer(ImageLayer* aLayer,
     LayoutDeviceIntRect::FromAppUnitsToNearest(GetDestRect(), factor));
 
   const LayoutDevicePoint p = destRect.TopLeft();
-  Matrix transform = Matrix::Translation(p.x, p.y);
+  Matrix transform = Matrix::Translation(p.x + aParameters.mOffset.x,
+                                         p.y + aParameters.mOffset.y);
   transform.PreScale(destRect.width / containerSize.width,
                      destRect.height / containerSize.height);
   aLayer->SetBaseTransform(gfx::Matrix4x4::From2D(transform));
