@@ -4774,6 +4774,10 @@ ssl3_SendClientHello(sslSocket *ss, sslClientHelloType type)
         sid = ssl_ReferenceSID(ss->sec.ci.sid);
         SSL_TRC(3, ("%d: SSL3[%d]: using external resumption token in ClientHello",
                     SSL_GETPID(), ss->fd));
+    } else if (ss->sec.ci.sid && ss->statelessResume && type == client_hello_retry) {
+        
+
+        sid = ssl_ReferenceSID(ss->sec.ci.sid);
     } else if (!ss->opt.noCache) {
         
 
@@ -6167,15 +6171,11 @@ ssl_PickClientSignatureScheme(sslSocket *ss, const SSLSignatureScheme *schemes,
 
     PORT_Assert(pubKey);
 
-    if (!isTLS13 && numSchemes == 0) {
+    if (ss->version >= SSL_LIBRARY_VERSION_TLS_1_2) {
         
 
-        rv = ssl_PickFallbackSignatureScheme(ss, pubKey);
-        SECKEY_DestroyPublicKey(pubKey);
-        return rv;
+        PORT_Assert(schemes && numSchemes > 0);
     }
-
-    PORT_Assert(schemes && numSchemes > 0);
 
     if (!isTLS13 &&
         (SECKEY_GetPublicKeyType(pubKey) == rsaKey ||
@@ -7326,6 +7326,11 @@ ssl3_HandleCertificateRequest(sslSocket *ss, PRUint8 *b, PRUint32 length)
         if (rv != SECSuccess) {
             PORT_SetError(SSL_ERROR_RX_MALFORMED_CERT_REQUEST);
             goto loser; 
+        }
+        if (signatureSchemeCount == 0) {
+            errCode = SSL_ERROR_UNSUPPORTED_SIGNATURE_ALGORITHM;
+            desc = handshake_failure;
+            goto alert_loser;
         }
     }
 

@@ -388,7 +388,7 @@ class TlsZeroCertificateRequestSigAlgsFilter : public TlsHandshakeFilter {
 
 
 
-TEST_P(TlsConnectTls12, ClientAuthNoSigAlgsFallback) {
+TEST_P(TlsConnectTls12, ClientAuthNoSigAlgs) {
   EnsureTlsSetup();
   MakeTlsFilter<TlsZeroCertificateRequestSigAlgsFilter>(server_);
   auto capture_cert_verify = MakeTlsFilter<TlsHandshakeRecorder>(
@@ -396,15 +396,10 @@ TEST_P(TlsConnectTls12, ClientAuthNoSigAlgsFallback) {
   client_->SetupClientAuth();
   server_->RequestClientAuth(true);
 
-  ConnectExpectAlert(server_, kTlsAlertDecryptError);
+  ConnectExpectAlert(client_, kTlsAlertHandshakeFailure);
 
-  
-  
-  
-  server_->CheckErrorCode(SEC_ERROR_BAD_SIGNATURE);
-  client_->CheckErrorCode(SSL_ERROR_DECRYPT_ERROR_ALERT);
-
-  CheckSigScheme(capture_cert_verify, 0, server_, ssl_sig_rsa_pkcs1_sha1, 1024);
+  server_->CheckErrorCode(SSL_ERROR_HANDSHAKE_FAILURE_ALERT);
+  client_->CheckErrorCode(SSL_ERROR_UNSUPPORTED_SIGNATURE_ALGORITHM);
 }
 
 static const SSLSignatureScheme kSignatureSchemeEcdsaSha384[] = {
