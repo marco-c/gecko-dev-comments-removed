@@ -32,6 +32,7 @@
 #include "js/GCVector.h"
 #include "js/HashTable.h"
 #include "js/Id.h"
+#include "js/MemoryFunctions.h"
 #include "js/Principals.h"
 #include "js/Realm.h"
 #include "js/RefCounted.h"
@@ -1265,30 +1266,6 @@ struct JSCTypesCallbacks {
 extern JS_PUBLIC_API(void)
 JS_SetCTypesCallbacks(JSObject* ctypesObj, const JSCTypesCallbacks* callbacks);
 #endif
-
-extern JS_PUBLIC_API(void*)
-JS_malloc(JSContext* cx, size_t nbytes);
-
-extern JS_PUBLIC_API(void*)
-JS_realloc(JSContext* cx, void* p, size_t oldBytes, size_t newBytes);
-
-
-
-
-
-
-extern JS_PUBLIC_API(void)
-JS_free(JSContext* cx, void* p);
-
-
-
-
-
-extern JS_PUBLIC_API(void)
-JS_freeop(JSFreeOp* fop, void* p);
-
-extern JS_PUBLIC_API(void)
-JS_updateMallocCounter(JSContext* cx, size_t nbytes);
 
 
 
