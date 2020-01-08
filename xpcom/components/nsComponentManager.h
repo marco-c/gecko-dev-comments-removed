@@ -198,14 +198,6 @@ public:
     
 
 
-    KnownModule(const mozilla::Module* aModule, mozilla::FileLocation& aFile)
-      : mModule(aModule)
-      , mFile(aFile)
-      , mLoaded(false)
-      , mFailed(false)
-    {
-    }
-
     explicit KnownModule(const mozilla::Module* aModule)
       : mModule(aModule)
       , mLoaded(false)
@@ -255,8 +247,7 @@ public:
   nsClassHashtable<nsCStringHashKey, KnownModule> mKnownModules;
 
   
-  void RegisterModule(const mozilla::Module* aModule,
-                      mozilla::FileLocation* aFile);
+  void RegisterModule(const mozilla::Module* aModule);
 
 
   
