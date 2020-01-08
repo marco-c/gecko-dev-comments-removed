@@ -12,6 +12,7 @@ import android.service.notification.StatusBarNotification;
 
 import com.robotium.solo.Condition;
 
+import org.mozilla.gecko.Actions;
 import org.mozilla.gecko.R;
 import org.mozilla.gecko.Tab;
 import org.mozilla.gecko.Tabs;
@@ -38,6 +39,25 @@ abstract class MediaPlaybackTest extends OldBaseTest {
             mContext = getInstrumentation().getTargetContext();
         }
         return mContext;
+    }
+
+    
+
+
+
+    final void blockForAudioFocusAgentReady() {
+        Actions.EventExpecter audioManagerExpector =
+                mActions.expectGlobalEvent(Actions.EventType.UI, AudioFocusAgent.READY);
+
+        
+        blockForGeckoReady();
+
+        try {
+            audioManagerExpector.blockForEvent(MAX_WAIT_MS, true);
+            audioManagerExpector.unregisterListener();
+        } catch (Exception e) {
+            mAsserter.dumpLog("Exception in blockForAudioFocusAgentReady", e);
+        }
     }
 
     
