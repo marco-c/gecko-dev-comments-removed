@@ -7,6 +7,7 @@
 #define mozilla_image_AnimationFrameBuffer_h
 
 #include "ISurfaceProvider.h"
+#include <deque>
 
 namespace mozilla {
 namespace image {
@@ -383,6 +384,42 @@ private:
 
   
   size_t mThreshold;
+};
+
+
+
+
+
+class AnimationFrameDiscardingQueue : public AnimationFrameBuffer
+{
+public:
+  explicit AnimationFrameDiscardingQueue(AnimationFrameRetainedBuffer&& aQueue);
+
+  imgFrame* Get(size_t aFrame, bool aForDisplay) final;
+  bool IsFirstFrameFinished() const final;
+  bool IsLastInsertedFrame(imgFrame* aFrame) const final;
+  bool MarkComplete(const gfx::IntRect& aFirstFrameRefreshArea) override;
+  void AddSizeOfExcludingThis(MallocSizeOf aMallocSizeOf,
+                              const AddSizeOfCb& aCallback) override;
+
+  const std::deque<RefPtr<imgFrame>>& Display() const { return mDisplay; }
+  const imgFrame* FirstFrame() const { return mFirstFrame; }
+  size_t PendingInsert() const { return mInsertIndex; }
+
+protected:
+  bool InsertInternal(RefPtr<imgFrame>&& aFrame) override;
+  void AdvanceInternal() override;
+  bool ResetInternal() override;
+
+  
+  size_t mInsertIndex;
+
+  
+  
+  std::deque<RefPtr<imgFrame>> mDisplay;
+
+  
+  RefPtr<imgFrame> mFirstFrame;
 };
 
 } 
