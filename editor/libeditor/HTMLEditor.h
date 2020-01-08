@@ -1125,6 +1125,7 @@ protected:
                          ErrorResult& aRv) const;
 
   struct CellAndIndexes;
+  struct CellData;
 
   
 
@@ -1184,6 +1185,15 @@ protected:
     void Update(HTMLEditor& aHTMLEditor, Selection& aSelection,
                 ErrorResult& aRv);
 
+    bool operator==(const CellIndexes& aOther) const
+    {
+      return mRow == aOther.mRow && mColumn == aOther.mColumn;
+    }
+    bool operator!=(const CellIndexes& aOther) const
+    {
+      return mRow != aOther.mRow || mColumn != aOther.mColumn;
+    }
+
   private:
     CellIndexes()
       : mRow(-1)
@@ -1192,6 +1202,7 @@ protected:
     }
 
     friend struct CellAndIndexes;
+    friend struct CellData;
   };
 
   struct MOZ_STACK_CLASS CellAndIndexes final
@@ -1219,6 +1230,184 @@ protected:
 
     void Update(HTMLEditor& aHTMLEditor, Selection& aSelection,
                 ErrorResult& aRv);
+  };
+
+  struct MOZ_STACK_CLASS CellData final
+  {
+    RefPtr<Element> mElement;
+    
+    CellIndexes mCurrent;
+    
+    
+    CellIndexes mFirst;
+    
+    
+    
+    int32_t mRowSpan;
+    int32_t mColSpan;
+    
+    
+    
+    
+    int32_t mEffectiveRowSpan;
+    int32_t mEffectiveColSpan;
+    
+    
+    
+    bool mIsSelected;
+
+    
+
+
+
+    CellData(HTMLEditor& aHTMLEditor,
+             Element& aTableElement,
+             int32_t aRowIndex,
+             int32_t aColumnIndex,
+             ErrorResult& aRv)
+    {
+      Update(aHTMLEditor, aTableElement, aRowIndex, aColumnIndex, aRv);
+    }
+
+    CellData(HTMLEditor& aHTMLEditor,
+             Element& aTableElement,
+             const CellIndexes& aIndexes,
+             ErrorResult& aRv)
+    {
+      Update(aHTMLEditor, aTableElement, aIndexes, aRv);
+    }
+
+    
+
+
+
+    void Update(HTMLEditor& aHTMLEditor,
+                Element& aTableElement,
+                int32_t aRowIndex,
+                int32_t aColumnIndex,
+                ErrorResult& aRv)
+    {
+      mCurrent.mRow = aRowIndex;
+      mCurrent.mColumn = aColumnIndex;
+      Update(aHTMLEditor, aTableElement, aRv);
+    }
+
+    void Update(HTMLEditor& aHTMLEditor,
+                Element& aTableElement,
+                const CellIndexes& aIndexes,
+                ErrorResult& aRv)
+    {
+      mCurrent = aIndexes;
+      Update(aHTMLEditor, aTableElement, aRv);
+    }
+
+    void Update(HTMLEditor& aHTMLEditor,
+                Element& aTableElement,
+                ErrorResult& aRv);
+
+    
+
+
+
+    bool FailedOrNotFound() const { return !mElement; }
+
+    
+
+
+
+
+    bool IsSpannedFromOtherRowOrColumn() const
+    {
+      return mElement && mCurrent != mFirst;
+    }
+    bool IsSpannedFromOtherColumn() const
+    {
+      return mElement && mCurrent.mColumn != mFirst.mColumn;
+    }
+    bool IsSpannedFromOtherRow() const
+    {
+      return mElement && mCurrent.mRow != mFirst.mRow;
+    }
+
+    
+
+
+
+
+    int32_t NextColumnIndex() const
+    {
+      if (NS_WARN_IF(FailedOrNotFound())) {
+        return -1;
+      }
+      return mCurrent.mColumn + mEffectiveColSpan;
+    }
+    int32_t NextRowIndex() const
+    {
+      if (NS_WARN_IF(FailedOrNotFound())) {
+        return -1;
+      }
+      return mCurrent.mRow + mEffectiveRowSpan;
+    }
+
+    
+
+
+
+    int32_t LastColumnIndex() const
+    {
+      if (NS_WARN_IF(FailedOrNotFound())) {
+        return -1;
+      }
+      return NextColumnIndex() - 1;
+    }
+    int32_t LastRowIndex() const
+    {
+      if (NS_WARN_IF(FailedOrNotFound())) {
+        return -1;
+      }
+      return NextRowIndex() - 1;
+    }
+
+    
+
+
+
+
+
+    int32_t NumberOfPrecedingColmuns() const
+    {
+      if (NS_WARN_IF(FailedOrNotFound())) {
+        return -1;
+      }
+      return mCurrent.mColumn - mFirst.mColumn;
+    }
+    int32_t NumberOfPrecedingRows() const
+    {
+      if (NS_WARN_IF(FailedOrNotFound())) {
+        return -1;
+      }
+      return mCurrent.mRow - mFirst.mRow;
+    }
+
+    
+
+
+
+
+    int32_t NumberOfFollowingColumns() const
+    {
+      if (NS_WARN_IF(FailedOrNotFound())) {
+        return -1;
+      }
+      return mEffectiveColSpan - 1;
+    }
+    int32_t NumberOfFollowingRows() const
+    {
+      if (NS_WARN_IF(FailedOrNotFound())) {
+        return -1;
+      }
+      return mEffectiveRowSpan - 1;
+    }
   };
 
   
