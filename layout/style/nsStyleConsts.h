@@ -143,14 +143,6 @@ enum class StyleGeometryBox : uint8_t {
 };
 
 
-
-enum class StyleFloat : uint8_t {
-  None,
-  Left,
-  Right,
-};
-
-
 enum class StyleFloatEdge : uint8_t {
   ContentBox,
   MarginBox,
@@ -575,10 +567,6 @@ enum class StyleGridTrackBreadth : uint8_t {
 #define NS_STYLE_OVERFLOW_SCROLLBARS_VERTICAL 6
 
 
-#define NS_STYLE_OVERFLOW_CLIP_BOX_PADDING_BOX 0
-#define NS_STYLE_OVERFLOW_CLIP_BOX_CONTENT_BOX 1
-
-
 #define NS_STYLE_LIST_STYLE_CUSTOM -1  // for @counter-style
 #define NS_STYLE_LIST_STYLE_NONE 0
 #define NS_STYLE_LIST_STYLE_DECIMAL 1
@@ -635,12 +623,6 @@ enum class StyleGridTrackBreadth : uint8_t {
 #define NS_STYLE_OBJECT_FIT_COVER 2
 #define NS_STYLE_OBJECT_FIT_NONE 3
 #define NS_STYLE_OBJECT_FIT_SCALE_DOWN 4
-
-
-#define NS_STYLE_RESIZE_NONE 0
-#define NS_STYLE_RESIZE_BOTH 1
-#define NS_STYLE_RESIZE_HORIZONTAL 2
-#define NS_STYLE_RESIZE_VERTICAL 3
 
 
 #define NS_STYLE_TEXT_ALIGN_START 0
@@ -1023,18 +1005,6 @@ enum class StyleTextRendering : uint8_t {
 
 #define NS_STYLE_SCROLL_BEHAVIOR_AUTO 0
 #define NS_STYLE_SCROLL_BEHAVIOR_SMOOTH 1
-
-
-enum class StyleOverscrollBehavior : uint8_t {
-  Auto = 0,
-  Contain,
-  None,
-};
-
-
-#define NS_STYLE_SCROLL_SNAP_TYPE_NONE 0
-#define NS_STYLE_SCROLL_SNAP_TYPE_MANDATORY 1
-#define NS_STYLE_SCROLL_SNAP_TYPE_PROXIMITY 2
 
 }  
 

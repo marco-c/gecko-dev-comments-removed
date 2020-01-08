@@ -1902,11 +1902,11 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
   mozilla::StyleBreakWithin mBreakInside;
   mozilla::StyleBreakBetween mBreakBefore;
   mozilla::StyleBreakBetween mBreakAfter;
-  uint8_t mOverflowX;              
-  uint8_t mOverflowY;              
-  uint8_t mOverflowClipBoxBlock;   
-  uint8_t mOverflowClipBoxInline;  
-  uint8_t mResize;                 
+  uint8_t mOverflowX;  
+  uint8_t mOverflowY;  
+  mozilla::StyleOverflowClipBox mOverflowClipBoxBlock;
+  mozilla::StyleOverflowClipBox mOverflowClipBoxInline;
+  mozilla::StyleResize mResize;
   mozilla::StyleOrient mOrient;
   uint8_t mIsolation;           
   uint8_t mTopLayer;            
@@ -1922,8 +1922,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
   uint8_t mScrollBehavior;  
   mozilla::StyleOverscrollBehavior mOverscrollBehaviorX;
   mozilla::StyleOverscrollBehavior mOverscrollBehaviorY;
-  uint8_t mScrollSnapTypeX;  
-  uint8_t mScrollSnapTypeY;  
+  mozilla::StyleScrollSnapType mScrollSnapTypeX;
+  mozilla::StyleScrollSnapType mScrollSnapTypeY;
   nsStyleCoord mScrollSnapPointsX;
   nsStyleCoord mScrollSnapPointsY;
   mozilla::Position mScrollSnapDestination;
