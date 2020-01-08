@@ -11,6 +11,7 @@
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/ComputedStyleInlines.h"
 #include "mozilla/DocumentStyleRootIterator.h"
+#include "mozilla/LayerAnimationInfo.h"
 #include "mozilla/ServoBindings.h"
 #include "mozilla/ServoStyleSetInlines.h"
 #include "mozilla/Unused.h"
@@ -1762,9 +1763,10 @@ RestyleManager::AddLayerChangesForAnimation(nsIFrame* aFrame,
   nsChangeHint hint = nsChangeHint(0);
   for (const LayerAnimationInfo::Record& layerInfo :
          LayerAnimationInfo::sRecords) {
-    layers::Layer* layer =
-      FrameLayerBuilder::GetDedicatedLayer(aFrame, layerInfo.mLayerType);
-    if (layer && frameGeneration != layer->GetAnimationGeneration()) {
+    Maybe<uint64_t> generation =
+      layers::AnimationInfo::GetGenerationFromFrame(aFrame,
+                                                    layerInfo.mLayerType);
+    if (generation && frameGeneration != *generation) {
       
       
       
@@ -1810,7 +1812,8 @@ RestyleManager::AddLayerChangesForAnimation(nsIFrame* aFrame,
     
     
     
-    if (!layer &&
+    
+    if (!generation &&
         nsLayoutUtils::HasEffectiveAnimation(aFrame, layerInfo.mProperty)) {
       hint |= layerInfo.mChangeHint;
     }
