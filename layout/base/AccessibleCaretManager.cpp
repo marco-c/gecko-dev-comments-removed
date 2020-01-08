@@ -1388,12 +1388,19 @@ AccessibleCaretManager::DispatchCaretStateChangedEvent(CaretChangedReason aReaso
     nsRect clampedRect = nsLayoutUtils::ClampRectToScrollFrames(commonAncestorFrame,
                                                                 rect);
     nsLayoutUtils::TransformRect(commonAncestorFrame, rootFrame, clampedRect);
-    domRect->SetLayoutRect(clampedRect);
+    rect = clampedRect;
     init.mSelectionVisible = !clampedRect.IsEmpty();
   } else {
-    domRect->SetLayoutRect(rect);
     init.mSelectionVisible = true;
   }
+
+  
+  
+  
+  
+  rect -= mPresShell->GetVisualViewportOffsetRelativeToLayoutViewport();
+
+  domRect->SetLayoutRect(rect);
 
   
   
