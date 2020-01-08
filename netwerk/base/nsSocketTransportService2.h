@@ -185,6 +185,10 @@ private:
         
         
         PRIntervalTime TimeoutIn(PRIntervalTime now) const;
+        
+        
+        
+        void MaybeResetEpoch();
     };
 
     SocketContext *mActiveList;                   
