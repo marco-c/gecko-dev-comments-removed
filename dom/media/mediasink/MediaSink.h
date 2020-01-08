@@ -9,15 +9,13 @@
 
 #include "AudioDeviceInfo.h"
 #include "MediaInfo.h"
-#include "mozilla/RefPtr.h"
 #include "mozilla/MozPromise.h"
+#include "mozilla/RefPtr.h"
 #include "nsISupportsImpl.h"
 
 namespace mozilla {
 
 class TimeStamp;
-
-namespace media {
 
 
 
@@ -58,13 +56,17 @@ class MediaSink {
 
   
   
-  
-  virtual RefPtr<GenericPromise> OnEnded(TrackType aType) = 0;
+  typedef MozPromise<bool, nsresult,  false> EndedPromise;
 
   
   
   
-  virtual TimeUnit GetEndTime(TrackType aType) const = 0;
+  virtual RefPtr<EndedPromise> OnEnded(TrackType aType) = 0;
+
+  
+  
+  
+  virtual media::TimeUnit GetEndTime(TrackType aType) const = 0;
 
   
   
@@ -72,7 +74,8 @@ class MediaSink {
   
   
   
-  virtual TimeUnit GetPosition(TimeStamp* aTimeStamp = nullptr) const = 0;
+  virtual media::TimeUnit GetPosition(
+      TimeStamp* aTimeStamp = nullptr) const = 0;
 
   
   
@@ -102,7 +105,7 @@ class MediaSink {
 
   
   
-  virtual nsresult Start(const TimeUnit& aStartTime,
+  virtual nsresult Start(const media::TimeUnit& aStartTime,
                          const MediaInfo& aInfo) = 0;
 
   
@@ -127,10 +130,9 @@ class MediaSink {
   virtual nsCString GetDebugInfo() { return nsCString(); }
 
  protected:
-  virtual ~MediaSink() {}
+  virtual ~MediaSink() = default;
 };
 
-}  
 }  
 
 #endif  

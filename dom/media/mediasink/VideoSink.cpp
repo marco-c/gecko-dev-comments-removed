@@ -31,8 +31,6 @@ extern LazyLogModule gMediaDecoderLog;
 
 using namespace mozilla::layers;
 
-namespace media {
-
 
 
 static const int64_t MIN_UPDATE_INTERVAL_US = 1000000 / (60 * 2);
@@ -82,7 +80,7 @@ void VideoSink::SetPlaybackParams(const PlaybackParams& aParams) {
   mAudioSink->SetPlaybackParams(aParams);
 }
 
-RefPtr<GenericPromise> VideoSink::OnEnded(TrackType aType) {
+RefPtr<VideoSink::EndedPromise> VideoSink::OnEnded(TrackType aType) {
   AssertOwnerThread();
   MOZ_ASSERT(mAudioSink->IsStarted(), "Must be called after playback starts.");
 
@@ -201,7 +199,7 @@ nsresult VideoSink::Start(const TimeUnit& aStartTime, const MediaInfo& aInfo) {
     
     
     
-    RefPtr<GenericPromise> p = mAudioSink->OnEnded(TrackInfo::kVideoTrack);
+    RefPtr<EndedPromise> p = mAudioSink->OnEnded(TrackInfo::kVideoTrack);
     if (p) {
       RefPtr<VideoSink> self = this;
       p->Then(mOwnerThread, __func__,
@@ -540,5 +538,4 @@ nsCString VideoSink::GetDebugInfo() {
   return std::move(str);
 }
 
-}  
 }  
