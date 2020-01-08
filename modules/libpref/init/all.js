@@ -183,7 +183,7 @@ pref("dom.performance.time_to_non_blank_paint.enabled", false);
 pref("dom.performance.time_to_dom_content_flushed.enabled", false);
 
 
-pref("dom.performance.time_to_interactive.enabled", false);
+pref("dom.performance.time_to_first_interactive.enabled", false);
 
 
 pref("dom.requestIdleCallback.enabled", true);
