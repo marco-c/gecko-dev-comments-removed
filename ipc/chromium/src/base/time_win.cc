@@ -44,9 +44,9 @@
 #include <mmsystem.h>
 
 #include "base/basictypes.h"
-#include "base/lock.h"
 #include "base/logging.h"
 #include "mozilla/Casting.h"
+#include "mozilla/StaticMutex.h"
 
 using base::Time;
 using base::TimeDelta;
@@ -216,10 +216,8 @@ DWORD (*tick_function)(void) = &timeGetTimeWrapper;
 
 class NowSingleton {
  public:
-  NowSingleton() : rollover_(TimeDelta::FromMilliseconds(0)), last_seen_(0) {}
-
   TimeDelta Now() {
-    AutoLock locked(lock_);
+    mozilla::StaticMutexAutoLock locked(lock_);
     
     
     DWORD now = tick_function();
@@ -231,12 +229,28 @@ class NowSingleton {
   }
 
   static NowSingleton& instance() {
-    static NowSingleton now;
+    
+    
+    
+    
+    
+    
+    
+    static mozilla::StaticMutex mutex;
+    static NowSingleton now(mutex);
     return now;
   }
 
  private:
-  Lock lock_;           
+  explicit NowSingleton(mozilla::StaticMutex& aMutex)
+    : lock_(aMutex)
+    , rollover_(TimeDelta::FromMilliseconds(0))
+    , last_seen_(0)
+  {
+  }
+  ~NowSingleton() = default;
+
+  mozilla::StaticMutex& lock_;  
   TimeDelta rollover_;  
   DWORD last_seen_;  
 
