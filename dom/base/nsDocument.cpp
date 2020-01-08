@@ -2100,9 +2100,7 @@ nsDocument::Init()
   
   
   
-  NS_ENSURE_TRUE(slots->mMutationObservers.PrependElementUnlessExists(static_cast<nsIMutationObserver*>(this)),
-                 NS_ERROR_OUT_OF_MEMORY);
-
+  slots->mMutationObservers.PrependElementUnlessExists(static_cast<nsIMutationObserver*>(this));
 
   mOnloadBlocker = new nsOnloadBlocker();
   mCSSLoader = new mozilla::css::Loader(this);

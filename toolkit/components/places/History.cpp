@@ -2316,11 +2316,7 @@ History::RegisterVisitedCallback(nsIURI* aURI,
                "Already tracking this Link object!");
 
   
-  if (!observers.AppendElement(aLink)) {
-    
-    (void)UnregisterVisitedCallback(aURI, aLink);
-    return NS_ERROR_OUT_OF_MEMORY;
-  }
+  observers.AppendElement(aLink);
 
   
   
