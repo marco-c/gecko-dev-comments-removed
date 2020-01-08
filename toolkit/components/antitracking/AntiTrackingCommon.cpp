@@ -30,7 +30,6 @@
 #include "nsIWebProgressListener.h"
 #include "nsNetUtil.h"
 #include "nsPIDOMWindow.h"
-#include "nsPrintfCString.h"
 #include "nsScriptSecurityManager.h"
 #include "nsSandboxFlags.h"
 #include "prtime.h"
@@ -333,8 +332,7 @@ ReportUnblockingConsole(nsPIDOMWindowInner* aWindow,
  bool
 AntiTrackingCommon::ShouldHonorContentBlockingCookieRestrictions()
 {
-  return StaticPrefs::browser_contentblocking_enabled() &&
-         StaticPrefs::browser_contentblocking_ui_enabled();
+  return StaticPrefs::browser_contentblocking_enabled();
 }
 
  RefPtr<AntiTrackingCommon::StorageAccessGrantPromise>
