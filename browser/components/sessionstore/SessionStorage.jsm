@@ -8,6 +8,9 @@ var EXPORTED_SYMBOLS = ["SessionStorage"];
 
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
+const ssu = Cc["@mozilla.org/browser/sessionstore/utils;1"]
+              .createInstance(Ci.nsISessionStoreUtils);
+
 
 const DOM_STORAGE_LIMIT_PREF = "browser.sessionstore.dom_storage_limit";
 
@@ -53,7 +56,7 @@ function forEachNonDynamicChildFrame(frame, cb) {
   cb(frame);
 
   
-  SessionStoreUtils.forEachNonDynamicChildFrame(frame, subframe => {
+  ssu.forEachNonDynamicChildFrame(frame, subframe => {
     return forEachNonDynamicChildFrame(subframe, cb);
   });
 }
