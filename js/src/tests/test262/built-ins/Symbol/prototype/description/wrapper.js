@@ -12,7 +12,6 @@
 
 
 
-
 const symbol = Object(Symbol('test'));
 assert.sameValue(
   symbol.description,

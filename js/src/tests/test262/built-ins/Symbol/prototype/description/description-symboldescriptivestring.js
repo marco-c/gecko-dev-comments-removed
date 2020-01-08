@@ -18,7 +18,6 @@
 
 
 
-
 const symbol = Symbol('foo');
 
 assert.sameValue(

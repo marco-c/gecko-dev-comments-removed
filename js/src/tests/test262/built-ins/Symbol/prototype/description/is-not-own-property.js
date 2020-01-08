@@ -7,7 +7,6 @@
 
 
 
-
 assert.sameValue(
   Symbol().hasOwnProperty('description'),
   false,

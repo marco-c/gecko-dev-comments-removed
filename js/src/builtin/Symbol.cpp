@@ -31,6 +31,7 @@ SymbolObject::create(JSContext* cx, JS::HandleSymbol symbol)
 }
 
 const JSPropertySpec SymbolObject::properties[] = {
+    JS_PSG("description", descriptionGetter, 0),
     JS_PS_END
 };
 
@@ -229,6 +230,31 @@ SymbolObject::toPrimitive(JSContext* cx, unsigned argc, Value* vp)
     
     
     return CallNonGenericMethod<IsSymbol, valueOf_impl>(cx, args);
+}
+
+bool
+SymbolObject::descriptionGetter_impl(JSContext* cx, const CallArgs& args)
+{
+    
+    HandleValue thisv = args.thisv();
+    MOZ_ASSERT(IsSymbol(thisv));
+    Rooted<Symbol*> sym(cx, thisv.isSymbol()
+                            ? thisv.toSymbol()
+                            : thisv.toObject().as<SymbolObject>().unbox());
+
+    
+    if (JSString* str = sym->description())
+        args.rval().setString(str);
+    else
+        args.rval().setUndefined();
+    return true;
+}
+
+bool
+SymbolObject::descriptionGetter(JSContext* cx, unsigned argc, Value* vp)
+{
+    CallArgs args = CallArgsFromVp(argc, vp);
+    return CallNonGenericMethod<IsSymbol, descriptionGetter_impl>(cx, args);
 }
 
 JSObject*

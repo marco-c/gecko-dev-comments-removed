@@ -13,7 +13,6 @@
 
 
 
-
 var desc = Object.getOwnPropertyDescriptor(Symbol.prototype, 'description');
 
 assert.sameValue(
