@@ -83,6 +83,12 @@ class OutputStreamDriver : public FrameCaptureListener {
 
 
 
+  void EndTrack();
+
+  
+
+
+
   virtual void Forget() {}
 
  protected:
@@ -91,9 +97,8 @@ class OutputStreamDriver : public FrameCaptureListener {
   class TrackListener;
 
  private:
-  RefPtr<SourceMediaStream> mSourceStream;
-  RefPtr<StreamListener> mStreamListener;
-  RefPtr<TrackListener> mTrackListener;
+  const RefPtr<SourceMediaStream> mSourceStream;
+  const RefPtr<TrackListener> mTrackListener;
 };
 
 class CanvasCaptureMediaStream : public DOMMediaStream {
