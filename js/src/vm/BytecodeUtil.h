@@ -74,7 +74,6 @@ enum {
 
     JOF_GNAME           = 1 << 13,  
     JOF_TYPESET         = 1 << 14,  
-    JOF_ARITH           = 1 << 15   
 };
 
 

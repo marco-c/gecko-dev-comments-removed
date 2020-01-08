@@ -244,9 +244,9 @@
 
 
  \
-    macro(JSOP_BITOR,     15, "bitor",      "|",          1,  2,  1, JOF_BYTE|JOF_ARITH) \
-    macro(JSOP_BITXOR,    16, "bitxor",     "^",          1,  2,  1, JOF_BYTE|JOF_ARITH) \
-    macro(JSOP_BITAND,    17, "bitand",     "&",          1,  2,  1, JOF_BYTE|JOF_ARITH) \
+    macro(JSOP_BITOR,     15, "bitor",      "|",          1,  2,  1, JOF_BYTE) \
+    macro(JSOP_BITXOR,    16, "bitxor",     "^",          1,  2,  1, JOF_BYTE) \
+    macro(JSOP_BITAND,    17, "bitand",     "&",          1,  2,  1, JOF_BYTE) \
     
 
 
@@ -255,12 +255,12 @@
 
 
  \
-    macro(JSOP_EQ,        18, "eq",         "==",         1,  2,  1, JOF_BYTE|JOF_ARITH|JOF_DETECTING) \
-    macro(JSOP_NE,        19, "ne",         "!=",         1,  2,  1, JOF_BYTE|JOF_ARITH|JOF_DETECTING) \
-    macro(JSOP_LT,        20, "lt",         "<",          1,  2,  1, JOF_BYTE|JOF_ARITH) \
-    macro(JSOP_LE,        21, "le",         "<=",         1,  2,  1, JOF_BYTE|JOF_ARITH) \
-    macro(JSOP_GT,        22, "gt",         ">",          1,  2,  1, JOF_BYTE|JOF_ARITH) \
-    macro(JSOP_GE,        23, "ge",         ">=",         1,  2,  1, JOF_BYTE|JOF_ARITH) \
+    macro(JSOP_EQ,        18, "eq",         "==",         1,  2,  1, JOF_BYTE|JOF_DETECTING) \
+    macro(JSOP_NE,        19, "ne",         "!=",         1,  2,  1, JOF_BYTE|JOF_DETECTING) \
+    macro(JSOP_LT,        20, "lt",         "<",          1,  2,  1, JOF_BYTE) \
+    macro(JSOP_LE,        21, "le",         "<=",         1,  2,  1, JOF_BYTE) \
+    macro(JSOP_GT,        22, "gt",         ">",          1,  2,  1, JOF_BYTE) \
+    macro(JSOP_GE,        23, "ge",         ">=",         1,  2,  1, JOF_BYTE) \
     
 
 
@@ -269,8 +269,8 @@
 
 
  \
-    macro(JSOP_LSH,       24, "lsh",        "<<",         1,  2,  1, JOF_BYTE|JOF_ARITH) \
-    macro(JSOP_RSH,       25, "rsh",        ">>",         1,  2,  1, JOF_BYTE|JOF_ARITH) \
+    macro(JSOP_LSH,       24, "lsh",        "<<",         1,  2,  1, JOF_BYTE) \
+    macro(JSOP_RSH,       25, "rsh",        ">>",         1,  2,  1, JOF_BYTE) \
     
 
 
@@ -279,7 +279,7 @@
 
 
  \
-    macro(JSOP_URSH,      26, "ursh",       ">>>",        1,  2,  1, JOF_BYTE|JOF_ARITH) \
+    macro(JSOP_URSH,      26, "ursh",       ">>>",        1,  2,  1, JOF_BYTE) \
     
 
 
@@ -288,7 +288,7 @@
 
 
  \
-    macro(JSOP_ADD,       27, "add",        "+",          1,  2,  1, JOF_BYTE|JOF_ARITH) \
+    macro(JSOP_ADD,       27, "add",        "+",          1,  2,  1, JOF_BYTE) \
     
 
 
@@ -297,10 +297,10 @@
 
 
  \
-    macro(JSOP_SUB,       28, "sub",        "-",          1,  2,  1, JOF_BYTE|JOF_ARITH) \
-    macro(JSOP_MUL,       29, "mul",        "*",          1,  2,  1, JOF_BYTE|JOF_ARITH) \
-    macro(JSOP_DIV,       30, "div",        "/",          1,  2,  1, JOF_BYTE|JOF_ARITH) \
-    macro(JSOP_MOD,       31, "mod",        "%",          1,  2,  1, JOF_BYTE|JOF_ARITH) \
+    macro(JSOP_SUB,       28, "sub",        "-",          1,  2,  1, JOF_BYTE) \
+    macro(JSOP_MUL,       29, "mul",        "*",          1,  2,  1, JOF_BYTE) \
+    macro(JSOP_DIV,       30, "div",        "/",          1,  2,  1, JOF_BYTE) \
+    macro(JSOP_MOD,       31, "mod",        "%",          1,  2,  1, JOF_BYTE) \
     
 
 
@@ -308,7 +308,7 @@
 
 
  \
-    macro(JSOP_NOT,       32, "not",        "!",          1,  1,  1, JOF_BYTE|JOF_ARITH|JOF_DETECTING) \
+    macro(JSOP_NOT,       32, "not",        "!",          1,  1,  1, JOF_BYTE|JOF_DETECTING) \
     
 
 
@@ -316,7 +316,7 @@
 
 
  \
-    macro(JSOP_BITNOT,    33, "bitnot",     "~",          1,  1,  1, JOF_BYTE|JOF_ARITH) \
+    macro(JSOP_BITNOT,    33, "bitnot",     "~",          1,  1,  1, JOF_BYTE) \
     
 
 
@@ -324,7 +324,7 @@
 
 
  \
-    macro(JSOP_NEG,       34, "neg",        "- ",         1,  1,  1, JOF_BYTE|JOF_ARITH) \
+    macro(JSOP_NEG,       34, "neg",        "- ",         1,  1,  1, JOF_BYTE) \
     
 
 
@@ -333,7 +333,7 @@
 
 
  \
-    macro(JSOP_POS,       35, "pos",        "+ ",         1,  1,  1, JOF_BYTE|JOF_ARITH) \
+    macro(JSOP_POS,       35, "pos",        "+ ",         1,  1,  1, JOF_BYTE) \
     
 
 
@@ -685,8 +685,8 @@
 
 
  \
-    macro(JSOP_STRICTEQ,  72, "stricteq",   "===",        1,  2,  1, JOF_BYTE|JOF_DETECTING|JOF_ARITH) \
-    macro(JSOP_STRICTNE,  73, "strictne",   "!==",        1,  2,  1, JOF_BYTE|JOF_DETECTING|JOF_ARITH) \
+    macro(JSOP_STRICTEQ,  72, "stricteq",   "===",        1,  2,  1, JOF_BYTE|JOF_DETECTING) \
+    macro(JSOP_STRICTNE,  73, "strictne",   "!==",        1,  2,  1, JOF_BYTE|JOF_DETECTING) \
     \
     
 
@@ -1538,7 +1538,7 @@
 
 
  \
-    macro(JSOP_POW,           150, "pow",     "**",       1,  2,  1, JOF_BYTE|JOF_ARITH) \
+    macro(JSOP_POW,           150, "pow",     "**",       1,  2,  1, JOF_BYTE) \
     \
     
 
