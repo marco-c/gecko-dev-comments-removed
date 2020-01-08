@@ -572,13 +572,15 @@ void PausedPhase::RestoreCheckpoint(size_t aCheckpoint) {
 void PausedPhase::RunToPoint(const ExecutionPoint& aTarget) {
   
   MOZ_RELEASE_ASSERT(!mPoint.HasPosition());
-  size_t checkpoint = mPoint.mCheckpoint;
+  MOZ_RELEASE_ASSERT(aTarget.mCheckpoint == mPoint.mCheckpoint);
 
-  MOZ_RELEASE_ASSERT(aTarget.mCheckpoint == checkpoint);
   ResumeExecution();
+
+  
+  
   gNavigation->mReachBreakpointPhase.Enter(
-      CheckpointId(checkpoint),  false, aTarget,
-       Nothing());
+      gNavigation->LastCheckpoint(),  mSavedTemporaryCheckpoint,
+      aTarget,  Nothing());
 }
 
 void PausedPhase::HandleDebuggerRequest(js::CharBuffer* aRequestBuffer) {
