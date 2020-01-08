@@ -1251,7 +1251,7 @@ nsStyleSVGReset::FinishStyle(nsPresContext* aPresContext, const nsStyleSVGReset*
   NS_FOR_VISIBLE_IMAGE_LAYERS_BACK_TO_FRONT(i, mMask) {
     nsStyleImage& image = mMask.mLayers[i].mImage;
     if (image.GetType() == eStyleImageType_Image) {
-      URLValueData* url = image.GetURLValue();
+      css::URLValueData* url = image.GetURLValue();
       
       
       if (url->IsLocalRef()) {
