@@ -9443,12 +9443,25 @@ nsHttpChannel::SetOriginHeader()
     }
 
     
+    
     if (sSendOriginHeader == 1) {
         nsAutoCString currentOrigin;
         nsContentUtils::GetASCIIOrigin(mURI, currentOrigin);
         if (!origin.EqualsIgnoreCase(currentOrigin.get())) {
             
             return;
+        }
+    } else if (gHttpHandler->HideOnionReferrerSource()) {
+        nsAutoCString host;
+        if (referrer &&
+            NS_SUCCEEDED(referrer->GetAsciiHost(host)) &&
+            StringEndsWith(host, NS_LITERAL_CSTRING(".onion"))) {
+            nsAutoCString currentOrigin;
+            nsContentUtils::GetASCIIOrigin(mURI, currentOrigin);
+            if (!origin.EqualsIgnoreCase(currentOrigin.get())) {
+                
+                return;
+            }
         }
     }
 
