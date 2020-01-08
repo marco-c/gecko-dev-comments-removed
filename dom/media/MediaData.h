@@ -546,6 +546,7 @@ class MediaRawDataWriter {
   MOZ_MUST_USE bool SetSize(size_t aSize);
   
   MOZ_MUST_USE bool Prepend(const uint8_t* aData, size_t aSize);
+  MOZ_MUST_USE bool Append(const uint8_t* aData, size_t aSize);
   
   MOZ_MUST_USE bool Replace(const uint8_t* aData, size_t aSize);
   
