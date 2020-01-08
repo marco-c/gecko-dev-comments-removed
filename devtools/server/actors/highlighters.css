@@ -67,6 +67,12 @@
   z-index: 1;
 }
 
+:-moz-native-anonymous .highlighter-container.flexbox {
+  
+
+  z-index: 2;
+}
+
 :-moz-native-anonymous .highlighter-container [hidden] {
   display: none;
 }
@@ -79,6 +85,10 @@
 
 :-moz-native-anonymous .box-model-regions {
   opacity: 0.6;
+}
+
+:-moz-native-anonymous .box-model-regions [half-faded] {
+  opacity: 0.5;
 }
 
 
@@ -145,6 +155,9 @@
   text-shadow: none;
 
   border: 1px solid var(--highlighter-bubble-border-color);
+
+  
+  z-index: 2147483647;
 }
 
 

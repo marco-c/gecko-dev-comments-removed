@@ -79,6 +79,9 @@ const JUSTIFY_CONTENT = "justify-content";
 
 
 
+
+
+
 class FlexboxHighlighter extends AutoRefreshHighlighter {
   constructor(highlighterEnv) {
     super(highlighterEnv);
@@ -113,7 +116,7 @@ class FlexboxHighlighter extends AutoRefreshHighlighter {
   _buildMarkup() {
     const container = createNode(this.win, {
       attributes: {
-        "class": "highlighter-container",
+        "class": "highlighter-container flexbox",
       },
     });
 
@@ -524,6 +527,9 @@ class FlexboxHighlighter extends AutoRefreshHighlighter {
     });
 
     this.ctx.fillStyle = this.getFlexContainerPattern(devicePixelRatio);
+    this.ctx.strokeStyle =
+      this.options.noContainerOutline ? "transparent" : this.color;
+
     drawRect(this.ctx, 0, 0, width, height, this.currentMatrix);
 
     

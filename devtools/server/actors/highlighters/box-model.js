@@ -15,11 +15,15 @@ const {
   moveInfobar,
 } = require("./utils/markup");
 const {
-  setIgnoreLayoutChanges,
+  findFlexOrGridParentContainerForNode,
   getCurrentZoom,
+  setIgnoreLayoutChanges,
  } = require("devtools/shared/layout/utils");
 const { getNodeDisplayName } = require("devtools/server/actors/inspector/utils");
 const nodeConstants = require("devtools/shared/dom-node-constants");
+
+loader.lazyRequireGetter(this, "FlexboxHighlighter",
+  "devtools/server/actors/highlighters/flexbox", true);
 
 
 
@@ -274,7 +278,21 @@ class BoxModelHighlighter extends AutoRefreshHighlighter {
     }
 
     this.markup.destroy();
+
+    if (this._flexboxHighlighter) {
+      this._flexboxHighlighter.destroy();
+      this._flexboxHighlighter = null;
+    }
+
     AutoRefreshHighlighter.prototype.destroy.call(this);
+  }
+
+  get flexboxHighlighter() {
+    if (!this._flexboxHighlighter) {
+      this._flexboxHighlighter = new FlexboxHighlighter(this.highlighterEnv);
+    }
+
+    return this._flexboxHighlighter;
   }
 
   getElement(id) {
@@ -330,15 +348,20 @@ class BoxModelHighlighter extends AutoRefreshHighlighter {
 
 
   _update() {
+    const node = this.currentNode;
     let shown = false;
     setIgnoreLayoutChanges(true);
+
+    
+    this.options.isFlexboxContainer =
+      !!(node && node.getAsFlexContainer && node.getAsFlexContainer());
 
     if (this._updateBoxModel()) {
       
       
       if (!this.options.hideInfoBar && (
-          this.currentNode.nodeType === this.currentNode.ELEMENT_NODE ||
-          this.currentNode.nodeType === this.currentNode.TEXT_NODE)) {
+          node.nodeType === node.ELEMENT_NODE ||
+          node.nodeType === node.TEXT_NODE)) {
         this._showInfobar();
       } else {
         this._hideInfobar();
@@ -350,9 +373,87 @@ class BoxModelHighlighter extends AutoRefreshHighlighter {
       this._hide();
     }
 
+    this._updateFlexboxHighlighter();
+
     setIgnoreLayoutChanges(false, this.highlighterEnv.window.document.documentElement);
 
     return shown;
+  }
+
+  
+
+
+
+  _updateFlexboxHighlighter() {
+    this._hideFlexboxHighlighter();
+
+    if (!this.currentNode) {
+      return;
+    }
+
+    const options = {};
+    let node = this.currentNode;
+    let showFlexboxHighlighter = false;
+
+    
+    
+    
+    if (this.options.isFlexboxContainer) {
+      for (const region of BOX_MODEL_REGIONS) {
+        const box = this.getElement(region);
+
+        if (region === "content") {
+          
+          box.removeAttribute("d");
+        } else {
+          
+          box.setAttribute("half-faded", "");
+        }
+      }
+
+      
+      
+      options.noContainerOutline = true;
+
+      
+      showFlexboxHighlighter = true;
+    } else {
+      
+      
+      const container = findFlexOrGridParentContainerForNode(node, "flex");
+
+      if (container) {
+        for (const region of BOX_MODEL_REGIONS) {
+          const box = this.getElement(region);
+
+          
+          
+          box.setAttribute("half-faded", "");
+        }
+
+        
+        
+        
+        this._hideGuides();
+
+        node = container;
+
+        
+        showFlexboxHighlighter = true;
+      }
+    }
+
+    if (showFlexboxHighlighter) {
+      
+      this.flexboxHighlighter.show(node, options);
+    } else {
+      
+      for (const region of BOX_MODEL_REGIONS) {
+        const box = this.getElement(region);
+
+        box.removeAttribute("half-faded");
+      }
+    }
   }
 
   _scrollUpdate() {
@@ -368,8 +469,18 @@ class BoxModelHighlighter extends AutoRefreshHighlighter {
     this._untrackMutations();
     this._hideBoxModel();
     this._hideInfobar();
+    this._hideFlexboxHighlighter();
 
     setIgnoreLayoutChanges(false, this.highlighterEnv.window.document.documentElement);
+  }
+
+  
+
+
+  _hideFlexboxHighlighter() {
+    if (this._flexboxHighlighter) {
+      this.flexboxHighlighter.hide();
+    }
   }
 
   
@@ -523,9 +634,11 @@ class BoxModelHighlighter extends AutoRefreshHighlighter {
 
   _getBoxPathCoordinates(boxQuad, nextBoxQuad) {
     const {p1, p2, p3, p4} = boxQuad;
+    const isFlexboxContainer = this.options.isFlexboxContainer;
 
     let path;
-    if (!nextBoxQuad || !this.options.onlyRegionArea) {
+    if ((isFlexboxContainer && !nextBoxQuad) ||
+        (!isFlexboxContainer && (!nextBoxQuad || !this.options.onlyRegionArea))) {
       
       
       path = "M" + p1.x + "," + p1.y + " " +
