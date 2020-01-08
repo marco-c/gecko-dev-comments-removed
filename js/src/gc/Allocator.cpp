@@ -152,7 +152,8 @@ GCRuntime::tryNewNurseryString(JSContext* cx, size_t thingSize, AllocKind kind)
         cx->runtime()->gc.minorGC(JS::gcreason::OUT_OF_NURSERY);
 
         
-        if (cx->nursery().isEnabled())
+        
+        if (cx->nursery().isEnabled() && cx->zone()->allocNurseryStrings)
             return static_cast<JSString*>(cx->nursery().allocateString(cx->zone(), thingSize, kind));
     }
     return nullptr;

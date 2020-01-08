@@ -8702,6 +8702,7 @@ JitRealm::generateStringConcatStub(JSContext* cx)
     masm.branch32(Assembler::Above, temp2, Imm32(JSString::MAX_LENGTH), &failure);
 
     
+    
     masm.newGCString(output, temp3, &failure, stringsCanBeInNursery);
 
     
