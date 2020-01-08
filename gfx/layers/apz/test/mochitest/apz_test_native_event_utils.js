@@ -1,5 +1,11 @@
 
 
+function getResolution() {
+  let resolution = { value: -1 }; 
+  SpecialPowers.getDOMWindowUtils(window).getResolution(resolution);
+  return resolution.value;
+}
+
 function getPlatform() {
   if (navigator.platform.indexOf("Win") == 0) {
     return "windows";
