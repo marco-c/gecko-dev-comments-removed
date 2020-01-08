@@ -362,6 +362,10 @@ window._gBrowser = {
 
     
     
+    browser.docShellIsActive = this.shouldActivateDocShell(browser);
+
+    
+    
     this.initialBrowser = browser;
 
     let autoScrollPopup = browser._createAutoScrollPopup();
