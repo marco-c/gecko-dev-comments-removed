@@ -3,7 +3,7 @@
 
 
 use api::{ColorF, DevicePixelScale, GlyphInstance, LayoutPrimitiveInfo};
-use api::{LayoutToWorldTransform, RasterSpace};
+use api::{LayoutRect, LayoutToWorldTransform, RasterSpace};
 use api::{LayoutVector2D, Shadow};
 use display_list_flattener::{AsInstanceKind, CreateShadow, IsVisible};
 use frame_builder::{FrameBuildingState, PictureContext};
@@ -35,11 +35,13 @@ pub struct TextRunKey {
 impl TextRunKey {
     pub fn new(
         info: &LayoutPrimitiveInfo,
+        prim_relative_clip_rect: LayoutRect,
         text_run: TextRun,
     ) -> Self {
         TextRunKey {
             common: PrimKeyCommonData::with_info(
                 info,
+                prim_relative_clip_rect,
             ),
             font: text_run.font,
             offset: text_run.offset.into(),
@@ -185,9 +187,11 @@ impl intern::Internable for TextRun {
     fn build_key(
         self,
         info: &LayoutPrimitiveInfo,
+        prim_relative_clip_rect: LayoutRect,
     ) -> TextRunKey {
         TextRunKey::new(
             info,
+            prim_relative_clip_rect,
             self,
         )
     }
@@ -337,7 +341,7 @@ fn test_struct_sizes() {
     
     
     assert_eq!(mem::size_of::<TextRun>(), 112, "TextRun size changed");
-    assert_eq!(mem::size_of::<TextRunTemplate>(), 128, "TextRunTemplate size changed");
-    assert_eq!(mem::size_of::<TextRunKey>(), 120, "TextRunKey size changed");
+    assert_eq!(mem::size_of::<TextRunTemplate>(), 144, "TextRunTemplate size changed");
+    assert_eq!(mem::size_of::<TextRunKey>(), 136, "TextRunKey size changed");
     assert_eq!(mem::size_of::<TextRunPrimitive>(), 88, "TextRunPrimitive size changed");
 }
