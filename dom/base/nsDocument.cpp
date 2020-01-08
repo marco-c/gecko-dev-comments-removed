@@ -13653,6 +13653,13 @@ nsIDocument::RequestStorageAccess(mozilla::ErrorResult& aRv)
   
   
 
+  if (nsContentUtils::IsInPrivateBrowsing(this)) {
+    
+    
+    promise->MaybeRejectWithUndefined();
+    return promise.forget();
+  }
+
   bool granted = true;
   bool isTrackingWindow = false;
   if (StaticPrefs::browser_contentblocking_enabled() &&
