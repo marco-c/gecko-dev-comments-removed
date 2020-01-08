@@ -887,11 +887,22 @@ BufferTextureHost::AcquireTextureSource(CompositableTextureSourceRef& aTexture)
 }
 
 void
+BufferTextureHost::ReadUnlock()
+{
+  if (mFirstSource) {
+    mFirstSource->Sync();
+  }
+
+  TextureHost::ReadUnlock();
+}
+
+void
 BufferTextureHost::UnbindTextureSource()
 {
   if (mFirstSource && mFirstSource->IsOwnedBy(this)) {
     mFirstSource->Unbind();
   }
+
   
   
   
@@ -995,7 +1006,9 @@ BufferTextureHost::Upload(nsIntRegion *aRegion)
     return false;
   }
   if (!mHasIntermediateBuffer && EnsureWrappingTextureSource()) {
-    return true;
+    if (!mFirstSource || !mFirstSource->IsDirectMap()) {
+      return true;
+    }
   }
 
   if (mFormat == gfx::SurfaceFormat::UNKNOWN) {
