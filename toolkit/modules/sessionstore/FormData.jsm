@@ -163,7 +163,7 @@ var FormDataInternal = {
 
       
       if (ChromeUtils.getClassName(node) === "HTMLInputElement") {
-        if (CreditCard.isValidNumber(node.value)) {
+        if (CreditCard.isValidNumber(node.value) || node.hasBeenTypePassword) {
           continue;
         }
       }
