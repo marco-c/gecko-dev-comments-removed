@@ -124,12 +124,6 @@ pub type LayoutSizeAu = TypedSize2D<Au, LayoutPixel>;
 pub type LayoutVector2DAu = TypedVector2D<Au, LayoutPixel>;
 
 
-#[derive(Hash, Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
-pub struct NormalizedCoordinates;
-
-pub type NormalizedRect = TypedRect<f32, NormalizedCoordinates>;
-
-
 
 
 

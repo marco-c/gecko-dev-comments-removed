@@ -425,17 +425,17 @@ impl ClipStore {
     
     
     
-    pub fn push_raster_root(
+    pub fn push_surface(
         &mut self,
-        raster_spatial_node_index: SpatialNodeIndex,
+        spatial_node_index: SpatialNodeIndex,
     ) {
         self.clip_node_collectors.push(
-            ClipNodeCollector::new(raster_spatial_node_index),
+            ClipNodeCollector::new(spatial_node_index),
         );
     }
 
     
-    pub fn pop_raster_root(
+    pub fn pop_surface(
         &mut self,
     ) -> ClipNodeCollector {
         self.clip_node_collectors.pop().unwrap()
@@ -474,7 +474,7 @@ impl ClipStore {
             
             
             match self.clip_node_collectors.iter_mut().find(|c| {
-                clip_chain_node.spatial_node_index < c.raster_root
+                clip_chain_node.spatial_node_index < c.spatial_node_index
             }) {
                 Some(collector) => {
                     collector.insert(current_clip_chain_id);
@@ -1186,16 +1186,16 @@ pub fn project_inner_rect(
 
 #[derive(Debug)]
 pub struct ClipNodeCollector {
-    raster_root: SpatialNodeIndex,
+    spatial_node_index: SpatialNodeIndex,
     clips: FastHashSet<ClipChainId>,
 }
 
 impl ClipNodeCollector {
     pub fn new(
-        raster_root: SpatialNodeIndex,
+        spatial_node_index: SpatialNodeIndex,
     ) -> Self {
         ClipNodeCollector {
-            raster_root,
+            spatial_node_index,
             clips: FastHashSet::default(),
         }
     }
