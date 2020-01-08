@@ -32,22 +32,19 @@ namespace JS {
 
 class Symbol : public js::gc::TenuredCell
 {
-  protected:
-    
-    
-    uintptr_t reserved_;
-
   private:
+    
+    JSAtom* description_;
+
     SymbolCode code_;
 
     
     
     js::HashNumber hash_;
 
-    JSAtom* description_;
 
     Symbol(SymbolCode code, js::HashNumber hash, JSAtom* desc)
-        : reserved_(0), code_(code), hash_(hash), description_(desc) { }
+        : description_(desc), code_(code), hash_(hash) { }
 
     Symbol(const Symbol&) = delete;
     void operator=(const Symbol&) = delete;
@@ -58,8 +55,6 @@ class Symbol : public js::gc::TenuredCell
     static void staticAsserts() {
         static_assert(uint32_t(SymbolCode::WellKnownAPILimit) == JS::shadow::Symbol::WellKnownAPILimit,
                       "JS::shadow::Symbol::WellKnownAPILimit must match SymbolCode::WellKnownAPILimit");
-        static_assert(offsetof(Symbol, reserved_) == offsetof(JS::shadow::Symbol, reserved_),
-                      "JS::shadow::Symbol::reserved_ offset must match SymbolCode::reserved_");
         static_assert(offsetof(Symbol, code_) == offsetof(JS::shadow::Symbol, code_),
                       "JS::shadow::Symbol::code_ offset must match SymbolCode::code_");
     }
