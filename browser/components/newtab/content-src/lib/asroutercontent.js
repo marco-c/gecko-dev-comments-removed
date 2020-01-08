@@ -7,7 +7,7 @@ export function enableASRouterContent(store, asrouterContent) {
     }
 
     if (!asrouterContent.initialized) {
-      asrouterContent.init();
+      asrouterContent.init(store);
     }
   });
   
