@@ -32,7 +32,6 @@ function getRelativeUrl(source, root) {
 }
 
 function formatSource(source, root) {
-  
   return { ...source,
     relativeUrl: getRelativeUrl(source, root)
   };

@@ -78,7 +78,7 @@ function addSourceToNode(node, url, source) {
   const isFile = !(0, _utils.isPathDirectory)(url.path);
 
   if (node.type == "source") {
-    throw new Error(`Unexpected type "source" at: ${node.name}`);
+    throw new Error(`wtf ${node.name}`);
   } 
   
 
