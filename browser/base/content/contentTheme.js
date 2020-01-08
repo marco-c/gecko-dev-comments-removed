@@ -46,17 +46,14 @@ const ContentThemeController = {
 
   init() {
     addEventListener("LightweightTheme:Set", this);
-
-    const event = new CustomEvent("LightweightTheme:Support", {bubbles: true});
-    document.dispatchEvent(event);
   },
 
   
 
 
 
-  handleEvent({ detail }) {
-    if (detail.type == "LightweightTheme:Update") {
+  handleEvent({ type, detail }) {
+    if (type == "LightweightTheme:Set") {
       let {data} = detail;
       if (!data) {
         data = {};
