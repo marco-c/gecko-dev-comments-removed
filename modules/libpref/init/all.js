@@ -657,6 +657,8 @@ pref("media.cubeb.sandbox", false);
 
 #ifdef MOZ_AV1
 pref("media.av1.enabled", false);
+
+pref("media.av1.use-dav1d", false);
 #endif
 
 pref("media.webaudio.audiocontextoptions-samplerate.enabled", true);
