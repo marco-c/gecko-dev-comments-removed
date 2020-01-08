@@ -302,6 +302,12 @@ MOZ_BEGIN_EXTERN_C
 #ifdef ANDROID
 
 
+void
+MozTagAnonymousMemory(const void* aPtr, size_t aLength, const char* aTag)
+{
+}
+
+
 
 
 int
