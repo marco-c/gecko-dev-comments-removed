@@ -4989,7 +4989,8 @@ var XULBrowserWindow = {
   
   
   
-  onSecurityChange(aWebProgress, aRequest, aState, aIsSimulated) {
+  onSecurityChange(aWebProgress, aRequest, aOldState, aState,
+                   aContentBlockingLogJSON, aIsSimulated) {
     
     
     let uri = gBrowser.currentURI;
@@ -5016,7 +5017,8 @@ var XULBrowserWindow = {
       uri = Services.uriFixup.createExposableURI(uri);
     } catch (e) {}
     gIdentityHandler.updateIdentity(this._state, uri);
-    ContentBlocking.onSecurityChange(this._state, aWebProgress, aIsSimulated);
+    ContentBlocking.onSecurityChange(aOldState, this._state, aWebProgress, aIsSimulated,
+                                     aContentBlockingLogJSON);
   },
 
   
