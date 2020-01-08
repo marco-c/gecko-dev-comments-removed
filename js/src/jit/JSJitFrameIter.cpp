@@ -621,12 +621,15 @@ void JSJitProfilingFrameIterator::fixBaselineReturnAddress() {
   
   
   
+  
   if (jsbytecode* override = bl->maybeOverridePc()) {
     PCMappingSlotInfo slotInfo;
     JSScript* script = bl->script();
     returnAddressToFp_ =
         script->baselineScript()->nativeCodeForPC(script, override, &slotInfo);
-    MOZ_ASSERT(slotInfo.isStackSynced());
+
+    
+    
     return;
   }
 }
