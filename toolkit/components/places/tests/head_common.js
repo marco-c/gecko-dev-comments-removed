@@ -895,17 +895,17 @@ async function compareFavicons(icon1, icon2, msg) {
 
 
 
-function mapItemIdToInternalRootName(aItemId) {
-  switch (aItemId) {
-    case PlacesUtils.placesRootId:
+function mapItemGuidToInternalRootName(itemGuid) {
+  switch (itemGuid) {
+    case PlacesUtils.bookmarks.rootGuid:
       return "placesRoot";
-    case PlacesUtils.bookmarksMenuFolderId:
+    case PlacesUtils.bookmarks.menuGuid:
       return "bookmarksMenuFolder";
-    case PlacesUtils.toolbarFolderId:
+    case PlacesUtils.bookmarks.toolbarGuid:
       return "toolbarFolder";
-    case PlacesUtils.unfiledBookmarksFolderId:
+    case PlacesUtils.bookmarks.unfiledGuid:
       return "unfiledBookmarksFolder";
-    case PlacesUtils.mobileFolderId:
+    case PlacesUtils.bookmarks.mobileGuid:
       return "mobileFolder";
   }
   return null;
