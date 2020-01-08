@@ -152,7 +152,44 @@ const Utils = {
   },
 
   
+  
+  _safeProtocols: new Set([
+    "bitcoin",
+    "geo",
+    "im",
+    "irc",
+    "ircs",
+    "magnet",
+    "mailto",
+    "mms",
+    "news",
+    "nntp",
+    "openpgp4fpr",
+    "sip",
+    "sms",
+    "smsto",
+    "ssh",
+    "tel",
+    "urn",
+    "webcal",
+    "wtai",
+    "xmpp",
+  ]),
+
+  
   checkProtocolHandlerAllowed(aProtocol, aURIString, aWindowOrNull) {
+    if (aProtocol.startsWith("web+")) {
+      if (!/[a-z]+/.test(aProtocol.substring(4 ))) {
+        throw this.getSecurityError(
+          `Permission denied to add a protocol handler for ${aProtocol}`,
+          aWindowOrNull);
+      }
+    } else if (!this._safeProtocols.has(aProtocol)) {
+      throw this.getSecurityError(
+        `Permission denied to add a protocol handler for ${aProtocol}`,
+        aWindowOrNull);
+    }
+
     
     
     let handler = Services.io.getProtocolHandler(aProtocol);
@@ -364,6 +401,7 @@ WebContentConverterRegistrar.prototype = {
 
 
   registerProtocolHandler(aProtocol, aURIString, aTitle, aBrowserOrWindow) {
+    aProtocol = (aProtocol || "").toLowerCase();
     LOG("registerProtocolHandler(" + aProtocol + "," + aURIString + "," + aTitle + ")");
     let haveWindow = (aBrowserOrWindow instanceof Ci.nsIDOMWindow);
     let uri;
@@ -998,6 +1036,7 @@ WebContentConverterRegistrarContent.prototype = {
   },
 
   registerProtocolHandler(aProtocol, aURIString, aTitle, aBrowserOrWindow) {
+    aProtocol = (aProtocol || "").toLowerCase();
     
     let messageManager = aBrowserOrWindow.QueryInterface(Ci.nsIInterfaceRequestor)
                                          .getInterface(Ci.nsIWebNavigation)
