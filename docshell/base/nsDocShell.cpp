@@ -384,6 +384,7 @@ nsDocShell::nsDocShell()
   , mInvisible(false)
   , mHasLoadedNonBlankURI(false)
   , mBlankTiming(false)
+  , mTitleValidForCurrentURI(false)
 {
   mHistoryID.m0 = 0;
   mHistoryID.m1 = 0;
@@ -1329,6 +1330,12 @@ nsDocShell::SetCurrentURI(nsIURI* aURI, nsIRequest* aRequest,
   
   if (mLoadType == LOAD_ERROR_PAGE) {
     return false;
+  }
+
+  bool uriIsEqual = false;
+  if (!mCurrentURI || !aURI ||
+      NS_FAILED(mCurrentURI->Equals(aURI, &uriIsEqual)) || !uriIsEqual) {
+    mTitleValidForCurrentURI = false;
   }
 
   mCurrentURI = aURI;
@@ -5987,7 +5994,14 @@ NS_IMETHODIMP
 nsDocShell::SetTitle(const nsAString& aTitle)
 {
   
+  
+  if (mTitleValidForCurrentURI && mTitle == aTitle) {
+    return NS_OK;
+  }
+
+  
   mTitle = aTitle;
+  mTitleValidForCurrentURI = true;
 
   nsCOMPtr<nsIDocShellTreeItem> parent;
   GetSameTypeParent(getter_AddRefs(parent));

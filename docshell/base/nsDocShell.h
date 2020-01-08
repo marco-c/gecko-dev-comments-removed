@@ -1173,6 +1173,9 @@ private:
   
   
   bool mBlankTiming : 1;
+
+  
+  bool mTitleValidForCurrentURI : 1;
 };
 
 #endif 
