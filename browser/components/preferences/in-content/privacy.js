@@ -529,10 +529,15 @@ var gPrivacyPane = {
     let siteDataGroup = document.getElementById("siteDataGroup");
     let browserPrivacyCategory = document.getElementById("browserPrivacyCategory");
 
-    browserPrivacyCategory.parentNode.insertBefore(siteDataGroup,
-                                                   browserPrivacyCategory.nextSibling);
-    browserPrivacyCategory.parentNode.insertBefore(trackingGroup,
-                                                   browserPrivacyCategory.nextSibling);
+    
+    
+    
+    setTimeout(() => {
+      browserPrivacyCategory.parentNode.insertBefore(siteDataGroup,
+                                                     browserPrivacyCategory.nextSibling);
+      browserPrivacyCategory.parentNode.insertBefore(trackingGroup,
+                                                     browserPrivacyCategory.nextSibling);
+    }, 0);
   },
 
   
