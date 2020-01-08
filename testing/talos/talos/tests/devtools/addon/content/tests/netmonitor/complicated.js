@@ -23,5 +23,8 @@ module.exports = async function() {
 
   await closeToolboxAndLog("complicated.netmonitor", toolbox);
 
+  
+  await new Promise(r => setTimeout(r, 1000));
+
   await testTeardown();
 };
