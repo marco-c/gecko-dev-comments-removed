@@ -2100,6 +2100,14 @@ XMLHttpRequestMainThread::OnStopRequest(nsIRequest *request, nsISupports *ctxt, 
   mXMLParserStreamListener = nullptr;
   mContext = nullptr;
 
+  
+  if (status == NS_BINDING_ABORTED) {
+    mFlagParseBody = false;
+    IgnoredErrorResult rv;
+    RequestErrorSteps(ProgressEventType::abort, NS_OK, rv);
+    return NS_OK;
+  }
+
   bool waitingForBlobCreation = false;
 
   
