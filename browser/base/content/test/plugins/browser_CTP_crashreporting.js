@@ -96,8 +96,10 @@ add_task(async function() {
       } catch (e) {
       }
 
-      let getUI = (id) => {
-        return plugin.openOrClosedShadowRoot.getElementById(id);
+      let doc = plugin.ownerDocument;
+
+      let getUI = (anonid) => {
+        return doc.getAnonymousElementByAttribute(plugin, "anonid", anonid);
       };
 
       
