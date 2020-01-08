@@ -6,7 +6,6 @@
 
 "use strict";
 
-const { Cu } = require("chrome");
 const { Services } = require("resource://gre/modules/Services.jsm");
 
 var systemAppOrigin = (function() {
@@ -247,32 +246,6 @@ TouchSimulator.prototype = {
   },
 
   sendTouchEvent(evt, target, name) {
-    function clone(obj) {
-      return Cu.cloneInto(obj, target);
-    }
-    
-    
-    if (target.localName == "iframe" && target.mozbrowser === true) {
-      if (name == "touchstart") {
-        this.touchstartTime = Date.now();
-      } else if (name == "touchend") {
-        
-        
-        if (Date.now() - this.touchstartTime < delay) {
-          this.cancelClick = true;
-        }
-      }
-      const unwrapped = XPCNativeWrapper.unwrap(target);
-      
-      unwrapped.sendTouchEvent(name, clone([0]),       
-                               clone([evt.clientX]),   
-                               clone([evt.clientY]),   
-                               clone([1]), clone([1]), 
-                               clone([0]), clone([0]), 
-                               1);                     
-      
-      return;
-    }
     const document = target.ownerDocument;
     const content = this.getContent(target);
     if (!content) {
