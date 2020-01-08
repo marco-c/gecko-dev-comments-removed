@@ -19,4 +19,20 @@
 #define CDM_API __attribute__((visibility("default")))
 #endif  
 
+
+
+
+
+
+
+#if defined(_WIN32)
+#if defined(__clang__)
+#define CDM_CLASS_API [[clang::lto_visibility_public]]
+#else
+#define CDM_CLASS_API
+#endif
+#else  
+#define CDM_CLASS_API __attribute__((visibility("default")))
+#endif  
+
 #endif  

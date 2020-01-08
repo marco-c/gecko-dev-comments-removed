@@ -49,7 +49,7 @@ VideoDecoder::~VideoDecoder()
 }
 
 Status
-VideoDecoder::InitDecode(const VideoDecoderConfig& aConfig)
+VideoDecoder::InitDecode(const VideoDecoderConfig_1& aConfig)
 {
   CK_LOGD("VideoDecoder::InitDecode");
 
@@ -63,7 +63,7 @@ VideoDecoder::InitDecode(const VideoDecoderConfig& aConfig)
 }
 
 Status
-VideoDecoder::Decode(const InputBuffer& aInputBuffer, VideoFrame* aVideoFrame)
+VideoDecoder::Decode(const InputBuffer_1& aInputBuffer, VideoFrame* aVideoFrame)
 {
   CK_LOGD("VideoDecoder::Decode");
   
@@ -239,7 +239,7 @@ VideoDecoder::SampleToVideoFrame(IMFSample* aSample,
   aVideoFrame->SetStride(VideoFrame::kUPlane, halfStride);
   aVideoFrame->SetStride(VideoFrame::kVPlane, halfStride);
 
-  aVideoFrame->SetSize(Size(aPictureWidth, aPictureHeight));
+  aVideoFrame->SetSize(Size{ aPictureWidth, aPictureHeight });
 
   
   
