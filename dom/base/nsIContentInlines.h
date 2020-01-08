@@ -153,9 +153,14 @@ inline bool nsINode::IsEditable() const {
     return true;
   }
 
-  Document* doc = GetUncomposedDoc();
+  
+  
+  if (IsInNativeAnonymousSubtree()) {
+    return false;
+  }
 
   
+  Document* doc = GetUncomposedDoc();
   return doc && doc->HasFlag(NODE_IS_EDITABLE);
 }
 
