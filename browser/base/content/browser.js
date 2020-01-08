@@ -1011,6 +1011,18 @@ function handleUriInChrome(aBrowser, aUri) {
 
 
 
+function _createNullPrincipalFromTabUserContextId(tab = gBrowser.selectedTab) {
+  let userContextId;
+  if (tab.hasAttribute("usercontextid")) {
+    userContextId = tab.getAttribute("usercontextid");
+  }
+  return Services.scriptSecurityManager.createNullPrincipal({
+    userContextId,
+  });
+}
+
+
+
 function _loadURI(browser, uri, params = {}) {
   let tab = gBrowser.getTabForBrowser(browser);
   
@@ -1030,6 +1042,10 @@ function _loadURI(browser, uri, params = {}) {
     postData,
     userContextId,
   } = params || {};
+
+  if (!triggeringPrincipal) {
+    throw new Error("Must load with a triggering Principal");
+  }
 
   let {
     uriObject,
@@ -2399,6 +2415,10 @@ function BrowserTryToCloseWindow() {
 function loadURI(uri, referrer, postData, allowThirdPartyFixup, referrerPolicy,
                  userContextId, originPrincipal, forceAboutBlankViewerInCurrent,
                  triggeringPrincipal, allowInheritPrincipal = false) {
+  if (!triggeringPrincipal) {
+    throw new Error("Must load with a triggering Principal");
+  }
+
   try {
     openLinkIn(uri, "current",
                { referrerURI: referrer,
@@ -3140,10 +3160,12 @@ var BrowserOnClick = {
   },
 
   ignoreWarningLink(reason, blockedInfo) {
+    let triggeringPrincipal = Utils.deserializePrincipal(blockedInfo.triggeringPrincipal) || _createNullPrincipalFromTabUserContextId();
     
     
     
     gBrowser.loadURI(gBrowser.currentURI.spec, {
+      triggeringPrincipal,
       flags: Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CLASSIFIER,
     });
 
@@ -3208,7 +3230,9 @@ var BrowserOnClick = {
 
 
 function getMeOutOfHere() {
-  gBrowser.loadURI(getDefaultHomePage());
+  gBrowser.loadURI(getDefaultHomePage(), {
+    triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(), 
+  });
 }
 
 
@@ -3224,7 +3248,9 @@ function goBackFromErrorPage() {
   if (state.index == 1) {
     
     
-    gBrowser.loadURI(getDefaultHomePage());
+    gBrowser.loadURI(getDefaultHomePage(), {
+      triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+    });
   } else {
     BrowserBack();
   }
@@ -3260,7 +3286,10 @@ function BrowserReloadWithFlags(reloadFlags) {
     
     
     
-    gBrowser.loadURI(url, { flags: reloadFlags });
+    gBrowser.loadURI(url, {
+      flags: reloadFlags,
+      triggeringPrincipal: gBrowser.selectedBrowser.contentPrincipal,
+    });
     return;
   }
 
@@ -3661,6 +3690,7 @@ var newWindowButtonObserver = {
 const DOMEventHandler = {
   init() {
     let mm = window.messageManager;
+    mm.addMessageListener("Link:AddFeed", this);
     mm.addMessageListener("Link:LoadingIcon", this);
     mm.addMessageListener("Link:SetIcon", this);
     mm.addMessageListener("Link:SetFailedIcon", this);
@@ -3670,6 +3700,11 @@ const DOMEventHandler = {
 
   receiveMessage(aMsg) {
     switch (aMsg.name) {
+      case "Link:AddFeed":
+        let link = {type: aMsg.data.type, href: aMsg.data.href, title: aMsg.data.title};
+        FeedHandler.addFeed(link, aMsg.target);
+        break;
+
       case "Link:LoadingIcon":
         if (aMsg.data.canUseForTab) {
           this.setPendingIcon(aMsg.target);
@@ -4703,6 +4738,9 @@ var XULBrowserWindow = {
 
       if (aRequest && aWebProgress.isTopLevel) {
         
+        browser.feeds = null;
+
+        
         browser.engines = null;
       }
 
@@ -4931,6 +4969,7 @@ var XULBrowserWindow = {
   },
 
   asyncUpdateUI() {
+    FeedHandler.updateFeeds();
     BrowserSearch.updateOpenSearchBadge();
   },
 
@@ -7666,7 +7705,9 @@ function switchToTabHavingURI(aURI, aOpenNew, aOpenParams = {}) {
         }
 
         if (ignoreFragment == "whenComparingAndReplace" || replaceQueryString) {
-          browser.loadURI(aURI.spec);
+          browser.loadURI(aURI.spec, {
+            triggeringPrincipal: aOpenParams.triggeringPrincipal || _createNullPrincipalFromTabUserContextId(),
+          });
         }
 
         if (!doAdopt) {

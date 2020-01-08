@@ -2960,7 +2960,11 @@ var SessionStoreInternal = {
     
     
     aTab.removeAttribute("crashed");
-    browser.loadURI("about:blank");
+    browser.loadURI("about:blank", {
+      triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({
+        userContextId: aTab.userContextId,
+      }),
+    });
 
     let data = TabState.collect(aTab, TAB_CUSTOM_VALUES.get(aTab));
     this.restoreTab(aTab, data, {
