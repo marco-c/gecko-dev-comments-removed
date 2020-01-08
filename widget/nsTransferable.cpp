@@ -39,18 +39,6 @@
 
 NS_IMPL_ISUPPORTS(nsTransferable, nsITransferable)
 
-size_t
-GetDataForFlavor(const nsTArray<DataStruct>& aArray, const char* aDataFlavor)
-{
-  for (size_t i = 0; i < aArray.Length(); ++i) {
-    if (aArray[i].GetFlavor().Equals(aDataFlavor)) {
-      return i;
-    }
-  }
-
-  return aArray.NoIndex;
-}
-
 DataStruct::DataStruct(DataStruct&& aRHS)
   : mData(aRHS.mData.forget())
   , mDataLen(aRHS.mDataLen)
@@ -235,6 +223,21 @@ nsTransferable::GetTransferDataFlavors(nsTArray<nsCString>& aFlavors)
   }
 }
 
+Maybe<size_t>
+nsTransferable::FindDataFlavor(const char* aFlavor)
+{
+  nsDependentCString flavor(aFlavor);
+
+  for (size_t i = 0; i < mDataArray.Length(); ++i) {
+    if (mDataArray[i].GetFlavor().Equals(flavor)) {
+      return Some(i);
+    }
+  }
+
+  return Nothing();
+}
+
+
 
 
 
@@ -255,33 +258,29 @@ nsTransferable::GetTransferData(const char* aFlavor,
   nsresult rv = NS_OK;
 
   
-  for (size_t i = 0; i < mDataArray.Length(); ++i) {
-    DataStruct& data = mDataArray.ElementAt(i);
-    if (data.GetFlavor().Equals(aFlavor)) {
-      nsCOMPtr<nsISupports> dataBytes;
-      uint32_t len;
-      data.GetData(getter_AddRefs(dataBytes), &len);
+  if (Maybe<size_t> index = FindDataFlavor(aFlavor)) {
+    nsCOMPtr<nsISupports> dataBytes;
+    uint32_t len;
+    mDataArray[index.value()].GetData(getter_AddRefs(dataBytes), &len);
 
-      
-      if (nsCOMPtr<nsIFlavorDataProvider> dataProvider =
-            do_QueryInterface(dataBytes)) {
-        rv = dataProvider->GetFlavorData(this, aFlavor,
-                                         getter_AddRefs(dataBytes), &len);
-        if (NS_FAILED(rv)) {
-          
-          break;
-        }
+    
+    if (nsCOMPtr<nsIFlavorDataProvider> dataProvider =
+          do_QueryInterface(dataBytes)) {
+      rv = dataProvider->GetFlavorData(this, aFlavor,
+                                       getter_AddRefs(dataBytes), &len);
+      if (NS_FAILED(rv)) {
+        dataBytes = nullptr;
+        
       }
-
-      if (dataBytes) {
-        *aDataLen = len;
-        dataBytes.forget(aData);
-        return NS_OK;
-      }
-
-      
-      break;
     }
+
+    if (dataBytes) {
+      *aDataLen = len;
+      dataBytes.forget(aData);
+      return NS_OK;
+    }
+
+    
   }
 
   
@@ -353,12 +352,10 @@ nsTransferable::SetTransferData(const char* aFlavor,
   MOZ_ASSERT(mInitialized);
 
   
-  for (size_t i = 0; i < mDataArray.Length(); ++i) {
-    DataStruct& data = mDataArray.ElementAt(i);
-    if (data.GetFlavor().Equals(aFlavor)) {
-      data.SetData(aData, aDataLen, mPrivateData);
-      return NS_OK;
-    }
+  if (Maybe<size_t> index = FindDataFlavor(aFlavor)) {
+    DataStruct& data = mDataArray.ElementAt(index.value());
+    data.SetData(aData, aDataLen, mPrivateData);
+    return NS_OK;
   }
 
   
@@ -402,13 +399,12 @@ nsTransferable::AddDataFlavor(const char* aDataFlavor)
 {
   MOZ_ASSERT(mInitialized);
 
-  if (GetDataForFlavor(mDataArray, aDataFlavor) != mDataArray.NoIndex) {
+  if (FindDataFlavor(aDataFlavor).isSome()) {
     return NS_ERROR_FAILURE;
   }
 
   
   mDataArray.AppendElement(DataStruct(aDataFlavor));
-
   return NS_OK;
 }
 
@@ -423,11 +419,11 @@ nsTransferable::RemoveDataFlavor(const char* aDataFlavor)
 {
   MOZ_ASSERT(mInitialized);
 
-  size_t idx = GetDataForFlavor(mDataArray, aDataFlavor);
-  if (idx != mDataArray.NoIndex) {
-    mDataArray.RemoveElementAt(idx);
+  if (Maybe<size_t> index = FindDataFlavor(aDataFlavor)) {
+    mDataArray.RemoveElementAt(index.value());
     return NS_OK;
   }
+
   return NS_ERROR_FAILURE;
 }
 
