@@ -72,19 +72,34 @@ class BuiltinCommands(object):
                 args = args[i+1:]
                 break
 
+        
         if not command:
             print("\n".join(all_commands))
             return
 
         handler = self.context.commands.command_handlers[command]
+        
         for arg in args:
             if arg in handler.subcommand_handlers:
                 handler = handler.subcommand_handlers[arg]
                 break
 
-        parser = handler.parser
         targets = sorted(handler.subcommand_handlers.keys())
-        if not is_help:
-            targets.append('help')
-            targets.extend(chain(*[action.option_strings for action in parser._actions]))
+        if is_help:
+            print("\n".join(targets))
+            return
+
+        targets.append('help')
+
+        
+        option_strings = [item[0] for item in handler.arguments]
+        
+        option_strings = [opt for opt in option_strings if opt[0].startswith('-')]
+        targets.extend(chain(*option_strings))
+
+        
+        if handler.parser:
+            targets.extend(chain(*[action.option_strings
+                                   for action in handler.parser._actions]))
+
         print("\n".join(targets))
