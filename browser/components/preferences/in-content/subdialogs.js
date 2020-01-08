@@ -279,6 +279,10 @@ SubDialog.prototype = {
       await aEvent.target.contentDocument.mozSubdialogReady;
     }
 
+    await this.resizeDialog();
+  },
+
+  async resizeDialog() {
     
     let docEl = this._frame.contentDocument.documentElement;
 

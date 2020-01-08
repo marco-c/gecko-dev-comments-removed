@@ -511,15 +511,20 @@ var gBrowserLanguagesDialog = {
   },
 
   showError() {
-    document.querySelectorAll(".warning-message-separator")
-      .forEach(separator => separator.classList.add("thin"));
     document.getElementById("warning-message").hidden = false;
     this._availableLocales.enableWithMessageId("browser-languages-select-language");
+
+    
+    requestAnimationFrame(() => {
+      let dialogs = window.opener.gSubDialog._dialogs;
+      let index = dialogs.findIndex(d => d._frame.contentDocument == document);
+      if (index != -1) {
+        dialogs[index].resizeDialog();
+      }
+    });
   },
 
   hideError() {
-    document.querySelectorAll(".warning-message-separator")
-      .forEach(separator => separator.classList.remove("thin"));
     document.getElementById("warning-message").hidden = true;
   },
 
