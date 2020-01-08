@@ -138,9 +138,9 @@
 #include "mozilla/widget/nsAutoRollup.h"
 #include "mozilla/widget/WinNativeEventData.h"
 #include "mozilla/widget/PlatformWidgetTypes.h"
-#include "nsStyleConsts.h"
+#include "nsThemeConstants.h"
 #include "nsBidiKeyboard.h"
-#include "nsStyleConsts.h"
+#include "nsThemeConstants.h"
 #include "gfxConfig.h"
 #include "InProcessWinCompositorWidget.h"
 #include "ScreenHelperWin.h"
@@ -5313,8 +5313,9 @@ nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
 
     case WM_SETTINGCHANGE:
     {
-      if (wParam == SPI_SETKEYBOARDDELAY) {
-        
+      if (wParam == SPI_SETCLIENTAREAANIMATION ||
+          
+          wParam == SPI_SETKEYBOARDDELAY) {
         NotifyThemeChanged();
         break;
       }
