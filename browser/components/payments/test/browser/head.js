@@ -412,14 +412,19 @@ async function navigateToAddAddressPage(frame, aOptions = {
 async function fillInBillingAddressForm(frame, aAddress) {
   
   
-  return fillInShippingAddressForm(frame, aAddress);
+  return fillInShippingAddressForm(frame, aAddress, {
+    expectedSelectedStateKey: ["basic-card-page", "billingAddressGUID"],
+  });
 }
 
 async function fillInShippingAddressForm(frame, aAddress, aOptions) {
   let address = Object.assign({}, aAddress);
   
   delete address.email;
-  return fillInAddressForm(frame, address, aOptions);
+  return fillInAddressForm(frame, address, {
+    expectedSelectedStateKey: ["selectedShippingAddress"],
+    ...aOptions,
+  });
 }
 
 async function fillInPayerAddressForm(frame, aAddress) {
@@ -431,12 +436,29 @@ async function fillInPayerAddressForm(frame, aAddress) {
     }
     delete address[fieldName];
   }
-  return fillInAddressForm(frame, address);
+  return fillInAddressForm(frame, address, {
+    expectedSelectedStateKey: ["selectedPayerAddress"],
+  });
 }
+
+
+
+
+
+
+
+
 
 async function fillInAddressForm(frame, aAddress, aOptions = {}) {
   await spawnPaymentDialogTask(frame, async (args) => {
     let {address, options = {}} = args;
+
+    if (options.expectedSelectedStateKey) {
+      let store = Cu.waiveXrays(content.document.querySelector("address-form")).requestStore;
+      Assert.deepEqual(store.getState()["address-page"].selectedStateKey,
+                       options.expectedSelectedStateKey,
+                       "Check address page selectedStateKey");
+    }
 
     if (typeof(address.country) != "undefined") {
       

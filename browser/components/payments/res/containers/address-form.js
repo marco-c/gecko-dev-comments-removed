@@ -44,10 +44,17 @@ export default class AddressForm extends PaymentStateSubscriberMixin(PaymentRequ
     this.persistCheckbox = new LabelledCheckbox();
     this.persistCheckbox.className = "persist-checkbox";
 
+    
     this._errorFieldMap = {
       addressLine: "#street-address",
       city: "#address-level2",
       country: "#country",
+      email: "#email",
+      
+      
+      
+      
+      name: "#family-name",
       organization: "#organization",
       phone: "#tel",
       postalCode: "#postal-code",
@@ -82,7 +89,7 @@ export default class AddressForm extends PaymentStateSubscriberMixin(PaymentRequ
     this.promiseReady.then(form => {
       this.body.appendChild(form);
 
-      let record = {};
+      let record = undefined;
       this.formHandler = new EditAddress({
         form,
       }, record, {
@@ -121,7 +128,6 @@ export default class AddressForm extends PaymentStateSubscriberMixin(PaymentRequ
     let {
       page,
       "address-page": addressPage,
-      request,
     } = state;
 
     if (this.id && page && page.id !== this.id) {
@@ -179,11 +185,14 @@ export default class AddressForm extends PaymentStateSubscriberMixin(PaymentRequ
     
     this.updateRequiredState();
 
-    let shippingAddressErrors = request.paymentDetails.shippingAddressErrors;
+    
+    let merchantFieldErrors = AddressForm.merchantFieldErrorsForForm(state,
+                                                                     addressPage.selectedStateKey);
     for (let [errorName, errorSelector] of Object.entries(this._errorFieldMap)) {
       let container = this.form.querySelector(errorSelector + "-container");
       let field = this.form.querySelector(errorSelector);
-      let errorText = (shippingAddressErrors && shippingAddressErrors[errorName]) || "";
+      
+      let errorText = (editing && merchantFieldErrors && merchantFieldErrors[errorName]) || "";
       field.setCustomValidity(errorText);
       let span = PaymentDialog.maybeCreateFieldErrorElement(container);
       span.textContent = errorText;
@@ -367,6 +376,34 @@ export default class AddressForm extends PaymentStateSubscriberMixin(PaymentRequ
           error: this.dataset.errorGenericSave,
         },
       });
+    }
+  }
+
+  
+
+
+
+
+
+
+
+  static merchantFieldErrorsForForm(state, stateKey) {
+    let {paymentDetails} = state.request;
+    switch (stateKey.join("|")) {
+      case "selectedShippingAddress": {
+        return paymentDetails.shippingAddressErrors;
+      }
+      case "selectedPayerAddress": {
+        return paymentDetails.payer;
+      }
+      case "basic-card-page|billingAddressGUID": {
+        
+        return (paymentDetails.paymentMethod
+                && paymentDetails.paymentMethod.billingAddress) || {};
+      }
+      default: {
+        throw new Error("Unknown selectedStateKey");
+      }
     }
   }
 }
