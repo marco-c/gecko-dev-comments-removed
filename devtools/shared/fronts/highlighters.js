@@ -4,12 +4,14 @@
 "use strict";
 
 const { FrontClassWithSpec, custom } = require("devtools/shared/protocol");
+const flags = require("devtools/shared/flags");
 const {
   customHighlighterSpec,
   highlighterSpec,
 } = require("devtools/shared/specs/highlighters");
 
 const HighlighterFront = FrontClassWithSpec(highlighterSpec, {
+  isNodeFrontHighlighted: false,
   
   form: function(json) {
     this.actorID = json.actor;
@@ -25,6 +27,44 @@ const HighlighterFront = FrontClassWithSpec(highlighterSpec, {
   }, {
     impl: "_pick",
   }),
+
+  
+
+
+
+
+
+
+
+  highlight: async function(nodeFront, options = {}) {
+    if (!nodeFront) {
+      return;
+    }
+
+    this.isNodeFrontHighlighted = true;
+    await this.showBoxModel(nodeFront, options);
+    this.emit("node-highlight", nodeFront);
+  },
+
+  
+
+
+
+
+
+
+
+
+  unhighlight: async function(forceHide = false) {
+    forceHide = forceHide || !flags.testing;
+
+    if (this.isNodeFrontHighlighted && forceHide) {
+      this.isNodeFrontHighlighted = false;
+      await this.hideBoxModel();
+    }
+
+    this.emit("node-unhighlight");
+  },
 });
 
 exports.HighlighterFront = HighlighterFront;

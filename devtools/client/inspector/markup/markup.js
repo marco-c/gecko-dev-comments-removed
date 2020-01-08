@@ -455,7 +455,7 @@ MarkupView.prototype = {
 
 
   _showBoxModel: function(nodeFront) {
-    return this.toolbox.highlighterUtils.highlightNodeFront(nodeFront)
+    return this.toolbox.highlighter.highlight(nodeFront)
       .catch(this._handleRejectionIfNotDestroyed);
   },
 
@@ -469,7 +469,7 @@ MarkupView.prototype = {
 
 
   _hideBoxModel: function(forceHide) {
-    return this.toolbox.highlighterUtils.unhighlight(forceHide)
+    return this.toolbox.highlighter.unhighlight(forceHide)
       .catch(this._handleRejectionIfNotDestroyed);
   },
 

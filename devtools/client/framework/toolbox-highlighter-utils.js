@@ -5,7 +5,6 @@
 "use strict";
 
 const promise = require("promise");
-const flags = require("devtools/shared/flags");
 
 
 
@@ -37,10 +36,6 @@ exports.getHighlighterUtils = function(toolbox) {
 
   
   let isPicking = false;
-
-  
-  
-  let isNodeFrontHighlighted = false;
 
   
 
@@ -177,50 +172,6 @@ exports.getHighlighterUtils = function(toolbox) {
     cancelPicker();
     toolbox.win.focus();
   }
-
-  
-
-
-
-
-
-
-
-  exported.highlightNodeFront = requireInspector(
-  async function(nodeFront, options = {}) {
-    if (!nodeFront) {
-      return;
-    }
-
-    isNodeFrontHighlighted = true;
-    await toolbox.highlighter.showBoxModel(nodeFront, options);
-
-    toolbox.emit("node-highlight", nodeFront);
-  });
-
-  
-
-
-
-
-
-
-
-
-  exported.unhighlight = async function(forceHide = false) {
-    forceHide = forceHide || !flags.testing;
-
-    if (isNodeFrontHighlighted && forceHide && toolbox.highlighter) {
-      isNodeFrontHighlighted = false;
-      await toolbox.highlighter.hideBoxModel();
-    }
-
-    
-    
-    if (toolbox) {
-      toolbox.emit("node-unhighlight");
-    }
-  };
 
   
 

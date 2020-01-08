@@ -183,7 +183,7 @@ add_task(async function testSidebarDOMNodeHighlighting() {
   
   info("Highlight the node by moving the cursor on it");
 
-  const onNodeHighlight = toolbox.once("node-highlight");
+  const onNodeHighlight = toolbox.highlighter.once("node-highlight");
 
   moveMouseOnObjectInspectorDOMNode(sidebarPanelContent);
 
@@ -192,7 +192,7 @@ add_task(async function testSidebarDOMNodeHighlighting() {
 
   
   info("Unhighlight the node by moving away from the node");
-  const onNodeUnhighlight = toolbox.once("node-unhighlight");
+  const onNodeUnhighlight = toolbox.highlighter.once("node-unhighlight");
 
   moveMouseOnPanelCenter(sidebarPanelContent);
 
@@ -216,8 +216,8 @@ add_task(async function testSidebarDOMNodeOpenInspector() {
 
   
   
-  const onNodeHighlight = toolbox.once("node-highlight");
-  const onNodeUnhighlight = toolbox.once("node-unhighlight");
+  const onNodeHighlight = toolbox.highlighter.once("node-highlight");
+  const onNodeUnhighlight = toolbox.highlighter.once("node-unhighlight");
   onceNewNodeFront = inspector.selection.once("new-node-front");
 
   clickOpenInspectorIcon(sidebarPanelContent);

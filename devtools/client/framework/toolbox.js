@@ -2379,7 +2379,7 @@ Toolbox.prototype = {
     
     if (this.rootFrameSelected) {
       const frameActor = await this.walker.getNodeActorFromWindowID(frameId);
-      this.highlighterUtils.highlightNodeFront(frameActor);
+      this.highlighter.highlight(frameActor);
     }
   },
 
