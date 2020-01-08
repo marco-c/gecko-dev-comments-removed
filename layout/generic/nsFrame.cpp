@@ -3221,8 +3221,8 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
                                         : containerItemASR;
       
       resultList.AppendToTop(
-          MakeDisplayItem<nsDisplayMask>(aBuilder, this, &resultList, !useOpacity,
-                                       maskASR));
+        MakeDisplayItem<nsDisplayMasksAndClipPaths>(aBuilder, this, &resultList,
+                                                    !useOpacity, maskASR));
     }
 
     
