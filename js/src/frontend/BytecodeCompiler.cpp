@@ -799,7 +799,7 @@ frontend::CompileLazyFunction(JSContext* cx, Handle<LazyScript*> lazy, const cha
     
     
     if (!lazy->scriptSource()->parseEnded().IsNull()) {
-        const mozilla::TimeDuration delta = mozilla::TimeStamp::Now() -
+        const mozilla::TimeDuration delta = ReallyNow() -
             lazy->scriptSource()->parseEnded();
 
         

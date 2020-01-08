@@ -1547,7 +1547,7 @@ static inline
 TimeDuration
 TimeSince(TimeStamp prev)
 {
-    TimeStamp now = TimeStamp::Now();
+    TimeStamp now = ReallyNow();
     
     MOZ_ASSERT(now >= prev);
     if (now < prev)
