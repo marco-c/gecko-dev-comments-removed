@@ -113,6 +113,13 @@ add_task(async function test_MatchPattern_matches() {
   pass({url: "http://mozilla.org/base#some-fragment", pattern: "http://mozilla.org/base"});
 
   
+  pass({url: "data:text/plain,foo", pattern: ["data:text/plain,foo"]});
+  pass({url: "data:text/plain,foo", pattern: ["data:text/plain,*"]});
+  pass({url: "data:text/plain;charset=utf-8,foo", pattern: ["data:text/plain;charset=utf-8,foo"]});
+  fail({url: "data:text/plain,foo", pattern: ["data:text/plain;charset=utf-8,foo"]});
+  fail({url: "data:text/plain;charset=utf-8,foo", pattern: ["data:text/plain,foo"]});
+
+  
   invalid({pattern: "about:foo"});
   invalid({pattern: "resource://foo/*"});
 
@@ -126,6 +133,7 @@ add_task(async function test_MatchPattern_matches() {
 
   
   pass({url: "about:reader?http://e.com/", pattern: ["about:reader*"], options: {ignorePath: true, restrictSchemes: false}});
+  pass({url: "data:,", pattern: ["data:,*"], options: {ignorePath: true}});
 });
 
 add_task(async function test_MatchPattern_overlaps() {

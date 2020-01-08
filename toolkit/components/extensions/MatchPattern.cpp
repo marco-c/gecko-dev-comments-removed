@@ -327,7 +327,7 @@ MatchPattern::Init(JSContext* aCx, const nsAString& aPattern, bool aIgnorePath,
   offset = index + 1;
   tail.Rebind(aPattern, offset);
 
-  if (scheme == nsGkAtoms::about) {
+  if (scheme == nsGkAtoms::about || scheme == nsGkAtoms::data) {
     
     
     mMatchSubdomain = true;
