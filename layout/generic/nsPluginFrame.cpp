@@ -1340,7 +1340,7 @@ bool nsPluginFrame::CreateWebRenderCommands(
   
   LayoutDeviceRect dest(r.x, r.y, size.width, size.height);
   aManager->CommandBuilder().PushImage(aItem, container, aBuilder, aResources,
-                                       aSc, dest);
+                                       aSc, dest, dest);
   return true;
 }
 
