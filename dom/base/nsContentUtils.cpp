@@ -2939,6 +2939,7 @@ nsContentUtils::GenerateStateKey(nsIContent* aContent,
       KeyAppendInt(control->ControlType(), aKey);
 
       
+      int32_t index = -1;
       Element *formElement = control->GetFormElement();
       if (formElement) {
         if (IsAutocompleteOff(formElement)) {
@@ -2949,7 +2950,7 @@ nsContentUtils::GenerateStateKey(nsIContent* aContent,
         KeyAppendString(NS_LITERAL_CSTRING("f"), aKey);
 
         
-        int32_t index = htmlForms->IndexOf(formElement, false);
+        index = htmlForms->IndexOf(formElement, false);
         if (index <= -1) {
           
           
@@ -2990,7 +2991,7 @@ nsContentUtils::GenerateStateKey(nsIContent* aContent,
 
         
         
-        int32_t index = htmlFormControls->IndexOf(aContent, true);
+        index = htmlFormControls->IndexOf(aContent, true);
         if (index > -1) {
           KeyAppendInt(index, aKey);
           generatedUniqueKey = true;
@@ -6509,9 +6510,10 @@ nsContentUtils::WrapNative(JSContext *cx, nsISupports *native,
     MOZ_CRASH();
   }
 
+  nsresult rv = NS_OK;
   JS::Rooted<JSObject*> scope(cx, JS::CurrentGlobalOrNull(cx));
-  nsresult rv = sXPConnect->WrapNativeToJSVal(cx, scope, native, cache, aIID,
-                                              aAllowWrapping, vp);
+  rv = sXPConnect->WrapNativeToJSVal(cx, scope, native, cache, aIID,
+                                     aAllowWrapping, vp);
   return rv;
 }
 
@@ -6950,8 +6952,7 @@ nsContentUtils::FindInternalContentViewer(const nsACString& aType,
 
   nsCString contractID;
   nsresult rv = catMan->GetCategoryEntry("Gecko-Content-Viewers",
-                                         PromiseFlatCString(aType).get(),
-                                         getter_Copies(contractID));
+                                         aType, contractID);
   if (NS_SUCCEEDED(rv)) {
     docFactory = do_GetService(contractID.get());
     if (docFactory && aLoaderType) {

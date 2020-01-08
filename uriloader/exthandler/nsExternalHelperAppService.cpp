@@ -2693,8 +2693,7 @@ nsExternalHelperAppService::GetTypeFromExtension(const nsACString& aFileExt,
     
     nsCString type;
     nsresult rv = catMan->GetCategoryEntry("ext-to-type-mapping",
-                                           lowercaseFileExt.get(),
-                                           getter_Copies(type));
+                                           lowercaseFileExt, type);
     if (NS_SUCCEEDED(rv)) {
       aContentType = type;
       return NS_OK;
