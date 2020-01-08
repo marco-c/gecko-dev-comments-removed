@@ -150,10 +150,6 @@ private:
   nsMargin GetAdjustedValuesForBoxSizing();
 
   
-  already_AddRefed<CSSValue> CreateTextAlignValue(uint8_t aAlign,
-                                                  bool aAlignTrue,
-                                                  const KTableEntry aTable[]);
-  
   void UpdateCurrentStyleSources(bool aNeedsLayoutFlush);
   void ClearCurrentStyleSources();
 

@@ -1640,8 +1640,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleText
 
   uint8_t mTextAlign;                   
   uint8_t mTextAlignLast;               
-  bool mTextAlignTrue : 1;
-  bool mTextAlignLastTrue : 1;
   mozilla::StyleTextJustify mTextJustify;
   uint8_t mTextTransform;               
   mozilla::StyleWhiteSpace mWhiteSpace;
