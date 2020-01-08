@@ -1608,5 +1608,50 @@ ProfileBuffer::DuplicateLastSample(int aThreadId,
   return true;
 }
 
+void
+ProfileBuffer::DiscardSamplesBeforeTime(double aTime)
+{
+  EntryGetter e(*this);
+  for (;;) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    while (e.Has()) {
+      if (e.Get().IsThreadId()) {
+        break;
+      } else {
+        e.Next();
+      }
+    }
+
+    if (!e.Has()) {
+      break;
+    }
+
+    MOZ_RELEASE_ASSERT(e.Get().IsThreadId());
+    uint64_t sampleStartPos = e.CurPos();
+    e.Next();
+
+    if (e.Has() && e.Get().IsTime()) {
+      double sampleTime = e.Get().u.mDouble;
+
+      if (sampleTime >= aTime) {
+        
+        
+        mRangeStart = sampleStartPos;
+        return;
+      }
+    }
+  }
+}
+
 
 

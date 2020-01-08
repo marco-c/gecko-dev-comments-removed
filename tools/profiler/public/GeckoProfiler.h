@@ -243,6 +243,7 @@ bool IsThreadBeingProfiled();
 # define PROFILER_DEFAULT_ENTRIES 100000
 #endif
 
+#define PROFILER_DEFAULT_DURATION 20
 #define PROFILER_DEFAULT_INTERVAL 1
 
 
@@ -273,8 +274,10 @@ void profiler_shutdown();
 
 
 
+
 void profiler_start(uint32_t aCapacity, double aInterval, uint32_t aFeatures,
-                    const char** aFilters, uint32_t aFilterCount);
+                    const char** aFilters, uint32_t aFilterCount,
+                    const mozilla::Maybe<double>& aDuration = mozilla::Nothing());
 
 
 
@@ -287,7 +290,8 @@ void profiler_stop();
 
 void profiler_ensure_started(uint32_t aCapacity, double aInterval,
                              uint32_t aFeatures, const char** aFilters,
-                             uint32_t aFilterCount);
+                             uint32_t aFilterCount,
+                             const mozilla::Maybe<double>& aDuration = mozilla::Nothing());
 
 
 
@@ -425,8 +429,8 @@ bool profiler_feature_active(uint32_t aFeature);
 
 
 
-void profiler_get_start_params(int* aEntrySize, double* aInterval,
-                               uint32_t* aFeatures,
+void profiler_get_start_params(int* aEntrySize, mozilla::Maybe<double>* aDuration,
+                               double* aInterval, uint32_t* aFeatures,
                                mozilla::Vector<const char*, 0,
                                                mozilla::MallocAllocPolicy>*
                                  aFilters);
