@@ -212,9 +212,7 @@ void
 PreallocatedProcessManagerImpl::RemoveBlocker(ContentParent* aParent)
 {
   uint64_t childID = aParent->ChildID();
-  
-  
-  
+  MOZ_ASSERT(mBlockers.Contains(childID));
   mBlockers.RemoveEntry(childID);
   if (!mPreallocatedProcess && mBlockers.IsEmpty()) {
     AllocateAfterDelay();
