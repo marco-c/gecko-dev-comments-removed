@@ -19,7 +19,6 @@
 #include "nsIDocShell.h"
 #include "nsIDocumentLoader.h"
 #include "nsIDOMWindow.h"
-#include "nsIDOMOfflineResourceList.h"
 #include "nsIDocument.h"
 #include "nsIObserverService.h"
 #include "nsIURL.h"
@@ -503,11 +502,10 @@ nsOfflineCacheUpdateService::Schedule(nsIURI *aManifestURI,
     nsresult rv;
 
     if (aWindow) {
-      
-      
-      
-      nsCOMPtr<nsIDOMOfflineResourceList> appCacheWindowObject =
-          aWindow->GetApplicationCache();
+        
+        
+        
+        aWindow->GetApplicationCache();
     }
 
     rv = update->Init(aManifestURI, aDocumentURI, aLoadingPrincipal, aDocument,

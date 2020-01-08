@@ -17,7 +17,7 @@
 #include "nsHistory.h"
 #include "nsDOMNavigationTiming.h"
 #include "nsIDOMStorageManager.h"
-#include "mozilla/AutoplayPermissionManager.h"
+#include "mozilla/dom/AutoplayRequest.h"
 #include "mozilla/dom/DOMJSProxyHandler.h"
 #include "mozilla/dom/DOMPrefs.h"
 #include "mozilla/dom/EventTarget.h"
@@ -111,7 +111,6 @@
 #include "nsIDocShell.h"
 #include "nsIDocument.h"
 #include "Crypto.h"
-#include "nsIDOMOfflineResourceList.h"
 #include "nsDOMString.h"
 #include "nsIEmbeddingSiteWindow.h"
 #include "nsThreadUtils.h"
@@ -3134,7 +3133,7 @@ nsGlobalWindowInner::DeviceSensorsEnabled(JSContext* aCx, JSObject* aObj)
   return Preferences::GetBool("device.sensors.enabled");
 }
 
-nsIDOMOfflineResourceList*
+nsDOMOfflineResourceList*
 nsGlobalWindowInner::GetApplicationCache(ErrorResult& aError)
 {
   if (!mApplicationCache) {
@@ -3165,14 +3164,10 @@ nsGlobalWindowInner::GetApplicationCache(ErrorResult& aError)
   return mApplicationCache;
 }
 
-already_AddRefed<nsIDOMOfflineResourceList>
+nsDOMOfflineResourceList*
 nsGlobalWindowInner::GetApplicationCache()
 {
-  ErrorResult dummy;
-  nsCOMPtr<nsIDOMOfflineResourceList> applicationCache =
-    GetApplicationCache(dummy);
-  dummy.SuppressException();
-  return applicationCache.forget();
+  return GetApplicationCache(IgnoreErrors());
 }
 
 Crypto*
@@ -5886,8 +5881,7 @@ nsGlobalWindowInner::Observe(nsISupports* aSubject, const char* aTopic,
     
     
     
-    nsCOMPtr<nsIDOMOfflineResourceList> applicationCache = GetApplicationCache();
-    nsCOMPtr<nsIObserver> observer = do_QueryInterface(applicationCache);
+    nsCOMPtr<nsIObserver> observer = GetApplicationCache();
     if (observer)
       observer->Observe(aSubject, aTopic, aData);
 
@@ -8182,21 +8176,19 @@ GetTopLevelInnerWindow(nsPIDOMWindowInner* aWindow)
   return rootTreeItem->GetDocument()->GetInnerWindow();
 }
 
-already_AddRefed<mozilla::AutoplayPermissionManager>
-nsPIDOMWindowInner::GetAutoplayPermissionManager()
+already_AddRefed<mozilla::AutoplayRequest>
+nsPIDOMWindowInner::GetAutoplayRequest()
 {
   
   nsPIDOMWindowInner* window = GetTopLevelInnerWindow(this);
   if (!window) {
     return nullptr;
   }
-  if (!window->mAutoplayPermissionManager) {
-    window->mAutoplayPermissionManager =
-      new AutoplayPermissionManager(nsGlobalWindowInner::Cast(window));
+  if (!window->mAutoplayRequest) {
+    window->mAutoplayRequest = AutoplayRequest::Create(nsGlobalWindowInner::Cast(window));
   }
-  RefPtr<mozilla::AutoplayPermissionManager> manager =
-    window->mAutoplayPermissionManager;
-  return manager.forget();
+  RefPtr<mozilla::AutoplayRequest> request = window->mAutoplayRequest;
+  return request.forget();
 }
 
 

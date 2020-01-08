@@ -22,6 +22,7 @@
 #define DOM_WINDOW_FROZEN_TOPIC "dom-window-frozen"
 #define DOM_WINDOW_THAWED_TOPIC "dom-window-thawed"
 
+class nsDOMOfflineResourceList;
 class nsDOMWindowList;
 class nsGlobalWindowInner;
 class nsGlobalWindowOuter;
@@ -45,7 +46,7 @@ typedef uint32_t SuspendTypes;
 
 namespace mozilla {
 class ThrottledEventQueue;
-class AutoplayPermissionManager;
+class AutoplayRequest;
 namespace dom {
 class AudioContext;
 class ClientInfo;
@@ -614,7 +615,7 @@ public:
 
   virtual mozilla::dom::Element* GetFrameElement() = 0;
 
-  virtual already_AddRefed<nsIDOMOfflineResourceList> GetApplicationCache() = 0;
+  virtual nsDOMOfflineResourceList* GetApplicationCache() = 0;
 
   virtual bool GetFullScreen() = 0;
 
@@ -627,8 +628,7 @@ public:
 
   
   
-  already_AddRefed<mozilla::AutoplayPermissionManager>
-  GetAutoplayPermissionManager();
+  already_AddRefed<mozilla::AutoplayRequest> GetAutoplayRequest();
 
 protected:
   void CreatePerformanceObjectIfNeeded();
@@ -716,7 +716,7 @@ protected:
   
   
   
-  RefPtr<mozilla::AutoplayPermissionManager> mAutoplayPermissionManager;
+  RefPtr<mozilla::AutoplayRequest> mAutoplayRequest;
 
   
   
