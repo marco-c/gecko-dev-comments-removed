@@ -11,7 +11,7 @@ use euclid::vec2;
 use display_list_flattener::DisplayListFlattener;
 use gpu_types::{BorderInstance, BorderSegment, BrushFlags};
 use prim_store::{BorderSegmentInfo, BrushSegment, NinePatchDescriptor};
-use prim_store::{EdgeAaSegmentMask, PrimitiveContainer, ScrollNodeAndClipChain};
+use prim_store::{EdgeAaSegmentMask, ScrollNodeAndClipChain, PrimitiveKeyKind};
 use util::{lerp, RectHelpers};
 
 
@@ -117,6 +117,18 @@ pub struct NormalBorderAu {
     pub do_aa: bool,
 }
 
+impl NormalBorderAu {
+    
+    pub fn with_color(&self, color: ColorU) -> Self {
+        let mut b = self.clone();
+        b.left.color = color;
+        b.right.color = color;
+        b.top.color = color;
+        b.bottom.color = color;
+        b
+    }
+}
+
 impl From<NormalBorder> for NormalBorderAu {
     fn from(border: NormalBorder) -> Self {
         NormalBorderAu {
@@ -217,9 +229,9 @@ impl<'a> DisplayListFlattener<'a> {
             clip_and_scroll,
             info,
             Vec::new(),
-            PrimitiveContainer::NormalBorder {
-                border,
-                widths,
+            PrimitiveKeyKind::NormalBorder {
+                border: border.into(),
+                widths: widths.to_au(),
             },
         );
     }
