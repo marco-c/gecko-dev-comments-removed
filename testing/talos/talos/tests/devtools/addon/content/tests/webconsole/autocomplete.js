@@ -71,6 +71,6 @@ function setJsTermValueForCompletion(jsterm, value) {
   
   
   jsterm.setInputValue(value);
-  jsterm.fetchAutocompletionProperties();
+  jsterm.props.autocompleteUpdate();
 }
 
