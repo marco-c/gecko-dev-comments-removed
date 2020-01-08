@@ -55,110 +55,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #define DEFINE_STATIC_ATOM_SUBCLASS(name_)                   \
   class name_ : public nsStaticAtom                          \
   {                                                          \
@@ -185,6 +81,13 @@ namespace detail {
 struct GkAtoms
 {
   
+  
+  
+  
+  
+  
+  
+  
   #define GK_ATOM(name_, value_, hash_, type_, atom_type_) \
     const char16_t name_##_string[sizeof(value_)];
   #include "nsGkAtomList.h"
@@ -192,6 +95,12 @@ struct GkAtoms
 
   
   enum class Atoms {
+    
+    
+    
+    
+    
+    
     #define GK_ATOM(name_, value_, hash_, type_, atom_type_) \
       name_,
     #include "nsGkAtomList.h"
@@ -205,10 +114,15 @@ struct GkAtoms
 } 
 } 
 
+
 class nsGkAtoms
 {
 private:
+  
+  
   static const nsStaticAtom* const sAtoms;
+
+  
   static constexpr size_t sAtomsLen =
     static_cast<size_t>(mozilla::detail::GkAtoms::Atoms::AtomsCount);
 
@@ -221,6 +135,12 @@ public:
     return const_cast<nsStaticAtom*>(&sAtoms[aIndex]);
   }
 
+  
+  
+  
+  
+  
+  
   
   
   
