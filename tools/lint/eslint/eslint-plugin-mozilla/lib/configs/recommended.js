@@ -64,6 +64,7 @@ module.exports = {
     
     "StopIteration": false,
     "StructuredCloneHolder": false,
+    "TelemetryStopwatch": false,
     "WebAssembly": false,
     "WebExtensionContentScript": false,
     "WebExtensionPolicy": false,
