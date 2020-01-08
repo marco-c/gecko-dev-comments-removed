@@ -94,6 +94,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(AudioContext)
   
   
   
+  
 
   
   
@@ -111,6 +112,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(AudioContext,
                "Online AudioContexts should always be started");
     NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mActiveNodes)
   }
+  
   
   
   
@@ -653,6 +655,29 @@ AudioContext::UnregisterActiveNode(AudioNode* aNode)
   mActiveNodes.RemoveEntry(aNode);
 }
 
+void
+AudioContext::UnregisterAudioBufferSourceNode(AudioBufferSourceNode* aNode)
+{
+  UpdatePannerSource();
+}
+
+void
+AudioContext::UnregisterPannerNode(PannerNode* aNode)
+{
+  mPannerNodes.RemoveEntry(aNode);
+  if (mListener) {
+    mListener->UnregisterPannerNode(aNode);
+  }
+}
+
+void
+AudioContext::UpdatePannerSource()
+{
+  for (auto iter = mPannerNodes.Iter(); !iter.Done(); iter.Next()) {
+    iter.Get()->GetKey()->FindConnectedSources();
+  }
+}
+
 uint32_t
 AudioContext::MaxChannelCount() const
 {
@@ -1177,6 +1202,7 @@ AudioContext::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
     amount += mDecodeJobs[i]->SizeOfIncludingThis(aMallocSizeOf);
   }
   amount += mActiveNodes.ShallowSizeOfExcludingThis(aMallocSizeOf);
+  amount += mPannerNodes.ShallowSizeOfExcludingThis(aMallocSizeOf);
   return amount;
 }
 

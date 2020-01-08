@@ -244,6 +244,9 @@ AudioNode::Connect(AudioNode& aDestination, uint32_t aOutput,
   }
   aDestination.NotifyInputsChanged();
 
+  
+  Context()->UpdatePannerSource();
+
   return &aDestination;
 }
 
@@ -451,6 +454,9 @@ AudioNode::Disconnect(ErrorResult& aRv)
                                                       return true;
                                                     });
   }
+
+  
+  Context()->UpdatePannerSource();
 }
 
 void
@@ -478,6 +484,9 @@ AudioNode::Disconnect(uint32_t aOutput, ErrorResult& aRv)
           return aInputNode.mOutputPort == aOutput;
         });
   }
+
+  
+  Context()->UpdatePannerSource();
 }
 
 void
@@ -501,6 +510,9 @@ AudioNode::Disconnect(AudioNode& aDestination, ErrorResult& aRv)
     aRv.Throw(NS_ERROR_DOM_INVALID_ACCESS_ERR);
     return;
   }
+
+  
+  Context()->UpdatePannerSource();
 }
 
 void
@@ -532,6 +544,9 @@ AudioNode::Disconnect(AudioNode& aDestination,
     aRv.Throw(NS_ERROR_DOM_INVALID_ACCESS_ERR);
     return;
   }
+
+  
+  Context()->UpdatePannerSource();
 }
 
 void
@@ -570,6 +585,9 @@ AudioNode::Disconnect(AudioNode& aDestination,
     aRv.Throw(NS_ERROR_DOM_INVALID_ACCESS_ERR);
     return;
   }
+
+  
+  Context()->UpdatePannerSource();
 }
 
 void
