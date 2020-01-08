@@ -471,14 +471,12 @@ PaymentRequest::IsValidDetailsUpdate(const PaymentDetailsUpdate& aDetails,
 {
   nsAutoString message;
   
-  if (aDetails.mTotal.WasPassed()) {
-    nsresult rv = IsValidCurrencyAmount(NS_LITERAL_STRING("details.total"),
-                                        aDetails.mTotal.Value().mAmount,
-                                        true, 
-                                        message);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
+  nsresult rv = IsValidCurrencyAmount(NS_LITERAL_STRING("details.total"),
+                                      aDetails.mTotal.mAmount,
+                                      true, 
+                                      message);
+  if (NS_FAILED(rv)) {
+    return rv;
   }
   return IsValidDetailsBase(aDetails, aRequestShipping, message);
 }
@@ -533,14 +531,12 @@ PaymentRequest::IsValidDetailsBase(const PaymentDetailsBase& aDetails,
       if (NS_FAILED(rv)) {
         return rv;
       }
-      if (modifier.mTotal.WasPassed()) {
-        rv = IsValidCurrencyAmount(NS_LITERAL_STRING("details.modifiers.total"),
-                                   modifier.mTotal.Value().mAmount,
-                                   true, 
-                                   aErrorMsg);
-        if (NS_FAILED(rv)) {
-          return rv;
-        }
+      rv = IsValidCurrencyAmount(NS_LITERAL_STRING("details.modifiers.total"),
+                                 modifier.mTotal.mAmount,
+                                 true, 
+                                 aErrorMsg);
+      if (NS_FAILED(rv)) {
+        return rv;
       }
       if (modifier.mAdditionalDisplayItems.WasPassed()) {
         const Sequence<PaymentItem>& displayItems = modifier.mAdditionalDisplayItems.Value();
