@@ -276,6 +276,8 @@ CompositorBridgeChild::InitForWidget(uint64_t aProcessToken,
 CompositorBridgeChild::Get()
 {
   
+  
+  
   MOZ_ASSERT(!XRE_IsParentProcess());
   return sCompositorBridge;
 }
