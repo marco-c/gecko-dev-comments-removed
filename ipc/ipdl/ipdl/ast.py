@@ -328,6 +328,7 @@ class TypeSpec(Node):
         self.spec = spec                
         self.array = 0                  
         self.nullable = 0               
+        self.uniqueptr = 0              
 
     def basename(self):
         return self.spec.baseid
