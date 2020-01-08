@@ -6115,8 +6115,7 @@ IonBuilder::compareTryBinaryStub(bool* emitted, MDefinition* left, MDefinition* 
     MOZ_ASSERT(*emitted == false);
 
     
-
-    if (JitOptions.disableSharedStubs)
+    if (JitOptions.disableCacheIR)
         return Ok();
 
     if (JSOp(*pc) == JSOP_CASE || IsCallPC(pc))
