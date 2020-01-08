@@ -1446,9 +1446,13 @@ Toolbox.prototype = {
 
     
     const selectedFrame = this.frameMap.get(this.selectedFrameId) || {};
-    this.frameButton.isChecked = selectedFrame.parentID != null;
+    const isVisible = this._commandIsVisible(this.frameButton);
 
-    this.frameButton.isVisible = this._commandIsVisible(this.frameButton);
+    this.frameButton.isVisible = isVisible;
+
+    if (isVisible) {
+      this.frameButton.isChecked = selectedFrame.parentID != null;
+    }
   },
 
   
