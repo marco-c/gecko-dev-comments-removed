@@ -358,6 +358,10 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
           .then(target => {
             
             return gDevTools.showToolbox(target, null, Toolbox.HostType.WINDOW);
+          })
+          .catch(e => {
+            console.error("Exception while opening the browser content toolbox:",
+              e);
           });
     }
 
