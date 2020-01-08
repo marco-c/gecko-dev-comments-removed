@@ -126,6 +126,7 @@ class Encoding;
 class ErrorResult;
 class EventStates;
 class EventListenerManager;
+class FullscreenExit;
 class FullscreenRequest;
 class PendingAnimationTracker;
 class ServoStyleSet;
@@ -1811,7 +1812,8 @@ public:
 
 
 
-  void RestorePreviousFullscreenState();
+  void RestorePreviousFullscreenState(
+    mozilla::UniquePtr<mozilla::FullscreenExit>);
 
   
 
@@ -3293,7 +3295,7 @@ public:
   {
     return !!GetFullscreenElement();
   }
-  void ExitFullscreen();
+  already_AddRefed<mozilla::dom::Promise> ExitFullscreen(ErrorResult&);
   void ExitPointerLock()
   {
     UnlockPointer(this);
