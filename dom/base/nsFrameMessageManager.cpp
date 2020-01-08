@@ -727,11 +727,13 @@ nsFrameMessageManager::ReceiveMessage(nsISupports* aTarget,
 
       JS::RootingContext* rcx = RootingCx();
       JS::Rooted<JSObject*> object(rcx);
+      JS::Rooted<JSObject*> nonCCWObject(rcx);
 
       RefPtr<MessageListener> webIDLListener;
       if (!weakListener) {
         webIDLListener = listener.mStrongListener;
         object = webIDLListener->CallbackOrNull();
+        nonCCWObject = webIDLListener->CallbackGlobalOrNull();
       } else {
         nsCOMPtr<nsIXPConnectWrappedJS> wrappedJS = do_QueryInterface(weakListener);
         if (!wrappedJS) {
@@ -739,6 +741,9 @@ nsFrameMessageManager::ReceiveMessage(nsISupports* aTarget,
         }
 
         object = wrappedJS->GetJSObject();
+        
+        
+        nonCCWObject = object;
       }
 
       if (!object) {
@@ -751,8 +756,7 @@ nsFrameMessageManager::ReceiveMessage(nsISupports* aTarget,
       
       
       
-      
-      JSAutoRealmAllowCCW ar(cx, object);
+      JSAutoRealm ar(cx, nonCCWObject);
 
       RootedDictionary<ReceiveMessageArgument> argument(cx);
 

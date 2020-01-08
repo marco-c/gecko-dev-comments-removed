@@ -377,7 +377,9 @@ nsXBLPrototypeHandler::ExecuteHandler(EventTarget* aTarget,
   NS_ENSURE_TRUE(bound, NS_ERROR_FAILURE);
 
   RefPtr<EventHandlerNonNull> handlerCallback =
-    new EventHandlerNonNull(nullptr, bound,  nullptr);
+    new EventHandlerNonNull(static_cast<JSContext*>(nullptr), bound,
+                            scopeObject,
+                             nullptr);
 
   TypedEventHandler typedHandler(handlerCallback);
 

@@ -56,6 +56,7 @@ public:
   
   
   explicit CallbackObject(JSContext* aCx, JS::Handle<JSObject*> aCallback,
+                          JS::Handle<JSObject*> aCallbackGlobal,
                           nsIGlobalObject* aIncumbentGlobal)
   {
     if (aCx && JS::ContextOptionsRef(aCx).asyncStack()) {
@@ -63,20 +64,21 @@ public:
       if (!JS::CaptureCurrentStack(aCx, &stack)) {
         JS_ClearPendingException(aCx);
       }
-      Init(aCallback, stack, aIncumbentGlobal);
+      Init(aCallback, aCallbackGlobal, stack, aIncumbentGlobal);
     } else {
-      Init(aCallback, nullptr, aIncumbentGlobal);
+      Init(aCallback, aCallbackGlobal, nullptr, aIncumbentGlobal);
     }
   }
 
   
   
   
-  explicit CallbackObject(JS::Handle<JSObject*> aCallback,
-                          JS::Handle<JSObject*> aAsyncStack,
+  explicit CallbackObject(JSObject* aCallback,
+                          JSObject* aCallbackGlobal,
+                          JSObject* aAsyncStack,
                           nsIGlobalObject* aIncumbentGlobal)
   {
-    Init(aCallback, aAsyncStack, aIncumbentGlobal);
+    Init(aCallback, aCallbackGlobal, aAsyncStack, aIncumbentGlobal);
   }
 
   
@@ -93,6 +95,12 @@ public:
     return CallbackPreserveColor();
   }
 
+  JSObject* CallbackGlobalOrNull() const
+  {
+    mCallbackGlobal.exposeToActiveJS();
+    return mCallbackGlobal;
+  }
+
   
   
   JSObject* Callback(JSContext* aCx);
@@ -105,6 +113,7 @@ public:
   void MarkForCC()
   {
     mCallback.exposeToActiveJS();
+    mCallbackGlobal.exposeToActiveJS();
     mCreationStack.exposeToActiveJS();
   }
 
@@ -165,7 +174,8 @@ protected:
 
   explicit CallbackObject(CallbackObject* aCallbackObject)
   {
-    Init(aCallbackObject->mCallback, aCallbackObject->mCreationStack,
+    Init(aCallbackObject->mCallback, aCallbackObject->mCallbackGlobal,
+         aCallbackObject->mCreationStack,
          aCallbackObject->mIncumbentGlobal);
   }
 
@@ -199,13 +209,17 @@ protected:
   };
 
 private:
-  inline void InitNoHold(JSObject* aCallback, JSObject* aCreationStack,
+  inline void InitNoHold(JSObject* aCallback, JSObject* aCallbackGlobal,
+                         JSObject* aCreationStack,
                          nsIGlobalObject* aIncumbentGlobal)
   {
     MOZ_ASSERT(aCallback && !mCallback);
-    
-    
+    MOZ_ASSERT(aCallbackGlobal);
+    MOZ_DIAGNOSTIC_ASSERT(js::GetObjectCompartment(aCallback) ==
+                          js::GetObjectCompartment(aCallbackGlobal));
+    MOZ_ASSERT(JS_IsGlobalObject(aCallbackGlobal));
     mCallback = aCallback;
+    mCallbackGlobal = aCallbackGlobal;
     mCreationStack = aCreationStack;
     if (aIncumbentGlobal) {
       mIncumbentGlobal = aIncumbentGlobal;
@@ -213,16 +227,20 @@ private:
     }
   }
 
-  inline void Init(JSObject* aCallback, JSObject* aCreationStack,
+  inline void Init(JSObject* aCallback, JSObject* aCallbackGlobal,
+                   JSObject* aCreationStack,
                    nsIGlobalObject* aIncumbentGlobal)
   {
-    InitNoHold(aCallback, aCreationStack, aIncumbentGlobal);
+    
+    
+    InitNoHold(aCallback, aCallbackGlobal, aCreationStack, aIncumbentGlobal);
     mozilla::HoldJSObjects(this);
   }
 
   inline void ClearJSReferences()
   {
     mCallback = nullptr;
+    mCallbackGlobal = nullptr;
     mCreationStack = nullptr;
     mIncumbentJSGlobal = nullptr;
   }
@@ -262,10 +280,11 @@ protected:
   
   
   
-  CallbackObject(JS::Handle<JSObject*> aCallback,
+  CallbackObject(JSObject* aCallback,
+                 JSObject* aCallbackGlobal,
                  const FastCallbackConstructor&)
   {
-    InitNoHold(aCallback, nullptr, nullptr);
+    InitNoHold(aCallback, aCallbackGlobal, nullptr, nullptr);
   }
 
   
@@ -273,6 +292,11 @@ protected:
   
   
   JS::Heap<JSObject*> mCallback;
+  
+  
+  
+  
+  JS::Heap<JSObject*> mCallbackGlobal;
   JS::Heap<JSObject*> mCreationStack;
   
   
@@ -330,7 +354,9 @@ protected:
     Maybe<AutoEntryScript> mAutoEntryScript;
     Maybe<AutoIncumbentScript> mAutoIncumbentScript;
 
-    Maybe<JS::Rooted<JSObject*> > mRootedCallable;
+    Maybe<JS::Rooted<JSObject*>> mRootedCallable;
+    
+    Maybe<JS::Rooted<JSObject*>> mRootedCallableGlobal;
 
     
     Maybe<JS::Rooted<JSObject*>> mAsyncStack;

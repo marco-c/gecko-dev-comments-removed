@@ -27,16 +27,18 @@ class CallbackFunction : public CallbackObject
 public:
   
   explicit CallbackFunction(JSContext* aCx, JS::Handle<JSObject*> aCallable,
+                            JS::Handle<JSObject*> aCallableGlobal,
                             nsIGlobalObject* aIncumbentGlobal)
-    : CallbackObject(aCx, aCallable, aIncumbentGlobal)
+    : CallbackObject(aCx, aCallable, aCallableGlobal, aIncumbentGlobal)
   {
   }
 
   
-  explicit CallbackFunction(JS::Handle<JSObject*> aCallable,
-                            JS::Handle<JSObject*> aAsyncStack,
+  explicit CallbackFunction(JSObject* aCallable,
+                            JSObject* aCallableGlobal,
+                            JSObject* aAsyncStack,
                             nsIGlobalObject* aIncumbentGlobal)
-    : CallbackObject(aCallable, aAsyncStack, aIncumbentGlobal)
+    : CallbackObject(aCallable, aCallableGlobal, aAsyncStack, aIncumbentGlobal)
   {
   }
 
@@ -63,9 +65,10 @@ protected:
   }
 
   
-  CallbackFunction(JS::Handle<JSObject*> aCallable,
+  CallbackFunction(JSObject* aCallable,
+                   JSObject* aCallableGlobal,
                    const FastCallbackConstructor&)
-    : CallbackObject(aCallable, FastCallbackConstructor())
+    : CallbackObject(aCallable, aCallableGlobal, FastCallbackConstructor())
   {
   }
 };

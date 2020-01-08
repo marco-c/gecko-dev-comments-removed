@@ -81,6 +81,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(CallbackObject)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN(CallbackObject)
   NS_IMPL_CYCLE_COLLECTION_TRACE_JS_MEMBER_CALLBACK(mCallback)
+  NS_IMPL_CYCLE_COLLECTION_TRACE_JS_MEMBER_CALLBACK(mCallbackGlobal)
   NS_IMPL_CYCLE_COLLECTION_TRACE_JS_MEMBER_CALLBACK(mCreationStack)
   NS_IMPL_CYCLE_COLLECTION_TRACE_JS_MEMBER_CALLBACK(mIncumbentJSGlobal)
 NS_IMPL_CYCLE_COLLECTION_TRACE_END
@@ -89,6 +90,7 @@ void
 CallbackObject::Trace(JSTracer* aTracer)
 {
   JS::TraceEdge(aTracer, &mCallback, "CallbackObject.mCallback");
+  JS::TraceEdge(aTracer, &mCallbackGlobal, "CallbackObject.mCallbackGlobal");
   JS::TraceEdge(aTracer, &mCreationStack, "CallbackObject.mCreationStack");
   JS::TraceEdge(aTracer, &mIncumbentJSGlobal,
                 "CallbackObject.mIncumbentJSGlobal");
@@ -239,6 +241,7 @@ CallbackObject::CallSetup::CallSetup(CallbackObject* aCallback,
   
   
   mRootedCallable.emplace(cx, aCallback->CallbackOrNull());
+  mRootedCallableGlobal.emplace(cx, aCallback->CallbackGlobalOrNull());
 
   mAsyncStack.emplace(cx, aCallback->GetCreationStack());
   if (*mAsyncStack) {
@@ -250,7 +253,7 @@ CallbackObject::CallSetup::CallSetup(CallbackObject* aCallback,
   
   
   
-  mAr.emplace(cx, *mRootedCallable);
+  mAr.emplace(cx, *mRootedCallableGlobal);
 
   
   mCx = cx;
