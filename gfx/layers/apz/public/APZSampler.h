@@ -45,6 +45,10 @@ class APZSampler {
  public:
   APZSampler(const RefPtr<APZCTreeManager>& aApz, bool aIsUsingWebRender);
 
+  
+  
+  void Destroy();
+
   void SetWebRenderWindowId(const wr::WindowId& aWindowId);
 
   
@@ -123,7 +127,8 @@ class APZSampler {
   
   
   static StaticMutex sWindowIdLock;
-  static StaticAutoPtr<std::unordered_map<uint64_t, APZSampler*>> sWindowIdMap;
+  static StaticAutoPtr<std::unordered_map<uint64_t, RefPtr<APZSampler>>>
+      sWindowIdMap;
   Maybe<wr::WrWindowId> mWindowId;
 
   
