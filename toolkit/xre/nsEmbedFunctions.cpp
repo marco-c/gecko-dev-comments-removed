@@ -295,10 +295,7 @@ XRE_SetRemoteExceptionHandler(const char* aPipe ,
 XRE_SetRemoteExceptionHandler(const char* aPipe )
 #endif
 {
-  
-  if (recordreplay::IsRecordingOrReplaying() || recordreplay::IsMiddleman()) {
-    return true;
-  }
+  recordreplay::AutoPassThroughThreadEvents pt;
 #if defined(XP_WIN)
   return CrashReporter::SetRemoteExceptionHandler(nsDependentCString(aPipe),
                                                   aCrashTimeAnnotationFile);
