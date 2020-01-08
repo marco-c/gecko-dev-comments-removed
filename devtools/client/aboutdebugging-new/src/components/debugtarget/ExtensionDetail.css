@@ -16,8 +16,8 @@
 
 .extension-detail {
   display: grid;
-  grid-template-columns: 120px auto;
-  margin-block-start: 4px;
+  grid-template-columns: auto 1fr;
+  grid-column-gap: calc(var(--base-distance) * 2);
 }
 
 .extension-detail__manifest {
