@@ -8,6 +8,7 @@ this.event = {};
 "use strict";
 
 
+
 ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 ChromeUtils.import("chrome://marionette/content/element.js");
@@ -319,6 +320,7 @@ function computeKeyCodeFromChar_(char, win) {
       return 0;
   }
 }
+
 
 
 
@@ -768,6 +770,7 @@ function expectEvent_(expectedTarget, expectedEvent, testName) {
   expectedTarget.addEventListener(type, handler);
   return handler;
 }
+
 
 
 

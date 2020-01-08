@@ -294,6 +294,9 @@ module.exports = {
     "no-new-wrappers": "error",
 
     
+    "no-restricted-globals": ["error", "event"],
+
+    
     "no-return-await": "error",
 
     
