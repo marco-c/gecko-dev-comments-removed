@@ -7890,9 +7890,9 @@ void PresShell::GetCurrentItemAndPositionForElement(
   
   
   
-  nsCOMPtr<nsIDOMXULSelectControlItemElement> item;
+  nsCOMPtr<Element> item;
   nsCOMPtr<nsIDOMXULMultiSelectControlElement> multiSelect =
-      do_QueryInterface(aFocusedElement);
+      aFocusedElement->AsXULMultiSelectControl();
   if (multiSelect) {
     checkLineHeight = false;
 
@@ -7939,10 +7939,10 @@ void PresShell::GetCurrentItemAndPositionForElement(
   } else {
     
     nsCOMPtr<nsIDOMXULMenuListElement> menulist =
-        do_QueryInterface(aFocusedElement);
+        aFocusedElement->AsXULMenuList();
     if (!menulist) {
       nsCOMPtr<nsIDOMXULSelectControlElement> select =
-          do_QueryInterface(aFocusedElement);
+          aFocusedElement->AsXULSelectControl();
       if (select) {
         checkLineHeight = false;
         select->GetSelectedItem(getter_AddRefs(item));
@@ -7950,7 +7950,9 @@ void PresShell::GetCurrentItemAndPositionForElement(
     }
   }
 
-  if (item) focusedContent = do_QueryInterface(item);
+  if (item) {
+    focusedContent = item;
+  }
 #endif
 
   nsIFrame* frame = focusedContent->GetPrimaryFrame();
