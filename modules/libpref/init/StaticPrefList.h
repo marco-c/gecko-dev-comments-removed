@@ -1563,6 +1563,16 @@ VARCACHE_PREF(
 )
 #undef PREF_VALUE
 
+
+
+#ifdef ANDROID
+VARCACHE_PREF(
+  "media.hls.max-allocations",
+   MediaHlsMaxAllocations,
+  uint32_t, 20
+)
+#endif
+
 #ifdef MOZ_FMP4
 # define PREF_VALUE true
 #else

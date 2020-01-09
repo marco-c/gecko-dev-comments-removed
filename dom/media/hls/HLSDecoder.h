@@ -16,8 +16,7 @@ class HLSResourceCallbacksSupport;
 
 class HLSDecoder final : public MediaDecoder {
  public:
-  
-  explicit HLSDecoder(MediaDecoderInit& aInit);
+  static RefPtr<HLSDecoder> Create(MediaDecoderInit& aInit);
 
   
   static bool IsEnabled();
@@ -29,6 +28,7 @@ class HLSDecoder final : public MediaDecoder {
 
   nsresult Load(nsIChannel* aChannel);
 
+  
   void Play() override;
 
   void Pause() override;
@@ -46,6 +46,8 @@ class HLSDecoder final : public MediaDecoder {
  private:
   friend class HLSResourceCallbacksSupport;
 
+  explicit HLSDecoder(MediaDecoderInit& aInit);
+  ~HLSDecoder();
   MediaDecoderStateMachine* CreateStateMachine();
 
   bool CanPlayThroughImpl() final {
@@ -53,6 +55,8 @@ class HLSDecoder final : public MediaDecoder {
     
     return true;
   }
+
+  static size_t sAllocatedInstances;  
 
   nsCOMPtr<nsIChannel> mChannel;
   nsCOMPtr<nsIURI> mURI;
