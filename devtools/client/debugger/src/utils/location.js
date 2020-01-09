@@ -4,7 +4,7 @@
 
 
 import { sortBy } from "lodash";
-import { getSelectedLocation } from "./source-maps";
+import { getSelectedLocation } from "./selected-location";
 
 import type {
   MappedLocation,

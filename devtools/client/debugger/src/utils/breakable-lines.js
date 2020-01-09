@@ -4,7 +4,7 @@
 
 
 
-import { getSelectedLocation } from "./source-maps";
+import { getSelectedLocation } from "./selected-location";
 import type { BreakpointPositions, Source } from "../types";
 
 export function findBreakableLines(
