@@ -5151,7 +5151,13 @@ void Database::RequestAllowToClose() {
   
   if (mActorDestroyed) {
     MOZ_ASSERT(mAllowedToClose);
-  } else if (NS_WARN_IF(!SendRequestAllowToClose())) {
+    return;
+  }
+
+  if (NS_WARN_IF(!SendRequestAllowToClose()) && !mSnapshot) {
+    
+    
+    
     
     AllowToClose();
   }
@@ -5161,6 +5167,7 @@ void Database::AllowToClose() {
   AssertIsOnBackgroundThread();
   MOZ_ASSERT(!mAllowedToClose);
   MOZ_ASSERT(mDatastore);
+  MOZ_ASSERT(!mSnapshot);
 
   mAllowedToClose = true;
 
