@@ -162,6 +162,9 @@ class HTMLFormatter(base.BaseFormatter):
                     if not isinstance(content, (six.text_type, six.binary_type)):
                         
                         content = json.dumps(content)
+                        
+                        if not isinstance(content, six.text_type):
+                            content = content.decode('utf-8')
                     
                     
                     if isinstance(content, six.text_type):
