@@ -38,6 +38,10 @@ class ExecutionContext {
     this._debugger.removeDebuggee(this._debuggee);
   }
 
+  hasRemoteObject(id) {
+    return this._remoteObjects.has(id);
+  }
+
   
 
 
@@ -90,7 +94,16 @@ class ExecutionContext {
     };
   }
 
-  async callFunctionOn(functionDeclaration, callArguments = [], returnByValue = false, awaitPromise = false) {
+  async callFunctionOn(functionDeclaration, callArguments = [], returnByValue = false, awaitPromise = false, objectId = null) {
+    
+    let thisArg = null;
+    if (objectId) {
+      thisArg = this._remoteObjects.get(objectId);
+      if (!thisArg) {
+        throw new Error(`Unable to get target object with id: ${objectId}`);
+      }
+    }
+
     
     const fun = this._debuggee.executeInGlobal("(" + functionDeclaration + ")");
     if (!fun) {
@@ -109,7 +122,7 @@ class ExecutionContext {
     const args = callArguments.map(arg => this._fromCallArgument(arg));
 
     
-    const rv = fun.return.apply(null, args);
+    const rv = fun.return.apply(thisArg, args);
     if (rv.throw) {
       return this._returnError(rv.throw);
     }
