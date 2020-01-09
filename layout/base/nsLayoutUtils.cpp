@@ -1715,41 +1715,33 @@ int32_t nsLayoutUtils::DoCompareTreePosition(
   int32_t index2 = parent->ComputeIndexOf(content2Ancestor);
 
   
-  
-  
-  if (index1 < 0) {
-    if (content1Ancestor->IsContent() &&
-        content1Ancestor->AsContent()->IsGeneratedContentContainerForAfter()) {
-      
-      MOZ_ASSERT(!content2Ancestor->IsContent() ||
-                 !content2Ancestor->AsContent()
-                      ->IsGeneratedContentContainerForAfter());
-      return 1;
-    }
-    if (index2 >= 0 || (content2Ancestor->IsContent() &&
-                        content2Ancestor->AsContent()
-                            ->IsGeneratedContentContainerForAfter())) {
-      
-      
-      return -1;
-    }
-    
-    return 0;
-  }
-  if (index2 < 0) {
-    
-    
-    if (content2Ancestor->IsContent() &&
-        content2Ancestor->AsContent()->IsGeneratedContentContainerForAfter()) {
-      MOZ_ASSERT(!content1Ancestor->IsContent() ||
-                 !content1Ancestor->AsContent()
-                      ->IsGeneratedContentContainerForAfter());
-      return -1;
-    }
-    return 1;
+  if (index1 >= 0 && index2 >= 0) {
+    return index1 - index2;
   }
 
-  return index1 - index2;
+  
+  
+  
+  auto PseudoIndex = [](const nsINode* aNode, int32_t aNodeIndex) -> int32_t {
+    if (aNodeIndex >= 0) {
+      return 1;  
+    }
+    if (aNode->IsContent()) {
+      if (aNode->AsContent()->IsGeneratedContentContainerForMarker()) {
+        return -2;
+      }
+      if (aNode->AsContent()->IsGeneratedContentContainerForBefore()) {
+        return -1;
+      }
+      if (aNode->AsContent()->IsGeneratedContentContainerForAfter()) {
+        return 2;
+      }
+    }
+    return 0;
+  };
+
+  return PseudoIndex(content1Ancestor, index1) -
+         PseudoIndex(content2Ancestor, index2);
 }
 
 
@@ -9989,7 +9981,7 @@ Maybe<MotionPathData> nsLayoutUtils::ResolveMotionPath(const nsIFrame* aFrame) {
     
     gfx::Float pathLength = gfxPath->ComputeLength();
     gfx::Float usedDistance =
-      display->mOffsetDistance.ResolveToCSSPixels(CSSCoord(pathLength));
+        display->mOffsetDistance.ResolveToCSSPixels(CSSCoord(pathLength));
     if (!path.empty() && path.rbegin()->IsClosePath()) {
       
       
