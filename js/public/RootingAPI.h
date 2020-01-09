@@ -1012,13 +1012,42 @@ class MOZ_RAII Rooted : public js::RootedBase<T, Rooted<T>> {
     return rootLists(RootingContext::get(cx));
   }
 
+  
+  
+  
+  
+
+  
+  struct CtorDispatcher {};
+
+  
+  
+  struct EmptyCtor {};
+  struct DelegatedCxCtor : EmptyCtor {};
+
+  
+  
+  template <typename RootingContext>
+  Rooted(const RootingContext& cx, CtorDispatcher, EmptyCtor)
+      : Rooted(cx, SafelyInitialized<T>()) {}
+
+  
+  
+  
+  template <typename RootingContext,
+            typename = decltype(T(std::declval<RootingContext>()))>
+  Rooted(const RootingContext& cx, CtorDispatcher, DelegatedCxCtor)
+      : Rooted(cx, T(cx)) {}
+
  public:
   using ElementType = T;
 
+  
+  
+  
   template <typename RootingContext>
-  explicit Rooted(const RootingContext& cx) : ptr(SafelyInitialized<T>()) {
-    registerWithRootLists(rootLists(cx));
-  }
+  explicit Rooted(const RootingContext& cx)
+      : Rooted(cx, CtorDispatcher(), DelegatedCxCtor()) {}
 
   template <typename RootingContext, typename S>
   Rooted(const RootingContext& cx, S&& initial)
