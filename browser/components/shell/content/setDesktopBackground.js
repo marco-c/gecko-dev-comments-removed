@@ -33,13 +33,14 @@ var gSetBackground = {
       document.documentElement.getButton("accept").hidden = true;
     } else {
       let multiMonitors = false;
-      try {
+      if (AppConstants.platform == "linux") {
+        
+        
+        multiMonitors = true;
+      } else {
         const gfxInfo = Cc["@mozilla.org/gfx/info;1"].getService(Ci.nsIGfxInfo);
         const monitors = gfxInfo.getMonitors();
         multiMonitors = monitors.length > 1;
-      } catch (e) {
-        
-        multiMonitors = true;
       }
 
       if (!multiMonitors || AppConstants.isPlatformAndVersionAtMost("win", 6.1)) {
