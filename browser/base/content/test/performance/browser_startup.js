@@ -26,10 +26,6 @@ const startupPhases = {
   
   
   "before profile selection": {whitelist: {
-    components: new Set([
-      
-      "PushComponents.js", 
-    ]),
     modules: new Set([
       "resource:///modules/BrowserGlue.jsm",
       "resource://gre/modules/AppConstants.jsm",
@@ -39,6 +35,8 @@ const startupPhases = {
       "resource://gre/modules/MainProcessSingleton.jsm",
       "resource://gre/modules/XPCOMUtils.jsm",
       "resource://gre/modules/Services.jsm",
+      
+      "resource://gre/modules/PushComponents.jsm", 
     ]),
   }},
 

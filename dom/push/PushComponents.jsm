@@ -113,7 +113,13 @@ PushServiceBase.prototype = {
 
 
 
+let parentInstance;
 function PushServiceParent() {
+  if (parentInstance) {
+    return parentInstance;
+  }
+  parentInstance = this;
+
   PushServiceBase.call(this);
 }
 
@@ -123,8 +129,6 @@ XPCOMUtils.defineLazyServiceGetter(PushServiceParent.prototype, "_mm",
   "@mozilla.org/parentprocessmessagemanager;1", "nsISupports");
 
 Object.assign(PushServiceParent.prototype, {
-  _xpcom_factory: XPCOMUtils.generateSingletonFactory(PushServiceParent),
-
   _messages: [
     "Push:Register",
     "Push:Registration",
@@ -306,6 +310,7 @@ Object.defineProperty(PushServiceParent.prototype, "service", {
   },
 });
 
+let contentInstance;
 
 
 
@@ -313,6 +318,11 @@ Object.defineProperty(PushServiceParent.prototype, "service", {
 
 
 function PushServiceContent() {
+  if (contentInstance) {
+    return contentInstance;
+  }
+  contentInstance = this;
+
   PushServiceBase.apply(this, arguments);
   this._requests = new Map();
   this._requestId = 0;
@@ -325,8 +335,6 @@ XPCOMUtils.defineLazyServiceGetter(PushServiceContent.prototype,
   "nsISupports");
 
 Object.assign(PushServiceContent.prototype, {
-  _xpcom_factory: XPCOMUtils.generateSingletonFactory(PushServiceContent),
-
   _messages: [
     "PushService:Register:OK",
     "PushService:Register:KO",
@@ -548,8 +556,8 @@ PushSubscription.prototype = {
   },
 };
 
-this.NSGetFactory = XPCOMUtils.generateNSGetFactory([
-  
-  
-  isParent ? PushServiceParent : PushServiceContent,
-]);
+
+
+let Service = isParent ? PushServiceParent : PushServiceContent;
+
+var EXPORTED_SYMBOLS = ["Service"];
