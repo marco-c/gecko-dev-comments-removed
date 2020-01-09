@@ -234,6 +234,8 @@ var gLogfileWritePromise;
 
 var gBITSInUseByAnotherUser = false;
 
+var gCheckStartMs;
+
 XPCOMUtils.defineLazyGetter(this, "gLogEnabled", function aus_gLogEnabled() {
   return Services.prefs.getBoolPref(PREF_APP_UPDATE_LOG, false) ||
          Services.prefs.getBoolPref(PREF_APP_UPDATE_LOG_FILE, false);
@@ -1933,8 +1935,16 @@ UpdateService.prototype = {
         
         
         
-        if (this._downloader && !this._downloader.usingBits) {
-          this.stopDownload();
+        if (this._downloader) {
+          if (!this._downloader.usingBits) {
+            this.stopDownload();
+          } else {
+            
+            
+            
+            Cc["@mozilla.org/updates/update-manager;1"].
+              getService(Ci.nsIUpdateManager).saveUpdates();
+          }
         }
         
         this._downloader = null;
@@ -2127,6 +2137,10 @@ UpdateService.prototype = {
       update.errorCode = parseInt(parts[1]);
     }
 
+    if (update.state == STATE_SUCCEEDED || update.patchCount == 1 ||
+        (update.selectedPatch && update.selectedPatch.type == "complete")) {
+      AUSTLMY.pingUpdatePhases(update, true);
+    }
 
     if (status != STATE_SUCCEEDED) {
       
@@ -3175,6 +3189,10 @@ UpdateManager.prototype = {
     if (!update) {
       return;
     }
+
+    let patch = update.selectedPatch.QueryInterface(Ci.nsIWritablePropertyBag);
+    patch.setProperty("stageFinished", Math.ceil(Date.now() / 1000));
+
     var status = readStatusFile(getUpdatesDir());
     pingStateAndStatusCodes(update, false, status);
     var parts = status.split(":");
@@ -3200,6 +3218,10 @@ UpdateManager.prototype = {
       writeStatusFile(getUpdatesDir(), update.state = STATE_APPLIED_SERVICE);
     }
 
+    if (update.state == STATE_FAILED) {
+      AUSTLMY.pingUpdatePhases(update, false);
+    }
+
     
     
     
@@ -3223,6 +3245,7 @@ UpdateManager.prototype = {
         update.state == STATE_PENDING ||
         update.state == STATE_PENDING_SERVICE ||
         update.state == STATE_PENDING_ELEVATE) {
+      patch.setProperty("applyStart", Math.floor(Date.now() / 1000));
       
       
       let prompter = Cc["@mozilla.org/updates/update-prompt;1"].
@@ -3378,6 +3401,7 @@ Checker.prototype = {
       throw Cr.NS_ERROR_NULL_POINTER;
     }
 
+    gCheckStartMs = Date.now();
     let UpdateServiceInstance = UpdateServiceFactory.createInstance();
     
     
@@ -3653,6 +3677,17 @@ Downloader.prototype = {
   
 
 
+  _startDownloadMs: null,
+
+  
+
+
+
+  _downloaderName: "bits",
+
+  
+
+
 
 
 
@@ -3880,11 +3915,26 @@ Downloader.prototype = {
     }
     
     
+    this._update.QueryInterface(Ci.nsIWritablePropertyBag);
+    if (gCheckStartMs && !this._update.getProperty("checkInterval")) {
+      let interval = Math.max(Math.ceil((Date.now() - gCheckStartMs) / 1000), 1);
+      this._update.setProperty("checkInterval", interval);
+    }
+    
+    
     
     this._patch.QueryInterface(Ci.nsIWritablePropertyBag);
     this.isCompleteUpdate = this._patch.type == "complete";
 
-    if (!this._canUseBits(this._patch)) {
+    let canUseBits = this._canUseBits(this._patch);
+    if (!canUseBits) {
+      this._downloaderName = "internal";
+    }
+    if (!this._patch.getProperty(this._downloaderName + "DownloadStart")) {
+      this._patch.setProperty(this._downloaderName + "DownloadStart", Math.floor(Date.now() / 1000));
+    }
+
+    if (!canUseBits) {
       let patchFile = getUpdatesDir().clone();
       patchFile.append(FILE_UPDATE_MAR);
 
@@ -4108,6 +4158,17 @@ Downloader.prototype = {
           getService(Ci.nsIUpdateManager).saveUpdates();
       }
     }
+    
+    
+    
+    
+    
+    
+    
+    if (!this._patch.getProperty("internalBytes") &&
+        !this._patch.getProperty("bitsBytes")) {
+      this._startDownloadMs = Date.now();
+    }
 
     
     let listeners = this._listeners.concat();
@@ -4131,6 +4192,11 @@ Downloader.prototype = {
   onProgress: function Downloader_onProgress(request, context, progress,
                                              maxProgress) {
     LOG("Downloader:onProgress - progress: " + progress + "/" + maxProgress);
+    if (this._startDownloadMs) {
+      let seconds = Math.round((Date.now() - this._startDownloadMs) / 1000);
+      this._patch.setProperty(this._downloaderName + "Seconds", seconds);
+      this._patch.setProperty(this._downloaderName + "Bytes", progress);
+    }
 
     if (progress > this._patch.size) {
       LOG("Downloader:onProgress - progress: " + progress +
@@ -4253,6 +4319,8 @@ Downloader.prototype = {
         "current fail: " + this.updateService._consecutiveSocketErrors + ", " +
         "max fail: " + maxFail + ", " +
         "retryTimeout: " + retryTimeout);
+    this._patch.setProperty(this._downloaderName + "DownloadFinished",
+                            Math.floor(Date.now() / 1000));
     if (Components.isSuccessCode(status)) {
       if (this._verifyDownload()) {
         if (shouldUseService()) {
@@ -4456,6 +4524,7 @@ Downloader.prototype = {
           Services.prefs.setIntPref(PREF_APP_UPDATE_DOWNLOAD_ATTEMPTS, downloadAttempts);
           let maxAttempts = Math.min(Services.prefs.getIntPref(PREF_APP_UPDATE_DOWNLOAD_MAXATTEMPTS, 2), 10);
 
+          AUSTLMY.pingUpdatePhases(this._update, false);
           if (downloadAttempts > maxAttempts) {
             LOG("Downloader:onStopRequest - notifying observers of error. " +
                 "topic: update-error, status: download-attempts-exceeded, " +
@@ -4496,6 +4565,7 @@ Downloader.prototype = {
         LOG("Downloader:onStopRequest - attempting to stage update: " +
             this._update.name);
         gUpdateFileWriteInfo = {phase: "stage", failure: false};
+        this._patch.setProperty("stageStart", Math.floor(Date.now() / 1000));
         
         try {
           Cc["@mozilla.org/updates/update-processor;1"].
@@ -4509,6 +4579,8 @@ Downloader.prototype = {
             shouldShowPrompt = true;
           }
         }
+      } else {
+        this._patch.setProperty("applyStart", Math.floor(Date.now() / 1000));
       }
     }
 
