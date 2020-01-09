@@ -9,7 +9,6 @@
 #include "mozilla/a11y/Accessible.h"
 #include "mozilla/a11y/DocManager.h"
 
-#include "AccessibleOrProxy.h"
 #include "nsAccessibilityService.h"
 #include "nsCoreUtils.h"
 
@@ -252,7 +251,7 @@ class nsAccUtils {
 
 
 
-  static bool MustPrune(AccessibleOrProxy aAccessible);
+  static bool MustPrune(Accessible* aAccessible);
 
   static bool PersistentPropertiesToArray(nsIPersistentProperties* aProps,
                                           nsTArray<Attribute>* aAttributes);
