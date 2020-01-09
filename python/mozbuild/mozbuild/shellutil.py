@@ -17,7 +17,7 @@ def _tokens2re(**tokens):
     
     
     all_tokens = '|'.join('(?P<%s>%s)' % (name, value)
-                          for name, value in tokens.iteritems())
+                          for name, value in tokens.items())
     nonescaped = r'(?<!\\)(?:%s)' % all_tokens
 
     
