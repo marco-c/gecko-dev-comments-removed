@@ -182,22 +182,22 @@ impl Task for PutTask {
     task_done!(void);
 }
 
-pub struct PutManyTask {
+pub struct WriteManyTask {
     callback: AtomicCell<Option<ThreadBoundRefPtr<nsIKeyValueVoidCallback>>>,
     rkv: Arc<RwLock<Rkv>>,
     store: SingleStore,
-    pairs: Vec<(nsCString, OwnedValue)>,
+    pairs: Vec<(nsCString, Option<OwnedValue>)>,
     result: AtomicCell<Option<Result<(), KeyValueError>>>,
 }
 
-impl PutManyTask {
+impl WriteManyTask {
     pub fn new(
         callback: RefPtr<nsIKeyValueVoidCallback>,
         rkv: Arc<RwLock<Rkv>>,
         store: SingleStore,
-        pairs: Vec<(nsCString, OwnedValue)>,
-    ) -> PutManyTask {
-        PutManyTask {
+        pairs: Vec<(nsCString, Option<OwnedValue>)>,
+    ) -> WriteManyTask {
+        WriteManyTask {
             callback: AtomicCell::new(Some(ThreadBoundRefPtr::new(callback))),
             rkv,
             store,
@@ -207,7 +207,7 @@ impl PutManyTask {
     }
 }
 
-impl Task for PutManyTask {
+impl Task for WriteManyTask {
     fn run(&self) {
         
         
@@ -217,7 +217,21 @@ impl Task for PutManyTask {
 
             for (key, value) in self.pairs.iter() {
                 let key = str::from_utf8(key)?;
-                self.store.put(&mut writer, key, &Value::from(value))?;
+                match value {
+                    Some(val) => self.store.put(&mut writer, key, &Value::from(val))?,
+                    None => {
+                        match self.store.delete(&mut writer, key) {
+                            Ok(_) => (),
+
+                            
+                            
+                            
+                            Err(StoreError::LmdbError(lmdb::Error::NotFound)) => (),
+
+                            Err(err) => return Err(KeyValueError::StoreError(err)),
+                        };
+                    }
+                }
             }
             writer.commit()?;
 
