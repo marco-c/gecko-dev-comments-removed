@@ -470,7 +470,6 @@ var PushServiceWebSocket = {
     socket.initLoadInfo(null, 
                         Services.scriptSecurityManager.getSystemPrincipal(),
                         null, 
-                        null, 
                         Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
                         Ci.nsIContentPolicy.TYPE_WEBSOCKET);
 
