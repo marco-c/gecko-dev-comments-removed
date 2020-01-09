@@ -1700,11 +1700,11 @@ impl PrimitiveStore {
     
     
     pub fn destroy(
-        self,
+        mut self,
         retained_tiles: &mut RetainedTiles,
         clip_scroll_tree: &ClipScrollTree,
     ) {
-        for pic in self.pictures {
+        for pic in &mut self.pictures {
             pic.destroy(
                 retained_tiles,
                 clip_scroll_tree,
@@ -2670,7 +2670,7 @@ impl PrimitiveStore {
                     .get_image_properties(image_data.key);
 
                 if let Some(ImageProperties { descriptor, tiling: Some(tile_size), .. }) = image_properties {
-                    let device_image_rect = DeviceIntRect::from_size(descriptor.size);
+                    let device_image_size = descriptor.size;
 
                     
                     
@@ -2710,15 +2710,15 @@ impl PrimitiveStore {
                     for Repetition { origin, edge_flags } in repetitions {
                         let edge_flags = base_edge_flags | edge_flags;
 
-                        let layout_image_rect = LayoutRect {
+                        let image_rect = LayoutRect {
                             origin,
                             size: image_data.stretch_size,
                         };
 
                         let tiles = ::image::tiles(
-                            &layout_image_rect,
+                            &image_rect,
                             &visible_rect,
-                            &device_image_rect,
+                            &device_image_size,
                             tile_size as i32,
                         );
 
