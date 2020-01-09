@@ -114,7 +114,7 @@ add_task(async function test() {
   for (let userContextId of Object.keys(USER_CONTEXTS)) {
     
     
-    let cookie = USER_CONTEXTS[userContextId] + "=1";
+    let cookie = USER_CONTEXTS[userContextId];
 
     
     let { tab, browser } = await openTabInUserContext(userContextId);
