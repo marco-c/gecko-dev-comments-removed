@@ -29,6 +29,7 @@ class EnterpriseCert {
   bool mIsRoot;
 };
 
+
 nsresult GatherEnterpriseCerts(mozilla::Vector<EnterpriseCert>& certs);
 
 #endif  

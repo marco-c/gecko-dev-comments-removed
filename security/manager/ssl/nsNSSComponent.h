@@ -56,6 +56,9 @@ class nsNSSComponent final : public nsINSSComponent, public nsIObserver {
   
   
   friend class LoadLoadableRootsTask;
+  
+  
+  friend class BackgroundImportEnterpriseCertsTask;
 
   nsNSSComponent();
 

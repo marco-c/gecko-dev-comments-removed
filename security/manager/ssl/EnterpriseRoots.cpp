@@ -14,6 +14,8 @@
 #ifdef XP_MACOSX
 #  include <Security/Security.h>
 #  include "KeychainSecret.h"  
+
+#  include "nsCocoaFeatures.h"
 #endif                         
 
 extern LazyLogModule gPIPNSSLog;
@@ -234,15 +236,55 @@ OSStatus GatherEnterpriseCertsMacOS(Vector<EnterpriseCert>& certs) {
   uint32_t numImported = 0;
   for (CFIndex i = 0; i < count; i++) {
     const CFTypeRef c = CFArrayGetValueAtIndex(arr.get(), i);
+    SecTrustRef trust;
+    rv = SecTrustCreateWithCertificates(c, sslPolicy.get(), &trust);
+    if (rv != errSecSuccess) {
+      MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+              ("SecTrustCreateWithCertificates failed"));
+      continue;
+    }
+    ScopedCFType<SecTrustRef> trustHandle(trust);
+    bool isTrusted = false;
+    bool fallBackToDeprecatedAPI = true;
+#  if defined MAC_OS_X_VERSION_10_14
+    if (nsCocoaFeatures::OnMojaveOrLater()) {
+      
+      
+      
+      if (__builtin_available(macOS 10.14, *)) {
+        isTrusted = SecTrustEvaluateWithError(trustHandle.get(), nullptr);
+        fallBackToDeprecatedAPI = false;
+      }
+    }
+#  endif  
+    if (fallBackToDeprecatedAPI) {
+      SecTrustResultType result;
+      rv = SecTrustEvaluate(trustHandle.get(), &result);
+      if (rv != errSecSuccess) {
+        MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("SecTrustEvaluate failed"));
+        continue;
+      }
+      
+      
+      
+      
+      isTrusted = result == kSecTrustResultProceed ||
+                  result == kSecTrustResultUnspecified;
+    }
+    if (!isTrusted) {
+      MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("skipping cert not trusted"));
+      continue;
+    }
+    CFIndex count = SecTrustGetCertificateCount(trustHandle.get());
+    bool isRoot = count == 1;
+
     
     
     const SecCertificateRef s = (const SecCertificateRef)c;
     ScopedCFType<CFDataRef> der(SecCertificateCopyData(s));
     EnterpriseCert enterpriseCert;
-    
-    
     if (NS_FAILED(enterpriseCert.Init(CFDataGetBytePtr(der.get()),
-                                      CFDataGetLength(der.get()), true))) {
+                                      CFDataGetLength(der.get()), isRoot))) {
       
       continue;
     }
@@ -258,6 +300,11 @@ OSStatus GatherEnterpriseCertsMacOS(Vector<EnterpriseCert>& certs) {
 #endif  
 
 nsresult GatherEnterpriseCerts(Vector<EnterpriseCert>& certs) {
+  MOZ_ASSERT(!NS_IsMainThread());
+  if (NS_IsMainThread()) {
+    return NS_ERROR_NOT_SAME_THREAD;
+  }
+
   certs.clear();
 #ifdef XP_WIN
   GatherEnterpriseCertsWindows(certs);
