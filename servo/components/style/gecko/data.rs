@@ -150,7 +150,7 @@ impl PerDocumentStyleData {
         
         
         
-        let quirks_mode = unsafe { (*device.pres_context().mDocument.mRawPtr).mCompatMode };
+        let quirks_mode = device.document().mCompatMode;
 
         PerDocumentStyleData(AtomicRefCell::new(PerDocumentStyleDataImpl {
             stylist: Stylist::new(device, quirks_mode.into()),
@@ -191,8 +191,7 @@ impl PerDocumentStyleDataImpl {
     
     #[inline]
     pub fn visited_styles_enabled(&self) -> bool {
-        let doc = self.stylist.device().pres_context().mDocument.mRawPtr;
-        unsafe { bindings::Gecko_VisitedStylesEnabled(doc) }
+        unsafe { bindings::Gecko_VisitedStylesEnabled(self.stylist.device().document()) }
     }
 
     

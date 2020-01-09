@@ -1444,19 +1444,13 @@ void nsIPresShell::UpdatePreferenceStyles() {
     return;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
+  PreferenceSheet::EnsureInitialized();
   auto cache = nsLayoutStylesheetCache::Singleton();
+
   RefPtr<StyleSheet> newPrefSheet =
-      mPresContext->IsChromeOriginImage()
-          ? cache->ChromePreferenceSheet(mPresContext)
-          : cache->ContentPreferenceSheet(mPresContext);
+      PreferenceSheet::ShouldUseChromePrefs(*mDocument)
+          ? cache->ChromePreferenceSheet()
+          : cache->ContentPreferenceSheet();
 
   if (mPrefStyleSheet == newPrefSheet) {
     return;
