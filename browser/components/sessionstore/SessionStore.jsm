@@ -3189,17 +3189,18 @@ var SessionStoreInternal = {
 
 
   async _asyncNavigateAndRestore(tab) {
-    let initialBrowser = tab.linkedBrowser;
+    let permanentKey = tab.linkedBrowser.permanentKey;
+
     
     
-    await TabStateFlusher.flush(initialBrowser);
+    await TabStateFlusher.flush(tab.linkedBrowser);
 
     
     
     
     let {loadArguments, historyIndex} =
-      this._remotenessChangingBrowsers.get(initialBrowser.permanentKey);
-    this._remotenessChangingBrowsers.delete(initialBrowser.permanentKey);
+      this._remotenessChangingBrowsers.get(permanentKey);
+    this._remotenessChangingBrowsers.delete(permanentKey);
 
     
     if (tab.closing || !tab.linkedBrowser) {
