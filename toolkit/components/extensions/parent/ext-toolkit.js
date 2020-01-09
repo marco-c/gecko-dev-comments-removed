@@ -12,6 +12,7 @@
 
 
 
+
 ChromeUtils.defineModuleGetter(this, "ContextualIdentityService",
                                "resource://gre/modules/ContextualIdentityService.jsm");
 
@@ -35,6 +36,18 @@ global.getCookieStoreIdForTab = function(data, tab) {
 
   if (tab.userContextId) {
     return getCookieStoreIdForContainer(tab.userContextId);
+  }
+
+  return DEFAULT_STORE;
+};
+
+global.getCookieStoreIdForOriginAttributes = function(originAttributes) {
+  if (originAttributes.privateBrowsingId) {
+    return PRIVATE_STORE;
+  }
+
+  if (originAttributes.userContextId) {
+    return getCookieStoreIdForContainer(originAttributes.userContextId);
   }
 
   return DEFAULT_STORE;

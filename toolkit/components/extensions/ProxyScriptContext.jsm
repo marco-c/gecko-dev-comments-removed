@@ -27,6 +27,9 @@ XPCOMUtils.defineLazyServiceGetter(this, "ProxyService",
 XPCOMUtils.defineLazyGetter(this, "tabTracker", () => {
   return ExtensionParent.apiManager.global.tabTracker;
 });
+XPCOMUtils.defineLazyGetter(this, "getCookieStoreIdForOriginAttributes", () => {
+  return ExtensionParent.apiManager.global.getCookieStoreIdForOriginAttributes;
+});
 
 const CATEGORY_EXTENSION_SCRIPTS_CONTENT = "webextension-scripts-content";
 
@@ -257,6 +260,8 @@ class ProxyChannelFilter {
   }
 
   
+  
+  
   getRequestData(channel, extraData) {
     let originAttributes = channel.loadInfo && channel.loadInfo.originAttributes;
     let data = {
@@ -279,6 +284,9 @@ class ProxyChannelFilter {
 
       ...extraData,
     };
+    if (originAttributes && this.extension.hasPermission("cookies")) {
+      data.cookieStoreId = getCookieStoreIdForOriginAttributes(originAttributes);
+    }
     if (this.extraInfoSpec.includes("requestHeaders")) {
       data.requestHeaders = channel.getRequestHeaders();
     }
