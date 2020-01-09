@@ -2,7 +2,9 @@
 
 
 
-class LoginItem extends HTMLElement {
+
+
+class LoginItem extends ReflectedFluentElement {
   constructor() {
     super();
     this._login = {};
@@ -18,6 +20,8 @@ class LoginItem extends HTMLElement {
     this.attachShadow({mode: "open"})
         .appendChild(loginItemTemplate.content.cloneNode(true));
 
+    this.reflectFluentStrings();
+
     for (let selector of [
       ".delete-button",
       ".save-changes-button",
@@ -32,7 +36,7 @@ class LoginItem extends HTMLElement {
     this.render();
   }
 
-  static get observedAttributes() {
+  static get reflectedFluentIDs() {
     return [
       "cancel-button",
       "delete-button",
@@ -46,17 +50,8 @@ class LoginItem extends HTMLElement {
     ];
   }
 
-  
-
-  attributeChangedCallback(attr, oldValue, newValue) {
-    if (!this.shadowRoot) {
-      return;
-    }
-
-    
-    
-    let shadowedElement = this.shadowRoot.querySelector("." + attr);
-    shadowedElement.textContent = newValue;
+  static get observedAttributes() {
+    return this.reflectedFluentIDs;
   }
 
   render() {

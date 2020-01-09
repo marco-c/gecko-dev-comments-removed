@@ -2,7 +2,9 @@
 
 
 
-class LoginFilter extends HTMLElement {
+
+
+class LoginFilter extends ReflectedFluentElement {
   connectedCallback() {
     if (this.children.length) {
       return;
@@ -11,6 +13,8 @@ class LoginFilter extends HTMLElement {
     let loginFilterTemplate = document.querySelector("#login-filter-template");
     this.attachShadow({mode: "open"})
         .appendChild(loginFilterTemplate.content.cloneNode(true));
+
+    this.reflectFluentStrings();
 
     this.addEventListener("input", this);
   }
@@ -28,22 +32,21 @@ class LoginFilter extends HTMLElement {
     }
   }
 
-  static get observedAttributes() {
+  static get reflectedFluentIDs() {
     return ["placeholder"];
   }
 
-  
+  static get observedAttributes() {
+    return this.reflectedFluentIDs;
+  }
 
-  attributeChangedCallback(attr, oldValue, newValue) {
-    if (!this.shadowRoot) {
-      return;
+  handleSpecialCaseFluentString(attrName) {
+    if (attrName != "placeholder") {
+      return false;
     }
 
-    switch (attr) {
-      case "placeholder":
-        this.shadowRoot.querySelector("input").placeholder = newValue;
-        break;
-    }
+    this.shadowRoot.querySelector("input").placeholder = this.getAttribute(attrName);
+    return true;
   }
 }
 customElements.define("login-filter", LoginFilter);

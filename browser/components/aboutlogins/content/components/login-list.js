@@ -4,7 +4,7 @@
 
 
 
-class LoginList extends HTMLElement {
+class LoginList extends ReflectedFluentElement {
   constructor() {
     super();
     this._logins = [];
@@ -18,6 +18,9 @@ class LoginList extends HTMLElement {
     let loginListTemplate = document.querySelector("#login-list-template");
     this.attachShadow({mode: "open"})
         .appendChild(loginListTemplate.content.cloneNode(true));
+
+    this.reflectFluentStrings();
+
     this.render();
 
     window.addEventListener("AboutLoginsLoginSelected", this);
@@ -71,22 +74,12 @@ class LoginList extends HTMLElement {
     }
   }
 
-  static get observedAttributes() {
+  static get reflectedFluentIDs() {
     return ["count"];
   }
 
-  
-
-  attributeChangedCallback(attr, oldValue, newValue) {
-    if (!this.shadowRoot) {
-      return;
-    }
-
-    switch (attr) {
-      case "count":
-        this.shadowRoot.querySelector(".count").textContent = newValue;
-        break;
-    }
+  static get observedAttributes() {
+    return this.reflectedFluentIDs;
   }
 
   setLogins(logins) {
