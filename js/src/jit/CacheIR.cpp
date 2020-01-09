@@ -4393,7 +4393,7 @@ InstanceOfIRGenerator::InstanceOfIRGenerator(JSContext* cx, HandleScript script,
       lhsVal_(lhs),
       rhsObj_(rhs) {}
 
-bool InstanceOfIRGenerator::tryAttachStub() {
+AttachDecision InstanceOfIRGenerator::tryAttachStub() {
   MOZ_ASSERT(cacheKind_ == CacheKind::InstanceOf);
   AutoAssertNoPendingException aanpe(cx_);
 
@@ -4401,41 +4401,41 @@ bool InstanceOfIRGenerator::tryAttachStub() {
   
   if (!rhsObj_->is<JSFunction>()) {
     trackAttached(IRGenerator::NotAttached);
-    return false;
+    return AttachDecision::NoAction;
   }
 
   HandleFunction fun = rhsObj_.as<JSFunction>();
 
   if (fun->isBoundFunction()) {
     trackAttached(IRGenerator::NotAttached);
-    return false;
+    return AttachDecision::NoAction;
   }
 
   
   
   if (!js::FunctionHasDefaultHasInstance(fun, cx_->wellKnownSymbols())) {
     trackAttached(IRGenerator::NotAttached);
-    return false;
+    return AttachDecision::NoAction;
   }
 
   
   
   if (!fun->hasStaticPrototype() || fun->hasUncacheableProto()) {
     trackAttached(IRGenerator::NotAttached);
-    return false;
+    return AttachDecision::NoAction;
   }
 
   Value funProto = cx_->global()->getPrototype(JSProto_Function);
   if (!funProto.isObject() || fun->staticPrototype() != &funProto.toObject()) {
     trackAttached(IRGenerator::NotAttached);
-    return false;
+    return AttachDecision::NoAction;
   }
 
   
   Shape* shape = fun->lookupPure(cx_->names().prototype);
   if (!shape || !shape->isDataProperty()) {
     trackAttached(IRGenerator::NotAttached);
-    return false;
+    return AttachDecision::NoAction;
   }
 
   uint32_t slot = shape->slot();
@@ -4443,7 +4443,7 @@ bool InstanceOfIRGenerator::tryAttachStub() {
   MOZ_ASSERT(fun->numFixedSlots() == 0, "Stub code relies on this");
   if (!fun->getSlot(slot).isObject()) {
     trackAttached(IRGenerator::NotAttached);
-    return false;
+    return AttachDecision::NoAction;
   }
 
   JSObject* prototypeObject = &fun->getSlot(slot).toObject();
@@ -4465,7 +4465,7 @@ bool InstanceOfIRGenerator::tryAttachStub() {
   writer.loadInstanceOfObjectResult(lhs, protoId, slot);
   writer.returnFromIC();
   trackAttached("InstanceOf");
-  return true;
+  return AttachDecision::Attach;
 }
 
 void InstanceOfIRGenerator::trackAttached(const char* name) {
