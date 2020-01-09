@@ -5,8 +5,10 @@
 
 
 
-#include "js/CompilationAndEvaluation.h"
-#include "js/SourceText.h"
+#include "mozilla/Utf8.h"  
+
+#include "js/CompilationAndEvaluation.h"  
+#include "js/SourceText.h"                
 #include "jsapi-tests/tests.h"
 
 struct ScriptObjectFixture : public JSAPITest {
@@ -43,7 +45,10 @@ BEGIN_FIXTURE_TEST(ScriptObjectFixture, bug438633_CompileScript) {
   JS::CompileOptions options(cx);
   options.setFileAndLine(__FILE__, __LINE__);
 
-  JS::RootedScript script(cx, JS::CompileUtf8(cx, options, code, code_size));
+  JS::SourceText<mozilla::Utf8Unit> srcBuf;
+  CHECK(srcBuf.init(cx, code, code_size, JS::SourceOwnership::Borrowed));
+
+  JS::RootedScript script(cx, JS::Compile(cx, options, srcBuf));
   CHECK(script);
 
   return tryScript(script);
@@ -54,7 +59,10 @@ BEGIN_FIXTURE_TEST(ScriptObjectFixture, bug438633_CompileScript_empty) {
   JS::CompileOptions options(cx);
   options.setFileAndLine(__FILE__, __LINE__);
 
-  JS::RootedScript script(cx, JS::CompileUtf8(cx, options, "", 0));
+  JS::SourceText<mozilla::Utf8Unit> srcBuf;
+  CHECK(srcBuf.init(cx, "", 0, JS::SourceOwnership::Borrowed));
+
+  JS::RootedScript script(cx, JS::Compile(cx, options, srcBuf));
   CHECK(script);
 
   return tryScript(script);
@@ -65,7 +73,10 @@ BEGIN_FIXTURE_TEST(ScriptObjectFixture, bug438633_CompileScriptForPrincipals) {
   JS::CompileOptions options(cx);
   options.setFileAndLine(__FILE__, __LINE__);
 
-  JS::RootedScript script(cx, JS::CompileUtf8(cx, options, code, code_size));
+  JS::SourceText<mozilla::Utf8Unit> srcBuf;
+  CHECK(srcBuf.init(cx, code, code_size, JS::SourceOwnership::Borrowed));
+
+  JS::RootedScript script(cx, JS::Compile(cx, options, srcBuf));
 
   return tryScript(script);
 }
@@ -209,7 +220,10 @@ BEGIN_FIXTURE_TEST(ScriptObjectFixture, CloneAndExecuteScript) {
   JS::CompileOptions options(cx);
   options.setFileAndLine(__FILE__, __LINE__);
 
-  JS::RootedScript script(cx, JS::CompileUtf8(cx, options, "val", 3));
+  JS::SourceText<mozilla::Utf8Unit> srcBuf;
+  CHECK(srcBuf.init(cx, "val", 3, JS::SourceOwnership::Borrowed));
+
+  JS::RootedScript script(cx, JS::Compile(cx, options, srcBuf));
   CHECK(script);
 
   JS::RootedValue value(cx);

@@ -5,10 +5,14 @@
 
 
 
+#include "mozilla/ArrayUtils.h"  
+#include "mozilla/Utf8.h"        
+
 #include "jsapi.h"
 
-#include "js/CompilationAndEvaluation.h"
+#include "js/CompilationAndEvaluation.h"  
 #include "js/HeapAPI.h"
+#include "js/SourceText.h"  
 #include "jsapi-tests/tests.h"
 
 class TestTracer : public JS::CallbackTracer {
@@ -37,13 +41,16 @@ BEGIN_TEST(testPrivateGCThingValue) {
   CHECK(obj);
 
   
-  const char code[] = "'objet petit a'";
+  static const char code[] = "'objet petit a'";
 
   JS::CompileOptions options(cx);
   options.setFileAndLine(__FILE__, __LINE__);
 
-  JS::RootedScript script(cx,
-                          JS::CompileUtf8(cx, options, code, sizeof(code) - 1));
+  JS::SourceText<mozilla::Utf8Unit> srcBuf;
+  CHECK(srcBuf.init(cx, code, mozilla::ArrayLength(code) - 1,
+                    JS::SourceOwnership::Borrowed));
+
+  JS::RootedScript script(cx, JS::Compile(cx, options, srcBuf));
   CHECK(script);
   JS_SetReservedSlot(obj, 0, PrivateGCThingValue(script));
 

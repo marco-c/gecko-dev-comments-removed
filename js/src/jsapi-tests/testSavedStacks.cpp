@@ -4,6 +4,9 @@
 
 
 
+#include "mozilla/ArrayUtils.h"  
+#include "mozilla/Utf8.h"        
+
 #include "jsfriendapi.h"
 #include "builtin/String.h"
 

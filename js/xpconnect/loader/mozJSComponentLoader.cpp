@@ -5,6 +5,7 @@
 
 
 #include "mozilla/Attributes.h"
+#include "mozilla/Utf8.h"  
 
 #include <cstdarg>
 
@@ -21,6 +22,7 @@
 #include "js/CompilationAndEvaluation.h"
 #include "js/Printf.h"
 #include "js/PropertySpec.h"
+#include "js/SourceText.h"  
 #include "nsCOMPtr.h"
 #include "nsAutoPtr.h"
 #include "nsExceptionHandler.h"
@@ -856,16 +858,27 @@ nsresult mozJSComponentLoader::ObjectForLocation(
       
       
       auto buf = map.get<char>();
-      script = reuseGlobal ? CompileUtf8ForNonSyntacticScope(
-                                 cx, options, buf.get(), map.size())
-                           : CompileUtf8(cx, options, buf.get(), map.size());
+
+      JS::SourceText<mozilla::Utf8Unit> srcBuf;
+      if (srcBuf.init(cx, buf.get(), map.size(),
+                      JS::SourceOwnership::Borrowed)) {
+        script = reuseGlobal ? CompileForNonSyntacticScope(cx, options, srcBuf)
+                             : Compile(cx, options, srcBuf);
+      } else {
+        MOZ_ASSERT(!script);
+      }
     } else {
       nsCString str;
       MOZ_TRY_VAR(str, ReadScript(aInfo));
 
-      script = reuseGlobal ? CompileUtf8ForNonSyntacticScope(
-                                 cx, options, str.get(), str.Length())
-                           : CompileUtf8(cx, options, str.get(), str.Length());
+      JS::SourceText<mozilla::Utf8Unit> srcBuf;
+      if (srcBuf.init(cx, str.get(), str.Length(),
+                      JS::SourceOwnership::Borrowed)) {
+        script = reuseGlobal ? CompileForNonSyntacticScope(cx, options, srcBuf)
+                             : Compile(cx, options, srcBuf);
+      } else {
+        MOZ_ASSERT(!script);
+      }
     }
     
     

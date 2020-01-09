@@ -159,6 +159,16 @@ extern JS_PUBLIC_API JSScript* Compile(JSContext* cx,
 
 
 
+extern JS_PUBLIC_API JSScript* Compile(JSContext* cx,
+                                       const ReadOnlyCompileOptions& options,
+                                       SourceText<mozilla::Utf8Unit>& srcBuf);
+
+
+
+
+
+
+
 
 
 
@@ -169,28 +179,6 @@ extern JS_PUBLIC_API JSScript* Compile(JSContext* cx,
 extern JS_PUBLIC_API JSScript* CompileDontInflate(
     JSContext* cx, const ReadOnlyCompileOptions& options,
     SourceText<mozilla::Utf8Unit>& srcBuf);
-
-
-
-
-
-
-extern JS_PUBLIC_API JSScript* CompileUtf8(
-    JSContext* cx, const ReadOnlyCompileOptions& options, const char* bytes,
-    size_t length);
-
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API JSScript* CompileUtf8DontInflate(
-    JSContext* cx, const ReadOnlyCompileOptions& options, const char* bytes,
-    size_t length);
 
 
 
@@ -230,9 +218,9 @@ extern JS_PUBLIC_API JSScript* CompileForNonSyntacticScope(
 
 
 
-extern JS_PUBLIC_API JSScript* CompileUtf8ForNonSyntacticScope(
-    JSContext* cx, const ReadOnlyCompileOptions& options, const char* bytes,
-    size_t length);
+extern JS_PUBLIC_API JSScript* CompileForNonSyntacticScope(
+    JSContext* cx, const ReadOnlyCompileOptions& options,
+    SourceText<mozilla::Utf8Unit>& srcBuf);
 
 
 

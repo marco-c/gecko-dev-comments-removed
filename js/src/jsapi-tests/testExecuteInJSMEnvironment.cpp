@@ -2,8 +2,12 @@
 
 
 
-#include "js/CompilationAndEvaluation.h"
+#include "mozilla/ArrayUtils.h"  
+#include "mozilla/Utf8.h"        
+
+#include "js/CompilationAndEvaluation.h"  
 #include "js/PropertySpec.h"
+#include "js/SourceText.h"  
 #include "jsapi-tests/tests.h"
 #include "vm/EnvironmentObject.h"
 #include "vm/EnvironmentObject-inl.h"
@@ -25,8 +29,12 @@ BEGIN_TEST(testExecuteInJSMEnvironment_Basic) {
   options.setFileAndLine(__FILE__, __LINE__);
   options.setNoScriptRval(true);
 
-  JS::RootedScript script(cx, JS::CompileUtf8ForNonSyntacticScope(
-                                  cx, options, src, sizeof(src) - 1));
+  JS::SourceText<mozilla::Utf8Unit> srcBuf;
+  CHECK(srcBuf.init(cx, src, mozilla::ArrayLength(src) - 1,
+                    JS::SourceOwnership::Borrowed));
+
+  JS::RootedScript script(cx,
+                          JS::CompileForNonSyntacticScope(cx, options, srcBuf));
   CHECK(script);
 
   JS::RootedObject varEnv(cx, js::NewJSMEnvironment(cx));
@@ -79,8 +87,12 @@ BEGIN_TEST(testExecuteInJSMEnvironment_Callback) {
   options.setFileAndLine(__FILE__, __LINE__);
   options.setNoScriptRval(true);
 
-  JS::RootedScript script(cx, JS::CompileUtf8ForNonSyntacticScope(
-                                  cx, options, src, sizeof(src) - 1));
+  JS::SourceText<mozilla::Utf8Unit> srcBuf;
+  CHECK(srcBuf.init(cx, src, mozilla::ArrayLength(src) - 1,
+                    JS::SourceOwnership::Borrowed));
+
+  JS::RootedScript script(cx,
+                          JS::CompileForNonSyntacticScope(cx, options, srcBuf));
   CHECK(script);
 
   JS::RootedObject nsvo(cx, js::NewJSMEnvironment(cx));

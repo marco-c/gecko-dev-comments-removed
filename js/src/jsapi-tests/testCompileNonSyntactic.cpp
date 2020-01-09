@@ -2,9 +2,11 @@
 
 
 
+#include "mozilla/Utf8.h"  
+
 #include "gc/GCInternals.h"
-#include "js/CompilationAndEvaluation.h"
-#include "js/SourceText.h"
+#include "js/CompilationAndEvaluation.h"  
+#include "js/SourceText.h"                
 #include "jsapi-tests/tests.h"
 #include "vm/Monitor.h"
 #include "vm/MutexIDs.h"
@@ -62,18 +64,21 @@ bool testCompile(bool nonSyntactic) {
   JS::CompileOptions options(cx);
   options.setNonSyntacticScope(nonSyntactic);
 
-  JS::SourceText<char16_t> buf;
-  CHECK(buf.init(cx, src_16, length, JS::SourceOwnership::Borrowed));
+  JS::SourceText<char16_t> buf16;
+  CHECK(buf16.init(cx, src_16, length, JS::SourceOwnership::Borrowed));
 
   JS::RootedScript script(cx);
 
   
   
-  script = CompileForNonSyntacticScope(cx, options, buf);
+  script = CompileForNonSyntacticScope(cx, options, buf16);
   CHECK(script);
   CHECK_EQUAL(script->hasNonSyntacticScope(), true);
 
-  script = CompileUtf8ForNonSyntacticScope(cx, options, src, length);
+  JS::SourceText<mozilla::Utf8Unit> buf8;
+  CHECK(buf8.init(cx, src, length, JS::SourceOwnership::Borrowed));
+
+  script = CompileForNonSyntacticScope(cx, options, buf8);
   CHECK(script);
   CHECK_EQUAL(script->hasNonSyntacticScope(), true);
 
@@ -86,11 +91,11 @@ bool testCompile(bool nonSyntactic) {
     CHECK_EQUAL(script->hasNonSyntacticScope(), true);
   }
 
-  script = Compile(cx, options, buf);
+  script = Compile(cx, options, buf16);
   CHECK(script);
   CHECK_EQUAL(script->hasNonSyntacticScope(), nonSyntactic);
 
-  script = CompileUtf8(cx, options, src, length);
+  script = Compile(cx, options, buf8);
   CHECK(script);
   CHECK_EQUAL(script->hasNonSyntacticScope(), nonSyntactic);
 
