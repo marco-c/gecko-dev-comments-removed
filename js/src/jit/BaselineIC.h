@@ -223,11 +223,13 @@ class ICEntry {
   
   uint32_t pcOffset_;
 
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
 #ifdef JS_64BIT
   
   
   static const uint32_t EXPECTED_TRACE_MAGIC = 0xdeaddead;
   uint32_t traceMagic_ = EXPECTED_TRACE_MAGIC;
+#endif
 #endif
 
  public:
