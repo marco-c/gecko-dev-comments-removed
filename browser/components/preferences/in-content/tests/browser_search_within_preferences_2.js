@@ -16,7 +16,7 @@ add_task(async function() {
 
 
 add_task(async function() {
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {leaveOpen: true});
+  await openPreferencesViaOpenPreferencesAPI("paneSync", {leaveOpen: true});
 
   
   
