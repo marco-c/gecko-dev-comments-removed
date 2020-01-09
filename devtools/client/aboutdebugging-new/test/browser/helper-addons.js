@@ -5,8 +5,6 @@
 
 
 
-const { Management } = ChromeUtils.import("resource://gre/modules/Extension.jsm", null);
-
 function _getSupportsFile(path) {
   const cr = Cc["@mozilla.org/chrome/chrome-registry;1"]
     .getService(Ci.nsIChromeRegistry);
@@ -54,6 +52,8 @@ function installRegularExtension(pathOrFile) {
 
 
 async function installTemporaryExtension(pathOrFile, name, document) {
+  const { Management } = ChromeUtils.import("resource://gre/modules/Extension.jsm", null);
+
   info("Install temporary extension named " + name);
   
   prepareMockFilePicker(pathOrFile);
@@ -81,7 +81,7 @@ function createTemporaryXPI(xpiData) {
   const { ExtensionTestCommon } =
     ChromeUtils.import("resource://testing-common/ExtensionTestCommon.jsm", {});
 
-  const { background, id, name, extraProperties } = xpiData;
+  const { background, files, id, name, extraProperties } = xpiData;
   info("Generate XPI file for " + id);
 
   const manifest = Object.assign({}, {
@@ -91,7 +91,7 @@ function createTemporaryXPI(xpiData) {
     version: "1.0",
   }, extraProperties);
 
-  const xpiFile = ExtensionTestCommon.generateXPI({ background, manifest });
+  const xpiFile = ExtensionTestCommon.generateXPI({ background, files, manifest });
   registerCleanupFunction(() => xpiFile.exists() && xpiFile.remove(false));
   return xpiFile;
 }
