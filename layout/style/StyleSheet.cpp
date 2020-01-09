@@ -969,13 +969,6 @@ nsresult StyleSheet::ReparseSheet(const nsAString& aInput) {
 
   
   
-  
-  if (GetOrigin() == OriginFlags::UserAgent) {
-    return NS_ERROR_DOM_NO_MODIFICATION_ALLOWED_ERR;
-  }
-
-  
-  
   RefPtr<css::Loader> loader;
   if (Document* doc = GetAssociatedDocument()) {
     loader = doc->CSSLoader();
