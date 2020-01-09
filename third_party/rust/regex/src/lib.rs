@@ -521,6 +521,9 @@
 #![cfg_attr(test, deny(warnings))]
 #![cfg_attr(feature = "pattern", feature(pattern))]
 
+#[cfg(not(feature = "use_std"))]
+compile_error!("`use_std` feature is currently required to build this crate");
+
 extern crate aho_corasick;
 extern crate memchr;
 extern crate thread_local;
@@ -539,11 +542,11 @@ pub use re_builder::set_unicode::*;
 #[cfg(feature = "use_std")]
 pub use re_set::unicode::*;
 #[cfg(feature = "use_std")]
-pub use re_trait::Locations;
 #[cfg(feature = "use_std")]
 pub use re_unicode::{
     Regex, Match, Captures,
     CaptureNames, Matches, CaptureMatches, SubCaptureMatches,
+    CaptureLocations, Locations,
     Replacer, ReplacerRef, NoExpand, Split, SplitN,
     escape,
 };
@@ -641,7 +644,6 @@ pub mod bytes {
     pub use re_builder::set_bytes::*;
     pub use re_bytes::*;
     pub use re_set::bytes::*;
-    pub use re_trait::Locations;
 }
 
 mod backtrack;
@@ -664,7 +666,7 @@ mod re_set;
 mod re_trait;
 mod re_unicode;
 mod sparse;
-#[cfg(feature = "unstable")]
+#[cfg(any(regex_runtime_teddy_ssse3, regex_runtime_teddy_avx2))]
 mod vector;
 
 

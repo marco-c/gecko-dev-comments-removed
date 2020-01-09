@@ -46,9 +46,9 @@
 
 
 
-use lexer::re;
 use grammar::parse_tree::InternToken;
 use grammar::repr::{Grammar, TerminalLiteral};
+use lexer::re;
 use rust::RustWrite;
 use std::io::{self, Write};
 

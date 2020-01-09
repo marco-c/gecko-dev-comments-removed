@@ -1,9 +1,9 @@
 use grammar::repr::*;
 use lr1::core::*;
 use lr1::lookahead::Lookahead;
-use petgraph::{EdgeDirection, Graph};
 use petgraph::graph::NodeIndex;
 use petgraph::prelude::*;
+use petgraph::{EdgeDirection, Graph};
 
 
 

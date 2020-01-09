@@ -2,10 +2,11 @@
 
 
 
+use log::{Level, Log};
+use std::collections::BTreeSet;
 use std::default::Default;
 use std::path;
 use style::{self, Style};
-use log::{Level, Log};
 
 
 
@@ -39,6 +40,9 @@ pub struct Session {
     
     
     pub emit_comments: bool,
+
+    
+    pub emit_whitespace: bool,
 
     
     pub emit_report: bool,
@@ -78,6 +82,9 @@ pub struct Session {
 
     
     pub unit_test: bool,
+
+    
+    pub features: Option<BTreeSet<String>>,
 }
 
 impl Session {
@@ -88,6 +95,7 @@ impl Session {
             out_dir: None,
             force_build: false,
             emit_comments: false,
+            emit_whitespace: true,
             emit_report: false,
             color_config: ColorConfig::default(),
             max_errors: 1,
@@ -100,6 +108,7 @@ impl Session {
             nonterminal_symbol: style::DEFAULT,
             hint_text: style::FG_BRIGHT_MAGENTA.with(style::BOLD),
             unit_test: false,
+            features: Default::default(),
         }
     }
 
@@ -112,6 +121,7 @@ impl Session {
             out_dir: None,
             force_build: false,
             emit_comments: false,
+            emit_whitespace: true,
             emit_report: false,
             color_config: ColorConfig::IfTty,
             max_errors: 1,
@@ -124,6 +134,7 @@ impl Session {
             nonterminal_symbol: Style::new(),
             hint_text: Style::new(),
             unit_test: true,
+            features: Default::default(),
         }
     }
 

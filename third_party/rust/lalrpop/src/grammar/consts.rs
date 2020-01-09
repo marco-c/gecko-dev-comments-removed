@@ -14,6 +14,9 @@ pub const INPUT_PARAMETER: &'static str = "input";
 pub const INLINE: &'static str = "inline";
 
 
+pub const CFG: &'static str = "cfg";
+
+
 pub const LALR: &'static str = "LALR";
 
 

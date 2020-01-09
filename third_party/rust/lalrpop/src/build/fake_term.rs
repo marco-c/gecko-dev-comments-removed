@@ -1,6 +1,6 @@
 use std::io::{self, Write};
-use term::{self, Attr, Terminal};
 use term::color::Color;
+use term::{self, Attr, Terminal};
 
 
 

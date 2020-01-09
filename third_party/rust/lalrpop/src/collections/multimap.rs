@@ -30,7 +30,8 @@ impl<K: Ord, C: Collection> Multimap<K, C> {
     
     pub fn push(&mut self, key: K, value: C::Item) -> bool {
         let mut inserted = false;
-        let pushed = self.map
+        let pushed = self
+            .map
             .entry(key)
             .or_insert_with(|| {
                 inserted = true;

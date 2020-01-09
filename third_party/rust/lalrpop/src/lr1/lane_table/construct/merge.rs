@@ -2,8 +2,8 @@ use collections::{Map, Multimap, Set};
 use ena::unify::InPlaceUnificationTable;
 use lr1::core::{Action, LR1State, StateIndex};
 use lr1::lane_table::construct::state_set::StateSet;
-use lr1::lane_table::table::LaneTable;
 use lr1::lane_table::table::context_set::ContextSet;
+use lr1::lane_table::table::LaneTable;
 
 
 
@@ -101,12 +101,13 @@ impl<'m, 'grammar> Merge<'m, 'grammar> {
                 debug!("Merge::walk: union failed, seek existing clone");
                 let existing_clone = {
                     let context_sets = &mut self.context_sets;
-                    self.clones.get(&successor)
-                               .into_iter()
-                               .flat_map(|clones| clones) 
-                               .cloned()
-                               .filter(|&successor1| context_sets.union(state, successor1))
-                               .next()
+                    self.clones
+                        .get(&successor)
+                        .into_iter()
+                        .flat_map(|clones| clones) 
+                        .cloned()
+                        .filter(|&successor1| context_sets.union(state, successor1))
+                        .next()
                 };
 
                 if let Some(successor1) = existing_clone {
