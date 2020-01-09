@@ -8,12 +8,9 @@ const { gDevToolsBrowser } = require("devtools/client/framework/devtools-browser
 add_task(async function() {
   const thisFirefoxClient = createThisFirefoxClientMock();
   
-  const testWorkerTargetFront = {
-    actorID: "test-worker-id",
-  };
   const testWorker = {
+    id: "test-worker-id",
     name: "Test Worker",
-    workerTargetFront: testWorkerTargetFront,
   };
   
   thisFirefoxClient.listWorkers = () => ({
@@ -22,8 +19,12 @@ add_task(async function() {
     sharedWorkers: [],
   });
   
-  thisFirefoxClient.client.getActor = id => {
-    return id === testWorkerTargetFront.actorID ? testWorkerTargetFront : null;
+  
+  thisFirefoxClient.client.getActor = id => null;
+  thisFirefoxClient.client.mainRoot = {
+    getWorker: id => {
+      return id === testWorker.id ? testWorker : null;
+    },
   };
 
   const runtimeClientFactoryMock = createRuntimeClientFactoryMock();
@@ -52,8 +53,8 @@ add_task(async function() {
 
   info("Check whether the correct actor front will be opened in worker toolbox");
   const url = new window.URL(devtoolsWindow.location.href);
-  const workderID = url.searchParams.get("id");
-  is(workderID, testWorkerTargetFront.actorID,
+  const workerID = url.searchParams.get("id");
+  is(workerID, testWorker.id,
      "Correct actor front will be opened in worker toolbox");
 
   await removeTab(devtoolsTab);

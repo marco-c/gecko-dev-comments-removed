@@ -43,16 +43,32 @@ exports.targetFromURL = async function targetFromURL(url) {
   const params = url.searchParams;
 
   
-  if (!params.get("remoteId")) {
+  const isCachedClient = params.get("remoteId");
+  if (!isCachedClient) {
     
     await client.connect();
   }
 
+  const id = params.get("id");
   const type = params.get("type");
+  const chrome = params.has("chrome");
+
+  try {
+    return await _targetFromURL(client, id, type, chrome);
+  } catch (e) {
+    if (!isCachedClient) {
+      
+      
+      await client.close();
+    }
+    throw e;
+  }
+};
+
+async function _targetFromURL(client, id, type, chrome) {
   if (!type) {
     throw new Error("targetFromURL, missing type parameter");
   }
-  let id = params.get("id");
 
   let front;
   if (type === "tab") {
@@ -78,7 +94,7 @@ exports.targetFromURL = async function targetFromURL(url) {
 
     front = await addonFront.connect();
   } else if (type === "worker") {
-    front = client.getActor(id);
+    front = await client.mainRoot.getWorker(id);
 
     if (!front) {
       throw new Error(`targetFromURL, worker with actor id '${id}' doesn't exist`);
@@ -121,13 +137,12 @@ exports.targetFromURL = async function targetFromURL(url) {
 
   
   
-  const chrome = params.has("chrome");
   if (chrome) {
     front.forceChrome();
   }
 
   return front;
-};
+}
 
 
 

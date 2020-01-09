@@ -46,6 +46,15 @@ const {
 
 const Actions = require("./index");
 
+function isCachedActorNeeded(runtime, type, id) {
+  
+  
+  
+  
+  return type === DEBUG_TARGETS.WORKER &&
+         runtime.runtimeDetails.clientWrapper.client.getActor(id);
+}
+
 function getTabForUrl(url) {
   for (const navigator of Services.wm.getEnumerator("navigator:browser")) {
     for (const browser of navigator.gBrowser.browsers) {
@@ -61,10 +70,9 @@ function getTabForUrl(url) {
 function inspectDebugTarget(type, id) {
   return async (dispatch, getState) => {
     const runtime = getCurrentRuntime(getState().runtimes);
-    const remoteId = remoteClientManager.getRemoteId(runtime.id, runtime.type);
 
     let url;
-    if (runtime.id === RUNTIMES.THIS_FIREFOX && type !== DEBUG_TARGETS.WORKER) {
+    if (runtime.id === RUNTIMES.THIS_FIREFOX && !isCachedActorNeeded(runtime, type, id)) {
       
       
       
@@ -76,6 +84,7 @@ function inspectDebugTarget(type, id) {
       
       url = `about:devtools-toolbox?type=${type}&id=${id}`;
     } else {
+      const remoteId = remoteClientManager.getRemoteId(runtime.id, runtime.type);
       url = `about:devtools-toolbox?type=${type}&id=${id}&remoteId=${remoteId}`;
     }
 

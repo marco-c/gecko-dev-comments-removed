@@ -95,6 +95,7 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
       result.service.push({
         active: front.active,
         fetch: front.fetch,
+        id: front.actorID,
         lastUpdateTime: front.lastUpdateTime,
         name: front.url,
         registrationFront: front,
@@ -105,6 +106,7 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
 
     workers.forEach(front => {
       const worker = {
+        id: front.actorID,
         name: front.url,
         url: front.url,
         workerTargetFront: front,
@@ -247,6 +249,21 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
     const addons = await this.listAddons();
     const addonTargetFront = addons.find(addon => addon.id === id);
     return addonTargetFront;
+  }
+
+  
+
+
+
+
+
+  async getWorker(id) {
+    const { service, shared, other } = await this.listAllWorkers();
+    const worker = [...service, ...shared, ...other].find(w => w.id === id);
+    if (!worker) {
+      return null;
+    }
+    return worker.workerTargetFront || worker.registrationFront;
   }
 
   
