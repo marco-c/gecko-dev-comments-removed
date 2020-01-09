@@ -1031,10 +1031,6 @@ void HttpChannelChild::OnStopRequest(
        static_cast<uint32_t>(channelStatus)));
   MOZ_ASSERT(NS_IsMainThread());
 
-  if (mOnStopRequestCalled && !mIPCOpen) {
-    return;
-  }
-
   if (mDivertingToParent) {
     MOZ_RELEASE_ASSERT(
         !mFlushedForDiversion,
@@ -3794,15 +3790,6 @@ void HttpChannelChild::ActorDestroy(ActorDestroyReason aWhy) {
   
   
   if (aWhy != Deletion) {
-    
-    
-    
-    
-    if (!mOnStopRequestCalled && mListener) {
-      DoPreOnStopRequest(NS_ERROR_ABORT);
-      DoOnStopRequest(this, NS_ERROR_ABORT, mListenerContext);
-    }
-
     CleanupBackgroundChannel();
   }
 }
