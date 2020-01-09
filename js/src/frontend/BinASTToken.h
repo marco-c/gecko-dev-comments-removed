@@ -9,8 +9,8 @@
 
 
 
-#ifndef frontend_BinToken_h
-#define frontend_BinToken_h
+#ifndef frontend_BinASTToken_h
+#define frontend_BinASTToken_h
 
 #include <stddef.h>
 
