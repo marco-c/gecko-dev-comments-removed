@@ -4,9 +4,4 @@ config = {
 
     
     "ignore_locales": ["en-US", "ja-JP-mac"],
-
-    
-    "local_mar_tool_dir": "dist/host/bin",
-    "mar": "mar",
-    "mbsdiff": "mbsdiff",
 }

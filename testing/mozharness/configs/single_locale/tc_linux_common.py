@@ -14,9 +14,4 @@ config = {
     },
 
     "vcs_share_base": "/builds/hg-shared",
-
-    
-    "local_mar_tool_dir": "dist/host/bin",
-    "mar": "mar",
-    "mbsdiff": "mbsdiff",
 }
