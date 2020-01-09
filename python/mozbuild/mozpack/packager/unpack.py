@@ -40,7 +40,7 @@ class UnpackFinder(BaseFinder):
     The UnpackFinder is populated with files from this Finder instance,
     or with files from a FileFinder using the given path as its root.
     '''
-    def __init__(self, source):
+    def __init__(self, source, omnijar_name=None):
         if isinstance(source, BaseFinder):
             self._finder = source
         else:
@@ -48,7 +48,12 @@ class UnpackFinder(BaseFinder):
         self.base = self._finder.base
         self.files = FileRegistry()
         self.kind = 'flat'
-        self.omnijar = None
+        if omnijar_name:
+            self.omnijar = omnijar_name
+        else:
+            
+            from buildconfig import substs
+            self.omnijar = substs.get('OMNIJAR_NAME', 'omni.ja')
         self.jarlogs = {}
         self.compressed = False
 
@@ -63,14 +68,11 @@ class UnpackFinder(BaseFinder):
             
             
             
-            if not p.endswith('.xpi') and self._maybe_zip(f) and \
-                    (mozpath.basename(p) == self.omnijar or
-                     not self.omnijar):
+            if self._maybe_zip(f) and mozpath.match(p, '**/%s' % self.omnijar):
                 jar = self._open_jar(p, f)
                 if 'chrome.manifest' in jar:
                     self.kind = 'omni'
-                    self.omnijar = mozpath.basename(p)
-                    self._fill_with_jar(base, jar)
+                    self._fill_with_jar(p[:-len(self.omnijar) - 1], jar)
                     continue
             
             
@@ -172,23 +174,23 @@ class UnpackFinder(BaseFinder):
         return mozpath.join(base, jar), entry
 
 
-def unpack_to_registry(source, registry):
+def unpack_to_registry(source, registry, omnijar_name=None):
     '''
     Transform a jar chrome or omnijar packaged directory into a flat package.
 
     The given registry is filled with the flat package.
     '''
-    finder = UnpackFinder(source)
+    finder = UnpackFinder(source, omnijar_name)
     packager = SimplePackager(FlatFormatter(registry))
     for p, f in finder.find('*'):
         packager.add(p, f)
     packager.close()
 
 
-def unpack(source):
+def unpack(source, omnijar_name=None):
     '''
     Transform a jar chrome or omnijar packaged directory into a flat package.
     '''
     copier = FileCopier()
-    unpack_to_registry(source, copier)
+    unpack_to_registry(source, copier, omnijar_name)
     copier.copy(source, skip_if_older=False)
