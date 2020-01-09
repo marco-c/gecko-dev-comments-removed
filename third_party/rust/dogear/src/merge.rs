@@ -35,7 +35,7 @@ enum StructureChange {
 }
 
 
-#[derive(Clone, Copy, Default, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Default, Debug, Eq, Hash, PartialEq)]
 pub struct StructureCounts {
     
     pub remote_revives: usize,
@@ -59,7 +59,7 @@ pub struct StructureCounts {
 type MatchingDupes<'t> = (HashMap<Guid, Node<'t>>, HashMap<Guid, Node<'t>>);
 
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct Deletion<'t> {
     pub guid: &'t Guid,
     pub local_level: i64,
@@ -886,7 +886,33 @@ impl<'t, D: Driver> Merger<'t, D> {
         match (local_node.needs_merge, remote_node.needs_merge) {
             (true, true) => {
                 
-                let newer_side = if local_node.age < remote_node.age {
+                let item = if local_node.is_user_content_root() {
+                    
+                    
+                    ConflictResolution::Local
+                } else {
+                    
+                    
+                    match remote_node.validity {
+                        Validity::Valid | Validity::Reupload => {
+                            
+                            
+                            
+                            if local_node.age < remote_node.age {
+                                ConflictResolution::Local
+                            } else {
+                                ConflictResolution::Remote
+                            }
+                        }
+                        
+                        
+                        
+                        Validity::Replace => ConflictResolution::Local,
+                    }
+                };
+                
+                
+                let children = if local_node.age < remote_node.age {
                     
                     
                     ConflictResolution::Local
@@ -895,16 +921,7 @@ impl<'t, D: Driver> Merger<'t, D> {
                     
                     ConflictResolution::Remote
                 };
-                if local_node.is_user_content_root() {
-                    
-                    
-                    
-                    (ConflictResolution::Local, newer_side)
-                } else {
-                    
-                    
-                    (newer_side, newer_side)
-                }
+                (item, children)
             }
 
             (true, false) => {
@@ -916,15 +933,20 @@ impl<'t, D: Driver> Merger<'t, D> {
 
             (false, true) => {
                 
-                if local_node.is_user_content_root() {
+                let item = if local_node.is_user_content_root() {
                     
-                    
-                    (ConflictResolution::Unchanged, ConflictResolution::Remote)
+                    ConflictResolution::Unchanged
                 } else {
-                    
-                    
-                    (ConflictResolution::Remote, ConflictResolution::Remote)
-                }
+                    match remote_node.validity {
+                        Validity::Valid | Validity::Reupload => ConflictResolution::Remote,
+                        
+                        
+                        
+                        Validity::Replace => ConflictResolution::Local,
+                    }
+                };
+                
+                (item, ConflictResolution::Remote)
             }
 
             (false, false) => {
@@ -984,31 +1006,10 @@ impl<'t, D: Driver> Merger<'t, D> {
         remote_parent_node: Node<'t>,
         remote_node: Node<'t>,
     ) -> Result<StructureChange> {
-        if remote_node.is_user_content_root() {
-            if let Some(local_node) = self.local_tree.node_for_guid(&remote_node.guid) {
-                let local_parent_node = local_node
-                    .parent()
-                    .expect("Can't check for structure changes without local parent");
-                if remote_parent_node.guid != local_parent_node.guid {
-                    return Ok(StructureChange::Moved);
-                }
-                return Ok(StructureChange::Unchanged);
-            }
-            return Ok(StructureChange::Unchanged);
-        }
-
         if !remote_node_is_syncable(&remote_node) {
             
             
-            self.delete_remotely.insert(remote_node.guid.clone());
-            if remote_node.is_folder() {
-                
-                
-                
-                self.relocate_remote_orphans_to_merged_node(merged_node, remote_node)?;
-            }
-            self.structure_counts.merged_deletions += 1;
-            return Ok(StructureChange::Deleted);
+            return self.delete_remote_node(merged_node, remote_node);
         }
 
         if !self.local_tree.is_deleted(&remote_node.guid) {
@@ -1016,25 +1017,14 @@ impl<'t, D: Driver> Merger<'t, D> {
                 if !local_node.is_syncable() {
                     
                     
-                    
-                    self.delete_remotely.insert(remote_node.guid.clone());
-                    if remote_node.is_folder() {
-                        self.relocate_remote_orphans_to_merged_node(merged_node, remote_node)?;
-                    }
-                    self.structure_counts.merged_deletions += 1;
-                    return Ok(StructureChange::Deleted);
+                    return self.delete_remote_node(merged_node, remote_node);
                 }
                 if local_node.validity == Validity::Replace
                     && remote_node.validity == Validity::Replace
                 {
                     
                     
-                    self.delete_remotely.insert(remote_node.guid.clone());
-                    if remote_node.is_folder() {
-                        self.relocate_remote_orphans_to_merged_node(merged_node, remote_node)?;
-                    }
-                    self.structure_counts.merged_deletions += 1;
-                    return Ok(StructureChange::Deleted);
+                    return self.delete_remote_node(merged_node, remote_node);
                 }
                 let local_parent_node = local_node
                     .parent()
@@ -1043,20 +1033,24 @@ impl<'t, D: Driver> Merger<'t, D> {
                     return Ok(StructureChange::Moved);
                 }
                 return Ok(StructureChange::Unchanged);
-            } else {
-                return Ok(StructureChange::Unchanged);
             }
+            if remote_node.validity == Validity::Replace {
+                
+                
+                return self.delete_remote_node(merged_node, remote_node);
+            }
+            return Ok(StructureChange::Unchanged);
         }
 
         if remote_node.validity == Validity::Replace {
             
             
-            self.delete_remotely.insert(remote_node.guid.clone());
-            if remote_node.is_folder() {
-                self.relocate_remote_orphans_to_merged_node(merged_node, remote_node)?;
-            }
-            self.structure_counts.merged_deletions += 1;
-            return Ok(StructureChange::Deleted);
+            return self.delete_remote_node(merged_node, remote_node);
+        }
+
+        if remote_node.is_user_content_root() {
+            
+            return Ok(StructureChange::Unchanged);
         }
 
         if remote_node.needs_merge {
@@ -1094,12 +1088,7 @@ impl<'t, D: Driver> Merger<'t, D> {
 
         
         
-        self.delete_remotely.insert(remote_node.guid.clone());
-        if remote_node.is_folder() {
-            self.relocate_remote_orphans_to_merged_node(merged_node, remote_node)?;
-        }
-        self.structure_counts.merged_deletions += 1;
-        Ok(StructureChange::Deleted)
+        self.delete_remote_node(merged_node, remote_node)
     }
 
     
@@ -1113,28 +1102,10 @@ impl<'t, D: Driver> Merger<'t, D> {
         local_parent_node: Node<'t>,
         local_node: Node<'t>,
     ) -> Result<StructureChange> {
-        if local_node.is_user_content_root() {
-            if let Some(remote_node) = self.remote_tree.node_for_guid(&local_node.guid) {
-                let remote_parent_node = remote_node
-                    .parent()
-                    .expect("Can't check for structure changes without remote parent");
-                if remote_parent_node.guid != local_parent_node.guid {
-                    return Ok(StructureChange::Moved);
-                }
-                return Ok(StructureChange::Unchanged);
-            }
-            return Ok(StructureChange::Unchanged);
-        }
-
         if !local_node.is_syncable() {
             
             
-            self.delete_locally.insert(local_node.guid.clone());
-            if local_node.is_folder() {
-                self.relocate_local_orphans_to_merged_node(merged_node, local_node)?;
-            }
-            self.structure_counts.merged_deletions += 1;
-            return Ok(StructureChange::Deleted);
+            return self.delete_local_node(merged_node, local_node);
         }
 
         if !self.remote_tree.is_deleted(&local_node.guid) {
@@ -1144,24 +1115,15 @@ impl<'t, D: Driver> Merger<'t, D> {
                     
                     
                     
-                    self.delete_locally.insert(local_node.guid.clone());
-                    if remote_node.is_folder() {
-                        self.relocate_local_orphans_to_merged_node(merged_node, local_node)?;
-                    }
-                    self.structure_counts.merged_deletions += 1;
-                    return Ok(StructureChange::Deleted);
+                    
+                    return self.delete_local_node(merged_node, local_node);
                 }
                 if remote_node.validity == Validity::Replace
                     && local_node.validity == Validity::Replace
                 {
                     
                     
-                    self.delete_locally.insert(local_node.guid.clone());
-                    if local_node.is_folder() {
-                        self.relocate_local_orphans_to_merged_node(merged_node, local_node)?;
-                    }
-                    self.structure_counts.merged_deletions += 1;
-                    return Ok(StructureChange::Deleted);
+                    return self.delete_local_node(merged_node, local_node);
                 }
                 
                 
@@ -1174,20 +1136,27 @@ impl<'t, D: Driver> Merger<'t, D> {
                 }
                 return Ok(StructureChange::Unchanged);
             }
+            if local_node.validity == Validity::Replace {
+                
+                
+                return self.delete_local_node(merged_node, local_node);
+            }
             return Ok(StructureChange::Unchanged);
         }
 
         if local_node.validity == Validity::Replace {
             
             
-            self.delete_locally.insert(local_node.guid.clone());
-            if local_node.is_folder() {
-                self.relocate_local_orphans_to_merged_node(merged_node, local_node)?;
-            }
-            self.structure_counts.merged_deletions += 1;
-            return Ok(StructureChange::Deleted);
+            return self.delete_local_node(merged_node, local_node);
         }
 
+        if local_node.is_user_content_root() {
+            
+            return Ok(StructureChange::Unchanged);
+        }
+
+        
+        
         if local_node.needs_merge {
             if !local_node.is_folder() {
                 trace!(
@@ -1214,12 +1183,7 @@ impl<'t, D: Driver> Merger<'t, D> {
 
         
         
-        self.delete_locally.insert(local_node.guid.clone());
-        if local_node.is_folder() {
-            self.relocate_local_orphans_to_merged_node(merged_node, local_node)?;
-        }
-        self.structure_counts.merged_deletions += 1;
-        Ok(StructureChange::Deleted)
+        self.delete_local_node(merged_node, local_node)
     }
 
     
@@ -1228,12 +1192,12 @@ impl<'t, D: Driver> Merger<'t, D> {
     
     
     
-    
-    fn relocate_remote_orphans_to_merged_node(
+    fn delete_remote_node(
         &mut self,
         merged_node: &mut MergedNode<'t>,
         remote_node: Node<'t>,
-    ) -> Result<()> {
+    ) -> Result<StructureChange> {
+        self.delete_remotely.insert(remote_node.guid.clone());
         for remote_child_node in remote_node.children() {
             if self.merged_guids.contains(&remote_child_node.guid) {
                 trace!(
@@ -1277,19 +1241,20 @@ impl<'t, D: Driver> Merger<'t, D> {
                 }
             }
         }
-        Ok(())
+        self.structure_counts.merged_deletions += 1;
+        Ok(StructureChange::Deleted)
     }
 
     
     
     
     
-    
-    fn relocate_local_orphans_to_merged_node(
+    fn delete_local_node(
         &mut self,
         merged_node: &mut MergedNode<'t>,
         local_node: Node<'t>,
-    ) -> Result<()> {
+    ) -> Result<StructureChange> {
+        self.delete_locally.insert(local_node.guid.clone());
         for local_child_node in local_node.children() {
             if self.merged_guids.contains(&local_child_node.guid) {
                 trace!(
@@ -1333,7 +1298,8 @@ impl<'t, D: Driver> Merger<'t, D> {
                 }
             }
         }
-        Ok(())
+        self.structure_counts.merged_deletions += 1;
+        Ok(StructureChange::Deleted)
     }
 
     

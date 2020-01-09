@@ -13,6 +13,7 @@
 
 
 use std::{
+    borrow::Cow,
     cmp::Ordering,
     collections::{HashMap, HashSet},
     fmt, mem,
@@ -46,6 +47,7 @@ pub struct Tree {
     entry_index_by_guid: HashMap<Guid, Index>,
     entries: Vec<TreeEntry>,
     deleted_guids: HashSet<Guid>,
+    problems: Problems,
 }
 
 impl Tree {
@@ -108,6 +110,12 @@ impl Tree {
             .get(guid)
             .map(|&index| Node(self, &self.entries[index]))
     }
+
+    
+    #[inline]
+    pub fn problems(&self) -> &Problems {
+        &self.problems
+    }
 }
 
 impl IntoTree for Tree {
@@ -120,20 +128,26 @@ impl IntoTree for Tree {
 impl fmt::Display for Tree {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let root = self.root();
-        let deleted_guids = self
-            .deleted_guids
-            .iter()
-            .map(|guid| guid.as_ref())
-            .collect::<Vec<&str>>();
-        match deleted_guids.len() {
-            0 => write!(f, "{}", root.to_ascii_string()),
-            _ => write!(
-                f,
-                "{}\nDeleted: [{}]",
-                root.to_ascii_string(),
-                deleted_guids.join(",")
-            ),
+        f.write_str(&root.to_ascii_string())?;
+        if !self.deleted_guids.is_empty() {
+            f.write_str("\nDeleted: [")?;
+            for (i, guid) in self.deleted_guids.iter().enumerate() {
+                if i != 0 {
+                    f.write_str(", ")?;
+                }
+                f.write_str(guid.as_ref())?;
+            }
         }
+        if !self.problems.is_empty() {
+            f.write_str("\nProblems:\n")?;
+            for (i, summary) in self.problems.summarize().enumerate() {
+                if i != 0 {
+                    f.write_str("\n")?;
+                }
+                write!(f, "❗️ {}", summary)?;
+            }
+        }
+        Ok(())
     }
 }
 
@@ -273,179 +287,6 @@ impl Builder {
         };
         ParentBuilder(self, entry_child)
     }
-
-    
-    
-    
-    fn reparent_orphans_to_default_index(&self) -> Index {
-        self.reparent_orphans_to
-            .as_ref()
-            .and_then(|guid| self.entry_index_by_guid.get(guid))
-            .cloned()
-            .filter(|&parent_index| {
-                let parent_entry = &self.entries[parent_index];
-                parent_entry.item.is_folder()
-            })
-            .unwrap_or(0)
-    }
-
-    
-    
-    fn resolve(&self) -> (Vec<ResolvedParent>, HashMap<Index, Vec<Index>>) {
-        let mut parents = Vec::with_capacity(self.entries.len());
-        let mut reparented_orphans_by_parent: HashMap<Index, Vec<Index>> = HashMap::new();
-        for (entry_index, entry) in self.entries.iter().enumerate() {
-            let mut resolved_parent = match &entry.parent {
-                BuilderEntryParent::Root => ResolvedParent::Root,
-                BuilderEntryParent::None => {
-                    
-                    
-                    let parent_index = self.reparent_orphans_to_default_index();
-                    ResolvedParent::ByParentGuid(parent_index)
-                }
-                BuilderEntryParent::Complete(index) => {
-                    
-                    
-                    ResolvedParent::Unchanged(*index)
-                }
-                BuilderEntryParent::Partial(parents) => match parents.as_slice() {
-                    [BuilderParentBy::UnknownItem(by_item), BuilderParentBy::Children(by_children)]
-                    | [BuilderParentBy::Children(by_children), BuilderParentBy::UnknownItem(by_item)] =>
-                    {
-                        self.entry_index_by_guid
-                            .get(by_item)
-                            .filter(|by_item| by_item == &by_children)
-                            .map(|&by_item| {
-                                
-                                
-                                
-                                
-                                ResolvedParent::Unchanged(by_item)
-                            })
-                            .unwrap_or_else(|| ResolvedParent::ByChildren(*by_children))
-                    }
-
-                    parents => {
-                        
-                        
-                        
-                        parents
-                            .iter()
-                            .min_by(|parent, other_parent| {
-                                let (parent_index, other_parent_index) =
-                                    match (parent, other_parent) {
-                                        (
-                                            BuilderParentBy::Children(parent_index),
-                                            BuilderParentBy::Children(other_parent_index),
-                                        ) => (*parent_index, *other_parent_index),
-                                        (
-                                            BuilderParentBy::Children(_),
-                                            BuilderParentBy::KnownItem(_),
-                                        ) => {
-                                            return Ordering::Less;
-                                        }
-                                        (
-                                            BuilderParentBy::Children(_),
-                                            BuilderParentBy::UnknownItem(_),
-                                        ) => {
-                                            return Ordering::Less;
-                                        }
-
-                                        (
-                                            BuilderParentBy::KnownItem(parent_index),
-                                            BuilderParentBy::KnownItem(other_parent_index),
-                                        ) => (*parent_index, *other_parent_index),
-                                        (
-                                            BuilderParentBy::KnownItem(_),
-                                            BuilderParentBy::Children(_),
-                                        ) => {
-                                            return Ordering::Greater;
-                                        }
-                                        (
-                                            BuilderParentBy::KnownItem(_),
-                                            BuilderParentBy::UnknownItem(_),
-                                        ) => {
-                                            return Ordering::Less;
-                                        }
-
-                                        (
-                                            BuilderParentBy::UnknownItem(parent_guid),
-                                            BuilderParentBy::UnknownItem(other_parent_guid),
-                                        ) => {
-                                            match (
-                                                self.entry_index_by_guid.get(parent_guid),
-                                                self.entry_index_by_guid.get(other_parent_guid),
-                                            ) {
-                                                (Some(parent_index), Some(other_parent_index)) => {
-                                                    (*parent_index, *other_parent_index)
-                                                }
-                                                (Some(_), None) => return Ordering::Less,
-                                                (None, Some(_)) => return Ordering::Greater,
-                                                (None, None) => return Ordering::Equal,
-                                            }
-                                        }
-                                        (
-                                            BuilderParentBy::UnknownItem(_),
-                                            BuilderParentBy::Children(_),
-                                        ) => {
-                                            return Ordering::Greater;
-                                        }
-                                        (
-                                            BuilderParentBy::UnknownItem(_),
-                                            BuilderParentBy::KnownItem(_),
-                                        ) => {
-                                            return Ordering::Greater;
-                                        }
-                                    };
-                                let parent_entry = &self.entries[parent_index];
-                                let other_parent_entry = &self.entries[other_parent_index];
-                                parent_entry.item.age.cmp(&other_parent_entry.item.age)
-                            })
-                            .and_then(|parent_from| match parent_from {
-                                BuilderParentBy::Children(index) => {
-                                    Some(ResolvedParent::ByChildren(*index))
-                                }
-                                BuilderParentBy::KnownItem(index) => {
-                                    Some(ResolvedParent::ByParentGuid(*index))
-                                }
-                                BuilderParentBy::UnknownItem(guid) => self
-                                    .entry_index_by_guid
-                                    .get(guid)
-                                    .filter(|&&index| self.entries[index].item.is_folder())
-                                    .map(|&index| ResolvedParent::ByParentGuid(index)),
-                            })
-                            .unwrap_or_else(|| {
-                                
-                                
-                                let parent_index = self.reparent_orphans_to_default_index();
-                                ResolvedParent::ByParentGuid(parent_index)
-                            })
-                    }
-                },
-            };
-            if entry.item.guid.is_user_content_root() {
-                
-                
-                resolved_parent = match resolved_parent {
-                    ResolvedParent::Unchanged(parent_index) if parent_index == 0 => {
-                        ResolvedParent::Unchanged(parent_index)
-                    }
-                    _ => ResolvedParent::ByParentGuid(0),
-                };
-            }
-            if let ResolvedParent::ByParentGuid(parent_index) = &resolved_parent {
-                
-                
-                
-                let reparented_orphans = reparented_orphans_by_parent
-                    .entry(*parent_index)
-                    .or_default();
-                reparented_orphans.push(entry_index);
-            }
-            parents.push(resolved_parent);
-        }
-        (parents, reparented_orphans_by_parent)
-    }
 }
 
 impl IntoTree for Builder {
@@ -453,94 +294,133 @@ impl IntoTree for Builder {
     
     
     fn into_tree(self) -> Result<Tree> {
+        let mut problems = Problems::default();
+
         
         
+        let mut parents = Vec::with_capacity(self.entries.len());
+        let mut reparented_child_indices_by_parent: HashMap<Index, Vec<Index>> = HashMap::new();
+        for (entry_index, entry) in self.entries.iter().enumerate() {
+            let r = ResolveParent::new(&self, entry, &mut problems);
+            let resolved_parent = r.resolve();
+            if let ResolvedParent::ByParentGuid(parent_index) = &resolved_parent {
+                
+                
+                
+                
+                
+                let reparented_child_indices = reparented_child_indices_by_parent
+                    .entry(*parent_index)
+                    .or_default();
+                reparented_child_indices.push(entry_index);
+            }
+            parents.push(resolved_parent);
+        }
+
         
-        let (parents, mut reparented_orphans_by_parent) = self.resolve();
+        
         if let Some(index) = detect_cycles(&parents) {
             return Err(ErrorKind::Cycle(self.entries[index].item.guid.clone()).into());
         }
-        for reparented_orphans in reparented_orphans_by_parent.values_mut() {
+
+        
+        let mut entries = Vec::with_capacity(self.entries.len());
+        for (entry_index, entry) in self.entries.into_iter().enumerate() {
             
-            reparented_orphans.sort_unstable_by(|&index, &other_index| {
-                self.entries[index]
-                    .item
-                    .guid
-                    .cmp(&self.entries[other_index].item.guid)
-            });
-        }
+            let mut divergence = Divergence::Consistent;
 
-        
-        
-        let entries = self
-            .entries
-            .into_iter()
-            .enumerate()
-            .map(|(entry_index, entry)| {
-                let mut divergence = Divergence::Consistent;
-
-                let parent_index = match &parents[entry_index] {
-                    ResolvedParent::Root => None,
-                    ResolvedParent::Unchanged(index) => Some(*index),
-                    ResolvedParent::ByChildren(index) | ResolvedParent::ByParentGuid(index) => {
-                        divergence = Divergence::Diverged;
-                        Some(*index)
-                    }
-                };
-
-                let mut child_indices = entry
-                    .children
-                    .iter()
-                    .filter_map(|child_index| {
-                        
-                        
-                        match child_index {
-                            BuilderEntryChild::Exists(child_index) => {
-                                match &parents[*child_index] {
-                                    ResolvedParent::Root | ResolvedParent::Unchanged(_) => {
-                                        Some(*child_index)
-                                    }
-
-                                    ResolvedParent::ByChildren(parent_index)
-                                    | ResolvedParent::ByParentGuid(parent_index) => {
-                                        divergence = Divergence::Diverged;
-                                        if *parent_index == entry_index {
-                                            Some(*child_index)
-                                        } else {
-                                            None
-                                        }
-                                    }
-                                }
-                            }
-                            BuilderEntryChild::Missing(_) => {
-                                divergence = Divergence::Diverged;
-                                None
-                            }
-                        }
-                    })
-                    .collect::<Vec<_>>();
-                if let Some(mut reparented_orphans) =
-                    reparented_orphans_by_parent.get_mut(&entry_index)
-                {
+            let parent_index = match &parents[entry_index] {
+                ResolvedParent::Root => {
+                    
+                    
+                    assert_eq!(entry_index, 0);
+                    None
+                }
+                ResolvedParent::ByStructure(index) => {
+                    
+                    Some(*index)
+                }
+                ResolvedParent::ByChildren(index) | ResolvedParent::ByParentGuid(index) => {
+                    
                     
                     divergence = Divergence::Diverged;
-                    child_indices.append(&mut reparented_orphans);
+                    Some(*index)
                 }
+            };
 
-                TreeEntry {
-                    item: entry.item,
-                    parent_index,
-                    child_indices,
-                    divergence,
+            
+            
+            let mut child_indices = Vec::with_capacity(entry.children.len());
+            for child in entry.children {
+                match child {
+                    BuilderEntryChild::Exists(child_index) => match &parents[child_index] {
+                        ResolvedParent::Root => {
+                            
+                            unreachable!("A child can't be a top-level root");
+                        }
+                        ResolvedParent::ByStructure(parent_index) => {
+                            
+                            
+                            
+                            assert_eq!(*parent_index, entry_index);
+                            child_indices.push(child_index);
+                        }
+                        ResolvedParent::ByChildren(parent_index) => {
+                            
+                            
+                            
+                            divergence = Divergence::Diverged;
+                            if *parent_index == entry_index {
+                                child_indices.push(child_index);
+                            }
+                        }
+                        ResolvedParent::ByParentGuid(parent_index) => {
+                            
+                            
+                            
+                            
+                            assert_eq!(*parent_index, 0);
+                            divergence = Divergence::Diverged;
+                        }
+                    },
+                    BuilderEntryChild::Missing(child_guid) => {
+                        
+                        
+                        
+                        divergence = Divergence::Diverged;
+                        problems.note(
+                            &entry.item.guid,
+                            Problem::MissingChild {
+                                child_guid: child_guid.clone(),
+                            },
+                        );
+                    }
                 }
-            })
-            .collect::<Vec<_>>();
+            }
+
+            
+            
+            if let Some(reparented_child_indices) =
+                reparented_child_indices_by_parent.get(&entry_index)
+            {
+                divergence = Divergence::Diverged;
+                child_indices.extend_from_slice(reparented_child_indices);
+            }
+
+            entries.push(TreeEntry {
+                item: entry.item,
+                parent_index,
+                child_indices,
+                divergence,
+            });
+        }
 
         
         Ok(Tree {
             entry_index_by_guid: self.entry_index_by_guid,
             entries,
             deleted_guids: HashSet::new(),
+            problems,
         })
     }
 }
@@ -727,6 +607,7 @@ impl BuilderEntry {
     }
 }
 
+
 #[derive(Debug)]
 enum BuilderEntryChild {
     Exists(Index),
@@ -734,7 +615,7 @@ enum BuilderEntryChild {
 }
 
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 enum BuilderEntryParent {
     
     None,
@@ -769,11 +650,321 @@ enum BuilderParentBy {
     KnownItem(Index),
 }
 
+
+struct ResolveParent<'a> {
+    builder: &'a Builder,
+    entry: &'a BuilderEntry,
+    problems: &'a mut Problems,
+}
+
+impl<'a> ResolveParent<'a> {
+    fn new(
+        builder: &'a Builder,
+        entry: &'a BuilderEntry,
+        problems: &'a mut Problems,
+    ) -> ResolveParent<'a> {
+        ResolveParent {
+            builder,
+            entry,
+            problems,
+        }
+    }
+
+    fn resolve(self) -> ResolvedParent {
+        if self.entry.item.guid.is_user_content_root() {
+            self.user_content_root()
+        } else {
+            self.item()
+        }
+    }
+
+    
+    
+    
+    fn parent(&self) -> Cow<'a, BuilderEntryParent> {
+        let parents = match &self.entry.parent {
+            
+            BuilderEntryParent::Root => return Cow::Owned(BuilderEntryParent::Root),
+            BuilderEntryParent::None => return Cow::Owned(BuilderEntryParent::None),
+            BuilderEntryParent::Complete(index) => {
+                
+                
+                return Cow::Owned(BuilderEntryParent::Complete(*index));
+            }
+            BuilderEntryParent::Partial(parents) => parents,
+        };
+        
+        
+        let (index_by_guid, index_by_children) = match parents.as_slice() {
+            [BuilderParentBy::UnknownItem(guid), BuilderParentBy::Children(index_by_children)]
+            | [BuilderParentBy::Children(index_by_children), BuilderParentBy::UnknownItem(guid)] => {
+                match self.builder.entry_index_by_guid.get(guid) {
+                    Some(&index_by_guid) => (index_by_guid, *index_by_children),
+                    None => return Cow::Borrowed(&self.entry.parent),
+                }
+            }
+            [BuilderParentBy::KnownItem(index_by_guid), BuilderParentBy::Children(index_by_children)]
+            | [BuilderParentBy::Children(index_by_children), BuilderParentBy::KnownItem(index_by_guid)] => {
+                (*index_by_guid, *index_by_children)
+            }
+            
+            
+            
+            _ => return Cow::Borrowed(&self.entry.parent),
+        };
+        
+        
+        
+        
+        
+        if index_by_guid == index_by_children {
+            Cow::Owned(BuilderEntryParent::Complete(index_by_children))
+        } else {
+            Cow::Borrowed(&self.entry.parent)
+        }
+    }
+
+    
+    
+    
+    
+    fn user_content_root(self) -> ResolvedParent {
+        match self.parent().as_ref() {
+            BuilderEntryParent::None => {
+                
+                
+                self.problems.note(&self.entry.item.guid, Problem::Orphan);
+                ResolvedParent::ByParentGuid(0)
+            }
+            BuilderEntryParent::Root => {
+                unreachable!("A user content root can't be a top-level root")
+            }
+            BuilderEntryParent::Complete(index) => {
+                if *index == 0 {
+                    ResolvedParent::ByStructure(*index)
+                } else {
+                    
+                    let parent_guid = self.builder.entries[*index].item.guid.clone();
+                    self.problems.note(
+                        &self.entry.item.guid,
+                        Problem::MisparentedRoot(vec![
+                            DivergedParent::ByChildren(parent_guid.clone()),
+                            DivergedParentGuid::Folder(parent_guid).into(),
+                        ]),
+                    );
+                    ResolvedParent::ByParentGuid(0)
+                }
+            }
+            BuilderEntryParent::Partial(parents_by) => {
+                
+                
+                self.problems.note(
+                    &self.entry.item.guid,
+                    Problem::MisparentedRoot(
+                        parents_by
+                            .iter()
+                            .map(|parent_by| {
+                                PossibleParent::new(self.builder, parent_by).summarize()
+                            })
+                            .collect(),
+                    ),
+                );
+                ResolvedParent::ByParentGuid(0)
+            }
+        }
+    }
+
+    
+    
+    fn item(self) -> ResolvedParent {
+        match self.parent().as_ref() {
+            BuilderEntryParent::Root => ResolvedParent::Root,
+            BuilderEntryParent::None => {
+                
+                
+                
+                let parent_index = self.reparent_orphans_to_default_index();
+                self.problems.note(&self.entry.item.guid, Problem::Orphan);
+                ResolvedParent::ByParentGuid(parent_index)
+            }
+            BuilderEntryParent::Complete(index) => {
+                
+                
+                ResolvedParent::ByStructure(*index)
+            }
+            BuilderEntryParent::Partial(parents) => {
+                
+                
+                let possible_parents = parents
+                    .iter()
+                    .map(|parent_by| PossibleParent::new(self.builder, parent_by))
+                    .collect::<Vec<_>>();
+                self.problems.note(
+                    &self.entry.item.guid,
+                    Problem::DivergedParents(
+                        possible_parents.iter().map(|p| p.summarize()).collect(),
+                    ),
+                );
+                possible_parents
+                    .into_iter()
+                    .min()
+                    .and_then(|p| match p.parent_by {
+                        BuilderParentBy::Children(index) => {
+                            Some(ResolvedParent::ByChildren(*index))
+                        }
+                        BuilderParentBy::KnownItem(index) => {
+                            Some(ResolvedParent::ByParentGuid(*index))
+                        }
+                        BuilderParentBy::UnknownItem(guid) => self
+                            .builder
+                            .entry_index_by_guid
+                            .get(guid)
+                            .filter(|&&index| self.builder.entries[index].item.is_folder())
+                            .map(|&index| ResolvedParent::ByParentGuid(index)),
+                    })
+                    .unwrap_or_else(|| {
+                        
+                        
+                        let parent_index = self.reparent_orphans_to_default_index();
+                        ResolvedParent::ByParentGuid(parent_index)
+                    })
+            }
+        }
+    }
+
+    
+    
+    
+    fn reparent_orphans_to_default_index(&self) -> Index {
+        self.builder
+            .reparent_orphans_to
+            .as_ref()
+            .and_then(|guid| self.builder.entry_index_by_guid.get(guid))
+            .cloned()
+            .filter(|&parent_index| {
+                let parent_entry = &self.builder.entries[parent_index];
+                parent_entry.item.is_folder()
+            })
+            .unwrap_or(0)
+    }
+}
+
+
+
+#[derive(Clone, Copy, Debug)]
+struct PossibleParent<'a> {
+    builder: &'a Builder,
+    parent_by: &'a BuilderParentBy,
+}
+
+impl<'a> PossibleParent<'a> {
+    fn new(builder: &'a Builder, parent_by: &'a BuilderParentBy) -> PossibleParent<'a> {
+        PossibleParent { builder, parent_by }
+    }
+
+    
+    fn summarize(&self) -> DivergedParent {
+        let entry = match self.parent_by {
+            BuilderParentBy::Children(index) => {
+                return DivergedParent::ByChildren(self.builder.entries[*index].item.guid.clone());
+            }
+            BuilderParentBy::KnownItem(index) => &self.builder.entries[*index],
+            BuilderParentBy::UnknownItem(guid) => {
+                match self.builder.entry_index_by_guid.get(guid) {
+                    Some(index) => &self.builder.entries[*index],
+                    None => return DivergedParentGuid::Missing(guid.clone()).into(),
+                }
+            }
+        };
+        if entry.item.is_folder() {
+            DivergedParentGuid::Folder(entry.item.guid.clone()).into()
+        } else {
+            DivergedParentGuid::NonFolder(entry.item.guid.clone()).into()
+        }
+    }
+}
+
+impl<'a> Ord for PossibleParent<'a> {
+    
+    
+    
+    
+    fn cmp(&self, other: &PossibleParent) -> Ordering {
+        let (index, other_index) = match (&self.parent_by, &other.parent_by) {
+            (BuilderParentBy::Children(index), BuilderParentBy::Children(other_index)) => {
+                
+                (*index, *other_index)
+            }
+            (BuilderParentBy::Children(_), BuilderParentBy::KnownItem(_)) => {
+                
+                
+                return Ordering::Less;
+            }
+            (BuilderParentBy::Children(_), BuilderParentBy::UnknownItem(_)) => {
+                
+                
+                
+                return Ordering::Less;
+            }
+            (BuilderParentBy::KnownItem(_), BuilderParentBy::Children(_)) => {
+                
+                
+                return Ordering::Greater;
+            }
+            (BuilderParentBy::UnknownItem(_), BuilderParentBy::Children(_)) => {
+                
+                
+                return Ordering::Greater;
+            }
+            
+            
+            
+            _ => return Ordering::Equal,
+        };
+        
+        
+        
+        let entry = &self.builder.entries[index];
+        let other_entry = &self.builder.entries[other_index];
+        match (entry.item.is_folder(), other_entry.item.is_folder()) {
+            (true, true) => entry.item.age.cmp(&other_entry.item.age),
+            (false, true) => Ordering::Greater,
+            (true, false) => Ordering::Less,
+            (false, false) => Ordering::Equal,
+        }
+    }
+}
+
+impl<'a> PartialOrd for PossibleParent<'a> {
+    fn partial_cmp(&self, other: &PossibleParent) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl<'a> PartialEq for PossibleParent<'a> {
+    fn eq(&self, other: &PossibleParent) -> bool {
+        self.cmp(other) == Ordering::Equal
+    }
+}
+
+impl<'a> Eq for PossibleParent<'a> {}
+
+
 #[derive(Debug)]
 enum ResolvedParent {
+    
     Root,
-    Unchanged(Index),
+
+    
+    ByStructure(Index),
+
+    
     ByChildren(Index),
+
+    
+    
+    
+    
     ByParentGuid(Index),
 }
 
@@ -781,7 +972,7 @@ impl ResolvedParent {
     fn index(&self) -> Option<Index> {
         match self {
             ResolvedParent::Root => None,
-            ResolvedParent::Unchanged(index)
+            ResolvedParent::ByStructure(index)
             | ResolvedParent::ByChildren(index)
             | ResolvedParent::ByParentGuid(index) => Some(*index),
         }
@@ -816,15 +1007,166 @@ fn detect_cycles(parents: &[ResolvedParent]) -> Option<Index> {
     None
 }
 
+
 #[derive(Debug)]
 enum Divergence {
-    
     
     Consistent,
 
     
     
     Diverged,
+}
+
+
+
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum Problem {
+    
+    Orphan,
+
+    
+    
+    MisparentedRoot(Vec<DivergedParent>),
+
+    
+    
+    
+    
+    DivergedParents(Vec<DivergedParent>),
+
+    
+    
+    MissingChild { child_guid: Guid },
+}
+
+
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum DivergedParent {
+    
+    ByChildren(Guid),
+    
+    ByParentGuid(DivergedParentGuid),
+}
+
+impl From<DivergedParentGuid> for DivergedParent {
+    fn from(d: DivergedParentGuid) -> DivergedParent {
+        DivergedParent::ByParentGuid(d)
+    }
+}
+
+impl fmt::Display for DivergedParent {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            DivergedParent::ByChildren(parent_guid) => {
+                write!(f, "is in children of {}", parent_guid)
+            }
+            DivergedParent::ByParentGuid(p) => match p {
+                DivergedParentGuid::Folder(parent_guid) => write!(f, "has parent {}", parent_guid),
+                DivergedParentGuid::NonFolder(parent_guid) => {
+                    write!(f, "has non-folder parent {}", parent_guid)
+                }
+                DivergedParentGuid::Missing(parent_guid) => {
+                    write!(f, "has nonexistent parent {}", parent_guid)
+                }
+            },
+        }
+    }
+}
+
+
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum DivergedParentGuid {
+    
+    Folder(Guid),
+    
+    NonFolder(Guid),
+    
+    Missing(Guid),
+}
+
+
+#[derive(Debug, Default)]
+pub struct Problems(HashMap<Guid, Vec<Problem>>);
+
+impl Problems {
+    
+    pub fn note(&mut self, guid: &Guid, problem: Problem) -> &mut Problems {
+        self.0.entry(guid.clone()).or_default().push(problem);
+        self
+    }
+
+    
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    
+    pub fn summarize(&self) -> impl Iterator<Item = ProblemSummary> {
+        self.0.iter().flat_map(|(guid, problems)| {
+            problems
+                .iter()
+                .map(move |problem| ProblemSummary(guid, problem))
+        })
+    }
+}
+
+
+#[derive(Clone, Copy, Debug)]
+pub struct ProblemSummary<'a>(&'a Guid, &'a Problem);
+
+impl<'a> ProblemSummary<'a> {
+    #[inline]
+    pub fn guid(&self) -> &Guid {
+        &self.0
+    }
+
+    #[inline]
+    pub fn problem(&self) -> &Problem {
+        &self.1
+    }
+}
+
+impl<'a> fmt::Display for ProblemSummary<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let parents = match self.problem() {
+            Problem::Orphan => return write!(f, "{} is an orphan", self.guid()),
+            Problem::MisparentedRoot(parents) => {
+                write!(f, "{} is a user content root", self.guid())?;
+                if parents.is_empty() {
+                    return Ok(());
+                }
+                f.write_str(", but ")?;
+                parents
+            }
+            Problem::DivergedParents(parents) => {
+                if parents.is_empty() {
+                    return write!(f, "{} has diverged parents", self.guid());
+                }
+                write!(f, "{} ", self.guid())?;
+                parents
+            }
+            Problem::MissingChild { child_guid } => {
+                return write!(f, "{} has nonexistent child {}", self.guid(), child_guid);
+            }
+        };
+        match parents.as_slice() {
+            [a] => write!(f, "{}", a)?,
+            [a, b] => write!(f, "{} and {}", a, b)?,
+            _ => {
+                for (i, parent) in parents.iter().enumerate() {
+                    if i != 0 {
+                        f.write_str(", ")?;
+                    }
+                    if i == parents.len() - 1 {
+                        f.write_str("and ")?;
+                    }
+                    write!(f, "{}", parent)?;
+                }
+            }
+        }
+        Ok(())
+    }
 }
 
 
@@ -920,7 +1262,13 @@ impl<'t> Node<'t> {
                 if children.is_empty() {
                     format!("{}{} {}", prefix, kind, self.1.item)
                 } else {
-                    format!("{}📂 {}\n{}", prefix, self.1.item, children.join("\n"))
+                    format!(
+                        "{}{} {}\n{}",
+                        prefix,
+                        kind,
+                        self.1.item,
+                        children.join("\n")
+                    )
                 }
             }
             _ => {
