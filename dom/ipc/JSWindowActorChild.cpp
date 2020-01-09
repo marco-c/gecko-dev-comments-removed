@@ -95,7 +95,7 @@ void JSWindowActorChild::SendAsyncMessage(JSContext* aCx,
   
   
   ClonedMessageData msgData;
-  nsIContentChild* cc = ContentChild::GetSingleton();
+  ContentChild* cc = ContentChild::GetSingleton();
   if (!data.BuildClonedMessageDataForChild(cc, msgData)) {
     aRv.Throw(NS_ERROR_DOM_DATA_CLONE_ERR);
     return;

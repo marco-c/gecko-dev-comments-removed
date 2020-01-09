@@ -222,7 +222,7 @@ class PBackgroundParent;
 namespace dom {
 
 class IPCBlob;
-class nsIContentChild;
+class ContentChild;
 class ContentParent;
 
 namespace IPCBlobUtils {
@@ -231,7 +231,7 @@ already_AddRefed<BlobImpl> Deserialize(const IPCBlob& aIPCBlob);
 
 
 
-nsresult Serialize(BlobImpl* aBlobImpl, nsIContentChild* aManager,
+nsresult Serialize(BlobImpl* aBlobImpl, ContentChild* aManager,
                    IPCBlob& aIPCBlob);
 
 nsresult Serialize(BlobImpl* aBlobImpl,
