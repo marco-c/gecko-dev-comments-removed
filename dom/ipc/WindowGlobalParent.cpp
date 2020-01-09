@@ -83,6 +83,10 @@ void WindowGlobalParent::Init(const WindowGlobalInit& aInit) {
   MOZ_ASSERT(mBrowsingContext);
 
   
+  
+  MOZ_ASSERT(mBrowsingContext->IsOwnedByProcess(processId));
+
+  
   mBrowsingContext->RegisterWindowGlobal(this);
 
   

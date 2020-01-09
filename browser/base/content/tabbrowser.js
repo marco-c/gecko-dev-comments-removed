@@ -1606,7 +1606,6 @@ window._gBrowser = {
     remoteType,
     sameProcessAsFrameLoader,
     recordExecution,
-    replaceBrowsingContext,
   } = {}) {
     let isRemote = aBrowser.getAttribute("remote") == "true";
 
@@ -1727,7 +1726,7 @@ window._gBrowser = {
       
       
       
-      aBrowser.changeRemoteness({ remoteType, replaceBrowsingContext });
+      aBrowser.changeRemoteness({ remoteType });
       
       
       

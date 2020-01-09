@@ -32,25 +32,8 @@ nsFrameLoaderOwner::GetBrowsingContext() {
 
 void nsFrameLoaderOwner::ChangeRemoteness(
     const mozilla::dom::RemotenessOptions& aOptions, mozilla::ErrorResult& rv) {
-  RefPtr<BrowsingContext> bc;
-  
   
   if (mFrameLoader) {
-    
-    
-    bool isChromeRemoteToLocal =
-        XRE_IsParentProcess() && (!aOptions.mRemoteType.WasPassed() ||
-                                  aOptions.mRemoteType.Value().IsVoid());
-
-    
-    
-    
-    if (!aOptions.mReplaceBrowsingContext && !isChromeRemoteToLocal &&
-        Preferences::GetBool("fission.preserve_browsing_contexts", false)) {
-      bc = mFrameLoader->GetBrowsingContext();
-      mFrameLoader->SkipBrowsingContextDetach();
-    }
-
     mFrameLoader->Destroy();
     mFrameLoader = nullptr;
   }
@@ -60,8 +43,7 @@ void nsFrameLoaderOwner::ChangeRemoteness(
   
   RefPtr<Element> owner = do_QueryObject(this);
   MOZ_ASSERT(owner);
-  mFrameLoader = nsFrameLoader::Create(owner, bc, aOptions);
-
+  mFrameLoader = nsFrameLoader::Create(owner, aOptions);
   if (NS_WARN_IF(!mFrameLoader)) {
     return;
   }
@@ -88,8 +70,9 @@ void nsFrameLoaderOwner::ChangeRemoteness(
   
   
   
-  (new mozilla::AsyncEventDispatcher(
-       owner, NS_LITERAL_STRING("XULFrameLoaderCreated"),
-       mozilla::CanBubble::eYes, mozilla::ChromeOnlyDispatch::eYes))
+  (new mozilla::AsyncEventDispatcher(owner,
+                                     NS_LITERAL_STRING("XULFrameLoaderCreated"),
+                                     mozilla::CanBubble::eYes,
+                                     mozilla::ChromeOnlyDispatch::eYes))
       ->RunDOMEventWhenSafe();
 }
