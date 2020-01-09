@@ -115,6 +115,10 @@ class nsCSSPropertyIDSet {
     return true;
   }
 
+  bool IsSubsetOf(const nsCSSPropertyIDSet& aOther) const {
+    return this->Intersect(aOther).Equals(*this);
+  }
+
   
   nsCSSPropertyIDSet Inverse() const {
     nsCSSPropertyIDSet result;
