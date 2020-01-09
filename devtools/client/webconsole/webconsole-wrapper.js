@@ -198,6 +198,9 @@ class WebConsoleWrapper {
         const messageEl = target.closest(".message");
         const clipboardText = getElementText(messageEl);
 
+        const linkEl = target.closest("a[href]");
+        const url = linkEl && linkEl.href;
+
         const messageVariable = target.closest(".objectBox");
         
         const variableText = (messageVariable
@@ -233,6 +236,7 @@ class WebConsoleWrapper {
           rootActorId,
           executionPoint,
           toolbox: this.toolbox,
+          url,
         });
 
         
