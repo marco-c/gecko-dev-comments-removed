@@ -8,7 +8,9 @@
 #include "Accessible-inl.h"
 #include "nsAccUtils.h"
 #include "DocAccessible-inl.h"
+#include "mozilla/a11y/DocAccessibleChild.h"
 #include "mozilla/a11y/DocAccessibleParent.h"
+#include "mozilla/dom/BrowserBridgeChild.h"
 #include "mozilla/dom/BrowserParent.h"
 #include "Role.h"
 #include "States.h"
@@ -34,6 +36,20 @@ OuterDocAccessible::OuterDocAccessible(nsIContent* aContent,
     remoteDoc->SendParentCOMProxy();
   }
 #endif
+
+  if (IPCAccessibilityActive()) {
+    auto bridge = dom::BrowserBridgeChild::GetFrom(aContent);
+    if (bridge) {
+      
+      
+      
+      DocAccessibleChild* ipcDoc = aDoc->IPCDoc();
+      if (ipcDoc) {
+        uint64_t id = reinterpret_cast<uintptr_t>(UniqueID());
+        bridge->SendSetEmbedderAccessible(ipcDoc, id);
+      }
+    }
+  }
 
   
   
