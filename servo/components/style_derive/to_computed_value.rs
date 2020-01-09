@@ -2,7 +2,7 @@
 
 
 
-use crate::cg;
+use derive_common::cg;
 use proc_macro2::{Span, TokenStream};
 use syn::{DeriveInput, Ident};
 use synstructure::BindStyle;

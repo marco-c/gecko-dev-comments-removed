@@ -2,8 +2,8 @@
 
 
 
-use crate::cg;
 use crate::to_css::CssVariantAttrs;
+use derive_common::cg;
 use proc_macro2::TokenStream;
 use syn::{self, DeriveInput, Path};
 use synstructure::{Structure, VariantInfo};

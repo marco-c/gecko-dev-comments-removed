@@ -2,8 +2,8 @@
 
 
 
-use crate::cg;
 use darling::util::Override;
+use derive_common::cg;
 use proc_macro2::TokenStream;
 use quote::{ToTokens, TokenStreamExt};
 use syn::{self, Data, Path, WhereClause};
