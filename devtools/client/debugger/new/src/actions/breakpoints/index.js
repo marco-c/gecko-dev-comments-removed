@@ -180,12 +180,20 @@ export function removeBreakpointsInSource(source: Source) {
 
 export function remapBreakpoints(sourceId: string) {
   return async ({ dispatch, getState, sourceMaps }: ThunkArgs) => {
-    const breakpoints = getBreakpointsList(getState());
+    const breakpoints = getBreakpointsForSource(getState(), sourceId);
     const newBreakpoints = await remapLocations(
       breakpoints,
       sourceId,
       sourceMaps
     );
+
+    
+    
+    
+    
+    for (const bp of breakpoints) {
+      dispatch(removeBreakpoint(bp));
+    }
 
     for (const bp of newBreakpoints) {
       await dispatch(addBreakpoint(bp.location, bp.options, bp.disabled));

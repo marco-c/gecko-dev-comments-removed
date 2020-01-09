@@ -10,19 +10,21 @@ import {
   getASTLocation
 } from "../../utils/breakpoint";
 
-import { getTextAtPosition } from "../../utils/source";
-
 import {
   getBreakpoint,
   getBreakpointPositionsForLocation,
   getFirstBreakpointPosition,
-  getSymbols
+  getSymbols,
+  getSource,
+  getBreakpointsList,
+  getPendingBreakpointList
 } from "../../selectors";
 
-import { loadSourceById } from "../sources/loadSourceText";
 import { setBreakpointPositions } from "./breakpointPositions";
 
 import { recordEvent } from "../../utils/telemetry";
+import { comparePosition } from "../../utils/location";
+import { getTextAtPosition } from "../../utils/source";
 
 import type { ThunkArgs } from "../types";
 import type {
@@ -66,11 +68,11 @@ function clientSetBreakpoint(breakpoint: Breakpoint) {
   };
 }
 
-function clientRemoveBreakpoint(breakpoint: Breakpoint) {
+function clientRemoveBreakpoint(generatedLocation: SourceLocation) {
   return ({ getState, client }: ThunkArgs) => {
     const breakpointLocation = makeBreakpointLocation(
       getState(),
-      breakpoint.generatedLocation
+      generatedLocation
     );
     return client.removeBreakpoint(breakpointLocation);
   };
@@ -95,7 +97,8 @@ export function enableBreakpoint(initialBreakpoint: Breakpoint) {
 export function addBreakpoint(
   initialLocation: SourceLocation,
   options: BreakpointOptions = {},
-  disabled: boolean = false
+  disabled: boolean = false,
+  shouldCancel: () => boolean = () => false
 ) {
   return async ({ dispatch, getState, sourceMaps, client }: ThunkArgs) => {
     recordEvent("add_breakpoint");
@@ -113,16 +116,16 @@ export function addBreakpoint(
     }
 
     const { location, generatedLocation } = position;
-    
-    
 
-    const source = await dispatch(loadSourceById(sourceId));
-    const generatedSource = await dispatch(
-      loadSourceById(generatedLocation.sourceId)
-    );
+    const source = getSource(getState(), location.sourceId);
+    const generatedSource = getSource(getState(), generatedLocation.sourceId);
+
+    if (!source || !generatedSource) {
+      return;
+    }
 
     const symbols = getSymbols(getState(), source);
-    const astLocation = await getASTLocation(source, symbols, location);
+    const astLocation = getASTLocation(source, symbols, location);
 
     const originalText = getTextAtPosition(source, location);
     const text = getTextAtPosition(generatedSource, generatedLocation);
@@ -139,16 +142,8 @@ export function addBreakpoint(
       originalText
     };
 
-    
-    
-    
-    
-    
-    
-    
-    const generatedId = makeBreakpointId(breakpoint.generatedLocation);
-    if (id != generatedId && getBreakpoint(getState(), generatedLocation)) {
-      dispatch({ type: "REMOVE_BREAKPOINT", location: generatedLocation });
+    if (shouldCancel()) {
+      return;
     }
 
     dispatch({ type: "SET_BREAKPOINT", breakpoint });
@@ -156,7 +151,7 @@ export function addBreakpoint(
     if (disabled) {
       
       
-      return dispatch(clientRemoveBreakpoint(breakpoint));
+      return dispatch(clientRemoveBreakpoint(generatedLocation));
     }
 
     return dispatch(clientSetBreakpoint(breakpoint));
@@ -188,7 +183,49 @@ export function removeBreakpoint(initialBreakpoint: Breakpoint) {
       return;
     }
 
-    return dispatch(clientRemoveBreakpoint(breakpoint));
+    return dispatch(clientRemoveBreakpoint(breakpoint.generatedLocation));
+  };
+}
+
+
+
+
+
+
+
+
+export function removeBreakpointAtGeneratedLocation(target: SourceLocation) {
+  return ({ dispatch, getState, client }: ThunkArgs) => {
+    
+    const breakpoints = getBreakpointsList(getState());
+    for (const { location, generatedLocation } of breakpoints) {
+      if (
+        generatedLocation.sourceId == target.sourceId &&
+        comparePosition(generatedLocation, target)
+      ) {
+        dispatch({
+          type: "REMOVE_BREAKPOINT",
+          location
+        });
+      }
+    }
+
+    
+    const pending = getPendingBreakpointList(getState());
+    for (const { location, generatedLocation } of pending) {
+      if (
+        generatedLocation.sourceUrl == target.sourceUrl &&
+        comparePosition(generatedLocation, target)
+      ) {
+        dispatch({
+          type: "REMOVE_PENDING_BREAKPOINT",
+          location
+        });
+      }
+    }
+
+    
+    return dispatch(clientRemoveBreakpoint(target));
   };
 }
 
@@ -210,7 +247,7 @@ export function disableBreakpoint(initialBreakpoint: Breakpoint) {
       breakpoint: { ...breakpoint, disabled: true }
     });
 
-    return dispatch(clientRemoveBreakpoint(breakpoint));
+    return dispatch(clientRemoveBreakpoint(breakpoint.generatedLocation));
   };
 }
 

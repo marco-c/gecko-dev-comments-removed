@@ -16,8 +16,8 @@ import {
 import { comparePosition, createLocation } from "../../utils/location";
 
 import { originalToGeneratedId, isOriginalId } from "devtools-source-map";
-import { getSource, getBreakpoint } from "../../selectors";
-import { removeBreakpoint, addBreakpoint } from ".";
+import { getSource } from "../../selectors";
+import { addBreakpoint, removeBreakpointAtGeneratedLocation } from ".";
 
 import type { ThunkArgs } from "../types";
 import type { LoadedSymbols } from "../../reducers/types";
@@ -118,22 +118,16 @@ export function syncBreakpoint(
       
       
       
-      
       const breakpointLocation = makeBreakpointLocation(
         getState(),
         sourceGeneratedLocation
       );
-      if (
-        getBreakpoint(getState(), sourceGeneratedLocation) ||
-        !client.hasBreakpoint(breakpointLocation)
-      ) {
-        return;
-      }
       return dispatch(
         addBreakpoint(
           sourceGeneratedLocation,
           pendingBreakpoint.options,
-          pendingBreakpoint.disabled
+          pendingBreakpoint.disabled,
+          () => !client.hasBreakpoint(breakpointLocation)
         )
       );
     }
@@ -153,6 +147,13 @@ export function syncBreakpoint(
     );
 
     if (!newGeneratedLocation) {
+      
+      
+      
+      
+      if (location.sourceUrl != generatedLocation.sourceUrl) {
+        dispatch(removeBreakpointAtGeneratedLocation(sourceGeneratedLocation));
+      }
       return;
     }
 
@@ -164,19 +165,8 @@ export function syncBreakpoint(
     
     
     
-    
-    
     if (!isSameLocation) {
-      const bp = getBreakpoint(getState(), sourceGeneratedLocation);
-      if (bp) {
-        dispatch(removeBreakpoint(bp));
-      } else {
-        const breakpointLocation = makeBreakpointLocation(
-          getState(),
-          sourceGeneratedLocation
-        );
-        client.removeBreakpoint(breakpointLocation);
-      }
+      dispatch(removeBreakpointAtGeneratedLocation(sourceGeneratedLocation));
     }
 
     return dispatch(
