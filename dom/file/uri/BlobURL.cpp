@@ -152,7 +152,7 @@ nsresult BlobURL::EqualsInternal(
 
 
 NS_IMPL_NSIURIMUTATOR_ISUPPORTS(BlobURL::Mutator, nsIURISetters, nsIURIMutator,
-                                nsISerializable, nsIBlobURLMutator)
+                                nsISerializable)
 
 NS_IMETHODIMP
 BlobURL::Mutate(nsIURIMutator** aMutator) {

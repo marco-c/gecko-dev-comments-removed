@@ -39,9 +39,6 @@ class BlobURLProtocolHandler final : public nsIProtocolHandler,
 
   BlobURLProtocolHandler();
 
-  static nsresult CreateNewURI(const nsACString& aSpec, const char* aCharset,
-                               nsIURI* aBaseURI, nsIURI** result);
-
   
   
   static nsresult AddDataEntry(mozilla::dom::BlobImpl* aBlobImpl,

@@ -100,19 +100,6 @@ nsresult NS_NewURI(nsIURI **result, const char *spec, nsIURI *baseURI = nullptr,
                    nsIIOService *ioService =
                        nullptr);  
 
-
-
-
-
-
-
-
-
-nsresult NS_NewURIOnAnyThread(nsIURI **aResult, const nsACString &aSpec,
-                              const char *aCharset = nullptr,
-                              nsIURI *aBaseURI = nullptr,
-                              nsIIOService *aIOService = nullptr);
-
 nsresult NS_NewFileURI(
     nsIURI **result, nsIFile *spec,
     nsIIOService *ioService =
