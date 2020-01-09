@@ -218,7 +218,8 @@ bool Compartment::getNonWrapperObjectForCurrentCompartment(
   
   
   if (!AllowNewWrapper(this, obj)) {
-    JSObject* res = NewDeadProxyObject(cx);
+    JSObject* res = NewDeadProxyObject(cx, IsCallableFlag(obj->isCallable()),
+                                       IsConstructorFlag(obj->isConstructor()));
     if (!res) {
       return false;
     }
