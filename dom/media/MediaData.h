@@ -336,14 +336,6 @@ class AudioData : public MediaData {
   static const Type sType = AUDIO_DATA;
   static const char* sTypeName;
 
-  
-  
-  
-  
-  static already_AddRefed<AudioData> TransferAndUpdateTimestampAndDuration(
-      AudioData* aOther, const media::TimeUnit& aTimestamp,
-      const media::TimeUnit& aDuration);
-
   size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
 
   
