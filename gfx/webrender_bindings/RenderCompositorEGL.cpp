@@ -59,22 +59,31 @@ RenderCompositorEGL::~RenderCompositorEGL() { DestroyEGLSurface(); }
 
 bool RenderCompositorEGL::BeginFrame() {
 #ifdef MOZ_WAYLAND
-  if (mWidget->AsX11() &&
-      mWidget->AsX11()->WaylandRequestsUpdatingEGLSurface()) {
+  bool newSurface =
+      mWidget->AsX11() && mWidget->AsX11()->WaylandRequestsUpdatingEGLSurface();
+  if (newSurface) {
+    
     
     DestroyEGLSurface();
     mEGLSurface = CreateEGLSurface();
-    if (mEGLSurface) {
-      const auto* egl = gl::GLLibraryEGL::Get();
-      
-      egl->fSwapInterval(gl::EGL_DISPLAY(), 0);
-    }
   }
 #endif
   if (!MakeCurrent()) {
     gfxCriticalNote << "Failed to make render context current, can't draw.";
     return false;
   }
+
+#ifdef MOZ_WAYLAND
+  if (newSurface) {
+    
+    
+    
+    
+    const auto* egl = gl::GLLibraryEGL::Get();
+    
+    egl->fSwapInterval(gl::EGL_DISPLAY(), 0);
+  }
+#endif
 
 #ifdef MOZ_WIDGET_ANDROID
   java::GeckoSurfaceTexture::DestroyUnused((int64_t)gl());
