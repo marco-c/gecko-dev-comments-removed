@@ -10,6 +10,7 @@
 
 
 #include "mozilla/MacroForEach.h"
+#include "mozilla/Span.h"
 
 #include <stdio.h>
 #include <sstream>
@@ -76,6 +77,28 @@ auto&& MozDbg(const char* aFile, int aLine, const char* aExpression,
 }  
 
 }  
+
+template <class ElementType, size_t Extent>
+std::ostream& operator<<(std::ostream& aOut,
+                         const mozilla::Span<ElementType, Extent>& aSpan) {
+  aOut << '[';
+  if (!aSpan.IsEmpty()) {
+    aOut << aSpan[0];
+    for (size_t i = 1; i < aSpan.Length(); ++i) {
+      aOut << ", " << aSpan[i];
+    }
+  }
+  return aOut << ']';
+}
+
+
+
+template <typename T, size_t N,
+          typename = std::enable_if_t<!std::is_same<T, char>::value>>
+std::ostream& operator<<(std::ostream& aOut, const T (&aArray)[N]) {
+  return aOut << mozilla::MakeSpan(aArray);
+  
+}
 
 
 
