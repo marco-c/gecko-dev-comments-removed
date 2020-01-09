@@ -49,8 +49,8 @@ class CSSPseudoElement final : public nsWrapperCache {
     aRetVal.Append(
         nsDependentAtomString(nsCSSPseudoElements::GetPseudoAtom(mPseudoType)));
   }
-  already_AddRefed<Element> ParentElement() const {
-    RefPtr<Element> retVal(mParentElement);
+  already_AddRefed<dom::Element> Element() const {
+    RefPtr<dom::Element> retVal(mOriginatingElement);
     return retVal.forget();
   }
 
@@ -66,18 +66,18 @@ class CSSPseudoElement final : public nsWrapperCache {
   
   
   static already_AddRefed<CSSPseudoElement> GetCSSPseudoElement(
-      Element* aElement, PseudoStyleType aType);
+      dom::Element* aElement, PseudoStyleType aType);
 
  private:
   
-  CSSPseudoElement(Element* aElement, PseudoStyleType aType);
+  CSSPseudoElement(dom::Element* aElement, PseudoStyleType aType);
 
   static nsAtom* GetCSSPseudoElementPropertyAtom(PseudoStyleType aType);
 
   
   
   
-  RefPtr<Element> mParentElement;
+  RefPtr<dom::Element> mOriginatingElement;
   PseudoStyleType mPseudoType;
 };
 
