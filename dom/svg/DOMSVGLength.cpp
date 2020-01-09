@@ -5,17 +5,18 @@
 
 
 #include "DOMSVGLength.h"
+
 #include "DOMSVGLengthList.h"
 #include "DOMSVGAnimatedLengthList.h"
-#include "SVGLength.h"
-#include "SVGAnimatedLengthList.h"
-#include "SVGElement.h"
-#include "nsSVGLength2.h"
 #include "nsError.h"
 #include "nsMathUtils.h"
+#include "SVGAnimatedLengthList.h"
+#include "SVGAttrTearoffTable.h"
+#include "SVGLength.h"
+#include "nsSVGLength2.h"
+#include "mozilla/dom/SVGElement.h"
 #include "mozilla/dom/SVGLengthBinding.h"
 #include "mozilla/FloatingPoint.h"
-#include "nsSVGAttrTearoffTable.h"
 
 
 
@@ -23,7 +24,7 @@ namespace mozilla {
 
 namespace dom {
 
-static nsSVGAttrTearoffTable<nsSVGLength2, DOMSVGLength>
+static SVGAttrTearoffTable<nsSVGLength2, DOMSVGLength>
     sBaseSVGLengthTearOffTable, sAnimSVGLengthTearOffTable;
 
 

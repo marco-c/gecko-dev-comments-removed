@@ -5,16 +5,17 @@
 
 
 #include "DOMSVGAnimatedTransformList.h"
+
 #include "DOMSVGTransformList.h"
 #include "SVGAnimatedTransformList.h"
-#include "nsSVGAttrTearoffTable.h"
+#include "SVGAttrTearoffTable.h"
 #include "mozilla/dom/SVGAnimatedTransformListBinding.h"
 
 namespace mozilla {
 namespace dom {
 
-static nsSVGAttrTearoffTable<SVGAnimatedTransformList,
-                             DOMSVGAnimatedTransformList>
+static SVGAttrTearoffTable<SVGAnimatedTransformList,
+                           DOMSVGAnimatedTransformList>
     sSVGAnimatedTransformListTearoffTable;
 
 NS_SVG_VAL_IMPL_CYCLE_COLLECTION_WRAPPERCACHED(DOMSVGAnimatedTransformList,

@@ -5,22 +5,23 @@
 
 
 #include "DOMSVGAnimatedNumberList.h"
+
+#include "nsCOMPtr.h"
 #include "DOMSVGNumberList.h"
 #include "SVGAnimatedNumberList.h"
-#include "SVGElement.h"
-#include "nsCOMPtr.h"
-#include "nsSVGAttrTearoffTable.h"
+#include "SVGAttrTearoffTable.h"
 #include "mozilla/dom/SVGAnimatedNumberListBinding.h"
+#include "mozilla/dom/SVGElement.h"
 
 
 
 namespace mozilla {
 namespace dom {
 
-static inline nsSVGAttrTearoffTable<SVGAnimatedNumberList,
-                                    DOMSVGAnimatedNumberList>&
+static inline SVGAttrTearoffTable<SVGAnimatedNumberList,
+                                  DOMSVGAnimatedNumberList>&
 SVGAnimatedNumberListTearoffTable() {
-  static nsSVGAttrTearoffTable<SVGAnimatedNumberList, DOMSVGAnimatedNumberList>
+  static SVGAttrTearoffTable<SVGAnimatedNumberList, DOMSVGAnimatedNumberList>
       sSVGAnimatedNumberListTearoffTable;
   return sSVGAnimatedNumberListTearoffTable;
 }
