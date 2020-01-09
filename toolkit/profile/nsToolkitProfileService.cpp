@@ -51,6 +51,7 @@ using namespace mozilla;
 
 #define DEV_EDITION_NAME "dev-edition-default"
 #define DEFAULT_NAME "default"
+#define COMPAT_FILE NS_LITERAL_STRING("compatibility.ini")
 
 nsToolkitProfile::nsToolkitProfile(const nsACString& aName, nsIFile* aRootDir,
                                    nsIFile* aLocalDir, nsToolkitProfile* aPrev)
@@ -351,17 +352,12 @@ bool nsToolkitProfileService::IsProfileForCurrentInstall(
   rv = profileDir->Clone(getter_AddRefs(compatFile));
   NS_ENSURE_SUCCESS(rv, false);
 
-  rv = compatFile->Append(NS_LITERAL_STRING("compatibility.ini"));
+  rv = compatFile->Append(COMPAT_FILE);
   NS_ENSURE_SUCCESS(rv, false);
 
   nsINIParser compatData;
   rv = compatData.Init(compatFile);
-  
-  
-  
-  if (NS_FAILED(rv)) {
-    return true;
-  }
+  NS_ENSURE_SUCCESS(rv, false);
 
   
 
@@ -1046,21 +1042,38 @@ nsresult nsToolkitProfileService::SelectStartupProfile(
         profile = mDevEditionDefault;
       }
 
-      if (profile && MaybeMakeDefaultDedicatedProfile(profile)) {
-        mStartupReason = NS_LITERAL_STRING("firstrun-claimed-default");
+      if (profile) {
+        nsCOMPtr<nsIFile> rootDir;
+        profile->GetRootDir(getter_AddRefs(rootDir));
 
-        mCurrent = profile;
-        profile->GetRootDir(aRootDir);
-        profile->GetLocalDir(aLocalDir);
-        profile.forget(aProfile);
-        return NS_OK;
+        nsCOMPtr<nsIFile> compat;
+        rootDir->Clone(getter_AddRefs(compat));
+        compat->Append(COMPAT_FILE);
+
+        bool exists;
+        rv = compat->Exists(&exists);
+
+        
+        
+        
+        if (exists) {
+          if (MaybeMakeDefaultDedicatedProfile(profile)) {
+            mStartupReason = NS_LITERAL_STRING("firstrun-claimed-default");
+
+            mCurrent = profile;
+            rootDir.forget(aRootDir);
+            profile->GetLocalDir(aLocalDir);
+            profile.forget(aProfile);
+            return NS_OK;
+          }
+
+          
+          
+          
+          
+          mCreatedAlternateProfile = true;
+        }
       }
-
-      
-      
-      
-      
-      mCreatedAlternateProfile = !!profile;
     }
 
     
