@@ -182,10 +182,9 @@ class DirectMediaStreamTrackListener : public MediaStreamTrackListener {
   
   
   
+  
   Atomic<int32_t> mDisabledFreezeCount;
   Atomic<int32_t> mDisabledBlackCount;
-
-  nsAutoPtr<MediaSegment> mMedia;
 };
 
 }  
