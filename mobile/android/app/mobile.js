@@ -551,9 +551,6 @@ pref("browser.chrome.toolbar_tips", false);
 pref("browser.meta_refresh_when_inactive.disabled", true);
 
 
-pref("media.preload.default", 1); 
-pref("media.preload.auto", 2);    
-
 
 
 pref("media.throttle-cellular-regardless-of-download-rate", true);
