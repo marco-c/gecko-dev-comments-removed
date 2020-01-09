@@ -175,6 +175,17 @@ var LoginManagerContent = {
   _deferredPasswordAddedTasksByRootElement: new WeakMap(),
 
   
+
+
+
+
+
+
+
+
+  _onVisibleTasksByDocument: new WeakMap(),
+
+  
   _requests: new Map(),
 
   
@@ -353,14 +364,55 @@ var LoginManagerContent = {
     LoginManagerContent._onFormSubmit(formLike);
   },
 
+  onDocumentVisibilityChange(event) {
+    if (!event.isTrusted) {
+      return;
+    }
+    let document = event.target;
+    let onVisibleTasks = this._onVisibleTasksByDocument.get(document);
+    if (!onVisibleTasks) {
+      return;
+    }
+    for (let task of onVisibleTasks) {
+      log("onDocumentVisibilityChange, executing queued task");
+      task();
+    }
+    this._onVisibleTasksByDocument.delete(document);
+  },
+
+  _deferHandlingEventUntilDocumentVisible(event, document, fn) {
+    log(`document.visibilityState: ${document.visibilityState}, defer handling ${event.type}`);
+    let onVisibleTasks = this._onVisibleTasksByDocument.get(document);
+    if (!onVisibleTasks) {
+      log(`deferHandling, first queued event, register the visibilitychange handler`);
+      onVisibleTasks = [];
+      this._onVisibleTasksByDocument.set(document, onVisibleTasks);
+      document.addEventListener("visibilitychange", event => {
+        this.onDocumentVisibilityChange(event);
+      }, { once: true });
+    }
+    onVisibleTasks.push(fn);
+  },
+
   onDOMFormHasPassword(event) {
     if (!event.isTrusted) {
       return;
     }
+    let document = event.target.ownerDocument;
+    if (document.visibilityState == "visible") {
+      this._processDOMFormHasPasswordEvent(event);
+    } else {
+      
+      this._deferHandlingEventUntilDocumentVisible(event, document, () => {
+        this._processDOMFormHasPasswordEvent(event);
+      });
+    }
+  },
 
+  _processDOMFormHasPasswordEvent(event) {
     let form = event.target;
     let formLike = LoginFormFactory.createFromForm(form);
-    log("onDOMFormHasPassword:", form, formLike);
+    log("_processDOMFormHasPasswordEvent:", form, formLike);
     this._fetchLoginsFromParentAndFillForm(formLike);
   },
 
@@ -375,12 +427,25 @@ var LoginManagerContent = {
       return;
     }
 
+    let document = pwField.ownerDocument;
+    if (document.visibilityState == "visible") {
+      this._processDOMInputPasswordAddedEvent(event, topWindow);
+    } else {
+      
+      this._deferHandlingEventUntilDocumentVisible(event, document, () => {
+        this._processDOMInputPasswordAddedEvent(event, topWindow);
+      });
+    }
+  },
+
+  _processDOMInputPasswordAddedEvent(event, topWindow) {
+    let pwField = event.originalTarget;
     
     
     this.setupProgressListener(topWindow);
 
     let formLike = LoginFormFactory.createFromField(pwField);
-    log("onDOMInputPasswordAdded:", pwField, formLike);
+    log(" _processDOMInputPasswordAddedEvent:", pwField, formLike);
 
     let deferredTask = this._deferredPasswordAddedTasksByRootElement.get(formLike.rootElement);
     if (!deferredTask) {
