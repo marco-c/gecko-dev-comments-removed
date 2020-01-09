@@ -126,18 +126,11 @@ function loadSourceMap(cx: Context, sourceId: SourceId) {
 
     if (!urls) {
       
-      
-      
-      
-      const currentSource = getSource(getState(), sourceId);
-
-      
       dispatch(
         ({
-          type: "UPDATE_SOURCE",
+          type: "CLEAR_SOURCE_MAP_URL",
           cx,
-          
-          source: (({ ...currentSource, sourceMapURL: "" }: any): Source)
+          sourceId
         }: Action)
       );
       return [];
