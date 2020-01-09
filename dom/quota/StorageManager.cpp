@@ -609,10 +609,18 @@ nsresult PersistentStoragePermissionRequest::Start() {
   MOZ_ASSERT(NS_IsMainThread());
 
   PromptResult pr;
+  #ifdef MOZ_WIDGET_ANDROID
+  
+  
+  
+  
+  pr = CheckPromptPrefs();
+  #else
   nsresult rv = ShowPrompt(pr);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
+  #endif
   if (pr == PromptResult::Granted) {
     return Allow(JS::UndefinedHandleValue);
   }

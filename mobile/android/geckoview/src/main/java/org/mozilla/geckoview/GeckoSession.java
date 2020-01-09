@@ -757,6 +757,8 @@ public class GeckoSession implements Parcelable {
                         type = PermissionDelegate.PERMISSION_GEOLOCATION;
                     } else if ("desktop-notification".equals(typeString)) {
                         type = PermissionDelegate.PERMISSION_DESKTOP_NOTIFICATION;
+                    } else if ("persistent-storage".equals(typeString)) {
+                        type = PermissionDelegate.PERMISSION_PERSISTENT_STORAGE;
                     } else {
                         throw new IllegalArgumentException("Unknown permission request: " + typeString);
                     }
@@ -4271,6 +4273,12 @@ public class GeckoSession implements Parcelable {
         
 
 
+
+        int PERMISSION_PERSISTENT_STORAGE = 2;
+
+        
+
+
         interface Callback {
             
 
@@ -4306,6 +4314,12 @@ public class GeckoSession implements Parcelable {
         }
 
         
+
+
+
+
+
+
 
 
 

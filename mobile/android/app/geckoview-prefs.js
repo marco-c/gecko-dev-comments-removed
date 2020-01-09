@@ -30,6 +30,9 @@ pref("geckoview.logging", "Debug");
 pref("dom.push.enabled", false);
 
 
+pref("dom.storageManager.enabled", true);
+
+
 pref("layout.scroll.root-frame-containers", 0);
 
 
