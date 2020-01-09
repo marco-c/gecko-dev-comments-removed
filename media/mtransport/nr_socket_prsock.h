@@ -94,6 +94,10 @@ namespace net {
 union NetAddr;
 }
 
+namespace dom {
+class UDPSocketChild;
+}  
+
 class NrSocketBase {
  public:
   NrSocketBase() : connect_invoked_(false), poll_flags_(0) {
@@ -277,7 +281,7 @@ class NrUdpSocketIpc : public NrSocketIpc {
   void sendto_i(const net::NetAddr& addr, nsAutoPtr<MediaPacket> buf);
   void close_i();
 #if defined(MOZILLA_INTERNAL_API) && !defined(MOZILLA_XPCOMRT_API)
-  static void destroy_i(nsIUDPSocketChild* aChild,
+  static void destroy_i(dom::UDPSocketChild* aChild,
                         nsCOMPtr<nsIEventTarget>& aStsThread);
 #endif
   
@@ -289,7 +293,8 @@ class NrUdpSocketIpc : public NrSocketIpc {
 
   std::queue<RefPtr<nr_udp_message>> received_msgs_;
 
-  RefPtr<nsIUDPSocketChild> socket_child_;  
+  
+  RefPtr<dom::UDPSocketChild> socket_child_;
 };
 
 
