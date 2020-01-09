@@ -68,7 +68,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   AddonRepository: "resource://gre/modules/addons/AddonRepository.jsm",
   Extension: "resource://gre/modules/Extension.jsm",
   FileUtils: "resource://gre/modules/FileUtils.jsm",
-  LightweightThemeManager: "resource://gre/modules/LightweightThemeManager.jsm",
 });
 
 XPCOMUtils.defineLazyPreferenceGetter(this, "WEBEXT_PERMISSION_PROMPTS",
@@ -90,7 +89,6 @@ const CATEGORY_PROVIDER_MODULE = "addon-provider-module";
 
 const DEFAULT_PROVIDERS = [
   "resource://gre/modules/addons/XPIProvider.jsm",
-  "resource://gre/modules/LightweightThemeManager.jsm",
 ];
 
 const {Log} = ChromeUtils.import("resource://gre/modules/Log.jsm");
@@ -1252,8 +1250,6 @@ var AddonManagerInternal = {
         
         let updates = [];
 
-        updates.push(LightweightThemeManager.updateThemes());
-
         let allAddons = await this.getAllAddons();
 
         
@@ -1494,8 +1490,6 @@ var AddonManagerInternal = {
       throw Components.Exception("aType must be a non-empty string",
                                  Cr.NS_ERROR_INVALID_ARG);
 
-    
-    
     
     
     
