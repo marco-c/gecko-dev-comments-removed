@@ -97,6 +97,15 @@
 
 
 
+
+
+
+
+
+
+
+
+
 VARCACHE_PREF(
   Live,
   "accessibility.monoaudio.enable",
@@ -2452,54 +2461,6 @@ VARCACHE_PREF(
 
 
 VARCACHE_PREF(
-  Live,
-  "gl.allow-high-power",
-  GLAllowHighPower,
-  RelaxedAtomicBool, true
-)
-
-VARCACHE_PREF(
-  Live,
-  "gl.ignore-dx-interop2-blacklist",
-  IgnoreDXInterop2Blacklist,
-  RelaxedAtomicBool, false
-)
-
-VARCACHE_PREF(
-  Live,
-  "gl.msaa-level",
-  MSAALevel,
-  RelaxedAtomicUint32, 2
-)
-
-#if defined(XP_MACOSX)
-VARCACHE_PREF(
-  Live,
-  "gl.multithreaded",
-  GLMultithreaded,
-  RelaxedAtomicBool, false
-)
-
-#endif
-VARCACHE_PREF(
-  Live,
-  "gl.require-hardware",
-  RequireHardwareGL,
-  RelaxedAtomicBool, false
-)
-
-VARCACHE_PREF(
-  Live,
-  "gl.use-tls-is-current",
-  UseTLSIsCurrent,
-  RelaxedAtomicInt32, 0
-)
-
-
-
-
-
-VARCACHE_PREF(
   Once,
   "gfx.allow-texture-direct-mapping",
   AllowTextureDirectMapping,
@@ -3055,6 +3016,54 @@ VARCACHE_PREF(
   "gfx.ycbcr.accurate-conversion",
   YCbCrAccurateConversion,
   RelaxedAtomicBool, false
+)
+
+
+
+
+
+VARCACHE_PREF(
+  Live,
+  "gl.allow-high-power",
+  GLAllowHighPower,
+  RelaxedAtomicBool, true
+)
+
+VARCACHE_PREF(
+  Live,
+  "gl.ignore-dx-interop2-blacklist",
+  IgnoreDXInterop2Blacklist,
+  RelaxedAtomicBool, false
+)
+
+VARCACHE_PREF(
+  Live,
+  "gl.msaa-level",
+  MSAALevel,
+  RelaxedAtomicUint32, 2
+)
+
+#if defined(XP_MACOSX)
+VARCACHE_PREF(
+  Live,
+  "gl.multithreaded",
+  GLMultithreaded,
+  RelaxedAtomicBool, false
+)
+#endif
+
+VARCACHE_PREF(
+  Live,
+  "gl.require-hardware",
+  RequireHardwareGL,
+  RelaxedAtomicBool, false
+)
+
+VARCACHE_PREF(
+  Live,
+  "gl.use-tls-is-current",
+  UseTLSIsCurrent,
+  RelaxedAtomicInt32, 0
 )
 
 
@@ -3848,6 +3857,7 @@ VARCACHE_PREF(
   LayersSingleTileEnabled,
   RelaxedAtomicBool, true
 )
+
 
 
 
@@ -6226,6 +6236,17 @@ VARCACHE_PREF(
 
 VARCACHE_PREF(
   Live,
+  "threads.medium_high_event_queue.enabled",
+  threads_medium_high_event_queue_enabled,
+  RelaxedAtomicBool, true
+)
+
+
+
+
+
+VARCACHE_PREF(
+  Live,
   "toolkit.scrollbox.horizontalScrollDistance",
   ToolkitHorizontalScrollDistance,
   RelaxedAtomicInt32, 5
@@ -6236,17 +6257,6 @@ VARCACHE_PREF(
   "toolkit.scrollbox.verticalScrollDistance",
   ToolkitVerticalScrollDistance,
   RelaxedAtomicInt32, 3
-)
-
-
-
-
-
-VARCACHE_PREF(
-  Live,
-  "threads.medium_high_event_queue.enabled",
-  threads_medium_high_event_queue_enabled,
-  RelaxedAtomicBool, true
 )
 
 
