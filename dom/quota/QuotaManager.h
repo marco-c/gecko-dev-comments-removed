@@ -145,10 +145,40 @@ class QuotaManager final : public BackgroundThreadObject {
     return mTemporaryStorageInitialized;
   }
 
+  
+
+
+
+
+
   void InitQuotaForOrigin(PersistenceType aPersistenceType,
                           const nsACString& aGroup, const nsACString& aOrigin,
                           uint64_t aUsageBytes, int64_t aAccessTime,
                           bool aPersisted);
+
+  
+
+
+
+
+
+
+
+
+
+  void EnsureQuotaForOrigin(PersistenceType aPersistenceType,
+                            const nsACString& aGroup,
+                            const nsACString& aOrigin);
+
+  
+
+
+
+
+  void NoteOriginDirectoryCreated(PersistenceType aPersistenceType,
+                                  const nsACString& aGroup,
+                                  const nsACString& aOrigin, bool aPersisted,
+                                  int64_t& aTimestamp);
 
   void DecreaseUsageForOrigin(PersistenceType aPersistenceType,
                               const nsACString& aGroup,
@@ -247,6 +277,19 @@ class QuotaManager final : public BackgroundThreadObject {
   
   uint64_t CollectOriginsForEviction(
       uint64_t aMinSizeToBeFreed, nsTArray<RefPtr<DirectoryLockImpl>>& aLocks);
+
+  
+
+
+
+
+
+
+
+
+
+  template <typename P>
+  void CollectPendingOriginsForListing(P aPredicate);
 
   void AssertStorageIsInitialized() const
 #ifdef DEBUG
@@ -398,6 +441,9 @@ class QuotaManager final : public BackgroundThreadObject {
   void LockedRemoveQuotaForOrigin(PersistenceType aPersistenceType,
                                   const nsACString& aGroup,
                                   const nsACString& aOrigin);
+
+  already_AddRefed<GroupInfo> LockedGetOrCreateGroupInfo(
+      PersistenceType aPersistenceType, const nsACString& aGroup);
 
   already_AddRefed<OriginInfo> LockedGetOriginInfo(
       PersistenceType aPersistenceType, const nsACString& aGroup,
