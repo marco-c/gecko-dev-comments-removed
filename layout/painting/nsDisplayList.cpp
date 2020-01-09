@@ -7330,7 +7330,6 @@ nsDisplayTransform::nsDisplayTransform(nsDisplayListBuilder* aBuilder,
   MOZ_COUNT_CTOR(nsDisplayTransform);
   MOZ_ASSERT(aFrame, "Must have a frame!");
   Init(aBuilder, aList);
-  UpdateBoundsFor3D(aBuilder);
 }
 
 nsDisplayTransform::nsDisplayTransform(nsDisplayListBuilder* aBuilder,
@@ -7350,7 +7349,6 @@ nsDisplayTransform::nsDisplayTransform(nsDisplayListBuilder* aBuilder,
   MOZ_ASSERT(aFrame, "Must have a frame!");
   SetReferenceFrameToAncestor(aBuilder);
   Init(aBuilder, aList);
-  UpdateBoundsFor3D(aBuilder);
 }
 
 nsDisplayTransform::nsDisplayTransform(
@@ -7409,9 +7407,8 @@ void nsDisplayTransform::SetReferenceFrameToAncestor(
 void nsDisplayTransform::Init(nsDisplayListBuilder* aBuilder,
                               nsDisplayList* aChildren) {
   mShouldFlatten = false;
-  mHasBounds = false;
   mChildren.AppendToTop(aChildren);
-  UpdateUntransformedBounds(aBuilder);
+  UpdateBounds(aBuilder);
 }
 
 bool nsDisplayTransform::ShouldFlattenAway(nsDisplayListBuilder* aBuilder) {
@@ -8173,6 +8170,59 @@ bool nsDisplayTransform::ComputeVisibility(nsDisplayListBuilder* aBuilder,
   return true;
 }
 
+nsRect nsDisplayTransform::TransformUntransformedBounds(
+    nsDisplayListBuilder* aBuilder, const Matrix4x4Flagged& aMatrix) const {
+  bool snap;
+  const nsRect untransformedBounds = GetUntransformedBounds(aBuilder, &snap);
+  
+  const float factor = mFrame->PresContext()->AppUnitsPerDevPixel();
+  return nsLayoutUtils::MatrixTransformRect(untransformedBounds, aMatrix,
+                                            factor);
+}
+
+
+
+
+
+nsRect nsDisplayTransform::GetBounds(nsDisplayListBuilder* aBuilder,
+                                     bool* aSnap) const {
+  *aSnap = false;
+  return mBounds;
+}
+
+void nsDisplayTransform::ComputeBounds(nsDisplayListBuilder* aBuilder) {
+  MOZ_ASSERT(mFrame->Extend3DContext() || IsLeafOf3DContext());
+
+  
+
+
+
+
+
+
+
+
+
+
+  nsDisplayListBuilder::AutoAccumulateTransform accTransform(aBuilder);
+  accTransform.Accumulate(GetTransform().GetMatrix());
+
+  
+  if (!IsLeafOf3DContext()) {
+    for (nsDisplayItem* i = GetChildren()->GetBottom(); i; i = i->GetAbove()) {
+      i->DoUpdateBoundsPreserves3D(aBuilder);
+    }
+  }
+
+  
+
+
+
+  const nsRect rect = TransformUntransformedBounds(
+      aBuilder, accTransform.GetCurrentTransform());
+  aBuilder->AccumulateRect(rect);
+}
+
 void nsDisplayTransform::DoUpdateBoundsPreserves3D(
     nsDisplayListBuilder* aBuilder) {
   MOZ_ASSERT(mFrame->Combines3DTransformWithAncestors() ||
@@ -8182,17 +8232,36 @@ void nsDisplayTransform::DoUpdateBoundsPreserves3D(
 }
 
 void nsDisplayTransform::UpdateBounds(nsDisplayListBuilder* aBuilder) {
-  mHasBounds = false;
-  UpdateUntransformedBounds(aBuilder, true);
-  UpdateBoundsFor3D(aBuilder);
+  UpdateUntransformedBounds(aBuilder);
+
+  if (IsTransformSeparator()) {
+    MOZ_ASSERT(GetTransform().IsIdentity());
+    mBounds = mChildBounds;
+    return;
+  }
+
+  if (!mFrame->Combines3DTransformWithAncestors()) {
+    if (mFrame->Extend3DContext()) {
+      
+      
+      UpdateBoundsFor3D(aBuilder);
+    } else {
+      
+      mBounds = TransformUntransformedBounds(aBuilder, GetTransform());
+    }
+
+    return;
+  }
+
+  
+  MOZ_ASSERT(mFrame->Combines3DTransformWithAncestors());
+  mBounds = nsRect();
 }
 
 void nsDisplayTransform::UpdateBoundsFor3D(nsDisplayListBuilder* aBuilder) {
-  if (!mFrame->Extend3DContext() ||
-      mFrame->Combines3DTransformWithAncestors() || IsTransformSeparator()) {
-    
-    return;
-  }
+  MOZ_ASSERT(mFrame->Extend3DContext() &&
+             !mFrame->Combines3DTransformWithAncestors() &&
+             !IsTransformSeparator());
 
   
   nsDisplayListBuilder::AutoAccumulateRect accRect(aBuilder);
@@ -8200,7 +8269,12 @@ void nsDisplayTransform::UpdateBoundsFor3D(nsDisplayListBuilder* aBuilder) {
   accTransform.StartRoot();
   ComputeBounds(aBuilder);
   mBounds = aBuilder->GetAccumulatedRect();
-  mHasBounds = true;
+}
+
+void nsDisplayTransform::UpdateUntransformedBounds(
+    nsDisplayListBuilder* aBuilder) {
+  mChildBounds = GetChildren()->GetClippedBoundsWithRespectToASR(
+      aBuilder, mActiveScrolledRoot);
 }
 
 #ifdef DEBUG_HIT
@@ -8316,67 +8390,6 @@ float nsDisplayTransform::GetHitDepthAtPoint(nsDisplayListBuilder* aBuilder,
 
   Point3D transformed = matrix.TransformPoint(Point3D(point2d.x, point2d.y, 0));
   return transformed.z;
-}
-
-
-
-
-nsRect nsDisplayTransform::GetBounds(nsDisplayListBuilder* aBuilder,
-                                     bool* aSnap) const {
-  *aSnap = false;
-
-  if (mHasBounds) {
-    return mBounds;
-  }
-
-  if (mFrame->Extend3DContext() && !mIsTransformSeparator) {
-    return nsRect();
-  }
-
-  bool snap;
-  nsRect untransformedBounds = GetUntransformedBounds(aBuilder, &snap);
-  
-  float factor = mFrame->PresContext()->AppUnitsPerDevPixel();
-  mBounds = nsLayoutUtils::MatrixTransformRect(untransformedBounds,
-                                               GetTransform(), factor);
-  mHasBounds = true;
-  return mBounds;
-}
-
-void nsDisplayTransform::ComputeBounds(nsDisplayListBuilder* aBuilder) {
-  MOZ_ASSERT(mFrame->Extend3DContext() || IsLeafOf3DContext());
-
-  
-
-
-
-
-
-
-
-  nsDisplayListBuilder::AutoAccumulateTransform accTransform(aBuilder);
-
-  accTransform.Accumulate(GetTransform().GetMatrix());
-
-  if (!IsLeafOf3DContext()) {
-    
-    for (nsDisplayItem* i = GetChildren()->GetBottom(); i; i = i->GetAbove()) {
-      i->DoUpdateBoundsPreserves3D(aBuilder);
-    }
-  }
-
-  
-
-
-
-  bool snap;
-  nsRect untransformedBounds = GetUntransformedBounds(aBuilder, &snap);
-  
-  float factor = mFrame->PresContext()->AppUnitsPerDevPixel();
-  nsRect rect = nsLayoutUtils::MatrixTransformRect(
-      untransformedBounds, accTransform.GetCurrentTransform(), factor);
-
-  aBuilder->AccumulateRect(rect);
 }
 
 
