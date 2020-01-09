@@ -902,6 +902,12 @@ class nsDocShell final : public nsDocLoader,
   nsresult MaybeHandleLoadDelegate(nsDocShellLoadState* aLoadState,
                                    uint32_t aWindowType, bool* aDidHandleLoad);
 
+  
+  
+  
+  nsresult MaybeHandleSameDocumentNavigation(nsDocShellLoadState* aLoadState,
+                                             bool* aWasSameDocument);
+
  private:  
   static nsIURIFixup* sURIFixup;
 

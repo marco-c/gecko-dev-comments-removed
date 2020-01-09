@@ -8845,6 +8845,297 @@ nsresult nsDocShell::PerformRetargeting(nsDocShellLoadState* aLoadState,
   return rv;
 }
 
+nsresult nsDocShell::MaybeHandleSameDocumentNavigation(
+    nsDocShellLoadState* aLoadState, bool* aWasSameDocument) {
+  MOZ_ASSERT(aLoadState);
+  MOZ_ASSERT(aWasSameDocument);
+  *aWasSameDocument = false;
+  if (!(aLoadState->LoadType() == LOAD_NORMAL ||
+        aLoadState->LoadType() == LOAD_STOP_CONTENT ||
+        LOAD_TYPE_HAS_FLAGS(aLoadState->LoadType(),
+                            LOAD_FLAGS_REPLACE_HISTORY) ||
+        aLoadState->LoadType() == LOAD_HISTORY ||
+        aLoadState->LoadType() == LOAD_LINK)) {
+    return NS_OK;
+  }
+  nsresult rv;
+  nsCOMPtr<nsIURI> currentURI = mCurrentURI;
+
+  nsAutoCString curHash, newHash;
+  bool curURIHasRef = false, newURIHasRef = false;
+
+  nsresult rvURINew = aLoadState->URI()->GetRef(newHash);
+  if (NS_SUCCEEDED(rvURINew)) {
+    rvURINew = aLoadState->URI()->GetHasRef(&newURIHasRef);
+  }
+
+  bool sameExceptHashes = false;
+  if (currentURI && NS_SUCCEEDED(rvURINew)) {
+    nsresult rvURIOld = currentURI->GetRef(curHash);
+    if (NS_SUCCEEDED(rvURIOld)) {
+      rvURIOld = currentURI->GetHasRef(&curURIHasRef);
+    }
+    if (NS_SUCCEEDED(rvURIOld)) {
+      if (NS_FAILED(currentURI->EqualsExceptRef(aLoadState->URI(),
+                                                &sameExceptHashes))) {
+        sameExceptHashes = false;
+      }
+    }
+  }
+
+  if (!sameExceptHashes && sURIFixup && currentURI && NS_SUCCEEDED(rvURINew)) {
+    
+    nsCOMPtr<nsIURI> currentExposableURI;
+    rv = sURIFixup->CreateExposableURI(currentURI,
+                                       getter_AddRefs(currentExposableURI));
+    NS_ENSURE_SUCCESS(rv, rv);
+    nsresult rvURIOld = currentExposableURI->GetRef(curHash);
+    if (NS_SUCCEEDED(rvURIOld)) {
+      rvURIOld = currentExposableURI->GetHasRef(&curURIHasRef);
+    }
+    if (NS_SUCCEEDED(rvURIOld)) {
+      if (NS_FAILED(currentExposableURI->EqualsExceptRef(aLoadState->URI(),
+                                                         &sameExceptHashes))) {
+        sameExceptHashes = false;
+      }
+    }
+  }
+
+  bool historyNavBetweenSameDoc = false;
+  if (mOSHE && aLoadState->SHEntry()) {
+    
+
+    mOSHE->SharesDocumentWith(aLoadState->SHEntry(), &historyNavBetweenSameDoc);
+
+#ifdef DEBUG
+    if (historyNavBetweenSameDoc) {
+      nsCOMPtr<nsIInputStream> currentPostData = mOSHE->GetPostData();
+      NS_ASSERTION(currentPostData == aLoadState->PostDataStream(),
+                   "Different POST data for entries for the same page?");
+    }
+#endif
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool doSameDocumentNavigation =
+      (historyNavBetweenSameDoc && mOSHE != aLoadState->SHEntry()) ||
+      (!aLoadState->SHEntry() && !aLoadState->PostDataStream() &&
+       sameExceptHashes && newURIHasRef);
+
+  if (!doSameDocumentNavigation) {
+    return NS_OK;
+  }
+
+  
+  nsPoint scrollPos = GetCurScrollPos();
+
+  
+  
+  
+  AutoRestore<uint32_t> loadTypeResetter(mLoadType);
+
+  
+  
+  
+  if (JustStartedNetworkLoad() && (aLoadState->LoadType() & LOAD_CMD_NORMAL)) {
+    mLoadType = LOAD_NORMAL_REPLACE;
+  } else {
+    mLoadType = aLoadState->LoadType();
+  }
+
+  mURIResultedInDocument = true;
+
+  nsCOMPtr<nsISHEntry> oldLSHE = mLSHE;
+
+  
+  
+  
+  
+  SetHistoryEntry(&mLSHE, aLoadState->SHEntry());
+
+  
+  RefPtr<Document> doc = GetDocument();
+  NS_ENSURE_TRUE(doc, NS_ERROR_FAILURE);
+  doc->SetDocumentURI(aLoadState->URI());
+
+  
+
+
+
+  nsCOMPtr<nsIPrincipal> newURITriggeringPrincipal, newURIPrincipalToInherit;
+  if (mOSHE) {
+    newURITriggeringPrincipal = mOSHE->GetTriggeringPrincipal();
+    newURIPrincipalToInherit = mOSHE->GetPrincipalToInherit();
+  } else {
+    newURITriggeringPrincipal = aLoadState->TriggeringPrincipal();
+    newURIPrincipalToInherit = doc->NodePrincipal();
+  }
+  
+  
+  
+  
+  
+  
+  
+  
+  OnNewURI(aLoadState->URI(), nullptr, newURITriggeringPrincipal,
+           newURIPrincipalToInherit, mLoadType, true, true, true);
+
+  nsCOMPtr<nsIInputStream> postData;
+  uint32_t cacheKey = 0;
+
+  bool scrollRestorationIsManual = false;
+  if (mOSHE) {
+    
+    mOSHE->SetScrollPosition(scrollPos.x, scrollPos.y);
+    scrollRestorationIsManual = mOSHE->GetScrollRestorationIsManual();
+    
+    
+    
+    
+    
+    
+    if (aLoadState->LoadType() & LOAD_CMD_NORMAL) {
+      postData = mOSHE->GetPostData();
+      cacheKey = mOSHE->GetCacheKey();
+
+      
+      
+      
+      if (mLSHE) {
+        if (!aLoadState->SHEntry()) {
+          
+          
+          mLSHE->SetScrollRestorationIsManual(scrollRestorationIsManual);
+        }
+        mLSHE->AdoptBFCacheEntry(mOSHE);
+      }
+    }
+  }
+
+  
+  if (aLoadState->SHEntry()) {
+    scrollRestorationIsManual =
+        aLoadState->SHEntry()->GetScrollRestorationIsManual();
+  }
+
+  
+
+
+
+  if (mLSHE) {
+    SetHistoryEntry(&mOSHE, mLSHE);
+    
+    
+    
+    
+    if (postData) {
+      mOSHE->SetPostData(postData);
+    }
+
+    
+    
+    if (cacheKey != 0) {
+      mOSHE->SetCacheKey(cacheKey);
+    }
+  }
+
+  
+
+
+  SetHistoryEntry(&mLSHE, oldLSHE);
+  
+
+
+  if (mSessionHistory) {
+    int32_t index = mSessionHistory->Index();
+    nsCOMPtr<nsISHEntry> shEntry;
+    mSessionHistory->LegacySHistory()->GetEntryAtIndex(index,
+                                                       getter_AddRefs(shEntry));
+    NS_ENSURE_TRUE(shEntry, NS_ERROR_FAILURE);
+    shEntry->SetTitle(mTitle);
+  }
+
+  
+
+  UpdateGlobalHistoryTitle(aLoadState->URI());
+
+  SetDocCurrentStateObj(mOSHE);
+
+  
+  
+  CopyFavicon(currentURI, aLoadState->URI(), doc->NodePrincipal(),
+              UsePrivateBrowsing());
+
+  RefPtr<nsGlobalWindowOuter> scriptGlobal = mScriptGlobal;
+  RefPtr<nsGlobalWindowInner> win =
+      scriptGlobal ? scriptGlobal->GetCurrentInnerWindowInternal() : nullptr;
+
+  
+  
+  
+  
+  
+  rv = ScrollToAnchor(curURIHasRef, newURIHasRef, newHash,
+                      aLoadState->LoadType());
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+
+
+  nscoord bx = 0;
+  nscoord by = 0;
+  bool needsScrollPosUpdate = false;
+  if (mOSHE &&
+      (aLoadState->LoadType() == LOAD_HISTORY ||
+       aLoadState->LoadType() == LOAD_RELOAD_NORMAL) &&
+      !scrollRestorationIsManual) {
+    needsScrollPosUpdate = true;
+    mOSHE->GetScrollPosition(&bx, &by);
+  }
+
+  
+  
+  
+  
+  
+  if (win) {
+    
+    bool doHashchange = sameExceptHashes && (curURIHasRef != newURIHasRef ||
+                                             !curHash.Equals(newHash));
+
+    if (historyNavBetweenSameDoc || doHashchange) {
+      win->DispatchSyncPopState();
+    }
+
+    if (needsScrollPosUpdate && win->AsInner()->HasActiveDocument()) {
+      SetCurScrollPosEx(bx, by);
+    }
+
+    if (doHashchange) {
+      
+      
+      win->DispatchAsyncHashchange(currentURI, aLoadState->URI());
+    }
+  }
+
+  *aWasSameDocument = true;
+  return NS_OK;
+}
+
 nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
                                   nsIDocShell** aDocShell,
                                   nsIRequest** aRequest) {
@@ -9014,289 +9305,13 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
       aLoadState->HasLoadFlags(INTERNAL_LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP);
   mURIResultedInDocument = false;  
 
-  if (aLoadState->LoadType() == LOAD_NORMAL ||
-      aLoadState->LoadType() == LOAD_STOP_CONTENT ||
-      LOAD_TYPE_HAS_FLAGS(aLoadState->LoadType(), LOAD_FLAGS_REPLACE_HISTORY) ||
-      aLoadState->LoadType() == LOAD_HISTORY ||
-      aLoadState->LoadType() == LOAD_LINK) {
-    nsCOMPtr<nsIURI> currentURI = mCurrentURI;
-
-    nsAutoCString curHash, newHash;
-    bool curURIHasRef = false, newURIHasRef = false;
-
-    nsresult rvURINew = aLoadState->URI()->GetRef(newHash);
-    if (NS_SUCCEEDED(rvURINew)) {
-      rvURINew = aLoadState->URI()->GetHasRef(&newURIHasRef);
-    }
-
-    bool sameExceptHashes = false;
-    if (currentURI && NS_SUCCEEDED(rvURINew)) {
-      nsresult rvURIOld = currentURI->GetRef(curHash);
-      if (NS_SUCCEEDED(rvURIOld)) {
-        rvURIOld = currentURI->GetHasRef(&curURIHasRef);
-      }
-      if (NS_SUCCEEDED(rvURIOld)) {
-        if (NS_FAILED(currentURI->EqualsExceptRef(aLoadState->URI(),
-                                                  &sameExceptHashes))) {
-          sameExceptHashes = false;
-        }
-      }
-    }
-
-    if (!sameExceptHashes && sURIFixup && currentURI &&
-        NS_SUCCEEDED(rvURINew)) {
-      
-      nsCOMPtr<nsIURI> currentExposableURI;
-      rv = sURIFixup->CreateExposableURI(currentURI,
-                                         getter_AddRefs(currentExposableURI));
-      NS_ENSURE_SUCCESS(rv, rv);
-      nsresult rvURIOld = currentExposableURI->GetRef(curHash);
-      if (NS_SUCCEEDED(rvURIOld)) {
-        rvURIOld = currentExposableURI->GetHasRef(&curURIHasRef);
-      }
-      if (NS_SUCCEEDED(rvURIOld)) {
-        if (NS_FAILED(currentExposableURI->EqualsExceptRef(
-                aLoadState->URI(), &sameExceptHashes))) {
-          sameExceptHashes = false;
-        }
-      }
-    }
-
-    bool historyNavBetweenSameDoc = false;
-    if (mOSHE && aLoadState->SHEntry()) {
-      
-
-      mOSHE->SharesDocumentWith(aLoadState->SHEntry(),
-                                &historyNavBetweenSameDoc);
-
-#ifdef DEBUG
-      if (historyNavBetweenSameDoc) {
-        nsCOMPtr<nsIInputStream> currentPostData = mOSHE->GetPostData();
-        NS_ASSERTION(currentPostData == aLoadState->PostDataStream(),
-                     "Different POST data for entries for the same page?");
-      }
-#endif
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    bool doShortCircuitedLoad =
-        (historyNavBetweenSameDoc && mOSHE != aLoadState->SHEntry()) ||
-        (!aLoadState->SHEntry() && !aLoadState->PostDataStream() &&
-         sameExceptHashes && newURIHasRef);
-
-    if (doShortCircuitedLoad) {
-      
-      nsPoint scrollPos = GetCurScrollPos();
-
-      
-      
-      
-      
-      AutoRestore<uint32_t> loadTypeResetter(mLoadType);
-
-      
-      
-      
-      if (JustStartedNetworkLoad() &&
-          (aLoadState->LoadType() & LOAD_CMD_NORMAL)) {
-        mLoadType = LOAD_NORMAL_REPLACE;
-      } else {
-        mLoadType = aLoadState->LoadType();
-      }
-
-      mURIResultedInDocument = true;
-
-      nsCOMPtr<nsISHEntry> oldLSHE = mLSHE;
-
-      
-      
-      
-      
-      SetHistoryEntry(&mLSHE, aLoadState->SHEntry());
-
-      
-      RefPtr<Document> doc = GetDocument();
-      NS_ENSURE_TRUE(doc, NS_ERROR_FAILURE);
-      doc->SetDocumentURI(aLoadState->URI());
-
-      
-
-
-
-      nsCOMPtr<nsIPrincipal> newURITriggeringPrincipal,
-          newURIPrincipalToInherit;
-      if (mOSHE) {
-        newURITriggeringPrincipal = mOSHE->GetTriggeringPrincipal();
-        newURIPrincipalToInherit = mOSHE->GetPrincipalToInherit();
-      } else {
-        newURITriggeringPrincipal = aLoadState->TriggeringPrincipal();
-        newURIPrincipalToInherit = doc->NodePrincipal();
-      }
-      
-      
-      
-      
-      
-      
-      
-      
-      OnNewURI(aLoadState->URI(), nullptr, newURITriggeringPrincipal,
-               newURIPrincipalToInherit, mLoadType, true, true, true);
-
-      nsCOMPtr<nsIInputStream> postData;
-      uint32_t cacheKey = 0;
-
-      bool scrollRestorationIsManual = false;
-      if (mOSHE) {
-        
-        mOSHE->SetScrollPosition(scrollPos.x, scrollPos.y);
-        scrollRestorationIsManual = mOSHE->GetScrollRestorationIsManual();
-        
-        
-        
-        
-        
-        
-        if (aLoadState->LoadType() & LOAD_CMD_NORMAL) {
-          postData = mOSHE->GetPostData();
-          cacheKey = mOSHE->GetCacheKey();
-
-          
-          
-          
-          if (mLSHE) {
-            if (!aLoadState->SHEntry()) {
-              
-              
-              mLSHE->SetScrollRestorationIsManual(scrollRestorationIsManual);
-            }
-            mLSHE->AdoptBFCacheEntry(mOSHE);
-          }
-        }
-      }
-
-      
-      if (aLoadState->SHEntry()) {
-        scrollRestorationIsManual =
-            aLoadState->SHEntry()->GetScrollRestorationIsManual();
-      }
-
-      
-
-
-
-      if (mLSHE) {
-        SetHistoryEntry(&mOSHE, mLSHE);
-        
-        
-        
-        
-        if (postData) {
-          mOSHE->SetPostData(postData);
-        }
-
-        
-        
-        if (cacheKey != 0) {
-          mOSHE->SetCacheKey(cacheKey);
-        }
-      }
-
-      
-
-
-      SetHistoryEntry(&mLSHE, oldLSHE);
-      
-
-
-      if (mSessionHistory) {
-        int32_t index = mSessionHistory->Index();
-        nsCOMPtr<nsISHEntry> shEntry;
-        mSessionHistory->LegacySHistory()->GetEntryAtIndex(
-            index, getter_AddRefs(shEntry));
-        NS_ENSURE_TRUE(shEntry, NS_ERROR_FAILURE);
-        shEntry->SetTitle(mTitle);
-      }
-
-      
-
-      UpdateGlobalHistoryTitle(aLoadState->URI());
-
-      SetDocCurrentStateObj(mOSHE);
-
-      
-      
-      CopyFavicon(currentURI, aLoadState->URI(), doc->NodePrincipal(),
-                  UsePrivateBrowsing());
-
-      RefPtr<nsGlobalWindowOuter> scriptGlobal = mScriptGlobal;
-      RefPtr<nsGlobalWindowInner> win =
-          scriptGlobal ? scriptGlobal->GetCurrentInnerWindowInternal()
-                       : nullptr;
-
-      
-      
-      
-      
-      
-      rv = ScrollToAnchor(curURIHasRef, newURIHasRef, newHash,
-                          aLoadState->LoadType());
-      NS_ENSURE_SUCCESS(rv, rv);
-
-      
-
-
-      nscoord bx = 0;
-      nscoord by = 0;
-      bool needsScrollPosUpdate = false;
-      if (mOSHE &&
-          (aLoadState->LoadType() == LOAD_HISTORY ||
-           aLoadState->LoadType() == LOAD_RELOAD_NORMAL) &&
-          !scrollRestorationIsManual) {
-        needsScrollPosUpdate = true;
-        mOSHE->GetScrollPosition(&bx, &by);
-      }
-
-      
-      
-      
-      
-      
-      if (win) {
-        
-        bool doHashchange = sameExceptHashes && (curURIHasRef != newURIHasRef ||
-                                                 !curHash.Equals(newHash));
-
-        if (historyNavBetweenSameDoc || doHashchange) {
-          win->DispatchSyncPopState();
-        }
-
-        if (needsScrollPosUpdate && win->AsInner()->HasActiveDocument()) {
-          SetCurScrollPosEx(bx, by);
-        }
-
-        if (doHashchange) {
-          
-          
-          win->DispatchAsyncHashchange(currentURI, aLoadState->URI());
-        }
-      }
-
-      return NS_OK;
-    }
+  
+  
+  
+  bool wasSameDocument;
+  rv = MaybeHandleSameDocumentNavigation(aLoadState, &wasSameDocument);
+  if (NS_FAILED(rv) || wasSameDocument) {
+    return rv;
   }
 
   
