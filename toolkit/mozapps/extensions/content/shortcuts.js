@@ -273,6 +273,14 @@ async function renderAddons(addons) {
 
     if (extension.shortcuts) {
       let commands = await extension.shortcuts.allCommands();
+      commands.sort((a, b) => {
+        
+        if (!a.shortcut == !b.shortcut)
+          return 0;
+        if (a.shortcut)
+          return -1;
+        return 1;
+      });
 
       for (let command of commands) {
         let row = document.importNode(templates.row.content, true);
