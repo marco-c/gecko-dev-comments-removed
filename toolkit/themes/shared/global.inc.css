@@ -4,6 +4,19 @@
 
 
 
+*|*.plain {
+  -moz-appearance: none;
+  margin: 0 !important;
+  border: none;
+  padding: 0;
+}
+
+html|textarea {
+  font: inherit;
+}
+
+
+
 .close-icon {
   -moz-appearance: none;
   -moz-context-properties: fill, fill-opacity;
