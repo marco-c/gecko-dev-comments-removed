@@ -532,7 +532,7 @@ enum MethodCallKind {
 
 
 const INTERFACE_PARAMS: &str =
-    "const size_t start, const BinASTKind kind, const BinASTFields& fields";
+    "const size_t start, const BinKind kind, const BinFields& fields";
 
 
 const INTERFACE_ARGS: &str =
@@ -944,14 +944,14 @@ impl CPPExporter {
                     spec_name = name))
                 .format(" \\\n")));
         buffer.push_str("
-enum class BinASTKind {
+enum class BinKind {
 #define EMIT_ENUM(name, _) name,
     FOR_EACH_BIN_KIND(EMIT_ENUM)
 #undef EMIT_ENUM
 };
 ");
 
-        buffer.push_str(&format!("\n// The number of distinct values of BinASTKind.\nconst size_t BINASTKIND_LIMIT = {};\n\n\n", kind_limit));
+        buffer.push_str(&format!("\n// The number of distinct values of BinKind.\nconst size_t BINKIND_LIMIT = {};\n\n\n", kind_limit));
         buffer.push_str("\n\n");
         if self.rules.hpp_tokens_field_doc.is_some() {
             buffer.push_str(&self.rules.hpp_tokens_field_doc.reindent(""));
@@ -968,13 +968,13 @@ enum class BinASTKind {
                     enum_name = name.to_cpp_enum_case()))
                 .format(" \\\n")));
         buffer.push_str("
-enum class BinASTField {
+enum class BinField {
 #define EMIT_ENUM(name, _) name,
     FOR_EACH_BIN_FIELD(EMIT_ENUM)
 #undef EMIT_ENUM
 };
 ");
-        buffer.push_str(&format!("\n// The number of distinct values of BinASTField.\nconst size_t BINASTFIELD_LIMIT = {};\n\n\n", field_limit));
+        buffer.push_str(&format!("\n// The number of distinct values of BinField.\nconst size_t BINFIELD_LIMIT = {};\n\n\n", field_limit));
 
         if self.rules.hpp_tokens_variants_doc.is_some() {
             buffer.push_str(&self.rules.hpp_tokens_variants_doc.reindent(""));
@@ -995,13 +995,13 @@ enum class BinASTField {
                 .format(" \\\n")));
 
         buffer.push_str("
-enum class BinASTVariant {
+enum class BinVariant {
 #define EMIT_ENUM(name, _) name,
     FOR_EACH_BIN_VARIANT(EMIT_ENUM)
 #undef EMIT_ENUM
 };
 ");
-        buffer.push_str(&format!("\n// The number of distinct values of BinASTVariant.\nconst size_t BINASTVARIANT_LIMIT = {};\n\n\n",
+        buffer.push_str(&format!("\n// The number of distinct values of BinVariant.\nconst size_t BINVARIANT_LIMIT = {};\n\n\n",
             variants_limit));
 
         buffer.push_str(&self.rules.hpp_tokens_footer.reindent(""));
@@ -1243,8 +1243,8 @@ impl CPPExporter {
             buffer.push_str(&format!("{bnf}
 {first_line}
 {{
-    BinASTKind kind;
-    BinASTFields fields(cx_);
+    BinKind kind;
+    BinFields fields(cx_);
     AutoTaggedTuple guard(*tokenizer_);
     const auto start = tokenizer_->offset();
 
@@ -1280,14 +1280,14 @@ impl CPPExporter {
 
             if rule_for_this_arm.disabled {
                 buffer_cases.push_str(&format!("
-      case BinASTKind::{variant_name}:
+      case BinKind::{variant_name}:
         return raiseError(\"FIXME: Not implemented yet in this preview release ({variant_name})\");",
                     variant_name = node.to_cpp_enum_case()));
                 continue;
             }
 
             buffer_cases.push_str(&format!("
-      case BinASTKind::{variant_name}:
+      case BinKind::{variant_name}:
 {call}
 {arm_after}        break;",
                 call = self.get_method_call("result", node,
@@ -1458,15 +1458,15 @@ impl CPPExporter {
             NamedType::Interface(_) => {
                 buffer.push_str(&format!("{first_line}
 {{
-    BinASTKind kind;
-    BinASTFields fields(cx_);
+    BinKind kind;
+    BinFields fields(cx_);
     AutoTaggedTuple guard(*tokenizer_);
 
     MOZ_TRY(tokenizer_->enterTaggedTuple(kind, fields, guard));
     {type_ok} result;
-    if (kind == BinASTKind::{null}) {{
+    if (kind == BinKind::{null}) {{
 {none_block}
-    }} else if (kind == BinASTKind::{kind}) {{
+    }} else if (kind == BinKind::{kind}) {{
         const auto start = tokenizer_->offset();
 {before}{call}{after}
     }} else {{
@@ -1511,13 +1511,13 @@ impl CPPExporter {
                     &TypeSpec::TypeSum(_) => {
                 buffer.push_str(&format!("{first_line}
 {{
-    BinASTKind kind;
-    BinASTFields fields(cx_);
+    BinKind kind;
+    BinFields fields(cx_);
     AutoTaggedTuple guard(*tokenizer_);
 
     MOZ_TRY(tokenizer_->enterTaggedTuple(kind, fields, guard));
     {type_ok} result;
-    if (kind == BinASTKind::{null}) {{
+    if (kind == BinKind::{null}) {{
 {none_block}
     }} else {{
         const auto start = tokenizer_->offset();
@@ -1673,12 +1673,12 @@ impl CPPExporter {
             
             buffer.push_str(&format!("{first_line}
 {{
-    BinASTKind kind;
-    BinASTFields fields(cx_);
+    BinKind kind;
+    BinFields fields(cx_);
     AutoTaggedTuple guard(*tokenizer_);
 
     MOZ_TRY(tokenizer_->enterTaggedTuple(kind, fields, guard));
-    if (kind != BinASTKind::{kind}) {{
+    if (kind != BinKind::{kind}) {{
         return raiseInvalidKind(\"{kind}\", kind);
     }}
     const auto start = tokenizer_->offset();
@@ -1714,7 +1714,7 @@ impl CPPExporter {
         let fields_type_list = format!("{{ {} }}", interface.contents()
             .fields()
             .iter()
-            .map(|field| format!("BinASTField::{}", field.name().to_cpp_enum_case()))
+            .map(|field| format!("BinField::{}", field.name().to_cpp_enum_case()))
             .format(", "));
 
         let mut fields_implem = String::new();
@@ -1755,7 +1755,7 @@ impl CPPExporter {
                 }
                 Some(IsNullable { is_nullable: false, content: Primitive::Offset }) => {
                     if needs_block {
-                        (Some(format!("BinASTTokenReaderBase::SkippableSubTree {var_name};", var_name = var_name)),
+                        (Some(format!("BinTokenReaderBase::SkippableSubTree {var_name};", var_name = var_name)),
                         Some(format!("MOZ_TRY_VAR({var_name}, tokenizer_->readSkippableSubTree());", var_name = var_name)))
                     } else {
                         (None,
@@ -1881,7 +1881,7 @@ impl CPPExporter {
                 
                 format!("
 #if defined(DEBUG)
-    const BinASTField expected_fields[{number_of_fields}] = {fields_type_list};
+    const BinField expected_fields[{number_of_fields}] = {fields_type_list};
     MOZ_TRY(tokenizer_->checkFields(kind, fields, expected_fields));
 #endif // defined(DEBUG)",
                     fields_type_list = fields_type_list,
@@ -1889,7 +1889,7 @@ impl CPPExporter {
             };
             buffer.push_str(&format!("{first_line}
 {{
-    MOZ_ASSERT(kind == BinASTKind::{kind});
+    MOZ_ASSERT(kind == BinKind::{kind});
     BINJS_TRY(CheckRecursionLimit(cx_));
 {check_fields}
 {pre}{fields_implem}
@@ -1960,11 +1960,11 @@ impl CPPExporter {
                     cases = enum_.strings()
                         .iter()
                         .map(|symbol| {
-                            format!("    case BinASTVariant::{binastvariant_variant}:
+                            format!("    case BinVariant::{binvariant_variant}:
         return {kind}::{specialized_variant};",
                                 kind = kind,
                                 specialized_variant = symbol.to_cpp_enum_case(),
-                                binastvariant_variant  = self.variants_by_symbol.get(symbol)
+                                binvariant_variant  = self.variants_by_symbol.get(symbol)
                                     .unwrap()
                             )
                         })
