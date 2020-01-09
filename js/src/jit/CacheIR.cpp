@@ -4975,12 +4975,14 @@ void GetIteratorIRGenerator::trackAttached(const char* name) {
 CallIRGenerator::CallIRGenerator(JSContext* cx, HandleScript script,
                                  jsbytecode* pc, JSOp op, ICState::Mode mode,
                                  uint32_t argc, HandleValue callee,
-                                 HandleValue thisval, HandleValueArray args)
+                                 HandleValue thisval, HandleValue newTarget,
+                                 HandleValueArray args)
     : IRGenerator(cx, script, pc, CacheKind::Call, mode),
       op_(op),
       argc_(argc),
       callee_(callee),
       thisval_(thisval),
+      newTarget_(newTarget),
       args_(args),
       typeCheckInfo_(cx,  true),
       cacheIRStubKind_(BaselineCacheIRStubKind::Regular) {}
@@ -5283,6 +5285,69 @@ uint32_t CallIRGenerator::calleeStackSlot(bool isSpread, bool isConstructing) {
   return 1 + (isSpread ? 1 : argc_) + isConstructing;
 }
 
+
+
+bool CallIRGenerator::getTemplateObjectForScripted(HandleFunction calleeFunc,
+                                                   MutableHandleObject result,
+                                                   bool* skipAttach) {
+  MOZ_ASSERT(!*skipAttach);
+
+  
+  
+  
+  bool isSuper = op_ == JSOP_SUPERCALL || op_ == JSOP_SPREADSUPERCALL;
+  if (isSuper) {
+    return true;
+  }
+
+  
+  
+  RootedValue protov(cx_);
+  RootedObject newTarget(cx_, &newTarget_.toObject());
+  if (!GetPropertyPure(cx_, newTarget, NameToId(cx_->names().prototype),
+                       protov.address())) {
+    
+    trackAttached(IRGenerator::NotAttached);
+    *skipAttach = true;
+    return true;
+  }
+
+  if (protov.isObject()) {
+    AutoRealm ar(cx_, calleeFunc);
+    TaggedProto proto(&protov.toObject());
+    ObjectGroup* group =
+        ObjectGroup::defaultNewGroup(cx_, nullptr, proto, newTarget);
+    if (!group) {
+      return false;
+    }
+
+    AutoSweepObjectGroup sweep(group);
+    if (group->newScript(sweep) && !group->newScript(sweep)->analyzed()) {
+      
+      trackAttached(IRGenerator::NotAttached);
+
+      
+      
+      *skipAttach = true;
+      return true;
+    }
+  }
+
+  JSObject* thisObject =
+      CreateThisForFunction(cx_, calleeFunc, newTarget, TenuredObject);
+  if (!thisObject) {
+    return false;
+  }
+
+  MOZ_ASSERT(thisObject->nonCCWRealm() == calleeFunc->realm());
+
+  if (thisObject->is<PlainObject>() || thisObject->is<UnboxedPlainObject>()) {
+    result.set(thisObject);
+  }
+
+  return true;
+}
+
 bool CallIRGenerator::tryAttachCallScripted(HandleFunction calleeFunc) {
   if (JitOptions.disableCacheIRCalls) {
     return false;
@@ -5295,11 +5360,6 @@ bool CallIRGenerator::tryAttachCallScripted(HandleFunction calleeFunc) {
   }
 
   bool isConstructing = IsConstructorCallPC(pc_);
-  if (isConstructing) {
-    
-    return false;
-  }
-
   bool isSpread = IsSpreadCallPC(pc_);
 
   
@@ -5334,8 +5394,16 @@ bool CallIRGenerator::tryAttachCallScripted(HandleFunction calleeFunc) {
     EnsureTrackPropertyTypes(cx_, calleeFunc, NameToId(cx_->names().prototype));
   }
 
-  
-  MOZ_ASSERT(!isConstructing);
+  RootedObject templateObj(cx_);
+  bool skipAttach = false;
+  if (isConstructing &&
+      !getTemplateObjectForScripted(calleeFunc, &templateObj, &skipAttach)) {
+    return false;
+  }
+  if (skipAttach) {
+    
+    return false;
+  }
 
   
   Int32OperandId argcId(writer.setInputOperandId(0));
@@ -5346,7 +5414,8 @@ bool CallIRGenerator::tryAttachCallScripted(HandleFunction calleeFunc) {
   ObjOperandId calleeObjId = writer.guardIsObject(calleeValId);
 
   
-  writer.guardSpecificObject(calleeObjId, calleeFunc);
+  FieldOffset calleeOffset =
+      writer.guardSpecificObject(calleeObjId, calleeFunc);
 
   
   writer.guardFunctionHasJitEntry(calleeObjId, isConstructing);
@@ -5357,8 +5426,13 @@ bool CallIRGenerator::tryAttachCallScripted(HandleFunction calleeFunc) {
   }
 
   bool isCrossRealm = cx_->realm() != calleeFunc->realm();
-  writer.callScriptedFunction(calleeObjId, argcId, isCrossRealm, isSpread);
+  writer.callScriptedFunction(calleeObjId, argcId, isCrossRealm, isSpread,
+                              isConstructing);
   writer.typeMonitorResult();
+
+  if (templateObj) {
+    writer.metaScriptedTemplateObject(templateObj, calleeOffset);
+  }
 
   cacheIRStubKind_ = BaselineCacheIRStubKind::Monitored;
   trackAttached("Call scripted func");
@@ -5445,8 +5519,8 @@ bool CallIRGenerator::getTemplateObjectForNative(HandleFunction calleeFunc,
     }
 
     case InlinableNative::TypedArrayConstructor: {
-      return TypedArrayObject::GetTemplateObjectForNative(cx_, calleeFunc->native(),
-                                                          args_, res);
+      return TypedArrayObject::GetTemplateObjectForNative(
+          cx_, calleeFunc->native(), args_, res);
     }
 
     default:
@@ -5487,7 +5561,8 @@ bool CallIRGenerator::tryAttachCallNative(HandleFunction calleeFunc) {
   ObjOperandId calleeObjId = writer.guardIsObject(calleeValId);
 
   
-  FieldOffset calleeOffset = writer.guardSpecificObject(calleeObjId, calleeFunc);
+  FieldOffset calleeOffset =
+      writer.guardSpecificObject(calleeObjId, calleeFunc);
 
   
   if (isSpread) {

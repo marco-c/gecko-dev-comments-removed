@@ -66,6 +66,9 @@ class MOZ_RAII BaselineCacheIRCompiler : public CacheIRCompiler {
                          bool isConstructing);
   void pushSpreadCallArguments(Register argcReg, Register scratch,
                                bool isJitCall, bool isConstructing);
+  void createThis(Register argcReg, Register calleeReg, Register scratch,
+                  bool isSpread);
+  void updateReturnValue();
 
   enum class NativeCallType { Native, ClassHook };
   bool emitCallNativeShared(NativeCallType callType);
@@ -2670,6 +2673,126 @@ bool BaselineCacheIRCompiler::emitCallClassHook() {
   return emitCallNativeShared(NativeCallType::ClassHook);
 }
 
+
+
+
+
+
+
+
+
+
+
+
+void BaselineCacheIRCompiler::createThis(Register argcReg, Register calleeReg,
+                                         Register scratch, bool isSpread) {
+  
+  masm.push(argcReg);
+
+  
+
+  
+  Address newTargetAddress(masm.getStackPointer(),
+                           STUB_FRAME_SIZE + sizeof(size_t));
+  masm.unboxObject(newTargetAddress, scratch);
+  masm.push(scratch);
+
+  
+  if (isSpread) {
+    Address calleeAddress(masm.getStackPointer(),
+                          3 * sizeof(Value) +      
+                              STUB_FRAME_SIZE +    
+                              sizeof(size_t) +     
+                              sizeof(JSObject*));  
+    masm.unboxObject(calleeAddress, scratch);
+  } else {
+    BaseValueIndex calleeAddress(masm.getStackPointer(),
+                                 argcReg,                 
+                                 2 * sizeof(Value) +      
+                                     STUB_FRAME_SIZE +    
+                                     sizeof(size_t) +     
+                                     sizeof(JSObject*));  
+    masm.unboxObject(calleeAddress, scratch);
+  }
+  masm.push(scratch);
+
+  
+  using Fn =
+      bool (*)(JSContext*, HandleObject, HandleObject, MutableHandleValue);
+  callVM<Fn, CreateThis>(masm);
+
+#ifdef DEBUG
+  Label createdThisOK;
+  masm.branchTestObject(Assembler::Equal, JSReturnOperand, &createdThisOK);
+  masm.branchTestMagic(Assembler::Equal, JSReturnOperand, &createdThisOK);
+  masm.assumeUnreachable(
+      "The return of CreateThis must be an object or uninitialized.");
+  masm.bind(&createdThisOK);
+#endif
+
+  
+  masm.pop(argcReg);
+
+  
+  if (isSpread) {
+    Address thisAddress(masm.getStackPointer(),
+                        2 * sizeof(Value) +    
+                            STUB_FRAME_SIZE);  
+    masm.storeValue(JSReturnOperand, thisAddress);
+  } else {
+    BaseValueIndex thisAddress(masm.getStackPointer(),
+                               argcReg,               
+                               1 * sizeof(Value) +    
+                                   STUB_FRAME_SIZE);  
+    masm.storeValue(JSReturnOperand, thisAddress);
+  }
+
+  
+  Address stubRegAddress(masm.getStackPointer(), STUB_FRAME_SAVED_STUB_OFFSET);
+  masm.loadPtr(stubRegAddress, ICStubReg);
+
+  
+  if (isSpread) {
+    Address calleeAddress(masm.getStackPointer(),
+                          3 * sizeof(Value) +    
+                              STUB_FRAME_SIZE);  
+    masm.unboxObject(calleeAddress, calleeReg);
+  } else {
+    BaseValueIndex calleeAddress(masm.getStackPointer(),
+                                 argcReg,               
+                                 2 * sizeof(Value) +    
+                                     STUB_FRAME_SIZE);  
+    masm.unboxObject(calleeAddress, calleeReg);
+  }
+}
+
+void BaselineCacheIRCompiler::updateReturnValue() {
+  Label skipThisReplace;
+  masm.branchTestObject(Assembler::Equal, JSReturnOperand, &skipThisReplace);
+
+  
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  Address thisAddress(masm.getStackPointer(), 3 * sizeof(size_t));
+  masm.loadValue(thisAddress, JSReturnOperand);
+
+#ifdef DEBUG
+  masm.branchTestObject(Assembler::Equal, JSReturnOperand, &skipThisReplace);
+  masm.assumeUnreachable("Return of constructing call should be an object.");
+#endif
+  masm.bind(&skipThisReplace);
+}
+
 bool BaselineCacheIRCompiler::emitCallScriptedFunction() {
   JitSpew(JitSpew_Codegen, __FUNCTION__);
   AutoOutputRegister output(*this);
@@ -2692,8 +2815,9 @@ bool BaselineCacheIRCompiler::emitCallScriptedFunction() {
     masm.switchToObjectRealm(calleeReg, scratch);
   }
 
-  
-  MOZ_ASSERT(!isConstructing);
+  if (isConstructing) {
+    createThis(argcReg, calleeReg, scratch, isSpread);
+  }
 
   if (isSpread) {
     pushSpreadCallArguments(argcReg, scratch,  true,
@@ -2712,9 +2836,7 @@ bool BaselineCacheIRCompiler::emitCallScriptedFunction() {
 
   
   AutoScratchRegister code(allocator, masm);
-  if (!isConstructing) {
-    masm.loadJitCodeRaw(calleeReg, code);
-  }
+  masm.loadJitCodeRaw(calleeReg, code);
 
   EmitBaselineCreateStubFrameDescriptor(masm, scratch, JitFrameLayout::Size());
 
@@ -2741,7 +2863,9 @@ bool BaselineCacheIRCompiler::emitCallScriptedFunction() {
 
   
   
-  MOZ_ASSERT(!isConstructing);
+  if (isConstructing) {
+    updateReturnValue();
+  }
 
   stubFrame.leave(masm, true);
 
