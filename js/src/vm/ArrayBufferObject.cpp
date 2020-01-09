@@ -1201,7 +1201,9 @@ static MOZ_MUST_USE bool CheckArrayBufferTooLarge(JSContext* cx,
 ArrayBufferObject* ArrayBufferObject::createForContents(
     JSContext* cx, uint32_t nbytes, BufferContents contents,
     OwnsState ownsState ) {
-  MOZ_ASSERT_IF(contents.kind() == MAPPED, contents);
+  MOZ_ASSERT(contents);
+  MOZ_ASSERT(contents.kind() != INLINE_DATA);
+  MOZ_ASSERT(contents.kind() != WASM);
 
   
   if (!CheckArrayBufferTooLarge(cx, nbytes)) {
@@ -1211,46 +1213,32 @@ ArrayBufferObject* ArrayBufferObject::createForContents(
   
   
   
-  
   size_t reservedSlots = JSCLASS_RESERVED_SLOTS(&class_);
 
   size_t nslots = reservedSlots;
-  bool allocated = false;
-  if (contents) {
-    if (ownsState == OwnsData) {
-      if (contents.kind() == EXTERNAL) {
-        
-        
-        size_t freeInfoSlots = JS_HOWMANY(sizeof(FreeInfo), sizeof(Value));
-        MOZ_ASSERT(
-            reservedSlots + freeInfoSlots <= NativeObject::MAX_FIXED_SLOTS,
-            "FreeInfo must fit in inline slots");
-        nslots += freeInfoSlots;
-      } else {
-        
-        
-        size_t nAllocated = nbytes;
-        if (contents.kind() == MAPPED) {
-          nAllocated = JS_ROUNDUP(nbytes, js::gc::SystemPageSize());
-        }
-        cx->updateMallocCounter(nAllocated);
-      }
-    }
-  } else {
-    MOZ_ASSERT(ownsState == OwnsData);
-    if (nbytes <= MaxInlineBytes) {
-      int newSlots = JS_HOWMANY(nbytes, sizeof(Value));
-      MOZ_ASSERT(int(nbytes) <= newSlots * int(sizeof(Value)));
-      nslots = reservedSlots + newSlots;
-      contents = BufferContents::createInlineData(nullptr);
+  if (ownsState == OwnsData) {
+    if (contents.kind() == EXTERNAL) {
+      
+      
+      size_t freeInfoSlots = JS_HOWMANY(sizeof(FreeInfo), sizeof(Value));
+      MOZ_ASSERT(reservedSlots + freeInfoSlots <= NativeObject::MAX_FIXED_SLOTS,
+                 "FreeInfo must fit in inline slots");
+      nslots += freeInfoSlots;
     } else {
-      uint8_t* data = AllocateArrayBufferContents(cx, nbytes);
-      if (!data) {
-        return nullptr;
+      
+      size_t nAllocated = nbytes;
+      if (contents.kind() == MAPPED) {
+        nAllocated = JS_ROUNDUP(nbytes, js::gc::SystemPageSize());
+      } else {
+        MOZ_ASSERT(contents.kind() == MALLOCED,
+                   "should have handled all possible callers' kinds");
       }
 
-      contents = BufferContents::createMalloced(data);
-      allocated = true;
+      
+      
+      
+      
+      cx->updateMallocCounter(nAllocated);
     }
   }
 
@@ -1258,32 +1246,20 @@ ArrayBufferObject* ArrayBufferObject::createForContents(
   gc::AllocKind allocKind = gc::GetGCObjectKind(nslots);
 
   AutoSetNewObjectMetadata metadata(cx);
-  Rooted<ArrayBufferObject*> obj(
+  Rooted<ArrayBufferObject*> buffer(
       cx, NewObjectWithClassProto<ArrayBufferObject>(cx, nullptr, allocKind,
                                                      TenuredObject));
-  if (!obj) {
-    if (allocated) {
-      js_free(contents.data());
-    }
+  if (!buffer) {
     return nullptr;
   }
 
-  MOZ_ASSERT(obj->getClass() == &class_);
-  MOZ_ASSERT(!gc::IsInsideNursery(obj),
+  MOZ_ASSERT(!gc::IsInsideNursery(buffer),
              "ArrayBufferObject has a finalizer that must be called to not "
              "leak in some cases, so it can't be nursery-allocated");
 
-  if (!contents) {
-    MOZ_ASSERT(contents.kind() == ArrayBufferObject::INLINE_DATA);
-    void* data = obj->inlineDataPointer();
-    memset(data, 0, nbytes);
-    obj->initialize(nbytes, BufferContents::createInlineData(data),
-                    DoesntOwnData);
-  } else {
-    obj->initialize(nbytes, contents, ownsState);
-  }
+  buffer->initialize(nbytes, contents, ownsState);
 
-  return obj;
+  return buffer;
 }
 
 ArrayBufferObject* ArrayBufferObject::createZeroed(
