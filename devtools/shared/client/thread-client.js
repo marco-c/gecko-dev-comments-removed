@@ -351,19 +351,6 @@ ThreadClient.prototype = {
 
 
 
-
-
-  releaseMany: DebuggerClient.requester({
-    type: "releaseMany",
-    actors: arg(0),
-  }),
-
-  
-
-
-
-
-
   threadGrips: DebuggerClient.requester({
     type: "threadGrips",
     actors: arg(0),

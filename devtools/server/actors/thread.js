@@ -1112,34 +1112,6 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     return { frames: frames.filter(x => !!x) };
   },
 
-  onReleaseMany: function(request) {
-    if (!request.actors) {
-      return { error: "missingParameter",
-               message: "no actors were specified" };
-    }
-
-    let res;
-    for (const actorID of request.actors) {
-      const actor = this.threadLifetimePool.get(actorID);
-      if (!actor) {
-        if (!res) {
-          res = { error: "notReleasable",
-                  message: "Only thread-lifetime actors can be released." };
-        }
-        continue;
-      }
-
-      
-      
-      if (actor.onRelease) {
-        actor.onRelease();
-      } else if (actor.destroy) {
-        actor.destroy();
-      }
-    }
-    return res ? res : {};
-  },
-
   onSources: function(request) {
     for (const source of this.dbg.findSources()) {
       this._addSource(source);
@@ -1772,7 +1744,6 @@ Object.assign(ThreadActor.prototype.requestTypes, {
   "clientEvaluate": ThreadActor.prototype.onClientEvaluate,
   "frames": ThreadActor.prototype.onFrames,
   "interrupt": ThreadActor.prototype.onInterrupt,
-  "releaseMany": ThreadActor.prototype.onReleaseMany,
   "sources": ThreadActor.prototype.onSources,
   "threadGrips": ThreadActor.prototype.onThreadGrips,
   "skipBreakpoints": ThreadActor.prototype.onSkipBreakpoints,
