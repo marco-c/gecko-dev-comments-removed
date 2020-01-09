@@ -261,16 +261,6 @@ class MediaEngineSourceInterface {
 
 
   virtual void GetSettings(dom::MediaTrackSettings& aOutSettings) const = 0;
-
-  
-
-
-
-
-  virtual void Pull(const RefPtr<const AllocationHandle>& aHandle,
-                    const RefPtr<SourceMediaStream>& aStream, TrackID aTrackID,
-                    StreamTime aEndOfAppendedData, StreamTime aDesiredTime,
-                    const PrincipalHandle& aPrincipalHandle) = 0;
 };
 
 

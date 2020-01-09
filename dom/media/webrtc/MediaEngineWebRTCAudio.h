@@ -6,15 +6,17 @@
 #ifndef MediaEngineWebRTCAudio_h
 #define MediaEngineWebRTCAudio_h
 
-#include "MediaEngineWebRTC.h"
 #include "AudioPacketizer.h"
 #include "AudioSegment.h"
 #include "AudioDeviceInfo.h"
+#include "MediaEngineWebRTC.h"
+#include "MediaStreamListener.h"
 #include "webrtc/modules/audio_processing/include/audio_processing.h"
 
 namespace mozilla {
 
 class AudioInputProcessing;
+class AudioInputProcessingPullListener;
 
 
 
@@ -56,11 +58,6 @@ class MediaEngineWebRTCMicrophoneSource : public MediaEngineSource {
                        const MediaEnginePrefs& aPrefs,
                        const nsString& aDeviceId,
                        const char** aOutBadConstraint) override;
-
-  void Pull(const RefPtr<const AllocationHandle>& aHandle,
-            const RefPtr<SourceMediaStream>& aStream, TrackID aTrackID,
-            StreamTime aEndOfAppendedData, StreamTime aDesiredTime,
-            const PrincipalHandle& aPrincipalHandle) override;
 
   
 
@@ -142,6 +139,13 @@ class MediaEngineWebRTCMicrophoneSource : public MediaEngineSource {
 
   
   RefPtr<AudioInputProcessing> mInputProcessing;
+
+  
+  
+  
+  
+  
+  RefPtr<AudioInputProcessingPullListener> mPullListener;
 };
 
 
@@ -153,9 +157,7 @@ class AudioInputProcessing : public AudioDataListener {
                        RefPtr<SourceMediaStream> aStream, TrackID aTrackID,
                        const PrincipalHandle& aPrincipalHandle);
 
-  void Pull(const RefPtr<SourceMediaStream>& aStream, TrackID aTrackID,
-            StreamTime aEndOfAppendedData, StreamTime aDesiredTime,
-            const PrincipalHandle& aPrincipalHandle);
+  void Pull(StreamTime aEndOfAppendedData, StreamTime aDesiredTime);
 
   void NotifyOutputData(MediaStreamGraphImpl* aGraph, AudioDataValue* aBuffer,
                         size_t aFrames, TrackRate aRate,
@@ -201,7 +203,7 @@ class AudioInputProcessing : public AudioDataListener {
 
  private:
   ~AudioInputProcessing() = default;
-  RefPtr<SourceMediaStream> mStream;
+  const RefPtr<SourceMediaStream> mStream;
   
   
   
@@ -243,15 +245,37 @@ class AudioInputProcessing : public AudioDataListener {
   
   bool mLiveSilenceAppended;
   
-  TrackID mTrackID;
+  const TrackID mTrackID;
   
-  PrincipalHandle mPrincipal;
+  const PrincipalHandle mPrincipal;
   
   
   
   bool mEnabled;
   
   bool mEnded;
+};
+
+
+
+class AudioInputProcessingPullListener : public MediaStreamTrackListener {
+ public:
+  explicit AudioInputProcessingPullListener(
+      RefPtr<AudioInputProcessing> aInputProcessing)
+      : mInputProcessing(std::move(aInputProcessing)) {
+    MOZ_COUNT_CTOR(AudioInputProcessingPullListener);
+  }
+
+  ~AudioInputProcessingPullListener() {
+    MOZ_COUNT_DTOR(AudioInputProcessingPullListener);
+  }
+
+  void NotifyPull(MediaStreamGraph* aGraph, StreamTime aEndOfAppendedData,
+                  StreamTime aDesiredTime) override {
+    mInputProcessing->Pull(aEndOfAppendedData, aDesiredTime);
+  }
+
+  const RefPtr<AudioInputProcessing> mInputProcessing;
 };
 
 class MediaEngineWebRTCAudioCaptureSource : public MediaEngineSource {
@@ -284,13 +308,6 @@ class MediaEngineWebRTCAudioCaptureSource : public MediaEngineSource {
                        const MediaEnginePrefs& aPrefs,
                        const nsString& aDeviceId,
                        const char** aOutBadConstraint) override;
-
-  void Pull(const RefPtr<const AllocationHandle>& aHandle,
-            const RefPtr<SourceMediaStream>& aStream, TrackID aTrackID,
-            StreamTime aEndOfAppendedData, StreamTime aDesiredTime,
-            const PrincipalHandle& aPrincipalHandle) override {
-    MOZ_ASSERT_UNREACHABLE("Should never have to append silence");
-  }
 
   dom::MediaSourceEnum GetMediaSource() const override {
     return dom::MediaSourceEnum::AudioCapture;
