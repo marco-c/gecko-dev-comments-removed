@@ -20,22 +20,13 @@ const ThreadStateTypes = {
 
 
 const UnsolicitedNotifications = {
-  "consoleAPICall": "consoleAPICall",
-  "fileActivity": "fileActivity",
-  "lastPrivateContextExited": "lastPrivateContextExited",
-  "logMessage": "logMessage",
-  "networkEvent": "networkEvent",
   "networkEventUpdate": "networkEventUpdate",
-  "documentEvent": "documentEvent",
   "tabDetached": "tabDetached",
   "tabListChanged": "tabListChanged",
   "addonListChanged": "addonListChanged",
   "workerListChanged": "workerListChanged",
   "serviceWorkerRegistrationListChanged": "serviceWorkerRegistrationList",
-  "pageError": "pageError",
-  "evaluationResult": "evaluationResult",
   "updatedSource": "updatedSource",
-  "inspectObject": "inspectObject",
 
   
   

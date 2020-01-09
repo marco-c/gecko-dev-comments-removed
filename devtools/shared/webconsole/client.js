@@ -43,8 +43,8 @@ class WebConsoleClient extends FrontClassWithSpec(webconsoleSpec) {
     this.onNetworkEvent = this._onNetworkEvent.bind(this);
     this.onNetworkEventUpdate = this._onNetworkEventUpdate.bind(this);
 
-    this._client.addListener("evaluationResult", this.onEvaluationResult);
-    this._client.addListener("networkEvent", this.onNetworkEvent);
+    this.on("evaluationResult", this.onEvaluationResult);
+    this.on("serverNetworkEvent", this.onNetworkEvent);
     this._client.addListener("networkEventUpdate", this.onNetworkEventUpdate);
     this.manage(this);
   }
@@ -71,37 +71,35 @@ class WebConsoleClient extends FrontClassWithSpec(webconsoleSpec) {
 
 
 
-  _onNetworkEvent(type, packet) {
-    if (packet.from == this.actorID) {
-      const actor = packet.eventActor;
-      const networkInfo = {
-        _type: "NetworkEvent",
-        timeStamp: actor.timeStamp,
-        node: null,
-        actor: actor.actor,
-        discardRequestBody: true,
-        discardResponseBody: true,
-        startedDateTime: actor.startedDateTime,
-        request: {
-          url: actor.url,
-          method: actor.method,
-        },
-        isXHR: actor.isXHR,
-        cause: actor.cause,
-        response: {},
-        timings: {},
-        
-        updates: [],
-        private: actor.private,
-        fromCache: actor.fromCache,
-        fromServiceWorker: actor.fromServiceWorker,
-        isThirdPartyTrackingResource: actor.isThirdPartyTrackingResource,
-        referrerPolicy: actor.referrerPolicy,
-      };
-      this._networkRequests.set(actor.actor, networkInfo);
+  _onNetworkEvent(packet) {
+    const actor = packet.eventActor;
+    const networkInfo = {
+      _type: "NetworkEvent",
+      timeStamp: actor.timeStamp,
+      node: null,
+      actor: actor.actor,
+      discardRequestBody: true,
+      discardResponseBody: true,
+      startedDateTime: actor.startedDateTime,
+      request: {
+        url: actor.url,
+        method: actor.method,
+      },
+      isXHR: actor.isXHR,
+      cause: actor.cause,
+      response: {},
+      timings: {},
+      
+      updates: [],
+      private: actor.private,
+      fromCache: actor.fromCache,
+      fromServiceWorker: actor.fromServiceWorker,
+      isThirdPartyTrackingResource: actor.isThirdPartyTrackingResource,
+      referrerPolicy: actor.referrerPolicy,
+    };
+    this._networkRequests.set(actor.actor, networkInfo);
 
-      this.emit("networkEvent", networkInfo);
-    }
+    this.emit("networkEvent", networkInfo);
   }
 
   
@@ -261,14 +259,7 @@ class WebConsoleClient extends FrontClassWithSpec(webconsoleSpec) {
   
 
 
-  onEvaluationResult(notification, packet) {
-    
-    
-    
-    if (packet.from !== this.actorID) {
-      return;
-    }
-
+  onEvaluationResult(packet) {
     
     
     
@@ -594,8 +585,8 @@ class WebConsoleClient extends FrontClassWithSpec(webconsoleSpec) {
 
 
   destroy() {
-    this._client.removeListener("evaluationResult", this.onEvaluationResult);
-    this._client.removeListener("networkEvent", this.onNetworkEvent);
+    this.off("evaluationResult", this.onEvaluationResult);
+    this.off("serverNetworkEvent", this.onNetworkEvent);
     this._client.removeListener("networkEventUpdate",
                                 this.onNetworkEventUpdate);
     this._longStrings = null;
