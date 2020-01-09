@@ -5,10 +5,17 @@
 import * as try_syntax from "./try_syntax";
 import extend from "./extend";
 
+const main = async () => {
+  
+  if (process.env.TC_PROJECT == "nss-try") {
+    await try_syntax.initFilter();
+  }
 
-if (process.env.TC_PROJECT == "nss-try") {
-  try_syntax.initFilter();
-}
+  
+  await extend();
+};
 
-
-extend().catch(console.error);
+main().catch(err => {
+  console.error(err);
+  process.exit(1);
+});
