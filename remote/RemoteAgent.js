@@ -41,6 +41,10 @@ class ParentRemoteAgent {
     this.tabs = new TabObserver({registerExisting: true});
     this.tabs.on("open", tab => this.targets.connect(tab.linkedBrowser));
     this.tabs.on("close", tab => this.targets.disconnect(tab.linkedBrowser));
+
+    
+    
+    this.wrappedJSObject = this;
   }
 
   get listening() {
