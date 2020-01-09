@@ -58,7 +58,7 @@ impl GlyphRasterizer {
         
         for key in glyph_keys {
             match glyph_key_cache.entry(key.clone()) {
-                Entry::Occupied(mut entry) => {
+                Entry::Occupied(entry) => {
                     let value = entry.into_mut();
                     match *value {
                         GlyphCacheEntry::Cached(ref glyph) => {
