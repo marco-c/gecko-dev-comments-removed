@@ -6,7 +6,7 @@
 
 
 
-#include "DBusRemoteClient.h"
+#include "nsDBusRemoteClient.h"
 #include "RemoteUtils.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Base64.h"
@@ -16,20 +16,22 @@
 #include <dbus/dbus-glib-lowlevel.h>
 
 using mozilla::LogLevel;
-static mozilla::LazyLogModule sRemoteLm("DBusRemoteClient");
+static mozilla::LazyLogModule sRemoteLm("nsDBusRemoteClient");
 
-DBusRemoteClient::DBusRemoteClient() {
+nsDBusRemoteClient::nsDBusRemoteClient() {
   mConnection = nullptr;
-  MOZ_LOG(sRemoteLm, LogLevel::Debug, ("DBusRemoteClient::DBusRemoteClient"));
+  MOZ_LOG(sRemoteLm, LogLevel::Debug,
+          ("nsDBusRemoteClient::nsDBusRemoteClient"));
 }
 
-DBusRemoteClient::~DBusRemoteClient() {
-  MOZ_LOG(sRemoteLm, LogLevel::Debug, ("DBusRemoteClient::~DBusRemoteClient"));
+nsDBusRemoteClient::~nsDBusRemoteClient() {
+  MOZ_LOG(sRemoteLm, LogLevel::Debug,
+          ("nsDBusRemoteClient::~nsDBusRemoteClient"));
   Shutdown();
 }
 
-nsresult DBusRemoteClient::Init() {
-  MOZ_LOG(sRemoteLm, LogLevel::Debug, ("DBusRemoteClient::Init"));
+nsresult nsDBusRemoteClient::Init() {
+  MOZ_LOG(sRemoteLm, LogLevel::Debug, ("nsDBusRemoteClient::Init"));
 
   if (mConnection) return NS_OK;
 
@@ -43,18 +45,18 @@ nsresult DBusRemoteClient::Init() {
   return NS_OK;
 }
 
-void DBusRemoteClient::Shutdown(void) {
-  MOZ_LOG(sRemoteLm, LogLevel::Debug, ("DBusRemoteClient::Shutdown"));
+void nsDBusRemoteClient::Shutdown(void) {
+  MOZ_LOG(sRemoteLm, LogLevel::Debug, ("nsDBusRemoteClient::Shutdown"));
   
   mConnection = nullptr;
 }
 
-nsresult DBusRemoteClient::SendCommandLine(
+nsresult nsDBusRemoteClient::SendCommandLine(
     const char *aProgram, const char *aProfile, int32_t argc, char **argv,
     const char *aDesktopStartupID, char **aResponse, bool *aWindowFound) {
   NS_ENSURE_TRUE(aProgram, NS_ERROR_INVALID_ARG);
 
-  MOZ_LOG(sRemoteLm, LogLevel::Debug, ("DBusRemoteClient::SendCommandLine"));
+  MOZ_LOG(sRemoteLm, LogLevel::Debug, ("nsDBusRemoteClient::SendCommandLine"));
 
   int commandLineLength;
   char *commandLine =
@@ -72,9 +74,9 @@ nsresult DBusRemoteClient::SendCommandLine(
   return rv;
 }
 
-bool DBusRemoteClient::GetRemoteDestinationName(const char *aProgram,
-                                                const char *aProfile,
-                                                nsCString &aDestinationName) {
+bool nsDBusRemoteClient::GetRemoteDestinationName(const char *aProgram,
+                                                  const char *aProfile,
+                                                  nsCString &aDestinationName) {
   if (!aProfile || aProfile[0] == '\0') {
     
     RefPtr<DBusMessage> msg =
@@ -150,10 +152,10 @@ bool DBusRemoteClient::GetRemoteDestinationName(const char *aProgram,
   }
 }
 
-nsresult DBusRemoteClient::DoSendDBusCommandLine(const char *aProgram,
-                                                 const char *aProfile,
-                                                 const char *aBuffer,
-                                                 int aLength) {
+nsresult nsDBusRemoteClient::DoSendDBusCommandLine(const char *aProgram,
+                                                   const char *aProfile,
+                                                   const char *aBuffer,
+                                                   int aLength) {
   nsAutoCString destinationName;
   if (!GetRemoteDestinationName(aProgram, aProfile, destinationName))
     return NS_ERROR_FAILURE;
