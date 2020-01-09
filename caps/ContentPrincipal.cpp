@@ -152,7 +152,8 @@ nsresult ContentPrincipal::GenerateOriginNoSuffixFromURI(
        
        
        
-       !origin->GetSpecOrDefault().EqualsLiteral("moz-safe-about:blank"))) {
+       !StringBeginsWith(origin->GetSpecOrDefault(),
+                         NS_LITERAL_CSTRING("moz-safe-about:blank")))) {
     rv = origin->GetAsciiSpec(aOriginNoSuffix);
     NS_ENSURE_SUCCESS(rv, rv);
 

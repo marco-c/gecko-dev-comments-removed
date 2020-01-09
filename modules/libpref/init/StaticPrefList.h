@@ -2302,6 +2302,13 @@ VARCACHE_PREF(
 )
 
 
+VARCACHE_PREF(
+  "security.fileuri.strict_origin_policy",
+   security_fileuri_strict_origin_policy,
+  RelaxedAtomicBool, true
+)
+
+
 
 
 
