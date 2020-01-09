@@ -180,9 +180,6 @@ class ChromiumCDMParent final : public PChromiumCDMParent,
   
   uint32_t mMaxRefFrames = 0;
   ReorderQueue mReorderQueue;
-
-  
-  nsCOMPtr<nsIEventTarget> mMainThread;
 };
 
 }  
