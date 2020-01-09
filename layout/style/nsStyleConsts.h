@@ -267,8 +267,7 @@ enum class StyleImageLayerRepeat : uint8_t {
 enum class StyleMaskMode : uint8_t { Alpha = 0, Luminance, MatchSource };
 
 
-#define NS_STYLE_BORDER_COLLAPSE 0
-#define NS_STYLE_BORDER_SEPARATE 1
+enum class StyleBorderCollapse : uint8_t { Collapse, Separate };
 
 
 enum class StyleBorderImageRepeat : uint8_t { Stretch, Repeat, Round, Space };
