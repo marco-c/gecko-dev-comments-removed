@@ -4,12 +4,6 @@
 
 "use strict";
 
-Services.prefs.setBoolPref("security.allow_eval_with_system_principal", true);
-
-registerCleanupFunction(() => {
-  Services.prefs.clearUserPref("security.allow_eval_with_system_principal");
-});
-
 
 
 
