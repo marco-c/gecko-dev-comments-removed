@@ -1970,7 +1970,10 @@ nsresult nsCookieService::GetCookieStringCommon(nsIURI* aHostURI,
 
   
   bool isForeign = true;
-  mThirdPartyUtil->IsThirdPartyChannel(aChannel, aHostURI, &isForeign);
+
+  if (aChannel) {
+    mThirdPartyUtil->IsThirdPartyChannel(aChannel, aHostURI, &isForeign);
+  }
 
   bool isTrackingResource = false;
   bool firstPartyStorageAccessGranted = false;
@@ -2092,7 +2095,10 @@ nsresult nsCookieService::SetCookieStringCommon(nsIURI* aHostURI,
 
   
   bool isForeign = true;
-  mThirdPartyUtil->IsThirdPartyChannel(aChannel, aHostURI, &isForeign);
+
+  if (aChannel) {
+    mThirdPartyUtil->IsThirdPartyChannel(aChannel, aHostURI, &isForeign);
+  }
 
   bool isTrackingResource = false;
   bool firstPartyStorageAccessGranted = false;
@@ -3275,7 +3281,10 @@ bool nsCookieService::CanSetCookie(nsIURI* aHostURI, const nsCookieKey& aKey,
     
     if (aThirdPartyUtil) {
       bool isThirdParty = true;
-      aThirdPartyUtil->IsThirdPartyChannel(aChannel, aHostURI, &isThirdParty);
+
+      if (aChannel) {
+        aThirdPartyUtil->IsThirdPartyChannel(aChannel, aHostURI, &isThirdParty);
+      }
       Telemetry::Accumulate(Telemetry::COOKIE_SCHEME_HTTPS,
                             (isThirdParty ? 0x04 : 0x00) |
                                 (isHTTPS ? 0x02 : 0x00) |
