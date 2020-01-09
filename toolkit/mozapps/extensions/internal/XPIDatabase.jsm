@@ -40,6 +40,9 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   verifyBundleSignedState: "resource://gre/modules/addons/XPIInstall.jsm",
 });
 
+XPCOMUtils.defineLazyPreferenceGetter(this, "allowPrivateBrowsingByDefault",
+                                      "extensions.allowPrivateBrowsingByDefault", true);
+
 const {nsIBlocklistService} = Ci;
 
 
@@ -619,7 +622,8 @@ class AddonInternal {
     
     
     
-    if (this.incognito !== "not_allowed" &&
+    if (!allowPrivateBrowsingByDefault && this.type === "extension" &&
+        this.incognito !== "not_allowed" &&
         this.signedState !== AddonManager.SIGNEDSTATE_PRIVILEGED &&
         this.signedState !== AddonManager.SIGNEDSTATE_SYSTEM &&
         !this.location.isBuiltin) {
