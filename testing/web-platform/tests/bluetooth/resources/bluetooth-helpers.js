@@ -19,7 +19,7 @@ function loadScripts(paths) {
 
 function performChromiumSetup() {
   
-  if (!Mojo) {
+  if (typeof Mojo === 'undefined') {
     return;
   }
 
