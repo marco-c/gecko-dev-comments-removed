@@ -1087,15 +1087,16 @@ void nsFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
   
   
   
-  const bool isNonTextFirstContinuation =
-      !IsTextFrame() && !GetPrevContinuation();
-  if (isNonTextFirstContinuation) {
+  
+  
+  
+  
+  
+  const bool isNonText = !IsTextFrame();
+  if (isNonText) {
     mComputedStyle->StartImageLoads(*doc);
   }
 
-  
-  
-  
   const nsStyleImageLayers* oldLayers =
       aOldComputedStyle ? &aOldComputedStyle->StyleBackground()->mImage
                         : nullptr;
@@ -1228,6 +1229,7 @@ void nsFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
 
   
   
+  const bool isNonTextFirstContinuation = isNonText && !GetPrevContinuation();
   if (isNonTextFirstContinuation) {
     
     
