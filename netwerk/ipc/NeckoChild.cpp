@@ -108,7 +108,7 @@ bool NeckoChild::DeallocPStunAddrsRequestChild(PStunAddrsRequestChild* aActor) {
 }
 
 PWebrtcProxyChannelChild* NeckoChild::AllocPWebrtcProxyChannelChild(
-    const PBrowserOrId& browser) {
+    const TabId& tabId) {
   
   
   MOZ_ASSERT_UNREACHABLE(

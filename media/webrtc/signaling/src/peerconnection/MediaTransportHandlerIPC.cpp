@@ -147,19 +147,17 @@ void MediaTransportHandlerIPC::Destroy() {
 
 void MediaTransportHandlerIPC::SetProxyServer(
     NrSocketProxyConfig&& aProxyConfig) {
-  
-#if 0
   mInitPromise->Then(
       GetMainThreadSerialEventTarget(), __func__,
       [aProxyConfig = std::move(aProxyConfig), this,
        self = RefPtr<MediaTransportHandlerIPC>(this)](bool ) mutable {
         if (mChild) {
-          mChild->SendSetProxyServer(aProxyConfig.GetBrowser(),
+          mChild->SendSetProxyServer(dom::TabId(aProxyConfig.GetTabId()),
+                                     aProxyConfig.GetLoadInfoArgs(),
                                      aProxyConfig.GetAlpn());
         }
       },
       [](const nsCString& aError) {});
-#endif
 }
 
 void MediaTransportHandlerIPC::EnsureProvisionalTransport(

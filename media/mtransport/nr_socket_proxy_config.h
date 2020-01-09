@@ -13,14 +13,14 @@
 class nsIPrincipal;
 
 namespace mozilla {
-namespace dom {
-class PBrowserOrId;
+namespace net {
+class LoadInfoArgs;
 }
 
 class NrSocketProxyConfig {
  public:
-  NrSocketProxyConfig(const dom::PBrowserOrId& aBrowser,
-                      const nsCString& aAlpn);
+  NrSocketProxyConfig(uint64_t aTabId, const nsCString& aAlpn,
+                      const net::LoadInfoArgs& aArgs);
   
   
   
@@ -28,8 +28,9 @@ class NrSocketProxyConfig {
 
   ~NrSocketProxyConfig();
 
-  const dom::PBrowserOrId& GetBrowser() const;
+  uint64_t GetTabId() const;
   const nsCString& GetAlpn() const;
+  const net::LoadInfoArgs& GetLoadInfoArgs() const;
 
  private:
   

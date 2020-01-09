@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 #include "CSFLog.h"
 
@@ -22,11 +22,11 @@
 #include "nsIProxyInfo.h"
 #include "nsIProtocolProxyService.h"
 #include "nsIPrincipal.h"
+#include "mozilla/LoadInfo.h"
 #include "nsProxyRelease.h"
 
 #include "nsIScriptGlobalObject.h"
 #include "mozilla/Preferences.h"
-#include "mozilla/dom/PBrowserOrId.h"
 #include "mozilla/dom/BrowserChild.h"
 #include "MediaManager.h"
 #include "WebrtcGmpVideoCodec.h"
@@ -44,7 +44,7 @@ NS_IMETHODIMP PeerConnectionMedia::ProtocolProxyQueryHandler::OnProxyAvailable(
     nsICancelable* request, nsIChannel* aChannel, nsIProxyInfo* proxyinfo,
     nsresult result) {
   if (!pcm_->mProxyRequest) {
-    // PeerConnectionMedia is no longer waiting
+    
     return NS_OK;
   }
 
@@ -66,8 +66,19 @@ void PeerConnectionMedia::ProtocolProxyQueryHandler::SetProxyOnPcm(
   CSFLogInfo(LOGTAG, "%s: Had proxyinfo", __FUNCTION__);
 
   nsCString alpn = NS_LITERAL_CSTRING("webrtc,c-webrtc");
-  PBrowserOrId browser = BrowserChild::GetFrom(pcm_->GetWindow());
-  pcm_->mProxyConfig.reset(new NrSocketProxyConfig(browser, alpn));
+  auto browserChild = BrowserChild::GetFrom(pcm_->GetWindow());
+  if (!browserChild) {
+    
+    return;
+  }
+  TabId id = browserChild->GetTabId();
+  nsCOMPtr<nsILoadInfo> loadInfo = new net::LoadInfo(
+      nsContentUtils::GetSystemPrincipal(), nullptr, nullptr, 0, 0);
+
+  Maybe<net::LoadInfoArgs> loadInfoArgs;
+  MOZ_ALWAYS_SUCCEEDS(
+      mozilla::ipc::LoadInfoToLoadInfoArgs(loadInfo, &loadInfoArgs));
+  pcm_->mProxyConfig.reset(new NrSocketProxyConfig(id, alpn, *loadInfoArgs));
 }
 
 NS_IMPL_ISUPPORTS(PeerConnectionMedia::ProtocolProxyQueryHandler,
@@ -82,8 +93,8 @@ void PeerConnectionMedia::StunAddrsHandler::OnStunAddrsAvailable(
     pcm_->mLocalAddrsCompleted = true;
     pcm_->mStunAddrsRequest = nullptr;
     pcm_->FlushIceCtxOperationQueueIfReady();
-    // If parent process returns 0 STUN addresses, change ICE connection
-    // state to failed.
+    
+    
     if (!pcm_->mStunAddrs.Length()) {
       pcm_->SignalIceConnectionStateChange(
           dom::PCImplIceConnectionState::Failed);
@@ -118,22 +129,22 @@ void PeerConnectionMedia::InitLocalAddrs() {
             ? mParent->GetWindow()->EventTargetFor(TaskCategory::Other)
             : nullptr;
 
-    // We're in the content process, so send a request over IPC for the
-    // stun address discovery.
+    
+    
     mStunAddrsRequest =
         new net::StunAddrsRequestChild(new StunAddrsHandler(this), target);
     mStunAddrsRequest->SendGetStunAddrs();
   } else {
-    // No content process, so don't need to hold up the ice event queue
-    // until completion of stun address discovery. We can let the
-    // discovery of stun addresses happen in the same process.
+    
+    
+    
     mLocalAddrsCompleted = true;
   }
 }
 
 nsresult PeerConnectionMedia::InitProxy() {
-  // Allow mochitests to disable this, since mochitest configures a fake proxy
-  // that serves up content.
+  
+  
   bool disable =
       Preferences::GetBool("media.peerconnection.disable_http_proxy", false);
   if (disable) {
@@ -150,10 +161,10 @@ nsresult PeerConnectionMedia::InitProxy() {
     return NS_ERROR_FAILURE;
   }
 
-  // We use the following URL to find the "default" proxy address for all HTTPS
-  // connections.  We will only attempt one HTTP(S) CONNECT per peer connection.
-  // "example.com" is guaranteed to be unallocated and should return the best
-  // default.
+  
+  
+  
+  
   nsCOMPtr<nsIURI> fakeHttpsLocation;
   rv = NS_NewURI(getter_AddRefs(fakeHttpsLocation), "https://example.com");
   if (NS_FAILED(rv)) {
@@ -196,7 +207,7 @@ nsresult PeerConnectionMedia::Init() {
   nsresult rv = InitProxy();
   NS_ENSURE_SUCCESS(rv, rv);
 
-  // setup the stun local addresses IPC async call
+  
   InitLocalAddrs();
 
   ConnectSignals();
@@ -306,10 +317,10 @@ void PeerConnectionMedia::UpdateTransport(const JsepTransceiver& aTransceiver,
 }
 
 nsresult PeerConnectionMedia::UpdateMediaPipelines() {
-  // The GMP code is all the way on the other side of webrtc.org, and it is not
-  // feasible to plumb error information all the way back. So, we set up a
-  // handle to the PC (for the duration of this call) in a global variable.
-  // This allows the GMP code to report errors to the PC.
+  
+  
+  
+  
   WebrtcGmpPCHandleSetter setter(mParentHandle);
 
   for (RefPtr<TransceiverImpl>& transceiver : mTransceivers) {
@@ -338,7 +349,7 @@ void PeerConnectionMedia::StartIceChecks(const JsepSession& aSession) {
       RefPtr<PeerConnectionMedia>(this), &PeerConnectionMedia::StartIceChecks_s,
       aSession.IsIceControlling(), aSession.IsOfferer(),
       aSession.RemoteIsIceLite(),
-      // Copy, just in case API changes to return a ref
+      
       std::vector<std::string>(aSession.GetIceOptions())));
 
   PerformOrEnqueueIceCtxOperation(runnable);
@@ -365,7 +376,7 @@ void PeerConnectionMedia::StartIceChecks_s(
 }
 
 bool PeerConnectionMedia::GetPrefDefaultAddressOnly() const {
-  ASSERT_ON_THREAD(mMainThread);  // will crash on STS thread
+  ASSERT_ON_THREAD(mMainThread);  
 
   uint64_t winId = mParent->GetWindow()->WindowID();
 
@@ -431,7 +442,7 @@ void PeerConnectionMedia::PerformOrEnqueueIceCtxOperation(
 void PeerConnectionMedia::GatherIfReady() {
   ASSERT_ON_THREAD(mMainThread);
 
-  // If we had previously queued gathering or ICE start, unqueue them
+  
   mQueuedIceCtxOperations.clear();
   nsCOMPtr<nsIRunnable> runnable(WrapRunnable(
       RefPtr<PeerConnectionMedia>(this),
@@ -442,20 +453,20 @@ void PeerConnectionMedia::GatherIfReady() {
 
 void PeerConnectionMedia::EnsureIceGathering_s(bool aDefaultRouteOnly) {
   if (mProxyConfig) {
-    // Note that this could check if PrivacyRequested() is set on the PC and
-    // remove "webrtc" from the ALPN list.  But that would only work if the PC
-    // was constructed with a peerIdentity constraint, not when isolated
-    // streams are added.  If we ever need to signal to the proxy that the
-    // media is isolated, then we would need to restructure this code.
+    
+    
+    
+    
+    
     mTransportHandler->SetProxyServer(std::move(*mProxyConfig));
     mProxyConfig.reset();
   }
 
-  // Make sure we don't call StartIceGathering if we're in e10s mode
-  // and we received no STUN addresses from the parent process.  In the
-  // absence of previously provided STUN addresses, StartIceGathering will
-  // attempt to gather them (as in non-e10s mode), and this will cause a
-  // sandboxing exception in e10s mode.
+  
+  
+  
+  
+  
   if (!mStunAddrs.Length() && XRE_IsContentProcess()) {
     CSFLogInfo(LOGTAG, "%s: No STUN addresses returned from parent process",
                __FUNCTION__);
@@ -481,8 +492,8 @@ void PeerConnectionMedia::SelfDestruct() {
   }
 
   for (auto& transceiver : mTransceivers) {
-    // transceivers are garbage-collected, so we need to poke them to perform
-    // cleanup right now so the appropriate events fire.
+    
+    
     transceiver->Shutdown_m();
   }
 
@@ -490,7 +501,7 @@ void PeerConnectionMedia::SelfDestruct() {
 
   mQueuedIceCtxOperations.clear();
 
-  // Shutdown the transport (async)
+  
   RUN_ON_THREAD(
       mSTSThread,
       WrapRunnable(this, &PeerConnectionMedia::ShutdownMediaTransport_s),
@@ -506,7 +517,7 @@ void PeerConnectionMedia::SelfDestruct_m() {
 
   mMainThread = nullptr;
 
-  // Final self-destruct.
+  
   this->Release();
 }
 
@@ -520,7 +531,7 @@ void PeerConnectionMedia::ShutdownMediaTransport_s() {
   mTransportHandler->Destroy();
   mTransportHandler = nullptr;
 
-  // we're holding a ref to 'this' that's released by SelfDestruct_m
+  
   mMainThread->Dispatch(
       WrapRunnable(this, &PeerConnectionMedia::SelfDestruct_m),
       NS_DISPATCH_NORMAL);
@@ -544,14 +555,14 @@ nsresult PeerConnectionMedia::AddTransceiver(
   }
 
   if (aSendTrack) {
-    // implement checking for peerIdentity (where failure == black/silence)
+    
     Document* doc = mParent->GetWindow()->GetExtantDoc();
     if (doc) {
       transceiver->UpdateSinkIdentity(nullptr, doc->NodePrincipal(),
                                       mParent->GetPeerIdentity());
     } else {
       MOZ_CRASH();
-      return NS_ERROR_FAILURE;  // Don't remove this till we know it's safe.
+      return NS_ERROR_FAILURE;  
     }
   }
 
@@ -622,10 +633,10 @@ void PeerConnectionMedia::IceGatheringStateChange_s(
     dom::PCImplIceGatheringState aState) {
   ASSERT_ON_THREAD(mSTSThread);
 
-  // ShutdownMediaTransport_s has not run yet because it unhooks this function
-  // from its signal, which means that SelfDestruct_m has not been dispatched
-  // yet either, so this PCMedia will still be around when this dispatch reaches
-  // main.
+  
+  
+  
+  
   GetMainThread()->Dispatch(
       WrapRunnable(this, &PeerConnectionMedia::IceGatheringStateChange_m,
                    aState),
@@ -635,10 +646,10 @@ void PeerConnectionMedia::IceGatheringStateChange_s(
 void PeerConnectionMedia::IceConnectionStateChange_s(
     dom::PCImplIceConnectionState aState) {
   ASSERT_ON_THREAD(mSTSThread);
-  // ShutdownMediaTransport_s has not run yet because it unhooks this function
-  // from its signal, which means that SelfDestruct_m has not been dispatched
-  // yet either, so this PCMedia will still be around when this dispatch reaches
-  // main.
+  
+  
+  
+  
   GetMainThread()->Dispatch(
       WrapRunnable(this, &PeerConnectionMedia::IceConnectionStateChange_m,
                    aState),
@@ -654,10 +665,10 @@ void PeerConnectionMedia::OnCandidateFound_s(
 
   MOZ_ASSERT(!aCandidateInfo.mUfrag.empty());
 
-  // ShutdownMediaTransport_s has not run yet because it unhooks this function
-  // from its signal, which means that SelfDestruct_m has not been dispatched
-  // yet either, so this PCMedia will still be around when this dispatch reaches
-  // main.
+  
+  
+  
+  
   GetMainThread()->Dispatch(
       WrapRunnable(this, &PeerConnectionMedia::OnCandidateFound_m, aTransportId,
                    aCandidateInfo),
@@ -705,15 +716,15 @@ void PeerConnectionMedia::AlpnNegotiated_m(const std::string& aParentHandle,
   }
 }
 
-/**
- * Tells you if any local track is isolated to a specific peer identity.
- * Obviously, we want all the tracks to be isolated equally so that they can
- * all be sent or not.  We check once when we are setting a local description
- * and that determines if we flip the "privacy requested" bit on.  Once the bit
- * is on, all media originating from this peer connection is isolated.
- *
- * @returns true if any track has a peerIdentity set on it
- */
+
+
+
+
+
+
+
+
+
 bool PeerConnectionMedia::AnyLocalTrackHasPeerIdentity() const {
   ASSERT_ON_THREAD(mMainThread);
 
@@ -757,4 +768,4 @@ bool PeerConnectionMedia::AnyCodecHasPluginID(uint64_t aPluginID) {
 nsPIDOMWindowInner* PeerConnectionMedia::GetWindow() const {
   return mParent->GetWindow();
 }
-}  // namespace mozilla
+}  
