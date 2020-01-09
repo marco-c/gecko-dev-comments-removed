@@ -34,6 +34,12 @@ use utils::DashResult;
 use wasm2clif::{init_sig, native_pointer_size, TransEnv};
 
 
+const USER_FUNCTION_NAMESPACE: u32 = 0;
+
+
+const SYMBOLIC_FUNCTION_NAMESPACE: u32 = 1;
+
+
 pub struct CompiledFunc {
     pub frame_pushed: StackSize,
     pub contains_calls: bool,
@@ -146,14 +152,14 @@ impl<'a, 'b> BatchCompiler<'a, 'b> {
         }
 
         {
-            let eenv = &mut EmitEnv::new(&mut self.current_func.metadata);
+            let emit_env = &mut EmitEnv::new(&mut self.current_func.metadata);
             let mut trap_sink = NullTrapSink {};
             unsafe {
                 let code_buffer = &mut self.current_func.code_buffer;
                 self.context.emit_to_memory(
                     &*self.isa,
                     code_buffer.as_mut_ptr(),
-                    eenv,
+                    emit_env,
                     &mut trap_sink,
                 )
             };
@@ -257,6 +263,19 @@ impl<'a, 'b> BatchCompiler<'a, 'b> {
         }
     }
 
+    fn srcloc(&self, inst: ir::Inst) -> ir::SourceLoc {
+        let srcloc = self.context.func.srclocs[inst];
+        debug_assert!(
+            !srcloc.is_default(),
+            "No source location on {}",
+            self.context
+                .func
+                .dfg
+                .display_inst(inst, Some(self.isa.as_ref()))
+        );
+        srcloc
+    }
+
     
     fn call_metadata(
         &self,
@@ -275,20 +294,17 @@ impl<'a, 'b> BatchCompiler<'a, 'b> {
 
         let func_index = match *callee {
             ir::ExternalName::User {
-                namespace: 0,
+                namespace: USER_FUNCTION_NAMESPACE,
                 index,
             } => FuncIndex::new(index as usize),
             _ => panic!("Direct call to {} unsupported", callee),
         };
 
-        let srcloc = func.srclocs[inst];
-        assert!(
-            !srcloc.is_default(),
-            "No source location on {}",
-            func.dfg.display_inst(inst, Some(self.isa.as_ref()))
-        );
-
-        metadata.push(bd::MetadataEntry::direct_call(ret_addr, func_index, srcloc));
+        metadata.push(bd::MetadataEntry::direct_call(
+            ret_addr,
+            func_index,
+            self.srcloc(inst),
+        ));
     }
 
     
@@ -298,8 +314,6 @@ impl<'a, 'b> BatchCompiler<'a, 'b> {
         inst: ir::Inst,
         ret_addr: CodeOffset,
     ) {
-        let func = &self.context.func;
-
         
         
         
@@ -308,15 +322,10 @@ impl<'a, 'b> BatchCompiler<'a, 'b> {
         
         
         
-
-        let srcloc = func.srclocs[inst];
-        assert!(
-            !srcloc.is_default(),
-            "No source location on {}",
-            func.dfg.display_inst(inst, Some(self.isa.as_ref()))
-        );
-
-        metadata.push(bd::MetadataEntry::indirect_call(ret_addr, srcloc));
+        metadata.push(bd::MetadataEntry::indirect_call(
+            ret_addr,
+            self.srcloc(inst),
+        ));
     }
 
     fn trap_metadata(
@@ -353,16 +362,9 @@ impl<'a, 'b> BatchCompiler<'a, 'b> {
             ir::TrapCode::User(_) => panic!("Uncovered trap code {}", code),
         };
 
-        let srcloc = func.srclocs[inst];
-        assert!(
-            !srcloc.is_default(),
-            "No source location on {}",
-            func.dfg.display_inst(inst, Some(self.isa.as_ref()))
-        );
-
         metadata.push(bd::MetadataEntry::trap(
             offset + trap_offset,
-            srcloc,
+            self.srcloc(inst),
             bd_trap,
         ));
     }
@@ -389,14 +391,7 @@ impl<'a, 'b> BatchCompiler<'a, 'b> {
             return;
         }
 
-        let srcloc = func.srclocs[inst];
-        assert!(
-            !srcloc.is_default(),
-            "No source location on {}",
-            func.dfg.display_inst(inst, Some(self.isa.as_ref()))
-        );
-
-        metadata.push(bd::MetadataEntry::memory_access(offset, srcloc));
+        metadata.push(bd::MetadataEntry::memory_access(offset, self.srcloc(inst)));
     }
 }
 
@@ -409,7 +404,7 @@ impl<'a, 'b> fmt::Display for BatchCompiler<'a, 'b> {
 
 pub fn wasm_function_name(func: FuncIndex) -> ir::ExternalName {
     ir::ExternalName::User {
-        namespace: 0,
+        namespace: USER_FUNCTION_NAMESPACE,
         index: func.index() as u32,
     }
 }
@@ -417,7 +412,7 @@ pub fn wasm_function_name(func: FuncIndex) -> ir::ExternalName {
 
 pub fn symbolic_function_name(sym: bd::SymbolicAddress) -> ir::ExternalName {
     ir::ExternalName::User {
-        namespace: 1,
+        namespace: SYMBOLIC_FUNCTION_NAMESPACE,
         index: sym as u32,
     }
 }
@@ -447,20 +442,26 @@ impl<'a> RelocSink for EmitEnv<'a> {
     ) {
         
         match *name {
-            ir::ExternalName::User { namespace: 0, .. } => {
+            ir::ExternalName::User {
+                namespace: USER_FUNCTION_NAMESPACE,
+                ..
+            } => {
                 
             }
+
             ir::ExternalName::User {
-                namespace: 1,
+                namespace: SYMBOLIC_FUNCTION_NAMESPACE,
                 index,
             } => {
                 
                 let sym = index.into();
+
                 
                 let offset = offset + native_pointer_size() as u32;
                 self.metadata
                     .push(bd::MetadataEntry::symbolic_access(offset, sym));
             }
+
             ir::ExternalName::LibCall(call) => {
                 let sym = match call {
                     ir::LibCall::CeilF32 => bd::SymbolicAddress::CeilF32,
@@ -475,6 +476,7 @@ impl<'a> RelocSink for EmitEnv<'a> {
                         panic!("Don't understand external {}", name);
                     }
                 };
+
                 
                 let offset = offset + native_pointer_size() as u32;
                 self.metadata
