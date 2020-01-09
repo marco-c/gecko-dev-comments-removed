@@ -128,6 +128,11 @@
   color: var(--theme-toolbar-color);
 }
 
+
+.network-monitor .tree-container .treeTable .treeRow.tree-section .theme-twisty {
+  fill: var(--theme-icon-dimmed-color);
+}
+
 .network-monitor .tree-container .treeTable .treeValueCell {
   
   max-width: 0;

@@ -91,6 +91,7 @@
 .treeTable .treeRow.selected *,
 .treeTable .treeRow.selected .treeLabelCell::after {
   color: var(--theme-selection-color);
+  fill: currentColor;
 }
 
 
@@ -120,13 +121,18 @@
 
 
 .treeTable .treeRow .treeIcon {
+  box-sizing: content-box;
   height: 14px;
   width: 14px;
-  font-size: 10px; 
+  padding: 1px;
+  
+  font-size: 10px;
+  line-height: 14px;
   display: inline-block;
   vertical-align: bottom;
+  
   margin-inline-start: 3px;
-  padding-top: 1px;
+  margin-inline-end: 1px;
 }
 
 
