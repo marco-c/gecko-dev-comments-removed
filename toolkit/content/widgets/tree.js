@@ -211,8 +211,8 @@
 
     buildPopup(aPopup) {
       
-      while (aPopup.childNodes.length > 2)
-        aPopup.firstChild.remove();
+      
+      aPopup.querySelectorAll("[colindex]").forEach((e) => { e.remove(); });
 
       var refChild = aPopup.firstChild;
 
@@ -237,11 +237,7 @@
       }
 
       var hidden = !tree.enableColumnDrag;
-      const anonids = ["menuseparator", "menuitem"];
-      for (var i = 0; i < anonids.length; i++) {
-        var element = this.querySelector(`[anonid=\"${anonids[i]}\"]`);
-        element.hidden = hidden;
-      }
+      aPopup.querySelectorAll(":not([colindex])").forEach((e) => { e.hidden = hidden; });
     }
   }
 
