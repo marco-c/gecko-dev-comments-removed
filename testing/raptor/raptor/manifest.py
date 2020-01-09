@@ -169,15 +169,21 @@ def write_test_settings_json(args, test_details, oskey):
 
     
     if test_details.get("gecko_profile", False):
-        test_settings['raptor-options']['gecko_profile'] = True
+        threads = 'GeckoMain,Compositor'
+
         
-        
-        test_settings['raptor-options']['gecko_profile_interval'] = \
-            float(test_details.get("gecko_profile_interval", 0))
-        test_settings['raptor-options']['gecko_profile_entries'] = \
-            float(test_details.get("gecko_profile_entries", 0))
-        if str(os.getenv('MOZ_WEBRENDER')) == '1':
-            test_settings['raptor-options']['webrender_enabled'] = True
+        if os.getenv('MOZ_WEBRENDER') == '1':
+            threads = '{},Renderer,WR'.format(threads)
+
+        if test_details.get('gecko_profile_threads'):
+            threads = '{0},{1}'.format(threads, test_details.get('gecko_profile_threads'))
+
+        test_settings['raptor-options'].update({
+            'gecko_profile': True,
+            'gecko_profile_entries': int(test_details.get('gecko_profile_entries')),
+            'gecko_profile_interval': int(test_details.get('gecko_profile_interval')),
+            'gecko_profile_threads': threads,
+        })
 
     if test_details.get("newtab_per_cycle", None) is not None:
         test_settings['raptor-options']['newtab_per_cycle'] = \
