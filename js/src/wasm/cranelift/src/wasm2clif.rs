@@ -411,12 +411,14 @@ impl<'a, 'b, 'c> FuncEnvironment for TransEnv<'a, 'b, 'c> {
 
         
         
+        
+        
         let (base_gv, offset) = if global.is_indirect() {
             let gv = func.create_global_value(ir::GlobalValueData::Load {
                 base: vmctx_gv,
                 offset: offset32(offset),
                 global_type: native_pointer_type(),
-                readonly: false,
+                readonly: true,
             });
             (gv, 0.into())
         } else {
