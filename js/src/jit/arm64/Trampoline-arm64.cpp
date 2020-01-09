@@ -15,8 +15,6 @@
 #include "jit/VMFunctions.h"
 
 #include "jit/MacroAssembler-inl.h"
-#include "jit/SharedICHelpers-inl.h"
-#include "jit/VMFunctionList-inl.h"
 
 using namespace js;
 using namespace js::jit;
@@ -784,63 +782,6 @@ uint32_t JitRuntime::generatePreBarrier(JSContext* cx, MacroAssembler& masm,
   masm.abiret();
 
   return offset;
-}
-
-JitCode* JitRuntime::generateDebugTrapHandler(JSContext* cx) {
-  StackMacroAssembler masm(cx);
-#ifndef JS_USE_LINK_REGISTER
-  
-  
-  masm.setFramePushed(sizeof(intptr_t));
-#endif
-
-  Register scratch1 = r0;
-  Register scratch2 = r1;
-
-  
-  masm.Sub(ARMRegister(scratch1, 64), BaselineFrameReg64,
-           Operand(BaselineFrame::Size()));
-
-  
-  
-  
-  masm.movePtr(ImmPtr(nullptr), ICStubReg);
-  EmitBaselineEnterStubFrame(masm, scratch2);
-
-  using Fn = bool (*)(JSContext*, BaselineFrame*, uint8_t*, bool*);
-  VMFunctionId id = VMFunctionToId<Fn, jit::HandleDebugTrap>::id;
-  TrampolinePtr code = cx->runtime()->jitRuntime()->getVMWrapper(id);
-
-  masm.asVIXL().Push(vixl::lr, ARMRegister(scratch1, 64));
-  EmitBaselineCallVM(code, masm);
-
-  EmitBaselineLeaveStubFrame(masm);
-
-  
-  
-  
-  Label forcedReturn;
-  masm.branchTest32(Assembler::NonZero, ReturnReg, ReturnReg, &forcedReturn);
-  masm.abiret();
-
-  masm.bind(&forcedReturn);
-  masm.loadValue(
-      Address(BaselineFrameReg, BaselineFrame::reverseOffsetOfReturnValue()),
-      JSReturnOperand);
-  masm.Mov(masm.GetStackPointer64(), BaselineFrameReg64);
-
-  masm.pop(BaselineFrameReg, lr);
-  masm.syncStackPtr();
-  masm.abiret();
-
-  Linker linker(masm, "DebugTrapHandler");
-  JitCode* codeDbg = linker.newCode(cx, CodeKind::Other);
-
-#ifdef JS_ION_PERF
-  writePerfSpewerJitCodeProfile(codeDbg, "DebugTrapHandler");
-#endif
-
-  return codeDbg;
 }
 
 void JitRuntime::generateExceptionTailStub(MacroAssembler& masm, void* handler,
