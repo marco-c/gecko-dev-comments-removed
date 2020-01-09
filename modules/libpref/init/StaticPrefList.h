@@ -541,6 +541,16 @@ VARCACHE_PREF(
 
 
 VARCACHE_PREF(
+  "extensions.allowPrivateBrowsingByDefault",
+   extensions_allowPrivateBrowsingByDefault,
+  bool, true
+)
+
+
+
+
+
+VARCACHE_PREF(
   "full-screen-api.unprefix.enabled",
    full_screen_api_unprefix_enabled,
   bool, true

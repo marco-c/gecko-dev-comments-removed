@@ -132,12 +132,15 @@ WebExtensionPolicy::WebExtensionPolicy(GlobalObject& aGlobal,
       mName(aInit.mName),
       mContentSecurityPolicy(aInit.mContentSecurityPolicy),
       mLocalizeCallback(aInit.mLocalizeCallback),
-      mPermissions(new AtomSet(aInit.mPermissions)),
-      mPrivateBrowsingAllowed(aInit.mPrivateBrowsingAllowed) {
+      mPermissions(new AtomSet(aInit.mPermissions)) {
   if (!ParseGlobs(aGlobal, aInit.mWebAccessibleResources, mWebAccessiblePaths,
                   aRv)) {
     return;
   }
+
+  
+  mAllowPrivateBrowsingByDefault =
+      StaticPrefs::extensions_allowPrivateBrowsingByDefault();
 
   MatchPatternOptions options;
   options.mRestrictSchemes = !HasPermission(nsGkAtoms::mozillaAddons);
@@ -442,12 +445,12 @@ void WebExtensionPolicy::GetContentScripts(
 
 bool WebExtensionPolicy::CanAccessContext(nsILoadContext* aContext) const {
   MOZ_ASSERT(aContext);
-  return mPrivateBrowsingAllowed || !aContext->UsePrivateBrowsing();
+  return PrivateBrowsingAllowed() || !aContext->UsePrivateBrowsing();
 }
 
 bool WebExtensionPolicy::CanAccessWindow(
     const dom::WindowProxyHolder& aWindow) const {
-  if (mPrivateBrowsingAllowed) {
+  if (PrivateBrowsingAllowed()) {
     return true;
   }
   

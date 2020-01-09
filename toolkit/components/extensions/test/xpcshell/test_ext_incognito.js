@@ -1,30 +1,52 @@
 
 
 "use strict";
+ChromeUtils.import("resource://gre/modules/AddonManager.jsm");
+ChromeUtils.import("resource://gre/modules/Extension.jsm");
+
+AddonTestUtils.init(this);
+AddonTestUtils.overrideCertDB();
+AddonTestUtils.createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "42");
+
+async function runIncognitoTest(extensionData, privateBrowsingAllowed, allowPrivateBrowsingByDefault) {
+  Services.prefs.setBoolPref("extensions.allowPrivateBrowsingByDefault", allowPrivateBrowsingByDefault);
+
+  let wrapper = ExtensionTestUtils.loadExtension(extensionData);
+  await wrapper.startup();
+  let {extension} = wrapper;
+
+  if (!allowPrivateBrowsingByDefault) {
+    
+    equal(extension.permissions.has("internal:privateBrowsingAllowed"), privateBrowsingAllowed,
+          "privateBrowsingAllowed in serialized extension");
+  }
+  equal(extension.privateBrowsingAllowed, privateBrowsingAllowed,
+        "privateBrowsingAllowed in extension");
+  equal(extension.policy.privateBrowsingAllowed, privateBrowsingAllowed,
+        "privateBrowsingAllowed on policy");
+
+  await wrapper.unload();
+  Services.prefs.clearUserPref("extensions.allowPrivateBrowsingByDefault");
+}
 
 add_task(async function test_extension_incognito_spanning() {
-  let wrapper = ExtensionTestUtils.loadExtension({});
-  await wrapper.startup();
-
-  let extension = wrapper.extension;
-  let data = extension.serialize();
-  equal(data.privateBrowsingAllowed, true, "Should have privateBrowsingAllowed in serialized extension");
-  equal(extension.privateBrowsingAllowed, true, "Should have privateBrowsingAllowed");
-  equal(extension.policy.privateBrowsingAllowed, true, "Should have privateBrowsingAllowed on policy");
-  await wrapper.unload();
+  await runIncognitoTest({}, false, false);
+  await runIncognitoTest({}, true, true);
 });
 
 
-add_task(async function test_extension_incognito_test_mode() {
-  let wrapper = ExtensionTestUtils.loadExtension({
-    incognitoOverride: "not_allowed",
-  });
-  await wrapper.startup();
+add_task(async function test_extension_incognito_override_spanning() {
+  let extensionData = {
+    incognitoOverride: "spanning",
+  };
+  await runIncognitoTest(extensionData, true, false);
+});
 
-  let extension = wrapper.extension;
-  let data = extension.serialize();
-  equal(data.privateBrowsingAllowed, false, "Should not have privateBrowsingAllowed in serialized extension");
-  equal(extension.privateBrowsingAllowed, false, "Should not have privateBrowsingAllowed");
-  equal(extension.policy.privateBrowsingAllowed, false, "Should not have privateBrowsingAllowed on policy");
-  await wrapper.unload();
+
+add_task(async function test_extension_incognito_privileged() {
+  let extensionData = {
+    isPrivileged: true,
+  };
+  await runIncognitoTest(extensionData, true, true);
+  await runIncognitoTest(extensionData, true, false);
 });
