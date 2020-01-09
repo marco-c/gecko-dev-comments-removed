@@ -35,8 +35,6 @@ class VideoOutput : public DirectMediaStreamTrackListener {
   virtual ~VideoOutput() = default;
 
   void DropPastFrames() {
-    mMutex.AssertCurrentThreadOwns();
-
     TimeStamp now = TimeStamp::Now();
     size_t nrChunksInPast = 0;
     for (const auto& idChunkPair : mFrames) {
@@ -54,9 +52,12 @@ class VideoOutput : public DirectMediaStreamTrackListener {
     }
   }
 
-  void SendFrames() {
+  void SendFramesEnsureLocked() {
     mMutex.AssertCurrentThreadOwns();
+    SendFrames();
+  }
 
+  void SendFrames() {
     DropPastFrames();
 
     if (mFrames.IsEmpty()) {
@@ -143,17 +144,38 @@ class VideoOutput : public DirectMediaStreamTrackListener {
       mLastFrameTime = i->mTimeStamp;
     }
 
-    SendFrames();
+    SendFramesEnsureLocked();
   }
   void NotifyRemoved() override {
     
     
+    if (mFrames.Length() <= 1) {
+      
+      mFrames.ClearAndRetainStorage();
+      mVideoFrameContainer->ClearFutureFrames();
+      return;
+    }
+
+    
+    
+    
+    
+    
+    DropPastFrames();
+    mFrames.RemoveElementsAt(1, mFrames.Length() - 1);
+    SendFrames();
     mFrames.ClearAndRetainStorage();
-    mVideoFrameContainer->ClearFutureFrames();
   }
   void NotifyEnded() override {
     
     
+    if (mFrames.IsEmpty()) {
+      return;
+    }
+
+    
+    mFrames.RemoveElementsAt(0, mFrames.Length() - 1);
+    SendFrames();
     mFrames.ClearAndRetainStorage();
   }
   void NotifyEnabledStateChanged(bool aEnabled) override {
@@ -164,7 +186,7 @@ class VideoOutput : public DirectMediaStreamTrackListener {
     for (auto& idChunkPair : mFrames) {
       idChunkPair.first() = mVideoFrameContainer->NewFrameID();
     }
-    SendFrames();
+    SendFramesEnsureLocked();
   }
 
   Mutex mMutex;
