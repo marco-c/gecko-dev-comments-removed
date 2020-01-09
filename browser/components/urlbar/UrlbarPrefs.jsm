@@ -165,15 +165,15 @@ const PREF_TYPES = new Map([
 
 
 const DEFAULT_BUCKETS_BEFORE = [
-  [UrlbarUtils.MATCH_GROUP.HEURISTIC, 1],
-  [UrlbarUtils.MATCH_GROUP.EXTENSION, UrlbarUtils.MAXIMUM_ALLOWED_EXTENSION_MATCHES - 1],
+  [UrlbarUtils.RESULT_GROUP.HEURISTIC, 1],
+  [UrlbarUtils.RESULT_GROUP.EXTENSION, UrlbarUtils.MAXIMUM_ALLOWED_EXTENSION_MATCHES - 1],
 ];
 
 
 
 const DEFAULT_BUCKETS_AFTER = [
-  [UrlbarUtils.MATCH_GROUP.SUGGESTION, Infinity],
-  [UrlbarUtils.MATCH_GROUP.GENERAL, Infinity],
+  [UrlbarUtils.RESULT_GROUP.SUGGESTION, Infinity],
+  [UrlbarUtils.RESULT_GROUP.GENERAL, Infinity],
 ];
 
 

@@ -665,13 +665,13 @@ function Search(searchString, searchParam, autocompleteListener,
   for (let i = 0; previousResult && i < previousResult.matchCount; ++i) {
     let style = previousResult.getStyleAt(i);
     if (style.includes("heuristic")) {
-      this._previousSearchMatchTypes.push(UrlbarUtils.MATCH_GROUP.HEURISTIC);
+      this._previousSearchMatchTypes.push(UrlbarUtils.RESULT_GROUP.HEURISTIC);
     } else if (style.includes("suggestion")) {
-      this._previousSearchMatchTypes.push(UrlbarUtils.MATCH_GROUP.SUGGESTION);
+      this._previousSearchMatchTypes.push(UrlbarUtils.RESULT_GROUP.SUGGESTION);
     } else if (style.includes("extension")) {
-      this._previousSearchMatchTypes.push(UrlbarUtils.MATCH_GROUP.EXTENSION);
+      this._previousSearchMatchTypes.push(UrlbarUtils.RESULT_GROUP.EXTENSION);
     } else {
-      this._previousSearchMatchTypes.push(UrlbarUtils.MATCH_GROUP.GENERAL);
+      this._previousSearchMatchTypes.push(UrlbarUtils.RESULT_GROUP.GENERAL);
     }
   }
 
@@ -692,7 +692,7 @@ function Search(searchString, searchParam, autocompleteListener,
   this._usedPlaceIds = new Set();
 
   
-  this._counts = Object.values(UrlbarUtils.MATCH_GROUP)
+  this._counts = Object.values(UrlbarUtils.RESULT_GROUP)
                        .reduce((o, p) => { o[p] = 0; return o; }, {});
 }
 
@@ -892,7 +892,7 @@ Search.prototype = {
     this._addingHeuristicFirstMatch = true;
     let hasHeuristic = await this._matchFirstHeuristicResult(conn);
     this._addingHeuristicFirstMatch = false;
-    this._cleanUpNonCurrentMatches(UrlbarUtils.MATCH_GROUP.HEURISTIC);
+    this._cleanUpNonCurrentMatches(UrlbarUtils.RESULT_GROUP.HEURISTIC);
     if (!this.pending)
       return;
 
@@ -987,7 +987,7 @@ Search.prototype = {
     }
     
     searchSuggestionsCompletePromise.then(() => {
-      this._cleanUpNonCurrentMatches(UrlbarUtils.MATCH_GROUP.SUGGESTION);
+      this._cleanUpNonCurrentMatches(UrlbarUtils.RESULT_GROUP.SUGGESTION);
     });
 
     
@@ -1034,14 +1034,14 @@ Search.prototype = {
 
     
     
-    this._cleanUpNonCurrentMatches(UrlbarUtils.MATCH_GROUP.GENERAL);
+    this._cleanUpNonCurrentMatches(UrlbarUtils.RESULT_GROUP.GENERAL);
 
     this._matchAboutPages();
 
     
     
-    let count = this._counts[UrlbarUtils.MATCH_GROUP.GENERAL] +
-                this._counts[UrlbarUtils.MATCH_GROUP.HEURISTIC];
+    let count = this._counts[UrlbarUtils.RESULT_GROUP.GENERAL] +
+                this._counts[UrlbarUtils.RESULT_GROUP.HEURISTIC];
     if (count < this._maxResults) {
       this._matchBehavior = Ci.mozIPlacesAutoComplete.MATCH_ANYWHERE;
       for (let [query, params] of [ this._adaptiveQuery,
@@ -1608,8 +1608,8 @@ Search.prototype = {
   },
 
   _addExtensionMatch(content, comment) {
-    let count = this._counts[UrlbarUtils.MATCH_GROUP.EXTENSION] +
-                this._counts[UrlbarUtils.MATCH_GROUP.HEURISTIC];
+    let count = this._counts[UrlbarUtils.RESULT_GROUP.EXTENSION] +
+                this._counts[UrlbarUtils.RESULT_GROUP.HEURISTIC];
     if (count >= UrlbarUtils.MAXIMUM_ALLOWED_EXTENSION_MATCHES) {
       return;
     }
@@ -1623,7 +1623,7 @@ Search.prototype = {
       icon: "chrome://browser/content/extension.svg",
       style: "action extension",
       frecency: Infinity,
-      type: UrlbarUtils.MATCH_GROUP.EXTENSION,
+      type: UrlbarUtils.RESULT_GROUP.EXTENSION,
     });
   },
 
@@ -1679,7 +1679,7 @@ Search.prototype = {
     if (suggestion) {
       actionURLParams.searchSuggestion = suggestion;
       match.style += " suggestion";
-      match.type = UrlbarUtils.MATCH_GROUP.SUGGESTION;
+      match.type = UrlbarUtils.RESULT_GROUP.SUGGESTION;
     }
 
     match.value = PlacesUtils.mozActionURI("searchengine", actionURLParams);
@@ -1699,7 +1699,7 @@ Search.prototype = {
     
     
     
-    setTimeout(() => this._cleanUpNonCurrentMatches(UrlbarUtils.MATCH_GROUP.EXTENSION), 100);
+    setTimeout(() => this._cleanUpNonCurrentMatches(UrlbarUtils.RESULT_GROUP.EXTENSION), 100);
 
     
     
@@ -1850,8 +1850,8 @@ Search.prototype = {
     }
     
     
-    let count = this._counts[UrlbarUtils.MATCH_GROUP.GENERAL] +
-                this._counts[UrlbarUtils.MATCH_GROUP.HEURISTIC];
+    let count = this._counts[UrlbarUtils.RESULT_GROUP.GENERAL] +
+                this._counts[UrlbarUtils.RESULT_GROUP.HEURISTIC];
     if (!this.pending || count >= this._maxResults) {
       cancel();
     }
@@ -1891,9 +1891,9 @@ Search.prototype = {
       throw new Error("Frecency not provided");
 
     if (this._addingHeuristicFirstMatch)
-      match.type = UrlbarUtils.MATCH_GROUP.HEURISTIC;
+      match.type = UrlbarUtils.RESULT_GROUP.HEURISTIC;
     else if (typeof match.type != "string")
-      match.type = UrlbarUtils.MATCH_GROUP.GENERAL;
+      match.type = UrlbarUtils.RESULT_GROUP.GENERAL;
 
     
     
@@ -1935,7 +1935,7 @@ Search.prototype = {
       if (this._currentMatchCount == 6)
         TelemetryStopwatch.finish(TELEMETRY_6_FIRST_RESULTS, this);
     }
-    this.notifyResult(true, match.type == UrlbarUtils.MATCH_GROUP.HEURISTIC);
+    this.notifyResult(true, match.type == UrlbarUtils.RESULT_GROUP.HEURISTIC);
   },
 
   _getInsertIndexForMatch(match) {
@@ -1960,7 +1960,7 @@ Search.prototype = {
             isDupe = true;
             
             
-            if (matchType == UrlbarUtils.MATCH_GROUP.HEURISTIC &&
+            if (matchType == UrlbarUtils.RESULT_GROUP.HEURISTIC &&
                 action.type == "switchtab") {
               isDupe = false;
               
@@ -1996,7 +1996,7 @@ Search.prototype = {
     
     if (!this._buckets) {
       
-      let buckets = match.type == UrlbarUtils.MATCH_GROUP.HEURISTIC &&
+      let buckets = match.type == UrlbarUtils.RESULT_GROUP.HEURISTIC &&
                     match.style.includes("searchengine") ? UrlbarPrefs.get("matchBucketsSearch")
                                                          : UrlbarPrefs.get("matchBuckets");
       

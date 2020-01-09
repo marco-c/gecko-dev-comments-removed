@@ -46,7 +46,7 @@ var UrlbarUtils = {
 
   
   
-  MATCH_GROUP: {
+  RESULT_GROUP: {
     HEURISTIC: "heuristic",
     GENERAL: "general",
     SUGGESTION: "suggestion",
