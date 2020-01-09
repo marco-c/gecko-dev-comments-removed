@@ -3698,7 +3698,6 @@ mozilla::ipc::IPCResult ContentChild::RecvAttachBrowsingContext(
     RefPtr<BrowsingContextGroup> group =
         BrowsingContextGroup::Select(aInit.mParentId, aInit.mOpenerId);
     child = BrowsingContext::CreateFromIPC(std::move(aInit), group, nullptr);
-    child->InitFromIPC(aInit.mOpenerId);
   }
 
   child->Attach( true);
@@ -3725,11 +3724,6 @@ mozilla::ipc::IPCResult ContentChild::RecvRegisterBrowsingContextGroup(
 
   
   
-  AutoTArray<RefPtr<BrowsingContext>, 8> grip;
-  grip.SetCapacity(aInits.Length());
-
-  
-  
   for (auto& init : aInits) {
 #ifdef DEBUG
     RefPtr<BrowsingContext> existing = BrowsingContext::Get(init.mId);
@@ -3739,22 +3733,10 @@ mozilla::ipc::IPCResult ContentChild::RecvRegisterBrowsingContextGroup(
     MOZ_ASSERT_IF(parent, parent->Group() == group);
 #endif
 
-    
-    auto* ctxt = grip.AppendElement();
-    *ctxt = BrowsingContext::CreateFromIPC(std::move(init), group, nullptr);
+    RefPtr<BrowsingContext> ctxt = BrowsingContext::CreateFromIPC(std::move(init), group, nullptr);
 
     
-    (*ctxt)->Attach( true);
-  }
-
-  
-  
-  
-  
-  MOZ_ASSERT(grip.Length() == aInits.Length());
-  for (uint32_t i = 0; i < grip.Length(); ++i) {
-    MOZ_ASSERT(grip[i]->Id() == aInits[i].mId);
-    grip[i]->InitFromIPC(aInits[i].mOpenerId);
+    ctxt->Attach( true);
   }
 
   return IPC_OK();

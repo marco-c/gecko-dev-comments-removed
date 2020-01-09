@@ -10,10 +10,7 @@ MOZ_BC_FIELD(CrossOriginPolicy, nsILoadInfo::CrossOriginPolicy)
 
 
 
-
-#ifndef MOZ_BC_FIELD_SKIP_OPENER
-MOZ_BC_FIELD(Opener, RefPtr<BrowsingContext>)
-#endif
+MOZ_BC_FIELD(OpenerId, uint64_t)
 
 
 
