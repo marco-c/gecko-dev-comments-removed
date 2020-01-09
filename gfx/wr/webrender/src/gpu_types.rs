@@ -2,8 +2,12 @@
 
 
 
-use api::PremultipliedColorF;
-use api::units::*;
+use api::{
+    DeviceHomogeneousVector, DevicePoint, DeviceSize, DeviceRect,
+    LayoutRect, LayoutToWorldTransform,
+    PremultipliedColorF, LayoutToPictureTransform, PictureToLayoutTransform, PicturePixel,
+    WorldPixel, WorldToLayoutTransform, LayoutPoint, DeviceVector2D
+};
 use clip_scroll_tree::{ClipScrollTree, ROOT_SPATIAL_NODE_INDEX, SpatialNodeIndex};
 use gpu_cache::{GpuCacheAddress, GpuDataRequest};
 use internal_types::FastHashMap;

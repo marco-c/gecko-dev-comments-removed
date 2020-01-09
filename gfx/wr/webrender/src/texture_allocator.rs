@@ -2,7 +2,7 @@
 
 
 
-use api::units::{DeviceIntPoint, DeviceIntRect, DeviceIntSize};
+use api::{DeviceIntPoint, DeviceIntRect, DeviceIntSize};
 use util;
 
 

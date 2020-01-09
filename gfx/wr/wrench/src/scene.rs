@@ -3,9 +3,9 @@
 
 
 use std::collections::HashMap;
-use webrender::api::{BuiltDisplayList, ColorF, Epoch, PipelineId};
-use webrender::api::{PropertyBinding, PropertyBindingId, DynamicProperties};
-use webrender::api::units::{LayoutSize, LayoutTransform};
+use webrender::api::{BuiltDisplayList, ColorF, Epoch};
+use webrender::api::{LayoutSize, PipelineId};
+use webrender::api::{PropertyBinding, PropertyBindingId, LayoutTransform, DynamicProperties};
 
 
 

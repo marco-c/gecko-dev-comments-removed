@@ -2,9 +2,8 @@
 
 
 
-use api::{ApiMsg, DebugCommand, DebugFlags};
+use api::{ApiMsg, DebugCommand, DebugFlags, DeviceIntSize};
 use api::channel::MsgSender;
-use api::units::DeviceIntSize;
 use print_tree::PrintTreePrinter;
 use std::sync::mpsc::{channel, Receiver};
 use std::sync::mpsc::Sender;

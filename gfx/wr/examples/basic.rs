@@ -2,6 +2,7 @@
 
 
 
+extern crate app_units;
 extern crate euclid;
 extern crate gleam;
 extern crate glutin;
@@ -17,8 +18,6 @@ use winit::TouchPhase;
 use std::collections::HashMap;
 use webrender::ShaderPrecacheFlags;
 use webrender::api::*;
-use webrender::api::units::*;
-
 
 #[derive(Debug)]
 enum Gesture {

@@ -2,10 +2,11 @@
 
 
 
-use api::units::*;
+use api::{LayoutPoint, LayoutVector2D};
 use euclid::TypedSize2D;
 use std::f32::consts::FRAC_PI_2;
-
+#[cfg(test)]
+use api::LayoutSize;
 
 
 const STEP_COUNT: usize = 20;

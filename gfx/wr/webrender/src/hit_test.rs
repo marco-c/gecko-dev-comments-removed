@@ -2,9 +2,8 @@
 
 
 
-use api::{BorderRadius, ClipMode, HitTestFlags, HitTestItem, HitTestResult, ItemTag};
-use api::{LayoutPrimitiveInfo, PipelineId};
-use api::units::*;
+use api::{BorderRadius, ClipMode, HitTestFlags, HitTestItem, HitTestResult, ItemTag, LayoutPoint};
+use api::{LayoutPrimitiveInfo, LayoutRect, PipelineId, WorldPoint};
 use clip::{ClipChainId, ClipDataStore, ClipNode, ClipItem, ClipStore};
 use clip::{rounded_rectangle_contains_point};
 use clip_scroll_tree::{SpatialNodeIndex, ClipScrollTree};

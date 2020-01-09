@@ -2,8 +2,8 @@
 
 
 
-use api::TileSize;
-use api::units::*;
+use api::{TileOffset, TileRange, LayoutRect, LayoutSize, LayoutPoint};
+use api::{DeviceIntSize, DeviceIntRect, TileSize};
 use euclid::{point2, size2};
 use prim_store::EdgeAaSegmentMask;
 
@@ -565,6 +565,7 @@ pub fn for_each_tile_in_range(
 mod tests {
     use super::*;
     use std::collections::HashSet;
+    use api::LayoutRect;
     use euclid::rect;
 
     

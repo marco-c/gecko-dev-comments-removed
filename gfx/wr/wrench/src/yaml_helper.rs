@@ -2,12 +2,12 @@
 
 
 
+use app_units::Au;
 use euclid::{Angle, TypedSize2D};
 use parse_function::parse_function;
 use std::f32;
 use std::str::FromStr;
 use webrender::api::*;
-use webrender::api::units::*;
 use yaml_rust::{Yaml, YamlLoader};
 
 pub trait YamlHelper {
