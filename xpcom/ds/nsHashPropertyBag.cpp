@@ -14,6 +14,16 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/Move.h"
 
+extern "C" {
+
+
+
+void NS_NewHashPropertyBag(nsIWritablePropertyBag** aBag) {
+  MakeRefPtr<nsHashPropertyBag>().forget(aBag);
+}
+
+}  
+
 
 
 
