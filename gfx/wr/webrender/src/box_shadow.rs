@@ -169,7 +169,7 @@ impl<'a> DisplayListFlattener<'a> {
             );
         } else {
             
-            let blur_offset = BLUR_SAMPLE_SCALE * blur_radius;
+            let blur_offset = (BLUR_SAMPLE_SCALE * blur_radius).ceil();
             let mut extra_clips = vec![];
 
             
