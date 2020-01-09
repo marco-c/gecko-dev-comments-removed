@@ -335,6 +335,7 @@ class nsSocketTransport final : public nsASocketHandler,
   nsCString mDNSRecordTxt;
   bool mEsniQueried;
   bool mEsniUsed;
+  bool mResolvedByTRR;
 
   
   
