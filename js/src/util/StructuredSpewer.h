@@ -62,6 +62,10 @@
 
 
 
+
+
+
+
 class JSScript;
 
 namespace js {
@@ -97,13 +101,14 @@ class StructuredSpewFilter {
 
   void enableChannel(SpewChannel x) { bits_ += x; }
 
-  void disableAll() { bits_.clear(); }
+  void disableAllChannels() { bits_.clear(); }
 };
 
 class StructuredSpewer {
  public:
   StructuredSpewer()
       : outputInitializationAttempted_(false),
+        spewingEnabled_(false),
         json_(mozilla::Nothing()),
         selectedChannels_() {
     
@@ -115,17 +120,29 @@ class StructuredSpewer {
     }
   }
 
-  ~StructuredSpewer() {
+  ~StructuredSpewer() { disableSpewing(); }
+
+  void enableSpewing() { spewingEnabled_ = true; }
+
+  void disableSpewing() {
+    if (!spewingEnabled_) {
+      return;
+    }
+
     if (json_.isSome()) {
       json_->endList();
       output_.flush();
       output_.finish();
+      json_.reset();
     }
+
+    spewingEnabled_ = false;
+    outputInitializationAttempted_ = false;
   }
 
   
   
-  static bool enabled(JSScript* script);
+  bool enabled(JSScript* script);
 
   
   static void spew(JSContext* cx, SpewChannel channel, const char* fmt, ...)
@@ -148,6 +165,8 @@ class StructuredSpewer {
   
   
   bool outputInitializationAttempted_;
+
+  bool spewingEnabled_;
 
   Fprinter output_;
   mozilla::Maybe<JSONPrinter> json_;
@@ -177,6 +196,11 @@ class StructuredSpewer {
 
   
   void parseSpewFlags(const char* flags);
+
+  
+  bool enabled(SpewChannel channel) {
+    return (spewingEnabled_ && filter().enabled(channel));
+  }
 
   
   bool enabled(JSContext* cx, const JSScript* script,

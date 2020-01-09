@@ -151,6 +151,15 @@ void GeckoProfilerRuntime::enable(bool enabled) {
   for (RealmsIter r(rt); !r.done(); r.next()) {
     r->wasm.ensureProfilingLabels(enabled);
   }
+
+#ifdef JS_STRUCTURED_SPEW
+  
+  if (enabled) {
+    cx->spewer().enableSpewing();
+  } else {
+    cx->spewer().disableSpewing();
+  }
+#endif
 }
 
 

@@ -73,7 +73,7 @@ void StructuredSpewer::tryToInitializeOutput(const char* path) {
     
     
     
-    selectedChannels_.disableAll();
+    selectedChannels_.disableAllChannels();
     return;
   }
 
@@ -102,8 +102,11 @@ static bool MatchJSScript(JSScript* script, const char* pattern) {
   return result != nullptr;
 }
 
-
 bool StructuredSpewer::enabled(JSScript* script) {
+  if (!spewingEnabled_) {
+    return false;
+  }
+
   
   if (mozilla::recordreplay::IsRecordingOrReplaying()) {
     return false;
@@ -120,7 +123,7 @@ bool StructuredSpewer::enabled(JSContext* cx, const JSScript* script,
   if (script && !script->spewEnabled()) {
     return false;
   }
-  return cx->spewer().filter().enabled(channel);
+  return cx->spewer().enabled(channel);
 }
 
 
@@ -148,7 +151,7 @@ void StructuredSpewer::spew(JSContext* cx, SpewChannel channel, const char* fmt,
                             ...) {
   
   
-  if (!cx->spewer().filter().enabled(channel)) {
+  if (!cx->spewer().enabled(channel)) {
     return;
   }
 
@@ -184,6 +187,10 @@ void StructuredSpewer::parseSpewFlags(const char* flags) {
 
 #  undef CHECK_CHANNEL
 
+  if (ContainsFlag(flags, "AtStartup")) {
+    enableSpewing();
+  }
+
   if (ContainsFlag(flags, "help")) {
     printf(
         "\n"
@@ -192,11 +199,16 @@ void StructuredSpewer::parseSpewFlags(const char* flags) {
         "  help               Dump this help message\n"
         "  all|*              Enable all the below channels\n"
         "  channel[,channel]  Enable the selected channels from below\n"
+        "  AtStartup          Enable spewing at browser startup instead\n"
+        "                     of when gecko profiling starts."
         "\n"
         " Channels: \n"
         "\n"
         
         "  BaselineICStats    Dump the IC Entry counters during Ion analysis\n"
+        "  ScriptStats        Dump statistics collected by tracelogger that\n"
+        "                     is aggregated by script. Requires\n"
+        "                     JS_TRACE_LOGGING=1\n"
         
         "\n\n"
         "By default output goes to a file called spew_output.$PID.$THREAD\n"
