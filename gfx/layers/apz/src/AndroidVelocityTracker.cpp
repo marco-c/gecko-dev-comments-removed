@@ -42,16 +42,9 @@ void AndroidVelocityTracker::StartTracking(ParentLayerCoord aPos,
 }
 
 Maybe<float> AndroidVelocityTracker::AddPosition(ParentLayerCoord aPos,
-                                                 uint32_t aTimestampMs,
-                                                 bool aIsAxisLocked) {
+                                                 uint32_t aTimestampMs) {
   if ((aTimestampMs - mLastEventTime) >= kAssumePointerMoveStoppedTimeMs) {
     Clear();
-  }
-
-  
-  
-  if (aIsAxisLocked && !mHistory.IsEmpty()) {
-    aPos = mHistory[mHistory.Length() - 1].second - mAdditionalDelta;
   }
 
   aPos += mAdditionalDelta;

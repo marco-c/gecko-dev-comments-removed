@@ -66,8 +66,8 @@ void Axis::UpdateWithTouchAtDevicePoint(ParentLayerCoord aPos,
   mPos = aPos;
 
   if (Maybe<float> newVelocity =
-          mVelocityTracker->AddPosition(aPos, aTimestampMs, mAxisLocked)) {
-    mVelocity = *newVelocity;
+          mVelocityTracker->AddPosition(aPos, aTimestampMs)) {
+    mVelocity = mAxisLocked ? 0 : *newVelocity;
   }
 }
 
@@ -237,15 +237,20 @@ void Axis::EndTouch(uint32_t aTimestampMs) {
   
   APZThreadUtils::AssertOnControllerThread();
 
-  mAxisLocked = false;
   
   
   
-  if (Maybe<float> velocity = mVelocityTracker->ComputeVelocity(aTimestampMs)) {
+  
+  
+  if (mAxisLocked) {
+    mVelocity = 0;
+  } else if (Maybe<float> velocity =
+                 mVelocityTracker->ComputeVelocity(aTimestampMs)) {
     mVelocity = *velocity;
   } else {
     mVelocity = 0;
   }
+  mAxisLocked = false;
   AXIS_LOG("%p|%s ending touch, computed velocity %f\n",
            mAsyncPanZoomController, Name(), mVelocity);
 }

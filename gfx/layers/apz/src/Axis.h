@@ -52,11 +52,8 @@ class VelocityTracker {
 
 
 
-
-
-
-  virtual Maybe<float> AddPosition(ParentLayerCoord aPos, uint32_t aTimestampMs,
-                                   bool aIsAxisLocked) = 0;
+  virtual Maybe<float> AddPosition(ParentLayerCoord aPos,
+                                   uint32_t aTimestampMs) = 0;
   
 
 

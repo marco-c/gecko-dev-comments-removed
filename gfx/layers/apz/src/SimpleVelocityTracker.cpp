@@ -36,8 +36,7 @@ void SimpleVelocityTracker::StartTracking(ParentLayerCoord aPos,
 }
 
 Maybe<float> SimpleVelocityTracker::AddPosition(ParentLayerCoord aPos,
-                                                uint32_t aTimestampMs,
-                                                bool aIsAxisLocked) {
+                                                uint32_t aTimestampMs) {
   if (aTimestampMs <= mVelocitySampleTimeMs + MIN_VELOCITY_SAMPLE_TIME_MS) {
     
     
@@ -51,10 +50,8 @@ Maybe<float> SimpleVelocityTracker::AddPosition(ParentLayerCoord aPos,
     return Nothing();
   }
 
-  float newVelocity = aIsAxisLocked
-                          ? 0.0f
-                          : (float)(mVelocitySamplePos - aPos) /
-                                (float)(aTimestampMs - mVelocitySampleTimeMs);
+  float newVelocity = (float)(mVelocitySamplePos - aPos) /
+                      (float)(aTimestampMs - mVelocitySampleTimeMs);
 
   newVelocity = ApplyFlingCurveToVelocity(newVelocity);
 
