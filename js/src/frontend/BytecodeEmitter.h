@@ -106,72 +106,76 @@ class PropertyEmitter;
 class TDZCheckCache;
 
 struct MOZ_STACK_CLASS BytecodeEmitter {
-  SharedContext* const
-      sc; 
+  
+  SharedContext* const sc = nullptr;
 
-  JSContext* const cx;
+  JSContext* const cx = nullptr;
 
-  BytecodeEmitter* const parent; 
+  
+  BytecodeEmitter* const parent = nullptr;
 
-  Rooted<JSScript*> script; 
+  
+  Rooted<JSScript*> script;
 
-  Rooted<LazyScript*> lazyScript; 
-
+  
+  Rooted<LazyScript*> lazyScript;
 
  private:
   BytecodeVector code_;  
   SrcNotesVector notes_; 
 
-  ptrdiff_t lastNoteOffset_; 
+  
+  ptrdiff_t lastNoteOffset_ = 0;
 
   
   
   
   
-  uint32_t currentLine_;
+  uint32_t currentLine_ = 0;
 
   
   
   
   
   
-  uint32_t lastColumn_;
+  uint32_t lastColumn_ = 0;
 
-  uint32_t lastSeparatorOffet_;
-  uint32_t lastSeparatorLine_;
-  uint32_t lastSeparatorColumn_;
+  uint32_t lastSeparatorOffet_ = 0;
+  uint32_t lastSeparatorLine_ = 0;
+  uint32_t lastSeparatorColumn_ = 0;
 
   
-  mozilla::Maybe<uint32_t> mainOffset_;
+  mozilla::Maybe<uint32_t> mainOffset_ = {};
 
  public:
-  JumpTarget lastTarget;  
+  
+  JumpTarget lastTarget = {-1 - ptrdiff_t(JSOP_JUMPTARGET_LENGTH)};
 
   
   
-  mozilla::Maybe<EitherParser> ep_;
-  BCEParserHandle* parser;
+  mozilla::Maybe<EitherParser> ep_ = {};
+  BCEParserHandle* parser = nullptr;
 
   PooledMapPtr<AtomIndexMap> atomIndices; 
-  unsigned firstLine; 
+  unsigned firstLine = 0; 
 
-  uint32_t maxFixedSlots; 
-  uint32_t maxStackDepth; 
+  uint32_t maxFixedSlots = 0; 
+  uint32_t maxStackDepth = 0; 
 
-  int32_t stackDepth; 
+  int32_t stackDepth = 0; 
 
-  uint32_t bodyScopeIndex; 
+  uint32_t bodyScopeIndex = UINT32_MAX; 
 
-  EmitterScope* varEmitterScope;
-  NestableControl* innermostNestableControl;
-  EmitterScope* innermostEmitterScope_;
-  TDZCheckCache* innermostTDZCheckCache;
+  EmitterScope* varEmitterScope = nullptr;
+  NestableControl* innermostNestableControl = nullptr;
+  EmitterScope* innermostEmitterScope_ = nullptr;
+  TDZCheckCache* innermostTDZCheckCache = nullptr;
 
   
   FieldInitializers fieldInitializers_;
 
 #ifdef DEBUG
-  bool unstableEmitterScope;
+  bool unstableEmitterScope = false;
 
   friend class AutoCheckUnstableEmitterScope;
 #endif
@@ -198,20 +202,22 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   CGResumeOffsetList resumeOffsetList;
 
   
-  size_t numICEntries;
+  size_t numICEntries = 0;
 
   
-  uint32_t numYields;
+  uint32_t numYields = 0;
 
-  uint16_t typesetCount; 
+  
+  uint16_t typesetCount = 0;
 
-  bool
-      hasSingletons : 1; 
+  
+  bool hasSingletons = false;
 
-  bool hasTryFinally : 1; 
+  
+  bool hasTryFinally = false;
 
-  bool emittingRunOnceLambda : 1; 
-
+  
+  bool emittingRunOnceLambda = false;
 
   bool isRunOnceLambda();
 
@@ -219,25 +225,21 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
     Normal,
 
     
-
-
-
-
+    
+    
     SelfHosting,
 
     
-
-
-
+    
     LazyFunction
   };
 
-  const EmitterMode emitterMode;
+  const EmitterMode emitterMode = Normal;
 
-  mozilla::Maybe<uint32_t> scriptStartOffset;
+  mozilla::Maybe<uint32_t> scriptStartOffset = {};
 
   
-  mozilla::Maybe<uint32_t> functionBodyEndPos;
+  mozilla::Maybe<uint32_t> functionBodyEndPos = {};
 
   
 
