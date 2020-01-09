@@ -1212,24 +1212,18 @@ impl ResourceCache {
                 
                 
                 
-                
-                
-                if tiles.size.width > MAX_TILES_PER_REQUEST {
-                    tiles.origin.x += (tiles.size.width - MAX_TILES_PER_REQUEST) / 2;
-                    tiles.size.width = MAX_TILES_PER_REQUEST;
-                }
-                if tiles.size.height > MAX_TILES_PER_REQUEST {
-                    tiles.origin.y += (tiles.size.height - MAX_TILES_PER_REQUEST) / 2;
-                    tiles.size.height = MAX_TILES_PER_REQUEST;
-                }
-                while tiles.size.width as i32 * tiles.size.height as i32 > MAX_TILES_PER_REQUEST {
+                while !tiles.size.is_empty_or_negative()
+                    && (tiles.size.width > MAX_TILES_PER_REQUEST
+                        || tiles.size.height > MAX_TILES_PER_REQUEST
+                        || tiles.size.width * tiles.size.height > MAX_TILES_PER_REQUEST) {
+                    let diff = tiles.size.width * tiles.size.height - MAX_TILES_PER_REQUEST;
                     
                     if tiles.size.width > tiles.size.height {
-                        tiles.size.width -= 2;
-                        tiles.origin.x += 1;
+                        tiles.size.width -= diff / tiles.size.height + 1;
+                        tiles.origin.x += diff / (2 * tiles.size.height);
                     } else {
-                        tiles.size.height -= 2;
-                        tiles.origin.y += 1;
+                        tiles.size.height -= diff / tiles.size.width + 1;
+                        tiles.origin.y += diff / (2 * tiles.size.height);
                     }
                 }
 
