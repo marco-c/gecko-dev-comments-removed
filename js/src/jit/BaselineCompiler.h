@@ -697,7 +697,13 @@ using BaselineInterpreterCodeGen = BaselineCodeGen<BaselineInterpreterHandler>;
 
 class BaselineInterpreterGenerator final : private BaselineInterpreterCodeGen {
   
-  js::Vector<uint32_t, 0, SystemAllocPolicy> debugTrapOffsets_;
+  Vector<uint32_t, 0, SystemAllocPolicy> debugTrapOffsets_;
+
+  
+  Vector<CodeOffset, 0, SystemAllocPolicy> tableLabels_;
+
+  
+  uint32_t tableOffset_ = 0;
 
   
   uint32_t interpretOpOffset_ = 0;
