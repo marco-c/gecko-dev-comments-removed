@@ -189,12 +189,6 @@ const startupPhases = {
       stat: 1,
     },
     { 
-      path: "ProfLDS:startupCache/startupCache." +
-             (Services.appinfo.is64Bit ? 8 : 4) + ".little",
-      condition: WIN,
-      stat: 1,
-    },
-    { 
       path: "PrfDef:channel-prefs.js",
       stat: 1,
       read: 1,
