@@ -107,12 +107,29 @@ already_AddRefed<BrowsingContext> BrowsingContext::Create(
           ("Creating 0x%08" PRIx64 " in %s", id,
            XRE_IsParentProcess() ? "Parent" : "Child"));
 
+  
+  RefPtr<BrowsingContextGroup> group =
+      BrowsingContextGroup::Select(aParent, aOpener);
+
   RefPtr<BrowsingContext> context;
   if (XRE_IsParentProcess()) {
-    context = new CanonicalBrowsingContext(aParent, aOpener, aName, id,
+    context = new CanonicalBrowsingContext(aParent, group, id,
                                             0, aType);
   } else {
-    context = new BrowsingContext(aParent, aOpener, aName, id, aType);
+    context = new BrowsingContext(aParent, group, id, aType);
+  }
+
+  
+  
+  context->mName = aName;
+  context->mOpener = aOpener;
+
+  if (aParent) {
+    context->mCrossOriginPolicy = aParent->mCrossOriginPolicy;
+  } else if (aOpener) {
+    context->mCrossOriginPolicy = aOpener->mCrossOriginPolicy;
+  } else {
+    context->mCrossOriginPolicy = nsILoadInfo::CROSS_ORIGIN_POLICY_NULL;
   }
 
   Register(context);
@@ -125,27 +142,35 @@ already_AddRefed<BrowsingContext> BrowsingContext::Create(
 
 
 already_AddRefed<BrowsingContext> BrowsingContext::CreateFromIPC(
-    BrowsingContext* aParent, BrowsingContext* aOpener, const nsAString& aName,
-    uint64_t aId, ContentParent* aOriginProcess) {
-  MOZ_DIAGNOSTIC_ASSERT(aOriginProcess || XRE_IsContentProcess(),
-                        "Parent Process IPC contexts need a Content Process.");
-  MOZ_DIAGNOSTIC_ASSERT(!aParent || aParent->IsContent());
+    BrowsingContext::IPCInitializer&& aInit, BrowsingContextGroup* aGroup,
+    ContentParent* aOriginProcess) {
+  MOZ_DIAGNOSTIC_ASSERT(aOriginProcess || XRE_IsContentProcess());
+  MOZ_DIAGNOSTIC_ASSERT(aGroup);
+
+  uint64_t originId = aOriginProcess ? aOriginProcess->ChildID() : 0;
 
   MOZ_LOG(GetLog(), LogLevel::Debug,
-          ("Creating 0x%08" PRIx64 " from IPC (origin=0x%08" PRIx64 ")", aId,
-           aOriginProcess ? uint64_t(aOriginProcess->ChildID()) : 0));
+          ("Creating 0x%08" PRIx64 " from IPC (origin=0x%08" PRIx64 ")",
+           aInit.mId, originId));
+
+  RefPtr<BrowsingContext> parent = aInit.GetParent();
 
   RefPtr<BrowsingContext> context;
   if (XRE_IsParentProcess()) {
-    context = new CanonicalBrowsingContext(
-        aParent, aOpener, aName, aId, aOriginProcess->ChildID(), Type::Content);
-
-    context->Group()->Subscribe(aOriginProcess);
+    context = new CanonicalBrowsingContext(parent, aGroup, aInit.mId, originId,
+                                           Type::Content);
   } else {
-    context = new BrowsingContext(aParent, aOpener, aName, aId, Type::Content);
+    context = new BrowsingContext(parent, aGroup, aInit.mId, Type::Content);
   }
 
   Register(context);
+
+  
+  
+  
+#define MOZ_BC_FIELD_SKIP_OPENER
+#define MOZ_BC_FIELD(name, ...) context->m##name = aInit.m##name;
+#include "mozilla/dom/BrowsingContextFieldList.h"
 
   
 
@@ -153,32 +178,16 @@ already_AddRefed<BrowsingContext> BrowsingContext::CreateFromIPC(
 }
 
 BrowsingContext::BrowsingContext(BrowsingContext* aParent,
-                                 BrowsingContext* aOpener,
-                                 const nsAString& aName,
+                                 BrowsingContextGroup* aGroup,
                                  uint64_t aBrowsingContextId, Type aType)
-    : mName(aName),
-      mClosed(false),
-      mOpener(aOpener),
-      mIsActivatedByUserGesture(false),
-      mType(aType),
+    : mType(aType),
       mBrowsingContextId(aBrowsingContextId),
+      mGroup(aGroup),
       mParent(aParent),
       mIsInProcess(false) {
-  mCrossOriginPolicy = nsILoadInfo::CROSS_ORIGIN_POLICY_NULL;
-
-  
-  
-  if (mParent) {
-    mGroup = mParent->Group();
-    mCrossOriginPolicy = mParent->CrossOriginPolicy();
-  } else if (mOpener) {
-    mGroup = mOpener->Group();
-    mCrossOriginPolicy = mOpener->CrossOriginPolicy();
-  } else {
-    
-    
-    mGroup = new BrowsingContextGroup();
-  }
+  MOZ_RELEASE_ASSERT(!mParent || mParent->Group() == mGroup);
+  MOZ_RELEASE_ASSERT(mBrowsingContextId != 0);
+  MOZ_RELEASE_ASSERT(mGroup);
 }
 
 void BrowsingContext::SetDocShell(nsIDocShell* aDocShell) {
@@ -205,10 +214,8 @@ void BrowsingContext::Attach(bool aFromIPC) {
 
   
   if (!aFromIPC && XRE_IsContentProcess()) {
-    auto cc = ContentChild::GetSingleton();
-    MOZ_DIAGNOSTIC_ASSERT(cc);
-    cc->SendAttachBrowsingContext(
-        mParent, mOpener, BrowsingContextId(mBrowsingContextId), Name());
+    ContentChild::GetSingleton()->SendAttachBrowsingContext(
+        GetIPCInitializer());
   }
 }
 
@@ -696,6 +703,24 @@ void BrowsingContext::Transaction::Apply(BrowsingContext* aBrowsingContext,
 #include "mozilla/dom/BrowsingContextFieldList.h"
 }
 
+already_AddRefed<BrowsingContext> BrowsingContext::IPCInitializer::GetParent() {
+  RefPtr<BrowsingContext> parent;
+  if (mParentId != 0) {
+    parent = BrowsingContext::Get(mParentId);
+    MOZ_RELEASE_ASSERT(parent);
+  }
+  return parent.forget();
+}
+
+already_AddRefed<BrowsingContext> BrowsingContext::IPCInitializer::GetOpener() {
+  RefPtr<BrowsingContext> opener;
+  if (mOpenerId != 0) {
+    opener = BrowsingContext::Get(mOpenerId);
+    MOZ_RELEASE_ASSERT(opener);
+  }
+  return opener.forget();
+}
+
 void BrowsingContext::LocationProxy::SetHref(const nsAString& aHref,
                                              nsIPrincipal& aSubjectPrincipal,
                                              ErrorResult& aError) {
@@ -774,6 +799,43 @@ bool IPDLParamTraits<dom::BrowsingContext::Transaction>::Read(
 #define MOZ_BC_FIELD(name, ...)                                              \
   if (!ReadIPDLParam(aMessage, aIterator, aActor, &aTransaction->m##name)) { \
     return false;                                                            \
+  }
+#include "mozilla/dom/BrowsingContextFieldList.h"
+
+  return true;
+}
+
+void IPDLParamTraits<dom::BrowsingContext::IPCInitializer>::Write(
+    IPC::Message* aMessage, IProtocol* aActor,
+    const dom::BrowsingContext::IPCInitializer& aInit) {
+  
+  
+  WriteIPDLParam(aMessage, aActor, aInit.mId);
+  WriteIPDLParam(aMessage, aActor, aInit.mParentId);
+  WriteIPDLParam(aMessage, aActor, aInit.mOpenerId);
+
+  
+#define MOZ_BC_FIELD_SKIP_OPENER
+#define MOZ_BC_FIELD(name, ...) WriteIPDLParam(aMessage, aActor, aInit.m##name);
+#include "mozilla/dom/BrowsingContextFieldList.h"
+}
+
+bool IPDLParamTraits<dom::BrowsingContext::IPCInitializer>::Read(
+    const IPC::Message* aMessage, PickleIterator* aIterator, IProtocol* aActor,
+    dom::BrowsingContext::IPCInitializer* aInit) {
+  
+  
+  if (!ReadIPDLParam(aMessage, aIterator, aActor, &aInit->mId) ||
+      !ReadIPDLParam(aMessage, aIterator, aActor, &aInit->mParentId) ||
+      !ReadIPDLParam(aMessage, aIterator, aActor, &aInit->mOpenerId)) {
+    return false;
+  }
+
+  
+#define MOZ_BC_FIELD_SKIP_OPENER
+#define MOZ_BC_FIELD(name, ...)                                       \
+  if (!ReadIPDLParam(aMessage, aIterator, aActor, &aInit->m##name)) { \
+    return false;                                                     \
   }
 #include "mozilla/dom/BrowsingContextFieldList.h"
 

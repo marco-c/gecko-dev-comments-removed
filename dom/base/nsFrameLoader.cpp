@@ -1894,7 +1894,7 @@ static already_AddRefed<BrowsingContext> CreateBrowsingContext(
     const nsAString& aName, bool aIsContent) {
   
   
-  if (aIsContent && !aParentContext->IsContent()) {
+  if (aIsContent && aParentContext && !aParentContext->IsContent()) {
     aParentContext = nullptr;
   }
 
@@ -2585,10 +2585,14 @@ bool nsFrameLoader::TryRemoteBrowser() {
     nsAutoString frameName;
     GetFrameName(mOwnerContent, frameName);
 
+    RefPtr<BrowsingContext> parentBC;
+    parentDocShell->GetBrowsingContext(getter_AddRefs(parentBC));
+    MOZ_ASSERT(parentBC, "docShell must have BrowsingContext");
+
     
     
     RefPtr<BrowsingContext> browsingContext =
-        CreateBrowsingContext(nullptr, nullptr, frameName, true);
+        CreateBrowsingContext(parentBC, nullptr, frameName, true);
 
     mBrowserBridgeChild = BrowserBridgeChild::Create(
         this, context, NS_LITERAL_STRING(DEFAULT_REMOTE_TYPE), browsingContext);

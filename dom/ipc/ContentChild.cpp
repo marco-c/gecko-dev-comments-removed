@@ -28,6 +28,8 @@
 #include "mozilla/VideoDecoderManagerChild.h"
 #include "mozilla/devtools/HeapSnapshotTempFileHelperChild.h"
 #include "mozilla/docshell/OfflineCacheUpdateChild.h"
+#include "mozilla/dom/BrowsingContext.h"
+#include "mozilla/dom/BrowsingContextGroup.h"
 #include "mozilla/dom/ClientManager.h"
 #include "mozilla/dom/ClientOpenWindowOpActors.h"
 #include "mozilla/dom/ChildProcessMessageManager.h"
@@ -3687,14 +3689,16 @@ PContentChild::Result ContentChild::OnMessageReceived(const Message& aMsg,
 }
 
 mozilla::ipc::IPCResult ContentChild::RecvAttachBrowsingContext(
-    BrowsingContext* aParent, BrowsingContext* aOpener,
-    BrowsingContextId aChildId, const nsString& aName) {
-  RefPtr<BrowsingContext> child = BrowsingContext::Get(aChildId);
+    BrowsingContext::IPCInitializer&& aInit) {
+  RefPtr<BrowsingContext> child = BrowsingContext::Get(aInit.mId);
   MOZ_RELEASE_ASSERT(!child || child->IsCached());
 
   if (!child) {
-    child = BrowsingContext::CreateFromIPC(aParent, aOpener, aName,
-                                           (uint64_t)aChildId, nullptr);
+    
+    RefPtr<BrowsingContextGroup> group =
+        BrowsingContextGroup::Select(aInit.mParentId, aInit.mOpenerId);
+    child = BrowsingContext::CreateFromIPC(std::move(aInit), group, nullptr);
+    child->InitFromIPC(aInit.mOpenerId);
   }
 
   child->Attach( true);
@@ -3710,6 +3714,47 @@ mozilla::ipc::IPCResult ContentChild::RecvDetachBrowsingContext(
     aContext->CacheChildren( true);
   } else {
     aContext->Detach( true);
+  }
+
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult ContentChild::RecvRegisterBrowsingContextGroup(
+    nsTArray<BrowsingContext::IPCInitializer>&& aInits) {
+  RefPtr<BrowsingContextGroup> group = new BrowsingContextGroup();
+
+  
+  
+  AutoTArray<RefPtr<BrowsingContext>, 8> grip;
+  grip.SetCapacity(aInits.Length());
+
+  
+  
+  for (auto& init : aInits) {
+#ifdef DEBUG
+    RefPtr<BrowsingContext> existing = BrowsingContext::Get(init.mId);
+    MOZ_ASSERT(!existing, "BrowsingContext must not exist yet!");
+
+    RefPtr<BrowsingContext> parent = init.GetParent();
+    MOZ_ASSERT_IF(parent, parent->Group() == group);
+#endif
+
+    
+    auto* ctxt = grip.AppendElement();
+    *ctxt = BrowsingContext::CreateFromIPC(std::move(init), group, nullptr);
+
+    
+    (*ctxt)->Attach( true);
+  }
+
+  
+  
+  
+  
+  MOZ_ASSERT(grip.Length() == aInits.Length());
+  for (uint32_t i = 0; i < grip.Length(); ++i) {
+    MOZ_ASSERT(grip[i]->Id() == aInits[i].mId);
+    grip[i]->InitFromIPC(aInits[i].mOpenerId);
   }
 
   return IPC_OK();

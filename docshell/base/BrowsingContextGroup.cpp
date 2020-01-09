@@ -43,21 +43,32 @@ void BrowsingContextGroup::EnsureSubscribed(ContentParent* aProcess) {
     return;
   }
 
-  MOZ_RELEASE_ASSERT(
-      mContexts.Count() == 1,
-      "EnsureSubscribed doesn't work on non-fresh BrowsingContextGroups yet!");
-
   
   Subscribe(aProcess);
 
   
   
+  
+  nsTArray<BrowsingContext::IPCInitializer> inits(mContexts.Count());
   for (auto iter = mContexts.Iter(); !iter.Done(); iter.Next()) {
-    RefPtr<BrowsingContext> bc = iter.Get()->GetKey();
-    Unused << aProcess->SendAttachBrowsingContext(
-        bc->GetParent(), bc->GetOpener(), BrowsingContextId(bc->Id()),
-        bc->Name());
+    auto* context = iter.Get()->GetKey();
+
+    
+    
+    if (context->GetParent() &&
+        context->GetParent()->GetChildren().IndexOf(context) !=
+            BrowsingContext::Children::NoIndex) {
+      continue;
+    }
+
+    
+    context->PreOrderWalk([&](BrowsingContext* aContext) {
+      inits.AppendElement(aContext->GetIPCInitializer());
+    });
   }
+
+  
+  Unused << aProcess->SendRegisterBrowsingContextGroup(inits);
 }
 
 BrowsingContextGroup::~BrowsingContextGroup() {

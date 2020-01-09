@@ -111,11 +111,6 @@ class BrowsingContext : public nsWrapperCache,
                                                   Type aType);
 
   
-  static already_AddRefed<BrowsingContext> CreateFromIPC(
-      BrowsingContext* aParent, BrowsingContext* aOpener,
-      const nsAString& aName, uint64_t aId, ContentParent* aOriginProcess);
-
-  
   CanonicalBrowsingContext* Canonical();
 
   
@@ -215,6 +210,15 @@ class BrowsingContext : public nsWrapperCache,
   const Children& GetChildren() { return mChildren; }
 
   
+  template <typename Func>
+  void PreOrderWalk(Func&& aCallback) {
+    aCallback(this);
+    for (auto& child : GetChildren()) {
+      child->PreOrderWalk(aCallback);
+    }
+  }
+
+  
   BrowsingContext* Window() { return Self(); }
   BrowsingContext* Self() { return this; }
   void Location(JSContext* aCx, JS::MutableHandle<JSObject*> aLocation,
@@ -277,11 +281,58 @@ class BrowsingContext : public nsWrapperCache,
   type const& Get##name() const { return m##name; }
 #include "mozilla/dom/BrowsingContextFieldList.h"
 
+  
+
+
+
+  struct IPCInitializer {
+    uint64_t mId;
+
+    
+    
+    
+    uint64_t mParentId;
+    uint64_t mOpenerId;
+    already_AddRefed<BrowsingContext> GetParent();
+    already_AddRefed<BrowsingContext> GetOpener();
+
+    
+    
+#define MOZ_BC_FIELD_SKIP_OPENER
+#define MOZ_BC_FIELD(name, type) type m##name;
+#include "mozilla/dom/BrowsingContextFieldList.h"
+  };
+
+  
+  IPCInitializer GetIPCInitializer() {
+    IPCInitializer init;
+    init.mId = Id();
+    init.mParentId = mParent ? mParent->Id() : 0;
+    init.mOpenerId = mOpener ? mOpener->Id() : 0;
+
+#define MOZ_BC_FIELD_SKIP_OPENER
+#define MOZ_BC_FIELD(name, type) init.m##name = m##name;
+#include "mozilla/dom/BrowsingContextFieldList.h"
+    return init;
+  }
+
+  
+  
+  
+  static already_AddRefed<BrowsingContext> CreateFromIPC(
+      IPCInitializer&& aInitializer, BrowsingContextGroup* aGroup,
+      ContentParent* aOriginProcess);
+
+  
+  void InitFromIPC(uint64_t aOpenerId) {
+    mOpener = BrowsingContext::Get(aOpenerId);
+    MOZ_RELEASE_ASSERT(mOpener || aOpenerId == 0);
+  }
+
  protected:
   virtual ~BrowsingContext();
-  BrowsingContext(BrowsingContext* aParent, BrowsingContext* aOpener,
-                  const nsAString& aName, uint64_t aBrowsingContextId,
-                  Type aType);
+  BrowsingContext(BrowsingContext* aParent, BrowsingContextGroup* aGroup,
+                  uint64_t aBrowsingContextId, Type aType);
 
  private:
   
@@ -391,6 +442,7 @@ extern bool GetRemoteOuterWindowProxy(JSContext* aCx, BrowsingContext* aContext,
                                       JS::MutableHandle<JSObject*> aRetVal);
 
 typedef BrowsingContext::Transaction BrowsingContextTransaction;
+typedef BrowsingContext::IPCInitializer BrowsingContextInitializer;
 
 }  
 
@@ -412,6 +464,16 @@ struct IPDLParamTraits<dom::BrowsingContext::Transaction> {
   static bool Read(const IPC::Message* aMessage, PickleIterator* aIterator,
                    IProtocol* aActor,
                    dom::BrowsingContext::Transaction* aTransaction);
+};
+
+template <>
+struct IPDLParamTraits<dom::BrowsingContext::IPCInitializer> {
+  static void Write(IPC::Message* aMessage, IProtocol* aActor,
+                    const dom::BrowsingContext::IPCInitializer& aInitializer);
+
+  static bool Read(const IPC::Message* aMessage, PickleIterator* aIterator,
+                   IProtocol* aActor,
+                   dom::BrowsingContext::IPCInitializer* aInitializer);
 };
 
 }  
