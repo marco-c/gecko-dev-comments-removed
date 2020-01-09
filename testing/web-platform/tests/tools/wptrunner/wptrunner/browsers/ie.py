@@ -2,16 +2,12 @@ from .base import Browser, ExecutorBrowser, require_arg
 from .base import get_timeout_multiplier   
 from ..webdriver_server import InternetExplorerDriverServer
 from ..executors import executor_kwargs as base_executor_kwargs
-from ..executors.executorselenium import (SeleniumTestharnessExecutor,  
-                                          SeleniumRefTestExecutor)  
 from ..executors.executorinternetexplorer import InternetExplorerDriverWdspecExecutor  
 
 __wptrunner__ = {"product": "ie",
                  "check_args": "check_args",
                  "browser": "InternetExplorerBrowser",
-                 "executor": {"testharness": "SeleniumTestharnessExecutor",
-                              "reftest": "SeleniumRefTestExecutor",
-                              "wdspec": "InternetExplorerDriverWdspecExecutor"},
+                 "executor": {"wdspec": "InternetExplorerDriverWdspecExecutor"},
                  "browser_kwargs": "browser_kwargs",
                  "executor_kwargs": "executor_kwargs",
                  "env_extras": "env_extras",
