@@ -119,7 +119,7 @@ class UrlbarView {
 
   
   onQueryStarted(queryContext) {
-    this._rows.textContent = "";
+    this._rows.style.minHeight = this._getBoundsWithoutFlushing(this._rows).height + "px";
   }
 
   onQueryCancelled(queryContext) {
@@ -127,7 +127,7 @@ class UrlbarView {
   }
 
   onQueryFinished(queryContext) {
-    
+    this._rows.style.minHeight = "";
   }
 
   onQueryResults(queryContext) {
