@@ -17,14 +17,8 @@ function run_test() {
 
 
 
-function setupUpdaterTestFinished() {
-  runHelperLockFile(gTestFiles[2]);
-}
-
-
-
-
-function waitForHelperSleepFinished() {
+async function setupUpdaterTestFinished() {
+  await runHelperLockFile(gTestFiles[2]);
   runUpdate(STATE_FAILED_READ_ERROR, false, 1, true);
   waitForHelperExit();
 }

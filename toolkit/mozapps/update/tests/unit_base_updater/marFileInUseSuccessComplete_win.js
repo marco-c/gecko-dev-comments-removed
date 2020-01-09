@@ -16,15 +16,9 @@ function run_test() {
 
 
 
-function setupUpdaterTestFinished() {
-  runHelperFileInUse(gTestFiles[13].relPathDir + gTestFiles[13].fileName,
-                     false);
-}
-
-
-
-
-function waitForHelperSleepFinished() {
+async function setupUpdaterTestFinished() {
+  await runHelperFileInUse(gTestFiles[13].relPathDir + gTestFiles[13].fileName,
+                           false);
   runUpdate(STATE_SUCCEEDED, false, 0, true);
   waitForHelperExit();
 }

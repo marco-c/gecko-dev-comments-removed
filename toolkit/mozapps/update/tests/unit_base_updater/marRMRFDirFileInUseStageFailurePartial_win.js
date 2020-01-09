@@ -20,14 +20,8 @@ function run_test() {
 
 
 
-function setupUpdaterTestFinished() {
-  runHelperFileInUse(gTestDirs[2].relPathDir + gTestDirs[2].files[0], true);
-}
-
-
-
-
-function waitForHelperSleepFinished() {
+async function setupUpdaterTestFinished() {
+  await runHelperFileInUse(gTestDirs[2].relPathDir + gTestDirs[2].files[0], true);
   stageUpdate(true);
 }
 

@@ -16,18 +16,8 @@ function run_test() {
 
 
 
-function setupUpdaterTestFinished() {
-  runHelperPIDPersists(DIR_RESOURCES + gCallbackBinFile, false);
-}
-
-
-
-
-function waitForHelperSleepFinished() {
-  if (!gPIDPersistProcess.pid) {
-    executeSoon(waitForHelperSleepFinished);
-    return;
-  }
+async function setupUpdaterTestFinished() {
+  await runHelperPIDPersists(DIR_RESOURCES + gCallbackBinFile, false);
   runUpdate(STATE_SUCCEEDED, false, 0, true);
   waitForHelperExit();
 }

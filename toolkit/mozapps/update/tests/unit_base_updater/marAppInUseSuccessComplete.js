@@ -16,14 +16,8 @@ function run_test() {
 
 
 
-function setupUpdaterTestFinished() {
-  runHelperFileInUse(DIR_RESOURCES + gCallbackBinFile, false);
-}
-
-
-
-
-function waitForHelperSleepFinished() {
+async function setupUpdaterTestFinished() {
+  await runHelperFileInUse(DIR_RESOURCES + gCallbackBinFile, false);
   runUpdate(STATE_SUCCEEDED, false, 0, true);
   waitForHelperExit();
 }

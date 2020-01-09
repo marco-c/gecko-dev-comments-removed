@@ -17,14 +17,8 @@ function run_test() {
 
 
 
-function setupUpdaterTestFinished() {
-  runHelperLockFile(gTestFiles[3]);
-}
-
-
-
-
-function waitForHelperSleepFinished() {
+async function setupUpdaterTestFinished() {
+  await runHelperLockFile(gTestFiles[3]);
   runUpdate(STATE_FAILED_WRITE_ERROR, false, 1, true);
   waitForHelperExit();
 }

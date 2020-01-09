@@ -2522,8 +2522,7 @@ function lockDirectory(aDirPath) {
 
 
 
-
-function runHelperFileInUse(aRelPath, aCopyTestHelper) {
+async function runHelperFileInUse(aRelPath, aCopyTestHelper) {
   debugDump("aRelPath: " + aRelPath);
   
   let helperBin = getTestDirFile(FILE_HELPER_BIN);
@@ -2542,7 +2541,7 @@ function runHelperFileInUse(aRelPath, aCopyTestHelper) {
   fileInUseProcess.init(fileInUseBin);
   fileInUseProcess.run(false, args, args.length);
 
-  executeSoon(waitForHelperSleep);
+  await waitForHelperSleep();
 }
 
 
@@ -2555,7 +2554,7 @@ function runHelperFileInUse(aRelPath, aCopyTestHelper) {
 
 
 
-function runHelperPIDPersists(aRelPath, aCopyTestHelper) {
+async function runHelperPIDPersists(aRelPath, aCopyTestHelper) {
   debugDump("aRelPath: " + aRelPath);
   
   let helperBin = getTestDirFile(FILE_HELPER_BIN);
@@ -2574,7 +2573,9 @@ function runHelperPIDPersists(aRelPath, aCopyTestHelper) {
   gPIDPersistProcess.init(pidPersistsBin);
   gPIDPersistProcess.run(false, args, args.length);
 
-  executeSoon(waitForHelperSleep);
+  await waitForHelperSleep();
+  await TestUtils.waitForCondition(() => (!!gPIDPersistProcess.pid),
+    "Waiting for the process pid");
 }
 
 
@@ -2584,7 +2585,7 @@ function runHelperPIDPersists(aRelPath, aCopyTestHelper) {
 
 
 
-function runHelperLockFile(aTestFile) {
+async function runHelperLockFile(aTestFile) {
   
   let helperBin = getTestDirFile(FILE_HELPER_BIN);
   let helperDestDir = getApplyDirFile(DIR_RESOURCES);
@@ -2604,40 +2605,32 @@ function runHelperLockFile(aTestFile) {
   helperProcess.init(helperBin);
   helperProcess.run(false, args, args.length);
 
-  executeSoon(waitForHelperSleep);
+  await waitForHelperSleep();
 }
 
 
 
 
+async function waitForHelperSleep() {
+  
+  
+  let file = getApplyDirFile(DIR_RESOURCES + "output");
+  await TestUtils.waitForCondition(() => (file.exists()),
+    "Waiting for file to exist, path: " + file.path);
 
-function waitForHelperSleep() {
-  gTimeoutRuns++;
-  
-  
-  let output = getApplyDirFile(DIR_RESOURCES + "output");
-  if (readFile(output) != "sleeping\n") {
-    if (gTimeoutRuns > MAX_TIMEOUT_RUNS) {
-      do_throw("Exceeded MAX_TIMEOUT_RUNS while waiting for the helper to " +
-               "finish its operation. Path: " + output.path);
+  let expectedContents = "sleeping\n";
+  await TestUtils.waitForCondition(() => (readFile(file) == expectedContents),
+    "Waiting for expected file contents: " + expectedContents);
+
+  await TestUtils.waitForCondition(() => {
+    try {
+      file.remove(false);
+    } catch (e) {
+      debugDump("failed to remove file. Path: " + file.path +
+                ", Exception: " + e);
     }
-    
-    do_timeout(FILE_IN_USE_TIMEOUT_MS, waitForHelperSleep);
-    return;
-  }
-  try {
-    output.remove(false);
-  } catch (e) {
-    if (gTimeoutRuns > MAX_TIMEOUT_RUNS) {
-      do_throw("Exceeded MAX_TIMEOUT_RUNS while waiting for the helper " +
-               "message file to no longer be in use. Path: " + output.path);
-    }
-    debugDump("failed to remove file. Path: " + output.path);
-    
-    do_timeout(FILE_IN_USE_TIMEOUT_MS, waitForHelperSleep);
-    return;
-  }
-  waitForHelperSleepFinished();
+    return !file.exists();
+  }, "Waiting for file to be removed, Path: " + file.path);
 }
 
 
