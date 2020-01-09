@@ -1552,6 +1552,7 @@ CssRuleView.prototype = {
 
 
 
+
   _scrollToElement(rule, declaration, scrollBehavior = "smooth") {
     let elementToScrollTo = rule;
 
@@ -1565,6 +1566,11 @@ CssRuleView.prototype = {
         elementToScrollTo = declaration;
       }
     }
+
+    
+    const win = elementToScrollTo.ownerGlobal;
+    const reducedMotion = win.matchMedia("(prefers-reduced-motion)").matches;
+    scrollBehavior = reducedMotion ? "auto" : scrollBehavior;
 
     elementToScrollTo.scrollIntoView({ behavior: scrollBehavior });
   },
