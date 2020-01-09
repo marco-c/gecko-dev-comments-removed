@@ -515,4 +515,46 @@ already_AddRefed<BrowsingContext> BrowsingContext::FindChildWithName(
 }
 
 }  
+
+namespace ipc {
+
+void IPDLParamTraits<dom::BrowsingContext>::Write(
+    IPC::Message* aMsg, IProtocol* aActor, dom::BrowsingContext* aParam) {
+  uint64_t id = aParam ? aParam->Id() : 0;
+  WriteIPDLParam(aMsg, aActor, id);
+
+  
+  
+  
+  if (!aActor->GetIPCChannel()->IsCrossProcess()) {
+    NS_IF_ADDREF(aParam);
+  }
+}
+
+bool IPDLParamTraits<dom::BrowsingContext>::Read(
+    const IPC::Message* aMsg, PickleIterator* aIter, IProtocol* aActor,
+    RefPtr<dom::BrowsingContext>* aResult) {
+  uint64_t id = 0;
+  if (!ReadIPDLParam(aMsg, aIter, aActor, &id)) {
+    return false;
+  }
+
+  if (id == 0) {
+    aResult = nullptr;
+    return true;
+  }
+
+  *aResult = dom::BrowsingContext::Get(id);
+  MOZ_ASSERT(aResult, "Deserialized absent BrowsingContext!");
+
+  
+  if (!aActor->GetIPCChannel()->IsCrossProcess()) {
+    dom::BrowsingContext* bc = *aResult;
+    NS_IF_RELEASE(bc);
+  }
+
+  return aResult != nullptr;
+}
+
+}  
 }  

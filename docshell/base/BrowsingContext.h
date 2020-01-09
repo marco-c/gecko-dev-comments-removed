@@ -20,12 +20,24 @@
 
 class nsGlobalWindowOuter;
 class nsOuterWindowProxy;
+class PickleIterator;
+
+namespace IPC {
+class Message;
+}  
 
 namespace mozilla {
 
 class ErrorResult;
 class LogModule;
 class OOMReporter;
+
+namespace ipc {
+class IProtocol;
+
+template <typename T>
+struct IPDLParamTraits;
+}  
 
 namespace dom {
 
@@ -253,6 +265,17 @@ class BrowsingContext : public nsWrapperCache,
 extern bool GetRemoteOuterWindowProxy(JSContext* aCx, BrowsingContext* aContext,
                                       JS::MutableHandle<JSObject*> aRetVal);
 
+}  
+
+
+namespace ipc {
+template <>
+struct IPDLParamTraits<dom::BrowsingContext> {
+  static void Write(IPC::Message* aMsg, IProtocol* aActor,
+                    dom::BrowsingContext* aParam);
+  static bool Read(const IPC::Message* aMsg, PickleIterator* aIter,
+                   IProtocol* aActor, RefPtr<dom::BrowsingContext>* aResult);
+};
 }  
 }  
 
