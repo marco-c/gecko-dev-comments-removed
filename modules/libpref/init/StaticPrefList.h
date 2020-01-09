@@ -469,6 +469,12 @@ VARCACHE_PREF(
   RelaxedAtomicUint32, 30000 
 )
 
+VARCACHE_PREF(
+  "dom.worker.use_medium_high_event_queue",
+   dom_worker_use_medium_high_event_queue,
+  RelaxedAtomicBool, true
+)
+
 
 
 VARCACHE_PREF(

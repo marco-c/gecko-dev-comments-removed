@@ -401,6 +401,15 @@ class WorkerPrivate : public RelativeTimeline {
   
   
   
+  nsIEventTarget* MainThreadEventTargetForMessaging();
+
+  nsresult DispatchToMainThreadForMessaging(
+      nsIRunnable* aRunnable, uint32_t aFlags = NS_DISPATCH_NORMAL);
+
+  nsresult DispatchToMainThreadForMessaging(
+      already_AddRefed<nsIRunnable> aRunnable,
+      uint32_t aFlags = NS_DISPATCH_NORMAL);
+
   nsIEventTarget* MainThreadEventTarget();
 
   nsresult DispatchToMainThread(nsIRunnable* aRunnable,
@@ -973,6 +982,7 @@ class WorkerPrivate : public RelativeTimeline {
   PRThread* mPRThread;
 
   
+  RefPtr<ThrottledEventQueue> mMainThreadEventTargetForMessaging;
   RefPtr<ThrottledEventQueue> mMainThreadEventTarget;
 
   
