@@ -43,12 +43,15 @@ add_task(async function() {
 
     await TestUtils.waitForTick();
 
-    const canvas = win.document.getElementById("screen");
-    
-    const screenRatio = Math.floor((screen.width / screen.height) * 100);
-    const previewRatio = Math.floor((canvas.clientWidth / canvas.clientHeight) * 100);
+    const img = win.document.getElementById("monitor");
+    const measure = new Image();
+    const measureLoad = BrowserTestUtils.waitForEvent(measure, "load");
+    measure.src =
+      getComputedStyle(img).listStyleImage.slice(4, -1).replace(/"/g, "");
+    await measureLoad;
 
-    Assert.equal(previewRatio, screenRatio, "Preview's aspect ratio matches screen's");
+    Assert.equal(img.clientWidth, measure.naturalWidth, "Monitor image correct width");
+    Assert.equal(img.clientHeight, measure.naturalHeight, "Monitor image correct height");
 
     win.close();
 
