@@ -69,21 +69,24 @@ class NewRenderer : public RendererEvent {
     *mUseDComp = compositor->UseDComp();
     *mUseTripleBuffering = compositor->UseTripleBuffering();
 
-    bool supportLowPriorityTransactions = true;  
+    bool isMainWindow = true;  
+    bool supportLowPriorityTransactions = isMainWindow;
+    bool supportPictureCaching = isMainWindow;
     wr::Renderer* wrRenderer = nullptr;
-    if (!wr_window_new(aWindowId, mSize.width, mSize.height,
-                       supportLowPriorityTransactions,
-                       gfxPrefs::WebRenderPictureCaching(), compositor->gl(),
-                       aRenderThread.GetProgramCache()
-                           ? aRenderThread.GetProgramCache()->Raw()
-                           : nullptr,
-                       aRenderThread.GetShaders()
-                           ? aRenderThread.GetShaders()->RawShaders()
-                           : nullptr,
-                       aRenderThread.ThreadPool().Raw(), &WebRenderMallocSizeOf,
-                       &WebRenderMallocEnclosingSizeOf,
-                       (uint32_t)wr::RenderRoot::Default,
-                       mDocHandle, &wrRenderer, mMaxTextureSize)) {
+    if (!wr_window_new(
+            aWindowId, mSize.width, mSize.height,
+            supportLowPriorityTransactions,
+            gfxPrefs::WebRenderPictureCaching() && supportPictureCaching,
+            compositor->gl(),
+            aRenderThread.GetProgramCache()
+                ? aRenderThread.GetProgramCache()->Raw()
+                : nullptr,
+            aRenderThread.GetShaders()
+                ? aRenderThread.GetShaders()->RawShaders()
+                : nullptr,
+            aRenderThread.ThreadPool().Raw(), &WebRenderMallocSizeOf,
+            &WebRenderMallocEnclosingSizeOf, (uint32_t)wr::RenderRoot::Default,
+            mDocHandle, &wrRenderer, mMaxTextureSize)) {
       
       return;
     }
