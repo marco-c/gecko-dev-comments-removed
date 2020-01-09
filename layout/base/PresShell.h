@@ -1084,6 +1084,16 @@ class PresShell final : public nsIPresShell,
 
 
 
+    bool PrepareToDispatchContextMenuEvent(WidgetEvent* aEvent);
+
+    
+
+
+
+
+
+
+
 
 
 

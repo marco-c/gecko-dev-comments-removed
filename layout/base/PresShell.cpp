@@ -7783,16 +7783,13 @@ nsresult PresShell::EventHandler::HandleEventInternal(
     }
   }
 
-  if (aEvent->mMessage == eContextMenu) {
-    WidgetMouseEvent* mouseEvent = aEvent->AsMouseEvent();
-    if (mouseEvent->IsContextMenuKeyEvent() &&
-        !AdjustContextMenuKeyEvent(mouseEvent)) {
-      return NS_OK;
-    }
-    if (mouseEvent->IsShift()) {
-      aEvent->mFlags.mOnlyChromeDispatch = true;
-      aEvent->mFlags.mRetargetToNonNativeAnonymous = true;
-    }
+  
+  
+  
+  
+  if (aEvent->mMessage == eContextMenu &&
+      !PrepareToDispatchContextMenuEvent(aEvent)) {
+    return NS_OK;
   }
 
   AutoHandlingUserInputStatePusher userInpStatePusher(isHandlingUserInput,
@@ -7933,6 +7930,28 @@ nsresult PresShell::EventHandler::HandleEventInternal(
   }
   RecordEventHandlingResponsePerformance(aEvent);
   return rv;
+}
+
+bool PresShell::EventHandler::PrepareToDispatchContextMenuEvent(
+    WidgetEvent* aEvent) {
+  MOZ_ASSERT(aEvent);
+  MOZ_ASSERT(aEvent->mMessage == eContextMenu);
+
+  WidgetMouseEvent* mouseEvent = aEvent->AsMouseEvent();
+  if (mouseEvent->IsContextMenuKeyEvent() &&
+      !AdjustContextMenuKeyEvent(mouseEvent)) {
+    return false;
+  }
+
+  
+  
+  
+  
+  if (mouseEvent->IsShift()) {
+    aEvent->mFlags.mOnlyChromeDispatch = true;
+    aEvent->mFlags.mRetargetToNonNativeAnonymous = true;
+  }
+  return true;
 }
 
 void PresShell::EventHandler::RecordEventHandlingResponsePerformance(
