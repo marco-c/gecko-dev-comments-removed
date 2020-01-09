@@ -93,6 +93,23 @@ async function openNewTabAndConsole(url, clearJstermHistory = true) {
 
 
 
+
+
+async function openNewWindowAndConsole(url) {
+  const win = await openNewBrowserWindow();
+  const tab = await addTab(url, {window: win});
+  win.gBrowser.selectedTab = tab;
+  const hud = await openConsole(tab);
+  return {win, hud, tab};
+}
+
+
+
+
+
+
+
+
 function logAllStoreChanges(hud) {
   const store = hud.ui.wrapper.getStore();
   
@@ -1220,4 +1237,44 @@ function isScrolledToBottom(container) {
   const lastNodeHeight = container.lastChild.clientHeight;
   return container.scrollTop + container.clientHeight >=
          container.scrollHeight - lastNodeHeight / 2;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+function checkConsoleOutputForWarningGroup(hud, expectedMessages) {
+  const messages = findMessages(hud, "");
+  is(messages.length, expectedMessages.length, "Got the expected number of messages");
+  expectedMessages.forEach((expectedMessage, i) => {
+    const message = messages[i];
+    if (expectedMessage.startsWith("▶︎")) {
+      is(message.querySelector(".arrow").getAttribute("aria-expanded"), "false",
+        "There's a collapsed arrow");
+      expectedMessage = expectedMessage.replace("▶︎ ", "");
+    }
+
+    if (expectedMessage.startsWith("▼")) {
+      is(message.querySelector(".arrow").getAttribute("aria-expanded"), "true",
+        "There's an expanded arrow");
+      expectedMessage = expectedMessage.replace("▼︎ ", "");
+    }
+
+    if (expectedMessage.startsWith("|")) {
+      is(message.querySelector(".indent.warning-indent").getAttribute("data-indent"), "1",
+        "The message has the expected indent");
+      expectedMessage = expectedMessage.replace("| ", "");
+    }
+
+    ok(message.textContent.trim().includes(expectedMessage.trim()), `Message includes ` +
+      `the expected "${expectedMessage}" content - "${message.textContent.trim()}"`);
+  });
 }

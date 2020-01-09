@@ -21,6 +21,10 @@ const {
 loader.lazyRequireGetter(this, "getGripPreviewItems", "devtools/client/shared/components/reps/reps", true);
 loader.lazyRequireGetter(this, "getUnicodeUrlPath", "devtools/client/shared/unicode-url", true);
 loader.lazyRequireGetter(this, "getSourceNames", "devtools/client/shared/source-utils", true);
+loader.lazyRequireGetter(this, "createWarningGroupMessage", "devtools/client/webconsole/utils/messages", true);
+loader.lazyRequireGetter(this, "isWarningGroup", "devtools/client/webconsole/utils/messages", true);
+loader.lazyRequireGetter(this, "getWarningGroupType", "devtools/client/webconsole/utils/messages", true);
+loader.lazyRequireGetter(this, "getParentWarningGroupMessageId", "devtools/client/webconsole/utils/messages", true);
 
 const {
   UPDATE_REQUEST,
@@ -46,9 +50,12 @@ const MessageState = overrides => Object.freeze(Object.assign({
   messagesTableDataById: new Map(),
   
   
+  
   groupsById: new Map(),
   
   currentGroup: null,
+  
+  warningGroupsById: new Map(),
   
   
   
@@ -78,10 +85,20 @@ function cloneState(state) {
     networkMessagesUpdateById: {...state.networkMessagesUpdateById},
     removedLogpointIds: new Set(state.removedLogpointIds),
     pausedExecutionPoint: state.pausedExecutionPoint,
+    warningGroupsById: new Map(state.warningGroupsById),
   };
 }
 
-function addMessage(state, filtersState, prefsState, newMessage) {
+
+
+
+
+
+
+
+
+
+function addMessage(newMessage, state, filtersState, prefsState) {
   const {
     messagesById,
     replayProgressMessages,
@@ -121,7 +138,7 @@ function addMessage(state, filtersState, prefsState, newMessage) {
   }
 
   if (newMessage.allowRepeating && messagesById.size > 0) {
-    const lastMessage = [...messagesById.values()][messagesById.size - 1];
+    const lastMessage = messagesById.get(getLastMessageId(state));
 
     if (
       lastMessage.repeatId === newMessage.repeatId
@@ -139,6 +156,47 @@ function addMessage(state, filtersState, prefsState, newMessage) {
 
   ensureExecutionPoint(state, newMessage);
 
+  
+  
+  
+  const warningGroupType = getWarningGroupType(newMessage);
+
+  
+  
+  if (prefsState.groupWarnings && warningGroupType !== null) {
+    const warningGroupMessageId = getParentWarningGroupMessageId(newMessage);
+
+    
+    if (!state.messagesById.has(warningGroupMessageId)) {
+      
+      const groupMessage = createWarningGroupMessage(
+        warningGroupMessageId, warningGroupType, newMessage);
+      state = addMessage(groupMessage, state, filtersState, prefsState);
+      state.warningGroupsById.set(warningGroupMessageId, []);
+    }
+
+    
+    state.warningGroupsById.get(warningGroupMessageId).push(newMessage.id);
+
+    
+    if (!state.visibleMessages.includes(warningGroupMessageId)
+      && getMessageVisibility(state.messagesById.get(warningGroupMessageId), {
+        messagesState: state,
+        filtersState,
+        prefsState,
+      }).visible
+    ) {
+      
+      
+      
+      
+      const index = state
+        .visibleMessages
+        .indexOf(state.warningGroupsById.get(warningGroupMessageId)[0]);
+      state.visibleMessages.splice(index, 1, warningGroupMessageId);
+    }
+  }
+
   const addedMessage = Object.freeze(newMessage);
   state.messagesById.set(newMessage.id, addedMessage);
 
@@ -155,13 +213,35 @@ function addMessage(state, filtersState, prefsState, newMessage) {
     }
   }
 
-  const {
-    visible,
-    cause,
-  } = getMessageVisibility(addedMessage, state, filtersState);
+  const { visible, cause } = getMessageVisibility(addedMessage, {
+    messagesState: state,
+    filtersState,
+    prefsState,
+  });
 
   if (visible) {
-    state.visibleMessages.push(newMessage.id);
+    
+    
+    const warningGroupId = getParentWarningGroupMessageId(newMessage);
+    if (warningGroupId && state.visibleMessages.includes(warningGroupId)) {
+      
+      let index = state.visibleMessages.indexOf(warningGroupId);
+
+      
+      
+      const messagesInWarningGroup = state.warningGroupsById.get(warningGroupId);
+      for (let i = messagesInWarningGroup.length - 1; i >= 0; i--) {
+        const idx = state.visibleMessages.indexOf(messagesInWarningGroup[i]);
+        if (idx > -1) {
+          index = idx;
+          break;
+        }
+      }
+      
+      state.visibleMessages.splice(index + 1, 0, newMessage.id);
+    } else {
+      state.visibleMessages.push(newMessage.id);
+    }
     maybeSortVisibleMessages(state);
   } else if (DEFAULT_FILTERS.includes(cause)) {
     state.filteredMessagesCount.global++;
@@ -222,7 +302,7 @@ function messages(state = MessageState(), action, filtersState, prefsState) {
 
       newState = cloneState(state);
       list.forEach(message => {
-        newState = addMessage(newState, filtersState, prefsState, message);
+        newState = addMessage(message, newState, filtersState, prefsState);
       });
 
       return limitTopLevelMessageCount(newState, logLimit);
@@ -279,20 +359,26 @@ function messages(state = MessageState(), action, filtersState, prefsState) {
       const currMessage = messagesById.get(action.id);
 
       
-      if (isGroupType(currMessage.type)) {
+      if (isGroupType(currMessage.type) || isWarningGroup(currMessage)) {
         
         const messagesToShow = [...messagesById].reduce((res, [id, message]) => {
           if (
             !visibleMessages.includes(message.id)
-            && getParentGroups(message.groupId, groupsById).includes(action.id)
-            && getMessageVisibility(
-              message,
-              openState,
+            && (
+              (isWarningGroup(currMessage) && !!getWarningGroupType(message))
+              || (
+                isGroupType(currMessage.type)
+                && getParentGroups(message.groupId, groupsById).includes(action.id)
+              )
+            )
+            && getMessageVisibility(message, {
+              messagesState: openState,
               filtersState,
-              
-              
-              message.groupId !== action.id
-            ).visible
+              prefsState,
+            
+            
+              checkGroup: message.groupId !== action.id,
+            }).visible
           ) {
             res.push(id);
           }
@@ -334,6 +420,11 @@ function messages(state = MessageState(), action, filtersState, prefsState) {
           getParentGroups(messagesById.get(id).groupId, groupsById)
             .includes(messageId) === false
         );
+      } else if (isWarningGroup(messagesById.get(messageId))) {
+        
+        const groupMessages = closeState.warningGroupsById.get(messageId);
+        closeState.visibleMessages =
+          visibleMessages.filter(id => !groupMessages.includes(id));
       }
       return closeState;
 
@@ -387,10 +478,12 @@ function messages(state = MessageState(), action, filtersState, prefsState) {
       const filtered = getDefaultFiltersCounter();
 
       messagesById.forEach((message, msgId) => {
-        const {
-          visible,
-          cause,
-        } = getMessageVisibility(message, state, filtersState);
+        const { visible, cause } = getMessageVisibility(message, {
+          messagesState: state,
+          filtersState,
+          prefsState,
+        });
+
         if (visible) {
           messagesToShow.push(msgId);
         } else if (DEFAULT_FILTERS.includes(cause)) {
@@ -635,7 +728,12 @@ function getToplevelMessageCount(state) {
 
 
 
-function getMessageVisibility(message, messagesState, filtersState, checkGroup = true) {
+function getMessageVisibility(message, {
+    messagesState,
+    filtersState,
+    prefsState,
+    checkGroup = true,
+}) {
   
   if (
     checkGroup
@@ -644,6 +742,30 @@ function getMessageVisibility(message, messagesState, filtersState, checkGroup =
     return {
       visible: false,
       cause: "closedGroup",
+    };
+  }
+
+  
+  if (
+    isWarningGroup(message)
+    && !shouldGroupWarningMessages(message, messagesState, prefsState)
+  ) {
+    return {
+      visible: false,
+      cause: "warningGroupHeuristicNotMet",
+    };
+  }
+
+  
+  
+  const warningGroupMessageId = getParentWarningGroupMessageId(message);
+  if (
+    messagesState.visibleMessages.includes(warningGroupMessageId)
+    && !messagesState.messagesUiById.includes(warningGroupMessageId)
+  ) {
+    return {
+      visible: false,
+      cause: "closedWarningGroup",
     };
   }
 
@@ -1047,6 +1169,28 @@ function maybeSortVisibleMessages(state) {
       return countA > countB;
     });
   }
+}
+
+function getLastMessageId(state) {
+  return Array.from(state.messagesById.keys())[state.messagesById.size - 1];
+}
+
+
+
+
+
+
+
+
+function shouldGroupWarningMessages(warningGroupMessage, messagesState, prefsState) {
+  
+  if (!prefsState.groupWarnings) {
+    return false;
+  }
+
+  
+  const warningGroup = messagesState.warningGroupsById.get(warningGroupMessage.id);
+  return warningGroup && warningGroup.length > 1;
 }
 
 exports.messages = messages;
