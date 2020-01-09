@@ -64,6 +64,10 @@ const SUMMARY_REFERRER_POLICY = L10N.getStr("netmonitor.summary.referrerPolicy")
 
 
 
+
+
+
+
 class HeadersPanel extends Component {
   static get propTypes() {
     return {
