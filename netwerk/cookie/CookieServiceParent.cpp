@@ -140,8 +140,8 @@ void CookieServiceParent::TrackCookieLoad(nsIChannel *aChannel) {
     
     
     
-    if (isForeign && AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(
-                         httpChannel, uri, nullptr)) {
+    if (AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(httpChannel,
+                                                                uri, nullptr)) {
       storageAccessGranted = true;
     }
   }
