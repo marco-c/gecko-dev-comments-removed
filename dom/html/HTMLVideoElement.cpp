@@ -461,13 +461,6 @@ void HTMLVideoElement::CloneElementVisually(HTMLVideoElement& aTargetVideo,
     EndCloningVisually();
   }
 
-  
-  
-  aTargetVideo.UnsetHTMLAttr(nsGkAtoms::poster, rv);
-  if (rv.Failed()) {
-    return;
-  }
-
   if (!SetVisualCloneTarget(&aTargetVideo)) {
     rv.Throw(NS_ERROR_FAILURE);
     return;
