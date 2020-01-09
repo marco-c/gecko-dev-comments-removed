@@ -207,7 +207,7 @@ tls13_HkdfExpandLabel(PK11SymKey *prk, SSLHashType baseHash,
     *keyp = derived;
 
 #ifdef TRACE
-    if (ssl_trace >= 10) {
+    if (ssl_trace >= 50) {
         
         char labelStr[100];
         PORT_Memcpy(labelStr, label, labelLen);

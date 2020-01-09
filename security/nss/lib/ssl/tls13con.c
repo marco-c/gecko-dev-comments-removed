@@ -416,7 +416,7 @@ SSL_SendAdditionalKeyShares(PRFileDesc *fd, unsigned int count)
 
 
 SECStatus
-tls13_SetupClientHello(sslSocket *ss)
+tls13_SetupClientHello(sslSocket *ss, sslClientHelloType chType)
 {
     unsigned int i;
     SSL3Statistics *ssl3stats = SSL_GetStatistics();
@@ -427,17 +427,24 @@ tls13_SetupClientHello(sslSocket *ss)
 
     PORT_Assert(ss->opt.noLocks || ssl_HaveSSL3HandshakeLock(ss));
     PORT_Assert(ss->opt.noLocks || ssl_HaveXmitBufLock(ss));
-    PORT_Assert(PR_CLIST_IS_EMPTY(&ss->ephemeralKeyPairs));
 
     
+
+
     rv = tls13_ClientSetupESNI(ss);
     if (rv != SECSuccess) {
         return SECFailure;
     }
 
     
+    if (chType != client_hello_initial) {
+        return SECSuccess;
+    }
+
+    
 
 
+    PORT_Assert(PR_CLIST_IS_EMPTY(&ss->ephemeralKeyPairs));
     for (i = 0; i < SSL_NAMED_GROUP_COUNT; ++i) {
         if (!ss->namedGroupPreferences[i]) {
             continue;
