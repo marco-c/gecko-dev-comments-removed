@@ -51,8 +51,8 @@ class IDBKeyRange : public nsISupports {
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(IDBKeyRange)
 
   
-  static nsresult FromJSVal(JSContext* aCx, JS::Handle<JS::Value> aVal,
-                            IDBKeyRange** aKeyRange);
+  static void FromJSVal(JSContext* aCx, JS::Handle<JS::Value> aVal,
+                        IDBKeyRange** aKeyRange, ErrorResult& aRv);
 
   static already_AddRefed<IDBKeyRange> FromSerialized(
       const indexedDB::SerializedKeyRange& aKeyRange);
