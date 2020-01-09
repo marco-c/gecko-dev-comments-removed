@@ -11,20 +11,7 @@ PromiseTestUtils.whitelistRejectionsGlobally(/File closed/);
 requestLongerTimeout(4);
 
 add_task(async function() {
-  await new Promise(done => {
-    const options = {"set": [
-      ["devtools.debugger.prompt-connection", false],
-      ["devtools.debugger.remote-enabled", true],
-      ["devtools.chrome.enabled", true],
-      
-      
-      ["devtools.browser-toolbox.allow-unsafe-script", true],
-      
-      
-      ["devtools.debugger.remote-timeout", 120000],
-    ]};
-    SpecialPowers.pushPrefEnv(options, done);
-  });
+  await setupPreferencesForBrowserToolbox();
 
   
   

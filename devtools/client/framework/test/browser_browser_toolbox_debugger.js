@@ -23,20 +23,7 @@ const helpersContextURL = CHROME_URL_ROOT + "../../debugger/test/mochitest/helpe
 const testScriptURL = CHROME_URL_ROOT + "test_browser_toolbox_debugger.js";
 
 add_task(async function runTest() {
-  await new Promise(done => {
-    const options = {"set": [
-      ["devtools.debugger.prompt-connection", false],
-      ["devtools.debugger.remote-enabled", true],
-      ["devtools.chrome.enabled", true],
-      
-      
-      ["devtools.browser-toolbox.allow-unsafe-script", true],
-      
-      
-      ["devtools.debugger.remote-timeout", 120000],
-    ]};
-    SpecialPowers.pushPrefEnv(options, done);
-  });
+  await setupPreferencesForBrowserToolbox();
 
   const s = Cu.Sandbox("http://mozilla.org");
 
