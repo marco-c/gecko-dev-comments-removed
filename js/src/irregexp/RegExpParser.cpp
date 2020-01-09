@@ -38,7 +38,6 @@
 #include "frontend/TokenStream.h"
 #include "gc/GC.h"
 #include "irregexp/RegExpCharacters.h"
-#include "js/RegExpFlags.h"  
 #include "util/StringBuffer.h"
 #include "util/Text.h"
 #include "util/Unicode.h"
@@ -49,9 +48,6 @@ using namespace js::irregexp;
 
 using mozilla::AssertedCast;
 using mozilla::PointerRangeSize;
-
-using JS::RegExpFlag;
-using JS::RegExpFlags;
 
 
 
@@ -244,9 +240,9 @@ RegExpBuilder::AddQuantifierToAtom(int min, int max,
 
 
 template <typename CharT>
-RegExpParser<CharT>::RegExpParser(frontend::TokenStreamAnyChars& ts,
-                                  LifoAlloc* alloc, RegExpFlags flags,
-                                  const CharT* chars, const CharT* end)
+RegExpParser<CharT>::RegExpParser(frontend::TokenStreamAnyChars& ts, LifoAlloc* alloc,
+                                  const CharT* chars, const CharT* end, bool multiline_mode,
+                                  bool unicode, bool ignore_case)
   : ts(ts),
     alloc(alloc),
     captures_(nullptr),
@@ -256,9 +252,9 @@ RegExpParser<CharT>::RegExpParser(frontend::TokenStreamAnyChars& ts,
     current_(kEndMarker),
     capture_count_(0),
     has_more_(true),
-    multiline_(flags.multiline()),
-    unicode_(flags.unicode()),
-    ignore_case_(flags.ignoreCase()),
+    multiline_(multiline_mode),
+    unicode_(unicode),
+    ignore_case_(ignore_case),
     simple_(false),
     contains_anchor_(false),
     is_scanned_for_captures_(false)
@@ -1935,12 +1931,13 @@ template class irregexp::RegExpParser<char16_t>;
 template <typename CharT>
 static bool
 ParsePattern(frontend::TokenStreamAnyChars& ts, LifoAlloc& alloc,
-             const CharT* chars, size_t length, bool match_only,
-             RegExpFlags flags, RegExpCompileData* data)
+             const CharT* chars, size_t length,
+             bool multiline, bool match_only, bool unicode, bool ignore_case,
+             bool global, bool sticky, RegExpCompileData* data)
 {
     
     
-    if (match_only && !flags.global() && !flags.sticky()) {
+    if (match_only && !global && !sticky) {
         
         
         
@@ -1961,7 +1958,7 @@ ParsePattern(frontend::TokenStreamAnyChars& ts, LifoAlloc& alloc,
         }
     }
 
-    RegExpParser<CharT> parser(ts, &alloc, flags, chars, chars + length);
+    RegExpParser<CharT> parser(ts, &alloc, chars, chars + length, multiline, unicode, ignore_case);
     data->tree = parser.ParsePattern();
     if (!data->tree)
         return false;
@@ -1973,16 +1970,16 @@ ParsePattern(frontend::TokenStreamAnyChars& ts, LifoAlloc& alloc,
 }
 
 bool
-irregexp::ParsePattern(frontend::TokenStreamAnyChars& ts, LifoAlloc& alloc,
-                       JSAtom* str, bool match_only, RegExpFlags flags,
-                       RegExpCompileData* data)
+irregexp::ParsePattern(frontend::TokenStreamAnyChars& ts, LifoAlloc& alloc, JSAtom* str,
+                       bool multiline, bool match_only, bool unicode, bool ignore_case,
+                       bool global, bool sticky, RegExpCompileData* data)
 {
     JS::AutoCheckCannotGC nogc;
     return str->hasLatin1Chars()
            ? ::ParsePattern(ts, alloc, str->latin1Chars(nogc), str->length(),
-                            match_only, flags, data)
+                            multiline, match_only, unicode, ignore_case, global, sticky, data)
            : ::ParsePattern(ts, alloc, str->twoByteChars(nogc), str->length(),
-                            match_only, flags, data);
+                            multiline, match_only, unicode, ignore_case, global, sticky, data);
 }
 
 template <typename CharT>
@@ -1990,8 +1987,7 @@ static bool
 ParsePatternSyntax(frontend::TokenStreamAnyChars& ts, LifoAlloc& alloc,
                    const CharT* chars, size_t length, bool unicode)
 {
-    RegExpParser<CharT> parser(ts, &alloc, unicode ? RegExpFlag::Unicode : 0,
-                               chars, chars + length);
+    RegExpParser<CharT> parser(ts, &alloc, chars, chars + length, false, unicode, false);
     return parser.ParsePattern() != nullptr;
 }
 
