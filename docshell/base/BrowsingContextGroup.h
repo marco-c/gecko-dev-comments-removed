@@ -51,8 +51,6 @@ class BrowsingContextGroup final : public nsWrapperCache {
   void CacheContexts(const BrowsingContext::Children& aContexts);
   bool EvictCachedContext(BrowsingContext* aContext);
 
-  ContentParents::Iterator ContentParentsIter() { return mSubscribers.Iter(); }
-
   
   
   BrowsingContext::Children& Toplevels() { return mToplevels; }
@@ -86,6 +84,28 @@ class BrowsingContextGroup final : public nsWrapperCache {
     MOZ_RELEASE_ASSERT(opener || aOpenerId == 0);
 
     return Select(parent, opener);
+  }
+
+  
+  
+  template <typename Func>
+  void EachOtherParent(ContentParent* aExcludedParent, Func&& aCallback) {
+    MOZ_DIAGNOSTIC_ASSERT(XRE_IsParentProcess());
+    for (auto iter = mSubscribers.Iter(); !iter.Done(); iter.Next()) {
+      if (iter.Get()->GetKey() != aExcludedParent) {
+        aCallback(iter.Get()->GetKey());
+      }
+    }
+  }
+
+  
+  
+  template <typename Func>
+  void EachParent(Func&& aCallback) {
+    MOZ_DIAGNOSTIC_ASSERT(XRE_IsParentProcess());
+    for (auto iter = mSubscribers.Iter(); !iter.Done(); iter.Next()) {
+      aCallback(iter.Get()->GetKey());
+    }
   }
 
  private:
