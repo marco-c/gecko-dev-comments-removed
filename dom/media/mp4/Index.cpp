@@ -193,11 +193,16 @@ already_AddRefed<MediaRawData> SampleIterator::GetNext() {
           moofParser->mSinf.mDefaultConstantIV);
     }
 
-    MOZ_ASSERT((writer->mCrypto.mIVSize == 0 &&
-                !writer->mCrypto.mConstantIV.IsEmpty()) ||
-                   !s->mCencRange.IsEmpty(),
-               "Crypto information should contain either a constant IV, or "
-               "have auxiliary information that will contain an IV");
+    if ((writer->mCrypto.mIVSize == 0 &&
+         writer->mCrypto.mConstantIV.IsEmpty()) ||
+        (writer->mCrypto.mIVSize != 0 && s->mCencRange.IsEmpty())) {
+      
+      
+      
+      
+      
+      return nullptr;
+    }
     
     if (!s->mCencRange.IsEmpty()) {
       
