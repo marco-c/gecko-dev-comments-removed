@@ -747,7 +747,7 @@ bool IsCrossOriginWhitelistedProp(JSContext* cx, JS::HandleId id);
 
 
 bool AppendCrossOriginWhitelistedPropNames(JSContext* cx,
-                                           JS::AutoIdVector& props);
+                                           JS::MutableHandleIdVector props);
 }  
 
 namespace mozilla {

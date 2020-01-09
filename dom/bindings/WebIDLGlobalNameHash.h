@@ -59,7 +59,7 @@ class WebIDLGlobalNameHash {
   };
   
   static bool GetNames(JSContext* aCx, JS::Handle<JSObject*> aObj,
-                       NameType aNameType, JS::AutoIdVector& aNames);
+                       NameType aNameType, JS::MutableHandleVector<jsid> aNames);
 
   
   
@@ -69,7 +69,7 @@ class WebIDLGlobalNameHash {
 
   static bool NewEnumerateSystemGlobal(JSContext* aCx,
                                        JS::Handle<JSObject*> aObj,
-                                       JS::AutoIdVector& aProperties,
+                                       JS::MutableHandleVector<jsid> aProperties,
                                        bool aEnumerableOnly);
 
  private:

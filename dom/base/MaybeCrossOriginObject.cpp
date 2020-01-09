@@ -437,7 +437,7 @@ bool MaybeCrossOriginObject<Base>::defineProperty(
 template <typename Base>
 bool MaybeCrossOriginObject<Base>::enumerate(JSContext* cx,
                                              JS::Handle<JSObject*> proxy,
-                                             JS::AutoIdVector& props) const {
+                                             JS::MutableHandleVector<jsid> props) const {
   
   
   
@@ -448,7 +448,7 @@ bool MaybeCrossOriginObject<Base>::enumerate(JSContext* cx,
     return false;
   }
 
-  return js::GetPropertyKeys(cx, self, 0, &props);
+  return js::GetPropertyKeys(cx, self, 0, props);
 }
 
 template <typename Base>

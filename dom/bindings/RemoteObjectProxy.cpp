@@ -35,7 +35,7 @@ bool RemoteObjectProxyBase::defineProperty(
 
 bool RemoteObjectProxyBase::ownPropertyKeys(JSContext* aCx,
                                             JS::Handle<JSObject*> aProxy,
-                                            JS::AutoIdVector& aProps) const {
+                                            JS::MutableHandleVector<jsid> aProps) const {
   
   
   
@@ -43,7 +43,7 @@ bool RemoteObjectProxyBase::ownPropertyKeys(JSContext* aCx,
   if (!EnsureHolder(aCx, aProxy, &holder) ||
       !js::GetPropertyKeys(aCx, holder,
                            JSITER_OWNONLY | JSITER_HIDDEN | JSITER_SYMBOLS,
-                           &aProps)) {
+                           aProps)) {
     return false;
   }
 
@@ -159,7 +159,7 @@ bool RemoteObjectProxyBase::hasOwn(JSContext* aCx, JS::Handle<JSObject*> aProxy,
 
 bool RemoteObjectProxyBase::getOwnEnumerablePropertyKeys(
     JSContext* aCx, JS::Handle<JSObject*> aProxy,
-    JS::AutoIdVector& aProps) const {
+    JS::MutableHandleVector<jsid> aProps) const {
   return true;
 }
 

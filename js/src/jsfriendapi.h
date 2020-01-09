@@ -957,10 +957,10 @@ inline void CopyFlatStringChars(char16_t* dest, JSFlatString* s, size_t len) {
 
 
 JS_FRIEND_API bool GetPropertyKeys(JSContext* cx, JS::HandleObject obj,
-                                   unsigned flags, JS::AutoIdVector* props);
+                                   unsigned flags, JS::MutableHandleIdVector props);
 
-JS_FRIEND_API bool AppendUnique(JSContext* cx, JS::AutoIdVector& base,
-                                JS::AutoIdVector& others);
+JS_FRIEND_API bool AppendUnique(JSContext* cx, JS::MutableHandleIdVector base,
+                                JS::HandleIdVector others);
 
 
 

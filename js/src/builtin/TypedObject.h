@@ -436,7 +436,7 @@ class StructMetaTypeDescr : public NativeObject {
   
   static StructTypeDescr* createFromArrays(
       JSContext* cx, HandleObject structTypePrototype, bool opaque,
-      bool allowConstruct, AutoIdVector& ids, HandleValueVector fieldTypeObjs,
+      bool allowConstruct, HandleIdVector ids, HandleValueVector fieldTypeObjs,
       Vector<StructFieldProps>& fieldProps);
 
   
@@ -580,7 +580,7 @@ class TypedObject : public JSObject {
 
  public:
   static MOZ_MUST_USE bool obj_newEnumerate(JSContext* cx, HandleObject obj,
-                                            AutoIdVector& properties,
+                                            MutableHandleIdVector properties,
                                             bool enumerableOnly);
 
   TypedProto& typedProto() const {

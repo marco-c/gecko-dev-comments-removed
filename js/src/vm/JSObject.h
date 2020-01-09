@@ -901,8 +901,8 @@ void CompletePropertyDescriptor(MutableHandle<JS::PropertyDescriptor> desc);
 
 
 extern bool ReadPropertyDescriptors(
-    JSContext* cx, HandleObject props, bool checkAccessors, AutoIdVector* ids,
-    MutableHandle<PropertyDescriptorVector> descs);
+    JSContext* cx, HandleObject props, bool checkAccessors,
+    MutableHandleIdVector ids, MutableHandle<PropertyDescriptorVector> descs);
 
 
 extern bool LookupName(JSContext* cx, HandlePropertyName name,

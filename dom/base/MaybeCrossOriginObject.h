@@ -316,7 +316,7 @@ class MaybeCrossOriginObject : public Base,
 
 
   bool enumerate(JSContext* cx, JS::Handle<JSObject*> proxy,
-                 JS::AutoIdVector& props) const final;
+                 JS::MutableHandleVector<jsid> props) const final;
 
   
 

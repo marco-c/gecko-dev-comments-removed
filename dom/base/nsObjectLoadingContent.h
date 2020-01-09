@@ -189,7 +189,7 @@ class nsObjectLoadingContent : public nsImageLoadingContent,
   static bool MayResolve(jsid aId);
 
   
-  void GetOwnPropertyNames(JSContext* aCx, JS::AutoIdVector& ,
+  void GetOwnPropertyNames(JSContext* aCx, JS::MutableHandleVector<jsid> ,
                            bool , mozilla::ErrorResult& aRv);
 
   

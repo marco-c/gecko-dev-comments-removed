@@ -742,7 +742,7 @@ bool ScriptedProxyHandler::defineProperty(JSContext* cx, HandleObject proxy,
 
 
 static bool CreateFilteredListFromArrayLike(JSContext* cx, HandleValue v,
-                                            AutoIdVector& props) {
+                                            MutableHandleIdVector props) {
   
   RootedObject obj(
       cx, NonNullObjectWithName(cx, "return value of the ownKeys trap", v));
@@ -793,7 +793,7 @@ static bool CreateFilteredListFromArrayLike(JSContext* cx, HandleValue v,
 
 
 bool ScriptedProxyHandler::ownPropertyKeys(JSContext* cx, HandleObject proxy,
-                                           AutoIdVector& props) const {
+                                           MutableHandleIdVector props) const {
   
   RootedObject handler(cx, ScriptedProxyHandler::handlerObject(proxy));
   if (!handler) {
@@ -815,7 +815,7 @@ bool ScriptedProxyHandler::ownPropertyKeys(JSContext* cx, HandleObject proxy,
   
   if (trap.isUndefined()) {
     return GetPropertyKeys(
-        cx, target, JSITER_OWNONLY | JSITER_HIDDEN | JSITER_SYMBOLS, &props);
+        cx, target, JSITER_OWNONLY | JSITER_HIDDEN | JSITER_SYMBOLS, props);
   }
 
   
@@ -826,8 +826,8 @@ bool ScriptedProxyHandler::ownPropertyKeys(JSContext* cx, HandleObject proxy,
   }
 
   
-  AutoIdVector trapResult(cx);
-  if (!CreateFilteredListFromArrayLike(cx, trapResultArray, trapResult)) {
+  RootedIdVector trapResult(cx);
+  if (!CreateFilteredListFromArrayLike(cx, trapResultArray, &trapResult)) {
     return false;
   }
 
@@ -855,7 +855,7 @@ bool ScriptedProxyHandler::ownPropertyKeys(JSContext* cx, HandleObject proxy,
   }
 
   
-  AutoIdVector targetKeys(cx);
+  RootedIdVector targetKeys(cx);
   if (!GetPropertyKeys(cx, target,
                        JSITER_OWNONLY | JSITER_HIDDEN | JSITER_SYMBOLS,
                        &targetKeys)) {
@@ -863,8 +863,8 @@ bool ScriptedProxyHandler::ownPropertyKeys(JSContext* cx, HandleObject proxy,
   }
 
   
-  AutoIdVector targetConfigurableKeys(cx);
-  AutoIdVector targetNonconfigurableKeys(cx);
+  RootedIdVector targetConfigurableKeys(cx);
+  RootedIdVector targetNonconfigurableKeys(cx);
 
   
   Rooted<PropertyDescriptor> desc(cx);

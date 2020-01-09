@@ -197,7 +197,7 @@ using ObjectVector = GCVector<JSObject*, 8>;
 class StringifyContext {
  public:
   StringifyContext(JSContext* cx, StringBuffer& sb, const StringBuffer& gap,
-                   HandleObject replacer, const AutoIdVector& propertyList,
+                   HandleObject replacer, const RootedIdVector& propertyList,
                    bool maybeSafely)
       : sb(sb),
         gap(gap),
@@ -214,7 +214,7 @@ class StringifyContext {
   const StringBuffer& gap;
   RootedObject replacer;
   Rooted<ObjectVector> stack;
-  const AutoIdVector& propertyList;
+  const RootedIdVector& propertyList;
   uint32_t depth;
   bool maybeSafely;
 };
@@ -435,8 +435,8 @@ static bool JO(JSContext* cx, HandleObject obj, StringifyContext* scx) {
   }
 
   
-  Maybe<AutoIdVector> ids;
-  const AutoIdVector* props;
+  Maybe<RootedIdVector> ids;
+  const RootedIdVector* props;
   if (scx->replacer && !scx->replacer->isCallable()) {
     
     
@@ -454,7 +454,7 @@ static bool JO(JSContext* cx, HandleObject obj, StringifyContext* scx) {
   }
 
   
-  const AutoIdVector& propertyList = *props;
+  const RootedIdVector& propertyList = *props;
 
   
   bool wroteMember = false;
@@ -725,7 +725,7 @@ bool js::Stringify(JSContext* cx, MutableHandleValue vp, JSObject* replacer_,
              "input to JS::ToJSONMaybeSafely must be a plain object or array");
 
   
-  AutoIdVector propertyList(cx);
+  RootedIdVector propertyList(cx);
   if (replacer) {
     bool isArray;
     if (replacer->isCallable()) {
@@ -938,7 +938,7 @@ static bool Walk(JSContext* cx, HandleObject holder, HandleId name,
       }
     } else {
       
-      AutoIdVector keys(cx);
+      RootedIdVector keys(cx);
       if (!GetPropertyKeys(cx, obj, JSITER_OWNONLY, &keys)) {
         return false;
       }
