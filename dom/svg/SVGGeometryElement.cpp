@@ -10,7 +10,7 @@
 #include "gfxPlatform.h"
 #include "nsCOMPtr.h"
 #include "nsComputedDOMStyle.h"
-#include "SVGAnimatedLength.h"
+#include "nsSVGLength2.h"
 #include "nsSVGUtils.h"
 #include "mozilla/dom/SVGLengthBinding.h"
 #include "mozilla/gfx/2D.h"

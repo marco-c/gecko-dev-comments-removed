@@ -118,7 +118,7 @@ SVGViewportElement::IsAttributeMapped(const nsAtom* name) const {
 
 
 inline float ComputeSynthesizedViewBoxDimension(
-    const SVGAnimatedLength& aLength, float aViewportLength,
+    const nsSVGLength2& aLength, float aViewportLength,
     const SVGViewportElement* aSelf) {
   if (aLength.IsPercentage()) {
     return aViewportLength * aLength.GetAnimValInSpecifiedUnits() / 100.0f;

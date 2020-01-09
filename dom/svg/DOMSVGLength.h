@@ -85,8 +85,7 @@ class DOMSVGLength final : public nsISupports, public nsWrapperCache {
 
 
 
-  DOMSVGLength(SVGAnimatedLength* aVal, dom::SVGElement* aSVGElement,
-               bool aAnimVal);
+  DOMSVGLength(nsSVGLength2* aVal, dom::SVGElement* aSVGElement, bool aAnimVal);
 
   ~DOMSVGLength();
 
@@ -107,7 +106,7 @@ class DOMSVGLength final : public nsISupports, public nsWrapperCache {
 
   DOMSVGLength();
 
-  static already_AddRefed<DOMSVGLength> GetTearOff(SVGAnimatedLength* aVal,
+  static already_AddRefed<DOMSVGLength> GetTearOff(nsSVGLength2* aVal,
                                                    dom::SVGElement* aSVGElement,
                                                    bool aAnimVal);
 
@@ -229,7 +228,7 @@ class DOMSVGLength final : public nsISupports, public nsWrapperCache {
   float mValue;
 
   
-  SVGAnimatedLength* mVal;  
+  nsSVGLength2* mVal;  
   RefPtr<dom::SVGElement> mSVGElement;
 };
 
