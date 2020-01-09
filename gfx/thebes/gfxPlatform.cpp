@@ -923,6 +923,7 @@ void gfxPlatform::Init() {
 #else
 #  error "No gfxPlatform implementation available"
 #endif
+  gPlatform->PopulateScreenInfo();
   gPlatform->InitAcceleration();
   gPlatform->InitWebRenderConfig();
   
@@ -960,7 +961,6 @@ void gfxPlatform::Init() {
 
   InitLayersIPC();
 
-  gPlatform->PopulateScreenInfo();
   gPlatform->ComputeTileSize();
 
 #ifdef MOZ_ENABLE_FREETYPE
@@ -2511,7 +2511,7 @@ static bool CalculateWrQualifiedPrefValue() {
 }
 
 static FeatureState& WebRenderHardwareQualificationStatus(
-    bool aHasBattery, nsCString& aOutFailureId) {
+    const IntSize& aScreenSize, bool aHasBattery, nsCString& aOutFailureId) {
   FeatureState& featureWebRenderQualified =
       gfxConfig::GetFeature(Feature::WEBRENDER_QUALIFIED);
   featureWebRenderQualified.EnableByDefault();
@@ -2576,7 +2576,8 @@ static FeatureState& WebRenderHardwareQualificationStatus(
                 FeatureStatus::Blocked, "Device too old",
                 NS_LITERAL_CSTRING("FEATURE_FAILURE_DEVICE_TOO_OLD"));
           }
-        } else if (adapterVendorID == u"0x8086") {  
+        } else if (adapterVendorID == u"0x8086" ||
+                   adapterVendorID == u"mesa/i965") {  
           const uint16_t supportedDevices[] = {
               0x191d,  
               0x192d,  
@@ -2605,6 +2606,18 @@ static FeatureState& WebRenderHardwareQualificationStatus(
             featureWebRenderQualified.Disable(
                 FeatureStatus::Blocked, "Device too old",
                 NS_LITERAL_CSTRING("FEATURE_FAILURE_DEVICE_TOO_OLD"));
+          } else if (adapterVendorID == u"mesa/i965") {
+            const int32_t maxPixels = 3440 * 1440;  
+            int32_t pixels = aScreenSize.width * aScreenSize.height;
+            if (pixels > maxPixels) {
+              featureWebRenderQualified.Disable(
+                  FeatureStatus::Blocked, "Screen size too large",
+                  NS_LITERAL_CSTRING("FEATURE_FAILURE_SCREEN_SIZE_TOO_LARGE"));
+            } else if (pixels <= 0) {
+              featureWebRenderQualified.Disable(
+                  FeatureStatus::Blocked, "Screen size unknown",
+                  NS_LITERAL_CSTRING("FEATURE_FAILURE_SCREEN_SIZE_UNKNOWN"));
+            }
           }
 #endif
         } else {
@@ -2653,7 +2666,8 @@ void gfxPlatform::InitWebRenderConfig() {
 
   nsCString failureId;
   FeatureState& featureWebRenderQualified =
-      WebRenderHardwareQualificationStatus(HasBattery(), failureId);
+      WebRenderHardwareQualificationStatus(GetScreenSize(), HasBattery(),
+                                           failureId);
   FeatureState& featureWebRender = gfxConfig::GetFeature(Feature::WEBRENDER);
 
   featureWebRender.DisableByDefault(
@@ -2748,6 +2762,14 @@ void gfxPlatform::InitWebRenderConfig() {
           WebRenderDebugPrefChangeCallback, WR_DEBUG_PREF);
     }
   }
+#ifdef XP_LINUX
+  else {
+    
+    
+    gfxConfig::Disable(Feature::HW_COMPOSITING, FeatureStatus::Blocked,
+                       "Acceleration blocked by platform");
+  }
+#endif
 
 #ifdef XP_WIN
   if (Preferences::GetBool("gfx.webrender.dcomp-win.enabled", false)) {
