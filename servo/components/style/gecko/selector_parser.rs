@@ -185,16 +185,6 @@ impl NonTSPseudoClass {
     }
 
     
-    
-    
-    pub fn is_safe_user_action_state(&self) -> bool {
-        matches!(
-            *self,
-            NonTSPseudoClass::Hover | NonTSPseudoClass::Active | NonTSPseudoClass::Focus
-        )
-    }
-
-    
     pub fn state_flag(&self) -> ElementState {
         macro_rules! flag {
             (_) => {
@@ -278,6 +268,15 @@ impl ::selectors::parser::NonTSPseudoClass for NonTSPseudoClass {
     #[inline]
     fn is_active_or_hover(&self) -> bool {
         matches!(*self, NonTSPseudoClass::Active | NonTSPseudoClass::Hover)
+    }
+
+    
+    #[inline]
+    fn is_user_action_state(&self) -> bool {
+        matches!(
+            *self,
+            NonTSPseudoClass::Hover | NonTSPseudoClass::Active | NonTSPseudoClass::Focus
+        )
     }
 }
 
