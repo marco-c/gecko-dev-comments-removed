@@ -1882,7 +1882,7 @@ class XPCConvert {
   
   static bool GetISupportsFromJSObject(JSObject* obj, nsISupports** iface);
 
-  static nsresult JSValToXPCException(JS::MutableHandleValue s,
+  static nsresult JSValToXPCException(JSContext* cx, JS::MutableHandleValue s,
                                       const char* ifaceName,
                                       const char* methodName,
                                       mozilla::dom::Exception** exception);
@@ -1905,9 +1905,11 @@ class XPCConvert {
 
 
 
-  static bool NativeArray2JS(JS::MutableHandleValue d, const void* buf,
-                             const nsXPTType& type, const nsID* iid,
-                             uint32_t count, nsresult* pErr);
+
+
+  static bool NativeArray2JS(JSContext* cx, JS::MutableHandleValue d,
+                             const void* buf, const nsXPTType& type,
+                             const nsID* iid, uint32_t count, nsresult* pErr);
 
   typedef std::function<void*(uint32_t*)> ArrayAllocFixupLen;
 
@@ -1922,8 +1924,10 @@ class XPCConvert {
 
 
 
-  static bool JSArray2Native(JS::HandleValue aJSVal, const nsXPTType& aEltType,
-                             const nsIID* aIID, nsresult* pErr,
+
+  static bool JSArray2Native(JSContext* cx, JS::HandleValue aJSVal,
+                             const nsXPTType& aEltType, const nsIID* aIID,
+                             nsresult* pErr,
                              const ArrayAllocFixupLen& aAllocFixupLen);
 
   XPCConvert() = delete;
@@ -2244,8 +2248,8 @@ class XPCVariant : public nsIVariant {
 
 
 
-  static bool VariantDataToJS(nsIVariant* variant, nsresult* pErr,
-                              JS::MutableHandleValue pJSVal);
+  static bool VariantDataToJS(JSContext* cx, nsIVariant* variant,
+                              nsresult* pErr, JS::MutableHandleValue pJSVal);
 
   bool IsPurple() { return mRefCnt.IsPurple(); }
 
