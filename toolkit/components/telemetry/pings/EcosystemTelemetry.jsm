@@ -216,9 +216,20 @@ var EcosystemTelemetry = {
     this._log.trace(`_submitPing, ping type: ${pingType}, reason: ${reason}`);
 
     let now = Policy.monotonicNow();
+    let new_send_time = now;
+    let old_send_time = this._lastSendTime;
+
     
     let duration = Math.round((now - this._lastSendTime) / 1000);
     this._lastSendTime = now;
+
+    
+    
+    
+    
+    
+    Services.telemetry.scalarSet("telemetry.ecosystem_old_send_time", old_send_time.toString());
+    Services.telemetry.scalarSet("telemetry.ecosystem_new_send_time", new_send_time.toString());
 
     let payload = this._payload(reason, duration);
 
