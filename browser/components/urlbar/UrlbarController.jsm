@@ -236,26 +236,19 @@ class UrlbarController {
 
 
 
-
-
-
-
-
-  handleKeyNavigation(event, executeAction = true) {
+  handleKeyNavigation(event) {
     const isMac = AppConstants.platform == "macosx";
     
     if (isMac &&
         this.view.isOpen &&
         event.ctrlKey &&
         (event.key == "n" || event.key == "p")) {
-      if (executeAction) {
-        this.view.selectBy(1, { reverse: event.key == "p" });
-      }
+      this.view.selectBy(1, { reverse: event.key == "p" });
       event.preventDefault();
       return;
     }
 
-    if (this.view.isOpen && executeAction) {
+    if (this.view.isOpen) {
       let queryContext = this._lastQueryContext;
       if (queryContext) {
         this.view.oneOffSearchButtons.handleKeyPress(
@@ -271,9 +264,7 @@ class UrlbarController {
 
     switch (event.keyCode) {
       case KeyEvent.DOM_VK_ESCAPE:
-        if (executeAction) {
-          this.input.handleRevert();
-        }
+        this.input.handleRevert();
         event.preventDefault();
         break;
       case KeyEvent.DOM_VK_RETURN:
@@ -282,16 +273,12 @@ class UrlbarController {
           
           event.preventDefault();
         }
-        if (executeAction) {
-          this.input.handleCommand(event);
-        }
+        this.input.handleCommand(event);
         break;
       case KeyEvent.DOM_VK_TAB:
         if (this.view.isOpen) {
-          if (executeAction) {
-            this.view.selectBy(1, { reverse: event.shiftKey });
-            this.userSelectionBehavior = "tab";
-          }
+          this.view.selectBy(1, { reverse: event.shiftKey });
+          this.userSelectionBehavior = "tab";
           event.preventDefault();
         }
         break;
@@ -303,29 +290,24 @@ class UrlbarController {
           break;
         }
         if (this.view.isOpen) {
-          if (executeAction) {
-            this.userSelectionBehavior = "arrow";
-            this.view.selectBy(
-              event.keyCode == KeyEvent.DOM_VK_PAGE_DOWN ||
-              event.keyCode == KeyEvent.DOM_VK_PAGE_UP ?
-                5 : 1,
-              { reverse: event.keyCode == KeyEvent.DOM_VK_UP ||
-                        event.keyCode == KeyEvent.DOM_VK_PAGE_UP });
-          }
+          this.userSelectionBehavior = "arrow";
+          this.view.selectBy(
+            event.keyCode == KeyEvent.DOM_VK_PAGE_DOWN ||
+            event.keyCode == KeyEvent.DOM_VK_PAGE_UP ?
+              5 : 1,
+            { reverse: event.keyCode == KeyEvent.DOM_VK_UP ||
+                       event.keyCode == KeyEvent.DOM_VK_PAGE_UP });
         } else {
           if (this.keyEventMovesCaret(event)) {
             break;
           }
-          if (executeAction) {
-            this.input.startQuery();
-          }
+          this.input.startQuery();
         }
         event.preventDefault();
         break;
       case KeyEvent.DOM_VK_DELETE:
       case KeyEvent.DOM_VK_BACK_SPACE:
-        if (event.shiftKey && this.view.isOpen &&
-            (!executeAction || this._handleDeleteEntry())) {
+        if (event.shiftKey && this.view.isOpen && this._handleDeleteEntry()) {
           event.preventDefault();
         }
         break;
