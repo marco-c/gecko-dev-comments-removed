@@ -388,6 +388,8 @@ class AudioContext final : public DOMEventTargetHelper,
 
   
   bool mSuspendedByContent;
+  
+  bool mSuspendedByChrome;
 
   
   
