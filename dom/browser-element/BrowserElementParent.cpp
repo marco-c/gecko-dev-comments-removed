@@ -4,7 +4,7 @@
 
 
 
-#include "BrowserParent.h"
+#include "TabParent.h"
 
 
 
@@ -114,6 +114,7 @@ BrowserElementParent::DispatchOpenWindowEvent(Element* aOpenerFrameElement,
                                               Element* aPopupFrameElement,
                                               const nsAString& aURL,
                                               const nsAString& aName,
+                                              bool aForceNoReferrer,
                                               const nsAString& aFeatures) {
   
   
@@ -130,6 +131,7 @@ BrowserElementParent::DispatchOpenWindowEvent(Element* aOpenerFrameElement,
   detail.mName = aName;
   detail.mFeatures = aFeatures;
   detail.mFrameElement = aPopupFrameElement;
+  detail.mForceNoReferrer = aForceNoReferrer;
 
   nsIGlobalObject* sgo = aPopupFrameElement->OwnerDoc()->GetScopeObject();
   if (!sgo) {
@@ -172,11 +174,11 @@ BrowserElementParent::DispatchOpenWindowEvent(Element* aOpenerFrameElement,
 
 
 BrowserElementParent::OpenWindowResult BrowserElementParent::OpenWindowOOP(
-    BrowserParent* aOpenerBrowserParent, BrowserParent* aPopupBrowserParent,
-    const nsAString& aURL, const nsAString& aName, const nsAString& aFeatures) {
+    TabParent* aOpenerTabParent, TabParent* aPopupTabParent,
+    const nsAString& aURL, const nsAString& aName, bool aForceNoReferrer,
+    const nsAString& aFeatures) {
   
-  nsCOMPtr<Element> openerFrameElement =
-      aOpenerBrowserParent->GetOwnerElement();
+  nsCOMPtr<Element> openerFrameElement = aOpenerTabParent->GetOwnerElement();
   NS_ENSURE_TRUE(openerFrameElement, BrowserElementParent::OPEN_WINDOW_IGNORED);
   RefPtr<HTMLIFrameElement> popupFrameElement =
       CreateIframe(openerFrameElement, aName,  true);
@@ -193,8 +195,9 @@ BrowserElementParent::OpenWindowResult BrowserElementParent::OpenWindowOOP(
   
   popupFrameElement->DisallowCreateFrameLoader();
 
-  OpenWindowResult opened = DispatchOpenWindowEvent(
-      openerFrameElement, popupFrameElement, aURL, aName, aFeatures);
+  OpenWindowResult opened =
+      DispatchOpenWindowEvent(openerFrameElement, popupFrameElement, aURL,
+                              aName, aForceNoReferrer, aFeatures);
 
   if (opened != BrowserElementParent::OPEN_WINDOW_ADDED) {
     return opened;
@@ -202,9 +205,9 @@ BrowserElementParent::OpenWindowResult BrowserElementParent::OpenWindowOOP(
 
   
   
-  aPopupBrowserParent->SetOwnerElement(popupFrameElement);
+  aPopupTabParent->SetOwnerElement(popupFrameElement);
   popupFrameElement->AllowCreateFrameLoader();
-  popupFrameElement->CreateRemoteFrameLoader(aPopupBrowserParent);
+  popupFrameElement->CreateRemoteFrameLoader(aPopupTabParent);
 
   return opened;
 }
@@ -250,7 +253,7 @@ BrowserElementParent::OpenWindowInProcess(BrowsingContext* aOpenerWindow,
 
   OpenWindowResult opened = DispatchOpenWindowEvent(
       openerFrameElement, popupFrameElement, NS_ConvertUTF8toUTF16(spec), aName,
-      NS_ConvertUTF8toUTF16(aFeatures));
+      false, NS_ConvertUTF8toUTF16(aFeatures));
 
   if (opened != BrowserElementParent::OPEN_WINDOW_ADDED) {
     return opened;

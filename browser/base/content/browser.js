@@ -5646,7 +5646,7 @@ nsBrowserAccess.prototype = {
                    aIsExternal, aForceNotRemote = false,
                    aUserContextId = Ci.nsIScriptSecurityManager.DEFAULT_USER_CONTEXT_ID,
                    aOpenerWindow = null, aOpenerBrowser = null,
-                   aTriggeringPrincipal = null, aNextRemoteTabId = 0, aName = "", aCsp = null) {
+                   aTriggeringPrincipal = null, aNextTabParentId = 0, aName = "", aCsp = null) {
     let win, needToFocusWin;
 
     
@@ -5679,7 +5679,7 @@ nsBrowserAccess.prototype = {
                                       forceNotRemote: aForceNotRemote,
                                       opener: aOpenerWindow,
                                       openerBrowser: aOpenerBrowser,
-                                      nextRemoteTabId: aNextRemoteTabId,
+                                      nextTabParentId: aNextTabParentId,
                                       name: aName,
                                       csp: aCsp,
                                       });
@@ -5749,8 +5749,13 @@ nsBrowserAccess.prototype = {
         aWhere = Services.prefs.getIntPref("browser.link.open_newwindow");
     }
 
-    let referrerInfo = new ReferrerInfo(Ci.nsIHttpChannel.REFERRER_POLICY_UNSET, true,
-      aOpener ? makeURI(aOpener.location.href) : null);
+    let referrerInfo;
+    if (aFlags & Ci.nsIBrowserDOMWindow.OPEN_NO_REFERRER) {
+      referrerInfo = new ReferrerInfo(Ci.nsIHttpChannel.REFERRER_POLICY_UNSET, false, null);
+    } else {
+      referrerInfo = new ReferrerInfo(Ci.nsIHttpChannel.REFERRER_POLICY_UNSET, true,
+        aOpener ? makeURI(aOpener.location.href) : null);
+    }
     if (aOpener && aOpener.document) {
       referrerInfo.referrerPolicy = aOpener.document.referrerPolicy;
     }
@@ -5818,22 +5823,22 @@ nsBrowserAccess.prototype = {
   },
 
   createContentWindowInFrame: function browser_createContentWindowInFrame(
-                              aURI, aParams, aWhere, aFlags, aNextRemoteTabId,
+                              aURI, aParams, aWhere, aFlags, aNextTabParentId,
                               aName) {
     
     return this.getContentWindowOrOpenURIInFrame(null, aParams, aWhere, aFlags,
-                                                 aNextRemoteTabId, aName);
+                                                 aNextTabParentId, aName);
   },
 
   openURIInFrame: function browser_openURIInFrame(aURI, aParams, aWhere, aFlags,
-                                                  aNextRemoteTabId, aName) {
+                                                  aNextTabParentId, aName) {
     return this.getContentWindowOrOpenURIInFrame(aURI, aParams, aWhere, aFlags,
-                                                 aNextRemoteTabId, aName);
+                                                 aNextTabParentId, aName);
   },
 
   getContentWindowOrOpenURIInFrame: function browser_getContentWindowOrOpenURIInFrame(
                                     aURI, aParams, aWhere, aFlags,
-                                    aNextRemoteTabId, aName) {
+                                    aNextTabParentId, aName) {
     if (aWhere != Ci.nsIBrowserDOMWindow.OPEN_NEWTAB) {
       dump("Error: openURIInFrame can only open in new tabs");
       return null;
@@ -5852,7 +5857,7 @@ nsBrowserAccess.prototype = {
                                  isExternal, false,
                                  userContextId, null, aParams.openerBrowser,
                                  aParams.triggeringPrincipal,
-                                 aNextRemoteTabId, aName, aParams.csp);
+                                 aNextTabParentId, aName, aParams.csp);
   },
 
   isTabContentWindow(aWindow) {

@@ -229,7 +229,7 @@
 #include "mozilla/dom/PopupBlockedEvent.h"
 #include "mozilla/dom/PrimitiveConversions.h"
 #include "mozilla/dom/WindowBinding.h"
-#include "nsIBrowserChild.h"
+#include "nsITabChild.h"
 #include "mozilla/dom/MediaQueryList.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/NavigatorBinding.h"
@@ -2565,19 +2565,18 @@ void nsGlobalWindowOuter::UpdateParentTarget() {
   
 
   nsCOMPtr<Element> frameElement = GetFrameElementInternal();
-  mMessageManager = nsContentUtils::TryGetBrowserChildGlobal(frameElement);
+  mMessageManager = nsContentUtils::TryGetTabChildGlobal(frameElement);
 
   if (!mMessageManager) {
     nsGlobalWindowOuter* topWin = GetScriptableTopInternal();
     if (topWin) {
       frameElement = topWin->GetFrameElementInternal();
-      mMessageManager = nsContentUtils::TryGetBrowserChildGlobal(frameElement);
+      mMessageManager = nsContentUtils::TryGetTabChildGlobal(frameElement);
     }
   }
 
   if (!mMessageManager) {
-    mMessageManager =
-        nsContentUtils::TryGetBrowserChildGlobal(mChromeEventHandler);
+    mMessageManager = nsContentUtils::TryGetTabChildGlobal(mChromeEventHandler);
   }
 
   if (mMessageManager) {
@@ -4652,7 +4651,7 @@ bool nsGlobalWindowOuter::CanMoveResizeWindows(CallerType aCallerType) {
     if (XRE_IsContentProcess()) {
       nsCOMPtr<nsIDocShell> docShell = GetDocShell();
       if (docShell) {
-        nsCOMPtr<nsIBrowserChild> child = docShell->GetBrowserChild();
+        nsCOMPtr<nsITabChild> child = docShell->GetTabChild();
         bool hasSiblings = true;
         if (child && NS_SUCCEEDED(child->GetHasSiblings(&hasSiblings)) &&
             hasSiblings) {
@@ -6465,19 +6464,19 @@ Element* nsGlobalWindowOuter::GetFrameElement() {
 namespace {
 class ChildCommandDispatcher : public Runnable {
  public:
-  ChildCommandDispatcher(nsPIWindowRoot* aRoot, nsIBrowserChild* aBrowserChild,
+  ChildCommandDispatcher(nsPIWindowRoot* aRoot, nsITabChild* aTabChild,
                          const nsAString& aAction)
       : mozilla::Runnable("ChildCommandDispatcher"),
         mRoot(aRoot),
-        mBrowserChild(aBrowserChild),
+        mTabChild(aTabChild),
         mAction(aAction) {}
 
   NS_IMETHOD Run() override {
     nsTArray<nsCString> enabledCommands, disabledCommands;
     mRoot->GetEnabledDisabledCommands(enabledCommands, disabledCommands);
     if (enabledCommands.Length() || disabledCommands.Length()) {
-      mBrowserChild->EnableDisableCommands(mAction, enabledCommands,
-                                           disabledCommands);
+      mTabChild->EnableDisableCommands(mAction, enabledCommands,
+                                       disabledCommands);
     }
 
     return NS_OK;
@@ -6485,7 +6484,7 @@ class ChildCommandDispatcher : public Runnable {
 
  private:
   nsCOMPtr<nsPIWindowRoot> mRoot;
-  nsCOMPtr<nsIBrowserChild> mBrowserChild;
+  nsCOMPtr<nsITabChild> mTabChild;
   nsString mAction;
 };
 
@@ -6508,7 +6507,7 @@ void nsGlobalWindowOuter::UpdateCommands(const nsAString& anAction,
                                          Selection* aSel, int16_t aReason) {
   
   if (nsIDocShell* docShell = GetDocShell()) {
-    if (nsCOMPtr<nsIBrowserChild> child = docShell->GetBrowserChild()) {
+    if (nsCOMPtr<nsITabChild> child = docShell->GetTabChild()) {
       nsCOMPtr<nsPIWindowRoot> root = GetTopWindowRoot();
       if (root) {
         nsContentUtils::AddScriptRunner(
@@ -7071,6 +7070,7 @@ nsresult nsGlobalWindowOuter::OpenInternal(
 
   nsAutoCString options;
   bool forceNoOpener = aForceNoOpener;
+  bool forceNoReferrer = false;
   
   
   nsCharSeparatedTokenizerTemplate<nsContentUtils::IsHTMLWhitespace> tok(
@@ -7078,6 +7078,13 @@ nsresult nsGlobalWindowOuter::OpenInternal(
   while (tok.hasMoreTokens()) {
     auto nextTok = tok.nextToken();
     if (nextTok.EqualsLiteral("noopener")) {
+      forceNoOpener = true;
+      continue;
+    }
+    if (StaticPrefs::dom_window_open_noreferrer_enabled() &&
+        nextTok.LowerCaseEqualsLiteral("noreferrer")) {
+      forceNoReferrer = true;
+      
       forceNoOpener = true;
       continue;
     }
@@ -7186,7 +7193,7 @@ nsresult nsGlobalWindowOuter::OpenInternal(
       rv = pwwatch->OpenWindow2(
           this, url.IsVoid() ? nullptr : url.get(), name_ptr, options_ptr,
            true, aDialog, aNavigate, argv,
-          isPopupSpamWindow, forceNoOpener, aLoadState,
+          isPopupSpamWindow, forceNoOpener, forceNoReferrer, aLoadState,
           getter_AddRefs(domReturn));
     } else {
       
@@ -7206,7 +7213,7 @@ nsresult nsGlobalWindowOuter::OpenInternal(
       rv = pwwatch->OpenWindow2(
           this, url.IsVoid() ? nullptr : url.get(), name_ptr, options_ptr,
            false, aDialog, aNavigate, aExtraArgument,
-          isPopupSpamWindow, forceNoOpener, aLoadState,
+          isPopupSpamWindow, forceNoOpener, forceNoReferrer, aLoadState,
           getter_AddRefs(domReturn));
     }
   }

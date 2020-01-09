@@ -65,7 +65,7 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Storage.h"
 #include "mozilla/dom/ScriptSettings.h"
-#include "mozilla/dom/BrowserParent.h"
+#include "mozilla/dom/TabParent.h"
 #include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/TabGroup.h"
 #include "nsIXULWindow.h"
@@ -292,6 +292,7 @@ nsWindowWatcher::OpenWindow(mozIDOMWindowProxy* aParent, const char* aUrl,
                              true, argv,
                              false,
                              false,
+                             false,
                              nullptr, aResult);
 }
 
@@ -347,6 +348,7 @@ nsWindowWatcher::OpenWindow2(mozIDOMWindowProxy* aParent, const char* aUrl,
                              bool aCalledFromScript, bool aDialog,
                              bool aNavigate, nsISupports* aArguments,
                              bool aIsPopupSpam, bool aForceNoOpener,
+                             bool aForceNoReferrer,
                              nsDocShellLoadState* aLoadState,
                              mozIDOMWindowProxy** aResult) {
   nsCOMPtr<nsIArray> argv = ConvertArgsToArray(aArguments);
@@ -366,7 +368,8 @@ nsWindowWatcher::OpenWindow2(mozIDOMWindowProxy* aParent, const char* aUrl,
 
   return OpenWindowInternal(aParent, aUrl, aName, aFeatures, aCalledFromScript,
                             dialog, aNavigate, argv, aIsPopupSpam,
-                            aForceNoOpener, aLoadState, aResult);
+                            aForceNoOpener, aForceNoReferrer, aLoadState,
+                            aResult);
 }
 
 
@@ -395,11 +398,14 @@ static bool CheckUserContextCompatibility(nsIDocShell* aDocShell) {
 
   return subjectPrincipal->GetUserContextId() == userContextId;
 }
-nsresult nsWindowWatcher::CreateChromeWindow(
-    const nsACString& aFeatures, nsIWebBrowserChrome* aParentChrome,
-    uint32_t aChromeFlags, nsIRemoteTab* aOpeningBrowserParent,
-    mozIDOMWindowProxy* aOpener, uint64_t aNextRemoteTabId,
-    nsIWebBrowserChrome** aResult) {
+
+nsresult nsWindowWatcher::CreateChromeWindow(const nsACString& aFeatures,
+                                             nsIWebBrowserChrome* aParentChrome,
+                                             uint32_t aChromeFlags,
+                                             nsITabParent* aOpeningTabParent,
+                                             mozIDOMWindowProxy* aOpener,
+                                             uint64_t aNextTabParentId,
+                                             nsIWebBrowserChrome** aResult) {
   nsCOMPtr<nsIWindowCreator2> windowCreator2(do_QueryInterface(mWindowCreator));
   if (NS_WARN_IF(!windowCreator2)) {
     return NS_ERROR_UNEXPECTED;
@@ -408,8 +414,8 @@ nsresult nsWindowWatcher::CreateChromeWindow(
   bool cancel = false;
   nsCOMPtr<nsIWebBrowserChrome> newWindowChrome;
   nsresult rv = windowCreator2->CreateChromeWindow2(
-      aParentChrome, aChromeFlags, aOpeningBrowserParent, aOpener,
-      aNextRemoteTabId, &cancel, getter_AddRefs(newWindowChrome));
+      aParentChrome, aChromeFlags, aOpeningTabParent, aOpener, aNextTabParentId,
+      &cancel, getter_AddRefs(newWindowChrome));
 
   if (NS_SUCCEEDED(rv) && cancel) {
     newWindowChrome = nullptr;
@@ -449,10 +455,10 @@ void nsWindowWatcher::MaybeDisablePersistence(
 }
 
 NS_IMETHODIMP
-nsWindowWatcher::OpenWindowWithRemoteTab(
-    nsIRemoteTab* aRemoteTab, const nsACString& aFeatures, bool aCalledFromJS,
-    float aOpenerFullZoom, uint64_t aNextRemoteTabId, bool aForceNoOpener,
-    nsIRemoteTab** aResult) {
+nsWindowWatcher::OpenWindowWithTabParent(
+    nsITabParent* aOpeningTabParent, const nsACString& aFeatures,
+    bool aCalledFromJS, float aOpenerFullZoom, uint64_t aNextTabParentId,
+    bool aForceNoOpener, nsITabParent** aResult) {
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(mWindowCreator);
 
@@ -470,10 +476,10 @@ nsWindowWatcher::OpenWindowWithRemoteTab(
       Preferences::GetBool("browser.privatebrowsing.autostart");
 
   nsCOMPtr<nsPIDOMWindowOuter> parentWindowOuter;
-  if (aRemoteTab) {
+  if (aOpeningTabParent) {
     
     
-    BrowserParent* openingTab = BrowserParent::GetFrom(aRemoteTab);
+    TabParent* openingTab = TabParent::GetFrom(aOpeningTabParent);
     parentWindowOuter = openingTab->GetParentWindowOuter();
 
     
@@ -523,8 +529,8 @@ nsWindowWatcher::OpenWindowWithRemoteTab(
   nsCOMPtr<nsIWebBrowserChrome> newWindowChrome;
 
   CreateChromeWindow(aFeatures, parentChrome, chromeFlags,
-                     aForceNoOpener ? nullptr : aRemoteTab, nullptr,
-                     aNextRemoteTabId, getter_AddRefs(newWindowChrome));
+                     aForceNoOpener ? nullptr : aOpeningTabParent, nullptr,
+                     aNextTabParentId, getter_AddRefs(newWindowChrome));
 
   if (NS_WARN_IF(!newWindowChrome)) {
     return NS_ERROR_UNEXPECTED;
@@ -561,13 +567,13 @@ nsWindowWatcher::OpenWindowWithRemoteTab(
   SizeOpenedWindow(chromeTreeOwner, parentWindowOuter, false, sizeSpec,
                    Some(aOpenerFullZoom));
 
-  nsCOMPtr<nsIRemoteTab> newBrowserParent;
-  chromeTreeOwner->GetPrimaryRemoteTab(getter_AddRefs(newBrowserParent));
-  if (NS_WARN_IF(!newBrowserParent)) {
+  nsCOMPtr<nsITabParent> newTabParent;
+  chromeTreeOwner->GetPrimaryTabParent(getter_AddRefs(newTabParent));
+  if (NS_WARN_IF(!newTabParent)) {
     return NS_ERROR_UNEXPECTED;
   }
 
-  newBrowserParent.forget(aResult);
+  newTabParent.forget(aResult);
   return NS_OK;
 }
 
@@ -575,7 +581,10 @@ nsresult nsWindowWatcher::OpenWindowInternal(
     mozIDOMWindowProxy* aParent, const char* aUrl, const char* aName,
     const char* aFeatures, bool aCalledFromJS, bool aDialog, bool aNavigate,
     nsIArray* aArgv, bool aIsPopupSpam, bool aForceNoOpener,
-    nsDocShellLoadState* aLoadState, mozIDOMWindowProxy** aResult) {
+    bool aForceNoReferrer, nsDocShellLoadState* aLoadState,
+    mozIDOMWindowProxy** aResult) {
+  MOZ_ASSERT_IF(aForceNoReferrer, aForceNoOpener);
+
   nsresult rv = NS_OK;
   bool isNewToplevelWindow = false;
   bool windowIsNew = false;
@@ -758,7 +767,8 @@ nsresult nsWindowWatcher::OpenWindowInternal(
         rv = provider->ProvideWindow(
             aParent, chromeFlags, aCalledFromJS, sizeSpec.PositionSpecified(),
             sizeSpec.SizeSpecified(), uriToLoad, name, features, aForceNoOpener,
-            aLoadState, &windowIsNew, getter_AddRefs(newWindow));
+            aForceNoReferrer, aLoadState, &windowIsNew,
+            getter_AddRefs(newWindow));
 
         if (NS_SUCCEEDED(rv)) {
           GetWindowTreeItem(newWindow, getter_AddRefs(newDocShellItem));
@@ -1076,20 +1086,22 @@ nsresult nsWindowWatcher::OpenWindowInternal(
                "nsWindowWatcher: triggeringPrincipal required");
 #endif
 
-    
+    if (!aForceNoReferrer) {
+      
 
 
 
 
 
-    RefPtr<Document> doc = GetEntryDocument();
-    if (!doc && parentWindow) {
-      doc = parentWindow->GetExtantDoc();
-    }
-    if (doc) {
-      nsCOMPtr<nsIReferrerInfo> referrerInfo =
-          new ReferrerInfo(doc->GetDocumentURI(), doc->GetReferrerPolicy());
-      loadState->SetReferrerInfo(referrerInfo);
+      RefPtr<Document> doc = GetEntryDocument();
+      if (!doc && parentWindow) {
+        doc = parentWindow->GetExtantDoc();
+      }
+      if (doc) {
+        nsCOMPtr<nsIReferrerInfo> referrerInfo =
+            new ReferrerInfo(doc->GetDocumentURI(), doc->GetReferrerPolicy());
+        loadState->SetReferrerInfo(referrerInfo);
+      }
     }
   }
 

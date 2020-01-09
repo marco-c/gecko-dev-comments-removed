@@ -3412,10 +3412,11 @@ nsBrowserAccess.prototype = {
     Services.io.offline = false;
 
     let referrer;
+    let forceNoReferrer = !!(aFlags & Ci.nsIBrowserDOMWindow.OPEN_NO_REFERRER);
     if (aOpener) {
       try {
         let location = aOpener.location;
-        referrer = Services.io.newURI(location);
+        referrer = forceNoReferrer ? null : Services.io.newURI(location);
       } catch(e) { }
     }
 
@@ -3501,7 +3502,7 @@ nsBrowserAccess.prototype = {
   },
 
   openURIInFrame: function browser_openURIInFrame(aURI, aParams, aWhere, aFlags,
-                                                  aNextRemoteTabId, aName) {
+                                                  aNextTabParentId, aName) {
     
     
     
@@ -3513,7 +3514,7 @@ nsBrowserAccess.prototype = {
 
   createContentWindowInFrame: function browser_createContentWindowInFrame(
                               aURI, aParams, aWhere, aFlags,
-                              aNextRemoteTabId, aName) {
+                              aNextTabParentId, aName) {
     return this._getBrowser(null, null, aWhere, aFlags, null);
   },
 

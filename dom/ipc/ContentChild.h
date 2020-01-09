@@ -75,7 +75,7 @@ class SharedMap;
 class AlertObserver;
 class ConsoleListener;
 class ClonedMessageData;
-class BrowserChild;
+class TabChild;
 class GetFilesHelperChild;
 class FileCreatorHelper;
 
@@ -109,15 +109,13 @@ class ContentChild final : public PContentChild,
     nsCString sourceURL;
   };
 
-  nsresult ProvideWindowCommon(BrowserChild* aTabOpener,
-                               mozIDOMWindowProxy* aOpener, bool aIframeMoz,
-                               uint32_t aChromeFlags, bool aCalledFromJS,
-                               bool aPositionSpecified, bool aSizeSpecified,
-                               nsIURI* aURI, const nsAString& aName,
-                               const nsACString& aFeatures, bool aForceNoOpener,
-                               nsDocShellLoadState* aLoadState,
-                               bool* aWindowIsNew,
-                               mozIDOMWindowProxy** aReturn);
+  nsresult ProvideWindowCommon(
+      TabChild* aTabOpener, mozIDOMWindowProxy* aParent, bool aIframeMoz,
+      uint32_t aChromeFlags, bool aCalledFromJS, bool aPositionSpecified,
+      bool aSizeSpecified, nsIURI* aURI, const nsAString& aName,
+      const nsACString& aFeatures, bool aForceNoOpener, bool aForceNoReferrer,
+      nsDocShellLoadState* aLoadState, bool* aWindowIsNew,
+      mozIDOMWindowProxy** aReturn);
 
   bool Init(MessageLoop* aIOLoop, base::ProcessId aParentPid,
             const char* aParentBuildID, IPC::Channel* aChannel,
@@ -520,7 +518,7 @@ class ContentChild final : public PContentChild,
 
   void GetAvailableDictionaries(InfallibleTArray<nsString>& aDictionaries);
 
-  PBrowserOrId GetBrowserOrId(BrowserChild* aBrowserChild);
+  PBrowserOrId GetBrowserOrId(TabChild* aTabChild);
 
   POfflineCacheUpdateChild* AllocPOfflineCacheUpdateChild(
       const URIParams& manifestURI, const URIParams& documentURI,
@@ -656,8 +654,7 @@ class ContentChild final : public PContentChild,
   nsresult AsyncOpenAnonymousTemporaryFile(
       const AnonymousTemporaryFileCallback& aCallback);
 
-  already_AddRefed<nsIEventTarget> GetEventTargetFor(
-      BrowserChild* aBrowserChild);
+  already_AddRefed<nsIEventTarget> GetEventTargetFor(TabChild* aTabChild);
 
   mozilla::ipc::IPCResult RecvSetPluginList(
       const uint32_t& aPluginEpoch, nsTArray<PluginTag>&& aPluginTags,

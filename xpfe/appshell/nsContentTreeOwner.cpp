@@ -181,21 +181,21 @@ nsContentTreeOwner::GetPrimaryContentShell(nsIDocShellTreeItem** aShell) {
 }
 
 NS_IMETHODIMP
-nsContentTreeOwner::RemoteTabAdded(nsIRemoteTab* aTab, bool aPrimary) {
+nsContentTreeOwner::TabParentAdded(nsITabParent* aTab, bool aPrimary) {
   NS_ENSURE_STATE(mXULWindow);
-  return mXULWindow->RemoteTabAdded(aTab, aPrimary);
+  return mXULWindow->TabParentAdded(aTab, aPrimary);
 }
 
 NS_IMETHODIMP
-nsContentTreeOwner::RemoteTabRemoved(nsIRemoteTab* aTab) {
+nsContentTreeOwner::TabParentRemoved(nsITabParent* aTab) {
   NS_ENSURE_STATE(mXULWindow);
-  return mXULWindow->RemoteTabRemoved(aTab);
+  return mXULWindow->TabParentRemoved(aTab);
 }
 
 NS_IMETHODIMP
-nsContentTreeOwner::GetPrimaryRemoteTab(nsIRemoteTab** aTab) {
+nsContentTreeOwner::GetPrimaryTabParent(nsITabParent** aTab) {
   NS_ENSURE_STATE(mXULWindow);
-  return mXULWindow->GetPrimaryRemoteTab(aTab);
+  return mXULWindow->GetPrimaryTabParent(aTab);
 }
 
 NS_IMETHODIMP
@@ -703,7 +703,7 @@ nsContentTreeOwner::ProvideWindow(
     mozIDOMWindowProxy* aParent, uint32_t aChromeFlags, bool aCalledFromJS,
     bool aPositionSpecified, bool aSizeSpecified, nsIURI* aURI,
     const nsAString& aName, const nsACString& aFeatures, bool aForceNoOpener,
-    nsDocShellLoadState* aLoadState, bool* aWindowIsNew,
+    bool aForceNoReferrer, nsDocShellLoadState* aLoadState, bool* aWindowIsNew,
     mozIDOMWindowProxy** aReturn) {
   NS_ENSURE_ARG_POINTER(aParent);
 
@@ -796,6 +796,9 @@ nsContentTreeOwner::ProvideWindow(
     uint32_t flags = nsIBrowserDOMWindow::OPEN_NEW;
     if (aForceNoOpener) {
       flags |= nsIBrowserDOMWindow::OPEN_NO_OPENER;
+    }
+    if (aForceNoReferrer) {
+      flags |= nsIBrowserDOMWindow::OPEN_NO_REFERRER;
     }
 
     
