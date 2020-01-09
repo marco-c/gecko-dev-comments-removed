@@ -11,13 +11,13 @@
 
 #include "mozilla/AccessibleCaretEventHub.h"
 #include "mozilla/AutoRestore.h"
+#include "mozilla/PresShell.h"  
 #include "mozilla/RangeBoundary.h"
 #include "mozilla/SelectionChangeEventDispatcher.h"
 #include "mozilla/TextRange.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
 #include "nsDirection.h"
-#include "nsIPresShell.h"  
 #include "nsISelectionController.h"
 #include "nsISelectionListener.h"
 #include "nsRange.h"
@@ -92,7 +92,7 @@ class Selection final : public nsSupportsWeakReference,
 
 
 
-  void MaybeNotifyAccessibleCaretEventHub(nsIPresShell* aPresShell) {
+  void MaybeNotifyAccessibleCaretEventHub(PresShell* aPresShell) {
     if (!mAccessibleCaretEventHub && aPresShell) {
       mAccessibleCaretEventHub = aPresShell->GetAccessibleCaretEventHub();
     }
@@ -122,7 +122,7 @@ class Selection final : public nsSupportsWeakReference,
 
   
   nsPresContext* GetPresContext() const;
-  nsIPresShell* GetPresShell() const;
+  PresShell* GetPresShell() const;
   nsFrameSelection* GetFrameSelection() const { return mFrameSelection; }
   
   
