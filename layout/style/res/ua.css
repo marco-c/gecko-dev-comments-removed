@@ -127,13 +127,10 @@
 }
 
 
-
-*|*::-moz-list-bullet, *|*::-moz-list-number {
-  display: inline;
-  vertical-align: baseline;
+*|*::marker {
+  text-align: end;
+  unicode-bidi: isolate;
   font-variant-numeric: tabular-nums;
-  
-  -moz-user-select: none;
 }
 
 

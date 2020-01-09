@@ -49,9 +49,11 @@ void DetailsFrame::SetInitialChildList(ChildListID aListID,
 #ifdef DEBUG
 bool DetailsFrame::CheckValidMainSummary(const nsFrameList& aFrameList) const {
   for (nsIFrame* child : aFrameList) {
+    if (child->IsGeneratedContentFrame()) {
+      continue;
+    }
     HTMLSummaryElement* summary =
         HTMLSummaryElement::FromNode(child->GetContent());
-
     if (child == aFrameList.FirstChild()) {
       if (summary && summary->IsMainSummary()) {
         return true;
@@ -125,7 +127,7 @@ bool DetailsFrame::HasMainSummaryFrame(nsIFrame* aSummaryFrame) {
         child = nsPlaceholderFrame::GetRealFrameFor(child);
         
         
-        if (child->IsPrimaryFrame()) {
+        if (!child->IsGeneratedContentFrame()) {
           return aSummaryFrame == child;
         }
       }

@@ -351,6 +351,17 @@ class nsLayoutUtils {
   
 
 
+  static mozilla::dom::Element* GetMarkerPseudo(const nsIContent* aContent);
+
+  
+
+
+
+  static nsIFrame* GetMarkerFrame(const nsIContent* aContent);
+
+  
+
+
 
 
 

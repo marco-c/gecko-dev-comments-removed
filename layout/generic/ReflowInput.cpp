@@ -2538,7 +2538,9 @@ void ReflowInput::InitConstraints(nsPresContext* aPresContext,
       
       if (isBlock && !IsSideCaption(mFrame, mStyleDisplay, cbwm) &&
           mStyleDisplay->mDisplay != StyleDisplay::InlineTable &&
-          !alignCB->IsFlexOrGridContainer()) {
+          !alignCB->IsFlexOrGridContainer() &&
+          !(mFrame->Style()->GetPseudoType() == PseudoStyleType::marker &&
+            mFrame->GetParent()->StyleList()->mListStylePosition == NS_STYLE_LIST_STYLE_POSITION_OUTSIDE)) {
         CalculateBlockSideMargins(aFrameType);
       }
     }

@@ -1713,13 +1713,13 @@ already_AddRefed<nsIContent> nsCSSFrameConstructor::CreateGeneratedContent(
 
 
 
-
 void nsCSSFrameConstructor::CreateGeneratedContentItem(
     nsFrameConstructorState& aState, nsContainerFrame* aParentFrame,
     Element& aOriginatingElement, ComputedStyle& aStyle,
     PseudoStyleType aPseudoElement, FrameConstructionItemList& aItems) {
   MOZ_ASSERT(aPseudoElement == PseudoStyleType::before ||
-                 aPseudoElement == PseudoStyleType::after,
+                 aPseudoElement == PseudoStyleType::after ||
+                 aPseudoElement == PseudoStyleType::marker,
              "unexpected aPseudoElement");
 
   if (aParentFrame && (aParentFrame->IsHTMLVideoFrame() ||
@@ -1738,12 +1738,27 @@ void nsCSSFrameConstructor::CreateGeneratedContentItem(
     return;
   }
 
-  bool isBefore = aPseudoElement == PseudoStyleType::before;
+  nsAtom* elemName = nullptr;
+  nsAtom* property = nullptr;
+  switch (aPseudoElement) {
+    case PseudoStyleType::before:
+      elemName = nsGkAtoms::mozgeneratedcontentbefore;
+      property = nsGkAtoms::beforePseudoProperty;
+      break;
+    case PseudoStyleType::after:
+      elemName = nsGkAtoms::mozgeneratedcontentafter;
+      property = nsGkAtoms::afterPseudoProperty;
+      break;
+    case PseudoStyleType::marker:
+      elemName = nsGkAtoms::mozgeneratedcontentmarker;
+      property = nsGkAtoms::markerPseudoProperty;
+      break;
+    default:
+      MOZ_ASSERT_UNREACHABLE("unexpected aPseudoElement");
+  }
 
   
   
-  nsAtom* elemName = isBefore ? nsGkAtoms::mozgeneratedcontentbefore
-                              : nsGkAtoms::mozgeneratedcontentafter;
   RefPtr<NodeInfo> nodeInfo = mDocument->NodeInfoManager()->GetNodeInfo(
       elemName, nullptr, kNameSpaceID_None, nsINode::ELEMENT_NODE);
   RefPtr<Element> container;
@@ -1754,8 +1769,6 @@ void nsCSSFrameConstructor::CreateGeneratedContentItem(
 
   
   
-  nsAtom* property = isBefore ? nsGkAtoms::beforePseudoProperty
-                              : nsGkAtoms::afterPseudoProperty;
   aOriginatingElement.SetProperty(property, container.get());
 
   container->SetIsNativeAnonymousRoot();
@@ -3223,7 +3236,8 @@ static nsIFrame* FindAncestorWithGeneratedContentPseudo(nsIFrame* aFrame) {
     NS_ASSERTION(f->IsGeneratedContentFrame(),
                  "should not have exited generated content");
     auto pseudo = f->Style()->GetPseudoType();
-    if (pseudo == PseudoStyleType::before || pseudo == PseudoStyleType::after)
+    if (pseudo == PseudoStyleType::before || pseudo == PseudoStyleType::after ||
+        pseudo == PseudoStyleType::marker)
       return f;
   }
   return nullptr;
@@ -3409,8 +3423,7 @@ nsCSSFrameConstructor::FindHTMLData(const Element& aElement,
       COMPLEX_TAG_CREATE(fieldset,
                          &nsCSSFrameConstructor::ConstructFieldSetFrame),
       {nsGkAtoms::legend,
-       FCDATA_DECL(FCDATA_ALLOW_BLOCK_STYLES | FCDATA_MAY_NEED_SCROLLFRAME |
-                       FCDATA_MAY_NEED_BULLET,
+       FCDATA_DECL(FCDATA_ALLOW_BLOCK_STYLES | FCDATA_MAY_NEED_SCROLLFRAME,
                    NS_NewLegendFrame)},
       SIMPLE_TAG_CREATE(frameset, NS_NewHTMLFramesetFrame),
       SIMPLE_TAG_CREATE(iframe, NS_NewSubDocumentFrame),
@@ -3854,14 +3867,6 @@ void nsCSSFrameConstructor::ConstructFrameFromItemInternal(
           FinishBuildingColumns(aState, outerFrame, newFrameAsContainer,
                                 columnSpanSiblings);
         }
-      }
-
-      if (bits & FCDATA_MAY_NEED_BULLET) {
-        nsBlockFrame* block = do_QueryFrame(newFrameAsContainer);
-        MOZ_ASSERT(block,
-                   "FCDATA_MAY_NEED_BULLET should not be set on "
-                   "non-block type!");
-        CreateBulletFrameForListItemIfNeeded(block);
       }
     }
   }
@@ -5257,7 +5262,9 @@ static bool ShouldSuppressFrameInSelect(const nsIContent* aParent,
 }
 
 static bool ShouldSuppressFrameInNonOpenDetails(
-    const HTMLDetailsElement* aDetails, const nsIContent& aChild) {
+    const HTMLDetailsElement* aDetails,
+    ComputedStyle* aComputedStyle,
+    const nsIContent& aChild) {
   if (!aDetails || aDetails->Open()) {
     return false;
   }
@@ -5273,6 +5280,9 @@ static bool ShouldSuppressFrameInNonOpenDetails(
 
   
   if (aChild.IsRootOfAnonymousSubtree() &&
+      !(aChild.IsGeneratedContentContainerForMarker() &&
+        aComputedStyle->StyleList()->mListStylePosition ==
+            NS_STYLE_LIST_STYLE_POSITION_INSIDE) &&
       !aChild.IsGeneratedContentContainerForBefore() &&
       !aChild.IsGeneratedContentContainerForAfter()) {
     return false;
@@ -5338,6 +5348,15 @@ nsCSSFrameConstructor::FindElementTagData(const Element& aElement,
                                           ComputedStyle& aStyle,
                                           nsIFrame* aParentFrame,
                                           uint32_t aFlags) {
+  
+  if (aStyle.GetPseudoType() == PseudoStyleType::marker) {
+    static const FrameConstructionData data = FCDATA_DECL(
+        FCDATA_DISALLOW_OUT_OF_FLOW | FCDATA_SKIP_ABSPOS_PUSH |
+            FCDATA_DISALLOW_GENERATED_CONTENT | FCDATA_IS_LINE_PARTICIPANT |
+            FCDATA_IS_INLINE | FCDATA_USE_CHILD_ITEMS,
+        NS_NewBulletFrame);
+    return &data;
+  }
   switch (aElement.GetNameSpaceID()) {
     case kNameSpaceID_XHTML:
       return FindHTMLData(aElement, aParentFrame, aStyle);
@@ -5486,7 +5505,7 @@ void nsCSSFrameConstructor::AddFrameConstructionItemsInternal(
   
   
   auto* details = HTMLDetailsElement::FromNodeOrNull(parent);
-  if (ShouldSuppressFrameInNonOpenDetails(details, *aContent)) {
+  if (ShouldSuppressFrameInNonOpenDetails(details, aComputedStyle, *aContent)) {
     return;
   }
 
@@ -9715,6 +9734,8 @@ void nsCSSFrameConstructor::ProcessChildren(
   AddFCItemsForAnonymousContent(aState, aFrame, anonymousItems,
                                 itemsToConstruct);
 
+  nsBlockFrame* listItem = nullptr;
+  bool isOutsideMarker = false;
   if (!aPossiblyLeafFrame->IsLeaf()) {
     
     
@@ -9724,9 +9745,18 @@ void nsCSSFrameConstructor::ProcessChildren(
     ComputedStyle* computedStyle;
 
     if (aCanHaveGeneratedContent) {
-      computedStyle =
-          nsFrame::CorrectStyleParentFrame(aFrame, PseudoStyleType::NotPseudo)
-              ->Style();
+      auto* styleParentFrame =
+        nsFrame::CorrectStyleParentFrame(aFrame, PseudoStyleType::NotPseudo);
+      computedStyle = styleParentFrame->Style();
+      if (computedStyle->StyleDisplay()->mDisplay == StyleDisplay::ListItem &&
+          (listItem = do_QueryFrame(aFrame)) &&
+          !styleParentFrame->IsFieldSetFrame()) {
+        isOutsideMarker = computedStyle->StyleList()->mListStylePosition ==
+                            NS_STYLE_LIST_STYLE_POSITION_OUTSIDE;
+        CreateGeneratedContentItem(aState, aFrame, *aContent->AsElement(),
+                                   *computedStyle, PseudoStyleType::marker,
+                                   itemsToConstruct);
+      }
       
       CreateGeneratedContentItem(aState, aFrame, *aContent->AsElement(),
                                  *computedStyle, PseudoStyleType::before,
@@ -9769,6 +9799,30 @@ void nsCSSFrameConstructor::ProcessChildren(
 
   NS_ASSERTION(!allowFirstPseudos || !aFrame->IsXULBoxFrame(),
                "can't be both block and box");
+
+  if (listItem) {
+    if (auto* markerFrame = nsLayoutUtils::GetMarkerFrame(aContent)) {
+      for (auto* childFrame : aFrameItems) {
+        if (markerFrame == childFrame) {
+          if (isOutsideMarker) {
+            
+            aFrameItems.RemoveFrame(childFrame);
+            auto* grandParent = listItem->GetParent()->GetParent();
+            if (listItem->Style()->GetPseudoType() == PseudoStyleType::columnContent &&
+                grandParent &&
+                grandParent->IsColumnSetWrapperFrame()) {
+              listItem = do_QueryFrame(grandParent);
+              MOZ_ASSERT(listItem, "ColumnSetWrapperFrame is expected to be "
+                                   "a nsBlockFrame subclass");
+            }
+          }
+          listItem->SetMarkerFrameForListItem(childFrame);
+          MOZ_ASSERT(listItem->HasAnyStateBits(NS_BLOCK_FRAME_HAS_OUTSIDE_BULLET) == isOutsideMarker);
+          break;
+        }
+      }
+    }
+  }
 
   if (haveFirstLetterStyle) {
     WrapFramesInFirstLetterFrame(aFrame, aFrameItems);
@@ -10647,14 +10701,12 @@ void nsCSSFrameConstructor::ConstructBlock(
   if (!StaticPrefs::layout_css_column_span_enabled()) {
     
     blockFrame->SetInitialChildList(kPrincipalList, childItems);
-    CreateBulletFrameForListItemIfNeeded(blockFrame);
     return;
   }
 
   if (!MayNeedToCreateColumnSpanSiblings(blockFrame, childItems)) {
     
     blockFrame->SetInitialChildList(kPrincipalList, childItems);
-    CreateBulletFrameForListItemIfNeeded(blockFrame);
     return;
   }
 
@@ -10663,16 +10715,6 @@ void nsCSSFrameConstructor::ConstructBlock(
   nsFrameList initialNonColumnSpanKids =
       childItems.Split([](nsIFrame* f) { return f->IsColumnSpan(); });
   blockFrame->SetInitialChildList(kPrincipalList, initialNonColumnSpanKids);
-
-  nsBlockFrame* blockFrameToCreateBullet = blockFrame;
-  if (needsColumn && (*aNewFrame)->StyleList()->mListStylePosition ==
-                         NS_STYLE_LIST_STYLE_POSITION_OUTSIDE) {
-    
-    
-    blockFrameToCreateBullet = static_cast<nsBlockFrame*>(*aNewFrame);
-  }
-
-  CreateBulletFrameForListItemIfNeeded(blockFrameToCreateBullet);
 
   if (childItems.IsEmpty()) {
     
@@ -10704,33 +10746,6 @@ void nsCSSFrameConstructor::ConstructBlock(
 
   MOZ_ASSERT(columnSpanSiblings.IsEmpty(),
              "The column-span siblings should be moved to the proper place!");
-}
-
-void nsCSSFrameConstructor::CreateBulletFrameForListItemIfNeeded(
-    nsBlockFrame* aBlockFrame) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  nsIFrame* possibleListItem = aBlockFrame;
-  while (true) {
-    nsIFrame* parent = possibleListItem->GetParent();
-    if (parent->GetContent() != aBlockFrame->GetContent()) {
-      break;
-    }
-    possibleListItem = parent;
-  }
-
-  if (possibleListItem->StyleDisplay()->mDisplay == StyleDisplay::ListItem) {
-    aBlockFrame->CreateBulletFrameForListItem();
-  }
 }
 
 nsContainerFrame* nsCSSFrameConstructor::BeginBuildingColumns(

@@ -442,6 +442,11 @@ pub trait TElement:
     }
 
     
+    fn marker_pseudo_element(&self) -> Option<Self> {
+        None
+    }
+
+    
     
     fn each_anonymous_content_child<F>(&self, _f: F)
     where

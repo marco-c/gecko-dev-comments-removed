@@ -303,6 +303,11 @@ class nsIContent : public nsINode {
            mNodeInfo->NameAtom() == nsGkAtoms::mozgeneratedcontentafter;
   }
 
+  bool IsGeneratedContentContainerForMarker() const {
+    return IsRootOfNativeAnonymousSubtree() &&
+           mNodeInfo->NameAtom() == nsGkAtoms::mozgeneratedcontentmarker;
+  }
+
   
 
 

@@ -2050,10 +2050,6 @@ static const nsIFrame* ExpectedOwnerForChild(const nsIFrame* aFrame) {
                                      : FirstContinuationOrPartOfIBSplit(parent);
   }
 
-  if (aFrame->IsBulletFrame()) {
-    return FirstContinuationOrPartOfIBSplit(parent);
-  }
-
   if (aFrame->IsLineFrame()) {
     
     
@@ -2743,6 +2739,20 @@ bool RestyleManager::ProcessPostTraversal(Element* aElement,
         maybeAnonBoxChild->ParentIsWrapperAnonBox()) {
       aRestyleState.AddPendingWrapperRestyle(
           ServoRestyleState::TableAwareParentFor(maybeAnonBoxChild));
+    }
+
+    
+    
+    
+    if (styleFrame->StyleDisplay()->mDisplay == StyleDisplay::ListItem &&
+        styleFrame->IsBlockFrameOrSubclass() &&
+        !nsLayoutUtils::GetMarkerPseudo(aElement)) {
+      RefPtr<ComputedStyle> pseudoStyle =
+          aRestyleState.StyleSet().ProbePseudoElementStyle(
+              *aElement, PseudoStyleType::marker, styleFrame->Style());
+      if (pseudoStyle) {
+        changeHint |= nsChangeHint_ReconstructFrame;
+      }
     }
   }
 

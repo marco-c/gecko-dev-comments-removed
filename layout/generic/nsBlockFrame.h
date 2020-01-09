@@ -503,7 +503,7 @@ class nsBlockFrame : public nsContainerFrame {
   
 
 
-  void CreateBulletFrameForListItem();
+  void SetMarkerFrameForListItem(nsIFrame* aMarkerFrame);
 
   
 
@@ -895,12 +895,6 @@ class nsBlockFrame : public nsContainerFrame {
   nsFrameList* EnsurePushedFloats();
   
   nsFrameList* RemovePushedFloats();
-
-  
-  
-  
-  already_AddRefed<ComputedStyle> ResolveBulletStyle(
-      mozilla::PseudoStyleType aType, mozilla::ServoStyleSet* aStyleSet);
 
 #ifdef DEBUG
   void VerifyLines(bool aFinalCheckOK);

@@ -699,12 +699,6 @@ class nsCSSFrameConstructor final : public nsFrameManager {
 
 
 #define FCDATA_IS_WRAPPER_ANON_BOX 0x400000
-  
-
-
-
-
-#define FCDATA_MAY_NEED_BULLET 0x800000
 
   
 
@@ -1801,8 +1795,6 @@ class nsCSSFrameConstructor final : public nsFrameManager {
                       nsContainerFrame** aNewFrame, nsFrameItems& aFrameItems,
                       nsIFrame* aPositionedFrameForAbsPosContainer,
                       PendingBinding* aPendingBinding);
-
-  void CreateBulletFrameForListItemIfNeeded(nsBlockFrame* aBlockFrame);
 
   
   

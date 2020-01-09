@@ -828,6 +828,17 @@ already_AddRefed<ComputedStyle> ServoStyleSet::ProbePseudoElementStyle(
     }
   }
 
+  if (aType == PseudoStyleType::marker) {
+    
+    if (aParentStyle->StyleDisplay()->mDisplay != StyleDisplay::ListItem) {
+      return nullptr;
+    }
+    
+    if (computedValues->StyleDisplay()->mDisplay == StyleDisplay::None) {
+      return nullptr;
+    }
+  }
+
   
   
   

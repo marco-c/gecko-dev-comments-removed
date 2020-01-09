@@ -54,6 +54,10 @@ bool nsGenConList::DestroyNodesFor(nsIFrame* aFrame) {
 
 inline int32_t PseudoCompareType(nsIFrame* aFrame, nsIContent** aContent) {
   auto pseudo = aFrame->Style()->GetPseudoType();
+  if (pseudo == mozilla::PseudoStyleType::marker) {
+    *aContent = aFrame->GetContent()->GetParent();
+    return -2;
+  }
   if (pseudo == mozilla::PseudoStyleType::before) {
     *aContent = aFrame->GetContent()->GetParent();
     return -1;
@@ -86,12 +90,28 @@ bool nsGenConList::NodeAfter(const nsGenConNode* aNode1,
     }
     
     
-    if (pseudoType1 == 0) pseudoType1 = -1;
-    if (pseudoType2 == 0) pseudoType2 = -1;
+    if (pseudoType1 == 0) {
+      pseudoType1 = -1;
+      if (pseudoType2 == -2) {
+        pseudoType2 = -1;
+      }
+    }
+    if (pseudoType2 == 0) {
+      pseudoType2 = -1;
+      if (pseudoType1 == -2) {
+        pseudoType1 = -1;
+      }
+    }
   } else {
     if (content1 == content2) {
       NS_ASSERTION(pseudoType1 != pseudoType2, "identical");
-      return pseudoType1 == 1;
+      return pseudoType1 > pseudoType2;
+    }
+    if (pseudoType1 == -2) {
+      pseudoType1 = -1;
+    }
+    if (pseudoType2 == -2) {
+      pseudoType2 = -1;
     }
   }
 
