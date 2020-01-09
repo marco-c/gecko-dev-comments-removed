@@ -500,6 +500,8 @@ class PresShell final : public nsIPresShell,
     EventHandler() = delete;
     EventHandler(const EventHandler& aOther) = delete;
     explicit EventHandler(PresShell& aPresShell) : mPresShell(aPresShell) {}
+    explicit EventHandler(RefPtr<PresShell>&& aPresShell)
+        : mPresShell(aPresShell.forget()) {}
 
     
 
@@ -795,6 +797,25 @@ class PresShell final : public nsIPresShell,
     nsIFrame* ComputeRootFrameToHandleEventWithCapturingContent(
         nsIFrame* aRootFrameToHandleEvent, nsIContent* aCapturingContent,
         bool* aIsCapturingContentIgnored, bool* aIsCaptureRetargeted);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+    MOZ_CAN_RUN_SCRIPT
+    nsresult HandleEventWithPointerCapturingContentWithoutItsFrame(
+        nsIFrame* aFrameForPresShell, WidgetGUIEvent* aGUIEvent,
+        nsIContent* aPointerCapturingContent, nsEventStatus* aEventStatus);
 
     
 
