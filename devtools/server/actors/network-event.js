@@ -67,7 +67,6 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
       private: this._private,
       isThirdPartyTrackingResource: this._isThirdPartyTrackingResource,
       referrerPolicy: this._referrerPolicy,
-      blockedReason: this._blockedReason,
     };
   },
 
@@ -127,8 +126,6 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
     
     this._discardRequestBody = !!networkEvent.discardRequestBody;
     this._discardResponseBody = !!networkEvent.discardResponseBody;
-
-    this._blockedReason = networkEvent.blockedReason;
 
     this._truncated = false;
     this._private = networkEvent.private;
@@ -403,16 +400,16 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
 
 
 
-  addSecurityInfo(info) {
+  addSecurityInfo(info, isRacing) {
     
     if (!this.actorID) {
       return;
     }
 
     this._securityInfo = info;
-
     this.emit("network-event-update:security-info", "securityInfo", {
       state: info.state,
+      isRacing: isRacing,
     });
   },
 
