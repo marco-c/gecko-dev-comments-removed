@@ -33,7 +33,6 @@ namespace frontend {
 class MOZ_STACK_CLASS BinTokenReaderMultipart : public BinTokenReaderBase {
  public:
   class AutoList;
-  class AutoTuple;
   class AutoTaggedTuple;
 
   using CharSlice = BinaryASTSupport::CharSlice;
@@ -177,19 +176,6 @@ class MOZ_STACK_CLASS BinTokenReaderMultipart : public BinTokenReaderBase {
   
 
 
-
-
-
-
-
-
-
-
-  MOZ_MUST_USE JS::Result<Ok> enterUntaggedTuple(AutoTuple& guard);
-
-  
-
-
   MOZ_MUST_USE JS::Result<uint32_t> readUnsignedLong() {
     return readInternalUint32();
   }
@@ -270,15 +256,6 @@ class MOZ_STACK_CLASS BinTokenReaderMultipart : public BinTokenReaderBase {
   class MOZ_STACK_CLASS AutoTaggedTuple : public AutoBase {
    public:
     explicit AutoTaggedTuple(BinTokenReaderMultipart& reader);
-
-    
-    MOZ_MUST_USE JS::Result<Ok> done();
-  };
-
-  
-  class MOZ_STACK_CLASS AutoTuple : public AutoBase {
-   public:
-    explicit AutoTuple(BinTokenReaderMultipart& reader);
 
     
     MOZ_MUST_USE JS::Result<Ok> done();
