@@ -17,402 +17,48 @@
 
 
 
+
 const { Localization } =
   ChromeUtils.import("resource://gre/modules/Localization.jsm");
 const { Services } =
   ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-
-
-const reOverlay = /<|&#?\w+;/;
-
-
-
-
-
-
-
-
-
-const TEXT_LEVEL_ELEMENTS = {
-  "http://www.w3.org/1999/xhtml": [
-    "em", "strong", "small", "s", "cite", "q", "dfn", "abbr", "data",
-    "time", "code", "var", "samp", "kbd", "sub", "sup", "i", "b", "u",
-    "mark", "bdi", "bdo", "span", "br", "wbr",
-  ],
-};
-
-const LOCALIZABLE_ATTRIBUTES = {
-  "http://www.w3.org/1999/xhtml": {
-    global: ["title", "aria-label", "aria-valuetext", "aria-moz-hint"],
-    a: ["download"],
-    area: ["download", "alt"],
-    
-    input: ["alt", "placeholder"],
-    menuitem: ["label"],
-    menu: ["label"],
-    optgroup: ["label"],
-    option: ["label"],
-    track: ["label"],
-    img: ["alt"],
-    textarea: ["placeholder"],
-    th: ["abbr"],
-  },
-  "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul": {
-    global: [
-      "accesskey", "aria-label", "aria-valuetext", "aria-moz-hint", "label",
-      "title", "tooltiptext"],
-    description: ["value"],
-    key: ["key", "keycode"],
-    label: ["value"],
-    textbox: ["placeholder", "value"],
-  },
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function translateElement(element, translation) {
-  const {value} = translation;
-
-  if (typeof value === "string") {
-    if (!reOverlay.test(value)) {
-      
-      element.textContent = value;
-    } else {
-      
-      
-      const templateElement = element.ownerDocument.createElementNS(
-        "http://www.w3.org/1999/xhtml", "template"
-      );
-      
-      templateElement.innerHTML = value;
-      overlayChildNodes(templateElement.content, element);
-    }
-  }
-
-  
-  
-  
-  overlayAttributes(translation, element);
-}
-
-
-
-
-
-
-
-
-
-
-
-function overlayChildNodes(fromFragment, toElement) {
-  for (const childNode of fromFragment.childNodes) {
-    if (childNode.nodeType === childNode.TEXT_NODE) {
-      
-      continue;
-    }
-
-    if (childNode.hasAttribute("data-l10n-name")) {
-      const sanitized = namedChildFrom(toElement, childNode);
-      fromFragment.replaceChild(sanitized, childNode);
-      continue;
-    }
-
-    if (isElementAllowed(childNode)) {
-      const sanitized = allowedChild(childNode);
-      fromFragment.replaceChild(sanitized, childNode);
-      continue;
-    }
-
-    console.warn(
-      `An element of forbidden type "${childNode.localName}" was found in ` +
-      "the translation. Only safe text-level elements and elements with " +
-      "data-l10n-name are allowed."
-    );
-
-    
-    fromFragment.replaceChild(textNode(childNode), childNode);
-  }
-
-  toElement.textContent = "";
-  toElement.appendChild(fromFragment);
-}
-
-function hasAttribute(attributes, name) {
-  if (!attributes) {
-    return false;
-  }
-  for (let attr of attributes) {
-    if (attr.name === name) {
-      return true;
-    }
-  }
-  return false;
-}
-
-
-
-
-
-
-
-
-
-
-
-function overlayAttributes(fromElement, toElement) {
-  const explicitlyAllowed = toElement.hasAttribute("data-l10n-attrs")
-    ? toElement.getAttribute("data-l10n-attrs")
-      .split(",").map(i => i.trim())
-    : null;
-
-  
-  
-  for (const attr of Array.from(toElement.attributes)) {
-    if (isAttrNameLocalizable(attr.name, toElement, explicitlyAllowed)
-      && !hasAttribute(fromElement.attributes, attr.name)) {
-      toElement.removeAttribute(attr.name);
-    }
-  }
-
-  
-  
-  
-  if (!fromElement.attributes) {
-    return;
-  }
-
-  
-  for (const attr of Array.from(fromElement.attributes)) {
-    if (isAttrNameLocalizable(attr.name, toElement, explicitlyAllowed)
-      && toElement.getAttribute(attr.name) !== attr.value) {
-      toElement.setAttribute(attr.name, attr.value);
-    }
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-function namedChildFrom(sourceElement, translatedChild) {
-  const childName = translatedChild.getAttribute("data-l10n-name");
-  const sourceChild = sourceElement.querySelector(
-    `[data-l10n-name="${childName}"]`
-  );
-
-  if (!sourceChild) {
-    console.warn(
-      `An element named "${childName}" wasn't found in the source.`
-    );
-    return textNode(translatedChild);
-  }
-
-  if (sourceChild.localName !== translatedChild.localName &&
-      
-      
-      !(translatedChild.localName == "img" &&
-        sourceChild.localName == "image")) {
-    console.warn(
-      `An element named "${childName}" was found in the translation ` +
-      `but its type ${translatedChild.localName} didn't match the ` +
-      `element found in the source (${sourceChild.localName}).`
-    );
-    return textNode(translatedChild);
-  }
-
-  
-  
-  sourceElement.removeChild(sourceChild);
-  
-  
-  
-  
-  
-  
-  
-  const clone = sourceChild.cloneNode(false);
-  return shallowPopulateUsing(translatedChild, clone);
-}
-
-
-
-
-
-
-
-
-
-
-
-function allowedChild(element) {
-  
-  
-  const clone = element.ownerDocument.createElement(element.localName);
-  return shallowPopulateUsing(element, clone);
-}
-
-
-
-
-
-
-
-
-function textNode(element) {
-  return element.ownerDocument.createTextNode(element.textContent);
-}
-
-
-
-
-
-
-
-
-
-
-
-function isElementAllowed(element) {
-  const allowed = TEXT_LEVEL_ELEMENTS[element.namespaceURI];
-  return allowed && allowed.includes(element.localName);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function isAttrNameLocalizable(name, element, explicitlyAllowed = null) {
-  if (explicitlyAllowed && explicitlyAllowed.includes(name)) {
-    return true;
-  }
-
-  const allowed = LOCALIZABLE_ATTRIBUTES[element.namespaceURI];
-  if (!allowed) {
-    return false;
-  }
-
-  const attrName = name.toLowerCase();
-  const elemName = element.localName;
-
-  
-  if (allowed.global.includes(attrName)) {
-    return true;
-  }
-
-  
-  if (!allowed[elemName]) {
-    return false;
-  }
-
-  
-  if (allowed[elemName].includes(attrName)) {
-    return true;
-  }
-
-  
-  if (element.namespaceURI === "http://www.w3.org/1999/xhtml" &&
-      elemName === "input" && attrName === "value") {
-    const type = element.type.toLowerCase();
-    if (type === "submit" || type === "button" || type === "reset") {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-
-
-
-
-
-
-
-
-function shallowPopulateUsing(fromElement, toElement) {
-  toElement.textContent = fromElement.textContent;
-  overlayAttributes(fromElement, toElement);
-  return toElement;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function sanitizeTranslationForNodeLocalize(l10nItem, translation) {
-  if (reOverlay.test(translation.value)) {
-    return false;
-  }
-
-  if (translation.attributes) {
-    const explicitlyAllowed = l10nItem.l10nAttrs === null ? null :
-      l10nItem.l10nAttrs.split(",").map(i => i.trim());
-    for (const [j, {name}] of translation.attributes.entries()) {
-      if (!isAttrNameLocalizable(name, l10nItem, explicitlyAllowed)) {
-        translation.attributes.splice(j, 1);
-      }
-    }
-  }
-  return true;
-}
-
 const L10NID_ATTR_NAME = "data-l10n-id";
 const L10NARGS_ATTR_NAME = "data-l10n-args";
 
 const L10N_ELEMENT_QUERY = `[${L10NID_ATTR_NAME}]`;
+
+function reportDOMOverlayErrors(errors) {
+  for (let error of errors) {
+    switch (error.code) {
+      case DOMOverlays.ERROR_FORBIDDEN_TYPE: {
+        console.warn(
+          `An element of forbidden type "${error.translatedElementName}" was found in ` +
+          "the translation. Only safe text-level elements and elements with " +
+          "data-l10n-name are allowed."
+        );
+        break;
+      }
+      case DOMOverlays.ERROR_NAMED_ELEMENT_MISSING: {
+        console.warn(
+          `An element named "${error.l10nName}" wasn't found in the source.`
+        );
+        break;
+      }
+      case DOMOverlays.ERROR_NAMED_ELEMENT_TYPE_MISMATCH: {
+        console.warn(
+          `An element named "${error.l10nName}" was found in the translation ` +
+          `but its type ${error.translatedElementName} didn't match the ` +
+          `element found in the source (${error.sourceElementName}).`
+        );
+        break;
+      }
+      default: {
+        console.warn(`Unknown error ${error.code} happend while translation an element.`);
+      }
+    }
+  }
+}
 
 
 
@@ -720,30 +366,10 @@ class DOMLocalization extends Localization {
 
       
       
-      const overlayTranslations = [];
-
       const getTranslationsForItems = async l10nItems => {
         const keys = l10nItems.map(
           l10nItem => ({id: l10nItem.l10nId, args: l10nItem.l10nArgs}));
         const translations = await this.formatMessages(keys);
-
-        
-        
-        
-        for (const [i, translation] of translations.entries()) {
-          if (translation === undefined) {
-            continue;
-          }
-
-          const hasOnlyText =
-            sanitizeTranslationForNodeLocalize(l10nItems[i], translation);
-          if (!hasOnlyText) {
-            
-            
-            overlayTranslations[i] = translations[i];
-            translations[i] = undefined;
-          }
-        }
 
         
         
@@ -755,12 +381,9 @@ class DOMLocalization extends Localization {
       };
 
       return frag.localize(getTranslationsForItems.bind(this))
-        .then(untranslatedElements => {
-          for (let i = 0; i < overlayTranslations.length; i++) {
-            if (overlayTranslations[i] !== undefined &&
-                untranslatedElements[i] !== undefined) {
-              translateElement(untranslatedElements[i], overlayTranslations[i]);
-            }
+        .then((errors) => {
+          if (errors) {
+            reportDOMOverlayErrors(errors);
           }
           this.resumeObserving();
         })
@@ -811,10 +434,17 @@ class DOMLocalization extends Localization {
   applyTranslations(elements, translations) {
     this.pauseObserving();
 
+    const errors = [];
     for (let i = 0; i < elements.length; i++) {
       if (translations[i] !== undefined) {
-        translateElement(elements[i], translations[i]);
+        const translationErrors = DOMOverlays.translateElement(elements[i], translations[i]);
+        if (translationErrors) {
+          errors.push(...translationErrors);
+        }
       }
+    }
+    if (errors.length) {
+      reportDOMOverlayErrors(errors);
     }
 
     this.resumeObserving();
