@@ -533,28 +533,6 @@ class PresShell final : public nsIPresShell,
 
 
 
-    MOZ_CAN_RUN_SCRIPT
-    nsresult HandleRetargetedEvent(WidgetGUIEvent* aGUIEvent,
-                                   nsEventStatus* aEventStatus,
-                                   nsIContent* aTarget) {
-      AutoCurrentEventInfoSetter eventInfoSetter(*this, nullptr, aTarget);
-      if (!mPresShell->GetCurrentEventFrame()) {
-        return NS_OK;
-      }
-      nsCOMPtr<nsIContent> overrideClickTarget;
-      return HandleEventInternal(aGUIEvent, aEventStatus, true,
-                                 overrideClickTarget);
-    }
-
-    
-
-
-
-
-
-
-
-
 
 
 
@@ -997,6 +975,49 @@ class PresShell final : public nsIPresShell,
 
 
 
+
+
+
+
+    MOZ_CAN_RUN_SCRIPT
+    bool MaybeHandleEventWithAnotherPresShell(Element* aEventTargetElement,
+                                              WidgetGUIEvent* aGUIEvent,
+                                              nsEventStatus* aEventStatus,
+                                              nsresult* aRv);
+
+    
+
+
+
+
+
+
+
+
+    MOZ_CAN_RUN_SCRIPT
+    nsresult HandleRetargetedEvent(WidgetGUIEvent* aGUIEvent,
+                                   nsEventStatus* aEventStatus,
+                                   nsIContent* aTarget) {
+      AutoCurrentEventInfoSetter eventInfoSetter(*this, nullptr, aTarget);
+      if (!mPresShell->GetCurrentEventFrame()) {
+        return NS_OK;
+      }
+      nsCOMPtr<nsIContent> overrideClickTarget;
+      return HandleEventInternal(aGUIEvent, aEventStatus, true,
+                                 overrideClickTarget);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
     MOZ_CAN_RUN_SCRIPT
     nsresult HandleEventInternal(WidgetEvent* aEvent,
                                  nsEventStatus* aEventStatus,
@@ -1125,22 +1146,6 @@ class PresShell final : public nsIPresShell,
     static TimeStamp sLastInputProcessed;
     static StaticRefPtr<Element> sLastKeyDownEventTargetElement;
   };
-
-  
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT
-  nsresult HandleRetargetedEvent(WidgetGUIEvent* aGUIEvent,
-                                 nsEventStatus* aEventStatus,
-                                 nsIContent* aTarget) {
-    MOZ_ASSERT(aGUIEvent);
-    EventHandler eventHandler(*this);
-    return eventHandler.HandleRetargetedEvent(aGUIEvent, aEventStatus, aTarget);
-  }
 
   void SynthesizeMouseMove(bool aFromScroll) override;
 
