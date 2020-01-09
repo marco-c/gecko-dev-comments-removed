@@ -522,7 +522,9 @@ class ViewPopup extends BasePopup {
       ]),
     ]);
 
-    if (!this.destroyed && !this.panel) {
+    const {panel} = this;
+
+    if (!this.destroyed && !panel) {
       this.destroy();
     }
 
@@ -533,35 +535,44 @@ class ViewPopup extends BasePopup {
 
     this.attached = true;
 
-
-    
-    
-    this.viewHeight = this.viewNode.boxObject.height;
-
-    
-    
-    let popupRect = this.panel.getBoundingClientRect();
-
     this.setBackground(this.background);
 
-    let win = this.window;
-    let popupBottom = win.mozInnerScreenY + popupRect.bottom;
-    let popupTop = win.mozInnerScreenY + popupRect.top;
+    let flushPromise = this.window.promiseDocumentFlushed(() => {
+      let win = this.window;
 
-    let screenBottom = win.screen.availTop + win.screen.availHeight;
-    this.extraHeight = {
-      bottom: Math.max(0, screenBottom - popupBottom),
-      top:  Math.max(0, popupTop - win.screen.availTop),
-    };
+      
+      
+      let popupRect = panel.getBoundingClientRect();
+      let screenBottom = win.screen.availTop + win.screen.availHeight;
+      let popupBottom = win.mozInnerScreenY + popupRect.bottom;
+      let popupTop = win.mozInnerScreenY + popupRect.top;
+
+      
+      
+      this.viewHeight = viewNode.boxObject.height;
+
+      this.extraHeight = {
+        bottom: Math.max(0, screenBottom - popupBottom),
+        top:  Math.max(0, popupTop - win.screen.availTop),
+      };
+    });
 
     
     let browser = this.browser;
     await this.createBrowser(this.viewNode);
 
-    this.ignoreResizes = false;
-
     this.browser.swapDocShells(browser);
     this.destroyBrowser(browser);
+
+    await flushPromise;
+
+    
+    
+    if (this.destroyed) {
+      this.closePopup();
+      this.destroy();
+      return false;
+    }
 
     if (this.dimensions) {
       if (this.fixedWidth) {
@@ -569,6 +580,8 @@ class ViewPopup extends BasePopup {
       }
       this.resizeBrowser(this.dimensions);
     }
+
+    this.ignoreResizes = false;
 
     this.viewNode.customRectGetter = () => {
       return {height: this.lastCalculatedInViewHeight || this.viewHeight};
