@@ -3242,6 +3242,14 @@ UpdateManager.prototype = {
       AUSTLMY.pingUpdatePhases(update, false);
     }
 
+    if (update.state == STATE_APPLIED ||
+        update.state == STATE_APPLIED_SERVICE ||
+        update.state == STATE_PENDING ||
+        update.state == STATE_PENDING_SERVICE ||
+        update.state == STATE_PENDING_ELEVATE) {
+      patch.setProperty("applyStart", Math.floor(Date.now() / 1000));
+    }
+
     
     
     
@@ -3265,7 +3273,6 @@ UpdateManager.prototype = {
         update.state == STATE_PENDING ||
         update.state == STATE_PENDING_SERVICE ||
         update.state == STATE_PENDING_ELEVATE) {
-      patch.setProperty("applyStart", Math.floor(Date.now() / 1000));
       
       
       let prompter = Cc["@mozilla.org/updates/update-prompt;1"].
@@ -4613,6 +4620,7 @@ Downloader.prototype = {
         }
       } else {
         this._patch.setProperty("applyStart", Math.floor(Date.now() / 1000));
+        um.saveUpdates();
       }
     }
 
