@@ -3190,10 +3190,6 @@ class nsContentUtils {
 
   
   
-  static bool IsBytecodeCacheEnabled() { return sIsBytecodeCacheEnabled; }
-
-  
-  
   static int32_t BytecodeCacheStrategy() { return sBytecodeCacheStrategy; }
 
   
@@ -3407,7 +3403,6 @@ class nsContentUtils {
 #ifndef RELEASE_OR_BETA
   static bool sBypassCSSOMOriginCheck;
 #endif
-  static bool sIsBytecodeCacheEnabled;
   static int32_t sBytecodeCacheStrategy;
   static bool sAntiTrackingControlCenterUIEnabled;
 

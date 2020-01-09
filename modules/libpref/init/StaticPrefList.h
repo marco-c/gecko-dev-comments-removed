@@ -541,6 +541,16 @@ VARCACHE_PREF(
 
 
 
+
+VARCACHE_PREF(
+  "dom.script_loader.bytecode_cache.enabled",
+   dom_script_loader_bytecode_cache_enabled,
+  bool, true
+)
+
+
+
+
 #ifdef MOZILLA_OFFICIAL
 # define PREF_VALUE false
 #else

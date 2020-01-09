@@ -236,12 +236,6 @@ pref("dom.webmidi.enabled", false);
 
 
 
-pref("dom.script_loader.bytecode_cache.enabled", true);
-
-
-
-
-
 
 
 

@@ -1285,7 +1285,7 @@ nsresult ScriptLoader::StartLoad(ScriptLoadRequest* aRequest) {
   
   aRequest->mCacheInfo = nullptr;
   nsCOMPtr<nsICacheInfoChannel> cic(do_QueryInterface(channel));
-  if (cic && nsContentUtils::IsBytecodeCacheEnabled() &&
+  if (cic && StaticPrefs::dom_script_loader_bytecode_cache_enabled() &&
       
       !aRequest->IsModuleRequest()) {
     if (!aRequest->IsLoadingSource()) {
