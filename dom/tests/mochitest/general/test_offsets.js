@@ -9,7 +9,7 @@ function testElements(baseid, callback)
     var element = elements[t];
 
     
-    if (element.closest("menu") && element.closest("[aria-hidden=true]")) {
+    if (element.closest("menu, menuitem") && element.closest("[aria-hidden=true]")) {
       continue;
     }
 
