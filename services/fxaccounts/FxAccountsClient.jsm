@@ -208,32 +208,6 @@ this.FxAccountsClient.prototype = {
 
 
 
-
-
-
-  async getScopedKeyData(sessionTokenHex, clientId, scope) {
-    if (!clientId) {
-      throw new Error("Missing 'clientId' parameter");
-    }
-    if (!scope) {
-      throw new Error("Missing 'scope' parameter");
-    }
-    const params = {
-      client_id: clientId,
-      scope,
-    };
-    const credentials = await deriveHawkCredentials(sessionTokenHex, "sessionToken");
-    return this._request("/account/scoped-key-data", "POST", credentials, params);
-  },
-
-  
-
-
-
-
-
-
-
   async signOut(sessionTokenHex, options = {}) {
     const credentials = await deriveHawkCredentials(sessionTokenHex, "sessionToken");
     let path = "/session/destroy";
