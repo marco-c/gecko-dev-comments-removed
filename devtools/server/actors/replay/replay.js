@@ -41,7 +41,15 @@ const dbg = new Debugger();
 
 
 dbg.onNewGlobalObject = function(global) {
-  dbg.addDebuggee(global);
+  try {
+    dbg.addDebuggee(global);
+  } catch (e) {
+    
+    
+    if (!/debugger and debuggee must be in different compartments/.test("" + e)) {
+      throw e;
+    }
+  }
 };
 
 
