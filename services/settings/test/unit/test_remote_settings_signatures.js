@@ -1,17 +1,17 @@
+
 "use strict";
 
 const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const { NetUtil } = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
-const { BlocklistClients } = ChromeUtils.import("resource://services-common/blocklist-clients.js");
+const { RemoteSettings } = ChromeUtils.import("resource://services-settings/remote-settings.js");
 const { UptakeTelemetry } = ChromeUtils.import("resource://services-common/uptake-telemetry.js");
 
-let server;
+const PREF_SETTINGS_SERVER = "services.settings.server";
+const PREF_SIGNATURE_ROOT  = "security.content.signature.root_hash";
+const SIGNER_NAME          = "onecrl.content-signature.mozilla.org";
 
-const PREF_SETTINGS_SERVER             = "services.settings.server";
-const PREF_SIGNATURE_ROOT              = "security.content.signature.root_hash";
-
-const CERT_DIR = "test_blocklist_signatures/";
+const CERT_DIR = "test_remote_settings_signatures/";
 const CHAIN_FILES =
     ["collection_signing_ee.pem",
      "collection_signing_int.pem",
@@ -48,32 +48,59 @@ function getCertChain() {
   return chain.join("\n");
 }
 
-async function checkRecordCount(client, count) {
+let server;
+let client;
+
+function run_test() {
   
-  const records = await client.get();
-  Assert.equal(count, records.length);
+  
+  client = RemoteSettings("signed", { signerName: SIGNER_NAME });
+
+  
+  setRoot();
+
+  
+  server = new HttpServer();
+  server.start(-1);
+
+  run_next_test();
+
+  registerCleanupFunction(() => server.stop(() => {}));
 }
 
-let OneCRLBlocklistClient;
-
-
-
 add_task(async function test_check_signatures() {
+  
+  
+  let verifier = Cc["@mozilla.org/security/contentsignatureverifier;1"]
+                   .createInstance(Ci.nsIContentSignatureVerifier);
+
+  const emptyData = "[]";
+  const emptySignature = "p384ecdsa=zbugm2FDitsHwk5-IWsas1PpWwY29f0Fg5ZHeqD8fzep7AVl2vfcaHA7LdmCZ28qZLOioGKvco3qT117Q4-HlqFTJM7COHzxGyU2MMJ0ZTnhJrPOC1fP3cVQjU1PTWi9";
+
+  ok(await verifier.asyncVerifyContentSignature(emptyData, emptySignature, getCertChain(), SIGNER_NAME));
+
+  const collectionData = '[{"details":{"bug":"https://bugzilla.mozilla.org/show_bug.cgi?id=1155145","created":"2016-01-18T14:43:37Z","name":"GlobalSign certs","who":".","why":"."},"enabled":true,"id":"97fbf7c4-3ef2-f54f-0029-1ba6540c63ea","issuerName":"MHExKDAmBgNVBAMTH0dsb2JhbFNpZ24gUm9vdFNpZ24gUGFydG5lcnMgQ0ExHTAbBgNVBAsTFFJvb3RTaWduIFBhcnRuZXJzIENBMRkwFwYDVQQKExBHbG9iYWxTaWduIG52LXNhMQswCQYDVQQGEwJCRQ==","last_modified":2000,"serialNumber":"BAAAAAABA/A35EU="},{"details":{"bug":"https://bugzilla.mozilla.org/show_bug.cgi?id=1155145","created":"2016-01-18T14:48:11Z","name":"GlobalSign certs","who":".","why":"."},"enabled":true,"id":"e3bd531e-1ee4-7407-27ce-6fdc9cecbbdc","issuerName":"MIGBMQswCQYDVQQGEwJCRTEZMBcGA1UEChMQR2xvYmFsU2lnbiBudi1zYTElMCMGA1UECxMcUHJpbWFyeSBPYmplY3QgUHVibGlzaGluZyBDQTEwMC4GA1UEAxMnR2xvYmFsU2lnbiBQcmltYXJ5IE9iamVjdCBQdWJsaXNoaW5nIENB","last_modified":3000,"serialNumber":"BAAAAAABI54PryQ="}]';
+  const collectionSignature = "p384ecdsa=f4pA2tYM5jQgWY6YUmhUwQiBLj6QO5sHLD_5MqLePz95qv-7cNCuQoZnPQwxoptDtW8hcWH3kLb0quR7SB-r82gkpR9POVofsnWJRA-ETb0BcIz6VvI3pDT49ZLlNg3p";
+
+  ok(await verifier.asyncVerifyContentSignature(collectionData, collectionSignature, getCertChain(), SIGNER_NAME));
+});
+
+add_task(async function test_check_synchronization_with_signatures() {
   const port = server.identity.primaryPort;
 
   
-  const TELEMETRY_HISTOGRAM_KEY = OneCRLBlocklistClient.identifier;
+  const TELEMETRY_HISTOGRAM_KEY = client.identifier;
 
   
   function makeMetaResponseBody(lastModified, signature) {
     return {
       data: {
-        id: "certificates",
+        id: "signed",
         last_modified: lastModified,
         signature: {
-          x5u: `http://localhost:${port}/test_blocklist_signatures/test_cert_chain.pem`,
+          x5u: `http://localhost:${port}/test_remote_settings_signatures/test_cert_chain.pem`,
           public_key: "fake",
-          "content-signature": `x5u=http://localhost:${port}/test_blocklist_signatures/test_cert_chain.pem;p384ecdsa=${signature}`,
+          "content-signature": `x5u=http://localhost:${port}/test_remote_settings_signatures/test_cert_chain.pem;p384ecdsa=${signature}`,
           signature_encoding: "rs_base64url",
           signature,
           hash_algorithm: "sha384",
@@ -126,23 +153,6 @@ add_task(async function test_check_signatures() {
       server.registerPathHandler(path, handleResponse.bind(null, 2000));
     }
   }
-
-  
-  
-  let verifier = Cc["@mozilla.org/security/contentsignatureverifier;1"]
-                   .createInstance(Ci.nsIContentSignatureVerifier);
-
-  const emptyData = "[]";
-  const emptySignature = "p384ecdsa=zbugm2FDitsHwk5-IWsas1PpWwY29f0Fg5ZHeqD8fzep7AVl2vfcaHA7LdmCZ28qZLOioGKvco3qT117Q4-HlqFTJM7COHzxGyU2MMJ0ZTnhJrPOC1fP3cVQjU1PTWi9";
-  const name = "onecrl.content-signature.mozilla.org";
-  ok(await verifier.asyncVerifyContentSignature(emptyData, emptySignature,
-                                                getCertChain(), name));
-
-  const collectionData = '[{"details":{"bug":"https://bugzilla.mozilla.org/show_bug.cgi?id=1155145","created":"2016-01-18T14:43:37Z","name":"GlobalSign certs","who":".","why":"."},"enabled":true,"id":"97fbf7c4-3ef2-f54f-0029-1ba6540c63ea","issuerName":"MHExKDAmBgNVBAMTH0dsb2JhbFNpZ24gUm9vdFNpZ24gUGFydG5lcnMgQ0ExHTAbBgNVBAsTFFJvb3RTaWduIFBhcnRuZXJzIENBMRkwFwYDVQQKExBHbG9iYWxTaWduIG52LXNhMQswCQYDVQQGEwJCRQ==","last_modified":2000,"serialNumber":"BAAAAAABA/A35EU="},{"details":{"bug":"https://bugzilla.mozilla.org/show_bug.cgi?id=1155145","created":"2016-01-18T14:48:11Z","name":"GlobalSign certs","who":".","why":"."},"enabled":true,"id":"e3bd531e-1ee4-7407-27ce-6fdc9cecbbdc","issuerName":"MIGBMQswCQYDVQQGEwJCRTEZMBcGA1UEChMQR2xvYmFsU2lnbiBudi1zYTElMCMGA1UECxMcUHJpbWFyeSBPYmplY3QgUHVibGlzaGluZyBDQTEwMC4GA1UEAxMnR2xvYmFsU2lnbiBQcmltYXJ5IE9iamVjdCBQdWJsaXNoaW5nIENB","last_modified":3000,"serialNumber":"BAAAAAABI54PryQ="}]';
-  const collectionSignature = "p384ecdsa=f4pA2tYM5jQgWY6YUmhUwQiBLj6QO5sHLD_5MqLePz95qv-7cNCuQoZnPQwxoptDtW8hcWH3kLb0quR7SB-r82gkpR9POVofsnWJRA-ETb0BcIz6VvI3pDT49ZLlNg3p";
-
-  ok(await verifier.asyncVerifyContentSignature(collectionData, collectionSignature,
-                                                getCertChain(), name));
 
   
   Services.prefs.setCharPref(PREF_SETTINGS_SERVER,
@@ -275,11 +285,11 @@ add_task(async function test_check_signatures() {
 
   
   const emptyCollectionResponses = {
-    "GET:/test_blocklist_signatures/test_cert_chain.pem?": [RESPONSE_CERT_CHAIN],
+    "GET:/test_remote_settings_signatures/test_cert_chain.pem?": [RESPONSE_CERT_CHAIN],
     "GET:/v1/?": [RESPONSE_SERVER_SETTINGS],
-    "GET:/v1/buckets/security-state/collections/onecrl/records?_expected=1000&_sort=-last_modified":
+    "GET:/v1/buckets/main/collections/signed/records?_expected=1000&_sort=-last_modified":
       [RESPONSE_EMPTY_INITIAL],
-    "GET:/v1/buckets/security-state/collections/onecrl?_expected=1000":
+    "GET:/v1/buckets/main/collections/signed?_expected=1000":
       [RESPONSE_META_EMPTY_SIG],
   };
 
@@ -290,8 +300,7 @@ add_task(async function test_check_signatures() {
 
   
   
-  
-  await OneCRLBlocklistClient.maybeSync(1000, { loadDump: false });
+  await client.maybeSync(1000);
 
   let endHistogram = getUptakeTelemetrySnapshot(TELEMETRY_HISTOGRAM_KEY);
 
@@ -323,13 +332,13 @@ add_task(async function test_check_signatures() {
                      "RESPONSE_META_TWO_ITEMS_SIG");
 
   const twoItemsResponses = {
-    "GET:/v1/buckets/security-state/collections/onecrl/records?_expected=3000&_sort=-last_modified&_since=1000":
+    "GET:/v1/buckets/main/collections/signed/records?_expected=3000&_sort=-last_modified&_since=1000":
       [RESPONSE_TWO_ADDED],
-    "GET:/v1/buckets/security-state/collections/onecrl?_expected=3000":
+    "GET:/v1/buckets/main/collections/signed?_expected=3000":
       [RESPONSE_META_TWO_ITEMS_SIG],
   };
   registerHandlers(twoItemsResponses);
-  await OneCRLBlocklistClient.maybeSync(3000);
+  await client.maybeSync(3000);
 
 
   
@@ -355,13 +364,13 @@ add_task(async function test_check_signatures() {
                      "RESPONSE_META_THREE_ITEMS_SIG");
 
   const oneAddedOneRemovedResponses = {
-    "GET:/v1/buckets/security-state/collections/onecrl/records?_expected=4000&_sort=-last_modified&_since=3000":
+    "GET:/v1/buckets/main/collections/signed/records?_expected=4000&_sort=-last_modified&_since=3000":
       [RESPONSE_ONE_ADDED_ONE_REMOVED],
-    "GET:/v1/buckets/security-state/collections/onecrl?_expected=4000":
+    "GET:/v1/buckets/main/collections/signed?_expected=4000":
       [RESPONSE_META_THREE_ITEMS_SIG],
   };
   registerHandlers(oneAddedOneRemovedResponses);
-  await OneCRLBlocklistClient.maybeSync(4000);
+  await client.maybeSync(4000);
 
   
 
@@ -377,13 +386,13 @@ add_task(async function test_check_signatures() {
   };
 
   const noOpResponses = {
-    "GET:/v1/buckets/security-state/collections/onecrl/records?_expected=4100&_sort=-last_modified&_since=4000":
+    "GET:/v1/buckets/main/collections/signed/records?_expected=4100&_sort=-last_modified&_since=4000":
       [RESPONSE_EMPTY_NO_UPDATE],
-    "GET:/v1/buckets/security-state/collections/onecrl?_expected=4100":
+    "GET:/v1/buckets/main/collections/signed?_expected=4100":
       [RESPONSE_META_THREE_ITEMS_SIG],
   };
   registerHandlers(noOpResponses);
-  await OneCRLBlocklistClient.maybeSync(4100);
+  await client.maybeSync(4100);
 
 
   
@@ -420,20 +429,20 @@ add_task(async function test_check_signatures() {
     
     
     
-    "GET:/v1/buckets/security-state/collections/onecrl?_expected=5000":
+    "GET:/v1/buckets/main/collections/signed?_expected=5000":
       [RESPONSE_META_BAD_SIG, RESPONSE_META_THREE_ITEMS_SIG],
     
     
     
-    "GET:/v1/buckets/security-state/collections/onecrl/records?_expected=5000&_sort=-last_modified&_since=4000":
+    "GET:/v1/buckets/main/collections/signed/records?_expected=5000&_sort=-last_modified&_since=4000":
       [RESPONSE_EMPTY_NO_UPDATE],
     
     
-    "GET:/v1/buckets/security-state/collections/onecrl/records?_sort=-last_modified":
+    "GET:/v1/buckets/main/collections/signed/records?_sort=-last_modified":
       [RESPONSE_COMPLETE_INITIAL],
     
     
-    "GET:/v1/buckets/security-state/collections/onecrl/records?_expected=5000&_sort=id":
+    "GET:/v1/buckets/main/collections/signed/records?_expected=5000&_sort=id":
       [RESPONSE_COMPLETE_INITIAL_SORTED_BY_ID],
   };
 
@@ -442,9 +451,9 @@ add_task(async function test_check_signatures() {
   startHistogram = getUptakeTelemetrySnapshot(TELEMETRY_HISTOGRAM_KEY);
 
   let syncEventSent = false;
-  OneCRLBlocklistClient.on("sync", ({ data }) => { syncEventSent = true; });
+  client.on("sync", ({ data }) => { syncEventSent = true; });
 
-  await OneCRLBlocklistClient.maybeSync(5000);
+  await client.maybeSync(5000);
 
   endHistogram = getUptakeTelemetrySnapshot(TELEMETRY_HISTOGRAM_KEY);
 
@@ -463,29 +472,29 @@ add_task(async function test_check_signatures() {
     
     
     
-    "GET:/v1/buckets/security-state/collections/onecrl?_expected=5000":
+    "GET:/v1/buckets/main/collections/signed?_expected=5000":
       [RESPONSE_META_BAD_SIG, RESPONSE_META_EMPTY_SIG],
     
     
-    "GET:/v1/buckets/security-state/collections/onecrl/records?_expected=5000&_sort=-last_modified&_since=4000":
+    "GET:/v1/buckets/main/collections/signed/records?_expected=5000&_sort=-last_modified&_since=4000":
       [RESPONSE_EMPTY_NO_UPDATE],
     
     
     
     
-    "GET:/v1/buckets/security-state/collections/onecrl/records?_expected=5000&_sort=id":
+    "GET:/v1/buckets/main/collections/signed/records?_expected=5000&_sort=id":
       [RESPONSE_EMPTY_INITIAL],
   };
 
   
-  await checkRecordCount(OneCRLBlocklistClient, 2);
+  equal((await client.get()).length, 2);
 
   registerHandlers(badSigGoodOldResponses);
 
   syncEventSent = false;
-  OneCRLBlocklistClient.on("sync", ({ data }) => { syncEventSent = true; });
+  client.on("sync", ({ data }) => { syncEventSent = true; });
 
-  await OneCRLBlocklistClient.maybeSync(5000);
+  await client.maybeSync(5000);
 
   
   
@@ -495,15 +504,15 @@ add_task(async function test_check_signatures() {
     
     
     
-    "GET:/v1/buckets/security-state/collections/onecrl?_expected=5000":
+    "GET:/v1/buckets/main/collections/signed?_expected=5000":
       [RESPONSE_META_BAD_SIG, RESPONSE_META_THREE_ITEMS_SIG],
     
     
-    "GET:/v1/buckets/security-state/collections/onecrl/records?_expected=5000&_sort=-last_modified":
+    "GET:/v1/buckets/main/collections/signed/records?_expected=5000&_sort=-last_modified":
       [RESPONSE_COMPLETE_INITIAL],
     
     
-    "GET:/v1/buckets/security-state/collections/onecrl/records?_expected=5000&_sort=id":
+    "GET:/v1/buckets/main/collections/signed/records?_expected=5000&_sort=id":
       [RESPONSE_COMPLETE_INITIAL_SORTED_BY_ID],
   };
 
@@ -512,16 +521,16 @@ add_task(async function test_check_signatures() {
   
   
   
-  const kintoCol = await OneCRLBlocklistClient.openCollection();
+  const kintoCol = await client.openCollection();
   await kintoCol.clear();
   await kintoCol.create({ ...RECORD2, last_modified: 1234567890, serialNumber: "abc" }, { synced: true, useRecordId: true });
   const localId = "0602b1b2-12ab-4d3a-b6fb-593244e7b035";
   await kintoCol.create({ id: localId }, { synced: true, useRecordId: true });
 
   let syncData;
-  OneCRLBlocklistClient.on("sync", ({ data }) => { syncData = data; });
+  client.on("sync", ({ data }) => { syncData = data; });
 
-  await OneCRLBlocklistClient.maybeSync(5000, { loadDump: false });
+  await client.maybeSync(5000);
 
   
   equal(syncData.current.length, 2);
@@ -536,26 +545,26 @@ add_task(async function test_check_signatures() {
 
   const allBadSigResponses = {
     
-    "GET:/v1/buckets/security-state/collections/onecrl?_expected=6000":
+    "GET:/v1/buckets/main/collections/signed?_expected=6000":
       [RESPONSE_META_BAD_SIG],
     
     
     
-    "GET:/v1/buckets/security-state/collections/onecrl/records?_expected=6000&_sort=-last_modified&_since=4000":
+    "GET:/v1/buckets/main/collections/signed/records?_expected=6000&_sort=-last_modified&_since=4000":
       [RESPONSE_EMPTY_NO_UPDATE],
     
     
-    "GET:/v1/buckets/security-state/collections/onecrl/records?_expected=6000&_sort=id":
+    "GET:/v1/buckets/main/collections/signed/records?_expected=6000&_sort=id":
       [RESPONSE_COMPLETE_INITIAL_SORTED_BY_ID],
   };
 
   startHistogram = getUptakeTelemetrySnapshot(TELEMETRY_HISTOGRAM_KEY);
   registerHandlers(allBadSigResponses);
   try {
-    await OneCRLBlocklistClient.maybeSync(6000);
+    await client.maybeSync(6000);
     do_throw("Sync should fail (the signature is intentionally bad)");
   } catch (e) {
-    await checkRecordCount(OneCRLBlocklistClient, 2);
+    equal((await client.get()).length, 2);
   }
 
   
@@ -567,17 +576,17 @@ add_task(async function test_check_signatures() {
   const missingSigResponses = {
     
     
-    "GET:/v1/buckets/security-state/collections/onecrl?_expected=6000":
+    "GET:/v1/buckets/main/collections/signed?_expected=6000":
       [RESPONSE_META_NO_SIG],
   };
 
   startHistogram = getUptakeTelemetrySnapshot(TELEMETRY_HISTOGRAM_KEY);
   registerHandlers(missingSigResponses);
   try {
-    await OneCRLBlocklistClient.maybeSync(6000);
+    await client.maybeSync(6000);
     do_throw("Sync should fail (the signature is missing)");
   } catch (e) {
-    await checkRecordCount(OneCRLBlocklistClient, 2);
+    equal((await client.get()).length, 2);
   }
 
   
@@ -588,25 +597,3 @@ add_task(async function test_check_signatures() {
   };
   checkUptakeTelemetry(startHistogram, endHistogram, expectedIncrements);
 });
-
-function run_test() {
-  
-  ({OneCRLBlocklistClient} = BlocklistClients.initialize());
-
-  
-  Cc["@mozilla.org/security/contentsignatureverifier;1"]
-    .createInstance(Ci.nsIContentSignatureVerifier);
-
-  
-  setRoot();
-
-  
-  server = new HttpServer();
-  server.start(-1);
-
-  run_next_test();
-
-  registerCleanupFunction(function() {
-    server.stop(function() { });
-  });
-}
