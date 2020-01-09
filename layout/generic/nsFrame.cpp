@@ -5521,7 +5521,7 @@ IntrinsicSize nsFrame::GetIntrinsicSize() {
 }
 
 
-nsSize nsFrame::GetIntrinsicRatio() { return nsSize(0, 0); }
+AspectRatio nsFrame::GetIntrinsicRatio() { return AspectRatio(); }
 
 
 LogicalSize nsFrame::ComputeSize(gfxContext* aRenderingContext, WritingMode aWM,
@@ -5531,7 +5531,7 @@ LogicalSize nsFrame::ComputeSize(gfxContext* aRenderingContext, WritingMode aWM,
                                  const LogicalSize& aBorder,
                                  const LogicalSize& aPadding,
                                  ComputeSizeFlags aFlags) {
-  MOZ_ASSERT(GetIntrinsicRatio() == nsSize(0, 0),
+  MOZ_ASSERT(!GetIntrinsicRatio(),
              "Please override this method and call "
              "nsFrame::ComputeSizeWithIntrinsicDimensions instead.");
   LogicalSize result =
@@ -5783,10 +5783,12 @@ LogicalSize nsFrame::ComputeSize(gfxContext* aRenderingContext, WritingMode aWM,
 
 LogicalSize nsFrame::ComputeSizeWithIntrinsicDimensions(
     gfxContext* aRenderingContext, WritingMode aWM,
-    const IntrinsicSize& aIntrinsicSize, nsSize aIntrinsicRatio,
+    const IntrinsicSize& aIntrinsicSize, const AspectRatio& aIntrinsicRatio,
     const LogicalSize& aCBSize, const LogicalSize& aMargin,
     const LogicalSize& aBorder, const LogicalSize& aPadding,
     ComputeSizeFlags aFlags) {
+  auto logicalRatio =
+      aWM.IsVertical() ? aIntrinsicRatio.Inverted() : aIntrinsicRatio;
   const nsStylePosition* stylePos = StylePosition();
   const auto* inlineStyleCoord = &stylePos->ISize(aWM);
   const auto* blockStyleCoord = &stylePos->BSize(aWM);
@@ -5915,10 +5917,6 @@ LogicalSize nsFrame::ComputeSizeWithIntrinsicDimensions(
   const bool hasIntrinsicBSize = bsizeCoord.isSome();
   nscoord intrinsicBSize = std::max(0, bsizeCoord.valueOr(0));
 
-  NS_ASSERTION(aIntrinsicRatio.width >= 0 && aIntrinsicRatio.height >= 0,
-               "Intrinsic ratio has a negative component!");
-  LogicalSize logicalRatio(aWM, aIntrinsicRatio);
-
   if (!isAutoISize) {
     iSize = ComputeISizeValue(
         aRenderingContext, aCBSize.ISize(aWM), boxSizingAdjust.ISize(aWM),
@@ -5937,7 +5935,7 @@ LogicalSize nsFrame::ComputeSizeWithIntrinsicDimensions(
         
         
         if ((inlineAxisAlignment == NS_STYLE_ALIGN_NORMAL &&
-             !hasIntrinsicISize && !(logicalRatio.ISize(aWM) > 0)) ||
+             !hasIntrinsicISize && !logicalRatio) ||
             inlineAxisAlignment == NS_STYLE_ALIGN_STRETCH) {
           stretchI = eStretch;
         }
@@ -6004,7 +6002,7 @@ LogicalSize nsFrame::ComputeSizeWithIntrinsicDimensions(
         
         
         if ((blockAxisAlignment == NS_STYLE_ALIGN_NORMAL &&
-             !hasIntrinsicBSize && !(logicalRatio.BSize(aWM) > 0)) ||
+             !hasIntrinsicBSize && !logicalRatio) ||
             blockAxisAlignment == NS_STYLE_ALIGN_STRETCH) {
           stretchB = eStretch;
         }
@@ -6059,10 +6057,9 @@ LogicalSize nsFrame::ComputeSizeWithIntrinsicDimensions(
 
       if (hasIntrinsicISize) {
         tentISize = intrinsicISize;
-      } else if (hasIntrinsicBSize && logicalRatio.BSize(aWM) > 0) {
-        tentISize = NSCoordMulDiv(intrinsicBSize, logicalRatio.ISize(aWM),
-                                  logicalRatio.BSize(aWM));
-      } else if (logicalRatio.ISize(aWM) > 0) {
+      } else if (hasIntrinsicBSize && logicalRatio) {
+        tentISize = logicalRatio.ApplyTo(intrinsicBSize);
+      } else if (logicalRatio) {
         tentISize =
             aCBSize.ISize(aWM) - boxSizingToMarginEdgeISize;  
         if (tentISize < 0) tentISize = 0;
@@ -6080,9 +6077,8 @@ LogicalSize nsFrame::ComputeSizeWithIntrinsicDimensions(
 
       if (hasIntrinsicBSize) {
         tentBSize = intrinsicBSize;
-      } else if (logicalRatio.ISize(aWM) > 0) {
-        tentBSize = NSCoordMulDiv(tentISize, logicalRatio.BSize(aWM),
-                                  logicalRatio.ISize(aWM));
+      } else if (logicalRatio) {
+        tentBSize = logicalRatio.Inverted().ApplyTo(tentISize);
       } else {
         tentBSize = nsPresContext::CSSPixelsToAppUnits(150);
       }
@@ -6093,45 +6089,32 @@ LogicalSize nsFrame::ComputeSizeWithIntrinsicDimensions(
         stretchB = (stretchI == eStretch ? eStretch : eStretchPreservingRatio);
       }
 
-      if (aIntrinsicRatio != nsSize(0, 0)) {
+      if (logicalRatio) {
         if (stretchI == eStretch) {
           tentISize = iSize;  
           if (stretchB == eStretch) {
             tentBSize = bSize;  
-          } else if (stretchB == eStretchPreservingRatio &&
-                     logicalRatio.ISize(aWM) > 0) {
+          } else if (stretchB == eStretchPreservingRatio) {
             
-            tentBSize = NSCoordMulDiv(iSize, logicalRatio.BSize(aWM),
-                                      logicalRatio.ISize(aWM));
+            tentBSize = logicalRatio.Inverted().ApplyTo(iSize);
           }
         } else if (stretchB == eStretch) {
           tentBSize = bSize;  
-          if (stretchI == eStretchPreservingRatio &&
-              logicalRatio.BSize(aWM) > 0) {
+          if (stretchI == eStretchPreservingRatio) {
             
-            tentISize = NSCoordMulDiv(bSize, logicalRatio.ISize(aWM),
-                                      logicalRatio.BSize(aWM));
+            tentISize = logicalRatio.ApplyTo(bSize);
           }
         } else if (stretchI == eStretchPreservingRatio) {
           tentISize = iSize;  
-          if (logicalRatio.ISize(aWM) > 0) {
-            tentBSize = NSCoordMulDiv(iSize, logicalRatio.BSize(aWM),
-                                      logicalRatio.ISize(aWM));
-          }
+          tentBSize = logicalRatio.Inverted().ApplyTo(iSize);
           if (stretchB == eStretchPreservingRatio && tentBSize > bSize) {
             
             tentBSize = bSize;  
-            if (logicalRatio.BSize(aWM) > 0) {
-              tentISize = NSCoordMulDiv(bSize, logicalRatio.ISize(aWM),
-                                        logicalRatio.BSize(aWM));
-            }
+            tentISize = logicalRatio.ApplyTo(bSize);
           }
         } else if (stretchB == eStretchPreservingRatio) {
           tentBSize = bSize;  
-          if (logicalRatio.BSize(aWM) > 0) {
-            tentISize = NSCoordMulDiv(bSize, logicalRatio.ISize(aWM),
-                                      logicalRatio.BSize(aWM));
-          }
+          tentISize = logicalRatio.ApplyTo(bSize);
         }
       }
 
@@ -6139,8 +6122,7 @@ LogicalSize nsFrame::ComputeSizeWithIntrinsicDimensions(
       
       
       
-      if (aIntrinsicRatio != nsSize(0, 0) && stretchI != eStretch &&
-          stretchB != eStretch) {
+      if (logicalRatio && stretchI != eStretch && stretchB != eStretch) {
         nsSize autoSize = nsLayoutUtils::ComputeAutoSizeWithIntrinsicDimensions(
             minISize, minBSize, maxISize, maxBSize, tentISize, tentBSize);
         
@@ -6158,9 +6140,8 @@ LogicalSize nsFrame::ComputeSizeWithIntrinsicDimensions(
       
       bSize = NS_CSS_MINMAX(bSize, minBSize, maxBSize);
       if (stretchI != eStretch) {
-        if (logicalRatio.BSize(aWM) > 0) {
-          iSize = NSCoordMulDiv(bSize, logicalRatio.ISize(aWM),
-                                logicalRatio.BSize(aWM));
+        if (logicalRatio) {
+          iSize = logicalRatio.ApplyTo(bSize);
         } else if (hasIntrinsicISize) {
           if (!((aFlags & ComputeSizeFlags::eIClampMarginBoxMinSize) &&
                 intrinsicISize > iSize)) {
@@ -6177,9 +6158,8 @@ LogicalSize nsFrame::ComputeSizeWithIntrinsicDimensions(
       
       iSize = NS_CSS_MINMAX(iSize, minISize, maxISize);
       if (stretchB != eStretch) {
-        if (logicalRatio.ISize(aWM) > 0) {
-          bSize = NSCoordMulDiv(iSize, logicalRatio.BSize(aWM),
-                                logicalRatio.ISize(aWM));
+        if (logicalRatio) {
+          bSize = logicalRatio.Inverted().ApplyTo(iSize);
         } else if (hasIntrinsicBSize) {
           if (!((aFlags & ComputeSizeFlags::eBClampMarginBoxMinSize) &&
                 intrinsicBSize > bSize)) {

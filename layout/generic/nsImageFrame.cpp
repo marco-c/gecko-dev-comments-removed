@@ -209,7 +209,6 @@ nsImageFrame::nsImageFrame(ComputedStyle* aStyle, nsPresContext* aPresContext,
     : nsAtomicContainerFrame(aStyle, aPresContext, aID),
       mComputedSize(0, 0),
       mIntrinsicSize(0, 0),
-      mIntrinsicRatio(0, 0),
       mKind(aKind),
       mContentURLRequestRegistered(false),
       mDisplayingIcon(false),
@@ -483,15 +482,13 @@ bool nsImageFrame::UpdateIntrinsicRatio(imgIContainer* aImage) {
 
   if (!aImage) return false;
 
-  nsSize oldIntrinsicRatio = mIntrinsicRatio;
-
   
   
   
-  if (StyleDisplay()->IsContainSize() ||
-      NS_FAILED(aImage->GetIntrinsicRatio(&mIntrinsicRatio))) {
-    mIntrinsicRatio.SizeTo(0, 0);
-  }
+  AspectRatio oldIntrinsicRatio = mIntrinsicRatio;
+  mIntrinsicRatio = StyleDisplay()->IsContainSize()
+                        ? AspectRatio()
+                        : aImage->GetIntrinsicRatio().valueOr(AspectRatio());
 
   return mIntrinsicRatio != oldIntrinsicRatio;
 }
@@ -699,7 +696,7 @@ nsresult nsImageFrame::OnSizeAvailable(imgIRequest* aRequest,
 
     
     mIntrinsicSize = IntrinsicSize(0, 0);
-    mIntrinsicRatio.SizeTo(0, 0);
+    mIntrinsicRatio = AspectRatio();
     intrinsicSizeChanged = true;
   }
 
@@ -820,7 +817,7 @@ void nsImageFrame::NotifyNewCurrentRequest(imgIRequest* aRequest,
 
     
     mIntrinsicSize = IntrinsicSize(0, 0);
-    mIntrinsicRatio.SizeTo(0, 0);
+    mIntrinsicRatio = AspectRatio();
   }
 
   if (GotInitialReflow()) {
@@ -907,7 +904,7 @@ void nsImageFrame::EnsureIntrinsicSizeAndRatio() {
     
     
     mIntrinsicSize = IntrinsicSize(0, 0);
-    mIntrinsicRatio.SizeTo(0, 0);
+    mIntrinsicRatio = AspectRatio();
     return;
   }
 
@@ -928,7 +925,7 @@ void nsImageFrame::EnsureIntrinsicSizeAndRatio() {
     nscoord edgeLengthToUse = nsPresContext::CSSPixelsToAppUnits(
         ICON_SIZE + (2 * (ICON_PADDING + ALT_BORDER_WIDTH)));
     mIntrinsicSize = IntrinsicSize(edgeLengthToUse, edgeLengthToUse);
-    mIntrinsicRatio.SizeTo(1, 1);
+    mIntrinsicRatio = AspectRatio(1.0f);
   }
 }
 
@@ -997,7 +994,7 @@ nscoord nsImageFrame::GetPrefISize(gfxContext* aRenderingContext) {
 IntrinsicSize nsImageFrame::GetIntrinsicSize() { return mIntrinsicSize; }
 
 
-nsSize nsImageFrame::GetIntrinsicRatio() { return mIntrinsicRatio; }
+AspectRatio nsImageFrame::GetIntrinsicRatio() { return mIntrinsicRatio; }
 
 void nsImageFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
                           const ReflowInput& aReflowInput,

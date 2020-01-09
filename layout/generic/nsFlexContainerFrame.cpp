@@ -392,20 +392,18 @@ class MOZ_STACK_CLASS nsFlexContainerFrame::FlexboxAxisTracker {
   
   bool AreAxesInternallyReversed() const { return mAreAxesInternallyReversed; }
 
- private:
-  
-  
-  FlexboxAxisTracker(const FlexboxAxisTracker&) = delete;
-  FlexboxAxisTracker& operator=(const FlexboxAxisTracker&) = delete;
-
-  
-  
   bool IsMainAxisHorizontal() const {
     
     
     
     return mIsRowOriented != mWM.IsVertical();
   }
+
+ private:
+  
+  
+  FlexboxAxisTracker(const FlexboxAxisTracker&) = delete;
+  FlexboxAxisTracker& operator=(const FlexboxAxisTracker&) = delete;
 
   
   
@@ -625,10 +623,8 @@ class nsFlexContainerFrame::FlexItem : public LinkedListElement<FlexItem> {
     return mFlexShrink * mFlexBaseSize;
   }
 
-  
-  
-  const LogicalSize& IntrinsicRatio() const { return mIntrinsicRatio; }
-  bool HasIntrinsicRatio() const { return !mIntrinsicRatio.IsAllZero(); }
+  const AspectRatio& IntrinsicRatio() const { return mIntrinsicRatio; }
+  bool HasIntrinsicRatio() const { return !!mIntrinsicRatio; }
 
   
   
@@ -846,7 +842,7 @@ class nsFlexContainerFrame::FlexItem : public LinkedListElement<FlexItem> {
   nsIFrame* const mFrame;  
   const float mFlexGrow;
   const float mFlexShrink;
-  const LogicalSize mIntrinsicRatio;
+  const AspectRatio mIntrinsicRatio;
   const nsMargin mBorderPadding;
   nsMargin mMargin;  
 
@@ -1453,15 +1449,16 @@ static nscoord CrossSizeToUseWithRatio(const FlexItem& aFlexItem,
 
 
 
-
 static nscoord MainSizeFromAspectRatio(nscoord aCrossSize,
-                                       const LogicalSize& aIntrinsicRatio,
+                                       const AspectRatio& aIntrinsicRatio,
                                        const FlexboxAxisTracker& aAxisTracker) {
-  MOZ_ASSERT(aAxisTracker.GetCrossComponent(aIntrinsicRatio) != 0,
+  MOZ_ASSERT(aIntrinsicRatio,
              "Invalid ratio; will divide by 0! Caller should've checked...");
-  return NSCoordMulDiv(aCrossSize,
-                       aAxisTracker.GetMainComponent(aIntrinsicRatio),
-                       aAxisTracker.GetCrossComponent(aIntrinsicRatio));
+  AspectRatio ratio = aAxisTracker.IsMainAxisHorizontal()
+                          ? aIntrinsicRatio
+                          : aIntrinsicRatio.Inverted();
+
+  return ratio.ApplyTo(aCrossSize);
 }
 
 
@@ -1506,7 +1503,7 @@ static nscoord PartiallyResolveAutoMinSize(
   
   
   
-  if (aAxisTracker.GetCrossComponent(aFlexItem.IntrinsicRatio()) != 0) {
+  if (aFlexItem.IntrinsicRatio()) {
     
     const bool useMinSizeIfCrossSizeIsIndefinite = true;
     nscoord crossSizeToUseWithRatio = CrossSizeToUseWithRatio(
@@ -1536,7 +1533,7 @@ static bool ResolveAutoFlexBasisFromRatio(
   
   
   
-  if (aAxisTracker.GetCrossComponent(aFlexItem.IntrinsicRatio()) != 0) {
+  if (aFlexItem.IntrinsicRatio()) {
     
     const bool useMinSizeIfCrossSizeIsIndefinite = false;
     nscoord crossSizeToUseWithRatio = CrossSizeToUseWithRatio(
@@ -1611,8 +1608,7 @@ void nsFlexContainerFrame::ResolveAutoFlexBasisAndMinSize(
     
     resolvedMinSize =
         PartiallyResolveAutoMinSize(aFlexItem, aItemReflowInput, aAxisTracker);
-    if (resolvedMinSize > 0 &&
-        aAxisTracker.GetCrossComponent(aFlexItem.IntrinsicRatio()) == 0) {
+    if (resolvedMinSize > 0 && !aFlexItem.IntrinsicRatio()) {
       
       
       
@@ -1872,9 +1868,7 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput, float aFlexGrow,
     : mFrame(aFlexItemReflowInput.mFrame),
       mFlexGrow(aFlexGrow),
       mFlexShrink(aFlexShrink),
-      
-      mIntrinsicRatio(aAxisTracker.GetWritingMode(),
-                      mFrame->GetIntrinsicRatio()),
+      mIntrinsicRatio(mFrame->GetIntrinsicRatio()),
       mBorderPadding(aFlexItemReflowInput.ComputedPhysicalBorderPadding()),
       mMargin(aFlexItemReflowInput.ComputedPhysicalMargin()),
       mMainMinSize(aMainMinSize),
@@ -1976,7 +1970,6 @@ FlexItem::FlexItem(nsIFrame* aChildFrame, nscoord aCrossSize,
     : mFrame(aChildFrame),
       mFlexGrow(0.0f),
       mFlexShrink(0.0f),
-      mIntrinsicRatio(aContainerWM),
       
       
       mFlexBaseSize(0),

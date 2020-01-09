@@ -53,6 +53,7 @@
 #include "FrameProperties.h"
 #include "LayoutConstants.h"
 #include "mozilla/layout/FrameChildList.h"
+#include "mozilla/AspectRatio.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/SmallPointerArray.h"
 #include "mozilla/WritingModes.h"
@@ -2378,8 +2379,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-
-  virtual nsSize GetIntrinsicRatio() = 0;
+  virtual mozilla::AspectRatio GetIntrinsicRatio() = 0;
 
   
 

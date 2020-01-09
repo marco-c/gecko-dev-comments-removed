@@ -727,7 +727,7 @@ static bool IsPercentageAware(const nsIFrame* aFrame, WritingMode aWM) {
     
     
     nsIFrame* f = const_cast<nsIFrame*>(aFrame);
-    if (f->GetIntrinsicRatio() != nsSize(0, 0) &&
+    if (f->GetIntrinsicRatio() &&
         
         !pos->BSize(aWM).ConvertsToLength()) {
       const IntrinsicSize& intrinsicSize = f->GetIntrinsicSize();

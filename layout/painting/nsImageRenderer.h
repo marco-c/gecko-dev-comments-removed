@@ -10,6 +10,7 @@
 #include "nsLayoutUtils.h"
 #include "nsStyleStruct.h"
 #include "Units.h"
+#include "mozilla/AspectRatio.h"
 
 class gfxDrawable;
 namespace mozilla {
@@ -31,20 +32,16 @@ class IpcResourceUpdateQueue;
 
 struct CSSSizeOrRatio {
   CSSSizeOrRatio()
-      : mRatio(0, 0),
-        mWidth(0),
-        mHeight(0),
-        mHasWidth(false),
-        mHasHeight(false) {}
+      : mWidth(0), mHeight(0), mHasWidth(false), mHasHeight(false) {}
 
   bool CanComputeConcreteSize() const {
     return mHasWidth + mHasHeight + HasRatio() >= 2;
   }
   bool IsConcrete() const { return mHasWidth && mHasHeight; }
-  bool HasRatio() const { return mRatio.width > 0 && mRatio.height > 0; }
+  bool HasRatio() const { return !!mRatio; }
   bool IsEmpty() const {
     return (mHasWidth && mWidth <= 0) || (mHasHeight && mHeight <= 0) ||
-           mRatio.width <= 0 || mRatio.height <= 0;
+           !mRatio;
   }
 
   
@@ -55,14 +52,14 @@ struct CSSSizeOrRatio {
     mWidth = aWidth;
     mHasWidth = true;
     if (mHasHeight) {
-      mRatio = nsSize(mWidth, mHeight);
+      mRatio = AspectRatio::FromSize(mWidth, mHeight);
     }
   }
   void SetHeight(nscoord aHeight) {
     mHeight = aHeight;
     mHasHeight = true;
     if (mHasWidth) {
-      mRatio = nsSize(mWidth, mHeight);
+      mRatio = AspectRatio::FromSize(mWidth, mHeight);
     }
   }
   void SetSize(const nsSize& aSize) {
@@ -70,16 +67,16 @@ struct CSSSizeOrRatio {
     mHeight = aSize.height;
     mHasWidth = true;
     mHasHeight = true;
-    mRatio = aSize;
+    mRatio = AspectRatio::FromSize(mWidth, mHeight);
   }
-  void SetRatio(const nsSize& aRatio) {
+  void SetRatio(const AspectRatio& aRatio) {
     MOZ_ASSERT(
         !mHasWidth || !mHasHeight,
         "Probably shouldn't be setting a ratio if we have a concrete size");
     mRatio = aRatio;
   }
 
-  nsSize mRatio;
+  AspectRatio mRatio;
   nscoord mWidth;
   nscoord mHeight;
   bool mHasWidth;
@@ -157,11 +154,9 @@ class nsImageRenderer {
 
 
 
-
-
-  static nsSize ComputeConstrainedSize(const nsSize& aConstrainingSize,
-                                       const nsSize& aIntrinsicRatio,
-                                       FitType aFitType);
+  static nsSize ComputeConstrainedSize(
+      const nsSize& aConstrainingSize,
+      const mozilla::AspectRatio& aIntrinsicRatio, FitType aFitType);
   
 
 

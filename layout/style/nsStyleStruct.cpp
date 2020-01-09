@@ -2662,7 +2662,7 @@ static bool SizeDependsOnPositioningAreaSize(const StyleBackgroundSize& aSize,
     }
     if (imgContainer) {
       CSSIntSize imageSize;
-      nsSize imageRatio;
+      AspectRatio imageRatio;
       bool hasWidth, hasHeight;
       nsLayoutUtils::ComputeSizeForDrawing(imgContainer, imageSize, imageRatio,
                                            hasWidth, hasHeight);
@@ -2675,7 +2675,7 @@ static bool SizeDependsOnPositioningAreaSize(const StyleBackgroundSize& aSize,
 
       
       
-      if (imageRatio != nsSize(0, 0)) {
+      if (imageRatio) {
         return size.width.IsAuto() == size.height.IsAuto();
       }
 

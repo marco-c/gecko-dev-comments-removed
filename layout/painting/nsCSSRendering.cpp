@@ -2889,11 +2889,9 @@ static nsSize ComputeDrawnSizeForBackground(
     if (!isRepeatRoundInBothDimensions && aLayerSize.IsExplicitSize() &&
         aLayerSize.explicit_size.height.IsAuto()) {
       
-      if (aIntrinsicSize.mRatio.width) {
-        float scale =
-            float(aIntrinsicSize.mRatio.height) / aIntrinsicSize.mRatio.width;
+      if (aIntrinsicSize.mRatio) {
         imageSize.height =
-            NSCoordSaturatingNonnegativeMultiply(imageSize.width, scale);
+            aIntrinsicSize.mRatio.Inverted().ApplyTo(imageSize.width);
       }
     }
   }
@@ -2906,11 +2904,8 @@ static nsSize ComputeDrawnSizeForBackground(
     if (!isRepeatRoundInBothDimensions && aLayerSize.IsExplicitSize() &&
         aLayerSize.explicit_size.width.IsAuto()) {
       
-      if (aIntrinsicSize.mRatio.height) {
-        float scale =
-            float(aIntrinsicSize.mRatio.width) / aIntrinsicSize.mRatio.height;
-        imageSize.width =
-            NSCoordSaturatingNonnegativeMultiply(imageSize.height, scale);
+      if (aIntrinsicSize.mRatio) {
+        imageSize.width = aIntrinsicSize.mRatio.ApplyTo(imageSize.height);
       }
     }
   }

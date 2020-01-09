@@ -723,7 +723,7 @@ IntrinsicSize nsSubDocumentFrame::GetIntrinsicSize() {
 }
 
 
-nsSize nsSubDocumentFrame::GetIntrinsicRatio() {
+AspectRatio nsSubDocumentFrame::GetIntrinsicRatio() {
   nsIFrame* subDocRoot = ObtainIntrinsicSizeFrame();
   if (subDocRoot) {
     return subDocRoot->GetIntrinsicRatio();
@@ -805,7 +805,7 @@ void nsSubDocumentFrame::Reflow(nsPresContext* aPresContext,
     
     nsIFrame* subDocRoot = ObtainIntrinsicSizeFrame();
     IntrinsicSize intrinsSize;
-    nsSize intrinsRatio;
+    AspectRatio intrinsRatio;
     if (subDocRoot) {
       intrinsSize = subDocRoot->GetIntrinsicSize();
       intrinsRatio = subDocRoot->GetIntrinsicRatio();
