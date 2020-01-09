@@ -14,7 +14,6 @@ author: Jordan Lund
 """
 
 import copy
-import pprint
 import sys
 import os
 
@@ -23,8 +22,7 @@ sys.path.insert(1, os.path.dirname(sys.path[0]))
 
 import mozharness.base.script as script
 from mozharness.mozilla.building.buildbase import BUILD_BASE_CONFIG_OPTIONS, \
-    BuildingConfig, BuildOptionParser, BuildScript
-from mozharness.base.config import parse_config_file
+    BuildingConfig, BuildScript
 from mozharness.mozilla.testing.try_tools import TryToolsMixin, try_config_options
 
 
@@ -84,90 +82,6 @@ class FxDesktopBuild(BuildScript, TryToolsMixin, object):
             'ConfigClass': BuildingConfig,
         }
         super(FxDesktopBuild, self).__init__(**buildscript_kwargs)
-
-    def _pre_config_lock(self, rw_config):
-        """grab properties if we are running this in automation"""
-        super(FxDesktopBuild, self)._pre_config_lock(rw_config)
-        c = self.config
-        if os.environ.get('USE_ARTIFACT'):
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            self.info('Artifact build requested by try push.')
-
-            variant = None
-
-            if 'artifact_flag_build_variant_in_try' in c:
-                variant = c['artifact_flag_build_variant_in_try']
-                if not variant:
-                    self.info('Build variant has falsy `artifact_flag_build_variant_in_try`; '
-                              'ignoring artifact build request and performing original build.')
-                    return
-                self.info('Build variant has `artifact_build_variant_in_try`: "%s".' % variant)
-            else:
-                if not c.get('build_variant'):
-                    if c.get('debug_build'):
-                        variant = 'debug-artifact'
-                    else:
-                        variant = 'artifact'
-                elif c.get('build_variant') in ['debug', 'cross-debug']:
-                    variant = 'debug-artifact'
-
-            if variant:
-                self.info('Using artifact build variant "%s".' % variant)
-                self._update_build_variant(rw_config, variant)
-
-    
-    def _update_build_variant(self, rw_config, variant='artifact'):
-        """ Intended for use in _pre_config_lock """
-        c = self.config
-        variant_cfg_path, _ = BuildOptionParser.find_variant_cfg_path(
-            '--custom-build-variant-cfg',
-            variant,
-            rw_config.config_parser
-        )
-        if not variant_cfg_path:
-            self.fatal('Could not find appropriate config file for variant %s' % variant)
-        
-        
-        
-        variant_cfg_dict = parse_config_file(variant_cfg_path)
-        rw_config.all_cfg_files_and_dicts.append((variant_cfg_path, variant_cfg_dict))
-        c.update({
-            'build_variant': variant,
-            'config_files': c['config_files'] + [variant_cfg_path]
-        })
-
-        self.info("Updating self.config with the following from {}:".format(variant_cfg_path))
-        self.info(pprint.pformat(variant_cfg_dict))
-        c.update(variant_cfg_dict)
-        c['forced_artifact_build'] = True
-        
-        
-        if rw_config.volatile_config['actions']:
-            self.info("Updating volatile_config to include default_actions "
-                      "from {}.".format(variant_cfg_path))
-            
-            combined_actions = []
-            for a in rw_config.all_actions:
-                if a in c['default_actions'] or a in rw_config.volatile_config['actions']:
-                    combined_actions.append(a)
-            rw_config.volatile_config['actions'] = combined_actions
-            self.info("Actions in volatile_config are now: {}".format(
-                rw_config.volatile_config['actions'])
-            )
-        
-        rw_config.set_config(c, overwrite=True)
-        rw_config.update_actions()
-        self.actions = tuple(rw_config.actions)
-        self.all_actions = tuple(rw_config.all_actions)
 
     def query_abs_dirs(self):
         if self.abs_dirs:

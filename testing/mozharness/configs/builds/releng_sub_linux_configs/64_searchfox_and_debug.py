@@ -36,6 +36,4 @@ config = {
     
     'mozconfig_platform': 'linux64',
     'mozconfig_variant': 'debug-searchfox-clang',
-    
-    'artifact_flag_build_variant_in_try': None,
 }

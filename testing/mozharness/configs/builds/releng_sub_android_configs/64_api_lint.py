@@ -9,6 +9,5 @@ config = {
          'api-lint',
         ],
     ],
-    'artifact_flag_build_variant_in_try': None, 
     'max_build_output_timeout': 0,
 }
