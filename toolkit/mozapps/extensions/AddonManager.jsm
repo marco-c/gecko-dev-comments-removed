@@ -1286,6 +1286,11 @@ var AddonManagerInternal = {
         for (let addon of allAddons) {
           
           
+
+          if (!(addon.permissions & AddonManager.PERM_CAN_UPGRADE)) {
+            continue;
+          }
+
           updates.push(new Promise((resolve, reject) => {
             addon.findUpdates({
               onUpdateAvailable(aAddon, aInstall) {
