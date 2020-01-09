@@ -2651,9 +2651,10 @@ static bool FrameParticipatesIn3DContext(nsIFrame* aAncestor,
 static bool ItemParticipatesIn3DContext(nsIFrame* aAncestor,
                                         nsDisplayItem* aItem) {
   auto type = aItem->GetType();
+  const bool isContainer = type == DisplayItemType::TYPE_WRAP_LIST ||
+                           type == DisplayItemType::TYPE_CONTAINER;
 
-  if (type == DisplayItemType::TYPE_WRAP_LIST &&
-      aItem->GetChildren()->Count() == 1) {
+  if (isContainer && aItem->GetChildren()->Count() == 1) {
     
     type = aItem->GetChildren()->GetBottom()->GetType();
   }
@@ -3531,7 +3532,7 @@ static nsDisplayItem* WrapInWrapList(nsDisplayListBuilder* aBuilder,
   
   
   if (aBuilder->IsPartialUpdate() &&
-      !aFrame->HasDisplayItem(uint32_t(DisplayItemType::TYPE_WRAP_LIST))) {
+      !aFrame->HasDisplayItem(uint32_t(DisplayItemType::TYPE_CONTAINER))) {
     
     
     
@@ -3553,10 +3554,8 @@ static nsDisplayItem* WrapInWrapList(nsDisplayListBuilder* aBuilder,
   
   
 
-  
-  
-  return MakeDisplayItem<nsDisplayWrapList>(aBuilder, aFrame, aList,
-                                            aContainerASR, true);
+  return MakeDisplayItem<nsDisplayContainer>(aBuilder, aFrame, aContainerASR,
+                                             aList);
 }
 
 

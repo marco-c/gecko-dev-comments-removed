@@ -3502,7 +3502,7 @@ class nsDisplayList {
 
 
 
-  nsRect GetBounds(nsDisplayListBuilder* aBuilder) const;
+  nsRect GetClippedBounds(nsDisplayListBuilder* aBuilder) const;
 
   
 
@@ -3864,6 +3864,71 @@ class nsDisplayHitTestInfoItem : public nsPaintedDisplayItem {
 
  protected:
   mozilla::UniquePtr<HitTestInfo> mHitTestInfo;
+};
+
+class nsDisplayContainer final : public nsDisplayItem {
+ public:
+  nsDisplayContainer(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
+                     const ActiveScrolledRoot* aActiveScrolledRoot,
+                     nsDisplayList* aList);
+
+  ~nsDisplayContainer() override { MOZ_COUNT_DTOR(nsDisplayContainer); }
+
+  NS_DISPLAY_DECL_NAME("nsDisplayContainer", TYPE_CONTAINER)
+
+  void Destroy(nsDisplayListBuilder* aBuilder) override {
+    mChildren.DeleteAll(aBuilder);
+    nsDisplayItem::Destroy(aBuilder);
+  }
+
+  bool ComputeVisibility(nsDisplayListBuilder* aBuilder,
+                         nsRegion* aVisibleRegion) override;
+
+  bool CreateWebRenderCommands(
+      mozilla::wr::DisplayListBuilder& aBuilder,
+      mozilla::wr::IpcResourceUpdateQueue& aResources,
+      const StackingContextHelper& aSc,
+      mozilla::layers::RenderRootStateManager* aManager,
+      nsDisplayListBuilder* aDisplayListBuilder) override;
+
+  nsRect GetBounds(nsDisplayListBuilder* aBuilder, bool* aSnap) const override;
+
+  nsRect GetComponentAlphaBounds(nsDisplayListBuilder* aBuilder) const override;
+
+  nsRegion GetOpaqueRegion(nsDisplayListBuilder* aBuilder,
+                           bool* aSnap) const override;
+
+  mozilla::Maybe<nscolor> IsUniform(
+      nsDisplayListBuilder* aBuilder) const override {
+    return mozilla::Nothing();
+  }
+
+  RetainedDisplayList* GetChildren() const override { return &mChildren; }
+  RetainedDisplayList* GetSameCoordinateSystemChildren() const override {
+    return GetChildren();
+  }
+
+  mozilla::Maybe<nsRect> GetClipWithRespectToASR(
+      nsDisplayListBuilder* aBuilder,
+      const ActiveScrolledRoot* aASR) const override;
+
+  void HitTest(nsDisplayListBuilder* aBuilder, const nsRect& aRect,
+               HitTestState* aState, nsTArray<nsIFrame*>* aOutFrames) override;
+
+  bool ShouldFlattenAway(nsDisplayListBuilder* aBuilder) override {
+    return true;
+  }
+
+  void SetClipChain(const DisplayItemClipChain* aClipChain,
+                    bool aStore) override {
+    MOZ_ASSERT_UNREACHABLE("nsDisplayContainer does not support clipping");
+  }
+
+  void UpdateBounds(nsDisplayListBuilder* aBuilder) override;
+
+ private:
+  mutable RetainedDisplayList mChildren;
+  nsRect mBounds;
 };
 
 class nsDisplayImageContainer : public nsPaintedDisplayItem {
@@ -7304,7 +7369,8 @@ class FlattenedDisplayListIterator {
     nsDisplayItem* next = mNext;
     mNext = next->GetAbove();
 
-    if (mNext) {
+    if (mNext && next->HasChildren() && mNext->HasChildren()) {
+      
       
       next = TryMergingFrom(next);
     }
@@ -7353,13 +7419,7 @@ class FlattenedDisplayListIterator {
         
         
         mStack.AppendElement(mNext->GetAbove());
-
-        nsDisplayList* childItems =
-            mNext->GetType() != DisplayItemType::TYPE_TRANSFORM
-                ? mNext->GetSameCoordinateSystemChildren()
-                : mNext->GetChildren();
-
-        mNext = childItems->GetBottom();
+        mNext = mNext->GetChildren()->GetBottom();
       }
     }
   }
