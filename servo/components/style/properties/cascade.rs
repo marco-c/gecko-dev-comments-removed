@@ -744,7 +744,7 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
             
             
             
-            if self.seen.contains(LonghandId::XLang) || self.seen.contains(LonghandId::FontFamily) {
+            if self.seen.contains(LonghandId::XLang) || font_family.is_some() {
                 
                 
                 let mut generic = self.context.builder.get_parent_font().gecko().mGenericID;
