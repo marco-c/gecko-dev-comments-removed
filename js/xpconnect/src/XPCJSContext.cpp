@@ -144,6 +144,16 @@ class Watchdog {
     }
 
     {
+      
+      
+      
+      
+      
+      nsCOMPtr<nsIDebug2> dbg = do_GetService("@mozilla.org/xpcom/debug;1");
+      Unused << dbg;
+    }
+
+    {
       AutoLockWatchdog lock(this);
 
       
