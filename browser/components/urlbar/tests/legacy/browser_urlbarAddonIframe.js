@@ -170,9 +170,13 @@ function promiseIframeLoad() {
 
 
 
+
 function promiseUrlbarFunctionCall(...args) {
   return promiseMessage("function", args)[0];
 }
+
+
+
 
 
 
@@ -184,6 +188,11 @@ function promiseEvent(type) {
 }
 
 let gNextMessageID = 1;
+
+
+
+
+
 
 
 

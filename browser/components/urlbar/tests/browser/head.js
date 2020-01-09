@@ -20,6 +20,11 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 });
 
 
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/browser/components/urlbar/tests/browser/head-common.js",
+  this);
+
+
 Services.scriptloader.loadSubScript("resource://testing-common/sinon-2.3.2.js");
 
 registerCleanupFunction(function() {

@@ -29,6 +29,8 @@ SearchTestUtils.init(Assert, registerCleanupFunction);
 
 
 
+
+
 function waitForDocLoadAndStopIt(aExpectedURL, aBrowser = gBrowser.selectedBrowser, aStopFromProgressListener = true) {
   function content_script(contentStopFromProgressListener) {
     ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
