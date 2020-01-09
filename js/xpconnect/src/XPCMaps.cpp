@@ -119,21 +119,6 @@ size_t Native2WrappedNativeMap::SizeOfIncludingThis(
 
 
 
-const struct PLDHashTableOps IID2WrappedJSClassMap::Entry::sOps = {
-    HashIIDPtrKey, MatchIIDPtrKey, PLDHashTable::MoveEntryStub,
-    PLDHashTable::ClearEntryStub};
-
-
-IID2WrappedJSClassMap* IID2WrappedJSClassMap::newMap(int length) {
-  return new IID2WrappedJSClassMap(length);
-}
-
-IID2WrappedJSClassMap::IID2WrappedJSClassMap(int length)
-    : mTable(&Entry::sOps, sizeof(Entry), length) {}
-
-
-
-
 const struct PLDHashTableOps IID2NativeInterfaceMap::Entry::sOps = {
     HashIIDPtrKey, MatchIIDPtrKey, PLDHashTable::MoveEntryStub,
     PLDHashTable::ClearEntryStub};

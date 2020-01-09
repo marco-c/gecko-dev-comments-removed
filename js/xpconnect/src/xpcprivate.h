@@ -171,7 +171,6 @@ class Exception;
 
 
 #define XPC_JS_MAP_LENGTH 32
-#define XPC_JS_CLASS_MAP_LENGTH 32
 
 #define XPC_NATIVE_MAP_LENGTH 8
 #define XPC_NATIVE_PROTO_MAP_LENGTH 8
@@ -488,10 +487,6 @@ class XPCJSRuntime final : public mozilla::CycleCollectedJSRuntime {
     return mWrappedJSMap;
   }
 
-  IID2WrappedJSClassMap* GetWrappedJSClassMap() const {
-    return mWrappedJSClassMap;
-  }
-
   IID2NativeInterfaceMap* GetIID2NativeInterfaceMap() const {
     return mIID2NativeInterfaceMap;
   }
@@ -625,7 +620,6 @@ class XPCJSRuntime final : public mozilla::CycleCollectedJSRuntime {
       Principal2JSObjectMap;
 
   JSObject2WrappedJSMap* mWrappedJSMap;
-  IID2WrappedJSClassMap* mWrappedJSClassMap;
   IID2NativeInterfaceMap* mIID2NativeInterfaceMap;
   ClassInfo2NativeSetMap* mClassInfo2NativeSetMap;
   NativeSetMap* mNativeSetMap;
@@ -1599,18 +1593,11 @@ class XPCWrappedNative final : public nsIXPConnectWrappedNative {
 
 
 
-class nsXPCWrappedJSClass final : public nsISupports {
-  
-  NS_DECL_ISUPPORTS
+class nsXPCWrappedJSClass final {
+ public:
+  static const nsXPTInterfaceInfo* GetInterfaceInfo(REFNSIID aIID);
 
   static void DebugDump(const nsXPTInterfaceInfo* aInfo, int16_t depth);
-
- public:
-  static already_AddRefed<nsXPCWrappedJSClass> GetNewOrUsed(REFNSIID aIID);
-
-  REFNSIID GetIID() const { return mInfo->IID(); }
-  const nsXPTInterfaceInfo* GetInterfaceInfo() const { return mInfo; }
-  const char* GetInterfaceName();
 
   static nsresult DelegatedQueryInterface(nsXPCWrappedJS* self, REFNSIID aIID,
                                           void** aInstancePtr);
@@ -1636,10 +1623,8 @@ class nsXPCWrappedJSClass final : public nsISupports {
       JS::HandleObject aObj, const char* aPropertyName,
       const char* anInterfaceName,
       mozilla::dom::Exception* aSyntheticException = nullptr);
-  virtual ~nsXPCWrappedJSClass();
-
   nsXPCWrappedJSClass() = delete;
-  explicit nsXPCWrappedJSClass(const nsXPTInterfaceInfo* aInfo);
+  ~nsXPCWrappedJSClass() = delete;
 
   static bool GetArraySizeFromParam(const nsXPTMethodInfo* method,
                                     const nsXPTType& type,
@@ -1654,9 +1639,6 @@ class nsXPCWrappedJSClass final : public nsISupports {
   static void CleanupOutparams(const nsXPTMethodInfo* info,
                                nsXPTCMiniVariant* nativeParams, bool inOutOnly,
                                uint8_t count);
-
- private:
-  const nsXPTInterfaceInfo* mInfo;
 };
 
 
@@ -1710,8 +1692,8 @@ class nsXPCWrappedJS final : protected nsAutoXPTCStub,
   
   bool IsMultiCompartment() const;
 
-  nsXPCWrappedJSClass* GetClass() const { return mClass; }
-  REFNSIID GetIID() const { return GetClass()->GetIID(); }
+  const nsXPTInterfaceInfo* GetInfo() const { return mInfo; }
+  REFNSIID GetIID() const { return mInfo->IID(); }
   nsXPCWrappedJS* GetRootWrapper() const { return mRoot; }
   nsXPCWrappedJS* GetNextWrapper() const { return mNext; }
 
@@ -1759,7 +1741,7 @@ class nsXPCWrappedJS final : protected nsAutoXPTCStub,
 
  protected:
   nsXPCWrappedJS() = delete;
-  nsXPCWrappedJS(JSContext* cx, JSObject* aJSObj, nsXPCWrappedJSClass* aClass,
+  nsXPCWrappedJS(JSContext* cx, JSObject* aJSObj, const nsXPTInterfaceInfo* aInfo,
                  nsXPCWrappedJS* root, nsresult* rv);
 
   bool CanSkip();
@@ -1772,7 +1754,7 @@ class nsXPCWrappedJS final : protected nsAutoXPTCStub,
   }
 
   JS::Heap<JSObject*> mJSObj;
-  RefPtr<nsXPCWrappedJSClass> mClass;
+  const nsXPTInterfaceInfo* const mInfo;
   nsXPCWrappedJS* mRoot;  
   nsXPCWrappedJS* mNext;
   nsCOMPtr<nsISupports> mOuter;  

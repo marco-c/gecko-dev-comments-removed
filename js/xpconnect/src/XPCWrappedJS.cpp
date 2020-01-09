@@ -103,12 +103,7 @@ NS_CYCLE_COLLECTION_CLASSNAME(nsXPCWrappedJS)::TraverseNative(
   nsrefcnt refcnt = tmp->mRefCnt.get();
   if (cb.WantDebugInfo()) {
     char name[72];
-    if (tmp->GetClass()) {
-      SprintfLiteral(name, "nsXPCWrappedJS (%s)",
-                     tmp->GetClass()->GetInterfaceName());
-    } else {
-      SprintfLiteral(name, "nsXPCWrappedJS");
-    }
+    SprintfLiteral(name, "nsXPCWrappedJS (%s)", tmp->mInfo->Name());
     cb.DescribeRefCountedNode(refcnt, name);
   } else {
     NS_IMPL_CYCLE_COLLECTION_DESCRIBE(nsXPCWrappedJS, refcnt)
@@ -334,8 +329,8 @@ nsresult nsXPCWrappedJS::GetNewOrUsed(JSContext* cx, JS::HandleObject jsObj,
   MOZ_RELEASE_ASSERT(js::GetContextCompartment(cx) ==
                      js::GetObjectCompartment(jsObj));
 
-  RefPtr<nsXPCWrappedJSClass> clasp = nsXPCWrappedJSClass::GetNewOrUsed(aIID);
-  if (!clasp) {
+  const nsXPTInterfaceInfo* info = nsXPCWrappedJSClass::GetInterfaceInfo(aIID);
+  if (!info) {
     return NS_ERROR_FAILURE;
   }
 
@@ -370,20 +365,20 @@ nsresult nsXPCWrappedJS::GetNewOrUsed(JSContext* cx, JS::HandleObject jsObj,
     
     
     
-    RefPtr<nsXPCWrappedJSClass> rootClasp =
-        nsXPCWrappedJSClass::GetNewOrUsed(NS_GET_IID(nsISupports));
-    if (!rootClasp) {
+    const nsXPTInterfaceInfo* rootInfo =
+        nsXPCWrappedJSClass::GetInterfaceInfo(NS_GET_IID(nsISupports));
+    if (!rootInfo) {
       return NS_ERROR_FAILURE;
     }
 
-    root = new nsXPCWrappedJS(cx, rootJSObj, rootClasp, nullptr, &rv);
+    root = new nsXPCWrappedJS(cx, rootJSObj, rootInfo, nullptr, &rv);
     if (NS_FAILED(rv)) {
       return rv;
     }
   }
 
   RefPtr<nsXPCWrappedJS> wrapper =
-      new nsXPCWrappedJS(cx, jsObj, clasp, root, &rv);
+      new nsXPCWrappedJS(cx, jsObj, info, root, &rv);
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -392,13 +387,13 @@ nsresult nsXPCWrappedJS::GetNewOrUsed(JSContext* cx, JS::HandleObject jsObj,
 }
 
 nsXPCWrappedJS::nsXPCWrappedJS(JSContext* cx, JSObject* aJSObj,
-                               nsXPCWrappedJSClass* aClass,
+                               const nsXPTInterfaceInfo* aInfo,
                                nsXPCWrappedJS* root, nsresult* rv)
     : mJSObj(aJSObj),
-      mClass(aClass),
+      mInfo(aInfo),
       mRoot(root ? root : this),
       mNext(nullptr) {
-  *rv = InitStub(GetClass()->GetIID());
+  *rv = InitStub(mInfo->IID());
   
   
 
@@ -535,7 +530,6 @@ void nsXPCWrappedJS::Unlink() {
     NS_RELEASE(mRoot);
   }
 
-  mClass = nullptr;
   if (mOuter) {
     XPCJSRuntime* rt = nsXPConnect::GetRuntimeInstance();
     if (rt->GCIsRunning()) {
@@ -578,7 +572,7 @@ nsXPCWrappedJS* nsXPCWrappedJS::FindInherited(REFNSIID aIID) {
   MOZ_ASSERT(!aIID.Equals(NS_GET_IID(nsISupports)), "bad call sequence");
 
   for (nsXPCWrappedJS* cur = mRoot; cur; cur = cur->mNext) {
-    if (cur->GetClass()->GetInterfaceInfo()->HasAncestor(aIID)) {
+    if (cur->mInfo->HasAncestor(aIID)) {
       return cur;
     }
   }
@@ -618,9 +612,6 @@ void nsXPCWrappedJS::SystemIsBeingShutDown() {
 
   
   
-
-  
-  
   
   
   MOZ_ASSERT(!IsIncrementalGCInProgress(xpc_GetSafeJSContext()));
@@ -634,7 +625,6 @@ void nsXPCWrappedJS::SystemIsBeingShutDown() {
 
 size_t nsXPCWrappedJS::SizeOfIncludingThis(
     mozilla::MallocSizeOf mallocSizeOf) const {
-  
   
   
   
@@ -663,14 +653,14 @@ nsXPCWrappedJS::DebugDump(int16_t depth) {
 
   XPC_LOG_ALWAYS(("%s wrapper around JSObject @ %p",
                   IsRootWrapper() ? "ROOT" : "non-root", mJSObj.get()));
-  const char* name = GetClass()->GetInterfaceInfo()->Name();
+  const char* name = mInfo->Name();
   XPC_LOG_ALWAYS(("interface name is %s", name));
-  char* iid = GetClass()->GetIID().ToString();
+  char* iid = mInfo->IID().ToString();
   XPC_LOG_ALWAYS(("IID number is %s", iid ? iid : "invalid"));
   if (iid) {
     free(iid);
   }
-  XPC_LOG_ALWAYS(("nsXPCWrappedJSClass @ %p", mClass.get()));
+  XPC_LOG_ALWAYS(("nsXPTInterfaceInfo @ %p", mInfo));
 
   if (!IsRootWrapper()) {
     XPC_LOG_OUTDENT();

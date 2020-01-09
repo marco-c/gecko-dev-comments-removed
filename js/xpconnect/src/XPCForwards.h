@@ -20,7 +20,6 @@ class XPCCallContext;
 class XPCJSThrower;
 
 class nsXPCWrappedJS;
-class nsXPCWrappedJSClass;
 
 class XPCNativeMember;
 class XPCNativeInterface;
@@ -34,7 +33,6 @@ class XPCTraceableVariant;
 
 class JSObject2WrappedJSMap;
 class Native2WrappedNativeMap;
-class IID2WrappedJSClassMap;
 class IID2NativeInterfaceMap;
 class ClassInfo2NativeSetMap;
 class ClassInfo2WrappedNativeProtoMap;
