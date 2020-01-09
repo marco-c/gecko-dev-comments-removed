@@ -21,7 +21,6 @@
 #include "nsClassHashtable.h"
 #include "nsDataHashtable.h"
 #include "nsHashKeys.h"
-#include "nsTArray.h"
 
 class ProfilerMarker;
 
@@ -167,7 +166,7 @@ struct JITFrameInfoForBufferRange final {
     void* mCanonicalAddress;
     uint32_t mDepth;
   };
-  nsClassHashtable<nsPtrHashKey<void>, nsTArray<JITFrameKey>>
+  nsClassHashtable<nsPtrHashKey<void>, mozilla::Vector<JITFrameKey>>
       mJITAddressToJITFramesMap;
   nsClassHashtable<nsGenericHashKey<JITFrameKey>, nsCString>
       mJITFrameToFrameJSONMap;
@@ -196,19 +195,19 @@ struct JITFrameInfo final {
   
   
   bool HasExpired(uint64_t aCurrentBufferRangeStart) const {
-    if (mRanges.IsEmpty()) {
+    if (mRanges.empty()) {
       
       
       return true;
     }
-    return mRanges.LastElement().mRangeEnd <= aCurrentBufferRangeStart;
+    return mRanges.back().mRangeEnd <= aCurrentBufferRangeStart;
   }
 
   
   
   
   
-  nsTArray<JITFrameInfoForBufferRange> mRanges;
+  mozilla::Vector<JITFrameInfoForBufferRange> mRanges;
 
   
   
@@ -296,7 +295,7 @@ class UniqueStacks {
   
   
   
-  MOZ_MUST_USE mozilla::Maybe<nsTArray<UniqueStacks::FrameKey>>
+  MOZ_MUST_USE mozilla::Maybe<mozilla::Vector<UniqueStacks::FrameKey>>
   LookupFramesForJITAddressFromBufferPos(void* aJITAddress,
                                          uint64_t aBufferPosition);
 
@@ -320,7 +319,7 @@ class UniqueStacks {
   SpliceableChunkedJSONWriter mStackTableWriter;
   nsDataHashtable<nsGenericHashKey<StackKey>, uint32_t> mStackToIndexMap;
 
-  nsTArray<JITFrameInfoForBufferRange> mJITInfoRanges;
+  mozilla::Vector<JITFrameInfoForBufferRange> mJITInfoRanges;
 };
 
 

@@ -605,7 +605,7 @@ RefPtr<nsProfiler::GatheringPromise> nsProfiler::StartGathering(
   mWriter->StartArrayProperty("processes");
 
   
-  nsTArray<nsCString> exitProfiles = profiler_move_exit_profiles();
+  Vector<nsCString> exitProfiles = profiler_move_exit_profiles();
   for (auto& exitProfile : exitProfiles) {
     if (!exitProfile.IsEmpty()) {
       mWriter->Splice(exitProfile.get());

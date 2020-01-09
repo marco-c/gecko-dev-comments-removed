@@ -33,8 +33,8 @@
 
 #include "mozilla/Logging.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/Vector.h"
 #include "nsString.h"
-#include "nsTArray.h"
 
 #include <functional>
 #include <stdint.h>
@@ -129,6 +129,6 @@ void profiler_received_exit_profile(const nsCString& aExitProfile);
 
 
 
-nsTArray<nsCString> profiler_move_exit_profiles();
+mozilla::Vector<nsCString> profiler_move_exit_profiles();
 
 #endif 
