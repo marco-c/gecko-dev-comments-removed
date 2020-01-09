@@ -511,14 +511,21 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
   
   
   class CueStyleBox extends StyleBoxBase {
-    constructor(window, cue, styleOptions) {
+    constructor(window, cue, containerBox) {
       super();
       this.cue = cue;
       this.div = window.document.createElement("div");
       this.cueDiv = parseContent(window, cue.text, supportPseudo ?
         PARSE_CONTENT_MODE.PSUEDO_CUE : PARSE_CONTENT_MODE.NORMAL_CUE);
       this.div.appendChild(this.cueDiv);
-      this.applyStyles(this._getNodeDefaultStyles(cue, styleOptions));
+
+      this.fontSize = this._getFontSize(containerBox.height);
+      
+      
+      if (supportPseudo) {
+        this.cueDiv.style.setProperty("--cue-font-size", this.fontSize);
+      }
+      this.applyStyles(this._getNodeDefaultStyles(cue));
     }
 
     move(box) {
@@ -536,15 +543,23 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
 
 
 
+    _getFontSize(renderingAreaHeight) {
+      
+      
+      
+      
+      
+      return renderingAreaHeight * 0.05 + "px";
+    }
 
     
-    _getNodeDefaultStyles(cue, styleOptions) {
+    _getNodeDefaultStyles(cue) {
       let styles = {
         "position": "absolute",
         "unicode-bidi": "plaintext",
         "overflow-wrap": "break-word",
         
-        "font": styleOptions.font,
+        "font": this.fontSize + " sans-serif",
         "color": "rgba(255,255,255,1)",
         "white-space": "pre-line",
         "text-align": cue.align,
@@ -1032,9 +1047,6 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
     return parseContent(window, cuetext, PARSE_CONTENT_MODE.DOCUMENT_FRAGMENT);
   };
 
-  var FONT_SIZE_PERCENT = 0.05;
-  var FONT_STYLE = "sans-serif";
-
   
   
   
@@ -1092,11 +1104,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
     overlay.appendChild(rootOfCues);
 
     var boxPositions = [],
-        containerBox = BoxPosition.getSimpleBoxPosition(rootOfCues),
-        fontSize = Math.round(containerBox.height * FONT_SIZE_PERCENT * 100) / 100;
-    var styleOptions = {
-      font: fontSize + "px " + FONT_STYLE
-    };
+        containerBox = BoxPosition.getSimpleBoxPosition(rootOfCues);
 
     (function() {
       var styleBox, cue, controlBarBox;
@@ -1146,8 +1154,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
           boxPositions.push(BoxPosition.getSimpleBoxPosition(currentRegionBox));
         } else {
           
-          styleBox = new CueStyleBox(window, cue, styleOptions);
-          styleBox.cueDiv.style.setProperty("--cue-font-size", fontSize + "px");
+          styleBox = new CueStyleBox(window, cue, containerBox);
           rootOfCues.appendChild(styleBox.div);
 
           
