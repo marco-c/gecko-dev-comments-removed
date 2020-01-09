@@ -1786,8 +1786,45 @@ static bool InitializeLegacyNetscapeObject(JSContext* aCx,
   return JS_DefineFunctions(aCx, obj, EnablePrivilegeSpec);
 }
 
+struct MOZ_STACK_CLASS CompartmentFinderState {
+  explicit CompartmentFinderState(nsIPrincipal* aPrincipal)
+      : principal(aPrincipal), compartment(nullptr) {}
+
+  
+  
+  nsIPrincipal* principal;
+
+  
+  JS::Compartment* compartment;
+};
+
+static JS::CompartmentIterResult FindSameOriginCompartment(
+    JSContext* aCx, void* aData, JS::Compartment* aCompartment) {
+  auto* data = static_cast<CompartmentFinderState*>(aData);
+  MOZ_ASSERT(!data->compartment, "Why are we getting called?");
+
+  
+  
+  
+  
+  
+  if (!js::IsSharableCompartment(aCompartment)) {
+    return JS::CompartmentIterResult::KeepGoing;
+  }
+
+  auto* compartmentPrivate = xpc::CompartmentPrivate::Get(aCompartment);
+  if (!compartmentPrivate->CanShareCompartmentWith(data->principal)) {
+    
+    return JS::CompartmentIterResult::KeepGoing;
+  }
+
+  
+  data->compartment = aCompartment;
+  return JS::CompartmentIterResult::Stop;
+}
+
 static JS::RealmCreationOptions& SelectZone(
-    nsIPrincipal* aPrincipal, nsGlobalWindowInner* aNewInner,
+    JSContext* aCx, nsIPrincipal* aPrincipal, nsGlobalWindowInner* aNewInner,
     JS::RealmCreationOptions& aOptions) {
   
   if (nsContentUtils::IsSystemPrincipal(aPrincipal)) {
@@ -1805,6 +1842,14 @@ static JS::RealmCreationOptions& SelectZone(
 
     
     if (top && top->GetGlobalJSObject()) {
+      JS::Zone* zone = JS::GetObjectZone(top->GetGlobalJSObject());
+      
+      
+      CompartmentFinderState data(aPrincipal);
+      JS_IterateCompartmentsInZone(aCx, zone, &data, FindSameOriginCompartment);
+      if (data.compartment) {
+        return aOptions.setExistingCompartment(data.compartment);
+      }
       return aOptions.setNewCompartmentInExistingZone(top->GetGlobalJSObject());
     }
   }
@@ -1834,7 +1879,7 @@ static nsresult CreateNativeGlobalForInner(JSContext* aCx,
 
   JS::RealmOptions options;
 
-  SelectZone(aPrincipal, aNewInner, options.creationOptions());
+  SelectZone(aCx, aPrincipal, aNewInner, options.creationOptions());
 
   options.creationOptions().setSecureContext(aIsSecureContext);
 

@@ -894,6 +894,11 @@ class XPCWrappedNativeScope final {
   
   JSObject* EnsureContentXBLScope(JSContext* cx);
 
+  
+  
+  
+  bool XBLScopeStateMatches(nsIPrincipal* aPrincipal);
+
   XPCWrappedNativeScope(JS::Compartment* aCompartment,
                         JS::HandleObject aFirstGlobal);
 
@@ -2684,6 +2689,18 @@ class CompartmentPrivate {
   static CompartmentPrivate* Get(JSObject* object) {
     JS::Compartment* compartment = js::GetObjectCompartment(object);
     return Get(compartment);
+  }
+
+  bool CanShareCompartmentWith(nsIPrincipal* principal) {
+    
+    if (!originInfo.IsSameOrigin(principal)) {
+      return false;
+    }
+
+    
+    return !wantXrays && !isWebExtensionContentScript &&
+           !isContentXBLCompartment && !isUAWidgetCompartment &&
+           !universalXPConnectEnabled && scope->XBLScopeStateMatches(principal);
   }
 
   CompartmentOriginInfo originInfo;

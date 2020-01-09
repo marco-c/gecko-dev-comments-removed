@@ -28,6 +28,23 @@ using namespace JS;
 XPCWrappedNativeScope* XPCWrappedNativeScope::gScopes = nullptr;
 XPCWrappedNativeScope* XPCWrappedNativeScope::gDyingScopes = nullptr;
 
+static bool RemoteXULForbidsXBLScopeForPrincipal(nsIPrincipal* aPrincipal) {
+  
+  
+  MOZ_ASSERT(nsContentUtils::IsInitialized());
+  if (aPrincipal->IsSystemPrincipal()) {
+    return false;
+  }
+
+  
+  if (!nsContentUtils::AllowXULXBLForPrincipal(aPrincipal)) {
+    return false;
+  }
+
+  
+  return !Preferences::GetBool("dom.use_xbl_scopes_for_remote_xul", false);
+}
+
 static bool RemoteXULForbidsXBLScope(HandleObject aFirstGlobal) {
   MOZ_ASSERT(aFirstGlobal);
 
@@ -39,21 +56,8 @@ static bool RemoteXULForbidsXBLScope(HandleObject aFirstGlobal) {
     return false;
   }
 
-  
-  
   nsIPrincipal* principal = xpc::GetObjectPrincipal(aFirstGlobal);
-  MOZ_ASSERT(nsContentUtils::IsInitialized());
-  if (nsContentUtils::IsSystemPrincipal(principal)) {
-    return false;
-  }
-
-  
-  if (!nsContentUtils::AllowXULXBLForPrincipal(principal)) {
-    return false;
-  }
-
-  
-  return !Preferences::GetBool("dom.use_xbl_scopes_for_remote_xul", false);
+  return RemoteXULForbidsXBLScopeForPrincipal(principal);
 }
 
 XPCWrappedNativeScope::XPCWrappedNativeScope(JS::Compartment* aCompartment,
@@ -206,6 +210,11 @@ JSObject* XPCWrappedNativeScope::EnsureContentXBLScope(JSContext* cx) {
   
   
   return global;
+}
+
+bool XPCWrappedNativeScope::XBLScopeStateMatches(nsIPrincipal* aPrincipal) {
+  return mAllowContentXBLScope ==
+         !RemoteXULForbidsXBLScopeForPrincipal(aPrincipal);
 }
 
 bool XPCWrappedNativeScope::AllowContentXBLScope(Realm* aRealm) {
