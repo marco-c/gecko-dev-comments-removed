@@ -48,14 +48,17 @@ NS_INTERFACE_MAP_END
 
 PerformanceObserver::PerformanceObserver(nsPIDOMWindowInner* aOwner,
                                          PerformanceObserverCallback& aCb)
-    : mOwner(aOwner), mCallback(&aCb), mConnected(false) {
+    : mOwner(aOwner),
+      mCallback(&aCb),
+      mObserverType(ObserverTypeUndefined),
+      mConnected(false) {
   MOZ_ASSERT(mOwner);
   mPerformance = aOwner->GetPerformance();
 }
 
 PerformanceObserver::PerformanceObserver(WorkerPrivate* aWorkerPrivate,
                                          PerformanceObserverCallback& aCb)
-    : mCallback(&aCb), mConnected(false) {
+    : mCallback(&aCb), mObserverType(ObserverTypeUndefined), mConnected(false) {
   MOZ_ASSERT(aWorkerPrivate);
   mPerformance = aWorkerPrivate->GlobalScope()->GetPerformance();
 }
@@ -116,85 +119,216 @@ void PerformanceObserver::Notify() {
 void PerformanceObserver::QueueEntry(PerformanceEntry* aEntry) {
   MOZ_ASSERT(aEntry);
 
-  nsAutoString entryType;
-  aEntry->GetEntryType(entryType);
-  if (!mEntryTypes.Contains<nsString>(entryType)) {
+  if (!ObservesTypeOfEntry(aEntry)) {
     return;
   }
-
   mQueuedEntries.AppendElement(aEntry);
 }
 
+
+
+
+
 static const char16_t* const sValidTypeNames[4] = {
-    u"navigation",
     u"mark",
     u"measure",
+    u"navigation",
     u"resource",
 };
 
-void PerformanceObserver::Observe(const PerformanceObserverInit& aOptions) {
-  if (aOptions.mEntryTypes.IsEmpty()) {
+void PerformanceObserver::ReportUnsupportedTypesErrorToConsole(
+    bool aIsMainThread, const nsString& aInvalidTypes) {
+  if (!aIsMainThread) {
+    nsTArray<nsString> params;
+    params.AppendElement(aInvalidTypes);
+    WorkerPrivate::ReportErrorToConsole("UnsupportedEntryTypesIgnored", params);
+  } else {
+    nsCOMPtr<nsPIDOMWindowInner> ownerWindow = do_QueryInterface(mOwner);
+    Document* document = ownerWindow->GetExtantDoc();
+    const char16_t* params[] = {aInvalidTypes.get()};
+    nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
+                                    NS_LITERAL_CSTRING("DOM"), document,
+                                    nsContentUtils::eDOM_PROPERTIES,
+                                    "UnsupportedEntryTypesIgnored", params, 1);
+  }
+  return;
+}
+
+void PerformanceObserver::Observe(const PerformanceObserverInit& aOptions,
+                                  ErrorResult& aRv) {
+  const Optional<Sequence<nsString>>& maybeEntryTypes = aOptions.mEntryTypes;
+  const Optional<nsString>& maybeType = aOptions.mType;
+  const Optional<bool>& maybeBuffered = aOptions.mBuffered;
+
+  if (!maybeEntryTypes.WasPassed() && !maybeType.WasPassed()) {
+    
+    aRv.Throw(NS_ERROR_DOM_SYNTAX_ERR);
     return;
   }
 
-  nsTArray<nsString> validEntryTypes;
-
-  for (const char16_t* name : sValidTypeNames) {
-    nsDependentString validTypeName(name);
-    if (aOptions.mEntryTypes.Contains<nsString>(validTypeName) &&
-        !validEntryTypes.Contains<nsString>(validTypeName)) {
-      validEntryTypes.AppendElement(validTypeName);
-    }
+  if (maybeEntryTypes.WasPassed() &&
+      (maybeType.WasPassed() || maybeBuffered.WasPassed())) {
+    
+    aRv.Throw(NS_ERROR_DOM_SYNTAX_ERR);
+    return;
   }
 
-  nsAutoString invalidTypesJoined;
-  bool addComma = false;
-  for (const auto& type : aOptions.mEntryTypes) {
-    if (!validEntryTypes.Contains<nsString>(type)) {
-      if (addComma) {
-        invalidTypesJoined.AppendLiteral(", ");
-      }
-      addComma = true;
-      invalidTypesJoined.Append(type);
-    }
-  }
-
-  if (!invalidTypesJoined.IsEmpty()) {
-    if (!NS_IsMainThread()) {
-      nsTArray<nsString> params;
-      params.AppendElement(invalidTypesJoined);
-      WorkerPrivate::ReportErrorToConsole("UnsupportedEntryTypesIgnored",
-                                          params);
+  
+  if (mObserverType == ObserverTypeUndefined) {
+    if (maybeEntryTypes.WasPassed()) {
+      mObserverType = ObserverTypeMultiple;
     } else {
-      nsCOMPtr<nsPIDOMWindowInner> ownerWindow = do_QueryInterface(mOwner);
-      Document* document = ownerWindow->GetExtantDoc();
-      const char16_t* params[] = {invalidTypesJoined.get()};
-      nsContentUtils::ReportToConsole(
-          nsIScriptError::warningFlag, NS_LITERAL_CSTRING("DOM"), document,
-          nsContentUtils::eDOM_PROPERTIES, "UnsupportedEntryTypesIgnored",
-          params, 1);
+      mObserverType = ObserverTypeSingle;
     }
   }
 
-  if (validEntryTypes.IsEmpty()) {
+  
+  if (mObserverType == ObserverTypeSingle && maybeEntryTypes.WasPassed()) {
+    aRv.Throw(NS_ERROR_DOM_INVALID_MODIFICATION_ERR);
+    return;
+  }
+  
+  if (mObserverType == ObserverTypeMultiple && maybeType.WasPassed()) {
+    aRv.Throw(NS_ERROR_DOM_INVALID_MODIFICATION_ERR);
     return;
   }
 
-  mEntryTypes.SwapElements(validEntryTypes);
+  
+  if (mObserverType == ObserverTypeMultiple) {
+    const Sequence<nsString>& entryTypes = maybeEntryTypes.Value();
 
-  mPerformance->AddObserver(this);
+    if (entryTypes.IsEmpty()) {
+      return;
+    }
 
-  if (aOptions.mBuffered) {
-    for (auto entryType : mEntryTypes) {
+    
+    nsTArray<nsString> validEntryTypes;
+    for (const char16_t* name : sValidTypeNames) {
+      nsDependentString validTypeName(name);
+      if (entryTypes.Contains<nsString>(validTypeName) &&
+          !validEntryTypes.Contains<nsString>(validTypeName)) {
+        validEntryTypes.AppendElement(validTypeName);
+      }
+    }
+
+    nsAutoString invalidTypesJoined;
+    bool addComma = false;
+    for (const auto& type : entryTypes) {
+      if (!validEntryTypes.Contains<nsString>(type)) {
+        if (addComma) {
+          invalidTypesJoined.AppendLiteral(", ");
+        }
+        addComma = true;
+        invalidTypesJoined.Append(type);
+      }
+    }
+
+    if (!invalidTypesJoined.IsEmpty()) {
+      ReportUnsupportedTypesErrorToConsole(NS_IsMainThread(),
+                                           invalidTypesJoined);
+    }
+
+    
+    if (validEntryTypes.IsEmpty()) {
+      nsString errorString;
+      nsresult rv = nsContentUtils::GetLocalizedString(
+          nsContentUtils::eDOM_PROPERTIES, "NoValidEntryTypes", errorString);
+      NS_ENSURE_SUCCESS(rv, );
+      ReportUnsupportedTypesErrorToConsole(NS_IsMainThread(), errorString);
+      return;
+    }
+
+    
+
+
+
+    mOptions.Clear();
+    mOptions.AppendElement(aOptions);
+
+  } else {
+    MOZ_ASSERT(mObserverType == ObserverTypeSingle);
+    bool typeValid = false;
+    nsString type = maybeType.Value();
+
+    
+    for (const char16_t* name : sValidTypeNames) {
+      nsDependentString validTypeName(name);
+      if (type == validTypeName) {
+        typeValid = true;
+        break;
+      }
+    }
+
+    if (!typeValid) {
+      ReportUnsupportedTypesErrorToConsole(NS_IsMainThread(), type);
+      return;
+    }
+
+    
+    bool didUpdateOptionsList = false;
+    nsTArray<PerformanceObserverInit> updatedOptionsList;
+    for (auto& option : mOptions) {
+      if (option.mType.WasPassed() && option.mType.Value() == type) {
+        updatedOptionsList.AppendElement(aOptions);
+        didUpdateOptionsList = true;
+      } else {
+        updatedOptionsList.AppendElement(option);
+      }
+    }
+    if (!didUpdateOptionsList) {
+      updatedOptionsList.AppendElement(aOptions);
+    }
+    mOptions.SwapElements(updatedOptionsList);
+
+    
+    if (maybeBuffered.WasPassed() && maybeBuffered.Value()) {
       nsTArray<RefPtr<PerformanceEntry>> existingEntries;
-      mPerformance->GetEntriesByType(entryType, existingEntries);
+      mPerformance->GetEntriesByType(type, existingEntries);
       if (!existingEntries.IsEmpty()) {
         mQueuedEntries.AppendElements(existingEntries);
       }
     }
   }
+  
 
+
+  mPerformance->AddObserver(this);
   mConnected = true;
+}
+
+void PerformanceObserver::GetSupportedEntryTypes(
+    const GlobalObject& aGlobal, JS::MutableHandle<JSObject*> aObject) {
+  nsTArray<nsString> validTypes;
+  JS::Rooted<JS::Value> val(aGlobal.Context());
+
+  for (const char16_t* name : sValidTypeNames) {
+    nsString validTypeName(name);
+    validTypes.AppendElement(validTypeName);
+  }
+
+  if (!ToJSValue(aGlobal.Context(), validTypes, &val)) {
+    
+
+
+
+    return;
+  }
+  aObject.set(&val.toObject());
+}
+
+bool PerformanceObserver::ObservesTypeOfEntry(PerformanceEntry* aEntry) {
+  for (auto& option : mOptions) {
+    if (option.mType.WasPassed()) {
+      if (option.mType.Value() == aEntry->GetEntryType()) {
+        return true;
+      }
+    } else {
+      if (option.mEntryTypes.Value().Contains(aEntry->GetEntryType())) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 void PerformanceObserver::Disconnect() {
