@@ -31,6 +31,7 @@ class nsIRollupListener {
 
 
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   virtual bool Rollup(uint32_t aCount, bool aFlush, const nsIntPoint* aPoint,
                       nsIContent** aLastRolledUp) = 0;
 

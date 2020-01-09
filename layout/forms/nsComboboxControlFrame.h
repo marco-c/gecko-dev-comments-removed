@@ -184,6 +184,7 @@ class nsComboboxControlFrame final : public nsBlockFrame,
 
 
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   virtual bool Rollup(uint32_t aCount, bool aFlush, const nsIntPoint* pos,
                       nsIContent** aLastRolledUp) override;
   virtual void NotifyGeometryChange() override;
