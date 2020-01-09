@@ -18,6 +18,9 @@ Services.scriptloader.loadSubScript(
   this);
 
 
+Services.scriptloader.loadSubScript(CHROME_URL_ROOT + "helper-mocks.js", this);
+
+
 registerCleanupFunction(async function() {
   try {
     const { adbAddon } = require("devtools/shared/adb/adb-addon");
