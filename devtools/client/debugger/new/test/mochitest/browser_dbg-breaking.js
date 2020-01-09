@@ -12,7 +12,7 @@ add_task(async function() {
 
   
   
-  await addBreakpoint(dbg, "scripts.html", 18);
+  await addBreakpoint(dbg, "scripts.html", 21);
   reload(dbg);
 
   await waitForDispatch(dbg, "NAVIGATE");
