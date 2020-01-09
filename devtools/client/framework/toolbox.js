@@ -220,6 +220,9 @@ Toolbox.HostType = {
   LEFT: "left",
   WINDOW: "window",
   CUSTOM: "custom",
+  
+  
+  PAGE: "page",
 };
 
 Toolbox.prototype = {
@@ -435,7 +438,9 @@ Toolbox.prototype = {
       if (isToolboxURL) {
         
         this._URL = this.win.location.href;
+      }
 
+      if (this.hostType === Toolbox.HostType.PAGE) {
         
         
         
@@ -727,6 +732,7 @@ Toolbox.prototype = {
       case Toolbox.HostType.WINDOW: return 2;
       case Toolbox.HostType.CUSTOM: return 3;
       case Toolbox.HostType.LEFT: return 4;
+      case Toolbox.HostType.PAGE: return 5;
       default: return 9;
     }
   },
@@ -738,6 +744,7 @@ Toolbox.prototype = {
       case Toolbox.HostType.LEFT: return "left";
       case Toolbox.HostType.RIGHT: return "right";
       case Toolbox.HostType.WINDOW: return "window";
+      case Toolbox.HostType.PAGE: return "page";
       case Toolbox.HostType.CUSTOM: return "other";
       default: return "bottom";
     }
@@ -1105,6 +1112,7 @@ Toolbox.prototype = {
     for (const type in Toolbox.HostType) {
       const position = Toolbox.HostType[type];
       if (position == Toolbox.HostType.CUSTOM ||
+          position == Toolbox.HostType.PAGE ||
           (!sideEnabled &&
             (position == Toolbox.HostType.LEFT || position == Toolbox.HostType.RIGHT))) {
         continue;
@@ -2981,7 +2989,13 @@ Toolbox.prototype = {
           
           
           try {
-            win.location.replace("about:blank");
+            
+            
+            
+            
+            if (this.hostType !== Toolbox.HostType.PAGE) {
+              win.location.replace("about:blank");
+            }
           } catch (e) {
             
           }

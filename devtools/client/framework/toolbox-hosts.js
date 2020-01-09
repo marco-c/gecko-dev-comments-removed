@@ -373,6 +373,35 @@ CustomHost.prototype = {
 
 
 
+
+
+
+function PageHost(hostTab, options) {
+  this.frame = options.customIframe;
+}
+
+PageHost.prototype = {
+  type: "page",
+
+  create: function() {
+    return promise.resolve(this.frame);
+  },
+
+  
+  raise: function() {},
+
+  
+  setTitle: function(title) {},
+
+  
+  destroy: function() {
+    return promise.resolve(null);
+  },
+};
+
+
+
+
 function focusTab(tab) {
   const browserWindow = tab.ownerDocument.defaultView;
   browserWindow.focus();
@@ -385,5 +414,5 @@ exports.Hosts = {
   "right": RightHost,
   "window": WindowHost,
   "custom": CustomHost,
+  "page": PageHost,
 };
-
