@@ -45,7 +45,7 @@ pub struct CounterPair<Integer> {
     ToResolvedValue,
     ToShmem,
 )]
-pub struct CounterIncrement<I>(Counters<I>);
+pub struct CounterIncrement<I>(pub Counters<I>);
 
 impl<I> CounterIncrement<I> {
     
@@ -77,7 +77,7 @@ impl<I> Deref for CounterIncrement<I> {
     ToResolvedValue,
     ToShmem,
 )]
-pub struct CounterSetOrReset<I>(Counters<I>);
+pub struct CounterSetOrReset<I>(pub Counters<I>);
 
 impl<I> CounterSetOrReset<I> {
     
@@ -102,6 +102,7 @@ impl<I> Deref for CounterSetOrReset<I> {
 #[derive(
     Clone,
     Debug,
+    Default,
     MallocSizeOf,
     PartialEq,
     SpecifiedValueInfo,
@@ -112,10 +113,13 @@ impl<I> Deref for CounterSetOrReset<I> {
 )]
 pub struct Counters<I>(#[css(iterable, if_empty = "none")] Box<[CounterPair<I>]>);
 
-impl<I> Default for Counters<I> {
+impl<I> Counters<I> {
+    
+    
+    
     #[inline]
-    fn default() -> Self {
-        Counters(vec![].into_boxed_slice())
+    pub fn into_vec(self) -> Vec<CounterPair<I>> {
+        self.0.into_vec()
     }
 }
 

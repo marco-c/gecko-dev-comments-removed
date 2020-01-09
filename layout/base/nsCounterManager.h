@@ -214,7 +214,7 @@ class nsCounterManager {
 
   
   
-  nsCounterList* CounterListFor(const nsAString& aCounterName);
+  nsCounterList* CounterListFor(nsAtom* aCounterName);
 
   
   void RecalcAll();
@@ -262,7 +262,7 @@ class nsCounterManager {
                             const nsStyleCounterData& aCounterData,
                             nsCounterNode::Type aType);
 
-  nsClassHashtable<nsStringHashKey, nsCounterList> mNames;
+  nsClassHashtable<nsRefPtrHashKey<nsAtom>, nsCounterList> mNames;
 };
 
 #endif 
