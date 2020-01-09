@@ -13,6 +13,7 @@
 #include "mozilla/dom/Document.h"
 
 using namespace mozilla;
+using namespace mozilla::dom;
 
 
 bool ServoCSSParser::IsValidCSSColor(const nsAString& aValue) {
