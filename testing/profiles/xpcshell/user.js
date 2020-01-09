@@ -16,6 +16,3 @@ user_pref("toolkit.telemetry.server", "https://%(server)s/telemetry-dummy");
 
 
 user_pref("dom.ipc.processPriorityManager.enabled", false);
-
-
-user_pref("idle.lastDailyNotification", -1);

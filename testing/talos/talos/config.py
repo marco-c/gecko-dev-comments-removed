@@ -142,6 +142,11 @@ def set_webserver(config):
 
 @validator
 def update_prefs(config):
+    config.setdefault('preferences', {}).update({
+        
+        'idle.lastDailyNotification': int(time.time()),
+    })
+
     
     prefs = config.pop('extraPrefs')
     if prefs:
