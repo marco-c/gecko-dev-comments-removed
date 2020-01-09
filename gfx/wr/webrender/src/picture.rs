@@ -1158,14 +1158,27 @@ impl TileCache {
                                 
                                 if clip_chain_node.spatial_node_index == prim_instance.spatial_node_index {
                                     culling_rect = culling_rect.intersection(&local_clip_rect).unwrap_or(LayoutRect::zero());
-                                } else {
+
+                                    false
+                                } else if !clip_scroll_tree.is_same_or_child_of(
+                                    clip_chain_node.spatial_node_index,
+                                    self.spatial_node_index,
+                                ) {
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
                                     world_clips.push((
                                         clip_world_rect.into(),
                                         clip_chain_node.spatial_node_index,
                                     ));
-                                }
 
-                                false
+                                    false
+                                } else {
+                                    true
+                                }
                             }
                             None => {
                                 true
