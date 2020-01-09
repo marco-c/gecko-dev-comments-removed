@@ -45,6 +45,7 @@
 #include "mozilla/PendingAnimationTracker.h"
 #include "mozilla/PendingFullscreenEvent.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/StaticPrefs.h"
 #include "nsViewManager.h"
 #include "GeckoProfiler.h"
 #include "nsNPAPIPluginInstance.h"
@@ -254,6 +255,19 @@ class RefreshDriverTimer {
     MOZ_ASSERT(NS_IsMainThread());
     TimeStamp nextTick = MostRecentRefresh() + GetTimerRate();
     return nextTick < TimeStamp::Now() ? Nothing() : Some(nextTick);
+  }
+
+  
+  
+  
+  nsPresContext* GetPresContextForOnlyRefreshDriver() {
+    if (mRootRefreshDrivers.Length() == 1 && mContentRefreshDrivers.IsEmpty()) {
+      return mRootRefreshDrivers[0]->GetPresContext();
+    }
+    if (mContentRefreshDrivers.Length() == 1 && mRootRefreshDrivers.IsEmpty()) {
+      return mContentRefreshDrivers[0]->GetPresContext();
+    }
+    return nullptr;
   }
 
  protected:
@@ -541,6 +555,37 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
           }
 
           return true;
+        }
+
+        if (StaticPrefs::layout_lower_priority_refresh_driver_during_load()) {
+          nsPresContext* pctx =
+              mVsyncRefreshDriverTimer->GetPresContextForOnlyRefreshDriver();
+          if (pctx && pctx->HadContentfulPaint() && pctx->Document() &&
+              pctx->Document()->GetReadyStateEnum() <
+                  Document::READYSTATE_COMPLETE) {
+            nsPIDOMWindowInner* win = pctx->Document()->GetInnerWindow();
+            if (win) {
+              dom::Performance* perf = win->GetPerformance();
+              
+              
+              if (perf && perf->Now() < 5000) {
+                if (mProcessedVsync) {
+                  mProcessedVsync = false;
+                  
+                  
+                  TimeDuration rate = mVsyncRefreshDriverTimer->GetTimerRate();
+                  uint32_t slowRate =
+                      static_cast<uint32_t>(rate.ToMilliseconds() * 4);
+                  nsCOMPtr<nsIRunnable> vsyncEvent = NewRunnableMethod<>(
+                      "RefreshDriverVsyncObserver::NormalPriorityNotify[IDLE]",
+                      this, &RefreshDriverVsyncObserver::NormalPriorityNotify);
+                  NS_DispatchToCurrentThreadQueue(vsyncEvent.forget(), slowRate,
+                                                  EventQueuePriority::Idle);
+                }
+                return true;
+              }
+            }
+          }
         }
 
         RefPtr<RefreshDriverVsyncObserver> kungFuDeathGrip(this);
