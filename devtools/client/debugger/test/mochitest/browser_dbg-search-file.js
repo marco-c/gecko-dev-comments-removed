@@ -64,4 +64,10 @@ add_task(async function() {
   
   await selectSource(dbg, "simple2");
   ok(findElement(dbg, "searchField"), "Search field is still visible");
+
+  
+  pressKey(dbg, "fileSearch");
+  await clickElement(dbg, "codeMirror");
+  pressKey(dbg, "fileSearch");
+  is(dbg.win.document.activeElement.tagName, "INPUT", "Search field focused");
 });
