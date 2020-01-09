@@ -2,6 +2,13 @@
 
 
 
+
+
+
+
+
+"use strict";
+
 const TEST_PATH = getRootDirectory(gTestPath)
   .replace("chrome://mochitests/content", "http://example.com");
 const TEST_URL = `${TEST_PATH}dummy_page.html`;

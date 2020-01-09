@@ -17,8 +17,7 @@ add_task(async function init() {
     await Services.search.removeEngine(engine);
     
     gURLBar.handleRevert();
-    gURLBar.blur();
-    Assert.ok(!gURLBar.popup.popupOpen, "popup should be closed");
+    await UrlbarTestUtils.promisePopupClose(window, () => gURLBar.blur());
   });
 });
 
@@ -43,10 +42,10 @@ add_task(async function spacesBeforeAlias() {
   gURLBar.search("     " + ALIAS);
   await promiseSearchComplete();
   await waitForAutocompleteResultAt(0);
-  assertAlias(true);
+  await assertAlias(true);
 
-  EventUtils.synthesizeKey("KEY_Escape");
-  await promisePopupHidden(gURLBar.popup);
+  await UrlbarTestUtils.promisePopupClose(window,
+    () => EventUtils.synthesizeKey("KEY_Escape"));
 });
 
 
@@ -55,10 +54,10 @@ add_task(async function charsBeforeAlias() {
   gURLBar.search("not an alias " + ALIAS);
   await promiseSearchComplete();
   await waitForAutocompleteResultAt(0);
-  assertAlias(false);
+  await assertAlias(false);
 
-  EventUtils.synthesizeKey("KEY_Escape");
-  await promisePopupHidden(gURLBar.popup);
+  await UrlbarTestUtils.promisePopupClose(window,
+    () => EventUtils.synthesizeKey("KEY_Escape"));
 });
 
 
@@ -68,10 +67,10 @@ add_task(async function restrictionCharBeforeAlias() {
   gURLBar.search(UrlbarTokenizer.RESTRICT.BOOKMARK + " " + ALIAS);
   await promiseSearchComplete();
   await waitForAutocompleteResultAt(0);
-  assertAlias(false);
+  await assertAlias(false);
 
-  EventUtils.synthesizeKey("KEY_Escape");
-  await promisePopupHidden(gURLBar.popup);
+  await UrlbarTestUtils.promisePopupClose(window,
+    () => EventUtils.synthesizeKey("KEY_Escape"));
 });
 
 
@@ -83,10 +82,10 @@ add_task(async function aliasCase() {
   gURLBar.search(alias);
   await promiseSearchComplete();
   await waitForAutocompleteResultAt(0);
-  assertAlias(true, alias);
+  await assertAlias(true, alias);
 
-  EventUtils.synthesizeKey("KEY_Escape");
-  await promisePopupHidden(gURLBar.popup);
+  await UrlbarTestUtils.promisePopupClose(window,
+    () => EventUtils.synthesizeKey("KEY_Escape"));
 });
 
 
@@ -102,11 +101,10 @@ add_task(async function inputDoesntMatchHeuristicResult() {
   gURLBar.search(searchString);
   await promiseSearchComplete();
   await waitForAutocompleteResultAt(0);
-  assertAlias(true);
+  await assertAlias(true);
 
-  
-  EventUtils.synthesizeKey("KEY_Escape");
-  await promisePopupHidden(gURLBar.popup);
+  await UrlbarTestUtils.promisePopupClose(window,
+    () => EventUtils.synthesizeKey("KEY_Escape"));
 
   
   
@@ -123,11 +121,10 @@ add_task(async function inputDoesntMatchHeuristicResult() {
   gURLBar.search(searchString);
   await promiseSearchComplete();
   await waitForAutocompleteResultAt(0);
-  assertAlias(true);
+  await assertAlias(true);
 
-  
-  EventUtils.synthesizeKey("KEY_Escape");
-  await promisePopupHidden(gURLBar.popup);
+  await UrlbarTestUtils.promisePopupClose(window,
+    () => EventUtils.synthesizeKey("KEY_Escape"));
 
   
   
@@ -147,6 +144,10 @@ add_task(async function inputDoesntMatchHeuristicResult() {
 
 
 add_task(async function nonHeuristicAliases() {
+  
+  if (UrlbarPrefs.get("quantumbar")) {
+    return;
+  }
   
   
   let tokenEngines = [];
@@ -173,7 +174,6 @@ add_task(async function nonHeuristicAliases() {
   gURLBar.search("@");
   await promiseSearchComplete();
   await waitForAutocompleteResultAt(tokenEngines.length - 1);
-
   
   
   for (let { tokenAliases } of tokenEngines) {
@@ -182,9 +182,8 @@ add_task(async function nonHeuristicAliases() {
     assertHighlighted(true, alias);
   }
 
-  
-  EventUtils.synthesizeKey("KEY_Escape");
-  await promisePopupHidden(gURLBar.popup);
+  await UrlbarTestUtils.promisePopupClose(window,
+    () => EventUtils.synthesizeKey("KEY_Escape"));
 });
 
 
@@ -198,11 +197,11 @@ add_task(async function nonTokenAlias() {
   gURLBar.search(alias);
   await promiseSearchComplete();
   await waitForAutocompleteResultAt(0);
-  assertFirstResultIsAlias(true, alias);
+  await assertFirstResultIsAlias(true, alias);
   assertHighlighted(false);
 
-  EventUtils.synthesizeKey("KEY_Escape");
-  await promisePopupHidden(gURLBar.popup);
+  await UrlbarTestUtils.promisePopupClose(window,
+    () => EventUtils.synthesizeKey("KEY_Escape"));
 
   engine.alias = ALIAS;
 });
@@ -210,6 +209,10 @@ add_task(async function nonTokenAlias() {
 
 
 add_task(async function clickAndFillAlias() {
+  
+  if (UrlbarPrefs.get("quantumbar")) {
+    return;
+  }
   
   gURLBar.search("@");
   await promiseSearchComplete();
@@ -226,22 +229,22 @@ add_task(async function clickAndFillAlias() {
   }
 
   
-  let hiddenPromise = promisePopupHidden(gURLBar.popup);
-  EventUtils.synthesizeMouseAtCenter(testEngineItem, {});
+  await UrlbarTestUtils.promisePopupClose(window, () => {
+    EventUtils.synthesizeMouseAtCenter(testEngineItem, {});
+  });
 
   
   
-  await hiddenPromise;
   await promiseSearchComplete();
   await promisePopupShown(gURLBar.popup);
-  assertAlias(true);
+  await assertAlias(true);
 
   
   
   Assert.equal(gURLBar.textValue, `${ALIAS} `);
 
-  EventUtils.synthesizeKey("KEY_Escape");
-  await promisePopupHidden(gURLBar.popup);
+  await UrlbarTestUtils.promisePopupClose(window,
+    () => EventUtils.synthesizeKey("KEY_Escape"));
 });
 
 
@@ -257,7 +260,7 @@ async function doSimpleTest(revertBetweenSteps) {
   gURLBar.search(ALIAS.substr(0, ALIAS.length - 1));
   await promiseSearchComplete();
   await waitForAutocompleteResultAt(0);
-  assertAlias(false);
+  await assertAlias(false);
 
   if (revertBetweenSteps) {
     gURLBar.handleRevert();
@@ -268,7 +271,7 @@ async function doSimpleTest(revertBetweenSteps) {
   gURLBar.search(ALIAS);
   await promiseSearchComplete();
   await waitForAutocompleteResultAt(0);
-  assertAlias(true);
+  await assertAlias(true);
 
   if (revertBetweenSteps) {
     gURLBar.handleRevert();
@@ -279,7 +282,7 @@ async function doSimpleTest(revertBetweenSteps) {
   gURLBar.search(ALIAS + " foo");
   await promiseSearchComplete();
   await waitForAutocompleteResultAt(0);
-  assertAlias(true);
+  await assertAlias(true);
 
   if (revertBetweenSteps) {
     gURLBar.handleRevert();
@@ -290,7 +293,7 @@ async function doSimpleTest(revertBetweenSteps) {
   gURLBar.search(ALIAS);
   await promiseSearchComplete();
   await waitForAutocompleteResultAt(0);
-  assertAlias(true);
+  await assertAlias(true);
 
   if (revertBetweenSteps) {
     gURLBar.handleRevert();
@@ -301,31 +304,37 @@ async function doSimpleTest(revertBetweenSteps) {
   gURLBar.search(ALIAS.substr(0, ALIAS.length - 1));
   await promiseSearchComplete();
   await waitForAutocompleteResultAt(0);
-  assertAlias(false);
+  await assertAlias(false);
 
-  EventUtils.synthesizeKey("KEY_Escape");
-  await promisePopupHidden(gURLBar.popup);
+  await UrlbarTestUtils.promisePopupClose(window,
+    () => EventUtils.synthesizeKey("KEY_Escape"));
 
   Services.prefs.clearUserPref("browser.urlbar.autoFill");
 }
 
-function assertAlias(aliasPresent, expectedAlias = ALIAS) {
-  assertFirstResultIsAlias(aliasPresent, expectedAlias);
+async function assertAlias(aliasPresent, expectedAlias = ALIAS) {
+  await assertFirstResultIsAlias(aliasPresent, expectedAlias);
   assertHighlighted(aliasPresent, expectedAlias);
 }
 
-function assertFirstResultIsAlias(isAlias, expectedAlias) {
-  let controller = gURLBar.popup.input.controller;
-  let action = PlacesUtils.parseActionUrl(controller.getFinalCompleteValueAt(0));
-  Assert.ok(action);
-  Assert.equal(action.type, "searchengine");
-  Assert.equal("alias" in action.params, isAlias);
+async function assertFirstResultIsAlias(isAlias, expectedAlias) {
+  let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
+  Assert.equal(result.type, UrlbarUtils.RESULT_TYPE.SEARCH,
+    "Should have the correct type");
+
+  Assert.equal("keyword" in result.searchParams && !!result.searchParams.keyword,
+    isAlias, "Should have a keyword if expected");
   if (isAlias) {
-    Assert.equal(action.params.alias, expectedAlias);
+    Assert.equal(result.searchParams.keyword, expectedAlias,
+      "Should have the correct keyword");
   }
 }
 
 function assertHighlighted(highlighted, expectedAlias) {
+  
+  if (UrlbarPrefs.get("quantumbar")) {
+    return;
+  }
   let selection = gURLBar.editor.selectionController.getSelection(
     Ci.nsISelectionController.SELECTION_FIND
   );
