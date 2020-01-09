@@ -90,7 +90,8 @@ nsresult runTest(
 
   
   
-  rv = csp->SetRequestContext(nullptr, selfURIPrincipal);
+  rv = csp->SetRequestContextWithPrincipal(selfURIPrincipal, selfURI,
+                                           EmptyString(), 0);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
