@@ -324,8 +324,16 @@ class Nursery {
   
   
   size_t spaceToEnd(unsigned chunkCount) const;
+  size_t capacity() const { return spaceToEnd(maxChunkCount()); }
+  size_t lazyCapacity() const { return spaceToEnd(allocatedChunkCount()); }
 
   
+  
+  
+  
+  MOZ_ALWAYS_INLINE size_t usedSpace() const {
+    return capacity() - freeSpace();
+  }
   MOZ_ALWAYS_INLINE size_t freeSpace() const {
     MOZ_ASSERT(currentEnd_ - position_ <= NurseryChunkUsableSize);
     return (currentEnd_ - position_) +
