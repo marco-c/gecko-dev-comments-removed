@@ -4,6 +4,7 @@
 
 from __future__ import absolute_import
 
+import glob
 import os
 import subprocess
 import sys
@@ -427,7 +428,7 @@ class MitmproxyAndroid(Mitmproxy):
             tooltool_download(_dest, self.config['run_local'], self.mozproxy_dir)
 
             
-            self.certutil = os.path.join(self.mozproxy_dir, 'host-utils-67.0a1.en-US.linux-x86_64')
+            self.certutil = glob.glob(os.path.join(self.mozproxy_dir, 'host-utils*[!z]'))[0]
 
             
             os.environ['LD_LIBRARY_PATH'] = self.certutil
