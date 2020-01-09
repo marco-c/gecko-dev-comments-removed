@@ -5,9 +5,6 @@
 
 const URI_EXTENSION_BLOCKLIST_DIALOG = "chrome://mozapps/content/extensions/blocklist.xul";
 
-var gTestserver = AddonTestUtils.createHttpServer({hosts: ["example.com"]});
-gTestserver.registerDirectory("/data/", do_get_file("../data"));
-
 
 const PREF_BLOCKLIST_ITEM_URL = "extensions.blocklist.itemURL";
 Services.prefs.setCharPref(PREF_BLOCKLIST_ITEM_URL, "http://example.com/blocklist/%blockID%");
@@ -73,12 +70,6 @@ var ADDONS = [{
   appVersion: "3",
 }];
 
-
-
-
-
-copyBlocklistToProfile(do_get_file("../data/bug455906_start.xml"));
-
 var PLUGINS = [
   
   new MockPluginTag({name: "test_bug455906_1", version: "5"}, Ci.nsIPluginTag.STATE_DISABLED),
@@ -95,8 +86,6 @@ var PLUGINS = [
 ];
 
 var gNotificationCheck = null;
-
-mockPluginHost(PLUGINS);
 
 
 
@@ -135,15 +124,9 @@ function createAddon(addon) {
 }
 
 async function loadBlocklist(file, callback) {
-  let blocklistUpdated = TestUtils.topicObserved("plugin-blocklist-updated");
-
   gNotificationCheck = callback;
 
-  Services.prefs.setCharPref("extensions.blocklist.url",
-                             "http://example.com/data/" + file);
-  Blocklist.notify();
-
-  await blocklistUpdated;
+  await AddonTestUtils.loadBlocklistData(do_get_file("../data"), file);
 }
 
 async function check_plugin_state(plugin) {
@@ -183,7 +166,16 @@ function checkAddonState(addon, state) {
 
 add_task(async function setup() {
   createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "3", "3");
+
   await promiseStartupManager();
+
+  
+  
+  
+  
+  await AddonTestUtils.loadBlocklistData(do_get_file("../data/"), "bug455906_start");
+  mockPluginHost(PLUGINS);
+
 
   for (let addon of ADDONS)
     await createAddon(addon);
@@ -219,9 +211,13 @@ add_task(async function test_1() {
   await promiseRestartManager();
   await checkInitialState();
 
-  await loadBlocklist("bug455906_warn.xml", args => {
+  await loadBlocklist("bug455906_warn", args => {
     dump("Checking notification pt 2\n");
-    equal(args.list.length, 4);
+    
+    
+    
+    
+    equal(args.list.length, 2);
 
     for (let addon of args.list) {
       if (addon.item instanceof Ci.nsIPluginTag) {
@@ -234,20 +230,10 @@ add_task(async function test_1() {
             addon.disable = true;
             break;
           default:
-            do_throw("Unknown addon: " + addon.item.name);
+            do_throw("Unknown plugin: " + addon.item.name);
         }
       } else {
-        switch (addon.item.id) {
-          case "test_bug455906_2@tests.mozilla.org":
-            ok(!addon.blocked);
-            break;
-          case "test_bug455906_3@tests.mozilla.org":
-            ok(!addon.blocked);
-            addon.disable = true;
-            break;
-          default:
-            do_throw("Unknown addon: " + addon.item.id);
-        }
+        do_throw("Everything here should be a plugin, what is this?!");
       }
     }
   });
@@ -257,18 +243,20 @@ add_task(async function test_1() {
 
   addons = await AddonManager.getAddonsByIDs(ADDONS.map(a => a.id));
 
-  
+  info("Should have disabled this add-on as requested");
   checkAddonState(addons[2], {userDisabled: true, softDisabled: true, appDisabled: false});
   equal(await check_plugin_state(PLUGINS[2]), "true,false");
 
-  
+  info("The blocked add-on should have changed to soft disabled");
   checkAddonState(addons[5], {userDisabled: true, softDisabled: true, appDisabled: false});
   checkAddonState(addons[6], {userDisabled: true, softDisabled: true, appDisabled: true});
   equal(await check_plugin_state(PLUGINS[5]), "true,false");
 
-  
+  info("These should have been unchanged");
   checkAddonState(addons[0], {userDisabled: true, softDisabled: false, appDisabled: false});
-  checkAddonState(addons[1], {userDisabled: false, softDisabled: false, appDisabled: false});
+  
+  
+  
   checkAddonState(addons[3], {userDisabled: true, softDisabled: true, appDisabled: false});
   checkAddonState(addons[4], {userDisabled: false, softDisabled: false, appDisabled: false});
   equal(await check_plugin_state(PLUGINS[0]), "true,false");
@@ -283,14 +271,14 @@ add_task(async function test_1() {
   PLUGINS[5].enabledState = Ci.nsIPluginTag.STATE_ENABLED;
 
   await promiseRestartManager();
-  await loadBlocklist("bug455906_start.xml");
+  await loadBlocklist("bug455906_start");
 });
 
 add_task(async function test_pt3() {
   await promiseRestartManager();
   await checkInitialState();
 
-  await loadBlocklist("bug455906_block.xml", args => {
+  await loadBlocklist("bug455906_block", args => {
     dump("Checking notification pt 3\n");
     equal(args.list.length, 3);
 
@@ -366,7 +354,7 @@ add_task(async function test_pt3() {
   equal(await check_plugin_state(PLUGINS[5]), "false,true");
 
   
-  await loadBlocklist("bug455906_start.xml");
+  await loadBlocklist("bug455906_start");
 });
 
 add_task(async function test_pt4() {
@@ -377,13 +365,10 @@ add_task(async function test_pt4() {
   await promiseRestartManager();
   await checkInitialState();
 
-  await loadBlocklist("bug455906_empty.xml", args => {
+  await loadBlocklist("bug455906_empty", args => {
     dump("Checking notification pt 4\n");
-
     
-    equal(args.list.length, 1);
-    equal(false, args.list[0].item instanceof Ci.nsIPluginTag);
-    equal(args.list[0].item.id, "dummy_bug455906_2@tests.mozilla.org");
+    ok(false, "Should not get a notification as there are no blocked plugins.");
   });
 
   await promiseRestartManager();

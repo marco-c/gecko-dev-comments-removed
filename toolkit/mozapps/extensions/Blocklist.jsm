@@ -128,6 +128,152 @@ const PREF_BLOCKLIST_BUCKET                  = "services.blocklist.bucket";
 const PREF_BLOCKLIST_GFX_COLLECTION          = "services.blocklist.gfx.collection";
 const PREF_BLOCKLIST_GFX_CHECKED_SECONDS     = "services.blocklist.gfx.checked";
 const PREF_BLOCKLIST_GFX_SIGNER              = "services.blocklist.gfx.signer";
+const PREF_BLOCKLIST_PLUGINS_COLLECTION      = "services.blocklist.plugins.collection";
+const PREF_BLOCKLIST_PLUGINS_CHECKED_SECONDS = "services.blocklist.plugins.checked";
+const PREF_BLOCKLIST_PLUGINS_SIGNER          = "services.blocklist.plugins.signer";
+const PREF_BLOCKLIST_ADDONS_COLLECTION       = "services.blocklist.addons.collection";
+const PREF_BLOCKLIST_ADDONS_CHECKED_SECONDS  = "services.blocklist.addons.checked";
+const PREF_BLOCKLIST_ADDONS_SIGNER           = "services.blocklist.addons.signer";
+
+const Utils = {
+  
+
+
+
+
+
+
+
+
+
+
+  matchesOSABI(item) {
+    if (item.os) {
+      let os = item.os.split(",");
+      if (!os.includes(gAppOS)) {
+        return false;
+      }
+    }
+
+    if (item.xpcomabi) {
+      let xpcomabi = item.xpcomabi.split(",");
+      if (!xpcomabi.includes(gApp.XPCOMABI)) {
+        return false;
+      }
+    }
+    return true;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  versionInRange(version, minVersion, maxVersion) {
+    if (minVersion && Services.vc.compare(version, minVersion) < 0)
+      return false;
+    if (maxVersion && Services.vc.compare(version, maxVersion) > 0)
+      return false;
+    return true;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  versionsMatch(versionRange, itemVersion, appVersion, toolkitVersion) {
+    
+    
+    if (!itemVersion && (versionRange.minVersion || versionRange.maxVersion))
+      return false;
+
+    
+    if (!this.versionInRange(itemVersion, versionRange.minVersion, versionRange.maxVersion))
+      return false;
+
+    
+    for (let tA of versionRange.targetApplication) {
+      if (tA.guid == gAppID && this.versionInRange(appVersion, tA.minVersion, tA.maxVersion)) {
+        return true;
+      }
+      if (tA.guid == TOOLKIT_ID &&
+          this.versionInRange(toolkitVersion, tA.minVersion, tA.maxVersion)) {
+        return true;
+      }
+    }
+    return false;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  ensureVersionRangeIsSane(entry) {
+    if (!entry.versionRange.length) {
+      entry.versionRange.push({});
+    }
+    for (let vr of entry.versionRange) {
+      if (!vr.hasOwnProperty("severity")) {
+        vr.severity = DEFAULT_SEVERITY;
+      }
+      if (!vr.hasOwnProperty("vulnerabilityStatus")) {
+        vr.vulnerabilityStatus = VULNERABILITYSTATUS_NONE;
+      }
+
+      if (!Array.isArray(vr.targetApplication)) {
+        vr.targetApplication = [];
+      }
+      if (!vr.targetApplication.length) {
+        vr.targetApplication.push({minVersion: null, maxVersion: null});
+      }
+      vr.targetApplication.forEach(tA => {
+        if (!tA.guid) {
+          tA.guid = gAppID;
+        }
+      });
+    }
+  },
+
+  
+
+
+
+
+  _createBlocklistURL(id) {
+    let url = Services.urlFormatter.formatURLPref(PREF_BLOCKLIST_ITEM_URL);
+    return url.replace(/%blockID%/g, id);
+  },
+
+};
 
 
 
@@ -256,6 +402,612 @@ this.GfxBlocklistRS = {
   },
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+this.PluginBlocklistRS = {
+  _matchProps: {
+    "matchDescription": "description",
+    "matchFilename": "filename",
+    "matchName": "name",
+  },
+
+  async _ensureEntries() {
+    await this._ensureInitialized();
+    if (!this._entries && gBlocklistEnabled) {
+      await this._updateEntries();
+
+      
+      
+      
+      Services.tm.dispatchToMainThread(function() {
+        Services.obs.notifyObservers(null, "plugin-blocklist-loaded");
+      });
+    }
+  },
+
+  async _updateEntries() {
+    if (!gBlocklistEnabled) {
+      this._entries = [];
+      return;
+    }
+    this._entries = await this._client.get().catch(ex => Cu.reportError(ex));
+    
+    
+    if (!this._entries) {
+      this._entries = [];
+      return;
+    }
+    this._entries.forEach(entry => {
+      entry.matches = {};
+      for (let k of Object.keys(this._matchProps)) {
+        if (entry[k]) {
+          try {
+            entry.matches[this._matchProps[k]] = new RegExp(entry[k], "m");
+          } catch (ex) {  }
+        }
+      }
+      Utils.ensureVersionRangeIsSane(entry);
+    });
+  },
+
+  async _filterItem(entry) {
+    if (!(await BlocklistClients.targetAppFilter(entry, {appID: gAppID, version: gApp.version}))) {
+      return null;
+    }
+    if (!Utils.matchesOSABI(entry)) {
+      return null;
+    }
+    if (!entry.matchFilename && !entry.matchName && !entry.matchDescription) {
+      Cu.reportError(new Error("Nothing to filter plugin item " + entry.blockID + " on"));
+      return null;
+    }
+    return entry;
+  },
+
+  async _ensureInitialized() {
+    if (!gBlocklistEnabled || this._initialized) {
+      return;
+    }
+    this._initialized = true;
+    this._client = RemoteSettings(Services.prefs.getCharPref(PREF_BLOCKLIST_PLUGINS_COLLECTION), {
+      bucketNamePref: PREF_BLOCKLIST_BUCKET,
+      lastCheckTimePref: PREF_BLOCKLIST_PLUGINS_CHECKED_SECONDS,
+      signerName: Services.prefs.getCharPref(PREF_BLOCKLIST_PLUGINS_SIGNER),
+      filterFunc: this._filterItem,
+    });
+    this._onUpdate = this._onUpdate.bind(this);
+    this._client.on("sync", this._onUpdate);
+  },
+
+  shutdown() {
+    if (this._client) {
+      this._client.off("sync", this._onUpdate);
+    }
+  },
+
+  async _onUpdate() {
+    let oldEntries = this._entries || [];
+    await this._ensureInitialized();
+    await this._updateEntries();
+    const pluginHost = Cc["@mozilla.org/plugin/host;1"].
+                         getService(Ci.nsIPluginHost);
+    const plugins = pluginHost.getPluginTags();
+
+    let blockedItems = [];
+
+    for (let plugin of plugins) {
+      let oldState = this._getState(plugin, oldEntries);
+      let state = this._getState(plugin, this._entries);
+      LOG("Blocklist state for " + plugin.name + " changed from " +
+          oldState + " to " + state);
+      
+      if (state == oldState)
+        continue;
+
+      if (oldState == Ci.nsIBlocklistService.STATE_BLOCKED) {
+        if (state == Ci.nsIBlocklistService.STATE_SOFTBLOCKED)
+          plugin.enabledState = Ci.nsIPluginTag.STATE_DISABLED;
+      } else if (!plugin.disabled && state != Ci.nsIBlocklistService.STATE_NOT_BLOCKED) {
+        if (state != Ci.nsIBlocklistService.STATE_OUTDATED &&
+            state != Ci.nsIBlocklistService.STATE_VULNERABLE_UPDATE_AVAILABLE &&
+            state != Ci.nsIBlocklistService.STATE_VULNERABLE_NO_UPDATE) {
+          blockedItems.push({
+            name: plugin.name,
+            version: plugin.version,
+            icon: "chrome://mozapps/skin/plugins/pluginGeneric.svg",
+            disable: false,
+            blocked: state == Ci.nsIBlocklistService.STATE_BLOCKED,
+            item: plugin,
+            url: await this.getURL(plugin),
+          });
+        }
+      }
+    }
+
+    if (blockedItems.length) {
+      this._showBlockedPluginsPrompt(blockedItems);
+    } else {
+      this._notifyUpdate();
+    }
+  },
+
+  _showBlockedPluginsPrompt(blockedPlugins) {
+    if ("@mozilla.org/addons/blocklist-prompt;1" in Cc) {
+      try {
+        let blockedPrompter = Cc["@mozilla.org/addons/blocklist-prompt;1"]
+                               .getService().wrappedJSObject;
+        blockedPrompter.prompt(blockedPlugins);
+      } catch (e) {
+        LOG(e);
+      }
+      this._notifyUpdate();
+      return;
+    }
+
+    let args = {
+      restart: false,
+      list: blockedPlugins,
+    };
+    
+    args.wrappedJSObject = args;
+
+    
+
+
+
+    let applyBlocklistChanges = async () => {
+      Services.obs.removeObserver(applyBlocklistChanges, "addon-blocklist-closed");
+
+      for (let blockedData of blockedPlugins) {
+        if (!blockedData.disable)
+          continue;
+
+        
+        if (blockedData.item instanceof Ci.nsIPluginTag) {
+          blockedData.item.enabledState = Ci.nsIPluginTag.STATE_DISABLED;
+        }
+      }
+
+      if (!args.restart) {
+        this._notifyUpdate();
+        return;
+      }
+
+      
+      
+      
+      let pluginUpdatesFinishedPromise = new Promise(resolve => {
+        Services.obs.addObserver(function updatesFinished() {
+          Services.obs.removeObserver(updatesFinished, "plugin-blocklist-updates-finished");
+          resolve();
+        }, "plugin-blocklist-updates-finished");
+      });
+      this._notifyUpdate();
+      await pluginUpdatesFinishedPromise;
+
+      
+      var cancelQuit = Cc["@mozilla.org/supports-PRBool;1"].
+                       createInstance(Ci.nsISupportsPRBool);
+      Services.obs.notifyObservers(cancelQuit, "quit-application-requested");
+
+      
+      if (cancelQuit.data)
+        return;
+
+      Services.startup.quit(Ci.nsIAppStartup.eRestart | Ci.nsIAppStartup.eAttemptQuit);
+    };
+
+    Services.obs.addObserver(applyBlocklistChanges, "addon-blocklist-closed");
+
+    if (Services.prefs.getBoolPref(PREF_BLOCKLIST_SUPPRESSUI, false)) {
+      applyBlocklistChanges();
+      return;
+    }
+
+    function blocklistUnloadHandler(event) {
+      if (event.target.location == URI_BLOCKLIST_DIALOG) {
+        applyBlocklistChanges();
+        blocklistWindow.removeEventListener("unload", blocklistUnloadHandler);
+      }
+    }
+
+    let blocklistWindow = Services.ww.openWindow(null, URI_BLOCKLIST_DIALOG, "",
+                            "chrome,centerscreen,dialog,titlebar", args);
+    if (blocklistWindow)
+      blocklistWindow.addEventListener("unload", blocklistUnloadHandler);
+  },
+
+  _notifyUpdate() {
+    Services.obs.notifyObservers(null, "plugin-blocklist-updated");
+  },
+
+  async getURL(plugin) {
+    await this._ensureEntries();
+    let r = this._getEntry(plugin, this._entries);
+    if (!r) {
+      return null;
+    }
+    let blockEntry = r.entry;
+    if (!blockEntry.blockID) {
+      return null;
+    }
+
+    return blockEntry.infoURL || Utils._createBlocklistURL(blockEntry.blockID);
+  },
+
+  async getState(plugin, appVersion, toolkitVersion) {
+    if (AppConstants.platform == "android") {
+      return Ci.nsIBlocklistService.STATE_NOT_BLOCKED;
+    }
+    await this._ensureEntries();
+    return this._getState(plugin, this._entries, appVersion, toolkitVersion);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _getEntry(plugin, pluginEntries, appVersion, toolkitVersion) {
+    if (!gBlocklistEnabled)
+      return null;
+
+    
+    if (!appVersion && !gApp.version)
+      return Ci.nsIBlocklistService.STATE_NOT_BLOCKED;
+
+    if (!appVersion)
+      appVersion = gApp.version;
+    if (!toolkitVersion)
+      toolkitVersion = gApp.platformVersion;
+
+    const pluginProperties = {
+      description: plugin.description,
+      filename: plugin.filename,
+      name: plugin.name,
+      version: plugin.version,
+    };
+    if (!pluginEntries) {
+      Cu.reportError(new Error("There are no plugin entries. This should never happen."));
+    }
+    for (let blockEntry of pluginEntries) {
+      var matchFailed = false;
+      for (var name in blockEntry.matches) {
+        let pluginProperty = pluginProperties[name];
+        if (typeof pluginProperty != "string" ||
+            !blockEntry.matches[name].test(pluginProperty)) {
+          matchFailed = true;
+          break;
+        }
+      }
+
+      if (matchFailed)
+        continue;
+
+      for (let versionRange of blockEntry.versionRange) {
+        if (Utils.versionsMatch(versionRange, pluginProperties.version,
+                                appVersion, toolkitVersion)) {
+          return {entry: blockEntry, version: versionRange};
+        }
+      }
+    }
+
+    return null;
+  },
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _getState(plugin, pluginEntries, appVersion, toolkitVersion) {
+    let r = this._getEntry(plugin, pluginEntries, appVersion, toolkitVersion);
+    if (!r) {
+      return Ci.nsIBlocklistService.STATE_NOT_BLOCKED;
+    }
+
+    let {version: versionRange} = r;
+
+    if (versionRange.severity >= gBlocklistLevel)
+      return Ci.nsIBlocklistService.STATE_BLOCKED;
+    if (versionRange.severity == SEVERITY_OUTDATED) {
+      let vulnerabilityStatus = versionRange.vulnerabilityStatus;
+      if (vulnerabilityStatus == VULNERABILITYSTATUS_UPDATE_AVAILABLE)
+        return Ci.nsIBlocklistService.STATE_VULNERABLE_UPDATE_AVAILABLE;
+      if (vulnerabilityStatus == VULNERABILITYSTATUS_NO_UPDATE)
+        return Ci.nsIBlocklistService.STATE_VULNERABLE_NO_UPDATE;
+      return Ci.nsIBlocklistService.STATE_OUTDATED;
+    }
+    return Ci.nsIBlocklistService.STATE_SOFTBLOCKED;
+  },
+
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+this.ExtensionBlocklistRS = {
+  async _ensureEntries() {
+    await this._ensureInitialized();
+    if (!this._entries && gBlocklistEnabled) {
+      await this._updateEntries();
+    }
+  },
+
+  async _updateEntries() {
+    if (!gBlocklistEnabled) {
+      this._entries = [];
+      return;
+    }
+    this._entries = await this._client.get().catch(ex => Cu.reportError(ex));
+    
+    
+    if (!this._entries) {
+      this._entries = [];
+      return;
+    }
+    this._entries.forEach(entry => {
+      function getCriteria(str) {
+        if (!str.startsWith("/")) {
+          return str;
+        }
+        let lastSlash = str.lastIndexOf("/");
+        let pattern = str.slice(1, lastSlash);
+        let flags = str.slice(lastSlash + 1);
+        return new RegExp(pattern, flags);
+      }
+      entry.matches = {};
+      if (entry.guid) {
+        entry.matches.id = getCriteria(entry.guid);
+      }
+      for (let key of EXTENSION_BLOCK_FILTERS) {
+        if (key == "id" || !entry[key]) {
+          continue;
+        }
+        entry.matches[key] = getCriteria(entry[key]);
+      }
+      Utils.ensureVersionRangeIsSane(entry);
+    });
+  },
+
+  async _filterItem(entry) {
+    if (!(await BlocklistClients.targetAppFilter(entry, {appID: gAppID, version: gApp.version}))) {
+      return null;
+    }
+    if (!Utils.matchesOSABI(entry)) {
+      return null;
+    }
+    
+    if (!entry.guid && !entry.name) {
+      Cu.reportError(new Error("Nothing to filter add-on item " + entry.blockID + " on"));
+      return null;
+    }
+    return entry;
+  },
+
+  async _ensureInitialized() {
+    if (!gBlocklistEnabled || this._initialized) {
+      return;
+    }
+    this._initialized = true;
+    this._client = RemoteSettings(Services.prefs.getCharPref(PREF_BLOCKLIST_ADDONS_COLLECTION), {
+      bucketNamePref: PREF_BLOCKLIST_BUCKET,
+      lastCheckTimePref: PREF_BLOCKLIST_ADDONS_CHECKED_SECONDS,
+      signerName: Services.prefs.getCharPref(PREF_BLOCKLIST_ADDONS_SIGNER),
+      filterFunc: this._filterItem,
+    });
+    this._onUpdate = this._onUpdate.bind(this);
+    this._client.on("sync", this._onUpdate);
+  },
+
+  shutdown() {
+    if (this._client) {
+      this._client.off("sync", this._onUpdate);
+    }
+  },
+
+  async _onUpdate() {
+    let oldEntries = this._entries || [];
+    await this._ensureInitialized();
+    await this._updateEntries();
+
+    const types = ["extension", "theme", "locale", "dictionary", "service"];
+    let addons = await AddonManager.getAddonsByTypes(types);
+    for (let addon of addons) {
+      let oldState = addon.blocklistState;
+      if (addon.updateBlocklistState) {
+        await addon.updateBlocklistState(false);
+      } else if (oldEntries) {
+        let oldEntry = this._getEntry(addon, oldEntries);
+        oldState = oldEntry ? oldEntry.state : Ci.nsIBlocklistService.STATE_NOT_BLOCKED;
+      } else {
+        oldState = Ci.nsIBlocklistService.STATE_NOT_BLOCKED;
+      }
+      let state = addon.blocklistState;
+
+      LOG("Blocklist state for " + addon.id + " changed from " +
+          oldState + " to " + state);
+
+      
+      if (state == oldState)
+        continue;
+
+      
+      if (state != Ci.nsIBlocklistService.STATE_SOFTBLOCKED)
+        addon.softDisabled = false;
+
+      
+      
+      if (state == Ci.nsIBlocklistService.STATE_SOFTBLOCKED &&
+          oldState == Ci.nsIBlocklistService.STATE_BLOCKED) {
+        addon.softDisabled = true;
+      }
+
+      if (state == Ci.nsIBlocklistService.STATE_BLOCKED ||
+          state == Ci.nsIBlocklistService.STATE_SOFTBLOCKED) {
+        
+        
+        
+        
+        if (state == Ci.nsIBlocklistService.STATE_SOFTBLOCKED && !addon.userDisabled)
+          addon.softDisabled = true;
+        
+        let entry = this._getEntry(addon, this._entries);
+        if (entry.prefs && entry.prefs.length) {
+          for (let pref of entry.prefs) {
+            Services.prefs.clearUserPref(pref);
+          }
+        }
+      }
+    }
+
+    AddonManagerPrivate.updateAddonAppDisabledStates();
+  },
+
+  async getState(addon, appVersion, toolkitVersion) {
+    let entry = await this.getEntry(addon, appVersion, toolkitVersion);
+    return entry ? entry.state : Ci.nsIBlocklistService.STATE_NOT_BLOCKED;
+  },
+
+  async getEntry(addon, appVersion, toolkitVersion) {
+    await this._ensureEntries();
+    return this._getEntry(addon, this._entries, appVersion, toolkitVersion);
+  },
+
+  _getEntry(addon, addonEntries, appVersion, toolkitVersion) {
+    if (!gBlocklistEnabled || !addon)
+      return null;
+
+    
+    if (!appVersion && !gApp.version)
+      return null;
+
+    if (!appVersion)
+      appVersion = gApp.version;
+    if (!toolkitVersion)
+      toolkitVersion = gApp.platformVersion;
+
+    let addonProps = {};
+    for (let key of EXTENSION_BLOCK_FILTERS) {
+      addonProps[key] = addon[key];
+    }
+    if (addonProps.creator)
+      addonProps.creator = addonProps.creator.name;
+
+    let propMatches = ([k, v]) => {
+      return !v || addonProps[k] == v || ((v instanceof RegExp) && v.test(addonProps[k]));
+    };
+    for (let entry of addonEntries) {
+      
+      if (!Object.entries(entry.matches).every(propMatches)) {
+        continue;
+      }
+      
+      for (let versionRange of entry.versionRange) {
+        if (Utils.versionsMatch(versionRange, addon.version,
+                                appVersion, toolkitVersion)) {
+          return {
+            state: versionRange.severity >= gBlocklistLevel ?
+                   Ci.nsIBlocklistService.STATE_BLOCKED : Ci.nsIBlocklistService.STATE_SOFTBLOCKED,
+            url: entry.blockID && Utils._createBlocklistURL(entry.blockID),
+            prefs: entry.prefs || [],
+          };
+        }
+      }
+    }
+    return null;
+  },
+};
+
 const EXTENSION_BLOCK_FILTERS = ["id", "name", "creator", "homepageURL", "updateURL"];
 
 var gLoggingEnabled = null;
@@ -311,9 +1063,11 @@ XPCOMUtils.defineLazyGetter(this, "gApp", function() {
 XPCOMUtils.defineLazyGetter(this, "gAppID", function() {
   return gApp.ID;
 });
-
 XPCOMUtils.defineLazyGetter(this, "gAppVersion", function() {
   return gApp.version;
+});
+XPCOMUtils.defineLazyGetter(this, "gAppOS", function() {
+  return gApp.OS;
 });
 
 XPCOMUtils.defineLazyGetter(this, "gABI", function() {
@@ -400,16 +1154,6 @@ function matchesOSABI(blocklistElement) {
   return true;
 }
 
-
-
-
-
-
-
-
-function getLocale() {
-  return Services.locale.requestedLocale;
-}
 
 
 function getDistributionPrefValue(aPrefName) {
@@ -705,7 +1449,7 @@ var BlocklistXML = {
       BUILD_ID: gApp.appBuildID,
       BUILD_TARGET: gApp.OS + "_" + gABI,
       OS_VERSION: gOSVersion,
-      LOCALE: getLocale(),
+      LOCALE: Services.locale.requestedLocale,
       CHANNEL: UpdateUtils.UpdateChannel,
       PLATFORM_VERSION: gApp.platformVersion,
       DISTRIBUTION: getDistributionPrefValue(PREF_APP_DISTRIBUTION),
@@ -1355,7 +2099,8 @@ var BlocklistXML = {
   },
 
   _notifyObserversBlocklistUpdated() {
-    Services.obs.notifyObservers(this, "blocklist-updated");
+    Services.obs.notifyObservers(this, "addon-blocklist-updated");
+    Services.obs.notifyObservers(this, "plugin-blocklist-updated");
   },
 
   async _blocklistUpdated(oldAddonEntries, oldPluginEntries) {
@@ -1707,6 +2452,8 @@ let BlocklistRS = {
   },
   shutdown() {
     GfxBlocklistRS.shutdown();
+    PluginBlocklistRS.shutdown();
+    ExtensionBlocklistRS.shutdown();
   },
   isLoaded: true,
 
@@ -1723,19 +2470,25 @@ let BlocklistRS = {
     gLoadingWasTriggered = true;
   },
 
-  getPluginBlocklistState() {
+  getPluginBlocklistState(plugin, appVersion, toolkitVersion) {
+    return PluginBlocklistRS.getState(plugin, appVersion, toolkitVersion);
   },
 
-  getPluginBlockURL() {
+  getPluginBlockURL(plugin) {
+    return PluginBlocklistRS.getURL(plugin);
   },
 
-  getAddonBlocklistState() {
+  getAddonBlocklistState(addon, appVersion, toolkitVersion) {
+    return ExtensionBlocklistRS.getState(addon, appVersion, toolkitVersion);
   },
 
-  getAddonBlocklistEntry() {
+  getAddonBlocklistEntry(addon, appVersion, toolkitVersion) {
+    return ExtensionBlocklistRS.getEntry(addon, appVersion, toolkitVersion);
   },
 
-  _blocklistUpdated(oldAddons, oldPlugins) {
+  _blocklistUpdated() {
+    ExtensionBlocklistRS._onUpdate();
+    PluginBlocklistRS._onUpdate();
   },
 
   initializeClients() {
@@ -1794,6 +2547,7 @@ let Blocklist = {
   },
 
   shutdown() {
+    this._impl.shutdown();
     Services.obs.removeObserver(this, "xpcom-shutdown");
     Services.prefs.removeObserver("extensions.blocklist.", this);
     Services.prefs.removeObserver(PREF_EM_LOGGING_ENABLED, this);
@@ -1821,6 +2575,8 @@ let Blocklist = {
             
             if (this._impl == BlocklistXML) {
               this._impl._onBlocklistEnabledToggle();
+            } else {
+              this._impl._blocklistUpdated();
             }
             break;
           case PREF_BLOCKLIST_LEVEL:

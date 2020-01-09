@@ -192,36 +192,19 @@ function clearAllPluginPermissions() {
   }
 }
 
-function updateBlocklist(aCallback) {
-  let blocklistNotifier = Cc["@mozilla.org/extensions/blocklist;1"]
-                          .getService(Ci.nsITimerCallback);
-  let observer = function() {
-    Services.obs.removeObserver(observer, "blocklist-updated");
-    SimpleTest.executeSoon(aCallback);
-  };
-  Services.obs.addObserver(observer, "blocklist-updated");
-  blocklistNotifier.notify(null);
-}
+
 
 var _originalTestBlocklistURL = null;
-function setAndUpdateBlocklist(aURL, aCallback) {
-  if (!_originalTestBlocklistURL) {
-    _originalTestBlocklistURL = Services.prefs.getCharPref("extensions.blocklist.url");
-  }
-  Services.prefs.setCharPref("extensions.blocklist.url", aURL);
-  updateBlocklist(aCallback);
-}
-
-
-
 async function asyncSetAndUpdateBlocklist(aURL, aBrowser) {
+  
+  
   info("*** loading new blocklist: " + aURL);
   let doTestRemote = aBrowser ? aBrowser.isRemoteBrowser : false;
   if (!_originalTestBlocklistURL) {
     _originalTestBlocklistURL = Services.prefs.getCharPref("extensions.blocklist.url");
   }
   Services.prefs.setCharPref("extensions.blocklist.url", aURL);
-  let localPromise = TestUtils.topicObserved("blocklist-updated");
+  let localPromise = TestUtils.topicObserved("plugin-blocklist-updated");
   let blocklistNotifier = Cc["@mozilla.org/extensions/blocklist;1"]
                             .getService(Ci.nsITimerCallback);
   blocklistNotifier.notify(null);

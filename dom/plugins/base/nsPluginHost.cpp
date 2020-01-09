@@ -268,18 +268,27 @@ class BlocklistPromiseHandler final
     sPendingBlocklistStateRequests--;
     
     
-    if (!sPendingBlocklistStateRequests &&
-        sPluginBlocklistStatesChangedSinceLastWrite) {
-      sPluginBlocklistStatesChangedSinceLastWrite = false;
+    if (!sPendingBlocklistStateRequests) {
+      if (sPluginBlocklistStatesChangedSinceLastWrite) {
+        sPluginBlocklistStatesChangedSinceLastWrite = false;
 
-      RefPtr<nsPluginHost> host = nsPluginHost::GetInst();
-      
-      host->WritePluginInfo();
+        RefPtr<nsPluginHost> host = nsPluginHost::GetInst();
+        
+        host->WritePluginInfo();
+
+        
+        
+        host->IncrementChromeEpoch();
+        host->SendPluginsToContent();
+      }
 
       
-      
-      host->IncrementChromeEpoch();
-      host->SendPluginsToContent();
+      nsCOMPtr<nsIObserverService> obsService =
+          mozilla::services::GetObserverService();
+      if (obsService) {
+        obsService->NotifyObservers(
+            nullptr, "plugin-blocklist-updates-finished", nullptr);
+      }
     }
   }
 
@@ -358,7 +367,7 @@ nsPluginHost::nsPluginHost()
   if (obsService) {
     obsService->AddObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID, false);
     if (XRE_IsParentProcess()) {
-      obsService->AddObserver(this, "blocklist-updated", false);
+      obsService->AddObserver(this, "plugin-blocklist-updated", false);
     }
   }
 
@@ -3305,7 +3314,7 @@ NS_IMETHODIMP nsPluginHost::Observe(nsISupports* aSubject, const char* aTopic,
       LoadPlugins();
     }
   }
-  if (XRE_IsParentProcess() && !strcmp("blocklist-updated", aTopic)) {
+  if (XRE_IsParentProcess() && !strcmp("plugin-blocklist-updated", aTopic)) {
     
     
     

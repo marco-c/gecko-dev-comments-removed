@@ -45,6 +45,10 @@ const ADDON_IDS = ["softblock1@tests.mozilla.org",
 
 
 
+
+
+
+
 var WindowWatcher = {
   openWindow(parent, url, name, features, openArgs) {
     
@@ -89,17 +93,8 @@ registrar.registerFactory(Components.ID("{f0863905-4dde-42e2-991c-2dc8209bc9ca}"
                           "Fake Install Prompt",
                           "@mozilla.org/addons/web-install-prompt;1", InstallConfirmFactory);
 
-const profileDir = gProfD.clone();
-profileDir.append("extensions");
-
 function Pload_blocklist(aFile) {
-  let blocklist_updated = TestUtils.topicObserved("addon-blocklist-updated");
-
-  Services.prefs.setCharPref("extensions.blocklist.url", "http://example.com/data/blocklistchange/" + aFile);
-  var blocklist = Cc["@mozilla.org/extensions/blocklist;1"].
-                  getService(Ci.nsITimerCallback);
-  blocklist.notify(null);
-  return blocklist_updated;
+  return AddonTestUtils.loadBlocklistData(do_get_file("../data/blocklistchange/"), aFile);
 }
 
 
@@ -259,7 +254,7 @@ add_task(async function setup() {
 
 
 add_task(async function run_app_update_test() {
-  await Pload_blocklist("app_update.xml");
+  await Pload_blocklist("app_update");
   await promiseRestartManager();
 
   let [s1, s2, s3, s4, h, r] = await promiseAddonsByIDs(ADDON_IDS);
@@ -424,7 +419,7 @@ add_task(async function update_schema_5() {
 
 
 add_task(async function run_blocklist_update_test() {
-  await Pload_blocklist("blocklist_update1.xml");
+  await Pload_blocklist("blocklist_update1");
   await promiseRestartManager();
 
   let [s1, s2, s3, s4, h, r] = await promiseAddonsByIDs(ADDON_IDS);
@@ -436,7 +431,7 @@ add_task(async function run_blocklist_update_test() {
   check_addon(h, "1.0", false, false, Ci.nsIBlocklistService.STATE_NOT_BLOCKED);
   check_addon(r, "1.0", false, false, Ci.nsIBlocklistService.STATE_NOT_BLOCKED);
 
-  await Pload_blocklist("blocklist_update2.xml");
+  await Pload_blocklist("blocklist_update2");
   await promiseRestartManager();
 
   [s1, s2, s3, s4, h, r] = await promiseAddonsByIDs(ADDON_IDS);
@@ -456,7 +451,7 @@ add_task(async function run_blocklist_update_test() {
 
   await promiseRestartManager();
 
-  await Pload_blocklist("blocklist_update2.xml");
+  await Pload_blocklist("blocklist_update2");
   await promiseRestartManager();
 
   [s1, s2, s3, s4, h, r] = await promiseAddonsByIDs(ADDON_IDS);
@@ -468,7 +463,7 @@ add_task(async function run_blocklist_update_test() {
   check_addon(h, "1.0", false, false, Ci.nsIBlocklistService.STATE_BLOCKED);
   check_addon(r, "1.0", false, false, Ci.nsIBlocklistService.STATE_BLOCKED);
 
-  await Pload_blocklist("blocklist_update1.xml");
+  await Pload_blocklist("blocklist_update1");
   await promiseRestartManager();
 
   [s1, s2, s3, s4, h, r] = await promiseAddonsByIDs(ADDON_IDS);
@@ -487,7 +482,7 @@ add_task(async function run_blocklist_update_test() {
 
 
 add_task(async function run_addon_change_test() {
-  await Pload_blocklist("addon_change.xml");
+  await Pload_blocklist("addon_change");
   await promiseRestartManager();
 
   let [s1, s2, s3, s4, h, r] = await promiseAddonsByIDs(ADDON_IDS);
@@ -632,7 +627,7 @@ add_task(async function run_background_update_2_test() {
 
 
 add_task(async function run_manual_update_test() {
-  await Pload_blocklist("manual_update.xml");
+  await Pload_blocklist("manual_update");
 
   let [s1, s2, s3, s4, h, r] = await promiseAddonsByIDs(ADDON_IDS);
 

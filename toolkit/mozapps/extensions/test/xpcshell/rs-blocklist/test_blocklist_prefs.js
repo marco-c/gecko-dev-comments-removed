@@ -5,52 +5,6 @@
 
 
 
-const URI_EXTENSION_BLOCKLIST_DIALOG = "chrome://mozapps/content/extensions/blocklist.xul";
-
-var testserver = createHttpServer({hosts: ["example.com"]});
-gPort = testserver.identity.primaryPort;
-
-testserver.registerDirectory("/data/", do_get_file("../data"));
-
-
-
-
-var WindowWatcher = {
-  openWindow(parent, url, name, features, args) {
-    
-    Assert.equal(url, URI_EXTENSION_BLOCKLIST_DIALOG);
-
-    
-    var list = args.wrappedJSObject.list;
-    list.forEach(function(aItem) {
-      if (!aItem.blocked)
-        aItem.disable = true;
-    });
-
-    
-    Services.obs.notifyObservers(null, "addon-blocklist-closed");
-  },
-
-  QueryInterface: ChromeUtils.generateQI(["nsIWindowWatcher"]),
-};
-
-MockRegistrar.register("@mozilla.org/embedcomp/window-watcher;1", WindowWatcher);
-
-function load_blocklist(aFile) {
-  return new Promise(resolve => {
-    Services.obs.addObserver(function observer() {
-      Services.obs.removeObserver(observer, "addon-blocklist-updated");
-      resolve();
-    }, "addon-blocklist-updated");
-
-    Services.prefs.setCharPref("extensions.blocklist.url",
-                               `http://localhost:${gPort}/data/${aFile}`);
-    var blocklist = Cc["@mozilla.org/extensions/blocklist;1"]
-                      .getService(Ci.nsITimerCallback);
-    blocklist.notify(null);
-  });
-}
-
 add_task(async function setup() {
   createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "1");
 
@@ -93,7 +47,7 @@ add_task(async function setup() {
 
 
 add_task(async function test_blocks() {
-  await load_blocklist("test_blocklist_prefs_1.xml");
+  await AddonTestUtils.loadBlocklistData(do_get_file("../data/"), "test_blocklist_prefs_1");
 
   
   let [a1, a2] = await AddonManager.getAddonsByIDs(["block1@tests.mozilla.org",
