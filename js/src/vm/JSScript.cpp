@@ -2908,39 +2908,16 @@ SharedScriptData* js::SharedScriptData::new_(JSContext* cx, uint32_t codeLength,
 
 inline js::ScriptBytecodeHasher::Lookup::Lookup(SharedScriptData* data)
     : scriptData(data),
-      hash(mozilla::HashBytes(scriptData->data(), scriptData->dataLength())) {
-  scriptData->incRefCount();
-}
-
-inline js::ScriptBytecodeHasher::Lookup::~Lookup() {
-  scriptData->decRefCount();
-}
+      hash(mozilla::HashBytes(scriptData->data(), scriptData->dataLength())) {}
 
 bool JSScript::createSharedScriptData(JSContext* cx, uint32_t codeLength,
                                       uint32_t noteLength, uint32_t natoms) {
-  MOZ_ASSERT(!scriptData());
-  SharedScriptData* ssd =
-      SharedScriptData::new_(cx, codeLength, noteLength, natoms);
-  if (!ssd) {
-    return false;
-  }
-
-  setScriptData(ssd);
-  return true;
-}
-
-void JSScript::freeScriptData() {
-  if (scriptData_) {
-    scriptData_->decRefCount();
-    scriptData_ = nullptr;
-  }
-}
-
-void JSScript::setScriptData(js::SharedScriptData* data) {
   MOZ_ASSERT(!scriptData_);
-  scriptData_ = data;
-  scriptData_->incRefCount();
+  scriptData_ = SharedScriptData::new_(cx, codeLength, noteLength, natoms);
+  return !!scriptData_;
 }
+
+void JSScript::freeScriptData() { scriptData_ = nullptr; }
 
 
 
@@ -2962,20 +2939,20 @@ bool JSScript::shareScriptData(JSContext* cx) {
   ScriptDataTable::AddPtr p = cx->scriptDataTable(lock).lookupForAdd(lookup);
   if (p) {
     MOZ_ASSERT(ssd != *p);
-    freeScriptData();
-    setScriptData(*p);
+    scriptData_ = *p;
   } else {
     if (!cx->scriptDataTable(lock).add(p, ssd)) {
-      freeScriptData();
       ReportOutOfMemory(cx);
       return false;
     }
 
     
-    scriptData()->incRefCount();
+    ssd->AddRef();
   }
 
+  
   MOZ_ASSERT(scriptData()->refCount() >= 2);
+
   return true;
 }
 
@@ -2989,7 +2966,7 @@ void js::SweepScriptData(JSRuntime* rt) {
   for (ScriptDataTable::Enum e(table); !e.empty(); e.popFront()) {
     SharedScriptData* scriptData = e.front();
     if (scriptData->refCount() == 1) {
-      scriptData->decRefCount();
+      scriptData->Release();
       e.removeFront();
     }
   }
@@ -3740,9 +3717,7 @@ void JSScript::finalize(FreeOp* fop) {
     fop->free_(data_);
   }
 
-  if (scriptData_) {
-    scriptData_->decRefCount();
-  }
+  freeScriptData();
 
   
   
@@ -4243,7 +4218,7 @@ JSScript* js::detail::CopyScript(JSContext* cx, HandleScript src,
   if (cx->zone() != src->zoneFromAnyThread()) {
     src->scriptData()->markForCrossZone(cx);
   }
-  dst->setScriptData(src->scriptData());
+  dst->scriptData_ = src->scriptData();
 
   return dst;
 }
