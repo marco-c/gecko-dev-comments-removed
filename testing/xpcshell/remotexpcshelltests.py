@@ -132,9 +132,8 @@ class RemoteXPCShellTestThread(xpcshell.XPCShellTestThread):
         xpcsCmd = xpcshell.XPCShellTestThread.buildXpcsCmd(self)
         
         del xpcsCmd[1:5]
-        if self.options['localAPK']:
-            xpcsCmd.insert(3, '--greomni')
-            xpcsCmd.insert(4, self.remoteAPK)
+        xpcsCmd.insert(3, '--greomni')
+        xpcsCmd.insert(4, self.remoteAPK)
 
         if self.remoteDebugger:
             
@@ -244,7 +243,6 @@ class XPCShellRemote(xpcshell.XPCShellTests, object):
         
         mozinfo.info['android_version'] = self.device.version
 
-        self.localLib = options['localLib']
         self.localBin = options['localBin']
         self.pathMapping = []
         
@@ -277,18 +275,16 @@ class XPCShellRemote(xpcshell.XPCShellTests, object):
             print("Couldn't find local xpcshell test directory", file=sys.stderr)
             sys.exit(1)
 
-        if options['localAPK']:
-            self.localAPKContents = ZipFile(options['localAPK'])
+        self.localAPKContents = ZipFile(options['localAPK'])
         if options['setup']:
             self.setupTestDir()
             self.setupUtilities()
             self.setupModules()
         self.initDir(self.remoteMinidumpDir)
         self.remoteAPK = None
-        if options['localAPK']:
-            self.remoteAPK = posixpath.join(self.remoteBinDir,
-                                            os.path.basename(options['localAPK']))
-            self.setAppRoot()
+        self.remoteAPK = posixpath.join(self.remoteBinDir,
+                                        os.path.basename(options['localAPK']))
+        self.setAppRoot()
 
         
         self.mobileArgs = {
@@ -354,7 +350,7 @@ class XPCShellRemote(xpcshell.XPCShellTests, object):
         self.buildCoreEnvironment()
         self.setLD_LIBRARY_PATH()
         self.env["MOZ_LINKER_CACHE"] = self.remoteBinDir
-        if self.options['localAPK'] and self.appRoot:
+        if self.appRoot:
             self.env["GRE_HOME"] = self.appRoot
         self.env["XPCSHELL_TEST_PROFILE_DIR"] = self.profileDir
         self.env["TMPDIR"] = self.remoteTmpDir
@@ -369,15 +365,13 @@ class XPCShellRemote(xpcshell.XPCShellTests, object):
         
         self.appRoot = None
         packageName = None
-        if self.options['localAPK']:
-            try:
-                packageName = self.localAPKContents.read("package-name.txt")
-                if packageName:
-                    self.appRoot = posixpath.join("/data", "data", packageName.strip())
-            except Exception as detail:
-                print("unable to determine app root: " + str(detail))
-                pass
-        return None
+        try:
+            packageName = self.localAPKContents.read("package-name.txt")
+        except Exception as e:
+            print("unable to determine app root; assuming geckoview: " + str(e))
+            packageName = "org.mozilla.geckoview.test"
+        if packageName:
+            self.appRoot = posixpath.join("/data", "data", packageName.strip())
 
     def setupUtilities(self):
         self.initDir(self.remoteTmpDir)
@@ -423,11 +417,10 @@ class XPCShellRemote(xpcshell.XPCShellTests, object):
         self.device.push(local, remoteFile)
         self.device.chmod(remoteFile, root=True)
 
-        if self.options['localAPK']:
-            remoteFile = posixpath.join(self.remoteBinDir,
-                                        os.path.basename(self.options['localAPK']))
-            self.device.push(self.options['localAPK'], remoteFile)
-            self.device.chmod(remoteFile, root=True)
+        remoteFile = posixpath.join(self.remoteBinDir,
+                                    os.path.basename(self.options['localAPK']))
+        self.device.push(self.options['localAPK'], remoteFile)
+        self.device.chmod(remoteFile, root=True)
 
         self.pushLibs()
 
@@ -436,58 +429,31 @@ class XPCShellRemote(xpcshell.XPCShellTests, object):
         if not os.path.exists(elfhack):
             elfhack = None
         pushed_libs_count = 0
-        if self.options['localAPK']:
-            try:
-                dir = tempfile.mkdtemp()
-                for info in self.localAPKContents.infolist():
-                    if info.filename.endswith(".so"):
-                        print("Pushing %s.." % info.filename, file=sys.stderr)
-                        remoteFile = posixpath.join(self.remoteBinDir,
-                                                    os.path.basename(info.filename))
-                        self.localAPKContents.extract(info, dir)
-                        localFile = os.path.join(dir, info.filename)
-                        with open(localFile) as f:
+        try:
+            dir = tempfile.mkdtemp()
+            for info in self.localAPKContents.infolist():
+                if info.filename.endswith(".so"):
+                    print("Pushing %s.." % info.filename, file=sys.stderr)
+                    remoteFile = posixpath.join(self.remoteBinDir,
+                                                os.path.basename(info.filename))
+                    self.localAPKContents.extract(info, dir)
+                    localFile = os.path.join(dir, info.filename)
+                    with open(localFile) as f:
+                        
+                        if f.read(5)[1:] == '7zXZ':
+                            cmd = ['xz', '-df', '--suffix', '.so', localFile]
+                            subprocess.check_output(cmd)
                             
-                            if f.read(5)[1:] == '7zXZ':
-                                cmd = ['xz', '-df', '--suffix', '.so', localFile]
+                            os.rename(localFile[:-3], localFile)
+                            
+                            if elfhack:
+                                cmd = [elfhack, '-r', localFile]
                                 subprocess.check_output(cmd)
-                                
-                                os.rename(localFile[:-3], localFile)
-                                
-                                if elfhack:
-                                    cmd = [elfhack, '-r', localFile]
-                                    subprocess.check_output(cmd)
-                        self.device.push(localFile, remoteFile)
-                        pushed_libs_count += 1
-                        self.device.chmod(remoteFile, root=True)
-            finally:
-                shutil.rmtree(dir)
-            return pushed_libs_count
-
-        for file in os.listdir(self.localLib):
-            if (file.endswith(".so")):
-                print("Pushing %s.." % file, file=sys.stderr)
-                if 'libxul' in file:
-                    print("This is a big file, it could take a while.", file=sys.stderr)
-                localFile = os.path.join(self.localLib, file)
-                remoteFile = posixpath.join(self.remoteBinDir, file)
-                self.device.push(localFile, remoteFile)
-                pushed_libs_count += 1
-                self.device.chmod(remoteFile, root=True)
-
-        
-        localArmLib = os.path.join(self.localLib, "lib")
-        if os.path.exists(localArmLib):
-            for root, dirs, files in os.walk(localArmLib):
-                for file in files:
-                    if (file.endswith(".so")):
-                        print("Pushing %s.." % file, file=sys.stderr)
-                        localFile = os.path.join(root, file)
-                        remoteFile = posixpath.join(self.remoteBinDir, file)
-                        self.device.push(localFile, remoteFile)
-                        pushed_libs_count += 1
-                        self.device.chmod(remoteFile, root=True)
-
+                    self.device.push(localFile, remoteFile)
+                    pushed_libs_count += 1
+                    self.device.chmod(remoteFile, root=True)
+        finally:
+            shutil.rmtree(dir)
         return pushed_libs_count
 
     def setupModules(self):
@@ -520,29 +486,10 @@ def verifyRemoteOptions(parser, options):
     if isinstance(options, Namespace):
         options = vars(options)
 
-    if options['localLib'] is None:
-        if options['localAPK'] and options['objdir']:
-            for path in ['dist/fennec', 'fennec/lib']:
-                options['localLib'] = os.path.join(options['objdir'], path)
-                if os.path.isdir(options['localLib']):
-                    break
-            else:
-                parser.error("Couldn't find local library dir, specify --local-lib-dir")
-        elif options['objdir']:
-            options['localLib'] = os.path.join(options['objdir'], 'dist/bin')
-        elif os.path.isfile(os.path.join(here, '..', 'bin', 'xpcshell')):
-            
-            options['localLib'] = os.path.abspath(os.path.join(here, '..', 'bin'))
-        else:
-            parser.error("Couldn't find local library dir, specify --local-lib-dir")
-
     if options['localBin'] is None:
         if options['objdir']:
-            for path in ['dist/bin', 'bin']:
-                options['localBin'] = os.path.join(options['objdir'], path)
-                if os.path.isdir(options['localBin']):
-                    break
-            else:
+            options['localBin'] = os.path.join(options['objdir'], 'dist', 'bin')
+            if not os.path.isdir(options['localBin']):
                 parser.error("Couldn't find local binary dir, specify --local-bin-dir")
         elif os.path.isfile(os.path.join(here, '..', 'bin', 'xpcshell')):
             
