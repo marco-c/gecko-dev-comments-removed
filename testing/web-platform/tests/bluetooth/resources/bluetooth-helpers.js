@@ -262,6 +262,12 @@ function requestDeviceWithTrustedClick() {
 }
 
 
+function requestLEScanWithTrustedClick() {
+  return callWithTrustedClick(
+      () => navigator.bluetooth.requestLEScan.apply(navigator.bluetooth));
+}
+
+
 
 
 
