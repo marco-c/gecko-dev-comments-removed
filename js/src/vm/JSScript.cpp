@@ -3239,8 +3239,8 @@ PrivateScriptData* PrivateScriptData::new_(JSContext* cx, uint32_t nscopes,
  bool PrivateScriptData::InitFromEmitter(
     JSContext* cx, js::HandleScript script, frontend::BytecodeEmitter* bce) {
   uint32_t nscopes = bce->perScriptData().scopeList().length();
-  uint32_t nconsts = bce->numberList.length();
-  uint32_t nobjects = bce->objectList.length;
+  uint32_t nconsts = bce->perScriptData().numberList().length();
+  uint32_t nobjects = bce->perScriptData().objectList().length;
   uint32_t ntrynotes = bce->bytecodeSection().tryNoteList().length();
   uint32_t nscopenotes = bce->bytecodeSection().scopeNoteList().length();
   uint32_t nresumeoffsets = bce->resumeOffsetList.length();
@@ -3257,10 +3257,10 @@ PrivateScriptData* PrivateScriptData::new_(JSContext* cx, uint32_t nscopes,
     bce->perScriptData().scopeList().finish(data->scopes());
   }
   if (nconsts) {
-    bce->numberList.finish(data->consts());
+    bce->perScriptData().numberList().finish(data->consts());
   }
   if (nobjects) {
-    bce->objectList.finish(data->objects());
+    bce->perScriptData().objectList().finish(data->objects());
   }
   if (ntrynotes) {
     bce->bytecodeSection().tryNoteList().finish(data->tryNotes());
@@ -3566,7 +3566,7 @@ bool JSScript::fullyInitFromEmitter(JSContext* cx, HandleScript script,
 
   
   MOZ_ASSERT(bce->atomIndices->count() <= INDEX_LIMIT);
-  MOZ_ASSERT(bce->objectList.length <= INDEX_LIMIT);
+  MOZ_ASSERT(bce->perScriptData().objectList().length <= INDEX_LIMIT);
 
   uint64_t nslots =
       bce->maxFixedSlots +
@@ -3629,7 +3629,7 @@ bool JSScript::fullyInitFromEmitter(JSContext* cx, HandleScript script,
   
   
   
-  bce->objectList.finishInnerFunctions();
+  bce->perScriptData().objectList().finishInnerFunctions();
 
 #ifdef JS_STRUCTURED_SPEW
   
