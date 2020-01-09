@@ -2910,7 +2910,7 @@ static bool StrFlatReplaceGlobal(JSContext* cx, JSLinearString* str,
 
 
 
-JSString* js::str_flat_replace_string(JSContext* cx, HandleString string,
+JSString* js::StringFlatReplaceString(JSContext* cx, HandleString string,
                                       HandleString pattern,
                                       HandleString replacement) {
   MOZ_ASSERT(string);
