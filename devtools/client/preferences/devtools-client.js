@@ -358,7 +358,7 @@ pref("devtools.aboutdebugging.new-enabled", true);
 #endif
 
 
-pref("devtools.aboutdebugging.process-debugging", false);
+pref("devtools.aboutdebugging.process-debugging", true);
 
 pref("devtools.aboutdebugging.network-locations", "[]");
 
