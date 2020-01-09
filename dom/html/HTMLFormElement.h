@@ -605,8 +605,6 @@ class HTMLFormElement final : public nsGenericHTMLElement,
  protected:
   
   static bool gFirstFormSubmitted;
-  
-  static bool gPasswordManagerInitialized;
 
  private:
   ~HTMLFormElement();
