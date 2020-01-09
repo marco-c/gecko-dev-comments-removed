@@ -1295,6 +1295,8 @@ gfxRect nsSVGUtils::PathExtentsToMaxStrokeExtents(const gfxRect& aPathExtents,
 
   
   
+  
+  
   bool affectedByMiterlimit = aFrame->GetContent()->IsAnyOfSVGElements(
       nsGkAtoms::path, nsGkAtoms::polyline, nsGkAtoms::polygon);
 
