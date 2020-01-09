@@ -733,7 +733,7 @@ var gPrivacyPane = {
 
     if (document.getElementById("historyMode").value == "custom") {
       let disabled = Preferences.get("browser.privatebrowsing.autostart").value;
-      this.dependentControls.forEach(function(aElement) {
+      this.dependentControls.forEach(aElement => {
         let control = document.getElementById(aElement);
         let preferenceId = control.getAttribute("preference");
         if (!preferenceId) {
@@ -746,19 +746,12 @@ var gPrivacyPane = {
 
         let preference = preferenceId ? Preferences.get(preferenceId) : {};
         control.disabled = disabled || preference.locked;
+        if (control != clearDataSettings) {
+          this.ensurePrivacyMicroControlUncheckedWhenDisabled(control);
+        }
       });
 
       clearDataSettings.removeAttribute("hidden");
-
-      
-      document.getElementById("alwaysClear").checked = disabled ? false :
-        Preferences.get("privacy.sanitize.sanitizeOnShutdown").value;
-
-      
-      document.getElementById("rememberHistory").checked = disabled ? false :
-        Preferences.get("places.history.enabled").value;
-      document.getElementById("rememberForms").checked = disabled ? false :
-        Preferences.get("browser.formfill.enable").value;
 
       if (!disabled) {
         
@@ -767,6 +760,16 @@ var gPrivacyPane = {
     } else {
       clearDataSettings.setAttribute("hidden", "true");
     }
+  },
+
+  ensurePrivacyMicroControlUncheckedWhenDisabled(el) {
+    if (Preferences.get("browser.privatebrowsing.autostart").value) {
+      
+      el.checked = false;
+      
+      return false;
+    }
+    return undefined; 
   },
 
   
