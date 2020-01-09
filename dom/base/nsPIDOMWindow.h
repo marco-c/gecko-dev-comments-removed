@@ -33,6 +33,7 @@ class nsICSSDeclaration;
 class nsIDocShell;
 class nsDocShellLoadState;
 class nsIPrincipal;
+class nsIRunnable;
 class nsIScriptTimeoutHandler;
 class nsISerialEventTarget;
 class nsIURI;
@@ -175,6 +176,7 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
 
   
   void SetActiveLoadingState(bool aIsActiveLoading);
+  void AddAfterLoadRunner(nsIRunnable* aRunner);
 
   bool AddAudioContext(mozilla::dom::AudioContext* aAudioContext);
   void RemoveAudioContext(mozilla::dom::AudioContext* aAudioContext);
@@ -664,6 +666,8 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   
   
   RefPtr<mozilla::dom::WindowGlobalChild> mWindowGlobalChild;
+
+  nsTArray<nsCOMPtr<nsIRunnable>> mAfterLoadRunners;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsPIDOMWindowInner, NS_PIDOMWINDOWINNER_IID)
