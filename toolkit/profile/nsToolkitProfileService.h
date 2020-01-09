@@ -13,6 +13,7 @@
 #include "nsIFactory.h"
 #include "nsSimpleEnumerator.h"
 #include "nsProfileLock.h"
+#include "nsINIParser.h"
 
 class nsToolkitProfile final : public nsIToolkitProfile {
  public:
@@ -77,6 +78,7 @@ class nsToolkitProfileService final : public nsIToolkitProfileService {
                                 nsIFile** aRootDir, nsIFile** aLocalDir,
                                 nsIToolkitProfile** aProfile, bool* aDidCreate);
   nsresult CreateResetProfile(nsIToolkitProfile** aNewProfile);
+  nsresult ApplyResetProfile(nsIToolkitProfile* aOldProfile);
 
  private:
   friend class nsToolkitProfile;
@@ -92,12 +94,25 @@ class nsToolkitProfileService final : public nsIToolkitProfileService {
   void GetProfileByDir(nsIFile* aRootDir, nsIFile* aLocalDir,
                        nsIToolkitProfile** aResult);
 
+  nsresult GetProfileDescriptor(nsIToolkitProfile* aProfile,
+                                nsACString& aDescriptor, bool* aIsRelative);
+  bool IsProfileForCurrentInstall(nsIToolkitProfile* aProfile);
+  void ClearProfileFromOtherInstalls(nsIToolkitProfile* aProfile);
+  bool MaybeMakeDefaultDedicatedProfile(nsIToolkitProfile* aProfile);
+  bool IsSnapEnvironment();
+
+  
+  
+  nsTArray<nsCString> GetKnownInstalls();
+
   
   bool mStartupProfileSelected;
   
   RefPtr<nsToolkitProfile> mFirst;
   
   nsCOMPtr<nsIToolkitProfile> mCurrent;
+  
+  nsCOMPtr<nsIToolkitProfile> mDedicatedProfile;
   
   nsCOMPtr<nsIToolkitProfile> mNormalDefault;
   
@@ -110,11 +125,22 @@ class nsToolkitProfileService final : public nsIToolkitProfileService {
   
   nsCOMPtr<nsIFile> mListFile;
   
+  nsCOMPtr<nsIFile> mInstallFile;
+  
+  nsINIParser mInstallData;
+  
+  nsCString mInstallHash;
+  
   bool mStartWithLast;
   
   bool mIsFirstRun;
   
   bool mUseDevEditionProfile;
+  
+  const bool mUseDedicatedProfile;
+  
+  
+  bool mCreatedAlternateProfile;
 
   static nsToolkitProfileService* gService;
 

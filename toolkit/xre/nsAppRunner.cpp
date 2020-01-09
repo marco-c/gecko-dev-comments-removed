@@ -2050,41 +2050,6 @@ static ReturnAbortOnError ShowProfileManager(
   return LaunchChild(aNative);
 }
 
-
-
-
-
-
-
-
-
-static nsresult GetCurrentProfile(nsIToolkitProfileService* aProfileSvc,
-                                  nsIFile* aCurrentProfileRoot,
-                                  nsIToolkitProfile** aProfile) {
-  NS_ENSURE_ARG_POINTER(aProfileSvc);
-  NS_ENSURE_ARG_POINTER(aProfile);
-
-  nsCOMPtr<nsISimpleEnumerator> profiles;
-  nsresult rv = aProfileSvc->GetProfiles(getter_AddRefs(profiles));
-  if (NS_FAILED(rv)) return rv;
-
-  bool foundMatchingProfile = false;
-  nsCOMPtr<nsISupports> supports;
-  rv = profiles->GetNext(getter_AddRefs(supports));
-  while (NS_SUCCEEDED(rv)) {
-    nsCOMPtr<nsIToolkitProfile> profile = do_QueryInterface(supports);
-    nsCOMPtr<nsIFile> profileRoot;
-    profile->GetRootDir(getter_AddRefs(profileRoot));
-    profileRoot->Equals(aCurrentProfileRoot, &foundMatchingProfile);
-    if (foundMatchingProfile) {
-      profile.forget(aProfile);
-      return NS_OK;
-    }
-    rv = profiles->GetNext(getter_AddRefs(supports));
-  }
-  return rv;
-}
-
 static bool gDoMigration = false;
 static bool gDoProfileReset = false;
 static nsCOMPtr<nsIToolkitProfile> gResetOldProfile;
@@ -4130,18 +4095,6 @@ nsresult XREMain::XRE_mainRun() {
   }
 
   {
-    bool profileWasDefault = false;
-    if (gDoProfileReset) {
-      nsCOMPtr<nsIToolkitProfile> defaultProfile;
-      
-      
-      nsresult gotDefault =
-          mProfileSvc->GetDefaultProfile(getter_AddRefs(defaultProfile));
-      if (NS_SUCCEEDED(gotDefault)) {
-        profileWasDefault = defaultProfile == gResetOldProfile;
-      }
-    }
-
     
     if (mAppData->flags & NS_XRE_ENABLE_PROFILE_MIGRATOR && gDoMigration) {
       gDoMigration = false;
@@ -4161,33 +4114,11 @@ nsresult XREMain::XRE_mainRun() {
     }
 
     if (gDoProfileReset) {
-      nsresult backupCreated = ProfileResetCleanup(gResetOldProfile);
+      nsresult backupCreated = ProfileResetCleanup(
+          static_cast<nsToolkitProfileService*>(mProfileSvc.get()),
+          gResetOldProfile);
       if (NS_FAILED(backupCreated))
         NS_WARNING("Could not cleanup the profile that was reset");
-
-      nsCOMPtr<nsIToolkitProfile> newProfile;
-      rv = GetCurrentProfile(mProfileSvc, mProfD, getter_AddRefs(newProfile));
-      if (NS_SUCCEEDED(rv)) {
-        nsAutoCString name;
-        gResetOldProfile->GetName(name);
-        newProfile->SetName(name);
-        mProfileName.Assign(name);
-        
-        
-        if (profileWasDefault) {
-          rv = mProfileSvc->SetDefaultProfile(newProfile);
-          if (NS_FAILED(rv))
-            NS_WARNING("Could not set current profile as the default");
-        }
-      } else {
-        NS_WARNING(
-            "Could not find current profile to set as default / change name.");
-      }
-
-      
-      
-      
-      mProfileSvc->Flush();
     }
   }
 
