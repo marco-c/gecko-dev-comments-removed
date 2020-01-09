@@ -323,10 +323,9 @@ var SitePermissions = {
 
 
 
-
   getAllPermissionDetailsForBrowser(browser) {
     return this.getAllForBrowser(browser).map(({id, scope, state}) =>
-      ({id, scope, state, label: this.getPermissionLabel(id), isPromptable: this.getIsPromptable(id)}));
+      ({id, scope, state, label: this.getPermissionLabel(id)}));
   },
 
   
@@ -612,28 +611,6 @@ var SitePermissions = {
 
 
 
-   getIsPromptable(permissionID) {
-    if (!(permissionID in gPermissionObject)) {
-      
-      return false;
-    }
-    if (!("isPromptable" in gPermissionObject[permissionID])) {
-      
-      return true;
-    }
-    return gPermissionObject[permissionID].isPromptable;
-  },
-
-  
-
-
-
-
-
-
-
-
-
   getMultichoiceStateLabel(state) {
     switch (state) {
       case this.UNKNOWN:
@@ -716,13 +693,8 @@ var gPermissionObject = {
 
 
 
-
-
-
-
   "autoplay-media": {
     exactHostMatch: true,
-    isPromptable: false,
     getDefault() {
       let state = Services.prefs.getIntPref("media.autoplay.default",
                                             Ci.nsIAutoplay.BLOCKED);
