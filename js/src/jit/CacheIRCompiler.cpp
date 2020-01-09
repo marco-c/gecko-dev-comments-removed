@@ -959,6 +959,8 @@ template GCPtr<jsid>& CacheIRStubInfo::getStubField<ICStub>(
     ICStub* stub, uint32_t offset) const;
 template GCPtr<Class*>& CacheIRStubInfo::getStubField<ICStub>(
     ICStub* stub, uint32_t offset) const;
+template GCPtr<ArrayObject*>& CacheIRStubInfo::getStubField<ICStub>(
+    ICStub* stub, uint32_t offset) const;
 
 template <typename T, typename V>
 static void InitGCPtr(uintptr_t* ptr, V val) {
@@ -4377,6 +4379,16 @@ bool CacheIRCompiler::emitCallIsSuspendedGeneratorResult() {
 
 
 bool CacheIRCompiler::emitMetaTwoByte() {
+  mozilla::Unused << reader.readByte();  
+  mozilla::Unused << reader.readByte();  
+  mozilla::Unused << reader.readByte();  
+
+  return true;
+}
+
+
+bool CacheIRCompiler::emitMetaThreeByte() {
+  mozilla::Unused << reader.readByte();  
   mozilla::Unused << reader.readByte();  
   mozilla::Unused << reader.readByte();  
   mozilla::Unused << reader.readByte();  
