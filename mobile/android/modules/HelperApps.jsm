@@ -22,21 +22,21 @@ XPCOMUtils.defineLazyGetter(this, "ContentAreaUtils", function() {
 
 var EXPORTED_SYMBOLS = ["App", "HelperApps"];
 
-function App(data) {
-  this.name = data.name;
-  this.isDefault = data.isDefault;
-  this.packageName = data.packageName;
-  this.activityName = data.activityName;
-  this.iconUri = "-moz-icon://" + data.packageName;
-}
+class App {
+  constructor(data) {
+    this.name = data.name;
+    this.isDefault = data.isDefault;
+    this.packageName = data.packageName;
+    this.activityName = data.activityName;
+    this.iconUri = "-moz-icon://" + data.packageName;
+  }
 
-App.prototype = {
   
-  launch: function(uri, callback) {
+  launch(uri, callback) {
     HelperApps._launchApp(this, uri, callback);
     return false;
-  },
-};
+  }
+}
 
 var HelperApps =  {
   get defaultBrowsers() {
@@ -59,13 +59,13 @@ var HelperApps =  {
     });
   },
 
-  _getHandlers: function(url, options) {
+  _getHandlers(url, options) {
     let values = {};
 
     let handlers = this.getAppsForUri(Services.io.newURI(url), options);
-    handlers.forEach(function(app) {
+    handlers.forEach(app => {
       values[app.name] = app;
-    }, this);
+    });
 
     return values;
   },
@@ -80,12 +80,12 @@ var HelperApps =  {
     return this.urlHandlerService = Cc["@mozilla.org/uriloader/external-url-handler-service;1"].getService(Ci.nsIExternalURLHandlerService);
   },
 
-  prompt: function showPicker(apps, promptOptions, callback) {
+  prompt(apps, promptOptions, callback) {
     let p = new Prompt(promptOptions).addIconGrid({ items: apps });
     p.show(callback);
   },
 
-  getAppsForProtocol: function getAppsForProtocol(scheme) {
+  getAppsForProtocol(scheme) {
     let protoHandlers = this.protoSvc.getProtocolHandlerInfoFromOS(scheme, {}).possibleApplicationHandlers;
 
     let results = {};
@@ -102,7 +102,7 @@ var HelperApps =  {
     return results;
   },
 
-  getAppsForUri: function getAppsForUri(uri, flags = { }, callback) {
+  getAppsForUri(uri, flags = { }, callback) {
     
     if (!uri || uri.schemeIs("about") || uri.schemeIs("chrome")) {
       if (callback) {
@@ -124,9 +124,8 @@ var HelperApps =  {
       apps = this._parseApps(apps);
 
       if (flags.filterBrowsers) {
-        apps = apps.filter((app) => {
-          return app.name && !this.defaultBrowsers[app.name];
-        });
+        apps = apps.filter(app =>
+          app.name && !this.defaultBrowsers[app.name]);
       }
 
       
@@ -136,9 +135,8 @@ var HelperApps =  {
         
         let ext = /\.([^\?#]*)/.exec(uri.pathQueryRef);
         if (ext && (ext[1] === "html" || ext[1] === "htm")) {
-          apps = apps.filter(function(app) {
-            return app.name && !this.defaultHtmlHandlers[app.name];
-          }, this);
+          apps = apps.filter(app =>
+            app.name && !this.defaultHtmlHandlers[app.name]);
         }
       }
 
@@ -149,7 +147,7 @@ var HelperApps =  {
       let data = null;
       
       EventDispatcher.instance.dispatch(msg.type, msg, {
-        onSuccess: (result) => { data = result; },
+        onSuccess: result => { data = result; },
         onError: () => { throw new Error("Intent:GetHandler callback failed"); },
       });
       if (data === null) {
@@ -157,17 +155,17 @@ var HelperApps =  {
       }
       return parseData(data);
     }
-      EventDispatcher.instance.sendRequestForResult(msg).then(function(data) {
+      EventDispatcher.instance.sendRequestForResult(msg).then(data => {
         callback(parseData(data));
       });
   },
 
-  launchUri: function launchUri(uri) {
+  launchUri(uri) {
     let msg = this._getMessage("Intent:Open", uri);
     EventDispatcher.instance.sendRequest(msg);
   },
 
-  _parseApps: function _parseApps(appInfo) {
+  _parseApps(appInfo) {
     
     
     const numAttr = 4; 
@@ -183,7 +181,7 @@ var HelperApps =  {
     return apps;
   },
 
-  _getMessage: function(type, uri, options = {}) {
+  _getMessage(type, uri, options = {}) {
     let mimeType = options.mimeType;
     if (uri && mimeType == undefined) {
       mimeType = ContentAreaUtils.getMIMETypeForURI(uri) || "";
@@ -199,7 +197,7 @@ var HelperApps =  {
     };
   },
 
-  _launchApp: function launchApp(app, uri, callback) {
+  _launchApp(app, uri, callback) {
     if (callback) {
         let msg = this._getMessage("Intent:OpenForResult", uri, {
             packageName: app.packageName,
