@@ -9,6 +9,7 @@
 const LINUX = AppConstants.platform == "linux";
 const WIN = AppConstants.platform == "win";
 const MAC = AppConstants.platform == "macosx";
+const WEBRENDER = window.windowUtils.layerManagerType == "WebRender";
 
 
 
@@ -38,8 +39,13 @@ const startupPhases = {
     },
     {
       name: "PLayerTransaction::Msg_GetTextureFactoryIdentifier",
-      condition: WIN,
+      condition: WIN && !WEBRENDER,
       maxCount: 3,
+    },
+    {
+      name: "PWebRenderBridge::Msg_EnsureConnected",
+      condition: WIN && WEBRENDER,
+      maxCount: 2,
     },
     { 
       name: "PCompositorBridge::Msg_NotifyChildCreated",
@@ -83,7 +89,7 @@ const startupPhases = {
     },
     {
       name: "PCompositorBridge::Msg_MakeSnapshot",
-      condition: WIN,
+      condition: WIN && !WEBRENDER,
       ignoreIfUnused: true, 
       maxCount: 1,
     },
@@ -97,6 +103,11 @@ const startupPhases = {
       name: "PAPZInputBridge::Msg_ProcessUnhandledEvent",
       condition: WIN,
       ignoreIfUnused: true, 
+      maxCount: 1,
+    },
+    {
+      name: "PGPU::Msg_GetDeviceStatus",
+      condition: WIN && WEBRENDER, 
       maxCount: 1,
     },
   ],
@@ -113,7 +124,7 @@ const startupPhases = {
     },
     {
       name: "PLayerTransaction::Msg_GetTextureFactoryIdentifier",
-      condition: !MAC,
+      condition: !MAC && !WEBRENDER,
       maxCount: 1,
     },
     {
@@ -131,6 +142,29 @@ const startupPhases = {
     {
       name: "PCompositorBridge::Msg_MakeSnapshot",
       condition: WIN,
+      ignoreIfUnused: true, 
+      maxCount: 1,
+    },
+    {
+      name: "PWebRenderBridge::Msg_GetSnapshot",
+      condition: WIN && WEBRENDER,
+      maxCount: 1,
+    },
+    {
+      name: "PAPZInputBridge::Msg_ProcessUnhandledEvent",
+      condition: WIN && WEBRENDER,
+      ignoreIfUnused: true, 
+      maxCount: 1,
+    },
+    {
+      name: "PAPZInputBridge::Msg_ReceiveMouseInputEvent",
+      condition: WIN && WEBRENDER,
+      ignoreIfUnused: true, 
+      maxCount: 1,
+    },
+    { 
+      name: "PLayerTransaction::Msg_GetTextureFactoryIdentifier",
+      condition: WIN && WEBRENDER,
       ignoreIfUnused: true, 
       maxCount: 1,
     },
@@ -154,6 +188,18 @@ const startupPhases = {
     {
       name: "PAPZInputBridge::Msg_ReceiveMouseInputEvent",
       condition: WIN,
+      ignoreIfUnused: true, 
+      maxCount: 1,
+    },
+    { 
+      name: "PLayerTransaction::Msg_GetTextureFactoryIdentifier",
+      condition: WIN && WEBRENDER,
+      ignoreIfUnused: true, 
+      maxCount: 1,
+    },
+    {
+      name: "PCompositorBridge::Msg_Initialize",
+      condition: WIN && WEBRENDER,
       ignoreIfUnused: true, 
       maxCount: 1,
     },
