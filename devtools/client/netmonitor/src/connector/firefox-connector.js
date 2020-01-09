@@ -269,7 +269,7 @@ class FirefoxConnector {
 
     
     const reconfigureTab = options => {
-      return this.tabTarget.activeTab.reconfigure({ options });
+      return this.tabTarget.reconfigure({ options });
     };
 
     

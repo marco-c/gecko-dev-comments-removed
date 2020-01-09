@@ -1251,7 +1251,7 @@ Toolbox.prototype = {
       id: "command-button-frames",
       description: L10N.getStr("toolbox.frames.tooltip"),
       isTargetSupported: target => {
-        return target.activeTab && target.activeTab.traits.frames;
+        return target.traits.frames;
       },
       isCurrentlyVisible: () => {
         const hasFrames = this.frameMap.size > 1;
@@ -1346,7 +1346,7 @@ Toolbox.prototype = {
       onClick: this._onPickerClick,
       isInStartContainer: true,
       isTargetSupported: target => {
-        return target.activeTab && target.activeTab.traits.frames;
+        return target.traits.frames;
       },
     });
 
@@ -1361,17 +1361,15 @@ Toolbox.prototype = {
     const pref = "devtools.cache.disabled";
     const cacheDisabled = Services.prefs.getBoolPref(pref);
 
-    if (this.target.activeTab) {
-      await this.target.activeTab.reconfigure({
-        options: {
-          "cacheDisabled": cacheDisabled,
-        },
-      });
+    await this.target.reconfigure({
+      options: {
+        "cacheDisabled": cacheDisabled,
+      },
+    });
 
-      
-      if (flags.testing) {
-        this.emit("cache-reconfigured");
-      }
+    
+    if (flags.testing) {
+      this.emit("cache-reconfigured");
     }
   },
 
@@ -1384,13 +1382,11 @@ Toolbox.prototype = {
     const serviceWorkersTestingEnabled =
       Services.prefs.getBoolPref(pref) || false;
 
-    if (this.target.activeTab) {
-      this.target.activeTab.reconfigure({
-        options: {
-          "serviceWorkersTestingEnabled": serviceWorkersTestingEnabled,
-        },
-      });
-    }
+    this.target.reconfigure({
+      options: {
+        "serviceWorkersTestingEnabled": serviceWorkersTestingEnabled,
+      },
+    });
   },
 
   
@@ -1434,7 +1430,7 @@ Toolbox.prototype = {
       this.telemetry.toolClosed("paintflashing", this.sessionId, this);
     }
     this.isPaintFlashing = !this.isPaintFlashing;
-    return this.target.activeTab.reconfigure({
+    return this.target.reconfigure({
       options: {
         "paintFlashing": this.isPaintFlashing,
       },
@@ -2204,7 +2200,7 @@ Toolbox.prototype = {
       
       reloadAndRecordTab();
     } else {
-      this.target.activeTab.reload({ force: force });
+      this.target.reload({ force: force });
     }
   },
 
@@ -2372,12 +2368,12 @@ Toolbox.prototype = {
   },
 
   _listFrames: async function(event) {
-    if (!this.target.activeTab || !this.target.activeTab.traits.frames) {
+    if (!this.target.traits.frames) {
       
       
       return promise.resolve();
     }
-    const { frames } = await this.target.activeTab.listFrames();
+    const { frames } = await this.target.listFrames();
     this._updateFrames({ frames });
   },
 
@@ -2387,7 +2383,7 @@ Toolbox.prototype = {
   onSelectFrame: function(frameId) {
     
     
-    this.target.activeTab.switchToFrame({ windowId: frameId });
+    this.target.switchToFrame({ windowId: frameId });
   },
 
   
