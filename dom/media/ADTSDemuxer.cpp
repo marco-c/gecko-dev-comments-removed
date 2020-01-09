@@ -337,6 +337,10 @@ bool ADTSTrackDemuxer::Init() {
           mInfo->mRate, mInfo->mChannels, mInfo->mBitDepth,
           mInfo->mDuration.ToMicroseconds());
 
+  
+  
+  
+  mPreRoll = TimeUnit::FromMicroseconds(2112 * 1000000ULL / mSamplesPerSecond);
   return mSamplesPerSecond && mChannels;
 }
 
@@ -347,9 +351,10 @@ UniquePtr<TrackInfo> ADTSTrackDemuxer::GetInfo() const {
 RefPtr<ADTSTrackDemuxer::SeekPromise> ADTSTrackDemuxer::Seek(
     const TimeUnit& aTime) {
   
-  FastSeek(aTime);
+  const TimeUnit time = aTime > mPreRoll ? aTime - mPreRoll : TimeUnit::Zero();
+  FastSeek(time);
   
-  const TimeUnit seekTime = ScanUntil(aTime);
+  const TimeUnit seekTime = ScanUntil(time);
 
   return SeekPromise::CreateAndResolve(seekTime, __func__);
 }

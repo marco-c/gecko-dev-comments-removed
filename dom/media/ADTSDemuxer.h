@@ -141,6 +141,11 @@ class ADTSTrackDemuxer : public MediaTrackDemuxer,
 
   
   UniquePtr<AudioInfo> mInfo;
+
+  
+  
+  media::TimeUnit mPreRoll;
+
 };
 
 }  
