@@ -222,7 +222,7 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/syn/0.15.24")]
+#![doc(html_root_url = "https://docs.rs/syn/0.15.30")]
 #![cfg_attr(feature = "cargo-clippy", allow(renamed_and_removed_lints))]
 #![cfg_attr(feature = "cargo-clippy", deny(clippy, clippy_pedantic))]
 
@@ -230,8 +230,8 @@
     feature = "cargo-clippy",
     allow(
         block_in_if_condition_stmt,
+        cognitive_complexity,
         const_static_lifetime,
-        cyclomatic_complexity,
         deprecated_cfg_attr,
         doc_markdown,
         eval_order_dependence,
@@ -660,6 +660,7 @@ pub fn parse2<T: parse::Parse>(tokens: proc_macro2::TokenStream) -> Result<T> {
 pub fn parse_str<T: parse::Parse>(s: &str) -> Result<T> {
     parse::Parser::parse_str(T::parse, s)
 }
+
 
 
 

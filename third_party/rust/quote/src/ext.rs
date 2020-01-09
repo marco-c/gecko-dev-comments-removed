@@ -8,21 +8,49 @@ use proc_macro2::{TokenStream, TokenTree};
 
 
 pub trait TokenStreamExt: private::Sealed {
+    
+    
+    
     fn append<U>(&mut self, token: U)
     where
         U: Into<TokenTree>;
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn append_all<T, I>(&mut self, iter: I)
     where
         T: ToTokens,
         I: IntoIterator<Item = T>;
 
+    
+    
+    
+    
     fn append_separated<T, I, U>(&mut self, iter: I, op: U)
     where
         T: ToTokens,
         I: IntoIterator<Item = T>,
         U: ToTokens;
 
+    
+    
+    
+    
     fn append_terminated<T, I, U>(&mut self, iter: I, term: U)
     where
         T: ToTokens,
@@ -31,9 +59,6 @@ pub trait TokenStreamExt: private::Sealed {
 }
 
 impl TokenStreamExt for TokenStream {
-    
-    
-    
     fn append<U>(&mut self, token: U)
     where
         U: Into<TokenTree>,
@@ -41,26 +66,6 @@ impl TokenStreamExt for TokenStream {
         self.extend(iter::once(token.into()));
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     fn append_all<T, I>(&mut self, iter: I)
     where
         T: ToTokens,
@@ -71,10 +76,6 @@ impl TokenStreamExt for TokenStream {
         }
     }
 
-    
-    
-    
-    
     fn append_separated<T, I, U>(&mut self, iter: I, op: U)
     where
         T: ToTokens,
@@ -89,10 +90,6 @@ impl TokenStreamExt for TokenStream {
         }
     }
 
-    
-    
-    
-    
     fn append_terminated<T, I, U>(&mut self, iter: I, term: U)
     where
         T: ToTokens,
