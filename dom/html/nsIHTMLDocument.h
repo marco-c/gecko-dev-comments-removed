@@ -30,11 +30,6 @@ class nsIHTMLDocument : public nsISupports {
   
 
 
-  virtual void SetCompatibilityMode(nsCompatibility aMode) = 0;
-
-  
-
-
 
   virtual void AddedForm() = 0;
   
@@ -49,8 +44,6 @@ class nsIHTMLDocument : public nsISupports {
   
   
   virtual int32_t GetNumFormsSynchronous() = 0;
-
-  virtual bool IsWriting() = 0;
 
   
 
@@ -99,8 +92,6 @@ class nsIHTMLDocument : public nsISupports {
   virtual void TearingDownEditor() = 0;
 
   virtual void SetIsXHTML(bool aXHTML) = 0;
-
-  virtual void SetDocWriteDisabled(bool aDisabled) = 0;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIHTMLDocument, NS_IHTMLDOCUMENT_IID)

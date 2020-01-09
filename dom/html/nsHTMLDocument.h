@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 #ifndef nsHTMLDocument_h___
 #define nsHTMLDocument_h___
 
@@ -32,8 +32,8 @@ class HTMLAllCollection;
 template <typename T>
 struct Nullable;
 class WindowProxyHolder;
-}  
-}  
+}  // namespace dom
+}  // namespace mozilla
 
 class nsHTMLDocument : public mozilla::dom::Document, public nsIHTMLDocument {
  protected:
@@ -53,7 +53,7 @@ class nsHTMLDocument : public mozilla::dom::Document, public nsIHTMLDocument {
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(nsHTMLDocument, Document)
 
-  
+  // Document
   virtual void Reset(nsIChannel* aChannel, nsILoadGroup* aLoadGroup) override;
   virtual void ResetToURI(nsIURI* aURI, nsILoadGroup* aLoadGroup,
                           nsIPrincipal* aPrincipal,
@@ -73,18 +73,14 @@ class nsHTMLDocument : public mozilla::dom::Document, public nsIHTMLDocument {
   virtual bool UseWidthDeviceWidthFallbackViewport() const override;
 
  public:
-  
-  virtual void SetCompatibilityMode(nsCompatibility aMode) override;
-
-  virtual bool IsWriting() override { return mWriteLevel != uint32_t(0); }
-
+  // nsIHTMLDocument
   virtual Element* GetUnfocusedKeyEventTarget() override;
 
   nsContentList* GetExistingForms() const { return mForms; }
 
   mozilla::dom::HTMLAllCollection* All();
 
-  
+  // Returns whether an object was found for aName.
   bool ResolveName(JSContext* aCx, const nsAString& aName,
                    JS::MutableHandle<JS::Value> aRetval,
                    mozilla::ErrorResult& aError);
@@ -95,9 +91,6 @@ class nsHTMLDocument : public mozilla::dom::Document, public nsIHTMLDocument {
   virtual void TearingDownEditor() override;
   virtual void SetIsXHTML(bool aXHTML) override {
     mType = (aXHTML ? eXHTML : eHTML);
-  }
-  virtual void SetDocWriteDisabled(bool aDisabled) override {
-    mDisableDocWrite = aDisabled;
   }
 
   nsresult ChangeContentEditableCount(nsIContent* aElement,
@@ -134,11 +127,11 @@ class nsHTMLDocument : public mozilla::dom::Document, public nsIHTMLDocument {
 
   virtual void DocAddSizeOfExcludingThis(
       nsWindowSizes& aWindowSizes) const override;
-  
+  // DocAddSizeOfIncludingThis is inherited from Document.
 
   virtual bool WillIgnoreCharsetOverride() override;
 
-  
+  // WebIDL API
   virtual JSObject* WrapNode(JSContext* aCx,
                              JS::Handle<JSObject*> aGivenProto) override;
   bool IsRegistrableDomainSuffixOfOrEqualTo(const nsAString& aHostSuffixString,
@@ -152,16 +145,6 @@ class nsHTMLDocument : public mozilla::dom::Document, public nsIHTMLDocument {
     }
   }
   void GetSupportedNames(nsTArray<nsString>& aNames);
-  Document* Open(const mozilla::dom::Optional<nsAString>& ,
-                 const nsAString& , mozilla::ErrorResult& aError);
-  mozilla::dom::Nullable<mozilla::dom::WindowProxyHolder> Open(
-      const nsAString& aURL, const nsAString& aName, const nsAString& aFeatures,
-      bool aReplace, mozilla::ErrorResult& rv);
-  void Close(mozilla::ErrorResult& rv);
-  void Write(const mozilla::dom::Sequence<nsString>& aText,
-             mozilla::ErrorResult& rv);
-  void Writeln(const mozilla::dom::Sequence<nsString>& aText,
-               mozilla::ErrorResult& rv);
   void GetDesignMode(nsAString& aDesignMode);
   void SetDesignMode(const nsAString& aDesignMode,
                      nsIPrincipal& aSubjectPrincipal, mozilla::ErrorResult& rv);
@@ -194,11 +177,11 @@ class nsHTMLDocument : public mozilla::dom::Document, public nsIHTMLDocument {
   void GetBgColor(nsAString& aBgColor);
   void SetBgColor(const nsAString& aBgColor);
   void Clear() const {
-    
+    // Deprecated
   }
   void CaptureEvents();
   void ReleaseEvents();
-  
+  // We're picking up GetLocation from Document
   already_AddRefed<mozilla::dom::Location> GetLocation() const {
     return Document::GetLocation();
   }
@@ -222,22 +205,14 @@ class nsHTMLDocument : public mozilla::dom::Document, public nsIHTMLDocument {
 
   static void DocumentWriteTerminationFunc(nsISupports* aRef);
 
-  void WriteCommon(const nsAString& aText, bool aNewlineTerminate,
-                   mozilla::ErrorResult& aRv);
-  
-  void WriteCommon(const mozilla::dom::Sequence<nsString>& aText,
-                   bool aNewlineTerminate, mozilla::ErrorResult& rv);
-
-  
-
-
+  /**
+   * Like IsEditingOn(), but will flush as needed first.
+   */
   bool IsEditingOnAfterFlush();
 
-  void* GenerateParserKey(void);
-
-  
-  
-  
+  // A helper class to keep nsContentList objects alive for a short period of
+  // time. Note, when the final Release is called on an nsContentList object, it
+  // removes itself from MutationObserver list.
   class ContentListHolder : public mozilla::Runnable {
    public:
     ContentListHolder(nsHTMLDocument* aDocument, nsContentList* aFormList,
@@ -263,7 +238,7 @@ class nsHTMLDocument : public mozilla::dom::Document, public nsIHTMLDocument {
 
   RefPtr<mozilla::dom::HTMLAllCollection> mAll;
 
-  
+  /** # of forms in the document, synchronously set */
   int32_t mNumForms;
 
   static void TryHintCharset(nsIContentViewer* aContentViewer,
@@ -281,58 +256,48 @@ class nsHTMLDocument : public mozilla::dom::Document, public nsIHTMLDocument {
   static void TryFallback(int32_t& aCharsetSource,
                           NotNull<const Encoding*>& aEncoding);
 
-  
-
-
-
-
-
-
+  /**
+   * MaybeDispatchCheckKeyPressEventModelEvent() dispatches
+   * "CheckKeyPressEventModel" event to check whether we should dispatch
+   * keypress events in confluent model or split model.  This should be
+   * called only when mEditingState is changed to eDesignMode or
+   * eConentEditable at first time.
+   */
   void MaybeDispatchCheckKeyPressEventModelEvent();
 
-  
-  
-  
-  
-  uint32_t mWriteLevel;
-
-  
+  // Load flags of the document's channel
   uint32_t mLoadFlags;
-
-  bool mTooDeepWriteRecursion;
-
-  bool mDisableDocWrite;
 
   bool mWarnedWidthHeight;
 
-  
+  /* Midas implementation */
   nsCommandManager* GetMidasCommandManager();
 
   RefPtr<nsCommandManager> mMidasCommandManager;
 
   nsresult TurnEditingOff();
-  
-  
-  
+  // MOZ_CAN_RUN_SCRIPT_BOUNDARY because this is called from all sorts
+  // of places, and I'm pretty sure the exact ExecCommand call it
+  // makes cannot actually run script.
   MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult EditingStateChanged();
   void MaybeEditingStateChanged();
 
   uint32_t mContentEditableCount;
   EditingState mEditingState;
 
-  
-
-
-
+  /**
+   * Temporary flag that is set in EndUpdate() to ignore
+   * MaybeEditingStateChanged() script runners from a nested scope.
+   */
   bool mPendingMaybeEditingStateChanged;
 
-  
-  
+  // mHasBeenEditable is set to true when mEditingState is firstly set to
+  // eDesignMode or eContentEditable.
   bool mHasBeenEditable;
 
-  
-
-
+  /**
+   * Set to true once we know that we are loading plain text content.
+   */
   bool mIsPlainText;
 };
 
@@ -344,11 +309,11 @@ inline nsHTMLDocument* Document::AsHTMLDocument() {
   return static_cast<nsHTMLDocument*>(this);
 }
 
-}  
-}  
+}  // namespace dom
+}  // namespace mozilla
 
 #define NS_HTML_DOCUMENT_INTERFACE_TABLE_BEGIN(_class) \
   NS_DOCUMENT_INTERFACE_TABLE_BEGIN(_class)            \
   NS_INTERFACE_TABLE_ENTRY(_class, nsIHTMLDocument)
 
-#endif 
+#endif /* nsHTMLDocument_h___ */
