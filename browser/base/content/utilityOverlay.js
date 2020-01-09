@@ -30,7 +30,18 @@ Object.defineProperty(this, "BROWSER_NEW_TAB_URL", {
       }
       
       
-      let extensionInfo = ExtensionSettingsStore.getSetting("url_overrides", "newTabURL");
+      let extensionInfo;
+      try {
+        extensionInfo = ExtensionSettingsStore.getSetting("url_overrides", "newTabURL");
+      } catch (e) {
+        
+        
+        
+        if (aboutNewTabService.newTabURL.startsWith("moz-extension://")) {
+          return "about:privatebrowsing";
+        }
+      }
+
       if (extensionInfo) {
         let policy = WebExtensionPolicy.getByID(extensionInfo.id);
         if (!policy || !policy.privateBrowsingAllowed) {

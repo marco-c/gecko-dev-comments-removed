@@ -48,11 +48,23 @@ function getHomepagePref(useDefault) {
 
 let HomePage = {
   get(aWindow) {
+    let homePages = getHomepagePref();
     if (PrivateBrowsingUtils.permanentPrivateBrowsing ||
         (aWindow && PrivateBrowsingUtils.isWindowPrivate(aWindow))) {
       
       
-      let extensionInfo = ExtensionSettingsStore.getSetting("prefs", "homepage_override");
+      let extensionInfo;
+      try {
+        extensionInfo = ExtensionSettingsStore.getSetting("prefs", "homepage_override");
+      } catch (e) {
+        
+        
+        
+        if (homePages.includes("moz-extension://")) {
+          return this.getDefault();
+        }
+      }
+
       if (extensionInfo) {
         let policy = WebExtensionPolicy.getByID(extensionInfo.id);
         if (!policy || !policy.privateBrowsingAllowed) {
@@ -61,7 +73,7 @@ let HomePage = {
       }
     }
 
-    return getHomepagePref();
+    return homePages;
   },
 
   getDefault() {
