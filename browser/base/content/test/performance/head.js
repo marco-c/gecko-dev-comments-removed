@@ -207,10 +207,7 @@ async function ensureNoPreloadedBrowser(win = window) {
   
   
   
-  let preloaded = win.gBrowser._getPreloadedBrowser();
-  if (preloaded) {
-    preloaded.remove();
-  }
+  NewTabPagePreloading.removePreloadedBrowser(win);
 
   await SpecialPowers.pushPrefEnv({
     set: [["browser.newtab.preload", false]],

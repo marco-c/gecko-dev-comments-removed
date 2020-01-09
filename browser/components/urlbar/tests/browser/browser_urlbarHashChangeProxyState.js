@@ -93,7 +93,7 @@ add_task(async function() {
 
 add_task(async function() {
   
-  gBrowser.removePreloadedBrowser();
+  NewTabPagePreloading.removePreloadedBrowser(window);
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:newtab");
   let url = `${TEST_BASE_URL}dummy_page.html#foo`;
   gURLBar.value = url;
