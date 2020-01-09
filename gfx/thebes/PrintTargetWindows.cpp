@@ -20,8 +20,8 @@ PrintTargetWindows::PrintTargetWindows(cairo_surface_t* aCairoSurface,
   
 }
 
- already_AddRefed<PrintTargetWindows>
-PrintTargetWindows::CreateOrNull(HDC aDC) {
+
+already_AddRefed<PrintTargetWindows> PrintTargetWindows::CreateOrNull(HDC aDC) {
   
   
   

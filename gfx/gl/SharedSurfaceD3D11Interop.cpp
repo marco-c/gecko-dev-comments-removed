@@ -307,9 +307,10 @@ class DXInterop2Device : public RefCounted<DXInterop2Device> {
 
 
 
- UniquePtr<SharedSurface_D3D11Interop>
-SharedSurface_D3D11Interop::Create(DXInterop2Device* interop, GLContext* gl,
-                                   const gfx::IntSize& size, bool hasAlpha) {
+
+UniquePtr<SharedSurface_D3D11Interop> SharedSurface_D3D11Interop::Create(
+    DXInterop2Device* interop, GLContext* gl, const gfx::IntSize& size,
+    bool hasAlpha) {
   const auto& d3d = interop->mD3D;
 
   
@@ -473,10 +474,10 @@ bool SharedSurface_D3D11Interop::ToSurfaceDescriptor(
 
 
 
- UniquePtr<SurfaceFactory_D3D11Interop>
-SurfaceFactory_D3D11Interop::Create(GLContext* gl, const SurfaceCaps& caps,
-                                    layers::LayersIPCChannel* allocator,
-                                    const layers::TextureFlags& flags) {
+
+UniquePtr<SurfaceFactory_D3D11Interop> SurfaceFactory_D3D11Interop::Create(
+    GLContext* gl, const SurfaceCaps& caps, layers::LayersIPCChannel* allocator,
+    const layers::TextureFlags& flags) {
   WGLLibrary* wgl = &sWGLLib;
   if (!wgl || !wgl->HasDXInterop2()) return nullptr;
 

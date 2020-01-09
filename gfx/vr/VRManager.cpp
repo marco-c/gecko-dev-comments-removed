@@ -51,7 +51,8 @@ const uint32_t kVRActiveTaskInterval = 1;
 
 const uint32_t kVRIdleTaskInterval = 100;  
 
- void VRManager::ManagerInit() {
+
+void VRManager::ManagerInit() {
   MOZ_ASSERT(NS_IsMainThread());
 
   
@@ -155,7 +156,8 @@ void VRManager::Shutdown() {
 
 void VRManager::Init() { mInitialized = true; }
 
- VRManager* VRManager::Get() {
+
+VRManager* VRManager::Get() {
   MOZ_ASSERT(sVRManagerSingleton != nullptr);
 
   return sVRManagerSingleton;
@@ -226,7 +228,8 @@ void VRManager::StopTasks() {
   }
 }
 
- void VRManager::TaskTimerCallback(nsITimer* aTimer, void* aClosure) {
+
+void VRManager::TaskTimerCallback(nsITimer* aTimer, void* aClosure) {
   
 
 

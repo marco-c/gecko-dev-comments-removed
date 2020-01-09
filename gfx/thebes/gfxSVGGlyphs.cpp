@@ -40,7 +40,8 @@ using namespace mozilla;
 using mozilla::dom::Document;
 using mozilla::dom::Element;
 
- const mozilla::gfx::Color SimpleTextContextPaint::sZero;
+
+const mozilla::gfx::Color SimpleTextContextPaint::sZero;
 
 gfxSVGGlyphs::gfxSVGGlyphs(hb_blob_t *aSVGTable, gfxFontEntry *aFontEntry)
     : mSVGData(aSVGTable), mFontEntry(aFontEntry) {
@@ -77,8 +78,8 @@ void gfxSVGGlyphs::DidRefresh() { mFontEntry->NotifyGlyphsChanged(); }
 
 
 
- int gfxSVGGlyphs::CompareIndexEntries(const void *aKey,
-                                                   const void *aEntry) {
+
+int gfxSVGGlyphs::CompareIndexEntries(const void *aKey, const void *aEntry) {
   const uint32_t key = *(uint32_t *)aKey;
   const IndexEntry *entry = (const IndexEntry *)aEntry;
 

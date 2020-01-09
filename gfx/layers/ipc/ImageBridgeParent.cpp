@@ -48,7 +48,8 @@ StaticAutoPtr<mozilla::Monitor> sImageBridgesLock;
 
 static StaticRefPtr<ImageBridgeParent> sImageBridgeParentSingleton;
 
- void ImageBridgeParent::Setup() {
+
+void ImageBridgeParent::Setup() {
   MOZ_ASSERT(NS_IsMainThread());
   if (!sImageBridgesLock) {
     sImageBridgesLock = new Monitor("ImageBridges");
@@ -67,7 +68,8 @@ ImageBridgeParent::ImageBridgeParent(MessageLoop* aLoop,
 
 ImageBridgeParent::~ImageBridgeParent() {}
 
- ImageBridgeParent* ImageBridgeParent::CreateSameProcess() {
+
+ImageBridgeParent* ImageBridgeParent::CreateSameProcess() {
   base::ProcessId pid = base::GetCurrentProcId();
   RefPtr<ImageBridgeParent> parent =
       new ImageBridgeParent(CompositorThreadHolder::Loop(), pid);
@@ -83,7 +85,8 @@ ImageBridgeParent::~ImageBridgeParent() {}
   return parent;
 }
 
- bool ImageBridgeParent::CreateForGPUProcess(
+
+bool ImageBridgeParent::CreateForGPUProcess(
     Endpoint<PImageBridgeParent>&& aEndpoint) {
   MOZ_ASSERT(XRE_GetProcessType() == GeckoProcessType_GPU);
 
@@ -99,7 +102,8 @@ ImageBridgeParent::~ImageBridgeParent() {}
   return true;
 }
 
- void ImageBridgeParent::ShutdownInternal() {
+
+void ImageBridgeParent::ShutdownInternal() {
   
   
   nsTArray<RefPtr<ImageBridgeParent>> actors;
@@ -118,7 +122,8 @@ ImageBridgeParent::~ImageBridgeParent() {}
   sImageBridgeParentSingleton = nullptr;
 }
 
- void ImageBridgeParent::Shutdown() {
+
+void ImageBridgeParent::Shutdown() {
   CompositorThreadHolder::Loop()->PostTask(NS_NewRunnableFunction(
       "ImageBridgeParent::Shutdown",
       []() -> void { ImageBridgeParent::ShutdownInternal(); }));
@@ -203,7 +208,8 @@ mozilla::ipc::IPCResult ImageBridgeParent::RecvUpdate(
   return IPC_OK();
 }
 
- bool ImageBridgeParent::CreateForContent(
+
+bool ImageBridgeParent::CreateForContent(
     Endpoint<PImageBridgeParent>&& aEndpoint) {
   MessageLoop* loop = CompositorThreadHolder::Loop();
 
@@ -318,7 +324,8 @@ class ProcessIdComparator {
   }
 };
 
- bool ImageBridgeParent::NotifyImageComposites(
+
+bool ImageBridgeParent::NotifyImageComposites(
     nsTArray<ImageCompositeNotificationInfo>& aNotifications) {
   
   

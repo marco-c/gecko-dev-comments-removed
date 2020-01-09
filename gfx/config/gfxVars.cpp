@@ -73,7 +73,8 @@ void gfxVars::Shutdown() {
   gGfxVarInitUpdates = nullptr;
 }
 
- void gfxVars::ApplyUpdate(const GfxVarUpdate& aUpdate) {
+
+void gfxVars::ApplyUpdate(const GfxVarUpdate& aUpdate) {
   
   MOZ_ASSERT(!XRE_IsParentProcess());
   MOZ_DIAGNOSTIC_ASSERT(sVarList || gGfxVarInitUpdates);
@@ -86,7 +87,8 @@ void gfxVars::Shutdown() {
   }
 }
 
- void gfxVars::AddReceiver(gfxVarReceiver* aReceiver) {
+
+void gfxVars::AddReceiver(gfxVarReceiver* aReceiver) {
   MOZ_ASSERT(NS_IsMainThread());
 
   
@@ -96,7 +98,8 @@ void gfxVars::Shutdown() {
   }
 }
 
- void gfxVars::RemoveReceiver(gfxVarReceiver* aReceiver) {
+
+void gfxVars::RemoveReceiver(gfxVarReceiver* aReceiver) {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (sInstance) {
@@ -104,7 +107,8 @@ void gfxVars::Shutdown() {
   }
 }
 
- nsTArray<GfxVarUpdate> gfxVars::FetchNonDefaultVars() {
+
+nsTArray<GfxVarUpdate> gfxVars::FetchNonDefaultVars() {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(sVarList);
 

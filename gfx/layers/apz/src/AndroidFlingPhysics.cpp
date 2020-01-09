@@ -137,7 +137,8 @@ struct SplineConstants {
 
 StaticAutoPtr<SplineConstants> gSplineConstants;
 
- void AndroidFlingPhysics::InitializeGlobalState() {
+
+void AndroidFlingPhysics::InitializeGlobalState() {
   gSplineConstants = new SplineConstants();
   ClearOnShutdown(&gSplineConstants);
 }

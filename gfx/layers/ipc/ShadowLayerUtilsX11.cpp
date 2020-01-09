@@ -102,7 +102,8 @@ already_AddRefed<gfxXlibSurface> SurfaceDescriptorX11::OpenForeign() const {
   return surf->CairoStatus() ? nullptr : surf.forget();
 }
 
- void ShadowLayerForwarder::PlatformSyncBeforeUpdate() {
+
+void ShadowLayerForwarder::PlatformSyncBeforeUpdate() {
   if (UsingXCompositing()) {
     
     
@@ -112,7 +113,8 @@ already_AddRefed<gfxXlibSurface> SurfaceDescriptorX11::OpenForeign() const {
   }
 }
 
- void LayerManagerComposite::PlatformSyncBeforeReplyUpdate() {
+
+void LayerManagerComposite::PlatformSyncBeforeReplyUpdate() {
   if (UsingXCompositing()) {
     
     
@@ -123,9 +125,8 @@ already_AddRefed<gfxXlibSurface> SurfaceDescriptorX11::OpenForeign() const {
   }
 }
 
- bool LayerManagerComposite::SupportsDirectTexturing() {
-  return false;
-}
+
+bool LayerManagerComposite::SupportsDirectTexturing() { return false; }
 
 }  
 }  

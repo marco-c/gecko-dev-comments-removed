@@ -585,6 +585,11 @@ void gfxWindowsPlatform::UpdateRenderMode() {
   }
 }
 
+bool gfxWindowsPlatform::AllowOpenGLCanvas() {
+  
+  return false;
+}
+
 mozilla::gfx::BackendType gfxWindowsPlatform::GetContentBackendFor(
     mozilla::layers::LayersBackend aLayers) {
   mozilla::gfx::BackendType defaultBackend =
@@ -1375,7 +1380,8 @@ void gfxWindowsPlatform::InitializeD3D11Config() {
   InitializeAdvancedLayersConfig();
 }
 
- void gfxWindowsPlatform::InitializeAdvancedLayersConfig() {
+
+void gfxWindowsPlatform::InitializeAdvancedLayersConfig() {
   
   if (!gfxConfig::IsEnabled(Feature::D3D11_COMPOSITING)) {
     return;
@@ -1409,7 +1415,8 @@ void gfxWindowsPlatform::InitializeD3D11Config() {
   }
 }
 
- void gfxWindowsPlatform::RecordContentDeviceFailure(
+
+void gfxWindowsPlatform::RecordContentDeviceFailure(
     TelemetryDeviceCode aDevice) {
   
   

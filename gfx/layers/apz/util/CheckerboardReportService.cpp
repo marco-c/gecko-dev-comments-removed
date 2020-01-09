@@ -21,10 +21,11 @@
 namespace mozilla {
 namespace layers {
 
- StaticRefPtr<CheckerboardEventStorage>
-    CheckerboardEventStorage::sInstance;
 
- already_AddRefed<CheckerboardEventStorage>
+StaticRefPtr<CheckerboardEventStorage> CheckerboardEventStorage::sInstance;
+
+
+already_AddRefed<CheckerboardEventStorage>
 CheckerboardEventStorage::GetInstance() {
   
   
@@ -152,8 +153,8 @@ NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(CheckerboardReportService, mParent)
 NS_IMPL_CYCLE_COLLECTION_ROOT_NATIVE(CheckerboardReportService, AddRef)
 NS_IMPL_CYCLE_COLLECTION_UNROOT_NATIVE(CheckerboardReportService, Release)
 
- bool CheckerboardReportService::IsEnabled(JSContext* aCtx,
-                                                     JSObject* aGlobal) {
+
+bool CheckerboardReportService::IsEnabled(JSContext* aCtx, JSObject* aGlobal) {
   
   if (!XRE_IsParentProcess()) {
     return false;
@@ -163,7 +164,8 @@ NS_IMPL_CYCLE_COLLECTION_UNROOT_NATIVE(CheckerboardReportService, Release)
          nsContentUtils::IsSpecificAboutPage(aGlobal, "about:checkerboard");
 }
 
- already_AddRefed<CheckerboardReportService>
+
+already_AddRefed<CheckerboardReportService>
 CheckerboardReportService::Constructor(const dom::GlobalObject& aGlobal,
                                        ErrorResult& aRv) {
   RefPtr<CheckerboardReportService> ces =

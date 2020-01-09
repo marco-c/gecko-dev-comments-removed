@@ -16,7 +16,8 @@
 namespace mozilla {
 namespace gl {
 
- UniquePtr<SharedSurface_EGLImage> SharedSurface_EGLImage::Create(
+
+UniquePtr<SharedSurface_EGLImage> SharedSurface_EGLImage::Create(
     GLContext* prodGL, const GLFormats& formats, const gfx::IntSize& size,
     bool hasAlpha, EGLContext context) {
   auto* egl = gl::GLLibraryEGL::Get();
@@ -139,7 +140,8 @@ bool SharedSurface_EGLImage::ReadbackBySharedHandle(
 
 
 
- UniquePtr<SurfaceFactory_EGLImage> SurfaceFactory_EGLImage::Create(
+
+UniquePtr<SurfaceFactory_EGLImage> SurfaceFactory_EGLImage::Create(
     GLContext* prodGL, const SurfaceCaps& caps,
     const RefPtr<layers::LayersIPCChannel>& allocator,
     const layers::TextureFlags& flags) {
@@ -160,11 +162,10 @@ bool SharedSurface_EGLImage::ReadbackBySharedHandle(
 
 #ifdef MOZ_WIDGET_ANDROID
 
- UniquePtr<SharedSurface_SurfaceTexture>
-SharedSurface_SurfaceTexture::Create(GLContext* prodGL,
-                                     const GLFormats& formats,
-                                     const gfx::IntSize& size, bool hasAlpha,
-                                     java::GeckoSurface::Param surface) {
+
+UniquePtr<SharedSurface_SurfaceTexture> SharedSurface_SurfaceTexture::Create(
+    GLContext* prodGL, const GLFormats& formats, const gfx::IntSize& size,
+    bool hasAlpha, java::GeckoSurface::Param surface) {
   MOZ_ASSERT(surface);
 
   UniquePtr<SharedSurface_SurfaceTexture> ret;
@@ -241,8 +242,8 @@ bool SharedSurface_SurfaceTexture::ToSurfaceDescriptor(
 
 
 
- UniquePtr<SurfaceFactory_SurfaceTexture>
-SurfaceFactory_SurfaceTexture::Create(
+
+UniquePtr<SurfaceFactory_SurfaceTexture> SurfaceFactory_SurfaceTexture::Create(
     GLContext* prodGL, const SurfaceCaps& caps,
     const RefPtr<layers::LayersIPCChannel>& allocator,
     const layers::TextureFlags& flags) {

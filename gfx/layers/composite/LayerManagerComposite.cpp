@@ -1434,11 +1434,11 @@ bool LayerComposite::HasStaleCompositor() const {
 
 #ifndef MOZ_HAVE_PLATFORM_SPECIFIC_LAYER_BUFFERS
 
- bool LayerManagerComposite::SupportsDirectTexturing() {
-  return false;
-}
 
- void LayerManagerComposite::PlatformSyncBeforeReplyUpdate() {}
+bool LayerManagerComposite::SupportsDirectTexturing() { return false; }
+
+
+void LayerManagerComposite::PlatformSyncBeforeReplyUpdate() {}
 
 #endif  
 

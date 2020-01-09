@@ -14,7 +14,8 @@
 namespace mozilla {
 namespace gl {
 
- UniquePtr<SharedSurface_IOSurface> SharedSurface_IOSurface::Create(
+
+UniquePtr<SharedSurface_IOSurface> SharedSurface_IOSurface::Create(
     const RefPtr<MacIOSurface>& ioSurf, GLContext* gl, bool hasAlpha) {
   MOZ_ASSERT(ioSurf);
   MOZ_ASSERT(gl);
@@ -187,7 +188,8 @@ bool SharedSurface_IOSurface::ReadbackBySharedHandle(
 
 
 
- UniquePtr<SurfaceFactory_IOSurface> SurfaceFactory_IOSurface::Create(
+
+UniquePtr<SurfaceFactory_IOSurface> SurfaceFactory_IOSurface::Create(
     GLContext* gl, const SurfaceCaps& caps,
     const RefPtr<layers::LayersIPCChannel>& allocator,
     const layers::TextureFlags& flags) {

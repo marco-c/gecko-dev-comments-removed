@@ -12,22 +12,26 @@ namespace layers {
 static bool sThreadAssertionsEnabled = true;
 static MessageLoop* sControllerThread;
 
- void APZThreadUtils::SetThreadAssertionsEnabled(bool aEnabled) {
+
+void APZThreadUtils::SetThreadAssertionsEnabled(bool aEnabled) {
   sThreadAssertionsEnabled = aEnabled;
 }
 
- bool APZThreadUtils::GetThreadAssertionsEnabled() {
+
+bool APZThreadUtils::GetThreadAssertionsEnabled() {
   return sThreadAssertionsEnabled;
 }
 
- void APZThreadUtils::SetControllerThread(MessageLoop* aLoop) {
+
+void APZThreadUtils::SetControllerThread(MessageLoop* aLoop) {
   
   
   MOZ_ASSERT(!sControllerThread || !aLoop || sControllerThread == aLoop);
   sControllerThread = aLoop;
 }
 
- void APZThreadUtils::AssertOnControllerThread() {
+
+void APZThreadUtils::AssertOnControllerThread() {
   if (!GetThreadAssertionsEnabled()) {
     return;
   }
@@ -35,8 +39,8 @@ static MessageLoop* sControllerThread;
   MOZ_ASSERT(sControllerThread == MessageLoop::current());
 }
 
- void APZThreadUtils::RunOnControllerThread(
-    RefPtr<Runnable>&& aTask) {
+
+void APZThreadUtils::RunOnControllerThread(RefPtr<Runnable>&& aTask) {
   RefPtr<Runnable> task = std::move(aTask);
 
   if (!sControllerThread) {
@@ -52,7 +56,8 @@ static MessageLoop* sControllerThread;
   }
 }
 
- bool APZThreadUtils::IsControllerThread() {
+
+bool APZThreadUtils::IsControllerThread() {
   return sControllerThread == MessageLoop::current();
 }
 

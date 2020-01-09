@@ -254,7 +254,8 @@ void CompositorBridgeChild::InitForWidget(uint64_t aProcessToken,
   mIdNamespace = aNamespace;
 }
 
- CompositorBridgeChild* CompositorBridgeChild::Get() {
+
+CompositorBridgeChild* CompositorBridgeChild::Get() {
   
   
   
@@ -267,7 +268,8 @@ bool CompositorBridgeChild::ChildProcessHasCompositorBridge() {
   return sCompositorBridge != nullptr;
 }
 
- bool CompositorBridgeChild::CompositorIsInGPUProcess() {
+
+bool CompositorBridgeChild::CompositorIsInGPUProcess() {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (XRE_IsParentProcess()) {

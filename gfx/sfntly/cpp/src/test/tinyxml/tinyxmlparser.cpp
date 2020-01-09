@@ -126,47 +126,46 @@ void TiXmlBase::ConvertUTF32ToUTF8( unsigned long input, char* output, int* leng
 }
 
 
- int TiXmlBase::IsAlpha( unsigned char anyByte, TiXmlEncoding  )
-{
-	
-	
-	
-	
+int TiXmlBase::IsAlpha(unsigned char anyByte, TiXmlEncoding ) {
+  
+  
+  
+  
 
-
-
-		if ( anyByte < 127 )
-			return isalpha( anyByte );
-		else
-			return 1;	
-
-
-
-
-
+  
+  
+  if (anyByte < 127)
+    return isalpha(anyByte);
+  else
+    return 1;  
+               
+  
+  
+  
+  
+  
 }
 
 
- int TiXmlBase::IsAlphaNum( unsigned char anyByte, TiXmlEncoding  )
-{
-	
-	
-	
-	
+int TiXmlBase::IsAlphaNum(unsigned char anyByte, TiXmlEncoding ) {
+  
+  
+  
+  
 
-
-
-		if ( anyByte < 127 )
-			return isalnum( anyByte );
-		else
-			return 1;	
-
-
-
-
-
+  
+  
+  if (anyByte < 127)
+    return isalnum(anyByte);
+  else
+    return 1;  
+               
+  
+  
+  
+  
+  
 }
-
 
 class TiXmlParsingData
 {
@@ -362,36 +361,33 @@ const char* TiXmlBase::SkipWhiteSpace( const char* p, TiXmlEncoding encoding )
 }
 
 #ifdef TIXML_USE_STL
- bool TiXmlBase::StreamWhiteSpace( std::istream * in, TIXML_STRING * tag )
-{
-	for( ;; )
-	{
-		if ( !in->good() ) return false;
 
-		int c = in->peek();
-		
-		if ( !IsWhiteSpace( c ) || c <= 0 )
-			return true;
+bool TiXmlBase::StreamWhiteSpace(std::istream* in, TIXML_STRING* tag) {
+  for (;;) {
+    if (!in->good()) return false;
 
-		*tag += (char) in->get();
-	}
+    int c = in->peek();
+    
+    if (!IsWhiteSpace(c) || c <= 0) return true;
+
+    *tag += (char)in->get();
+  }
 }
 
- bool TiXmlBase::StreamTo( std::istream * in, int character, TIXML_STRING * tag )
-{
-	
-	while ( in->good() )
-	{
-		int c = in->peek();
-		if ( c == character )
-			return true;
-		if ( c <= 0 )		
-			return false;
 
-		in->get();
-		*tag += (char) c;
-	}
-	return false;
+bool TiXmlBase::StreamTo(std::istream* in, int character, TIXML_STRING* tag) {
+  
+  
+  while (in->good()) {
+    int c = in->peek();
+    if (c == character) return true;
+    if (c <= 0)  
+      return false;
+
+    in->get();
+    *tag += (char)c;
+  }
+  return false;
 }
 #endif
 

@@ -71,8 +71,8 @@ void VRManagerParent::UnregisterFromManager() {
   mVRManagerHolder = nullptr;
 }
 
- bool VRManagerParent::CreateForContent(
-    Endpoint<PVRManagerParent>&& aEndpoint) {
+
+bool VRManagerParent::CreateForContent(Endpoint<PVRManagerParent>&& aEndpoint) {
   MessageLoop* loop = CompositorThreadHolder::Loop();
 
   RefPtr<VRManagerParent> vmp = new VRManagerParent(aEndpoint.OtherPid(), true);
@@ -92,12 +92,14 @@ void VRManagerParent::Bind(Endpoint<PVRManagerParent>&& aEndpoint) {
   RegisterWithManager();
 }
 
- void VRManagerParent::RegisterVRManagerInCompositorThread(
+
+void VRManagerParent::RegisterVRManagerInCompositorThread(
     VRManagerParent* aVRManager) {
   aVRManager->RegisterWithManager();
 }
 
- VRManagerParent* VRManagerParent::CreateSameProcess() {
+
+VRManagerParent* VRManagerParent::CreateSameProcess() {
   MessageLoop* loop = CompositorThreadHolder::Loop();
   RefPtr<VRManagerParent> vmp =
       new VRManagerParent(base::GetCurrentProcId(), false);

@@ -1024,7 +1024,8 @@ static already_AddRefed<GLContextGLX> CreateOffscreenPixmapContext(
                                        config, true, surface);
 }
 
- already_AddRefed<GLContext> GLContextProviderGLX::CreateHeadless(
+
+already_AddRefed<GLContext> GLContextProviderGLX::CreateHeadless(
     CreateContextFlags flags, nsACString* const out_failureId) {
   IntSize dummySize = IntSize(16, 16);
   SurfaceCaps dummyCaps = SurfaceCaps::Any();
@@ -1032,7 +1033,8 @@ static already_AddRefed<GLContextGLX> CreateOffscreenPixmapContext(
                                       out_failureId);
 }
 
- already_AddRefed<GLContext> GLContextProviderGLX::CreateOffscreen(
+
+already_AddRefed<GLContext> GLContextProviderGLX::CreateOffscreen(
     const IntSize& size, const SurfaceCaps& minCaps, CreateContextFlags flags,
     nsACString* const out_failureId) {
   SurfaceCaps minBackbufferCaps = minCaps;
@@ -1055,12 +1057,14 @@ static already_AddRefed<GLContextGLX> CreateOffscreenPixmapContext(
   return gl.forget();
 }
 
- GLContext* GLContextProviderGLX::GetGlobalContext() {
+
+GLContext* GLContextProviderGLX::GetGlobalContext() {
   
   return nullptr;
 }
 
- void GLContextProviderGLX::Shutdown() {}
+
+void GLContextProviderGLX::Shutdown() {}
 
 } 
 } 

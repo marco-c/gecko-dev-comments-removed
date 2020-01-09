@@ -61,22 +61,24 @@ void APZUpdater::SetWebRenderWindowId(const wr::WindowId& aWindowId) {
   (*sWindowIdMap)[wr::AsUint64(aWindowId)] = this;
 }
 
- void APZUpdater::SetUpdaterThread(const wr::WrWindowId& aWindowId) {
+
+void APZUpdater::SetUpdaterThread(const wr::WrWindowId& aWindowId) {
   if (RefPtr<APZUpdater> updater = GetUpdater(aWindowId)) {
     MutexAutoLock lock(updater->mThreadIdLock);
     updater->mUpdaterThreadId = Some(PlatformThread::CurrentId());
   }
 }
 
- void APZUpdater::PrepareForSceneSwap(
-    const wr::WrWindowId& aWindowId) {
+
+void APZUpdater::PrepareForSceneSwap(const wr::WrWindowId& aWindowId) {
   if (RefPtr<APZUpdater> updater = GetUpdater(aWindowId)) {
     updater->mApz->LockTree();
   }
 }
 
- void APZUpdater::CompleteSceneSwap(const wr::WrWindowId& aWindowId,
-                                              const wr::WrPipelineInfo& aInfo) {
+
+void APZUpdater::CompleteSceneSwap(const wr::WrWindowId& aWindowId,
+                                   const wr::WrPipelineInfo& aInfo) {
   RefPtr<APZUpdater> updater = GetUpdater(aWindowId);
   if (!updater) {
     
@@ -119,8 +121,8 @@ void APZUpdater::SetWebRenderWindowId(const wr::WindowId& aWindowId) {
   updater->mApz->UnlockTree();
 }
 
- void APZUpdater::ProcessPendingTasks(
-    const wr::WrWindowId& aWindowId) {
+
+void APZUpdater::ProcessPendingTasks(const wr::WrWindowId& aWindowId) {
   if (RefPtr<APZUpdater> updater = GetUpdater(aWindowId)) {
     updater->ProcessQueue();
   }
@@ -409,7 +411,8 @@ bool APZUpdater::UsingWebRenderUpdaterThread() const {
   return mIsUsingWebRender;
 }
 
- already_AddRefed<APZUpdater> APZUpdater::GetUpdater(
+
+already_AddRefed<APZUpdater> APZUpdater::GetUpdater(
     const wr::WrWindowId& aWindowId) {
   RefPtr<APZUpdater> updater;
   StaticMutexAutoLock lock(sWindowIdLock);

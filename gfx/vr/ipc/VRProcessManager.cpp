@@ -16,16 +16,19 @@ namespace gfx {
 
 static StaticAutoPtr<VRProcessManager> sSingleton;
 
- VRProcessManager* VRProcessManager::Get() { return sSingleton; }
 
- void VRProcessManager::Initialize() {
+VRProcessManager* VRProcessManager::Get() { return sSingleton; }
+
+
+void VRProcessManager::Initialize() {
   MOZ_ASSERT(XRE_IsParentProcess());
   if (sSingleton == nullptr) {
     sSingleton = new VRProcessManager();
   }
 }
 
- void VRProcessManager::Shutdown() { sSingleton = nullptr; }
+
+void VRProcessManager::Shutdown() { sSingleton = nullptr; }
 
 VRProcessManager::VRProcessManager() : mProcess(nullptr) {
   MOZ_COUNT_CTOR(VRProcessManager);

@@ -10,8 +10,9 @@
 #define MOZILLA_SSE_INCLUDE_HEADER_FOR_SSE2
 #include "mozilla/SSE.h"
 
- bool gfxAlphaRecovery::RecoverAlpha(
-    gfxImageSurface* blackSurf, const gfxImageSurface* whiteSurf) {
+
+bool gfxAlphaRecovery::RecoverAlpha(gfxImageSurface* blackSurf,
+                                    const gfxImageSurface* whiteSurf) {
   mozilla::gfx::IntSize size = blackSurf->GetSize();
 
   if (size != whiteSurf->GetSize() ||

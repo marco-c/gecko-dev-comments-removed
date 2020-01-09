@@ -35,7 +35,8 @@ ProfilerScreenshots::~ProfilerScreenshots() {
   }
 }
 
- bool ProfilerScreenshots::IsEnabled() {
+
+bool ProfilerScreenshots::IsEnabled() {
 #ifdef MOZ_GECKO_PROFILER
   return profiler_feature_active(ProfilerFeature::Screenshots);
 #else

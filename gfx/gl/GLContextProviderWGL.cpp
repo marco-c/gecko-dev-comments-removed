@@ -467,7 +467,8 @@ already_AddRefed<GLContext> GLContextProviderWGL::CreateForWindow(
       .forget();
 }
 
- already_AddRefed<GLContext> GLContextProviderWGL::CreateHeadless(
+
+already_AddRefed<GLContext> GLContextProviderWGL::CreateHeadless(
     const CreateContextFlags flags, nsACString* const out_failureId) {
   auto& wgl = sWGLLib;
   if (!wgl.EnsureInitialized()) return nullptr;
@@ -523,7 +524,8 @@ already_AddRefed<GLContext> GLContextProviderWGL::CreateForWindow(
   return RefPtr<GLContext>(gl.get()).forget();
 }
 
- already_AddRefed<GLContext> GLContextProviderWGL::CreateOffscreen(
+
+already_AddRefed<GLContext> GLContextProviderWGL::CreateOffscreen(
     const IntSize& size, const SurfaceCaps& minCaps, CreateContextFlags flags,
     nsACString* const out_failureId) {
   *out_failureId = NS_LITERAL_CSTRING("FEATURE_FAILURE_WGL_INIT");
@@ -536,11 +538,11 @@ already_AddRefed<GLContext> GLContextProviderWGL::CreateForWindow(
   return gl.forget();
 }
 
- GLContext* GLContextProviderWGL::GetGlobalContext() {
-  return nullptr;
-}
 
- void GLContextProviderWGL::Shutdown() {}
+GLContext* GLContextProviderWGL::GetGlobalContext() { return nullptr; }
+
+
+void GLContextProviderWGL::Shutdown() {}
 
 } 
 } 

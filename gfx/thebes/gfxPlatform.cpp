@@ -109,6 +109,11 @@
 #    pragma GCC diagnostic ignored "-Wshadow"
 #  endif
 #  include "skia/include/core/SkGraphics.h"
+#  ifdef USE_SKIA_GPU
+#    include "skia/include/gpu/GrContext.h"
+#    include "skia/include/gpu/gl/GrGLInterface.h"
+#    include "SkiaGLGlue.h"
+#  endif
 #  ifdef MOZ_ENABLE_FREETYPE
 #    include "skia/include/ports/SkTypeface_cairo.h"
 #  endif
@@ -118,6 +123,10 @@
 #  endif
 static const uint32_t kDefaultGlyphCacheSize = -1;
 
+#endif
+
+#if !defined(USE_SKIA) || !defined(USE_SKIA_GPU)
+class mozilla::gl::SkiaGLGlue : public GenericAtomicRefCounted {};
 #endif
 
 #include "mozilla/Preferences.h"
@@ -439,6 +448,7 @@ void gfxPlatform::OnMemoryPressure(layers::MemoryPressureReason aWhy) {
   gfxGradientCache::PurgeAllCaches();
   gfxFontMissingGlyphs::Purge();
   PurgeSkiaFontCache();
+  PurgeSkiaGPUCache();
   if (XRE_IsParentProcess()) {
     layers::CompositorManagerChild* manager =
         CompositorManagerChild::GetInstance();
@@ -465,6 +475,8 @@ gfxPlatform::gfxPlatform()
   mOpenTypeSVGEnabled = UNINITIALIZED_VALUE;
   mBidiNumeralOption = UNINITIALIZED_VALUE;
 
+  mSkiaGlue = nullptr;
+
   InitBackendPrefs(GetBackendPrefs());
 
   mTotalSystemMemory = PR_GetPhysicalMemorySize();
@@ -484,7 +496,8 @@ gfxPlatform* gfxPlatform::GetPlatform() {
 
 bool gfxPlatform::Initialized() { return !!gPlatform; }
 
- void gfxPlatform::InitChild(const ContentDeviceData& aData) {
+
+void gfxPlatform::InitChild(const ContentDeviceData& aData) {
   MOZ_ASSERT(XRE_IsContentProcess());
   MOZ_RELEASE_ASSERT(!gPlatform,
                      "InitChild() should be called before first GetPlatform()");
@@ -875,7 +888,7 @@ void gfxPlatform::Init() {
         gfxPrefs::WebGLForceMSAA());
     
     forcedPrefs.AppendPrintf("-T%d%d%d) ", gfxPrefs::AndroidRGB16Force(),
-                             0, 
+                             gfxPrefs::CanvasAzureAccelerated(),
                              gfxPrefs::ForceShmemTiles());
     ScopedGfxFeatureReporter::AppNote(forcedPrefs);
   }
@@ -1076,37 +1089,44 @@ static bool IsFeatureSupported(long aFeature) {
   }
   return status != nsIGfxInfo::FEATURE_STATUS_OK;
 }
- bool gfxPlatform::IsDXInterop2Blocked() {
+
+bool gfxPlatform::IsDXInterop2Blocked() {
   return IsFeatureSupported(nsIGfxInfo::FEATURE_DX_INTEROP2);
 }
 
- bool gfxPlatform::IsDXNV12Blocked() {
+
+bool gfxPlatform::IsDXNV12Blocked() {
   return IsFeatureSupported(nsIGfxInfo::FEATURE_DX_NV12);
 }
 
- bool gfxPlatform::IsDXP010Blocked() {
+
+bool gfxPlatform::IsDXP010Blocked() {
   return IsFeatureSupported(nsIGfxInfo::FEATURE_DX_P010);
 }
 
- bool gfxPlatform::IsDXP016Blocked() {
+
+bool gfxPlatform::IsDXP016Blocked() {
   return IsFeatureSupported(nsIGfxInfo::FEATURE_DX_P016);
 }
 
- int32_t gfxPlatform::MaxTextureSize() {
+
+int32_t gfxPlatform::MaxTextureSize() {
   
   
   const int32_t kMinSizePref = 2048;
   return std::max(kMinSizePref, gfxPrefs::MaxTextureSizeDoNotUseDirectly());
 }
 
- int32_t gfxPlatform::MaxAllocSize() {
+
+int32_t gfxPlatform::MaxAllocSize() {
   
   
   const int32_t kMinAllocPref = 10000000;
   return std::max(kMinAllocPref, gfxPrefs::MaxAllocSizeDoNotUseDirectly());
 }
 
- void gfxPlatform::InitMoz2DLogging() {
+
+void gfxPlatform::InitMoz2DLogging() {
   auto fwd = new CrashStatsLogForwarder(
       CrashReporter::Annotation::GraphicsCriticalError);
   fwd->SetCircularBufferSize(gfxPrefs::GfxLoggingCrashLength());
@@ -1119,7 +1139,8 @@ static bool IsFeatureSupported(long aFeature) {
   gfx::Factory::Init(cfg);
 }
 
- bool gfxPlatform::IsHeadless() {
+
+bool gfxPlatform::IsHeadless() {
   static bool initialized = false;
   static bool headless = false;
   if (!initialized) {
@@ -1131,7 +1152,8 @@ static bool IsFeatureSupported(long aFeature) {
 
 static bool sLayersIPCIsUp = false;
 
- void gfxPlatform::InitNullMetadata() {
+
+void gfxPlatform::InitNullMetadata() {
   ScrollMetadata::sNullMetadata = new ScrollMetadata();
   ClearOnShutdown(&ScrollMetadata::sNullMetadata);
 }
@@ -1173,6 +1195,7 @@ void gfxPlatform::Shutdown() {
     gPlatform->mMemoryPressureObserver->Unregister();
     gPlatform->mMemoryPressureObserver = nullptr;
   }
+  gPlatform->mSkiaGlue = nullptr;
 
   if (XRE_IsParentProcess()) {
     gPlatform->mVsyncSource->Shutdown();
@@ -1215,7 +1238,8 @@ void gfxPlatform::Shutdown() {
   gPlatform = nullptr;
 }
 
- void gfxPlatform::InitLayersIPC() {
+
+void gfxPlatform::InitLayersIPC() {
   if (sLayersIPCIsUp) {
     return;
   }
@@ -1238,7 +1262,8 @@ void gfxPlatform::Shutdown() {
   }
 }
 
- void gfxPlatform::ShutdownLayersIPC() {
+
+void gfxPlatform::ShutdownLayersIPC() {
   if (!sLayersIPCIsUp) {
     return;
   }
@@ -1306,9 +1331,9 @@ gfxPlatform::~gfxPlatform() {
 #endif
 }
 
- already_AddRefed<DrawTarget>
-gfxPlatform::CreateDrawTargetForSurface(gfxASurface* aSurface,
-                                        const IntSize& aSize) {
+
+already_AddRefed<DrawTarget> gfxPlatform::CreateDrawTargetForSurface(
+    gfxASurface* aSurface, const IntSize& aSize) {
   SurfaceFormat format = aSurface->GetSurfaceFormat();
   RefPtr<DrawTarget> drawTarget = Factory::CreateDrawTargetForCairoSurface(
       aSurface->CairoSurface(), aSize, &format);
@@ -1352,9 +1377,9 @@ void gfxPlatform::ClearSourceSurfaceForSurface(gfxASurface* aSurface) {
   aSurface->SetData(&kSourceSurface, nullptr, nullptr);
 }
 
- already_AddRefed<SourceSurface>
-gfxPlatform::GetSourceSurfaceForSurface(RefPtr<DrawTarget> aTarget,
-                                        gfxASurface* aSurface, bool aIsPlugin) {
+
+already_AddRefed<SourceSurface> gfxPlatform::GetSourceSurfaceForSurface(
+    RefPtr<DrawTarget> aTarget, gfxASurface* aSurface, bool aIsPlugin) {
   if (!aSurface->CairoSurface() || aSurface->CairoStatus()) {
     return nullptr;
   }
@@ -1552,7 +1577,114 @@ bool gfxPlatform::SupportsAzureContentForDrawTarget(DrawTarget* aTarget) {
     return false;
   }
 
+#ifdef USE_SKIA_GPU
+  
+  
+  if ((aTarget->GetType() == DrawTargetType::HARDWARE_RASTER) &&
+      (aTarget->GetBackendType() == BackendType::SKIA)) {
+    return false;
+  }
+#endif
+
   return SupportsAzureContentForType(aTarget->GetBackendType());
+}
+
+bool gfxPlatform::AllowOpenGLCanvas() {
+  
+  
+  
+
+  
+  
+  
+  
+  
+  
+  bool correctBackend =
+      !XRE_IsParentProcess() ||
+      (mCompositorBackend == LayersBackend::LAYERS_OPENGL &&
+       (GetContentBackendFor(mCompositorBackend) == BackendType::SKIA));
+
+  if (gfxPrefs::CanvasAzureAccelerated() && correctBackend) {
+    nsCOMPtr<nsIGfxInfo> gfxInfo = do_GetService("@mozilla.org/gfx/info;1");
+    int32_t status;
+    nsCString discardFailureId;
+    return !gfxInfo || (NS_SUCCEEDED(gfxInfo->GetFeatureStatus(
+                            nsIGfxInfo::FEATURE_CANVAS2D_ACCELERATION,
+                            discardFailureId, &status)) &&
+                        status == nsIGfxInfo::FEATURE_STATUS_OK);
+  }
+  return false;
+}
+
+void gfxPlatform::InitializeSkiaCacheLimits() {
+  if (AllowOpenGLCanvas()) {
+#ifdef USE_SKIA_GPU
+    bool usingDynamicCache = gfxPrefs::CanvasSkiaGLDynamicCache();
+    int cacheItemLimit = gfxPrefs::CanvasSkiaGLCacheItems();
+    uint64_t cacheSizeLimit =
+        std::max(gfxPrefs::CanvasSkiaGLCacheSize(), (int32_t)0);
+
+    
+    cacheSizeLimit *= 1024 * 1024;
+
+    if (usingDynamicCache) {
+      if (mTotalSystemMemory < 512 * 1024 * 1024) {
+        
+        
+        cacheSizeLimit = 2 * 1024 * 1024;
+      } else if (mTotalSystemMemory > 0) {
+        cacheSizeLimit = mTotalSystemMemory / 16;
+      }
+    }
+
+    
+    cacheSizeLimit = std::min(cacheSizeLimit, (uint64_t)SIZE_MAX);
+
+#  ifdef DEBUG
+    printf_stderr("Determined SkiaGL cache limits: Size %" PRIu64
+                  ", Items: %i\n",
+                  cacheSizeLimit, cacheItemLimit);
+#  endif
+
+    mSkiaGlue->GetGrContext()->setResourceCacheLimits(cacheItemLimit,
+                                                      (size_t)cacheSizeLimit);
+#endif
+  }
+}
+
+SkiaGLGlue* gfxPlatform::GetSkiaGLGlue() {
+#ifdef USE_SKIA_GPU
+  
+  
+  if (!mSkiaGlue && !AllowOpenGLCanvas()) {
+    return nullptr;
+  }
+
+  if (!mSkiaGlue) {
+    
+
+
+
+
+
+    RefPtr<GLContext> glContext;
+    nsCString discardFailureId;
+    glContext = GLContextProvider::CreateHeadless(
+        CreateContextFlags::REQUIRE_COMPAT_PROFILE |
+            CreateContextFlags::ALLOW_OFFLINE_RENDERER,
+        &discardFailureId);
+    if (!glContext) {
+      printf_stderr("Failed to create GLContext for SkiaGL!\n");
+      return nullptr;
+    }
+    mSkiaGlue = new SkiaGLGlue(glContext);
+    MOZ_ASSERT(mSkiaGlue->GetGrContext(), "No GrContext");
+    InitializeSkiaCacheLimits();
+  }
+#endif
+
+  return mSkiaGlue;
 }
 
 void gfxPlatform::PurgeSkiaFontCache() {
@@ -1563,6 +1695,19 @@ void gfxPlatform::PurgeSkiaFontCache() {
   }
 #endif
 }
+
+void gfxPlatform::PurgeSkiaGPUCache() {
+#ifdef USE_SKIA_GPU
+  if (!mSkiaGlue) return;
+
+  mSkiaGlue->GetGrContext()->freeGpuResources();
+  
+  mSkiaGlue->GetGLContext()->MakeCurrent();
+  mSkiaGlue->GetGLContext()->fFlush();
+#endif
+}
+
+bool gfxPlatform::HasEnoughTotalSystemMemoryForSkiaGL() { return true; }
 
 already_AddRefed<DrawTarget> gfxPlatform::CreateDrawTargetForBackend(
     BackendType aBackend, const IntSize& aSize, SurfaceFormat aFormat) {
@@ -1640,7 +1785,8 @@ already_AddRefed<DrawTarget> gfxPlatform::CreateSimilarSoftwareDrawTarget(
   return dt.forget();
 }
 
- already_AddRefed<DrawTarget> gfxPlatform::CreateDrawTargetForData(
+
+already_AddRefed<DrawTarget> gfxPlatform::CreateDrawTargetForData(
     unsigned char* aData, const IntSize& aSize, int32_t aStride,
     SurfaceFormat aFormat, bool aUninitialized) {
   BackendType backendType = gfxVars::ContentBackend();
@@ -1660,8 +1806,8 @@ already_AddRefed<DrawTarget> gfxPlatform::CreateSimilarSoftwareDrawTarget(
   return dt.forget();
 }
 
- BackendType gfxPlatform::BackendTypeForName(
-    const nsCString& aName) {
+
+BackendType gfxPlatform::BackendTypeForName(const nsCString& aName) {
   if (aName.EqualsLiteral("cairo")) return BackendType::CAIRO;
   if (aName.EqualsLiteral("skia")) return BackendType::SKIA;
   if (aName.EqualsLiteral("direct2d")) return BackendType::DIRECT2D;
@@ -1871,18 +2017,19 @@ void gfxPlatform::InitBackendPrefs(BackendPrefsData&& aPrefsData) {
   }
 }
 
- BackendType gfxPlatform::GetCanvasBackendPref(
-    uint32_t aBackendBitmask) {
+
+BackendType gfxPlatform::GetCanvasBackendPref(uint32_t aBackendBitmask) {
   return GetBackendPref("gfx.canvas.azure.backends", aBackendBitmask);
 }
 
- BackendType gfxPlatform::GetContentBackendPref(
-    uint32_t& aBackendBitmask) {
+
+BackendType gfxPlatform::GetContentBackendPref(uint32_t& aBackendBitmask) {
   return GetBackendPref("gfx.content.azure.backends", aBackendBitmask);
 }
 
- BackendType gfxPlatform::GetBackendPref(
-    const char* aBackendPrefName, uint32_t& aBackendBitmask) {
+
+BackendType gfxPlatform::GetBackendPref(const char* aBackendPrefName,
+                                        uint32_t& aBackendBitmask) {
   nsTArray<nsCString> backendList;
   nsAutoCString prefString;
   if (NS_SUCCEEDED(Preferences::GetCString(aBackendPrefName, prefString))) {
@@ -2153,7 +2300,8 @@ int32_t gfxPlatform::GetBidiNumeralOption() {
   return mBidiNumeralOption;
 }
 
- void gfxPlatform::FlushFontAndWordCaches() {
+
+void gfxPlatform::FlushFontAndWordCaches() {
   gfxFontCache* fontCache = gfxFontCache::GetCache();
   if (fontCache) {
     fontCache->AgeAllGenerations();
@@ -2163,7 +2311,8 @@ int32_t gfxPlatform::GetBidiNumeralOption() {
   gfxPlatform::PurgeSkiaFontCache();
 }
 
- void gfxPlatform::ForceGlobalReflow() {
+
+void gfxPlatform::ForceGlobalReflow() {
   MOZ_ASSERT(NS_IsMainThread());
   if (XRE_IsParentProcess()) {
     
@@ -2453,12 +2602,14 @@ void gfxPlatform::InitCompositorAccelerationPrefs() {
   }
 }
 
- bool gfxPlatform::WebRenderPrefEnabled() {
+
+bool gfxPlatform::WebRenderPrefEnabled() {
   return gfxPrefs::WebRenderAll() ||
          gfxPrefs::WebRenderEnabledDoNotUseDirectly();
 }
 
- bool gfxPlatform::WebRenderEnvvarEnabled() {
+
+bool gfxPlatform::WebRenderEnvvarEnabled() {
   const char* env = PR_GetEnv("MOZ_WEBRENDER");
   return (env && *env == '1');
 }
@@ -2835,7 +2986,8 @@ void gfxPlatform::DisableBufferRotation() {
   sBufferRotationCheckPref = false;
 }
 
- bool gfxPlatform::UsesOffMainThreadCompositing() {
+
+bool gfxPlatform::UsesOffMainThreadCompositing() {
   if (XRE_GetProcessType() == GeckoProcessType_GPU) {
     return true;
   }
@@ -2889,7 +3041,8 @@ bool gfxPlatform::ContentUsesTiling() const {
           contentUsesPOMTP);
 }
 
- bool gfxPlatform::ShouldAdjustForLowEndMachine() {
+
+bool gfxPlatform::ShouldAdjustForLowEndMachine() {
   return gfxPrefs::AdjustToMachine() && !gfxPrefs::ResistFingerprinting() &&
          gfxPrefs::IsLowEndMachineDoNotUseDirectly();
 }
@@ -2908,7 +3061,8 @@ gfxPlatform::CreateHardwareVsyncSource() {
   return softwareVsync.forget();
 }
 
- bool gfxPlatform::IsInLayoutAsapMode() {
+
+bool gfxPlatform::IsInLayoutAsapMode() {
   
   
   
@@ -2917,12 +3071,14 @@ gfxPlatform::CreateHardwareVsyncSource() {
   return gfxPrefs::LayoutFrameRate() == 0;
 }
 
- bool gfxPlatform::ForceSoftwareVsync() {
+
+bool gfxPlatform::ForceSoftwareVsync() {
   return ShouldAdjustForLowEndMachine() || gfxPrefs::LayoutFrameRate() > 0 ||
          recordreplay::IsRecordingOrReplaying();
 }
 
- int gfxPlatform::GetSoftwareVsyncRate() {
+
+int gfxPlatform::GetSoftwareVsyncRate() {
   int preferenceRate = gfxPrefs::LayoutFrameRate();
   if (preferenceRate <= 0) {
     return gfxPlatform::GetDefaultFrameRate();
@@ -2930,11 +3086,13 @@ gfxPlatform::CreateHardwareVsyncSource() {
   return preferenceRate;
 }
 
- int gfxPlatform::GetDefaultFrameRate() {
+
+int gfxPlatform::GetDefaultFrameRate() {
   return ShouldAdjustForLowEndMachine() ? 30 : 60;
 }
 
- void gfxPlatform::ReInitFrameRate() {
+
+void gfxPlatform::ReInitFrameRate() {
   if (XRE_IsParentProcess() || recordreplay::IsRecordingOrReplaying()) {
     RefPtr<VsyncSource> oldSource = gPlatform->mVsyncSource;
 
@@ -2981,6 +3139,8 @@ void gfxPlatform::GetAzureBackendInfo(mozilla::widget::InfoObject& aObj) {
                         GetBackendName(mFallbackCanvasBackend));
     aObj.DefineProperty("AzureContentBackend", GetBackendName(mContentBackend));
   }
+
+  aObj.DefineProperty("AzureCanvasAccelerated", AllowOpenGLCanvas());
 }
 
 void gfxPlatform::GetApzSupportInfo(mozilla::widget::InfoObject& aObj) {
@@ -3067,7 +3227,8 @@ void gfxPlatform::NotifyFrameStats(nsTArray<FrameStats>&& aFrameStats) {
   }
 }
 
- uint32_t gfxPlatform::TargetFrameRate() {
+
+uint32_t gfxPlatform::TargetFrameRate() {
   if (gPlatform && gPlatform->mVsyncSource) {
     VsyncSource::Display& display = gPlatform->mVsyncSource->GetGlobalDisplay();
     return round(1000.0 / display.GetVsyncRate().ToMilliseconds());
@@ -3075,7 +3236,8 @@ void gfxPlatform::NotifyFrameStats(nsTArray<FrameStats>&& aFrameStats) {
   return 0;
 }
 
- bool gfxPlatform::AsyncPanZoomEnabled() {
+
+bool gfxPlatform::AsyncPanZoomEnabled() {
 #if !defined(MOZ_WIDGET_ANDROID) && !defined(MOZ_WIDGET_UIKIT)
   
   
@@ -3097,7 +3259,8 @@ void gfxPlatform::NotifyFrameStats(nsTArray<FrameStats>&& aFrameStats) {
 #endif
 }
 
- bool gfxPlatform::PerfWarnings() { return gfxPrefs::PerfWarnings(); }
+
+bool gfxPlatform::PerfWarnings() { return gfxPrefs::PerfWarnings(); }
 
 void gfxPlatform::GetAcceleratedCompositorBackends(
     nsTArray<LayersBackend>& aBackends) {
@@ -3148,7 +3311,8 @@ void gfxPlatform::NotifyCompositorCreated(LayersBackend aBackend) {
       }));
 }
 
- void gfxPlatform::NotifyGPUProcessDisabled() {
+
+void gfxPlatform::NotifyGPUProcessDisabled() {
   if (gfxConfig::IsEnabled(Feature::WEBRENDER)) {
     gfxConfig::GetFeature(Feature::WEBRENDER)
         .ForceDisable(

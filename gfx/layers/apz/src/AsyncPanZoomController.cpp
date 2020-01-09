@@ -762,7 +762,8 @@ class SmoothScrollAnimation : public AsyncPanZoomAnimation {
   AxisPhysicsMSDModel mXAxisModel, mYAxisModel;
 };
 
- void AsyncPanZoomController::InitializeGlobalState() {
+
+void AsyncPanZoomController::InitializeGlobalState() {
   static bool sInitialized = false;
   if (sInitialized) return;
   sInitialized = true;

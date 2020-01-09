@@ -19,7 +19,8 @@ NS_IMPL_ISUPPORTS(GfxMemoryImageReporter, nsIMemoryReporter)
 
 mozilla::Atomic<ptrdiff_t> GfxMemoryImageReporter::sAmount(0);
 
- uint32_t CompositableForwarder::GetMaxFileDescriptorsPerMessage() {
+
+uint32_t CompositableForwarder::GetMaxFileDescriptorsPerMessage() {
 #if defined(OS_POSIX)
   static const uint32_t kMaxFileDescriptors =
       FileDescriptorSet::MAX_DESCRIPTORS_PER_MESSAGE;

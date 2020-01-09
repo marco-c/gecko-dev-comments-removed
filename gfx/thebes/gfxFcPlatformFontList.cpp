@@ -2039,7 +2039,8 @@ void gfxFcPlatformFontList::ClearLangGroupPrefFonts() {
   mAlwaysUseFontconfigGenerics = PrefFontListsUseOnlyGenerics();
 }
 
- FT_Library gfxFcPlatformFontList::GetFTLibrary() {
+
+FT_Library gfxFcPlatformFontList::GetFTLibrary() {
   if (!sCairoFTLibrary) {
     
     
@@ -2205,8 +2206,8 @@ bool gfxFcPlatformFontList::PrefFontListsUseOnlyGenerics() {
   return prefFontsUseOnlyGenerics;
 }
 
- void gfxFcPlatformFontList::CheckFontUpdates(nsITimer* aTimer,
-                                                          void* aThis) {
+
+void gfxFcPlatformFontList::CheckFontUpdates(nsITimer* aTimer, void* aThis) {
   
   
   MOZ_ASSERT(XRE_IsParentProcess());

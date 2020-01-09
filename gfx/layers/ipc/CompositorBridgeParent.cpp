@@ -874,7 +874,8 @@ void CompositorBridgeParent::ScheduleComposition() {
 
 
 
- void CompositorBridgeParent::SetShadowProperties(Layer* aLayer) {
+
+void CompositorBridgeParent::SetShadowProperties(Layer* aLayer) {
   ForEachNode<ForwardIterator>(aLayer, [](Layer* layer) {
     if (Layer* maskLayer = layer->GetMaskLayer()) {
       SetShadowProperties(maskLayer);
@@ -1167,7 +1168,8 @@ CompositorBridgeParent::GetCompositorBridgeParentFromLayersId(
   return sIndirectLayerTrees[aLayersId].mParent;
 }
 
- RefPtr<CompositorBridgeParent>
+
+RefPtr<CompositorBridgeParent>
 CompositorBridgeParent::GetCompositorBridgeParentFromWindowId(
     const wr::WindowId& aWindowId) {
   MonitorAutoLock lock(*sIndirectLayerTreesLock);
@@ -1844,7 +1846,8 @@ static void EraseLayerState(LayersId aId) {
   }
 }
 
- void CompositorBridgeParent::DeallocateLayerTreeId(LayersId aId) {
+
+void CompositorBridgeParent::DeallocateLayerTreeId(LayersId aId) {
   MOZ_ASSERT(NS_IsMainThread());
   
   
@@ -1880,7 +1883,8 @@ ScopedLayerTreeRegistration::~ScopedLayerTreeRegistration() {
   sIndirectLayerTrees.erase(mLayersId);
 }
 
- void CompositorBridgeParent::SetControllerForLayerTree(
+
+void CompositorBridgeParent::SetControllerForLayerTree(
     LayersId aLayersId, GeckoContentController* aController) {
   
   aController->AddRef();
@@ -1889,8 +1893,9 @@ ScopedLayerTreeRegistration::~ScopedLayerTreeRegistration() {
       aLayersId, aController));
 }
 
- already_AddRefed<IAPZCTreeManager>
-CompositorBridgeParent::GetAPZCTreeManager(LayersId aLayersId) {
+
+already_AddRefed<IAPZCTreeManager> CompositorBridgeParent::GetAPZCTreeManager(
+    LayersId aLayersId) {
   EnsureLayerTreeMapReady();
   MonitorAutoLock lock(*sIndirectLayerTreesLock);
   LayerTreeMap::iterator cit = sIndirectLayerTrees.find(aLayersId);
@@ -1914,7 +1919,8 @@ static void InsertVsyncProfilerMarker(TimeStamp aVsyncTimestamp) {
 }
 #endif
 
- void CompositorBridgeParent::PostInsertVsyncProfilerMarker(
+
+void CompositorBridgeParent::PostInsertVsyncProfilerMarker(
     TimeStamp aVsyncTimestamp) {
 #if defined(MOZ_GECKO_PROFILER)
   
@@ -2156,7 +2162,8 @@ CompositorBridgeParent::GetIndirectShadowTree(LayersId aId) {
   return &cit->second;
 }
 
- bool CompositorBridgeParent::CallWithIndirectShadowTree(
+
+bool CompositorBridgeParent::CallWithIndirectShadowTree(
     LayersId aId,
     const std::function<void(CompositorBridgeParent::LayerTreeState&)>& aFunc) {
   
@@ -2196,8 +2203,8 @@ static CompositorBridgeParent::LayerTreeState* GetStateForRoot(
   return state;
 }
 
- APZCTreeManagerParent*
-CompositorBridgeParent::GetApzcTreeManagerParentForRoot(
+
+APZCTreeManagerParent* CompositorBridgeParent::GetApzcTreeManagerParentForRoot(
     LayersId aContentLayersId) {
   MonitorAutoLock lock(*sIndirectLayerTreesLock);
   CompositorBridgeParent::LayerTreeState* state =
@@ -2205,7 +2212,8 @@ CompositorBridgeParent::GetApzcTreeManagerParentForRoot(
   return state ? state->mApzcTreeManagerParent : nullptr;
 }
 
- GeckoContentController*
+
+GeckoContentController*
 CompositorBridgeParent::GetGeckoContentControllerForRoot(
     LayersId aContentLayersId) {
   MonitorAutoLock lock(*sIndirectLayerTreesLock);

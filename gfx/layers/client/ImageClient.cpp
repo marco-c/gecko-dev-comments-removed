@@ -39,7 +39,8 @@ namespace layers {
 
 using namespace mozilla::gfx;
 
- already_AddRefed<ImageClient> ImageClient::CreateImageClient(
+
+already_AddRefed<ImageClient> ImageClient::CreateImageClient(
     CompositableType aCompositableHostType, CompositableForwarder* aForwarder,
     TextureFlags aFlags) {
   RefPtr<ImageClient> result = nullptr;
@@ -83,9 +84,9 @@ void ImageClientSingle::FlushAllImages() {
   mBuffers.Clear();
 }
 
- already_AddRefed<TextureClient>
-ImageClient::CreateTextureClientForImage(Image* aImage,
-                                         KnowsCompositor* aForwarder) {
+
+already_AddRefed<TextureClient> ImageClient::CreateTextureClientForImage(
+    Image* aImage, KnowsCompositor* aForwarder) {
   RefPtr<TextureClient> texture;
   if (aImage->GetFormat() == ImageFormat::PLANAR_YCBCR) {
     PlanarYCbCrImage* ycbcr = static_cast<PlanarYCbCrImage*>(aImage);

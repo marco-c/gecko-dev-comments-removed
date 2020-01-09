@@ -16,11 +16,13 @@ namespace layers {
 
 DragTracker::DragTracker() : mInDrag(false) {}
 
- bool DragTracker::StartsDrag(const MouseInput& aInput) {
+
+bool DragTracker::StartsDrag(const MouseInput& aInput) {
   return aInput.IsLeftButton() && aInput.mType == MouseInput::MOUSE_DOWN;
 }
 
- bool DragTracker::EndsDrag(const MouseInput& aInput) {
+
+bool DragTracker::EndsDrag(const MouseInput& aInput) {
   
   
   

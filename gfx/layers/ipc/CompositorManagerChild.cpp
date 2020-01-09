@@ -24,15 +24,16 @@ using gfx::GPUProcessManager;
 
 StaticRefPtr<CompositorManagerChild> CompositorManagerChild::sInstance;
 
- bool CompositorManagerChild::IsInitialized(
-    uint64_t aProcessToken) {
+
+bool CompositorManagerChild::IsInitialized(uint64_t aProcessToken) {
   MOZ_ASSERT(NS_IsMainThread());
   return sInstance && sInstance->CanSend() &&
          sInstance->mProcessToken == aProcessToken;
 }
 
- void CompositorManagerChild::InitSameProcess(
-    uint32_t aNamespace, uint64_t aProcessToken) {
+
+void CompositorManagerChild::InitSameProcess(uint32_t aNamespace,
+                                             uint64_t aProcessToken) {
   MOZ_ASSERT(NS_IsMainThread());
   if (NS_WARN_IF(IsInitialized(aProcessToken))) {
     MOZ_ASSERT_UNREACHABLE("Already initialized same process");
@@ -52,9 +53,10 @@ StaticRefPtr<CompositorManagerChild> CompositorManagerChild::sInstance;
   sInstance = child.forget();
 }
 
- bool CompositorManagerChild::Init(
-    Endpoint<PCompositorManagerChild>&& aEndpoint, uint32_t aNamespace,
-    uint64_t aProcessToken ) {
+
+bool CompositorManagerChild::Init(Endpoint<PCompositorManagerChild>&& aEndpoint,
+                                  uint32_t aNamespace,
+                                  uint64_t aProcessToken ) {
   MOZ_ASSERT(NS_IsMainThread());
   if (sInstance) {
     MOZ_ASSERT(sInstance->mNamespace != aNamespace);
@@ -65,7 +67,8 @@ StaticRefPtr<CompositorManagerChild> CompositorManagerChild::sInstance;
   return sInstance->CanSend();
 }
 
- void CompositorManagerChild::Shutdown() {
+
+void CompositorManagerChild::Shutdown() {
   MOZ_ASSERT(NS_IsMainThread());
   CompositorBridgeChild::ShutDown();
 
@@ -77,8 +80,8 @@ StaticRefPtr<CompositorManagerChild> CompositorManagerChild::sInstance;
   sInstance = nullptr;
 }
 
- void CompositorManagerChild::OnGPUProcessLost(
-    uint64_t aProcessToken) {
+
+void CompositorManagerChild::OnGPUProcessLost(uint64_t aProcessToken) {
   MOZ_ASSERT(NS_IsMainThread());
 
   
@@ -89,7 +92,8 @@ StaticRefPtr<CompositorManagerChild> CompositorManagerChild::sInstance;
   }
 }
 
- bool CompositorManagerChild::CreateContentCompositorBridge(
+
+bool CompositorManagerChild::CreateContentCompositorBridge(
     uint32_t aNamespace) {
   MOZ_ASSERT(NS_IsMainThread());
   if (NS_WARN_IF(!sInstance || !sInstance->CanSend())) {
@@ -108,7 +112,8 @@ StaticRefPtr<CompositorManagerChild> CompositorManagerChild::sInstance;
   return true;
 }
 
- already_AddRefed<CompositorBridgeChild>
+
+already_AddRefed<CompositorBridgeChild>
 CompositorManagerChild::CreateWidgetCompositorBridge(
     uint64_t aProcessToken, LayerManager* aLayerManager, uint32_t aNamespace,
     CSSToLayoutDeviceScale aScale, const CompositorOptions& aOptions,
@@ -138,7 +143,8 @@ CompositorManagerChild::CreateWidgetCompositorBridge(
   return bridge.forget();
 }
 
- already_AddRefed<CompositorBridgeChild>
+
+already_AddRefed<CompositorBridgeChild>
 CompositorManagerChild::CreateSameProcessWidgetCompositorBridge(
     LayerManager* aLayerManager, uint32_t aNamespace) {
   MOZ_ASSERT(XRE_IsParentProcess() || recordreplay::IsRecordingOrReplaying());

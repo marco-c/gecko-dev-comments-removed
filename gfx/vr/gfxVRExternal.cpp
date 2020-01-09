@@ -610,8 +610,9 @@ void VRSystemManagerExternal::CloseShmem() {
 #endif
 }
 
- already_AddRefed<VRSystemManagerExternal>
-VRSystemManagerExternal::Create(VRExternalShmem* aAPIShmem ) {
+
+already_AddRefed<VRSystemManagerExternal> VRSystemManagerExternal::Create(
+    VRExternalShmem* aAPIShmem ) {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (!gfxPrefs::VREnabled()) {

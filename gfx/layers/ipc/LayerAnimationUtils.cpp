@@ -12,7 +12,8 @@
 namespace mozilla {
 namespace layers {
 
- Maybe<ComputedTimingFunction>
+
+Maybe<ComputedTimingFunction>
 AnimationUtils::TimingFunctionToComputedTimingFunction(
     const TimingFunction& aTimingFunction) {
   switch (aTimingFunction.type()) {

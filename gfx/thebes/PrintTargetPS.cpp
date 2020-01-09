@@ -44,7 +44,8 @@ PrintTargetPS::~PrintTargetPS() {
   Finish();
 }
 
- already_AddRefed<PrintTargetPS> PrintTargetPS::CreateOrNull(
+
+already_AddRefed<PrintTargetPS> PrintTargetPS::CreateOrNull(
     nsIOutputStream* aStream, IntSize aSizeInPoints,
     PageOrientation aOrientation) {
   

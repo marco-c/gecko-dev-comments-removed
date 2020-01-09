@@ -13,7 +13,8 @@
 namespace mozilla {
 namespace wr {
 
- UniquePtr<RenderCompositor> RenderCompositorOGL::Create(
+
+UniquePtr<RenderCompositor> RenderCompositorOGL::Create(
     RefPtr<widget::CompositorWidget>&& aWidget) {
   RefPtr<gl::GLContext> gl;
   gl = gl::GLContextProvider::CreateForCompositorWidget(aWidget, true);

@@ -43,7 +43,8 @@ KeyboardShortcut::KeyboardShortcut(KeyboardInput::KeyboardEventType aEventType,
       mEventType(aEventType),
       mDispatchToContent(true) {}
 
- void KeyboardShortcut::AppendHardcodedShortcuts(
+
+void KeyboardShortcut::AppendHardcodedShortcuts(
     nsTArray<KeyboardShortcut>& aShortcuts) {
   
   KeyboardShortcut tab1;

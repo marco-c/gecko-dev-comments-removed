@@ -21,7 +21,8 @@ void FrameMetrics::RecalculateLayoutViewportOffset() {
                                             mLayoutViewport);
 }
 
- void FrameMetrics::KeepLayoutViewportEnclosingVisualViewport(
+
+void FrameMetrics::KeepLayoutViewportEnclosingVisualViewport(
     const CSSRect& aVisualViewport, CSSRect& aLayoutViewport) {
   
   

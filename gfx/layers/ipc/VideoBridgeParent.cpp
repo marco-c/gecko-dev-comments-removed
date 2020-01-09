@@ -24,7 +24,8 @@ VideoBridgeParent::VideoBridgeParent() : mClosed(false) {
 
 VideoBridgeParent::~VideoBridgeParent() { sVideoBridgeSingleton = nullptr; }
 
- VideoBridgeParent* VideoBridgeParent::GetSingleton() {
+
+VideoBridgeParent* VideoBridgeParent::GetSingleton() {
   return sVideoBridgeSingleton;
 }
 

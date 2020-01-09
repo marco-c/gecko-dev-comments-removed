@@ -74,7 +74,8 @@ UniquePtr<VelocityTracker> AndroidSpecificState::CreateVelocityTracker(
   return MakeUnique<SimpleVelocityTracker>(aAxis);
 }
 
- void AndroidSpecificState::InitializeGlobalState() {
+
+void AndroidSpecificState::InitializeGlobalState() {
   
   
   AndroidFlingPhysics::InitializeGlobalState();

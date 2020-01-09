@@ -50,7 +50,8 @@ VRManagerChild::VRManagerChild()
 
 VRManagerChild::~VRManagerChild() { MOZ_ASSERT(NS_IsMainThread()); }
 
- void VRManagerChild::IdentifyTextureHost(
+
+void VRManagerChild::IdentifyTextureHost(
     const TextureFactoryIdentifier& aIdentifier) {
   if (sVRManagerChildSingleton) {
     sVRManagerChildSingleton->mBackend = aIdentifier.mParentBackend;
@@ -64,17 +65,17 @@ layers::LayersBackend VRManagerChild::GetBackendType() const {
   return mBackend;
 }
 
- VRManagerChild* VRManagerChild::Get() {
+
+VRManagerChild* VRManagerChild::Get() {
   MOZ_ASSERT(sVRManagerChildSingleton);
   return sVRManagerChildSingleton;
 }
 
- bool VRManagerChild::IsCreated() {
-  return !!sVRManagerChildSingleton;
-}
 
- bool VRManagerChild::InitForContent(
-    Endpoint<PVRManagerChild>&& aEndpoint) {
+bool VRManagerChild::IsCreated() { return !!sVRManagerChildSingleton; }
+
+
+bool VRManagerChild::InitForContent(Endpoint<PVRManagerChild>&& aEndpoint) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(!sVRManagerChildSingleton);
 
@@ -86,8 +87,8 @@ layers::LayersBackend VRManagerChild::GetBackendType() const {
   return true;
 }
 
- bool VRManagerChild::ReinitForContent(
-    Endpoint<PVRManagerChild>&& aEndpoint) {
+
+bool VRManagerChild::ReinitForContent(Endpoint<PVRManagerChild>&& aEndpoint) {
   MOZ_ASSERT(NS_IsMainThread());
 
   ShutDown();
@@ -95,7 +96,8 @@ layers::LayersBackend VRManagerChild::GetBackendType() const {
   return InitForContent(std::move(aEndpoint));
 }
 
- void VRManagerChild::InitSameProcess() {
+
+void VRManagerChild::InitSameProcess() {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(!sVRManagerChildSingleton);
 
@@ -106,8 +108,8 @@ layers::LayersBackend VRManagerChild::GetBackendType() const {
                                  mozilla::ipc::ChildSide);
 }
 
- void VRManagerChild::InitWithGPUProcess(
-    Endpoint<PVRManagerChild>&& aEndpoint) {
+
+void VRManagerChild::InitWithGPUProcess(Endpoint<PVRManagerChild>&& aEndpoint) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(!sVRManagerChildSingleton);
 
@@ -117,7 +119,8 @@ layers::LayersBackend VRManagerChild::GetBackendType() const {
   }
 }
 
- void VRManagerChild::ShutDown() {
+
+void VRManagerChild::ShutDown() {
   MOZ_ASSERT(NS_IsMainThread());
   if (sVRManagerChildSingleton) {
     sVRManagerChildSingleton->Destroy();
@@ -125,8 +128,8 @@ layers::LayersBackend VRManagerChild::GetBackendType() const {
   }
 }
 
- void VRManagerChild::DeferredDestroy(
-    RefPtr<VRManagerChild> aVRManagerChild) {
+
+void VRManagerChild::DeferredDestroy(RefPtr<VRManagerChild> aVRManagerChild) {
   aVRManagerChild->Close();
 }
 

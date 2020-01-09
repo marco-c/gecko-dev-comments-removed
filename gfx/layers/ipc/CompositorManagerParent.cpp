@@ -25,7 +25,8 @@ StaticAutoPtr<nsTArray<CompositorManagerParent*>>
     CompositorManagerParent::sActiveActors;
 #endif
 
- already_AddRefed<CompositorManagerParent>
+
+already_AddRefed<CompositorManagerParent>
 CompositorManagerParent::CreateSameProcess() {
   MOZ_ASSERT(XRE_IsParentProcess() || recordreplay::IsRecordingOrReplaying());
   MOZ_ASSERT(NS_IsMainThread());
@@ -47,7 +48,8 @@ CompositorManagerParent::CreateSameProcess() {
   return parent.forget();
 }
 
- void CompositorManagerParent::Create(
+
+void CompositorManagerParent::Create(
     Endpoint<PCompositorManagerParent>&& aEndpoint) {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -64,7 +66,8 @@ CompositorManagerParent::CreateSameProcess() {
   CompositorThreadHolder::Loop()->PostTask(runnable.forget());
 }
 
- already_AddRefed<CompositorBridgeParent>
+
+already_AddRefed<CompositorBridgeParent>
 CompositorManagerParent::CreateSameProcessWidgetCompositorBridge(
     CSSToLayoutDeviceScale aScale, const CompositorOptions& aOptions,
     bool aUseExternalSurfaceSize, const gfx::IntSize& aSurfaceSize) {
@@ -165,7 +168,8 @@ void CompositorManagerParent::DeferredDestroy() {
 }
 
 #ifdef COMPOSITOR_MANAGER_PARENT_EXPLICIT_SHUTDOWN
- void CompositorManagerParent::ShutdownInternal() {
+
+void CompositorManagerParent::ShutdownInternal() {
   nsAutoPtr<nsTArray<CompositorManagerParent*>> actors;
 
   
@@ -183,7 +187,8 @@ void CompositorManagerParent::DeferredDestroy() {
 }
 #endif  
 
- void CompositorManagerParent::Shutdown() {
+
+void CompositorManagerParent::Shutdown() {
   MOZ_ASSERT(NS_IsMainThread());
 
 #ifdef COMPOSITOR_MANAGER_PARENT_EXPLICIT_SHUTDOWN

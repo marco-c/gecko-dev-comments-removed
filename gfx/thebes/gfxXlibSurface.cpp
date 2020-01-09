@@ -328,9 +328,11 @@ DisplayTable* DisplayTable::sDisplayTable;
 
 
 
- bool DisplayTable::GetColormapAndVisual(
-    Screen* aScreen, XRenderPictFormat* aFormat, Visual* aVisual,
-    Colormap* aColormap, Visual** aVisualForColormap)
+
+bool DisplayTable::GetColormapAndVisual(Screen* aScreen,
+                                        XRenderPictFormat* aFormat,
+                                        Visual* aVisual, Colormap* aColormap,
+                                        Visual** aVisualForColormap)
 
 {
   Display* display = DisplayOfScreen(aScreen);
@@ -397,8 +399,8 @@ DisplayTable* DisplayTable::sDisplayTable;
   return true;
 }
 
- int DisplayTable::DisplayClosing(Display* display,
-                                              XExtCodes* codes) {
+
+int DisplayTable::DisplayClosing(Display* display, XExtCodes* codes) {
   
   
   sDisplayTable->mDisplays.RemoveElement(display, FindDisplay());

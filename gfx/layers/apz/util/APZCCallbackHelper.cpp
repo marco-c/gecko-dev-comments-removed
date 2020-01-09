@@ -902,14 +902,15 @@ void APZCCallbackHelper::NotifyFlushComplete(nsIPresShell* aShell) {
   observerService->NotifyObservers(nullptr, "apz-repaints-flushed", nullptr);
 }
 
- bool APZCCallbackHelper::IsScrollInProgress(
-    nsIScrollableFrame* aFrame) {
+
+bool APZCCallbackHelper::IsScrollInProgress(nsIScrollableFrame* aFrame) {
   return aFrame->IsProcessingAsyncScroll() ||
          nsLayoutUtils::CanScrollOriginClobberApz(aFrame->LastScrollOrigin()) ||
          aFrame->LastSmoothScrollOrigin();
 }
 
- void APZCCallbackHelper::NotifyAsyncScrollbarDragInitiated(
+
+void APZCCallbackHelper::NotifyAsyncScrollbarDragInitiated(
     uint64_t aDragBlockId, const ScrollableLayerGuid::ViewID& aScrollId,
     ScrollDirection aDirection) {
   MOZ_ASSERT(NS_IsMainThread());
@@ -919,7 +920,8 @@ void APZCCallbackHelper::NotifyFlushComplete(nsIPresShell* aShell) {
   }
 }
 
- void APZCCallbackHelper::NotifyAsyncScrollbarDragRejected(
+
+void APZCCallbackHelper::NotifyAsyncScrollbarDragRejected(
     const ScrollableLayerGuid::ViewID& aScrollId) {
   MOZ_ASSERT(NS_IsMainThread());
   if (nsIScrollableFrame* scrollFrame =
@@ -928,7 +930,8 @@ void APZCCallbackHelper::NotifyFlushComplete(nsIPresShell* aShell) {
   }
 }
 
- void APZCCallbackHelper::NotifyAsyncAutoscrollRejected(
+
+void APZCCallbackHelper::NotifyAsyncAutoscrollRejected(
     const ScrollableLayerGuid::ViewID& aScrollId) {
   MOZ_ASSERT(NS_IsMainThread());
   nsCOMPtr<nsIObserverService> observerService =
@@ -941,7 +944,8 @@ void APZCCallbackHelper::NotifyFlushComplete(nsIPresShell* aShell) {
                                    data.get());
 }
 
- void APZCCallbackHelper::CancelAutoscroll(
+
+void APZCCallbackHelper::CancelAutoscroll(
     const ScrollableLayerGuid::ViewID& aScrollId) {
   MOZ_ASSERT(NS_IsMainThread());
   nsCOMPtr<nsIObserverService> observerService =
@@ -954,7 +958,8 @@ void APZCCallbackHelper::NotifyFlushComplete(nsIPresShell* aShell) {
                                    data.get());
 }
 
- void APZCCallbackHelper::NotifyPinchGesture(
+
+void APZCCallbackHelper::NotifyPinchGesture(
     PinchGestureInput::PinchGestureType aType, LayoutDeviceCoord aSpanChange,
     Modifiers aModifiers, nsIWidget* aWidget) {
   EventMessage msg;

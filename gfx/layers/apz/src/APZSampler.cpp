@@ -56,15 +56,17 @@ void APZSampler::SetWebRenderWindowId(const wr::WindowId& aWindowId) {
   (*sWindowIdMap)[wr::AsUint64(aWindowId)] = this;
 }
 
- void APZSampler::SetSamplerThread(const wr::WrWindowId& aWindowId) {
+
+void APZSampler::SetSamplerThread(const wr::WrWindowId& aWindowId) {
   if (RefPtr<APZSampler> sampler = GetSampler(aWindowId)) {
     MutexAutoLock lock(sampler->mThreadIdLock);
     sampler->mSamplerThreadId = Some(PlatformThread::CurrentId());
   }
 }
 
- void APZSampler::SampleForWebRender(const wr::WrWindowId& aWindowId,
-                                               wr::Transaction* aTransaction) {
+
+void APZSampler::SampleForWebRender(const wr::WrWindowId& aWindowId,
+                                    wr::Transaction* aTransaction) {
   if (RefPtr<APZSampler> sampler = GetSampler(aWindowId)) {
     wr::TransactionWrapper txn(aTransaction);
     sampler->SampleForWebRender(txn);
@@ -246,7 +248,8 @@ bool APZSampler::IsSamplerThread() const {
   return CompositorThreadHolder::IsInCompositorThread();
 }
 
- already_AddRefed<APZSampler> APZSampler::GetSampler(
+
+already_AddRefed<APZSampler> APZSampler::GetSampler(
     const wr::WrWindowId& aWindowId) {
   RefPtr<APZSampler> sampler;
   StaticMutexAutoLock lock(sWindowIdLock);

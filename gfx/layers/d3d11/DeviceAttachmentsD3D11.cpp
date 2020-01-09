@@ -27,7 +27,8 @@ DeviceAttachmentsD3D11::DeviceAttachmentsD3D11(ID3D11Device* device)
 
 DeviceAttachmentsD3D11::~DeviceAttachmentsD3D11() {}
 
- RefPtr<DeviceAttachmentsD3D11> DeviceAttachmentsD3D11::Create(
+
+RefPtr<DeviceAttachmentsD3D11> DeviceAttachmentsD3D11::Create(
     ID3D11Device* aDevice) {
   
   

@@ -55,9 +55,11 @@ PFN_DCOMPOSITION_CREATE_DEVICE sDcompCreateDeviceFn = nullptr;
 
 decltype(DirectDrawCreateEx)* sDirectDrawCreateExFn = nullptr;
 
- void DeviceManagerDx::Init() { sInstance = new DeviceManagerDx(); }
 
- void DeviceManagerDx::Shutdown() { sInstance = nullptr; }
+void DeviceManagerDx::Init() { sInstance = new DeviceManagerDx(); }
+
+
+void DeviceManagerDx::Shutdown() { sInstance = nullptr; }
 
 DeviceManagerDx::DeviceManagerDx()
     : mDeviceLock("gfxWindowsPlatform.mDeviceLock"),
@@ -1244,7 +1246,8 @@ void DeviceManagerDx::GetCompositorDevices(
   *aOutAttachments = attachments;
 }
 
- void DeviceManagerDx::PreloadAttachmentsOnCompositorThread() {
+
+void DeviceManagerDx::PreloadAttachmentsOnCompositorThread() {
   MessageLoop* loop = layers::CompositorThreadHolder::Loop();
   if (!loop) {
     return;

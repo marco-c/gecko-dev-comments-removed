@@ -33,7 +33,8 @@ EGLImage CreateEGLImage(GLContext* gl, GLuint tex) {
 
 
 
- EGLImageWrapper* EGLImageWrapper::Create(GLContext* gl, GLuint tex) {
+
+EGLImageWrapper* EGLImageWrapper::Create(GLContext* gl, GLuint tex) {
   MOZ_ASSERT(DoesEGLContextSupportSharingWithEGLImage(gl));
 
   auto* egl = gl::GLLibraryEGL::Get();

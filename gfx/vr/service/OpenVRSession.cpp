@@ -2066,8 +2066,8 @@ void OpenVRSession::StopHapticTimer() {
   }
 }
 
- void OpenVRSession::HapticTimerCallback(nsITimer* aTimer,
-                                                   void* aClosure) {
+
+void OpenVRSession::HapticTimerCallback(nsITimer* aTimer, void* aClosure) {
   
 
 

@@ -24,7 +24,8 @@ namespace layers {
 
 typedef CompositorBridgeParent::LayerTreeState LayerTreeState;
 
- RefPtr<UiCompositorControllerParent>
+
+RefPtr<UiCompositorControllerParent>
 UiCompositorControllerParent::GetFromRootLayerTreeId(
     const LayersId& aRootLayerTreeId) {
   RefPtr<UiCompositorControllerParent> controller;
@@ -35,8 +36,8 @@ UiCompositorControllerParent::GetFromRootLayerTreeId(
   return controller;
 }
 
- RefPtr<UiCompositorControllerParent>
-UiCompositorControllerParent::Start(
+
+RefPtr<UiCompositorControllerParent> UiCompositorControllerParent::Start(
     const LayersId& aRootLayerTreeId,
     Endpoint<PUiCompositorControllerParent>&& aEndpoint) {
   RefPtr<UiCompositorControllerParent> parent =

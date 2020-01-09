@@ -163,9 +163,9 @@ void PrintTarget::AdjustPrintJobNameForIPP(const nsAString& aJobName,
   CopyUTF8toUTF16(jobName, aAdjustedJobName);
 }
 
- already_AddRefed<DrawTarget>
-PrintTarget::CreateWrapAndRecordDrawTarget(DrawEventRecorder* aRecorder,
-                                           DrawTarget* aDrawTarget) {
+
+already_AddRefed<DrawTarget> PrintTarget::CreateWrapAndRecordDrawTarget(
+    DrawEventRecorder* aRecorder, DrawTarget* aDrawTarget) {
   MOZ_ASSERT(aRecorder);
   MOZ_ASSERT(aDrawTarget);
 

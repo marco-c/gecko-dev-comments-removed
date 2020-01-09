@@ -471,7 +471,8 @@ void gfxFontEntry::FontTableHashEntry::Clear() {
 
 
 
- void gfxFontEntry::FontTableHashEntry::DeleteFontTableBlobData(
+
+void gfxFontEntry::FontTableHashEntry::DeleteFontTableBlobData(
     void* aBlobData) {
   delete static_cast<FontTableBlobData*>(aBlobData);
 }
@@ -542,8 +543,9 @@ hb_blob_t* gfxFontEntry::GetFontTable(uint32_t aTag) {
 
 
 
- hb_blob_t* gfxFontEntry::HBGetTable(hb_face_t* face, uint32_t aTag,
-                                               void* aUserData) {
+
+hb_blob_t* gfxFontEntry::HBGetTable(hb_face_t* face, uint32_t aTag,
+                                    void* aUserData) {
   gfxFontEntry* fontEntry = static_cast<gfxFontEntry*>(aUserData);
 
   
@@ -561,7 +563,8 @@ hb_blob_t* gfxFontEntry::GetFontTable(uint32_t aTag) {
   return fontEntry->GetFontTable(aTag);
 }
 
- void gfxFontEntry::HBFaceDeletedCallback(void* aUserData) {
+
+void gfxFontEntry::HBFaceDeletedCallback(void* aUserData) {
   gfxFontEntry* fe = static_cast<gfxFontEntry*>(aUserData);
   fe->ForgetHBFace();
 }
@@ -594,8 +597,9 @@ hb_face_t* gfxFontEntry::GetHBFace() {
   return nullptr;
 }
 
- void gfxFontEntry::GrReleaseTable(const void* aAppFaceHandle,
-                                             const void* aTableBuffer) {
+
+void gfxFontEntry::GrReleaseTable(const void* aAppFaceHandle,
+                                  const void* aTableBuffer) {
   gfxFontEntry* fontEntry =
       static_cast<gfxFontEntry*>(const_cast<void*>(aAppFaceHandle));
   void* value;
@@ -1789,7 +1793,8 @@ gfxFontFamily::~gfxFontFamily() {
   MOZ_ASSERT(NS_IsMainThread());
 }
 
- void gfxFontFamily::ReadOtherFamilyNamesForFace(
+
+void gfxFontFamily::ReadOtherFamilyNamesForFace(
     const nsACString& aFamilyName, const char* aNameData, uint32_t aDataLength,
     nsTArray<nsCString>& aOtherFamilyNames, bool useFullName) {
   const gfxFontUtils::NameHeader* nameHeader =

@@ -286,7 +286,8 @@ void ImageBridgeChild::ForgetImageContainer(const CompositableHandle& aHandle) {
 
 Thread* ImageBridgeChild::GetThread() const { return sImageBridgeChildThread; }
 
- RefPtr<ImageBridgeChild> ImageBridgeChild::GetSingleton() {
+
+RefPtr<ImageBridgeChild> ImageBridgeChild::GetSingleton() {
   StaticMutexAutoLock lock(sImageBridgeSingletonLock);
   return sImageBridgeChildSingleton;
 }
@@ -500,7 +501,8 @@ void ImageBridgeChild::BindSameProcess(RefPtr<ImageBridgeParent> aParent) {
   mCanSend = true;
 }
 
- void ImageBridgeChild::ShutDown() {
+
+void ImageBridgeChild::ShutDown() {
   MOZ_ASSERT(NS_IsMainThread());
 
   ShutdownSingleton();
@@ -509,7 +511,8 @@ void ImageBridgeChild::BindSameProcess(RefPtr<ImageBridgeParent> aParent) {
   sImageBridgeChildThread = nullptr;
 }
 
- void ImageBridgeChild::ShutdownSingleton() {
+
+void ImageBridgeChild::ShutdownSingleton() {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (RefPtr<ImageBridgeChild> child = GetSingleton()) {
@@ -570,7 +573,8 @@ void ImageBridgeChild::InitSameProcess(uint32_t aNamespace) {
   }
 }
 
- void ImageBridgeChild::InitWithGPUProcess(
+
+void ImageBridgeChild::InitWithGPUProcess(
     Endpoint<PImageBridgeChild>&& aEndpoint, uint32_t aNamespace) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(!sImageBridgeChildSingleton);
@@ -606,7 +610,8 @@ MessageLoop* ImageBridgeChild::GetMessageLoop() const {
                                  : nullptr;
 }
 
- void ImageBridgeChild::IdentifyCompositorTextureHost(
+
+void ImageBridgeChild::IdentifyCompositorTextureHost(
     const TextureFactoryIdentifier& aIdentifier) {
   if (RefPtr<ImageBridgeChild> child = GetSingleton()) {
     child->UpdateTextureFactoryIdentifier(aIdentifier);

@@ -298,7 +298,8 @@ void TextureChild::Destroy(const TextureDeallocParams& aParams) {
   }
 }
 
- Atomic<uint64_t> TextureClient::sSerialCounter(0);
+
+Atomic<uint64_t> TextureClient::sSerialCounter(0);
 
 static void DeallocateTextureClientSyncProxy(TextureDeallocParams params,
                                              ReentrantMonitor* aBarrier,
@@ -818,8 +819,9 @@ void TextureClient::CancelWaitForRecycle() {
   }
 }
 
- void TextureClient::TextureClientRecycleCallback(
-    TextureClient* aClient, void* aClosure) {
+
+void TextureClient::TextureClientRecycleCallback(TextureClient* aClient,
+                                                 void* aClosure) {
   MOZ_ASSERT(aClient->GetRecycleAllocator());
   aClient->GetRecycleAllocator()->RecycleTextureClient(aClient);
 }

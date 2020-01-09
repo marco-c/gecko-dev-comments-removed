@@ -23,7 +23,8 @@ LayerMLGPU::LayerMLGPU(LayerManagerMLGPU* aManager)
       mComputedOpacity(0.0),
       mPrepared(false) {}
 
- void LayerMLGPU::BeginFrame() { sFrameKey++; }
+
+void LayerMLGPU::BeginFrame() { sFrameKey++; }
 
 LayerManagerMLGPU* LayerMLGPU::GetManager() {
   return static_cast<LayerManagerMLGPU*>(mCompositorManager);

@@ -19,7 +19,8 @@
 namespace mozilla {
 namespace wr {
 
- UniquePtr<RenderCompositor> RenderCompositorEGL::Create(
+
+UniquePtr<RenderCompositor> RenderCompositorEGL::Create(
     RefPtr<widget::CompositorWidget> aWidget) {
   if (GDK_IS_X11_DISPLAY(gdk_display_get_default())) {
     return nullptr;
@@ -56,7 +57,8 @@ RenderCompositorEGL::CreateGLContext(RefPtr<widget::CompositorWidget> aWidget) {
   return gl.forget();
 }
 
- EGLSurface RenderCompositorEGL::CreateEGLSurface(
+
+EGLSurface RenderCompositorEGL::CreateEGLSurface(
     widget::CompositorWidget* aWidget) {
   EGLSurface surface = EGL_NO_SURFACE;
   surface = gl::GLContextEGL::CreateEGLSurfaceForCompositorWidget(
@@ -80,8 +82,6 @@ RenderCompositorEGL::~RenderCompositorEGL() { DestroyEGLSurface(); }
 bool RenderCompositorEGL::BeginFrame() {
   if (mWidget->AsX11() &&
       mWidget->AsX11()->WaylandRequestsUpdatingEGLSurface()) {
-    
-    DestroyEGLSurface();
     mEGLSurface = CreateEGLSurface(mWidget);
     gl::GLContextEGL::Cast(gl())->SetEGLSurfaceOverride(mEGLSurface);
   }

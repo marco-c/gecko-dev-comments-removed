@@ -118,11 +118,13 @@ void gfxPrefs::Pref::SetChangeCallback(ChangeCallback aCallback) {
 
 
 
- bool gfxPrefs::IsPrefsServiceAvailable() {
+
+bool gfxPrefs::IsPrefsServiceAvailable() {
   return Preferences::IsServiceAvailable();
 }
 
- bool gfxPrefs::IsParentProcess() { return XRE_IsParentProcess(); }
+
+bool gfxPrefs::IsParentProcess() { return XRE_IsParentProcess(); }
 
 void gfxPrefs::PrefAddVarCache(bool* aVariable, const nsACString& aPref,
                                bool aDefault) {

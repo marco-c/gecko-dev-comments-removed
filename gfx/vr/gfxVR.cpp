@@ -21,13 +21,11 @@ using namespace mozilla::gfx;
 Atomic<uint32_t> VRSystemManager::sDisplayBase(0);
 Atomic<uint32_t> VRSystemManager::sControllerBase(0);
 
- uint32_t VRSystemManager::AllocateDisplayID() {
-  return ++sDisplayBase;
-}
 
- uint32_t VRSystemManager::AllocateControllerID() {
-  return ++sControllerBase;
-}
+uint32_t VRSystemManager::AllocateDisplayID() { return ++sDisplayBase; }
+
+
+uint32_t VRSystemManager::AllocateControllerID() { return ++sControllerBase; }
 
 
 

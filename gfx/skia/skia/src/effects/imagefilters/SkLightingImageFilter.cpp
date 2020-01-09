@@ -1126,23 +1126,25 @@ void SkImageFilterLight::flattenLight(SkWriteBuffer& buffer) const {
     this->onFlattenLight(buffer);
 }
 
- SkImageFilterLight* SkImageFilterLight::UnflattenLight(SkReadBuffer& buffer) {
-    SkImageFilterLight::LightType type = buffer.read32LE(SkImageFilterLight::kLast_LightType);
 
-    switch (type) {
-        
-        
-        case SkImageFilterLight::kDistant_LightType:
-            return new SkDistantLight(buffer);
-        case SkImageFilterLight::kPoint_LightType:
-            return new SkPointLight(buffer);
-        case SkImageFilterLight::kSpot_LightType:
-            return new SkSpotLight(buffer);
-        default:
-            
-            SkDEBUGFAIL("Unknown LightType.");
-            return nullptr;
-    }
+SkImageFilterLight* SkImageFilterLight::UnflattenLight(SkReadBuffer& buffer) {
+  SkImageFilterLight::LightType type =
+      buffer.read32LE(SkImageFilterLight::kLast_LightType);
+
+  switch (type) {
+    
+    
+    case SkImageFilterLight::kDistant_LightType:
+      return new SkDistantLight(buffer);
+    case SkImageFilterLight::kPoint_LightType:
+      return new SkPointLight(buffer);
+    case SkImageFilterLight::kSpot_LightType:
+      return new SkSpotLight(buffer);
+    default:
+      
+      SkDEBUGFAIL("Unknown LightType.");
+      return nullptr;
+  }
 }
 
 

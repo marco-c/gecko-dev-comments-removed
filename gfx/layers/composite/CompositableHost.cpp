@@ -104,7 +104,8 @@ void CompositableHost::RemoveMaskEffect() {
   }
 }
 
- already_AddRefed<CompositableHost> CompositableHost::Create(
+
+already_AddRefed<CompositableHost> CompositableHost::Create(
     const TextureInfo& aTextureInfo, bool aUseWebRender) {
   RefPtr<CompositableHost> result;
   switch (aTextureInfo.mCompositableType) {

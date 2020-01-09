@@ -1131,7 +1131,8 @@ static bool WillHandleInput(const PanGestureOrScrollWheelInput& aPanInput) {
   return APZInputBridge::ActionForWheelEvent(&wheelEvent).isSome();
 }
 
- void APZCTreeManager::FlushApzRepaints(LayersId aLayersId) {
+
+void APZCTreeManager::FlushApzRepaints(LayersId aLayersId) {
   
   
   
@@ -3148,8 +3149,9 @@ already_AddRefed<wr::WebRenderAPI> APZCTreeManager::GetWebRenderAPI() const {
   return api.forget();
 }
 
- already_AddRefed<GeckoContentController>
-APZCTreeManager::GetContentController(LayersId aLayersId) {
+
+already_AddRefed<GeckoContentController> APZCTreeManager::GetContentController(
+    LayersId aLayersId) {
   RefPtr<GeckoContentController> controller;
   CompositorBridgeParent::CallWithIndirectShadowTree(
       aLayersId,
@@ -3169,8 +3171,8 @@ bool APZCTreeManager::GetAPZTestData(LayersId aLayersId,
   return true;
 }
 
- LayerToParentLayerMatrix4x4
-APZCTreeManager::ComputeTransformForScrollThumb(
+
+LayerToParentLayerMatrix4x4 APZCTreeManager::ComputeTransformForScrollThumb(
     const LayerToParentLayerMatrix4x4& aCurrentTransform,
     const Matrix4x4& aScrollableContentTransform, AsyncPanZoomController* aApzc,
     const FrameMetrics& aMetrics, const ScrollbarData& aScrollbarData,

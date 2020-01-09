@@ -497,11 +497,14 @@ static bool PrescaleAndTileDrawable(gfxDrawable* aDrawable,
 }
 #endif  
 
- void gfxUtils::DrawPixelSnapped(
-    gfxContext* aContext, gfxDrawable* aDrawable, const gfxSize& aImageSize,
-    const ImageRegion& aRegion, const SurfaceFormat aFormat,
-    SamplingFilter aSamplingFilter, uint32_t aImageFlags, gfxFloat aOpacity,
-    bool aUseOptimalFillOp) {
+
+void gfxUtils::DrawPixelSnapped(gfxContext* aContext, gfxDrawable* aDrawable,
+                                const gfxSize& aImageSize,
+                                const ImageRegion& aRegion,
+                                const SurfaceFormat aFormat,
+                                SamplingFilter aSamplingFilter,
+                                uint32_t aImageFlags, gfxFloat aOpacity,
+                                bool aUseOptimalFillOp) {
   AUTO_PROFILER_LABEL("gfxUtils::DrawPixelSnapped", GRAPHICS);
 
   gfxRect imageRect(gfxPoint(0, 0), aImageSize);
@@ -560,7 +563,8 @@ static bool PrescaleAndTileDrawable(gfxDrawable* aDrawable,
                  aOpacity, gfxMatrix());
 }
 
- int gfxUtils::ImageFormatToDepth(gfxImageFormat aFormat) {
+
+int gfxUtils::ImageFormatToDepth(gfxImageFormat aFormat) {
   switch (aFormat) {
     case SurfaceFormat::A8R8G8B8_UINT32:
       return 32;
@@ -574,8 +578,8 @@ static bool PrescaleAndTileDrawable(gfxDrawable* aDrawable,
   return 0;
 }
 
- void gfxUtils::ClipToRegion(gfxContext* aContext,
-                                       const nsIntRegion& aRegion) {
+
+void gfxUtils::ClipToRegion(gfxContext* aContext, const nsIntRegion& aRegion) {
   aContext->NewPath();
   for (auto iter = aRegion.RectIter(); !iter.Done(); iter.Next()) {
     const IntRect& r = iter.Get();
@@ -584,8 +588,8 @@ static bool PrescaleAndTileDrawable(gfxDrawable* aDrawable,
   aContext->Clip();
 }
 
- void gfxUtils::ClipToRegion(DrawTarget* aTarget,
-                                       const nsIntRegion& aRegion) {
+
+void gfxUtils::ClipToRegion(DrawTarget* aTarget, const nsIntRegion& aRegion) {
   uint32_t numRects = aRegion.GetNumRects();
   
   
@@ -623,7 +627,8 @@ static bool PrescaleAndTileDrawable(gfxDrawable* aDrawable,
   }
 }
 
- float gfxUtils::ClampToScaleFactor(float aVal, bool aRoundDown) {
+
+float gfxUtils::ClampToScaleFactor(float aVal, bool aRoundDown) {
   
   
   
@@ -733,7 +738,8 @@ bool gfxUtils::GfxRectToIntRect(const gfxRect& aIn, IntRect* aOut) {
 
 
 
- void gfxUtils::ConditionRect(gfxRect& aRect) {
+
+void gfxUtils::ConditionRect(gfxRect& aRect) {
 #define CAIRO_COORD_MAX (16777215.0)
 #define CAIRO_COORD_MIN (-16777216.0)
   
@@ -773,8 +779,9 @@ bool gfxUtils::GfxRectToIntRect(const gfxRect& aIn, IntRect* aOut) {
 #undef CAIRO_COORD_MIN
 }
 
- gfxQuad gfxUtils::TransformToQuad(
-    const gfxRect& aRect, const mozilla::gfx::Matrix4x4& aMatrix) {
+
+gfxQuad gfxUtils::TransformToQuad(const gfxRect& aRect,
+                                  const mozilla::gfx::Matrix4x4& aMatrix) {
   gfxPoint points[4];
 
   points[0] = aMatrix.TransformPoint(aRect.TopLeft());
@@ -786,7 +793,8 @@ bool gfxUtils::GfxRectToIntRect(const gfxRect& aIn, IntRect* aOut) {
   return gfxQuad(points[0], points[1], points[2], points[3]);
 }
 
- void gfxUtils::ClearThebesSurface(gfxASurface* aSurface) {
+
+void gfxUtils::ClearThebesSurface(gfxASurface* aSurface) {
   if (aSurface->CairoStatus()) {
     return;
   }
@@ -803,7 +811,8 @@ bool gfxUtils::GfxRectToIntRect(const gfxRect& aIn, IntRect* aOut) {
   cairo_destroy(ctx);
 }
 
- already_AddRefed<DataSourceSurface>
+
+already_AddRefed<DataSourceSurface>
 gfxUtils::CopySurfaceToDataSourceSurfaceWithFormat(SourceSurface* aSurface,
                                                    SurfaceFormat aFormat) {
   MOZ_ASSERT(aFormat != aSurface->GetFormat(),
@@ -878,8 +887,8 @@ gfxUtils::CopySurfaceToDataSourceSurfaceWithFormat(SourceSurface* aSurface,
 
 const uint32_t gfxUtils::sNumFrameColors = 8;
 
- const gfx::Color& gfxUtils::GetColorForFrameNumber(
-    uint64_t aFrameNumber) {
+
+const gfx::Color& gfxUtils::GetColorForFrameNumber(uint64_t aFrameNumber) {
   static bool initialized = false;
   static gfx::Color colors[sNumFrameColors];
 
@@ -900,10 +909,12 @@ const uint32_t gfxUtils::sNumFrameColors = 8;
   return colors[aFrameNumber % sNumFrameColors];
 }
 
- nsresult gfxUtils::EncodeSourceSurface(
-    SourceSurface* aSurface, const ImageType aImageType,
-    const nsAString& aOutputOptions, BinaryOrData aBinaryOrData, FILE* aFile,
-    nsACString* aStrOut) {
+
+nsresult gfxUtils::EncodeSourceSurface(SourceSurface* aSurface,
+                                       const ImageType aImageType,
+                                       const nsAString& aOutputOptions,
+                                       BinaryOrData aBinaryOrData, FILE* aFile,
+                                       nsACString* aStrOut) {
   MOZ_ASSERT(aBinaryOrData == gfxUtils::eDataURIEncode || aFile || aStrOut,
              "Copying binary encoding to clipboard not currently supported");
 
@@ -1151,13 +1162,13 @@ const float kBT709NarrowYCbCrToRGB_RowMajor[16] = {
   }
 }
 
- void gfxUtils::WriteAsPNG(SourceSurface* aSurface,
-                                       const nsAString& aFile) {
+
+void gfxUtils::WriteAsPNG(SourceSurface* aSurface, const nsAString& aFile) {
   WriteAsPNG(aSurface, NS_ConvertUTF16toUTF8(aFile).get());
 }
 
- void gfxUtils::WriteAsPNG(SourceSurface* aSurface,
-                                       const char* aFile) {
+
+void gfxUtils::WriteAsPNG(SourceSurface* aSurface, const char* aFile) {
   FILE* file = fopen(aFile, "wb");
 
   if (!file) {
@@ -1189,12 +1200,13 @@ const float kBT709NarrowYCbCrToRGB_RowMajor[16] = {
   fclose(file);
 }
 
- void gfxUtils::WriteAsPNG(DrawTarget* aDT,
-                                       const nsAString& aFile) {
+
+void gfxUtils::WriteAsPNG(DrawTarget* aDT, const nsAString& aFile) {
   WriteAsPNG(aDT, NS_ConvertUTF16toUTF8(aFile).get());
 }
 
- void gfxUtils::WriteAsPNG(DrawTarget* aDT, const char* aFile) {
+
+void gfxUtils::WriteAsPNG(DrawTarget* aDT, const char* aFile) {
   RefPtr<SourceSurface> surface = aDT->Snapshot();
   if (surface) {
     WriteAsPNG(surface, aFile);
@@ -1203,8 +1215,8 @@ const float kBT709NarrowYCbCrToRGB_RowMajor[16] = {
   }
 }
 
- void gfxUtils::WriteAsPNG(nsIPresShell* aShell,
-                                       const char* aFile) {
+
+void gfxUtils::WriteAsPNG(nsIPresShell* aShell, const char* aFile) {
   int32_t width = 1000, height = 1000;
   nsRect r(0, 0, aShell->GetPresContext()->DevPixelsToAppUnits(width),
            aShell->GetPresContext()->DevPixelsToAppUnits(height));
@@ -1220,17 +1232,19 @@ const float kBT709NarrowYCbCrToRGB_RowMajor[16] = {
   WriteAsPNG(dt.get(), aFile);
 }
 
- void gfxUtils::DumpAsDataURI(SourceSurface* aSurface,
-                                          FILE* aFile) {
+
+void gfxUtils::DumpAsDataURI(SourceSurface* aSurface, FILE* aFile) {
   EncodeSourceSurface(aSurface, ImageType::PNG, EmptyString(), eDataURIEncode,
                       aFile);
 }
 
- nsCString gfxUtils::GetAsDataURI(SourceSurface* aSurface) {
+
+nsCString gfxUtils::GetAsDataURI(SourceSurface* aSurface) {
   return EncodeSourceSurfaceAsPNGURI(aSurface);
 }
 
- void gfxUtils::DumpAsDataURI(DrawTarget* aDT, FILE* aFile) {
+
+void gfxUtils::DumpAsDataURI(DrawTarget* aDT, FILE* aFile) {
   RefPtr<SourceSurface> surface = aDT->Snapshot();
   if (surface) {
     DumpAsDataURI(surface, aFile);
@@ -1239,8 +1253,8 @@ const float kBT709NarrowYCbCrToRGB_RowMajor[16] = {
   }
 }
 
- nsCString gfxUtils::GetAsLZ4Base64Str(
-    DataSourceSurface* aSourceSurface) {
+
+nsCString gfxUtils::GetAsLZ4Base64Str(DataSourceSurface* aSourceSurface) {
   DataSourceSurface::ScopedMap map(aSourceSurface, DataSourceSurface::READ);
   int32_t dataSize = aSourceSurface->GetSize().height * map.GetStride();
   auto compressedData = MakeUnique<char[]>(LZ4::maxCompressedSize(dataSize));
@@ -1264,7 +1278,8 @@ const float kBT709NarrowYCbCrToRGB_RowMajor[16] = {
   return nsCString("");
 }
 
- nsCString gfxUtils::GetAsDataURI(DrawTarget* aDT) {
+
+nsCString gfxUtils::GetAsDataURI(DrawTarget* aDT) {
   RefPtr<SourceSurface> surface = aDT->Snapshot();
   if (surface) {
     return EncodeSourceSurfaceAsPNGURI(surface);
@@ -1274,12 +1289,14 @@ const float kBT709NarrowYCbCrToRGB_RowMajor[16] = {
   }
 }
 
- void gfxUtils::CopyAsDataURI(SourceSurface* aSurface) {
+
+void gfxUtils::CopyAsDataURI(SourceSurface* aSurface) {
   EncodeSourceSurface(aSurface, ImageType::PNG, EmptyString(), eDataURIEncode,
                       nullptr);
 }
 
- void gfxUtils::CopyAsDataURI(DrawTarget* aDT) {
+
+void gfxUtils::CopyAsDataURI(DrawTarget* aDT) {
   RefPtr<SourceSurface> surface = aDT->Snapshot();
   if (surface) {
     CopyAsDataURI(surface);
@@ -1322,11 +1339,12 @@ const float kBT709NarrowYCbCrToRGB_RowMajor[16] = {
   return imageBuffer;
 }
 
- nsresult gfxUtils::GetInputStream(gfx::DataSourceSurface* aSurface,
-                                               bool aIsAlphaPremultiplied,
-                                               const char* aMimeType,
-                                               const char16_t* aEncoderOptions,
-                                               nsIInputStream** outStream) {
+
+nsresult gfxUtils::GetInputStream(gfx::DataSourceSurface* aSurface,
+                                  bool aIsAlphaPremultiplied,
+                                  const char* aMimeType,
+                                  const char16_t* aEncoderOptions,
+                                  nsIInputStream** outStream) {
   nsCString enccid("@mozilla.org/image/encoder;2?type=");
   enccid += aMimeType;
   nsCOMPtr<imgIEncoder> encoder = do_CreateInstance(enccid.get());
@@ -1375,7 +1393,8 @@ class GetFeatureStatusRunnable final : public dom::WorkerMainThreadRunnable {
   nsresult mNSResult;
 };
 
- nsresult gfxUtils::ThreadSafeGetFeatureStatus(
+
+nsresult gfxUtils::ThreadSafeGetFeatureStatus(
     const nsCOMPtr<nsIGfxInfo>& gfxInfo, int32_t feature, nsACString& failureId,
     int32_t* status) {
   if (!NS_IsMainThread()) {
@@ -1403,7 +1422,8 @@ class GetFeatureStatusRunnable final : public dom::WorkerMainThreadRunnable {
 #define GFX_SHADER_CHECK_DEVICE_ID_PREF "gfx-shader-check.device-id"
 #define GFX_SHADER_CHECK_DRIVER_VERSION_PREF "gfx-shader-check.driver-version"
 
- void gfxUtils::RemoveShaderCacheFromDiskIfNecessary() {
+
+void gfxUtils::RemoveShaderCacheFromDiskIfNecessary() {
   if (!gfxVars::UseWebRenderProgramBinaryDisk()) {
     return;
   }
@@ -1444,7 +1464,8 @@ class GetFeatureStatusRunnable final : public dom::WorkerMainThreadRunnable {
   return;
 }
 
- bool gfxUtils::DumpDisplayList() {
+
+bool gfxUtils::DumpDisplayList() {
   return gfxPrefs::LayoutDumpDisplayList() ||
          (gfxPrefs::LayoutDumpDisplayListParent() && XRE_IsParentProcess()) ||
          (gfxPrefs::LayoutDumpDisplayListContent() && XRE_IsContentProcess());

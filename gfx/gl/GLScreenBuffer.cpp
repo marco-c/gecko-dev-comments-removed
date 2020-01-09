@@ -59,7 +59,8 @@ UniquePtr<GLScreenBuffer> GLScreenBuffer::Create(GLContext* gl,
   return ret;
 }
 
- UniquePtr<SurfaceFactory> GLScreenBuffer::CreateFactory(
+
+UniquePtr<SurfaceFactory> GLScreenBuffer::CreateFactory(
     GLContext* gl, const SurfaceCaps& caps,
     KnowsCompositor* compositorConnection, const layers::TextureFlags& flags) {
   LayersIPCChannel* ipcChannel = compositorConnection->GetTextureForwarder();

@@ -20,7 +20,8 @@ namespace layers {
 
 using namespace mozilla::gfx;
 
- UserDataKey SharedSurfacesChild::sSharedKey;
+
+UserDataKey SharedSurfacesChild::sSharedKey;
 
 SharedSurfacesChild::ImageKeyData::ImageKeyData(
     RenderRootStateManager* aManager, const wr::ImageKey& aImageKey)
@@ -146,8 +147,9 @@ wr::ImageKey SharedSurfacesChild::SharedUserData::UpdateKey(
   return key;
 }
 
- SourceSurfaceSharedData*
-SharedSurfacesChild::AsSourceSurfaceSharedData(SourceSurface* aSurface) {
+
+SourceSurfaceSharedData* SharedSurfacesChild::AsSourceSurfaceSharedData(
+    SourceSurface* aSurface) {
   MOZ_ASSERT(aSurface);
   switch (aSurface->GetType()) {
     case SurfaceType::DATA_SHARED:
@@ -163,14 +165,16 @@ SharedSurfacesChild::AsSourceSurfaceSharedData(SourceSurface* aSurface) {
   }
 }
 
- void SharedSurfacesChild::DestroySharedUserData(void* aClosure) {
+
+void SharedSurfacesChild::DestroySharedUserData(void* aClosure) {
   MOZ_ASSERT(aClosure);
   auto data = static_cast<SharedUserData*>(aClosure);
   delete data;
 }
 
- nsresult SharedSurfacesChild::ShareInternal(
-    SourceSurfaceSharedData* aSurface, SharedUserData** aUserData) {
+
+nsresult SharedSurfacesChild::ShareInternal(SourceSurfaceSharedData* aSurface,
+                                            SharedUserData** aUserData) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aSurface);
   MOZ_ASSERT(aUserData);
@@ -253,8 +257,8 @@ SharedSurfacesChild::AsSourceSurfaceSharedData(SourceSurface* aSurface) {
   return NS_OK;
 }
 
- void SharedSurfacesChild::Share(
-    SourceSurfaceSharedData* aSurface) {
+
+void SharedSurfacesChild::Share(SourceSurfaceSharedData* aSurface) {
   MOZ_ASSERT(aSurface);
 
   
@@ -286,9 +290,11 @@ SharedSurfacesChild::AsSourceSurfaceSharedData(SourceSurface* aSurface) {
   SharedSurfacesChild::ShareInternal(aSurface, &unused);
 }
 
- nsresult SharedSurfacesChild::Share(
-    SourceSurfaceSharedData* aSurface, RenderRootStateManager* aManager,
-    wr::IpcResourceUpdateQueue& aResources, wr::ImageKey& aKey) {
+
+nsresult SharedSurfacesChild::Share(SourceSurfaceSharedData* aSurface,
+                                    RenderRootStateManager* aManager,
+                                    wr::IpcResourceUpdateQueue& aResources,
+                                    wr::ImageKey& aKey) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aSurface);
   MOZ_ASSERT(aManager);
@@ -308,9 +314,11 @@ SharedSurfacesChild::AsSourceSurfaceSharedData(SourceSurface* aSurface) {
   return rv;
 }
 
- nsresult SharedSurfacesChild::Share(
-    SourceSurface* aSurface, RenderRootStateManager* aManager,
-    wr::IpcResourceUpdateQueue& aResources, wr::ImageKey& aKey) {
+
+nsresult SharedSurfacesChild::Share(SourceSurface* aSurface,
+                                    RenderRootStateManager* aManager,
+                                    wr::IpcResourceUpdateQueue& aResources,
+                                    wr::ImageKey& aKey) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aSurface);
   MOZ_ASSERT(aManager);
@@ -323,10 +331,12 @@ SharedSurfacesChild::AsSourceSurfaceSharedData(SourceSurface* aSurface) {
   return Share(sharedSurface, aManager, aResources, aKey);
 }
 
- nsresult SharedSurfacesChild::Share(
-    ImageContainer* aContainer, RenderRootStateManager* aManager,
-    wr::IpcResourceUpdateQueue& aResources, wr::ImageKey& aKey,
-    ContainerProducerID aProducerId) {
+
+nsresult SharedSurfacesChild::Share(ImageContainer* aContainer,
+                                    RenderRootStateManager* aManager,
+                                    wr::IpcResourceUpdateQueue& aResources,
+                                    wr::ImageKey& aKey,
+                                    ContainerProducerID aProducerId) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aContainer);
   MOZ_ASSERT(aManager);
@@ -368,8 +378,9 @@ SharedSurfacesChild::AsSourceSurfaceSharedData(SourceSurface* aSurface) {
   return Share(sharedSurface, aManager, aResources, aKey);
 }
 
- nsresult SharedSurfacesChild::Share(SourceSurface* aSurface,
-                                                 wr::ExternalImageId& aId) {
+
+nsresult SharedSurfacesChild::Share(SourceSurface* aSurface,
+                                    wr::ExternalImageId& aId) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aSurface);
 
@@ -391,9 +402,10 @@ SharedSurfacesChild::AsSourceSurfaceSharedData(SourceSurface* aSurface) {
   return rv;
 }
 
- void SharedSurfacesChild::Unshare(const wr::ExternalImageId& aId,
-                                               bool aReleaseId,
-                                               nsTArray<ImageKeyData>& aKeys) {
+
+void SharedSurfacesChild::Unshare(const wr::ExternalImageId& aId,
+                                  bool aReleaseId,
+                                  nsTArray<ImageKeyData>& aKeys) {
   MOZ_ASSERT(NS_IsMainThread());
 
   for (const auto& entry : aKeys) {
@@ -444,9 +456,10 @@ SharedSurfacesChild::AsSourceSurfaceSharedData(SourceSurface* aSurface) {
   return Some(data->Id());
 }
 
- nsresult SharedSurfacesChild::UpdateAnimation(
-    ImageContainer* aContainer, SourceSurface* aSurface,
-    const IntRect& aDirtyRect) {
+
+nsresult SharedSurfacesChild::UpdateAnimation(ImageContainer* aContainer,
+                                              SourceSurface* aSurface,
+                                              const IntRect& aDirtyRect) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aContainer);
   MOZ_ASSERT(!aContainer->IsAsync());

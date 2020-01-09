@@ -48,7 +48,8 @@ bool IsImmersiveContentActive(const mozilla::gfx::VRBrowserState& aState) {
 
 }  
 
- already_AddRefed<VRService> VRService::Create() {
+
+already_AddRefed<VRService> VRService::Create() {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (!gfxPrefs::VRServiceEnabled()) {

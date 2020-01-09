@@ -411,7 +411,8 @@ static void LookupAlternateValues(gfxFontFeatureValueSet* featureLookup,
   }
 }
 
- void gfxFontShaper::MergeFontFeatures(
+
+void gfxFontShaper::MergeFontFeatures(
     const gfxFontStyle* aStyle, const nsTArray<gfxFontFeature>& aFontFeatures,
     bool aDisableLigatures, const nsACString& aFamilyName, bool aAddSmallCaps,
     void (*aHandleFeature)(const uint32_t&, uint32_t&, void*),
@@ -3308,7 +3309,8 @@ static void DestroyRefCairo(void* aData) {
   cairo_destroy(refCairo);
 }
 
- cairo_t* gfxFont::RefCairo(DrawTarget* aDT) {
+
+cairo_t* gfxFont::RefCairo(DrawTarget* aDT) {
   
   
   
@@ -3990,10 +3992,10 @@ bool gfxFont::TryGetMathTable() {
   return !!mMathTable;
 }
 
- void SharedFontList::Initialize() {
-  sEmpty = new SharedFontList();
-}
 
- void SharedFontList::Shutdown() { sEmpty = nullptr; }
+void SharedFontList::Initialize() { sEmpty = new SharedFontList(); }
+
+
+void SharedFontList::Shutdown() { sEmpty = nullptr; }
 
 StaticRefPtr<SharedFontList> SharedFontList::sEmpty;

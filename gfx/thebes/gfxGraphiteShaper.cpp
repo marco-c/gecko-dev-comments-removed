@@ -43,8 +43,9 @@ gfxGraphiteShaper::~gfxGraphiteShaper() {
   mFont->GetFontEntry()->ReleaseGrFace(mGrFace);
 }
 
- float gfxGraphiteShaper::GrGetAdvance(const void *appFontHandle,
-                                                 uint16_t glyphid) {
+
+float gfxGraphiteShaper::GrGetAdvance(const void *appFontHandle,
+                                      uint16_t glyphid) {
   const CallbackData *cb = static_cast<const CallbackData *>(appFontHandle);
   return FixedToFloat(cb->mFont->GetGlyphWidth(glyphid));
 }
@@ -346,8 +347,8 @@ nsresult gfxGraphiteShaper::SetGlyphsFromSegment(
 
 nsTHashtable<nsUint32HashKey> *gfxGraphiteShaper::sLanguageTags;
 
- uint32_t gfxGraphiteShaper::GetGraphiteTagForLang(
-    const nsCString &aLang) {
+
+uint32_t gfxGraphiteShaper::GetGraphiteTagForLang(const nsCString &aLang) {
   int len = aLang.Length();
   if (len < 2) {
     return 0;
@@ -395,7 +396,8 @@ nsTHashtable<nsUint32HashKey> *gfxGraphiteShaper::sLanguageTags;
   return 0;
 }
 
- void gfxGraphiteShaper::Shutdown() {
+
+void gfxGraphiteShaper::Shutdown() {
 #ifdef NS_FREE_PERMANENT_DATA
   if (sLanguageTags) {
     sLanguageTags->Clear();

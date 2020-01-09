@@ -45,7 +45,8 @@ void PaintThread::Release() {}
 
 void PaintThread::AddRef() {}
 
- int32_t PaintThread::CalculatePaintWorkerCount() {
+
+int32_t PaintThread::CalculatePaintWorkerCount() {
   int32_t cpuCores = PR_GetNumberOfProcessors();
   int32_t workerCount = gfxPrefs::LayersOMTPPaintWorkers();
 
@@ -58,7 +59,8 @@ void PaintThread::AddRef() {}
   return workerCount;
 }
 
- void PaintThread::Start() {
+
+void PaintThread::Start() {
   PaintThread::sSingleton = new PaintThread();
 
   if (!PaintThread::sSingleton->Init()) {
@@ -108,7 +110,8 @@ void DestroyPaintThread(UniquePtr<PaintThread>&& pt) {
   pt->ShutdownOnPaintThread();
 }
 
- void PaintThread::Shutdown() {
+
+void PaintThread::Shutdown() {
   MOZ_ASSERT(NS_IsMainThread());
 
   UniquePtr<PaintThread> pt(sSingleton.forget());
@@ -124,11 +127,11 @@ void DestroyPaintThread(UniquePtr<PaintThread>&& pt) {
 
 void PaintThread::ShutdownOnPaintThread() { MOZ_ASSERT(IsOnPaintThread()); }
 
- PaintThread* PaintThread::Get() {
-  return PaintThread::sSingleton.get();
-}
 
- bool PaintThread::IsOnPaintThread() {
+PaintThread* PaintThread::Get() { return PaintThread::sSingleton.get(); }
+
+
+bool PaintThread::IsOnPaintThread() {
   return sThreadId == PlatformThread::CurrentId();
 }
 

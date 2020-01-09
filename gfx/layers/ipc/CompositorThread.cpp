@@ -29,7 +29,8 @@ base::Thread* CompositorThread() {
              : nullptr;
 }
 
- MessageLoop* CompositorThreadHolder::Loop() {
+
+MessageLoop* CompositorThreadHolder::Loop() {
   return CompositorThread() ? CompositorThread()->message_loop() : nullptr;
 }
 
@@ -49,7 +50,8 @@ CompositorThreadHolder::~CompositorThreadHolder() {
   }
 }
 
- void CompositorThreadHolder::DestroyCompositorThread(
+
+void CompositorThreadHolder::DestroyCompositorThread(
     base::Thread* aCompositorThread) {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -135,7 +137,8 @@ void CompositorThreadHolder::Shutdown() {
   CompositorBridgeParent::FinishShutdown();
 }
 
- bool CompositorThreadHolder::IsInCompositorThread() {
+
+bool CompositorThreadHolder::IsInCompositorThread() {
   return CompositorThread() &&
          CompositorThread()->thread_id() == PlatformThread::CurrentId();
 }

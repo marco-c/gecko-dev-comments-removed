@@ -22,8 +22,9 @@
 namespace mozilla {
 namespace gl {
 
- void SharedSurface::ProdCopy(SharedSurface* src, SharedSurface* dest,
-                                        SurfaceFactory* factory) {
+
+void SharedSurface::ProdCopy(SharedSurface* src, SharedSurface* dest,
+                             SurfaceFactory* factory) {
   GLContext* gl = src->mGL;
 
   
@@ -334,8 +335,9 @@ void SurfaceFactory::StopRecycling(layers::SharedSurfaceTextureClient* tc) {
   mozilla::Unused << didErase;
 }
 
- void SurfaceFactory::RecycleCallback(layers::TextureClient* rawTC,
-                                                void* rawFactory) {
+
+void SurfaceFactory::RecycleCallback(layers::TextureClient* rawTC,
+                                     void* rawFactory) {
   RefPtr<layers::SharedSurfaceTextureClient> tc;
   tc = static_cast<layers::SharedSurfaceTextureClient*>(rawTC);
   SurfaceFactory* factory = static_cast<SurfaceFactory*>(rawFactory);

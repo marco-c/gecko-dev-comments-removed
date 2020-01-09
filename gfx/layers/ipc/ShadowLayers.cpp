@@ -793,7 +793,8 @@ LayerHandle ShadowLayerForwarder::ConstructShadowFor(ShadowableLayer* aLayer) {
 
 #if !defined(MOZ_HAVE_PLATFORM_SPECIFIC_LAYER_BUFFERS)
 
- void ShadowLayerForwarder::PlatformSyncBeforeUpdate() {}
+
+void ShadowLayerForwarder::PlatformSyncBeforeUpdate() {}
 
 #endif  
 
@@ -976,7 +977,8 @@ bool ShadowLayerForwarder::AllocSurfaceDescriptorWithCaps(
   return true;
 }
 
- bool ShadowLayerForwarder::IsShmem(SurfaceDescriptor* aSurface) {
+
+bool ShadowLayerForwarder::IsShmem(SurfaceDescriptor* aSurface) {
   return aSurface &&
          (aSurface->type() == SurfaceDescriptor::TSurfaceDescriptorBuffer) &&
          (aSurface->get_SurfaceDescriptorBuffer().data().type() ==

@@ -29,7 +29,8 @@
 namespace mozilla {
 namespace wr {
 
- UniquePtr<RenderCompositor> RenderCompositorANGLE::Create(
+
+UniquePtr<RenderCompositor> RenderCompositorANGLE::Create(
     RefPtr<widget::CompositorWidget>&& aWidget) {
   UniquePtr<RenderCompositorANGLE> compositor =
       MakeUnique<RenderCompositorANGLE>(std::move(aWidget));

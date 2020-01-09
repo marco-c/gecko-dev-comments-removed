@@ -376,8 +376,9 @@ Maybe<SymbolLoader> GLLibraryEGL::GetSymbolLoader() const {
 
 
 
- bool GLLibraryEGL::EnsureInitialized(
-    bool forceAccel, nsACString* const out_failureId) {
+
+bool GLLibraryEGL::EnsureInitialized(bool forceAccel,
+                                     nsACString* const out_failureId) {
   if (!sEGLLibrary) {
     sEGLLibrary = new GLLibraryEGL();
   }

@@ -11,8 +11,8 @@ namespace gfx {
 
 static StaticRefPtr<VRGPUChild> sVRGPUChildSingleton;
 
- bool VRGPUChild::InitForGPUProcess(
-    Endpoint<PVRGPUChild>&& aEndpoint) {
+
+bool VRGPUChild::InitForGPUProcess(Endpoint<PVRGPUChild>&& aEndpoint) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(!sVRGPUChildSingleton);
 
@@ -33,14 +33,17 @@ static StaticRefPtr<VRGPUChild> sVRGPUChildSingleton;
   return true;
 }
 
- bool VRGPUChild::IsCreated() { return !!sVRGPUChildSingleton; }
 
- VRGPUChild* VRGPUChild::Get() {
+bool VRGPUChild::IsCreated() { return !!sVRGPUChildSingleton; }
+
+
+VRGPUChild* VRGPUChild::Get() {
   MOZ_ASSERT(IsCreated(), "VRGPUChild haven't initialized yet.");
   return sVRGPUChildSingleton;
 }
 
- void VRGPUChild::Shutdown() {
+
+void VRGPUChild::Shutdown() {
   MOZ_ASSERT(NS_IsMainThread());
   if (sVRGPUChildSingleton && !sVRGPUChildSingleton->IsClosed()) {
     sVRGPUChildSingleton->Close();
