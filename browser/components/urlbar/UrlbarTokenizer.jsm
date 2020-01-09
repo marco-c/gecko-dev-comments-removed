@@ -39,6 +39,9 @@ var UrlbarTokenizer = {
   REGEXP_HOSTPORT_IPV6: /^\[([0-9a-f]{0,4}:){0,7}[0-9a-f]{0,4}\]?$/i,
   REGEXP_COMMON_EMAIL: /^[\w!#$%&'*+\/=?^`{|}~-]+@[\[\]A-Z0-9.-]+$/i,
 
+  
+  REGEXP_PERCENT_ENCODED_START: /^(%[0-9a-f]{2}){2,}/i,
+
   TYPE: {
     TEXT: 1,
     POSSIBLE_ORIGIN: 2, 
@@ -217,22 +220,27 @@ function splitString(searchString) {
   let hasRestrictionToken = tokens.some(t => CHAR_TO_TYPE_MAP.has(t));
   let chars = Array.from(CHAR_TO_TYPE_MAP.keys()).join("");
   logger.debug("Restriction chars", chars);
-  for (let token of tokens) {
+  for (let i = 0; i < tokens.length; ++i) {
     
     
     
     
     
-    if (!hasRestrictionToken &&
-        token.length > 1 &&
-        !UrlbarTokenizer.looksLikeUrl(token, {requirePath: true})) {
+    
+    let token = tokens[i];
+    if (!hasRestrictionToken && token.length > 1) {
       
-      if (chars.includes(token[0])) {
+      
+      if (i == 0 &&
+          chars.includes(token[0]) &&
+          !UrlbarTokenizer.REGEXP_PERCENT_ENCODED_START.test(token)) {
         hasRestrictionToken = true;
         accumulator.push(token[0]);
         accumulator.push(token.slice(1));
         continue;
-      } else if (chars.includes(token[token.length - 1])) {
+      } else if (i == tokens.length - 1 &&
+                 chars.includes(token[token.length - 1]) &&
+                 !UrlbarTokenizer.looksLikeUrl(token, {requirePath: true})) {
         hasRestrictionToken = true;
         accumulator.push(token.slice(0, token.length - 1));
         accumulator.push(token[token.length - 1]);

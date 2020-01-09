@@ -608,11 +608,17 @@ function Search(searchString, searchParam, autocompleteListener,
 
   
   this._leadingRestrictionToken = null;
+  this._trailingRestrictionToken = null;
   if (tokens.length > 0) {
     if (UrlbarTokenizer.isRestrictionToken(tokens[0]) &&
         (tokens.length > 1 || tokens[0].type == UrlbarTokenizer.TYPE.RESTRICT_SEARCH)) {
       this._leadingRestrictionToken = tokens[0].value;
     }
+    if (UrlbarTokenizer.isRestrictionToken(tokens[tokens.length - 1]) &&
+        (tokens.length > 1 || tokens[tokens.length - 1].type == UrlbarTokenizer.TYPE.RESTRICT_SEARCH)) {
+      this._trailingRestrictionToken = tokens[tokens.length - 1].value;
+    }
+
     
     
     if (prefix && tokens[0].value.length > prefix.length) {
@@ -1489,6 +1495,7 @@ Search.prototype = {
       style = "action " + style;
       value = PlacesUtils.mozActionURI("keyword", {
         url,
+        keyword,
         input: this._originalSearchString,
         postData,
       });
@@ -1603,9 +1610,13 @@ Search.prototype = {
       return false;
     }
     
-    let query = this._leadingRestrictionToken ?
-      substringAfter(this._trimmedOriginalSearchString, this._leadingRestrictionToken).trim() :
-      this._trimmedOriginalSearchString;
+    let query = this._trimmedOriginalSearchString;
+    if (this._leadingRestrictionToken) {
+      query = substringAfter(query, this._leadingRestrictionToken).trim();
+    }
+    if (this._trailingRestrictionToken) {
+      query = query.substring(0, query.lastIndexOf(this._trailingRestrictionToken));
+    }
     this._addSearchEngineMatch({ engine, query });
     return true;
   },
@@ -1761,6 +1772,11 @@ Search.prototype = {
     if (!this._searchString && this._strippedPrefix) {
       
       
+      return false;
+    }
+    
+    
+    if (this.hasBehavior("search") && this.hasBehavior("restrict")) {
       return false;
     }
     let flags = Ci.nsIURIFixup.FIXUP_FLAG_FIX_SCHEME_TYPOS |
