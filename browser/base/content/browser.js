@@ -8299,13 +8299,13 @@ var ConfirmationHint = {
       this._panel.setAttribute("hidearrow", "true");
     }
 
+    
+    
+    
+    const DURATION = options.showDescription ? 4000 : 1500 + 120;
     this._panel.addEventListener("popupshown", () => {
       this._animationBox.setAttribute("animate", "true");
 
-      
-      
-      
-      const DURATION = options.showDescription ? 4000 : 1500 + 120;
       setTimeout(() => {
         this._panel.hidePopup(true);
       }, DURATION);
