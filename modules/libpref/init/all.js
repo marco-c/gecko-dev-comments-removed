@@ -6087,6 +6087,3 @@ pref("dom.datatransfer.mozAtAPIs", true);
 
 
 pref("dom.sidebar.enabled", true);
-
-
-pref("fission.rebuild_frameloaders_on_remoteness_change", true);
