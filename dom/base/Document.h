@@ -107,7 +107,6 @@ class nsILayoutHistoryState;
 class nsILoadContext;
 class nsIObjectLoadingContent;
 class nsIObserver;
-class nsIPresShell;
 class nsIPrincipal;
 class nsIRequest;
 class nsIRunnable;
@@ -139,6 +138,7 @@ class EventListenerManager;
 class FullscreenExit;
 class FullscreenRequest;
 class PendingAnimationTracker;
+class PresShell;
 class ServoStyleSet;
 class SMILAnimationController;
 enum class StyleCursorKind : uint8_t;
@@ -471,8 +471,8 @@ class Document : public nsINode,
                                              func_, params_);                 \
     /* FIXME(emilio): Apparently we can keep observing from the BFCache? That \
        looks bogus. */                                                        \
-    if (nsIPresShell* shell = GetObservingShell()) {                          \
-      shell->func_ params_;                                                   \
+    if (PresShell* presShell = GetObservingPresShell()) {                     \
+      presShell->func_ params_;                                               \
     }                                                                         \
   } while (0)
 
@@ -1244,16 +1244,16 @@ class Document : public nsINode,
 
 
 
-  already_AddRefed<nsIPresShell> CreateShell(
+  already_AddRefed<PresShell> CreatePresShell(
       nsPresContext* aContext, nsViewManager* aViewManager,
       UniquePtr<ServoStyleSet> aStyleSet);
-  void DeleteShell();
+  void DeletePresShell();
 
-  nsIPresShell* GetShell() const {
+  PresShell* GetPresShell() const {
     return GetBFCacheEntry() ? nullptr : mPresShell;
   }
 
-  inline nsIPresShell* GetObservingShell() const;
+  inline PresShell* GetObservingPresShell() const;
 
   
   bool IsSafeToFlush() const;
@@ -2513,7 +2513,7 @@ class Document : public nsINode,
 
 
   void SetDisplayDocument(Document* aDisplayDocument) {
-    MOZ_ASSERT(!GetShell() && !GetContainer() && !GetWindow(),
+    MOZ_ASSERT(!GetPresShell() && !GetContainer() && !GetWindow(),
                "Shouldn't set mDisplayDocument on documents that already "
                "have a presentation or a docshell or a window");
     MOZ_ASSERT(aDisplayDocument, "Must not be null");
@@ -3852,7 +3852,7 @@ class Document : public nsINode,
   
   
   void UpdateFrameRequestCallbackSchedulingState(
-      nsIPresShell* aOldShell = nullptr);
+      PresShell* aOldPresShell = nullptr);
 
   
   bool IsPotentiallyScrollable(HTMLBodyElement* aBody);
@@ -4332,7 +4332,7 @@ class Document : public nsINode,
   
   uint32_t mMarkedCCGeneration;
 
-  nsIPresShell* mPresShell;
+  PresShell* mPresShell;
 
   nsCOMArray<nsINode> mSubtreeModifiedTargets;
   uint32_t mSubtreeModifiedDepth;

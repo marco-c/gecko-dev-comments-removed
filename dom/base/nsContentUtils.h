@@ -127,6 +127,7 @@ class Dispatcher;
 class ErrorResult;
 class EventListenerManager;
 class HTMLEditor;
+class PresShell;
 class TextEditor;
 
 namespace dom {
@@ -827,7 +828,7 @@ class nsContentUtils {
 
 
 
-  static nsIPresShell* GetPresShellForContent(const nsIContent* aContent);
+  static mozilla::PresShell* GetPresShellForContent(const nsIContent* aContent);
 
   
 

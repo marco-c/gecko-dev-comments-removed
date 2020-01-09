@@ -25,8 +25,9 @@
 #include "nsTreeColumns.h"
 #include "nsContentUtils.h"
 #include "mozilla/ErrorResult.h"
-#include "mozilla/Preferences.h"
 #include "mozilla/LookAndFeel.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/PresShell.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Event.h"  
 #include "mozilla/dom/MouseEvent.h"
@@ -524,7 +525,7 @@ nsresult nsXULTooltipListener::FindTooltip(nsIContent* aTarget,
   
   if (!aTarget->IsXULElement()) {
     nsIPopupContainer* popupContainer =
-        nsIPopupContainer::GetPopupContainer(document->GetShell());
+        nsIPopupContainer::GetPopupContainer(document->GetPresShell());
     NS_ENSURE_STATE(popupContainer);
     if (RefPtr<Element> tooltip = popupContainer->GetDefaultTooltip()) {
       tooltip.forget(aTooltip);
@@ -541,7 +542,7 @@ nsresult nsXULTooltipListener::FindTooltip(nsIContent* aTarget,
   if (!tooltipText.IsEmpty()) {
     
     nsIPopupContainer* popupContainer =
-        nsIPopupContainer::GetPopupContainer(document->GetShell());
+        nsIPopupContainer::GetPopupContainer(document->GetPresShell());
     NS_ENSURE_STATE(popupContainer);
     if (RefPtr<Element> tooltip = popupContainer->GetDefaultTooltip()) {
       tooltip->SetAttr(kNameSpaceID_None, nsGkAtoms::label, tooltipText, true);
@@ -584,7 +585,7 @@ nsresult nsXULTooltipListener::FindTooltip(nsIContent* aTarget,
   
   if (mIsSourceTree && mNeedTitletip) {
     nsIPopupContainer* popupContainer =
-        nsIPopupContainer::GetPopupContainer(document->GetShell());
+        nsIPopupContainer::GetPopupContainer(document->GetPresShell());
     NS_ENSURE_STATE(popupContainer);
     NS_IF_ADDREF(*aTooltip = popupContainer->GetDefaultTooltip());
   }
