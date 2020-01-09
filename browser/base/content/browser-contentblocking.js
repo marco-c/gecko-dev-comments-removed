@@ -498,6 +498,8 @@ var ThirdPartyCookies = {
       
     case Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER:
       return "cookierestrictions";
+    case Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN:
+      return "cookierestrictionsforeignpartitioned";
     }
   },
 
