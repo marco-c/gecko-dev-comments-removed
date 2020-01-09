@@ -490,10 +490,10 @@
 
       
       
-      Array.forEach(this.getElementsByTagName("splitter"), function(splitter) {
+      for (let splitter of this.getElementsByTagName("splitter")) {
         if (!splitter.hasAttribute("resizeafter"))
           splitter.setAttribute("resizeafter", "farthest");
-      });
+      }
     }
   }
 

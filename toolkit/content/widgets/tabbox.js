@@ -228,7 +228,7 @@ class MozTabpanels extends MozXULElement {
 
     
     
-    let tabpanelIdx = Array.indexOf(this.children, aTabPanelElm);
+    let tabpanelIdx = Array.prototype.indexOf.call(this.children, aTabPanelElm);
     if (tabpanelIdx == -1)
       return null;
 

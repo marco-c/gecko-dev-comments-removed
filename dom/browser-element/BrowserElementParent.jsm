@@ -27,8 +27,7 @@ function defineNoReturnMethod(fn) {
   return function method() {
     if (!this._domRequestReady) {
       
-      let args = Array.slice(arguments);
-      args.unshift(this);
+      let args = [this, ...arguments];
       this._pendingAPICalls.push(method.bind.apply(fn, args));
       return;
     }

@@ -39,7 +39,7 @@ this.DownloadList.prototype = {
 
 
   getAll: function DL_getAll() {
-    return Promise.resolve(Array.slice(this._downloads, 0));
+    return Promise.resolve(Array.from(this._downloads));
   },
 
   

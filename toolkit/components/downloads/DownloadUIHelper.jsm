@@ -69,7 +69,7 @@ XPCOMUtils.defineLazyGetter(DownloadUIHelper, "strings", function() {
       strings[stringName] = function() {
         
         return sb.formatStringFromName(stringName,
-                                       Array.slice(arguments, 0),
+                                       Array.from(arguments),
                                        arguments.length);
       };
     } else {

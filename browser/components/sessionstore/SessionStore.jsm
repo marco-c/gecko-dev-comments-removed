@@ -3667,7 +3667,7 @@ var SessionStoreInternal = {
     
     let initialTabs;
     if (!overwriteTabs && firstWindow) {
-      initialTabs = Array.slice(tabbrowser.tabs);
+      initialTabs = Array.from(tabbrowser.tabs);
     }
 
     
@@ -4052,7 +4052,7 @@ var SessionStoreInternal = {
     
     
     
-    for (let otherTab of Array.slice(tabbrowser.tabs, 0, tab._tPos)) {
+    for (let otherTab of Array.prototype.slice.call(tabbrowser.tabs, 0, tab._tPos)) {
       let emptyState = {entries: [], lastAccessed: otherTab.lastAccessed};
       this._windows[window.__SSi].tabs.push(emptyState);
     }
