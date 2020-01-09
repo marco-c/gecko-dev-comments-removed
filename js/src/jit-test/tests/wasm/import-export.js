@@ -528,26 +528,112 @@ var m = new Module(wasmTextToBinary(`
         (export "g" $g))
 `));
 
+
+
+
+
+
+
+
+
+
+
+
 var npages = 2;
 var mem = new Memory({initial:npages});
 var mem8 = new Uint8Array(mem.buffer);
 var tbl = new Table({initial:2, element:"anyfunc"});
 
-assertErrorMessage(() => new Instance(m, {a:{mem, tbl, memOff:1, tblOff:2}}), LinkError, /elem segment does not fit/);
+assertErrorMessage(() => new Instance(m, {a:{mem, tbl, memOff:1, tblOff:2}}),
+                   LinkError,
+                   /elem segment does not fit/);
+if (wasmBulkMemSupported()) {
+    
+    
+    assertEq(typeof tbl.get(0), "function");
+    assertEq(tbl.get(1), null);
+} else {
+    assertEq(tbl.get(0), null);
+    assertEq(tbl.get(1), null);
+}
 assertEq(mem8[0], 0);
 assertEq(mem8[1], 0);
-assertEq(tbl.get(0), null);
 
-assertErrorMessage(() => new Instance(m, {a:{mem, tbl, memOff:npages*64*1024, tblOff:1}}), LinkError, /data segment does not fit/);
-assertEq(mem8[0], 0);
-assertEq(tbl.get(0), null);
-assertEq(tbl.get(1), null);
+tbl.set(0, null);
+tbl.set(1, null);
+
+assertErrorMessage(() => new Instance(m, {a:{mem, tbl, memOff:npages*64*1024, tblOff:1}}),
+                   LinkError,
+                   /data segment does not fit/);
+if (wasmBulkMemSupported()) {
+    
+    
+    assertEq(typeof tbl.get(0), "function");
+    assertEq(typeof tbl.get(1), "function");
+    assertEq(mem8[0], 1);
+} else {
+    assertEq(tbl.get(0), null);
+    assertEq(tbl.get(1), null);
+    assertEq(mem8[0], 0);
+}
+
+tbl.set(0, null);
+tbl.set(1, null);
+mem8[0] = 0;
+
+
 
 var i = new Instance(m, {a:{mem, tbl, memOff:npages*64*1024-1, tblOff:1}});
 assertEq(mem8[0], 1);
 assertEq(mem8[npages*64*1024-1], 2);
 assertEq(tbl.get(0), i.exports.f);
 assertEq(tbl.get(1), i.exports.g);
+
+
+
+
+if (wasmBulkMemSupported()) {
+    let m = new Module(wasmTextToBinary(
+        `(module
+           (import "" "mem" (memory 1))
+           (import "" "tbl" (table 3 anyfunc))
+           (elem (i32.const 1) $f $g $h) ;; fails after $f and $g
+           (elem (i32.const 0) $f)       ;; is not applied
+           (data (i32.const 0) "\\01")   ;; is not applied
+           (func $f)
+           (func $g)
+           (func $h))`));
+    let mem = new Memory({initial:1});
+    let tbl = new Table({initial:3, element:"anyfunc"});
+    assertErrorMessage(() => new Instance(m, {"":{mem, tbl}}),
+                       LinkError,
+                       /elem segment does not fit/);
+    assertEq(tbl.get(0), null);
+    assertEq(typeof tbl.get(1), "function");
+    assertEq(typeof tbl.get(2), "function");
+    let v = new Uint8Array(mem.buffer);
+    assertEq(v[0], 0);
+}
+
+
+
+
+if (wasmBulkMemSupported()) {
+    let m = new Module(wasmTextToBinary(
+        `(module
+           (import "" "mem" (memory 1))
+           (data (i32.const 65534) "\\01\\02\\03") ;; fails after 1 and 2
+           (data (i32.const 0) "\\04")             ;; is not applied
+         )`));
+    let mem = new Memory({initial:1});
+    assertErrorMessage(() => new Instance(m, {"":{mem}}),
+                       LinkError,
+                       /data segment does not fit/);
+    let v = new Uint8Array(mem.buffer);
+    assertEq(v[65534], 1);
+    assertEq(v[65535], 2);
+    assertEq(v[0], 0);
+}
 
 
 
