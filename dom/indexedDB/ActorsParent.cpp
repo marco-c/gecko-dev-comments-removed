@@ -5481,6 +5481,7 @@ class TransactionDatabaseOperationBase : public DatabaseOperationBase {
   RefPtr<TransactionBase> mTransaction;
   const int64_t mTransactionLoggingSerialNumber;
   InternalState mInternalState;
+  bool mWaitingForContinue;
   const bool mTransactionIsAborted;
 
  public:
@@ -5504,6 +5505,12 @@ class TransactionDatabaseOperationBase : public DatabaseOperationBase {
     MOZ_ASSERT(mTransaction);
 
     return mTransaction;
+  }
+
+  bool IsWaitingForContinue() const {
+    AssertIsOnOwningThread();
+
+    return mWaitingForContinue;
   }
 
   void NoteContinueReceived();
@@ -21532,6 +21539,7 @@ TransactionDatabaseOperationBase::TransactionDatabaseOperationBase(
       mTransaction(aTransaction),
       mTransactionLoggingSerialNumber(aTransaction->LoggingSerialNumber()),
       mInternalState(InternalState::Initial),
+      mWaitingForContinue(false),
       mTransactionIsAborted(aTransaction->IsAborted()) {
   MOZ_ASSERT(aTransaction);
   MOZ_ASSERT(LoggingSerialNumber());
@@ -21676,6 +21684,8 @@ void TransactionDatabaseOperationBase::NoteContinueReceived() {
   AssertIsOnOwningThread();
   MOZ_ASSERT(mInternalState == InternalState::WaitingForContinue);
 
+  mWaitingForContinue = false;
+
   mInternalState = InternalState::SendingResults;
 
   
@@ -21758,6 +21768,8 @@ void TransactionDatabaseOperationBase::SendPreprocessInfoOrResults(
 
   if (aSendPreprocessInfo && NS_SUCCEEDED(mResultCode)) {
     mInternalState = InternalState::WaitingForContinue;
+
+    mWaitingForContinue = true;
   } else {
     if (mLoggingSerialNumber) {
       mTransaction->NoteFinishedRequest();
@@ -23726,6 +23738,24 @@ void NormalTransactionOp::ActorDestroy(ActorDestroyReason aWhy) {
   AssertIsOnOwningThread();
 
   NoteActorDestroyed();
+
+  
+  
+  
+  
+  
+  
+  
+  
+
+  if (IsWaitingForContinue()) {
+    NoteContinueReceived();
+  }
+
+  
+  
+  
+  
 }
 
 mozilla::ipc::IPCResult NormalTransactionOp::RecvContinue(
