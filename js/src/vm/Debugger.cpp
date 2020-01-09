@@ -51,6 +51,7 @@
 #include "wasm/WasmInstance.h"
 
 #include "gc/GC-inl.h"
+#include "jit/JSJitFrameIter-inl.h"
 #include "vm/BytecodeUtil-inl.h"
 #include "vm/Compartment-inl.h"
 #include "vm/GeckoProfiler-inl.h"
@@ -2924,7 +2925,15 @@ static bool UpdateExecutionObservabilityOfScriptsInZone(
       const JSJitFrameIter& frame = iter.frame();
       switch (frame.type()) {
         case FrameType::BaselineJS:
-          MarkTypeScriptActiveIfObservable(frame.script(), obs);
+          
+          
+          
+          
+          
+          
+          if (!frame.baselineFrame()->runningInInterpreter()) {
+            MarkTypeScriptActiveIfObservable(frame.script(), obs);
+          }
           break;
         case FrameType::IonJS:
           MarkTypeScriptActiveIfObservable(frame.script(), obs);

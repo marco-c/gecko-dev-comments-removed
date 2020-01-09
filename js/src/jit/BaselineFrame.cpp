@@ -136,14 +136,15 @@ bool BaselineFrame::initForOsr(InterpreterFrame* fp, uint32_t numStackValues) {
   JSContext* cx =
       fp->script()->runtimeFromMainThread()->mainContextFromOwnThread();
 
+  Activation* interpActivation = cx->activation()->prev();
+  jsbytecode* pc = interpActivation->asInterpreter()->regs().pc;
+  MOZ_ASSERT(fp->script()->containsPC(pc));
+
   if (!fp->script()->hasBaselineScript()) {
     
     
     
     
-    Activation* interpActivation = cx->activation()->prev();
-    jsbytecode* pc = interpActivation->asInterpreter()->regs().pc;
-    MOZ_ASSERT(fp->script()->containsPC(pc));
     flags_ |= BaselineFrame::RUNNING_IN_INTERPRETER;
     interpreterScript_ = fp->script();
     setInterpreterPC(pc);
@@ -165,18 +166,13 @@ bool BaselineFrame::initForOsr(InterpreterFrame* fp, uint32_t numStackValues) {
     
     
     
-    
-    JSJitFrameIter frame(cx->activation()->asJit());
-    MOZ_ASSERT(frame.returnAddress() == nullptr);
-    BaselineScript* baseline = fp->script()->baselineScript();
-    uint8_t* retAddr =
-        baseline->returnAddressForEntry(baseline->retAddrEntry(0));
-    frame.current()->setReturnAddress(retAddr);
+    setOverridePc(pc);
 
     if (!Debugger::handleBaselineOsr(cx, fp, this)) {
       return false;
     }
 
+    clearOverridePc();
     setIsDebuggee();
   }
 

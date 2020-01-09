@@ -1122,9 +1122,13 @@ bool HandleDebugTrap(JSContext* cx, BaselineFrame* frame, uint8_t* retAddr,
   *mustReturn = false;
 
   RootedScript script(cx, frame->script());
-  jsbytecode* pc =
-      script->baselineScript()->retAddrEntryFromReturnAddress(retAddr).pc(
-          script);
+  jsbytecode* pc;
+  if (frame->runningInInterpreter()) {
+    pc = frame->interpreterPC();
+  } else {
+    BaselineScript* blScript = script->baselineScript();
+    pc = blScript->retAddrEntryFromReturnAddress(retAddr).pc(script);
+  }
 
   if (*pc == JSOP_AFTERYIELD) {
     
@@ -1141,7 +1145,15 @@ bool HandleDebugTrap(JSContext* cx, BaselineFrame* frame, uint8_t* retAddr,
   }
 
   MOZ_ASSERT(frame->isDebuggee());
-  MOZ_ASSERT(script->stepModeEnabled() || script->hasBreakpointsAt(pc));
+
+  
+  
+  
+  if (frame->runningInInterpreter()) {
+    MOZ_ASSERT(script->hasAnyBreakpointsOrStepMode());
+  } else {
+    MOZ_ASSERT(script->stepModeEnabled() || script->hasBreakpointsAt(pc));
+  }
 
   RootedValue rval(cx);
   ResumeMode resumeMode = ResumeMode::Continue;

@@ -166,7 +166,11 @@ static bool CollectJitStackScripts(JSContext* cx,
           break;
         }
 
+        
         BaselineFrame* baselineFrame = frame.baselineFrame();
+        if (baselineFrame->runningInInterpreter()) {
+          break;
+        }
 
         if (BaselineDebugModeOSRInfo* info =
                 baselineFrame->getDebugModeOSRInfo()) {
@@ -355,6 +359,12 @@ static void PatchBaselineFramesForDebugMode(
         
         
         if (!obs.shouldRecompileOrInvalidate(frame.script())) {
+          break;
+        }
+
+        
+        BaselineFrame* baselineFrame = frame.baselineFrame();
+        if (baselineFrame->runningInInterpreter()) {
           break;
         }
 
