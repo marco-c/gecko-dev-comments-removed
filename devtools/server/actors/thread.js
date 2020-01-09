@@ -19,7 +19,6 @@ const {
   getAvailableEventBreakpoints,
 } = require("devtools/server/actors/utils/event-breakpoints");
 
-loader.lazyRequireGetter(this, "findCssSelector", "devtools/shared/inspector/css-logic", true);
 loader.lazyRequireGetter(this, "EnvironmentActor", "devtools/server/actors/environment", true);
 loader.lazyRequireGetter(this, "BreakpointActorMap", "devtools/server/actors/utils/breakpoint-actor-map", true);
 loader.lazyRequireGetter(this, "PauseScopedObjectActor", "devtools/server/actors/pause-scoped", true);
@@ -1233,85 +1232,6 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
   
 
 
-  onEventListeners: function(request) {
-    
-    if (!this.global) {
-      return {
-        error: "notImplemented",
-        message: "eventListeners request is only supported in content debugging",
-      };
-    }
-
-    let nodes = this.global.document.getElementsByTagName("*");
-    nodes = [this.global].concat([].slice.call(nodes));
-    const listeners = [];
-
-    for (const node of nodes) {
-      const handlers = Services.els.getListenerInfoFor(node);
-
-      for (const handler of handlers) {
-        
-        const listenerForm = Object.create(null);
-        const listener = handler.listenerObject;
-        
-        
-        if (!listener || !handler.type) {
-          continue;
-        }
-
-        
-        const selector = node.tagName ? findCssSelector(node) : "window";
-        const nodeDO = this.globalDebugObject.makeDebuggeeValue(node);
-        listenerForm.node = {
-          selector: selector,
-          object: createValueGrip(nodeDO, this._pausePool, this.objectGrip),
-        };
-        listenerForm.type = handler.type;
-        listenerForm.capturing = handler.capturing;
-        listenerForm.allowsUntrusted = handler.allowsUntrusted;
-        listenerForm.inSystemEventGroup = handler.inSystemEventGroup;
-        const handlerName = "on" + listenerForm.type;
-        listenerForm.isEventHandler = false;
-        if (typeof node.hasAttribute !== "undefined") {
-          listenerForm.isEventHandler = !!node.hasAttribute(handlerName);
-        }
-        if (node[handlerName]) {
-          listenerForm.isEventHandler = !!node[handlerName];
-        }
-        
-        let listenerDO = this.globalDebugObject.makeDebuggeeValue(listener);
-        
-        if (listenerDO.class === "Object" || /^XUL\w*Element$/.test(listenerDO.class)) {
-          
-          
-          if (!listenerDO.unwrap()) {
-            continue;
-          }
-          let heDesc;
-          while (!heDesc && listenerDO) {
-            heDesc = listenerDO.getOwnPropertyDescriptor("handleEvent");
-            listenerDO = listenerDO.proto;
-          }
-          if (heDesc && heDesc.value) {
-            listenerDO = heDesc.value;
-          }
-        }
-        
-        
-        while (listenerDO.isBoundFunction) {
-          listenerDO = listenerDO.boundTargetFunction;
-        }
-        listenerForm.function = createValueGrip(listenerDO, this._pausePool,
-          this.objectGrip);
-        listeners.push(listenerForm);
-      }
-    }
-    return { listeners: listeners };
-  },
-
-  
-
-
   _requestFrame: function(frameID) {
     if (!frameID) {
       return this.youngestFrame;
@@ -1855,7 +1775,6 @@ Object.assign(ThreadActor.prototype.requestTypes, {
   "clientEvaluate": ThreadActor.prototype.onClientEvaluate,
   "frames": ThreadActor.prototype.onFrames,
   "interrupt": ThreadActor.prototype.onInterrupt,
-  "eventListeners": ThreadActor.prototype.onEventListeners,
   "releaseMany": ThreadActor.prototype.onReleaseMany,
   "sources": ThreadActor.prototype.onSources,
   "threadGrips": ThreadActor.prototype.onThreadGrips,

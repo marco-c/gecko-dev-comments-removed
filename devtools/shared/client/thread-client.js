@@ -375,16 +375,6 @@ ThreadClient.prototype = {
 
 
 
-  eventListeners: DebuggerClient.requester({
-    type: "eventListeners",
-  }),
-
-  
-
-
-
-
-
   getSources: DebuggerClient.requester({
     type: "sources",
   }),
