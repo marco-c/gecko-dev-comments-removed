@@ -307,6 +307,7 @@ impl Docopt {
     }
 
     #[doc(hidden)]
+    
     pub fn parser(&self) -> &Parser {
         &self.p
     }
