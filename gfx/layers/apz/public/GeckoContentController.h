@@ -13,6 +13,7 @@
 #include "mozilla/Assertions.h"                  
 #include "mozilla/DefineEnum.h"                  
 #include "mozilla/EventForwards.h"               
+#include "mozilla/layers/MatrixMessage.h"        
 #include "mozilla/layers/RepaintRequest.h"       
 #include "mozilla/layers/ScrollableLayerGuid.h"  
 #include "nsISupportsImpl.h"
@@ -26,6 +27,15 @@ namespace layers {
 class GeckoContentController {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(GeckoContentController)
+
+  
+
+
+
+
+
+  virtual void NotifyLayerTransforms(
+      const nsTArray<MatrixMessage>& aTransforms) = 0;
 
   
 
@@ -189,6 +199,11 @@ class GeckoContentController {
 
 
   virtual void Destroy() {}
+
+  
+
+
+  virtual bool IsRemote() { return false; }
 
  protected:
   

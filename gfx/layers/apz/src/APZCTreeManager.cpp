@@ -32,6 +32,7 @@
 #include "mozilla/layers/AsyncDragMetrics.h"         
 #include "mozilla/layers/CompositorBridgeParent.h"  
 #include "mozilla/layers/LayerMetricsWrapper.h"
+#include "mozilla/layers/MatrixMessage.h"
 #include "mozilla/layers/WebRenderScrollDataWrapper.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/mozalloc.h"  
@@ -552,6 +553,7 @@ APZCTreeManager::UpdateHitTestingTreeImpl(LayersId aRootLayerTreeId,
     mRootNode->Dump("  ");
   }
 #endif
+  CollectTransformsForChromeMainThread(aRootLayerTreeId);
 }
 
 void APZCTreeManager::UpdateFocusState(LayersId aRootLayerTreeId,
@@ -3169,6 +3171,38 @@ bool APZCTreeManager::GetAPZTestData(LayersId aLayersId,
   }
   *aOutData = *(it->second);
   return true;
+}
+
+void APZCTreeManager::CollectTransformsForChromeMainThread(
+    LayersId aRootLayerTreeId) {
+  RefPtr<GeckoContentController> controller =
+      GetContentController(aRootLayerTreeId);
+  if (!controller) {
+    return;
+  }
+  if (controller->IsRemote() && !gfxPrefs::FissionApzMatricesWithGpuProcess()) {
+    
+    
+    
+    return;
+  }
+  nsTArray<MatrixMessage> messages;
+  {
+    RecursiveMutexAutoLock lock(mTreeLock);
+    
+    
+    
+    ForEachNode<ReverseIterator>(
+        mRootNode.get(), [&messages](HitTestingTreeNode* aNode) {
+          LayersId layersId = aNode->GetLayersId();
+          HitTestingTreeNode* parent = aNode->GetParent();
+          if (!parent || layersId != parent->GetLayersId()) {
+            messages.AppendElement(
+                MatrixMessage(aNode->GetCSSTransformToRoot(), layersId));
+          }
+        });
+  }
+  controller->NotifyLayerTransforms(messages);
 }
 
 

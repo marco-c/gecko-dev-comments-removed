@@ -61,6 +61,11 @@ enum class PixelCastJustification : uint8_t {
   LayerIsImage,
   
   ExternalIsScreen,
+  
+  
+  
+  
+  ContentProcessIsLayerInUiProcess,
 };
 
 template <class TargetUnits, class SourceUnits>

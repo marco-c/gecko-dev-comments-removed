@@ -10,6 +10,7 @@
 #include "LayersTypes.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/layers/APZUtils.h"
+#include "mozilla/layers/MatrixMessage.h"
 #include "mozilla/layers/RepaintRequest.h"
 #include "nsIDOMWindowUtils.h"
 #include "nsRefreshDriver.h"
@@ -59,6 +60,8 @@ class APZCCallbackHelper {
   typedef mozilla::layers::ScrollableLayerGuid ScrollableLayerGuid;
 
  public:
+  static void NotifyLayerTransforms(const nsTArray<MatrixMessage>& aTransforms);
+
   
 
 

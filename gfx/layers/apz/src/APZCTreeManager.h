@@ -19,13 +19,13 @@
 #include "mozilla/layers/APZTestData.h"       
 #include "mozilla/layers/IAPZCTreeManager.h"  
 #include "mozilla/layers/LayersTypes.h"
-#include "mozilla/layers/KeyboardMap.h"  
-#include "mozilla/layers/TouchCounter.h" 
-#include "mozilla/RecursiveMutex.h"      
-#include "mozilla/RefPtr.h"              
-#include "mozilla/TimeStamp.h"           
-#include "mozilla/UniquePtr.h"           
-#include "nsCOMPtr.h"                    
+#include "mozilla/layers/KeyboardMap.h"   
+#include "mozilla/layers/TouchCounter.h"  
+#include "mozilla/RecursiveMutex.h"       
+#include "mozilla/RefPtr.h"               
+#include "mozilla/TimeStamp.h"            
+#include "mozilla/UniquePtr.h"            
+#include "nsCOMPtr.h"                     
 
 #if defined(MOZ_WIDGET_ANDROID)
 #  include "mozilla/layers/AndroidDynamicToolbarAnimator.h"
@@ -499,6 +499,13 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
                               EventMessage aEventMessage) override;
 
   bool GetAPZTestData(LayersId aLayersId, APZTestData* aOutData);
+
+  
+
+
+
+
+  void CollectTransformsForChromeMainThread(LayersId aRootLayerTreeId);
 
   
 

@@ -518,6 +518,9 @@ class TabParent final : public PBrowserParent,
   
   LayoutDeviceToLayoutDeviceMatrix4x4 GetChildToParentConversionMatrix();
 
+  void SetChildToParentConversionMatrix(
+      const LayoutDeviceToLayoutDeviceMatrix4x4& aMatrix);
+
   
   
   
@@ -766,6 +769,8 @@ class TabParent final : public PBrowserParent,
 
   layout::RenderFrame mRenderFrame;
   LayersObserverEpoch mLayerTreeEpoch;
+
+  Maybe<LayoutDeviceToLayoutDeviceMatrix4x4> mChildToParentConversionMatrix;
 
   
   

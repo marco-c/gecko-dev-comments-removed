@@ -2004,10 +2004,16 @@ LayoutDeviceIntRect TabParent::TransformChildToParent(
 
 LayoutDeviceToLayoutDeviceMatrix4x4
 TabParent::GetChildToParentConversionMatrix() {
-  
-  
+  if (mChildToParentConversionMatrix) {
+    return *mChildToParentConversionMatrix;
+  }
   LayoutDevicePoint offset(-GetChildProcessOffset());
   return LayoutDeviceToLayoutDeviceMatrix4x4::Translation(offset);
+}
+
+void TabParent::SetChildToParentConversionMatrix(
+    const LayoutDeviceToLayoutDeviceMatrix4x4& aMatrix) {
+  mChildToParentConversionMatrix = Some(aMatrix);
 }
 
 LayoutDeviceIntPoint TabParent::GetChildProcessOffset() {
