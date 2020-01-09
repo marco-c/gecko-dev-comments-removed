@@ -187,10 +187,10 @@ class MediaDecoderStateMachine
   void SetOutputStreamPrincipal(const nsCOMPtr<nsIPrincipal>& aPrincipal);
   void SetOutputStreamCORSMode(CORSMode aCORSMode);
   
+  void EnsureOutputStreamManager(MediaStreamGraph* aGraph);
   
   
-  void EnsureOutputStreamManager(MediaStreamGraph* aGraph,
-                                 const Maybe<MediaInfo>& aLoadedInfo);
+  void EnsureOutputStreamManagerHasTracks(const MediaInfo& aLoadedInfo);
   
   
   void AddOutputStream(DOMMediaStream* aStream);

@@ -77,16 +77,14 @@ class OutputStreamManager {
   
   void Remove(DOMMediaStream* aDOMStream);
   
-  bool HasTrack(TrackID aTrackID);
+  bool HasTrackType(MediaSegment::Type aType);
   
   
   bool HasTracks(TrackID aAudioTrack, TrackID aVideoTrack);
   
   size_t NumberOfTracks();
   
-  void AddTrack(TrackID aTrackID, MediaSegment::Type aType);
-  
-  void RemoveTrack(TrackID aTrackID);
+  void AddTrack(MediaSegment::Type aType);
   
   void RemoveTracks();
   
@@ -104,7 +102,7 @@ class OutputStreamManager {
   TrackID NextTrackID() const;
   
   
-  TrackID AllocateNextTrackID();
+  TrackID GetLiveTrackIDFor(MediaSegment::Type aType) const;
   
   
   void SetPlaying(bool aPlaying);
@@ -135,11 +133,21 @@ class OutputStreamManager {
   };
   struct TrackTypeComparator {
     static bool Equals(const Pair<TrackID, MediaSegment::Type>& aLiveTrack,
+                       MediaSegment::Type aType) {
+      return aLiveTrack.second() == aType;
+    }
+  };
+  struct TrackComparator {
+    static bool Equals(const Pair<TrackID, MediaSegment::Type>& aLiveTrack,
                        const Pair<TrackID, MediaSegment::Type>& aOther) {
       return aLiveTrack.first() == aOther.first() &&
              aLiveTrack.second() == aOther.second();
     }
   };
+
+  
+  void RemoveTrack(TrackID aTrackID);
+
   nsTArray<UniquePtr<OutputStreamData>> mStreams;
   nsTArray<Pair<TrackID, MediaSegment::Type>> mLiveTracks;
   Canonical<PrincipalHandle> mPrincipalHandle;
