@@ -310,8 +310,15 @@ class UrlbarInput {
       allowInheritPrincipal: false,
     };
 
-    
-    
+    if (result.autofill) {
+      
+      
+      let canonizedUrl = this._maybeCanonizeURL(event, this._lastSearchString);
+      if (canonizedUrl) {
+        this._loadURL(canonizedUrl, where, openParams);
+        return;
+      }
+    }
 
     switch (result.type) {
       case UrlbarUtils.RESULT_TYPE.TAB_SWITCH: {
