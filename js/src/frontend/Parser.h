@@ -1359,12 +1359,8 @@ class MOZ_STACK_CLASS GeneralParser : public PerHandlerParser<ParseHandler> {
   Node propertyName(YieldHandling yieldHandling,
                     PropertyNameContext propertyNameContext,
                     const mozilla::Maybe<DeclarationKind>& maybeDecl,
-                    ListNodeType propList, MutableHandleAtom propAtom);
-  Node propertyOrMethodName(YieldHandling yieldHandling,
-                            PropertyNameContext propertyNameContext,
-                            const mozilla::Maybe<DeclarationKind>& maybeDecl,
-                            ListNodeType propList, PropertyType* propType,
-                            MutableHandleAtom propAtom);
+                    ListNodeType propList, PropertyType* propType,
+                    MutableHandleAtom propAtom);
   UnaryNodeType computedPropertyName(
       YieldHandling yieldHandling,
       const mozilla::Maybe<DeclarationKind>& maybeDecl,
@@ -1426,17 +1422,7 @@ class MOZ_STACK_CLASS GeneralParser : public PerHandlerParser<ParseHandler> {
       GeneratorKind generatorKind, FunctionAsyncKind asyncKind, bool tryAnnexB,
       Directives inheritedDirectives, Directives* newDirectives);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  bool matchOrInsertSemicolon(Modifier modifier = TokenStream::SlashIsRegExp);
+  bool matchOrInsertSemicolon();
 
   bool noteDeclaredName(HandlePropertyName name, DeclarationKind kind,
                         TokenPos pos);
