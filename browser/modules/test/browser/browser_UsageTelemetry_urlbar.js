@@ -510,7 +510,6 @@ add_task(async function test_suggestion_rightclick() {
 add_task(async function test_privateWindow() {
   
   
-  
   SearchTelemetry.overrideSearchTelemetryForTests({
     "example": {
       "regexp": "^http://example\\.com/",
