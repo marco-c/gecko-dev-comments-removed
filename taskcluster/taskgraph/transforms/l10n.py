@@ -344,8 +344,9 @@ def chunk_locales(config, jobs):
 @transforms.add
 def mh_config_replace_project(config, jobs):
     """ Replaces {project} in mh config entries with the current project """
-    
     for job in jobs:
+        job['mozharness'].setdefault('extra-config', {})['branch'] = config.params['project']
+        
         job['mozharness']['config'] = map(
             lambda x: x.format(project=config.params['project']),
             job['mozharness']['config']
