@@ -1838,8 +1838,6 @@ class XPCWrappedJSIterator final : public nsISimpleEnumerator {
 
 class XPCConvert {
  public:
-  static bool IsMethodReflectable(const nsXPTMethodInfo& info);
-
   
 
 
