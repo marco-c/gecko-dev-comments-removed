@@ -352,14 +352,14 @@ struct SizeComputationInput {
 struct ReflowInput : public SizeComputationInput {
   
   
-  const ReflowInput* mParentReflowInput;
+  const ReflowInput* mParentReflowInput = nullptr;
 
   
   
-  nsFloatManager* mFloatManager;
+  nsFloatManager* mFloatManager = nullptr;
 
   
-  nsLineLayout* mLineLayout;
+  nsLineLayout* mLineLayout = nullptr;
 
   
   
@@ -647,14 +647,14 @@ struct ReflowInput : public SizeComputationInput {
 
   
   
-  nsIPercentBSizeObserver* mPercentBSizeObserver;
+  nsIPercentBSizeObserver* mPercentBSizeObserver = nullptr;
 
   
   
   
   
   
-  nsIFrame** mDiscoveredClearance;
+  nsIFrame** mDiscoveredClearance = nullptr;
 
   ReflowInputFlags mFlags;
 
