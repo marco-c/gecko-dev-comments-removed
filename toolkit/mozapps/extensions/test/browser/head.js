@@ -1423,3 +1423,26 @@ function acceptAppMenuNotificationWhenShown(id) {
     PanelUI.notificationPanel.addEventListener("popupshown", popupshown);
   });
 }
+
+function assertTelemetryMatches(events, {filterMethods} = {}) {
+  let snapshot = Services.telemetry.snapshotEvents(
+    Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, true);
+
+  if (events.length == 0) {
+    ok(!snapshot.parent || snapshot.parent.length == 0, "There are no telemetry events");
+    return;
+  }
+
+  
+  ok(snapshot.parent && snapshot.parent.length > 0, "Got parent telemetry events in the snapshot");
+
+  
+  
+  let relatedEvents = snapshot.parent.filter(([timestamp, category, method]) => {
+    return category == "addonsManager" && (filterMethods ? filterMethods.includes(method) : true);
+  }).map(relatedEvent => relatedEvent.slice(2, 6));
+
+  
+  Assert.deepEqual(relatedEvents, events, "The events are recorded correctly");
+}
+
