@@ -260,7 +260,8 @@ class UrlbarView {
     this.panel.setAttribute("width", width);
 
     
-    this._mainContainer.style.maxWidth = (width - 2) + "px";
+    let contentWidth = width - 2;
+    this._mainContainer.style.maxWidth = contentWidth + "px";
 
     
     
@@ -289,10 +290,12 @@ class UrlbarView {
 
       this.panel.style.setProperty("--item-padding-start", Math.round(start) + "px");
       this.panel.style.setProperty("--item-padding-end", Math.round(endOffset) + "px");
+      contentWidth -= start + endOffset;
     } else {
       this.panel.style.removeProperty("--item-padding-start");
       this.panel.style.removeProperty("--item-padding-end");
     }
+    this.panel.style.setProperty("--item-content-width", Math.round(contentWidth) + "px");
   }
 
   _createRow(resultIndex) {
