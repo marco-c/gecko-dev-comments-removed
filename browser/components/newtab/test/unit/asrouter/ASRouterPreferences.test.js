@@ -14,7 +14,8 @@ const CFR_USER_PREF_FEATURES = "browser.newtabpage.activity-stream.asrouter.user
 
 
 
-const NUMBER_OF_PREFS_TO_OBSERVE = 5;
+
+const NUMBER_OF_PREFS_TO_OBSERVE = 6;
 
 describe("ASRouterPreferences", () => {
   let ASRouterPreferences;
