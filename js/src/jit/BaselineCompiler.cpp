@@ -1005,18 +1005,89 @@ void BaselineCompilerCodeGen::emitPreInitEnvironmentChain(
 template <>
 void BaselineInterpreterCodeGen::emitPreInitEnvironmentChain(
     Register nonFunctionEnv) {
-  MOZ_CRASH("NYI: interpreter emitPreInitEnvironmentChain");
+  Label notFunction, done;
+  masm.branchTestPtr(Assembler::NonZero, frame.addressOfCalleeToken(),
+                     Imm32(CalleeTokenScriptBit), &notFunction);
+  {
+    masm.storePtr(ImmPtr(nullptr), frame.addressOfEnvironmentChain());
+    masm.jump(&done);
+  }
+  masm.bind(&notFunction);
+  { masm.storePtr(nonFunctionEnv, frame.addressOfEnvironmentChain()); }
+  masm.bind(&done);
 }
 
 template <>
-bool BaselineCompilerCodeGen::initEnvironmentChain() {
+void BaselineCompilerCodeGen::emitInitFrameFields() {
+  masm.store32(Imm32(0), frame.addressOfFlags());
+}
+
+template <>
+void BaselineInterpreterCodeGen::emitInitFrameFields() {
+  MOZ_CRASH("NYI: interpreter emitInitFrameFields");
+}
+
+template <>
+template <typename F1, typename F2>
+bool BaselineCompilerCodeGen::initEnvironmentChainHelper(
+    const F1& initFunctionEnv, const F2& initGlobalOrEvalEnv,
+    Register scratch) {
+  if (handler.function()) {
+    return initFunctionEnv();
+  }
+  if (handler.module()) {
+    return true;
+  }
+  return initGlobalOrEvalEnv();
+}
+
+template <>
+template <typename F1, typename F2>
+bool BaselineInterpreterCodeGen::initEnvironmentChainHelper(
+    const F1& initFunctionEnv, const F2& initGlobalOrEvalEnv,
+    Register scratch) {
+  
+  
+  
+  
+  
+
+  Label notFunction, done;
+  masm.loadPtr(frame.addressOfCalleeToken(), scratch);
+  masm.branchTestPtr(Assembler::NonZero, scratch, Imm32(CalleeTokenScriptBit),
+                     &notFunction);
+  {
+    if (!initFunctionEnv()) {
+      return false;
+    }
+    masm.jump(&done);
+  }
+  masm.bind(&notFunction);
+  {
+    masm.andPtr(Imm32(uint32_t(CalleeTokenMask)), scratch);
+    masm.branchTest32(Assembler::NonZero,
+                      Address(scratch, JSScript::offsetOfImmutableFlags()),
+                      Imm32(uint32_t(JSScript::ImmutableFlags::IsModule)),
+                      &done);
+    {
+      if (!initGlobalOrEvalEnv()) {
+        return false;
+      }
+    }
+  }
+
+  masm.bind(&done);
+  return true;
+}
+
+template <typename Handler>
+bool BaselineCodeGen<Handler>::initEnvironmentChain() {
   CallVMPhase phase = POST_INITIALIZE;
   if (handler.needsEarlyStackCheck()) {
     phase = CHECK_OVER_RECURSED;
   }
 
-  RootedFunction fun(cx, handler.function());
-  if (fun) {
+  auto initFunctionEnv = [this, phase]() {
     
     
     
@@ -1026,7 +1097,7 @@ bool BaselineCompilerCodeGen::initEnvironmentChain() {
     masm.loadPtr(Address(callee, JSFunction::offsetOfEnvironment()), scope);
     masm.storePtr(scope, frame.addressOfEnvironmentChain());
 
-    if (fun->needsFunctionEnvironmentObjects()) {
+    auto initEnv = [this, phase]() {
       
       prepareVMCall();
 
@@ -1034,11 +1105,14 @@ bool BaselineCompilerCodeGen::initEnvironmentChain() {
       pushArg(R0.scratchReg());
 
       using Fn = bool (*)(JSContext*, BaselineFrame*);
-      if (!callVMNonOp<Fn, jit::InitFunctionEnvironmentObjects>(phase)) {
-        return false;
-      }
-    }
-  } else if (!handler.module()) {
+      return callVMNonOp<Fn, jit::InitFunctionEnvironmentObjects>(phase);
+    };
+    return emitTestScriptFlag(
+        JSScript::ImmutableFlags::NeedsFunctionEnvironmentObjects, true,
+        initEnv, R2.scratchReg());
+  };
+
+  auto initGlobalOrEvalEnv = [this, phase]() {
     
     
     
@@ -1050,17 +1124,11 @@ bool BaselineCompilerCodeGen::initEnvironmentChain() {
     pushArg(R0.scratchReg());
 
     using Fn = bool (*)(JSContext*, HandleObject, HandleScript);
-    if (!callVMNonOp<Fn, js::CheckGlobalOrEvalDeclarationConflicts>(phase)) {
-      return false;
-    }
-  }
+    return callVMNonOp<Fn, js::CheckGlobalOrEvalDeclarationConflicts>(phase);
+  };
 
-  return true;
-}
-
-template <>
-bool BaselineInterpreterCodeGen::initEnvironmentChain() {
-  MOZ_CRASH("NYI: interpreter initEnvironmentChain");
+  return initEnvironmentChainHelper(initFunctionEnv, initGlobalOrEvalEnv,
+                                    R2.scratchReg());
 }
 
 template <typename Handler>
@@ -6056,7 +6124,7 @@ bool BaselineCodeGen<Handler>::emitPrologue() {
   
 
   
-  masm.store32(Imm32(0), frame.addressOfFlags());
+  emitInitFrameFields();
 
   
   
