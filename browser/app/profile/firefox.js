@@ -1862,10 +1862,6 @@ pref("prio.publicKeyB", "26E6674E65425B823F1F1D5F96E3BB3EF9E406EC7FBA7DEF8B08A35
 pref("toolkit.coverage.enabled", false);
 pref("toolkit.coverage.endpoint.base", "https://coverage.mozilla.org");
 
-#if defined(NIGHTLY_BUILD)
-pref("toolkit.telemetry.prioping.enabled", true);
-#endif
-
 
 pref("browser.discovery.enabled", true);
 pref("browser.discovery.containers.enabled", true);
