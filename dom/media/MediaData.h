@@ -296,9 +296,11 @@ class MediaData {
 
   media::TimeUnit GetEndTime() const { return mTime + mDuration; }
 
+  
+  
   virtual bool AdjustForStartTime(int64_t aStartTime) {
-    mTime = mTime - media::TimeUnit::FromMicroseconds(aStartTime);
-    return !mTime.IsNegative();
+    mTime -= media::TimeUnit::FromMicroseconds(aStartTime);
+    return mTime.IsValid();
   }
 
   template <typename ReturnType>
@@ -367,6 +369,8 @@ class AudioData : public MediaData {
   
   bool IsAudible() const;
 
+  
+  
   bool AdjustForStartTime(int64_t aStartTime) override;
 
   const uint32_t mChannels;
