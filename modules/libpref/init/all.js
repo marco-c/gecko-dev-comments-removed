@@ -5612,6 +5612,9 @@ pref("network.trr.max-fails", 5);
 
 pref("network.trr.excluded-domains", "localhost,local");
 
+
+pref("network.traffic_analyzer.enabled", true);
+
 pref("captivedetect.canonicalURL", "http://detectportal.firefox.com/success.txt");
 pref("captivedetect.canonicalContent", "success\n");
 pref("captivedetect.maxWaitingTime", 5000);
