@@ -37,7 +37,7 @@ uint32_t CPU::GetCacheType() {
   
   __asm__ __volatile__ ("mrs %[ctr], ctr_el0"  
                         : [ctr] "=r" (cache_type_register));
-  VIXL_ASSERT(is_uint32(cache_type_register));
+  VIXL_ASSERT(IsUint32(cache_type_register));
   return cache_type_register;
 #else
   

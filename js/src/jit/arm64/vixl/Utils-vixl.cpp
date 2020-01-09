@@ -26,95 +26,153 @@
 
 #include "jit/arm64/vixl/Utils-vixl.h"
 
-#include "mozilla/MathAlgorithms.h"
-
-#include <stdio.h>
+#include <cstdio>
 
 namespace vixl {
 
-uint32_t float_to_rawbits(float value) {
+
+const double kFP64DefaultNaN = RawbitsToDouble(UINT64_C(0x7ff8000000000000));
+const float kFP32DefaultNaN = RawbitsToFloat(0x7fc00000);
+const Float16 kFP16DefaultNaN = RawbitsToFloat16(0x7e00);
+
+
+const Float16 kFP16PositiveZero = RawbitsToFloat16(0x0);
+const Float16 kFP16NegativeZero = RawbitsToFloat16(0x8000);
+
+
+const Float16 kFP16PositiveInfinity = RawbitsToFloat16(0x7c00);
+const Float16 kFP16NegativeInfinity = RawbitsToFloat16(0xfc00);
+const float kFP32PositiveInfinity = RawbitsToFloat(0x7f800000);
+const float kFP32NegativeInfinity = RawbitsToFloat(0xff800000);
+const double kFP64PositiveInfinity =
+    RawbitsToDouble(UINT64_C(0x7ff0000000000000));
+const double kFP64NegativeInfinity =
+    RawbitsToDouble(UINT64_C(0xfff0000000000000));
+
+bool IsZero(Float16 value) {
+  uint16_t bits = Float16ToRawbits(value);
+  return (bits == Float16ToRawbits(kFP16PositiveZero) ||
+          bits == Float16ToRawbits(kFP16NegativeZero));
+}
+
+uint16_t Float16ToRawbits(Float16 value) { return value.rawbits_; }
+
+uint32_t FloatToRawbits(float value) {
   uint32_t bits = 0;
   memcpy(&bits, &value, 4);
   return bits;
 }
 
 
-uint64_t double_to_rawbits(double value) {
+uint64_t DoubleToRawbits(double value) {
   uint64_t bits = 0;
   memcpy(&bits, &value, 8);
   return bits;
 }
 
 
-float rawbits_to_float(uint32_t bits) {
+Float16 RawbitsToFloat16(uint16_t bits) {
+  Float16 f;
+  f.rawbits_ = bits;
+  return f;
+}
+
+
+float RawbitsToFloat(uint32_t bits) {
   float value = 0.0;
   memcpy(&value, &bits, 4);
   return value;
 }
 
 
-double rawbits_to_double(uint64_t bits) {
+double RawbitsToDouble(uint64_t bits) {
   double value = 0.0;
   memcpy(&value, &bits, 8);
   return value;
 }
 
 
-uint32_t float_sign(float val) {
-  uint32_t rawbits = float_to_rawbits(val);
-  return unsigned_bitextract_32(31, 31, rawbits);
+uint32_t Float16Sign(internal::SimFloat16 val) {
+  uint16_t rawbits = Float16ToRawbits(val);
+  return ExtractUnsignedBitfield32(15, 15, rawbits);
 }
 
 
-uint32_t float_exp(float val) {
-  uint32_t rawbits = float_to_rawbits(val);
-  return unsigned_bitextract_32(30, 23, rawbits);
+uint32_t Float16Exp(internal::SimFloat16 val) {
+  uint16_t rawbits = Float16ToRawbits(val);
+  return ExtractUnsignedBitfield32(14, 10, rawbits);
+}
+
+uint32_t Float16Mantissa(internal::SimFloat16 val) {
+  uint16_t rawbits = Float16ToRawbits(val);
+  return ExtractUnsignedBitfield32(9, 0, rawbits);
 }
 
 
-uint32_t float_mantissa(float val) {
-  uint32_t rawbits = float_to_rawbits(val);
-  return unsigned_bitextract_32(22, 0, rawbits);
+uint32_t FloatSign(float val) {
+  uint32_t rawbits = FloatToRawbits(val);
+  return ExtractUnsignedBitfield32(31, 31, rawbits);
 }
 
 
-uint32_t double_sign(double val) {
-  uint64_t rawbits = double_to_rawbits(val);
-  return static_cast<uint32_t>(unsigned_bitextract_64(63, 63, rawbits));
+uint32_t FloatExp(float val) {
+  uint32_t rawbits = FloatToRawbits(val);
+  return ExtractUnsignedBitfield32(30, 23, rawbits);
 }
 
 
-uint32_t double_exp(double val) {
-  uint64_t rawbits = double_to_rawbits(val);
-  return static_cast<uint32_t>(unsigned_bitextract_64(62, 52, rawbits));
+uint32_t FloatMantissa(float val) {
+  uint32_t rawbits = FloatToRawbits(val);
+  return ExtractUnsignedBitfield32(22, 0, rawbits);
 }
 
 
-uint64_t double_mantissa(double val) {
-  uint64_t rawbits = double_to_rawbits(val);
-  return unsigned_bitextract_64(51, 0, rawbits);
+uint32_t DoubleSign(double val) {
+  uint64_t rawbits = DoubleToRawbits(val);
+  return static_cast<uint32_t>(ExtractUnsignedBitfield64(63, 63, rawbits));
 }
 
 
-float float_pack(uint32_t sign, uint32_t exp, uint32_t mantissa) {
+uint32_t DoubleExp(double val) {
+  uint64_t rawbits = DoubleToRawbits(val);
+  return static_cast<uint32_t>(ExtractUnsignedBitfield64(62, 52, rawbits));
+}
+
+
+uint64_t DoubleMantissa(double val) {
+  uint64_t rawbits = DoubleToRawbits(val);
+  return ExtractUnsignedBitfield64(51, 0, rawbits);
+}
+
+
+internal::SimFloat16 Float16Pack(uint16_t sign,
+                                 uint16_t exp,
+                                 uint16_t mantissa) {
+  uint16_t bits = (sign << 15) | (exp << 10) | mantissa;
+  return RawbitsToFloat16(bits);
+}
+
+
+float FloatPack(uint32_t sign, uint32_t exp, uint32_t mantissa) {
   uint32_t bits = (sign << 31) | (exp << 23) | mantissa;
-  return rawbits_to_float(bits);
+  return RawbitsToFloat(bits);
 }
 
 
-double double_pack(uint64_t sign, uint64_t exp, uint64_t mantissa) {
+double DoublePack(uint64_t sign, uint64_t exp, uint64_t mantissa) {
   uint64_t bits = (sign << 63) | (exp << 52) | mantissa;
-  return rawbits_to_double(bits);
+  return RawbitsToDouble(bits);
 }
 
 
-int float16classify(float16 value) {
+int Float16Classify(Float16 value) {
+  uint16_t bits = Float16ToRawbits(value);
   uint16_t exponent_max = (1 << 5) - 1;
   uint16_t exponent_mask = exponent_max << 10;
   uint16_t mantissa_mask = (1 << 10) - 1;
 
-  uint16_t exponent = (value & exponent_mask) >> 10;
-  uint16_t mantissa = value & mantissa_mask;
+  uint16_t exponent = (bits & exponent_mask) >> 10;
+  uint16_t mantissa = bits & mantissa_mask;
   if (exponent == 0) {
     if (mantissa == 0) {
       return FP_ZERO;
@@ -140,6 +198,358 @@ unsigned CountClearHalfWords(uint64_t imm, unsigned reg_size) {
     imm >>= 16;
   }
   return count;
+}
+
+
+int BitCount(uint64_t value) { return CountSetBits(value); }
+
+
+
+Float16::Float16(double dvalue) {
+  rawbits_ =
+      Float16ToRawbits(FPToFloat16(dvalue, FPTieEven, kIgnoreDefaultNaN));
+}
+
+namespace internal {
+
+SimFloat16 SimFloat16::operator-() const {
+  return RawbitsToFloat16(rawbits_ ^ 0x8000);
+}
+
+
+SimFloat16 SimFloat16::operator+(SimFloat16 rhs) const {
+  return static_cast<double>(*this) + static_cast<double>(rhs);
+}
+
+SimFloat16 SimFloat16::operator-(SimFloat16 rhs) const {
+  return static_cast<double>(*this) - static_cast<double>(rhs);
+}
+
+SimFloat16 SimFloat16::operator*(SimFloat16 rhs) const {
+  return static_cast<double>(*this) * static_cast<double>(rhs);
+}
+
+SimFloat16 SimFloat16::operator/(SimFloat16 rhs) const {
+  return static_cast<double>(*this) / static_cast<double>(rhs);
+}
+
+bool SimFloat16::operator<(SimFloat16 rhs) const {
+  return static_cast<double>(*this) < static_cast<double>(rhs);
+}
+
+bool SimFloat16::operator>(SimFloat16 rhs) const {
+  return static_cast<double>(*this) > static_cast<double>(rhs);
+}
+
+bool SimFloat16::operator==(SimFloat16 rhs) const {
+  if (IsNaN(*this) || IsNaN(rhs)) {
+    return false;
+  } else if (IsZero(rhs) && IsZero(*this)) {
+    
+    return true;
+  }
+  return this->rawbits_ == rhs.rawbits_;
+}
+
+bool SimFloat16::operator!=(SimFloat16 rhs) const { return !(*this == rhs); }
+
+bool SimFloat16::operator==(double rhs) const {
+  return static_cast<double>(*this) == static_cast<double>(rhs);
+}
+
+SimFloat16::operator double() const {
+  return FPToDouble(*this, kIgnoreDefaultNaN);
+}
+
+Int64 BitCount(Uint32 value) { return CountSetBits(value.Get()); }
+
+}  
+
+float FPToFloat(Float16 value, UseDefaultNaN DN, bool* exception) {
+  uint16_t bits = Float16ToRawbits(value);
+  uint32_t sign = bits >> 15;
+  uint32_t exponent =
+      ExtractUnsignedBitfield32(kFloat16MantissaBits + kFloat16ExponentBits - 1,
+                                kFloat16MantissaBits,
+                                bits);
+  uint32_t mantissa =
+      ExtractUnsignedBitfield32(kFloat16MantissaBits - 1, 0, bits);
+
+  switch (Float16Classify(value)) {
+    case FP_ZERO:
+      return (sign == 0) ? 0.0f : -0.0f;
+
+    case FP_INFINITE:
+      return (sign == 0) ? kFP32PositiveInfinity : kFP32NegativeInfinity;
+
+    case FP_SUBNORMAL: {
+      
+      
+      int shift = CountLeadingZeros(mantissa << (32 - 10));
+
+      
+      mantissa <<= (kFloatMantissaBits - kFloat16MantissaBits) + shift + 1;
+      mantissa &= (1 << kFloatMantissaBits) - 1;
+
+      
+      exponent = exponent - shift + (-15 + 127);
+      break;
+    }
+
+    case FP_NAN:
+      if (IsSignallingNaN(value)) {
+        if (exception != NULL) {
+          *exception = true;
+        }
+      }
+      if (DN == kUseDefaultNaN) return kFP32DefaultNaN;
+
+      
+      
+      
+      
+      
+      exponent = (1 << kFloatExponentBits) - 1;
+
+      
+      mantissa <<= (kFloatMantissaBits - kFloat16MantissaBits);
+      mantissa |= 1 << 22;  
+      break;
+
+    case FP_NORMAL:
+      
+      mantissa <<= (kFloatMantissaBits - kFloat16MantissaBits);
+
+      
+      exponent += (-15 + 127);
+      break;
+
+    default:
+      VIXL_UNREACHABLE();
+  }
+  return RawbitsToFloat((sign << 31) | (exponent << kFloatMantissaBits) |
+                        mantissa);
+}
+
+
+float FPToFloat(double value,
+                FPRounding round_mode,
+                UseDefaultNaN DN,
+                bool* exception) {
+  
+  VIXL_ASSERT((round_mode == FPTieEven) || (round_mode == FPRoundOdd));
+  USE(round_mode);
+
+  switch (std::fpclassify(value)) {
+    case FP_NAN: {
+      if (IsSignallingNaN(value)) {
+        if (exception != NULL) {
+          *exception = true;
+        }
+      }
+      if (DN == kUseDefaultNaN) return kFP32DefaultNaN;
+
+      
+      
+      
+      
+      uint64_t raw = DoubleToRawbits(value);
+
+      uint32_t sign = raw >> 63;
+      uint32_t exponent = (1 << 8) - 1;
+      uint32_t payload =
+          static_cast<uint32_t>(ExtractUnsignedBitfield64(50, 52 - 23, raw));
+      payload |= (1 << 22);  
+
+      return RawbitsToFloat((sign << 31) | (exponent << 23) | payload);
+    }
+
+    case FP_ZERO:
+    case FP_INFINITE: {
+      
+      
+      return static_cast<float>(value);
+    }
+
+    case FP_NORMAL:
+    case FP_SUBNORMAL: {
+      
+      
+      uint64_t raw = DoubleToRawbits(value);
+      
+      uint32_t sign = raw >> 63;
+      
+      int32_t exponent =
+          static_cast<int32_t>(ExtractUnsignedBitfield64(62, 52, raw)) - 1023;
+      
+      uint64_t mantissa = ExtractUnsignedBitfield64(51, 0, raw);
+      if (std::fpclassify(value) == FP_NORMAL) {
+        mantissa |= (UINT64_C(1) << 52);
+      }
+      return FPRoundToFloat(sign, exponent, mantissa, round_mode);
+    }
+  }
+
+  VIXL_UNREACHABLE();
+  return value;
+}
+
+
+
+double FPToDouble(Float16 value, UseDefaultNaN DN, bool* exception) {
+  
+  return FPToFloat(value, DN, exception);
+}
+
+
+double FPToDouble(float value, UseDefaultNaN DN, bool* exception) {
+  switch (std::fpclassify(value)) {
+    case FP_NAN: {
+      if (IsSignallingNaN(value)) {
+        if (exception != NULL) {
+          *exception = true;
+        }
+      }
+      if (DN == kUseDefaultNaN) return kFP64DefaultNaN;
+
+      
+      
+      
+      
+      
+      uint32_t raw = FloatToRawbits(value);
+
+      uint64_t sign = raw >> 31;
+      uint64_t exponent = (1 << 11) - 1;
+      uint64_t payload = ExtractUnsignedBitfield64(21, 0, raw);
+      payload <<= (52 - 23);           
+      payload |= (UINT64_C(1) << 51);  
+
+      return RawbitsToDouble((sign << 63) | (exponent << 52) | payload);
+    }
+
+    case FP_ZERO:
+    case FP_NORMAL:
+    case FP_SUBNORMAL:
+    case FP_INFINITE: {
+      
+      
+      
+      return static_cast<double>(value);
+    }
+  }
+
+  VIXL_UNREACHABLE();
+  return static_cast<double>(value);
+}
+
+
+Float16 FPToFloat16(float value,
+                    FPRounding round_mode,
+                    UseDefaultNaN DN,
+                    bool* exception) {
+  
+  VIXL_ASSERT(round_mode == FPTieEven);
+  USE(round_mode);
+
+  uint32_t raw = FloatToRawbits(value);
+  int32_t sign = raw >> 31;
+  int32_t exponent = ExtractUnsignedBitfield32(30, 23, raw) - 127;
+  uint32_t mantissa = ExtractUnsignedBitfield32(22, 0, raw);
+
+  switch (std::fpclassify(value)) {
+    case FP_NAN: {
+      if (IsSignallingNaN(value)) {
+        if (exception != NULL) {
+          *exception = true;
+        }
+      }
+      if (DN == kUseDefaultNaN) return kFP16DefaultNaN;
+
+      
+      
+      
+      
+      uint16_t result = (sign == 0) ? Float16ToRawbits(kFP16PositiveInfinity)
+                                    : Float16ToRawbits(kFP16NegativeInfinity);
+      result |= mantissa >> (kFloatMantissaBits - kFloat16MantissaBits);
+      result |= (1 << 9);  
+      return RawbitsToFloat16(result);
+    }
+
+    case FP_ZERO:
+      return (sign == 0) ? kFP16PositiveZero : kFP16NegativeZero;
+
+    case FP_INFINITE:
+      return (sign == 0) ? kFP16PositiveInfinity : kFP16NegativeInfinity;
+
+    case FP_NORMAL:
+    case FP_SUBNORMAL: {
+      
+      
+
+      
+      mantissa += (1 << 23);
+      return FPRoundToFloat16(sign, exponent, mantissa, round_mode);
+    }
+  }
+
+  VIXL_UNREACHABLE();
+  return kFP16PositiveZero;
+}
+
+
+Float16 FPToFloat16(double value,
+                    FPRounding round_mode,
+                    UseDefaultNaN DN,
+                    bool* exception) {
+  
+  VIXL_ASSERT(round_mode == FPTieEven);
+  USE(round_mode);
+
+  uint64_t raw = DoubleToRawbits(value);
+  int32_t sign = raw >> 63;
+  int64_t exponent = ExtractUnsignedBitfield64(62, 52, raw) - 1023;
+  uint64_t mantissa = ExtractUnsignedBitfield64(51, 0, raw);
+
+  switch (std::fpclassify(value)) {
+    case FP_NAN: {
+      if (IsSignallingNaN(value)) {
+        if (exception != NULL) {
+          *exception = true;
+        }
+      }
+      if (DN == kUseDefaultNaN) return kFP16DefaultNaN;
+
+      
+      
+      
+      
+      uint16_t result = (sign == 0) ? Float16ToRawbits(kFP16PositiveInfinity)
+                                    : Float16ToRawbits(kFP16NegativeInfinity);
+      result |= mantissa >> (kDoubleMantissaBits - kFloat16MantissaBits);
+      result |= (1 << 9);  
+      return RawbitsToFloat16(result);
+    }
+
+    case FP_ZERO:
+      return (sign == 0) ? kFP16PositiveZero : kFP16NegativeZero;
+
+    case FP_INFINITE:
+      return (sign == 0) ? kFP16PositiveInfinity : kFP16NegativeInfinity;
+    case FP_NORMAL:
+    case FP_SUBNORMAL: {
+      
+      
+
+      
+      mantissa += (UINT64_C(1) << 52);
+      return FPRoundToFloat16(sign, exponent, mantissa, round_mode);
+    }
+  }
+
+  VIXL_UNREACHABLE();
+  return kFP16PositiveZero;
 }
 
 }  
