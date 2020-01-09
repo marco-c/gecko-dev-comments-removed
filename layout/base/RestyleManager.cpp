@@ -456,6 +456,33 @@ void RestyleManager::ContentRemoved(nsIContent* aOldChild,
   }
 }
 
+static bool StateChangeMayAffectFrame(const Element& aElement,
+                                      const nsIFrame& aFrame,
+                                      EventStates aStates) {
+  if (aFrame.IsGeneratedContentFrame()) {
+    
+    return false;
+  }
+
+  const bool brokenChanged = aStates.HasAtLeastOneOfStates(
+      NS_EVENT_STATE_BROKEN | NS_EVENT_STATE_USERDISABLED |
+      NS_EVENT_STATE_SUPPRESSED);
+  const bool loadingChanged =
+      aStates.HasAtLeastOneOfStates(NS_EVENT_STATE_LOADING);
+
+  if (!brokenChanged && !loadingChanged) {
+    return false;
+  }
+
+  if (aElement.IsHTMLElement(nsGkAtoms::img)) {
+    
+    
+    return brokenChanged;
+  }
+
+  return brokenChanged || loadingChanged;
+}
+
 
 
 
@@ -471,13 +498,7 @@ static nsChangeHint ChangeForContentStateChange(const Element& aElement,
   
   
   if (nsIFrame* primaryFrame = aElement.GetPrimaryFrame()) {
-    
-    if (!primaryFrame->IsGeneratedContentFrame() &&
-        aStateMask.HasAtLeastOneOfStates(
-            NS_EVENT_STATE_BROKEN | NS_EVENT_STATE_USERDISABLED |
-            NS_EVENT_STATE_SUPPRESSED | NS_EVENT_STATE_LOADING)) {
-      
-      
+    if (StateChangeMayAffectFrame(aElement, *primaryFrame, aStateMask)) {
       return nsChangeHint_ReconstructFrame;
     }
 
