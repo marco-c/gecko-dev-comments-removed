@@ -4154,6 +4154,13 @@ const BrowserSearch = {
   },
 
   addEngine(browser, engine, uri) {
+    if (!this._searchInitComplete) {
+      
+      
+      
+      
+      return;
+    }
     
     if (browser.engines) {
       if (browser.engines.some(e => e.title == engine.title))
