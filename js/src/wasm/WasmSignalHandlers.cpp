@@ -213,7 +213,25 @@ using mozilla::DebugOnly;
 #  error "Don't know how to read/write to the thread state via the mcontext_t."
 #endif
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #if defined(__linux__) && defined(__arm__)
+#  define WASM_EMULATE_ARM_UNALIGNED_FP_ACCESS
+#endif
+
+#ifdef WASM_EMULATE_ARM_UNALIGNED_FP_ACCESS
 #  include <sys/user.h>
 #endif
 
@@ -441,7 +459,7 @@ struct AutoHandlingTrap {
   }
 };
 
-#if defined(__linux__) && defined(__arm__)
+#ifdef WASM_EMULATE_ARM_UNALIGNED_FP_ACCESS
 
 
 
@@ -1170,3 +1188,5 @@ bool wasm::HandleIllegalInstruction(const RegisterState& regs,
   *newPC = segment.trapCode();
   return true;
 }
+
+#undef WASM_EMULATE_ARM_UNALIGNED_FP_ACCESS
