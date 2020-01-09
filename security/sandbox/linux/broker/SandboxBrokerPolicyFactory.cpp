@@ -419,7 +419,7 @@ UniquePtr<SandboxBroker::Policy> SandboxBrokerPolicyFactory::GetContentPolicy(
 
   MOZ_ASSERT(NS_IsMainThread());
   
-  if (!IsContentSandboxEnabled()) {
+  if (GetEffectiveContentSandboxLevel() <= 1) {
     return nullptr;
   }
 
