@@ -3778,7 +3778,8 @@ nsresult HTMLEditor::CollapseAdjacentTextNodes(nsRange* aInRange) {
     
     nsCOMPtr<nsINode> prevSibOfRightNode = rightTextNode->GetPreviousSibling();
     if (prevSibOfRightNode && prevSibOfRightNode == leftTextNode) {
-      nsresult rv = JoinNodesWithTransaction(*leftTextNode, *rightTextNode);
+      nsresult rv = JoinNodesWithTransaction(MOZ_KnownLive(*leftTextNode),
+                                             MOZ_KnownLive(*rightTextNode));
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }

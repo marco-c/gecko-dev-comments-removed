@@ -1085,6 +1085,7 @@ class EditorBase : public nsIEditor,
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   nsresult JoinNodesWithTransaction(nsINode& aLeftNode, nsINode& aRightNode);
 
   
@@ -1403,6 +1404,7 @@ class EditorBase : public nsIEditor,
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   EditorDOMPoint JoinNodesDeepWithTransaction(nsIContent& aLeftNode,
                                               nsIContent& aRightNode);
 

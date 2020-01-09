@@ -711,7 +711,7 @@ class HTMLEditor final : public TextEditor,
   
 
 
-  nsresult CollapseAdjacentTextNodes(nsRange* aRange);
+  MOZ_CAN_RUN_SCRIPT nsresult CollapseAdjacentTextNodes(nsRange* aRange);
 
   
 
