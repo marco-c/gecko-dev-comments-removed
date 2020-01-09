@@ -28,7 +28,6 @@
 
 
 
-
 function startOfUnicodeExtensions(locale) {
     assert(typeof locale === "string", "locale is a string");
 
@@ -118,15 +117,6 @@ function getUnicodeExtensions(locale) {
 
     return Substring(locale, start, end - start);
 }
-
-
-
-
-
-
-
-
-
 
 
 
@@ -256,11 +246,9 @@ function parseLanguageTag(locale) {
 
     
     
+    
     if (!nextToken())
         return null;
-
-    
-    
 
     var language, script, region, privateuse;
     var variants = [];
@@ -272,8 +260,10 @@ function parseLanguageTag(locale) {
     
     
     
-
     
+    
+    
+
     
     if (token !== ALPHA || tokenLength === 1 || tokenLength === 4 || tokenLength > 8) {
         
@@ -303,7 +293,6 @@ function parseLanguageTag(locale) {
     }
 
     
-    
     if ((tokenLength === 2 && token === ALPHA) || (tokenLength === 3 && token === DIGIT)) {
         region = tokenStringLower();
 
@@ -314,7 +303,6 @@ function parseLanguageTag(locale) {
             return null;
     }
 
-    
     
     
     
@@ -347,6 +335,37 @@ function parseLanguageTag(locale) {
             return null;
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
