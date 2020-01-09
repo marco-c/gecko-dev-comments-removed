@@ -118,7 +118,6 @@
 #include "nsIMultiplexInputStream.h"
 #include "../../cache2/CacheFileUtils.h"
 #include "nsINetworkLinkService.h"
-#include "nsIRedirectProcessChooser.h"
 #include "mozilla/dom/PromiseNativeHandler.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/ServiceWorkerUtils.h"
@@ -2425,6 +2424,29 @@ nsresult nsHttpChannel::ContinueProcessResponse1() {
     LOG(("  continuation state has been reset"));
   }
 
+  rv = NS_OK;
+  if (mRedirectTabPromise && !mCanceled) {
+    MOZ_ASSERT(!mOnStartRequestCalled);
+
+    PushRedirectAsyncFunc(&nsHttpChannel::ContinueProcessResponse1_5);
+    rv = StartCrossProcessRedirect();
+    if (NS_SUCCEEDED(rv)) {
+      return NS_OK;
+    }
+    PopRedirectAsyncFunc(&nsHttpChannel::ContinueProcessResponse1_5);
+  }
+
+  
+  return ContinueProcessResponse1_5(rv);
+}
+
+nsresult nsHttpChannel::ContinueProcessResponse1_5(nsresult rv) {
+  if (NS_FAILED(rv) && !mCanceled) {
+    
+    Cancel(rv);
+    return CallOnStartRequest();
+  }
+
   if (mAPIRedirectToURI && !mCanceled) {
     MOZ_ASSERT(!mOnStartRequestCalled);
     nsCOMPtr<nsIURI> redirectTo;
@@ -2446,7 +2468,7 @@ nsresult nsHttpChannel::ContinueProcessResponse1() {
 }
 
 nsresult nsHttpChannel::ContinueProcessResponse2(nsresult rv) {
-  LOG(("nsHttpChannel::ContinueProcessResponse1 [this=%p, rv=%" PRIx32 "]",
+  LOG(("nsHttpChannel::ContinueProcessResponse2 [this=%p, rv=%" PRIx32 "]",
        this, static_cast<uint32_t>(rv)));
 
   if (NS_SUCCEEDED(rv)) {
@@ -7049,8 +7071,6 @@ nsHttpChannel::GetRequestMethod(nsACString &aMethod) {
 
 
 
-
-
 class DomPromiseListener final : dom::PromiseNativeHandler {
   NS_DECL_ISUPPORTS
 
@@ -7092,8 +7112,26 @@ class DomPromiseListener final : dom::PromiseNativeHandler {
 
 NS_IMPL_ISUPPORTS0(DomPromiseListener)
 
+NS_IMETHODIMP nsHttpChannel::SwitchProcessTo(dom::Promise *aTabPromise,
+                                             uint64_t aIdentifier) {
+  MOZ_ASSERT(NS_IsMainThread());
+  NS_ENSURE_ARG(aTabPromise);
+
+  LOG(("nsHttpChannel::SwitchProcessTo [this=%p]", this));
+  LogCallingScriptLocation(this);
+
+  
+  NS_ENSURE_FALSE(mOnStartRequestCalled, NS_ERROR_NOT_AVAILABLE);
+
+  mRedirectTabPromise = DomPromiseListener::Create(aTabPromise);
+  mCrossProcessRedirectIdentifier = aIdentifier;
+  return NS_OK;
+}
+
 nsresult nsHttpChannel::StartCrossProcessRedirect() {
-  nsresult rv = CheckRedirectLimit(nsIChannelEventSink::REDIRECT_INTERNAL);
+  nsresult rv;
+
+  rv = CheckRedirectLimit(nsIChannelEventSink::REDIRECT_INTERNAL);
   NS_ENSURE_SUCCESS(rv, rv);
 
   RefPtr<HttpChannelParentListener> listener = do_QueryObject(mCallbacks);
@@ -7221,37 +7259,34 @@ nsHttpChannel::OnStartRequest(nsIRequest *request, nsISupports *ctxt) {
   }
 
   
-  
-  
-  nsCOMPtr<nsIRedirectProcessChooser> requestChooser =
-      do_GetClassObject("@mozilla.org/network/processChooser");
-  if (requestChooser) {
-    nsCOMPtr<nsITabParent> tp;
-    nsCOMPtr<nsIParentChannel> parentChannel;
-    NS_QueryNotificationCallbacks(this, parentChannel);
-
-    RefPtr<dom::Promise> tabPromise;
-    rv = requestChooser->GetChannelRedirectTarget(
-        this, parentChannel, &mCrossProcessRedirectIdentifier,
-        getter_AddRefs(tabPromise));
-
-    if (NS_SUCCEEDED(rv) && tabPromise) {
-      
-      mRedirectTabPromise = DomPromiseListener::Create(tabPromise);
-
-      PushRedirectAsyncFunc(&nsHttpChannel::ContinueOnStartRequest3);
-      rv = StartCrossProcessRedirect();
-      if (NS_SUCCEEDED(rv)) {
-        return NS_OK;
-      }
-      PopRedirectAsyncFunc(&nsHttpChannel::ContinueOnStartRequest3);
-    }
-  }
-
-  
   if (!mListener) {
     MOZ_ASSERT_UNREACHABLE("mListener is null");
     return NS_OK;
+  }
+
+  
+  
+  rv = NS_OK;
+  if (mRedirectTabPromise && !mCanceled) {
+    PushRedirectAsyncFunc(&nsHttpChannel::ContinueOnStartRequest0);
+    rv = StartCrossProcessRedirect();
+    if (NS_SUCCEEDED(rv)) {
+      return NS_OK;
+    }
+    PopRedirectAsyncFunc(&nsHttpChannel::ContinueOnStartRequest0);
+  }
+
+  
+  return ContinueOnStartRequest0(rv);
+}
+
+nsresult nsHttpChannel::ContinueOnStartRequest0(nsresult result) {
+  nsresult rv;
+
+  
+  if (NS_FAILED(result) && !mCanceled) {
+    Cancel(result);
+    return CallOnStartRequest();
   }
 
   

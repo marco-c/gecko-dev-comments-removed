@@ -123,7 +123,11 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
 
   base::ProcessId OtherPid() const override;
 
-  void SetCrossProcessRedirect() { mDoingCrossProcessRedirect = true; }
+  
+  
+  
+  
+  void CancelChildCrossProcessRedirect();
 
  protected:
   
@@ -337,6 +341,9 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
   uint8_t mCacheNeedFlowControlInitialized : 1;
   uint8_t mNeedFlowControl : 1;
   uint8_t mSuspendedForFlowControl : 1;
+
+  
+  
   uint8_t mDoingCrossProcessRedirect : 1;
 
   

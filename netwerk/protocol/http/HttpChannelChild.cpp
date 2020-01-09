@@ -3798,7 +3798,7 @@ void HttpChannelChild::ActorDestroy(ActorDestroyReason aWhy) {
     
     
     
-    if (!mOnStopRequestCalled) {
+    if (!mOnStopRequestCalled && mListener) {
       DoPreOnStopRequest(NS_ERROR_ABORT);
       DoOnStopRequest(this, NS_ERROR_ABORT, mListenerContext);
     }
