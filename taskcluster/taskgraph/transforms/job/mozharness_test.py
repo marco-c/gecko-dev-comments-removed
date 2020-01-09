@@ -247,7 +247,7 @@ def mozharness_test_on_generic_worker(config, job, taskdesc):
     
     
     if test.get('run-as-administrator', False):
-        if job['worker-type'].startswith('aws-provisioner-v1/gecko-t-win10-64'):
+        if job['worker-type'].startswith('t-win10-64'):
             worker['run-as-administrator'] = True
         else:
             raise Exception('run-as-administrator not supported on {}'.format(job['worker-type']))
