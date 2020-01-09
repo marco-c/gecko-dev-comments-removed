@@ -3,15 +3,26 @@
 
 
 
+
 "use strict";
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const {XPCOMUtils} = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   AddonManager: "resource://gre/modules/AddonManager.jsm",
 });
 
 const PLUGIN_ICON_URL = "chrome://global/skin/plugins/pluginGeneric.svg";
+const PERMISSION_MASKS = {
+  enable: AddonManager.PERM_CAN_ENABLE,
+  disable: AddonManager.PERM_CAN_DISABLE,
+  uninstall: AddonManager.PERM_CAN_UNINSTALL,
+};
+
+function hasPermission(addon, permission) {
+  return !!(addon.permissions & PERMISSION_MASKS[permission]);
+}
 
 let _templates = {};
 
@@ -29,30 +40,44 @@ function importTemplate(name) {
   throw new Error(`Unknown template: ${name}`);
 }
 
-class ListView {
-  constructor({param, root}) {
-    this.type = param;
-    this.root = root;
+
+
+
+
+
+
+
+
+class AddonCard extends HTMLElement {
+  constructor() {
+    super();
+    this.connected = false;
   }
 
-  async getAddons() {
-    let addons = await AddonManager.getAddonsByTypes([this.type]);
-    addons = addons.filter(addon => !addon.isSystem);
-
-    
-    addons.sort((a, b) => a.name.localeCompare(b.name));
-    return addons;
-  }
-
-  setEnableLabel(button, disabled) {
-    if (disabled) {
-      document.l10n.setAttributes(button, "enable-addon-button");
-    } else {
-      document.l10n.setAttributes(button, "disable-addon-button");
+  connectedCallback() {
+    if (this.connected) {
+      return;
     }
+    this.connected = true;
+    this.render();
   }
 
-  updateCard(card, addon) {
+  
+
+
+
+
+
+  setAddon(addon) {
+    this.addon = addon;
+  }
+
+  
+
+
+
+  update() {
+    let {addon, card} = this;
     let icon;
     if (addon.type == "plugin") {
       icon = PLUGIN_ICON_URL;
@@ -62,19 +87,31 @@ class ListView {
     card.querySelector(".addon-icon").src = icon;
     card.querySelector(".addon-name").textContent = addon.name;
     card.querySelector(".addon-description").textContent = addon.description;
+    card.querySelector('[action="remove"]').hidden =
+      !hasPermission(addon, "uninstall");
 
-    this.setEnableLabel(
-      card.querySelector('[action="toggle-disabled"]'), addon.userDisabled);
+    let disableButton = card.querySelector('[action="toggle-disabled"]');
+    let disableAction = addon.userDisabled ? "enable" : "disable";
+    document.l10n.setAttributes(
+      disableButton, `${disableAction}-addon-button`);
+    disableButton.hidden = !hasPermission(addon, disableAction);
   }
 
-  renderAddonCard(addon) {
-    let card = importTemplate("card").firstElementChild;
-    card.setAttribute("addon-id", addon.id);
+  render() {
+    this.textContent = "";
+
+    let {addon} = this;
+    if (!addon) {
+      throw new Error("addon-card must be initialized with setAddon()");
+    }
+
+    this.card = importTemplate("card").firstElementChild;
+    this.setAttribute("addon-id", addon.id);
 
     
-    this.updateCard(card, addon);
+    this.update();
 
-    card.addEventListener("click", async (e) => {
+    this.addEventListener("click", async (e) => {
       switch (e.target.getAttribute("action")) {
         case "toggle-disabled":
           if (addon.userDisabled) {
@@ -82,58 +119,299 @@ class ListView {
           } else {
             await addon.disable();
           }
-          this.render();
           break;
         case "remove":
           await addon.uninstall();
-          this.render();
           break;
       }
     });
-    return card;
+
+    this.appendChild(this.card);
+  }
+}
+customElements.define("addon-card", AddonCard);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class AddonList extends HTMLElement {
+  constructor() {
+    super();
+    this.connected = false;
+    this.sections = [];
   }
 
-  renderSections({disabledFrag, enabledFrag}) {
-    let viewFrag = importTemplate("list");
-    let enabledSection = viewFrag.querySelector('[type="enabled"]');
-    let disabledSection = viewFrag.querySelector('[type="disabled"]');
-
+  async connectedCallback() {
+    if (this.connected) {
+      return;
+    }
+    this.connected = true;
     
-    let setSection = (section, cards) => {
-      if (cards.children.length > 0) {
-        section.appendChild(cards);
-      } else {
-        section.remove();
-      }
-    };
-
-    setSection(enabledSection, enabledFrag);
-    setSection(disabledSection, disabledFrag);
-
-    return viewFrag;
+    
+    this.registerListener();
+    
+    this.render(await this.getAddons());
   }
 
-  async render() {
-    let addons = await this.getAddons();
-
-    let disabledFrag = document.createDocumentFragment();
-    let enabledFrag = document.createDocumentFragment();
-
+  disconnectedCallback() {
     
-    for (let addon of addons) {
-      let card = this.renderAddonCard(addon);
-      if (addon.userDisabled) {
-        disabledFrag.appendChild(card);
-      } else {
-        enabledFrag.appendChild(card);
-      }
+    this.connected = false;
+    this.textContent = "";
+    this.removeListener();
+  }
+
+  
+
+
+
+
+
+
+
+
+  setSections(sections) {
+    this.sections = sections.map(section => Object.assign({}, section));
+  }
+
+  
+
+
+
+
+
+  set type(val) {
+    this.setAttribute("type", val);
+  }
+
+  get type() {
+    return this.getAttribute("type");
+  }
+
+  getSection(index) {
+    return this.sections[index].node;
+  }
+
+  getCards(section) {
+    return section.querySelectorAll("addon-card");
+  }
+
+  getCard(addon) {
+    return this.querySelector(`addon-card[addon-id="${addon.id}"]`);
+  }
+
+  sortByFn(aAddon, bAddon) {
+    return aAddon.name.localeCompare(bAddon.name);
+  }
+
+  async getAddons() {
+    if (!this.type) {
+      throw new Error(`type must be set to find add-ons`);
     }
 
     
-    let frag = this.renderSections({disabledFrag, enabledFrag});
+    let addons = await AddonManager.getAddonsByTypes([this.type]);
 
-    this.root.textContent = "";
-    this.root.appendChild(frag);
+    
+    addons.sort(this.sortByFn);
+
+    
+    
+    let sectionedAddons = this.sections.map(() => []);
+    for (let addon of addons) {
+      let index = this.sections.findIndex(({filterFn}) => filterFn(addon));
+      if (index != -1) {
+        sectionedAddons[index].push(addon);
+      }
+    }
+
+    return sectionedAddons;
+  }
+
+  createSectionHeading(headingIndex) {
+    let {headingId} = this.sections[headingIndex];
+    let heading = document.createElement("h2");
+    heading.classList.add("list-section-heading");
+    document.l10n.setAttributes(heading, headingId);
+    return heading;
+  }
+
+  updateSectionIfEmpty(section) {
+    
+    
+    if (section.children.length == 1) {
+      section.textContent = "";
+    }
+  }
+
+  insertCardInto(card, sectionIndex) {
+    let section = this.getSection(sectionIndex);
+    let sectionCards = this.getCards(section);
+
+    
+    if (sectionCards.length == 0) {
+      section.appendChild(this.createSectionHeading(sectionIndex));
+    }
+
+    
+    let insertBefore = Array.from(sectionCards).find(
+      otherCard => this.sortByFn(card.addon, otherCard.addon) < 0);
+    
+    section.insertBefore(card, insertBefore || null);
+  }
+
+  addAddon(addon) {
+    
+    if (addon.type != this.type) {
+      this.sendEvent("skip-add", "type-mismatch");
+      return;
+    }
+
+    let insertSection = this.sections.findIndex(
+      ({filterFn}) => filterFn(addon));
+
+    
+    if (insertSection == -1) {
+      return;
+    }
+
+    
+    let card = document.createElement("addon-card");
+    card.setAddon(addon);
+    this.insertCardInto(card, insertSection);
+    this.sendEvent("add", {id: addon.id});
+  }
+
+  sendEvent(name, detail) {
+    this.dispatchEvent(new CustomEvent(name, {detail}));
+  }
+
+  removeAddon(addon) {
+    let card = this.getCard(addon);
+    if (card) {
+      let section = card.parentNode;
+      card.remove();
+      this.updateSectionIfEmpty(section);
+      this.sendEvent("remove", {id: addon.id});
+    }
+  }
+
+  updateAddon(addon) {
+    let card = this.getCard(addon);
+    if (card) {
+      let sectionIndex = this.sections.findIndex(s => s.filterFn(addon));
+      if (sectionIndex != -1) {
+        card.update();
+        
+        
+        if (card.parentNode.getAttribute("section") != sectionIndex) {
+          let oldSection = card.parentNode;
+          this.insertCardInto(card, sectionIndex);
+          this.updateSectionIfEmpty(oldSection);
+          this.sendEvent("move", {id: addon.id});
+        } else {
+          this.sendEvent("update", {id: addon.id});
+        }
+      } else {
+        this.removeAddon(addon);
+      }
+    } else {
+      
+      this.addAddon(addon);
+    }
+  }
+
+  renderSection(addons, index) {
+    let section = document.createElement("section");
+    section.setAttribute("section", index);
+
+    
+    if (addons.length > 0) {
+      section.appendChild(this.createSectionHeading(index));
+
+      for (let addon of addons) {
+        let card = document.createElement("addon-card");
+        card.setAddon(addon);
+        section.appendChild(card);
+      }
+    }
+
+    return section;
+  }
+
+  render(sectionedAddons) {
+    this.textContent = "";
+
+    
+    let frag = document.createDocumentFragment();
+
+    for (let i = 0; i < sectionedAddons.length; i++) {
+      this.sections[i].node = this.renderSection(sectionedAddons[i], i);
+      frag.appendChild(this.sections[i].node);
+    }
+
+    this.appendChild(frag);
+    this.sendEvent("rendered");
+  }
+
+  registerListener() {
+    AddonManager.addAddonListener(this);
+  }
+
+  removeListener() {
+    AddonManager.removeAddonListener(this);
+  }
+
+  onEnabled(addon) {
+    this.updateAddon(addon);
+  }
+
+  onDisabled(addon) {
+    this.updateAddon(addon);
+  }
+
+  onInstalled(addon) {
+    this.addAddon(addon);
+  }
+
+  onUninstalled(addon) {
+    this.removeAddon(addon);
+  }
+}
+customElements.define("addon-list", AddonList);
+
+class ListView {
+  constructor({param, root}) {
+    this.type = param;
+    this.root = root;
+  }
+
+  async render() {
+    let list = document.createElement("addon-list");
+    list.type = this.type;
+    list.setSections([{
+      headingId: "addons-enabled-heading",
+      filterFn: addon => !addon.hidden && addon.isActive,
+    }, {
+      headingId: "addons-disabled-heading",
+      filterFn: addon => !addon.hidden && !addon.isActive,
+    }]);
+
+    await new Promise(resolve => {
+      list.addEventListener("rendered", resolve, {once: true});
+
+      this.root.textContent = "";
+      this.root.appendChild(list);
+    });
   }
 }
 
@@ -145,6 +423,11 @@ let root = null;
 
 function initialize() {
   root = document.getElementById("main");
+  window.addEventListener("unload", () => {
+    
+    
+    root.textContent = "";
+  }, {once: true});
 }
 
 
