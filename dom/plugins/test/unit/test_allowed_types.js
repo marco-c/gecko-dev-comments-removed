@@ -23,7 +23,7 @@ function run_test() {
   function get_status_for_type(type) {
     try {
       return pluginHost.getStateForType(type);
-    } catch(ex) {
+    } catch (ex) {
       
       
       
