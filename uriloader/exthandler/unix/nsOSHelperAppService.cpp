@@ -1039,8 +1039,8 @@ nsresult nsOSHelperAppService::OSProtocolHandlerExists(
     nsCOMPtr<nsIHandlerService> handlerSvc =
         do_GetService(NS_HANDLERSERVICE_CONTRACTID, &rv);
     if (NS_SUCCEEDED(rv) && handlerSvc) {
-      rv = handlerSvc->ExistsForProtocolOS(nsCString(aProtocolScheme),
-                                           aHandlerExists);
+      rv = handlerSvc->ExistsForProtocol(nsCString(aProtocolScheme),
+                                         aHandlerExists);
     }
   }
 
@@ -1324,10 +1324,8 @@ already_AddRefed<nsMIMEInfoBase> nsOSHelperAppService::GetFromType(
   return mimeInfo.forget();
 }
 
-nsresult nsOSHelperAppService::GetMIMEInfoFromOS(const nsACString& aType,
-                                                 const nsACString& aFileExt,
-                                                 bool* aFound,
-                                                 nsIMIMEInfo** aMIMEInfo) {
+already_AddRefed<nsIMIMEInfo> nsOSHelperAppService::GetMIMEInfoFromOS(
+    const nsACString& aType, const nsACString& aFileExt, bool* aFound) {
   *aFound = true;
   RefPtr<nsMIMEInfoBase> retval;
   
@@ -1341,18 +1339,14 @@ nsresult nsOSHelperAppService::GetMIMEInfoFromOS(const nsACString& aType,
     RefPtr<nsMIMEInfoBase> miByExt =
         GetFromExtension(PromiseFlatCString(aFileExt));
     
-    if (!miByExt && retval) {
-      retval.forget(aMIMEInfo);
-      return NS_OK;
-    }
+    if (!miByExt && retval) return retval.forget();
     
     
     if (!retval && miByExt) {
       if (!aType.IsEmpty()) miByExt->SetMIMEType(aType);
       miByExt.swap(retval);
 
-      retval.forget(aMIMEInfo);
-      return NS_OK;
+      return retval.forget();
     }
     
     if (!retval) {
@@ -1362,8 +1356,7 @@ nsresult nsOSHelperAppService::GetMIMEInfoFromOS(const nsACString& aType,
         if (!aFileExt.IsEmpty()) retval->AppendExtension(aFileExt);
       }
 
-      retval.forget(aMIMEInfo);
-      return NS_OK;
+      return retval.forget();
     }
 
     
@@ -1376,8 +1369,7 @@ nsresult nsOSHelperAppService::GetMIMEInfoFromOS(const nsACString& aType,
 
     miByExt.swap(retval);
   }
-  retval.forget(aMIMEInfo);
-  return NS_OK;
+  return retval.forget();
 }
 
 NS_IMETHODIMP

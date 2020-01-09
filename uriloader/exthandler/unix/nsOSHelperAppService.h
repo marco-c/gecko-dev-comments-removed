@@ -24,9 +24,9 @@ class nsOSHelperAppService : public nsExternalHelperAppService {
   virtual ~nsOSHelperAppService();
 
   
-  NS_IMETHOD GetMIMEInfoFromOS(const nsACString& aMimeType,
-                               const nsACString& aFileExt, bool* aFound,
-                               nsIMIMEInfo** aMIMEInfo) override;
+  already_AddRefed<nsIMIMEInfo> GetMIMEInfoFromOS(const nsACString& aMimeType,
+                                                  const nsACString& aFileExt,
+                                                  bool* aFound) override;
   NS_IMETHOD GetProtocolHandlerInfoFromOS(const nsACString& aScheme,
                                           bool* found,
                                           nsIHandlerInfo** _retval) override;
