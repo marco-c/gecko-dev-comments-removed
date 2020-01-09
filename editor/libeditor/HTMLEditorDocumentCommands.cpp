@@ -41,6 +41,10 @@ namespace mozilla {
 
 
 
+
+
+StaticRefPtr<SetDocumentStateCommand> SetDocumentStateCommand::sInstance;
+
 NS_IMETHODIMP
 SetDocumentStateCommand::IsCommandEnabled(const char* aCommandName,
                                           nsISupports* refCon,
@@ -439,6 +443,9 @@ SetDocumentStateCommand::GetCommandStateParams(const char* aCommandName,
 
 
 
+
+
+StaticRefPtr<DocumentStateCommand> DocumentStateCommand::sInstance;
 
 NS_IMETHODIMP
 DocumentStateCommand::IsCommandEnabled(const char* aCommandName,
