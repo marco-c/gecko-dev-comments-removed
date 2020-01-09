@@ -28,28 +28,17 @@ namespace {
 
 
 
-void CreateDummyChannel(nsIURI *aHostURI, nsIURI *aChannelURI,
-                        OriginAttributes &aAttrs, nsIChannel **aChannel) {
-  nsCOMPtr<nsIPrincipal> principal =
-      BasePrincipal::CreateCodebasePrincipal(aHostURI, aAttrs);
-  if (!principal) {
-    return;
-  }
-
-  
-  
+nsresult CreateDummyChannel(nsIURI *aHostURI, nsILoadInfo *aLoadInfo,
+                            nsIChannel **aChannel) {
   nsCOMPtr<nsIChannel> dummyChannel;
-  NS_NewChannel(getter_AddRefs(dummyChannel), aChannelURI, principal,
-                nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_IS_BLOCKED,
-                nsIContentPolicy::TYPE_INVALID);
-  nsCOMPtr<nsIPrivateBrowsingChannel> pbChannel =
-      do_QueryInterface(dummyChannel);
-  if (!pbChannel) {
-    return;
+  nsresult rv =
+      NS_NewChannelInternal(getter_AddRefs(dummyChannel), aHostURI, aLoadInfo);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
   }
 
-  pbChannel->SetPrivate(aAttrs.mPrivateBrowsingId > 0);
   dummyChannel.forget(aChannel);
+  return NS_OK;
 }
 
 }  
@@ -216,10 +205,10 @@ void CookieServiceParent::ActorDestroy(ActorDestroyReason aWhy) {
 
 mozilla::ipc::IPCResult CookieServiceParent::RecvSetCookieString(
     const URIParams &aHost, const Maybe<URIParams> &aChannelURI,
-    const bool &aIsForeign, const bool &aIsTrackingResource,
+    const Maybe<LoadInfoArgs> &aLoadInfoArgs, const bool &aIsForeign,
+    const bool &aIsTrackingResource,
     const bool &aFirstPartyStorageAccessGranted, const nsCString &aCookieString,
-    const nsCString &aServerTime, const OriginAttributes &aAttrs,
-    const bool &aFromHttp) {
+    const nsCString &aServerTime, const bool &aFromHttp) {
   if (!mCookieService) return IPC_OK();
 
   
@@ -229,6 +218,10 @@ mozilla::ipc::IPCResult CookieServiceParent::RecvSetCookieString(
 
   nsCOMPtr<nsIURI> channelURI = DeserializeURI(aChannelURI);
 
+  nsCOMPtr<nsILoadInfo> loadInfo;
+  Unused << NS_WARN_IF(NS_FAILED(
+      LoadInfoArgsToLoadInfo(aLoadInfoArgs, getter_AddRefs(loadInfo))));
+
   
   
   
@@ -237,19 +230,27 @@ mozilla::ipc::IPCResult CookieServiceParent::RecvSetCookieString(
   
   
   nsCOMPtr<nsIChannel> dummyChannel;
-  CreateDummyChannel(hostURI, channelURI,
-                     const_cast<OriginAttributes &>(aAttrs),
-                     getter_AddRefs(dummyChannel));
+  nsresult rv =
+      CreateDummyChannel(channelURI, loadInfo, getter_AddRefs(dummyChannel));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    
+    return IPC_OK();
+  }
 
   
   nsDependentCString cookieString(aCookieString, 0);
+
+  OriginAttributes attrs;
+  if (loadInfo) {
+    attrs = loadInfo->GetOriginAttributes();
+  }
 
   
   
   mProcessingCookie = true;
   mCookieService->SetCookieStringInternal(
       hostURI, aIsForeign, aIsTrackingResource, aFirstPartyStorageAccessGranted,
-      cookieString, aServerTime, aFromHttp, aAttrs, dummyChannel);
+      cookieString, aServerTime, aFromHttp, attrs, dummyChannel);
   mProcessingCookie = false;
   return IPC_OK();
 }
