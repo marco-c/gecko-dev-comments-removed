@@ -357,11 +357,16 @@ function getSourceForActor(actor: ActorId) {
 
 async function fetchWorkers(): Promise<Worker[]> {
   if (features.windowlessWorkers) {
+    const options = {
+      breakpoints
+    };
+
     const newWorkerClients = await updateWorkerClients({
       tabTarget,
       debuggerClient,
       threadClient,
-      workerClients
+      workerClients,
+      options
     });
 
     
@@ -370,9 +375,6 @@ async function fetchWorkers(): Promise<Worker[]> {
       if (!workerClients[actor]) {
         const client = newWorkerClients[actor].thread;
         createSources(client);
-        for (const { location, options } of (Object.values(breakpoints): any)) {
-          client.setBreakpoint(location, options);
-        }
       }
     }
 
