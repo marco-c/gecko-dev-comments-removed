@@ -655,6 +655,9 @@ int32_t IToplevelProtocol::ToplevelState::NextId() {
   }
 
   
+  MOZ_RELEASE_ASSERT(mLastLocalId < (1 << 29));
+
+  
   
   return (++mLastLocalId << 2) | tag;
 }
