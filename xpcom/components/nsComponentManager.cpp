@@ -498,30 +498,17 @@ nsresult nsComponentManagerImpl::Init() {
     
     
     
-    
-    
 
     InitializeModuleLocations();
     ComponentLocation* cl = sModuleLocations->AppendElement();
-    nsCOMPtr<nsIFile> lf =
-        CloneAndAppend(greDir, NS_LITERAL_CSTRING("chrome.manifest"));
     cl->type = NS_APP_LOCATION;
-    cl->location.Init(lf);
-
     RefPtr<nsZipArchive> greOmnijar =
         mozilla::Omnijar::GetReader(mozilla::Omnijar::GRE);
     if (greOmnijar) {
-      cl = sModuleLocations->AppendElement();
-      cl->type = NS_APP_LOCATION;
       cl->location.Init(greOmnijar, "chrome.manifest");
-    }
-
-    bool equals = false;
-    appDir->Equals(greDir, &equals);
-    if (!equals) {
-      cl = sModuleLocations->AppendElement();
-      cl->type = NS_APP_LOCATION;
-      lf = CloneAndAppend(appDir, NS_LITERAL_CSTRING("chrome.manifest"));
+    } else {
+      nsCOMPtr<nsIFile> lf =
+          CloneAndAppend(greDir, NS_LITERAL_CSTRING("chrome.manifest"));
       cl->location.Init(lf);
     }
 
@@ -531,6 +518,16 @@ nsresult nsComponentManagerImpl::Init() {
       cl = sModuleLocations->AppendElement();
       cl->type = NS_APP_LOCATION;
       cl->location.Init(appOmnijar, "chrome.manifest");
+    } else {
+      bool equals = false;
+      appDir->Equals(greDir, &equals);
+      if (!equals) {
+        cl = sModuleLocations->AppendElement();
+        cl->type = NS_APP_LOCATION;
+        nsCOMPtr<nsIFile> lf =
+            CloneAndAppend(appDir, NS_LITERAL_CSTRING("chrome.manifest"));
+        cl->location.Init(lf);
+      }
     }
 
     RereadChromeManifests(false);
