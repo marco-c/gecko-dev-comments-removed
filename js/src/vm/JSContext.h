@@ -174,6 +174,8 @@ struct JSContext : public JS::RootingContext,
   
   js::ThreadData<js::gc::FreeLists*> atomsZoneFreeLists_;
 
+  js::ThreadData<js::FreeOp> defaultFreeOp_;
+
  public:
   
   
@@ -269,7 +271,7 @@ struct JSContext : public JS::RootingContext,
     return *runtime_->wellKnownSymbols;
   }
   js::PropertyName* emptyString() { return runtime_->emptyString; }
-  js::FreeOp* defaultFreeOp() { return runtime_->defaultFreeOp(); }
+  js::FreeOp* defaultFreeOp() { return &defaultFreeOp_.ref(); }
   void* stackLimitAddress(JS::StackKind kind) {
     return &nativeStackLimit[kind];
   }
