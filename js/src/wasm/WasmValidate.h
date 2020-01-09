@@ -126,8 +126,6 @@ struct CompilerEnvironment {
 
 
 
-
-
 struct ModuleEnvironment {
   
   const ModuleKind kind;
@@ -146,6 +144,7 @@ struct ModuleEnvironment {
   
   bool gcFeatureOptIn;
 #endif
+  Maybe<uint32_t> dataCount;
   MemoryUsage memoryUsage;
   uint32_t minMemoryLength;
   Maybe<uint32_t> maxMemoryLength;
@@ -406,43 +405,6 @@ class Encoder {
                        bytes_.length() - offset - varU32ByteLength(offset));
   }
 };
-
-
-
-
-
-struct DeferredValidationState {
-  
-  
-  
-  
-  
-  
-
-  bool haveHighestDataSegIndex;
-  uint32_t highestDataSegIndex;
-  size_t highestDataSegIndexOffset;
-
-  DeferredValidationState() { init(); }
-
-  void init() {
-    haveHighestDataSegIndex = false;
-    highestDataSegIndex = 0;
-    highestDataSegIndexOffset = 0;
-  }
-
-  
-  
-  
-  void notifyDataSegmentIndex(uint32_t segIndex, size_t offsetInModule);
-
-  
-  
-  bool performDeferredValidation(const ModuleEnvironment& env,
-                                 UniqueChars* error);
-};
-
-typedef ExclusiveData<DeferredValidationState> ExclusiveDeferredValidationState;
 
 
 
@@ -806,11 +768,9 @@ MOZ_MUST_USE bool DecodeModuleEnvironment(Decoder& d, ModuleEnvironment* env);
 
 MOZ_MUST_USE bool ValidateFunctionBody(const ModuleEnvironment& env,
                                        uint32_t funcIndex, uint32_t bodySize,
-                                       Decoder& d,
-                                       ExclusiveDeferredValidationState& dvs);
+                                       Decoder& d);
 
-MOZ_MUST_USE bool DecodeModuleTail(Decoder& d, ModuleEnvironment* env,
-                                   ExclusiveDeferredValidationState& dvs);
+MOZ_MUST_USE bool DecodeModuleTail(Decoder& d, ModuleEnvironment* env);
 
 void ConvertMemoryPagesToBytes(Limits* memory);
 

@@ -108,6 +108,14 @@ const ThreadPrefix = 0xfe;
 const MozPrefix = 0xff;
 
 
+const MemoryInitCode = 0x08;    
+const DataDropCode = 0x09;      
+const MemoryCopyCode = 0x0a;    
+const MemoryFillCode = 0x0b;    
+const TableInitCode = 0x0c;     
+const ElemDropCode = 0x0d;      
+const TableCopyCode = 0x0e;     
+
 const StructNew = 0x50;         
 const StructGet = 0x51;         
 const StructSet = 0x52;         

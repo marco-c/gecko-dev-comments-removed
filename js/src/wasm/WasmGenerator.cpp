@@ -82,7 +82,6 @@ ModuleGenerator::ModuleGenerator(const CompileArgs& args,
       debugTrapCodeOffset_(),
       lastPatchedCallSite_(0),
       startOfUnpatchedCallsites_(0),
-      deferredValidationState_(mutexid::WasmDeferredValidation),
       parallel_(false),
       outstanding_(0),
       currentTask_(nullptr),
@@ -388,10 +387,6 @@ bool ModuleGenerator::init(Metadata* maybeAsmJSMetadata) {
 
   
   
-  deferredValidationState_.lock()->init();
-
-  
-  
 
   GlobalHelperThreadState& threads = HelperThreadState();
   MOZ_ASSERT(threads.threadCount > 1);
@@ -408,7 +403,7 @@ bool ModuleGenerator::init(Metadata* maybeAsmJSMetadata) {
     return false;
   }
   for (size_t i = 0; i < numTasks; i++) {
-    tasks_.infallibleEmplaceBack(*env_, taskState_, deferredValidationState_,
+    tasks_.infallibleEmplaceBack(*env_, taskState_,
                                  COMPILATION_LIFO_DEFAULT_CHUNK_SIZE);
   }
 
@@ -708,7 +703,7 @@ static bool ExecuteCompileTask(CompileTask* task, UniqueChars* error) {
 #ifdef ENABLE_WASM_CRANELIFT
       if (task->env.optimizedBackend() == OptimizedBackend::Cranelift) {
         if (!CraneliftCompileFunctions(task->env, task->lifo, task->inputs,
-                                       &task->output, task->dvs, error)) {
+                                       &task->output, error)) {
           return false;
         }
         break;
@@ -716,13 +711,13 @@ static bool ExecuteCompileTask(CompileTask* task, UniqueChars* error) {
 #endif
       MOZ_ASSERT(task->env.optimizedBackend() == OptimizedBackend::Ion);
       if (!IonCompileFunctions(task->env, task->lifo, task->inputs,
-                               &task->output, task->dvs, error)) {
+                               &task->output, error)) {
         return false;
       }
       break;
     case Tier::Baseline:
       if (!BaselineCompileFunctions(task->env, task->lifo, task->inputs,
-                                    &task->output, task->dvs, error)) {
+                                    &task->output, error)) {
         return false;
       }
       break;
@@ -1007,14 +1002,6 @@ UniqueCodeTier ModuleGenerator::finishCodeTier() {
   }
 
   if (!linkCompiledCode(stubCode)) {
-    return nullptr;
-  }
-
-  
-  
-
-  if (!deferredValidationState_.lock()->performDeferredValidation(*env_,
-                                                                  error_)) {
     return nullptr;
   }
 

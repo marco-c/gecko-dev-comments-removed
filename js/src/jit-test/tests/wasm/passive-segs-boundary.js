@@ -114,11 +114,11 @@ mem_test("(memory.init 1 (i32.const 1234) (i32.const 1) (i32.const 1))", "",
 
 
 mem_test("data.drop 4", "",
-         WebAssembly.CompileError, /memory.{drop,init} index out of range/);
+         WebAssembly.CompileError, /data.drop segment index out of range/);
 
 
 mem_test("(memory.init 4 (i32.const 1234) (i32.const 1) (i32.const 1))", "",
-         WebAssembly.CompileError, /memory.{drop,init} index out of range/);
+         WebAssembly.CompileError, /memory.init segment index out of range/);
 
 
 mem_test("data.drop 2", "",
