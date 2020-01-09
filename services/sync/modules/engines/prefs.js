@@ -15,9 +15,6 @@ const {Svc, Utils} = ChromeUtils.import("resource://services-sync/util.js");
 const {SCORE_INCREMENT_XLARGE} = ChromeUtils.import("resource://services-sync/constants.js");
 const {CommonUtils} = ChromeUtils.import("resource://services-common/utils.js");
 
-ChromeUtils.defineModuleGetter(this, "LightweightThemeManager",
-                          "resource://gre/modules/LightweightThemeManager.jsm");
-
 XPCOMUtils.defineLazyGetter(this, "PREFS_GUID",
                             () => CommonUtils.encodeBase64URL(Services.appinfo.ID));
 
@@ -127,19 +124,7 @@ PrefStore.prototype = {
     return values;
   },
 
-  _updateLightWeightTheme(themeID) {
-    let themeObject = null;
-    if (themeID) {
-      themeObject = LightweightThemeManager.getUsedTheme(themeID);
-    }
-    LightweightThemeManager.currentTheme = themeObject;
-  },
-
   _setAllPrefs(values) {
-    let selectedThemeIDPref = "lightweightThemes.selectedThemeID";
-    let selectedThemeIDBefore = this._prefs.get(selectedThemeIDPref, null);
-    let selectedThemeIDAfter = selectedThemeIDBefore;
-
     
     
     let prefs = Object.keys(values).sort(a => -a.indexOf(PREF_SYNC_PREFS_PREFIX));
@@ -154,30 +139,16 @@ PrefStore.prototype = {
         continue;
       }
 
-      switch (pref) {
+      if (value == null) {
         
-        case selectedThemeIDPref:
-          selectedThemeIDAfter = value;
-          break;
-
-        
-        default:
-          if (value == null) {
-            
-            this._prefs.reset(pref);
-          } else {
-            try {
-              this._prefs.set(pref, value);
-            } catch (ex) {
-              this._log.trace(`Failed to set pref: ${pref}`, ex);
-            }
-          }
+        this._prefs.reset(pref);
+      } else {
+        try {
+          this._prefs.set(pref, value);
+        } catch (ex) {
+          this._log.trace(`Failed to set pref: ${pref}`, ex);
+        }
       }
-    }
-
-    
-    if (selectedThemeIDBefore != selectedThemeIDAfter) {
-      this._updateLightWeightTheme(selectedThemeIDAfter);
     }
   },
 
