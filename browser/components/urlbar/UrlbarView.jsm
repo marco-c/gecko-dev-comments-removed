@@ -69,7 +69,7 @@ class UrlbarView {
 
 
   get selectedResult() {
-    if (!this.isOpen) {
+    if (!this.isOpen || !this._selected) {
       return null;
     }
 
