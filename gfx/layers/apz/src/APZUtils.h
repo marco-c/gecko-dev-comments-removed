@@ -124,25 +124,6 @@ struct TargetConfirmationFlags {
   bool mRequiresTargetConfirmation : 1;
 };
 
-
-
-
-
-
-
-
-
-
-class MOZ_RAII AutoApplyAsyncTestAttributes {
- public:
-  explicit AutoApplyAsyncTestAttributes(const AsyncPanZoomController*);
-  ~AutoApplyAsyncTestAttributes();
-
- private:
-  AsyncPanZoomController* mApzc;
-  FrameMetrics mPrevFrameMetrics;
-};
-
 enum class AsyncTransformComponent { eLayout, eVisual };
 
 using AsyncTransformComponents = EnumSet<AsyncTransformComponent>;

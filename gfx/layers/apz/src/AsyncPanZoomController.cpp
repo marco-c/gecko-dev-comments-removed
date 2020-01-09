@@ -572,6 +572,40 @@ class MOZ_STACK_CLASS StateChangeNotificationBlocker {
   AsyncPanZoomController::PanZoomState mInitialState;
 };
 
+
+
+
+
+
+
+
+
+
+class MOZ_RAII AutoApplyAsyncTestAttributes {
+ public:
+  explicit AutoApplyAsyncTestAttributes(const AsyncPanZoomController*);
+  ~AutoApplyAsyncTestAttributes();
+
+ private:
+  AsyncPanZoomController* mApzc;
+  FrameMetrics mPrevFrameMetrics;
+};
+
+AutoApplyAsyncTestAttributes::AutoApplyAsyncTestAttributes(
+    const AsyncPanZoomController* aApzc)
+    
+    
+    
+    
+    : mApzc(const_cast<AsyncPanZoomController*>(aApzc)),
+      mPrevFrameMetrics(aApzc->Metrics()) {
+  mApzc->ApplyAsyncTestAttributes();
+}
+
+AutoApplyAsyncTestAttributes::~AutoApplyAsyncTestAttributes() {
+  mApzc->UnapplyAsyncTestAttributes(mPrevFrameMetrics);
+}
+
 class ZoomAnimation : public AsyncPanZoomAnimation {
  public:
   ZoomAnimation(AsyncPanZoomController& aApzc, const CSSPoint& aStartOffset,
