@@ -345,7 +345,7 @@ class UrlbarInput {
             browser.lastLocationChange == lastLocationChange) {
           openParams.postData = data.postData;
           openParams.allowInheritPrincipal = data.mayInheritPrincipal;
-          this._loadURL(data.url, where, openParams);
+          this._loadURL(data.url, where, openParams, browser);
         }
       });
       return;
@@ -857,9 +857,9 @@ class UrlbarInput {
 
 
 
-  _loadURL(url, openUILinkWhere, params) {
-    let browser = this.window.gBrowser.selectedBrowser;
 
+  _loadURL(url, openUILinkWhere, params,
+           browser = this.window.gBrowser.selectedBrowser) {
     this.value = url;
     browser.userTypedValue = url;
 
