@@ -137,9 +137,6 @@ DefaultJitOptions::DefaultJitOptions() {
   SET_DEFAULT(disableSink, true);
 
   
-  SET_DEFAULT(eagerCompilation, false);
-
-  
   SET_DEFAULT(forceInlineCaches, false);
 
   
@@ -264,32 +261,18 @@ bool DefaultJitOptions::isSmallFunction(JSScript* script) const {
 
 void DefaultJitOptions::enableGvn(bool enable) { disableGvn = !enable; }
 
-void DefaultJitOptions::setEagerCompilation() {
-  eagerCompilation = true;
+void DefaultJitOptions::setEagerIonCompilation() {
   baselineWarmUpThreshold = 0;
   normalIonWarmUpThreshold = 0;
 }
 
 void DefaultJitOptions::setCompilerWarmUpThreshold(uint32_t warmUpThreshold) {
   normalIonWarmUpThreshold = warmUpThreshold;
-
-  
-  if (eagerCompilation && warmUpThreshold != 0) {
-    jit::DefaultJitOptions defaultValues;
-    eagerCompilation = false;
-    baselineWarmUpThreshold = defaultValues.baselineWarmUpThreshold;
-  }
 }
 
 void DefaultJitOptions::resetCompilerWarmUpThreshold() {
   jit::DefaultJitOptions defaultValues;
   normalIonWarmUpThreshold = defaultValues.normalIonWarmUpThreshold;
-
-  
-  if (eagerCompilation) {
-    eagerCompilation = false;
-    baselineWarmUpThreshold = defaultValues.baselineWarmUpThreshold;
-  }
 }
 
 }  
