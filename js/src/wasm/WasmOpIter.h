@@ -762,12 +762,14 @@ inline bool OpIter<Policy>::readBlockType(ExprType* type) {
     case uint8_t(ExprType::F64):
       known = true;
       break;
+    case uint8_t(ExprType::AnyRef):
+#ifdef ENABLE_WASM_REFTYPES
+      known = true;
+#endif
+      break;
     case uint8_t(ExprType::Ref):
       known = env_.gcTypesEnabled() && uncheckedRefTypeIndex < MaxTypes &&
               uncheckedRefTypeIndex < env_.types.length();
-      break;
-    case uint8_t(ExprType::AnyRef):
-      known = env_.gcTypesEnabled();
       break;
     case uint8_t(ExprType::Limit):
       break;
@@ -1991,10 +1993,6 @@ inline bool OpIter<Policy>::readTableGet(uint32_t* tableIndex, Value* index) {
     return fail("table.get only on tables of anyref");
   }
 
-  if (!env_.gcTypesEnabled()) {
-    return fail("anyref support not enabled");
-  }
-
   infalliblePush(ValType::AnyRef);
   return true;
 }
@@ -2021,10 +2019,6 @@ inline bool OpIter<Policy>::readTableGrow(uint32_t* tableIndex, Value* delta,
     return fail("table.grow only on tables of anyref");
   }
 
-  if (!env_.gcTypesEnabled()) {
-    return fail("anyref support not enabled");
-  }
-
   infalliblePush(ValType::I32);
   return true;
 }
@@ -2049,10 +2043,6 @@ inline bool OpIter<Policy>::readTableSet(uint32_t* tableIndex, Value* index,
   }
   if (env_.tables[*tableIndex].kind != TableKind::AnyRef) {
     return fail("table.set only on tables of anyref");
-  }
-
-  if (!env_.gcTypesEnabled()) {
-    return fail("anyref support not enabled");
   }
 
   return true;

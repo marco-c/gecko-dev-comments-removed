@@ -3798,14 +3798,8 @@ static bool EmitBodyExprs(FunctionCompiler& f) {
 #endif
 #ifdef ENABLE_WASM_REFTYPES
       case uint16_t(Op::RefNull):
-        if (!f.env().gcTypesEnabled()) {
-          return f.iter().unrecognizedOpcode(&op);
-        }
         CHECK(EmitRefNull(f));
       case uint16_t(Op::RefIsNull):
-        if (!f.env().gcTypesEnabled()) {
-          return f.iter().unrecognizedOpcode(&op);
-        }
         CHECK(EmitRefIsNull(f));
 #endif
 

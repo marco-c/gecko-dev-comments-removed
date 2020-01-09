@@ -133,8 +133,7 @@ struct ModuleEnvironment {
 
   
   
-#ifdef ENABLE_WASM_REFTYPES
-  
+#ifdef ENABLE_WASM_GC
   
   
   
@@ -174,7 +173,7 @@ struct ModuleEnvironment {
       : kind(kind),
         sharedMemoryEnabled(sharedMemoryEnabled),
         compilerEnv(compilerEnv),
-#ifdef ENABLE_WASM_REFTYPES
+#ifdef ENABLE_WASM_GC
         gcFeatureOptIn(false),
 #endif
         memoryUsage(MemoryUsage::None),
@@ -208,9 +207,9 @@ struct ModuleEnvironment {
   bool isRefSubtypeOf(ValType one, ValType two) const {
     MOZ_ASSERT(one.isReference());
     MOZ_ASSERT(two.isReference());
-    MOZ_ASSERT(gcTypesEnabled());
     return one == two || two == ValType::AnyRef || one == ValType::NullRef ||
-           (one.isRef() && two.isRef() && isStructPrefixOf(two, one));
+           (one.isRef() && two.isRef() && gcTypesEnabled() &&
+            isStructPrefixOf(two, one));
   }
 
  private:
@@ -607,14 +606,11 @@ class Decoder {
         *type = ValType::Code(code);
         return true;
       case uint8_t(ValType::AnyRef):
-        if (!gcTypesEnabled) {
-          return fail("reference types not enabled");
-        }
         *type = ValType::Code(code);
         return true;
       case uint8_t(ValType::Ref): {
         if (!gcTypesEnabled) {
-          return fail("reference types not enabled");
+          return fail("(ref T) types not enabled");
         }
         uint32_t typeIndex;
         if (!readVarU32(&typeIndex)) {

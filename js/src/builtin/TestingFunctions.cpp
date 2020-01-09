@@ -701,11 +701,7 @@ static bool WasmReftypesEnabled(JSContext* cx, unsigned argc, Value* vp) {
 
 static bool WasmGcEnabled(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
-#ifdef ENABLE_WASM_GC
-  args.rval().setBoolean(wasm::HasReftypesSupport(cx));
-#else
-  args.rval().setBoolean(false);
-#endif
+  args.rval().setBoolean(wasm::HasGcSupport(cx));
   return true;
 }
 
@@ -1657,16 +1653,17 @@ static bool NewRope(JSContext* cx, unsigned argc, Value* vp) {
     }
   }
 
-  RootedString left(cx, args[0].toString());
-  RootedString right(cx, args[1].toString());
+  JSString* left = args[0].toString();
+  JSString* right = args[1].toString();
   size_t length = JS_GetStringLength(left) + JS_GetStringLength(right);
   if (length > JSString::MAX_LENGTH) {
     JS_ReportErrorASCII(cx, "rope length exceeds maximum string length");
     return false;
   }
 
-  Rooted<JSRope*> str(cx, JSRope::new_<CanGC>(cx, left, right, length, heap));
+  Rooted<JSRope*> str(cx, JSRope::new_<NoGC>(cx, left, right, length, heap));
   if (!str) {
+    JS_ReportOutOfMemory(cx);
     return false;
   }
 
@@ -6031,15 +6028,15 @@ gc::ZealModeHelpText),
 "This will return true early if compilation isn't two-tiered. "),
 
     JS_FN_HELP("wasmReftypesEnabled", WasmReftypesEnabled, 1, 0,
-"wasmReftypesEnabled(bool)",
+"wasmReftypesEnabled()",
 "  Returns a boolean indicating whether the WebAssembly reftypes proposal is enabled."),
 
     JS_FN_HELP("wasmGcEnabled", WasmGcEnabled, 1, 0,
-"wasmGcEnabled(bool)",
+"wasmGcEnabled()",
 "  Returns a boolean indicating whether the WebAssembly GC types proposal is enabled."),
 
     JS_FN_HELP("wasmDebugSupport", WasmDebugSupport, 1, 0,
-"wasmDebugSupport(bool)",
+"wasmDebugSupport()",
 "  Returns a boolean indicating whether the WebAssembly compilers support debugging."),
 
     JS_FN_HELP("isLazyFunction", IsLazyFunction, 1, 0,

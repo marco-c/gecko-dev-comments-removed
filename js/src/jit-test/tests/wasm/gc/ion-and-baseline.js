@@ -12,16 +12,14 @@
 
 
 
-
-
-
-
-
-
 var refmod = new WebAssembly.Module(wasmTextToBinary(
     `(module
+      (gc_feature_opt_in 3)
       (import $tbl "" "tbl" (table 4 funcref))
       (import $print "" "print" (func (param i32)))
+
+      ;; Just a dummy
+      (type $s (struct (field i32)))
 
       (type $htype (func (param anyref)))
       (type $itype (func (result anyref)))
