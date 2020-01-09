@@ -865,9 +865,7 @@ nsresult nsXULElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
         } else if (aName == nsGkAtoms::localedir) {
           
           
-          if (document->IsXULDocument()) {
-            document->AsXULDocument()->ResetDocumentDirection();
-          }
+          document->ResetDocumentDirection();
         } else if (aName == nsGkAtoms::lwtheme ||
                    aName == nsGkAtoms::lwthemetextcolor) {
           
@@ -892,9 +890,7 @@ nsresult nsXULElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
         if (aName == nsGkAtoms::localedir) {
           
           
-          if (doc->IsXULDocument()) {
-            doc->AsXULDocument()->ResetDocumentDirection();
-          }
+          doc->ResetDocumentDirection();
         } else if ((aName == nsGkAtoms::lwtheme ||
                     aName == nsGkAtoms::lwthemetextcolor)) {
           

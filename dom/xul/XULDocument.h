@@ -74,13 +74,6 @@ class XULDocument final : public XMLDocument {
   
   virtual nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
 
-  virtual bool IsDocumentRightToLeft() override;
-
-  
-
-
-  void ResetDocumentDirection();
-
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(XULDocument, XMLDocument)
 
  protected:
@@ -90,8 +83,6 @@ class XULDocument final : public XMLDocument {
   friend nsresult(::NS_NewXULDocument(Document** aResult));
 
   nsresult Init(void) override;
-
-  static void DirectionChanged(const char* aPrefName, XULDocument* aData);
 
   
   static int32_t gRefCnt;

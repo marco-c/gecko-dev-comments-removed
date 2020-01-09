@@ -2021,6 +2021,8 @@ class Document : public nsINode,
   
   void DocumentStatesChanged(EventStates aStateMask);
 
+  void ResetDocumentDirection();
+
   
   
   void StyleRuleChanged(StyleSheet* aStyleSheet, css::Rule* aStyleRule);
@@ -2865,7 +2867,7 @@ class Document : public nsINode,
 
 
 
-  virtual bool IsDocumentRightToLeft() { return false; }
+  bool IsDocumentRightToLeft();
 
   
 
