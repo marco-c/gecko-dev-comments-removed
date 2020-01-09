@@ -19,6 +19,12 @@ def merge_to(source, dest):
     '''
 
     for key, value in source.items():
+        if isinstance(value, dict) and len(value) == 1 and \
+                value.keys()[0].startswith('by-'):
+            
+            dest[key] = value
+            continue
+
         
         if type(value) != type(dest.get(key)):  
             dest[key] = source[key]
