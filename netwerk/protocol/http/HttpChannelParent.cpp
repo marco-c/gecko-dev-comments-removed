@@ -2353,7 +2353,8 @@ void HttpChannelParent::NotifyDiversionFailed(nsresult aErrorCode) {
 }
 
 nsresult HttpChannelParent::OpenAlternativeOutputStream(
-    const nsACString& type, int64_t predictedSize, nsIOutputStream** _retval) {
+    const nsACString& type, int64_t predictedSize,
+    nsIAsyncOutputStream** _retval) {
   
   
   if (!mCacheEntry) {

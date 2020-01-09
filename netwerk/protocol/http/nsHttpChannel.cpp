@@ -8377,7 +8377,7 @@ nsHttpChannel::GetAlternativeDataType(nsACString &aType) {
 NS_IMETHODIMP
 nsHttpChannel::OpenAlternativeOutputStream(const nsACString &type,
                                            int64_t predictedSize,
-                                           nsIOutputStream **_retval) {
+                                           nsIAsyncOutputStream **_retval) {
   
   
   nsCOMPtr<nsICacheEntry> cacheEntry =
