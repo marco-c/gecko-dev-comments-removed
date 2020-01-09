@@ -452,13 +452,8 @@ CssRuleView.prototype = {
   
 
 
-
   _getRuleEditorForNode: function(node) {
-    if (!node.offsetParent) {
-      
-      node = node.parentNode;
-    }
-    return node.offsetParent._ruleEditor;
+    return node.closest(".ruleview-rule")._ruleEditor;
   },
 
   
