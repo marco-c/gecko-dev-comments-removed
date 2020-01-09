@@ -3043,6 +3043,7 @@ int NS_main(int argc, NS_tchar** argv) {
 
   
   
+  
   HANDLE updateLockFileHandle = INVALID_HANDLE_VALUE;
   NS_tchar elevatedLockFilePath[MAXPATHLEN] = {NS_T('\0')};
   if (!sUsingService &&
@@ -3078,10 +3079,12 @@ int NS_main(int argc, NS_tchar** argv) {
     if (NS_tremove(updateLockFilePath) && errno != ENOENT) {
       
       
-      if (sStagedUpdate || sReplaceRequest) {
+      if (sReplaceRequest) {
         
         
         WriteStatusFile("pending");
+      } else if (sStagedUpdate) {
+        WriteStatusFile(DELETE_ERROR_STAGING_LOCK_FILE);
       }
       LOG(("Update already in progress! Exiting"));
       return 1;
@@ -3254,7 +3257,10 @@ int NS_main(int argc, NS_tchar** argv) {
         if (updateLockFileHandle != INVALID_HANDLE_VALUE) {
           CloseHandle(updateLockFileHandle);
         }
-        WriteStatusFile("pending");
+        WriteStatusFile(UNEXPECTED_STAGING_ERROR);
+        LOG(
+            ("Non-critical update staging error! Falling back to non-staged "
+             "updates and exiting"));
         return 0;
       }
 
@@ -3341,6 +3347,23 @@ int NS_main(int argc, NS_tchar** argv) {
 #endif
 
   if (sStagedUpdate) {
+#ifdef TEST_UPDATER
+    
+    
+    
+    
+    if (EnvHasValue("MOZ_TEST_STAGING_ERROR")) {
+#  ifdef XP_WIN
+      if (updateLockFileHandle != INVALID_HANDLE_VALUE) {
+        CloseHandle(updateLockFileHandle);
+      }
+#  endif
+      
+      
+      WriteStatusFile(WRITE_ERROR);
+      return 0;
+    }
+#endif
     
     
     ensure_remove_recursive(gWorkingDirPath);
