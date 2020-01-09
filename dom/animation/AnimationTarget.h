@@ -7,7 +7,9 @@
 #ifndef mozilla_AnimationTarget_h
 #define mozilla_AnimationTarget_h
 
-#include "mozilla/Attributes.h"  
+#include "mozilla/Attributes.h"     
+#include "mozilla/HashFunctions.h"  
+#include "mozilla/HashTable.h"      
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 #include "nsCSSPseudoElements.h"
@@ -68,6 +70,26 @@ inline void ImplCycleCollectionUnlink(Maybe<OwningAnimationTarget>& aTarget) {
     ImplCycleCollectionUnlink(aTarget->mElement);
   }
 }
+
+
+template <>
+struct DefaultHasher<OwningAnimationTarget> {
+  using Key = OwningAnimationTarget;
+  using Lookup = OwningAnimationTarget;
+  using PtrHasher = PointerHasher<dom::Element*>;
+
+  static HashNumber hash(const Lookup& aLookup) {
+    return AddToHash(PtrHasher::hash(aLookup.mElement.get()),
+                     static_cast<uint8_t>(aLookup.mPseudoType));
+  }
+
+  static bool match(const Key& aKey, const Lookup& aLookup) {
+    return PtrHasher::match(aKey.mElement.get(), aLookup.mElement.get()) &&
+           aKey.mPseudoType == aLookup.mPseudoType;
+  }
+
+  static void rekey(Key& aKey, Key&& aNewKey) { aKey = std::move(aNewKey); }
+};
 
 }  
 
