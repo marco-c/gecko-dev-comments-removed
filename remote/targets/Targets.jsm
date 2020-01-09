@@ -68,6 +68,15 @@ class Targets {
 
 
 
+
+  getById(id) {
+    return this._targets.get(id);
+  }
+
+  
+
+
+
   getMainProcessTarget() {
     if (!this.mainProcessTarget) {
       this.mainProcessTarget = new MainProcessTarget(this);
