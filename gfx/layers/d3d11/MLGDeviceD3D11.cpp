@@ -234,7 +234,10 @@ bool MLGSwapChainD3D11::Initialize(CompositorWidget* aWidget) {
   RefPtr<IDXGIFactory2> dxgiFactory2;
   if (gfxPrefs::Direct3D11UseDoubleBuffering() &&
       SUCCEEDED(dxgiFactory->QueryInterface(dxgiFactory2.StartAssignment())) &&
-      dxgiFactory2 && IsWin10OrLater()) {
+      dxgiFactory2 && IsWin10OrLater() && XRE_IsGPUProcess()) {
+    
+    
+    
     
     
     
@@ -375,6 +378,8 @@ void MLGSwapChainD3D11::UpdateBackBufferContents(ID3D11Texture2D* aBack) {
 }
 
 bool MLGSwapChainD3D11::ResizeBuffers(const IntSize& aSize) {
+  mWidget->AsWindows()->UpdateCompositorWndSizeIfNecessary();
+
   
   mRT = nullptr;
 
