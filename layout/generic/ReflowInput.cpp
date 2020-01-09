@@ -125,7 +125,7 @@ static bool CheckNextInFlowParenthood(nsIFrame* aFrame, nsIFrame* aParent) {
 
 
 static nscoord FontSizeInflationListMarginAdjustment(const nsIFrame* aFrame) {
-  if (!aFrame->IsFrameOfType(nsIFrame::eBlockFrame)) {
+  if (!aFrame->IsBlockFrameOrSubclass()) {
     return 0;
   }
 
@@ -892,7 +892,7 @@ void ReflowInput::InitDynamicReflowRoot() {
 
   
   
-  if (canBeDynamicReflowRoot && mFrame->IsFrameOfType(nsIFrame::eBlockFrame) &&
+  if (canBeDynamicReflowRoot && mFrame->IsBlockFrameOrSubclass() &&
       !mFrame->HasAllStateBits(NS_BLOCK_FLOAT_MGR | NS_BLOCK_MARGIN_ROOT)) {
     canBeDynamicReflowRoot = false;
   }

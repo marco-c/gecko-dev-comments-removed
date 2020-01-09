@@ -2531,7 +2531,7 @@ static void UpdateBackdropIfNeeded(nsIFrame* aFrame, ServoStyleSet& aStyleSet,
 static void UpdateFirstLetterIfNeeded(nsIFrame* aFrame,
                                       ServoRestyleState& aRestyleState) {
   MOZ_ASSERT(
-      !aFrame->IsFrameOfType(nsIFrame::eBlockFrame),
+      !aFrame->IsBlockFrameOrSubclass(),
       "You're probably duplicating work with UpdatePseudoElementStyles!");
   if (!aFrame->HasFirstLetterChild()) {
     return;
@@ -2541,7 +2541,7 @@ static void UpdateFirstLetterIfNeeded(nsIFrame* aFrame,
   
   
   nsIFrame* block = aFrame->GetParent();
-  while (!block->IsFrameOfType(nsIFrame::eBlockFrame)) {
+  while (!block->IsBlockFrameOrSubclass()) {
     block = block->GetParent();
   }
 
@@ -2598,9 +2598,8 @@ static void UpdateAdditionalComputedStyles(nsIFrame* aFrame,
 
 static void UpdateFramePseudoElementStyles(nsIFrame* aFrame,
                                            ServoRestyleState& aRestyleState) {
-  if (aFrame->IsFrameOfType(nsIFrame::eBlockFrame)) {
-    static_cast<nsBlockFrame*>(aFrame)->UpdatePseudoElementStyles(
-        aRestyleState);
+  if (nsBlockFrame* blockFrame = do_QueryFrame(aFrame)) {
+    blockFrame->UpdatePseudoElementStyles(aRestyleState);
   } else {
     UpdateFirstLetterIfNeeded(aFrame, aRestyleState);
   }
@@ -2897,7 +2896,7 @@ bool RestyleManager::ProcessPostTraversal(Element* aElement,
     if (wasRestyled) {
       UpdateFramePseudoElementStyles(styleFrame, childrenRestyleState);
     } else if (traverseElementChildren &&
-               styleFrame->IsFrameOfType(nsIFrame::eBlockFrame)) {
+               styleFrame->IsBlockFrameOrSubclass()) {
       
       
       
@@ -3521,10 +3520,10 @@ void RestyleManager::DoReparentComputedStyleForFirstLine(
 
   ComputedStyle* newParentIgnoringFirstLine;
   if (newParent->GetPseudoType() == PseudoStyleType::firstLine) {
-    MOZ_ASSERT(providerFrame && providerFrame->GetParent()->IsFrameOfType(
-                                    nsIFrame::eBlockFrame),
-               "How could we get a ::first-line parent style without having "
-               "a ::first-line provider frame?");
+    MOZ_ASSERT(
+        providerFrame && providerFrame->GetParent()->IsBlockFrameOrSubclass(),
+        "How could we get a ::first-line parent style without having "
+        "a ::first-line provider frame?");
     
     
     

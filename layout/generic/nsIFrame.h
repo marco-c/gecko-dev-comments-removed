@@ -2838,23 +2838,22 @@ class nsIFrame : public nsQueryFrame {
     eLineParticipant = 1 << 9,
     eXULBox = 1 << 10,
     eCanContainOverflowContainers = 1 << 11,
-    eBlockFrame = 1 << 12,
-    eTablePart = 1 << 13,
+    eTablePart = 1 << 12,
     
     
     
-    eExcludesIgnorableWhitespace = 1 << 14,
-    eSupportsCSSTransforms = 1 << 15,
+    eExcludesIgnorableWhitespace = 1 << 13,
+    eSupportsCSSTransforms = 1 << 14,
 
     
     
     
-    eReplacedSizing = 1 << 16,
+    eReplacedSizing = 1 << 15,
 
     
     
     
-    eSupportsContainLayoutAndPaint = 1 << 17,
+    eSupportsContainLayoutAndPaint = 1 << 16,
 
     
     
