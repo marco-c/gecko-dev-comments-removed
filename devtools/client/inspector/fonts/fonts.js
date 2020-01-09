@@ -62,6 +62,9 @@ class FontInspector {
     this.inspector = inspector;
     
     this.keywordValues = new Set(this.getFontPropertyValueKeywords());
+    
+    
+    this.node = null;
     this.nodeComputedStyle = {};
     this.pageStyle = this.inspector.pageStyle;
     this.ruleViewTool = this.inspector.getPanel("ruleview");
@@ -163,7 +166,7 @@ class FontInspector {
     
     const unit = toUnit === "px" ? fromUnit : toUnit;
     
-    const node = this.inspector.selection.nodeFront;
+    const node = this.node;
     
     const referenceNode = (property === "line-height") ? node : node.parentNode();
     
@@ -296,6 +299,7 @@ class FontInspector {
 
     this.document = null;
     this.inspector = null;
+    this.node = null;
     this.nodeComputedStyle = {};
     this.pageStyle = null;
     this.ruleView = null;
@@ -540,17 +544,6 @@ class FontInspector {
            this.inspector.sidebar &&
            this.inspector.sidebar.getCurrentTabID() === "fontinspector";
   }
-  
-
-
-
-
-  isSelectedNodeValid() {
-    return this.inspector &&
-           this.inspector.selection.nodeFront &&
-           this.inspector.selection.isConnected() &&
-           this.inspector.selection.isElementNode();
-  }
 
   
 
@@ -656,8 +649,29 @@ class FontInspector {
   
 
 
+
+
+
+
+
+
   onNewNode() {
     this.ruleView.off("property-value-updated", this.onRulePropertyUpdated);
+    
+    this.node = null;
+    
+    const selection = this.inspector && this.inspector.selection;
+    if (selection && selection.isConnected()) {
+
+      if (selection.isElementNode()) {
+        this.node = selection.nodeFront;
+      }
+
+      if (selection.isTextNode()) {
+        this.node = selection.nodeFront.parentNode();
+      }
+    }
+
     if (this.isPanelVisible()) {
       Promise.all([this.update(), this.refreshFontEditor()]).then(() => {
         this.logTelemetryProbesOnNewNode();
@@ -753,9 +767,7 @@ class FontInspector {
 
     try {
       if (show) {
-        const node = isForCurrentElement
-                   ? this.inspector.selection.nodeFront
-                   : this.inspector.walker.rootNode;
+        const node = isForCurrentElement ? this.node : this.inspector.walker.rootNode;
 
         await this.fontsHighlighter.show(node, {
           CSSFamilyName: font.CSSFamilyName,
@@ -790,16 +802,8 @@ class FontInspector {
 
 
 
-
   async refreshFontEditor() {
-    if (!this.store || !this.isSelectedNodeValid()) {
-      
-      if (this.inspector.selection.isTextNode()) {
-        const selection = this.inspector.selection;
-        selection.setNodeFront(selection.nodeFront.parentNode());
-        return;
-      }
-
+    if (!this.node) {
       this.store.dispatch(resetFontEditor());
       return;
     }
@@ -809,12 +813,11 @@ class FontInspector {
       options.includeVariations = true;
     }
 
-    const node = this.inspector.selection.nodeFront;
-    const fonts = await this.getFontsForNode(node, options);
+    const fonts = await this.getFontsForNode(this.node, options);
 
     try {
       
-      this.nodeComputedStyle = await this.pageStyle.getComputed(node, {
+      this.nodeComputedStyle = await this.pageStyle.getComputed(this.node, {
         filterProperties: FONT_PROPERTIES,
       });
     } catch (e) {
@@ -842,7 +845,7 @@ class FontInspector {
     
     
     if (!this.ruleViewTool.isSidebarActive()) {
-      await this.ruleView.selectElement(node, false);
+      await this.ruleView.selectElement(this.node, false);
     }
 
     
@@ -856,9 +859,8 @@ class FontInspector {
       this.writers.set(axis, this.getWriterForAxis(axis));
     });
 
-    this.store.dispatch(updateFontEditor(fonts, properties, node.actorID));
-    const isPseudo = this.inspector.selection.isPseudoElementNode();
-    this.store.dispatch(setEditorDisabled(isPseudo));
+    this.store.dispatch(updateFontEditor(fonts, properties, this.node.actorID));
+    this.store.dispatch(setEditorDisabled(this.node.isPseudoElement));
 
     this.inspector.emit("fonteditor-updated");
     
@@ -882,7 +884,7 @@ class FontInspector {
 
     let allFonts = [];
 
-    if (!this.isSelectedNodeValid()) {
+    if (!this.node) {
       this.store.dispatch(updateFonts(allFonts));
       return;
     }
