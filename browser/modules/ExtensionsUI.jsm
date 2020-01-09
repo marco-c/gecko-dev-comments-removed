@@ -443,7 +443,7 @@ var ExtensionsUI = {
       
       let checkbox = window.document.getElementById("addon-incognito-checkbox");
       checkbox.checked = false;
-      checkbox.hidden = allowPrivateBrowsingByDefault;
+      checkbox.hidden = allowPrivateBrowsingByDefault || addon.type !== "extension";
 
       async function actionResolve() {
         if (checkbox.checked) {
