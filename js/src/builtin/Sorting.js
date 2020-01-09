@@ -138,8 +138,8 @@ function RadixSort(array, len, buffer, nbytes, signed, floating, comparefn) {
         
         let offset = IsTypedArray(array)
                      ? TypedArrayByteOffset(array)
-                     : callFunction(CallTypedArrayMethodIfWrapped, array, array,
-                                    "TypedArrayByteOffset");
+                     : callFunction(CallTypedArrayMethodIfWrapped, array,
+                                    "TypedArrayByteOffsetMethod");
 
         view = new Int32Array(buffer, offset, len);
 
