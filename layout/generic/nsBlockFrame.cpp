@@ -2930,11 +2930,8 @@ void nsBlockFrame::ReflowDirtyLines(BlockReflowInput& aState) {
     if (!MarkerIsEmpty()) {
       
       
-      
-      
-      
-      if (!aState.mReflowInput.mStyleDisplay->IsContainLayout() &&
-          metrics.BlockStartAscent() == ReflowOutput::ASK_FOR_BASELINE) {
+
+      if (metrics.BlockStartAscent() == ReflowOutput::ASK_FOR_BASELINE) {
         nscoord ascent;
         WritingMode wm = aState.mReflowInput.GetWritingMode();
         if (nsLayoutUtils::GetFirstLineBaseline(wm, marker, &ascent)) {

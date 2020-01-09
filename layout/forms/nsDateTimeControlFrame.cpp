@@ -185,15 +185,11 @@ void nsDateTimeControlFrame::Reflow(nsPresContext* aPresContext,
     FinishReflowChild(inputAreaFrame, aPresContext, childDesiredSize,
                       &childReflowOuput, myWM, childOffset, borderBoxSize, 0);
 
-    if (!aReflowInput.mStyleDisplay->IsContainLayout()) {
-      nsSize contentBoxSize =
-          LogicalSize(myWM, contentBoxISize, contentBoxBSize)
-              .GetPhysicalSize(myWM);
-      aDesiredSize.SetBlockStartAscent(
-          childDesiredSize.BlockStartAscent() +
-          inputAreaFrame->BStart(aReflowInput.GetWritingMode(),
-                                 contentBoxSize));
-    }  
+    nsSize contentBoxSize = LogicalSize(myWM, contentBoxISize, contentBoxBSize)
+                                .GetPhysicalSize(myWM);
+    aDesiredSize.SetBlockStartAscent(
+        childDesiredSize.BlockStartAscent() +
+        inputAreaFrame->BStart(aReflowInput.GetWritingMode(), contentBoxSize));
   }
 
   LogicalSize logicalDesiredSize(myWM, borderBoxISize, borderBoxBSize);

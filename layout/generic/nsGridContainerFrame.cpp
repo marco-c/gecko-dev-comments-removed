@@ -7039,9 +7039,7 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
   } else {
     RemoveStateBits(NS_STATE_GRID_NORMAL_FLOW_CHILDREN_IN_CSS_ORDER);
   }
-  if (gridReflowInput.mIter.AtEnd() ||
-      aReflowInput.mStyleDisplay->IsContainLayout()) {
-    
+  if (gridReflowInput.mIter.AtEnd()) {
     
     AddStateBits(NS_STATE_GRID_SYNTHESIZE_BASELINE);
   } else {

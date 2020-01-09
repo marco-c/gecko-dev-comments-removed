@@ -31,12 +31,6 @@ using namespace mozilla::layout;
 
 nscoord nsTableWrapperFrame::GetLogicalBaseline(
     WritingMode aWritingMode) const {
-  if (StyleDisplay()->IsContainLayout()) {
-    
-    
-    return nsContainerFrame::GetLogicalBaseline(aWritingMode);
-  }
-
   nsIFrame* kid = mFrames.FirstChild();
   if (!kid) {
     MOZ_ASSERT_UNREACHABLE("no inner table");
