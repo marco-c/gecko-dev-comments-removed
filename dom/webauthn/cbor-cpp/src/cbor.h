@@ -20,4 +20,4 @@
 #include "encoder.h"
 #include "output_dynamic.h"
 
-#endif  
+#endif 
