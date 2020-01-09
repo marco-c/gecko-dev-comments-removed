@@ -1,13 +1,10 @@
-
-
-let sampleRate = 32768;
+let sampleRate = 44100.0;
 
 
 let nodesToCreate = 100;
 
 
-
-let timeStep = Math.floor(0.001 * sampleRate) / sampleRate;
+let timeStep = 0.001;
 
 
 let renderLengthSeconds = timeStep * (nodesToCreate + 1);
@@ -137,7 +134,7 @@ function checkDistanceResult(renderedBuffer, model, should) {
   
   
   
-  let maxAllowedError = 2.2720e-6;
+  let maxAllowedError = 3.3e-6;
 
   let success = true;
 

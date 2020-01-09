@@ -1,13 +1,7 @@
 ["<link>", "@import"].forEach(linkType => {
   [
    ["same-origin", "resources/css.py"],
-
-   
-   
-   
-   
-   
-   ["cross-origin", get_host_info().HTTP_NOTSAMESITE_ORIGIN + "/html/semantics/document-metadata/the-link-element/resources/css.py"]
+   ["cross-origin", get_host_info().HTTP_REMOTE_ORIGIN + "/html/semantics/document-metadata/the-link-element/resources/css.py"]
   ].forEach(originType => {
     ["no Content-Type", "wrong Content-Type", "broken Content-Type"].forEach(contentType => {
       ["no nosniff", "nosniff"].forEach(nosniff => {

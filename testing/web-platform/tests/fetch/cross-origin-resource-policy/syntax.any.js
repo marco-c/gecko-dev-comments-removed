@@ -8,8 +8,7 @@ const crossOriginURL = get_host_info().HTTP_REMOTE_ORIGIN + "/fetch/cross-origin
   "SAME-ORIGIN",
   "Same-Origin",
   "same-origin, <>",
-  "same-origin, same-origin",
-  "https://www.example.com",  
+  "same-origin, same-origin"
 ].forEach(incorrectHeaderValue => {
   
   

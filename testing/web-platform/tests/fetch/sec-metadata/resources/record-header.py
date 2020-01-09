@@ -2,7 +2,6 @@ import os
 import uuid
 import hashlib
 import time
-import json
 
 def main(request, response):
   
@@ -32,13 +31,7 @@ def main(request, response):
   else:
     try:
       
-      
-      header = json.dumps({
-        "dest": request.headers.get("sec-fetch-dest", ""),
-        "mode": request.headers.get("sec-fetch-mode", ""),
-        "site": request.headers.get("sec-fetch-site", ""),
-        "user": request.headers.get("sec-fetch-user", ""),
-      })
+      header = request.headers.get("Sec-Metadata", "")
       request.server.stash.put(testId, header)
     except KeyError:
       

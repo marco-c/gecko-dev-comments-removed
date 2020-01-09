@@ -7,7 +7,7 @@
 
 idl_test(
   ['webrtc-stats'],
-  ['webrtc'],
+  [], 
   idl_array => {
     
   }

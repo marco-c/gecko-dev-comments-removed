@@ -19,7 +19,7 @@ function loadScripts(paths) {
 
 function performChromiumSetup() {
   
-  if (typeof Mojo === 'undefined') {
+  if (!Mojo) {
     return;
   }
 
@@ -259,13 +259,6 @@ function requestDeviceWithTrustedClick() {
   let args = arguments;
   return callWithTrustedClick(
       () => navigator.bluetooth.requestDevice.apply(navigator.bluetooth, args));
-}
-
-
-function requestLEScanWithTrustedClick() {
-  let args = arguments;
-  return callWithTrustedClick(
-      () => navigator.bluetooth.requestLEScan.apply(navigator.bluetooth, args));
 }
 
 

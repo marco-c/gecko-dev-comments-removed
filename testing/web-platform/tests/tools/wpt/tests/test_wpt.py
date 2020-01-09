@@ -30,29 +30,27 @@ def is_port_8000_in_use():
     return False
 
 
-def get_persistent_manifest_path():
-    directory = ("~/meta" if os.environ.get('TRAVIS') == "true"
-                 else wpt.localpaths.repo_root)
-    return os.path.join(directory, "MANIFEST.json")
-
-
-@pytest.fixture(scope="module", autouse=True)
-def init_manifest():
-    with pytest.raises(SystemExit) as excinfo:
-        wpt.main(argv=["manifest", "--no-download",
-                       "--path", get_persistent_manifest_path()])
-    assert excinfo.value.code == 0
-
-
-@pytest.fixture
+@pytest.fixture(scope="module")
 def manifest_dir():
-    try:
-        path = tempfile.mkdtemp()
-        shutil.copyfile(get_persistent_manifest_path(),
-                        os.path.join(path, "MANIFEST.json"))
+    def update_manifest():
+        with pytest.raises(SystemExit) as excinfo:
+            wpt.main(argv=["manifest", "--no-download", "--path", os.path.join(path, "MANIFEST.json")])
+        assert excinfo.value.code == 0
+
+    if os.environ.get('TRAVIS') == "true":
+        path = "~/meta"
+        update_manifest()
         yield path
-    finally:
-        shutil.rmtree(path)
+    else:
+        try:
+            path = tempfile.mkdtemp()
+            old_path = os.path.join(wpt.localpaths.repo_root, "MANIFEST.json")
+            if os.path.exists(os.path.join(wpt.localpaths.repo_root, "MANIFEST.json")):
+                shutil.copyfile(old_path, os.path.join(path, "MANIFEST.json"))
+            update_manifest()
+            yield path
+        finally:
+            shutil.rmtree(path)
 
 
 @pytest.fixture
@@ -158,6 +156,51 @@ def test_list_tests_invalid_manifest(manifest_dir):
                        "--yes",
                        "firefox", "/dom/nodes/Element-tagName.html"])
 
+    assert excinfo.value.code == 0
+
+
+@pytest.mark.slow
+@pytest.mark.remote_network
+@pytest.mark.xfail(sys.platform == "win32",
+                   reason="Tests currently don't work on Windows for path reasons")
+def test_run_firefox(manifest_dir):
+    
+    
+    if is_port_8000_in_use():
+        pytest.skip("port 8000 already in use")
+
+    if sys.platform == "darwin":
+        fx_path = os.path.join(wpt.localpaths.repo_root, "_venv", "browsers", "nightly", "Firefox Nightly.app")
+    else:
+        fx_path = os.path.join(wpt.localpaths.repo_root, "_venv", "browsers", "nightly", "firefox")
+    if os.path.exists(fx_path):
+        shutil.rmtree(fx_path)
+    with pytest.raises(SystemExit) as excinfo:
+        wpt.main(argv=["run", "--no-pause", "--install-browser", "--yes",
+                       
+                       
+                       
+                       
+                       
+                       "--binary-arg=-headless",
+                       "--metadata", manifest_dir,
+                       "firefox", "/dom/nodes/Element-tagName.html"])
+    assert os.path.exists(fx_path)
+    shutil.rmtree(fx_path)
+    assert excinfo.value.code == 0
+
+
+@pytest.mark.slow
+@pytest.mark.xfail(sys.platform == "win32",
+                   reason="Tests currently don't work on Windows for path reasons")
+def test_run_chrome(manifest_dir):
+    if is_port_8000_in_use():
+        pytest.skip("port 8000 already in use")
+
+    with pytest.raises(SystemExit) as excinfo:
+        wpt.main(argv=["run", "--yes", "--no-pause", "--binary-arg", "headless",
+                       "--metadata", manifest_dir,
+                       "chrome", "/dom/nodes/Element-tagName.html"])
     assert excinfo.value.code == 0
 
 
@@ -357,7 +400,7 @@ def test_tests_affected_idlharness(capsys, manifest_dir):
         wpt.main(argv=["tests-affected", "--metadata", manifest_dir, "%s~..%s" % (commit, commit)])
     assert excinfo.value.code == 0
     out, err = capsys.readouterr()
-    assert "webrtc-stats/idlharness.window.js\nwebrtc/idlharness.https.window.js\n" == out
+    assert "webrtc/idlharness.https.window.js\n" == out
 
 
 @pytest.mark.slow  
@@ -409,6 +452,7 @@ def test_serve():
                 break
     finally:
         os.killpg(p.pid, 15)
+
 
 
 

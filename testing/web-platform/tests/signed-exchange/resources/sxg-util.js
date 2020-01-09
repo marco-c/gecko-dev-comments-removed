@@ -1,12 +1,12 @@
 
 
 
-function openSXGInIframeAndWaitForMessage(test_object, url, referrerPolicy) {
+function openSXGInIframeAndWaitForMessage(test_object, url) {
   return new Promise(async (resolve, reject) => {
     
-    test_object.step_timeout(() => reject('timeout'), 3000);
+    test_object.step_timeout(() => reject('timeout'), 2000);
 
-    const frame = await withIframe(url, 'sxg_iframe', referrerPolicy);
+    const frame = await withIframe(url, 'sxg_iframe');
     const channel = new MessageChannel();
     channel.port1.onmessage = (event) => resolve(event.data);
     frame.contentWindow.postMessage(
@@ -14,14 +14,11 @@ function openSXGInIframeAndWaitForMessage(test_object, url, referrerPolicy) {
   });
 }
 
-function withIframe(url, name, referrerPolicy) {
+function withIframe(url, name) {
   return new Promise((resolve, reject) => {
       const frame = document.createElement('iframe');
       frame.src = url;
       frame.name = name;
-      if (referrerPolicy !== undefined) {
-        frame.referrerPolicy = referrerPolicy;
-      }
       frame.onload = () => resolve(frame);
       frame.onerror = () => reject('failed to load ' + url);
       document.body.appendChild(frame);
@@ -40,28 +37,4 @@ function loadScript(url) {
 
 function innerURLOrigin() {
   return 'https://127.0.0.1:8444';
-}
-
-function runReferrerTests(test_cases) {
-  for (const i in test_cases) {
-    const test_case = test_cases[i];
-    promise_test(async (t) => {
-      const sxgUrl = test_case.origin + '/signed-exchange/resources/sxg/' +
-                     test_case.sxg;
-      const message =
-          await openSXGInIframeAndWaitForMessage(
-              t, sxgUrl, test_case.referrerPolicy);
-      assert_false(message.is_fallback);
-      assert_equals(message.referrer, test_case.expectedReferrer);
-
-      const invalidSxgUrl =
-          test_case.origin + '/signed-exchange/resources/sxg/invalid-' +
-          test_case.sxg;
-      const fallbackMessage =
-          await openSXGInIframeAndWaitForMessage(
-                t, invalidSxgUrl, test_case.referrerPolicy);
-      assert_true(fallbackMessage.is_fallback);
-      assert_equals(fallbackMessage.referrer, test_case.expectedReferrer);
-    }, 'Referrer of SignedHTTPExchange test : ' + JSON.stringify(test_case));
-  }
 }

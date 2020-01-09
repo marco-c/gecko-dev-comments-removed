@@ -5,8 +5,7 @@ let signal;
 let renderedBuffer;
 let renderedData;
 
-
-let sampleRate = 32768;
+let sampleRate = 44100.0;
 let pulseLengthFrames = .1 * sampleRate;
 
 
@@ -14,7 +13,7 @@ let maxAllowedError = 5.9e-8;
 
 
 
-let timeStep = Math.ceil(.1 * sampleRate) / sampleRate;
+let timeStep = .1;
 
 
 

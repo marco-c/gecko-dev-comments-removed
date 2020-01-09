@@ -9,9 +9,19 @@
 
 
 
+function generateCertificate(keygenAlgorithm) {
+  return RTCPeerConnection.generateCertificate({
+    name: 'ECDSA',
+    namedCurve: 'P-256',
+    ...keygenAlgorithm,
+  });
+}
 
-function makeQuicTransport(t, iceTransport) {
-  const quicTransport = new RTCQuicTransport(iceTransport);
+
+
+
+function makeQuicTransport(t, iceTransport, certificates) {
+  const quicTransport = new RTCQuicTransport(iceTransport, certificates);
   t.add_cleanup(() => quicTransport.stop());
   return quicTransport;
 }
@@ -20,8 +30,9 @@ function makeQuicTransport(t, iceTransport) {
 
 
 
-function makeStandaloneQuicTransport(t) {
-  return makeQuicTransport(t, makeIceTransport(t));
+async function makeStandaloneQuicTransport(t) {
+  const certificate = await generateCertificate();
+  return makeQuicTransport(t, makeIceTransport(t), [ certificate ]);
 }
 
 
@@ -29,16 +40,17 @@ function makeStandaloneQuicTransport(t) {
 
 
 
-function makeAndStartTwoQuicTransports(t) {
+async function makeAndStartTwoQuicTransports(t) {
+  const [ localCertificate, remoteCertificate ] =
+      await Promise.all([ generateCertificate(), generateCertificate() ]);
   const [ localIceTransport, remoteIceTransport ] =
       makeGatherAndStartTwoIceTransports(t);
   const localQuicTransport =
-      makeQuicTransport(t, localIceTransport);
+      makeQuicTransport(t, localIceTransport, [ localCertificate ]);
   const remoteQuicTransport =
-      makeQuicTransport(t, remoteIceTransport);
-  const remote_key = remoteQuicTransport.getKey();
-  localQuicTransport.listen(remote_key);
-  remoteQuicTransport.connect();
+      makeQuicTransport(t, remoteIceTransport, [ remoteCertificate ]);
+  localQuicTransport.start(remoteQuicTransport.getLocalParameters());
+  remoteQuicTransport.start(localQuicTransport.getLocalParameters());
   return [ localQuicTransport, remoteQuicTransport ];
 }
 

@@ -26,6 +26,7 @@ function xr_promise_test(name, func, properties) {
 
 function xr_session_promise_test(
     name, func, fakeDeviceInit, sessionOptions, properties) {
+  let testDevice;
   let testDeviceController;
   let testSession;
 
@@ -43,12 +44,16 @@ function xr_session_promise_test(
           XRTest.simulateDeviceConnection(fakeDeviceInit)
               .then((controller) => {
                 testDeviceController = controller;
-                return gl.makeXRCompatible();
+                return navigator.xr.requestDevice();
+              })
+              .then((device) => {
+                testDevice = device;
+                return gl.setCompatibleXRDevice(device);
               })
               .then(() => new Promise((resolve, reject) => {
                       
                       XRTest.simulateUserActivation(() => {
-                        navigator.xr.requestSession(sessionOptions)
+                        testDevice.requestSession(sessionOptions)
                             .then((session) => {
                               testSession = session;
                               
@@ -69,7 +74,7 @@ function xr_session_promise_test(
               .then(() => {
                 
                 testSession.end().catch(() => {});
-                XRTest.simulateDeviceDisconnection();
+                XRTest.simulateDeviceDisconnection(testDevice);
               }),
       properties);
 }
@@ -92,6 +97,7 @@ function getOutputContext() {
 
 function forEachWebxrObject(callback) {
   callback(window.navigator.xr, 'navigator.xr');
+  callback(window.XRDevice, 'XRDevice');
   callback(window.XRSession, 'XRSession');
   callback(window.XRSessionCreationOptions, 'XRSessionCreationOptions');
   callback(window.XRFrameRequestCallback, 'XRFrameRequestCallback');
@@ -99,7 +105,7 @@ function forEachWebxrObject(callback) {
   callback(window.XRFrame, 'XRFrame');
   callback(window.XRView, 'XRView');
   callback(window.XRViewport, 'XRViewport');
-  callback(window.XRViewerPose, 'XRViewerPose');
+  callback(window.XRDevicePose, 'XRDevicePose');
   callback(window.XRLayer, 'XRLayer');
   callback(window.XRWebGLLayer, 'XRWebGLLayer');
   callback(window.XRWebGLLayerInit, 'XRWebGLLayerInit');

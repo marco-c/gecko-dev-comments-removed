@@ -3,12 +3,10 @@ let StereoPannerTest = (function() {
   
   let PI_OVER_TWO = Math.PI * 0.5;
 
-  
-  
-  let gSampleRate = 32768;
+  let gSampleRate = 44100;
 
   
-  let gTimeStep = Math.floor(0.001 * gSampleRate) / gSampleRate;
+  let gTimeStep = 0.001;
 
   
   let gNodesToCreate = 100;
@@ -79,7 +77,7 @@ let StereoPannerTest = (function() {
     
     
     
-    this.maxAllowedError = 9.8015e-8;
+    this.maxAllowedError = 1.3e-6;
 
     
     

@@ -3,7 +3,7 @@
 
 <head>
     <meta http-equiv="Content-Security-Policy" content="script-src 'unsafe-hashes' 'nonce-abc'
-    'sha256-WZYVPzLjoxd1Cbc8gcx07ChlPmT3WP+KxkOiY0s4h8g=';">
+    'sha256-r5W8SQIDMTbMxAjJ7KzCzFT38dwBy7Y5KF5B+20009g=';">
     
 
 
@@ -13,7 +13,7 @@
 
 <body>
     <div id='log'></div>
-    <a target="_blank" href='javascript:opener.t1.done();' id='test'>
+    <a target="_blank" href='javascript:t1.done();' id='test'>
     <script nonce='abc'>
         var t1 = async_test("Test that the javascript: src is allowed to run");
 

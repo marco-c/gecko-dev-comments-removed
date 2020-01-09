@@ -1,12 +1,9 @@
-
-
-let sampleRate = 32768;
+let sampleRate = 44100.0;
 
 let numberOfChannels = 1;
 
 
-
-let timeStep = Math.floor(0.001 * sampleRate) / sampleRate;
+let timeStep = 0.001;
 
 
 let pulseLengthFrames = Math.round(timeStep * sampleRate);
@@ -117,7 +114,7 @@ function checkResult(renderedBuffer, should) {
   
   
   
-  let maxAllowedError = 1.1597e-6;
+  let maxAllowedError = 1.3e-6;
 
   let success = true;
 

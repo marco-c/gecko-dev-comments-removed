@@ -5,8 +5,8 @@
   
   
   let res_num = 0;
-  self.uniqueName = (testCase, prefix) => {
-    return `${self.location.pathname}-${prefix}-${testCase.name}-${++res_num}`;
+  self.uniqueName = testCase => {
+    return `${self.location.pathname}-${testCase.name}-${++res_num}`;
   };
 
   
