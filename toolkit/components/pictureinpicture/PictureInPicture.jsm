@@ -118,6 +118,12 @@ var PictureInPicture = {
 
     
     
+    
+    screenWidth.value = screenWidth.value / screen.defaultCSSScaleFactor;
+    screenHeight.value = screenHeight.value / screen.defaultCSSScaleFactor;
+
+    
+    
     const MAX_HEIGHT = screenHeight.value / 4;
     const MAX_WIDTH = screenWidth.value / 3;
 
