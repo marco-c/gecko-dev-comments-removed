@@ -2,7 +2,6 @@
 
 
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const {ContentPref, cbHandleCompletion, cbHandleError, cbHandleResult} = ChromeUtils.import("resource://gre/modules/ContentPrefUtils.jsm");
 const {ContentPrefStore} = ChromeUtils.import("resource://gre/modules/ContentPrefStore.jsm");
@@ -1243,5 +1242,4 @@ function invalidArg(msg) {
 
 
 
-var components = [ContentPrefService2];
-this.NSGetFactory = XPCOMUtils.generateNSGetFactory(components);
+var EXPORTED_SYMBOLS = ["ContentPrefService2"];
