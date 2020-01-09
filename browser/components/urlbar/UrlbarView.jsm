@@ -174,8 +174,10 @@ class UrlbarView {
       fragment.appendChild(this._createRow(resultIndex));
     }
 
+    let isFirstPreselectedResult = false;
     if (queryContext.lastResultCount == 0) {
       if (queryContext.preselected) {
+        isFirstPreselectedResult = true;
         this._selectItem(fragment.firstElementChild, false);
       } else {
         
@@ -204,6 +206,13 @@ class UrlbarView {
     this._rows.appendChild(fragment);
 
     this._openPanel();
+
+    if (isFirstPreselectedResult) {
+      
+      
+      
+      this.input.formatValue();
+    }
   }
 
   

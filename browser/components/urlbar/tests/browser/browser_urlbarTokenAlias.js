@@ -108,8 +108,8 @@ add_task(async function inputDoesntMatchHeuristicResult() {
 
   
   
-  let value = `${ALIAS} xxx`;
-  gURLBar.value = `${ALIAS} xxx`;
+  let value = `${ALIAS}xxx`;
+  gURLBar.value = `${ALIAS}xxx`;
 
   
   Assert.equal(gURLBar.value, value);
@@ -337,10 +337,6 @@ async function assertFirstResultIsAlias(isAlias, expectedAlias) {
 }
 
 function assertHighlighted(highlighted, expectedAlias) {
-  
-  if (UrlbarPrefs.get("quantumbar")) {
-    return;
-  }
   let selection = gURLBar.editor.selectionController.getSelection(
     Ci.nsISelectionController.SELECTION_FIND
   );

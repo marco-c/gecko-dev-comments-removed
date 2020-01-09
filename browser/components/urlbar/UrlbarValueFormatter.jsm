@@ -12,6 +12,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   AppConstants: "resource://gre/modules/AppConstants.jsm",
   Services: "resource://gre/modules/Services.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
+  UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
 });
 
 
@@ -271,55 +272,19 @@ class UrlbarValueFormatter {
       return false;
     }
 
-    let popup = this.urlbarInput.popup;
-    if (!popup) {
-      
-      return false;
-    }
-
-    if (popup.oneOffSearchButtons.selectedButton) {
-      return false;
-    }
-
     let editor = this.urlbarInput.editor;
     let textNode = editor.rootElement.firstChild;
     let value = textNode.textContent;
     let trimmedValue = value.trim();
 
-    if (!trimmedValue.startsWith("@")) {
+    if (!trimmedValue.startsWith("@") ||
+        (this.urlbarInput.popup || this.urlbarInput.view)
+          .oneOffSearchButtons.selectedButton) {
       return false;
     }
 
-    
-    
-    
-    
-    
-    
-    
-    let itemIndex =
-      popup.selectedIndex < 0 ? popup._previousSelectedIndex :
-      popup.selectedIndex;
-    if (itemIndex < 0) {
-      return false;
-    }
-    let item = popup.richlistbox.children[itemIndex] || null;
-
-    
-    
-    
-    
-    
-    if (!item || item.getAttribute("actiontype") != "searchengine") {
-      return false;
-    }
-
-    let url = item.getAttribute("url");
-    let action = this.urlbarInput._parseActionUrl(url);
-    if (!action) {
-      return false;
-    }
-    let alias = action.params.alias || null;
+    let alias = UrlbarPrefs.get("quantumbar") ? this._getSearchAlias() :
+                this._getSearchAliasAwesomebar();
     if (!alias) {
       return false;
     }
@@ -329,13 +294,7 @@ class UrlbarValueFormatter {
     
     
     
-    
-    
-    
-    
-    
-    
-    if (!trimmedValue.startsWith(action.params.input.trim())) {
+    if (trimmedValue != alias && !trimmedValue.startsWith(alias + " ")) {
       return false;
     }
 
@@ -380,5 +339,55 @@ class UrlbarValueFormatter {
     }
 
     return true;
+  }
+
+  _getSearchAlias() {
+    
+    
+    
+    
+    
+    this._selectedResult =
+      this.urlbarInput.view.selectedResult || this._selectedResult;
+    if (this._selectedResult &&
+        this._selectedResult.type == UrlbarUtils.RESULT_TYPE.SEARCH) {
+      return this._selectedResult.payload.keyword || null;
+    }
+    return null;
+  }
+
+  _getSearchAliasAwesomebar() {
+    let popup = this.urlbarInput.popup;
+
+    
+    
+    
+    
+    
+    
+    
+    let itemIndex =
+      popup.selectedIndex < 0 ? popup._previousSelectedIndex :
+      popup.selectedIndex;
+    if (itemIndex < 0) {
+      return null;
+    }
+    let item = popup.richlistbox.children[itemIndex] || null;
+
+    
+    
+    
+    
+    
+    if (!item || item.getAttribute("actiontype") != "searchengine") {
+      return null;
+    }
+
+    let url = item.getAttribute("url");
+    let action = this.urlbarInput._parseActionUrl(url);
+    if (!action) {
+      return null;
+    }
+    return action.params.alias || null;
   }
 }
