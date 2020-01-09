@@ -289,6 +289,20 @@ add_task(async function testActivation() {
 });
 
 
+
+
+add_task(async function testActivationMousedown() {
+  await openPopup();
+  await expectFocusAfterKey("ArrowDown", gMainButton1);
+  let activated = false;
+  gMainButton1.onmousedown = function() { activated = true; };
+  EventUtils.synthesizeKey(" ");
+  ok(activated, "mousedown activated after space");
+  gMainButton1.onmousedown = null;
+  await hidePopup();
+});
+
+
 add_task(async function testTabArrowsBrowser() {
   await openPopup();
   await showSubView(gDocView);
