@@ -75,6 +75,9 @@ class RaptorResultsHandler():
         LOG.info("summarizing raptor test results")
         output = Output(self.results, self.supporting_data, test_config['subtest_alert_on'])
         output.summarize(test_names)
+        
+        
+        output.combine_browser_cycles()
         output.summarize_screenshots(self.images)
         
         if self.supporting_data is not None and len(self.results) != 0:
