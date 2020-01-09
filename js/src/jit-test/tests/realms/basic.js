@@ -94,5 +94,10 @@ function testEvalcx() {
     
     assertEq((sb && objectGlobal(sb) === null) ||
              ex.toString().includes("visibility"), true);
+
+    
+    var lazysb = evalcx("lazy");
+    Object.setPrototypeOf(lazysb, Math);
+    assertEq(lazysb.__proto__, Math);
 }
 testEvalcx();
