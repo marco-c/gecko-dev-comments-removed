@@ -25,6 +25,9 @@
 
 
 #include "jit/arm64/vixl/Cpu-vixl.h"
+
+#include <algorithm>
+
 #include "jit/arm64/vixl/Utils-vixl.h"
 
 namespace vixl {
@@ -54,6 +57,15 @@ void CPU::SetUp() {
 
   dcache_line_size_ = 4 << dcache_line_size_power_of_two;
   icache_line_size_ = 4 << icache_line_size_power_of_two;
+
+  
+  
+  
+  
+  
+  const uint32_t conservative_line_size = 32;
+  dcache_line_size_ = std::min(dcache_line_size_, conservative_line_size);
+  icache_line_size_ = std::min(icache_line_size_, conservative_line_size);
 }
 
 }  
