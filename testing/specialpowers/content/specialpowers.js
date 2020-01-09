@@ -257,14 +257,23 @@ SpecialPowers.prototype.nestedFrameSetup = function() {
   }, "remote-browser-shown");
 };
 
-SpecialPowers.prototype.isServiceWorkerRegistered = function() {
+SpecialPowers.prototype.registeredServiceWorkers = function() {
   
   
   
   if (!Services.prefs.getBoolPref("dom.serviceWorkers.parent_intercept", false)) {
     let swm = Cc["@mozilla.org/serviceworkers/manager;1"]
                 .getService(Ci.nsIServiceWorkerManager);
-    return swm.getAllRegistrations().length != 0;
+    let regs = swm.getAllRegistrations();
+
+    
+    let workers = new Array(regs.length);
+    for (let i = 0; i < workers.length; ++i) {
+      let { scope, scriptSpec } = regs.queryElementAt(i, Ci.nsIServiceWorkerRegistrationInfo);
+      workers[i] = { scope, scriptSpec };
+    }
+
+    return workers;
   }
 
   
@@ -273,10 +282,11 @@ SpecialPowers.prototype.isServiceWorkerRegistered = function() {
     
     
     
-    return this._sendSyncMessage("SPCheckServiceWorkers")[0].hasWorkers;
+    let { workers } = this._sendSyncMessage("SPCheckServiceWorkers")[0];
+    return workers;
   }
 
-  return false;
+  return [];
 };
 
 SpecialPowers.prototype._removeServiceWorkerData = function(messageName) {
