@@ -129,6 +129,8 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
   
   void CancelChildCrossProcessRedirect();
 
+  already_AddRefed<HttpChannelParentListener> GetParentListener();
+
  protected:
   
   

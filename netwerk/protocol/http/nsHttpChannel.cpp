@@ -7131,8 +7131,20 @@ nsresult nsHttpChannel::StartCrossProcessRedirect() {
   rv = CheckRedirectLimit(nsIChannelEventSink::REDIRECT_INTERNAL);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  RefPtr<HttpChannelParentListener> listener = do_QueryObject(mCallbacks);
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIParentChannel> parentChannel;
+  NS_QueryNotificationCallbacks(this, parentChannel);
+  RefPtr<HttpChannelParent> httpParent = do_QueryObject(parentChannel);
+  MOZ_ASSERT(httpParent);
+  NS_ENSURE_TRUE(httpParent, NS_ERROR_UNEXPECTED);
+
+  RefPtr<HttpChannelParentListener> listener = httpParent->GetParentListener();
   MOZ_ASSERT(listener);
+  NS_ENSURE_TRUE(listener, NS_ERROR_UNEXPECTED);
 
   nsCOMPtr<nsILoadInfo> redirectLoadInfo =
       CloneLoadInfoForRedirect(mURI, nsIChannelEventSink::REDIRECT_INTERNAL);
