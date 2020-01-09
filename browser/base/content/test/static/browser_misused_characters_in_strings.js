@@ -261,6 +261,43 @@ add_task(async function checkAllTheDTDs() {
   await checkDTD(dtdLocation);
 });
 
+add_task(async function checkAllTheFluents() {
+  let uris = await getAllTheFiles(".ftl");
+  let {FluentResource} = ChromeUtils.import("resource://gre/modules/Fluent.jsm", {});
+  let domParser = new DOMParser();
+  for (let uri of uris) {
+    let rawContents = await fetchFile(uri.spec);
+    let resource = FluentResource.fromString(rawContents);
+    if (!resource) {
+      return;
+    }
+
+    for (let [key, val] of resource) {
+      CheckError(domParser, uri, key, val);
+    }
+  }
+});
+
+
+
+
+
+
+
+
+
+function CheckError(domParser, uri, key, val) {
+  if (typeof val === "string") {
+    let stripped_val = domParser.parseFromString(val, "text/html").documentElement.textContent;
+    testForErrors(uri.spec, key, stripped_val);
+  } else if (typeof val === "object" && val) {
+    let new_vals = Object.values(val);
+    for (let new_val of new_vals) {
+      CheckError(domParser, uri, key, new_val);
+    }
+  }
+}
+
 add_task(async function ensureWhiteListIsEmpty() {
   is(gWhitelist.length, 0, "No remaining whitelist entries exist");
 });
