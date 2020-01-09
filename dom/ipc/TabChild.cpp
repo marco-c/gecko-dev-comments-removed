@@ -554,7 +554,7 @@ nsresult TabChild::Init(mozIDOMWindowProxy* aParent) {
   
   RefPtr<BrowsingContext> browsingContext =
       nsDocShell::Cast(docShell)->GetBrowsingContext();
-  SendRootBrowsingContext(BrowsingContextId(browsingContext->Id()));
+  SendRootBrowsingContext(browsingContext);
 
   
   

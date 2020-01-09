@@ -42,6 +42,7 @@ struct IPDLParamTraits;
 namespace dom {
 
 class BrowsingContextGroup;
+class CanonicalBrowsingContext;
 class ContentParent;
 template <typename>
 struct Nullable;
@@ -92,6 +93,9 @@ class BrowsingContext : public nsWrapperCache,
   static already_AddRefed<BrowsingContext> CreateFromIPC(
       BrowsingContext* aParent, BrowsingContext* aOpener,
       const nsAString& aName, uint64_t aId, ContentParent* aOriginProcess);
+
+  
+  CanonicalBrowsingContext* Canonical();
 
   
   
