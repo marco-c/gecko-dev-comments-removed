@@ -1386,13 +1386,18 @@ class PackageFrontend(MachCommandBase):
                 
                 
                 
-                for l in cot.content.splitlines():
-                    if l.startswith('{'):
-                        try:
-                            data = json.loads(l)
-                            break
-                        except Exception:
-                            pass
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                data = json.loads(
+                    cot.content.partition("-----BEGIN PGP SIGNATURE-----")[0]
+                               .partition("Hash: SHA256")[2])
                 for algorithm, digest in (data.get('artifacts', {})
                                               .get(artifact_name, {}).items()):
                     pass
@@ -1522,7 +1527,7 @@ class PackageFrontend(MachCommandBase):
                     os.unlink(record.filename)
                     if attempt < retry:
                         self.log(logging.INFO, 'artifact', {},
-                                 'Will retry in a moment...')
+                                 'Corrupt download. Will retry in a moment...')
                     continue
 
                 downloaded.append(record)
