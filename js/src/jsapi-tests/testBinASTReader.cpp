@@ -240,13 +240,11 @@ void runTestFromPath(JSContext* cx, const char* path) {
       continue;
     }
 
-    {
-      
-      
-      
-      JS::PrepareForFullGC(cx);
-      cx->runtime()->gc.gc(GC_NORMAL, JS::GCReason::NO_REASON);
-    }
+    
+    
+    
+    JS_GC(cx);
+
     LifoAllocScope allocScope(&cx->tempLifoAlloc());
 
     
