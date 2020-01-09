@@ -18,6 +18,11 @@ ChromeUtils.defineModuleGetter(this, "EcosystemTelemetry",
 const WEAVE_EVENT = "weave:service:login:change";
 const TEST_PING_TYPE = "test-ping-type";
 
+function fakeIdleNotification(topic) {
+  let scheduler = ChromeUtils.import("resource://gre/modules/TelemetryScheduler.jsm", null);
+  return scheduler.TelemetryScheduler.observe(null, topic, null);
+}
+
 function checkPingStructure(ping, type, reason) {
   Assert.equal(ping.type, type, "Should be an ecosystem ping.");
 
@@ -182,4 +187,60 @@ add_task({
 
   
   fakeFxaUid(originalFxaUid);
+});
+
+
+
+
+add_task({
+  skip_if: () => gIsAndroid,
+}, async function test_periodic_ping() {
+  await TelemetryStorage.testClearPendingPings();
+  PingServer.clearRequests();
+
+  const pingType = "pre-account";
+
+  let receivedPing = null;
+  
+  
+  PingServer.registerPingHandler(req => {
+    const ping = decodeRequestPayload(req);
+    if (ping.type == pingType) {
+      Assert.ok(!receivedPing, "Telemetry must only send one periodic ecosystem ping.");
+      receivedPing = ping;
+    }
+  });
+
+  
+  
+  let schedulerTickCallback = null;
+  let now = new Date(2040, 1, 1, 0, 0, 0);
+  fakeNow(now);
+  
+  fakeSchedulerTimer(callback => schedulerTickCallback = callback, () => {});
+  await TelemetryController.testReset();
+
+  Preferences.set(TelemetryUtils.Preferences.EcosystemTelemetryEnabled, true);
+  EcosystemTelemetry.testReset();
+
+  
+  let firstPeriodicDue = new Date(2040, 1, 2, 0, 0, 0);
+  fakeNow(firstPeriodicDue);
+
+  
+  Assert.ok(!!schedulerTickCallback);
+  let tickPromise = schedulerTickCallback();
+
+  
+  fakeIdleNotification("idle");
+  fakeIdleNotification("active");
+
+  
+  await tickPromise;
+
+  await TelemetrySend.testWaitOnOutgoingPings();
+
+  
+  Assert.ok(receivedPing, "Telemetry must send one ecosystem periodic ping.");
+  checkPingStructure(receivedPing, pingType, "periodic");
 });
