@@ -4,9 +4,9 @@
 
 
 
-let CURRENT_VERSION = 2;
-let OLDER_INCOMPATIBLE_VERSION = 1; 
-let FUTURE_VERSION = 3;
+let CURRENT_VERSION = 3;
+let SOME_OLDER_INCOMPATIBLE_VERSION = CURRENT_VERSION - 1;  
+let SOME_FUTURE_VERSION = CURRENT_VERSION + 1;              
 
 
 
@@ -36,13 +36,13 @@ new WebAssembly.Module(wasmTextToBinary(
 
 assertErrorMessage(() => new WebAssembly.Module(wasmTextToBinary(
     `(module
-      (gc_feature_opt_in ${OLDER_INCOMPATIBLE_VERSION}))`)),
+      (gc_feature_opt_in ${SOME_OLDER_INCOMPATIBLE_VERSION}))`)),
                    WebAssembly.CompileError,
-                   /GC feature version \d+ is no longer supported by this engine/);
+                   /GC feature version.*no longer supported by this engine/);
 
 assertErrorMessage(() => new WebAssembly.Module(wasmTextToBinary(
     `(module
-      (gc_feature_opt_in ${FUTURE_VERSION}))`)),
+      (gc_feature_opt_in ${SOME_FUTURE_VERSION}))`)),
                    WebAssembly.CompileError,
                    /GC feature version is unknown/);
 
