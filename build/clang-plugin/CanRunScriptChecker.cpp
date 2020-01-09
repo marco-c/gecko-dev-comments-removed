@@ -91,19 +91,22 @@ namespace {
 
 
 
+
 class FuncSetCallback : public MatchFinder::MatchCallback {
 public:
-  FuncSetCallback(std::unordered_set<const FunctionDecl *> &FuncSet)
-      : CanRunScriptFuncs(FuncSet) {}
+  FuncSetCallback(CanRunScriptChecker& Checker,
+                  std::unordered_set<const FunctionDecl *> &FuncSet)
+      : CanRunScriptFuncs(FuncSet),
+        Checker(Checker) {}
 
   void run(const MatchFinder::MatchResult &Result) override;
 
 private:
   
-  
-  void addAllOverriddenMethodsRecursively(const CXXMethodDecl *Method);
+  void checkOverriddenMethods(const CXXMethodDecl *Method);
 
   std::unordered_set<const FunctionDecl *> &CanRunScriptFuncs;
+  CanRunScriptChecker &Checker;
 };
 
 void FuncSetCallback::run(const MatchFinder::MatchResult &Result) {
@@ -120,24 +123,25 @@ void FuncSetCallback::run(const MatchFinder::MatchResult &Result) {
 
   
   if (auto *Method = dyn_cast<CXXMethodDecl>(Func)) {
-    addAllOverriddenMethodsRecursively(Method);
+    checkOverriddenMethods(Method);
   }
 }
 
-void FuncSetCallback::addAllOverriddenMethodsRecursively(
-    const CXXMethodDecl *Method) {
+void FuncSetCallback::checkOverriddenMethods(const CXXMethodDecl *Method) {
   for (auto OverriddenMethod : Method->overridden_methods()) {
-    CanRunScriptFuncs.insert(OverriddenMethod);
+    if (!hasCustomAttribute<moz_can_run_script>(OverriddenMethod)) {
+      const char *ErrorNonCanRunScriptOverridden =
+          "functions marked as MOZ_CAN_RUN_SCRIPT cannot override functions "
+          "that are not marked MOZ_CAN_RUN_SCRIPT";
+      const char* NoteNonCanRunScriptOverridden =
+          "overridden function declared here";
 
-    
-    
-    if (!OverriddenMethod->isThisDeclarationADefinition()) {
-      if (auto Def = OverriddenMethod->getDefinition()) {
-        CanRunScriptFuncs.insert(Def);
-      }
+      Checker.diag(Method->getLocation(), ErrorNonCanRunScriptOverridden,
+                   DiagnosticIDs::Error);
+      Checker.diag(OverriddenMethod->getLocation(),
+                   NoteNonCanRunScriptOverridden,
+                   DiagnosticIDs::Note);
     }
-
-    addAllOverriddenMethodsRecursively(OverriddenMethod);
   }
 }
 } 
@@ -147,7 +151,7 @@ void CanRunScriptChecker::buildFuncSet(ASTContext *Context) {
   MatchFinder Finder;
   
   
-  FuncSetCallback Callback(CanRunScriptFuncs);
+  FuncSetCallback Callback(*this, CanRunScriptFuncs);
   
   Finder.addMatcher(
       functionDecl(hasCanRunScriptAnnotation()).bind("canRunScriptFunction"),

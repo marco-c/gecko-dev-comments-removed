@@ -33,8 +33,8 @@ struct RefCountedBase {
     test2(this);
   }
 
-  virtual void method_test3() {
-    test();
+  virtual void method_test3() { 
+    test(); 
   }
 };
 
@@ -92,18 +92,18 @@ MOZ_CAN_RUN_SCRIPT void test3_parent() {
 }
 
 struct RefCountedChild : public RefCountedBase {
-  virtual void method_test3() override;
+  virtual void method_test3() override; 
 };
 
-void RefCountedChild::method_test3() {
-  test();
+void RefCountedChild::method_test3() { 
+  test(); 
 }
 
 struct RefCountedSubChild : public RefCountedChild {
-  MOZ_CAN_RUN_SCRIPT void method_test3() override;
+  MOZ_CAN_RUN_SCRIPT void method_test3() override; 
 };
 
-void RefCountedSubChild::method_test3() {
+void RefCountedSubChild::method_test3() { 
   test();
 }
 
