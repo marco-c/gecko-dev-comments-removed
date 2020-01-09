@@ -1888,6 +1888,11 @@ gboolean nsWindow::OnExposeEvent(cairo_t *cr) {
   region.ScaleRoundOut(scale, scale);
 
   if (GetLayerManager()->AsKnowsCompositor() && mCompositorSession) {
+#ifdef MOZ_WAYLAND
+    if(mCompositorWidgetDelegate && WaylandRequestsUpdatingEGLSurface()) {
+      mCompositorWidgetDelegate->RequestsUpdatingEGLSurface();
+    }
+#endif
     
     
     GetLayerManager()->SetNeedsComposite(true);
@@ -6583,6 +6588,17 @@ bool nsWindow::WaylandSurfaceNeedsClear() {
       "nsWindow::WaylandSurfaceNeedsClear(): We don't have any mContainer!");
   return false;
 }
+
+bool nsWindow::WaylandRequestsUpdatingEGLSurface() {
+  if (mContainer) {
+    return moz_container_egl_surface_needs_update(MOZ_CONTAINER(mContainer));
+  }
+
+  NS_WARNING(
+      "nsWindow::WaylandSurfaceNeedsClear(): We don't have any mContainer!");
+  return false;
+}
+
 #endif
 
 #ifdef MOZ_X11
