@@ -94,6 +94,16 @@ function getRowByLabel(panel, text) {
 
 
 
+function getRowByIndex(panel, id) {
+  const doc = panel.panelWin.document;
+  const labels = [...doc.querySelectorAll(".treeLabel")];
+  const label = labels.find((node, i) => i == id);
+  return label ? label.closest(".treeRow") : null;
+}
+
+
+
+
 
 function getAllRowsForLabel(panel, text) {
   let rootObjectLevel;
