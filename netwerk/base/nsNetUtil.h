@@ -611,8 +611,11 @@ bool NS_UsePrivateBrowsing(nsIChannel *channel);
 
 
 
+
+
 bool NS_GetOriginAttributes(nsIChannel *aChannel,
-                            mozilla::OriginAttributes &aAttributes);
+                            mozilla::OriginAttributes &aAttributes,
+                            bool aUsingStoragePrincipal = false);
 
 
 

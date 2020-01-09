@@ -9,6 +9,7 @@
 
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/ipc/URIUtils.h"
+#include "mozilla/StoragePrincipalHelper.h"
 #include "nsArrayUtils.h"
 #include "nsCookieService.h"
 #include "nsIChannel.h"
@@ -126,6 +127,8 @@ void CookieServiceParent::TrackCookieLoad(nsIChannel *aChannel) {
   bool isSafeTopLevelNav = NS_IsSafeTopLevelNav(aChannel);
   bool aIsSameSiteForeign = NS_IsSameSiteForeign(aChannel, uri);
 
+  StoragePrincipalHelper::PrepareOriginAttributes(aChannel, attrs);
+
   
   nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil;
   thirdPartyUtil = do_GetService(THIRDPARTYUTIL_CONTRACTID);
@@ -207,8 +210,9 @@ mozilla::ipc::IPCResult CookieServiceParent::RecvSetCookieString(
     const URIParams &aHost, const Maybe<URIParams> &aChannelURI,
     const Maybe<LoadInfoArgs> &aLoadInfoArgs, const bool &aIsForeign,
     const bool &aIsTrackingResource,
-    const bool &aFirstPartyStorageAccessGranted, const nsCString &aCookieString,
-    const nsCString &aServerTime, const bool &aFromHttp) {
+    const bool &aFirstPartyStorageAccessGranted, const OriginAttributes &aAttrs,
+    const nsCString &aCookieString, const nsCString &aServerTime,
+    const bool &aFromHttp) {
   if (!mCookieService) return IPC_OK();
 
   
@@ -240,17 +244,12 @@ mozilla::ipc::IPCResult CookieServiceParent::RecvSetCookieString(
   
   nsDependentCString cookieString(aCookieString, 0);
 
-  OriginAttributes attrs;
-  if (loadInfo) {
-    attrs = loadInfo->GetOriginAttributes();
-  }
-
   
   
   mProcessingCookie = true;
   mCookieService->SetCookieStringInternal(
       hostURI, aIsForeign, aIsTrackingResource, aFirstPartyStorageAccessGranted,
-      cookieString, aServerTime, aFromHttp, attrs, dummyChannel);
+      cookieString, aServerTime, aFromHttp, aAttrs, dummyChannel);
   mProcessingCookie = false;
   return IPC_OK();
 }
