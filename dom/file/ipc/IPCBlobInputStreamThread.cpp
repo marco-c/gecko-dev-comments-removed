@@ -87,6 +87,17 @@ bool IPCBlobInputStreamThread::IsOnFileEventTarget(
 }
 
 
+IPCBlobInputStreamThread* IPCBlobInputStreamThread::Get() {
+  mozilla::StaticMutexAutoLock lock(gIPCBlobThreadMutex);
+
+  if (gShutdownHasStarted) {
+    return nullptr;
+  }
+
+  return gIPCBlobThread;
+}
+
+
 IPCBlobInputStreamThread* IPCBlobInputStreamThread::GetOrCreate() {
   mozilla::StaticMutexAutoLock lock(gIPCBlobThreadMutex);
 
