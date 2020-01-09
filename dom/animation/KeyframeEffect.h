@@ -361,7 +361,12 @@ class KeyframeEffect : public AnimationEffect {
   
   
   
-  already_AddRefed<ComputedStyle> GetTargetComputedStyle() const;
+  enum class Flush {
+    Style,
+    None,
+  };
+  already_AddRefed<ComputedStyle> GetTargetComputedStyle(
+      Flush aFlushType) const;
 
   
   
