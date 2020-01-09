@@ -13,6 +13,7 @@
 #include "mozilla/mozalloc.h"                 
 #include "mozilla/PresShell.h"                
 #include "nsAString.h"
+#include "nsBaseCommandController.h"  
 #include "nsCommandManager.h"         
 #include "nsComponentManagerUtils.h"  
 #include "nsContentUtils.h"
@@ -21,8 +22,6 @@
 #include "nsError.h"               
 #include "nsIChannel.h"            
 #include "nsIContentViewer.h"      
-#include "nsIController.h"         
-#include "nsIControllerContext.h"  
 #include "nsIControllers.h"        
 #include "nsID.h"                  
 #include "nsHTMLDocument.h"        
@@ -1071,17 +1070,17 @@ nsresult nsEditingSession::SetupEditorCommandController(
   
   
   if (!*aControllerId) {
-    nsCOMPtr<nsIController> controller = aControllerCreatorFn();
-    NS_ENSURE_TRUE(controller, NS_ERROR_FAILURE);
+    RefPtr<nsBaseCommandController> commandController = aControllerCreatorFn();
+    NS_ENSURE_TRUE(commandController, NS_ERROR_FAILURE);
 
     
     
     
-    rv = controllers->InsertControllerAt(0, controller);
+    rv = controllers->InsertControllerAt(0, commandController);
     NS_ENSURE_SUCCESS(rv, rv);
 
     
-    rv = controllers->GetControllerId(controller, aControllerId);
+    rv = controllers->GetControllerId(commandController, aControllerId);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 

@@ -7,53 +7,51 @@
 
 #include "mozilla/HTMLEditorCommands.h"  
 #include "mozilla/mozalloc.h"            
+#include "nsControllerCommandTable.h"    
 #include "nsError.h"                     
 #include "nsGkAtoms.h"                   
-#include "nsIControllerCommandTable.h"   
-
-class nsIControllerCommand;
 
 namespace mozilla {
 
 #define NS_REGISTER_ONE_COMMAND(_cmdClass, _cmdName)            \
   {                                                             \
     _cmdClass *theCmd = new _cmdClass();                        \
-    inCommandTable->RegisterCommand(                            \
+    aCommandTable->RegisterCommand(                             \
         _cmdName, static_cast<nsIControllerCommand *>(theCmd)); \
   }
 
 #define NS_REGISTER_FIRST_COMMAND(_cmdClass, _cmdName) \
   {                                                    \
     _cmdClass *theCmd = new _cmdClass();               \
-    inCommandTable->RegisterCommand(                   \
+    aCommandTable->RegisterCommand(                    \
         _cmdName, static_cast<nsIControllerCommand *>(theCmd));
 
 #define NS_REGISTER_NEXT_COMMAND(_cmdClass, _cmdName) \
-  inCommandTable->RegisterCommand(                    \
-      _cmdName, static_cast<nsIControllerCommand *>(theCmd));
+  aCommandTable->RegisterCommand(_cmdName,            \
+                                 static_cast<nsIControllerCommand *>(theCmd));
 
-#define NS_REGISTER_LAST_COMMAND(_cmdClass, _cmdName)         \
-  inCommandTable->RegisterCommand(                            \
-      _cmdName, static_cast<nsIControllerCommand *>(theCmd)); \
+#define NS_REGISTER_LAST_COMMAND(_cmdClass, _cmdName)                          \
+  aCommandTable->RegisterCommand(_cmdName,                                     \
+                                 static_cast<nsIControllerCommand *>(theCmd)); \
   }
 
 #define NS_REGISTER_STYLE_COMMAND(_cmdClass, _cmdName, _styleTag) \
   {                                                               \
     _cmdClass *theCmd = new _cmdClass(_styleTag);                 \
-    inCommandTable->RegisterCommand(                              \
+    aCommandTable->RegisterCommand(                               \
         _cmdName, static_cast<nsIControllerCommand *>(theCmd));   \
   }
 
 #define NS_REGISTER_TAG_COMMAND(_cmdClass, _cmdName, _tagName)  \
   {                                                             \
     _cmdClass *theCmd = new _cmdClass(_tagName);                \
-    inCommandTable->RegisterCommand(                            \
+    aCommandTable->RegisterCommand(                             \
         _cmdName, static_cast<nsIControllerCommand *>(theCmd)); \
   }
 
 
 nsresult HTMLEditorController::RegisterEditorDocStateCommands(
-    nsIControllerCommandTable *inCommandTable) {
+    nsControllerCommandTable *aCommandTable) {
   
   NS_REGISTER_FIRST_COMMAND(DocumentStateCommand, "obs_documentCreated")
   NS_REGISTER_NEXT_COMMAND(DocumentStateCommand, "obs_documentWillBeDestroyed")
@@ -77,7 +75,7 @@ nsresult HTMLEditorController::RegisterEditorDocStateCommands(
 
 
 nsresult HTMLEditorController::RegisterHTMLEditorCommands(
-    nsIControllerCommandTable *inCommandTable) {
+    nsControllerCommandTable *aCommandTable) {
   
   NS_REGISTER_ONE_COMMAND(PasteNoFormattingCommand, "cmd_pasteNoFormatting");
 

@@ -15,11 +15,12 @@ struct KeyboardScrollAction;
 }  
 }  
 
-class nsIControllerCommandTable;
+class nsControllerCommandTable;
 
 class nsWindowCommandRegistration {
  public:
-  static nsresult RegisterWindowCommands(nsIControllerCommandTable* ccm);
+  static nsresult RegisterWindowCommands(
+      nsControllerCommandTable* aCommandTable);
 };
 
 class nsGlobalWindowCommands {

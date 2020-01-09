@@ -7,9 +7,9 @@
 
 #include "EditorCommands.h"
 #include "mozilla/mozalloc.h"
+#include "nsControllerCommandTable.h"
 #include "nsDebug.h"
 #include "nsError.h"
-#include "nsIControllerCommandTable.h"
 
 class nsIControllerCommand;
 
@@ -41,7 +41,7 @@ namespace mozilla {
 
 
 nsresult EditorController::RegisterEditingCommands(
-    nsIControllerCommandTable* aCommandTable) {
+    nsControllerCommandTable* aCommandTable) {
   
   
 
@@ -79,7 +79,7 @@ nsresult EditorController::RegisterEditingCommands(
 
 
 nsresult EditorController::RegisterEditorCommands(
-    nsIControllerCommandTable* aCommandTable) {
+    nsControllerCommandTable* aCommandTable) {
   
 
   NS_REGISTER_FIRST_COMMAND(SelectionMoveCommands, "cmd_scrollTop");
