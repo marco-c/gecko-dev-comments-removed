@@ -192,5 +192,15 @@ var TabStateInternal = {
         tabData[key] = value;
       }
     }
+
+    
+    
+    
+    
+    if (tabData.scroll) {
+      if (!data.scroll) {
+        delete tabData.scroll;
+      }
+    }
   },
 };
