@@ -10362,8 +10362,8 @@ nsresult nsDocShell::DoChannelLoad(nsIChannel* aChannel,
       break;
   }
 
-  if (!aBypassClassifier) {
-    
+  if (aBypassClassifier) {
+    loadFlags |= nsIChannel::LOAD_BYPASS_URL_CLASSIFIER;
   }
 
   
