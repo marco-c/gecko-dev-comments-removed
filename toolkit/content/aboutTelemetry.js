@@ -2523,7 +2523,8 @@ function displayRichPingData(ping, updatePayloadList) {
 
   if (isEventPing) {
     
-    let payload = { processes: {} };
+    
+    let payload = { processes: { parent: {} } };
     for (let process of Object.keys(ping.payload.events)) {
       payload.processes[process] = {
         events: ping.payload.events[process],
