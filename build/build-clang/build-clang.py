@@ -120,23 +120,8 @@ def delete(path):
             pass
 
 
-def install_libgcc(gcc_dir, clang_dir, is_final_stage):
-    gcc_bin_dir = os.path.join(gcc_dir, 'bin')
-
-    
-    
-    
-    
-    
-    
-    
-    
-    if not is_final_stage:
-        x64_bin_dir = os.path.join(clang_dir, 'x86_64-unknown-linux-gnu', 'bin')
-        mkdir_p(x64_bin_dir)
-        shutil.copy2(os.path.join(gcc_bin_dir, 'ld'), x64_bin_dir)
-
-    out = subprocess.check_output([os.path.join(gcc_bin_dir, "gcc"),
+def install_libgcc(gcc_dir, clang_dir):
+    out = subprocess.check_output([os.path.join(gcc_dir, "bin", "gcc"),
                                    '-print-libgcc-file-name'])
 
     libgcc_dir = os.path.dirname(out.rstrip())
@@ -324,7 +309,7 @@ def build_one_stage(cc, cxx, asm, ld, ar, ranlib, libtool,
     build_package(build_dir, cmake_args)
 
     if is_linux():
-        install_libgcc(gcc_dir, inst_dir, is_final_stage)
+        install_libgcc(gcc_dir, inst_dir)
     
     
     if is_windows():
@@ -691,13 +676,9 @@ if __name__ == "__main__":
     elif is_linux():
         extra_cflags = []
         extra_cxxflags = []
+        extra_cflags2 = ["-fPIC"]
         
-        
-        
-        
-        extra_cflags2 = ["-fPIC", '-gcc-toolchain', stage1_inst_dir]
-        
-        extra_cxxflags2 = ["-fPIC", '-Qunused-arguments', '-gcc-toolchain', stage1_inst_dir]
+        extra_cxxflags2 = ["-fPIC", '-Qunused-arguments']
         extra_asmflags = []
         
         extra_ldflags = ['-Wl,-Bsymbolic-functions']
