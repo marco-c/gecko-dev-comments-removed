@@ -1114,6 +1114,8 @@ pref("toolkit.asyncshutdown.crash_timeout", 180000);
 
 pref("toolkit.asyncshutdown.log", false);
 
+pref("toolkit.content-background-hang-monitor.disabled", false);
+
 
 
 
