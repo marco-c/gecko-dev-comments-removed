@@ -11,6 +11,9 @@ ChromeUtils.defineModuleGetter(this, "RuntimePermissions",
 ChromeUtils.defineModuleGetter(this, "DoorHanger",
                                "resource://gre/modules/Prompt.jsm");
 
+ChromeUtils.defineModuleGetter(this, "PrivateBrowsingUtils",
+                               "resource://gre/modules/PrivateBrowsingUtils.jsm");
+
 const kEntities = {
   "contacts": "contacts",
   "desktop-notification": "desktopNotification2",
@@ -54,6 +57,8 @@ ContentPermissionPrompt.prototype = {
   },
 
   prompt: function(request) {
+    let isApp = request.principal.appId !== Ci.nsIScriptSecurityManager.NO_APP_ID && request.principal.appId !== Ci.nsIScriptSecurityManager.UNKNOWN_APP_ID;
+
     
     let types = request.types.QueryInterface(Ci.nsIArray);
     if (types.length != 1) {
@@ -77,6 +82,9 @@ ContentPermissionPrompt.prototype = {
       }
       request.allow();
     };
+
+    
+    let isPrivate = PrivateBrowsingUtils.isWindowPrivate(request.window.ownerGlobal);
 
     
     if (this.handleExistingPermission(request, perm.type, callback)) {
@@ -106,9 +114,17 @@ ContentPermissionPrompt.prototype = {
     {
       label: browserBundle.GetStringFromName(entityName + ".allow"),
       callback: function(aChecked) {
+        let isPermanent = (aChecked || entityName == "desktopNotification2");
         
-        if (aChecked || entityName == "desktopNotification2") {
+        
+        if (!isPrivate && isPermanent) {
           Services.perms.addFromPrincipal(request.principal, perm.type, Ci.nsIPermissionManager.ALLOW_ACTION);
+        
+        
+        } else if (isApp || (isPrivate && isPermanent)) {
+          
+          
+          Services.perms.addFromPrincipal(request.principal, perm.type, Ci.nsIPermissionManager.ALLOW_ACTION, Ci.nsIPermissionManager.EXPIRE_SESSION);
         }
 
         callback( true);
@@ -129,8 +145,12 @@ ContentPermissionPrompt.prototype = {
           url: "https://www.mozilla.org/firefox/push/",
         },
       };
-    } else {
+    
+    
+    } else if (!isPrivate) {
       options = { checkbox: browserBundle.GetStringFromName(entityName + ".dontAskAgain") };
+    } else {
+      options = { };
     }
 
     options.defaultCallback = () => {
