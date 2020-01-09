@@ -274,6 +274,8 @@ var UninstallObserver = {
       Services.perms.removeFromPrincipal(principal, "persistent-storage");
     }
 
+    ExtensionPermissions.removeAll(addon.id);
+
     if (!Services.prefs.getBoolPref(LEAVE_UUID_PREF, false)) {
       
       UUIDMap.remove(addon.id);
@@ -671,7 +673,7 @@ class ExtensionData {
         originPermissions.add(matcher.pattern);
 
         
-        let perms = await ExtensionPermissions.get(this);
+        let perms = await ExtensionPermissions.get(this.id);
         for (let perm of perms.permissions) {
           permissions.add(perm);
         }
@@ -1434,7 +1436,7 @@ class Extension extends ExtensionData {
 
 
 
-  static getBootstrapScope() {
+  static getBootstrapScope(id, file) {
     return new BootstrapScope();
   }
 
@@ -2050,7 +2052,7 @@ class Dictionary extends ExtensionData {
     this.startupData = addonData.startupData;
   }
 
-  static getBootstrapScope() {
+  static getBootstrapScope(id, file) {
     return new DictionaryBootstrapScope();
   }
 
@@ -2080,7 +2082,7 @@ class Langpack extends ExtensionData {
     this.manifestCacheKey = [addonData.id, addonData.version];
   }
 
-  static getBootstrapScope() {
+  static getBootstrapScope(id, file) {
     return new LangpackBootstrapScope();
   }
 
