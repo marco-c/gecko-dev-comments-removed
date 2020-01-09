@@ -857,6 +857,16 @@ void ReflowInput::InitDynamicReflowRoot() {
     canBeDynamicReflowRoot = false;
   }
 
+  
+  
+  if (canBeDynamicReflowRoot &&
+      (mStylePosition->GridTemplateColumns().mIsSubgrid ||
+       mStylePosition->GridTemplateRows().mIsSubgrid)) {
+    
+    
+    canBeDynamicReflowRoot = false;
+  }
+
   if (canBeDynamicReflowRoot) {
     mFrame->AddStateBits(NS_FRAME_DYNAMIC_REFLOW_ROOT);
   } else {
