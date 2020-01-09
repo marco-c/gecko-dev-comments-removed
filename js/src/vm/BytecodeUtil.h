@@ -57,8 +57,9 @@ enum {
   JOF_REGEXP = 16,      
   JOF_DOUBLE = 17,      
   JOF_SCOPE = 18,       
+  JOF_CODE_OFFSET = 19, 
 #ifdef ENABLE_BIGINT
-  JOF_BIGINT = 19, 
+  JOF_BIGINT = 20, 
 #endif
   JOF_TYPEMASK = 0x001f, 
 
@@ -197,6 +198,14 @@ static MOZ_ALWAYS_INLINE void SET_JUMP_OFFSET(jsbytecode* pc, int32_t off) {
   SET_INT32(pc, off);
 }
 
+static MOZ_ALWAYS_INLINE int32_t GET_CODE_OFFSET(jsbytecode* pc) {
+  return GET_INT32(pc);
+}
+
+static MOZ_ALWAYS_INLINE void SET_CODE_OFFSET(jsbytecode* pc, int32_t off) {
+  SET_INT32(pc, off);
+}
+
 static const unsigned UINT32_INDEX_LEN = 4;
 
 static MOZ_ALWAYS_INLINE uint32_t GET_UINT32_INDEX(const jsbytecode* pc) {
@@ -322,15 +331,7 @@ static inline uint32_t JOF_OPTYPE(JSOp op) {
   return JOF_TYPE(CodeSpec[op].format);
 }
 
-static inline bool IsJumpOpcode(JSOp op) {
-  uint32_t type = JOF_TYPE(CodeSpec[op].format);
-
-  
-
-
-
-  return type == JOF_JUMP && op != JSOP_LABEL;
-}
+static inline bool IsJumpOpcode(JSOp op) { return JOF_OPTYPE(op) == JOF_JUMP; }
 
 static inline bool BytecodeFallsThrough(JSOp op) {
   switch (op) {

@@ -23,7 +23,7 @@ bool LabelEmitter::emitLabel(JSAtom* name) {
   if (!bce_->makeAtomIndex(name, &index)) {
     return false;
   }
-  if (!bce_->emitJump(JSOP_LABEL, &top_)) {
+  if (!bce_->emitN(JSOP_LABEL, 4, &top_)) {
     return false;
   }
 
@@ -39,8 +39,10 @@ bool LabelEmitter::emitEnd() {
   MOZ_ASSERT(state_ == State::Label);
 
   
-  JumpTarget brk{bce_->lastNonJumpTargetOffset()};
-  bce_->patchJumpsToTarget(top_, brk);
+  jsbytecode* labelpc = bce_->code(top_);
+  int32_t offset = bce_->lastNonJumpTargetOffset() - top_;
+  MOZ_ASSERT(*labelpc == JSOP_LABEL);
+  SET_CODE_OFFSET(labelpc, offset);
 
   
   if (!controlInfo_->patchBreaks(bce_)) {
