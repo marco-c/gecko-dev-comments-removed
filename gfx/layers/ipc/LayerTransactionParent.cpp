@@ -1031,7 +1031,7 @@ mozilla::ipc::IPCResult LayerTransactionParent::RecvRecordPaintTimes(
 
 mozilla::ipc::IPCResult LayerTransactionParent::RecvGetTextureFactoryIdentifier(
     TextureFactoryIdentifier* aIdentifier) {
-  if (!mLayerManager) {
+  if (mDestroyed || !mLayerManager || mLayerManager->IsDestroyed()) {
     
     return IPC_OK();
   }
