@@ -25,8 +25,8 @@
 
 
 
-#ifndef __DAV1D_SRC_LOOPRESTORATION_H__
-#define __DAV1D_SRC_LOOPRESTORATION_H__
+#ifndef DAV1D_SRC_LOOPRESTORATION_H
+#define DAV1D_SRC_LOOPRESTORATION_H
 
 #include <stdint.h>
 #include <stddef.h>

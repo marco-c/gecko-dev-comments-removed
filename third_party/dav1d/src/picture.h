@@ -25,8 +25,8 @@
 
 
 
-#ifndef __DAV1D_SRC_PICTURE_H__
-#define __DAV1D_SRC_PICTURE_H__
+#ifndef DAV1D_SRC_PICTURE_H
+#define DAV1D_SRC_PICTURE_H
 
 #include <stdatomic.h>
 
@@ -55,12 +55,7 @@ typedef struct Dav1dThreadPicture {
 
 
 
-int dav1d_thread_picture_alloc(Dav1dThreadPicture *p, int w, int h,
-                               Dav1dSequenceHeader *seq_hdr, Dav1dRef *seq_hdr_ref,
-                               Dav1dFrameHeader *frame_hdr, Dav1dRef *frame_hdr_ref,
-                               int bpc, const Dav1dDataProps *props,
-                               struct thread_data *t, int visible,
-                               Dav1dPicAllocator *);
+int dav1d_thread_picture_alloc(Dav1dContext *c, Dav1dFrameContext *f, const int bpc);
 
 
 
@@ -69,7 +64,7 @@ int dav1d_thread_picture_alloc(Dav1dThreadPicture *p, int w, int h,
 
 
 
-int dav1d_picture_alloc_copy(Dav1dPicture *dst, const int w,
+int dav1d_picture_alloc_copy(Dav1dContext *c, Dav1dPicture *dst, const int w,
                              const Dav1dPicture *src);
 
 

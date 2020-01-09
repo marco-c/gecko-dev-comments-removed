@@ -25,8 +25,8 @@
 
 
 
-#ifndef __DAV1D_SRC_INTRA_EDGE_H__
-#define __DAV1D_SRC_INTRA_EDGE_H__
+#ifndef DAV1D_SRC_INTRA_EDGE_H
+#define DAV1D_SRC_INTRA_EDGE_H
 
 enum EdgeFlags {
     EDGE_I444_TOP_HAS_RIGHT = 1 << 0,

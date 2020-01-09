@@ -25,8 +25,8 @@
 
 
 
-#ifndef __DAV1D_COMMON_VALIDATE_H__
-#define __DAV1D_COMMON_VALIDATE_H__
+#ifndef DAV1D_COMMON_VALIDATE_H
+#define DAV1D_COMMON_VALIDATE_H
 
 #include <stdio.h>
 #include <stdlib.h>

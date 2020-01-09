@@ -25,8 +25,8 @@
 
 
 
-#ifndef __DAV1D_HEADERS_H__
-#define __DAV1D_HEADERS_H__
+#ifndef DAV1D_HEADERS_H
+#define DAV1D_HEADERS_H
 
 
 #define DAV1D_MAX_CDEF_STRENGTHS 8
@@ -160,6 +160,22 @@ enum Dav1dChromaSamplePosition {
     DAV1D_CHR_COLOCATED = 2, 
 };
 
+typedef struct Dav1dContentLightLevel {
+    int max_content_light_level;
+    int max_frame_average_light_level;
+} Dav1dContentLightLevel;
+
+typedef struct Dav1dMasteringDisplay {
+    
+    uint16_t primaries[3][2];
+    
+    uint16_t white_point[2];
+    
+    uint32_t max_luminance;
+    
+    uint32_t min_luminance;
+} Dav1dMasteringDisplay;
+
 typedef struct Dav1dSequenceHeader {
     
 
@@ -182,6 +198,14 @@ typedef struct Dav1dSequenceHeader {
 
 
 
+
+
+
+    int hbd;
+    
+
+
+
     int color_range;
 
     int num_operating_points;
@@ -191,9 +215,6 @@ typedef struct Dav1dSequenceHeader {
         int idc;
         int tier;
         int decoder_model_param_present;
-        int decoder_buffer_delay;
-        int encoder_buffer_delay;
-        int low_delay_mode;
         int display_model_param_present;
     } operating_points[DAV1D_MAX_OPERATING_POINTS];
 
@@ -230,18 +251,22 @@ typedef struct Dav1dSequenceHeader {
     int super_res;
     int cdef;
     int restoration;
-    
-
-
-
-
-
-
-    int hbd;
     int ss_hor, ss_ver, monochrome;
     int color_description_present;
     int separate_uv_delta_q;
     int film_grain_present;
+
+    
+    
+    
+    
+    
+    
+    struct Dav1dSequenceHeaderOperatingParameterInfo {
+        int decoder_buffer_delay;
+        int encoder_buffer_delay;
+        int low_delay_mode;
+    } operating_parameter_info[DAV1D_MAX_OPERATING_POINTS];
 } Dav1dSequenceHeader;
 
 typedef struct Dav1dSegmentationData {

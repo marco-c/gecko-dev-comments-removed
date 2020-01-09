@@ -25,8 +25,8 @@
 
 
 
-#ifndef __DAV1D_SCAN_H__
-#define __DAV1D_SCAN_H__
+#ifndef DAV1D_SRC_SCAN_H
+#define DAV1D_SRC_SCAN_H
 
 #include <stdint.h>
 

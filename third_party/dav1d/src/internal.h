@@ -25,8 +25,8 @@
 
 
 
-#ifndef __DAV1D_SRC_INTERNAL_H__
-#define __DAV1D_SRC_INTERNAL_H__
+#ifndef DAV1D_SRC_INTERNAL_H
+#define DAV1D_SRC_INTERNAL_H
 
 #include <stdatomic.h>
 
@@ -65,22 +65,30 @@ typedef struct Dav1dDSPContext {
     Dav1dLoopRestorationDSPContext lr;
 } Dav1dDSPContext;
 
+struct Dav1dTileGroup {
+    Dav1dData data;
+    int start, end;
+};
+
 struct Dav1dContext {
     Dav1dFrameContext *fc;
     unsigned n_fc;
 
     
     
-    struct {
-        Dav1dData data;
-        int start, end;
-    } tile[256];
+    struct Dav1dTileGroup *tile;
+    int n_tile_data_alloc;
     int n_tile_data;
     int n_tiles;
     Dav1dRef *seq_hdr_ref;
     Dav1dSequenceHeader *seq_hdr;
     Dav1dRef *frame_hdr_ref;
     Dav1dFrameHeader *frame_hdr;
+
+    Dav1dRef *content_light_ref;
+    Dav1dContentLightLevel *content_light;
+    Dav1dRef *mastering_display_ref;
+    Dav1dMasteringDisplay *mastering_display;
 
     
     Dav1dData in;
@@ -120,6 +128,8 @@ struct Dav1dContext {
     unsigned operating_point_idc;
     int all_layers;
     int drain;
+
+    Dav1dLogger logger;
 };
 
 struct Dav1dFrameContext {
@@ -139,10 +149,8 @@ struct Dav1dFrameContext {
     unsigned refpoc[7], refrefpoc[7][7];
     uint8_t gmv_warp_allowed[7];
     CdfThreadContext in_cdf, out_cdf;
-    struct {
-        Dav1dData data;
-        int start, end;
-    } tile[256];
+    struct Dav1dTileGroup *tile;
+    int n_tile_data_alloc;
     int n_tile_data;
 
     
@@ -227,6 +235,7 @@ struct Dav1dFrameContext {
         int tasks_left, num_tasks;
         int (*task_idx_to_sby_and_tile_idx)[2];
         int titsati_sz, titsati_init[3];
+        int inited;
     } tile_thread;
 };
 
@@ -270,7 +279,7 @@ struct Dav1dTileContext {
     
     
     uint16_t al_pal[2 ][32 ][3 ][8 ];
-    uint16_t pal[3 ][8 ];
+    ALIGN(uint16_t pal[3 ][8 ], 16);
     uint8_t pal_sz_uv[2 ][32 ];
     uint8_t txtp_map[32 * 32]; 
     Dav1dWarpedMotionParams warpmv;

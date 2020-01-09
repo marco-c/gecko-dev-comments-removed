@@ -25,8 +25,8 @@
 
 
 
-#ifndef __DAV1D_OUTPUT_OUTPUT_H__
-#define __DAV1D_OUTPUT_OUTPUT_H__
+#ifndef DAV1D_OUTPUT_OUTPUT_H
+#define DAV1D_OUTPUT_OUTPUT_H
 
 #include "picture.h"
 

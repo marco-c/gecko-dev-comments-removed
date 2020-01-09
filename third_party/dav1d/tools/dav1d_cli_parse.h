@@ -25,10 +25,10 @@
 
 
 
-#ifndef __DAV1D_CLI_PARSE_H__
-#define __DAV1D_CLI_PARSE_H__
+#ifndef DAV1D_CLI_PARSE_H
+#define DAV1D_CLI_PARSE_H
 
-#include "dav1d.h"
+#include "dav1d/dav1d.h"
 
 typedef struct {
     const char *outputfile;

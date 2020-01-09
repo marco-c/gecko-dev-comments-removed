@@ -25,8 +25,8 @@
 
 
 
-#ifndef __DAV1D_SRC_WEDGE_H__
-#define __DAV1D_SRC_WEDGE_H__
+#ifndef DAV1D_SRC_WEDGE_H
+#define DAV1D_SRC_WEDGE_H
 
 #include "src/levels.h"
 

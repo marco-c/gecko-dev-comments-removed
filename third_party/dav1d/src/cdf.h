@@ -25,8 +25,8 @@
 
 
 
-#ifndef __AV1_CDF_H__
-#define __AV1_CDF_H__
+#ifndef DAV1D_SRC_CDF_H
+#define DAV1D_SRC_CDF_H
 
 #include <stdint.h>
 

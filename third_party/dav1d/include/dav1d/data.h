@@ -25,8 +25,8 @@
 
 
 
-#ifndef __DAV1D_DATA_H__
-#define __DAV1D_DATA_H__
+#ifndef DAV1D_DATA_H
+#define DAV1D_DATA_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -37,7 +37,7 @@ typedef struct Dav1dData {
     const uint8_t *data; 
     size_t sz; 
     struct Dav1dRef *ref; 
-    Dav1dDataProps m;
+    Dav1dDataProps m; 
 } Dav1dData;
 
 

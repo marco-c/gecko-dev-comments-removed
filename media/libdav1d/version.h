@@ -1,2 +1,34 @@
 
-#define DAV1D_VERSION "0.1.1"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef DAV1D_VERSION_H
+#define DAV1D_VERSION_H
+
+#define DAV1D_API_VERSION_MAJOR 1
+#define DAV1D_API_VERSION_MINOR 0
+#define DAV1D_API_VERSION_PATCH 1
+
+#endif 

@@ -25,8 +25,8 @@
 
 
 
-#ifndef __DAV1D_COMMON_MEM_H__
-#define __DAV1D_COMMON_MEM_H__
+#ifndef DAV1D_COMMON_MEM_H
+#define DAV1D_COMMON_MEM_H
 
 #include <assert.h>
 #include <stdlib.h>

@@ -25,8 +25,8 @@
 
 
 
-#ifndef __DAV1D_INPUT_DEMUXER_H__
-#define __DAV1D_INPUT_DEMUXER_H__
+#ifndef DAV1D_INPUT_DEMUXER_H
+#define DAV1D_INPUT_DEMUXER_H
 
 #include "data.h"
 

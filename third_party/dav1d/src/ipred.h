@@ -25,8 +25,8 @@
 
 
 
-#ifndef __DAV1D_SRC_IPRED_H__
-#define __DAV1D_SRC_IPRED_H__
+#ifndef DAV1D_SRC_IPRED_H
+#define DAV1D_SRC_IPRED_H
 
 #include <stddef.h>
 

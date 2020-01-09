@@ -25,8 +25,8 @@
 
 
 
-#ifndef __DAV1D_SRC_RECON_H__
-#define __DAV1D_SRC_RECON_H__
+#ifndef DAV1D_SRC_RECON_H
+#define DAV1D_SRC_RECON_H
 
 #include "src/internal.h"
 #include "src/levels.h"

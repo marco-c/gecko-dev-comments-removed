@@ -25,8 +25,8 @@
 
 
 
-#ifndef __DAV1D_COMMON_BITDEPTH_H__
-#define __DAV1D_COMMON_BITDEPTH_H__ 1
+#ifndef DAV1D_COMMON_BITDEPTH_H
+#define DAV1D_COMMON_BITDEPTH_H
 
 #include <stdint.h>
 #include <string.h>

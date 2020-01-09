@@ -25,14 +25,19 @@
 
 
 
-#ifndef __DAV1D_PICTURE_H__
-#define __DAV1D_PICTURE_H__
+#ifndef DAV1D_PICTURE_H
+#define DAV1D_PICTURE_H
 
 #include <stddef.h>
 #include <stdint.h>
 
 #include "common.h"
 #include "headers.h"
+
+
+
+
+#define DAV1D_PICTURE_ALIGNMENT 32
 
 typedef struct Dav1dPictureParameters {
     int w; 
@@ -61,7 +66,21 @@ typedef struct Dav1dPicture {
 
     Dav1dPictureParameters p;
     Dav1dDataProps m;
-    struct Dav1dRef *frame_hdr_ref, *seq_hdr_ref, *ref; 
+
+    
+
+
+
+    Dav1dContentLightLevel *content_light;
+    
+
+
+
+    Dav1dMasteringDisplay *mastering_display;
+
+    struct Dav1dRef *frame_hdr_ref, *seq_hdr_ref; 
+    struct Dav1dRef *content_light_ref, *mastering_display_ref; 
+    struct Dav1dRef *ref; 
 
     void *allocator_data; 
 } Dav1dPicture;
@@ -69,6 +88,10 @@ typedef struct Dav1dPicture {
 typedef struct Dav1dPicAllocator {
     void *cookie; 
     
+
+
+
+
 
 
 

@@ -25,8 +25,8 @@
 
 
 
-#ifndef __DAV1D_SRC_ARM_CPU_H__
-#define __DAV1D_SRC_ARM_CPU_H__
+#ifndef DAV1D_SRC_ARM_CPU_H
+#define DAV1D_SRC_ARM_CPU_H
 
 enum CpuFlags {
     DAV1D_ARM_CPU_FLAG_NEON = 1 << 0,

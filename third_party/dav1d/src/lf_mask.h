@@ -25,8 +25,8 @@
 
 
 
-#ifndef __DAV1D_SRC_LF_MASK_H__
-#define __DAV1D_SRC_LF_MASK_H__
+#ifndef DAV1D_SRC_LF_MASK_H
+#define DAV1D_SRC_LF_MASK_H
 
 #include <stddef.h>
 #include <stdint.h>

@@ -25,8 +25,8 @@
 
 
 
-#ifndef __DAV1D_SRC_IPRED_PREPARE_H__
-#define __DAV1D_SRC_IPRED_PREPARE_H__
+#ifndef DAV1D_SRC_IPRED_PREPARE_H
+#define DAV1D_SRC_IPRED_PREPARE_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -81,8 +81,8 @@ enum IntraPredMode
                                       const pixel *dst, ptrdiff_t stride,
                                       const pixel *prefilter_toplevel_sb_edge,
                                       enum IntraPredMode mode, int *angle,
-                                      int tw, int th, pixel *topleft_out
-                                      HIGHBD_DECL_SUFFIX);
+                                      int tw, int th, int filter_edge,
+                                      pixel *topleft_out HIGHBD_DECL_SUFFIX);
 
 
 

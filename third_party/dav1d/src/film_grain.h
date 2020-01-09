@@ -25,8 +25,8 @@
 
 
 
-#ifndef __DAV1D_SRC_FILM_GRAIN_H__
-#define __DAV1D_SRC_FILM_GRAIN_H__
+#ifndef DAV1D_SRC_FILM_GRAIN_H
+#define DAV1D_SRC_FILM_GRAIN_H
 
 #include "dav1d/dav1d.h"
 
