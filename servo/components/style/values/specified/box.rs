@@ -642,6 +642,7 @@ pub enum OverflowClipBox {
 #[derive(
     Clone,
     Debug,
+    Default,
     MallocSizeOf,
     PartialEq,
     SpecifiedValueInfo,
@@ -650,38 +651,38 @@ pub enum OverflowClipBox {
     ToResolvedValue,
     ToShmem,
 )]
+#[css(comma)]
+#[repr(C)]
 
 
 
 
 
-pub enum WillChange {
+
+pub struct WillChange {
     
-    Auto,
     
-    #[css(comma)]
-    AnimateableFeatures {
-        
-        #[css(iterable)]
-        features: Box<[CustomIdent]>,
-        
-        
-        #[css(skip)]
-        bits: WillChangeBits,
-    },
+    
+    
+    #[css(iterable, if_empty = "auto")]
+    features: crate::OwnedSlice<CustomIdent>,
+    
+    
+    #[css(skip)]
+    bits: WillChangeBits,
 }
 
 impl WillChange {
     #[inline]
     
-    pub fn auto() -> WillChange {
-        WillChange::Auto
+    pub fn auto() -> Self {
+        Self::default()
     }
 }
 
 bitflags! {
     /// The change bits that we care about.
-    #[derive(MallocSizeOf, SpecifiedValueInfo, ToComputedValue, ToResolvedValue, ToShmem)]
+    #[derive(Default, MallocSizeOf, SpecifiedValueInfo, ToComputedValue, ToResolvedValue, ToShmem)]
     #[repr(C)]
     pub struct WillChangeBits: u8 {
         /// Whether the stacking context will change.
@@ -746,7 +747,7 @@ impl Parse for WillChange {
             .try(|input| input.expect_ident_matching("auto"))
             .is_ok()
         {
-            return Ok(WillChange::Auto);
+            return Ok(Self::default());
         }
 
         let mut bits = WillChangeBits::empty();
@@ -767,8 +768,8 @@ impl Parse for WillChange {
             Ok(ident)
         })?;
 
-        Ok(WillChange::AnimateableFeatures {
-            features: custom_idents.into_boxed_slice(),
+        Ok(Self {
+            features: custom_idents.into(),
             bits,
         })
     }
