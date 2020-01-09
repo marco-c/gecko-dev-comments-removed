@@ -1194,7 +1194,7 @@ BrowserPageActions.addSearchEngine = {
         showBrowserPageActionFeedback(this.action);
       },
       errorCode => {
-        if (errorCode != Ci.nsISearchInstallCallback.ERROR_DUPLICATE_ENGINE) {
+        if (errorCode != Ci.nsISearchService.ERROR_DUPLICATE_ENGINE) {
           
           return;
         }
