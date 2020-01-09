@@ -1845,3 +1845,10 @@ pref("browser.engagement.recent_visited_origins.expiry", 86400);
 pref("browser.aboutConfig.showWarning", true);
 
 pref("browser.toolbars.keyboard_navigation", true);
+
+
+
+
+
+pref("identity.fxaccounts.toolbar.enabled", true);
+pref("identity.fxaccounts.toolbar.accessed", false);

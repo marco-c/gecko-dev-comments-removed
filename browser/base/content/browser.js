@@ -361,6 +361,16 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "gToolbarKeyNavEnabled",
     }
   });
 
+XPCOMUtils.defineLazyPreferenceGetter(this, "gFxaToolbarEnabled",
+  "identity.fxaccounts.toolbar.enabled", false, (aPref, aOldVal, aNewVal) => {
+    showFxaToolbarMenu(aNewVal);
+  });
+
+XPCOMUtils.defineLazyPreferenceGetter(this, "gFxaToolbarAccessed",
+  "identity.fxaccounts.toolbar.accessed", false, (aPref, aOldVal, aNewVal) => {
+    showFxaToolbarMenu(gFxaToolbarEnabled);
+  });
+
 customElements.setElementCreationCallback("translation-notification", () => {
   Services.scriptloader.loadSubScript(
     "chrome://browser/content/translation-notification.js", window);
@@ -459,6 +469,30 @@ var gNavigatorBundle = {
     return gBrowserBundle.formatStringFromName(key, array, array.length);
   },
 };
+
+function showFxaToolbarMenu(enable) {
+  
+  
+  const syncEnabled = Services.prefs.getBoolPref("identity.fxaccounts.enabled", false);
+  const mainWindowEl = document.documentElement;
+  if (enable && syncEnabled) {
+    mainWindowEl.setAttribute("fxastatus", "not_configured");
+    
+    
+    
+    gSync.maybeUpdateUIState();
+
+    
+    
+    if (!gFxaToolbarAccessed) {
+      mainWindowEl.setAttribute("fxa_avatar_badged", "badged");
+    } else {
+      mainWindowEl.removeAttribute("fxa_avatar_badged");
+    }
+  } else {
+    mainWindowEl.removeAttribute("fxastatus");
+  }
+}
 
 function UpdateBackForwardCommands(aWebNavigation) {
   var backCommand = document.getElementById("Browser:Back");
@@ -1402,6 +1436,8 @@ var gBrowserInit = {
     });
 
     this._setInitialFocus();
+
+    showFxaToolbarMenu(gFxaToolbarEnabled);
   },
 
   onLoad() {

@@ -1,7 +1,6 @@
 
 
 
-
 "use strict";
 
 var EXPORTED_SYMBOLS = ["CustomizableUI"];
@@ -55,7 +54,7 @@ const kSubviewEvents = [
 
 
 
-var kVersion = 15;
+var kVersion = 16;
 
 
 
@@ -202,6 +201,7 @@ var CustomizableUIInternal = {
       "downloads-button",
       "library-button",
       "sidebar-button",
+      "fxa-toolbar-menu-button",
     ];
 
     if (AppConstants.MOZ_DEV_EDITION) {
@@ -270,6 +270,7 @@ var CustomizableUIInternal = {
     }
   },
 
+  
   _updateForNewVersion() {
     
     
@@ -474,6 +475,15 @@ var CustomizableUIInternal = {
         if (!this._builtinAreas.has(area)) {
           delete gSavedState.placements[area];
         }
+      }
+    }
+
+    
+    if (currentVersion < 16 && gSavedState.placements) {
+      let navbarPlacements = gSavedState.placements[CustomizableUI.AREA_NAVBAR];
+      
+      if (navbarPlacements) {
+        navbarPlacements.push("fxa-toolbar-menu-button");
       }
     }
   },
