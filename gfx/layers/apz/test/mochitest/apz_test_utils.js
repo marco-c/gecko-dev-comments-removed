@@ -751,6 +751,8 @@ function getPrefs(ident) {
         
         
         ["apz.displayport_expiry_ms", 0],
+        
+        ["dom.meta-viewport.enabled", true],
       ];
     default:
       return [];
