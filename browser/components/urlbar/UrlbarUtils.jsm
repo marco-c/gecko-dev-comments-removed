@@ -242,17 +242,15 @@ var UrlbarUtils = {
 
 
 
-
   getTokenMatches(tokens, str) {
-    str = str.toLocaleLowerCase();
     
     
     
     let hits = new Array(str.length).fill(0);
-    for (let { lowerCaseValue } of tokens) {
+    for (let token of tokens) {
       
       
-      for (let index = 0, needle = lowerCaseValue; index >= 0 && needle;) {
+      for (let index = 0, needle = token.value; index >= 0 && needle;) {
         index = str.indexOf(needle, index);
         if (index >= 0) {
           hits.fill(1, index, index + needle.length);
