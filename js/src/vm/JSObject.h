@@ -84,7 +84,6 @@ bool SetImmutablePrototype(JSContext* cx, JS::HandleObject obj,
 
 
 
-
 class JSObject : public js::gc::Cell {
  protected:
   js::GCPtrObjectGroup group_;

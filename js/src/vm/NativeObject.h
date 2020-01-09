@@ -28,7 +28,6 @@ namespace js {
 
 class Shape;
 class TenuringTracer;
-class UnboxedPlainObject;
 
 
 
@@ -565,7 +564,7 @@ class NativeObject : public ShapedObject {
       js::HandleShape shape, js::HandleObjectGroup group);
 
   static inline JS::Result<NativeObject*, JS::OOM&> createWithTemplate(
-      JSContext* cx, HandleObject templateObject);
+      JSContext* cx, js::gc::InitialHeap heap, HandleObject templateObject);
 
 #ifdef DEBUG
   static void enableShapeConsistencyChecks();
@@ -1672,11 +1671,6 @@ extern void AddPropertyTypesAfterProtoChange(JSContext* cx, NativeObject* obj,
 
 extern bool CopyDataPropertiesNative(JSContext* cx, HandlePlainObject target,
                                      HandleNativeObject from,
-                                     HandlePlainObject excludedItems,
-                                     bool* optimized);
-
-extern bool CopyDataPropertiesNative(JSContext* cx, HandlePlainObject target,
-                                     Handle<UnboxedPlainObject*> from,
                                      HandlePlainObject excludedItems,
                                      bool* optimized);
 
