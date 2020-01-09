@@ -1245,6 +1245,9 @@ class nsDocShell final : public nsDocLoader,
   
   
   bool mSkipBrowsingContextDetachOnDestroy : 1;
+
+  
+  bool mWatchedByDevtools : 1;
 };
 
 #endif 
