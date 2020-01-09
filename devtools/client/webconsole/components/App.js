@@ -34,6 +34,9 @@ const { div } = dom;
 const isMacOS = Services.appinfo.OS === "Darwin";
 
 
+const { PREFS } = require("devtools/client/webconsole/constants");
+
+
 
 
 class App extends Component {
@@ -61,6 +64,35 @@ class App extends Component {
     this.onClick = this.onClick.bind(this);
     this.onPaste = this.onPaste.bind(this);
     this.onKeyDown = this.onKeyDown.bind(this);
+  }
+
+  componentDidMount() {
+    const {
+      UI,
+    } = PREFS;
+
+    
+    
+    
+    this.timeStampObserver = {
+      QueryInterface: ChromeUtils.generateQI([
+        Ci.nsIObserver,
+        Ci.nsISupportsWeakReference,
+      ]),
+
+      observe: () => {
+        const enabled = Services.prefs.getBoolPref(UI.MESSAGE_TIMESTAMP);
+        this.props.dispatch(actions.timestampsToggle(enabled));
+      },
+    };
+
+    Services.prefs.addObserver(
+      UI.MESSAGE_TIMESTAMP,
+      this.timeStampObserver,
+      
+      
+      true
+    );
   }
 
   onKeyDown(event) {
