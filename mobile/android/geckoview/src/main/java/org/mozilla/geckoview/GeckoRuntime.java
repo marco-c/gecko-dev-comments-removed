@@ -230,8 +230,8 @@ public final class GeckoRuntime implements Parcelable {
         
         EventDispatcher.getInstance().registerUiThreadListener(mEventListener, "Gecko:Exited");
 
-        mSettings.runtime = this;
-        mSettings.flush();
+        
+        mSettings.attachTo(this);
 
         
         GeckoAppShell.getApplicationContext().getSystemService(Context.CLIPBOARD_SERVICE);
