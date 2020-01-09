@@ -760,11 +760,11 @@ PromptDelegate.prototype = {
     
     if (aAuthInfo.flags & Ci.nsIAuthInformation.AUTH_PROXY) {
       if (!(aChannel instanceof Ci.nsIProxiedChannel)) {
-        throw "proxy auth needs nsIProxiedChannel";
+        throw new Error("proxy auth needs nsIProxiedChannel");
       }
       let info = aChannel.proxyInfo;
       if (!info) {
-        throw "proxy auth needs nsIProxyInfo";
+        throw new Error("proxy auth needs nsIProxyInfo");
       }
       
       

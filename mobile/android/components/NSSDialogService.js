@@ -109,7 +109,7 @@ NSSDialogs.prototype = {
   setPKCS12FilePassword: function(aCtx, aPassword) {
     
     
-    throw "Unimplemented";
+    throw new Error("Unimplemented");
   },
 
   getPKCS12FilePassword: function(aCtx, aPassword) {

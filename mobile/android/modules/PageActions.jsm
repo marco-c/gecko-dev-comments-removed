@@ -18,7 +18,7 @@ var EXPORTED_SYMBOLS = ["PageActions"];
 
 function resolveGeckoURI(aURI) {
   if (!aURI)
-    throw "Can't resolve an empty uri";
+    throw new Error("Can't resolve an empty uri");
 
   if (aURI.startsWith("chrome://")) {
     let registry = Cc["@mozilla.org/chrome/chrome-registry;1"].getService(Ci.nsIChromeRegistry);
