@@ -13,6 +13,7 @@
 
 #include "jstypes.h"  
 
+#include "js/RegExpFlags.h"  
 #include "js/RootingAPI.h"  
 #include "js/Value.h"       
 
@@ -24,43 +25,17 @@ namespace JS {
 
 
 
-
-struct RegExpFlags {
- public:
-  
-
-
-
-  static constexpr unsigned IgnoreCase = 0b0'0001;
-
-  
-
-
-
-  static constexpr unsigned Global = 0b0'0010;
-
-  
-  static constexpr unsigned Multiline = 0b0'0100;
-
-  
-  static constexpr unsigned Sticky = 0b0'1000;
-
-  
-  static constexpr unsigned Unicode = 0b1'0000;
-};
-
-
-
-
 extern JS_PUBLIC_API JSObject* NewRegExpObject(JSContext* cx, const char* bytes,
-                                               size_t length, unsigned flags);
+                                               size_t length,
+                                               RegExpFlags flags);
 
 
 
 
 extern JS_PUBLIC_API JSObject* NewUCRegExpObject(JSContext* cx,
                                                  const char16_t* chars,
-                                                 size_t length, unsigned flags);
+                                                 size_t length,
+                                                 RegExpFlags flags);
 
 extern JS_PUBLIC_API bool SetRegExpInput(JSContext* cx, Handle<JSObject*> obj,
                                          Handle<JSString*> input);
@@ -97,8 +72,8 @@ extern JS_PUBLIC_API bool ObjectIsRegExp(JSContext* cx, Handle<JSObject*> obj,
 
 
 
-extern JS_PUBLIC_API unsigned GetRegExpFlags(JSContext* cx,
-                                             Handle<JSObject*> obj);
+extern JS_PUBLIC_API RegExpFlags GetRegExpFlags(JSContext* cx,
+                                                Handle<JSObject*> obj);
 
 
 

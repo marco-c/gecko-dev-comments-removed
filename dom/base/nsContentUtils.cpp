@@ -6513,7 +6513,7 @@ bool nsContentUtils::IsPatternMatching(nsAString& aValue, nsAString& aPattern,
   JS::Rooted<JSObject*> re(
       cx,
       JS::NewUCRegExpObject(cx, static_cast<char16_t*>(aPattern.BeginWriting()),
-                            aPattern.Length(), JS::RegExpFlags::Unicode));
+                            aPattern.Length(), JS::RegExpFlag::Unicode));
   if (!re) {
     
     aPattern.Cut(0, 4);
