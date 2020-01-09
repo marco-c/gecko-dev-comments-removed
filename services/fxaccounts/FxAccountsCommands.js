@@ -38,62 +38,52 @@ class FxAccountsCommands {
     log.info(`Payload sent to device ${device.id}.`);
   }
 
-  async consumeRemoteCommand(index) {
+  
+
+
+
+
+
+
+
+
+  async pollDeviceCommands(receivedIndex = 0) {
+    
+    
+    
+    const scheduledFetch = receivedIndex == 0;
     if (!Services.prefs.getBoolPref("identity.fxaccounts.commands.enabled", true)) {
       return false;
     }
-    log.info(`Consuming command with index ${index}.`);
-    const {messages} = await this._fetchRemoteCommands(index, 1);
-    if (messages.length != 1) {
-      log.warn(`Should have retrieved 1 and only 1 message, got ${messages.length}.`);
-    }
-    return this._fxAccounts._withCurrentAccountState(async (getUserData, updateUserData) => {
-      const {device} = await getUserData(["device"]);
-      if (!device) {
-        throw new Error("No device registration.");
-      }
-      const handledCommands = (device.handledCommands || []).concat(messages.map(m => m.index));
-      await updateUserData({
-        device: {...device, handledCommands},
-      });
-      await this._handleCommands(messages);
-
-      
-      
-      if (handledCommands.length > 20) {
-        await this.fetchMissedRemoteCommands();
-      }
-    });
-  }
-
-  async fetchMissedRemoteCommands() {
-    if (!Services.prefs.getBoolPref("identity.fxaccounts.commands.enabled", true)) {
-      return false;
-    }
-    log.info(`Consuming missed commands.`);
+    log.info(`Polling device commands.`);
     await this._fxAccounts._withCurrentAccountState(async (getUserData, updateUserData) => {
       const {device} = await getUserData(["device"]);
       if (!device) {
         throw new Error("No device registration.");
       }
-      const lastCommandIndex = device.lastCommandIndex || 0;
-      const handledCommands = device.handledCommands || [];
-      handledCommands.push(lastCommandIndex); 
-      const {index, messages} = await this._fetchRemoteCommands(lastCommandIndex);
-      const missedMessages = messages.filter(m => !handledCommands.includes(m.index));
-      await updateUserData({
-        device: {...device, lastCommandIndex: index, handledCommands: []},
-      });
-      if (missedMessages.length) {
-        log.info(`Handling ${missedMessages.length} missed messages`);
-        Services.telemetry.scalarAdd("identity.fxaccounts.missed_commands_fetched", missedMessages.length);
-        await this._handleCommands(missedMessages);
+      
+      
+      const lastCommandIndex = (device.lastCommandIndex + 1) || receivedIndex;
+      
+      if (receivedIndex > 0 && receivedIndex < lastCommandIndex) {
+        return;
+      }
+      const {index, messages} = await this._fetchDeviceCommands(lastCommandIndex);
+      if (messages.length) {
+        await updateUserData({
+          device: {...device, lastCommandIndex: index},
+        });
+        log.info(`Handling ${messages.length} messages`);
+        if (scheduledFetch) {
+          Services.telemetry.scalarAdd("identity.fxaccounts.missed_commands_fetched", messages.length);
+        }
+        await this._handleCommands(messages);
       }
     });
     return true;
   }
 
-  async _fetchRemoteCommands(index, limit = null) {
+  async _fetchDeviceCommands(index, limit = null) {
     const userData = await this._fxAccounts.getSignedInUser();
     if (!userData) {
       throw new Error("No user.");
@@ -112,15 +102,20 @@ class FxAccountsCommands {
 
   async _handleCommands(messages) {
     const fxaDevices = await this._fxAccounts.getDeviceList();
+    
+    const tabsReceived = [];
     for (const {data} of messages) {
-      let {command, payload, sender} = data;
-      if (sender) {
-        sender = fxaDevices.find(d => d.id == sender);
+      const {command, payload, sender: senderId} = data;
+      const sender = senderId ? fxaDevices.find(d => d.id == senderId) : null;
+      if (!sender) {
+        log.warn("Incoming command is from an unknown device (maybe disconnected?)");
       }
       switch (command) {
         case COMMAND_SENDTAB:
           try {
-            await this.sendTab.handle(sender, payload);
+            const {title, uri} = await this.sendTab.handle(payload);
+            log.info(`Tab received with FxA commands: ${title} from ${sender ? sender.name : "Unknown device"}.`);
+            tabsReceived.push({title, uri, sender});
           } catch (e) {
             log.error(`Error while handling incoming Send Tab payload.`, e);
           }
@@ -128,6 +123,9 @@ class FxAccountsCommands {
         default:
           log.info(`Unknown command: ${command}.`);
       }
+    }
+    if (tabsReceived.length) {
+      Observers.notify("fxaccounts:commands:open-uri", tabsReceived);
     }
   }
 }
@@ -184,22 +182,17 @@ class SendTab {
   }
 
   
-  async handle(sender, {encrypted}) {
-    if (!sender) {
-      log.warn("Incoming tab is from an unknown device (maybe disconnected?)");
-    }
+  async handle({encrypted}) {
     const bytes = await this._decrypt(encrypted);
     const decoder = new TextDecoder("utf8");
     const data = JSON.parse(decoder.decode(bytes));
     const current = data.hasOwnProperty("current") ? data.current :
                                                      data.entries.length - 1;
-    const tabSender = {
-      id: sender ? sender.id : "",
-      name: sender ? sender.name : "",
-    };
     const {title, url: uri} = data.entries[current];
-    log.info(`Tab received with FxA commands: ${title} from ${tabSender.name}.`);
-    Observers.notify("fxaccounts:commands:open-uri", [{uri, title, sender: tabSender}]);
+    return {
+      title,
+      uri,
+    };
   }
 
   async _encrypt(bytes, device) {

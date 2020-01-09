@@ -645,7 +645,7 @@ var gSync = {
         
         
         
-        fxAccounts.commands.fetchMissedRemoteCommands().catch(e => {
+        fxAccounts.commands.pollDeviceCommands().catch(e => {
           console.error("Fetching missed remote commands failed.", e);
         });
         Weave.Service.sync();
