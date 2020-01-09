@@ -256,7 +256,6 @@ impl ToComputedValue for SpecifiedUrl {
 
 
 #[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
-#[repr(C)]
 pub struct SpecifiedImageUrl(pub SpecifiedUrl);
 
 impl SpecifiedImageUrl {
@@ -340,6 +339,7 @@ impl ToCss for ComputedUrl {
 
 
 #[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq)]
+#[repr(transparent)]
 pub struct ComputedImageUrl(pub ComputedUrl);
 
 impl ComputedImageUrl {

@@ -302,7 +302,7 @@ class SVGObserverUtils {
 
   static already_AddRefed<nsISupports> ObserveFiltersForCanvasContext(
       CanvasRenderingContext2D* aContext, Element* aCanvasElement,
-      nsTArray<nsStyleFilter>& aFilters);
+      Span<const StyleFilter> aFilters);
 
   
 
@@ -403,7 +403,7 @@ class SVGObserverUtils {
 
 
   static already_AddRefed<URLAndReferrerInfo> GetFilterURI(
-      nsIFrame* aFrame, const nsStyleFilter& aFilter);
+      nsIFrame* aFrame, const StyleFilter& aFilter);
 
   
 
