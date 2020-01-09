@@ -5670,24 +5670,29 @@ bool nsDisplayWrapList::ComputeVisibility(nsDisplayListBuilder* aBuilder,
   return retval;
 }
 
+static nsRegion GetOpaqueRegion(nsDisplayListBuilder* aBuilder,
+                                nsDisplayList* aList,
+                                const nsRect& aListBounds) {
+  if (aList->IsOpaque()) {
+    
+    
+    return aListBounds;
+  }
+
+  if (aBuilder->HitTestIsForVisibility()) {
+    
+    
+    return aList->GetOpaqueRegion(aBuilder);
+  }
+
+  return nsRegion();
+}
+
 nsRegion nsDisplayWrapList::GetOpaqueRegion(nsDisplayListBuilder* aBuilder,
                                             bool* aSnap) const {
   *aSnap = false;
-  nsRegion result;
-  if (mListPtr->IsOpaque()) {
-    
-    result = GetBounds(aBuilder, aSnap);
-  } else if (aBuilder->HitTestIsForVisibility()) {
-    
-    
-    nsDisplayItem* item = mList.GetBottom();
-    while (item) {
-      result.OrWith(item->GetOpaqueRegion(aBuilder, aSnap));
-      item = item->GetAbove();
-    }
-  }
-  *aSnap = false;
-  return result;
+  bool snap;
+  return ::GetOpaqueRegion(aBuilder, GetChildren(), GetBounds(aBuilder, &snap));
 }
 
 Maybe<nscolor> nsDisplayWrapList::IsUniform(
@@ -5755,11 +5760,7 @@ static LayerState RequiredLayerStateForChildren(
 
 nsRect nsDisplayWrapList::GetComponentAlphaBounds(
     nsDisplayListBuilder* aBuilder) const {
-  nsRect bounds;
-  for (nsDisplayItem* i = mListPtr->GetBottom(); i; i = i->GetAbove()) {
-    bounds.UnionRect(bounds, i->GetComponentAlphaBounds(aBuilder));
-  }
-  return bounds;
+  return mListPtr->GetComponentAlphaBounds(aBuilder);
 }
 
 void nsDisplayWrapList::SetReferenceFrame(const nsIFrame* aFrame) {
