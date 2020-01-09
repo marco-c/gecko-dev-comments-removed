@@ -17,9 +17,32 @@
 using namespace js;
 using namespace js::gc;
 
-void StoreBuffer::GenericBuffer::trace(StoreBuffer* owner, JSTracer* trc) {
-  mozilla::ReentrancyGuard g(*owner);
-  MOZ_ASSERT(owner->isEnabled());
+bool StoreBuffer::WholeCellBuffer::init() {
+  MOZ_ASSERT(!head_);
+  if (!storage_) {
+    storage_ = MakeUnique<LifoAlloc>(LifoAllocBlockSize);
+    
+    
+    
+    if (storage_) {
+      storage_->disableOversize();
+    }
+  }
+  clear();
+  return bool(storage_);
+}
+
+bool StoreBuffer::GenericBuffer::init() {
+  if (!storage_) {
+    storage_ = MakeUnique<LifoAlloc>(LifoAllocBlockSize);
+  }
+  clear();
+  return bool(storage_);
+}
+
+void StoreBuffer::GenericBuffer::trace(JSTracer* trc) {
+  mozilla::ReentrancyGuard g(*owner_);
+  MOZ_ASSERT(owner_->isEnabled());
   if (!storage_) {
     return;
   }
@@ -30,6 +53,25 @@ void StoreBuffer::GenericBuffer::trace(StoreBuffer* owner, JSTracer* trc) {
     edge->trace(trc);
   }
 }
+
+StoreBuffer::StoreBuffer(JSRuntime* rt, const Nursery& nursery)
+ : bufferVal(this),
+   bufferCell(this),
+   bufferSlot(this),
+   bufferWholeCell(this),
+   bufferGeneric(this),
+   cancelIonCompilations_(false),
+   runtime_(rt),
+   nursery_(nursery),
+   aboutToOverflow_(false),
+   enabled_(false)
+#ifdef DEBUG
+ ,
+   mEntered(false)
+#endif
+{
+}
+
 
 void StoreBuffer::checkEmpty() const {
   MOZ_ASSERT(bufferVal.isEmpty());
