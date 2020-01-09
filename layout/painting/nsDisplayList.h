@@ -742,6 +742,10 @@ class nsDisplayListBuilder {
     return CurrentPresShellState()->mInsidePointerEventsNoneDoc;
   }
 
+  bool IsTouchEventPrefEnabledDoc() {
+    return CurrentPresShellState()->mTouchEventPrefEnabledDoc;
+  }
+
   bool GetAncestorHasApzAwareEventHandler() const {
     return mAncestorHasApzAwareEventHandler;
   }
@@ -1833,6 +1837,7 @@ class nsDisplayListBuilder {
     
     
     bool mInsidePointerEventsNoneDoc;
+    bool mTouchEventPrefEnabledDoc;
     nsIFrame* mPresShellIgnoreScrollFrame;
   };
 
