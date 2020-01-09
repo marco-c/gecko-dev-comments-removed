@@ -437,7 +437,7 @@ static bool IsCacheableGetPropCallNative(JSObject* obj, JSObject* holder,
   }
 
   JSFunction& getter = shape->getterValue().toObject().as<JSFunction>();
-  if (!getter.isNativeWithCppEntry()) {
+  if (!getter.isBuiltinNative()) {
     return false;
   }
 
@@ -478,7 +478,7 @@ static bool IsCacheableGetPropCallScripted(
   }
 
   JSFunction& getter = shape->getterValue().toObject().as<JSFunction>();
-  if (getter.isNativeWithCppEntry()) {
+  if (getter.isBuiltinNative()) {
     return false;
   }
 
@@ -998,7 +998,7 @@ static void EmitCallGetterResultNoGuards(CacheIRWriter& writer, JSObject* obj,
                                          ObjOperandId receiverId) {
   if (IsCacheableGetPropCallNative(obj, holder, shape)) {
     JSFunction* target = &shape->getterValue().toObject().as<JSFunction>();
-    MOZ_ASSERT(target->isNativeWithCppEntry());
+    MOZ_ASSERT(target->isBuiltinNative());
     writer.callNativeGetterResult(receiverId, target);
     writer.typeMonitorResult();
     return;
@@ -2652,7 +2652,7 @@ bool GetNameIRGenerator::tryAttachEnvironmentName(ObjOperandId objId,
   env = env_;
   while (env) {
     if (NeedEnvironmentShapeGuard(env)) {
-      writer.guardShape(lastObjId, env->shape());
+      writer.guardShape(lastObjId, env->maybeShape());
     }
 
     if (env == holder) {
@@ -2802,7 +2802,7 @@ bool BindNameIRGenerator::tryAttachEnvironmentName(ObjOperandId objId,
   env = env_;
   while (env) {
     if (NeedEnvironmentShapeGuard(env) && !env->is<GlobalObject>()) {
-      writer.guardShape(lastObjId, env->shape());
+      writer.guardShape(lastObjId, env->maybeShape());
     }
 
     if (env == holder) {
@@ -3528,7 +3528,7 @@ static bool IsCacheableSetPropCallNative(JSObject* obj, JSObject* holder,
   }
 
   JSFunction& setter = shape->setterObject()->as<JSFunction>();
-  if (!setter.isNativeWithCppEntry()) {
+  if (!setter.isBuiltinNative()) {
     return false;
   }
 
@@ -3563,7 +3563,7 @@ static bool IsCacheableSetPropCallScripted(
   }
 
   JSFunction& setter = shape->setterObject()->as<JSFunction>();
-  if (setter.isNativeWithCppEntry()) {
+  if (setter.isBuiltinNative()) {
     return false;
   }
 
@@ -3617,7 +3617,7 @@ static void EmitCallSetterNoGuards(CacheIRWriter& writer, JSObject* obj,
                                    ObjOperandId objId, ValOperandId rhsId) {
   if (IsCacheableSetPropCallNative(obj, holder, shape)) {
     JSFunction* target = &shape->setterValue().toObject().as<JSFunction>();
-    MOZ_ASSERT(target->isNativeWithCppEntry());
+    MOZ_ASSERT(target->isBuiltinNative());
     writer.callNativeSetter(objId, target, rhsId);
     writer.returnFromIC();
     return;
@@ -4401,6 +4401,7 @@ bool SetPropIRGenerator::tryAttachAddSlotStub(HandleObjectGroup oldGroup,
   
   
   
+  MOZ_ASSERT(obj->is<ShapedObject>());
   writer.guardGroup(objId, oldGroup);
 
   
