@@ -22,6 +22,9 @@ class Runtime extends ContentProcessDomain {
     
     
     this.contexts = new Map();
+
+    this.onContextCreated = this.onContextCreated.bind(this);
+    this.onContextDestroyed = this.onContextDestroyed.bind(this);
   }
 
   destructor() {
@@ -33,21 +36,16 @@ class Runtime extends ContentProcessDomain {
   async enable() {
     if (!this.enabled) {
       this.enabled = true;
-      this.chromeEventHandler.addEventListener("DOMWindowCreated", this,
-        {mozSystemGroup: true});
-
-      
-      this.chromeEventHandler.addEventListener("pageshow", this,
-        {mozSystemGroup: true});
-      this.chromeEventHandler.addEventListener("pagehide", this,
-        {mozSystemGroup: true});
-
-      Services.obs.addObserver(this, "inner-window-destroyed");
+      this.contextObserver.on("context-created", this.onContextCreated);
+      this.contextObserver.on("context-destroyed", this.onContextDestroyed);
 
       
       
       Services.tm.dispatchToMainThread(() => {
-        this._createContext(this.content);
+        this.onContextCreated("context-created", {
+          id: this.content.windowUtils.currentInnerWindowID,
+          window: this.content,
+        });
       });
     }
   }
@@ -55,13 +53,8 @@ class Runtime extends ContentProcessDomain {
   disable() {
     if (this.enabled) {
       this.enabled = false;
-      this.chromeEventHandler.removeEventListener("DOMWindowCreated", this,
-        {mozSystemGroup: true});
-      this.chromeEventHandler.removeEventListener("pageshow", this,
-        {mozSystemGroup: true});
-      this.chromeEventHandler.removeEventListener("pagehide", this,
-        {mozSystemGroup: true});
-      Services.obs.removeObserver(this, "inner-window-destroyed");
+      this.contextObserver.off("context-created", this.onContextCreated);
+      this.contextObserver.off("context-destroyed", this.onContextDestroyed);
     }
   }
 
@@ -120,38 +113,13 @@ class Runtime extends ContentProcessDomain {
     return this.__debugger;
   }
 
-  handleEvent({type, target, persisted}) {
-    if (target.defaultView != this.content) {
-      
-      return;
-    }
-    switch (type) {
-    case "DOMWindowCreated":
-      this._createContext(target.defaultView);
-      break;
-
-    case "pageshow":
-      
-      if (!persisted) {
-        return;
+  getContextByFrameId(frameId) {
+    for (const ctx of this.contexts.values()) {
+      if (ctx.frameId === frameId) {
+        return ctx;
       }
-      this._createContext(target.defaultView);
-      break;
-
-    case "pagehide":
-      
-      if (!persisted) {
-        return;
-      }
-      const id = target.defaultView.windowUtils.currentInnerWindowID;
-      this._destroyContext(id);
-      break;
     }
-  }
-
-  observe(subject, topic, data) {
-    const innerWindowID = subject.QueryInterface(Ci.nsISupportsPRUint64).data;
-    this._destroyContext(innerWindowID);
+    return null;
   }
 
   
@@ -162,9 +130,7 @@ class Runtime extends ContentProcessDomain {
 
 
 
-  _createContext(window) {
-    const { windowUtils } = window;
-    const id = windowUtils.currentInnerWindowID;
+  onContextCreated(name, { id, window }) {
     if (this.contexts.has(id)) {
       return;
     }
@@ -172,13 +138,12 @@ class Runtime extends ContentProcessDomain {
     const context = new ExecutionContext(this._debugger, window);
     this.contexts.set(id, context);
 
-    const frameId = windowUtils.outerWindowID;
     this.emit("Runtime.executionContextCreated", {
       context: {
         id,
         auxData: {
           isDefault: window == this.content,
-          frameId,
+          frameId: context.frameId,
         },
       },
     });
@@ -191,14 +156,28 @@ class Runtime extends ContentProcessDomain {
 
 
 
-  _destroyContext(id) {
-    const context = this.contexts.get(id);
+
+
+
+
+
+  onContextDestroyed(name, { id, frameId }) {
+    let context;
+    if (id && frameId) {
+      throw new Error("Expects only id *or* frameId argument to be passed");
+    }
+
+    if (id) {
+      context = this.contexts.get(id);
+    } else {
+      context = this.getContextByFrameId(frameId);
+    }
 
     if (context) {
       context.destructor();
-      this.contexts.delete(id);
+      this.contexts.delete(context.id);
       this.emit("Runtime.executionContextDestroyed", {
-        executionContextId: id,
+        executionContextId: context.id,
       });
     }
   }

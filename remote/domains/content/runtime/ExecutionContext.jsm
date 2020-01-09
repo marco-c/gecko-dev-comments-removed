@@ -31,6 +31,12 @@ class ExecutionContext {
     this._debugger = dbg;
     this._debuggee = this._debugger.addDebuggee(debuggee);
 
+    
+    
+    const { windowUtils } = debuggee;
+    this.id = windowUtils.currentInnerWindowID;
+    this.frameId = windowUtils.outerWindowID;
+
     this._remoteObjects = new Map();
   }
 
