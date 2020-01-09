@@ -49,6 +49,7 @@ class MozURL final {
   nsDependentCSubstring Host() const { return mozurl_host(this); }
   
   int32_t Port() const { return mozurl_port(this); }
+  int32_t RealPort() const { return mozurl_real_port(this); }
   
   
   
@@ -58,6 +59,7 @@ class MozURL final {
   nsDependentCSubstring Query() const { return mozurl_query(this); }
   nsDependentCSubstring Ref() const { return mozurl_fragment(this); }
   bool HasFragment() const { return mozurl_has_fragment(this); }
+  nsDependentCSubstring Directory() const { return mozurl_directory(this); }
 
   
   
