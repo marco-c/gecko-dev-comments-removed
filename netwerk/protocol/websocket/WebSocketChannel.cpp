@@ -2839,8 +2839,14 @@ nsresult WebSocketChannel::ApplyForAdmission() {
 
 
 
-nsresult WebSocketChannel::StartWebsocketData() {
-  nsresult rv;
+nsresult WebSocketChannel::CallStartWebsocketData() {
+  LOG(("WebSocketChannel::CallStartWebsocketData() %p", this));
+  MOZ_ASSERT(NS_IsMainThread(), "not main thread");
+
+  if (mOpenTimer) {
+    mOpenTimer->Cancel();
+    mOpenTimer = nullptr;
+  }
 
   if (!IsOnTargetThread()) {
     return mTargetThread->Dispatch(
@@ -2848,6 +2854,12 @@ nsresult WebSocketChannel::StartWebsocketData() {
                           &WebSocketChannel::StartWebsocketData),
         NS_DISPATCH_NORMAL);
   }
+
+  return StartWebsocketData();
+}
+
+nsresult WebSocketChannel::StartWebsocketData() {
+  nsresult rv;
 
   {
     MutexAutoLock lock(mMutex);
@@ -2925,7 +2937,7 @@ nsresult WebSocketChannel::StartPinging() {
   return NS_OK;
 }
 
-void WebSocketChannel::ReportConnectionTelemetry() {
+void WebSocketChannel::ReportConnectionTelemetry(nsresult aStatusCode) {
   
   
   
@@ -2943,8 +2955,10 @@ void WebSocketChannel::ReportConnectionTelemetry() {
       didProxy = true;
   }
 
-  uint8_t value = (mEncrypted ? (1 << 2) : 0) |
-                  (!mGotUpgradeOK ? (1 << 1) : 0) | (didProxy ? (1 << 0) : 0);
+  uint8_t value =
+      (mEncrypted ? (1 << 2) : 0) |
+      (!(mGotUpgradeOK && NS_SUCCEEDED(aStatusCode)) ? (1 << 1) : 0) |
+      (didProxy ? (1 << 0) : 0);
 
   LOG(("WebSocketChannel::ReportConnectionTelemetry() %p %d", this, value));
   Telemetry::Accumulate(Telemetry::WEBSOCKETS_HANDSHAKE_TYPE, value);
@@ -3165,7 +3179,6 @@ WebSocketChannel::Notify(nsITimer *timer) {
     LOG(("WebSocketChannel:: Expecting Server Close - Timed Out\n"));
     AbortSession(NS_ERROR_NET_TIMEOUT);
   } else if (timer == mOpenTimer) {
-    MOZ_ASSERT(!mGotUpgradeOK, "Open Timer after open complete");
     MOZ_ASSERT(NS_IsMainThread(), "not main thread");
 
     mOpenTimer = nullptr;
@@ -3597,7 +3610,7 @@ WebSocketChannel::OnTransportAvailable(nsISocketTransport *aTransport,
     
     nsWSAdmissionManager::OnConnected(this);
 
-    return StartWebsocketData();
+    return CallStartWebsocketData();
   }
 
   if (mIsServerSide) {
@@ -3640,7 +3653,7 @@ WebSocketChannel::OnTransportAvailable(nsISocketTransport *aTransport,
       }
     }
 
-    return StartWebsocketData();
+    return CallStartWebsocketData();
   }
 
   return NS_OK;
@@ -3654,11 +3667,6 @@ WebSocketChannel::OnStartRequest(nsIRequest *aRequest, nsISupports *aContext) {
        this, aRequest, mHttpChannel.get(), mRecvdHttpUpgradeTransport));
   MOZ_ASSERT(NS_IsMainThread(), "not main thread");
   MOZ_ASSERT(!mGotUpgradeOK, "OTA duplicated");
-
-  if (mOpenTimer) {
-    mOpenTimer->Cancel();
-    mOpenTimer = nullptr;
-  }
 
   if (mStopped) {
     LOG(("WebSocketChannel::OnStartRequest: Channel Already Done\n"));
@@ -3832,7 +3840,7 @@ WebSocketChannel::OnStartRequest(nsIRequest *aRequest, nsISupports *aContext) {
     
     nsWSAdmissionManager::OnConnected(this);
 
-    return StartWebsocketData();
+    return CallStartWebsocketData();
   }
 
   return NS_OK;
@@ -3845,7 +3853,13 @@ WebSocketChannel::OnStopRequest(nsIRequest *aRequest, nsISupports *aContext,
        aRequest, mHttpChannel.get(), static_cast<uint32_t>(aStatusCode)));
   MOZ_ASSERT(NS_IsMainThread(), "not main thread");
 
-  ReportConnectionTelemetry();
+  
+  
+  if (NS_FAILED(aStatusCode) && !mRecvdHttpUpgradeTransport) {
+    AbortSession(aStatusCode);
+  }
+
+  ReportConnectionTelemetry(aStatusCode);
 
   
   
