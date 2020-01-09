@@ -450,15 +450,15 @@ static uint8_t* AllocateArrayBufferContents(JSContext* cx, uint32_t nbytes) {
   return p;
 }
 
-static void NoteViewBufferWasDetached(
-    ArrayBufferViewObject* view, ArrayBufferObject::BufferContents newContents,
-    JSContext* cx) {
-  MOZ_ASSERT(!view->isSharedMemory());
-
-  view->notifyBufferDetached(newContents.data());
-
-  
-  MarkObjectStateChange(cx, view);
+static uint8_t* NewCopiedBufferContents(JSContext* cx,
+                                        Handle<ArrayBufferObject*> buffer) {
+  uint8_t* dataCopy = AllocateArrayBufferContents(cx, buffer->byteLength());
+  if (dataCopy) {
+    if (auto count = buffer->byteLength()) {
+      memcpy(dataCopy, buffer->dataPointer(), count);
+    }
+  }
+  return dataCopy;
 }
 
  void ArrayBufferObject::detach(JSContext* cx,
@@ -487,6 +487,16 @@ static void NoteViewBufferWasDetached(
     cx->zone()->detachedTypedObjects = 1;
   }
 
+  auto NoteViewBufferWasDetached = [&cx,
+                                    &newContents](ArrayBufferViewObject* view) {
+    MOZ_ASSERT(!view->isSharedMemory());
+
+    view->notifyBufferDetached(newContents.data());
+
+    
+    MarkObjectStateChange(cx, view);
+  };
+
   
   
   
@@ -497,14 +507,12 @@ static void NoteViewBufferWasDetached(
           innerViews.maybeViewsUnbarriered(buffer)) {
     for (size_t i = 0; i < views->length(); i++) {
       JSObject* view = (*views)[i];
-      NoteViewBufferWasDetached(&view->as<ArrayBufferViewObject>(), newContents,
-                                cx);
+      NoteViewBufferWasDetached(&view->as<ArrayBufferViewObject>());
     }
     innerViews.removeViews(buffer);
   }
   if (JSObject* view = buffer->firstView()) {
-    NoteViewBufferWasDetached(&view->as<ArrayBufferViewObject>(), newContents,
-                              cx);
+    NoteViewBufferWasDetached(&view->as<ArrayBufferViewObject>());
     buffer->setFirstView(nullptr);
   }
 
@@ -974,11 +982,11 @@ bool js::CreateWasmBuffer(JSContext* cx, const wasm::Limits& memory,
   
   
   if (!buffer->ownsData()) {
-    uint8_t* data = AllocateArrayBufferContents(cx, buffer->byteLength());
+    uint8_t* data = NewCopiedBufferContents(cx, buffer);
     if (!data) {
       return false;
     }
-    memcpy(data, buffer->dataPointer(), buffer->byteLength());
+
     buffer->changeContents(cx, BufferContents::createMalloced(data), OwnsData);
   }
 
@@ -1404,14 +1412,11 @@ ArrayBufferObject* ArrayBufferObject::createFromNewRawBuffer(
 
   
   
-  uint8_t* dataCopy = AllocateArrayBufferContents(cx, buffer->byteLength());
+  uint8_t* dataCopy = NewCopiedBufferContents(cx, buffer);
   if (!dataCopy) {
     return BufferContents::createFailed();
   }
 
-  if (buffer->byteLength() > 0) {
-    memcpy(dataCopy, oldContents.data(), buffer->byteLength());
-  }
   ArrayBufferObject::detach(cx, buffer, oldContents);
   return BufferContents::createMalloced(dataCopy);
 }
