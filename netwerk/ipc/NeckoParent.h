@@ -27,6 +27,8 @@ enum PBOverrideStatus {
 
 
 class NeckoParent : public PNeckoParent {
+  friend class PNeckoParent;
+
  public:
   NeckoParent();
   virtual ~NeckoParent() = default;

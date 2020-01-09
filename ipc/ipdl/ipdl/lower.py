@@ -9,7 +9,9 @@ from collections import OrderedDict
 import ipdl.ast
 import ipdl.builtin
 from ipdl.cxx.ast import *
+from ipdl.direct_call import VIRTUAL_CALL_CLASSES, DIRECT_CALL_OVERRIDES
 from ipdl.type import ActorType, UnionType, TypeVisitor, builtinHeaderIncludes
+
 
 
 
@@ -2951,6 +2953,18 @@ class _GenerateProtocolActorCode(ipdl.ast.Visitor):
         )
 
         
+        if (self.protocol.name, self.side) not in VIRTUAL_CALL_CLASSES:
+            if (self.protocol.name, self.side) in DIRECT_CALL_OVERRIDES:
+                (_, header_file) = DIRECT_CALL_OVERRIDES[self.protocol.name, self.side]
+            else:
+                assert self.protocol.name.startswith("P")
+                header_file = "{}/{}{}.h".format(
+                    "/".join(n.name for n in self.protocol.namespaces),
+                    self.protocol.name[1:],
+                    self.side.capitalize(),
+                )
+            self.externalIncludes.add(header_file)
+
         cf.addthings([
             _DISCLAIMER,
             Whitespace.NL,
@@ -3734,7 +3748,24 @@ class _GenerateProtocolActorCode(ipdl.ast.Visitor):
     
 
     def thisCall(self, function, args):
-        return ExprCall(ExprVar(function), args=args)
+        
+        
+        if (self.protocol.name, self.side) in VIRTUAL_CALL_CLASSES:
+            return ExprCall(ExprVar(function), args=args)
+
+        if (self.protocol.name, self.side) in DIRECT_CALL_OVERRIDES:
+            (class_name, _) = DIRECT_CALL_OVERRIDES[self.protocol.name, self.side]
+        else:
+            assert self.protocol.name.startswith("P")
+            class_name = "{}{}".format(self.protocol.name[1:], self.side.capitalize())
+        return ExprCall(
+            ExprSelect(
+                ExprCast(ExprVar("this"), Type(class_name, ptr=True), static=True),
+                "->",
+                ExprVar(function)
+            ),
+            args=args
+        )
 
     def visitMessageDecl(self, md):
         isctor = md.decl.type.isCtor()

@@ -215,6 +215,8 @@ class TabChild final : public TabChildBase,
       SetAllowedTouchBehaviorCallback;
   typedef mozilla::layers::TouchBehaviorFlags TouchBehaviorFlags;
 
+  friend class PBrowserChild;
+
  public:
   
 
