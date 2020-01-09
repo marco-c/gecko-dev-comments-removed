@@ -79,6 +79,14 @@ static bool AsyncFunctionResume(JSContext* cx,
     return true;
   }
 
+  
+  
+  
+  
+  if (generator->isRunning()) {
+    return true;
+  }
+
   Rooted<PromiseObject*> resultPromise(cx, generator->promise());
 
   RootedObject stack(cx);

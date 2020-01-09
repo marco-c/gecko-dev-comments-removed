@@ -116,6 +116,7 @@ class AsyncGeneratorObject : public AbstractGeneratorObject {
     Slots
   };
 
+ public:
   enum State {
     
     
@@ -150,6 +151,7 @@ class AsyncGeneratorObject : public AbstractGeneratorObject {
   }
   void setState(State state_) { setFixedSlot(Slot_State, Int32Value(state_)); }
 
+ private:
   
   
   

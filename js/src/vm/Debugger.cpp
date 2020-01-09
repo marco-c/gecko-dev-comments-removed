@@ -953,17 +953,28 @@ static void DebuggerFrame_maybeDecrementFrameScriptStepModeCount(
 
 class MOZ_RAII AutoSetGeneratorRunning {
   int32_t resumeIndex_;
+  AsyncGeneratorObject::State asyncGenState_;
   Rooted<AbstractGeneratorObject*> genObj_;
 
  public:
   AutoSetGeneratorRunning(JSContext* cx,
                           Handle<AbstractGeneratorObject*> genObj)
-      : resumeIndex_(0), genObj_(cx, genObj) {
+      : resumeIndex_(0),
+        asyncGenState_(static_cast<AsyncGeneratorObject::State>(0)),
+        genObj_(cx, genObj) {
     if (genObj) {
       if (!genObj->isClosed() && genObj->isSuspended()) {
         
         resumeIndex_ = genObj->resumeIndex();
         genObj->setRunning();
+
+        
+        
+        if (genObj->is<AsyncGeneratorObject>()) {
+          auto* asyncGenObj = &genObj->as<AsyncGeneratorObject>();
+          asyncGenState_ = asyncGenObj->state();
+          asyncGenObj->setExecuting();
+        }
       } else {
         
         
@@ -976,6 +987,9 @@ class MOZ_RAII AutoSetGeneratorRunning {
     if (genObj_) {
       MOZ_ASSERT(genObj_->isRunning());
       genObj_->setResumeIndex(resumeIndex_);
+      if (genObj_->is<AsyncGeneratorObject>()) {
+        genObj_->as<AsyncGeneratorObject>().setState(asyncGenState_);
+      }
     }
   }
 };
