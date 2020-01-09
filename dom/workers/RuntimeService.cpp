@@ -1256,14 +1256,13 @@ bool RuntimeService::RegisterWorker(WorkerPrivate* aWorkerPrivate) {
   } else {
     if (!mNavigatorPropertiesLoaded) {
       Navigator::AppName(mNavigatorProperties.mAppName,
-                         aWorkerPrivate->GetPrincipal(),
                          false );
-      if (NS_FAILED(Navigator::GetAppVersion(
-              mNavigatorProperties.mAppVersion, aWorkerPrivate->GetPrincipal(),
-              false )) ||
-          NS_FAILED(Navigator::GetPlatform(
-              mNavigatorProperties.mPlatform, aWorkerPrivate->GetPrincipal(),
-              false ))) {
+      if (NS_FAILED(
+              Navigator::GetAppVersion(mNavigatorProperties.mAppVersion,
+                                       false )) ||
+          NS_FAILED(
+              Navigator::GetPlatform(mNavigatorProperties.mPlatform,
+                                     false ))) {
         UnregisterWorker(aWorkerPrivate);
         return false;
       }
