@@ -332,10 +332,9 @@ where
         }
 
         
-        let next_sequence = iter.next_sequence().unwrap();
-        debug_assert_eq!(next_sequence, Combinator::PseudoElement);
-        if element.is_pseudo_element() {
-            return false;
+        
+        if iter.next_sequence().is_none() {
+            return true;
         }
     }
 
@@ -467,13 +466,7 @@ where
             }
             Some(current_slot)
         },
-        Combinator::PseudoElement => {
-            let next_element = element.pseudo_element_originating_element()?;
-            if next_element.is_pseudo_element() {
-                return None;
-            }
-            Some(next_element)
-        }
+        Combinator::PseudoElement => element.pseudo_element_originating_element(),
     }
 }
 
@@ -684,6 +677,7 @@ where
         Component::Slotted(ref selector) => {
             
             !element.is_html_slot_element() &&
+                element.assigned_slot().is_some() &&
                 context.shared.nest(|context| {
                     matches_complex_selector(selector.iter(), element, context, flags_setter)
                 })

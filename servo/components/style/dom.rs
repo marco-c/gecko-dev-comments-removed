@@ -779,7 +779,7 @@ pub trait TElement:
     
     
     fn rule_hash_target(&self) -> Self {
-        if self.is_pseudo_element() {
+        if self.implemented_pseudo_element().is_some() {
             self.pseudo_element_originating_element()
                 .expect("Trying to collect rules for a detached pseudo-element")
         } else {
