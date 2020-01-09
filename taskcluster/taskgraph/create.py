@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 testing = False
 
 
-def create_tasks(taskgraph, label_to_taskid, params, decision_task_id=None):
+def create_tasks(graph_config, taskgraph, label_to_taskid, params, decision_task_id=None):
     taskid_to_label = {t: l for l, t in label_to_taskid.iteritems()}
 
     decision_task_id = decision_task_id or os.environ.get('TASK_ID')
@@ -31,7 +31,7 @@ def create_tasks(taskgraph, label_to_taskid, params, decision_task_id=None):
     
     
     task_group_id = decision_task_id or slugid()
-    scheduler_id = 'gecko-level-{}'.format(params['level'])
+    scheduler_id = '{}-level-{}'.format(graph_config['trust-domain'], params['level'])
 
     
     
