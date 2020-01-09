@@ -1,14 +1,14 @@
-/* Any copyright is dedicated to the Public Domain.
- * http://creativecommons.org/publicdomain/zero/1.0/
- */
 
-// This verifies that add-on update checks work
 
-// The test extension uses an insecure update url.
+
+
+
+
+
 Services.prefs.setBoolPref(PREF_EM_CHECK_UPDATE_SECURITY, false);
 
-// This test requires lightweight themes update to be enabled even if the app
-// doesn't support lightweight themes.
+
+
 Services.prefs.setBoolPref("lightweightThemes.update.enabled", true);
 
 const updateFile = "test_update.json";
@@ -70,7 +70,7 @@ add_task(async function setup() {
   await promiseStartupManager();
 });
 
-// Verify that an update is available and can be installed.
+
 add_task(async function test_apply_update() {
   await promiseInstallWebExtension({
     manifest: {
@@ -94,23 +94,31 @@ add_task(async function test_apply_update() {
 
   let originalSyncGUID = a1.syncGUID;
 
-  prepare_test({
-    "addon1@tests.mozilla.org": [
-      ["onPropertyChanged", ["applyBackgroundUpdates"]],
-    ],
-  });
-  a1.applyBackgroundUpdates = AddonManager.AUTOUPDATE_DISABLE;
-  check_test_completed();
+  await expectEvents(
+    {
+      addonEvents: {
+        "addon1@tests.mozilla.org": [
+          {event: "onPropertyChanged",
+           properties: ["applyBackgroundUpdates"]},
+        ],
+      },
+    },
+    async () => {
+      a1.applyBackgroundUpdates = AddonManager.AUTOUPDATE_DISABLE;
+    });
 
   a1.applyBackgroundUpdates = AddonManager.AUTOUPDATE_DISABLE;
 
-  prepare_test({}, [
-    "onNewInstall",
-  ]);
-
-  let {updateAvailable: install} = await AddonTestUtils.promiseFindAddonUpdates(a1);
-
-  ensure_test_completed();
+  let install;
+  await expectEvents(
+    {
+      installEvents: [
+        {event: "onNewInstall"},
+      ],
+    },
+    async () => {
+      ({updateAvailable: install} = await AddonTestUtils.promiseFindAddonUpdates(a1));
+    });
 
   let installs = await AddonManager.getAllInstalls();
   equal(installs.length, 1);
@@ -122,7 +130,7 @@ add_task(async function test_apply_update() {
   equal(install.existingAddon, a1);
   equal(install.releaseNotesURI.spec, "http://example.com/updateInfo.xhtml");
 
-  // Verify that another update check returns the same AddonInstall
+  
   let {updateAvailable: install2} = await AddonTestUtils.promiseFindAddonUpdates(a1);
 
   installs = await AddonManager.getAllInstalls();
@@ -130,22 +138,21 @@ add_task(async function test_apply_update() {
   equal(installs[0], install);
   equal(install2, install);
 
-  await new Promise(resolve => {
-    prepare_test({}, [
-      "onDownloadStarted",
-      "onDownloadEnded",
-    ], () => {
-      resolve();
-      return false;
+  await expectEvents(
+    {
+      installEvents: [
+        {event: "onDownloadStarted"},
+        {event: "onDownloadEnded", returnValue: false},
+      ],
+    },
+    () => {
+      install.install();
     });
-    install.install();
-  });
 
-  ensure_test_completed();
   equal(install.state, AddonManager.STATE_DOWNLOADED);
 
-  // Continue installing the update.
-  // Verify that another update check returns no new update
+  
+  
   let {updateAvailable} = await AddonTestUtils.promiseFindAddonUpdates(install.existingAddon);
 
   ok(!updateAvailable, "Should find no available updates when one is already downloading");
@@ -154,25 +161,27 @@ add_task(async function test_apply_update() {
   equal(installs.length, 1);
   equal(installs[0], install);
 
-  await new Promise(resolve => {
-    prepare_test({
-      "addon1@tests.mozilla.org": [
-        ["onInstalling", false],
-        "onInstalled",
+  await expectEvents(
+    {
+      addonEvents: {
+        "addon1@tests.mozilla.org": [
+          {event: "onInstalling"},
+          {event: "onInstalled"},
+        ],
+      },
+      installEvents: [
+        {event: "onInstallStarted"},
+        {event: "onInstallEnded"},
       ],
-    }, [
-      "onInstallStarted",
-      "onInstallEnded",
-    ], resolve);
-    install.install();
-  });
-
-  ensure_test_completed();
+    },
+    () => {
+      install.install();
+    });
 
   await AddonTestUtils.loadAddonsList(true);
 
-  // Grab the current time so we can check the mtime of the add-on below
-  // without worrying too much about how long other tests take.
+  
+  
   let startupTime = Date.now();
 
   ok(isExtensionInBootstrappedList(profileDir, "addon1@tests.mozilla.org"));
@@ -186,16 +195,15 @@ add_task(async function test_apply_update() {
   notEqual(a1.syncGUID, null);
   equal(originalSyncGUID, a1.syncGUID);
 
-  // Make sure that the extension lastModifiedTime was updated.
+  
   let testFile = getAddonFile(a1);
   let difference = testFile.lastModifiedTime - startupTime;
   ok(Math.abs(difference) < MAX_TIME_DIFFERENCE);
 
-  clearListeners();
   await a1.uninstall();
 });
 
-// Check that an update check finds compatibility updates and applies them
+
 add_task(async function test_compat_update() {
   await promiseInstallWebExtension({
     manifest: {
@@ -236,7 +244,7 @@ add_task(async function test_compat_update() {
   await a2.uninstall();
 });
 
-// Checks that we see no compatibility information when there is none.
+
 add_task(async function test_no_compat() {
   gAppInfo.platformVersion = "5";
   await promiseRestartManager("5");
@@ -269,8 +277,8 @@ add_task(async function test_no_compat() {
   ok(!result.updateAvailable, "Should not have seen a version update");
 });
 
-// Checks that compatibility info for future apps are detected but don't make
-// the item compatibile.
+
+
 add_task(async function test_future_compat() {
   let a3 = await AddonManager.getAddonByID("addon3@tests.mozilla.org");
   notEqual(a3, null);
@@ -299,7 +307,7 @@ add_task(async function test_future_compat() {
   await a3.uninstall();
 });
 
-// Test that background update checks work
+
 add_task(async function test_background_update() {
   await promiseInstallWebExtension({
     manifest: {
@@ -316,37 +324,37 @@ add_task(async function test_background_update() {
     },
   });
 
-  let install = await new Promise(resolve => {
-    prepare_test({}, [
-      "onNewInstall",
-      "onDownloadStarted",
-      "onDownloadEnded",
-    ], resolve);
+  function checkInstall(install) {
+    notEqual(install.existingAddon, null);
+    equal(install.existingAddon.id, "addon1@tests.mozilla.org");
+  }
 
-    AddonManagerInternal.backgroundUpdateCheck();
-  });
-
-  notEqual(install.existingAddon, null);
-  equal(install.existingAddon.id, "addon1@tests.mozilla.org");
-
-  await new Promise(resolve => {
-    prepare_test({
-      "addon1@tests.mozilla.org": [
-        ["onInstalling", false],
-        "onInstalled",
+  await expectEvents(
+    {
+      addonEvents: {
+        "addon1@tests.mozilla.org": [
+          {event: "onInstalling"},
+          {event: "onInstalled"},
+        ],
+      },
+      installEvents: [
+        {event: "onNewInstall"},
+        {event: "onDownloadStarted"},
+        {event: "onDownloadEnded",
+         callback: checkInstall},
+        {event: "onInstallStarted"},
+        {event: "onInstallEnded"},
       ],
-    }, [
-      "onInstallStarted",
-      "onInstallEnded",
-    ], resolve);
-  });
+    },
+    () => {
+      AddonManagerInternal.backgroundUpdateCheck();
+    });
 
   let a1 = await AddonManager.getAddonByID("addon1@tests.mozilla.org");
   notEqual(a1, null);
   equal(a1.version, "2.0");
   equal(a1.releaseNotesURI.spec, "http://example.com/updateInfo.xhtml");
 
-  end_test();
   await a1.uninstall();
 });
 
@@ -557,7 +565,7 @@ const PARAM_ADDONS = {
 
 const PARAM_IDS = Object.keys(PARAM_ADDONS);
 
-// Verify the parameter escaping in update urls.
+
 add_task(async function test_params() {
   let blocklistAddons = new Map();
   for (let [id, options] of Object.entries(PARAM_ADDONS)) {
@@ -596,8 +604,8 @@ add_task(async function test_params() {
 
   let addons = await getAddons(PARAM_IDS);
   for (let [id, options] of Object.entries(PARAM_ADDONS)) {
-    // Having an onUpdateAvailable callback in the listener automagically adds
-    // UPDATE_TYPE_NEWVERSION to the update type flags in the request.
+    
+    
     let listener = options.compatOnly ? {} : {onUpdateAvailable() {}};
 
     addons.get(id).findUpdates(listener, ...options.updateType);
@@ -631,8 +639,8 @@ add_task(async function test_params() {
   await mockBlocklist.unregister();
 });
 
-// Tests that if a manifest claims compatibility then the add-on will be
-// seen as compatible regardless of what the update payload says.
+
+
 add_task(async function test_manifest_compat() {
   await promiseInstallWebExtension({
     manifest: {
@@ -653,8 +661,8 @@ add_task(async function test_manifest_compat() {
   ok(a4.isActive, "addon4 is active");
   ok(a4.isCompatible, "addon4 is compatible");
 
-  // Test that a normal update check won't decrease a targetApplication's
-  // maxVersion but an update check for a new application will.
+  
+  
   await AddonTestUtils.promiseFindAddonUpdates(
     a4, AddonManager.UPDATE_WHEN_PERIODIC_UPDATE);
   ok(a4.isActive, "addon4 is active");
@@ -668,10 +676,10 @@ add_task(async function test_manifest_compat() {
   await a4.uninstall();
 });
 
-// Test that the background update check doesn't update an add-on that isn't
-// allowed to update automatically.
+
+
 add_task(async function test_no_auto_update() {
-  // Have an add-on there that will be updated so we see some events from it
+  
   await promiseInstallWebExtension({
     manifest: {
       name: "Test Addon 1",
@@ -701,8 +709,8 @@ add_task(async function test_no_auto_update() {
   let a8 = await AddonManager.getAddonByID("addon8@tests.mozilla.org");
   a8.applyBackgroundUpdates = AddonManager.AUTOUPDATE_DISABLE;
 
-  // The background update check will find updates for both add-ons but only
-  // proceed to install one of them.
+  
+  
   let listener;
   await new Promise(resolve => {
     listener = {
@@ -763,8 +771,8 @@ add_task(async function test_no_auto_update() {
   await a8.uninstall();
 });
 
-// Test that the update check returns nothing for addons in locked install
-// locations.
+
+
 add_task(async function run_test_locked_install() {
   const lockedDir = gProfD.clone();
   lockedDir.append("locked_extensions");
