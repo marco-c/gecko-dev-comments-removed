@@ -42,6 +42,10 @@ bool HasCompilerSupport(JSContext* cx);
 
 
 
+bool HasOptimizedCompilerTier(JSContext* cx);
+
+
+
 
 
 bool HasSupport(JSContext* cx);
