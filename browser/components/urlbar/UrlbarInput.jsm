@@ -856,10 +856,15 @@ class UrlbarInput {
         this.view.panel.setAttribute("actionoverride", "true");
       } else if (this._actionOverrideKeyCount &&
                  --this._actionOverrideKeyCount == 0) {
-        this.removeAttribute("actionoverride");
-        this.view.panel.removeAttribute("actionoverride");
+        this._clearActionOverride();
       }
     }
+  }
+
+  _clearActionOverride() {
+    this._actionOverrideKeyCount = 0;
+    this.removeAttribute("actionoverride");
+    this.view.panel.removeAttribute("actionoverride");
   }
 
   
@@ -1145,6 +1150,10 @@ class UrlbarInput {
   
 
   _on_blur(event) {
+    
+    
+    
+    this._clearActionOverride();
     this.formatValue();
     
     
