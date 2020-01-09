@@ -420,8 +420,11 @@ var gPermissionManager = {
 
       case "statusCol":
         sortFunc = (a, b) => {
-          return a.querySelector(".website-capability-value").getAttribute("value") >
-                 b.querySelector(".website-capability-value").getAttribute("value");
+          
+          
+          
+          return a.querySelector(".website-capability-value").getAttribute("data-l10n-id") >
+                 b.querySelector(".website-capability-value").getAttribute("data-l10n-id");
         };
         break;
     }
