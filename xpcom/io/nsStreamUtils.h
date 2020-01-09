@@ -128,6 +128,12 @@ extern nsresult NS_ConsumeStream(nsIInputStream* aSource, uint32_t aMaxCount,
 
 
 
+extern nsresult NS_ConsumeStream(nsIInputStream* aSource, uint32_t aMaxCount,
+                                 nsTArray<uint8_t>& aBuffer);
+
+
+
+
 
 
 
