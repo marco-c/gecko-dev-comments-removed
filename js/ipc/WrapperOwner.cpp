@@ -1034,9 +1034,7 @@ bool WrapperOwner::ok(JSContext* cx, const ReturnStatus& status,
 
 
 static nsCString GetRemoteObjectTag(JS::Handle<JSObject*> obj) {
-  
-  
-  if (nsCOMPtr<nsISupports> supports = xpc::ReflectorToISupportsStatic(obj)) {
+  if (nsCOMPtr<nsISupports> supports = xpc::UnwrapReflectorToISupports(obj)) {
     nsCOMPtr<nsIDocShellTreeItem> treeItem(do_QueryInterface(supports));
     if (treeItem) {
       return NS_LITERAL_CSTRING("ContentDocShellTreeItem");

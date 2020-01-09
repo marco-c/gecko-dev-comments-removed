@@ -27,8 +27,8 @@ namespace mozilla {
 namespace dom {
 
 
-bool MaybeCrossOriginObjectMixins::IsPlatformObjectSameOrigin(JSContext* cx,
-                                                              JSObject* obj) {
+bool MaybeCrossOriginObjectMixins::IsPlatformObjectSameOrigin(
+    JSContext* cx, JS::Handle<JSObject*> obj) {
   MOZ_ASSERT(!js::IsCrossCompartmentWrapper(obj));
   
   

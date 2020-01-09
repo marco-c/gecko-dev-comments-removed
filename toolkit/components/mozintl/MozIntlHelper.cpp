@@ -30,9 +30,7 @@ static nsresult AddFunctions(JSContext* cx, JS::Handle<JS::Value> val,
     return NS_ERROR_INVALID_ARG;
   }
 
-  
-  JS::Rooted<JSObject*> realIntlObj(
-      cx, js::CheckedUnwrapDynamic(&val.toObject(), cx));
+  JS::Rooted<JSObject*> realIntlObj(cx, js::CheckedUnwrap(&val.toObject()));
   if (!realIntlObj) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -71,9 +69,7 @@ MozIntlHelper::AddDateTimeFormatConstructor(JS::Handle<JS::Value> val,
     return NS_ERROR_INVALID_ARG;
   }
 
-  
-  JS::Rooted<JSObject*> realIntlObj(
-      cx, js::CheckedUnwrapDynamic(&val.toObject(), cx));
+  JS::Rooted<JSObject*> realIntlObj(cx, js::CheckedUnwrap(&val.toObject()));
   if (!realIntlObj) {
     return NS_ERROR_INVALID_ARG;
   }

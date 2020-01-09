@@ -158,22 +158,10 @@ inline bool IsDOMObject(JSObject* obj) {
 
 
 
-
-
-
-
-#define UNWRAP_OBJECT(Interface, obj, value)                        \
-  mozilla::dom::binding_detail::UnwrapObjectWithCrossOriginAsserts< \
-      mozilla::dom::prototypes::id::Interface,                      \
-      mozilla::dom::Interface##_Binding::NativeType>(obj, value)
-
-
-
-
-#define UNWRAP_MAYBE_CROSS_ORIGIN_OBJECT(Interface, obj, value, cx)          \
+#define UNWRAP_OBJECT(Interface, obj, value)                                 \
   mozilla::dom::UnwrapObject<mozilla::dom::prototypes::id::Interface,        \
                              mozilla::dom::Interface##_Binding::NativeType>( \
-      obj, value, cx)
+      obj, value)
 
 
 #define IS_INSTANCE_OF(Interface, obj)                                       \
@@ -207,23 +195,11 @@ inline bool IsDOMObject(JSObject* obj) {
 
 
 
-
-
-
-
-
-
-
 namespace binding_detail {
-template <class T, bool mayBeWrapper, typename U, typename V, typename CxType>
+template <class T, bool mayBeWrapper, typename U, typename V>
 MOZ_ALWAYS_INLINE nsresult UnwrapObjectInternal(V& obj, U& value,
                                                 prototypes::ID protoID,
-                                                uint32_t protoDepth,
-                                                CxType cx) {
-  static_assert(IsSame<CxType, JSContext*>::value ||
-                    IsSame<CxType, decltype(nullptr)>::value,
-                "Unexpected CxType");
-
+                                                uint32_t protoDepth) {
   
   const DOMJSClass* domClass = GetDOMClass(obj);
   if (domClass) {
@@ -242,28 +218,12 @@ MOZ_ALWAYS_INLINE nsresult UnwrapObjectInternal(V& obj, U& value,
     return NS_ERROR_XPC_BAD_CONVERT_JS;
   }
 
-  JSObject* unwrappedObj;
-  if (IsSame<CxType, decltype(nullptr)>::value) {
-    unwrappedObj = js::CheckedUnwrapStatic(obj);
-  } else {
-    unwrappedObj =
-        js::CheckedUnwrapDynamic(obj, cx,  false);
-  }
+  JSObject* unwrappedObj =
+      js::CheckedUnwrap(obj,  false);
   if (!unwrappedObj) {
     return NS_ERROR_XPC_SECURITY_MANAGER_VETO;
   }
-
-  if (IsSame<CxType, decltype(nullptr)>::value) {
-    
-    
-    
-    
-    MOZ_ASSERT(!js::IsWrapper(unwrappedObj) || js::IsWindowProxy(unwrappedObj));
-  } else {
-    
-    MOZ_ASSERT(!js::IsWrapper(unwrappedObj));
-  }
-
+  MOZ_ASSERT(!js::IsWrapper(unwrappedObj));
   
   
   
@@ -274,7 +234,7 @@ MOZ_ALWAYS_INLINE nsresult UnwrapObjectInternal(V& obj, U& value,
   
   T* tempValue = nullptr;
   nsresult rv = UnwrapObjectInternal<T, false>(unwrappedObj, tempValue, protoID,
-                                               protoDepth, nullptr);
+                                               protoDepth);
   if (NS_SUCCEEDED(rv)) {
     
     
@@ -325,86 +285,55 @@ struct MutableValueHandleWrapper {
 }  
 
 
-template <prototypes::ID PrototypeID, class T, typename U, typename CxType>
+template <prototypes::ID PrototypeID, class T, typename U>
 MOZ_ALWAYS_INLINE nsresult UnwrapObject(JS::MutableHandle<JSObject*> obj,
-                                        U& value, CxType cx) {
+                                        U& value) {
   binding_detail::MutableObjectHandleWrapper wrapper(obj);
   return binding_detail::UnwrapObjectInternal<T, true>(
-      wrapper, value, PrototypeID, PrototypeTraits<PrototypeID>::Depth, cx);
+      wrapper, value, PrototypeID, PrototypeTraits<PrototypeID>::Depth);
 }
 
-template <prototypes::ID PrototypeID, class T, typename U, typename CxType>
+template <prototypes::ID PrototypeID, class T, typename U>
 MOZ_ALWAYS_INLINE nsresult UnwrapObject(JS::MutableHandle<JS::Value> obj,
-                                        U& value, CxType cx) {
+                                        U& value) {
   MOZ_ASSERT(obj.isObject());
   binding_detail::MutableValueHandleWrapper wrapper(obj);
   return binding_detail::UnwrapObjectInternal<T, true>(
-      wrapper, value, PrototypeID, PrototypeTraits<PrototypeID>::Depth, cx);
+      wrapper, value, PrototypeID, PrototypeTraits<PrototypeID>::Depth);
 }
 
 
-template <prototypes::ID PrototypeID, class T, typename U, typename CxType>
-MOZ_ALWAYS_INLINE nsresult UnwrapObject(JSObject* obj, RefPtr<U>& value,
-                                        CxType cx) {
+template <prototypes::ID PrototypeID, class T, typename U>
+MOZ_ALWAYS_INLINE nsresult UnwrapObject(JSObject* obj, RefPtr<U>& value) {
   return binding_detail::UnwrapObjectInternal<T, true>(
-      obj, value, PrototypeID, PrototypeTraits<PrototypeID>::Depth, cx);
+      obj, value, PrototypeID, PrototypeTraits<PrototypeID>::Depth);
 }
 
-template <prototypes::ID PrototypeID, class T, typename U, typename CxType>
-MOZ_ALWAYS_INLINE nsresult UnwrapObject(JSObject* obj, nsCOMPtr<U>& value,
-                                        CxType cx) {
+template <prototypes::ID PrototypeID, class T, typename U>
+MOZ_ALWAYS_INLINE nsresult UnwrapObject(JSObject* obj, nsCOMPtr<U>& value) {
   return binding_detail::UnwrapObjectInternal<T, true>(
-      obj, value, PrototypeID, PrototypeTraits<PrototypeID>::Depth, cx);
+      obj, value, PrototypeID, PrototypeTraits<PrototypeID>::Depth);
 }
 
-template <prototypes::ID PrototypeID, class T, typename U, typename CxType>
-MOZ_ALWAYS_INLINE nsresult UnwrapObject(JSObject* obj, OwningNonNull<U>& value,
-                                        CxType cx) {
+template <prototypes::ID PrototypeID, class T, typename U>
+MOZ_ALWAYS_INLINE nsresult UnwrapObject(JSObject* obj,
+                                        OwningNonNull<U>& value) {
   return binding_detail::UnwrapObjectInternal<T, true>(
-      obj, value, PrototypeID, PrototypeTraits<PrototypeID>::Depth, cx);
+      obj, value, PrototypeID, PrototypeTraits<PrototypeID>::Depth);
 }
 
 
-template <prototypes::ID PrototypeID, class T, typename U, typename CxType>
-MOZ_ALWAYS_INLINE nsresult UnwrapObject(JS::Handle<JS::Value> obj, U& value,
-                                        CxType cx) {
+template <prototypes::ID PrototypeID, class T, typename U>
+MOZ_ALWAYS_INLINE nsresult UnwrapObject(JS::Handle<JS::Value> obj, U& value) {
   MOZ_ASSERT(obj.isObject());
-  return UnwrapObject<PrototypeID, T>(&obj.toObject(), value, cx);
+  return UnwrapObject<PrototypeID, T>(&obj.toObject(), value);
 }
-
-template <prototypes::ID PrototypeID>
-MOZ_ALWAYS_INLINE void AssertStaticUnwrapOK() {
-  static_assert(PrototypeID != prototypes::id::Window,
-                "Can't do static unwrap of WindowProxy; use "
-                "UNWRAP_MAYBE_CROSS_ORIGIN_OBJECT or a cross-origin-object "
-                "aware version of IS_INSTANCE_OF");
-  static_assert(PrototypeID != prototypes::id::EventTarget,
-                "Can't do static unwrap of WindowProxy (which an EventTarget "
-                "might be); use UNWRAP_MAYBE_CROSS_ORIGIN_OBJECT or a "
-                "cross-origin-object aware version of IS_INSTANCE_OF");
-  static_assert(PrototypeID != prototypes::id::Location,
-                "Can't do static unwrap of Location; use "
-                "UNWRAP_MAYBE_CROSS_ORIGIN_OBJECT or a cross-origin-object "
-                "aware version of IS_INSTANCE_OF");
-}
-
-namespace binding_detail {
-
-
-template <prototypes::ID PrototypeID, class T, typename U, typename V>
-MOZ_ALWAYS_INLINE nsresult UnwrapObjectWithCrossOriginAsserts(V&& obj,
-                                                              U& value) {
-  AssertStaticUnwrapOK<PrototypeID>();
-  return UnwrapObject<PrototypeID, T>(obj, value, nullptr);
-}
-}  
 
 template <prototypes::ID PrototypeID, class T>
 MOZ_ALWAYS_INLINE bool IsInstanceOf(JSObject* obj) {
-  AssertStaticUnwrapOK<PrototypeID>();
   void* ignored;
   nsresult unwrapped = binding_detail::UnwrapObjectInternal<T, true>(
-      obj, ignored, PrototypeID, PrototypeTraits<PrototypeID>::Depth, nullptr);
+      obj, ignored, PrototypeID, PrototypeTraits<PrototypeID>::Depth);
   return NS_SUCCEEDED(unwrapped);
 }
 
@@ -412,7 +341,7 @@ template <prototypes::ID PrototypeID, class T, typename U>
 MOZ_ALWAYS_INLINE nsresult UnwrapNonWrapperObject(JSObject* obj, U& value) {
   MOZ_ASSERT(!js::IsWrapper(obj));
   return binding_detail::UnwrapObjectInternal<T, false>(
-      obj, value, PrototypeID, PrototypeTraits<PrototypeID>::Depth, nullptr);
+      obj, value, PrototypeID, PrototypeTraits<PrototypeID>::Depth);
 }
 
 MOZ_ALWAYS_INLINE bool IsConvertibleToDictionary(JS::Handle<JS::Value> val) {
@@ -1162,10 +1091,7 @@ inline bool WrapNewBindingNonWrapperCachedObject(
     JS::Rooted<JSObject*> scope(cx, scopeArg);
     JS::Rooted<JSObject*> proto(cx, givenProto);
     if (js::IsWrapper(scope)) {
-      
-      
-      scope =
-          js::CheckedUnwrapDynamic(scope, cx,  false);
+      scope = js::CheckedUnwrap(scope,  false);
       if (!scope) return false;
       ar.emplace(cx, scope);
       if (!JS_WrapObject(cx, &proto)) {
@@ -1214,10 +1140,7 @@ inline bool WrapNewBindingNonWrapperCachedObject(
     JS::Rooted<JSObject*> scope(cx, scopeArg);
     JS::Rooted<JSObject*> proto(cx, givenProto);
     if (js::IsWrapper(scope)) {
-      
-      
-      scope =
-          js::CheckedUnwrapDynamic(scope, cx,  false);
+      scope = js::CheckedUnwrap(scope,  false);
       if (!scope) return false;
       ar.emplace(cx, scope);
       if (!JS_WrapObject(cx, &proto)) {

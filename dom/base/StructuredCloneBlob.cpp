@@ -40,9 +40,7 @@ StructuredCloneBlob::Constructor(GlobalObject& aGlobal, JS::HandleValue aValue,
   JS::RootedValue value(cx, aValue);
 
   if (aTargetGlobal) {
-    
-    JS::RootedObject targetGlobal(cx,
-                                  js::CheckedUnwrapDynamic(aTargetGlobal, cx));
+    JS::RootedObject targetGlobal(cx, js::CheckedUnwrap(aTargetGlobal));
     if (!targetGlobal) {
       js::ReportAccessDenied(cx);
       aRv.NoteJSContextException(cx);
@@ -56,8 +54,7 @@ StructuredCloneBlob::Constructor(GlobalObject& aGlobal, JS::HandleValue aValue,
       return nullptr;
     }
   } else if (value.isObject()) {
-    
-    JS::RootedObject obj(cx, js::CheckedUnwrapDynamic(&value.toObject(), cx));
+    JS::RootedObject obj(cx, js::CheckedUnwrap(&value.toObject()));
     if (!obj) {
       js::ReportAccessDenied(cx);
       aRv.NoteJSContextException(cx);
@@ -81,8 +78,7 @@ void StructuredCloneBlob::Deserialize(JSContext* aCx,
                                       bool aKeepData,
                                       JS::MutableHandleValue aResult,
                                       ErrorResult& aRv) {
-  
-  JS::RootedObject scope(aCx, js::CheckedUnwrapDynamic(aTargetScope, aCx));
+  JS::RootedObject scope(aCx, js::CheckedUnwrap(aTargetScope));
   if (!scope) {
     js::ReportAccessDenied(aCx);
     aRv.NoteJSContextException(aCx);

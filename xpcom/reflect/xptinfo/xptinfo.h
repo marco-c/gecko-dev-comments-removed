@@ -522,8 +522,8 @@ static_assert(sizeof(nsXPTConstantInfo) == 8, "wrong size");
 
 
 struct nsXPTDOMObjectInfo {
-  nsresult Unwrap(JS::HandleValue aHandle, void** aObj, JSContext* aCx) const {
-    return mUnwrap(aHandle, aObj, aCx);
+  nsresult Unwrap(JS::HandleValue aHandle, void** aObj) const {
+    return mUnwrap(aHandle, aObj);
   }
 
   bool Wrap(JSContext* aCx, void* aObj, JS::MutableHandleValue aHandle) const {
@@ -536,7 +536,7 @@ struct nsXPTDOMObjectInfo {
   
   
 
-  nsresult (*mUnwrap)(JS::HandleValue aHandle, void** aObj, JSContext* aCx);
+  nsresult (*mUnwrap)(JS::HandleValue aHandle, void** aObj);
   bool (*mWrap)(JSContext* aCx, void* aObj, JS::MutableHandleValue aHandle);
   void (*mCleanup)(void* aObj);
 };
