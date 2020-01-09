@@ -534,10 +534,9 @@ class nsDocShell final : public nsDocLoader,
   
   
   
+  
   nsresult DoURILoad(nsDocShellLoadState* aLoadState, bool aLoadFromExternal,
-                     nsIDocShell** aDocShell, nsIRequest** aRequest,
-                     const nsAString& aSrcdoc,
-                     nsContentPolicyType aContentPolicyType);
+                     nsIDocShell** aDocShell, nsIRequest** aRequest);
 
   nsresult AddHeadersToChannel(nsIInputStream* aHeadersData,
                                nsIChannel* aChannel);
