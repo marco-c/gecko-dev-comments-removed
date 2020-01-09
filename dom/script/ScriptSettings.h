@@ -18,6 +18,7 @@
 
 #include "jsapi.h"
 #include "js/Debug.h"
+#include "js/Warnings.h"  
 
 class nsPIDOMWindowInner;
 class nsGlobalWindowInner;

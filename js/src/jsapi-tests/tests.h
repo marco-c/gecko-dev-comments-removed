@@ -22,6 +22,7 @@
 #include "js/Equality.h"     
 #include "js/RegExpFlags.h"  
 #include "js/Vector.h"
+#include "js/Warnings.h"  
 #include "vm/JSContext.h"
 
 

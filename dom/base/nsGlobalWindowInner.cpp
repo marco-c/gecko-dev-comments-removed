@@ -73,6 +73,7 @@
 
 #include "nsJSUtils.h"
 #include "jsapi.h"
+#include "js/Warnings.h"  
 #include "js/Wrapper.h"
 #include "nsCharSeparatedTokenizer.h"
 #include "nsReadableUtils.h"
@@ -4549,7 +4550,7 @@ nsGlobalWindowInner::ShowSlowScriptDialog(JSContext* aCx,
   
   
   if (!nsContentUtils::IsSafeToRunScript()) {
-    JS_ReportWarningASCII(aCx, "A long running script was terminated");
+    JS::WarnASCII(aCx, "A long running script was terminated");
     return KillSlowScript;
   }
 

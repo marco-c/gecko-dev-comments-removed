@@ -10,6 +10,7 @@
 #include "jsapi.h"
 #include "jsfriendapi.h"
 #include "js/Initialization.h"
+#include "js/Warnings.h"  
 
 using namespace JS;
 

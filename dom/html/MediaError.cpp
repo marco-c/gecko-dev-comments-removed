@@ -13,6 +13,7 @@
 #include "nsContentUtils.h"
 #include "nsIScriptError.h"
 #include "jsapi.h"
+#include "js/Warnings.h"  
 
 namespace mozilla {
 namespace dom {
@@ -55,7 +56,7 @@ void MediaError::GetMessage(nsAString& aResult) const {
     if (api.Init(ownerDoc->GetScopeObject())) {
       
       
-      JS_ReportWarningASCII(api.cx(), "%s", message.get());
+      JS::WarnASCII(api.cx(), "%s", message.get());
     } else {
       
       
