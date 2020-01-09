@@ -24,19 +24,12 @@
 #include "mozilla/layers/ShadowLayers.h"  
 #include "mozilla/layers/PaintThread.h"   
 #include "TextureClientPool.h"
-#include "nsDebug.h"              
 #include "nsISupportsImpl.h"      
 #include "nsExpirationTracker.h"  
 #include "nsMathUtils.h"          
 #include "LayersLogging.h"
 #include "UnitTransforms.h"  
 #include "mozilla/UniquePtr.h"
-
-
-
-
-
-#define MINIMUM_TILE_COPY_AREA (1.f / 16.f)
 
 #ifdef GFX_TILEDLAYER_DEBUG_OVERLAY
 #  include "cairo.h"
