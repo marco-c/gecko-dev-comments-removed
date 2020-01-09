@@ -1328,28 +1328,13 @@ type SmallParseErrorVec<'i> = SmallVec<[(ParseError<'i>, &'i str, Option<Propert
 #[cold]
 fn report_one_css_error<'i>(
     context: &ParserContext,
-    block: Option<&PropertyDeclarationBlock>,
+    _block: Option<&PropertyDeclarationBlock>,
     selectors: Option<&SelectorList<SelectorImpl>>,
     mut error: ParseError<'i>,
     slice: &str,
     property: Option<PropertyId>,
 ) {
     debug_assert!(context.error_reporting_enabled());
-
-    fn all_properties_in_block(block: &PropertyDeclarationBlock, property: &PropertyId) -> bool {
-        match *property {
-            PropertyId::LonghandAlias(id, _) |
-            PropertyId::Longhand(id) => block.contains(id),
-            PropertyId::ShorthandAlias(id, _) |
-            PropertyId::Shorthand(id) => {
-                id.longhands().all(|longhand| block.contains(longhand))
-            },
-            
-            
-            
-            PropertyId::Custom(..) => false,
-        }
-    }
 
     
     
@@ -1358,11 +1343,6 @@ fn report_one_css_error<'i>(
     }
 
     if let Some(ref property) = property {
-        if let Some(block) = block {
-            if all_properties_in_block(block, property) {
-                return;
-            }
-        }
         error = match *property {
             PropertyId::Custom(ref c) => StyleParseErrorKind::new_invalid(format!("--{}", c), error),
             _ => StyleParseErrorKind::new_invalid(property.non_custom_id().unwrap().name(), error),
