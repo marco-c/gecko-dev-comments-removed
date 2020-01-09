@@ -378,9 +378,7 @@ bool nsMixedContentBlocker::IsPotentiallyTrustworthyLoopbackURL(nsIURI* aURL) {
   
   
   
-  
-  return host.EqualsLiteral("127.0.0.1") || host.EqualsLiteral("::1") ||
-         host.EqualsLiteral("localhost");
+  return host.EqualsLiteral("127.0.0.1") || host.EqualsLiteral("::1");
 }
 
 
@@ -402,85 +400,6 @@ bool nsMixedContentBlocker::IsPotentiallyTrustworthyOnion(nsIURI* aURL) {
   nsresult rv = aURL->GetHost(host);
   NS_ENSURE_SUCCESS(rv, false);
   return StringEndsWith(host, NS_LITERAL_CSTRING(".onion"));
-}
-
-NS_IMETHODIMP
-nsMixedContentBlocker::IsOriginPotentiallyTrustworthy(nsIURI* aURI,
-                                                      bool* aIsTrustWorthy) {
-  
-  
-
-  *aIsTrustWorthy = false;
-
-  nsAutoCString scheme;
-  nsresult rv = aURI->GetScheme(scheme);
-  if (NS_FAILED(rv)) {
-    return NS_OK;
-  }
-
-  
-  
-  
-  NS_WARNING_ASSERTION(!scheme.EqualsLiteral("blob"),
-                       "IsOriginPotentiallyTrustworthy ignoring blob scheme");
-
-  
-  
-  
-  
-  
-  
-  
-  bool aPrioriAuthenticated = false;
-  if (NS_FAILED(NS_URIChainHasFlags(
-          aURI, nsIProtocolHandler::URI_IS_POTENTIALLY_TRUSTWORTHY,
-          &aPrioriAuthenticated))) {
-    return NS_ERROR_UNEXPECTED;
-  }
-
-  if (aPrioriAuthenticated) {
-    *aIsTrustWorthy = true;
-    return NS_OK;
-  }
-
-  nsAutoCString host;
-  rv = aURI->GetHost(host);
-  if (NS_FAILED(rv)) {
-    return NS_OK;
-  }
-
-  if (IsPotentiallyTrustworthyLoopbackURL(aURI)) {
-    *aIsTrustWorthy = true;
-    return NS_OK;
-  }
-
-  
-  
-  
-  
-
-  if (!scheme.EqualsLiteral("http") && !scheme.EqualsLiteral("ws")) {
-    return NS_OK;
-  }
-  nsAutoCString whitelist;
-  rv = Preferences::GetCString("dom.securecontext.whitelist", whitelist);
-  if (NS_SUCCEEDED(rv)) {
-    nsCCharSeparatedTokenizer tokenizer(whitelist, ',');
-    while (tokenizer.hasMoreTokens()) {
-      const nsACString& allowedHost = tokenizer.nextToken();
-      if (host.Equals(allowedHost)) {
-        *aIsTrustWorthy = true;
-        return NS_OK;
-      }
-    }
-  }
-  
-  
-  if (nsMixedContentBlocker::IsPotentiallyTrustworthyOnion(aURI)) {
-    *aIsTrustWorthy = true;
-    return NS_OK;
-  }
-  return NS_OK;
 }
 
 
@@ -819,12 +738,17 @@ nsresult nsMixedContentBlocker::ShouldLoad(
   rv = innerContentLocation->SchemeIs("http", &isHttpScheme);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  bool IsPotentiallyTrustworthy = false;
-  rv = IsOriginPotentiallyTrustworthy(innerContentLocation,
-                                      &IsPotentiallyTrustworthy);
-  NS_ENSURE_SUCCESS(rv, rv);
+  
+  
+  if (isHttpScheme &&
+      IsPotentiallyTrustworthyLoopbackURL(innerContentLocation)) {
+    *aDecision = ACCEPT;
+    return NS_OK;
+  }
 
-  if (isHttpScheme && IsPotentiallyTrustworthy) {
+  
+  
+  if (isHttpScheme && IsPotentiallyTrustworthyOnion(innerContentLocation)) {
     *aDecision = ACCEPT;
     return NS_OK;
   }
