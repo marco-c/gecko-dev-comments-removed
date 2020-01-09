@@ -219,17 +219,9 @@ var gUpdates = {
 
 
 
-  _pages: { },
-
-  
-
-
-
   onWizardFinish() {
     this._runUnload = false;
     var pageid = document.documentElement.currentPage.pageid;
-    if ("onWizardFinish" in this._pages[pageid])
-      this._pages[pageid].onWizardFinish();
     this._submitTelemetry(pageid);
   },
 
@@ -240,22 +232,9 @@ var gUpdates = {
   onWizardCancel() {
     this._runUnload = false;
     var pageid = document.documentElement.currentPage.pageid;
-    if ("onWizardCancel" in this._pages[pageid])
-      this._pages[pageid].onWizardCancel();
+    let cancelEvent = new CustomEvent("wizardpagecancel", { });
+    document.documentElement.currentPage.dispatchEvent(cancelEvent);
     this._submitTelemetry(pageid);
-  },
-
-  
-
-
-
-  onWizardNext() {
-    var cp = document.documentElement.currentPage;
-    if (!cp)
-      return;
-    var pageid = cp.pageid;
-    if ("onWizardNext" in this._pages[pageid])
-      this._pages[pageid].onWizardNext();
   },
 
   
@@ -294,24 +273,32 @@ var gUpdates = {
     var brandStrings = document.getElementById("brandStrings");
     this.brandName = brandStrings.getString("brandShortName");
 
-    var pages = this.wiz.childNodes;
-    for (var i = 0; i < pages.length; ++i) {
-      var page = pages[i];
-      if (page.localName == "wizardpage")
-        
-        this._pages[page.pageid] = eval(page.getAttribute("object"));
-    }
-
     
     this._cacheButtonStrings("next");
     this._cacheButtonStrings("finish");
     this._cacheButtonStrings("extra1");
     this._cacheButtonStrings("extra2");
 
+    
     document.addEventListener("wizardfinish", function() { gUpdates.onWizardFinish(); });
-    document.addEventListener("wizardcancel", function() { gUpdates.onWizardCancel(); });
-    document.addEventListener("wizardnext", function() { gUpdates.onWizardNext(); });
+    document.getElementById("finished").addEventListener("wizardfinish", function() { gFinishedPage.onWizardFinish(); });
+    document.getElementById("finishedBackground").addEventListener("wizardfinish", function() { gFinishedPage.onWizardFinish(); });
 
+    
+    document.addEventListener("wizardcancel", function() { gUpdates.onWizardCancel(); });
+
+    
+    document.getElementById("checking").addEventListener("wizardpagecancel", function() { gCheckingPage.onWizardCancel(); });
+    document.getElementById("downloading").addEventListener("wizardpagecancel", function() { gDownloadingPage.onWizardCancel(); });
+
+    
+    document.addEventListener("wizardnext", function() {
+        if (document.documentElement.currentPage.pageid == "errorpatching") {
+          gErrorPatchingPage.onWizardNext();
+        }
+    });
+
+    
     document.getElementById("checking").addEventListener("pageshow", function() { gCheckingPage.onPageShow(); });
     document.getElementById("noupdatesfound").addEventListener("pageshow", function() { gNoUpdatesPage.onPageShow(); });
     document.getElementById("manualUpdate").addEventListener("pageshow", function() { gManualUpdatePage.onPageShow(); });
@@ -324,11 +311,13 @@ var gUpdates = {
     document.getElementById("finished").addEventListener("pageshow", function() { gFinishedPage.onPageShow(); });
     document.getElementById("finishedBackground").addEventListener("pageshow", function() { gFinishedPage.onPageShowBackground(); });
 
+    
     document.getElementById("updatesfoundbasic").addEventListener("extra1", function() { gUpdatesFoundBasicPage.onExtra1(); });
     document.getElementById("downloading").addEventListener("extra1", function() { gDownloadingPage.onHide(); });
     document.getElementById("finished").addEventListener("extra1", function() { gFinishedPage.onExtra1(); });
     document.getElementById("finishedBackground").addEventListener("extra1", function() { gFinishedPage.onExtra1(); });
 
+    
     document.getElementById("updatesfoundbasic").addEventListener("extra2", function() { gUpdatesFoundBasicPage.onExtra2(); });
     document.getElementById("finishedBackground").addEventListener("extra2", function() { gFinishedPage.onExtra2(); });
 
