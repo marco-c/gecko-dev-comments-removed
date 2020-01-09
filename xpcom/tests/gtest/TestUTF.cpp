@@ -116,7 +116,7 @@ TEST(UTF, Hash16) {
 
 
 
-void NonASCII16_helper(const size_t aStrSize) {
+static void NonASCII16_helper(const size_t aStrSize) {
   const size_t kTestSize = aStrSize;
   const size_t kMaxASCII = 0x80;
   const char16_t kUTF16Char = 0xC9;
@@ -165,6 +165,15 @@ void NonASCII16_helper(const size_t aStrSize) {
 
     EXPECT_STREQ(dest.BeginReading(), expected.BeginReading());
   }
+}
+
+TEST(UTF, NonASCII16) {
+  
+  NonASCII16_helper(1);
+  NonASCII16_helper(8);
+  NonASCII16_helper(16);
+  NonASCII16_helper(32);
+  NonASCII16_helper(512);
 }
 
 TEST(UTF, UTF8CharEnumerator) {
