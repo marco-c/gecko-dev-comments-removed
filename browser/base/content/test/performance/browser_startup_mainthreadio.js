@@ -81,6 +81,7 @@ const startupPhases = {
     },
     { 
       path: "UAppData:Crash Reports/InstallTime20*",
+      condition: AppConstants.MOZ_CRASHREPORTER,
       stat: 1, 
       read: 1,
       write: 2,
@@ -88,13 +89,13 @@ const startupPhases = {
     },
     { 
       path: "UAppData:Crash Reports/LastCrash",
-      condition: WIN,
+      condition: WIN && AppConstants.MOZ_CRASHREPORTER,
       stat: 1, 
       read: 1,
     },
     { 
       path: "UAppData:Crash Reports/LastCrash",
-      condition: !WIN,
+      condition: !WIN && AppConstants.MOZ_CRASHREPORTER,
       ignoreIfUnused: true, 
       read: 1,
       close: 1,
@@ -226,6 +227,7 @@ const startupPhases = {
     {
       path: "*ld.so.conf*",
       condition: LINUX,
+      ignoreIfUnused: true,
       read: 22,
       close: 11,
     },
@@ -295,6 +297,7 @@ const startupPhases = {
     {
       path: "*ld.so.conf*",
       condition: LINUX,
+      ignoreIfUnused: true,
       read: 22,
       close: 11,
     },
