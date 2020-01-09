@@ -176,6 +176,9 @@ class nsJSUtils {
     JSScript* GetScript();
 
     
+    JSScript* MaybeGetScript();
+
+    
     MOZ_MUST_USE nsresult ExecScript();
 
     
