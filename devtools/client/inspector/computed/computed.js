@@ -695,6 +695,10 @@ CssComputedView.prototype = {
 
 
   _onContextMenu: function(event) {
+    
+    
+    event.stopPropagation();
+    event.preventDefault();
     this.contextMenu.show(event);
   },
 

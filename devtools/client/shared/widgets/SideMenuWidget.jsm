@@ -416,6 +416,10 @@ SideMenuWidget.prototype = {
       node = node.parentNode;
     }
 
+    
+    
+    e.stopPropagation();
+    e.preventDefault();
     this._contextMenu.openPopupAtScreen(e.screenX, e.screenY, true);
   },
 

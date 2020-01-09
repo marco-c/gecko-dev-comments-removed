@@ -1213,6 +1213,10 @@ InplaceEditor.prototype = {
 
   _onContextMenu: function(event) {
     if (this.contextMenu) {
+      
+      
+      event.stopPropagation();
+      event.preventDefault();
       this.contextMenu(event);
     }
   },

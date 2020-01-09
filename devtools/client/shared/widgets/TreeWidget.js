@@ -127,6 +127,10 @@ TreeWidget.prototype = {
     this.root = new TreeItem(this.document);
     if (this.contextMenuId) {
       this.root.children.addEventListener("contextmenu", (event) => {
+        
+        
+        event.stopPropagation();
+        event.preventDefault();
         const menu = this.document.getElementById(this.contextMenuId);
         menu.openPopupAtScreen(event.screenX, event.screenY, true);
       });
