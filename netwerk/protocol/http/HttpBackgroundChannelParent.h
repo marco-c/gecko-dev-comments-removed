@@ -74,7 +74,8 @@ class HttpBackgroundChannelParent final : public PHttpBackgroundChannelParent {
   bool OnNotifyCookieBlocked(uint32_t aRejectedReason);
 
   
-  bool OnNotifyTrackingResource(bool aIsThirdParty);
+  bool OnNotifyClassificationFlags(uint32_t aClassificationFlags,
+                                   bool aIsThirdParty);
 
   
   bool OnNotifyFlashPluginStateChanged(nsIHttpChannel::FlashPluginState aState);

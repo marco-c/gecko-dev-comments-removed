@@ -344,12 +344,12 @@ IPCResult HttpBackgroundChannelChild::RecvNotifyCookieBlocked(
   return IPC_OK();
 }
 
-IPCResult HttpBackgroundChannelChild::RecvNotifyTrackingResource(
-    const bool& aIsThirdParty) {
+IPCResult HttpBackgroundChannelChild::RecvNotifyClassificationFlags(
+    const uint32_t& aClassificationFlags, const bool& aIsThirdParty) {
   LOG(
-      ("HttpBackgroundChannelChild::RecvNotifyTrackingResource thirdparty=%d "
-       "[this=%p]\n",
-       static_cast<int>(aIsThirdParty), this));
+      ("HttpBackgroundChannelChild::RecvNotifyClassificationFlags "
+       "classificationFlags=%" PRIu32 ", thirdparty=%d [this=%p]\n",
+       aClassificationFlags, static_cast<int>(aIsThirdParty), this));
   MOZ_ASSERT(OnSocketThread());
 
   if (NS_WARN_IF(!mChannelChild)) {
@@ -358,7 +358,8 @@ IPCResult HttpBackgroundChannelChild::RecvNotifyTrackingResource(
 
   
   
-  mChannelChild->ProcessNotifyTrackingResource(aIsThirdParty);
+  mChannelChild->ProcessNotifyClassificationFlags(aClassificationFlags,
+                                                  aIsThirdParty);
 
   return IPC_OK();
 }

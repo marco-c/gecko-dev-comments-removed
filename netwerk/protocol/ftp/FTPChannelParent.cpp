@@ -515,7 +515,8 @@ FTPChannelParent::NotifyCookieBlocked(uint32_t aRejectedReason) {
 }
 
 NS_IMETHODIMP
-FTPChannelParent::NotifyTrackingResource(bool aIsThirdParty) {
+FTPChannelParent::NotifyClassificationFlags(uint32_t aClassificationFlags,
+                                            bool aIsThirdParty) {
   
   return NS_OK;
 }
