@@ -145,6 +145,8 @@ var whitelist = [
   
   {file: "chrome://pippki/content/resetpassword.xul"},
   
+  {file: "resource://gre/modules/Battery.jsm"},
+  
   {file: "resource://gre/modules/Manifest.jsm"},
   
   {file: "resource://gre/modules/accessibility/AccessFu.jsm"},
