@@ -29,7 +29,7 @@ HandlerService.prototype = {
   QueryInterface: ChromeUtils.generateQI([
     Ci.nsISupportsWeakReference,
     Ci.nsIHandlerService,
-    Ci.nsIObserver,
+    Ci.nsIObserver
   ]),
 
   __store: null,
@@ -111,6 +111,7 @@ HandlerService.prototype = {
 
     
     for (let schemePrefName of schemePrefList) {
+
       let [scheme, handlerNumber, attribute] = schemePrefName.split(".");
 
       try {
@@ -139,7 +140,7 @@ HandlerService.prototype = {
         let handlerApp = this.handlerAppFromSerializable(schemes[scheme][handlerNumber]);
         
         
-        possibleHandlers.appendElement(handlerApp);
+        possibleHandlers.appendElement(handlerApp, false);
       }
 
       this.store(protoInfo);
@@ -263,17 +264,17 @@ HandlerService.prototype = {
       let handler = new Proxy(
         {
           QueryInterface: ChromeUtils.generateQI([Ci.nsIHandlerInfo]),
-          type,
+          type: type,
           get _handlerInfo() {
             delete this._handlerInfo;
             return this._handlerInfo = gExternalProtocolService.getProtocolHandlerInfo(type);
           },
         },
         {
-          get(target, name) {
+          get: function(target, name) {
             return target[name] || target._handlerInfo[name];
           },
-          set(target, name, value) {
+          set: function(target, name, value) {
             target._handlerInfo[name] = value;
           },
         },

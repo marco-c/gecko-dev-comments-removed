@@ -41,7 +41,7 @@ function createMockedObjects(createHandlerApp) {
 
   
   let mockedMIME = new Proxy(internalMockedMIME, {
-    get(target, property) {
+    get: function (target, property) {
       switch (property) {
       case "hasDefaultHandler":
         return true;
@@ -68,7 +68,7 @@ function createMockedObjects(createHandlerApp) {
     targetFile: null, 
     
     timeDownloadStarted: Date.now() * 1000,
-    QueryInterface: ChromeUtils.generateQI([Ci.nsICancelable, Ci.nsIHelperAppLauncher]),
+    QueryInterface: ChromeUtils.generateQI([Ci.nsICancelable, Ci.nsIHelperAppLauncher])
   };
 
   registerCleanupFunction(function() {
