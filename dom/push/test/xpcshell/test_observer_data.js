@@ -11,7 +11,7 @@ add_task(async function test_notifyWithData() {
   let notifyPromise =
     promiseObserverNotification(PushServiceComponent.pushTopic);
   pushNotifier.notifyPushWithData("chrome://notify-test", systemPrincipal,
-    "" , payload.length, payload);
+    "" , payload);
 
   let data = (await notifyPromise).subject.QueryInterface(
     Ci.nsIPushMessage).data;
@@ -27,7 +27,7 @@ add_task(async function test_empty_notifyWithData() {
   let notifyPromise =
     promiseObserverNotification(PushServiceComponent.pushTopic);
   pushNotifier.notifyPushWithData("chrome://notify-test", systemPrincipal,
-    "" , 0, null);
+    "" , []);
 
   let data = (await notifyPromise).subject.QueryInterface(
     Ci.nsIPushMessage).data;
