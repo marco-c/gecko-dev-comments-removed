@@ -611,18 +611,15 @@ impl Document {
         
         let mut retained_tiles = RetainedTiles::new();
         if let Some(frame_builder) = self.frame_builder.take() {
-            let globals = frame_builder.destroy(
+            frame_builder.destroy(
                 &mut retained_tiles,
                 &self.clip_scroll_tree,
             );
-
-            
-            
-            built_scene.frame_builder.set_retained_resources(
-                retained_tiles,
-                globals,
-            );
         }
+
+        
+        
+        built_scene.frame_builder.set_retained_tiles(retained_tiles);
 
         self.frame_builder = Some(built_scene.frame_builder);
 
