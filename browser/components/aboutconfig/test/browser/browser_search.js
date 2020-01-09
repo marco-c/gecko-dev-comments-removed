@@ -77,6 +77,21 @@ add_task(async function test_search() {
 add_task(async function test_search_delayed() {
   await AboutConfigTest.withNewTab(async function() {
     
+    this.search("");
+
+    
+    
+    EventUtils.synthesizeKey("t");
+    EventUtils.synthesizeKey("e");
+    
+    await new Promise(resolve => setTimeout(resolve, 500));
+    Assert.equal(this.rows.length, 0);
+
+    
+    EventUtils.sendKey("return");
+    Assert.greater(this.rows.length, 0);
+
+    
     this.search("test.aboutconfig.a");
     Assert.equal(this.rows.length, 2);
 

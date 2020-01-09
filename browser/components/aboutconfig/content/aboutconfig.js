@@ -6,7 +6,8 @@ const {DeferredTask} = ChromeUtils.import("resource://gre/modules/DeferredTask.j
 const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const {Preferences} = ChromeUtils.import("resource://gre/modules/Preferences.jsm");
 
-const SEARCH_TIMEOUT_MS = 500;
+const SEARCH_TIMEOUT_MS = 100;
+const SEARCH_AUTO_MIN_CRARACTERS = 3;
 
 const GETTERS_BY_PREF_TYPE = {
   [Ci.nsIPrefBranch.PREF_BOOL]: "getBoolPref",
@@ -21,7 +22,7 @@ const STRINGS_ADD_BY_TYPE = {
 };
 
 let gDefaultBranch = Services.prefs.getDefaultBranch("");
-let gFilterPrefsTask = new DeferredTask(() => filterPrefs(), SEARCH_TIMEOUT_MS);
+let gFilterPrefsTask = new DeferredTask(() => filterPrefs(), SEARCH_TIMEOUT_MS, 0);
 
 
 
@@ -381,20 +382,22 @@ function loadPrefs() {
   }
 
   search.addEventListener("keypress", event => {
-    switch (event.key) {
-      case "Escape":
-        search.value = "";
-        
-      case "Enter":
-        gFilterPrefsTask.disarm();
-        filterPrefs();
+    if (event.key == "Escape") {
+      
+      search.value = "";
+      gFilterPrefsTask.disarm();
+      filterPrefs();
+    } else if (event.key == "Enter") {
+      
+      gFilterPrefsTask.disarm();
+      filterPrefs({ shortString: true });
     }
   });
 
   search.addEventListener("input", () => {
     
     gFilterPrefsTask.disarm();
-    if (!search.value.trim().length) {
+    if (search.value.trim().length < SEARCH_AUTO_MIN_CRARACTERS) {
       
       filterPrefs();
     } else {
@@ -442,6 +445,10 @@ function filterPrefs(options = {}) {
   gDeletedPrefs.clear();
 
   let searchName = gSearchInput.value.trim();
+  if (searchName.length < SEARCH_AUTO_MIN_CRARACTERS && !options.shortString) {
+    searchName = "";
+  }
+
   gFilterString = searchName.toLowerCase();
   gFilterShowAll = !!options.showAll;
 
