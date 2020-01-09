@@ -21,7 +21,7 @@ add_task(async function() {
 
   
   let browser = win.gBrowser.selectedBrowser;
-  let tabClosed = promiseWaitForEvent(browser, "pagehide", true);
+  let tabClosed = BrowserTestUtils.waitForEvent(browser, "pagehide", true);
   let win2 = win.gBrowser.replaceTabWithWindow(win.gBrowser.tabs[0]);
 
   
@@ -52,7 +52,7 @@ add_task(async function() {
 });
 
 function promiseTestsDone(win) {
-  return promiseWaitForEvent(win, "TestsDone");
+  return BrowserTestUtils.waitForEvent(win, "TestsDone");
 }
 
 function promiseDelayedStartupFinished(win) {
