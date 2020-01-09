@@ -3053,15 +3053,23 @@ class StaticAnalysis(MachCommandBase):
         if end is not None:
             clang_output = clang_output[:end.start()-1]
 
+        platform, _ = self.platform
         
-        regex_header = re.compile(
-            r'(.+):(\d+):(\d+): (warning|error): ([^\[\]\n]+)(?: \[([\.\w-]+)\])?$', re.MULTILINE)
+        
+        
+        regex_string = r'(.+):(\d+):(\d+): (warning|error): ([^\[\]\n]+)(?: \[([\.\w-]+)\])'
 
+        
+        if platform not in ('win64', 'win32'):
+            regex_string += '?$'
+
+        regex_header = re.compile(regex_string, re.MULTILINE)
+
+        
         headers = sorted(
             regex_header.finditer(clang_output),
             key=lambda h: h.start()
         )
-
         issues = []
         for _, header in enumerate(headers):
             header_group = header.groups()
