@@ -414,24 +414,10 @@ class PinchGestureInput : public InputData {
   
 
   
-  
-  
-  
-  
-  
-  
   PinchGestureInput(PinchGestureType aType, uint32_t aTime,
                     TimeStamp aTimeStamp, const ScreenPoint& aFocusPoint,
-                    ParentLayerCoord aCurrentSpan,
-                    ParentLayerCoord aPreviousSpan, Modifiers aModifiers);
-
-  
-  
-  PinchGestureInput(PinchGestureType aType, uint32_t aTime,
-                    TimeStamp aTimeStamp,
-                    const ParentLayerPoint& aLocalFocusPoint,
-                    ParentLayerCoord aCurrentSpan,
-                    ParentLayerCoord aPreviousSpan, Modifiers aModifiers);
+                    ScreenCoord aCurrentSpan, ScreenCoord aPreviousSpan,
+                    Modifiers aModifiers);
 
   bool TransformToLocal(const ScreenToParentLayerMatrix4x4& aTransform);
 
@@ -454,12 +440,12 @@ class PinchGestureInput : public InputData {
   ParentLayerPoint mLocalFocusPoint;
 
   
-  ParentLayerCoord mCurrentSpan;
+  ScreenCoord mCurrentSpan;
 
   
   
   
-  ParentLayerCoord mPreviousSpan;
+  ScreenCoord mPreviousSpan;
 
   
   
