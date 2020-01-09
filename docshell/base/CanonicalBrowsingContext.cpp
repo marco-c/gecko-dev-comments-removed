@@ -30,27 +30,6 @@ CanonicalBrowsingContext::CanonicalBrowsingContext(BrowsingContext* aParent,
   MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
 }
 
-
-
-
-
-
- void CanonicalBrowsingContext::CleanupContexts(
-    uint64_t aProcessId) {
-  nsTArray<RefPtr<BrowsingContext>> contexts;
-  for (auto& group : *BrowsingContextGroup::sAllGroups) {
-    for (auto& context : group->Toplevels()) {
-      if (Cast(context)->IsOwnedByProcess(aProcessId)) {
-        contexts.AppendElement(context);
-      }
-    }
-  }
-
-  for (auto& context : contexts) {
-    context->Detach();
-  }
-}
-
  already_AddRefed<CanonicalBrowsingContext>
 CanonicalBrowsingContext::Get(uint64_t aId) {
   MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
