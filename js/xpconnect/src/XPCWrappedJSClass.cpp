@@ -559,7 +559,8 @@ bool nsXPCWrappedJSClass::GetInterfaceTypeFromParam(
   } else if (inner.Tag() == nsXPTType::T_INTERFACE_IS) {
     
     const nsXPTParamInfo& param = method->Param(inner.ArgNum());
-    if (param.Type().Tag() != nsXPTType::T_IID) {
+    if (param.Type().Tag() != nsXPTType::T_NSID &&
+        param.Type().Tag() != nsXPTType::T_NSIDPTR) {
       return false;
     }
 
@@ -567,7 +568,8 @@ bool nsXPCWrappedJSClass::GetInterfaceTypeFromParam(
 
     
     
-    if (ptr && param.IsIndirect()) {
+    if (ptr && param.Type().Tag() == nsXPTType::T_NSIDPTR &&
+        param.IsIndirect()) {
       ptr = *(nsID**)ptr;
     }
 

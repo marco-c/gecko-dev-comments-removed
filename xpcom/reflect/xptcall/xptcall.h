@@ -51,6 +51,7 @@ struct nsXPTCVariant {
     
     nsXPTCMiniVariant mini;
 
+    nsID nsid;
     nsCString nscstr;
     nsString nsstr;
     JS::Value jsval;

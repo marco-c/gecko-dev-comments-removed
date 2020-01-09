@@ -560,19 +560,20 @@ class Native(object):
             const = True
 
         if calltype == 'element':
+            if self.specialtype == 'nsid':
+                if self.isPtr(calltype):
+                    raise IDLError("Array<nsIDPtr> not yet supported. "
+                                   "File an XPConnect bug if you need it.", self.location)
+
+                
+                return self.nativename
+
             if self.isRef(calltype):
                 raise IDLError("[ref] qualified type unsupported in Array<T>", self.location)
 
             
             if self.specialtype == 'promise':
                 return 'RefPtr<mozilla::dom::Promise>'
-
-            
-            
-            
-            if self.specialtype == 'nsid':
-                raise IDLError("Array<nsIDPtr> not yet supported. "
-                               "File an XPConnect bug if you need it.", self.location)
 
         if self.isRef(calltype):
             m = '& '  
