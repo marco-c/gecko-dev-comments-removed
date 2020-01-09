@@ -1908,6 +1908,9 @@ VARIABLES = {
         """List of manifest files defining cram unit tests.
         """),
 
+    'TELEMETRY_TESTS_CLIENT_MANIFESTS': (ManifestparserManifestList, list,
+        """List of manifest files defining telemetry client tests.
+        """),
 
     
     'XPI_NAME': (unicode, unicode,
