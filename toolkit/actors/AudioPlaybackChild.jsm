@@ -34,14 +34,6 @@ class AudioPlaybackChild extends ActorChild {
       case "mediaControlStopped":
         utils.mediaSuspend = suspendTypes.SUSPENDED_STOP_DISPOSABLE;
         break;
-      case "resumeMedia":
-        
-        
-        
-        
-        this.content.document.notifyUserGestureActivation();
-        utils.mediaSuspend = suspendTypes.NONE_SUSPENDED;
-        break;
       default:
         dump("Error : wrong media control msg!\n");
         break;
