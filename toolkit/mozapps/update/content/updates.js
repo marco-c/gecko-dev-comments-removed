@@ -768,10 +768,7 @@ var gDownloadingPage = {
       gUpdates.update.QueryInterface(Ci.nsIWritablePropertyBag);
       gUpdates.update.setProperty("foregroundDownload", "true");
 
-      
-      
-      gAUS.pauseDownload();
-      var state = gAUS.downloadUpdate(gUpdates.update, false);
+      let state = gAUS.downloadUpdate(gUpdates.update, false);
       if (state == "failed") {
         
         
@@ -894,7 +891,7 @@ var gDownloadingPage = {
       var patch = gUpdates.update.selectedPatch;
       patch.QueryInterface(Ci.nsIWritablePropertyBag);
       patch.setProperty("status", this._pausedStatus);
-      gAUS.pauseDownload();
+      gAUS.stopDownload();
     }
     this._paused = !this._paused;
 

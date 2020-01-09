@@ -26,6 +26,6 @@ function run_test() {
 
   
   
-  gAUS.pauseDownload();
+  gAUS.stopDownload();
   executeSoon(doTestFinish);
 }

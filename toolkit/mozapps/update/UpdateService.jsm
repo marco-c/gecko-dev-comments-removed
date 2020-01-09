@@ -8,6 +8,8 @@
 
 const {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 const {AUSTLMY} = ChromeUtils.import("resource://gre/modules/UpdateTelemetry.jsm");
+const {Bits, BitsRequest} =
+  ChromeUtils.import("resource://gre/modules/Bits.jsm");
 const {FileUtils} = ChromeUtils.import("resource://gre/modules/FileUtils.jsm");
 const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -30,6 +32,7 @@ const UPDATESERVICE_CID = Components.ID("{B3C290A6-3943-4B89-8BBE-C01EB7B3B311}"
 const PREF_APP_UPDATE_ALTWINDOWTYPE        = "app.update.altwindowtype";
 const PREF_APP_UPDATE_BACKGROUNDERRORS     = "app.update.backgroundErrors";
 const PREF_APP_UPDATE_BACKGROUNDMAXERRORS  = "app.update.backgroundMaxErrors";
+const PREF_APP_UPDATE_BITS_ENABLED         = "app.update.BITS.enabled";
 const PREF_APP_UPDATE_CANCELATIONS         = "app.update.cancelations";
 const PREF_APP_UPDATE_CANCELATIONS_OSX     = "app.update.cancelations.osx";
 const PREF_APP_UPDATE_CANCELATIONS_OSX_MAX = "app.update.cancelations.osx.max";
@@ -56,6 +59,7 @@ const PREF_APP_UPDATE_SOCKET_RETRYTIMEOUT  = "app.update.socket.retryTimeout";
 const PREF_APP_UPDATE_STAGING_ENABLED      = "app.update.staging.enabled";
 const PREF_APP_UPDATE_URL                  = "app.update.url";
 const PREF_APP_UPDATE_URL_DETAILS          = "app.update.url.details";
+const PREF_NETWORK_PROXY_TYPE              = "network.proxy.type";
 
 const URI_BRAND_PROPERTIES      = "chrome://branding/locale/brand.properties";
 const URI_UPDATE_HISTORY_DIALOG = "chrome://mozapps/content/update/history.xul";
@@ -92,6 +96,13 @@ const STATE_APPLIED_SERVICE = "applied-service";
 const STATE_SUCCEEDED       = "succeeded";
 const STATE_DOWNLOAD_FAILED = "download-failed";
 const STATE_FAILED          = "failed";
+
+
+
+
+
+const BITS_IDLE_POLL_RATE_MS = 1000;
+const BITS_ACTIVE_POLL_RATE_MS = 200;
 
 
 const WRITE_ERROR                          = 7;
@@ -169,6 +180,11 @@ const NETWORK_ERROR_OFFLINE             = 111;
 
 const HTTP_ERROR_OFFSET                 = 1000;
 
+
+
+
+const HRESULT_E_ACCESSDENIED            = -2147024891;
+
 const DOWNLOAD_CHUNK_SIZE           = 300000; 
 
 const UPDATE_WINDOW_NAME      = "Update:Wizard";
@@ -212,6 +228,11 @@ var gUpdateMutexHandle = null;
 var gUpdateDirPermissionFixAttempted = false;
 
 var gLogfileWritePromise;
+
+
+
+
+var gBITSInUseByAnotherUser = false;
 
 XPCOMUtils.defineLazyGetter(this, "gLogEnabled", function aus_gLogEnabled() {
   return Services.prefs.getBoolPref(PREF_APP_UPDATE_LOG, false) ||
@@ -532,6 +553,47 @@ function getCanStageUpdates() {
   }
 
   return gCanStageUpdatesSession;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function getCanUseBits() {
+  if (AppConstants.platform != "win") {
+    LOG("getCanUseBits - Not using BITS because this is not Windows");
+    return "NoBits_NotWindows";
+  }
+  if (!AppConstants.MOZ_BITS_DOWNLOAD) {
+    LOG("getCanUseBits - Not using BITS because the feature is disabled");
+    return "NoBits_FeatureOff";
+  }
+  if (!Services.prefs.getBoolPref(PREF_APP_UPDATE_BITS_ENABLED, true)) {
+    LOG("getCanUseBits - Not using BITS. Disabled by pref.");
+    return "NoBits_Pref";
+  }
+  if (gBITSInUseByAnotherUser) {
+    LOG("getCanUseBits - Not using BITS. Already in use by another user");
+    return "NoBits_OtherUser";
+  }
+  
+  
+  
+  let defaultProxy = Ci.nsIProtocolProxyService.PROXYCONFIG_SYSTEM;
+  if (Services.prefs.getIntPref(PREF_NETWORK_PROXY_TYPE, defaultProxy) !=
+      defaultProxy) {
+    LOG("getCanUseBits - Not using BITS because of proxy usage");
+    return "NoBits_Proxy";
+  }
+  LOG("getCanUseBits - BITS can be used to download updates");
+  return "CanUseBits";
 }
 
 
@@ -1861,7 +1923,15 @@ UpdateService.prototype = {
           this._retryTimer.cancel();
         }
 
-        this.pauseDownload();
+        
+        
+        
+        
+        
+        
+        if (this._downloader && !this._downloader.usingBits) {
+          this.stopDownload();
+        }
         
         this._downloader = null;
         
@@ -2705,10 +2775,10 @@ UpdateService.prototype = {
 
     
     if (this.isDownloading) {
-      if (update.isCompleteUpdate == this._downloader.isCompleteUpdate &&
-          background == this._downloader.background) {
+      if (update.isCompleteUpdate == this._downloader.isCompleteUpdate) {
         LOG("UpdateService:downloadUpdate - no support for downloading more " +
             "than one update at a time");
+        this._downloader.background = background;
         return readStatusFile(getUpdatesDir());
       }
       this._downloader.cancel();
@@ -2720,7 +2790,7 @@ UpdateService.prototype = {
   
 
 
-  pauseDownload: function AUS_pauseDownload() {
+  stopDownload: function AUS_stopDownload() {
     if (this.isDownloading) {
       this._downloader.cancel();
     } else if (this._retryTimer) {
@@ -2728,7 +2798,9 @@ UpdateService.prototype = {
       
       this._retryTimer.cancel();
       this._retryTimer = null;
-      this._downloader.cancel();
+      if (this._downloader) {
+        this._downloader.cancel();
+      }
     }
   },
 
@@ -2748,6 +2820,7 @@ UpdateService.prototype = {
     if (!gLogEnabled) {
       return;
     }
+    LOG("Logging current UpdateService status:");
     
     this.canCheckForUpdates;
     this.canApplyUpdates;
@@ -2756,9 +2829,28 @@ UpdateService.prototype = {
     LOG("Update being handled by other instance: " +
         this.isOtherInstanceHandlingUpdates);
     LOG("Downloading: " + !!this.isDownloading);
-    if (this._downloader) {
+    if (this._downloader && this._downloader.isBusy) {
       LOG("Downloading complete update: " + this._downloader.isCompleteUpdate);
+      LOG("Downloader using BITS: " + this._downloader.usingBits);
+      if (this._downloader._patch) {
+        
+        this._downloader._canUseBits(this._downloader._patch);
+
+        
+        
+        
+        let bitsResult = this._downloader._patch.getProperty("bitsResult");
+        if (bitsResult != null) {
+          LOG("Patch BITS result: " + bitsResult);
+        }
+        let internalResult =
+          this._downloader._patch.getProperty("internalResult");
+        if (internalResult != null) {
+          LOG("Patch nsIIncrementalDownload result: " + internalResult);
+        }
+      }
     }
+    LOG("End of UpdateService status");
   },
 
   classID: UPDATESERVICE_CID,
@@ -3090,8 +3182,6 @@ UpdateManager.prototype = {
         handleFallbackToCompleteUpdate(update, true);
       }
 
-      
-      
       update.QueryInterface(Ci.nsIWritablePropertyBag);
       update.setProperty("stagingFailed", "true");
     }
@@ -3531,12 +3621,47 @@ Downloader.prototype = {
   
 
 
-  cancel: function Downloader_cancel(cancelError) {
+
+
+  _pendingRequest: null,
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  _bitsActiveNotifications: false,
+
+  
+
+
+
+
+
+
+  cancel: async function Downloader_cancel(cancelError) {
     LOG("Downloader: cancel");
     if (cancelError === undefined) {
       cancelError = Cr.NS_BINDING_ABORTED;
     }
-    if (this._request && this._request instanceof Ci.nsIRequest) {
+    if (this.usingBits) {
+      if (this._pendingRequest) {
+        await this._pendingRequest;
+      }
+      if (this._patch.getProperty("bitsId") != null) {
+        
+        
+        this._patch.deleteProperty("bitsId");
+      }
+      await this._request.cancelAsync(cancelError);
+    } else if (this._request && this._request instanceof Ci.nsIRequest) {
       this._request.cancel(cancelError);
     }
   },
@@ -3566,7 +3691,8 @@ Downloader.prototype = {
       return false;
     }
 
-    let destination = this._request.destination;
+    let destination = getUpdatesDir();
+    destination.append(FILE_UPDATE_MAR);
 
     
     if (destination.fileSize != this._patch.size) {
@@ -3632,6 +3758,16 @@ Downloader.prototype = {
         return null;
       }
 
+      selectedPatch.QueryInterface(Ci.nsIWritablePropertyBag);
+      if (selectedPatch.getProperty("bitsResult") != null &&
+          selectedPatch.getProperty("internalResult") == null &&
+          selectedPatch.getProperty("stagingFailed") != null) {
+        LOG("Downloader:_selectPatch - Falling back to non-BITS download " +
+            "mechanism due to existing BITS result: " +
+            selectedPatch.getProperty("bitsResult"));
+        return selectedPatch;
+      }
+
       if (update && selectedPatch.type == "complete") {
         
         LOG("Downloader:_selectPatch - failed to apply complete patch!");
@@ -3666,7 +3802,7 @@ Downloader.prototype = {
     if (selectedPatch)
       selectedPatch.selected = true;
 
-    update.isCompleteUpdate = useComplete;
+    update.isCompleteUpdate = (selectedPatch.type == "complete");
 
     
     
@@ -3681,7 +3817,29 @@ Downloader.prototype = {
 
 
   get isBusy() {
-    return this._request != null;
+    return this._request != null || this._pendingRequest != null;
+  },
+
+  get usingBits() {
+    return this._pendingRequest != null || this._request instanceof BitsRequest;
+  },
+
+  
+
+
+  _canUseBits: function Downloader__canUseBits(patch) {
+    if (getCanUseBits() != "CanUseBits") {
+      
+      return false;
+    }
+    
+    
+    if (patch.getProperty("bitsResult") != null) {
+      LOG("Downloader:_canUseBits - Not using BITS because it was already tried");
+      return false;
+    }
+    LOG("Downloader:_canUseBits - Patch is able to use BITS download");
+    return true;
   },
 
   
@@ -3709,22 +3867,124 @@ Downloader.prototype = {
       AUSTLMY.pingDownloadCode(undefined, AUSTLMY.DWNLD_ERR_NO_UPDATE_PATCH);
       return readStatusFile(updateDir);
     }
+    
+    
+    
+    this._patch.QueryInterface(Ci.nsIWritablePropertyBag);
     this.isCompleteUpdate = this._patch.type == "complete";
 
-    let patchFile = getUpdatesDir().clone();
-    patchFile.append(FILE_UPDATE_MAR);
+    if (!this._canUseBits(this._patch)) {
+      let patchFile = getUpdatesDir().clone();
+      patchFile.append(FILE_UPDATE_MAR);
 
-    
-    let interval = 0;
+      
+      let interval = 0;
 
-    LOG("Downloader:downloadUpdate - url: " + this._patch.URL + ", path: " +
-        patchFile.path + ", interval: " + interval);
-    var uri = Services.io.newURI(this._patch.URL);
+      LOG("Downloader:downloadUpdate - Starting nsIIncrementalDownload with " +
+          "url: " + this._patch.URL + ", path: " + patchFile.path +
+          ", interval: " + interval);
+      let uri = Services.io.newURI(this._patch.URL);
 
-    this._request = Cc["@mozilla.org/network/incremental-download;1"].
-                    createInstance(Ci.nsIIncrementalDownload);
-    this._request.init(uri, patchFile, DOWNLOAD_CHUNK_SIZE, interval);
-    this._request.start(this, null);
+      this._request = Cc["@mozilla.org/network/incremental-download;1"].
+                      createInstance(Ci.nsIIncrementalDownload);
+      this._request.init(uri, patchFile, DOWNLOAD_CHUNK_SIZE, interval);
+      this._request.start(this, null);
+    } else {
+      let monitorInterval = BITS_IDLE_POLL_RATE_MS;
+      this._bitsActiveNotifications = false;
+      
+      
+      
+      
+      let monitorTimeout = Math.max(10 * monitorInterval, 10 * 60 * 1000);
+      if (this.hasDownloadListeners) {
+        monitorInterval = BITS_ACTIVE_POLL_RATE_MS;
+        this._bitsActiveNotifications = true;
+      }
+
+      let updateRootDir = FileUtils.getDir("UpdRootD", [], true);
+      let jobName = "MozillaUpdate " + updateRootDir.leafName;
+      let updatePath = updateDir.path;
+      if (!Bits.initialized) {
+        Bits.init(jobName, updatePath, monitorTimeout);
+      }
+
+      let bitsId = this._patch.getProperty("bitsId");
+      if (bitsId) {
+        LOG("Downloader:downloadUpdate - Connecting to in-progress download. " +
+            "BITS ID: " + bitsId);
+
+        this._pendingRequest = Bits.monitorDownload(bitsId, monitorInterval,
+                                                    this, null);
+      } else {
+        LOG("Downloader:downloadUpdate - Starting BITS download with url: " +
+            this._patch.URL + ", updateDir: " + updatePath + ", filename: " +
+            FILE_UPDATE_MAR);
+
+        this._pendingRequest = Bits.startDownload(this._patch.URL,
+                                                  FILE_UPDATE_MAR,
+                                                  Ci.nsIBits.PROXY_PRECONFIG,
+                                                  monitorInterval, this, null);
+      }
+      this._pendingRequest = this._pendingRequest.then(request => {
+        this._request = request;
+        this._patch.setProperty("bitsId", request.bitsId);
+
+        LOG("Downloader:downloadUpdate - BITS download running. BITS ID: " +
+            request.bitsId);
+
+        if (this.hasDownloadListeners) {
+          this._maybeStartActiveNotifications();
+        } else {
+          this._maybeStopActiveNotifications();
+        }
+
+        Cc["@mozilla.org/updates/update-manager;1"].
+          getService(Ci.nsIUpdateManager).saveUpdates();
+        this._pendingRequest = null;
+      }, error => {
+        if (error.type == Ci.nsIBits.ERROR_TYPE_FAILED_TO_GET_BITS_JOB &&
+            error.action == Ci.nsIBits.ERROR_ACTION_MONITOR_DOWNLOAD &&
+            error.stage == Ci.nsIBits.ERROR_STAGE_BITS_CLIENT &&
+            error.codeType == Ci.nsIBits.ERROR_CODE_TYPE_HRESULT &&
+            error.code == HRESULT_E_ACCESSDENIED) {
+          LOG("Downloader:downloadUpdate - Failed to connect to existing " +
+              "BITS job. It is likely owned by another user.");
+          
+          
+          
+          error.type = Ci.nsIBits.ERROR_TYPE_ACCESS_DENIED_EXPECTED;
+          error.codeType = Ci.nsIBits.ERROR_CODE_TYPE_NONE;
+          error.code = null;
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          gBITSInUseByAnotherUser = true;
+        } else {
+          this._patch.setProperty("bitsResult", Cr.NS_ERROR_FAILURE);
+          Cc["@mozilla.org/updates/update-manager;1"].
+            getService(Ci.nsIUpdateManager).saveUpdates();
+
+          LOG("Downloader:downloadUpdate - Failed to start to BITS job. " +
+              "Error: " + error);
+        }
+
+        this._pendingRequest = null;
+        
+        
+        
+        
+        
+        
+        this.downloadUpdate(this._update);
+      });
+    }
 
     writeStatusFile(updateDir, STATE_DOWNLOADING);
     if (this._patch.state != STATE_DOWNLOADING) {
@@ -3753,6 +4013,9 @@ Downloader.prototype = {
         return;
     }
     this._listeners.push(listener);
+
+    
+    this._maybeStartActiveNotifications();
   },
 
   
@@ -3767,6 +4030,50 @@ Downloader.prototype = {
         return;
       }
     }
+
+    
+    if (this._listeners.length == 0) {
+      this._maybeStopActiveNotifications();
+    }
+  },
+
+  
+
+
+  get hasDownloadListeners() {
+    return this._listeners.length > 0;
+  },
+
+  
+
+
+
+  _maybeStartActiveNotifications: async function Downloader__maybeStartActiveNotifications() {
+    if (this.usingBits && !this._bitsActiveNotifications &&
+        this.hasDownloadListeners && this._request) {
+      LOG("Downloader:_maybeStartActiveNotifications - Starting active " +
+          "notifications");
+      await this._request.changeMonitorInterval(BITS_ACTIVE_POLL_RATE_MS).catch(error => {
+        LOG("Downloader:_maybeStartActiveNotifications - Failed to increase " +
+            "status update frequency. Error: " + error);
+      });
+    }
+  },
+
+  
+
+
+
+  _maybeStopActiveNotifications: async function Downloader__maybeStopActiveNotifications() {
+    if (this.usingBits && this._bitsActiveNotifications &&
+        !this.hasDownloadListeners && this._request) {
+      LOG("Downloader:_maybeStopActiveNotifications - Stopping active " +
+          "notifications");
+      await this._request.changeMonitorInterval(BITS_IDLE_POLL_RATE_MS).catch(error => {
+        LOG("Downloader:_maybeStopActiveNotifications - Failed to decrease " +
+            "status update frequency: " + error);
+      });
+    }
   },
 
   
@@ -3775,16 +4082,18 @@ Downloader.prototype = {
 
 
   onStartRequest: function Downloader_onStartRequest(request) {
-    if (request instanceof Ci.nsIIncrementalDownload)
+    if (!this.usingBits) {
       LOG("Downloader:onStartRequest - original URI spec: " + request.URI.spec +
           ", final URI spec: " + request.finalURI.spec);
-    
-    if (this._patch.finalURL != request.finalURI.spec) {
-      this._patch.finalURL = request.finalURI.spec;
-      Cc["@mozilla.org/updates/update-manager;1"].
-        getService(Ci.nsIUpdateManager).saveUpdates();
+      
+      if (this._patch.finalURL != request.finalURI.spec) {
+        this._patch.finalURL = request.finalURI.spec;
+        Cc["@mozilla.org/updates/update-manager;1"].
+          getService(Ci.nsIUpdateManager).saveUpdates();
+      }
     }
 
+    
     let listeners = this._listeners.concat();
     let listenerCount = listeners.length;
     for (let i = 0; i < listenerCount; ++i) {
@@ -3803,7 +4112,7 @@ Downloader.prototype = {
 
 
 
-    onProgress: function Downloader_onProgress(request, context, progress,
+  onProgress: function Downloader_onProgress(request, context, progress,
                                              maxProgress) {
     LOG("Downloader:onProgress - progress: " + progress + "/" + maxProgress);
 
@@ -3816,7 +4125,10 @@ Downloader.prototype = {
       return;
     }
 
-    if (maxProgress != this._patch.size) {
+    
+    
+    
+    if (progress > 0 && maxProgress != this._patch.size) {
       LOG("Downloader:onProgress - maxProgress: " + maxProgress +
           " is not equal to expected patch size: " + this._patch.size);
       AUSTLMY.pingDownloadCode(this.isCompleteUpdate,
@@ -3825,6 +4137,7 @@ Downloader.prototype = {
       return;
     }
 
+    
     var listeners = this._listeners.concat();
     var listenerCount = listeners.length;
     for (var i = 0; i < listenerCount; ++i) {
@@ -3851,6 +4164,7 @@ Downloader.prototype = {
     LOG("Downloader:onStatus - status: " + status + ", statusText: " +
         statusText);
 
+    
     var listeners = this._listeners.concat();
     var listenerCount = listeners.length;
     for (var i = 0; i < listenerCount; ++i) {
@@ -3868,10 +4182,38 @@ Downloader.prototype = {
 
 
    
-  onStopRequest: function Downloader_onStopRequest(request, status) {
-    if (request instanceof Ci.nsIIncrementalDownload)
-      LOG("Downloader:onStopRequest - original URI spec: " + request.URI.spec +
-          ", final URI spec: " + request.finalURI.spec + ", status: " + status);
+  onStopRequest: async function Downloader_onStopRequest(request, status) {
+    if (!this.usingBits) {
+      LOG("Downloader:onStopRequest - downloader: nsIIncrementalDownload, " +
+          "original URI spec: " + request.URI.spec + ", final URI spec: " +
+          request.finalURI.spec + ", status: " + status);
+    } else {
+      LOG("Downloader:onStopRequest - downloader: BITS, status: " + status);
+    }
+
+    if (this.usingBits) {
+      if (Components.isSuccessCode(status)) {
+        try {
+          await request.complete();
+        } catch (e) {
+          LOG("Downloader:onStopRequest - Unable to complete BITS download: " +
+              e);
+          status = Cr.NS_ERROR_FAILURE;
+        }
+      } else {
+        
+        
+        try {
+          await request.cancelAsync();
+        } catch (e) {
+          
+          
+          
+          
+          
+        }
+      }
+    }
 
     
     
@@ -3939,6 +4281,7 @@ Downloader.prototype = {
                                AUSTLMY.DWNLD_RETRY_OFFLINE);
       shouldRegisterOnlineObserver = true;
       deleteActiveUpdate = false;
+
     
     
     
@@ -3995,31 +4338,43 @@ Downloader.prototype = {
 
       deleteActiveUpdate = true;
     }
-    let saveUpdate = false;
+    if (!this.usingBits) {
+      this._patch.setProperty("internalResult", status);
+    } else {
+      this._patch.setProperty("bitsResult", status);
+
+      
+      
+      
+      
+      if (!Components.isSuccessCode(status) &&
+          status != Cr.NS_BINDING_ABORTED &&
+          status != Cr.NS_ERROR_ABORT) {
+        deleteActiveUpdate = false;
+        shouldRetrySoon = true;
+      }
+    }
+
     LOG("Downloader:onStopRequest - setting state to: " + state);
     if (this._patch.state != state) {
-      saveUpdate = true;
       this._patch.state = state;
     }
     var um = Cc["@mozilla.org/updates/update-manager;1"].
              getService(Ci.nsIUpdateManager);
     if (deleteActiveUpdate) {
-      saveUpdate = true;
       this._update.installDate = (new Date()).getTime();
       
       
       um.activeUpdate = null;
     } else if (um.activeUpdate && um.activeUpdate.state != state) {
-      saveUpdate = true;
       um.activeUpdate.state = state;
     }
-    if (saveUpdate) {
-      um.saveUpdates();
-    }
+    um.saveUpdates();
 
     
     
     if (!shouldRetrySoon && !shouldRegisterOnlineObserver) {
+      
       var listeners = this._listeners.concat();
       var listenerCount = listeners.length;
       for (var i = 0; i < listenerCount; ++i) {
@@ -4032,7 +4387,20 @@ Downloader.prototype = {
     if (state == STATE_DOWNLOAD_FAILED) {
       var allFailed = true;
       
-      if (!this._update.isCompleteUpdate && this._update.patchCount == 2) {
+      if (request instanceof BitsRequest) {
+        LOG("Downloader:onStopRequest - BITS download failed. Falling back " +
+            "to nsIIncrementalDownload");
+        let updateStatus = this.downloadUpdate(this._update);
+        if (updateStatus == STATE_NONE) {
+          cleanupActiveUpdate();
+        } else {
+          allFailed = false;
+        }
+      }
+
+      
+      if (allFailed && !this._update.isCompleteUpdate &&
+          this._update.patchCount == 2) {
         LOG("Downloader:onStopRequest - verification of patch failed, " +
             "downloading complete update patch");
         this._update.isCompleteUpdate = true;

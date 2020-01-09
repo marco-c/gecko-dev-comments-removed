@@ -734,7 +734,10 @@ gTestDirsPartialSuccess = gTestDirsCommon.concat(gTestDirsPartialSuccess);
 
 
 
-function setupTestCommon(aAppUpdateAutoEnabled = false) {
+
+
+
+function setupTestCommon(aAppUpdateAutoEnabled = false, aAllowBits = false) {
   debugDump("start - general test setup");
 
   Assert.strictEqual(gTestID, undefined,
@@ -839,6 +842,7 @@ function setupTestCommon(aAppUpdateAutoEnabled = false) {
   }
 
   setAppUpdateAutoSync(aAppUpdateAutoEnabled);
+  Services.prefs.setBoolPref(PREF_APP_UPDATE_BITS_ENABLED, aAllowBits);
 
   debugDump("finish - general test setup");
   return true;
@@ -942,6 +946,7 @@ function cleanupTestCommon() {
   }
 
   resetEnvironment();
+  Services.prefs.clearUserPref(PREF_APP_UPDATE_BITS_ENABLED);
 
   debugDump("finish - general test cleanup");
 

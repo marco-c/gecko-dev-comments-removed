@@ -58,7 +58,7 @@ function check_status() {
   
   
   
-  gAUS.pauseDownload();
+  gAUS.stopDownload();
   writeUpdatesToXMLFile(getLocalUpdatesXMLString(""), true);
   writeUpdatesToXMLFile(getLocalUpdatesXMLString(""), false);
   reloadUpdateManagerData();

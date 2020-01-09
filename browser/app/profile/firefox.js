@@ -168,6 +168,11 @@ pref("app.update.idletime", 60);
 pref("app.update.service.enabled", true);
 #endif
 
+#ifdef XP_WIN
+
+pref("app.update.BITS.enabled", false);
+#endif
+
 
 
 
