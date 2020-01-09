@@ -46,7 +46,7 @@ enum JSType {
   JSTYPE_BOOLEAN,   
   JSTYPE_NULL,      
   JSTYPE_SYMBOL,    
-  JSTYPE_BIGINT, 
+  JSTYPE_BIGINT,    
   JSTYPE_LIMIT
 };
 

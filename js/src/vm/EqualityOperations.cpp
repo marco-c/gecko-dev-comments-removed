@@ -17,9 +17,9 @@
 #include "js/RootingAPI.h"  
 #include "js/Value.h"       
 #include "vm/BigIntType.h"  
-#include "vm/JSContext.h"     
-#include "vm/JSObject.h"      
-#include "vm/StringType.h"    
+#include "vm/JSContext.h"   
+#include "vm/JSObject.h"    
+#include "vm/StringType.h"  
 
 #include "builtin/Boolean-inl.h"  
 #include "vm/JSContext-inl.h"     

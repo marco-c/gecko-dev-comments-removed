@@ -7,7 +7,7 @@
 #ifndef GFX_IMAGETYPES_H
 #define GFX_IMAGETYPES_H
 
-#include <stdint.h>     
+#include <stdint.h>  
 
 namespace mozilla {
 

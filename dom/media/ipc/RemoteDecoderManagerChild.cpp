@@ -77,15 +77,15 @@ RemoteDecoderManagerChild::GetManagerAbstractThread() {
   return sRemoteDecoderManagerChildAbstractThread;
 }
 
-PRemoteDecoderChild*
-RemoteDecoderManagerChild::AllocPRemoteDecoderChild(
+PRemoteDecoderChild* RemoteDecoderManagerChild::AllocPRemoteDecoderChild(
     const RemoteDecoderInfoIPDL& ,
     const CreateDecoderParams::OptionSet& , bool* ,
     nsCString* ) {
   
   
-  MOZ_ASSERT(false, "RemoteDecoderManagerChild cannot create "
-                    "RemoteDecoderChild classes");
+  MOZ_ASSERT(false,
+             "RemoteDecoderManagerChild cannot create "
+             "RemoteDecoderChild classes");
   return nullptr;
 }
 

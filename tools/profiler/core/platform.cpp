@@ -776,8 +776,7 @@ class ActivePS {
 
 #if !defined(RELEASE_OR_BETA)
   static void UnregisterIOInterposer(PSLockRef) {
-    if (!sInstance->mInterposeObserver)
-      return;
+    if (!sInstance->mInterposeObserver) return;
 
     IOInterposer::Unregister(IOInterposeObserver::OpAll,
                              sInstance->mInterposeObserver);
@@ -1710,20 +1709,40 @@ static void StreamTaskTracer(PSLockRef aLock, SpliceableJSONWriter& aWriter) {
 
 static void StreamCategories(SpliceableJSONWriter& aWriter) {
   
-
-#define CATEGORY_JSON_BEGIN_CATEGORY(name, labelAsString, color) \
-  aWriter.Start();                                               \
-  aWriter.StringProperty("name", labelAsString);                 \
-  aWriter.StringProperty("color", color);
-#define CATEGORY_JSON_SUBCATEGORY(category, name, labelAsString)
-#define CATEGORY_JSON_END_CATEGORY aWriter.EndObject();
-
-  PROFILING_CATEGORY_LIST(CATEGORY_JSON_BEGIN_CATEGORY,
-                          CATEGORY_JSON_SUBCATEGORY, CATEGORY_JSON_END_CATEGORY)
-
-#undef CATEGORY_JSON_BEGIN_CATEGORY
-#undef CATEGORY_JSON_SUBCATEGORY
-#undef CATEGORY_JSON_END_CATEGORY
+  
+  
+  aWriter.Start();
+  aWriter.StringProperty("name", "Idle");
+  aWriter.StringProperty("color", "transparent");
+  aWriter.EndObject();
+  aWriter.Start();
+  aWriter.StringProperty("name", "Other");
+  aWriter.StringProperty("color", "grey");
+  aWriter.EndObject();
+  aWriter.Start();
+  aWriter.StringProperty("name", "Layout");
+  aWriter.StringProperty("color", "purple");
+  aWriter.EndObject();
+  aWriter.Start();
+  aWriter.StringProperty("name", "JavaScript");
+  aWriter.StringProperty("color", "yellow");
+  aWriter.EndObject();
+  aWriter.Start();
+  aWriter.StringProperty("name", "GC / CC");
+  aWriter.StringProperty("color", "orange");
+  aWriter.EndObject();
+  aWriter.Start();
+  aWriter.StringProperty("name", "Network");
+  aWriter.StringProperty("color", "lightblue");
+  aWriter.EndObject();
+  aWriter.Start();
+  aWriter.StringProperty("name", "Graphics");
+  aWriter.StringProperty("color", "green");
+  aWriter.EndObject();
+  aWriter.Start();
+  aWriter.StringProperty("name", "DOM");
+  aWriter.StringProperty("color", "blue");
+  aWriter.EndObject();
 }
 
 static void StreamMetaJSCustomObject(PSLockRef aLock,
@@ -1921,18 +1940,18 @@ static UniquePtr<ProfileBuffer> CollectJavaThreadProfileData() {
       
       
       
-      Maybe<JS::ProfilingCategoryPair> categoryPair;
+      Maybe<js::ProfilingStackFrame::Category> category;
       if (frameNameString.EqualsLiteral(
               "android.os.MessageQueue.nativePollOnce()")) {
-        categoryPair = Some(JS::ProfilingCategoryPair::IDLE);
+        category = Some(js::ProfilingStackFrame::Category::IDLE);
         parentFrameWasIdleFrame = true;
       } else if (parentFrameWasIdleFrame) {
-        categoryPair = Some(JS::ProfilingCategoryPair::OTHER);
+        category = Some(js::ProfilingStackFrame::Category::OTHER);
         parentFrameWasIdleFrame = false;
       }
 
       buffer->CollectCodeLocation("", frameNameString.get(), 0, Nothing(),
-                                  Nothing(), categoryPair);
+                                  Nothing(), category);
     }
     sampleId++;
   }
@@ -2616,7 +2635,7 @@ ProfilingStack* MozGlueLabelEnter(const char* aLabel,
   ProfilingStack* profilingStack = AutoProfilerLabel::sProfilingStack.get();
   if (profilingStack) {
     profilingStack->pushLabelFrame(aLabel, aDynamicString, aSp,
-                                   JS::ProfilingCategoryPair::OTHER);
+                                   js::ProfilingStackFrame::Category::OTHER);
   }
   return profilingStack;
 }
@@ -3666,7 +3685,7 @@ void ProfilerBacktraceDestructor::operator()(ProfilerBacktrace* aBacktrace) {
 }
 
 static void racy_profiler_add_marker(
-    const char* aMarkerName, JS::ProfilingCategoryPair aCategoryPair,
+    const char* aMarkerName, js::ProfilingStackFrame::Category aCategory,
     UniquePtr<ProfilerMarkerPayload> aPayload) {
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
@@ -3688,11 +3707,11 @@ static void racy_profiler_add_marker(
                          : TimeStamp::Now();
   TimeDuration delta = origin - CorePS::ProcessStartTime();
   racyRegisteredThread->AddPendingMarker(
-      aMarkerName, aCategoryPair, std::move(aPayload), delta.ToMilliseconds());
+      aMarkerName, aCategory, std::move(aPayload), delta.ToMilliseconds());
 }
 
 void profiler_add_marker(const char* aMarkerName,
-                         JS::ProfilingCategoryPair aCategoryPair,
+                         js::ProfilingStackFrame::Category aCategory,
                          UniquePtr<ProfilerMarkerPayload> aPayload) {
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
@@ -3701,18 +3720,19 @@ void profiler_add_marker(const char* aMarkerName,
     return;
   }
 
-  racy_profiler_add_marker(aMarkerName, aCategoryPair, std::move(aPayload));
+  racy_profiler_add_marker(aMarkerName, aCategory, std::move(aPayload));
 }
 
 void profiler_add_marker(const char* aMarkerName,
-                         JS::ProfilingCategoryPair aCategoryPair) {
-  profiler_add_marker(aMarkerName, aCategoryPair, nullptr);
+                         js::ProfilingStackFrame::Category aCategory) {
+  profiler_add_marker(aMarkerName, aCategory, nullptr);
 }
 
 
 
 void profiler_add_js_marker(const char* aMarkerName) {
-  profiler_add_marker(aMarkerName, JS::ProfilingCategoryPair::JS, nullptr);
+  profiler_add_marker(aMarkerName, js::ProfilingStackFrame::Category::JS,
+                      nullptr);
 }
 
 void profiler_add_network_marker(
@@ -3737,7 +3757,7 @@ void profiler_add_network_marker(
   char name[2048];
   SprintfLiteral(name, "Load %d: %s", id, PromiseFlatCString(spec).get());
   profiler_add_marker(
-      name, JS::ProfilingCategoryPair::NETWORK,
+      name, js::ProfilingStackFrame::Category::NETWORK,
       MakeUnique<NetworkMarkerPayload>(
           static_cast<int64_t>(aChannelId), PromiseFlatCString(spec).get(),
           aType, aStart, aEnd, aPriority, aCount, aCacheDisposition, aTimings,
@@ -3747,7 +3767,7 @@ void profiler_add_network_marker(
 
 
 void profiler_add_marker_for_thread(int aThreadId,
-                                    JS::ProfilingCategoryPair aCategoryPair,
+                                    js::ProfilingStackFrame::Category aCategory,
                                     const char* aMarkerName,
                                     UniquePtr<ProfilerMarkerPayload> aPayload) {
   MOZ_RELEASE_ASSERT(CorePS::Exists());
@@ -3763,8 +3783,8 @@ void profiler_add_marker_for_thread(int aThreadId,
                          : TimeStamp::Now();
   TimeDuration delta = origin - CorePS::ProcessStartTime();
   ProfilerMarker* marker =
-      new ProfilerMarker(aMarkerName, aCategoryPair, aThreadId,
-                         std::move(aPayload), delta.ToMilliseconds());
+      new ProfilerMarker(aMarkerName, aCategory, aThreadId, std::move(aPayload),
+                         delta.ToMilliseconds());
 
 #ifdef DEBUG
   
@@ -3788,7 +3808,7 @@ void profiler_add_marker_for_thread(int aThreadId,
 }
 
 void profiler_tracing(const char* aCategoryString, const char* aMarkerName,
-                      JS::ProfilingCategoryPair aCategoryPair,
+                      js::ProfilingStackFrame::Category aCategory,
                       TracingKind aKind, const Maybe<nsID>& aDocShellId,
                       const Maybe<uint32_t>& aDocShellHistoryId) {
   MOZ_RELEASE_ASSERT(CorePS::Exists());
@@ -3802,11 +3822,11 @@ void profiler_tracing(const char* aCategoryString, const char* aMarkerName,
 
   auto payload = MakeUnique<TracingMarkerPayload>(
       aCategoryString, aKind, aDocShellId, aDocShellHistoryId);
-  racy_profiler_add_marker(aMarkerName, aCategoryPair, std::move(payload));
+  racy_profiler_add_marker(aMarkerName, aCategory, std::move(payload));
 }
 
 void profiler_tracing(const char* aCategoryString, const char* aMarkerName,
-                      JS::ProfilingCategoryPair aCategoryPair,
+                      js::ProfilingStackFrame::Category aCategory,
                       TracingKind aKind, UniqueProfilerBacktrace aCause,
                       const Maybe<nsID>& aDocShellId,
                       const Maybe<uint32_t>& aDocShellHistoryId) {
@@ -3822,18 +3842,18 @@ void profiler_tracing(const char* aCategoryString, const char* aMarkerName,
   auto payload =
       MakeUnique<TracingMarkerPayload>(aCategoryString, aKind, aDocShellId,
                                        aDocShellHistoryId, std::move(aCause));
-  racy_profiler_add_marker(aMarkerName, aCategoryPair, std::move(payload));
+  racy_profiler_add_marker(aMarkerName, aCategory, std::move(payload));
 }
 
 void profiler_add_text_marker(
     const char* aMarkerName, const nsACString& aText,
-    JS::ProfilingCategoryPair aCategoryPair,
+    js::ProfilingStackFrame::Category aCategory,
     const mozilla::TimeStamp& aStartTime, const mozilla::TimeStamp& aEndTime,
     const mozilla::Maybe<nsID>& aDocShellId,
     const mozilla::Maybe<uint32_t>& aDocShellHistoryId,
     UniqueProfilerBacktrace aCause) {
   profiler_add_marker(
-      aMarkerName, aCategoryPair,
+      aMarkerName, aCategory,
       MakeUnique<TextMarkerPayload>(aText, aStartTime, aEndTime, aDocShellId,
                                     aDocShellHistoryId, std::move(aCause)));
 }

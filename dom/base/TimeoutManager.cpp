@@ -174,7 +174,7 @@ void TimeoutManager::MoveIdleToActive() {
           int(delta.ToMilliseconds()));
       
       profiler_add_marker(
-          "setTimeout deferred release", JS::ProfilingCategoryPair::DOM,
+          "setTimeout deferred release", js::ProfilingStackFrame::Category::DOM,
           MakeUnique<TextMarkerPayload>(
               marker, delta.ToMilliseconds() >= 0 ? timeout->When() : now,
               now));
@@ -798,11 +798,12 @@ void TimeoutManager::RunTimeout(const TimeStamp& aNow,
     }
   }
   if (aProcessIdle) {
-    MOZ_LOG(gTimeoutLog, LogLevel::Debug,
-            ("Running %u deferred timeouts on idle (TimeoutManager=%p), "
-             "nextDeadline = %gms from now",
-             numTimersToRun, this,
-             nextDeadline.IsNull() ? 0.0 : (nextDeadline - now).ToMilliseconds()));
+    MOZ_LOG(
+        gTimeoutLog, LogLevel::Debug,
+        ("Running %u deferred timeouts on idle (TimeoutManager=%p), "
+         "nextDeadline = %gms from now",
+         numTimersToRun, this,
+         nextDeadline.IsNull() ? 0.0 : (nextDeadline - now).ToMilliseconds()));
   }
 
   now = TimeStamp::Now();
@@ -959,7 +960,7 @@ void TimeoutManager::RunTimeout(const TimeStamp& aNow,
               int(delta.ToMilliseconds()), int(runtime.ToMilliseconds()));
           
           profiler_add_marker(
-              "setTimeout", JS::ProfilingCategoryPair::DOM,
+              "setTimeout", js::ProfilingStackFrame::Category::DOM,
               MakeUnique<TextMarkerPayload>(
                   marker, delta.ToMilliseconds() >= 0 ? timeout->When() : now,
                   now));

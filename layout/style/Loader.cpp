@@ -1322,8 +1322,7 @@ nsresult Loader::LoadSheet(SheetLoadData* aLoadData,
 
     
     if (contentPolicyType == nsIContentPolicy::TYPE_INTERNAL_STYLESHEET) {
-      nsCOMPtr<Element> element =
-          do_QueryInterface(aLoadData->mRequestingNode);
+      nsCOMPtr<Element> element = do_QueryInterface(aLoadData->mRequestingNode);
       if (element && element->IsHTMLElement()) {
         nsAutoString cspNonce;
         element->GetAttribute(NS_LITERAL_STRING("nonce"), cspNonce);
@@ -1579,7 +1578,7 @@ Loader::Completed Loader::ParseSheet(const nsACString& aBytes,
                                      SheetLoadData* aLoadData,
                                      AllowAsyncParse aAllowAsync) {
   LOG(("css::Loader::ParseSheet"));
-  AUTO_PROFILER_LABEL("css::Loader::ParseSheet", LAYOUT_CSSParsing);
+  AUTO_PROFILER_LABEL("css::Loader::ParseSheet", LAYOUT);
   MOZ_ASSERT(aLoadData);
   aLoadData->mIsBeingParsed = true;
 
