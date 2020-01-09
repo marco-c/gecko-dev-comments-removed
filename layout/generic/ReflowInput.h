@@ -270,6 +270,20 @@ struct SizeComputationInput {
     
     bool mIOffsetsNeedCSSAlign : 1;
     bool mBOffsetsNeedCSSAlign : 1;
+
+    
+    
+    
+    
+    bool mInsideLineClamp : 1;
+
+    
+    
+    
+    
+    
+    
+    bool mApplyLineClamp : 1;
   };
 
 #ifdef DEBUG

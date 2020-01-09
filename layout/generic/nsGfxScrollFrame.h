@@ -471,7 +471,8 @@ class ScrollFrameHelper : public nsIReflowCallback {
       PostScrollEndEvent();
     }
     mTransformingByAPZ = aTransforming;
-    if (!mozilla::css::TextOverflow::HasClippedOverflow(mOuter)) {
+    if (!mozilla::css::TextOverflow::HasClippedTextOverflow(mOuter) ||
+        mozilla::css::TextOverflow::HasBlockEllipsis(mScrolledFrame)) {
       
       
       mOuter->SchedulePaint();

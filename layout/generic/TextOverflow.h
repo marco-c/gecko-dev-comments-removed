@@ -65,13 +65,13 @@ class TextOverflow final {
   nsDisplayList& GetMarkers() { return mMarkerList; }
 
   
+  static bool HasClippedTextOverflow(nsIFrame* aBlockFrame);
 
-
-  static bool HasClippedOverflow(nsIFrame* aBlockFrame);
   
+  static bool HasBlockEllipsis(nsIFrame* aBlockFrame);
 
-
-  static bool CanHaveTextOverflow(nsIFrame* aBlockFrame);
+  
+  static bool CanHaveOverflowMarkers(nsIFrame* aBlockFrame);
 
   typedef nsTHashtable<nsPtrHashKey<nsIFrame>> FrameHashtable;
 
@@ -79,22 +79,36 @@ class TextOverflow final {
   typedef mozilla::WritingMode WritingMode;
   typedef mozilla::LogicalRect LogicalRect;
 
+  
   struct AlignmentEdges {
-    AlignmentEdges() : mIStart(0), mIEnd(0), mAssigned(false) {}
-    void Accumulate(WritingMode aWM, const LogicalRect& aRect) {
-      if (MOZ_LIKELY(mAssigned)) {
+    AlignmentEdges()
+        : mIStart(0), mIEnd(0), mIEndOuter(0), mAssignedInner(false) {}
+    void AccumulateInner(WritingMode aWM, const LogicalRect& aRect) {
+      if (MOZ_LIKELY(mAssignedInner)) {
         mIStart = std::min(mIStart, aRect.IStart(aWM));
         mIEnd = std::max(mIEnd, aRect.IEnd(aWM));
       } else {
         mIStart = aRect.IStart(aWM);
         mIEnd = aRect.IEnd(aWM);
-        mAssigned = true;
+        mAssignedInner = true;
       }
     }
+    void AccumulateOuter(WritingMode aWM, const LogicalRect& aRect) {
+      mIEndOuter = std::max(mIEndOuter, aRect.IEnd(aWM));
+    }
     nscoord ISize() { return mIEnd - mIStart; }
+
+    
+    
     nscoord mIStart;
     nscoord mIEnd;
-    bool mAssigned;
+
+    
+    
+    
+    nscoord mIEndOuter;
+
+    bool mAssignedInner;
   };
 
   struct InnerClipEdges {
@@ -141,10 +155,14 @@ class TextOverflow final {
 
 
 
+
+
   LogicalRect ExamineLineFrames(nsLineBox* aLine, FrameHashtable* aFramesToHide,
                                 AlignmentEdges* aAlignmentEdges);
 
   
+
+
 
 
 
@@ -166,6 +184,10 @@ class TextOverflow final {
                            InnerClipEdges* aClippedMarkerEdges);
 
   
+
+
+
+
 
 
 
@@ -234,7 +256,9 @@ class TextOverflow final {
       mStyle = &aStyle;
       mIntrinsicISize = 0;
       mHasOverflow = false;
+      mHasBlockEllipsis = false;
       mActive = false;
+      mEdgeAligned = false;
     }
 
     
@@ -242,22 +266,35 @@ class TextOverflow final {
 
     void SetupString(nsIFrame* aFrame);
 
-    bool IsNeeded() const { return mHasOverflow; }
-    void Reset() { mHasOverflow = false; }
+    bool IsSuppressed() const {
+      return !mHasBlockEllipsis && mStyle->mType == NS_STYLE_TEXT_OVERFLOW_CLIP;
+    }
+    bool IsNeeded() const { return mHasOverflow || mHasBlockEllipsis; }
+    void Reset() {
+      mHasOverflow = false;
+      mHasBlockEllipsis = false;
+      mEdgeAligned = false;
+    }
 
     
     nscoord mISize;
     
     nscoord mIntrinsicISize;
     
+    
     const nsStyleTextOverflowSide* mStyle;
     
     bool mHasOverflow;
+    
+    bool mHasBlockEllipsis;
     
     bool mInitialized;
     
     
     bool mActive;
+    
+    
+    bool mEdgeAligned;
   };
 
   Marker mIStart;  

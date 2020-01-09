@@ -641,6 +641,9 @@ impl From<CSSInteger> for PositiveInteger {
 }
 
 
+pub type PositiveIntegerOrNone = Either<PositiveInteger, None_>;
+
+
 pub type ClipRect = generics::ClipRect<LengthOrAuto>;
 
 

@@ -833,6 +833,10 @@ class nsFlexContainerFrame::FlexItem : public LinkedListElement<FlexItem> {
   bool CanMainSizeInfluenceCrossSize(
       const FlexboxAxisTracker& aAxisTracker) const;
 
+  
+  
+  nsBlockFrame* BlockFrame() const;
+
  protected:
   
   void CheckForMinSizeAuto(const ReflowInput& aFlexItemReflowInput,
@@ -1262,19 +1266,25 @@ uint16_t nsFlexContainerFrame::CSSAlignmentForAbsPosChild(
 UniquePtr<FlexItem> nsFlexContainerFrame::GenerateFlexItemForChild(
     nsPresContext* aPresContext, nsIFrame* aChildFrame,
     const ReflowInput& aParentReflowInput,
-    const FlexboxAxisTracker& aAxisTracker) {
+    const FlexboxAxisTracker& aAxisTracker, bool aHasLineClampEllipsis) {
   
   
   
   ReflowInput childRI(
       aPresContext, aParentReflowInput, aChildFrame,
       aParentReflowInput.ComputedSize(aChildFrame->GetWritingMode()));
+  childRI.mFlags.mInsideLineClamp = GetLineClampValue() != 0;
 
   
   
   float flexGrow, flexShrink;
   if (IsLegacyBox(this)) {
-    flexGrow = flexShrink = aChildFrame->StyleXUL()->mBoxFlex;
+    if (GetLineClampValue() != 0) {
+      
+      flexGrow = flexShrink = 0;
+    } else {
+      flexGrow = flexShrink = aChildFrame->StyleXUL()->mBoxFlex;
+    }
   } else {
     const nsStylePosition* stylePos = aChildFrame->StylePosition();
     flexGrow = stylePos->mFlexGrow;
@@ -1379,7 +1389,8 @@ UniquePtr<FlexItem> nsFlexContainerFrame::GenerateFlexItemForChild(
 
   
   
-  ResolveAutoFlexBasisAndMinSize(aPresContext, *item, childRI, aAxisTracker);
+  ResolveAutoFlexBasisAndMinSize(aPresContext, *item, childRI, aAxisTracker,
+                                 aHasLineClampEllipsis);
   return item;
 }
 
@@ -1554,8 +1565,8 @@ static bool ResolveAutoFlexBasisFromRatio(
 
 void nsFlexContainerFrame::ResolveAutoFlexBasisAndMinSize(
     nsPresContext* aPresContext, FlexItem& aFlexItem,
-    const ReflowInput& aItemReflowInput,
-    const FlexboxAxisTracker& aAxisTracker) {
+    const ReflowInput& aItemReflowInput, const FlexboxAxisTracker& aAxisTracker,
+    bool aHasLineClampEllipsis) {
   
   
   
@@ -1658,7 +1669,7 @@ void nsFlexContainerFrame::ResolveAutoFlexBasisAndMinSize(
 
       nscoord contentBSize = MeasureFlexItemContentBSize(
           aPresContext, aFlexItem, forceBResizeForMeasuringReflow,
-          *flexContainerRI);
+          aHasLineClampEllipsis, *flexContainerRI);
       if (minSizeNeedsToMeasureContent) {
         resolvedMinSize = std::min(resolvedMinSize, contentBSize);
       }
@@ -1823,7 +1834,7 @@ void nsFlexContainerFrame::MarkIntrinsicISizesDirty() {
 
 nscoord nsFlexContainerFrame::MeasureFlexItemContentBSize(
     nsPresContext* aPresContext, FlexItem& aFlexItem,
-    bool aForceBResizeForMeasuringReflow,
+    bool aForceBResizeForMeasuringReflow, bool aHasLineClampEllipsis,
     const ReflowInput& aParentReflowInput) {
   
   WritingMode wm = aFlexItem.Frame()->GetWritingMode();
@@ -1833,6 +1844,9 @@ nscoord nsFlexContainerFrame::MeasureFlexItemContentBSize(
                                        aFlexItem.Frame(), availSize, Nothing(),
                                        ReflowInput::CALLER_WILL_INIT);
   childRIForMeasuringBSize.mFlags.mIsFlexContainerMeasuringBSize = true;
+  childRIForMeasuringBSize.mFlags.mInsideLineClamp = GetLineClampValue() != 0;
+  childRIForMeasuringBSize.mFlags.mApplyLineClamp =
+      childRIForMeasuringBSize.mFlags.mInsideLineClamp || aHasLineClampEllipsis;
   childRIForMeasuringBSize.Init(aPresContext);
 
   if (aFlexItem.IsStretched()) {
@@ -3355,6 +3369,22 @@ void FlexItem::ResolveStretchedCrossSize(
   mIsStretched = true;
 }
 
+static nsBlockFrame* FindFlexItemBlockFrame(nsIFrame* aFrame) {
+  if (nsBlockFrame* block = do_QueryFrame(aFrame)) {
+    return block;
+  }
+  for (nsIFrame* f : aFrame->PrincipalChildList()) {
+    if (nsBlockFrame* block = FindFlexItemBlockFrame(f)) {
+      return block;
+    }
+  }
+  return nullptr;
+}
+
+nsBlockFrame* FlexItem::BlockFrame() const {
+  return FindFlexItemBlockFrame(Frame());
+}
+
 void SingleLineCrossAxisPositionTracker::ResolveAutoMarginsInCrossAxis(
     const FlexLine& aLine, FlexItem& aItem) {
   
@@ -3728,7 +3758,8 @@ void nsFlexContainerFrame::GenerateFlexLines(
     nsPresContext* aPresContext, const ReflowInput& aReflowInput,
     nscoord aContentBoxMainSize, nscoord aAvailableBSizeForContent,
     const nsTArray<StrutInfo>& aStruts, const FlexboxAxisTracker& aAxisTracker,
-    nscoord aMainGapSize, nsTArray<nsIFrame*>& aPlaceholders, 
+    nscoord aMainGapSize, bool aHasLineClampEllipsis,
+    nsTArray<nsIFrame*>& aPlaceholders, 
     LinkedList<FlexLine>& aLines ) {
   MOZ_ASSERT(aLines.isEmpty(), "Expecting outparam to start out empty");
 
@@ -3827,7 +3858,7 @@ void nsFlexContainerFrame::GenerateFlexLines(
       nextStrutIdx++;
     } else {
       item = GenerateFlexItemForChild(aPresContext, childFrame, aReflowInput,
-                                      aAxisTracker);
+                                      aAxisTracker, aHasLineClampEllipsis);
     }
 
     nscoord itemInnerHypotheticalMainSize = item->GetMainSize();
@@ -4223,6 +4254,13 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
     AddStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE);
   }
 
+  
+  
+  
+  bool hasLineClampEllipsis =
+      HasAnyStateBits(NS_STATE_FLEX_HAS_LINE_CLAMP_ELLIPSIS);
+  RemoveStateBits(NS_STATE_FLEX_HAS_LINE_CLAMP_ELLIPSIS);
+
   const FlexboxAxisTracker axisTracker(this, aReflowInput.GetWritingMode());
 
   
@@ -4280,14 +4318,14 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
   AutoTArray<StrutInfo, 1> struts;
   DoFlexLayout(aPresContext, aDesiredSize, aReflowInput, aStatus,
                contentBoxMainSize, availableBSizeForContent, struts,
-               axisTracker, mainGapSize, crossGapSize);
+               axisTracker, mainGapSize, crossGapSize, hasLineClampEllipsis);
 
   if (!struts.IsEmpty()) {
     
     aStatus.Reset();
     DoFlexLayout(aPresContext, aDesiredSize, aReflowInput, aStatus,
                  contentBoxMainSize, availableBSizeForContent, struts,
-                 axisTracker, mainGapSize, crossGapSize);
+                 axisTracker, mainGapSize, crossGapSize, hasLineClampEllipsis);
   }
 }
 
@@ -4502,7 +4540,7 @@ void nsFlexContainerFrame::DoFlexLayout(
     const ReflowInput& aReflowInput, nsReflowStatus& aStatus,
     nscoord aContentBoxMainSize, nscoord aAvailableBSizeForContent,
     nsTArray<StrutInfo>& aStruts, const FlexboxAxisTracker& aAxisTracker,
-    nscoord aMainGapSize, nscoord aCrossGapSize) {
+    nscoord aMainGapSize, nscoord aCrossGapSize, bool aHasLineClampEllipsis) {
   MOZ_ASSERT(aStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
 
   AutoCleanLinkedList<FlexLine> lines;
@@ -4510,7 +4548,8 @@ void nsFlexContainerFrame::DoFlexLayout(
 
   GenerateFlexLines(aPresContext, aReflowInput, aContentBoxMainSize,
                     aAvailableBSizeForContent, aStruts, aAxisTracker,
-                    aMainGapSize, placeholderKids, lines);
+                    aMainGapSize, aHasLineClampEllipsis, placeholderKids,
+                    lines);
 
   if ((lines.getFirst()->IsEmpty() && !lines.getFirst()->getNext()) ||
       aReflowInput.mStyleDisplay->IsContainLayout()) {
@@ -4656,6 +4695,7 @@ void nsFlexContainerFrame::DoFlexLayout(
         availSize.BSize(wm) = NS_UNCONSTRAINEDSIZE;
         ReflowInput childReflowInput(aPresContext, aReflowInput, item->Frame(),
                                      availSize);
+        childReflowInput.mFlags.mInsideLineClamp = GetLineClampValue() != 0;
         if (!sizeOverride) {
           
           if (item->IsInlineAxisMainAxis()) {
@@ -4838,6 +4878,7 @@ void nsFlexContainerFrame::DoFlexLayout(
 
       
       
+      
       bool itemNeedsReflow = true;  
       if (item->HadMeasuringReflow()) {
         LogicalSize finalFlexItemCBSize =
@@ -4869,7 +4910,17 @@ void nsFlexContainerFrame::DoFlexLayout(
       }
       if (itemNeedsReflow) {
         ReflowFlexItem(aPresContext, aAxisTracker, aReflowInput, *item,
-                       framePos, containerSize);
+                       framePos, containerSize, aHasLineClampEllipsis);
+      }
+
+      
+      
+      
+      
+      
+      
+      if (!itemNeedsReflow && aHasLineClampEllipsis && GetLineClampValue() == 0) {
+        item->BlockFrame()->ClearLineClampEllipsis();
       }
 
       
@@ -5029,13 +5080,21 @@ void nsFlexContainerFrame::MoveFlexItemToFinalPosition(
 void nsFlexContainerFrame::ReflowFlexItem(
     nsPresContext* aPresContext, const FlexboxAxisTracker& aAxisTracker,
     const ReflowInput& aReflowInput, const FlexItem& aItem,
-    LogicalPoint& aFramePos, const nsSize& aContainerSize) {
+    LogicalPoint& aFramePos, const nsSize& aContainerSize,
+    bool aHasLineClampEllipsis) {
   WritingMode outerWM = aReflowInput.GetWritingMode();
   WritingMode wm = aItem.Frame()->GetWritingMode();
   LogicalSize availSize = aReflowInput.ComputedSize(wm);
   availSize.BSize(wm) = NS_UNCONSTRAINEDSIZE;
   ReflowInput childReflowInput(aPresContext, aReflowInput, aItem.Frame(),
                                availSize);
+  childReflowInput.mFlags.mInsideLineClamp = GetLineClampValue() != 0;
+  
+  
+  
+  
+  childReflowInput.mFlags.mApplyLineClamp =
+      !childReflowInput.mFlags.mInsideLineClamp && aHasLineClampEllipsis;
 
   
   
@@ -5140,6 +5199,8 @@ void nsFlexContainerFrame::ReflowPlaceholders(
     LogicalSize availSize = aReflowInput.ComputedSize(wm);
     ReflowInput childReflowInput(aPresContext, aReflowInput, placeholder,
                                  availSize);
+    
+    
     ReflowOutput childDesiredSize(childReflowInput);
     nsReflowStatus childReflowStatus;
     ReflowChild(placeholder, aPresContext, childDesiredSize, childReflowInput,
@@ -5236,4 +5297,18 @@ nscoord nsFlexContainerFrame::GetPrefISize(gfxContext* aRenderingContext) {
   }
 
   return mCachedPrefISize;
+}
+
+uint32_t nsFlexContainerFrame::GetLineClampValue() const {
+  
+  
+  
+  
+  
+  if (!HasAnyStateBits(NS_STATE_FLEX_IS_EMULATING_LEGACY_BOX) ||
+      StyleXUL()->mBoxOrient != StyleBoxOrient::Vertical) {
+    return 0;
+  }
+
+  return StyleDisplay()->mLineClamp;
 }

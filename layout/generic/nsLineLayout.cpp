@@ -912,7 +912,8 @@ void nsLineLayout::ReflowFrame(nsIFrame* aFrame, nsReflowStatus& aReflowStatus,
             
             
             !outOfFlowFrame->IsLetterFrame() &&
-            !GetOutermostLineLayout()->mBlockRI->mFlags.mCanHaveTextOverflow) {
+            !GetOutermostLineLayout()
+                 ->mBlockRI->mFlags.mCanHaveOverflowMarkers) {
           
           RecordNoWrapFloat(outOfFlowFrame);
         } else {

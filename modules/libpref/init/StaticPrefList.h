@@ -1341,6 +1341,13 @@ VARCACHE_PREF(
 #undef PREF_VALUE
 
 
+VARCACHE_PREF(
+  "layout.css.webkit-line-clamp.enabled",
+  layout_css_webkit_line_clamp_enabled,
+  bool, true
+)
+
+
 
 
 

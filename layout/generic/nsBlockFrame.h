@@ -577,6 +577,12 @@ class nsBlockFrame : public nsContainerFrame {
   
   void AddSizeOfExcludingThisForTree(nsWindowSizes&) const override;
 
+  
+
+
+
+  void ClearLineClampEllipsis();
+
  protected:
   
   void DoRemoveFrameInternal(nsIFrame* aDeletedFrame, uint32_t aFlags,

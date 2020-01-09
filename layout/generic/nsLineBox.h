@@ -267,6 +267,11 @@ class nsLineBox final : public nsLineLink {
   void ClearHadFloatPushed() { mFlags.mHadFloatPushed = false; }
   bool HadFloatPushed() const { return mFlags.mHadFloatPushed; }
 
+  
+  void SetHasLineClampEllipsis() { mFlags.mHasLineClampEllipsis = true; }
+  void ClearHasLineClampEllipsis() { mFlags.mHasLineClampEllipsis = false; }
+  bool HasLineClampEllipsis() const { return mFlags.mHasLineClampEllipsis; }
+
  private:
   
   static const uint32_t kMinChildCountForHashtable = 200;
@@ -608,6 +613,13 @@ class nsLineBox final : public nsLineLink {
     
     bool mHadFloatPushed : 1;
     bool mHasHashedFrames : 1;
+    
+    
+    
+    
+    
+    
+    bool mHasLineClampEllipsis : 1;
     StyleClear mBreakType;
   };
 
