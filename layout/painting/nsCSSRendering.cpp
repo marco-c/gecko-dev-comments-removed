@@ -188,12 +188,15 @@ struct InlineBackgroundData {
           mPIStartBorderData.SetCoord(joinedBorderArea.x);
         }
       } else if (mPIStartBorderData.mFrame) {
+        
+        
+        InlineBackgroundData temp = *this;
         if (mVertical) {
           mPIStartBorderData.SetCoord(
-              GetContinuousRect(mPIStartBorderData.mFrame).y);
+              temp.GetContinuousRect(mPIStartBorderData.mFrame).y);
         } else {
           mPIStartBorderData.SetCoord(
-              GetContinuousRect(mPIStartBorderData.mFrame).x);
+              temp.GetContinuousRect(mPIStartBorderData.mFrame).x);
         }
       }
     } else {
