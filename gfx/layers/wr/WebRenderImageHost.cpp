@@ -13,6 +13,7 @@
 #include "mozilla/layers/Effects.h"  
 #include "mozilla/layers/LayerManagerComposite.h"  
 #include "mozilla/layers/WebRenderBridgeParent.h"
+#include "mozilla/layers/WebRenderTextureHost.h"
 #include "mozilla/layers/AsyncImagePipelineManager.h"
 #include "nsAString.h"
 #include "nsDebug.h"          
@@ -161,6 +162,13 @@ TextureHost* WebRenderImageHost::GetAsTextureHostForComposite() {
 void WebRenderImageHost::SetCurrentTextureHost(TextureHost* aTexture) {
   if (aTexture == mCurrentTextureHost.get()) {
     return;
+  }
+
+  if (aTexture && aTexture->AsWebRenderTextureHost()) {
+    
+    
+    
+    aTexture->AsWebRenderTextureHost()->PrepareForUse();
   }
 
   mCurrentTextureHost = aTexture;

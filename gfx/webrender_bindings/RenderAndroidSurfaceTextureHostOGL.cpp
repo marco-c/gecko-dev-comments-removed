@@ -7,6 +7,7 @@
 #include "RenderAndroidSurfaceTextureHostOGL.h"
 
 #include "mozilla/gfx/Logging.h"
+#include "mozilla/webrender/RenderThread.h"
 #include "GLContext.h"
 
 namespace mozilla {
@@ -15,16 +16,24 @@ namespace wr {
 RenderAndroidSurfaceTextureHostOGL::RenderAndroidSurfaceTextureHostOGL(
     const java::GeckoSurfaceTexture::GlobalRef& aSurfTex, gfx::IntSize aSize,
     gfx::SurfaceFormat aFormat, bool aContinuousUpdate)
-    : mSurfTex(aSurfTex), mSize(aSize) {
+    : mSurfTex(aSurfTex),
+      mSize(aSize),
+      mIsPrepared(false),
+      mAttachedToGLContext(false) {
   MOZ_COUNT_CTOR_INHERITED(RenderAndroidSurfaceTextureHostOGL,
                            RenderTextureHostOGL);
 
   if (mSurfTex) {
     mSurfTex->IncrementUse();
   }
+
+  if (mSurfTex && !mSurfTex->IsSingleBuffer()) {
+    mIsPrepared = true;
+  }
 }
 
 RenderAndroidSurfaceTextureHostOGL::~RenderAndroidSurfaceTextureHostOGL() {
+  MOZ_ASSERT(RenderThread::IsInRenderThread());
   MOZ_COUNT_DTOR_INHERITED(RenderAndroidSurfaceTextureHostOGL,
                            RenderTextureHostOGL);
   DeleteTextureHandle();
@@ -52,29 +61,19 @@ wr::WrExternalImage RenderAndroidSurfaceTextureHostOGL::Lock(
 
   if (mGL.get() != aGL) {
     
-    DeleteTextureHandle();
-    mGL = aGL;
-    mGL->MakeCurrent();
+    MOZ_ASSERT_UNREACHABLE("Unexpected GL context");
+    return InvalidToWrExternalImage();
   }
 
   if (!mSurfTex || !mGL || !mGL->MakeCurrent()) {
     return InvalidToWrExternalImage();
   }
 
-  if (!mSurfTex->IsAttachedToGLContext((int64_t)mGL.get())) {
-    GLuint texName;
-    mGL->fGenTextures(1, &texName);
+  if (!mAttachedToGLContext) {
     
     mCachedRendering = aRendering;
-    ActivateBindAndTexParameteri(mGL, LOCAL_GL_TEXTURE0,
-                                 LOCAL_GL_TEXTURE_EXTERNAL_OES, texName,
-                                 aRendering);
-
-    if (NS_FAILED(mSurfTex->AttachToGLContext((int64_t)mGL.get(), texName))) {
-      MOZ_ASSERT(0);
-      mGL->fDeleteTextures(1, &texName);
+    if (!EnsureAttachedToGLContext()) {
       return InvalidToWrExternalImage();
-      ;
     }
   } else if (IsFilterUpdateNecessary(aRendering)) {
     
@@ -85,10 +84,9 @@ wr::WrExternalImage RenderAndroidSurfaceTextureHostOGL::Lock(
   }
 
   
-  
-  
-  mSurfTex->UpdateTexImage();
-  
+  if (mSurfTex && !mSurfTex->IsSingleBuffer()) {
+    mSurfTex->UpdateTexImage();
+  }
 
   return NativeTextureToWrExternalImage(mSurfTex->GetTexName(), 0, 0,
                                         mSize.width, mSize.height);
@@ -97,8 +95,67 @@ wr::WrExternalImage RenderAndroidSurfaceTextureHostOGL::Lock(
 void RenderAndroidSurfaceTextureHostOGL::Unlock() {}
 
 void RenderAndroidSurfaceTextureHostOGL::DeleteTextureHandle() {
+  NotifyNotUsed();
+}
+
+bool RenderAndroidSurfaceTextureHostOGL::EnsureAttachedToGLContext() {
+  if (mAttachedToGLContext) {
+    return true;
+  }
+
+  if (!mGL) {
+    mGL = RenderThread::Get()->SharedGL();
+  }
+
+  if (!mSurfTex || !mGL || !mGL->MakeCurrent()) {
+    return false;
+  }
+
+  if (!mSurfTex->IsAttachedToGLContext((int64_t)mGL.get())) {
+    GLuint texName;
+    mGL->fGenTextures(1, &texName);
+    ActivateBindAndTexParameteri(mGL, LOCAL_GL_TEXTURE0,
+                                 LOCAL_GL_TEXTURE_EXTERNAL_OES, texName,
+                                 mCachedRendering);
+
+    if (NS_FAILED(mSurfTex->AttachToGLContext((int64_t)mGL.get(), texName))) {
+      MOZ_ASSERT(0);
+      mGL->fDeleteTextures(1, &texName);
+      return false;
+    }
+  }
+
+  mAttachedToGLContext = true;
+  return true;
+}
+
+void RenderAndroidSurfaceTextureHostOGL::PrepareForUse() {
   
   
+  
+  
+  
+
+  MOZ_ASSERT(RenderThread::IsInRenderThread());
+
+  EnsureAttachedToGLContext();
+
+  if (mSurfTex && mSurfTex->IsSingleBuffer() && !mIsPrepared) {
+    mSurfTex->UpdateTexImage();
+    mIsPrepared = true;
+  }
+}
+
+void RenderAndroidSurfaceTextureHostOGL::NotifyNotUsed() {
+  MOZ_ASSERT(RenderThread::IsInRenderThread());
+
+  EnsureAttachedToGLContext();
+
+  if (mSurfTex && mSurfTex->IsSingleBuffer() && mIsPrepared) {
+    mGL->MakeCurrent();
+    mSurfTex->ReleaseTexImage();
+    mIsPrepared = false;
+  }
 }
 
 }  

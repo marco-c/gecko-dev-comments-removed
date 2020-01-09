@@ -39,6 +39,8 @@ class WebRenderTextureHost : public TextureHost {
 
   virtual gfx::SurfaceFormat GetFormat() const override;
 
+  virtual void NotifyNotUsed() override;
+
   
   
   
@@ -61,6 +63,8 @@ class WebRenderTextureHost : public TextureHost {
   virtual WebRenderTextureHost* AsWebRenderTextureHost() override {
     return this;
   }
+
+  virtual void PrepareForUse();
 
   wr::ExternalImageId GetExternalImageKey() { return mExternalImageId; }
 

@@ -188,6 +188,12 @@ class RenderThread final {
   void UnregisterExternalImage(uint64_t aExternalImageId);
 
   
+  void PrepareForUse(uint64_t aExternalImageId);
+
+  
+  void NotifyNotUsed(uint64_t aExternalImageId);
+
+  
   void UpdateRenderTextureHost(uint64_t aSrcExternalImageId,
                                uint64_t aWrappedExternalImageId);
 
