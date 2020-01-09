@@ -52,6 +52,8 @@ var UrlbarTestUtils = {
     if (fireInputEvent) {
       
       urlbar.fireInputEvent();
+    } else {
+      win.gURLBar.setAttribute("pageproxystate", "invalid");
     }
     
     
@@ -340,6 +342,7 @@ class UrlbarAbstraction {
   startSearch(text) {
     if (this.quantumbar) {
       this.urlbar.value = text;
+      this.urlbar.setAttribute("pageproxystate", "invalid");
       this.urlbar.startQuery();
     } else {
       
