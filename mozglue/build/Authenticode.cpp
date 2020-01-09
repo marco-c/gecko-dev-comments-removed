@@ -172,8 +172,8 @@ bool SignedBinary::QueryObject(const wchar_t* aFilePath) {
 
 
 
- bool SignedBinary::VerifySignatureInternal(
-    WINTRUST_DATA& aTrustData) {
+
+bool SignedBinary::VerifySignatureInternal(WINTRUST_DATA& aTrustData) {
   aTrustData.dwUIChoice = WTD_UI_NONE;
   aTrustData.fdwRevocationChecks = WTD_REVOKE_NONE;
   aTrustData.dwStateAction = WTD_STATEACTION_VERIFY;

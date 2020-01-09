@@ -43,11 +43,11 @@ struct TimeStampInitialization {
 
 static bool sFuzzyfoxEnabled;
 
- bool TimeStamp::GetFuzzyfoxEnabled() { return sFuzzyfoxEnabled; }
 
- void TimeStamp::SetFuzzyfoxEnabled(bool aValue) {
-  sFuzzyfoxEnabled = aValue;
-}
+bool TimeStamp::GetFuzzyfoxEnabled() { return sFuzzyfoxEnabled; }
+
+
+void TimeStamp::SetFuzzyfoxEnabled(bool aValue) { sFuzzyfoxEnabled = aValue; }
 
 
 
