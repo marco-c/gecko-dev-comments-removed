@@ -824,8 +824,14 @@ void TextTrackManager::NotifyCueUpdated(TextTrackCue* aCue) {
 }
 
 void TextTrackManager::NotifyReset() {
+  
+  
   WEBVTT_LOG("NotifyReset");
   mLastTimeMarchesOnCalled = media::TimeUnit::Zero();
+  for (uint32_t idx = 0; idx < mTextTracks->Length(); ++idx) {
+    (*mTextTracks)[idx]->SetCuesInactive();
+  }
+  UpdateCueDisplay();
 }
 
 void TextTrackManager::ReportTelemetryForTrack(TextTrack* aTextTrack) const {
