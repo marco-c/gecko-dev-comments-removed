@@ -11,6 +11,8 @@
 #include "nsStringFwd.h"
 #include "nsTArray.h"
 
+class nsCommandParams;
+
 
 
 
@@ -230,11 +232,8 @@ const char* ToChar(Command aCommand);
 
 
 
-
-
-
-Command GetInternalCommand(const char* aCommandName);
-Command GetInternalCommand(const char* aCommandName, const nsAString& aValue);
+Command GetInternalCommand(const char* aCommandName,
+                           const nsCommandParams* aCommandParams = nullptr);
 
 }  
 
