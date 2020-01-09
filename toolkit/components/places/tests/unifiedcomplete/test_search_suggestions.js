@@ -971,11 +971,16 @@ add_task(async function avoid_http_url_suggestions() {
     ],
   });
 
+  
   await check_autocomplete({
     search: "ftp://test",
     searchParam: "enable-actions",
     matches: [
-      makeSearchMatch("ftp://test", { engineName: ENGINE_NAME, heuristic: true }),
+      {
+        uri: makeActionURI("visiturl", { url: "ftp://test/", input: "ftp://test" }),
+        style: [ "action", "visiturl", "heuristic" ],
+        title: "ftp://test/",
+      },
     ],
   });
 
