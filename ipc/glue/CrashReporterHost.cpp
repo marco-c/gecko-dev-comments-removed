@@ -117,6 +117,8 @@ bool CrashReporterHost::FinalizeCrashReport() {
   
   if (mProcessType == GeckoProcessType_GMPlugin) {
     type.AssignLiteral("plugin");
+  } else if (mProcessType == GeckoProcessType_Content) {
+    type.AssignLiteral("content");
   } else {
     
     
