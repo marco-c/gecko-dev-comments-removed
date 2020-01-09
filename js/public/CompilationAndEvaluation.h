@@ -227,6 +227,19 @@ extern JS_PUBLIC_API JSScript* CompileUtf8FileDontInflate(
 extern JS_PUBLIC_API JSScript* CompileUtf8Path(
     JSContext* cx, const ReadOnlyCompileOptions& options, const char* filename);
 
+
+
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API JSScript* CompileUtf8PathDontInflate(
+    JSContext* cx, const ReadOnlyCompileOptions& options, const char* filename);
+
 extern JS_PUBLIC_API JSScript* CompileForNonSyntacticScope(
     JSContext* cx, const ReadOnlyCompileOptions& options,
     SourceText<char16_t>& srcBuf);
