@@ -168,6 +168,7 @@ class TreeNode extends Component {
       item: _propTypes2.default.any.isRequired,
       isExpandable: _propTypes2.default.bool.isRequired,
       onClick: _propTypes2.default.func,
+      shouldItemUpdate: _propTypes2.default.func,
       renderItem: _propTypes2.default.func.isRequired
     };
   }
@@ -196,7 +197,7 @@ class TreeNode extends Component {
   }
 
   shouldComponentUpdate(nextProps) {
-    return this.props.item !== nextProps.item || this.props.focused !== nextProps.focused || this.props.expanded !== nextProps.expanded;
+    return this.props.item !== nextProps.item || (this.props.shouldItemUpdate && this.props.shouldItemUpdate(this.props.item, nextProps.item)) || this.props.focused !== nextProps.focused || this.props.expanded !== nextProps.expanded;
   }
 
   
@@ -422,6 +423,17 @@ class Tree extends Component {
       
       
       getChildren: _propTypes2.default.func.isRequired,
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      shouldItemUpdate: _propTypes2.default.func,
 
       
       
@@ -993,6 +1005,7 @@ class Tree extends Component {
         index: i,
         item,
         depth,
+        shouldItemUpdate: this.props.shouldItemUpdate,
         renderItem: this.props.renderItem,
         focused: focused === item,
         active: active === item,
@@ -3591,6 +3604,7 @@ const {
   getChildrenWithEvaluations,
   getActor,
   getParent,
+  getValue,
   nodeIsPrimitive,
   nodeHasGetter,
   nodeHasSetter
@@ -3814,6 +3828,7 @@ class ObjectInspector extends Component {
       onFocus: focusable ? this.focusItem : null,
       onActivate: focusable ? this.activateItem : null,
 
+      shouldItemUpdate,
       renderItem: (item, depth, focused, arrow, expanded) => ObjectInspectorItem({
         ...this.props,
         item,
@@ -3825,6 +3840,11 @@ class ObjectInspector extends Component {
       })
     });
   }
+}
+
+function shouldItemUpdate(prevItem, nextItem) {
+  const value = getValue(nextItem);
+  return value && value.type === "longString";
 }
 
 function mapStateToProps(state, props) {
