@@ -67,9 +67,6 @@ class VRService {
   HANDLE mMutex;
 #endif
   
-  
-  
-  
   bool mVRProcessEnabled;
 
   bool IsInServiceThread();

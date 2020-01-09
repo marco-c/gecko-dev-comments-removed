@@ -28,6 +28,7 @@
 #include "mozilla/AutoRestore.h"      
 #include "mozilla/ClearOnShutdown.h"  
 #include "mozilla/DebugOnly.h"        
+#include "mozilla/StaticPrefs.h"      
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/gfx/2D.h"         
 #include "mozilla/gfx/GPUChild.h"   
@@ -294,7 +295,7 @@ static int32_t CalculateCompositionFrameRate() {
   
   
   const int32_t defaultFrameRate = 60;
-  int32_t compositionFrameRatePref = gfxPrefs::LayersCompositionFrameRate();
+  int32_t compositionFrameRatePref = StaticPrefs::LayersCompositionFrameRate();
   if (compositionFrameRatePref < 0) {
     
     int32_t layoutFrameRatePref = gfxPrefs::LayoutFrameRate();
@@ -1793,7 +1794,7 @@ PWebRenderBridgeParent* CompositorBridgeParent::AllocPWebRenderBridgeParent(
     return mWrBridge;
   }
 
-  if (gfxPrefs::WebRenderSplitRenderRoots()) {
+  if (StaticPrefs::WebRenderSplitRenderRoots()) {
     apis.AppendElement(
         apis[0]->CreateDocument(aSize, 1, wr::RenderRoot::Content));
   }

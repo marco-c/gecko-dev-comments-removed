@@ -16,12 +16,11 @@
 #include "gfxCrashReporterUtils.h"  
 #include "gfxEnv.h"                 
 #include "gfxPlatform.h"            
-#include "gfxPrefs.h"               
 #include "gfxRect.h"                
 #include "gfxUtils.h"               
 #include "mozilla/ArrayUtils.h"     
 #include "mozilla/Preferences.h"    
-#include "mozilla/StaticPrefs.h"
+#include "mozilla/StaticPrefs.h"    
 #include "mozilla/gfx/BasePoint.h"  
 #include "mozilla/gfx/Matrix.h"     
 #include "mozilla/gfx/Triangle.h"   
@@ -1549,7 +1548,7 @@ void CompositorOGL::DrawGeometry(const Geometry& aGeometry,
       BindAndDrawGeometry(program, aGeometry);
     } break;
     case EffectTypes::COMPONENT_ALPHA: {
-      MOZ_ASSERT(gfxPrefs::ComponentAlphaEnabled());
+      MOZ_ASSERT(StaticPrefs::ComponentAlphaEnabled());
       MOZ_ASSERT(blendMode == gfx::CompositionOp::OP_OVER,
                  "Can't support blend modes with component alpha!");
       EffectComponentAlpha* effectComponentAlpha =
@@ -1973,7 +1972,7 @@ GLuint CompositorOGL::GetTemporaryTexture(GLenum aTarget, GLenum aUnit) {
 }
 
 bool CompositorOGL::SupportsTextureDirectMapping() {
-  if (!gfxPrefs::AllowTextureDirectMapping()) {
+  if (!StaticPrefs::AllowTextureDirectMapping()) {
     return false;
   }
 

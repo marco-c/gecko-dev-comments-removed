@@ -604,7 +604,7 @@ void APZCTreeManager::UpdateFocusState(LayersId aRootLayerTreeId,
                                        const FocusTarget& aFocusTarget) {
   AssertOnUpdaterThread();
 
-  if (!gfxPrefs::APZKeyboardEnabled()) {
+  if (!StaticPrefs::APZKeyboardEnabled()) {
     return;
   }
 
@@ -1543,7 +1543,7 @@ nsEventStatus APZCTreeManager::ReceiveInputEvent(
     case KEYBOARD_INPUT: {
       
       
-      if (!gfxPrefs::APZKeyboardEnabled() ||
+      if (!StaticPrefs::APZKeyboardEnabled() ||
           StaticPrefs::AccessibilityBrowseWithCaret()) {
         APZ_KEY_LOG("Skipping key input from invalid prefs\n");
         return result;
