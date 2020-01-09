@@ -1,600 +1,575 @@
-  <binding id="autocomplete-rich-result-popup">
-    <content ignorekeys="true" level="top" consumeoutsideclicks="never">
-      <xul:richlistbox anonid="richlistbox" class="autocomplete-richlistbox" flex="1"/>
-      <xul:hbox>
-        <children/>
-      </xul:hbox>
-    </content>
 
-    <implementation implements="nsIAutoCompletePopup">
-      <field name="mInput">null</field>
-      <field name="mPopupOpen">false</field>
-      <field name="_currentIndex">0</field>
 
-      <constructor><![CDATA[
-        if (!this.listEvents) {
-          this.listEvents = {
-            handleEvent: event => {
-              if (!this.parentNode) {
+
+
+"use strict";
+
+
+
+{
+const MozPopupElement = MozElementMixin(XULPopupElement);
+MozElements.MozAutocompleteRichlistboxPopup = class MozAutocompleteRichlistboxPopup extends MozPopupElement {
+  constructor() {
+    super();
+
+    this.mInput = null;
+    this.mPopupOpen = false;
+    this._currentIndex = 0;
+
+    this.setListeners();
+  }
+
+  initialize() {
+    this.setAttribute("ignorekeys", "true");
+    this.setAttribute("level", "top");
+    this.setAttribute("consumeoutsideclicks", "never");
+
+    this.textContent = "";
+    this.appendChild(MozXULElement.parseXULToFragment(this._markup));
+
+    
+
+
+
+
+    this.defaultMaxRows = 6;
+
+    
+
+
+
+
+
+
+
+
+
+
+    this._normalMaxRows = -1;
+    this._previousSelectedIndex = -1;
+    this.mLastMoveTime = Date.now();
+    this.mousedOverIndex = -1;
+    this._richlistbox = this.querySelector(".autocomplete-richlistbox");
+
+    if (!this.listEvents) {
+      this.listEvents = {
+        handleEvent: event => {
+          if (!this.parentNode) {
+            return;
+          }
+
+          switch (event.type) {
+            case "mouseup":
+              
+              
+              
+              if (event.target.closest("richlistbox,richlistitem")
+                .localName == "richlistitem") {
+                this.onPopupClick(event);
+              }
+              break;
+            case "mousemove":
+              if (Date.now() - this.mLastMoveTime <= 30) {
                 return;
               }
 
-              switch (event.type) {
-                case "mouseup":
-                  
-                  
-                  
-                  if (event.target.closest("richlistbox,richlistitem")
-                                  .localName == "richlistitem") {
-                    this.onPopupClick(event);
-                  }
-                  break;
-                case "mousemove":
-                  if (Date.now() - this.mLastMoveTime <= 30) {
-                    return;
-                  }
+              let item = event.target.closest("richlistbox,richlistitem");
 
-                  let item = event.target.closest("richlistbox,richlistitem");
-
-                  
-                  
-                  if (item.localName == "richlistbox") {
-                    return;
-                  }
-
-                  let index = this.richlistbox.getIndexOfItem(item);
-
-                  this.mousedOverIndex = index;
-
-                  if (item.selectedByMouseOver) {
-                    this.richlistbox.selectedIndex = index;
-                  }
-
-                  this.mLastMoveTime = Date.now();
-                  break;
+              
+              
+              if (item.localName == "richlistbox") {
+                return;
               }
-            },
-          };
-          this.richlistbox.addEventListener("mouseup", this.listEvents);
-          this.richlistbox.addEventListener("mousemove", this.listEvents);
-        }
-      ]]></constructor>
 
-      <destructor><![CDATA[
-        if (this.listEvents) {
-          this.richlistbox.removeEventListener("mouseup", this.listEvents);
-          this.richlistbox.removeEventListener("mousemove", this.listEvents);
-          delete this.listEvents;
-        }
-      ]]></destructor>
+              let index = this.richlistbox.getIndexOfItem(item);
 
-      <!-- =================== nsIAutoCompletePopup =================== -->
+              this.mousedOverIndex = index;
 
-      <property name="input" readonly="true"
-                onget="return this.mInput"/>
-
-      <property name="overrideValue" readonly="true"
-                onget="return null;"/>
-
-      <property name="popupOpen" readonly="true"
-                onget="return this.mPopupOpen;"/>
-
-      <method name="closePopup">
-        <body>
-          <![CDATA[
-          if (this.mPopupOpen) {
-            this.hidePopup();
-            this.removeAttribute("width");
-          }
-        ]]>
-        </body>
-      </method>
-
-      <!-- This is the default number of rows that we give the autocomplete
-           popup when the textbox doesn't have a "maxrows" attribute
-           for us to use. -->
-      <field name="defaultMaxRows" readonly="true">6</field>
-
-      <!-- In some cases (e.g. when the input's dropmarker button is clicked),
-           the input wants to display a popup with more rows. In that case, it
-           should increase its maxRows property and store the "normal" maxRows
-           in this field. When the popup is hidden, we restore the input's
-           maxRows to the value stored in this field.
-
-           This field is set to -1 between uses so that we can tell when it's
-           been set by the input and when we need to set it in the popupshowing
-           handler. -->
-      <field name="_normalMaxRows">-1</field>
-
-      <property name="maxRows" readonly="true">
-        <getter>
-          <![CDATA[
-          return (this.mInput && this.mInput.maxRows) || this.defaultMaxRows;
-        ]]>
-        </getter>
-      </property>
-
-      <method name="getNextIndex">
-        <parameter name="aReverse"/>
-        <parameter name="aAmount"/>
-        <parameter name="aIndex"/>
-        <parameter name="aMaxRow"/>
-        <body><![CDATA[
-          if (aMaxRow < 0)
-            return -1;
-
-          var newIdx = aIndex + (aReverse ? -1 : 1) * aAmount;
-          if (aReverse && aIndex == -1 || newIdx > aMaxRow && aIndex != aMaxRow)
-            newIdx = aMaxRow;
-          else if (!aReverse && aIndex == -1 || newIdx < 0 && aIndex != 0)
-            newIdx = 0;
-
-          if (newIdx < 0 && aIndex == 0 || newIdx > aMaxRow && aIndex == aMaxRow)
-            aIndex = -1;
-          else
-            aIndex = newIdx;
-
-          return aIndex;
-        ]]></body>
-      </method>
-
-      <method name="onPopupClick">
-        <parameter name="aEvent"/>
-        <body><![CDATA[
-          this.input.controller.handleEnter(true, aEvent);
-        ]]></body>
-      </method>
-
-      <property name="selectedIndex"
-                onget="return this.richlistbox.selectedIndex;">
-        <setter>
-          <![CDATA[
-          if (val != this.richlistbox.selectedIndex) {
-            this._previousSelectedIndex = this.richlistbox.selectedIndex;
-          }
-          this.richlistbox.selectedIndex = val;
-          
-          
-          
-          
-          
-          if (this.mPopupOpen && this.maxResults > this.maxRows) {
-            
-            
-            this.richlistbox.ensureElementIsVisible(
-              this.richlistbox.selectedItem || this.richlistbox.firstElementChild);
-          }
-          return val;
-        ]]>
-        </setter>
-      </property>
-
-      <field name="_previousSelectedIndex">-1</field>
-      <field name="mLastMoveTime">Date.now()</field>
-      <field name="mousedOverIndex">-1</field>
-
-      <method name="onSearchBegin">
-        <body><![CDATA[
-          this.mousedOverIndex = -1;
-
-          if (typeof this._onSearchBegin == "function") {
-            this._onSearchBegin();
-          }
-        ]]></body>
-      </method>
-
-      <method name="openAutocompletePopup">
-        <parameter name="aInput"/>
-        <parameter name="aElement"/>
-        <body>
-          <![CDATA[
-          
-          
-          
-          this._openAutocompletePopup(aInput, aElement);
-        ]]>
-        </body>
-      </method>
-
-      <method name="_openAutocompletePopup">
-        <parameter name="aInput"/>
-        <parameter name="aElement"/>
-        <body>
-          <![CDATA[
-          if (!this.mPopupOpen) {
-            
-            
-            aInput.popup.hidden = false;
-
-            this.mInput = aInput;
-            
-            this.selectedIndex = -1;
-
-            var width = aElement.getBoundingClientRect().width;
-            this.setAttribute("width", width > 100 ? width : 100);
-            
-            this._invalidate();
-
-            this.openPopup(aElement, "after_start", 0, 0, false, false);
-          }
-        ]]>
-        </body>
-      </method>
-
-      <method name="invalidate">
-        <parameter name="reason"/>
-        <body>
-          <![CDATA[
-          
-          if (!this.mPopupOpen)
-            return;
-
-          this._invalidate(reason);
-          ]]>
-        </body>
-      </method>
-
-      <method name="_invalidate">
-        <parameter name="reason"/>
-        <body>
-          <![CDATA[
-          
-          this.richlistbox.collapsed = (this.matchCount == 0);
-
-          
-          if (this._adjustHeightRAFToken) {
-            cancelAnimationFrame(this._adjustHeightRAFToken);
-            this._adjustHeightRAFToken = null;
-          }
-
-          if (this.mPopupOpen) {
-            delete this._adjustHeightOnPopupShown;
-            this._adjustHeightRAFToken = requestAnimationFrame(() => this.adjustHeight());
-          } else {
-            this._adjustHeightOnPopupShown = true;
-          }
-
-          this._currentIndex = 0;
-          if (this._appendResultTimeout) {
-            clearTimeout(this._appendResultTimeout);
-          }
-          this._appendCurrentResult(reason);
-        ]]>
-        </body>
-      </method>
-
-      <property name="maxResults" readonly="true">
-        <getter>
-          <![CDATA[
-            
-            
-            
-            
-            if (this.getAttribute("nomaxresults") == "true") {
-              return Infinity;
-            }
-
-            return 20;
-          ]]>
-        </getter>
-      </property>
-
-      <property name="matchCount" readonly="true">
-        <getter>
-          <![CDATA[
-          return Math.min(this.mInput.controller.matchCount, this.maxResults);
-          ]]>
-        </getter>
-      </property>
-
-      <method name="_collapseUnusedItems">
-        <body>
-          <![CDATA[
-            let existingItemsCount = this.richlistbox.children.length;
-            for (let i = this.matchCount; i < existingItemsCount; ++i) {
-              let item = this.richlistbox.children[i];
-
-              item.collapsed = true;
-              if (typeof item._onCollapse == "function") {
-                item._onCollapse();
+              if (item.selectedByMouseOver) {
+                this.richlistbox.selectedIndex = index;
               }
-            }
-          ]]>
-        </body>
-      </method>
 
-      <method name="adjustHeight">
-        <body>
-          <![CDATA[
-          
-          let rows = this.richlistbox.children;
-          let numRows = Math.min(this.matchCount, this.maxRows, rows.length);
-
-          
-          let height = 0;
-          if (numRows) {
-            let firstRowRect = rows[0].getBoundingClientRect();
-            if (this._rlbPadding == undefined) {
-              let style = window.getComputedStyle(this.richlistbox);
-              let paddingTop = parseInt(style.paddingTop) || 0;
-              let paddingBottom = parseInt(style.paddingBottom) || 0;
-              this._rlbPadding = paddingTop + paddingBottom;
-            }
-
-            
-            
-            
-            for (let i = 0; i < numRows; i++) {
-              if (rows[i].classList.contains("forceHandleUnderflow")) {
-                rows[i].handleOverUnderflow();
-              }
-            }
-
-            let lastRowRect = rows[numRows - 1].getBoundingClientRect();
-            
-            height = lastRowRect.bottom - firstRowRect.top +
-                     this._rlbPadding;
-          }
-
-          let currentHeight = this.richlistbox.getBoundingClientRect().height;
-          if (height <= currentHeight) {
-            this._collapseUnusedItems();
-          }
-          this.richlistbox.style.removeProperty("height");
-          
-          
-          
-          
-          this.richlistbox.height = Math.ceil(height);
-          ]]>
-        </body>
-      </method>
-
-      <method name="_appendCurrentResult">
-        <parameter name="invalidateReason"/>
-        <body>
-          <![CDATA[
-          var controller = this.mInput.controller;
-          var matchCount = this.matchCount;
-          var existingItemsCount = this.richlistbox.children.length;
-
-          
-          for (let i = 0; i < this.maxRows; i++) {
-            if (this._currentIndex >= matchCount) {
+              this.mLastMoveTime = Date.now();
               break;
-            }
-            let item;
-            let itemExists = this._currentIndex < existingItemsCount;
-
-            let originalValue, originalText, originalType;
-            let style = controller.getStyleAt(this._currentIndex);
-            let value =
-              style && style.includes("autofill") ?
-              controller.getFinalCompleteValueAt(this._currentIndex) :
-              controller.getValueAt(this._currentIndex);
-            let label = controller.getLabelAt(this._currentIndex);
-            let comment = controller.getCommentAt(this._currentIndex);
-            let image = controller.getImageAt(this._currentIndex);
-            
-            let trimmedSearchString = controller.searchString.replace(/^\s+/, "").replace(/\s+$/, "");
-
-            let reusable = false;
-            if (itemExists) {
-              item = this.richlistbox.children[this._currentIndex];
-
-              
-              originalValue = item.getAttribute("url") || item.getAttribute("ac-value");
-              originalText = item.getAttribute("ac-text");
-              originalType = item.getAttribute("originaltype");
-
-              
-              
-              const UNREUSEABLE_STYLES = [
-                "autofill-profile",
-                "autofill-footer",
-                "autofill-clear-button",
-                "autofill-insecureWarning",
-                "insecureWarning",
-                "loginsFooter",
-              ];
-              
-              
-              reusable = originalType === style ||
-                !(UNREUSEABLE_STYLES.includes(style) || UNREUSEABLE_STYLES.includes(originalType));
-            }
-
-            
-            if (!reusable) {
-              let options = null;
-              switch (style) {
-                case "autofill-profile":
-                  options = { is: "autocomplete-profile-listitem" };
-                  break;
-                case "autofill-footer":
-                  options = { is: "autocomplete-profile-listitem-footer" };
-                  break;
-                case "autofill-clear-button":
-                  options = { is: "autocomplete-profile-listitem-clear-button" };
-                  break;
-                case "autofill-insecureWarning":
-                  options = { is: "autocomplete-creditcard-insecure-field" };
-                  break;
-                case "insecureWarning":
-                  options = { is: "autocomplete-richlistitem-insecure-warning" };
-                  break;
-                case "loginsFooter":
-                  options = { is: "autocomplete-richlistitem-logins-footer" };
-                  break;
-                default:
-                  options = { is: "autocomplete-richlistitem" };
-              }
-              item = document.createXULElement("richlistitem", options);
-              item.className = "autocomplete-richlistitem";
-            }
-
-            item.setAttribute("dir", this.style.direction);
-            item.setAttribute("ac-image", image);
-            item.setAttribute("ac-value", value);
-            item.setAttribute("ac-label", label);
-            item.setAttribute("ac-comment", comment);
-            item.setAttribute("ac-text", trimmedSearchString);
-
-            
-            
-            
-            
-            let iface = Ci.nsIAutoCompletePopup;
-            if (reusable &&
-                originalText == trimmedSearchString &&
-                invalidateReason == iface.INVALIDATE_REASON_NEW_RESULT &&
-                (originalValue == value ||
-                 this.mousedOverIndex === this._currentIndex)) {
-              
-              let reused = item._reuseAcItem();
-              if (reused) {
-                this._currentIndex++;
-                continue;
-              }
-            } else {
-              if (typeof item._cleanup == "function") {
-                item._cleanup();
-              }
-              item.setAttribute("originaltype", style);
-            }
-
-            if (reusable) {
-              
-              
-              
-              
-              
-              item._adjustAcItem();
-              item.collapsed = false;
-            } else if (itemExists) {
-              let oldItem = this.richlistbox.children[this._currentIndex];
-              this.richlistbox.replaceChild(item, oldItem);
-            } else {
-              this.richlistbox.appendChild(item);
-            }
-
-            this._currentIndex++;
           }
+        },
+      };
+      this.richlistbox.addEventListener("mouseup", this.listEvents);
+      this.richlistbox.addEventListener("mousemove", this.listEvents);
+    }
+  }
 
-          if (typeof this.onResultsAdded == "function") {
-            
-            
-            
-            Services.tm.dispatchToMainThread(() => this.onResultsAdded());
-          }
+  get richlistbox() {
+    if (!this._richlistbox) {
+      this.initialize();
+    }
+    return this._richlistbox;
+  }
 
-          if (this._currentIndex < matchCount) {
-            
-            
-            this._appendResultTimeout = setTimeout(() => this._appendCurrentResult(), 0);
-          }
-        ]]>
-        </body>
-      </method>
+  get _markup() {
+    return `
+      <richlistbox class="autocomplete-richlistbox" flex="1"></richlistbox>
+    `;
+  }
 
-      <property name="overflowPadding"
-                onget="return Number(this.getAttribute('overflowpadding'))"
-                readonly="true" />
+  
 
-      <method name="selectBy">
-        <parameter name="aReverse"/>
-        <parameter name="aPage"/>
-        <body>
-          <![CDATA[
-          try {
-            var amount = aPage ? 5 : 1;
 
-            
-            this.selectedIndex = this.getNextIndex(aReverse, amount, this.selectedIndex, this.matchCount - 1);
-            if (this.selectedIndex == -1) {
-              this.input._focus();
-            }
-          } catch (ex) {
-            
-            
-            
-          }
-            ]]>
-        </body>
-      </method>
+  get input() {
+    return this.mInput;
+  }
 
-      <field name="richlistbox">
-        document.getAnonymousElementByAttribute(this, "anonid", "richlistbox");
-      </field>
+  get overrideValue() {
+    return null;
+  }
 
-      <property name="view"
-                onget="return this.mInput.controller;"
-                onset="return val;"/>
+  get popupOpen() {
+    return this.mPopupOpen;
+  }
 
-    </implementation>
-    <handlers>
-      <handler event="popupshowing"><![CDATA[
-        
-        
+  get maxRows() {
+    return (this.mInput && this.mInput.maxRows) || this.defaultMaxRows;
+  }
 
-        
-        if (this._normalMaxRows < 0 && this.mInput) {
-          this._normalMaxRows = this.mInput.maxRows;
+  set selectedIndex(val) {
+    if (val != this.richlistbox.selectedIndex) {
+      this._previousSelectedIndex = this.richlistbox.selectedIndex;
+    }
+    this.richlistbox.selectedIndex = val;
+    
+    
+    
+    
+    
+    if (this.mPopupOpen && this.maxResults > this.maxRows) {
+      
+      
+      this.richlistbox.ensureElementIsVisible(
+        this.richlistbox.selectedItem || this.richlistbox.firstElementChild);
+    }
+    return val;
+  }
+
+  get selectedIndex() {
+    return this.richlistbox.selectedIndex;
+  }
+
+  get maxResults() {
+    
+    
+    
+    
+    if (this.getAttribute("nomaxresults") == "true") {
+      return Infinity;
+    }
+    return 20;
+  }
+
+  get matchCount() {
+    return Math.min(this.mInput.controller.matchCount, this.maxResults);
+  }
+
+  get overflowPadding() {
+    return Number(this.getAttribute("overflowpadding"));
+  }
+
+  set view(val) {
+    return val;
+  }
+
+  get view() {
+    return this.mInput.controller;
+  }
+
+  closePopup() {
+    if (this.mPopupOpen) {
+      this.hidePopup();
+      this.removeAttribute("width");
+    }
+  }
+
+  getNextIndex(aReverse, aAmount, aIndex, aMaxRow) {
+    if (aMaxRow < 0)
+      return -1;
+
+    var newIdx = aIndex + (aReverse ? -1 : 1) * aAmount;
+    if (aReverse && aIndex == -1 || newIdx > aMaxRow && aIndex != aMaxRow)
+      newIdx = aMaxRow;
+    else if (!aReverse && aIndex == -1 || newIdx < 0 && aIndex != 0)
+      newIdx = 0;
+
+    if (newIdx < 0 && aIndex == 0 || newIdx > aMaxRow && aIndex == aMaxRow)
+      aIndex = -1;
+    else
+      aIndex = newIdx;
+
+    return aIndex;
+  }
+
+  onPopupClick(aEvent) {
+    this.input.controller.handleEnter(true, aEvent);
+  }
+
+  onSearchBegin() {
+    this.mousedOverIndex = -1;
+
+    if (typeof this._onSearchBegin == "function") {
+      this._onSearchBegin();
+    }
+  }
+
+  openAutocompletePopup(aInput, aElement) {
+    
+    
+    
+    this._openAutocompletePopup(aInput, aElement);
+  }
+
+  _openAutocompletePopup(aInput, aElement) {
+    if (!this._initialized) {
+      this.initialize();
+      this._initialized = true;
+    }
+
+    if (!this.mPopupOpen) {
+      
+      
+      aInput.popup.hidden = false;
+
+      this.mInput = aInput;
+      
+      this.selectedIndex = -1;
+
+      var width = aElement.getBoundingClientRect().width;
+      this.setAttribute("width", width > 100 ? width : 100);
+      
+      this._invalidate();
+
+      this.openPopup(aElement, "after_start", 0, 0, false, false);
+    }
+  }
+
+  invalidate(reason) {
+    
+    if (!this.mPopupOpen)
+      return;
+
+    this._invalidate(reason);
+  }
+
+  _invalidate(reason) {
+    
+    this.richlistbox.collapsed = (this.matchCount == 0);
+
+    
+    if (this._adjustHeightRAFToken) {
+      cancelAnimationFrame(this._adjustHeightRAFToken);
+      this._adjustHeightRAFToken = null;
+    }
+
+    if (this.mPopupOpen) {
+      delete this._adjustHeightOnPopupShown;
+      this._adjustHeightRAFToken = requestAnimationFrame(() => this.adjustHeight());
+    } else {
+      this._adjustHeightOnPopupShown = true;
+    }
+
+    this._currentIndex = 0;
+    if (this._appendResultTimeout) {
+      clearTimeout(this._appendResultTimeout);
+    }
+    this._appendCurrentResult(reason);
+  }
+
+  _collapseUnusedItems() {
+    let existingItemsCount = this.richlistbox.children.length;
+    for (let i = this.matchCount; i < existingItemsCount; ++i) {
+      let item = this.richlistbox.children[i];
+
+      item.collapsed = true;
+      if (typeof item._onCollapse == "function") {
+        item._onCollapse();
+      }
+    }
+  }
+
+  adjustHeight() {
+    
+    let rows = this.richlistbox.children;
+    let numRows = Math.min(this.matchCount, this.maxRows, rows.length);
+
+    
+    let height = 0;
+    if (numRows) {
+      let firstRowRect = rows[0].getBoundingClientRect();
+      if (this._rlbPadding == undefined) {
+        let style = window.getComputedStyle(this.richlistbox);
+        let paddingTop = parseInt(style.paddingTop) || 0;
+        let paddingBottom = parseInt(style.paddingBottom) || 0;
+        this._rlbPadding = paddingTop + paddingBottom;
+      }
+
+      
+      
+      
+      for (let i = 0; i < numRows; i++) {
+        if (rows[i].classList.contains("forceHandleUnderflow")) {
+          rows[i].handleOverUnderflow();
         }
+      }
+
+      let lastRowRect = rows[numRows - 1].getBoundingClientRect();
+      
+      height = lastRowRect.bottom - firstRowRect.top +
+        this._rlbPadding;
+    }
+
+    let currentHeight = this.richlistbox.getBoundingClientRect().height;
+    if (height <= currentHeight) {
+      this._collapseUnusedItems();
+    }
+    this.richlistbox.style.removeProperty("height");
+    
+    
+    
+    
+    this.richlistbox.height = Math.ceil(height);
+  }
+
+  _appendCurrentResult(invalidateReason) {
+    var controller = this.mInput.controller;
+    var matchCount = this.matchCount;
+    var existingItemsCount = this.richlistbox.children.length;
+
+    
+    for (let i = 0; i < this.maxRows; i++) {
+      if (this._currentIndex >= matchCount) {
+        break;
+      }
+      let item;
+      let itemExists = this._currentIndex < existingItemsCount;
+
+      let originalValue, originalText, originalType;
+      let style = controller.getStyleAt(this._currentIndex);
+      let value =
+        style && style.includes("autofill") ?
+        controller.getFinalCompleteValueAt(this._currentIndex) :
+        controller.getValueAt(this._currentIndex);
+      let label = controller.getLabelAt(this._currentIndex);
+      let comment = controller.getCommentAt(this._currentIndex);
+      let image = controller.getImageAt(this._currentIndex);
+      
+      let trimmedSearchString = controller.searchString.replace(/^\s+/, "").replace(/\s+$/, "");
+
+      let reusable = false;
+      if (itemExists) {
+        item = this.richlistbox.children[this._currentIndex];
 
         
-        let inputID = "";
-        if (this.mInput && this.mInput.ownerDocument &&
-            this.mInput.ownerDocument.documentURIObject.schemeIs("chrome")) {
-          inputID = this.mInput.id;
-          
-          if (!inputID) {
-            let bindingParent = this.mInput.ownerDocument.getBindingParent(this.mInput);
-            if (bindingParent) {
-              inputID = bindingParent.id;
-            }
+        originalValue = item.getAttribute("url") || item.getAttribute("ac-value");
+        originalText = item.getAttribute("ac-text");
+        originalType = item.getAttribute("originaltype");
+
+        
+        
+        const UNREUSEABLE_STYLES = [
+          "autofill-profile",
+          "autofill-footer",
+          "autofill-clear-button",
+          "autofill-insecureWarning",
+          "insecureWarning",
+          "loginsFooter",
+        ];
+        
+        
+        reusable = originalType === style ||
+          !(UNREUSEABLE_STYLES.includes(style) || UNREUSEABLE_STYLES.includes(originalType));
+      }
+
+      
+      if (!reusable) {
+        let options = null;
+        switch (style) {
+          case "autofill-profile":
+            options = { is: "autocomplete-profile-listitem" };
+            break;
+          case "autofill-footer":
+            options = { is: "autocomplete-profile-listitem-footer" };
+            break;
+          case "autofill-clear-button":
+            options = { is: "autocomplete-profile-listitem-clear-button" };
+            break;
+          case "autofill-insecureWarning":
+            options = { is: "autocomplete-creditcard-insecure-field" };
+            break;
+          case "insecureWarning":
+            options = { is: "autocomplete-richlistitem-insecure-warning" };
+            break;
+          case "loginsFooter":
+            options = { is: "autocomplete-richlistitem-logins-footer" };
+            break;
+          default:
+            options = { is: "autocomplete-richlistitem" };
+        }
+        item = document.createXULElement("richlistitem", options);
+        item.className = "autocomplete-richlistitem";
+      }
+
+      item.setAttribute("dir", this.style.direction);
+      item.setAttribute("ac-image", image);
+      item.setAttribute("ac-value", value);
+      item.setAttribute("ac-label", label);
+      item.setAttribute("ac-comment", comment);
+      item.setAttribute("ac-text", trimmedSearchString);
+
+      
+      
+      
+      
+      let iface = Ci.nsIAutoCompletePopup;
+      if (reusable &&
+        originalText == trimmedSearchString &&
+        invalidateReason == iface.INVALIDATE_REASON_NEW_RESULT &&
+        (originalValue == value ||
+          this.mousedOverIndex === this._currentIndex)) {
+        
+        let reused = item._reuseAcItem();
+        if (reused) {
+          this._currentIndex++;
+          continue;
+        }
+      } else {
+        if (typeof item._cleanup == "function") {
+          item._cleanup();
+        }
+        item.setAttribute("originaltype", style);
+      }
+
+      if (reusable) {
+        
+        
+        
+        
+        
+        item._adjustAcItem();
+        item.collapsed = false;
+      } else if (itemExists) {
+        let oldItem = this.richlistbox.children[this._currentIndex];
+        this.richlistbox.replaceChild(item, oldItem);
+      } else {
+        this.richlistbox.appendChild(item);
+      }
+
+      this._currentIndex++;
+    }
+
+    if (typeof this.onResultsAdded == "function") {
+      
+      
+      
+      Services.tm.dispatchToMainThread(() => this.onResultsAdded());
+    }
+
+    if (this._currentIndex < matchCount) {
+      
+      
+      this._appendResultTimeout = setTimeout(() => this._appendCurrentResult(), 0);
+    }
+  }
+
+  selectBy(aReverse, aPage) {
+    try {
+      var amount = aPage ? 5 : 1;
+
+      
+      this.selectedIndex = this.getNextIndex(aReverse, amount, this.selectedIndex, this.matchCount - 1);
+      if (this.selectedIndex == -1) {
+        this.input._focus();
+      }
+    } catch (ex) {
+      
+      
+      
+    }
+  }
+
+  disconnectedCallback() {
+    if (this.listEvents) {
+      this.richlistbox.removeEventListener("mouseup", this.listEvents);
+      this.richlistbox.removeEventListener("mousemove", this.listEvents);
+      delete this.listEvents;
+    }
+  }
+
+  setListeners() {
+    this.addEventListener("popupshowing", (event) => {
+      
+      
+
+      
+      if (this._normalMaxRows < 0 && this.mInput) {
+        this._normalMaxRows = this.mInput.maxRows;
+      }
+
+      
+      let inputID = "";
+      if (this.mInput && this.mInput.ownerDocument &&
+        this.mInput.ownerDocument.documentURIObject.schemeIs("chrome")) {
+        inputID = this.mInput.id;
+        
+        if (!inputID) {
+          let bindingParent = this.mInput.ownerDocument.getBindingParent(this.mInput);
+          if (bindingParent) {
+            inputID = bindingParent.id;
           }
         }
-        this.setAttribute("autocompleteinput", inputID);
+      }
+      this.setAttribute("autocompleteinput", inputID);
 
-        this.mPopupOpen = true;
-      ]]></handler>
+      this.mPopupOpen = true;
+    });
 
-      <handler event="popupshown">
-        <![CDATA[
-          if (this._adjustHeightOnPopupShown) {
-            delete this._adjustHeightOnPopupShown;
-            this.adjustHeight();
-          }
-      ]]>
-      </handler>
+    this.addEventListener("popupshown", (event) => {
+       if (this._adjustHeightOnPopupShown) {
+        delete this._adjustHeightOnPopupShown;
+        this.adjustHeight();
+      }
+    });
 
-      <handler event="popuphiding"><![CDATA[
-        var isListActive = true;
-        if (this.selectedIndex == -1)
-          isListActive = false;
-        this.input.controller.stopSearch();
+    this.addEventListener("popuphiding", (event) => {
+      var isListActive = true;
+      if (this.selectedIndex == -1)
+        isListActive = false;
+      this.input.controller.stopSearch();
 
-        this.removeAttribute("autocompleteinput");
-        this.mPopupOpen = false;
+      this.removeAttribute("autocompleteinput");
+      this.mPopupOpen = false;
 
-        
-        
-        
+      
+      
+      
 
-        
-        if (this.mInput && this._normalMaxRows > 0) {
-          this.mInput.maxRows = this._normalMaxRows;
-        }
-        this._normalMaxRows = -1;
-        // If the list was being navigated and then closed, make sure
-        // we fire accessible focus event back to textbox
+      
+      if (this.mInput && this._normalMaxRows > 0) {
+        this.mInput.maxRows = this._normalMaxRows;
+      }
+      this._normalMaxRows = -1;
+      
+      
 
-        // Null-check this.mInput; see bug 1017914
-        if (isListActive && this.mInput) {
-          this.mInput.mIgnoreFocus = true;
-          this.mInput._focus();
-          this.mInput.mIgnoreFocus = false;
-        }
-      ]]></handler>
-    </handlers>
-  </binding>
+      
+      if (isListActive && this.mInput) {
+        this.mInput.mIgnoreFocus = true;
+        this.mInput._focus();
+        this.mInput.mIgnoreFocus = false;
+      }
+    });
+  }
+};
+
+MozPopupElement.implementCustomInterface(MozElements.MozAutocompleteRichlistboxPopup, [Ci.nsIAutoCompletePopup]);
+
+customElements.define("autocomplete-richlistbox-popup", MozElements.MozAutocompleteRichlistboxPopup, {
+  extends: "panel",
+});
+}
