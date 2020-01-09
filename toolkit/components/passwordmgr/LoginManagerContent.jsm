@@ -11,10 +11,7 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = [
-  "LoginManagerContent",
-  "LoginFormFactory",
-];
+var EXPORTED_SYMBOLS = ["LoginManagerContent"];
 
 const PASSWORD_INPUT_ADDED_COALESCING_THRESHOLD_MS = 1;
 const AUTOCOMPLETE_AFTER_RIGHT_CLICK_THRESHOLD_MS = 400;
@@ -28,6 +25,8 @@ const {PromiseUtils} = ChromeUtils.import("resource://gre/modules/PromiseUtils.j
 ChromeUtils.defineModuleGetter(this, "DeferredTask", "resource://gre/modules/DeferredTask.jsm");
 ChromeUtils.defineModuleGetter(this, "FormLikeFactory",
                                "resource://gre/modules/FormLikeFactory.jsm");
+ChromeUtils.defineModuleGetter(this, "LoginFormFactory",
+                               "resource://gre/modules/LoginFormFactory.jsm");
 ChromeUtils.defineModuleGetter(this, "LoginRecipesContent",
                                "resource://gre/modules/LoginRecipes.jsm");
 ChromeUtils.defineModuleGetter(this, "LoginHelper",
@@ -160,19 +159,6 @@ var LoginManagerContent = {
 
 
 
-
-
-  _formLikeByRootElement: new WeakMap(),
-
-  
-
-
-
-
-
-
-
-
   _deferredPasswordAddedTasksByRootElement: new WeakMap(),
 
   
@@ -212,8 +198,7 @@ var LoginManagerContent = {
     return request;
   },
 
-  _sendRequest(messageManager, requestData,
-               name, messageData) {
+  _sendRequest(messageManager, requestData, name, messageData) {
     let count;
     if (!(count = this._managers.get(messageManager))) {
       this._managers.set(messageManager, 1);
@@ -451,12 +436,12 @@ var LoginManagerContent = {
     let deferredTask = this._deferredPasswordAddedTasksByRootElement.get(formLike.rootElement);
     if (!deferredTask) {
       log("Creating a DeferredTask to call _fetchLoginsFromParentAndFillForm soon");
-      this._formLikeByRootElement.set(formLike.rootElement, formLike);
+      LoginFormFactory.setForRootElement(formLike.rootElement, formLike);
 
       deferredTask = new DeferredTask(() => {
         
         
-        let formLike2 = this._formLikeByRootElement.get(formLike.rootElement);
+        let formLike2 = LoginFormFactory.getForRootElement(formLike.rootElement);
         log("Running deferred processing of onDOMInputPasswordAdded", formLike2);
         this._deferredPasswordAddedTasksByRootElement.delete(formLike2.rootElement);
         this._fetchLoginsFromParentAndFillForm(formLike2);
@@ -467,10 +452,10 @@ var LoginManagerContent = {
 
     let window = pwField.ownerGlobal;
     if (deferredTask.isArmed) {
-      log("DeferredTask is already armed so just updating the FormLike");
+      log("DeferredTask is already armed so just updating the LoginForm");
       
       
-      this._formLikeByRootElement.set(formLike.rootElement, formLike);
+      LoginFormFactory.setForRootElement(formLike.rootElement, formLike);
     } else if (window.document.readyState == "complete") {
       log("Arming the DeferredTask we just created since document.readyState == 'complete'");
       deferredTask.arm();
@@ -526,7 +511,6 @@ var LoginManagerContent = {
 
 
         fillsByRootElement: new WeakMap(),
-        loginFormRootElements: new WeakSet(),
       };
       this.loginFormStateByDocument.set(document, loginFormState);
     }
@@ -543,7 +527,7 @@ var LoginManagerContent = {
     
     let hasInsecureLoginForms = (thisWindow) => {
       let doc = thisWindow.document;
-      let rootElsWeakSet = this.stateForDocument(doc).loginFormRootElements;
+      let rootElsWeakSet = LoginFormFactory.getRootElementsWeakSetForDocument(doc);
       let hasLoginForm = ChromeUtils.nondeterministicGetWeakSetKeys(rootElsWeakSet)
                                     .filter(el => el.isConnected).length > 0;
       return (hasLoginForm && !thisWindow.isSecureContext) ||
@@ -948,11 +932,10 @@ var LoginManagerContent = {
 
 
   _onNavigation(aDocument) {
-    let state = this.stateForDocument(aDocument);
-    let rootElsWeakSet = state.loginFormRootElements;
+    let rootElsWeakSet = LoginFormFactory.getRootElementsWeakSetForDocument(aDocument);
     let weakLoginFormRootElements = ChromeUtils.nondeterministicGetWeakSetKeys(rootElsWeakSet);
 
-    log("_onNavigation: state:", state, "loginFormRootElements approx size:", weakLoginFormRootElements.length,
+    log("_onNavigation: root elements approx size:", weakLoginFormRootElements.length,
         "document:", aDocument);
 
     for (let formRoot of weakLoginFormRootElements) {
@@ -968,7 +951,7 @@ var LoginManagerContent = {
             "since it was for a real <form>");
         continue;
       }
-      let formLike = this._formLikeByRootElement.get(formRoot);
+      let formLike = LoginFormFactory.getForRootElement(formRoot);
       this._onFormSubmit(formLike);
     }
   },
@@ -1118,7 +1101,7 @@ var LoginManagerContent = {
     userTriggered = false,
   } = {}) {
     if (ChromeUtils.getClassName(form) === "HTMLFormElement") {
-      throw new Error("_fillForm should only be called with FormLike objects");
+      throw new Error("_fillForm should only be called with LoginForm objects");
     }
 
     log("_fillForm", form.elements);
@@ -1417,13 +1400,13 @@ var LoginManagerContent = {
   _isLoginAlreadyFilled(aUsernameField) {
     let formLikeRoot = FormLikeFactory.findRootForField(aUsernameField);
     
-    let existingFormLike = this._formLikeByRootElement.get(formLikeRoot);
-    if (!existingFormLike) {
+    let existingLoginForm = LoginFormFactory.getForRootElement(formLikeRoot);
+    if (!existingLoginForm) {
       throw new Error("_isLoginAlreadyFilled called with a username field with " +
-                      "no rootElement FormLike");
+                      "no rootElement LoginForm");
     }
 
-    log("_isLoginAlreadyFilled: existingFormLike", existingFormLike);
+    log("_isLoginAlreadyFilled: existingLoginForm", existingLoginForm);
     let filledLogin = this.stateForDocument(aUsernameField.ownerDocument).fillsByRootElement.get(formLikeRoot);
     if (!filledLogin) {
       return false;
@@ -1492,8 +1475,7 @@ var LoginManagerContent = {
       return null;
     }
 
-    let [usernameField, newPasswordField] =
-          this.getUserNameAndPasswordFields(aField);
+    let [usernameField, newPasswordField] = this.getUserNameAndPasswordFields(aField);
 
     
     
@@ -1511,72 +1493,5 @@ var LoginManagerContent = {
         disabled: newPasswordField && (newPasswordField.disabled || newPasswordField.readOnly),
       },
     };
-  },
-};
-
-
-
-
-
-
-var LoginFormFactory = {
-  
-
-
-
-
-
-
-  createFromForm(aForm) {
-    let formLike = FormLikeFactory.createFromForm(aForm);
-    formLike.action = LoginHelper.getFormActionOrigin(aForm);
-
-    let state = LoginManagerContent.stateForDocument(formLike.ownerDocument);
-    state.loginFormRootElements.add(formLike.rootElement);
-    log("adding", formLike.rootElement, "to loginFormRootElements for", formLike.ownerDocument);
-
-    LoginManagerContent._formLikeByRootElement.set(formLike.rootElement, formLike);
-    return formLike;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  createFromField(aField) {
-    if (ChromeUtils.getClassName(aField) !== "HTMLInputElement" ||
-        (aField.type != "password" && !LoginHelper.isUsernameFieldType(aField)) ||
-        !aField.ownerDocument) {
-      throw new Error("createFromField requires a password or username field in a document");
-    }
-
-    if (aField.form) {
-      return this.createFromForm(aField.form);
-    }
-
-    let formLike = FormLikeFactory.createFromField(aField);
-    formLike.action = LoginHelper.getLoginOrigin(aField.ownerDocument.baseURI);
-    log("Created non-form FormLike for rootElement:", aField.ownerDocument.documentElement);
-
-    let state = LoginManagerContent.stateForDocument(formLike.ownerDocument);
-    state.loginFormRootElements.add(formLike.rootElement);
-    log("adding", formLike.rootElement, "to loginFormRootElements for", formLike.ownerDocument);
-
-
-    LoginManagerContent._formLikeByRootElement.set(formLike.rootElement, formLike);
-
-    return formLike;
   },
 };
