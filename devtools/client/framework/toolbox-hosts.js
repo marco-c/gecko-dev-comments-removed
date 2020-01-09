@@ -249,8 +249,15 @@ WindowHost.prototype = {
         win.removeEventListener("load", frameLoad, true);
         win.focus();
 
-        this.frame = win.document.getElementById("toolbox-iframe");
-        this.emit("ready", this.frame);
+        this.frame = createDevToolsFrame(win.document, "devtools-toolbox-window-iframe");
+        win.document.getElementById("devtools-toolbox-window").appendChild(this.frame);
+
+        
+        
+        
+        this.frame.setAttribute("forceOwnRefreshDriver", "");
+
+        this.frame.setAttribute("src", "about:blank");
         resolve(this.frame);
       };
 
