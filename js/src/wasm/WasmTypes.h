@@ -49,6 +49,8 @@ enum class RoundingMode;
 
 
 
+typedef GCVector<JSFunction*, 0, SystemAllocPolicy> JSFunctionVector;
+
 class WasmMemoryObject;
 typedef GCPtr<WasmMemoryObject*> GCPtrWasmMemoryObject;
 typedef Rooted<WasmMemoryObject*> RootedWasmMemoryObject;
@@ -753,7 +755,6 @@ class LitVal {
 
 
 
-
 class MOZ_NON_PARAM Val : public LitVal {
  public:
   Val() : LitVal() {}
@@ -773,10 +774,10 @@ typedef Rooted<Val> RootedVal;
 typedef Handle<Val> HandleVal;
 typedef MutableHandle<Val> MutableHandleVal;
 
-typedef GCVector<Val, 0, SystemAllocPolicy> GCVectorVal;
-typedef Rooted<GCVectorVal> RootedValVector;
-typedef Handle<GCVectorVal> HandleValVector;
-typedef MutableHandle<GCVectorVal> MutableHandleValVector;
+typedef GCVector<Val, 0, SystemAllocPolicy> ValVector;
+typedef Rooted<ValVector> RootedValVector;
+typedef Handle<ValVector> HandleValVector;
+typedef MutableHandle<ValVector> MutableHandleValVector;
 
 
 
