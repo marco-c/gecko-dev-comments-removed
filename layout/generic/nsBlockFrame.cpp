@@ -3367,6 +3367,15 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
       cbSize.emplace(LogicalSize(wm, aState.mReflowInput.ComputedISize(),
                                  cbReflowInput->ComputedBSize())
                          .ConvertTo(frame->GetWritingMode(), wm));
+
+      
+      
+      
+      
+      if (aState.mReflowInput.mFlags.mIsColumnBalancing &&
+          frame->IsColumnSetWrapperFrame()) {
+        frame->AddStateBits(NS_FRAME_HAS_DIRTY_CHILDREN);
+      }
     }
 
     blockReflowInput.emplace(
