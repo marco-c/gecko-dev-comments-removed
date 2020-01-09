@@ -39,8 +39,7 @@ class nsCookie final : public nsICookie2 {
            const char* aPath, const char* aEnd, int64_t aExpiry,
            int64_t aLastAccessed, int64_t aCreationTime, bool aIsSession,
            bool aIsSecure, bool aIsHttpOnly,
-           const OriginAttributes& aOriginAttributes, int32_t aSameSite,
-           int32_t aRawSameSite)
+           const OriginAttributes& aOriginAttributes, int32_t aSameSite)
       : mName(aName),
         mValue(aValue),
         mHost(aHost),
@@ -53,8 +52,7 @@ class nsCookie final : public nsICookie2 {
         mIsSecure(aIsSecure),
         mIsHttpOnly(aIsHttpOnly),
         mOriginAttributes(aOriginAttributes),
-        mSameSite(aSameSite),
-        mRawSameSite(aRawSameSite) {}
+        mSameSite(aSameSite) {}
 
  public:
   
@@ -67,8 +65,7 @@ class nsCookie final : public nsICookie2 {
       const nsACString& aHost, const nsACString& aPath, int64_t aExpiry,
       int64_t aLastAccessed, int64_t aCreationTime, bool aIsSession,
       bool aIsSecure, bool aIsHttpOnly,
-      const OriginAttributes& aOriginAttributes, int32_t aSameSite,
-      int32_t aRawSameSite);
+      const OriginAttributes& aOriginAttributes, int32_t aSameSite);
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
@@ -103,7 +100,6 @@ class nsCookie final : public nsICookie2 {
     return mOriginAttributes;
   }
   inline int32_t SameSite() const { return mSameSite; }
-  inline int32_t RawSameSite() const { return mRawSameSite; }
 
   
   inline void SetExpiry(int64_t aExpiry) { mExpiry = aExpiry; }
@@ -139,9 +135,6 @@ class nsCookie final : public nsICookie2 {
   bool mIsHttpOnly;
   mozilla::OriginAttributes mOriginAttributes;
   int32_t mSameSite;
-
-  
-  int32_t mRawSameSite;
 };
 
 
