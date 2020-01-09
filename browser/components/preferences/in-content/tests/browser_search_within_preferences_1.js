@@ -222,11 +222,15 @@ add_task(async function changing_tabs_after_searching() {
   is(searchInput, gBrowser.contentDocument.activeElement.closest("#searchInput"),
     "Search input should be focused when visiting preferences");
 
-  let query = "password";
+  let query = "permission";
   let searchCompletedPromise = BrowserTestUtils.waitForEvent(
     gBrowser.contentWindow, "PreferencesSearchCompleted", evt => evt.detail == query);
   EventUtils.sendString(query);
   await searchCompletedPromise;
+
+  
+  let permissionsSearchHeader = gBrowser.contentDocument.querySelector("#permissionsGroup .search-header");
+  is(permissionsSearchHeader.hidden, false, "Permissions search-header should be visible");
 
   let privacyCategory = gBrowser.contentDocument.getElementById("category-privacy");
   privacyCategory.click();
@@ -240,6 +244,9 @@ add_task(async function changing_tabs_after_searching() {
       is(child.selected, false, "No other panel should be selected");
     }
   }
+
+  
+  is(permissionsSearchHeader.hidden, true, "Permissions search-header should be hidden");
 
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
