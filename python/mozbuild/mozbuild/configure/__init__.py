@@ -289,10 +289,12 @@ class ConfigureSandbox(dict):
     
     
     BUILTINS = ReadOnlyDict({
-        b: getattr(__builtin__, b)
+        b: getattr(__builtin__, b, None)
         for b in ('None', 'False', 'True', 'int', 'bool', 'any', 'all', 'len',
                   'list', 'tuple', 'set', 'dict', 'isinstance', 'getattr',
-                  'hasattr', 'enumerate', 'range', 'zip', 'AssertionError')
+                  'hasattr', 'enumerate', 'range', 'zip', 'AssertionError',
+                  '__build_class__',  
+                  )
     }, __import__=forbidden_import, str=six.text_type)
 
     
@@ -374,7 +376,7 @@ class ConfigureSandbox(dict):
 
             def wrapped(*args, **kwargs):
                 out_args = [
-                    arg.decode(encoding) if isinstance(arg, str) else arg
+                    arg.decode(encoding) if isinstance(arg, six.binary_type) else arg
                     for arg in args
                 ]
                 return method(*out_args, **kwargs)
