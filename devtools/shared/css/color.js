@@ -152,6 +152,25 @@ CssColor.prototype = {
   
 
 
+
+
+  get highResTuple() {
+    const type = classifyColor(this.authored);
+
+    if (type === CssColor.COLORUNIT.hex) {
+      return hexToRGBA(this.authored.substring(1), true);
+    }
+
+    
+    
+    const tuple = colorToRGBA(this.authored);
+    tuple.a *= 255;
+    return tuple;
+  },
+
+  
+
+
   get transparent() {
     try {
       const tuple = this.getRGBATuple();
@@ -235,10 +254,11 @@ CssColor.prototype = {
       return invalidOrSpecialValue;
     }
 
-    const tuple = this.getRGBATuple();
+    const tuple = this.highResTuple;
+
     return "#" + ((1 << 24) + (tuple.r << 16) + (tuple.g << 8) +
                   (tuple.b << 0)).toString(16).substr(-6) +
-                  Math.round(tuple.a * 255).toString(16).padEnd(2, "0");
+                  Math.round(tuple.a).toString(16).padEnd(2, "0");
   },
 
   get rgb() {
@@ -347,7 +367,8 @@ CssColor.prototype = {
     let formats = ["hex", "hsl", "rgb", "name"];
     const currentFormat = classifyColor(this.toString());
     const putOnEnd = formats.splice(0, formats.indexOf(currentFormat));
-    formats = formats.concat(putOnEnd);
+    formats = [...formats, ...putOnEnd];
+
     const currentDisplayedColor = this[formats[0]];
 
     for (const format of formats) {
@@ -623,7 +644,9 @@ function hslToRGB([h, s, l]) {
 
 
 
-function hexToRGBA(name) {
+
+
+function hexToRGBA(name, highResolution) {
   let r, g, b, a = 1;
 
   if (name.length === 3) {
@@ -636,7 +659,11 @@ function hexToRGBA(name) {
     r = parseInt(name.charAt(0) + name.charAt(0), 16);
     g = parseInt(name.charAt(1) + name.charAt(1), 16);
     b = parseInt(name.charAt(2) + name.charAt(2), 16);
-    a = parseInt(name.charAt(3) + name.charAt(3), 16) / 255;
+    a = parseInt(name.charAt(3) + name.charAt(3), 16);
+
+    if (!highResolution) {
+      a /= 255;
+    }
   } else if (name.length === 6) {
     
     r = parseInt(name.charAt(0) + name.charAt(1), 16);
@@ -647,11 +674,17 @@ function hexToRGBA(name) {
     r = parseInt(name.charAt(0) + name.charAt(1), 16);
     g = parseInt(name.charAt(2) + name.charAt(3), 16);
     b = parseInt(name.charAt(4) + name.charAt(5), 16);
-    a = parseInt(name.charAt(6) + name.charAt(7), 16) / 255;
+    a = parseInt(name.charAt(6) + name.charAt(7), 16);
+
+    if (!highResolution) {
+      a /= 255;
+    }
   } else {
     return null;
   }
-  a = Math.round(a * 10) / 10;
+  if (!highResolution) {
+    a = Math.round(a * 10) / 10;
+  }
   return {r, g, b, a};
 }
 
