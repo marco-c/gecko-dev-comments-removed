@@ -6007,6 +6007,7 @@ bool BytecodeEmitter::emitInitialYield(UnaryNode* yieldNode) {
 
 bool BytecodeEmitter::emitYield(UnaryNode* yieldNode) {
   MOZ_ASSERT(sc->isFunctionBox());
+  MOZ_ASSERT(sc->asFunctionBox()->isGenerator());
   MOZ_ASSERT(yieldNode->isKind(ParseNodeKind::YieldExpr));
 
   bool needsIteratorResult = sc->asFunctionBox()->needsIteratorResult();
@@ -6030,6 +6031,7 @@ bool BytecodeEmitter::emitYield(UnaryNode* yieldNode) {
 
   
   if (sc->asFunctionBox()->isAsync()) {
+    MOZ_ASSERT(!needsIteratorResult);
     if (!emitAwaitInInnermostScope()) {
       
       return false;
@@ -6044,6 +6046,9 @@ bool BytecodeEmitter::emitYield(UnaryNode* yieldNode) {
   }
 
   if (!emitGetDotGeneratorInInnermostScope()) {
+    
+    
+    
     
     return false;
   }
@@ -6122,6 +6127,7 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
   
   IteratorKind iterKind =
       sc->asFunctionBox()->isAsync() ? IteratorKind::Async : IteratorKind::Sync;
+  bool needsIteratorResult = sc->asFunctionBox()->needsIteratorResult();
 
   
   if (!emitTree(iter)) {
@@ -6160,7 +6166,19 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
 
   JumpTarget tryStart;
   if (!emitJumpTarget(&tryStart)) {
+    
     return false;
+  }
+
+  if (iterKind == IteratorKind::Async) {
+    
+    
+    
+    
+    if (!emitAtomOp(cx->names().value, JSOP_GETPROP)) {
+      
+      return false;
+    }
   }
 
   if (!tryCatch.emitTry()) {
@@ -6374,10 +6392,12 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
     
     return false;
   }
-  if (!emitAtomOp(cx->names().value, JSOP_GETPROP)) {
-    
-    
-    return false;
+  if (needsIteratorResult) {
+    if (!emitAtomOp(cx->names().value, JSOP_GETPROP)) {
+      
+      
+      return false;
+    }
   }
   if (!emitCall(JSOP_CALL, 1)) {
     
@@ -6419,18 +6439,19 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
     
     return false;
   }
-
-  if (!emitPrepareIteratorResult()) {
-    
-    return false;
-  }
-  if (!emit1(JSOP_SWAP)) {
-    
-    return false;
-  }
-  if (!emitFinishIteratorResult(true)) {
-    
-    return false;
+  if (needsIteratorResult) {
+    if (!emitPrepareIteratorResult()) {
+      
+      return false;
+    }
+    if (!emit1(JSOP_SWAP)) {
+      
+      return false;
+    }
+    if (!emitFinishIteratorResult(true)) {
+      
+      return false;
+    }
   }
   if (!emit1(JSOP_SETRVAL)) {
     

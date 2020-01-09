@@ -382,29 +382,12 @@ MOZ_MUST_USE bool js::AsyncGeneratorResume(
   }
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-  RootedObject resultObj(cx, &thisOrRval.toObject());
-  RootedValue value(cx);
-  if (!GetProperty(cx, resultObj, resultObj, cx->names().value, &value)) {
-    return false;
-  }
-
   if (asyncGenObj->isAfterYield()) {
-    return AsyncGeneratorYield(cx, asyncGenObj, value);
+    return AsyncGeneratorYield(cx, asyncGenObj, thisOrRval);
   }
 
   
-  return AsyncGeneratorReturned(cx, asyncGenObj, value);
+  return AsyncGeneratorReturned(cx, asyncGenObj, thisOrRval);
 }
 
 static const JSFunctionSpec async_iterator_proto_methods[] = {
