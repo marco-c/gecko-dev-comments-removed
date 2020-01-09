@@ -7864,6 +7864,11 @@ bool nsDisplayTransform::CreateWebRenderCommands(
     
     
     transformForSC = nullptr;
+
+    
+    
+    
+    position.Round();
   }
 
   uint64_t animationsId = AddAnimationsForWebRender(
