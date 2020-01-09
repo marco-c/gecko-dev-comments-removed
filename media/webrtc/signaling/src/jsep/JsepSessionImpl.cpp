@@ -114,8 +114,7 @@ nsresult JsepSessionImpl::AddTransceiver(RefPtr<JsepTransceiver> transceiver) {
         return NS_ERROR_FAILURE;
       }
 
-      transceiver->mSendTrack.UpdateTrackIds(std::vector<std::string>(),
-                                             trackId);
+      transceiver->mSendTrack.SetTrackId(trackId);
     }
   } else {
     
@@ -325,25 +324,6 @@ void JsepSessionImpl::SetupBundle(Sdp* sdp) const {
     groupAttr->PushEntry(SdpGroupAttributeList::kBundle, mids);
     sdp->GetAttributeList().SetAttribute(groupAttr.release());
   }
-}
-
-nsresult JsepSessionImpl::GetRemoteIds(const Sdp& sdp,
-                                       const SdpMediaSection& msection,
-                                       std::vector<std::string>* streamIds,
-                                       std::string* trackId) {
-  
-  if (!mUuidGen->Generate(trackId)) {
-    JSEP_SET_ERROR("Failed to generate UUID for JsepTrack");
-    return NS_ERROR_FAILURE;
-  }
-
-  nsresult rv = mSdpHelper.GetIdsFromMsid(sdp, msection, streamIds);
-  if (rv == NS_ERROR_NOT_AVAILABLE) {
-    streamIds->push_back(mDefaultRemoteStreamId);
-    return NS_OK;
-  }
-
-  return rv;
 }
 
 JsepSession::Result JsepSessionImpl::CreateOffer(
@@ -1487,15 +1467,12 @@ nsresult JsepSessionImpl::UpdateTransceiversFromRemoteDescription(
     
     
     
-    if (msection.IsSending() && transceiver->mRecvTrack.GetTrackId().empty()) {
-      std::vector<std::string> streamIds;
-      std::string trackId;
+    
+    transceiver->mRecvTrack.UpdateStreamIds({mDefaultRemoteStreamId});
 
-      nsresult rv = GetRemoteIds(remote, msection, &streamIds, &trackId);
-      NS_ENSURE_SUCCESS(rv, rv);
-      transceiver->mRecvTrack.UpdateTrackIds(streamIds, trackId);
-    }
-
+    
+    
+    
     transceiver->mRecvTrack.UpdateRecvTrack(remote, msection);
   }
 
