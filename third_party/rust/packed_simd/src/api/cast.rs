@@ -1,11 +1,5 @@
 
-#![cfg_attr(
-    feature = "cargo-clippy",
-    allow(
-        clippy::module_name_repetitions,
-        clippy::stutter
-    )
-)]
+#![allow(clippy::module_name_repetitions)]
 
 
 

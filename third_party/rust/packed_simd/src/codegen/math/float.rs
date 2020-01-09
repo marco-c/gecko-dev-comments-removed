@@ -1,5 +1,5 @@
 
-#![cfg_attr(feature = "cargo-clippy", allow(clippy::useless_transmute))]
+#![allow(clippy::useless_transmute)]
 
 #[macro_use]
 crate mod macros;
