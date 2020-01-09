@@ -39,9 +39,11 @@ class DataMutex {
  private:
   class MOZ_STACK_CLASS AutoLock {
    public:
-    T* operator->() const { return &ref(); }
+    T* operator->() const& { return &ref(); }
+    T* operator->() const&& = delete;
 
-    T& operator*() const { return ref(); }
+    T& operator*() const& { return ref(); }
+    T& operator*() const&& = delete;
 
     
     
@@ -50,10 +52,11 @@ class DataMutex {
     
     operator T*() const&& = delete;
 
-    T& ref() const {
+    T& ref() const& {
       MOZ_ASSERT(mOwner);
       return mOwner->mValue;
     }
+    T& ref() const&& = delete;
 
     AutoLock(AutoLock&& aOther) : mOwner(aOther.mOwner) {
       aOther.mOwner = nullptr;
