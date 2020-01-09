@@ -46,9 +46,6 @@ TEST(GfxPrefs, OnceValues) {
   ASSERT_FALSE(gfxPrefs::LayersDump());
 
   
-  ASSERT_TRUE(gfxPrefs::CanvasSkiaGLCacheSize() == 96);
-
-  
   ASSERT_TRUE(gfxPrefs::APZMaxVelocityQueueSize() == 5);
 
   

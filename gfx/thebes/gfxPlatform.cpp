@@ -875,7 +875,7 @@ void gfxPlatform::Init() {
         gfxPrefs::WebGLForceMSAA());
     
     forcedPrefs.AppendPrintf("-T%d%d%d) ", gfxPrefs::AndroidRGB16Force(),
-                             gfxPrefs::CanvasAzureAccelerated(),
+                             0, 
                              gfxPrefs::ForceShmemTiles());
     ScopedGfxFeatureReporter::AppNote(forcedPrefs);
   }

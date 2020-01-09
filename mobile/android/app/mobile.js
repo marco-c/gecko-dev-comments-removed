@@ -718,10 +718,7 @@ pref("dom.phonenumber.substringmatching.BR", 8);
 pref("dom.phonenumber.substringmatching.CO", 10);
 pref("dom.phonenumber.substringmatching.VE", 7);
 
-
 pref("gfx.canvas.azure.backends", "skia");
-pref("gfx.canvas.azure.accelerated", false);
-pref("gfx.canvas.azure.accelerated.limit", 64);
 
 
 pref("general.useragent.updates.enabled", true);
