@@ -442,41 +442,31 @@ VRSystemManagerExternal::VRSystemManagerExternal(
   mEnumerationCompleted = false;
 #endif
   mDoShutdown = false;
-
-#if defined(XP_WIN)
-  mMutex = CreateMutex(
-    NULL,                   
-    false,                  
-    TEXT("mozilla::vr::ShmemMutex"));  
-
-  if (mMutex == NULL) {
-    nsAutoCString msg;
-    msg.AppendPrintf("VRSystemManagerExternal CreateMutex error \"%lu\".",
-                      GetLastError());
-    NS_WARNING(msg.get());
-    MOZ_ASSERT(false);
-    return;
-  }
-  
-  
-  
-  
-  
-  MOZ_ASSERT(GetLastError() == 0 || GetLastError() == ERROR_ALREADY_EXISTS);
-#endif  
 }
 
-VRSystemManagerExternal::~VRSystemManagerExternal() {
-  CloseShmem();
-#if defined(XP_WIN)
-  if (mMutex) {
-    CloseHandle(mMutex);
-    mMutex = NULL;
-  }
-#endif
-}
+VRSystemManagerExternal::~VRSystemManagerExternal() { CloseShmem(); }
 
 void VRSystemManagerExternal::OpenShmem() {
+#if defined(XP_WIN)
+  if (!mMutex) {
+     mMutex = CreateMutex(
+        NULL,                   
+        false,                  
+        TEXT("mozilla::vr::ShmemMutex"));  
+
+    if (mMutex == NULL) {
+      nsAutoCString msg("VRService CreateMutex error \"%lu\".",
+                        GetLastError());
+      NS_WARNING(msg.get());
+      MOZ_ASSERT(false);
+      return;
+    }
+    else if (GetLastError() == ERROR_ALREADY_EXISTS) {
+      NS_WARNING("CreateMutex opened an existing mutex.");
+    }
+  }
+#endif  
+
   if (mExternalShmem) {
     return;
 #if defined(MOZ_WIDGET_ANDROID)
@@ -580,6 +570,12 @@ void VRSystemManagerExternal::CheckForShutdown() {
 }
 
 void VRSystemManagerExternal::CloseShmem() {
+#if defined(XP_WIN)
+  if (mMutex) {
+    CloseHandle(mMutex);
+    mMutex = NULL;
+  }
+#endif
 #if !defined(MOZ_WIDGET_ANDROID)
   if (mSameProcess) {
     return;

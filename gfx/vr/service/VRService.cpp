@@ -103,24 +103,6 @@ void VRService::Refresh() {
 }
 
 void VRService::Start() {
-#if defined(XP_WIN)
-  if (!mMutex) {
-     mMutex = OpenMutex(
-        MUTEX_ALL_ACCESS,       
-        false,                  
-        TEXT("mozilla::vr::ShmemMutex"));  
-
-    if (mMutex == NULL) {
-      nsAutoCString msg;
-      msg.AppendPrintf("VRService OpenMutex error \"%lu\".",
-                       GetLastError());
-      NS_WARNING(msg.get());
-      MOZ_ASSERT(false);
-    }
-    MOZ_ASSERT(GetLastError() == 0);
-  }
-#endif
-
   if (!mServiceThread) {
     
 
@@ -184,6 +166,23 @@ void VRService::Stop() {
 }
 
 bool VRService::InitShmem() {
+#if defined(XP_WIN)
+  if (!mMutex) {
+     mMutex = OpenMutex(
+        MUTEX_ALL_ACCESS,       
+        false,                  
+        TEXT("mozilla::vr::ShmemMutex"));  
+
+    if (mMutex == NULL) {
+      nsAutoCString msg("VRService OpenMutex error \"%lu\".",
+                        GetLastError());
+      NS_WARNING(msg.get());
+      MOZ_ASSERT(false);
+      return false;
+    }
+  }
+#endif
+
   if (!mVRProcessEnabled) {
     return true;
   }
