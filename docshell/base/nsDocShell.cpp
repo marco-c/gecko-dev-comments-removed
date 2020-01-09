@@ -13150,7 +13150,7 @@ nsDocShell::ResumeRedirectedLoad(uint64_t aIdentifier, int32_t aHistoryIndex) {
 
         
         
-        if (aHistoryIndex >= 0) {
+        if (aHistoryIndex >= 0 && self->mSessionHistory) {
           nsCOMPtr<nsISHistory> legacySHistory =
               self->mSessionHistory->LegacySHistory();
 
