@@ -14,7 +14,6 @@ class nsIPrincipal;
 
 namespace mozilla {
 class DOMMediaStream;
-class MediaStreamListener;
 class SourceMediaStream;
 
 namespace layers {
@@ -25,12 +24,6 @@ namespace dom {
 class CanvasCaptureMediaStream;
 class HTMLCanvasElement;
 class OutputStreamFrameListener;
-
-
-
-
-
-
 
 
 
@@ -93,12 +86,11 @@ class OutputStreamDriver : public FrameCaptureListener {
 
  protected:
   virtual ~OutputStreamDriver();
-  class StreamListener;
-  class TrackListener;
 
  private:
+  const TrackID mTrackId;
   const RefPtr<SourceMediaStream> mSourceStream;
-  const RefPtr<TrackListener> mTrackListener;
+  const PrincipalHandle mPrincipalHandle;
 };
 
 class CanvasCaptureMediaStream : public DOMMediaStream {
