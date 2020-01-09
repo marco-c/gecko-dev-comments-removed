@@ -140,8 +140,9 @@ class Frame extends Component {
     
     
     
+    
     const isLinkable = !!(isScratchpadScheme(source) || parseURL(source))
-      || isSourceMapped;
+      || isSourceMapped || sourceId;
     const elements = [];
     const sourceElements = [];
     let sourceEl;
