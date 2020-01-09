@@ -15,7 +15,7 @@ use crate::values::generics::effects::SimpleShadow as GenericSimpleShadow;
 use crate::values::Impossible;
 
 
-type AnimatedSimpleShadow = GenericSimpleShadow<Color, Length, Length>;
+pub type AnimatedSimpleShadow = GenericSimpleShadow<Color, Length, Length>;
 
 
 #[cfg(feature = "gecko")]
