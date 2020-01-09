@@ -94,6 +94,9 @@ pref("devtools.markup.collapseAttributes", true);
 pref("devtools.markup.collapseAttributeLength", 120);
 
 
+pref("devtools.markup.beautifyOnCopy", false);
+
+
 pref("devtools.defaultColorUnit", "authored");
 
 

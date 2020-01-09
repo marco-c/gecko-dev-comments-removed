@@ -11,7 +11,6 @@ const promise = require("promise");
 loader.lazyRequireGetter(this, "KeyCodes", "devtools/client/shared/keycodes", true);
 loader.lazyRequireGetter(this, "getCSSLexer", "devtools/shared/css/lexer", true);
 loader.lazyRequireGetter(this, "parseDeclarations", "devtools/shared/css/parsing-utils", true);
-loader.lazyRequireGetter(this, "clipboardHelper", "devtools/shared/platform/clipboard");
 
 const HTML_NS = "http://www.w3.org/1999/xhtml";
 
@@ -81,21 +80,6 @@ function blurOnMultipleProperties(cssProperties) {
       }
     }, 0);
   };
-}
-
-
-
-
-
-
-
-
-
-
-function copyLongString(longStringActorPromise) {
-  return getLongString(longStringActorPromise).then(string => {
-    clipboardHelper.copyString(string);
-  }).catch(console.error);
 }
 
 
@@ -228,7 +212,6 @@ function translateNodeFrontToGrip(nodeFront) {
 exports.advanceValidate = advanceValidate;
 exports.appendText = appendText;
 exports.blurOnMultipleProperties = blurOnMultipleProperties;
-exports.copyLongString = copyLongString;
 exports.createChild = createChild;
 exports.getLongString = getLongString;
 exports.getSelectorFromGrip = getSelectorFromGrip;
