@@ -289,8 +289,23 @@ async function GetCookiesResource(aProfileFolder) {
 
     async migrate(aCallback) {
       
+      let columns = await MigrationUtils.getRowsFromDBWithoutLocks(cookiesPath, "Chrome cookies",
+        `PRAGMA table_info(cookies)`).catch(ex => {
+          Cu.reportError(ex);
+          aCallback(false);
+        });
+      
+      
+      if (!columns) {
+        return;
+      }
+      columns = columns.map(c => c.getResultByName("name"));
+      let isHttponly = columns.includes("is_httponly") ? "is_httponly" : "httponly";
+      let isSecure = columns.includes("is_secure") ? "is_secure" : "secure";
+
+      
       let rows = await MigrationUtils.getRowsFromDBWithoutLocks(cookiesPath, "Chrome cookies",
-       `SELECT host_key, name, value, path, expires_utc, secure, httponly, encrypted_value
+       `SELECT host_key, name, value, path, expires_utc, ${isSecure}, ${isHttponly}, encrypted_value
         FROM cookies
         WHERE length(encrypted_value) = 0`).catch(ex => {
           Cu.reportError(ex);
@@ -316,8 +331,8 @@ async function GetCookiesResource(aProfileFolder) {
                                row.getResultByName("path"),
                                row.getResultByName("name"),
                                row.getResultByName("value"),
-                               row.getResultByName("secure"),
-                               row.getResultByName("httponly"),
+                               row.getResultByName(isSecure),
+                               row.getResultByName(isHttponly),
                                false,
                                parseInt(expiresUtc),
                                {},
