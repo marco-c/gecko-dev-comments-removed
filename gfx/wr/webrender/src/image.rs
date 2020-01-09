@@ -3,9 +3,12 @@
 
 
 use api::{TileOffset, TileRange, LayoutRect, LayoutSize, LayoutPoint};
-use api::{DeviceIntSize, DeviceIntRect};
-use euclid::{vec2, point2};
+use api::{DeviceIntSize, DeviceIntRect, TileSize};
+use euclid::{point2, size2};
 use prim_store::EdgeAaSegmentMask;
+
+use std::i32;
+use std::ops::Range;
 
 
 
@@ -155,69 +158,82 @@ pub struct Tile {
     pub edge_flags: EdgeAaSegmentMask,
 }
 
+#[derive(Debug)]
+pub struct TileIteratorExtent {
+    
+    tile_range: Range<i32>,
+    
+    first_tile_layout_size: f32,
+    
+    last_tile_layout_size: f32,
+}
+
+#[derive(Debug)]
 pub struct TileIterator {
-    current_x: i32,
-    x_count: i32,
-    current_y: i32,
-    y_count: i32,
-    origin: TileOffset,
-    tile_size: LayoutSize,
-    leftover_offset: TileOffset,
-    leftover_size: LayoutSize,
+    current_tile: TileOffset,
+    x: TileIteratorExtent,
+    y: TileIteratorExtent,
+    regular_tile_size: LayoutSize,
     local_origin: LayoutPoint,
-    row_flags: EdgeAaSegmentMask,
 }
 
 impl Iterator for TileIterator {
     type Item = Tile;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.current_x == self.x_count {
-            self.current_y += 1;
-            if self.current_y >= self.y_count {
+        if self.current_tile.x >= self.x.tile_range.end {
+            self.current_tile.y += 1;
+            if self.current_tile.y >= self.y.tile_range.end {
                 return None;
             }
-            self.current_x = 0;
-            self.row_flags = EdgeAaSegmentMask::empty();
-            if self.current_y == self.y_count - 1 {
-                self.row_flags |= EdgeAaSegmentMask::BOTTOM;
-            }
+            self.current_tile.x = self.x.tile_range.start;
         }
 
-        let tile_offset = self.origin + vec2(self.current_x, self.current_y);
+        let tile_offset = self.current_tile;
 
         let mut segment_rect = LayoutRect {
             origin: LayoutPoint::new(
-                self.local_origin.x + tile_offset.x as f32 * self.tile_size.width,
-                self.local_origin.y + tile_offset.y as f32 * self.tile_size.height,
+                self.local_origin.x + tile_offset.x as f32 * self.regular_tile_size.width,
+                self.local_origin.y + tile_offset.y as f32 * self.regular_tile_size.height,
             ),
-            size: self.tile_size,
+            size: self.regular_tile_size,
         };
 
-        if tile_offset.x == self.leftover_offset.x {
-            segment_rect.size.width = self.leftover_size.width;
-        }
+        let mut edge_flags = EdgeAaSegmentMask::empty();
 
-        if tile_offset.y == self.leftover_offset.y {
-            segment_rect.size.height = self.leftover_size.height;
-        }
-
-        let mut edge_flags = self.row_flags;
-        if self.current_x == 0 {
+        if tile_offset.x == self.x.tile_range.start {
             edge_flags |= EdgeAaSegmentMask::LEFT;
+            segment_rect.size.width = self.x.first_tile_layout_size;
+            
+            
+            segment_rect.origin.x += self.regular_tile_size.width - self.x.first_tile_layout_size;
         }
-
-        if self.current_x == self.x_count - 1 {
+        if tile_offset.x == self.x.tile_range.end - 1 {
             edge_flags |= EdgeAaSegmentMask::RIGHT;
+            segment_rect.size.width = self.x.last_tile_layout_size;
         }
 
+        if tile_offset.y == self.y.tile_range.start {
+            segment_rect.size.height = self.y.first_tile_layout_size;
+            
+            
+            segment_rect.origin.y += self.regular_tile_size.height - self.y.first_tile_layout_size;
+            edge_flags |= EdgeAaSegmentMask::TOP;
+        }
+        if tile_offset.y == self.y.tile_range.end - 1 {
+            segment_rect.size.height = self.y.last_tile_layout_size;
+            edge_flags |= EdgeAaSegmentMask::BOTTOM;
+        }
+
+        assert!(tile_offset.y < self.y.tile_range.end);
         let tile = Tile {
             rect: segment_rect,
             offset: tile_offset,
             edge_flags,
         };
 
-        self.current_x += 1;
+        self.current_tile.x += 1;
+
         Some(tile)
     }
 }
@@ -252,7 +268,8 @@ pub fn tiles(
     
     
     
-
+    
+    
     
     
 
@@ -260,102 +277,259 @@ pub fn tiles(
         Some(rect) => rect,
         None => {
             return TileIterator {
-                current_x: 0,
-                current_y: 0,
-                x_count: 0,
-                y_count: 0,
-                row_flags: EdgeAaSegmentMask::empty(),
-                origin: TileOffset::zero(),
-                tile_size: LayoutSize::zero(),
-                leftover_offset: TileOffset::zero(),
-                leftover_size: LayoutSize::zero(),
+                current_tile: TileOffset::zero(),
+                x: TileIteratorExtent {
+                    tile_range: 0..0,
+                    first_tile_layout_size: 0.0,
+                    last_tile_layout_size: 0.0,
+                },
+                y: TileIteratorExtent {
+                    tile_range: 0..0,
+                    first_tile_layout_size: 0.0,
+                    last_tile_layout_size: 0.0,
+                },
+                regular_tile_size: LayoutSize::zero(),
                 local_origin: LayoutPoint::zero(),
             }
         }
     };
 
-    let device_tile_size_f32 = device_tile_size as f32;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let layout_tiling_origin = prim_rect.origin;
+    let device_image_range_x = 0..device_image_size.width;
+    let device_image_range_y = 0..device_image_size.height;
 
     
-    let tile_dw = device_tile_size_f32 / (device_image_size.width as f32);
-    let tile_dh = device_tile_size_f32 / (device_image_size.height as f32);
+    
+    let x_device_tile_size = i32::min(device_tile_size, device_image_size.width);
+    let y_device_tile_size = i32::min(device_tile_size, device_image_size.height);
 
     
-    let layer_tile_size = LayoutSize::new(
-        tile_dw * prim_rect.size.width,
-        tile_dh * prim_rect.size.height,
+    let layout_tile_size = LayoutSize::new(
+        x_device_tile_size as f32 / device_image_size.width as f32 * prim_rect.size.width,
+        y_device_tile_size as f32 / device_image_size.height as f32 * prim_rect.size.height,
     );
 
     
     
-    
-    let leftover_device_size = DeviceIntSize::new(
-        device_image_size.width % device_tile_size,
-        device_image_size.height % device_tile_size
+
+    let x_extent = tiles_1d(
+        layout_tile_size.width,
+        visible_rect.min_x()..visible_rect.max_x(),
+        device_image_range_x,
+        x_device_tile_size,
+        layout_tiling_origin.x,
     );
 
-    
-    let leftover_layer_size = LayoutSize::new(
-        layer_tile_size.width * leftover_device_size.width as f32 / device_tile_size_f32,
-        layer_tile_size.height * leftover_device_size.height as f32 / device_tile_size_f32,
+    let y_extent = tiles_1d(
+        layout_tile_size.height,
+        visible_rect.min_y()..visible_rect.max_y(),
+        device_image_range_y,
+        y_device_tile_size,
+        layout_tiling_origin.y,
     );
 
-    
-    let leftover_offset = TileOffset::new(
-        device_image_size.width / device_tile_size,
-        device_image_size.height / device_tile_size,
-    );
-
-    
-    let t0 = TileOffset::new(
-        if visible_rect.origin.x > prim_rect.origin.x {
-            f32::floor((visible_rect.origin.x - prim_rect.origin.x) / layer_tile_size.width) as i32
-        } else {
-            0
-        },
-        if visible_rect.origin.y > prim_rect.origin.y {
-            f32::floor((visible_rect.origin.y - prim_rect.origin.y) / layer_tile_size.height) as i32
-        } else {
-            0
-        },
-    );
-
-    
-    
-    
-    let x_max = {
-        let result = f32::ceil((visible_rect.max_x() - prim_rect.origin.x) / layer_tile_size.width) as i32;
-        if result == leftover_offset.x + 1 && leftover_layer_size.width == 0.0f32 {
-            leftover_offset.x
-        } else {
-            result
-        }
-    };
-    let y_max = {
-        let result = f32::ceil((visible_rect.max_y() - prim_rect.origin.y) / layer_tile_size.height) as i32;
-        if result == leftover_offset.y + 1 && leftover_layer_size.height == 0.0f32 {
-            leftover_offset.y
-        } else {
-            result
-        }
-    };
-
-    let mut row_flags = EdgeAaSegmentMask::TOP;
-    if y_max - t0.y == 1 {
-        row_flags |= EdgeAaSegmentMask::BOTTOM;
-    }
     TileIterator {
-        current_x: 0,
-        current_y: 0,
-        x_count: x_max - t0.x,
-        y_count: y_max - t0.y,
-        row_flags,
-        origin: t0,
-        tile_size: layer_tile_size,
-        leftover_offset,
-        leftover_size: leftover_layer_size,
+        current_tile: point2(
+            x_extent.tile_range.start,
+            y_extent.tile_range.start,
+        ),
+        x: x_extent,
+        y: y_extent,
+        regular_tile_size: layout_tile_size,
         local_origin: prim_rect.origin,
     }
+}
+
+
+
+
+
+fn tiles_1d(
+    layout_tile_size: f32,
+    layout_visible_range: Range<f32>,
+    device_image_range: Range<i32>,
+    device_tile_size: i32,
+    layout_tiling_origin: f32,
+) -> TileIteratorExtent {
+    
+    debug_assert!(layout_tile_size > 0.0);
+    debug_assert!(layout_visible_range.end >= layout_visible_range.start);
+    debug_assert!(device_image_range.end > device_image_range.start);
+    debug_assert!(device_tile_size > 0);
+
+    
+    let first_tile_device_size = first_tile_size_1d(&device_image_range, device_tile_size);
+    let last_tile_device_size = last_tile_size_1d(&device_image_range, device_tile_size);
+
+    
+    
+    let image_tiles = tile_range_1d(&device_image_range, device_tile_size);
+
+    
+    let visible_tiles_start = f32::floor((layout_visible_range.start - layout_tiling_origin) / layout_tile_size) as i32;
+    let visible_tiles_end = f32::ceil((layout_visible_range.end - layout_tiling_origin) / layout_tile_size) as i32;
+
+    
+
+    let tiles_start = i32::max(image_tiles.start, visible_tiles_start);
+    let tiles_end = i32::min(image_tiles.end, visible_tiles_end);
+
+    
+    let first_tile_layout_size = if tiles_start == image_tiles.start {
+        first_tile_device_size as f32 * layout_tile_size / device_tile_size as f32
+    } else {
+        
+        layout_tile_size
+    };
+
+    
+    let last_tile_layout_size = if tiles_end == image_tiles.end {
+        last_tile_device_size as f32 * layout_tile_size / device_tile_size as f32
+    } else {
+        layout_tile_size
+    };
+
+    TileIteratorExtent {
+        tile_range: tiles_start..tiles_end,
+        first_tile_layout_size,
+        last_tile_layout_size,
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+fn tile_range_1d(
+    image_range: &Range<i32>,
+    regular_tile_size: i32,
+) -> Range<i32> {
+    
+    
+
+    let mut start = image_range.start / regular_tile_size;
+    if image_range.start % regular_tile_size < 0 {
+        start -= 1;
+    }
+
+    let mut end = image_range.end / regular_tile_size;
+    if image_range.end % regular_tile_size > 0 {
+        end += 1;
+    }
+
+    start..end
+}
+
+
+
+
+
+fn first_tile_size_1d(
+    image_range: &Range<i32>,
+    regular_tile_size: i32,
+) -> i32 {
+    
+    let image_size = image_range.end - image_range.start;
+    i32::min(
+        match image_range.start % regular_tile_size {
+            
+            
+            0 => regular_tile_size,
+            
+            
+            
+            m if m > 0 => regular_tile_size - m,
+            
+            
+            
+            m => -m,
+        },
+        image_size
+    )
+}
+
+
+
+
+
+fn last_tile_size_1d(
+    image_range: &Range<i32>,
+    regular_tile_size: i32,
+) -> i32 {
+    
+    let image_size = image_range.end - image_range.start;
+    i32::min(
+        match image_range.end % regular_tile_size {
+            
+            
+            0 => regular_tile_size,
+            
+            
+            
+            m if m < 0 => regular_tile_size + m,
+            
+            
+            
+            m => m,
+        },
+        image_size,
+    )
+}
+
+
+pub fn compute_tile_size(
+    image_rect: &DeviceIntRect,
+    regular_tile_size: TileSize,
+    tile: TileOffset,
+) -> DeviceIntSize {
+    let regular_tile_size = regular_tile_size as i32;
+    size2(
+        compute_tile_size_1d(image_rect.min_x()..image_rect.max_x(), regular_tile_size, tile.x as i32),
+        compute_tile_size_1d(image_rect.min_y()..image_rect.max_y(), regular_tile_size, tile.y as i32),
+    )
+}
+
+fn compute_tile_size_1d(
+    img_range: Range<i32>,
+    regular_tile_size: i32,
+    tile_offset: i32,
+) -> i32 {
+    let tile_range = tile_range_1d(&img_range, regular_tile_size);
+
+    
+    
+    let actual_size = if tile_offset == tile_range.start {
+        first_tile_size_1d(&img_range, regular_tile_size)
+    } else if tile_offset == tile_range.end - 1 {
+        last_tile_size_1d(&img_range, regular_tile_size)
+    } else {
+        regular_tile_size
+    };
+
+    assert!(actual_size > 0);
+
+    actual_size
 }
 
 pub fn compute_tile_range(
@@ -386,9 +560,9 @@ pub fn for_each_tile_in_range(
     range: &TileRange,
     mut callback: impl FnMut(TileOffset),
 ) {
-    for y in 0..range.size.height {
-        for x in 0..range.size.width {
-            callback(range.origin + vec2(x, y));
+    for y in range.min_y()..range.max_y() {
+        for x in range.min_x()..range.max_x() {
+            callback(point2(x, y));
         }
     }
 }
@@ -453,5 +627,107 @@ mod tests {
               },
         );
         assert_eq!(count, 0);
+    }
+
+    #[test]
+    fn test_tiles_1d() {
+        
+        let result = tiles_1d(64.0, -10000.0..10000.0, 0..64, 64, 0.0);
+        assert_eq!(result.tile_range.start, 0);
+        assert_eq!(result.tile_range.end, 1);
+        assert_eq!(result.first_tile_layout_size, 64.0);
+        assert_eq!(result.last_tile_layout_size, 64.0);
+
+        
+        let result = tiles_1d(64.0, -10000.0..10000.0, -64..0, 64, 0.0);
+        assert_eq!(result.tile_range.start, -1);
+        assert_eq!(result.tile_range.end, 0);
+        assert_eq!(result.first_tile_layout_size, 64.0);
+        assert_eq!(result.last_tile_layout_size, 64.0);
+
+        
+        let result = tiles_1d(64.0, -10000.0..10000.0, -64..64, 64, 0.0);
+        assert_eq!(result.tile_range.start, -1);
+        assert_eq!(result.tile_range.end, 1);
+        assert_eq!(result.first_tile_layout_size, 64.0);
+        assert_eq!(result.last_tile_layout_size, 64.0);
+
+        
+        let result = tiles_1d(64.0, -100.0..10.0, 64..310, 64, 0.0);
+        assert_eq!(result.tile_range.start, result.tile_range.end);
+
+        
+        
+        let result = tiles_1d(64.0, 10.0..10000.0, -64..64, 64, 0.0);
+        assert_eq!(result.tile_range.start, 0);
+        assert_eq!(result.tile_range.end, 1);
+        assert_eq!(result.first_tile_layout_size, 64.0);
+        assert_eq!(result.last_tile_layout_size, 64.0);
+        let result = tiles_1d(64.0, -10000.0..-10.0, -64..64, 64, 0.0);
+        assert_eq!(result.tile_range.start, -1);
+        assert_eq!(result.tile_range.end, 0);
+        assert_eq!(result.first_tile_layout_size, 64.0);
+        assert_eq!(result.last_tile_layout_size, 64.0);
+
+        
+        
+        let result = tiles_1d(128.0, -10000.0..10000.0, -64..32, 64, 0.0);
+        assert_eq!(result.tile_range.start, -1);
+        assert_eq!(result.tile_range.end, 1);
+        assert_eq!(result.first_tile_layout_size, 128.0);
+        assert_eq!(result.last_tile_layout_size, 64.0);
+
+        
+        let result = tiles_1d(10.0, 0.0..20.0, 0..64, 64, 0.0);
+        assert_eq!(result.tile_range.start, 0);
+        assert_eq!(result.tile_range.end, 1);
+        assert_eq!(result.first_tile_layout_size, 10.0);
+        assert_eq!(result.last_tile_layout_size, 10.0);
+
+        
+        let result = tiles_1d(10.0, -20.0..0.0, 0..64, 64, -20.0);
+        assert_eq!(result.tile_range.start, 0);
+        assert_eq!(result.tile_range.end, 1);
+        assert_eq!(result.first_tile_layout_size, 10.0);
+        assert_eq!(result.last_tile_layout_size, 10.0);
+    }
+
+    #[test]
+    fn test_tile_range_1d() {
+        assert_eq!(tile_range_1d(&(0..256), 256), 0..1);
+        assert_eq!(tile_range_1d(&(0..257), 256), 0..2);
+        assert_eq!(tile_range_1d(&(-1..257), 256), -1..2);
+        assert_eq!(tile_range_1d(&(-256..256), 256), -1..1);
+        assert_eq!(tile_range_1d(&(-20..-10), 6), -4..-1);
+    }
+
+    #[test]
+    fn test_first_last_tile_size_1d() {
+        assert_eq!(first_tile_size_1d(&(0..10), 64), 10);
+        assert_eq!(first_tile_size_1d(&(-20..0), 64), 20);
+
+        assert_eq!(last_tile_size_1d(&(0..10), 64), 10);
+        assert_eq!(last_tile_size_1d(&(-20..0), 64), 20);
+    }
+
+    #[test]
+    fn doubly_partial_tiles() {
+        
+        
+        
+        
+        assert_eq!(first_tile_size_1d(&(300..310), 64), 10);
+        assert_eq!(first_tile_size_1d(&(-20..-10), 64), 10);
+
+        assert_eq!(last_tile_size_1d(&(300..310), 64), 10);
+        assert_eq!(last_tile_size_1d(&(-20..-10), 64), 10);
+
+
+        
+        let result = tiles_1d(64.0, -10000.0..10000.0, 300..310, 64, 0.0);
+        assert_eq!(result.tile_range.start, 4);
+        assert_eq!(result.tile_range.end, 5);
+        assert_eq!(result.first_tile_layout_size, 10.0);
+        assert_eq!(result.last_tile_layout_size, 10.0);
     }
 }
