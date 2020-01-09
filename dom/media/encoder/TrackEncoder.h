@@ -350,6 +350,18 @@ class VideoTrackEncoder : public TrackEncoder {
   
 
 
+  void Disable(const TimeStamp& aTime);
+
+  
+
+
+
+
+  void Enable(const TimeStamp& aTime);
+
+  
+
+
 
 
   void AppendVideoSegment(VideoSegment&& aSegment);
@@ -508,6 +520,12 @@ class VideoTrackEncoder : public TrackEncoder {
 
 
   int32_t mKeyFrameInterval;
+
+  
+
+
+
+  bool mEnabled;
 };
 
 }  
