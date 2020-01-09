@@ -1768,7 +1768,13 @@ bool InterSliceGCRunnerFired(TimeStamp aDeadline, void* aData) {
         uint32_t(idleDuration.ToSeconds() / duration.ToSeconds() * 100);
     Telemetry::Accumulate(Telemetry::GC_SLICE_DURING_IDLE, percent);
   }
-  return true;
+
+  
+  
+  
+  
+  
+  return int64_t(sliceDuration.ToMilliseconds()) >= budget;
 }
 
 
