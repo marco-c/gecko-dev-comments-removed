@@ -41,6 +41,8 @@
 
 #define NS_FAVICONSERVICE_CONTRACTID "@mozilla.org/browser/favicon-service;1"
 
+#define NS_KEY_VALUE_SERVICE_CONTRACTID "@mozilla.org/key-value-service;1"
+
 
 
 
@@ -131,5 +133,13 @@
   {                                                  \
     0x984e3259, 0x9266, 0x49cf, {                    \
       0xb6, 0x05, 0x60, 0xb0, 0x22, 0xa0, 0x07, 0x56 \
+    }                                                \
+  }
+
+
+#define NS_KEY_VALUE_SERVICE_CID                     \
+  {                                                  \
+    0x6cc1a0a8, 0xaf97, 0x4d41, {                    \
+      0x9b, 0x4a, 0x58, 0xdc, 0xec, 0x46, 0xeb, 0xce \
     }                                                \
   }

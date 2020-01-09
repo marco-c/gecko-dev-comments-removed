@@ -578,3 +578,39 @@ bool nsIEventTarget::IsOnCurrentThread() {
   }
   return IsOnCurrentThreadInfallible();
 }
+
+extern "C" {
+
+
+
+
+nsresult NS_GetCurrentThreadEventTarget(nsIEventTarget** aResult) {
+  nsCOMPtr<nsIEventTarget> target = mozilla::GetCurrentThreadEventTarget();
+  if (!target) {
+    return NS_ERROR_UNEXPECTED;
+  }
+  target.forget(aResult);
+  return NS_OK;
+}
+
+nsresult NS_GetMainThreadEventTarget(nsIEventTarget** aResult) {
+  nsCOMPtr<nsIEventTarget> target = mozilla::GetMainThreadEventTarget();
+  if (!target) {
+    return NS_ERROR_UNEXPECTED;
+  }
+  target.forget(aResult);
+  return NS_OK;
+}
+
+
+
+
+
+
+
+nsresult NS_NewNamedThreadWithDefaultStackSize(const nsACString& aName,
+                                               nsIThread** aResult,
+                                               nsIRunnable* aEvent) {
+  return NS_NewNamedThread(aName, aResult, aEvent);
+}
+}

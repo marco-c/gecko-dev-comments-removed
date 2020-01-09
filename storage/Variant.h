@@ -33,6 +33,13 @@
 
 
 
+
+
+
+
+
+
+
 namespace mozilla {
 namespace storage {
 
@@ -78,6 +85,13 @@ struct variant_storage_traits {
 #define NO_CONVERSION return NS_ERROR_CANNOT_CONVERT_DATA;
 
 template <typename DataType, bool Adopting = false>
+struct variant_boolean_traits {
+  typedef typename variant_storage_traits<DataType, Adopting>::StorageType
+      StorageType;
+  static inline nsresult asBool(const StorageType &, bool *) { NO_CONVERSION }
+};
+
+template <typename DataType, bool Adopting = false>
 struct variant_integer_traits {
   typedef typename variant_storage_traits<DataType, Adopting>::StorageType
       StorageType;
@@ -121,6 +135,30 @@ struct variant_blob_traits {
 };
 
 #undef NO_CONVERSION
+
+
+
+
+
+template <>
+struct variant_traits<bool> {
+  static inline uint16_t type() { return nsIDataType::VTYPE_BOOL; }
+};
+template <>
+struct variant_boolean_traits<bool> {
+  static inline nsresult asBool(bool aValue, bool *_result) {
+    *_result = aValue;
+    return NS_OK;
+  }
+
+  
+
+  
+  
+  
+  
+  
+};
 
 
 
@@ -347,6 +385,11 @@ class Variant final : public Variant_base {
   }
 
   uint16_t GetDataType() override { return variant_traits<DataType>::type(); }
+
+  NS_IMETHOD GetAsBool(bool *_boolean) override {
+    return variant_boolean_traits<DataType, Adopting>::asBool(mData, _boolean);
+  }
+
   NS_IMETHOD GetAsInt32(int32_t *_integer) override {
     return variant_integer_traits<DataType, Adopting>::asInt32(mData, _integer);
   }
@@ -380,6 +423,10 @@ class Variant final : public Variant_base {
 
 
 
+
+
+typedef Variant<bool> BooleanVariant;
+
 typedef Variant<int64_t> IntegerVariant;
 typedef Variant<double> FloatVariant;
 typedef Variant<nsString> TextVariant;
@@ -392,4 +439,4 @@ typedef Variant<uint8_t[], true> AdoptedBlobVariant;
 
 #include "Variant_inl.h"
 
-#endif  
+#endif

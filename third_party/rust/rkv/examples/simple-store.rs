@@ -35,14 +35,14 @@ fn main() {
     {
         
         let mut writer = k.write().unwrap();
-        writer.put(&store, "int", &Value::I64(1234)).unwrap();
-        writer.put(&store, "uint", &Value::U64(1234_u64)).unwrap();
-        writer.put(&store, "float", &Value::F64(1234.0.into())).unwrap();
-        writer.put(&store, "instant", &Value::Instant(1528318073700)).unwrap();
-        writer.put(&store, "boolean", &Value::Bool(true)).unwrap();
-        writer.put(&store, "string", &Value::Str("héllo, yöu")).unwrap();
-        writer.put(&store, "json", &Value::Json(r#"{"foo":"bar", "number": 1}"#)).unwrap();
-        writer.put(&store, "blob", &Value::Blob(b"blob")).unwrap();
+        writer.put(store, "int", &Value::I64(1234)).unwrap();
+        writer.put(store, "uint", &Value::U64(1234_u64)).unwrap();
+        writer.put(store, "float", &Value::F64(1234.0.into())).unwrap();
+        writer.put(store, "instant", &Value::Instant(1528318073700)).unwrap();
+        writer.put(store, "boolean", &Value::Bool(true)).unwrap();
+        writer.put(store, "string", &Value::Str("héllo, yöu")).unwrap();
+        writer.put(store, "json", &Value::Json(r#"{"foo":"bar", "number": 1}"#)).unwrap();
+        writer.put(store, "blob", &Value::Blob(b"blob")).unwrap();
         writer.commit().unwrap();
     }
 
@@ -50,40 +50,40 @@ fn main() {
     {
         
         let reader = k.read().unwrap();
-        println!("Get int {:?}", reader.get(&store, "int").unwrap());
-        println!("Get uint {:?}", reader.get(&store, "uint").unwrap());
-        println!("Get float {:?}", reader.get(&store, "float").unwrap());
-        println!("Get instant {:?}", reader.get(&store, "instant").unwrap());
-        println!("Get boolean {:?}", reader.get(&store, "boolean").unwrap());
-        println!("Get string {:?}", reader.get(&store, "string").unwrap());
-        println!("Get json {:?}", reader.get(&store, "json").unwrap());
-        println!("Get blob {:?}", reader.get(&store, "blob").unwrap());
-        println!("Get non-existent {:?}", reader.get(&store, "non-existent").unwrap());
+        println!("Get int {:?}", reader.get(store, "int").unwrap());
+        println!("Get uint {:?}", reader.get(store, "uint").unwrap());
+        println!("Get float {:?}", reader.get(store, "float").unwrap());
+        println!("Get instant {:?}", reader.get(store, "instant").unwrap());
+        println!("Get boolean {:?}", reader.get(store, "boolean").unwrap());
+        println!("Get string {:?}", reader.get(store, "string").unwrap());
+        println!("Get json {:?}", reader.get(store, "json").unwrap());
+        println!("Get blob {:?}", reader.get(store, "blob").unwrap());
+        println!("Get non-existent {:?}", reader.get(store, "non-existent").unwrap());
     }
 
     println!("Looking up keys via Writer.get()...");
     {
         let mut writer = k.write().unwrap();
-        writer.put(&store, "foo", &Value::Str("bar")).unwrap();
-        writer.put(&store, "bar", &Value::Str("baz")).unwrap();
-        writer.delete(&store, "foo").unwrap();
-        println!("It should be None! ({:?})", writer.get(&store, "foo").unwrap());
-        println!("Get bar ({:?})", writer.get(&store, "bar").unwrap());
+        writer.put(store, "foo", &Value::Str("bar")).unwrap();
+        writer.put(store, "bar", &Value::Str("baz")).unwrap();
+        writer.delete(store, "foo").unwrap();
+        println!("It should be None! ({:?})", writer.get(store, "foo").unwrap());
+        println!("Get bar ({:?})", writer.get(store, "bar").unwrap());
         writer.commit().unwrap();
         let reader = k.read().expect("reader");
-        println!("It should be None! ({:?})", reader.get(&store, "foo").unwrap());
-        println!("Get bar {:?}", reader.get(&store, "bar").unwrap());
+        println!("It should be None! ({:?})", reader.get(store, "foo").unwrap());
+        println!("Get bar {:?}", reader.get(store, "bar").unwrap());
     }
 
     println!("Aborting transaction...");
     {
         
         let mut writer = k.write().unwrap();
-        writer.put(&store, "foo", &Value::Str("bar")).unwrap();
+        writer.put(store, "foo", &Value::Str("bar")).unwrap();
         writer.abort();
 
         let reader = k.read().expect("reader");
-        println!("It should be None! ({:?})", reader.get(&store, "foo").unwrap());
+        println!("It should be None! ({:?})", reader.get(store, "foo").unwrap());
         
         
         
@@ -93,9 +93,9 @@ fn main() {
     {
         
         let mut writer = k.write().unwrap();
-        writer.put(&store, "foo", &Value::Str("bar")).unwrap();
-        writer.delete(&store, "foo").unwrap();
-        println!("It should be None! ({:?})", writer.get(&store, "foo").unwrap());
+        writer.put(store, "foo", &Value::Str("bar")).unwrap();
+        writer.delete(store, "foo").unwrap();
+        println!("It should be None! ({:?})", writer.get(store, "foo").unwrap());
         writer.commit().unwrap();
 
         
@@ -108,12 +108,12 @@ fn main() {
     {
         let another_store = k.open_or_create("another_store").unwrap();
         let mut writer = k.write().unwrap();
-        writer.put(&store, "foo", &Value::Str("bar")).unwrap();
-        writer.put(&another_store, "foo", &Value::Str("baz")).unwrap();
+        writer.put(store, "foo", &Value::Str("bar")).unwrap();
+        writer.put(another_store, "foo", &Value::Str("baz")).unwrap();
         writer.commit().unwrap();
 
         let reader = k.read().unwrap();
-        println!("Get from store value: {:?}", reader.get(&store, "foo").unwrap());
-        println!("Get from another store value: {:?}", reader.get(&another_store, "foo").unwrap());
+        println!("Get from store value: {:?}", reader.get(store, "foo").unwrap());
+        println!("Get from another store value: {:?}", reader.get(another_store, "foo").unwrap());
     }
 }

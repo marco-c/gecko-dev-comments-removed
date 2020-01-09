@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+use parser;
+use std::error;
+
+impl error::Error for parser::ParseError {
+    fn description(&self) -> &str {
+        self._description()
+    }
+}

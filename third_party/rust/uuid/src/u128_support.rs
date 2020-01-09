@@ -18,6 +18,7 @@ impl Uuid {
     
     
     
+    
     #[inline]
     pub fn from_u128(quad: u128) -> Self {
         Uuid::from(quad)
@@ -26,7 +27,7 @@ impl Uuid {
 
 impl From<u128> for Uuid {
     fn from(f: u128) -> Self {
-        let mut bytes = [0; 16];
+        let mut bytes: ::Bytes = [0; 16];
 
         {
             use byteorder::ByteOrder;
@@ -34,7 +35,7 @@ impl From<u128> for Uuid {
             byteorder::NativeEndian::write_u128(&mut bytes[..], f);
         }
 
-        Uuid { bytes }
+        Uuid::from_bytes(bytes)
     }
 }
 

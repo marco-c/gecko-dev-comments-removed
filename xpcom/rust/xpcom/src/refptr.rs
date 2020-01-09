@@ -15,6 +15,8 @@ use libc;
 
 use interfaces::nsrefcnt;
 
+use threadbound::ThreadBound;
+
 
 
 
@@ -107,6 +109,35 @@ impl <T: RefCounted + 'static> Clone for RefPtr<T> {
     #[inline]
     fn clone(&self) -> RefPtr<T> {
         RefPtr::new(self)
+    }
+}
+
+
+
+
+
+
+
+
+pub struct ThreadBoundRefPtr<T: RefCounted + 'static>(ThreadBound<*const T>);
+
+impl<T: RefCounted + 'static> ThreadBoundRefPtr<T> {
+    pub fn new(ptr: RefPtr<T>) -> Self {
+        let raw: *const T = &*ptr;
+        mem::forget(ptr);
+        ThreadBoundRefPtr(ThreadBound::new(raw))
+    }
+
+    pub fn get_ref(&self) -> Option<&T> {
+        self.0.get_ref().map(|raw| unsafe { &**raw })
+    }
+}
+
+impl<T: RefCounted + 'static> Drop for ThreadBoundRefPtr<T> {
+    fn drop(&mut self) {
+        unsafe {
+            RefPtr::from_raw_dont_addref(self.get_ref().expect("drop() called on wrong thread!"));
+        }
     }
 }
 

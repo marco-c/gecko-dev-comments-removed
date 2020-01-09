@@ -14,6 +14,7 @@
 extern crate libc;
 extern crate nsstring;
 extern crate nserror;
+extern crate threadbound;
 
 
 #[macro_use]
@@ -25,6 +26,10 @@ pub use xpcom_macros::*;
 
 mod base;
 pub use base::*;
+
+
+mod method;
+pub use method::*;
 
 mod refptr;
 pub use refptr::*;
