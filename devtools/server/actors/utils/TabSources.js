@@ -30,6 +30,14 @@ function TabSources(threadActor, allowSourceFn = () => true) {
 
   
   this._sourceActors = new Map();
+
+  
+  
+  
+  
+  
+  
+  this._sourceActorsByInternalSourceId = new Map();
 }
 
 
@@ -61,6 +69,7 @@ TabSources.prototype = {
 
   reset: function() {
     this._sourceActors = new Map();
+    this._sourceActorsByInternalSourceId = new Map();
   },
 
   
@@ -106,6 +115,9 @@ TabSources.prototype = {
     }
 
     this._sourceActors.set(source, actor);
+    if (source.id) {
+      this._sourceActorsByInternalSourceId.set(source.id, actor);
+    }
 
     this.emit("newSource", actor);
     return actor;
@@ -132,6 +144,10 @@ TabSources.prototype = {
     }
 
     return sourceActor;
+  },
+
+  getSourceActorByInternalSourceId: function(id) {
+    return this._sourceActorsByInternalSourceId.get(id) || null;
   },
 
   getSourceActorsByURL: function(url) {
