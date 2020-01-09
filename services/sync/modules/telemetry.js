@@ -477,7 +477,12 @@ class SyncTelemetryImpl {
     this.lastSubmissionTime = Telemetry.msSinceProcessStart();
     this.lastUID = EMPTY_UID;
     this.lastDeviceID = undefined;
-    let sessionStartDate = Services.startup.getStartupInfo().main;
+    
+    
+    
+    
+    
+    let sessionStartDate = new Date();
     this.sessionStartDate = TelemetryUtils.toLocalTimeISOString(
       TelemetryUtils.truncateToHours(sessionStartDate));
   }
