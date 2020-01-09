@@ -2452,7 +2452,7 @@ Toolbox.prototype = {
 
 
 
-  toggleOptions: function() {
+  toggleOptions: function(event) {
     
     
     if (this.currentToolId === "options" &&
@@ -2461,6 +2461,10 @@ Toolbox.prototype = {
     } else {
       this.selectTool("options", "toggle_settings_on");
     }
+
+    
+    
+    event.preventDefault();
   },
 
   
