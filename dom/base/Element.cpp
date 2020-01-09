@@ -1278,6 +1278,14 @@ void Element::NotifyUAWidgetTeardown(UnattachShadowRoot aUnattachShadowRoot) {
         }
         MOZ_ASSERT(self->GetShadowRoot()->IsUAWidget());
 
+        
+        bool hasHadScriptObject = true;
+        nsIScriptGlobalObject* scriptObject =
+            ownerDoc->GetScriptHandlingObject(hasHadScriptObject);
+        if (!scriptObject && hasHadScriptObject) {
+          return;
+        }
+
         nsresult rv = nsContentUtils::DispatchChromeEvent(
             ownerDoc, self, NS_LITERAL_STRING("UAWidgetTeardown"),
             CanBubble::eYes, Cancelable::eNo);
