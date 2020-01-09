@@ -85,6 +85,17 @@ function createContextMenu(webConsoleUI, parentNode, {
   }
 
   
+  if (serviceContainer.resendNetworkRequest && request) {
+    menu.append(new MenuItem({
+      id: "console-menu-resend-network-request",
+      label: l10n.getStr("webconsole.menu.resendNetworkRequest.label"),
+      accesskey: l10n.getStr("webconsole.menu.resendNetworkRequest.accesskey"),
+      visible: source === MESSAGE_SOURCE.NETWORK,
+      click: () => serviceContainer.resendNetworkRequest(message.messageId),
+    }));
+  }
+
+  
   menu.append(new MenuItem({
     id: "console-menu-open-url",
     label: l10n.getStr("webconsole.menu.openURL.label"),
