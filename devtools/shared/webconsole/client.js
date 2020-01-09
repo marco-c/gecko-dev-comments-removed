@@ -219,15 +219,13 @@ WebConsoleClient.prototype = {
 
 
 
-
-
-  getCachedMessages: function(types, onResponse) {
+  getCachedMessages: function(types) {
     const packet = {
       to: this.actorID,
       type: "getCachedMessages",
       messageTypes: types,
     };
-    return this._client.request(packet, onResponse);
+    return this._client.request(packet);
   },
 
   
