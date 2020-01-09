@@ -43,7 +43,7 @@ function NetMonitorAPI() {
   this._requestFinishedListeners = new Set();
 
   
-  this.onRequestAdded = this.onRequestAdded.bind(this);
+  this.onPayloadReady = this.onPayloadReady.bind(this);
   this.actions = bindActionCreators(Actions, this.store.dispatch);
 }
 
@@ -57,7 +57,7 @@ NetMonitorAPI.prototype = {
     this.toolbox = toolbox;
 
     
-    this.on(EVENTS.REQUEST_ADDED, this.onRequestAdded);
+    this.on(EVENTS.PAYLOAD_READY, this.onPayloadReady);
 
     
     
@@ -77,7 +77,7 @@ NetMonitorAPI.prototype = {
 
 
   async destroy() {
-    this.off(EVENTS.REQUEST_ADDED, this.onRequestAdded);
+    this.off(EVENTS.PAYLOAD_READY, this.onPayloadReady);
 
     await this.connector.disconnect();
 
@@ -120,7 +120,7 @@ NetMonitorAPI.prototype = {
 
 
 
-  async onRequestAdded(requestId) {
+  async onPayloadReady(requestId) {
     if (!this._requestFinishedListeners.size) {
       return;
     }
