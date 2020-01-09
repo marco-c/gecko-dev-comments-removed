@@ -655,6 +655,17 @@ exports.isDirectShadowHostChild = isDirectShadowHostChild;
 
 
 
+function isMarkerPseudoElement(node) {
+  return node.nodeName === "_moz_generated_content_marker";
+}
+exports.isMarkerPseudoElement = isMarkerPseudoElement;
+
+
+
+
+
+
+
 function isBeforePseudoElement(node) {
   return node.nodeName === "_moz_generated_content_before";
 }
