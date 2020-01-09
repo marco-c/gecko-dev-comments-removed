@@ -53,38 +53,6 @@ class FilteringWrapper : public Base {
   static const FilteringWrapper singleton;
 };
 
-
-
-
-
-
-class CrossOriginXrayWrapper : public SecurityXrayDOM {
- public:
-  constexpr explicit CrossOriginXrayWrapper(unsigned flags)
-      : SecurityXrayDOM(flags) {}
-
-  virtual bool getOwnPropertyDescriptor(
-      JSContext* cx, JS::Handle<JSObject*> wrapper, JS::Handle<jsid> id,
-      JS::MutableHandle<JS::PropertyDescriptor> desc) const override;
-  virtual bool defineProperty(JSContext* cx, JS::Handle<JSObject*> wrapper,
-                              JS::Handle<jsid> id,
-                              JS::Handle<JS::PropertyDescriptor> desc,
-                              JS::ObjectOpResult& result) const override;
-  virtual bool ownPropertyKeys(JSContext* cx, JS::Handle<JSObject*> wrapper,
-                               JS::AutoIdVector& props) const override;
-  virtual bool delete_(JSContext* cx, JS::Handle<JSObject*> wrapper,
-                       JS::Handle<jsid> id,
-                       JS::ObjectOpResult& result) const override;
-
-  virtual bool getPropertyDescriptor(
-      JSContext* cx, JS::Handle<JSObject*> wrapper, JS::Handle<jsid> id,
-      JS::MutableHandle<JS::PropertyDescriptor> desc) const override;
-
-  virtual bool setPrototype(JSContext* cx, JS::HandleObject wrapper,
-                            JS::HandleObject proto,
-                            JS::ObjectOpResult& result) const override;
-};
-
 }  
 
 #endif 
