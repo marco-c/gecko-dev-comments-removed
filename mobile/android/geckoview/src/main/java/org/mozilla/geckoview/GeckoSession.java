@@ -11,8 +11,6 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.ref.WeakReference;
 import java.util.UUID;
 
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.EventDispatcher;
 import org.mozilla.gecko.GeckoAppShell;
@@ -345,7 +343,6 @@ public class GeckoSession implements Parcelable {
                 "GeckoView:ExternalResponse",
                 "GeckoView:FullScreenEnter",
                 "GeckoView:FullScreenExit",
-                "GeckoView:WebAppManifest",
             }
         ) {
             @Override
@@ -385,17 +382,6 @@ public class GeckoSession implements Parcelable {
                     delegate.onFullScreen(GeckoSession.this, false);
                 } else if ("GeckoView:ExternalResponse".equals(event)) {
                     delegate.onExternalResponse(GeckoSession.this, new WebResponseInfo(message));
-                } else if ("GeckoView:WebAppManifest".equals(event)) {
-                    final GeckoBundle manifest = message.getBundle("manifest");
-                    if (manifest == null) {
-                        return;
-                    }
-
-                    try {
-                        delegate.onWebAppManifest(GeckoSession.this, manifest.toJSONObject());
-                    } catch (JSONException e) {
-                        Log.e(LOGTAG, "Failed to convert web app manifest to JSON", e);
-                    }
                 }
             }
         };
@@ -2771,16 +2757,6 @@ public class GeckoSession implements Parcelable {
 
         @UiThread
         default void onFirstComposite(@NonNull GeckoSession session) {}
-
-        
-
-
-
-
-
-
-        @UiThread
-        default void onWebAppManifest(@NonNull GeckoSession session, @NonNull JSONObject manifest) {}
     }
 
     public interface SelectionActionDelegate {
