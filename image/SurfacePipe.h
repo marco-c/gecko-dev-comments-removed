@@ -425,9 +425,6 @@ class SurfaceFilter {
   
 
   
-  virtual bool IsValidPalettedPipe() const { return false; }
-
-  
 
 
 
@@ -752,54 +749,12 @@ struct SurfaceConfig {
 
 
 
-
 class SurfaceSink final : public AbstractSurfaceSink {
  public:
   nsresult Configure(const SurfaceConfig& aConfig);
 
  protected:
   uint8_t* GetRowPointer() const override;
-};
-
-class PalettedSurfaceSink;
-
-struct PalettedSurfaceConfig {
-  using Filter = PalettedSurfaceSink;
-  Decoder* mDecoder;           
-  gfx::IntSize mOutputSize;    
-  gfx::IntRect mFrameRect;     
-  gfx::SurfaceFormat mFormat;  
-  uint8_t mPaletteDepth;       
-  bool mFlipVertically;        
-  Maybe<AnimationParams> mAnimParams;  
-};
-
-
-
-
-
-
-
-
-
-
-
-class PalettedSurfaceSink final : public AbstractSurfaceSink {
- public:
-  bool IsValidPalettedPipe() const override { return true; }
-
-  nsresult Configure(const PalettedSurfaceConfig& aConfig);
-
- protected:
-  uint8_t* GetRowPointer() const override;
-
- private:
-  
-
-
-
-
-  gfx::IntRect mFrameRect;
 };
 
 }  

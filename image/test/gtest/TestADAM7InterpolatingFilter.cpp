@@ -593,16 +593,3 @@ TEST(ImageADAM7InterpolatingFilter, ADAM7InterpolationFailsForMinus1_Minus1) {
   
   AssertConfiguringADAM7InterpolatingFilterFails(IntSize(-1, -1));
 }
-
-TEST(ImageADAM7InterpolatingFilter,
-     ConfiguringPalettedADAM7InterpolatingFilterFails) {
-  RefPtr<Decoder> decoder = CreateTrivialDecoder();
-  ASSERT_TRUE(decoder != nullptr);
-
-  
-  
-  AssertConfiguringPipelineFails(
-      decoder, ADAM7InterpolatingConfig{},
-      PalettedSurfaceConfig{decoder, IntSize(100, 100), IntRect(0, 0, 50, 50),
-                            SurfaceFormat::B8G8R8A8, 8, false});
-}
