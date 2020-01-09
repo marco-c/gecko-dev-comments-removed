@@ -38,7 +38,6 @@
 #include "gc/Nursery-inl.h"
 #include "gc/PrivateIterators-inl.h"
 #include "gc/Zone-inl.h"
-#include "vm/GeckoProfiler-inl.h"
 #include "vm/NativeObject-inl.h"
 #include "vm/Realm-inl.h"
 #include "vm/StringType-inl.h"
@@ -1097,8 +1096,8 @@ inline void js::GCMarker::eagerlyMarkChildren(Shape* shape) {
     BaseShape* base = shape->base();
     CheckTraversedEdge(shape, base);
     if (mark(base)) {
-      MOZ_ASSERT(base->canSkipMarkingShapeTable(shape));
-      base->traceChildrenSkipShapeTable(this);
+      MOZ_ASSERT(base->canSkipMarkingShapeCache(shape));
+      base->traceChildrenSkipShapeCache(this);
     }
 
     traverseEdge(shape, shape->propidRef().get());
@@ -3642,11 +3641,6 @@ static bool UnmarkGrayGCThing(JSRuntime* rt, JS::GCCellPtr thing) {
   
   
   mozilla::recordreplay::AutoDisallowThreadEvents d;
-
-  AutoGeckoProfilerEntry profilingStackFrame(
-    rt->mainContextFromOwnThread(),
-    "UnmarkGrayGCThing",
-    ProfilingStackFrame::Category::GCCC);
 
   UnmarkGrayTracer unmarker(rt);
   gcstats::AutoPhase innerPhase(rt->gc.stats(),
