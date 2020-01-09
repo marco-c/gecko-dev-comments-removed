@@ -69,9 +69,7 @@ var _utils = require("../src/utils");
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 ChromeUtils.import("resource://gre/modules/Timer.jsm", global);
-const {
-  XPCOMUtils
-} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 XPCOMUtils.defineLazyGlobalGetters(global, ["fetch", "indexedDB"]);
 ChromeUtils.defineModuleGetter(global, "EventEmitter", "resource://gre/modules/EventEmitter.jsm"); 
 
@@ -504,15 +502,6 @@ function createListRequest(cid, store, filters, done) {
 
   if (!indexField) {
     
-    const isSubQuery = Object.keys(filters).some(key => key.includes(".")); 
-
-    if (isSubQuery) {
-      const newFilter = (0, _utils.transformSubObjectFilters)(filters);
-      const request = store.index("cid").openCursor(IDBKeyRange.only(cid));
-      request.onsuccess = cursorHandlers.all(newFilter, done);
-      return request;
-    }
-
     const request = store.index("cid").openCursor(IDBKeyRange.only(cid));
     request.onsuccess = cursorHandlers.all(filters, done);
     return request;
@@ -599,34 +588,24 @@ class IDB extends _base.default {
 
     const dataToMigrate = this._options.migrateOldData ? await migrationRequired(this.cid) : null;
     this._db = await open(this.dbName, {
-      version: 2,
+      version: 1,
       onupgradeneeded: event => {
-        const db = event.target.result;
+        const db = event.target.result; 
 
-        if (event.oldVersion < 1) {
-          
-          const recordsStore = db.createObjectStore("records", {
-            keyPath: ["_cid", "id"]
-          }); 
+        const recordsStore = db.createObjectStore("records", {
+          keyPath: ["_cid", "id"]
+        }); 
 
-          recordsStore.createIndex("cid", "_cid"); 
-          
+        recordsStore.createIndex("cid", "_cid"); 
+        
 
-          recordsStore.createIndex("_status", ["_cid", "_status"]); 
+        recordsStore.createIndex("_status", ["_cid", "_status"]); 
 
-          recordsStore.createIndex("last_modified", ["_cid", "last_modified"]); 
+        recordsStore.createIndex("last_modified", ["_cid", "last_modified"]); 
 
-          db.createObjectStore("timestamps", {
-            keyPath: "cid"
-          });
-        }
-
-        if (event.oldVersion < 2) {
-          
-          db.createObjectStore("collections", {
-            keyPath: "cid"
-          });
-        }
+        db.createObjectStore("timestamps", {
+          keyPath: "cid"
+        });
       }
     });
 
@@ -958,32 +937,6 @@ class IDB extends _base.default {
     }
   }
 
-  async saveMetadata(metadata) {
-    try {
-      await this.prepare("collections", store => store.put({
-        cid: this.cid,
-        metadata
-      }), {
-        mode: "readwrite"
-      });
-      return metadata;
-    } catch (e) {
-      this._handleError("saveMetadata", e);
-    }
-  }
-
-  async getMetadata() {
-    try {
-      let entry = null;
-      await this.prepare("collections", store => {
-        store.get(this.cid).onsuccess = e => entry = e.target.result;
-      });
-      return entry ? entry.metadata : null;
-    } catch (e) {
-      this._handleError("getMetadata", e);
-    }
-  }
-
 }
 
 
@@ -1202,14 +1155,6 @@ class BaseAdapter {
     throw new Error("Not Implemented.");
   }
 
-  saveMetadata(metadata) {
-    throw new Error("Not Implemented.");
-  }
-
-  getMetadata() {
-    throw new Error("Not Implemented.");
-  }
-
 }
 
 exports.default = BaseAdapter;
@@ -1221,7 +1166,6 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.recordsEqual = recordsEqual;
-exports.createKeyValueStoreIdSchema = createKeyValueStoreIdSchema;
 exports.CollectionTransaction = exports.default = exports.ServerWasFlushedError = exports.SyncResultObject = void 0;
 
 var _base = _interopRequireDefault(require("./adapters/base"));
@@ -1369,30 +1313,6 @@ function createUUIDSchema() {
 
     validate(id) {
       return typeof id == "string" && _utils.RE_RECORD_ID.test(id);
-    }
-
-  };
-}
-
-
-
-
-
-
-
-
-
-
-
-
-function createKeyValueStoreIdSchema() {
-  return {
-    generate() {
-      throw new Error("createKeyValueStoreIdSchema() does not generate an id");
-    },
-
-    validate() {
-      return true;
     }
 
   };
@@ -1755,7 +1675,6 @@ class Collection {
 
   async clear() {
     await this.db.clear();
-    await this.db.saveMetadata(null);
     await this.db.saveLastModified(null);
     return {
       data: [],
@@ -2638,8 +2557,6 @@ class Collection {
 
     try {
       
-      await this.pullMetadata(client, options); 
-
       await this.pullChanges(client, result, options);
       const {
         lastModified
@@ -2761,23 +2678,6 @@ class Collection {
       return shouldKeep;
     });
     return await this.db.importBulk(newRecords.map(markSynced));
-  }
-
-  async pullMetadata(client, options = {}) {
-    const {
-      expectedTimestamp
-    } = options;
-    const query = expectedTimestamp ? {
-      query: {
-        _expected: expectedTimestamp
-      }
-    } : undefined;
-    const metadata = await client.getData(query);
-    return this.db.saveMetadata(metadata);
-  }
-
-  async metadata() {
-    return this.db.getMetadata();
   }
 
 }
@@ -3158,7 +3058,6 @@ exports.waterfall = waterfall;
 exports.deepEqual = deepEqual;
 exports.omitKeys = omitKeys;
 exports.arrayEqual = arrayEqual;
-exports.transformSubObjectFilters = transformSubObjectFilters;
 exports.RE_RECORD_ID = void 0;
 const RE_RECORD_ID = /^[a-zA-Z0-9][a-zA-Z0-9_-]*$/;
 
@@ -3216,11 +3115,6 @@ function filterObject(filters, entry) {
 
     if (Array.isArray(value)) {
       return value.some(candidate => candidate === entry[filter]);
-    } else if (typeof value === "object") {
-      return filterObject(value, entry[filter]);
-    } else if (!entry.hasOwnProperty(filter)) {
-      console.error(`The property ${filter} does not exist`);
-      return false;
     }
 
     return entry[filter] === value;
@@ -3326,31 +3220,6 @@ function arrayEqual(a, b) {
   }
 
   return true;
-}
-
-function makeNestedObjectFromArr(arr, val, nestedFiltersObj) {
-  const last = arr.length - 1;
-  return arr.reduce((acc, cv, i) => {
-    if (i === last) {
-      return acc[cv] = val;
-    } else if (acc.hasOwnProperty(cv)) {
-      return acc[cv];
-    } else {
-      return acc[cv] = {};
-    }
-  }, nestedFiltersObj);
-}
-
-function transformSubObjectFilters(filtersObj) {
-  const transformedFilters = {};
-
-  for (const key in filtersObj) {
-    const keysArr = key.split(".");
-    const val = filtersObj[key];
-    makeNestedObjectFromArr(keysArr, val, transformedFilters);
-  }
-
-  return transformedFilters;
 }
 
 },{}]},{},[1])(1)

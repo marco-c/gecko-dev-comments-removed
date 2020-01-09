@@ -74,6 +74,43 @@ class ClientEnvironment extends ClientEnvironmentBase {
 
 
 
+
+
+async function fetchCollectionSignature(bucket, collection, expectedTimestamp) {
+  const client = new KintoHttpClient(gServerURL);
+  const { signature: signaturePayload } = await client.bucket(bucket)
+    .collection(collection)
+    .getData({ query: { _expected: expectedTimestamp } });
+  if (!signaturePayload) {
+    throw new RemoteSettingsClient.MissingSignatureError(`${bucket}/${collection}`);
+  }
+  const { x5u, signature } = signaturePayload;
+  const certChainResponse = await fetch(x5u);
+  const certChain = await certChainResponse.text();
+
+  return { signature, certChain };
+}
+
+
+
+
+
+
+
+
+async function fetchRemoteRecords(bucket, collection, expectedTimestamp) {
+  const client = new KintoHttpClient(gServerURL);
+  return client.bucket(bucket)
+    .collection(collection)
+    .listRecords({ sort: "id", filters: { _expected: expectedTimestamp } });
+}
+
+
+
+
+
+
+
 class EventEmitter {
   constructor(events) {
     this._listeners = new Map();
@@ -151,7 +188,6 @@ class RemoteSettingsClient extends EventEmitter {
     this.filterFunc = filterFunc;
     this.localFields = localFields;
     this._lastCheckTimePref = lastCheckTimePref;
-    this._verifier = null;
 
     
     
@@ -199,14 +235,12 @@ class RemoteSettingsClient extends EventEmitter {
 
 
 
-
   async get(options = {}) {
     const {
       filters = {},
       order = "", 
       syncIfEmpty = true,
     } = options;
-    let { verifySignature = false } = options;
 
     if (syncIfEmpty && !(await Utils.hasLocalData(this))) {
       try {
@@ -219,8 +253,6 @@ class RemoteSettingsClient extends EventEmitter {
           
           await this.sync({ loadDump: false });
         }
-        
-        verifySignature = false;
       } catch (e) {
         
         Cu.reportError(e);
@@ -229,20 +261,8 @@ class RemoteSettingsClient extends EventEmitter {
     }
 
     
-    const kintoCollection = await this.openCollection();
-    const { data } = await kintoCollection.list({ filters, order });
-
-    
-    if (verifySignature) {
-      const localRecords = data.map(r => kintoCollection.cleanLocalFields(r));
-      const timestamp = await kintoCollection.db.getLastModified();
-      const metadata = await kintoCollection.metadata();
-      await this._validateCollectionSignature([],
-                                              timestamp,
-                                              metadata,
-                                              { localRecords });
-    }
-
+    const kintoCol = await this.openCollection();
+    const { data } = await kintoCol.list({ filters, order });
     
     return this._filterEntries(data);
   }
@@ -316,15 +336,10 @@ class RemoteSettingsClient extends EventEmitter {
       
       if (this.verifySignature) {
         kintoCollection.hooks["incoming-changes"] = [async (payload, collection) => {
-          const { changes: remoteRecords, lastModified: timestamp } = payload;
-          const { data } = await kintoCollection.list({ order: "" }); 
-          const metadata = await collection.metadata();
-          
-          const localRecords = data.map(r => kintoCollection.cleanLocalFields(r));
-          await this._validateCollectionSignature(remoteRecords,
-                                                  timestamp,
-                                                  metadata,
-                                                  { localRecords });
+          await this._validateCollectionSignature(payload.changes,
+                                                  payload.lastModified,
+                                                  collection,
+                                                  { expectedTimestamp });
           
           return payload;
         }];
@@ -423,30 +438,32 @@ class RemoteSettingsClient extends EventEmitter {
 
 
 
-  async _validateCollectionSignature(remoteRecords, timestamp, metadata, options = {}) {
-    const { localRecords = [] } = options;
 
-    if (!metadata || !metadata.signature) {
-      throw new RemoteSettingsClient.MissingSignatureError(this.identifier);
+
+
+  async _validateCollectionSignature(remoteRecords, timestamp, kintoCollection, options = {}) {
+    const { expectedTimestamp, ignoreLocal = false } = options;
+    
+    const { name: collection, bucket } = kintoCollection;
+    const { signature, certChain } = await fetchCollectionSignature(bucket, collection, expectedTimestamp);
+
+    let localRecords = [];
+    if (!ignoreLocal) {
+      const { data } = await kintoCollection.list({ order: "" }); 
+      
+      localRecords = data.map(r => kintoCollection.cleanLocalFields(r));
     }
 
-    if (!this._verifier) {
-        this._verifier = Cc["@mozilla.org/security/contentsignatureverifier;1"]
-          .createInstance(Ci.nsIContentSignatureVerifier);
-    }
-
-    
-    const { signature: { x5u, signature } } = metadata;
-    const certChain = await (await fetch(x5u)).text();
-    
     const serialized = await RemoteSettingsWorker.canonicalStringify(localRecords,
                                                                      remoteRecords,
                                                                      timestamp);
-    if (!await this._verifier.asyncVerifyContentSignature(serialized,
-                                                          "p384ecdsa=" + signature,
-                                                          certChain,
-                                                          this.signerName)) {
-      throw new RemoteSettingsClient.InvalidSignatureError(this.identifier);
+    const verifier = Cc["@mozilla.org/security/contentsignatureverifier;1"]
+      .createInstance(Ci.nsIContentSignatureVerifier);
+    if (!await verifier.asyncVerifyContentSignature(serialized,
+                                                    "p384ecdsa=" + signature,
+                                                    certChain,
+                                                    this.signerName)) {
+      throw new RemoteSettingsClient.InvalidSignatureError(`${bucket}/${collection}`);
     }
   }
 
@@ -461,21 +478,12 @@ class RemoteSettingsClient extends EventEmitter {
 
 
   async _retrySyncFromScratch(kintoCollection, expectedTimestamp) {
-    
-    const api = new KintoHttpClient(gServerURL);
-    const client = await api.bucket(this.bucketName).collection(this.collectionName);
-    const metadata = await client.getData({ query: { _expected: expectedTimestamp }});
-    
-    const {
-      data: remoteRecords,
-      last_modified: timestamp,
-    } = await client.listRecords({ sort: "id", filters: { _expected: expectedTimestamp } });
-    
-    await this._validateCollectionSignature(remoteRecords,
-                                            timestamp,
-                                            metadata);
+    const payload = await fetchRemoteRecords(kintoCollection.bucket, kintoCollection.name, expectedTimestamp);
+    await this._validateCollectionSignature(payload.data,
+      payload.last_modified,
+      kintoCollection,
+      { expectedTimestamp, ignoreLocal: true });
 
-    
     
     
     const { data: oldData } = await kintoCollection.list({ order: "" }); 
@@ -486,15 +494,14 @@ class RemoteSettingsClient extends EventEmitter {
     
     
     const localLastModified = await kintoCollection.db.getLastModified();
-    if (timestamp >= localLastModified) {
+    if (payload.last_modified >= localLastModified) {
+      const { data: newData } = payload;
       await kintoCollection.clear();
-      await kintoCollection.loadDump(remoteRecords);
-      await kintoCollection.db.saveLastModified(timestamp);
-      await kintoCollection.db.saveMetadata(metadata);
+      await kintoCollection.loadDump(newData);
 
       
       const oldById = new Map(oldData.map(e => [e.id, e]));
-      for (const r of remoteRecords) {
+      for (const r of newData) {
         const old = oldById.get(r.id);
         if (old) {
           if (old.last_modified != r.last_modified) {
