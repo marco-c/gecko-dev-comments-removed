@@ -425,70 +425,6 @@ static ArgResult CheckArgExists(const char* aArg) {
   return CheckArg(aArg, nullptr, CheckArgFlag::None);
 }
 
-#if defined(XP_WIN)
-
-
-
-
-
-
-static ArgResult CheckArgShell(const char* aArg) {
-  char** curarg = gRestartArgv + 1;  
-
-  while (*curarg) {
-    char* arg = curarg[0];
-
-    if (arg[0] == '-') {
-      ++arg;
-
-      if (strimatch(aArg, arg)) {
-        do {
-          *curarg = *(curarg + 1);
-          ++curarg;
-        } while (*curarg);
-
-        --gRestartArgc;
-
-        return ARG_FOUND;
-      }
-    }
-
-    ++curarg;
-  }
-
-  return ARG_NONE;
-}
-
-
-
-
-
-
-
-
-static void ProcessDDE(nsINativeAppSupport* aNative, bool aWait) {
-  
-  
-  
-  
-  
-  
-  
-  
-  ArgResult ar;
-  ar = CheckArgShell("requestpending");
-  if (ar == ARG_FOUND) {
-    aNative->Enable();  
-    if (aWait) {
-      
-      
-      int32_t count = 20;
-      SpinEventLoopUntil([&]() { return --count < 0; });
-    }
-  }
-}
-#endif
-
 bool gSafeMode = false;
 
 
@@ -1911,12 +1847,6 @@ static ReturnAbortOnError ShowProfileManager(
 #ifdef XP_MACOSX
     CommandLineServiceMac::SetupMacCommandLine(gRestartArgc, gRestartArgv,
                                                true);
-#endif
-
-#ifdef XP_WIN
-    
-    
-    ProcessDDE(aNative, false);
 #endif
 
     {  
