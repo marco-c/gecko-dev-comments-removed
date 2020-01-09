@@ -4166,26 +4166,15 @@ bool js::detail::CopyScript(JSContext* cx, HandleScript src,
   }
 
   
-  if (!PrivateScriptData::Clone(cx, src, dst, scopes)) {
-    return false;
-  }
-
-  if (cx->zone() != src->zoneFromAnyThread()) {
-    src->scriptData()->markForCrossZone(cx);
-  }
-
-  
-  dst->setScriptData(src->scriptData());
-
   dst->lineno_ = src->lineno();
   dst->mainOffset_ = src->mainOffset();
   dst->nfixed_ = src->nfixed();
   dst->nslots_ = src->nslots();
-  dst->bodyScopeIndex_ = src->bodyScopeIndex_;
+  dst->bodyScopeIndex_ = src->bodyScopeIndex();
+  dst->immutableFlags_ = src->immutableFlags_;
   dst->funLength_ = src->funLength();
   dst->numBytecodeTypeSets_ = src->numBytecodeTypeSets();
 
-  dst->immutableFlags_ = src->immutableFlags_;
   dst->setFlag(JSScript::ImmutableFlags::HasNonSyntacticScope,
                scopes[0]->hasOnChain(ScopeKind::NonSyntactic));
 
@@ -4195,6 +4184,18 @@ bool js::detail::CopyScript(JSContext* cx, HandleScript src,
       dst->setNeedsArgsObj(src->needsArgsObj());
     }
   }
+
+  
+  if (!PrivateScriptData::Clone(cx, src, dst, scopes)) {
+    return false;
+  }
+
+  
+  
+  if (cx->zone() != src->zoneFromAnyThread()) {
+    src->scriptData()->markForCrossZone(cx);
+  }
+  dst->setScriptData(src->scriptData());
 
   return true;
 }
