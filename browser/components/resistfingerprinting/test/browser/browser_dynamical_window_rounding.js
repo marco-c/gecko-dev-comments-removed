@@ -6,6 +6,10 @@
 
 
 
+
+
+
+
 const TEST_PATH = "http://example.net/browser/browser/components/resistfingerprinting/test/browser/";
 
 const DEFAULT_ROUNDED_WIDTH_STEP  = 200;
