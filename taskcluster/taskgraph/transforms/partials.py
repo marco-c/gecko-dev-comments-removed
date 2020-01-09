@@ -155,7 +155,7 @@ def make_task_description(config, jobs):
         }
 
         
-        if int(level) == 3 and any([platform in dep_th_platform for platform in ['linux', 'windows']]):
+        if level == 3 and any([platform in dep_th_platform for platform in ['linux', 'windows']]):
             task['scopes'].append(
                 'auth:aws-s3:read-write:tc-gp-private-1d-us-east-1/releng/mbsdiff-cache/')
 
