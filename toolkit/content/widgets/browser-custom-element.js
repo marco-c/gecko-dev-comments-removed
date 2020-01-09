@@ -599,9 +599,7 @@ class MozBrowser extends MozElements.MozElementMixin(XULFrameElement) {
   }
 
   get csp() {
-    
-    
-    return this.isRemoteBrowser ? this._csp : this.contentDocument.nodePrincipal.csp;
+    return this.isRemoteBrowser ? this._csp : this.contentDocument.csp;
   }
 
   get contentRequestContextID() {

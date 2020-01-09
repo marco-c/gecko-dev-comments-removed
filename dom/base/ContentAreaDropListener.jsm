@@ -211,12 +211,7 @@ ContentAreaDropListener.prototype =
       
       
       
-      
-      if (sourceNode.nodePrincipal) {
-        
-        
-        return sourceNode.nodePrincipal.csp;
-      }
+      return sourceNode.csp;
     }
     return null;
   },

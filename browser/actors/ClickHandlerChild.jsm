@@ -61,8 +61,7 @@ class ClickHandlerChild extends ActorChild {
       }
     }
 
-    
-    let csp = ownerDoc.nodePrincipal.csp;
+    let csp = ownerDoc.csp;
     if (csp) {
       csp = E10SUtils.serializeCSP(csp);
     }

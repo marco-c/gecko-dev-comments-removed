@@ -221,7 +221,7 @@ this.windows = class extends ExtensionAPI {
           args.appendElement(principal); 
           args.appendElement(Cc["@mozilla.org/supports-PRBool;1"].createInstance(Ci.nsISupportsPRBool)); 
           
-          args.appendElement(principal.csp); 
+          args.appendElement(null); 
 
           let features = ["chrome"];
 

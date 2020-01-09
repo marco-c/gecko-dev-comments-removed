@@ -2599,19 +2599,6 @@ function loadURI(uri, referrerInfo, postData, allowThirdPartyFixup,
     throw new Error("Must load with a triggering Principal");
   }
 
-  
-  
-  
-  if (AppConstants.EARLY_BETA_OR_EARLIER) {
-    
-    
-    
-    
-    if (!triggeringPrincipal.isSystemPrincipal && triggeringPrincipal.csp && !csp) {
-      throw new Error("If Principal has CSP then we need an explicit CSP");
-    }
-  }
-
   try {
     openLinkIn(uri, "current",
                { referrerInfo,
@@ -5802,19 +5789,6 @@ nsBrowserAccess.prototype = {
       throw Cr.NS_ERROR_FAILURE;
     }
 
-    
-    
-    
-    if (AppConstants.EARLY_BETA_OR_EARLIER) {
-      
-      
-      
-      
-      if (!aTriggeringPrincipal.isSystemPrincipal && aTriggeringPrincipal.csp && !aCsp) {
-        throw new Error("If Principal has CSP then we need an explicit CSP");
-      }
-    }
-
     var newWindow = null;
     var isExternal = !!(aFlags & Ci.nsIBrowserDOMWindow.OPEN_EXTERNAL);
 
@@ -6507,9 +6481,6 @@ function handleLinkClick(event, href, linkNode) {
     !BrowserUtils.linkHasNoReferrer(linkNode),
     referrerURI);
 
-  
-  let csp = doc.nodePrincipal.csp;
-
   urlSecurityCheck(href, doc.nodePrincipal);
   let params = {
     charset: doc.characterSet,
@@ -6517,7 +6488,7 @@ function handleLinkClick(event, href, linkNode) {
     referrerInfo,
     originPrincipal: doc.nodePrincipal,
     triggeringPrincipal: doc.nodePrincipal,
-    csp,
+    csp: doc.csp,
     frameOuterWindowID,
   };
 

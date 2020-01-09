@@ -597,9 +597,7 @@ var pktUIMessaging = (function() {
             var payload = JSON.parse(e.target.getAttribute("payload"))[0];
             var panelId = payload.panelId;
             var data = payload.data;
-            
-            
-            var csp = e.target.nodePrincipal.csp;
+            var csp = e.target.ownerDocument.csp;
             callback(panelId, data, nodePrincipal, csp);
 
             
