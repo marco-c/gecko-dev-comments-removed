@@ -29,7 +29,7 @@ use api::{DebugFlags, DocumentId, PremultipliedColorF};
 use api::IdNamespace;
 use api::units::TexelRect;
 use euclid::{HomogeneousVector, TypedRect};
-use internal_types::{FastHashMap};
+use internal_types::{FastHashMap, FastHashSet};
 use profiler::GpuCacheProfileCounters;
 use render_backend::{FrameStamp, FrameId};
 use renderer::MAX_VERTEX_TEXTURE_WIDTH;
@@ -694,6 +694,15 @@ pub struct GpuCache {
     
     
     pending_clear: bool,
+    
+    
+    prepared_for_frames: bool,
+    
+    
+    requires_frame_build: bool,
+    
+    
+    document_frames_to_build: FastHashSet<DocumentId>,
 }
 
 impl GpuCache {
@@ -705,6 +714,9 @@ impl GpuCache {
             saved_block_count: 0,
             debug_flags,
             pending_clear: false,
+            prepared_for_frames: false,
+            requires_frame_build: false,
+            document_frames_to_build: FastHashSet::default(),
         }
     }
 
@@ -729,11 +741,35 @@ impl GpuCache {
         self.texture = Texture::new(next_base_epoch, self.debug_flags);
         self.saved_block_count = 0;
         self.pending_clear = true;
+        self.requires_frame_build = true;
+    }
+
+    pub fn requires_frame_build(&self) -> bool {
+        self.requires_frame_build
+    }
+
+    pub fn before_frames(&mut self) {
+        self.prepared_for_frames = true;
+        if self.should_reclaim_memory() {
+            self.clear();
+            debug_assert!(self.document_frames_to_build.is_empty());
+            for &document_id in self.texture.occupied_list_heads.keys() {
+                self.document_frames_to_build.insert(document_id);
+            }
+        }
+    }
+
+    pub fn after_frames(&mut self) {
+        assert!(self.document_frames_to_build.is_empty());
+        assert!(self.prepared_for_frames);
+        self.requires_frame_build = false;
+        self.prepared_for_frames = false;
     }
 
     
     pub fn begin_frame(&mut self, stamp: FrameStamp) {
         debug_assert!(self.texture.pending_blocks.is_empty());
+        assert!(self.prepared_for_frames);
         self.now = stamp;
         self.texture.evict_old_blocks(self.now);
         self.saved_block_count = 0;
@@ -833,6 +869,7 @@ impl GpuCache {
             self.texture.reached_reclaim_threshold = None;
         }
 
+        self.document_frames_to_build.remove(&self.now.document_id());
         self.now
     }
 
