@@ -55,7 +55,8 @@ class nsFontFaceLoader final : public nsIStreamLoaderObserver,
  private:
   RefPtr<gfxUserFontEntry> mUserFontEntry;
   nsCOMPtr<nsIURI> mFontURI;
-  RefPtr<mozilla::dom::FontFaceSet> mFontFaceSet;
+  
+  mozilla::dom::FontFaceSet* MOZ_NON_OWNING_REF mFontFaceSet;
   nsCOMPtr<nsIChannel> mChannel;
   nsCOMPtr<nsITimer> mLoadTimer;
   mozilla::TimeStamp mStartTime;
