@@ -1879,7 +1879,6 @@ toolbar#nav-bar {
         prefs = {
             "browser.tabs.remote.autostart": options.e10s,
             "dom.ipc.tabs.nested.enabled": options.nested_oop,
-            "idle.lastDailyNotification": int(time.time()),
             
             
             "marionette.log.level": "Trace",
