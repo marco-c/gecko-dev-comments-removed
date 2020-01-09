@@ -801,7 +801,11 @@ std::vector<uint16_t> TransportLayerDtls::GetDefaultSrtpCiphers() {
   
   ciphers.push_back(kDtlsSrtpAeadAes256Gcm);
   ciphers.push_back(kDtlsSrtpAes128CmHmacSha1_80);
+#ifndef NIGHTLY_BUILD
+  
+  
   ciphers.push_back(kDtlsSrtpAes128CmHmacSha1_32);
+#endif
 
   return ciphers;
 }
