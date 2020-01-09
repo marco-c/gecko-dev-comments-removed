@@ -1200,8 +1200,7 @@ nsresult nsWindowWatcher::OpenWindowInternal(
     
     
     
-    nsAutoWindowStateHelper windowStateHelper(
-        parentWindow ? parentWindow->GetOuterWindow() : nullptr);
+    nsAutoWindowStateHelper windowStateHelper(parentWindow);
 
     if (!windowStateHelper.DefaultEnabled()) {
       
