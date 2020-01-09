@@ -19,7 +19,6 @@ def test(mod, path, entity=None):
         
         if path in (
             "chrome/global/aboutReader.properties",
-            "chrome/global/aboutRights.dtd",
             "chrome/global/charsetMenu.properties",
             "chrome/global/commonDialogs.properties",
             "chrome/global/intl.properties",
@@ -39,6 +38,9 @@ def test(mod, path, entity=None):
             
             return "error"
         if re.match(r"toolkit/about/[^/]*Plugins.ftl", path):
+            
+            return "error"
+        if re.match(r"toolkit/about/[^/]*Rights.ftl", path):
             
             return "error"
         if re.match(r"toolkit/about/[^/]*Support.ftl", path):
