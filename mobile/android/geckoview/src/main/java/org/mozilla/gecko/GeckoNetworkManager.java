@@ -55,7 +55,7 @@ public class GeckoNetworkManager extends BroadcastReceiver implements BundleEven
 
     
     
-    private Context context;
+    private Context mContext;
 
     public static void destroy() {
         if (instance != null) {
@@ -79,13 +79,13 @@ public class GeckoNetworkManager extends BroadcastReceiver implements BundleEven
         receivedUpdate
     }
 
-    private ManagerState currentState = ManagerState.OffNoListeners;
-    private ConnectionType currentConnectionType = ConnectionType.NONE;
-    private ConnectionType previousConnectionType = ConnectionType.NONE;
-    private ConnectionSubType currentConnectionSubtype = ConnectionSubType.UNKNOWN;
-    private ConnectionSubType previousConnectionSubtype = ConnectionSubType.UNKNOWN;
-    private NetworkStatus currentNetworkStatus = NetworkStatus.UNKNOWN;
-    private NetworkStatus previousNetworkStatus = NetworkStatus.UNKNOWN;
+    private ManagerState mCurrentState = ManagerState.OffNoListeners;
+    private ConnectionType mCurrentConnectionType = ConnectionType.NONE;
+    private ConnectionType mPreviousConnectionType = ConnectionType.NONE;
+    private ConnectionSubType mCurrentConnectionSubtype = ConnectionSubType.UNKNOWN;
+    private ConnectionSubType mPreviousConnectionSubtype = ConnectionSubType.UNKNOWN;
+    private NetworkStatus mCurrentNetworkStatus = NetworkStatus.UNKNOWN;
+    private NetworkStatus mPreviousNetworkStatus = NetworkStatus.UNKNOWN;
 
     private enum InfoType {
         MCC,
@@ -115,7 +115,7 @@ public class GeckoNetworkManager extends BroadcastReceiver implements BundleEven
 
     public double[] getCurrentInformation() {
         final Context applicationContext = GeckoAppShell.getApplicationContext();
-        final ConnectionType connectionType = currentConnectionType;
+        final ConnectionType connectionType = mCurrentConnectionType;
         return new double[] {
                 connectionType.value,
                 connectionType == ConnectionType.WIFI ? 1.0 : 0.0,
@@ -129,7 +129,7 @@ public class GeckoNetworkManager extends BroadcastReceiver implements BundleEven
     }
 
     public void start(final Context context) {
-        this.context = context;
+        mContext = context;
         handleManagerEvent(ManagerEvent.start);
     }
 
@@ -153,11 +153,11 @@ public class GeckoNetworkManager extends BroadcastReceiver implements BundleEven
 
 
     private synchronized boolean handleManagerEvent(final ManagerEvent event) {
-        final ManagerState nextState = getNextState(currentState, event);
+        final ManagerState nextState = getNextState(mCurrentState, event);
 
-        Log.d(LOGTAG, "Incoming event " + event + " for state " + currentState + " -> " + nextState);
+        Log.d(LOGTAG, "Incoming event " + event + " for state " + mCurrentState + " -> " + nextState);
         if (nextState == null) {
-            Log.w(LOGTAG, "Invalid event " + event + " for state " + currentState);
+            Log.w(LOGTAG, "Invalid event " + event + " for state " + mCurrentState);
             return false;
         }
 
@@ -169,19 +169,19 @@ public class GeckoNetworkManager extends BroadcastReceiver implements BundleEven
         
         
         final Context contextForAction;
-        if (context != null) {
-            contextForAction = context;
+        if (mContext != null) {
+            contextForAction = mContext;
         } else {
             contextForAction = GeckoAppShell.getApplicationContext();
         }
 
         if (contextForAction == null) {
-            Log.w(LOGTAG, "Context is not available while processing event " + event + " for state " + currentState);
+            Log.w(LOGTAG, "Context is not available while processing event " + event + " for state " + mCurrentState);
             return false;
         }
 
-        performActionsForStateEvent(contextForAction, currentState, event);
-        currentState = nextState;
+        performActionsForStateEvent(contextForAction, mCurrentState, event);
+        mCurrentState = nextState;
 
         return true;
     }
@@ -309,10 +309,10 @@ public class GeckoNetworkManager extends BroadcastReceiver implements BundleEven
         if (connectivityManager == null) {
             Log.e(LOGTAG, "ConnectivityManager does not exist.");
         }
-        currentConnectionType = NetworkUtils.getConnectionType(connectivityManager);
-        currentNetworkStatus = NetworkUtils.getNetworkStatus(connectivityManager);
-        currentConnectionSubtype = NetworkUtils.getConnectionSubType(connectivityManager);
-        Log.d(LOGTAG, "New network state: " + currentNetworkStatus + ", " + currentConnectionType + ", " + currentConnectionSubtype);
+        mCurrentConnectionType = NetworkUtils.getConnectionType(connectivityManager);
+        mCurrentNetworkStatus = NetworkUtils.getNetworkStatus(connectivityManager);
+        mCurrentConnectionSubtype = NetworkUtils.getConnectionSubType(connectivityManager);
+        Log.d(LOGTAG, "New network state: " + mCurrentNetworkStatus + ", " + mCurrentConnectionType + ", " + mCurrentConnectionSubtype);
     }
 
     @WrapForJNI(dispatchTo = "gecko")
@@ -326,40 +326,40 @@ public class GeckoNetworkManager extends BroadcastReceiver implements BundleEven
 
 
     private void sendNetworkStateToListeners(final Context context) {
-        final boolean connectionTypeOrSubtypeChanged = currentConnectionType != previousConnectionType ||
-                currentConnectionSubtype != previousConnectionSubtype;
+        final boolean connectionTypeOrSubtypeChanged = mCurrentConnectionType != mPreviousConnectionType ||
+                mCurrentConnectionSubtype != mPreviousConnectionSubtype;
         if (connectionTypeOrSubtypeChanged) {
-            previousConnectionType = currentConnectionType;
-            previousConnectionSubtype = currentConnectionSubtype;
+            mPreviousConnectionType = mCurrentConnectionType;
+            mPreviousConnectionSubtype = mCurrentConnectionSubtype;
 
-            final boolean isWifi = currentConnectionType == ConnectionType.WIFI;
+            final boolean isWifi = mCurrentConnectionType == ConnectionType.WIFI;
             final int gateway = !isWifi ? 0 :
                     wifiDhcpGatewayAddress(context);
 
             if (GeckoThread.isRunning()) {
-                onConnectionChanged(currentConnectionType.value,
-                                    currentConnectionSubtype.value, isWifi, gateway);
+                onConnectionChanged(mCurrentConnectionType.value,
+                                    mCurrentConnectionSubtype.value, isWifi, gateway);
             } else {
                 GeckoThread.queueNativeCall(GeckoNetworkManager.class, "onConnectionChanged",
-                                            currentConnectionType.value,
-                                            String.class, currentConnectionSubtype.value,
+                                            mCurrentConnectionType.value,
+                                            String.class, mCurrentConnectionSubtype.value,
                                             isWifi, gateway);
             }
         }
 
         
-        if (currentNetworkStatus == previousNetworkStatus && !connectionTypeOrSubtypeChanged) {
+        if (mCurrentNetworkStatus == mPreviousNetworkStatus && !connectionTypeOrSubtypeChanged) {
             return;
         }
 
         
         
         final String status;
-        if (currentNetworkStatus == previousNetworkStatus) {
+        if (mCurrentNetworkStatus == mPreviousNetworkStatus) {
             status = LINK_DATA_CHANGED;
         } else {
-            previousNetworkStatus = currentNetworkStatus;
-            status = currentNetworkStatus.value;
+            mPreviousNetworkStatus = mCurrentNetworkStatus;
+            status = mCurrentNetworkStatus.value;
         }
 
         if (GeckoThread.isRunning()) {

@@ -18,11 +18,11 @@ final class GeckoBackgroundThread extends Thread {
 
     
     
-    private Runnable initialRunnable;
+    private Runnable mInitialRunnable;
 
     
     private GeckoBackgroundThread(final Runnable initialRunnable) {
-        this.initialRunnable = initialRunnable;
+        mInitialRunnable = initialRunnable;
     }
 
     @Override
@@ -35,9 +35,9 @@ final class GeckoBackgroundThread extends Thread {
             GeckoBackgroundThread.class.notifyAll();
         }
 
-        if (initialRunnable != null) {
-            initialRunnable.run();
-            initialRunnable = null;
+        if (mInitialRunnable != null) {
+            mInitialRunnable.run();
+            mInitialRunnable = null;
         }
 
         Looper.loop();
