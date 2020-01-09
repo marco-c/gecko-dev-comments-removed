@@ -30,15 +30,10 @@ from mozproxy import mozharness_dir
 
 LOG = get_proxy_logger(component="mozproxy")
 
-if "MOZ_UPLOAD_DIR" in os.environ:
-    TOOLTOOL_PATH = os.path.join(
-        os.environ["MOZ_UPLOAD_DIR"],
-        "..",
-        "..",
-        "mozharness",
-        "external_tools",
-        "tooltool.py",
-    )
+external_tools_path = os.environ.get("EXTERNALTOOLSPATH", None)
+if external_tools_path is not None:
+    
+    TOOLTOOL_PATH = os.path.join(external_tools_path, "tooltool.py")
 else:
     
     TOOLTOOL_PATH = os.path.join(mozharness_dir, "external_tools", "tooltool.py")
@@ -85,15 +80,10 @@ def tooltool_download(manifest, run_local, raptor_dir):
         
         
         
-        _cache = next(
-            x
-            for x in (
-                os.environ.get("TOOLTOOLCACHE"),
-                os.environ.get("TOOLTOOL_CACHE"),
-                "/builds/tooltool_cache",
-            )
-            if x is not None
-        )
+        _cache = next(x for x in (
+                    os.environ.get("TOOLTOOLCACHE"),
+                    os.environ.get("TOOLTOOL_CACHE"),
+                    "/builds/tooltool_cache") if x is not None)
 
         command = [
             sys.executable,
