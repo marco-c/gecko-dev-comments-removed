@@ -207,7 +207,6 @@ this.windows = class extends ExtensionAPI {
           args.appendElement(null); 
           args.appendElement(null); 
           args.appendElement(null); 
-          args.appendElement(null); 
 
           if (createData.cookieStoreId) {
             let userContextIdSupports = Cc["@mozilla.org/supports-PRUint32;1"].createInstance(Ci.nsISupportsPRUint32);

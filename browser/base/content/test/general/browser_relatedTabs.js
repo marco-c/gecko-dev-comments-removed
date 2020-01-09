@@ -10,8 +10,14 @@ add_task(async function() {
   
   
   let tabs = [];
+  let ReferrerInfo = Components.Constructor("@mozilla.org/referrer-info;1",
+                                            "nsIReferrerInfo",
+                                            "init");
+
   function addTab(aURL, aReferrer) {
-    let tab = BrowserTestUtils.addTab(gBrowser, aURL, {referrerURI: aReferrer});
+    let referrerInfo = new ReferrerInfo(
+      Ci.nsIHttpChannel.REFERRER_POLICY_UNSET, true, aReferrer);
+    let tab = BrowserTestUtils.addTab(gBrowser, aURL, { referrerInfo });
     tabs.push(tab);
     return BrowserTestUtils.browserLoaded(tab.linkedBrowser);
   }

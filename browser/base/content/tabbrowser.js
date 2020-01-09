@@ -282,7 +282,7 @@ window._gBrowser = {
   _setupInitialBrowserAndTab() {
     
     
-    let userContextId = window.arguments && window.arguments[6];
+    let userContextId = window.arguments && window.arguments[5];
 
     let tabArgument = gBrowserInit.getTabToAdopt();
 
@@ -1386,9 +1386,9 @@ window._gBrowser = {
     return true;
   },
 
-  loadOneTab(aURI, aReferrerURI, aCharset, aPostData, aLoadInBackground, aAllowThirdPartyFixup) {
+  loadOneTab(aURI, aReferrerInfoOrParams, aCharset, aPostData, aLoadInBackground, aAllowThirdPartyFixup) {
     var aTriggeringPrincipal;
-    var aReferrerPolicy;
+    var aReferrerInfo;
     var aFromExternal;
     var aRelatedToCurrent;
     var aAllowInheritPrincipal;
@@ -1396,7 +1396,6 @@ window._gBrowser = {
     var aSkipAnimation;
     var aForceNotRemote;
     var aPreferredRemoteType;
-    var aNoReferrer;
     var aUserContextId;
     var aSameProcessAsFrameLoader;
     var aOriginPrincipal;
@@ -1412,8 +1411,7 @@ window._gBrowser = {
         !(arguments[1] instanceof Ci.nsIURI)) {
       let params = arguments[1];
       aTriggeringPrincipal = params.triggeringPrincipal;
-      aReferrerURI = params.referrerURI;
-      aReferrerPolicy = params.referrerPolicy;
+      aReferrerInfo = params.referrerInfo;
       aCharset = params.charset;
       aPostData = params.postData;
       aLoadInBackground = params.inBackground;
@@ -1425,7 +1423,6 @@ window._gBrowser = {
       aSkipAnimation = params.skipAnimation;
       aForceNotRemote = params.forceNotRemote;
       aPreferredRemoteType = params.preferredRemoteType;
-      aNoReferrer = params.noReferrer;
       aUserContextId = params.userContextId;
       aSameProcessAsFrameLoader = params.sameProcessAsFrameLoader;
       aOriginPrincipal = params.originPrincipal;
@@ -1449,8 +1446,7 @@ window._gBrowser = {
 
     var tab = this.addTab(aURI, {
       triggeringPrincipal: aTriggeringPrincipal,
-      referrerURI: aReferrerURI,
-      referrerPolicy: aReferrerPolicy,
+      referrerInfo: aReferrerInfo,
       charset: aCharset,
       postData: aPostData,
       ownerTab: owner,
@@ -1463,7 +1459,6 @@ window._gBrowser = {
       forceNotRemote: aForceNotRemote,
       createLazyBrowser: aCreateLazyBrowser,
       preferredRemoteType: aPreferredRemoteType,
-      noReferrer: aNoReferrer,
       userContextId: aUserContextId,
       originPrincipal: aOriginPrincipal,
       sameProcessAsFrameLoader: aSameProcessAsFrameLoader,
@@ -2344,7 +2339,6 @@ window._gBrowser = {
     name,
     nextTabParentId,
     noInitialLabel,
-    noReferrer,
     opener,
     openerBrowser,
     originPrincipal,
@@ -2352,8 +2346,7 @@ window._gBrowser = {
     pinned,
     postData,
     preferredRemoteType,
-    referrerPolicy,
-    referrerURI,
+    referrerInfo,
     relatedToCurrent,
     sameProcessAsFrameLoader,
     skipAnimation,
@@ -2391,7 +2384,7 @@ window._gBrowser = {
     
     
     if (relatedToCurrent == null) {
-      relatedToCurrent = !!referrerURI;
+      relatedToCurrent = !!(referrerInfo && referrerInfo.originalReferrer);
     }
     let openerTab = ((openerBrowser && this.getTabForBrowser(openerBrowser)) ||
       (relatedToCurrent && this.selectedTab));
@@ -2537,9 +2530,11 @@ window._gBrowser = {
       
       
       
-      if (uriIsAboutBlank && !preferredRemoteType && referrerURI) {
+      if (uriIsAboutBlank && !preferredRemoteType && referrerInfo &&
+          referrerInfo.originalReferrer) {
         preferredRemoteType =
-          E10SUtils.getRemoteTypeForURI(referrerURI.spec, gMultiProcessBrowser);
+          E10SUtils.getRemoteTypeForURI(referrerInfo.originalReferrer.spec,
+                                        gMultiProcessBrowser);
       }
 
       let remoteType =
@@ -2667,16 +2662,11 @@ window._gBrowser = {
       if (!allowInheritPrincipal) {
         flags |= Ci.nsIWebNavigation.LOAD_FLAGS_DISALLOW_INHERIT_PRINCIPAL;
       }
-
-      let ReferrerInfo = Components.Constructor("@mozilla.org/referrer-info;1",
-                                                "nsIReferrerInfo",
-                                                "init");
       try {
         b.loadURI(aURI, {
           flags,
           triggeringPrincipal,
-          referrerInfo: new ReferrerInfo(
-            referrerPolicy, !noReferrer, referrerURI),
+          referrerInfo,
           charset,
           postData,
           csp,

@@ -250,7 +250,6 @@ function openBrowserWindow(cmdLine, triggeringPrincipal, urlOrUrlList, postData 
               undefined, 
                          
               undefined, 
-              undefined, 
               null, 
               triggeringPrincipal];
     }
