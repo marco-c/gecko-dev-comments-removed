@@ -7,24 +7,17 @@
 
 
 
-const STATE_AFTER_STAGE = STATE_PENDING;
-
 async function run_test() {
   if (!setupTestCommon()) {
     return;
   }
+  const STATE_AFTER_STAGE = STATE_PENDING;
   gTestFiles = gTestFilesCompleteSuccess;
   gTestDirs = gTestDirsCompleteSuccess;
   setTestFilesAndDirsForFailure();
   createUpdateInProgressLockFile(getGREBinDir());
   await setupUpdaterTest(FILE_COMPLETE_MAR, false);
-  stageUpdate(false);
-}
-
-
-
-
-async function stageUpdateFinished() {
+  await stageUpdate(STATE_AFTER_STAGE, false);
   removeUpdateInProgressLockFile(getGREBinDir());
   checkPostUpdateRunningFile(false);
   checkFilesAfterUpdateFailure(getApplyDirFile);

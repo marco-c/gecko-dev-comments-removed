@@ -141,6 +141,27 @@ XPCOMUtils.defineLazyServiceGetter(this, "gEnv",
                                    "nsIEnvironment");
 
 
+
+
+
+
+
+
+
+
+
+function waitForEvent(topic, status = null) {
+  return new Promise(resolve => Services.obs.addObserver({
+    observe(subject, innerTopic, innerStatus) {
+      if (!status || status == innerStatus) {
+        Services.obs.removeObserver(this, topic);
+        resolve(innerStatus);
+      }
+    },
+  }, topic));
+}
+
+
 function testPostUpdateProcessing() {
   gAUS.observe(null, "test-post-update-processing", "");
 }

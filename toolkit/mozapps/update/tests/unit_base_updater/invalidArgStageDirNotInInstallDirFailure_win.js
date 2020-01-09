@@ -5,20 +5,19 @@
 
 
 
-
-
-const STATE_AFTER_RUNUPDATE_BASE =
-  STATE_FAILED_INVALID_APPLYTO_DIR_STAGED_ERROR;
-const STATE_AFTER_RUNUPDATE_SERVICE = AppConstants.EARLY_BETA_OR_EARLIER
-    ? STATE_PENDING_SVC
-    : STATE_FAILED_SERVICE_INVALID_APPLYTO_DIR_STAGED_ERROR;
-const STATE_AFTER_RUNUPDATE = IS_SERVICE_TEST ? STATE_AFTER_RUNUPDATE_SERVICE
-                                              : STATE_AFTER_RUNUPDATE_BASE;
-
 async function run_test() {
   if (!setupTestCommon()) {
     return;
   }
+  
+  
+  const STATE_AFTER_RUNUPDATE_BASE =
+    STATE_FAILED_INVALID_APPLYTO_DIR_STAGED_ERROR;
+  const STATE_AFTER_RUNUPDATE_SERVICE = AppConstants.EARLY_BETA_OR_EARLIER
+      ? STATE_PENDING_SVC
+      : STATE_FAILED_SERVICE_INVALID_APPLYTO_DIR_STAGED_ERROR;
+  const STATE_AFTER_RUNUPDATE = IS_SERVICE_TEST ? STATE_AFTER_RUNUPDATE_SERVICE
+                                                : STATE_AFTER_RUNUPDATE_BASE;
   gTestFiles = gTestFilesCompleteSuccess;
   gTestDirs = gTestDirsCompleteSuccess;
   setTestFilesAndDirsForFailure();

@@ -5,25 +5,17 @@
 
 
 
-const STATE_AFTER_STAGE = STATE_FAILED;
-gStagingRemovedUpdate = true;
-
 async function run_test() {
   if (!setupTestCommon()) {
     return;
   }
+  const STATE_AFTER_STAGE = STATE_FAILED;
   gTestFiles = gTestFilesPartialSuccess;
   gTestFiles[11].originalFile = "partial.png";
   gTestDirs = gTestDirsPartialSuccess;
   setTestFilesAndDirsForFailure();
   await setupUpdaterTest(FILE_PARTIAL_MAR, false);
-  stageUpdate(true);
-}
-
-
-
-
-async function stageUpdateFinished() {
+  await stageUpdate(STATE_AFTER_STAGE, true, true);
   checkPostUpdateRunningFile(false);
   checkFilesAfterUpdateFailure(getApplyDirFile);
   checkUpdateLogContains(ERR_LOADSOURCEFILE_FAILED);

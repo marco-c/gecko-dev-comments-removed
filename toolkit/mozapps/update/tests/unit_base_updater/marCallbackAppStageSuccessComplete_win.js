@@ -4,23 +4,16 @@
 
 
 
-const STATE_AFTER_STAGE = IS_SERVICE_TEST ? STATE_APPLIED_SVC : STATE_APPLIED;
-
 async function run_test() {
   if (!setupTestCommon()) {
     return;
   }
+  const STATE_AFTER_STAGE = IS_SERVICE_TEST ? STATE_APPLIED_SVC : STATE_APPLIED;
   gTestFiles = gTestFilesCompleteSuccess;
   gTestDirs = gTestDirsCompleteSuccess;
   gCallbackBinFile = "exe0.exe";
   await setupUpdaterTest(FILE_COMPLETE_MAR, false);
-  stageUpdate(true);
-}
-
-
-
-
-async function stageUpdateFinished() {
+  await stageUpdate(STATE_AFTER_STAGE, true);
   checkPostUpdateRunningFile(false);
   checkFilesAfterUpdateSuccess(getStageDirFile, true);
   checkUpdateLogContents(LOG_COMPLETE_SUCCESS, true);

@@ -4,24 +4,17 @@
 
 
 
-const STATE_AFTER_STAGE = STATE_PENDING;
-
 async function run_test() {
   if (!setupTestCommon()) {
     return;
   }
+  const STATE_AFTER_STAGE = STATE_PENDING;
   gTestFiles = gTestFilesCompleteSuccess;
   gTestDirs = gTestDirsCompleteSuccess;
   setTestFilesAndDirsForFailure();
   await setupUpdaterTest(FILE_COMPLETE_MAR, false);
   await runHelperLockFile(gTestFiles[3]);
-  stageUpdate(true);
-}
-
-
-
-
-async function stageUpdateFinished() {
+  await stageUpdate(STATE_AFTER_STAGE, true);
   checkPostUpdateRunningFile(false);
   
   

@@ -9,12 +9,11 @@
 
 
 
-const STATE_AFTER_STAGE = STATE_APPLIED;
-
 async function run_test() {
   if (!setupTestCommon()) {
     return;
   }
+  const STATE_AFTER_STAGE = STATE_APPLIED;
   gTestFiles = gTestFilesCompleteSuccess;
   gTestDirs = gTestDirsCompleteSuccess;
   await setupUpdaterTest(FILE_COMPLETE_MAR, null, "", false);
