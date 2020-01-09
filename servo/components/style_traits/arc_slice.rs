@@ -85,6 +85,16 @@ impl<T> ArcSlice<T> {
         mem::forget(self);
         ret
     }
+
+    
+    
+    #[inline]
+    pub fn leaked_empty_ptr() -> *mut std::os::raw::c_void {
+        let empty: ArcSlice<_> = EMPTY_ARC_SLICE.clone();
+        let ptr = empty.0.ptr();
+        std::mem::forget(empty);
+        ptr as *mut _
+    }
 }
 
 
