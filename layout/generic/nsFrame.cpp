@@ -905,6 +905,20 @@ bool nsIFrame::HasDisplayItem(nsDisplayItem* aItem) {
   return items->Contains(aItem);
 }
 
+bool nsIFrame::HasDisplayItem(uint32_t aKey) {
+  DisplayItemArray* items = GetProperty(DisplayItems());
+  if (!items) {
+    return false;
+  }
+
+  for (nsDisplayItem* i : *items) {
+    if (i->GetPerFrameKey() == aKey) {
+      return true;
+    }
+  }
+  return false;
+}
+
 void nsIFrame::RemoveDisplayItemDataForDeletion() {
   
   
@@ -3404,17 +3418,46 @@ void nsIFrame::BuildDisplayListForStackingContext(
 static nsDisplayItem* WrapInWrapList(nsDisplayListBuilder* aBuilder,
                                      nsIFrame* aFrame, nsDisplayList* aList,
                                      const ActiveScrolledRoot* aContainerASR,
-                                     bool aCanSkipWrapList = false) {
+                                     bool aBuiltContainerItem = false) {
   nsDisplayItem* item = aList->GetBottom();
   if (!item) {
     return nullptr;
   }
 
-  if (aCanSkipWrapList) {
-    MOZ_ASSERT(!item->GetAbove());
+  
+  
+  bool needsWrapList = item->GetAbove() || item->Frame() != aFrame;
+
+  
+  
+  
+  if (!needsWrapList && (!aBuilder->IsPartialUpdate() || aBuiltContainerItem)) {
     aList->RemoveBottom();
     return item;
   }
+
+  
+  
+  if (aBuilder->IsPartialUpdate() &&
+      !aFrame->HasDisplayItem(uint32_t(DisplayItemType::TYPE_WRAP_LIST))) {
+    
+    
+    
+    
+    
+    if (needsWrapList) {
+      aBuilder->MarkFrameModifiedDuringBuilding(aFrame);
+    } else {
+      aList->RemoveBottom();
+      return item;
+    }
+  }
+
+  
+  
+  
+  
+  
 
   
   
@@ -3729,17 +3772,17 @@ void nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder* aBuilder,
   nsDisplayList list;
   nsDisplayList extraPositionedDescendants;
   const ActiveScrolledRoot* wrapListASR;
-  bool canSkipWrapList = false;
+  bool builtContainerItem = false;
   if (isStackingContext) {
     
     
     
     nsDisplayListBuilder::AutoContainerASRTracker contASRTracker(aBuilder);
     child->BuildDisplayListForStackingContext(aBuilder, &list,
-                                              &canSkipWrapList);
+                                              &builtContainerItem);
     wrapListASR = contASRTracker.GetContainerASR();
     if (aBuilder->GetCaretFrame() == child) {
-      canSkipWrapList = false;
+      builtContainerItem = false;
     }
   } else {
     Maybe<nsRect> clipPropClip =
@@ -3795,7 +3838,7 @@ void nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder* aBuilder,
     child->BuildDisplayList(aBuilder, pseudoStack);
     aBuilder->Check();
     if (aBuilder->DisplayCaret(child, pseudoStack.Content())) {
-      canSkipWrapList = false;
+      builtContainerItem = false;
     }
     wrapListASR = contASRTracker.GetContainerASR();
 
@@ -3817,8 +3860,8 @@ void nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder* aBuilder,
     
     
     if (!list.IsEmpty()) {
-      nsDisplayItem* item =
-          WrapInWrapList(aBuilder, child, &list, wrapListASR, canSkipWrapList);
+      nsDisplayItem* item = WrapInWrapList(aBuilder, child, &list, wrapListASR,
+                                           builtContainerItem);
       if (isSVG) {
         aLists.Content()->AppendToTop(item);
       } else {
