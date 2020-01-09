@@ -380,6 +380,8 @@ int NS_main(int argc, NS_tchar **argv) {
 
   
   if (!NS_tstrcmp(argv[4], NS_T("-s"))) {
+    
+    
     NS_tchar *cwd = NS_tgetcwd(nullptr, 0);
     NS_tchar inFilePath[MAXPATHLEN];
     NS_tsnprintf(inFilePath, sizeof(inFilePath) / sizeof(inFilePath[0]),
@@ -387,6 +389,7 @@ int NS_main(int argc, NS_tchar **argv) {
     NS_tchar outFilePath[MAXPATHLEN];
     NS_tsnprintf(outFilePath, sizeof(outFilePath) / sizeof(outFilePath[0]),
                  NS_T("%s/%s"), cwd, argv[3]);
+    free(cwd);
 
     int seconds = NS_ttoi(argv[5]);
 #ifdef XP_WIN
