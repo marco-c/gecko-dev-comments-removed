@@ -836,27 +836,6 @@ void BaselineScript::computeResumeNativeOffsets(JSScript* script) {
                  computeNative);
 }
 
-void ICScript::initICEntries(JSScript* script, const ICEntry* entries) {
-  
-  
-  for (uint32_t i = 0; i < numICEntries(); i++) {
-    ICEntry& realEntry = icEntry(i);
-    new (&realEntry) ICEntry(entries[i]);
-
-    
-    
-    if (realEntry.firstStub()->isFallback()) {
-      realEntry.firstStub()->toFallbackStub()->fixupICEntry(&realEntry);
-    }
-
-    if (realEntry.firstStub()->isTypeMonitor_Fallback()) {
-      ICTypeMonitor_Fallback* stub =
-          realEntry.firstStub()->toTypeMonitor_Fallback();
-      stub->fixupICEntry(&realEntry);
-    }
-  }
-}
-
 void BaselineScript::copyRetAddrEntries(JSScript* script,
                                         const RetAddrEntry* entries) {
   for (uint32_t i = 0; i < numRetAddrEntries(); i++) {

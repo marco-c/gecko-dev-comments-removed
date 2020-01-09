@@ -9,8 +9,10 @@
 #include "mozilla/Casting.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/IntegerPrintfMacros.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/TemplateLib.h"
+#include "mozilla/Unused.h"
 
 #include "jsfriendapi.h"
 #include "jslibmath.h"
@@ -159,23 +161,50 @@ UniquePtr<ICScript> ICScript::create(JSContext* cx, JSScript* script) {
   MOZ_ASSERT(cx->realm()->jitRealm());
   MOZ_ASSERT(jit::IsBaselineEnabled(cx));
 
-  FallbackICStubSpace stubSpace;
-  FallbackStubAllocator alloc(cx, stubSpace);
+  const uint32_t numICEntries = script->numICEntries();
 
-  js::Vector<ICEntry, 16, SystemAllocPolicy> icEntries;
+  
+  UniquePtr<ICScript> icScript(
+      script->zone()->pod_malloc_with_extra<ICScript, ICEntry>(numICEntries));
+  if (!icScript) {
+    ReportOutOfMemory(cx);
+    return nullptr;
+  }
+  new (icScript.get()) ICScript(numICEntries);
+
+  
+  auto prepareForDestruction = mozilla::MakeScopeExit(
+      [&] { icScript->prepareForDestruction(cx->zone()); });
+
+  FallbackStubAllocator alloc(cx, icScript->fallbackStubSpace_);
+
+  
+  uint32_t icEntryIndex = 0;
 
   using Kind = BaselineICFallbackKind;
 
-  auto addIC = [cx, &icEntries, script](jsbytecode* pc, ICStub* stub) {
+  ICScript* icScriptPtr = icScript.get();
+  auto addIC = [cx, icScriptPtr, &icEntryIndex, script](jsbytecode* pc,
+                                                        ICStub* stub) {
     if (!stub) {
       MOZ_ASSERT(cx->isExceptionPending());
+      mozilla::Unused << cx;  
       return false;
     }
+
+    
     uint32_t offset = pc ? script->pcToOffset(pc) : ICEntry::ProloguePCOffset;
-    if (!icEntries.emplaceBack(stub, offset)) {
-      ReportOutOfMemory(cx);
-      return false;
+    ICEntry& entryRef = icScriptPtr->icEntry(icEntryIndex);
+    icEntryIndex++;
+    new (&entryRef) ICEntry(stub, offset);
+
+    
+    if (stub->isFallback()) {
+      stub->toFallbackStub()->fixupICEntry(&entryRef);
+    } else {
+      stub->toTypeMonitor_Fallback()->fixupICEntry(&entryRef);
     }
+
     return true;
   };
 
@@ -205,8 +234,7 @@ UniquePtr<ICScript> ICScript::create(JSContext* cx, JSScript* script) {
     JSOp op = JSOp(*pc);
 
     
-    MOZ_ASSERT_IF(BytecodeIsJumpTarget(op),
-                  GET_ICINDEX(pc) == icEntries.length());
+    MOZ_ASSERT_IF(BytecodeIsJumpTarget(op), GET_ICINDEX(pc) == icEntryIndex);
 
     if (!BytecodeOpHasIC(op)) {
       continue;
@@ -482,21 +510,10 @@ UniquePtr<ICScript> ICScript::create(JSContext* cx, JSScript* script) {
     }
   }
 
-  UniquePtr<ICScript> icScript(
-      script->zone()->pod_malloc_with_extra<ICScript, ICEntry>(
-          icEntries.length()));
-  if (!icScript) {
-    ReportOutOfMemory(cx);
-    return nullptr;
-  }
-  new (icScript.get()) ICScript(icEntries.length());
-
   
-  icScript->fallbackStubSpace_.adoptFrom(&stubSpace);
+  MOZ_ASSERT(icEntryIndex == numICEntries);
 
-  if (icEntries.length() > 0) {
-    icScript->initICEntries(script, &icEntries[0]);
-  }
+  prepareForDestruction.release();
 
   return icScript;
 }
