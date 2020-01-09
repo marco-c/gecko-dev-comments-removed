@@ -36,8 +36,8 @@ class UrlbarView {
     this._mainContainer = this.panel.querySelector(".urlbarView-body-inner");
     this._rows = this.panel.querySelector("#urlbarView-results");
 
-    this._rows.addEventListener("mouseup", this);
     this._rows.addEventListener("mousedown", this);
+    this._rows.addEventListener("mouseup", this);
 
     
     
@@ -139,6 +139,9 @@ class UrlbarView {
     if (!this.isOpen) {
       throw new Error("UrlbarView: Cannot select an item if the view isn't open.");
     }
+
+    
+    this.controller.cancelQuery();
 
     let row = this._selected;
 
