@@ -21,13 +21,6 @@ nsNativeAppSupportBase::Start(bool *result) {
 NS_IMETHODIMP
 nsNativeAppSupportBase::Enable() { return NS_OK; }
 
-
-NS_IMETHODIMP
-nsNativeAppSupportBase::Stop(bool *result) {
-  *result = true;
-  return NS_OK;
-}
-
 NS_IMETHODIMP
 nsNativeAppSupportBase::Quit() { return NS_OK; }
 
