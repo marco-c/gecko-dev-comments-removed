@@ -357,19 +357,47 @@ static float GetSuitableScale(float aMaxScale, float aMinScale,
   return std::max(std::min(aMaxScale, displayVisibleRatio), aMinScale);
 }
 
+
+
+using MinAndMaxScale = Pair<Size, Size>;
+
 static inline void UpdateMinMaxScale(const nsIFrame* aFrame,
                                      const AnimationValue& aValue,
-                                     Size& aMinScale, Size& aMaxScale) {
+                                     MinAndMaxScale& aMinAndMaxScale) {
   Size size = aValue.GetScaleValue(aFrame);
-  aMaxScale.width = std::max<float>(aMaxScale.width, size.width);
-  aMaxScale.height = std::max<float>(aMaxScale.height, size.height);
-  aMinScale.width = std::min<float>(aMinScale.width, size.width);
-  aMinScale.height = std::min<float>(aMinScale.height, size.height);
+  Size& minScale = aMinAndMaxScale.first();
+  Size& maxScale = aMinAndMaxScale.second();
+
+  minScale = Min(minScale, size);
+  maxScale = Max(maxScale, size);
 }
 
-static void GetMinAndMaxScaleForAnimationProperty(
-    const nsIFrame* aFrame, nsTArray<RefPtr<dom::Animation>>& aAnimations,
-    Size& aMaxScale, Size& aMinScale) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+static Array<MinAndMaxScale, 2> GetMinAndMaxScaleForAnimationProperty(
+    const nsIFrame* aFrame,
+    const nsTArray<RefPtr<dom::Animation>>& aAnimations) {
+  
+  
+  
+  const MinAndMaxScale defaultValue =
+      MakePair(Size(std::numeric_limits<float>::max(),
+                    std::numeric_limits<float>::max()),
+               Size(std::numeric_limits<float>::min(),
+                    std::numeric_limits<float>::min()));
+  Array<MinAndMaxScale, 2> minAndMaxScales(defaultValue, defaultValue);
+
   for (dom::Animation* anim : aAnimations) {
     
     
@@ -377,53 +405,100 @@ static void GetMinAndMaxScaleForAnimationProperty(
     
     MOZ_ASSERT(anim->IsRelevant());
 
-    dom::KeyframeEffect* effect =
+    const dom::KeyframeEffect* effect =
         anim->GetEffect() ? anim->GetEffect()->AsKeyframeEffect() : nullptr;
     MOZ_ASSERT(effect, "A playing animation should have a keyframe effect");
-    for (size_t propIdx = effect->Properties().Length(); propIdx-- != 0;) {
-      const AnimationProperty& prop = effect->Properties()[propIdx];
-      
-      if (prop.mProperty != eCSSProperty_transform) {
+    for (const AnimationProperty& prop : effect->Properties()) {
+      if (prop.mProperty != eCSSProperty_transform &&
+          prop.mProperty != eCSSProperty_scale) {
         continue;
       }
 
       
       
-      AnimationValue baseStyle = effect->BaseStyle(prop.mProperty);
+      MinAndMaxScale& scales =
+          minAndMaxScales[prop.mProperty == eCSSProperty_transform ? 0 : 1];
+
+      
+      
+      const AnimationValue& baseStyle = effect->BaseStyle(prop.mProperty);
       if (!baseStyle.IsNull()) {
-        UpdateMinMaxScale(aFrame, baseStyle, aMinScale, aMaxScale);
+        UpdateMinMaxScale(aFrame, baseStyle, scales);
       }
 
       for (const AnimationPropertySegment& segment : prop.mSegments) {
         
         
         if (segment.HasReplaceableFromValue()) {
-          UpdateMinMaxScale(aFrame, segment.mFromValue, aMinScale, aMaxScale);
+          UpdateMinMaxScale(aFrame, segment.mFromValue, scales);
         }
+
         if (segment.HasReplaceableToValue()) {
-          UpdateMinMaxScale(aFrame, segment.mToValue, aMinScale, aMaxScale);
+          UpdateMinMaxScale(aFrame, segment.mToValue, scales);
         }
       }
     }
   }
+
+  return minAndMaxScales;
 }
 
 Size nsLayoutUtils::ComputeSuitableScaleForAnimation(
     const nsIFrame* aFrame, const nsSize& aVisibleSize,
     const nsSize& aDisplaySize) {
+  const nsTArray<RefPtr<dom::Animation>> compositorAnimations =
+      EffectCompositor::GetAnimationsForCompositor(
+          aFrame,
+          nsCSSPropertyIDSet{eCSSProperty_transform, eCSSProperty_scale});
+
+  if (compositorAnimations.IsEmpty()) {
+    return Size(1.0, 1.0);
+  }
+
+  const Array<MinAndMaxScale, 2> minAndMaxScales =
+      GetMinAndMaxScaleForAnimationProperty(aFrame, compositorAnimations);
+
+  
+  
+  
+  
   Size maxScale(std::numeric_limits<float>::min(),
                 std::numeric_limits<float>::min());
   Size minScale(std::numeric_limits<float>::max(),
                 std::numeric_limits<float>::max());
 
-  
-  nsTArray<RefPtr<dom::Animation>> compositorAnimations =
-      EffectCompositor::GetAnimationsForCompositor(
-          aFrame, nsCSSPropertyIDSet{eCSSProperty_transform});
-  GetMinAndMaxScaleForAnimationProperty(aFrame, compositorAnimations, maxScale,
-                                        minScale);
+  auto isUnset = [](const Size& aMax, const Size& aMin) {
+    return aMax.width == std::numeric_limits<float>::min() &&
+           aMax.height == std::numeric_limits<float>::min() &&
+           aMin.width == std::numeric_limits<float>::max() &&
+           aMin.height == std::numeric_limits<float>::max();
+  };
 
-  if (maxScale.width == std::numeric_limits<float>::min()) {
+  
+  for (const auto& pair : minAndMaxScales) {
+    const Size& currMinScale = pair.first();
+    const Size& currMaxScale = pair.second();
+
+    if (isUnset(currMaxScale, currMinScale)) {
+      
+      continue;
+    }
+
+    if (isUnset(maxScale, minScale)) {
+      
+      maxScale = currMaxScale;
+      minScale = currMinScale;
+    } else {
+      
+      
+      
+      
+      maxScale = maxScale * currMaxScale;
+      minScale = minScale * currMinScale;
+    }
+  }
+
+  if (isUnset(maxScale, minScale)) {
     
     return Size(1.0, 1.0);
   }
