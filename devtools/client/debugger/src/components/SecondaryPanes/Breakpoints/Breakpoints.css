@@ -2,6 +2,10 @@
 
 
 
+.breakpoints-pane > ._content {
+  overflow-x: auto;
+}
+
 .breakpoints-toggle {
   margin: 2px 3px;
 }

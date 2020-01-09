@@ -2,6 +2,10 @@
 
 
 
+.xhr-breakpoints-pane ._content {
+  overflow-x: auto;
+}
+
 .xhr-input-container {
   display: flex;
   border: 1px solid transparent;
