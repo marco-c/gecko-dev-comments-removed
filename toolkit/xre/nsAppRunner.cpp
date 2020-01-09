@@ -196,8 +196,6 @@
 #  ifdef MOZ_ENABLE_DBUS
 #    include "nsDBusRemoteClient.h"
 #  endif
-
-#  define MOZ_XREMOTE_START_TIMEOUT_SEC 5
 #endif
 
 #if defined(DEBUG) && defined(XP_WIN32)
@@ -2882,8 +2880,6 @@ class XREMain {
   nsCOMPtr<nsIProfileLock> mProfileLock;
 #if defined(MOZ_WIDGET_GTK)
   RefPtr<nsRemoteService> mRemoteService;
-  nsProfileLock mRemoteLock;
-  nsCOMPtr<nsIFile> mRemoteLockDir;
 #endif
 
   UniquePtr<ScopedXPCOMStartup> mScopedXPCOM;
@@ -3919,35 +3915,7 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
       
       CheckArg("p", &profile, CheckArgFlag::None);
 
-      nsCOMPtr<nsIFile> mutexDir;
-      rv = GetSpecialSystemDirectory(OS_TemporaryDirectory,
-                                     getter_AddRefs(mutexDir));
-      if (NS_SUCCEEDED(rv)) {
-        nsAutoCString mutexPath = program;
-        if (profile) {
-          mutexPath.Append(NS_LITERAL_CSTRING("_") +
-                           nsDependentCString(profile));
-        }
-        mutexDir->AppendNative(mutexPath);
-
-        rv = mutexDir->Create(nsIFile::DIRECTORY_TYPE, 0700);
-        if (NS_SUCCEEDED(rv) || rv == NS_ERROR_FILE_ALREADY_EXISTS) {
-          mRemoteLockDir = mutexDir;
-        }
-      }
-
-      if (mRemoteLockDir) {
-        const TimeStamp epoch = mozilla::TimeStamp::Now();
-        do {
-          rv = mRemoteLock.Lock(mRemoteLockDir, nullptr);
-          if (NS_SUCCEEDED(rv)) break;
-          sched_yield();
-        } while ((TimeStamp::Now() - epoch) <
-                 TimeDuration::FromSeconds(MOZ_XREMOTE_START_TIMEOUT_SEC));
-        if (NS_FAILED(rv)) {
-          NS_WARNING("Cannot lock XRemote start mutex");
-        }
-      }
+      mRemoteService->LockStartup(program, profile);
 
       
       
@@ -4592,11 +4560,7 @@ nsresult XREMain::XRE_mainRun() {
     
     if (mRemoteService) {
       mRemoteService->StartupServer(mAppData->remotingName, mProfileName.get());
-    }
-    if (mRemoteLockDir) {
-      mRemoteLock.Unlock();
-      mRemoteLock.Cleanup();
-      mRemoteLockDir->Remove(false);
+      mRemoteService->UnlockStartup();
     }
 #endif 
 
