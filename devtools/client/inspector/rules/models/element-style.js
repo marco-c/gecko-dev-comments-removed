@@ -11,6 +11,7 @@ const { ELEMENT_STYLE } = require("devtools/shared/specs/styles");
 
 loader.lazyRequireGetter(this, "promiseWarn", "devtools/client/inspector/shared/utils", true);
 loader.lazyRequireGetter(this, "parseDeclarations", "devtools/shared/css/parsing-utils", true);
+loader.lazyRequireGetter(this, "parseSingleValue", "devtools/shared/css/parsing-utils", true);
 loader.lazyRequireGetter(this, "isCssVariable", "devtools/shared/fronts/css-properties", true);
 
 
@@ -366,6 +367,100 @@ ElementStyle.prototype = {
 
     if (!declaration.enabled) {
       await declaration.setEnabled(true);
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _getValueAndExtraProperties: function(value) {
+    
+    
+    
+    
+    let firstValue = value;
+    let declarationsToAdd = [];
+
+    const declarations = parseDeclarations(this.cssProperties.isKnown, value);
+
+    
+    if (declarations.length) {
+      
+      
+      if (!declarations[0].name && declarations[0].value) {
+        firstValue = declarations[0].value;
+        declarationsToAdd = declarations.slice(1);
+      } else if (declarations[0].name && declarations[0].value) {
+        
+        
+        
+        firstValue = declarations[0].name + ": " + declarations[0].value;
+        declarationsToAdd = declarations.slice(1);
+      }
+    }
+
+    return {
+      declarationsToAdd,
+      firstValue,
+    };
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  modifyDeclarationValue: async function(ruleId, declarationId, value) {
+    const rule = this.getRule(ruleId);
+    if (!rule) {
+      return;
+    }
+
+    const declaration = rule.getDeclaration(declarationId);
+    if (!declaration) {
+      return;
+    }
+
+    const { declarationsToAdd, firstValue} = this._getValueAndExtraProperties(value);
+    const parsedValue = parseSingleValue(this.cssProperties.isKnown, firstValue);
+
+    if (!declarationsToAdd.length &&
+        declaration.value === parsedValue.value &&
+        declaration.priority === parsedValue.priority) {
+      return;
+    }
+
+    
+    await declaration.setValue(parsedValue.value, parsedValue.priority);
+
+    if (!declaration.enabled) {
+      await declaration.setEnabled(true);
+    }
+
+    let siblingDeclaration = declaration;
+    for (const { commentOffsets, name, value: val, priority } of declarationsToAdd) {
+      const isCommented = Boolean(commentOffsets);
+      const enabled = !isCommented;
+      siblingDeclaration = rule.createProperty(name, val, priority, enabled,
+        siblingDeclaration);
     }
   },
 
