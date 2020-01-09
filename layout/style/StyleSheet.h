@@ -440,6 +440,9 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   
   void RuleRemoved(css::Rule&);
 
+  
+  void StyleSheetCloned(StyleSheet&);
+
   void ApplicableStateChanged(bool aApplicable);
 
   struct ChildSheetListBuilder {

@@ -108,7 +108,8 @@ class ServoStyleSet {
   
   void RuleAdded(StyleSheet&, css::Rule&);
   void RuleRemoved(StyleSheet&, css::Rule&);
-  void RuleChanged(StyleSheet& aSheet, css::Rule* aRule);
+  void RuleChanged(StyleSheet&, css::Rule* aRule);
+  void StyleSheetCloned(StyleSheet&);
 
   
   void InvalidateStyleForDocumentStateChanges(EventStates aStatesChanged);
@@ -380,12 +381,6 @@ class ServoStyleSet {
   bool EnsureUniqueInnerOnCSSSheets();
 
   
-  
-  void SetNeedsRestyleAfterEnsureUniqueInner() {
-    mNeedsRestyleAfterEnsureUniqueInner = true;
-  }
-
-  
   ServoStyleRuleMap* StyleRuleMap();
 
   
@@ -434,6 +429,19 @@ class ServoStyleSet {
   friend class PostTraversalTask;
 
   bool ShouldTraverseInParallel() const;
+
+  
+
+
+
+
+
+
+
+
+
+
+  void ForceDirtyAllShadowStyles();
 
   
 

@@ -889,6 +889,10 @@ void ServoStyleSet::RuleChanged(StyleSheet& aSheet, css::Rule* aRule) {
   MarkOriginsDirty(ToOriginFlags(aSheet.GetOrigin()));
 }
 
+void ServoStyleSet::StyleSheetCloned(StyleSheet& aSheet) {
+  mNeedsRestyleAfterEnsureUniqueInner = true;
+}
+
 #ifdef DEBUG
 void ServoStyleSet::AssertTreeIsClean() {
   DocumentStyleRootIterator iter(mDocument);
@@ -971,23 +975,11 @@ bool ServoStyleSet::EnsureUniqueInnerOnCSSSheets() {
     }
   });
 
-  bool anyNonDocStyleChanged = false;
   while (!queue.IsEmpty()) {
     uint32_t idx = queue.Length() - 1;
     auto* sheet = queue[idx].first();
     SheetOwner owner = queue[idx].second();
     queue.RemoveElementAt(idx);
-
-    if (!sheet->HasUniqueInner() && owner.is<ShadowRoot*>()) {
-      RawServoAuthorStyles* authorStyles =
-          owner.as<ShadowRoot*>()->GetServoStyles();
-
-      if (authorStyles) {
-        Servo_AuthorStyles_ForceDirty(authorStyles);
-        mNeedsRestyleAfterEnsureUniqueInner = true;
-        anyNonDocStyleChanged = true;
-      }
-    }
 
     
     
@@ -1007,15 +999,12 @@ bool ServoStyleSet::EnsureUniqueInnerOnCSSSheets() {
     }
   }
 
-  if (anyNonDocStyleChanged) {
-    SetStylistShadowDOMStyleSheetsDirty();
-  }
-
   if (mNeedsRestyleAfterEnsureUniqueInner) {
     
     
     
     MarkOriginsDirty(OriginFlags::All);
+    ForceDirtyAllShadowStyles();
   }
   bool res = mNeedsRestyleAfterEnsureUniqueInner;
   mNeedsRestyleAfterEnsureUniqueInner = false;
@@ -1027,9 +1016,7 @@ void ServoStyleSet::ClearCachedStyleData() {
   Servo_StyleSet_RebuildCachedData(mRawSet.get());
 }
 
-void ServoStyleSet::CompatibilityModeChanged() {
-  Servo_StyleSet_CompatModeChanged(mRawSet.get());
-  SetStylistStyleSheetsDirty();
+void ServoStyleSet::ForceDirtyAllShadowStyles() {
   bool anyShadow = false;
   EnumerateShadowRoots(*mDocument, [&](ShadowRoot& aShadowRoot) {
     if (auto* authorStyles = aShadowRoot.GetServoStyles()) {
@@ -1040,6 +1027,12 @@ void ServoStyleSet::CompatibilityModeChanged() {
   if (anyShadow) {
     SetStylistShadowDOMStyleSheetsDirty();
   }
+}
+
+void ServoStyleSet::CompatibilityModeChanged() {
+  Servo_StyleSet_CompatModeChanged(mRawSet.get());
+  SetStylistStyleSheetsDirty();
+  ForceDirtyAllShadowStyles();
 }
 
 void ServoStyleSet::ClearNonInheritingComputedStyles() {
