@@ -18,8 +18,14 @@ class CompositorController {
  public:
   NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
 
+  
+
+
+
+
+
   virtual void ScheduleRenderOnCompositorThread(
-      const wr::RenderRootSet& aRenderRoots = wr::RenderRootSet()) = 0;
+      const wr::RenderRootSet& aRenderRoots) = 0;
   virtual void ScheduleHideAllPluginWindows() = 0;
   virtual void ScheduleShowAllPluginWindows() = 0;
 

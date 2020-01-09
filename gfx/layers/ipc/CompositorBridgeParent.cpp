@@ -723,7 +723,7 @@ void CompositorBridgeParent::ResumeComposition() {
 void CompositorBridgeParent::ForceComposition() {
   
   mForceCompositionTask = nullptr;
-  ScheduleRenderOnCompositorThread();
+  ScheduleRenderOnCompositorThread(wr::RenderRootSet());
 }
 
 void CompositorBridgeParent::CancelCurrentCompositeTask() {

@@ -426,7 +426,7 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase,
 
   
   void ScheduleRenderOnCompositorThread(
-      const wr::RenderRootSet& aRenderRoots = wr::RenderRootSet()) override;
+      const wr::RenderRootSet& aRenderRoots) override;
   void SchedulePauseOnCompositorThread();
   void InvalidateOnCompositorThread();
   
