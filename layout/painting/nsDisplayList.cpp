@@ -955,7 +955,11 @@ nsDisplayListBuilder::OutOfFlowDisplayData::ComputeVisibleRectForFrame(
         dirtyRectRelativeToDirtyFrame.Size() < ps->GetVisualViewportSize()) {
       dirtyRectRelativeToDirtyFrame.SizeTo(ps->GetVisualViewportSize());
     }
-
+    
+    const nsSize layoutViewportSize = ps->GetLayoutViewportSize();
+    if (dirtyRectRelativeToDirtyFrame.Size() < layoutViewportSize) {
+      dirtyRectRelativeToDirtyFrame.SizeTo(layoutViewportSize);
+    }
     visible = dirtyRectRelativeToDirtyFrame;
   }
 #endif
@@ -6674,6 +6678,13 @@ already_AddRefed<Layer> nsDisplayFixedPosition::BuildLayer(
       anchorRect.SizeTo(presContext->PresShell()->GetVisualViewportSize());
     } else {
       anchorRect.SizeTo(viewportFrame->GetSize());
+    }
+
+    
+    const nsSize layoutViewportSize =
+        presContext->PresShell()->GetLayoutViewportSize();
+    if (anchorRect.Size() < layoutViewportSize) {
+      anchorRect.SizeTo(layoutViewportSize);
     }
   } else {
     
