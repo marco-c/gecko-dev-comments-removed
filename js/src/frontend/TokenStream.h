@@ -318,6 +318,12 @@ class MOZ_STACK_CLASS TokenStreamPosition final {
   Token lookaheadTokens[TokenStreamShared::maxLookahead];
 } JS_HAZ_ROOTED;
 
+
+
+
+
+#define JS_COLUMN_DIMENSION_IS_CODE_POINTS() 0
+
 class TokenStreamAnyChars : public TokenStreamShared {
  public:
   TokenStreamAnyChars(JSContext* cx, const JS::ReadOnlyCompileOptions& options,
@@ -1604,12 +1610,6 @@ class TokenStart {
 
   uint32_t offset() const { return startOffset_; }
 };
-
-
-
-
-
-#define JS_COLUMN_DIMENSION_IS_CODE_POINTS 0
 
 template <typename Unit, class AnyCharsAccess>
 class GeneralTokenStreamChars : public SpecializedTokenStreamCharsBase<Unit> {
