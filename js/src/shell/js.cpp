@@ -7702,7 +7702,11 @@ static bool DumpScopeChain(JSContext* cx, unsigned argc, Value* vp) {
     }
   }
 
+#ifndef JS_MORE_DETERMINISTIC
+  
+  
   script->bodyScope()->dump();
+#endif
 
   args.rval().setUndefined();
   return true;
