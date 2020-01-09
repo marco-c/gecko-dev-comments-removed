@@ -3695,6 +3695,16 @@ Downloader.prototype = {
 
 
 
+  _cancelPromise: null,
+
+  
+
+
+
+
+
+
+
 
 
 
@@ -3725,6 +3735,13 @@ Downloader.prototype = {
       cancelError = Cr.NS_BINDING_ABORTED;
     }
     if (this.usingBits) {
+      
+      
+      if (this._cancelPromise) {
+        await this._cancelPromise;
+        return;
+      }
+
       if (this._pendingRequest) {
         await this._pendingRequest;
       }
@@ -3733,7 +3750,17 @@ Downloader.prototype = {
         
         this._patch.deleteProperty("bitsId");
       }
-      await this._request.cancelAsync(cancelError);
+      try {
+        this._cancelPromise = this._request.cancelAsync(cancelError);
+        await this._cancelPromise;
+      } catch (e) {
+        
+        
+        
+        
+        this._cancelPromise = null;
+        throw e;
+      }
     } else if (this._request && this._request instanceof Ci.nsIRequest) {
       this._request.cancel(cancelError);
     }
@@ -4007,6 +4034,8 @@ Downloader.prototype = {
       if (!Bits.initialized) {
         Bits.init(jobName, updatePath, monitorTimeout);
       }
+
+      this._cancelPromise = null;
 
       let bitsId = this._patch.getProperty("bitsId");
       if (bitsId) {
@@ -4327,7 +4356,7 @@ Downloader.prototype = {
         
         
         try {
-          await request.cancelAsync();
+          await this.cancel();
         } catch (e) {
           
           
