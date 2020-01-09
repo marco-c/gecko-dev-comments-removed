@@ -1,9 +1,15 @@
 
 
-extern crate libc;
 extern crate libz_sys as ffi;
+extern crate libc;
 
 mod context;
 mod extension;
 
-pub use self::extension::{DeflateBuilder, DeflateHandler, DeflateSettings};
+pub use self::extension::{DeflateHandler, DeflateBuilder, DeflateSettings};
+
+
+
+
+
+

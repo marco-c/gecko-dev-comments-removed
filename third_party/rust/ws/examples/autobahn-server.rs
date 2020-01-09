@@ -1,25 +1,30 @@
-extern crate env_logger;
+
 
 
 extern crate ws;
+extern crate env_logger;
 
-#[cfg(feature = "permessage-deflate")]
+#[cfg(feature="permessage-deflate")]
 use ws::deflate::DeflateHandler;
 
-#[cfg(not(feature = "permessage-deflate"))]
-fn main() {
-    env_logger::init();
+#[cfg(not(feature="permessage-deflate"))]
+fn main () {
+    env_logger::init().unwrap();
 
     ws::listen("127.0.0.1:3012", |out| {
-        move |msg| out.send(msg)
+        move |msg| {
+            out.send(msg)
+        }
     }).unwrap()
 }
 
-#[cfg(feature = "permessage-deflate")]
-fn main() {
-    env_logger::init();
+#[cfg(feature="permessage-deflate")]
+fn main () {
+    env_logger::init().unwrap();
 
     ws::listen("127.0.0.1:3012", |out| {
-        DeflateHandler::new(move |msg| out.send(msg))
+        DeflateHandler::new(move |msg| {
+            out.send(msg)
+        })
     }).unwrap();
 }

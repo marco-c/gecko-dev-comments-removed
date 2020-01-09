@@ -1,9 +1,12 @@
 
+use slab;
 
 
 pub use mio::Token;
 
-pub use mio_extras::timer::Timeout;
-#[cfg(any(feature = "ssl", feature = "nativetls"))]
+pub use mio::timer::Timeout;
+
+pub type Slab<T> = slab::Slab<T, Token>;
+#[cfg(feature="ssl")]
 
 pub use mio::tcp::TcpStream;

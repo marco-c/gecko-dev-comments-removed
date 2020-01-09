@@ -1,10 +1,11 @@
-extern crate env_logger;
-extern crate time;
-extern crate url;
+
 
 
 
 extern crate ws;
+extern crate url;
+extern crate time;
+extern crate env_logger;
 
 
 
@@ -12,14 +13,14 @@ extern crate ws;
 
 
 
-use ws::{Builder, CloseCode, Handler, Handshake, Message, Result, Sender, Settings};
+use ws::{Builder, Settings, Sender, CloseCode, Handler, Message, Handshake, Result};
 
 const CONNECTIONS: usize = 10_000; 
 const MESSAGES: u32 = 10;
 static MESSAGE: &'static str = "TEST TEST TEST TEST TEST TEST TEST TEST";
 
-fn main() {
-    env_logger::init();
+fn main () {
+    env_logger::init().unwrap();
 
     let url = url::Url::parse("ws://127.0.0.1:3012").unwrap();
 
@@ -31,19 +32,19 @@ fn main() {
     }
 
     impl Handler for Connection {
+
         fn on_open(&mut self, _: Handshake) -> Result<()> {
-            self.out.send(MESSAGE)?;
+            try!(self.out.send(MESSAGE));
             self.count += 1;
-            self.time = time::precise_time_ns();
-            Ok(())
+            Ok(self.time = time::precise_time_ns())
         }
 
         fn on_message(&mut self, msg: Message) -> Result<()> {
             assert_eq!(msg.as_text().unwrap(), MESSAGE);
             if self.count > MESSAGES {
-                self.out.close(CloseCode::Normal)?;
+                try!(self.out.close(CloseCode::Normal));
             } else {
-                self.out.send(MESSAGE)?;
+                try!(self.out.send(MESSAGE));
                 let time = time::precise_time_ns();
                 
                 self.total += time - self.time;
@@ -54,26 +55,23 @@ fn main() {
         }
     }
 
-    let mut ws = Builder::new()
-        .with_settings(Settings {
-            max_connections: CONNECTIONS,
-            ..Settings::default()
-        })
-        .build(|out| Connection {
-            out,
+    let mut ws = Builder::new().with_settings(Settings {
+        max_connections: CONNECTIONS,
+        ..Settings::default()
+    }).build(|out| {
+        Connection {
+            out: out,
             count: 0,
             time: 0,
             total: 0,
-        })
-        .unwrap();
+        }
+    }).unwrap();
+
 
     for _ in 0..CONNECTIONS {
         ws.connect(url.clone()).unwrap();
     }
     let start = time::precise_time_ns();
     ws.run().unwrap();
-    println!(
-        "Total time. {}",
-        (time::precise_time_ns() - start) / 1_000_000
-    )
+    println!("Total time. {}", (time::precise_time_ns() - start) / 1_000_000)
 }

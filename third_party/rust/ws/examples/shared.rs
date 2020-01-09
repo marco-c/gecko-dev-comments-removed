@@ -1,20 +1,23 @@
-extern crate env_logger;
-extern crate url;
+
 
 
 extern crate ws;
+extern crate url;
+extern crate env_logger;
 
-use ws::{Sender, WebSocket};
+use ws::{WebSocket, Sender};
 
-fn main() {
+fn main () {
+
     
-    env_logger::init();
+    env_logger::init().unwrap();
 
     
     let mut name = "Client";
 
     
     let mut ws = WebSocket::new(|output: Sender| {
+
         
         if name == "Client" {
             println!("{} sending 'Hello Websocket' ", name);

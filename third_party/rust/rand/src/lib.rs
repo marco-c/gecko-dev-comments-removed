@@ -41,499 +41,788 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #![doc(html_logo_url = "https://www.rust-lang.org/logos/rust-logo-128x128-blk.png",
        html_favicon_url = "https://www.rust-lang.org/favicon.ico",
-       html_root_url = "https://rust-random.github.io/rand/")]
+       html_root_url = "https://docs.rs/rand/0.4")]
 
-#![deny(missing_docs)]
 #![deny(missing_debug_implementations)]
-#![doc(test(attr(allow(unused_variables), deny(warnings))))]
 
 #![cfg_attr(not(feature="std"), no_std)]
 #![cfg_attr(all(feature="alloc", not(feature="std")), feature(alloc))]
-#![cfg_attr(all(feature="simd_support", feature="nightly"), feature(stdsimd))]
+#![cfg_attr(feature = "i128_support", feature(i128_type, i128))]
 
-#[cfg(feature = "std")] extern crate core;
-#[cfg(all(feature = "alloc", not(feature="std")))] #[macro_use] extern crate alloc;
+#[cfg(feature="std")] extern crate std as core;
+#[cfg(all(feature = "alloc", not(feature="std")))] extern crate alloc;
 
-#[cfg(feature="simd_support")] extern crate packed_simd;
-
-extern crate rand_jitter;
-#[cfg(feature = "rand_os")]
-extern crate rand_os;
-
-extern crate rand_core;
-extern crate rand_isaac;    
-extern crate rand_chacha;    
-extern crate rand_hc;
-extern crate rand_pcg;
-extern crate rand_xorshift;
-
-#[cfg(feature = "log")] #[macro_use] extern crate log;
-#[allow(unused)]
-#[cfg(not(feature = "log"))] macro_rules! trace { ($($x:tt)*) => () }
-#[allow(unused)]
-#[cfg(not(feature = "log"))] macro_rules! debug { ($($x:tt)*) => () }
-#[allow(unused)]
-#[cfg(not(feature = "log"))] macro_rules! info { ($($x:tt)*) => () }
-#[allow(unused)]
-#[cfg(not(feature = "log"))] macro_rules! warn { ($($x:tt)*) => () }
-#[allow(unused)]
-#[cfg(not(feature = "log"))] macro_rules! error { ($($x:tt)*) => () }
+use core::marker;
+use core::mem;
+#[cfg(feature="std")] use std::cell::RefCell;
+#[cfg(feature="std")] use std::io;
+#[cfg(feature="std")] use std::rc::Rc;
 
 
+pub use jitter::JitterRng;
+#[cfg(feature="std")] pub use os::OsRng;
 
-pub use rand_core::{RngCore, CryptoRng, SeedableRng};
-pub use rand_core::{ErrorKind, Error};
+
+pub use isaac::{IsaacRng, Isaac64Rng};
+pub use chacha::ChaChaRng;
+pub use prng::XorShiftRng;
 
 
-#[cfg(feature="std")] pub use rngs::thread::thread_rng;
+#[cfg(target_pointer_width = "32")]
+use prng::IsaacRng as IsaacWordRng;
+#[cfg(target_pointer_width = "64")]
+use prng::Isaac64Rng as IsaacWordRng;
+
+use distributions::{Range, IndependentSample};
+use distributions::range::SampleRange;
 
 
 pub mod distributions;
-pub mod prelude;
-#[deprecated(since="0.6.0")]
-pub mod prng;
-pub mod rngs;
-pub mod seq;
+pub mod jitter;
+#[cfg(feature="std")] pub mod os;
+#[cfg(feature="std")] pub mod read;
+pub mod reseeding;
+#[cfg(any(feature="std", feature = "alloc"))] pub mod seq;
 
 
-
-
-#[doc(hidden)] mod deprecated;
-
-#[allow(deprecated)]
-#[doc(hidden)] pub use deprecated::ReseedingRng;
-
-#[allow(deprecated)]
-#[cfg(feature="std")] #[doc(hidden)] pub use deprecated::EntropyRng;
-
-#[allow(deprecated)]
-#[cfg(feature="rand_os")]
-#[doc(hidden)]
-pub use deprecated::OsRng;
-
-#[allow(deprecated)]
-#[doc(hidden)] pub use deprecated::{ChaChaRng, IsaacRng, Isaac64Rng, XorShiftRng};
-#[allow(deprecated)]
-#[doc(hidden)] pub use deprecated::StdRng;
-
-
-#[allow(deprecated)]
-#[doc(hidden)]
-pub mod jitter {
-    pub use deprecated::JitterRng;
-    pub use rngs::TimerError;
-}
-#[allow(deprecated)]
-#[cfg(feature="rand_os")]
-#[doc(hidden)]
-pub mod os {
-    pub use deprecated::OsRng;
-}
-#[allow(deprecated)]
-#[doc(hidden)]
 pub mod chacha {
-    pub use deprecated::ChaChaRng;
+    
+    pub use prng::ChaChaRng;
 }
-#[allow(deprecated)]
-#[doc(hidden)]
 pub mod isaac {
-    pub use deprecated::{IsaacRng, Isaac64Rng};
+    
+    pub use prng::{IsaacRng, Isaac64Rng};
 }
-#[allow(deprecated)]
+
+
+mod rand_impls;
+mod prng;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub trait Rand : Sized {
+    
+    
+    fn rand<R: Rng>(rng: &mut R) -> Self;
+}
+
+
+pub trait Rng {
+    
+    
+    
+    
+    
+    fn next_u32(&mut self) -> u32;
+
+    
+    
+    
+    
+    
+    
+    fn next_u64(&mut self) -> u64 {
+        ((self.next_u32() as u64) << 32) | (self.next_u32() as u64)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn next_f32(&mut self) -> f32 {
+        const UPPER_MASK: u32 = 0x3F800000;
+        const LOWER_MASK: u32 = 0x7FFFFF;
+        let tmp = UPPER_MASK | (self.next_u32() & LOWER_MASK);
+        let result: f32 = unsafe { mem::transmute(tmp) };
+        result - 1.0
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn next_f64(&mut self) -> f64 {
+        const UPPER_MASK: u64 = 0x3FF0000000000000;
+        const LOWER_MASK: u64 = 0xFFFFFFFFFFFFF;
+        let tmp = UPPER_MASK | (self.next_u64() & LOWER_MASK);
+        let result: f64 = unsafe { mem::transmute(tmp) };
+        result - 1.0
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn fill_bytes(&mut self, dest: &mut [u8]) {
+        
+        
+        
+        
+        
+        
+        let mut count = 0;
+        let mut num = 0;
+        for byte in dest.iter_mut() {
+            if count == 0 {
+                
+                
+                
+                num = self.next_u64();
+                count = 8;
+            }
+
+            *byte = (num & 0xff) as u8;
+            num >>= 8;
+            count -= 1;
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline(always)]
+    fn gen<T: Rand>(&mut self) -> T where Self: Sized {
+        Rand::rand(self)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn gen_iter<'a, T: Rand>(&'a mut self) -> Generator<'a, T, Self> where Self: Sized {
+        Generator { rng: self, _marker: marker::PhantomData }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn gen_range<T: PartialOrd + SampleRange>(&mut self, low: T, high: T) -> T where Self: Sized {
+        assert!(low < high, "Rng.gen_range called with low >= high");
+        Range::new(low, high).ind_sample(self)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn gen_weighted_bool(&mut self, n: u32) -> bool where Self: Sized {
+        n <= 1 || self.gen_range(0, n) == 0
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn gen_ascii_chars<'a>(&'a mut self) -> AsciiGenerator<'a, Self> where Self: Sized {
+        AsciiGenerator { rng: self }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn choose<'a, T>(&mut self, values: &'a [T]) -> Option<&'a T> where Self: Sized {
+        if values.is_empty() {
+            None
+        } else {
+            Some(&values[self.gen_range(0, values.len())])
+        }
+    }
+
+    
+    
+    
+    fn choose_mut<'a, T>(&mut self, values: &'a mut [T]) -> Option<&'a mut T> where Self: Sized {
+        if values.is_empty() {
+            None
+        } else {
+            let len = values.len();
+            Some(&mut values[self.gen_range(0, len)])
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn shuffle<T>(&mut self, values: &mut [T]) where Self: Sized {
+        let mut i = values.len();
+        while i >= 2 {
+            
+            i -= 1;
+            
+            values.swap(i, self.gen_range(0, i + 1));
+        }
+    }
+}
+
+impl<'a, R: ?Sized> Rng for &'a mut R where R: Rng {
+    fn next_u32(&mut self) -> u32 {
+        (**self).next_u32()
+    }
+
+    fn next_u64(&mut self) -> u64 {
+        (**self).next_u64()
+    }
+
+    fn next_f32(&mut self) -> f32 {
+        (**self).next_f32()
+    }
+
+    fn next_f64(&mut self) -> f64 {
+        (**self).next_f64()
+    }
+
+    fn fill_bytes(&mut self, dest: &mut [u8]) {
+        (**self).fill_bytes(dest)
+    }
+}
+
 #[cfg(feature="std")]
-#[doc(hidden)]
-pub mod read {
-    pub use deprecated::ReadRng;
-}
-
-#[allow(deprecated)]
-#[cfg(feature="std")] #[doc(hidden)] pub use deprecated::ThreadRng;
-
-
-
-
-use core::{mem, slice};
-use distributions::{Distribution, Standard};
-use distributions::uniform::{SampleUniform, UniformSampler, SampleBorrow};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-pub trait Rng: RngCore {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    fn gen<T>(&mut self) -> T where Standard: Distribution<T> {
-        Standard.sample(self)
+impl<R: ?Sized> Rng for Box<R> where R: Rng {
+    fn next_u32(&mut self) -> u32 {
+        (**self).next_u32()
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn gen_range<T: SampleUniform, B1, B2>(&mut self, low: B1, high: B2) -> T
-        where B1: SampleBorrow<T> + Sized,
-              B2: SampleBorrow<T> + Sized {
-        T::Sampler::sample_single(low, high, self)
+    fn next_u64(&mut self) -> u64 {
+        (**self).next_u64()
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn sample<T, D: Distribution<T>>(&mut self, distr: D) -> T {
-        distr.sample(self)
+    fn next_f32(&mut self) -> f32 {
+        (**self).next_f32()
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn sample_iter<'a, T, D: Distribution<T>>(&'a mut self, distr: &'a D)
-        -> distributions::DistIter<'a, D, Self, T> where Self: Sized
-    {
-        distr.sample_iter(self)
+    fn next_f64(&mut self) -> f64 {
+        (**self).next_f64()
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn fill<T: AsByteSliceMut + ?Sized>(&mut self, dest: &mut T) {
-        self.fill_bytes(dest.as_byte_slice_mut());
-        dest.to_le();
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn try_fill<T: AsByteSliceMut + ?Sized>(&mut self, dest: &mut T) -> Result<(), Error> {
-        self.try_fill_bytes(dest.as_byte_slice_mut())?;
-        dest.to_le();
-        Ok(())
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    fn gen_bool(&mut self, p: f64) -> bool {
-        let d = distributions::Bernoulli::new(p);
-        self.sample(d)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    fn gen_ratio(&mut self, numerator: u32, denominator: u32) -> bool {
-        let d = distributions::Bernoulli::from_ratio(numerator, denominator);
-        self.sample(d)
-    }
-
-    
-    
-    
-    #[deprecated(since="0.6.0", note="use SliceRandom::choose instead")]
-    fn choose<'a, T>(&mut self, values: &'a [T]) -> Option<&'a T> {
-        use seq::SliceRandom;
-        values.choose(self)
-    }
-
-    
-    
-    
-    #[deprecated(since="0.6.0", note="use SliceRandom::choose_mut instead")]
-    fn choose_mut<'a, T>(&mut self, values: &'a mut [T]) -> Option<&'a mut T> {
-        use seq::SliceRandom;
-        values.choose_mut(self)
-    }
-
-    
-    
-    
-    #[deprecated(since="0.6.0", note="use SliceRandom::shuffle instead")]
-    fn shuffle<T>(&mut self, values: &mut [T]) {
-        use seq::SliceRandom;
-        values.shuffle(self)
+    fn fill_bytes(&mut self, dest: &mut [u8]) {
+        (**self).fill_bytes(dest)
     }
 }
 
-impl<R: RngCore + ?Sized> Rng for R {}
 
 
 
 
-pub trait AsByteSliceMut {
-    
-    fn as_byte_slice_mut(&mut self) -> &mut [u8];
 
-    
-    fn to_le(&mut self);
+
+#[derive(Debug)]
+pub struct Generator<'a, T, R:'a> {
+    rng: &'a mut R,
+    _marker: marker::PhantomData<fn() -> T>,
 }
 
-impl AsByteSliceMut for [u8] {
-    fn as_byte_slice_mut(&mut self) -> &mut [u8] {
-        self
+impl<'a, T: Rand, R: Rng> Iterator for Generator<'a, T, R> {
+    type Item = T;
+
+    fn next(&mut self) -> Option<T> {
+        Some(self.rng.gen())
     }
-
-    fn to_le(&mut self) {}
 }
 
-macro_rules! impl_as_byte_slice {
-    ($t:ty) => {
-        impl AsByteSliceMut for [$t] {
-            fn as_byte_slice_mut(&mut self) -> &mut [u8] {
-                if self.len() == 0 {
-                    unsafe {
-                        // must not use null pointer
-                        slice::from_raw_parts_mut(0x1 as *mut u8, 0)
-                    }
-                } else {
-                    unsafe {
-                        slice::from_raw_parts_mut(&mut self[0]
-                            as *mut $t
-                            as *mut u8,
-                            self.len() * mem::size_of::<$t>()
-                        )
+
+
+
+
+
+
+#[derive(Debug)]
+pub struct AsciiGenerator<'a, R:'a> {
+    rng: &'a mut R,
+}
+
+impl<'a, R: Rng> Iterator for AsciiGenerator<'a, R> {
+    type Item = char;
+
+    fn next(&mut self) -> Option<char> {
+        const GEN_ASCII_STR_CHARSET: &'static [u8] =
+            b"ABCDEFGHIJKLMNOPQRSTUVWXYZ\
+              abcdefghijklmnopqrstuvwxyz\
+              0123456789";
+        Some(*self.rng.choose(GEN_ASCII_STR_CHARSET).unwrap() as char)
+    }
+}
+
+
+
+pub trait SeedableRng<Seed>: Rng {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn reseed(&mut self, Seed);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn from_seed(seed: Seed) -> Self;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Debug)]
+pub struct Open01<F>(pub F);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Debug)]
+pub struct Closed01<F>(pub F);
+
+
+
+#[derive(Copy, Clone, Debug)]
+pub struct StdRng {
+    rng: IsaacWordRng,
+}
+
+impl StdRng {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature="std")]
+    pub fn new() -> io::Result<StdRng> {
+        match OsRng::new() {
+            Ok(mut r) => Ok(StdRng { rng: r.gen() }),
+            Err(e1) => {
+                match JitterRng::new() {
+                    Ok(mut r) => Ok(StdRng { rng: r.gen() }),
+                    Err(_) => {
+                        Err(e1)
                     }
                 }
             }
-
-            fn to_le(&mut self) {
-                for x in self {
-                    *x = x.to_le();
-                }
-            }
         }
     }
 }
 
-impl_as_byte_slice!(u16);
-impl_as_byte_slice!(u32);
-impl_as_byte_slice!(u64);
-#[cfg(all(rustc_1_26, not(target_os = "emscripten")))] impl_as_byte_slice!(u128);
-impl_as_byte_slice!(usize);
-impl_as_byte_slice!(i8);
-impl_as_byte_slice!(i16);
-impl_as_byte_slice!(i32);
-impl_as_byte_slice!(i64);
-#[cfg(all(rustc_1_26, not(target_os = "emscripten")))] impl_as_byte_slice!(i128);
-impl_as_byte_slice!(isize);
+impl Rng for StdRng {
+    #[inline]
+    fn next_u32(&mut self) -> u32 {
+        self.rng.next_u32()
+    }
 
-macro_rules! impl_as_byte_slice_arrays {
-    ($n:expr,) => {};
-    ($n:expr, $N:ident, $($NN:ident,)*) => {
-        impl_as_byte_slice_arrays!($n - 1, $($NN,)*);
-
-        impl<T> AsByteSliceMut for [T; $n] where [T]: AsByteSliceMut {
-            fn as_byte_slice_mut(&mut self) -> &mut [u8] {
-                self[..].as_byte_slice_mut()
-            }
-
-            fn to_le(&mut self) {
-                self[..].to_le()
-            }
-        }
-    };
-    (!div $n:expr,) => {};
-    (!div $n:expr, $N:ident, $($NN:ident,)*) => {
-        impl_as_byte_slice_arrays!(!div $n / 2, $($NN,)*);
-
-        impl<T> AsByteSliceMut for [T; $n] where [T]: AsByteSliceMut {
-            fn as_byte_slice_mut(&mut self) -> &mut [u8] {
-                self[..].as_byte_slice_mut()
-            }
-
-            fn to_le(&mut self) {
-                self[..].to_le()
-            }
-        }
-    };
+    #[inline]
+    fn next_u64(&mut self) -> u64 {
+        self.rng.next_u64()
+    }
 }
-impl_as_byte_slice_arrays!(32, N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,);
-impl_as_byte_slice_arrays!(!div 4096, N,N,N,N,N,N,N,);
+
+impl<'a> SeedableRng<&'a [usize]> for StdRng {
+    fn reseed(&mut self, seed: &'a [usize]) {
+        
+        
+        self.rng.reseed(unsafe {mem::transmute(seed)})
+    }
+
+    fn from_seed(seed: &'a [usize]) -> StdRng {
+        StdRng { rng: SeedableRng::from_seed(unsafe {mem::transmute(seed)}) }
+    }
+}
 
 
 
@@ -543,12 +832,36 @@ impl_as_byte_slice_arrays!(!div 4096, N,N,N,N,N,N,N,);
 
 
 
+#[cfg(feature="std")]
+pub fn weak_rng() -> XorShiftRng {
+    thread_rng().gen()
+}
 
 
+#[cfg(feature="std")]
+#[derive(Debug)]
+struct ThreadRngReseeder;
+
+#[cfg(feature="std")]
+impl reseeding::Reseeder<StdRng> for ThreadRngReseeder {
+    fn reseed(&mut self, rng: &mut StdRng) {
+        match StdRng::new() {
+            Ok(r) => *rng = r,
+            Err(e) => panic!("No entropy available: {}", e),
+        }
+    }
+}
+#[cfg(feature="std")]
+const THREAD_RNG_RESEED_THRESHOLD: u64 = 32_768;
+#[cfg(feature="std")]
+type ThreadRngInner = reseeding::ReseedingRng<StdRng, ThreadRngReseeder>;
 
 
-
-
+#[cfg(feature="std")]
+#[derive(Clone, Debug)]
+pub struct ThreadRng {
+    rng: Rc<RefCell<ThreadRngInner>>,
+}
 
 
 
@@ -563,47 +876,37 @@ impl_as_byte_slice_arrays!(!div 4096, N,N,N,N,N,N,N,);
 
 
 #[cfg(feature="std")]
-pub trait FromEntropy: SeedableRng {
+pub fn thread_rng() -> ThreadRng {
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn from_entropy() -> Self;
+    thread_local!(static THREAD_RNG_KEY: Rc<RefCell<ThreadRngInner>> = {
+        let r = match StdRng::new() {
+            Ok(r) => r,
+            Err(e) => panic!("No entropy available: {}", e),
+        };
+        let rng = reseeding::ReseedingRng::new(r,
+                                               THREAD_RNG_RESEED_THRESHOLD,
+                                               ThreadRngReseeder);
+        Rc::new(RefCell::new(rng))
+    });
+
+    ThreadRng { rng: THREAD_RNG_KEY.with(|t| t.clone()) }
 }
 
 #[cfg(feature="std")]
-impl<R: SeedableRng> FromEntropy for R {
-    fn from_entropy() -> R {
-        R::from_rng(rngs::EntropyRng::new()).unwrap_or_else(|err|
-            panic!("FromEntropy::from_entropy() failed: {}", err))
+impl Rng for ThreadRng {
+    fn next_u32(&mut self) -> u32 {
+        self.rng.borrow_mut().next_u32()
+    }
+
+    fn next_u64(&mut self) -> u64 {
+        self.rng.borrow_mut().next_u64()
+    }
+
+    #[inline]
+    fn fill_bytes(&mut self, bytes: &mut [u8]) {
+        self.rng.borrow_mut().fill_bytes(bytes)
     }
 }
-
 
 
 
@@ -649,49 +952,91 @@ impl<R: SeedableRng> FromEntropy for R {
 
 #[cfg(feature="std")]
 #[inline]
-pub fn random<T>() -> T where Standard: Distribution<T> {
+pub fn random<T: Rand>() -> T {
     thread_rng().gen()
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(feature="std")]
+#[inline(always)]
+#[deprecated(since="0.4.0", note="renamed to seq::sample_iter")]
+pub fn sample<T, I, R>(rng: &mut R, iterable: I, amount: usize) -> Vec<T>
+    where I: IntoIterator<Item=T>,
+          R: Rng,
+{
+    
+    seq::sample_iter(rng, iterable, amount)
+        .unwrap_or_else(|e| e)
 }
 
 #[cfg(test)]
 mod test {
-    use rngs::mock::StepRng;
-    use rngs::StdRng;
-    use super::*;
-    #[cfg(all(not(feature="std"), feature="alloc"))] use alloc::boxed::Box;
+    use super::{Rng, thread_rng, random, SeedableRng, StdRng, weak_rng};
+    use std::iter::repeat;
 
-    pub struct TestRng<R> { inner: R }
+    pub struct MyRng<R> { inner: R }
 
-    impl<R: RngCore> RngCore for TestRng<R> {
+    impl<R: Rng> Rng for MyRng<R> {
         fn next_u32(&mut self) -> u32 {
-            self.inner.next_u32()
-        }
-        fn next_u64(&mut self) -> u64 {
-            self.inner.next_u64()
-        }
-        fn fill_bytes(&mut self, dest: &mut [u8]) {
-            self.inner.fill_bytes(dest)
-        }
-        fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), Error> {
-            self.inner.try_fill_bytes(dest)
+            fn next<T: Rng>(t: &mut T) -> u32 {
+                t.next_u32()
+            }
+            next(&mut self.inner)
         }
     }
 
-    pub fn rng(seed: u64) -> TestRng<StdRng> {
-        TestRng { inner: StdRng::seed_from_u64(seed) }
+    pub fn rng() -> MyRng<::ThreadRng> {
+        MyRng { inner: ::thread_rng() }
+    }
+
+    struct ConstRng { i: u64 }
+    impl Rng for ConstRng {
+        fn next_u32(&mut self) -> u32 { self.i as u32 }
+        fn next_u64(&mut self) -> u64 { self.i }
+
+        
+    }
+
+    pub fn iter_eq<I, J>(i: I, j: J) -> bool
+        where I: IntoIterator,
+              J: IntoIterator<Item=I::Item>,
+              I::Item: Eq
+    {
+        
+        let mut i = i.into_iter();
+        let mut j = j.into_iter();
+        loop {
+            match (i.next(), j.next()) {
+                (Some(ref ei), Some(ref ej)) if ei == ej => { }
+                (None, None) => return true,
+                _ => return false,
+            }
+        }
     }
 
     #[test]
     fn test_fill_bytes_default() {
-        let mut r = StepRng::new(0x11_22_33_44_55_66_77_88, 0);
+        let mut r = ConstRng { i: 0x11_22_33_44_55_66_77_88 };
 
         
         let lengths = [0, 1, 2, 3, 4, 5, 6, 7,
                        80, 81, 82, 83, 84, 85, 86, 87];
         for &n in lengths.iter() {
-            let mut buffer = [0u8; 87];
-            let v = &mut buffer[0..n];
-            r.fill_bytes(v);
+            let mut v = repeat(0u8).take(n).collect::<Vec<_>>();
+            r.fill_bytes(&mut v);
 
             
             for (i, &byte) in v.iter().enumerate() {
@@ -703,100 +1048,127 @@ mod test {
     }
 
     #[test]
-    fn test_fill() {
-        let x = 9041086907909331047;    
-        let mut rng = StepRng::new(x, 0);
-
-        
-        let mut array = [0u64; 2];
-        rng.fill(&mut array[..]);
-        assert_eq!(array, [x, x]);
-        assert_eq!(rng.next_u64(), x);
-
-        
-        let mut array = [0u32; 2];
-        rng.fill(&mut array[..]);
-        assert_eq!(array, [x as u32, (x >> 32) as u32]);
-        assert_eq!(rng.next_u32(), x as u32);
-    }
-
-    #[test]
-    fn test_fill_empty() {
-        let mut array = [0u32; 0];
-        let mut rng = StepRng::new(0, 1);
-        rng.fill(&mut array);
-        rng.fill(&mut array[..]);
-    }
-
-    #[test]
     fn test_gen_range() {
-        let mut r = rng(101);
+        let mut r = thread_rng();
         for _ in 0..1000 {
-            let a = r.gen_range(-4711, 17);
-            assert!(a >= -4711 && a < 17);
-            let a = r.gen_range(-3i8, 42);
-            assert!(a >= -3i8 && a < 42i8);
-            let a = r.gen_range(&10u16, 99);
-            assert!(a >= 10u16 && a < 99u16);
-            let a = r.gen_range(-100i32, &2000);
-            assert!(a >= -100i32 && a < 2000i32);
-            let a = r.gen_range(&12u32, &24u32);
-            assert!(a >= 12u32 && a < 24u32);
+            let a = r.gen_range(-3, 42);
+            assert!(a >= -3 && a < 42);
+            assert_eq!(r.gen_range(0, 1), 0);
+            assert_eq!(r.gen_range(-12, -11), -12);
+        }
 
-            assert_eq!(r.gen_range(0u32, 1), 0u32);
-            assert_eq!(r.gen_range(-12i64, -11), -12i64);
+        for _ in 0..1000 {
+            let a = r.gen_range(10, 42);
+            assert!(a >= 10 && a < 42);
+            assert_eq!(r.gen_range(0, 1), 0);
             assert_eq!(r.gen_range(3_000_000, 3_000_001), 3_000_000);
         }
+
     }
 
     #[test]
     #[should_panic]
     fn test_gen_range_panic_int() {
-        let mut r = rng(102);
+        let mut r = thread_rng();
         r.gen_range(5, -2);
     }
 
     #[test]
     #[should_panic]
     fn test_gen_range_panic_usize() {
-        let mut r = rng(103);
+        let mut r = thread_rng();
         r.gen_range(5, 2);
     }
 
     #[test]
-    fn test_gen_bool() {
-        let mut r = rng(105);
-        for _ in 0..5 {
-            assert_eq!(r.gen_bool(0.0), false);
-            assert_eq!(r.gen_bool(1.0), true);
-        }
+    fn test_gen_weighted_bool() {
+        let mut r = thread_rng();
+        assert_eq!(r.gen_weighted_bool(0), true);
+        assert_eq!(r.gen_weighted_bool(1), true);
+    }
+
+    #[test]
+    fn test_gen_ascii_str() {
+        let mut r = thread_rng();
+        assert_eq!(r.gen_ascii_chars().take(0).count(), 0);
+        assert_eq!(r.gen_ascii_chars().take(10).count(), 10);
+        assert_eq!(r.gen_ascii_chars().take(16).count(), 16);
+    }
+
+    #[test]
+    fn test_gen_vec() {
+        let mut r = thread_rng();
+        assert_eq!(r.gen_iter::<u8>().take(0).count(), 0);
+        assert_eq!(r.gen_iter::<u8>().take(10).count(), 10);
+        assert_eq!(r.gen_iter::<f64>().take(16).count(), 16);
+    }
+
+    #[test]
+    fn test_choose() {
+        let mut r = thread_rng();
+        assert_eq!(r.choose(&[1, 1, 1]).map(|&x|x), Some(1));
+
+        let v: &[isize] = &[];
+        assert_eq!(r.choose(v), None);
+    }
+
+    #[test]
+    fn test_shuffle() {
+        let mut r = thread_rng();
+        let empty: &mut [isize] = &mut [];
+        r.shuffle(empty);
+        let mut one = [1];
+        r.shuffle(&mut one);
+        let b: &[_] = &[1];
+        assert_eq!(one, b);
+
+        let mut two = [1, 2];
+        r.shuffle(&mut two);
+        assert!(two == [1, 2] || two == [2, 1]);
+
+        let mut x = [1, 1, 1];
+        r.shuffle(&mut x);
+        let b: &[_] = &[1, 1, 1];
+        assert_eq!(x, b);
+    }
+
+    #[test]
+    fn test_thread_rng() {
+        let mut r = thread_rng();
+        r.gen::<i32>();
+        let mut v = [1, 1, 1];
+        r.shuffle(&mut v);
+        let b: &[_] = &[1, 1, 1];
+        assert_eq!(v, b);
+        assert_eq!(r.gen_range(0, 1), 0);
     }
 
     #[test]
     fn test_rng_trait_object() {
-        use distributions::{Distribution, Standard};
-        let mut rng = rng(109);
-        let mut r = &mut rng as &mut RngCore;
-        r.next_u32();
-        r.gen::<i32>();
-        assert_eq!(r.gen_range(0, 1), 0);
-        let _c: u8 = Standard.sample(&mut r);
+        let mut rng = thread_rng();
+        {
+            let mut r = &mut rng as &mut Rng;
+            r.next_u32();
+            (&mut r).gen::<i32>();
+            let mut v = [1, 1, 1];
+            (&mut r).shuffle(&mut v);
+            let b: &[_] = &[1, 1, 1];
+            assert_eq!(v, b);
+            assert_eq!((&mut r).gen_range(0, 1), 0);
+        }
+        {
+            let mut r = Box::new(rng) as Box<Rng>;
+            r.next_u32();
+            r.gen::<i32>();
+            let mut v = [1, 1, 1];
+            r.shuffle(&mut v);
+            let b: &[_] = &[1, 1, 1];
+            assert_eq!(v, b);
+            assert_eq!(r.gen_range(0, 1), 0);
+        }
     }
 
     #[test]
-    #[cfg(feature="alloc")]
-    fn test_rng_boxed_trait() {
-        use distributions::{Distribution, Standard};
-        let rng = rng(110);
-        let mut r = Box::new(rng) as Box<RngCore>;
-        r.next_u32();
-        r.gen::<i32>();
-        assert_eq!(r.gen_range(0, 1), 0);
-        let _c: u8 = Standard.sample(&mut r);
-    }
-
-    #[test]
-    #[cfg(feature="std")]
     fn test_random() {
         
         let _n : usize = random();
@@ -811,20 +1183,32 @@ mod test {
     }
 
     #[test]
-    fn test_gen_ratio_average() {
-        const NUM: u32 = 3;
-        const DENOM: u32 = 10;
-        const N: u32 = 100_000;
+    fn test_std_rng_seeded() {
+        let s = thread_rng().gen_iter::<usize>().take(256).collect::<Vec<usize>>();
+        let mut ra: StdRng = SeedableRng::from_seed(&s[..]);
+        let mut rb: StdRng = SeedableRng::from_seed(&s[..]);
+        assert!(iter_eq(ra.gen_ascii_chars().take(100),
+                        rb.gen_ascii_chars().take(100)));
+    }
 
-        let mut sum: u32 = 0;
-        let mut rng = rng(111);
-        for _ in 0..N {
-            if rng.gen_ratio(NUM, DENOM) {
-                sum += 1;
-            }
-        }
-        
-        let expected = (NUM * N) / DENOM;   
-        assert!(((sum - expected) as i32).abs() < 500);
+    #[test]
+    fn test_std_rng_reseed() {
+        let s = thread_rng().gen_iter::<usize>().take(256).collect::<Vec<usize>>();
+        let mut r: StdRng = SeedableRng::from_seed(&s[..]);
+        let string1 = r.gen_ascii_chars().take(100).collect::<String>();
+
+        r.reseed(&s);
+
+        let string2 = r.gen_ascii_chars().take(100).collect::<String>();
+        assert_eq!(string1, string2);
+    }
+
+    #[test]
+    fn test_weak_rng() {
+        let s = weak_rng().gen_iter::<usize>().take(256).collect::<Vec<usize>>();
+        let mut ra: StdRng = SeedableRng::from_seed(&s[..]);
+        let mut rb: StdRng = SeedableRng::from_seed(&s[..]);
+        assert!(iter_eq(ra.gen_ascii_chars().take(100),
+                        rb.gen_ascii_chars().take(100)));
     }
 }

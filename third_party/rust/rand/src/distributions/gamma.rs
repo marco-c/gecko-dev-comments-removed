@@ -9,12 +9,15 @@
 
 
 
+
+
+
 use self::GammaRepr::*;
 use self::ChiSquaredRepr::*;
 
-use Rng;
-use distributions::normal::StandardNormal;
-use distributions::{Distribution, Exp, Open01};
+use {Rng, Open01};
+use super::normal::StandardNormal;
+use super::{IndependentSample, Sample, Exp};
 
 
 
@@ -106,7 +109,7 @@ impl Gamma {
         } else {
             Large(GammaLargeShape::new_raw(shape, scale))
         };
-        Gamma { repr }
+        Gamma { repr: repr }
     }
 }
 
@@ -123,40 +126,50 @@ impl GammaLargeShape {
     fn new_raw(shape: f64, scale: f64) -> GammaLargeShape {
         let d = shape - 1. / 3.;
         GammaLargeShape {
-            scale,
+            scale: scale,
             c: 1. / (9. * d).sqrt(),
-            d
+            d: d
         }
     }
 }
 
-impl Distribution<f64> for Gamma {
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> f64 {
+impl Sample<f64> for Gamma {
+    fn sample<R: Rng>(&mut self, rng: &mut R) -> f64 { self.ind_sample(rng) }
+}
+impl Sample<f64> for GammaSmallShape {
+    fn sample<R: Rng>(&mut self, rng: &mut R) -> f64 { self.ind_sample(rng) }
+}
+impl Sample<f64> for GammaLargeShape {
+    fn sample<R: Rng>(&mut self, rng: &mut R) -> f64 { self.ind_sample(rng) }
+}
+
+impl IndependentSample<f64> for Gamma {
+    fn ind_sample<R: Rng>(&self, rng: &mut R) -> f64 {
         match self.repr {
-            Small(ref g) => g.sample(rng),
-            One(ref g) => g.sample(rng),
-            Large(ref g) => g.sample(rng),
+            Small(ref g) => g.ind_sample(rng),
+            One(ref g) => g.ind_sample(rng),
+            Large(ref g) => g.ind_sample(rng),
         }
     }
 }
-impl Distribution<f64> for GammaSmallShape {
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> f64 {
-        let u: f64 = rng.sample(Open01);
+impl IndependentSample<f64> for GammaSmallShape {
+    fn ind_sample<R: Rng>(&self, rng: &mut R) -> f64 {
+        let Open01(u) = rng.gen::<Open01<f64>>();
 
-        self.large_shape.sample(rng) * u.powf(self.inv_shape)
+        self.large_shape.ind_sample(rng) * u.powf(self.inv_shape)
     }
 }
-impl Distribution<f64> for GammaLargeShape {
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> f64 {
+impl IndependentSample<f64> for GammaLargeShape {
+    fn ind_sample<R: Rng>(&self, rng: &mut R) -> f64 {
         loop {
-            let x = rng.sample(StandardNormal);
+            let StandardNormal(x) = rng.gen::<StandardNormal>();
             let v_cbrt = 1.0 + self.c * x;
             if v_cbrt <= 0.0 { 
                 continue
             }
 
             let v = v_cbrt * v_cbrt * v_cbrt;
-            let u: f64 = rng.sample(Open01);
+            let Open01(u) = rng.gen::<Open01<f64>>();
 
             let x_sqr = x * x;
             if u < 1.0 - 0.0331 * x_sqr * x_sqr ||
@@ -208,18 +221,21 @@ impl ChiSquared {
             assert!(k > 0.0, "ChiSquared::new called with `k` < 0");
             DoFAnythingElse(Gamma::new(0.5 * k, 2.0))
         };
-        ChiSquared { repr }
+        ChiSquared { repr: repr }
     }
 }
-impl Distribution<f64> for ChiSquared {
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> f64 {
+impl Sample<f64> for ChiSquared {
+    fn sample<R: Rng>(&mut self, rng: &mut R) -> f64 { self.ind_sample(rng) }
+}
+impl IndependentSample<f64> for ChiSquared {
+    fn ind_sample<R: Rng>(&self, rng: &mut R) -> f64 {
         match self.repr {
             DoFExactlyOne => {
                 
-                let norm = rng.sample(StandardNormal);
+                let StandardNormal(norm) = rng.gen::<StandardNormal>();
                 norm * norm
             }
-            DoFAnythingElse(ref g) => g.sample(rng)
+            DoFAnythingElse(ref g) => g.ind_sample(rng)
         }
     }
 }
@@ -262,9 +278,12 @@ impl FisherF {
         }
     }
 }
-impl Distribution<f64> for FisherF {
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> f64 {
-        self.numer.sample(rng) / self.denom.sample(rng) * self.dof_ratio
+impl Sample<f64> for FisherF {
+    fn sample<R: Rng>(&mut self, rng: &mut R) -> f64 { self.ind_sample(rng) }
+}
+impl IndependentSample<f64> for FisherF {
+    fn ind_sample<R: Rng>(&self, rng: &mut R) -> f64 {
+        self.numer.ind_sample(rng) / self.denom.ind_sample(rng) * self.dof_ratio
     }
 }
 
@@ -297,79 +316,46 @@ impl StudentT {
         }
     }
 }
-impl Distribution<f64> for StudentT {
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> f64 {
-        let norm = rng.sample(StandardNormal);
-        norm * (self.dof / self.chi.sample(rng)).sqrt()
-    }
+impl Sample<f64> for StudentT {
+    fn sample<R: Rng>(&mut self, rng: &mut R) -> f64 { self.ind_sample(rng) }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-#[derive(Clone, Copy, Debug)]
-pub struct Beta {
-    gamma_a: Gamma,
-    gamma_b: Gamma,
-}
-
-impl Beta {
-    
-    
-    
-    
-    pub fn new(alpha: f64, beta: f64) -> Beta {
-        assert!((alpha > 0.) & (beta > 0.));
-        Beta {
-            gamma_a: Gamma::new(alpha, 1.),
-            gamma_b: Gamma::new(beta, 1.),
-        }
-    }
-}
-
-impl Distribution<f64> for Beta {
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> f64 {
-        let x = self.gamma_a.sample(rng);
-        let y = self.gamma_b.sample(rng);
-        x / (x + y)
+impl IndependentSample<f64> for StudentT {
+    fn ind_sample<R: Rng>(&self, rng: &mut R) -> f64 {
+        let StandardNormal(norm) = rng.gen::<StandardNormal>();
+        norm * (self.dof / self.chi.ind_sample(rng)).sqrt()
     }
 }
 
 #[cfg(test)]
 mod test {
-    use distributions::Distribution;
-    use super::{Beta, ChiSquared, StudentT, FisherF};
+    use distributions::{Sample, IndependentSample};
+    use super::{ChiSquared, StudentT, FisherF};
 
     #[test]
     fn test_chi_squared_one() {
-        let chi = ChiSquared::new(1.0);
-        let mut rng = ::test::rng(201);
+        let mut chi = ChiSquared::new(1.0);
+        let mut rng = ::test::rng();
         for _ in 0..1000 {
             chi.sample(&mut rng);
+            chi.ind_sample(&mut rng);
         }
     }
     #[test]
     fn test_chi_squared_small() {
-        let chi = ChiSquared::new(0.5);
-        let mut rng = ::test::rng(202);
+        let mut chi = ChiSquared::new(0.5);
+        let mut rng = ::test::rng();
         for _ in 0..1000 {
             chi.sample(&mut rng);
+            chi.ind_sample(&mut rng);
         }
     }
     #[test]
     fn test_chi_squared_large() {
-        let chi = ChiSquared::new(30.0);
-        let mut rng = ::test::rng(203);
+        let mut chi = ChiSquared::new(30.0);
+        let mut rng = ::test::rng();
         for _ in 0..1000 {
             chi.sample(&mut rng);
+            chi.ind_sample(&mut rng);
         }
     }
     #[test]
@@ -380,34 +366,21 @@ mod test {
 
     #[test]
     fn test_f() {
-        let f = FisherF::new(2.0, 32.0);
-        let mut rng = ::test::rng(204);
+        let mut f = FisherF::new(2.0, 32.0);
+        let mut rng = ::test::rng();
         for _ in 0..1000 {
             f.sample(&mut rng);
+            f.ind_sample(&mut rng);
         }
     }
 
     #[test]
     fn test_t() {
-        let t = StudentT::new(11.0);
-        let mut rng = ::test::rng(205);
+        let mut t = StudentT::new(11.0);
+        let mut rng = ::test::rng();
         for _ in 0..1000 {
             t.sample(&mut rng);
+            t.ind_sample(&mut rng);
         }
-    }
-
-    #[test]
-    fn test_beta() {
-        let beta = Beta::new(1.0, 2.0);
-        let mut rng = ::test::rng(201);
-        for _ in 0..1000 {
-            beta.sample(&mut rng);
-        }
-    }
-
-    #[test]
-    #[should_panic]
-    fn test_beta_invalid_dof() {
-        Beta::new(0., 0.);
     }
 }

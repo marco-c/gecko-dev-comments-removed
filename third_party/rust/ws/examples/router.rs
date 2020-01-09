@@ -1,7 +1,7 @@
-extern crate env_logger;
 
 
 extern crate ws;
+extern crate env_logger;
 
 
 struct Router {
@@ -11,35 +11,30 @@ struct Router {
 
 impl ws::Handler for Router {
     fn on_request(&mut self, req: &ws::Request) -> ws::Result<(ws::Response)> {
+
         
         let out = self.sender.clone();
 
         match req.resource() {
-            "/echo" => self.inner = Box::new(Echo { ws: out }),
+            "/echo" => self.inner = Box::new(Echo { ws: out } ),
 
             
-            "/data/one" => {
-                self.inner = Box::new(Data {
-                    ws: out,
-                    data: vec!["one", "two", "three", "four", "five"],
-                })
-            }
+            "/data/one" => self.inner = Box::new(Data {
+                ws: out,
+                data: vec!["one", "two", "three", "four", "five"]
+            }),
 
             
-            "/data/two" => {
-                self.inner = Box::new(Data {
-                    ws: out,
-                    data: vec!["いち", "二", "さん", "四", "ご"],
-                })
-            }
+            "/data/two" => self.inner = Box::new(Data {
+                ws: out,
+                data: vec!["いち", "二", "さん", "四", "ご"]
+            }),
 
             
-            "/closure" => {
-                self.inner = Box::new(move |msg: ws::Message| {
-                    println!("Got a message on a closure handler: {}", msg);
-                    out.close_with_reason(ws::CloseCode::Error, "Not Implemented.")
-                })
-            }
+            "/closure" => self.inner = Box::new(move |msg: ws::Message| {
+                println!("Got a message on a closure handler: {}", msg);
+                out.close_with_reason(ws::CloseCode::Error, "Not Implemented.")
+            }),
 
             
             _ => (),
@@ -79,14 +74,17 @@ impl ws::Handler for Router {
 struct NotFound;
 
 impl ws::Handler for NotFound {
+
     fn on_request(&mut self, req: &ws::Request) -> ws::Result<(ws::Response)> {
         
-        let mut res = ws::Response::from_request(req)?;
+        let mut res = try!(ws::Response::from_request(req));
         res.set_status(404);
         res.set_reason("Not Found");
         Ok(res)
     }
+
 }
+
 
 
 struct Echo {
@@ -94,10 +92,12 @@ struct Echo {
 }
 
 impl ws::Handler for Echo {
+
     fn on_message(&mut self, msg: ws::Message) -> ws::Result<()> {
         println!("Echo handler received a message: {}", msg);
         self.ws.send(msg)
     }
+
 }
 
 
@@ -109,8 +109,8 @@ struct Data {
 
 impl ws::Handler for Data {
     fn on_open(&mut self, _: ws::Handshake) -> ws::Result<()> {
-        for msg in &self.data {
-            self.ws.send(*msg)?
+        for msg in self.data.iter() {
+            try!(self.ws.send(*msg))
         }
         Ok(())
     }
@@ -122,11 +122,14 @@ impl ws::Handler for Data {
     }
 }
 
-fn main() {
-    env_logger::init();
+
+fn main () {
+
+    env_logger::init().unwrap();
 
     
     if let Err(error) = ws::listen("127.0.0.1:3012", |out| {
+
         
         Router {
             sender: out,
@@ -134,6 +137,7 @@ fn main() {
             
             inner: Box::new(NotFound),
         }
+
     }) {
         
         println!("Failed to create WebSocket due to {:?}", error);

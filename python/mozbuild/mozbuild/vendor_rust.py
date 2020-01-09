@@ -174,7 +174,6 @@ Please commit or stash these changes before vendoring, or re-run with `--ignore-
             'bindgen',
             'fuchsia-zircon',
             'fuchsia-zircon-sys',
-            'fuchsia-cprng',
         ]
     }
 
@@ -182,6 +181,7 @@ Please commit or stash these changes before vendoring, or re-run with `--ignore-
     
     RUNTIME_LICENSE_PACKAGE_WHITELIST = {
         'BSD-3-Clause': [
+            'sha1',
         ]
     }
 

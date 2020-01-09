@@ -1,4 +1,4 @@
-extern crate env_logger;
+
 
 
 
@@ -9,18 +9,21 @@ extern crate env_logger;
 
 
 extern crate ws;
+extern crate env_logger;
 
-use std::sync::mpsc::Sender as ThreadOut;
-use std::sync::mpsc::channel;
 use std::thread;
 use std::thread::sleep;
 use std::time::Duration;
+use std::sync::mpsc::channel;
+use std::sync::mpsc::Sender as ThreadOut;
 
-use ws::{connect, listen, CloseCode, Handler, Handshake, Message, Result, Sender};
+use ws::{connect, listen, CloseCode, Message, Sender, Handler, Handshake, Result};
 
-fn main() {
+
+fn main () {
+
     
-    env_logger::init();
+    env_logger::init().unwrap();
 
     
     let data = vec![1, 2, 3, 4, 5];
@@ -34,6 +37,7 @@ fn main() {
     }
 
     impl Handler for Server {
+
         fn on_message(&mut self, msg: Message) -> Result<()> {
             println!("Server got message '{}'. ", msg);
 
@@ -50,19 +54,16 @@ fn main() {
     }
 
     
-    let server = thread::Builder::new()
-        .name("server".to_owned())
-        .spawn(move || {
-            listen("127.0.0.1:3012", |out| {
-                Server {
-                    ws: out,
-                    
-                    
-                    log: log_in.clone(),
-                }
-            }).unwrap()
-        })
-        .unwrap();
+    let server = thread::Builder::new().name("server".to_owned()).spawn(move || {
+        listen("127.0.0.1:3012", |out| {
+            Server {
+                ws: out,
+                
+                
+                log: log_in.clone(),
+            }
+        }).unwrap()
+    }).unwrap();
 
     
     sleep(Duration::from_millis(10));
@@ -75,22 +76,28 @@ fn main() {
     }
 
     impl Client {
+
         
         fn increment(&mut self) -> Result<()> {
             if let Some(num) = self.data.get(self.ind) {
+
                 
                 self.ind += 1;
 
                 
                 self.out.send(num.to_string())
+
             } else {
+
                 
                 self.out.close(CloseCode::Normal)
             }
         }
+
     }
 
     impl Handler for Client {
+
         fn on_open(&mut self, _: Handshake) -> Result<()> {
             self.increment()
         }
@@ -106,40 +113,36 @@ fn main() {
     let client_data = data.clone();
 
     
-    let client = thread::Builder::new()
-        .name("client".to_owned())
-        .spawn(move || {
-            connect("ws://127.0.0.1:3012", |out| {
-                Client {
-                    out,
-                    ind: 0,
-                    
-                    
-                    data: client_data.clone(),
-                }
-            }).unwrap()
-        })
-        .unwrap();
+    let client = thread::Builder::new().name("client".to_owned()).spawn(move || {
+        connect("ws://127.0.0.1:3012", |out| {
 
-    
-    let logger = thread::Builder::new()
-        .name("logger".to_owned())
-        .spawn(move || {
-            
-            let mut log: Vec<u32> = Vec::new();
-
-            
-            
-            
-            while let Ok(string) = log_out.recv() {
-                println!("Logger is storing {}", string);
-                log.push(string.parse().unwrap());
+            Client {
+                out: out,
+                ind: 0,
+                
+                
+                data: client_data.clone(),
             }
 
-            println!("Logger sending final log result.");
-            final_in.send(log).unwrap();
-        })
-        .unwrap();
+        }).unwrap()
+    }).unwrap();
+
+    
+    let logger = thread::Builder::new().name("logger".to_owned()).spawn(move || {
+        
+        let mut log: Vec<u32> = Vec::new();
+
+        
+        
+        
+        while let Ok(string) = log_out.recv() {
+            println!("Logger is storing {}", string);
+            log.push(string.parse().unwrap());
+        }
+
+        println!("Logger sending final log result.");
+        final_in.send(log).unwrap();
+    }).unwrap();
 
     
     let _ = server.join();
@@ -154,3 +157,4 @@ fn main() {
 
     println!("All done.")
 }
+
