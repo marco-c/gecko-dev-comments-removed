@@ -129,7 +129,7 @@ const previewers = {
     const items = grip.preview.items = [];
 
     for (let i = 0; i < length; ++i) {
-      if (raw && !isWorker) {
+      if (raw) {
         
         
         
@@ -145,7 +145,6 @@ const previewers = {
           items.push(null);
         }
       } else {
-        
         
         
         const value = DevToolsUtils.getProperty(obj, i);
@@ -459,8 +458,7 @@ previewers.Object = [
 
     
     
-    
-    if (raw && !isWorker) {
+    if (raw) {
       const global = Cu.getGlobalForObject(DebuggerServer);
       const classProto = global[obj.class].prototype;
       

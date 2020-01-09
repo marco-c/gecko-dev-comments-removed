@@ -8,8 +8,6 @@
 
 
 
-const { getLastThreadActor } = require("xpcshell-test/testactors");
-
 var gDebuggee;
 var gClient;
 var gThreadClient;
@@ -29,13 +27,6 @@ function run_test() {
 }
 
 function test_simple_breakpoint() {
-  let lastMessage;
-  getLastThreadActor()._parent._consoleActor = {
-    onConsoleAPICall(message) {
-      lastMessage = message;
-    },
-  };
-
   gThreadClient.addOneTimeListener("paused", async function(event, packet) {
     const source = await getSourceById(
       gThreadClient,
@@ -45,7 +36,7 @@ function test_simple_breakpoint() {
     
     gThreadClient.setBreakpoint({
       sourceUrl: source.url,
-      line: 4,
+      line: 5,
     }, { logValue: "a", condition: "a === 5" });
 
     
@@ -53,7 +44,9 @@ function test_simple_breakpoint() {
   });
 
   
-  Cu.evalInSandbox("debugger;\n" + 
+  
+  Cu.evalInSandbox("var console = { log: v => { this.logValue = v } };\n" + 
+                   "debugger;\n" + 
                    "var a = 1;\n" +  
                    "while (a < 10) {\n" + 
                    "  a++;\n" + 
@@ -64,6 +57,6 @@ function test_simple_breakpoint() {
                    1);
   
 
-  Assert.equal(lastMessage.arguments[0], 5);
+  Assert.equal(gDebuggee.logValue, 5);
   finishClient(gClient);
 }
