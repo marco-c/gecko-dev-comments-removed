@@ -168,7 +168,7 @@ impl RunnerProcess for FirefoxProcess {
 
 #[derive(Debug)]
 pub struct FirefoxRunner {
-    binary: PathBuf,
+    path: PathBuf,
     profile: Profile,
     args: Vec<OsString>,
     envs: HashMap<OsString, OsString>,
@@ -177,12 +177,17 @@ pub struct FirefoxRunner {
 }
 
 impl FirefoxRunner {
-    pub fn new(binary: &Path, profile: Profile) -> FirefoxRunner {
+    
+    
+    
+    
+    
+    pub fn new(path: &Path, profile: Profile) -> FirefoxRunner {
         let mut envs: HashMap<OsString, OsString> = HashMap::new();
         envs.insert("MOZ_NO_REMOTE".into(), "1".into());
 
         FirefoxRunner {
-            binary: binary.to_path_buf(),
+            path: path.to_path_buf(),
             envs: envs,
             profile: profile,
             args: vec![],
@@ -257,7 +262,8 @@ impl Runner for FirefoxRunner {
         let stdout = self.stdout.unwrap_or_else(|| Stdio::inherit());
         let stderr = self.stderr.unwrap_or_else(|| Stdio::inherit());
 
-        let mut cmd = Command::new(&self.binary);
+        let binary_path = platform::resolve_binary_path(&mut self.path);
+        let mut cmd = Command::new(binary_path);
         cmd.args(&self.args[..])
             .envs(&self.envs)
             .stdout(stdout)
@@ -298,6 +304,10 @@ pub mod platform {
     use path::find_binary;
     use std::path::PathBuf;
 
+    pub fn resolve_binary_path(path: &mut PathBuf) -> &PathBuf {
+        path
+    }
+
     
     pub fn firefox_default_path() -> Option<PathBuf> {
         find_binary("firefox")
@@ -313,6 +323,33 @@ pub mod platform {
     use crate::path::{find_binary, is_binary};
     use dirs;
     use std::path::PathBuf;
+    use plist::Value;
+
+    
+    
+    
+    pub fn resolve_binary_path(path: &mut PathBuf) -> &PathBuf {
+        if path.as_path().is_dir() {
+            let mut info_plist = path.clone();
+            info_plist.push("Contents");
+            info_plist.push("Info.plist");
+            if let Ok(plist) = Value::from_file(&info_plist) {
+                if let Some(dict) = plist.as_dictionary() {
+                    if let Some(binary_file) = dict.get("CFBundleExecutable") {
+                        match binary_file {
+                            Value::String(s) => {
+                                path.push("Contents");
+                                path.push("MacOS");
+                                path.push(s);
+                            },
+                            _ => {}
+                        }
+                    }
+                }
+            }
+        }
+        path
+    }
 
     
     
@@ -356,6 +393,10 @@ pub mod platform {
     use std::path::PathBuf;
     use winreg::RegKey;
     use winreg::enums::*;
+
+    pub fn resolve_binary_path(path: &mut PathBuf) -> &PathBuf {
+        path
+    }
 
     
     
@@ -411,6 +452,11 @@ pub mod platform {
 #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
 pub mod platform {
     use std::path::PathBuf;
+
+    
+    pub fn resolve_binary_path(path: &mut PathBuf) -> &PathBuf {
+        path
+    }
 
     
     
