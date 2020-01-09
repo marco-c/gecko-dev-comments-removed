@@ -548,13 +548,16 @@ impl ToComputedValue for FontFamily {
 
     fn to_computed_value(&self, context: &Context) -> Self::ComputedValue {
         match *self {
-            FontFamily::Values(ref v) => computed::FontFamily(v.clone()),
+            FontFamily::Values(ref v) => computed::FontFamily {
+                families: v.clone(),
+                is_system_font: false,
+            },
             FontFamily::System(_) => self.compute_system(context),
         }
     }
 
     fn from_computed_value(other: &computed::FontFamily) -> Self {
-        FontFamily::Values(other.0.clone())
+        FontFamily::Values(other.families.clone())
     }
 }
 
@@ -956,48 +959,6 @@ impl FontSize {
         try_match_ident_ignore_ascii_case! { input,
             "smaller" => Ok(FontSize::Smaller),
             "larger" => Ok(FontSize::Larger),
-        }
-    }
-
-    #[allow(unused_mut)]
-    
-    pub fn cascade_specified_font_size(
-        context: &mut Context,
-        specified_value: &FontSize,
-        mut computed: computed::FontSize,
-    ) {
-        
-        
-        #[cfg(feature = "gecko")]
-        {
-            
-            
-            if context.builder.get_font().gecko().mLanguage.mRawPtr !=
-                context.builder.get_parent_font().gecko().mLanguage.mRawPtr ||
-                context.builder.get_font().gecko().mGenericID !=
-                    context.builder.get_parent_font().gecko().mGenericID
-            {
-                if let Some(info) = computed.keyword_info {
-                    computed.size = info.to_computed_value(context);
-                }
-            }
-        }
-
-        let device = context.builder.device;
-        let mut font = context.builder.take_font();
-        let parent_unconstrained = {
-            let parent_font = context.builder.get_parent_font();
-            font.apply_font_size(computed, parent_font, device)
-        };
-        context.builder.put_font(font);
-
-        if let Some(parent) = parent_unconstrained {
-            let new_unconstrained = specified_value
-                .to_computed_value_against(context, FontBaseSize::Custom(Au::from(parent)));
-            context
-                .builder
-                .mutate_font()
-                .apply_unconstrained_font_size(new_unconstrained.size);
         }
     }
 }

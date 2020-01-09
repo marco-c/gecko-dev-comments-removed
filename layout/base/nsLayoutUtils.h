@@ -2984,14 +2984,6 @@ class nsLayoutUtils {
   static void FixupNoneGeneric(nsFont* aFont, uint8_t aGenericFontID,
                                const nsFont* aDefaultVariableFont);
 
-  
-
-
-
-  static void ApplyMinFontSize(nsStyleFont* aFont,
-                               const mozilla::dom::Document*,
-                               nscoord aMinFontSize);
-
   static void ComputeSystemFont(nsFont* aSystemFont,
                                 mozilla::LookAndFeel::FontID aFontID,
                                 const nsFont* aDefaultVariableFont);
