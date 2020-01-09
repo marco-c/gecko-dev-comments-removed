@@ -8,13 +8,13 @@
 
 
 
-var EXPORTED_SYMBOLS = ["FormSubmitChild"];
+var EXPORTED_SYMBOLS = ["FormValidationChild"];
 
 const {ActorChild} = ChromeUtils.import("resource://gre/modules/ActorChild.jsm");
 const {BrowserUtils} = ChromeUtils.import("resource://gre/modules/BrowserUtils.jsm");
 const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-class FormSubmitChild extends ActorChild {
+class FormValidationChild extends ActorChild {
   constructor(dispatcher) {
     super(dispatcher);
 
