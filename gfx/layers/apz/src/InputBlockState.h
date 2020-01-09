@@ -14,9 +14,9 @@
 #include "mozilla/layers/APZUtils.h"
 #include "mozilla/layers/LayersTypes.h"  
 #include "mozilla/layers/AsyncDragMetrics.h"
-#include "mozilla/layers/TouchCounter.h"
 #include "mozilla/TimeStamp.h"  
 #include "nsTArray.h"           
+#include "TouchCounter.h"
 
 namespace mozilla {
 namespace layers {

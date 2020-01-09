@@ -7,7 +7,6 @@
 #include "TouchCounter.h"
 
 #include "InputData.h"
-#include "mozilla/TouchEvents.h"
 
 namespace mozilla {
 namespace layers {
@@ -25,7 +24,7 @@ void TouchCounter::Update(const MultiTouchInput& aInput) {
         
         mActiveTouchCount -= aInput.mTouches.Length();
       } else {
-        NS_WARNING("Got an unexpected touchend");
+        NS_WARNING("Got an unexpected touchend/touchcancel");
         mActiveTouchCount = 0;
       }
       break;
@@ -33,29 +32,6 @@ void TouchCounter::Update(const MultiTouchInput& aInput) {
       mActiveTouchCount = 0;
       break;
     case MultiTouchInput::MULTITOUCH_MOVE:
-      break;
-  }
-}
-
-void TouchCounter::Update(const WidgetTouchEvent& aEvent) {
-  switch (aEvent.mMessage) {
-    case eTouchStart:
-      
-      mActiveTouchCount = aEvent.mTouches.Length();
-      break;
-    case eTouchEnd:
-      if (mActiveTouchCount >= aEvent.mTouches.Length()) {
-        
-        mActiveTouchCount -= aEvent.mTouches.Length();
-      } else {
-        NS_WARNING("Got an unexpected touchend");
-        mActiveTouchCount = 0;
-      }
-      break;
-    case eTouchCancel:
-      mActiveTouchCount = 0;
-      break;
-    default:
       break;
   }
 }
