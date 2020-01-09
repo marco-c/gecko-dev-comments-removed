@@ -15,4 +15,9 @@ const RecommendedPreferences = {
   
   
   "toolkit.startup.max_resumed_crashes": -1,
+
+  
+  
+  "browser.contentblocking.features.standard": "-tp,tpPrivate,cookieBehavior0,-cm,-fp",
+  "network.cookie.cookieBehavior": 0,
 };
