@@ -18,7 +18,23 @@ const {RemoteAgentError} = ChromeUtils.import("chrome://remote/content/Error.jsm
 
 
 
+
+
+
+
+
 class Session {
+  
+
+
+
+
+
+
+
+
+
+
   constructor(connection, target, id) {
     this.connection = connection;
     this.target = target;

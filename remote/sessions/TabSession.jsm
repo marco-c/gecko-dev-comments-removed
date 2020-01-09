@@ -9,7 +9,25 @@ var EXPORTED_SYMBOLS = ["TabSession"];
 const {Domains} = ChromeUtils.import("chrome://remote/content/domains/Domains.jsm");
 const {Session} = ChromeUtils.import("chrome://remote/content/sessions/Session.jsm");
 
+
+
+
 class TabSession extends Session {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   constructor(connection, target, id, parentSession) {
     super(connection, target, id);
     this.parentSession = parentSession;
