@@ -913,26 +913,6 @@ void Element::SetScrollLeft(int32_t aScrollLeft) {
   }
 }
 
-bool Element::ScrollByNoFlush(int32_t aDx, int32_t aDy) {
-  nsIScrollableFrame* sf = GetScrollFrame(nullptr, FlushType::None);
-  if (!sf) {
-    return false;
-  }
-
-  AutoWeakFrame weakRef(sf->GetScrolledFrame());
-
-  CSSIntPoint before = sf->GetScrollPositionCSSPixels();
-  sf->ScrollToCSSPixelsApproximate(CSSIntPoint(before.x + aDx, before.y + aDy));
-
-  
-  if (!weakRef.IsAlive()) {
-    return false;
-  }
-
-  CSSIntPoint after = sf->GetScrollPositionCSSPixels();
-  return (before != after);
-}
-
 void Element::MozScrollSnap() {
   nsIScrollableFrame* sf = GetScrollFrame(nullptr, FlushType::None);
   if (sf) {
