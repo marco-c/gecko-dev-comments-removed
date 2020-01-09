@@ -2,18 +2,18 @@ var pb = Cc["@mozilla.org/preferences-service;1"].getService(Ci.nsIPrefBranch);
 
 
 
-const kPrefName = 'intl.accept_languages'; 
+const kPrefName = "intl.accept_languages"; 
                                            
 var initialValue = null;
 
 function check_child_pref_info_eq(continuation) {
     sendCommand(
-        'var pb = Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefBranch);\n'+
+        'var pb = Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefBranch);\n' +
         
-        'pb.getCharPref("'+ kPrefName +'")+ "," +'+
-        'pb.prefHasUserValue("'+ kPrefName +'");',
-        function (info) {
-            let [ value, isUser ] = info.split(',');
+        'pb.getCharPref("' + kPrefName + '")+ "," +' +
+        'pb.prefHasUserValue("' + kPrefName + '");',
+        function(info) {
+            let [ value, isUser ] = info.split(",");
             Assert.equal(pb.getCharPref(kPrefName), value);
             Assert.equal(pb.prefHasUserValue(kPrefName), isUser == "true");
             continuation();
@@ -33,11 +33,11 @@ function test_user_setting() {
     
     
     
-    pb.setCharPref(kPrefName, 'i-imaginarylanguage');
+    pb.setCharPref(kPrefName, "i-imaginarylanguage");
     
     
     
-    check_child_pref_info_eq(function () {
+    check_child_pref_info_eq(function() {
             Assert.equal(pb.prefHasUserValue(kPrefName), true);
 
             test_cleared_is_default();
@@ -49,7 +49,7 @@ function test_cleared_is_default() {
     
     
     
-    check_child_pref_info_eq(function () {
+    check_child_pref_info_eq(function() {
             Assert.equal(pb.prefHasUserValue(kPrefName), false);
 
             clean_up();
@@ -61,7 +61,7 @@ function clean_up() {
     
     
     
-    check_child_pref_info_eq(function () {
+    check_child_pref_info_eq(function() {
             do_test_finished();
         });
 }

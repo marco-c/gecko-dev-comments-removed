@@ -5,17 +5,16 @@ function run_test() {
 }
 
 
-function AddToZip(zipWriter, path, file)
-{
+function AddToZip(zipWriter, path, file) {
   var currentPath = path + file.leafName;
-  
+
   if (file.isDirectory()) {
     currentPath += "/";
   }
-  
+
   
   zipWriter.addEntryFile(currentPath, Ci.nsIZipWriter.COMPRESSION_DEFAULT, file, false);
-  
+
   
   if (file.isDirectory()) {
     var entries = file.QueryInterface(Ci.nsIFile).directoryEntries;
@@ -24,14 +23,13 @@ function AddToZip(zipWriter, path, file)
       AddToZip(zipWriter, currentPath, entry);
     }
   }
-  
+
   
 }
 
-function RecursivelyZipDirectory(bundle)
-{
+function RecursivelyZipDirectory(bundle) {
   zipW.open(tmpFile, PR_RDWR | PR_CREATE_FILE | PR_TRUNCATE);
-  AddToZip(zipW, "", bundle); 
+  AddToZip(zipW, "", bundle);
   zipW.close();
 }
 

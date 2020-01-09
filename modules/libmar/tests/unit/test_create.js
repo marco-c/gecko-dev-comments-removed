@@ -2,7 +2,6 @@
 
 
 function run_test() {
-
   
 
 
@@ -102,7 +101,7 @@ function run_test() {
       if (outMAR.exists()) {
         outMAR.remove(false);
       }
-    }
+    },
   };
 
   

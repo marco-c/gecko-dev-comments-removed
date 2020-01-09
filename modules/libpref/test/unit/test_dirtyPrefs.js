@@ -10,7 +10,6 @@ const PREF_INT     = 64;
 const PREF_STRING  = 32;
 
 function run_test() {
-
   var ps = Cc["@mozilla.org/preferences-service;1"].
             getService(Ci.nsIPrefService);
 
@@ -58,7 +57,8 @@ function run_test() {
   Assert.ok(!ps.dirty);
   
   do_check_throws(function() {
-    userBranch.setCharPref("DirtyTest.existing.bool", "boo"); }, Cr.NS_ERROR_UNEXPECTED);
+    userBranch.setCharPref("DirtyTest.existing.bool", "boo");
+}, Cr.NS_ERROR_UNEXPECTED);
   Assert.ok(!ps.dirty);
 
   

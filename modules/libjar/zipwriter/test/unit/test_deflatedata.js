@@ -9,8 +9,7 @@ const CRC = 0xe6164331;
 
 const time = 1199145600000; 
 
-function run_test()
-{
+function run_test() {
   zipW.open(tmpFile, PR_RDWR | PR_CREATE_FILE | PR_TRUNCATE);
 
   

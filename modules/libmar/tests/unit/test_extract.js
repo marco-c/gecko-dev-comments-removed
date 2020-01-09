@@ -2,7 +2,6 @@
 
 
 function run_test() {
-
   
 
 
@@ -114,7 +113,7 @@ function run_test() {
       return extract_and_fail("manipulated_frontend_collision.mar");
     },
     
-    test_collsion_b_onto_a: function test_collsion_b_onto_a()  {
+    test_collsion_b_onto_a: function test_collsion_b_onto_a() {
       return extract_and_fail("manipulated_backend_collision.mar");
     },
     
@@ -137,7 +136,7 @@ function run_test() {
       if (outDir.exists()) {
         outDir.remove(true);
       }
-    }
+    },
   };
 
   

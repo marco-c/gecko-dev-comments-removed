@@ -37,10 +37,6 @@ function saveAndReload() {
   ps.readUserPrefsFromFile(file);
 }
 
-function run_test() {
-  run_next_test();
-}
-
 
 add_test(function notWrittenWhenUnchanged() {
   resetAndLoadDefaults();

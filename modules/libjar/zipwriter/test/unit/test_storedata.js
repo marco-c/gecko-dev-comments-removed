@@ -10,8 +10,7 @@ const CRC = 0xe6164331;
 
 const time = 1199145600000; 
 
-function testpass(source)
-{
+function testpass(source) {
   
   Assert.ok(source.hasEntry(FILENAME));
 
@@ -34,8 +33,7 @@ function testpass(source)
   Assert.equal(entry.CRC32, CRC);
 }
 
-function run_test()
-{
+function run_test() {
   zipW.open(tmpFile, PR_RDWR | PR_CREATE_FILE | PR_TRUNCATE);
 
   

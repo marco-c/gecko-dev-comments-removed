@@ -9,22 +9,19 @@ const PREF_STRING  = 32;
 
 const MAX_PREF_LENGTH = 1 * 1024 * 1024;
 
-function makeList(a)
-{
+function makeList(a) {
   var o = {};
-  for(var i=0; i<a.length; i++)
-  {
-    o[a[i]] = '';
+  for (var i = 0; i < a.length; i++) {
+    o[a[i]] = "";
   }
   return o;
 }
 
 function run_test() {
-
   var ps = Cc["@mozilla.org/preferences-service;1"].
             getService(Ci.nsIPrefService);
 
-  var pb2= Cc["@mozilla.org/preferences-service;1"].
+  var pb2 = Cc["@mozilla.org/preferences-service;1"].
             getService(Ci.nsIPrefBranch);
 
   var pb = Cc["@mozilla.org/preferences-service;1"].
@@ -34,37 +31,53 @@ function run_test() {
   
 
   do_check_throws(function() {
-    pb.getPrefType(null); },  Cr.NS_ERROR_INVALID_ARG);
+    pb.getPrefType(null);
+}, Cr.NS_ERROR_INVALID_ARG);
   do_check_throws(function() {
-    pb.getBoolPref(null); },  Cr.NS_ERROR_INVALID_ARG);
+    pb.getBoolPref(null);
+}, Cr.NS_ERROR_INVALID_ARG);
   do_check_throws(function() {
-    pb.setBoolPref(null, false); },  Cr.NS_ERROR_INVALID_ARG);
+    pb.setBoolPref(null, false);
+}, Cr.NS_ERROR_INVALID_ARG);
   do_check_throws(function() {
-    pb.getIntPref(null); },  Cr.NS_ERROR_INVALID_ARG);
+    pb.getIntPref(null);
+}, Cr.NS_ERROR_INVALID_ARG);
   do_check_throws(function() {
-    pb.setIntPref(null, 0); },  Cr.NS_ERROR_INVALID_ARG);
+    pb.setIntPref(null, 0);
+}, Cr.NS_ERROR_INVALID_ARG);
   do_check_throws(function() {
-    pb.getCharPref(null); },  Cr.NS_ERROR_INVALID_ARG);
+    pb.getCharPref(null);
+}, Cr.NS_ERROR_INVALID_ARG);
   do_check_throws(function() {
-    pb.setCharPref(null, null); },  Cr.NS_ERROR_INVALID_ARG);
+    pb.setCharPref(null, null);
+}, Cr.NS_ERROR_INVALID_ARG);
   do_check_throws(function() {
-    pb.getStringPref(null); },  Cr.NS_ERROR_INVALID_ARG);
+    pb.getStringPref(null);
+}, Cr.NS_ERROR_INVALID_ARG);
   do_check_throws(function() {
-    pb.setStringPref(null, null); },  Cr.NS_ERROR_INVALID_ARG);
+    pb.setStringPref(null, null);
+}, Cr.NS_ERROR_INVALID_ARG);
   do_check_throws(function() {
-    pb.clearUserPref(null); },  Cr.NS_ERROR_INVALID_ARG);
+    pb.clearUserPref(null);
+}, Cr.NS_ERROR_INVALID_ARG);
   do_check_throws(function() {
-    pb.prefHasUserValue(null); },  Cr.NS_ERROR_INVALID_ARG);
+    pb.prefHasUserValue(null);
+}, Cr.NS_ERROR_INVALID_ARG);
   do_check_throws(function() {
-    pb.lockPref(null); },  Cr.NS_ERROR_INVALID_ARG);
+    pb.lockPref(null);
+}, Cr.NS_ERROR_INVALID_ARG);
   do_check_throws(function() {
-    pb.prefIsLocked(null); },  Cr.NS_ERROR_INVALID_ARG);
+    pb.prefIsLocked(null);
+}, Cr.NS_ERROR_INVALID_ARG);
   do_check_throws(function() {
-    pb.unlockPref(null); },  Cr.NS_ERROR_INVALID_ARG);
+    pb.unlockPref(null);
+}, Cr.NS_ERROR_INVALID_ARG);
   do_check_throws(function() {
-    pb.deleteBranch(null); },  Cr.NS_ERROR_INVALID_ARG);
+    pb.deleteBranch(null);
+}, Cr.NS_ERROR_INVALID_ARG);
   do_check_throws(function() {
-    pb.getChildList(null); },  Cr.NS_ERROR_INVALID_ARG);
+    pb.getChildList(null);
+}, Cr.NS_ERROR_INVALID_ARG);
 
   
   
@@ -76,19 +89,22 @@ function run_test() {
 
   
   do_check_throws(function() {
-    pb.getBoolPref("UserPref.nonexistent.getBoolPref");}, Cr.NS_ERROR_UNEXPECTED);
+    pb.getBoolPref("UserPref.nonexistent.getBoolPref");
+}, Cr.NS_ERROR_UNEXPECTED);
   pb.setBoolPref("UserPref.nonexistent.setBoolPref", false);
   Assert.equal(pb.getBoolPref("UserPref.nonexistent.setBoolPref"), false);
 
   
   do_check_throws(function() {
-    pb.getIntPref("UserPref.nonexistent.getIntPref");}, Cr.NS_ERROR_UNEXPECTED);
+    pb.getIntPref("UserPref.nonexistent.getIntPref");
+}, Cr.NS_ERROR_UNEXPECTED);
   pb.setIntPref("UserPref.nonexistent.setIntPref", 5);
   Assert.equal(pb.getIntPref("UserPref.nonexistent.setIntPref"), 5);
 
   
   do_check_throws(function() {
-    pb.getCharPref("UserPref.nonexistent.getCharPref");}, Cr.NS_ERROR_UNEXPECTED);
+    pb.getCharPref("UserPref.nonexistent.getCharPref");
+}, Cr.NS_ERROR_UNEXPECTED);
   pb.setCharPref("UserPref.nonexistent.setCharPref", "_test");
   Assert.equal(pb.getCharPref("UserPref.nonexistent.setCharPref"), "_test");
 
@@ -128,11 +144,12 @@ function run_test() {
   
   
 
-  let largeStr = new Array(MAX_PREF_LENGTH + 1).join('x');
+  let largeStr = new Array(MAX_PREF_LENGTH + 1).join("x");
   pb.setCharPref("UserPref.large.char", largeStr);
-  largeStr += 'x';
+  largeStr += "x";
   do_check_throws(function() {
-    pb.setCharPref("UserPref.large.char", largeStr); }, Cr.NS_ERROR_ILLEGAL_VALUE);
+    pb.setCharPref("UserPref.large.char", largeStr);
+}, Cr.NS_ERROR_ILLEGAL_VALUE);
 
   
   
@@ -151,7 +168,7 @@ function run_test() {
 
   
   
-  
+
   Assert.equal(ps.root, "");
 
   
@@ -206,48 +223,50 @@ function run_test() {
   
   pb1 = ps.getDefaultBranch("");
   pb1.setBoolPref("DefaultPref.bool", true);
-  Assert.equal(pb1.getBoolPref("DefaultPref.bool"), true);  
+  Assert.equal(pb1.getBoolPref("DefaultPref.bool"), true);
   Assert.ok(!pb1.prefHasUserValue("DefaultPref.bool"));
   ps.setBoolPref("DefaultPref.bool", false);
   Assert.ok(pb1.prefHasUserValue("DefaultPref.bool"));
-  Assert.equal(ps.getBoolPref("DefaultPref.bool"), false); 
+  Assert.equal(ps.getBoolPref("DefaultPref.bool"), false);
 
   
   pb1 = ps.getDefaultBranch("");
   pb1.setIntPref("DefaultPref.int", 100);
-  Assert.equal(pb1.getIntPref("DefaultPref.int"), 100);  
+  Assert.equal(pb1.getIntPref("DefaultPref.int"), 100);
   Assert.ok(!pb1.prefHasUserValue("DefaultPref.int"));
   ps.setIntPref("DefaultPref.int", 50);
   Assert.ok(pb1.prefHasUserValue("DefaultPref.int"));
-  Assert.equal(ps.getIntPref("DefaultPref.int"), 50); 
+  Assert.equal(ps.getIntPref("DefaultPref.int"), 50);
 
   
   pb1 = ps.getDefaultBranch("");
   pb1.setCharPref("DefaultPref.char", "_default");
-  Assert.equal(pb1.getCharPref("DefaultPref.char"), "_default");  
+  Assert.equal(pb1.getCharPref("DefaultPref.char"), "_default");
   Assert.ok(!pb1.prefHasUserValue("DefaultPref.char"));
   ps.setCharPref("DefaultPref.char", "_user");
   Assert.ok(pb1.prefHasUserValue("DefaultPref.char"));
-  Assert.equal(ps.getCharPref("DefaultPref.char"), "_user"); 
+  Assert.equal(ps.getCharPref("DefaultPref.char"), "_user");
 
   
   
 
   
   do_check_throws(function() {
-    ps.lockPref("DefaultPref.nonexistent");}, Cr.NS_ERROR_ILLEGAL_VALUE);
+    ps.lockPref("DefaultPref.nonexistent");
+}, Cr.NS_ERROR_ILLEGAL_VALUE);
   do_check_throws(function() {
-    ps.unlockPref("DefaultPref.nonexistent");}, Cr.NS_ERROR_ILLEGAL_VALUE);
+    ps.unlockPref("DefaultPref.nonexistent");
+}, Cr.NS_ERROR_ILLEGAL_VALUE);
 
   
   Assert.ok(!ps.prefIsLocked("DefaultPref.char"));
   ps.lockPref("DefaultPref.char");
-  Assert.equal(ps.getCharPref("DefaultPref.char"), "_default"); 
+  Assert.equal(ps.getCharPref("DefaultPref.char"), "_default");
   Assert.ok(ps.prefIsLocked("DefaultPref.char"));
 
   
   ps.unlockPref("DefaultPref.char");
-  Assert.equal(ps.getCharPref("DefaultPref.char"), "_user"); 
+  Assert.equal(ps.getCharPref("DefaultPref.char"), "_user");
   Assert.ok(!ps.prefIsLocked("DefaultPref.char"));
 
   
@@ -283,19 +302,25 @@ function run_test() {
 
   
   do_check_throws(function() {
-    pb.getBoolPref("DefaultPref.bool");}, Cr.NS_ERROR_UNEXPECTED);
+    pb.getBoolPref("DefaultPref.bool");
+}, Cr.NS_ERROR_UNEXPECTED);
   do_check_throws(function() {
-    pb.getIntPref("DefaultPref.int");}, Cr.NS_ERROR_UNEXPECTED);
+    pb.getIntPref("DefaultPref.int");
+}, Cr.NS_ERROR_UNEXPECTED);
   do_check_throws(function() {
-    pb.getCharPref("DefaultPref.char");}, Cr.NS_ERROR_UNEXPECTED);
+    pb.getCharPref("DefaultPref.char");
+}, Cr.NS_ERROR_UNEXPECTED);
 
   
   do_check_throws(function() {
-    pb1.getBoolPref("DefaultPref.bool");}, Cr.NS_ERROR_UNEXPECTED);
+    pb1.getBoolPref("DefaultPref.bool");
+}, Cr.NS_ERROR_UNEXPECTED);
   do_check_throws(function() {
-    pb1.getIntPref("DefaultPref.int");}, Cr.NS_ERROR_UNEXPECTED);
+    pb1.getIntPref("DefaultPref.int");
+}, Cr.NS_ERROR_UNEXPECTED);
   do_check_throws(function() {
-    pb1.getCharPref("DefaultPref.char");}, Cr.NS_ERROR_UNEXPECTED);
+    pb1.getCharPref("DefaultPref.char");
+}, Cr.NS_ERROR_UNEXPECTED);
 
   
   
@@ -322,11 +347,14 @@ function run_test() {
 
   
   do_check_throws(function() {
-    pb.getBoolPref("ReadPref.bool");}, Cr.NS_ERROR_UNEXPECTED);
+    pb.getBoolPref("ReadPref.bool");
+}, Cr.NS_ERROR_UNEXPECTED);
   do_check_throws(function() {
-    pb.getIntPref("ReadPref.int");}, Cr.NS_ERROR_UNEXPECTED);
+    pb.getIntPref("ReadPref.int");
+}, Cr.NS_ERROR_UNEXPECTED);
   do_check_throws(function() {
-    pb.getCharPref("ReadPref.char");}, Cr.NS_ERROR_UNEXPECTED);
+    pb.getCharPref("ReadPref.char");
+}, Cr.NS_ERROR_UNEXPECTED);
 
   
   pb = ps.getBranch("testPref.");
@@ -390,7 +418,7 @@ function run_test() {
       
       do_test_finished();
     }
-  };
+  }
 
   
   

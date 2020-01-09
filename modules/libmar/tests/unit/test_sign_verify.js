@@ -2,7 +2,6 @@
 
 
 function run_test() {
-
   
 
 
@@ -568,7 +567,7 @@ function run_test() {
     },
     
     cleanup_per_test: function _cleanup_per_test() {
-    }
+    },
   };
 
   cleanup();

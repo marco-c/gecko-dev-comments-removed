@@ -1,5 +1,5 @@
 
- 
+
 
 
 
@@ -9,24 +9,19 @@ function run_test() {
   var prefs = Cc["@mozilla.org/preferences-service;1"]
               .getService(Ci.nsIPrefBranch);
   var observer = {
-    QueryInterface: function QueryInterface(aIID) {
-      if (aIID.equals(Ci.nsIObserver) ||
-          aIID.equals(Ci.nsISupports))
-         return this;
-      throw Cr.NS_NOINTERFACE;
-    },
+    QueryInterface: ChromeUtils.generateQI(["nsIObserver"]),
 
     observe: function observe(aSubject, aTopic, aState) {
       prefs.removeObserver(PREF_NAME, observer);
-    }
-  }
+    },
+  };
   prefs.addObserver(PREF_NAME, observer);
 
-  prefs.setCharPref(PREF_NAME, "test0")
+  prefs.setCharPref(PREF_NAME, "test0");
   
   
   
-  prefs.setCharPref(PREF_NAME, "test1")
+  prefs.setCharPref(PREF_NAME, "test1");
 
   Assert.ok(true);
 }

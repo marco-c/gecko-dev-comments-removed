@@ -13,7 +13,7 @@ function test_relative_sub() {
   
   var expected = "jar:" + ios.newFileURI(do_get_file(path)).spec +
     "!/modules/libjar";
-  
+
   Assert.equal(uri.spec, expected);
 }
 

@@ -4,8 +4,7 @@
 
 
 
-function wrapInputStream(input)
-{
+function wrapInputStream(input) {
   var nsIScriptableInputStream = Ci.nsIScriptableInputStream;
   var factory = Cc["@mozilla.org/scriptableinputstream;1"];
   var wrapper = factory.createInstance(nsIScriptableInputStream);
@@ -26,10 +25,10 @@ function run_test() {
     zipreader.test(null);
     return true;
   }
-  Assert.ok(check_archive_crc())
+  Assert.ok(check_archive_crc());
   var entries = zipreader.findEntries(null);
-  var stream = wrapInputStream(zipreader.getInputStream("modules/libjar/test/Makefile.in"))
-  var dirstream= wrapInputStream(zipreader.getInputStream("modules/libjar/test/"))
+  var stream = wrapInputStream(zipreader.getInputStream("modules/libjar/test/Makefile.in"));
+  var dirstream = wrapInputStream(zipreader.getInputStream("modules/libjar/test/"));
   zipreader.close();
   zipreader = null;
   Cu.forceGC();

@@ -2,8 +2,7 @@
 
 
 
-function wrapInputStream(input)
-{
+function wrapInputStream(input) {
   var nsIScriptableInputStream = Ci.nsIScriptableInputStream;
   var factory = Cc["@mozilla.org/scriptableinputstream;1"];
   var wrapper = factory.createInstance(nsIScriptableInputStream);

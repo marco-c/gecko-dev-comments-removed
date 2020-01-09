@@ -14,6 +14,6 @@ function run_test() {
                   createInstance(Ci.nsIZipReader);
   zipreader.open(file);
   zipreader.close();
-  var entries = zipreader.findEntries('*.*');
+  var entries = zipreader.findEntries("*.*");
   Assert.ok(!entries.hasMore()); 
 }
