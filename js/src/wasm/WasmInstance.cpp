@@ -902,6 +902,15 @@ Instance::postBarrier(Instance* instance, gc::Cell** location) {
   TlsContext.get()->runtime()->gc.storeBuffer().putCell(location);
 }
 
+ void 
+Instance::postBarrierFiltering(Instance* instance, gc::Cell** location) {
+  MOZ_ASSERT(location);
+  if (*location == nullptr || !gc::IsInsideNursery(*location)) {
+    return;
+  }
+  TlsContext.get()->runtime()->gc.storeBuffer().putCell(location);
+}
+
 
 
 
