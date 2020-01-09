@@ -1,0 +1,19 @@
+
+
+
+
+
+
+#ifndef nsCookieModule_h
+#define nsCookieModule_h
+
+#include "nscore.h"
+
+namespace mozilla {
+
+void CookieModuleDtor();
+
+}  
+
+#endif
+
