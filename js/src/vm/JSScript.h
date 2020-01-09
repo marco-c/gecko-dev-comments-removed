@@ -1137,6 +1137,10 @@ class ScriptSourceHolder {
 
 
 
+
+
+
+
 class ScriptSourceObject : public NativeObject {
   static const ClassOps classOps_;
 
@@ -3217,7 +3221,8 @@ extern void DescribeScriptedCallerForDirectEval(
     unsigned* linenop, uint32_t* pcOffset, bool* mutedErrors);
 
 JSScript* CloneScriptIntoFunction(JSContext* cx, HandleScope enclosingScope,
-                                  HandleFunction fun, HandleScript src);
+                                  HandleFunction fun, HandleScript src,
+                                  Handle<ScriptSourceObject*> sourceObject);
 
 JSScript* CloneGlobalScript(JSContext* cx, ScopeKind scopeKind,
                             HandleScript src);

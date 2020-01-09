@@ -3251,21 +3251,23 @@ static JSObject* CloneFunctionObject(JSContext* cx, HandleObject funobj,
     return nullptr;
   }
 
+  
   RootedFunction fun(cx, &funobj->as<JSFunction>());
+  if (fun->isNative() || fun->isBoundFunction() ||
+      fun->kind() != JSFunction::NormalFunction || fun->isExtended() ||
+      fun->isSelfHostedBuiltin()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_CANT_CLONE_OBJECT);
+    return nullptr;
+  }
+
   if (fun->isInterpretedLazy()) {
     AutoRealm ar(cx, fun);
     if (!JSFunction::getOrCreateScript(cx, fun)) {
       return nullptr;
     }
   }
-
-  
-  if (fun->isNative() || fun->isBoundFunction() ||
-      fun->kind() != JSFunction::NormalFunction || fun->isExtended()) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_CANT_CLONE_OBJECT);
-    return nullptr;
-  }
+  RootedScript script(cx, fun->nonLazyScript());
 
   if (!IsFunctionCloneable(fun)) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
@@ -3274,24 +3276,19 @@ static JSObject* CloneFunctionObject(JSContext* cx, HandleObject funobj,
   }
 
   if (CanReuseScriptForClone(cx->realm(), fun, env)) {
-    
-    
-    
-#ifdef DEBUG
-    
-    
-    
-    if (!JSFunction::getOrCreateScript(cx, fun)) {
-      return nullptr;
-    }
-    MOZ_ASSERT(scope->as<GlobalScope>().isSyntactic() ||
-               fun->nonLazyScript()->hasNonSyntacticScope());
-#endif
     return CloneFunctionReuseScript(cx, fun, env, fun->getAllocKind());
   }
 
-  JSFunction* clone =
-      CloneFunctionAndScript(cx, fun, env, scope, fun->getAllocKind());
+  Rooted<ScriptSourceObject*> sourceObject(cx, script->sourceObject());
+  if (cx->compartment() != sourceObject->compartment()) {
+    sourceObject = ScriptSourceObject::clone(cx, sourceObject);
+    if (!sourceObject) {
+      return nullptr;
+    }
+  }
+
+  JSFunction* clone = CloneFunctionAndScript(cx, fun, env, scope, sourceObject,
+                                             fun->getAllocKind());
 
 #ifdef DEBUG
   

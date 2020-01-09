@@ -3189,6 +3189,26 @@ static JSString* CloneString(JSContext* cx, JSFlatString* selfHostedString) {
                    cx, chars.twoByteRange().begin().get(), len);
 }
 
+
+
+static ScriptSourceObject* SelfHostingScriptSourceObject(JSContext* cx) {
+  if (ScriptSourceObject* sso = cx->realm()->selfHostingScriptSource) {
+    return sso;
+  }
+
+  CompileOptions options(cx);
+  FillSelfHostingCompileOptions(options);
+
+  ScriptSourceObject* sourceObject =
+      frontend::CreateScriptSourceObject(cx, options);
+  if (!sourceObject) {
+    return nullptr;
+  }
+
+  cx->realm()->selfHostingScriptSource.set(sourceObject);
+  return sourceObject;
+}
+
 static JSObject* CloneObject(JSContext* cx,
                              HandleNativeObject selfHostedObject) {
 #ifdef DEBUG
@@ -3224,10 +3244,15 @@ static JSObject* CloneObject(JSContext* cx,
       Rooted<LexicalEnvironmentObject*> globalLexical(
           cx, &global->lexicalEnvironment());
       RootedScope emptyGlobalScope(cx, &global->emptyGlobalScope());
+      Rooted<ScriptSourceObject*> sourceObject(
+          cx, SelfHostingScriptSourceObject(cx));
+      if (!sourceObject) {
+        return nullptr;
+      }
       MOZ_ASSERT(
           !CanReuseScriptForClone(cx->realm(), selfHostedFunction, global));
       clone = CloneFunctionAndScript(cx, selfHostedFunction, globalLexical,
-                                     emptyGlobalScope, kind);
+                                     emptyGlobalScope, sourceObject, kind);
       
       
       if (clone && hasName) {
@@ -3367,6 +3392,12 @@ bool JSRuntime::cloneSelfHostedFunctionScript(JSContext* cx,
     return false;
   }
 
+  Rooted<ScriptSourceObject*> sourceObject(cx,
+                                           SelfHostingScriptSourceObject(cx));
+  if (!sourceObject) {
+    return false;
+  }
+
   
   
   
@@ -3375,7 +3406,8 @@ bool JSRuntime::cloneSelfHostedFunctionScript(JSContext* cx,
   MOZ_ASSERT(sourceScript->outermostScope()->enclosing()->kind() ==
              ScopeKind::Global);
   RootedScope emptyGlobalScope(cx, &cx->global()->emptyGlobalScope());
-  if (!CloneScriptIntoFunction(cx, emptyGlobalScope, targetFun, sourceScript)) {
+  if (!CloneScriptIntoFunction(cx, emptyGlobalScope, targetFun, sourceScript,
+                               sourceObject)) {
     return false;
   }
   MOZ_ASSERT(!targetFun->isInterpretedLazy());
