@@ -286,7 +286,7 @@ void Downscaler::DownscaleInputLine() {
 
   
   mLinesInBuffer -= diff;
-  mLinesInBuffer = min(max(mLinesInBuffer, 0), mWindowCapacity);
+  mLinesInBuffer = std::min(std::max(mLinesInBuffer, 0), mWindowCapacity);
 
   
   
