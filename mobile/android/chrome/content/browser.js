@@ -6486,7 +6486,9 @@ var ExternalApps = {
             buttons: [
               Strings.browser.GetStringFromName("openInApp.ok"),
               Strings.browser.GetStringFromName("openInApp.cancel")
-            ]
+            ],
+            
+            doubleTapButton: 0
           }, (result) => {
             if (result.button != 0) {
               if (wasPlaying) {
