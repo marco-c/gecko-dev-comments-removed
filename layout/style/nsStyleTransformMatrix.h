@@ -190,7 +190,16 @@ mozilla::gfx::Matrix4x4 ReadTransforms(
 
 
 
-mozilla::gfx::Point Convert2DPosition(nsStyleCoord const (&aValue)[2],
+mozilla::CSSPoint Convert2DPosition(const mozilla::LengthPercentage& aX,
+                                    const mozilla::LengthPercentage& aY,
+                                    TransformReferenceBox& aRefBox);
+
+
+
+
+
+mozilla::gfx::Point Convert2DPosition(const mozilla::LengthPercentage& aX,
+                                      const mozilla::LengthPercentage& aY,
                                       TransformReferenceBox& aRefBox,
                                       int32_t aAppUnitsPerDevPixel);
 

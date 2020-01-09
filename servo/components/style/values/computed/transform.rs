@@ -21,7 +21,7 @@ pub type TransformOperation =
 pub type Transform = generic::Transform<TransformOperation>;
 
 
-pub type TransformOrigin = generic::TransformOrigin<LengthPercentage, LengthPercentage, Length>;
+pub type TransformOrigin = generic::GenericTransformOrigin<LengthPercentage, LengthPercentage, Length>;
 
 
 pub type DirectionVector = Vector3D<CSSFloat>;
