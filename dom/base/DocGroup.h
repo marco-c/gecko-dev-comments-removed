@@ -114,8 +114,6 @@ class DocGroup final {
   nsTArray<Document*> mDocuments;
   RefPtr<mozilla::dom::CustomElementReactionsStack> mReactionsStack;
   nsTArray<RefPtr<HTMLSlotElement>> mSignalSlotList;
-  
-  
   RefPtr<mozilla::PerformanceCounter> mPerformanceCounter;
 };
 

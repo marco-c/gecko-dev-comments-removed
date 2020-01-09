@@ -77,16 +77,12 @@ class TimedRunnable final : public Runnable {
 
 
 
-static const char prefKey[] = "dom.performance.enable_scheduler_timing";
-
 class ThreadMetrics : public ::testing::Test {
  public:
   explicit ThreadMetrics() = default;
 
  protected:
   virtual void SetUp() {
-    mOldPref = Preferences::GetBool(prefKey);
-    Preferences::SetBool(prefKey, true);
     
     nsCString key = NS_LITERAL_CSTRING("key");
     RefPtr<dom::Document> doc;
@@ -103,7 +99,6 @@ class ThreadMetrics : public ::testing::Test {
     
     mDocGroup->RemoveDocument(nullptr);
     mDocGroup = nullptr;
-    Preferences::SetBool(prefKey, mOldPref);
     ProcessAllEvents();
   }
 

@@ -1120,10 +1120,7 @@ nsThread::ProcessNextEvent(bool aMayWait, bool* aResult) {
         BackgroundHangMonitor().NotifyActivity();
       }
 
-      bool schedulerLoggingEnabled =
-          mozilla::StaticPrefs::dom_performance_enable_scheduler_timing();
-      if (schedulerLoggingEnabled &&
-          mNestedEventLoopDepth > mCurrentEventLoopDepth &&
+      if (mNestedEventLoopDepth > mCurrentEventLoopDepth &&
           mCurrentPerformanceCounter) {
         
         
@@ -1170,12 +1167,10 @@ nsThread::ProcessNextEvent(bool aMayWait, bool* aResult) {
         mCurrentEventStart = mozilla::TimeStamp::Now();
       }
       RefPtr<mozilla::PerformanceCounter> currentPerformanceCounter;
-      if (schedulerLoggingEnabled) {
-        mCurrentEventStart = mozilla::TimeStamp::Now();
-        mCurrentEvent = event;
-        mCurrentPerformanceCounter = GetPerformanceCounter(event);
-        currentPerformanceCounter = mCurrentPerformanceCounter;
-      }
+      mCurrentEventStart = mozilla::TimeStamp::Now();
+      mCurrentEvent = event;
+      mCurrentPerformanceCounter = GetPerformanceCounter(event);
+      currentPerformanceCounter = mCurrentPerformanceCounter;
 
       event->Run();
 
@@ -1203,24 +1198,22 @@ nsThread::ProcessNextEvent(bool aMayWait, bool* aResult) {
       }
 
       
-      if (schedulerLoggingEnabled) {
-        if (recursiveEvent) {
-          
-          
-          mCurrentEventStart = mozilla::TimeStamp::Now();
-          mCurrentPerformanceCounter = currentPerformanceCounter;
-        } else {
-          
-          if (currentPerformanceCounter) {
-            mozilla::TimeDuration duration =
-                TimeStamp::Now() - mCurrentEventStart;
-            currentPerformanceCounter->IncrementExecutionDuration(
-                duration.ToMicroseconds());
-          }
-          mCurrentEvent = nullptr;
-          mCurrentEventLoopDepth = -1;
-          mCurrentPerformanceCounter = nullptr;
+      if (recursiveEvent) {
+        
+        
+        mCurrentEventStart = mozilla::TimeStamp::Now();
+        mCurrentPerformanceCounter = currentPerformanceCounter;
+      } else {
+        
+        if (currentPerformanceCounter) {
+          mozilla::TimeDuration duration =
+              TimeStamp::Now() - mCurrentEventStart;
+          currentPerformanceCounter->IncrementExecutionDuration(
+              duration.ToMicroseconds());
         }
+        mCurrentEvent = nullptr;
+        mCurrentEventLoopDepth = -1;
+        mCurrentPerformanceCounter = nullptr;
       }
     } else if (aMayWait) {
       MOZ_ASSERT(ShuttingDown(), "This should only happen when shutting down");

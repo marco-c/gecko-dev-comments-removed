@@ -52,10 +52,8 @@ DocGroup::DocGroup(TabGroup* aTabGroup, const nsACString& aKey)
     : mKey(aKey), mTabGroup(aTabGroup) {
   
   
-  if (mozilla::StaticPrefs::dom_performance_enable_scheduler_timing()) {
-    mPerformanceCounter =
-        new mozilla::PerformanceCounter(NS_LITERAL_CSTRING("DocGroup:") + aKey);
-  }
+  mPerformanceCounter =
+      new mozilla::PerformanceCounter(NS_LITERAL_CSTRING("DocGroup:") + aKey);
 }
 
 DocGroup::~DocGroup() {

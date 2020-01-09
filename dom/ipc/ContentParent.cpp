@@ -3495,11 +3495,6 @@ mozilla::ipc::IPCResult ContentParent::RecvFinishMemoryReport(
 
 mozilla::ipc::IPCResult ContentParent::RecvAddPerformanceMetrics(
     const nsID& aID, nsTArray<PerformanceInfo>&& aMetrics) {
-  if (!mozilla::StaticPrefs::dom_performance_enable_scheduler_timing()) {
-    
-    
-    return IPC_OK();
-  }
   nsresult rv = PerformanceMetricsCollector::DataReceived(aID, aMetrics);
   Unused << NS_WARN_IF(NS_FAILED(rv));
   return IPC_OK();

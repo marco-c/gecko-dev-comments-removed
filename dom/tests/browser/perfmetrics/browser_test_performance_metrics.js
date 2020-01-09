@@ -44,7 +44,6 @@ function postMessageToWorker(tab, message) {
 }
 
 add_task(async function test() {
-  
   waitForExplicitFinish();
 
   

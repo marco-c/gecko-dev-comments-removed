@@ -1140,8 +1140,6 @@ class WorkerPrivate : public RelativeTimeline {
   
   bool mIsInAutomation;
 
-  
-  
   RefPtr<mozilla::PerformanceCounter> mPerformanceCounter;
 
   nsString mID;

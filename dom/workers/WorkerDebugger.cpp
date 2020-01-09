@@ -95,9 +95,7 @@ class CompileDebuggerScriptRunnable final : public WorkerDebuggerRunnable {
     
     
     aWorkerPrivate->EnsurePerformanceStorage();
-    if (mozilla::StaticPrefs::dom_performance_enable_scheduler_timing()) {
-      aWorkerPrivate->EnsurePerformanceCounter();
-    }
+    aWorkerPrivate->EnsurePerformanceCounter();
 
     JS::Rooted<JSObject*> global(aCx, globalScope->GetWrapper());
 
