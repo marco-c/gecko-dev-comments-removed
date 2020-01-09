@@ -39,6 +39,8 @@
 #include "nsIContentPolicy.h"
 #include "SVGObserverUtils.h"
 
+#include "gfxPrefs.h"
+
 #include "mozAutoDocUpdate.h"
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/AutoRestore.h"
@@ -527,7 +529,7 @@ void nsImageLoadingContent::MaybeForceSyncDecoding(
     
     TimeStamp now = TimeStamp::Now();
     TimeDuration threshold = TimeDuration::FromMilliseconds(
-        StaticPrefs::ImageInferSrcAnimationThresholdMS());
+        gfxPrefs::ImageInferSrcAnimationThresholdMS());
 
     
     

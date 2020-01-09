@@ -203,8 +203,6 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
   static bool IsHeadless();
 
-  static bool UseWebRender();
-
   
 
 

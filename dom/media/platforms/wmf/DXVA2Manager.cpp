@@ -15,9 +15,9 @@
 #include "VideoUtils.h"
 #include "WMFUtils.h"
 #include "gfxCrashReporterUtils.h"
+#include "gfxPrefs.h"
 #include "gfxWindowsPlatform.h"
 #include "mfapi.h"
-#include "mozilla/StaticPrefs.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/gfx/DeviceManagerDx.h"
 #include "mozilla/layers/D3D11ShareHandleImage.h"
@@ -416,7 +416,7 @@ D3D9DXVA2Manager::Init(layers::KnowsCompositor* aKnowsCompositor,
   }
 
   if ((adapter.VendorId == 0x1022 || adapter.VendorId == 0x1002) &&
-      !StaticPrefs::PDMWMFSkipBlacklist()) {
+      !gfxPrefs::PDMWMFSkipBlacklist()) {
     for (const auto& model : sAMDPreUVD4) {
       if (adapter.DeviceId == model) {
         mIsAMDPreUVD4 = true;
@@ -506,7 +506,7 @@ DXVA2Manager* DXVA2Manager::CreateD3D9DXVA(
 
   
   
-  uint32_t dxvaLimit = StaticPrefs::PDMWMFMaxDXVAVideos();
+  uint32_t dxvaLimit = gfxPrefs::PDMWMFMaxDXVAVideos();
 
   if (sDXVAVideosCount == dxvaLimit) {
     aFailureReason.AssignLiteral("Too many DXVA videos playing");
@@ -679,8 +679,7 @@ D3D11DXVA2Manager::Init(layers::KnowsCompositor* aKnowsCompositor,
         layers::ImageBridgeChild::GetSingleton().get(), mDevice,
         gfx::SurfaceFormat::NV12);
 
-    if (ImageBridgeChild::GetSingleton() &&
-        StaticPrefs::PDMWMFUseSyncTexture() &&
+    if (ImageBridgeChild::GetSingleton() && gfxPrefs::PDMWMFUseSyncTexture() &&
         mDevice != DeviceManagerDx::Get()->GetCompositorDevice()) {
       
       
@@ -695,7 +694,7 @@ D3D11DXVA2Manager::Init(layers::KnowsCompositor* aKnowsCompositor,
   } else {
     mTextureClientAllocator = new D3D11RecycleAllocator(
         aKnowsCompositor, mDevice, gfx::SurfaceFormat::NV12);
-    if (StaticPrefs::PDMWMFUseSyncTexture()) {
+    if (gfxPrefs::PDMWMFUseSyncTexture()) {
       
       
       
@@ -849,7 +848,7 @@ D3D11DXVA2Manager::InitInternal(layers::KnowsCompositor* aKnowsCompositor,
   }
 
   if ((adapterDesc.VendorId == 0x1022 || adapterDesc.VendorId == 0x1002) &&
-      !StaticPrefs::PDMWMFSkipBlacklist()) {
+      !gfxPrefs::PDMWMFSkipBlacklist()) {
     for (const auto& model : sAMDPreUVD4) {
       if (adapterDesc.DeviceId == model) {
         mIsAMDPreUVD4 = true;
@@ -1219,7 +1218,7 @@ DXVA2Manager* DXVA2Manager::CreateD3D11DXVA(
     ID3D11Device* aDevice) {
   
   
-  uint32_t dxvaLimit = StaticPrefs::PDMWMFMaxDXVAVideos();
+  uint32_t dxvaLimit = gfxPrefs::PDMWMFMaxDXVAVideos();
 
   if (sDXVAVideosCount == dxvaLimit) {
     aFailureReason.AssignLiteral("Too many DXVA videos playing");
@@ -1251,7 +1250,7 @@ bool DXVA2Manager::IsUnsupportedResolution(const uint32_t& aWidth,
   
   
   
-  return !StaticPrefs::PDMWMFAMDHighResEnabled() && mIsAMDPreUVD4 &&
+  return !gfxPrefs::PDMWMFAMDHighResEnabled() && mIsAMDPreUVD4 &&
          (aWidth >= 1920 || aHeight >= 1088) && aFramerate > 45;
 }
 

@@ -11,6 +11,7 @@
 #include "Layers.h"                         
 #include "CompositableTransactionParent.h"  
 #include "CompositorBridgeParent.h"
+#include "gfxPrefs.h"
 #include "mozilla/gfx/BasePoint3D.h"         
 #include "mozilla/layers/AnimationHelper.h"  
 #include "mozilla/layers/CanvasLayerComposite.h"
@@ -25,7 +26,6 @@
 #include "mozilla/layers/TextureHostOGL.h"  
 #include "mozilla/layers/PaintedLayerComposite.h"
 #include "mozilla/mozalloc.h"  
-#include "mozilla/StaticPrefs.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/Unused.h"
 #include "nsCoord.h"          
@@ -472,9 +472,9 @@ mozilla::ipc::IPCResult LayerTransactionParent::RecvUpdate(
 #endif
 
   
-  bool drawFps = StaticPrefs::LayersDrawFPS();
+  bool drawFps = gfxPrefs::LayersDrawFPS();
   if (drawFps) {
-    uint32_t visualWarningTrigger = StaticPrefs::LayerTransactionWarning();
+    uint32_t visualWarningTrigger = gfxPrefs::LayerTransactionWarning();
     
     
     TimeDuration latency = TimeStamp::Now() - aInfo.transactionStart();
@@ -751,7 +751,7 @@ mozilla::ipc::IPCResult LayerTransactionParent::RecvGetTransform(
   
   
   
-  if (StaticPrefs::LayoutUseContainersForRootFrames() &&
+  if (gfxPrefs::LayoutUseContainersForRootFrames() &&
       !layer->HasScrollableFrameMetrics() && layer->GetParent() &&
       layer->GetParent()->HasRootScrollableFrameMetrics()) {
     transform *= layer->GetParent()->AsHostLayer()->GetShadowBaseTransform();

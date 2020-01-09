@@ -7,7 +7,7 @@
 #include "WebRenderLayerManager.h"
 
 #include "BasicLayers.h"
-
+#include "gfxPrefs.h"
 #include "GeckoProfiler.h"
 #include "LayersLogging.h"
 #include "mozilla/dom/BrowserChild.h"
@@ -171,7 +171,7 @@ bool WebRenderLayerManager::BeginTransaction(const nsCString& aURL) {
   
   
   ++mPaintSequenceNumber;
-  if (StaticPrefs::APZTestLoggingEnabled()) {
+  if (gfxPrefs::APZTestLoggingEnabled()) {
     mApzTestData.StartNewPaint(mPaintSequenceNumber);
   }
   return true;
@@ -692,7 +692,7 @@ void WebRenderLayerManager::FlushRendering() {
   if (WrBridge()->GetCompositorUseDComp() && !resizing) {
     cBridge->SendFlushRenderingAsync();
   } else if (mWidget->SynchronouslyRepaintOnResize() ||
-             StaticPrefs::LayersForceSynchronousResize()) {
+             gfxPrefs::LayersForceSynchronousResize()) {
     cBridge->SendFlushRendering();
   } else {
     cBridge->SendFlushRenderingAsync();
@@ -726,7 +726,7 @@ WebRenderLayerManager::CreatePersistentBufferProvider(
   
   gfxPlatform::GetPlatform()->EnsureDevicesInitialized();
 
-  if (StaticPrefs::PersistentBufferProviderSharedEnabled()) {
+  if (gfxPrefs::PersistentBufferProviderSharedEnabled()) {
     RefPtr<PersistentBufferProvider> provider =
         PersistentBufferProviderShared::Create(aSize, aFormat,
                                                AsKnowsCompositor());

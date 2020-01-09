@@ -270,6 +270,7 @@
 #include "nsWindowSizes.h"
 #include "mozilla/dom/Location.h"
 #include "mozilla/dom/FontFaceSet.h"
+#include "gfxPrefs.h"
 #include "nsISupportsPrimitives.h"
 #include "mozilla/ServoStyleSet.h"
 #include "mozilla/StyleSheet.h"
@@ -7146,7 +7147,7 @@ nsViewportInfo Document::GetViewportInfo(const ScreenIntSize& aDisplaySize) {
   
   nsPIDOMWindowOuter* win = GetWindow();
   if (win && win->IsDesktopModeViewport() && !IsAboutPage()) {
-    CSSCoord viewportWidth = StaticPrefs::DesktopViewportWidth() / fullZoom;
+    CSSCoord viewportWidth = gfxPrefs::DesktopViewportWidth() / fullZoom;
     CSSToScreenScale scaleToFit(aDisplaySize.width / viewportWidth);
     float aspectRatio = (float)aDisplaySize.height / aDisplaySize.width;
     CSSSize viewportSize(viewportWidth, viewportWidth * aspectRatio);
@@ -7240,7 +7241,7 @@ nsViewportInfo Document::GetViewportInfo(const ScreenIntSize& aDisplaySize) {
       nsViewportInfo::ZoomFlag effectiveZoomFlag =
           mAllowZoom ? nsViewportInfo::ZoomFlag::AllowZoom
                      : nsViewportInfo::ZoomFlag::DisallowZoom;
-      if (StaticPrefs::ForceUserScalable()) {
+      if (gfxPrefs::ForceUserScalable()) {
         
         
         
@@ -7353,7 +7354,7 @@ nsViewportInfo Document::GetViewportInfo(const ScreenIntSize& aDisplaySize) {
             
             
             
-            width = StaticPrefs::DesktopViewportWidth() / fullZoom;
+            width = gfxPrefs::DesktopViewportWidth() / fullZoom;
           } else {
             
             width = displaySize.width;

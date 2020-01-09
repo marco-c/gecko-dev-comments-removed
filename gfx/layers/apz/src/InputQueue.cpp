@@ -7,7 +7,7 @@
 #include "InputQueue.h"
 
 #include "AsyncPanZoomController.h"
-
+#include "gfxPrefs.h"
 #include "InputBlockState.h"
 #include "LayersLogging.h"
 #include "mozilla/layers/APZThreadUtils.h"
@@ -82,7 +82,7 @@ nsEventStatus InputQueue::ReceiveTouchInput(
   if (aEvent.mType == MultiTouchInput::MULTITOUCH_START) {
     nsTArray<TouchBehaviorFlags> currentBehaviors;
     bool haveBehaviors = false;
-    if (!StaticPrefs::TouchActionEnabled()) {
+    if (!gfxPrefs::TouchActionEnabled()) {
       haveBehaviors = true;
     } else if (mActiveTouchBlock) {
       haveBehaviors =
@@ -114,7 +114,7 @@ nsEventStatus InputQueue::ReceiveTouchInput(
           aTarget, InputBlockState::TargetConfirmationState::eConfirmed,
           nullptr ,
           false );
-      if (StaticPrefs::TouchActionEnabled()) {
+      if (gfxPrefs::TouchActionEnabled()) {
         block->SetAllowedTouchBehaviors(currentBehaviors);
       }
       INPQ_LOG("block %p tagged as fast-motion\n", block);
@@ -318,7 +318,7 @@ nsEventStatus InputQueue::ReceiveKeyboardInput(
 
   
   
-  return StaticPrefs::APZKeyboardPassiveListeners()
+  return gfxPrefs::APZKeyboardPassiveListeners()
              ? nsEventStatus_eConsumeDoDefault
              : nsEventStatus_eConsumeNoDefault;
 }
@@ -551,7 +551,7 @@ void InputQueue::ScheduleMainThreadTimeout(
   RefPtr<Runnable> timeoutTask = NewRunnableMethod<uint64_t>(
       "layers::InputQueue::MainThreadTimeout", this,
       &InputQueue::MainThreadTimeout, aBlock->GetBlockId());
-  int32_t timeout = StaticPrefs::APZContentResponseTimeout();
+  int32_t timeout = gfxPrefs::APZContentResponseTimeout();
   if (timeout == 0) {
     
     

@@ -24,12 +24,13 @@
 #ifdef MOZ_WIDGET_GTK
 #  include "gfxPlatformGtk.h"  
 #endif
+#include "gfxPrefs.h"                 
 #include "mozilla/AutoRestore.h"      
 #include "mozilla/ClearOnShutdown.h"  
 #include "mozilla/DebugOnly.h"        
-#include "mozilla/StaticPrefs.h"      
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/gfx/2D.h"         
+#include "mozilla/gfx/GPUChild.h"   
 #include "mozilla/gfx/Point.h"      
 #include "mozilla/gfx/Rect.h"       
 #include "mozilla/gfx/gfxVars.h"    
@@ -293,10 +294,10 @@ static int32_t CalculateCompositionFrameRate() {
   
   
   const int32_t defaultFrameRate = 60;
-  int32_t compositionFrameRatePref = StaticPrefs::LayersCompositionFrameRate();
+  int32_t compositionFrameRatePref = gfxPrefs::LayersCompositionFrameRate();
   if (compositionFrameRatePref < 0) {
     
-    int32_t layoutFrameRatePref = StaticPrefs::LayoutFrameRate();
+    int32_t layoutFrameRatePref = gfxPrefs::LayoutFrameRate();
     if (layoutFrameRatePref < 0) {
       
       
@@ -1003,7 +1004,7 @@ void CompositorBridgeParent::CompositeToTarget(VsyncId aId, DrawTarget* aTarget,
   RenderTraceLayers(mLayerManager->GetRoot(), "0000");
 
 #ifdef MOZ_DUMP_PAINTING
-  if (StaticPrefs::DumpHostLayers()) {
+  if (gfxPrefs::DumpHostLayers()) {
     printf_stderr("Painting --- compositing layer tree:\n");
     mLayerManager->Dump( true);
   }
@@ -1043,7 +1044,7 @@ void CompositorBridgeParent::CompositeToTarget(VsyncId aId, DrawTarget* aTarget,
 #endif
 
   
-  if (StaticPrefs::LayersCompositionFrameRate() == 0 ||
+  if (gfxPrefs::LayersCompositionFrameRate() == 0 ||
       mLayerManager->AlwaysScheduleComposite()) {
     
     ScheduleComposition();
@@ -1215,7 +1216,7 @@ void CompositorBridgeParent::ScheduleRotationOnCompositorThread(
         "layers::CompositorBridgeParent::ForceComposition", this,
         &CompositorBridgeParent::ForceComposition);
     mForceCompositionTask = task;
-    ScheduleTask(task.forget(), StaticPrefs::OrientationSyncMillis());
+    ScheduleTask(task.forget(), gfxPrefs::OrientationSyncMillis());
   }
 }
 
@@ -1553,7 +1554,7 @@ PLayerTransactionParent* CompositorBridgeParent::AllocPLayerTransactionParent(
 #ifdef XP_WIN
   
   
-  if (StaticPrefs::Direct3D11UseDoubleBuffering() && IsWin10OrLater() &&
+  if (gfxPrefs::Direct3D11UseDoubleBuffering() && IsWin10OrLater() &&
       XRE_IsGPUProcess()) {
     mWidget->AsWindows()->EnsureCompositorWindow();
   }
@@ -1792,7 +1793,7 @@ PWebRenderBridgeParent* CompositorBridgeParent::AllocPWebRenderBridgeParent(
     return mWrBridge;
   }
 
-  if (StaticPrefs::WebRenderSplitRenderRoots()) {
+  if (gfxPrefs::WebRenderSplitRenderRoots()) {
     apis.AppendElement(
         apis[0]->CreateDocument(aSize, 1, wr::RenderRoot::Content));
   }

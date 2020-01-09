@@ -11,7 +11,6 @@
 #include "ImageFactory.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/RefPtr.h"
-#include "mozilla/StaticPrefs.h"
 #include "nsIInputStream.h"
 #include "nsString.h"
 #include "ProgressTracker.h"
@@ -44,7 +43,7 @@ TEST_F(ImageSurfaceCache, Factor2) {
   
   
   ASSERT_LT(length,
-            static_cast<uint64_t>(StaticPrefs::ImageMemDecodeBytesAtATime()));
+            static_cast<uint64_t>(gfxPrefs::ImageMemDecodeBytesAtATime()));
 
   
   rv = image->OnImageDataAvailable(nullptr, nullptr, inputStream, 0,
@@ -73,7 +72,7 @@ TEST_F(ImageSurfaceCache, Factor2) {
 
   
   
-  int32_t threshold = StaticPrefs::ImageCacheFactor2ThresholdSurfaces();
+  int32_t threshold = gfxPrefs::ImageCacheFactor2ThresholdSurfaces();
   ASSERT_TRUE(threshold >= 0);
 
   

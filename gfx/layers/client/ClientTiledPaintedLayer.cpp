@@ -10,9 +10,9 @@
 #include "UnitTransforms.h"        
 #include "ClientLayerManager.h"    
 #include "gfxPlatform.h"           
+#include "gfxPrefs.h"              
 #include "gfxRect.h"               
 #include "mozilla/Assertions.h"    
-#include "mozilla/StaticPrefs.h"   
 #include "mozilla/gfx/BaseSize.h"  
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/gfx/Rect.h"  
@@ -85,7 +85,7 @@ static LayerToParentLayerMatrix4x4 GetTransformToAncestorsParentLayer(
        iter = iter.GetParent()) {
     transform = transform * iter.GetTransform();
 
-    if (StaticPrefs::LayoutUseContainersForRootFrames()) {
+    if (gfxPrefs::LayoutUseContainersForRootFrames()) {
       
       
       
@@ -267,7 +267,7 @@ bool ClientTiledPaintedLayer::IsScrollingOnCompositor(
 }
 
 bool ClientTiledPaintedLayer::UseProgressiveDraw() {
-  if (!StaticPrefs::ProgressivePaint()) {
+  if (!gfxPrefs::ProgressivePaint()) {
     
     return false;
   }
@@ -479,7 +479,7 @@ void ClientTiledPaintedLayer::RenderLayer() {
        isHalfTileWidthOrHeight) &&
       SingleTiledContentClient::ClientSupportsLayerSize(layerSize,
                                                         ClientManager()) &&
-      StaticPrefs::LayersSingleTileEnabled();
+      gfxPrefs::LayersSingleTileEnabled();
 
   if (mContentClient && mHaveSingleTiledContentClient &&
       !wantSingleTiledContentClient) {

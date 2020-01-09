@@ -63,6 +63,7 @@
 #include "nsIDocShell.h"
 #include "nsIWidget.h"
 #include "gfxMatrix.h"
+#include "gfxPrefs.h"
 #include "gfxTypes.h"
 #include "nsTArray.h"
 #include "mozilla/dom/HTMLCanvasElement.h"
@@ -114,7 +115,6 @@
 #include "nsIContentViewer.h"
 #include "LayersLogging.h"
 #include "mozilla/Preferences.h"
-#include "mozilla/StaticPrefs.h"
 #include "nsFrameSelection.h"
 #include "FrameLayerBuilder.h"
 #include "mozilla/layers/APZUtils.h"  
@@ -541,14 +541,14 @@ bool nsLayoutUtils::IsAnimationLoggingEnabled() {
 
 bool nsLayoutUtils::AreRetainedDisplayListsEnabled() {
 #ifdef MOZ_WIDGET_ANDROID
-  return StaticPrefs::LayoutRetainDisplayList();
+  return gfxPrefs::LayoutRetainDisplayList();
 #else
   if (XRE_IsContentProcess()) {
-    return StaticPrefs::LayoutRetainDisplayList();
+    return gfxPrefs::LayoutRetainDisplayList();
   }
 
   if (XRE_IsE10sParentProcess()) {
-    return StaticPrefs::LayoutRetainDisplayListChrome();
+    return gfxPrefs::LayoutRetainDisplayListChrome();
   }
 
   
@@ -756,7 +756,7 @@ bool nsLayoutUtils::AllowZoomingForDocument(
   
   
   
-  return StaticPrefs::APZAllowZooming() ||
+  return gfxPrefs::APZAllowZooming() ||
          (aDocument && aDocument->InRDMPane() &&
           nsLayoutUtils::ShouldHandleMetaViewport(aDocument));
 }
@@ -769,7 +769,7 @@ float nsLayoutUtils::GetCurrentAPZResolutionScale(PresShell* aPresShell) {
 
 static nscoord GetMaxDisplayPortSize(nsIContent* aContent,
                                      nsPresContext* aFallbackPrescontext) {
-  MOZ_ASSERT(!StaticPrefs::LayersTilesEnabled(),
+  MOZ_ASSERT(!gfxPrefs::LayersTilesEnabled(),
              "Do not clamp displayports if tiling is enabled");
 
   
@@ -906,7 +906,7 @@ static nsRect GetDisplayPortFromMarginsData(
 
   if (presShell->IsDisplayportSuppressed()) {
     alignment = ScreenSize(1, 1);
-  } else if (StaticPrefs::LayersTilesEnabled()) {
+  } else if (gfxPrefs::LayersTilesEnabled()) {
     
     
     
@@ -928,7 +928,7 @@ static nsRect GetDisplayPortFromMarginsData(
     alignment.height = 128;
   }
 
-  if (StaticPrefs::LayersTilesEnabled()) {
+  if (gfxPrefs::LayersTilesEnabled()) {
     
     screenRect.Inflate(aMarginsData->mMargins);
   } else {
@@ -1048,7 +1048,7 @@ bool nsLayoutUtils::ShouldDisableApzForElement(nsIContent* aContent) {
   if (!doc) {
     return false;
   }
-  return StaticPrefs::APZDisableForScrollLinkedEffects() &&
+  return gfxPrefs::APZDisableForScrollLinkedEffects() &&
          doc->HasScrollLinkedEffect();
 }
 
@@ -1140,7 +1140,7 @@ static bool GetDisplayPortImpl(
     result = GetDisplayPortFromMarginsData(aContent, marginsData, aMultiplier);
   }
 
-  if (!StaticPrefs::LayersTilesEnabled()) {
+  if (!gfxPrefs::LayersTilesEnabled()) {
     
     
     nscoord maxSize = GetMaxDisplayPortSize(aContent, nullptr);
@@ -1173,8 +1173,8 @@ static void TranslateFromScrollPortToScrollFrame(nsIContent* aContent,
 bool nsLayoutUtils::GetDisplayPort(
     nsIContent* aContent, nsRect* aResult,
     RelativeTo aRelativeTo ) {
-  float multiplier = StaticPrefs::UseLowPrecisionBuffer()
-                         ? 1.0f / StaticPrefs::LowPrecisionResolution()
+  float multiplier = gfxPrefs::UseLowPrecisionBuffer()
+                         ? 1.0f / gfxPrefs::LowPrecisionResolution()
                          : 1.0f;
   bool usingDisplayPort = GetDisplayPortImpl(aContent, aResult, multiplier);
   if (aResult && usingDisplayPort && aRelativeTo == RelativeTo::ScrollFrame) {
@@ -1290,7 +1290,7 @@ bool nsLayoutUtils::SetDisplayPortMargins(nsIContent* aContent,
       GetHighResolutionDisplayPort(aContent, &newDisplayPort);
   MOZ_ASSERT(hasDisplayPort);
 
-  if (StaticPrefs::LayoutUseContainersForRootFrames()) {
+  if (gfxPrefs::LayoutUseContainersForRootFrames()) {
     nsIFrame* rootScrollFrame = aPresShell->GetRootScrollFrame();
     if (rootScrollFrame && aContent == rootScrollFrame->GetContent() &&
         nsLayoutUtils::UsesAsyncScrolling(rootScrollFrame)) {
@@ -1366,7 +1366,7 @@ void nsLayoutUtils::SetDisplayPortBaseIfNotSet(nsIContent* aContent,
 
 bool nsLayoutUtils::GetCriticalDisplayPort(nsIContent* aContent,
                                            nsRect* aResult) {
-  if (StaticPrefs::UseLowPrecisionBuffer()) {
+  if (gfxPrefs::UseLowPrecisionBuffer()) {
     return GetDisplayPortImpl(aContent, aResult, 1.0f);
   }
   return false;
@@ -1378,7 +1378,7 @@ bool nsLayoutUtils::HasCriticalDisplayPort(nsIContent* aContent) {
 
 bool nsLayoutUtils::GetHighResolutionDisplayPort(nsIContent* aContent,
                                                  nsRect* aResult) {
-  if (StaticPrefs::UseLowPrecisionBuffer()) {
+  if (gfxPrefs::UseLowPrecisionBuffer()) {
     return GetCriticalDisplayPort(aContent, aResult);
   }
   return GetDisplayPort(aContent, aResult);
@@ -3806,7 +3806,7 @@ nsresult nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext,
       
       
       if (shouldAttemptPartialUpdate) {
-        if (StaticPrefs::LayoutVerifyRetainDisplayList()) {
+        if (gfxPrefs::LayoutVerifyRetainDisplayList()) {
           beforeMergeChecker.Set(&list, "BM");
         }
         updateState = retainedBuilder->AttemptPartialUpdate(
@@ -3818,9 +3818,9 @@ nsresult nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext,
       }
 
       if ((updateState != PartialUpdateResult::Failed) &&
-          (StaticPrefs::LayoutDisplayListBuildTwice() || afterMergeChecker)) {
+          (gfxPrefs::LayoutDisplayListBuildTwice() || afterMergeChecker)) {
         updateState = PartialUpdateResult::Failed;
-        if (StaticPrefs::LayersDrawFPS()) {
+        if (gfxPrefs::LayersDrawFPS()) {
           if (RefPtr<LayerManager> lm = builder.GetWidgetLayerManager()) {
             if (PaintTiming* pt = ClientLayerManager::MaybeGetPaintTiming(lm)) {
               pt->dl2Ms() = (TimeStamp::Now() - dlStart).ToMilliseconds();
@@ -3872,7 +3872,7 @@ nsresult nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext,
     builder.SetIsBuilding(false);
     builder.IncrementPresShellPaintCount(presShell);
 
-    if (StaticPrefs::LayersDrawFPS()) {
+    if (gfxPrefs::LayersDrawFPS()) {
       if (RefPtr<LayerManager> lm = builder.GetWidgetLayerManager()) {
         if (PaintTiming* pt = ClientLayerManager::MaybeGetPaintTiming(lm)) {
           pt->dlMs() = (TimeStamp::Now() - dlStart).ToMilliseconds();
@@ -3980,7 +3980,7 @@ nsresult nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext,
   presShell->EndPaint();
   builder.Check();
 
-  if (StaticPrefs::GfxLoggingPaintedPixelCountEnabled()) {
+  if (gfxPrefs::GfxLoggingPaintedPixelCountEnabled()) {
     TimeStamp now = TimeStamp::Now();
     float rasterizeTime = (now - paintStart).ToMilliseconds();
     uint32_t pixelCount = layerManager->GetAndClearPaintedPixelCount();
@@ -4036,7 +4036,7 @@ nsresult nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext,
   }
 
 #ifdef MOZ_DUMP_PAINTING
-  if (StaticPrefs::DumpClientLayers()) {
+  if (gfxPrefs::DumpClientLayers()) {
     std::stringstream ss;
     FrameLayerBuilder::DumpRetainedLayerTree(layerManager, ss, false);
     print_stderr(ss);
@@ -8602,7 +8602,7 @@ void nsLayoutUtils::LogAdditionalTestData(nsDisplayListBuilder* aBuilder,
 
 
 bool nsLayoutUtils::IsAPZTestLoggingEnabled() {
-  return StaticPrefs::APZTestLoggingEnabled();
+  return gfxPrefs::APZTestLoggingEnabled();
 }
 
 
@@ -8885,7 +8885,7 @@ ScrollMetadata nsLayoutUtils::ComputeScrollMetadata(
     
     if (IsAPZTestLoggingEnabled()) {
       LogTestDataForPaint(aLayerManager, scrollId, "displayport",
-                          StaticPrefs::UseLowPrecisionBuffer()
+                          gfxPrefs::UseLowPrecisionBuffer()
                               ? metrics.GetCriticalDisplayPort()
                               : metrics.GetDisplayPort());
     }
@@ -9140,7 +9140,7 @@ ScrollMetadata nsLayoutUtils::ComputeScrollMetadata(
       aScrollFrame ? aScrollFrame : aForFrame, isRootContentDocRootScrollFrame,
       metrics));
 
-  if (StaticPrefs::APZPrintTree() || StaticPrefs::APZTestLoggingEnabled()) {
+  if (gfxPrefs::APZPrintTree() || gfxPrefs::APZTestLoggingEnabled()) {
     if (nsIContent* content =
             frameForCompositionBoundsCalculation->GetContent()) {
       nsAutoString contentDescription;
@@ -9206,15 +9206,15 @@ Maybe<ScrollMetadata> nsLayoutUtils::GetRootMetadata(
   
   
   
-  bool addMetrics = StaticPrefs::LayoutUseContainersForRootFrames() ||
+  bool addMetrics = gfxPrefs::LayoutUseContainersForRootFrames() ||
                     (XRE_IsParentProcess() && !presShell->GetRootScrollFrame());
 
   
   
-  bool ensureMetricsForRootId =
-      nsLayoutUtils::AsyncPanZoomEnabled(frame) &&
-      !StaticPrefs::LayoutUseContainersForRootFrames() &&
-      aBuilder->IsPaintingToWindow() && !presContext->GetParentPresContext();
+  bool ensureMetricsForRootId = nsLayoutUtils::AsyncPanZoomEnabled(frame) &&
+                                !gfxPrefs::LayoutUseContainersForRootFrames() &&
+                                aBuilder->IsPaintingToWindow() &&
+                                !presContext->GetParentPresContext();
 
   nsIContent* content = nullptr;
   nsIFrame* rootScrollFrame = presShell->GetRootScrollFrame();
@@ -9895,7 +9895,7 @@ bool nsLayoutUtils::ShouldHandleMetaViewport(const Document* aDocument) {
                  nsIDocShell::META_VIEWPORT_OVERRIDE_NONE);
       
       
-      return StaticPrefs::MetaViewportEnabled();
+      return gfxPrefs::MetaViewportEnabled();
   }
 }
 

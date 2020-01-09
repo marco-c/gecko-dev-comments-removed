@@ -11,10 +11,10 @@
 #include "AsyncPanZoomController.h"
 #include "GeneratedJNIWrappers.h"
 #include "GenericFlingAnimation.h"
+#include "gfxPrefs.h"
 #include "OverscrollHandoffState.h"
 #include "SimpleVelocityTracker.h"
 #include "ViewConfiguration.h"
-#include "mozilla/StaticPrefs.h"
 
 #define ANDROID_APZ_LOG(...)
 
@@ -55,7 +55,7 @@ AndroidSpecificState::AndroidSpecificState() {
 AsyncPanZoomAnimation* AndroidSpecificState::CreateFlingAnimation(
     AsyncPanZoomController& aApzc, const FlingHandoffState& aHandoffState,
     float aPLPPI) {
-  if (StaticPrefs::APZUseChromeFlingPhysics()) {
+  if (gfxPrefs::APZUseChromeFlingPhysics()) {
     return new GenericFlingAnimation<AndroidFlingPhysics>(
         aApzc, aHandoffState.mChain, aHandoffState.mIsHandoff,
         aHandoffState.mScrolledApzc, aPLPPI);
@@ -68,7 +68,7 @@ AsyncPanZoomAnimation* AndroidSpecificState::CreateFlingAnimation(
 
 UniquePtr<VelocityTracker> AndroidSpecificState::CreateVelocityTracker(
     Axis* aAxis) {
-  if (StaticPrefs::APZUseChromeFlingPhysics()) {
+  if (gfxPrefs::APZUseChromeFlingPhysics()) {
     return MakeUnique<AndroidVelocityTracker>();
   }
   return MakeUnique<SimpleVelocityTracker>(aAxis);
@@ -167,8 +167,8 @@ StackScrollerFlingAnimation::StackScrollerFlingAnimation(
     
     
     TimeDuration flingDuration = TimeStamp::Now() - state->mLastFling;
-    if (flingDuration.ToMilliseconds() < StaticPrefs::APZFlingAccelInterval() &&
-        velocity.Length() >= StaticPrefs::APZFlingAccelMinVelocity()) {
+    if (flingDuration.ToMilliseconds() < gfxPrefs::APZFlingAccelInterval() &&
+        velocity.Length() >= gfxPrefs::APZFlingAccelMinVelocity()) {
       bool unused = false;
       mOverScroller->ComputeScrollOffset(flingDuration.ToMilliseconds(),
                                          &unused);
@@ -243,8 +243,7 @@ bool StackScrollerFlingAnimation::DoSample(FrameMetrics& aFrameMetrics,
   float speed = velocity.Length();
 
   
-  if (!shouldContinueFling ||
-      (speed < StaticPrefs::APZFlingStoppedThreshold())) {
+  if (!shouldContinueFling || (speed < gfxPrefs::APZFlingStoppedThreshold())) {
     if (shouldContinueFling) {
       
       

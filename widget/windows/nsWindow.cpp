@@ -57,7 +57,7 @@
 #include "gfx2DGlue.h"
 #include "gfxEnv.h"
 #include "gfxPlatform.h"
-
+#include "gfxPrefs.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/Logging.h"
 #include "mozilla/MathAlgorithms.h"
@@ -4195,7 +4195,7 @@ bool nsWindow::DispatchMouseEvent(EventMessage aEventMessage, WPARAM wParam,
       
       && nsWindowType::eWindowType_toplevel == mWindowType
       
-      && StaticPrefs::PointerEventsEnabled() && InkCollector::sInkCollector) {
+      && gfxPrefs::PointerEventsEnabled() && InkCollector::sInkCollector) {
     InkCollector::sInkCollector->SetTarget(mWnd);
     InkCollector::sInkCollector->SetPointerId(pointerId);
   }

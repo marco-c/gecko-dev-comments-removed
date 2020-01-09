@@ -19,12 +19,12 @@
 #include "mozilla/Pair.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/StaticMutex.h"
-#include "mozilla/StaticPrefs.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/Tuple.h"
 #include "nsIMemoryReporter.h"
 #include "gfx2DGlue.h"
 #include "gfxPlatform.h"
+#include "gfxPrefs.h"
 #include "imgFrame.h"
 #include "Image.h"
 #include "ISurfaceProvider.h"
@@ -409,8 +409,7 @@ class ImageSurfaceCache {
 
     
     
-    int32_t thresholdSurfaces =
-        StaticPrefs::ImageCacheFactor2ThresholdSurfaces();
+    int32_t thresholdSurfaces = gfxPrefs::ImageCacheFactor2ThresholdSurfaces();
     if (thresholdSurfaces < 0 ||
         mSurfaces.Count() <= static_cast<uint32_t>(thresholdSurfaces)) {
       return;
@@ -1056,7 +1055,7 @@ class SurfaceCacheImpl final : public nsIMemoryReporter {
     
     DoUnlockSurfaces(
         WrapNotNull(cache),
-         !StaticPrefs::ImageMemAnimatedDiscardable(),
+         !gfxPrefs::ImageMemAnimatedDiscardable(),
         aAutoLock);
   }
 
@@ -1378,17 +1377,17 @@ void SurfaceCache::Initialize() {
   
   
   uint32_t surfaceCacheExpirationTimeMS =
-      StaticPrefs::ImageMemSurfaceCacheMinExpirationMS();
+      gfxPrefs::ImageMemSurfaceCacheMinExpirationMS();
 
   
   
   
   
   uint32_t surfaceCacheDiscardFactor =
-      max(StaticPrefs::ImageMemSurfaceCacheDiscardFactor(), 1u);
+      max(gfxPrefs::ImageMemSurfaceCacheDiscardFactor(), 1u);
 
   
-  uint64_t surfaceCacheMaxSizeKB = StaticPrefs::ImageMemSurfaceCacheMaxSizeKB();
+  uint64_t surfaceCacheMaxSizeKB = gfxPrefs::ImageMemSurfaceCacheMaxSizeKB();
 
   
   
@@ -1399,7 +1398,7 @@ void SurfaceCache::Initialize() {
   
   
   uint32_t surfaceCacheSizeFactor =
-      max(StaticPrefs::ImageMemSurfaceCacheSizeFactor(), 1u);
+      max(gfxPrefs::ImageMemSurfaceCacheSizeFactor(), 1u);
 
   
   uint64_t memorySize = PR_GetPhysicalMemorySize();
@@ -1637,7 +1636,7 @@ IntSize SurfaceCache::ClampVectorSize(const IntSize& aSize) {
   
   
   
-  int32_t maxSizeKB = StaticPrefs::ImageCacheMaxRasterizedSVGThresholdKB();
+  int32_t maxSizeKB = gfxPrefs::ImageCacheMaxRasterizedSVGThresholdKB();
   if (maxSizeKB <= 0) {
     return aSize;
   }

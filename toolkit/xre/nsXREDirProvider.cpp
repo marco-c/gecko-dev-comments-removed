@@ -990,10 +990,6 @@ nsXREDirProvider::DoStartup() {
       if (policies) {
         policies->Observe(nullptr, "policies-startup", nullptr);
       }
-
-      
-      
-      mozilla::Preferences::RefreshStaticPrefsValues();
     }
 
 #if defined(MOZ_SANDBOX) && defined(XP_WIN)

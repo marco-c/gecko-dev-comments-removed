@@ -9,7 +9,7 @@
 #include "gfxContext.h"             
 #include "gfxPlatform.h"            
 #include "gfxEnv.h"                 
-
+#include "gfxPrefs.h"               
 #include "gfxPoint.h"               
 #include "gfxUtils.h"               
 #include "ipc/ShadowLayers.h"       

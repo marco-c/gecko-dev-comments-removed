@@ -24,7 +24,7 @@
 #include "nsContentUtils.h"
 #include "nsIScriptSecurityManager.h"
 
-#include "mozilla/StaticPrefs.h"
+#include "gfxPrefs.h"
 
 namespace mozilla {
 namespace image {
@@ -37,8 +37,8 @@ static uint32_t ComputeImageFlags(nsIURI* uri, const nsCString& aMimeType,
   nsresult rv;
 
   
-  bool isDiscardable = StaticPrefs::ImageMemDiscardable();
-  bool doDecodeImmediately = StaticPrefs::ImageDecodeImmediatelyEnabled();
+  bool isDiscardable = gfxPrefs::ImageMemDiscardable();
+  bool doDecodeImmediately = gfxPrefs::ImageDecodeImmediatelyEnabled();
 
   
   
@@ -110,6 +110,9 @@ already_AddRefed<Image> ImageFactory::CreateImage(
     nsIRequest* aRequest, ProgressTracker* aProgressTracker,
     const nsCString& aMimeType, nsIURI* aURI, bool aIsMultiPart,
     uint32_t aInnerWindowId) {
+  MOZ_ASSERT(gfxPrefs::SingletonExists(),
+             "Pref observers should have been initialized already");
+
   
   uint32_t imageFlags = ComputeImageFlags(aURI, aMimeType, aIsMultiPart);
 

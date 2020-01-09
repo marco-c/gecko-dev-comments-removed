@@ -5,10 +5,10 @@
 
 #include "GPUChild.h"
 #include "gfxConfig.h"
+#include "gfxPrefs.h"
 #include "GPUProcessHost.h"
 #include "GPUProcessManager.h"
 #include "VRProcessManager.h"
-#include "mozilla/StaticPrefs.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/TelemetryIPC.h"
 #include "mozilla/dom/CheckerboardReportService.h"
@@ -40,6 +40,22 @@ GPUChild::GPUChild(GPUProcessHost* aHost) : mHost(aHost), mGPUReady(false) {
 GPUChild::~GPUChild() { MOZ_COUNT_DTOR(GPUChild); }
 
 void GPUChild::Init() {
+  
+  
+  
+  
+  
+  nsTArray<GfxPrefSetting> prefs;
+  for (auto pref : gfxPrefs::all()) {
+    if (pref->HasDefaultValue()) {
+      continue;
+    }
+
+    GfxPrefValue value;
+    pref->GetCachedValue(&value);
+    prefs.AppendElement(GfxPrefSetting(pref->Index(), value));
+  }
+
   nsTArray<GfxVarUpdate> updates = gfxVars::FetchNonDefaultVars();
 
   DevicePrefs devicePrefs;
@@ -57,7 +73,7 @@ void GPUChild::Init() {
         mappings.AppendElement(LayerTreeIdMapping(aLayersId, aProcessId));
       });
 
-  SendInit(updates, devicePrefs, mappings);
+  SendInit(prefs, updates, devicePrefs, mappings);
 
   gfxVars::AddReceiver(this);
 
@@ -142,7 +158,7 @@ mozilla::ipc::IPCResult GPUChild::RecvInitCrashReporter(
 mozilla::ipc::IPCResult GPUChild::RecvCreateVRProcess() {
   
   MOZ_ASSERT(XRE_IsParentProcess());
-  if (StaticPrefs::VRProcessEnabled()) {
+  if (gfxPrefs::VRProcessEnabled()) {
     VRProcessManager::Initialize();
     VRProcessManager* vr = VRProcessManager::Get();
     MOZ_ASSERT(vr, "VRProcessManager must be initialized first.");
@@ -158,7 +174,7 @@ mozilla::ipc::IPCResult GPUChild::RecvCreateVRProcess() {
 mozilla::ipc::IPCResult GPUChild::RecvShutdownVRProcess() {
   
   MOZ_ASSERT(XRE_IsParentProcess());
-  if (StaticPrefs::VRProcessEnabled()) {
+  if (gfxPrefs::VRProcessEnabled()) {
     VRProcessManager::Shutdown();
   }
 
