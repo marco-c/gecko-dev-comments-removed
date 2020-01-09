@@ -10,6 +10,7 @@
 #include <stdint.h>
 
 #include "mozilla/Assertions.h"
+#include "mozilla/FunctionTypeTraits.h"
 #include "mozilla/OperatorNewExtensions.h"
 #include "mozilla/TemplateLib.h"
 #include "mozilla/TypeTraits.h"
@@ -177,6 +178,11 @@ struct VariantImplementation<Tag, N, T> {
   static decltype(auto) match(Matcher&& aMatcher, ConcreteVariant& aV) {
     return aMatcher(aV.template as<N>());
   }
+
+  template <typename ConcreteVariant, typename Matcher>
+  static decltype(auto) matchN(ConcreteVariant& aV, Matcher&& aMatcher) {
+    return aMatcher(aV.template as<N>());
+  }
 };
 
 
@@ -241,8 +247,21 @@ struct VariantImplementation<Tag, N, T, Ts...> {
       
       
       
-      
       return Next::match(std::forward<Matcher>(aMatcher), aV);
+    }
+  }
+
+  template <typename ConcreteVariant, typename Mi, typename... Ms>
+  static decltype(auto) matchN(ConcreteVariant& aV, Mi&& aMi, Ms&&... aMs) {
+    if (aV.template is<N>()) {
+      return aMi(aV.template as<N>());
+    } else {
+      
+      
+      
+      
+      
+      return Next::matchN(aV, std::forward<Ms>(aMs)...);
     }
   }
 };
@@ -286,6 +305,15 @@ template <size_t N>
 struct VariantIndex {
   static constexpr size_t index = N;
 };
+
+
+
+
+
+
+
+
+
 
 
 
@@ -692,10 +720,42 @@ class MOZ_INHERIT_TYPE_ANNOTATIONS_FROM_TEMPLATE_ARGS MOZ_NON_PARAM Variant {
     return Impl::match(std::forward<Matcher>(aMatcher), *this);
   }
 
+  template <typename M0, typename M1, typename... Ms>
+  decltype(auto) match(M0&& aM0, M1&& aM1, Ms&&... aMs) const {
+    static_assert(
+        2 + sizeof...(Ms) == sizeof...(Ts),
+        "Variant<T...>::match() takes either one callable argument that "
+        "accepts every type T; or one for each type T, in order");
+    static_assert(
+        tl::And<IsSame<typename FunctionTypeTraits<M0>::ReturnType,
+                       typename FunctionTypeTraits<M1>::ReturnType>::value,
+                IsSame<typename FunctionTypeTraits<M1>::ReturnType,
+                       typename FunctionTypeTraits<Ms>::ReturnType>::value...>::value,
+        "all matchers must have the same return type");
+    return Impl::matchN(*this, std::forward<M0>(aM0), std::forward<M1>(aM1),
+                        std::forward<Ms>(aMs)...);
+  }
+
   
   template <typename Matcher>
   decltype(auto) match(Matcher&& aMatcher) {
     return Impl::match(std::forward<Matcher>(aMatcher), *this);
+  }
+
+  template <typename M0, typename M1, typename... Ms>
+  decltype(auto) match(M0&& aM0, M1&& aM1, Ms&&... aMs) {
+    static_assert(
+        2 + sizeof...(Ms) == sizeof...(Ts),
+        "Variant<T...>::match() takes either one callable argument that "
+        "accepts every type T; or one for each type T, in order");
+    static_assert(
+        tl::And<IsSame<typename FunctionTypeTraits<M0>::ReturnType,
+                       typename FunctionTypeTraits<M1>::ReturnType>::value,
+                IsSame<typename FunctionTypeTraits<M0>::ReturnType,
+                       typename FunctionTypeTraits<Ms>::ReturnType>::value...>::value,
+        "all matchers must have the same return type");
+    return Impl::matchN(*this, std::forward<M0>(aM0), std::forward<M1>(aM1),
+                        std::forward<Ms>(aMs)...);
   }
 };
 
