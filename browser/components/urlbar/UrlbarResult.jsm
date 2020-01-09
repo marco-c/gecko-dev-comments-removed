@@ -12,7 +12,7 @@
 
 
 
-var EXPORTED_SYMBOLS = ["UrlbarMatch"];
+var EXPORTED_SYMBOLS = ["UrlbarResult"];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 XPCOMUtils.defineLazyModuleGetters(this, {
@@ -22,7 +22,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 
 
-class UrlbarMatch {
+class UrlbarResult {
   
 
 
