@@ -15,8 +15,6 @@ XPCOMUtils.defineLazyServiceGetter(this, "swm",
                                    "@mozilla.org/serviceworkers/manager;1",
                                    "nsIServiceWorkerManager");
 
-XPCOMUtils.defineLazyGlobalGetters(this, ["indexedDB", "Blob"]);
-
 
 
 
@@ -33,38 +31,25 @@ var SiteDataTestUtils = {
 
 
 
-  persist(origin, value = Services.perms.ALLOW_ACTION) {
+
+
+
+  addToIndexedDB(origin, key = "foo", value = "bar", originAttributes = {}) {
     return new Promise(resolve => {
-      let principal = Services.scriptSecurityManager.createCodebasePrincipalFromOrigin(origin);
-      Services.perms.addFromPrincipal(principal, "persistent-storage", value);
-      Services.qms.persist(principal).callback = () => resolve();
-    });
-  },
-
-  
-
-
-
-
-
-
-
-  addToIndexedDB(origin, size = 1024) {
-    return new Promise(resolve => {
-      let principal = Services.scriptSecurityManager.createCodebasePrincipalFromOrigin(origin);
+      let uri = Services.io.newURI(origin);
+      let principal =
+        Services.scriptSecurityManager.createCodebasePrincipal(uri, originAttributes);
       let request = indexedDB.openForPrincipal(principal, "TestDatabase", 1);
       request.onupgradeneeded = function(e) {
         let db = e.target.result;
-        db.createObjectStore("TestStore");
+        db.createObjectStore("TestStore", { keyPath: "id" });
       };
       request.onsuccess = function(e) {
         let db = e.target.result;
         let tx = db.transaction("TestStore", "readwrite");
         let store = tx.objectStore("TestStore");
         tx.oncomplete = resolve;
-        let buffer = new ArrayBuffer(size);
-        let blob = new Blob([buffer]);
-        store.add(blob, Cu.now());
+        store.put({ id: key, description: value});
       };
     });
   },
@@ -78,8 +63,8 @@ var SiteDataTestUtils = {
 
 
   addToCookies(origin, name = "foo", value = "bar") {
-    let principal = Services.scriptSecurityManager.createCodebasePrincipalFromOrigin(origin);
-    Services.cookies.add(principal.URI.host, principal.URI.pathQueryRef, name, value,
+    let uri = Services.io.newURI(origin);
+    Services.cookies.add(uri.host, uri.pathQueryRef, name, value,
       false, false, false, Date.now() + 24000 * 60 * 60, {},
       Ci.nsICookie2.SAMESITE_UNSET);
   },
@@ -136,7 +121,8 @@ var SiteDataTestUtils = {
 
   getQuotaUsage(origin) {
     return new Promise(resolve => {
-      let principal = Services.scriptSecurityManager.createCodebasePrincipalFromOrigin(origin);
+      let uri = Services.io.newURI(origin);
+      let principal = Services.scriptSecurityManager.createCodebasePrincipal(uri, {});
       Services.qms.getUsageForPrincipal(principal, request => resolve(request.result.usage));
     });
   },
