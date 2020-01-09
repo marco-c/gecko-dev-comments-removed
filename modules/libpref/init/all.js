@@ -3205,8 +3205,7 @@ pref("layout.display-list.dump-parent", false);
 pref("layout.display-list.retain", true);
 pref("layout.display-list.retain.chrome", false);
 #else
-pref("layout.display-list.retain", true);
-pref("layout.display-list.retain.chrome", true);
+pref("layout.display-list.retain", false);
 #endif
 
 
@@ -6068,8 +6067,6 @@ pref("dom.datatransfer.mozAtAPIs", false);
 pref("dom.datatransfer.mozAtAPIs", true);
 #endif
 
-
-pref("prio.enabled", false);
 
 pref("toolkit.telemetry.prioping.enabled", false);
 

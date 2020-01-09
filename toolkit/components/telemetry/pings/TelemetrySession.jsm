@@ -72,9 +72,6 @@ const IDLE_TIMEOUT_SECONDS = Services.prefs.getIntPref("toolkit.telemetry.idleTi
 
 const ABORTED_SESSION_UPDATE_INTERVAL_MS = 5 * 60 * 1000;
 
-
-const PRIO_ENABLED_PREF = "prio.enabled";
-
 var gWasDebuggerAttached = false;
 
 XPCOMUtils.defineLazyServiceGetters(this, {
@@ -98,7 +95,6 @@ var Policy = {
   generateSubsessionUUID: () => generateUUID(),
   setSchedulerTickTimeout: (callback, delayMs) => setTimeout(callback, delayMs),
   clearSchedulerTickTimeout: id => clearTimeout(id),
-  prioEncode: (batchID, prioParams) => PrioEncoder.encode(batchID, prioParams),
 };
 
 
@@ -954,11 +950,6 @@ var Impl = {
     payloadObj.info = info;
 
     
-    if (Services.prefs.getBoolPref(PRIO_ENABLED_PREF, false)) {
-      payloadObj.prio = protect(() => this._prioEncode(payloadObj));
-    }
-
-    
     if (Telemetry.canRecordExtended) {
       payloadObj.slowSQL = protect(() => Telemetry.slowSQL);
       payloadObj.fileIOReports = protect(() => Telemetry.fileIOReports);
@@ -1574,49 +1565,5 @@ var Impl = {
     this._log.trace("markNewProfilePingSent");
     this._newProfilePingSent = true;
     return TelemetryStorage.saveSessionData(this._getSessionDataObject());
-  },
-
-  
-
-
-
-
-
-
-  _prioEncode(payloadObj) {
-    
-    const prioEncodedHistograms = [
-      "BROWSER_IS_USER_DEFAULT",
-      "NEWTAB_PAGE_ENABLED",
-      "PDF_VIEWER_USED",
-    ];
-
-    
-    let prioParams = { booleans: [] };
-    for (const [i, histogramName] of prioEncodedHistograms.entries()) {
-      try {
-        if (histogramName in payloadObj.histograms) {
-          const histogram = payloadObj.histograms[histogramName];
-          prioParams.booleans[i] = Boolean(histogram.sum);
-        } else {
-          prioParams.booleans[i] = false;
-        }
-      } catch (ex) {
-        this._log.error(ex);
-      }
-    }
-
-    
-    const batchID = Services.appinfo.appBuildID;
-
-    let prioEncodedData;
-
-    try {
-      prioEncodedData = Policy.prioEncode(batchID, prioParams);
-    } catch (ex) {
-      this._log.error(ex);
-    }
-
-    return prioEncodedData;
   },
 };

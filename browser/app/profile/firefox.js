@@ -1816,10 +1816,6 @@ pref("toolkit.coverage.enabled", false);
 pref("toolkit.coverage.endpoint.base", "https://coverage.mozilla.org");
 
 #if defined(NIGHTLY_BUILD)
-pref("prio.enabled", true);
-#endif
-
-#if defined(NIGHTLY_BUILD)
 pref("toolkit.telemetry.prioping.enabled", true);
 #endif
 
