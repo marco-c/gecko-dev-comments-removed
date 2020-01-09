@@ -2894,6 +2894,9 @@ class nsContentUtils {
   enum class StorageAccess {
     
     
+    ePartitionForeignOrDeny = -2,
+    
+    
     ePartitionTrackersOrDeny = -1,
     
     eDeny = 0,
