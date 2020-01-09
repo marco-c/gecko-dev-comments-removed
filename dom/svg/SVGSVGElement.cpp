@@ -524,15 +524,15 @@ void SVGSVGElement::SetImageOverridePreserveAspectRatio(
   MOZ_ASSERT(OwnerDoc()->IsBeingUsedAsImage(),
              "should only override preserveAspectRatio in images");
 
-  bool hasViewBoxRect = HasViewBoxRect();
-  if (!hasViewBoxRect && ShouldSynthesizeViewBox()) {
+  bool hasViewBox = HasViewBox();
+  if (!hasViewBox && ShouldSynthesizeViewBox()) {
     
     
     
     mImageNeedsTransformInvalidation = true;
   }
 
-  if (!hasViewBoxRect) {
+  if (!hasViewBox) {
     return;  
   }
 
@@ -545,7 +545,7 @@ void SVGSVGElement::ClearImageOverridePreserveAspectRatio() {
   MOZ_ASSERT(OwnerDoc()->IsBeingUsedAsImage(),
              "should only override image preserveAspectRatio in images");
 
-  if (!HasViewBoxRect() && ShouldSynthesizeViewBox()) {
+  if (!HasViewBox() && ShouldSynthesizeViewBox()) {
     
     
     

@@ -567,9 +567,9 @@ class SVGElement : public SVGElementBase
   virtual EnumAttributesInfo GetEnumInfo();
   
   
-  virtual SVGAnimatedOrient* GetOrient();
-  virtual SVGAnimatedPreserveAspectRatio* GetPreserveAspectRatio();
-  virtual SVGAnimatedViewBox* GetViewBox();
+  virtual SVGAnimatedOrient* GetAnimatedOrient();
+  virtual SVGAnimatedPreserveAspectRatio* GetAnimatedPreserveAspectRatio();
+  virtual SVGAnimatedViewBox* GetAnimatedViewBox();
   virtual NumberListAttributesInfo GetNumberListInfo();
   virtual LengthListAttributesInfo GetLengthListInfo();
   virtual StringAttributesInfo GetStringInfo();

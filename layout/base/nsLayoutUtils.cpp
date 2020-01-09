@@ -9589,14 +9589,15 @@ static nsRect ComputeSVGReferenceRect(nsIFrame* aFrame,
       SVGViewportElement* svgElement = element->GetCtx();
       MOZ_ASSERT(svgElement);
 
-      if (svgElement && svgElement->HasViewBoxRect()) {
+      if (svgElement && svgElement->HasViewBox()) {
         
         
         
         
         
         
-        const SVGViewBoxRect& value = svgElement->GetViewBox()->GetAnimValue();
+        const SVGViewBox& value =
+            svgElement->GetAnimatedViewBox()->GetAnimValue();
         r = nsRect(nsPresContext::CSSPixelsToAppUnits(value.x),
                    nsPresContext::CSSPixelsToAppUnits(value.y),
                    nsPresContext::CSSPixelsToAppUnits(value.width),

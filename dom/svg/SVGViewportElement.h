@@ -79,7 +79,7 @@ class SVGViewportElement : public SVGGraphicsElement {
 
 
 
-  bool HasViewBoxRect() const { return GetViewBoxInternal().HasRect(); }
+  bool HasViewBox() const { return GetViewBoxInternal().HasRect(); }
 
   
 
@@ -91,7 +91,7 @@ class SVGViewportElement : public SVGGraphicsElement {
   bool ShouldSynthesizeViewBox() const;
 
   bool HasViewBoxOrSyntheticViewBox() const {
-    return HasViewBoxRect() || ShouldSynthesizeViewBox();
+    return HasViewBox() || ShouldSynthesizeViewBox();
   }
 
   bool HasChildrenOnlyTransform() const { return mHasChildrenOnlyTransform; }
@@ -126,7 +126,7 @@ class SVGViewportElement : public SVGGraphicsElement {
   
   already_AddRefed<SVGAnimatedRect> ViewBox();
   already_AddRefed<DOMSVGAnimatedPreserveAspectRatio> PreserveAspectRatio();
-  virtual SVGAnimatedViewBox* GetViewBox() override;
+  virtual SVGAnimatedViewBox* GetAnimatedViewBox() override;
 
  protected:
   
@@ -162,8 +162,8 @@ class SVGViewportElement : public SVGGraphicsElement {
 
 
 
-  SVGViewBoxRect GetViewBoxWithSynthesis(float aViewportWidth,
-                                         float aViewportHeight) const;
+  SVGViewBox GetViewBoxWithSynthesis(float aViewportWidth,
+                                     float aViewportHeight) const;
 
   
 
@@ -176,7 +176,8 @@ class SVGViewportElement : public SVGGraphicsElement {
   static LengthInfo sLengthInfo[4];
   virtual LengthAttributesInfo GetLengthInfo() override;
 
-  virtual SVGAnimatedPreserveAspectRatio* GetPreserveAspectRatio() override;
+  virtual SVGAnimatedPreserveAspectRatio* GetAnimatedPreserveAspectRatio()
+      override;
 
   virtual const SVGAnimatedViewBox& GetViewBoxInternal() const {
     return mViewBox;
