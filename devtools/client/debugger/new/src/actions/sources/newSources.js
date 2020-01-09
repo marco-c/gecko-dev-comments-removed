@@ -13,7 +13,7 @@ import { generatedToOriginalId } from "devtools-source-map";
 import { flatten } from "lodash";
 
 import { toggleBlackBox } from "./blackbox";
-import { syncBreakpoint, addBreakpoint } from "../breakpoints";
+import { syncBreakpoint } from "../breakpoints";
 import { loadSourceText } from "./loadSourceText";
 import { togglePrettyPrint } from "./prettyPrint";
 import { selectLocation } from "../sources";
@@ -186,19 +186,8 @@ function checkPendingBreakpoints(sourceId: string) {
     
     await dispatch(loadSourceText(source));
 
-    
-    
-    
-    
-    
     await Promise.all(
-      pendingBreakpoints.map(bp => {
-        if (source.url == bp.location.sourceUrl) {
-          return dispatch(syncBreakpoint(sourceId, bp));
-        }
-        const { line, column } = bp.generatedLocation;
-        return dispatch(addBreakpoint({ sourceId, line, column }, bp.options));
-      })
+      pendingBreakpoints.map(bp => dispatch(syncBreakpoint(sourceId, bp)))
     );
   };
 }

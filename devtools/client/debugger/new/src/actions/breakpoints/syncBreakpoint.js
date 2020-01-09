@@ -18,8 +18,7 @@ import { getTextAtPosition } from "../../utils/source";
 import { comparePosition } from "../../utils/location";
 
 import { originalToGeneratedId, isOriginalId } from "devtools-source-map";
-import { getSource, getBreakpointsList } from "../../selectors";
-import { removeBreakpoint } from ".";
+import { getSource } from "../../selectors";
 
 import type { ThunkArgs, Action } from "../types";
 
@@ -89,26 +88,13 @@ function createSyncData(
 }
 
 
-function findExistingBreakpoint(state, generatedLocation) {
-  const breakpoints = getBreakpointsList(state);
-
-  return breakpoints.find(bp => {
-    return (
-      bp.generatedLocation.sourceUrl == generatedLocation.sourceUrl &&
-      bp.generatedLocation.line == generatedLocation.line &&
-      bp.generatedLocation.column == generatedLocation.column
-    );
-  });
-}
-
-
 
 export async function syncBreakpointPromise(
   thunkArgs: ThunkArgs,
   sourceId: SourceId,
   pendingBreakpoint: PendingBreakpoint
 ): Promise<?BreakpointSyncData> {
-  const { getState, client, dispatch } = thunkArgs;
+  const { getState, client } = thunkArgs;
   assertPendingBreakpoint(pendingBreakpoint);
 
   const source = getSource(getState(), sourceId);
@@ -143,12 +129,6 @@ export async function syncBreakpointPromise(
   );
 
   
-  const bp = findExistingBreakpoint(getState(), generatedLocation);
-  if (bp) {
-    await dispatch(removeBreakpoint(bp));
-  }
-
-  
   
   if (newGeneratedLocation && (pendingBreakpoint.disabled || isSameLocation)) {
     
@@ -171,6 +151,9 @@ export async function syncBreakpointPromise(
       originalText
     );
   }
+
+  
+  await client.removeBreakpoint(generatedLocation);
 
   if (!newGeneratedLocation) {
     return { previousLocation, breakpoint: null };
