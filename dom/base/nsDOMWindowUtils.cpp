@@ -2501,6 +2501,18 @@ nsDOMWindowUtils::ZoomToFocusedInput() {
       flags |= layers::ONLY_ZOOM_TO_DEFAULT_SCALE;
     }
 
+    
+    
+    
+    
+    shell->ScrollContentIntoView(
+        content,
+        nsIPresShell::ScrollAxis(nsIPresShell::SCROLL_MINIMUM,
+                                 nsIPresShell::SCROLL_IF_NOT_VISIBLE),
+        nsIPresShell::ScrollAxis(nsIPresShell::SCROLL_MINIMUM,
+                                 nsIPresShell::SCROLL_IF_NOT_VISIBLE),
+        nsIPresShell::SCROLL_OVERFLOW_HIDDEN);
+
     CSSRect bounds =
         nsLayoutUtils::GetBoundingContentRect(content, rootScrollFrame);
     if (bounds.IsEmpty()) {
