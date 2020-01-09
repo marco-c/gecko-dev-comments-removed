@@ -223,6 +223,10 @@ class MOZ_STACK_CLASS LSNotifyInfo {
 
 
 
+
+
+
+
 bool NextGenLocalStorageEnabled();
 
 
