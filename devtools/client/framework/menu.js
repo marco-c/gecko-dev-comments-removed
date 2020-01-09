@@ -6,6 +6,7 @@
 
 "use strict";
 
+const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const EventEmitter = require("devtools/shared/event-emitter");
 const { getCurrentZoom } = require("devtools/shared/layout/utils");
 
@@ -79,6 +80,12 @@ Menu.prototype.popupWithZoom = function(x, y, doc) {
 
 
 Menu.prototype.popup = function(screenX, screenY, doc) {
+  
+  
+  
+  const win = doc.defaultView;
+  doc = DevToolsUtils.getTopWindow(doc.defaultView).document;
+
   let popupset = doc.querySelector("popupset");
   if (!popupset) {
     popupset = doc.createXULElement("popupset");
@@ -104,8 +111,14 @@ Menu.prototype.popup = function(screenX, screenY, doc) {
   this._createMenuItems(popup);
 
   
+  
+  const onWindowUnload = () => popup.hidePopup();
+  win.addEventListener("unload", onWindowUnload);
+
+  
   popup.addEventListener("popuphidden", (e) => {
     if (e.target === popup) {
+      win.removeEventListener("unload", onWindowUnload);
       popup.remove();
       this.emit("close");
     }
@@ -155,6 +168,11 @@ Menu.prototype._createMenuItems = function(parent) {
       parent.appendChild(menuitem);
     }
   });
+};
+
+Menu.getMenuElementById = function(id, doc) {
+  const menuDoc = DevToolsUtils.getTopWindow(doc.defaultView).document;
+  return menuDoc.getElementById(id);
 };
 
 Menu.setApplicationMenu = () => {
