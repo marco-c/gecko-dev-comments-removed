@@ -451,8 +451,10 @@ nsJARURI::EqualsExceptRef(nsIURI *other, bool *result) {
 }
 
 
- nsresult nsJARURI::EqualsInternal(
-    nsIURI *other, nsJARURI::RefHandlingEnum refHandlingMode, bool *result) {
+
+nsresult nsJARURI::EqualsInternal(nsIURI *other,
+                                  nsJARURI::RefHandlingEnum refHandlingMode,
+                                  bool *result) {
   *result = false;
 
   if (!other) return NS_OK;  
