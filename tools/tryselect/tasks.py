@@ -86,17 +86,31 @@ def generate_tasks(params=None, full=False):
 
     root = os.path.join(root, 'taskcluster', 'ci')
     params = parameters_loader(params, strict=False, overrides={'try_mode': 'try_select'})
-    try:
-        tg = getattr(TaskGraphGenerator(root_dir=root, parameters=params), attr)
-    except ParameterMismatch as e:
-        print(PARAMETER_MISMATCH.format(e.args[0]))
-        sys.exit(1)
+
+    
+    
+    
+    generator = TaskGraphGenerator(root_dir=root, parameters=params)
+
+    def generate(attr):
+        try:
+            tg = getattr(generator, attr)
+        except ParameterMismatch as e:
+            print(PARAMETER_MISMATCH.format(e.args[0]))
+            sys.exit(1)
+
+        
+        with open(os.path.join(cache_dir, attr), 'w') as fh:
+            json.dump(tg.to_json(), fh)
+        return tg
+
+    tg_full = generate('full_task_set')
+    tg_target = generate('target_task_set')
 
     os.chdir(cwd)
-
-    with open(cache, 'w') as fh:
-        json.dump(tg.to_json(), fh)
-    return tg
+    if full:
+        return tg_full
+    return tg_target
 
 
 def filter_tasks_by_paths(tasks, paths):
