@@ -385,7 +385,7 @@ enum class MiscOp {
   
   TableGrow = 0x0f,
   TableSize = 0x10,
-  
+  TableFill = 0x11,
 
   
   StructNew = 0x50,

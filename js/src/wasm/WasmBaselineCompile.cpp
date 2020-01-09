@@ -6850,6 +6850,7 @@ class BaseCompiler final : public BaseCompilerInterface {
   MOZ_MUST_USE bool emitMemFill();
   MOZ_MUST_USE bool emitMemOrTableInit(bool isMem);
 #endif
+  MOZ_MUST_USE bool emitTableFill();
   MOZ_MUST_USE bool emitTableGet();
   MOZ_MUST_USE bool emitTableGrow();
   MOZ_MUST_USE bool emitTableSet();
@@ -10333,6 +10334,37 @@ bool BaseCompiler::emitMemOrTableInit(bool isMem) {
 #endif
 
 MOZ_MUST_USE
+bool BaseCompiler::emitTableFill() {
+  uint32_t lineOrBytecode = readCallSiteLineOrBytecode();
+
+  Nothing nothing;
+  uint32_t tableIndex;
+  if (!iter_.readTableFill(&tableIndex, &nothing, &nothing, &nothing)) {
+    return false;
+  }
+
+  if (deadCode_) {
+    return true;
+  }
+
+  
+  
+  
+  pushI32(tableIndex);
+  if (!emitInstanceCall(lineOrBytecode, SASigTableFill,
+                        false)) {
+    return false;
+  }
+
+  Label ok;
+  masm.branchTest32(Assembler::NotSigned, ReturnReg, ReturnReg, &ok);
+  trap(Trap::ThrowReported);
+  masm.bind(&ok);
+
+  return true;
+}
+
+MOZ_MUST_USE
 bool BaseCompiler::emitTableGet() {
   uint32_t lineOrBytecode = readCallSiteLineOrBytecode();
   Nothing index;
@@ -11565,6 +11597,8 @@ bool BaseCompiler::emitBody() {
             CHECK_NEXT(emitMemOrTableInit(false));
 #endif  
 #ifdef ENABLE_WASM_REFTYPES
+          case uint32_t(MiscOp::TableFill):
+            CHECK_NEXT(emitTableFill());
           case uint32_t(MiscOp::TableGrow):
             CHECK_NEXT(emitTableGrow());
           case uint32_t(MiscOp::TableSize):
