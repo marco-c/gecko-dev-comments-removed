@@ -166,6 +166,16 @@ exports.shortSource = function(sheet) {
 const TAB_CHARS = "\t";
 const SPACE_CHARS = " ";
 
+function getLineCountInComments(text) {
+  let count = 0;
+
+  for (const comment of text.match(/\/\*(?:.|\n)*?\*\//mg) || []) {
+    count += comment.split("\n").length + 1;
+  }
+
+  return count;
+}
+
 
 
 
@@ -190,7 +200,7 @@ function prettifyCSS(text, ruleCount) {
   text = text.trim();
 
   
-  const lineCount = text.split("\n").length - 1;
+  const lineCount = text.split("\n").length - 1 - getLineCountInComments(text);
   if (ruleCount !== null && lineCount >= ruleCount) {
     return originalText;
   }
