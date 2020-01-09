@@ -1246,6 +1246,10 @@ mozilla::ipc::IPCResult TabChild::RecvHandleTap(
     const GeckoContentController::TapType& aType,
     const LayoutDevicePoint& aPoint, const Modifiers& aModifiers,
     const ScrollableLayerGuid& aGuid, const uint64_t& aInputBlockId) {
+  
+  
+  
+  RefPtr<TabChild> kungFuDeathGrip(this);
   nsCOMPtr<nsIPresShell> presShell = GetPresShell();
   if (!presShell) {
     return IPC_OK();
@@ -1291,6 +1295,10 @@ mozilla::ipc::IPCResult TabChild::RecvNormalPriorityHandleTap(
     const GeckoContentController::TapType& aType,
     const LayoutDevicePoint& aPoint, const Modifiers& aModifiers,
     const ScrollableLayerGuid& aGuid, const uint64_t& aInputBlockId) {
+  
+  
+  
+  RefPtr<TabChild> kungFuDeathGrip(this);
   return RecvHandleTap(aType, aPoint, aModifiers, aGuid, aInputBlockId);
 }
 
@@ -1378,6 +1386,10 @@ mozilla::ipc::IPCResult TabChild::RecvMouseEvent(
     const nsString& aType, const float& aX, const float& aY,
     const int32_t& aButton, const int32_t& aClickCount,
     const int32_t& aModifiers, const bool& aIgnoreRootScrollFrame) {
+  
+  
+  
+  RefPtr<TabChild> kungFuDeathGrip(this);
   APZCCallbackHelper::DispatchMouseEvent(
       GetPresShell(), aType, CSSPoint(aX, aY), aButton, aClickCount, aModifiers,
       aIgnoreRootScrollFrame, MouseEvent_Binding::MOZ_SOURCE_UNKNOWN,
