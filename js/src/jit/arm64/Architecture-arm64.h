@@ -397,7 +397,9 @@ static const uint32_t ShadowStackSpace = 0;
 
 
 
-static const uint32_t JumpImmediateRange = UINT32_MAX;
+
+
+static const uint32_t JumpImmediateRange = ((1 << 27) - (20 * 1024 * 1024));
 
 static const uint32_t ABIStackAlignment = 16;
 static const uint32_t CodeAlignment = 16;
