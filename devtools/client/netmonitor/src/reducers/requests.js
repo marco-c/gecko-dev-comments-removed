@@ -207,16 +207,13 @@ function closeCustomRequest(state) {
   const removedRequest = requests.get(selectedId);
 
   
-  if (!removedRequest || !removedRequest.isCustom) {
-    return state;
-  }
-
-  
   
   const hasPreselectedId = preselectedId && requests.has(preselectedId);
   return {
     ...state,
-    requests: mapDelete(requests, selectedId),
+    
+    [(removedRequest && removedRequest.isCustom)
+      && "requests"]: mapDelete(requests, selectedId),
     preselectedId: hasPreselectedId ? null : preselectedId,
     selectedId: hasPreselectedId ? preselectedId : null,
   };
