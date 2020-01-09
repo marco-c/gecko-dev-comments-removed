@@ -194,17 +194,17 @@ class ArenaCellIter : public ArenaCellIterImpl {
 };
 
 template <typename T>
-class ZoneCellIter;
+class ZoneAllCellIter;
 
 template <>
-class ZoneCellIter<TenuredCell> {
+class ZoneAllCellIter<TenuredCell> {
   ArenaIter arenaIter;
   ArenaCellIterImpl cellIter;
   mozilla::Maybe<JS::AutoAssertNoGC> nogc;
 
  protected:
   
-  ZoneCellIter() {}
+  ZoneAllCellIter() {}
 
   void init(JS::Zone* zone, AllocKind kind) {
     MOZ_ASSERT_IF(IsNurseryAllocable(kind),
@@ -239,7 +239,7 @@ class ZoneCellIter<TenuredCell> {
   }
 
  public:
-  ZoneCellIter(JS::Zone* zone, AllocKind kind) {
+  ZoneAllCellIter(JS::Zone* zone, AllocKind kind) {
     
     
     if (IsNurseryAllocable(kind)) {
@@ -249,8 +249,8 @@ class ZoneCellIter<TenuredCell> {
     init(zone, kind);
   }
 
-  ZoneCellIter(JS::Zone* zone, AllocKind kind,
-               const js::gc::AutoAssertEmptyNursery&) {
+  ZoneAllCellIter(JS::Zone* zone, AllocKind kind,
+                  const js::gc::AutoAssertEmptyNursery&) {
     
     
     init(zone, kind);
@@ -327,7 +327,7 @@ class ZoneCellIter<TenuredCell> {
 
 
 template <typename GCType>
-class ZoneCellIter : public ZoneCellIter<TenuredCell> {
+class ZoneAllCellIter : public ZoneAllCellIter<TenuredCell> {
  public:
   
   
@@ -339,68 +339,68 @@ class ZoneCellIter : public ZoneCellIter<TenuredCell> {
   
   
   
-  explicit ZoneCellIter(JS::Zone* zone) : ZoneCellIter<TenuredCell>() {
+  explicit ZoneAllCellIter(JS::Zone* zone) : ZoneAllCellIter<TenuredCell>() {
     init(zone, MapTypeToFinalizeKind<GCType>::kind);
   }
 
   
   
-  ZoneCellIter(JS::Zone* zone, const js::gc::AutoAssertEmptyNursery&)
-      : ZoneCellIter(zone) {}
+  ZoneAllCellIter(JS::Zone* zone, const js::gc::AutoAssertEmptyNursery&)
+      : ZoneAllCellIter(zone) {}
 
   
   
-  ZoneCellIter(JS::Zone* zone, AllocKind kind)
-      : ZoneCellIter<TenuredCell>(zone, kind) {}
+  ZoneAllCellIter(JS::Zone* zone, AllocKind kind)
+      : ZoneAllCellIter<TenuredCell>(zone, kind) {}
 
   
   
-  ZoneCellIter(JS::Zone* zone, AllocKind kind,
-               const js::gc::AutoAssertEmptyNursery& empty)
-      : ZoneCellIter<TenuredCell>(zone, kind, empty) {}
+  ZoneAllCellIter(JS::Zone* zone, AllocKind kind,
+                  const js::gc::AutoAssertEmptyNursery& empty)
+      : ZoneAllCellIter<TenuredCell>(zone, kind, empty) {}
 
-  GCType* get() const { return ZoneCellIter<TenuredCell>::get<GCType>(); }
+  GCType* get() const { return ZoneAllCellIter<TenuredCell>::get<GCType>(); }
   operator GCType*() const { return get(); }
   GCType* operator->() const { return get(); }
 };
 
 
 template <typename T>
-class SafeZoneCellIter : public ZoneCellIter<T> {
+class ZoneCellIter : public ZoneAllCellIter<T> {
  public:
   
 
 
-  explicit SafeZoneCellIter(JS::Zone* zone) : ZoneCellIter<T>(zone) {
+  explicit ZoneCellIter(JS::Zone* zone) : ZoneAllCellIter<T>(zone) {
     skipDying();
   }
-  SafeZoneCellIter(JS::Zone* zone, const js::gc::AutoAssertEmptyNursery& empty)
-      : ZoneCellIter<T>(zone, empty) {
+  ZoneCellIter(JS::Zone* zone, const js::gc::AutoAssertEmptyNursery& empty)
+      : ZoneAllCellIter<T>(zone, empty) {
     skipDying();
   }
-  SafeZoneCellIter(JS::Zone* zone, AllocKind kind)
-      : ZoneCellIter<T>(zone, kind) {
+  ZoneCellIter(JS::Zone* zone, AllocKind kind)
+      : ZoneAllCellIter<T>(zone, kind) {
     skipDying();
   }
-  SafeZoneCellIter(JS::Zone* zone, AllocKind kind,
-                   const js::gc::AutoAssertEmptyNursery& empty)
-      : ZoneCellIter<T>(zone, kind, empty) {
+  ZoneCellIter(JS::Zone* zone, AllocKind kind,
+               const js::gc::AutoAssertEmptyNursery& empty)
+      : ZoneAllCellIter<T>(zone, kind, empty) {
     skipDying();
   }
 
   void next() {
-    ZoneCellIter<T>::next();
+    ZoneAllCellIter<T>::next();
     skipDying();
   }
 
  private:
   void skipDying() {
-    while (!ZoneCellIter<T>::done()) {
-      T* current = ZoneCellIter<T>::get();
+    while (!ZoneAllCellIter<T>::done()) {
+      T* current = ZoneAllCellIter<T>::get();
       if (!IsAboutToBeFinalizedUnbarriered(&current)) {
         return;
       }
-      ZoneCellIter<T>::next();
+      ZoneAllCellIter<T>::next();
     }
   }
 };
