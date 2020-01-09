@@ -370,6 +370,13 @@ void RemoteContentController::Destroy() {
   }
 }
 
+mozilla::ipc::IPCResult RemoteContentController::RecvDestroy() {
+  
+  
+  mCanSend = false;
+  return IPC_OK();
+}
+
 bool RemoteContentController::IsRemote() { return true; }
 
 }  
