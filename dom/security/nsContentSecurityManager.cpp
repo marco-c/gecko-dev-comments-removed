@@ -800,7 +800,7 @@ static void DebugDoContentSecurityCheck(nsIChannel* aChannel,
   }
 }
 
-#if defined(DEBUG) || defined(FUZZING)
+#ifdef EARLY_BETA_OR_EARLIER
 
 
 static void AssertSystemPrincipalMustNotLoadRemoteDocuments(
@@ -860,7 +860,7 @@ static void AssertSystemPrincipalMustNotLoadRemoteDocuments(
     
     return;
   }
-  MOZ_ASSERT(false, "SystemPrincipal must not load remote documents.");
+  MOZ_RELEASE_ASSERT(false, "SystemPrincipal must not load remote documents.");
 }
 #endif
 
@@ -890,7 +890,7 @@ nsresult nsContentSecurityManager::doContentSecurityCheck(
     DebugDoContentSecurityCheck(aChannel, loadInfo);
   }
 
-#if defined(DEBUG) || defined(FUZZING)
+#ifdef EARLY_BETA_OR_EARLIER
   AssertSystemPrincipalMustNotLoadRemoteDocuments(aChannel);
 #endif
 
