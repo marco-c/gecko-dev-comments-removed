@@ -5496,11 +5496,11 @@ pub trait SceneBuilderHooks {
     
     
     
-    fn post_scene_swap(&self, document_id: &Vec<DocumentId>, info: PipelineInfo, sceneswap_time: u64);
+    fn post_scene_swap(&self, document_id: DocumentId, info: PipelineInfo, sceneswap_time: u64);
     
     
     
-    fn post_resource_update(&self, document_ids: &Vec<DocumentId>);
+    fn post_resource_update(&self, document_id: DocumentId);
     
     
     
