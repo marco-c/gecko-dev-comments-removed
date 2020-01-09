@@ -8,6 +8,7 @@
 #define MOZILLA_GFX_GLMANAGER_H
 
 #include "mozilla/gfx/Types.h"  
+#include "OGLShaderProgram.h"
 
 namespace mozilla {
 namespace gl {
@@ -17,7 +18,6 @@ class GLContext;
 namespace layers {
 
 class LayerManagerComposite;
-class ShaderProgramOGL;
 
 
 

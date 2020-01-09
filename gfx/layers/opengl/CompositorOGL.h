@@ -7,13 +7,12 @@
 #ifndef MOZILLA_GFX_COMPOSITOROGL_H
 #define MOZILLA_GFX_COMPOSITOROGL_H
 
-#include <map>
 #include <unordered_set>
 
 #include "gfx2DGlue.h"
 #include "GLContextTypes.h"             
 #include "GLDefs.h"                     
-#include "OGLShaderConfig.h"            
+#include "OGLShaderProgram.h"           
 #include "Units.h"                      
 #include "mozilla/Assertions.h"         
 #include "mozilla/Attributes.h"         
@@ -46,7 +45,6 @@ class CompositingRenderTarget;
 class CompositingRenderTargetOGL;
 class DataTextureSource;
 class GLManagerCompositor;
-class ShaderProgramOGL;
 class TextureSource;
 class TextureSourceOGL;
 class BufferTextureHost;
@@ -83,8 +81,12 @@ class CompositorTexturePoolOGL {
 
 class PerUnitTexturePoolOGL : public CompositorTexturePoolOGL {
  public:
-  explicit PerUnitTexturePoolOGL(gl::GLContext* aGL);
-  virtual ~PerUnitTexturePoolOGL();
+  explicit PerUnitTexturePoolOGL(gl::GLContext* aGL)
+      : mTextureTarget(0)  
+        ,
+        mGL(aGL) {}
+
+  virtual ~PerUnitTexturePoolOGL() { DestroyTextures(); }
 
   virtual void Clear() override { DestroyTextures(); }
 
