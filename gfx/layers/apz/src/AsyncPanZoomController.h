@@ -1182,18 +1182,14 @@ class AsyncPanZoomController {
 
 
 
-
-
-  bool ApplyAsyncTestAttributes();
+  void ApplyAsyncTestAttributes();
 
   
 
 
 
 
-
-
-  bool UnapplyAsyncTestAttributes(const FrameMetrics& aPrevFrameMetrics);
+  void UnapplyAsyncTestAttributes(const FrameMetrics& aPrevFrameMetrics);
 
   
 
