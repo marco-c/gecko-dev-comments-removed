@@ -19,6 +19,14 @@ add_task(async function init() {
     gURLBar.handleRevert();
     await UrlbarTestUtils.promisePopupClose(window, () => gURLBar.blur());
   });
+
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.suggest.searches", true],
+    ],
+  });
 });
 
 
@@ -167,14 +175,6 @@ add_task(async function nonHeuristicAliases() {
 
   
   
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.urlbar.suggest.searches", true],
-    ],
-  });
-
-  
-  
   gURLBar.search("@");
   await promiseSearchComplete();
   await waitForAutocompleteResultAt(tokenEngines.length - 1);
@@ -188,8 +188,6 @@ add_task(async function nonHeuristicAliases() {
 
   await UrlbarTestUtils.promisePopupClose(window,
     () => EventUtils.synthesizeKey("KEY_Escape"));
-
-  await SpecialPowers.popPrefEnv();
 });
 
 
@@ -216,10 +214,6 @@ add_task(async function nonTokenAlias() {
 
 add_task(async function clickAndFillAlias() {
   
-  if (UrlbarPrefs.get("quantumbar")) {
-    return;
-  }
-  
   gURLBar.search("@");
   await promiseSearchComplete();
 
@@ -227,10 +221,9 @@ add_task(async function clickAndFillAlias() {
   
   let testEngineItem;
   for (let i = 0; !testEngineItem; i++) {
-    let item = await waitForAutocompleteResultAt(i);
-    let action = PlacesUtils.parseActionUrl(item.getAttribute("url"));
-    if (action && action.params.alias == ALIAS) {
-      testEngineItem = item;
+    let details = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
+    if (details.searchParams && details.searchParams.keyword == ALIAS) {
+      testEngineItem = await waitForAutocompleteResultAt(i);
     }
   }
 
@@ -240,9 +233,8 @@ add_task(async function clickAndFillAlias() {
   });
 
   
-  
   await promiseSearchComplete();
-  await promisePopupShown(gURLBar.popup);
+  await waitForAutocompleteResultAt(0);
   await assertAlias(true);
 
   

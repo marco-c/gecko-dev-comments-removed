@@ -357,6 +357,14 @@ class UrlbarInput {
           url = canonizedUrl;
           break;
         }
+        if (result.payload.isKeywordOffer) {
+          
+          
+          
+          
+          this.startQuery();
+          return;
+        }
         const actionDetails = {
           isSuggestion: !!result.payload.suggestion,
           alias: result.payload.keyword,
