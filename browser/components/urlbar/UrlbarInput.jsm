@@ -240,9 +240,9 @@ class UrlbarInput {
 
     
     
-    let result = !selectedOneOff && this.view.selectedResult;
-    if (result) {
-      this.pickResult(event, result);
+    let index = this.view.selectedIndex;
+    if (!selectedOneOff && index != -1) {
+      this.pickResult(event, index);
       return;
     }
 
@@ -309,7 +309,8 @@ class UrlbarInput {
 
 
 
-  pickResult(event, result) {
+  pickResult(event, resultIndex) {
+    let result = this.view.getResult(resultIndex);
     this.setValueFromResult(result);
 
     this.view.close();
@@ -318,6 +319,7 @@ class UrlbarInput {
     
     
     
+    this.controller.recordSelectedResult(event, result, resultIndex);
 
     let where = this._whereToOpen(event);
     let {url, postData} = UrlbarUtils.getUrlFromResult(result);

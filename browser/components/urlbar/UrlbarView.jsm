@@ -114,6 +114,19 @@ class UrlbarView {
 
 
 
+  getResult(index) {
+    if (index < 0 || index > this._queryContext.results.length) {
+      throw new Error(`UrlbarView: Index ${index} is out of bounds`);
+    }
+    return this._queryContext.results[index];
+  }
+
+  
+
+
+
+
+
 
 
   selectNextItem({reverse = false} = {}) {
@@ -513,11 +526,7 @@ class UrlbarView {
     while (!row.classList.contains("urlbarView-row")) {
       row = row.parentNode;
     }
-    let resultIndex = row.getAttribute("resultIndex");
-    let result = this._queryContext.results[resultIndex];
-    if (result) {
-      this.input.pickResult(event, result);
-    }
+    this.input.pickResult(event, parseInt(row.getAttribute("resultIndex")));
   }
 
   _on_overflow(event) {
