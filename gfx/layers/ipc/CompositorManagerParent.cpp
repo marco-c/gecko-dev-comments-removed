@@ -11,6 +11,7 @@
 #include "mozilla/layers/ContentCompositorBridgeParent.h"
 #include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/SharedSurfacesParent.h"
+#include "mozilla/Unused.h"
 #include "nsAutoPtr.h"
 #include "VsyncSource.h"
 
@@ -128,6 +129,9 @@ void CompositorManagerParent::Bind(
 }
 
 void CompositorManagerParent::BindComplete() {
+  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread() ||
+             NS_IsMainThread());
+
   
   
   AddRef();
@@ -320,6 +324,17 @@ mozilla::ipc::IPCResult CompositorManagerParent::RecvReportMemory(
       });
 
   return IPC_OK();
+}
+
+
+void CompositorManagerParent::NotifyWebRenderError(wr::WebRenderError aError) {
+  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+
+  StaticMutexAutoLock lock(sMutex);
+  if (NS_WARN_IF(!sInstance)) {
+    return;
+  }
+  Unused << sInstance->SendNotifyWebRenderError(aError);
 }
 
 }  
