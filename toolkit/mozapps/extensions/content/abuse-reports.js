@@ -17,7 +17,8 @@ const ABUSE_REPORT_MESSAGE_BARS = {
   "submitting": {id: "submitting", actions: ["cancel"]},
   
   "submitted": {
-    id: "submitted", actions: ["remove", "keep"], dismissable: true,
+    id: "submitted", actionAddonTypeSuffix: true,
+    actions: ["remove", "keep"], dismissable: true,
   },
   
   "submitted-and-removed": {
@@ -68,7 +69,7 @@ function createReportMessageBar(
   if (!barInfo) {
     throw new Error(`message-bar definition not found: ${definitionId}`);
   }
-  const {id, dismissable, actions, type, addonTypeSuffix} = barInfo;
+  const {id, dismissable, actions, type} = barInfo;
   const messageEl = document.createElement("span");
 
   
@@ -80,13 +81,17 @@ function createReportMessageBar(
 
   document.l10n.setAttributes(
     messageEl,
-    getMessageL10n(addonTypeSuffix ? `${id}-${addonType}` : id),
+    getMessageL10n(barInfo.addonTypeSuffix ? `${id}-${addonType}` : id),
     {"addon-name": addonName || addonId});
 
   const barActions = actions ? actions.map(action => {
+    
+    
+    const actionId = barInfo.actionAddonTypeSuffix ?
+      `${action}-${addonType}` : action;
     const buttonEl = document.createElement("button");
     buttonEl.addEventListener("click", () => onaction && onaction(action));
-    document.l10n.setAttributes(buttonEl, getActionL10n(action));
+    document.l10n.setAttributes(buttonEl, getActionL10n(actionId));
     return buttonEl;
   }) : [];
 
