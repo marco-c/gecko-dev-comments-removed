@@ -56,11 +56,7 @@ typedef nsTHashtable<nsPtrHashKey<nsIFrame>> VisibleFrames;
 
 
 
-#ifdef MOZ_WIDGET_ANDROID
-#  define PAINTLOCK_EVENT_DELAY 250
-#else
-#  define PAINTLOCK_EVENT_DELAY 5
-#endif
+#define PAINTLOCK_EVENT_DELAY 5
 
 class PresShell final : public nsIPresShell,
                         public nsISelectionController,
@@ -526,14 +522,12 @@ class PresShell final : public nsIPresShell,
 
 
 
-
     MOZ_CAN_RUN_SCRIPT
     nsresult HandleEvent(nsIFrame* aFrameForPresShell,
                          WidgetGUIEvent* aGUIEvent, bool aDontRetargetEvents,
                          nsEventStatus* aEventStatus);
 
     
-
 
 
 
@@ -1109,11 +1103,8 @@ class PresShell final : public nsIPresShell,
 
 
 
-
-
-
     MOZ_CAN_RUN_SCRIPT
-    bool PrepareToDispatchEvent(WidgetEvent* aEvent, bool* aIsUserInteraction);
+    bool PrepareToDispatchEvent(WidgetEvent* aEvent);
 
     
 
@@ -1124,6 +1115,16 @@ class PresShell final : public nsIPresShell,
     MOZ_CAN_RUN_SCRIPT
     void MaybeHandleKeyboardEventBeforeDispatch(
         WidgetKeyboardEvent* aKeyboardEvent);
+
+    
+
+
+
+
+
+
+
+    bool PrepareToDispatchContextMenuEvent(WidgetEvent* aEvent);
 
     
 
