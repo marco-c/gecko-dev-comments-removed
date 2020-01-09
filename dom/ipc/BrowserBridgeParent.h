@@ -42,6 +42,7 @@ class BrowserBridgeParent : public PBrowserBridgeParent {
   
   BrowserParent* Manager();
 
+#if defined(ACCESSIBILITY)
   
 
 
@@ -51,6 +52,7 @@ class BrowserBridgeParent : public PBrowserBridgeParent {
     return Tuple<a11y::DocAccessibleParent*, uint64_t>(mEmbedderAccessibleDoc,
                                                        mEmbedderAccessibleID);
   }
+#endif  
 
   
   void Destroy();
@@ -93,8 +95,10 @@ class BrowserBridgeParent : public PBrowserBridgeParent {
   ~BrowserBridgeParent();
 
   RefPtr<BrowserParent> mBrowserParent;
+#if defined(ACCESSIBILITY)
   RefPtr<a11y::DocAccessibleParent> mEmbedderAccessibleDoc;
   uint64_t mEmbedderAccessibleID;
+#endif  
   bool mIPCOpen;
 };
 
