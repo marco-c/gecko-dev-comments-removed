@@ -41,10 +41,10 @@ bool BranchEmitterBase::emitThenInternal(SrcNoteType type) {
   
 #ifdef DEBUG
   
-  thenDepth_ = bce_->stackDepth;
+  thenDepth_ = bce_->bytecodeSection().stackDepth();
 #else
   if (type == SRC_COND || type == SRC_IF_ELSE) {
-    thenDepth_ = bce_->stackDepth;
+    thenDepth_ = bce_->bytecodeSection().stackDepth();
   }
 #endif
 
@@ -59,10 +59,10 @@ bool BranchEmitterBase::emitThenInternal(SrcNoteType type) {
 void BranchEmitterBase::calculateOrCheckPushed() {
 #ifdef DEBUG
   if (!calculatedPushed_) {
-    pushed_ = bce_->stackDepth - thenDepth_;
+    pushed_ = bce_->bytecodeSection().stackDepth() - thenDepth_;
     calculatedPushed_ = true;
   } else {
-    MOZ_ASSERT(pushed_ == bce_->stackDepth - thenDepth_);
+    MOZ_ASSERT(pushed_ == bce_->bytecodeSection().stackDepth() - thenDepth_);
   }
 #endif
 }
@@ -92,7 +92,7 @@ bool BranchEmitterBase::emitElseInternal() {
   jumpAroundThen_ = JumpList();
 
   
-  bce_->stackDepth = thenDepth_;
+  bce_->bytecodeSection().setStackDepth(thenDepth_);
 
   
   if (kind_ == Kind::MayContainLexicalAccessInBranch) {
