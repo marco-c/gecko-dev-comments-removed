@@ -356,8 +356,14 @@ nsresult nsFrameLoader::ReallyStartLoadingInternal() {
       return NS_ERROR_FAILURE;
     }
 
-    
-    mRemoteBrowser->LoadURL(mURIToLoad);
+    if (mRemoteFrameChild) {
+      nsAutoCString spec;
+      mURIToLoad->GetSpec(spec);
+      Unused << mRemoteFrameChild->SendLoadURL(spec);
+    } else {
+      
+      mRemoteBrowser->LoadURL(mURIToLoad);
+    }
 
     if (!mRemoteBrowserShown) {
       
@@ -811,12 +817,25 @@ bool nsFrameLoader::ShowRemoteFrame(const ScreenIntSize& size,
       return false;
     }
 
-    RenderFrame* rf = GetCurrentRenderFrame();
-    if (!rf) {
-      return false;
+    if (mRemoteFrameChild) {
+      nsCOMPtr<nsISupports> container =
+          mOwnerContent->OwnerDoc()->GetContainer();
+      nsCOMPtr<nsIBaseWindow> baseWindow = do_QueryInterface(container);
+      nsCOMPtr<nsIWidget> mainWidget;
+      baseWindow->GetMainWidget(getter_AddRefs(mainWidget));
+      nsSizeMode sizeMode =
+          mainWidget ? mainWidget->SizeMode() : nsSizeMode_Normal;
+
+      Unused << mRemoteFrameChild->SendShow(
+          size, ParentWindowIsActive(mOwnerContent->OwnerDoc()), sizeMode);
+      mRemoteBrowserShown = true;
+      return true;
     }
 
-    if (!rf->AttachLayerManager()) {
+    RenderFrame* rf =
+        mRemoteBrowser ? mRemoteBrowser->GetRenderFrame() : nullptr;
+
+    if (!rf || !rf->AttachLayerManager()) {
       
       return false;
     }
@@ -834,7 +853,11 @@ bool nsFrameLoader::ShowRemoteFrame(const ScreenIntSize& size,
 
     
     if (!aFrame || !(aFrame->GetStateBits() & NS_FRAME_FIRST_REFLOW)) {
-      mRemoteBrowser->UpdateDimensions(dimensions, size);
+      if (mRemoteBrowser) {
+        mRemoteBrowser->UpdateDimensions(dimensions, size);
+      } else if (mRemoteFrameChild) {
+        mRemoteFrameChild->UpdateDimensions(dimensions, size);
+      }
     }
   }
 
@@ -920,6 +943,11 @@ nsresult nsFrameLoader::SwapWithOtherRemoteLoader(
   nsIPresShell* ourShell = ourDoc->GetShell();
   nsIPresShell* otherShell = otherDoc->GetShell();
   if (!ourShell || !otherShell) {
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
+
+  
+  if (mRemoteFrameChild) {
     return NS_ERROR_NOT_IMPLEMENTED;
   }
 
@@ -2286,7 +2314,7 @@ nsresult nsFrameLoader::GetWindowDimensions(nsIntRect& aRect) {
 
 nsresult nsFrameLoader::UpdatePositionAndSize(nsSubDocumentFrame* aIFrame) {
   if (IsRemoteFrame()) {
-    if (mRemoteBrowser) {
+    if (mRemoteBrowser || mRemoteFrameChild) {
       ScreenIntSize size = aIFrame->GetSubdocumentSize();
       
       
@@ -2296,7 +2324,11 @@ nsresult nsFrameLoader::UpdatePositionAndSize(nsSubDocumentFrame* aIFrame) {
       nsIntRect dimensions;
       NS_ENSURE_SUCCESS(GetWindowDimensions(dimensions), NS_ERROR_FAILURE);
       mLazySize = size;
-      mRemoteBrowser->UpdateDimensions(dimensions, size);
+      if (mRemoteBrowser) {
+        mRemoteBrowser->UpdateDimensions(dimensions, size);
+      } else if (mRemoteFrameChild) {
+        mRemoteFrameChild->UpdateDimensions(dimensions, size);
+      }
     }
     return NS_OK;
   }
