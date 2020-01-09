@@ -95,12 +95,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(CharacterData)
   nsIContent::Unlink(tmp);
 
-  
-  
-  tmp->UnsetFlags(NODE_IS_IN_SHADOW_TREE);
-
-  nsContentSlots* slots = tmp->GetExistingContentSlots();
-  if (slots) {
+  if (nsContentSlots* slots = tmp->GetExistingContentSlots()) {
     slots->Unlink();
   }
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
