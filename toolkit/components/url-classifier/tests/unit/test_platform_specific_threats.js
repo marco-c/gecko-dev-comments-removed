@@ -31,14 +31,12 @@ function testMobileOnlyThreats() {
     let requestWithPHA =
       urlUtils.makeFindFullHashRequestV4(["goog-phish-proto", "goog-harmful-proto"],
                                          ["", ""], 
-                                         [btoa("0123")], 
-                                         2, 1);
+                                         [btoa("0123")]); 
 
     let requestNoPHA =
       urlUtils.makeFindFullHashRequestV4(["goog-phish-proto"],
                                          [""], 
-                                         [btoa("0123")], 
-                                         1, 1);
+                                         [btoa("0123")]); 
 
     if (AppConstants.platform === "android") {
       notEqual(requestWithPHA, requestNoPHA,

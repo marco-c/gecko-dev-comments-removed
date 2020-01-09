@@ -7,56 +7,36 @@ using namespace mozilla;
 using namespace mozilla::safebrowsing;
 
 namespace {
-
-
-
-
-
-
-
-
-class Base64EncodedStringArray {
- public:
-  Base64EncodedStringArray(nsCString aArray[], size_t N);
-  operator const char**() const { return (const char**)&mArray[0]; }
-
- private:
-  
-  
-  
-  nsTArray<const char*> mArray;
-  nsTArray<nsCString> mStringStorage;
-};
-
-
 template <size_t N>
-Base64EncodedStringArray MakeBase64EncodedStringArray(nsCString (&aArray)[N]) {
-  return Base64EncodedStringArray(aArray, N);
-}
-
+void ToBase64EncodedStringArray(nsCString (&aInput)[N],
+                                nsTArray<nsCString>& aEncodedArray);
 }  
 
 TEST(UrlClassifierFindFullHash, Request)
 {
   nsUrlClassifierUtils* urlUtil = nsUrlClassifierUtils::GetInstance();
 
-  const char* listNames[] = {"test-phish-proto", "test-unwanted-proto"};
+  nsTArray<nsCString> listNames;
+  listNames.AppendElement("test-phish-proto");
+  listNames.AppendElement("test-unwanted-proto");
 
   nsCString listStates[] = {nsCString("sta\x00te1", 7),
                             nsCString("sta\x00te2", 7)};
+  nsTArray<nsCString> listStateArray;
+  ToBase64EncodedStringArray(listStates, listStateArray);
 
   nsCString prefixes[] = {nsCString("\x00\x00\x00\x01", 4),
                           nsCString("\x00\x00\x00\x00\x01", 5),
                           nsCString("\x00\xFF\x00\x01", 4),
                           nsCString("\x00\xFF\x00\x01\x11\x23\xAA\xBC", 8),
                           nsCString("\x00\x00\x00\x01\x00\x01\x98", 7)};
+  nsTArray<nsCString> prefixArray;
+  ToBase64EncodedStringArray(prefixes, prefixArray);
 
   nsCString requestBase64;
   nsresult rv;
-  rv = urlUtil->MakeFindFullHashRequestV4(
-      listNames, MakeBase64EncodedStringArray(listStates),
-      MakeBase64EncodedStringArray(prefixes), ArrayLength(listNames),
-      ArrayLength(prefixes), requestBase64);
+  rv = urlUtil->MakeFindFullHashRequestV4(listNames, listStateArray,
+                                          prefixArray, requestBase64);
   ASSERT_TRUE(NS_SUCCEEDED(rv));
 
   
@@ -82,8 +62,8 @@ TEST(UrlClassifierFindFullHash, Request)
   ASSERT_EQ(threatInfo.threat_types_size(), (int)ArrayLength(listStates));
   for (int i = 0; i < threatInfo.threat_types_size(); i++) {
     uint32_t expectedThreatType;
-    rv = urlUtil->ConvertListNameToThreatType(nsCString(listNames[i]),
-                                              &expectedThreatType);
+    rv =
+        urlUtil->ConvertListNameToThreatType(listNames[i], &expectedThreatType);
     ASSERT_TRUE(NS_SUCCEEDED(rv));
     ASSERT_EQ(threatInfo.threat_types(i), expectedThreatType);
   }
@@ -228,14 +208,14 @@ TEST(UrlClassifierFindFullHash, ParseRequest)
 
 namespace {
 
-Base64EncodedStringArray::Base64EncodedStringArray(nsCString aArray[],
-                                                   size_t N) {
+template <size_t N>
+void ToBase64EncodedStringArray(nsCString (&aArray)[N],
+                                nsTArray<nsCString>& aEncodedArray) {
   for (size_t i = 0; i < N; i++) {
     nsCString encoded;
     nsresult rv = Base64Encode(aArray[i], encoded);
     NS_ENSURE_SUCCESS_VOID(rv);
-    mStringStorage.AppendElement(encoded);
-    mArray.AppendElement(encoded.get());
+    aEncodedArray.AppendElement(encoded);
   }
 }
 
