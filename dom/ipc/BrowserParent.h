@@ -164,11 +164,6 @@ class BrowserParent final : public PBrowserParent,
   
 
 
-
-
-
-
-
   a11y::DocAccessibleParent* GetTopLevelDocAccessible() const;
 
   layout::RenderFrame* GetRenderFrame();

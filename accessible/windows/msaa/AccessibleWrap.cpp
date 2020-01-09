@@ -35,7 +35,6 @@
 #include "nsIScrollableFrame.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/dom/NodeInfo.h"
-#include "mozilla/dom/BrowserBridgeParent.h"
 #include "mozilla/dom/BrowserParent.h"
 #include "nsIServiceManager.h"
 #include "nsNameSpaceManager.h"
@@ -1308,13 +1307,13 @@ static already_AddRefed<IDispatch> GetProxiedAccessibleInSubtree(
   int32_t docWrapperChildId = AccessibleWrap::GetChildIDFor(wrapper);
   
   
-  if (aDoc->IsTopLevelInContentProcess()) {
+  if (aDoc->IsTopLevel()) {
     wrapper->GetNativeInterface(getter_AddRefs(comProxy));
   } else {
     auto tab = static_cast<dom::BrowserParent*>(aDoc->Manager());
     MOZ_ASSERT(tab);
     DocAccessibleParent* topLevelDoc = tab->GetTopLevelDocAccessible();
-    MOZ_ASSERT(topLevelDoc && topLevelDoc->IsTopLevelInContentProcess());
+    MOZ_ASSERT(topLevelDoc && topLevelDoc->IsTopLevel());
     VARIANT docId = {{{VT_I4}}};
     docId.lVal = docWrapperChildId;
     RefPtr<IDispatch> disp = GetProxiedAccessibleInSubtree(topLevelDoc, docId);
@@ -1479,40 +1478,6 @@ already_AddRefed<IAccessible> AccessibleWrap::GetIAccessibleFor(
   return nullptr;
 }
 
-
-
-
-
-
-
-
-
-
-
-template <typename Callback>
-static bool VisitDocAccessibleParentDescendantsAtTopLevelInContentProcess(
-    dom::BrowserParent* aBrowser, Callback aCallback) {
-  
-  
-  const auto& bridges = aBrowser->ManagedPBrowserBridgeParent();
-  for (auto iter = bridges.ConstIter(); !iter.Done(); iter.Next()) {
-    auto bridge = static_cast<dom::BrowserBridgeParent*>(iter.Get()->GetKey());
-    dom::BrowserParent* childBrowser = bridge->GetBrowserParent();
-    DocAccessibleParent* childDocAcc = childBrowser->GetTopLevelDocAccessible();
-    if (!childDocAcc) {
-      continue;
-    }
-    if (!aCallback(childDocAcc)) {
-      return false;  
-    }
-    if (!VisitDocAccessibleParentDescendantsAtTopLevelInContentProcess(
-            childBrowser, aCallback)) {
-      return false;  
-    }
-  }
-  return true;  
-}
-
 already_AddRefed<IAccessible> AccessibleWrap::GetRemoteIAccessibleFor(
     const VARIANT& aVarChild) {
   a11y::RootAccessible* root = RootAccessible();
@@ -1528,9 +1493,14 @@ already_AddRefed<IAccessible> AccessibleWrap::GetRemoteIAccessibleFor(
   
   
   for (size_t i = 0; i < remoteDocs->Length(); i++) {
-    DocAccessibleParent* topRemoteDoc = remoteDocs->ElementAt(i);
+    DocAccessibleParent* remoteDoc = remoteDocs->ElementAt(i);
 
-    Accessible* outerDoc = topRemoteDoc->OuterDocOfRemoteBrowser();
+    uint32_t remoteDocMsaaId = WrapperFor(remoteDoc)->GetExistingID();
+    if (!sIDGen.IsSameContentProcessFor(aVarChild.lVal, remoteDocMsaaId)) {
+      continue;
+    }
+
+    Accessible* outerDoc = remoteDoc->OuterDocOfRemoteBrowser();
     if (!outerDoc) {
       continue;
     }
@@ -1539,28 +1509,8 @@ already_AddRefed<IAccessible> AccessibleWrap::GetRemoteIAccessibleFor(
       continue;
     }
 
-    RefPtr<IDispatch> disp;
-    auto checkDoc = [&aVarChild,
-                     &disp](DocAccessibleParent* aRemoteDoc) -> bool {
-      uint32_t remoteDocMsaaId = WrapperFor(aRemoteDoc)->GetExistingID();
-      if (!sIDGen.IsSameContentProcessFor(aVarChild.lVal, remoteDocMsaaId)) {
-        return true;  
-      }
-      if ((disp = GetProxiedAccessibleInSubtree(aRemoteDoc, aVarChild))) {
-        return false;  
-      }
-      return true;  
-    };
-
-    
-    checkDoc(topRemoteDoc);
-    if (!disp) {
-      
-      
-      VisitDocAccessibleParentDescendantsAtTopLevelInContentProcess(
-          static_cast<dom::BrowserParent*>(topRemoteDoc->Manager()), checkDoc);
-    }
-
+    RefPtr<IDispatch> disp =
+        GetProxiedAccessibleInSubtree(remoteDoc, aVarChild);
     if (!disp) {
       continue;
     }

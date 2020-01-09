@@ -557,10 +557,6 @@ ipc::IPCResult DocAccessibleParent::AddChildDoc(DocAccessibleParent* aChildDoc,
       mDocProxyStream = docHolder.GetPreservedStream();
 #  endif  
     }
-    
-    
-    
-    aChildDoc->SendParentCOMProxy(WrapperFor(outerDoc));
   }
 #endif  
 
@@ -738,7 +734,10 @@ void DocAccessibleParent::MaybeInitWindowEmulation() {
   MOZ_ASSERT(hWnd);
 }
 
-void DocAccessibleParent::SendParentCOMProxy(Accessible* aOuterDoc) {
+
+
+
+void DocAccessibleParent::SendParentCOMProxy() {
   
   auto tab = static_cast<dom::BrowserParent*>(Manager());
   MOZ_ASSERT(tab);
@@ -746,8 +745,13 @@ void DocAccessibleParent::SendParentCOMProxy(Accessible* aOuterDoc) {
     return;
   }
 
+  Accessible* outerDoc = OuterDocOfRemoteBrowser();
+  if (!outerDoc) {
+    return;
+  }
+
   RefPtr<IAccessible> nativeAcc;
-  aOuterDoc->GetNativeInterface(getter_AddRefs(nativeAcc));
+  outerDoc->GetNativeInterface(getter_AddRefs(nativeAcc));
   MOZ_ASSERT(nativeAcc);
 
   RefPtr<IDispatch> wrapped(

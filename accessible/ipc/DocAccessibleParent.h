@@ -36,7 +36,6 @@ class DocAccessibleParent : public ProxyAccessible,
         mEmulatedWindowHandle(nullptr),
 #endif  
         mTopLevel(false),
-        mTopLevelInContentProcess(false),
         mShutdown(false) {
     sMaxDocID++;
     mActorID = sMaxDocID;
@@ -44,26 +43,8 @@ class DocAccessibleParent : public ProxyAccessible,
     LiveDocs().Put(mActorID, this);
   }
 
-  
-
-
-
-
-
-  void SetTopLevel() {
-    mTopLevel = true;
-    mTopLevelInContentProcess = true;
-  }
+  void SetTopLevel() { mTopLevel = true; }
   bool IsTopLevel() const { return mTopLevel; }
-
-  
-
-
-
-
-
-  void SetTopLevelInContentProcess() { mTopLevelInContentProcess = true; }
-  bool IsTopLevelInContentProcess() const { return mTopLevelInContentProcess; }
 
   bool IsShutdown() const { return mShutdown; }
 
@@ -216,13 +197,7 @@ class DocAccessibleParent : public ProxyAccessible,
 
 #if defined(XP_WIN)
   void MaybeInitWindowEmulation();
-
-  
-
-
-
-
-  void SendParentCOMProxy(Accessible* aOuterDoc);
+  void SendParentCOMProxy();
 
   virtual mozilla::ipc::IPCResult RecvGetWindowedPluginIAccessible(
       const WindowsHandle& aHwnd, IAccessibleHolder* aPluginCOMProxy) override;
@@ -304,7 +279,6 @@ class DocAccessibleParent : public ProxyAccessible,
   nsTHashtable<ProxyEntry> mAccessibles;
   uint64_t mActorID;
   bool mTopLevel;
-  bool mTopLevelInContentProcess;
   bool mShutdown;
 
   static uint64_t sMaxDocID;
