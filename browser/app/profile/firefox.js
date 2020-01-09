@@ -1542,10 +1542,14 @@ pref("browser.ping-centre.production.endpoint", "https://tiles.services.mozilla.
 
 pref("media.gmp-provider.enabled", true);
 
-
-
 #ifdef EARLY_BETA_OR_EARLIER
+
+
 pref("network.cookie.cookieBehavior", 4 );
+
+pref("privacy.trackingprotection.fingerprinting.enabled", true);
+
+pref("privacy.trackingprotection.cryptomining.enabled", true);
 #endif
 
 pref("browser.contentblocking.allowlist.storage.enabled", true);
@@ -1585,12 +1589,13 @@ pref("browser.contentblocking.fingerprinting.preferences.ui.enabled", true);
 
 
 
-pref("browser.contentblocking.features.strict", "tp,tpPrivate,cookieBehavior4,-cm,-fp");
+pref("browser.contentblocking.features.strict", "tp,tpPrivate,cookieBehavior4,cm,fp");
+
 
 
 
 #ifdef EARLY_BETA_OR_EARLIER
-pref("browser.contentblocking.features.standard", "-tp,tpPrivate,cookieBehavior4,-cm,-fp");
+pref("browser.contentblocking.features.standard", "-tp,tpPrivate,cookieBehavior4,cm,fp");
 #else
 pref("browser.contentblocking.features.standard", "-tp,tpPrivate,cookieBehavior0,-cm,-fp");
 #endif
