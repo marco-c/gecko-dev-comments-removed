@@ -36,11 +36,15 @@ class RenderAndroidSurfaceTextureHostOGL final : public RenderTextureHostOGL {
   void DeleteTextureHandle();
   bool EnsureAttachedToGLContext();
 
+  enum PrepareStatus { STATUS_NONE, STATUS_PREPARE_NEEDED, STATUS_PREPARED };
+
   const mozilla::java::GeckoSurfaceTexture::GlobalRef mSurfTex;
   const gfx::IntSize mSize;
+  
+  
   const bool mContinuousUpdate;
   
-  bool mIsPrepared;
+  PrepareStatus mPrepareStatus;
   bool mAttachedToGLContext;
 
   RefPtr<gl::GLContext> mGL;

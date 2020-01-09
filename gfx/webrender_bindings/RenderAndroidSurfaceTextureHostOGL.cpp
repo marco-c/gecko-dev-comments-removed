@@ -19,17 +19,13 @@ RenderAndroidSurfaceTextureHostOGL::RenderAndroidSurfaceTextureHostOGL(
     : mSurfTex(aSurfTex),
       mSize(aSize),
       mContinuousUpdate(aContinuousUpdate),
-      mIsPrepared(false),
+      mPrepareStatus(STATUS_NONE),
       mAttachedToGLContext(false) {
   MOZ_COUNT_CTOR_INHERITED(RenderAndroidSurfaceTextureHostOGL,
                            RenderTextureHostOGL);
 
   if (mSurfTex) {
     mSurfTex->IncrementUse();
-  }
-
-  if (mSurfTex && !mSurfTex->IsSingleBuffer()) {
-    mIsPrepared = true;
   }
 }
 
@@ -87,10 +83,13 @@ wr::WrExternalImage RenderAndroidSurfaceTextureHostOGL::Lock(
   if (mContinuousUpdate) {
     MOZ_ASSERT(!mSurfTex->IsSingleBuffer());
     mSurfTex->UpdateTexImage();
-  } else if (!mSurfTex->IsSingleBuffer()) {
+  } else if (mPrepareStatus == STATUS_PREPARE_NEEDED) {
+    MOZ_ASSERT(!mSurfTex->IsSingleBuffer());
+    
     
     
     mSurfTex->UpdateTexImage();
+    mPrepareStatus = STATUS_PREPARED;
   }
 
   return NativeTextureToWrExternalImage(mSurfTex->GetTexName(), 0, 0,
@@ -142,12 +141,21 @@ void RenderAndroidSurfaceTextureHostOGL::PrepareForUse() {
   
 
   MOZ_ASSERT(RenderThread::IsInRenderThread());
+  MOZ_ASSERT(mPrepareStatus == STATUS_NONE);
 
   EnsureAttachedToGLContext();
 
-  if (mSurfTex && mSurfTex->IsSingleBuffer() && !mIsPrepared) {
+  if (mContinuousUpdate) {
+    return;
+  }
+
+  mPrepareStatus = STATUS_PREPARE_NEEDED;
+
+  if (mSurfTex && mSurfTex->IsSingleBuffer()) {
+    
+    
     mSurfTex->UpdateTexImage();
-    mIsPrepared = true;
+    mPrepareStatus = STATUS_PREPARED;
   }
 }
 
@@ -156,11 +164,19 @@ void RenderAndroidSurfaceTextureHostOGL::NotifyNotUsed() {
 
   EnsureAttachedToGLContext();
 
-  if (mSurfTex && mSurfTex->IsSingleBuffer() && mIsPrepared) {
+  if (mSurfTex && mSurfTex->IsSingleBuffer() &&
+      mPrepareStatus == STATUS_PREPARED) {
+    
     mGL->MakeCurrent();
     mSurfTex->ReleaseTexImage();
-    mIsPrepared = false;
+  } else if (mSurfTex && mPrepareStatus == STATUS_PREPARE_NEEDED) {
+    
+    
+    MOZ_ASSERT(!mSurfTex->IsSingleBuffer());
+    mSurfTex->UpdateTexImage();
   }
+
+  mPrepareStatus = STATUS_NONE;
 }
 
 }  
