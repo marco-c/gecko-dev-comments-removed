@@ -1,0 +1,22 @@
+
+
+
+"use strict";
+
+
+
+
+
+
+exports.preventDefaultAndStopPropagation = function(event) {
+  event.preventDefault();
+  event.stopPropagation();
+  if (event.nativeEvent) {
+    if (event.nativeEvent.preventDefault) {
+      event.nativeEvent.preventDefault();
+    }
+    if (event.nativeEvent.stopPropagation) {
+      event.nativeEvent.stopPropagation();
+    }
+  }
+};
