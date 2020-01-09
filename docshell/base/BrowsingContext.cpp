@@ -205,24 +205,53 @@ void BrowsingContext::SetDocShell(nsIDocShell* aDocShell) {
 }
 
 void BrowsingContext::SetEmbedderElement(Element* aEmbedder) {
-  mEmbedderElement = aEmbedder;
-
   
   
-  if (mEmbedderElement) {
-    nsCOMPtr<nsPIDOMWindowInner> embedderGlobal =
-        do_QueryInterface(mEmbedderElement->GetOwnerGlobal());
-    RefPtr<WindowGlobalChild> wgc = embedderGlobal->GetWindowGlobalChild();
+  if (aEmbedder) {
+    nsCOMPtr<nsIDocShell> container =
+        do_QueryInterface(aEmbedder->OwnerDoc()->GetContainer());
 
     
     
     
-    if (RefPtr<WindowGlobalParent> wgp = wgc->GetParentActor()) {
-      Canonical()->SetEmbedderWindowGlobal(wgp);
-    } else {
-      wgc->SendDidEmbedBrowsingContext(this);
+    
+    
+    if (mParent && mEmbedderElement && mEmbedderElement != aEmbedder) {
+      NS_WARNING("Non root content frameLoader swap! This will crash soon!");
+
+      MOZ_DIAGNOSTIC_ASSERT(mType == Type::Chrome, "must be chrome");
+      MOZ_DIAGNOSTIC_ASSERT(XRE_IsParentProcess(), "must be in parent");
+      MOZ_DIAGNOSTIC_ASSERT(
+          !sCachedBrowsingContexts || !sCachedBrowsingContexts->has(Id()),
+          "cannot be in bfcache");
+
+      RefPtr<BrowsingContext> kungFuDeathGrip(this);
+      RefPtr<BrowsingContext> newParent;
+      container->GetBrowsingContext(getter_AddRefs(newParent));
+      mParent->mChildren.RemoveElement(this);
+      if (newParent) {
+        newParent->mChildren.AppendElement(this);
+      }
+      mParent = newParent;
+    }
+
+    nsCOMPtr<nsPIDOMWindowInner> inner =
+        do_QueryInterface(aEmbedder->GetOwnerGlobal());
+    if (inner) {
+      RefPtr<WindowGlobalChild> wgc = inner->GetWindowGlobalChild();
+
+      
+      
+      
+      if (RefPtr<WindowGlobalParent> wgp = wgc->GetParentActor()) {
+        Canonical()->SetEmbedderWindowGlobal(wgp);
+      } else {
+        wgc->SendDidEmbedBrowsingContext(this);
+      }
     }
   }
+
+  mEmbedderElement = aEmbedder;
 }
 
 void BrowsingContext::Attach(bool aFromIPC) {
