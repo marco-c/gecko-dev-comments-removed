@@ -10,7 +10,6 @@
 
 
 
-
 pub type ZigTable = &'static [f64; 257];
 pub const ZIG_NORM_R: f64 = 3.654152885361008796;
 pub static ZIG_NORM_X: [f64; 257] =
