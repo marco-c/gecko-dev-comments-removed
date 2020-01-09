@@ -76,6 +76,8 @@ pref("browser.cache.frecency_half_life_hours", 6);
 
 pref("browser.cache.max_shutdown_io_lag", 2);
 
+pref("browser.cache.offline.enable",           true);
+
 
 pref("browser.cache.offline.insecure.enable",  false);
 
@@ -174,6 +176,15 @@ pref("dom.performance.time_to_first_interactive.enabled", false);
 pref("dom.pointer-lock.enabled", true);
 
 
+pref("dom.gamepad.enabled", true);
+pref("dom.gamepad.test.enabled", false);
+#ifdef RELEASE_OR_BETA
+pref("dom.gamepad.non_standard_events.enabled", false);
+#else
+pref("dom.gamepad.non_standard_events.enabled", true);
+#endif
+
+
 
 
 pref("dom.keyboardevent.dispatch_during_composition", true);
@@ -216,6 +227,9 @@ pref("dom.inputevent.datatransfer.enabled", true);
 
 
 pref("dom.inputevent.inputtype.enabled", true);
+
+
+pref("dom.webmidi.enabled", false);
 
 #ifdef JS_BUILD_BINAST
 pref("dom.script_loader.binast_encoding.enabled", false);
@@ -493,6 +507,8 @@ pref("media.getusermedia.agc", 1);
 pref("media.navigator.audio.full_duplex", true);
 #endif
 
+pref("dom.webaudio.enabled", true);
+
 
 pref("dom.webdriver.enabled", true);
 
@@ -503,7 +519,13 @@ pref("media.getusermedia.screensharing.enabled", true);
 pref("media.getusermedia.audiocapture.enabled", false);
 
 
+pref("media.webvtt.regions.enabled", true);
+
+
 pref("media.webvtt.pseudo.enabled", true);
+
+
+pref("media.track.enabled", false);
 
 
 pref("media.mediasource.enabled", true);
@@ -527,6 +549,9 @@ pref("media.benchmark.timeout", 1000);
 pref("media.media-capabilities.enabled", true);
 pref("media.media-capabilities.screen.enabled", false);
 
+#ifdef MOZ_WEBSPEECH
+pref("media.webspeech.synth.enabled", false);
+#endif
 #ifdef MOZ_WEBM_ENCODER
 pref("media.encoder.webm.enabled", true);
 #endif
@@ -966,6 +991,9 @@ pref("canvas.focusring.enabled", true);
 pref("canvas.hitregions.enabled", false);
 pref("canvas.filters.enabled", true);
 
+pref("canvas.path.enabled", true);
+pref("canvas.capturestream.enabled", true);
+
 
 
 
@@ -1227,7 +1255,6 @@ pref("editor.positioning.offset",            0);
 
 
 pref("dom.disable_beforeunload",            false);
-pref("dom.beforeunload_timeout_ms",         1000);
 pref("dom.disable_window_flip",             false);
 pref("dom.disable_window_move_resize",      false);
 
@@ -1544,6 +1571,8 @@ pref("javascript.options.spectre.jit_to_C++_calls", true);
 pref("javascript.options.streams", true);
 
 pref("javascript.options.experimental.fields", false);
+
+pref("javascript.options.experimental.await_fix", false);
 
 
 pref("javascript.options.dynamicImport", true);
@@ -2327,6 +2356,8 @@ pref("network.proxy.no_proxies_on",         "");
 pref("network.proxy.allow_hijacking_localhost", false);
 pref("network.proxy.failover_timeout",      1800); 
 pref("network.online",                      true); 
+pref("network.cookie.thirdparty.sessionOnly", false);
+pref("network.cookie.thirdparty.nonsecureSessionOnly", false);
 
 
 
@@ -3038,6 +3069,15 @@ pref("layout.css.scroll-snap.prediction-max-velocity", 2000);
 pref("layout.css.scroll-snap.prediction-sensitivity", "0.750");
 
 
+pref("layout.css.DOMPoint.enabled", true);
+
+
+pref("layout.css.DOMQuad.enabled", true);
+
+
+pref("layout.css.DOMMatrix.enabled", true);
+
+
 #ifdef RELEASE_OR_BETA
 pref("layout.css.convertFromNode.enabled", false);
 #else
@@ -3091,6 +3131,9 @@ pref("layout.css.scroll-behavior.spring-constant", "250.0");
 
 
 pref("layout.css.scroll-behavior.damping-ratio", "1.0");
+
+
+pref("layout.css.font-loading-api.enabled", true);
 
 
 pref("layout.css.ruby.intercharacter.enabled", false);
@@ -4926,6 +4969,8 @@ pref("webgl.dxgl.enabled", true);
 pref("webgl.dxgl.needs-finish", false);
 #endif
 
+pref("dom.webgpu.enable", false);
+
 
 
 
@@ -4968,12 +5013,17 @@ pref("layers.acceleration.disabled", false);
 
 pref("layers.bench.enabled", false);
 
-#if defined(XP_WIN)
+#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
 pref("layers.gpu-process.enabled", true);
-pref("layers.gpu-process.allow-software", true);
 #ifdef NIGHTLY_BUILD
 pref("layers.gpu-process.max_restarts", 3);
 #endif
+#endif
+
+#if defined(XP_WIN)
+pref("layers.gpu-process.allow-software", true);
+#elif defined(MOZ_WIDGET_GTK)
+pref("layers.gpu-process.allow-software", false);
 #endif
 
 
@@ -5110,6 +5160,10 @@ pref("geo.wifi.xhr.timeout", 60000);
 
 
 pref("device.sensors.enabled", true);
+pref("device.sensors.orientation.enabled", true);
+pref("device.sensors.motion.enabled", true);
+pref("device.sensors.proximity.enabled", false);
+pref("device.sensors.ambientLight.enabled", false);
 
 
 pref("device.storage.enabled", false);
@@ -5288,6 +5342,13 @@ pref("dom.w3c_touch_events.enabled", 2);
 #endif
 
 
+#if !defined(ANDROID)
+pref("dom.w3c_pointer_events.enabled", true);
+#else
+pref("dom.w3c_pointer_events.enabled", false);
+#endif
+
+
 
 #if defined(XP_WIN)
 pref("dom.w3c_pointer_events.dispatch_by_pointer_messages", false);
@@ -5295,6 +5356,9 @@ pref("dom.w3c_pointer_events.dispatch_by_pointer_messages", false);
 
 
 pref("dom.w3c_pointer_events.implicit_capture", false);
+
+
+pref("dom.imagecapture.enabled", false);
 
 
 pref("media.ondevicechange.enabled", true);
@@ -5455,6 +5519,8 @@ pref("gfx.vr.osvr.clientKitLibPath", "");
 
 
 pref("dom.vr.display.rafMaxDuration", 50);
+
+pref("dom.vr.test.enabled", false);
 
 pref("dom.vr.service.enabled", true);
 
@@ -5678,6 +5744,14 @@ pref("identity.fxaccounts.auth.uri", "https://api.accounts.firefox.com/v1");
 pref("beacon.enabled", true);
 
 
+pref("dom.udpsocket.enabled", false);
+
+
+pref("dom.presentation.enabled", false);
+pref("dom.presentation.controller.enabled", false);
+pref("dom.presentation.receiver.enabled", false);
+
+
 pref("dom.presentation.tcp_server.debug", false);
 pref("dom.presentation.discovery.enabled", false);
 pref("dom.presentation.discovery.timeout_ms", 10000);
@@ -5810,6 +5884,9 @@ pref("narrate.voice", " { \"default\": \"automatic\" }");
 pref("narrate.filter-voices", true);
 
 
+pref("dom.dialog_element.enabled", false);
+
+
 
 
 
@@ -5896,6 +5973,8 @@ pref("browser.sanitizer.loglevel", "Warn");
 
 pref("prompts.authentication_dialog_abuse_limit", 2);
 
+pref("dom.IntersectionObserver.enabled", true);
+
 
 pref("dom.moduleScripts.enabled", true);
 
@@ -5968,6 +6047,10 @@ pref("general.document_open_conversion_depth_limit", 20);
 
 pref("dom.event.default_to_passive_touch_listeners", true);
 
+
+pref("dom.events.asyncClipboard", true);
+
+pref("dom.events.asyncClipboard.dataTransfer", false);
 
 pref("dom.events.testing.asyncClipboard", false);
 
