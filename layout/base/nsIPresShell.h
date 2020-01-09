@@ -1402,6 +1402,11 @@ class nsIPresShell : public nsStubDocumentObserver {
   
 
 
+  bool IsResolutionUpdatedByApz() const { return mResolutionUpdatedByApz; }
+
+  
+
+
 
   virtual float GetCumulativeNonRootScaleResolution() = 0;
 
@@ -2060,6 +2065,9 @@ class nsIPresShell : public nsStubDocumentObserver {
   
   
   bool mResolutionUpdated : 1;
+
+  
+  bool mResolutionUpdatedByApz : 1;
 
   uint32_t mPresShellId;
 
