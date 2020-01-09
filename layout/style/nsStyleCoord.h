@@ -64,7 +64,7 @@ nscoord StyleCSSPixelLength::ToAppUnits() const {
   if (length <= nscoord_MIN) {
     return nscoord_MIN;
   }
-  return roundf(length);
+  return NSToIntRound(length);
 }
 
 constexpr LengthPercentage LengthPercentage::Zero() {
