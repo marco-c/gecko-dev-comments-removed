@@ -22,6 +22,7 @@
 
 namespace mozilla {
 
+using media::NullableTimeUnit;
 using media::TimeUnit;
 
 
@@ -275,11 +276,11 @@ class DecodedStreamData {
   
   
   
-  Maybe<TimeUnit> mLastVideoStartTime;
+  NullableTimeUnit mLastVideoStartTime;
   
   
   
-  Maybe<TimeUnit> mLastVideoEndTime;
+  NullableTimeUnit mLastVideoEndTime;
   
   
   TimeStamp mLastVideoTimeStamp;
