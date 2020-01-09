@@ -21685,31 +21685,37 @@ void TransactionDatabaseOperationBase::SendPreprocessInfoOrResults(
 
   if (NS_WARN_IF(IsActorDestroyed())) {
     
+    
+    
+    
+    
+    
+    
     if (NS_SUCCEEDED(mResultCode)) {
       IDB_REPORT_INTERNAL_ERR();
       mResultCode = NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR;
     }
-  } else {
-    if (mTransaction->IsInvalidated() || mTransaction->IsAborted()) {
-      
-      
-      mResultCode = NS_ERROR_DOM_INDEXEDDB_ABORT_ERR;
-    } else if (NS_SUCCEEDED(mResultCode)) {
-      if (aSendPreprocessInfo) {
-        
-        mResultCode = SendPreprocessInfo();
-      } else {
-        
-        mResultCode = SendSuccessResult();
-      }
-    }
+  } else if (mTransaction->IsInvalidated() || mTransaction->IsAborted()) {
+    
+    
+    mResultCode = NS_ERROR_DOM_INDEXEDDB_ABORT_ERR;
+  }
 
-    if (NS_FAILED(mResultCode)) {
+  if (NS_SUCCEEDED(mResultCode)) {
+    if (aSendPreprocessInfo) {
       
-      if (!SendFailureResult(mResultCode)) {
-        
-        mTransaction->Abort(mResultCode,  false);
-      }
+      mResultCode = SendPreprocessInfo();
+    } else {
+      
+      mResultCode = SendSuccessResult();
+    }
+  }
+
+  if (NS_FAILED(mResultCode)) {
+    
+    if (!SendFailureResult(mResultCode)) {
+      
+      mTransaction->Abort(mResultCode,  false);
     }
   }
 
