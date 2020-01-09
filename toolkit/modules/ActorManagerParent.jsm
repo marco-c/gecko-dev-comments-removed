@@ -101,6 +101,9 @@ const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const {DefaultMap} = ExtensionUtils;
 
 let ACTORS = {
+};
+
+let LEGACY_ACTORS = {
   AudioPlayback: {
     child: {
       module: "resource://gre/actors/AudioPlaybackChild.jsm",
@@ -418,6 +421,12 @@ var ActorManagerParent = {
 
   addActors(actors) {
     for (let [actorName, actor] of Object.entries(actors)) {
+      ChromeUtils.registerWindowActor(actorName, actor);
+    }
+  },
+
+  addLegacyActors(actors) {
+    for (let [actorName, actor] of Object.entries(actors)) {
       let {child} = actor;
       {
         let actorSet;
@@ -455,3 +464,4 @@ var ActorManagerParent = {
 };
 
 ActorManagerParent.addActors(ACTORS);
+ActorManagerParent.addLegacyActors(LEGACY_ACTORS);
