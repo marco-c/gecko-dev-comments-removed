@@ -2770,6 +2770,7 @@ int NS_main(int argc, NS_tchar **argv) {
   }
   
   NS_tstrncpy(gPatchDirPath, argv[1], MAXPATHLEN);
+  gPatchDirPath[MAXPATHLEN - 1] = NS_T('\0');
 
   
   
