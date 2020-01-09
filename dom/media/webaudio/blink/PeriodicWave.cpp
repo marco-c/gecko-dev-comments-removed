@@ -110,7 +110,7 @@ PeriodicWave::PeriodicWave(float sampleRate, size_t numberOfComponents,
     m_periodicWaveSize = MinPeriodicWaveSize;
   } else {
     unsigned npow2 =
-        powf(2.0f, floorf(logf(numberOfComponents - 1.0) / logf(2.0f) + 1.0f));
+        exp2f(floorf(logf(numberOfComponents - 1.0) / logf(2.0f) + 1.0f));
     m_periodicWaveSize = std::min(MaxPeriodicWaveSize, npow2);
   }
 
@@ -205,7 +205,7 @@ unsigned PeriodicWave::numberOfPartialsForRange(unsigned rangeIndex) const {
   float centsToCull = rangeIndex * m_centsPerRange;
 
   
-  float cullingScale = pow(2, -centsToCull / 1200);
+  float cullingScale = exp2(-centsToCull / 1200);
 
   
   unsigned numberOfPartials = cullingScale * maxNumberOfPartials();
