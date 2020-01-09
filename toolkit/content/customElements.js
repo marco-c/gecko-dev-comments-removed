@@ -311,6 +311,9 @@ MozElements.MozElementMixin = Base => {
       return;
     }
 
+    
+    this._inheritedElements = null;
+
     this.initializedAttributeInheritance = true;
     for (let attr in flippedInheritedAttributes) {
       if (this.hasAttribute(attr)) {
