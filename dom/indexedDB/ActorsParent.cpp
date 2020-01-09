@@ -6557,6 +6557,7 @@ class FactoryOp : public DatabaseOperationBase,
   nsCString mDatabaseId;
   nsString mDatabaseFilePath;
   State mState;
+  bool mWaitingForPermissionRetry;
   bool mEnforcingQuota;
   const bool mDeleting;
   bool mChromeWriteAccessAllowed;
@@ -6598,6 +6599,8 @@ class FactoryOp : public DatabaseOperationBase,
   nsresult Open();
 
   nsresult ChallengePermission();
+
+  void PermissionRetry();
 
   nsresult RetryCheckPermission();
 
@@ -19042,6 +19045,7 @@ FactoryOp::FactoryOp(Factory* aFactory,
       mContentParent(std::move(aContentParent)),
       mCommonParams(aCommonParams),
       mState(State::Initial),
+      mWaitingForPermissionRetry(false),
       mEnforcingQuota(true),
       mDeleting(aDeleting),
       mChromeWriteAccessAllowed(false),
@@ -19128,7 +19132,22 @@ nsresult FactoryOp::ChallengePermission() {
     return NS_ERROR_FAILURE;
   }
 
+  mWaitingForPermissionRetry = true;
+
   return NS_OK;
+}
+
+void FactoryOp::PermissionRetry() {
+  AssertIsOnOwningThread();
+  MOZ_ASSERT(mState == State::PermissionChallenge);
+
+  mContentParent = BackgroundParent::GetContentParent(Manager()->Manager());
+
+  mState = State::PermissionRetry;
+
+  mWaitingForPermissionRetry = false;
+
+  MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(this));
 }
 
 nsresult FactoryOp::RetryCheckPermission() {
@@ -19742,17 +19761,30 @@ void FactoryOp::ActorDestroy(ActorDestroyReason aWhy) {
   AssertIsOnBackgroundThread();
 
   NoteActorDestroyed();
+
+  
+  
+  
+  
+  
+  
+  
+
+  if (mWaitingForPermissionRetry) {
+    PermissionRetry();
+  }
+
+  
+  
+  
+  
 }
 
 mozilla::ipc::IPCResult FactoryOp::RecvPermissionRetry() {
   AssertIsOnOwningThread();
   MOZ_ASSERT(!IsActorDestroyed());
-  MOZ_ASSERT(mState == State::PermissionChallenge);
 
-  mContentParent = BackgroundParent::GetContentParent(Manager()->Manager());
-
-  mState = State::PermissionRetry;
-  MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(this));
+  PermissionRetry();
 
   return IPC_OK();
 }
