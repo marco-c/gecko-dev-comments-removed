@@ -99,11 +99,6 @@ typedef struct _nsCocoaWindowList {
 
 - (void)_setWindowNumber:(NSInteger)aNumber;
 
-
-
-
-
-- (void)setBottomCornerRounded:(BOOL)rounded;
 - (BOOL)bottomCornerRounded;
 
 
