@@ -80,7 +80,7 @@ already_AddRefed<ResizeObserver> ResizeObserver::Constructor(
   }
 
   RefPtr<ResizeObserver> observer = new ResizeObserver(window.forget(), aCb);
-  
+  document->AddResizeObserver(observer);
 
   return observer.forget();
 }
@@ -106,7 +106,7 @@ void ResizeObserver::Observe(Element& aTarget, ErrorResult& aRv) {
   
   
   
-  
+  aTarget.OwnerDoc()->ScheduleResizeObserversNotification();
 }
 
 void ResizeObserver::Unobserve(Element& aTarget, ErrorResult& aRv) {

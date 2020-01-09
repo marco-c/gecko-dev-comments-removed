@@ -243,6 +243,8 @@ namespace dom {
 
 class Document;
 class DOMStyleSheetSetList;
+class ResizeObserver;
+class ResizeObserverController;
 
 
 
@@ -3536,6 +3538,10 @@ class Document : public nsINode,
   FlashClassification DocumentFlashClassification();
 
   
+  void AddResizeObserver(ResizeObserver* aResizeObserver);
+  void ScheduleResizeObserversNotification() const;
+
+  
 
 
 
@@ -4023,6 +4029,8 @@ class Document : public nsINode,
   RefPtr<Promise> mReadyForIdle;
 
   RefPtr<FeaturePolicy> mFeaturePolicy;
+
+  UniquePtr<ResizeObserverController> mResizeObserverController;
 
   
   bool mBidiEnabled : 1;
