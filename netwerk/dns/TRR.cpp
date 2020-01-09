@@ -275,7 +275,7 @@ nsresult TRR::SendHTTPRequest() {
   
   rv = internalChannel->SetInitialRwin(127 * 1024);
   NS_ENSURE_SUCCESS(rv, rv);
-  rv = internalChannel->SetIsTRRServiceChannel(true);
+  rv = internalChannel->SetTrr(true);
   NS_ENSURE_SUCCESS(rv, rv);
 
   mAllowRFC1918 = gTRRService->AllowRFC1918();
