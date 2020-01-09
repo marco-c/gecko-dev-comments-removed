@@ -219,19 +219,10 @@ WebConsoleConnectionProxy.prototype = {
 
 
   dispatchMessageUpdate: function(networkInfo, response) {
-    
-    if (!this.webConsoleUI) {
-      return;
-    }
     this.webConsoleUI.wrapper.dispatchMessageUpdate(networkInfo, response);
   },
 
   dispatchRequestUpdate: function(id, data) {
-    
-    if (!this.webConsoleUI) {
-      return;
-    }
-
     this.webConsoleUI.wrapper.dispatchRequestUpdate(id, data);
   },
 
