@@ -80,7 +80,7 @@ def git():
 
     try:
         changedFiles = check_output(
-            ["git", "diff", "--staged", "--name-only", "HEAD"]
+            ["git", "diff", "--staged", "--diff-filter=d", "--name-only", "HEAD"]
         ).split()
         
         return run_clang_format(hooktype, changedFiles)
