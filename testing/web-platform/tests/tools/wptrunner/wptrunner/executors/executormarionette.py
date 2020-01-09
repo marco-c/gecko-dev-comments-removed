@@ -891,6 +891,11 @@ class InternalRefTestImplementation(object):
             if self.executor.protocol.marionette and self.executor.protocol.marionette.session_id:
                 self.executor.protocol.marionette._send_message("reftest:teardown", {})
                 self.executor.protocol.marionette.set_context(self.executor.protocol.marionette.CONTEXT_CONTENT)
+                
+                
+                
+                handles = self.executor.protocol.marionette.window_handles
+                self.executor.protocol.marionette.switch_to_window(handles[0])
         except Exception as e:
             
             self.logger.warning(traceback.format_exc(e))
