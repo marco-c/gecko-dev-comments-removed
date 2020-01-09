@@ -822,8 +822,7 @@ void ReflowInput::InitDynamicReflowRoot() {
   if (mFrame->IsFrameOfType(nsIFrame::eLineParticipant) ||
       nsStyleDisplay::IsRubyDisplayType(display) ||
       mFrameType == NS_CSS_FRAME_TYPE_INTERNAL_TABLE ||
-      display == StyleDisplay::Table || display == StyleDisplay::TableCaption ||
-      display == StyleDisplay::InlineTable ||
+      display == StyleDisplay::Table || display == StyleDisplay::InlineTable ||
       (mFrame->GetParent() && mFrame->GetParent()->IsXULBoxFrame())) {
     
     
