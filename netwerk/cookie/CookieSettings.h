@@ -120,6 +120,11 @@ class CookieSettings final : public nsICookieSettings {
 
   void Merge(const CookieSettingsArgs& aData);
 
+  
+  
+  
+  bool HasBeenChanged() const { return mToBeMerged; }
+
  private:
   enum State {
     
@@ -137,6 +142,8 @@ class CookieSettings final : public nsICookieSettings {
   CookiePermissionList mCookiePermissions;
 
   State mState;
+
+  bool mToBeMerged;
 };
 
 }  
