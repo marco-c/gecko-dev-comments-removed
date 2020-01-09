@@ -418,15 +418,11 @@ struct Lookup
 } 
 
 extern HB_INTERNAL const unsigned char _hb_Null_AAT_Lookup[2];
-template <>
- inline const AAT::Lookup<OT::HBUINT16>& Null<AAT::Lookup<OT::HBUINT16> > ()
-{ return *reinterpret_cast<const AAT::Lookup<OT::HBUINT16> *> (_hb_Null_AAT_Lookup); }
-template <>
- inline const AAT::Lookup<OT::HBUINT32>& Null<AAT::Lookup<OT::HBUINT32> > ()
-{ return *reinterpret_cast<const AAT::Lookup<OT::HBUINT32> *> (_hb_Null_AAT_Lookup); }
-template <>
- inline const AAT::Lookup<OT::Offset<OT::HBUINT16, false> >& Null<AAT::Lookup<OT::Offset<OT::HBUINT16, false> > > ()
-{ return *reinterpret_cast<const AAT::Lookup<OT::Offset<OT::HBUINT16, false> > *> (_hb_Null_AAT_Lookup); }
+template <typename T>
+struct Null<AAT::Lookup<T> > {
+  static AAT::Lookup<T> const & get_null ()
+  { return *reinterpret_cast<const AAT::Lookup<T> *> (_hb_Null_AAT_Lookup); }
+};
 namespace AAT {
 
 enum { DELETED_GLYPH = 0xFFFF };

@@ -731,7 +731,7 @@ parse_uint (const char **pp, const char *end, unsigned int *pv)
   
 
   errno = 0;
-  v = strtol (p, &pend, 0);
+  v = strtol (p, &pend, 10);
   if (errno || p == pend)
     return false;
 
@@ -755,7 +755,7 @@ parse_uint32 (const char **pp, const char *end, uint32_t *pv)
   
 
   errno = 0;
-  v = strtol (p, &pend, 0);
+  v = strtol (p, &pend, 10);
   if (errno || p == pend)
     return false;
 
@@ -857,9 +857,14 @@ parse_bool (const char **pp, const char *end, uint32_t *pv)
     (*pp)++;
 
   
-  if (*pp - p == 2 && 0 == strncmp (p, "on", 2))
+  if (*pp - p == 2
+      && TOLOWER (p[0]) == 'o'
+      && TOLOWER (p[1]) == 'n')
     *pv = 1;
-  else if (*pp - p == 3 && 0 == strncmp (p, "off", 3))
+  else if (*pp - p == 3
+	   && TOLOWER (p[0]) == 'o'
+	   && TOLOWER (p[1]) == 'f'
+	   && TOLOWER (p[2]) == 'f')
     *pv = 0;
   else
     return false;
@@ -965,6 +970,40 @@ parse_one_feature (const char **pp, const char *end, hb_feature_t *feature)
 	 parse_space (pp, end) &&
 	 *pp == end;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

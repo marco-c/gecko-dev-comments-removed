@@ -152,7 +152,7 @@ static const uint8_t joining_table[] =
 
    D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,
    D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,D,
-   D,D,D,D,
+   D,D,D,D,X,X,X,X,X,X,X,T,
 
 }; 
 
@@ -190,7 +190,7 @@ joining_type (hb_codepoint_t u)
       break;
 
     case 0x1Eu:
-      if (hb_in_range<hb_codepoint_t> (u, 0x1E900u, 0x1E943u)) return joining_table[u - 0x1E900u + joining_offset_0x1e900u];
+      if (hb_in_range<hb_codepoint_t> (u, 0x1E900u, 0x1E94Bu)) return joining_table[u - 0x1E900u + joining_offset_0x1e900u];
       break;
 
     default:

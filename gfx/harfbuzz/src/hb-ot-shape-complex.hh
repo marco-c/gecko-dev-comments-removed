@@ -377,6 +377,9 @@ hb_ot_shape_complex_categorize (const hb_ot_shape_planner_t *planner)
     case HB_SCRIPT_MAKASAR:
     
 
+    
+    case HB_SCRIPT_NANDINAGARI:
+
       
 
 

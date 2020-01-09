@@ -358,6 +358,14 @@ typedef enum
   HB_SCRIPT_SOGDIAN			= HB_TAG ('S','o','g','d'),
 
   
+
+
+  HB_SCRIPT_ELYMAIC			= HB_TAG ('E','l','y','m'),
+  HB_SCRIPT_NANDINAGARI			= HB_TAG ('N','a','n','d'),
+  HB_SCRIPT_NYIAKENG_PUACHUE_HMONG	= HB_TAG ('H','m','n','p'),
+  HB_SCRIPT_WANCHO			= HB_TAG ('W','c','h','o'),
+
+  
   HB_SCRIPT_INVALID				= HB_TAG_NONE,
 
   

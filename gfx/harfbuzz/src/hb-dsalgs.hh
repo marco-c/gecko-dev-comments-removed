@@ -299,33 +299,19 @@ hb_ceil_to_4 (unsigned int v)
 }
 
 template <typename T> struct hb_is_signed;
-template <> struct hb_is_signed<signed char> { enum { value = true }; };
-template <> struct hb_is_signed<signed short> { enum { value = true }; };
-template <> struct hb_is_signed<signed int> { enum { value = true }; };
-template <> struct hb_is_signed<signed long> { enum { value = true }; };
-template <> struct hb_is_signed<unsigned char> { enum { value = false }; };
-template <> struct hb_is_signed<unsigned short> { enum { value = false }; };
-template <> struct hb_is_signed<unsigned int> { enum { value = false }; };
-template <> struct hb_is_signed<unsigned long> { enum { value = false }; };
 
-
-
-
-
-
-
-#if defined(_MSC_VER) && (_MSC_VER < 1600)
-template <> struct hb_is_signed<__int8> { enum { value = true }; };
-#endif
+template <> struct hb_is_signed<int8_t> { enum { value = true }; };
+template <> struct hb_is_signed<int16_t> { enum { value = true }; };
+template <> struct hb_is_signed<int32_t> { enum { value = true }; };
+template <> struct hb_is_signed<int64_t> { enum { value = true }; };
+template <> struct hb_is_signed<uint8_t> { enum { value = false }; };
+template <> struct hb_is_signed<uint16_t> { enum { value = false }; };
+template <> struct hb_is_signed<uint32_t> { enum { value = false }; };
+template <> struct hb_is_signed<uint64_t> { enum { value = false }; };
 
 template <typename T> static inline bool
 hb_in_range (T u, T lo, T hi)
 {
-  
-
-
-
-
   static_assert (!hb_is_signed<T>::value, "");
 
   

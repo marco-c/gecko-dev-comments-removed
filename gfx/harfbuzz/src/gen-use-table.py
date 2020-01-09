@@ -48,7 +48,6 @@ defaults = ('Other', 'Not_Applicable', 'Cn', 'No_Block')
 
 data[0][0x034F] = defaults[0]
 data[0][0x2060] = defaults[0]
-data[0][0x20F0] = defaults[0]
 
 data[0][0x11C44] = 'Consonant_Placeholder'
 data[0][0x11C45] = 'Consonant_Placeholder'
@@ -318,7 +317,6 @@ def map_to_use(data):
 		
 
 		
-		if U == 0x17DD: UISC = Vowel_Dependent
 		if 0x1CE2 <= U <= 0x1CE8: UISC = Cantillation_Mark
 
 		
@@ -347,13 +345,7 @@ def map_to_use(data):
 		if U == 0x1CED: UISC = Tone_Mark
 
 		
-		if U == 0x1A7F: UISC = Consonant_Final; UIPC = Bottom
-
-		
-		if U == 0x20F0: UISC = Cantillation_Mark; UIPC = Top
-
-		
-		if U == 0xA8B4: UISC = Consonant_Medial
+		if U == 0x1A7F: UISC = Consonant_Final
 
 		
 		if U == 0x11134: UISC = Gemination_Mark
@@ -368,9 +360,6 @@ def map_to_use(data):
 		
 
 		
-		if U == 0x1B6C: UIPC = Bottom
-
-		
 		if U in [0x953, 0x954]: UIPC = Not_Applicable
 
 		
@@ -378,16 +367,11 @@ def map_to_use(data):
 
 		
 		if 0xA926 <= U <= 0xA92A: UIPC = Top
-		if U == 0x111CA: UIPC = Bottom
-		if U == 0x11300: UIPC = Top
 		
-		if U == 0x11302: UIPC = Top
-		if U == 0x1133C: UIPC = Bottom
-		if U == 0x1171E: UIPC = Left 
-		if 0x1CF2 <= U <= 0x1CF3: UIPC = Right
+		
+		if U in [0x11302, 0x11303, 0x114C1]: UIPC = Top
+		if U == 0x1171E: UIPC = Left
 		if 0x1CF8 <= U <= 0x1CF9: UIPC = Top
-		
-		if U == 0x0A51: UIPC = Bottom
 
 		assert (UIPC in [Not_Applicable, Visual_Order_Left] or
 			USE in use_positions), "%s %s %s %s %s" % (hex(U), UIPC, USE, UISC, UGC)

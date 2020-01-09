@@ -79,10 +79,6 @@ data = combined
 del combined
 num = len (data)
 
-for u in [0x17CD, 0x17CE, 0x17CF, 0x17D0, 0x17D3]:
-	if data[u][0] == 'Other':
-		data[u][0] = "Vowel_Dependent"
-
 
 singles = {}
 for u in ALLOWED_SINGLES:

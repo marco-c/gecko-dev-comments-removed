@@ -67,12 +67,14 @@ enum indic_category_t {
   OT_CS = 19
 };
 
+#define MEDIAL_FLAGS (FLAG (OT_CM))
 
 
 
 
 
-#define CONSONANT_FLAGS (FLAG (OT_C) | FLAG (OT_CS) | FLAG (OT_Ra) | FLAG (OT_V) | FLAG (OT_PLACEHOLDER) | FLAG (OT_DOTTEDCIRCLE))
+
+#define CONSONANT_FLAGS (FLAG (OT_C) | FLAG (OT_CS) | FLAG (OT_Ra) | MEDIAL_FLAGS | FLAG (OT_V) | FLAG (OT_PLACEHOLDER) | FLAG (OT_DOTTEDCIRCLE))
 #define JOINER_FLAGS (FLAG (OT_ZWJ) | FLAG (OT_ZWNJ))
 
 
@@ -362,6 +364,7 @@ set_indic_properties (hb_glyph_info_t &info)
   else if (unlikely (u == 0x0AFBu)) cat = OT_N; 
 
   else if (unlikely (u == 0x0980u)) cat = OT_PLACEHOLDER; 
+  else if (unlikely (u == 0x09FCu)) cat = OT_PLACEHOLDER; 
   else if (unlikely (u == 0x0C80u)) cat = OT_PLACEHOLDER; 
   else if (unlikely (hb_in_range<hb_codepoint_t> (u, 0x2010u, 0x2011u)))
 				    cat = OT_PLACEHOLDER;
