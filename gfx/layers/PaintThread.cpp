@@ -196,8 +196,13 @@ void PaintThread::AsyncPaintTask(CompositorBridgeChild* aBridge,
   gfx::DrawTargetCapture* capture = aTask->mCapture;
   gfx::DrawTarget* target = aTask->mTarget;
 
-  target->DrawCapturedDT(capture, Matrix());
-  target->Flush();
+  if (target->IsValid()) {
+    
+    
+    
+    target->DrawCapturedDT(capture, Matrix());
+    target->Flush();
+  }
 
   if (gfxPrefs::LayersOMTPReleaseCaptureOnMainThread()) {
     
