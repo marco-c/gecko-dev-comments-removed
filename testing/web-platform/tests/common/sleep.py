@@ -5,4 +5,8 @@ import time
 sleep_padding = 15.0
 
 def sleep_at_least(sleep_in_ms):
-    time.sleep((sleep_in_ms + sleep_padding) / 1E3);
+    sleep_until = time.time() + (sleep_in_ms / 1E3)
+    time.sleep((sleep_in_ms + sleep_padding) / 1E3)
+    
+    while time.time() < sleep_until:
+        time.sleep(sleep_padding / 1E3)
