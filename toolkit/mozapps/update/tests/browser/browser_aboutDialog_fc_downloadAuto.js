@@ -6,6 +6,15 @@
 
 
 add_task(async function aboutDialog_foregroundCheck_downloadAuto() {
+  let downloadInfo = [];
+  if (Services.prefs.getBoolPref(PREF_APP_UPDATE_BITS_ENABLED)) {
+    downloadInfo[0] = {patchType: "partial",
+                       bitsResult: "0"};
+  } else {
+    downloadInfo[0] = {patchType: "partial",
+                       internalResult: "0"};
+  }
+
   
   
   let updateParams = "&invalidCompleteSize=1";
@@ -19,6 +28,7 @@ add_task(async function aboutDialog_foregroundCheck_downloadAuto() {
       panelId: "downloading",
       checkActiveUpdate: {state: STATE_DOWNLOADING},
       continueFile: CONTINUE_DOWNLOAD,
+      downloadInfo,
     },
     {
       panelId: "apply",
