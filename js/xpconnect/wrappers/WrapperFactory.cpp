@@ -349,14 +349,14 @@ static bool CompartmentsMayHaveHadTransparentCCWs(
 #ifdef DEBUG
 static void DEBUG_CheckUnwrapSafety(HandleObject obj,
                                     const js::Wrapper* handler,
-                                    JS::Realm* origin,
-                                    JS::Compartment* target) {
-  if (!js::AllowNewWrapper(target, obj)) {
+                                    JS::Realm* origin, JS::Realm* target) {
+  JS::Compartment* targetCompartment = JS::GetCompartmentForRealm(target);
+  if (!js::AllowNewWrapper(targetCompartment, obj)) {
     
     
     MOZ_ASSERT_UNREACHABLE("CheckUnwrapSafety called for a dead wrapper");
-  } else if (AccessCheck::isChrome(target) ||
-             xpc::IsUniversalXPConnectEnabled(target)) {
+  } else if (AccessCheck::isChrome(targetCompartment) ||
+             xpc::IsUniversalXPConnectEnabled(targetCompartment)) {
     
     
     
@@ -370,12 +370,11 @@ static void DEBUG_CheckUnwrapSafety(HandleObject obj,
                handler == &CrossOriginObjectWrapper::singleton);
   } else {
     
-    JS::Compartment* originComp = JS::GetCompartmentForRealm(origin);
     bool subsumes =
         (OriginAttributes::IsRestrictOpenerAccessForFPI()
-             ? AccessCheck::subsumesConsideringDomain(target, originComp)
+             ? AccessCheck::subsumesConsideringDomain(target, origin)
              : AccessCheck::subsumesConsideringDomainIgnoringFPD(target,
-                                                                 originComp));
+                                                                 origin));
     if (!subsumes) {
       
       
@@ -385,7 +384,7 @@ static void DEBUG_CheckUnwrapSafety(HandleObject obj,
       
       
       CompartmentPrivate* originCompartmentPrivate =
-          CompartmentPrivate::Get(originComp);
+          CompartmentPrivate::Get(origin);
       CompartmentPrivate* targetCompartmentPrivate =
           CompartmentPrivate::Get(target);
       if (!originCompartmentPrivate->wantXrays &&
@@ -478,8 +477,9 @@ JSObject* WrapperFactory::Rewrap(JSContext* cx, HandleObject existing,
   MOZ_ASSERT(dom::IsJSAPIActive());
 
   
-  JS::Compartment* origin = js::GetObjectCompartment(obj);
-  JS::Compartment* target = js::GetContextCompartment(cx);
+  JS::Realm* origin = js::GetNonCCWObjectRealm(obj);
+  JS::Realm* target = js::GetContextRealm(cx);
+  MOZ_ASSERT(target, "Why is our JSContext not in a Realm?");
   bool originIsChrome = AccessCheck::isChrome(origin);
   bool targetIsChrome = AccessCheck::isChrome(target);
   bool originSubsumesTarget =
@@ -499,8 +499,7 @@ JSObject* WrapperFactory::Rewrap(JSContext* cx, HandleObject existing,
   CompartmentPrivate* targetCompartmentPrivate =
       CompartmentPrivate::Get(target);
 
-  JS::Realm* originRealm = js::GetNonCCWObjectRealm(obj);
-  RealmPrivate* originRealmPrivate = RealmPrivate::Get(originRealm);
+  RealmPrivate* originRealmPrivate = RealmPrivate::Get(origin);
 
   
   
@@ -622,7 +621,7 @@ JSObject* WrapperFactory::Rewrap(JSContext* cx, HandleObject existing,
     }
   }
 
-  DEBUG_CheckUnwrapSafety(obj, wrapper, originRealm, target);
+  DEBUG_CheckUnwrapSafety(obj, wrapper, origin, target);
 
   if (existing) {
     return Wrapper::Renew(existing, obj, wrapper);
