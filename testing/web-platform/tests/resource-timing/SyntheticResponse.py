@@ -33,7 +33,11 @@ def main(request, response):
         elif arg.startswith("status:"):
             code = int(urllib.unquote(arg[7:]))
             response.writer.write_status(code)
-            statusSent = True
+            if code // 100 == 1:
+                
+                response.writer.end_headers()
+            else:
+                statusSent = True
         elif arg == "flush":
             response.writer.flush()
 
