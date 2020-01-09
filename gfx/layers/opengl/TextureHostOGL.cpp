@@ -16,7 +16,6 @@
 #include "mozilla/gfx/BaseSize.h"  
 #include "mozilla/gfx/Logging.h"   
 #include "mozilla/layers/ISurfaceAllocator.h"
-#include "mozilla/webrender/RenderEGLImageTextureHost.h"
 #include "mozilla/webrender/WebRenderAPI.h"
 #include "nsRegion.h"  
 #include "AndroidSurfaceTexture.h"
@@ -816,60 +815,6 @@ gfx::SurfaceFormat EGLImageTextureHost::GetFormat() const {
   MOZ_ASSERT(mTextureSource);
   return mTextureSource ? mTextureSource->GetFormat()
                         : gfx::SurfaceFormat::UNKNOWN;
-}
-
-void EGLImageTextureHost::CreateRenderTexture(
-    const wr::ExternalImageId& aExternalImageId) {
-  RefPtr<wr::RenderTextureHost> texture =
-      new wr::RenderEGLImageTextureHost(mImage, mSync, mSize);
-  wr::RenderThread::Get()->RegisterExternalImage(wr::AsUint64(aExternalImageId),
-                                                 texture.forget());
-}
-
-void EGLImageTextureHost::PushResourceUpdates(
-    wr::TransactionBuilder& aResources, ResourceUpdateOp aOp,
-    const Range<wr::ImageKey>& aImageKeys, const wr::ExternalImageId& aExtID) {
-  auto method = aOp == TextureHost::ADD_IMAGE
-                    ? &wr::TransactionBuilder::AddExternalImage
-                    : &wr::TransactionBuilder::UpdateExternalImage;
-  auto bufferType = wr::WrExternalImageBufferType::TextureExternalHandle;
-
-  gfx::SurfaceFormat format =
-      mHasAlpha ? gfx::SurfaceFormat::R8G8B8A8 : gfx::SurfaceFormat::R8G8B8X8;
-
-  switch (format) {
-    case gfx::SurfaceFormat::R8G8B8X8:
-    case gfx::SurfaceFormat::R8G8B8A8: {
-      MOZ_ASSERT(aImageKeys.length() == 1);
-
-      
-      
-      auto formatTmp = format == gfx::SurfaceFormat::R8G8B8A8
-                           ? gfx::SurfaceFormat::B8G8R8A8
-                           : gfx::SurfaceFormat::B8G8R8X8;
-      wr::ImageDescriptor descriptor(GetSize(), formatTmp);
-      (aResources.*method)(aImageKeys[0], descriptor, aExtID, bufferType, 0);
-      break;
-    }
-  }
-}
-
-void EGLImageTextureHost::PushDisplayItems(
-    wr::DisplayListBuilder& aBuilder, const wr::LayoutRect& aBounds,
-    const wr::LayoutRect& aClip, wr::ImageRendering aFilter,
-    const Range<wr::ImageKey>& aImageKeys) {
-  gfx::SurfaceFormat format =
-      mHasAlpha ? gfx::SurfaceFormat::R8G8B8A8 : gfx::SurfaceFormat::R8G8B8X8;
-
-  switch (format) {
-    case gfx::SurfaceFormat::R8G8B8X8:
-    case gfx::SurfaceFormat::R8G8B8A8: {
-      MOZ_ASSERT(aImageKeys.length() == 1);
-      aBuilder.PushImage(aBounds, aClip, true, aFilter, aImageKeys[0],
-                         !(mFlags & TextureFlags::NON_PREMULTIPLIED));
-      break;
-    }
-  }
 }
 
 
