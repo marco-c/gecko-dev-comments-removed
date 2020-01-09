@@ -834,9 +834,9 @@ class LockFile(object):
                     
                     
                     time.sleep(0.1)
-            else:
-                
-                raise
+                else:
+                    
+                    raise
 
 
 def lock_file(lockfile, max_wait = 600):
