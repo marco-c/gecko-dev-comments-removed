@@ -14,8 +14,8 @@ add_task(async function test_about_profiles() {
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:profiles", false);
 
   await ContentTask.spawn(tab.linkedBrowser, null, async function() {
-    ok(content.document.documentURI.startsWith("about:neterror"),
-       "about:profiles should display the net error page");
+    ok(content.document.documentURI.startsWith("about:neterror?e=blockedByPolicy"),
+       content.document.documentURI + "should start with about:neterror?e=blockedByPolicy");
 
     
     
