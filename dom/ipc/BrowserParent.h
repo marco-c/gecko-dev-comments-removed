@@ -11,6 +11,7 @@
 #include "LiveResizeListener.h"
 #include "mozilla/ContentCache.h"
 #include "mozilla/dom/ipc/IdType.h"
+#include "mozilla/dom/BrowserBridgeParent.h"
 #include "mozilla/dom/PBrowserParent.h"
 #include "mozilla/dom/PContent.h"
 #include "mozilla/dom/PFilePickerParent.h"
@@ -72,7 +73,6 @@ class ClonedMessageData;
 class ContentParent;
 class Element;
 class DataTransfer;
-class BrowserBridgeParent;
 
 namespace ipc {
 class StructuredCloneData;
@@ -186,6 +186,46 @@ class BrowserParent final : public PBrowserParent,
 
 
   bool IsDestroyed() const { return mIsDestroyed; }
+
+  
+
+
+
+  template <typename Callback>
+  void VisitAll(Callback aCallback) {
+    aCallback(this);
+    VisitAllDescendants(aCallback);
+  }
+
+  
+
+
+
+  template <typename Callback>
+  void VisitAllDescendants(Callback aCallback) {
+    const auto& browserBridges = ManagedPBrowserBridgeParent();
+    for (auto iter = browserBridges.ConstIter(); !iter.Done(); iter.Next()) {
+      BrowserBridgeParent* browserBridge =
+          static_cast<BrowserBridgeParent*>(iter.Get()->GetKey());
+      BrowserParent* browserParent = browserBridge->GetBrowserParent();
+
+      aCallback(browserParent);
+      browserParent->VisitAllDescendants(aCallback);
+    }
+  }
+
+  
+
+
+  template <typename Callback>
+  void VisitChildren(Callback aCallback) {
+    const auto& browserBridges = ManagedPBrowserBridgeParent();
+    for (auto iter = browserBridges.ConstIter(); !iter.Done(); iter.Next()) {
+      BrowserBridgeParent* browserBridge =
+          static_cast<BrowserBridgeParent*>(iter.Get()->GetKey());
+      aCallback(browserBridge);
+    }
+  }
 
   void SetOwnerElement(Element* aElement);
 
