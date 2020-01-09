@@ -1,0 +1,14 @@
+
+
+pref("remote.enabled", true);
+
+
+
+pref("remote.force-local", true);
+
+
+
+
+
+
+pref("remote.log.level", "Info");

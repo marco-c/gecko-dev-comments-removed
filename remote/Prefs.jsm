@@ -1,0 +1,12 @@
+
+
+
+
+"use strict";
+
+var EXPORTED_SYMBOLS = ["RecommendedPreferences"];
+
+const RecommendedPreferences = {
+  
+  "focusmanager.testmode": true,
+};
