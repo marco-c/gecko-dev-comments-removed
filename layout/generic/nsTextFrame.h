@@ -456,8 +456,9 @@ class nsTextFrame : public nsFrame {
   
   
   
-  void PaintText(const PaintTextParams& aParams,
-                 const nsCharClipDisplayItem& aItem, float aOpacity = 1.0f);
+  void PaintText(const PaintTextParams& aParams, const nscoord aVisIStartEdge,
+                 const nscoord aVisIEndEdge, const nsPoint& aToReferenceFrame,
+                 const bool aIsSelected, float aOpacity = 1.0f);
   
   
   
