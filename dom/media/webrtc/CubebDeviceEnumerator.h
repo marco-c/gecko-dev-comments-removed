@@ -6,8 +6,8 @@
 #define CUBEBDEVICEENUMERATOR_H_
 
 #include "AudioDeviceInfo.h"
-#include "cubeb/cubeb.h"
 #include "CubebUtils.h"
+#include "cubeb/cubeb.h"
 #include "mozilla/Mutex.h"
 #include "nsTArray.h"
 
@@ -33,6 +33,16 @@ class CubebDeviceEnumerator final {
   
   already_AddRefed<AudioDeviceInfo> DeviceInfoFromID(
       CubebUtils::AudioDeviceID aID);
+  
+  
+  
+  already_AddRefed<AudioDeviceInfo> DeviceInfoFromName(const nsString& aName);
+  enum class Side {
+    INPUT,
+    OUTPUT,
+  };
+  already_AddRefed<AudioDeviceInfo> DeviceInfoFromName(const nsString& aName,
+                                                       Side aSide);
 
  private:
   CubebDeviceEnumerator();
@@ -42,10 +52,6 @@ class CubebDeviceEnumerator final {
   
   static void InputAudioDeviceListChanged_s(cubeb* aContext, void* aUser);
   static void OutputAudioDeviceListChanged_s(cubeb* aContext, void* aUser);
-  enum class Side {
-    INPUT,
-    OUTPUT,
-  };
   
   
   void AudioDeviceListChanged(Side aSide);
@@ -63,6 +69,8 @@ class CubebDeviceEnumerator final {
   static StaticRefPtr<CubebDeviceEnumerator> sInstance;
 };
 
+typedef CubebDeviceEnumerator Enumerator;
+typedef CubebDeviceEnumerator::Side EnumeratorSide;
 }  
 
 #endif  
