@@ -104,7 +104,7 @@ const TILE_SIZE_WIDTH: i32 = 1024;
 const TILE_SIZE_HEIGHT: i32 = 256;
 const TILE_SIZE_TESTING: i32 = 64;
 
-pub const FRAMES_BEFORE_PICTURE_CACHING: usize = 2;
+const FRAMES_BEFORE_PICTURE_CACHING: usize = 2;
 const MAX_DIRTY_RECTS: usize = 3;
 
 
@@ -1535,7 +1535,9 @@ impl TileCache {
                 
                 
                 
-                if tile.same_frames >= FRAMES_BEFORE_PICTURE_CACHING {
+                
+                
+                if tile.same_frames >= FRAMES_BEFORE_PICTURE_CACHING || frame_context.config.testing {
                     
                     if !resource_cache.texture_cache.is_allocated(&tile.handle) {
                         resource_cache.texture_cache.update_picture_cache(
