@@ -12,8 +12,7 @@ INTEGRATION_PROJECTS = {
     'autoland',
 }
 
-
-TRUNK_PROJECTS = INTEGRATION_PROJECTS | {'mozilla-central', 'comm-central', 'oak'}
+TRUNK_PROJECTS = INTEGRATION_PROJECTS | {'mozilla-central', 'comm-central'}
 
 RELEASE_PROJECTS = {
     'mozilla-central',
@@ -23,7 +22,7 @@ RELEASE_PROJECTS = {
     'comm-central',
     'comm-beta',
     'comm-esr60',
-    'oak',  
+    'oak',
 }
 
 RELEASE_PROMOTION_PROJECTS = {
