@@ -7,13 +7,13 @@
 #ifndef __NUMPARSE_AFFIXES_H__
 #define __NUMPARSE_AFFIXES_H__
 
+#include "cmemory.h"
+
 #include "numparse_types.h"
 #include "numparse_symbols.h"
 #include "numparse_currency.h"
 #include "number_affixutils.h"
 #include "number_currencysymbols.h"
-
-#include <array>
 
 U_NAMESPACE_BEGIN
 namespace numparse {
@@ -52,44 +52,14 @@ class CodePointMatcher : public NumberParseMatcher, public UMemory {
 
 
 #if U_PF_WINDOWS <= U_PLATFORM && U_PLATFORM <= U_PF_CYGWIN
+template class U_I18N_API MaybeStackArray<numparse::impl::CodePointMatcher*, 8>; 
 template class U_I18N_API MaybeStackArray<UChar, 4>;
-template class U_I18N_API MaybeStackArray<numparse::impl::CodePointMatcher*, 3>;
+template class U_I18N_API MemoryPool<numparse::impl::CodePointMatcher, 8>;
 template class U_I18N_API numparse::impl::CompactUnicodeString<4>;
 #endif
 
 namespace numparse {
 namespace impl {
-
-
-
-
-
-class U_I18N_API CodePointMatcherWarehouse : public UMemory {
-  private:
-    static constexpr int32_t CODE_POINT_STACK_CAPACITY = 5; 
-    static constexpr int32_t CODE_POINT_BATCH_SIZE = 10; 
-
-  public:
-    CodePointMatcherWarehouse();
-
-    
-    
-
-    ~CodePointMatcherWarehouse();
-
-    CodePointMatcherWarehouse(CodePointMatcherWarehouse&& src) U_NOEXCEPT;
-
-    CodePointMatcherWarehouse& operator=(CodePointMatcherWarehouse&& src) U_NOEXCEPT;
-
-    NumberParseMatcher& nextCodePointMatcher(UChar32 cp);
-
-  private:
-    std::array<CodePointMatcher, CODE_POINT_STACK_CAPACITY> codePoints; 
-    MaybeStackArray<CodePointMatcher*, 3> codePointsOverflow; 
-    int32_t codePointCount; 
-    int32_t codePointNumBatches; 
-};
-
 
 struct AffixTokenMatcherSetupData {
     const CurrencySymbols& currencySymbols;
@@ -129,7 +99,7 @@ class U_I18N_API AffixTokenMatcherWarehouse : public UMemory {
 
     IgnorablesMatcher& ignorables();
 
-    NumberParseMatcher& nextCodePointMatcher(UChar32 cp);
+    NumberParseMatcher* nextCodePointMatcher(UChar32 cp, UErrorCode& status);
 
   private:
     
@@ -143,7 +113,7 @@ class U_I18N_API AffixTokenMatcherWarehouse : public UMemory {
     CombinedCurrencyMatcher fCurrency;
 
     
-    CodePointMatcherWarehouse fCodePoints;
+    MemoryPool<CodePointMatcher> fCodePoints;
 
     friend class AffixPatternMatcherBuilder;
     friend class AffixPatternMatcher;

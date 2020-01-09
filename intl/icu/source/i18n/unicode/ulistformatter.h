@@ -15,6 +15,7 @@
 #if !UCONFIG_NO_FORMATTING
 
 #include "unicode/localpointer.h"
+#include "unicode/uformattedvalue.h"
 
 
 
@@ -32,6 +33,15 @@
 
 struct UListFormatter;
 typedef struct UListFormatter UListFormatter;  
+
+#ifndef U_HIDE_DRAFT_API
+struct UFormattedList;
+
+
+
+
+typedef struct UFormattedList UFormattedList;
+#endif 
 
 #ifndef U_HIDE_DRAFT_API
 
@@ -82,6 +92,53 @@ ulistfmt_open(const char*  locale,
 U_CAPI void U_EXPORT2
 ulistfmt_close(UListFormatter *listfmt);
 
+#ifndef U_HIDE_DRAFT_API
+
+
+
+
+
+
+
+
+
+U_CAPI UFormattedList* U_EXPORT2
+ulistfmt_openResult(UErrorCode* ec);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+U_CAPI const UFormattedValue* U_EXPORT2
+ulistfmt_resultAsValue(const UFormattedList* uresult, UErrorCode* ec);
+
+
+
+
+
+
+
+U_CAPI void U_EXPORT2
+ulistfmt_closeResult(UFormattedList* uresult);
+#endif 
+
 
 #if U_SHOW_CPLUSPLUS_API
 
@@ -97,6 +154,19 @@ U_NAMESPACE_BEGIN
 
 
 U_DEFINE_LOCAL_OPEN_POINTER(LocalUListFormatterPointer, UListFormatter, ulistfmt_close);
+
+#ifndef U_HIDE_DRAFT_API
+
+
+
+
+
+
+
+
+
+U_DEFINE_LOCAL_OPEN_POINTER(LocalUFormattedListPointer, UFormattedList, ulistfmt_closeResult);
+#endif 
 
 U_NAMESPACE_END
 
@@ -144,6 +214,43 @@ ulistfmt_format(const UListFormatter* listfmt,
                 UChar*             result,
                 int32_t            resultCapacity,
                 UErrorCode*        status);
+
+#ifndef U_HIDE_DRAFT_API
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+U_CAPI void U_EXPORT2
+ulistfmt_formatStringsToResult(
+                const UListFormatter* listfmt,
+                const UChar* const strings[],
+                const int32_t *    stringLengths,
+                int32_t            stringCount,
+                UFormattedList*    uresult,
+                UErrorCode*        status);
+#endif 
 
 #endif 
 

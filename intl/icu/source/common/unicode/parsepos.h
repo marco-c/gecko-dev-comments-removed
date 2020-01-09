@@ -90,21 +90,21 @@ public:
 
 
 
-    ParsePosition&      operator=(const ParsePosition& copy);
+    inline ParsePosition&      operator=(const ParsePosition& copy);
 
     
 
 
 
 
-    UBool              operator==(const ParsePosition& that) const;
+    inline UBool              operator==(const ParsePosition& that) const;
 
     
 
 
 
 
-    UBool              operator!=(const ParsePosition& that) const;
+    inline UBool              operator!=(const ParsePosition& that) const;
 
     
 
@@ -126,14 +126,14 @@ public:
 
 
 
-    int32_t getIndex(void) const;
+    inline int32_t getIndex(void) const;
 
     
 
 
 
 
-    void setIndex(int32_t index);
+    inline void setIndex(int32_t index);
 
     
 
@@ -142,14 +142,14 @@ public:
 
 
 
-    void setErrorIndex(int32_t ei);
+    inline void setErrorIndex(int32_t ei);
 
     
 
 
 
 
-    int32_t getErrorIndex(void) const;
+    inline int32_t getErrorIndex(void) const;
 
     
 

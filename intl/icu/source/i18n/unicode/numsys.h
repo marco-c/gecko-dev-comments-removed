@@ -25,21 +25,19 @@
 
 
 
-#define NUMSYS_NAME_CAPACITY 8
-
-
-
-
-
-
-
 #if !UCONFIG_NO_FORMATTING
-
 
 #include "unicode/format.h"
 #include "unicode/uobject.h"
 
 U_NAMESPACE_BEGIN
+
+
+
+
+
+
+constexpr const size_t kInternalNumSysNameCapacity = 8;
 
 
 
@@ -109,9 +107,15 @@ public:
 
 
 
+
+
+
+
      static StringEnumeration * U_EXPORT2 getAvailableNames(UErrorCode& status);
 
     
+
+
 
 
 
@@ -187,7 +191,7 @@ private:
     UnicodeString   desc;
     int32_t         radix;
     UBool           algorithmic;
-    char            name[NUMSYS_NAME_CAPACITY+1];
+    char            name[kInternalNumSysNameCapacity+1];
 
     void setRadix(int32_t radix);
 

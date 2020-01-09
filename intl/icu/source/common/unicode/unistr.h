@@ -1490,7 +1490,6 @@ public:
 
 
 
-
   inline void extract(int32_t start,
            int32_t length,
            UnicodeString& target) const;
@@ -1512,7 +1511,6 @@ public:
               int32_t dstStart = 0) const;
 
   
-
 
 
 
@@ -1902,22 +1900,7 @@ public:
 
 
 
-  UnicodeString &operator=(UnicodeString &&src) U_NOEXCEPT {
-    return moveFrom(src);
-  }
-
-  
-  
-
-
-
-
-
-
-
-
-
-  UnicodeString &moveFrom(UnicodeString &src) U_NOEXCEPT;
+  UnicodeString &operator=(UnicodeString &&src) U_NOEXCEPT;
 
   
 
@@ -1932,7 +1915,7 @@ public:
 
 
 
-  friend U_COMMON_API inline void U_EXPORT2
+  friend inline void U_EXPORT2
   swap(UnicodeString &s1, UnicodeString &s2) U_NOEXCEPT {
     s1.swap(s2);
   }
@@ -2015,7 +1998,7 @@ public:
 
 
 
-  UnicodeString& setTo(char16_t srcChar);
+  inline UnicodeString& setTo(char16_t srcChar);
 
   
 
@@ -2025,7 +2008,7 @@ public:
 
 
 
-  UnicodeString& setTo(UChar32 srcChar);
+  inline UnicodeString& setTo(UChar32 srcChar);
 
   
 
@@ -2336,7 +2319,7 @@ public:
 
 
 
-  UnicodeString& replace(int32_t start,
+  inline UnicodeString& replace(int32_t start,
              int32_t length,
              const UnicodeString& srcText,
              int32_t srcStart,
@@ -2354,7 +2337,7 @@ public:
 
 
 
-  UnicodeString& replace(int32_t start,
+  inline UnicodeString& replace(int32_t start,
              int32_t length,
              const UnicodeString& srcText);
 
@@ -2375,7 +2358,7 @@ public:
 
 
 
-  UnicodeString& replace(int32_t start,
+  inline UnicodeString& replace(int32_t start,
              int32_t length,
              const char16_t *srcChars,
              int32_t srcStart,
@@ -2466,9 +2449,6 @@ public:
 
 
 
-
-
-
   virtual void handleReplaceBetween(int32_t start,
                                     int32_t limit,
                                     const UnicodeString& text);
@@ -2481,8 +2461,6 @@ public:
   virtual UBool hasMetaData() const;
 
   
-
-
 
 
 
@@ -3272,7 +3250,6 @@ public:
 #endif
 
   
-
 
 
 

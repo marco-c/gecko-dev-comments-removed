@@ -42,6 +42,8 @@
 
 #if U_SHOW_CPLUSPLUS_API
 
+#include <memory>
+
 U_NAMESPACE_BEGIN
 
 
@@ -65,6 +67,13 @@ U_NAMESPACE_BEGIN
 template<typename T>
 class LocalPointerBase {
 public:
+    
+    static void* U_EXPORT2 operator new(size_t) = delete;
+    static void* U_EXPORT2 operator new[](size_t) = delete;
+#if U_HAVE_PLACEMENT_NEW
+    static void* U_EXPORT2 operator new(size_t, void*) = delete;
+#endif
+
     
 
 
@@ -158,12 +167,6 @@ private:
     
     LocalPointerBase(const LocalPointerBase<T> &other);
     void operator=(const LocalPointerBase<T> &other);
-    
-    static void * U_EXPORT2 operator new(size_t size);
-    static void * U_EXPORT2 operator new[](size_t size);
-#if U_HAVE_PLACEMENT_NEW
-    static void * U_EXPORT2 operator new(size_t, void *ptr);
-#endif
 };
 
 
@@ -221,6 +224,22 @@ public:
     LocalPointer(LocalPointer<T> &&src) U_NOEXCEPT : LocalPointerBase<T>(src.ptr) {
         src.ptr=NULL;
     }
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+
+
+
+    explicit LocalPointer(std::unique_ptr<T> &&p)
+        : LocalPointerBase<T>(p.release()) {}
+#endif  
+
     
 
 
@@ -236,24 +255,27 @@ public:
 
 
     LocalPointer<T> &operator=(LocalPointer<T> &&src) U_NOEXCEPT {
-        return moveFrom(src);
-    }
-    
-    
-
-
-
-
-
-
-
-
-    LocalPointer<T> &moveFrom(LocalPointer<T> &src) U_NOEXCEPT {
         delete LocalPointerBase<T>::ptr;
         LocalPointerBase<T>::ptr=src.ptr;
         src.ptr=NULL;
         return *this;
     }
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+
+    LocalPointer<T> &operator=(std::unique_ptr<T> &&p) U_NOEXCEPT {
+        adoptInstead(p.release());
+        return *this;
+    }
+#endif  
+
     
 
 
@@ -309,6 +331,23 @@ public:
             delete p;
         }
     }
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+
+
+
+
+    operator std::unique_ptr<T> () && {
+        return std::unique_ptr<T>(LocalPointerBase<T>::orphan());
+    }
+#endif  
 };
 
 
@@ -366,6 +405,22 @@ public:
     LocalArray(LocalArray<T> &&src) U_NOEXCEPT : LocalPointerBase<T>(src.ptr) {
         src.ptr=NULL;
     }
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+
+
+
+    explicit LocalArray(std::unique_ptr<T[]> &&p)
+        : LocalPointerBase<T>(p.release()) {}
+#endif  
+
     
 
 
@@ -381,24 +436,27 @@ public:
 
 
     LocalArray<T> &operator=(LocalArray<T> &&src) U_NOEXCEPT {
-        return moveFrom(src);
-    }
-    
-    
-
-
-
-
-
-
-
-
-    LocalArray<T> &moveFrom(LocalArray<T> &src) U_NOEXCEPT {
         delete[] LocalPointerBase<T>::ptr;
         LocalPointerBase<T>::ptr=src.ptr;
         src.ptr=NULL;
         return *this;
     }
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+
+    LocalArray<T> &operator=(std::unique_ptr<T[]> &&p) U_NOEXCEPT {
+        adoptInstead(p.release());
+        return *this;
+    }
+#endif  
+
     
 
 
@@ -462,6 +520,23 @@ public:
 
 
     T &operator[](ptrdiff_t i) const { return LocalPointerBase<T>::ptr[i]; }
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+
+
+
+
+    operator std::unique_ptr<T[]> () && {
+        return std::unique_ptr<T[]>(LocalPointerBase<T>::orphan());
+    }
+#endif  
 };
 
 
@@ -494,14 +569,19 @@ public:
                 : LocalPointerBase<Type>(src.ptr) { \
             src.ptr=NULL; \
         } \
+        /* TODO: Be agnostic of the deleter function signature from the user-provided std::unique_ptr? */ \
+        explicit LocalPointerClassName(std::unique_ptr<Type, decltype(&closeFunction)> &&p) \
+                : LocalPointerBase<Type>(p.release()) {} \
         ~LocalPointerClassName() { if (ptr != NULL) { closeFunction(ptr); } } \
         LocalPointerClassName &operator=(LocalPointerClassName &&src) U_NOEXCEPT { \
-            return moveFrom(src); \
-        } \
-        LocalPointerClassName &moveFrom(LocalPointerClassName &src) U_NOEXCEPT { \
             if (ptr != NULL) { closeFunction(ptr); } \
             LocalPointerBase<Type>::ptr=src.ptr; \
             src.ptr=NULL; \
+            return *this; \
+        } \
+        /* TODO: Be agnostic of the deleter function signature from the user-provided std::unique_ptr? */ \
+        LocalPointerClassName &operator=(std::unique_ptr<Type, decltype(&closeFunction)> &&p) { \
+            adoptInstead(p.release()); \
             return *this; \
         } \
         void swap(LocalPointerClassName &other) U_NOEXCEPT { \
@@ -515,6 +595,9 @@ public:
         void adoptInstead(Type *p) { \
             if (ptr != NULL) { closeFunction(ptr); } \
             ptr=p; \
+        } \
+        operator std::unique_ptr<Type, decltype(&closeFunction)> () && { \
+            return std::unique_ptr<Type, decltype(&closeFunction)>(LocalPointerBase<Type>::orphan(), closeFunction); \
         } \
     }
 

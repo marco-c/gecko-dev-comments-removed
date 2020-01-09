@@ -98,7 +98,7 @@ struct U_I18N_API ParsedPatternInfo : public AffixPatternProvider, public UMemor
         int32_t offset = 0;
 
         explicit ParserState(const UnicodeString& _pattern)
-                : pattern(_pattern) {};
+                : pattern(_pattern) {}
 
         ParserState& operator=(ParserState&& src) U_NOEXCEPT {
             
@@ -222,6 +222,28 @@ class U_I18N_API PatternParser {
 
 class U_I18N_API PatternStringUtils {
   public:
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+     static bool ignoreRoundingIncrement(double roundIncr, int32_t maxFrac);
+
     
 
 

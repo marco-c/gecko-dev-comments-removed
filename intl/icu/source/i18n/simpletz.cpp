@@ -1077,13 +1077,13 @@ SimpleTimeZone::deleteTransitionRules(void) {
 
 
 
-static UMutex gLock = U_MUTEX_INITIALIZER;
 
 void
 SimpleTimeZone::checkTransitionRules(UErrorCode& status) const {
     if (U_FAILURE(status)) {
         return;
     }
+    static UMutex gLock = U_MUTEX_INITIALIZER;
     umtx_lock(&gLock);
     if (!transitionRulesInitialized) {
         SimpleTimeZone *ncThis = const_cast<SimpleTimeZone*>(this);

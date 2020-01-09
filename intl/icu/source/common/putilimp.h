@@ -240,6 +240,22 @@ typedef size_t uintptr_t;
 
 
 
+
+
+#ifdef U_HAVE_STD_MUTEX
+    
+#else
+#    define U_HAVE_STD_MUTEX 1
+#endif
+
+
+
+
+
+
+
+
+
 #ifdef U_MAKE_IS_NMAKE
     
 #elif U_PLATFORM == U_PF_WINDOWS

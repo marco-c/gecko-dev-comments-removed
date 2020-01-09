@@ -309,8 +309,7 @@ UnicodeString::UnicodeString(const UnicodeString& that) {
 }
 
 UnicodeString::UnicodeString(UnicodeString &&src) U_NOEXCEPT {
-  fUnion.fFields.fLengthAndFlags = kShortString;
-  moveFrom(src);
+  copyFieldsFrom(src, TRUE);
 }
 
 UnicodeString::UnicodeString(const UnicodeString& that,
@@ -572,7 +571,7 @@ UnicodeString::copyFrom(const UnicodeString &src, UBool fastCopy) {
   return *this;
 }
 
-UnicodeString &UnicodeString::moveFrom(UnicodeString &src) U_NOEXCEPT {
+UnicodeString &UnicodeString::operator=(UnicodeString &&src) U_NOEXCEPT {
   
   
   releaseArray();

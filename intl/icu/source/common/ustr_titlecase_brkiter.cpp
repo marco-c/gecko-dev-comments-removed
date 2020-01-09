@@ -77,13 +77,7 @@ UBool WholeStringBreakIterator::operator==(const BreakIterator&) const { return 
 BreakIterator *WholeStringBreakIterator::clone() const { return nullptr; }
 
 CharacterIterator &WholeStringBreakIterator::getText() const {
-    U_ASSERT(FALSE);  
-    
-    
-    
-    
-    CharacterIterator *none = nullptr;
-    return *none;
+    UPRV_UNREACHABLE;  
 }
 UText *WholeStringBreakIterator::getUText(UText * , UErrorCode &errorCode) const {
     if (U_SUCCESS(errorCode)) {
@@ -105,10 +99,8 @@ void  WholeStringBreakIterator::setText(UText *text, UErrorCode &errorCode) {
         }
     }
 }
-void  WholeStringBreakIterator::adoptText(CharacterIterator* it) {
-    U_ASSERT(FALSE);  
-    length = it->getLength();
-    delete it;
+void  WholeStringBreakIterator::adoptText(CharacterIterator*) {
+    UPRV_UNREACHABLE;  
 }
 
 int32_t WholeStringBreakIterator::first() { return 0; }

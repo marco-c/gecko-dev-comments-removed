@@ -273,7 +273,6 @@ public:
 
     const UnicodeString& getAppendItemName(UDateTimePatternField field) const;
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -284,7 +283,6 @@ public:
 
 
     UnicodeString getFieldDisplayName(UDateTimePatternField field, UDateTimePGDisplayWidth width) const;
-#endif  
 
     
 
@@ -564,6 +562,7 @@ private:
     void setDecimalSymbols(const Locale& locale, UErrorCode& status);
     UDateTimePatternField getAppendFormatNumber(const char* field) const;
 #ifndef U_HIDE_DRAFT_API
+    
     UDateTimePatternField getFieldAndWidthIndices(const char* key, UDateTimePGDisplayWidth* widthP) const;
     void setFieldDisplayName(UDateTimePatternField field, UDateTimePGDisplayWidth width, const UnicodeString& value);
     UnicodeString& getMutableFieldDisplayName(UDateTimePatternField field, UDateTimePGDisplayWidth width);

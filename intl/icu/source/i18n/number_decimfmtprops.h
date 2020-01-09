@@ -21,10 +21,16 @@ U_NAMESPACE_BEGIN
 
 
 #if U_PF_WINDOWS <= U_PLATFORM && U_PLATFORM <= U_PF_CYGWIN
+#if defined(_MSC_VER)
 
-#pragma warning(suppress: 4661)
+#pragma warning(push)
+#pragma warning(disable: 4661)
+#endif
 template class U_I18N_API LocalPointerBase<CurrencyPluralInfo>;
 template class U_I18N_API LocalPointer<CurrencyPluralInfo>;
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
 #endif
 
 namespace number {
@@ -148,6 +154,11 @@ struct U_I18N_API DecimalFormatProperties : public UMemory {
 
 
     bool equalsDefaultExceptFastFormat() const;
+
+    
+
+
+    static const DecimalFormatProperties& getDefault();
 
   private:
     bool _equals(const DecimalFormatProperties& other, bool ignoreForFastFormat) const;

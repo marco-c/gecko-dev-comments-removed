@@ -431,6 +431,7 @@ public:
     static BreakIterator* U_EXPORT2
     createSentenceInstance(const Locale& where, UErrorCode& status);
 
+#ifndef U_HIDE_DEPRECATED_API
     
 
 
@@ -455,6 +456,7 @@ public:
 
     static BreakIterator* U_EXPORT2
     createTitleInstance(const Locale& where, UErrorCode& status);
+#endif 
 
     
 

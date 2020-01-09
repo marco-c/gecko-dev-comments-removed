@@ -7,8 +7,10 @@
 #ifndef __UNUMBERFORMATTER_H__
 #define __UNUMBERFORMATTER_H__
 
+#include "unicode/parseerr.h"
 #include "unicode/ufieldpositer.h"
 #include "unicode/umisc.h"
+#include "unicode/uformattedvalue.h"
 
 
 
@@ -267,13 +269,6 @@ typedef enum UNumberGroupingStrategy {
 
 } UNumberGroupingStrategy;
 
-#ifndef U_HIDE_DEPRECATED_API
-
-
-
-
-typedef UNumberGroupingStrategy UGroupingStrategy;
-#endif  
 
 #endif  
 
@@ -383,6 +378,8 @@ typedef enum UNumberSignDisplay {
 
 
 
+
+
 typedef enum UNumberDecimalSeparatorDisplay {
     
 
@@ -407,8 +404,6 @@ typedef enum UNumberDecimalSeparatorDisplay {
             UNUM_DECIMAL_SEPARATOR_COUNT
 } UNumberDecimalSeparatorDisplay;
 #endif  
-
-#ifndef U_HIDE_DRAFT_API
 
 struct UNumberFormatter;
 
@@ -448,11 +443,12 @@ typedef struct UFormattedNumber UFormattedNumber;
 
 
 
-U_DRAFT UNumberFormatter* U_EXPORT2
+U_STABLE UNumberFormatter* U_EXPORT2
 unumf_openForSkeletonAndLocale(const UChar* skeleton, int32_t skeletonLen, const char* locale,
                                UErrorCode* ec);
 
 
+#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -463,7 +459,23 @@ unumf_openForSkeletonAndLocale(const UChar* skeleton, int32_t skeletonLen, const
 
 
 
-U_DRAFT UFormattedNumber* U_EXPORT2
+
+
+U_DRAFT UNumberFormatter* U_EXPORT2
+unumf_openForSkeletonAndLocaleWithError(
+       const UChar* skeleton, int32_t skeletonLen, const char* locale, UParseError* perror, UErrorCode* ec);
+#endif  
+
+
+
+
+
+
+
+
+
+
+U_STABLE UFormattedNumber* U_EXPORT2
 unumf_openResult(UErrorCode* ec);
 
 
@@ -482,7 +494,7 @@ unumf_openResult(UErrorCode* ec);
 
 
 
-U_DRAFT void U_EXPORT2
+U_STABLE void U_EXPORT2
 unumf_formatInt(const UNumberFormatter* uformatter, int64_t value, UFormattedNumber* uresult,
                 UErrorCode* ec);
 
@@ -502,7 +514,7 @@ unumf_formatInt(const UNumberFormatter* uformatter, int64_t value, UFormattedNum
 
 
 
-U_DRAFT void U_EXPORT2
+U_STABLE void U_EXPORT2
 unumf_formatDouble(const UNumberFormatter* uformatter, double value, UFormattedNumber* uresult,
                    UErrorCode* ec);
 
@@ -526,10 +538,28 @@ unumf_formatDouble(const UNumberFormatter* uformatter, double value, UFormattedN
 
 
 
-U_DRAFT void U_EXPORT2
+U_STABLE void U_EXPORT2
 unumf_formatDecimal(const UNumberFormatter* uformatter, const char* value, int32_t valueLen,
                     UFormattedNumber* uresult, UErrorCode* ec);
 
+#ifndef U_HIDE_DRAFT_API
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+U_DRAFT const UFormattedValue* U_EXPORT2
+unumf_resultAsValue(const UFormattedNumber* uresult, UErrorCode* ec);
+#endif  
 
 
 
@@ -545,7 +575,13 @@ unumf_formatDecimal(const UNumberFormatter* uformatter, const char* value, int32
 
 
 
-U_DRAFT int32_t U_EXPORT2
+
+
+
+
+
+
+U_STABLE int32_t U_EXPORT2
 unumf_resultToString(const UFormattedNumber* uresult, UChar* buffer, int32_t bufferCapacity,
                      UErrorCode* ec);
 
@@ -581,7 +617,9 @@ unumf_resultToString(const UFormattedNumber* uresult, UChar* buffer, int32_t buf
 
 
 
-U_DRAFT UBool U_EXPORT2
+
+
+U_STABLE UBool U_EXPORT2
 unumf_resultNextFieldPosition(const UFormattedNumber* uresult, UFieldPosition* ufpos, UErrorCode* ec);
 
 
@@ -603,7 +641,10 @@ unumf_resultNextFieldPosition(const UFormattedNumber* uresult, UFieldPosition* u
 
 
 
-U_DRAFT void U_EXPORT2
+
+
+
+U_STABLE void U_EXPORT2
 unumf_resultGetAllFieldPositions(const UFormattedNumber* uresult, UFieldPositionIterator* ufpositer,
                                  UErrorCode* ec);
 
@@ -614,9 +655,7 @@ unumf_resultGetAllFieldPositions(const UFormattedNumber* uresult, UFieldPosition
 
 
 
-
-
-U_DRAFT void U_EXPORT2
+U_STABLE void U_EXPORT2
 unumf_close(UNumberFormatter* uformatter);
 
 
@@ -626,9 +665,7 @@ unumf_close(UNumberFormatter* uformatter);
 
 
 
-
-
-U_DRAFT void U_EXPORT2
+U_STABLE void U_EXPORT2
 unumf_closeResult(UFormattedNumber* uresult);
 
 
@@ -672,58 +709,5 @@ U_DEFINE_LOCAL_OPEN_POINTER(LocalUFormattedNumberPointer, UFormattedNumber, unum
 U_NAMESPACE_END
 #endif 
 
-#endif  
-
 #endif 
 #endif 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

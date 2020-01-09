@@ -42,8 +42,6 @@
 
 
 
-
-
 #include "unicode/utypes.h"
 
 #if !UCONFIG_NO_REGULAR_EXPRESSIONS
@@ -677,7 +675,6 @@ public:
 
 
 
-
     RegexMatcher(const UnicodeString &regexp, uint32_t flags, UErrorCode &status);
 
     
@@ -694,11 +691,9 @@ public:
 
 
 
-
     RegexMatcher(UText *regexp, uint32_t flags, UErrorCode &status);
 
     
-
 
 
 
@@ -741,13 +736,11 @@ public:
 
 
 
-
     RegexMatcher(UText *regexp, UText *input,
         uint32_t flags, UErrorCode &status);
 
 private:
     
-
 
 
 
@@ -841,6 +834,7 @@ public:
 
 
    
+
 
 
 

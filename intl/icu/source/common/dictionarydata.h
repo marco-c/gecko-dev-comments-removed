@@ -68,7 +68,7 @@ public:
 
 class U_COMMON_API DictionaryMatcher : public UMemory {
 public:
-    DictionaryMatcher() {};
+    DictionaryMatcher() {}
     virtual ~DictionaryMatcher();
     
     

@@ -32,18 +32,9 @@
 #include "cmemory.h"
 #include "unicode/uloc.h"
 
-#if U_PLATFORM == U_PF_WINDOWS && defined(_MSC_VER) && (_MSC_VER >= 1500)
-
-
-
-
-
-
-
-
-#define USE_WINDOWS_LCID_MAPPING_API
+#if U_PLATFORM_HAS_WIN32_API && UCONFIG_USE_WINDOWS_LCID_MAPPING_API
 #include <windows.h>
-#include <winnls.h>
+#include <winnls.h> 
 #endif
 
 
@@ -1035,7 +1026,7 @@ getPosixID(const ILcidPosixMap *this_0, uint32_t hostID)
 
 
 
-#ifdef USE_WINDOWS_LCID_MAPPING_API
+#if U_PLATFORM_HAS_WIN32_API && UCONFIG_USE_WINDOWS_LCID_MAPPING_API
 
 
 
@@ -1053,6 +1044,7 @@ getPosixID(const ILcidPosixMap *this_0, uint32_t hostID)
     }
 
 #endif
+
 U_CAPI int32_t
 uprv_convertToPosix(uint32_t hostid, char *posixID, int32_t posixIDCapacity, UErrorCode* status)
 {
@@ -1061,8 +1053,10 @@ uprv_convertToPosix(uint32_t hostid, char *posixID, int32_t posixIDCapacity, UEr
     UBool bLookup = TRUE;
     const char *pPosixID = NULL;
 
-#ifdef USE_WINDOWS_LCID_MAPPING_API
-    char locName[LOCALE_NAME_MAX_LENGTH] = {};      
+#if U_PLATFORM_HAS_WIN32_API && UCONFIG_USE_WINDOWS_LCID_MAPPING_API
+    static_assert(ULOC_FULLNAME_CAPACITY > LOCALE_NAME_MAX_LENGTH, "Windows locale names have smaller length than ICU locale names.");
+
+    char locName[LOCALE_NAME_MAX_LENGTH] = {};
 
     
     
@@ -1070,7 +1064,7 @@ uprv_convertToPosix(uint32_t hostid, char *posixID, int32_t posixIDCapacity, UEr
     
     if ((hostid & 0x3FF) != 0x92) {
         int32_t tmpLen = 0;
-        UChar windowsLocaleName[LOCALE_NAME_MAX_LENGTH];  
+        char16_t windowsLocaleName[LOCALE_NAME_MAX_LENGTH] = {};
 
         
         tmpLen = LCIDToLocaleName(hostid, (PWSTR)windowsLocaleName, UPRV_LENGTHOF(windowsLocaleName), LOCALE_ALLOW_NEUTRAL_NAMES);
@@ -1110,7 +1104,7 @@ uprv_convertToPosix(uint32_t hostid, char *posixID, int32_t posixIDCapacity, UEr
             pPosixID = locName;
         }
     }
-#endif 
+#endif
 
     if (bLookup) {
         const char *pCandidate = NULL;
@@ -1163,20 +1157,15 @@ uprv_convertToPosix(uint32_t hostid, char *posixID, int32_t posixIDCapacity, UEr
 
 
 U_CAPI uint32_t
-uprv_convertToLCIDPlatform(const char* localeID)
+uprv_convertToLCIDPlatform(const char* localeID, UErrorCode* status)
 {
-    
-    
-#ifdef USE_WINDOWS_LCID_MAPPING_API
-    DWORD nameLCIDFlags = 0;
-    UErrorCode myStatus = U_ZERO_ERROR;
+    if (U_FAILURE(*status)) {
+        return 0;
+    }
 
     
     
-#if LOCALE_ALLOW_NEUTRAL_NAMES
-    nameLCIDFlags = LOCALE_ALLOW_NEUTRAL_NAMES;
-#endif 
-
+#if U_PLATFORM_HAS_WIN32_API && UCONFIG_USE_WINDOWS_LCID_MAPPING_API
     int32_t len;
     char collVal[ULOC_KEYWORDS_CAPACITY] = {};
     char baseName[ULOC_FULLNAME_CAPACITY] = {};
@@ -1185,8 +1174,8 @@ uprv_convertToLCIDPlatform(const char* localeID)
     
     if (uprv_strchr(localeID, '@'))
     {
-        len = uloc_getKeywordValue(localeID, "collation", collVal, UPRV_LENGTHOF(collVal) - 1, &myStatus);
-        if (U_SUCCESS(myStatus) && len > 0)
+        len = uloc_getKeywordValue(localeID, "collation", collVal, UPRV_LENGTHOF(collVal) - 1, status);
+        if (U_SUCCESS(*status) && len > 0)
         {
             
             return 0;
@@ -1194,9 +1183,9 @@ uprv_convertToLCIDPlatform(const char* localeID)
         else
         {
             
-            len = uloc_getBaseName(localeID, baseName, UPRV_LENGTHOF(baseName) - 1, &myStatus);
+            len = uloc_getBaseName(localeID, baseName, UPRV_LENGTHOF(baseName) - 1, status);
 
-            if (U_SUCCESS(myStatus) && len > 0)
+            if (U_SUCCESS(*status) && len > 0)
             {
                 baseName[len] = 0;
                 mylocaleID = baseName;
@@ -1206,9 +1195,9 @@ uprv_convertToLCIDPlatform(const char* localeID)
 
     char asciiBCP47Tag[LOCALE_NAME_MAX_LENGTH] = {};
     
-    (void)uloc_toLanguageTag(mylocaleID, asciiBCP47Tag, UPRV_LENGTHOF(asciiBCP47Tag), FALSE, &myStatus);
+    (void)uloc_toLanguageTag(mylocaleID, asciiBCP47Tag, UPRV_LENGTHOF(asciiBCP47Tag), FALSE, status);
 
-    if (U_SUCCESS(myStatus))
+    if (U_SUCCESS(*status))
     {
         
         wchar_t bcp47Tag[LOCALE_NAME_MAX_LENGTH] = {};
@@ -1230,7 +1219,7 @@ uprv_convertToLCIDPlatform(const char* localeID)
         {
             
             bcp47Tag[i] = L'\0';
-            LCID lcid = LocaleNameToLCID(bcp47Tag, nameLCIDFlags);
+            LCID lcid = LocaleNameToLCID(bcp47Tag, LOCALE_ALLOW_NEUTRAL_NAMES);
             if (lcid > 0)
             {
                 
@@ -1244,8 +1233,8 @@ uprv_convertToLCIDPlatform(const char* localeID)
         }
     }
 #else
-    (void)localeID; 
-#endif 
+    (void) localeID; 
+#endif
 
     
     return 0;

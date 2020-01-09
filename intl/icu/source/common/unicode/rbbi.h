@@ -260,7 +260,7 @@ public:
 
 
 
-    UBool operator!=(const BreakIterator& that) const;
+    inline UBool operator!=(const BreakIterator& that) const;
 
     
 

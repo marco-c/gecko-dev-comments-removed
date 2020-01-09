@@ -167,30 +167,30 @@ uregex_openUText(UText          *pattern,
                  UParseError    *pe,
                  UErrorCode     *status);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #if !UCONFIG_NO_CONVERSION
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 U_STABLE URegularExpression * U_EXPORT2
 uregex_openC( const char           *pattern,
                     uint32_t        flags,

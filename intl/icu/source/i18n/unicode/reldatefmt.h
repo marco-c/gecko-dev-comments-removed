@@ -19,6 +19,7 @@
 #include "unicode/udisplaycontext.h"
 #include "unicode/ureldatefmt.h"
 #include "unicode/locid.h"
+#include "unicode/formattedvalue.h"
 
 
 
@@ -245,6 +246,72 @@ class SharedPluralRules;
 class SharedBreakIterator;
 class NumberFormat;
 class UnicodeString;
+class FormattedRelativeDateTimeData;
+
+#ifndef U_HIDE_DRAFT_API
+
+
+
+
+
+
+
+
+
+class U_I18N_API FormattedRelativeDateTime : public UMemory, public FormattedValue {
+  public:
+    
+
+
+
+    FormattedRelativeDateTime() : fData(nullptr), fErrorCode(U_INVALID_STATE_ERROR) {}
+
+    
+
+
+
+    FormattedRelativeDateTime(FormattedRelativeDateTime&& src) U_NOEXCEPT;
+
+    
+
+
+
+    virtual ~FormattedRelativeDateTime() U_OVERRIDE;
+
+    
+    FormattedRelativeDateTime(const FormattedRelativeDateTime&) = delete;
+
+    
+    FormattedRelativeDateTime& operator=(const FormattedRelativeDateTime&) = delete;
+
+    
+
+
+
+    FormattedRelativeDateTime& operator=(FormattedRelativeDateTime&& src) U_NOEXCEPT;
+
+    
+    UnicodeString toString(UErrorCode& status) const U_OVERRIDE;
+
+    
+    UnicodeString toTempString(UErrorCode& status) const U_OVERRIDE;
+
+    
+    Appendable &appendTo(Appendable& appendable, UErrorCode& status) const U_OVERRIDE;
+
+    
+    UBool nextPosition(ConstrainedFieldPosition& cfpos, UErrorCode& status) const U_OVERRIDE;
+
+  private:
+    FormattedRelativeDateTimeData *fData;
+    UErrorCode fErrorCode;
+    explicit FormattedRelativeDateTime(FormattedRelativeDateTimeData *results)
+        : fData(results), fErrorCode(U_ZERO_ERROR) {}
+    explicit FormattedRelativeDateTime(UErrorCode errorCode)
+        : fData(nullptr), fErrorCode(errorCode) {}
+    friend class RelativeDateTimeFormatter;
+};
+#endif  
 
 
 
@@ -398,6 +465,10 @@ public:
 
 
 
+
+
+
+
     UnicodeString& format(
             double quantity,
             UDateDirection direction,
@@ -405,7 +476,36 @@ public:
             UnicodeString& appendTo,
             UErrorCode& status) const;
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    FormattedRelativeDateTime formatToValue(
+            double quantity,
+            UDateDirection direction,
+            UDateRelativeUnit unit,
+            UErrorCode& status) const;
+#endif  
+
+    
+
+
+
+
 
 
 
@@ -423,7 +523,32 @@ public:
             UnicodeString& appendTo,
             UErrorCode& status) const;
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    FormattedRelativeDateTime formatToValue(
+            UDateDirection direction,
+            UDateAbsoluteUnit unit,
+            UErrorCode& status) const;
+#endif  
+
+    
+
+
+
 
 
 
@@ -446,7 +571,35 @@ public:
             UnicodeString& appendTo,
             UErrorCode& status) const;
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    FormattedRelativeDateTime formatNumericToValue(
+            double offset,
+            URelativeDateTimeUnit unit,
+            UErrorCode& status) const;
+#endif  
+
+    
+
+
+
 
 
 
@@ -468,6 +621,31 @@ public:
             URelativeDateTimeUnit unit,
             UnicodeString& appendTo,
             UErrorCode& status) const;
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    FormattedRelativeDateTime formatToValue(
+            double offset,
+            URelativeDateTimeUnit unit,
+            UErrorCode& status) const;
+#endif  
 
     
 
@@ -520,7 +698,45 @@ private:
             NumberFormat *nfToAdopt,
             BreakIterator *brkIter,
             UErrorCode &status);
-    void adjustForContext(UnicodeString &) const;
+    UnicodeString& adjustForContext(UnicodeString &) const;
+    UBool checkNoAdjustForContext(UErrorCode& status) const;
+
+    template<typename F, typename... Args>
+    UnicodeString& doFormat(
+            F callback,
+            UnicodeString& appendTo,
+            UErrorCode& status,
+            Args... args) const;
+
+#ifndef U_HIDE_DRAFT_API  
+    template<typename F, typename... Args>
+    FormattedRelativeDateTime doFormatToValue(
+            F callback,
+            UErrorCode& status,
+            Args... args) const;
+#endif  
+
+    void formatImpl(
+            double quantity,
+            UDateDirection direction,
+            UDateRelativeUnit unit,
+            FormattedRelativeDateTimeData& output,
+            UErrorCode& status) const;
+    void formatAbsoluteImpl(
+            UDateDirection direction,
+            UDateAbsoluteUnit unit,
+            FormattedRelativeDateTimeData& output,
+            UErrorCode& status) const;
+    void formatNumericImpl(
+            double offset,
+            URelativeDateTimeUnit unit,
+            FormattedRelativeDateTimeData& output,
+            UErrorCode& status) const;
+    void formatRelativeImpl(
+            double offset,
+            URelativeDateTimeUnit unit,
+            FormattedRelativeDateTimeData& output,
+            UErrorCode& status) const;
 };
 
 U_NAMESPACE_END

@@ -207,8 +207,7 @@ u_UCharsToChars(const UChar *us, char *cs, int32_t length) {
     while(length>0) {
         u=*us++;
         if(!UCHAR_IS_INVARIANT(u)) {
-            U_ASSERT(FALSE); 
-            u=0;
+            UPRV_UNREACHABLE; 
         }
         *cs++=(char)UCHAR_TO_CHAR(u);
         --length;

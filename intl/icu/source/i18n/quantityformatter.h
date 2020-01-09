@@ -27,6 +27,12 @@ class NumberFormat;
 class Formattable;
 class FieldPosition;
 
+namespace number {
+namespace impl {
+class NumberStringBuilder;
+}
+}
+
 
 
 
@@ -112,6 +118,7 @@ public:
     
 
 
+
     static StandardPlural::Form selectPlural(
             const Formattable &number,
             const NumberFormat &fmt,
@@ -121,6 +128,28 @@ public:
             UErrorCode &status);
 
     
+
+
+
+
+
+
+
+
+
+
+
+
+    static void formatAndSelect(
+            double quantity,
+            const NumberFormat& fmt,
+            const PluralRules& rules,
+            number::impl::NumberStringBuilder& output,
+            StandardPlural::Form& pluralForm,
+            UErrorCode& status);
+
+    
+
 
 
     static UnicodeString &format(

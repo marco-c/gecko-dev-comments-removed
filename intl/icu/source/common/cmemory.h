@@ -50,6 +50,7 @@
 #define UPRV_LENGTHOF(array) (int32_t)(sizeof(array)/sizeof((array)[0]))
 #define uprv_memset(buffer, mark, size) U_STANDARD_CPP_NAMESPACE memset(buffer, mark, size)
 #define uprv_memcmp(buffer1, buffer2, size) U_STANDARD_CPP_NAMESPACE memcmp(buffer1, buffer2,size)
+#define uprv_memchr(ptr, value, num) U_STANDARD_CPP_NAMESPACE memchr(ptr, value, num)
 
 U_CAPI void * U_EXPORT2
 uprv_malloc(size_t s) U_MALLOC_ATTR U_ALLOC_SIZE_ATTR(1);
@@ -122,6 +123,9 @@ uprv_deleteUObject(void *obj);
 
 #ifdef __cplusplus
 
+#include <utility>
+#include "unicode/uobject.h"
+
 U_NAMESPACE_BEGIN
 
 
@@ -161,17 +165,6 @@ public:
 
 
     LocalMemory<T> &operator=(LocalMemory<T> &&src) U_NOEXCEPT {
-        return moveFrom(src);
-    }
-    
-
-
-
-
-
-
-
-    LocalMemory<T> &moveFrom(LocalMemory<T> &src) U_NOEXCEPT {
         uprv_free(LocalPointerBase<T>::ptr);
         LocalPointerBase<T>::ptr=src.ptr;
         src.ptr=NULL;
@@ -288,6 +281,13 @@ template<typename T, int32_t stackCapacity>
 class MaybeStackArray {
 public:
     
+    static void* U_EXPORT2 operator new(size_t) U_NOEXCEPT = delete;
+    static void* U_EXPORT2 operator new[](size_t) U_NOEXCEPT = delete;
+#if U_HAVE_PLACEMENT_NEW
+    static void* U_EXPORT2 operator new(size_t, void*) U_NOEXCEPT = delete;
+#endif
+
+    
 
 
     MaybeStackArray() : ptr(stackArray), capacity(stackCapacity), needToRelease(FALSE) {}
@@ -298,7 +298,7 @@ public:
 
     MaybeStackArray(int32_t newCapacity) : MaybeStackArray() {
         if (capacity < newCapacity) { resize(newCapacity); }
-    };
+    }
     
 
 
@@ -399,20 +399,6 @@ private:
     
     MaybeStackArray(const MaybeStackArray & ) {}
     void operator=(const MaybeStackArray & ) {}
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-#if U_HAVE_PLACEMENT_NEW
-    
-#endif
 };
 
 template<typename T, int32_t stackCapacity>
@@ -510,6 +496,13 @@ template<typename H, typename T, int32_t stackCapacity>
 class MaybeStackHeaderAndArray {
 public:
     
+    static void* U_EXPORT2 operator new(size_t) U_NOEXCEPT = delete;
+    static void* U_EXPORT2 operator new[](size_t) U_NOEXCEPT = delete;
+#if U_HAVE_PLACEMENT_NEW
+    static void* U_EXPORT2 operator new(size_t, void*) U_NOEXCEPT = delete;
+#endif
+
+    
 
 
     MaybeStackHeaderAndArray() : ptr(&stackHeader), capacity(stackCapacity), needToRelease(FALSE) {}
@@ -605,15 +598,6 @@ private:
     
     MaybeStackHeaderAndArray(const MaybeStackHeaderAndArray & ) {}
     void operator=(const MaybeStackHeaderAndArray & ) {}
-
-    
-    
-    
-    
-    
-#if U_HAVE_PLACEMENT_NEW
-    
-#endif
 };
 
 template<typename H, typename T, int32_t stackCapacity>
@@ -674,6 +658,78 @@ inline H *MaybeStackHeaderAndArray<H, T, stackCapacity>::orphanOrClone(int32_t l
     needToRelease=FALSE;
     return p;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template<typename T, int32_t stackCapacity = 8>
+class MemoryPool : public UMemory {
+public:
+    MemoryPool() : count(0), pool() {}
+
+    ~MemoryPool() {
+        for (int32_t i = 0; i < count; ++i) {
+            delete pool[i];
+        }
+    }
+
+    MemoryPool(const MemoryPool&) = delete;
+    MemoryPool& operator=(const MemoryPool&) = delete;
+
+    MemoryPool(MemoryPool&& other) U_NOEXCEPT : count(other.count),
+                                                pool(std::move(other.pool)) {
+        other.count = 0;
+    }
+
+    MemoryPool& operator=(MemoryPool&& other) U_NOEXCEPT {
+        count = other.count;
+        pool = std::move(other.pool);
+        other.count = 0;
+        return *this;
+    }
+
+    
+
+
+
+
+
+
+    template<typename... Args>
+    T* create(Args&&... args) {
+        int32_t capacity = pool.getCapacity();
+        if (count == capacity &&
+            pool.resize(capacity == stackCapacity ? 4 * capacity : 2 * capacity,
+                        capacity) == nullptr) {
+            return nullptr;
+        }
+        return pool[count++] = new T(std::forward<Args>(args)...);
+    }
+
+private:
+    int32_t count;
+    MaybeStackArray<T*, stackCapacity> pool;
+};
 
 U_NAMESPACE_END
 

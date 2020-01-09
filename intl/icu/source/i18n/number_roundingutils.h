@@ -135,7 +135,10 @@ inline bool roundsAtMidpoint(int roundingMode) {
 
 
 
-digits_t doubleFractionLength(double input);
+
+
+
+digits_t doubleFractionLength(double input, int8_t* singleDigit);
 
 } 
 

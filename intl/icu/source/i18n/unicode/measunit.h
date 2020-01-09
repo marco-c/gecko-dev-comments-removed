@@ -214,9 +214,20 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
 
+
     static MeasureUnit *createGForce(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getGForce();
+#endif  
+
+    
+
 
 
 
@@ -224,7 +235,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createMeterPerSecondSquared(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getMeterPerSecondSquared();
+#endif  
+
+    
+
 
 
 
@@ -232,7 +253,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createArcMinute(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getArcMinute();
+#endif  
+
+    
+
 
 
 
@@ -240,7 +271,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createArcSecond(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getArcSecond();
+#endif  
+
+    
+
 
 
 
@@ -248,7 +289,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createDegree(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getDegree();
+#endif  
+
+    
+
 
 
 
@@ -256,7 +307,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createRadian(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getRadian();
+#endif  
+
+    
+
 
 
 
@@ -264,7 +325,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createRevolutionAngle(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getRevolutionAngle();
+#endif  
+
+    
+
 
 
 
@@ -272,7 +343,35 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createAcre(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getAcre();
+#endif  
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createDunam(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getDunam();
+#endif 
+
+    
+
 
 
 
@@ -280,7 +379,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createHectare(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getHectare();
+#endif  
+
+    
+
 
 
 
@@ -288,7 +397,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createSquareCentimeter(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getSquareCentimeter();
+#endif  
+
+    
+
 
 
 
@@ -296,7 +415,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createSquareFoot(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getSquareFoot();
+#endif  
+
+    
+
 
 
 
@@ -304,7 +433,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createSquareInch(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getSquareInch();
+#endif  
+
+    
+
 
 
 
@@ -312,7 +451,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createSquareKilometer(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getSquareKilometer();
+#endif  
+
+    
+
 
 
 
@@ -320,7 +469,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createSquareMeter(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getSquareMeter();
+#endif  
+
+    
+
 
 
 
@@ -328,7 +487,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createSquareMile(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getSquareMile();
+#endif  
+
+    
+
 
 
 
@@ -336,7 +505,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createSquareYard(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getSquareYard();
+#endif  
+
+    
+
 
 
 
@@ -344,7 +523,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createKarat(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getKarat();
+#endif  
+
+    
+
 
 
 
@@ -352,7 +541,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createMilligramPerDeciliter(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getMilligramPerDeciliter();
+#endif  
+
+    
+
 
 
 
@@ -360,7 +559,35 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createMillimolePerLiter(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getMillimolePerLiter();
+#endif  
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createMole(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getMole();
+#endif 
+
+    
+
 
 
 
@@ -374,8 +601,27 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
 
+    static MeasureUnit getPartPerMillion();
+#endif  
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
 
     static MeasureUnit *createPercent(UErrorCode &status);
+#endif  
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+    static MeasureUnit getPercent();
 #endif 
 
 #ifndef U_HIDE_DRAFT_API
@@ -385,7 +631,35 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
 
+
     static MeasureUnit *createPermille(UErrorCode &status);
+#endif  
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+    static MeasureUnit getPermille();
+#endif 
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createPermyriad(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getPermyriad();
 #endif 
 
     
@@ -394,9 +668,20 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
 
+
     static MeasureUnit *createLiterPer100Kilometers(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getLiterPer100Kilometers();
+#endif  
+
+    
+
 
 
 
@@ -404,7 +689,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createLiterPerKilometer(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getLiterPerKilometer();
+#endif  
+
+    
+
 
 
 
@@ -412,7 +707,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createMilePerGallon(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getMilePerGallon();
+#endif  
+
+    
+
 
 
 
@@ -420,7 +725,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createMilePerGallonImperial(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getMilePerGallonImperial();
+#endif  
+
+    
+
 
 
 
@@ -428,7 +743,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createBit(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getBit();
+#endif  
+
+    
+
 
 
 
@@ -436,7 +761,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createByte(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getByte();
+#endif  
+
+    
+
 
 
 
@@ -444,7 +779,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createGigabit(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getGigabit();
+#endif  
+
+    
+
 
 
 
@@ -452,7 +797,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createGigabyte(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getGigabyte();
+#endif  
+
+    
+
 
 
 
@@ -460,7 +815,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createKilobit(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getKilobit();
+#endif  
+
+    
+
 
 
 
@@ -468,7 +833,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createKilobyte(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getKilobyte();
+#endif  
+
+    
+
 
 
 
@@ -476,7 +851,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createMegabit(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getMegabit();
+#endif  
+
+    
+
 
 
 
@@ -490,8 +875,27 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
 
+    static MeasureUnit getMegabyte();
+#endif  
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
 
     static MeasureUnit *createPetabyte(UErrorCode &status);
+#endif  
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+    static MeasureUnit getPetabyte();
 #endif 
 
     
@@ -500,9 +904,20 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
 
+
     static MeasureUnit *createTerabit(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getTerabit();
+#endif  
+
+    
+
 
 
 
@@ -510,7 +925,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createTerabyte(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getTerabyte();
+#endif  
+
+    
+
 
 
 
@@ -518,7 +943,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createCentury(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getCentury();
+#endif  
+
+    
+
 
 
 
@@ -526,7 +961,37 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createDay(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getDay();
+#endif  
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createDayPerson(UErrorCode &status);
+#endif  
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+    static MeasureUnit getDayPerson();
+#endif 
+
+    
+
 
 
 
@@ -534,7 +999,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createHour(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getHour();
+#endif  
+
+    
+
 
 
 
@@ -542,7 +1017,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createMicrosecond(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getMicrosecond();
+#endif  
+
+    
+
 
 
 
@@ -550,7 +1035,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createMillisecond(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getMillisecond();
+#endif  
+
+    
+
 
 
 
@@ -558,7 +1053,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createMinute(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getMinute();
+#endif  
+
+    
+
 
 
 
@@ -566,7 +1071,37 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createMonth(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getMonth();
+#endif  
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createMonthPerson(UErrorCode &status);
+#endif  
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+    static MeasureUnit getMonthPerson();
+#endif 
+
+    
+
 
 
 
@@ -574,7 +1109,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createNanosecond(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getNanosecond();
+#endif  
+
+    
+
 
 
 
@@ -582,7 +1127,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createSecond(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getSecond();
+#endif  
+
+    
+
 
 
 
@@ -590,7 +1145,37 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createWeek(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getWeek();
+#endif  
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createWeekPerson(UErrorCode &status);
+#endif  
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+    static MeasureUnit getWeekPerson();
+#endif 
+
+    
+
 
 
 
@@ -598,7 +1183,37 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createYear(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getYear();
+#endif  
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createYearPerson(UErrorCode &status);
+#endif  
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+    static MeasureUnit getYearPerson();
+#endif 
+
+    
+
 
 
 
@@ -606,7 +1221,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createAmpere(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getAmpere();
+#endif  
+
+    
+
 
 
 
@@ -614,7 +1239,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createMilliampere(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getMilliampere();
+#endif  
+
+    
+
 
 
 
@@ -622,7 +1257,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createOhm(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getOhm();
+#endif  
+
+    
+
 
 
 
@@ -630,7 +1275,35 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createVolt(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getVolt();
+#endif  
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createBritishThermalUnit(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getBritishThermalUnit();
+#endif 
+
+    
+
 
 
 
@@ -638,7 +1311,35 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createCalorie(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getCalorie();
+#endif  
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createElectronvolt(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getElectronvolt();
+#endif 
+
+    
+
 
 
 
@@ -646,7 +1347,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createFoodcalorie(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getFoodcalorie();
+#endif  
+
+    
+
 
 
 
@@ -654,7 +1365,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createJoule(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getJoule();
+#endif  
+
+    
+
 
 
 
@@ -662,7 +1383,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createKilocalorie(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getKilocalorie();
+#endif  
+
+    
+
 
 
 
@@ -670,7 +1401,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createKilojoule(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getKilojoule();
+#endif  
+
+    
+
 
 
 
@@ -678,7 +1419,53 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createKilowattHour(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getKilowattHour();
+#endif  
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createNewton(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getNewton();
+#endif 
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createPoundForce(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getPoundForce();
+#endif 
+
+    
+
 
 
 
@@ -686,7 +1473,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createGigahertz(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getGigahertz();
+#endif  
+
+    
+
 
 
 
@@ -694,7 +1491,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createHertz(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getHertz();
+#endif  
+
+    
+
 
 
 
@@ -702,7 +1509,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createKilohertz(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getKilohertz();
+#endif  
+
+    
+
 
 
 
@@ -710,7 +1527,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createMegahertz(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getMegahertz();
+#endif  
+
+    
+
 
 
 
@@ -718,7 +1545,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createAstronomicalUnit(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getAstronomicalUnit();
+#endif  
+
+    
+
 
 
 
@@ -726,7 +1563,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createCentimeter(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getCentimeter();
+#endif  
+
+    
+
 
 
 
@@ -734,7 +1581,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createDecimeter(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getDecimeter();
+#endif  
+
+    
+
 
 
 
@@ -742,7 +1599,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createFathom(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getFathom();
+#endif  
+
+    
+
 
 
 
@@ -750,7 +1617,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createFoot(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getFoot();
+#endif  
+
+    
+
 
 
 
@@ -758,7 +1635,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createFurlong(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getFurlong();
+#endif  
+
+    
+
 
 
 
@@ -766,7 +1653,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createInch(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getInch();
+#endif  
+
+    
+
 
 
 
@@ -774,7 +1671,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createKilometer(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getKilometer();
+#endif  
+
+    
+
 
 
 
@@ -782,7 +1689,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createLightYear(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getLightYear();
+#endif  
+
+    
+
 
 
 
@@ -790,7 +1707,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createMeter(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getMeter();
+#endif  
+
+    
+
 
 
 
@@ -798,7 +1725,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createMicrometer(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getMicrometer();
+#endif  
+
+    
+
 
 
 
@@ -806,7 +1743,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createMile(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getMile();
+#endif  
+
+    
+
 
 
 
@@ -814,7 +1761,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createMileScandinavian(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getMileScandinavian();
+#endif  
+
+    
+
 
 
 
@@ -822,7 +1779,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createMillimeter(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getMillimeter();
+#endif  
+
+    
+
 
 
 
@@ -830,7 +1797,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createNanometer(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getNanometer();
+#endif  
+
+    
+
 
 
 
@@ -838,7 +1815,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createNauticalMile(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getNauticalMile();
+#endif  
+
+    
+
 
 
 
@@ -846,7 +1833,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createParsec(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getParsec();
+#endif  
+
+    
+
 
 
 
@@ -854,7 +1851,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createPicometer(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getPicometer();
+#endif  
+
+    
+
 
 
 
@@ -862,7 +1869,35 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createPoint(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getPoint();
+#endif  
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createSolarRadius(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getSolarRadius();
+#endif 
+
+    
+
 
 
 
@@ -870,7 +1905,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createYard(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getYard();
+#endif  
+
+    
+
 
 
 
@@ -878,7 +1923,35 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createLux(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getLux();
+#endif  
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createSolarLuminosity(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getSolarLuminosity();
+#endif 
+
+    
+
 
 
 
@@ -886,7 +1959,53 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createCarat(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getCarat();
+#endif  
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createDalton(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getDalton();
+#endif 
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createEarthMass(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getEarthMass();
+#endif 
+
+    
+
 
 
 
@@ -894,7 +2013,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createGram(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getGram();
+#endif  
+
+    
+
 
 
 
@@ -902,7 +2031,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createKilogram(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getKilogram();
+#endif  
+
+    
+
 
 
 
@@ -910,7 +2049,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createMetricTon(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getMetricTon();
+#endif  
+
+    
+
 
 
 
@@ -918,7 +2067,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createMicrogram(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getMicrogram();
+#endif  
+
+    
+
 
 
 
@@ -926,7 +2085,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createMilligram(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getMilligram();
+#endif  
+
+    
+
 
 
 
@@ -934,7 +2103,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createOunce(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getOunce();
+#endif  
+
+    
+
 
 
 
@@ -942,7 +2121,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createOunceTroy(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getOunceTroy();
+#endif  
+
+    
+
 
 
 
@@ -950,7 +2139,35 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createPound(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getPound();
+#endif  
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createSolarMass(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getSolarMass();
+#endif 
+
+    
+
 
 
 
@@ -958,7 +2175,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createStone(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getStone();
+#endif  
+
+    
+
 
 
 
@@ -966,7 +2193,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createTon(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getTon();
+#endif  
+
+    
+
 
 
 
@@ -974,7 +2211,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createGigawatt(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getGigawatt();
+#endif  
+
+    
+
 
 
 
@@ -982,7 +2229,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createHorsepower(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getHorsepower();
+#endif  
+
+    
+
 
 
 
@@ -990,7 +2247,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createKilowatt(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getKilowatt();
+#endif  
+
+    
+
 
 
 
@@ -998,7 +2265,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createMegawatt(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getMegawatt();
+#endif  
+
+    
+
 
 
 
@@ -1006,7 +2283,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createMilliwatt(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getMilliwatt();
+#endif  
+
+    
+
 
 
 
@@ -1020,8 +2307,27 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
 
+    static MeasureUnit getWatt();
+#endif  
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
 
     static MeasureUnit *createAtmosphere(UErrorCode &status);
+#endif  
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+    static MeasureUnit getAtmosphere();
 #endif 
 
     
@@ -1030,9 +2336,20 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
 
+
     static MeasureUnit *createHectopascal(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getHectopascal();
+#endif  
+
+    
+
 
 
 
@@ -1040,7 +2357,53 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createInchHg(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getInchHg();
+#endif  
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createKilopascal(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getKilopascal();
+#endif 
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createMegapascal(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getMegapascal();
+#endif 
+
+    
+
 
 
 
@@ -1048,7 +2411,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createMillibar(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getMillibar();
+#endif  
+
+    
+
 
 
 
@@ -1056,7 +2429,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createMillimeterOfMercury(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getMillimeterOfMercury();
+#endif  
+
+    
+
 
 
 
@@ -1064,7 +2447,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createPoundPerSquareInch(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getPoundPerSquareInch();
+#endif  
+
+    
+
 
 
 
@@ -1072,7 +2465,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createKilometerPerHour(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getKilometerPerHour();
+#endif  
+
+    
+
 
 
 
@@ -1080,7 +2483,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createKnot(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getKnot();
+#endif  
+
+    
+
 
 
 
@@ -1088,7 +2501,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createMeterPerSecond(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getMeterPerSecond();
+#endif  
+
+    
+
 
 
 
@@ -1096,7 +2519,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createMilePerHour(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getMilePerHour();
+#endif  
+
+    
+
 
 
 
@@ -1104,7 +2537,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createCelsius(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getCelsius();
+#endif  
+
+    
+
 
 
 
@@ -1112,7 +2555,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createFahrenheit(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getFahrenheit();
+#endif  
+
+    
+
 
 
 
@@ -1120,7 +2573,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createGenericTemperature(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getGenericTemperature();
+#endif  
+
+    
+
 
 
 
@@ -1128,7 +2591,53 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createKelvin(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getKelvin();
+#endif  
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createNewtonMeter(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getNewtonMeter();
+#endif 
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createPoundFoot(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getPoundFoot();
+#endif 
+
+    
+
 
 
 
@@ -1136,7 +2645,35 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createAcreFoot(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getAcreFoot();
+#endif  
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createBarrel(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getBarrel();
+#endif 
+
+    
+
 
 
 
@@ -1144,7 +2681,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createBushel(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getBushel();
+#endif  
+
+    
+
 
 
 
@@ -1152,7 +2699,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createCentiliter(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getCentiliter();
+#endif  
+
+    
+
 
 
 
@@ -1160,7 +2717,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createCubicCentimeter(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getCubicCentimeter();
+#endif  
+
+    
+
 
 
 
@@ -1168,7 +2735,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createCubicFoot(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getCubicFoot();
+#endif  
+
+    
+
 
 
 
@@ -1176,7 +2753,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createCubicInch(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getCubicInch();
+#endif  
+
+    
+
 
 
 
@@ -1184,7 +2771,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createCubicKilometer(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getCubicKilometer();
+#endif  
+
+    
+
 
 
 
@@ -1192,7 +2789,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createCubicMeter(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getCubicMeter();
+#endif  
+
+    
+
 
 
 
@@ -1200,7 +2807,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createCubicMile(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getCubicMile();
+#endif  
+
+    
+
 
 
 
@@ -1208,7 +2825,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createCubicYard(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getCubicYard();
+#endif  
+
+    
+
 
 
 
@@ -1216,7 +2843,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createCup(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getCup();
+#endif  
+
+    
+
 
 
 
@@ -1224,7 +2861,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createCupMetric(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getCupMetric();
+#endif  
+
+    
+
 
 
 
@@ -1232,7 +2879,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createDeciliter(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getDeciliter();
+#endif  
+
+    
+
 
 
 
@@ -1240,7 +2897,35 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createFluidOunce(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getFluidOunce();
+#endif  
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createFluidOunceImperial(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getFluidOunceImperial();
+#endif 
+
+    
+
 
 
 
@@ -1248,7 +2933,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createGallon(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getGallon();
+#endif  
+
+    
+
 
 
 
@@ -1256,7 +2951,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createGallonImperial(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getGallonImperial();
+#endif  
+
+    
+
 
 
 
@@ -1264,7 +2969,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createHectoliter(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getHectoliter();
+#endif  
+
+    
+
 
 
 
@@ -1272,7 +2987,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createLiter(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getLiter();
+#endif  
+
+    
+
 
 
 
@@ -1280,7 +3005,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createMegaliter(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getMegaliter();
+#endif  
+
+    
+
 
 
 
@@ -1288,7 +3023,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createMilliliter(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getMilliliter();
+#endif  
+
+    
+
 
 
 
@@ -1296,7 +3041,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createPint(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getPint();
+#endif  
+
+    
+
 
 
 
@@ -1304,7 +3059,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createPintMetric(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getPintMetric();
+#endif  
+
+    
+
 
 
 
@@ -1312,7 +3077,17 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createQuart(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+    static MeasureUnit getQuart();
+#endif  
+
+    
+
 
 
 
@@ -1320,13 +3095,32 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createTablespoon(UErrorCode &status);
 
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+    static MeasureUnit getTablespoon();
+#endif  
+
     
 
 
 
 
 
+
     static MeasureUnit *createTeaspoon(UErrorCode &status);
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+    static MeasureUnit getTeaspoon();
+#endif  
 
 
 

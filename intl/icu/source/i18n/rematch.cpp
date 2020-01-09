@@ -717,7 +717,7 @@ UBool RegexMatcher::find(UErrorCode &status) {
             if  (findProgressInterrupt(startPos, status))
                 return FALSE;
         }
-        U_ASSERT(FALSE);
+        UPRV_UNREACHABLE;
 
     case START_START:
         
@@ -765,7 +765,7 @@ UBool RegexMatcher::find(UErrorCode &status) {
                     return FALSE;
             }
         }
-        U_ASSERT(FALSE);
+        UPRV_UNREACHABLE;
 
     case START_STRING:
     case START_CHAR:
@@ -797,7 +797,7 @@ UBool RegexMatcher::find(UErrorCode &status) {
                     return FALSE;
            }
         }
-        U_ASSERT(FALSE);
+        UPRV_UNREACHABLE;
 
     case START_LINE:
         {
@@ -877,11 +877,10 @@ UBool RegexMatcher::find(UErrorCode &status) {
         }
 
     default:
-        U_ASSERT(FALSE);
+        UPRV_UNREACHABLE;
     }
 
-    U_ASSERT(FALSE);
-    return FALSE;
+    UPRV_UNREACHABLE;
 }
 
 
@@ -992,7 +991,7 @@ UBool RegexMatcher::findUsingChunk(UErrorCode &status) {
             if  (findProgressInterrupt(startPos, status))
                 return FALSE;
         }
-        U_ASSERT(FALSE);
+        UPRV_UNREACHABLE;
 
     case START_START:
         
@@ -1034,7 +1033,7 @@ UBool RegexMatcher::findUsingChunk(UErrorCode &status) {
                 return FALSE;
         }
     }
-    U_ASSERT(FALSE);
+    UPRV_UNREACHABLE;
 
     case START_STRING:
     case START_CHAR:
@@ -1063,7 +1062,7 @@ UBool RegexMatcher::findUsingChunk(UErrorCode &status) {
                 return FALSE;
         }
     }
-    U_ASSERT(FALSE);
+    UPRV_UNREACHABLE;
 
     case START_LINE:
     {
@@ -1134,11 +1133,10 @@ UBool RegexMatcher::findUsingChunk(UErrorCode &status) {
     }
 
     default:
-        U_ASSERT(FALSE);
+        UPRV_UNREACHABLE;
     }
 
-    U_ASSERT(FALSE);
-    return FALSE;
+    UPRV_UNREACHABLE;
 }
 
 
@@ -4278,7 +4276,7 @@ GC_Done:
         default:
             
             
-            U_ASSERT(FALSE);
+            UPRV_UNREACHABLE;
         }
 
         if (U_FAILURE(status)) {
@@ -5778,7 +5776,7 @@ GC_Done:
         default:
             
             
-            U_ASSERT(FALSE);
+            UPRV_UNREACHABLE;
         }
 
         if (U_FAILURE(status)) {

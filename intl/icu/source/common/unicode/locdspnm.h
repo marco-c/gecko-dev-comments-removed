@@ -49,7 +49,7 @@ public:
 
 
 
-    static LocaleDisplayNames* U_EXPORT2 createInstance(const Locale& locale);
+    inline static LocaleDisplayNames* U_EXPORT2 createInstance(const Locale& locale);
 
     
 

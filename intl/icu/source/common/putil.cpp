@@ -103,17 +103,6 @@
 #   include <windows.h>
 #   include "unicode/uloc.h"
 #   include "wintz.h"
-#if U_PLATFORM_HAS_WINUWP_API
-typedef PVOID LPMSG; 
-#include <Windows.Globalization.h>
-#include <windows.system.userprofile.h>
-#include <wrl/wrappers/corewrappers.h>
-#include <wrl/client.h>
-
-using namespace ABI::Windows::Foundation;
-using namespace Microsoft::WRL;
-using namespace Microsoft::WRL::Wrappers;
-#endif
 #elif U_PLATFORM == U_PF_OS400
 #   include <float.h>
 #   include <qusec.h>       
@@ -252,7 +241,6 @@ u_signBit(double d) {
 UDate fakeClock_t0 = 0; 
 UDate fakeClock_dt = 0; 
 UBool fakeClock_set = FALSE; 
-static UMutex fakeClockMutex = U_MUTEX_INTIALIZER;
 
 static UDate getUTCtime_real() {
     struct timeval posixTime;
@@ -261,6 +249,7 @@ static UDate getUTCtime_real() {
 }
 
 static UDate getUTCtime_fake() {
+    static UMutex fakeClockMutex = U_MUTEX_INTIALIZER;
     umtx_lock(&fakeClockMutex);
     if(!fakeClock_set) {
         UDate real = getUTCtime_real();
@@ -997,7 +986,8 @@ static char* searchForTZFile(const char* path, DefaultTZInfo* tzInfo) {
     
     while((dirEntry = readdir(dirp)) != NULL) {
         const char* dirName = dirEntry->d_name;
-        if (uprv_strcmp(dirName, SKIP1) != 0 && uprv_strcmp(dirName, SKIP2) != 0) {
+        if (uprv_strcmp(dirName, SKIP1) != 0 && uprv_strcmp(dirName, SKIP2) != 0
+            && uprv_strcmp(TZFILE_SKIP, dirName) != 0 && uprv_strcmp(TZFILE_SKIP2, dirName) != 0) {
             
             CharString newpath(curpath, status);
             newpath.append(dirName, -1, status);
@@ -1024,7 +1014,7 @@ static char* searchForTZFile(const char* path, DefaultTZInfo* tzInfo) {
 
                 if (result != NULL)
                     break;
-            } else if (uprv_strcmp(TZFILE_SKIP, dirName) != 0 && uprv_strcmp(TZFILE_SKIP2, dirName) != 0) {
+            } else {
                 if(compareBinaryFiles(TZDEFAULT, newpath.data(), tzInfo)) {
                     int32_t amountToSkip = sizeof(TZZONEINFO) - 1;
                     if (amountToSkip > newpath.length()) {
@@ -1078,7 +1068,7 @@ uprv_tzname(int n)
     
     
     
-    return uprv_strdup("Etc/UTC");
+    return uprv_strdup("");
 #endif 
 
 #else
@@ -1319,7 +1309,7 @@ uprv_pathIsAbsolute(const char *path)
 
 
 
-#if U_PLATFORM_IS_DARWIN_BASED && TARGET_IPHONE_SIMULATOR
+#if U_PLATFORM_IS_DARWIN_BASED && TARGET_OS_SIMULATOR
 # if !defined(ICU_DATA_DIR_PREFIX_ENV_VAR)
 #  define ICU_DATA_DIR_PREFIX_ENV_VAR "IPHONE_SIMULATOR_ROOT"
 # endif
@@ -1430,12 +1420,7 @@ static void U_CALLCONV dataDirectoryInitFn() {
 
     if(path==NULL) {
         
-#if U_PLATFORM_HAS_WIN32_API
-        
-        path = ".\\";
-#else
         path = "";
-#endif
     }
 
     u_setDataDirectory(path);
@@ -1633,11 +1618,7 @@ uprv_getDefaultLocaleID()
 
 
 
-    char *correctedPOSIXLocale = 0;
     const char* posixID = uprv_getPOSIXIDForDefaultLocale();
-    const char *p;
-    const char *q;
-    int32_t len;
 
     
 
@@ -1645,38 +1626,29 @@ uprv_getDefaultLocaleID()
 
 
 
-    if (gCorrectedPOSIXLocale != NULL) {
+    if (gCorrectedPOSIXLocale != nullptr) {
         return gCorrectedPOSIXLocale;
     }
 
-    if ((p = uprv_strchr(posixID, '.')) != NULL) {
-        
-        correctedPOSIXLocale = static_cast<char *>(uprv_malloc(uprv_strlen(posixID)+1));
-        
-        if (correctedPOSIXLocale == NULL) {
-            return NULL;
-        }
-        uprv_strncpy(correctedPOSIXLocale, posixID, p-posixID);
-        correctedPOSIXLocale[p-posixID] = 0;
+    
+    
+    char *correctedPOSIXLocale = static_cast<char *>(uprv_malloc(uprv_strlen(posixID) + 1 + 1));
+    if (correctedPOSIXLocale == nullptr) {
+        return nullptr;
+    }
+    uprv_strcpy(correctedPOSIXLocale, posixID);
 
-        
-        if ((p = uprv_strchr(correctedPOSIXLocale, '@')) != NULL) {
-            correctedPOSIXLocale[p-correctedPOSIXLocale] = 0;
+    char *limit;
+    if ((limit = uprv_strchr(correctedPOSIXLocale, '.')) != nullptr) {
+        *limit = 0;
+        if ((limit = uprv_strchr(correctedPOSIXLocale, '@')) != nullptr) {
+            *limit = 0;
         }
     }
 
     
-    if ((p = uprv_strrchr(posixID, '@')) != NULL) {
-        if (correctedPOSIXLocale == NULL) {
-            
-            correctedPOSIXLocale = static_cast<char *>(uprv_malloc(uprv_strlen(posixID)+2));
-            
-            if (correctedPOSIXLocale == NULL) {
-                return NULL;
-            }
-            uprv_strncpy(correctedPOSIXLocale, posixID, p-posixID);
-            correctedPOSIXLocale[p-posixID] = 0;
-        }
+    const char *p;
+    if ((p = uprv_strrchr(posixID, '@')) != nullptr) {
         p++;
 
         
@@ -1685,16 +1657,17 @@ uprv_getDefaultLocaleID()
             
         }
 
-        if (uprv_strchr(correctedPOSIXLocale,'_') == NULL) {
+        if (uprv_strchr(correctedPOSIXLocale,'_') == nullptr) {
             uprv_strcat(correctedPOSIXLocale, "__"); 
         }
         else {
             uprv_strcat(correctedPOSIXLocale, "_"); 
         }
 
-        if ((q = uprv_strchr(p, '.')) != NULL) {
+        const char *q;
+        if ((q = uprv_strchr(p, '.')) != nullptr) {
             
-            len = (int32_t)(uprv_strlen(correctedPOSIXLocale) + (q-p));
+            int32_t len = (int32_t)(uprv_strlen(correctedPOSIXLocale) + (q-p));
             uprv_strncat(correctedPOSIXLocale, p, q-p);
             correctedPOSIXLocale[len] = 0;
         }
@@ -1710,28 +1683,15 @@ uprv_getDefaultLocaleID()
 
     }
 
-    
-    if (correctedPOSIXLocale != NULL) {
-        posixID = correctedPOSIXLocale;
-    }
-    else {
-        
-        correctedPOSIXLocale = (char *)uprv_malloc(uprv_strlen(posixID) + 1);
-        
-        if (correctedPOSIXLocale == NULL) {
-            return NULL;
-        }
-        posixID = uprv_strcpy(correctedPOSIXLocale, posixID);
-    }
-
-    if (gCorrectedPOSIXLocale == NULL) {
+    if (gCorrectedPOSIXLocale == nullptr) {
         gCorrectedPOSIXLocale = correctedPOSIXLocale;
         gCorrectedPOSIXLocaleHeapAllocated = true;
         ucln_common_registerCleanup(UCLN_COMMON_PUTIL, putil_cleanup);
-        correctedPOSIXLocale = NULL;
+        correctedPOSIXLocale = nullptr;
     }
+    posixID = gCorrectedPOSIXLocale;
 
-    if (correctedPOSIXLocale != NULL) {  
+    if (correctedPOSIXLocale != nullptr) {  
         uprv_free(correctedPOSIXLocale);
     }
 

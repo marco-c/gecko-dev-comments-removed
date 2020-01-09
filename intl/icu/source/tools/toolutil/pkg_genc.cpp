@@ -309,15 +309,10 @@ writeAssemblyCode(const char *filename, const char *destdir, const char *optEntr
     T_FileStream_writeLine(out, assemblyHeader[assemblyHeaderIndex].beginLine);
 
     for(;;) {
+        memset(buffer, 0, sizeof(buffer));
         length=T_FileStream_read(in, buffer, sizeof(buffer));
         if(length==0) {
             break;
-        }
-        if (length != sizeof(buffer)) {
-            
-            for(i=0; i < (length % sizeof(uint32_t)); ++i) {
-                buffer[length+i] = 0;
-            }
         }
         for(i=0; i<(length/sizeof(buffer[0])); i++) {
             column = write32(out, buffer[i], column);
@@ -685,23 +680,30 @@ getArchitecture(uint16_t *pCPU, uint16_t *pBits, UBool *pIsBigEndian, const char
         *pBits=32;
         *pIsBigEndian=(UBool)(U_IS_BIG_ENDIAN ? ELFDATA2MSB : ELFDATA2LSB);
 #elif U_PLATFORM_HAS_WIN32_API
+        
+        *pIsBigEndian = FALSE;
 
-#   if defined(_M_IA64)
-        *pCPU=IMAGE_FILE_MACHINE_IA64;
-        *pBits = 64;
-#   elif defined(_M_AMD64)
-
-
-
-        *pCPU = IMAGE_FILE_MACHINE_UNKNOWN;
         
         
-        *pBits = 64;                           
+        
+
+        
+        
+        
+        
+        
+#   if defined(_M_IX86)
+        *pCPU = IMAGE_FILE_MACHINE_I386;
 #   else
-        *pCPU=IMAGE_FILE_MACHINE_I386;    
-        *pBits = 32;
+        *pCPU = IMAGE_FILE_MACHINE_UNKNOWN;
 #   endif
-        *pIsBigEndian=FALSE;
+#   if defined(_M_IA64) || defined(_M_AMD64) || defined (_M_ARM64)
+        *pBits = 64; 
+#   elif defined(_M_IX86) || defined(_M_ARM)
+        *pBits = 32;
+#   else
+#      error "Unknown platform for CAN_GENERATE_OBJECTS."
+#   endif
 #else
 #   error "Unknown platform for CAN_GENERATE_OBJECTS."
 #endif

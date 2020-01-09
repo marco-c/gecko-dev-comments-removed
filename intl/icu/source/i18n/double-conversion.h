@@ -349,6 +349,11 @@ class DoubleToStringConverter {
   
   
   
+  
+  
+  
+  
+  
   static void U_I18N_API DoubleToAscii(double v,
                             DtoaMode mode,
                             int requested_digits,
@@ -393,7 +398,7 @@ class DoubleToStringConverter {
   const int max_trailing_padding_zeroes_in_precision_mode_;
 #endif 
 
-  DISALLOW_IMPLICIT_CONSTRUCTORS(DoubleToStringConverter);
+  DC_DISALLOW_IMPLICIT_CONSTRUCTORS(DoubleToStringConverter);
 };
 
 
@@ -408,9 +413,34 @@ class StringToDoubleConverter {
     ALLOW_TRAILING_JUNK = 4,
     ALLOW_LEADING_SPACES = 8,
     ALLOW_TRAILING_SPACES = 16,
-    ALLOW_SPACES_AFTER_SIGN = 32
+    ALLOW_SPACES_AFTER_SIGN = 32,
+    ALLOW_CASE_INSENSIBILITY = 64,
+    ALLOW_HEX_FLOATS = 128,
   };
 
+  static const uc16 kNoSeparator = '\0';
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   
@@ -507,12 +537,14 @@ class StringToDoubleConverter {
                           double empty_string_value,
                           double junk_string_value,
                           const char* infinity_symbol,
-                          const char* nan_symbol)
+                          const char* nan_symbol,
+                          uc16 separator = kNoSeparator)
       : flags_(flags),
         empty_string_value_(empty_string_value),
         junk_string_value_(junk_string_value),
         infinity_symbol_(infinity_symbol),
-        nan_symbol_(nan_symbol) {
+        nan_symbol_(nan_symbol),
+        separator_(separator) {
   }
 
   
@@ -547,6 +579,7 @@ class StringToDoubleConverter {
   const double junk_string_value_;
   const char* const infinity_symbol_;
   const char* const nan_symbol_;
+  const uc16 separator_;
 
   template <class Iterator>
   double StringToIeee(Iterator start_pointer,
@@ -554,7 +587,7 @@ class StringToDoubleConverter {
                       bool read_as_double,
                       int* processed_characters_count) const;
 
-  DISALLOW_IMPLICIT_CONSTRUCTORS(StringToDoubleConverter);
+  DC_DISALLOW_IMPLICIT_CONSTRUCTORS(StringToDoubleConverter);
 };
 
 }  

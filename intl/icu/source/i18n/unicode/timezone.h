@@ -290,9 +290,18 @@ public:
 
 
 
+
+
+
+
+
+
+
+
     static TimeZone* U_EXPORT2 detectHostTimeZone();
 
     
+
 
 
 
@@ -666,7 +675,7 @@ public:
 
 
 
-    UnicodeString& getDisplayName(UBool daylight, EDisplayType style, UnicodeString& result) const;
+    UnicodeString& getDisplayName(UBool inDaylight, EDisplayType style, UnicodeString& result) const;
 
     
 
@@ -682,7 +691,7 @@ public:
 
 
 
-    UnicodeString& getDisplayName(UBool daylight, EDisplayType style, const Locale& locale, UnicodeString& result) const;
+    UnicodeString& getDisplayName(UBool inDaylight, EDisplayType style, const Locale& locale, UnicodeString& result) const;
     
     
 

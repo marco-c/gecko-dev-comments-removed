@@ -60,7 +60,7 @@ U_CDECL_BEGIN
 
 
 
-#define U_UNICODE_VERSION "11.0"
+#define U_UNICODE_VERSION "12.0"
 
 
 
@@ -1767,6 +1767,27 @@ enum UBlockCode {
     
     UBLOCK_SOGDIAN = 291, 
 
+    
+
+    
+    UBLOCK_EGYPTIAN_HIEROGLYPH_FORMAT_CONTROLS = 292, 
+    
+    UBLOCK_ELYMAIC = 293, 
+    
+    UBLOCK_NANDINAGARI = 294, 
+    
+    UBLOCK_NYIAKENG_PUACHUE_HMONG = 295, 
+    
+    UBLOCK_OTTOMAN_SIYAQ_NUMBERS = 296, 
+    
+    UBLOCK_SMALL_KANA_EXTENSION = 297, 
+    
+    UBLOCK_SYMBOLS_AND_PICTOGRAPHS_EXTENDED_A = 298, 
+    
+    UBLOCK_TAMIL_SUPPLEMENT = 299, 
+    
+    UBLOCK_WANCHO = 300, 
+
 #ifndef U_HIDE_DEPRECATED_API
     
 
@@ -1774,7 +1795,7 @@ enum UBlockCode {
 
 
 
-    UBLOCK_COUNT = 292,
+    UBLOCK_COUNT = 301,
 #endif  
 
     

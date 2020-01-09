@@ -17,6 +17,7 @@
 #ifndef __PATTERNPROPS_H__
 #define __PATTERNPROPS_H__
 
+#include "unicode/unistr.h"
 #include "unicode/utypes.h"
 
 U_NAMESPACE_BEGIN
@@ -62,6 +63,12 @@ public:
 
 
     static const UChar *skipWhiteSpace(const UChar *s, int32_t length);
+
+    
+
+
+
+    static int32_t skipWhiteSpace(const UnicodeString &s, int32_t start);
 
     
 

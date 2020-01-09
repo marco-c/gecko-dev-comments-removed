@@ -3544,9 +3544,7 @@ const CEI *CEIBuffer::get(int32_t index) {
     
     
     if (index != limitIx) {
-        U_ASSERT(FALSE);
-
-        return NULL;
+        UPRV_UNREACHABLE;
     }
 
     
@@ -3583,9 +3581,7 @@ const CEI *CEIBuffer::getPrevious(int32_t index) {
     
     
     if (index != limitIx) {
-        U_ASSERT(FALSE);
-
-        return NULL;
+        UPRV_UNREACHABLE;
     }
 
     

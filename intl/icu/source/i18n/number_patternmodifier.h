@@ -21,10 +21,16 @@ U_NAMESPACE_BEGIN
 
 
 #if U_PF_WINDOWS <= U_PLATFORM && U_PLATFORM <= U_PF_CYGWIN
+#if defined(_MSC_VER)
 
-#pragma warning(suppress: 4661)
+#pragma warning(push)
+#pragma warning(disable : 4661)
+#endif
 template class U_I18N_API LocalPointerBase<number::impl::AdoptingModifierStore>;
 template class U_I18N_API LocalPointer<number::impl::AdoptingModifierStore>;
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
 #endif
 
 namespace number {
@@ -40,7 +46,7 @@ class U_I18N_API ImmutablePatternModifier : public MicroPropsGenerator, public U
 
     void processQuantity(DecimalQuantity&, MicroProps& micros, UErrorCode& status) const U_OVERRIDE;
 
-    void applyToMicros(MicroProps& micros, DecimalQuantity& quantity) const;
+    void applyToMicros(MicroProps& micros, const DecimalQuantity& quantity, UErrorCode& status) const;
 
     const Modifier* getModifier(int8_t signum, StandardPlural::Form plural) const;
 
@@ -96,7 +102,10 @@ class U_I18N_API MutablePatternModifier
 
 
 
-    void setPatternInfo(const AffixPatternProvider *patternInfo);
+
+
+
+    void setPatternInfo(const AffixPatternProvider *patternInfo, Field field);
 
     
 
@@ -203,8 +212,9 @@ class U_I18N_API MutablePatternModifier
 
     
     const AffixPatternProvider *fPatternInfo;
+    Field fField;
     UNumberSignDisplay fSignDisplay;
-    bool perMilleReplacesPercent;
+    bool fPerMilleReplacesPercent;
 
     
     const DecimalFormatSymbols *fSymbols;

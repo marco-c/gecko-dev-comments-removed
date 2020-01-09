@@ -80,8 +80,10 @@ MacroProps NumberPropertyMapper::oldToNew(const DecimalFormatProperties& propert
     
 
     bool useCurrency = (
-            !properties.currency.isNull() || !properties.currencyPluralInfo.fPtr.isNull() ||
-            !properties.currencyUsage.isNull() || affixProvider->hasCurrencySign());
+            !properties.currency.isNull() ||
+            !properties.currencyPluralInfo.fPtr.isNull() ||
+            !properties.currencyUsage.isNull() ||
+            affixProvider->hasCurrencySign());
     CurrencyUnit currency = resolveCurrency(properties, locale, status);
     UCurrencyUsage currencyUsage = properties.currencyUsage.getOrDefault(UCURR_USAGE_STANDARD);
     if (useCurrency) {
@@ -141,7 +143,11 @@ MacroProps NumberPropertyMapper::oldToNew(const DecimalFormatProperties& propert
     if (!properties.currencyUsage.isNull()) {
         precision = Precision::constructCurrency(currencyUsage).withCurrency(currency);
     } else if (roundingIncrement != 0.0) {
-        precision = Precision::constructIncrement(roundingIncrement, minFrac);
+        if (PatternStringUtils::ignoreRoundingIncrement(roundingIncrement, maxFrac)) {
+            precision = Precision::constructFraction(minFrac, maxFrac);
+        } else {
+            precision = Precision::constructIncrement(roundingIncrement, minFrac);
+        }
     } else if (explicitMinMaxSig) {
         minSig = minSig < 1 ? 1 : minSig > kMaxIntFracSig ? kMaxIntFracSig : minSig;
         maxSig = maxSig < 0 ? kMaxIntFracSig : maxSig < minSig ? minSig : maxSig > kMaxIntFracSig
@@ -153,7 +159,7 @@ MacroProps NumberPropertyMapper::oldToNew(const DecimalFormatProperties& propert
         precision = Precision::constructCurrency(currencyUsage);
     }
     if (!precision.isBogus()) {
-        precision = precision.withMode(roundingMode);
+        precision.fRoundingMode = roundingMode;
         macros.precision = precision;
     }
 
@@ -176,7 +182,7 @@ MacroProps NumberPropertyMapper::oldToNew(const DecimalFormatProperties& propert
     
     
 
-    if (properties.formatWidth != -1) {
+    if (properties.formatWidth > 0) {
         macros.padder = Padder::forProperties(properties);
     }
 
@@ -232,10 +238,10 @@ MacroProps NumberPropertyMapper::oldToNew(const DecimalFormatProperties& propert
             int maxFrac_ = properties.maximumFractionDigits;
             if (minInt_ == 0 && maxFrac_ == 0) {
                 
-                macros.precision = Precision::unlimited().withMode(roundingMode);
+                macros.precision = Precision::unlimited();
             } else if (minInt_ == 0 && minFrac_ == 0) {
                 
-                macros.precision = Precision::constructSignificant(1, maxFrac_ + 1).withMode(roundingMode);
+                macros.precision = Precision::constructSignificant(1, maxFrac_ + 1);
             } else {
                 int maxSig_ = minInt_ + maxFrac_;
                 
@@ -245,8 +251,9 @@ MacroProps NumberPropertyMapper::oldToNew(const DecimalFormatProperties& propert
                 int minSig_ = minInt_ + minFrac_;
                 
                 
-                macros.precision = Precision::constructSignificant(minSig_, maxSig_).withMode(roundingMode);
+                macros.precision = Precision::constructSignificant(minSig_, maxSig_);
             }
+            macros.precision.fRoundingMode = roundingMode;
         }
     }
 
@@ -295,7 +302,9 @@ MacroProps NumberPropertyMapper::oldToNew(const DecimalFormatProperties& propert
         if (rounding_.fType == Precision::PrecisionType::RND_FRACTION) {
             minFrac_ = rounding_.fUnion.fracSig.fMinFrac;
             maxFrac_ = rounding_.fUnion.fracSig.fMaxFrac;
-        } else if (rounding_.fType == Precision::PrecisionType::RND_INCREMENT) {
+        } else if (rounding_.fType == Precision::PrecisionType::RND_INCREMENT
+                || rounding_.fType == Precision::PrecisionType::RND_INCREMENT_ONE
+                || rounding_.fType == Precision::PrecisionType::RND_INCREMENT_FIVE) {
             increment_ = rounding_.fUnion.increment.fIncrement;
             minFrac_ = rounding_.fUnion.increment.fMinFrac;
             maxFrac_ = rounding_.fUnion.increment.fMinFrac;
@@ -315,11 +324,9 @@ MacroProps NumberPropertyMapper::oldToNew(const DecimalFormatProperties& propert
 }
 
 
-void PropertiesAffixPatternProvider::setTo(const DecimalFormatProperties& properties, UErrorCode&) {
+void PropertiesAffixPatternProvider::setTo(const DecimalFormatProperties& properties, UErrorCode& status) {
     fBogus = false;
 
-    
-    
     
     
     
@@ -379,6 +386,14 @@ void PropertiesAffixPatternProvider::setTo(const DecimalFormatProperties& proper
         
         negSuffix = psp.isBogus() ? u"" : psp;
     }
+
+    
+    
+    isCurrencyPattern = (
+        AffixUtils::hasCurrencySymbols(ppp, status) ||
+        AffixUtils::hasCurrencySymbols(psp, status) ||
+        AffixUtils::hasCurrencySymbols(npp, status) ||
+        AffixUtils::hasCurrencySymbols(nsp, status));
 }
 
 char16_t PropertiesAffixPatternProvider::charAt(int flags, int i) const {
@@ -415,8 +430,11 @@ bool PropertiesAffixPatternProvider::positiveHasPlusSign() const {
 }
 
 bool PropertiesAffixPatternProvider::hasNegativeSubpattern() const {
-    
-    return true;
+    return (
+        (negSuffix != posSuffix) ||
+        negPrefix.tempSubString(1) != posPrefix ||
+        negPrefix.charAt(0) != u'-'
+    );
 }
 
 bool PropertiesAffixPatternProvider::negativeHasMinusSign() const {
@@ -426,11 +444,7 @@ bool PropertiesAffixPatternProvider::negativeHasMinusSign() const {
 }
 
 bool PropertiesAffixPatternProvider::hasCurrencySign() const {
-    ErrorCode localStatus;
-    return AffixUtils::hasCurrencySymbols(posPrefix, localStatus) ||
-           AffixUtils::hasCurrencySymbols(posSuffix, localStatus) ||
-           AffixUtils::hasCurrencySymbols(negPrefix, localStatus) ||
-           AffixUtils::hasCurrencySymbols(negSuffix, localStatus);
+    return isCurrencyPattern;
 }
 
 bool PropertiesAffixPatternProvider::containsSymbolType(AffixPatternType type, UErrorCode& status) const {

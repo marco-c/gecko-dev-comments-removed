@@ -1555,7 +1555,7 @@ struct UText {
 U_STABLE UText * U_EXPORT2
 utext_setup(UText *ut, int32_t extraSpace, UErrorCode *status);
 
-#ifndef U_HIDE_INTERNAL_API
+
 
 
 
@@ -1564,7 +1564,6 @@ utext_setup(UText *ut, int32_t extraSpace, UErrorCode *status);
 enum {
     UTEXT_MAGIC = 0x345ad82c
 };
-#endif  
 
 
 

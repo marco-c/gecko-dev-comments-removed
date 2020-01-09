@@ -144,7 +144,8 @@ class U_I18N_API AffixUtils {
 
 
     static int32_t unescape(const UnicodeString& affixPattern, NumberStringBuilder& output,
-                            int32_t position, const SymbolProvider& provider, UErrorCode& status);
+                            int32_t position, const SymbolProvider& provider, Field field,
+                            UErrorCode& status);
 
     
 

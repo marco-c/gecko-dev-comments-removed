@@ -14,21 +14,36 @@
 
 
 
-
-
-
-
-
 #ifndef U_ASSERT_H
 #define U_ASSERT_H
 
+
 #include "unicode/utypes.h"
+
+#include <stdlib.h>
+
+
+
+
+
+
+
 #if U_DEBUG
 #   include <assert.h>
 #   define U_ASSERT(exp) assert(exp)
 #else
 #   define U_ASSERT(exp)
 #endif
+
+
+
+
+
+
+#if defined(UPRV_UNREACHABLE)
+    
+#else
+#   define UPRV_UNREACHABLE abort()
 #endif
 
-
+#endif

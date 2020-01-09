@@ -2047,8 +2047,7 @@ processPropertySeq(UBiDi *pBiDi, LevState *pLevState, uint8_t _prop,
             break;
 
         default:                        
-            U_ASSERT(FALSE);
-            break;
+            UPRV_UNREACHABLE;
         }
     }
     if((addLevel) || (start < start0)) {
@@ -2251,8 +2250,7 @@ resolveImplicitLevels(UBiDi *pBiDi,
                 start2=i;
                 break;
             default:            
-                U_ASSERT(FALSE);
-                break;
+                UPRV_UNREACHABLE;
             }
         }
     }
@@ -2726,8 +2724,7 @@ ubidi_setPara(UBiDi *pBiDi, const UChar *text, int32_t length,
             break;
         default:
             
-            U_ASSERT(FALSE);
-            break;
+            UPRV_UNREACHABLE;
         }
         
 

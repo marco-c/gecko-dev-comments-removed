@@ -265,8 +265,37 @@ public:
 
 
     UnicodeString getTextWithNoArguments() const {
-        return getTextWithNoArguments(compiledPattern.getBuffer(), compiledPattern.length());
+        return getTextWithNoArguments(
+            compiledPattern.getBuffer(),
+            compiledPattern.length(),
+            nullptr,
+            0);
     }
+
+#ifndef U_HIDE_INTERNAL_API
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    UnicodeString getTextWithNoArguments(int32_t *offsets, int32_t offsetsLength) const {
+        return getTextWithNoArguments(
+            compiledPattern.getBuffer(),
+            compiledPattern.length(),
+            offsets,
+            offsetsLength);
+    }
+#endif 
 
 private:
     
@@ -285,7 +314,11 @@ private:
         return compiledPatternLength == 0 ? 0 : compiledPattern[0];
     }
 
-    static UnicodeString getTextWithNoArguments(const char16_t *compiledPattern, int32_t compiledPatternLength);
+    static UnicodeString getTextWithNoArguments(
+        const char16_t *compiledPattern,
+        int32_t compiledPatternLength,
+        int32_t *offsets,
+        int32_t offsetsLength);
 
     static UnicodeString &format(
             const char16_t *compiledPattern, int32_t compiledPatternLength,

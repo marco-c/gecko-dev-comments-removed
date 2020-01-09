@@ -23,7 +23,11 @@ namespace impl {
 
 
 
-typedef UNumberFormatFields Field;
+
+
+
+
+typedef uint8_t Field;
 
 typedef UNumberFormatRoundingMode RoundingMode;
 
@@ -345,6 +349,7 @@ class U_I18N_API NullableValue {
     bool fNull;
     T fValue;
 };
+
 
 } 
 } 

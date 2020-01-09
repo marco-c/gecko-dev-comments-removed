@@ -16,6 +16,7 @@
 
 #include "unicode/fieldpos.h"
 #include "unicode/fpositer.h"
+#include "unicode/formattedvalue.h"
 
 U_NAMESPACE_BEGIN
 
@@ -40,6 +41,8 @@ class U_I18N_API FieldPositionHandler: public UMemory {
 
 class FieldPositionOnlyHandler : public FieldPositionHandler {
   FieldPosition& pos;
+  UBool acceptFirstOnly = FALSE;
+  UBool seenFirst = FALSE;
 
  public:
   FieldPositionOnlyHandler(FieldPosition& pos);
@@ -48,6 +51,13 @@ class FieldPositionOnlyHandler : public FieldPositionHandler {
   void addAttribute(int32_t id, int32_t start, int32_t limit) U_OVERRIDE;
   void shiftLast(int32_t delta) U_OVERRIDE;
   UBool isRecording(void) const U_OVERRIDE;
+
+  
+
+
+
+
+  void setAcceptFirstOnly(UBool acceptFirstOnly);
 };
 
 
@@ -57,21 +67,38 @@ class FieldPositionIteratorHandler : public FieldPositionHandler {
   FieldPositionIterator* iter; 
   UVector32* vec;
   UErrorCode status;
+  UFieldCategory fCategory;
 
   
   
   
   
-  void *operator new(size_t s);
-  void *operator new[](size_t s);
+  static void* U_EXPORT2 operator new(size_t) U_NOEXCEPT = delete;
+  static void* U_EXPORT2 operator new[](size_t) U_NOEXCEPT = delete;
+#if U_HAVE_PLACEMENT_NEW
+  static void* U_EXPORT2 operator new(size_t, void*) U_NOEXCEPT = delete;
+#endif
 
  public:
   FieldPositionIteratorHandler(FieldPositionIterator* posIter, UErrorCode& status);
+  
+  FieldPositionIteratorHandler(UVector32* vec, UErrorCode& status);
   ~FieldPositionIteratorHandler();
 
   void addAttribute(int32_t id, int32_t start, int32_t limit) U_OVERRIDE;
   void shiftLast(int32_t delta) U_OVERRIDE;
   UBool isRecording(void) const U_OVERRIDE;
+
+  
+  inline void getError(UErrorCode& _status) {
+    if (U_SUCCESS(_status) && U_FAILURE(status)) {
+      _status = status;
+    }
+  }
+
+  inline void setCategory(UFieldCategory category) {
+    fCategory = category;
+  }
 };
 
 U_NAMESPACE_END

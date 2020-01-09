@@ -186,8 +186,7 @@ Transliterator* TransliteratorAlias::create(UParseError& pe,
         }
         break;
     case RULES:
-        U_ASSERT(FALSE); 
-        break;
+        UPRV_UNREACHABLE; 
     }
     return t;
 }
@@ -1396,8 +1395,7 @@ Transliterator* TransliteratorRegistry::instantiateEntry(const UnicodeString& ID
         }
         return 0;
     default:
-        U_ASSERT(FALSE); 
-        return 0;
+        UPRV_UNREACHABLE; 
     }
 }
 U_NAMESPACE_END

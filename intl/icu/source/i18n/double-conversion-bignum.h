@@ -150,7 +150,7 @@ class Bignum {
   
   int exponent_;
 
-  DISALLOW_COPY_AND_ASSIGN(Bignum);
+  DC_DISALLOW_COPY_AND_ASSIGN(Bignum);
 };
 
 }  

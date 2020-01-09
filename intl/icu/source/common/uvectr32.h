@@ -97,21 +97,21 @@ public:
     
     
 
-    void addElement(int32_t elem, UErrorCode &status);
+    inline void addElement(int32_t elem, UErrorCode &status);
 
     void setElementAt(int32_t elem, int32_t index);
 
     void insertElementAt(int32_t elem, int32_t index, UErrorCode &status);
     
-    int32_t elementAti(int32_t index) const;
+    inline int32_t elementAti(int32_t index) const;
 
     UBool equals(const UVector32 &other) const;
 
-    int32_t lastElementi(void) const;
+    inline int32_t lastElementi(void) const;
 
     int32_t indexOf(int32_t elem, int32_t startIndex = 0) const;
 
-    UBool contains(int32_t elem) const;
+    inline UBool contains(int32_t elem) const;
 
     UBool containsAll(const UVector32& other) const;
 
@@ -123,9 +123,9 @@ public:
 
     void removeAllElements();
 
-    int32_t size(void) const;
+    inline int32_t size(void) const;
 
-    UBool isEmpty(void) const;
+    inline UBool isEmpty(void) const;
 
     
     inline UBool ensureCapacity(int32_t minimumCapacity, UErrorCode &status);
@@ -163,7 +163,7 @@ public:
     
 
 
-    int32_t *getBuffer() const;
+    inline int32_t *getBuffer() const;
 
     
 
@@ -197,16 +197,16 @@ private:
     
     
 public:
-    UBool empty(void) const;   
+    inline UBool empty(void) const;   
 
-    int32_t peeki(void) const;
+    inline int32_t peeki(void) const;
     
-    int32_t popi(void);
+    inline int32_t popi(void);
     
-    int32_t push(int32_t i, UErrorCode &status);
+    inline int32_t push(int32_t i, UErrorCode &status);
 
-    int32_t *reserveBlock(int32_t size, UErrorCode &status);
-    int32_t *popFrame(int32_t size);
+    inline int32_t *reserveBlock(int32_t size, UErrorCode &status);
+    inline int32_t *popFrame(int32_t size);
 };
 
 

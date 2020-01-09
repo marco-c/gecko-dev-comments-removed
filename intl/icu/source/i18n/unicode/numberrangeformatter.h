@@ -8,10 +8,12 @@
 #include <atomic>
 #include "unicode/appendable.h"
 #include "unicode/fieldpos.h"
+#include "unicode/formattedvalue.h"
 #include "unicode/fpositer.h"
 #include "unicode/numberformatter.h"
 
 #ifndef U_HIDE_DRAFT_API
+
 
 
 
@@ -175,7 +177,7 @@ namespace impl {
 
 struct RangeMacroProps;
 class DecimalQuantity;
-struct UFormattedNumberRangeData;
+class UFormattedNumberRangeData;
 class NumberRangeFormatterImpl;
 
 } 
@@ -450,6 +452,28 @@ class U_I18N_API NumberRangeFormatterSettings {
 
 
 
+
+
+
+
+
+    LocalPointer<Derived> clone() const &;
+
+    
+
+
+
+
+
+
+    LocalPointer<Derived> clone() &&;
+
+    
+
+
+
+
+
     UBool copyErrorTo(UErrorCode &outErrorCode) const {
         if (U_FAILURE(outErrorCode)) {
             
@@ -457,7 +481,7 @@ class U_I18N_API NumberRangeFormatterSettings {
         }
         fMacros.copyErrorTo(outErrorCode);
         return U_FAILURE(outErrorCode);
-    };
+    }
 
     
 
@@ -470,6 +494,8 @@ class U_I18N_API NumberRangeFormatterSettings {
     friend class LocalizedNumberRangeFormatter;
     friend class UnlocalizedNumberRangeFormatter;
 };
+
+
 
 
 
@@ -549,6 +575,8 @@ class U_I18N_API UnlocalizedNumberRangeFormatter
     
     friend class NumberRangeFormatter;
 };
+
+
 
 
 
@@ -662,18 +690,11 @@ class U_I18N_API LocalizedNumberRangeFormatter
 
 
 
-class U_I18N_API FormattedNumberRange : public UMemory {
+
+
+class U_I18N_API FormattedNumberRange : public UMemory, public FormattedValue {
   public:
     
-
-
-
-
-
-
-
-    UnicodeString toString(UErrorCode& status) const;
-
     
 
 
@@ -681,11 +702,25 @@ class U_I18N_API FormattedNumberRange : public UMemory {
 
 
 
+    UnicodeString toString(UErrorCode& status) const U_OVERRIDE;
+
+    
+    
+    UnicodeString toTempString(UErrorCode& status) const U_OVERRIDE;
+
+    
+    
 
 
 
 
-    Appendable &appendTo(Appendable &appendable, UErrorCode& status) const;
+
+
+    Appendable &appendTo(Appendable &appendable, UErrorCode& status) const U_OVERRIDE;
+
+    
+    
+    UBool nextPosition(ConstrainedFieldPosition& cfpos, UErrorCode& status) const U_OVERRIDE;
 
     
 
@@ -808,7 +843,7 @@ class U_I18N_API FormattedNumberRange : public UMemory {
 
   private:
     
-    const impl::UFormattedNumberRangeData *fResults;
+    const impl::UFormattedNumberRangeData *fData;
 
     
     UErrorCode fErrorCode;
@@ -818,10 +853,10 @@ class U_I18N_API FormattedNumberRange : public UMemory {
 
 
     explicit FormattedNumberRange(impl::UFormattedNumberRangeData *results)
-        : fResults(results), fErrorCode(U_ZERO_ERROR) {};
+        : fData(results), fErrorCode(U_ZERO_ERROR) {}
 
     explicit FormattedNumberRange(UErrorCode errorCode)
-        : fResults(nullptr), fErrorCode(errorCode) {};
+        : fData(nullptr), fErrorCode(errorCode) {}
 
     void getAllFieldPositionsImpl(FieldPositionIteratorHandler& fpih, UErrorCode& status) const;
 
@@ -867,6 +902,6 @@ U_NAMESPACE_END
 
 #endif  
 
-#endif
+#endif 
 
-#endif
+#endif 

@@ -41,16 +41,37 @@ class NumberRangeDataSink : public ResourceSink {
         if (U_FAILURE(status)) { return; }
         for (int i = 0; miscTable.getKeyAndValue(i, key, value); i++) {
             if (uprv_strcmp(key, "range") == 0) {
-                if (fData.rangePattern.getArgumentLimit() != 0) {
+                if (hasRangeData()) {
                     continue; 
                 }
                 fData.rangePattern = {value.getUnicodeString(status), status};
             } else if (uprv_strcmp(key, "approximately") == 0) {
-                if (fData.approximatelyPattern.getArgumentLimit() != 0) {
+                if (hasApproxData()) {
                     continue; 
                 }
                 fData.approximatelyPattern = {value.getUnicodeString(status), status};
             }
+        }
+    }
+
+    bool hasRangeData() {
+        return fData.rangePattern.getArgumentLimit() != 0;
+    }
+
+    bool hasApproxData() {
+        return fData.approximatelyPattern.getArgumentLimit() != 0;
+    }
+
+    bool isComplete() {
+        return hasRangeData() && hasApproxData();
+    }
+
+    void fillInDefaults(UErrorCode& status) {
+        if (!hasRangeData()) {
+            fData.rangePattern = {u"{0}–{1}", status};
+        }
+        if (!hasApproxData()) {
+            fData.approximatelyPattern = {u"~{0}", status};
         }
     }
 
@@ -68,19 +89,21 @@ void getNumberRangeData(const char* localeName, const char* nsName, NumberRangeD
     dataPath.append("NumberElements/", -1, status);
     dataPath.append(nsName, -1, status);
     dataPath.append("/miscPatterns", -1, status);
-    ures_getAllItemsWithFallback(rb.getAlias(), dataPath.data(), sink, status);
     if (U_FAILURE(status)) { return; }
 
-    
+    UErrorCode localStatus = U_ZERO_ERROR;
+    ures_getAllItemsWithFallback(rb.getAlias(), dataPath.data(), sink, localStatus);
+    if (U_FAILURE(localStatus) && localStatus != U_MISSING_RESOURCE_ERROR) {
+        status = localStatus;
+        return;
+    }
 
-    if (data.rangePattern.getArgumentLimit() == 0) {
-        
-        data.rangePattern = {u"{0}–{1}", status};
+    
+    if (!sink.isComplete()) {
+        ures_getAllItemsWithFallback(rb.getAlias(), "NumberElements/latn/miscPatterns", sink, status);
     }
-    if (data.approximatelyPattern.getArgumentLimit() == 0) {
-        
-        data.approximatelyPattern = {u"~{0}", status};
-    }
+
+    sink.fillInDefaults(status);
 }
 
 class PluralRangesDataSink : public ResourceSink {
@@ -177,15 +200,14 @@ NumberRangeFormatterImpl::NumberRangeFormatterImpl(const RangeMacroProps& macros
       fCollapse(macros.collapse),
       fIdentityFallback(macros.identityFallback) {
 
-    
-    
-    
-    
-    
-    
+    const char* nsName = formatterImpl1.getRawMicroProps().nsName;
+    if (uprv_strcmp(nsName, formatterImpl2.getRawMicroProps().nsName) != 0) {
+        status = U_ILLEGAL_ARGUMENT_ERROR;
+        return;
+    }
 
     NumberRangeData data;
-    getNumberRangeData(macros.locale.getName(), "latn", data, status);
+    getNumberRangeData(macros.locale.getName(), nsName, data, status);
     if (U_FAILURE(status)) { return; }
     fRangeFormatter = data.rangePattern;
     fApproximatelyModifier = {data.approximatelyPattern, UNUM_FIELD_COUNT, false};
@@ -269,8 +291,7 @@ void NumberRangeFormatterImpl::format(UFormattedNumberRangeData& data, bool equa
             break;
 
         default:
-            U_ASSERT(false);
-            break;
+            UPRV_UNREACHABLE;
     }
 }
 
@@ -280,8 +301,8 @@ void NumberRangeFormatterImpl::formatSingleValue(UFormattedNumberRangeData& data
                                                  UErrorCode& status) const {
     if (U_FAILURE(status)) { return; }
     if (fSameFormatters) {
-        int32_t length = NumberFormatterImpl::writeNumber(micros1, data.quantity1, data.string, 0, status);
-        NumberFormatterImpl::writeAffixes(micros1, data.string, 0, length, status);
+        int32_t length = NumberFormatterImpl::writeNumber(micros1, data.quantity1, data.getStringRef(), 0, status);
+        NumberFormatterImpl::writeAffixes(micros1, data.getStringRef(), 0, length, status);
     } else {
         formatRange(data, micros1, micros2, status);
     }
@@ -293,12 +314,12 @@ void NumberRangeFormatterImpl::formatApproximately (UFormattedNumberRangeData& d
                                                     UErrorCode& status) const {
     if (U_FAILURE(status)) { return; }
     if (fSameFormatters) {
-        int32_t length = NumberFormatterImpl::writeNumber(micros1, data.quantity1, data.string, 0, status);
+        int32_t length = NumberFormatterImpl::writeNumber(micros1, data.quantity1, data.getStringRef(), 0, status);
         
-        length += micros1.modInner->apply(data.string, 0, length, status);
-        length += micros1.modMiddle->apply(data.string, 0, length, status);
-        length += fApproximatelyModifier.apply(data.string, 0, length, status);
-        micros1.modOuter->apply(data.string, 0, length, status);
+        length += micros1.modInner->apply(data.getStringRef(), 0, length, status);
+        length += micros1.modMiddle->apply(data.getStringRef(), 0, length, status);
+        length += fApproximatelyModifier.apply(data.getStringRef(), 0, length, status);
+        micros1.modOuter->apply(data.getStringRef(), 0, length, status);
     } else {
         formatRange(data, micros1, micros2, status);
     }
@@ -376,7 +397,7 @@ void NumberRangeFormatterImpl::formatRange(UFormattedNumberRangeData& data,
             break;
     }
 
-    NumberStringBuilder& string = data.string;
+    NumberStringBuilder& string = data.getStringRef();
     int32_t lengthPrefix = 0;
     int32_t length1 = 0;
     int32_t lengthInfix = 0;

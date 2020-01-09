@@ -21,6 +21,9 @@
 
 
 
+
+#include <utility>
+
 #include "unicode/utypes.h"
 
 #if !UCONFIG_NO_FORMATTING
@@ -231,8 +234,6 @@ static const char gDayPeriodTag[]="dayPeriod";
 
 
 static const char gContextTransformsTag[]="contextTransforms";
-
-static UMutex LOCK = U_MUTEX_INITIALIZER;
 
 
 
@@ -1245,6 +1246,7 @@ const UnicodeString**
 DateFormatSymbols::getZoneStrings(int32_t& rowCount, int32_t& columnCount) const
 {
     const UnicodeString **result = NULL;
+    static UMutex LOCK = U_MUTEX_INITIALIZER;
 
     umtx_lock(&LOCK);
     if (fZoneStrings == NULL) {
@@ -1500,7 +1502,7 @@ struct CalendarDataSink : public ResourceSink {
 
 
 
-    UVector mapRefs;
+    MemoryPool<Hashtable> mapRefs;
 
     
     UVector aliasPathPairs;
@@ -1518,7 +1520,7 @@ struct CalendarDataSink : public ResourceSink {
     
     CalendarDataSink(UErrorCode& status)
     :   arrays(FALSE, status), arraySizes(FALSE, status), maps(FALSE, status),
-        mapRefs(deleteHashtable, NULL, 10, status),
+        mapRefs(),
         aliasPathPairs(uprv_deleteUObject, uhash_compareUnicodeString, status),
         currentCalendarType(), nextCalendarType(),
         resourcesToVisit(NULL), aliasRelativePath() {
@@ -1663,7 +1665,7 @@ struct CalendarDataSink : public ResourceSink {
 
         
         if (!resourcesToVisitNext.isNull()) {
-            resourcesToVisit.moveFrom(resourcesToVisitNext);
+            resourcesToVisit = std::move(resourcesToVisitNext);
         }
     }
 
@@ -1688,14 +1690,14 @@ struct CalendarDataSink : public ResourceSink {
             if (value.getType() == URES_STRING) {
                 
                 if (i == 0) {
-                    LocalPointer<Hashtable> stringMapPtr(new Hashtable(FALSE, errorCode), errorCode);
-                    stringMap = stringMapPtr.getAlias();
+                    
+                    stringMap = mapRefs.create(FALSE, errorCode);
+                    if (stringMap == NULL) {
+                        errorCode = U_MEMORY_ALLOCATION_ERROR;
+                        return;
+                    }
                     maps.put(path, stringMap, errorCode);
-                    
-                    mapRefs.addElement(stringMap, errorCode);
                     if (U_FAILURE(errorCode)) { return; }
-                    
-                    stringMapPtr.orphan();
                     stringMap->setValueDeleter(uprv_deleteUObject);
                 }
                 U_ASSERT(stringMap != NULL);
@@ -1838,11 +1840,6 @@ struct CalendarDataSink : public ResourceSink {
     
     static void U_CALLCONV deleteUnicodeStringArray(void *uArray) {
         delete[] static_cast<UnicodeString *>(uArray);
-    }
-
-    
-    static void U_CALLCONV deleteHashtable(void *table) {
-        delete static_cast<Hashtable *>(table);
     }
 };
 

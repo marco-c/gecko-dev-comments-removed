@@ -27,6 +27,8 @@
 
 #ifdef __cplusplus
 
+#include "capi_helper.h"
+
 U_NAMESPACE_BEGIN
 
 
@@ -52,7 +54,8 @@ class ConfusableDataUtils;
 
 
 
-class SpoofImpl : public UObject  {
+class SpoofImpl : public UObject,
+        public IcuCApiHelper<USpoofChecker, SpoofImpl, USPOOF_MAGIC> {
 public:
     SpoofImpl(SpoofData *data, UErrorCode& status);
     SpoofImpl(UErrorCode& status);
@@ -96,7 +99,6 @@ public:
     
     
 
-    int32_t           fMagic;             
     int32_t           fChecks;            
 
     SpoofData        *fSpoofData;
@@ -112,7 +114,8 @@ public:
 
 
 
-class CheckResult : public UObject {
+class CheckResult : public UObject,
+        public IcuCApiHelper<USpoofCheckResult, CheckResult, USPOOF_CHECK_MAGIC> {
 public:
     CheckResult();
     virtual ~CheckResult();
@@ -127,7 +130,6 @@ public:
     int32_t toCombinedBitmask(int32_t expectedChecks);
 
     
-    int32_t fMagic;                        
     int32_t fChecks;                       
     UnicodeSet fNumerics;                  
     URestrictionLevel fRestrictionLevel;   

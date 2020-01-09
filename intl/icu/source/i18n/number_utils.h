@@ -33,6 +33,48 @@ enum CldrPatternStyle {
 };
 
 
+
+
+
+
+class NumFieldUtils {
+public:
+    struct CategoryFieldPair {
+        int32_t category;
+        int32_t field;
+    };
+
+    
+    template <int32_t category, int32_t field>
+    static constexpr Field compress() {
+        static_assert(category != 0, "cannot use Undefined category in NumFieldUtils");
+        static_assert(category <= 0xf, "only 4 bits for category");
+        static_assert(field <= 0xf, "only 4 bits for field");
+        return static_cast<int8_t>((category << 4) | field);
+    }
+
+    
+    static inline CategoryFieldPair expand(Field field) {
+        if (field == UNUM_FIELD_COUNT) {
+            return {UFIELD_CATEGORY_UNDEFINED, 0};
+        }
+        CategoryFieldPair ret = {
+            (field >> 4),
+            (field & 0xf)
+        };
+        if (ret.category == 0) {
+            ret.category = UFIELD_CATEGORY_NUMBER;
+        }
+        return ret;
+    }
+
+    static inline bool isNumericField(Field field) {
+        int8_t category = field >> 4;
+        return category == 0 || category == UFIELD_CATEGORY_NUMBER;
+    }
+};
+
+
 namespace utils {
 
 inline int32_t insertDigitFromSymbols(NumberStringBuilder& output, int32_t index, int8_t digit,
@@ -80,6 +122,23 @@ inline StandardPlural::Form getStandardPlural(const PluralRules *rules,
         UnicodeString ruleString = rules->select(fdec);
         return StandardPlural::orOtherFromString(ruleString);
     }
+}
+
+
+
+
+inline StandardPlural::Form getPluralSafe(
+        const RoundingImpl& rounder,
+        const PluralRules* rules,
+        const DecimalQuantity& dq,
+        UErrorCode& status) {
+    
+    DecimalQuantity copy(dq);
+    rounder.apply(copy, status);
+    if (U_FAILURE(status)) {
+        return StandardPlural::Form::OTHER;
+    }
+    return getStandardPlural(rules, copy);
 }
 
 } 

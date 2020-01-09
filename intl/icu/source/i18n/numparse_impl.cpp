@@ -72,7 +72,7 @@ NumberParserImpl::createSimpleParser(const Locale& locale, const UnicodeString& 
     parser->addMatcher(parser->fLocalMatchers.padding = {u"@"});
     parser->addMatcher(parser->fLocalMatchers.scientific = {symbols, grouper});
     parser->addMatcher(parser->fLocalMatchers.currency = {currencySymbols, symbols, parseFlags, status});
-
+    parser->addMatcher(parser->fLocalValidators.number = {});
 
     parser->freeze();
     return parser.orphan();
@@ -252,9 +252,13 @@ void NumberParserImpl::parse(const UnicodeString& input, int32_t start, bool gre
     StringSegment segment(input, 0 != (fParseFlags & PARSE_FLAG_IGNORE_CASE));
     segment.adjustOffset(start);
     if (greedy) {
-        parseGreedyRecursive(segment, result, status);
+        parseGreedy(segment, result, status);
+    } else if (0 != (fParseFlags & PARSE_FLAG_ALLOW_INFINITE_RECURSION)) {
+        
+        parseLongestRecursive(segment, result, 1, status);
     } else {
-        parseLongestRecursive(segment, result, status);
+        
+        parseLongestRecursive(segment, result, -100, status);
     }
     for (int32_t i = 0; i < fNumMatchers; i++) {
         fMatchers[i]->postProcess(result);
@@ -262,41 +266,50 @@ void NumberParserImpl::parse(const UnicodeString& input, int32_t start, bool gre
     result.postProcess();
 }
 
-void NumberParserImpl::parseGreedyRecursive(StringSegment& segment, ParsedNumber& result,
+void NumberParserImpl::parseGreedy(StringSegment& segment, ParsedNumber& result,
                                             UErrorCode& status) const {
     
-    if (segment.length() == 0) {
-        return;
-    }
-
-    int initialOffset = segment.getOffset();
-    for (int32_t i = 0; i < fNumMatchers; i++) {
+    for (int i = 0; i <fNumMatchers;) {
+        
+        if (segment.length() == 0) {
+            return;
+        }
         const NumberParseMatcher* matcher = fMatchers[i];
         if (!matcher->smokeTest(segment)) {
+            
+            i++;
             continue;
         }
+        int32_t initialOffset = segment.getOffset();
         matcher->match(segment, result, status);
         if (U_FAILURE(status)) {
             return;
         }
         if (segment.getOffset() != initialOffset) {
             
-            parseGreedyRecursive(segment, result, status);
+            i = 0;
+            continue;
+        } else {
             
-            
-            
-            segment.setOffset(initialOffset);
-            return;
+            i++;
+            continue;
         }
+        UPRV_UNREACHABLE;
     }
 
     
 }
 
 void NumberParserImpl::parseLongestRecursive(StringSegment& segment, ParsedNumber& result,
+                                             int32_t recursionLevels,
                                              UErrorCode& status) const {
     
     if (segment.length() == 0) {
+        return;
+    }
+
+    
+    if (recursionLevels == 0) {
         return;
     }
 
@@ -326,7 +339,7 @@ void NumberParserImpl::parseLongestRecursive(StringSegment& segment, ParsedNumbe
 
             
             if (segment.getOffset() - initialOffset == charsToConsume) {
-                parseLongestRecursive(segment, candidate, status);
+                parseLongestRecursive(segment, candidate, recursionLevels + 1, status);
                 if (U_FAILURE(status)) {
                     return;
                 }

@@ -50,6 +50,10 @@ class PluralKeywordEnumeration;
 class AndConstraint;
 class SharedPluralRules;
 
+namespace number {
+class FormattedNumber;
+}
+
 
 
 
@@ -343,6 +347,25 @@ public:
 
 
     UnicodeString select(double number) const;
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    UnicodeString select(const number::FormattedNumber& number, UErrorCode& status) const;
+#endif  
 
 #ifndef U_HIDE_INTERNAL_API
     

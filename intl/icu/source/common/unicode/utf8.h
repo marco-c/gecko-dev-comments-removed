@@ -609,7 +609,6 @@ utf8_back1SafeBody(const uint8_t *s, int32_t start, int32_t i);
     } \
 }
 
-#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -658,7 +657,6 @@ utf8_back1SafeBody(const uint8_t *s, int32_t start, int32_t i);
             } \
         } \
     }
-#endif  
 
 
 

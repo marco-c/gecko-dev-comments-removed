@@ -149,7 +149,6 @@ U_NAMESPACE_BEGIN
 
 
 
-
 class U_I18N_API DateIntervalInfo U_FINAL : public UObject {
 public:
     

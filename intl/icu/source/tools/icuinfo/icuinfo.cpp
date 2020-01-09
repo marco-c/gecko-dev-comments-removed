@@ -84,6 +84,12 @@ void cmd_version(UBool , UErrorCode &errorCode)
         errorCode=U_INTERNAL_PROGRAM_ERROR;
     }
 
+#if defined(_MSC_VER)
+
+#pragma warning(push)
+#pragma warning(disable: 4127)
+#endif
+
     if(U_SIZEOF_WCHAR_T==sizeof(wchar_t)) {
       
     } else {
@@ -107,6 +113,10 @@ void cmd_version(UBool , UErrorCode &errorCode)
                 U_CHARSET_FAMILY, charsetFamily);
         errorCode=U_INTERNAL_PROGRAM_ERROR;
     }
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
 
     printf("\n\nICU Initialization returned: %s\n", u_errorName(initStatus));
     

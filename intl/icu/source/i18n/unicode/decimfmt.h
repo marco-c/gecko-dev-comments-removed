@@ -68,18 +68,6 @@ class NumberParserImpl;
 
 
 
-#if U_PF_WINDOWS <= U_PLATFORM && U_PLATFORM <= U_PF_CYGWIN && !defined(U_IN_DOXYGEN)
-template class U_I18N_API    EnumSet<UNumberFormatAttribute,
-            UNUM_MAX_NONBOOLEAN_ATTRIBUTE+1,
-            UNUM_LIMIT_BOOLEAN_ATTRIBUTE>;
-#endif
-
-
-
-
-
-
-
 
 
 
@@ -1292,20 +1280,27 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
     virtual void setNegativeSuffix(const UnicodeString& newValue);
 
-#ifndef U_HIDE_INTERNAL_API
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
 
 
 
     UBool isSignAlwaysShown() const;
-#endif  
 
     
 
 
 
 
-    virtual void setSignAlwaysShown(UBool value);
+
+
+
+    void setSignAlwaysShown(UBool value);
+#endif  
 
     
 
@@ -1350,7 +1345,6 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
     int32_t getMultiplierScale(void) const;
-#endif  
 
     
 
@@ -1371,7 +1365,8 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
 
-    virtual void setMultiplierScale(int32_t newValue);
+    void setMultiplierScale(int32_t newValue);
+#endif  
 
     
 
@@ -1654,9 +1649,10 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
     virtual void setSecondaryGroupingSize(int32_t newValue);
 
-#ifndef U_HIDE_INTERNAL_API
-
+#ifndef U_HIDE_DRAFT_API
     
+
+
 
 
 
@@ -1679,18 +1675,18 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
     int32_t getMinimumGroupingDigits() const;
 
+    
+
+
+
+
+
+
+
+
+
+    void setMinimumGroupingDigits(int32_t newValue);
 #endif  
-
-    
-    
-
-
-
-
-
-
-
-    virtual void setMinimumGroupingDigits(int32_t newValue);
 
 
     
@@ -1732,14 +1728,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
     virtual void setDecimalPatternMatchRequired(UBool newValue);
 
-    
-
-
-
-
-
-    virtual UBool isParseNoExponent() const;
-
+#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -1747,16 +1736,7 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
 
-
-    virtual void setParseNoExponent(UBool value);
-
-    
-
-
-
-
-
-    virtual UBool isParseCaseSensitive() const;
+    UBool isParseNoExponent() const;
 
     
 
@@ -1766,8 +1746,16 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
 
+    void setParseNoExponent(UBool value);
 
-    virtual void setParseCaseSensitive(UBool value);
+    
+
+
+
+
+
+
+    UBool isParseCaseSensitive() const;
 
     
 
@@ -1776,7 +1764,11 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
 
-    virtual UBool isFormatFailIfMoreThanMaxDigits() const;
+
+
+
+
+    void setParseCaseSensitive(UBool value);
 
     
 
@@ -1784,7 +1776,19 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
 
-    virtual void setFormatFailIfMoreThanMaxDigits(UBool value);
+
+
+    UBool isFormatFailIfMoreThanMaxDigits() const;
+
+    
+
+
+
+
+
+
+    void setFormatFailIfMoreThanMaxDigits(UBool value);
+#endif  
 
 
     
@@ -2083,6 +2087,45 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    const number::LocalizedNumberFormatter* toNumberFormatter(UErrorCode& status) const;
+#endif  
+
+#ifndef U_HIDE_DEPRECATED_API
+    
+
+
+
+
+
+
+
+
+
+
+
     const number::LocalizedNumberFormatter& toNumberFormatter() const;
 #endif  
 
@@ -2156,11 +2199,16 @@ class U_I18N_API DecimalFormat : public NumberFormat {
     
     
 
+
     
-    number::impl::DecimalFormatFields* fields;
+    
+    number::impl::DecimalFormatFields* fields = nullptr;
 
     
     friend class CompactDecimalFormat;
+
+    
+    friend class MeasureFormat;
 
 };
 

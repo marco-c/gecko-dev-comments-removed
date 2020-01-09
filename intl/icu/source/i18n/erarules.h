@@ -18,10 +18,16 @@ U_NAMESPACE_BEGIN
 
 
 #if U_PF_WINDOWS <= U_PLATFORM && U_PLATFORM <= U_PF_CYGWIN
+#if defined(_MSC_VER)
 
-#pragma warning(suppress: 4661)
+#pragma warning(push)
+#pragma warning(disable: 4661)
+#endif
 template class U_I18N_API LocalPointerBase<int32_t>;
 template class U_I18N_API LocalMemory<int32_t>;
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
 #endif
 
 class U_I18N_API EraRules : public UMemory {

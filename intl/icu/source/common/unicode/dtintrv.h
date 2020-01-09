@@ -53,14 +53,14 @@ public:
 
 
 
-    UDate getFromDate() const;
+    inline UDate getFromDate() const;
 
     
 
 
 
 
-    UDate getToDate() const;
+    inline UDate getToDate() const;
 
 
     
@@ -114,7 +114,7 @@ public:
 
 
 
-    UBool operator!=(const DateInterval& other) const;
+    inline UBool operator!=(const DateInterval& other) const;
 
 
     

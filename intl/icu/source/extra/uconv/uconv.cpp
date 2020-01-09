@@ -736,7 +736,7 @@ ConvertFile::convertFile(const char *pname,
         willexit = FALSE;
 
         
-        infoffset += rd;
+        infoffset += static_cast<uint32_t>(rd);
 
         rd = fread(buf, 1, bufsz, infile);
         if (ferror(infile) != 0) {
@@ -974,7 +974,7 @@ ConvertFile::convertFile(const char *pname,
                         
                         
                         
-                        ferroffset = infoffset + (prevbufp - buf) + fromoffset;
+                        ferroffset = static_cast<int32_t>(infoffset + (prevbufp - buf) + fromoffset);
                         errtag = "problemCvtFromU";
                     } else {
                         

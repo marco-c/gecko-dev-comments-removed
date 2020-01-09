@@ -32,6 +32,7 @@ struct MicroProps : public MicroPropsGenerator {
     UNumberSignDisplay sign;
     UNumberDecimalSeparatorDisplay decimal;
     bool useCurrency;
+    char nsName[9];
 
     
     const DecimalFormatSymbols* symbols;

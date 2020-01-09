@@ -103,10 +103,8 @@ typedef enum UCurrNameStyle {
 
 
 
-    UCURR_LONG_NAME
+    UCURR_LONG_NAME,
 
-#ifndef U_HIDE_DRAFT_API
-    ,
     
 
 
@@ -116,7 +114,6 @@ typedef enum UCurrNameStyle {
 
 
     UCURR_NARROW_SYMBOL_NAME
-#endif  
 } UCurrNameStyle;
 
 #if !UCONFIG_NO_SERVICE
@@ -214,9 +211,23 @@ ucurr_getPluralName(const UChar* currency,
 
 
 
+
+
+
+
+
+
+
 U_STABLE int32_t U_EXPORT2
 ucurr_getDefaultFractionDigits(const UChar* currency,
                                UErrorCode* ec);
+
+
+
+
+
+
+
 
 
 

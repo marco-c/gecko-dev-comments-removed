@@ -229,6 +229,10 @@ const int32_t SCRIPT_PROPS[] = {
     0x10D12 | LIMITED_USE | RTL,  
     0x10F42 | EXCLUSION | RTL,  
     0x10F19 | EXCLUSION | RTL,  
+    0x10FF1 | EXCLUSION | RTL,  
+    0x1E108 | LIMITED_USE,  
+    0x119CE | EXCLUSION,  
+    0x1E2E1 | LIMITED_USE,  
     
 };
 

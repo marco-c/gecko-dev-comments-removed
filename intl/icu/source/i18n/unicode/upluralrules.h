@@ -21,6 +21,9 @@
 #endif  
 
 
+struct UFormattedNumber;
+
+
 
 
 
@@ -142,13 +145,40 @@ U_NAMESPACE_END
 
 
 
+
 U_CAPI int32_t U_EXPORT2
 uplrules_select(const UPluralRules *uplrules,
                double number,
                UChar *keyword, int32_t capacity,
                UErrorCode *status);
 
+#ifndef U_HIDE_DRAFT_API
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+U_CAPI int32_t U_EXPORT2
+uplrules_selectFormatted(const UPluralRules *uplrules,
+               const struct UFormattedNumber* number,
+               UChar *keyword, int32_t capacity,
+               UErrorCode *status);
+#endif  
+
 #ifndef U_HIDE_INTERNAL_API
+
 
 
 

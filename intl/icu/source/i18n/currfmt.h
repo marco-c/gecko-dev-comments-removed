@@ -86,10 +86,6 @@ class CurrencyFormat : public MeasureFormat {
 
 
     static UClassID U_EXPORT2 getStaticClassID();
-
- private:
-
-    NumberFormat* fmt;
 };
 
 U_NAMESPACE_END

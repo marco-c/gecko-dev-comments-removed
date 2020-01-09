@@ -62,7 +62,8 @@ static const int32_t kGregorianEpoch = 1970;
 static const char* TENTATIVE_ERA_VAR_NAME = "ICU_ENABLE_TENTATIVE_ERA";
 
 
-static void U_CALLCONV initializeEras(UErrorCode &status) {
+
+UBool JapaneseCalendar::enableTentativeEra() {
     
     
     
@@ -87,7 +88,13 @@ static void U_CALLCONV initializeEras(UErrorCode &status) {
         includeTentativeEra = TRUE;
     }
 #endif
-    gJapaneseEraRules = EraRules::createInstance("japanese", includeTentativeEra, status);
+    return includeTentativeEra;
+}
+
+
+
+static void U_CALLCONV initializeEras(UErrorCode &status) {
+    gJapaneseEraRules = EraRules::createInstance("japanese", JapaneseCalendar::enableTentativeEra(), status);
     if (U_FAILURE(status)) {
         return;
     }

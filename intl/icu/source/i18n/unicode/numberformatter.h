@@ -11,9 +11,11 @@
 #include "unicode/dcfmtsym.h"
 #include "unicode/currunit.h"
 #include "unicode/fieldpos.h"
+#include "unicode/formattedvalue.h"
 #include "unicode/fpositer.h"
 #include "unicode/measunit.h"
 #include "unicode/nounit.h"
+#include "unicode/parseerr.h"
 #include "unicode/plurrule.h"
 #include "unicode/ucurr.h"
 #include "unicode/unum.h"
@@ -21,6 +23,8 @@
 #include "unicode/uobject.h"
 
 #ifndef U_HIDE_DRAFT_API
+
+
 
 
 
@@ -113,6 +117,7 @@ namespace impl {
 
 
 
+
 typedef int16_t digits_t;
 
 
@@ -121,14 +126,15 @@ typedef int16_t digits_t;
 
 
 
-static constexpr int32_t DEFAULT_THRESHOLD = 3;
+
+static constexpr int32_t kInternalDefaultThreshold = 3;
 
 
 class Padder;
 struct MacroProps;
 struct MicroProps;
 class DecimalQuantity;
-struct UFormattedNumberData;
+class UFormattedNumberData;
 class NumberFormatterImpl;
 struct ParsedPatternInfo;
 class ScientificModifier;
@@ -146,6 +152,7 @@ class GeneratorHelpers;
 class DecNum;
 class NumberRangeFormatterImpl;
 struct RangeMacroProps;
+struct UFormattedNumberImpl;
 
 
 
@@ -447,38 +454,11 @@ typedef Precision SignificantDigitsPrecision;
 
 
 
-typedef Precision Rounder;
-
-
-
-
-
-typedef FractionPrecision FractionRounder;
-
-
-
-
-
-typedef IncrementPrecision IncrementRounder;
-
-
-
-
-
-typedef CurrencyPrecision CurrencyRounder;
-
-
-
-
-
-
-
-
-
 class U_I18N_API Precision : public UMemory {
 
   public:
     
+
 
 
 
@@ -628,31 +608,6 @@ class U_I18N_API Precision : public UMemory {
     static SignificantDigitsPrecision minMaxSignificantDigits(int32_t minSignificantDigits,
                                                               int32_t maxSignificantDigits);
 
-#ifndef U_HIDE_DEPRECATED_API
-    
-    
-
-    
-    static inline SignificantDigitsPrecision fixedDigits(int32_t a) {
-        return fixedSignificantDigits(a);
-    }
-
-    
-    static inline SignificantDigitsPrecision minDigits(int32_t a) {
-        return minSignificantDigits(a);
-    }
-
-    
-    static inline SignificantDigitsPrecision maxDigits(int32_t a) {
-        return maxSignificantDigits(a);
-    }
-
-    
-    static inline SignificantDigitsPrecision minMaxDigits(int32_t a, int32_t b) {
-        return minMaxSignificantDigits(a, b);
-    }
-#endif  
-
     
 
 
@@ -693,21 +648,6 @@ class U_I18N_API Precision : public UMemory {
 
     static CurrencyPrecision currency(UCurrencyUsage currencyUsage);
 
-#ifndef U_HIDE_DEPRECATED_API
-    
-
-
-
-
-
-
-
-
-
-
-    Precision withMode(UNumberFormatRoundingMode roundingMode) const;
-#endif  
-
   private:
     enum PrecisionType {
         RND_BOGUS,
@@ -715,7 +655,18 @@ class U_I18N_API Precision : public UMemory {
         RND_FRACTION,
         RND_SIGNIFICANT,
         RND_FRACTION_SIGNIFICANT,
+
+        
         RND_INCREMENT,
+
+        
+        
+        
+        RND_INCREMENT_ONE,
+
+        
+        RND_INCREMENT_FIVE,
+
         RND_CURRENCY,
         RND_ERROR
     } fType;
@@ -736,12 +687,13 @@ class U_I18N_API Precision : public UMemory {
         
         struct IncrementSettings {
             
+            
             double fIncrement;
             
             impl::digits_t fMinFrac;
             
             impl::digits_t fMaxFrac;
-        } increment; 
+        } increment;
         UCurrencyUsage currencyUsage; 
         UErrorCode errorCode; 
     } fUnion;
@@ -1314,7 +1266,7 @@ class U_I18N_API Grouper : public UMemory {
 
     UNumberGroupingStrategy fStrategy;
 
-    Grouper() : fGrouping1(-3) {};
+    Grouper() : fGrouping1(-3) {}
 
     bool isBogus() const {
         return fGrouping1 == -3;
@@ -1459,7 +1411,7 @@ struct U_I18N_API MacroProps : public UMemory {
     const CurrencySymbols* currencySymbols = nullptr;  
 
     
-    int32_t threshold = DEFAULT_THRESHOLD;
+    int32_t threshold = kInternalDefaultThreshold;
 
     
     Locale locale;
@@ -1571,7 +1523,6 @@ class U_I18N_API NumberFormatterSettings {
 
 
 
-
     Derived unit(const icu::MeasureUnit &unit) const &;
 
     
@@ -1586,8 +1537,6 @@ class U_I18N_API NumberFormatterSettings {
     Derived unit(const icu::MeasureUnit &unit) &&;
 
     
-
-
 
 
 
@@ -1630,6 +1579,11 @@ class U_I18N_API NumberFormatterSettings {
 
 
 
+
+
+
+
+
     Derived perUnit(const icu::MeasureUnit &perUnit) const &;
 
     
@@ -1644,10 +1598,6 @@ class U_I18N_API NumberFormatterSettings {
     Derived perUnit(const icu::MeasureUnit &perUnit) &&;
 
     
-
-
-
-
 
 
 
@@ -1715,16 +1665,6 @@ class U_I18N_API NumberFormatterSettings {
 
 
     Derived precision(const Precision& precision) &&;
-
-#ifndef U_HIDE_DEPRECATED_API
-    
-    
-    
-    
-    Derived rounding(const Rounder& rounder) const & {
-        return precision(rounder);
-    }
-#endif  
 
     
 
@@ -2146,6 +2086,28 @@ class U_I18N_API NumberFormatterSettings {
 
 
 
+
+
+
+
+
+    LocalPointer<Derived> clone() const &;
+
+    
+
+
+
+
+
+
+    LocalPointer<Derived> clone() &&;
+
+    
+
+
+
+
+
     UBool copyErrorTo(UErrorCode &outErrorCode) const {
         if (U_FAILURE(outErrorCode)) {
             
@@ -2153,7 +2115,7 @@ class U_I18N_API NumberFormatterSettings {
         }
         fMacros.copyErrorTo(outErrorCode);
         return U_FAILURE(outErrorCode);
-    };
+    }
 
     
 
@@ -2170,6 +2132,8 @@ class U_I18N_API NumberFormatterSettings {
     friend void impl::touchRangeLocales(impl::RangeMacroProps& macros);
     friend class impl::NumberRangeFormatterImpl;
 };
+
+
 
 
 
@@ -2248,6 +2212,8 @@ class U_I18N_API UnlocalizedNumberFormatter
     
     friend class NumberFormatter;
 };
+
+
 
 
 
@@ -2435,9 +2401,43 @@ class U_I18N_API LocalizedNumberFormatter
 
 
 
-class U_I18N_API FormattedNumber : public UMemory {
+
+
+class U_I18N_API FormattedNumber : public UMemory, public FormattedValue {
   public:
-#ifndef U_HIDE_DEPRECATED_API
+
+    
+
+
+
+    FormattedNumber()
+        : fData(nullptr), fErrorCode(U_INVALID_STATE_ERROR) {}
+
+    
+
+
+
+    FormattedNumber(FormattedNumber&& src) U_NOEXCEPT;
+
+    
+
+
+
+    virtual ~FormattedNumber() U_OVERRIDE;
+
+    
+    FormattedNumber(const FormattedNumber&) = delete;
+
+    
+    FormattedNumber& operator=(const FormattedNumber&) = delete;
+
+    
+
+
+
+    FormattedNumber& operator=(FormattedNumber&& src) U_NOEXCEPT;
+
+    
     
 
 
@@ -2445,10 +2445,13 @@ class U_I18N_API FormattedNumber : public UMemory {
 
 
 
+    UnicodeString toString(UErrorCode& status) const U_OVERRIDE;
 
-    UnicodeString toString() const;
-#endif  
+    
+    
+    UnicodeString toTempString(UErrorCode& status) const U_OVERRIDE;
 
+    
     
 
 
@@ -2456,62 +2459,15 @@ class U_I18N_API FormattedNumber : public UMemory {
 
 
 
+    Appendable &appendTo(Appendable& appendable, UErrorCode& status) const U_OVERRIDE;
 
-    UnicodeString toString(UErrorCode& status) const;
-
-#ifndef U_HIDE_DEPRECATED_API
     
-
-
-
-
-
-
-
-
-
-
-    Appendable &appendTo(Appendable &appendable);
-#endif  
+    
+    UBool nextPosition(ConstrainedFieldPosition& cfpos, UErrorCode& status) const U_OVERRIDE;
 
     
 
 
-
-
-
-
-
-
-
-
-    Appendable &appendTo(Appendable &appendable, UErrorCode& status) const;
-
-#ifndef U_HIDE_DEPRECATED_API
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    void populateFieldPosition(FieldPosition &fieldPosition, UErrorCode &status);
-#endif  
-
-    
 
 
 
@@ -2544,26 +2500,9 @@ class U_I18N_API FormattedNumber : public UMemory {
 
     UBool nextFieldPosition(FieldPosition& fieldPosition, UErrorCode& status) const;
 
-#ifndef U_HIDE_DEPRECATED_API
     
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-    void populateFieldPositionIterator(FieldPositionIterator &iterator, UErrorCode &status);
-#endif  
-
-    
 
 
 
@@ -2594,39 +2533,9 @@ class U_I18N_API FormattedNumber : public UMemory {
 
 #endif  
 
-    
-
-
-    FormattedNumber(const FormattedNumber&) = delete;
-
-    
-
-
-    FormattedNumber& operator=(const FormattedNumber&) = delete;
-
-    
-
-
-
-
-    FormattedNumber(FormattedNumber&& src) U_NOEXCEPT;
-
-    
-
-
-
-
-    FormattedNumber& operator=(FormattedNumber&& src) U_NOEXCEPT;
-
-    
-
-
-
-    ~FormattedNumber();
-
   private:
     
-    const impl::UFormattedNumberData *fResults;
+    const impl::UFormattedNumberData *fData;
 
     
     UErrorCode fErrorCode;
@@ -2636,13 +2545,16 @@ class U_I18N_API FormattedNumber : public UMemory {
 
 
     explicit FormattedNumber(impl::UFormattedNumberData *results)
-        : fResults(results), fErrorCode(U_ZERO_ERROR) {};
+        : fData(results), fErrorCode(U_ZERO_ERROR) {}
 
     explicit FormattedNumber(UErrorCode errorCode)
-        : fResults(nullptr), fErrorCode(errorCode) {};
+        : fData(nullptr), fErrorCode(errorCode) {}
 
     
     friend class LocalizedNumberFormatter;
+
+    
+    friend struct impl::UFormattedNumberImpl;
 };
 
 
@@ -2683,7 +2595,30 @@ class U_I18N_API NumberFormatter final {
 
 
 
+
+
+
     static UnlocalizedNumberFormatter forSkeleton(const UnicodeString& skeleton, UErrorCode& status);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static UnlocalizedNumberFormatter forSkeleton(const UnicodeString& skeleton,
+                                                  UParseError& perror, UErrorCode& status);
 
     
 

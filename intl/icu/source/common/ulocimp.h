@@ -10,6 +10,7 @@
 #ifndef ULOCIMP_H
 #define ULOCIMP_H
 
+#include "unicode/bytestream.h"
 #include "unicode/uloc.h"
 
 
@@ -80,16 +81,38 @@ ulocimp_getCountry(const char *localeID,
 
 
 
+U_STABLE void U_EXPORT2
+ulocimp_toLanguageTag(const char* localeID,
+                      icu::ByteSink& sink,
+                      UBool strict,
+                      UErrorCode* err);
 
 
 
 
 
-U_CAPI int32_t U_EXPORT2
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+U_CAPI void U_EXPORT2
 ulocimp_forLanguageTag(const char* langtag,
                        int32_t tagLen,
-                       char* localeID,
-                       int32_t localeIDCapacity,
+                       icu::ByteSink& sink,
                        int32_t* parsedLength,
                        UErrorCode* err);
 
@@ -122,15 +145,112 @@ U_CAPI int32_t U_EXPORT2
 ulocimp_getRegionForSupplementalData(const char *localeID, UBool inferRegion,
                                      char *region, int32_t regionCapacity, UErrorCode* status);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+U_STABLE void U_EXPORT2
+ulocimp_addLikelySubtags(const char* localeID,
+                         icu::ByteSink& sink,
+                         UErrorCode* err);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+U_STABLE void U_EXPORT2
+ulocimp_minimizeSubtags(const char* localeID,
+                        icu::ByteSink& sink,
+                        UErrorCode* err);
+
 U_CAPI const char * U_EXPORT2
 locale_getKeywordsStart(const char *localeID);
 
+U_CFUNC UBool
+ultag_isExtensionSubtags(const char* s, int32_t len);
+
+U_CFUNC UBool
+ultag_isLanguageSubtag(const char* s, int32_t len);
+
+U_CFUNC UBool
+ultag_isPrivateuseValueSubtags(const char* s, int32_t len);
+
+U_CFUNC UBool
+ultag_isRegionSubtag(const char* s, int32_t len);
+
+U_CFUNC UBool
+ultag_isScriptSubtag(const char* s, int32_t len);
+
+U_CFUNC UBool
+ultag_isTransformedExtensionSubtags(const char* s, int32_t len);
+
+U_CFUNC UBool
+ultag_isUnicodeExtensionSubtags(const char* s, int32_t len);
+
+U_CFUNC UBool
+ultag_isUnicodeLocaleAttribute(const char* s, int32_t len);
+
+U_CFUNC UBool
+ultag_isUnicodeLocaleAttributes(const char* s, int32_t len);
 
 U_CFUNC UBool
 ultag_isUnicodeLocaleKey(const char* s, int32_t len);
 
 U_CFUNC UBool
 ultag_isUnicodeLocaleType(const char* s, int32_t len);
+
+U_CFUNC UBool
+ultag_isVariantSubtags(const char* s, int32_t len);
 
 U_CFUNC const char*
 ulocimp_toBcpKey(const char* key);

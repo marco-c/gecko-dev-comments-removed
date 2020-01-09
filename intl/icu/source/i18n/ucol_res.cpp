@@ -348,7 +348,7 @@ CollationLoader::loadFromCollations(UErrorCode &errorCode) {
     const char *actualLocale = ures_getLocaleByType(data, ULOC_ACTUAL_LOCALE, &errorCode);
     if(U_FAILURE(errorCode)) { return NULL; }
     const char *vLocale = validLocale.getBaseName();
-    UBool actualAndValidLocalesAreDifferent = uprv_strcmp(actualLocale, vLocale) != 0;
+    UBool actualAndValidLocalesAreDifferent = Locale(actualLocale) != Locale(vLocale);
 
     
     
@@ -410,7 +410,7 @@ CollationLoader::loadFromData(UErrorCode &errorCode) {
 
     const char *actualLocale = locale.getBaseName();  
     const char *vLocale = validLocale.getBaseName();
-    UBool actualAndValidLocalesAreDifferent = uprv_strcmp(actualLocale, vLocale) != 0;
+    UBool actualAndValidLocalesAreDifferent = Locale(actualLocale) != Locale(vLocale);
 
     
     

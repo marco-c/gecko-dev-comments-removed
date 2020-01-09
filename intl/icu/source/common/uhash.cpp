@@ -376,8 +376,7 @@ _uhash_find(const UHashtable *hash, UHashTok key,
 
 
 
-        U_ASSERT(FALSE);
-        return NULL; 
+        UPRV_UNREACHABLE;
     }
     return &(elements[theIndex]);
 }

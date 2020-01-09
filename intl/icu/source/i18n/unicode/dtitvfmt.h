@@ -28,10 +28,86 @@
 #include "unicode/dtintrv.h"
 #include "unicode/dtitvinf.h"
 #include "unicode/dtptngen.h"
+#include "unicode/formattedvalue.h"
 
 U_NAMESPACE_BEGIN
 
 
+class FormattedDateIntervalData;
+class DateIntervalFormat;
+
+#ifndef U_HIDE_DRAFT_API
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class U_I18N_API FormattedDateInterval : public UMemory, public FormattedValue {
+  public:
+    
+
+
+
+    FormattedDateInterval() : fData(nullptr), fErrorCode(U_INVALID_STATE_ERROR) {}
+
+    
+
+
+
+    FormattedDateInterval(FormattedDateInterval&& src) U_NOEXCEPT;
+
+    
+
+
+
+    virtual ~FormattedDateInterval() U_OVERRIDE;
+
+    
+    FormattedDateInterval(const FormattedDateInterval&) = delete;
+
+    
+    FormattedDateInterval& operator=(const FormattedDateInterval&) = delete;
+
+    
+
+
+
+    FormattedDateInterval& operator=(FormattedDateInterval&& src) U_NOEXCEPT;
+
+    
+    UnicodeString toString(UErrorCode& status) const U_OVERRIDE;
+
+    
+    UnicodeString toTempString(UErrorCode& status) const U_OVERRIDE;
+
+    
+    Appendable &appendTo(Appendable& appendable, UErrorCode& status) const U_OVERRIDE;
+
+    
+    UBool nextPosition(ConstrainedFieldPosition& cfpos, UErrorCode& status) const U_OVERRIDE;
+
+  private:
+    FormattedDateIntervalData *fData;
+    UErrorCode fErrorCode;
+    explicit FormattedDateInterval(FormattedDateIntervalData *results)
+        : fData(results), fErrorCode(U_ZERO_ERROR) {}
+    explicit FormattedDateInterval(UErrorCode errorCode)
+        : fData(nullptr), fErrorCode(errorCode) {}
+    friend class DateIntervalFormat;
+};
+#endif 
 
 
 
@@ -425,6 +501,21 @@ public:
                           FieldPosition& fieldPosition,
                           UErrorCode& status) const ;
 
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+
+
+
+    FormattedDateInterval formatToValue(
+        const DateInterval& dtInterval,
+        UErrorCode& status) const;
+#endif 
 
     
 
@@ -454,6 +545,29 @@ public:
                           UnicodeString& appendTo,
                           FieldPosition& fieldPosition,
                           UErrorCode& status) const ;
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    FormattedDateInterval formatToValue(
+        Calendar& fromCalendar,
+        Calendar& toCalendar,
+        UErrorCode& status) const;
+#endif 
 
     
 
@@ -665,27 +779,13 @@ private:
 
 
     
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    static void
-    adjustPosition(UnicodeString& combiningPattern, 
-                   UnicodeString& pat0, FieldPosition& pos0, 
-                   UnicodeString& pat1, FieldPosition& pos1, 
-                   FieldPosition& posResult);
-
+    void fallbackFormatRange(
+        Calendar& fromCalendar,
+        Calendar& toCalendar,
+        UnicodeString& appendTo,
+        int8_t& firstIndex,
+        FieldPositionHandler& fphandler,
+        UErrorCode& status) const;
 
     
 
@@ -713,7 +813,8 @@ private:
                                   Calendar& toCalendar,
                                   UBool fromToOnSameDay,
                                   UnicodeString& appendTo,
-                                  FieldPosition& pos,
+                                  int8_t& firstIndex,
+                                  FieldPositionHandler& fphandler,
                                   UErrorCode& status) const;
 
 
@@ -991,8 +1092,16 @@ private:
     UnicodeString& formatImpl(Calendar& fromCalendar,
                               Calendar& toCalendar,
                               UnicodeString& appendTo,
-                              FieldPosition& fieldPosition,
+                              int8_t& firstIndex,
+                              FieldPositionHandler& fphandler,
                               UErrorCode& status) const ;
+
+    
+    UnicodeString& formatIntervalImpl(const DateInterval& dtInterval,
+                              UnicodeString& appendTo,
+                              int8_t& firstIndex,
+                              FieldPositionHandler& fphandler,
+                              UErrorCode& status) const;
 
 
     

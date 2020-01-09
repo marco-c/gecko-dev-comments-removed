@@ -54,7 +54,6 @@ static void debug_islamcal_msg(const char *pat, ...)
 
 
 
-static UMutex astroLock = U_MUTEX_INITIALIZER;  
 static icu::CalendarCache *gMonthCache = NULL;
 static icu::CalendarAstronomer *gIslamicCalendarAstro = NULL;
 
@@ -223,9 +222,7 @@ const char *IslamicCalendar::getType() const {
         sType = "islamic-umalqura";
         break;
     default:
-        U_ASSERT(false); 
-        sType = "islamic";  
-        break;
+        UPRV_UNREACHABLE; 
     }
     return sType;
 }
@@ -473,6 +470,7 @@ double IslamicCalendar::moonAge(UDate time, UErrorCode &status)
 {
     double age = 0;
 
+    static UMutex astroLock = U_MUTEX_INITIALIZER;      
     umtx_lock(&astroLock);
     if(gIslamicCalendarAstro == NULL) {
         gIslamicCalendarAstro = new CalendarAstronomer();
@@ -675,8 +673,7 @@ void IslamicCalendar::handleComputeFields(int32_t julianDay, UErrorCode &status)
                 month = m;
             }
     } else { 
-      U_ASSERT(false); 
-      year=month=0;
+      UPRV_UNREACHABLE; 
     }
 
     dayOfMonth = (days - monthStart(year, month)) + 1;

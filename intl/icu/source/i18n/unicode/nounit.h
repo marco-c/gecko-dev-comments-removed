@@ -13,6 +13,7 @@
 #include "unicode/utypes.h"
 
 #if !UCONFIG_NO_FORMATTING
+#ifndef U_HIDE_DRAFT_API
 
 #include "unicode/measunit.h"
 
@@ -23,7 +24,6 @@
 
 U_NAMESPACE_BEGIN
 
-#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -100,10 +100,10 @@ private:
     NoUnit(const char* subtype);
 
 };
-#endif  
 
 U_NAMESPACE_END
 
+#endif  
 #endif 
 
 #endif 

@@ -453,11 +453,17 @@ u_getNumericValue(UChar32 c) {
         }
 
         return numValue;
-    } else if(ntv<UPROPS_NTV_RESERVED_START) {
+    } else if(ntv<UPROPS_NTV_FRACTION32_START) {
         
         int32_t frac20=ntv-UPROPS_NTV_FRACTION20_START;  
         int32_t numerator=2*(frac20&3)+1;
         int32_t denominator=20<<(frac20>>2);
+        return (double)numerator/denominator;
+    } else if(ntv<UPROPS_NTV_RESERVED_START) {
+        
+        int32_t frac32=ntv-UPROPS_NTV_FRACTION32_START;  
+        int32_t numerator=2*(frac32&3)+1;
+        int32_t denominator=32<<(frac32>>2);
         return (double)numerator/denominator;
     } else {
         

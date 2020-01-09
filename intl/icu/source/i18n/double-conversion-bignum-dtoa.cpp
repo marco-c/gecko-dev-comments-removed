@@ -34,7 +34,7 @@
 #include "unicode/utypes.h"
 #if !UCONFIG_NO_FORMATTING
 
-#include <math.h>
+#include <cmath>
 
 
 

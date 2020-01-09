@@ -237,6 +237,12 @@ public:
         kPermillField = UNUM_PERMILL_FIELD,
         
         kSignField = UNUM_SIGN_FIELD,
+#ifndef U_HIDE_DRAFT_API
+        
+        kMeasureUnitField = UNUM_MEASURE_UNIT_FIELD,
+        
+        kCompactField = UNUM_COMPACT_FIELD,
+#endif  
 
     
 

@@ -482,6 +482,27 @@ typedef enum UDateFormatStyle {
 #define UDAT_HOUR_TZ                    "jz"
 #endif  
 
+#ifndef U_HIDE_INTERNAL_API
+
+
+
+
+
+#define JP_ERA_2019_ROOT                "Qqqq"
+
+
+
+
+
+#define JP_ERA_2019_JA                  "\\uFF31\\uFF31"
+
+
+
+
+
+#define JP_ERA_2019_NARROW              "Q"
+#endif  
+
 
 
 

@@ -58,8 +58,7 @@ class U_I18N_API DecimalQuantity : public IFixedDecimal, public UMemory {
 
 
 
-
-    void setIntegerLength(int32_t minInt, int32_t maxInt);
+    void setMinInteger(int32_t minInt);
 
     
 
@@ -67,8 +66,15 @@ class U_I18N_API DecimalQuantity : public IFixedDecimal, public UMemory {
 
 
 
+    void setMinFraction(int32_t minFrac);
 
-    void setFractionLength(int32_t minFrac, int32_t maxFrac);
+    
+
+
+
+
+
+    void applyMaxInteger(int32_t maxInt);
 
     
 
@@ -79,10 +85,19 @@ class U_I18N_API DecimalQuantity : public IFixedDecimal, public UMemory {
 
 
     void roundToIncrement(double roundingIncrement, RoundingMode roundingMode,
-                          int32_t maxFrac, UErrorCode& status);
+                          UErrorCode& status);
 
     
     void truncate();
+
+    
+
+
+
+
+
+
+    void roundToNickel(int32_t magnitude, RoundingMode roundingMode, UErrorCode& status);
 
     
 
@@ -260,7 +275,7 @@ class U_I18N_API DecimalQuantity : public IFixedDecimal, public UMemory {
     inline bool isUsingBytes() { return usingBytes; }
 
     
-    inline bool isExplicitExactDouble() { return explicitExactDouble; };
+    inline bool isExplicitExactDouble() { return explicitExactDouble; }
 
     bool operator==(const DecimalQuantity& other) const;
 
@@ -330,33 +345,8 @@ class U_I18N_API DecimalQuantity : public IFixedDecimal, public UMemory {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    int32_t lOptPos = INT32_MAX;
     int32_t lReqPos = 0;
     int32_t rReqPos = 0;
-    int32_t rOptPos = INT32_MIN;
 
     
 
@@ -381,6 +371,8 @@ class U_I18N_API DecimalQuantity : public IFixedDecimal, public UMemory {
 
 
     bool explicitExactDouble = false;
+
+    void roundToMagnitude(int32_t magnitude, RoundingMode roundingMode, bool nickel, UErrorCode& status);
 
     
 
@@ -410,7 +402,21 @@ class U_I18N_API DecimalQuantity : public IFixedDecimal, public UMemory {
 
     void shiftLeft(int32_t numDigits);
 
+    
+
+
+
+
+
     void shiftRight(int32_t numDigits);
+
+    
+
+
+
+
+
+    void popFromLeft(int32_t numDigits);
 
     
 

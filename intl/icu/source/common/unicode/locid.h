@@ -340,7 +340,7 @@ public:
 
 
 
-    UBool   operator!=(const    Locale&     other) const;
+    inline UBool   operator!=(const    Locale&     other) const;
 
     
 
@@ -962,7 +962,7 @@ public:
 
 
 
-    UBool isBogus(void) const;
+    inline UBool isBogus(void) const;
 
     
 

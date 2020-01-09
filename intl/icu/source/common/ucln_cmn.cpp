@@ -40,8 +40,8 @@ U_CAPI void U_EXPORT2
 u_cleanup(void)
 {
     UTRACE_ENTRY_OC(UTRACE_U_CLEANUP);
-    umtx_lock(NULL);     
-    umtx_unlock(NULL);   
+    icu::umtx_lock(NULL);     
+    icu::umtx_unlock(NULL);   
 
     ucln_lib_cleanup();
 

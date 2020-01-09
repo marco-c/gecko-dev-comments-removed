@@ -21,6 +21,7 @@
 
 
 
+#include "unicode/ures.h"
 #include "unicode/ustring.h"
 #include "unicode/ucnv.h"
 #include "charstr.h"
@@ -48,7 +49,10 @@ using namespace icu;
 static UHashtable *cache = NULL;
 static icu::UInitOnce gCacheInitOnce;
 
-static UMutex resbMutex = U_MUTEX_INITIALIZER;
+static UMutex *resbMutex() {
+    static UMutex m = U_MUTEX_INITIALIZER;
+    return &m;
+}
 
 
 static int32_t U_CALLCONV hashEntry(const UHashTok parm) {
@@ -92,13 +96,13 @@ static UBool chopLocale(char *name) {
 
 
 static void entryIncrease(UResourceDataEntry *entry) {
-    umtx_lock(&resbMutex);
+    umtx_lock(resbMutex());
     entry->fCountExisting++;
     while(entry->fParent != NULL) {
       entry = entry->fParent;
       entry->fCountExisting++;
     }
-    umtx_unlock(&resbMutex);
+    umtx_unlock(resbMutex());
 }
 
 
@@ -180,9 +184,9 @@ static int32_t ures_flushCache()
     
 
 
-    umtx_lock(&resbMutex);
+    umtx_lock(resbMutex());
     if (cache == NULL) {
-        umtx_unlock(&resbMutex);
+        umtx_unlock(resbMutex());
         return 0;
     }
 
@@ -214,7 +218,7 @@ static int32_t ures_flushCache()
 
 
     } while(deletedMore);
-    umtx_unlock(&resbMutex);
+    umtx_unlock(resbMutex());
 
     return rbDeletedNum;
 }
@@ -228,9 +232,9 @@ U_CAPI UBool U_EXPORT2 ures_dumpCacheContents(void) {
   const UHashElement *e;
   UResourceDataEntry *resB;
   
-    umtx_lock(&resbMutex);
+    umtx_lock(resbMutex());
     if (cache == NULL) {
-      umtx_unlock(&resbMutex);
+      umtx_unlock(resbMutex());
       fprintf(stderr,"%s:%d: RB Cache is NULL.\n", __FILE__, __LINE__);
       return FALSE;
     }
@@ -250,7 +254,7 @@ U_CAPI UBool U_EXPORT2 ures_dumpCacheContents(void) {
     
     fprintf(stderr,"%s:%d: RB Cache still contains %d items.\n", __FILE__, __LINE__, uhash_count(cache));
 
-    umtx_unlock(&resbMutex);
+    umtx_unlock(resbMutex());
     
     return cacheNotEmpty;
 }
@@ -488,6 +492,9 @@ findFirstExisting(const char* path, char* name,
 
         
         *hasChopped = chopLocale(name);
+        if (*hasChopped && *name == '\0') {
+            uprv_strcpy(name, "und");
+        }
     }
     return r;
 }
@@ -511,6 +518,18 @@ U_CFUNC void ures_initStackObject(UResourceBundle* resB) {
   uprv_memset(resB, 0, sizeof(UResourceBundle));
   ures_setIsStackObject(resB, TRUE);
 }
+
+U_NAMESPACE_BEGIN
+
+StackUResourceBundle::StackUResourceBundle() {
+    ures_initStackObject(&bundle);
+}
+
+StackUResourceBundle::~StackUResourceBundle() {
+    ures_close(&bundle);
+}
+
+U_NAMESPACE_END
 
 static UBool  
 loadParentsExceptRoot(UResourceDataEntry *&t1,
@@ -647,7 +666,7 @@ static UResourceDataEntry *entryOpen(const char* path, const char* localeID,
         }
     }
  
-    umtx_lock(&resbMutex);
+    umtx_lock(resbMutex());
     { 
         
         r = findFirstExisting(path, name, &isRoot, &hasChopped, &isDefault, &intStatus);
@@ -746,7 +765,7 @@ static UResourceDataEntry *entryOpen(const char* path, const char* localeID,
         }
     } 
 finishUnlock:
-    umtx_unlock(&resbMutex);
+    umtx_unlock(resbMutex());
 
     if(U_SUCCESS(*status)) {
         if(intStatus != U_ZERO_ERROR) {
@@ -771,7 +790,7 @@ entryOpenDirect(const char* path, const char* localeID, UErrorCode* status) {
         return NULL;
     }
 
-    umtx_lock(&resbMutex);
+    umtx_lock(resbMutex());
     
     UResourceDataEntry *r = init_entry(localeID, path, status);
     if(U_SUCCESS(*status)) {
@@ -809,7 +828,7 @@ entryOpenDirect(const char* path, const char* localeID, UErrorCode* status) {
             t1 = t1->fParent;
         }
     }
-    umtx_unlock(&resbMutex);
+    umtx_unlock(resbMutex());
     return r;
 }
 
@@ -852,9 +871,9 @@ static void entryCloseInt(UResourceDataEntry *resB) {
 
 
 static void entryClose(UResourceDataEntry *resB) {
-  umtx_lock(&resbMutex);
+  umtx_lock(resbMutex());
   entryCloseInt(resB);
-  umtx_unlock(&resbMutex);
+  umtx_unlock(resbMutex());
 }
 
 
@@ -1110,7 +1129,7 @@ static UResourceBundle *init_resb_result(const ResourceData *rdata, Resource r,
                             UResourceDataEntry *dataEntry = mainRes->fData;
                             char stackPath[URES_MAX_BUFFER_SIZE];
                             char *pathBuf = stackPath, *myPath = pathBuf;
-                            if(uprv_strlen(keyPath) > URES_MAX_BUFFER_SIZE) {
+                            if(uprv_strlen(keyPath) >= UPRV_LENGTHOF(stackPath)) {
                                 pathBuf = (char *)uprv_malloc((uprv_strlen(keyPath)+1)*sizeof(char));
                                 if(pathBuf == NULL) {
                                     *status = U_MEMORY_ALLOCATION_ERROR;
@@ -2304,7 +2323,9 @@ ures_openDirect(const char* path, const char* localeID, UErrorCode* status) {
 
 
 
-U_CAPI void U_EXPORT2
+
+
+U_INTERNAL void U_EXPORT2
 ures_openFillIn(UResourceBundle *r, const char* path,
                 const char* localeID, UErrorCode* status) {
     if(U_SUCCESS(*status) && r == NULL) {
@@ -2312,6 +2333,18 @@ ures_openFillIn(UResourceBundle *r, const char* path,
         return;
     }
     ures_openWithType(r, path, localeID, URES_OPEN_LOCALE_DEFAULT_ROOT, status);
+}
+
+
+
+
+U_INTERNAL void U_EXPORT2
+ures_openDirectFillIn(UResourceBundle *r, const char* path, const char* localeID, UErrorCode* status) {
+    if(U_SUCCESS(*status) && r == NULL) {
+        *status = U_ILLEGAL_ARGUMENT_ERROR;
+        return;
+    }
+    ures_openWithType(r, path, localeID, URES_OPEN_DIRECT, status);
 }
 
 

@@ -28,13 +28,17 @@
 #endif
 
 #include <assert.h>
+#include <iostream>
+#include <set>
 #include <stdio.h>
+
 #include "unicode/localpointer.h"
 #include "reslist.h"
 #include "unewdata.h"
 #include "unicode/ures.h"
 #include "unicode/putil.h"
 #include "errmsg.h"
+#include "filterrb.h"
 
 #include "uarrsort.h"
 #include "uelement.h"
@@ -42,6 +46,8 @@
 #include "uinvchar.h"
 #include "ustr_imp.h"
 #include "unicode/utf16.h"
+#include "uassert.h"
+
 
 
 
@@ -921,9 +927,6 @@ void SRBRoot::write(const char *outputDir, const char *outputPkg,
     if (f16BitUnits.length() & 1) {
         f16BitUnits.append((UChar)0xaaaa);  
     }
-    
-    uprv_free(fKeyMap);
-    fKeyMap = NULL;
 
     byteOffset = fKeysTop + f16BitUnits.length() * 2;
     fRoot->preWrite(&byteOffset);
@@ -1037,14 +1040,15 @@ void SRBRoot::write(const char *outputDir, const char *outputPkg,
                 
                 
                 UnicodeString s(f16BitUnits);
-                s.append((UChar)1);  
                 assert(!s.isBogus());
-                uint16_t *p = const_cast<uint16_t *>(reinterpret_cast<const uint16_t *>(s.getBuffer()));
+                
+                char16_t* p = s.getBuffer(f16BitUnits.length());
                 for (int32_t count = f16BitUnits.length(); count > 0; --count) {
                     uint16_t x = *p;
                     *p++ = (uint16_t)((x << 8) | (x >> 8));
                 }
-                checksum = computeCRC((const char *)p,
+                s.releaseBuffer(f16BitUnits.length());
+                checksum = computeCRC((const char *)s.getBuffer(),
                                       (uint32_t)f16BitUnits.length() * 2, checksum);
             }
             indexes[URES_INDEX_POOL_CHECKSUM] = (int32_t)checksum;
@@ -1127,7 +1131,8 @@ SRBRoot::SRBRoot(const UString *comment, UBool isPoolBundle, UErrorCode &errorCo
         : fRoot(NULL), fLocale(NULL), fIndexLength(0), fMaxTableLength(0), fNoFallback(FALSE),
           fStringsForm(STRINGS_UTF16_V1), fIsPoolBundle(isPoolBundle),
           fKeys(NULL), fKeyMap(NULL),
-          fKeysBottom(0), fKeysTop(0), fKeysCapacity(0), fKeysCount(0), fLocalKeyLimit(0),
+          fKeysBottom(0), fKeysTop(0), fKeysCapacity(0),
+          fKeysCount(0), fLocalKeyLimit(0),
           f16BitUnits(), f16BitStringsLength(0),
           fUsePoolBundle(&kNoPoolBundle),
           fPoolStringIndexLimit(0), fPoolStringIndex16Limit(0), fLocalStringIndexLimit(0),
@@ -1232,6 +1237,9 @@ int32_t
 SRBRoot::addKeyBytes(const char *keyBytes, int32_t length, UErrorCode &errorCode) {
     int32_t keypos;
 
+    
+    U_ASSERT(fKeyMap == nullptr);
+
     if (U_FAILURE(errorCode)) {
         return -1;
     }
@@ -1333,11 +1341,35 @@ compareKeyOldpos(const void * , const void *l, const void *r) {
     return compareInt32(((const KeyMapEntry *)l)->oldpos, ((const KeyMapEntry *)r)->oldpos);
 }
 
+void SResource::collectKeys(std::function<void(int32_t)> collector) const {
+    collector(fKey);
+}
+
+void ContainerResource::collectKeys(std::function<void(int32_t)> collector) const {
+    collector(fKey);
+    for (SResource* curr = fFirst; curr != NULL; curr = curr->fNext) {
+        curr->collectKeys(collector);
+    }
+}
+
 void
 SRBRoot::compactKeys(UErrorCode &errorCode) {
     KeyMapEntry *map;
     char *keys;
     int32_t i;
+
+    
+    
+    std::set<int32_t> keysInUse;
+    if (!fIsPoolBundle) {
+        fRoot->collectKeys([&keysInUse](int32_t key) {
+            if (key >= 0) {
+                keysInUse.insert(key);
+            }
+        });
+        fKeysCount = static_cast<int32_t>(keysInUse.size());
+    }
+
     int32_t keysCount = fUsePoolBundle->fKeysCount + fKeysCount;
     if (U_FAILURE(errorCode) || fKeysCount == 0 || fKeyMap != NULL) {
         return;
@@ -1356,11 +1388,23 @@ SRBRoot::compactKeys(UErrorCode &errorCode) {
         ++keys;  
     }
     keys = fKeys + fKeysBottom;
-    for (; i < keysCount; ++i) {
-        map[i].oldpos = (int32_t)(keys - fKeys);
-        map[i].newpos = 0;
-        while (*keys != 0) { ++keys; }  
-        ++keys;  
+    while (i < keysCount) {
+        int32_t keyOffset = static_cast<int32_t>(keys - fKeys);
+        if (!fIsPoolBundle && keysInUse.count(keyOffset) == 0) {
+            
+            while (*keys != 0) { *keys++ = 1; }
+            *keys++ = 1;
+        } else {
+            map[i].oldpos = keyOffset;
+            map[i].newpos = 0;
+            while (*keys != 0) { ++keys; }  
+            ++keys;  
+            i++;
+        }
+    }
+    if (keys != fKeys + fKeysTop) {
+        
+        fKeysTop = static_cast<int32_t>(keys - fKeys);
     }
     
     uprv_sortArray(map, keysCount, (int32_t)sizeof(KeyMapEntry),
@@ -1437,7 +1481,7 @@ SRBRoot::compactKeys(UErrorCode &errorCode) {
                         keys[newpos++] = keys[oldpos++];
                     }
                 }
-                assert(i == keysCount);
+                U_ASSERT(i == keysCount);
             }
             fKeysTop = newpos;
             
@@ -1690,4 +1734,56 @@ SRBRoot::compactStringsV2(UHashtable *stringSet, UErrorCode &errorCode) {
     }
     
     assert(f16BitUnits.length() <= (f16BitStringsLength + 1));
+}
+
+void SResource::applyFilter(
+        const PathFilter& ,
+        ResKeyPath& ,
+        const SRBRoot* ) {
+    
+}
+
+void TableResource::applyFilter(
+        const PathFilter& filter,
+        ResKeyPath& path,
+        const SRBRoot* bundle) {
+    SResource* prev = nullptr;
+    SResource* curr = fFirst;
+    for (; curr != nullptr;) {
+        path.push(curr->getKeyString(bundle));
+        auto inclusion = filter.match(path);
+        if (inclusion == PathFilter::EInclusion::INCLUDE) {
+            
+            
+            if (isVerbose()) {
+                std::cout << "genrb subtree: " << bundle->fLocale << ": INCLUDE: " << path << std::endl;
+            }
+        } else if (inclusion == PathFilter::EInclusion::EXCLUDE) {
+            
+            
+            if (isVerbose()) {
+                std::cout << "genrb subtree: " << bundle->fLocale << ": DELETE:  " << path << std::endl;
+            }
+            if (prev == nullptr) {
+                fFirst = curr->fNext;
+            } else {
+                prev->fNext = curr->fNext;
+            }
+            fCount--;
+            delete curr;
+            curr = prev;
+        } else {
+            U_ASSERT(inclusion == PathFilter::EInclusion::PARTIAL);
+            
+            curr->applyFilter(filter, path, bundle);
+        }
+        path.pop();
+
+        prev = curr;
+        if (curr == nullptr) {
+            curr = fFirst;
+        } else {
+            curr = curr->fNext;
+        }
+    }
 }

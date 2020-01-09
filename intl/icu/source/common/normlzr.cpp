@@ -23,7 +23,7 @@
 #include "normalizer2impl.h"
 #include "uprops.h"  
 
-#if defined(_ARM64_) && defined(move32)
+#if defined(move32)
  
  
 #undef move32

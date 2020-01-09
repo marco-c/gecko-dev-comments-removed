@@ -51,7 +51,21 @@ class U_I18N_API CurrencyUnit: public MeasureUnit {
 
 
 
+
     CurrencyUnit(ConstChar16Ptr isoCode, UErrorCode &ec);
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+
+
+    CurrencyUnit(StringPiece isoCode, UErrorCode &ec);
+#endif  
 
     
 

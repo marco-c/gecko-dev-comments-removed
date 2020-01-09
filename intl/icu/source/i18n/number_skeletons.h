@@ -122,7 +122,8 @@ enum StemEnum {
 
 
 
-UnlocalizedNumberFormatter create(const UnicodeString& skeletonString, UErrorCode& status);
+UnlocalizedNumberFormatter create(
+    const UnicodeString& skeletonString, UParseError* perror, UErrorCode& status);
 
 
 
@@ -138,7 +139,7 @@ UnicodeString generate(const MacroProps& macros, UErrorCode& status);
 
 
 
-MacroProps parseSkeleton(const UnicodeString& skeletonString, UErrorCode& status);
+MacroProps parseSkeleton(const UnicodeString& skeletonString, int32_t& errOffset, UErrorCode& status);
 
 
 
@@ -174,7 +175,7 @@ Precision precision(skeleton::StemEnum stem);
 
 UNumberFormatRoundingMode roundingMode(skeleton::StemEnum stem);
 
-UGroupingStrategy groupingStrategy(skeleton::StemEnum stem);
+UNumberGroupingStrategy groupingStrategy(skeleton::StemEnum stem);
 
 UNumberUnitWidth unitWidth(skeleton::StemEnum stem);
 
@@ -192,7 +193,7 @@ namespace enum_to_stem_string {
 
 void roundingMode(UNumberFormatRoundingMode value, UnicodeString& sb);
 
-void groupingStrategy(UGroupingStrategy value, UnicodeString& sb);
+void groupingStrategy(UNumberGroupingStrategy value, UnicodeString& sb);
 
 void unitWidth(UNumberUnitWidth value, UnicodeString& sb);
 

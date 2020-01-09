@@ -58,32 +58,32 @@ U_NAMESPACE_BEGIN
 
 
 
-void * U_EXPORT2 UMemory::operator new(size_t size) U_NO_THROW {
+void * U_EXPORT2 UMemory::operator new(size_t size) U_NOEXCEPT {
     return uprv_malloc(size);
 }
 
-void U_EXPORT2 UMemory::operator delete(void *p) U_NO_THROW {
+void U_EXPORT2 UMemory::operator delete(void *p) U_NOEXCEPT {
     if(p!=NULL) {
         uprv_free(p);
     }
 }
 
-void * U_EXPORT2 UMemory::operator new[](size_t size) U_NO_THROW {
+void * U_EXPORT2 UMemory::operator new[](size_t size) U_NOEXCEPT {
     return uprv_malloc(size);
 }
 
-void U_EXPORT2 UMemory::operator delete[](void *p) U_NO_THROW {
+void U_EXPORT2 UMemory::operator delete[](void *p) U_NOEXCEPT {
     if(p!=NULL) {
         uprv_free(p);
     }
 }
 
 #if U_HAVE_DEBUG_LOCATION_NEW
-void * U_EXPORT2 UMemory::operator new(size_t size, const char* , int ) U_NO_THROW {
+void * U_EXPORT2 UMemory::operator new(size_t size, const char* , int ) U_NOEXCEPT {
     return UMemory::operator new(size);
 }
 
-void U_EXPORT2 UMemory::operator delete(void* p, const char* , int ) U_NO_THROW {
+void U_EXPORT2 UMemory::operator delete(void* p, const char* , int ) U_NOEXCEPT {
     UMemory::operator delete(p);
 }
 #endif 

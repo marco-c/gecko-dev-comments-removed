@@ -651,7 +651,7 @@ private:
      
 
 
-     AlphabeticIndex &operator =(const AlphabeticIndex & ) { return *this;};
+     AlphabeticIndex &operator =(const AlphabeticIndex & ) { return *this;}
 
     
 

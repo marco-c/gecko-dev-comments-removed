@@ -377,6 +377,18 @@
 
 
 
+#ifndef UCONFIG_USE_WINDOWS_LCID_MAPPING_API
+#   define UCONFIG_USE_WINDOWS_LCID_MAPPING_API 1
+#endif
+
+
+
+
+
+
+
+
+
 #ifndef UCONFIG_NO_COLLATION
 #   define UCONFIG_NO_COLLATION 0
 #endif

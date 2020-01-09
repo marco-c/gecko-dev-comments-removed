@@ -17,6 +17,7 @@
 #include "unicode/unum.h"
 #include "unicode/udisplaycontext.h"
 #include "unicode/localpointer.h"
+#include "unicode/uformattedvalue.h"
 
 
 
@@ -174,6 +175,27 @@ typedef enum URelativeDateTimeUnit {
 #endif  
 } URelativeDateTimeUnit;
 
+#ifndef U_HIDE_DRAFT_API
+
+
+
+
+
+typedef enum URelativeDateTimeFormatterField {
+    
+
+
+
+    UDAT_REL_LITERAL_FIELD,
+    
+
+
+
+    UDAT_REL_NUMERIC_FIELD,
+} URelativeDateTimeFormatterField;
+#endif 
+
+
 
 
 
@@ -230,6 +252,54 @@ ureldatefmt_open( const char*          locale,
 U_STABLE void U_EXPORT2
 ureldatefmt_close(URelativeDateTimeFormatter *reldatefmt);
 
+#ifndef U_HIDE_DRAFT_API
+struct UFormattedRelativeDateTime;
+
+
+
+
+typedef struct UFormattedRelativeDateTime UFormattedRelativeDateTime;
+
+
+
+
+
+
+
+
+
+
+U_DRAFT UFormattedRelativeDateTime* U_EXPORT2
+ureldatefmt_openResult(UErrorCode* ec);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+U_DRAFT const UFormattedValue* U_EXPORT2
+ureldatefmt_resultAsValue(const UFormattedRelativeDateTime* ufrdt, UErrorCode* ec);
+
+
+
+
+
+
+
+U_DRAFT void U_EXPORT2
+ureldatefmt_closeResult(UFormattedRelativeDateTime* ufrdt);
+#endif  
+
+
 #if U_SHOW_CPLUSPLUS_API
 
 U_NAMESPACE_BEGIN
@@ -244,6 +314,19 @@ U_NAMESPACE_BEGIN
 
 
 U_DEFINE_LOCAL_OPEN_POINTER(LocalURelativeDateTimeFormatterPointer, URelativeDateTimeFormatter, ureldatefmt_close);
+
+#ifndef U_HIDE_DRAFT_API
+
+
+
+
+
+
+
+
+
+U_DEFINE_LOCAL_OPEN_POINTER(LocalUFormattedRelativeDateTimePointer, UFormattedRelativeDateTime, ureldatefmt_closeResult);
+#endif  
 
 U_NAMESPACE_END
 
@@ -285,6 +368,39 @@ ureldatefmt_formatNumeric( const URelativeDateTimeFormatter* reldatefmt,
                     int32_t               resultCapacity,
                     UErrorCode*           status);
 
+#ifndef U_HIDE_DRAFT_API
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+U_DRAFT void U_EXPORT2
+ureldatefmt_formatNumericToResult(
+    const URelativeDateTimeFormatter* reldatefmt,
+    double                            offset,
+    URelativeDateTimeUnit             unit,
+    UFormattedRelativeDateTime*       result,
+    UErrorCode*                       status);
+#endif  
+
 
 
 
@@ -320,6 +436,42 @@ ureldatefmt_format( const URelativeDateTimeFormatter* reldatefmt,
                     UChar*                result,
                     int32_t               resultCapacity,
                     UErrorCode*           status);
+
+#ifndef U_HIDE_DRAFT_API
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+U_DRAFT void U_EXPORT2
+ureldatefmt_formatToResult(
+    const URelativeDateTimeFormatter* reldatefmt,
+    double                            offset,
+    URelativeDateTimeUnit             unit,
+    UFormattedRelativeDateTime*       result,
+    UErrorCode*                       status);
+#endif  
 
 
 

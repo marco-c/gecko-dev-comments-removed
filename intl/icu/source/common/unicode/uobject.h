@@ -20,6 +20,9 @@
 #define __UOBJECT_H__
 
 #include "unicode/utypes.h"
+#include "unicode/platform.h"
+
+
 
 
 
@@ -125,14 +128,14 @@ public:
 
 
 
-    static void * U_EXPORT2 operator new(size_t size) U_NO_THROW;
+    static void * U_EXPORT2 operator new(size_t size) U_NOEXCEPT;
 
     
 
 
 
 
-    static void * U_EXPORT2 operator new[](size_t size) U_NO_THROW;
+    static void * U_EXPORT2 operator new[](size_t size) U_NOEXCEPT;
 
     
 
@@ -142,14 +145,14 @@ public:
 
 
 
-    static void U_EXPORT2 operator delete(void *p) U_NO_THROW;
+    static void U_EXPORT2 operator delete(void *p) U_NOEXCEPT;
 
     
 
 
 
 
-    static void U_EXPORT2 operator delete[](void *p) U_NO_THROW;
+    static void U_EXPORT2 operator delete[](void *p) U_NOEXCEPT;
 
 #if U_HAVE_PLACEMENT_NEW
     
@@ -157,14 +160,14 @@ public:
 
 
 
-    static inline void * U_EXPORT2 operator new(size_t, void *ptr) U_NO_THROW { return ptr; }
+    static inline void * U_EXPORT2 operator new(size_t, void *ptr) U_NOEXCEPT { return ptr; }
 
     
 
 
 
 
-    static inline void U_EXPORT2 operator delete(void *, void *) U_NO_THROW {}
+    static inline void U_EXPORT2 operator delete(void *, void *) U_NOEXCEPT {}
 #endif 
 #if U_HAVE_DEBUG_LOCATION_NEW
     
@@ -174,7 +177,7 @@ public:
 
 
  
-    static void * U_EXPORT2 operator new(size_t size, const char* file, int line) U_NO_THROW;
+    static void * U_EXPORT2 operator new(size_t size, const char* file, int line) U_NOEXCEPT;
     
 
 
@@ -182,7 +185,7 @@ public:
 
 
  
-    static void U_EXPORT2 operator delete(void* p, const char* file, int line) U_NO_THROW;
+    static void U_EXPORT2 operator delete(void* p, const char* file, int line) U_NOEXCEPT;
 #endif 
 #endif 
 

@@ -11,34 +11,15 @@
 #include "number_types.h"
 #include "number_decimalquantity.h"
 #include "number_stringbuilder.h"
+#include "formattedval_impl.h"
 
 U_NAMESPACE_BEGIN namespace number {
 namespace impl {
 
 
 
-
-
-
-
-struct UNumberFormatterData : public UMemory {
-    
-    
-    static constexpr int32_t kMagic = 0x4E465200;
-
-    
-    int32_t fMagic = kMagic;
-    LocalizedNumberFormatter fFormatter;
-
-    
-    static UNumberFormatterData* validate(UNumberFormatter* input, UErrorCode& status);
-
-    
-    static const UNumberFormatterData* validate(const UNumberFormatter* input, UErrorCode& status);
-
-    
-    UNumberFormatter* exportForC();
-};
+const DecimalQuantity* validateUFormattedNumberToDecimalQuantity(
+    const UFormattedNumber* uresult, UErrorCode& status);
 
 
 
@@ -50,24 +31,12 @@ struct UNumberFormatterData : public UMemory {
 
 
 
-struct UFormattedNumberData : public UMemory {
-    
-    
-    static constexpr int32_t kMagic = 0x46444E00;
+class UFormattedNumberData : public FormattedValueNumberStringBuilderImpl {
+public:
+    UFormattedNumberData() : FormattedValueNumberStringBuilderImpl(0) {}
+    virtual ~UFormattedNumberData();
 
-    
-    int32_t fMagic = kMagic;
     DecimalQuantity quantity;
-    NumberStringBuilder string;
-
-    
-    static UFormattedNumberData* validate(UFormattedNumber* input, UErrorCode& status);
-
-    
-    static const UFormattedNumberData* validate(const UFormattedNumber* input, UErrorCode& status);
-
-    
-    UFormattedNumber* exportForC();
 };
 
 

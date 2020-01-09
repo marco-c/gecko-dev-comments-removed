@@ -325,6 +325,21 @@ class NumberFormat;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class U_I18N_API MessageFormat : public Format {
 public:
 #ifndef U_HIDE_OBSOLETE_API
@@ -993,6 +1008,8 @@ private:
     UBool argNameMatches(int32_t partIndex, const UnicodeString& argName, int32_t argNumber);
 
     void cacheExplicitFormats(UErrorCode& status);
+
+    int32_t skipLeadingSpaces(UnicodeString& style);
 
     Format* createAppropriateFormat(UnicodeString& type,
                                     UnicodeString& style,

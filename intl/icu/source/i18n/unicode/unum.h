@@ -375,12 +375,19 @@ typedef enum UNumberFormatFields {
     UNUM_PERMILL_FIELD,
     
     UNUM_SIGN_FIELD,
+#ifndef U_HIDE_DRAFT_API
+    
+    UNUM_MEASURE_UNIT_FIELD,
+    
+    UNUM_COMPACT_FIELD,
+#endif  
+
 #ifndef U_HIDE_DEPRECATED_API
     
 
 
 
-    UNUM_FIELD_COUNT
+    UNUM_FIELD_COUNT = UNUM_SIGN_FIELD + 3
 #endif  
 } UNumberFormatFields;
 
@@ -1022,16 +1029,18 @@ typedef enum UNumberFormatAttribute {
 
 
   UNUM_SCALE = 21,
-#ifndef U_HIDE_INTERNAL_API
+
+#ifndef U_HIDE_DRAFT_API
   
+
+
 
 
 
 
 
   UNUM_MINIMUM_GROUPING_DIGITS = 22,
-  
-#endif  
+#endif 
 
   
 
@@ -1041,11 +1050,12 @@ typedef enum UNumberFormatAttribute {
 
   UNUM_CURRENCY_USAGE = 23,
 
-  
+#ifndef U_HIDE_INTERNAL_API
   
 
 
   UNUM_MAX_NONBOOLEAN_ATTRIBUTE = 0x0FFF,
+#endif 
 
   
 
@@ -1071,24 +1081,33 @@ typedef enum UNumberFormatAttribute {
 
   UNUM_PARSE_DECIMAL_MARK_REQUIRED = 0x1002,
 
-  
-  
-
-  UNUM_LIMIT_BOOLEAN_ATTRIBUTE = 0x1003,
+#ifndef U_HIDE_DRAFT_API
 
   
 
 
 
 
-  UNUM_PARSE_CASE_SENSITIVE = 0x1004,
+  UNUM_PARSE_CASE_SENSITIVE = 0x1003,
 
   
 
 
 
 
-  UNUM_SIGN_ALWAYS_SHOWN = 0x1005,
+
+
+  UNUM_SIGN_ALWAYS_SHOWN = 0x1004,
+
+#endif 
+
+#ifndef U_HIDE_INTERNAL_API
+  
+
+
+  UNUM_LIMIT_BOOLEAN_ATTRIBUTE = 0x1005,
+#endif 
+
 } UNumberFormatAttribute;
 
 

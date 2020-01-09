@@ -11,6 +11,7 @@
 #define URESIMP_H
 
 #include "unicode/ures.h"
+#include "unicode/utypes.h"
 
 #include "uresdata.h"
 
@@ -81,6 +82,60 @@ struct UResourceBundle {
 };
 
 U_CAPI void U_EXPORT2 ures_initStackObject(UResourceBundle* resB);
+
+#ifdef __cplusplus
+
+U_NAMESPACE_BEGIN
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class U_COMMON_API StackUResourceBundle {
+public:
+    
+    static void* U_EXPORT2 operator new(size_t) U_NOEXCEPT = delete;
+    static void* U_EXPORT2 operator new[](size_t) U_NOEXCEPT = delete;
+#if U_HAVE_PLACEMENT_NEW
+    static void* U_EXPORT2 operator new(size_t, void*) U_NOEXCEPT = delete;
+#endif
+
+    StackUResourceBundle();
+    ~StackUResourceBundle();
+
+    UResourceBundle* getAlias() { return &bundle; }
+
+    UResourceBundle& ref() { return bundle; }
+    const UResourceBundle& ref() const { return bundle; }
+
+    StackUResourceBundle(const StackUResourceBundle&) = delete;
+    StackUResourceBundle& operator=(const StackUResourceBundle&) = delete;
+
+    StackUResourceBundle(StackUResourceBundle&&) = delete;
+    StackUResourceBundle& operator=(StackUResourceBundle&&) = delete;
+
+private:
+    UResourceBundle bundle;
+};
+
+U_NAMESPACE_END
+
+#endif  
 
 
 
@@ -274,5 +329,28 @@ ures_getVersionNumberInternal(const UResourceBundle *resourceBundle);
 U_CAPI const char* U_EXPORT2 
 ures_getLocaleInternal(const UResourceBundle* resourceBundle, 
                UErrorCode* status);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+U_CAPI void U_EXPORT2
+ures_openDirectFillIn(UResourceBundle *r,
+                      const char *packageName,
+                      const char *locale,
+                      UErrorCode *status);
 
 #endif 

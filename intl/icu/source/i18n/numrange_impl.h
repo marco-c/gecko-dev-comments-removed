@@ -14,6 +14,7 @@
 #include "number_decimalquantity.h"
 #include "number_formatimpl.h"
 #include "number_stringbuilder.h"
+#include "formattedval_impl.h"
 
 U_NAMESPACE_BEGIN namespace number {
 namespace impl {
@@ -25,19 +26,17 @@ namespace impl {
 
 
 
-struct UFormattedNumberRangeData : public UMemory {
-    
-    
-    static constexpr int32_t kMagic = 0x46445200;
 
-    
-    int32_t fMagic = kMagic;
+
+
+class UFormattedNumberRangeData : public FormattedValueNumberStringBuilderImpl {
+public:
+    UFormattedNumberRangeData() : FormattedValueNumberStringBuilderImpl(0) {}
+    virtual ~UFormattedNumberRangeData();
+
     DecimalQuantity quantity1;
     DecimalQuantity quantity2;
-    NumberStringBuilder string;
     UNumberRangeIdentityResult identityResult = UNUM_IDENTITY_RESULT_COUNT;
-
-    
 };
 
 

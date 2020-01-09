@@ -16,6 +16,7 @@
 
 #include "unicode/umisc.h"
 #include "unicode/localpointer.h"
+#include "unicode/uformattedvalue.h"
 
 
 
@@ -81,6 +82,15 @@
 struct UDateIntervalFormat;
 typedef struct UDateIntervalFormat UDateIntervalFormat;  
 
+#ifndef U_HIDE_DRAFT_API
+struct UFormattedDateInterval;
+
+
+
+
+typedef struct UFormattedDateInterval UFormattedDateInterval;
+#endif 
+
 
 
 
@@ -123,6 +133,55 @@ U_STABLE void U_EXPORT2
 udtitvfmt_close(UDateIntervalFormat *formatter);
 
 
+#ifndef U_HIDE_DRAFT_API
+
+
+
+
+
+
+
+
+
+U_CAPI UFormattedDateInterval* U_EXPORT2
+udtitvfmt_openResult(UErrorCode* ec);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+U_CAPI const UFormattedValue* U_EXPORT2
+udtitvfmt_resultAsValue(const UFormattedDateInterval* uresult, UErrorCode* ec);
+
+
+
+
+
+
+
+U_CAPI void U_EXPORT2
+udtitvfmt_closeResult(UFormattedDateInterval* uresult);
+#endif 
+
+
 #if U_SHOW_CPLUSPLUS_API
 
 U_NAMESPACE_BEGIN
@@ -137,6 +196,19 @@ U_NAMESPACE_BEGIN
 
 
 U_DEFINE_LOCAL_OPEN_POINTER(LocalUDateIntervalFormatPointer, UDateIntervalFormat, udtitvfmt_close);
+
+#ifndef U_HIDE_DRAFT_API
+
+
+
+
+
+
+
+
+
+U_DEFINE_LOCAL_OPEN_POINTER(LocalUFormattedDateIntervalPointer, UFormattedDateInterval, udtitvfmt_closeResult);
+#endif 
 
 U_NAMESPACE_END
 
@@ -180,6 +252,34 @@ udtitvfmt_format(const UDateIntervalFormat* formatter,
                 int32_t         resultCapacity,
                 UFieldPosition* position,
                 UErrorCode*     status);
+
+
+#ifndef U_HIDE_DRAFT_API
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+U_DRAFT void U_EXPORT2
+udtitvfmt_formatToResult(
+                const UDateIntervalFormat* formatter,
+                UFormattedDateInterval* result,
+                UDate           fromDate,
+                UDate           toDate,
+                UErrorCode*     status);
+#endif 
+
 
 #endif 
 

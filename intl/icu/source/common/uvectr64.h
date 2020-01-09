@@ -96,17 +96,17 @@ public:
     
     
 
-    void addElement(int64_t elem, UErrorCode &status);
+    inline void addElement(int64_t elem, UErrorCode &status);
 
     void setElementAt(int64_t elem, int32_t index);
 
     void insertElementAt(int64_t elem, int32_t index, UErrorCode &status);
     
-    int64_t elementAti(int32_t index) const;
+    inline int64_t elementAti(int32_t index) const;
 
     
 
-    int64_t lastElementi(void) const;
+    inline int64_t lastElementi(void) const;
 
     
 
@@ -122,7 +122,7 @@ public:
 
     void removeAllElements();
 
-    int32_t size(void) const;
+    inline int32_t size(void) const;
 
     inline UBool isEmpty(void) const { return count == 0; }
 
@@ -152,7 +152,7 @@ public:
     
 
 
-    int64_t *getBuffer() const;
+    inline int64_t *getBuffer() const;
 
     
 
@@ -190,12 +190,12 @@ public:
 
     
     
-    int64_t popi(void);
+    inline int64_t popi(void);
     
-    int64_t push(int64_t i, UErrorCode &status);
+    inline int64_t push(int64_t i, UErrorCode &status);
 
-    int64_t *reserveBlock(int32_t size, UErrorCode &status);
-    int64_t *popFrame(int32_t size);
+    inline int64_t *reserveBlock(int32_t size, UErrorCode &status);
+    inline int64_t *popFrame(int32_t size);
 };
 
 

@@ -3,6 +3,16 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 #include "unicode/utypes.h"
 
 #if !UCONFIG_NO_FORMATTING
@@ -35,6 +45,7 @@ enum Key {
     PERIOD,
     STRICT_COMMA,
     STRICT_PERIOD,
+    APOSTROPHE_SIGN,
     OTHER_GROUPING_SEPARATORS,
     ALL_SEPARATORS,
     STRICT_ALL_SEPARATORS,
@@ -44,13 +55,14 @@ enum Key {
     PLUS_SIGN,
     PERCENT_SIGN,
     PERMILLE_SIGN,
-    INFINITY_KEY, 
+    INFINITY_SIGN,
 
     
     DOLLAR_SIGN,
     POUND_SIGN,
     RUPEE_SIGN,
-    YEN_SIGN, 
+    YEN_SIGN,
+    WON_SIGN,
 
     
     DIGITS,
@@ -60,8 +72,15 @@ enum Key {
     DIGITS_OR_STRICT_ALL_SEPARATORS,
 
     
-    COUNT
+    UNISETS_KEY_COUNT
 };
+
+
+
+
+
+
+
 
 
 
@@ -102,14 +121,16 @@ U_COMMON_API Key chooseFrom(UnicodeString str, Key key1, Key key2);
 
 
 
+
 static const struct {
     Key key;
     UChar32 exemplar;
 } kCurrencyEntries[] = {
     {DOLLAR_SIGN, u'$'},
     {POUND_SIGN, u'£'},
-    {RUPEE_SIGN, u'₨'},
+    {RUPEE_SIGN, u'₹'},
     {YEN_SIGN, u'¥'},
+    {WON_SIGN, u'₩'},
 };
 
 } 

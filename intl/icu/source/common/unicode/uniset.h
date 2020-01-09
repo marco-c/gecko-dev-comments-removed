@@ -490,7 +490,7 @@ public:
 
 
 
-    UBool operator!=(const UnicodeSet& o) const;
+    inline UBool operator!=(const UnicodeSet& o) const;
 
     
 

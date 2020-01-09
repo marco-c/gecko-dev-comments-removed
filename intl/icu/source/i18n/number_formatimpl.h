@@ -64,6 +64,10 @@ class NumberFormatterImpl : public UMemory {
     int32_t getPrefixSuffix(int8_t signum, StandardPlural::Form plural, NumberStringBuilder& outString,
                             UErrorCode& status) const;
 
+    const MicroProps& getRawMicroProps() const {
+        return fMicros;
+    }
+
     
 
 

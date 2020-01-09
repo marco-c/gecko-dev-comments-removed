@@ -322,7 +322,14 @@ class U_I18N_API MeasureFormat : public Format {
 
 
 
-    const NumberFormat &getNumberFormat() const;
+    const NumberFormat &getNumberFormatInternal() const;
+
+    
+
+
+
+
+    const NumberFormat& getCurrencyFormatInternal() const;
 
     
 
@@ -354,27 +361,6 @@ class U_I18N_API MeasureFormat : public Format {
     
     
     ListFormatter *listFormatter;
-
-    const SimpleFormatter *getFormatterOrNull(
-            const MeasureUnit &unit, UMeasureFormatWidth width, int32_t index) const;
-
-    const SimpleFormatter *getFormatter(
-            const MeasureUnit &unit, UMeasureFormatWidth width, int32_t index,
-            UErrorCode &errorCode) const;
-
-    const SimpleFormatter *getPluralFormatter(
-            const MeasureUnit &unit, UMeasureFormatWidth width, int32_t index,
-            UErrorCode &errorCode) const;
-
-    const SimpleFormatter *getPerFormatter(
-            UMeasureFormatWidth width,
-            UErrorCode &status) const;
-
-    int32_t withPerUnitAndAppend(
-        const UnicodeString &formatted,
-        const MeasureUnit &perUnit,
-        UnicodeString &appendTo,
-        UErrorCode &status) const;
 
     UnicodeString &formatMeasure(
         const Measure &measure,

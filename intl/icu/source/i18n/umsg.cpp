@@ -463,9 +463,7 @@ umsg_vformat(   const UMessageFormat *fmt,
 
         default:
             
-            U_ASSERT(FALSE);
-            *status=U_ILLEGAL_ARGUMENT_ERROR;
-            break;
+            UPRV_UNREACHABLE;
         }
     }
     UnicodeString resultStr;
@@ -592,13 +590,11 @@ umsg_vparse(const UMessageFormat *fmt,
             
             
             
-            U_ASSERT(FALSE);
-            break;
+            UPRV_UNREACHABLE;
 
         
         case Formattable::kArray:
-            U_ASSERT(FALSE);
-            break;
+            UPRV_UNREACHABLE;
         }
     }
 

@@ -37,12 +37,32 @@
 #   define NOSERVICE
 #   define NOIME
 #   define NOMCX
+
+#   if U_PLATFORM_HAS_WINUWP_API == 1
+        
+        
+        
+#       include <winapifamily.h>
+#       if !(WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP | WINAPI_PARTITION_SYSTEM))
+#           pragma push_macro("WINAPI_PARTITION_DESKTOP")
+#           undef WINAPI_PARTITION_DESKTOP
+#           define WINAPI_PARTITION_DESKTOP 1
+#           define CHANGED_WINAPI_PARTITION_DESKTOP_VALUE
+#       endif
+#   endif
+
 #   include <windows.h>
+
+#   if U_PLATFORM_HAS_WINUWP_API == 1 && defined(CHANGED_WINAPI_PARTITION_DESKTOP_VALUE)
+#       pragma pop_macro("WINAPI_PARTITION_DESKTOP")
+#   endif
+
 #   include "cmemory.h"
 
-    typedef HANDLE MemoryMap;
+typedef HANDLE MemoryMap;
 
-#   define IS_MAP(map) ((map)!=NULL)
+#   define IS_MAP(map) ((map)!=nullptr)
+
 #elif MAP_IMPLEMENTATION==MAP_POSIX || MAP_IMPLEMENTATION==MAP_390DLL
     typedef size_t MemoryMap;
 
@@ -74,7 +94,7 @@
 
     typedef void *MemoryMap;
 
-#   define IS_MAP(map) ((map)!=NULL)
+#   define IS_MAP(map) ((map)!=nullptr)
 #endif
 
 
@@ -105,20 +125,24 @@
          UErrorCode *status     
          )
     {
-        HANDLE map;
-        HANDLE file;
-
         if (U_FAILURE(*status)) {
             return FALSE;
         }
+
+        HANDLE map = nullptr;
+        HANDLE file = INVALID_HANDLE_VALUE;
 
         UDataMemory_init(pData); 
 
         
 #if U_PLATFORM_HAS_WINUWP_API == 0
-        file=CreateFileA(path, GENERIC_READ, FILE_SHARE_READ, NULL,
+        
+        
+        
+        
+        file=CreateFileA(path, GENERIC_READ, FILE_SHARE_READ, nullptr,
             OPEN_EXISTING,
-            FILE_ATTRIBUTE_NORMAL|FILE_FLAG_RANDOM_ACCESS, NULL);
+            FILE_ATTRIBUTE_NORMAL|FILE_FLAG_RANDOM_ACCESS, nullptr);
 #else
         
         wchar_t utf16Path[MAX_PATH];
@@ -134,8 +158,9 @@
             return FALSE;
         }
 
-        
-        file = CreateFile2(utf16Path, GENERIC_READ, FILE_SHARE_READ, OPEN_EXISTING, NULL);
+        file = CreateFileW(utf16Path, GENERIC_READ, FILE_SHARE_READ, nullptr,
+            OPEN_EXISTING,
+            FILE_ATTRIBUTE_NORMAL | FILE_FLAG_RANDOM_ACCESS, nullptr);
 #endif
         if (file == INVALID_HANDLE_VALUE) {
             
@@ -147,35 +172,12 @@
         }
 
         
-
         
-#if U_PLATFORM_HAS_WINUWP_API == 0
-
-        SECURITY_ATTRIBUTES mappingAttributes;
-        SECURITY_ATTRIBUTES *mappingAttributesPtr = NULL;
-        SECURITY_DESCRIPTOR securityDesc;
-
-        if (InitializeSecurityDescriptor(&securityDesc, SECURITY_DESCRIPTOR_REVISION)) {
-            
-            if (SetSecurityDescriptorDacl(&securityDesc, TRUE, (PACL)NULL, FALSE)) {
-                
-                uprv_memset(&mappingAttributes, 0, sizeof(mappingAttributes));
-                mappingAttributes.nLength = sizeof(mappingAttributes);
-                mappingAttributes.lpSecurityDescriptor = &securityDesc;
-                mappingAttributes.bInheritHandle = FALSE; 
-                mappingAttributesPtr = &mappingAttributes;
-            }
-        }
         
+        map = CreateFileMappingW(file, nullptr, PAGE_READONLY, 0, 0, nullptr);
 
-
-        
-        map=CreateFileMapping(file, mappingAttributesPtr, PAGE_READONLY, 0, 0, NULL);
-#else
-        map = CreateFileMappingFromApp(file, NULL, PAGE_READONLY, 0, NULL);
-#endif
         CloseHandle(file);
-        if (map == NULL) {
+        if (map == nullptr) {
             
             
             if (HRESULT_FROM_WIN32(GetLastError()) == E_OUTOFMEMORY) {
@@ -185,22 +187,22 @@
         }
 
         
-        pData->pHeader=(const DataHeader *)MapViewOfFile(map, FILE_MAP_READ, 0, 0, 0);
-        if(pData->pHeader==NULL) {
+        pData->pHeader = reinterpret_cast<const DataHeader *>(MapViewOfFile(map, FILE_MAP_READ, 0, 0, 0));
+        if (pData->pHeader == nullptr) {
             CloseHandle(map);
             return FALSE;
         }
-        pData->map=map;
+        pData->map = map;
         return TRUE;
     }
 
     U_CFUNC void
     uprv_unmapFile(UDataMemory *pData) {
-        if(pData!=NULL && pData->map!=NULL) {
+        if (pData != nullptr && pData->map != nullptr) {
             UnmapViewOfFile(pData->pHeader);
             CloseHandle(pData->map);
-            pData->pHeader=NULL;
-            pData->map=NULL;
+            pData->pHeader = nullptr;
+            pData->map = nullptr;
         }
     }
 
@@ -255,13 +257,13 @@
 
     U_CFUNC void
     uprv_unmapFile(UDataMemory *pData) {
-        if(pData!=NULL && pData->map!=NULL) {
+        if(pData!=nullptr && pData->map!=nullptr) {
             size_t dataLen = (char *)pData->map - (char *)pData->mapAddr;
             if(munmap(pData->mapAddr, dataLen)==-1) {
             }
-            pData->pHeader=NULL;
+            pData->pHeader=nullptr;
             pData->map=0;
-            pData->mapAddr=NULL;
+            pData->mapAddr=nullptr;
         }
     }
 
@@ -295,7 +297,7 @@
         UDataMemory_init(pData); 
         
         file=fopen(path, "rb");
-        if(file==NULL) {
+        if(file==nullptr) {
             return FALSE;
         }
 
@@ -308,7 +310,7 @@
 
         
         p=uprv_malloc(fileLength);
-        if(p==NULL) {
+        if(p==nullptr) {
             fclose(file);
             *status = U_MEMORY_ALLOCATION_ERROR;
             return FALSE;
@@ -330,11 +332,11 @@
 
     U_CFUNC void
     uprv_unmapFile(UDataMemory *pData) {
-        if(pData!=NULL && pData->map!=NULL) {
+        if(pData!=nullptr && pData->map!=nullptr) {
             uprv_free(pData->map);
-            pData->map     = NULL;
-            pData->mapAddr = NULL;
-            pData->pHeader = NULL;
+            pData->map     = nullptr;
+            pData->mapAddr = nullptr;
+            pData->pHeader = nullptr;
         }
     }
 
@@ -397,7 +399,7 @@
 
             const char *icuDataDir;
             icuDataDir=u_getDataDirectory();
-            if(icuDataDir!=NULL && *icuDataDir!=0) {
+            if(icuDataDir!=nullptr && *icuDataDir!=0) {
                 return strcpy_returnEnd(pathBuffer, icuDataDir);
             } else {
                 
@@ -429,7 +431,7 @@
         }
 
         inBasename=uprv_strrchr(path, U_FILE_SEP_CHAR);
-        if(inBasename==NULL) {
+        if(inBasename==nullptr) {
             inBasename = path;
         } else {
             inBasename++;
@@ -494,7 +496,7 @@
                fprintf(stderr, " -> %08X\n", handle );
 #       endif
 
-        if(handle != NULL) {
+        if(handle != nullptr) {
                
                
                UDataMemory_init(pData); 
@@ -515,11 +517,11 @@
     }
 
     U_CFUNC void uprv_unmapFile(UDataMemory *pData) {
-        if(pData!=NULL && pData->map!=NULL) {
+        if(pData!=nullptr && pData->map!=nullptr) {
             uprv_free(pData->map);
-            pData->map     = NULL;
-            pData->mapAddr = NULL;
-            pData->pHeader = NULL;
+            pData->map     = nullptr;
+            pData->mapAddr = nullptr;
+            pData->pHeader = nullptr;
         }   
     }
 
