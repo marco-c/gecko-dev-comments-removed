@@ -501,11 +501,7 @@ bool HTMLLinkElement::CheckPreloadAttrs(const nsAttrValue& aAs,
   
   if (!aMedia.IsEmpty()) {
     RefPtr<MediaList> mediaList = MediaList::Create(aMedia);
-    nsPresContext* presContext = aDocument->GetPresContext();
-    if (!presContext) {
-      return false;
-    }
-    if (!mediaList->Matches(presContext)) {
+    if (!mediaList->Matches(*aDocument)) {
       return false;
     }
   }

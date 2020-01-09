@@ -118,28 +118,7 @@ void MediaQueryList::RecomputeMatches() {
     return;
   }
 
-  
-  
-  nsPresContext* presContext = mDocument->GetPresContext();
-  if (!presContext && mDocument->GetParentDocument()) {
-    
-    
-    mDocument->GetParentDocument()->FlushPendingNotifications(
-        FlushType::Frames);
-    
-    if (!mDocument) {
-      return;
-    }
-
-    presContext = mDocument->GetPresContext();
-  }
-
-  if (!presContext) {
-    
-    return;
-  }
-
-  mMatches = mMediaList->Matches(presContext);
+  mMatches = mMediaList->Matches(*mDocument);
   mMatchesValid = true;
 }
 
