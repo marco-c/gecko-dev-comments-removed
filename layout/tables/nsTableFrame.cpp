@@ -314,6 +314,11 @@ void nsTableFrame::SetInitialChildList(ChildListID aListID,
 
   MOZ_ASSERT(mFrames.IsEmpty() && mColGroups.IsEmpty(),
              "unexpected second call to SetInitialChildList");
+#ifdef DEBUG
+  for (nsIFrame* f : aChildList) {
+    MOZ_ASSERT(f->GetParent() == this, "Unexpected parent");
+  }
+#endif
 
   
   
