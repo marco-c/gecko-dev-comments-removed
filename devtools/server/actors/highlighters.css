@@ -142,9 +142,6 @@
 :-moz-native-anonymous [class$=infobar] {
   position: relative;
 
-  
-  left: -50%;
-
   padding: 5px;
   min-width: 75px;
 

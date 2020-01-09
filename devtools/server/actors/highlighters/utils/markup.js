@@ -674,10 +674,12 @@ function moveInfobar(container, bounds, win, options = {}) {
   
   
   
+  
+  
   container.setAttribute("style", `
     position:${position};
     transform-origin: 0 0;
-    transform: scale(${1 / zoom}) translate(${left}px, ${top}px)`);
+    transform: scale(${1 / zoom}) translate(calc(${left}px - 50%), ${top}px)`);
 
   container.setAttribute("position", positionAttribute);
 }
