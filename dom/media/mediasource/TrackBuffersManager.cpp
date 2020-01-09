@@ -1106,8 +1106,13 @@ void TrackBuffersManager::OnDemuxerInitDone(const MediaResult& aResult) {
   
   
   
+  
+  
   bool isRepeatInitData =
-      mInitData && *(mInitData.get()) == *(mParser->InitData());
+      !mChangeTypeReceived && mInitData &&
+      ((*mInitData.get() == *mParser->InitData()) ||
+       (numVideos == 0 && numAudios > 0 && mAudioTracks.mLastInfo &&
+        *mAudioTracks.mLastInfo->GetAsAudioInfo() == info.mAudio));
 
   MOZ_ASSERT(mFirstInitializationSegmentReceived || !isRepeatInitData,
              "Should never detect repeat init data for first segment!");
