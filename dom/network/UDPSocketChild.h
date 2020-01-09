@@ -45,6 +45,44 @@ class UDPSocketChild : public mozilla::net::PUDPSocketChild,
   UDPSocketChild();
   virtual ~UDPSocketChild();
 
+  uint16_t LocalPort() const { return mLocalPort; }
+  
+  const nsACString& LocalAddress() const { return mLocalAddress; }
+
+  nsresult SetFilterName(const nsACString& aFilterName);
+
+  
+  nsresult SetBackgroundSpinsEvents();
+
+  
+  
+  nsresult Bind(nsIUDPSocketInternal* aSocket, nsIPrincipal* aPrincipal,
+                const nsACString& aHost, uint16_t aPort, bool aAddressReuse,
+                bool aLoopback, uint32_t recvBufferSize,
+                uint32_t sendBufferSize,
+                nsIEventTarget* aMainThreadEventTarget);
+
+  
+  
+  void Connect(nsIUDPSocketInternal* aSocket, const nsACString& aHost,
+               uint16_t aPort);
+
+  
+  nsresult SendWithAddress(const NetAddr* aAddr, const uint8_t* aData,
+                           uint32_t aByteLength);
+
+  
+  nsresult SendBinaryStream(const nsACString& aHost, uint16_t aPort,
+                            nsIInputStream* aStream);
+
+  void Close();
+
+  
+  void JoinMulticast(const nsACString& aMulticastAddress,
+                     const nsACString& aInterface);
+  void LeaveMulticast(const nsACString& aMulticastAddress,
+                      const nsACString& aInterface);
+
   mozilla::ipc::IPCResult RecvCallbackOpened(
       const UDPAddressInfo& aAddressInfo);
   mozilla::ipc::IPCResult RecvCallbackConnected(
