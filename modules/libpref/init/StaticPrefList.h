@@ -2431,6 +2431,14 @@ VARCACHE_PREF(
 )
 
 
+
+VARCACHE_PREF(
+  "dom.event.handling-user-input-time-limit",
+   dom_event_handling_user_input_time_limit,
+  uint32_t, 1000
+)
+
+
 VARCACHE_PREF(
   "browser.safebrowsing.passwords.enabled",
    browser_safebrowsing_passwords_enabled,
