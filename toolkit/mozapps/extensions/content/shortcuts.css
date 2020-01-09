@@ -3,7 +3,7 @@
 }
 
 .shortcut.card {
-  
+  /* Preferences content is 664px and the cards have 16px of left/right padding. */
   width: 632px;
   margin-bottom: 16px;
 }
@@ -20,6 +20,8 @@
   width: 24px;
   height: 24px;
   margin-inline-end: 16px;
+  -moz-context-properties: fill;
+  fill: currentColor;
 }
 
 .card-heading {
