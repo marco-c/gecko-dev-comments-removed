@@ -1754,25 +1754,15 @@ bool DOMXrayTraits::call(JSContext* cx, HandleObject wrapper,
   
   
   
-  if (clasp->flags & JSCLASS_IS_DOMIFACEANDPROTOJSCLASS) {
-    if (JSNative call = clasp->getCall()) {
-      
-      if (!call(cx, args.length(), args.base())) {
-        return false;
-      }
-    } else {
-      RootedValue v(cx, ObjectValue(*wrapper));
-      js::ReportIsNotFunction(cx, v);
-      return false;
-    }
-  } else {
+  
+  if (JSNative call = clasp->getCall()) {
     
-    
-    if (!baseInstance.call(cx, wrapper, args)) {
-      return false;
-    }
+    return call(cx, args.length(), args.base());
   }
-  return JS_WrapValue(cx, args.rval());
+
+  RootedValue v(cx, ObjectValue(*wrapper));
+  js::ReportIsNotFunction(cx, v);
+  return false;
 }
 
 bool DOMXrayTraits::construct(JSContext* cx, HandleObject wrapper,
