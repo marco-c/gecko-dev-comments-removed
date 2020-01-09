@@ -136,7 +136,9 @@ static uint32_t gPrioDatasPerMetric;
 
 
 
-static uint32_t kNumMetaOrigins = 0;
+static uint32_t kNumMetaOrigins = 1;
+
+NS_NAMED_LITERAL_CSTRING(kUnknownOrigin, "__UNKNOWN__");
 
 }  
 
@@ -222,8 +224,13 @@ void TelemetryOrigin::InitializeGlobalState() {
 
   gOriginToIndexMap = new OriginToIndexMap(gOriginsList->Length());
   for (size_t i = 0; i < gOriginsList->Length(); ++i) {
+    MOZ_ASSERT(!kUnknownOrigin.Equals((*gOriginsList)[i]),
+               "Unknown origin literal is reserved in Origin Telemetry");
     gOriginToIndexMap->Put(nsDependentCString((*gOriginsList)[i]), i);
   }
+
+  
+  gOriginToIndexMap->Put(kUnknownOrigin, gOriginsList->Length());
 
   gMetricToOriginsMap = new IdToOriginsMap();
 
@@ -274,8 +281,15 @@ nsresult TelemetryOrigin::RecordOrigin(OriginMetricID aId,
     return NS_OK;
   }
 
+  nsCString origin(aOrigin);
   if (!gOriginToIndexMap->Contains(aOrigin)) {
-    return NS_OK;
+    
+    
+    if (gMetricToOriginsMap->Contains(aId) &&
+        gMetricToOriginsMap->GetOrInsert(aId).Contains(kUnknownOrigin)) {
+      return NS_OK;
+    }
+    origin = kUnknownOrigin;
   }
 
   if (!gMetricToOriginsMap->Contains(aId)) {
@@ -286,13 +300,13 @@ nsresult TelemetryOrigin::RecordOrigin(OriginMetricID aId,
 
   auto& originArray = gMetricToOriginsMap->GetOrInsert(aId);
 
-  if (originArray.Contains(aOrigin)) {
+  if (originArray.Contains(origin)) {
     
     
     gPrioDataCount += gPrioDatasPerMetric;
   }
 
-  originArray.AppendElement(aOrigin);
+  originArray.AppendElement(origin);
 
   static uint32_t sPrioPingLimit =
       mozilla::Preferences::GetUint("toolkit.telemetry.prioping.dataLimit", 10);
