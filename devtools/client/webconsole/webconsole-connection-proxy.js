@@ -210,25 +210,25 @@ WebConsoleConnectionProxy.prototype = {
 
 
   dispatchMessageAdd: function(packet) {
-    this.webConsoleFrame.consoleOutput.dispatchMessageAdd(packet);
+    this.webConsoleFrame.wrapper.dispatchMessageAdd(packet);
   },
 
   
 
 
   dispatchMessagesAdd: function(packets) {
-    this.webConsoleFrame.consoleOutput.dispatchMessagesAdd(packets);
+    this.webConsoleFrame.wrapper.dispatchMessagesAdd(packets);
   },
 
   
 
 
   dispatchMessageUpdate: function(networkInfo, response) {
-    this.webConsoleFrame.consoleOutput.dispatchMessageUpdate(networkInfo, response);
+    this.webConsoleFrame.wrapper.dispatchMessageUpdate(networkInfo, response);
   },
 
   dispatchRequestUpdate: function(id, data) {
-    this.webConsoleFrame.consoleOutput.dispatchRequestUpdate(id, data);
+    this.webConsoleFrame.wrapper.dispatchRequestUpdate(id, data);
   },
 
   

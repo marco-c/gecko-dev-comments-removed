@@ -114,7 +114,7 @@ class App extends Component {
 
     
     
-    if (!target.closest(".webconsole-output-wrapper")) {
+    if (!target.closest(".webconsole-app")) {
       return;
     }
 
@@ -202,7 +202,7 @@ class App extends Component {
       reverseSearchInitialValue,
     } = this.props;
 
-    const classNames = ["webconsole-output-wrapper"];
+    const classNames = ["webconsole-app"];
     if (jstermCodeMirror) {
       classNames.push("jsterm-cm");
     }

@@ -63,7 +63,7 @@ WebConsoleFrame.prototype = {
   async init() {
     this._initUI();
     await this._initConnection();
-    await this.consoleOutput.init();
+    await this.wrapper.init();
     
     Services.prefs.addObserver(PREF_MESSAGE_TIMESTAMP, this._onToolboxPrefChanged);
     this._onToolboxPrefChanged();
@@ -92,7 +92,7 @@ WebConsoleFrame.prototype = {
       toolbox.off("select", this._onChangeSplitConsoleState);
     }
 
-    this.window = this.owner = this.consoleOutput = null;
+    this.window = this.owner = this.wrapper = null;
 
     const onDestroy = () => {
       this._destroyer.resolve(null);
@@ -117,8 +117,8 @@ WebConsoleFrame.prototype = {
 
 
   clearOutput(clearStorage) {
-    if (this.consoleOutput) {
-      this.consoleOutput.dispatchMessagesClear();
+    if (this.wrapper) {
+      this.wrapper.dispatchMessagesClear();
     }
     this.webConsoleClient.clearNetworkRequests();
     if (clearStorage) {
@@ -133,20 +133,20 @@ WebConsoleFrame.prototype = {
 
 
   clearPrivateMessages() {
-    if (this.consoleOutput) {
-      this.consoleOutput.dispatchPrivateMessagesClear();
+    if (this.wrapper) {
+      this.wrapper.dispatchPrivateMessagesClear();
       this.emit("private-messages-cleared");
     }
   },
 
   inspectObjectActor(objectActor) {
-    this.consoleOutput.dispatchMessageAdd({
+    this.wrapper.dispatchMessageAdd({
       helperResult: {
         type: "inspectObject",
         object: objectActor,
       },
     }, true);
-    return this.consoleOutput;
+    return this.wrapper;
   },
 
   _onUpdateListeners() {
@@ -219,9 +219,8 @@ WebConsoleFrame.prototype = {
 
     const toolbox = gDevTools.getToolbox(this.owner.target);
 
-    this.consoleOutput = new this.window.WebConsoleOutput(
-      this.outputNode, this, toolbox, this.owner, this.document
-    );
+    this.wrapper = new this.window.WebConsoleWrapper(
+      this.outputNode, this, toolbox, this.owner, this.document);
 
     this._initShortcuts();
     this._initOutputSyntaxHighlighting();
@@ -290,7 +289,7 @@ WebConsoleFrame.prototype = {
     } else if (Services.prefs.getBoolPref(PREF_SIDEBAR_ENABLED)) {
       shortcuts.on("Esc", event => {
         if (!this.jsterm.autocompletePopup || !this.jsterm.autocompletePopup.isOpen) {
-          this.consoleOutput.dispatchSidebarClose();
+          this.wrapper.dispatchSidebarClose();
           this.jsterm.focus();
         }
       });
@@ -330,7 +329,7 @@ WebConsoleFrame.prototype = {
 
   _onToolboxPrefChanged: function() {
     const newValue = Services.prefs.getBoolPref(PREF_MESSAGE_TIMESTAMP);
-    this.consoleOutput.dispatchTimestampsToggle(newValue);
+    this.wrapper.dispatchTimestampsToggle(newValue);
   },
 
   
@@ -343,7 +342,7 @@ WebConsoleFrame.prototype = {
   },
 
   _onChangeSplitConsoleState: function() {
-    this.consoleOutput.dispatchSplitConsoleCloseButtonToggle();
+    this.wrapper.dispatchSplitConsoleCloseButtonToggle();
   },
 
   
@@ -365,12 +364,12 @@ WebConsoleFrame.prototype = {
 
     
     
-    await this.consoleOutput.waitAsyncDispatches();
+    await this.wrapper.waitAsyncDispatches();
     this.emit("reloaded");
   },
 
   handleTabWillNavigate: function(packet) {
-    this.consoleOutput.dispatchTabWillNavigate(packet);
+    this.wrapper.dispatchTabWillNavigate(packet);
     if (packet.url) {
       this.onLocationChange(packet.url, packet.title);
     }
