@@ -55,7 +55,6 @@ module.exports = {
   }, {
     
     "files": [
-      "gfx/layers/apz/test/mochitest/**",
       "mobile/android/components/**",
       "mobile/android/modules/**",
       "modules/libmar/tests/unit/head_libmar.js",
