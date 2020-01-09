@@ -451,6 +451,14 @@ XRE_API(bool, XRE_IsSocketProcess, ())
 
 XRE_API(bool, XRE_UseNativeEventProcessing, ())
 
+#if defined(XP_WIN)
+
+
+
+
+XRE_API(bool, XRE_Win32kCallsAllowed, ())
+#endif
+
 typedef void (*MainFunction)(void* aData);
 
 XRE_API(nsresult, XRE_InitParentProcess,
