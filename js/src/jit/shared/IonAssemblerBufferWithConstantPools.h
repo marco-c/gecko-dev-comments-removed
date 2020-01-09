@@ -7,6 +7,7 @@
 #ifndef jit_shared_IonAssemblerBufferWithConstantPools_h
 #define jit_shared_IonAssemblerBufferWithConstantPools_h
 
+#include "mozilla/CheckedInt.h"
 #include "mozilla/MathAlgorithms.h"
 
 #include <algorithm>
@@ -783,7 +784,7 @@ struct AssemblerBufferWithConstantPools
                 id, sizeExcludingCurrentPool());
       }
 
-      finishPool();
+      finishPool(numInst * InstSize);
       if (this->oom()) {
         return OOM_FAIL;
       }
@@ -813,7 +814,7 @@ struct AssemblerBufferWithConstantPools
       JitSpew(JitSpew_Pools,
               "[%d] nextInstrOffset @ %d caused a constant pool spill", id,
               this->nextOffset().getOffset());
-      finishPool();
+      finishPool(ShortRangeBranchHysteresis);
     }
     return this->nextOffset();
   }
@@ -944,7 +945,7 @@ struct AssemblerBufferWithConstantPools
 
  private:
   
-  bool hasExpirableShortRangeBranches() const {
+  bool hasExpirableShortRangeBranches(size_t reservedBytes) const {
     if (branchDeadlines_.empty()) {
       return false;
     }
@@ -952,19 +953,30 @@ struct AssemblerBufferWithConstantPools
     
     
     
-    return this->nextOffset().getOffset() + ShortRangeBranchHysteresis >
-           size_t(branchDeadlines_.earliestDeadline().getOffset());
+    
+    
+    
+    size_t deadline = branchDeadlines_.earliestDeadline().getOffset();
+    using CheckedSize = mozilla::CheckedInt<size_t>;
+    CheckedSize current(this->nextOffset().getOffset());
+    CheckedSize poolFreeSpace(reservedBytes);
+    auto future = current + poolFreeSpace;
+    return !future.isValid() || deadline < future.value();
   }
 
-  bool isPoolEmpty() const {
-    return pool_.numEntries() == 0 && !hasExpirableShortRangeBranches();
+  bool isPoolEmptyFor(size_t bytes) const {
+    return pool_.numEntries() == 0 && !hasExpirableShortRangeBranches(bytes);
   }
-  void finishPool() {
+  void finishPool(size_t reservedBytes) {
     JitSpew(JitSpew_Pools,
             "[%d] Attempting to finish pool %zu with %u entries.", id,
             poolInfo_.length(), pool_.numEntries());
 
-    if (isPoolEmpty()) {
+    if (reservedBytes < ShortRangeBranchHysteresis) {
+      reservedBytes = ShortRangeBranchHysteresis;
+    }
+
+    if (isPoolEmptyFor(reservedBytes)) {
       
       JitSpew(JitSpew_Pools, "[%d] Aborting because the pool is empty", id);
       return;
@@ -984,7 +996,7 @@ struct AssemblerBufferWithConstantPools
 
     
     
-    while (hasExpirableShortRangeBranches()) {
+    while (hasExpirableShortRangeBranches(reservedBytes)) {
       unsigned rangeIdx = branchDeadlines_.earliestDeadlineRange();
       BufferOffset deadline = branchDeadlines_.earliestDeadline();
 
@@ -1052,7 +1064,7 @@ struct AssemblerBufferWithConstantPools
       return;
     }
     JitSpew(JitSpew_Pools, "[%d] Requesting a pool flush", id);
-    finishPool();
+    finishPool(SIZE_MAX);
   }
 
   void enterNoPool(size_t maxInst) {
@@ -1070,7 +1082,8 @@ struct AssemblerBufferWithConstantPools
     if (!hasSpaceForInsts(maxInst, 0)) {
       JitSpew(JitSpew_Pools, "[%d] No-Pool instruction(%zu) caused a spill.",
               id, sizeExcludingCurrentPool());
-      finishPool();
+      finishPool(maxInst * InstSize);
+      MOZ_ASSERT(hasSpaceForInsts(maxInst, 0));
     }
 
 #ifdef DEBUG
@@ -1105,7 +1118,7 @@ struct AssemblerBufferWithConstantPools
     inhibitNops_ = false;
   }
   void assertNoPoolAndNoNops() {
-    MOZ_ASSERT(inhibitNops_ && (isPoolEmpty() || canNotPlacePool_));
+    MOZ_ASSERT(inhibitNops_ && (isPoolEmptyFor(InstSize) || canNotPlacePool_));
   }
 
   void align(unsigned alignment) { align(alignment, alignFillInst_); }
@@ -1130,7 +1143,7 @@ struct AssemblerBufferWithConstantPools
       
       JitSpew(JitSpew_Pools, "[%d] Alignment of %d at %zu caused a spill.", id,
               alignment, sizeExcludingCurrentPool());
-      finishPool();
+      finishPool(requiredFill);
     }
 
     bool prevInhibitNops = inhibitNops_;
