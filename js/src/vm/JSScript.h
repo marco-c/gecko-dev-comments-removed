@@ -262,7 +262,7 @@ class DebugScript {
 
 
 
-  uint32_t stepMode;
+  uint32_t stepperCount;
 
   
 
@@ -282,7 +282,7 @@ class DebugScript {
 
 
 
-  bool needed() const { return stepMode > 0 || numSites > 0; }
+  bool needed() const { return stepperCount > 0 || numSites > 0; }
 };
 
 using UniqueDebugScript = js::UniquePtr<DebugScript, JS::FreePolicy>;
@@ -2919,16 +2919,16 @@ class JSScript : public js::gc::TenuredCell {
 
 
 
-  bool incrementStepModeCount(JSContext* cx);
-  void decrementStepModeCount(js::FreeOp* fop);
+  bool incrementStepperCount(JSContext* cx);
+  void decrementStepperCount(js::FreeOp* fop);
 
   bool stepModeEnabled() {
-    return hasDebugScript() && !!debugScript()->stepMode;
+    return hasDebugScript() && debugScript()->stepperCount > 0;
   }
 
 #ifdef DEBUG
-  uint32_t stepModeCount() {
-    return hasDebugScript() ? debugScript()->stepMode : 0;
+  uint32_t stepperCount() {
+    return hasDebugScript() ? debugScript()->stepperCount : 0;
   }
 #endif
 
