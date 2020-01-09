@@ -61,7 +61,7 @@ function test_importfromPrefs() {
   PermissionsUtils.importFromPrefs(PREF_ROOT, TEST_PERM);
 
   
-  let preferences = Services.prefs.getChildList(PREF_ROOT, {});
+  let preferences = Services.prefs.getChildList(PREF_ROOT);
 
   
   for (let pref of preferences) {
