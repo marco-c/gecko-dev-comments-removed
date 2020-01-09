@@ -1,7 +1,6 @@
 
 
 
-"use strict";
 
 async function waitForConsoleLink(dbg, text) {
   const toolbox = dbg.toolbox;
