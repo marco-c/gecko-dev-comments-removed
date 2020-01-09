@@ -25,6 +25,7 @@
 
 
 #include "jit/arm64/vixl/Cpu-vixl.h"
+#include "jit/arm64/vixl/Simulator-vixl.h"
 #include "jit/arm64/vixl/Utils-vixl.h"
 #include "util/Windows.h"
 
@@ -48,7 +49,24 @@ uint32_t CPU::GetCacheType() {
 
 
 void CPU::EnsureIAndDCacheCoherency(void *address, size_t length) {
-#if defined(_MSC_VER) && defined(_M_ARM64)
+#ifdef JS_CACHE_SIMULATOR_ARM64
+  
+  
+  
+  
+  
+  
+  
+  using js::jit::SimulatorProcess;
+  js::jit::AutoLockSimulatorCache alsc;
+  if (length > 0) {
+    SimulatorProcess::recordICacheFlush(address, length);
+  }
+  Simulator* sim = vixl::Simulator::Current();
+  if (sim) {
+    sim->FlushICache();
+  }
+#elif defined(_MSC_VER) && defined(_M_ARM64)
   FlushInstructionCache(GetCurrentProcess(), address, length);
 #elif defined(__aarch64__)
   
