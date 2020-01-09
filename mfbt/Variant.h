@@ -766,7 +766,7 @@ class MOZ_INHERIT_TYPE_ANNOTATIONS_FROM_TEMPLATE_ARGS MOZ_NON_PARAM Variant {
 
 
 
-  mozilla::HashNumber addTagToHash(mozilla::HashNumber hashValue) {
+  mozilla::HashNumber addTagToHash(mozilla::HashNumber hashValue) const {
     return mozilla::AddToHash(hashValue, tag);
   }
 };
