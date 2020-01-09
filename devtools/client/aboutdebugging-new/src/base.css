@@ -422,6 +422,8 @@ p, h1 {
   background-color: var(--white-100); 
   border-radius: var(--card-shadow-blur-radius); 
   box-shadow: 0 1px 4px var(--grey-90-a10); 
+  box-sizing: border-box;
+  min-width: min-content;
   padding-block: calc(var(--base-unit) * 5);
 }
 
