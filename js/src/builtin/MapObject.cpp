@@ -10,6 +10,7 @@
 #include "gc/FreeOp.h"
 #include "js/PropertySpec.h"
 #include "js/Utility.h"
+#include "vm/BigIntType.h"
 #include "vm/EqualityOperations.h"  
 #include "vm/GlobalObject.h"
 #include "vm/Interpreter.h"
@@ -101,12 +102,8 @@ bool HashableValue::operator==(const HashableValue& other) const {
 
   
   
-  
   if (!b && (value.isBigInt() && other.value.isBigInt())) {
-    JSContext* cx = TlsContext.get();
-    RootedValue valueRoot(cx, value);
-    RootedValue otherRoot(cx, other.value);
-    SameValue(cx, valueRoot, otherRoot, &b);
+    b = BigInt::equal(value.toBigInt(), other.value.toBigInt());
   }
 
 #ifdef DEBUG
