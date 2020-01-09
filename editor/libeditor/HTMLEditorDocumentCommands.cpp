@@ -40,7 +40,7 @@ StaticRefPtr<SetDocumentStateCommand> SetDocumentStateCommand::sInstance;
 bool SetDocumentStateCommand::IsCommandEnabled(Command aCommand,
                                                TextEditor* aTextEditor) const {
   
-  return true;
+  return aTextEditor && aTextEditor->AsHTMLEditor();
 }
 
 nsresult SetDocumentStateCommand::DoCommand(Command aCommand,
@@ -52,6 +52,10 @@ nsresult SetDocumentStateCommand::DoCommandParams(
     Command aCommand, nsCommandParams* aParams, TextEditor& aTextEditor) const {
   if (NS_WARN_IF(!aParams)) {
     return NS_ERROR_INVALID_ARG;
+  }
+
+  if (NS_WARN_IF(!aTextEditor.AsHTMLEditor())) {
+    return NS_ERROR_FAILURE;
   }
 
   switch (aCommand) {
@@ -217,6 +221,11 @@ nsresult SetDocumentStateCommand::GetCommandStateParams(
   if (NS_WARN_IF(!aTextEditor)) {
     return NS_ERROR_INVALID_ARG;
   }
+
+  if (NS_WARN_IF(!aTextEditor->AsHTMLEditor())) {
+    return NS_ERROR_FAILURE;
+  }
+
   
   nsresult rv =
       aParams.SetBool(STATE_ENABLED, IsCommandEnabled(aCommand, aTextEditor));
