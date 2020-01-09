@@ -6,7 +6,7 @@
 
 
 
-const TEST_URL = "data:text/html;charset=utf-8,<style>body{color:red}</style>Hello RDM";
+const TEST_URL = `${URL_ROOT}page_style.html`;
 
 addRDMTask(TEST_URL, async function({ ui, manager }) {
   
