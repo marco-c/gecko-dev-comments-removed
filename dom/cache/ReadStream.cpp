@@ -223,10 +223,12 @@ void ReadStream::Inner::Serialize(
     mControl->SerializeStream(aReadStreamOut, mStream, aStreamCleanupList);
   }
 
-  MOZ_DIAGNOSTIC_ASSERT(aReadStreamOut->stream().type() ==
-                            OptionalIPCStream::Tvoid_t ||
-                        aReadStreamOut->stream().get_IPCStream().type() ==
-                            IPCStream::TInputStreamParamsWithFds);
+  MOZ_DIAGNOSTIC_ASSERT(
+      aReadStreamOut->stream().type() == OptionalIPCStream::Tvoid_t ||
+      (aReadStreamOut->stream().get_IPCStream().stream().type() !=
+           mozilla::ipc::InputStreamParams::TIPCRemoteStreamParams &&
+       aReadStreamOut->stream().get_IPCStream().stream().type() !=
+           mozilla::ipc::InputStreamParams::T__None));
 
   
   
@@ -519,10 +521,12 @@ already_AddRefed<ReadStream> ReadStream::Create(
     return nullptr;
   }
 
-  MOZ_DIAGNOSTIC_ASSERT(aReadStream.stream().type() ==
-                            OptionalIPCStream::Tvoid_t ||
-                        aReadStream.stream().get_IPCStream().type() ==
-                            IPCStream::TInputStreamParamsWithFds);
+  MOZ_DIAGNOSTIC_ASSERT(
+      aReadStream.stream().type() == OptionalIPCStream::Tvoid_t ||
+      (aReadStream.stream().get_IPCStream().stream().type() !=
+           mozilla::ipc::InputStreamParams::TIPCRemoteStreamParams &&
+       aReadStream.stream().get_IPCStream().stream().type() !=
+           mozilla::ipc::InputStreamParams::T__None));
 
   
   

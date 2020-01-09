@@ -51,6 +51,17 @@ class InputStreamHelper {
                                    bool aDelayedStart,
                                    PBackgroundParent* aManager);
 
+  
+  
+  
+  static void PostSerializationActivation(InputStreamParams& aParams,
+                                          bool aConsumedByIPC,
+                                          bool aDelayedStart);
+
+  static void PostSerializationActivation(OptionalInputStreamParams& aParams,
+                                          bool aConsumedByIPC,
+                                          bool aDelayedStart);
+
   static already_AddRefed<nsIInputStream> DeserializeInputStream(
       const InputStreamParams& aParams,
       const nsTArray<FileDescriptor>& aFileDescriptors);
