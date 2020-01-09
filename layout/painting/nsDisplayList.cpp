@@ -7803,10 +7803,15 @@ Matrix4x4 nsDisplayTransform::GetResultingTransformMatrixInternal(
       frame &&
       frame->IsSVGTransformed(&svgTransform, &parentsChildrenOnlyTransform);
 
+  bool shouldRound = true;
+
   
   
   
-  bool shouldRound = !(frame && frame->IsFrameOfType(nsIFrame::eSVG));
+  if (frame && frame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT) &&
+      !frame->IsSVGOuterSVGAnonChildFrame()) {
+    shouldRound = false;
+  }
 
   
 
