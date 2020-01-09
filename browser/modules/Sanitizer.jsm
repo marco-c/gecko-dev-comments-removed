@@ -22,6 +22,17 @@ XPCOMUtils.defineLazyServiceGetter(this, "serviceWorkerManager",
                                    "@mozilla.org/serviceworkers/manager;1",
                                    "nsIServiceWorkerManager");
 
+var logConsole;
+function log(msg) {
+  if (!logConsole) {
+    logConsole = console.createInstance({
+      prefix: "** Sanitizer.jsm",
+      maxLogLevelPref: "browser.sanitizer.loglevel",
+    });
+  }
+
+  logConsole.log(msg);
+}
 
 
 var gPendingSanitizationSerial = 0;
@@ -654,6 +665,8 @@ async function sanitizeInternal(items, aItemsToClear, progress, options = {}) {
 }
 
 async function sanitizeOnShutdown(progress) {
+  log("Sanitizing on shutdown");
+
   if (Sanitizer.shouldSanitizeOnShutdown) {
     
     let itemsToClear = getItemsToClearFromPrefBranch(Sanitizer.PREF_SHUTDOWN_BRANCH);
@@ -684,6 +697,7 @@ async function sanitizeOnShutdown(progress) {
   
   if (Services.prefs.getIntPref(PREF_COOKIE_LIFETIME,
                                 Ci.nsICookieService.ACCEPT_NORMALLY) == Ci.nsICookieService.ACCEPT_SESSION) {
+    log("Session-only configuration detected");
     let principals = await getAllPrincipals();
     await maybeSanitizeSessionPrincipals(principals);
   }
@@ -699,6 +713,8 @@ async function sanitizeOnShutdown(progress) {
     if (!isSupportedURI(permission.principal.URI)) {
       continue;
     }
+
+    log("Custom session cookie permission detected for: " + permission.principal.URI.spec);
 
     
     let principals = await getAllPrincipals(permission.principal.URI);
@@ -783,6 +799,8 @@ async function getAllPrincipals(matchUri = null) {
 
 
 async function maybeSanitizeSessionPrincipals(principals) {
+  log("Sanitizing " + principals.length + " principals");
+
   let promises = [];
 
   principals.forEach(principal => {
@@ -795,20 +813,25 @@ async function maybeSanitizeSessionPrincipals(principals) {
 }
 
 function cookiesAllowedForDomainOrSubDomain(principal) {
+  log("Checking principal: " + principal.URI.spec);
+
   
   
   let p = Services.perms.testPermissionFromPrincipal(principal, "cookie");
   if (p == Ci.nsICookiePermission.ACCESS_ALLOW) {
+    log("Cookie allowed!");
     return true;
   }
 
   if (p == Ci.nsICookiePermission.ACCESS_DENY ||
       p == Ci.nsICookiePermission.ACCESS_SESSION) {
+    log("Cookie denied or session!");
     return false;
   }
 
   
   if (p != Ci.nsICookiePermission.ACCESS_DEFAULT) {
+    log("Not supported cookie permission: " + p);
     return false;
   }
 
@@ -825,14 +848,18 @@ function cookiesAllowedForDomainOrSubDomain(principal) {
     
     if (Services.eTLD.hasRootDomain(perm.principal.URI.host,
                                     principal.URI.host)) {
+      log("Recursive cookie check on principal: " + perm.principal.URI.spec);
       return cookiesAllowedForDomainOrSubDomain(perm.principal);
     }
   }
 
+  log("Cookie not allowed.");
   return false;
 }
 
 async function sanitizeSessionPrincipal(principal) {
+  log("Sanitizing principal: " + principal.URI.spec);
+
   await new Promise(resolve => {
     Services.clearData.deleteDataFromPrincipal(principal, true ,
                                                Ci.nsIClearDataService.CLEAR_DOM_STORAGES |

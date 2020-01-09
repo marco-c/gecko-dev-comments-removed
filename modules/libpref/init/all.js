@@ -5888,6 +5888,8 @@ pref("dom.storageManager.prompt.testing.allow", false);
 pref("browser.storageManager.pressureNotification.minIntervalMS", 1200000);
 pref("browser.storageManager.pressureNotification.usageThresholdGB", 5);
 
+pref("browser.sanitizer.loglevel", "Warn");
+
 
 
 
