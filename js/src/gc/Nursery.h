@@ -141,6 +141,28 @@ class Nursery {
   static const size_t Alignment = gc::ChunkSize;
   static const size_t ChunkShift = gc::ChunkShift;
 
+  
+
+
+
+
+
+#ifndef JS_GC_SMALL_CHUNK_SIZE
+  
+
+
+
+  static const size_t SubChunkLimit = 192 * 1024;
+  static const size_t SubChunkStep = 64 * 1024;
+#else
+  
+
+
+
+  static const size_t SubChunkLimit = 64 * 1024;
+  static const size_t SubChunkStep = 16 * 1024;
+#endif
+
   struct alignas(gc::CellAlignBytes) CellAlignedByte {
     char byte;
   };
@@ -328,7 +350,11 @@ class Nursery {
   
   size_t spaceToEnd(unsigned chunkCount) const;
 
-  size_t capacity() const { return capacity_; }
+  size_t capacity() const {
+    MOZ_ASSERT(capacity_ >= SubChunkLimit || capacity_ == 0);
+    MOZ_ASSERT(capacity_ <= chunkCountLimit() * NurseryChunkUsableSize);
+    return capacity_;
+  }
   size_t lazyCapacity() const { return spaceToEnd(allocatedChunkCount()); }
 
   
@@ -553,6 +579,7 @@ class Nursery {
 
 
   void setCurrentChunk(unsigned chunkno, bool fullPoison = false);
+  void setCurrentEnd();
   void setStartPosition();
 
   
@@ -565,6 +592,8 @@ class Nursery {
   MOZ_ALWAYS_INLINE uintptr_t currentEnd() const;
 
   uintptr_t position() const { return position_; }
+
+  MOZ_ALWAYS_INLINE bool isSubChunkMode() const;
 
   JSRuntime* runtime() const { return runtime_; }
   gcstats::Statistics& stats() const;
