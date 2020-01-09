@@ -3576,7 +3576,7 @@ static size_t NumTypeSets(JSScript* script) {
 
   
   
-  static_assert(JSScript::NumBytecodeTypeSetsBits == 16,
+  static_assert(JSScript::MaxBytecodeTypeSets == UINT16_MAX,
                 "JSScript typesets should have safe range to avoid overflow");
   static_assert(JSFunction::NArgsBits == 16,
                 "JSFunction nargs should have safe range to avoid overflow");
