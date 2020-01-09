@@ -91,18 +91,21 @@ evaluate.sandbox = function(sb, script, args = [],
       line = 0,
       timeout = DEFAULT_TIMEOUT,
     } = {}) {
-  let scriptTimeoutID, unloadHandler;
+  let unloadHandler;
+
+  
+  let scriptTimeoutID, timeoutPromise;
+  if (timeout !== null) {
+    timeoutPromise = new Promise((resolve, reject) => {
+      scriptTimeoutID = setTimeout(() => {
+        reject(new ScriptTimeoutError(`Timed out after ${timeout} ms`));
+      }, timeout);
+    });
+  }
 
   let promise = new Promise((resolve, reject) => {
     let src = "";
     sb[COMPLETE] = resolve;
-    unloadHandler = sandbox.cloneInto(
-        () => reject(new JavaScriptError("Document was unloaded")),
-        sb);
-
-    if (async) {
-      sb[CALLBACK] = sb[COMPLETE];
-    }
     sb[ARGUMENTS] = sandbox.cloneInto(args, sb);
 
     
@@ -117,29 +120,36 @@ evaluate.sandbox = function(sb, script, args = [],
       ${script}
     }).apply(null, ${ARGUMENTS})`;
 
-    
-    if (timeout !== null) {
-      scriptTimeoutID = setTimeout(() => reject(new ScriptTimeoutError(
-          `Timed out after ${timeout} ms`)), timeout);
-    }
+    unloadHandler = sandbox.cloneInto(
+        () => reject(new JavaScriptError("Document was unloaded")), sb);
     sb.window.onunload = unloadHandler;
 
-    let res;
-    try {
-      res = Cu.evalInSandbox(src, sb, "1.8", file, line);
-    } catch (e) {
-      reject(new JavaScriptError(e));
-    }
+    let promises = [
+      Cu.evalInSandbox(src, sb, "1.8", file, line),
+      timeoutPromise,
+    ];
 
-    if (!async) {
-      resolve(res);
-    }
+    
+    
+    
+    Promise.race(promises).then(value => {
+      if (!async) {
+        resolve(value);
+      }
+    }, err => {
+      reject(err);
+    });
   });
 
-  return promise.then(res => {
-    return res;
-  }, error => {
-    throw error;
+  
+  
+  
+  return Promise.race([promise, timeoutPromise]).catch(err => {
+    
+    if (err instanceof ScriptTimeoutError) {
+      throw err;
+    }
+    throw new JavaScriptError(err);
   }).finally(() => {
     clearTimeout(scriptTimeoutID);
     sb.window.removeEventListener("unload", unloadHandler);
