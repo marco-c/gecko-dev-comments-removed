@@ -274,11 +274,7 @@ enum class StyleImageLayerRepeat : uint8_t {
 };
 
 
-enum class StyleMaskMode : uint8_t {
-  Alpha = 0,
-  Luminance,
-  MatchSource
-};
+enum class StyleMaskMode : uint8_t { Alpha = 0, Luminance, MatchSource };
 
 
 #define NS_STYLE_BORDER_COLLAPSE 0
@@ -386,10 +382,10 @@ enum class StyleContent : uint8_t {
 
 
 enum class StyleFlexDirection : uint8_t {
-	Row,
-	RowReverse,
-	Column,
-	ColumnReverse,
+  Row,
+  RowReverse,
+  Column,
+  ColumnReverse,
 };
 
 
