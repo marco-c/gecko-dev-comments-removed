@@ -86,10 +86,60 @@ static const WhereToScroll kScrollToBottom = 100;
 static const WhereToScroll kScrollToRight = 100;
 static const WhereToScroll kScrollMinimum = -1;
 
+
 enum class WhenToScroll : uint8_t {
   Always,
   IfNotVisible,
   IfNotFullyVisible,
+};
+
+struct ScrollAxis final {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  explicit ScrollAxis(WhereToScroll aWhere = kScrollMinimum,
+                      WhenToScroll aWhen = WhenToScroll::IfNotFullyVisible,
+                      bool aOnlyIfPerceivedScrollableDirection = false)
+      : mWhereToScroll(aWhere),
+        mWhenToScroll(aWhen),
+        mOnlyIfPerceivedScrollableDirection(
+            aOnlyIfPerceivedScrollableDirection) {}
+
+  WhereToScroll mWhereToScroll;
+  WhenToScroll mWhenToScroll;
+  bool mOnlyIfPerceivedScrollableDirection : 1;
 };
 
 enum class ScrollFlags {

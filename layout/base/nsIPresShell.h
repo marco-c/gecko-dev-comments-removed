@@ -619,53 +619,6 @@ class nsIPresShell : public nsStubDocumentObserver {
 
   already_AddRefed<gfxContext> CreateReferenceRenderingContext();
 
-  typedef struct ScrollAxis {
-    mozilla::WhereToScroll mWhereToScroll;
-    mozilla::WhenToScroll mWhenToScroll;
-    bool mOnlyIfPerceivedScrollableDirection : 1;
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    explicit ScrollAxis(
-        mozilla::WhereToScroll aWhere = mozilla::kScrollMinimum,
-        mozilla::WhenToScroll aWhen = mozilla::WhenToScroll::IfNotFullyVisible,
-        bool aOnlyIfPerceivedScrollableDirection = false)
-        : mWhereToScroll(aWhere),
-          mWhenToScroll(aWhen),
-          mOnlyIfPerceivedScrollableDirection(
-              aOnlyIfPerceivedScrollableDirection) {}
-  } ScrollAxis;
-
   
 
 
@@ -690,7 +643,8 @@ class nsIPresShell : public nsStubDocumentObserver {
 
 
   bool ScrollFrameRectIntoView(nsIFrame* aFrame, const nsRect& aRect,
-                               ScrollAxis aVertical, ScrollAxis aHorizontal,
+                               mozilla::ScrollAxis aVertical,
+                               mozilla::ScrollAxis aHorizontal,
                                mozilla::ScrollFlags aScrollFlags);
 
   
@@ -1561,8 +1515,8 @@ class nsIPresShell : public nsStubDocumentObserver {
   
   
   struct ScrollIntoViewData {
-    ScrollAxis mContentScrollVAxis;
-    ScrollAxis mContentScrollHAxis;
+    mozilla::ScrollAxis mContentScrollVAxis;
+    mozilla::ScrollAxis mContentScrollHAxis;
     mozilla::ScrollFlags mContentToScrollToFlags;
   };
 
