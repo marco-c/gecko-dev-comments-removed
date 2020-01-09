@@ -11,6 +11,8 @@
 
 #ifdef XGILL_PLUGIN
 
+#  define JS_EXPECT_HAZARDS __attribute__((annotate("Expect Hazards")))
+
 
 #  define JS_HAZ_GC_THING __attribute__((annotate("GC Thing")))
 
@@ -63,6 +65,7 @@
 
 #else
 
+#  define JS_EXPECT_HAZARDS
 #  define JS_HAZ_GC_THING
 #  define JS_HAZ_GC_POINTER
 #  define JS_HAZ_ROOTED
