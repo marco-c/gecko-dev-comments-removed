@@ -464,7 +464,7 @@ class Raptor(object):
                                                self.config,
                                                test)
 
-    def process_results(self):
+    def process_results(self, test_names):
         
         
         if self.config.get('run_local', False):
@@ -477,7 +477,7 @@ class Raptor(object):
             raptor_json_path = os.path.join(os.getcwd(), 'local.json')
 
         self.config['raptor_json_path'] = raptor_json_path
-        return self.results_handler.summarize_and_output(self.config)
+        return self.results_handler.summarize_and_output(self.config, test_names)
 
     def get_page_timeout_list(self):
         return self.results_handler.page_timeout_list
@@ -589,6 +589,7 @@ def main(args=sys.argv[1:]):
     
     
     raptor_test_list = get_raptor_test_list(args, mozinfo.os)
+    raptor_test_names = [raptor_test['name'] for raptor_test in raptor_test_list]
 
     
     if len(raptor_test_list) == 0:
@@ -622,12 +623,13 @@ def main(args=sys.argv[1:]):
 
         raptor.run_test(next_test, timeout=int(next_test['page_timeout']))
 
-    success = raptor.process_results()
+    success = raptor.process_results(raptor_test_names)
     raptor.clean_up()
 
     if not success:
         
-        LOG.critical("TEST-UNEXPECTED-FAIL: no raptor test results were found")
+        LOG.critical("TEST-UNEXPECTED-FAIL: no raptor test results were found for %s" %
+                     ', '.join(raptor_test_names))
         os.sys.exit(1)
 
     
