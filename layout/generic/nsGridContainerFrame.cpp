@@ -741,8 +741,12 @@ void GridItemInfo::ReverseDirection(LogicalAxis aAxis, uint32_t aGridEnd) {
 
 
 struct nsGridContainerFrame::Subgrid {
-  Subgrid(const GridArea& aArea, bool aIsOrthogonal)
-      : mArea(aArea), mIsOrthogonal(aIsOrthogonal) {}
+  Subgrid(const GridArea& aArea, bool aIsOrthogonal, WritingMode aCBWM)
+      : mArea(aArea),
+        mGridColEnd(0),
+        mGridRowEnd(0),
+        mMarginBorderPadding(aCBWM),
+        mIsOrthogonal(aIsOrthogonal) {}
 
   
   const LineRange& SubgridCols() const {
@@ -762,6 +766,9 @@ struct nsGridContainerFrame::Subgrid {
   
   uint32_t mGridColEnd;
   uint32_t mGridRowEnd;
+  
+  
+  LogicalMargin mMarginBorderPadding;
   
   bool mIsOrthogonal;
 
@@ -2708,6 +2715,47 @@ struct MOZ_STACK_CLASS nsGridContainerFrame::Grid {
   const LineNameMap* mRowNameMap;
 };
 
+
+
+
+
+
+static Subgrid* SubgridComputeMarginBorderPadding(
+    const GridItemInfo& aGridItem, const LogicalSize& aPercentageBasis) {
+  auto* subgridFrame = aGridItem.SubgridFrame();
+  auto cbWM = aGridItem.mFrame->GetParent()->GetWritingMode();
+  nsMargin physicalMBP;
+  {
+    auto wm = subgridFrame->GetWritingMode();
+    auto pmPercentageBasis = cbWM.IsOrthogonalTo(wm)
+        ? aPercentageBasis.BSize(wm) : aPercentageBasis.ISize(wm);
+    SizeComputationInput sz(subgridFrame, nullptr, cbWM, pmPercentageBasis);
+    physicalMBP = sz.ComputedPhysicalMargin() +
+                  sz.ComputedPhysicalBorderPadding();
+  }
+  auto* subgrid = subgridFrame->GetProperty(Subgrid::Prop());
+  subgrid->mMarginBorderPadding = LogicalMargin(cbWM, physicalMBP);
+  if (aGridItem.mFrame != subgridFrame) {
+    nsIScrollableFrame* scrollFrame = aGridItem.mFrame->GetScrollTargetFrame();
+    if (scrollFrame) {
+      nsMargin ssz = scrollFrame->GetActualScrollbarSizes();
+      subgrid->mMarginBorderPadding += LogicalMargin(cbWM, ssz);
+    }
+
+    if (aGridItem.mFrame->IsFieldSetFrame()) {
+      const auto* f = static_cast<nsFieldSetFrame*>(aGridItem.mFrame);
+      const auto* inner = f->GetInner();
+      auto wm = inner->GetWritingMode();
+      LogicalPoint pos = inner->GetLogicalPosition(aGridItem.mFrame->GetSize());
+      
+      
+      LogicalMargin offsets(wm, pos.B(wm), 0, 0, 0);
+      subgrid->mMarginBorderPadding += offsets.ConvertTo(cbWM, wm);
+    }
+  }
+  return subgrid;
+}
+
 void nsGridContainerFrame::GridReflowInput::CalculateTrackSizes(
     const Grid& aGrid, const LogicalSize& aContentBox,
     SizingConstraint aConstraint) {
@@ -3397,7 +3445,7 @@ void nsGridContainerFrame::Grid::SubgridPlaceGridItems(
   
   auto* subgrid = childGrid->GetProperty(Subgrid::Prop());
   if (!subgrid) {
-    subgrid = new Subgrid(aGridItem.mArea, isOrthogonal);
+    subgrid = new Subgrid(aGridItem.mArea, isOrthogonal, aParentState.mWM);
     childGrid->SetProperty(Subgrid::Prop(), subgrid);
   } else {
     subgrid->mArea = aGridItem.mArea;
@@ -3989,6 +4037,60 @@ static nscoord MeasuringReflow(nsIFrame* aChild,
   parent->DeleteProperty(nsContainerFrame::DebugReflowingWithInfiniteISize());
 #endif
   return childSize.BSize(wm);
+}
+
+
+
+
+
+static LogicalMargin SubgridAccumulatedMarginBorderPadding(
+    nsIFrame* aFrame, const Subgrid* aSubgrid, WritingMode aResultWM,
+    LogicalAxis aAxis) {
+  MOZ_ASSERT(aFrame->IsGridContainerFrame());
+  auto* subgridFrame = static_cast<nsGridContainerFrame*>(aFrame);
+  LogicalMargin result(aSubgrid->mMarginBorderPadding);
+  auto* parent = subgridFrame->ParentGridContainerForSubgrid();
+  auto subgridCBWM = parent->GetWritingMode();
+  auto childRange = aSubgrid->mArea.LineRangeForAxis(aAxis);
+  bool skipStartSide = false;
+  bool skipEndSide = false;
+  auto axis = aSubgrid->mIsOrthogonal ? GetOrthogonalAxis(aAxis) : aAxis;
+  
+  
+  
+  
+  while (parent->IsSubgrid(axis)) {
+    auto* parentSubgrid = parent->GetProperty(Subgrid::Prop());
+    auto* grandParent = parent->ParentGridContainerForSubgrid();
+    auto parentCBWM = grandParent->GetWritingMode();
+    if (parentCBWM.IsOrthogonalTo(subgridCBWM)) {
+      axis = GetOrthogonalAxis(axis);
+    }
+    const auto& parentRange = parentSubgrid->mArea.LineRangeForAxis(axis);
+    bool sameDir = parentCBWM.ParallelAxisStartsOnSameSide(axis, subgridCBWM);
+    if (sameDir) {
+      skipStartSide |= childRange.mStart != 0;
+      skipEndSide |= childRange.mEnd != parentRange.Extent();
+    } else {
+      skipEndSide |= childRange.mStart != 0;
+      skipStartSide |= childRange.mEnd != parentRange.Extent();
+    }
+    if (skipStartSide && skipEndSide) {
+      break;
+    }
+    auto mbp =
+        parentSubgrid->mMarginBorderPadding.ConvertTo(subgridCBWM, parentCBWM);
+    if (skipStartSide) {
+      mbp.Start(aAxis, subgridCBWM) = nscoord(0);
+    }
+    if (skipEndSide) {
+      mbp.End(aAxis, subgridCBWM) = nscoord(0);
+    }
+    result += mbp;
+    parent = grandParent;
+    childRange = parentRange;
+  }
+  return result.ConvertTo(aResultWM, subgridCBWM);
 }
 
 
