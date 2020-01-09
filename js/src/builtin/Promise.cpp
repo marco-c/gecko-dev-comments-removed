@@ -97,6 +97,11 @@ enum PromiseAllResolveElementFunctionSlots {
   PromiseAllResolveElementFunctionSlot_ElementIndex,
 };
 
+enum PromiseAllSettledElementFunctionSlots {
+  PromiseAllSettledElementFunctionSlot_Data = 0,
+  PromiseAllSettledElementFunctionSlot_ElementIndex,
+};
+
 enum ReactionJobSlots {
   ReactionJobSlot_ReactionRecord = 0,
 };
@@ -2272,11 +2277,20 @@ static MOZ_MUST_USE bool PerformPromiseAll(
     JSContext* cx, PromiseForOfIterator& iterator, HandleObject C,
     Handle<PromiseCapability> resultCapability, bool* done);
 
+static MOZ_MUST_USE bool PerformPromiseAllSettled(
+    JSContext* cx, PromiseForOfIterator& iterator, HandleObject C,
+    Handle<PromiseCapability> resultCapability, bool* done);
+
 static MOZ_MUST_USE bool PerformPromiseRace(
     JSContext* cx, PromiseForOfIterator& iterator, HandleObject C,
     Handle<PromiseCapability> resultCapability, bool* done);
 
-enum class IterationMode { All, Race };
+enum class IterationMode { All, AllSettled, Race };
+
+
+
+
+
 
 
 
@@ -2294,6 +2308,9 @@ static MOZ_MUST_USE bool CommonStaticAllRace(JSContext* cx, CallArgs& args,
     switch (mode) {
       case IterationMode::All:
         message = "Receiver of Promise.all call";
+        break;
+      case IterationMode::AllSettled:
+        message = "Receiver of Promise.allSettled call";
         break;
       case IterationMode::Race:
         message = "Receiver of Promise.race call";
@@ -2325,6 +2342,9 @@ static MOZ_MUST_USE bool CommonStaticAllRace(JSContext* cx, CallArgs& args,
       case IterationMode::All:
         message = "Argument of Promise.all";
         break;
+      case IterationMode::AllSettled:
+        message = "Argument of Promise.allSettled";
+        break;
       case IterationMode::Race:
         message = "Argument of Promise.race";
         break;
@@ -2341,6 +2361,9 @@ static MOZ_MUST_USE bool CommonStaticAllRace(JSContext* cx, CallArgs& args,
   switch (mode) {
     case IterationMode::All:
       result = PerformPromiseAll(cx, iter, C, promiseCapability, &done);
+      break;
+    case IterationMode::AllSettled:
+      result = PerformPromiseAllSettled(cx, iter, C, promiseCapability, &done);
       break;
     case IterationMode::Race:
       result = PerformPromiseRace(cx, iter, C, promiseCapability, &done);
@@ -2579,6 +2602,10 @@ static MOZ_MUST_USE JSObject* CommonStaticResolveRejectImpl(
     ResolutionMode mode);
 
 static bool IsPromiseSpecies(JSContext* cx, JSFunction* species);
+
+
+
+
 
 
 
@@ -3115,6 +3142,285 @@ static MOZ_MUST_USE bool PerformPromiseRace(
   return CommonPerformPromiseAllRace(cx, iterator, C,
                                      resultCapability.promise(), done,
                                      isDefaultResolveFn, getResolveAndReject);
+}
+
+enum class PromiseAllSettledElementFunctionKind { Resolve, Reject };
+
+
+
+
+
+
+template <PromiseAllSettledElementFunctionKind Kind>
+static bool PromiseAllSettledElementFunction(JSContext* cx, unsigned argc,
+                                             Value* vp);
+
+
+
+
+
+static bool Promise_static_allSettled(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CommonStaticAllRace(cx, args, IterationMode::AllSettled);
+}
+
+
+
+
+
+static MOZ_MUST_USE bool PerformPromiseAllSettled(
+    JSContext* cx, PromiseForOfIterator& iterator, HandleObject C,
+    Handle<PromiseCapability> resultCapability, bool* done) {
+  *done = false;
+
+  
+  MOZ_ASSERT(C->isConstructor());
+
+  
+
+  
+  
+  
+  RootedArrayObject valuesArray(cx);
+  RootedValue valuesArrayVal(cx);
+  if (IsWrapper(resultCapability.promise())) {
+    JSObject* unwrappedPromiseObj =
+        CheckedUnwrapStatic(resultCapability.promise());
+    MOZ_ASSERT(unwrappedPromiseObj);
+
+    {
+      AutoRealm ar(cx, unwrappedPromiseObj);
+      valuesArray = NewDenseEmptyArray(cx);
+      if (!valuesArray) {
+        return false;
+      }
+    }
+
+    valuesArrayVal.setObject(*valuesArray);
+    if (!cx->compartment()->wrap(cx, &valuesArrayVal)) {
+      return false;
+    }
+  } else {
+    valuesArray = NewDenseEmptyArray(cx);
+    if (!valuesArray) {
+      return false;
+    }
+
+    valuesArrayVal.setObject(*valuesArray);
+  }
+
+  
+  
+  
+  
+  
+  Rooted<PromiseAllDataHolder*> dataHolder(cx);
+  dataHolder =
+      NewPromiseAllDataHolder(cx, resultCapability.promise(), valuesArrayVal,
+                              resultCapability.resolve());
+  if (!dataHolder) {
+    return false;
+  }
+
+  
+  uint32_t index = 0;
+
+  auto getResolveAndReject = [cx, &valuesArray, &dataHolder, &index](
+                                 MutableHandleValue resolveFunVal,
+                                 MutableHandleValue rejectFunVal) {
+    
+    {  
+      
+      
+      AutoRealm ar(cx, valuesArray);
+
+      if (!NewbornArrayPush(cx, valuesArray, UndefinedValue())) {
+        return false;
+      }
+    }
+
+    auto PromiseAllSettledResolveElementFunction =
+        PromiseAllSettledElementFunction<
+            PromiseAllSettledElementFunctionKind::Resolve>;
+    auto PromiseAllSettledRejectElementFunction =
+        PromiseAllSettledElementFunction<
+            PromiseAllSettledElementFunctionKind::Reject>;
+
+    
+    JSFunction* resolveFunc = NewNativeFunction(
+        cx, PromiseAllSettledResolveElementFunction, 1, nullptr,
+        gc::AllocKind::FUNCTION_EXTENDED, GenericObject);
+    if (!resolveFunc) {
+      return false;
+    }
+    resolveFunVal.setObject(*resolveFunc);
+
+    
+    resolveFunc->setExtendedSlot(PromiseAllSettledElementFunctionSlot_Data,
+                                 ObjectValue(*dataHolder));
+
+    
+    resolveFunc->setExtendedSlot(
+        PromiseAllSettledElementFunctionSlot_ElementIndex, Int32Value(index));
+
+    
+    JSFunction* rejectFunc = NewNativeFunction(
+        cx, PromiseAllSettledRejectElementFunction, 1, nullptr,
+        gc::AllocKind::FUNCTION_EXTENDED, GenericObject);
+    if (!rejectFunc) {
+      return false;
+    }
+    rejectFunVal.setObject(*rejectFunc);
+
+    
+    rejectFunc->setExtendedSlot(PromiseAllSettledElementFunctionSlot_Data,
+                                ObjectValue(*dataHolder));
+
+    
+    rejectFunc->setExtendedSlot(
+        PromiseAllSettledElementFunctionSlot_ElementIndex, Int32Value(index));
+
+    
+    dataHolder->increaseRemainingCount();
+
+    
+    index++;
+    MOZ_ASSERT(index > 0);
+
+    return true;
+  };
+
+  
+  if (!CommonPerformPromiseAllRace(cx, iterator, C, resultCapability.promise(),
+                                   done, true, getResolveAndReject)) {
+    return false;
+  }
+
+  
+  int32_t remainingCount = dataHolder->decreaseRemainingCount();
+
+  
+  if (remainingCount == 0) {
+    return RunResolutionFunction(cx, resultCapability.resolve(), valuesArrayVal,
+                                 ResolveMode, resultCapability.promise());
+  }
+
+  return true;
+}
+
+
+
+
+
+
+template <PromiseAllSettledElementFunctionKind Kind>
+static bool PromiseAllSettledElementFunction(JSContext* cx, unsigned argc,
+                                             Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  HandleValue valueOrReason = args.get(0);
+
+  
+  JSFunction* resolve = &args.callee().as<JSFunction>();
+  Rooted<PromiseAllDataHolder*> data(
+      cx, &resolve->getExtendedSlot(PromiseAllSettledElementFunctionSlot_Data)
+               .toObject()
+               .as<PromiseAllDataHolder>());
+
+  
+
+  
+  int32_t index =
+      resolve
+          ->getExtendedSlot(PromiseAllSettledElementFunctionSlot_ElementIndex)
+          .toInt32();
+
+  
+  RootedValue valuesVal(cx, data->valuesArray());
+  RootedObject valuesObj(cx, &valuesVal.toObject());
+  bool needsWrapping = false;
+  if (IsProxy(valuesObj)) {
+    
+    valuesObj = UncheckedUnwrap(valuesObj);
+
+    if (JS_IsDeadWrapper(valuesObj)) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_DEAD_OBJECT);
+      return false;
+    }
+
+    needsWrapping = true;
+  }
+  HandleNativeObject values = valuesObj.as<NativeObject>();
+
+  
+  
+  
+  if (!values->getDenseElement(index).isUndefined()) {
+    args.rval().setUndefined();
+    return true;
+  }
+
+  
+
+  
+  RootedPlainObject obj(cx, NewBuiltinClassInstance<PlainObject>(cx));
+  if (!obj) {
+    return false;
+  }
+
+  
+  RootedId id(cx, NameToId(cx->names().status));
+  RootedValue statusValue(cx);
+  if (Kind == PromiseAllSettledElementFunctionKind::Resolve) {
+    statusValue.setString(cx->names().fulfilled);
+  } else {
+    statusValue.setString(cx->names().rejected);
+  }
+  if (!NativeDefineDataProperty(cx, obj, id, statusValue, JSPROP_ENUMERATE)) {
+    return false;
+  }
+
+  
+  if (Kind == PromiseAllSettledElementFunctionKind::Resolve) {
+    id = NameToId(cx->names().value);
+  } else {
+    id = NameToId(cx->names().reason);
+  }
+  if (!NativeDefineDataProperty(cx, obj, id, valueOrReason, JSPROP_ENUMERATE)) {
+    return false;
+  }
+
+  RootedValue objVal(cx, ObjectValue(*obj));
+  if (needsWrapping) {
+    AutoRealm ar(cx, valuesObj);
+    if (!cx->compartment()->wrap(cx, &objVal)) {
+      return false;
+    }
+  }
+
+  
+  values->setDenseElement(index, objVal);
+
+  
+  uint32_t remainingCount = data->decreaseRemainingCount();
+
+  
+  if (remainingCount == 0) {
+    
+    
+
+    
+    RootedObject resolveAllFun(cx, data->resolveObj());
+    RootedObject promiseObj(cx, data->promiseObj());
+    if (!RunResolutionFunction(cx, resolveAllFun, valuesVal, ResolveMode,
+                               promiseObj)) {
+      return false;
+    }
+  }
+
+  
+  args.rval().setUndefined();
+  return true;
 }
 
 
@@ -5392,9 +5698,13 @@ static const JSPropertySpec promise_properties[] = {
 
 static const JSFunctionSpec promise_static_methods[] = {
     JS_FN("all", Promise_static_all, 1, 0),
+#ifdef NIGHTLY_BUILD
+    JS_FN("allSettled", Promise_static_allSettled, 1, 0),
+#endif
     JS_FN("race", Promise_static_race, 1, 0),
     JS_FN("reject", Promise_reject, 1, 0),
-    JS_FN("resolve", Promise_static_resolve, 1, 0), JS_FS_END};
+    JS_FN("resolve", Promise_static_resolve, 1, 0),
+    JS_FS_END};
 
 static const JSPropertySpec promise_static_properties[] = {
     JS_SYM_GET(species, Promise_static_species, 0), JS_PS_END};
