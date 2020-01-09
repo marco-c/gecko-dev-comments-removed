@@ -198,16 +198,12 @@ goog.scope(function() {
 
 
     glsShaderExecUtil.generateEmptyFragmentSource = function() {
-         var customOut = true;
          var src;
 
         src = '#version 300 es\n';
-
-        
-
+        src += 'out lowp vec4 color;\n';
         src += 'void main (void)\n{\n';
-        if (!customOut)
-            src += ' gl.FragColor = vec4(0.0);\n';
+        src += ' color = vec4(0.0);\n';
         src += '}\n';
 
         return src;

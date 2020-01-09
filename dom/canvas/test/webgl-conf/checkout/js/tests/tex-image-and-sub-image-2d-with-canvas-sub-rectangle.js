@@ -177,24 +177,8 @@ function generateTest(internalFormat, pixelFormat, pixelType, prologue, resource
               sourceSubRectangleString);
 
         var loc;
-        var skipCorner = false;
         if (bindingTarget == gl.TEXTURE_CUBE_MAP) {
             loc = gl.getUniformLocation(program, "face");
-            switch (gl[pixelFormat]) {
-              case gl.RED_INTEGER:
-              case gl.RG_INTEGER:
-              case gl.RGB_INTEGER:
-              case gl.RGBA_INTEGER:
-                
-                skipCorner = true;
-                break;
-            }
-        }
-
-        if (skipCorner && sourceSubRectangle &&
-                sourceSubRectangle[2] == 1 && sourceSubRectangle[3] == 1) {
-            debug("Test skipped, see WebGL#1819");
-            return;
         }
 
         
@@ -258,12 +242,6 @@ function generateTest(internalFormat, pixelFormat, pixelType, prologue, resource
         
         var outputCanvasWidth = gl.drawingBufferWidth;
         var outputCanvasHeight = gl.drawingBufferHeight;
-        var outputCanvasHalfWidth = Math.floor(outputCanvasWidth / 2);
-        var outputCanvasHalfHeight = Math.floor(outputCanvasHeight / 2);
-        var top = 0;
-        var bottom = outputCanvasHeight - outputCanvasHalfHeight;
-        var left = 0;
-        var right = outputCanvasWidth - outputCanvasHalfWidth;
 
         for (var tt = 0; tt < targets.length; ++tt) {
             if (bindingTarget == gl.TEXTURE_CUBE_MAP) {
@@ -272,17 +250,8 @@ function generateTest(internalFormat, pixelFormat, pixelType, prologue, resource
             
             wtu.clearAndDrawUnitQuad(gl, [0, 0, 0, 255]);
 
-            
-            
             var msg = 'should be ' + expected;
-            wtu.checkCanvasRect(gl, left, top, outputCanvasHalfWidth, outputCanvasHalfHeight, expected, msg);
-            if (!skipCorner) {
-                wtu.checkCanvasRect(gl, right, top, outputCanvasHalfWidth, outputCanvasHalfHeight, expected, msg);
-            }
-            wtu.checkCanvasRect(gl, left, bottom, outputCanvasHalfWidth, outputCanvasHalfHeight, expected, msg);
-            if (!skipCorner) {
-                wtu.checkCanvasRect(gl, right, bottom, outputCanvasHalfWidth, outputCanvasHalfHeight, expected, msg);
-            }
+            wtu.checkCanvasRect(gl, 0, 0, outputCanvasWidth, outputCanvasHeight, expected, msg);
         }
     }
 

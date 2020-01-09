@@ -95,6 +95,9 @@ goog.scope(function() {
         
         _skip("texture_functions.textureprojlodoffset.isampler3d_vertex");
         _skip("texture_functions.texturegrad.samplercubeshadow*");
+        
+        
+        _skip("texture_functions.texturelodoffset.sampler3d_float_vertex");
 
         
         _setReason("Tricky blit rects can result in imperfect copies on some HW.");
@@ -117,13 +120,6 @@ goog.scope(function() {
         _skip("blit.rect.nearest_consistency_out_of_bounds_min_reverse_src_dst_x");
         _skip("blit.rect.nearest_consistency_out_of_bounds_min_reverse_src_x");
         _skip("blit.rect.nearest_consistency_out_of_bounds_min_reverse_src_y");
-
-        _setReason("Tricky blit rects can result in imperfect copies on Mac Intel driver.");
-        
-        
-        _skip("blit.rect.nearest_consistency_mag_reverse_src_dst_y");
-        
-        _skip("blit.rect.nearest_consistency_min_reverse_src_dst_y");
 
         
         _setReason("Tricky blit rects can result in imperfect copies on some drivers.");
@@ -210,6 +206,25 @@ goog.scope(function() {
         
         _skip("blit.depth_stencil.depth24_stencil8_scale");
         _skip("blit.depth_stencil.depth24_stencil8_stencil_only");
+
+        _setReason("Removed from native dEQP mustpass. Not passable on Adreno.");
+        
+        
+        
+        
+        
+        _skip("derivate.dfdy.fbo_float.float_highp");
+        _skip("derivate.dfdy.fbo_float.vec2_highp");
+        _skip("derivate.dfdy.fbo_float.vec3_highp");
+        _skip("derivate.dfdy.fbo_float.vec4_highp");
+        _skip("derivate.dfdy.nicest.fbo_float.float_highp");
+        _skip("derivate.dfdy.nicest.fbo_float.vec2_highp");
+        _skip("derivate.dfdy.nicest.fbo_float.vec3_highp");
+        _skip("derivate.dfdy.nicest.fbo_float.vec4_highp");
+        _skip("derivate.dfdy.fastest.fbo_float.float_highp");
+        _skip("derivate.dfdy.fastest.fbo_float.vec2_highp");
+        _skip("derivate.dfdy.fastest.fbo_float.vec3_highp");
+        _skip("derivate.dfdy.fastest.fbo_float.vec4_highp");
     } 
 
     
