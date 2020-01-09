@@ -623,7 +623,14 @@ void ImageBridgeChild::UpdateTextureFactoryIdentifier(
   
   
 
-  bool needsDrop = disablingWebRender;
+  
+  
+  
+  
+  bool initializingWebRender = GetCompositorBackendType() != LayersBackend::LAYERS_WR &&
+                               aIdentifier.mParentBackend == LayersBackend::LAYERS_WR;
+
+  bool needsDrop = disablingWebRender || initializingWebRender;
 
 #if defined(XP_WIN)
   RefPtr<ID3D11Device> device = gfx::DeviceManagerDx::Get()->GetImageDevice();
