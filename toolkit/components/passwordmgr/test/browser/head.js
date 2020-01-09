@@ -154,3 +154,13 @@ async function checkDoorhangerUsernamePassword(username, password) {
 }
 
 
+
+async function waitForPasswordManagerDialog() {
+  let win;
+  await TestUtils.waitForCondition(() => {
+    win = Services.wm.getMostRecentWindow("Toolkit:PasswordManager");
+    return win && win.document.getElementById("filter");
+  }, "Waiting for the password manager dialog to open");
+
+  return win;
+}
