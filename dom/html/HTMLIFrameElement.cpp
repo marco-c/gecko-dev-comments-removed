@@ -55,6 +55,10 @@ HTMLIFrameElement::HTMLIFrameElement(
     : nsGenericHTMLFrameElement(std::move(aNodeInfo), aFromParser) {
   
   mFeaturePolicy = new FeaturePolicy(this);
+
+  nsCOMPtr<nsIPrincipal> origin = GetFeaturePolicyDefaultOrigin();
+  MOZ_ASSERT(origin);
+  mFeaturePolicy->SetDefaultOrigin(origin);
 }
 
 HTMLIFrameElement::~HTMLIFrameElement() {}
