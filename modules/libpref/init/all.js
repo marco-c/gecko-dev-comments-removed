@@ -1481,8 +1481,10 @@ pref("javascript.options.mem.max", -1);
 
 
 #if defined(ANDROID) || defined(XP_IOS)
+pref("javascript.options.mem.nursery.min_kb", 192);
 pref("javascript.options.mem.nursery.max_kb", 4096);
 #else
+pref("javascript.options.mem.nursery.min_kb", 192);
 pref("javascript.options.mem.nursery.max_kb", 16384);
 #endif
 
