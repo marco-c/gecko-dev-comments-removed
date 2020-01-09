@@ -77,7 +77,6 @@ export function createWorker(actor: string, url: string) {
     actor,
     url,
     
-    type: 0,
-    name: ""
+    type: 0
   };
 }

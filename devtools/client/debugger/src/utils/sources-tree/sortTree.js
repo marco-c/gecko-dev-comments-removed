@@ -14,6 +14,25 @@ import type { TreeDirectory } from "./types";
 
 
 
+export function sortEntireTree(
+  tree: TreeDirectory,
+  debuggeeUrl: string = ""
+): TreeDirectory {
+  if (nodeHasChildren(tree)) {
+    const contents = sortTree(tree, debuggeeUrl).map((subtree: any) =>
+      sortEntireTree(subtree)
+    );
+    return { ...tree, contents };
+  }
+  return tree;
+}
+
+
+
+
+
+
+
 export function sortTree(tree: TreeDirectory, debuggeeUrl: string = "") {
   return (tree.contents: any).sort((previousNode, currentNode) => {
     const currentNodeIsDir = nodeHasChildren(currentNode);
