@@ -2673,11 +2673,6 @@ class nsContentUtils {
   
 
 
-  static bool DoNotTrackEnabled();
-
-  
-
-
 
 
   static mozilla::LogModule* DOMDumpLog();
@@ -3491,7 +3486,6 @@ class nsContentUtils {
   
   static nsCString* sJSBytecodeMimeType;
 
-  static bool sDoNotTrackEnabled;
   static mozilla::LazyLogModule sDOMDumpLog;
 
   static int32_t sInnerOrOuterWindowCount;

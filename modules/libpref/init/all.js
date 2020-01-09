@@ -1418,8 +1418,6 @@ pref("privacy.restrict3rdpartystorage.userInteractionRequiredForHosts", "");
 pref("privacy.popups.maxReported", 100);
 
 
-pref("privacy.donottrackheader.enabled",    false);
-
 
 pref("privacy.trackingprotection.enabled",  false);
 

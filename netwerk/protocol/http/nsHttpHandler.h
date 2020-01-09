@@ -574,9 +574,6 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   bool mEnablePersistentHttpsCaching;
 
   
-  bool mDoNotTrackEnabled;
-
-  
   bool mSafeHintEnabled;
   bool mParentalControlEnabled;
 

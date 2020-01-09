@@ -2357,6 +2357,13 @@ VARCACHE_PREF(
 )
 
 
+VARCACHE_PREF(
+  "privacy.donottrackheader.enabled",
+   privacy_donottrackheader_enabled,
+  bool, false
+)
+
+
 
 
 
