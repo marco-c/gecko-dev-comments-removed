@@ -13,7 +13,7 @@ use clip::{ClipChainId, ClipChainNode, ClipItem};
 use clip_scroll_tree::{ROOT_SPATIAL_NODE_INDEX, ClipScrollTree, SpatialNodeIndex, CoordinateSystemId};
 use debug_colors;
 use device::TextureFilter;
-use euclid::{size2, vec3, TypedRect, TypedPoint2D, TypedSize2D};
+use euclid::{size2, vec3, TypedPoint2D, TypedScale, TypedSize2D};
 use euclid::approxeq::ApproxEq;
 use frame_builder::{FrameVisibilityContext, FrameVisibilityState};
 use intern::ItemUid;
@@ -1561,17 +1561,40 @@ impl TileCache {
 
 
 pub struct PictureUpdateState<'a> {
-    pub surfaces: &'a mut Vec<SurfaceInfo>,
+    surfaces: &'a mut Vec<SurfaceInfo>,
     surface_stack: Vec<SurfaceIndex>,
     picture_stack: Vec<PictureInfo>,
+    are_raster_roots_assigned: bool,
 }
 
 impl<'a> PictureUpdateState<'a> {
-    pub fn new(surfaces: &'a mut Vec<SurfaceInfo>) -> Self {
-        PictureUpdateState {
+    pub fn update_all(
+        surfaces: &'a mut Vec<SurfaceInfo>,
+        pic_index: PictureIndex,
+        picture_primitives: &mut [PicturePrimitive],
+        frame_context: &FrameBuildingContext,
+        gpu_cache: &mut GpuCache,
+    ) {
+        let mut state = PictureUpdateState {
             surfaces,
             surface_stack: vec![SurfaceIndex(0)],
             picture_stack: Vec::new(),
+            are_raster_roots_assigned: true,
+        };
+
+        state.update(
+            pic_index,
+            picture_primitives,
+            frame_context,
+            gpu_cache,
+        );
+
+        if !state.are_raster_roots_assigned {
+            state.assign_raster_roots(
+                pic_index,
+                picture_primitives,
+                ROOT_SPATIAL_NODE_INDEX,
+            );
         }
     }
 
@@ -1597,8 +1620,8 @@ impl<'a> PictureUpdateState<'a> {
     }
 
     
-    fn pop_surface(&mut self) {
-        self.surface_stack.pop().unwrap();
+    fn pop_surface(&mut self) -> SurfaceIndex{
+        self.surface_stack.pop().unwrap()
     }
 
     
@@ -1620,9 +1643,74 @@ impl<'a> PictureUpdateState<'a> {
     ) -> PictureInfo {
         self.picture_stack.pop().unwrap()
     }
+
+    
+    
+    
+    fn update(
+        &mut self,
+        pic_index: PictureIndex,
+        picture_primitives: &mut [PicturePrimitive],
+        frame_context: &FrameBuildingContext,
+        gpu_cache: &mut GpuCache,
+    ) {
+        if let Some(children) = picture_primitives[pic_index.0].pre_update(
+            self,
+            frame_context,
+        ) {
+            for child_pic_index in &children {
+                self.update(
+                    *child_pic_index,
+                    picture_primitives,
+                    frame_context,
+                    gpu_cache,
+                );
+            }
+
+            picture_primitives[pic_index.0].post_update(
+                children,
+                self,
+                frame_context,
+                gpu_cache,
+            );
+        }
+    }
+
+    
+    
+    
+    fn assign_raster_roots(
+        &mut self,
+        pic_index: PictureIndex,
+        picture_primitives: &[PicturePrimitive],
+        fallback_raster_spatial_node: SpatialNodeIndex,
+    ) {
+        let picture = &picture_primitives[pic_index.0];
+        if !picture.is_visible() {
+            return
+        }
+
+        let new_fallback = match picture.raster_config {
+            Some(ref config) => {
+                let surface = &mut self.surfaces[config.surface_index.0];
+                if surface.surface_spatial_node_index == surface.raster_spatial_node_index && (
+                    surface.rect.size.width > MAX_SURFACE_SIZE ||
+                    surface.rect.size.height > MAX_SURFACE_SIZE
+                ) {
+                    surface.raster_spatial_node_index = fallback_raster_spatial_node;
+                }
+                surface.raster_spatial_node_index
+            }
+            None => fallback_raster_spatial_node,
+        };
+
+        for child_pic_index in &picture.prim_list.pictures {
+            self.assign_raster_roots(*child_pic_index, picture_primitives, new_fallback);
+        }
+    }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct SurfaceIndex(pub usize);
 
 pub const ROOT_SURFACE_INDEX: SurfaceIndex = SurfaceIndex(0);
@@ -1686,11 +1774,6 @@ impl SurfaceInfo {
             tasks: Vec::new(),
             inflation_factor,
         }
-    }
-
-    pub fn fits_surface_size_limits(&self) -> bool {
-        self.map_local_to_surface.bounds.size.width <= MAX_SURFACE_SIZE &&
-        self.map_local_to_surface.bounds.size.height <= MAX_SURFACE_SIZE
     }
 
     
@@ -2412,7 +2495,7 @@ impl PicturePrimitive {
     
     
     
-    pub fn pre_update(
+    fn pre_update(
         &mut self,
         state: &mut PictureUpdateState,
         frame_context: &FrameBuildingContext,
@@ -2439,9 +2522,10 @@ impl PicturePrimitive {
 
         if let Some(composite_mode) = actual_composite_mode {
             
-            let parent_raster_spatial_node_index = state.current_surface().raster_spatial_node_index;
+            let parent_raster_node_index = state.current_surface().raster_spatial_node_index;
             let surface_spatial_node_index = self.spatial_node_index;
 
+            
             let inflation_factor = match composite_mode {
                 PictureCompositeMode::Filter(FilterOp::Blur(blur_radius)) => {
                     
@@ -2459,45 +2543,28 @@ impl PicturePrimitive {
                 }
             };
 
-            let mut surface = {
-                
-                
-                let xf = frame_context.clip_scroll_tree.get_relative_transform(
-                    parent_raster_spatial_node_index,
-                    surface_spatial_node_index,
-                ).expect("BUG: unable to get relative transform");
+            
+            
+            let establishes_raster_root = frame_context.clip_scroll_tree
+                .get_relative_transform(parent_raster_node_index, surface_spatial_node_index)
+                .expect("BUG: unable to get relative transform")
+                .has_perspective_component();
 
-                let establishes_raster_root = xf.has_perspective_component();
-
-                SurfaceInfo::new(
-                    surface_spatial_node_index,
-                    if establishes_raster_root {
-                        surface_spatial_node_index
-                    } else {
-                        parent_raster_spatial_node_index
-                    },
-                    inflation_factor,
-                    frame_context.screen_world_rect,
-                    &frame_context.clip_scroll_tree,
-                )
-            };
-
-            if surface_spatial_node_index != parent_raster_spatial_node_index &&
-                !surface.fits_surface_size_limits()
-            {
-                
-                surface = SurfaceInfo::new(
-                    surface_spatial_node_index,
-                    parent_raster_spatial_node_index,
-                    inflation_factor,
-                    frame_context.screen_world_rect,
-                    &frame_context.clip_scroll_tree,
-                );
-            };
+            let surface = SurfaceInfo::new(
+                surface_spatial_node_index,
+                if establishes_raster_root {
+                    surface_spatial_node_index
+                } else {
+                    parent_raster_node_index
+                },
+                inflation_factor,
+                frame_context.screen_world_rect,
+                &frame_context.clip_scroll_tree,
+            );
 
             self.raster_config = Some(RasterConfig {
                 composite_mode,
-                establishes_raster_root: surface.raster_spatial_node_index != parent_raster_spatial_node_index,
+                establishes_raster_root,
                 surface_index: state.push_surface(surface),
             });
         }
@@ -2507,7 +2574,7 @@ impl PicturePrimitive {
 
     
     
-    pub fn post_update(
+    fn post_update(
         &mut self,
         child_pictures: PictureList,
         state: &mut PictureUpdateState,
@@ -2574,35 +2641,29 @@ impl PicturePrimitive {
         }
 
         
-        let inflation_size = match self.raster_config {
-            Some(RasterConfig { surface_index, composite_mode: PictureCompositeMode::Filter(FilterOp::Blur(_)), .. }) => {
-                Some(state.surfaces[surface_index.0].inflation_factor)
-            }
-            Some(RasterConfig { composite_mode: PictureCompositeMode::Filter(FilterOp::DropShadow(_, blur_radius, _)), .. }) => {
-                Some((blur_radius * BLUR_SAMPLE_SCALE).ceil())
-            }
-            _ => {
-                None
-            }
-        };
-        if let Some(inflation_size) = inflation_size {
-            let surface = state.current_surface_mut();
-            surface.rect = surface.rect.inflate(inflation_size, inflation_size);
-        }
-
-        
         self.prim_list.pictures = child_pictures;
 
         
         
         
-        if let Some(ref mut raster_config) = self.raster_config {
-            let surface_rect = state.current_surface().rect;
-
-            let mut surface_rect = TypedRect::from_untyped(&surface_rect.to_untyped());
+        if let Some(ref raster_config) = self.raster_config {
+            let mut surface_rect = {
+                let surface = state.current_surface_mut();
+                
+                
+                let inflation_size = match raster_config.composite_mode {
+                    PictureCompositeMode::Filter(FilterOp::Blur(_)) => surface.inflation_factor,
+                    PictureCompositeMode::Filter(FilterOp::DropShadow(_, blur_radius, _)) =>
+                        (blur_radius * BLUR_SAMPLE_SCALE).ceil(),
+                    _ => 0.0,
+                };
+                surface.rect = surface.rect.inflate(inflation_size, inflation_size);
+                surface.rect * TypedScale::new(1.0)
+            };
 
             
-            state.pop_surface();
+            let surface_index = state.pop_surface();
+            debug_assert_eq!(surface_index, raster_config.surface_index);
 
             
             
@@ -2617,6 +2678,13 @@ impl PicturePrimitive {
                     gpu_cache.invalidate(&self.extra_gpu_data_handle);
                 }
                 self.local_rect = surface_rect;
+            }
+
+            
+            if raster_config.establishes_raster_root && state.are_raster_roots_assigned {
+                state.are_raster_roots_assigned =
+                    surface_rect.size.width <= MAX_SURFACE_SIZE &&
+                    surface_rect.size.height <= MAX_SURFACE_SIZE;
             }
 
             
@@ -2635,7 +2703,8 @@ impl PicturePrimitive {
             );
             if let Some(parent_surface_rect) = parent_surface
                 .map_local_to_surface
-                .map(&surface_rect) {
+                .map(&surface_rect)
+            {
                 parent_surface.rect = parent_surface.rect.union(&parent_surface_rect);
             }
         }
