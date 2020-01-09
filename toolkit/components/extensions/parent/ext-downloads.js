@@ -266,8 +266,8 @@ const downloadQuery = query => {
   
   
 
-  const totalBytesGreater = query.totalBytesGreater;
-  const totalBytesLess = query.totalBytesLess != null ? query.totalBytesLess : Number.MAX_VALUE;
+  const totalBytesGreater = query.totalBytesGreater !== null ? query.totalBytesGreater : -1;
+  const totalBytesLess = query.totalBytesLess !== null ? query.totalBytesLess : Number.MAX_VALUE;
 
   
   
@@ -323,7 +323,7 @@ const downloadQuery = query => {
     
 
     if (item.totalBytes == -1) {
-      if (query.totalBytesGreater != null || query.totalBytesLess != null) {
+      if (query.totalBytesGreater !== null || query.totalBytesLess !== null) {
         return false;
       }
     } else if (item.totalBytes <= totalBytesGreater || item.totalBytes >= totalBytesLess) {
