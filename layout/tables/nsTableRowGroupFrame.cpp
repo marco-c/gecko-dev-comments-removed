@@ -205,10 +205,9 @@ static void DisplayRows(nsDisplayListBuilder* aBuilder, nsFrame* aFrame,
     
     while (kid) {
       if (kid->GetRect().y - overflowAbove >=
-              aBuilder->GetVisibleRect().YMost() &&
-          kid->GetNormalRect().y - overflowAbove >=
-              aBuilder->GetVisibleRect().YMost())
+          aBuilder->GetVisibleRect().YMost()) {
         break;
+      }
       f->BuildDisplayListForChild(aBuilder, kid, aLists);
       kid = kid->GetNextSibling();
     }
@@ -1914,13 +1913,12 @@ nsIFrame* nsTableRowGroupFrame::GetFirstRowContaining(nscoord aY,
   
   
   while (cursorIndex > 0 &&
-         cursorFrame->GetNormalRect().YMost() + property->mOverflowBelow > aY) {
+         cursorFrame->GetRect().YMost() + property->mOverflowBelow > aY) {
     --cursorIndex;
     cursorFrame = property->mFrames[cursorIndex];
   }
   while (cursorIndex + 1 < frameCount &&
-         cursorFrame->GetNormalRect().YMost() + property->mOverflowBelow <=
-             aY) {
+         cursorFrame->GetRect().YMost() + property->mOverflowBelow <= aY) {
     ++cursorIndex;
     cursorFrame = property->mFrames[cursorIndex];
   }
@@ -1931,7 +1929,6 @@ nsIFrame* nsTableRowGroupFrame::GetFirstRowContaining(nscoord aY,
 }
 
 bool nsTableRowGroupFrame::FrameCursorData::AppendFrame(nsIFrame* aFrame) {
-  
   
   
   
