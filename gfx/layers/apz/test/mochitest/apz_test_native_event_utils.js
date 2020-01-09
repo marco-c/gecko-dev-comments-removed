@@ -32,7 +32,7 @@ function nativeVerticalWheelEventMsg() {
     case "mac": return 0; 
     case "linux": return 4; 
   }
-  throw "Native wheel events not supported on platform " + getPlatform();
+  throw new Error("Native wheel events not supported on platform " + getPlatform());
 }
 
 function nativeHorizontalWheelEventMsg() {
@@ -41,7 +41,7 @@ function nativeHorizontalWheelEventMsg() {
     case "mac": return 0; 
     case "linux": return 4; 
   }
-  throw "Native wheel events not supported on platform " + getPlatform();
+  throw new Error("Native wheel events not supported on platform " + getPlatform());
 }
 
 
@@ -81,7 +81,7 @@ function nativeMouseDownEventMsg() {
     case "linux": return 4; 
     case "android": return 5; 
   }
-  throw "Native mouse-down events not supported on platform " + getPlatform();
+  throw new Error("Native mouse-down events not supported on platform " + getPlatform());
 }
 
 function nativeMouseMoveEventMsg() {
@@ -91,7 +91,7 @@ function nativeMouseMoveEventMsg() {
     case "linux": return 3; 
     case "android": return 7; 
   }
-  throw "Native mouse-move events not supported on platform " + getPlatform();
+  throw new Error("Native mouse-move events not supported on platform " + getPlatform());
 }
 
 function nativeMouseUpEventMsg() {
@@ -101,7 +101,7 @@ function nativeMouseUpEventMsg() {
     case "linux": return 7; 
     case "android": return 6; 
   }
-  throw "Native mouse-up events not supported on platform " + getPlatform();
+  throw new Error("Native mouse-up events not supported on platform " + getPlatform());
 }
 
 function getBoundingClientRectRelativeToVisualViewport(aElement) {
@@ -164,7 +164,7 @@ function rectRelativeToScreen(aElement) {
 function synthesizeNativeWheel(aTarget, aX, aY, aDeltaX, aDeltaY, aObserver) {
   var pt = coordinatesRelativeToScreen(aX, aY, aTarget);
   if (aDeltaX && aDeltaY) {
-    throw "Simultaneous wheeling of horizontal and vertical is not supported on all platforms.";
+    throw new Error("Simultaneous wheeling of horizontal and vertical is not supported on all platforms.");
   }
   aDeltaX = nativeScrollUnits(aTarget, aDeltaX);
   aDeltaY = nativeScrollUnits(aTarget, aDeltaY);
@@ -286,7 +286,7 @@ function* synthesizeNativeTouchSequences(aTarget, aPositions, aObserver = null, 
     }
   }
   if (lastNonNullValue < 0) {
-    throw "All values in positions array were null!";
+    throw new Error("All values in positions array were null!");
   }
 
   
