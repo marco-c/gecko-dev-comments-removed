@@ -6012,7 +6012,7 @@ void PresShell::Paint(nsView* aViewToPaint, const nsRegion& aDirtyRegion,
     return;
   }
 
-  if (gfxPrefs::APZKeyboardEnabled()) {
+  if (StaticPrefs::APZKeyboardEnabled()) {
     
     
     

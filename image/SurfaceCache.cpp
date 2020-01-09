@@ -19,12 +19,12 @@
 #include "mozilla/Pair.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/StaticMutex.h"
+#include "mozilla/StaticPrefs.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/Tuple.h"
 #include "nsIMemoryReporter.h"
 #include "gfx2DGlue.h"
 #include "gfxPlatform.h"
-#include "gfxPrefs.h"
 #include "imgFrame.h"
 #include "Image.h"
 #include "ISurfaceProvider.h"
@@ -1056,7 +1056,7 @@ class SurfaceCacheImpl final : public nsIMemoryReporter {
     
     DoUnlockSurfaces(
         WrapNotNull(cache),
-         !gfxPrefs::ImageMemAnimatedDiscardable(),
+         !StaticPrefs::ImageMemAnimatedDiscardable(),
         aAutoLock);
   }
 
@@ -1378,17 +1378,17 @@ void SurfaceCache::Initialize() {
   
   
   uint32_t surfaceCacheExpirationTimeMS =
-      gfxPrefs::ImageMemSurfaceCacheMinExpirationMS();
+      StaticPrefs::ImageMemSurfaceCacheMinExpirationMS();
 
   
   
   
   
   uint32_t surfaceCacheDiscardFactor =
-      max(gfxPrefs::ImageMemSurfaceCacheDiscardFactor(), 1u);
+      max(StaticPrefs::ImageMemSurfaceCacheDiscardFactor(), 1u);
 
   
-  uint64_t surfaceCacheMaxSizeKB = gfxPrefs::ImageMemSurfaceCacheMaxSizeKB();
+  uint64_t surfaceCacheMaxSizeKB = StaticPrefs::ImageMemSurfaceCacheMaxSizeKB();
 
   
   
@@ -1399,7 +1399,7 @@ void SurfaceCache::Initialize() {
   
   
   uint32_t surfaceCacheSizeFactor =
-      max(gfxPrefs::ImageMemSurfaceCacheSizeFactor(), 1u);
+      max(StaticPrefs::ImageMemSurfaceCacheSizeFactor(), 1u);
 
   
   uint64_t memorySize = PR_GetPhysicalMemorySize();

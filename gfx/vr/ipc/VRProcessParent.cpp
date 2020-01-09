@@ -11,6 +11,7 @@
 #include "mozilla/gfx/GPUChild.h"
 #include "mozilla/ipc/ProtocolTypes.h"
 #include "mozilla/ipc/ProtocolUtils.h"  
+#include "mozilla/StaticPrefs.h"
 #include "mozilla/TimeStamp.h"          
 #include "mozilla/Unused.h"
 #include "ProcessUtils.h"
@@ -81,7 +82,7 @@ bool VRProcessParent::WaitForLaunch() {
     return !!mVRChild;
   }
 
-  int32_t timeoutMs = gfxPrefs::VRProcessTimeoutMs();
+  int32_t timeoutMs = StaticPrefs::VRProcessTimeoutMs();
 
   
   

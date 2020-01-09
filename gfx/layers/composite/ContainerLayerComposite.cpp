@@ -10,9 +10,9 @@
 #include "Units.h"                           
 #include "CompositableHost.h"                
 #include "gfxEnv.h"                          
-#include "gfxPrefs.h"                        
 #include "mozilla/Assertions.h"              
 #include "mozilla/RefPtr.h"                  
+#include "mozilla/StaticPrefs.h"             
 #include "mozilla/UniquePtr.h"               
 #include "mozilla/gfx/BaseRect.h"            
 #include "mozilla/gfx/Matrix.h"              
@@ -473,7 +473,7 @@ void RenderLayers(ContainerT* aContainer, LayerManagerComposite* aManager,
       layerToRender->RenderLayer(clipRect, geometry);
     }
 
-    if (gfxPrefs::UniformityInfo()) {
+    if (StaticPrefs::UniformityInfo()) {
       PrintUniformityInfo(layer);
     }
 

@@ -2037,7 +2037,7 @@ ScrollFrameHelper::ScrollFrameHelper(nsContainerFrame* aOuter, bool aIsRoot)
 
   EnsureFrameVisPrefsCached();
 
-  if (IsAlwaysActive() && gfxPrefs::LayersTilesEnabled() &&
+  if (IsAlwaysActive() && StaticPrefs::LayersTilesEnabled() &&
       !nsLayoutUtils::UsesAsyncScrolling(mOuter) && mOuter->GetContent()) {
     
     

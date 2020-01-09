@@ -600,7 +600,7 @@ static uint32_t GetSkiaGlyphCacheSize() {
   
   
   
-  uint32_t cacheSize = gfxPrefs::SkiaContentFontCacheSize() * 1024 * 1024;
+  uint32_t cacheSize = StaticPrefs::SkiaContentFontCacheSize() * 1024 * 1024;
   if (mozilla::BrowserTabsRemoteAutostart()) {
     return XRE_IsContentProcess() ? cacheSize : kDefaultGlyphCacheSize;
   }
@@ -892,25 +892,25 @@ void gfxPlatform::Init() {
   {
     nsAutoCString forcedPrefs;
     
-    forcedPrefs.AppendPrintf("FP(D%d%d", gfxPrefs::Direct2DDisabled(),
-                             gfxPrefs::Direct2DForceEnabled());
+    forcedPrefs.AppendPrintf("FP(D%d%d", StaticPrefs::Direct2DDisabled(),
+                             StaticPrefs::Direct2DForceEnabled());
     
     forcedPrefs.AppendPrintf(
-        "-L%d%d%d%d", gfxPrefs::LayersAMDSwitchableGfxEnabled(),
-        gfxPrefs::LayersAccelerationDisabledDoNotUseDirectly(),
-        gfxPrefs::LayersAccelerationForceEnabledDoNotUseDirectly(),
-        gfxPrefs::LayersD3D11ForceWARP());
+        "-L%d%d%d%d", StaticPrefs::LayersAMDSwitchableGfxEnabled(),
+        StaticPrefs::LayersAccelerationDisabledDoNotUseDirectly(),
+        StaticPrefs::LayersAccelerationForceEnabledDoNotUseDirectly(),
+        StaticPrefs::LayersD3D11ForceWARP());
     
     forcedPrefs.AppendPrintf(
         "-W%d%d%d%d%d%d%d%d", StaticPrefs::WebGLANGLEForceD3D11(),
         StaticPrefs::WebGLANGLEForceWARP(), StaticPrefs::WebGLDisabled(),
         StaticPrefs::WebGLDisableANGLE(), StaticPrefs::WebGLDXGLEnabled(),
-        StaticPrefs::WebGLForceEnabled(), gfxPrefs::WebGLForceLayersReadback(),
-        StaticPrefs::WebGLForceMSAA());
+        StaticPrefs::WebGLForceEnabled(),
+        StaticPrefs::WebGLForceLayersReadback(), StaticPrefs::WebGLForceMSAA());
     
-    forcedPrefs.AppendPrintf("-T%d%d%d) ", gfxPrefs::AndroidRGB16Force(),
+    forcedPrefs.AppendPrintf("-T%d%d%d) ", StaticPrefs::AndroidRGB16Force(),
                              0,  
-                             gfxPrefs::ForceShmemTiles());
+                             StaticPrefs::ForceShmemTiles());
     ScopedGfxFeatureReporter::AppNote(forcedPrefs);
   }
 
@@ -951,6 +951,7 @@ void gfxPlatform::Init() {
   gPlatform->PopulateScreenInfo();
   gPlatform->InitAcceleration();
   gPlatform->InitWebRenderConfig();
+
   
   
   
@@ -1118,7 +1119,7 @@ int32_t gfxPlatform::MaxTextureSize() {
   
   
   const int32_t kMinSizePref = 2048;
-  return std::max(kMinSizePref, gfxPrefs::MaxTextureSizeDoNotUseDirectly());
+  return std::max(kMinSizePref, StaticPrefs::MaxTextureSizeDoNotUseDirectly());
 }
 
 
@@ -1126,14 +1127,14 @@ int32_t gfxPlatform::MaxAllocSize() {
   
   
   const int32_t kMinAllocPref = 10000000;
-  return std::max(kMinAllocPref, gfxPrefs::MaxAllocSizeDoNotUseDirectly());
+  return std::max(kMinAllocPref, StaticPrefs::MaxAllocSizeDoNotUseDirectly());
 }
 
 
 void gfxPlatform::InitMoz2DLogging() {
   auto fwd = new CrashStatsLogForwarder(
       CrashReporter::Annotation::GraphicsCriticalError);
-  fwd->SetCircularBufferSize(gfxPrefs::GfxLoggingCrashLength());
+  fwd->SetCircularBufferSize(StaticPrefs::GfxLoggingCrashLength());
 
   mozilla::gfx::Config cfg;
   cfg.mLogForwarder = fwd;
@@ -1538,10 +1539,10 @@ void gfxPlatform::ComputeTileSize() {
     return;
   }
 
-  int32_t w = gfxPrefs::LayersTileWidth();
-  int32_t h = gfxPrefs::LayersTileHeight();
+  int32_t w = StaticPrefs::LayersTileWidth();
+  int32_t h = StaticPrefs::LayersTileHeight();
 
-  if (gfxPrefs::LayersTilesAdjust()) {
+  if (StaticPrefs::LayersTilesAdjust()) {
     gfx::IntSize screenSize = GetScreenSize();
     if (screenSize.width > 0) {
       
@@ -2381,7 +2382,7 @@ void gfxPlatform::InitAcceleration() {
           gfxInfo->GetFeatureStatus(nsIGfxInfo::FEATURE_HARDWARE_VIDEO_DECODING,
                                     discardFailureId, &status))) {
     if (status == nsIGfxInfo::FEATURE_STATUS_OK ||
-        gfxPrefs::HardwareVideoDecodingForceEnabled()) {
+        StaticPrefs::HardwareVideoDecodingForceEnabled()) {
       sLayersSupportsHardwareVideoDecoding = true;
     }
   }
@@ -2399,7 +2400,8 @@ void gfxPlatform::InitAcceleration() {
 void gfxPlatform::InitGPUProcessPrefs() {
   
   
-  if (!gfxPrefs::GPUProcessEnabled() && !gfxPrefs::GPUProcessForceEnabled()) {
+  if (!StaticPrefs::GPUProcessEnabled() &&
+      !StaticPrefs::GPUProcessForceEnabled()) {
     return;
   }
 
@@ -2413,11 +2415,12 @@ void gfxPlatform::InitGPUProcessPrefs() {
                              "Multi-process mode is not enabled",
                              NS_LITERAL_CSTRING("FEATURE_FAILURE_NO_E10S"));
   } else {
-    gpuProc.SetDefaultFromPref(gfxPrefs::GetGPUProcessEnabledPrefName(), true,
-                               gfxPrefs::GetGPUProcessEnabledPrefDefault());
+    gpuProc.SetDefaultFromPref(StaticPrefs::GetGPUProcessEnabledPrefName(),
+                               true,
+                               StaticPrefs::GetGPUProcessEnabledPrefDefault());
   }
 
-  if (gfxPrefs::GPUProcessForceEnabled()) {
+  if (StaticPrefs::GPUProcessForceEnabled()) {
     gpuProc.UserForceEnable("User force-enabled via pref");
   }
 
@@ -2447,7 +2450,7 @@ void gfxPlatform::InitCompositorAccelerationPrefs() {
   
   if (feature.SetDefault(AccelerateLayersByDefault(), FeatureStatus::Blocked,
                          "Acceleration blocked by platform")) {
-    if (gfxPrefs::LayersAccelerationDisabledDoNotUseDirectly()) {
+    if (StaticPrefs::LayersAccelerationDisabledDoNotUseDirectly()) {
       feature.UserDisable("Disabled by pref",
                           NS_LITERAL_CSTRING("FEATURE_FAILURE_COMP_PREF"));
     } else if (acceleratedEnv && *acceleratedEnv == '0') {
@@ -2461,7 +2464,7 @@ void gfxPlatform::InitCompositorAccelerationPrefs() {
   }
 
   
-  if (gfxPrefs::LayersAccelerationForceEnabledDoNotUseDirectly()) {
+  if (StaticPrefs::LayersAccelerationForceEnabledDoNotUseDirectly()) {
     feature.UserForceEnable("Force-enabled by pref");
   }
 
@@ -2485,8 +2488,8 @@ void gfxPlatform::InitCompositorAccelerationPrefs() {
 
 
 bool gfxPlatform::WebRenderPrefEnabled() {
-  return gfxPrefs::WebRenderAll() ||
-         gfxPrefs::WebRenderEnabledDoNotUseDirectly();
+  return StaticPrefs::WebRenderAll() ||
+         StaticPrefs::WebRenderEnabledDoNotUseDirectly();
 }
 
 
@@ -2522,7 +2525,8 @@ static bool CalculateWrQualifiedPrefValue() {
     
     
     
-    return gfxPrefs::WebRenderAllQualifiedDefault();
+    
+    return StaticPrefs::WebRenderAllQualifiedDefault();
   }
 
   
@@ -2534,7 +2538,7 @@ static bool CalculateWrQualifiedPrefValue() {
   if (Preferences::HasUserValue(WR_ROLLOUT_PREF_OVERRIDE)) {
     return Preferences::GetBool(WR_ROLLOUT_PREF_OVERRIDE);
   }
-  return gfxPrefs::WebRenderAllQualified();
+  return StaticPrefs::WebRenderAllQualified();
 }
 
 static FeatureState& WebRenderHardwareQualificationStatus(
@@ -2805,7 +2809,7 @@ void gfxPlatform::InitWebRenderConfig() {
   
   
   
-  if (gfxPrefs::WebRenderForceDisabled() || WebRenderEnvvarDisabled()) {
+  if (StaticPrefs::WebRenderForceDisabled() || WebRenderEnvvarDisabled()) {
     featureWebRender.UserDisable(
         "User force-disabled WR",
         NS_LITERAL_CSTRING("FEATURE_FAILURE_USER_FORCE_DISABLED"));
@@ -2967,7 +2971,7 @@ bool gfxPlatform::AccelerateLayersByDefault() {
 bool gfxPlatform::BufferRotationEnabled() {
   MutexAutoLock autoLock(*gGfxPlatformPrefsLock);
 
-  return sBufferRotationCheckPref && gfxPrefs::BufferRotationEnabled();
+  return sBufferRotationCheckPref && StaticPrefs::BufferRotationEnabled();
 }
 
 void gfxPlatform::DisableBufferRotation() {
@@ -2988,10 +2992,10 @@ bool gfxPlatform::UsesOffMainThreadCompositing() {
   if (firstTime) {
     MOZ_ASSERT(sLayersAccelerationPrefsInitialized);
     result = gfxVars::BrowserTabsRemoteAutostart() ||
-             !gfxPrefs::LayersOffMainThreadCompositionForceDisabled();
+             !StaticPrefs::LayersOffMainThreadCompositionForceDisabled();
 #if defined(MOZ_WIDGET_GTK)
     
-    result |= gfxPrefs::LayersAccelerationForceEnabledDoNotUseDirectly();
+    result |= StaticPrefs::LayersAccelerationForceEnabledDoNotUseDirectly();
 
 #endif
     firstTime = false;
@@ -3007,11 +3011,12 @@ bool gfxPlatform::UsesTiling() const {
   
   
   bool usesPOMTP = XRE_IsContentProcess() && gfxVars::UseOMTP() &&
-                   (gfxPrefs::LayersOMTPPaintWorkers() == -1 ||
-                    gfxPrefs::LayersOMTPPaintWorkers() > 1);
+                   (StaticPrefs::LayersOMTPPaintWorkers() == -1 ||
+                    StaticPrefs::LayersOMTPPaintWorkers() > 1);
 
-  return gfxPrefs::LayersTilesEnabled() ||
-         (gfxPrefs::LayersTilesEnabledIfSkiaPOMTP() && usesSkia && usesPOMTP);
+  return StaticPrefs::LayersTilesEnabled() ||
+         (StaticPrefs::LayersTilesEnabledIfSkiaPOMTP() && usesSkia &&
+          usesPOMTP);
 }
 
 bool gfxPlatform::ContentUsesTiling() const {
@@ -3023,11 +3028,11 @@ bool gfxPlatform::ContentUsesTiling() const {
 
   bool contentUsesSkia = contentBackend == BackendType::SKIA;
   bool contentUsesPOMTP =
-      gfxVars::UseOMTP() && (gfxPrefs::LayersOMTPPaintWorkers() == -1 ||
-                             gfxPrefs::LayersOMTPPaintWorkers() > 1);
+      gfxVars::UseOMTP() && (StaticPrefs::LayersOMTPPaintWorkers() == -1 ||
+                             StaticPrefs::LayersOMTPPaintWorkers() > 1);
 
-  return gfxPrefs::LayersTilesEnabled() ||
-         (gfxPrefs::LayersTilesEnabledIfSkiaPOMTP() && contentUsesSkia &&
+  return StaticPrefs::LayersTilesEnabled() ||
+         (StaticPrefs::LayersTilesEnabledIfSkiaPOMTP() && contentUsesSkia &&
           contentUsesPOMTP);
 }
 
@@ -3151,7 +3156,7 @@ void gfxPlatform::GetApzSupportInfo(mozilla::widget::InfoObject& aObj) {
 }
 
 void gfxPlatform::GetTilesSupportInfo(mozilla::widget::InfoObject& aObj) {
-  if (!gfxPrefs::LayersTilesEnabled()) {
+  if (!StaticPrefs::LayersTilesEnabled()) {
     return;
   }
 
@@ -3199,7 +3204,7 @@ class FrameStatsComparator {
 };
 
 void gfxPlatform::NotifyFrameStats(nsTArray<FrameStats>&& aFrameStats) {
-  if (!gfxPrefs::LoggingSlowFramesEnabled()) {
+  if (!StaticPrefs::LoggingSlowFramesEnabled()) {
     return;
   }
 
@@ -3240,7 +3245,7 @@ bool gfxPlatform::AsyncPanZoomEnabled() {
     MOZ_ASSERT(NS_IsMainThread());
     gfxPrefs::GetSingleton();
   }
-  return gfxPrefs::AsyncPanZoomEnabledDoNotUseDirectly();
+  return StaticPrefs::AsyncPanZoomEnabledDoNotUseDirectly();
 #endif
 }
 
@@ -3361,7 +3366,7 @@ bool gfxPlatform::SupportsApzDragInput() const {
 }
 
 bool gfxPlatform::SupportsApzKeyboardInput() const {
-  return gfxPrefs::APZKeyboardEnabled();
+  return StaticPrefs::APZKeyboardEnabled();
 }
 
 bool gfxPlatform::SupportsApzAutoscrolling() const {
@@ -3390,15 +3395,15 @@ void gfxPlatform::InitOpenGLConfig() {
 
 #ifdef XP_WIN
   openGLFeature.SetDefaultFromPref(
-      gfxPrefs::GetLayersPreferOpenGLPrefName(), true,
-      gfxPrefs::GetLayersPreferOpenGLPrefDefault());
+      StaticPrefs::GetLayersPreferOpenGLPrefName(), true,
+      StaticPrefs::GetLayersPreferOpenGLPrefDefault());
 #else
   openGLFeature.EnableByDefault();
 #endif
 
   
   
-  if (gfxPrefs::LayersAccelerationForceEnabledDoNotUseDirectly()) {
+  if (StaticPrefs::LayersAccelerationForceEnabledDoNotUseDirectly()) {
     openGLFeature.UserForceEnable("Force-enabled by pref");
     return;
   }

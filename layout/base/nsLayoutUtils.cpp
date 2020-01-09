@@ -114,6 +114,7 @@
 #include "nsIContentViewer.h"
 #include "LayersLogging.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/StaticPrefs.h"
 #include "nsFrameSelection.h"
 #include "FrameLayerBuilder.h"
 #include "mozilla/layers/APZUtils.h"  
@@ -768,7 +769,7 @@ float nsLayoutUtils::GetCurrentAPZResolutionScale(PresShell* aPresShell) {
 
 static nscoord GetMaxDisplayPortSize(nsIContent* aContent,
                                      nsPresContext* aFallbackPrescontext) {
-  MOZ_ASSERT(!gfxPrefs::LayersTilesEnabled(),
+  MOZ_ASSERT(!StaticPrefs::LayersTilesEnabled(),
              "Do not clamp displayports if tiling is enabled");
 
   
@@ -905,7 +906,7 @@ static nsRect GetDisplayPortFromMarginsData(
 
   if (presShell->IsDisplayportSuppressed()) {
     alignment = ScreenSize(1, 1);
-  } else if (gfxPrefs::LayersTilesEnabled()) {
+  } else if (StaticPrefs::LayersTilesEnabled()) {
     
     
     
@@ -927,7 +928,7 @@ static nsRect GetDisplayPortFromMarginsData(
     alignment.height = 128;
   }
 
-  if (gfxPrefs::LayersTilesEnabled()) {
+  if (StaticPrefs::LayersTilesEnabled()) {
     
     screenRect.Inflate(aMarginsData->mMargins);
   } else {
@@ -1139,7 +1140,7 @@ static bool GetDisplayPortImpl(
     result = GetDisplayPortFromMarginsData(aContent, marginsData, aMultiplier);
   }
 
-  if (!gfxPrefs::LayersTilesEnabled()) {
+  if (!StaticPrefs::LayersTilesEnabled()) {
     
     
     nscoord maxSize = GetMaxDisplayPortSize(aContent, nullptr);

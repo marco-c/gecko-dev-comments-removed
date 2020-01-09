@@ -4,7 +4,7 @@
 
 
 
-#include "gfxPrefs.h"
+#include "mozilla/StaticPrefs.h"
 
 namespace mozilla {
 namespace gfx {
@@ -15,7 +15,7 @@ static BYTE GetSystemTextQuality() { return sSystemTextQuality; }
 
 static AntialiasMode GetSystemDefaultAAMode() {
   AntialiasMode defaultMode = AntialiasMode::SUBPIXEL;
-  if (gfxPrefs::DisableAllTextAA()) {
+  if (StaticPrefs::DisableAllTextAA()) {
     return AntialiasMode::NONE;
   }
 
