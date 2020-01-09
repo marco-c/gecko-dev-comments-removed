@@ -185,10 +185,32 @@ void nsSHistory::EvictContentViewerForEntry(nsISHEntry* aEntry) {
   }
 }
 
-nsSHistory::nsSHistory()
-    : mIndex(-1), mRequestedIndex(-1), mRootDocShell(nullptr) {
+nsSHistory::nsSHistory(nsDocShell* aRootDocShell)
+    : mIndex(-1), mRequestedIndex(-1), mRootDocShell(aRootDocShell) {
   
   gSHistoryList.insertBack(this);
+
+  
+  
+  nsCOMPtr<nsPIDOMWindowOuter> win = mRootDocShell->GetWindow();
+  if (win) {
+    
+    
+    if (mHistoryTracker) {
+      NS_WARNING(
+          "Change the root docshell of a shistory is unsafe and "
+          "potentially problematic.");
+      mHistoryTracker->AgeAllGenerations();
+    }
+
+    nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(win);
+
+    mHistoryTracker = mozilla::MakeUnique<HistoryTracker>(
+        this,
+        mozilla::Preferences::GetUint(CONTENT_VIEWER_TIMEOUT_SECONDS,
+                                      CONTENT_VIEWER_TIMEOUT_SECONDS_DEFAULT),
+        global->EventTargetFor(mozilla::TaskCategory::Other));
+  }
 }
 
 nsSHistory::~nsSHistory() {}
@@ -573,6 +595,11 @@ nsSHistory::AddEntry(nsISHEntry* aSHEntry, bool aPersist) {
   }
 
   return NS_OK;
+}
+
+NS_IMETHODIMP_(void)
+nsSHistory::ClearRootDocShell() {
+  mRootDocShell = nullptr;
 }
 
 
@@ -1454,35 +1481,4 @@ nsresult nsSHistory::InitiateLoad(nsISHEntry* aFrameEntry,
 
   
   return aFrameDS->LoadURI(loadState);
-}
-
-NS_IMETHODIMP_(void)
-nsSHistory::SetRootDocShell(nsIDocShell* aDocShell) {
-  mRootDocShell = aDocShell;
-
-  
-  
-  if (mRootDocShell) {
-    nsCOMPtr<nsPIDOMWindowOuter> win = mRootDocShell->GetWindow();
-    if (!win) {
-      return;
-    }
-
-    
-    
-    if (mHistoryTracker) {
-      NS_WARNING(
-          "Change the root docshell of a shistory is unsafe and "
-          "potentially problematic.");
-      mHistoryTracker->AgeAllGenerations();
-    }
-
-    nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(win);
-
-    mHistoryTracker = mozilla::MakeUnique<HistoryTracker>(
-        this,
-        mozilla::Preferences::GetUint(CONTENT_VIEWER_TIMEOUT_SECONDS,
-                                      CONTENT_VIEWER_TIMEOUT_SECONDS_DEFAULT),
-        global->EventTargetFor(mozilla::TaskCategory::Other));
-  }
 }
