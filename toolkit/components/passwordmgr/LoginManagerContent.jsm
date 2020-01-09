@@ -51,9 +51,27 @@ var gLastRightClickTimeStamp = Number.NEGATIVE_INFINITY;
 
 var observer = {
   QueryInterface: ChromeUtils.generateQI([Ci.nsIObserver,
+                                          Ci.nsIFormSubmitObserver,
                                           Ci.nsIWebProgressListener,
                                           Ci.nsISupportsWeakReference]),
 
+  
+  notify(formElement, aWindow, actionURI) {
+    log("observer notified for form submission.");
+
+    
+    
+
+    try {
+      let formLike = LoginFormFactory.createFromForm(formElement);
+      LoginManagerContent._onFormSubmit(formLike);
+    } catch (e) {
+      log("Caught error in onFormSubmit(", e.lineNumber, "):", e.message);
+      Cu.reportError(e);
+    }
+
+    return true; 
+  },
 
   
   onLocationChange(aWebProgress, aRequest, aLocation, aFlags) {
@@ -127,6 +145,7 @@ var observer = {
   },
 };
 
+Services.obs.addObserver(observer, "earlyformsubmit");
 
 
 var LoginManagerContent = {
@@ -339,18 +358,6 @@ var LoginManagerContent = {
     } catch (ex) {
       
     }
-  },
-
-  onDOMFormBeforeSubmit(event) {
-    if (!event.isTrusted) {
-      return;
-    }
-
-    
-    
-    log("notified before form submission");
-    let formLike = LoginFormFactory.createFromForm(event.target);
-    LoginManagerContent._onFormSubmit(formLike);
   },
 
   onDOMFormHasPassword(event) {

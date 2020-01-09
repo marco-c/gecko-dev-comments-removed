@@ -127,6 +127,11 @@ this.formautofill = class extends ExtensionAPI {
     Services.mm.addMessageListener("FormAutoComplete:MaybeOpenPopup", onMaybeOpenPopup);
 
     formAutofillParent.init().catch(Cu.reportError);
+    
+    Services.ppmm.loadProcessScript("data:,new " + function() {
+      ChromeUtils.import("resource://formautofill/FormAutofillContent.jsm");
+    }, true);
+    
     Services.mm.loadFrameScript("chrome://formautofill/content/FormAutofillFrameScript.js", true, true);
   }
 

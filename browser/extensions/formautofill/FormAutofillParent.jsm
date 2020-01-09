@@ -187,10 +187,10 @@ FormAutofillParent.prototype = {
 
   _onStatusChanged() {
     log.debug("_onStatusChanged: Status changed to", this._active);
-    Services.ppmm.sharedData.set("FormAutofill:enabled", this._active);
+    Services.ppmm.broadcastAsyncMessage("FormAutofill:enabledStatus", this._active);
     
     
-    Services.ppmm.sharedData.flush();
+    Services.ppmm.initialProcessData.autofillEnabled = this._active;
   },
 
   
@@ -200,7 +200,7 @@ FormAutofillParent.prototype = {
 
 
   _computeStatus() {
-    const savedFieldNames = Services.ppmm.sharedData.get("FormAutofill:savedFieldNames");
+    const savedFieldNames = Services.ppmm.initialProcessData.autofillSavedFieldNames;
 
     return (Services.prefs.getBoolPref(ENABLED_AUTOFILL_ADDRESSES_PREF) ||
            Services.prefs.getBoolPref(ENABLED_AUTOFILL_CREDITCARDS_PREF)) &&
@@ -375,20 +375,18 @@ FormAutofillParent.prototype = {
   _updateSavedFieldNames() {
     log.debug("_updateSavedFieldNames");
 
-    let savedFieldNames;
     
     if (FormAutofill.isAutofillCreditCardsAvailable) {
-      savedFieldNames = new Set([
-        ...this.formAutofillStorage.addresses.getSavedFieldNames(),
-        ...this.formAutofillStorage.creditCards.getSavedFieldNames(),
-      ]);
+      Services.ppmm.initialProcessData.autofillSavedFieldNames =
+        new Set([...this.formAutofillStorage.addresses.getSavedFieldNames(),
+          ...this.formAutofillStorage.creditCards.getSavedFieldNames()]);
     } else {
-      savedFieldNames = this.formAutofillStorage.addresses.getSavedFieldNames();
+      Services.ppmm.initialProcessData.autofillSavedFieldNames =
+        this.formAutofillStorage.addresses.getSavedFieldNames();
     }
 
-    Services.ppmm.sharedData.set("FormAutofill:savedFieldNames", savedFieldNames);
-    Services.ppmm.sharedData.flush();
-
+    Services.ppmm.broadcastAsyncMessage("FormAutofill:savedFieldNames",
+                                        Services.ppmm.initialProcessData.autofillSavedFieldNames);
     this._updateStatus();
   },
 

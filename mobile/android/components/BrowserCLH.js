@@ -226,12 +226,6 @@ BrowserCLH.prototype = {
 
     
     
-    aWindow.addEventListener("DOMFormBeforeSubmit", event => {
-      if (shouldIgnoreLoginManagerEvent(event)) {
-        return;
-      }
-      this.LoginManagerContent.onDOMFormBeforeSubmit(event);
-    });
     aWindow.addEventListener("DOMFormHasPassword", event => {
       if (shouldIgnoreLoginManagerEvent(event)) {
         return;
