@@ -102,6 +102,11 @@ impl Angle {
     }
 
     
+    pub fn zero() -> Self {
+        Self::from_degrees(0.0, false)
+    }
+
+    
     #[inline]
     pub fn degrees(&self) -> CSSFloat {
         self.value.degrees()
@@ -111,12 +116,6 @@ impl Angle {
     #[inline]
     pub fn was_calc(&self) -> bool {
         self.was_calc
-    }
-
-    
-    #[inline]
-    pub fn zero() -> Self {
-        Self::from_degrees(0.0, false)
     }
 
     

@@ -7,6 +7,7 @@
 use crate::values::animated::ToAnimatedValue;
 use crate::values::generics::NonNegative;
 use crate::values::{serialize_percentage, CSSFloat};
+use crate::Zero;
 use std::fmt;
 use style_traits::{CssWriter, ToCss};
 
@@ -33,12 +34,6 @@ pub struct Percentage(pub CSSFloat);
 impl Percentage {
     
     #[inline]
-    pub fn zero() -> Self {
-        Percentage(0.)
-    }
-
-    
-    #[inline]
     pub fn hundred() -> Self {
         Percentage(1.)
     }
@@ -56,6 +51,16 @@ impl Percentage {
     }
 }
 
+impl Zero for Percentage {
+    fn zero() -> Self {
+        Percentage(0.)
+    }
+
+    fn is_zero(&self) -> bool {
+        self.0 == 0.
+    }
+}
+
 impl ToCss for Percentage {
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
     where
@@ -69,12 +74,6 @@ impl ToCss for Percentage {
 pub type NonNegativePercentage = NonNegative<Percentage>;
 
 impl NonNegativePercentage {
-    
-    #[inline]
-    pub fn zero() -> Self {
-        NonNegative(Percentage::zero())
-    }
-
     
     #[inline]
     pub fn hundred() -> Self {
