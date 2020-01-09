@@ -39,16 +39,15 @@ class WebGL2Context : public WebGLContext {
   
 
   void CopyBufferSubData(GLenum readTarget, GLenum writeTarget,
-                         WebGLintptr readOffset, WebGLintptr writeOffset,
-                         WebGLsizeiptr size);
+                         GLintptr readOffset, GLintptr writeOffset,
+                         GLsizeiptr size);
 
  private:
   template <typename BufferT>
-  void GetBufferSubDataT(GLenum target, WebGLintptr offset,
-                         const BufferT& data);
+  void GetBufferSubDataT(GLenum target, GLintptr offset, const BufferT& data);
 
  public:
-  void GetBufferSubData(GLenum target, WebGLintptr srcByteOffset,
+  void GetBufferSubData(GLenum target, GLintptr srcByteOffset,
                         const dom::ArrayBufferView& dstData,
                         GLuint dstElemOffset, GLuint dstElemCountOverride);
 
