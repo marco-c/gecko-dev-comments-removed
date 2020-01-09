@@ -2,11 +2,14 @@
 
 
 
+
+
 import React from "react";
 import { shallow } from "enzyme";
 import SearchBar from "../SearchBar";
 import "../../../workers/search";
 import "../../../utils/editor";
+
 
 const SearchBarComponent = SearchBar.WrappedComponent;
 

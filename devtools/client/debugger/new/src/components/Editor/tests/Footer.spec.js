@@ -3,6 +3,8 @@
 
 
 
+
+
 import React from "react";
 import { shallow } from "enzyme";
 
@@ -38,6 +40,7 @@ function render(overrides = {}, position = { line: 0, column: 0 }) {
   const doc = createMockDocument(clear, position);
   setDocument(props.selectedSource.id, doc);
 
+  
   const component = shallow(<SourceFooter.WrappedComponent {...props} />, {
     lifecycleExperimental: true
   });

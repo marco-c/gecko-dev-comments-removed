@@ -2,10 +2,13 @@
 
 
 
+
+
 import React from "react";
 import { shallow } from "enzyme";
 import Breakpoints from "../Breakpoints";
 import * as I from "immutable";
+
 
 const BreakpointsComponent = Breakpoints.WrappedComponent;
 

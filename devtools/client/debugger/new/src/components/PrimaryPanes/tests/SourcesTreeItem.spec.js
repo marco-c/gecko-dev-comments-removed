@@ -2,6 +2,8 @@
 
 
 
+
+
 import React from "react";
 import { shallow } from "enzyme";
 import { showMenu } from "devtools-contextmenu";
@@ -17,7 +19,7 @@ jest.mock("../../../utils/clipboard", () => ({
 
 describe("SourceTreeItem", () => {
   afterEach(() => {
-    copyToTheClipboard.mockClear();
+    (copyToTheClipboard: any).mockClear();
     showMenu.mockClear();
   });
 
@@ -252,7 +254,7 @@ describe("SourceTreeItem", () => {
     });
 
     it("should not show domain item when the projectRoot exists", async () => {
-      const { node } = render({
+      const node = render({
         projectRoot: "root/"
       });
       expect(node).toMatchSnapshot();
@@ -321,6 +323,7 @@ function generateDefaults(overrides) {
 
 function render(overrides = {}) {
   const props = generateDefaults(overrides);
+  
   const component = shallow(<SourcesTreeItem.WrappedComponent {...props} />);
   const defaultState = component.state();
   const instance = component.instance();
@@ -338,10 +341,13 @@ function createMockDirectory(path = "folder/", name = "folder", contents = []) {
 }
 
 function createMockItem(overrides = {}) {
-  overrides.contents = createSource({
-    id: "server1.conn13.child1/39",
-    ...(overrides.contents || {})
-  });
+  overrides = {
+    ...overrides,
+    contents: createSource({
+      id: "server1.conn13.child1/39",
+      ...(overrides.contents || {})
+    })
+  };
 
   return {
     type: "source",

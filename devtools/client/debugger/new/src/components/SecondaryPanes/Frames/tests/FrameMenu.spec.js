@@ -2,6 +2,8 @@
 
 
 
+
+
 import FrameMenu from "../FrameMenu";
 import { kebabCase } from "lodash";
 
@@ -18,7 +20,7 @@ function generateMockId(labelString) {
 }
 
 describe("FrameMenu", () => {
-  let mockEvent;
+  let mockEvent: any;
   let mockFrame;
   let emptyFrame;
   let callbacks;

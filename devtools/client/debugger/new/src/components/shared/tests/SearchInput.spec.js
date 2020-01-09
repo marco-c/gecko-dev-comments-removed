@@ -2,6 +2,8 @@
 
 
 
+
+
 import React from "react";
 import { shallow } from "enzyme";
 
@@ -17,6 +19,9 @@ describe("SearchInput", () => {
       placeholder="A placeholder"
       summaryMsg="So many results"
       showErrorEmoji={false}
+      isLoading={false}
+      onChange={() => {}}
+      onKeyDown={() => {}}
     />
   );
 

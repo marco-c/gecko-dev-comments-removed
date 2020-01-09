@@ -2,6 +2,8 @@
 
 
 
+
+
 import React from "react";
 import { shallow } from "enzyme";
 import CommandBar from "../CommandBar";
@@ -22,6 +24,7 @@ describe("CommandBar", () => {
     
     const context = { shortcuts: { on: jest.fn() } };
 
+    
     shallow(<CommandBar.WrappedComponent {...props} />, { context });
 
     
@@ -53,6 +56,7 @@ describe("CommandBar", () => {
     
     const context = { shortcuts: { on: jest.fn() } };
 
+    
     shallow(<CommandBar.WrappedComponent {...props} />, { context });
 
     

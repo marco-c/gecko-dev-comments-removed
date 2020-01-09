@@ -2,6 +2,8 @@
 
 
 
+
+
 import React from "react";
 import { shallow } from "enzyme";
 import { showMenu } from "devtools-contextmenu";
@@ -16,7 +18,7 @@ jest.mock("../../../utils/clipboard", () => ({
 
 describe("PrimaryPanes", () => {
   afterEach(() => {
-    copyToTheClipboard.mockClear();
+    (copyToTheClipboard: any).mockClear();
     showMenu.mockClear();
   });
 
@@ -62,6 +64,7 @@ function generateDefaults(overrides) {
 
 function render(overrides = {}) {
   const props = generateDefaults(overrides);
+  
   const component = shallow(<PrimaryPanes.WrappedComponent {...props} />);
   const defaultState = component.state();
   const instance = component.instance();

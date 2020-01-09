@@ -2,6 +2,8 @@
 
 
 
+
+
 import React from "react";
 import { shallow } from "enzyme";
 import Editor from "../index";
@@ -65,6 +67,7 @@ function render(overrides = {}) {
   const props = generateDefaults(overrides);
   const mockEditor = createMockEditor();
 
+  
   const component = shallow(<Editor.WrappedComponent {...props} />, {
     context: {
       shortcuts: { on: jest.fn() }

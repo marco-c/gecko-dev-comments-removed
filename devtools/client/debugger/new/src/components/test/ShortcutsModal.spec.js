@@ -2,6 +2,8 @@
 
 
 
+
+
 import React from "react";
 import { shallow } from "enzyme";
 import { ShortcutsModal } from "../ShortcutsModal";
@@ -10,6 +12,7 @@ function render(overrides = {}) {
   const props = {
     enabled: true,
     handleClose: jest.fn(),
+    additionalClass: "",
     ...overrides
   };
   const component = shallow(<ShortcutsModal {...props} />);

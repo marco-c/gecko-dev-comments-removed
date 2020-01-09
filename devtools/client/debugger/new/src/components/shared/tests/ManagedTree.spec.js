@@ -2,6 +2,8 @@
 
 
 
+
+
 import React from "react";
 import { mount, shallow } from "enzyme";
 
@@ -40,7 +42,7 @@ function getTestContent() {
       return item.value;
     }
     if (i) {
-      return i;
+      return `${i}`;
     }
     return `${item}-$`;
   };

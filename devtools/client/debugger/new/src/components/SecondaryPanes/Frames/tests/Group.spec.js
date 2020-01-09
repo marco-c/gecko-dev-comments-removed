@@ -2,6 +2,8 @@
 
 
 
+
+
 import React from "react";
 import { shallow } from "enzyme";
 import Group from "../Group.js";
@@ -17,7 +19,10 @@ function render(overrides = {}) {
     toggleFrameworkGrouping: jest.fn(),
     selectFrame: jest.fn(),
     copyStackTrace: jest.fn(),
-    toggleBlackBox: jest.fn()
+    toggleBlackBox: jest.fn(),
+    disableContextMenu: false,
+    displayFullUrl: false,
+    selectable: true
   };
 
   const props = { ...defaultProps, ...overrides };
