@@ -115,10 +115,6 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
   },
 
   form: function(detail) {
-    if (detail === "actorid") {
-      return this.actorID;
-    }
-
     
     
     const CSS = this.inspector.targetActor.window.CSS;
@@ -131,6 +127,8 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
         
         
         getAppliedCreatesStyleCache: true,
+        
+        authoredStyles: true,
         
         fontStretchLevel4: CSS.supports("font-stretch: 100%"),
         
@@ -936,7 +934,11 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
 
 
 
-  async addNewRule(node, pseudoClasses) {
+
+
+
+
+  async addNewRule(node, pseudoClasses, editAuthored = false) {
     const style = this.getStyleElement(node.rawNode.ownerDocument);
     const sheet = style.sheet;
     const cssRules = sheet.cssRules;
@@ -960,10 +962,12 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
 
     
     
-    const sheetActor = this._sheetRef(sheet);
-    let {str: authoredText} = await sheetActor.getText();
-    authoredText += "\n" + selector + " {\n" + "}";
-    await sheetActor.update(authoredText, false);
+    if (editAuthored) {
+      const sheetActor = this._sheetRef(sheet);
+      let {str: authoredText} = await sheetActor.getText();
+      authoredText += "\n" + selector + " {\n" + "}";
+      await sheetActor.update(authoredText, false);
+    }
 
     return this.getNewAppliedProps(node, sheet.cssRules.item(index));
   },

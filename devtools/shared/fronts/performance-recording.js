@@ -18,11 +18,7 @@ loader.lazyRequireGetter(this, "RecordingUtils",
 
 
 class PerformanceRecordingFront extends FrontClassWithSpec(performanceRecordingSpec) {
-  form(form, detail) {
-    if (detail === "actorid") {
-      this.actorID = form;
-      return;
-    }
+  form(form) {
     this.actorID = form.actor;
     this._form = form;
     this._configuration = form.configuration;

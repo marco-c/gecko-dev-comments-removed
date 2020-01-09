@@ -33,11 +33,7 @@ const AUDIO_GLOBALS = [
 
 
 var AudioNodeActor = exports.AudioNodeActor = protocol.ActorClassWithSpec(audionodeSpec, {
-  form: function(detail) {
-    if (detail === "actorid") {
-      return this.actorID;
-    }
-
+  form: function() {
     return {
       
       actor: this.actorID,

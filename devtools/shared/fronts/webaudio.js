@@ -27,12 +27,7 @@ loader.lazyRequireGetter(this, "AUDIO_NODE_DEFINITION",
 
 
 class AudioNodeFront extends FrontClassWithSpec(audionodeSpec) {
-  form(form, detail) {
-    if (detail === "actorid") {
-      this.actorID = form;
-      return;
-    }
-
+  form(form) {
     this.actorID = form.actor;
     this.type = form.type;
     this.source = form.source;
