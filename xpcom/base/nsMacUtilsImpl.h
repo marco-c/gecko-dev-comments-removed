@@ -10,6 +10,11 @@
 #include "nsIMacUtils.h"
 #include "nsString.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/StaticMutex.h"
+#include "mozilla/StaticPtr.h"
+
+using mozilla::StaticAutoPtr;
+using mozilla::StaticMutex;
 
 class nsMacUtilsImpl final : public nsIMacUtils {
  public:
@@ -34,6 +39,13 @@ class nsMacUtilsImpl final : public nsIMacUtils {
   
   
   nsString mBinaryArchs;
+
+#if defined(MOZ_SANDBOX)
+  
+  static StaticAutoPtr<nsCString> sCachedAppPath;
+  
+  static StaticMutex sCachedAppPathMutex;
+#endif
 };
 
 
