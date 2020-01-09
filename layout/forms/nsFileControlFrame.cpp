@@ -212,8 +212,6 @@ static already_AddRefed<Element> MakeAnonButton(Document* aDoc,
   
   
   button->SetIsNativeAnonymousRoot();
-  button->SetAttr(kNameSpaceID_None, nsGkAtoms::type,
-                  NS_LITERAL_STRING("button"), false);
 
   
   nsAutoString buttonTxt;
@@ -277,7 +275,7 @@ nsresult nsFileControlFrame::CreateAnonymousContent(
 
   
   nsAutoString value;
-  HTMLInputElement::FromNode(mContent)->GetDisplayFileName(value);
+  fileContent->GetDisplayFileName(value);
   UpdateDisplayedValue(value, false);
 
   aElements.AppendElement(mTextContent);
