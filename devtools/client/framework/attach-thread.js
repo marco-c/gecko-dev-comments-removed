@@ -15,11 +15,6 @@ function handleThreadState(toolbox, event, packet) {
     return;
   }
 
-  
-  
-  
-  toolbox.target.emit("thread-" + event);
-
   if (event === "paused") {
     toolbox.highlightTool("jsdebugger");
 
