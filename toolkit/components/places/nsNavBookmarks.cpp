@@ -34,6 +34,19 @@ const int32_t nsNavBookmarks::kGetChildrenIndex_SyncStatus = 22;
 
 using namespace mozilla::places;
 
+extern "C" {
+
+
+
+
+
+
+int64_t NS_NavBookmarksTotalSyncChanges() {
+  return nsNavBookmarks::sTotalSyncChanges;
+}
+
+}  
+
 PLACES_FACTORY_SINGLETON_IMPLEMENTATION(nsNavBookmarks, gBookmarksService)
 
 #define BOOKMARKS_ANNO_PREFIX "bookmarks/"
