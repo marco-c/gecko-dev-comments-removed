@@ -119,32 +119,6 @@ const kBuiltInInputs = {
     type: "mainButton",
     callback: () => execCommand("Browser:OpenLocation", "OpenLocation"),
   },
-  Focus: {
-    title: "close-window",
-    image: "private-browsing.pdf",
-    type: "mainButton",
-    callback: () => execCommand("cmd_closeWindow", "Focus"),
-    color: "#8000D7",
-    context: () => {
-      let name;
-      if (PrivateBrowsingUtils.isWindowPrivate(BrowserWindowTracker.getTopWindow())) {
-        name = "Focus";
-      }
-      return name;
-    },
-  },
-  OpenOrFocus: {
-    
-    context: () => {
-      let name;
-      if (PrivateBrowsingUtils.isWindowPrivate(BrowserWindowTracker.getTopWindow())) {
-        name = "Focus";
-      } else {
-        name = "OpenLocation";
-      }
-      return name;
-    },
-  },
   
   
   
@@ -170,7 +144,7 @@ class TouchBarHelper {
     }
 
     XPCOMUtils.defineLazyPreferenceGetter(this, "_touchBarLayout",
-      "ui.touchbar.layout", "Back,Reload,OpenOrFocus,AddBookmark,NewTab,Share");
+      "ui.touchbar.layout", "Back,Forward,Reload,OpenLocation,NewTab,Share");
   }
 
   destructor() {
@@ -286,15 +260,14 @@ class TouchBarHelper {
     switch (topic) {
       case "touchbar-location-change":
         this.activeUrl = data;
-        if (data.startsWith("about:reader")) {
-          kBuiltInInputs.ReaderView.disabled = false;
-          this._updateTouchBarInput("ReaderView");
-        } else {
-          
-          
-          kBuiltInInputs.ReaderView.disabled = true;
-          this._updateTouchBarInput("ReaderView");
-        }
+        
+        
+        kBuiltInInputs.ReaderView.disabled = !data.startsWith("about:reader");
+        this._updateTouchBarInput("ReaderView");
+        kBuiltInInputs.Back.disabled = !this.window.gBrowser.canGoBack;
+        this._updateTouchBarInput("Back");
+        kBuiltInInputs.Forward.disabled = !this.window.gBrowser.canGoForward;
+        this._updateTouchBarInput("Forward");
         break;
       case "bookmark-icon-updated":
         data == "starred" ?
