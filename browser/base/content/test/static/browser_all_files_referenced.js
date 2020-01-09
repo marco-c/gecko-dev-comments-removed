@@ -132,8 +132,6 @@ var whitelist = [
 
   
   
-  {file: "chrome://browser/locale/pageInfo.properties"},
-  
   {file: "chrome://browser/locale/taskbar.properties",
    platforms: ["linux", "macosx"]},
   
