@@ -10,6 +10,7 @@
 #include "nsSMILTypes.h"
 #include "nsDebug.h"
 
+namespace mozilla {
 
 
 
@@ -49,19 +50,20 @@
 
 
 
-class nsSMILTimeValue {
+
+class SMILTimeValue {
  public:
   
-  nsSMILTimeValue()
+  SMILTimeValue()
       : mMilliseconds(kUnresolvedMillis), mState(STATE_UNRESOLVED) {}
 
   
-  explicit nsSMILTimeValue(nsSMILTime aMillis)
+  explicit SMILTimeValue(nsSMILTime aMillis)
       : mMilliseconds(aMillis), mState(STATE_DEFINITE) {}
 
   
-  static nsSMILTimeValue Indefinite() {
-    nsSMILTimeValue value;
+  static SMILTimeValue Indefinite() {
+    SMILTimeValue value;
     value.SetIndefinite();
     return value;
   }
@@ -91,29 +93,29 @@ class nsSMILTimeValue {
     mMilliseconds = aMillis;
   }
 
-  int8_t CompareTo(const nsSMILTimeValue& aOther) const;
+  int8_t CompareTo(const SMILTimeValue& aOther) const;
 
-  bool operator==(const nsSMILTimeValue& aOther) const {
+  bool operator==(const SMILTimeValue& aOther) const {
     return CompareTo(aOther) == 0;
   }
 
-  bool operator!=(const nsSMILTimeValue& aOther) const {
+  bool operator!=(const SMILTimeValue& aOther) const {
     return CompareTo(aOther) != 0;
   }
 
-  bool operator<(const nsSMILTimeValue& aOther) const {
+  bool operator<(const SMILTimeValue& aOther) const {
     return CompareTo(aOther) < 0;
   }
 
-  bool operator>(const nsSMILTimeValue& aOther) const {
+  bool operator>(const SMILTimeValue& aOther) const {
     return CompareTo(aOther) > 0;
   }
 
-  bool operator<=(const nsSMILTimeValue& aOther) const {
+  bool operator<=(const SMILTimeValue& aOther) const {
     return CompareTo(aOther) <= 0;
   }
 
-  bool operator>=(const nsSMILTimeValue& aOther) const {
+  bool operator>=(const SMILTimeValue& aOther) const {
     return CompareTo(aOther) >= 0;
   }
 
@@ -123,5 +125,7 @@ class nsSMILTimeValue {
   nsSMILTime mMilliseconds;
   enum { STATE_DEFINITE, STATE_INDEFINITE, STATE_UNRESOLVED } mState;
 };
+
+}  
 
 #endif  

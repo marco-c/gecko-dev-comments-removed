@@ -8,14 +8,12 @@
 #define NS_SMILINSTANCETIME_H_
 
 #include "nsISupportsImpl.h"
-#include "nsSMILTimeValue.h"
-
-class nsSMILTimeValueSpec;
+#include "mozilla/SMILTimeValue.h"
 
 namespace mozilla {
 class SMILInterval;
 class SMILTimeContainer;
-}
+class SMILTimeValueSpec;
 
 
 
@@ -37,15 +35,12 @@ class SMILTimeContainer;
 
 
 
-class nsSMILInstanceTime final {
-  typedef mozilla::SMILInterval SMILInterval;
-  typedef mozilla::SMILTimeContainer SMILTimeContainer;
-
+class SMILInstanceTime final {
  public:
   
   
   
-  enum nsSMILInstanceTimeSource {
+  enum SMILInstanceTimeSource {
     
     SOURCE_NONE,
     
@@ -56,10 +51,10 @@ class nsSMILInstanceTime final {
     SOURCE_EVENT
   };
 
-  explicit nsSMILInstanceTime(const nsSMILTimeValue& aTime,
-                              nsSMILInstanceTimeSource aSource = SOURCE_NONE,
-                              nsSMILTimeValueSpec* aCreator = nullptr,
-                              SMILInterval* aBaseInterval = nullptr);
+  explicit SMILInstanceTime(const SMILTimeValue& aTime,
+                            SMILInstanceTimeSource aSource = SOURCE_NONE,
+                            SMILTimeValueSpec* aCreator = nullptr,
+                            SMILInterval* aBaseInterval = nullptr);
 
   void Unlink();
   void HandleChangedInterval(const SMILTimeContainer* aSrcContainer,
@@ -67,8 +62,8 @@ class nsSMILInstanceTime final {
   void HandleDeletedInterval();
   void HandleFilteredInterval();
 
-  const nsSMILTimeValue& Time() const { return mTime; }
-  const nsSMILTimeValueSpec* GetCreator() const { return mCreator; }
+  const SMILTimeValue& Time() const { return mTime; }
+  const SMILTimeValueSpec* GetCreator() const { return mCreator; }
 
   bool IsDynamic() const { return !!(mFlags & kDynamic); }
   bool IsFixedTime() const { return !(mFlags & kMayUpdate); }
@@ -80,18 +75,18 @@ class nsSMILInstanceTime final {
   void AddRefFixedEndpoint();
   void ReleaseFixedEndpoint();
 
-  void DependentUpdate(const nsSMILTimeValue& aNewTime) {
+  void DependentUpdate(const SMILTimeValue& aNewTime) {
     MOZ_ASSERT(!IsFixedTime(),
                "Updating an instance time that is not expected to be updated");
     mTime = aNewTime;
   }
 
   bool IsDependent() const { return !!mBaseInterval; }
-  bool IsDependentOn(const nsSMILInstanceTime& aOther) const;
+  bool IsDependentOn(const SMILInstanceTime& aOther) const;
   const SMILInterval* GetBaseInterval() const { return mBaseInterval; }
-  const nsSMILInstanceTime* GetBaseTime() const;
+  const SMILInstanceTime* GetBaseTime() const;
 
-  bool SameTimeAndBase(const nsSMILInstanceTime& aOther) const {
+  bool SameTimeAndBase(const SMILInstanceTime& aOther) const {
     return mTime == aOther.mTime && GetBaseTime() == aOther.GetBaseTime();
   }
 
@@ -100,15 +95,15 @@ class nsSMILInstanceTime final {
   uint32_t Serial() const { return mSerial; }
   void SetSerial(uint32_t aIndex) { mSerial = aIndex; }
 
-  NS_INLINE_DECL_REFCOUNTING(nsSMILInstanceTime)
+  NS_INLINE_DECL_REFCOUNTING(SMILInstanceTime)
 
  private:
   
-  ~nsSMILInstanceTime();
+  ~SMILInstanceTime();
 
   void SetBaseInterval(SMILInterval* aBaseInterval);
 
-  nsSMILTimeValue mTime;
+  SMILTimeValue mTime;
 
   
   enum {
@@ -159,11 +154,13 @@ class nsSMILInstanceTime final {
                      
                      
 
-  nsSMILTimeValueSpec* mCreator;  
-                                  
-                                  
-  SMILInterval* mBaseInterval;    
-                                  
+  SMILTimeValueSpec* mCreator;  
+                                
+                                
+  SMILInterval* mBaseInterval;  
+                                
 };
+
+}  
 
 #endif  

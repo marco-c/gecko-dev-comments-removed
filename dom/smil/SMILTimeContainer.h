@@ -13,9 +13,9 @@
 #include "nsSMILTypes.h"
 #include "nsTPriorityQueue.h"
 
-class nsSMILTimeValue;
-
 namespace mozilla {
+
+class SMILTimeValue;
 
 
 
@@ -107,7 +107,7 @@ class SMILTimeContainer {
 
 
 
-  nsSMILTimeValue ContainerToParentTime(nsSMILTime aContainerTime) const;
+  SMILTimeValue ContainerToParentTime(nsSMILTime aContainerTime) const;
 
   
 
@@ -116,7 +116,7 @@ class SMILTimeContainer {
 
 
 
-  nsSMILTimeValue ParentToContainerTime(nsSMILTime aParentTime) const;
+  SMILTimeValue ParentToContainerTime(nsSMILTime aParentTime) const;
 
   
 

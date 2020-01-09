@@ -7,7 +7,7 @@
 #ifndef NS_SMILINTERVAL_H_
 #define NS_SMILINTERVAL_H_
 
-#include "nsSMILInstanceTime.h"
+#include "mozilla/SMILInstanceTime.h"
 #include "nsTArray.h"
 
 namespace mozilla {
@@ -28,23 +28,23 @@ class SMILInterval {
   ~SMILInterval();
   void Unlink(bool aFiltered = false);
 
-  const nsSMILInstanceTime* Begin() const {
+  const SMILInstanceTime* Begin() const {
     MOZ_ASSERT(mBegin && mEnd,
                "Requesting Begin() on un-initialized instance time");
     return mBegin;
   }
-  nsSMILInstanceTime* Begin();
+  SMILInstanceTime* Begin();
 
-  const nsSMILInstanceTime* End() const {
+  const SMILInstanceTime* End() const {
     MOZ_ASSERT(mBegin && mEnd,
                "Requesting End() on un-initialized instance time");
     return mEnd;
   }
-  nsSMILInstanceTime* End();
+  SMILInstanceTime* End();
 
-  void SetBegin(nsSMILInstanceTime& aBegin);
-  void SetEnd(nsSMILInstanceTime& aEnd);
-  void Set(nsSMILInstanceTime& aBegin, nsSMILInstanceTime& aEnd) {
+  void SetBegin(SMILInstanceTime& aBegin);
+  void SetEnd(SMILInstanceTime& aEnd);
+  void Set(SMILInstanceTime& aBegin, SMILInstanceTime& aEnd) {
     SetBegin(aBegin);
     SetEnd(aEnd);
   }
@@ -52,18 +52,18 @@ class SMILInterval {
   void FixBegin();
   void FixEnd();
 
-  typedef nsTArray<RefPtr<nsSMILInstanceTime> > InstanceTimeList;
+  typedef nsTArray<RefPtr<SMILInstanceTime> > InstanceTimeList;
 
-  void AddDependentTime(nsSMILInstanceTime& aTime);
-  void RemoveDependentTime(const nsSMILInstanceTime& aTime);
+  void AddDependentTime(SMILInstanceTime& aTime);
+  void RemoveDependentTime(const SMILInstanceTime& aTime);
   void GetDependentTimes(InstanceTimeList& aTimes);
 
   
   bool IsDependencyChainLink() const;
 
  private:
-  RefPtr<nsSMILInstanceTime> mBegin;
-  RefPtr<nsSMILInstanceTime> mEnd;
+  RefPtr<SMILInstanceTime> mBegin;
+  RefPtr<SMILInstanceTime> mEnd;
 
   
   InstanceTimeList mDependentTimes;

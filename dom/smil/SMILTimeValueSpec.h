@@ -8,24 +8,24 @@
 #define NS_SMILTIMEVALUESPEC_H_
 
 #include "mozilla/Attributes.h"
+#include "mozilla/SMILTimeValueSpecParams.h"
 #include "mozilla/dom/IDTracker.h"
-#include "nsSMILTimeValueSpecParams.h"
 #include "nsStringFwd.h"
 #include "nsIDOMEventListener.h"
 
-class nsSMILTimeValue;
-class nsSMILInstanceTime;
-
 namespace mozilla {
+
+class EventListenerManager;
+class SMILInstanceTime;
 class SMILInterval;
 class SMILTimeContainer;
 class SMILTimedElement;
+class SMILTimeValue;
+
 namespace dom {
 class Event;
 }  
 
-class EventListenerManager;
-}  
 
 
 
@@ -37,18 +37,14 @@ class EventListenerManager;
 
 
 
-
-class nsSMILTimeValueSpec {
+class SMILTimeValueSpec {
  public:
-  typedef mozilla::SMILInterval SMILInterval;
-  typedef mozilla::SMILTimeContainer SMILTimeContainer;
-  typedef mozilla::SMILTimedElement SMILTimedElement;
   typedef mozilla::dom::Element Element;
   typedef mozilla::dom::Event Event;
   typedef mozilla::dom::IDTracker IDTracker;
 
-  nsSMILTimeValueSpec(SMILTimedElement& aOwner, bool aIsBegin);
-  ~nsSMILTimeValueSpec();
+  SMILTimeValueSpec(SMILTimedElement& aOwner, bool aIsBegin);
+  ~SMILTimeValueSpec();
 
   nsresult SetSpec(const nsAString& aStringSpec, Element& aContextElement);
   void ResolveReferences(Element& aContextElement);
@@ -60,11 +56,11 @@ class nsSMILTimeValueSpec {
 
   
   bool DependsOnBegin() const;
-  void HandleChangedInstanceTime(const nsSMILInstanceTime& aBaseTime,
+  void HandleChangedInstanceTime(const SMILInstanceTime& aBaseTime,
                                  const SMILTimeContainer* aSrcContainer,
-                                 nsSMILInstanceTime& aInstanceTimeToUpdate,
+                                 SMILInstanceTime& aInstanceTimeToUpdate,
                                  bool aObjectChanged);
-  void HandleDeletedInstanceTime(nsSMILInstanceTime& aInstanceTime);
+  void HandleDeletedInstanceTime(SMILInstanceTime& aInstanceTime);
 
   
   void Traverse(nsCycleCollectionTraversalCallback* aCallback);
@@ -79,9 +75,9 @@ class nsSMILTimeValueSpec {
   void UnregisterEventListener(Element* aElement);
   void HandleEvent(Event* aEvent);
   bool CheckRepeatEventDetail(Event* aEvent);
-  nsSMILTimeValue ConvertBetweenTimeContainers(
-      const nsSMILTimeValue& aSrcTime, const SMILTimeContainer* aSrcContainer);
-  bool ApplyOffset(nsSMILTimeValue& aTime) const;
+  SMILTimeValue ConvertBetweenTimeContainers(
+      const SMILTimeValue& aSrcTime, const SMILTimeContainer* aSrcContainer);
+  bool ApplyOffset(SMILTimeValue& aTime) const;
 
   SMILTimedElement* mOwner;
   bool mIsBegin;  
@@ -89,7 +85,7 @@ class nsSMILTimeValueSpec {
                   
                   
                   
-  nsSMILTimeValueSpecParams mParams;
+  SMILTimeValueSpecParams mParams;
 
   
 
@@ -103,8 +99,7 @@ class nsSMILTimeValueSpec {
 
   class TimeReferenceTracker final : public IDTracker {
    public:
-    explicit TimeReferenceTracker(nsSMILTimeValueSpec* aOwner)
-        : mSpec(aOwner) {}
+    explicit TimeReferenceTracker(SMILTimeValueSpec* aOwner) : mSpec(aOwner) {}
     void ResetWithElement(Element* aTo) {
       RefPtr<Element> from = get();
       Unlink();
@@ -119,7 +114,7 @@ class nsSMILTimeValueSpec {
     virtual bool IsPersistent() override { return true; }
 
    private:
-    nsSMILTimeValueSpec* mSpec;
+    SMILTimeValueSpec* mSpec;
   };
 
   TimeReferenceTracker mReferencedElement;
@@ -128,16 +123,18 @@ class nsSMILTimeValueSpec {
     ~EventListener() {}
 
    public:
-    explicit EventListener(nsSMILTimeValueSpec* aOwner) : mSpec(aOwner) {}
+    explicit EventListener(SMILTimeValueSpec* aOwner) : mSpec(aOwner) {}
     void Disconnect() { mSpec = nullptr; }
 
     NS_DECL_ISUPPORTS
     NS_DECL_NSIDOMEVENTLISTENER
 
    private:
-    nsSMILTimeValueSpec* mSpec;
+    SMILTimeValueSpec* mSpec;
   };
   RefPtr<EventListener> mEventListener;
 };
+
+}  
 
 #endif  

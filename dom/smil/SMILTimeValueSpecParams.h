@@ -7,18 +7,20 @@
 #ifndef NS_SMILTIMEVALUESPECPARAMS_H_
 #define NS_SMILTIMEVALUESPECPARAMS_H_
 
-#include "nsSMILTimeValue.h"
+#include "mozilla/SMILTimeValue.h"
 #include "nsAtom.h"
 
+namespace mozilla {
 
 
 
 
 
 
-class nsSMILTimeValueSpecParams {
+
+class SMILTimeValueSpecParams {
  public:
-  nsSMILTimeValueSpecParams()
+  SMILTimeValueSpecParams()
       : mType(INDEFINITE), mSyncBegin(false), mRepeatIteration(0) {}
 
   
@@ -30,7 +32,7 @@ class nsSMILTimeValueSpecParams {
   
   
   
-  nsSMILTimeValue mOffset;
+  SMILTimeValue mOffset;
 
   
   
@@ -50,5 +52,7 @@ class nsSMILTimeValueSpecParams {
   
   uint32_t mRepeatIteration;
 };
+
+}  
 
 #endif  

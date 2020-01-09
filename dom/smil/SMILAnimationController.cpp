@@ -521,7 +521,7 @@ void SMILAnimationController::DoMilestoneSamples() {
         
         continue;
 
-      nsSMILTimeValue containerTimeValue =
+      SMILTimeValue containerTimeValue =
           container->ParentToContainerTime(sampleTime);
       if (!containerTimeValue.IsDefinite()) continue;
 

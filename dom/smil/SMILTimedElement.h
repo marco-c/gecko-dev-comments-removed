@@ -10,11 +10,11 @@
 #include "mozilla/EventForwards.h"
 #include "mozilla/Move.h"
 #include "mozilla/SMILMilestone.h"
+#include "mozilla/SMILInstanceTime.h"
 #include "mozilla/SMILInterval.h"
 #include "mozilla/SMILRepeatCount.h"
+#include "mozilla/SMILTimeValueSpec.h"
 #include "mozilla/UniquePtr.h"
-#include "nsSMILInstanceTime.h"
-#include "nsSMILTimeValueSpec.h"
 #include "nsSMILTypes.h"
 #include "nsTArray.h"
 #include "nsTHashtable.h"
@@ -22,12 +22,14 @@
 #include "nsAutoPtr.h"
 #include "nsAttrValue.h"
 
-class nsSMILTimeValue;
 class nsAtom;
 
 namespace mozilla {
+
 class SMILAnimationFunction;
 class SMILTimeContainer;
+class SMILTimeValue;
+
 namespace dom {
 class SVGAnimationElement;
 }  
@@ -97,18 +99,14 @@ class SMILTimedElement {
 
 
 
-  nsSMILTimeValue GetStartTime() const;
+  SMILTimeValue GetStartTime() const;
 
   
 
 
 
 
-  nsSMILTimeValue GetSimpleDuration() const { return mSimpleDur; }
-
-  
-
-
+  SMILTimeValue GetSimpleDuration() const { return mSimpleDur; }
 
   
 
@@ -117,29 +115,6 @@ class SMILTimedElement {
   
 
 
-
-
-
-
-
-
-
-
-
-
-  nsSMILTimeValue GetHyperlinkTime() const;
-
-  
-
-
-
-
-
-
-
-
-
-  void AddInstanceTime(nsSMILInstanceTime* aInstanceTime, bool aIsBegin);
 
   
 
@@ -154,19 +129,7 @@ class SMILTimedElement {
 
 
 
-  void UpdateInstanceTime(nsSMILInstanceTime* aInstanceTime,
-                          nsSMILTimeValue& aUpdatedTime, bool aIsBegin);
-
-  
-
-
-
-
-
-
-
-
-  void RemoveInstanceTime(nsSMILInstanceTime* aInstanceTime, bool aIsBegin);
+  SMILTimeValue GetHyperlinkTime() const;
 
   
 
@@ -178,7 +141,46 @@ class SMILTimedElement {
 
 
 
-  void RemoveInstanceTimesForCreator(const nsSMILTimeValueSpec* aSpec,
+  void AddInstanceTime(SMILInstanceTime* aInstanceTime, bool aIsBegin);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  void UpdateInstanceTime(SMILInstanceTime* aInstanceTime,
+                          SMILTimeValue& aUpdatedTime, bool aIsBegin);
+
+  
+
+
+
+
+
+
+
+
+  void RemoveInstanceTime(SMILInstanceTime* aInstanceTime, bool aIsBegin);
+
+  
+
+
+
+
+
+
+
+
+
+  void RemoveInstanceTimesForCreator(const SMILTimeValueSpec* aSpec,
                                      bool aIsBegin);
 
   
@@ -292,7 +294,7 @@ class SMILTimedElement {
 
 
 
-  void AddDependent(nsSMILTimeValueSpec& aDependent);
+  void AddDependent(SMILTimeValueSpec& aDependent);
 
   
 
@@ -300,7 +302,7 @@ class SMILTimedElement {
 
 
 
-  void RemoveDependent(nsSMILTimeValueSpec& aDependent);
+  void RemoveDependent(SMILTimeValueSpec& aDependent);
 
   
 
@@ -342,23 +344,23 @@ class SMILTimedElement {
   void Traverse(nsCycleCollectionTraversalCallback* aCallback);
   void Unlink();
 
-  typedef bool (*RemovalTestFunction)(nsSMILInstanceTime* aInstance);
+  typedef bool (*RemovalTestFunction)(SMILInstanceTime* aInstance);
 
  protected:
   
-  typedef nsTArray<UniquePtr<nsSMILTimeValueSpec>> TimeValueSpecList;
-  typedef nsTArray<RefPtr<nsSMILInstanceTime>> InstanceTimeList;
+  typedef nsTArray<UniquePtr<SMILTimeValueSpec>> TimeValueSpecList;
+  typedef nsTArray<RefPtr<SMILInstanceTime>> InstanceTimeList;
   typedef nsTArray<UniquePtr<SMILInterval>> IntervalList;
-  typedef nsPtrHashKey<nsSMILTimeValueSpec> TimeValueSpecPtrKey;
+  typedef nsPtrHashKey<SMILTimeValueSpec> TimeValueSpecPtrKey;
   typedef nsTHashtable<TimeValueSpecPtrKey> TimeValueSpecHashSet;
 
   
   class InstanceTimeComparator {
    public:
-    bool Equals(const nsSMILInstanceTime* aElem1,
-                const nsSMILInstanceTime* aElem2) const;
-    bool LessThan(const nsSMILInstanceTime* aElem1,
-                  const nsSMILInstanceTime* aElem2) const;
+    bool Equals(const SMILInstanceTime* aElem1,
+                const SMILInstanceTime* aElem2) const;
+    bool LessThan(const SMILInstanceTime* aElem1,
+                  const SMILInstanceTime* aElem2) const;
   };
 
   
@@ -412,7 +414,7 @@ class SMILTimedElement {
 
 
 
-  bool ApplyEarlyEnd(const nsSMILTimeValue& aSampleTime);
+  bool ApplyEarlyEnd(const SMILTimeValue& aSampleTime);
 
   
 
@@ -494,22 +496,21 @@ class SMILTimedElement {
 
   bool GetNextInterval(const SMILInterval* aPrevInterval,
                        const SMILInterval* aReplacedInterval,
-                       const nsSMILInstanceTime* aFixedBeginTime,
+                       const SMILInstanceTime* aFixedBeginTime,
                        SMILInterval& aResult) const;
-  nsSMILInstanceTime* GetNextGreater(const InstanceTimeList& aList,
-                                     const nsSMILTimeValue& aBase,
-                                     int32_t& aPosition) const;
-  nsSMILInstanceTime* GetNextGreaterOrEqual(const InstanceTimeList& aList,
-                                            const nsSMILTimeValue& aBase,
-                                            int32_t& aPosition) const;
-  nsSMILTimeValue CalcActiveEnd(const nsSMILTimeValue& aBegin,
-                                const nsSMILTimeValue& aEnd) const;
-  nsSMILTimeValue GetRepeatDuration() const;
-  nsSMILTimeValue ApplyMinAndMax(const nsSMILTimeValue& aDuration) const;
+  SMILInstanceTime* GetNextGreater(const InstanceTimeList& aList,
+                                   const SMILTimeValue& aBase,
+                                   int32_t& aPosition) const;
+  SMILInstanceTime* GetNextGreaterOrEqual(const InstanceTimeList& aList,
+                                          const SMILTimeValue& aBase,
+                                          int32_t& aPosition) const;
+  SMILTimeValue CalcActiveEnd(const SMILTimeValue& aBegin,
+                              const SMILTimeValue& aEnd) const;
+  SMILTimeValue GetRepeatDuration() const;
+  SMILTimeValue ApplyMinAndMax(const SMILTimeValue& aDuration) const;
   nsSMILTime ActiveTimeToSimpleTime(nsSMILTime aActiveTime,
                                     uint32_t& aRepeatIteration);
-  nsSMILInstanceTime* CheckForEarlyEnd(
-      const nsSMILTimeValue& aContainerTime) const;
+  SMILInstanceTime* CheckForEarlyEnd(const SMILTimeValue& aContainerTime) const;
   void UpdateCurrentInterval(bool aForceChangeNotice = false);
   void SampleSimpleTime(nsSMILTime aActiveTime);
   void SampleFillValue();
@@ -529,12 +530,12 @@ class SMILTimedElement {
                              bool aEndObjectChanged);
 
   void FireTimeEventAsync(EventMessage aMsg, int32_t aDetail);
-  const nsSMILInstanceTime* GetEffectiveBeginInstance() const;
+  const SMILInstanceTime* GetEffectiveBeginInstance() const;
   const SMILInterval* GetPreviousInterval() const;
   bool HasPlayed() const { return !mOldIntervals.IsEmpty(); }
   bool HasClientInFillRange() const;
   bool EndHasEventConditions() const;
-  bool AreEndTimesDependentOn(const nsSMILInstanceTime* aBase) const;
+  bool AreEndTimesDependentOn(const SMILInstanceTime* aBase) const;
 
   
   
@@ -555,13 +556,13 @@ class SMILTimedElement {
   TimeValueSpecList mBeginSpecs;                         
   TimeValueSpecList mEndSpecs;                           
 
-  nsSMILTimeValue mSimpleDur;
+  SMILTimeValue mSimpleDur;
 
   SMILRepeatCount mRepeatCount;
-  nsSMILTimeValue mRepeatDur;
+  SMILTimeValue mRepeatDur;
 
-  nsSMILTimeValue mMin;
-  nsSMILTimeValue mMax;
+  SMILTimeValue mMin;
+  SMILTimeValue mMax;
 
   enum nsSMILFillMode : uint8_t { FILL_REMOVE, FILL_FREEZE };
   nsSMILFillMode mFillMode;

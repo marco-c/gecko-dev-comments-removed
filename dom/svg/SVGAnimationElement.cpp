@@ -98,7 +98,7 @@ SVGElement* SVGAnimationElement::GetTargetElement() {
 float SVGAnimationElement::GetStartTime(ErrorResult& rv) {
   FlushAnimations();
 
-  nsSMILTimeValue startTime = mTimedElement.GetStartTime();
+  SMILTimeValue startTime = mTimedElement.GetStartTime();
   if (!startTime.IsDefinite()) {
     rv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return 0.f;
@@ -121,7 +121,7 @@ float SVGAnimationElement::GetCurrentTimeAsFloat() {
 float SVGAnimationElement::GetSimpleDuration(ErrorResult& rv) {
   
 
-  nsSMILTimeValue simpleDur = mTimedElement.GetSimpleDuration();
+  SMILTimeValue simpleDur = mTimedElement.GetSimpleDuration();
   if (!simpleDur.IsDefinite()) {
     rv.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
     return 0.f;
@@ -297,7 +297,7 @@ void SVGAnimationElement::ActivateByHyperlink() {
   
   
   
-  nsSMILTimeValue seekTime = mTimedElement.GetHyperlinkTime();
+  SMILTimeValue seekTime = mTimedElement.GetHyperlinkTime();
   if (seekTime.IsDefinite()) {
     SMILTimeContainer* timeContainer = GetTimeContainer();
     if (timeContainer) {

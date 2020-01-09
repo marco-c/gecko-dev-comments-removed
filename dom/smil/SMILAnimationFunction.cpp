@@ -131,7 +131,7 @@ bool SMILAnimationFunction::UnsetAttr(nsAtom* aAttribute) {
 }
 
 void SMILAnimationFunction::SampleAt(nsSMILTime aSampleTime,
-                                     const nsSMILTimeValue& aSimpleDuration,
+                                     const SMILTimeValue& aSimpleDuration,
                                      uint32_t aRepeatIteration) {
   
   

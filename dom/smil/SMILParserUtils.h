@@ -11,13 +11,13 @@
 #include "nsStringFwd.h"
 
 class nsISMILAttr;
-class nsSMILTimeValue;
 class nsSMILValue;
-class nsSMILTimeValueSpecParams;
 
 namespace mozilla {
 class SMILKeySpline;
 class SMILRepeatCount;
+class SMILTimeValue;
+class SMILTimeValueSpecParams;
 namespace dom {
 class SVGAnimationElement;
 }  
@@ -60,7 +60,7 @@ class SMILParserUtils {
                                SMILRepeatCount& aResult);
 
   static bool ParseTimeValueSpecParams(const nsAString& aSpec,
-                                       nsSMILTimeValueSpecParams& aResult);
+                                       SMILTimeValueSpecParams& aResult);
 
   
 
@@ -71,7 +71,7 @@ class SMILParserUtils {
 
 
 
-  static bool ParseClockValue(const nsAString& aSpec, nsSMILTimeValue* aResult);
+  static bool ParseClockValue(const nsAString& aSpec, SMILTimeValue* aResult);
 
   
 
