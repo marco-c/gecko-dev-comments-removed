@@ -55,6 +55,8 @@ SCOPE_WHITELIST = [
     
     re.compile(r'^docker-worker:relengapi-proxy:tooltool.download.public$'),
     
+    re.compile(r'^docker-worker:relengapi-proxy:tooltool.download.internal$'),
+    
     
     
     re.compile(r'^secrets:get:project/releng/gecko/build/level-[0-9]/\*'),
