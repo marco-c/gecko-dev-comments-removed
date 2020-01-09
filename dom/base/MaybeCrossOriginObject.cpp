@@ -451,6 +451,36 @@ bool MaybeCrossOriginObject<Base>::enumerate(JSContext* cx,
   return js::GetPropertyKeys(cx, self, 0, &props);
 }
 
+template <typename Base>
+bool MaybeCrossOriginObject<Base>::hasInstance(JSContext* cx,
+                                               JS::Handle<JSObject*> proxy,
+                                               JS::MutableHandle<JS::Value> v,
+                                               bool* bp) const {
+  if (!IsPlatformObjectSameOrigin(cx, proxy)) {
+    
+    
+    
+    
+    
+    
+    
+    JS::Rooted<JS::Value> val(cx, JS::ObjectValue(*proxy));
+    if (!MaybeWrapValue(cx, &val)) {
+      return false;
+    }
+    return js::ReportIsNotFunction(cx, val);
+  }
+
+  
+  
+  JSAutoRealm ar(cx, proxy);
+  JS::Rooted<JS::Value> val(cx, v);
+  if (!MaybeWrapValue(cx, &val)) {
+    return false;
+  }
+  return JS::InstanceofOperator(cx, proxy, val, bp);
+}
+
 
 template class MaybeCrossOriginObject<js::Wrapper>;
 template class MaybeCrossOriginObject<DOMProxyHandler>;

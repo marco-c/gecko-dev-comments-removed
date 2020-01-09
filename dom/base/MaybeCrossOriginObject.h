@@ -323,6 +323,14 @@ class MaybeCrossOriginObject : public Base,
 
 
 
+  bool hasInstance(JSContext* cx, JS::Handle<JSObject*> proxy,
+                   JS::MutableHandle<JS::Value> v, bool* bp) const final;
+
+  
+
+
+
+
   const char* className(JSContext* cx,
                         JS::Handle<JSObject*> proxy) const override = 0;
 };
