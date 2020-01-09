@@ -183,21 +183,6 @@ class ObjectGroup : public gc::TenuredCell {
  public:
   const Class* clasp() const { return clasp_; }
 
-  void setClasp(const Class* clasp) {
-    MOZ_ASSERT(JS::StringIsASCII(clasp->name));
-    MOZ_ASSERT(hasUncacheableClass());
-    clasp_ = clasp;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  bool hasUncacheableClass() const { return clasp_->isNative(); }
-
   bool hasDynamicPrototype() const { return proto_.isDynamic(); }
 
   const GCPtr<TaggedProto>& proto() const { return proto_; }

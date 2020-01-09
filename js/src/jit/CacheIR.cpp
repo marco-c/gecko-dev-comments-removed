@@ -4399,7 +4399,7 @@ bool SetPropIRGenerator::tryAttachAddSlotStub(HandleObjectGroup oldGroup,
   
   
   
-  MOZ_ASSERT(!oldGroup->hasUncacheableClass() || obj->is<ShapedObject>());
+  MOZ_ASSERT(obj->is<ShapedObject>());
   writer.guardGroup(objId, oldGroup);
 
   
