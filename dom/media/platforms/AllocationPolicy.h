@@ -7,13 +7,13 @@
 #ifndef AllocationPolicy_h_
 #define AllocationPolicy_h_
 
+#include <queue>
 #include "MediaInfo.h"
 #include "PlatformDecoderModule.h"
 #include "TimeUnits.h"
 #include "mozilla/MozPromise.h"
-#include "mozilla/StaticMutex.h"
 #include "mozilla/ReentrantMonitor.h"
-#include <queue>
+#include "mozilla/StaticMutex.h"
 
 namespace mozilla {
 
@@ -62,6 +62,68 @@ class GlobalAllocPolicy {
   int mDecoderLimit;
   
   std::queue<RefPtr<PromisePrivate>> mPromises;
+};
+
+
+
+
+
+class LocalAllocPolicy {
+  using TrackType = TrackInfo::TrackType;
+  using Promise = GlobalAllocPolicy::Promise;
+  using Token = GlobalAllocPolicy::Token;
+
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(LocalAllocPolicy)
+
+ public:
+  LocalAllocPolicy(TrackType aTrack, TaskQueue* aOwnerThread)
+      : mTrack(aTrack), mOwnerThread(aOwnerThread) {}
+
+  
+  
+  
+  
+  RefPtr<Promise> Alloc();
+
+  
+  
+  void Cancel();
+
+ private:
+  
+
+
+  class AutoDeallocToken : public Token {
+   public:
+    explicit AutoDeallocToken(LocalAllocPolicy* aOwner) : mOwner(aOwner) {
+      MOZ_DIAGNOSTIC_ASSERT(mOwner->mDecoderLimit > 0);
+      --mOwner->mDecoderLimit;
+    }
+    
+    
+    
+    void Append(Token* aToken) { mToken = aToken; }
+
+   private:
+    
+    
+    ~AutoDeallocToken() {
+      mToken = nullptr;          
+      ++mOwner->mDecoderLimit;   
+      mOwner->ProcessRequest();  
+    }
+    RefPtr<LocalAllocPolicy> mOwner;
+    RefPtr<Token> mToken;
+  };
+
+  ~LocalAllocPolicy() = default;
+  void ProcessRequest();
+
+  int mDecoderLimit = 1;
+  const TrackType mTrack;
+  RefPtr<TaskQueue> mOwnerThread;
+  MozPromiseHolder<Promise> mPendingPromise;
+  MozPromiseRequestHolder<Promise> mTokenRequest;
 };
 
 class AllocationWrapper : public MediaDataDecoder {
