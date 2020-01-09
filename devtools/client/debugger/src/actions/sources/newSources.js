@@ -117,7 +117,7 @@ function loadSourceMap(cx: Context, sourceId: SourceId) {
         
         
         
-        urlInfo.url = urlInfo.introductionUrl;
+        (urlInfo: any).url = urlInfo.introductionUrl;
       }
       urls = await sourceMaps.getOriginalURLs(urlInfo);
     } catch (e) {

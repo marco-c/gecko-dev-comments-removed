@@ -383,7 +383,7 @@ export type SourceWithContentAndType<+Content: SourceContent> = {|
 
 
 
-type BaseSource = {|
+export type Source = {|
   +id: SourceId,
   +url: string,
   +sourceMapURL?: string,
@@ -392,34 +392,9 @@ type BaseSource = {|
   +relativeUrl: string,
   +introductionUrl: ?string,
   +introductionType: ?string,
-  +isExtension: boolean
+  +isExtension: boolean,
+  +isWasm: boolean
 |};
-
-
-
-
-
-
-
-
-export type JsSource = {|
-  ...BaseSource,
-  +isWasm: false
-|};
-
-
-
-
-
-
-
-
-export type WasmSource = {|
-  ...BaseSource,
-  +isWasm: true
-|};
-
-export type Source = JsSource | WasmSource;
 
 
 
