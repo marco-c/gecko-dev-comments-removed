@@ -12,8 +12,6 @@
 %downloadsDTD;
 <!ENTITY % placesDTD SYSTEM "chrome:
 %placesDTD;
-<!ENTITY % safebrowsingDTD SYSTEM "chrome:
-%safebrowsingDTD;
 <!ENTITY % syncBrandDTD SYSTEM "chrome:
 %syncBrandDTD;
 <!ENTITY % reportphishDTD SYSTEM "chrome:
