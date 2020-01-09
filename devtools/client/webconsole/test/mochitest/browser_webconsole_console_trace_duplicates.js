@@ -5,44 +5,52 @@
 
 "use strict";
 
-const TEST_URI = "http://example.com/browser/devtools/client/webconsole/" +
-                  "test/mochitest/" +
-                  "test-console-trace-duplicates.html";
+const TEST_URI = "http://example.com/browser/devtools/client/webconsole/test/mochitest/" +
+                 "test-console-trace-duplicates.html";
 
 add_task(async function testTraceMessages() {
   const hud = await openNewTabAndConsole(TEST_URI);
 
-  
-  
-  
-  
   const message = await waitFor(() => findMessage(hud, "foo1"));
-  const stackInfo = getStackInfo(message);
+  
+  await waitFor(() => !!message.querySelector(".frames"));
 
-  checkStackInfo(stackInfo, {
-    variable: "console.trace()",
-    repeats: 3,
-    filename: "test-console-trace-duplicates.html",
-    line: 24,
-    column: 3,
-    stack: [{
-      functionName: "foo3",
-      filename: TEST_URI,
-      line: 24,
-    }, {
-      functionName: "foo2",
-      filename: TEST_URI,
-      line: 20,
-    }, {
-      functionName: "foo1",
-      filename: TEST_URI,
-      line: 12,
-    }, {
-      functionName: "<anonymous>",
-      filename: TEST_URI,
-      line: 27,
-    }],
-  });
+  is(message.querySelector(".message-body").textContent, "console.trace()",
+    "console.trace message body has expected text");
+  is(message.querySelector(".message-repeats").textContent, "3",
+    "console.trace has the expected content for the repeat badge");
+
+  is(
+    message.querySelector(".frame-link-filename").textContent,
+    "test-console-trace-duplicates.html",
+    "message frame has expected text content"
+  );
+  const [, line, column] =
+    message.querySelector(".frame-link-line").textContent.split(":");
+  is(line, 20, "message frame has expected line");
+  is(column, 3, "message frame has expected column");
+
+  const stack = message.querySelector(".stacktrace");
+  ok(!!stack, "There's a stacktrace element");
+
+  const frames = Array.from(stack.querySelectorAll(".frame"));
+  checkStacktraceFrames(frames, [{
+    functionName: "foo3",
+    filename: TEST_URI,
+    line: 20,
+  }, {
+    functionName: "foo2",
+    filename: TEST_URI,
+    line: 16,
+  }, {
+    functionName: "foo1",
+    filename: TEST_URI,
+    line: 12,
+  }, {
+    functionName: "<anonymous>",
+    filename: TEST_URI,
+    line: 23,
+  }]);
 });
 
 
@@ -53,111 +61,18 @@ add_task(async function testTraceMessages() {
 
 
 
+function checkStacktraceFrames(frames, expectedFrames) {
+  is(frames.length, expectedFrames.length,
+    `There are ${frames.length} frames in the stacktrace`);
 
+  frames.forEach((frameEl, i) => {
+    const expected = expectedFrames[i];
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-function getStackInfo(message) {
-  const frameNode = message.querySelector(".frame-link-line");
-  const lc = getLineAndColumn(frameNode);
-  const result = {
-    variable: message.querySelector(".cm-variable").textContent,
-    repeats: message.querySelector(".message-repeats").textContent,
-    filename: message.querySelector(".frame-link-filename").textContent,
-    line: lc.line,
-    column: lc.column,
-    stack: [],
-  };
-
-  const stack = message.querySelector(".stacktrace");
-  if (stack) {
-    const frames = Array.from(stack.querySelectorAll(".frame"));
-
-    result.stack = frames.map(frameEl => {
-      const title = frameEl.querySelector(".title");
-      const filename = frameEl.querySelector(".location .filename");
-      const line = frameEl.querySelector(".location .line");
-
-      return {
-        functionName: getElementTextContent(title),
-        filename: getElementTextContent(filename),
-        line: getElementTextContent(line),
-      };
-    });
-  }
-
-  return result;
-}
-
-
-
-
-
-
-
-
-
-function checkStackInfo(stackInfo, expected) {
-  is(stackInfo.variable, expected.variable, `"$(expected.variable}" command logged`);
-  is(stackInfo.repeats, expected.repeats, "expected number of repeats are displayed");
-  is(stackInfo.filename, expected.filename, "expected filename is displayed");
-  is(stackInfo.line, expected.line, "expected line is displayed");
-  is(stackInfo.column, expected.column, "expected column is displayed");
-
-  ok(stackInfo.stack.length > 0, "a stack is displayed");
-  is(stackInfo.stack.length, expected.stack.length, "the stack is the expected length");
-
-  for (let i = 0; i < stackInfo.stack.length; i++) {
-    const actual = stackInfo.stack[i];
-    const stackExpected = expected.stack[i];
-
-    is(actual.functionName, stackExpected.functionName,
-      `expected function name is displayed for index ${i}`);
-    is(actual.filename, stackExpected.filename,
-      `expected filename is displayed for index ${i}`);
-    is(actual.line, stackExpected.line,
-      `expected line is displayed for index ${i}`);
-  }
-}
-
-
-
-
-
-
-
-
-function getLineAndColumn(node) {
-  let lineAndColumn = getElementTextContent(node);
-  let line = 0;
-  let column = 0;
-
-  
-  if (lineAndColumn && lineAndColumn.startsWith(":")) {
-    
-    lineAndColumn = lineAndColumn.substr(1);
-
-    
-    [ line, column ] = lineAndColumn.split(":");
-  }
-
-  return {
-    line: line * 1,
-    column: column * 1,
-  };
-}
-
-function getElementTextContent(el) {
-  return el ? el.textContent : null;
+    is(frameEl.querySelector(".title").textContent, expected.functionName,
+      `expected function name is displayed for frame #${i}`);
+    is(frameEl.querySelector(".location .filename").textContent, expected.filename,
+      `expected filename is displayed for frame #${i}`);
+    is(frameEl.querySelector(".location .line").textContent, expected.line,
+      `expected line is displayed for frame #${i}`);
+  });
 }
