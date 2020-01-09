@@ -3560,17 +3560,21 @@ static MOZ_MUST_USE bool InternalAwait(JSContext* cx, HandleValue value,
   MOZ_ASSERT(onRejected.isInt32());
 
   
-  Rooted<PromiseObject*> promise(
-      cx, CreatePromiseObjectWithoutResolutionFunctions(cx));
+  RootedObject promise(cx, PromiseObject::unforgeableResolve(cx, value));
   if (!promise) {
     return false;
   }
 
   
   
-  if (!ResolvePromiseInternal(cx, promise, value)) {
+  
+  Rooted<PromiseObject*> unwrappedPromise(
+      cx, UnwrapAndDowncastObject<PromiseObject>(cx, promise));
+  if (!unwrappedPromise) {
     return false;
   }
+
+  
 
   
   Rooted<PromiseCapability> resultCapability(cx);
@@ -3582,9 +3586,7 @@ static MOZ_MUST_USE bool InternalAwait(JSContext* cx, HandleValue value,
     return false;
   }
   extraStep(reaction);
-
-  
-  return PerformPromiseThenWithReaction(cx, promise, reaction);
+  return PerformPromiseThenWithReaction(cx, unwrappedPromise, reaction);
 }
 
 
@@ -3813,9 +3815,6 @@ bool js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args,
   
   
   
-  
-  
-  
   auto extra = [](Handle<PromiseReactionRecord*> reaction) {};
   if (!InternalAwait(cx, value, resultPromise, onFulfilled, onRejected,
                      extra)) {
@@ -4010,9 +4009,6 @@ static MOZ_MUST_USE bool AsyncGeneratorResumeNext(
           RootedValue onFulfilled(cx, Int32Value(ResumeNextReturnFulfilled));
           RootedValue onRejected(cx, Int32Value(ResumeNextReturnRejected));
 
-          
-          
-          
           
           
           
