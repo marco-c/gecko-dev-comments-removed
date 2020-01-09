@@ -266,6 +266,11 @@ class StructDecl(NamespacedNode):
     def __init__(self, loc, name, fields):
         NamespacedNode.__init__(self, loc, name)
         self.fields = fields
+        
+        
+        
+        
+        self.packed_field_ordering = []
 
 
 class UnionDecl(NamespacedNode):
