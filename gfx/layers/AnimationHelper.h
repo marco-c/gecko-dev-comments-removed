@@ -231,6 +231,15 @@ class AnimationHelper {
   static bool SampleAnimations(CompositorAnimationStorage* aStorage,
                                TimeStamp aPreviousFrameTime,
                                TimeStamp aCurrentFrameTime);
+
+  
+
+
+
+
+  static gfx::Matrix4x4 ServoAnimationValueToMatrix4x4(
+      const RefPtr<RawServoAnimationValue>& aValue,
+      const TransformData& aTransformData);
 };
 
 }  
