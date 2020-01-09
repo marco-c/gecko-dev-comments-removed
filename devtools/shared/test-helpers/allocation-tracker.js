@@ -36,17 +36,15 @@
 "use strict";
 
 const { Cu } = require("chrome");
+const ChromeUtils = require("ChromeUtils");
 
-
-
-const global = require("resource://gre/modules/jsdebugger.jsm");
-const {addDebuggerToGlobal} = global;
+const global = Cu.getGlobalForObject(this);
+const {addDebuggerToGlobal} = ChromeUtils.import("resource://gre/modules/jsdebugger.jsm");
 addDebuggerToGlobal(global);
-const { Debugger } = global;
 
 exports.allocationTracker = function() {
   dump("DEVTOOLS ALLOCATION: Start logging allocations\n");
-  let dbg = new Debugger();
+  let dbg = new global.Debugger();
 
   
   dbg.memory.trackingAllocationSites = true;
@@ -59,7 +57,7 @@ exports.allocationTracker = function() {
   dbg.addAllGlobalsAsDebuggees();
 
   
-  dbg.removeDebuggee(Cu.getGlobalForObject({}));
+  dbg.removeDebuggee(global);
 
   
   
