@@ -11,6 +11,8 @@
 
 #include "nsISubstitutionObserver.h"
 #include "nsDataHashtable.h"
+#include "nsStandardURL.h"
+#include "nsJARURI.h"
 #include "mozilla/chrome/RegistryMessageUtils.h"
 #include "mozilla/Maybe.h"
 
@@ -101,6 +103,10 @@ class SubstitutingProtocolHandler {
   
   
   nsTArray<nsCOMPtr<nsISubstitutionObserver>> mObservers;
+
+  
+  
+  nsresult ResolveJARURI(nsIURL* aURL, nsIURI** aResult);
 
   
   

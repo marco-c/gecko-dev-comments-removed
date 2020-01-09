@@ -120,7 +120,11 @@ nsresult nsResProtocolHandler::GetSubstitutionInternal(const nsACString& aRoot,
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  *aFlags = 0;  
+  if (aRoot.Equals(kAndroid)) {
+    *aFlags = nsISubstitutingProtocolHandler::RESOLVE_JAR_URI;
+  } else {
+    *aFlags = 0;  
+  }
   return NS_NewURI(aResult, uri);
 }
 
