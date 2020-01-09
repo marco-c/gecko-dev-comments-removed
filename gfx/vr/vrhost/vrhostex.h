@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+#pragma once
+
+
+typedef void (*PFN_SAMPLE)();
