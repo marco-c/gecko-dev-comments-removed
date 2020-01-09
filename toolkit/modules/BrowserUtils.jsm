@@ -305,6 +305,12 @@ var BrowserUtils = {
           elt instanceof win.HTMLObjectElement ||
           elt instanceof win.HTMLEmbedElement)
         return false;
+
+      if (elt instanceof win.HTMLIFrameElement && elt.mozbrowser) {
+        
+        
+        return false;
+      }
     }
 
     return true;
