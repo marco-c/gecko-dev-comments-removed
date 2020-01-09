@@ -6644,31 +6644,11 @@ nsresult PresShell::EventHandler::HandleEvent(nsIFrame* aFrame,
       return NS_OK;
     }
 
-    eventTargetData.SetContentForEventFromFrame(aGUIEvent);
-
-    
-    
-    
-    if (eventTargetData.mContent) {
-      
-      
-      
-      
-      
-      
-      
-      
-      while (eventTargetData.mContent &&
-             !eventTargetData.mContent->IsElement()) {
-        eventTargetData.mContent =
-            eventTargetData.mContent->GetFlattenedTreeParent();
-      }
-
-      
-      if (!eventTargetData.mContent) {
-        return NS_OK;
-      }
+    if (!eventTargetData.ComputeElementFromFrame(aGUIEvent)) {
+      return NS_OK;
     }
+    
+    
 
     nsCOMPtr<nsIContent> overrideClickTarget;
     if (PointerEventHandler::IsPointerEventEnabled()) {
@@ -10798,4 +10778,38 @@ bool PresShell::EventHandler::EventTargetData::MaybeRetargetToActiveDocument(
   SetPresShellAndFrame(static_cast<PresShell*>(activePresShell),
                        activePresShell->GetRootFrame());
   return true;
+}
+
+bool PresShell::EventHandler::EventTargetData::ComputeElementFromFrame(
+    WidgetGUIEvent* aGUIEvent) {
+  MOZ_ASSERT(aGUIEvent);
+  MOZ_ASSERT(aGUIEvent->IsUsingCoordinates());
+  MOZ_ASSERT(mPresShell);
+  MOZ_ASSERT(mFrame);
+
+  SetContentForEventFromFrame(aGUIEvent);
+
+  
+  
+  
+  if (!mContent) {
+    return true;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  nsIContent* content = mContent;
+  while (content && !content->IsElement()) {
+    content = content->GetFlattenedTreeParent();
+  }
+  mContent = content;
+
+  
+  return !!mContent;
 }
