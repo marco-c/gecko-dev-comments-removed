@@ -32,6 +32,7 @@
 
 
 
+
 const {PromiseTestUtils} = ChromeUtils.import("resource://testing-common/PromiseTestUtils.jsm");
 PromiseTestUtils.whitelistRejectionsGlobally(/Message manager disconnected/);
 PromiseTestUtils.whitelistRejectionsGlobally(/No matching message handler/);
@@ -50,6 +51,11 @@ XPCOMUtils.defineLazyGetter(this, "Management", () => {
 if (AppConstants.ASAN) {
   SimpleTest.requestLongerTimeout(10);
 }
+
+function loadTestSubscript(filePath) {
+  Services.scriptloader.loadSubScript(new URL(filePath, gTestPath).href, this);
+}
+
 
 
 

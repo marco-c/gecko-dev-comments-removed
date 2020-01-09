@@ -6,11 +6,10 @@
 
 requestLongerTimeout(4);
 
+loadTestSubscript("head_devtools.js");
+
 ChromeUtils.defineModuleGetter(this, "Preferences",
                                "resource://gre/modules/Preferences.jsm");
-
-const {require} = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
-const {gDevTools} = require("devtools/client/framework/devtools");
 
 const DEVTOOLS_THEME_PREF = "devtools.theme";
 
@@ -24,20 +23,6 @@ const DEVTOOLS_THEME_PREF = "devtools.theme";
 
 
 
-async function openToolboxForTab(tab) {
-  const target = await gDevTools.getTargetForTab(tab);
-  const toolbox = await gDevTools.showToolbox(target, "testBlankPanel");
-  info("Developer toolbox opened");
-  return {toolbox, target};
-}
-
-async function closeToolboxForTab(tab) {
-  const target = await gDevTools.getTargetForTab(tab);
-  await gDevTools.closeToolbox(target);
-  await target.destroy();
-  info("Developer toolbox closed");
-}
-
 function createPage(jsScript, bodyText = "") {
   return `<!DOCTYPE html>
     <html>
@@ -50,35 +35,6 @@ function createPage(jsScript, bodyText = "") {
        </body>
     </html>`;
 }
-
-add_task(async function setup_blank_panel() {
-  
-  
-  
-  const testBlankPanel = {
-    id: "testBlankPanel",
-    url: "about:blank",
-    label: "Blank Tool",
-    isTargetSupported() {
-      return true;
-    },
-    build(iframeWindow, toolbox) {
-      return Promise.resolve({
-        target: toolbox.target,
-        toolbox: toolbox,
-        isReady: true,
-        panelDoc: iframeWindow.document,
-        destroy() {},
-      });
-    },
-  };
-
-  registerCleanupFunction(() => {
-    gDevTools.unregisterTool(testBlankPanel.id);
-  });
-
-  gDevTools.registerTool(testBlankPanel);
-});
 
 async function test_theme_name(testWithPanel = false) {
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "http://mochi.test:8888/");

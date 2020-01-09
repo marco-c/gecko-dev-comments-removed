@@ -2,8 +2,7 @@
 
 "use strict";
 
-const {require} = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
-const {gDevTools} = require("devtools/client/framework/devtools");
+loadTestSubscript("head_devtools.js");
 
 
 
@@ -54,11 +53,7 @@ add_task(async function test_devtools_inspectedWindow_eval_bindings() {
 
   await extension.startup();
 
-  const target = await gDevTools.getTargetForTab(tab);
-  
-  
-  const toolbox = await gDevTools.showToolbox(target, "styleeditor");
-  info("Developer toolbox opened");
+  const {toolbox} = await openToolboxForTab(tab);
 
   
   info("Test inspectedWindow.eval $0 binding with no selected node");
@@ -73,8 +68,7 @@ add_task(async function test_devtools_inspectedWindow_eval_bindings() {
 
   
 
-  await gDevTools.showToolbox(target, "inspector");
-  info("Toolbox switched to the inspector panel");
+  await openToolboxForTab(tab, "inspector");
 
   info("Test inspectedWindow.eval $0 binding with a selected node in the inspector");
 
@@ -88,9 +82,7 @@ add_task(async function test_devtools_inspectedWindow_eval_bindings() {
 
   
 
-  await gDevTools.showToolbox(target, "styleeditor");
-
-  info("Toolbox switched back to the styleeditor panel");
+  await openToolboxForTab(tab, TOOLBOX_BLANK_PANEL_ID);
 
   const inspectorPanelSelectedPromise = (async () => {
     const toolId = await toolbox.once("select");
@@ -170,9 +162,7 @@ add_task(async function test_devtools_inspectedWindow_eval_bindings() {
   await splitPanelOpenedPromise;
   info("Split console has been opened as expected");
 
-  await gDevTools.closeToolbox(target);
-
-  await target.destroy();
+  await closeToolboxForTab(tab);
 
   await extension.unload();
 
