@@ -38,7 +38,6 @@
 #include "gfxUtils.h"
 #include "gfx2DGlue.h"
 #include "GLScreenBuffer.h"
-#include "gfxPrefs.h"
 
 #include "gfxCrashReporterUtils.h"
 
@@ -598,7 +597,7 @@ bool GLContextGLX::MakeCurrentImpl() const {
     
     
     
-    const bool isASAP = (gfxPrefs::LayoutFrameRate() == 0);
+    const bool isASAP = (StaticPrefs::LayoutFrameRate() == 0);
     mGLX->fSwapInterval(mDisplay, mDrawable, isASAP ? 0 : 1);
   }
   return succeeded;
