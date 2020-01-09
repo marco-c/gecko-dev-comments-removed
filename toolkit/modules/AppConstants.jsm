@@ -325,8 +325,6 @@ this.AppConstants = Object.freeze({
 
   BROWSER_CHROME_URL: "@BROWSER_CHROME_URL@",
 
-  OMNIJAR_NAME: "@OMNIJAR_NAME@",
-
   
   
   

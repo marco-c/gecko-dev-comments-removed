@@ -1879,10 +1879,3 @@ pref("browser.toolbars.keyboard_navigation", true);
 
 pref("identity.fxaccounts.toolbar.enabled", true);
 pref("identity.fxaccounts.toolbar.accessed", false);
-
-
-#ifdef RELEASE_OR_BETA
-pref("corroborator.enabled", false);
-#else
-pref("corroborator.enabled", true);
-#endif
