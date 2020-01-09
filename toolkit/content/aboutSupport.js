@@ -447,8 +447,8 @@ var snapshotFormatters = {
 
     addRow("features", "asyncPanZoom",
            apzInfo.length
-           ? (await document.l10n.formatValues(apzInfo.map(id => { return {id}; }))).join("; ")
-           : await localizedMsg("apz-none"));
+           ? [new Text((await document.l10n.formatValues(apzInfo.map(id => { return {id}; }))).join("; "))]
+           : "apz-none");
     let featureKeys = [
       "webgl1WSIInfo",
       "webgl1Renderer",
@@ -587,7 +587,7 @@ var snapshotFormatters = {
 
     if (featureLog.fallbacks.length) {
       for (let fallback of featureLog.fallbacks) {
-        addRow("workarounds", fallback.name, fallback.message);
+        addRow("workarounds", fallback.name, [new Text(fallback.message)]);
       }
     } else {
       $("graphics-workarounds-tbody").style.display = "none";
@@ -618,7 +618,7 @@ var snapshotFormatters = {
     
     for (let key in data) {
       let value = data[key];
-      addRow("diagnostics", key, value);
+      addRow("diagnostics", key, [new Text(value)]);
     }
   },
 
