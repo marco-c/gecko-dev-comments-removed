@@ -58,6 +58,11 @@ class UrlbarEventBufferer {
 
   constructor(input) {
     this.input = input;
+    this.input.inputField.addEventListener("blur", this);
+
+    
+    
+    
     
     this._eventsQueue = [];
     
@@ -110,43 +115,54 @@ class UrlbarEventBufferer {
   onQueryResults(queryContext) {
     this._lastQuery.results = queryContext.results;
     
-    Services.tm.dispatchToMainThread(this.replaySafeDeferredEvents.bind(this));
+    Services.tm.dispatchToMainThread(() => {
+      this.replayDeferredEvents(true);
+    });
   }
 
   
-
-
 
 
 
   handleEvent(event) {
-    switch (event.type) {
-      case "keydown":
-        if (this.shouldDeferEvent(event)) {
-          this.deferEvent(event);
-          return false;
-        }
-        break;
-      case "blur":
-        logger.debug("Clearing queue on blur");
-        
-        
-        this._eventsQueue.length = 0;
-        if (this._deferringTimeout) {
-          clearTimeout(this._deferringTimeout);
-          this._deferringTimeout = null;
-        }
-        break;
+    if (event.type == "blur") {
+      logger.debug("Clearing queue on blur");
+      
+      
+      this._eventsQueue.length = 0;
+      if (this._deferringTimeout) {
+        clearTimeout(this._deferringTimeout);
+        this._deferringTimeout = null;
+      }
     }
-    
-    return this.input.handleEvent(event);
   }
 
   
 
 
 
-  deferEvent(event) {
+
+
+
+  maybeDeferEvent(event, callback) {
+    if (!callback) {
+      throw new Error("Must provide a callback");
+    }
+    if (this.shouldDeferEvent(event)) {
+      this.deferEvent(event, callback);
+      return;
+    }
+    
+    callback();
+  }
+
+  
+
+
+
+
+
+  deferEvent(event, callback) {
     
     
     
@@ -162,13 +178,13 @@ class UrlbarEventBufferer {
     
     
     event.searchString = this._lastQuery.searchString;
-    this._eventsQueue.push(event);
+    this._eventsQueue.push({event, callback});
 
     if (!this._deferringTimeout) {
       let elapsed = Cu.now() - this._lastQuery.startDate;
       let remaining = DEFERRING_TIMEOUT_MS - elapsed;
       this._deferringTimeout = setTimeout(() => {
-        this.replayAllDeferredEvents();
+        this.replayDeferredEvents(false);
         this._deferringTimeout = null;
       }, Math.max(0, remaining));
     }
@@ -180,43 +196,29 @@ class UrlbarEventBufferer {
 
 
 
-  replayAllDeferredEvents() {
-    let event = this._eventsQueue.shift();
-    if (!event) {
-      return;
+
+  replayDeferredEvents(onlyIfSafe) {
+    if (typeof onlyIfSafe != "boolean") {
+      throw new Error("Must provide a boolean argument");
     }
-    this.replayDeferredEvent(event);
-    Services.tm.dispatchToMainThread(this.replayAllDeferredEvents.bind(this));
-  }
-
-  
-
-
-
-  replaySafeDeferredEvents() {
     if (!this._eventsQueue.length) {
       return;
     }
-    let event = this._eventsQueue[0];
-    if (!this.isSafeToPlayDeferredEvent(event)) {
+
+    let {event, callback} = this._eventsQueue[0];
+    if (onlyIfSafe && !this.isSafeToPlayDeferredEvent(event)) {
       return;
     }
+
     
     this._eventsQueue.shift();
-    this.replayDeferredEvent(event);
-    
-    Services.tm.dispatchToMainThread(this.replaySafeDeferredEvents.bind(this));
-  }
-
-  
-
-
-
-  replayDeferredEvent(event) {
     
     if (event.searchString == this._lastQuery.searchString) {
-      this.input.handleEvent(event);
+      callback();
     }
+    Services.tm.dispatchToMainThread(() => {
+      this.replayDeferredEvents(onlyIfSafe);
+    });
   }
 
   

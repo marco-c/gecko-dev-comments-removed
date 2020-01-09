@@ -50,8 +50,11 @@ add_task(async function test_switchtab_override() {
   EventUtils.synthesizeKey("KEY_Shift", {type: "keydown"});
   EventUtils.synthesizeKey("KEY_Enter");
   info(`gURLBar.value = ${gURLBar.value}`);
-  EventUtils.synthesizeKey("KEY_Shift", {type: "keyup"});
   await deferred.promise;
+  
+  
+  gURLBar.focus();
+  EventUtils.synthesizeKey("KEY_Shift", {type: "keyup"});
 
   await PlacesUtils.history.clear();
 });
