@@ -5,9 +5,9 @@
 "use strict";
 
 var Services = require("Services");
-var WebConsole = require("devtools/client/webconsole/webconsole");
-
+loader.lazyRequireGetter(this, "extend", "devtools/shared/extend", true);
 loader.lazyRequireGetter(this, "Telemetry", "devtools/client/shared/telemetry");
+loader.lazyRequireGetter(this, "WebConsole", "devtools/client/webconsole/webconsole");
 
 
 
@@ -20,8 +20,6 @@ loader.lazyRequireGetter(this, "Telemetry", "devtools/client/shared/telemetry");
 
 
 
-class BrowserConsole extends WebConsole {
-  
 
 
 
@@ -32,13 +30,17 @@ class BrowserConsole extends WebConsole {
 
 
 
-  constructor(target, iframeWindow, chromeWindow, hudService) {
-    super(target, iframeWindow, chromeWindow, hudService, true);
+function BrowserConsole(target, iframeWindow, chromeWindow, hudService) {
+  WebConsole.call(this, target, iframeWindow, chromeWindow, hudService);
+  this._telemetry = new Telemetry();
+}
 
-    this._telemetry = new Telemetry();
-    this._bcInitializer = null;
-    this._bcDestroyer = null;
-  }
+BrowserConsole.prototype = extend(WebConsole.prototype, {
+  _browserConsole: true,
+  _bcInit: null,
+  _bcDestroyer: null,
+
+  $init: WebConsole.prototype.init,
 
   
 
@@ -47,8 +49,8 @@ class BrowserConsole extends WebConsole {
 
 
   init() {
-    if (this._bcInitializer) {
-      return this._bcInitializer;
+    if (this._bcInit) {
+      return this._bcInit;
     }
 
     
@@ -66,9 +68,11 @@ class BrowserConsole extends WebConsole {
     
     this._telemetry.toolOpened("browserconsole", -1, this);
 
-    this._bcInitializer = super.init();
-    return this._bcInitializer;
-  }
+    this._bcInit = this.$init();
+    return this._bcInit;
+  },
+
+  $destroy: WebConsole.prototype.destroy,
 
   
 
@@ -86,15 +90,15 @@ class BrowserConsole extends WebConsole {
       
       this._telemetry.toolClosed("browserconsole", -1, this);
 
-      await super.destroy();
+      await this.$destroy();
       await this.target.destroy();
       this.hudService._browserConsoleID = null;
       this.chromeWindow.close();
     })();
 
     return this._bcDestroyer;
-  }
-}
+  },
+});
 
 
 

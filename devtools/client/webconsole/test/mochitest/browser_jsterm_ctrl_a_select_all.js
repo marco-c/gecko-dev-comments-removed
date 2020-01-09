@@ -19,21 +19,20 @@ add_task(async function() {
 });
 
 async function performTests() {
-  const hud = await openNewTabAndConsole(TEST_URI);
-  const {jsterm} = hud;
+  const {jsterm} = await openNewTabAndConsole(TEST_URI);
 
-  setInputValue(hud, "Ignore These Four Words");
+  jsterm.setInputValue("Ignore These Four Words");
 
   
   EventUtils.synthesizeKey("a", { accelKey: true });
 
   const inputLength = getSelectionTextLength(jsterm);
-  is(inputLength, getInputValue(hud).length, "Select all of input");
+  is(inputLength, jsterm.getInputValue().length, "Select all of input");
 
   
   if (Services.appinfo.OS !== "Linux") {
    
-    setInputValue(hud, "Ignore These Four Words");
+    jsterm.setInputValue("Ignore These Four Words");
     setCursorAtStart(jsterm);
     EventUtils.synthesizeKey("e", { accelKey: true });
     checkSelectionStart(jsterm, 0, "control|cmd + e does not move to end of input");

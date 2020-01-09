@@ -280,7 +280,7 @@ async function openContextMenu(hud, element) {
   const onConsoleMenuOpened = hud.ui.wrapper.once("menu-open");
   synthesizeContextMenuEvent(element);
   await onConsoleMenuOpened;
-  const doc = hud.chromeWindow.document;
+  const doc = hud.ui.wrapper.owner.chromeWindow.document;
   return doc.getElementById("webconsole-menu");
 }
 
@@ -293,7 +293,7 @@ async function openContextMenu(hud, element) {
 
 
 function hideContextMenu(hud) {
-  const doc = hud.chromeWindow.document;
+  const doc = hud.ui.wrapper.owner.chromeWindow.document;
   const popup = doc.getElementById("webconsole-menu");
   if (!popup) {
     return Promise.resolve();
@@ -398,39 +398,17 @@ function hasFocus(node) {
 
 
 
-function getInputValue(hud) {
-  return hud.jsterm._getValue();
-}
-
-
-
-
-
-
-
-function setInputValue(hud, value) {
-  return hud.jsterm._setValue(value);
-}
-
-
-
-
-
-
-
 
 
 
 
 
 async function setInputValueForAutocompletion(
-  hud,
+  jsterm,
   value,
   caretPosition = value.length,
 ) {
-  const {jsterm} = hud;
-
-  setInputValue(hud, "");
+  jsterm.setInputValue("");
   jsterm.focus();
 
   const updated = jsterm.once("autocomplete-updated");
@@ -463,8 +441,8 @@ async function setInputValueForAutocompletion(
 
 
 
-async function setInputValueForGetterConfirmDialog(toolbox, hud, value) {
-  await setInputValueForAutocompletion(hud, value);
+async function setInputValueForGetterConfirmDialog(toolbox, jsterm, value) {
+  await setInputValueForAutocompletion(jsterm, value);
   await waitFor(() => isConfirmDialogOpened(toolbox));
   ok(true, "The confirm dialog is displayed");
   return getConfirmDialog(toolbox);
@@ -477,15 +455,15 @@ async function setInputValueForGetterConfirmDialog(toolbox, hud, value) {
 
 
 
-function checkInputCompletionValue(hud, expectedValue, assertionInfo) {
-  const completionValue = getInputCompletionValue(hud);
+function checkJsTermCompletionValue(jsterm, expectedValue, assertionInfo) {
+  const completionValue = getJsTermCompletionValue(jsterm);
   if (completionValue === null) {
     ok(false, "Couldn't retrieve the completion value");
   }
 
   info(`Expects "${expectedValue}", is "${completionValue}"`);
 
-  if (hud.jsterm.completeNode) {
+  if (jsterm.completeNode) {
     is(completionValue, expectedValue, assertionInfo);
   } else {
     
@@ -500,8 +478,7 @@ function checkInputCompletionValue(hud, expectedValue, assertionInfo) {
 
 
 
-function checkInputCursorPosition(hud, expectedCursorIndex, assertionInfo) {
-  const {jsterm} = hud;
+function checkJsTermCursor(jsterm, expectedCursorIndex, assertionInfo) {
   if (jsterm.inputNode) {
     const {selectionStart, selectionEnd} = jsterm.inputNode;
     is(selectionStart, expectedCursorIndex, assertionInfo);
@@ -523,7 +500,7 @@ function checkInputCursorPosition(hud, expectedCursorIndex, assertionInfo) {
 
 
 
-function checkInputValueAndCursorPosition(hud, expectedStringWithCursor, assertionInfo) {
+function checkJsTermValueAndCursor(jsterm, expectedStringWithCursor, assertionInfo) {
   info(`Checking jsterm state: \n${expectedStringWithCursor}`);
   if (!expectedStringWithCursor.includes("|")) {
     ok(false,
@@ -531,8 +508,7 @@ function checkInputValueAndCursorPosition(hud, expectedStringWithCursor, asserti
   }
 
   const inputValue = expectedStringWithCursor.replace("|", "");
-  const {jsterm} = hud;
-  is(getInputValue(hud), inputValue, "console input has expected value");
+  is(jsterm.getInputValue(), inputValue, "jsterm has expected value");
   if (jsterm.inputNode) {
     is(jsterm.inputNode.selectionStart, jsterm.inputNode.selectionEnd);
     is(jsterm.inputNode.selectionStart, expectedStringWithCursor.indexOf("|"),
@@ -552,8 +528,7 @@ function checkInputValueAndCursorPosition(hud, expectedStringWithCursor, asserti
 
 
 
-function getInputCompletionValue(hud) {
-  const {jsterm} = hud;
+function getJsTermCompletionValue(jsterm) {
   if (jsterm.completeNode) {
     return jsterm.completeNode.value;
   }
@@ -571,8 +546,8 @@ function getInputCompletionValue(hud) {
 
 
 
-function isInputFocused(hud) {
-  const {jsterm} = hud;
+
+function isJstermFocused(jsterm) {
   const document = jsterm.outputNode.ownerDocument;
   const documentIsFocused = document.hasFocus();
 

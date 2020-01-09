@@ -22,8 +22,6 @@ var gHudId = 0;
 
 
 
-class WebConsole {
-  
 
 
 
@@ -34,23 +32,30 @@ class WebConsole {
 
 
 
+function WebConsole(target, iframeWindow, chromeWindow, hudService) {
+  this.iframeWindow = iframeWindow;
+  this.chromeWindow = chromeWindow;
+  this.hudId = "hud_" + ++gHudId;
+  this.target = target;
+  this.browserWindow = this.chromeWindow.top;
+  this.hudService = hudService;
 
-  constructor(target, iframeWindow, chromeWindow, hudService, isBrowserConsole = false) {
-    this.iframeWindow = iframeWindow;
-    this.chromeWindow = chromeWindow;
-    this.hudId = "hud_" + ++gHudId;
-    this.target = target;
-    this.browserWindow = this.chromeWindow.top;
-    this.hudService = hudService;
-    this._browserConsole = isBrowserConsole;
-
-    const element = this.browserWindow.document.documentElement;
-    if (element.getAttribute("windowtype") != gDevTools.chromeWindowType) {
-      this.browserWindow = this.hudService.currentContext();
-    }
-    this.ui = new WebConsoleUI(this);
-    this._destroyer = null;
+  const element = this.browserWindow.document.documentElement;
+  if (element.getAttribute("windowtype") != gDevTools.chromeWindowType) {
+    this.browserWindow = this.hudService.currentContext();
   }
+  this.ui = new WebConsoleUI(this);
+}
+
+WebConsole.prototype = {
+  iframeWindow: null,
+  chromeWindow: null,
+  browserWindow: null,
+  hudId: null,
+  target: null,
+  ui: null,
+  _browserConsole: false,
+  _destroyer: null,
 
   
 
@@ -61,7 +66,7 @@ class WebConsole {
 
   get lastFinishedRequestCallback() {
     return this.hudService.lastFinishedRequest.callback;
-  }
+  },
 
   
 
@@ -76,7 +81,7 @@ class WebConsole {
       return this.browserWindow;
     }
     return this.chromeWindow.top;
-  }
+  },
 
   
 
@@ -84,11 +89,11 @@ class WebConsole {
 
   get outputNode() {
     return this.ui ? this.ui.outputNode : null;
-  }
+  },
 
   get gViewSourceUtils() {
     return this.chromeUtilsWindow.gViewSourceUtils;
-  }
+  },
 
   
 
@@ -98,7 +103,7 @@ class WebConsole {
 
   init() {
     return this.ui.init().then(() => this);
-  }
+  },
 
   
 
@@ -107,32 +112,7 @@ class WebConsole {
 
   get jsterm() {
     return this.ui ? this.ui.jsterm : null;
-  }
-
-  
-
-
-
-  getInputValue() {
-    if (!this.jsterm) {
-      return null;
-    }
-
-    return this.jsterm._getValue();
-  }
-
-  
-
-
-
-
-  setInputValue(newValue) {
-    if (!this.jsterm) {
-      return;
-    }
-
-    this.jsterm._setValue(newValue);
-  }
+  },
 
   
 
@@ -140,7 +120,7 @@ class WebConsole {
 
   setFilterState() {
     this.ui && this.ui.setFilterState.apply(this.ui, arguments);
-  }
+  },
 
   
 
@@ -150,7 +130,7 @@ class WebConsole {
 
   openLink(link, e) {
     openDocLink(link);
-  }
+  },
 
   
 
@@ -162,7 +142,7 @@ class WebConsole {
 
   viewSource(sourceURL, sourceLine) {
     this.gViewSourceUtils.viewSource({ URL: sourceURL, lineNumber: sourceLine || 0 });
-  }
+  },
 
   
 
@@ -183,7 +163,7 @@ class WebConsole {
       return;
     }
     toolbox.viewSourceInStyleEditor(sourceURL, sourceLine);
-  }
+  },
 
   
 
@@ -206,7 +186,7 @@ class WebConsole {
     toolbox.viewSourceInDebugger(sourceURL, sourceLine).then(() => {
       this.ui.emit("source-in-debugger-opened");
     });
-  }
+  },
 
   
 
@@ -217,7 +197,7 @@ class WebConsole {
 
   viewSourceInScratchpad(sourceURL, sourceLine) {
     viewSource.viewSourceInScratchpad(sourceURL, sourceLine);
-  }
+  },
 
   
 
@@ -244,7 +224,7 @@ class WebConsole {
     }
 
     return panel.getFrames();
-  }
+  },
 
   
 
@@ -281,7 +261,7 @@ class WebConsole {
     }
 
     return null;
-  }
+  },
 
   
 
@@ -298,7 +278,7 @@ class WebConsole {
       "resource://devtools/client/debugger/new/dist/parser-worker.js",
       this.chromeUtilsWindow);
     return this._parserService;
-  }
+  },
 
   
 
@@ -321,7 +301,7 @@ class WebConsole {
       return null;
     }
     return panel.selection;
-  }
+  },
 
   
 
@@ -360,7 +340,7 @@ class WebConsole {
     })();
 
     return this._destroyer;
-  }
-}
+  },
+};
 
 module.exports = WebConsole;
