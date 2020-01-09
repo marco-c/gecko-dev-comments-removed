@@ -332,10 +332,8 @@ where
         }
 
         
-        
-        if iter.next_sequence().is_none() {
-            return true;
-        }
+        let next_sequence = iter.next_sequence().unwrap();
+        debug_assert_eq!(next_sequence, Combinator::PseudoElement);
     }
 
     let result =
@@ -452,10 +450,6 @@ where
         },
         Combinator::Part => element.containing_shadow_host(),
         Combinator::SlotAssignment => {
-            debug_assert!(
-                context.current_host.is_some(),
-                "Should not be trying to match slotted rules in a non-shadow-tree context"
-            );
             debug_assert!(element
                 .assigned_slot()
                 .map_or(true, |s| s.is_html_slot_element()));
@@ -677,7 +671,6 @@ where
         Component::Slotted(ref selector) => {
             
             !element.is_html_slot_element() &&
-                element.assigned_slot().is_some() &&
                 context.shared.nest(|context| {
                     matches_complex_selector(selector.iter(), element, context, flags_setter)
                 })

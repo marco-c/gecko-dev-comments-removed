@@ -1158,8 +1158,7 @@ void nsFrameConstructorState::ConstructBackdropFrameFor(nsIContent* aContent,
 
   RefPtr<ComputedStyle> style =
       mPresShell->StyleSet()->ResolvePseudoElementStyle(
-          aContent->AsElement(), PseudoStyleType::backdrop,
-           nullptr,
+          *aContent->AsElement(), PseudoStyleType::backdrop,
            nullptr);
   MOZ_ASSERT(style->StyleDisplay()->mTopLayer == NS_STYLE_TOP_LAYER_TOP);
   nsContainerFrame* parentFrame =
@@ -1717,6 +1716,8 @@ void nsCSSFrameConstructor::CreateGeneratedContentItem(
       property = nsGkAtoms::afterPseudoProperty;
       break;
     case PseudoStyleType::marker:
+      
+      
       elemName = nsGkAtoms::mozgeneratedcontentmarker;
       property = nsGkAtoms::markerPseudoProperty;
       break;
@@ -8717,8 +8718,7 @@ already_AddRefed<ComputedStyle> nsCSSFrameConstructor::GetFirstLetterStyle(
     nsIContent* aContent, ComputedStyle* aComputedStyle) {
   if (aContent) {
     return mPresShell->StyleSet()->ResolvePseudoElementStyle(
-        aContent->AsElement(), PseudoStyleType::firstLetter, aComputedStyle,
-        nullptr);
+        *aContent->AsElement(), PseudoStyleType::firstLetter, aComputedStyle);
   }
   return nullptr;
 }
@@ -8727,8 +8727,7 @@ already_AddRefed<ComputedStyle> nsCSSFrameConstructor::GetFirstLineStyle(
     nsIContent* aContent, ComputedStyle* aComputedStyle) {
   if (aContent) {
     return mPresShell->StyleSet()->ResolvePseudoElementStyle(
-        aContent->AsElement(), PseudoStyleType::firstLine, aComputedStyle,
-        nullptr);
+        *aContent->AsElement(), PseudoStyleType::firstLine, aComputedStyle);
   }
   return nullptr;
 }

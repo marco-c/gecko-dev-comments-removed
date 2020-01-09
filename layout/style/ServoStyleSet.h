@@ -170,13 +170,30 @@ class ServoStyleSet {
   already_AddRefed<ComputedStyle> ResolveStyleForPlaceholder();
 
   
+  static bool GeneratedContentPseudoExists(const ComputedStyle& aParentStyle,
+                                           const ComputedStyle& aPseudoStyle);
+
+  enum class IsProbe {
+    No,
+    Yes,
+  };
+
+  
+  
   
   
   
   
   already_AddRefed<ComputedStyle> ResolvePseudoElementStyle(
-      dom::Element* aOriginatingElement, PseudoStyleType aType,
-      ComputedStyle* aParentStyle, dom::Element* aPseudoElement);
+      const dom::Element& aOriginatingElement, PseudoStyleType,
+      ComputedStyle* aParentStyle, IsProbe = IsProbe::No);
+
+  already_AddRefed<ComputedStyle> ProbePseudoElementStyle(
+      const dom::Element& aOriginatingElement, PseudoStyleType aType,
+      ComputedStyle* aParentStyle) {
+    return ResolvePseudoElementStyle(aOriginatingElement, aType, aParentStyle,
+                                     IsProbe::Yes);
+  }
 
   
   
@@ -219,11 +236,6 @@ class ServoStyleSet {
   }
 
   void AddDocStyleSheet(StyleSheet* aSheet);
-
-  
-  already_AddRefed<ComputedStyle> ProbePseudoElementStyle(
-      const dom::Element& aOriginatingElement, PseudoStyleType aType,
-      ComputedStyle* aParentStyle);
 
   
 
