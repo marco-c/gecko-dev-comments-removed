@@ -283,10 +283,6 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
   
   already_AddRefed<CSSValue> DoGetColumnRuleWidth();
 
-  
-  already_AddRefed<CSSValue> DoGetColumnGap();
-  already_AddRefed<CSSValue> DoGetRowGap();
-
 
   
   

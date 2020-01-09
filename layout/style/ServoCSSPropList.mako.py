@@ -69,8 +69,6 @@ LONGHANDS_NOT_SERIALIZED_WITH_SERVO = [
     "column-rule-width",
 
     
-    "row-gap",
-    "column-gap",
     "grid-auto-columns",
     "grid-auto-rows",
 
