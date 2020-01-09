@@ -61,9 +61,9 @@ Menu.prototype.insert = function(pos, menuItem) {
 
 
 
-Menu.prototype.popupWithZoom = function(x, y, toolbox) {
-  const zoom = getCurrentZoom(toolbox.doc);
-  this.popup(x * zoom, y * zoom, toolbox);
+Menu.prototype.popupWithZoom = function(x, y, doc) {
+  const zoom = getCurrentZoom(doc);
+  this.popup(x * zoom, y * zoom, doc);
 };
 
 
@@ -78,9 +78,7 @@ Menu.prototype.popupWithZoom = function(x, y, toolbox) {
 
 
 
-Menu.prototype.popup = function(screenX, screenY, toolbox) {
-  const doc = toolbox.doc;
-
+Menu.prototype.popup = function(screenX, screenY, doc) {
   let popupset = doc.querySelector("popupset");
   if (!popupset) {
     popupset = doc.createXULElement("popupset");
