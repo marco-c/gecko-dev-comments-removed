@@ -15,6 +15,7 @@
 
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/EndianUtils.h"
+#include "mozilla/Components.h"
 #include "mozilla/Compression.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/Preferences.h"
@@ -30,6 +31,7 @@
 #include "nsAppRunner.h"
 #include "nsContentUtils.h"
 #include "nsChromeRegistry.h"
+#include "nsIAppStartup.h"
 #include "nsIDOMWindowUtils.h"  
 #include "nsIFileURL.h"
 #include "nsIIOService.h"
@@ -691,6 +693,13 @@ NS_IMETHODIMP
 RegistryEntries::Destruct() {
   if (isInList()) {
     remove();
+
+    
+    
+    nsCOMPtr<nsIAppStartup> appStartup = components::AppStartup::Service();
+    if (appStartup->GetShuttingDown()) {
+      return NS_OK;
+    }
 
     
     
