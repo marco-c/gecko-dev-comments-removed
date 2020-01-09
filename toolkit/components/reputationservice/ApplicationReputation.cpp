@@ -487,10 +487,10 @@ static const char* const kBinaryFileExtensions[] = {
     ".cpi",        
                    
     
-    ".cpl",         
-    ".crt",         
-    ".crx",         
-    ".csh",         
+    ".cpl",  
+    ".crt",  
+    ".crx",  
+    ".csh",  
     
     ".dart",        
     ".dc42",        
@@ -504,31 +504,33 @@ static const char* const kBinaryFileExtensions[] = {
     ".dll",         
     ".dmg",         
     ".dmgpart",     
-    
-    
-    
-    
-    
-    
-    ".drv",   
-    ".dvdr",  
-    ".efi",   
-    ".eml",   
-    ".exe",   
+    ".doc",         
+    ".docb",        
+    ".docm",        
+    ".docx",        
+    ".dot",         
+    ".dotm",        
+    ".dott",        
+    ".dotx",        
+    ".drv",         
+    ".dvdr",        
+    ".efi",         
+    ".eml",         
+    ".exe",         
     
     ".fon",     
     ".fxp",     
     ".gadget",  
     
-    ".grp",     
-    ".gz",      
-    ".gzip",    
-    ".hfs",     
-    ".hlp",     
-    ".hqx",     
-    ".hta",     
+    ".grp",   
+    ".gz",    
+    ".gzip",  
+    ".hfs",   
+    ".hlp",   
+    ".hqx",   
+    ".hta",   
     ".htm", ".html",
-    ".htt",      
+    ".htt",  
     
     ".img",      
     ".imgpart",  
@@ -577,24 +579,24 @@ static const char* const kBinaryFileExtensions[] = {
     ".mhtml",     
     ".mim",       
     
-    ".mmc",       
-    ".mof",       
+    ".mmc",  
+    ".mof",  
     
     
     
-    ".mpkg",      
-    ".msc",       
-    ".msg",       
-    ".msh",       
-    ".msh1",      
-    ".msh1xml",   
-    ".msh2",      
-    ".msh2xml",   
-    ".mshxml",    
-    ".msi",       
-    ".msp",       
-    ".mst",       
-    ".ndif",      
+    ".mpkg",     
+    ".msc",      
+    ".msg",      
+    ".msh",      
+    ".msh1",     
+    ".msh1xml",  
+    ".msh2",     
+    ".msh2xml",  
+    ".mshxml",   
+    ".msi",      
+    ".msp",      
+    ".mst",      
+    ".ndif",     
     
     ".ocx",   
     ".ops",   
@@ -619,12 +621,16 @@ static const char* const kBinaryFileExtensions[] = {
     ".pl",   
     ".plg",  
     
-    
-    
-    
-    
-    
-    
+    ".pot",     
+    ".potm",    
+    ".potx",    
+    ".ppam",    
+    ".pps",     
+    ".ppsm",    
+    ".ppsx",    
+    ".ppt",     
+    ".pptm",    
+    ".pptx",    
     ".prf",     
     ".prg",     
     ".ps1",     
@@ -677,7 +683,7 @@ static const char* const kBinaryFileExtensions[] = {
     ".rels",  
     
     ".rpm",  
-    
+    ".rtf",  
     
     ".scf",                
     ".scpt",               
@@ -694,14 +700,14 @@ static const char* const kBinaryFileExtensions[] = {
     ".shtml",              
     ".shtm",               
     ".sht",                
-    
-    
-    ".slk",           
-    ".slp",           
-    ".smi",           
-    ".sparsebundle",  
-    ".sparseimage",   
-    ".spl",           
+    ".sldm",               
+    ".sldx",               
+    ".slk",                
+    ".slp",                
+    ".smi",                
+    ".sparsebundle",       
+    ".sparseimage",        
+    ".spl",                
     
     ".svg",
     ".swf",   
@@ -713,13 +719,13 @@ static const char* const kBinaryFileExtensions[] = {
     ".tbz2",  
     ".tcsh",  
     
-    ".tgz",   
+    ".tgz",  
     
     ".torrent",  
     ".tpz",      
     
-    ".txz",      
-    ".tz",       
+    ".txz",  
+    ".tz",   
     
     ".udf",   
     ".udif",  
@@ -749,8 +755,8 @@ static const char* const kBinaryFileExtensions[] = {
     ".vtx",       
     
     
-    ".website",   
-    ".wim",       
+    ".website",  
+    ".wim",      
     
     
     ".ws",    
@@ -760,13 +766,21 @@ static const char* const kBinaryFileExtensions[] = {
     ".xar",   
     ".xbap",  
     ".xhtml", ".xhtm", ".xht",
-    ".xip",  
-    
-    
-    
-    
-    
-    ".xml",
+    ".xip",     
+    ".xla",     
+    ".xlam",    
+    ".xldm",    
+    ".xll",     
+    ".xlm",     
+    ".xls",     
+    ".xlsb",    
+    ".xlsm",    
+    ".xlsx",    
+    ".xlt",     
+    ".xltm",    
+    ".xltx",    
+    ".xlw",     
+    ".xml",     
     ".xnk",     
     ".xrm-ms",  
     ".xsl",     
