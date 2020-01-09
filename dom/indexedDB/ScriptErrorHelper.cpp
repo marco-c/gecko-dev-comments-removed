@@ -111,8 +111,7 @@ class ScriptErrorRunnable final : public mozilla::Runnable {
           aMessage, aFilename,
            EmptyString(), aLineNumber, aColumnNumber,
           aSeverityFlag, category.get(),
-           false,
-           aIsChrome));
+           false));
     }
 
     MOZ_ALWAYS_SUCCEEDS(consoleService->LogMessage(scriptError));
