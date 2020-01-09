@@ -464,7 +464,7 @@ nsresult CertErrorRunnable::OverrideAllowedForHost(
   
   
   const nsACString& hostname = mInfoObject->GetHostName();
-  if (net_IsValidIPv6Addr(hostname.BeginReading(), hostname.Length())) {
+  if (net_IsValidIPv6Addr(hostname)) {
     overrideAllowed = true;
     return NS_OK;
   }
@@ -959,7 +959,7 @@ void GatherBaselineRequirementsTelemetry(const UniqueCERTCertList& certList) {
       
       if (!net_IsValidHostName(altNameWithoutWildcard) ||
           net_IsValidIPv4Addr(altName) ||
-          net_IsValidIPv6Addr(altName.get(), altName.Length())) {
+          net_IsValidIPv6Addr(altName)) {
         MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
                 ("BR telemetry: DNSName '%s' not valid (for '%s')\n",
                  altName.get(), commonName.get()));

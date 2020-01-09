@@ -969,55 +969,6 @@ bool net_IsValidIPv4Addr(const nsACString &aAddr) {
   return rust_net_is_valid_ipv4_addr(aAddr);
 }
 
-bool net_IsValidIPv6Addr(const char *addr, int32_t addrLen) {
-  RangedPtr<const char> p(addr, addrLen);
-
-  int32_t digits = 0;      
-  int32_t colons = 0;      
-  int32_t blocks = 0;      
-  bool haveZeros = false;  
-
-  for (; addrLen; ++p, --addrLen) {
-    if (*p == ':') {
-      if (colons == 0) {
-        if (digits != 0) {
-          digits = 0;
-          blocks++;
-        }
-      } else if (colons == 1) {
-        if (haveZeros) return false;  
-        haveZeros = true;
-      } else {
-        
-        return false;
-      }
-      colons++;
-    } else if ((*p >= '0' && *p <= '9') || (*p >= 'a' && *p <= 'f') ||
-               (*p >= 'A' && *p <= 'F')) {
-      if (colons == 1 && blocks == 0)  
-        return false;
-      if (digits == 4)  
-        return false;
-      colons = 0;
-      digits++;
-    } else if (*p == '.') {
-      
-      if (!net_IsValidIPv4Addr(
-              Substring(p.get() - digits, p.get() + addrLen))) {
-        return false;
-      }
-      return (haveZeros && blocks < 6) || (!haveZeros && blocks == 6);
-    } else {
-      
-      return false;
-    }
-  }
-
-  if (colons == 1)  
-    return false;
-
-  if (digits)  
-    blocks++;
-
-  return (haveZeros && blocks < 8) || (!haveZeros && blocks == 8);
+bool net_IsValidIPv6Addr(const nsACString &aAddr) {
+  return rust_net_is_valid_ipv6_addr(aAddr);
 }

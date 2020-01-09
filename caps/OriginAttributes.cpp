@@ -67,7 +67,7 @@ void OriginAttributes::SetFirstPartyDomain(const bool aIsTopLevelDocument,
     rv = aURI->GetHost(ipAddr);
     NS_ENSURE_SUCCESS_VOID(rv);
 
-    if (net_IsValidIPv6Addr(ipAddr.BeginReading(), ipAddr.Length())) {
+    if (net_IsValidIPv6Addr(ipAddr)) {
       
       
       

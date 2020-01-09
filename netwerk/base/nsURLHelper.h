@@ -240,7 +240,7 @@ bool net_IsValidIPv4Addr(const nsACString &aAddr);
 
 
 
-bool net_IsValidIPv6Addr(const char *addr, int32_t addrLen);
+bool net_IsValidIPv6Addr(const nsACString &aAddr);
 
 
 
