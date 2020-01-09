@@ -1381,8 +1381,6 @@ Document* nsHTMLDocument::Open(JSContext* cx,
   SetReadyStateInternal(READYSTATE_UNINITIALIZED,
                          false);
 
-  mDidDocumentOpen = true;
-
   
   SetCompatibilityMode(eCompatibility_FullStandards);
 

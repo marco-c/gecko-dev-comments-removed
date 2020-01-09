@@ -1396,8 +1396,6 @@ class Document : public nsINode,
 
   nsresult GetSrcdocData(nsAString& aSrcdocData);
 
-  bool DidDocumentOpen() { return mDidDocumentOpen; }
-
   already_AddRefed<mozilla::dom::AnonymousContent> InsertAnonymousContent(
       mozilla::dom::Element& aElement, mozilla::ErrorResult& aError);
   void RemoveAnonymousContent(mozilla::dom::AnonymousContent& aContent,
@@ -4129,11 +4127,6 @@ class Document : public nsINode,
 
   
   bool mIsSrcdocDocument : 1;
-
-  
-  
-  
-  bool mDidDocumentOpen : 1;
 
   
   

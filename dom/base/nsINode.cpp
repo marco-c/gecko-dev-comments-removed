@@ -1169,22 +1169,6 @@ static void AdoptNodeIntoOwnerDoc(nsINode* aParent, nsINode* aNode,
 #endif  
 }
 
-static void CheckForOutdatedParent(nsINode* aParent, nsINode* aNode,
-                                   ErrorResult& aError) {
-  if (JSObject* existingObjUnrooted = aNode->GetWrapper()) {
-    JS::Rooted<JSObject*> existingObj(RootingCx(), existingObjUnrooted);
-
-    AutoJSContext cx;
-    nsIGlobalObject* global = aParent->OwnerDoc()->GetScopeObject();
-    MOZ_ASSERT(global);
-
-    if (JS::GetNonCCWObjectGlobal(existingObj) != global->GetGlobalJSObject()) {
-      JSAutoRealm ar(cx, existingObj);
-      UpdateReflectorGlobal(cx, existingObj, aError);
-    }
-  }
-}
-
 static nsresult UpdateGlobalsInSubtree(nsIContent* aRoot) {
   MOZ_ASSERT(ShouldUseNACScope(aRoot));
   
@@ -1235,17 +1219,6 @@ nsresult nsINode::InsertChildBefore(nsIContent* aKid,
   if (OwnerDoc() != aKid->OwnerDoc()) {
     ErrorResult error;
     AdoptNodeIntoOwnerDoc(this, aKid, error);
-
-    
-    
-    
-    error.WouldReportJSException();
-    if (NS_WARN_IF(error.Failed())) {
-      return error.StealNSResult();
-    }
-  } else if (OwnerDoc()->DidDocumentOpen()) {
-    ErrorResult error;
-    CheckForOutdatedParent(this, aKid, error);
 
     
     
@@ -2301,11 +2274,6 @@ nsINode* nsINode::ReplaceOrInsertBefore(bool aReplace, nsINode* aNewChild,
   Document* doc = OwnerDoc();
   if (doc != newContent->OwnerDoc()) {
     AdoptNodeIntoOwnerDoc(this, aNewChild, aError);
-    if (aError.Failed()) {
-      return nullptr;
-    }
-  } else if (doc->DidDocumentOpen()) {
-    CheckForOutdatedParent(this, aNewChild, aError);
     if (aError.Failed()) {
       return nullptr;
     }
