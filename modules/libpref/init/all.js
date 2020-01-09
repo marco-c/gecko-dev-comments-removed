@@ -1408,6 +1408,7 @@ pref("content.sink.pending_event_mode", 0);
 pref("privacy.popups.disable_from_plugins", 3);
 
 
+
 pref("privacy.restrict3rdpartystorage.partitionedHosts", "accounts.google.com/o/oauth2/");
 
 
@@ -5995,7 +5996,3 @@ pref("prio.enabled", false);
 
 
 pref("dom.sidebar.enabled", true);
-
-#if defined(MOZ_WIDGET_GTK)
-pref("widget.default-hidden-titlebar", true);
-#endif
