@@ -607,7 +607,6 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
                                      PropListType type);
 
   FieldInitializers setupFieldInitializers(ListNode* classMembers);
-  MOZ_MUST_USE bool emitCreateFieldKeys(ListNode* obj);
   MOZ_MUST_USE bool emitCreateFieldInitializers(ListNode* obj);
 
   
