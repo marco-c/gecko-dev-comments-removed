@@ -30,6 +30,7 @@ add_task(async function() {
   
   let dir = getChromeDir(getResolvedURI(gTestPath));
   dir.append(TEST_FILE);
+  dir.normalize();
   const uriString = Services.io.newFileURI(dir).spec;
   await BrowserTestUtils.withNewTab(uriString, async function(fileBrowser) {
     
