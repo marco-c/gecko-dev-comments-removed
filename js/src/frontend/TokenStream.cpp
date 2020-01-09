@@ -2436,12 +2436,6 @@ MOZ_MUST_USE bool TokenStreamSpecific<Unit, AnyCharsAccess>::getTokenInternal(
 
   
   
-  if (MOZ_UNLIKELY(modifier == TemplateTail)) {
-    return getStringOrTemplateToken('`', modifier, ttp);
-  }
-
-  
-  
   do {
     int32_t unit = peekCodeUnit();
     if (MOZ_UNLIKELY(unit == EOF)) {

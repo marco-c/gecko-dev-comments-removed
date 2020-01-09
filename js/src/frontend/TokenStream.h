@@ -341,16 +341,6 @@ struct Token {
     
     
     SlashIsInvalid,
-
-    
-    
-    
-    
-    
-    
-    
-    
-    TemplateTail,
   };
   friend class TokenStreamShared;
 
@@ -486,27 +476,14 @@ class TokenStreamShared {
   static constexpr Modifier SlashIsDiv = Token::SlashIsDiv;
   static constexpr Modifier SlashIsRegExp = Token::SlashIsRegExp;
   static constexpr Modifier SlashIsInvalid = Token::SlashIsInvalid;
-  static constexpr Modifier TemplateTail = Token::TemplateTail;
 
   static void verifyConsistentModifier(Modifier modifier,
-                                       Token lookaheadToken) {
-#ifdef DEBUG
-    
-    if (modifier == lookaheadToken.modifier) {
-      return;
-    }
-
-    if (modifier == SlashIsInvalid &&
-        lookaheadToken.modifier != TemplateTail) {
-      
-      return;
-    }
-
-    MOZ_ASSERT_UNREACHABLE(
-        "This token was scanned with both SlashIsRegExp and SlashIsDiv, indicating "
-        "the parser is confused about which one is allowed here. See comment "
-        "at Token::Modifier.");
-#endif
+                                       const Token& nextToken) {
+    MOZ_ASSERT(
+        modifier == nextToken.modifier || modifier == SlashIsInvalid,
+        "This token was scanned with both SlashIsRegExp and SlashIsDiv, "
+        "indicating the parser is confused about how to handle a slash here. "
+        "See comment at Token::Modifier.");
   }
 };
 
@@ -2769,6 +2746,29 @@ class MOZ_STACK_CLASS TokenStreamSpecific
 
   MOZ_MUST_USE bool getStringOrTemplateToken(char untilChar, Modifier modifier,
                                              TokenKind* out);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  MOZ_MUST_USE bool getTemplateToken(TokenKind* ttp) {
+    MOZ_ASSERT(anyCharsAccess().currentToken().type == TokenKind::RightCurly);
+    return getStringOrTemplateToken('`', SlashIsInvalid, ttp);
+  }
 
   MOZ_MUST_USE bool getDirectives(bool isMultiline, bool shouldWarnDeprecated);
   MOZ_MUST_USE bool getDirective(
