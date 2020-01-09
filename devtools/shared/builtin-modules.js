@@ -297,7 +297,6 @@ exports.globals = {
   btoa,
   console,
   CSS,
-  CSSRule,
   
   
   
@@ -380,4 +379,11 @@ lazyGlobal("indexedDB", () => {
 });
 lazyGlobal("isReplaying", () => {
   return exports.modules.Debugger.recordReplayProcessKind() == "Middleman";
+});
+lazyGlobal("CSSRule", () => {
+  if (exports.modules.Debugger.recordReplayProcessKind() == "Middleman") {
+    const ReplayInspector = require("devtools/server/actors/replay/inspector");
+    return ReplayInspector.createCSSRule(CSSRule);
+  }
+  return CSSRule;
 });
