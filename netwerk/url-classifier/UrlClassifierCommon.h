@@ -37,6 +37,10 @@ class UrlClassifierCommon final {
                                     const nsACString& aProvider,
                                     const nsACString& aFullHash);
 
+  static nsresult SetTrackingInfo(nsIChannel* channel,
+                                  const nsTArray<nsCString>& aLists,
+                                  const nsTArray<nsCString>& aFullHashes);
+
   
   
   static nsresult CreatePairwiseWhiteListURI(nsIChannel* aChannel,

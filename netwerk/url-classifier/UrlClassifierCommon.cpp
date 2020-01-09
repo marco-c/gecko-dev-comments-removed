@@ -140,6 +140,38 @@ bool UrlClassifierCommon::ShouldEnableClassifier(nsIChannel* aChannel) {
 }
 
 
+nsresult UrlClassifierCommon::SetTrackingInfo(
+    nsIChannel* aChannel, const nsTArray<nsCString>& aLists,
+    const nsTArray<nsCString>& aFullHashes) {
+  NS_ENSURE_ARG(!aLists.IsEmpty());
+
+  
+  nsCOMPtr<nsIParentChannel> parentChannel;
+  NS_QueryNotificationCallbacks(aChannel, parentChannel);
+  if (parentChannel) {
+    
+    
+    nsAutoCString strLists, strHashes;
+    TablesToString(aLists, strLists);
+    TablesToString(aFullHashes, strHashes);
+
+    parentChannel->SetClassifierMatchedTrackingInfo(strLists, strHashes);
+    return NS_OK;
+  }
+
+  nsresult rv;
+  nsCOMPtr<nsIClassifiedChannel> classifiedChannel =
+      do_QueryInterface(aChannel, &rv);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  if (classifiedChannel) {
+    classifiedChannel->SetMatchedTrackingInfo(aLists, aFullHashes);
+  }
+
+  return NS_OK;
+}
+
+
 nsresult UrlClassifierCommon::SetBlockedContent(nsIChannel* channel,
                                                 nsresult aErrorCode,
                                                 const nsACString& aList,
