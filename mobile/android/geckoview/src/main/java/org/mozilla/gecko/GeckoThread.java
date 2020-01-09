@@ -130,6 +130,7 @@ public class GeckoThread extends Thread {
     public static final int FLAG_DEBUGGING = 1 << 0; 
     public static final int FLAG_PRELOAD_CHILD = 1 << 1; 
     public static final int FLAG_ENABLE_NATIVE_CRASHREPORTER = 1 << 2; 
+    public static final int FLAG_ENABLE_MARIONETTE = 1 << 3; 
 
     public static final long DEFAULT_TIMEOUT = 5000;
 
@@ -459,6 +460,12 @@ public class GeckoThread extends Thread {
             env.add(0, "MOZ_CRASHREPORTER_DISABLE=1");
         } else if ((mInitInfo.flags & FLAG_ENABLE_NATIVE_CRASHREPORTER) != 0 && BuildConfig.DEBUG_BUILD) {
             env.add(0, "MOZ_CRASHREPORTER=1");
+        }
+
+        if (!isChildProcess() && ((mInitInfo.flags & FLAG_ENABLE_MARIONETTE) != 0)) {
+            
+            
+            env.add(0, "MOZ_MARIONETTE=1");
         }
 
         GeckoLoader.setupGeckoEnvironment(context, context.getFilesDir().getPath(), env, mInitInfo.prefs);

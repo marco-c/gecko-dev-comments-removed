@@ -47,6 +47,25 @@ var GeckoViewRemoteDebugger = {
     debug `onInit`;
     this._isEnabled = false;
     this._usbDebugger = new USBRemoteDebugger();
+
+    
+    
+    
+    
+    Services.prefs.setBoolPref("marionette.enabled", false);
+
+    
+    Services.prefs.setBoolPref("marionette.prefs.recommended", false);
+
+    
+    
+    
+    
+    
+    
+    Services.tm.dispatchToMainThread(() => {
+        Services.obs.notifyObservers(null, "marionette-startup-requested");
+    });
   },
 
   onEnable() {
@@ -75,7 +94,7 @@ var GeckoViewRemoteDebugger = {
     if (packageName) {
       packageName = packageName + "/";
     } else {
-      warn `Missing env MOZ_ANDROID_PACKAGE_NAME. Unable to get pacakge name`;
+      warn `Missing env MOZ_ANDROID_PACKAGE_NAME. Unable to get package name`;
     }
 
     this._isEnabled = true;
@@ -83,6 +102,8 @@ var GeckoViewRemoteDebugger = {
 
     const portOrPath = packageName + "firefox-debugger-socket";
     this._usbDebugger.start(portOrPath);
+
+    Services.prefs.setBoolPref("marionette.enabled", true);
   },
 
   onDisable() {
@@ -93,6 +114,8 @@ var GeckoViewRemoteDebugger = {
     debug `onDisable`;
     this._isEnabled = false;
     this._usbDebugger.stop();
+
+    Services.prefs.setBoolPref("marionette.enabled", false);
   },
 };
 
