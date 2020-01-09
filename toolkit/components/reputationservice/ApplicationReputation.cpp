@@ -465,7 +465,7 @@ static const char* const kBinaryFileExtensions[] = {
     ".bash",  
     ".bat",   
     
-    
+    ".bin",
     ".btapp",      
     ".btinstall",  
     ".btkey",      
