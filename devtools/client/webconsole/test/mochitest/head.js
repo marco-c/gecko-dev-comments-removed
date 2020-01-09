@@ -32,7 +32,7 @@ const DOCS_GA_PARAMS = `?${new URLSearchParams({
   "utm_medium": "firefox-console-errors",
   "utm_campaign": "default",
 })}`;
-const STATUS_CODES_GA_PARAMS = `?${new URLSearchParams({
+const GA_PARAMS = `?${new URLSearchParams({
   "utm_source": "mozilla",
   "utm_medium": "devtools-webconsole",
   "utm_campaign": "default",
@@ -660,6 +660,29 @@ async function closeConsole(tab = gBrowser.selectedTab) {
 
 
 function simulateLinkClick(element, clickEventProps) {
+  return overrideOpenLink(() => {
+    if (clickEventProps) {
+      
+      element.dispatchEvent(clickEventProps);
+    } else {
+      
+      element.click();
+    }
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function overrideOpenLink(fn) {
   const browserWindow = Services.wm.getMostRecentWindow(gDevTools.chromeWindowType);
 
   
@@ -673,13 +696,7 @@ function simulateLinkClick(element, clickEventProps) {
       resolve({link: link, where});
     };
     browserWindow.openWebLinkIn = browserWindow.openTrustedLinkIn = openLinkIn;
-    if (clickEventProps) {
-      
-      element.dispatchEvent(clickEventProps);
-    } else {
-      
-      element.click();
-    }
+    fn();
   });
 
   
