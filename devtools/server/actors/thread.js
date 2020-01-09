@@ -76,6 +76,12 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     
     this._onLoadBreakpointURLs = new Set();
 
+    
+    
+    
+    
+    this._handledFrameExceptions = new WeakMap();
+
     this.global = global;
 
     this.onNewSourceEvent = this.onNewSourceEvent.bind(this);
@@ -1565,6 +1571,11 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       return undefined;
     }
 
+    if (this._handledFrameExceptions.has(youngestFrame) &&
+        this._handledFrameExceptions.get(youngestFrame) === value) {
+      return undefined;
+    }
+
     
     
     
@@ -1583,6 +1594,12 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
     if (this.skipBreakpoints || this.sources.isBlackBoxed(url)) {
       return undefined;
+    }
+
+    
+    
+    for (let frame = youngestFrame.older; frame != null; frame = frame.older) {
+      this._handledFrameExceptions.set(frame, value);
     }
 
     try {
