@@ -1019,6 +1019,7 @@ nsresult nsCSPContext::SendReports(
                          nullptr,  
                          nullptr,  
                          nullptr,  
+                         nullptr,  
                          loadFlags);
     }
 

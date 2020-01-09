@@ -1995,6 +1995,7 @@ nsUrlClassifierDBService::SendThreatHitReport(nsIChannel* aChannel,
                      nsIContentPolicy::TYPE_OTHER,
                      nullptr,  
                      nullptr,  
+                     nullptr,  
                      nullptr, loadFlags);
   NS_ENSURE_SUCCESS(rv, rv);
 

@@ -238,6 +238,7 @@ nsresult TRR::SendHTTPRequest() {
       nsIContentPolicy::TYPE_OTHER,
       nullptr,  
       nullptr,  
+      nullptr,  
       this,
       nsIRequest::LOAD_ANONYMOUS | (mPB ? nsIRequest::INHIBIT_CACHING : 0),
       ios);

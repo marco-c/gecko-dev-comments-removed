@@ -193,6 +193,7 @@ static inline already_AddRefed<nsIChannel> SetupIPCheckChannel(bool ipv4) {
       nsIContentPolicy::TYPE_OTHER,
       nullptr,  
       nullptr,  
+      nullptr,  
       nullptr,
       nsIRequest::LOAD_BYPASS_CACHE |    
           nsIRequest::INHIBIT_CACHING |  
