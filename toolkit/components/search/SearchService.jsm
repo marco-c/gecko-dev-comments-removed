@@ -1950,9 +1950,14 @@ SearchService.prototype = {
       });
     }
 
+    let shortName = extension.id.split("@")[0];
+    if (locale != DEFAULT_TAG) {
+      shortName += "-" + locale;
+    }
+
     let params = {
       name: searchProvider.name.trim(),
-      shortName: extension.id.split("@")[0],
+      shortName,
       description: extension.manifest.description,
       searchForm: searchProvider.search_form,
       
