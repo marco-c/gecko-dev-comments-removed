@@ -72,9 +72,9 @@ class PopupBlocker final {
 }  
 
 #ifdef MOZILLA_INTERNAL_API
-#  define NS_AUTO_POPUP_STATE_PUSHER nsAutoPopupStatePusherInternal
+#  define AUTO_POPUP_STATE_PUSHER AutoPopupStatePusherInternal
 #else
-#  define NS_AUTO_POPUP_STATE_PUSHER nsAutoPopupStatePusherExternal
+#  define AUTO_POPUP_STATE_PUSHER AutoPopupStatePusherExternal
 #endif
 
 
@@ -83,24 +83,23 @@ class PopupBlocker final {
 
 
 
-class MOZ_RAII NS_AUTO_POPUP_STATE_PUSHER final {
+class MOZ_RAII AUTO_POPUP_STATE_PUSHER final {
  public:
 #ifdef MOZILLA_INTERNAL_API
-  explicit NS_AUTO_POPUP_STATE_PUSHER(
+  explicit AUTO_POPUP_STATE_PUSHER(
       mozilla::dom::PopupBlocker::PopupControlState aState,
       bool aForce = false);
-  ~NS_AUTO_POPUP_STATE_PUSHER();
+  ~AUTO_POPUP_STATE_PUSHER();
 #else
-  NS_AUTO_POPUP_STATE_PUSHER(
-      nsPIDOMWindowOuter* aWindow,
-      mozilla::dom::PopupBlocker::PopupControlState aState)
+  AUTO_POPUP_STATE_PUSHER(nsPIDOMWindowOuter* aWindow,
+                          mozilla::dom::PopupBlocker::PopupControlState aState)
       : mWindow(aWindow), mOldState(openAbused) {
     if (aWindow) {
       mOldState = PopupBlocker::PushPopupControlState(aState, false);
     }
   }
 
-  ~NS_AUTO_POPUP_STATE_PUSHER() {
+  ~AUTO_POPUP_STATE_PUSHER() {
     if (mWindow) {
       PopupBlocker::PopPopupControlState(mOldState);
     }
@@ -114,6 +113,6 @@ class MOZ_RAII NS_AUTO_POPUP_STATE_PUSHER final {
   mozilla::dom::PopupBlocker::PopupControlState mOldState;
 };
 
-#define nsAutoPopupStatePusher NS_AUTO_POPUP_STATE_PUSHER
+#define AutoPopupStatePusher AUTO_POPUP_STATE_PUSHER
 
 #endif  

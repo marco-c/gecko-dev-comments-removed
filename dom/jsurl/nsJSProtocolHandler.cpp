@@ -217,7 +217,7 @@ nsresult nsJSThunk::EvaluateScript(
   }
 
   
-  nsAutoPopupStatePusher popupStatePusher(aPopupState);
+  AutoPopupStatePusher popupStatePusher(aPopupState);
 
   
   nsCOMPtr<nsPIDOMWindowOuter> win = do_QueryInterface(global);

@@ -5694,7 +5694,7 @@ bool nsGlobalWindowInner::RunTimeoutHandler(Timeout* aTimeout,
   
   
   
-  nsAutoPopupStatePusher popupStatePusher(timeout->mPopupState);
+  AutoPopupStatePusher popupStatePusher(timeout->mPopupState);
 
   
   

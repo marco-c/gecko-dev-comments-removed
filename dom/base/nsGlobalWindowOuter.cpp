@@ -2660,7 +2660,7 @@ bool nsGlobalWindowOuter::ConfirmDialogIfNeeded() {
   
   
   
-  nsAutoPopupStatePusher popupStatePusher(PopupBlocker::openAbused, true);
+  AutoPopupStatePusher popupStatePusher(PopupBlocker::openAbused, true);
 
   bool disableDialog = false;
   nsAutoString label, title;
@@ -4702,7 +4702,7 @@ bool nsGlobalWindowOuter::AlertOrConfirm(bool aAlert, const nsAString& aMessage,
   
   
   
-  nsAutoPopupStatePusher popupStatePusher(PopupBlocker::openAbused, true);
+  AutoPopupStatePusher popupStatePusher(PopupBlocker::openAbused, true);
 
   
   
@@ -4790,7 +4790,7 @@ void nsGlobalWindowOuter::PromptOuter(const nsAString& aMessage,
   
   
   
-  nsAutoPopupStatePusher popupStatePusher(PopupBlocker::openAbused, true);
+  AutoPopupStatePusher popupStatePusher(PopupBlocker::openAbused, true);
 
   
   
@@ -7195,7 +7195,7 @@ nsresult nsGlobalWindowOuter::OpenInternal(
     
     
     
-    nsAutoPopupStatePusher popupStatePusher(PopupBlocker::openAbused, true);
+    AutoPopupStatePusher popupStatePusher(PopupBlocker::openAbused, true);
 
     if (!aCalledNoScript) {
       
