@@ -823,7 +823,7 @@ pref("browser.sessionstore.idleDelay", 180000);
 
 pref("browser.sessionstore.privacy_level", 0);
 
-pref("browser.sessionstore.max_tabs_undo", 10);
+pref("browser.sessionstore.max_tabs_undo", 25);
 
 
 pref("browser.sessionstore.max_windows_undo", 3);
