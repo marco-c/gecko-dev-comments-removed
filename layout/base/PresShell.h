@@ -960,6 +960,17 @@ class PresShell final : public nsIPresShell,
 
 
 
+    MOZ_CAN_RUN_SCRIPT
+    nsresult HandleEventAtFocusedContent(WidgetGUIEvent* aGUIEvent,
+                                         nsEventStatus* aEventStatus);
+
+    
+
+
+
+
+
+
 
 
     Element* ComputeFocusedEventTargetElement(WidgetGUIEvent* aGUIEvent);
@@ -1006,6 +1017,21 @@ class PresShell final : public nsIPresShell,
       return HandleEventInternal(aGUIEvent, aEventStatus, true,
                                  overrideClickTarget);
     }
+
+    
+
+
+
+
+
+
+
+
+
+    MOZ_CAN_RUN_SCRIPT
+    nsresult HandleEventWithFrameForPresShell(nsIFrame* aFrameForPresShell,
+                                              WidgetGUIEvent* aGUIEvent,
+                                              nsEventStatus* aEventStatus);
 
     
 
