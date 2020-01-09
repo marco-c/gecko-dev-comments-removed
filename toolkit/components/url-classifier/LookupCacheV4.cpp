@@ -173,15 +173,15 @@ nsresult LookupCacheV4::LoadFromFile(nsCOMPtr<nsIFile>& aFile) {
     return rv;
   }
 
-  nsCString state, checksum;
-  rv = LoadMetadata(state, checksum);
+  nsCString state, sha256;
+  rv = LoadMetadata(state, sha256);
   Telemetry::Accumulate(Telemetry::URLCLASSIFIER_VLPS_METADATA_CORRUPT,
                         rv == NS_ERROR_FILE_CORRUPTED);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
 
-  rv = VerifyChecksum(checksum);
+  rv = VerifySHA256(sha256);
   Telemetry::Accumulate(Telemetry::URLCLASSIFIER_VLPS_LOAD_CORRUPT,
                         rv == NS_ERROR_FILE_CORRUPTED);
   Unused << NS_WARN_IF(NS_FAILED(rv));
@@ -223,7 +223,7 @@ static nsresult InitCrypto(nsCOMPtr<nsICryptoHash>& aCrypto) {
 
 
 
-static void UpdateChecksum(nsICryptoHash* aCrypto, const nsACString& aPrefix) {
+static void UpdateSHA256(nsICryptoHash* aCrypto, const nsACString& aPrefix) {
   MOZ_ASSERT(aCrypto);
   aCrypto->Update(
       reinterpret_cast<uint8_t*>(const_cast<char*>(aPrefix.BeginReading())),
@@ -315,7 +315,7 @@ nsresult LookupCacheV4::ApplyUpdate(RefPtr<TableUpdateV4> aTableUpdate,
           return rv;
         }
 
-        UpdateChecksum(crypto, smallestOldPrefix);
+        UpdateSHA256(crypto, smallestOldPrefix);
       }
       smallestOldPrefix.SetLength(0);
     } else {
@@ -324,7 +324,7 @@ nsresult LookupCacheV4::ApplyUpdate(RefPtr<TableUpdateV4> aTableUpdate,
         return rv;
       }
 
-      UpdateChecksum(crypto, smallestAddPrefix);
+      UpdateSHA256(crypto, smallestAddPrefix);
       smallestAddPrefix.SetLength(0);
     }
   }
@@ -343,20 +343,20 @@ nsresult LookupCacheV4::ApplyUpdate(RefPtr<TableUpdateV4> aTableUpdate,
     return NS_ERROR_UC_UPDATE_WRONG_REMOVAL_INDICES;
   }
 
-  nsAutoCString checksum;
-  crypto->Finish(false, checksum);
-  if (aTableUpdate->Checksum().IsEmpty()) {
-    LOG(("Update checksum missing."));
+  nsAutoCString sha256;
+  crypto->Finish(false, sha256);
+  if (aTableUpdate->SHA256().IsEmpty()) {
+    LOG(("Update sha256 hash missing."));
     Telemetry::Accumulate(
         Telemetry::URLCLASSIFIER_UPDATE_ERROR, mProvider,
         NS_ERROR_GET_CODE(NS_ERROR_UC_UPDATE_MISSING_CHECKSUM));
 
     
     
-    std::string stdChecksum(checksum.BeginReading(), checksum.Length());
-    aTableUpdate->NewChecksum(stdChecksum);
-  } else if (aTableUpdate->Checksum() != checksum) {
-    LOG(("Checksum mismatch after applying partial update"));
+    std::string stdSha256(sha256.BeginReading(), sha256.Length());
+    aTableUpdate->SetSHA256(stdSha256);
+  } else if (aTableUpdate->SHA256() != sha256) {
+    LOG(("SHA256 hash mismatch after applying partial update"));
     return NS_ERROR_UC_UPDATE_CHECKSUM_MISMATCH;
   }
 
@@ -370,7 +370,7 @@ nsresult LookupCacheV4::AddFullHashResponseToCache(
   return NS_OK;
 }
 
-nsresult LookupCacheV4::VerifyChecksum(const nsACString& aChecksum) {
+nsresult LookupCacheV4::VerifySHA256(const nsACString& aSHA256) {
   nsCOMPtr<nsICryptoHash> crypto;
   nsresult rv = InitCrypto(crypto);
   if (NS_FAILED(rv)) {
@@ -387,14 +387,14 @@ nsresult LookupCacheV4::VerifyChecksum(const nsACString& aChecksum) {
     if (!loadPSet.GetSmallestPrefix(prefix)) {
       break;
     }
-    UpdateChecksum(crypto, prefix);
+    UpdateSHA256(crypto, prefix);
   }
 
-  nsAutoCString checksum;
-  crypto->Finish(false, checksum);
+  nsAutoCString sha256;
+  crypto->Finish(false, sha256);
 
-  if (checksum != aChecksum) {
-    LOG(("Checksum mismatch when loading prefixes from file."));
+  if (sha256 != aSHA256) {
+    LOG(("Sha256 hash mismatch when loading prefixes from file."));
     return NS_ERROR_FILE_CORRUPTED;
   }
 
@@ -513,14 +513,13 @@ nsresult LookupCacheV4::WriteMetadata(
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  rv = WriteValue(outputStream, aTableUpdate->Checksum());
+  rv = WriteValue(outputStream, aTableUpdate->SHA256());
   NS_ENSURE_SUCCESS(rv, rv);
 
   return rv;
 }
 
-nsresult LookupCacheV4::LoadMetadata(nsACString& aState,
-                                     nsACString& aChecksum) {
+nsresult LookupCacheV4::LoadMetadata(nsACString& aState, nsACString& aSHA256) {
   nsCOMPtr<nsIFile> metaFile;
   nsresult rv = mStoreDirectory->Clone(getter_AddRefs(metaFile));
   NS_ENSURE_SUCCESS(rv, rv);
@@ -544,9 +543,9 @@ nsresult LookupCacheV4::LoadMetadata(nsACString& aState,
   }
 
   
-  rv = ReadValue(localInFile, aChecksum);
+  rv = ReadValue(localInFile, aSHA256);
   if (NS_FAILED(rv)) {
-    LOG(("Failed to read checksum."));
+    LOG(("Failed to read SHA256 hash."));
     return rv;
   }
 
