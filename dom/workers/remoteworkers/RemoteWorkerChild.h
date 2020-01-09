@@ -8,6 +8,7 @@
 #define mozilla_dom_RemoteWorkerChild_h
 
 #include "mozilla/dom/PRemoteWorkerChild.h"
+#include "mozilla/ThreadBound.h"
 #include "mozilla/UniquePtr.h"
 #include "nsISupportsImpl.h"
 
@@ -99,7 +100,11 @@ class RemoteWorkerChild final : public PRemoteWorkerChild {
   WorkerState mWorkerState;
 
   
-  nsTArray<RemoteWorkerOp> mPendingOps;
+  struct LauncherBoundData {
+    nsTArray<RemoteWorkerOp> mPendingOps;
+  };
+
+  ThreadBound<LauncherBoundData> mLauncherData;
 };
 
 }  
