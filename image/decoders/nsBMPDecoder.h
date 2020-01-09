@@ -154,7 +154,6 @@ class nsBMPDecoder : public Decoder {
 
   enum class State {
     FILE_HEADER,
-    CLIPBOARD_HEADER,
     INFO_HEADER_SIZE,
     INFO_HEADER_REST,
     BITFIELDS,
@@ -174,7 +173,8 @@ class nsBMPDecoder : public Decoder {
   nsBMPDecoder(RasterImage* aImage, uint32_t aDataOffset);
 
   
-  nsBMPDecoder(RasterImage* aImage, State aState, size_t aLength);
+  nsBMPDecoder(RasterImage* aImage, State aState, size_t aLength,
+               bool aForClipboard);
 
   int32_t AbsoluteHeight() const { return abs(mH.mHeight); }
 
@@ -183,7 +183,6 @@ class nsBMPDecoder : public Decoder {
   void FinishRow();
 
   LexerTransition<State> ReadFileHeader(const char* aData, size_t aLength);
-  LexerTransition<State> ReadClipboardHeader(const char* aData, size_t aLength);
   LexerTransition<State> ReadInfoHeaderSize(const char* aData, size_t aLength);
   LexerTransition<State> ReadInfoHeaderRest(const char* aData, size_t aLength);
   LexerTransition<State> ReadBitfields(const char* aData, size_t aLength);
@@ -201,6 +200,9 @@ class nsBMPDecoder : public Decoder {
 
   
   bool mIsWithinICO;
+
+  
+  bool mIsForClipboard;
 
   bmp::BitFields mBitFields;
 

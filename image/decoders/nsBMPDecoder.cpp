@@ -82,6 +82,16 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 #include "ImageLogging.h"
 #include "nsBMPDecoder.h"
 
@@ -157,10 +167,12 @@ static mozilla::LazyLogModule sBMPLog("BMPDecoder");
 
 static const uint32_t BIHSIZE_FIELD_LENGTH = 4;
 
-nsBMPDecoder::nsBMPDecoder(RasterImage* aImage, State aState, size_t aLength)
+nsBMPDecoder::nsBMPDecoder(RasterImage* aImage, State aState, size_t aLength,
+                           bool aForClipboard)
     : Decoder(aImage),
       mLexer(Transition::To(aState, aLength), Transition::TerminateSuccess()),
       mIsWithinICO(false),
+      mIsForClipboard(aForClipboard),
       mMayHaveTransparency(false),
       mDoesHaveTransparency(false),
       mNumColors(0),
@@ -175,12 +187,14 @@ nsBMPDecoder::nsBMPDecoder(RasterImage* aImage, State aState, size_t aLength)
 
 nsBMPDecoder::nsBMPDecoder(RasterImage* aImage, bool aForClipboard)
     : nsBMPDecoder(aImage,
-                   aForClipboard ? State::CLIPBOARD_HEADER : State::FILE_HEADER,
-                   aForClipboard ? BIHSIZE_FIELD_LENGTH : FILE_HEADER_LENGTH) {}
+                   aForClipboard ? State::INFO_HEADER_SIZE : State::FILE_HEADER,
+                   aForClipboard ? BIHSIZE_FIELD_LENGTH : FILE_HEADER_LENGTH,
+                   aForClipboard) {}
 
 
 nsBMPDecoder::nsBMPDecoder(RasterImage* aImage, uint32_t aDataOffset)
-    : nsBMPDecoder(aImage, State::INFO_HEADER_SIZE, BIHSIZE_FIELD_LENGTH) {
+    : nsBMPDecoder(aImage, State::INFO_HEADER_SIZE, BIHSIZE_FIELD_LENGTH,
+                    false) {
   SetIsWithinICO();
 
   
@@ -404,8 +418,6 @@ LexerResult nsBMPDecoder::DoDecode(SourceBufferIterator& aIterator,
                       switch (aState) {
                         case State::FILE_HEADER:
                           return ReadFileHeader(aData, aLength);
-                        case State::CLIPBOARD_HEADER:
-                          return ReadClipboardHeader(aData, aLength);
                         case State::INFO_HEADER_SIZE:
                           return ReadInfoHeaderSize(aData, aLength);
                         case State::INFO_HEADER_REST:
@@ -446,13 +458,6 @@ LexerTransition<nsBMPDecoder::State> nsBMPDecoder::ReadFileHeader(
   mH.mDataOffset = LittleEndian::readUint32(aData + 10);
 
   return Transition::To(State::INFO_HEADER_SIZE, BIHSIZE_FIELD_LENGTH);
-}
-
-LexerTransition<nsBMPDecoder::State> nsBMPDecoder::ReadClipboardHeader(
-    const char* aData, size_t aLength) {
-  
-  mH.mDataOffset = LittleEndian::readUint32(aData);
-  return ReadInfoHeaderSize(aData, aLength);
 }
 
 
@@ -571,6 +576,13 @@ LexerTransition<nsBMPDecoder::State> nsBMPDecoder::ReadInfoHeaderRest(
       
       
       mBitFields.ReadFromHeader(aData + 36,  true);
+
+      
+      
+      
+      if (mIsForClipboard) {
+        mH.mDataOffset += BitFields::LENGTH;
+      }
     } else {
       
       
@@ -680,6 +692,12 @@ LexerTransition<nsBMPDecoder::State> nsBMPDecoder::ReadColorTable(
     mColors[i].mGreen = uint8_t(aData[1]);
     mColors[i].mRed = uint8_t(aData[2]);
     aData += mBytesPerColor;
+  }
+
+  
+  
+  if (mIsForClipboard) {
+    mH.mDataOffset += mPreGapLength;
   }
 
   
