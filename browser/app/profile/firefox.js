@@ -968,6 +968,9 @@ pref("app.productInfo.baseURL", "https://www.mozilla.org/firefox/features/");
 
 pref("security.alternate_certificate_error_page", "certerror");
 
+
+pref("browser.security.newcerterrorpage.enabled", true);
+
 pref("browser.security.newcerterrorpage.mitm.enabled", true);
 pref("security.certerrors.recordEventTelemetry", true);
 pref("security.certerrors.permanentOverride", true);
@@ -1710,7 +1713,7 @@ pref("print.use_simplify_page", true);
 
 
 
-pref("webchannel.allowObject.urlWhitelist", "https://content.cdn.mozilla.net https://input.mozilla.org https://support.mozilla.org https://install.mozilla.org");
+pref("webchannel.allowObject.urlWhitelist", "https://content.cdn.mozilla.net https://support.mozilla.org https://install.mozilla.org");
 
 
 

@@ -3206,7 +3206,8 @@ pref("layout.display-list.dump-parent", false);
 pref("layout.display-list.retain", true);
 pref("layout.display-list.retain.chrome", false);
 #else
-pref("layout.display-list.retain", false);
+pref("layout.display-list.retain", true);
+pref("layout.display-list.retain.chrome", true);
 #endif
 
 
@@ -5191,7 +5192,7 @@ pref("extensions.webextensions.keepStorageOnUninstall", false);
 pref("extensions.webextensions.keepUuidOnUninstall", false);
 
 pref("extensions.webextensions.identity.redirectDomain", "extensions.allizom.org");
-pref("extensions.webextensions.restrictedDomains", "accounts-static.cdn.mozilla.net,accounts.firefox.com,addons.cdn.mozilla.net,addons.mozilla.org,api.accounts.firefox.com,content.cdn.mozilla.net,discovery.addons.mozilla.org,input.mozilla.org,install.mozilla.org,oauth.accounts.firefox.com,profile.accounts.firefox.com,support.mozilla.org,sync.services.mozilla.com");
+pref("extensions.webextensions.restrictedDomains", "accounts-static.cdn.mozilla.net,accounts.firefox.com,addons.cdn.mozilla.net,addons.mozilla.org,api.accounts.firefox.com,content.cdn.mozilla.net,discovery.addons.mozilla.org,install.mozilla.org,oauth.accounts.firefox.com,profile.accounts.firefox.com,support.mozilla.org,sync.services.mozilla.com");
 
 pref("extensions.webextensions.themes.icons.enabled", false);
 pref("extensions.webextensions.remote", false);

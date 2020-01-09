@@ -847,7 +847,7 @@ pref("media.block-autoplay-until-in-foreground", false);
 
 
 
-pref("webchannel.allowObject.urlWhitelist", "https://accounts.firefox.com https://content.cdn.mozilla.net https://input.mozilla.org https://support.mozilla.org https://install.mozilla.org");
+pref("webchannel.allowObject.urlWhitelist", "https://accounts.firefox.com https://content.cdn.mozilla.net https://support.mozilla.org https://install.mozilla.org");
 
 pref("media.openUnsupportedTypeWithExternalApp", true);
 
