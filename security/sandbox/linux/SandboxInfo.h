@@ -29,6 +29,7 @@ class SandboxInfo {
     
     kEnabledForContent = 1 << 1,
     
+    
     kEnabledForMedia = 1 << 2,
     
     kVerbose = 1 << 3,

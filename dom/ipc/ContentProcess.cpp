@@ -11,12 +11,12 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/recordreplay/ParentIPC.h"
 
-#if defined(XP_MACOSX) && defined(MOZ_CONTENT_SANDBOX)
+#if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
 #  include <stdlib.h>
 #  include "mozilla/Sandbox.h"
 #endif
 
-#if (defined(XP_WIN) || defined(XP_MACOSX)) && defined(MOZ_CONTENT_SANDBOX)
+#if (defined(XP_WIN) || defined(XP_MACOSX)) && defined(MOZ_SANDBOX)
 #  include "mozilla/SandboxSettings.h"
 #  include "nsAppDirectoryServiceDefs.h"
 #  include "nsDirectoryService.h"
@@ -28,7 +28,7 @@ using mozilla::ipc::IOThreadChild;
 namespace mozilla {
 namespace dom {
 
-#if defined(XP_WIN) && defined(MOZ_CONTENT_SANDBOX)
+#if defined(XP_WIN) && defined(MOZ_SANDBOX)
 static void SetTmpEnvironmentVariable(nsIFile* aValue) {
   
   
@@ -45,7 +45,7 @@ static void SetTmpEnvironmentVariable(nsIFile* aValue) {
 }
 #endif
 
-#if defined(XP_WIN) && defined(MOZ_CONTENT_SANDBOX)
+#if defined(XP_WIN) && defined(MOZ_SANDBOX)
 static void SetUpSandboxEnvironment() {
   MOZ_ASSERT(
       nsDirectoryService::gService,
@@ -85,7 +85,7 @@ bool ContentProcess::Init(int aArgc, char* aArgv[]) {
   char* prefMapHandle = nullptr;
   char* prefsLen = nullptr;
   char* prefMapSize = nullptr;
-#if defined(XP_MACOSX) && defined(MOZ_CONTENT_SANDBOX)
+#if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
   nsCOMPtr<nsIFile> profileDir;
 #endif
 
@@ -149,7 +149,7 @@ bool ContentProcess::Init(int aArgc, char* aArgv[]) {
       }
       parentBuildID = Some(aArgv[i]);
 
-#if defined(XP_MACOSX) && defined(MOZ_CONTENT_SANDBOX)
+#if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
     } else if (strcmp(aArgv[i], "-profile") == 0) {
       if (++i == aArgc) {
         return false;
@@ -186,7 +186,7 @@ bool ContentProcess::Init(int aArgc, char* aArgv[]) {
                 IOThreadChild::channel(), *childID, *isForBrowser);
 
   mXREEmbed.Start();
-#if (defined(XP_MACOSX)) && defined(MOZ_CONTENT_SANDBOX)
+#if (defined(XP_MACOSX)) && defined(MOZ_SANDBOX)
   mContent.SetProfileDir(profileDir);
 #  if defined(DEBUG)
   
@@ -199,7 +199,7 @@ bool ContentProcess::Init(int aArgc, char* aArgv[]) {
 #  endif 
 #endif   
 
-#if defined(XP_WIN) && defined(MOZ_CONTENT_SANDBOX)
+#if defined(XP_WIN) && defined(MOZ_SANDBOX)
   SetUpSandboxEnvironment();
 #endif
 

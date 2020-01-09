@@ -143,7 +143,7 @@ nsresult nsXREDirProvider::Initialize(
   mAppProvider = aAppProvider;
   mXULAppDir = aXULAppDir;
   mGREDir = aGREDir;
-#if defined(XP_WIN) && defined(MOZ_CONTENT_SANDBOX)
+#if defined(XP_WIN) && defined(MOZ_SANDBOX)
   
   
   
@@ -216,7 +216,7 @@ nsresult nsXREDirProvider::SetProfile(nsIFile* aDir, nsIFile* aLocalDir) {
 
   mProfileDir = aDir;
   mProfileLocalDir = aLocalDir;
-#if defined(XP_WIN) && defined(MOZ_CONTENT_SANDBOX)
+#if defined(XP_WIN) && defined(MOZ_SANDBOX)
   
   
   
@@ -475,7 +475,7 @@ nsXREDirProvider::GetFile(const char* aProperty, bool* aPersistent,
     bool unused;
     rv = dirsvc->GetFile("XCurProcD", &unused, getter_AddRefs(file));
   }
-#if defined(MOZ_CONTENT_SANDBOX)
+#if defined(MOZ_SANDBOX)
   else if (!strcmp(aProperty, NS_APP_CONTENT_PROCESS_TEMP_DIR)) {
     if (!mContentTempDir && NS_FAILED((rv = LoadContentProcessTempDir()))) {
       return rv;
@@ -624,7 +624,7 @@ static const char* GetProcessTempBaseDirKey() {
 #  endif
 }
 
-#  if defined(MOZ_CONTENT_SANDBOX)
+#  if defined(MOZ_SANDBOX)
 
 
 
@@ -749,7 +749,7 @@ static already_AddRefed<nsIFile> GetProcessSandboxTempDir(
 
 static already_AddRefed<nsIFile> CreateProcessSandboxTempDir(
     GeckoProcessType procType) {
-#  if defined(MOZ_CONTENT_SANDBOX)
+#  if defined(MOZ_SANDBOX)
   if ((procType == GeckoProcessType_Content) && IsContentSandboxDisabled()) {
     return nullptr;
   }
@@ -1051,7 +1051,7 @@ nsXREDirProvider::DoStartup() {
 
     obsSvc->NotifyObservers(nullptr, "profile-initial-state", nullptr);
 
-#if defined(MOZ_CONTENT_SANDBOX)
+#if defined(MOZ_SANDBOX)
     
     
     
@@ -1100,10 +1100,8 @@ void nsXREDirProvider::DoShutdown() {
   }
 
   if (XRE_IsParentProcess()) {
-#if defined(MOZ_CONTENT_SANDBOX)
-    mozilla::Unused << DeleteDirIfExists(mContentProcessSandboxTempDir);
-#endif
 #if defined(MOZ_SANDBOX)
+    mozilla::Unused << DeleteDirIfExists(mContentProcessSandboxTempDir);
     mozilla::Unused << DeleteDirIfExists(mPluginProcessSandboxTempDir);
 #endif
   }

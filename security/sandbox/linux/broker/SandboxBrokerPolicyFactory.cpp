@@ -51,7 +51,6 @@
 
 namespace mozilla {
 
-#if defined(MOZ_CONTENT_SANDBOX)
 namespace {
 static const int rdonly = SandboxBroker::MAY_READ;
 static const int wronly = SandboxBroker::MAY_WRITE;
@@ -59,7 +58,6 @@ static const int rdwr = rdonly | wronly;
 static const int rdwrcr = rdwr | SandboxBroker::MAY_CREATE;
 static const int access = SandboxBroker::MAY_ACCESS;
 }  
-#endif
 
 static void AddMesaSysfsPaths(SandboxBroker::Policy* aPolicy) {
   
@@ -203,7 +201,6 @@ static void AddSharedMemoryPaths(SandboxBroker::Policy* aPolicy, pid_t aPid) {
 SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory() {
   
   
-#if defined(MOZ_CONTENT_SANDBOX)
   SandboxBroker::Policy* policy = new SandboxBroker::Policy;
   
   
@@ -413,10 +410,8 @@ SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory() {
 #  endif
 
   mCommonContentPolicy.reset(policy);
-#endif
 }
 
-#ifdef MOZ_CONTENT_SANDBOX
 UniquePtr<SandboxBroker::Policy> SandboxBrokerPolicyFactory::GetContentPolicy(
     int aPid, bool aFileProcess) {
   
@@ -597,5 +592,4 @@ SandboxBrokerPolicyFactory::GetUtilityPolicy(int aPid) {
   return policy;
 }
 
-#endif  
 }  

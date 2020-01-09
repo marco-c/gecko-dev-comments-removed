@@ -732,7 +732,7 @@ void DocAccessibleParent::SendParentCOMProxy() {
     return;
   }
 
-#  if defined(MOZ_CONTENT_SANDBOX)
+#  if defined(MOZ_SANDBOX)
   mParentProxyStream = holder.GetPreservedStream();
 #  endif  
 }
@@ -746,7 +746,7 @@ void DocAccessibleParent::SetEmulatedWindowHandle(HWND aWindowHandle) {
 
 mozilla::ipc::IPCResult DocAccessibleParent::RecvGetWindowedPluginIAccessible(
     const WindowsHandle& aHwnd, IAccessibleHolder* aPluginCOMProxy) {
-#  if defined(MOZ_CONTENT_SANDBOX)
+#  if defined(MOZ_SANDBOX)
   
   
   HWND childWnd = ::GetWindow(reinterpret_cast<HWND>(aHwnd), GW_CHILD);

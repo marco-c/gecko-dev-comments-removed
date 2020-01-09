@@ -89,7 +89,7 @@ InitLoggingIfRequired(ProvideLogFunctionCb aProvideLogFunctionCb)
       PR_GetEnv("MOZ_SANDBOX_LOGGING")) {
     aProvideLogFunctionCb(Log);
 
-#if defined(MOZ_CONTENT_SANDBOX)
+#if defined(MOZ_SANDBOX)
     
     
     if (XRE_IsContentProcess()) {

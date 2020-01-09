@@ -12,9 +12,7 @@
 #include "SandboxFilter.h"
 #include "SandboxInternal.h"
 #include "SandboxLogging.h"
-#ifdef MOZ_GMP_SANDBOX
-#  include "SandboxOpenedFiles.h"
-#endif
+#include "SandboxOpenedFiles.h"
 #include "SandboxReporterClient.h"
 
 #include <dirent.h>
@@ -576,7 +574,6 @@ static void SetCurrentProcessSandbox(
   EnterChroot();
 }
 
-#ifdef MOZ_CONTENT_SANDBOX
 
 
 
@@ -608,9 +605,6 @@ bool SetContentProcessSandbox(ContentProcessSandboxParams&& aParams) {
       GetContentSandboxPolicy(sBroker, std::move(aParams)));
   return true;
 }
-#endif  
-
-#ifdef MOZ_GMP_SANDBOX
 
 
 
@@ -651,7 +645,6 @@ void SetMediaPluginSandbox(const char* aFilePath) {
   
   SetCurrentProcessSandbox(GetMediaSandboxPolicy(files));
 }
-#endif  
 
 void SetRemoteDataDecoderSandbox(int aBroker) {
   if (PR_GetEnv("MOZ_DISABLE_RDD_SANDBOX") != nullptr) {

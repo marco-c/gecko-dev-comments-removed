@@ -11,7 +11,7 @@
 #include "mozilla/mscom/ProxyStream.h"
 #include "mozilla/mscom/Ptr.h"
 #include "mozilla/NotNull.h"
-#if defined(MOZ_CONTENT_SANDBOX)
+#if defined(MOZ_SANDBOX)
 #  include "mozilla/SandboxSettings.h"
 #endif  
 
@@ -37,7 +37,7 @@ class PassthruProxy final : public IMarshal, public IClientSecurity {
   static RefPtr<Iface> Wrap(NotNull<Iface*> aIn) {
     static_assert(detail::VTableSizer<Iface>::Size >= 3, "VTable too small");
 
-#if defined(MOZ_CONTENT_SANDBOX)
+#if defined(MOZ_SANDBOX)
     if (mozilla::GetEffectiveContentSandboxLevel() < 3) {
       
       return aIn.get();

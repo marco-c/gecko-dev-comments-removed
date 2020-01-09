@@ -1025,7 +1025,6 @@ pref("dom.ipc.plugins.sandbox-level.flash", 3);
 pref("dom.ipc.plugins.sandbox-level.flash", 0);
 #endif
 
-#if defined(MOZ_CONTENT_SANDBOX)
 
 
 
@@ -1038,7 +1037,6 @@ pref("security.sandbox.content.level", 5);
 
 
 pref("security.sandbox.windows.log.stackTraceDepth", 0);
-#endif
 
 
 
@@ -1059,9 +1057,7 @@ pref("security.sandbox.gmp.win32k-disable", false);
 
 
 pref("security.sandbox.content.mac.earlyinit", true);
-#endif
 
-#if defined(XP_MACOSX) && defined(MOZ_SANDBOX) && defined(MOZ_CONTENT_SANDBOX)
 
 
 
@@ -1077,9 +1073,7 @@ pref("security.sandbox.content.mac.earlyinit", true);
 
 
 pref("security.sandbox.content.level", 3);
-#endif
 
-#if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
 
 
 
@@ -1099,7 +1093,7 @@ pref("dom.ipc.plugins.sandbox-level.flash.max-legacy-os-minor", 10);
 pref("dom.ipc.plugins.sandbox-level.default", 1);
 #endif
 
-#if defined(XP_LINUX) && defined(MOZ_SANDBOX) && defined(MOZ_CONTENT_SANDBOX)
+#if defined(XP_LINUX) && defined(MOZ_SANDBOX)
 
 
 
@@ -1122,23 +1116,17 @@ pref("security.sandbox.content.syscall_whitelist", "");
 
 
 pref("security.sandbox.pledge.main", "stdio rpath wpath cpath inet proc exec prot_exec flock ps sendfd recvfd dns vminfo tty drm unix fattr getpw mcast");
-#if defined(MOZ_CONTENT_SANDBOX)
 pref("security.sandbox.content.level", 1);
 pref("security.sandbox.pledge.content", "stdio rpath wpath cpath inet recvfd sendfd prot_exec unix drm ps");
 #endif
-#endif
 
 #if defined(MOZ_SANDBOX)
-#if defined(MOZ_CONTENT_SANDBOX)
 
 
 
 pref("security.sandbox.content.tempDirSuffix", "");
-#endif
 pref("security.sandbox.plugin.tempDirSuffix", "");
-#endif
 
-#if defined(MOZ_SANDBOX)
 
 
 #if defined(XP_WIN) || defined(XP_MACOSX)

@@ -1267,7 +1267,7 @@ VARCACHE_PREF(
   bool, false
 )
 
-#if defined(XP_LINUX) && defined(MOZ_GMP_SANDBOX)
+#if defined(XP_LINUX) && defined(MOZ_SANDBOX)
 
 
 

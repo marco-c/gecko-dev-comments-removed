@@ -78,7 +78,7 @@
 
 #define NS_APP_PERMISSION_PARENT_DIR "permissionDBPDir"
 
-#if defined(MOZ_CONTENT_SANDBOX)
+#if defined(MOZ_SANDBOX)
 
 
 

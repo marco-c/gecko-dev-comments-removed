@@ -112,7 +112,7 @@
 #  include "ChildProfilerController.h"
 #endif
 
-#if defined(MOZ_CONTENT_SANDBOX)
+#if defined(MOZ_SANDBOX)
 #  include "mozilla/SandboxSettings.h"
 #  if defined(XP_WIN)
 #    include "mozilla/sandboxTarget.h"
@@ -1497,7 +1497,7 @@ mozilla::ipc::IPCResult ContentChild::RecvReinitRenderingForDeviceReset() {
   return IPC_OK();
 }
 
-#if defined(XP_MACOSX) && defined(MOZ_CONTENT_SANDBOX)
+#if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
 extern "C" {
 CGError CGSSetDenyWindowServerConnections(bool);
 void CGSShutdownServerConnections();
@@ -1636,7 +1636,7 @@ mozilla::ipc::IPCResult ContentChild::RecvSetProcessSandbox(
     const Maybe<mozilla::ipc::FileDescriptor>& aBroker) {
   
   
-#if defined(MOZ_CONTENT_SANDBOX)
+#if defined(MOZ_SANDBOX)
   bool sandboxEnabled = true;
 #  if defined(XP_LINUX)
   
@@ -3841,7 +3841,7 @@ mozilla::ipc::IPCResult ContentChild::RecvCommitBrowsingContextTransaction(
 
 }  
 
-#if defined(__OpenBSD__) && defined(MOZ_CONTENT_SANDBOX)
+#if defined(__OpenBSD__) && defined(MOZ_SANDBOX)
 #  include <unistd.h>
 
 static LazyLogModule sPledgeLog("SandboxPledge");

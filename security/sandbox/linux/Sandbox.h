@@ -25,7 +25,6 @@ class FileDescriptor;
 
 MOZ_EXPORT void SandboxEarlyInit();
 
-#ifdef MOZ_CONTENT_SANDBOX
 
 
 
@@ -53,14 +52,11 @@ struct ContentProcessSandboxParams {
 
 
 MOZ_EXPORT bool SetContentProcessSandbox(ContentProcessSandboxParams&& aParams);
-#endif
 
-#ifdef MOZ_GMP_SANDBOX
 
 
 
 MOZ_EXPORT void SetMediaPluginSandbox(const char* aFilePath);
-#endif
 
 MOZ_EXPORT void SetRemoteDataDecoderSandbox(int aBroker);
 

@@ -261,7 +261,7 @@
 #  include "mozilla/dom/SpeechSynthesisParent.h"
 #endif
 
-#if defined(MOZ_CONTENT_SANDBOX)
+#if defined(MOZ_SANDBOX)
 #  include "mozilla/SandboxSettings.h"
 #  if defined(XP_LINUX)
 #    include "mozilla/SandboxInfo.h"
@@ -565,13 +565,13 @@ nsDataHashtable<nsUint32HashKey, ContentParent*>*
     ContentParent::sJSPluginContentParents;
 nsTArray<ContentParent*>* ContentParent::sPrivateContent;
 StaticAutoPtr<LinkedList<ContentParent>> ContentParent::sContentParents;
-#if defined(XP_LINUX) && defined(MOZ_CONTENT_SANDBOX)
+#if defined(XP_LINUX) && defined(MOZ_SANDBOX)
 UniquePtr<SandboxBrokerPolicyFactory>
     ContentParent::sSandboxBrokerPolicyFactory;
 #endif
 uint64_t ContentParent::sNextTabParentId = 0;
 nsDataHashtable<nsUint64HashKey, TabParent*> ContentParent::sNextTabParents;
-#if defined(XP_MACOSX) && defined(MOZ_CONTENT_SANDBOX)
+#if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
 StaticAutoPtr<std::vector<std::string>> ContentParent::sMacSandboxParams;
 #endif
 
@@ -613,7 +613,7 @@ static const char* sObserverTopics[] = {
     "clear-site-data-reload-needed",
 };
 
-#if defined(XP_MACOSX) && defined(MOZ_CONTENT_SANDBOX)
+#if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
 bool ContentParent::sEarlySandboxInit = false;
 #endif
 
@@ -648,11 +648,11 @@ void ContentParent::StartUp() {
 
   sDisableUnsafeCPOWWarnings = PR_GetEnv("DISABLE_UNSAFE_CPOW_WARNINGS");
 
-#if defined(XP_LINUX) && defined(MOZ_CONTENT_SANDBOX)
+#if defined(XP_LINUX) && defined(MOZ_SANDBOX)
   sSandboxBrokerPolicyFactory = MakeUnique<SandboxBrokerPolicyFactory>();
 #endif
 
-#if defined(XP_MACOSX) && defined(MOZ_CONTENT_SANDBOX)
+#if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
   sMacSandboxParams = new std::vector<std::string>;
 #endif
 }
@@ -663,11 +663,11 @@ void ContentParent::ShutDown() {
   
   sCanLaunchSubprocesses = false;
 
-#if defined(XP_LINUX) && defined(MOZ_CONTENT_SANDBOX)
+#if defined(XP_LINUX) && defined(MOZ_SANDBOX)
   sSandboxBrokerPolicyFactory = nullptr;
 #endif
 
-#if defined(XP_MACOSX) && defined(MOZ_CONTENT_SANDBOX)
+#if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
   sMacSandboxParams = nullptr;
 #endif
 }
@@ -1890,7 +1890,7 @@ TestShellParent* ContentParent::GetTestShellSingleton() {
   return static_cast<TestShellParent*>(p);
 }
 
-#if defined(XP_MACOSX) && defined(MOZ_CONTENT_SANDBOX)
+#if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
 
 
 void ContentParent::AppendDynamicSandboxParams(
@@ -2116,7 +2116,7 @@ void ContentParent::LaunchSubprocessInternal(
     extraArgs.push_back("-safeMode");
   }
 
-#if defined(XP_MACOSX) && defined(MOZ_CONTENT_SANDBOX)
+#if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
   
   
   if (sEarlySandboxInit && IsContentSandboxEnabled() &&
@@ -2307,7 +2307,7 @@ ContentParent::ContentParent(ContentParent* aOpener,
   bool isFile = mRemoteType.EqualsLiteral(FILE_REMOTE_TYPE);
   mSubprocess = new GeckoChildProcessHost(GeckoProcessType_Content, isFile);
 
-#if defined(XP_MACOSX) && defined(MOZ_CONTENT_SANDBOX)
+#if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
   
   
   
@@ -2582,7 +2582,7 @@ void ContentParent::InitInternal(ProcessPriority aInitialPriority) {
   }
 #endif
 
-#ifdef MOZ_CONTENT_SANDBOX
+#ifdef MOZ_SANDBOX
   bool shouldSandbox = true;
   Maybe<FileDescriptor> brokerFd;
   

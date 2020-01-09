@@ -33,10 +33,8 @@ class RemoteSandboxBroker : public AbstractSandboxBroker {
                  void **aProcessHandle) override;
 
   
-#if defined(MOZ_CONTENT_SANDBOX)
   void SetSecurityLevelForContentProcess(int32_t aSandboxLevel,
                                          bool aIsFileProcess) override;
-#endif
   void SetSecurityLevelForGPUProcess(int32_t aSandboxLevel) override;
   bool SetSecurityLevelForRDDProcess() override;
   bool SetSecurityLevelForPluginProcess(int32_t aSandboxLevel) override;

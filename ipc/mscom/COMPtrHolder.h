@@ -13,7 +13,7 @@
 #include "mozilla/Move.h"
 #include "mozilla/mscom/ProxyStream.h"
 #include "mozilla/mscom/Ptr.h"
-#if defined(MOZ_CONTENT_SANDBOX)
+#if defined(MOZ_SANDBOX)
 #  include "mozilla/SandboxSettings.h"
 #endif  
 #include "nsExceptionHandler.h"
@@ -46,7 +46,7 @@ class COMPtrHolder {
 
   void SetActCtx(const ActivationContext& aActCtx) { mActCtx = aActCtx; }
 
-#if defined(MOZ_CONTENT_SANDBOX)
+#if defined(MOZ_SANDBOX)
   
   
   
@@ -64,7 +64,7 @@ class COMPtrHolder {
 
   COMPtrHolder(COMPtrHolder&& aOther)
       : mPtr(std::move(aOther.mPtr))
-#if defined(MOZ_CONTENT_SANDBOX)
+#if defined(MOZ_SANDBOX)
         ,
         mMarshaledStream(std::move(aOther.mMarshaledStream))
 #endif  
@@ -81,7 +81,7 @@ class COMPtrHolder {
   ThisType& operator=(const ThisType& aOther) {
     Set(std::move(aOther.mPtr));
 
-#if defined(MOZ_CONTENT_SANDBOX)
+#if defined(MOZ_SANDBOX)
     mMarshaledStream = std::move(aOther.mMarshaledStream);
 #endif  
 
@@ -91,7 +91,7 @@ class COMPtrHolder {
   ThisType& operator=(ThisType&& aOther) {
     Set(std::move(aOther.mPtr));
 
-#if defined(MOZ_CONTENT_SANDBOX)
+#if defined(MOZ_SANDBOX)
     mMarshaledStream = std::move(aOther.mMarshaledStream);
 #endif  
 
@@ -107,7 +107,7 @@ class COMPtrHolder {
   mutable COMPtrType mPtr;
   ActivationContext mActCtx;
 
-#if defined(MOZ_CONTENT_SANDBOX)
+#if defined(MOZ_SANDBOX)
   
   
   mutable PreservedStreamPtr mMarshaledStream;
@@ -124,7 +124,7 @@ struct ParamTraits<mozilla::mscom::COMPtrHolder<Interface, _IID>> {
   typedef mozilla::mscom::COMPtrHolder<Interface, _IID> paramType;
 
   static void Write(Message* aMsg, const paramType& aParam) {
-#if defined(MOZ_CONTENT_SANDBOX)
+#if defined(MOZ_SANDBOX)
     static const bool sIsStreamPreservationNeeded =
         XRE_IsParentProcess() &&
         mozilla::GetEffectiveContentSandboxLevel() >= 3;
@@ -148,7 +148,7 @@ struct ParamTraits<mozilla::mscom::COMPtrHolder<Interface, _IID>> {
       aMsg->WriteBytes(reinterpret_cast<const char*>(buf), bufLen);
     }
 
-#if defined(MOZ_CONTENT_SANDBOX)
+#if defined(MOZ_SANDBOX)
     if (sIsStreamPreservationNeeded) {
       
 

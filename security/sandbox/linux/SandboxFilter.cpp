@@ -12,9 +12,7 @@
 #include "SandboxInfo.h"
 #include "SandboxInternal.h"
 #include "SandboxLogging.h"
-#ifdef MOZ_GMP_SANDBOX
-#  include "SandboxOpenedFiles.h"
-#endif
+#include "SandboxOpenedFiles.h"
 #include "mozilla/Move.h"
 #include "mozilla/PodOperations.h"
 #include "mozilla/TemplateLib.h"
@@ -655,7 +653,6 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
 
 
 
-#ifdef MOZ_CONTENT_SANDBOX
 
 
 
@@ -1264,9 +1261,7 @@ UniquePtr<sandbox::bpf_dsl::Policy> GetContentSandboxPolicy(
     SandboxBrokerClient* aMaybeBroker, ContentProcessSandboxParams&& aParams) {
   return MakeUnique<ContentSandboxPolicy>(aMaybeBroker, std::move(aParams));
 }
-#endif  
 
-#ifdef MOZ_GMP_SANDBOX
 
 
 
@@ -1398,7 +1393,6 @@ UniquePtr<sandbox::bpf_dsl::Policy> GetMediaSandboxPolicy(
   return UniquePtr<sandbox::bpf_dsl::Policy>(new GMPSandboxPolicy(aFiles));
 }
 
-#endif  
 
 
 

@@ -127,7 +127,7 @@ nsMacUtilsImpl::GetIsTranslated(bool* aIsTranslated) {
   return NS_OK;
 }
 
-#if defined(MOZ_CONTENT_SANDBOX)
+#if defined(MOZ_SANDBOX)
 
 
 

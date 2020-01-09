@@ -122,7 +122,7 @@
 #  endif
 #endif
 
-#if defined(MOZ_CONTENT_SANDBOX)
+#if defined(MOZ_SANDBOX)
 #  include "mozilla/SandboxSettings.h"
 #  if (defined(XP_WIN) || defined(XP_MACOSX))
 #    include "nsIUUIDGenerator.h"
@@ -3208,7 +3208,7 @@ int XREMain::XRE_mainInit(bool* aExitFlag) {
   if (mAppData->sandboxBrokerServices) {
     SandboxBroker::Initialize(mAppData->sandboxBrokerServices);
   } else {
-#  if defined(MOZ_CONTENT_SANDBOX)
+#  if defined(MOZ_SANDBOX)
     
     
     if (BrowserTabsRemoteAutostart()) {
@@ -4209,7 +4209,7 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
   return 0;
 }
 
-#if defined(MOZ_CONTENT_SANDBOX)
+#if defined(MOZ_SANDBOX)
 void AddSandboxAnnotations() {
   
   int level = GetEffectiveContentSandboxLevel();
@@ -4579,7 +4579,7 @@ nsresult XREMain::XRE_mainRun() {
       CrashReporter::Annotation::ContentSandboxCapabilities, flagsString);
 #endif 
 
-#if defined(MOZ_CONTENT_SANDBOX)
+#if defined(MOZ_SANDBOX)
   AddSandboxAnnotations();
 #endif 
 

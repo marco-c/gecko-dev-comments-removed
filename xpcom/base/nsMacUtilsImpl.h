@@ -18,7 +18,7 @@ class nsMacUtilsImpl final : public nsIMacUtils {
 
   nsMacUtilsImpl() {}
 
-#if defined(MOZ_CONTENT_SANDBOX)
+#if defined(MOZ_SANDBOX)
   static bool GetAppPath(nsCString &aAppPath);
 
 #  ifdef DEBUG

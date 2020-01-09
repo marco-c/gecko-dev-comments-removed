@@ -94,7 +94,7 @@
 #  include "mozilla/RemoteSandboxBrokerProcessChild.h"
 #endif
 
-#if defined(MOZ_CONTENT_SANDBOX)
+#if defined(MOZ_SANDBOX)
 #  include "mozilla/SandboxSettings.h"
 #  include "mozilla/Preferences.h"
 #endif
@@ -295,7 +295,7 @@ void SetTaskbarGroupId(const nsString& aId) {
 }
 #endif
 
-#if defined(MOZ_CONTENT_SANDBOX)
+#if defined(MOZ_SANDBOX)
 void AddContentSandboxLevelAnnotation() {
   if (XRE_GetProcessType() == GeckoProcessType_Content) {
     int level = GetEffectiveContentSandboxLevel();
@@ -420,7 +420,7 @@ nsresult XRE_InitChildProcess(int aArgc, char* aArgv[],
 #ifdef XP_MACOSX
   if (aArgc < 1) return NS_ERROR_FAILURE;
 
-#  if defined(MOZ_CONTENT_SANDBOX)
+#  if defined(MOZ_SANDBOX)
   
   
   int allArgc = aArgc;
@@ -502,7 +502,7 @@ nsresult XRE_InitChildProcess(int aArgc, char* aArgv[],
     return NS_ERROR_FAILURE;
   }
 
-#  if defined(MOZ_CONTENT_SANDBOX)
+#  if defined(MOZ_SANDBOX)
   std::string sandboxError;
   if (!EarlyStartMacSandboxIfEnabled(allArgc, aArgv, sandboxError)) {
     printf_stderr("Sandbox error: %s\n", sandboxError.c_str());
@@ -763,7 +763,7 @@ nsresult XRE_InitChildProcess(int aArgc, char* aArgv[],
         OverrideDefaultLocaleIfNeeded();
       }
 
-#if defined(MOZ_CONTENT_SANDBOX)
+#if defined(MOZ_SANDBOX)
       AddContentSandboxLevelAnnotation();
 #endif
 

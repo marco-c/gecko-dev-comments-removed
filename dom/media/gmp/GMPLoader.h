@@ -12,7 +12,7 @@
 #include "gmp-entrypoints.h"
 #include "mozilla/UniquePtr.h"
 
-#if defined(XP_MACOSX) && defined(MOZ_GMP_SANDBOX)
+#if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
 #  include "mozilla/Sandbox.h"
 #endif
 
@@ -23,7 +23,7 @@ class SandboxStarter {
  public:
   virtual ~SandboxStarter() {}
   virtual bool Start(const char* aLibPath) = 0;
-#if defined(XP_MACOSX) && defined(MOZ_GMP_SANDBOX)
+#if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
   
   
   
@@ -69,7 +69,7 @@ class GMPLoader {
   
   void Shutdown();
 
-#if defined(XP_MACOSX) && defined(MOZ_GMP_SANDBOX)
+#if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
   
   
   
