@@ -8,6 +8,9 @@ var EXPORTED_SYMBOLS = [
   "AUSTLMY",
 ];
 
+const {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
+const {BitsError, BitsUnknownError} =
+  ChromeUtils.import("resource://gre/modules/Bits.jsm");
 ChromeUtils.import("resource://gre/modules/Services.jsm", this);
 
 var AUSTLMY = {
@@ -280,6 +283,110 @@ var AUSTLMY = {
       let id = "update.binarytransparencyresult";
       let key = aSuffix.toLowerCase().replace("_", "-");
       Services.telemetry.keyedScalarSet(id, key, aCode);
+    } catch (e) {
+      Cu.reportError(e);
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  pingBitsError: function UT_pingBitsError(aIsComplete, aError) {
+    if (AppConstants.platform != "win") {
+      Cu.reportError("Warning: Attempted to submit BITS telemetry on a " +
+                     "non-Windows platform");
+      return;
+    }
+    if (!(aError instanceof BitsError)) {
+      Cu.reportError("Error sending BITS Error ping: Error is not a BitsError");
+      aError = new BitsUnknownError();
+    }
+    
+    let type = +aError.type;
+    if (isNaN(type)) {
+      Cu.reportError("Error sending BITS Error ping: Either error is not a " +
+                     "BitsError, or error type is not an integer.");
+      type = Ci.nsIBits.ERROR_TYPE_UNKNOWN;
+    } else if (type == Ci.nsIBits.ERROR_TYPE_SUCCESS) {
+      Cu.reportError("Error sending BITS Error ping: The error type must not " +
+                     "be the success type.");
+      type = Ci.nsIBits.ERROR_TYPE_UNKNOWN;
+    }
+    this._pingBitsResult(aIsComplete, type);
+
+    if (aError.codeType == Ci.nsIBits.ERROR_CODE_TYPE_HRESULT) {
+      let scalarKey;
+      if (aIsComplete) {
+        scalarKey = this.PATCH_COMPLETE;
+      } else {
+        scalarKey = this.PATCH_PARTIAL;
+      }
+      try {
+        Services.telemetry.keyedScalarSet("update.bitshresult", scalarKey,
+                                          aError.code);
+      } catch (e) {
+        Cu.reportError(e);
+      }
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  pingBitsSuccess: function UT_pingBitsSuccess(aIsComplete) {
+    if (AppConstants.platform != "win") {
+      Cu.reportError("Warning: Attempted to submit BITS telemetry on a " +
+                     "non-Windows platform");
+      return;
+    }
+    this._pingBitsResult(aIsComplete, Ci.nsIBits.ERROR_TYPE_SUCCESS);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _pingBitsResult: function UT_pingBitsResult(aIsComplete, aResultType) {
+    let patchType;
+    if (aIsComplete) {
+      patchType = this.PATCH_COMPLETE;
+    } else {
+      patchType = this.PATCH_PARTIAL;
+    }
+    try {
+      let id = "UPDATE_BITS_RESULT_" + patchType;
+      Services.telemetry.getHistogramById(id).add(aResultType);
     } catch (e) {
       Cu.reportError(e);
     }

@@ -8,7 +8,7 @@
 
 const {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 const {AUSTLMY} = ChromeUtils.import("resource://gre/modules/UpdateTelemetry.jsm");
-const {Bits, BitsRequest} =
+const {Bits, BitsRequest, BitsUnknownError, BitsVerificationError} =
   ChromeUtils.import("resource://gre/modules/Bits.jsm");
 const {FileUtils} = ChromeUtils.import("resource://gre/modules/FileUtils.jsm");
 const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm");
@@ -554,6 +554,10 @@ function getCanStageUpdates() {
 
   return gCanStageUpdatesSession;
 }
+
+
+
+
 
 
 
@@ -2316,6 +2320,13 @@ UpdateService.prototype = {
     
     AUSTLMY.pingGeneric("UPDATE_CANNOT_STAGE_" + this._pingSuffix,
                         getCanStageUpdates(), true);
+    if (AppConstants.platform == "win") {
+      
+      
+      
+      AUSTLMY.pingGeneric("UPDATE_CAN_USE_BITS_" + this._pingSuffix,
+                          getCanUseBits());
+    }
     
     
     
@@ -3976,6 +3987,9 @@ Downloader.prototype = {
         }
 
         this._pendingRequest = null;
+
+        AUSTLMY.pingBitsError(this.isCompleteUpdate, error);
+
         
         
         
@@ -4191,6 +4205,7 @@ Downloader.prototype = {
       LOG("Downloader:onStopRequest - downloader: BITS, status: " + status);
     }
 
+    let bitsCompletionError;
     if (this.usingBits) {
       if (Components.isSuccessCode(status)) {
         try {
@@ -4199,6 +4214,7 @@ Downloader.prototype = {
           LOG("Downloader:onStopRequest - Unable to complete BITS download: " +
               e);
           status = Cr.NS_ERROR_FAILURE;
+          bitsCompletionError = e;
         }
       } else {
         
@@ -4352,6 +4368,24 @@ Downloader.prototype = {
           status != Cr.NS_ERROR_ABORT) {
         deleteActiveUpdate = false;
         shouldRetrySoon = true;
+      }
+
+      
+      if (Components.isSuccessCode(status)) {
+        AUSTLMY.pingBitsSuccess(this.isCompleteUpdate);
+      } else {
+        let error;
+        if (bitsCompletionError) {
+          error = bitsCompletionError;
+        } else if (status == Cr.NS_ERROR_CORRUPTED_CONTENT) {
+          error = new BitsVerificationError();
+        } else {
+          error = request.transferError;
+          if (!error) {
+            error = new BitsUnknownError();
+          }
+        }
+        AUSTLMY.pingBitsError(this.isCompleteUpdate, error);
       }
     }
 
