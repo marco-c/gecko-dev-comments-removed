@@ -43,15 +43,20 @@ add_task(async function() {
 
     await TestUtils.waitForTick();
 
-    const img = win.document.getElementById("monitor");
-    const measure = new Image();
-    const measureLoad = BrowserTestUtils.waitForEvent(measure, "load");
-    measure.src =
-      getComputedStyle(img).listStyleImage.slice(4, -1).replace(/"/g, "");
-    await measureLoad;
+    const canvas = win.document.getElementById("screen");
+    const screenRatio = screen.width / screen.height;
+    const previewRatio = canvas.clientWidth / canvas.clientHeight;
 
-    Assert.equal(img.clientWidth, measure.naturalWidth, "Monitor image correct width");
-    Assert.equal(img.clientHeight, measure.naturalHeight, "Monitor image correct height");
+    info(`Screen dimensions are ${screen.width}x${screen.height}`);
+    info(`Screen's raw ratio is ${screenRatio}`);
+    info(`Preview dimensions are ${canvas.clientWidth}x${canvas.clientHeight}`);
+    info(`Preview's raw ratio is ${previewRatio}`);
+
+    Assert.ok(
+      (previewRatio < screenRatio + .01) &&
+        (previewRatio > screenRatio - .01),
+      "Preview's aspect ratio is within ±.01 of screen's"
+    );
 
     win.close();
 

@@ -25,8 +25,10 @@ var gSetBackground = {
     if (AppConstants.platform == "macosx") {
       document.documentElement.getButton("accept").hidden = true;
     }
-    if (this._screenWidth / this._screenHeight >= 1.6)
-      document.getElementById("monitor").setAttribute("aspectratio", "16:10");
+    
+    
+    let screenRatio = Math.min(this._screenWidth / this._screenHeight, 4);
+    this._canvas.width = this._canvas.height * screenRatio;
 
     if (AppConstants.platform == "win") {
       
