@@ -3206,9 +3206,8 @@ AbortReasonOr<Ok> IonBuilder::visitTry(CFGTry* try_) {
 
   
   
-  if (info().analysisMode() == Analysis_ArgumentsUsage) {
-    return abort(AbortReason::Disable,
-                 "Try-catch during arguments usage analysis");
+  if (info().isAnalysis()) {
+    return abort(AbortReason::Disable, "Try-catch during analysis");
   }
 
   graph().setHasTryBlock();
