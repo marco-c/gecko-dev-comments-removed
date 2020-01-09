@@ -14,24 +14,6 @@ var voids = [null, undefined];
 function noop() { }
 
 var generics = {
-String: [{ substring: [] },
-{ toLowerCase: [] },
-{ toUpperCase: [] },
-{ charAt: [] },
-{ charCodeAt: [] },
-{ indexOf: [] },
-{ lastIndexOf: [] },
-{ toLocaleLowerCase: [] },
-{ toLocaleUpperCase: [] },
-{ localeCompare: [] },
-{ match: [/(?:)/] }, 
-{ search: [] },
-{ replace: [] },
-{ split: [] },
-{ substr: [] },
-{ concat: [] },
-{ slice: [] }],
-
   Array:  [{ join: [] },
 { reverse: [] },
 { sort: [] },
