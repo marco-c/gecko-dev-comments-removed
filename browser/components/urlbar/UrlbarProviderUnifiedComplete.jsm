@@ -314,7 +314,11 @@ function makeUrlbarResult(tokens, info) {
     if (hasTags) {
       
       [comment, tags] = info.comment.split(TITLE_TAGS_SEPARATOR);
-      tags = tags.split(",").map(t => t.trim());
+      
+      
+      tags = tags.split(",").map(t => t.trim()).filter(tag => {
+        return tokens.some(token => tag.includes(token.value));
+      }).sort();
     }
   } else if (info.style.includes("preloaded-top-sites")) {
     source = UrlbarUtils.MATCH_SOURCE.OTHER_LOCAL;
