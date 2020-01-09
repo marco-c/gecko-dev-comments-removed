@@ -97,6 +97,7 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
 
 
+  MOZ_CAN_RUN_SCRIPT
   nsresult PreHandleEvent(nsPresContext* aPresContext, WidgetEvent* aEvent,
                           nsIFrame* aTargetFrame, nsIContent* aTargetContent,
                           nsEventStatus* aStatus,
@@ -107,7 +108,7 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
 
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
+  MOZ_CAN_RUN_SCRIPT
   nsresult PostHandleEvent(nsPresContext* aPresContext, WidgetEvent* aEvent,
                            nsIFrame* aTargetFrame, nsEventStatus* aStatus,
                            nsIContent* aOverrideClickTarget);
@@ -1099,6 +1100,7 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
   void FillInEventFromGestureDown(WidgetMouseEvent* aEvent);
 
+  MOZ_CAN_RUN_SCRIPT
   nsresult DoContentCommandEvent(WidgetContentCommandEvent* aEvent);
   nsresult DoContentCommandScrollEvent(WidgetContentCommandEvent* aEvent);
 

@@ -169,6 +169,10 @@ class nsHTMLDocument : public mozilla::dom::Document, public nsIHTMLDocument {
   void SetDesignMode(const nsAString& aDesignMode,
                      const mozilla::Maybe<nsIPrincipal*>& aSubjectPrincipal,
                      mozilla::ErrorResult& rv);
+  
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   bool ExecCommand(const nsAString& aCommandID, bool aDoShowUI,
                    const nsAString& aValue, nsIPrincipal& aSubjectPrincipal,
                    mozilla::ErrorResult& rv);
@@ -180,6 +184,7 @@ class nsHTMLDocument : public mozilla::dom::Document, public nsIHTMLDocument {
   bool QueryCommandState(const nsAString& aCommandID, mozilla::ErrorResult& rv);
   bool QueryCommandSupported(const nsAString& aCommandID,
                              mozilla::dom::CallerType aCallerType);
+  MOZ_CAN_RUN_SCRIPT
   void QueryCommandValue(const nsAString& aCommandID, nsAString& aValue,
                          mozilla::ErrorResult& rv);
   void GetFgColor(nsAString& aFgColor);

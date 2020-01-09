@@ -2117,13 +2117,14 @@ nsresult nsHTMLDocument::EditingStateChanged() {
     
     
     ErrorResult errorResult;
+    nsCOMPtr<nsIPrincipal> principal = NodePrincipal();
     Unused << ExecCommand(NS_LITERAL_STRING("insertBrOnReturn"), false,
                           NS_LITERAL_STRING("false"),
                           
                           
                           
                           
-                          *NodePrincipal(), errorResult);
+                          *principal, errorResult);
 
     if (errorResult.Failed()) {
       
@@ -2540,7 +2541,7 @@ bool nsHTMLDocument::ExecCommand(const nsAString& commandID, bool doShowUI,
     return false;
   }
 
-  nsPIDOMWindowOuter* window = GetWindow();
+  nsCOMPtr<nsPIDOMWindowOuter> window = GetWindow();
   if (!window) {
     rv.Throw(NS_ERROR_FAILURE);
     return false;
@@ -2789,7 +2790,7 @@ void nsHTMLDocument::QueryCommandValue(const nsAString& commandID,
     return;
   }
 
-  nsPIDOMWindowOuter* window = GetWindow();
+  nsCOMPtr<nsPIDOMWindowOuter> window = GetWindow();
   if (!window) {
     rv.Throw(NS_ERROR_FAILURE);
     return;

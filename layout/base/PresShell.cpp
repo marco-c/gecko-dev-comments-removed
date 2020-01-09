@@ -7725,11 +7725,15 @@ nsresult PresShell::EventHandler::DispatchEvent(
 
   
   
-  nsresult rv = aEventStateManager->PreHandleEvent(
-      GetPresContext(), aEvent, mPresShell->mCurrentEventFrame,
-      mPresShell->mCurrentEventContent, aEventStatus, aOverrideClickTarget);
-  if (NS_FAILED(rv)) {
-    return rv;
+  {  
+    RefPtr<nsPresContext> presContext = GetPresContext();
+    nsCOMPtr<nsIContent> eventContent = mPresShell->mCurrentEventContent;
+    nsresult rv = aEventStateManager->PreHandleEvent(
+        presContext, aEvent, mPresShell->mCurrentEventFrame, eventContent,
+        aEventStatus, aOverrideClickTarget);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
   }
 
   
@@ -7783,9 +7787,11 @@ nsresult PresShell::EventHandler::DispatchEvent(
 
   
   
+  
+  RefPtr<nsPresContext> presContext = GetPresContext();
   return aEventStateManager->PostHandleEvent(
-      GetPresContext(), aEvent, mPresShell->GetCurrentEventFrame(),
-      aEventStatus, aOverrideClickTarget);
+      presContext, aEvent, mPresShell->GetCurrentEventFrame(), aEventStatus,
+      aOverrideClickTarget);
 }
 
 bool PresShell::EventHandler::PrepareToDispatchEvent(WidgetEvent* aEvent) {
