@@ -940,6 +940,26 @@ static bool AssignSlow(JSContext* cx, HandleObject to, HandleObject from) {
   return true;
 }
 
+JS_PUBLIC_API bool JS_AssignObject(JSContext* cx, JS::HandleObject target,
+                                   JS::HandleObject src) {
+  bool optimized;
+  if (!TryAssignNative(cx, target, src, &optimized)) {
+    return false;
+  }
+  if (optimized) {
+    return true;
+  }
+
+  if (!TryAssignFromUnboxed(cx, target, src, &optimized)) {
+    return false;
+  }
+  if (optimized) {
+    return true;
+  }
+
+  return AssignSlow(cx, target, src);
+}
+
 
 
 static bool obj_assign(JSContext* cx, unsigned argc, Value* vp) {
@@ -969,22 +989,7 @@ static bool obj_assign(JSContext* cx, unsigned argc, Value* vp) {
     }
 
     
-    bool optimized;
-    if (!TryAssignNative(cx, to, from, &optimized)) {
-      return false;
-    }
-    if (optimized) {
-      continue;
-    }
-
-    if (!TryAssignFromUnboxed(cx, to, from, &optimized)) {
-      return false;
-    }
-    if (optimized) {
-      continue;
-    }
-
-    if (!AssignSlow(cx, to, from)) {
+    if (!JS_AssignObject(cx, to, from)) {
       return false;
     }
   }
