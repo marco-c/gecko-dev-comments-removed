@@ -63,6 +63,16 @@ class KeyValueService {
 
 
 
+
+
+
+
+
+
+
+
+
+
 class KeyValueDatabase {
   constructor(database) {
     this.database = database;
@@ -70,6 +80,50 @@ class KeyValueDatabase {
 
   put(key, value) {
     return promisify(this.database.put, key, value);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  putMany(pairs) {
+    if (!pairs) {
+      throw new Error("putMany(): unexpected argument.");
+    }
+
+    let entries;
+
+    if (pairs instanceof Map || pairs instanceof Array ||
+        typeof(pairs[Symbol.iterator]) === "function") {
+      try {
+        
+        
+        
+        const map = pairs instanceof Map ? pairs : new Map(pairs);
+        entries = Array.from(map, ([key, value]) => ({key, value}));
+      } catch (error) {
+        throw new Error("putMany(): unexpected argument.");
+      }
+    } else if (typeof(pairs) === "object") {
+      entries = Array.from(Object.entries(pairs), ([key, value]) => ({key, value}));
+    } else {
+      throw new Error("putMany(): unexpected argument.");
+    }
+
+    if (entries.length) {
+      return promisify(this.database.putMany, entries);
+    }
+    return Promise.resolve();
   }
 
   has(key) {
@@ -82,6 +136,10 @@ class KeyValueDatabase {
 
   delete(key) {
     return promisify(this.database.delete, key);
+  }
+
+  clear() {
+    return promisify(this.database.clear);
   }
 
   async enumerate(from_key, to_key) {
