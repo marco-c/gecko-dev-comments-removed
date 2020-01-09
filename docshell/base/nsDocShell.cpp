@@ -620,7 +620,7 @@ nsDocShell::GetInterface(const nsIID& aIID, void** aSink) {
     
     
     nsIPrompt* prompt;
-    rv = wwatch->GetNewPrompter(mScriptGlobal->AsOuter(), &prompt);
+    rv = wwatch->GetNewPrompter(mScriptGlobal, &prompt);
     NS_ENSURE_SUCCESS(rv, rv);
 
     *aSink = prompt;
@@ -1001,8 +1001,7 @@ bool nsDocShell::MaybeInitTiming() {
   bool canBeReset = false;
 
   if (mScriptGlobal && mBlankTiming) {
-    nsPIDOMWindowInner* innerWin =
-        mScriptGlobal->AsOuter()->GetCurrentInnerWindow();
+    nsPIDOMWindowInner* innerWin = mScriptGlobal->GetCurrentInnerWindow();
     if (innerWin && innerWin->GetPerformance()) {
       mTiming = innerWin->GetPerformance()->GetDOMTiming();
       mBlankTiming = false;
@@ -1663,8 +1662,7 @@ nsDocShell::SetAllowMedia(bool aAllowMedia) {
 
   
   if (mScriptGlobal) {
-    if (nsPIDOMWindowInner* innerWin =
-            mScriptGlobal->AsOuter()->GetCurrentInnerWindow()) {
+    if (nsPIDOMWindowInner* innerWin = mScriptGlobal->GetCurrentInnerWindow()) {
       if (aAllowMedia) {
         innerWin->UnmuteAudioContexts();
       } else {
@@ -2647,10 +2645,7 @@ nsresult nsDocShell::SetDocLoaderParent(nsDocLoader* aParent) {
 
   
   if (!aParent && mScriptGlobal) {
-    nsCOMPtr<nsPIDOMWindowOuter> window = mScriptGlobal->AsOuter();
-    MOZ_ASSERT(window);
-    auto* win = nsGlobalWindowOuter::Cast(window);
-    win->ParentWindowChanged();
+    mScriptGlobal->ParentWindowChanged();
   }
 
   NS_ASSERTION(mInheritPrivateBrowsingId || wasPrivate == UsePrivateBrowsing(),
@@ -3629,7 +3624,7 @@ nsPIDOMWindowOuter* nsDocShell::GetWindow() {
   if (NS_FAILED(EnsureScriptEnvironment())) {
     return nullptr;
   }
-  return mScriptGlobal->AsOuter();
+  return mScriptGlobal;
 }
 
 NS_IMETHODIMP
@@ -3639,7 +3634,7 @@ nsDocShell::GetDomWindow(mozIDOMWindowProxy** aWindow) {
   nsresult rv = EnsureScriptEnvironment();
   NS_ENSURE_SUCCESS(rv, rv);
 
-  nsCOMPtr<nsPIDOMWindowOuter> window = mScriptGlobal->AsOuter();
+  RefPtr<nsGlobalWindowOuter> window = mScriptGlobal;
   window.forget(aWindow);
   return NS_OK;
 }
@@ -8561,7 +8556,7 @@ uint32_t nsDocShell::DetermineContentType() {
   }
 
   nsCOMPtr<Element> requestingElement =
-      mScriptGlobal->AsOuter()->GetFrameElementInternal();
+      mScriptGlobal->GetFrameElementInternal();
   if (requestingElement) {
     return requestingElement->IsHTMLElement(nsGkAtoms::iframe)
                ? nsIContentPolicy::TYPE_INTERNAL_IFRAME
@@ -8621,15 +8616,14 @@ nsresult nsDocShell::PerformRetargeting(nsDocShellLoadState* aLoadState,
       
       
       nsCOMPtr<Element> requestingElement =
-          mScriptGlobal->AsOuter()->GetFrameElementInternal();
+          mScriptGlobal->GetFrameElementInternal();
       requestingContext = requestingElement;
     }
 
     
     
-    nsCOMPtr<nsPIDOMWindowOuter> loadingWindow = mScriptGlobal->AsOuter();
     nsCOMPtr<nsILoadInfo> secCheckLoadInfo = new LoadInfo(
-        loadingWindow, aLoadState->TriggeringPrincipal(), requestingContext,
+        mScriptGlobal, aLoadState->TriggeringPrincipal(), requestingContext,
         nsILoadInfo::SEC_ONLY_FOR_EXPLICIT_CONTENTSEC_CHECK);
 
     
@@ -9622,7 +9616,7 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
         
         if (PopupBlocker::GetPopupControlState() <= PopupBlocker::openBlocked) {
           nsCOMPtr<nsINode> loadingNode =
-              mScriptGlobal->AsOuter()->GetFrameElementInternal();
+              mScriptGlobal->GetFrameElementInternal();
           popupBlocked = !PopupBlocker::TryUsePopupOpeningToken(
               loadingNode ? loadingNode->NodePrincipal() : nullptr);
         } else if (mIsActive &&
@@ -9630,7 +9624,7 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
           popupBlocked = false;
         } else {
           nsCOMPtr<nsINode> loadingNode =
-              mScriptGlobal->AsOuter()->GetFrameElementInternal();
+              mScriptGlobal->GetFrameElementInternal();
           if (loadingNode) {
             popupBlocked = !PopupBlocker::CanShowPopupByPermission(
                 loadingNode->NodePrincipal());
@@ -9719,7 +9713,7 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
   if (contentPolicyType == nsIContentPolicy::TYPE_DOCUMENT) {
     loadingNode = nullptr;
     loadingPrincipal = nullptr;
-    loadingWindow = mScriptGlobal->AsOuter();
+    loadingWindow = mScriptGlobal;
     if (XRE_IsContentProcess()) {
       
       
@@ -9736,7 +9730,7 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
     }
   } else {
     loadingWindow = nullptr;
-    loadingNode = mScriptGlobal->AsOuter()->GetFrameElementInternal();
+    loadingNode = mScriptGlobal->GetFrameElementInternal();
     if (loadingNode) {
       
       loadingPrincipal = loadingNode->NodePrincipal();
@@ -12196,7 +12190,7 @@ nsDocShell::GetAuthPrompt(uint32_t aPromptReason, const nsIID& aIID,
   
   
 
-  return wwatch->GetPrompt(mScriptGlobal->AsOuter(), aIID,
+  return wwatch->GetPrompt(mScriptGlobal, aIID,
                            reinterpret_cast<void**>(aResult));
 }
 
@@ -12637,7 +12631,7 @@ nsDocShell::OnLinkClickSync(
   nsPIDOMWindowInner* refererInner = refererDoc->GetInnerWindow();
   NS_ENSURE_TRUE(refererInner, NS_ERROR_UNEXPECTED);
   if (!mScriptGlobal ||
-      mScriptGlobal->AsOuter()->GetCurrentInnerWindow() != refererInner) {
+      mScriptGlobal->GetCurrentInnerWindow() != refererInner) {
     
     return NS_OK;
   }
