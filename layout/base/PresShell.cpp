@@ -3982,7 +3982,9 @@ static inline void AssertFrameTreeIsSane(const nsIPresShell& aShell) {
 }
 
 void PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush) {
-  MOZ_RELEASE_ASSERT(!mForbiddenToFlush, "This is bad!");
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(!mForbiddenToFlush, "This is bad!");
 
   
   nsCOMPtr<nsIPresShell> kungFuDeathGrip = this;
