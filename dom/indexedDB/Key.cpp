@@ -110,6 +110,21 @@ namespace indexedDB {
 
 
 
+
+
+
+static size_t LengthOfEncodedBinary(const unsigned char* aPos,
+                                    const unsigned char* aEnd) {
+  MOZ_ASSERT(*aPos % Key::eMaxType == Key::eBinary, "Don't call me!");
+  auto iter = ++aPos;
+  for (; iter < aEnd && *iter != Key::eTerminator; ++iter) {
+    if (*iter & 0x80) {
+      iter++;
+    }
+  }
+  return iter - aPos;
+}
+
 nsresult Key::ToLocaleBasedKey(Key& aTarget, const nsCString& aLocale) const {
   if (IsUnset()) {
     aTarget.Unset();
@@ -131,11 +146,16 @@ nsresult Key::ToLocaleBasedKey(Key& aTarget, const nsCString& aLocale) const {
   bool canShareBuffers = true;
   while (it < end) {
     auto type = *it % eMaxType;
-    if (type == eTerminator || type == eArray) {
+    if (type == eTerminator) {
       it++;
     } else if (type == eFloat || type == eDate) {
       it++;
       it += std::min(sizeof(uint64_t), size_t(end - it));
+    } else if (type == eBinary) {
+      
+      auto binaryLength = LengthOfEncodedBinary(it, end);
+      it++;
+      it += binaryLength;
     } else {
       
       canShareBuffers = false;
@@ -159,9 +179,7 @@ nsresult Key::ToLocaleBasedKey(Key& aTarget, const nsCString& aLocale) const {
       return NS_ERROR_OUT_OF_MEMORY;
     }
 
-    while (start < it) {
-      *(buffer++) = *(start++);
-    }
+    std::copy(start, it, buffer);
   }
 
   
@@ -170,24 +188,38 @@ nsresult Key::ToLocaleBasedKey(Key& aTarget, const nsCString& aLocale) const {
     uint32_t oldLen = aTarget.mBuffer.Length();
     auto type = *it % eMaxType;
 
-    if (type == eTerminator || type == eArray) {
-      
-      if (!aTarget.mBuffer.GetMutableData(&buffer, oldLen + 1)) {
-        return NS_ERROR_OUT_OF_MEMORY;
-      }
-      *(buffer + oldLen) = *(it++);
-    } else if (type == eFloat || type == eDate) {
-      
-      if (!aTarget.mBuffer.GetMutableData(&buffer,
-                                          oldLen + 1 + sizeof(uint64_t))) {
-        return NS_ERROR_OUT_OF_MEMORY;
+    
+    
+    auto updateBufferAndIter = [&](size_t byteCount) -> bool {
+      if (!aTarget.mBuffer.GetMutableData(&buffer, oldLen + 1 + byteCount)) {
+        return false;
       }
       buffer += oldLen;
-      *(buffer++) = *(it++);
 
-      const size_t byteCount = std::min(sizeof(uint64_t), size_t(end - it));
-      for (size_t count = 0; count < byteCount; count++) {
-        *(buffer++) = (*it++);
+      
+      std::copy_n(it, byteCount + 1, buffer);
+      it += (byteCount + 1);
+      return true;
+    };
+
+    if (type == eTerminator) {
+      
+      if (!updateBufferAndIter(0)) {
+        return NS_ERROR_OUT_OF_MEMORY;
+      }
+    } else if (type == eFloat || type == eDate) {
+      
+      const size_t byteCount = std::min(sizeof(uint64_t), size_t(end - it - 1));
+
+      if (!updateBufferAndIter(byteCount)) {
+        return NS_ERROR_OUT_OF_MEMORY;
+      }
+    } else if (type == eBinary) {
+      
+      auto binaryLength = LengthOfEncodedBinary(it, end);
+
+      if (!updateBufferAndIter(binaryLength)) {
+        return NS_ERROR_OUT_OF_MEMORY;
       }
     } else {
       
