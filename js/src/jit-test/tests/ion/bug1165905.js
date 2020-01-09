@@ -1,3 +1,4 @@
+
 load(libdir + "asserts.js");
 var oldOpts = getJitCompilerOptions();
 for (var k in oldOpts)

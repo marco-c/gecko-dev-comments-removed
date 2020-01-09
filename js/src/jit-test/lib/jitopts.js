@@ -9,13 +9,6 @@ function jitTogglesMatch(opts) {
     if (k.indexOf(".enable") > 0 && opts[k] != currentOpts[k])
       return false;
   }
-
-  
-  
-  var conf = getBuildConfiguration();
-  if (conf['arm64'] && opts['ion.enable'])
-    return false;
-
   return true;
 }
 

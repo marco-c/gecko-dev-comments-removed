@@ -1462,7 +1462,11 @@ pref("javascript.options.unboxed_objects",  false);
 pref("javascript.options.baselinejit",      true);
 
 pref("javascript.options.baselinejit.threshold", 10);
+#ifdef _ARM64_
+pref("javascript.options.ion",              false);
+#else
 pref("javascript.options.ion",              true);
+#endif
 
 pref("javascript.options.ion.threshold",    1000);
 
