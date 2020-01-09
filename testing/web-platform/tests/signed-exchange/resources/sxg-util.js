@@ -1,12 +1,12 @@
 
 
 
-function openSXGInIframeAndWaitForMessage(test_object, url) {
+function openSXGInIframeAndWaitForMessage(test_object, url, referrerPolicy) {
   return new Promise(async (resolve, reject) => {
     
     test_object.step_timeout(() => reject('timeout'), 2000);
 
-    const frame = await withIframe(url, 'sxg_iframe');
+    const frame = await withIframe(url, 'sxg_iframe', referrerPolicy);
     const channel = new MessageChannel();
     channel.port1.onmessage = (event) => resolve(event.data);
     frame.contentWindow.postMessage(
@@ -14,11 +14,14 @@ function openSXGInIframeAndWaitForMessage(test_object, url) {
   });
 }
 
-function withIframe(url, name) {
+function withIframe(url, name, referrerPolicy) {
   return new Promise((resolve, reject) => {
       const frame = document.createElement('iframe');
       frame.src = url;
       frame.name = name;
+      if (referrerPolicy !== undefined) {
+        frame.referrerPolicy = referrerPolicy;
+      }
       frame.onload = () => resolve(frame);
       frame.onerror = () => reject('failed to load ' + url);
       document.body.appendChild(frame);
