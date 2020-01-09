@@ -20,8 +20,9 @@ var FontBuilder = {
   _langGroupSupported: false,
   async buildFontList(aLanguage, aFontType, aMenuList) {
     
-    while (aMenuList.hasChildNodes())
-      aMenuList.firstChild.remove();
+    if (aMenuList.menupopup) {
+      aMenuList.menupopup.remove();
+    }
 
     let defaultFont = null;
     

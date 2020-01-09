@@ -12,7 +12,7 @@ class SelectionChangedMenulist {
   
 
   constructor(menulist, onCommand) {
-    let popup = menulist.firstElementChild;
+    let popup = menulist.menupopup;
     let lastEvent;
 
     menulist.addEventListener("command", event => {
