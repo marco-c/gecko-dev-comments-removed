@@ -2000,21 +2000,19 @@ DeclarationBlock* Element::GetSMILOverrideStyleDeclaration() {
 }
 
 nsresult Element::SetSMILOverrideStyleDeclaration(
-    DeclarationBlock* aDeclaration, bool aNotify) {
+    DeclarationBlock* aDeclaration) {
   Element::nsExtendedDOMSlots* slots = ExtendedDOMSlots();
 
   slots->mSMILOverrideStyleDeclaration = aDeclaration;
 
-  if (aNotify) {
-    Document* doc = GetComposedDoc();
-    
-    
-    
-    if (doc) {
-      nsCOMPtr<nsIPresShell> shell = doc->GetShell();
-      if (shell) {
-        shell->RestyleForAnimation(this, eRestyle_StyleAttribute_Animations);
-      }
+  Document* doc = GetComposedDoc();
+  
+  
+  
+  if (doc) {
+    nsCOMPtr<nsIPresShell> shell = doc->GetShell();
+    if (shell) {
+      shell->RestyleForAnimation(this, eRestyle_StyleAttribute_Animations);
     }
   }
 

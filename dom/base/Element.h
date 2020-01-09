@@ -351,8 +351,7 @@ class Element : public FragmentOrElement {
 
 
 
-  nsresult SetSMILOverrideStyleDeclaration(DeclarationBlock* aDeclaration,
-                                           bool aNotify);
+  nsresult SetSMILOverrideStyleDeclaration(DeclarationBlock* aDeclaration);
 
   
 
