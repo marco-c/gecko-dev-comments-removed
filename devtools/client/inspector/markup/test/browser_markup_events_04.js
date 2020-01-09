@@ -125,7 +125,7 @@ const TEST_DATA = [
           "Bubbling",
           "DOM2",
         ],
-        handler: "function sort(arr, comparefn) {\n" +
+        handler: "function sort(, ) {\n" +
                  "  [native code]\n" +
                  "}",
       },
