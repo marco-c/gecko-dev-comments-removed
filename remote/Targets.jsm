@@ -6,6 +6,7 @@
 
 var EXPORTED_SYMBOLS = ["Targets"];
 
+const {EventEmitter} = ChromeUtils.import("resource://gre/modules/EventEmitter.jsm");
 const {MessagePromise} = ChromeUtils.import("chrome://remote/content/Sync.jsm");
 const {Target} = ChromeUtils.import("chrome://remote/content/Target.jsm");
 
@@ -13,6 +14,8 @@ class Targets {
   constructor() {
     
     this._targets = new Map();
+
+    EventEmitter.decorate(this);
   }
 
   
@@ -28,6 +31,7 @@ class Targets {
     const target = new Target(browser);
     target.connect();
     this._targets.set(target.id, target);
+    this.emit("connect", target);
   }
 
   
@@ -39,6 +43,7 @@ class Targets {
 
     const target = this._targets.get(browser.browsingContext.id);
     if (target) {
+      this.emit("disconnect", target);
       target.disconnect();
       this._targets.delete(target.id);
     }
