@@ -36,6 +36,15 @@ const workerTargetSpec = generateActorSpec({
     "worker-close": {
       type: "close",
     },
+
+    
+    
+    
+    
+    
+    newSource: {
+      type: "newSource",
+    },
   },
 });
 

@@ -30,6 +30,17 @@ const addonTargetSpec = generateActorSpec({
       response: RetVal("json"),
     },
   },
+
+  events: {
+    
+    
+    
+    
+    
+    newSource: {
+      type: "newSource",
+    },
+  },
 });
 
 exports.addonTargetSpec = addonTargetSpec;

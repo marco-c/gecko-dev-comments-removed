@@ -136,6 +136,15 @@ const browsingContextTargetSpecPrototype = {
     workerListChanged: {
       type: "workerListChanged",
     },
+
+    
+    
+    
+    
+    
+    newSource: {
+      type: "newSource",
+    },
   },
 };
 
