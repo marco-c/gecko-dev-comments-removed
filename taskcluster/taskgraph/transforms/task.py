@@ -769,6 +769,16 @@ def build_generic_worker_payload(config, task, task_def):
         'maxRunTime': worker['max-run-time'],
     }
 
+    if worker['os'] == 'windows':
+        task_def['payload']['onExitStatus'] = {
+            'retry': [
+                
+                
+                1073807364,  
+                3221225786,  
+            ]
+        }
+
     env = worker.get('env', {})
 
     if task.get('needs-sccache'):
