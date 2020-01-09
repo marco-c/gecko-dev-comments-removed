@@ -885,7 +885,10 @@ pub struct Capabilities {
     
     
     pub supports_blit_to_texture_array: bool,
-
+    
+    
+    
+    pub supports_pixel_local_storage: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -1114,6 +1117,7 @@ impl Device {
         resource_override_path: Option<PathBuf>,
         upload_method: UploadMethod,
         cached_programs: Option<Rc<ProgramCache>>,
+        allow_pixel_local_storage_support: bool,
     ) -> Device {
         
         
@@ -1233,6 +1237,17 @@ impl Device {
         
         
         
+        let ext_pixel_local_storage = supports_extension(&extensions, "GL_EXT_shader_pixel_local_storage");
+        let ext_framebuffer_fetch = supports_extension(&extensions, "GL_ARM_shader_framebuffer_fetch");
+        let supports_pixel_local_storage =
+            allow_pixel_local_storage_support &&
+            ext_framebuffer_fetch &&
+            ext_pixel_local_storage;
+
+        
+        
+        
+        
         
         let optimal_pbo_stride = if renderer_name.contains("Adreno") {
             NonZeroUsize::new(256).unwrap()
@@ -1251,6 +1266,7 @@ impl Device {
                 supports_multisampling: false, 
                 supports_copy_image_sub_data,
                 supports_blit_to_texture_array,
+                supports_pixel_local_storage,
             },
 
             bgra_format_internal,
@@ -2948,6 +2964,18 @@ impl Device {
 
     pub fn supports_extension(&self, extension: &str) -> bool {
         supports_extension(&self.extensions, extension)
+    }
+
+    
+    
+    pub fn enable_pixel_local_storage(&mut self, enable: bool) {
+        debug_assert!(self.capabilities.supports_pixel_local_storage);
+
+        if enable {
+            self.gl.enable(gl::SHADER_PIXEL_LOCAL_STORAGE_EXT);
+        } else {
+            self.gl.disable(gl::SHADER_PIXEL_LOCAL_STORAGE_EXT);
+        }
     }
 
     pub fn echo_driver_messages(gl: &gl::Gl) {
