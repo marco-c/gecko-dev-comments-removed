@@ -19,6 +19,7 @@
 #include "js/CharacterEncoding.h"
 #include "js/UniquePtr.h"
 #include "vm/ArrayObject.h"
+#include "vm/GlobalObject.h"
 #include "vm/JSObject.h"
 #include "vm/RegExpObject.h"
 #include "vm/Shape.h"
@@ -251,21 +252,14 @@ void ObjectGroup::setAddendum(AddendumKind kind, void* addendum,
 
 
 
-bool JSObject::shouldSplicePrototype() {
+bool GlobalObject::shouldSplicePrototype() {
   
-
-
-
-
-
-  if (staticPrototype() != nullptr) {
-    return false;
-  }
-  return isSingleton();
+  
+  
+  return staticPrototype() == nullptr;
 }
 
  bool JSObject::splicePrototype(JSContext* cx, HandleObject obj,
-                                            const Class* clasp,
                                             Handle<TaggedProto> proto) {
   MOZ_ASSERT(cx->compartment() == obj->compartment());
 
@@ -278,6 +272,10 @@ bool JSObject::shouldSplicePrototype() {
 
   
   MOZ_ASSERT_IF(proto.isObject(), !IsWindow(proto.toObject()));
+
+#ifdef DEBUG
+  const Class* oldClass = obj->getClass();
+#endif
 
   if (proto.isObject()) {
     RootedObject protoObj(cx, proto.toObject());
@@ -300,7 +298,8 @@ bool JSObject::shouldSplicePrototype() {
     }
   }
 
-  group->setClasp(clasp);
+  MOZ_ASSERT(group->clasp() == oldClass,
+             "splicing a prototype doesn't change a group's class");
   group->setProto(proto);
   return true;
 }
