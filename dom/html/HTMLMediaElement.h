@@ -117,6 +117,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   explicit HTMLMediaElement(
       already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+  nsresult Init();
 
   void ReportCanPlayTelemetry();
 
@@ -1749,6 +1750,9 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   
   void ReportPlayedTimeAfterBlockedTelemetry();
+
+  
+  bool mInitialized = false;
 
   
   
