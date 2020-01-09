@@ -17,15 +17,20 @@
 #include "prenv.h"
 
 #include <CoreFoundation/CoreFoundation.h>
+#include <sys/sysctl.h>
 
 NS_IMPL_ISUPPORTS(nsMacUtilsImpl, nsIMacUtils)
 
 using mozilla::StaticMutexAutoLock;
+using mozilla::Unused;
 
 #if defined(MOZ_SANDBOX)
 StaticAutoPtr<nsCString> nsMacUtilsImpl::sCachedAppPath;
 StaticMutex nsMacUtilsImpl::sCachedAppPathMutex;
 #endif
+
+
+Atomic<nsMacUtilsImpl::TCSMStatus> nsMacUtilsImpl::sTCSMStatus(TCSM_Unknown);
 
 nsresult nsMacUtilsImpl::GetArchString(nsAString& aArchString) {
   if (!mBinaryArchs.IsEmpty()) {
@@ -241,3 +246,60 @@ nsresult nsMacUtilsImpl::GetDirectoryPath(const char* aPath,
 }
 #  endif 
 #endif   
+
+
+bool nsMacUtilsImpl::IsTCSMAvailable() {
+  if (sTCSMStatus == TCSM_Unknown) {
+    uint32_t oldVal = 0;
+    size_t oldValSize = sizeof(oldVal);
+    int rv = sysctlbyname("kern.tcsm_available", &oldVal, &oldValSize, NULL, 0);
+    TCSMStatus newStatus;
+    if (rv < 0 || oldVal == 0) {
+      newStatus = TCSM_Unavailable;
+    } else {
+      newStatus = TCSM_Available;
+    }
+    
+    
+    
+    
+    
+    Unused << sTCSMStatus.compareExchange(TCSM_Unknown, newStatus);
+  }
+  return (sTCSMStatus == TCSM_Available);
+}
+
+
+nsresult nsMacUtilsImpl::EnableTCSM() {
+  uint32_t newVal = 1;
+  int rv = sysctlbyname("kern.tcsm_enable", NULL, 0, &newVal, sizeof(newVal));
+  if (rv < 0) {
+    return NS_ERROR_UNEXPECTED;
+  }
+  return NS_OK;
+}
+
+
+
+
+
+
+
+void nsMacUtilsImpl::EnableTCSMIfAvailable() {
+  if (IsTCSMAvailable()) {
+    if (NS_FAILED(EnableTCSM())) {
+      NS_WARNING("Failed to enable TCSM");
+    }
+    MOZ_ASSERT(IsTCSMEnabled());
+  }
+}
+
+#if defined(DEBUG)
+
+bool nsMacUtilsImpl::IsTCSMEnabled() {
+  uint32_t oldVal = 0;
+  size_t oldValSize = sizeof(oldVal);
+  int rv = sysctlbyname("kern.tcsm_enable", &oldVal, &oldValSize, NULL, 0);
+  return (rv == 0) && (oldVal != 0);
+}
+#endif
