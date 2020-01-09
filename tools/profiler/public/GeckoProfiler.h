@@ -775,6 +775,9 @@ class MOZ_RAII AutoProfilerTextMarker {
 
 
 
+void profiler_set_process_name(const nsACString& aProcessName);
+
+
 
 
 
