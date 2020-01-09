@@ -626,6 +626,16 @@ class ADBDevice(ADBCommand):
 
         self._check_adb_root(timeout=timeout)
 
+        
+        
+        
+        
+        
+        adb_process = self.shell("su -c setenforce 0")
+        self._logger.info("setenforce 0 exitcode %s, stdout: %s" % (
+            adb_process.proc.poll(),
+            adb_process.proc.stdout))
+
         uid = 'uid=0'
         
         try:
@@ -633,8 +643,8 @@ class ADBDevice(ADBCommand):
                 self.shell_output("su -c id", timeout=timeout).find(uid) != -1):
                 self._have_su = True
                 self._logger.info("su -c supported")
-        except ADBError:
-            self._logger.debug("Check for su -c failed")
+        except ADBError as e:
+            self._logger.debug("Check for su -c failed: {}".format(e))
 
         
         
@@ -646,8 +656,8 @@ class ADBDevice(ADBCommand):
                 self.shell_output("su 0 id", timeout=timeout).find(uid) != -1):
                 self._have_android_su = True
                 self._logger.info("su 0 supported")
-        except ADBError:
-            self._logger.debug("Check for su 0 failed")
+        except ADBError as e:
+            self._logger.debug("Check for su 0 failed: {}".format(e))
 
         self._mkdir_p = None
         
