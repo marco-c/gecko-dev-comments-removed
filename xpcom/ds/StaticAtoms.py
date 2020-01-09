@@ -28,6 +28,7 @@ STATIC_ATOMS = [
     
     
 
+    Atom("SystemPrincipal", "[System Principal]"),
     Atom("_empty", ""),
     Atom("_0", "0"),
     Atom("_1", "1"),
