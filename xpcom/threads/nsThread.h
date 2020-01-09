@@ -66,8 +66,7 @@ class nsThread : public nsIThreadInternal,
 
  public:
   
-  
-  nsresult Init(const nsACString& aName = NS_LITERAL_CSTRING(""));
+  nsresult Init(const nsACString& aName);
 
   
   nsresult InitCurrentThread();
