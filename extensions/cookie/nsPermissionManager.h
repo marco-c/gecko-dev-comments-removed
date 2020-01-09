@@ -184,6 +184,18 @@ class nsPermissionManager final : public nsIPermissionManager,
                        const bool aIgnoreSessionPermissions = false);
 
   
+  
+  nsresult TestPermissionWithoutDefaultsFromPrincipal(nsIPrincipal* aPrincipal,
+                                                      const nsACString& aType,
+                                                      uint32_t* aPermission) {
+    MOZ_ASSERT(!HasDefaultPref(aType));
+
+    return CommonTestPermission(aPrincipal, -1, aType, aPermission,
+                                nsIPermissionManager::UNKNOWN_ACTION, true,
+                                false, true);
+  }
+
+  
 
 
 
