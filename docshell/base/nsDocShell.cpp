@@ -11090,7 +11090,7 @@ nsresult nsDocShell::UpdateURLAndHistory(Document* aDocument, nsIURI* aNewURI,
   
   
   
-  NS_ENSURE_TRUE(mOSHE, NS_ERROR_FAILURE);
+  NS_ENSURE_TRUE(mOSHE || aReplace, NS_ERROR_FAILURE);
   nsCOMPtr<nsISHEntry> oldOSHE = mOSHE;
 
   mLoadType = LOAD_PUSHSTATE;
@@ -11147,6 +11147,22 @@ nsresult nsDocShell::UpdateURLAndHistory(Document* aDocument, nsIURI* aNewURI,
   } else {
     
     newSHEntry = mOSHE;
+
+    
+    
+    
+    nsCOMPtr<nsIContentSecurityPolicy> csp;
+    aDocument->NodePrincipal()->GetCsp(getter_AddRefs(csp));
+
+    
+    if (!newSHEntry) {
+      nsresult rv = AddToSessionHistory(
+          aNewURI, nullptr,
+          aDocument->NodePrincipal(),  
+          nullptr, csp, true, getter_AddRefs(newSHEntry));
+      NS_ENSURE_SUCCESS(rv, rv);
+      mOSHE = newSHEntry;
+    }
     newSHEntry->SetURI(aNewURI);
     newSHEntry->SetOriginalURI(aNewURI);
     newSHEntry->SetLoadReplace(false);
@@ -11163,7 +11179,7 @@ nsresult nsDocShell::UpdateURLAndHistory(Document* aDocument, nsIURI* aNewURI,
   
   bool sameExceptHashes = true;
   aNewURI->EqualsExceptRef(aCurrentURI, &sameExceptHashes);
-  bool oldURIWasModified = oldOSHE->GetURIWasModified();
+  bool oldURIWasModified = oldOSHE && oldOSHE->GetURIWasModified();
   newSHEntry->SetURIWasModified(!sameExceptHashes || oldURIWasModified);
 
   
