@@ -106,6 +106,9 @@ class InternalJobQueue : public JS::JobQueue {
 
   
   bool interrupted_;
+
+  class SavedQueue;
+  js::UniquePtr<JobQueue::SavedJobQueue> saveJobQueue(JSContext*) override;
 };
 
 class AutoLockScriptData;

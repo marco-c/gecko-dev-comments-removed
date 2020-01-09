@@ -7,11 +7,17 @@
 #ifndef js_Promise_h
 #define js_Promise_h
 
+#include "mozilla/Attributes.h"
+#include "mozilla/GuardObjects.h"
+
 #include "jspubtd.h"
 #include "js/RootingAPI.h"
 #include "js/TypeDecls.h"
+#include "js/UniquePtr.h"
 
 namespace JS {
+
+class JS_PUBLIC_API AutoDebuggerJobQueueInterruption;
 
 
 
@@ -58,12 +64,44 @@ class JS_PUBLIC_API JobQueue {
 
 
 
+
+
+
+
+
   virtual void runJobs(JSContext* cx) = 0;
 
   
 
 
   virtual bool empty() const = 0;
+
+ protected:
+  friend class AutoDebuggerJobQueueInterruption;
+
+  
+
+
+
+
+
+
+
+  class SavedJobQueue {
+   public:
+    virtual ~SavedJobQueue() = default;
+  };
+
+  
+
+
+
+
+
+
+
+
+  virtual js::UniquePtr<SavedJobQueue> saveJobQueue(JSContext*) = 0;
 };
 
 
@@ -73,6 +111,151 @@ class JS_PUBLIC_API JobQueue {
 
 
 extern JS_PUBLIC_API void SetJobQueue(JSContext* cx, JobQueue* queue);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class MOZ_RAII JS_PUBLIC_API AutoDebuggerJobQueueInterruption {
+ public:
+  explicit AutoDebuggerJobQueueInterruption(
+      MOZ_GUARD_OBJECT_NOTIFIER_ONLY_PARAM);
+  ~AutoDebuggerJobQueueInterruption();
+
+  bool init(JSContext* cx);
+  bool initialized() const { return !!saved; }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void runJobs();
+
+ private:
+  MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER;
+  JSContext* cx;
+  js::UniquePtr<JobQueue::SavedJobQueue> saved;
+};
 
 enum class PromiseRejectionHandlingState { Unhandled, Handled };
 
@@ -379,4 +562,4 @@ extern JS_PUBLIC_API void ShutdownAsyncTasks(JSContext* cx);
 
 }  
 
-#endif
+#endif  

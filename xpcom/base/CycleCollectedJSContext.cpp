@@ -279,6 +279,9 @@ bool CycleCollectedJSContext::enqueuePromiseJob(
   return true;
 }
 
+
+
+
 void CycleCollectedJSContext::runJobs(JSContext* aCx) {
   MOZ_ASSERT(aCx == Context());
   MOZ_ASSERT(Get() == this);
@@ -290,6 +293,38 @@ bool CycleCollectedJSContext::empty() const {
   
   
   return mPendingMicroTaskRunnables.empty();
+}
+
+
+
+class CycleCollectedJSContext::SavedMicroTaskQueue
+    : public JS::JobQueue::SavedJobQueue {
+ public:
+  explicit SavedMicroTaskQueue(CycleCollectedJSContext* ccjs) : ccjs(ccjs) {
+    ccjs->mPendingMicroTaskRunnables.swap(mQueue);
+  }
+
+  ~SavedMicroTaskQueue() {
+    MOZ_RELEASE_ASSERT(ccjs->mPendingMicroTaskRunnables.empty());
+    ccjs->mPendingMicroTaskRunnables.swap(mQueue);
+  }
+
+ private:
+  CycleCollectedJSContext* ccjs;
+  std::queue<RefPtr<MicroTaskRunnable>> mQueue;
+};
+
+js::UniquePtr<JS::JobQueue::SavedJobQueue>
+CycleCollectedJSContext::saveJobQueue(JSContext* cx) {
+  auto saved = js::MakeUnique<SavedMicroTaskQueue>(this);
+  if (!saved) {
+    
+    
+    JS_ReportOutOfMemory(cx);
+    return nullptr;
+  }
+
+  return saved;
 }
 
 

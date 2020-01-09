@@ -236,12 +236,17 @@ class CycleCollectedJSContext
  private:
   
   
+  
+  
+  
   JSObject* getIncumbentGlobal(JSContext* cx) override;
   bool enqueuePromiseJob(JSContext* cx, JS::HandleObject promise,
                          JS::HandleObject job, JS::HandleObject allocationSite,
                          JS::HandleObject incumbentGlobal) override;
   void runJobs(JSContext* cx) override;
   bool empty() const override;
+  class SavedMicroTaskQueue;
+  js::UniquePtr<SavedJobQueue> saveJobQueue(JSContext*) override;
 
  private:
   
