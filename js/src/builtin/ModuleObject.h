@@ -215,8 +215,10 @@ struct FunctionDeclaration {
   HeapPtr<JSFunction*> fun;
 };
 
+
+
 using FunctionDeclarationVector =
-    GCVector<FunctionDeclaration, 0, ZoneAllocPolicy>;
+    GCVector<FunctionDeclaration, 0, SystemAllocPolicy>;
 
 
 using ModuleStatus = int32_t;
