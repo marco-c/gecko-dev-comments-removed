@@ -243,6 +243,18 @@ var LoginHelper = {
     return realm;
   },
 
+  getFormActionOrigin(form) {
+    let uriString = form.action;
+
+    
+    if (uriString == "") {
+      
+      uriString = form.baseURI;
+    }
+
+    return this.getLoginOrigin(uriString, true);
+  },
+
   
 
 
