@@ -160,6 +160,25 @@ struct ParamTraits<mozilla::layers::CompositableHandle> {
   }
 };
 
+
+
+template <typename ParamType>
+struct BitfieldHelper {
+  
+  
+  
+  static bool ReadBoolForBitfield(const Message* aMsg, PickleIterator* aIter,
+                                  ParamType* aResult,
+                                  void (ParamType::*aSetter)(bool)) {
+    bool value;
+    if (ReadParam(aMsg, aIter, &value)) {
+      (aResult->*aSetter)(value);
+      return true;
+    }
+    return false;
+  }
+};
+
 template <>
 struct ParamTraits<mozilla::layers::FrameMetrics>
     : BitfieldHelper<mozilla::layers::FrameMetrics> {

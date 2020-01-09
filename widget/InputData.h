@@ -332,17 +332,6 @@ class PanGestureInput : public InputData {
       
       PANGESTURE_MOMENTUMEND
   ));
-
-  MOZ_DEFINE_ENUM_AT_CLASS_SCOPE(
-    PanDeltaType, (
-      
-      
-      
-      
-      
-      PANDELTA_PAGE,
-      PANDELTA_PIXEL
-  ));
   
 
   PanGestureInput(PanGestureType aType, uint32_t aTime, TimeStamp aTimeStamp,
@@ -379,13 +368,11 @@ class PanGestureInput : public InputData {
   double mUserDeltaMultiplierX;
   double mUserDeltaMultiplierY;
 
-  PanDeltaType mDeltaType = PANDELTA_PIXEL;
-
-  bool mHandledByAPZ : 1;
+  bool mHandledByAPZ;
 
   
   
-  bool mFollowedByMomentum : 1;
+  bool mFollowedByMomentum;
 
   
   
@@ -393,32 +380,15 @@ class PanGestureInput : public InputData {
   
   
   
-  bool mRequiresContentResponseIfCannotScrollHorizontallyInStartDirection : 1;
+  bool mRequiresContentResponseIfCannotScrollHorizontallyInStartDirection;
 
   
   
   
   
-  bool mOverscrollBehaviorAllowsSwipe : 1;
+  bool mOverscrollBehaviorAllowsSwipe;
 
   
-  
-  
-  bool mSimulateMomentum : 1;
-
-  void SetHandledByAPZ(bool aHandled) { mHandledByAPZ = aHandled; }
-  void SetFollowedByMomentum(bool aFollowed) {
-    mFollowedByMomentum = aFollowed;
-  }
-  void SetRequiresContentResponseIfCannotScrollHorizontallyInStartDirection(
-      bool aRequires) {
-    mRequiresContentResponseIfCannotScrollHorizontallyInStartDirection =
-        aRequires;
-  }
-  void SetOverscrollBehaviorAllowsSwipe(bool aAllows) {
-    mOverscrollBehaviorAllowsSwipe = aAllows;
-  }
-  void SetSimulateMomentum(bool aSimulate) { mSimulateMomentum = aSimulate; }
 };
 
 

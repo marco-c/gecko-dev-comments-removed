@@ -618,14 +618,6 @@ class nsBaseWidget : public nsIWidget, public nsSupportsWeakReference {
 
   void DispatchTouchInput(mozilla::MultiTouchInput& aInput);
 
-  
-
-
-
-
-
-  void DispatchPanGestureInput(mozilla::PanGestureInput& aInput);
-
 #if defined(XP_WIN)
   void UpdateScrollCapture() override;
 

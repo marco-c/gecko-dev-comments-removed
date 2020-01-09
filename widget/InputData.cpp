@@ -477,6 +477,7 @@ WidgetWheelEvent PanGestureInput::ToWidgetWheelEvent(nsIWidget* aWidget) const {
       mPanStartPoint,
       PixelCastJustification::LayoutDeviceIsScreenForUntransformedEvent));
   wheelEvent.mButtons = 0;
+  wheelEvent.mDeltaMode = WheelEvent_Binding::DOM_DELTA_PIXEL;
   wheelEvent.mMayHaveMomentum = true;  
   wheelEvent.mIsMomentum = IsMomentum();
   wheelEvent.mLineOrPageDeltaX = mLineOrPageDeltaX;
@@ -485,16 +486,6 @@ WidgetWheelEvent PanGestureInput::ToWidgetWheelEvent(nsIWidget* aWidget) const {
   wheelEvent.mDeltaY = mPanDisplacement.y;
   wheelEvent.mFlags.mHandledByAPZ = mHandledByAPZ;
   wheelEvent.mFocusSequenceNumber = mFocusSequenceNumber;
-  if (mDeltaType == PanGestureInput::PANDELTA_PAGE) {
-    
-    wheelEvent.mDeltaMode = WheelEvent_Binding::DOM_DELTA_LINE;
-    wheelEvent.mIsNoLineOrPageDelta = true;
-    wheelEvent.mScrollType = WidgetWheelEvent::SCROLL_ASYNCHRONOUSELY;
-    wheelEvent.mDeltaX *= 3;
-    wheelEvent.mDeltaY *= 3;
-  } else {
-    wheelEvent.mDeltaMode = WheelEvent_Binding::DOM_DELTA_PIXEL;
-  }
   return wheelEvent;
 }
 
@@ -506,14 +497,6 @@ bool PanGestureInput::TransformToLocal(
     return false;
   }
   mLocalPanStartPoint = *panStartPoint;
-
-  if (mDeltaType == PanGestureInput::PANDELTA_PAGE) {
-    
-    
-    mLocalPanDisplacement.x = mPanDisplacement.x;
-    mLocalPanDisplacement.y = mPanDisplacement.y;
-    return true;
-  }
 
   Maybe<ParentLayerPoint> panDisplacement =
       UntransformVector(aTransform, mPanDisplacement, mPanStartPoint);

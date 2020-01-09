@@ -48,10 +48,10 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/Unused.h"
 #include "nsContentUtils.h"
+#include "gfxPrefs.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/MouseEvents.h"
 #include "GLConsts.h"
-#include "mozilla/StaticPrefs.h"
 #include "mozilla/Unused.h"
 #include "mozilla/IMEStateManager.h"
 #include "mozilla/VsyncDispatcher.h"
@@ -823,7 +823,7 @@ bool nsBaseWidget::UseAPZ() {
           (WindowType() == eWindowType_toplevel ||
            WindowType() == eWindowType_child ||
            (WindowType() == eWindowType_popup && HasRemoteContent() &&
-            StaticPrefs::APZPopupsEnabled())));
+            gfxPrefs::APZPopupsEnabled())));
 }
 
 bool nsBaseWidget::AllowWebRenderForThisWindow() {
@@ -857,7 +857,7 @@ void nsBaseWidget::ConfigureAPZCTreeManager() {
       NewRunnableMethod<float>("layers::IAPZCTreeManager::SetDPI", mAPZC,
                                &IAPZCTreeManager::SetDPI, dpi));
 
-  if (StaticPrefs::APZKeyboardEnabled()) {
+  if (gfxPrefs::APZKeyboardEnabled()) {
     KeyboardMap map = nsXBLWindowKeyHandler::CollectKeyboardShortcuts();
     
     APZThreadUtils::RunOnControllerThread(NewRunnableMethod<KeyboardMap>(
@@ -976,7 +976,7 @@ nsEventStatus nsBaseWidget::ProcessUntransformedAPZEvent(
     UniquePtr<DisplayportSetListener> postLayerization;
     if (WidgetTouchEvent* touchEvent = aEvent->AsTouchEvent()) {
       if (touchEvent->mMessage == eTouchStart) {
-        if (StaticPrefs::TouchActionEnabled()) {
+        if (gfxPrefs::TouchActionEnabled()) {
           APZCCallbackHelper::SendSetAllowedTouchBehaviorNotification(
               this, GetDocument(), *(original->AsTouchEvent()), aInputBlockId,
               mSetAllowedTouchBehaviorCallback);
@@ -1090,29 +1090,6 @@ void nsBaseWidget::DispatchTouchInput(MultiTouchInput& aInput) {
     ProcessUntransformedAPZEvent(&event, guid, inputBlockId, result);
   } else {
     WidgetTouchEvent event = aInput.ToWidgetTouchEvent(this);
-
-    nsEventStatus status;
-    DispatchEvent(&event, status);
-  }
-}
-
-void nsBaseWidget::DispatchPanGestureInput(PanGestureInput& aInput) {
-  MOZ_ASSERT(NS_IsMainThread());
-  if (mAPZC) {
-    MOZ_ASSERT(APZThreadUtils::IsControllerThread());
-    uint64_t inputBlockId = 0;
-    ScrollableLayerGuid guid;
-
-    nsEventStatus result =
-        mAPZC->InputBridge()->ReceiveInputEvent(aInput, &guid, &inputBlockId);
-    if (result == nsEventStatus_eConsumeNoDefault) {
-      return;
-    }
-
-    WidgetWheelEvent event = aInput.ToWidgetWheelEvent(this);
-    ProcessUntransformedAPZEvent(&event, guid, inputBlockId, result);
-  } else {
-    WidgetWheelEvent event = aInput.ToWidgetWheelEvent(this);
 
     nsEventStatus status;
     DispatchEvent(&event, status);
