@@ -2,6 +2,7 @@
 
 
 
+
 requestLongerTimeout(3);
 
 
@@ -20,16 +21,13 @@ function addBreakpoint(dbg, line) {
 }
 
 function assertEditorBreakpoint(dbg, line) {
-  const exists = !!getLineEl(dbg, line).querySelector(".new-breakpoint");
+  const lineEl = getLineEl(dbg, line);
+  const exists = lineEl.classList.contains("new-breakpoint");
   ok(exists, `Breakpoint exists on line ${line}`);
 }
 
 add_task(async function() {
   const dbg = await initDebugger("doc-scripts.html", "simple1.js");
-  const {
-    selectors: { getBreakpoints, getBreakpoint },
-    getState
-  } = dbg;
   const source = findSource(dbg, "simple1.js");
 
   await selectSource(dbg, source.url);

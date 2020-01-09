@@ -90,7 +90,7 @@ async function loadSourceTextPromise(
 
   if (!newSource.isWasm && isLoaded(newSource)) {
     parser.setSource(newSource);
-    await dispatch(setBreakpointPositions(newSource.id));
+    dispatch(setBreakpointPositions(newSource.id));
   }
 
   return newSource;
@@ -105,6 +105,7 @@ export function loadSourceText(inputSource: ?Source) {
     if (!inputSource) {
       return;
     }
+
     
     
     const source = inputSource;

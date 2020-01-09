@@ -123,6 +123,9 @@ export function setBreakpointPositions(sourceId: string) {
         (async () => {
           try {
             await _setBreakpointPositions(sourceId, thunkArgs);
+          } catch (e) {
+            
+            
           } finally {
             requests.delete(sourceId);
           }

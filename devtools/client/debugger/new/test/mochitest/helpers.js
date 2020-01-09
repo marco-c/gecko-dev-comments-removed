@@ -8,6 +8,7 @@
 
 
 
+
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/devtools/client/debugger/new/test/mochitest/helpers/context.js",
   this
@@ -44,14 +45,14 @@ async function waitFor(condition) {
 
 
 
-function waitForNextDispatch(store, type) {
+function waitForNextDispatch(store, actionType) {
   return new Promise(resolve => {
     store.dispatch({
       
       
       
       type: "@@service/waitUntil",
-      predicate: action => action.type === type,
+      predicate: action => action.type === actionType,
       run: (dispatch, getState, action) => {
         resolve(action);
       }
@@ -61,48 +62,37 @@ function waitForNextDispatch(store, type) {
 
 
 
-function _afterDispatchDone(store, type) {
+
+
+
+
+
+
+
+
+
+function waitForDispatch(dbg, actionType, eventRepeat = 1) {
+  let count = 0;
   return new Promise(resolve => {
-    store.dispatch({
+    dbg.store.dispatch({
       
       
       
       type: "@@service/waitUntil",
       predicate: action => {
-        if (action.type === type) {
-          return action.status
-            ? action.status === "done" || action.status === "error"
-            : true;
+        const isDone =
+          !action.status ||
+          action.status === "done" ||
+          action.status === "error";
+
+        if (action.type === actionType && isDone && ++count == eventRepeat) {
+          return true;
         }
       },
       run: (dispatch, getState, action) => {
         resolve(action);
       }
     });
-  });
-}
-
-
-
-
-
-
-
-
-
-
-
-
-function waitForDispatch(dbg, type, eventRepeat = 1) {
-  let count = 0;
-
-  return Task.spawn(function*() {
-    info(`Waiting for ${type} to dispatch ${eventRepeat} time(s)`);
-    while (count < eventRepeat) {
-      yield _afterDispatchDone(dbg.store, type);
-      count++;
-      info(`${type} dispatched ${count} time(s)`);
-    }
   });
 }
 
@@ -737,10 +727,13 @@ async function navigate(dbg, url, ...sources) {
   return waitForSources(dbg, ...sources);
 }
 
-function getFirstBreakpointColumn(dbg, {line, sourceId}) {
-  const {getSource, getFirstBreakpointPosition} = dbg.selectors;
-  const source = getSource(dbg.getState(), sourceId)
-  const position = getFirstBreakpointPosition(dbg.getState(), { line, sourceId });
+function getFirstBreakpointColumn(dbg, { line, sourceId }) {
+  const { getSource, getFirstBreakpointPosition } = dbg.selectors;
+  const source = getSource(dbg.getState(), sourceId);
+  const position = getFirstBreakpointPosition(dbg.getState(), {
+    line,
+    sourceId
+  });
 
   return getSelectedLocation(position, source).column;
 }
@@ -759,15 +752,19 @@ function getFirstBreakpointColumn(dbg, {line, sourceId}) {
 async function addBreakpoint(dbg, source, line, column, options) {
   source = findSource(dbg, source);
   const sourceId = source.id;
-  column = column || getFirstBreakpointColumn(dbg, {line, sourceId: source.id});
   const bpCount = dbg.selectors.getBreakpointCount(dbg.getState());
   dbg.actions.addBreakpoint({ sourceId, line, column }, options);
   await waitForDispatch(dbg, "ADD_BREAKPOINT");
-  is(dbg.selectors.getBreakpointCount(dbg.getState()), bpCount + 1, "a new breakpoint was created");
+  is(
+    dbg.selectors.getBreakpointCount(dbg.getState()),
+    bpCount + 1,
+    "a new breakpoint was created"
+  );
 }
 
 function disableBreakpoint(dbg, source, line, column) {
-  column = column || getFirstBreakpointColumn(dbg, {line, sourceId: source.id});
+  column =
+    column || getFirstBreakpointColumn(dbg, { line, sourceId: source.id });
   const location = { sourceId: source.id, sourceUrl: source.url, line, column };
   const bp = dbg.selectors.getBreakpointForLocation(dbg.getState(), location);
   dbg.actions.disableBreakpoint(bp);
@@ -1255,10 +1252,7 @@ async function clickElement(dbg, elementName, ...args) {
 }
 
 function clickElementWithSelector(dbg, selector) {
-  clickDOMElement(
-    dbg,
-    findElementWithSelector(dbg, selector)
-  );
+  clickDOMElement(dbg, findElementWithSelector(dbg, selector));
 }
 
 function clickDOMElement(dbg, element) {
