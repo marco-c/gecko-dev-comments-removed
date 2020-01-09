@@ -14,8 +14,6 @@ class WorkerTargetFront extends
 
     this.traits = {};
 
-    this._isClosed = false;
-
     
     
     
@@ -34,16 +32,6 @@ class WorkerTargetFront extends
     this.type = json.type;
     this.scope = json.scope;
     this.fetch = json.fetch;
-  }
-
-  get isClosed() {
-    return this._isClosed;
-  }
-
-  destroy() {
-    this._isClosed = true;
-
-    super.destroy();
   }
 
   async attach() {
