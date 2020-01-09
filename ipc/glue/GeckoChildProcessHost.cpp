@@ -680,7 +680,7 @@ AddAppDirToCommandLine(std::vector<std::string>& aCmdLine)
   }
 }
 
-#ifdef XP_WIN
+#if defined(XP_WIN) && (defined(MOZ_SANDBOX) || defined(_ARM64_))
 static bool Contains(const std::vector<std::string>& aExtraOpts,
                      const char* aValue) {
   return std::any_of(aExtraOpts.begin(), aExtraOpts.end(),
