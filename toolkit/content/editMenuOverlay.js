@@ -60,13 +60,12 @@ window.addEventListener("DOMContentLoaded", () => {
 
 
 window.addEventListener("contextmenu", (e) => {
-  const HTML_NS = "http://www.w3.org/1999/xhtml";
   
   
-  let needsContextMenu = e.target.ownerDocument == document && !e.defaultPrevented && (
-    (e.target.localName == "textarea" && e.target.namespaceURI == HTML_NS)
-    || e.target.closest("textbox[is='search-textbox']")
-  );
+  let needsContextMenu = e.target.ownerDocument == document &&
+                         !e.defaultPrevented &&
+                         e.target.localName == "textarea" &&
+                         e.target.namespaceURI == "http://www.w3.org/1999/xhtml";
 
   if (!needsContextMenu) {
     return;
