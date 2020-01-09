@@ -8,96 +8,96 @@
 		for(var i in a) (typeof exports === 'object' ? exports : root)[i] = a[i];
 	}
 })(typeof self !== 'undefined' ? self : this, function(__WEBPACK_EXTERNAL_MODULE_0__, __WEBPACK_EXTERNAL_MODULE_1__, __WEBPACK_EXTERNAL_MODULE_6__, __WEBPACK_EXTERNAL_MODULE_37__, __WEBPACK_EXTERNAL_MODULE_103__, __WEBPACK_EXTERNAL_MODULE_112__, __WEBPACK_EXTERNAL_MODULE_417__) {
-return  (function(modules) { 
- 	
- 	var installedModules = {};
+return /******/ (function(modules) { // webpackBootstrap
+/******/ 	// The module cache
+/******/ 	var installedModules = {};
+/******/
+/******/ 	// The require function
+/******/ 	function __webpack_require__(moduleId) {
+/******/
+/******/ 		// Check if module is in cache
+/******/ 		if(installedModules[moduleId]) {
+/******/ 			return installedModules[moduleId].exports;
+/******/ 		}
+/******/ 		// Create a new module (and put it into the cache)
+/******/ 		var module = installedModules[moduleId] = {
+/******/ 			i: moduleId,
+/******/ 			l: false,
+/******/ 			exports: {}
+/******/ 		};
+/******/
+/******/ 		// Execute the module function
+/******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
+/******/
+/******/ 		// Flag the module as loaded
+/******/ 		module.l = true;
+/******/
+/******/ 		// Return the exports of the module
+/******/ 		return module.exports;
+/******/ 	}
+/******/
+/******/
+/******/ 	// expose the modules object (__webpack_modules__)
+/******/ 	__webpack_require__.m = modules;
+/******/
+/******/ 	// expose the module cache
+/******/ 	__webpack_require__.c = installedModules;
+/******/
+/******/ 	// define getter function for harmony exports
+/******/ 	__webpack_require__.d = function(exports, name, getter) {
+/******/ 		if(!__webpack_require__.o(exports, name)) {
+/******/ 			Object.defineProperty(exports, name, {
+/******/ 				configurable: false,
+/******/ 				enumerable: true,
+/******/ 				get: getter
+/******/ 			});
+/******/ 		}
+/******/ 	};
+/******/
+/******/ 	// getDefaultExport function for compatibility with non-harmony modules
+/******/ 	__webpack_require__.n = function(module) {
+/******/ 		var getter = module && module.__esModule ?
+/******/ 			function getDefault() { return module['default']; } :
+/******/ 			function getModuleExports() { return module; };
+/******/ 		__webpack_require__.d(getter, 'a', getter);
+/******/ 		return getter;
+/******/ 	};
+/******/
+/******/ 	// Object.prototype.hasOwnProperty.call
+/******/ 	__webpack_require__.o = function(object, property) { return Object.prototype.hasOwnProperty.call(object, property); };
+/******/
+/******/ 	// __webpack_public_path__
+/******/ 	__webpack_require__.p = "/assets/build";
+/******/
+/******/ 	// Load entry module and return exports
+/******/ 	return __webpack_require__(__webpack_require__.s = 413);
+/******/ })
+/************************************************************************/
+/******/ ({
 
- 	
- 	function __webpack_require__(moduleId) {
-
- 		
- 		if(installedModules[moduleId]) {
- 			return installedModules[moduleId].exports;
- 		}
- 		
- 		var module = installedModules[moduleId] = {
- 			i: moduleId,
- 			l: false,
- 			exports: {}
- 		};
-
- 		
- 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
-
- 		
- 		module.l = true;
-
- 		
- 		return module.exports;
- 	}
-
-
- 	
- 	__webpack_require__.m = modules;
-
- 	
- 	__webpack_require__.c = installedModules;
-
- 	
- 	__webpack_require__.d = function(exports, name, getter) {
- 		if(!__webpack_require__.o(exports, name)) {
- 			Object.defineProperty(exports, name, {
- 				configurable: false,
- 				enumerable: true,
- 				get: getter
- 			});
- 		}
- 	};
-
- 	
- 	__webpack_require__.n = function(module) {
- 		var getter = module && module.__esModule ?
- 			function getDefault() { return module['default']; } :
- 			function getModuleExports() { return module; };
- 		__webpack_require__.d(getter, 'a', getter);
- 		return getter;
- 	};
-
- 	
- 	__webpack_require__.o = function(object, property) { return Object.prototype.hasOwnProperty.call(object, property); };
-
- 	
- 	__webpack_require__.p = "/assets/build";
-
- 	
- 	return __webpack_require__(__webpack_require__.s = 413);
- })
-
- ({
-
- 0:
- (function(module, exports) {
+/***/ 0:
+/***/ (function(module, exports) {
 
 module.exports = __WEBPACK_EXTERNAL_MODULE_0__;
 
- }),
+/***/ }),
 
- 1:
- (function(module, exports) {
+/***/ 1:
+/***/ (function(module, exports) {
 
 module.exports = __WEBPACK_EXTERNAL_MODULE_1__;
 
- }),
+/***/ }),
 
- 102:
- (function(module, exports, __webpack_require__) {
+/***/ 102:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-(function(process) {
+/* WEBPACK VAR INJECTION */(function(process) {
 
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
 const flag = __webpack_require__(103);
 
@@ -137,19 +137,19 @@ module.exports = {
   isFirefoxPanel,
   isFirefox
 };
-}.call(exports, __webpack_require__(35)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(35)))
 
- }),
+/***/ }),
 
- 103:
- (function(module, exports) {
+/***/ 103:
+/***/ (function(module, exports) {
 
 module.exports = __WEBPACK_EXTERNAL_MODULE_103__;
 
- }),
+/***/ }),
 
- 108:
- (function(module, exports, __webpack_require__) {
+/***/ 108:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -162,14 +162,14 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 module.exports = {
   Tree: _tree2.default
-}; 
+}; /* This Source Code Form is subject to the terms of the Mozilla Public
+    * License, v. 2.0. If a copy of the MPL was not distributed with this
+    * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/***/ }),
 
-
- }),
-
- 109:
- (function(module, exports, __webpack_require__) {
+/***/ 109:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -192,23 +192,23 @@ var _propTypes2 = _interopRequireDefault(_propTypes);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const { Component, createFactory } = _react2.default; 
-
-
+const { Component, createFactory } = _react2.default; /* This Source Code Form is subject to the terms of the Mozilla Public
+                                                       * License, v. 2.0. If a copy of the MPL was not distributed with this
+                                                       * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
 __webpack_require__(110);
 
-
+// depth
 const AUTO_EXPAND_DEPTH = 0;
 
-
-
+// Simplied selector targetting elements that can receive the focus,
+// full version at https://stackoverflow.com/questions/1599660.
 const FOCUSABLE_SELECTOR = ["a[href]:not([tabindex='-1'])", "button:not([disabled]):not([tabindex='-1'])", "iframe:not([tabindex='-1'])", "input:not([disabled]):not([tabindex='-1'])", "select:not([disabled]):not([tabindex='-1'])", "textarea:not([disabled]):not([tabindex='-1'])", "[tabindex]:not([tabindex='-1'])"].join(", ");
 
-
-
-
-
+/**
+ * An arrow that displays whether its node is expanded (▼) or collapsed
+ * (▶). When its node has no children, it is hidden.
+ */
 class ArrowExpander extends Component {
   static get propTypes() {
     return {
@@ -261,10 +261,10 @@ class TreeNode extends Component {
   }
 
   componentDidMount() {
-    
-    
-    
-    
+    // Make sure that none of the focusable elements inside the tree node
+    // container are tabbable if the tree node is not active. If the tree node
+    // is active and focus is outside its container, focus on the first
+    // focusable element inside.
     const elms = this.getFocusableElements();
     if (this.props.active) {
       if (elms.length > 0 && !elms.includes(document.activeElement)) {
@@ -279,23 +279,23 @@ class TreeNode extends Component {
     return this.props.item !== nextProps.item || this.props.shouldItemUpdate && this.props.shouldItemUpdate(this.props.item, nextProps.item) || this.props.focused !== nextProps.focused || this.props.expanded !== nextProps.expanded;
   }
 
-  
-
-
-
+  /**
+   * Get a list of all elements that are focusable with a keyboard inside the
+   * tree node.
+   */
   getFocusableElements() {
     return this.treeNodeRef.current ? Array.from(this.treeNodeRef.current.querySelectorAll(FOCUSABLE_SELECTOR)) : [];
   }
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Wrap and move keyboard focus to first/last focusable element inside the
+   * tree node to prevent the focus from escaping the tree node boundaries.
+   * element).
+   *
+   * @param  {DOMNode} current  currently focused element
+   * @param  {Boolean} back     direction
+   * @return {Boolean}          true there is a newly focused element.
+   */
   _wrapMoveFocus(current, back) {
     const elms = this.getFocusableElements();
     let next;
@@ -326,8 +326,8 @@ class TreeNode extends Component {
 
     const focusMoved = this._wrapMoveFocus(target, shiftKey);
     if (focusMoved) {
-      
-      
+      // Focus was moved to the begining/end of the list, so we need to prevent
+      // the default focus change that would happen here.
       e.preventDefault();
     }
 
@@ -379,13 +379,13 @@ class TreeNode extends Component {
 const ArrowExpanderFactory = createFactory(ArrowExpander);
 const TreeNodeFactory = createFactory(TreeNode);
 
-
-
-
-
-
-
-
+/**
+ * Create a function that calls the given function `fn` only once per animation
+ * frame.
+ *
+ * @param {Function} fn
+ * @returns {Function}
+ */
 function oncePerAnimationFrame(fn) {
   let animationId = null;
   let argsToPass = null;
@@ -403,228 +403,228 @@ function oncePerAnimationFrame(fn) {
   };
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * A generic tree component. See propTypes for the public API.
+ *
+ * This tree component doesn't make any assumptions about the structure of your
+ * tree data. Whether children are computed on demand, or stored in an array in
+ * the parent's `_children` property, it doesn't matter. We only require the
+ * implementation of `getChildren`, `getRoots`, `getParent`, and `isExpanded`
+ * functions.
+ *
+ * This tree component is well tested and reliable. See the tests in ./tests
+ * and its usage in the performance and memory panels in mozilla-central.
+ *
+ * This tree component doesn't make any assumptions about how to render items in
+ * the tree. You provide a `renderItem` function, and this component will ensure
+ * that only those items whose parents are expanded and which are visible in the
+ * viewport are rendered. The `renderItem` function could render the items as a
+ * "traditional" tree or as rows in a table or anything else. It doesn't
+ * restrict you to only one certain kind of tree.
+ *
+ * The tree comes with basic styling for the indent, the arrow, as well as
+ * hovered and focused styles which can be override in CSS.
+ *
+ * ### Example Usage
+ *
+ * Suppose we have some tree data where each item has this form:
+ *
+ *     {
+ *       id: Number,
+ *       label: String,
+ *       parent: Item or null,
+ *       children: Array of child items,
+ *       expanded: bool,
+ *     }
+ *
+ * Here is how we could render that data with this component:
+ *
+ *     class MyTree extends Component {
+ *       static get propTypes() {
+ *         // The root item of the tree, with the form described above.
+ *         return {
+ *           root: PropTypes.object.isRequired
+ *         };
+ *       },
+ *
+ *       render() {
+ *         return Tree({
+ *           itemHeight: 20, // px
+ *
+ *           getRoots: () => [this.props.root],
+ *
+ *           getParent: item => item.parent,
+ *           getChildren: item => item.children,
+ *           getKey: item => item.id,
+ *           isExpanded: item => item.expanded,
+ *
+ *           renderItem: (item, depth, isFocused, arrow, isExpanded) => {
+ *             let className = "my-tree-item";
+ *             if (isFocused) {
+ *               className += " focused";
+ *             }
+ *             return dom.div({
+ *               className,
+ *             },
+ *               arrow,
+ *               // And here is the label for this item.
+ *               dom.span({ className: "my-tree-item-label" }, item.label)
+ *             );
+ *           },
+ *
+ *           onExpand: item => dispatchExpandActionToRedux(item),
+ *           onCollapse: item => dispatchCollapseActionToRedux(item),
+ *         });
+ *       }
+ *     }
+ */
 class Tree extends Component {
   static get propTypes() {
     return {
-      
+      // Required props
 
-      
-      
-      
-      
-      
-      
-      
-      
+      // A function to get an item's parent, or null if it is a root.
+      //
+      // Type: getParent(item: Item) -> Maybe<Item>
+      //
+      // Example:
+      //
+      //     // The parent of this item is stored in its `parent` property.
+      //     getParent: item => item.parent
       getParent: _propTypes2.default.func.isRequired,
 
-      
-      
-      
-      
-      
-      
-      
-      
+      // A function to get an item's children.
+      //
+      // Type: getChildren(item: Item) -> [Item]
+      //
+      // Example:
+      //
+      //     // This item's children are stored in its `children` property.
+      //     getChildren: item => item.children
       getChildren: _propTypes2.default.func.isRequired,
 
-      
-      
-      
-      
-      
-      
-      
-      
-      
+      // A function to check if the tree node for the item should be updated.
+      //
+      // Type: shouldItemUpdate(prevItem: Item, nextItem: Item) -> Boolean
+      //
+      // Example:
+      //
+      //     // This item should be updated if it's type is a long string
+      //     shouldItemUpdate: (prevItem, nextItem) =>
+      //       nextItem.type === "longstring"
       shouldItemUpdate: _propTypes2.default.func,
 
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
+      // A function which takes an item and ArrowExpander component instance and
+      // returns a component, or text, or anything else that React considers
+      // renderable.
+      //
+      // Type: renderItem(item: Item,
+      //                  depth: Number,
+      //                  isFocused: Boolean,
+      //                  arrow: ReactComponent,
+      //                  isExpanded: Boolean) -> ReactRenderable
+      //
+      // Example:
+      //
+      //     renderItem: (item, depth, isFocused, arrow, isExpanded) => {
+      //       let className = "my-tree-item";
+      //       if (isFocused) {
+      //         className += " focused";
+      //       }
+      //       return dom.div(
+      //         {
+      //           className,
+      //           style: { marginLeft: depth * 10 + "px" }
+      //         },
+      //         arrow,
+      //         dom.span({ className: "my-tree-item-label" }, item.label)
+      //       );
+      //     },
       renderItem: _propTypes2.default.func.isRequired,
 
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
+      // A function which returns the roots of the tree (forest).
+      //
+      // Type: getRoots() -> [Item]
+      //
+      // Example:
+      //
+      //     // In this case, we only have one top level, root item. You could
+      //     // return multiple items if you have many top level items in your
+      //     // tree.
+      //     getRoots: () => [this.props.rootOfMyTree]
       getRoots: _propTypes2.default.func.isRequired,
 
-      
-      
-      
-      
-      
-      
-      
-      
+      // A function to get a unique key for the given item. This helps speed up
+      // React's rendering a *TON*.
+      //
+      // Type: getKey(item: Item) -> String
+      //
+      // Example:
+      //
+      //     getKey: item => `my-tree-item-${item.uniqueId}`
       getKey: _propTypes2.default.func.isRequired,
 
-      
-      
-      
-      
-      
-      
-      
-      
+      // A function to get whether an item is expanded or not. If an item is not
+      // expanded, then it must be collapsed.
+      //
+      // Type: isExpanded(item: Item) -> Boolean
+      //
+      // Example:
+      //
+      //     isExpanded: item => item.expanded,
       isExpanded: _propTypes2.default.func.isRequired,
 
-      
+      // Optional props
 
-      
+      // The currently focused item, if any such item exists.
       focused: _propTypes2.default.any,
 
-      
+      // Handle when a new item is focused.
       onFocus: _propTypes2.default.func,
 
-      
+      // The depth to which we should automatically expand new items.
       autoExpandDepth: _propTypes2.default.number,
-      
-      
+      // Should auto expand all new items or just the new items under the first
+      // root item.
       autoExpandAll: _propTypes2.default.bool,
 
-      
-      
+      // Auto expand a node only if number of its children
+      // are less than autoExpandNodeChildrenLimit
       autoExpandNodeChildrenLimit: _propTypes2.default.number,
 
-      
-      
-      
-      
+      // Note: the two properties below are mutually exclusive. Only one of the
+      // label properties is necessary.
+      // ID of an element whose textual content serves as an accessible label
+      // for a tree.
       labelledby: _propTypes2.default.string,
-      
+      // Accessibility label for a tree widget.
       label: _propTypes2.default.string,
 
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
+      // Optional event handlers for when items are expanded or collapsed.
+      // Useful for dispatching redux events and updating application state,
+      // maybe lazily loading subtrees from a worker, etc.
+      //
+      // Type:
+      //     onExpand(item: Item)
+      //     onCollapse(item: Item)
+      //
+      // Example:
+      //
+      //     onExpand: item => dispatchExpandActionToRedux(item)
       onExpand: _propTypes2.default.func,
       onCollapse: _propTypes2.default.func,
-      
+      // The currently active (keyboard) item, if any such item exists.
       active: _propTypes2.default.any,
-      
-      
-      
+      // Optional event handler called with the current focused node when the
+      // Enter key is pressed. Can be useful to allow further keyboard actions
+      // within the tree node.
       onActivate: _propTypes2.default.func,
       isExpandable: _propTypes2.default.func,
-      
+      // Additional classes to add to the root element.
       className: _propTypes2.default.string,
-      
+      // style object to be applied to the root element.
       style: _propTypes2.default.object,
-      
+      // Prevents blur when Tree loses focus
       preventBlur: _propTypes2.default.bool
     };
   }
@@ -689,9 +689,9 @@ class Tree extends Component {
       return;
     }
 
-    
-    
-    
+    // Automatically expand the first autoExpandDepth levels for new items. Do
+    // not use the usual DFS infrastructure because we don't want to ignore
+    // collapsed nodes.
     const autoExpand = (item, currentDepth) => {
       if (currentDepth >= autoExpandDepth || this.state.seen.has(item)) {
         return;
@@ -746,9 +746,9 @@ class Tree extends Component {
     }
   }
 
-  
-
-
+  /**
+   * Perform a pre-order depth-first search from item.
+   */
   _dfs(item, maxDepth = Infinity, traversal = [], _depth = 0) {
     traversal.push({ item, depth: _depth });
 
@@ -771,9 +771,9 @@ class Tree extends Component {
     return traversal;
   }
 
-  
-
-
+  /**
+   * Perform a pre-order depth-first search over the whole forest.
+   */
   _dfsFromRoots(maxDepth = Infinity) {
     const traversal = [];
 
@@ -786,12 +786,12 @@ class Tree extends Component {
     return traversal;
   }
 
-  
-
-
-
-
-
+  /**
+   * Expands current row.
+   *
+   * @param {Object} item
+   * @param {Boolean} expandAllChildren
+   */
   _onExpand(item, expandAllChildren) {
     if (this.props.onExpand) {
       this.props.onExpand(item);
@@ -806,29 +806,29 @@ class Tree extends Component {
     }
   }
 
-  
-
-
-
-
+  /**
+   * Collapses current row.
+   *
+   * @param {Object} item
+   */
   _onCollapse(item) {
     if (this.props.onCollapse) {
       this.props.onCollapse(item);
     }
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Sets the passed in item to be the focused item.
+   *
+   * @param {Object|undefined} item
+   *        The item to be focused, or undefined to focus no item.
+   *
+   * @param {Object|undefined} options
+   *        An options object which can contain:
+   *          - dir: "up" or "down" to indicate if we should scroll the element
+   *                 to the top or the bottom of the scrollable container when
+   *                 the element is off canvas.
+   */
   _focus(item, options = {}) {
     const { preventAutoScroll } = options;
     if (item && !preventAutoScroll) {
@@ -847,30 +847,30 @@ class Tree extends Component {
     }
   }
 
-  
-
-
-
-
-
+  /**
+   * Sets the passed in item to be the active item.
+   *
+   * @param {Object|undefined} item
+   *        The item to be activated, or undefined to activate no item.
+   */
   _activate(item) {
     if (this.props.onActivate) {
       this.props.onActivate(item);
     }
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Sets the passed in item to be the focused item.
+   *
+   * @param {Object|undefined} item
+   *        The item to be scrolled to.
+   *
+   * @param {Object|undefined} options
+   *        An options object which can contain:
+   *          - dir: "up" or "down" to indicate if we should scroll the element
+   *                 to the top or the bottom of the scrollable container when
+   *                 the element is off canvas.
+   */
   _scrollNodeIntoView(item, options = {}) {
     if (item !== undefined) {
       const treeElement = this.treeRef.current;
@@ -901,9 +901,9 @@ class Tree extends Component {
     }
   }
 
-  
-
-
+  /**
+   * Sets the state to have no focused item.
+   */
   _onBlur(e) {
     if (this.props.active != undefined) {
       const { relatedTarget } = e;
@@ -915,18 +915,18 @@ class Tree extends Component {
     }
   }
 
-  
-
-
-
-
-  
+  /**
+   * Handles key down events in the tree's container.
+   *
+   * @param {Event} e
+   */
+  // eslint-disable-next-line complexity
   _onKeyDown(e) {
     if (this.props.focused == null) {
       return;
     }
 
-    
+    // Allow parent nodes to use navigation arrows with modifiers.
     if (e.altKey || e.ctrlKey || e.shiftKey || e.metaKey) {
       return;
     }
@@ -988,13 +988,13 @@ class Tree extends Component {
     }
   }
 
-  
-
-
+  /**
+   * Sets the previous node relative to the currently focused item, to focused.
+   */
   _focusPrevNode() {
-    
-    
-    
+    // Start a depth first search and keep going until we reach the currently
+    // focused node. Focus the previous node in the DFS, if it exists. If it
+    // doesn't exist, we're at the first node already.
 
     let prev;
 
@@ -1014,14 +1014,14 @@ class Tree extends Component {
     this._focus(prev, { alignTo: "top" });
   }
 
-  
-
-
-
+  /**
+   * Handles the down arrow key which will focus either the next child
+   * or sibling row.
+   */
   _focusNextNode() {
-    
-    
-    
+    // Start a depth first search and keep going until we reach the currently
+    // focused node. Focus the next node in the DFS, if it exists. If it
+    // doesn't exist, we're at the last node already.
     const traversal = this._dfsFromRoots();
     const length = traversal.length;
     let i = 0;
@@ -1038,10 +1038,10 @@ class Tree extends Component {
     }
   }
 
-  
-
-
-
+  /**
+   * Handles the left arrow key, going back up to the current rows'
+   * parent row.
+   */
   _focusParentNode() {
     const parent = this.props.getParent(this.props.focused);
     if (!parent) {
@@ -1075,9 +1075,9 @@ class Tree extends Component {
       const { item, depth } = traversal[i];
       const key = this.props.getKey(item, i);
       return TreeNodeFactory({
-        
-        
-        
+        // We make a key unique depending on whether the tree node is in active
+        // or inactive state to make sure that it is actually replaced and the
+        // tabbable state is reset.
         key: `${key}-${active === item ? "active" : "inactive"}`,
         id: key,
         index: i,
@@ -1092,12 +1092,12 @@ class Tree extends Component {
         onExpand: this._onExpand,
         onCollapse: this._onCollapse,
         onClick: e => {
-          
-          
+          // We can stop the propagation since click handler on the node can be
+          // created in `renderItem`.
           e.stopPropagation();
 
-          
-          
+          // Since the user just clicked the node, there's no need to check if
+          // it should be scrolled into view.
           this._focus(item, { preventAutoScroll: true });
           if (this.props.isExpanded(item)) {
             this.props.onCollapse(item, e.altKey);
@@ -1105,7 +1105,7 @@ class Tree extends Component {
             this.props.onExpand(item, e.altKey);
           }
 
-          
+          // Focus should always remain on the tree container itself.
           this.treeRef.current.focus();
         }
       });
@@ -1127,9 +1127,9 @@ class Tree extends Component {
         }
 
         const { explicitOriginalTarget } = nativeEvent;
-        
-        
-        
+        // Only set default focus to the first tree node if the focus came
+        // from outside the tree (e.g. by tabbing to the tree from other
+        // external elements).
         if (explicitOriginalTarget !== this.treeRef.current && !this.treeRef.current.contains(explicitOriginalTarget)) {
           this._focus(traversal[0].item);
         }
@@ -1145,17 +1145,17 @@ class Tree extends Component {
 
 exports.default = Tree;
 
- }),
+/***/ }),
 
- 110:
- (function(module, exports) {
+/***/ 110:
+/***/ (function(module, exports) {
 
+// removed by extract-text-webpack-plugin
 
+/***/ }),
 
- }),
-
- 111:
- (function(module, exports, __webpack_require__) {
+/***/ 111:
+/***/ (function(module, exports, __webpack_require__) {
 
 (function() {
   var computeScore, countDir, file_coeff, getExtension, getExtensionScore, isMatch, scorePath, scoreSize, tau_depth, _ref;
@@ -1269,21 +1269,21 @@ exports.default = Tree;
 }).call(this);
 
 
- }),
+/***/ }),
 
- 112:
- (function(module, exports) {
+/***/ 112:
+/***/ (function(module, exports) {
 
 module.exports = __WEBPACK_EXTERNAL_MODULE_112__;
 
- }),
+/***/ }),
 
- 13:
- (function(module, exports) {
+/***/ 13:
+/***/ (function(module, exports) {
 
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
 function networkRequest(url, opts) {
   return fetch(url, {
@@ -1304,19 +1304,19 @@ function networkRequest(url, opts) {
 
 module.exports = networkRequest;
 
- }),
+/***/ }),
 
- 14:
- (function(module, exports) {
+/***/ 14:
+/***/ (function(module, exports) {
 
 function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
 
 function WorkerDispatcher() {
   this.msgId = 1;
   this.worker = null;
-} 
-
-
+} /* This Source Code Form is subject to the terms of the Mozilla Public
+   * License, v. 2.0. If a copy of the MPL was not distributed with this
+   * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
 WorkerDispatcher.prototype = {
   start(url, win = window) {
@@ -1408,14 +1408,14 @@ function workerHandler(publicInterface) {
         const response = publicInterface[method].apply(undefined, args);
         if (response instanceof Promise) {
           return response.then(val => ({ response: val }),
-          
-          
+          // Error can't be sent via postMessage, so be sure to
+          // convert to string.
           err => ({ error: err.toString() }));
         }
         return { response };
       } catch (error) {
-        
-        
+        // Error can't be sent via postMessage, so be sure to convert to
+        // string.
         return { error: error.toString() };
       }
     })).then(results => {
@@ -1482,45 +1482,45 @@ module.exports = {
   streamingWorkerHandler
 };
 
- }),
+/***/ }),
 
- 15:
- (function(module, exports) {
+/***/ 15:
+/***/ (function(module, exports) {
 
 var g;
 
-
+// This works in non-strict mode
 g = (function() {
 	return this;
 })();
 
 try {
-	
+	// This works if eval is allowed (see CSP)
 	g = g || Function("return this")() || (1,eval)("this");
 } catch(e) {
-	
+	// This works if the window reference is available
 	if(typeof window === "object")
 		g = window;
 }
 
-
-
-
+// g can still be undefined, but nothing to do about it...
+// We return undefined, instead of nothing here, so it's
+// easier to handle this case. if(!global) { ...}
 
 module.exports = g;
 
 
- }),
+/***/ }),
 
- 183:
- (function(module, exports, __webpack_require__) {
+/***/ 183:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const Menu = __webpack_require__(421);
 const MenuItem = __webpack_require__(423);
@@ -1548,10 +1548,10 @@ module.exports = {
   getUnicodeUrl
 };
 
- }),
+/***/ }),
 
- 184:
- (function(module, exports, __webpack_require__) {
+/***/ 184:
+/***/ (function(module, exports, __webpack_require__) {
 
 (function() {
   var Query, coreChars, countDir, getCharCodes, getExtension, opt_char_re, truncatedUpperCase, _ref;
@@ -1612,10 +1612,10 @@ module.exports = {
 }).call(this);
 
 
- }),
+/***/ }),
 
- 185:
- (function(module, exports, __webpack_require__) {
+/***/ 185:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -1776,10 +1776,10 @@ TabList.defaultProps = {
   vertical: false
 };
 
- }),
+/***/ }),
 
- 186:
- (function(module, exports, __webpack_require__) {
+/***/ 186:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -1848,10 +1848,10 @@ Tab.defaultProps = {
   tabRef: undefined
 };
 
- }),
+/***/ }),
 
- 187:
- (function(module, exports, __webpack_require__) {
+/***/ 187:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -1904,16 +1904,16 @@ TabPanels.defaultProps = {
   className: null
 };
 
- }),
+/***/ }),
 
- 22:
- (function(module, exports) {
+/***/ 22:
+/***/ (function(module, exports) {
 
 module.exports = function(module) {
 	if(!module.webpackPolyfill) {
 		module.deprecate = function() {};
 		module.paths = [];
-		
+		// module.parent = undefined by default
 		if(!module.children) module.children = [];
 		Object.defineProperty(module, "loaded", {
 			enumerable: true,
@@ -1933,18 +1933,18 @@ module.exports = function(module) {
 };
 
 
- }),
+/***/ }),
 
- 35:
- (function(module, exports) {
+/***/ 35:
+/***/ (function(module, exports) {
 
-
+// shim for using process in browser
 var process = module.exports = {};
 
-
-
-
-
+// cached from whatever global is present so that test runners that stub it
+// don't break things.  But we need to wrap it in a try catch in case it is
+// wrapped in strict mode code which doesn't define any globals.  It's inside a
+// function because try/catches deoptimize in certain engines.
 
 var cachedSetTimeout;
 var cachedClearTimeout;
@@ -1977,23 +1977,23 @@ function defaultClearTimeout () {
 } ())
 function runTimeout(fun) {
     if (cachedSetTimeout === setTimeout) {
-        
+        //normal enviroments in sane situations
         return setTimeout(fun, 0);
     }
-    
+    // if setTimeout wasn't available but was latter defined
     if ((cachedSetTimeout === defaultSetTimout || !cachedSetTimeout) && setTimeout) {
         cachedSetTimeout = setTimeout;
         return setTimeout(fun, 0);
     }
     try {
-        
+        // when when somebody has screwed with setTimeout but no I.E. maddness
         return cachedSetTimeout(fun, 0);
     } catch(e){
         try {
-            
+            // When we are in I.E. but the script has been evaled so I.E. doesn't trust the global object when called normally
             return cachedSetTimeout.call(null, fun, 0);
         } catch(e){
-            
+            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error
             return cachedSetTimeout.call(this, fun, 0);
         }
     }
@@ -2002,24 +2002,24 @@ function runTimeout(fun) {
 }
 function runClearTimeout(marker) {
     if (cachedClearTimeout === clearTimeout) {
-        
+        //normal enviroments in sane situations
         return clearTimeout(marker);
     }
-    
+    // if clearTimeout wasn't available but was latter defined
     if ((cachedClearTimeout === defaultClearTimeout || !cachedClearTimeout) && clearTimeout) {
         cachedClearTimeout = clearTimeout;
         return clearTimeout(marker);
     }
     try {
-        
+        // when when somebody has screwed with setTimeout but no I.E. maddness
         return cachedClearTimeout(marker);
     } catch (e){
         try {
-            
+            // When we are in I.E. but the script has been evaled so I.E. doesn't  trust the global object when called normally
             return cachedClearTimeout.call(null, marker);
         } catch (e){
-            
-            
+            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error.
+            // Some versions of I.E. have different rules for clearTimeout vs setTimeout
             return cachedClearTimeout.call(this, marker);
         }
     }
@@ -2084,7 +2084,7 @@ process.nextTick = function (fun) {
     }
 };
 
-
+// v8 likes predictible objects
 function Item(fun, array) {
     this.fun = fun;
     this.array = array;
@@ -2096,7 +2096,7 @@ process.title = 'browser';
 process.browser = true;
 process.env = {};
 process.argv = [];
-process.version = ''; 
+process.version = ''; // empty string to avoid regexp issues
 process.versions = {};
 
 function noop() {}
@@ -2124,25 +2124,25 @@ process.chdir = function (dir) {
 process.umask = function() { return 0; };
 
 
- }),
+/***/ }),
 
- 37:
- (function(module, exports) {
+/***/ 37:
+/***/ (function(module, exports) {
 
 module.exports = __WEBPACK_EXTERNAL_MODULE_37__;
 
- }),
+/***/ }),
 
- 413:
- (function(module, exports, __webpack_require__) {
+/***/ 413:
+/***/ (function(module, exports, __webpack_require__) {
 
 module.exports = __webpack_require__(414);
 
 
- }),
+/***/ }),
 
- 414:
- (function(module, exports, __webpack_require__) {
+/***/ 414:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -2212,30 +2212,30 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
+// We cannot directly export literals containing special characters
+// (eg. "my-module/Test") which is why they are nested in "vendored".
+// The keys of the vendored object should match the module names
+// !!! Should remain synchronized with .babel/transform-mc.js !!!
 
 
+// Modules imported without destructuring
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
+/**
+ * Vendors.js is a file used to bundle and expose all dependencies needed to run
+ * the transpiled debugger modules when running in Firefox.
+ *
+ * To make transpilation easier, a vendored module should always be imported in
+ * same way:
+ * - always with destructuring (import { a } from "modA";)
+ * - always without destructuring (import modB from "modB")
+ *
+ * Both are fine, but cannot be mixed for the same module.
+ */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// Modules imported with destructuring
 const vendored = exports.vendored = {
   classnames: _classnames2.default,
   "devtools-components": devtoolsComponents,
@@ -2250,49 +2250,49 @@ const vendored = exports.vendored = {
   "react-aria-components/src/tabs": reactAriaComponentsTabs,
   "react-transition-group/Transition": transition,
   reselect,
-  
-  
+  // Svg is required via relative paths, so the key is not imported path.
+  // See .babel/transform-mc.js
   Svg: _Svg2.default
 };
+// $FlowIgnore
 
+/***/ }),
 
- }),
-
- 415:
- (function(module, exports, __webpack_require__) {
+/***/ 415:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const feature = __webpack_require__(416);
 
 module.exports = feature;
 
- }),
+/***/ }),
 
- 416:
- (function(module, exports, __webpack_require__) {
+/***/ 416:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const { get: pick, set: put } = __webpack_require__(417);
 const fs = __webpack_require__(418);
 const path = __webpack_require__(419);
 
 let config;
-
-
-
-
+/**
+ * Gets a config value for a given key
+ * e.g "chrome.webSocketPort"
+ */
 function getValue(key) {
   return pick(config, key);
 }
@@ -2324,52 +2324,52 @@ module.exports = {
   updateLocalConfig
 };
 
- }),
+/***/ }),
 
- 417:
- (function(module, exports) {
+/***/ 417:
+/***/ (function(module, exports) {
 
 module.exports = __WEBPACK_EXTERNAL_MODULE_417__;
 
- }),
+/***/ }),
 
- 418:
- (function(module, exports) {
-
-
-
- }),
-
- 419:
- (function(module, exports, __webpack_require__) {
-
-(function(process) {
+/***/ 418:
+/***/ (function(module, exports) {
 
 
 
+/***/ }),
 
+/***/ 419:
+/***/ (function(module, exports, __webpack_require__) {
 
+/* WEBPACK VAR INJECTION */(function(process) {// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// resolves . and .. elements in a path array with directory names there
+// must be no slashes, empty elements, or device names (c:\) in the array
+// (so also no leading and trailing slashes - it does not distinguish
+// relative and absolute paths)
 function normalizeArray(parts, allowAboveRoot) {
-  
+  // if the path tries to go above the root, `up` ends up > 0
   var up = 0;
   for (var i = parts.length - 1; i >= 0; i--) {
     var last = parts[i];
@@ -2384,7 +2384,7 @@ function normalizeArray(parts, allowAboveRoot) {
     }
   }
 
-  
+  // if the path is allowed to go above the root, restore leading ..s
   if (allowAboveRoot) {
     for (; up--; up) {
       parts.unshift('..');
@@ -2394,16 +2394,16 @@ function normalizeArray(parts, allowAboveRoot) {
   return parts;
 }
 
-
-
+// Split a filename into [root, dir, basename, ext], unix version
+// 'root' is just a slash, or nothing.
 var splitPathRe =
     /^(\/?|)([\s\S]*?)((?:\.{1,2}|[^\/]+?|)(\.[^.\/]*|))(?:[\/]*)$/;
 var splitPath = function(filename) {
   return splitPathRe.exec(filename).slice(1);
 };
 
-
-
+// path.resolve([from ...], to)
+// posix version
 exports.resolve = function() {
   var resolvedPath = '',
       resolvedAbsolute = false;
@@ -2411,7 +2411,7 @@ exports.resolve = function() {
   for (var i = arguments.length - 1; i >= -1 && !resolvedAbsolute; i--) {
     var path = (i >= 0) ? arguments[i] : process.cwd();
 
-    
+    // Skip empty and invalid entries
     if (typeof path !== 'string') {
       throw new TypeError('Arguments to path.resolve must be strings');
     } else if (!path) {
@@ -2422,10 +2422,10 @@ exports.resolve = function() {
     resolvedAbsolute = path.charAt(0) === '/';
   }
 
-  
-  
+  // At this point the path should be resolved to a full absolute path, but
+  // handle relative paths to be safe (might happen when process.cwd() fails)
 
-  
+  // Normalize the path
   resolvedPath = normalizeArray(filter(resolvedPath.split('/'), function(p) {
     return !!p;
   }), !resolvedAbsolute).join('/');
@@ -2433,13 +2433,13 @@ exports.resolve = function() {
   return ((resolvedAbsolute ? '/' : '') + resolvedPath) || '.';
 };
 
-
-
+// path.normalize(path)
+// posix version
 exports.normalize = function(path) {
   var isAbsolute = exports.isAbsolute(path),
       trailingSlash = substr(path, -1) === '/';
 
-  
+  // Normalize the path
   path = normalizeArray(filter(path.split('/'), function(p) {
     return !!p;
   }), !isAbsolute).join('/');
@@ -2454,12 +2454,12 @@ exports.normalize = function(path) {
   return (isAbsolute ? '/' : '') + path;
 };
 
-
+// posix version
 exports.isAbsolute = function(path) {
   return path.charAt(0) === '/';
 };
 
-
+// posix version
 exports.join = function() {
   var paths = Array.prototype.slice.call(arguments, 0);
   return exports.normalize(filter(paths, function(p, index) {
@@ -2471,8 +2471,8 @@ exports.join = function() {
 };
 
 
-
-
+// path.relative(from, to)
+// posix version
 exports.relative = function(from, to) {
   from = exports.resolve(from).substr(1);
   to = exports.resolve(to).substr(1);
@@ -2523,12 +2523,12 @@ exports.dirname = function(path) {
       dir = result[1];
 
   if (!root && !dir) {
-    
+    // No dirname whatsoever
     return '.';
   }
 
   if (dir) {
-    
+    // It has a dirname, strip trailing slash
     dir = dir.substr(0, dir.length - 1);
   }
 
@@ -2538,7 +2538,7 @@ exports.dirname = function(path) {
 
 exports.basename = function(path, ext) {
   var f = splitPath(path)[2];
-  
+  // TODO: make this comparison case-insensitive on windows?
   if (ext && f.substr(-1 * ext.length) === ext) {
     f = f.substr(0, f.length - ext.length);
   }
@@ -2559,7 +2559,7 @@ function filter (xs, f) {
     return res;
 }
 
-
+// String.prototype.substr - negative index don't work in IE8
 var substr = 'ab'.substr(-1) === 'b'
     ? function (str, start, len) { return str.substr(start, len) }
     : function (str, start, len) {
@@ -2568,19 +2568,19 @@ var substr = 'ab'.substr(-1) === 'b'
     }
 ;
 
-}.call(exports, __webpack_require__(35)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(35)))
 
- }),
+/***/ }),
 
- 420:
- (function(module, exports, __webpack_require__) {
+/***/ 420:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const { Menu, MenuItem } = __webpack_require__(183);
 
@@ -2588,7 +2588,7 @@ function inToolbox() {
   try {
     return window.parent.document.documentURI == "about:devtools-toolbox";
   } catch (e) {
-    
+    // If `window` is not available, it's very likely that we are in the toolbox.
     return true;
   }
 }
@@ -2722,10 +2722,10 @@ module.exports = {
   buildMenu
 };
 
- }),
+/***/ }),
 
- 421:
- (function(module, exports, __webpack_require__) {
+/***/ 421:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -2736,26 +2736,26 @@ var _devtoolsServices2 = _interopRequireDefault(_devtoolsServices);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const { appinfo } = _devtoolsServices2.default; 
-
-
+const { appinfo } = _devtoolsServices2.default; /* This Source Code Form is subject to the terms of the Mozilla Public
+                                                 * License, v. 2.0. If a copy of the MPL was not distributed with this
+                                                 * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const isMacOS = appinfo.OS === "Darwin";
 
 const EventEmitter = __webpack_require__(65);
 
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Formats key for use in tooltips
+ * For macOS we use the following unicode
+ *
+ * cmd ⌘ = \u2318
+ * shift ⇧ – \u21E7
+ * option (alt) ⌥ \u2325
+ *
+ * For Win/Lin this replaces CommandOrControl or CmdOrCtrl with Ctrl
+ *
+ * @static
+ */
 function formatKeyShortcut(shortcut) {
   if (isMacOS) {
     return shortcut.replace(/Shift\+/g, "\u21E7").replace(/Command\+|Cmd\+/g, "\u2318").replace(/CommandOrControl\+|CmdOrCtrl\+/g, "\u2318").replace(/Alt\+/g, "\u2325");
@@ -2767,21 +2767,21 @@ function inToolbox() {
   try {
     return window.parent.document.documentURI == "about:devtools-toolbox";
   } catch (e) {
-    
+    // If `window` is not available, it's very likely that we are in the toolbox.
     return true;
   }
 }
 
+/**
+ * A partial implementation of the Menu API provided by electron:
+ * https://github.com/electron/electron/blob/master/docs/api/menu.md.
+ *
+ * Extra features:
+ *  - Emits an 'open' and 'close' event when the menu is opened/closed
 
-
-
-
-
-
-
-
-
-
+ * @param String id (non standard)
+ *        Needed so tests can confirm the XUL implementation is working
+ */
 function Menu({ id = null } = {}) {
   this.menuitems = [];
   this.id = id;
@@ -2795,37 +2795,37 @@ function Menu({ id = null } = {}) {
   EventEmitter.decorate(this);
 }
 
-
-
-
-
-
+/**
+ * Add an item to the end of the Menu
+ *
+ * @param {MenuItem} menuItem
+ */
 Menu.prototype.append = function (menuItem) {
   this.menuitems.push(menuItem);
 };
 
-
-
-
-
-
-
+/**
+ * Add an item to a specified position in the menu
+ *
+ * @param {int} pos
+ * @param {MenuItem} menuItem
+ */
 Menu.prototype.insert = function (pos, menuItem) {
   throw Error("Not implemented");
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Show the Menu at a specified location on the screen
+ *
+ * Missing features:
+ *   - browserWindow - BrowserWindow (optional) - Default is null.
+ *   - positioningItem Number - (optional) OS X
+ *
+ * @param {int} screenX
+ * @param {int} screenY
+ * @param Toolbox toolbox (non standard)
+ *        Needed so we in which window to inject XUL
+ */
 Menu.prototype.popup = function (screenX, screenY, toolbox) {
   let doc = toolbox.doc;
   let popupset = doc.querySelector("popupset");
@@ -2833,10 +2833,10 @@ Menu.prototype.popup = function (screenX, screenY, toolbox) {
     popupset = doc.createXULElement("popupset");
     doc.documentElement.appendChild(popupset);
   }
-  
-  
-  
-  
+  // See bug 1285229, on Windows, opening the same popup multiple times in a
+  // row ends up duplicating the popup. The newly inserted popup doesn't
+  // dismiss the old one. So remove any previously displayed popup before
+  // opening a new one.
   let popup = popupset.querySelector("menupopup[menu-api=\"true\"]");
   if (popup) {
     popup.hidePopup();
@@ -2850,7 +2850,7 @@ Menu.prototype.popup = function (screenX, screenY, toolbox) {
   }
   this._createMenuItems(popup);
 
-  
+  // Remove the menu from the DOM once it's hidden.
   popup.addEventListener("popuphidden", e => {
     if (e.target === popup) {
       popup.remove();
@@ -2958,27 +2958,27 @@ Menu.buildFromTemplate = () => {
 
 module.exports = Menu;
 
- }),
+/***/ }),
 
- 422:
- (function(module, exports, __webpack_require__) {
+/***/ 422:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/*
+ * A sham for https://dxr.mozilla.org/mozilla-central/source/toolkit/modules/Promise.jsm
+ */
 
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Promise.jsm is mostly the Promise web API with a `defer` method. Just drop this in here,
+ * and use the native web API (although building with webpack/babel, it may replace this
+ * with it's own version if we want to target environments that do not have `Promise`.
+ */
 
 let p = typeof window != "undefined" ? window.Promise : Promise;
 p.defer = function defer() {
@@ -2996,53 +2996,53 @@ p.defer = function defer() {
 
 module.exports = p;
 
- }),
+/***/ }),
 
- 423:
- (function(module, exports, __webpack_require__) {
+/***/ 423:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * A partial implementation of the MenuItem API provided by electron:
+ * https://github.com/electron/electron/blob/master/docs/api/menu-item.md.
+ *
+ * Missing features:
+ *   - id String - Unique within a single menu. If defined then it can be used
+ *                 as a reference to this item by the position attribute.
+ *   - role String - Define the action of the menu item; when specified the
+ *                   click property will be ignored
+ *   - sublabel String
+ *   - icon NativeImage
+ *   - position String - This field allows fine-grained definition of the
+ *                       specific location within a given menu.
+ *
+ * Implemented features:
+ *  @param Object options
+ *    Function click
+ *      Will be called with click(menuItem, browserWindow) when the menu item
+ *       is clicked
+ *    String type
+ *      Can be normal, separator, submenu, checkbox or radio
+ *    String label
+ *    Boolean enabled
+ *      If false, the menu item will be greyed out and unclickable.
+ *    Boolean checked
+ *      Should only be specified for checkbox or radio type menu items.
+ *    Menu submenu
+ *      Should be specified for submenu type menu items. If submenu is specified,
+ *      the type: 'submenu' can be omitted. If the value is not a Menu then it
+ *      will be automatically converted to one using Menu.buildFromTemplate.
+ *    Boolean visible
+ *      If false, the menu item will be entirely hidden.
+ *    String accelerator
+ *      If specified, will be used as accelerator text for MenuItem
+ */
 function MenuItem({
   accesskey = null,
   checked = false,
@@ -3069,47 +3069,47 @@ function MenuItem({
 
 module.exports = MenuItem;
 
- }),
+/***/ }),
 
- 424:
- (function(module, exports, __webpack_require__) {
+/***/ 424:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const Services = __webpack_require__(37);
 const EventEmitter = __webpack_require__(65);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Shortcuts for lazily accessing and setting various preferences.
+ * Usage:
+ *   let prefs = new Prefs("root.path.to.branch", {
+ *     myIntPref: ["Int", "leaf.path.to.my-int-pref"],
+ *     myCharPref: ["Char", "leaf.path.to.my-char-pref"],
+ *     myJsonPref: ["Json", "leaf.path.to.my-json-pref"],
+ *     myFloatPref: ["Float", "leaf.path.to.my-float-pref"]
+ *     ...
+ *   });
+ *
+ * Get/set:
+ *   prefs.myCharPref = "foo";
+ *   let aux = prefs.myCharPref;
+ *
+ * Observe:
+ *   prefs.registerObserver();
+ *   prefs.on("pref-changed", (prefName, prefValue) => {
+ *     ...
+ *   });
+ *
+ * @param string prefsRoot
+ *        The root path to the required preferences branch.
+ * @param object prefsBlueprint
+ *        An object containing { accessorName: [prefType, prefName, prefDefault] } keys.
+ */
 function PrefsHelper(prefsRoot = "", prefsBlueprint = {}) {
   EventEmitter.decorate(this);
 
@@ -3125,15 +3125,15 @@ function PrefsHelper(prefsRoot = "", prefsBlueprint = {}) {
   this.unregisterObserver = () => observer.unregister();
 }
 
-
-
-
-
-
-
-
-
-
+/**
+ * Helper method for getting a pref value.
+ *
+ * @param Map cache
+ * @param string prefType
+ * @param string prefsRoot
+ * @param string prefName
+ * @return any
+ */
 function get(cache, prefType, prefsRoot, prefName) {
   let cachedPref = cache.get(prefName);
   if (cachedPref !== undefined) {
@@ -3144,35 +3144,35 @@ function get(cache, prefType, prefsRoot, prefName) {
   return value;
 }
 
-
-
-
-
-
-
-
-
-
+/**
+ * Helper method for setting a pref value.
+ *
+ * @param Map cache
+ * @param string prefType
+ * @param string prefsRoot
+ * @param string prefName
+ * @param any value
+ */
 function set(cache, prefType, prefsRoot, prefName, value) {
   Services.prefs["set" + prefType + "Pref"]([prefsRoot, prefName].join("."), value);
   cache.set(prefName, value);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Maps a property name to a pref, defining lazy getters and setters.
+ * Supported types are "Bool", "Char", "Int", "Float" (sugar around "Char"
+ * type and casting), and "Json" (which is basically just sugar for "Char"
+ * using the standard JSON serializer).
+ *
+ * @param PrefsHelper self
+ * @param Map cache
+ * @param string accessorName
+ * @param string prefType
+ * @param string prefsRoot
+ * @param string prefName
+ * @param string prefDefault
+ * @param array serializer [optional]
+ */
 function map(self, cache, accessorName, prefType, prefsRoot, prefName, prefDefault, serializer = { in: e => e, out: e => e }) {
   if (prefName in self) {
     throw new Error(`Can't use ${prefName} because it overrides a property` + "on the instance.");
@@ -3207,14 +3207,14 @@ function map(self, cache, accessorName, prefType, prefsRoot, prefName, prefDefau
   });
 }
 
-
-
-
-
-
-
-
-
+/**
+ * Finds the accessor for the provided pref, based on the blueprint object
+ * used in the constructor.
+ *
+ * @param PrefsHelper self
+ * @param object prefsBlueprint
+ * @return string
+ */
 function accessorNameForPref(somePrefName, prefsBlueprint) {
   for (let accessorName in prefsBlueprint) {
     let [, prefName] = prefsBlueprint[accessorName];
@@ -3225,15 +3225,15 @@ function accessorNameForPref(somePrefName, prefsBlueprint) {
   return "";
 }
 
-
-
-
-
-
-
-
-
-
+/**
+ * Creates a pref observer for `self`.
+ *
+ * @param PrefsHelper self
+ * @param Map cache
+ * @param string prefsRoot
+ * @param object prefsBlueprint
+ * @return object
+ */
 function makeObserver(self, cache, prefsRoot, prefsBlueprint) {
   return {
     register: function () {
@@ -3244,8 +3244,8 @@ function makeObserver(self, cache, prefsRoot, prefsBlueprint) {
       this._branch.removeObserver("", this);
     },
     observe: function (subject, topic, prefName) {
-      
-      
+      // If this particular pref isn't handled by the blueprint object,
+      // even though it's in the specified branch, ignore it.
       let accessorName = accessorNameForPref(prefName, prefsBlueprint);
       if (!(accessorName in self)) {
         return;
@@ -3258,23 +3258,23 @@ function makeObserver(self, cache, prefsRoot, prefsBlueprint) {
 
 exports.PrefsHelper = PrefsHelper;
 
- }),
+/***/ }),
 
- 425:
- (function(module, exports, __webpack_require__) {
+/***/ 425:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const { appinfo } = __webpack_require__(37);
 const EventEmitter = __webpack_require__(65);
 const isOSX = appinfo.OS === "Darwin";
 
-
+// List of electron keys mapped to DOM API (DOM_VK_*) key code
 const ElectronKeysMapping = {
   "F1": "DOM_VK_F1",
   "F2": "DOM_VK_F2",
@@ -3323,22 +3323,22 @@ const ElectronKeysMapping = {
   "PrintScreen": "DOM_VK_PRINTSCREEN"
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Helper to listen for keyboard events decribed in .properties file.
+ *
+ * let shortcuts = new KeyShortcuts({
+ *   window
+ * });
+ * shortcuts.on("Ctrl+F", event => {
+ *   // `event` is the KeyboardEvent which relates to the key shortcuts
+ * });
+ *
+ * @param DOMWindow window
+ *        The window object of the document to listen events from.
+ * @param DOMElement target
+ *        Optional DOM Element on which we should listen events from.
+ *        If omitted, we listen for all events fired on `window`.
+ */
 function KeyShortcuts({ window, target }) {
   this.window = window;
   this.target = target || window;
@@ -3347,17 +3347,17 @@ function KeyShortcuts({ window, target }) {
   this.target.addEventListener("keydown", this);
 }
 
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * Parse an electron-like key string and return a normalized object which
+ * allow efficient match on DOM key event. The normalized object matches DOM
+ * API.
+ *
+ * @param DOMWindow window
+ *        Any DOM Window object, just to fetch its `KeyboardEvent` object
+ * @param String str
+ *        The shortcut string to parse, following this document:
+ *        https://github.com/electron/electron/blob/master/docs/api/accelerator.md
+ */
 KeyShortcuts.parseElectronKey = function (window, str) {
   let modifiers = str.split("+");
   let key = modifiers.pop();
@@ -3367,9 +3367,9 @@ KeyShortcuts.parseElectronKey = function (window, str) {
     meta: false,
     alt: false,
     shift: false,
-    
+    // Set for character keys
     key: undefined,
-    
+    // Set for non-character keys
     keyCode: undefined
   };
   for (let mod of modifiers) {
@@ -3393,20 +3393,20 @@ KeyShortcuts.parseElectronKey = function (window, str) {
     }
   }
 
-  
-  
+  // Plus is a special case. It's a character key and shouldn't be matched
+  // against a keycode as it is only accessible via Shift/Capslock
   if (key === "Plus") {
     key = "+";
   }
 
   if (typeof key === "string" && key.length === 1) {
-    
+    // Match any single character
     shortcut.key = key.toLowerCase();
   } else if (key in ElectronKeysMapping) {
-    
+    // Maps the others manually to DOM API DOM_VK_*
     key = ElectronKeysMapping[key];
     shortcut.keyCode = window.KeyboardEvent[key];
-    
+    // Used only to stringify the shortcut
     shortcut.keyCodeString = key;
     shortcut.key = key;
   } else {
@@ -3457,8 +3457,8 @@ KeyShortcuts.prototype = {
     if (shortcut.alt != event.altKey) {
       return false;
     }
-    
-    
+    // Shift is a special modifier, it may implicitely be required if the
+    // expected key is a special character accessible via shift.
     if (shortcut.shift != event.shiftKey && event.key && event.key.match(/[a-zA-Z]/)) {
       return false;
     }
@@ -3468,12 +3468,12 @@ KeyShortcuts.prototype = {
       return ElectronKeysMapping[event.key] === shortcut.key;
     }
 
-    
+    // get the key from the keyCode if key is not provided.
     let key = event.key || String.fromCharCode(event.keyCode);
 
-    
-    
-    
+    // For character keys, we match if the final character is the expected one.
+    // But for digits we also accept indirect match to please azerty keyboard,
+    // which requires Shift to be pressed to get digits.
     return key.toLowerCase() == shortcut.key || shortcut.key.match(/^[0-9]$/) && event.keyCode == shortcut.key.charCodeAt(0);
   },
 
@@ -3491,7 +3491,7 @@ KeyShortcuts.prototype = {
     }
     if (!this.keys.has(key)) {
       let shortcut = KeyShortcuts.parseElectronKey(this.window, key);
-      
+      // The key string is wrong and we were unable to compute the key shortcut
       if (!shortcut) {
         return;
       }
@@ -3506,74 +3506,74 @@ KeyShortcuts.prototype = {
 };
 module.exports = KeyShortcuts;
 
- }),
+/***/ }),
 
- 426:
- (function(module, exports, __webpack_require__) {
+/***/ 426:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 
 
-
-
-
-
-
-
-
-
-
+/**
+ * Empty shim for "devtools/client/shared/zoom-keys" module
+ *
+ * Based on nsIMarkupDocumentViewer.fullZoom API
+ * https://developer.mozilla.org/en-US/Firefox/Releases/3/Full_page_zoom
+ */
 
 exports.register = function (window) {};
 
- }),
+/***/ }),
 
- 427:
- (function(module, exports, __webpack_require__) {
+/***/ 427:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ *
+ * Adapted from https://github.com/mozilla-b2g/gaia/blob/f09993563fb5fec4393eb71816ce76cb00463190/shared/js/async_storage.js
+ * (converted to use Promises instead of callbacks).
+ *
+ * This file defines an asynchronous version of the localStorage API, backed by
+ * an IndexedDB database.  It creates a global asyncStorage object that has
+ * methods like the localStorage object.
+ *
+ * To store a value use setItem:
+ *
+ *   asyncStorage.setItem("key", "value");
+ *
+ * This returns a promise in case you want confirmation that the value has been stored.
+ *
+ *  asyncStorage.setItem("key", "newvalue").then(function() {
+ *    console.log("new value stored");
+ *  });
+ *
+ * To read a value, call getItem(), but note that you must wait for a promise
+ * resolution for the value to be retrieved.
+ *
+ *  asyncStorage.getItem("key").then(function(value) {
+ *    console.log("The value of key is:", value);
+ *  });
+ *
+ * Note that unlike localStorage, asyncStorage does not allow you to store and
+ * retrieve values by setting and querying properties directly. You cannot just
+ * write asyncStorage.key; you have to explicitly call setItem() or getItem().
+ *
+ * removeItem(), clear(), length(), and key() are like the same-named methods of
+ * localStorage, and all return a promise.
+ *
+ * The asynchronous nature of getItem() makes it tricky to retrieve multiple
+ * values. But unlike localStorage, asyncStorage does not require the values you
+ * store to be strings.  So if you need to save multiple values and want to
+ * retrieve them together, in a single asynchronous operation, just group the
+ * values into a single object. The properties of this object may not include
+ * DOM elements, but they may include things like Blobs and typed arrays.
+ *
+ */
 
 
 
@@ -3593,7 +3593,7 @@ function withStore(type, onsuccess, onerror) {
       onerror();
     };
     openreq.onupgradeneeded = function withStoreOnUpgradeNeeded() {
-      
+      // First time setup: create an empty object store
       openreq.result.createObjectStore(STORENAME);
     };
     openreq.onsuccess = function withStoreOnSuccess() {
@@ -3693,16 +3693,16 @@ function key(n) {
       req.onsuccess = function keyOnSuccess() {
         const cursor = req.result;
         if (!cursor) {
-          
+          // this means there weren"t enough keys
           return;
         }
         if (n === 0 || advanced) {
-          
-          
+          // Either 1) we have the first key, return it if that's what they
+          // wanted, or 2) we"ve got the nth key.
           return;
         }
 
-        
+        // Otherwise, ask the cursor to skip ahead n records
         advanced = true;
         cursor.advance(n);
       };
@@ -3720,22 +3720,22 @@ exports.clear = clear;
 exports.length = length;
 exports.key = key;
 
- }),
+/***/ }),
 
- 428:
- (function(module, exports, __webpack_require__) {
+/***/ 428:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
+/* This Source Code Form is subject to the terms of the Mozilla Public
+* License, v. 2.0. If a copy of the MPL was not distributed with this
+* file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
+// TODO : Localize this (was l10n.getStr("frame.unknownSource"))
 const UNKNOWN_SOURCE_STRING = "(unknown)";
 
-
+// Character codes used in various parsing helper functions.
 const CHAR_CODE_A = "a".charCodeAt(0);
 const CHAR_CODE_B = "b".charCodeAt(0);
 const CHAR_CODE_C = "c".charCodeAt(0);
@@ -3761,20 +3761,20 @@ const CHAR_CODE_L_SQUARE_BRACKET = "[".charCodeAt(0);
 const CHAR_CODE_SLASH = "/".charCodeAt(0);
 const CHAR_CODE_CAP_S = "S".charCodeAt(0);
 
-
+// The cache used in the `parseURL` function.
 const gURLStore = new Map();
-
+// The cache used in the `getSourceNames` function.
 const gSourceNamesStore = new Map();
 
-
-
-
-
-
-
-
-
-
+/**
+* Takes a string and returns an object containing all the properties
+* available on an URL instance, with additional properties (fileName),
+* Leverages caching.
+*
+* @param {String} location
+* @return {Object?} An object containing most properties available
+*                   in https://developer.mozilla.org/en-US/docs/Web/API/URL
+*/
 
 function parseURL(location) {
   let url = gURLStore.get(location);
@@ -3785,9 +3785,9 @@ function parseURL(location) {
 
   try {
     url = new URL(location);
-    
-    
-    
+    // The callers were generally written to expect a URL from
+    // sdk/url, which is subtly different.  So, work around some
+    // important differences here.
     url = {
       href: url.href,
       protocol: url.protocol,
@@ -3802,10 +3802,10 @@ function parseURL(location) {
       origin: url.origin
     };
 
-    
-    
-    
-    
+    // Definitions:
+    // Example: https://foo.com:8888/file.js
+    // `hostname`: "foo.com"
+    // `host`: "foo.com:8888"
     let isChrome = isChromeScheme(location);
 
     url.fileName = url.pathname ? url.pathname.slice(url.pathname.lastIndexOf("/") + 1) || "/" : "/";
@@ -3823,22 +3823,22 @@ function parseURL(location) {
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+* Parse a source into a short and long name as well as a host name.
+*
+* @param {String} source
+*        The source to parse. Can be a URI or names like "(eval)" or
+*        "self-hosted".
+* @return {Object}
+*         An object with the following properties:
+*           - {String} short: A short name for the source.
+*             - "http://page.com/test.js#go?q=query" -> "test.js"
+*           - {String} long: The full, long name for the source, with
+              hash/query stripped.
+*             - "http://page.com/test.js#go?q=query" -> "http://page.com/test.js"
+*           - {String?} host: If available, the host name for the source.
+*             - "http://page.com/test.js#go?q=query" -> "page.com"
+*/
 function getSourceNames(source) {
   let data = gSourceNamesStore.get(source);
 
@@ -3849,12 +3849,12 @@ function getSourceNames(source) {
   let short, long, host;
   const sourceStr = source ? String(source) : "";
 
-  
+  // If `data:...` uri
   if (isDataScheme(sourceStr)) {
     let commaIndex = sourceStr.indexOf(",");
     if (commaIndex > -1) {
-      
-      
+      // The `short` name for a data URI becomes `data:` followed by the actual
+      // encoded content, omitting the MIME type, and charset.
       short = `data:${sourceStr.substring(commaIndex + 1)}`.slice(0, 100);
       let result = { short, long: sourceStr };
       gSourceNamesStore.set(source, result);
@@ -3862,8 +3862,8 @@ function getSourceNames(source) {
     }
   }
 
-  
-  
+  // If Scratchpad URI, like "Scratchpad/1"; no modifications,
+  // and short/long are the same.
   if (isScratchpadScheme(sourceStr)) {
     let result = { short: sourceStr, long: sourceStr };
     gSourceNamesStore.set(source, result);
@@ -3873,7 +3873,7 @@ function getSourceNames(source) {
   const parsedUrl = parseURL(sourceStr);
 
   if (!parsedUrl) {
-    
+    // Malformed URI.
     long = sourceStr;
     short = sourceStr.slice(0, 100);
   } else {
@@ -3888,9 +3888,9 @@ function getSourceNames(source) {
     }
 
     short = parsedUrl.fileName;
-    
-    
-    
+    // If `short` is just a slash, and we actually have a path,
+    // strip the slash and parse again to get a more useful short name.
+    // e.g. "http://foo.com/bar/" -> "bar", rather than "/"
     if (short === "/" && parsedUrl.pathname !== "/") {
       short = parseURL(long.replace(/\/$/, "")).fileName;
     }
@@ -3908,19 +3908,19 @@ function getSourceNames(source) {
   return result;
 }
 
-
-
-
-
-
+// For the functions below, we assume that we will never access the location
+// argument out of bounds, which is indeed the vast majority of cases.
+//
+// They are written this way because they are hot. Each frame is checked for
+// being content or chrome when processing the profile.
 
 function isColonSlashSlash(location, i = 0) {
   return location.charCodeAt(++i) === CHAR_CODE_COLON && location.charCodeAt(++i) === CHAR_CODE_SLASH && location.charCodeAt(++i) === CHAR_CODE_SLASH;
 }
 
-
-
-
+/**
+* Checks for a Scratchpad URI, like "Scratchpad/1"
+*/
 function isScratchpadScheme(location, i = 0) {
   return location.charCodeAt(i) === CHAR_CODE_CAP_S && location.charCodeAt(++i) === CHAR_CODE_C && location.charCodeAt(++i) === CHAR_CODE_R && location.charCodeAt(++i) === CHAR_CODE_A && location.charCodeAt(++i) === CHAR_CODE_T && location.charCodeAt(++i) === CHAR_CODE_C && location.charCodeAt(++i) === CHAR_CODE_H && location.charCodeAt(++i) === CHAR_CODE_P && location.charCodeAt(++i) === CHAR_CODE_A && location.charCodeAt(++i) === CHAR_CODE_D && location.charCodeAt(++i) === CHAR_CODE_SLASH;
 }
@@ -3933,7 +3933,7 @@ function isContentScheme(location, i = 0) {
   let firstChar = location.charCodeAt(i);
 
   switch (firstChar) {
-    
+    // "http://" or "https://"
     case CHAR_CODE_H:
       if (location.charCodeAt(++i) === CHAR_CODE_T && location.charCodeAt(++i) === CHAR_CODE_T && location.charCodeAt(++i) === CHAR_CODE_P) {
         if (location.charCodeAt(i + 1) === CHAR_CODE_S) {
@@ -3943,21 +3943,21 @@ function isContentScheme(location, i = 0) {
       }
       return false;
 
-    
+    // "file://"
     case CHAR_CODE_F:
       if (location.charCodeAt(++i) === CHAR_CODE_I && location.charCodeAt(++i) === CHAR_CODE_L && location.charCodeAt(++i) === CHAR_CODE_E) {
         return isColonSlashSlash(location, i);
       }
       return false;
 
-    
+    // "app://"
     case CHAR_CODE_A:
       if (location.charCodeAt(++i) == CHAR_CODE_P && location.charCodeAt(++i) == CHAR_CODE_P) {
         return isColonSlashSlash(location, i);
       }
       return false;
 
-    
+    // "blob:"
     case CHAR_CODE_B:
       if (location.charCodeAt(++i) == CHAR_CODE_L && location.charCodeAt(++i) == CHAR_CODE_O && location.charCodeAt(++i) == CHAR_CODE_B && location.charCodeAt(++i) == CHAR_CODE_COLON) {
         return isContentScheme(location, i + 1);
@@ -3973,21 +3973,21 @@ function isChromeScheme(location, i = 0) {
   let firstChar = location.charCodeAt(i);
 
   switch (firstChar) {
-    
+    // "chrome://"
     case CHAR_CODE_C:
       if (location.charCodeAt(++i) === CHAR_CODE_H && location.charCodeAt(++i) === CHAR_CODE_R && location.charCodeAt(++i) === CHAR_CODE_O && location.charCodeAt(++i) === CHAR_CODE_M && location.charCodeAt(++i) === CHAR_CODE_E) {
         return isColonSlashSlash(location, i);
       }
       return false;
 
-    
+    // "resource://"
     case CHAR_CODE_R:
       if (location.charCodeAt(++i) === CHAR_CODE_E && location.charCodeAt(++i) === CHAR_CODE_S && location.charCodeAt(++i) === CHAR_CODE_O && location.charCodeAt(++i) === CHAR_CODE_U && location.charCodeAt(++i) === CHAR_CODE_R && location.charCodeAt(++i) === CHAR_CODE_C && location.charCodeAt(++i) === CHAR_CODE_E) {
         return isColonSlashSlash(location, i);
       }
       return false;
 
-    
+    // "jar:file://"
     case CHAR_CODE_J:
       if (location.charCodeAt(++i) === CHAR_CODE_A && location.charCodeAt(++i) === CHAR_CODE_R && location.charCodeAt(++i) === CHAR_CODE_COLON && location.charCodeAt(++i) === CHAR_CODE_F && location.charCodeAt(++i) === CHAR_CODE_I && location.charCodeAt(++i) === CHAR_CODE_L && location.charCodeAt(++i) === CHAR_CODE_E) {
         return isColonSlashSlash(location, i);
@@ -4001,23 +4001,23 @@ function isChromeScheme(location, i = 0) {
 
 function isWASM(location, i = 0) {
   return (
-    
+    // "wasm-function["
     location.charCodeAt(i) === CHAR_CODE_W && location.charCodeAt(++i) === CHAR_CODE_A && location.charCodeAt(++i) === CHAR_CODE_S && location.charCodeAt(++i) === CHAR_CODE_M && location.charCodeAt(++i) === CHAR_CODE_DASH && location.charCodeAt(++i) === CHAR_CODE_F && location.charCodeAt(++i) === CHAR_CODE_U && location.charCodeAt(++i) === CHAR_CODE_N && location.charCodeAt(++i) === CHAR_CODE_C && location.charCodeAt(++i) === CHAR_CODE_T && location.charCodeAt(++i) === CHAR_CODE_I && location.charCodeAt(++i) === CHAR_CODE_O && location.charCodeAt(++i) === CHAR_CODE_N && location.charCodeAt(++i) === CHAR_CODE_L_SQUARE_BRACKET
   );
 }
 
-
-
-
-
-
-
-
+/**
+* A utility method to get the file name from a sourcemapped location
+* The sourcemap location can be in any form. This method returns a
+* formatted file name for different cases like Windows or OSX.
+* @param source
+* @returns String
+*/
 function getSourceMappedFile(source) {
-  
-  
-  
-  
+  // If sourcemapped source is a OSX path, return
+  // the characters after last "/".
+  // If sourcemapped source is a Windowss path, return
+  // the characters after last "\\".
   if (source.lastIndexOf("/") >= 0) {
     source = source.slice(source.lastIndexOf("/") + 1);
   } else if (source.lastIndexOf("\\") >= 0) {
@@ -4037,387 +4037,387 @@ module.exports = {
   getSourceMappedFile
 };
 
- }),
+/***/ }),
 
- 429:
- (function(module, exports, __webpack_require__) {
+/***/ 429:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
-
-
-
-
-
-
-
+/**
+ * This is a stub of the DevTools telemetry module and will be replaced by the
+ * full version of the file by Webpack for running inside Firefox.
+ */
 
 class Telemetry {
-  
-
-
-
+  /**
+   * Time since the system wide epoch. This is not a monotonic timer but
+   * can be used across process boundaries.
+   */
   get msSystemNow() {
     return 0;
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Starts a timer associated with a telemetry histogram. The timer can be
+   * directly associated with a histogram, or with a pair of a histogram and
+   * an object.
+   *
+   * @param {String} histogramId
+   *        A string which must be a valid histogram name.
+   * @param {Object} obj
+   *        Optional parameter. If specified, the timer is associated with this
+   *        object, meaning that multiple timers for the same histogram may be
+   *        run concurrently, as long as they are associated with different
+   *        objects.
+   *
+   * @returns {Boolean}
+   *          True if the timer was successfully started, false otherwise. If a
+   *          timer already exists, it can't be started again, and the existing
+   *          one will be cleared in order to avoid measurements errors.
+   */
   start(histogramId, obj) {
     return true;
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Starts a timer associated with a keyed telemetry histogram. The timer can
+   * be directly associated with a histogram and its key. Similarly to
+   * TelemetryStopwatch.start the histogram and its key can be associated
+   * with an object. Each key may have multiple associated objects and each
+   * object can be associated with multiple keys.
+   *
+   * @param {String} histogramId
+   *        A string which must be a valid histogram name.
+   * @param {String} key
+   *        A string which must be a valid histgram key.
+   * @param {Object} obj
+   *        Optional parameter. If specified, the timer is associated with this
+   *        object, meaning that multiple timers for the same histogram may be
+   *        run concurrently,as long as they are associated with different
+   *        objects.
+   *
+   * @returns {Boolean}
+   *          True if the timer was successfully started, false otherwise. If a
+   *          timer already exists, it can't be started again, and the existing
+   *          one will be cleared in order to avoid measurements errors.
+   */
   startKeyed(histogramId, key, obj) {
     return true;
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Stops the timer associated with the given histogram (and object),
+   * calculates the time delta between start and finish, and adds the value
+   * to the histogram.
+   *
+   * @param {String} histogramId
+   *        A string which must be a valid histogram name.
+   * @param {Object} obj
+   *        Optional parameter which associates the histogram timer with the
+   *        given object.
+   * @param {Boolean} canceledOkay
+   *        Optional parameter which will suppress any warnings that normally
+   *        fire when a stopwatch is finished after being cancelled.
+   *        Defaults to false.
+   *
+   * @returns {Boolean}
+   *          True if the timer was succesfully stopped and the data was added
+   *          to the histogram, False otherwise.
+   */
   finish(histogramId, obj, canceledOkay) {
     return true;
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Stops the timer associated with the given keyed histogram (and object),
+   * calculates the time delta between start and finish, and adds the value
+   * to the keyed histogram.
+   *
+   * @param {String} histogramId
+   *        A string which must be a valid histogram name.
+   * @param {String} key
+   *        A string which must be a valid histogram key.
+   * @param {Object} obj
+   *        Optional parameter which associates the histogram timer with the
+   *        given object.
+   * @param {Boolean} canceledOkay
+   *        Optional parameter which will suppress any warnings that normally
+   *        fire when a stopwatch is finished after being cancelled.
+   *        Defaults to false.
+   *
+   * @returns {Boolean}
+   *          True if the timer was succesfully stopped and the data was added
+   *          to the histogram, False otherwise.
+   */
   finishKeyed(histogramId, key, obj, cancelledOkay) {
     return true;
   }
 
-  
-
-
-
-
-
+  /**
+   * Log a value to a histogram.
+   *
+   * @param  {String} histogramId
+   *         Histogram in which the data is to be stored.
+   */
   getHistogramById(histogramId) {
     return {
       add: () => {}
     };
   }
 
-  
-
-
-
-
-
+  /**
+   * Get a keyed histogram.
+   *
+   * @param  {String} histogramId
+   *         Histogram in which the data is to be stored.
+   */
   getKeyedHistogramById(histogramId) {
     return {
       add: () => {}
     };
   }
 
-  
-
-
-
-
-
-
-
+  /**
+   * Log a value to a scalar.
+   *
+   * @param  {String} scalarId
+   *         Scalar in which the data is to be stored.
+   * @param  value
+   *         Value to store.
+   */
   scalarSet(scalarId, value) {}
 
-  
-
-
-
-
-
-
-
+  /**
+   * Log a value to a count scalar.
+   *
+   * @param  {String} scalarId
+   *         Scalar in which the data is to be stored.
+   * @param  value
+   *         Value to store.
+   */
   scalarAdd(scalarId, value) {}
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Log a value to a keyed count scalar.
+   *
+   * @param  {String} scalarId
+   *         Scalar in which the data is to be stored.
+   * @param  {String} key
+   *         The key within the  scalar.
+   * @param  value
+   *         Value to store.
+   */
   keyedScalarAdd(scalarId, key, value) {}
 
-  
-
-
-
-
-
-
+  /**
+   * Event telemetry is disabled by default. Use this method to enable it for
+   * a particular category.
+   *
+   * @param {Boolean} enabled
+   *        Enabled: true or false.
+   */
   setEventRecordingEnabled(enabled) {
     return enabled;
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Telemetry events often need to make use of a number of properties from
+   * completely different codepaths. To make this possible we create a
+   * "pending event" along with an array of property names that we need to wait
+   * for before sending the event.
+   *
+   * As each property is received via addEventProperty() we check if all
+   * properties have been received. Once they have all been received we send the
+   * telemetry event.
+   *
+   * @param {Object} obj
+   *        The telemetry event or ping is associated with this object, meaning
+   *        that multiple events or pings for the same histogram may be run
+   *        concurrently, as long as they are associated with different objects.
+   * @param {String} method
+   *        The telemetry event method (describes the type of event that
+   *        occurred e.g. "open")
+   * @param {String} object
+   *        The telemetry event object name (the name of the object the event
+   *        occurred on) e.g. "tools" or "setting"
+   * @param {String|null} value
+   *        The telemetry event value (a user defined value, providing context
+   *        for the event) e.g. "console"
+   * @param {Array} expected
+   *        An array of the properties needed before sending the telemetry
+   *        event e.g.
+   *        [
+   *          "host",
+   *          "width"
+   *        ]
+   */
   preparePendingEvent(obj, method, object, value, expected = []) {}
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Adds an expected property for either a current or future pending event.
+   * This means that if preparePendingEvent() is called before or after sending
+   * the event properties they will automatically added to the event.
+   *
+   * @param {Object} obj
+   *        The telemetry event or ping is associated with this object, meaning
+   *        that multiple events or pings for the same histogram may be run
+   *        concurrently, as long as they are associated with different objects.
+   * @param {String} method
+   *        The telemetry event method (describes the type of event that
+   *        occurred e.g. "open")
+   * @param {String} object
+   *        The telemetry event object name (the name of the object the event
+   *        occurred on) e.g. "tools" or "setting"
+   * @param {String|null} value
+   *        The telemetry event value (a user defined value, providing context
+   *        for the event) e.g. "console"
+   * @param {String} pendingPropName
+   *        The pending property name
+   * @param {String} pendingPropValue
+   *        The pending property value
+   */
   addEventProperty(obj, method, object, value, pendingPropName, pendingPropValue) {}
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Adds expected properties for either a current or future pending event.
+   * This means that if preparePendingEvent() is called before or after sending
+   * the event properties they will automatically added to the event.
+   *
+   * @param {Object} obj
+   *        The telemetry event or ping is associated with this object, meaning
+   *        that multiple events or pings for the same histogram may be run
+   *        concurrently, as long as they are associated with different objects.
+   * @param {String} method
+   *        The telemetry event method (describes the type of event that
+   *        occurred e.g. "open")
+   * @param {String} object
+   *        The telemetry event object name (the name of the object the event
+   *        occurred on) e.g. "tools" or "setting"
+   * @param {String|null} value
+   *        The telemetry event value (a user defined value, providing context
+   *        for the event) e.g. "console"
+   * @param {String} pendingObject
+   *        An object containing key, value pairs that should be added to the
+   *        event as properties.
+   */
   addEventProperties(obj, method, object, value, pendingObject) {}
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * A private method that is not to be used externally. This method is used to
+   * prepare a pending telemetry event for sending and then send it via
+   * recordEvent().
+   *
+   * @param {Object} obj
+   *        The telemetry event or ping is associated with this object, meaning
+   *        that multiple events or pings for the same histogram may be run
+   *        concurrently, as long as they are associated with different objects.
+   * @param {String} method
+   *        The telemetry event method (describes the type of event that
+   *        occurred e.g. "open")
+   * @param {String} object
+   *        The telemetry event object name (the name of the object the event
+   *        occurred on) e.g. "tools" or "setting"
+   * @param {String|null} value
+   *        The telemetry event value (a user defined value, providing context
+   *        for the event) e.g. "console"
+   */
   _sendPendingEvent(obj, method, object, value) {}
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Send a telemetry event.
+   *
+   * @param {String} method
+   *        The telemetry event method (describes the type of event that
+   *        occurred e.g. "open")
+   * @param {String} object
+   *        The telemetry event object name (the name of the object the event
+   *        occurred on) e.g. "tools" or "setting"
+   * @param {String|null} value
+   *        The telemetry event value (a user defined value, providing context
+   *        for the event) e.g. "console"
+   * @param {Object} extra
+   *        The telemetry event extra object containing the properties that will
+   *        be sent with the event e.g.
+   *        {
+   *          host: "bottom",
+   *          width: "1024"
+   *        }
+   */
   recordEvent(method, object, value, extra) {}
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Sends telemetry pings to indicate that a tool has been opened.
+   *
+   * @param {String} id
+   *        The ID of the tool opened.
+   * @param {String} sessionId
+   *        Toolbox session id used when we need to ensure a tool really has a
+   *        timer before calculating a delta.
+   * @param {Object} obj
+   *        The telemetry event or ping is associated with this object, meaning
+   *        that multiple events or pings for the same histogram may be run
+   *        concurrently, as long as they are associated with different objects.
+   */
   toolOpened(id, sessionId, obj) {}
 
-  
-
-
-
-
-
+  /**
+   * Sends telemetry pings to indicate that a tool has been closed.
+   *
+   * @param {String} id
+   *        The ID of the tool opened.
+   */
   toolClosed(id, sessionId, obj) {}
 }
 
 module.exports = Telemetry;
 
- }),
+/***/ }),
 
- 430:
- (function(module, exports, __webpack_require__) {
+/***/ 430:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
-
-
-
-
+// This file is a chrome-API-free version of the module
+// devtools/client/shared/unicode-url.js in the mozilla-central repository, so
+// that it can be used in Chrome-API-free applications, such as the Launchpad.
+// But because of this, it cannot take advantage of utilizing chrome APIs and
+// should implement the similar functionalities on its own.
+//
+// Please keep in mind that if the feature in this file has changed, don't
+// forget to also change that accordingly in
+// devtools/client/shared/unicode-url.js in the mozilla-central repository.
 
 
 
 const punycode = __webpack_require__(62);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Gets a readble Unicode hostname from a hostname.
+ *
+ * If the `hostname` is a readable ASCII hostname, such as example.org, then
+ * this function will simply return the original `hostname`.
+ *
+ * If the `hostname` is a Punycode hostname representing a Unicode domain name,
+ * such as xn--g6w.xn--8pv, then this function will return the readable Unicode
+ * domain name by decoding the Punycode hostname.
+ *
+ * @param {string}  hostname
+ *                  the hostname from which the Unicode hostname will be
+ *                  parsed, such as example.org, xn--g6w.xn--8pv.
+ * @return {string} The Unicode hostname. It may be the same as the `hostname`
+ *                  passed to this function if the `hostname` itself is
+ *                  a readable ASCII hostname or a Unicode hostname.
+ */
 function getUnicodeHostname(hostname) {
   try {
     return punycode.toUnicode(hostname);
@@ -4425,25 +4425,25 @@ function getUnicodeHostname(hostname) {
   return hostname;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Gets a readble Unicode URL pathname from a URL pathname.
+ *
+ * If the `urlPath` is a readable ASCII URL pathname, such as /a/b/c.js, then
+ * this function will simply return the original `urlPath`.
+ *
+ * If the `urlPath` is a URI-encoded pathname, such as %E8%A9%A6/%E6%B8%AC.js,
+ * then this function will return the readable Unicode pathname.
+ *
+ * If the `urlPath` is a malformed URL pathname, then this function will simply
+ * return the original `urlPath`.
+ *
+ * @param {string}  urlPath
+ *                  the URL path from which the Unicode URL path will be parsed,
+ *                  such as /a/b/c.js, %E8%A9%A6/%E6%B8%AC.js.
+ * @return {string} The Unicode URL Path. It may be the same as the `urlPath`
+ *                  passed to this function if the `urlPath` itself is a readable
+ *                  ASCII url or a Unicode url.
+ */
 function getUnicodeUrlPath(urlPath) {
   try {
     return decodeURIComponent(urlPath);
@@ -4451,36 +4451,36 @@ function getUnicodeUrlPath(urlPath) {
   return urlPath;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Gets a readable Unicode URL from a URL.
+ *
+ * If the `url` is a readable ASCII URL, such as http://example.org/a/b/c.js,
+ * then this function will simply return the original `url`.
+ *
+ * If the `url` includes either an unreadable Punycode domain name or an
+ * unreadable URI-encoded pathname, such as
+ * http://xn--g6w.xn--8pv/%E8%A9%A6/%E6%B8%AC.js, then this function will return
+ * the readable URL by decoding all its unreadable URL components to Unicode
+ * characters.
+ *
+ * If the `url` is a malformed URL, then this function will return the original
+ * `url`.
+ *
+ * If the `url` is a data: URI, then this function will return the original
+ * `url`.
+ *
+ * @param {string}  url
+ *                  the full URL, or a data: URI. from which the readable URL
+ *                  will be parsed, such as, http://example.org/a/b/c.js,
+ *                  http://xn--g6w.xn--8pv/%E8%A9%A6/%E6%B8%AC.js
+ * @return {string} The readable URL. It may be the same as the `url` passed to
+ *                  this function if the `url` itself is readable.
+ */
 function getUnicodeUrl(url) {
   try {
     const { protocol, hostname } = new URL(url);
     if (protocol === "data:") {
-      
+      // Never convert a data: URI.
       return url;
     }
     const readableHostname = getUnicodeHostname(hostname);
@@ -4496,19 +4496,19 @@ module.exports = {
   getUnicodeUrl
 };
 
- }),
+/***/ }),
 
- 431:
- (function(module, exports) {
+/***/ 431:
+/***/ (function(module, exports) {
 
+// removed by extract-text-webpack-plugin
 
+/***/ }),
 
- }),
+/***/ 432:
+/***/ (function(module, exports, __webpack_require__) {
 
- 432:
- (function(module, exports, __webpack_require__) {
-
-(function(process) {(function() {
+/* WEBPACK VAR INJECTION */(function(process) {(function() {
   var Query, defaultPathSeparator, filter, matcher, parseOptions, pathScorer, preparedQueryCache, scorer;
 
   filter = __webpack_require__(433);
@@ -4620,12 +4620,12 @@ module.exports = {
 
 }).call(this);
 
-}.call(exports, __webpack_require__(35)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(35)))
 
- }),
+/***/ }),
 
- 433:
- (function(module, exports, __webpack_require__) {
+/***/ 433:
+/***/ (function(module, exports, __webpack_require__) {
 
 (function() {
   var Query, pathScorer, pluckCandidates, scorer, sortCandidates;
@@ -4679,10 +4679,10 @@ module.exports = {
 }).call(this);
 
 
- }),
+/***/ }),
 
- 434:
- (function(module, exports, __webpack_require__) {
+/***/ 434:
+/***/ (function(module, exports, __webpack_require__) {
 
 (function() {
   var basenameMatch, computeMatch, isMatch, isWordStart, match, mergeMatches, scoreAcronyms, scoreCharacter, scoreConsecutives, _ref;
@@ -4901,10 +4901,10 @@ module.exports = {
 }).call(this);
 
 
- }),
+/***/ }),
 
- 435:
- (function(module, exports, __webpack_require__) {
+/***/ 435:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -4946,106 +4946,106 @@ var ENTERING = exports.ENTERING = 'entering';
 var ENTERED = exports.ENTERED = 'entered';
 var EXITING = exports.EXITING = 'exiting';
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * The Transition component lets you describe a transition from one component
+ * state to another _over time_ with a simple declarative API. Most commonly
+ * it's used to animate the mounting and unmounting of a component, but can also
+ * be used to describe in-place transition states as well.
+ *
+ * By default the `Transition` component does not alter the behavior of the
+ * component it renders, it only tracks "enter" and "exit" states for the components.
+ * It's up to you to give meaning and effect to those states. For example we can
+ * add styles to a component when it enters or exits:
+ *
+ * ```jsx
+ * import Transition from 'react-transition-group/Transition';
+ *
+ * const duration = 300;
+ *
+ * const defaultStyle = {
+ *   transition: `opacity ${duration}ms ease-in-out`,
+ *   opacity: 0,
+ * }
+ *
+ * const transitionStyles = {
+ *   entering: { opacity: 0 },
+ *   entered:  { opacity: 1 },
+ * };
+ *
+ * const Fade = ({ in: inProp }) => (
+ *   <Transition in={inProp} timeout={duration}>
+ *     {(state) => (
+ *       <div style={{
+ *         ...defaultStyle,
+ *         ...transitionStyles[state]
+ *       }}>
+ *         I'm a fade Transition!
+ *       </div>
+ *     )}
+ *   </Transition>
+ * );
+ * ```
+ *
+ * As noted the `Transition` component doesn't _do_ anything by itself to its child component.
+ * What it does do is track transition states over time so you can update the
+ * component (such as by adding styles or classes) when it changes states.
+ *
+ * There are 4 main states a Transition can be in:
+ *  - `'entering'`
+ *  - `'entered'`
+ *  - `'exiting'`
+ *  - `'exited'`
+ *
+ * Transition state is toggled via the `in` prop. When `true` the component begins the
+ * "Enter" stage. During this stage, the component will shift from its current transition state,
+ * to `'entering'` for the duration of the transition and then to the `'entered'` stage once
+ * it's complete. Let's take the following example:
+ *
+ * ```jsx
+ * state = { in: false };
+ *
+ * toggleEnterState = () => {
+ *   this.setState({ in: true });
+ * }
+ *
+ * render() {
+ *   return (
+ *     <div>
+ *       <Transition in={this.state.in} timeout={500} />
+ *       <button onClick={this.toggleEnterState}>Click to Enter</button>
+ *     </div>
+ *   );
+ * }
+ * ```
+ *
+ * When the button is clicked the component will shift to the `'entering'` state and
+ * stay there for 500ms (the value of `timeout`) before it finally switches to `'entered'`.
+ *
+ * When `in` is `false` the same thing happens except the state moves from `'exiting'` to `'exited'`.
+ *
+ * ## Timing
+ *
+ * Timing is often the trickiest part of animation, mistakes can result in slight delays
+ * that are hard to pin down. A common example is when you want to add an exit transition,
+ * you should set the desired final styles when the state is `'exiting'`. That's when the
+ * transition to those styles will start and, if you matched the `timeout` prop with the
+ * CSS Transition duration, it will end exactly when the state changes to `'exited'`.
+ *
+ * > **Note**: For simpler transitions the `Transition` component might be enough, but
+ * > take into account that it's platform-agnostic, while the `CSSTransition` component
+ * > [forces reflows](https://github.com/reactjs/react-transition-group/blob/5007303e729a74be66a21c3e2205e4916821524b/src/CSSTransition.js#L208-L215)
+ * > in order to make more complex transitions more predictable. For example, even though
+ * > classes `example-enter` and `example-enter-active` are applied immediately one after
+ * > another, you can still transition from one to the other because of the forced reflow
+ * > (read [this issue](https://github.com/reactjs/react-transition-group/issues/159#issuecomment-322761171)
+ * > for more info). Take this into account when choosing between `Transition` and
+ * > `CSSTransition`.
+ *
+ * ## Example
+ *
+ * <iframe src="https://codesandbox.io/embed/741op4mmj0?fontsize=14" style="width:100%; height:500px; border:0; border-radius: 4px; overflow:hidden;" sandbox="allow-modals allow-forms allow-popups allow-scripts allow-same-origin"></iframe>
+ *
+ */
 
 var Transition = function (_React$Component) {
   _inherits(Transition, _React$Component);
@@ -5056,7 +5056,7 @@ var Transition = function (_React$Component) {
     var _this = _possibleConstructorReturn(this, _React$Component.call(this, props, context));
 
     var parentGroup = context.transitionGroup;
-    
+    // In the context of a TransitionGroup all enters are really appears
     var appear = parentGroup && !parentGroup.isMounting ? props.enter : props.appear;
 
     var initialStatus = void 0;
@@ -5085,7 +5085,7 @@ var Transition = function (_React$Component) {
   }
 
   Transition.prototype.getChildContext = function getChildContext() {
-    return { transitionGroup: null 
+    return { transitionGroup: null // allows for nested Transitions
     };
   };
 
@@ -5098,25 +5098,25 @@ var Transition = function (_React$Component) {
     return null;
   };
 
-  
-  
+  // getSnapshotBeforeUpdate(prevProps) {
+  //   let nextStatus = null
 
-  
-  
+  //   if (prevProps !== this.props) {
+  //     const { status } = this.state
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  //     if (this.props.in) {
+  //       if (status !== ENTERING && status !== ENTERED) {
+  //         nextStatus = ENTERING
+  //       }
+  //     } else {
+  //       if (status === ENTERING || status === ENTERED) {
+  //         nextStatus = EXITING
+  //       }
+  //     }
+  //   }
 
-  
-  
+  //   return { nextStatus }
+  // }
 
   Transition.prototype.componentDidMount = function componentDidMount() {
     this.updateStatus(true, this.appearStatus);
@@ -5167,7 +5167,7 @@ var Transition = function (_React$Component) {
     var nextStatus = arguments[1];
 
     if (nextStatus !== null) {
-      
+      // nextStatus will always be ENTERING or EXITING.
       this.cancelNextCallback();
       var node = _reactDom2.default.findDOMNode(this);
 
@@ -5190,8 +5190,8 @@ var Transition = function (_React$Component) {
 
     var timeouts = this.getTimeouts();
 
-    
-    
+    // no enter animation skip right to ENTERED
+    // if we are mounting and running this it means appear _must_ be set
     if (!mounting && !enter) {
       this.safeSetState({ status: ENTERED }, function () {
         _this2.props.onEntered(node);
@@ -5204,7 +5204,7 @@ var Transition = function (_React$Component) {
     this.safeSetState({ status: ENTERING }, function () {
       _this2.props.onEntering(node, appearing);
 
-      
+      // FIXME: appear timeout?
       _this2.onTransitionEnd(node, timeouts.enter, function () {
         _this2.safeSetState({ status: ENTERED }, function () {
           _this2.props.onEntered(node, appearing);
@@ -5220,7 +5220,7 @@ var Transition = function (_React$Component) {
 
     var timeouts = this.getTimeouts();
 
-    
+    // no exit animation skip right to EXITED
     if (!exit) {
       this.safeSetState({ status: EXITED }, function () {
         _this3.props.onExited(node);
@@ -5248,9 +5248,9 @@ var Transition = function (_React$Component) {
   };
 
   Transition.prototype.safeSetState = function safeSetState(nextState, callback) {
-    
-    
-    
+    // This shouldn't be necessary, but there are weird race conditions with
+    // setState callbacks and unmounting in testing, so always make sure that
+    // we can cancel any pending setState callbacks after we unmount.
     callback = this.setNextCallback(callback);
     this.setState(nextState, callback);
   };
@@ -5300,7 +5300,7 @@ var Transition = function (_React$Component) {
     var _props = this.props,
         children = _props.children,
         childProps = _objectWithoutProperties(_props, ['children']);
-    
+    // filter props for Transtition
 
 
     delete childProps.in;
@@ -5338,76 +5338,76 @@ Transition.childContextTypes = {
 
 
 Transition.propTypes =  false ? {
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * A `function` child can be used instead of a React element.
+   * This function is called with the current transition status
+   * ('entering', 'entered', 'exiting', 'exited', 'unmounted'), which can be used
+   * to apply context specific props to a component.
+   *
+   * ```jsx
+   * <Transition timeout={150}>
+   *   {(status) => (
+   *     <MyComponent className={`fade fade-${status}`} />
+   *   )}
+   * </Transition>
+   * ```
+   */
   children: PropTypes.oneOfType([PropTypes.func.isRequired, PropTypes.element.isRequired]).isRequired,
 
-  
-
-
+  /**
+   * Show the component; triggers the enter or exit states
+   */
   in: PropTypes.bool,
 
-  
-
-
-
-
-
+  /**
+   * By default the child component is mounted immediately along with
+   * the parent `Transition` component. If you want to "lazy mount" the component on the
+   * first `in={true}` you can set `mountOnEnter`. After the first enter transition the component will stay
+   * mounted, even on "exited", unless you also specify `unmountOnExit`.
+   */
   mountOnEnter: PropTypes.bool,
 
-  
-
-
-
+  /**
+   * By default the child component stays mounted after it reaches the `'exited'` state.
+   * Set `unmountOnExit` if you'd prefer to unmount the component after it finishes exiting.
+   */
   unmountOnExit: PropTypes.bool,
 
-  
-
-
-
-
-
-
+  /**
+   * Normally a component is not transitioned if it is shown when the `<Transition>` component mounts.
+   * If you want to transition on the first mount set `appear` to `true`, and the
+   * component will transition in as soon as the `<Transition>` mounts.
+   *
+   * > Note: there are no specific "appear" states. `appear` only adds an additional `enter` transition.
+   */
   appear: PropTypes.bool,
 
-  
-
-
+  /**
+   * Enable or disable enter transitions.
+   */
   enter: PropTypes.bool,
 
-  
-
-
+  /**
+   * Enable or disable exit transitions.
+   */
   exit: PropTypes.bool,
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * The duration of the transition, in milliseconds.
+   * Required unless `addEndListener` is provided
+   *
+   * You may specify a single timeout for all transitions like: `timeout={500}`,
+   * or individually like:
+   *
+   * ```jsx
+   * timeout={{
+   *  enter: 300,
+   *  exit: 500,
+   * }}
+   * ```
+   *
+   * @type {number | { enter?: number, exit?: number }}
+   */
   timeout: function timeout(props) {
     for (var _len = arguments.length, args = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
       args[_key - 1] = arguments[_key];
@@ -5418,66 +5418,66 @@ Transition.propTypes =  false ? {
     return pt.apply(undefined, [props].concat(args));
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Add a custom transition end trigger. Called with the transitioning
+   * DOM node and a `done` callback. Allows for more fine grained transition end
+   * logic. **Note:** Timeouts are still used as a fallback if provided.
+   *
+   * ```jsx
+   * addEndListener={(node, done) => {
+   *   // use the css transitionend event to mark the finish of a transition
+   *   node.addEventListener('transitionend', done, false);
+   * }}
+   * ```
+   */
   addEndListener: PropTypes.func,
 
-  
-
-
-
-
-
+  /**
+   * Callback fired before the "entering" status is applied. An extra parameter
+   * `isAppearing` is supplied to indicate if the enter stage is occurring on the initial mount
+   *
+   * @type Function(node: HtmlElement, isAppearing: bool) -> void
+   */
   onEnter: PropTypes.func,
 
-  
-
-
-
-
-
+  /**
+   * Callback fired after the "entering" status is applied. An extra parameter
+   * `isAppearing` is supplied to indicate if the enter stage is occurring on the initial mount
+   *
+   * @type Function(node: HtmlElement, isAppearing: bool)
+   */
   onEntering: PropTypes.func,
 
-  
-
-
-
-
-
+  /**
+   * Callback fired after the "entered" status is applied. An extra parameter
+   * `isAppearing` is supplied to indicate if the enter stage is occurring on the initial mount
+   *
+   * @type Function(node: HtmlElement, isAppearing: bool) -> void
+   */
   onEntered: PropTypes.func,
 
-  
-
-
-
-
+  /**
+   * Callback fired before the "exiting" status is applied.
+   *
+   * @type Function(node: HtmlElement) -> void
+   */
   onExit: PropTypes.func,
 
-  
-
-
-
-
+  /**
+   * Callback fired after the "exiting" status is applied.
+   *
+   * @type Function(node: HtmlElement) -> void
+   */
   onExiting: PropTypes.func,
 
-  
-
-
-
-
+  /**
+   * Callback fired after the "exited" status is applied.
+   *
+   * @type Function(node: HtmlElement) -> void
+   */
   onExited: PropTypes.func
 
-  
+  // Name the function so it is clearer in the documentation
 } : {};function noop() {}
 
 Transition.defaultProps = {
@@ -5505,23 +5505,23 @@ Transition.EXITING = 4;
 
 exports.default = (0, _reactLifecyclesCompat.polyfill)(Transition);
 
- }),
+/***/ }),
 
- 436:
- (function(module, __webpack_exports__, __webpack_require__) {
+/***/ 436:
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
- __webpack_require__.d(__webpack_exports__, "polyfill", function() { return polyfill; });
-
-
-
-
-
-
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "polyfill", function() { return polyfill; });
+/**
+ * Copyright (c) 2013-present, Facebook, Inc.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
 
 function componentWillMount() {
-  
+  // Call this.constructor.gDSFP to support sub-classes.
   var state = this.constructor.getDerivedStateFromProps(this.props, this.state);
   if (state !== null && state !== undefined) {
     this.setState(state);
@@ -5529,13 +5529,13 @@ function componentWillMount() {
 }
 
 function componentWillReceiveProps(nextProps) {
-  
-  
+  // Call this.constructor.gDSFP to support sub-classes.
+  // Use the setState() updater to ensure state isn't stale in certain edge cases.
   function updater(prevState) {
     var state = this.constructor.getDerivedStateFromProps(nextProps, prevState);
     return state !== null && state !== undefined ? state : null;
   }
-  
+  // Binding "this" is important for shallow renderer support.
   this.setState(updater.bind(this));
 }
 
@@ -5556,8 +5556,8 @@ function componentWillUpdate(nextProps, nextState) {
   }
 }
 
-
-
+// React may warn about cWM/cWRP/cWU methods being deprecated.
+// Add a flag to suppress these warnings for this special case.
 componentWillMount.__suppressDeprecationWarning = true;
 componentWillReceiveProps.__suppressDeprecationWarning = true;
 componentWillUpdate.__suppressDeprecationWarning = true;
@@ -5576,9 +5576,9 @@ function polyfill(Component) {
     return Component;
   }
 
-  
-  
-  
+  // If new component APIs are defined, "unsafe" lifecycles won't be called.
+  // Error if any of these lifecycles are present,
+  // Because they would work differently between older and newer (16.3+) versions of React.
   var foundWillMountName = null;
   var foundWillReceivePropsName = null;
   var foundWillUpdateName = null;
@@ -5624,17 +5624,17 @@ function polyfill(Component) {
     );
   }
 
-  
-  
-  
+  // React <= 16.2 does not support static getDerivedStateFromProps.
+  // As a workaround, use cWM and cWRP to invoke the new static lifecycle.
+  // Newer versions of React will ignore these lifecycles if gDSFP exists.
   if (typeof Component.getDerivedStateFromProps === 'function') {
     prototype.componentWillMount = componentWillMount;
     prototype.componentWillReceiveProps = componentWillReceiveProps;
   }
 
-  
-  
-  
+  // React <= 16.2 does not support getSnapshotBeforeUpdate.
+  // As a workaround, use cWU to invoke the new lifecycle.
+  // Newer versions of React will ignore that lifecycle if gSBU exists.
   if (typeof prototype.getSnapshotBeforeUpdate === 'function') {
     if (typeof prototype.componentDidUpdate !== 'function') {
       throw new Error(
@@ -5651,14 +5651,14 @@ function polyfill(Component) {
       prevState,
       maybeSnapshot
     ) {
-      
-      
-      
-      
-      
-      
-      
-      
+      // 16.3+ will not execute our will-update method;
+      // It will pass a snapshot value to did-update though.
+      // Older versions will require our polyfilled will-update value.
+      // We need to handle both cases, but can't just check for the presence of "maybeSnapshot",
+      // Because for <= 15.x versions this might be a "prevContext" object.
+      // We also can't just check "__reactInternalSnapshot",
+      // Because get-snapshot might return a falsy value.
+      // So check for the explicit __reactInternalSnapshotFlag flag to determine behavior.
       var snapshot = this.__reactInternalSnapshotFlag
         ? this.__reactInternalSnapshot
         : maybeSnapshot;
@@ -5673,10 +5673,10 @@ function polyfill(Component) {
 
 
 
- }),
+/***/ }),
 
- 437:
- (function(module, exports, __webpack_require__) {
+/***/ 437:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -5696,13 +5696,13 @@ function transitionTimeout(transitionType) {
   var enabledPropName = 'transition' + transitionType;
 
   return function (props) {
-    
+    // If the transition is enabled
     if (props[enabledPropName]) {
-      
+      // If no timeout duration is provided
       if (props[timeoutPropName] == null) {
         return new Error(timeoutPropName + ' wasn\'t supplied to CSSTransitionGroup: ' + 'this can cause unreliable animations and won\'t be supported in ' + 'a future version of React. See ' + 'https://fb.me/react-animation-transition-group-timeout for more ' + 'information.');
 
-        
+        // If the duration isn't a number
       } else if (typeof props[timeoutPropName] !== 'number') {
         return new Error(timeoutPropName + ' must be a number (in milliseconds)');
       }
@@ -5730,10 +5730,10 @@ var classNamesShape = exports.classNamesShape = _propTypes2.default.oneOfType([_
   exitActive: _propTypes2.default.string
 })]);
 
- }),
+/***/ }),
 
- 438:
- (function(module, exports, __webpack_require__) {
+/***/ 438:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -5780,10 +5780,10 @@ Object.defineProperty(exports, 'Tabs', {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
- }),
+/***/ }),
 
- 439:
- (function(module, exports, __webpack_require__) {
+/***/ 439:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -5800,24 +5800,24 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 exports.default = _propTypes2.default.object;
 
- }),
+/***/ }),
 
- 440:
- (function(module, exports) {
+/***/ 440:
+/***/ (function(module, exports) {
 
+// removed by extract-text-webpack-plugin
 
+/***/ }),
 
- }),
+/***/ 441:
+/***/ (function(module, exports) {
 
- 441:
- (function(module, exports) {
+// removed by extract-text-webpack-plugin
 
+/***/ }),
 
-
- }),
-
- 442:
- (function(module, exports, __webpack_require__) {
+/***/ 442:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -5919,10 +5919,10 @@ Tabs.defaultProps = {
   onActivateTab: function onActivateTab() {}
 };
 
- }),
+/***/ }),
 
- 443:
- (function(module, exports, __webpack_require__) {
+/***/ 443:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -5938,17 +5938,17 @@ function uniqueId() {
   return "$rac$" + counter;
 }
 
- }),
+/***/ }),
 
- 444:
- (function(module, __webpack_exports__, __webpack_require__) {
+/***/ 444:
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
- __webpack_exports__["defaultMemoize"] = defaultMemoize;
- __webpack_exports__["createSelectorCreator"] = createSelectorCreator;
- __webpack_require__.d(__webpack_exports__, "createSelector", function() { return createSelector; });
- __webpack_exports__["createStructuredSelector"] = createStructuredSelector;
+/* harmony export (immutable) */ __webpack_exports__["defaultMemoize"] = defaultMemoize;
+/* harmony export (immutable) */ __webpack_exports__["createSelectorCreator"] = createSelectorCreator;
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "createSelector", function() { return createSelector; });
+/* harmony export (immutable) */ __webpack_exports__["createStructuredSelector"] = createStructuredSelector;
 function defaultEqualityCheck(a, b) {
   return a === b;
 }
@@ -5958,7 +5958,7 @@ function areArgumentsShallowlyEqual(equalityCheck, prev, next) {
     return false;
   }
 
-  
+  // Do this in a for loop (and not a `forEach` or an `every`) so we can determine equality as fast as possible.
   var length = prev.length;
   for (var i = 0; i < length; i++) {
     if (!equalityCheck(prev[i], next[i])) {
@@ -5974,10 +5974,10 @@ function defaultMemoize(func) {
 
   var lastArgs = null;
   var lastResult = null;
-  
+  // we reference arguments instead of spreading them for performance reasons
   return function () {
     if (!areArgumentsShallowlyEqual(equalityCheck, lastArgs, arguments)) {
-      
+      // apply arguments instead of spreading for performance.
       lastResult = func.apply(null, arguments);
     }
 
@@ -6017,21 +6017,21 @@ function createSelectorCreator(memoize) {
 
     var memoizedResultFunc = memoize.apply(undefined, [function () {
       recomputations++;
-      
+      // apply arguments instead of spreading for performance.
       return resultFunc.apply(null, arguments);
     }].concat(memoizeOptions));
 
-    
+    // If a selector is called with the exact same arguments we don't need to traverse our dependencies again.
     var selector = memoize(function () {
       var params = [];
       var length = dependencies.length;
 
       for (var i = 0; i < length; i++) {
-        
+        // apply arguments instead of spreading and mutate a local list of params for performance.
         params.push(dependencies[i].apply(null, arguments));
       }
 
-      
+      // apply arguments instead of spreading for performance.
       return memoizedResultFunc.apply(null, params);
     });
 
@@ -6070,23 +6070,23 @@ function createStructuredSelector(selectors) {
   });
 }
 
- }),
+/***/ }),
 
- 445:
- (function(module, exports, __webpack_require__) {
+/***/ 445:
+/***/ (function(module, exports, __webpack_require__) {
 
 const SplitBox = __webpack_require__(446);
 
 module.exports = SplitBox;
 
- }),
+/***/ }),
 
- 446:
- (function(module, exports, __webpack_require__) {
+/***/ 446:
+/***/ (function(module, exports, __webpack_require__) {
 
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
 const React = __webpack_require__(6);
 const ReactDOM = __webpack_require__(112);
@@ -6097,42 +6097,42 @@ const dom = __webpack_require__(1);
 
 __webpack_require__(448);
 
-
-
-
-
+/**
+ * This component represents a Splitter. The splitter supports vertical
+ * as well as horizontal mode.
+ */
 class SplitBox extends Component {
   static get propTypes() {
     return {
-      
+      // Custom class name. You can use more names separated by a space.
       className: PropTypes.string,
-      
+      // Initial size of controlled panel.
       initialSize: PropTypes.any,
-      
+      // Optional initial width of controlled panel.
       initialWidth: PropTypes.number,
-      
+      // Optional initial height of controlled panel.
       initialHeight: PropTypes.number,
-      
+      // Left/top panel
       startPanel: PropTypes.any,
-      
+      // Left/top panel collapse state.
       startPanelCollapsed: PropTypes.bool,
-      
+      // Min panel size.
       minSize: PropTypes.any,
-      
+      // Max panel size.
       maxSize: PropTypes.any,
-      
+      // Right/bottom panel
       endPanel: PropTypes.any,
-      
+      // Right/bottom panel collapse state.
       endPanelCollapsed: PropTypes.bool,
-      
+      // True if the right/bottom panel should be controlled.
       endPanelControl: PropTypes.bool,
-      
+      // Size of the splitter handle bar.
       splitterSize: PropTypes.number,
-      
+      // True if the splitter bar is vertical (default is vertical).
       vert: PropTypes.bool,
-      
+      // Optional style properties passed into the splitbox
       style: PropTypes.object,
-      
+      // Optional callback when splitbox resize stops
       onResizeEnd: PropTypes.func
     };
   }
@@ -6152,7 +6152,7 @@ class SplitBox extends Component {
 
     this.state = {
       vert: props.vert,
-      
+      // We use integers for these properties
       width: parseInt(props.initialWidth || props.initialSize, 10),
       height: parseInt(props.initialHeight || props.initialSize, 10)
     };
@@ -6175,13 +6175,13 @@ class SplitBox extends Component {
     }
   }
 
-  
+  // Dragging Events
 
-  
-
-
-
-
+  /**
+   * Set 'resizing' cursor on entire document during splitter dragging.
+   * This avoids cursor-flickering that happens when the mouse leaves
+   * the splitter bar area (happens frequently).
+   */
   onStartMove() {
     const splitBox = ReactDOM.findDOMNode(this);
     const doc = splitBox.ownerDocument;
@@ -6209,18 +6209,18 @@ class SplitBox extends Component {
     }
   }
 
-  
-
-
-
-
+  /**
+   * Adjust size of the controlled panel. Depending on the current
+   * orientation we either remember the width or height of
+   * the splitter box.
+   */
   onMove({ movementX, movementY }) {
     const node = ReactDOM.findDOMNode(this);
     const doc = node.ownerDocument;
 
     if (this.props.endPanelControl) {
-      
-      
+      // For the end panel we need to increase the width/height when the
+      // movement is towards the left/top.
       movementX = -movementX;
       movementY = -movementY;
     }
@@ -6228,8 +6228,8 @@ class SplitBox extends Component {
     if (this.state.vert) {
       const isRtl = doc.dir === "rtl";
       if (isRtl) {
-        
-        
+        // In RTL we need to reverse the movement again -- but only for vertical
+        // splitters
         movementX = -movementX;
       }
 
@@ -6243,7 +6243,7 @@ class SplitBox extends Component {
     }
   }
 
-  
+  // Rendering
   preparePanelStyles() {
     const vert = this.state.vert;
     const {
@@ -6255,7 +6255,7 @@ class SplitBox extends Component {
     } = this.props;
     let leftPanelStyle, rightPanelStyle;
 
-    
+    // Set proper size for panels depending on the current state.
     if (vert) {
       const startWidth = endPanelControl ? null : this.state.width,
             endWidth = endPanelControl ? this.state.width : null;
@@ -6302,7 +6302,7 @@ class SplitBox extends Component {
 
     const style = Object.assign({}, this.props.style);
 
-    
+    // Calculate class names list.
     let classNames = ["split-box"];
     classNames.push(vert ? "vert" : "horz");
     if (this.props.className) {
@@ -6311,7 +6311,7 @@ class SplitBox extends Component {
 
     const { leftPanelStyle, rightPanelStyle } = this.preparePanelStyles();
 
-    
+    // Calculate splitter size
     const splitterStyle = {
       flex: `0 0 ${splitterSize}px`
     };
@@ -6337,14 +6337,14 @@ class SplitBox extends Component {
 
 module.exports = SplitBox;
 
- }),
+/***/ }),
 
- 447:
- (function(module, exports, __webpack_require__) {
+/***/ 447:
+/***/ (function(module, exports, __webpack_require__) {
 
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
 const React = __webpack_require__(6);
 const ReactDOM = __webpack_require__(112);
@@ -6381,13 +6381,13 @@ class Draggable extends Component {
   onMove(ev) {
     ev.preventDefault();
 
-    
+    // When the target is outside of the document, its tagName is undefined
     if (!ev.target.tagName) {
       return;
     }
 
-    
-    
+    // We pass the whole event because we don't know which properties
+    // the callee needs.
     this.props.onMove(ev);
   }
 
@@ -6410,17 +6410,17 @@ class Draggable extends Component {
 
 module.exports = Draggable;
 
- }),
+/***/ }),
 
- 448:
- (function(module, exports) {
+/***/ 448:
+/***/ (function(module, exports) {
 
+// removed by extract-text-webpack-plugin
 
+/***/ }),
 
- }),
-
- 449:
- (function(module, exports, __webpack_require__) {
+/***/ 449:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -6433,32 +6433,32 @@ exports.default = move;
 function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
 function move(array, moveIndex, toIndex) {
-  
-
-
-
-
-
-
-
+  /* #move - Moves an array item from one position in an array to another.
+      Note: This is a pure function so a new array will be returned, instead
+     of altering the array argument.
+     Arguments:
+    1. array     (String) : Array in which to move an item.         (required)
+    2. moveIndex (Object) : The index of the item to move.          (required)
+    3. toIndex   (Object) : The index to move item at moveIndex to. (required)
+  */
   var item = array[moveIndex];
   var length = array.length;
   var diff = moveIndex - toIndex;
 
   if (diff > 0) {
-    
+    // move left
     return [].concat(_toConsumableArray(array.slice(0, toIndex)), [item], _toConsumableArray(array.slice(toIndex, moveIndex)), _toConsumableArray(array.slice(moveIndex + 1, length)));
   } else if (diff < 0) {
-    
+    // move right
     return [].concat(_toConsumableArray(array.slice(0, moveIndex)), _toConsumableArray(array.slice(moveIndex + 1, toIndex + 1)), [item], _toConsumableArray(array.slice(toIndex + 1, length)));
   }
   return array;
 }
 
- }),
+/***/ }),
 
- 450:
- (function(module, exports, __webpack_require__) {
+/***/ 450:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -6473,18 +6473,18 @@ var _Svg2 = _interopRequireDefault(_Svg);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-exports.default = _Svg2.default; 
+exports.default = _Svg2.default; /* This Source Code Form is subject to the terms of the Mozilla Public
+                                  * License, v. 2.0. If a copy of the MPL was not distributed with this
+                                  * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
+/**
+ * This file maps the SVG React Components in the images directory.
+ */
 
+/***/ }),
 
-
-
-
-
- }),
-
- 451:
- (function(module, exports, __webpack_require__) {
+/***/ 451:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -6495,9 +6495,9 @@ var _svgInlineReact2 = _interopRequireDefault(_svgInlineReact);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
 const React = __webpack_require__(6);
 
@@ -6528,10 +6528,10 @@ Svg.displayName = "Svg";
 
 module.exports = Svg;
 
- }),
+/***/ }),
 
- 452:
- (function(module, exports, __webpack_require__) {
+/***/ 452:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -6627,10 +6627,10 @@ InlineSVG.propTypes = {
     raw: _propTypes.bool
 };
 
- }),
+/***/ }),
 
- 453:
- (function(module, exports, __webpack_require__) {
+/***/ 453:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
@@ -6643,7 +6643,7 @@ exports.startsWith = startsWith;
 exports.serializeAttrs = serializeAttrs;
 exports.getSVGFromSource = getSVGFromSource;
 exports.extractSVGProps = extractSVGProps;
-
+// Transform DOM prop/attr names applicable to `<svg>` element but react-limited
 
 function convertReactSVGDOMProperty(str) {
     return str.replace(/[-|:]([a-z])/g, function (g) {
@@ -6656,7 +6656,7 @@ function startsWith(str, substring) {
 }
 
 var DataPropPrefix = 'data-';
-
+// Serialize `Attr` objects in `NamedNodeMap`
 function serializeAttrs(map) {
     var ret = {};
     for (var prop, i = 0; i < map.length; i++) {
@@ -6678,46 +6678,46 @@ function getSVGFromSource(src) {
     var svgContainer = document.createElement('div');
     svgContainer.innerHTML = src;
     var svg = svgContainer.firstElementChild;
-    svg.remove ? svg.remove() : svgContainer.removeChild(svg); 
+    svg.remove ? svg.remove() : svgContainer.removeChild(svg); // deref from parent element
     return svg;
 }
 
-
+// get <svg /> element props
 function extractSVGProps(src) {
     var map = getSVGFromSource(src).attributes;
     return map.length > 0 ? serializeAttrs(map) : null;
 }
 
- }),
+/***/ }),
 
- 454:
- (function(module, exports) {
+/***/ 454:
+/***/ (function(module, exports) {
 
-module.exports = "<!-- This Source Code Form is subject to the terms of the Mozilla Public - License, v. 2.0. If a copy of the MPL was not distributed with this - file, You can obtain one at http://mozilla.org/MPL/2.0/. --><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 60 15\"><path d=\"M53.07.5H1.5c-.54 0-1 .46-1 1v12c0 .54.46 1 1 1h51.57c.58 0 1.15-.26 1.53-.7l4.7-6.3-4.7-6.3c-.38-.44-.95-.7-1.53-.7z\"></path></svg>"
+module.exports = "<!-- This Source Code Form is subject to the terms of the Mozilla Public - License, v. 2.0. If a copy of the MPL was not distributed with this - file, You can obtain one at http://mozilla.org/MPL/2.0/. --><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 60 15\" stroke=\"currentColor\"><path d=\"M53.07.5H1.5c-.54 0-1 .46-1 1v12c0 .54.46 1 1 1h51.57c.58 0 1.15-.26 1.53-.7l4.7-6.3-4.7-6.3c-.38-.44-.95-.7-1.53-.7z\"></path></svg>"
 
- }),
+/***/ }),
 
- 455:
- (function(module, exports) {
+/***/ 455:
+/***/ (function(module, exports) {
 
 module.exports = "<!-- This Source Code Form is subject to the terms of the Mozilla Public - License, v. 2.0. If a copy of the MPL was not distributed with this - file, You can obtain one at http://mozilla.org/MPL/2.0/. --><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 11 13\"><path d=\"M5.07.5H1.5c-.54 0-1 .46-1 1v10c0 .54.46 1 1 1h3.57c.58 0 1.15-.26 1.53-.7l3.7-5.3-3.7-5.3C6.22.76 5.65.5 5.07.5z\"></path></svg>"
 
- }),
+/***/ }),
 
- 6:
- (function(module, exports) {
+/***/ 6:
+/***/ (function(module, exports) {
 
 module.exports = __WEBPACK_EXTERNAL_MODULE_6__;
 
- }),
+/***/ }),
 
- 62:
- (function(module, exports, __webpack_require__) {
+/***/ 62:
+/***/ (function(module, exports, __webpack_require__) {
 
-(function(module, global) {var __WEBPACK_AMD_DEFINE_RESULT__;
+/* WEBPACK VAR INJECTION */(function(module, global) {var __WEBPACK_AMD_DEFINE_RESULT__;/*! https://mths.be/punycode v1.4.1 by @mathias */
 ;(function(root) {
 
-	
+	/** Detect free variables */
 	var freeExports = typeof exports == 'object' && exports &&
 		!exports.nodeType && exports;
 	var freeModule = typeof module == 'object' && module &&
@@ -6731,66 +6731,66 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_6__;
 		root = freeGlobal;
 	}
 
-	
-
-
-
-
+	/**
+	 * The `punycode` object.
+	 * @name punycode
+	 * @type Object
+	 */
 	var punycode,
 
-	
-	maxInt = 2147483647, 
+	/** Highest positive signed 32-bit float value */
+	maxInt = 2147483647, // aka. 0x7FFFFFFF or 2^31-1
 
-	
+	/** Bootstring parameters */
 	base = 36,
 	tMin = 1,
 	tMax = 26,
 	skew = 38,
 	damp = 700,
 	initialBias = 72,
-	initialN = 128, 
-	delimiter = '-', 
+	initialN = 128, // 0x80
+	delimiter = '-', // '\x2D'
 
-	
+	/** Regular expressions */
 	regexPunycode = /^xn--/,
-	regexNonASCII = /[^\x20-\x7E]/, 
-	regexSeparators = /[\x2E\u3002\uFF0E\uFF61]/g, 
+	regexNonASCII = /[^\x20-\x7E]/, // unprintable ASCII chars + non-ASCII chars
+	regexSeparators = /[\x2E\u3002\uFF0E\uFF61]/g, // RFC 3490 separators
 
-	
+	/** Error messages */
 	errors = {
 		'overflow': 'Overflow: input needs wider integers to process',
 		'not-basic': 'Illegal input >= 0x80 (not a basic code point)',
 		'invalid-input': 'Invalid input'
 	},
 
-	
+	/** Convenience shortcuts */
 	baseMinusTMin = base - tMin,
 	floor = Math.floor,
 	stringFromCharCode = String.fromCharCode,
 
-	
+	/** Temporary variable */
 	key;
 
-	
+	/*--------------------------------------------------------------------------*/
 
-	
-
-
-
-
-
+	/**
+	 * A generic error utility function.
+	 * @private
+	 * @param {String} type The error type.
+	 * @returns {Error} Throws a `RangeError` with the applicable error message.
+	 */
 	function error(type) {
 		throw new RangeError(errors[type]);
 	}
 
-	
-
-
-
-
-
-
-
+	/**
+	 * A generic `Array#map` utility function.
+	 * @private
+	 * @param {Array} array The array to iterate over.
+	 * @param {Function} callback The function that gets called for every array
+	 * item.
+	 * @returns {Array} A new array of values returned by the callback function.
+	 */
 	function map(array, fn) {
 		var length = array.length;
 		var result = [];
@@ -6800,45 +6800,45 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_6__;
 		return result;
 	}
 
-	
-
-
-
-
-
-
-
-
-
+	/**
+	 * A simple `Array#map`-like wrapper to work with domain name strings or email
+	 * addresses.
+	 * @private
+	 * @param {String} domain The domain name or email address.
+	 * @param {Function} callback The function that gets called for every
+	 * character.
+	 * @returns {Array} A new string of characters returned by the callback
+	 * function.
+	 */
 	function mapDomain(string, fn) {
 		var parts = string.split('@');
 		var result = '';
 		if (parts.length > 1) {
-			
-			
+			// In email addresses, only the domain name should be punycoded. Leave
+			// the local part (i.e. everything up to `@`) intact.
 			result = parts[0] + '@';
 			string = parts[1];
 		}
-		
+		// Avoid `split(regex)` for IE8 compatibility. See #17.
 		string = string.replace(regexSeparators, '\x2E');
 		var labels = string.split('.');
 		var encoded = map(labels, fn).join('.');
 		return result + encoded;
 	}
 
-	
-
-
-
-
-
-
-
-
-
-
-
-
+	/**
+	 * Creates an array containing the numeric code points of each Unicode
+	 * character in the string. While JavaScript uses UCS-2 internally,
+	 * this function will convert a pair of surrogate halves (each of which
+	 * UCS-2 exposes as separate characters) into a single code point,
+	 * matching UTF-16.
+	 * @see `punycode.ucs2.encode`
+	 * @see <https://mathiasbynens.be/notes/javascript-encoding>
+	 * @memberOf punycode.ucs2
+	 * @name decode
+	 * @param {String} string The Unicode input string (UCS-2).
+	 * @returns {Array} The new array of code points.
+	 */
 	function ucs2decode(string) {
 		var output = [],
 		    counter = 0,
@@ -6848,13 +6848,13 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_6__;
 		while (counter < length) {
 			value = string.charCodeAt(counter++);
 			if (value >= 0xD800 && value <= 0xDBFF && counter < length) {
-				
+				// high surrogate, and there is a next character
 				extra = string.charCodeAt(counter++);
-				if ((extra & 0xFC00) == 0xDC00) { 
+				if ((extra & 0xFC00) == 0xDC00) { // low surrogate
 					output.push(((value & 0x3FF) << 10) + (extra & 0x3FF) + 0x10000);
 				} else {
-					
-					
+					// unmatched surrogate; only append this code unit, in case the next
+					// code unit is the high surrogate of a surrogate pair
 					output.push(value);
 					counter--;
 				}
@@ -6865,14 +6865,14 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_6__;
 		return output;
 	}
 
-	
-
-
-
-
-
-
-
+	/**
+	 * Creates a string based on an array of numeric code points.
+	 * @see `punycode.ucs2.decode`
+	 * @memberOf punycode.ucs2
+	 * @name encode
+	 * @param {Array} codePoints The array of numeric code points.
+	 * @returns {String} The new Unicode string (UCS-2).
+	 */
 	function ucs2encode(array) {
 		return map(array, function(value) {
 			var output = '';
@@ -6886,15 +6886,15 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_6__;
 		}).join('');
 	}
 
-	
-
-
-
-
-
-
-
-
+	/**
+	 * Converts a basic code point into a digit/integer.
+	 * @see `digitToBasic()`
+	 * @private
+	 * @param {Number} codePoint The basic numeric code point value.
+	 * @returns {Number} The numeric value of a basic code point (for use in
+	 * representing integers) in the range `0` to `base - 1`, or `base` if
+	 * the code point does not represent a value.
+	 */
 	function basicToDigit(codePoint) {
 		if (codePoint - 48 < 10) {
 			return codePoint - 22;
@@ -6908,47 +6908,47 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_6__;
 		return base;
 	}
 
-	
-
-
-
-
-
-
-
-
-
-
+	/**
+	 * Converts a digit/integer into a basic code point.
+	 * @see `basicToDigit()`
+	 * @private
+	 * @param {Number} digit The numeric value of a basic code point.
+	 * @returns {Number} The basic code point whose value (when used for
+	 * representing integers) is `digit`, which needs to be in the range
+	 * `0` to `base - 1`. If `flag` is non-zero, the uppercase form is
+	 * used; else, the lowercase form is used. The behavior is undefined
+	 * if `flag` is non-zero and `digit` has no uppercase form.
+	 */
 	function digitToBasic(digit, flag) {
-		
-		
+		//  0..25 map to ASCII a..z or A..Z
+		// 26..35 map to ASCII 0..9
 		return digit + 22 + 75 * (digit < 26) - ((flag != 0) << 5);
 	}
 
-	
-
-
-
-
+	/**
+	 * Bias adaptation function as per section 3.4 of RFC 3492.
+	 * https://tools.ietf.org/html/rfc3492#section-3.4
+	 * @private
+	 */
 	function adapt(delta, numPoints, firstTime) {
 		var k = 0;
 		delta = firstTime ? floor(delta / damp) : delta >> 1;
 		delta += floor(delta / numPoints);
-		for (; delta > baseMinusTMin * tMax >> 1; k += base) {
+		for (/* no initialization */; delta > baseMinusTMin * tMax >> 1; k += base) {
 			delta = floor(delta / baseMinusTMin);
 		}
 		return floor(k + (baseMinusTMin + 1) * delta / (delta + skew));
 	}
 
-	
-
-
-
-
-
-
+	/**
+	 * Converts a Punycode string of ASCII-only symbols to a string of Unicode
+	 * symbols.
+	 * @memberOf punycode
+	 * @param {String} input The Punycode string of ASCII-only symbols.
+	 * @returns {String} The resulting string of Unicode symbols.
+	 */
 	function decode(input) {
-		
+		// Don't use UCS-2
 		var output = [],
 		    inputLength = input.length,
 		    out,
@@ -6963,12 +6963,12 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_6__;
 		    k,
 		    digit,
 		    t,
-		    
+		    /** Cached calculation results */
 		    baseMinusT;
 
-		
-		
-		
+		// Handle the basic code points: let `basic` be the number of input code
+		// points before the last delimiter, or `0` if there is none, then copy
+		// the first basic code points to the output.
 
 		basic = input.lastIndexOf(delimiter);
 		if (basic < 0) {
@@ -6976,24 +6976,24 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_6__;
 		}
 
 		for (j = 0; j < basic; ++j) {
-			
+			// if it's not a basic code point
 			if (input.charCodeAt(j) >= 0x80) {
 				error('not-basic');
 			}
 			output.push(input.charCodeAt(j));
 		}
 
-		
-		
+		// Main decoding loop: start just after the last delimiter if any basic code
+		// points were copied; start at the beginning otherwise.
 
-		for (index = basic > 0 ? basic + 1 : 0; index < inputLength; ) {
+		for (index = basic > 0 ? basic + 1 : 0; index < inputLength; /* no final expression */) {
 
-			
-			
-			
-			
-			
-			for (oldi = i, w = 1, k = base; ; k += base) {
+			// `index` is the index of the next character to be consumed.
+			// Decode a generalized variable-length integer into `delta`,
+			// which gets added to `i`. The overflow checking is easier
+			// if we increase `i` as we go, then subtract off its starting
+			// value at the end to obtain `delta`.
+			for (oldi = i, w = 1, k = base; /* no condition */; k += base) {
 
 				if (index >= inputLength) {
 					error('invalid-input');
@@ -7024,8 +7024,8 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_6__;
 			out = output.length + 1;
 			bias = adapt(i - oldi, out, oldi == 0);
 
-			
-			
+			// `i` was supposed to wrap around from `out` to `0`,
+			// incrementing `n` each time, so we'll fix that now:
 			if (floor(i / out) > maxInt - n) {
 				error('overflow');
 			}
@@ -7033,7 +7033,7 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_6__;
 			n += floor(i / out);
 			i %= out;
 
-			
+			// Insert `n` at position `i` of the output
 			output.splice(i++, 0, n);
 
 		}
@@ -7041,13 +7041,13 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_6__;
 		return ucs2encode(output);
 	}
 
-	
-
-
-
-
-
-
+	/**
+	 * Converts a string of Unicode symbols (e.g. a domain name label) to a
+	 * Punycode string of ASCII-only symbols.
+	 * @memberOf punycode
+	 * @param {String} input The string of Unicode symbols.
+	 * @returns {String} The resulting Punycode string of ASCII-only symbols.
+	 */
 	function encode(input) {
 		var n,
 		    delta,
@@ -7061,25 +7061,25 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_6__;
 		    t,
 		    currentValue,
 		    output = [],
-		    
+		    /** `inputLength` will hold the number of code points in `input`. */
 		    inputLength,
-		    
+		    /** Cached calculation results */
 		    handledCPCountPlusOne,
 		    baseMinusT,
 		    qMinusT;
 
-		
+		// Convert the input in UCS-2 to Unicode
 		input = ucs2decode(input);
 
-		
+		// Cache the length
 		inputLength = input.length;
 
-		
+		// Initialize the state
 		n = initialN;
 		delta = 0;
 		bias = initialBias;
 
-		
+		// Handle the basic code points
 		for (j = 0; j < inputLength; ++j) {
 			currentValue = input[j];
 			if (currentValue < 0x80) {
@@ -7089,19 +7089,19 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_6__;
 
 		handledCPCount = basicLength = output.length;
 
-		
-		
+		// `handledCPCount` is the number of code points that have been handled;
+		// `basicLength` is the number of basic code points.
 
-		
+		// Finish the basic string - if it is not empty - with a delimiter
 		if (basicLength) {
 			output.push(delimiter);
 		}
 
-		
+		// Main encoding loop:
 		while (handledCPCount < inputLength) {
 
-			
-			
+			// All non-basic code points < n have been handled already. Find the next
+			// larger one:
 			for (m = maxInt, j = 0; j < inputLength; ++j) {
 				currentValue = input[j];
 				if (currentValue >= n && currentValue < m) {
@@ -7109,8 +7109,8 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_6__;
 				}
 			}
 
-			
-			
+			// Increase `delta` enough to advance the decoder's <n,i> state to <m,0>,
+			// but guard against overflow
 			handledCPCountPlusOne = handledCPCount + 1;
 			if (m - n > floor((maxInt - delta) / handledCPCountPlusOne)) {
 				error('overflow');
@@ -7127,8 +7127,8 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_6__;
 				}
 
 				if (currentValue == n) {
-					
-					for (q = delta, k = base; ; k += base) {
+					// Represent delta as a generalized variable-length integer
+					for (q = delta, k = base; /* no condition */; k += base) {
 						t = k <= bias ? tMin : (k >= bias + tMax ? tMax : k - bias);
 						if (q < t) {
 							break;
@@ -7155,17 +7155,17 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_6__;
 		return output.join('');
 	}
 
-	
-
-
-
-
-
-
-
-
-
-
+	/**
+	 * Converts a Punycode string representing a domain name or an email address
+	 * to Unicode. Only the Punycoded parts of the input will be converted, i.e.
+	 * it doesn't matter if you call it on a string that has already been
+	 * converted to Unicode.
+	 * @memberOf punycode
+	 * @param {String} input The Punycoded domain name or email address to
+	 * convert to Unicode.
+	 * @returns {String} The Unicode representation of the given Punycode
+	 * string.
+	 */
 	function toUnicode(input) {
 		return mapDomain(input, function(string) {
 			return regexPunycode.test(string)
@@ -7174,17 +7174,17 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_6__;
 		});
 	}
 
-	
-
-
-
-
-
-
-
-
-
-
+	/**
+	 * Converts a Unicode string representing a domain name or an email address to
+	 * Punycode. Only the non-ASCII parts of the domain name will be converted,
+	 * i.e. it doesn't matter if you call it with a domain that's already in
+	 * ASCII.
+	 * @memberOf punycode
+	 * @param {String} input The domain name or email address to convert, as a
+	 * Unicode string.
+	 * @returns {String} The Punycode representation of the given domain name or
+	 * email address.
+	 */
 	function toASCII(input) {
 		return mapDomain(input, function(string) {
 			return regexNonASCII.test(string)
@@ -7193,23 +7193,23 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_6__;
 		});
 	}
 
-	
+	/*--------------------------------------------------------------------------*/
 
-	
+	/** Define the public API */
 	punycode = {
-		
-
-
-
-
+		/**
+		 * A string representing the current Punycode.js version number.
+		 * @memberOf punycode
+		 * @type String
+		 */
 		'version': '1.4.1',
-		
-
-
-
-
-
-
+		/**
+		 * An object of methods to convert from JavaScript's internal character
+		 * representation (UCS-2) to Unicode code points, and back.
+		 * @see <https://mathiasbynens.be/notes/javascript-encoding>
+		 * @memberOf punycode
+		 * @type Object
+		 */
 		'ucs2': {
 			'decode': ucs2decode,
 			'encode': ucs2encode
@@ -7220,9 +7220,9 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_6__;
 		'toUnicode': toUnicode
 	};
 
-	
-	
-	
+	/** Expose `punycode` */
+	// Some AMD build optimizers, like r.js, check for specific condition patterns
+	// like the following:
 	if (
 		true
 	) {
@@ -7232,47 +7232,47 @@ module.exports = __WEBPACK_EXTERNAL_MODULE_6__;
 				__WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 	} else if (freeExports && freeModule) {
 		if (module.exports == freeExports) {
-			
+			// in Node.js, io.js, or RingoJS v0.8.0+
 			freeModule.exports = punycode;
 		} else {
-			
+			// in Narwhal or RingoJS v0.7.0-
 			for (key in punycode) {
 				punycode.hasOwnProperty(key) && (freeExports[key] = punycode[key]);
 			}
 		}
 	} else {
-		
+		// in Rhino or a web browser
 		root.punycode = punycode;
 	}
 
 }(this));
 
-}.call(exports, __webpack_require__(22)(module), __webpack_require__(15)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(22)(module), __webpack_require__(15)))
 
- }),
+/***/ }),
 
- 65:
- (function(module, exports, __webpack_require__) {
+/***/ 65:
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 var EventEmitter = function EventEmitter() {};
 module.exports = EventEmitter;
 
 const promise = __webpack_require__(422);
 
-
-
-
-
-
-
-
+/**
+ * Decorate an object with event emitter functionality.
+ *
+ * @param Object aObjectToDecorate
+ *        Bind all public methods of EventEmitter to
+ *        the aObjectToDecorate object.
+ */
 EventEmitter.decorate = function EventEmitter_decorate(aObjectToDecorate) {
   let emitter = new EventEmitter();
   aObjectToDecorate.on = emitter.on.bind(emitter);
@@ -7282,14 +7282,14 @@ EventEmitter.decorate = function EventEmitter_decorate(aObjectToDecorate) {
 };
 
 EventEmitter.prototype = {
-  
-
-
-
-
-
-
-
+  /**
+   * Connect a listener.
+   *
+   * @param string aEvent
+   *        The event name to which we're connecting.
+   * @param function aListener
+   *        Called when the event is fired.
+   */
   on: function EventEmitter_on(aEvent, aListener) {
     if (!this._eventEmitterListeners) this._eventEmitterListeners = new Map();
     if (!this._eventEmitterListeners.has(aEvent)) {
@@ -7298,20 +7298,20 @@ EventEmitter.prototype = {
     this._eventEmitterListeners.get(aEvent).push(aListener);
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Listen for the next time an event is fired.
+   *
+   * @param string aEvent
+   *        The event name to which we're connecting.
+   * @param function aListener
+   *        (Optional) Called when the event is fired. Will be called at most
+   *        one time.
+   * @return promise
+   *        A promise which is resolved when the event next happens. The
+   *        resolution value of the promise is the first event argument. If
+   *        you need access to second or subsequent event arguments (it's rare
+   *        that this is needed) then use aListener
+   */
   once: function EventEmitter_once(aEvent, aListener) {
     let deferred = promise.defer();
 
@@ -7329,15 +7329,15 @@ EventEmitter.prototype = {
     return deferred.promise;
   },
 
-  
-
-
-
-
-
-
-
-
+  /**
+   * Remove a previously-registered event listener.  Works for events
+   * registered with either on or once.
+   *
+   * @param string aEvent
+   *        The event name whose listener we're disconnecting.
+   * @param function aListener
+   *        The listener to remove.
+   */
   off: function EventEmitter_off(aEvent, aListener) {
     if (!this._eventEmitterListeners) return;
     let listeners = this._eventEmitterListeners.get(aEvent);
@@ -7348,10 +7348,10 @@ EventEmitter.prototype = {
     }
   },
 
-  
-
-
-
+  /**
+   * Emit an event.  All arguments to this method will
+   * be sent to listener functions.
+   */
   emit: function EventEmitter_emit(aEvent) {
     if (!this._eventEmitterListeners || !this._eventEmitterListeners.has(aEvent)) {
       return;
@@ -7359,21 +7359,21 @@ EventEmitter.prototype = {
 
     let originalListeners = this._eventEmitterListeners.get(aEvent);
     for (let listener of this._eventEmitterListeners.get(aEvent)) {
-      
-      
+      // If the object was destroyed during event emission, stop
+      // emitting.
       if (!this._eventEmitterListeners) {
         break;
       }
 
-      
-      
+      // If listeners were removed during emission, make sure the
+      // event handler we're going to fire wasn't removed.
       if (originalListeners === this._eventEmitterListeners.get(aEvent) || this._eventEmitterListeners.get(aEvent).some(l => l === listener)) {
         try {
           listener.apply(null, arguments);
         } catch (ex) {
-          
+          // Prevent a bad listener from interfering with the others.
           let msg = ex + ": " + ex.stack;
-          
+          //console.error(msg);
           console.log(msg);
         }
       }
@@ -7381,10 +7381,10 @@ EventEmitter.prototype = {
   }
 };
 
- }),
+/***/ }),
 
- 66:
- (function(module, exports) {
+/***/ 66:
+/***/ (function(module, exports) {
 
 (function() {
   var AcronymResult, computeScore, emptyAcronymResult, isAcronymFullWord, isMatch, isSeparator, isWordEnd, isWordStart, miss_coeff, pos_bonus, scoreAcronyms, scoreCharacter, scoreConsecutives, scoreExact, scoreExactMatch, scorePattern, scorePosition, scoreSize, tau_size, wm;
@@ -7715,17 +7715,17 @@ EventEmitter.prototype = {
 }).call(this);
 
 
- }),
+/***/ }),
 
- 67:
- (function(module, exports, __webpack_require__) {
+/***/ 67:
+/***/ (function(module, exports, __webpack_require__) {
 
-var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;
-
-
-
-
-
+var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;/*!
+  Copyright (c) 2017 Jed Watson.
+  Licensed under the MIT License (MIT), see
+  http://jedwatson.github.io/classnames
+*/
+/* global define */
 
 (function () {
 	'use strict';
@@ -7764,7 +7764,7 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;
 		classNames.default = classNames;
 		module.exports = classNames;
 	} else if (true) {
-		
+		// register as 'classnames', consistent with npm package name
 		!(__WEBPACK_AMD_DEFINE_ARRAY__ = [], __WEBPACK_AMD_DEFINE_RESULT__ = (function () {
 			return classNames;
 		}).apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__),
@@ -7775,14 +7775,14 @@ var __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;
 }());
 
 
- }),
+/***/ }),
 
- 7:
- (function(module, exports, __webpack_require__) {
+/***/ 7:
+/***/ (function(module, exports, __webpack_require__) {
 
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const networkRequest = __webpack_require__(13);
 const workerUtils = __webpack_require__(14);
@@ -7792,7 +7792,7 @@ module.exports = {
   workerUtils
 };
 
- })
+/***/ })
 
- });
+/******/ });
 });
