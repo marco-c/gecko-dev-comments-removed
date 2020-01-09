@@ -8279,9 +8279,21 @@ var ConfirmationHint = {
 
 
 
+
+
   show(anchor, messageId, options = {}) {
     this._message.textContent =
-      gBrowserBundle.GetStringFromName("confirmationHint." + messageId + ".label");
+      gBrowserBundle.GetStringFromName(`confirmationHint.${messageId}.label`);
+
+    if (options.showDescription) {
+      this._description.textContent =
+          gBrowserBundle.GetStringFromName(`confirmationHint.${messageId}.description`);
+      this._description.hidden = false;
+      this._panel.classList.add("with-description");
+    } else {
+      this._description.hidden = true;
+      this._panel.classList.remove("with-description");
+    }
 
     if (options.hideArrow) {
       this._panel.setAttribute("hidearrow", "true");
@@ -8292,10 +8304,11 @@ var ConfirmationHint = {
 
       
       
-      const DURATION = 1500;
+      
+      const DURATION = options.showDescription ? 4000 : 1500 + 120;
       setTimeout(() => {
         this._panel.hidePopup(true);
-      }, DURATION + 120);
+      }, DURATION);
     }, {once: true});
 
     this._panel.addEventListener("popuphidden", () => {
@@ -8305,7 +8318,7 @@ var ConfirmationHint = {
 
     this._panel.hidden = false;
     this._panel.openPopup(anchor, {
-      position: "bottomcenter topright",
+      position: "bottomcenter topleft",
       triggerEvent: options.event,
     });
   },
@@ -8323,5 +8336,10 @@ var ConfirmationHint = {
   get _message() {
     delete this._message;
     return this._message = document.getElementById("confirmation-hint-message");
+  },
+
+  get _description() {
+    delete this._description;
+    return this._description = document.getElementById("confirmation-hint-description");
   },
 };
