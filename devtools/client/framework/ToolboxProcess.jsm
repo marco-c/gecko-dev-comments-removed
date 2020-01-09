@@ -36,9 +36,7 @@ var processes = new Set();
 
 
 
-
-
-this.BrowserToolboxProcess = function BrowserToolboxProcess(onClose, onRun, options) {
+this.BrowserToolboxProcess = function BrowserToolboxProcess(onClose, onRun) {
   const emitter = new EventEmitter();
   this.on = emitter.on.bind(emitter);
   this.off = emitter.off.bind(emitter);
@@ -49,24 +47,11 @@ this.BrowserToolboxProcess = function BrowserToolboxProcess(onClose, onRun, opti
     BrowserToolboxProcess.emit(...args);
   };
 
-  
-  
-  if (typeof onClose === "object") {
-    if (onClose.onClose) {
-      this.once("close", onClose.onClose);
-    }
-    if (onClose.onRun) {
-      this.once("run", onClose.onRun);
-    }
-    this._options = onClose;
-  } else {
-    if (onClose) {
-      this.once("close", onClose);
-    }
-    if (onRun) {
-      this.once("run", onRun);
-    }
-    this._options = options || {};
+  if (onClose) {
+    this.once("close", onClose);
+  }
+  if (onRun) {
+    this.once("run", onRun);
   }
 
   this._telemetry = new Telemetry();
@@ -86,13 +71,13 @@ EventEmitter.decorate(BrowserToolboxProcess);
 
 
 
-BrowserToolboxProcess.init = function(onClose, onRun, options) {
+BrowserToolboxProcess.init = function(onClose, onRun) {
   if (!Services.prefs.getBoolPref("devtools.chrome.enabled") ||
       !Services.prefs.getBoolPref("devtools.debugger.remote-enabled")) {
     console.error("Could not start Browser Toolbox, you need to enable it.");
     return null;
   }
-  return new BrowserToolboxProcess(onClose, onRun, options);
+  return new BrowserToolboxProcess(onClose, onRun);
 };
 
 
@@ -100,13 +85,7 @@ BrowserToolboxProcess.init = function(onClose, onRun, options) {
 
 
 BrowserToolboxProcess.getBrowserToolboxSessionState = function() {
-  for (const process of processes.values()) {
-    
-    if (!process._options || !process._options.addonID) {
-      return true;
-    }
-  }
-  return false;
+  return processes.size !== 0;
 };
 
 BrowserToolboxProcess.prototype = {
@@ -257,9 +236,6 @@ BrowserToolboxProcess.prototype = {
       MOZ_DISABLE_SAFE_MODE_KEY: "1",
       MOZ_BROWSER_TOOLBOX_PORT: String(this.port),
     };
-    if (this._options.addonID) {
-      environment.MOZ_BROWSER_TOOLBOX_ADDONID = String(this._options.addonID);
-    }
 
     
     
@@ -341,7 +317,6 @@ BrowserToolboxProcess.prototype = {
     processes.delete(this);
 
     this._dbgProcess = null;
-    this._options = null;
     if (this.loader) {
       this.loader.destroy();
     }

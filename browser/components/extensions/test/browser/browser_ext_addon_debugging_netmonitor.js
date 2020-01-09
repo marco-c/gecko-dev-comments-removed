@@ -2,33 +2,72 @@
 
 "use strict";
 
+const {require} = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
 
+const {DebuggerClient} = require("devtools/shared/client/debugger-client");
+const {DebuggerServer} = require("devtools/server/main");
+const {gDevTools} = require("devtools/client/framework/devtools");
+const {Toolbox} = require("devtools/client/framework/toolbox");
 
-PromiseTestUtils.whitelistRejectionsGlobally(/File closed/);
+async function setupToolboxTest(extensionId) {
+  DebuggerServer.init();
+  DebuggerServer.registerAllActors();
+  const transport = DebuggerServer.connectPipe();
+  const client = new DebuggerClient(transport);
+  await client.connect();
+  const addonFront = await client.mainRoot.getAddon({id: extensionId});
+  const target = await addonFront.connect();
+  const toolbox = await gDevTools.showToolbox(target, null, Toolbox.HostType.WINDOW);
 
-ChromeUtils.defineModuleGetter(this, "BrowserToolboxProcess",
-                               "resource://devtools/client/framework/ToolboxProcess.jsm");
+  async function waitFor(condition) {
+    while (!condition()) {
+      
+      await new Promise(done => window.setTimeout(done, 1000));
+    }
+  }
 
-async function setupToolboxProcessTest(toolboxProcessScript) {
+  const console = await toolbox.selectTool("webconsole");
+  const {hud} = console;
+  const {jsterm} = hud;
+
+  const netmonitor = await toolbox.selectTool("netmonitor");
+
+  const expectedURL = "http://mochi.test:8888/?test_netmonitor=1";
+
   
-  await SpecialPowers.pushPrefEnv({
-    "set": [
-      
-      ["devtools.chrome.enabled", true],
-      ["devtools.debugger.remote-enabled", true],
-      
-      ["devtools.debugger.prompt-connection", false],
-      
-      ["devtools.browser-toolbox.allow-unsafe-script", true],
-    ],
+  
+  await jsterm.execute(`doFetchHTTPRequest("${expectedURL}");`);
+
+  await waitFor(() => {
+    return !netmonitor.panelWin.document.querySelector(".request-list-empty-notice");
   });
 
-  let env = Cc["@mozilla.org/process/environment;1"]
-              .getService(Ci.nsIEnvironment);
-  env.set("MOZ_TOOLBOX_TEST_SCRIPT", `(${toolboxProcessScript})();`);
-  registerCleanupFunction(() => {
-    env.set("MOZ_TOOLBOX_TEST_SCRIPT", "");
+  let {store} = netmonitor.panelWin;
+
+  
+  
+  
+  
+  function filterRequest(request) {
+    return request.url === expectedURL;
+  }
+
+  let requests;
+
+  await waitFor(() => {
+    requests = Array.from(store.getState().requests.requests.values())
+                    .filter(filterRequest);
+
+    return requests.length > 0;
   });
+
+  
+  
+  await jsterm.execute(`testNetworkRequestReceived(${JSON.stringify(requests)});`);
+
+  const onToolboxClosed = gDevTools.once("toolbox-destroyed");
+  await toolbox.destroy();
+  return onToolboxClosed;
 }
 
 add_task(async function test_addon_debugging_netmonitor_panel() {
@@ -66,68 +105,11 @@ add_task(async function test_addon_debugging_netmonitor_panel() {
   await extension.startup();
   await extension.awaitMessage("ready");
 
-  
-  
-  const toolboxProcessScript = async function() {
-    
-    async function waitFor(condition) {
-      while (!condition()) {
-        
-        await new Promise(done => window.setTimeout(done, 1000));
-      }
-    }
-
-    const console = await toolbox.selectTool("webconsole");
-    const {hud} = console;
-    const {jsterm} = hud;
-
-    const netmonitor = await toolbox.selectTool("netmonitor");
-
-    const expectedURL = "http://mochi.test:8888/?test_netmonitor=1";
-
-    
-    
-    await jsterm.execute(`doFetchHTTPRequest("${expectedURL}");`);
-
-    await waitFor(() => {
-      return !netmonitor.panelWin.document.querySelector(".request-list-empty-notice");
-    });
-
-    let {store} = netmonitor.panelWin;
-
-    
-    
-    
-    
-    function filterRequest(request) {
-      return request.url === expectedURL;
-    }
-
-    let requests;
-
-    await waitFor(() => {
-      requests = Array.from(store.getState().requests.requests.values())
-                      .filter(filterRequest);
-
-      return requests.length > 0;
-    });
-
-    
-    
-    await jsterm.execute(`testNetworkRequestReceived(${JSON.stringify(requests)});`);
-
-    await toolbox.destroy();
-    
-  };
-
-  await setupToolboxProcessTest(toolboxProcessScript);
-  const browserToolboxProcess = new BrowserToolboxProcess({
-    addonID: EXTENSION_ID,
-  });
-
-  let onToolboxClose = browserToolboxProcess.once("close");
-  await extension.awaitFinish("netmonitor_request_logged");
-  await onToolboxClose;
+  const onToolboxClose = setupToolboxTest(EXTENSION_ID);
+  await Promise.all([
+    extension.awaitFinish("netmonitor_request_logged"),
+    onToolboxClose,
+  ]);
 
   info("Addon Toolbox closed");
 
