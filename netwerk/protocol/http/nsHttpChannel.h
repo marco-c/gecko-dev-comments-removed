@@ -548,6 +548,8 @@ class nsHttpChannel final : public HttpBaseChannel,
 
   bool IsIsolated();
 
+  const nsCString &GetTopWindowOrigin();
+
   already_AddRefed<nsChannelClassifier> GetOrCreateChannelClassifier();
 
   
@@ -727,6 +729,13 @@ class nsHttpChannel final : public HttpBaseChannel,
   
   
   uint32_t mIsIsolated : 1;
+
+  
+  uint32_t mTopWindowOriginComputed : 1;
+
+  
+  
+  nsCString mTopWindowOrigin;
 
   nsTArray<nsContinueRedirectionFunc> mRedirectFuncStack;
 
