@@ -6112,13 +6112,18 @@ bool BytecodeEmitter::emitAwaitInScope(EmitterScope& currentScope) {
   return true;
 }
 
+
+
+
 bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
   MOZ_ASSERT(sc->isFunctionBox());
   MOZ_ASSERT(sc->asFunctionBox()->isGenerator());
 
+  
   IteratorKind iterKind =
       sc->asFunctionBox()->isAsync() ? IteratorKind::Async : IteratorKind::Sync;
 
+  
   if (!emitTree(iter)) {
     
     return false;
@@ -6135,6 +6140,7 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
     }
   }
 
+  
   
   if (!emit1(JSOP_UNDEFINED)) {
     
@@ -6165,6 +6171,9 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
   MOZ_ASSERT(this->stackDepth == startDepth);
 
   
+  
+  
+  
   if (iterKind == IteratorKind::Async) {
     if (!emitAwaitInInnermostScope()) {
       
@@ -6172,6 +6181,9 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
     }
   }
 
+  
+  
+  
   
   if (!emitGetDotGeneratorInInnermostScope()) {
     
@@ -6238,6 +6250,7 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
     return false;
   }
 
+  
   if (iterKind == IteratorKind::Async) {
     if (!emitAwaitInInnermostScope()) {
       
@@ -6245,6 +6258,7 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
     }
   }
 
+  
   if (!emitCheckIsObj(CheckIsObjectKind::IteratorThrow)) {
     
     return false;
@@ -6258,9 +6272,8 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
     return false;
   }
   MOZ_ASSERT(this->stackDepth == startDepth);
+
   JumpList checkResult;
-  
-  
   
   
   if (!emitJump(JSOP_GOTO, &checkResult)) {
@@ -6287,6 +6300,7 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
     
     return false;
   }
+  
   if (!emitUint16Operand(JSOP_THROWMSG, JSMSG_ITERATOR_NO_THROW)) {
     
     
@@ -6370,6 +6384,7 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
     return false;
   }
 
+  
   if (iterKind == IteratorKind::Async) {
     if (!emitAwaitInInnermostScope()) {
       
@@ -6472,6 +6487,7 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
 
   
   
+  
   if (!emit2(JSOP_UNPICK, 2)) {
     
     return false;
@@ -6489,6 +6505,7 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
     return false;
   }
 
+  
   if (iterKind == IteratorKind::Async) {
     if (!emitAwaitInInnermostScope()) {
       
@@ -6496,12 +6513,15 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
     }
   }
 
+  
   if (!emitCheckIsObj(CheckIsObjectKind::IteratorNext)) {
     
     return false;
   }
   MOZ_ASSERT(this->stackDepth == startDepth);
 
+  
+  
   if (!emitJumpTargetAndPatch(checkResult)) {
     
     

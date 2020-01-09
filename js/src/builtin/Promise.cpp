@@ -50,17 +50,24 @@ enum PromiseHandler {
   PromiseHandlerAsyncFunctionAwaitedRejected,
 
   
+  
+  
   PromiseHandlerAsyncGeneratorAwaitedFulfilled,
   PromiseHandlerAsyncGeneratorAwaitedRejected,
 
+  
+  
   
   PromiseHandlerAsyncGeneratorResumeNextReturnFulfilled,
   PromiseHandlerAsyncGeneratorResumeNextReturnRejected,
 
   
+  
   PromiseHandlerAsyncGeneratorYieldReturnAwaitedFulfilled,
   PromiseHandlerAsyncGeneratorYieldReturnAwaitedRejected,
 
+  
+  
   
   
   

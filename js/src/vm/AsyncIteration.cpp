@@ -23,11 +23,13 @@
 using namespace js;
 
 
+
 MOZ_MUST_USE bool js::AsyncGeneratorAwaitedFulfilled(
     JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
     HandleValue value) {
   return AsyncGeneratorResume(cx, asyncGenObj, CompletionKind::Normal, value);
 }
+
 
 
 MOZ_MUST_USE bool js::AsyncGeneratorAwaitedRejected(
@@ -37,11 +39,13 @@ MOZ_MUST_USE bool js::AsyncGeneratorAwaitedRejected(
 }
 
 
+
 MOZ_MUST_USE bool js::AsyncGeneratorYieldReturnAwaitedFulfilled(
     JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
     HandleValue value) {
   return AsyncGeneratorResume(cx, asyncGenObj, CompletionKind::Return, value);
 }
+
 
 
 MOZ_MUST_USE bool js::AsyncGeneratorYieldReturnAwaitedRejected(
@@ -55,14 +59,13 @@ const Class AsyncFromSyncIteratorObject::class_ = {
     JSCLASS_HAS_RESERVED_SLOTS(AsyncFromSyncIteratorObject::Slots)};
 
 
+
 JSObject* js::CreateAsyncFromSyncIterator(JSContext* cx, HandleObject iter,
                                           HandleValue nextMethod) {
   
-  
-
-  
   return AsyncFromSyncIteratorObject::create(cx, iter, nextMethod);
 }
+
 
 
 
@@ -86,14 +89,20 @@ JSObject* AsyncFromSyncIteratorObject::create(JSContext* cx, HandleObject iter,
   asyncIter->init(iter, nextMethod);
 
   
+  
+  
+  
+  
   return asyncIter;
 }
+
 
 
 static bool AsyncFromSyncIteratorNext(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   return AsyncFromSyncIteratorMethod(cx, args, CompletionKind::Normal);
 }
+
 
 
 static bool AsyncFromSyncIteratorReturn(JSContext* cx, unsigned argc,
@@ -103,11 +112,13 @@ static bool AsyncFromSyncIteratorReturn(JSContext* cx, unsigned argc,
 }
 
 
+
 static bool AsyncFromSyncIteratorThrow(JSContext* cx, unsigned argc,
                                        Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   return AsyncFromSyncIteratorMethod(cx, args, CompletionKind::Throw);
 }
+
 
 
 static bool AsyncGeneratorNext(JSContext* cx, unsigned argc, Value* vp) {
@@ -119,6 +130,7 @@ static bool AsyncGeneratorNext(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 
+
 static bool AsyncGeneratorReturn(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
@@ -126,6 +138,7 @@ static bool AsyncGeneratorReturn(JSContext* cx, unsigned argc, Value* vp) {
   return AsyncGeneratorEnqueue(cx, args.thisv(), CompletionKind::Return,
                                args.get(0), args.rval());
 }
+
 
 
 static bool AsyncGeneratorThrow(JSContext* cx, unsigned argc, Value* vp) {
@@ -264,6 +277,7 @@ const Class AsyncGeneratorRequest::class_ = {
 
 
 
+
 AsyncGeneratorRequest* AsyncGeneratorRequest::create(
     JSContext* cx, CompletionKind completionKind, HandleValue completionValue,
     Handle<PromiseObject*> promise) {
@@ -278,6 +292,7 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
 }
 
 
+
 static MOZ_MUST_USE bool AsyncGeneratorReturned(
     JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
     HandleValue value) {
@@ -290,6 +305,7 @@ static MOZ_MUST_USE bool AsyncGeneratorReturned(
   
   return AsyncGeneratorResolve(cx, asyncGenObj, value, true);
 }
+
 
 
 static MOZ_MUST_USE bool AsyncGeneratorThrown(
@@ -314,6 +330,7 @@ static MOZ_MUST_USE bool AsyncGeneratorThrown(
 
 
 
+
 static MOZ_MUST_USE bool AsyncGeneratorYield(
     JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
     HandleValue value) {
@@ -325,6 +342,8 @@ static MOZ_MUST_USE bool AsyncGeneratorYield(
   
   return AsyncGeneratorResolve(cx, asyncGenObj, value, false);
 }
+
+
 
 
 
