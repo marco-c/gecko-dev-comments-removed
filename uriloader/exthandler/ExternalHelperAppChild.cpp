@@ -27,7 +27,7 @@ ExternalHelperAppChild::~ExternalHelperAppChild() {}
 
 
 NS_IMETHODIMP
-ExternalHelperAppChild::OnDataAvailable(nsIRequest *request,
+ExternalHelperAppChild::OnDataAvailable(nsIRequest *request, nsISupports *ctx,
                                         nsIInputStream *input, uint64_t offset,
                                         uint32_t count) {
   if (NS_FAILED(mStatus)) return mStatus;
@@ -60,8 +60,8 @@ ExternalHelperAppChild::OnDataAvailable(nsIRequest *request,
 
 
 NS_IMETHODIMP
-ExternalHelperAppChild::OnStartRequest(nsIRequest *request) {
-  nsresult rv = mHandler->OnStartRequest(request);
+ExternalHelperAppChild::OnStartRequest(nsIRequest *request, nsISupports *ctx) {
+  nsresult rv = mHandler->OnStartRequest(request, ctx);
   NS_ENSURE_SUCCESS(rv, NS_ERROR_UNEXPECTED);
 
   
@@ -90,11 +90,11 @@ ExternalHelperAppChild::OnStartRequest(nsIRequest *request) {
 }
 
 NS_IMETHODIMP
-ExternalHelperAppChild::OnStopRequest(nsIRequest *request,
+ExternalHelperAppChild::OnStopRequest(nsIRequest *request, nsISupports *ctx,
                                       nsresult status) {
   
   if (mHandler) {
-    nsresult rv = mHandler->OnStopRequest(request, status);
+    nsresult rv = mHandler->OnStopRequest(request, ctx, status);
     SendOnStopRequest(status);
     NS_ENSURE_SUCCESS(rv, NS_ERROR_UNEXPECTED);
   }

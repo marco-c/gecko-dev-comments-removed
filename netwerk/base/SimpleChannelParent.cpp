@@ -77,7 +77,8 @@ SimpleChannelParent::Delete() {
 void SimpleChannelParent::ActorDestroy(ActorDestroyReason aWhy) {}
 
 NS_IMETHODIMP
-SimpleChannelParent::OnStartRequest(nsIRequest* aRequest) {
+SimpleChannelParent::OnStartRequest(nsIRequest* aRequest,
+                                    nsISupports* aContext) {
   
   
   
@@ -85,7 +86,7 @@ SimpleChannelParent::OnStartRequest(nsIRequest* aRequest) {
 }
 
 NS_IMETHODIMP
-SimpleChannelParent::OnStopRequest(nsIRequest* aRequest,
+SimpleChannelParent::OnStopRequest(nsIRequest* aRequest, nsISupports* aContext,
                                    nsresult aStatusCode) {
   
   MOZ_ASSERT(NS_FAILED(aStatusCode));
@@ -94,6 +95,7 @@ SimpleChannelParent::OnStopRequest(nsIRequest* aRequest,
 
 NS_IMETHODIMP
 SimpleChannelParent::OnDataAvailable(nsIRequest* aRequest,
+                                     nsISupports* aContext,
                                      nsIInputStream* aInputStream,
                                      uint64_t aOffset, uint32_t aCount) {
   

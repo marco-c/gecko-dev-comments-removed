@@ -1963,8 +1963,8 @@ this.DownloadCopySaver.prototype = {
       
       backgroundFileSaver.QueryInterface(Ci.nsIStreamListener);
       channel.asyncOpen({
-        onStartRequest: function(aRequest) {
-          backgroundFileSaver.onStartRequest(aRequest);
+        onStartRequest: function(aRequest, aContext) {
+          backgroundFileSaver.onStartRequest(aRequest, aContext);
 
           
           
@@ -2044,9 +2044,9 @@ this.DownloadCopySaver.prototype = {
           }
         }.bind(copySaver),
 
-        onStopRequest(aRequest, aStatusCode) {
+        onStopRequest(aRequest, aContext, aStatusCode) {
           try {
-            backgroundFileSaver.onStopRequest(aRequest,
+            backgroundFileSaver.onStopRequest(aRequest, aContext,
                                               aStatusCode);
           } finally {
             
@@ -2058,9 +2058,9 @@ this.DownloadCopySaver.prototype = {
           }
         },
 
-        onDataAvailable(aRequest, aInputStream,
+        onDataAvailable(aRequest, aContext, aInputStream,
                                   aOffset, aCount) {
-          backgroundFileSaver.onDataAvailable(aRequest,
+          backgroundFileSaver.onDataAvailable(aRequest, aContext,
                                               aInputStream, aOffset,
                                               aCount);
         },

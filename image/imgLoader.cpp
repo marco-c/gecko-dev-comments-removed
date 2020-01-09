@@ -2643,7 +2643,7 @@ ProxyListener::~ProxyListener() {
 
 
 NS_IMETHODIMP
-ProxyListener::OnStartRequest(nsIRequest* aRequest) {
+ProxyListener::OnStartRequest(nsIRequest* aRequest, nsISupports* ctxt) {
   if (!mDestListener) {
     return NS_ERROR_FAILURE;
   }
@@ -2686,30 +2686,30 @@ ProxyListener::OnStartRequest(nsIRequest* aRequest) {
     }
   }
 
-  return mDestListener->OnStartRequest(aRequest);
+  return mDestListener->OnStartRequest(aRequest, ctxt);
 }
 
 NS_IMETHODIMP
-ProxyListener::OnStopRequest(nsIRequest* aRequest,
+ProxyListener::OnStopRequest(nsIRequest* aRequest, nsISupports* ctxt,
                              nsresult status) {
   if (!mDestListener) {
     return NS_ERROR_FAILURE;
   }
 
-  return mDestListener->OnStopRequest(aRequest, status);
+  return mDestListener->OnStopRequest(aRequest, ctxt, status);
 }
 
 
 
 NS_IMETHODIMP
-ProxyListener::OnDataAvailable(nsIRequest* aRequest,
+ProxyListener::OnDataAvailable(nsIRequest* aRequest, nsISupports* ctxt,
                                nsIInputStream* inStr, uint64_t sourceOffset,
                                uint32_t count) {
   if (!mDestListener) {
     return NS_ERROR_FAILURE;
   }
 
-  return mDestListener->OnDataAvailable(aRequest, inStr, sourceOffset,
+  return mDestListener->OnDataAvailable(aRequest, ctxt, inStr, sourceOffset,
                                         count);
 }
 
@@ -2832,7 +2832,7 @@ void imgCacheValidator::UpdateProxies(bool aCancelRequest, bool aSyncNotify) {
 
 
 NS_IMETHODIMP
-imgCacheValidator::OnStartRequest(nsIRequest* aRequest) {
+imgCacheValidator::OnStartRequest(nsIRequest* aRequest, nsISupports* ctxt) {
   
   nsCOMPtr<nsISupports> context = mContext.forget();
 
@@ -2912,11 +2912,11 @@ imgCacheValidator::OnStartRequest(nsIRequest* aRequest) {
   
   mImgLoader->PutIntoCache(mNewRequest->CacheKey(), mNewEntry);
   UpdateProxies( false,  true);
-  return mDestListener->OnStartRequest(aRequest);
+  return mDestListener->OnStartRequest(aRequest, ctxt);
 }
 
 NS_IMETHODIMP
-imgCacheValidator::OnStopRequest(nsIRequest* aRequest,
+imgCacheValidator::OnStopRequest(nsIRequest* aRequest, nsISupports* ctxt,
                                  nsresult status) {
   
   mContext = nullptr;
@@ -2925,13 +2925,13 @@ imgCacheValidator::OnStopRequest(nsIRequest* aRequest,
     return NS_OK;
   }
 
-  return mDestListener->OnStopRequest(aRequest, status);
+  return mDestListener->OnStopRequest(aRequest, ctxt, status);
 }
 
 
 
 NS_IMETHODIMP
-imgCacheValidator::OnDataAvailable(nsIRequest* aRequest,
+imgCacheValidator::OnDataAvailable(nsIRequest* aRequest, nsISupports* ctxt,
                                    nsIInputStream* inStr, uint64_t sourceOffset,
                                    uint32_t count) {
   if (!mDestListener) {
@@ -2941,7 +2941,7 @@ imgCacheValidator::OnDataAvailable(nsIRequest* aRequest,
     return NS_OK;
   }
 
-  return mDestListener->OnDataAvailable(aRequest, inStr, sourceOffset,
+  return mDestListener->OnDataAvailable(aRequest, ctxt, inStr, sourceOffset,
                                         count);
 }
 

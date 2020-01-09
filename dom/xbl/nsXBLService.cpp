@@ -176,17 +176,17 @@ nsXBLStreamListener::~nsXBLStreamListener() {
 }
 
 NS_IMETHODIMP
-nsXBLStreamListener::OnDataAvailable(nsIRequest* request,
+nsXBLStreamListener::OnDataAvailable(nsIRequest* request, nsISupports* aCtxt,
                                      nsIInputStream* aInStr,
                                      uint64_t aSourceOffset, uint32_t aCount) {
   if (mInner)
-    return mInner->OnDataAvailable(request, aInStr, aSourceOffset,
+    return mInner->OnDataAvailable(request, aCtxt, aInStr, aSourceOffset,
                                    aCount);
   return NS_ERROR_FAILURE;
 }
 
 NS_IMETHODIMP
-nsXBLStreamListener::OnStartRequest(nsIRequest* request) {
+nsXBLStreamListener::OnStartRequest(nsIRequest* request, nsISupports* aCtxt) {
   
   nsCOMPtr<nsIXMLContentSink> sink;
   mSink.swap(sink);
@@ -208,15 +208,15 @@ nsXBLStreamListener::OnStartRequest(nsIRequest* request) {
   
   doc->AddEventListener(NS_LITERAL_STRING("load"), this, false);
 
-  return mInner->OnStartRequest(request);
+  return mInner->OnStartRequest(request, aCtxt);
 }
 
 NS_IMETHODIMP
-nsXBLStreamListener::OnStopRequest(nsIRequest* request,
+nsXBLStreamListener::OnStopRequest(nsIRequest* request, nsISupports* aCtxt,
                                    nsresult aStatus) {
   nsresult rv = NS_OK;
   if (mInner) {
-    rv = mInner->OnStopRequest(request, aStatus);
+    rv = mInner->OnStopRequest(request, aCtxt, aStatus);
   }
 
   

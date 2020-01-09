@@ -622,7 +622,7 @@ TCPControlChannel.prototype = {
   },
 
   
-  onDataAvailable(aRequest, aInputStream) {
+  onDataAvailable(aRequest, aContext, aInputStream) {
     let data = NetUtil.readInputStreamToString(aInputStream,
                                                aInputStream.available());
     DEBUG && log("TCPControlChannel - onDataAvailable: " + data); 

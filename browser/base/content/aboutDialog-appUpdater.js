@@ -325,13 +325,13 @@ appUpdater.prototype =
   
 
 
-  onStartRequest(aRequest) {
+  onStartRequest(aRequest, aContext) {
   },
 
   
 
 
-  onStopRequest(aRequest, aStatusCode) {
+  onStopRequest(aRequest, aContext, aStatusCode) {
     switch (aStatusCode) {
     case Cr.NS_ERROR_UNEXPECTED:
       if (this.update.selectedPatch.state == "download-failed" &&

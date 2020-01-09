@@ -86,7 +86,7 @@ void ContentVerifier::FinishSignature() {
   
   if (NS_FAILED(mVerifier->End(&verified)) || !verified) {
     CSV_LOG(("failed to verify content\n"));
-    (void)nextListener->OnStopRequest(mContentRequest,
+    (void)nextListener->OnStopRequest(mContentRequest, mContentContext,
                                       NS_ERROR_INVALID_SIGNATURE);
     return;
   }
@@ -102,7 +102,7 @@ void ContentVerifier::FinishSignature() {
       break;
     }
     
-    rv = nextListener->OnDataAvailable(mContentRequest, oInStr,
+    rv = nextListener->OnDataAvailable(mContentRequest, mContentContext, oInStr,
                                        offset, mContent[i].Length());
     offset += mContent[i].Length();
     if (NS_FAILED(rv)) {
@@ -111,17 +111,17 @@ void ContentVerifier::FinishSignature() {
   }
 
   
-  nextListener->OnStopRequest(mContentRequest, rv);
+  nextListener->OnStopRequest(mContentRequest, mContentContext, rv);
 }
 
 NS_IMETHODIMP
-ContentVerifier::OnStartRequest(nsIRequest* aRequest) {
+ContentVerifier::OnStartRequest(nsIRequest* aRequest, nsISupports* aContext) {
   MOZ_CRASH("This OnStartRequest should've never been called!");
   return NS_OK;
 }
 
 NS_IMETHODIMP
-ContentVerifier::OnStopRequest(nsIRequest* aRequest,
+ContentVerifier::OnStopRequest(nsIRequest* aRequest, nsISupports* aContext,
                                nsresult aStatus) {
   
   
@@ -133,7 +133,7 @@ ContentVerifier::OnStopRequest(nsIRequest* aRequest,
     CSV_LOG(("Stream failed\n"));
     nsCOMPtr<nsIStreamListener> nextListener;
     nextListener.swap(mNextListener);
-    return nextListener->OnStopRequest(aRequest, aStatus);
+    return nextListener->OnStopRequest(aRequest, aContext, aStatus);
   }
 
   mContentRead = true;
@@ -148,7 +148,7 @@ ContentVerifier::OnStopRequest(nsIRequest* aRequest,
 }
 
 NS_IMETHODIMP
-ContentVerifier::OnDataAvailable(nsIRequest* aRequest,
+ContentVerifier::OnDataAvailable(nsIRequest* aRequest, nsISupports* aContext,
                                  nsIInputStream* aInputStream, uint64_t aOffset,
                                  uint32_t aCount) {
   
@@ -189,7 +189,7 @@ ContentVerifier::ContextCreated(bool successful) {
     if (mContentRequest && nextListener) {
       mContentRequest->Cancel(NS_ERROR_INVALID_SIGNATURE);
       nsresult rv = nextListener->OnStopRequest(
-          mContentRequest, NS_ERROR_INVALID_SIGNATURE);
+          mContentRequest, mContentContext, NS_ERROR_INVALID_SIGNATURE);
       mContentRequest = nullptr;
       mContentContext = nullptr;
       return rv;

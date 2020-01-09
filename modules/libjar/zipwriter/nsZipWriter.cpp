@@ -540,7 +540,7 @@ NS_IMETHODIMP nsZipWriter::ProcessQueue(nsIRequestObserver *aObserver,
   mInQueue = true;
 
   if (mProcessObserver)
-    mProcessObserver->OnStartRequest(nullptr);
+    mProcessObserver->OnStartRequest(nullptr, mProcessContext);
 
   BeginProcessingNextItem();
 
@@ -620,11 +620,13 @@ NS_IMETHODIMP nsZipWriter::Close() {
 }
 
 
-NS_IMETHODIMP nsZipWriter::OnStartRequest(nsIRequest *aRequest) {
+NS_IMETHODIMP nsZipWriter::OnStartRequest(nsIRequest *aRequest,
+                                          nsISupports *aContext) {
   return NS_OK;
 }
 
 NS_IMETHODIMP nsZipWriter::OnStopRequest(nsIRequest *aRequest,
+                                         nsISupports *aContext,
                                          nsresult aStatusCode) {
   if (NS_FAILED(aStatusCode)) {
     FinishQueue(aStatusCode);
@@ -1029,11 +1031,12 @@ void nsZipWriter::BeginProcessingNextItem() {
 
 void nsZipWriter::FinishQueue(nsresult aStatus) {
   nsCOMPtr<nsIRequestObserver> observer = mProcessObserver;
+  nsCOMPtr<nsISupports> context = mProcessContext;
   
   
   mProcessObserver = nullptr;
   mProcessContext = nullptr;
   mInQueue = false;
 
-  if (observer) observer->OnStopRequest(nullptr, aStatus);
+  if (observer) observer->OnStopRequest(nullptr, context, aStatus);
 }

@@ -222,16 +222,16 @@ XPCOMUtils.defineLazyGetter(this, "tests", function() {
 function start(ch) {
   Assert.equal(ch.getResponseHeader("Content-Type"), "text/html;charset=utf-8");
 }
-function stopRootDirectory(ch, status, data) {
+function stopRootDirectory(ch, cx, status, data) {
   dataCheck(data, BASE_URL, "/", gDirEntries[0]);
 }
 
 
-function stopFooDirectory(ch, status, data) {
+function stopFooDirectory(ch, cx, status, data) {
   dataCheck(data, BASE_URL + "foo/", "/foo/", gDirEntries[1]);
 }
 
 
-function stopTrailingCaretDirectory(ch, status, data) {
+function stopTrailingCaretDirectory(ch, cx, status, data) {
   hiddenDataCheck(data, BASE_URL + "bar/folder^/", "/bar/folder^/");
 }

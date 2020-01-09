@@ -352,7 +352,7 @@ void nsDocLoader::DestroyChildren() {
 }
 
 NS_IMETHODIMP
-nsDocLoader::OnStartRequest(nsIRequest* request) {
+nsDocLoader::OnStartRequest(nsIRequest* request, nsISupports* aCtxt) {
   
 
   if (MOZ_LOG_TEST(gDocLoaderLog, LogLevel::Debug)) {
@@ -444,7 +444,7 @@ nsDocLoader::OnStartRequest(nsIRequest* request) {
 }
 
 NS_IMETHODIMP
-nsDocLoader::OnStopRequest(nsIRequest* aRequest,
+nsDocLoader::OnStopRequest(nsIRequest* aRequest, nsISupports* aCtxt,
                            nsresult aStatus) {
   nsresult rv = NS_OK;
 

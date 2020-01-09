@@ -275,7 +275,7 @@ function runHttpTests(testArray, done) {
       
       _data: [],
 
-      onStartRequest(request) {
+      onStartRequest(request, cx) {
         Assert.ok(request === this._channel);
         var ch = request.QueryInterface(Ci.nsIHttpChannel)
                         .QueryInterface(Ci.nsIHttpChannelInternal);
@@ -283,7 +283,7 @@ function runHttpTests(testArray, done) {
         this._data.length = 0;
         try {
           try {
-            testArray[testIndex].onStartRequest(ch);
+            testArray[testIndex].onStartRequest(ch, cx);
           } catch (e) {
             do_report_unexpected_exception(e, "testArray[" + testIndex + "].onStartRequest");
           }
@@ -292,7 +292,7 @@ function runHttpTests(testArray, done) {
                 "called...");
         }
       },
-      onDataAvailable(request, inputStream, offset, count) {
+      onDataAvailable(request, cx, inputStream, offset, count) {
         var quantum = 262144; 
         var bis = makeBIS(inputStream);
         for (var start = 0; start < count; start += quantum) {
@@ -300,7 +300,7 @@ function runHttpTests(testArray, done) {
           Array.prototype.push.apply(this._data, newData);
         }
       },
-      onStopRequest(request, status) {
+      onStopRequest(request, cx, status) {
         this._channel = null;
 
         var ch = request.QueryInterface(Ci.nsIHttpChannel)
@@ -311,7 +311,7 @@ function runHttpTests(testArray, done) {
         
         
         try {
-          testArray[testIndex].onStopRequest(ch, status, this._data);
+          testArray[testIndex].onStopRequest(ch, cx, status, this._data);
         } finally {
           try {
             performNextTest();

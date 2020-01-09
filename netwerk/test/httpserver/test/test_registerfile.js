@@ -12,11 +12,11 @@ XPCOMUtils.defineLazyGetter(this, "BASE", function() {
 
 var file = do_get_file("test_registerfile.js");
 
-function onStart(ch) {
+function onStart(ch, cx) {
   Assert.equal(ch.responseStatus, 200);
 }
 
-function onStop(ch, status, data) {
+function onStop(ch, cx, status, data) {
   
   Assert.equal(data.length, file.fileSize);
 }

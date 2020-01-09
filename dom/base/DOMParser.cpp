@@ -197,18 +197,18 @@ already_AddRefed<Document> DOMParser::ParseFromStream(nsIInputStream* aStream,
   
   nsresult status;
 
-  rv = listener->OnStartRequest(parserChannel);
+  rv = listener->OnStartRequest(parserChannel, nullptr);
   if (NS_FAILED(rv)) parserChannel->Cancel(rv);
   parserChannel->GetStatus(&status);
 
   if (NS_SUCCEEDED(rv) && NS_SUCCEEDED(status)) {
-    rv = listener->OnDataAvailable(parserChannel, stream, 0,
+    rv = listener->OnDataAvailable(parserChannel, nullptr, stream, 0,
                                    aContentLength);
     if (NS_FAILED(rv)) parserChannel->Cancel(rv);
     parserChannel->GetStatus(&status);
   }
 
-  rv = listener->OnStopRequest(parserChannel, status);
+  rv = listener->OnStopRequest(parserChannel, nullptr, status);
   
   
 

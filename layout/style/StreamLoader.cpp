@@ -25,7 +25,7 @@ NS_IMPL_ISUPPORTS(StreamLoader, nsIStreamListener)
 
 
 NS_IMETHODIMP
-StreamLoader::OnStartRequest(nsIRequest* aRequest) {
+StreamLoader::OnStartRequest(nsIRequest* aRequest, nsISupports*) {
   
   
   
@@ -47,7 +47,7 @@ StreamLoader::OnStartRequest(nsIRequest* aRequest) {
 }
 
 NS_IMETHODIMP
-StreamLoader::OnStopRequest(nsIRequest* aRequest,
+StreamLoader::OnStopRequest(nsIRequest* aRequest, nsISupports* aContext,
                             nsresult aStatus) {
   
   nsCString utf8String;
@@ -114,7 +114,7 @@ StreamLoader::OnStopRequest(nsIRequest* aRequest,
 
 
 NS_IMETHODIMP
-StreamLoader::OnDataAvailable(nsIRequest*,
+StreamLoader::OnDataAvailable(nsIRequest*, nsISupports*,
                               nsIInputStream* aInputStream, uint64_t,
                               uint32_t aCount) {
   if (NS_FAILED(mStatus)) {

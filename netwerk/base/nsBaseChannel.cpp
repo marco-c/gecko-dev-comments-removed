@@ -281,8 +281,8 @@ void nsBaseChannel::ContinueHandleAsyncRedirect(nsresult result) {
 
   if (NS_FAILED(result) && mListener) {
     
-    mListener->OnStartRequest(this);
-    mListener->OnStopRequest(this, mStatus);
+    mListener->OnStartRequest(this, nullptr);
+    mListener->OnStopRequest(this, nullptr, mStatus);
     ChannelDone();
   }
 
@@ -739,7 +739,7 @@ static void CallUnknownTypeSniffer(void *aClosure, const uint8_t *aData,
 }
 
 NS_IMETHODIMP
-nsBaseChannel::OnStartRequest(nsIRequest *request) {
+nsBaseChannel::OnStartRequest(nsIRequest *request, nsISupports *ctxt) {
   MOZ_ASSERT_IF(mRequest, request == mRequest);
 
   if (mPump) {
@@ -760,12 +760,12 @@ nsBaseChannel::OnStartRequest(nsIRequest *request) {
   SUSPEND_PUMP_FOR_SCOPE();
 
   if (mListener)  
-    return mListener->OnStartRequest(this);
+    return mListener->OnStartRequest(this, nullptr);
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsBaseChannel::OnStopRequest(nsIRequest *request,
+nsBaseChannel::OnStopRequest(nsIRequest *request, nsISupports *ctxt,
                              nsresult status) {
   
   
@@ -777,7 +777,7 @@ nsBaseChannel::OnStopRequest(nsIRequest *request,
   mPumpingData = false;
 
   if (mListener)  
-    mListener->OnStopRequest(this, mStatus);
+    mListener->OnStopRequest(this, nullptr, mStatus);
   ChannelDone();
 
   
@@ -796,13 +796,13 @@ nsBaseChannel::OnStopRequest(nsIRequest *request,
 
 
 NS_IMETHODIMP
-nsBaseChannel::OnDataAvailable(nsIRequest *request,
+nsBaseChannel::OnDataAvailable(nsIRequest *request, nsISupports *ctxt,
                                nsIInputStream *stream, uint64_t offset,
                                uint32_t count) {
   SUSPEND_PUMP_FOR_SCOPE();
 
   nsresult rv =
-      mListener->OnDataAvailable(this, stream, offset, count);
+      mListener->OnDataAvailable(this, nullptr, stream, offset, count);
   if (mSynthProgressEvents && NS_SUCCEEDED(rv)) {
     int64_t prog = offset + count;
     if (NS_IsMainThread()) {

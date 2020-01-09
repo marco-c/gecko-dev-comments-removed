@@ -645,7 +645,7 @@ bool imgRequest::HadInsecureRedirect() const {
 
 
 NS_IMETHODIMP
-imgRequest::OnStartRequest(nsIRequest* aRequest) {
+imgRequest::OnStartRequest(nsIRequest* aRequest, nsISupports* ctxt) {
   LOG_SCOPE(gImgLog, "imgRequest::OnStartRequest");
 
   RefPtr<Image> image;
@@ -735,7 +735,7 @@ imgRequest::OnStartRequest(nsIRequest* aRequest) {
 }
 
 NS_IMETHODIMP
-imgRequest::OnStopRequest(nsIRequest* aRequest,
+imgRequest::OnStopRequest(nsIRequest* aRequest, nsISupports* ctxt,
                           nsresult status) {
   LOG_FUNC(gImgLog, "imgRequest::OnStopRequest");
   MOZ_ASSERT(NS_IsMainThread(), "Can't send notifications off-main-thread");
@@ -745,7 +745,7 @@ imgRequest::OnStopRequest(nsIRequest* aRequest,
   RefPtr<imgRequest> strongThis = this;
 
   if (mIsMultiPartChannel && mNewPartPending) {
-    OnDataAvailable(aRequest, nullptr, 0, 0);
+    OnDataAvailable(aRequest, ctxt, nullptr, 0, 0);
   }
 
   
@@ -779,7 +779,7 @@ imgRequest::OnStopRequest(nsIRequest* aRequest,
   
   
   if (image) {
-    nsresult rv = image->OnImageDataComplete(aRequest, nullptr, status, lastPart);
+    nsresult rv = image->OnImageDataComplete(aRequest, ctxt, status, lastPart);
 
     
     
@@ -989,7 +989,7 @@ void imgRequest::FinishPreparingForNewPart(const NewPartResult& aResult) {
 }
 
 NS_IMETHODIMP
-imgRequest::OnDataAvailable(nsIRequest* aRequest,
+imgRequest::OnDataAvailable(nsIRequest* aRequest, nsISupports* aContext,
                             nsIInputStream* aInStr, uint64_t aOffset,
                             uint32_t aCount) {
   LOG_SCOPE_WITH_PARAM(gImgLog, "imgRequest::OnDataAvailable", "count", aCount);
@@ -1062,7 +1062,7 @@ imgRequest::OnDataAvailable(nsIRequest* aRequest,
 
   
   if (aInStr) {
-    nsresult rv = image->OnImageDataAvailable(aRequest, nullptr, aInStr,
+    nsresult rv = image->OnImageDataAvailable(aRequest, aContext, aInStr,
                                               aOffset, aCount);
 
     if (NS_FAILED(rv)) {

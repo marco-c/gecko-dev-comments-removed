@@ -72,7 +72,7 @@ nsFTPDirListingConv::AsyncConvertData(const char *aFromType,
 
 
 NS_IMETHODIMP
-nsFTPDirListingConv::OnDataAvailable(nsIRequest *request,
+nsFTPDirListingConv::OnDataAvailable(nsIRequest *request, nsISupports *ctxt,
                                      nsIInputStream *inStr,
                                      uint64_t sourceOffset, uint32_t count) {
   NS_ASSERTION(request, "FTP dir listing stream converter needs a request");
@@ -99,9 +99,9 @@ nsFTPDirListingConv::OnDataAvailable(nsIRequest *request,
   buffer[streamLen] = '\0';
 
   MOZ_LOG(gFTPDirListConvLog, LogLevel::Debug,
-          ("nsFTPDirListingConv::OnData(request = %p, inStr = %p, "
+          ("nsFTPDirListingConv::OnData(request = %p, ctxt = %p, inStr = %p, "
            "sourceOffset = %" PRIu64 ", count = %u)\n",
-           request, inStr, sourceOffset, count));
+           request, ctxt, inStr, sourceOffset, count));
 
   if (!mBuffer.IsEmpty()) {
     
@@ -153,7 +153,7 @@ nsFTPDirListingConv::OnDataAvailable(nsIRequest *request,
   rv = NS_NewCStringInputStream(getter_AddRefs(inputData), indexFormat);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  rv = mFinalListener->OnDataAvailable(request, inputData, 0,
+  rv = mFinalListener->OnDataAvailable(request, ctxt, inputData, 0,
                                        indexFormat.Length());
 
   return rv;
@@ -161,18 +161,18 @@ nsFTPDirListingConv::OnDataAvailable(nsIRequest *request,
 
 
 NS_IMETHODIMP
-nsFTPDirListingConv::OnStartRequest(nsIRequest *request) {
+nsFTPDirListingConv::OnStartRequest(nsIRequest *request, nsISupports *ctxt) {
   
   
-  return mFinalListener->OnStartRequest(request);
+  return mFinalListener->OnStartRequest(request, ctxt);
 }
 
 NS_IMETHODIMP
-nsFTPDirListingConv::OnStopRequest(nsIRequest *request,
+nsFTPDirListingConv::OnStopRequest(nsIRequest *request, nsISupports *ctxt,
                                    nsresult aStatus) {
   
 
-  return mFinalListener->OnStopRequest(request, aStatus);
+  return mFinalListener->OnStopRequest(request, ctxt, aStatus);
 }
 
 

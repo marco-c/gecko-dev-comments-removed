@@ -56,12 +56,12 @@ PushSubscriptionListener.prototype = {
     return this.QueryInterface(aIID);
   },
 
-  onStartRequest: function(aRequest) {
+  onStartRequest: function(aRequest, aContext) {
     console.debug("PushSubscriptionListener: onStartRequest()");
     
   },
 
-  onDataAvailable: function(aRequest, aStream, aOffset, aCount) {
+  onDataAvailable: function(aRequest, aContext, aStream, aOffset, aCount) {
     console.debug("PushSubscriptionListener: onDataAvailable()");
     
     
@@ -76,7 +76,7 @@ PushSubscriptionListener.prototype = {
     var data = inputStream.read(aCount);
   },
 
-  onStopRequest: function(aRequest, aStatusCode) {
+  onStopRequest: function(aRequest, aContext, aStatusCode) {
     console.debug("PushSubscriptionListener: onStopRequest()");
     if (!this._pushService) {
         return;
@@ -111,11 +111,11 @@ var PushChannelListener = function(pushSubscriptionListener) {
 
 PushChannelListener.prototype = {
 
-  onStartRequest: function(aRequest) {
+  onStartRequest: function(aRequest, aContext) {
     this._ackUri = aRequest.URI.spec;
   },
 
-  onDataAvailable: function(aRequest, aStream, aOffset, aCount) {
+  onDataAvailable: function(aRequest, aContext, aStream, aOffset, aCount) {
     console.debug("PushChannelListener: onDataAvailable()");
 
     if (aCount === 0) {
@@ -131,7 +131,7 @@ PushChannelListener.prototype = {
     this._message.push(chunk);
   },
 
-  onStopRequest: function(aRequest, aStatusCode) {
+  onStopRequest: function(aRequest, aContext, aStatusCode) {
     console.debug("PushChannelListener: onStopRequest()", "status code",
       aStatusCode);
     if (Components.isSuccessCode(aStatusCode) &&
@@ -169,9 +169,9 @@ var PushServiceDelete = function(resolve, reject) {
 
 PushServiceDelete.prototype = {
 
-  onStartRequest: function(aRequest) {},
+  onStartRequest: function(aRequest, aContext) {},
 
-  onDataAvailable: function(aRequest, aStream, aOffset, aCount) {
+  onDataAvailable: function(aRequest, aContext, aStream, aOffset, aCount) {
     
     
     if (aCount === 0) {
@@ -185,7 +185,7 @@ PushServiceDelete.prototype = {
     var data = inputStream.read(aCount);
   },
 
-  onStopRequest: function(aRequest, aStatusCode) {
+  onStopRequest: function(aRequest, aContext, aStatusCode) {
 
     if (Components.isSuccessCode(aStatusCode)) {
        this._resolve();
@@ -210,9 +210,9 @@ var SubscriptionListener = function(aSubInfo, aResolve, aReject,
 
 SubscriptionListener.prototype = {
 
-  onStartRequest: function(aRequest) {},
+  onStartRequest: function(aRequest, aContext) {},
 
-  onDataAvailable: function(aRequest, aStream, aOffset, aCount) {
+  onDataAvailable: function(aRequest, aContext, aStream, aOffset, aCount) {
     console.debug("SubscriptionListener: onDataAvailable()");
 
     
@@ -228,7 +228,7 @@ SubscriptionListener.prototype = {
     this._data.concat(inputStream.read(aCount));
   },
 
-  onStopRequest: function(aRequest, aStatus) {
+  onStopRequest: function(aRequest, aContext, aStatus) {
     console.debug("SubscriptionListener: onStopRequest()");
 
     
