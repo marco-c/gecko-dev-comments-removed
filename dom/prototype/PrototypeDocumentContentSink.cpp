@@ -439,6 +439,7 @@ nsresult PrototypeDocumentContentSink::ResumeWalk() {
       
       nsXULPrototypeElement* proto;
       nsCOMPtr<nsIContent> element;
+      nsCOMPtr<nsIContent> nodeToPushTo;
       int32_t indx;  
                      
       rv = mContextStack.Peek(&proto, getter_AddRefs(element), &indx);
@@ -467,6 +468,15 @@ nsresult PrototypeDocumentContentSink::ResumeWalk() {
         continue;
       }
 
+      nodeToPushTo = element;
+      
+      
+      if (element->IsHTMLElement(nsGkAtoms::_template)) {
+        HTMLTemplateElement* templateElement =
+            static_cast<HTMLTemplateElement*>(element.get());
+        nodeToPushTo = templateElement->Content();
+      }
+
       
       
       nsXULPrototypeNode* childproto = proto->mChildren[indx];
@@ -487,7 +497,7 @@ nsresult PrototypeDocumentContentSink::ResumeWalk() {
           if (NS_FAILED(rv)) return rv;
 
           
-          rv = element->AppendChildTo(child, false);
+          rv = nodeToPushTo->AppendChildTo(child, false);
           if (NS_FAILED(rv)) return rv;
 
           
@@ -532,7 +542,7 @@ nsresult PrototypeDocumentContentSink::ResumeWalk() {
               static_cast<nsXULPrototypeText*>(childproto);
           text->SetText(textproto->mValue, false);
 
-          rv = element->AppendChildTo(text, false);
+          rv = nodeToPushTo->AppendChildTo(text, false);
           NS_ENSURE_SUCCESS(rv, rv);
         } break;
 
