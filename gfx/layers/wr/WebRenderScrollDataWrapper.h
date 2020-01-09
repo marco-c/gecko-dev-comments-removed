@@ -167,6 +167,10 @@ class MOZ_STACK_CLASS WebRenderScrollDataWrapper {
           mWrRootId.mLayersId, mLayer->GetReferentRenderRoot()->GetChildType());
       const WebRenderScrollData* childData =
           mUpdater->GetScrollData(newWrRootId);
+      if (!childData) {
+        
+        return WebRenderScrollDataWrapper(*mUpdater, newWrRootId);
+      }
       
       
       
