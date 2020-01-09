@@ -228,8 +228,11 @@ class GCMarker : public JSTracer {
   explicit GCMarker(JSRuntime* rt);
   MOZ_MUST_USE bool init(JSGCMode gcMode);
 
-  void setMaxCapacity(size_t maxCap) { stack.setMaxCapacity(maxCap); }
-  size_t maxCapacity() const { return stack.maxCapacity(); }
+  void setMaxCapacity(size_t maxCap) {
+    blackStack.setMaxCapacity(maxCap);
+    grayStack.setMaxCapacity(maxCap);
+  }
+  size_t maxCapacity() const { return blackStack.maxCapacity(); }
 
   void start();
   void stop();
@@ -296,7 +299,10 @@ class GCMarker : public JSTracer {
 
   MOZ_MUST_USE bool markUntilBudgetExhausted(SliceBudget& budget);
 
-  void setGCMode(JSGCMode mode) { stack.setGCMode(mode); }
+  void setGCMode(JSGCMode mode) {
+    blackStack.setGCMode(mode);
+    grayStack.setGCMode(mode);
+  }
 
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 
@@ -358,11 +364,13 @@ class GCMarker : public JSTracer {
 
   inline void pushValueArray(JSObject* obj, HeapSlot* start, HeapSlot* end);
 
-  bool isMarkStackEmpty() { return stack.isEmpty(); }
+  bool isMarkStackEmpty() {
+    return blackStack.isEmpty() && grayStack.isEmpty();
+  }
 
-  bool hasBlackEntries() const { return stack.position() > grayPosition; }
+  bool hasBlackEntries() const { return !blackStack.isEmpty(); }
 
-  bool hasGrayEntries() const { return grayPosition > 0 && !stack.isEmpty(); }
+  bool hasGrayEntries() const { return !grayStack.isEmpty(); }
 
   MOZ_MUST_USE bool restoreValueArray(
       const gc::MarkStack::SavedValueArray& array, HeapSlot** vpp,
@@ -387,13 +395,16 @@ class GCMarker : public JSTracer {
   void forEachDelayedMarkingArena(F&& f);
 
   
-  gc::MarkStack stack;
-
+  gc::MarkStack blackStack;
   
-  MainThreadData<size_t> grayPosition;
+  gc::MarkStack grayStack;
 
   
   MainThreadData<gc::MarkColor> color;
+
+  gc::MarkStack& currentStack() {
+    return color == gc::MarkColor::Black ? blackStack : grayStack;
+  }
 
   
   MainThreadData<js::gc::Arena*> delayedMarkingList;
