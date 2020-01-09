@@ -40,17 +40,14 @@ var LoginManagerParent = {
   
   _lastMPLoginCancelled: Math.NEGATIVE_INFINITY,
 
-  _searchAndDedupeLogins(formOrigin, actionOrigin, {looseActionOriginMatch} = {}) {
+  _searchAndDedupeLogins(formOrigin, actionOrigin) {
     let logins;
-    let matchData = {
-      hostname: formOrigin,
-      schemeUpgrades: LoginHelper.schemeUpgrades,
-    };
-    if (!looseActionOriginMatch) {
-      matchData.formSubmitURL = actionOrigin;
-    }
     try {
-      logins = LoginHelper.searchLoginsWithObject(matchData);
+      logins = LoginHelper.searchLoginsWithObject({
+        hostname: formOrigin,
+        formSubmitURL: actionOrigin,
+        schemeUpgrades: LoginHelper.schemeUpgrades,
+      });
     } catch (e) {
       
       
@@ -64,11 +61,10 @@ var LoginManagerParent = {
 
     
     let resolveBy = [
-      "actionOrigin",
       "scheme",
       "timePasswordChanged",
     ];
-    return LoginHelper.dedupeLogins(logins, ["username"], resolveBy, formOrigin, actionOrigin);
+    return LoginHelper.dedupeLogins(logins, ["username"], resolveBy, formOrigin);
   },
 
   
@@ -226,8 +222,7 @@ var LoginManagerParent = {
       return;
     }
 
-    
-    let logins = this._searchAndDedupeLogins(formOrigin, actionOrigin, {looseActionOriginMatch: true});
+    let logins = this._searchAndDedupeLogins(formOrigin, actionOrigin);
 
     log("sendLoginDataToChild:", logins.length, "deduped logins");
     
@@ -275,8 +270,7 @@ var LoginManagerParent = {
     } else {
       log("Creating new autocomplete search result.");
 
-      
-      logins = this._searchAndDedupeLogins(formOrigin, actionOrigin, {looseActionOriginMatch: true});
+      logins = this._searchAndDedupeLogins(formOrigin, actionOrigin);
     }
 
     let matchingLogins = logins.filter(function(fullMatch) {
