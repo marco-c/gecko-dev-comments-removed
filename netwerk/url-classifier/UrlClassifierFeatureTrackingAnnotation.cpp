@@ -217,8 +217,7 @@ UrlClassifierFeatureTrackingAnnotation::ProcessChannel(nsIChannel* aChannel,
     
     
     
-    UrlClassifierCommon::NotifyChannelClassifierProtectionDisabled(
-        aChannel, nsIWebProgressListener::STATE_LOADED_TRACKING_CONTENT);
+    UrlClassifierCommon::NotifyTrackingProtectionDisabled(aChannel);
 
     if (StaticPrefs::privacy_trackingprotection_lower_network_priority()) {
       LowerPriorityHelper(aChannel);

@@ -178,25 +178,6 @@ void nsSecureBrowserUIImpl::CheckForContentBlockingEvents() {
     mEvent |= STATE_LOADED_TRACKING_CONTENT;
   }
 
-  
-  if (doc->GetHasFingerprintingContentBlocked()) {
-    mEvent |= STATE_BLOCKED_FINGERPRINTING_CONTENT;
-  }
-
-  if (doc->GetHasFingerprintingContentLoaded()) {
-    mEvent |= STATE_LOADED_FINGERPRINTING_CONTENT;
-  }
-
-  
-  if (doc->GetHasCryptominingContentBlocked()) {
-    mEvent |= STATE_BLOCKED_CRYPTOMINING_CONTENT;
-  }
-
-  if (doc->GetHasCryptominingContentLoaded()) {
-    mEvent |= STATE_LOADED_CRYPTOMINING_CONTENT;
-  }
-
-  
   if (doc->GetHasCookiesBlockedByPermission()) {
     mEvent |= STATE_COOKIES_BLOCKED_BY_PERMISSION;
   }

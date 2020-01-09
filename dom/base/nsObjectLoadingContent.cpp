@@ -90,7 +90,6 @@
 #include "mozilla/dom/HTMLObjectElementBinding.h"
 #include "mozilla/dom/HTMLEmbedElement.h"
 #include "mozilla/dom/HTMLObjectElement.h"
-#include "mozilla/net/UrlClassifierFeatureFactory.h"
 #include "mozilla/LoadInfo.h"
 #include "nsChannelClassifier.h"
 #include "nsFocusManager.h"
@@ -994,7 +993,7 @@ nsObjectLoadingContent::OnStartRequest(nsIRequest* aRequest,
     return NS_ERROR_FAILURE;
   }
 
-  if (UrlClassifierFeatureFactory::IsClassifierBlockingErrorCode(status)) {
+  if (status == NS_ERROR_TRACKING_URI) {
     mContentBlockingEnabled = true;
     return NS_ERROR_FAILURE;
   }
@@ -1021,12 +1020,11 @@ nsObjectLoadingContent::OnStopRequest(nsIRequest* aRequest,
   
   
   
-  
-  if (UrlClassifierFeatureFactory::IsClassifierBlockingErrorCode(aStatusCode)) {
+  if (aStatusCode == NS_ERROR_TRACKING_URI) {
     nsCOMPtr<nsIContent> thisNode =
         do_QueryInterface(static_cast<nsIObjectLoadingContent*>(this));
     if (thisNode && thisNode->IsInComposedDoc()) {
-      thisNode->GetComposedDoc()->AddBlockedNodeByClassifier(thisNode);
+      thisNode->GetComposedDoc()->AddBlockedTrackingNode(thisNode);
     }
   }
 

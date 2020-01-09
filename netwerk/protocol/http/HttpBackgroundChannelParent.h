@@ -64,14 +64,13 @@ class HttpBackgroundChannelParent final : public PHttpBackgroundChannelParent {
   bool OnDiversion();
 
   
-  
-  bool OnNotifyChannelClassifierProtectionDisabled(uint32_t aAcceptedReason);
+  bool OnNotifyTrackingProtectionDisabled();
 
   
   bool OnNotifyCookieAllowed();
 
   
-  bool OnNotifyCookieBlocked(uint32_t aRejectedReason);
+  bool OnNotifyTrackingCookieBlocked(uint32_t aRejectedReason);
 
   
   bool OnNotifyTrackingResource(bool aIsThirdParty);

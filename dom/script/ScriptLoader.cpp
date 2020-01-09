@@ -28,7 +28,6 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/SRILogHelper.h"
-#include "mozilla/net/UrlClassifierFeatureFactory.h"
 #include "nsGkAtoms.h"
 #include "nsNetUtil.h"
 #include "nsGlobalWindowInner.h"
@@ -3250,8 +3249,7 @@ void ScriptLoader::ReportErrorToConsole(ScriptLoadRequest* aRequest,
     message = isScript ? "ScriptSourceMalformed" : "ModuleSourceMalformed";
   } else if (aResult == NS_ERROR_DOM_BAD_URI) {
     message = isScript ? "ScriptSourceNotAllowed" : "ModuleSourceNotAllowed";
-  } else if (net::UrlClassifierFeatureFactory::IsClassifierBlockingErrorCode(
-                 aResult)) {
+  } else if (aResult == NS_ERROR_TRACKING_URI) {
     
     return;
   } else {
@@ -3291,11 +3289,9 @@ void ScriptLoader::HandleLoadError(ScriptLoadRequest* aRequest,
 
 
 
-
-  if (net::UrlClassifierFeatureFactory::IsClassifierBlockingErrorCode(
-          aResult)) {
+  if (aResult == NS_ERROR_TRACKING_URI) {
     nsCOMPtr<nsIContent> cont = do_QueryInterface(aRequest->Element());
-    mDocument->AddBlockedNodeByClassifier(cont);
+    mDocument->AddBlockedTrackingNode(cont);
   }
 
   if (aRequest->IsModuleRequest() && !aRequest->mIsInline) {

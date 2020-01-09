@@ -1005,22 +1005,6 @@ class Document : public nsINode,
   
 
 
-  bool GetHasFingerprintingContentBlocked() {
-    return mContentBlockingLog.HasBlockedAnyOfType(
-        nsIWebProgressListener::STATE_BLOCKED_FINGERPRINTING_CONTENT);
-  }
-
-  
-
-
-  bool GetHasCryptominingContentBlocked() {
-    return mContentBlockingLog.HasBlockedAnyOfType(
-        nsIWebProgressListener::STATE_BLOCKED_CRYPTOMINING_CONTENT);
-  }
-
-  
-
-
   bool GetHasAllCookiesBlocked() {
     return mContentBlockingLog.HasBlockedAnyOfType(
         nsIWebProgressListener::STATE_COOKIES_BLOCKED_ALL);
@@ -1058,28 +1042,6 @@ class Document : public nsINode,
     RecordContentBlockingLog(
         aOriginBlocked, nsIWebProgressListener::STATE_BLOCKED_TRACKING_CONTENT,
         aHasTrackingContentBlocked);
-  }
-
-  
-
-
-  void SetHasFingerprintingContentBlocked(bool aHasFingerprintingContentBlocked,
-                                          const nsACString& aOriginBlocked) {
-    RecordContentBlockingLog(
-        aOriginBlocked,
-        nsIWebProgressListener::STATE_BLOCKED_FINGERPRINTING_CONTENT,
-        aHasFingerprintingContentBlocked);
-  }
-
-  
-
-
-  void SetHasCryptominingContentBlocked(bool aHasCryptominingContentBlocked,
-                                        const nsACString& aOriginBlocked) {
-    RecordContentBlockingLog(
-        aOriginBlocked,
-        nsIWebProgressListener::STATE_BLOCKED_CRYPTOMINING_CONTENT,
-        aHasCryptominingContentBlocked);
   }
 
   
@@ -1157,44 +1119,6 @@ class Document : public nsINode,
     RecordContentBlockingLog(
         aOriginBlocked, nsIWebProgressListener::STATE_LOADED_TRACKING_CONTENT,
         aHasTrackingContentLoaded);
-  }
-
-  
-
-
-  bool GetHasFingerprintingContentLoaded() {
-    return mContentBlockingLog.HasBlockedAnyOfType(
-        nsIWebProgressListener::STATE_LOADED_FINGERPRINTING_CONTENT);
-  }
-
-  
-
-
-  void SetHasFingerprintingContentLoaded(bool aHasFingerprintingContentLoaded,
-                                         const nsACString& aOriginBlocked) {
-    RecordContentBlockingLog(
-        aOriginBlocked,
-        nsIWebProgressListener::STATE_LOADED_FINGERPRINTING_CONTENT,
-        aHasFingerprintingContentLoaded);
-  }
-
-  
-
-
-  bool GetHasCryptominingContentLoaded() {
-    return mContentBlockingLog.HasBlockedAnyOfType(
-        nsIWebProgressListener::STATE_LOADED_CRYPTOMINING_CONTENT);
-  }
-
-  
-
-
-  void SetHasCryptominingContentLoaded(bool aHasCryptominingContentLoaded,
-                                       const nsACString& aOriginBlocked) {
-    RecordContentBlockingLog(
-        aOriginBlocked,
-        nsIWebProgressListener::STATE_LOADED_CRYPTOMINING_CONTENT,
-        aHasCryptominingContentLoaded);
   }
 
   
@@ -1461,8 +1385,8 @@ class Document : public nsINode,
   
   
   
-  long BlockedNodeByClassifierCount() const {
-    return mBlockedNodesByClassifier.Length();
+  long BlockedTrackingNodeCount() const {
+    return mBlockedTrackingNodes.Length();
   }
 
   
@@ -1472,7 +1396,7 @@ class Document : public nsINode,
   
   
   
-  already_AddRefed<nsSimpleContentList> BlockedNodesByClassifier() const;
+  already_AddRefed<nsSimpleContentList> BlockedTrackingNodes() const;
 
   
   
@@ -3327,7 +3251,7 @@ class Document : public nsINode,
 
 
 
-  void AddBlockedNodeByClassifier(nsINode* node) {
+  void AddBlockedTrackingNode(nsINode* node) {
     if (!node) {
       return;
     }
@@ -3335,7 +3259,7 @@ class Document : public nsINode,
     nsWeakPtr weakNode = do_GetWeakReference(node);
 
     if (weakNode) {
-      mBlockedNodesByClassifier.AppendElement(weakNode);
+      mBlockedTrackingNodes.AppendElement(weakNode);
     }
   }
 
@@ -4324,7 +4248,7 @@ class Document : public nsINode,
   
   
   
-  nsTArray<nsWeakPtr> mBlockedNodesByClassifier;
+  nsTArray<nsWeakPtr> mBlockedTrackingNodes;
 
   
   
