@@ -2682,8 +2682,8 @@ static FeatureState& WebRenderHardwareQualificationStatus(
         } else if (adapterVendorID == u"0x1002") {  
           
           
-          if ((deviceID >= 0x6640 && deviceID < 0x6660) ||
-              (deviceID >= 0x67a0 && deviceID < 0x6800) ||
+          if ((deviceID >= 0x6600 && deviceID < 0x66b0) ||
+              (deviceID >= 0x6780 && deviceID < 0x6840) ||
               (deviceID >= 0x6860 && deviceID < 0x6880) ||
               (deviceID >= 0x6900 && deviceID < 0x6a00) ||
               (deviceID == 0x7300) ||
