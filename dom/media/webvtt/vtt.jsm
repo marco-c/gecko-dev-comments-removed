@@ -898,7 +898,11 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
     }
   }
 
-  function adjustBoxPosition(styleBox, containerBox, controlBarBox) {
+  BoxPosition.prototype.clone = function(){
+    return new BoxPosition(this);
+  };
+
+  function adjustBoxPosition(styleBox, containerBox, controlBarBox, outputBoxes) {
     const cue = styleBox.cue;
     const isWritingDirectionHorizontal = cue.vertical == "";
     let box = new BoxPosition(styleBox);
@@ -920,25 +924,36 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
         return;
       }
 
+      
       let line = Math.floor(cue.computedLine + 0.5);
       if (cue.vertical == "rl") {
         line = -1 * (line + 1);
       }
 
+      
       let position = step * line;
       if (cue.vertical == "rl") {
         position = position - box.width + step;
       }
 
+      
       if (line < 0) {
         position += fullDimension;
         step = -1 * step;
       }
 
-      if (isWritingDirectionHorizontal) {
-        box.top += position;
-      } else {
-        box.left += position;
+      
+      const movingDirection = isWritingDirectionHorizontal ? "+y" : "+x";
+      box.move(movingDirection, position);
+
+      
+      let specifiedPosition = box.clone();
+
+      
+      
+      const titleAreaBox = containerBox.clone();
+      if (controlBarBox) {
+        titleAreaBox.height -= controlBarBox.height;
       }
 
       function isBoxOutsideTheRenderingArea() {
@@ -957,44 +972,87 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
 
       
       
-
       
-      
-      if (isBoxOutsideTheRenderingArea()) {
-        step = -1 * step;
-        if (isWritingDirectionHorizontal) {
-          box.top += step;
-        } else {
-          box.left += step;
+      let switched = false;
+      while (!box.within(titleAreaBox) || box.overlapsAny(outputBoxes)) {
+        
+        if (isBoxOutsideTheRenderingArea()) {
+          
+          
+          
+          if (switched) {
+            return null;
+          }
+          
+          switched = true;
+          box = specifiedPosition.clone();
+          step = -1 * step;
         }
+        
+        box.move(movingDirection, step);
+      }
+
+      if (isWritingDirectionHorizontal) {
+        styleBox.applyStyles({
+          top: getPercentagePosition(box.top, fullDimension),
+        });
+      } else {
+        styleBox.applyStyles({
+          left: getPercentagePosition(box.left, fullDimension),
+        });
       }
     } else {
+      
       if (cue.lineAlign != "start") {
         const isCenterAlign = cue.lineAlign == "center";
+        const movingDirection = isWritingDirectionHorizontal ? "-y" : "-x";
         if (isWritingDirectionHorizontal) {
-          box.top += isCenterAlign ? box.height : box.height / 2;
+          box.move(movingDirection, isCenterAlign ? box.height : box.height / 2);
         } else {
-          box.left += isCenterAlign ? box.width : box.width / 2;
+          box.move(movingDirection, isCenterAlign ? box.width : box.width / 2);
         }
       }
+
       
+      let bestPosition = {},
+          specifiedPosition = box.clone(),
+          outsideAreaPercentage = 1; 
+      let hasFoundBestPosition = false;
+      const axis = ["-y", "-x", "+x", "+y"];
+      const toMove = parseFloat(styleBox.fontSize.replace("px", ""));
+      for (let i = 0; i < axis.length && !hasFoundBestPosition; i++) {
+        while (box.overlapsOppositeAxis(containerBox, axis[i]) ||
+               (!box.within(containerBox) || box.overlapsAny(outputBoxes))) {
+          box.move(axis[i], toMove);
+        }
+        
+        
+        if (box.within(containerBox)) {
+          bestPosition = box.clone();
+          hasFoundBestPosition = true;
+          break;
+        }
+        let p = box.intersectPercentage(containerBox);
+        
+        
+        if (outsideAreaPercentage > p) {
+          bestPosition = box.clone();
+          outsideAreaPercentage = p;
+        }
+        
+        box = specifiedPosition.clone();
+      }
+
+      styleBox.applyStyles({
+        top: getPercentagePosition(box.top, fullDimension),
+        left: getPercentagePosition(box.left, fullDimension),
+      });
     }
 
     
     
     function getPercentagePosition(position, fullDimension) {
       return (position / fullDimension) * 100 + "%";
-    }
-    if (isWritingDirectionHorizontal) {
-      
-      const controlOffset = controlBarBox ? controlBarBox.height : 0;
-      styleBox.applyStyles({
-        top: getPercentagePosition(box.top - controlOffset, fullDimension),
-      });
-    } else {
-      styleBox.applyStyles({
-        left: getPercentagePosition(box.left, fullDimension),
-      });
     }
 
     return box;
@@ -1271,13 +1329,15 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
           rootOfCues.appendChild(styleBox.div);
 
           
-          let cueBox = adjustBoxPosition(styleBox, containerBox, controlBarBox);
-
           
           
-          cue.displayState = styleBox.div;
-
-          boxPositions.push(cueBox);
+          let cueBox = adjustBoxPosition(styleBox, containerBox, controlBarBox, boxPositions);
+          if (cueBox) {
+            
+            
+            cue.displayState = styleBox.div;
+            boxPositions.push(cueBox);
+          }
         }
       }
     })();
