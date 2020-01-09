@@ -886,8 +886,6 @@ class XPCWrappedNativeScope final {
 
   void AddSizeOfIncludingThis(JSContext* cx, ScopeSizeInfo* scopeSizeInfo);
 
-  static bool IsDyingScope(XPCWrappedNativeScope* scope);
-
   
   
   
