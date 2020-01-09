@@ -6,6 +6,7 @@
 
 #include "mozilla/layers/FocusTarget.h"
 
+#include "mozilla/dom/BrowserBridgeChild.h"  
 #include "mozilla/dom/EventTarget.h"     
 #include "mozilla/dom/TabParent.h"       
 #include "mozilla/EventDispatcher.h"     
@@ -176,6 +177,17 @@ FocusTarget::FocusTarget(nsIPresShell* aRootPresShell,
            ", kl=%d (remote browser missing layers id)\n",
            aFocusSequenceNumber, mFocusHasKeyEventListeners);
 
+    return;
+  }
+
+  
+  if (BrowserBridgeChild* bbc = BrowserBridgeChild::GetFrom(keyEventTarget)) {
+    FT_LOG("Creating oopif reflayer target with seq=%" PRIu64
+           ", kl=%d, lt=%" PRIu64 "\n",
+           aFocusSequenceNumber, mFocusHasKeyEventListeners,
+           bbc->GetLayersId());
+
+    mData = AsVariant<LayersId>(bbc->GetLayersId());
     return;
   }
 
