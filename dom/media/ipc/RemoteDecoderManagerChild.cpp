@@ -94,6 +94,16 @@ bool RemoteDecoderManagerChild::DeallocPRemoteVideoDecoderChild(
 
 void RemoteDecoderManagerChild::Open(
     Endpoint<PRemoteDecoderManagerChild>&& aEndpoint) {
+  MOZ_ASSERT(NS_GetCurrentThread() == GetManagerThread());
+  
+  
+  
+  
+  
+  
+  if (sRemoteDecoderManagerChild && sRemoteDecoderManagerChild->mCanSend) {
+    return;
+  }
   sRemoteDecoderManagerChild = nullptr;
   if (aEndpoint.IsValid()) {
     RefPtr<RemoteDecoderManagerChild> manager = new RemoteDecoderManagerChild();
