@@ -2172,7 +2172,7 @@ nsresult Database::MigrateV44Up() {
       "BEGIN "
       
       "INSERT OR IGNORE INTO moz_bookmarks_deleted (guid, dateRemoved) "
-      "VALUES (OLD.guid, strftime('%s', 'now', 'localtime', 'utc') * 1000); "
+      "VALUES (OLD.guid, strftime('%s', 'now', 'localtime', 'utc') * 1000000); "
       
       "DELETE FROM moz_items_annos "
       "WHERE item_id = OLD.id; "
