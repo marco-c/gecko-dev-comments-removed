@@ -427,7 +427,33 @@ JSObject* MaybeCrossOriginObject<Base>::enumerate(
   
   
   
-  return js::BaseProxyHandler::enumerate(cx, proxy);
+  
+  
+  
+  JS::AutoIdVector props(cx);
+  if (!GetPropertyKeys(cx, proxy, 0, &props)) {
+    return nullptr;
+  }
+
+  
+  JS::Rooted<JSObject*> iterator(cx);
+  {  
+    JSAutoRealm ar(cx, proxy);
+    for (auto& id : props) {
+      JS_MarkCrossZoneId(cx, id);
+    }
+    iterator = EnumeratedIdVectorToIterator(cx, proxy, props);
+    if (!iterator) {
+      return nullptr;
+    }
+  }
+
+  
+  if (!MaybeWrapObject(cx, &iterator)) {
+    return nullptr;
+  }
+
+  return iterator;
 }
 
 
