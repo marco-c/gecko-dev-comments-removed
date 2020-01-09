@@ -66,9 +66,6 @@ user_pref("identity.fxaccounts.migrateToDevEdition", false);
 
 
 user_pref("idle.lastDailyNotification", -1);
-
-
-user_pref("lightweightThemes.selectedThemeID", "");
 user_pref("media.capturestream_hints.enabled", true);
 user_pref("media.gmp-manager.url", "http://127.0.0.1/gmpmanager-dummy/update.xml");
 

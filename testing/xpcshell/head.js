@@ -1479,11 +1479,6 @@ try {
       .createInstance(Ci.nsIFile);
     prefsFile.initWithPath(_PREFS_FILE);
     _Services.prefs.readUserPrefsFromFile(prefsFile);
-
-    
-    
-    _Services.prefs.deleteBranch("lightweightThemes.selectedThemeID");
-    _Services.prefs.deleteBranch("browser.devedition.theme.enabled");
   }
 } catch (e) {
   do_throw(e);

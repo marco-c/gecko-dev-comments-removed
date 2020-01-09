@@ -2245,16 +2245,6 @@ BrowserGlue.prototype = {
 
     let xulStore = Services.xulStore;
 
-    if (currentUIVersion < 51) {
-      
-      
-      let currentTheme = Services.prefs.getCharPref("lightweightThemes.selectedThemeID", "");
-      if (currentTheme == "firefox-compact-dark@mozilla.org" ||
-          currentTheme == "firefox-compact-light@mozilla.org") {
-        Services.prefs.setIntPref("browser.uidensity", 1);
-      }
-    }
-
     if (currentUIVersion < 52) {
       
       
@@ -2288,24 +2278,6 @@ BrowserGlue.prototype = {
       
       if (xulStore.getValue(BROWSER_DOCURL, "sidebar-box", "sidebarcommand")) {
         xulStore.setValue(BROWSER_DOCURL, "sidebar-box", "checked", "true");
-      }
-    }
-
-    if (currentUIVersion < 57) {
-      
-      
-      
-      let lwthemePrefs = Services.prefs.getBranch("lightweightThemes.");
-      if (lwthemePrefs.prefHasUserValue("usedThemes")) {
-        try {
-          let usedThemes = lwthemePrefs.getStringPref("usedThemes");
-          usedThemes = JSON.parse(usedThemes);
-          let renaissanceTheme = usedThemes.find(theme => theme.id == "recommended-1");
-          if (renaissanceTheme) {
-            renaissanceTheme.accentcolor = "#834d29";
-            lwthemePrefs.setStringPref("usedThemes", JSON.stringify(usedThemes));
-          }
-        } catch (e) {  }
       }
     }
 

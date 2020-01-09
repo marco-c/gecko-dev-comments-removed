@@ -160,9 +160,6 @@ user_pref("layout.css.report_errors", true);
 user_pref("layout.spammy_warnings.enabled", false);
 
 
-user_pref("lightweightThemes.selectedThemeID", "");
-
-
 
 user_pref("marionette.prefs.recommended", false);
 user_pref("media.cache_size", 1000);
