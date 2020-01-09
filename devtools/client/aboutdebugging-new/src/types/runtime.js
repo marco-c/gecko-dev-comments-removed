@@ -105,6 +105,10 @@ const runtimeExtra = {
   
   
   deviceName: PropTypes.string,
+
+  
+  
+  adbPackageVersion: PropTypes.string,
 };
 
 const runtime = {
