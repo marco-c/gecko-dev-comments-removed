@@ -127,16 +127,15 @@ namespace dom {
 
 #define NS_OUTER_ACTIVATE_EVENT (1 << 9)
 #define NS_ORIGINAL_CHECKED_VALUE (1 << 10)
-#define NS_NO_CONTENT_DISPATCH (1 << 11)
+
 #define NS_ORIGINAL_INDETERMINATE_VALUE (1 << 12)
 #define NS_PRE_HANDLE_BLUR_EVENT (1 << 13)
 #define NS_PRE_HANDLE_INPUT_EVENT (1 << 14)
 #define NS_IN_SUBMIT_CLICK (1 << 15)
-#define NS_CONTROL_TYPE(bits)                                            \
-  ((bits) & ~(NS_OUTER_ACTIVATE_EVENT | NS_ORIGINAL_CHECKED_VALUE |      \
-              NS_NO_CONTENT_DISPATCH | NS_ORIGINAL_INDETERMINATE_VALUE | \
-              NS_PRE_HANDLE_BLUR_EVENT | NS_PRE_HANDLE_INPUT_EVENT |     \
-              NS_IN_SUBMIT_CLICK))
+#define NS_CONTROL_TYPE(bits)                                              \
+  ((bits) & ~(NS_OUTER_ACTIVATE_EVENT | NS_ORIGINAL_CHECKED_VALUE |        \
+              NS_ORIGINAL_INDETERMINATE_VALUE | NS_PRE_HANDLE_BLUR_EVENT | \
+              NS_PRE_HANDLE_INPUT_EVENT | NS_IN_SUBMIT_CLICK))
 
 
 
@@ -3203,19 +3202,6 @@ void HTMLInputElement::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
   }
 
   
-  
-  
-  if (aVisitor.mEvent->mFlags.mNoContentDispatch) {
-    aVisitor.mItemFlags |= NS_NO_CONTENT_DISPATCH;
-  }
-  if (IsSingleLineTextControl(false) &&
-      aVisitor.mEvent->mMessage == eMouseClick &&
-      aVisitor.mEvent->AsMouseEvent()->button ==
-          WidgetMouseEvent::eMiddleButton) {
-    aVisitor.mEvent->mFlags.mNoContentDispatch = false;
-  }
-
-  
   aVisitor.mItemFlags |= mType;
 
   if (aVisitor.mEvent->mMessage == eFocus && aVisitor.mEvent->IsTrusted() &&
@@ -3705,7 +3691,6 @@ nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
   bool outerActivateEvent = !!(aVisitor.mItemFlags & NS_OUTER_ACTIVATE_EVENT);
   bool originalCheckedValue =
       !!(aVisitor.mItemFlags & NS_ORIGINAL_CHECKED_VALUE);
-  bool noContentDispatch = !!(aVisitor.mItemFlags & NS_NO_CONTENT_DISPATCH);
   uint8_t oldType = NS_CONTROL_TYPE(aVisitor.mItemFlags);
 
   
@@ -3755,9 +3740,6 @@ nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
         break;
     }
   }
-
-  
-  aVisitor.mEvent->mFlags.mNoContentDispatch = noContentDispatch;
 
   
   if (mCheckedIsToggled && outerActivateEvent) {

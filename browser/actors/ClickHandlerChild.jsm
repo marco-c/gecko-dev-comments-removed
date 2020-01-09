@@ -23,6 +23,16 @@ class ClickHandlerChild extends ActorChild {
         (event.type == "click" && event.button == 1)) {
       return;
     }
+    
+    
+    let composedTarget = event.composedTarget;
+    if (composedTarget.isContentEditable ||
+        (composedTarget.ownerDocument &&
+         composedTarget.ownerDocument.designMode == "on") ||
+        ChromeUtils.getClassName(composedTarget) == "HTMLInputElement" ||
+        ChromeUtils.getClassName(composedTarget) == "HTMLTextAreaElement") {
+      return;
+    }
 
     let originalTarget = event.originalTarget;
     let ownerDoc = originalTarget.ownerDocument;

@@ -170,6 +170,8 @@ nsresult EditorEventListener::InstallToEditor() {
                                TrustedEventsAtCapture());
   elmP->AddEventListenerByType(this, NS_LITERAL_STRING("click"),
                                TrustedEventsAtCapture());
+  elmP->AddEventListenerByType(this, NS_LITERAL_STRING("auxclick"),
+                               TrustedEventsAtSystemGroupCapture());
   
   
   elmP->AddEventListenerByType(this, NS_LITERAL_STRING("blur"),
@@ -242,6 +244,8 @@ void EditorEventListener::UninstallFromEditor() {
                                   TrustedEventsAtCapture());
   elmP->RemoveEventListenerByType(this, NS_LITERAL_STRING("click"),
                                   TrustedEventsAtCapture());
+  elmP->RemoveEventListenerByType(this, NS_LITERAL_STRING("auxclick"),
+                                  TrustedEventsAtSystemGroupCapture());
   elmP->RemoveEventListenerByType(this, NS_LITERAL_STRING("blur"),
                                   TrustedEventsAtSystemGroupCapture());
   elmP->RemoveEventListenerByType(this, NS_LITERAL_STRING("focus"),
@@ -397,6 +401,15 @@ EditorEventListener::HandleEvent(Event* aEvent) {
     }
     
     case eMouseClick: {
+      WidgetMouseEvent* widgetMouseEvent = internalEvent->AsMouseEvent();
+      
+      if (widgetMouseEvent->button != WidgetMouseEventBase::eLeftButton) {
+        return NS_OK;
+      }
+      MOZ_FALLTHROUGH;
+    }
+    
+    case eMouseAuxClick: {
       WidgetMouseEvent* widgetMouseEvent = internalEvent->AsMouseEvent();
       if (NS_WARN_IF(!widgetMouseEvent)) {
         return NS_OK;
@@ -652,7 +665,7 @@ nsresult EditorEventListener::MouseClick(WidgetMouseEvent* aMouseClickEvent) {
   if (status == nsEventStatus_eConsumeNoDefault) {
     
     
-    aMouseClickEvent->StopImmediatePropagation();
+    
     aMouseClickEvent->PreventDefault();
   }
   return NS_OK;

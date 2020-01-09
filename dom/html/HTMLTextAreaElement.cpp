@@ -43,8 +43,6 @@
 #include "nsBaseCommandController.h"
 #include "nsXULControllers.h"
 
-#define NS_NO_CONTENT_DISPATCH (1 << 0)
-
 NS_IMPL_NS_NEW_HTML_ELEMENT_CHECK_PARSER(TextArea)
 
 namespace mozilla {
@@ -452,18 +450,6 @@ void HTMLTextAreaElement::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
     mHandlingSelect = true;
   }
 
-  
-  
-  
-  if (aVisitor.mEvent->mFlags.mNoContentDispatch) {
-    aVisitor.mItemFlags |= NS_NO_CONTENT_DISPATCH;
-  }
-  if (aVisitor.mEvent->mMessage == eMouseClick &&
-      aVisitor.mEvent->AsMouseEvent()->button ==
-          WidgetMouseEvent::eMiddleButton) {
-    aVisitor.mEvent->mFlags.mNoContentDispatch = false;
-  }
-
   if (aVisitor.mEvent->mMessage == eBlur) {
     
     
@@ -519,10 +505,6 @@ nsresult HTMLTextAreaElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
 
     UpdateState(true);
   }
-
-  
-  aVisitor.mEvent->mFlags.mNoContentDispatch =
-      ((aVisitor.mItemFlags & NS_NO_CONTENT_DISPATCH) != 0);
 
   return NS_OK;
 }
