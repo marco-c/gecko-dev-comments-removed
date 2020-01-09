@@ -1056,21 +1056,6 @@ void BrowserParent::SizeModeChanged(const nsSizeMode& aSizeMode) {
   }
 }
 
-void BrowserParent::UIResolutionChanged() {
-  if (!mIsDestroyed) {
-    
-    
-    mDPI = -1;
-    TryCacheDPIAndScale();
-    
-    
-    
-    
-    Unused << SendUIResolutionChanged(mDPI, mRounding,
-                                      mDPI < 0 ? -1.0 : mDefaultScale.scale);
-  }
-}
-
 void BrowserParent::ThemeChanged() {
   if (!mIsDestroyed) {
     
@@ -3252,6 +3237,23 @@ BrowserParent::TransmitPermissionsForPrincipal(nsIPrincipal* aPrincipal) {
 NS_IMETHODIMP
 BrowserParent::GetHasBeforeUnload(bool* aResult) {
   *aResult = mHasBeforeUnload;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+BrowserParent::NotifyResolutionChanged() {
+  if (!mIsDestroyed) {
+    
+    
+    mDPI = -1;
+    TryCacheDPIAndScale();
+    
+    
+    
+    
+    Unused << SendUIResolutionChanged(mDPI, mRounding,
+                                      mDPI < 0 ? -1.0 : mDefaultScale.scale);
+  }
   return NS_OK;
 }
 
