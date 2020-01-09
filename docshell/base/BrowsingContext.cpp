@@ -161,6 +161,7 @@ BrowsingContext::BrowsingContext(BrowsingContext* aParent,
       mType(aType),
       mBrowsingContextId(aBrowsingContextId),
       mParent(aParent),
+      mIsInProcess(false),
       mOpener(aOpener),
       mIsActivatedByUserGesture(false) {
   mCrossOriginPolicy = nsILoadInfo::CROSS_ORIGIN_POLICY_NULL;
@@ -184,6 +185,7 @@ void BrowsingContext::SetDocShell(nsIDocShell* aDocShell) {
   
   MOZ_RELEASE_ASSERT(nsDocShell::Cast(aDocShell)->GetBrowsingContext() == this);
   mDocShell = aDocShell;
+  mIsInProcess = true;
 }
 
 void BrowsingContext::Attach(bool aFromIPC) {
@@ -240,6 +242,11 @@ void BrowsingContext::Detach(bool aFromIPC) {
   
   
   mDocShell = nullptr;
+
+  
+  
+  
+  mClosed = true;
 
   if (!aFromIPC && XRE_IsContentProcess()) {
     auto cc = ContentChild::GetSingleton();

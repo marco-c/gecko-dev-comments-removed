@@ -167,6 +167,11 @@ class BrowsingContext : public nsWrapperCache,
 
   
   
+  
+  bool IsInProcess() const { return mIsInProcess; }
+
+  
+  
   nsIDocShell* GetDocShell() { return mDocShell; }
   void SetDocShell(nsIDocShell* aDocShell);
 
@@ -374,6 +379,7 @@ class BrowsingContext : public nsWrapperCache,
   Children mChildren;
   WeakPtr<BrowsingContext> mOpener;
   nsCOMPtr<nsIDocShell> mDocShell;
+
   
   
   
@@ -384,6 +390,11 @@ class BrowsingContext : public nsWrapperCache,
   
   
   bool mIsActivatedByUserGesture;
+
+  
+  
+  
+  bool mIsInProcess : 1;
 };
 
 
