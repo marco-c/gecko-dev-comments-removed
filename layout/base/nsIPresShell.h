@@ -18,6 +18,7 @@
 #include "mozilla/ScrollTypes.h"
 #include "mozilla/ServoStyleSet.h"
 #include "mozilla/ServoStyleConsts.h"
+#include "mozilla/StaticPtr.h"
 #include "mozilla/StyleSheet.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
@@ -126,6 +127,15 @@ namespace gfx {
 class SourceSurface;
 }  
 }  
+
+struct CapturingContentInfo final {
+  
+  bool mAllowed;
+  bool mPointerLock;
+  bool mRetargetToElement;
+  bool mPreventDrag;
+  mozilla::StaticRefPtr<nsIContent> mContent;
+};
 
 
 #define NS_IPRESSHELL_IID                            \
@@ -609,6 +619,53 @@ class nsIPresShell : public nsStubDocumentObserver {
 
   already_AddRefed<gfxContext> CreateReferenceRenderingContext();
 
+  typedef struct ScrollAxis {
+    mozilla::WhereToScroll mWhereToScroll;
+    mozilla::WhenToScroll mWhenToScroll;
+    bool mOnlyIfPerceivedScrollableDirection : 1;
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    explicit ScrollAxis(
+        mozilla::WhereToScroll aWhere = mozilla::kScrollMinimum,
+        mozilla::WhenToScroll aWhen = mozilla::WhenToScroll::IfNotFullyVisible,
+        bool aOnlyIfPerceivedScrollableDirection = false)
+        : mWhereToScroll(aWhere),
+          mWhenToScroll(aWhen),
+          mOnlyIfPerceivedScrollableDirection(
+              aOnlyIfPerceivedScrollableDirection) {}
+  } ScrollAxis;
+
   
 
 
@@ -633,8 +690,7 @@ class nsIPresShell : public nsStubDocumentObserver {
 
 
   bool ScrollFrameRectIntoView(nsIFrame* aFrame, const nsRect& aRect,
-                               mozilla::ScrollAxis aVertical,
-                               mozilla::ScrollAxis aHorizontal,
+                               ScrollAxis aVertical, ScrollAxis aHorizontal,
                                mozilla::ScrollFlags aScrollFlags);
 
   
@@ -1048,6 +1104,29 @@ class nsIPresShell : public nsStubDocumentObserver {
   bool IsActive() { return mIsActive; }
 
   
+  static CapturingContentInfo gCaptureInfo;
+
+  
+
+
+  static nsIContent* GetCapturingContent() { return gCaptureInfo.mContent; }
+
+  
+
+
+  static void AllowMouseCapture(bool aAllowed) {
+    gCaptureInfo.mAllowed = aAllowed;
+  }
+
+  
+
+
+
+  static bool IsMouseCapturePreventingDrag() {
+    return gCaptureInfo.mPreventDrag && gCaptureInfo.mContent;
+  }
+
+  
 
 
 
@@ -1167,6 +1246,7 @@ class nsIPresShell : public nsStubDocumentObserver {
 
   virtual void DidPaintWindow() = 0;
 
+  virtual void ClearMouseCaptureOnView(nsView* aView) = 0;
   virtual bool IsVisible() = 0;
   MOZ_CAN_RUN_SCRIPT
   void DispatchSynthMouseMove(mozilla::WidgetGUIEvent* aEvent);
@@ -1328,6 +1408,10 @@ class nsIPresShell : public nsStubDocumentObserver {
   bool AddPostRefreshObserver(nsAPostRefreshObserver* aObserver);
   bool RemovePostRefreshObserver(nsAPostRefreshObserver* aObserver);
 
+  
+  
+  static void ClearMouseCapture(nsIFrame* aFrame);
+
   void SetVisualViewportSize(nscoord aWidth, nscoord aHeight);
   void ResetVisualViewportSize();
   bool IsVisualViewportSizeSet() { return mVisualViewportSizeSet; }
@@ -1477,8 +1561,8 @@ class nsIPresShell : public nsStubDocumentObserver {
   
   
   struct ScrollIntoViewData {
-    mozilla::ScrollAxis mContentScrollVAxis;
-    mozilla::ScrollAxis mContentScrollHAxis;
+    ScrollAxis mContentScrollVAxis;
+    ScrollAxis mContentScrollHAxis;
     mozilla::ScrollFlags mContentToScrollToFlags;
   };
 

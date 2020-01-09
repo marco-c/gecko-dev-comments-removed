@@ -236,7 +236,7 @@ nsBaseDragService::InvokeDragSession(
   
   
   
-  PresShell::ClearMouseCapture(nullptr);
+  nsIPresShell::ClearMouseCapture(nullptr);
 
   uint32_t length = 0;
   mozilla::Unused << aTransferableArray->GetLength(&length);

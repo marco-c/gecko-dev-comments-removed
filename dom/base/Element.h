@@ -1175,7 +1175,7 @@ class Element : public FragmentOrElement {
     
     
     
-    if (!PresShell::GetCapturingContent()) {
+    if (!nsIPresShell::GetCapturingContent()) {
       PresShell::SetCapturingContent(
           this, CaptureFlags::PreventDragStart |
                     (aRetargetToElement ? CaptureFlags::RetargetToElement
@@ -1192,7 +1192,7 @@ class Element : public FragmentOrElement {
   }
 
   void ReleaseCapture() {
-    if (PresShell::GetCapturingContent() == this) {
+    if (nsIPresShell::GetCapturingContent() == this) {
       PresShell::ReleaseCapturingContent();
     }
   }

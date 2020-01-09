@@ -1809,7 +1809,7 @@ static NPCocoaEventType CocoaEventTypeForEvent(const WidgetGUIEvent& anEvent,
       
       
       
-      if (PresShell::GetCapturingContent()) {
+      if (nsIPresShell::GetCapturingContent()) {
         return NPCocoaEventMouseDragged;
       }
 

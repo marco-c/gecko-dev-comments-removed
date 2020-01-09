@@ -1187,7 +1187,7 @@ void nsHTMLFramesetFrame::StartMouseDrag(nsPresContext* aPresContext,
 void nsHTMLFramesetFrame::MouseDrag(nsPresContext* aPresContext,
                                     WidgetGUIEvent* aEvent) {
   
-  if (PresShell::GetCapturingContent() != GetContent()) {
+  if (nsIPresShell::GetCapturingContent() != GetContent()) {
     mDragger = nullptr;
     gDragInProgress = false;
     return;
