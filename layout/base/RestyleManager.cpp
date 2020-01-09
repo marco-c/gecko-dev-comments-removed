@@ -2795,6 +2795,7 @@ bool RestyleManager::ProcessPostTraversal(Element* aElement,
     
     
     
+    
     upToDateContext->ResolveSameStructsAs(oldOrDisplayContentsStyle);
 
     
