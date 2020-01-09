@@ -874,18 +874,6 @@ class nsIPresShell : public nsStubDocumentObserver {
   
 
 
-  virtual nsresult GetAgentStyleSheets(
-      nsTArray<RefPtr<mozilla::StyleSheet>>& aSheets) = 0;
-
-  
-
-
-  virtual nsresult SetAgentStyleSheets(
-      const nsTArray<RefPtr<mozilla::StyleSheet>>& aSheets) = 0;
-
-  
-
-
   virtual nsresult AddOverrideStyleSheet(mozilla::StyleSheet* aSheet) = 0;
 
   

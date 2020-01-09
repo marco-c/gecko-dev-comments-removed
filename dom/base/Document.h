@@ -3825,8 +3825,11 @@ class Document : public nsINode,
   void CompatibilityModeChanged();
   bool NeedsQuirksSheet() const {
     
+    
     return mCompatMode == eCompatibility_NavQuirks && !IsSVGDocument();
   }
+  void AddContentEditableStyleSheetsToStyleSet(bool aDesignMode);
+  void RemoveContentEditableStyleSheets();
   void AddStyleSheetToStyleSets(StyleSheet* aSheet);
   void RemoveStyleSheetFromStyleSets(StyleSheet* aSheet);
   void NotifyStyleSheetAdded(StyleSheet* aSheet, bool aDocumentSheet);
@@ -4219,6 +4222,12 @@ class Document : public nsINode,
 
   
   bool mQuirkSheetAdded : 1;
+
+  
+  bool mContentEditableSheetAdded : 1;
+
+  
+  bool mDesignModeSheetAdded : 1;
 
   
   

@@ -1712,25 +1712,8 @@ static void NotifyEditableStateChange(nsINode* aNode, Document* aDocument) {
 
 void nsHTMLDocument::TearingDownEditor() {
   if (IsEditingOn()) {
-    EditingState oldState = mEditingState;
     mEditingState = eTearingDown;
-
-    RefPtr<PresShell> presShell = GetPresShell();
-    if (!presShell) {
-      return;
-    }
-
-    nsTArray<RefPtr<StyleSheet>> agentSheets;
-    presShell->GetAgentStyleSheets(agentSheets);
-
-    auto cache = nsLayoutStylesheetCache::Singleton();
-
-    agentSheets.RemoveElement(cache->ContentEditableSheet());
-    if (oldState == eDesignMode)
-      agentSheets.RemoveElement(cache->DesignModeSheet());
-
-    presShell->SetAgentStyleSheets(agentSheets);
-    ApplicableStylesChanged();
+    RemoveContentEditableStyleSheets();
   }
 }
 
@@ -1864,43 +1847,21 @@ nsresult nsHTMLDocument::EditingStateChanged() {
     RefPtr<PresShell> presShell = GetPresShell();
     NS_ENSURE_TRUE(presShell, NS_ERROR_FAILURE);
 
-    
-    
-    
-    nsTArray<RefPtr<StyleSheet>> agentSheets;
-    rv = presShell->GetAgentStyleSheets(agentSheets);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    auto cache = nsLayoutStylesheetCache::Singleton();
-
-    StyleSheet* contentEditableSheet = cache->ContentEditableSheet();
-
-    if (!agentSheets.Contains(contentEditableSheet)) {
-      agentSheets.AppendElement(contentEditableSheet);
-    }
+    MOZ_ASSERT(mStyleSetFilled);
 
     
     
     
+    AddContentEditableStyleSheetsToStyleSet(designMode);
+
+    
+    
+    
+    updateState = designMode || oldState == eDesignMode;
     if (designMode) {
       
-      StyleSheet* designModeSheet = cache->DesignModeSheet();
-      if (!agentSheets.Contains(designModeSheet)) {
-        agentSheets.AppendElement(designModeSheet);
-      }
-
-      updateState = true;
       spellRecheckAll = oldState == eContentEditable;
-    } else if (oldState == eDesignMode) {
-      
-      agentSheets.RemoveElement(cache->DesignModeSheet());
-      updateState = true;
     }
-
-    rv = presShell->SetAgentStyleSheets(agentSheets);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    ApplicableStylesChanged();
 
     
     

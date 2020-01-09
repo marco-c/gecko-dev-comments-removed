@@ -584,28 +584,6 @@ void ServoStyleSet::RemoveStyleSheet(StyleOrigin aOrigin, StyleSheet* aSheet) {
   }
 }
 
-void ServoStyleSet::ReplaceSheets(
-    StyleOrigin aOrigin, const nsTArray<RefPtr<StyleSheet>>& aNewSheets) {
-  
-  
-  
-  
-
-  SetStylistStyleSheetsDirty();
-
-  mStyleRuleMap = nullptr;
-
-  
-  for (size_t count = SheetCount(aOrigin); count--;) {
-    RemoveStyleSheet(aOrigin, SheetAt(aOrigin, count));
-  }
-
-  
-  for (auto& sheet : aNewSheets) {
-    AppendStyleSheet(aOrigin, sheet);
-  }
-}
-
 void ServoStyleSet::InsertStyleSheetBefore(Origin aOrigin,
                                            StyleSheet* aNewSheet,
                                            StyleSheet* aReferenceSheet) {
