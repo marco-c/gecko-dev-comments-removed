@@ -12,7 +12,7 @@ AddonTestUtils.usePrivilegedSignatures = false;
 
 
 function assertActionAMTelemetryEvent(expectedActionEvents, assertMessage, {actionType} = {}) {
-  const snapshot = Services.telemetry.snapshotEvents(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, true);
+  const snapshot = Services.telemetry.snapshotEvents(Ci.nsITelemetry.DATASET_PRERELEASE_CHANNELS, true);
 
   ok(snapshot.parent && snapshot.parent.length > 0, "Got parent telemetry events in the snapshot");
 

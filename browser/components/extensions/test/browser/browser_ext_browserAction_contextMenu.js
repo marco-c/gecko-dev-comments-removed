@@ -72,7 +72,7 @@ function assertTelemetryMatches(events) {
 
 add_task(async function test_setup() {
   
-  Services.telemetry.snapshotEvents(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, true);
+  Services.telemetry.clearEvents();
 });
 
 add_task(async function browseraction_popup_contextmenu() {
