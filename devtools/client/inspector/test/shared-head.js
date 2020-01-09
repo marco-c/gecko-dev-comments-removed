@@ -383,8 +383,22 @@ var focusEditableField = async function(ruleView, editable, xOffset = 1,
     yOffset = 1, options = {}) {
   const onFocus = once(editable.parentNode, "focus", true);
   info("Clicking on editable field to turn to edit mode");
-  EventUtils.synthesizeMouse(editable, xOffset, yOffset, options,
-    editable.ownerDocument.defaultView);
+  if (options.type === undefined) {
+    
+    
+    
+    
+    
+    options.type = "mousedown";
+    EventUtils.synthesizeMouse(editable, xOffset, yOffset, options,
+      editable.ownerGlobal);
+    options.type = "mouseup";
+    EventUtils.synthesizeMouse(editable, xOffset, yOffset, options,
+      editable.ownerGlobal);
+  } else {
+    EventUtils.synthesizeMouse(editable, xOffset, yOffset, options,
+      editable.ownerGlobal);
+  }
   await onFocus;
 
   info("Editable field gained focus, returning the input field now");

@@ -589,6 +589,32 @@ class PresShell final : public nsIPresShell,
 
 
 
+
+    MOZ_CAN_RUN_SCRIPT
+    bool MaybeFlushPendingNotifications(WidgetGUIEvent* aGUIEvent);
+
+    
+
+
+
+
+
+
+
+
+
+    MOZ_CAN_RUN_SCRIPT
+    nsIFrame* GetFrameToHandleNonTouchEvent(nsIFrame* aRootFrameToHandleEvent,
+                                            WidgetGUIEvent* aGUIEvent);
+
+    
+
+
+
+
+
+
+
     bool MaybeDiscardEvent(WidgetGUIEvent* aGUIEvent);
 
     
