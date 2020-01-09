@@ -637,37 +637,13 @@ inline bool OpIter<Policy>::popStackType(StackType* type, Value* value) {
 
 template <typename Policy>
 inline bool OpIter<Policy>::popWithType(ValType expectedType, Value* value) {
-  ControlStackEntry<ControlItem>& block = controlStack_.back();
-
-  MOZ_ASSERT(valueStack_.length() >= block.valueStackStart());
-  if (MOZ_UNLIKELY(valueStack_.length() == block.valueStackStart())) {
-    
-    
-    
-    if (block.polymorphicBase()) {
-      *value = Value();
-
-      
-      
-      return valueStack_.reserve(valueStack_.length() + 1);
-    }
-
-    return failEmptyStack();
-  }
-
-  TypeAndValue<Value> observed = valueStack_.popCopy();
-
-  if (observed.type() == StackType::TVar) {
-    *value = Value();
-    return true;
-  }
-
-  if (!checkIsSubtypeOf(NonTVarToValType(observed.type()), expectedType)) {
+  StackType stackType(expectedType);
+  if (!popStackType(&stackType, value)) {
     return false;
   }
 
-  *value = observed.value();
-  return true;
+  return stackType == StackType::TVar ||
+         checkIsSubtypeOf(NonTVarToValType(stackType), expectedType);
 }
 
 
