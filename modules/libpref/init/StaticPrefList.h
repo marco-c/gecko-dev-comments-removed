@@ -1943,6 +1943,13 @@ VARCACHE_PREF(
 
 
 VARCACHE_PREF(
+  "privacy.documentCookies.maxage",
+   privacy_documentCookies_maxage,
+  uint32_t, 0 
+)
+
+
+VARCACHE_PREF(
   "privacy.resistFingerprinting",
    privacy_resistFingerprinting,
   RelaxedAtomicBool, false
