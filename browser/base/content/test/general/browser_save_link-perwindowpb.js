@@ -151,7 +151,7 @@ function test() {
       
       
       
-      throw "We should never send a cookie in this test";
+      throw new Error("We should never send a cookie in this test");
     } catch (ex) {
       if (ex.result == Cr.NS_ERROR_NOT_AVAILABLE) {
         info("onModifyRequest caught NOTAVAIL" + ex);

@@ -758,7 +758,7 @@ var PlacesSearchBox = {
         break;
       }
       default:
-        throw "Invalid filterCollection on search";
+        throw new Error("Invalid filterCollection on search");
     }
 
     
@@ -880,7 +880,7 @@ var PlacesQueryBuilder = {
         filterCollection = "downloads";
         break;
       default:
-        throw "Invalid search scope";
+        throw new Error("Invalid search scope");
     }
 
     

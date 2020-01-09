@@ -164,7 +164,7 @@ this.FirefoxMonitor = {
     } else {
       
       
-      throw "Cannot find fxmonitor chrome.manifest for registering translated strings";
+      throw new Error("Cannot find fxmonitor chrome.manifest for registering translated strings");
     }
   },
 

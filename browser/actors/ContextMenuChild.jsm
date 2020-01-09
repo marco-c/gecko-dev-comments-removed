@@ -272,7 +272,7 @@ class ContextMenuChild extends ActorChild {
     if (!href || !href.match(/\S/)) {
       
       
-      throw "Empty href";
+      throw new Error("Empty href");
     }
 
     return this._makeURLAbsolute(this.context.link.baseURI, href);
@@ -375,7 +375,7 @@ class ContextMenuChild extends ActorChild {
     }
 
     if (urls.length != 1) {
-      throw "found multiple URLs";
+      throw new Error("found multiple URLs");
     }
 
     return urls[0];
