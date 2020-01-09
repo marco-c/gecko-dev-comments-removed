@@ -2,52 +2,46 @@
 
 
 
-add_task(async function listener() {
-  let testURL = "http://example.org/browser/browser/base/content/test/general/dummy_page.html";
-  let tabSelected = false;
+
+
+
+
+
+"use strict";
+
+add_task(async function test_switchToTab_closes() {
+  let testURL = "http://example.org/browser/browser/components/urlbar/tests/browser/dummy_page.html";
 
   
-  let baseTab = BrowserTestUtils.addTab(gBrowser, testURL);
+  let baseTab = await BrowserTestUtils.openNewForegroundTab(gBrowser, testURL);
 
-  
-  await promiseTabLoaded(baseTab);
   if (baseTab.linkedBrowser.currentURI.spec == "about:blank")
     return;
-  baseTab.linkedBrowser.removeEventListener("load", listener, true);
-
-  let testTab = BrowserTestUtils.addTab(gBrowser);
 
   
-  gBrowser.selectedTab = testTab;
+  let testTab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
 
   
-  gURLBar.value = "moz-action:switchtab," + JSON.stringify({url: testURL});
-  
-  gURLBar.focus();
+  let tabClosePromise = BrowserTestUtils.waitForEvent(gBrowser.tabContainer,
+    "TabClose", false, event => {
+      return event.originalTarget == testTab;
+    });
+  let tabSelectPromise = BrowserTestUtils.waitForEvent(gBrowser.tabContainer,
+    "TabSelect", false, event => {
+      return event.originalTarget == baseTab;
+    });
+
+  await UrlbarTestUtils.promiseAutocompleteResultPopup(window, "dummy", waitForFocus);
 
   
-  function onTabClose(aEvent) {
-    gBrowser.tabContainer.removeEventListener("TabClose", onTabClose);
-    
-    is(aEvent.originalTarget, testTab, "Got the TabClose event for the right tab");
-    
-    ok(tabSelected, "Confirming that the tab was selected");
-    gBrowser.removeTab(baseTab);
-    finish();
-  }
-  function onTabSelect(aEvent) {
-    gBrowser.tabContainer.removeEventListener("TabSelect", onTabSelect);
-    
-    is(aEvent.originalTarget, baseTab, "Got the TabSelect event for the right tab");
-    
-    is(gBrowser.selectedTab, baseTab, "We've switched to the correct tab");
-    tabSelected = true;
-  }
+  let element = await UrlbarTestUtils.waitForAutocompleteResultAt(window, 1);
+  EventUtils.synthesizeMouseAtCenter(element, {}, window);
+
+  await Promise.all([tabSelectPromise, tabClosePromise]);
 
   
-  gBrowser.tabContainer.addEventListener("TabClose", onTabClose);
-  gBrowser.tabContainer.addEventListener("TabSelect", onTabSelect);
+  Assert.equal(gBrowser.selectedTab, baseTab,
+    "Should have switched to the correct tab");
 
-  
-  EventUtils.synthesizeKey("KEY_Enter");
+  gBrowser.removeTab(baseTab);
 });
