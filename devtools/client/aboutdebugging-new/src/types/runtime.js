@@ -132,6 +132,11 @@ const runtime = {
   
   
   
+  isFenix: PropTypes.bool.isRequired,
+
+  
+  
+  
   isUnavailable: PropTypes.bool.isRequired,
 
   
