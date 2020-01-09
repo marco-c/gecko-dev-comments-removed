@@ -7,7 +7,6 @@
 var Services = require("Services");
 loader.lazyRequireGetter(this, "Tools", "devtools/client/definitions", true);
 loader.lazyRequireGetter(this, "gDevTools", "devtools/client/framework/devtools", true);
-loader.lazyRequireGetter(this, "DebuggerServer", "devtools/server/main", true);
 loader.lazyRequireGetter(this, "DebuggerClient", "devtools/shared/client/debugger-client", true);
 loader.lazyRequireGetter(this, "l10n", "devtools/client/webconsole/webconsole-l10n");
 loader.lazyRequireGetter(this, "WebConsole", "devtools/client/webconsole/webconsole");
@@ -128,7 +127,19 @@ HUDService.prototype = {
       
       
       
+      
+      const ChromeUtils = require("ChromeUtils");
+      const { DevToolsLoader } =
+        ChromeUtils.import("resource://devtools/shared/Loader.jsm");
+      const loader = new DevToolsLoader();
+      loader.invisibleToDebugger = true;
+      const { DebuggerServer } = loader.require("devtools/server/main");
+
       DebuggerServer.init();
+
+      
+      
+      
       DebuggerServer.registerActors({ root: true, target: true });
 
       DebuggerServer.allowChromeProcess = true;
