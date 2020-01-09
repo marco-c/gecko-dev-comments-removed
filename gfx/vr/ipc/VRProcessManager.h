@@ -53,6 +53,7 @@ class VRProcessManager final : public VRProcessParent::Listener {
   bool CreateGPUVRManager(base::ProcessId aOtherProcess,
                           mozilla::ipc::Endpoint<PVRGPUChild>* aOutEndpoint);
   void OnXPCOMShutdown();
+  void OnPreferenceChange(const char16_t* aData);
   void CleanShutdown();
   void DestroyProcess();
 
@@ -76,6 +77,10 @@ class VRProcessManager final : public VRProcessParent::Listener {
   RefPtr<Observer> mObserver;
   VRProcessParent* mProcess;
   VRChild* mVRChild;
+  
+  
+  
+  nsTArray<mozilla::dom::Pref> mQueuedPrefs;
 };
 
 }  
