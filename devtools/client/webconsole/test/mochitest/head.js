@@ -55,10 +55,6 @@ registerCleanupFunction(async function() {
     browserConsole.ui.clearOutput(true);
     await HUDService.toggleBrowserConsole();
   }
-
-  
-  
-  Cu.forceShrinkingGC();
 });
 
 
