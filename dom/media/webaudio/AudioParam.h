@@ -161,6 +161,9 @@ class AudioParam final : public nsWrapperCache, public AudioParamTimeline {
   
   MediaStream* Stream();
 
+  
+  MediaStream* GetStream() const;
+
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const override {
     size_t amount = AudioParamTimeline::SizeOfExcludingThis(aMallocSizeOf);
     
