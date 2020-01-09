@@ -725,6 +725,7 @@ class IonBuilder : public MIRGenerator,
 
   
   InliningResult inlineNewIterator(CallInfo& callInfo, MNewIterator::Type type);
+  InliningResult inlineArrayIteratorPrototypeOptimizable(CallInfo& callInfo);
 
   
   InliningResult inlineMathAbs(CallInfo& callInfo);
