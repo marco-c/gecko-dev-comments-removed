@@ -18,7 +18,6 @@ const HTML_NS = "http://www.w3.org/1999/xhtml";
 
 const PREFERENCES_LOADED_EVENT = "home-pane-loaded";
 const DISCOVERY_STREAM_CONFIG_PREF_NAME = "browser.newtabpage.activity-stream.discoverystream.config";
-const PREF_SHOW_SPONSORED = "showSponsored";
 
 
 
@@ -106,7 +105,7 @@ this.AboutPreferences = class AboutPreferences {
 
   async observe(window) {
     this.renderPreferences(window, await this.strings, [...PREFS_BEFORE_SECTIONS,
-      ...this.store.getState().Sections, ...PREFS_AFTER_SECTIONS], this.store.getState().DiscoveryStream.config);
+      ...this.store.getState().Sections, ...PREFS_AFTER_SECTIONS], this.store.getState().DiscoveryStream.config.enabled);
   }
 
   
@@ -134,10 +133,10 @@ this.AboutPreferences = class AboutPreferences {
 
 
 
-  renderPreferences({document, Preferences, gHomePane}, strings, prefStructure, discoveryStreamConfig) {
+  renderPreferences({document, Preferences, gHomePane}, strings, prefStructure, discoveryStreamEnabled) {
     
-    const createAppend = (tag, parent) => parent.appendChild(
-      document.createXULElement(tag));
+    const createAppend = (tag, parent, options) => parent.appendChild(
+      document.createXULElement(tag, options));
 
     
     const formatString = id => {
@@ -167,10 +166,6 @@ this.AboutPreferences = class AboutPreferences {
     document.insertBefore(document.createProcessingInstruction("xml-stylesheet",
       `href="data:text/css,${encodeURIComponent(CUSTOM_CSS)}" type="text/css"`),
       document.documentElement);
-
-    
-    
-    let sponsoredStoriesCheckbox = null;
 
     
     const homeGroup = document.getElementById("homepageGroup");
@@ -225,9 +220,8 @@ this.AboutPreferences = class AboutPreferences {
         sponsoredHbox.appendChild(checkbox);
         checkbox.classList.add("tail-with-learn-more");
 
-        const link = createAppend("label", sponsoredHbox);
+        const link = createAppend("label", sponsoredHbox, {is: "text-link"});
         link.classList.add("learn-sponsored");
-        link.classList.add("text-link");
         link.setAttribute("href", sectionData.learnMore.link.href);
         link.textContent = formatString(sectionData.learnMore.link.id);
       }
@@ -270,15 +264,12 @@ this.AboutPreferences = class AboutPreferences {
         subcheck.classList.add("indent");
         subcheck.setAttribute("label", formatString(nested.titleString));
         linkPref(subcheck, nested.name, "bool");
-        if (nested.name === PREF_SHOW_SPONSORED) {
-          sponsoredStoriesCheckbox = subcheck;
-        }
       });
     });
 
-    if (discoveryStreamConfig.enabled) {
+    if (discoveryStreamEnabled) {
       
-      contentsGroup.style.visibility = "collapse";
+      contentsGroup.style.visibility = "hidden";
 
       const discoveryGroup = homeGroup.insertAdjacentElement("afterend", homeGroup.cloneNode());
       discoveryGroup.id = "discoveryContentsGroup";
@@ -286,31 +277,8 @@ this.AboutPreferences = class AboutPreferences {
       createAppend("label", discoveryGroup)
         .appendChild(document.createElementNS(HTML_NS, "h2"))
         .textContent = formatString("prefs_content_discovery_header");
-      const descriptionHbox = createAppend("hbox", discoveryGroup);
-      const discoveryGroupDescription = createAppend("description", descriptionHbox);
-      discoveryGroupDescription.textContent = formatString("prefs_content_discovery_description");
-      discoveryGroupDescription.classList.add("tail-with-learn-more");
-
-      
-      const topstoriesSection = prefStructure.find(s => s.id === "topstories");
-      const learnMoreURL = topstoriesSection && topstoriesSection.learnMore.link.href;
-      const link = createAppend("label", descriptionHbox);
-      link.classList.add("learn-sponsored");
-      link.classList.add("text-link");
-      link.setAttribute("href", learnMoreURL);
-      link.textContent = formatString("prefs_topstories_sponsored_learn_more");
-
-      if (discoveryStreamConfig.show_spocs && sponsoredStoriesCheckbox) {
-        sponsoredStoriesCheckbox.remove();
-        sponsoredStoriesCheckbox.classList.remove("indent");
-        discoveryGroup.appendChild(sponsoredStoriesCheckbox);
-      } else if (discoveryStreamConfig.show_spocs) {
-        
-        const discoveryDetails = createAppend("vbox", discoveryGroup);
-        const subcheck = createAppend("checkbox", discoveryDetails);
-        subcheck.setAttribute("label", formatString("prefs_topstories_options_sponsored_label"));
-        linkPref(subcheck, PREF_SHOW_SPONSORED, "bool");
-      }
+      createAppend("description", discoveryGroup)
+        .textContent = formatString("prefs_content_discovery_description");
 
       const contentDiscoveryButton = document.createElementNS(HTML_NS, "button");
       contentDiscoveryButton.classList.add("contentDiscoveryButton");
@@ -324,14 +292,7 @@ this.AboutPreferences = class AboutPreferences {
           
           
           discoveryGroup.style.display = "none";
-          contentsGroup.style.visibility = "";
-          if (sponsoredStoriesCheckbox) {
-            
-            sponsoredStoriesCheckbox.remove();
-            sponsoredStoriesCheckbox.classList.add("indent");
-            const topstoriesDetails = document.querySelector("[data-subcategory='topstories'] .indent");
-            topstoriesDetails.appendChild(sponsoredStoriesCheckbox);
-          }
+          contentsGroup.style.visibility = "visible";
           if (experiment) {
             await PreferenceExperiments.stop(experiment.name, {
               resetValue: true,
