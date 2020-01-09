@@ -35,12 +35,13 @@ class AccessCheck {
                                       const nsACString& accessType);
 };
 
-enum CrossOriginObjectType {
-  CrossOriginWindow,
-  CrossOriginLocation,
-  CrossOriginOpaque
-};
-CrossOriginObjectType IdentifyCrossOriginObject(JSObject* obj);
+
+
+
+
+
+
+bool IsCrossOriginAccessibleObject(JSObject* obj);
 
 struct Policy {
   static bool checkCall(JSContext* cx, JS::HandleObject wrapper,
