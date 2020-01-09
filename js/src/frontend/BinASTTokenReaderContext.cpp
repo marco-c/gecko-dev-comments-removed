@@ -168,6 +168,7 @@ JS::Result<Ok> BinASTTokenReaderContext::AutoList::done() {
 
 
 
+
 MOZ_MUST_USE JS::Result<uint32_t> BinASTTokenReaderContext::readVarU32() {
   uint32_t result = 0;
   uint32_t shift = 0;
@@ -176,7 +177,7 @@ MOZ_MUST_USE JS::Result<uint32_t> BinASTTokenReaderContext::readVarU32() {
     uint32_t byte;
     MOZ_TRY_VAR(byte, readByte());
 
-    const uint32_t newResult = result | (byte >> 1) << shift;
+    const uint32_t newResult = result | (byte & 0x7f) << shift;
     if (newResult < result) {
       return raiseError("Overflow during readVarU32");
     }
@@ -184,7 +185,7 @@ MOZ_MUST_USE JS::Result<uint32_t> BinASTTokenReaderContext::readVarU32() {
     result = newResult;
     shift += 7;
 
-    if ((byte & 1) == 0) {
+    if ((byte & 0x80) == 0) {
       return result;
     }
 
