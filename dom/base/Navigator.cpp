@@ -1532,11 +1532,13 @@ JSObject* Navigator::WrapObject(JSContext* cx,
 }
 
 
-bool Navigator::HasUserMediaSupport(JSContext* ,
-                                    JSObject* ) {
+bool Navigator::HasUserMediaSupport(JSContext* cx, JSObject* obj) {
   
-  return Preferences::GetBool("media.navigator.enabled", false) ||
-         Preferences::GetBool("media.peerconnection.enabled", false);
+  
+  return (StaticPrefs::media_navigator_enabled() ||
+          StaticPrefs::media_peerconnection_enabled()) &&
+         (IsSecureContextOrObjectIsFromSecureContext(cx, obj) ||
+          StaticPrefs::media_devices_insecure_enabled());
 }
 
 
