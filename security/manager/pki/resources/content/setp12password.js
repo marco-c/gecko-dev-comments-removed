@@ -28,9 +28,9 @@
 function onLoad() {
   
   document.getElementById("pw1").focus();
+  document.addEventListener("dialogaccept", onDialogAccept);
+  document.addEventListener("dialogcancel", onDialogCancel);
 }
-
-
 
 
 
@@ -41,10 +41,7 @@ function onDialogAccept() {
   let retVals = window.arguments[0].QueryInterface(Ci.nsIWritablePropertyBag2);
   retVals.setPropertyAsBool("confirmedPassword", true);
   retVals.setPropertyAsAString("password", password);
-  return true;
 }
-
-
 
 
 
@@ -52,7 +49,6 @@ function onDialogAccept() {
 function onDialogCancel() {
   let retVals = window.arguments[0].QueryInterface(Ci.nsIWritablePropertyBag2);
   retVals.setPropertyAsBool("confirmedPassword", false);
-  return true;
 }
 
 

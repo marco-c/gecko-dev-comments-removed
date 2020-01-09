@@ -41,6 +41,9 @@ var gCert;
 function onLoad() {
   gCert = window.arguments[0].QueryInterface(Ci.nsIX509Cert);
 
+  document.addEventListener("dialogaccept", onDialogAccept);
+  document.addEventListener("dialogcancel", onDialogCancel);
+
   let bundle = document.getElementById("pippki_bundle");
   let caName = gCert.commonName;
   if (caName.length == 0) {
@@ -60,8 +63,6 @@ function viewCert() {
 
 
 
-
-
 function onDialogAccept() {
   let checkSSL = document.getElementById("trustSSL");
   let checkEmail = document.getElementById("trustEmail");
@@ -70,10 +71,7 @@ function onDialogAccept() {
   retVals.setPropertyAsBool("importConfirmed", true);
   retVals.setPropertyAsBool("trustForSSL", checkSSL.checked);
   retVals.setPropertyAsBool("trustForEmail", checkEmail.checked);
-  return true;
 }
-
-
 
 
 
@@ -81,5 +79,4 @@ function onDialogAccept() {
 function onDialogCancel() {
   let retVals = window.arguments[1].QueryInterface(Ci.nsIWritablePropertyBag2);
   retVals.setPropertyAsBool("importConfirmed", false);
-  return true;
 }

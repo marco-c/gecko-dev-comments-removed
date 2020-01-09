@@ -412,6 +412,9 @@ nsUnknownContentTypeDialog.prototype = {
     
     var suggestedFileName = this.mLauncher.suggestedFileName;
 
+    this.mDialog.document.addEventListener("dialogaccept", this);
+    this.mDialog.document.addEventListener("dialogcancel", this);
+
     
     var url = this.mLauncher.source;
     if (url instanceof Ci.nsINestedURI)
@@ -843,7 +846,7 @@ nsUnknownContentTypeDialog.prototype = {
   },
 
   
-  onOK() {
+  onOK(aEvent) {
     
     if (this.useOtherHandler) {
       var helperApp = this.helperAppChoice();
@@ -862,7 +865,7 @@ nsUnknownContentTypeDialog.prototype = {
         this.chosenApp = null;
 
         
-        return false;
+        aEvent.preventDefault();
       }
     }
 
@@ -915,12 +918,7 @@ nsUnknownContentTypeDialog.prototype = {
       if (needUpdate && this.mLauncher.MIMEInfo.MIMEType != "application/octet-stream")
         this.updateHelperAppPref();
     } catch (e) { }
-
-    
-    this.mDialog.dialog = null;
-
-    
-    return true;
+    this.onUnload();
   },
 
   
@@ -933,12 +931,26 @@ nsUnknownContentTypeDialog.prototype = {
       this.mLauncher.cancel(Cr.NS_BINDING_ABORTED);
     } catch (exception) {
     }
+    this.onUnload();
+  },
+
+  onUnload() {
+    this.mDialog.document.removeEventListener("dialogaccept", this);
+    this.mDialog.document.removeEventListener("dialogcancel", this);
 
     
     this.mDialog.dialog = null;
+  },
 
-    
-    return true;
+  handleEvent(aEvent) {
+    switch (aEvent.type) {
+      case "dialogaccept":
+        this.onOK(aEvent);
+        break;
+      case "dialogcancel":
+        this.onCancel();
+        break;
+    }
   },
 
   

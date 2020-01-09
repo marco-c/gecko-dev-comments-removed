@@ -222,6 +222,12 @@ var BookmarkPropertiesPanel = {
     await this._determineItemInfo();
 
     document.title = this._getDialogTitle();
+    document.addEventListener("dialogaccept", function() {
+      BookmarkPropertiesPanel.onDialogAccept();
+    });
+    document.addEventListener("dialogcancel", function() {
+      BookmarkPropertiesPanel.onDialogCancel();
+    });
 
     
     let acceptButton = document.documentElement.getButton("accept");

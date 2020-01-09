@@ -182,6 +182,7 @@ function onLoad() {
     
     loadDialog();
 
+    document.addEventListener("dialogcancel", onCancel);
     
     printProgress.registerListener(progressListener);
     
@@ -202,10 +203,7 @@ function onCancel() {
   
    try {
      printProgress.processCanceledByUser = true;
-   } catch ( exception ) { return true; }
-
-  
-  return false;
+   } catch ( exception ) {}
 }
 
 function doneIniting() {

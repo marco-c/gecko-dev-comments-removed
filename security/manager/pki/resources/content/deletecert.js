@@ -84,6 +84,9 @@ function onLoad() {
   document.l10n.setAttributes(confirm, prefixForType + "confirm");
   document.l10n.setAttributes(impact, prefixForType + "impact");
 
+  document.addEventListener("dialogaccept", onDialogAccept);
+  document.addEventListener("dialogcancel", onDialogCancel);
+
   let box = document.getElementById("certlist");
   let certTreeItems = window.arguments[1];
   for (let certTreeItem of certTreeItems) {
@@ -97,15 +100,10 @@ function onLoad() {
 
 
 
-
-
 function onDialogAccept() {
   let retVals = window.arguments[2];
   retVals.deleteConfirmed = true;
-  return true;
 }
-
-
 
 
 
@@ -113,5 +111,4 @@ function onDialogAccept() {
 function onDialogCancel() {
   let retVals = window.arguments[2];
   retVals.deleteConfirmed = false;
-  return true;
 }

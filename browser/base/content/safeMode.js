@@ -35,16 +35,16 @@ function showResetDialog() {
   restartApp();
 }
 
-function onDefaultButton() {
+function onDefaultButton(event) {
   if (defaultToReset) {
+    
+    event.preventDefault();
     
     resetProfile();
     restartApp();
-    
-    return false;
   }
   
-  return true;
+  
 }
 
 function onCancel() {
@@ -75,5 +75,7 @@ function onLoad() {
     document.documentElement.getButton("extra1").hidden = true;
     document.getElementById("resetProfileInstead").hidden = true;
   }
+  document.addEventListener("dialogaccept", onDefaultButton);
+  document.addEventListener("dialogcancel", onCancel);
   document.addEventListener("dialogextra1", onExtra1);
 }

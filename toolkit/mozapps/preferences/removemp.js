@@ -23,6 +23,7 @@ var gRemovePasswordDialog = {
     
     
     this.validateInput();
+    document.addEventListener("dialogaccept", function() { gRemovePasswordDialog.removePassword(); });
   },
 
   validateInput() {

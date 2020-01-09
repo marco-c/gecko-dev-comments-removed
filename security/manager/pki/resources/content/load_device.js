@@ -4,6 +4,8 @@
 
 "use strict";
 
+document.addEventListener("dialogaccept", onDialogAccept);
+
 
 
 
@@ -30,7 +32,7 @@ async function onBrowseBtnPress() {
 
 
 
-function onDialogAccept() {
+function onDialogAccept(event) {
   let nameBox = document.getElementById("device_name");
   let pathBox = document.getElementById("device_path");
   let pkcs11ModuleDB = Cc["@mozilla.org/security/pkcs11moduledb;1"]
@@ -40,10 +42,8 @@ function onDialogAccept() {
     pkcs11ModuleDB.addModule(nameBox.value, pathBox.value, 0, 0);
   } catch (e) {
     addModuleFailure("add-module-failure");
-    return false;
+    event.preventDefault();
   }
-
-  return true;
 }
 
 async function addModuleFailure(l10nID) {
