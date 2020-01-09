@@ -956,8 +956,8 @@ namespace mozilla {
 namespace dom {
 
 bool IsType(nsIURI* aUri, DataInfo::ObjectType aType) {
-  MOZ_ASSERT(NS_IsMainThread(),
-             "without locking gDataTable is main-thread only");
+  
+  StaticMutexAutoLock lock(sMutex);
   DataInfo* info = GetDataInfoFromURI(aUri);
   if (!info) {
     return false;
