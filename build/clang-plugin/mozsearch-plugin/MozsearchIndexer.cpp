@@ -1102,6 +1102,7 @@ public:
 
     
     
+    SourceLocation expandedLoc = Loc;
     if (SM.isMacroBodyExpansion(Loc)) {
       Loc = SM.getFileLoc(Loc);
     }
@@ -1175,20 +1176,34 @@ public:
 
     
     
+    
+    
+    
+    
+    
     if (isa<CXXDestructorDecl>(D)) {
-      const char *P = SM.getCharacterData(Loc);
-      assert(*P == '~');
-      P++;
-
-      unsigned Skipped = 1;
-      while (*P == ' ' || *P == '\t' || *P == '\r' || *P == '\n') {
-        P++;
-        Skipped++;
-      }
-
-      Loc = Loc.getLocWithOffset(Skipped);
-
       PrettyKind = "destructor";
+      const char *P = SM.getCharacterData(Loc);
+      if (*P == '~') {
+        
+        P++;
+
+        unsigned Skipped = 1;
+        while (*P == ' ' || *P == '\t' || *P == '\r' || *P == '\n') {
+          P++;
+          Skipped++;
+        }
+
+        Loc = Loc.getLocWithOffset(Skipped);
+      } else {
+        
+        P = SM.getCharacterData(expandedLoc);
+        if (*P != '~') {
+          
+          return true;
+        }
+        
+      }
     }
 
     visitIdentifier(Kind, PrettyKind, getQualifiedName(D), Loc, Symbols,
