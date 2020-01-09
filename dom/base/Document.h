@@ -221,6 +221,20 @@ class CallbackObjectHolder;
 
 enum class CallerType : uint32_t;
 
+enum BFCacheStatus {
+  NOT_ALLOWED = 1 << 0,                  
+  EVENT_HANDLING_SUPPRESSED = 1 << 1,    
+  SUSPENDED = 1 << 2,                    
+  UNLOAD_LISTENER = 1 << 3,              
+  REQUEST = 1 << 4,                      
+  ACTIVE_GET_USER_MEDIA = 1 << 5,        
+  ACTIVE_PEER_CONNECTION = 1 << 6,       
+  CONTAINS_EME_CONTENT = 1 << 7,         
+  CONTAINS_MSE_CONTENT = 1 << 8,         
+  HAS_ACTIVE_SPEECH_SYNTHESIS = 1 << 9,  
+  HAS_USED_VR = 1 << 10,                 
+};
+
 }  
 }  
 
@@ -2253,7 +2267,11 @@ class Document : public nsINode,
 
 
 
-  virtual bool CanSavePresentation(nsIRequest* aNewRequest);
+
+
+
+  virtual bool CanSavePresentation(nsIRequest* aNewRequest,
+                                   uint16_t& aBFCacheCombo);
 
   virtual nsresult Init();
 
