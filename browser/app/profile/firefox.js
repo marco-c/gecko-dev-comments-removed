@@ -1809,7 +1809,10 @@ pref("intl.multilingual.downloadEnabled", false);
 
 
 
-pref("browser.fission.simulate", false);
+pref("fission.frontend.simulate-events", false);
+
+
+pref("fission.frontend.simulate-messages", false);
 
 
 
