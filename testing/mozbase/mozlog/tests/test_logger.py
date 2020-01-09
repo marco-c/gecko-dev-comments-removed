@@ -210,15 +210,15 @@ class TestStructuredLogging(unittest.TestCase):
 
         
         
-        sock.sendall(message_string[:8])
+        sock.sendall(message_string[:8].encode())
         time.sleep(.01)
-        sock.sendall(message_string[8:32])
+        sock.sendall(message_string[8:32].encode())
         time.sleep(.01)
-        sock.sendall(message_string[32:64])
+        sock.sendall(message_string[32:64].encode())
         time.sleep(.01)
-        sock.sendall(message_string[64:128])
+        sock.sendall(message_string[64:128].encode())
         time.sleep(.01)
-        sock.sendall(message_string[128:])
+        sock.sendall(message_string[128:].encode())
 
         server_thread.join()
 
