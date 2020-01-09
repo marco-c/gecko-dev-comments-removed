@@ -1,8 +1,9 @@
 
 
 
-const REDIRECT_FROM = "https://example.com/browser/browser/base/content/test/urlbar/" +
-                      "redirect_bug623155.sjs";
+const TEST_PATH = getRootDirectory(gTestPath)
+  .replace("chrome://mochitests/content", "http://example.com");
+const REDIRECT_FROM = `${TEST_PATH}redirect_bug623155.sjs`;
 
 const REDIRECT_TO = "https://www.bank1.com/"; 
 
@@ -15,10 +16,6 @@ function isRedirectedURI(aURI) {
   return Services.io.newURI(REDIRECT_TO)
                  .equalsExceptRef(aURI);
 }
-
-
-
-
 
 
 

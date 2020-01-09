@@ -2,9 +2,11 @@
 
 
 
-var testURL = "http://example.org/browser/browser/base/content/test/urlbar/dummy_page.html";
-var testActionURL = "moz-action:switchtab," + JSON.stringify({url: testURL});
-testURL = gURLBar.trimValue(testURL);
+const TEST_PATH = getRootDirectory(gTestPath)
+  .replace("chrome://mochitests/content", "http://example.com");
+const TEST_URL = `${TEST_PATH}dummy_page.html`;
+var testActionURL = "moz-action:switchtab," + JSON.stringify({url: TEST_URL});
+const testURL = gURLBar.trimValue(TEST_URL);
 var testTab;
 
 function runNextTest() {

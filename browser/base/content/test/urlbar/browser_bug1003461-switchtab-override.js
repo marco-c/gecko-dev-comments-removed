@@ -2,11 +2,14 @@
 
 
 
-add_task(async function test_switchtab_override() {
-  let testURL = "http://example.org/browser/browser/base/content/test/urlbar/dummy_page.html";
+const TEST_PATH = getRootDirectory(gTestPath)
+  .replace("chrome://mochitests/content", "http://example.org/");
+const TEST_URL = `${TEST_PATH}dummy_page.html`;
 
+
+add_task(async function test_switchtab_override() {
   info("Opening first tab");
-  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, testURL);
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
 
   info("Opening and selecting second tab");
   let secondTab = gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
