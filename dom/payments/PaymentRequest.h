@@ -251,6 +251,9 @@ class PaymentRequest final : public DOMEventTargetHelper,
   
   RefPtr<PaymentAddress> mFullShippingAddress;
   
+  
+  RefPtr<Document> mDocument;
+  
   nsString mShippingOption;
 
   Nullable<PaymentShippingType> mShippingType;
