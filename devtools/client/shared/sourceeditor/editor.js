@@ -129,7 +129,11 @@ function Editor(config) {
     matchBrackets: true,
     extraKeys: {},
     indentWithTabs: useTabs,
-    inputStyle: "textarea",
+    inputStyle: "accessibleTextArea",
+    
+    
+    
+    pollInterval: Math.pow(2, 31) - 1,
     styleActiveLine: true,
     autoCloseBrackets: "()[]{}''\"\"``",
     autoCloseEnabled: useAutoClose,
