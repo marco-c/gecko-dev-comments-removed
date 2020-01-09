@@ -2850,6 +2850,11 @@ class JS_PUBLIC_API AutoSaveExceptionState {
 
 
 
+JS_PUBLIC_API void SetPendingExceptionAndStack(JSContext* cx, HandleValue value,
+                                               HandleObject stack);
+
+
+
 
 
 
