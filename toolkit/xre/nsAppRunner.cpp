@@ -5196,7 +5196,7 @@ extern "C" void GeckoHandleOOM(size_t size) { mozalloc_handle_oom(size); }
 
 extern "C" void GeckoCrashOOL(const char* aFilename, int aLine,
                               const char* aReason) {
-  MOZ_CrashOOL(aFilename, aLine, aReason);
+  MOZ_Crash(aFilename, aLine, aReason);
 }
 
 
