@@ -3,20 +3,24 @@
 
 
 from telemetry_harness.testcase import TelemetryTestCase
-from telemetry_harness.ping_filters import ANY_PING, OPTOUT_PING, FIRST_SHUTDOWN_PING
+from telemetry_harness.ping_filters import ANY_PING, OPTOUT_PING, MAIN_SHUTDOWN_PING
 
 
 class TestOptoutPing(TelemetryTestCase):
     """Tests for "optout" ping."""
 
     def disable_telemetry(self):
+        self.marionette.instance.profile.set_persistent_preferences(
+            {"datareporting.healthreport.uploadEnabled": False})
         self.marionette.set_pref("datareporting.healthreport.uploadEnabled", False)
 
     def enable_telemetry(self):
+        self.marionette.instance.profile.set_persistent_preferences(
+            {"datareporting.healthreport.uploadEnabled": True})
         self.marionette.set_pref("datareporting.healthreport.uploadEnabled", True)
 
-    def test_optout_ping(self):
-        """Test for "optout" ping."""
+    def test_optout_ping_across_sessions(self):
+        """Test the "optout" ping behaviour across sessions."""
 
         
         client_id = self.wait_for_ping(self.install_addon, ANY_PING)["clientId"]
@@ -25,31 +29,42 @@ class TestOptoutPing(TelemetryTestCase):
         
         optout_ping = self.wait_for_ping(self.disable_telemetry, OPTOUT_PING)
 
-        self.assertIsNotNone(optout_ping)
         self.assertNotIn("clientId", optout_ping)
         self.assertIn("payload", optout_ping)
         self.assertNotIn("environment", optout_ping["payload"])
 
         
+        self.marionette.quit(in_app=True)
+
+        
+
+        
+        self.marionette.start_session()
+
+        
+        self.install_addon()
+
+        
         self.assertEqual(self.ping_server.pings[-1], optout_ping)
 
-        """ Test what happens when the user opts back in """
-
+        
         self.enable_telemetry()
 
         
+        main_ping = self.wait_for_ping(self.restart_browser, MAIN_SHUTDOWN_PING)
+
         
-        shutdown_ping = self.wait_for_ping(self.restart_browser, FIRST_SHUTDOWN_PING)
+        self.assertIn("clientId", main_ping)
+        self.assertIsValidUUID(main_ping["clientId"])
+        self.assertNotEqual(main_ping["clientId"], client_id)
 
-        self.assertIn("clientId", shutdown_ping)
-        self.assertIsValidUUID(shutdown_ping["clientId"])
-        self.assertNotEqual(shutdown_ping["clientId"], client_id)
+        
+        parent_scalars = main_ping["payload"]["processes"]["parent"]["scalars"]
 
-        self.assertIn("payload", shutdown_ping)
-        self.assertIn("processes", shutdown_ping["payload"])
-        self.assertIn("parent", shutdown_ping["payload"]["processes"])
-        self.assertIn("scalars", shutdown_ping["payload"]["processes"]["parent"])
-        scalars = shutdown_ping["payload"]["processes"]["parent"]["scalars"]
+        self.assertIn("telemetry.data_upload_optin", parent_scalars)
+        self.assertIs(parent_scalars["telemetry.data_upload_optin"], True)
 
-        self.assertIn("telemetry.data_upload_optin", scalars)
-        self.assertTrue(scalars["telemetry.data_upload_optin"])
+        
+        for ping in self.ping_server.pings:
+            if "clientId" in ping:
+                self.assertIsValidUUID(ping["clientId"])
