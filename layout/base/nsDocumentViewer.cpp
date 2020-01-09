@@ -22,7 +22,6 @@
 #include "mozilla/dom/PopupBlocker.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
-#include "mozilla/dom/DocGroup.h"
 #include "nsPresContext.h"
 #include "nsIFrame.h"
 #include "nsIWritablePropertyBag2.h"
@@ -3624,8 +3623,7 @@ nsDocumentViewer::PrintPreview(nsIPrintSettings* aPrintSettings,
     PR_PL(("PrintPreview: found mozdisallowselectionprint"));
     printJob->SetDisallowSelectionPrint(true);
   }
-  rv = printJob->PrintPreview(aPrintSettings, aChildDOMWin,
-                              aWebProgressListener);
+  rv = printJob->PrintPreview(doc, aPrintSettings, aWebProgressListener);
   mPrintPreviewZoomed = false;
   if (NS_FAILED(rv)) {
     OnDonePrinting();
