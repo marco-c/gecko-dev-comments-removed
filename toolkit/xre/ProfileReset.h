@@ -49,8 +49,10 @@ class ProfileResetCleanupAsyncTask : public mozilla::Runnable {
   NS_IMETHOD Run() override {
     
     
+    
+    
     nsresult rv = mProfileDir->CopyToFollowingLinks(mTargetDir, mLeafName);
-    if (NS_SUCCEEDED(rv)) rv = mProfileDir->Remove(true);
+    
     if (NS_WARN_IF(NS_FAILED(rv))) {
       NS_WARNING("Could not backup the root profile directory");
     }
@@ -62,8 +64,9 @@ class ProfileResetCleanupAsyncTask : public mozilla::Runnable {
     nsresult rvLocal = mProfileDir->Equals(mProfileLocalDir, &sameDir);
     if (NS_SUCCEEDED(rvLocal) && !sameDir) {
       rvLocal = mProfileLocalDir->Remove(true);
-      if (NS_FAILED(rvLocal))
+      if (NS_FAILED(rvLocal)) {
         NS_WARNING("Could not remove the old local profile directory (cache)");
+      }
     }
     gProfileResetCleanupCompleted = true;
 
