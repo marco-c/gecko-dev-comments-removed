@@ -993,36 +993,41 @@ AntiTrackingCommon::SaveFirstPartyStorageAccessGrantedForOriginOnParentProcess(
     rv = permManager->AddFromPrincipal(
         aTrackingPrincipal, NS_LITERAL_CSTRING("cookie"),
         nsICookiePermission::ACCESS_ALLOW, expirationType, when);
-  } else {
-    uint32_t privateBrowsingId = 0;
-    rv = aParentPrincipal->GetPrivateBrowsingId(&privateBrowsingId);
-    if ((!NS_WARN_IF(NS_FAILED(rv)) && privateBrowsingId > 0) ||
-        (aAllowMode == eAllowAutoGrant)) {
-      
-      
-      
-      expirationType = nsIPermissionManager::EXPIRE_SESSION;
-      when = 0;
-    }
-
-    nsAutoCString type;
-    CreatePermissionKey(aTrackingOrigin, aGrantedOrigin, type);
-
-    LOG(
-        ("Computed permission key: %s, expiry: %u, proceeding to save in the "
-         "permission manager",
-         type.get(), expirationTime));
-
-    rv = permManager->AddFromPrincipal(aParentPrincipal, type,
-                                       nsIPermissionManager::ALLOW_ACTION,
-                                       expirationType, when);
-
-    if (NS_SUCCEEDED(rv) && (aAllowMode == eAllowAutoGrant)) {
-      
-      TemporaryAccessGrantObserver::Create(permManager, aParentPrincipal, type);
-    }
+    Unused << NS_WARN_IF(NS_FAILED(rv));
   }
+
+  
+  
+  
+
+  uint32_t privateBrowsingId = 0;
+  rv = aParentPrincipal->GetPrivateBrowsingId(&privateBrowsingId);
+  if ((!NS_WARN_IF(NS_FAILED(rv)) && privateBrowsingId > 0) ||
+      (aAllowMode == eAllowAutoGrant)) {
+    
+    
+    
+    expirationType = nsIPermissionManager::EXPIRE_SESSION;
+    when = 0;
+  }
+
+  nsAutoCString type;
+  CreatePermissionKey(aTrackingOrigin, aGrantedOrigin, type);
+
+  LOG(
+      ("Computed permission key: %s, expiry: %u, proceeding to save in the "
+       "permission manager",
+       type.get(), expirationTime));
+
+  rv = permManager->AddFromPrincipal(aParentPrincipal, type,
+                                     nsIPermissionManager::ALLOW_ACTION,
+                                     expirationType, when);
   Unused << NS_WARN_IF(NS_FAILED(rv));
+
+  if (NS_SUCCEEDED(rv) && (aAllowMode == eAllowAutoGrant)) {
+    
+    TemporaryAccessGrantObserver::Create(permManager, aParentPrincipal, type);
+  }
 
   LOG(("Result: %s", NS_SUCCEEDED(rv) ? "success" : "failure"));
   return FirstPartyStorageAccessGrantPromise::CreateAndResolve(rv, __func__);
