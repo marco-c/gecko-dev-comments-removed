@@ -1671,19 +1671,15 @@ window._gBrowser = {
     let oldSameProcessAsFrameLoader = aBrowser.sameProcessAsFrameLoader;
     let oldUserTypedValue = aBrowser.userTypedValue;
     let hadStartedLoad = aBrowser.didStartLoadSinceLastUserTyping();
+    let parent = aBrowser.parentNode;
+
+    
 
     
     aBrowser.destroy();
-
     
-    let parent = aBrowser.parentNode;
-    aBrowser.remove();
-    if (shouldBeRemote) {
-      aBrowser.setAttribute("remote", "true");
-      aBrowser.setAttribute("remoteType", remoteType);
-    } else {
-      aBrowser.setAttribute("remote", "false");
-      aBrowser.removeAttribute("remoteType");
+    if (!Services.prefs.getBoolPref("fission.rebuild_frameloaders_on_remoteness_change", false)) {
+      aBrowser.remove();
     }
 
     if (recordExecution) {
@@ -1713,7 +1709,30 @@ window._gBrowser = {
       aBrowser.presetOpenerWindow(opener);
     }
 
-    parent.appendChild(aBrowser);
+    
+    
+    
+    
+    
+    
+    if (shouldBeRemote) {
+      aBrowser.setAttribute("remote", "true");
+      aBrowser.setAttribute("remoteType", remoteType);
+    } else {
+      aBrowser.setAttribute("remote", "false");
+      aBrowser.removeAttribute("remoteType");
+    }
+
+    if (!Services.prefs.getBoolPref("fission.rebuild_frameloaders_on_remoteness_change", false)) {
+      parent.appendChild(aBrowser);
+    } else {
+      
+      
+      
+      aBrowser.changeRemoteness({ remoteType });
+      
+      aBrowser.construct();
+    }
 
     aBrowser.userTypedValue = oldUserTypedValue;
     if (hadStartedLoad) {

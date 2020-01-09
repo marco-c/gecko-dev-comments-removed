@@ -27,7 +27,11 @@ class MozBrowser extends MozElementMixin(XULFrameElement) {
     
     
     
-    if (name === "remote" && oldValue != newValue && this.isConnectedAndReady) {
+    
+    
+    
+    if (!Services.prefs.getBoolPref("fission.rebuild_frameloaders_on_remoteness_change", false) &&
+        name === "remote" && oldValue != newValue && this.isConnectedAndReady) {
       this.destroy();
       this.construct();
     }
