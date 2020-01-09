@@ -1,0 +1,18 @@
+
+
+
+
+"use strict";
+
+
+
+
+
+
+
+exports.accessibility = {
+  
+  AUDIT_TYPE: {
+    CONTRAST: "CONTRAST",
+  },
+};
