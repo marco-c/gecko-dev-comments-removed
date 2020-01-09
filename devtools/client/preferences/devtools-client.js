@@ -57,12 +57,6 @@ pref("devtools.inspector.changes.enabled", true);
 
 pref("devtools.inspector.new-rulesview.enabled", false);
 
-#if defined(NIGHTLY_BUILD)
-pref("devtools.inspector.scrollable-badges.enabled", true);
-#else
-pref("devtools.inspector.scrollable-badges.enabled", false);
-#endif
-
 
 
 #if defined(NIGHTLY_BUILD) || defined(MOZ_DEV_EDITION)
