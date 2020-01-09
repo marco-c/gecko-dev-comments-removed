@@ -884,7 +884,7 @@ void nsInlineFrame::UpdateStyleOfOwnedAnonBoxesForIBSplit(
   
   RefPtr<ComputedStyle> newContext =
       aRestyleState.StyleSet().ResolveInheritingAnonymousBoxStyle(
-          nsCSSAnonBoxes::mozBlockInsideInlineWrapper(), ourStyle);
+          PseudoStyleType::mozBlockInsideInlineWrapper, ourStyle);
 
   
   
@@ -896,8 +896,8 @@ void nsInlineFrame::UpdateStyleOfOwnedAnonBoxesForIBSplit(
     MOZ_ASSERT(!blockFrame->GetPrevContinuation(),
                "Must be first continuation");
 
-    MOZ_ASSERT(blockFrame->Style()->GetPseudo() ==
-                   nsCSSAnonBoxes::mozBlockInsideInlineWrapper(),
+    MOZ_ASSERT(blockFrame->Style()->GetPseudoType() ==
+                   PseudoStyleType::mozBlockInsideInlineWrapper,
                "Unexpected kind of ComputedStyle");
 
     for (nsIFrame* cont = blockFrame; cont;
@@ -939,13 +939,13 @@ void nsFirstLineFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
                             nsIFrame* aPrevInFlow) {
   nsInlineFrame::Init(aContent, aParent, aPrevInFlow);
   if (!aPrevInFlow) {
-    MOZ_ASSERT(Style()->GetPseudo() == nsCSSPseudoElements::firstLine());
+    MOZ_ASSERT(Style()->GetPseudoType() == PseudoStyleType::firstLine);
     return;
   }
 
   
   
-  if (aPrevInFlow->Style()->GetPseudo() == nsCSSPseudoElements::firstLine()) {
+  if (aPrevInFlow->Style()->GetPseudoType() == PseudoStyleType::firstLine) {
     MOZ_ASSERT(FirstInFlow() == aPrevInFlow);
     
     
@@ -954,12 +954,12 @@ void nsFirstLineFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
     ComputedStyle* parentContext = aParent->Style();
     RefPtr<ComputedStyle> newSC =
         PresContext()->StyleSet()->ResolveInheritingAnonymousBoxStyle(
-            nsCSSAnonBoxes::mozLineFrame(), parentContext);
+            PseudoStyleType::mozLineFrame, parentContext);
     SetComputedStyle(newSC);
   } else {
     MOZ_ASSERT(FirstInFlow() != aPrevInFlow);
-    MOZ_ASSERT(aPrevInFlow->Style()->GetPseudo() ==
-               nsCSSAnonBoxes::mozLineFrame());
+    MOZ_ASSERT(aPrevInFlow->Style()->GetPseudoType() ==
+               PseudoStyleType::mozLineFrame);
   }
 }
 

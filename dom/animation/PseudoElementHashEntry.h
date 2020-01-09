@@ -36,15 +36,14 @@ class PseudoElementHashEntry : public PLDHashEntryHdr {
     if (!aKey) return 0;
 
     
-    
-    
+    static_assert(sizeof(PseudoStyleType) == sizeof(uint8_t), "");
     return mozilla::HashGeneric(aKey->mElement,
                                 static_cast<uint8_t>(aKey->mPseudoType));
   }
   enum { ALLOW_MEMMOVE = true };
 
   RefPtr<dom::Element> mElement;
-  CSSPseudoElementType mPseudoType;
+  PseudoStyleType mPseudoType;
 };
 
 }  

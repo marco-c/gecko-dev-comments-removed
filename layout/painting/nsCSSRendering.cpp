@@ -969,7 +969,7 @@ Maybe<nsCSSBorderRenderer> nsCSSRendering::CreateBorderRendererForOutline(
   nsRect innerRect;
   if (
 #ifdef MOZ_XUL
-      aComputedStyle->GetPseudoType() == CSSPseudoElementType::XULTree
+      aComputedStyle->GetPseudoType() == PseudoStyleType::XULTree
 #else
       false
 #endif
@@ -1284,7 +1284,9 @@ inline bool FindElementBackground(nsIFrame* aForFrame,
   
   
 
-  if (aForFrame->Style()->GetPseudo()) return true;  
+  if (aForFrame->Style()->GetPseudoType() != PseudoStyleType::NotPseudo) {
+    return true;  
+  }
 
   
   Document* document = content->OwnerDoc();

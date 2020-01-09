@@ -536,8 +536,8 @@ class nsFrame : public nsBox {
 
 
 
-  static nsIFrame* CorrectStyleParentFrame(nsIFrame* aProspectiveParent,
-                                           nsAtom* aChildPseudo);
+  static nsIFrame* CorrectStyleParentFrame(
+      nsIFrame* aProspectiveParent, mozilla::PseudoStyleType aChildPseudo);
 
  protected:
   

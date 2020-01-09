@@ -908,7 +908,7 @@ class nsBlockFrame : public nsContainerFrame {
   
   
   already_AddRefed<ComputedStyle> ResolveBulletStyle(
-      mozilla::CSSPseudoElementType aType, mozilla::ServoStyleSet* aStyleSet);
+      mozilla::PseudoStyleType aType, mozilla::ServoStyleSet* aStyleSet);
 
 #ifdef DEBUG
   void VerifyLines(bool aFinalCheckOK);

@@ -87,7 +87,7 @@ class EffectCompositor {
   
   
   
-  void RequestRestyle(dom::Element* aElement, CSSPseudoElementType aPseudoType,
+  void RequestRestyle(dom::Element* aElement, PseudoStyleType aPseudoType,
                       RestyleType aRestyleType, CascadeLevel aCascadeLevel);
 
   
@@ -95,7 +95,7 @@ class EffectCompositor {
   
   
   void PostRestyleForAnimation(dom::Element* aElement,
-                               CSSPseudoElementType aPseudoType,
+                               PseudoStyleType aPseudoType,
                                CascadeLevel aCascadeLevel);
 
   
@@ -113,7 +113,7 @@ class EffectCompositor {
   
   void UpdateEffectProperties(const ComputedStyle* aStyle,
                               dom::Element* aElement,
-                              CSSPseudoElementType aPseudoType);
+                              PseudoStyleType aPseudoType);
 
   
   
@@ -121,7 +121,7 @@ class EffectCompositor {
   
   
   bool GetServoAnimationRule(
-      const dom::Element* aElement, CSSPseudoElementType aPseudoType,
+      const dom::Element* aElement, PseudoStyleType aPseudoType,
       CascadeLevel aCascadeLevel,
       RawServoAnimationValueMapBorrowedMut aAnimationValues);
 
@@ -144,7 +144,7 @@ class EffectCompositor {
   
   
   static void MaybeUpdateCascadeResults(dom::Element* aElement,
-                                        CSSPseudoElementType aPseudoType);
+                                        PseudoStyleType aPseudoType);
 
   
   
@@ -160,7 +160,7 @@ class EffectCompositor {
   
   static void UpdateCascadeResults(EffectSet& aEffectSet,
                                    dom::Element* aElement,
-                                   CSSPseudoElementType aPseudoType);
+                                   PseudoStyleType aPseudoType);
 
   
   
@@ -188,7 +188,7 @@ class EffectCompositor {
   bool PreTraverse(ServoTraversalFlags aFlags);
 
   
-  bool PreTraverse(dom::Element* aElement, CSSPseudoElementType aPseudoType);
+  bool PreTraverse(dom::Element* aElement, PseudoStyleType aPseudoType);
 
   
   
@@ -201,7 +201,7 @@ class EffectCompositor {
   
   
   static dom::Element* GetElementToRestyle(dom::Element* aElement,
-                                           CSSPseudoElementType aPseudoType);
+                                           PseudoStyleType aPseudoType);
 
   
   
@@ -218,7 +218,7 @@ class EffectCompositor {
   
   static nsCSSPropertyIDSet GetOverriddenProperties(
       EffectSet& aEffectSet, dom::Element* aElement,
-      CSSPseudoElementType aPseudoType);
+      PseudoStyleType aPseudoType);
 
   static nsPresContext* GetPresContext(dom::Element* aElement);
 

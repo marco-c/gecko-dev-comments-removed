@@ -317,7 +317,7 @@ void nsHTMLFramesetFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
     RefPtr<ComputedStyle> pseudoComputedStyle;
     pseudoComputedStyle =
         shell->StyleSet()->ResolveNonInheritingAnonymousBoxStyle(
-            nsCSSAnonBoxes::framesetBlank());
+            PseudoStyleType::framesetBlank);
 
     
     
@@ -875,7 +875,7 @@ void nsHTMLFramesetFrame::Reflow(nsPresContext* aPresContext,
 
         RefPtr<ComputedStyle> pseudoComputedStyle;
         pseudoComputedStyle = styleSet->ResolveNonInheritingAnonymousBoxStyle(
-            nsCSSAnonBoxes::horizontalFramesetBorder());
+            PseudoStyleType::horizontalFramesetBorder);
 
         borderFrame = new (shell) nsHTMLFramesetBorderFrame(
             pseudoComputedStyle, PresContext(), borderWidth, false, false);
@@ -904,7 +904,7 @@ void nsHTMLFramesetFrame::Reflow(nsPresContext* aPresContext,
             RefPtr<ComputedStyle> pseudoComputedStyle;
             pseudoComputedStyle =
                 styleSet->ResolveNonInheritingAnonymousBoxStyle(
-                    nsCSSAnonBoxes::verticalFramesetBorder());
+                    PseudoStyleType::verticalFramesetBorder);
 
             borderFrame = new (shell) nsHTMLFramesetBorderFrame(
                 pseudoComputedStyle, PresContext(), borderWidth, true, false);

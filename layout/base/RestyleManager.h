@@ -254,14 +254,14 @@ class RestyleManager {
     
     void Put(nsIContent* aContent, ComputedStyle* aComputedStyle) {
       MOZ_ASSERT(aContent);
-      CSSPseudoElementType pseudoType = aComputedStyle->GetPseudoType();
-      if (pseudoType == CSSPseudoElementType::NotPseudo) {
+      PseudoStyleType pseudoType = aComputedStyle->GetPseudoType();
+      if (pseudoType == PseudoStyleType::NotPseudo) {
         mContents.AppendElement(aContent);
-      } else if (pseudoType == CSSPseudoElementType::before) {
+      } else if (pseudoType == PseudoStyleType::before) {
         MOZ_ASSERT(aContent->NodeInfo()->NameAtom() ==
                    nsGkAtoms::mozgeneratedcontentbefore);
         mBeforeContents.AppendElement(aContent->GetParent());
-      } else if (pseudoType == CSSPseudoElementType::after) {
+      } else if (pseudoType == PseudoStyleType::after) {
         MOZ_ASSERT(aContent->NodeInfo()->NameAtom() ==
                    nsGkAtoms::mozgeneratedcontentafter);
         mAfterContents.AppendElement(aContent->GetParent());
@@ -272,7 +272,7 @@ class RestyleManager {
 
    private:
     void StopAnimationsWithoutFrame(nsTArray<RefPtr<nsIContent>>& aArray,
-                                    CSSPseudoElementType aPseudoType);
+                                    PseudoStyleType aPseudoType);
 
     RestyleManager* mRestyleManager;
     AutoRestore<AnimationsWithDestroyedFrame*> mRestorePointer;
@@ -327,7 +327,7 @@ class RestyleManager {
 
 
 
-  void PostRestyleEventForAnimations(dom::Element*, CSSPseudoElementType,
+  void PostRestyleEventForAnimations(dom::Element*, PseudoStyleType,
                                      nsRestyleHint);
 
   void NextRestyleIsForCSSRuleChanges() { mRestyleForCSSRuleChanges = true; }

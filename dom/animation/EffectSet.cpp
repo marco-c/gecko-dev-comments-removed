@@ -33,8 +33,8 @@ void EffectSet::Traverse(nsCycleCollectionTraversalCallback& aCallback) {
   }
 }
 
- EffectSet* EffectSet::GetEffectSet(
-    const dom::Element* aElement, CSSPseudoElementType aPseudoType) {
+ EffectSet* EffectSet::GetEffectSet(const dom::Element* aElement,
+                                                PseudoStyleType aPseudoType) {
   if (!aElement->MayHaveAnimations()) {
     return nullptr;
   }
@@ -55,7 +55,7 @@ void EffectSet::Traverse(nsCycleCollectionTraversalCallback& aCallback) {
 }
 
  EffectSet* EffectSet::GetOrCreateEffectSet(
-    dom::Element* aElement, CSSPseudoElementType aPseudoType) {
+    dom::Element* aElement, PseudoStyleType aPseudoType) {
   EffectSet* effectSet = GetEffectSet(aElement, aPseudoType);
   if (effectSet) {
     return effectSet;
@@ -79,8 +79,8 @@ void EffectSet::Traverse(nsCycleCollectionTraversalCallback& aCallback) {
   return effectSet;
 }
 
- void EffectSet::DestroyEffectSet(
-    dom::Element* aElement, CSSPseudoElementType aPseudoType) {
+ void EffectSet::DestroyEffectSet(dom::Element* aElement,
+                                              PseudoStyleType aPseudoType) {
   nsAtom* propName = GetEffectSetPropertyAtom(aPseudoType);
   EffectSet* effectSet =
       static_cast<EffectSet*>(aElement->GetProperty(propName));
@@ -110,15 +110,15 @@ void EffectSet::UpdateAnimationGeneration(nsPresContext* aPresContext) {
 }
 
  nsAtom* EffectSet::GetEffectSetPropertyAtom(
-    CSSPseudoElementType aPseudoType) {
+    PseudoStyleType aPseudoType) {
   switch (aPseudoType) {
-    case CSSPseudoElementType::NotPseudo:
+    case PseudoStyleType::NotPseudo:
       return nsGkAtoms::animationEffectsProperty;
 
-    case CSSPseudoElementType::before:
+    case PseudoStyleType::before:
       return nsGkAtoms::animationEffectsForBeforeProperty;
 
-    case CSSPseudoElementType::after:
+    case PseudoStyleType::after:
       return nsGkAtoms::animationEffectsForAfterProperty;
 
     default:

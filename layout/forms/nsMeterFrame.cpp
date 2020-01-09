@@ -56,7 +56,7 @@ nsresult nsMeterFrame::CreateAnonymousContent(
   mBarDiv = doc->CreateHTMLElement(nsGkAtoms::div);
 
   
-  mBarDiv->SetPseudoElementType(CSSPseudoElementType::mozMeterBar);
+  mBarDiv->SetPseudoElementType(PseudoStyleType::mozMeterBar);
 
   aElements.AppendElement(mBarDiv);
 

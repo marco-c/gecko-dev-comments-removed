@@ -54,7 +54,7 @@ nsresult nsProgressFrame::CreateAnonymousContent(
   mBarDiv = doc->CreateHTMLElement(nsGkAtoms::div);
 
   
-  mBarDiv->SetPseudoElementType(CSSPseudoElementType::mozProgressBar);
+  mBarDiv->SetPseudoElementType(PseudoStyleType::mozProgressBar);
 
   if (!aElements.AppendElement(mBarDiv)) {
     return NS_ERROR_OUT_OF_MEMORY;

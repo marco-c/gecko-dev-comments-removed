@@ -146,7 +146,7 @@ class ServoStyleSet {
   
   
   already_AddRefed<ComputedStyle> ResolveStyleForText(
-      nsIContent* aTextNode, ComputedStyle* aParentContext);
+      nsIContent* aTextNode, ComputedStyle* aParentStyle);
 
   
   
@@ -159,7 +159,7 @@ class ServoStyleSet {
   
   
   already_AddRefed<ComputedStyle> ResolveStyleForFirstLetterContinuation(
-      ComputedStyle* aParentContext);
+      ComputedStyle* aParentStyle);
 
   
   
@@ -177,33 +177,31 @@ class ServoStyleSet {
   
   
   already_AddRefed<ComputedStyle> ResolvePseudoElementStyle(
-      dom::Element* aOriginatingElement, CSSPseudoElementType aType,
-      ComputedStyle* aParentContext, dom::Element* aPseudoElement);
+      dom::Element* aOriginatingElement, PseudoStyleType aType,
+      ComputedStyle* aParentStyle, dom::Element* aPseudoElement);
 
   
   
   
   
   already_AddRefed<ComputedStyle> ResolveStyleLazily(
-      dom::Element* aElement, CSSPseudoElementType aPseudoType,
+      dom::Element* aElement, PseudoStyleType,
       StyleRuleInclusion aRules = StyleRuleInclusion::All);
 
   
   
-  
   already_AddRefed<ComputedStyle> ResolveInheritingAnonymousBoxStyle(
-      nsAtom* aPseudoTag, ComputedStyle* aParentContext);
+      PseudoStyleType, ComputedStyle* aParentStyle);
 
   
   
-  
   already_AddRefed<ComputedStyle> ResolveNonInheritingAnonymousBoxStyle(
-      nsAtom* aPseudoTag);
+      PseudoStyleType);
 
 #ifdef MOZ_XUL
   already_AddRefed<ComputedStyle> ResolveXULTreePseudoStyle(
       dom::Element* aParentElement, nsCSSAnonBoxPseudoStaticAtom* aPseudoTag,
-      ComputedStyle* aParentContext, const AtomArray& aInputWord);
+      ComputedStyle* aParentStyle, const AtomArray& aInputWord);
 #endif
 
   
@@ -231,7 +229,7 @@ class ServoStyleSet {
 
   
   already_AddRefed<ComputedStyle> ProbePseudoElementStyle(
-      const dom::Element& aOriginatingElement, CSSPseudoElementType aType,
+      const dom::Element& aOriginatingElement, PseudoStyleType aType,
       ComputedStyle* aParentStyle);
 
   
@@ -494,7 +492,7 @@ class ServoStyleSet {
   void UpdateStylist();
 
   already_AddRefed<ComputedStyle> ResolveStyleLazilyInternal(
-      dom::Element* aElement, CSSPseudoElementType aPseudoType,
+      dom::Element* aElement, PseudoStyleType aPseudoType,
       StyleRuleInclusion aRules = StyleRuleInclusion::All);
 
   void RunPostTraversalTasks();

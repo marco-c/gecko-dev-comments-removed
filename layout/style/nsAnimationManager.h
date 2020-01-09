@@ -30,7 +30,7 @@ namespace dom {
 class Promise;
 } 
 
-enum class CSSPseudoElementType : uint8_t;
+enum class PseudoStyleType : uint8_t;
 struct NonOwningAnimationTarget;
 
 namespace dom {
@@ -278,7 +278,7 @@ class nsAnimationManager final
 
 
   void UpdateAnimations(mozilla::dom::Element* aElement,
-                        mozilla::CSSPseudoElementType aPseudoType,
+                        mozilla::PseudoStyleType aPseudoType,
                         const mozilla::ComputedStyle* aComputedValues);
 
   

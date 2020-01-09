@@ -92,8 +92,7 @@ nsMathMLFrame::UpdatePresentationData(uint32_t aFlagsValues,
  void nsMathMLFrame::ResolveMathMLCharStyle(
     nsPresContext* aPresContext, nsIContent* aContent,
     ComputedStyle* aParentComputedStyle, nsMathMLChar* aMathMLChar) {
-  CSSPseudoElementType pseudoType =
-      CSSPseudoElementType::mozMathAnonymous;  
+  PseudoStyleType pseudoType = PseudoStyleType::mozMathAnonymous;  
   RefPtr<ComputedStyle> newComputedStyle;
   newComputedStyle = aPresContext->StyleSet()->ResolvePseudoElementStyle(
       aContent->AsElement(), pseudoType, aParentComputedStyle, nullptr);

@@ -57,7 +57,7 @@ class FlattenedChildIterator;
 class nsCSSFrameConstructor final : public nsFrameManager {
  public:
   typedef mozilla::ComputedStyle ComputedStyle;
-  typedef mozilla::CSSPseudoElementType CSSPseudoElementType;
+  typedef mozilla::PseudoStyleType PseudoStyleType;
   typedef mozilla::dom::Element Element;
   typedef mozilla::dom::Text Text;
 
@@ -447,7 +447,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   void CreateGeneratedContentItem(nsFrameConstructorState& aState,
                                   nsContainerFrame* aParentFrame,
                                   Element& aOriginatingElement, ComputedStyle&,
-                                  CSSPseudoElementType aPseudoElement,
+                                  PseudoStyleType aPseudoElement,
                                   FrameConstructionItemList& aItems);
 
   
@@ -721,7 +721,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
     FrameFullConstructor mFullConstructor;
     
     
-    nsCSSAnonBoxPseudoStaticAtom* const mAnonBoxPseudo;
+    PseudoStyleType const mAnonBoxPseudo;
   };
 
   
@@ -760,7 +760,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
 
   struct PseudoParentData {
     const FrameConstructionData mFCData;
-    nsCSSAnonBoxPseudoStaticAtom* const mPseudoType;
+    mozilla::PseudoStyleType const mPseudoType;
   };
   
 
@@ -1552,7 +1552,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
       nsContainerFrame* aParentFrame, nsFrameItems& aFrameItems,
       ContainerFrameCreationFunc aConstructor,
       ContainerFrameCreationFunc aInnerConstructor,
-      nsCSSAnonBoxPseudoStaticAtom* aInnerPseudo, bool aCandidateRootFrame);
+      mozilla::PseudoStyleType aInnerPseudo, bool aCandidateRootFrame);
 
   
 
@@ -1697,7 +1697,8 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   already_AddRefed<ComputedStyle> BeginBuildingScrollFrame(
       nsFrameConstructorState& aState, nsIContent* aContent,
       ComputedStyle* aContentStyle, nsContainerFrame* aParentFrame,
-      nsAtom* aScrolledPseudo, bool aIsRoot, nsContainerFrame*& aNewFrame);
+      mozilla::PseudoStyleType aScrolledPseudo, bool aIsRoot,
+      nsContainerFrame*& aNewFrame);
 
   
   

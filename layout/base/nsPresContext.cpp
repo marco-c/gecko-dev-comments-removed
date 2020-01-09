@@ -1830,7 +1830,7 @@ bool nsPresContext::HasAuthorSpecifiedRules(const nsIFrame* aFrame,
 
   
   
-  if (elem->GetPseudoElementType() != CSSPseudoElementType::NotPseudo) {
+  if (elem->GetPseudoElementType() != PseudoStyleType::NotPseudo) {
     MOZ_ASSERT(elem->GetParent(), "Pseudo element has no parent element?");
     elem = elem->GetParent()->AsElement();
   }
@@ -1839,15 +1839,13 @@ bool nsPresContext::HasAuthorSpecifiedRules(const nsIFrame* aFrame,
     return false;
   }
 
-  ComputedStyle* computedStyle = aFrame->Style();
-  CSSPseudoElementType pseudoType = computedStyle->GetPseudoType();
   
   
-  if (pseudoType == CSSPseudoElementType::InheritingAnonBox ||
-      pseudoType == CSSPseudoElementType::NonInheritingAnonBox) {
+  if (aFrame->Style()->IsAnonBox()) {
     return false;
   }
-  return Servo_HasAuthorSpecifiedRules(computedStyle, elem, pseudoType,
+  return Servo_HasAuthorSpecifiedRules(aFrame->Style(), elem,
+                                       aFrame->Style()->GetPseudoType(),
                                        aRuleTypeMask, UseDocumentColors());
 }
 

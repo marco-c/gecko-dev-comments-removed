@@ -81,6 +81,15 @@ ComputedStyle* nsTreeStyleCache::GetComputedStyle(
 
     
     
+    
+    
+    
+    MOZ_ASSERT(newResult->GetPseudoType() == PseudoStyleType::XULTree);
+    MOZ_ASSERT(!newResult->IsAnonBox());
+    MOZ_ASSERT(!newResult->IsPseudoElement());
+
+    
+    
     if (!mCache) {
       mCache = new ComputedStyleCache();
     }

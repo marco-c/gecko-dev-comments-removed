@@ -217,8 +217,9 @@ ComputedStyle* nsPlaceholderFrame::GetLayoutParentStyleForOutOfFlow(
   
   
   
-  *aProviderFrame =
-      CorrectStyleParentFrame(GetParent(), nsGkAtoms::placeholderFrame);
+  
+  
+  *aProviderFrame = CorrectStyleParentFrame(GetParent(), PseudoStyleType::MAX);
   return *aProviderFrame ? (*aProviderFrame)->Style() : nullptr;
 }
 

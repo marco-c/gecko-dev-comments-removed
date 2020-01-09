@@ -74,7 +74,7 @@ void nsRangeFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
   ServoStyleSet* styleSet = PresContext()->StyleSet();
 
   mOuterFocusStyle = styleSet->ProbePseudoElementStyle(
-      *aContent->AsElement(), CSSPseudoElementType::mozFocusOuter, Style());
+      *aContent->AsElement(), PseudoStyleType::mozFocusOuter, Style());
 
   return nsContainerFrame::Init(aContent, aParent, aPrevInFlow);
 }
@@ -96,7 +96,7 @@ void nsRangeFrame::DestroyFrom(nsIFrame* aDestructRoot,
 }
 
 nsresult nsRangeFrame::MakeAnonymousDiv(Element** aResult,
-                                        CSSPseudoElementType aPseudoType,
+                                        PseudoStyleType aPseudoType,
                                         nsTArray<ContentInfo>& aElements) {
   nsCOMPtr<Document> doc = mContent->GetComposedDoc();
   RefPtr<Element> resultElement = doc->CreateHTMLElement(nsGkAtoms::div);
@@ -118,17 +118,17 @@ nsresult nsRangeFrame::CreateAnonymousContent(
 
   
   rv = MakeAnonymousDiv(getter_AddRefs(mTrackDiv),
-                        CSSPseudoElementType::mozRangeTrack, aElements);
+                        PseudoStyleType::mozRangeTrack, aElements);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
   rv = MakeAnonymousDiv(getter_AddRefs(mProgressDiv),
-                        CSSPseudoElementType::mozRangeProgress, aElements);
+                        PseudoStyleType::mozRangeProgress, aElements);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
   rv = MakeAnonymousDiv(getter_AddRefs(mThumbDiv),
-                        CSSPseudoElementType::mozRangeThumb, aElements);
+                        PseudoStyleType::mozRangeThumb, aElements);
   return rv;
 }
 

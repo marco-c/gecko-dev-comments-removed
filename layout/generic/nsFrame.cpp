@@ -1200,19 +1200,19 @@ void nsIFrame::MarkNeedsDisplayItemRebuild() {
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
 void nsIFrame::AssertNewStyleIsSane(ComputedStyle& aNewStyle) {
   MOZ_DIAGNOSTIC_ASSERT(
-      aNewStyle.GetPseudo() == mComputedStyle->GetPseudo() ||
+      aNewStyle.GetPseudoType() == mComputedStyle->GetPseudoType() ||
       
       
-      (mComputedStyle->GetPseudo() == nsCSSPseudoElements::firstLine() &&
-       aNewStyle.GetPseudo() == nsCSSAnonBoxes::mozLineFrame()) ||
+      (mComputedStyle->GetPseudoType() == PseudoStyleType::firstLine &&
+       aNewStyle.GetPseudoType() == PseudoStyleType::mozLineFrame) ||
       
       
       
-      (mComputedStyle->GetPseudo() == nsCSSAnonBoxes::mozText() &&
-       aNewStyle.GetPseudo() == nsCSSAnonBoxes::firstLetterContinuation()) ||
-      (mComputedStyle->GetPseudo() ==
-           nsCSSAnonBoxes::firstLetterContinuation() &&
-       aNewStyle.GetPseudo() == nsCSSAnonBoxes::mozText()));
+      (mComputedStyle->GetPseudoType() == PseudoStyleType::mozText &&
+       aNewStyle.GetPseudoType() == PseudoStyleType::firstLetterContinuation) ||
+      (mComputedStyle->GetPseudoType() ==
+           PseudoStyleType::firstLetterContinuation &&
+       aNewStyle.GetPseudoType() == PseudoStyleType::mozText));
 }
 #endif
 
@@ -2192,7 +2192,7 @@ already_AddRefed<ComputedStyle> nsIFrame::ComputeSelectionStyle() const {
     return nullptr;
   }
   RefPtr<ComputedStyle> sc = PresContext()->StyleSet()->ProbePseudoElementStyle(
-      *element, CSSPseudoElementType::selection, Style());
+      *element, PseudoStyleType::selection, Style());
   return sc.forget();
 }
 
@@ -7247,10 +7247,10 @@ bool nsFrame::IsFrameTreeTooDeep(const ReflowInput& aReflowInput,
 }
 
 bool nsIFrame::IsBlockWrapper() const {
-  nsAtom* pseudoType = Style()->GetPseudo();
-  return (pseudoType == nsCSSAnonBoxes::mozBlockInsideInlineWrapper() ||
-          pseudoType == nsCSSAnonBoxes::buttonContent() ||
-          pseudoType == nsCSSAnonBoxes::cellContent());
+  auto pseudoType = Style()->GetPseudoType();
+  return pseudoType == PseudoStyleType::mozBlockInsideInlineWrapper ||
+         pseudoType == PseudoStyleType::buttonContent ||
+         pseudoType == PseudoStyleType::cellContent;
 }
 
 bool nsIFrame::IsBlockFrameOrSubclass() const {
@@ -7298,7 +7298,7 @@ nsIFrame* nsIFrame::GetContainingBlock(
   }
 
   if (aFlags & SKIP_SCROLLED_FRAME && f &&
-      f->Style()->GetPseudo() == nsCSSAnonBoxes::scrolledContent()) {
+      f->Style()->GetPseudoType() == PseudoStyleType::scrolledContent) {
     f = f->GetParent();
   }
   return f;
@@ -7427,12 +7427,10 @@ void nsIFrame::ListGeneric(nsACString& aTo, const char* aPrefix,
   }
   aTo += nsPrintfCString(" [cs=%p", static_cast<void*>(mComputedStyle));
   if (mComputedStyle) {
-    nsAtom* pseudoTag = mComputedStyle->GetPseudo();
-    if (pseudoTag) {
-      nsAutoString atomString;
-      pseudoTag->ToString(atomString);
-      aTo +=
-          nsPrintfCString("%s", NS_LossyConvertUTF16toASCII(atomString).get());
+    auto pseudoType = mComputedStyle->GetPseudoType();
+    if (pseudoType != PseudoStyleType::NotPseudo) {
+      
+      aTo += nsPrintfCString("pseudo: %d", static_cast<int>(pseudoType));
     }
   }
   aTo += "]";
@@ -8869,8 +8867,8 @@ static void ComputeAndIncludeOutlineArea(nsIFrame* aFrame,
   
   nsIFrame* frameForArea = aFrame;
   do {
-    nsAtom* pseudoType = frameForArea->Style()->GetPseudo();
-    if (pseudoType != nsCSSAnonBoxes::mozBlockInsideInlineWrapper()) break;
+    PseudoStyleType pseudoType = frameForArea->Style()->GetPseudoType();
+    if (pseudoType != PseudoStyleType::mozBlockInsideInlineWrapper) break;
     
     frameForArea = frameForArea->PrincipalChildList().FirstChild();
     NS_ASSERTION(frameForArea, "anonymous block with no children?");
@@ -9283,8 +9281,8 @@ static nsIFrame* GetIBSplitSiblingForAnonymousBlock(const nsIFrame* aFrame) {
   NS_ASSERTION(aFrame->GetStateBits() & NS_FRAME_PART_OF_IBSPLIT,
                "GetIBSplitSibling should only be called on ib-split frames");
 
-  nsAtom* type = aFrame->Style()->GetPseudo();
-  if (type != nsCSSAnonBoxes::mozBlockInsideInlineWrapper()) {
+  if (aFrame->Style()->GetPseudoType() !=
+      PseudoStyleType::mozBlockInsideInlineWrapper) {
     
     return nullptr;
   }
@@ -9325,7 +9323,7 @@ static nsIFrame* GetCorrectedParent(const nsIFrame* aFrame) {
   
   if (aFrame->IsTableCaption()) {
     nsIFrame* innerTable = parent->PrincipalChildList().FirstChild();
-    if (!innerTable->Style()->GetPseudo()) {
+    if (!innerTable->Style()->IsAnonBox()) {
       return innerTable;
     }
   }
@@ -9333,14 +9331,15 @@ static nsIFrame* GetCorrectedParent(const nsIFrame* aFrame) {
   
   
   
-  nsAtom* pseudo = aFrame->Style()->GetPseudo();
-  if (pseudo == nsCSSAnonBoxes::tableWrapper()) {
-    pseudo = aFrame->PrincipalChildList().FirstChild()->Style()->GetPseudo();
+  auto pseudo = aFrame->Style()->GetPseudoType();
+  if (pseudo == PseudoStyleType::tableWrapper) {
+    pseudo =
+        aFrame->PrincipalChildList().FirstChild()->Style()->GetPseudoType();
   }
 
   
   
-  if (pseudo) {
+  if (pseudo != PseudoStyleType::NotPseudo) {
     MOZ_ASSERT(aFrame->GetContent());
     Element* element = Element::FromNode(aFrame->GetContent());
     
@@ -9360,23 +9359,22 @@ static nsIFrame* GetCorrectedParent(const nsIFrame* aFrame) {
 
 
 nsIFrame* nsFrame::CorrectStyleParentFrame(nsIFrame* aProspectiveParent,
-                                           nsAtom* aChildPseudo) {
+                                           PseudoStyleType aChildPseudo) {
   MOZ_ASSERT(aProspectiveParent, "Must have a prospective parent");
 
-  if (aChildPseudo) {
+  if (aChildPseudo != PseudoStyleType::NotPseudo) {
     
-    if (nsCSSAnonBoxes::IsNonInheritingAnonBox(aChildPseudo)) {
+    if (PseudoStyle::IsNonInheritingAnonBox(aChildPseudo)) {
       return nullptr;
     }
 
     
     
-    if (!nsCSSAnonBoxes::IsNonElement(aChildPseudo) &&
-        nsCSSAnonBoxes::IsAnonBox(aChildPseudo)) {
-      NS_ASSERTION(
-          aChildPseudo != nsCSSAnonBoxes::mozBlockInsideInlineWrapper(),
-          "Should have dealt with kids that have "
-          "NS_FRAME_PART_OF_IBSPLIT elsewhere");
+    if (PseudoStyle::IsAnonBox(aChildPseudo) &&
+        !nsCSSAnonBoxes::IsNonElement(aChildPseudo)) {
+      NS_ASSERTION(aChildPseudo != PseudoStyleType::mozBlockInsideInlineWrapper,
+                   "Should have dealt with kids that have "
+                   "NS_FRAME_PART_OF_IBSPLIT elsewhere");
       return aProspectiveParent;
     }
   }
@@ -9396,22 +9394,23 @@ nsIFrame* nsFrame::CorrectStyleParentFrame(nsIFrame* aProspectiveParent,
       }
     }
 
-    nsAtom* parentPseudo = parent->Style()->GetPseudo();
-    if (!parentPseudo ||
-        (!nsCSSAnonBoxes::IsAnonBox(parentPseudo) &&
-         
-         
-         
-         
-         aChildPseudo != nsGkAtoms::placeholderFrame)) {
+    if (!parent->Style()->IsPseudoOrAnonBox()) {
+      return parent;
+    }
+
+    if (!parent->Style()->IsAnonBox() && aChildPseudo != PseudoStyleType::MAX) {
+      
+      
+      
+      
       return parent;
     }
 
     parent = parent->GetInFlowParent();
   } while (parent);
 
-  if (aProspectiveParent->Style()->GetPseudo() ==
-      nsCSSAnonBoxes::viewportScroll()) {
+  if (aProspectiveParent->Style()->GetPseudoType() ==
+      PseudoStyleType::viewportScroll) {
     
     
     return aProspectiveParent;
@@ -9434,16 +9433,16 @@ ComputedStyle* nsFrame::DoGetParentComputedStyle(
   if (MOZ_LIKELY(mContent)) {
     Element* parentElement = mContent->GetFlattenedTreeParentElement();
     if (MOZ_LIKELY(parentElement)) {
-      nsAtom* pseudo = Style()->GetPseudo();
-      if (!pseudo || !mContent->IsElement() ||
-          (!nsCSSAnonBoxes::IsAnonBox(pseudo) &&
+      auto pseudo = Style()->GetPseudoType();
+      if (pseudo == PseudoStyleType::NotPseudo || !mContent->IsElement() ||
+          (!PseudoStyle::IsAnonBox(pseudo) &&
            
            
            
            IsPrimaryFrame()) ||
           
 
-          pseudo == nsCSSAnonBoxes::tableWrapper()) {
+          pseudo == PseudoStyleType::tableWrapper) {
         if (Servo_Element_IsDisplayContents(parentElement)) {
           RefPtr<ComputedStyle> style =
               PresShell()->StyleSet()->ResolveServoStyle(*parentElement);
@@ -9456,7 +9455,7 @@ ComputedStyle* nsFrame::DoGetParentComputedStyle(
         }
       }
     } else {
-      if (!Style()->GetPseudo()) {
+      if (Style()->GetPseudoType() == PseudoStyleType::NotPseudo) {
         
         return nullptr;
       }
@@ -9532,8 +9531,8 @@ void nsFrame::GetFirstLeaf(nsPresContext* aPresContext, nsIFrame** aFrame) {
   bool isFocusable = false;
 
   if (mContent && mContent->IsElement() && IsVisibleConsideringAncestors() &&
-      Style()->GetPseudo() != nsCSSAnonBoxes::anonymousFlexItem() &&
-      Style()->GetPseudo() != nsCSSAnonBoxes::anonymousGridItem()) {
+      Style()->GetPseudoType() != PseudoStyleType::anonymousFlexItem &&
+      Style()->GetPseudoType() != PseudoStyleType::anonymousGridItem) {
     const nsStyleUI* ui = StyleUI();
     if (ui->mUserFocus != StyleUserFocus::Ignore &&
         ui->mUserFocus != StyleUserFocus::None) {
@@ -10211,9 +10210,9 @@ void nsIFrame::UpdateStyleOfChildAnonBox(nsIFrame* aChildFrame,
 
   
   
-  nsAtom* pseudo = aChildFrame->Style()->GetPseudo();
-  MOZ_ASSERT(nsCSSAnonBoxes::IsAnonBox(pseudo), "Child is not an anon box?");
-  MOZ_ASSERT(!nsCSSAnonBoxes::IsNonInheritingAnonBox(pseudo),
+  auto pseudo = aChildFrame->Style()->GetPseudoType();
+  MOZ_ASSERT(PseudoStyle::IsAnonBox(pseudo), "Child is not an anon box?");
+  MOZ_ASSERT(!PseudoStyle::IsNonInheritingAnonBox(pseudo),
              "Why did the caller bother calling us?");
 
   

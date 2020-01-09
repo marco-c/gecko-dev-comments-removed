@@ -141,7 +141,7 @@ ComputedStyle* nsTableFrame::GetParentComputedStyle(
   
 
   MOZ_ASSERT(GetParent(), "table constructed without table wrapper");
-  if (!mContent->GetParent() && !Style()->GetPseudo()) {
+  if (!mContent->GetParent() && !Style()->IsPseudoOrAnonBox()) {
     
     *aProviderFrame = nullptr;
     return nullptr;
@@ -641,7 +641,7 @@ nsTableColGroupFrame* nsTableFrame::CreateSyntheticColGroupFrame() {
 
   RefPtr<ComputedStyle> colGroupStyle;
   colGroupStyle = shell->StyleSet()->ResolveNonInheritingAnonymousBoxStyle(
-      nsCSSAnonBoxes::tableColGroup());
+      PseudoStyleType::tableColGroup);
   
   nsTableColGroupFrame* newFrame =
       NS_NewTableColGroupFrame(shell, colGroupStyle);
@@ -695,7 +695,7 @@ void nsTableFrame::AppendAnonymousColFrames(
     nsIContent* iContent = aColGroupFrame->GetContent();
     RefPtr<ComputedStyle> computedStyle =
         shell->StyleSet()->ResolveNonInheritingAnonymousBoxStyle(
-            nsCSSAnonBoxes::tableCol());
+            PseudoStyleType::tableCol);
     
     NS_ASSERTION(iContent, "null content in CreateAnonymousColFrames");
 
@@ -7668,7 +7668,7 @@ void nsTableFrame::InvalidateTableFrame(nsIFrame* aFrame,
 void nsTableFrame::AppendDirectlyOwnedAnonBoxes(
     nsTArray<OwnedAnonBox>& aResult) {
   nsIFrame* wrapper = GetParent();
-  MOZ_ASSERT(wrapper->Style()->GetPseudo() == nsCSSAnonBoxes::tableWrapper(),
+  MOZ_ASSERT(wrapper->Style()->GetPseudoType() == PseudoStyleType::tableWrapper,
              "What happened to our parent?");
   aResult.AppendElement(
       OwnedAnonBox(wrapper, &UpdateStyleOfOwnedAnonBoxesForTableWrapper));
@@ -7678,12 +7678,12 @@ void nsTableFrame::AppendDirectlyOwnedAnonBoxes(
     nsIFrame* aOwningFrame, nsIFrame* aWrapperFrame,
     ServoRestyleState& aRestyleState) {
   MOZ_ASSERT(
-      aWrapperFrame->Style()->GetPseudo() == nsCSSAnonBoxes::tableWrapper(),
+      aWrapperFrame->Style()->GetPseudoType() == PseudoStyleType::tableWrapper,
       "What happened to our parent?");
 
   RefPtr<ComputedStyle> newStyle =
       aRestyleState.StyleSet().ResolveInheritingAnonymousBoxStyle(
-          nsCSSAnonBoxes::tableWrapper(), aOwningFrame->Style());
+          PseudoStyleType::tableWrapper, aOwningFrame->Style());
 
   
   

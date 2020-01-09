@@ -37,7 +37,7 @@ class CSSPseudoElement final : public nsWrapperCache {
   virtual JSObject* WrapObject(JSContext* aCx,
                                JS::Handle<JSObject*> aGivenProto) override;
 
-  CSSPseudoElementType GetType() const { return mPseudoType; }
+  PseudoStyleType GetType() const { return mPseudoType; }
   void GetType(nsString& aRetVal) const {
     MOZ_ASSERT(nsCSSPseudoElements::GetPseudoAtom(mPseudoType),
                "All pseudo-types allowed by this class should have a"
@@ -66,19 +66,19 @@ class CSSPseudoElement final : public nsWrapperCache {
   
   
   static already_AddRefed<CSSPseudoElement> GetCSSPseudoElement(
-      Element* aElement, CSSPseudoElementType aType);
+      Element* aElement, PseudoStyleType aType);
 
  private:
   
-  CSSPseudoElement(Element* aElement, CSSPseudoElementType aType);
+  CSSPseudoElement(Element* aElement, PseudoStyleType aType);
 
-  static nsAtom* GetCSSPseudoElementPropertyAtom(CSSPseudoElementType aType);
+  static nsAtom* GetCSSPseudoElementPropertyAtom(PseudoStyleType aType);
 
   
   
   
   RefPtr<Element> mParentElement;
-  CSSPseudoElementType mPseudoType;
+  PseudoStyleType mPseudoType;
 };
 
 }  

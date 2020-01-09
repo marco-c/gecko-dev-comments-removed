@@ -14,6 +14,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/CachedInheritingStyles.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/PseudoStyleType.h"
 #include "mozilla/ServoComputedData.h"
 #include "mozilla/ServoTypes.h"
 #include "mozilla/ServoUtils.h"
@@ -23,7 +24,6 @@
 
 #include "nsStyleStructFwd.h"
 
-class nsAtom;
 enum nsChangeHint : uint32_t;
 class nsIPresShell;
 class nsPresContext;
@@ -45,7 +45,6 @@ namespace dom {
 class Document;
 }
 
-enum class CSSPseudoElementType : uint8_t;
 class ComputedStyle;
 
 
@@ -79,7 +78,7 @@ class ComputedStyle {
   using Bit = ComputedStyleBit;
 
  public:
-  ComputedStyle(nsAtom* aPseudoTag, CSSPseudoElementType aPseudoType,
+  ComputedStyle(PseudoStyleType aPseudoType,
                 ServoComputedDataForgotten aComputedValues);
 
   void AddRef() { Servo_ComputedStyle_AddRef(this); }
@@ -108,31 +107,29 @@ class ComputedStyle {
            !nsCSSPseudoElements::IsEagerlyCascadedInServo(GetPseudoType());
   }
 
-  nsAtom* GetPseudo() const { return mPseudoTag; }
-  mozilla::CSSPseudoElementType GetPseudoType() const { return mPseudoType; }
+  PseudoStyleType GetPseudoType() const { return mPseudoType; }
+
+  bool IsPseudoElement() const {
+    return PseudoStyle::IsPseudoElement(mPseudoType);
+  }
 
   bool IsInheritingAnonBox() const {
-    return GetPseudoType() == mozilla::CSSPseudoElementType::InheritingAnonBox;
+    return PseudoStyle::IsInheritingAnonBox(mPseudoType);
   }
 
   bool IsNonInheritingAnonBox() const {
-    return GetPseudoType() ==
-           mozilla::CSSPseudoElementType::NonInheritingAnonBox;
+    return PseudoStyle::IsNonInheritingAnonBox(mPseudoType);
   }
 
-  
-  
-  
-  
   bool IsWrapperAnonBox() const {
-    return nsCSSAnonBoxes::IsWrapperAnonBox(GetPseudo());
+    return PseudoStyle::IsWrapperAnonBox(mPseudoType);
   }
 
-  bool IsAnonBox() const {
-    return IsInheritingAnonBox() || IsNonInheritingAnonBox();
-  }
+  bool IsAnonBox() const { return PseudoStyle::IsAnonBox(mPseudoType); }
 
-  bool IsPseudoElement() const { return mPseudoTag && !IsAnonBox(); }
+  bool IsPseudoOrAnonBox() const {
+    return mPseudoType != PseudoStyleType::NotPseudo;
+  }
 
   
   
@@ -172,20 +169,20 @@ class ComputedStyle {
     return bool(mBits & Bit::RelevantLinkVisited);
   }
 
-  ComputedStyle* GetCachedInheritingAnonBoxStyle(nsAtom* aAnonBox) const {
-    MOZ_ASSERT(nsCSSAnonBoxes::IsInheritingAnonBox(aAnonBox));
-    return mCachedInheritingStyles.Lookup(aAnonBox);
+  ComputedStyle* GetCachedInheritingAnonBoxStyle(
+      PseudoStyleType aPseudoType) const {
+    MOZ_ASSERT(PseudoStyle::IsInheritingAnonBox(aPseudoType));
+    return mCachedInheritingStyles.Lookup(aPseudoType);
   }
 
-  void SetCachedInheritedAnonBoxStyle(nsAtom* aAnonBox, ComputedStyle* aStyle) {
-    MOZ_ASSERT(!GetCachedInheritingAnonBoxStyle(aAnonBox));
+  void SetCachedInheritedAnonBoxStyle(ComputedStyle* aStyle) {
     mCachedInheritingStyles.Insert(aStyle);
   }
 
-  ComputedStyle* GetCachedLazyPseudoStyle(CSSPseudoElementType aPseudo) const;
+  ComputedStyle* GetCachedLazyPseudoStyle(PseudoStyleType aPseudo) const;
 
   void SetCachedLazyPseudoStyle(ComputedStyle* aStyle) {
-    MOZ_ASSERT(aStyle->GetPseudo() && !aStyle->IsAnonBox());
+    MOZ_ASSERT(aStyle->IsPseudoElement());
     MOZ_ASSERT(!GetCachedLazyPseudoStyle(aStyle->GetPseudoType()));
     MOZ_ASSERT(!IsLazilyCascadedPseudoElement(),
                "lazy pseudos can't inherit lazy pseudos");
@@ -288,12 +285,8 @@ class ComputedStyle {
   
   CachedInheritingStyles mCachedInheritingStyles;
 
-  
-  
-  const RefPtr<nsAtom> mPseudoTag;
-
   const Bit mBits;
-  const CSSPseudoElementType mPseudoType;
+  const PseudoStyleType mPseudoType;
 };
 
 }  

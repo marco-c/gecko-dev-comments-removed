@@ -65,7 +65,7 @@ class AnimationCollection
   
   
   static AnimationCollection<AnimationType>* GetAnimationCollection(
-      const dom::Element* aElement, CSSPseudoElementType aPseudoType);
+      const dom::Element* aElement, PseudoStyleType aPseudoType);
 
   
   
@@ -81,7 +81,7 @@ class AnimationCollection
   
   
   static AnimationCollection<AnimationType>* GetOrCreateAnimationCollection(
-      dom::Element* aElement, CSSPseudoElementType aPseudoType,
+      dom::Element* aElement, PseudoStyleType aPseudoType,
       bool* aCreatedCollection);
 
   dom::Element* mElement;
@@ -93,7 +93,7 @@ class AnimationCollection
   InfallibleTArray<RefPtr<AnimationType>> mAnimations;
 
  private:
-  static nsAtom* GetPropertyAtomForPseudoType(CSSPseudoElementType aPseudoType);
+  static nsAtom* GetPropertyAtomForPseudoType(PseudoStyleType aPseudoType);
 
 #ifdef DEBUG
   bool mCalledPropertyDtor;

@@ -301,14 +301,14 @@ class FocusTextField : public Runnable {
 };
 
 already_AddRefed<Element> nsNumberControlFrame::MakeAnonymousElement(
-    Element* aParent, nsAtom* aTagName, CSSPseudoElementType aPseudoType) {
+    Element* aParent, nsAtom* aTagName, PseudoStyleType aPseudoType) {
   
   Document* doc = mContent->GetComposedDoc();
   RefPtr<Element> resultElement = doc->CreateHTMLElement(aTagName);
   resultElement->SetPseudoElementType(aPseudoType);
 
-  if (aPseudoType == CSSPseudoElementType::mozNumberSpinDown ||
-      aPseudoType == CSSPseudoElementType::mozNumberSpinUp) {
+  if (aPseudoType == PseudoStyleType::mozNumberSpinDown ||
+      aPseudoType == PseudoStyleType::mozNumberSpinUp) {
     resultElement->SetAttr(kNameSpaceID_None, nsGkAtoms::role,
                            NS_LITERAL_STRING("button"), false);
   }
@@ -337,13 +337,13 @@ nsresult nsNumberControlFrame::CreateAnonymousContent(
 
   
   mOuterWrapper = MakeAnonymousElement(nullptr, nsGkAtoms::div,
-                                       CSSPseudoElementType::mozNumberWrapper);
+                                       PseudoStyleType::mozNumberWrapper);
 
   aElements.AppendElement(mOuterWrapper);
 
   
   mTextField = MakeAnonymousElement(mOuterWrapper, nsGkAtoms::input,
-                                    CSSPseudoElementType::mozNumberText);
+                                    PseudoStyleType::mozNumberText);
 
   mTextField->SetAttr(kNameSpaceID_None, nsGkAtoms::type,
                       NS_LITERAL_STRING("text"), false);
@@ -391,15 +391,15 @@ nsresult nsNumberControlFrame::CreateAnonymousContent(
 
   
   mSpinBox = MakeAnonymousElement(mOuterWrapper, nsGkAtoms::div,
-                                  CSSPseudoElementType::mozNumberSpinBox);
+                                  PseudoStyleType::mozNumberSpinBox);
 
   
   mSpinUp = MakeAnonymousElement(mSpinBox, nsGkAtoms::div,
-                                 CSSPseudoElementType::mozNumberSpinUp);
+                                 PseudoStyleType::mozNumberSpinUp);
 
   
   mSpinDown = MakeAnonymousElement(mSpinBox, nsGkAtoms::div,
-                                   CSSPseudoElementType::mozNumberSpinDown);
+                                   PseudoStyleType::mozNumberSpinDown);
 
   return NS_OK;
 }

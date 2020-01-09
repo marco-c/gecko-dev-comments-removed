@@ -507,7 +507,7 @@ void nsButtonFrameRenderer::ReResolveStyles(nsPresContext* aPresContext) {
 
   
   mInnerFocusStyle = styleSet->ProbePseudoElementStyle(
-      *mFrame->GetContent()->AsElement(), CSSPseudoElementType::mozFocusInner,
+      *mFrame->GetContent()->AsElement(), PseudoStyleType::mozFocusInner,
       context);
 }
 

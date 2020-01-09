@@ -479,7 +479,7 @@ void nsTextControlFrame::CreatePlaceholderIfNeeded() {
 
   mPlaceholderDiv = CreateEmptyDivWithTextNode(*this);
   
-  mPlaceholderDiv->SetPseudoElementType(CSSPseudoElementType::placeholder);
+  mPlaceholderDiv->SetPseudoElementType(PseudoStyleType::placeholder);
   mPlaceholderDiv->GetFirstChild()->AsText()->SetText(placeholderTxt, false);
 }
 

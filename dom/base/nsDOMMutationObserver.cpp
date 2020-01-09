@@ -365,8 +365,7 @@ void nsAnimationReceiver::RecordAnimationMutation(
   }
 
   
-  if (animationTarget->mPseudoType !=
-          mozilla::CSSPseudoElementType::NotPseudo &&
+  if (animationTarget->mPseudoType != PseudoStyleType::NotPseudo &&
       !Subtree()) {
     return;
   }

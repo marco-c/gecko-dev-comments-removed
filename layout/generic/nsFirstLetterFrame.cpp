@@ -52,7 +52,7 @@ void nsFirstLetterFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
     
     
     nsIFrame* styleParent =
-        CorrectStyleParentFrame(aParent, nsCSSPseudoElements::firstLetter());
+        CorrectStyleParentFrame(aParent, PseudoStyleType::firstLetter);
     ComputedStyle* parentComputedStyle = styleParent->Style();
     newSC = PresContext()->StyleSet()->ResolveStyleForFirstLetterContinuation(
         parentComputedStyle);
@@ -214,8 +214,8 @@ void nsFirstLetterFrame::Reflow(nsPresContext* aPresContext,
     nsLineLayout* ll = aReflowInput.mLineLayout;
     bool pushedFrame;
 
-    ll->SetInFirstLetter(mComputedStyle->GetPseudo() ==
-                         nsCSSPseudoElements::firstLetter());
+    ll->SetInFirstLetter(Style()->GetPseudoType() ==
+                         PseudoStyleType::firstLetter);
     ll->BeginSpan(this, &aReflowInput, bp.IStart(wm), availSize.ISize(wm),
                   &mBaseline);
     ll->ReflowFrame(kid, aReflowStatus, &kidMetrics, pushedFrame);
@@ -354,8 +354,8 @@ void nsFirstLetterFrame::DrainOverflowFrames(nsPresContext* aPresContext) {
       ComputedStyle* parentSC;
       if (prevInFlow) {
         
-        nsIFrame* styleParent = CorrectStyleParentFrame(
-            GetParent(), nsCSSPseudoElements::firstLetter());
+        nsIFrame* styleParent =
+            CorrectStyleParentFrame(GetParent(), PseudoStyleType::firstLetter);
         parentSC = styleParent->Style();
       } else {
         
