@@ -6861,6 +6861,12 @@ GeneralParser<ParseHandler, Unit>::classDefinition(
     }
 
     if (propType == PropertyType::Field) {
+      
+      
+      
+      errorAt(propNameOffset, JSMSG_FIELDS_NOT_SUPPORTED);
+      return null();
+
       if (isStatic) {
         errorAt(propNameOffset, JSMSG_BAD_METHOD_DEF);
         return null();
@@ -6893,11 +6899,7 @@ GeneralParser<ParseHandler, Unit>::classDefinition(
         return null();
       }
 
-      
-      
-      
-      errorAt(propNameOffset, JSMSG_FIELDS_NOT_SUPPORTED);
-      return null();
+      continue;
     }
 
     if (propType != PropertyType::Getter && propType != PropertyType::Setter &&
