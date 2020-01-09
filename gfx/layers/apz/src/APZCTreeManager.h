@@ -588,6 +588,11 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   
   virtual TimeStamp GetFrameTime();
 
+  
+  void SetTestSampleTime(const Maybe<TimeStamp>& aTime);
+ private:
+  Maybe<TimeStamp> mTestSampleTime;
+
  public:
   
 
