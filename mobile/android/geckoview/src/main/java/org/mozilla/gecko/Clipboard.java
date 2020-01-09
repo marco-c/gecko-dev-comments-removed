@@ -11,6 +11,7 @@ import android.content.ClipData;
 import android.content.ClipDescription;
 import android.content.Context;
 import android.text.TextUtils;
+import android.util.Log;
 
 public final class Clipboard {
     private final static String HTML_MIME = "text/html";
@@ -69,9 +70,10 @@ public final class Clipboard {
 
 
 
+
     @WrapForJNI(calledFrom = "gecko")
-    public static void setText(final Context context, final CharSequence text) {
-        setData(context, ClipData.newPlainText("text", text));
+    public static boolean setText(final Context context, final CharSequence text) {
+        return setData(context, ClipData.newPlainText("text", text));
     }
 
     
@@ -81,9 +83,10 @@ public final class Clipboard {
 
 
 
+
     @WrapForJNI(calledFrom = "gecko")
-    public static void setHTML(final Context context, final CharSequence text, final String htmlText) {
-        setData(context, ClipData.newHtmlText("html", text, htmlText));
+    public static boolean setHTML(final Context context, final CharSequence text, final String htmlText) {
+        return setData(context, ClipData.newHtmlText("html", text, htmlText));
     }
 
     
@@ -92,7 +95,8 @@ public final class Clipboard {
 
 
 
-    private static void setData(final Context context, final ClipData clipData) {
+
+    private static boolean setData(final Context context, final ClipData clipData) {
         
         
         final ClipboardManager cm = (ClipboardManager)
@@ -103,7 +107,12 @@ public final class Clipboard {
             
             
             
+        } catch (RuntimeException e) {
+            
+            Log.e(LOGTAG, "Couldn't set clip data to clipboard", e);
+            return false;
         }
+        return true;
     }
 
     
