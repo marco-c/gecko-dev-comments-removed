@@ -174,6 +174,18 @@ class AsyncCompositionManager final {
 
 
 
+  void AdjustFixedOrStickyLayer(
+      Layer* aTransformedSubtreeRoot, Layer* aFixedOrSticky,
+      ScrollableLayerGuid::ViewID aTransformScrollId,
+      const LayerToParentLayerMatrix4x4& aPreviousTransformForRoot,
+      const LayerToParentLayerMatrix4x4& aCurrentTransformForRoot,
+      const ScreenMargin& aFixedLayerMargins, ClipPartsCache& aClipPartsCache);
+
+  
+
+
+
+
 
 
 
