@@ -307,14 +307,6 @@ typedef enum JSGCParamKey {
 
   JSGC_MIN_NURSERY_BYTES = 31,
 
-  
-
-
-
-
-
-  JSGC_MIN_LAST_DITCH_GC_PERIOD = 32,
-
 } JSGCParamKey;
 
 
