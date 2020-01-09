@@ -131,6 +131,12 @@ void TextTrack::SetMode(TextTrackMode aValue) {
   }
   
   
+  
+  if (mTrackElement) {
+    mTrackElement->MaybeDispatchLoadResource();
+  }
+  
+  
   NotifyCueUpdated(nullptr);
 }
 
