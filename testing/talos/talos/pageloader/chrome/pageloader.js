@@ -207,7 +207,7 @@ function plInit() {
         
         
         
-        let remoteType = E10SUtils.getRemoteTypeForURI(pageUrls[0], true);
+        let remoteType = E10SUtils.getRemoteTypeForURI(pageUrls[0],  true,  false);
         let tabbrowser = browserWindow.gBrowser;
         if (remoteType) {
           tabbrowser.updateBrowserRemoteness(tabbrowser.initialBrowser, { remoteType });

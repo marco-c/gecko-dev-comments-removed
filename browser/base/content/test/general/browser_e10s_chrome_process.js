@@ -49,24 +49,24 @@ registerCleanupFunction(() => {
 });
 
 function test_url(url, chromeResult, contentResult) {
-  is(E10SUtils.canLoadURIInRemoteType(url, CHROME_PROCESS),
+  is(E10SUtils.canLoadURIInRemoteType(url,  false, CHROME_PROCESS),
      chromeResult, "Check URL in chrome process.");
-  is(E10SUtils.canLoadURIInRemoteType(url, WEB_CONTENT_PROCESS),
+  is(E10SUtils.canLoadURIInRemoteType(url,  false, WEB_CONTENT_PROCESS),
      contentResult, "Check URL in web content process.");
 
-  is(E10SUtils.canLoadURIInRemoteType(url + "#foo", CHROME_PROCESS),
+  is(E10SUtils.canLoadURIInRemoteType(url + "#foo",  false, CHROME_PROCESS),
      chromeResult, "Check URL with ref in chrome process.");
-  is(E10SUtils.canLoadURIInRemoteType(url + "#foo", WEB_CONTENT_PROCESS),
+  is(E10SUtils.canLoadURIInRemoteType(url + "#foo",  false, WEB_CONTENT_PROCESS),
      contentResult, "Check URL with ref in web content process.");
 
-  is(E10SUtils.canLoadURIInRemoteType(url + "?foo", CHROME_PROCESS),
+  is(E10SUtils.canLoadURIInRemoteType(url + "?foo",  false, CHROME_PROCESS),
      chromeResult, "Check URL with query in chrome process.");
-  is(E10SUtils.canLoadURIInRemoteType(url + "?foo", WEB_CONTENT_PROCESS),
+  is(E10SUtils.canLoadURIInRemoteType(url + "?foo",  false, WEB_CONTENT_PROCESS),
      contentResult, "Check URL with query in web content process.");
 
-  is(E10SUtils.canLoadURIInRemoteType(url + "?foo#bar", CHROME_PROCESS),
+  is(E10SUtils.canLoadURIInRemoteType(url + "?foo#bar",  false, CHROME_PROCESS),
      chromeResult, "Check URL with query and ref in chrome process.");
-  is(E10SUtils.canLoadURIInRemoteType(url + "?foo#bar", WEB_CONTENT_PROCESS),
+  is(E10SUtils.canLoadURIInRemoteType(url + "?foo#bar",  false, WEB_CONTENT_PROCESS),
      contentResult, "Check URL with query and ref in web content process.");
 }
 

@@ -408,6 +408,10 @@ var gMultiProcessBrowser =
   window.docShell
         .QueryInterface(Ci.nsILoadContext)
         .useRemoteTabs;
+var gFissionBrowser =
+  window.docShell
+        .QueryInterface(Ci.nsILoadContext)
+        .useRemoteSubframes;
 
 var gBrowserAllowScriptsToCloseInitialTabs = false;
 
@@ -1204,7 +1208,7 @@ function _loadURI(browser, uri, params = {}) {
     mustChangeProcess,
     newFrameloader,
   } = E10SUtils.shouldLoadURIInBrowser(browser, uri, gMultiProcessBrowser,
-                                       flags);
+                                       gFissionBrowser, flags);
   if (uriObject && handleUriInChrome(browser, uriObject)) {
     
     return;
@@ -1316,7 +1320,8 @@ function RedirectLoad({ target: browser, data }) {
     
     
     data.loadOptions.remoteType =
-      E10SUtils.getRemoteTypeForURI(data.loadOptions.uri, gMultiProcessBrowser);
+      E10SUtils.getRemoteTypeForURI(data.loadOptions.uri, gMultiProcessBrowser,
+                                    gFissionBrowser);
   }
 
   
@@ -2719,7 +2724,8 @@ async function BrowserViewSourceOfDocument(aArgsOrDocument) {
     
     
     preferredRemoteType =
-      E10SUtils.getRemoteTypeForURI(args.URL, gMultiProcessBrowser);
+      E10SUtils.getRemoteTypeForURI(args.URL, gMultiProcessBrowser,
+                                    gFissionBrowser);
   }
 
   

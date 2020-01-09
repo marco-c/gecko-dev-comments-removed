@@ -29,7 +29,8 @@ add_task(async function() {
   
   
   const remoteType = E10SUtils.getRemoteTypeForURI(uri.spec,
-                                                 gMultiProcessBrowser);
+                                                   gMultiProcessBrowser,
+                                                   gFissionBrowser);
   const { browser } = await loadTab("about:blank", remoteType);
 
   hud = await openConsole();

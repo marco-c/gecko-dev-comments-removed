@@ -600,7 +600,7 @@ var BrowserTestUtils = {
           let browser = win.gBrowser.selectedBrowser;
 
           if (win.gMultiProcessBrowser &&
-              !E10SUtils.canLoadURIInRemoteType(url, browser.remoteType,
+              !E10SUtils.canLoadURIInRemoteType(url, win.gFissionBrowser, browser.remoteType,
                                                 browser.remoteType )) {
             await this.waitForEvent(browser, "XULFrameLoaderCreated");
           }
@@ -647,7 +647,9 @@ var BrowserTestUtils = {
     
     
     
-    if (!E10SUtils.canLoadURIInRemoteType(uri, browser.remoteType)) {
+    if (!E10SUtils.canLoadURIInRemoteType(uri,
+                                          browser.ownerGlobal.gFissionBrowser,
+                                          browser.remoteType)) {
       await this.waitForEvent(browser, "XULFrameLoaderCreated");
     }
   },

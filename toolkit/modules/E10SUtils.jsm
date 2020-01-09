@@ -52,12 +52,19 @@ const PRIVILEGED_REMOTE_TYPE = "privileged";
 const LARGE_ALLOCATION_REMOTE_TYPE = "webLargeAllocation";
 const DEFAULT_REMOTE_TYPE = WEB_REMOTE_TYPE;
 
-function validatedWebRemoteType(aPreferredRemoteType, aTargetUri, aCurrentUri) {
+function validatedWebRemoteType(aPreferredRemoteType, aTargetUri, aCurrentUri, aRemoteSubframes) {
   
   
   const sm = Services.scriptSecurityManager;
   if (sm.inFileURIAllowlist(aTargetUri)) {
     return FILE_REMOTE_TYPE;
+  }
+
+  
+  
+  if (aRemoteSubframes) {
+    let targetPrincipal = sm.createCodebasePrincipal(aTargetUri, {});
+    return "webIsolated=" + targetPrincipal.siteOrigin;
   }
 
   if (!aPreferredRemoteType) {
@@ -146,7 +153,8 @@ var E10SUtils = {
     return null;
   },
 
-  canLoadURIInRemoteType(aURL, aRemoteType = DEFAULT_REMOTE_TYPE,
+  canLoadURIInRemoteType(aURL, aRemoteSubframes,
+                         aRemoteType = DEFAULT_REMOTE_TYPE,
                          aPreferredRemoteType = undefined) {
     
     
@@ -157,10 +165,10 @@ var E10SUtils = {
         : DEFAULT_REMOTE_TYPE;
     }
 
-    return aRemoteType == this.getRemoteTypeForURI(aURL, true, aPreferredRemoteType);
+    return aRemoteType == this.getRemoteTypeForURI(aURL, true, aRemoteSubframes, aPreferredRemoteType);
   },
 
-  getRemoteTypeForURI(aURL, aMultiProcess,
+  getRemoteTypeForURI(aURL, aMultiProcess, aRemoteSubframes,
                       aPreferredRemoteType = DEFAULT_REMOTE_TYPE,
                       aCurrentUri) {
     if (!aMultiProcess) {
@@ -183,11 +191,11 @@ var E10SUtils = {
       return DEFAULT_REMOTE_TYPE;
     }
 
-    return this.getRemoteTypeForURIObject(uri, aMultiProcess,
+    return this.getRemoteTypeForURIObject(uri, aMultiProcess, aRemoteSubframes,
                                           aPreferredRemoteType, aCurrentUri);
   },
 
-  getRemoteTypeForURIObject(aURI, aMultiProcess,
+  getRemoteTypeForURIObject(aURI, aMultiProcess, aRemoteSubframes,
                             aPreferredRemoteType = DEFAULT_REMOTE_TYPE,
                             aCurrentUri) {
     if (!aMultiProcess) {
@@ -282,15 +290,16 @@ var E10SUtils = {
         if (aURI instanceof Ci.nsINestedURI) {
           let innerURI = aURI.QueryInterface(Ci.nsINestedURI).innerURI;
           return this.getRemoteTypeForURIObject(innerURI, aMultiProcess,
+                                                aRemoteSubframes,
                                                 aPreferredRemoteType,
                                                 aCurrentUri);
         }
 
-        return validatedWebRemoteType(aPreferredRemoteType, aURI, aCurrentUri);
+        return validatedWebRemoteType(aPreferredRemoteType, aURI, aCurrentUri, aRemoteSubframes);
     }
   },
 
-  getRemoteTypeForPrincipal(aPrincipal, aMultiProcess,
+  getRemoteTypeForPrincipal(aPrincipal, aMultiProcess, aRemoteSubframes,
                             aPreferredRemoteType = DEFAULT_REMOTE_TYPE,
                             aCurrentPrincipal) {
     if (!aMultiProcess) {
@@ -316,6 +325,7 @@ var E10SUtils = {
                      ? aCurrentPrincipal.URI : null;
     return E10SUtils.getRemoteTypeForURIObject(aPrincipal.URI,
                                                aMultiProcess,
+                                               aRemoteSubframes,
                                                aPreferredRemoteType,
                                                currentURI);
   },
@@ -397,7 +407,7 @@ var E10SUtils = {
     return fallbackPrincipalCallback();
   },
 
-  shouldLoadURIInBrowser(browser, uri, multiProcess = true,
+  shouldLoadURIInBrowser(browser, uri, multiProcess = true, remoteSubframes = false,
                          flags = Ci.nsIWebNavigation.LOAD_FLAGS_NONE) {
     let currentRemoteType = browser.remoteType;
     let requiredRemoteType;
@@ -414,7 +424,7 @@ var E10SUtils = {
       
       
       requiredRemoteType =
-        this.getRemoteTypeForURIObject(uriObject, multiProcess,
+        this.getRemoteTypeForURIObject(uriObject, multiProcess, remoteSubframes,
                                        currentRemoteType, browser.currentURI);
     } catch (e) {
       
@@ -440,12 +450,19 @@ var E10SUtils = {
     };
   },
 
-  shouldLoadURIInThisProcess(aURI) {
+  shouldLoadURIInThisProcess(aURI, aRemoteSubframes) {
     let remoteType = Services.appinfo.remoteType;
-    return remoteType == this.getRemoteTypeForURIObject(aURI, true, remoteType);
+    return remoteType == this.getRemoteTypeForURIObject(aURI,
+                                                         true,
+                                                        aRemoteSubframes,
+                                                        remoteType);
   },
 
   shouldLoadURI(aDocShell, aURI, aReferrer, aHasPostData) {
+    let remoteSubframes = aDocShell.useRemoteSubframes;
+
+    
+    
     
     if (aDocShell.sameTypeParent) {
       return true;
@@ -499,11 +516,12 @@ var E10SUtils = {
       
       let remoteType = Services.appinfo.remoteType;
       return remoteType ==
-        this.getRemoteTypeForURIObject(aURI, true, remoteType, webNav.currentURI);
+        this.getRemoteTypeForURIObject(aURI, true, remoteSubframes,
+                                       remoteType, webNav.currentURI);
     }
 
     
-    return this.shouldLoadURIInThisProcess(aURI);
+    return this.shouldLoadURIInThisProcess(aURI, remoteSubframes);
   },
 
   redirectLoad(aDocShell, aURI, aReferrer, aTriggeringPrincipal, aFreshProcess, aFlags, aCsp) {
