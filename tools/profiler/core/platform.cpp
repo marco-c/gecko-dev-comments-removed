@@ -2833,6 +2833,11 @@ void profiler_init(void* aStackTop) {
       }
     }
 
+    
+    
+    
+    features |= ProfilerFeature::MainThreadIO;
+
     const char* startupFeaturesBitfield =
         getenv("MOZ_PROFILER_STARTUP_FEATURES_BITFIELD");
     if (startupFeaturesBitfield && startupFeaturesBitfield[0] != '\0') {
