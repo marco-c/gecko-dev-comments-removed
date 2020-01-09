@@ -2024,7 +2024,9 @@ class Document : public nsINode,
   
   
   
-  void DocumentStatesChanged(EventStates aStateMask);
+  
+  
+  void UpdateDocumentStates(EventStates aStateMask, bool aNotify);
 
   void ResetDocumentDirection();
 
@@ -3816,8 +3818,6 @@ class Document : public nsINode,
   bool GetChildDocumentUseCounter(UseCounter aUseCounter) {
     return mChildDocumentUseCounters[aUseCounter];
   }
-
-  void UpdateDocumentStates(EventStates);
 
   void RemoveDocStyleSheetsFromStyleSets();
   void RemoveStyleSheetsFromStyleSets(
