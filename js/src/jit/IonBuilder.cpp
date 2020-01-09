@@ -4468,6 +4468,16 @@ AbortReasonOr<Ok> IonBuilder::selectInliningTargets(
       inlineable = false;
     }
 
+    
+    
+    if (inlineable && targets[i].group) {
+      ObjectGroup* group = targets[i].group;
+      TypeSet::ObjectKey* key = TypeSet::ObjectKey::get(group);
+      if (!key->hasStableClassAndProto(constraints())) {
+        inlineable = false;
+      }
+    }
+
     choiceSet.infallibleAppend(inlineable);
     if (inlineable) {
       *numInlineable += 1;
