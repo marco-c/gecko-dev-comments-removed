@@ -70,6 +70,8 @@ already_AddRefed<WindowGlobalChild> WindowGlobalChild::Create(
   MOZ_RELEASE_ASSERT(!entry, "Duplicate WindowGlobalChild entry for ID!");
   entry.OrInsert([&] { return wgc; });
 
+  
+  wgc->SendUpdateDocumentURI(aWindow->GetDocumentURI());
   return wgc.forget();
 }
 
