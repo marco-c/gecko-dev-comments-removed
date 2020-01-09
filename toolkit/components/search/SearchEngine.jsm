@@ -10,6 +10,7 @@ const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm")
 XPCOMUtils.defineLazyModuleGetters(this, {
   AppConstants: "resource://gre/modules/AppConstants.jsm",
   OS: "resource://gre/modules/osfile.jsm",
+  SearchUtils: "resource://gre/modules/SearchUtils.jsm",
   Services: "resource://gre/modules/Services.jsm",
 });
 
@@ -18,33 +19,9 @@ XPCOMUtils.defineLazyServiceGetters(this, {
   gChromeReg: ["@mozilla.org/chrome/chrome-registry;1", "nsIChromeRegistry"],
 });
 
-const BROWSER_SEARCH_PREF = "browser.search.";
-
-XPCOMUtils.defineLazyPreferenceGetter(this, "loggingEnabled", BROWSER_SEARCH_PREF + "log", false);
-
 const BinaryInputStream = Components.Constructor(
   "@mozilla.org/binaryinputstream;1",
   "nsIBinaryInputStream", "setInputStream");
-
-const APP_SEARCH_PREFIX = "resource://search-plugins/";
-
-
-const SEARCH_ENGINE_TOPIC        = "browser-search-engine-modified";
-
-const SEARCH_ENGINE_CHANGED      = "engine-changed";
-const SEARCH_ENGINE_LOADED       = "engine-loaded";
-
-
-
-
-
-
-const MAX_ICON_SIZE   = 20000;
-
-
-
-
-const DEFAULT_QUERY_CHARSET = "ISO-8859-1";
 
 const SEARCH_BUNDLE = "chrome://global/locale/search/search.properties";
 const BRAND_BUNDLE = "chrome://branding/locale/brand.properties";
@@ -65,10 +42,6 @@ const OPENSEARCH_LOCALNAME = "OpenSearchDescription";
 
 const MOZSEARCH_NS_10     = "http://www.mozilla.org/2006/browser/search/";
 const MOZSEARCH_LOCALNAME = "SearchPlugin";
-
-const URLTYPE_SUGGEST_JSON = "application/x-suggestions+json";
-const URLTYPE_SEARCH_HTML  = "text/html";
-const URLTYPE_OPENSEARCH   = "application/opensearchdescription+xml";
 
 const USER_DEFINED = "searchTerms";
 
@@ -109,29 +82,6 @@ var OS_UNSUPPORTED_PARAMS = [
   [OS_PARAM_START_INDEX, OS_PARAM_START_INDEX_DEF],
   [OS_PARAM_START_PAGE, OS_PARAM_START_PAGE_DEF],
 ];
-
-
-
-
-function LOG(text) {
-  if (loggingEnabled) {
-    dump("*** Search: " + text + "\n");
-    Services.console.logStringMessage(text);
-  }
-}
-
-
-
-
-
-
-
-
-
-function FAIL(message, resultCode) {
-  LOG(message);
-  throw Components.Exception(message, resultCode || Cr.NS_ERROR_INVALID_ARG);
-}
 
 
 
@@ -186,20 +136,20 @@ loadListener.prototype = {
 
   
   onStartRequest(request) {
-    LOG("loadListener: Starting request: " + request.name);
+    SearchUtils.log("loadListener: Starting request: " + request.name);
     this._stream = Cc["@mozilla.org/binaryinputstream;1"].
                    createInstance(Ci.nsIBinaryInputStream);
   },
 
   onStopRequest(request, statusCode) {
-    LOG("loadListener: Stopping request: " + request.name);
+    SearchUtils.log("loadListener: Stopping request: " + request.name);
 
     var requestFailed = !Components.isSuccessCode(statusCode);
     if (!requestFailed && (request instanceof Ci.nsIHttpChannel))
       requestFailed = !request.requestSucceeded;
 
     if (requestFailed || this._countRead == 0) {
-      LOG("loadListener: request failed!");
+      SearchUtils.log("loadListener: request failed!");
       
       this._bytes = null;
     }
@@ -256,7 +206,7 @@ function rescaleIcon(byteArray, contentType, size = 32) {
   let container = imgTools.decodeImageFromArrayBuffer(arrayBuffer, contentType);
   let stream = imgTools.encodeScaledImage(container, "image/png", size, size);
   let streamSize = stream.available();
-  if (streamSize > MAX_ICON_SIZE)
+  if (streamSize > SearchUtils.MAX_ICON_SIZE)
     throw new Error("Icon is too big");
   let bis = new BinaryInputStream(stream);
   return [bis.readByteArray(streamSize), "image/png"];
@@ -293,45 +243,11 @@ function getVerificationHash(name) {
 
 
 
-function makeURI(urlSpec) {
-  try {
-    return Services.io.newURI(urlSpec);
-  } catch (ex) { }
-
-  return null;
-}
-
-
-
-
-
-
-
-function makeChannel(url) {
-  try {
-    let uri = typeof url == "string" ? Services.io.newURI(url) : url;
-    return Services.io.newChannelFromURI(uri,
-                                         null, 
-                                         Services.scriptSecurityManager.getSystemPrincipal(),
-                                         null, 
-                                         Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
-                                         Ci.nsIContentPolicy.TYPE_OTHER);
-  } catch (ex) { }
-
-  return null;
-}
-
-
-
-
-
-
-
 
 
 function getDir(key, iface) {
   if (!key)
-    FAIL("getDir requires a directory key!");
+    SearchUtils.fail("getDir requires a directory key!");
 
   return Services.dirsvc.get(key, iface || Ci.nsIFile);
 }
@@ -368,7 +284,7 @@ function sanitizeName(name) {
 
 
 function getMozParamPref(prefName) {
-  let branch = Services.prefs.getDefaultBranch(BROWSER_SEARCH_PREF + "param.");
+  let branch = Services.prefs.getDefaultBranch(SearchUtils.BROWSER_SEARCH_PREF + "param.");
   let prefValue = branch.getCharPref(prefName, null);
   return prefValue ? encodeURIComponent(prefValue) : null;
 }
@@ -381,27 +297,9 @@ function getMozParamPref(prefName) {
 
 
 
-
-
-
-function notifyAction(engine, verb) {
-  if (Services.search.isInitialized) {
-    LOG("NOTIFY: Engine: \"" + engine.name + "\"; Verb: \"" + verb + "\"");
-    Services.obs.notifyObservers(engine, SEARCH_ENGINE_TOPIC, verb);
-  }
-}
-
-
-
-
-
-
-
-
-
 function QueryParameter(name, value, purpose) {
   if (!name || (value == null))
-    FAIL("missing name or value for QueryParameter!");
+    SearchUtils.fail("missing name or value for QueryParameter!");
 
   this.name = name;
   this.value = value;
@@ -440,12 +338,12 @@ function ParamSubstitution(paramValue, searchTerms, engine) {
       if (name == MOZ_PARAM_LOCALE)
         return Services.locale.requestedLocale;
       if (name == MOZ_PARAM_DIST_ID) {
-        return Services.prefs.getCharPref(BROWSER_SEARCH_PREF + "distributionID",
+        return Services.prefs.getCharPref(SearchUtils.BROWSER_SEARCH_PREF + "distributionID",
                                           Services.appinfo.distributionID || "");
       }
       
       if (name == MOZ_PARAM_OFFICIAL) {
-        if (Services.prefs.getBoolPref(BROWSER_SEARCH_PREF + "official",
+        if (Services.prefs.getBoolPref(SearchUtils.BROWSER_SEARCH_PREF + "official",
                                        AppConstants.MOZ_OFFICIAL_BRANDING))
           return "official";
         return "unofficial";
@@ -523,13 +421,13 @@ function getInternalAliases(engine) {
 
 function EngineURL(mimeType, requestMethod, template, resultDomain) {
   if (!mimeType || !requestMethod || !template)
-    FAIL("missing mimeType, method or template for EngineURL!");
+    SearchUtils.fail("missing mimeType, method or template for EngineURL!");
 
   var method = requestMethod.toUpperCase();
   var type   = mimeType.toLowerCase();
 
   if (method != "GET" && method != "POST")
-    FAIL("method passed to EngineURL must be \"GET\" or \"POST\"");
+    SearchUtils.fail("method passed to EngineURL must be \"GET\" or \"POST\"");
 
   this.type     = type;
   this.method   = method;
@@ -538,9 +436,9 @@ function EngineURL(mimeType, requestMethod, template, resultDomain) {
   
   this.mozparams = {};
 
-  var templateURI = makeURI(template);
+  var templateURI = SearchUtils.makeURI(template);
   if (!templateURI)
-    FAIL("new EngineURL: template is not a valid URI!", Cr.NS_ERROR_FAILURE);
+    SearchUtils.fail("new EngineURL: template is not a valid URI!", Cr.NS_ERROR_FAILURE);
 
   switch (templateURI.scheme) {
     case "http":
@@ -551,7 +449,7 @@ function EngineURL(mimeType, requestMethod, template, resultDomain) {
       this.template = template;
       break;
     default:
-      FAIL("new EngineURL: template uses invalid scheme!", Cr.NS_ERROR_FAILURE);
+      SearchUtils.fail("new EngineURL: template uses invalid scheme!", Cr.NS_ERROR_FAILURE);
   }
 
   this.templateHost = templateURI.host;
@@ -666,7 +564,7 @@ EngineURL.prototype = {
       resultDomain: this.resultDomain,
     };
 
-    if (this.type != URLTYPE_SEARCH_HTML)
+    if (this.type != SearchUtils.URL_TYPE.SEARCH)
       json.type = this.type;
     if (this.method != "GET")
       json.method = this.method;
@@ -718,7 +616,7 @@ function SearchEngine(options = {}) {
   } else if ("uri" in options) {
     let optionsURI = options.uri;
     if (typeof optionsURI == "string") {
-      optionsURI = makeURI(optionsURI);
+      optionsURI = SearchUtils.makeURI(optionsURI);
     }
     
     if (!optionsURI || !(optionsURI instanceof Ci.nsIURI)) {
@@ -770,7 +668,7 @@ function SearchEngine(options = {}) {
     
     
     if (this._isDefault ||
-        (uri && uri.spec.startsWith(APP_SEARCH_PREFIX))) {
+        (uri && uri.spec.startsWith(SearchUtils.APP_SEARCH_PREFIX))) {
       
       
       
@@ -780,7 +678,7 @@ function SearchEngine(options = {}) {
     } else {
       
       
-      LOG("Setting _id to full path for engine from " + this._loadPath);
+      SearchUtils.log("Setting _id to full path for engine from " + this._loadPath);
       this._id = file ? file.path : uri.spec;
     }
   }
@@ -818,7 +716,7 @@ SearchEngine.prototype = {
     if (/^https?:/i.test(value))
       this.__searchForm = value;
     else
-      LOG("_searchForm: Invalid URL dropped for " + this._name ||
+      SearchUtils.log("_searchForm: Invalid URL dropped for " + this._name ||
           "the current engine");
   },
   
@@ -852,7 +750,7 @@ SearchEngine.prototype = {
 
   async _initFromFile(file) {
     if (!file || !(await OS.File.exists(file.path)))
-      FAIL("File must exist before calling initFromFile!", Cr.NS_ERROR_UNEXPECTED);
+      SearchUtils.fail("File must exist before calling initFromFile!", Cr.NS_ERROR_UNEXPECTED);
 
     let fileURI = Services.io.newFileURI(file);
     await this._retrieveSearchXMLData(fileURI.spec);
@@ -868,14 +766,14 @@ SearchEngine.prototype = {
 
 
   _initFromURIAndLoad(uri) {
-    let loadURI = uri instanceof Ci.nsIURI ? uri : makeURI(uri);
+    let loadURI = uri instanceof Ci.nsIURI ? uri : SearchUtils.makeURI(uri);
     ENSURE_WARN(loadURI,
                 "Must have URI when calling _initFromURIAndLoad!",
                 Cr.NS_ERROR_UNEXPECTED);
 
-    LOG("_initFromURIAndLoad: Downloading engine from: \"" + loadURI.spec + "\".");
+    SearchUtils.log("_initFromURIAndLoad: Downloading engine from: \"" + loadURI.spec + "\".");
 
-    var chan = makeChannel(loadURI);
+    var chan = SearchUtils.makeChannel(loadURI);
 
     if (this._engineToUpdate && (chan instanceof Ci.nsIHttpChannel)) {
       var lastModified = this._engineToUpdate.getAttr("updatelastmodified");
@@ -897,7 +795,7 @@ SearchEngine.prototype = {
 
 
   async _initFromURI(uri) {
-    LOG("_initFromURI: Loading engine from: \"" + uri.spec + "\".");
+    SearchUtils.log("_initFromURI: Loading engine from: \"" + uri.spec + "\".");
     await this._retrieveSearchXMLData(uri.spec);
     
     this._initFromData();
@@ -958,7 +856,7 @@ SearchEngine.prototype = {
         stringBundle.formatStringFromName("addEngineConfirmation",
                                           [this._name, this._uri.host], 2);
     var checkboxMessage = null;
-    if (!Services.prefs.getBoolPref(BROWSER_SEARCH_PREF + "noCurrentEngine", false))
+    if (!Services.prefs.getBoolPref(SearchUtils.BROWSER_SEARCH_PREF + "noCurrentEngine", false))
       checkboxMessage = stringBundle.GetStringFromName("addEngineAsCurrentText");
 
     var addButtonLabel =
@@ -1011,7 +909,7 @@ SearchEngine.prototype = {
 
       if (engine._engineToUpdate) {
         
-        LOG("updating " + engine._engineToUpdate.name + " failed");
+        SearchUtils.log("updating " + engine._engineToUpdate.name + " failed");
         return;
       }
       var brandBundle = Services.strings.createBundle(BRAND_BUNDLE);
@@ -1041,7 +939,7 @@ SearchEngine.prototype = {
       
       engine._initFromData();
     } catch (ex) {
-      LOG("_onLoad: Failed to init engine!\n" + ex);
+      SearchUtils.log("_onLoad: Failed to init engine!\n" + ex);
       
       if (ex.result == Cr.NS_ERROR_FILE_CORRUPTED) {
         promptError({ error: "error_invalid_engine_msg2",
@@ -1084,7 +982,7 @@ SearchEngine.prototype = {
         } else {
           onError(Ci.nsISearchService.ERROR_DUPLICATE_ENGINE);
         }
-        LOG("_onLoad: duplicate engine found, bailing");
+        SearchUtils.log("_onLoad: duplicate engine found, bailing");
         return;
       }
 
@@ -1093,7 +991,7 @@ SearchEngine.prototype = {
       
       if (engine._confirm) {
         var confirmation = engine._confirmAddEngine();
-        LOG("_onLoad: confirm is " + confirmation.confirmed +
+        SearchUtils.log("_onLoad: confirm is " + confirmation.confirmed +
             "; useNow is " + confirmation.useNow);
         if (!confirmation.confirmed) {
           onError();
@@ -1112,7 +1010,7 @@ SearchEngine.prototype = {
 
     
     
-    notifyAction(engine, SEARCH_ENGINE_LOADED);
+    SearchUtils.notifyAction(engine, SearchUtils.MODIFIED_TYPE.LOADED);
 
     
     if (engine._installCallback) {
@@ -1181,13 +1079,13 @@ SearchEngine.prototype = {
 
 
   _setIcon(iconURL, isPreferred, width, height) {
-    var uri = makeURI(iconURL);
+    var uri = SearchUtils.makeURI(iconURL);
 
     
     if (!uri)
       return;
 
-    LOG("_setIcon: Setting icon url \"" + limitURILength(uri.spec) + "\" for engine \""
+    SearchUtils.log("_setIcon: Setting icon url \"" + limitURILength(uri.spec) + "\" for engine \""
         + this.name + "\".");
     
     switch (uri.scheme) {
@@ -1202,7 +1100,7 @@ SearchEngine.prototype = {
       case "data":
         if (!this._hasPreferredIcon || isPreferred) {
           this._iconURI = uri;
-          notifyAction(this, SEARCH_ENGINE_CHANGED);
+          SearchUtils.notifyAction(this, SearchUtils.MODIFIED_TYPE.CHANGED);
           this._hasPreferredIcon = isPreferred;
         }
 
@@ -1213,9 +1111,9 @@ SearchEngine.prototype = {
       case "http":
       case "https":
       case "ftp":
-        LOG("_setIcon: Downloading icon: \"" + uri.spec +
+        SearchUtils.log("_setIcon: Downloading icon: \"" + uri.spec +
             "\" for engine: \"" + this.name + "\"");
-        var chan = makeChannel(uri);
+        var chan = SearchUtils.makeChannel(uri);
 
         let iconLoadCallback = function(byteArray, engine) {
           
@@ -1224,17 +1122,17 @@ SearchEngine.prototype = {
             return;
 
           if (!byteArray) {
-            LOG("iconLoadCallback: load failed");
+            SearchUtils.log("iconLoadCallback: load failed");
             return;
           }
 
           let contentType = chan.contentType;
-          if (byteArray.length > MAX_ICON_SIZE) {
+          if (byteArray.length > SearchUtils.MAX_ICON_SIZE) {
             try {
-              LOG("iconLoadCallback: rescaling icon");
+              SearchUtils.log("iconLoadCallback: rescaling icon");
               [byteArray, contentType] = rescaleIcon(byteArray, contentType);
             } catch (ex) {
-              LOG("iconLoadCallback: got exception: " + ex);
+              SearchUtils.log("iconLoadCallback: got exception: " + ex);
               Cu.reportError("Unable to set an icon for the search engine because: " + ex);
               return;
             }
@@ -1245,13 +1143,13 @@ SearchEngine.prototype = {
           let dataURL = "data:" + contentType + ";base64," +
             btoa(String.fromCharCode.apply(null, byteArray));
 
-          engine._iconURI = makeURI(dataURL);
+          engine._iconURI = SearchUtils.makeURI(dataURL);
 
           if (width && height) {
             engine._addIconToMap(width, height, dataURL);
           }
 
-          notifyAction(engine, SEARCH_ENGINE_CHANGED);
+          SearchUtils.notifyAction(engine, SearchUtils.MODIFIED_TYPE.CHANGED);
           engine._hasPreferredIcon = isPreferred;
         };
 
@@ -1280,12 +1178,12 @@ SearchEngine.prototype = {
          element.namespaceURI == MOZSEARCH_NS_10) ||
         (element.localName == OPENSEARCH_LOCALNAME &&
          OPENSEARCH_NAMESPACES.includes(element.namespaceURI))) {
-      LOG("_init: Initing search plugin from " + this._location);
+      SearchUtils.log("_init: Initing search plugin from " + this._location);
 
       this._parse();
     } else {
       Cu.reportError("Invalid search plugin due to namespace not matching.");
-      FAIL(this._location + " is not a valid search plugin.", Cr.NS_ERROR_FILE_CORRUPTED);
+      SearchUtils.fail(this._location + " is not a valid search plugin.", Cr.NS_ERROR_FILE_CORRUPTED);
     }
     
     
@@ -1369,7 +1267,7 @@ SearchEngine.prototype = {
     this._extensionID = params.extensionID;
     this._isBuiltin = !!params.isBuiltin;
 
-    this._initEngineURLFromMetaData(URLTYPE_SEARCH_HTML, {
+    this._initEngineURLFromMetaData(SearchUtils.URL_TYPE.SEARCH, {
       method: (params.searchPostParams && "POST") || params.method || "GET",
       template: params.template,
       getParams: params.searchGetParams,
@@ -1378,7 +1276,7 @@ SearchEngine.prototype = {
     });
 
     if (params.suggestURL) {
-      this._initEngineURLFromMetaData(URLTYPE_SUGGEST_JSON, {
+      this._initEngineURLFromMetaData(SearchUtils.URL_TYPE.SUGGEST_JSON, {
         method: (params.suggestPostParams && "POST") || params.method || "GET",
         template: params.suggestURL,
         getParams: params.suggestGetParams,
@@ -1440,13 +1338,13 @@ SearchEngine.prototype = {
 
     
     if (type == "application/json" && rels.includes("suggestions")) {
-      type = URLTYPE_SUGGEST_JSON;
+      type = SearchUtils.URL_TYPE.SUGGEST_JSON;
     }
 
     try {
       var url = new EngineURL(type, method, template, resultDomain);
     } catch (ex) {
-      FAIL("_parseURL: failed to add " + template + " as a URL",
+      SearchUtils.fail("_parseURL: failed to add " + template + " as a URL",
            Cr.NS_ERROR_FAILURE);
     }
 
@@ -1461,7 +1359,7 @@ SearchEngine.prototype = {
           url.addParam(param.getAttribute("name"), param.getAttribute("value"));
         } catch (ex) {
           
-          LOG("_parseURL: Url element has an invalid param");
+          SearchUtils.log("_parseURL: Url element has an invalid param");
         }
       } else if (param.localName == "MozParam" &&
                  
@@ -1473,7 +1371,7 @@ SearchEngine.prototype = {
         if (!condition) {
           let engineLoc = this._location;
           let paramName = param.getAttribute("name");
-          LOG("_parseURL: MozParam (" + paramName +
+          SearchUtils.log("_parseURL: MozParam (" + paramName +
             ") without a condition attribute found parsing engine: " + engineLoc);
           continue;
         }
@@ -1498,7 +1396,7 @@ SearchEngine.prototype = {
           default:
             let engineLoc = this._location;
             let paramName = param.getAttribute("name");
-            LOG("_parseURL: MozParam (" + paramName + ") has an unknown condition: " +
+            SearchUtils.log("_parseURL: MozParam (" + paramName + ") has an unknown condition: " +
               condition + ". Found parsing engine: " + engineLoc);
           break;
         }
@@ -1516,14 +1414,14 @@ SearchEngine.prototype = {
 
 
   _parseImage(element) {
-    LOG("_parseImage: Image textContent: \"" + limitURILength(element.textContent) + "\"");
+    SearchUtils.log("_parseImage: Image textContent: \"" + limitURILength(element.textContent) + "\"");
 
     let width = parseInt(element.getAttribute("width"), 10);
     let height = parseInt(element.getAttribute("height"), 10);
     let isPrefered = width == 16 && height == 16;
 
     if (isNaN(width) || isNaN(height) || width <= 0 || height <= 0) {
-      LOG("OpenSearch image element must have positive width and height.");
+      SearchUtils.log("OpenSearch image element must have positive width and height.");
       return;
     }
 
@@ -1554,7 +1452,7 @@ SearchEngine.prototype = {
             this._parseURL(child);
           } catch (ex) {
             
-            LOG("_parse: failed to parse URL child: " + ex);
+            SearchUtils.log("_parse: failed to parse URL child: " + ex);
           }
           break;
         case "Image":
@@ -1583,9 +1481,9 @@ SearchEngine.prototype = {
       }
     }
     if (!this.name || (this._urls.length == 0))
-      FAIL("_parse: No name, or missing URL!", Cr.NS_ERROR_FAILURE);
-    if (!this.supportsResponseType(URLTYPE_SEARCH_HTML))
-      FAIL("_parse: No text/html result type!", Cr.NS_ERROR_FAILURE);
+      SearchUtils.fail("_parse: No name, or missing URL!", Cr.NS_ERROR_FAILURE);
+    if (!this.supportsResponseType(SearchUtils.URL_TYPE.SEARCH))
+      SearchUtils.fail("_parse: No text/html result type!", Cr.NS_ERROR_FAILURE);
   },
 
   
@@ -1600,13 +1498,13 @@ SearchEngine.prototype = {
     this._loadPath = json._loadPath;
     this._description = json.description;
     this._hasPreferredIcon = json._hasPreferredIcon == undefined;
-    this._queryCharset = json.queryCharset || DEFAULT_QUERY_CHARSET;
+    this._queryCharset = json.queryCharset || SearchUtils.DEFAULT_QUERY_CHARSET;
     this.__searchForm = json.__searchForm;
     this._updateInterval = json._updateInterval || null;
     this._updateURL = json._updateURL || null;
     this._iconUpdateURL = json._iconUpdateURL || null;
     this._readOnly = json._readOnly == undefined;
-    this._iconURI = makeURI(json._iconURL);
+    this._iconURI = SearchUtils.makeURI(json._iconURL);
     this._iconMapObj = json._iconMapObj;
     this._metaData = json._metaData || {};
     this._isBuiltin = json._isBuiltin;
@@ -1618,7 +1516,7 @@ SearchEngine.prototype = {
     }
     for (let i = 0; i < json._urls.length; ++i) {
       let url = json._urls[i];
-      let engineURL = new EngineURL(url.type || URLTYPE_SEARCH_HTML,
+      let engineURL = new EngineURL(url.type || SearchUtils.URL_TYPE.SEARCH,
                                     url.method || "GET", url.template,
                                     url.resultDomain || undefined);
       engineURL._initWithJSON(url);
@@ -1653,7 +1551,7 @@ SearchEngine.prototype = {
       json._iconUpdateURL = this._iconUpdateURL;
     if (!this._hasPreferredIcon)
       json._hasPreferredIcon = this._hasPreferredIcon;
-    if (this.queryCharset != DEFAULT_QUERY_CHARSET)
+    if (this.queryCharset != SearchUtils.DEFAULT_QUERY_CHARSET)
       json.queryCharset = this.queryCharset;
     if (!this._readOnly)
       json._readOnly = this._readOnly;
@@ -1684,7 +1582,7 @@ SearchEngine.prototype = {
   set alias(val) {
     var value = val ? val.trim() : null;
     this.setAttr("alias", value);
-    notifyAction(this, SEARCH_ENGINE_CHANGED);
+    SearchUtils.notifyAction(this, SearchUtils.MODIFIED_TYPE.CHANGED);
   },
 
   
@@ -1714,7 +1612,7 @@ SearchEngine.prototype = {
     var value = !!val;
     if (value != this.hidden) {
       this.setAttr("hidden", value);
-      notifyAction(this, SEARCH_ENGINE_CHANGED);
+      SearchUtils.notifyAction(this, SearchUtils.MODIFIED_TYPE.CHANGED);
     }
   },
 
@@ -1769,9 +1667,9 @@ SearchEngine.prototype = {
     let prefix = "", suffix = "";
     if (!file) {
       if (uri.schemeIs("resource")) {
-        uri = makeURI(Services.io.getProtocolHandler("resource")
-                              .QueryInterface(Ci.nsISubstitutingProtocolHandler)
-                              .resolveURI(uri));
+        uri = SearchUtils.makeURI(Services.io.getProtocolHandler("resource")
+                                          .QueryInterface(Ci.nsISubstitutingProtocolHandler)
+                                          .resolveURI(uri));
       }
       let scheme = uri.scheme;
       let packageName = "";
@@ -1863,7 +1761,7 @@ SearchEngine.prototype = {
 
   get _hasUpdates() {
     
-    let selfURL = this._getURLOfType(URLTYPE_OPENSEARCH, "self");
+    let selfURL = this._getURLOfType(SearchUtils.URL_TYPE.OPENSEARCH, "self");
     return !!(this._updateURL || this._iconUpdateURL || selfURL);
   },
 
@@ -1886,7 +1784,7 @@ SearchEngine.prototype = {
 
   _getSearchFormWithPurpose(aPurpose = "") {
     
-    var searchFormURL = this._getURLOfType(URLTYPE_SEARCH_HTML, "searchform");
+    var searchFormURL = this._getURLOfType(SearchUtils.URL_TYPE.SEARCH, "searchform");
     if (searchFormURL) {
       let submission = searchFormURL.getSubmission("", this, aPurpose);
 
@@ -1899,9 +1797,9 @@ SearchEngine.prototype = {
     if (!this._searchForm) {
       
       
-      var htmlUrl = this._getURLOfType(URLTYPE_SEARCH_HTML);
+      var htmlUrl = this._getURLOfType(SearchUtils.URL_TYPE.SEARCH);
       ENSURE_WARN(htmlUrl, "Engine has no HTML URL!", Cr.NS_ERROR_UNEXPECTED);
-      this._searchForm = makeURI(htmlUrl.template).prePath;
+      this._searchForm = SearchUtils.makeURI(htmlUrl.template).prePath;
     }
 
     return ParamSubstitution(this._searchForm, "", this);
@@ -1916,23 +1814,23 @@ SearchEngine.prototype = {
   
   addParam(name, value, responseType) {
     if (!name || (value == null))
-      FAIL("missing name or value for nsISearchEngine::addParam!");
+      SearchUtils.fail("missing name or value for nsISearchEngine::addParam!");
     ENSURE_WARN(!this._readOnly,
                 "called nsISearchEngine::addParam on a read-only engine!",
                 Cr.NS_ERROR_FAILURE);
     if (!responseType)
-      responseType = URLTYPE_SEARCH_HTML;
+      responseType = SearchUtils.URL_TYPE.SEARCH;
 
     var url = this._getURLOfType(responseType);
     if (!url)
-      FAIL("Engine object has no URL for response type " + responseType,
+      SearchUtils.fail("Engine object has no URL for response type " + responseType,
            Cr.NS_ERROR_FAILURE);
 
     url.addParam(name, value);
   },
 
   get _defaultMobileResponseType() {
-    let type = URLTYPE_SEARCH_HTML;
+    let type = SearchUtils.URL_TYPE.SEARCH;
 
     let isTablet = Services.sysinfo.get("tablet");
     if (isTablet && this.supportsResponseType("application/x-moz-tabletsearch")) {
@@ -1952,13 +1850,13 @@ SearchEngine.prototype = {
   },
 
   get _isWhiteListed() {
-    let url = this._getURLOfType(URLTYPE_SEARCH_HTML).template;
-    let hostname = makeURI(url).host;
-    let whitelist = Services.prefs.getDefaultBranch(BROWSER_SEARCH_PREF)
+    let url = this._getURLOfType(SearchUtils.URL_TYPE.SEARCH).template;
+    let hostname = SearchUtils.makeURI(url).host;
+    let whitelist = Services.prefs.getDefaultBranch(SearchUtils.BROWSER_SEARCH_PREF)
                             .getCharPref("reset.whitelist")
                             .split(",");
     if (whitelist.includes(hostname)) {
-      LOG("The hostname " + hostname + " is white listed, " +
+      SearchUtils.log("The hostname " + hostname + " is white listed, " +
           "we won't show the search reset prompt");
       return true;
     }
@@ -1970,7 +1868,7 @@ SearchEngine.prototype = {
   getSubmission(data, responseType, purpose) {
     if (!responseType) {
       responseType = AppConstants.platform == "android" ? this._defaultMobileResponseType :
-                                                          URLTYPE_SEARCH_HTML;
+                                                          SearchUtils.URL_TYPE.SEARCH;
     }
 
     var url = this._getURLOfType(responseType);
@@ -1980,18 +1878,18 @@ SearchEngine.prototype = {
 
     if (!data) {
       
-      return new Submission(makeURI(this._getSearchFormWithPurpose(purpose)));
+      return new Submission(SearchUtils.makeURI(this._getSearchFormWithPurpose(purpose)));
     }
 
-    LOG("getSubmission: In data: \"" + data + "\"; Purpose: \"" + purpose + "\"");
+    SearchUtils.log("getSubmission: In data: \"" + data + "\"; Purpose: \"" + purpose + "\"");
     var submissionData = "";
     try {
       submissionData = Services.textToSubURI.ConvertAndEscape(this.queryCharset, data);
     } catch (ex) {
-      LOG("getSubmission: Falling back to default queryCharset!");
-      submissionData = Services.textToSubURI.ConvertAndEscape(DEFAULT_QUERY_CHARSET, data);
+      SearchUtils.log("getSubmission: Falling back to default queryCharset!");
+      submissionData = Services.textToSubURI.ConvertAndEscape(SearchUtils.DEFAULT_QUERY_CHARSET, data);
     }
-    LOG("getSubmission: Out data: \"" + submissionData + "\"");
+    SearchUtils.log("getSubmission: Out data: \"" + submissionData + "\"");
     return url.getSubmission(submissionData, this, purpose);
   },
 
@@ -2004,10 +1902,10 @@ SearchEngine.prototype = {
   getResultDomain(responseType) {
     if (!responseType) {
       responseType = AppConstants.platform == "android" ? this._defaultMobileResponseType :
-                                                          URLTYPE_SEARCH_HTML;
+                                                          SearchUtils.URL_TYPE.SEARCH;
     }
 
-    LOG("getResultDomain: responseType: \"" + responseType + "\"");
+    SearchUtils.log("getResultDomain: responseType: \"" + responseType + "\"");
 
     let url = this._getURLOfType(responseType);
     if (url)
@@ -2020,7 +1918,7 @@ SearchEngine.prototype = {
 
   getURLParsingInfo() {
     let responseType = AppConstants.platform == "android" ? this._defaultMobileResponseType :
-                                                            URLTYPE_SEARCH_HTML;
+                                                            SearchUtils.URL_TYPE.SEARCH;
 
     let url = this._getURLOfType(responseType);
     if (!url || url.method != "GET") {
@@ -2141,8 +2039,8 @@ SearchEngine.prototype = {
       Cu.reportError(e);
     }
 
-    if (this.supportsResponseType(URLTYPE_SUGGEST_JSON)) {
-      let suggestURI = this.getSubmission("dummy", URLTYPE_SUGGEST_JSON).uri;
+    if (this.supportsResponseType(SearchUtils.URL_TYPE.SUGGEST_JSON)) {
+      let suggestURI = this.getSubmission("dummy", SearchUtils.URL_TYPE.SUGGEST_JSON).uri;
       if (suggestURI.prePath != searchURI.prePath)
         try {
           connector.speculativeConnect(suggestURI, principal, callbacks);
