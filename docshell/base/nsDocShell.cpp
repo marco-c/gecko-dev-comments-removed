@@ -13453,3 +13453,43 @@ nsDocShell::GetBrowsingContext(BrowsingContext** aBrowsingContext) {
   *aBrowsingContext = do_AddRef(mBrowsingContext).take();
   return NS_OK;
 }
+
+bool nsDocShell::GetIsAttemptingToNavigate() {
+  
+  
+  
+  
+  
+  if (mDocumentRequest) {
+    
+    return true;
+  }
+
+  
+  
+  
+  
+  if (!mLoadGroup) {
+    return false;
+  }
+
+  nsCOMPtr<nsISimpleEnumerator> requests;
+  mLoadGroup->GetRequests(getter_AddRefs(requests));
+  bool hasMore = false;
+  while (NS_SUCCEEDED(requests->HasMoreElements(&hasMore)) && hasMore) {
+    nsCOMPtr<nsISupports> elem;
+    requests->GetNext(getter_AddRefs(elem));
+    nsCOMPtr<nsIScriptChannel> scriptChannel(do_QueryInterface(elem));
+    if (!scriptChannel) {
+      continue;
+    }
+
+    if (scriptChannel->GetIsDocumentLoad()) {
+      
+      
+      return true;
+    }
+  }
+
+  return false;
+}
