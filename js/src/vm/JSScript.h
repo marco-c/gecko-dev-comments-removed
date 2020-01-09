@@ -1355,7 +1355,7 @@ class alignas(JS::Value) PrivateScriptData final {
 
   
   PackedOffsets packedOffsets = {};  
-  uint32_t nscopes;
+  uint32_t nscopes = 0;
 
   
   template <typename T>
@@ -1450,7 +1450,11 @@ class alignas(JS::Value) PrivateScriptData final {
   static bool InitFromEmitter(JSContext* cx, js::HandleScript script,
                               js::frontend::BytecodeEmitter* bce);
 
-  void traceChildren(JSTracer* trc);
+  void trace(JSTracer* trc);
+
+  
+  PrivateScriptData(const PrivateScriptData&) = delete;
+  PrivateScriptData& operator=(const PrivateScriptData&) = delete;
 };
 
 
@@ -1572,6 +1576,16 @@ using ScriptDataTable =
 extern void SweepScriptData(JSRuntime* rt);
 
 extern void FreeScriptData(JSRuntime* rt);
+
+} 
+
+namespace JS {
+
+
+
+template <>
+struct DeletePolicy<js::PrivateScriptData>
+    : public js::GCManagedDeletePolicy<js::PrivateScriptData> {};
 
 } 
 
