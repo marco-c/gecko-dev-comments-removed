@@ -597,6 +597,17 @@ extern JS_PUBLIC_API void JS_IterateCompartments(
 
 
 
+
+extern JS_PUBLIC_API void JS_IterateCompartmentsInZone(
+    JSContext* cx, JS::Zone* zone, void* data,
+    JSIterateCompartmentCallback compartmentCallback);
+
+
+
+
+
+
+
 extern JS_PUBLIC_API void JS_MarkCrossZoneId(JSContext* cx, jsid id);
 
 
