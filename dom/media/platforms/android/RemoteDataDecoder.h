@@ -75,6 +75,10 @@ class RemoteDataDecoder : public MediaDataDecoder,
 
   RefPtr<TaskQueue> mTaskQueue;
 
+  
+  
+  java::sdk::BufferInfo::GlobalRef mInputBufferInfo;
+
  private:
   enum class PendingOp { INCREASE, DECREASE, CLEAR };
   void UpdatePendingInputStatus(PendingOp aOp);
