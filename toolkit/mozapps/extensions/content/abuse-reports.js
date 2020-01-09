@@ -143,7 +143,7 @@ async function submitReport({report, reason, message}) {
         
         
         if (action === "remove") {
-          report.addon.uninstall();
+          report.addon.uninstall(true);
         }
       },
     });

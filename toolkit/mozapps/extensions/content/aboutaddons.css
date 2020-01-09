@@ -15,8 +15,13 @@
 }
 
 
-#abuse-reports-messages > * {
+message-bar-stack > * {
   margin-bottom: 8px;
+}
+
+
+addon-list message-bar-stack.pending-uninstall {
+  margin-bottom: 12px;
 }
 
 

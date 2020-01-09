@@ -1,10 +1,15 @@
 
 
+const {AddonTestUtils} =
+  ChromeUtils.import("resource://testing-common/AddonTestUtils.jsm", {});
+
 const {ExtensionPermissions} =
   ChromeUtils.import("resource://gre/modules/ExtensionPermissions.jsm", {});
 
 let gProvider;
 let promptService;
+
+AddonTestUtils.initMochitest(this);
 
 function getAddonCard(doc, addonId) {
   return doc.querySelector(`addon-card[addon-id="${addonId}"]`);
@@ -205,9 +210,11 @@ add_task(async function testDetailOperations() {
     "The name is updated to the disabled text");
 
   
+  let extensionStarted = AddonTestUtils.promiseWebExtensionStartup(
+    "test@mochi.test");
   disableToggled = BrowserTestUtils.waitForEvent(card, "update");
   disableButton.click();
-  await disableToggled;
+  await Promise.all([disableToggled, extensionStarted]);
 
   
   is(name.textContent, "Test", "The name is reset when enabled");
@@ -218,7 +225,6 @@ add_task(async function testDetailOperations() {
   removeButton.click();
   await cancelled;
 
-
   
   let viewChanged = waitForViewLoad(win);
   
@@ -227,11 +233,27 @@ add_task(async function testDetailOperations() {
   await viewChanged;
 
   
-  ok(doc.querySelector("addon-list"), "There's an addon-list now");
+  const addonList = doc.querySelector("addon-list");
+  ok(addonList, "There's an addon-list now");
   ok(!getAddonCard(doc, "test@mochi.test"),
      "The extension no longer has a card");
   let addon = await AddonManager.getAddonByID("test@mochi.test");
-  ok(!addon, "The extension can't be found now");
+  ok(addon && !!(addon.pendingOperations & AddonManager.PENDING_UNINSTALL),
+     "The addon is pending uninstall");
+
+  
+  
+  
+  assertHasPendingUninstalls(addonList, 1);
+  assertHasPendingUninstallAddon(addonList, addon);
+
+  extensionStarted = AddonTestUtils.promiseWebExtensionStartup(addon.id);
+  await testUndoPendingUninstall(addonList, addon);
+  info("Wait for the pending uninstall addon complete restart");
+  await extensionStarted;
+
+  card = getAddonCard(doc, addon.id);
+  ok(card, "Addon card rendered after clicking pending uninstall undo button");
 
   await closeView(win);
   await extension.unload();
