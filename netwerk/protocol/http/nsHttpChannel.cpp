@@ -6557,8 +6557,11 @@ nsresult nsHttpChannel::BeginConnect() {
 
   
   
+  
+  
   RefPtr<nsHttpChannel> self = this;
-  return AsyncUrlChannelClassifier::CheckChannel(this, [self]() -> void {
+  bool willCallback = NS_SUCCEEDED(
+      AsyncUrlChannelClassifier::CheckChannel(this, [self]() -> void {
         nsresult rv = self->BeginConnectActual();
         if (NS_FAILED(rv)) {
           
@@ -6567,7 +6570,17 @@ nsresult nsHttpChannel::BeginConnect() {
           self->CloseCacheEntry(false);
           Unused << self->AsyncAbort(rv);
         }
-  });
+      }));
+
+  if (!willCallback) {
+    
+    
+    
+    
+    return BeginConnectActual();
+  }
+
+  return NS_OK;
 }
 
 void nsHttpChannel::MaybeStartDNSPrefetch() {
