@@ -225,7 +225,7 @@ impl Context {
 
     
     pub fn preopt(&mut self, isa: &TargetIsa) -> CodegenResult<()> {
-        do_preopt(&mut self.func, &mut self.cfg);
+        do_preopt(&mut self.func);
         self.verify_if(isa)?;
         Ok(())
     }
