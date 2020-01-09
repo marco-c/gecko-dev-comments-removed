@@ -195,13 +195,6 @@ SourceClient.prototype = {
         noSliding,
       };
 
-      
-      
-      if (!root.traits.debuggerSourceActors) {
-        packet.to = this._activeThread.actor;
-        packet.location.url = this.url;
-      }
-
       return this._client.request(packet).then(response => {
         
         

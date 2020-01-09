@@ -122,9 +122,6 @@ RootActor.prototype = {
     
     storageInspectorReadOnly: true,
     
-    
-    debuggerSourceActors: true,
-    
     wasmBinarySource: true,
     bulk: true,
     
