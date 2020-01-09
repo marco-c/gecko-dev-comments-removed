@@ -340,12 +340,15 @@ static void DEBUG_CheckUnwrapSafety(HandleObject obj,
              xpc::IsUniversalXPConnectEnabled(target)) {
     
     
-    MOZ_ASSERT(!handler->hasSecurityPolicy());
+    
+    MOZ_ASSERT(!handler->hasSecurityPolicy() ||
+               handler == &CrossOriginObjectWrapper::singleton);
   } else if (RealmPrivate::Get(origin)->forcePermissiveCOWs) {
     
     
     
-    MOZ_ASSERT(!handler->hasSecurityPolicy());
+    MOZ_ASSERT(!handler->hasSecurityPolicy() ||
+               handler == &CrossOriginObjectWrapper::singleton);
   } else {
     
     JS::Compartment* originComp = JS::GetCompartmentForRealm(origin);
@@ -354,7 +357,17 @@ static void DEBUG_CheckUnwrapSafety(HandleObject obj,
              ? AccessCheck::subsumesConsideringDomain(target, originComp)
              : AccessCheck::subsumesConsideringDomainIgnoringFPD(target,
                                                                  originComp));
-    MOZ_ASSERT(handler->hasSecurityPolicy() == !subsumes);
+    if (!subsumes) {
+      
+      
+      
+      MOZ_ASSERT(handler->hasSecurityPolicy());
+    } else {
+      
+      
+      MOZ_ASSERT(!handler->hasSecurityPolicy() ||
+                 handler == &CrossOriginObjectWrapper::singleton);
+    }
   }
 }
 #else
@@ -402,12 +415,6 @@ static const Wrapper* SelectWrapper(bool securityWrapper, XrayType xrayType,
     }
     MOZ_ASSERT(xrayType == XrayForOpaqueObject);
     return &PermissiveXrayOpaque::singleton;
-  }
-
-  
-  if (xrayType == XrayForDOMObject &&
-      IdentifyCrossOriginObject(obj) != CrossOriginOpaque) {
-    return &CrossOriginObjectWrapper::singleton;
   }
 
   
@@ -499,6 +506,18 @@ JSObject* WrapperFactory::Rewrap(JSContext* cx, HandleObject existing,
       wrapper =
           &FilteringWrapper<CrossCompartmentSecurityWrapper, Opaque>::singleton;
     }
+  }
+
+  
+  
+  
+  else if (originSubsumesTarget == targetSubsumesOrigin &&
+           
+           
+           IsCrossOriginAccessibleObject(obj) &&
+           (!targetSubsumesOrigin || (!originCompartmentPrivate->wantXrays &&
+                                      !targetCompartmentPrivate->wantXrays))) {
+    wrapper = &CrossOriginObjectWrapper::singleton;
   }
 
   
