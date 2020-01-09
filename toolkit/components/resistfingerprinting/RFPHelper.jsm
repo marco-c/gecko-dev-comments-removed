@@ -16,11 +16,25 @@ const kTopicHttpOnModifyRequest = "http-on-modify-request";
 const kPrefLetterboxing = "privacy.resistFingerprinting.letterboxing";
 const kPrefLetterboxingDimensions =
   "privacy.resistFingerprinting.letterboxing.dimensions";
+const kPrefLetterboxingTesting =
+  "privacy.resistFingerprinting.letterboxing.testing";
 const kTopicDOMWindowOpened = "domwindowopened";
 const kEventLetterboxingSizeUpdate = "Letterboxing:ContentSizeUpdated";
 
 const kDefaultWidthStepping = 200;
 const kDefaultHeightStepping = 100;
+
+var logConsole;
+function log(msg) {
+  if (!logConsole) {
+    logConsole = console.createInstance({
+      prefix: "RFPHelper.jsm",
+      maxLogLevelPref: "privacy.resistFingerprinting.jsmloglevel",
+    });
+  }
+
+  logConsole.log(msg);
+}
 
 class _RFPHelper {
   
@@ -41,6 +55,8 @@ class _RFPHelper {
     Services.prefs.addObserver(kPrefLetterboxing, this);
     XPCOMUtils.defineLazyPreferenceGetter(this, "_letterboxingDimensions",
       kPrefLetterboxingDimensions, "", null, this._parseLetterboxingDimensions);
+    XPCOMUtils.defineLazyPreferenceGetter(this, "_isLetterboxingTesting",
+      kPrefLetterboxingTesting, false);
 
     
     this._handleResistFingerprintingChanged();
@@ -326,6 +342,8 @@ class _RFPHelper {
 
 
   async _roundContentView(aBrowser) {
+    let logId = Math.random();
+    log("_roundContentView[" + logId + "]");
     let win = aBrowser.ownerGlobal;
     let browserContainer = aBrowser.getTabBrowser()
                                    .getBrowserContainer(aBrowser);
@@ -345,14 +363,21 @@ class _RFPHelper {
         };
       });
 
+    log("_roundContentView[" + logId + "] contentWidth=" + contentWidth + " contentHeight=" + contentHeight +
+      " containerWidth=" + containerWidth + " containerHeight=" + containerHeight + " ");
+
     let calcMargins = (aWidth, aHeight) => {
+      let result;
+      log("_roundContentView[" + logId + "] calcMargins(" + aWidth + ", " + aHeight + ")");
       
       
       if (!this._letterboxingDimensions.length) {
-        return {
+        result = {
           width: (aWidth % kDefaultWidthStepping) / 2,
           height: (aHeight % kDefaultHeightStepping) / 2,
         };
+        log("_roundContentView[" + logId + "] calcMargins(" + aWidth + ", " + aHeight + ") = " + result.width + " x " + result.height);
+        return result;
       }
 
       let matchingArea = aWidth * aHeight;
@@ -375,7 +400,6 @@ class _RFPHelper {
         }
       }
 
-      let result;
       
       
       
@@ -391,6 +415,7 @@ class _RFPHelper {
         };
       }
 
+      log("_roundContentView[" + logId + "] calcMargins(" + aWidth + ", " + aHeight + ") = " + result.width + " x " + result.height);
       return result;
     };
 
@@ -401,10 +426,16 @@ class _RFPHelper {
 
     
     if (aBrowser.style.margin == `${margins.height}px ${margins.width}px`) {
+      log("_roundContentView[" + logId + "] is_rounded == true");
+      if (this._isLetterboxingTesting) {
+        log("_roundContentView[" + logId + "] is_rounded == true test:letterboxing:update-margin-finish");
+        Services.obs.notifyObservers(null, "test:letterboxing:update-margin-finish");
+      }
       return;
     }
 
     win.requestAnimationFrame(() => {
+      log("_roundContentView[" + logId + "] setting margins to " + margins.width + " x " + margins.height);
       
       
       
