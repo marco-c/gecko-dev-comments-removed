@@ -5,13 +5,17 @@
 
 add_task(async function() {
   const dbg = await initDebugger("doc-script-switching.html");
-  
+
+  info(">> Close the panel");
   clickElementWithSelector(dbg, ".watch-expressions-pane ._header");
-  
+
+  info(">> Click + to add the new expression");
   clickElementWithSelector(dbg, ".watch-expressions-pane ._header .plus");
-  
+
+  info(">> Ensure element gets focused");
   await waitForElementWithSelector(dbg, ".expression-input-container.focused");
-  
+
+  info(">> Ensure the element is focused");
   is(
     dbg.win.document.activeElement.classList.contains("input-expression"),
     true
