@@ -193,6 +193,7 @@ class JSFunction : public js::NativeObject {
   
   
   
+  
   js::GCPtrAtom atom_;
 
  public:
@@ -897,8 +898,9 @@ extern JSAtom* IdToFunctionName(
     JSContext* cx, HandleId id,
     FunctionPrefixKind prefixKind = FunctionPrefixKind::None);
 
-extern bool SetFunctionName(JSContext* cx, HandleFunction fun, HandleValue name,
-                            FunctionPrefixKind prefixKind);
+extern bool SetFunctionNameIfNoOwnName(JSContext* cx, HandleFunction fun,
+                                       HandleValue name,
+                                       FunctionPrefixKind prefixKind);
 
 extern JSFunction* DefineFunction(
     JSContext* cx, HandleObject obj, HandleId id, JSNative native,

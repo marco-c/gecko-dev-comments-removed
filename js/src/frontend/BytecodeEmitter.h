@@ -767,13 +767,10 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   
   MOZ_MUST_USE bool emitDefault(ParseNode* defaultExpr, ParseNode* pattern);
 
-  MOZ_MUST_USE bool emitAnonymousFunctionWithName(ParseNode* node,
-                                                  HandleAtom name);
-
-  MOZ_MUST_USE bool emitAnonymousFunctionWithComputedName(
-      ParseNode* node, FunctionPrefixKind prefixKind);
+  MOZ_MUST_USE bool setOrEmitSetFunName(ParseNode* maybeFun, HandleAtom name);
 
   MOZ_MUST_USE bool setFunName(JSFunction* fun, JSAtom* name);
+  MOZ_MUST_USE bool emitSetClassConstructorName(JSAtom* name);
   MOZ_MUST_USE bool emitInitializer(ParseNode* initializer, ParseNode* pattern);
 
   MOZ_MUST_USE bool emitCallSiteObject(CallSiteNode* callSiteObj);
@@ -854,20 +851,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   
   MOZ_MUST_USE bool emitSpread(bool allowSelfHosted = false);
 
-  enum class ClassNameKind {
-    
-    BindingName,
-
-    
-    InferredName,
-
-    
-    ComputedName
-  };
-
-  MOZ_MUST_USE bool emitClass(
-      ClassNode* classNode, ClassNameKind nameKind = ClassNameKind::BindingName,
-      HandleAtom nameForAnonymousClass = nullptr);
+  MOZ_MUST_USE bool emitClass(ClassNode* classNode);
   MOZ_MUST_USE bool emitSuperElemOperands(
       PropertyByValue* elem, EmitElemOption opts = EmitElemOption::Get);
   MOZ_MUST_USE bool emitSuperGetElem(PropertyByValue* elem,
