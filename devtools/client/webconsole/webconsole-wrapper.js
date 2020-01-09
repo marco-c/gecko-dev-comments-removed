@@ -134,16 +134,27 @@ class WebConsoleWrapper {
 
 
 
+
+
+
         getFrameActor: (frame = null) => {
           const state = this.hud.getDebuggerFrames();
           if (!state) {
-            return null;
+            return { frameActor: null, client: webConsoleUI.webConsoleClient };
           }
 
           const grip = Number.isInteger(frame)
             ? state.frames[frame]
             : state.frames[state.selected];
-          return grip ? grip.actor : null;
+
+          if (!grip) {
+            return { frameActor: null, client: webConsoleUI.webConsoleClient };
+          }
+
+          return {
+            frameActor: grip.actor,
+            client: this.hud.lookupConsoleClient(grip.thread),
+          };
         },
 
         inputHasSelection: () => {
