@@ -4,9 +4,7 @@
 
 "use strict";
 
-const Services = require("Services");
 const promise = require("devtools/shared/deprecated-sync-thenables");
-const {AppConstants} = require("resource://gre/modules/AppConstants.jsm");
 
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const { getStack, callFunctionWithAsyncStack } = require("devtools/shared/platform/stack");
@@ -28,17 +26,6 @@ loader.lazyRequireGetter(this, "ThreadClient", "devtools/shared/client/thread-cl
 loader.lazyRequireGetter(this, "ObjectClient", "devtools/shared/client/object-client");
 loader.lazyRequireGetter(this, "Pool", "devtools/shared/protocol", true);
 loader.lazyRequireGetter(this, "Front", "devtools/shared/protocol", true);
-
-
-const PLATFORM_MAJOR_VERSION = AppConstants.MOZ_APP_VERSION.match(/\d+/)[0];
-
-
-
-
-
-const MIN_SUPPORTED_PLATFORM_VERSION = (PLATFORM_MAJOR_VERSION - 2) + ".0a1";
-
-const MS_PER_DAY = 86400000;
 
 
 
@@ -199,80 +186,6 @@ DebuggerClient.prototype = {
 
     this._transport.ready();
     return deferred.promise;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async checkRuntimeVersion() {
-    const localID = Services.appinfo.appBuildID.substr(0, 8);
-
-    let deviceFront;
-    try {
-      deviceFront = await this.mainRoot.getFront("device");
-    } catch (e) {
-      
-      
-      if (e.error == "unrecognizedPacketType") {
-        return {
-          incompatible: "too-old",
-          minVersion: MIN_SUPPORTED_PLATFORM_VERSION,
-          runtimeVersion: "<55",
-          localID,
-          runtimeID: "?",
-        };
-      }
-      throw e;
-    }
-    const desc = await deviceFront.getDescription();
-    let incompatible = null;
-
-    
-    
-    
-    
-    const runtimeID = desc.appbuildid.substr(0, 8);
-    function buildIDToDate(buildID) {
-      const fields = buildID.match(/(\d{4})(\d{2})(\d{2})/);
-      
-      return new Date(fields[1], Number.parseInt(fields[2], 10) - 1, fields[3]);
-    }
-    const runtimeDate = buildIDToDate(runtimeID);
-    const localDate = buildIDToDate(localID);
-    
-    
-    
-    if (runtimeDate - localDate > 7 * MS_PER_DAY) {
-      incompatible = "too-recent";
-    }
-
-    
-    const platformversion = desc.platformversion;
-    if (Services.vc.compare(platformversion, MIN_SUPPORTED_PLATFORM_VERSION) < 0) {
-      incompatible = "too-old";
-    }
-
-    return {
-      incompatible,
-      minVersion: MIN_SUPPORTED_PLATFORM_VERSION,
-      runtimeVersion: platformversion,
-      localID,
-      runtimeID,
-    };
   },
 
   
