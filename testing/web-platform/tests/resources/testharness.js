@@ -2135,6 +2135,9 @@
                     }
                 } else if (p == "timeout_multiplier") {
                     this.timeout_multiplier = value;
+                    if (this.timeout_length) {
+                         this.timeout_length *= this.timeout_multiplier;
+                    }
                 }
             }
         }
