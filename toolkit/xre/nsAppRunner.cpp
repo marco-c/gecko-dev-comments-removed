@@ -110,7 +110,7 @@
 #  include "cairo/cairo-features.h"
 #  include "mozilla/WindowsDllBlocklist.h"
 #  include "mozilla/WinHeaderOnlyUtils.h"
-#  include "mozilla/mscom/ProcessRuntime.h"
+#  include "mozilla/mscom/MainThreadRuntime.h"
 #  include "mozilla/widget/AudioSession.h"
 
 #  if defined(MOZ_LAUNCHER_PROCESS)
@@ -1248,12 +1248,14 @@ nsXULAppInfo::Callback(nsISupports* aData) {
 }
 
 static const nsXULAppInfo kAppInfo;
-static nsresult AppInfoConstructor(nsISupports* aOuter, REFNSIID aIID,
-                                   void** aResult) {
+namespace mozilla {
+nsresult AppInfoConstructor(nsISupports* aOuter, REFNSIID aIID,
+                            void** aResult) {
   NS_ENSURE_NO_AGGREGATION(aOuter);
 
   return const_cast<nsXULAppInfo*>(&kAppInfo)->QueryInterface(aIID, aResult);
 }
+}  
 
 bool gLogConsoleErrors = false;
 
@@ -4803,7 +4805,7 @@ int XREMain::XRE_main(int argc, char* argv[], const BootstrapConfig& aConfig) {
   
   
   
-  mozilla::mscom::ProcessRuntime msCOMRuntime;
+  mozilla::mscom::MainThreadRuntime msCOMRuntime;
 #endif
 
   
