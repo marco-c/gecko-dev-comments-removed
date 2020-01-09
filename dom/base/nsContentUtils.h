@@ -2343,13 +2343,6 @@ class nsContentUtils {
   
 
 
-  static bool SendPerformanceTimingNotifications() {
-    return sSendPerformanceTimingNotifications;
-  }
-
-  
-
-
 
 
   static bool ResistFingerprinting(mozilla::dom::CallerType aCallerType) {
@@ -3460,7 +3453,6 @@ class nsContentUtils {
 
   static bool sIsHandlingKeyBoardEvent;
   static bool sAllowXULXBL_for_file;
-  static bool sSendPerformanceTimingNotifications;
   static bool sUseActivityCursor;
   static bool sAnimationsAPICoreEnabled;
   static bool sGetBoxQuadsEnabled;

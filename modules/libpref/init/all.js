@@ -155,9 +155,6 @@ pref("dom.serviceWorkers.update_delay", 1000);
 pref("dom.serviceWorkers.testUpdateOverOneDay", false);
 
 
-pref("dom.performance.enable_notify_performance_timing", false);
-
-
 pref("dom.performance.enable_scheduler_timing", true);
 
 

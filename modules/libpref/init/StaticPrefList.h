@@ -490,6 +490,13 @@ VARCACHE_PREF(
 
 
 VARCACHE_PREF(
+  "dom.performance.enable_notify_performance_timing",
+   dom_performance_enable_notify_performance_timing,
+  bool, false
+)
+
+
+VARCACHE_PREF(
   "browser.measurement.render_anims_and_video_solid",
   browser_measurement_render_anims_and_video_solid,
   RelaxedAtomicBool, false
