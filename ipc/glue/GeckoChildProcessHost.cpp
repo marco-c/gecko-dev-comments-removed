@@ -680,6 +680,16 @@ AddAppDirToCommandLine(std::vector<std::string>& aCmdLine)
   }
 }
 
+#ifdef XP_WIN
+static bool Contains(const std::vector<std::string>& aExtraOpts,
+                     const char* aValue) {
+  return std::any_of(aExtraOpts.begin(), aExtraOpts.end(),
+                     [&](const std::string arg) {
+                       return arg.find(aValue) != std::string::npos;
+                     });
+}
+#endif  
+
 bool GeckoChildProcessHost::PerformAsyncLaunch(
     std::vector<std::string> aExtraOpts) {
 #ifdef MOZ_GECKO_PROFILER
@@ -1008,6 +1018,18 @@ bool GeckoChildProcessHost::PerformAsyncLaunch(
   FilePath exePath;
   BinaryPathType pathType = GetPathToBinary(exePath, mProcessType);
 
+  const bool isGMP = mProcessType == GeckoProcessType_GMPlugin;
+  const bool isWidevine = isGMP && Contains(aExtraOpts, "gmp-widevinecdm");
+#  if defined(_ARM64_) && defined(XP_WIN)
+  const bool isClearKey = isGMP && Contains(aExtraOpts, "gmp-clearkey");
+  if (isGMP && (isClearKey || isWidevine)) {
+    
+    
+    
+    exePath = exePath.DirName().AppendASCII("i686").Append(exePath.BaseName());
+  }
+#  endif
+
   CommandLine cmdLine(exePath.ToWStringHack());
 
   if (pathType == BinaryPathType::Self) {
@@ -1076,10 +1098,6 @@ bool GeckoChildProcessHost::PerformAsyncLaunch(
         
         
         
-        bool isWidevine = std::any_of(
-            aExtraOpts.begin(), aExtraOpts.end(), [](const std::string arg) {
-              return arg.find("gmp-widevinecdm") != std::string::npos;
-            });
         auto level =
             isWidevine ? SandboxBroker::Restricted : SandboxBroker::LockDown;
         bool ok = mSandboxBroker.SetSecurityLevelForGMPlugin(level);
