@@ -150,8 +150,6 @@ CookieSettings::CookiePermission(nsIPrincipal* aPrincipal,
   } else         
 #endif
 
-    
-    
     rv = pm->TestPermissionFromPrincipal(
         aPrincipal, NS_LITERAL_CSTRING("cookie"), aCookiePermission);
   if (NS_WARN_IF(NS_FAILED(rv))) {
