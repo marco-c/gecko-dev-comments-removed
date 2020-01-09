@@ -91,6 +91,8 @@ class UrlbarInput {
     this.isPrivate = PrivateBrowsingUtils.isWindowPrivate(this.window);
     this.lastQueryContextPromise = Promise.resolve();
     this._actionOverrideKeyCount = 0;
+    this._autofillPlaceholder = "";
+    this._lastSearchString = "";
     this._resultForCurrentValue = null;
     this._suppressStartQuery = false;
     this._untrimmedValue = "";
@@ -468,12 +470,10 @@ class UrlbarInput {
                        this._lastSearchString : this.textValue);
       if (canonizedUrl) {
         this.value = canonizedUrl;
+      } else if (result.autofill) {
+        this._autofillValue(result.autofill);
       } else {
         this.value = this._getValueFromResult(result);
-        if (result.autofill) {
-          this.selectionStart = result.autofill.selectionStart;
-          this.selectionEnd = result.autofill.selectionEnd;
-        }
       }
     }
     this._resultForCurrentValue = result;
@@ -502,32 +502,48 @@ class UrlbarInput {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   startQuery({
+    allowAutofill = true,
     lastKey = null,
+    searchString = null,
+    resetSearchState = true,
   } = {}) {
     if (this._suppressStartQuery) {
       return;
     }
 
-    let searchString = this.textValue;
+    if (resetSearchState) {
+      this._resetSearchState();
+    }
 
-    
-    
-    
-    
-    
-    let enableAutofill =
-      UrlbarPrefs.get("autoFill") &&
-      this.selectionEnd == searchString.length &&
-      (!this._lastSearchString ||
-       !this._lastSearchString.startsWith(searchString));
+    if (!searchString) {
+      searchString = this.textValue;
+    } else if (!this.textValue.startsWith(searchString)) {
+      throw new Error("The current value doesn't start with the search string");
+    }
     this._lastSearchString = searchString;
 
     
     
     
     this.lastQueryContextPromise = this.controller.startQuery(new UrlbarQueryContext({
-      enableAutofill,
+      allowAutofill,
       isPrivate: this.isPrivate,
       lastKey,
       maxResults: UrlbarPrefs.get("maxRichResults"),
@@ -563,6 +579,7 @@ class UrlbarInput {
     
     
     
+    this._lastSearchString = "";
     let event = this.document.createEvent("UIEvents");
     event.initUIEvent("input", true, false, this.window, 0);
     this.inputField.dispatchEvent(event);
@@ -605,6 +622,12 @@ class UrlbarInput {
   }
 
   set value(val) {
+    return this._setValue(val, true);
+  }
+
+  
+
+  _setValue(val, allowTrim) {
     this._untrimmedValue = val;
 
     let originalUrl = ReaderMode.getOriginalUrlObjectForDisplay(val);
@@ -612,7 +635,7 @@ class UrlbarInput {
       val = originalUrl.displaySpec;
     }
 
-    val = this.trimValue(val);
+    val = allowTrim ? this.trimValue(val) : val;
 
     this.valueIsTyped = false;
     this._resultForCurrentValue = null;
@@ -628,13 +651,7 @@ class UrlbarInput {
     return val;
   }
 
-  
-
   _getValueFromResult(result) {
-    if (result.autofill) {
-      return result.autofill.value;
-    }
-
     switch (result.type) {
       case UrlbarUtils.RESULT_TYPE.KEYWORD:
         return result.payload.input;
@@ -653,6 +670,56 @@ class UrlbarInput {
     } catch (ex) {}
 
     return "";
+  }
+
+  
+
+
+
+  _resetSearchState() {
+    this._lastSearchString = this.textValue;
+    this._autofillPlaceholder = "";
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  _maybeAutofillOnInput(value, deletedAutofilledSubstring) {
+    
+    
+    let lastSearchStartsWithNewSearch =
+      value.length < this._lastSearchString.length &&
+      this._lastSearchString.startsWith(value);
+    let allowAutofill =
+      !lastSearchStartsWithNewSearch &&
+      !deletedAutofilledSubstring &&
+      this.selectionEnd == value.length;
+
+    
+    
+    
+    
+    
+    
+    if (!allowAutofill ||
+        this._autofillPlaceholder.length <= value.length ||
+        !this._autofillPlaceholder.startsWith(value)) {
+      this._autofillPlaceholder = "";
+    }
+    if (this._autofillPlaceholder) {
+      this._autofillValueOnInput(this._autofillPlaceholder);
+    }
+
+    return allowAutofill;
   }
 
   _updateTextOverflow() {
@@ -869,6 +936,49 @@ class UrlbarInput {
 
 
 
+  _autofillValueOnInput(value) {
+    
+    
+    if (this.selectionEnd != this.value.length ||
+        !value.startsWith(this._lastSearchString)) {
+      return;
+    }
+    this._autofillValue({
+      value,
+      selectionStart: this._lastSearchString.length,
+      selectionEnd: value.length,
+    });
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  _autofillValue({ value, selectionStart, selectionEnd } = {}) {
+    
+    
+    this._setValue(value, false);
+    this.selectionStart = selectionStart;
+    this.selectionEnd = selectionEnd;
+    this._autofillPlaceholder = value;
+  }
+
+  
+
+
+
+
+
+
+
+
 
 
 
@@ -1034,6 +1144,7 @@ class UrlbarInput {
     if (this.getAttribute("pageproxystate") != "valid") {
       this.window.UpdatePopupNotificationsVisibility();
     }
+    this._resetSearchState();
   }
 
   _on_focus(event) {
@@ -1099,18 +1210,40 @@ class UrlbarInput {
       return;
     }
 
-    if (this._compositionState == UrlbarUtils.COMPOSITION.COMMIT) {
+    let handlingCompositionCommit =
+      this._compositionState == UrlbarUtils.COMPOSITION.COMMIT;
+    if (handlingCompositionCommit) {
       this._compositionState = UrlbarUtils.COMPOSITION.NONE;
     }
 
+    let sameSearchStrings = value == this._lastSearchString;
+
+    
+    
+    let deletedAutofilledSubstring =
+      sameSearchStrings &&
+      value.length < this._autofillPlaceholder.length &&
+      this._autofillPlaceholder.startsWith(value);
+
     
     
     
-    
+    if (sameSearchStrings &&
+        !deletedAutofilledSubstring &&
+        !handlingCompositionCommit &&
+        value.length > 0) {
+      return;
+    }
+
+    let allowAutofill =
+      this._maybeAutofillOnInput(value, deletedAutofilledSubstring);
 
     
     this.startQuery({
+      searchString: value,
+      allowAutofill,
       lastKey: null,
+      resetSearchState: false,
     });
   }
 
@@ -1194,6 +1327,7 @@ class UrlbarInput {
   }
 
   _on_TabSelect(event) {
+    this._resetSearchState();
     this.controller.viewContextChanged();
   }
 

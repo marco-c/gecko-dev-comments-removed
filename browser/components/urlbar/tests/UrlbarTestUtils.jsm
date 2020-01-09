@@ -46,6 +46,7 @@ var UrlbarTestUtils = {
     let urlbar = getUrlbarAbstraction(win);
     let restoreAnimationsFn = urlbar.disableAnimations();
     await new Promise(resolve => waitForFocus(resolve, win));
+    let lastSearchString = urlbar.lastSearchString;
     urlbar.focus();
     urlbar.value = inputText;
     if (fireInputEvent) {
@@ -54,7 +55,15 @@ var UrlbarTestUtils = {
     }
     
     
-    if (!urlbar.quantumbar || !fireInputEvent) {
+    
+    
+    
+    
+    
+    
+    if (!urlbar.quantumbar ||
+        !fireInputEvent ||
+        inputText == lastSearchString) {
       urlbar.startSearch(inputText);
     }
     return this.promiseSearchComplete(win, restoreAnimationsFn);
@@ -286,6 +295,11 @@ class UrlbarAbstraction {
   }
   get value() {
     return this.urlbar.value;
+  }
+
+  get lastSearchString() {
+    return this.quantumbar ? this.urlbar._lastSearchString :
+                             this.urlbar.controller.searchString;
   }
 
   get panel() {

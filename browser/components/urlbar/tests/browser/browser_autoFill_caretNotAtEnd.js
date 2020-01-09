@@ -1,0 +1,33 @@
+
+
+
+"use strict";
+
+add_task(async function noAutofillWhenCaretNotAtEnd() {
+  gURLBar.focus();
+
+  
+  await PlacesUtils.history.clear();
+  await PlacesTestUtils.addVisits([{
+    uri: "http://example.com/",
+  }]);
+
+  
+  gURLBar.inputField.value = "xample";
+
+  
+  gURLBar.selectionStart = 0;
+  gURLBar.selectionEnd = 0;
+  EventUtils.sendString("e");
+
+  
+  let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
+  Assert.ok(!result.autofill, "The first result should not be autofill");
+
+  Assert.equal(gURLBar.value, "example");
+  Assert.equal(gURLBar.selectionStart, 1);
+  Assert.equal(gURLBar.selectionEnd, 1);
+
+  await UrlbarTestUtils.promisePopupClose(window);
+  await PlacesUtils.history.clear();
+});

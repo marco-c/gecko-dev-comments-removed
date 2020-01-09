@@ -394,7 +394,7 @@ class UrlbarQueryContext {
 
   constructor(options = {}) {
     this._checkRequiredOptions(options, [
-      "enableAutofill",
+      "allowAutofill",
       "isPrivate",
       "lastKey",
       "maxResults",
