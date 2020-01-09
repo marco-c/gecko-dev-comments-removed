@@ -231,6 +231,12 @@ pub struct ScrollFrameDisplayItem {
     pub external_id: Option<ExternalScrollId>,
     pub image_mask: Option<ImageMask>,
     pub scroll_sensitivity: ScrollSensitivity,
+    
+    
+    
+    
+    
+    pub external_scroll_offset: LayoutPoint,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
