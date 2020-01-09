@@ -184,6 +184,11 @@ var whitelist = [
   
   
   {file: "resource://gre/modules/kvstore.jsm"},
+  {file: "chrome://devtools/content/aboutdebugging-new/tmp-locale/en-US/aboutdebugging.ftl",
+   isFromDevTools: true},
+  
+  {file: "resource://app/localization/en-US/browser/touchbar/touchbar.ftl",
+   platforms: ["linux", "win"]},
 ];
 
 whitelist = new Set(whitelist.filter(item =>
@@ -403,6 +408,7 @@ function parseCodeFile(fileUri) {
     for (let line of data.split("\n")) {
       let urls =
         line.match(/["'`]chrome:\/\/[a-zA-Z0-9-]+\/(content|skin|locale)\/[^"'` ]*["'`]/g);
+
       if (!urls) {
         urls = line.match(/["']resource:\/\/[^"']+["']/g);
         if (urls && isDevtools &&
@@ -411,6 +417,23 @@ function parseCodeFile(fileUri) {
           continue;
         }
       }
+
+      if (!urls) {
+        urls = line.match(/[a-z0-9_\/-]+\.ftl/i);
+        if (urls) {
+          urls = urls[0];
+          let grePrefix = Services.io.newURI("resource://gre/localization/en-US/");
+          let appPrefix = Services.io.newURI("resource://app/localization/en-US/");
+
+          let grePrefixUrl = Services.io.newURI(urls, null, grePrefix).spec;
+          let appPrefixUrl = Services.io.newURI(urls, null, appPrefix).spec;
+
+          addCodeReference(grePrefixUrl, fileUri);
+          addCodeReference(appPrefixUrl, fileUri);
+          continue;
+        }
+      }
+
       if (!urls) {
         
         
@@ -596,7 +619,8 @@ add_task(async function checkAllTheFiles() {
   
   
   
-  let uris = await generateURIsFromDirTree(appDir, [".css", ".manifest", ".jpg", ".png", ".gif", ".svg",  ".dtd", ".properties"].concat(kCodeExtensions));
+  let uris = await generateURIsFromDirTree(appDir, [".css", ".manifest", ".jpg", ".png", ".gif", ".svg",
+                                                    ".ftl", ".dtd", ".properties"].concat(kCodeExtensions));
 
   
   
@@ -653,7 +677,11 @@ add_task(async function checkAllTheFiles() {
                           "resource://devtools-client-jsonview/",
                           "resource://devtools-client-shared/",
                           "resource://app/modules/devtools",
-                          "resource://gre/modules/devtools"];
+                          "resource://gre/modules/devtools",
+                          "resource://app/localization/en-US/startup/aboutDevTools.ftl",
+                          "resource://app/localization/en-US/devtools/",
+                          
+                          "resource://gre/localization/en-US/toolkit/main-window/editmenu.ftl"];
   let hasDevtoolsPrefix =
     uri => devtoolsPrefixes.some(prefix => uri.startsWith(prefix));
   let chromeFiles = [];
