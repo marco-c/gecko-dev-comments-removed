@@ -164,11 +164,18 @@ class PresShell final : public nsIPresShell,
   nsresult AddOverrideStyleSheet(StyleSheet* aSheet) override;
   nsresult RemoveOverrideStyleSheet(StyleSheet* aSheet) override;
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   nsresult HandleEventWithTarget(
       WidgetEvent* aEvent, nsIFrame* aFrame, nsIContent* aContent,
-      nsEventStatus* aStatus, bool aIsHandlingNativeEvent = false,
+      nsEventStatus* aEventStatus, bool aIsHandlingNativeEvent = false,
       nsIContent** aTargetContent = nullptr,
-      nsIContent* aOverrideClickTarget = nullptr) override;
+      nsIContent* aOverrideClickTarget = nullptr) override {
+    MOZ_ASSERT(aEvent);
+    EventHandler eventHandler(*this);
+    return eventHandler.HandleEventWithTarget(
+        aEvent, aFrame, aContent, aEventStatus, aIsHandlingNativeEvent,
+        aTargetContent, aOverrideClickTarget);
+  }
 
   void NotifyCounterStylesAreDirty() override;
 
@@ -404,11 +411,6 @@ class PresShell final : public nsIPresShell,
   friend class ::nsAutoCauseReflowNotifier;
   friend class ::AutoPointerEventTargetUpdater;
 
-  nsresult DispatchEventToDOM(WidgetEvent* aEvent, nsEventStatus* aStatus,
-                              nsPresShellEventCB* aEventCB);
-  void DispatchTouchEventToDOM(WidgetEvent* aEvent, nsEventStatus* aStatus,
-                               nsPresShellEventCB* aEventCB, bool aTouchIsNew);
-
   void WillDoReflow();
 
   
@@ -540,18 +542,6 @@ class PresShell final : public nsIPresShell,
 
   void MaybeReleaseCapturingContent();
 
-  nsresult HandleRetargetedEvent(WidgetEvent* aEvent, nsEventStatus* aStatus,
-                                 nsIContent* aTarget) {
-    PushCurrentEventInfo(nullptr, nullptr);
-    mCurrentEventContent = aTarget;
-    nsresult rv = NS_OK;
-    if (GetCurrentEventFrame()) {
-      rv = HandleEventInternal(aEvent, aStatus, true);
-    }
-    PopCurrentEventInfo();
-    return rv;
-  }
-
   class DelayedEvent {
    public:
     virtual ~DelayedEvent() {}
@@ -621,47 +611,223 @@ class PresShell final : public nsIPresShell,
   void QueryIsActive();
   nsresult UpdateImageLockingState();
 
-  bool InZombieDocument(nsIContent* aContent);
   already_AddRefed<nsIPresShell> GetParentPresShellForEventHandling();
-  MOZ_CAN_RUN_SCRIPT nsresult
-  RetargetEventToParent(WidgetGUIEvent* aEvent, nsEventStatus* aEventStatus);
+
+  
+
+
+  class MOZ_STACK_CLASS EventHandler final {
+   public:
+    EventHandler() = delete;
+    EventHandler(const EventHandler& aOther) = delete;
+    explicit EventHandler(PresShell& aPresShell) : mPresShell(aPresShell) {}
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    MOZ_CAN_RUN_SCRIPT
+    nsresult HandleEvent(nsIFrame* aFrame, WidgetGUIEvent* aGUIEvent,
+                         bool aDontRetargetEvents, nsEventStatus* aEventStatus);
+
+    
+
+
+
+
+
+
+
+
+    MOZ_CAN_RUN_SCRIPT
+    nsresult HandleRetargetedEvent(WidgetGUIEvent* aGUIEvent,
+                                   nsEventStatus* aEventStatus,
+                                   nsIContent* aTarget) {
+      mPresShell->PushCurrentEventInfo(nullptr, nullptr);
+      mPresShell->mCurrentEventContent = aTarget;
+      nsresult rv = NS_OK;
+      if (mPresShell->GetCurrentEventFrame()) {
+        nsCOMPtr<nsIContent> overrideClickTarget;
+        rv = HandleEventInternal(aGUIEvent, aEventStatus, true,
+                                 overrideClickTarget);
+      }
+      mPresShell->PopCurrentEventInfo();
+      return rv;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    MOZ_CAN_RUN_SCRIPT
+    nsresult HandleEventWithTarget(WidgetEvent* aEvent,
+                                   nsIFrame* aNewEventFrame,
+                                   nsIContent* aNewEventContent,
+                                   nsEventStatus* aEventStatus,
+                                   bool aIsHandlingNativeEvent,
+                                   nsIContent** aTargetContent,
+                                   nsIContent* aOverrideClickTarget);
+
+   private:
+    static bool InZombieDocument(nsIContent* aContent);
+    static nsIFrame* GetNearestFrameContainingPresShell(
+        nsIPresShell* aPresShell);
+    static already_AddRefed<nsIURI> GetDocumentURIToCompareWithBlacklist(
+        PresShell& aPresShell);
+
+    MOZ_CAN_RUN_SCRIPT
+    nsresult RetargetEventToParent(WidgetGUIEvent* aGUIEvent,
+                                   nsEventStatus* aEventStatus);
+
+    
+
+
+
+
+
+
+
+
+
+
+    MOZ_CAN_RUN_SCRIPT
+    nsresult HandleEventInternal(WidgetEvent* aEvent,
+                                 nsEventStatus* aEventStatus,
+                                 bool aIsHandlingNativeEvent,
+                                 nsIContent* aOverrideClickTarget);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    bool AdjustContextMenuKeyEvent(WidgetMouseEvent* aMouseEvent);
+
+    bool PrepareToUseCaretPosition(nsIWidget* aEventWidget,
+                                   LayoutDeviceIntPoint& aTargetPt);
+
+    
+
+
+
+    void GetCurrentItemAndPositionForElement(dom::Element* aFocusedElement,
+                                             nsIContent** aTargetToUse,
+                                             LayoutDeviceIntPoint& aTargetPt,
+                                             nsIWidget* aRootWidget);
+
+    nsIContent* GetOverrideClickTarget(WidgetGUIEvent* aGUIEvent,
+                                       nsIFrame* aFrame);
+
+    
+
+
+
+
+
+
+
+    nsresult DispatchEventToDOM(WidgetEvent* aEvent,
+                                nsEventStatus* aEventStatus,
+                                nsPresShellEventCB* aEventCB);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    void DispatchTouchEventToDOM(WidgetEvent* aEvent,
+                                 nsEventStatus* aEventStatus,
+                                 nsPresShellEventCB* aEventCB,
+                                 bool aTouchIsNew);
+
+    
+
+
+    nsPresContext* GetPresContext() const {
+      return mPresShell->GetPresContext();
+    }
+    Document* GetDocument() const { return mPresShell->GetDocument(); }
+    void PushCurrentEventInfo(nsIFrame* aFrame, nsIContent* aContent) {
+      mPresShell->PushCurrentEventInfo(aFrame, aContent);
+    }
+    nsCSSFrameConstructor* FrameConstructor() const {
+      return mPresShell->FrameConstructor();
+    }
+    void PopCurrentEventInfo() { mPresShell->PopCurrentEventInfo(); }
+    already_AddRefed<nsPIDOMWindowOuter> GetFocusedDOMWindowInOurWindow() {
+      return mPresShell->GetFocusedDOMWindowInOurWindow();
+    }
+    already_AddRefed<nsIPresShell> GetParentPresShellForEventHandling() {
+      return mPresShell->GetParentPresShellForEventHandling();
+    }
+    void PushDelayedEventIntoQueue(UniquePtr<DelayedEvent>&& aDelayedEvent) {
+      mPresShell->mDelayedEvents.AppendElement(std::move(aDelayedEvent));
+    }
+
+    OwningNonNull<PresShell> mPresShell;
+    static TimeStamp sLastInputCreated;
+    static TimeStamp sLastInputProcessed;
+  };
 
   
 
 
 
 
-  nsresult HandleEventInternal(WidgetEvent* aEvent, nsEventStatus* aStatus,
-                               bool aIsHandlingNativeEvent,
-                               nsIContent* aOverrideClickTarget = nullptr);
-
-  
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-  bool AdjustContextMenuKeyEvent(WidgetMouseEvent* aEvent);
-
-  
-  bool PrepareToUseCaretPosition(nsIWidget* aEventWidget,
-                                 LayoutDeviceIntPoint& aTargetPt);
-
-  
-  
-  void GetCurrentItemAndPositionForElement(dom::Element* aFocusedElement,
-                                           nsIContent** aTargetToUse,
-                                           LayoutDeviceIntPoint& aTargetPt,
-                                           nsIWidget* aRootWidget);
+  MOZ_CAN_RUN_SCRIPT
+  nsresult HandleRetargetedEvent(WidgetGUIEvent* aGUIEvent,
+                                 nsEventStatus* aEventStatus,
+                                 nsIContent* aTarget) {
+    MOZ_ASSERT(aGUIEvent);
+    EventHandler eventHandler(*this);
+    return eventHandler.HandleRetargetedEvent(aGUIEvent, aEventStatus, aTarget);
+  }
 
   void SynthesizeMouseMove(bool aFromScroll) override;
 
@@ -720,7 +886,6 @@ class PresShell final : public nsIPresShell,
   nsresult SetResolutionImpl(float aResolution, bool aScaleToResolution,
                              nsAtom* aOrigin);
 
-  nsIContent* GetOverrideClickTarget(WidgetGUIEvent* aEvent, nsIFrame* aFrame);
 #ifdef DEBUG
   
   
@@ -847,9 +1012,6 @@ class PresShell final : public nsIPresShell,
   static bool sDisableNonTestMouseEvents;
 
   TimeStamp mLastOSWake;
-
-  static TimeStamp sLastInputCreated;
-  static TimeStamp sLastInputProcessed;
 
   static bool sProcessInteractable;
 };
