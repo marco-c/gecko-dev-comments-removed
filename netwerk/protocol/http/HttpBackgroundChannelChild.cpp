@@ -401,6 +401,25 @@ IPCResult HttpBackgroundChannelChild::RecvSetClassifierMatchedInfo(
   return IPC_OK();
 }
 
+IPCResult HttpBackgroundChannelChild::RecvSetClassifierMatchedTrackingInfo(
+    const ClassifierInfo& info) {
+  LOG(
+      ("HttpBackgroundChannelChild::RecvSetClassifierMatchedTrackingInfo "
+       "[this=%p]\n",
+       this));
+  MOZ_ASSERT(OnSocketThread());
+
+  if (NS_WARN_IF(!mChannelChild)) {
+    return IPC_OK();
+  }
+
+  
+  
+  mChannelChild->ProcessSetClassifierMatchedTrackingInfo(info.list(),
+                                                         info.fullhash());
+
+  return IPC_OK();
+}
 void HttpBackgroundChannelChild::ActorDestroy(ActorDestroyReason aWhy) {
   LOG(("HttpBackgroundChannelChild::ActorDestroy[this=%p]\n", this));
   

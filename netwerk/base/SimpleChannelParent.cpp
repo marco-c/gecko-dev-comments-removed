@@ -70,6 +70,13 @@ SimpleChannelParent::SetClassifierMatchedInfo(const nsACString& aList,
 }
 
 NS_IMETHODIMP
+SimpleChannelParent::SetClassifierMatchedTrackingInfo(
+    const nsACString& aLists, const nsACString& aFullHashes) {
+  
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 SimpleChannelParent::Delete() {
   
   return NS_OK;
