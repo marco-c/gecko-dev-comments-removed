@@ -221,13 +221,6 @@ wr::WrSpaceAndClipChain ClipManager::SwitchItem(
   
   clips.mClipChainId = DefineClipChain(clip, auPerDevPixel, aStackingContext);
 
-  
-  
-  
-  if (clips.mClipChainId.isNothing() && !mItemClipStack.empty()) {
-    clips.mClipChainId = mItemClipStack.top().mClipChainId;
-  }
-
   Maybe<wr::WrSpaceAndClip> spaceAndClip = GetScrollLayer(asr);
   MOZ_ASSERT(spaceAndClip.isSome());
   clips.mScrollId = SpatialIdAfterOverride(spaceAndClip->space);
@@ -363,11 +356,22 @@ Maybe<wr::WrClipChainId> ClipManager::DefineClipChain(
     CLIP_LOG("cache[%p] <= %zu\n", chain, clipId.id);
   }
 
-  if (clipIds.Length() == 0) {
-    return Nothing();
+  
+  Maybe<wr::WrClipChainId> parentChainId;
+  if (!mItemClipStack.empty()) {
+    parentChainId = mItemClipStack.top().mClipChainId;
   }
 
-  return Some(mBuilder->DefineClipChain(clipIds));
+  
+  
+  
+  Maybe<wr::WrClipChainId> chainId;
+  if (clipIds.Length() > 0) {
+    chainId = Some(mBuilder->DefineClipChain(parentChainId, clipIds));
+  } else {
+    chainId = parentChainId;
+  }
+  return chainId;
 }
 
 ClipManager::~ClipManager() {
