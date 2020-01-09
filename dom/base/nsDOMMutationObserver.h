@@ -359,7 +359,8 @@ class nsMutationReceiver : public nsMutationReceiverBase {
                                           nsAtom* aAttribute) override {
     
     AttributeWillChange(aElement, aNameSpaceID, aAttribute,
-                        mozilla::dom::MutationEvent_Binding::MODIFICATION);
+                        mozilla::dom::MutationEvent_Binding::MODIFICATION,
+                        nullptr);
   }
 
  protected:
