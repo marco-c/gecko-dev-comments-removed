@@ -14,8 +14,7 @@ const Localized = createFactory(FluentReact.Localized);
 const { MESSAGE_LEVEL } = require("../../constants");
 
 const ICONS = {
-  
-  [MESSAGE_LEVEL.ERROR]: "chrome://global/skin/icons/warning.svg",
+  [MESSAGE_LEVEL.ERROR]: "chrome://devtools/skin/images/aboutdebugging-error.svg",
   [MESSAGE_LEVEL.INFO]: "chrome://devtools/skin/images/aboutdebugging-information.svg",
   [MESSAGE_LEVEL.WARNING]: "chrome://global/skin/icons/warning.svg",
 };
