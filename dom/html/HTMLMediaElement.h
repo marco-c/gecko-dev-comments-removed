@@ -1674,6 +1674,16 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   bool mHasEverBeenBlockedForAutoplay = false;
 
+  
+  
+  
+  bool mPendingTextTrackChanged = false;
+
+ public:
+  
+  
+  void NotifyTextTrackModeChanged();
+
  public:
   
   class TimeDurationAccumulator {
