@@ -231,13 +231,16 @@ def verify_android_device(build_obj, install=False, xre=False, debugger=False,
         device = _get_device(build_obj.substs, device_serial)
         response = ''
         action = 'Re-install'
-        if not device.is_app_installed(app):
+        installed = device.is_app_installed(app)
+        if not installed:
             _log_info("It looks like %s is not installed on this device." % app)
             action = 'Install'
         if 'fennec' in app or 'firefox' in app:
             response = response = raw_input(
                 "%s Firefox? (Y/n) " % action).strip()
             if response.lower().startswith('y') or response == '':
+                if installed:
+                    device.uninstall_app(app)
                 _log_info("Installing Firefox. This may take a while...")
                 build_obj._run_make(directory=".", target='install',
                                     ensure_exit_code=False)
@@ -245,6 +248,8 @@ def verify_android_device(build_obj, install=False, xre=False, debugger=False,
             response = response = raw_input(
                 "%s geckoview AndroidTest? (Y/n) " % action).strip()
             if response.lower().startswith('y') or response == '':
+                if installed:
+                    device.uninstall_app(app)
                 _log_info("Installing geckoview AndroidTest. This may take a while...")
                 sub = 'geckoview:installWithGeckoBinariesDebugAndroidTest'
                 build_obj._mach_context.commands.dispatch('gradle',
@@ -254,18 +259,19 @@ def verify_android_device(build_obj, install=False, xre=False, debugger=False,
             response = response = raw_input(
                 "%s geckoview_example? (Y/n) " % action).strip()
             if response.lower().startswith('y') or response == '':
+                if installed:
+                    device.uninstall_app(app)
                 _log_info("Installing geckoview_example. This may take a while...")
                 sub = 'install-geckoview_example'
                 build_obj._mach_context.commands.dispatch('android',
                                                           subcommand=sub,
                                                           args=[],
                                                           context=build_obj._mach_context)
-        else:
-            if not device.is_app_installed(app):
-                response = raw_input(
-                    "It looks like %s is not installed on this device,\n"
-                    "but I don't know how to install it.\n"
-                    "Install it now, then hit Enter " % app)
+        elif not installed:
+            response = raw_input(
+                "It looks like %s is not installed on this device,\n"
+                "but I don't know how to install it.\n"
+                "Install it now, then hit Enter " % app)
 
     if device_verified and xre:
         
