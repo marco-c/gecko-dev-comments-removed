@@ -98,6 +98,11 @@ a:active {
   color: var(--link-color-active);
 }
 
+p {
+  
+  margin: initial;
+}
+
 
 
 

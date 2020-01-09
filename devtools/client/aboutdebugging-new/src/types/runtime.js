@@ -35,6 +35,11 @@ const runtimeDetails = {
   
   
   isMultiE10s: PropTypes.bool,
+
+  
+  
+  
+  serviceWorkersAvailable: PropTypes.bool.isRequired,
 };
 exports.runtimeDetails = PropTypes.shape(runtimeDetails);
 
