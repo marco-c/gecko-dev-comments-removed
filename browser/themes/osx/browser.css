@@ -338,6 +338,12 @@ html|input.urlbar-input {
 
 
 
+#urlbar-results {
+  border-style: none;
+}
+
+
+
 
 
 #PopupAutoCompleteRichResult {
