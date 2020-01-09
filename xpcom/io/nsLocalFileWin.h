@@ -14,7 +14,6 @@
 #include "nsIFile.h"
 #include "nsIFactory.h"
 #include "nsILocalFileWin.h"
-#include "nsIHashable.h"
 #include "nsIClassInfoImpl.h"
 #include "prio.h"
 
@@ -25,7 +24,7 @@
 
 #include <sys/stat.h>
 
-class nsLocalFile final : public nsILocalFileWin, public nsIHashable {
+class nsLocalFile final : public nsILocalFileWin {
  public:
   NS_DEFINE_STATIC_CID_ACCESSOR(NS_LOCAL_FILE_CID)
 
@@ -43,9 +42,6 @@ class nsLocalFile final : public nsILocalFileWin, public nsIHashable {
 
   
   NS_DECL_NSILOCALFILEWIN
-
-  
-  NS_DECL_NSIHASHABLE
 
  public:
   

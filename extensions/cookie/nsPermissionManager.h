@@ -72,9 +72,6 @@ class nsPermissionManager final : public nsIPermissionManager,
   
 
 
-
-
-
   class PermissionKey {
    public:
     static PermissionKey* CreateFromPrincipal(nsIPrincipal* aPrincipal,
