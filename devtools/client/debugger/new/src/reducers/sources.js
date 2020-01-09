@@ -179,15 +179,6 @@ function update(
 
 function updateSource(state: SourcesState, source: Object) {
   const existingSource = state.sources[source.id];
-
-  
-  
-  
-  if (!existingSource) {
-    
-    
-    return state;
-  }
   return {
     ...state,
     sources: {
