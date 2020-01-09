@@ -1663,6 +1663,10 @@ var AddonManagerInternal = {
       throw Components.Exception("aInstallingPrincipal must be a nsIPrincipal",
                                  Cr.NS_ERROR_INVALID_ARG);
 
+    if (this.isInstallAllowedByPolicy(aInstallingPrincipal, null, true )) {
+      return true;
+    }
+
     let providers = [...this.providers];
     for (let provider of providers) {
       if (callProvider(provider, "supportsMimetype", false, aMimetype) &&
@@ -1670,6 +1674,40 @@ var AddonManagerInternal = {
         return true;
     }
     return false;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  isInstallAllowedByPolicy(aInstallingPrincipal, aInstall, explicit) {
+    if (Services.policies) {
+      let extensionSettings = Services.policies.getExtensionSettings("*");
+      if (extensionSettings && extensionSettings.install_sources) {
+        if ((!aInstall || Services.policies.allowedInstallSource(aInstall.sourceURI)) &&
+            (!aInstallingPrincipal || !aInstallingPrincipal.URI ||
+            Services.policies.allowedInstallSource(aInstallingPrincipal.URI))) {
+          return true;
+        }
+        return false;
+      }
+    }
+    return !explicit;
   },
 
   installNotifyObservers(aTopic, aBrowser, aUri, aInstall, aInstallFn) {
@@ -1809,7 +1847,9 @@ var AddonManagerInternal = {
         this.installNotifyObservers("addon-install-disabled", topBrowser,
                                     aInstallingPrincipal.URI, aInstall);
         return;
-      } else if (aInstallingPrincipal.isNullPrincipal || !aBrowser.contentPrincipal || !aInstallingPrincipal.subsumes(aBrowser.contentPrincipal)) {
+      } else if (aInstallingPrincipal.isNullPrincipal || !aBrowser.contentPrincipal ||
+                 !aInstallingPrincipal.subsumes(aBrowser.contentPrincipal) ||
+                 !this.isInstallAllowedByPolicy(aInstallingPrincipal, aInstall, false )) {
         aInstall.cancel();
 
         this.installNotifyObservers("addon-install-origin-blocked", topBrowser,
@@ -1855,6 +1895,13 @@ var AddonManagerInternal = {
 
 
   installAddonFromAOM(browser, uri, install) {
+    if (!this.isInstallAllowedByPolicy(null, install)) {
+      install.cancel();
+
+      this.installNotifyObservers("addon-install-origin-blocked", browser,
+                                  install.sourceURI, install);
+      return;
+    }
     if (!gStarted)
       throw Components.Exception("AddonManager is not initialized",
                                  Cr.NS_ERROR_NOT_INITIALIZED);
