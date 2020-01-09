@@ -140,37 +140,6 @@ nsFtpProtocolHandler::GetProtocolFlags(uint32_t* result) {
 }
 
 NS_IMETHODIMP
-nsFtpProtocolHandler::NewURI(const nsACString& aSpec, const char* aCharset,
-                             nsIURI* aBaseURI, nsIURI** result) {
-  if (!mEnabled) {
-    return NS_ERROR_UNKNOWN_PROTOCOL;
-  }
-  nsAutoCString spec(aSpec);
-  spec.Trim(" \t\n\r");  
-
-  char* fwdPtr = spec.BeginWriting();
-
-  
-
-  int32_t len = NS_UnescapeURL(fwdPtr);
-
-  
-  
-  spec.Truncate(len);
-
-  
-  if (spec.FindCharInSet(CRLF) >= 0 || spec.FindChar('\0') >= 0)
-    return NS_ERROR_MALFORMED_URI;
-
-  nsCOMPtr<nsIURI> base(aBaseURI);
-  return NS_MutateURI(NS_STANDARDURLMUTATOR_CONTRACTID)
-      .Apply(NS_MutatorMethod(&nsIStandardURLMutator::Init,
-                              nsIStandardURL::URLTYPE_AUTHORITY, 21,
-                              nsCString(aSpec), aCharset, base, nullptr))
-      .Finalize(result);
-}
-
-NS_IMETHODIMP
 nsFtpProtocolHandler::NewChannel(nsIURI* url, nsILoadInfo* aLoadInfo,
                                  nsIChannel** result) {
   return NewProxiedChannel(url, nullptr, 0, nullptr, aLoadInfo, result);
