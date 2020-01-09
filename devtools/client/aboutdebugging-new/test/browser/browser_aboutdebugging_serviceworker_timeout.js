@@ -5,14 +5,14 @@
 
 
 
-requestLongerTimeout(2);
+requestLongerTimeout(3);
 
 
 Services.scriptloader.loadSubScript(CHROME_URL_ROOT + "helper-serviceworker.js", this);
 
 const SW_TAB_URL = URL_ROOT + "resources/service-workers/empty-sw.html";
 const SW_URL = URL_ROOT + "resources/service-workers/empty-sw.js";
-const SW_TIMEOUT = 1000;
+const SW_TIMEOUT = 4000;
 
 
 
@@ -61,7 +61,7 @@ add_task(async function() {
 
   
   
-  await wait(SW_TIMEOUT * 10);
+  await wait(SW_TIMEOUT * 5);
 
   
   
