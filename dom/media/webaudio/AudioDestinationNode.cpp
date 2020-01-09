@@ -336,6 +336,8 @@ AudioDestinationNode::AudioDestinationNode(AudioContext* aContext,
     return;
   }
 
+  
+  
   MediaStreamGraph* graph = MediaStreamGraph::GetInstance(
       MediaStreamGraph::AUDIO_THREAD_DRIVER, aContext->GetParentObject(),
       aContext->SampleRate());
@@ -377,6 +379,8 @@ AudioNodeStream* AudioDestinationNode::Stream() {
 
   MOZ_ASSERT(mIsOffline, "Realtime streams are created in constructor");
 
+  
+  
   MediaStreamGraph* graph = MediaStreamGraph::CreateNonRealtimeInstance(
       context->SampleRate(), context->GetParentObject());
   AudioNodeEngine* engine = new OfflineDestinationNodeEngine(this);

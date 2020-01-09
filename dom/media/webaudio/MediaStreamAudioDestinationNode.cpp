@@ -72,9 +72,17 @@ MediaStreamAudioDestinationNode::MediaStreamAudioDestinationNode(
       mDOMStream(DOMAudioNodeMediaStream::CreateTrackUnionStreamAsInput(
           GetOwner(), this, aContext->Graph())) {
   
-  Document* doc = aContext->GetParentObject()->GetExtantDoc();
+  
+  
+  
+  
+  nsCOMPtr<nsIPrincipal> principal = nullptr;
+  if (aContext->GetParentObject()) {
+    Document* doc = aContext->GetParentObject()->GetExtantDoc();
+    principal = doc->NodePrincipal();
+  }
   RefPtr<MediaStreamTrackSource> source =
-      new AudioDestinationTrackSource(this, doc->NodePrincipal());
+      new AudioDestinationTrackSource(this, principal);
   RefPtr<MediaStreamTrack> track = mDOMStream->CreateDOMTrack(
       AudioNodeStream::AUDIO_TRACK, MediaSegment::AUDIO, source,
       MediaTrackConstraints());
