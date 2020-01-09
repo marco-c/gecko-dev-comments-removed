@@ -385,6 +385,41 @@ class PresShell final : public nsIPresShell,
 
   MOZ_CAN_RUN_SCRIPT nsresult ScrollToAnchor();
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT
+  nsresult ScrollContentIntoView(nsIContent* aContent, ScrollAxis aVertical,
+                                 ScrollAxis aHorizontal, uint32_t aFlags);
+
  private:
   ~PresShell();
 
@@ -1201,8 +1236,10 @@ class PresShell final : public nsIPresShell,
 
 
 
+    MOZ_CAN_RUN_SCRIPT
     bool AdjustContextMenuKeyEvent(WidgetMouseEvent* aMouseEvent);
 
+    MOZ_CAN_RUN_SCRIPT
     bool PrepareToUseCaretPosition(nsIWidget* aEventWidget,
                                    LayoutDeviceIntPoint& aTargetPt);
 
@@ -1210,6 +1247,7 @@ class PresShell final : public nsIPresShell,
 
 
 
+    MOZ_CAN_RUN_SCRIPT
     void GetCurrentItemAndPositionForElement(dom::Element* aFocusedElement,
                                              nsIContent** aTargetToUse,
                                              LayoutDeviceIntPoint& aTargetPt,

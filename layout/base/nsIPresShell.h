@@ -730,39 +730,6 @@ class nsIPresShell : public nsStubDocumentObserver {
           mOnlyIfPerceivedScrollableDirection(
               aOnlyIfPerceivedScrollableDirection) {}
   } ScrollAxis;
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  nsresult ScrollContentIntoView(nsIContent* aContent, ScrollAxis aVertical,
-                                 ScrollAxis aHorizontal, uint32_t aFlags);
 
   enum {
     SCROLL_FIRST_ANCESTOR_ONLY = 0x01,
