@@ -3038,6 +3038,14 @@ bool NS_IsOffline() {
 
 
 bool NS_ShouldClassifyChannel(nsIChannel *aChannel) {
+  nsLoadFlags loadFlags;
+  Unused << aChannel->GetLoadFlags(&loadFlags);
+  
+  
+  if (loadFlags & nsIChannel::LOAD_BYPASS_URL_CLASSIFIER) {
+    return false;
+  }
+
   nsCOMPtr<nsIHttpChannelInternal> httpChannel(do_QueryInterface(aChannel));
   if (httpChannel) {
     bool beConservative;
