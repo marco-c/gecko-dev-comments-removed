@@ -7,17 +7,16 @@ const MC_PATH = "resource://devtools/client/shared/components/reps/images/";
 const EXPRESS_PATH = "/devtools-reps/images/";
 const IMAGES = ["open-inspector.svg", "jump-definition.svg", "input.svg"];
 
-
 function mapUrlProduction(url, type) {
   for (const img of IMAGES) {
-    url = url.replace(`/images/${img}`, `${MC_PATH}${img}`);
+    url = url.replace(`^/images/${img}`, `${MC_PATH}${img}`);
   }
   return url;
 }
 
 function mapUrlDevelopment(url) {
   for (const img of IMAGES) {
-    url = url.replace(`/images/${img}`, `${EXPRESS_PATH}${img}`);
+    url = url.replace(`^/images/${img}`, `${EXPRESS_PATH}${img}`);
   }
   return url;
 }
