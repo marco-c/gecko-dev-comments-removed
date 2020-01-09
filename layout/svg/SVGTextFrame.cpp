@@ -5224,7 +5224,18 @@ bool SVGTextFrame::UpdateFontSizeScaleFactor() {
     
     
     
-    mFontSizeScaleFactor = CLAMP_MIN_SIZE / minSize;
+    
+    
+    
+    if (maxTextRunSize <= CLAMP_MAX_SIZE) {
+      mFontSizeScaleFactor = CLAMP_MAX_SIZE / maxSize;
+    } else if (minTextRunSize >= CLAMP_MIN_SIZE) {
+      mFontSizeScaleFactor = CLAMP_MIN_SIZE / minSize;
+    } else {
+      
+      
+      mFontSizeScaleFactor = contextScale;
+    }
   } else if (minTextRunSize < CLAMP_MIN_SIZE) {
     mFontSizeScaleFactor = CLAMP_MIN_SIZE / minSize;
   } else {
