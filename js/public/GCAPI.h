@@ -94,6 +94,9 @@ typedef enum JSGCParamKey {
 
 
 
+
+
+
   JSGC_MAX_NURSERY_BYTES = 2,
 
   
@@ -292,6 +295,17 @@ typedef enum JSGCParamKey {
 
 
   JSGC_NURSERY_FREE_THRESHOLD_FOR_IDLE_COLLECTION_PERCENT = 30,
+
+  
+
+
+
+
+
+
+
+
+  JSGC_MIN_NURSERY_BYTES = 31,
 
 } JSGCParamKey;
 
