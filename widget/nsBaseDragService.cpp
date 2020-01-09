@@ -205,6 +205,23 @@ nsBaseDragService::InvokeDragSession(
     nsContentPolicyType aContentPolicyType = nsIContentPolicy::TYPE_OTHER) {
   AUTO_PROFILER_LABEL("nsBaseDragService::InvokeDragSession", OTHER);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (XRE_IsParentProcess()) {
+    MOZ_ASSERT(
+        !xpc::IsInAutomation(),
+        "About to start drag-drop native loop on which will prevent later "
+        "tests from running properly.");
+  }
+
   NS_ENSURE_TRUE(aDOMNode, NS_ERROR_INVALID_ARG);
   NS_ENSURE_TRUE(mSuppressLevel == 0, NS_ERROR_FAILURE);
 
