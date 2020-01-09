@@ -4,6 +4,7 @@
 
 
 
+#include "ComputedStyle.h"
 #include "mozilla/dom/SVGCircleElement.h"
 #include "mozilla/gfx/2D.h"
 #include "nsGkAtoms.h"
@@ -137,6 +138,16 @@ already_AddRefed<Path> SVGCircleElement::BuildPath(PathBuilder* aBuilder) {
   aBuilder->Arc(Point(x, y), r, 0, Float(2 * M_PI));
 
   return aBuilder->Finish();
+}
+
+bool SVGCircleElement::IsLengthChangedViaCSS(const ComputedStyle& aNewStyle,
+                                             const ComputedStyle& aOldStyle) {
+  auto *newSVGReset = aNewStyle.StyleSVGReset(),
+       *oldSVGReset = aOldStyle.StyleSVGReset();
+
+  return newSVGReset->mCx != oldSVGReset->mCx ||
+         newSVGReset->mCy != oldSVGReset->mCy ||
+         newSVGReset->mR != oldSVGReset->mR;
 }
 
 }  
