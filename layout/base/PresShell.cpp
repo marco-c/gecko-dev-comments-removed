@@ -1317,9 +1317,9 @@ void PresShell::Destroy() {
   
   
   if (mDocument) {
-    NS_ASSERTION(mDocument->GetPresShell() == this, "Wrong shell?");
+    NS_ASSERTION(mDocument->GetShell() == this, "Wrong shell?");
     mDocument->ClearServoRestyleRoot();
-    mDocument->DeletePresShell();
+    mDocument->DeleteShell();
 
     if (mDocument->HasAnimationController()) {
       mDocument->GetAnimationController()->NotifyRefreshDriverDestroying(rd);
@@ -3415,8 +3415,8 @@ nsresult nsIPresShell::ScrollContentIntoView(
   }
 
   
-  if (PresShell* presShell = composedDoc->GetPresShell()) {
-    presShell->SetNeedLayoutFlush();
+  if (nsIPresShell* shell = composedDoc->GetShell()) {
+    shell->SetNeedLayoutFlush();
   }
   composedDoc->FlushPendingNotifications(FlushType::InterruptibleLayout);
 
@@ -4040,8 +4040,8 @@ void PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush) {
   }
 
   
-  if (MOZ_UNLIKELY(mDocument->GetPresShell() != this)) {
-    MOZ_DIAGNOSTIC_ASSERT(!mDocument->GetPresShell(),
+  if (MOZ_UNLIKELY(mDocument->GetShell() != this)) {
+    MOZ_DIAGNOSTIC_ASSERT(!mDocument->GetShell(),
                           "Where did this shell come from?");
     isSafeToFlush = false;
   }
@@ -5853,8 +5853,8 @@ void PresShell::EnsureFrameInApproximatelyVisibleList(nsIFrame* aFrame) {
   
   nsCOMPtr<nsIContent> content = aFrame->GetContent();
   if (content) {
-    PresShell* presShell = content->OwnerDoc()->GetPresShell();
-    MOZ_ASSERT(!presShell || presShell == this, "wrong shell");
+    PresShell* shell = static_cast<PresShell*>(content->OwnerDoc()->GetShell());
+    MOZ_ASSERT(!shell || shell == this, "wrong shell");
   }
 #endif
 
@@ -5869,8 +5869,8 @@ void PresShell::RemoveFrameFromApproximatelyVisibleList(nsIFrame* aFrame) {
   
   nsCOMPtr<nsIContent> content = aFrame->GetContent();
   if (content) {
-    PresShell* presShell = content->OwnerDoc()->GetPresShell();
-    MOZ_ASSERT(!presShell || presShell == this, "wrong shell");
+    PresShell* shell = static_cast<PresShell*>(content->OwnerDoc()->GetShell());
+    MOZ_ASSERT(!shell || shell == this, "wrong shell");
   }
 #endif
 
@@ -6376,9 +6376,9 @@ nsIFrame* PresShell::EventHandler::GetNearestFrameContainingPresShell(
 }
 
 static bool FlushThrottledStyles(Document* aDocument, void* aData) {
-  PresShell* presShell = aDocument->GetPresShell();
-  if (presShell && presShell->IsVisible()) {
-    nsPresContext* presContext = presShell->GetPresContext();
+  nsIPresShell* shell = aDocument->GetShell();
+  if (shell && shell->IsVisible()) {
+    nsPresContext* presContext = shell->GetPresContext();
     if (presContext) {
       presContext->RestyleManager()->UpdateOnlyAnimationStyles();
     }
@@ -6408,7 +6408,7 @@ PresShell* PresShell::GetShellForEventTarget(nsIFrame* aFrame,
     if (!doc) {
       return nullptr;
     }
-    return doc->GetPresShell();
+    return static_cast<PresShell*>(doc->GetShell());
   }
   return nullptr;
 }
@@ -6947,7 +6947,7 @@ bool PresShell::EventHandler::MaybeHandleEventWithAccessibleCaret(
   if (!retargetEventDoc) {
     return false;
   }
-  RefPtr<PresShell> presShell = retargetEventDoc->GetPresShell();
+  nsCOMPtr<nsIPresShell> presShell = retargetEventDoc->GetShell();
   if (!presShell) {
     return false;
   }
@@ -7074,7 +7074,7 @@ nsIFrame* PresShell::EventHandler::GetFrameForHandlingEventWith(
   MOZ_ASSERT(aGUIEvent);
   MOZ_ASSERT(aRetargetDocument);
 
-  RefPtr<PresShell> retargetPresShell = aRetargetDocument->GetPresShell();
+  nsCOMPtr<nsIPresShell> retargetPresShell = aRetargetDocument->GetShell();
   
   
   
@@ -7088,7 +7088,7 @@ nsIFrame* PresShell::EventHandler::GetFrameForHandlingEventWith(
       if (!retargetEventDoc) {
         return nullptr;
       }
-      retargetPresShell = retargetEventDoc->GetPresShell();
+      retargetPresShell = retargetEventDoc->GetShell();
     }
   }
 
@@ -7552,7 +7552,8 @@ bool PresShell::EventHandler::MaybeHandleEventWithAnotherPresShell(
     return false;
   }
 
-  RefPtr<PresShell> eventTargetPresShell = eventTargetDocument->GetPresShell();
+  RefPtr<PresShell> eventTargetPresShell =
+      static_cast<PresShell*>(eventTargetDocument->GetShell());
   if (!eventTargetPresShell) {
     *aRv = NS_OK;
     return true;  
@@ -8256,7 +8257,7 @@ void PresShell::EventHandler::DispatchTouchEventToDOM(
 
     RefPtr<PresShell> contentPresShell;
     if (doc == GetDocument()) {
-      contentPresShell = doc->GetPresShell();
+      contentPresShell = static_cast<PresShell*>(doc->GetShell());
       if (contentPresShell) {
         
         
@@ -8833,10 +8834,9 @@ static void FreezeElement(nsISupports* aSupports, void* ) {
 }
 
 static bool FreezeSubDocument(Document* aDocument, void* aData) {
-  PresShell* presShell = aDocument->GetPresShell();
-  if (presShell) {
-    presShell->Freeze();
-  }
+  nsIPresShell* shell = aDocument->GetShell();
+  if (shell) shell->Freeze();
+
   return true;
 }
 
@@ -8904,10 +8904,9 @@ static void ThawElement(nsISupports* aSupports, void* aShell) {
 }
 
 static bool ThawSubDocument(Document* aDocument, void* aData) {
-  PresShell* presShell = aDocument->GetPresShell();
-  if (presShell) {
-    presShell->Thaw();
-  }
+  nsIPresShell* shell = aDocument->GetShell();
+  if (shell) shell->Thaw();
+
   return true;
 }
 
@@ -9921,26 +9920,23 @@ bool nsIPresShell::VerifyIncrementalReflow() {
   
   UniquePtr<ServoStyleSet> newSet = CloneStyleSet(StyleSet());
 
-  RefPtr<PresShell> presShell =
-      mDocument->CreatePresShell(cx, vm, std::move(newSet));
-  NS_ENSURE_TRUE(presShell, false);
+  nsCOMPtr<nsIPresShell> sh = mDocument->CreateShell(cx, vm, std::move(newSet));
+  NS_ENSURE_TRUE(sh, false);
   
-  presShell->SetVerifyReflowEnable(
-      false);  
-               
-  vm->SetPresShell(presShell);
+  sh->SetVerifyReflowEnable(false);  
+                                     
+  vm->SetPresShell(sh);
   {
     nsAutoCauseReflowNotifier crNotifier(this);
-    presShell->Initialize();
+    sh->Initialize();
   }
   mDocument->BindingManager()->ProcessAttachedQueue();
-  presShell->FlushPendingNotifications(FlushType::Layout);
-  presShell->SetVerifyReflowEnable(
-      true);  
-              
+  sh->FlushPendingNotifications(FlushType::Layout);
+  sh->SetVerifyReflowEnable(true);  
+                                    
   
   
-  presShell->mPaintingSuppressed = false;
+  ((PresShell*)sh.get())->mPaintingSuppressed = false;
   if (VERIFY_REFLOW_NOISY & gVerifyReflowFlags) {
     printf("Verification Tree built, comparing...\n");
   }
@@ -9948,7 +9944,7 @@ bool nsIPresShell::VerifyIncrementalReflow() {
   
   
   nsIFrame* root1 = mFrameConstructor->GetRootFrame();
-  nsIFrame* root2 = presShell->GetRootFrame();
+  nsIFrame* root2 = sh->GetRootFrame();
   bool ok = CompareTrees(mPresContext, root1, cx, root2);
   if (!ok && (VERIFY_REFLOW_NOISY & gVerifyReflowFlags)) {
     printf("Verify reflow failed, primary tree:\n");
@@ -9966,18 +9962,18 @@ bool nsIPresShell::VerifyIncrementalReflow() {
     stra.AppendLiteral("C:\\mozilla\\mozilla\\debug\\filea");
     stra.AppendInt(num);
     stra.AppendLiteral(".png");
-    gfxUtils::WriteAsPNG(presShell, stra);
+    gfxUtils::WriteAsPNG(sh, stra);
     nsString strb;
     strb.AppendLiteral("C:\\mozilla\\mozilla\\debug\\fileb");
     strb.AppendInt(num);
     strb.AppendLiteral(".png");
-    gfxUtils::WriteAsPNG(presShell, strb);
+    gfxUtils::WriteAsPNG(sh, strb);
     ++num;
   }
 #  endif
 
-  presShell->EndObservingDocument();
-  presShell->Destroy();
+  sh->EndObservingDocument();
+  sh->Destroy();
   if (VERIFY_REFLOW_NOISY & gVerifyReflowFlags) {
     printf("Finished Verifying Reflow...\n");
   }
@@ -10481,9 +10477,9 @@ void PresShell::QueryIsActive() {
 
 
 static bool SetExternalResourceIsActive(Document* aDocument, void* aClosure) {
-  PresShell* presShell = aDocument->GetPresShell();
-  if (presShell) {
-    presShell->SetIsActive(*static_cast<bool*>(aClosure));
+  nsIPresShell* shell = aDocument->GetShell();
+  if (shell) {
+    shell->SetIsActive(*static_cast<bool*>(aClosure));
   }
   return true;
 }

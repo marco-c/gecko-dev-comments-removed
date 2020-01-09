@@ -19,6 +19,7 @@
 #include "nsIContentInlines.h"
 #include "mozilla/dom/Document.h"
 #include "nsContentUtils.h"
+#include "nsIPresShell.h"
 #include "nsIPresShellInlines.h"
 #include "nsIXMLContentSink.h"
 #include "nsContentCID.h"
@@ -50,7 +51,6 @@
 #include "nsThreadUtils.h"
 #include "mozilla/dom/NodeListBinding.h"
 #include "mozilla/dom/ScriptSettings.h"
-#include "mozilla/PresShell.h"
 #include "mozilla/Unused.h"
 
 using namespace mozilla;
@@ -228,7 +228,8 @@ nsresult nsBindingManager::ClearBinding(Element* aElement) {
   nsCOMPtr<Document> doc = aElement->OwnerDoc();
 
   
-  if (PresShell* presShell = doc->GetPresShell()) {
+  nsIPresShell* presShell = doc->GetShell();
+  if (presShell) {
     presShell->DestroyFramesForAndRestyle(aElement);
   }
 
@@ -244,9 +245,9 @@ nsresult nsBindingManager::ClearBinding(Element* aElement) {
   
   
   
-  
-  PresShell* presShell = doc->GetPresShell();
+  presShell = doc->GetShell();  
   NS_ENSURE_TRUE(presShell, NS_ERROR_FAILURE);
+
   presShell->PostRecreateFramesFor(aElement);
   return NS_OK;
 }
@@ -288,8 +289,8 @@ nsresult nsBindingManager::AddToAttachedQueue(nsXBLBinding* aBinding) {
   }
 
   
-  if (PresShell* presShell = mDocument->GetPresShell()) {
-    presShell->SetNeedStyleFlush();
+  if (nsIPresShell* shell = mDocument->GetShell()) {
+    shell->SetNeedStyleFlush();
   }
 
   return NS_OK;

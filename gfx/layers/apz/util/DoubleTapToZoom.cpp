@@ -8,7 +8,6 @@
 
 #include <algorithm>  
 
-#include "mozilla/PresShell.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/dom/Element.h"
 #include "nsCOMPtr.h"
@@ -17,6 +16,7 @@
 #include "nsIDOMWindow.h"
 #include "nsIFrame.h"
 #include "nsIFrameInlines.h"
+#include "nsIPresShell.h"
 #include "nsLayoutUtils.h"
 #include "nsStyleConsts.h"
 
@@ -36,8 +36,8 @@ using FrameForPointOption = nsLayoutUtils::FrameForPointOption;
 
 
 static already_AddRefed<dom::Element> ElementFromPoint(
-    const RefPtr<PresShell>& aPresShell, const CSSPoint& aPoint) {
-  nsIFrame* rootFrame = aPresShell->GetRootFrame();
+    const nsCOMPtr<nsIPresShell>& aShell, const CSSPoint& aPoint) {
+  nsIFrame* rootFrame = aShell->GetRootFrame();
   if (!rootFrame) {
     return nullptr;
   }
@@ -104,18 +104,17 @@ CSSRect CalculateRectToZoomTo(const RefPtr<dom::Document>& aRootContentDocument,
   
   const CSSRect zoomOut;
 
-  RefPtr<PresShell> presShell = aRootContentDocument->GetPresShell();
-  if (!presShell) {
+  nsCOMPtr<nsIPresShell> shell = aRootContentDocument->GetShell();
+  if (!shell) {
     return zoomOut;
   }
 
-  nsIScrollableFrame* rootScrollFrame =
-      presShell->GetRootScrollFrameAsScrollable();
+  nsIScrollableFrame* rootScrollFrame = shell->GetRootScrollFrameAsScrollable();
   if (!rootScrollFrame) {
     return zoomOut;
   }
 
-  nsCOMPtr<dom::Element> element = ElementFromPoint(presShell, aPoint);
+  nsCOMPtr<dom::Element> element = ElementFromPoint(shell, aPoint);
   if (!element) {
     return zoomOut;
   }
@@ -131,7 +130,7 @@ CSSRect CalculateRectToZoomTo(const RefPtr<dom::Document>& aRootContentDocument,
   FrameMetrics metrics =
       nsLayoutUtils::CalculateBasicFrameMetrics(rootScrollFrame);
   CSSRect compositedArea(
-      CSSPoint::FromAppUnits(presShell->GetVisualViewportOffset()),
+      CSSPoint::FromAppUnits(shell->GetVisualViewportOffset()),
       metrics.CalculateCompositedSizeInCssPixels());
   const CSSCoord margin = 15;
   CSSRect rect =

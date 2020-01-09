@@ -30,7 +30,6 @@
 #include "nsCSSProps.h"
 #include "nsCSSPseudoElements.h"  
 #include "nsIScriptError.h"
-#include "nsPresContextInlines.h"
 #include "nsTArray.h"
 #include <algorithm>  
 

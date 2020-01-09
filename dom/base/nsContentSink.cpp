@@ -11,7 +11,6 @@
 
 #include "nsContentSink.h"
 #include "mozilla/Components.h"
-#include "mozilla/PresShell.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/css/Loader.h"
 #include "mozilla/dom/SRILogHelper.h"
@@ -25,6 +24,7 @@
 #include "nsIProtocolHandler.h"
 #include "nsIHttpChannel.h"
 #include "nsIContent.h"
+#include "nsIPresShell.h"
 #include "nsPresContext.h"
 #include "nsViewManager.h"
 #include "nsAtom.h"
@@ -1190,14 +1190,14 @@ void nsContentSink::StartLayout(bool aIgnorePendingSheets) {
   mLastNotificationTime = PR_Now();
 
   mDocument->SetMayStartLayout(true);
-  RefPtr<PresShell> presShell = mDocument->GetPresShell();
+  nsCOMPtr<nsIPresShell> shell = mDocument->GetShell();
   
   
   
   
   
-  if (presShell && !presShell->DidInitialize()) {
-    nsresult rv = presShell->Initialize();
+  if (shell && !shell->DidInitialize()) {
+    nsresult rv = shell->Initialize();
     if (NS_FAILED(rv)) {
       return;
     }
@@ -1345,8 +1345,8 @@ nsresult nsContentSink::DidProcessATokenImpl() {
   }
 
   
-  PresShell* presShell = mDocument->GetPresShell();
-  if (!presShell) {
+  nsIPresShell* shell = mDocument->GetShell();
+  if (!shell) {
     
     
     return NS_OK;
@@ -1358,7 +1358,7 @@ nsresult nsContentSink::DidProcessATokenImpl() {
   
   if (sPendingEventMode != 0 && !mHasPendingEvent &&
       (mDeflectedCount % sEventProbeRate) == 0) {
-    nsViewManager* vm = presShell->GetViewManager();
+    nsViewManager* vm = shell->GetViewManager();
     NS_ENSURE_TRUE(vm, NS_ERROR_FAILURE);
     nsCOMPtr<nsIWidget> widget;
     vm->GetRootWidget(getter_AddRefs(widget));
@@ -1492,15 +1492,15 @@ nsresult nsContentSink::WillParseImpl(void) {
     return NS_OK;
   }
 
-  PresShell* presShell = mDocument->GetPresShell();
-  if (!presShell) {
+  nsIPresShell* shell = mDocument->GetShell();
+  if (!shell) {
     return NS_OK;
   }
 
   uint32_t currentTime = PR_IntervalToMicroseconds(PR_IntervalNow());
 
   if (sEnablePerfMode == 0) {
-    nsViewManager* vm = presShell->GetViewManager();
+    nsViewManager* vm = shell->GetViewManager();
     NS_ENSURE_TRUE(vm, NS_ERROR_FAILURE);
     uint32_t lastEventTime;
     vm->GetLastUserEventTime(lastEventTime);

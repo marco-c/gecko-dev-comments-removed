@@ -20,7 +20,6 @@
 #include "mozilla/Likely.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
-#include "mozilla/PresShell.h"
 #include "mozilla/ServoStyleSetInlines.h"
 #include "mozilla/StaticPrefs.h"
 #include "mozilla/Unused.h"
@@ -28,7 +27,6 @@
 #include "mozilla/dom/Document.h"
 #include "nsFontMetrics.h"
 #include "nsPresContext.h"
-#include "nsPresContextInlines.h"
 #include "nsIContent.h"
 #include "nsFrameList.h"
 #include "nsGenericHTMLElement.h"
@@ -598,7 +596,7 @@ static nsIFrame* GetScrollFrameFromContent(nsIContent* aContent) {
   if (aContent->OwnerDoc()->GetRootElement() == aContent) {
     nsIPresShell* presShell = frame ? frame->PresShell() : nullptr;
     if (!presShell) {
-      presShell = aContent->OwnerDoc()->GetPresShell();
+      presShell = aContent->OwnerDoc()->GetShell();
     }
     
     
@@ -9358,7 +9356,7 @@ CSSRect nsLayoutUtils::GetBoundingContentRect(
 static already_AddRefed<nsIPresShell> GetPresShell(const nsIContent* aContent) {
   nsCOMPtr<nsIPresShell> result;
   if (Document* doc = aContent->GetComposedDoc()) {
-    result = doc->GetPresShell();
+    result = doc->GetShell();
   }
   return result.forget();
 }

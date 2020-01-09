@@ -172,14 +172,6 @@ class PresShell final : public nsIPresShell,
                             LayoutDeviceIntSize aDisplaySize) override;
 
   
-  void WindowSizeMoveDone() override;
-  void SysColorChanged() override { mPresContext->SysColorChanged(); }
-  void ThemeChanged() override { mPresContext->ThemeChanged(); }
-  void BackingScaleFactorChanged() override {
-    mPresContext->UIResolutionChangedSync();
-  }
-
-  
 
   void Paint(nsView* aViewToPaint, const nsRegion& aDirtyRegion,
              uint32_t aFlags) override;
@@ -571,7 +563,12 @@ class PresShell final : public nsIPresShell,
 
 
 
-    static inline void OnPresShellDestroy(Document* aDocument);
+    static inline void OnPresShellDestroy(Document* aDocument) {
+      if (sLastKeyDownEventTargetElement &&
+          sLastKeyDownEventTargetElement->OwnerDoc() == aDocument) {
+        sLastKeyDownEventTargetElement = nullptr;
+      }
+    }
 
    private:
     static bool InZombieDocument(nsIContent* aContent);
@@ -989,7 +986,7 @@ class PresShell final : public nsIPresShell,
 
 
 
-    dom::Element* ComputeFocusedEventTargetElement(WidgetGUIEvent* aGUIEvent);
+    Element* ComputeFocusedEventTargetElement(WidgetGUIEvent* aGUIEvent);
 
     
 
@@ -1007,7 +1004,7 @@ class PresShell final : public nsIPresShell,
 
 
     MOZ_CAN_RUN_SCRIPT
-    bool MaybeHandleEventWithAnotherPresShell(dom::Element* aEventTargetElement,
+    bool MaybeHandleEventWithAnotherPresShell(Element* aEventTargetElement,
                                               WidgetGUIEvent* aGUIEvent,
                                               nsEventStatus* aEventStatus,
                                               nsresult* aRv);
@@ -1280,7 +1277,7 @@ class PresShell final : public nsIPresShell,
     AutoCurrentEventInfoSetter* mCurrentEventInfoSetter;
     static TimeStamp sLastInputCreated;
     static TimeStamp sLastInputProcessed;
-    static StaticRefPtr<dom::Element> sLastKeyDownEventTargetElement;
+    static StaticRefPtr<Element> sLastKeyDownEventTargetElement;
   };
 
   void SynthesizeMouseMove(bool aFromScroll) override;
@@ -1292,6 +1289,13 @@ class PresShell final : public nsIPresShell,
   
   static void sPaintSuppressionCallback(nsITimer* aTimer, void* aPresShell);
 
+  
+  void WindowSizeMoveDone() override;
+  void SysColorChanged() override { mPresContext->SysColorChanged(); }
+  void ThemeChanged() override { mPresContext->ThemeChanged(); }
+  void BackingScaleFactorChanged() override {
+    mPresContext->UIResolutionChangedSync();
+  }
   Document* GetPrimaryContentDocument() override;
 
   void PausePainting() override;

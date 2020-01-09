@@ -6,7 +6,6 @@
 #ifndef mozilla_dom_Document_h___
 #define mozilla_dom_Document_h___
 
-#include "mozilla/EventStates.h"  
 #include "mozilla/FlushType.h"  
 #include "mozilla/Pair.h"       
 #include "nsAutoPtr.h"          
@@ -24,6 +23,7 @@
 #include "nsILoadGroup.h"  
 #include "nsINode.h"       
 #include "nsIParser.h"
+#include "nsIPresShell.h"
 #include "nsIChannelEventSink.h"
 #include "nsIProgressEventSink.h"
 #include "nsIRadioGroupContainer.h"
@@ -138,7 +138,6 @@ class EventListenerManager;
 class FullscreenExit;
 class FullscreenRequest;
 class PendingAnimationTracker;
-class PresShell;
 class ServoStyleSet;
 class SMILAnimationController;
 enum class StyleCursorKind : uint8_t;
@@ -471,8 +470,8 @@ class Document : public nsINode,
                                              func_, params_);                 \
     /* FIXME(emilio): Apparently we can keep observing from the BFCache? That \
        looks bogus. */                                                        \
-    if (PresShell* presShell = GetObservingPresShell()) {                     \
-      presShell->func_ params_;                                               \
+    if (nsIPresShell* shell = GetObservingShell()) {                          \
+      shell->func_ params_;                                                   \
     }                                                                         \
   } while (0)
 
@@ -1244,21 +1243,27 @@ class Document : public nsINode,
 
 
 
-  already_AddRefed<PresShell> CreatePresShell(
+  already_AddRefed<nsIPresShell> CreateShell(
       nsPresContext* aContext, nsViewManager* aViewManager,
       UniquePtr<ServoStyleSet> aStyleSet);
-  void DeletePresShell();
+  void DeleteShell();
 
-  PresShell* GetPresShell() const {
+  nsIPresShell* GetShell() const {
     return GetBFCacheEntry() ? nullptr : mPresShell;
   }
 
-  inline PresShell* GetObservingPresShell() const;
+  nsIPresShell* GetObservingShell() const {
+    return mPresShell && mPresShell->IsObservingDocument() ? mPresShell
+                                                           : nullptr;
+  }
 
   
   bool IsSafeToFlush() const;
 
-  inline nsPresContext* GetPresContext() const;
+  nsPresContext* GetPresContext() const {
+    nsIPresShell* shell = GetShell();
+    return shell ? shell->GetPresContext() : nullptr;
+  }
 
   bool HasShellOrBFCacheEntry() const { return mPresShell || mBFCacheEntry; }
 
@@ -2513,7 +2518,7 @@ class Document : public nsINode,
 
 
   void SetDisplayDocument(Document* aDisplayDocument) {
-    MOZ_ASSERT(!GetPresShell() && !GetContainer() && !GetWindow(),
+    MOZ_ASSERT(!GetShell() && !GetContainer() && !GetWindow(),
                "Shouldn't set mDisplayDocument on documents that already "
                "have a presentation or a docshell or a window");
     MOZ_ASSERT(aDisplayDocument, "Must not be null");
@@ -3852,7 +3857,7 @@ class Document : public nsINode,
   
   
   void UpdateFrameRequestCallbackSchedulingState(
-      PresShell* aOldPresShell = nullptr);
+      nsIPresShell* aOldShell = nullptr);
 
   
   bool IsPotentiallyScrollable(HTMLBodyElement* aBody);
@@ -4332,7 +4337,7 @@ class Document : public nsINode,
   
   uint32_t mMarkedCCGeneration;
 
-  PresShell* mPresShell;
+  nsIPresShell* mPresShell;
 
   nsCOMArray<nsINode> mSubtreeModifiedTargets;
   uint32_t mSubtreeModifiedDepth;
