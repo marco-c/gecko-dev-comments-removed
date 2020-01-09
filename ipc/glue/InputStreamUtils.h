@@ -53,6 +53,26 @@ class InputStreamHelper {
 
   
   
+  static void SerializeInputStreamAsPipe(
+      nsIInputStream* aInputStream, InputStreamParams& aParams,
+      bool aDelayedStart, mozilla::dom::nsIContentChild* aManager);
+
+  static void SerializeInputStreamAsPipe(nsIInputStream* aInputStream,
+                                         InputStreamParams& aParams,
+                                         bool aDelayedStart,
+                                         PBackgroundChild* aManager);
+
+  static void SerializeInputStreamAsPipe(
+      nsIInputStream* aInputStream, InputStreamParams& aParams,
+      bool aDelayedStart, mozilla::dom::nsIContentParent* aManager);
+
+  static void SerializeInputStreamAsPipe(nsIInputStream* aInputStream,
+                                         InputStreamParams& aParams,
+                                         bool aDelayedStart,
+                                         PBackgroundParent* aManager);
+
+  
+  
   
   static void PostSerializationActivation(InputStreamParams& aParams,
                                           bool aConsumedByIPC,

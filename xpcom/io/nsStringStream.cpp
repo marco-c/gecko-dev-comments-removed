@@ -346,8 +346,13 @@ void nsStringInputStream::Serialize(InputStreamParams& aParams,
 template <typename M>
 void nsStringInputStream::SerializeInternal(InputStreamParams& aParams,
                                             bool aDelayedStart, M* aManager) {
-  if (Length() > 0) {
-    
+  
+  const uint64_t kTooLargeStream = 1024 * 1024;
+
+  if (Length() > kTooLargeStream) {
+    InputStreamHelper::SerializeInputStreamAsPipe(this, aParams, aDelayedStart,
+                                                  aManager);
+    return;
   }
 
   StringInputStreamParams params;
