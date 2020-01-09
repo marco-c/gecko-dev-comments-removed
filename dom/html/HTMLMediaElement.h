@@ -1702,6 +1702,11 @@ class HTMLMediaElement : public nsGenericHTMLElement,
       
       return mCount + 1;
     }
+    void Reset() {
+      mStartTime = TimeStamp();
+      mSum = TimeDuration();
+      mCount = 0;
+    }
 
    private:
     TimeStamp mStartTime;
@@ -1732,6 +1737,18 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   
   TimeDurationAccumulator mVideoDecodeSuspendTime;
+
+  
+  
+  
+  TimeDurationAccumulator mCurrentLoadPlayTime;
+
+  
+  bool mHasPlayEverBeenBlocked = false;
+
+  
+  
+  void ReportPlayedTimeAfterBlockedTelemetry();
 
   
   
