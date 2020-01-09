@@ -28,6 +28,7 @@ class WebProgressChild {
     
     
     let notifyCode = Ci.nsIWebProgress.NOTIFY_ALL &
+                        ~Ci.nsIWebProgress.NOTIFY_STATE_ALL &
                         ~Ci.nsIWebProgress.NOTIFY_PROGRESS &
                         ~Ci.nsIWebProgress.NOTIFY_STATUS &
                         ~Ci.nsIWebProgress.NOTIFY_REFRESH &
@@ -97,26 +98,6 @@ class WebProgressChild {
 
   _send(name, data) {
     this.mm.sendAsyncMessage(name, data);
-  }
-
-  onStateChange(aWebProgress, aRequest, aStateFlags, aStatus) {
-    let json = this._setupJSON(aWebProgress, aRequest, aStateFlags);
-
-    json.stateFlags = aStateFlags;
-    json.status = aStatus;
-
-    
-    
-    
-    
-    if (aWebProgress && aWebProgress.isTopLevel) {
-      json.documentURI = this.mm.content.document.documentURIObject.spec;
-      json.charset = this.mm.content.document.characterSet;
-      json.mayEnableCharacterEncodingMenu = this.mm.docShell.mayEnableCharacterEncodingMenu;
-      json.isNavigating = this.mm.docShell.isNavigating;
-    }
-
-    this._send("Content:StateChange", json);
   }
 
   onLocationChange(aWebProgress, aRequest, aLocationURI, aFlags) {
