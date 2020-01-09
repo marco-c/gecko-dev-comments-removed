@@ -14,6 +14,10 @@ const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const TELEMETRY_HISTOGRAM_ID = "UPTAKE_REMOTE_CONTENT_RESULT_1";
 
 
+const TELEMETRY_EVENTS_ID = "uptake.remotecontent.result";
+
+
+
 
 
 class UptakeTelemetry {
@@ -82,7 +86,27 @@ class UptakeTelemetry {
 
 
 
-  static report(source, status) {
+
+
+  static report(component, status, extra = {}) {
+    const { source } = extra;
+
+    if (!source) {
+      throw new Error("`source` value is mandatory.");
+    }
+
+    
+    
+    
+    if (!this._eventsEnabled) {
+      Services.telemetry.setEventRecordingEnabled(TELEMETRY_EVENTS_ID, true);
+      this._eventsEnabled = true;
+    }
+    Services.telemetry
+      .recordEvent(TELEMETRY_EVENTS_ID, "uptake", component, status, extra);
+
+    
+    
     Services.telemetry
       .getKeyedHistogramById(TELEMETRY_HISTOGRAM_ID)
       .add(source, status);
