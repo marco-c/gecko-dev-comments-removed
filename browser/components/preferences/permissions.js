@@ -183,41 +183,7 @@ var gPermissionManager = {
     this._permissions.set(p.origin, p);
   },
 
-  addPermission(capability) {
-    let textbox = document.getElementById("url");
-    let input_url = textbox.value.replace(/^\s*/, ""); 
-    let principal;
-    try {
-      
-      
-      
-      
-      
-      
-      
-      let uri;
-      try {
-        uri = Services.io.newURI(input_url);
-        principal = Services.scriptSecurityManager.createCodebasePrincipal(uri, {});
-        if (principal.origin.startsWith("moz-nullprincipal:")) {
-          throw "Null principal";
-        }
-      } catch (ex) {
-        uri = Services.io.newURI("http://" + input_url);
-        principal = Services.scriptSecurityManager.createCodebasePrincipal(uri, {});
-        
-        principal.origin;
-      }
-    } catch (ex) {
-      document.l10n.formatValues([
-        {id: "permissions-invalid-uri-title"},
-        {id: "permissions-invalid-uri-label"},
-      ]).then(([title, message]) => {
-        Services.prompt.alert(window, title, message);
-      });
-      return;
-    }
-
+  _addOrModifyPermission(principal, capability) {
     
     let permissionParams = {principal, type: this._type, capability};
     let existingPermission = this._permissions.get(principal.origin);
@@ -229,6 +195,50 @@ var gPermissionManager = {
       existingPermission.capability = capability;
       this._permissionsToAdd.set(principal.origin, permissionParams);
       this._handleCapabilityChange(existingPermission);
+    }
+  },
+
+  _addNewPrincipalToList(list, uri) {
+    list.push(Services.scriptSecurityManager.createCodebasePrincipal(uri, {}));
+    
+    list[list.length - 1].origin;
+  },
+
+  addPermission(capability) {
+    let textbox = document.getElementById("url");
+    let input_url = textbox.value.replace(/^\s*/, ""); 
+    let principals = [];
+    try {
+      
+      
+      
+      
+      
+      
+      
+      try {
+        let uri = Services.io.newURI(input_url);
+        let principal = Services.scriptSecurityManager.createCodebasePrincipal(uri, {});
+        if (principal.origin.startsWith("moz-nullprincipal:")) {
+          throw "Null principal";
+        }
+        principals.push(principal);
+      } catch (ex) {
+        this._addNewPrincipalToList(principals, Services.io.newURI("http://" + input_url));
+        this._addNewPrincipalToList(principals, Services.io.newURI("https://" + input_url));
+      }
+    } catch (ex) {
+      document.l10n.formatValues([
+        {id: "permissions-invalid-uri-title"},
+        {id: "permissions-invalid-uri-label"},
+      ]).then(([title, message]) => {
+        Services.prompt.alert(window, title, message);
+      });
+      return;
+    }
+
+    for (let principal of principals) {
+      this._addOrModifyPermission(principal, capability);
     }
 
     textbox.value = "";
