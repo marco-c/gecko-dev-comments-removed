@@ -283,7 +283,6 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
   
   already_AddRefed<CSSValue> DoGetColumnRuleWidth();
 
-
   
   
   already_AddRefed<CSSValue> DummyGetter();
@@ -392,7 +391,7 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
 
   
   
-  bool NeedsToFlush(Document*) const;
+  bool NeedsToFlush() const;
 
   static ComputedStyleMap* GetComputedStyleMap();
 

@@ -99,15 +99,22 @@ already_AddRefed<CSSValue> GetBackgroundList(
 }
 
 
-static bool DocumentNeedsRestyle(const Document* aDocument, Element* aElement,
-                                 nsAtom* aPseudo) {
-  PresShell* presShell = aDocument->GetPresShell();
-  if (!presShell) {
-    return true;
+static bool ElementNeedsRestyle(Element* aElement, nsAtom* aPseudo) {
+  const Document* doc = aElement->GetComposedDoc();
+  if (!doc) {
+    
+    
+    return false;
   }
 
-  nsPresContext* presContext = presShell->GetPresContext();
-  MOZ_ASSERT(presContext);
+  PresShell* presShell = doc->GetPresShell();
+  if (!presShell) {
+    
+    
+    
+    
+    return false;
+  }
 
   
   
@@ -115,6 +122,9 @@ static bool DocumentNeedsRestyle(const Document* aDocument, Element* aElement,
   if (styleSet->StyleSheetsHaveChanged()) {
     return true;
   }
+
+  nsPresContext* presContext = presShell->GetPresContext();
+  MOZ_ASSERT(presContext);
 
   
   
@@ -151,7 +161,7 @@ static bool DocumentNeedsRestyle(const Document* aDocument, Element* aElement,
   restyleManager->ProcessAllPendingAttributeAndStateInvalidations();
 
   if (!presContext->EffectCompositor()->HasPendingStyleUpdates() &&
-      !aDocument->GetServoRestyleRoot()) {
+      !doc->GetServoRestyleRoot()) {
     return false;
   }
 
@@ -765,29 +775,21 @@ void nsComputedDOMStyle::SetFrameComputedStyle(mozilla::ComputedStyle* aStyle,
   mPresShellId = mPresShell->GetPresShellId();
 }
 
-bool nsComputedDOMStyle::NeedsToFlush(Document* aDocument) const {
+bool nsComputedDOMStyle::NeedsToFlush() const {
   
-  
-  
-  
-  
-  
-  
-  
-  if (aDocument != mElement->OwnerDoc()) {
+  if (ElementNeedsRestyle(mElement, mPseudo)) {
     return true;
   }
-  if (DocumentNeedsRestyle(aDocument, mElement, mPseudo)) {
-    return true;
-  }
+
+  Document* doc = mElement->OwnerDoc();
   
   
-  while (Document* parentDocument = aDocument->GetParentDocument()) {
-    Element* element = parentDocument->FindContentForSubDocument(aDocument);
-    if (DocumentNeedsRestyle(parentDocument, element, nullptr)) {
+  while (Document* parentDocument = doc->GetParentDocument()) {
+    Element* element = parentDocument->FindContentForSubDocument(doc);
+    if (ElementNeedsRestyle(element, nullptr)) {
       return true;
     }
-    aDocument = parentDocument;
+    doc = parentDocument;
   }
 
   return false;
@@ -806,7 +808,7 @@ void nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush) {
   
 
   
-  const bool needsToFlush = aNeedsLayoutFlush || NeedsToFlush(document);
+  const bool needsToFlush = aNeedsLayoutFlush || NeedsToFlush();
   if (needsToFlush) {
     
     
