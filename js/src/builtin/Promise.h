@@ -491,6 +491,15 @@ class OffThreadPromiseRuntimeState;
 
 
 
+
+
+
+
+
+
+
+
+
 class OffThreadPromiseTask : public JS::Dispatchable {
   friend class OffThreadPromiseRuntimeState;
 
