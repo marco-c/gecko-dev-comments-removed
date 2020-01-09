@@ -1279,24 +1279,15 @@ void nsXULPopupManager::FirePopupShowingEvent(nsIContent* aPopup,
   nsMenuPopupFrame* popupFrame = do_QueryFrame(aPopup->GetPrimaryFrame());
   if (!popupFrame) return;
 
-  nsPresContext* presContext = popupFrame->PresContext();
-  nsCOMPtr<nsIPresShell> presShell = presContext->PresShell();
-  nsPopupType popupType = popupFrame->PopupType();
-
-  
-  const bool generateFrames = popupFrame->IsLeaf();
-  MOZ_ASSERT_IF(generateFrames, !popupFrame->HasGeneratedChildren());
-  popupFrame->SetGeneratedChildren();
-  if (generateFrames) {
-    MOZ_ASSERT(popupFrame->PrincipalChildList().IsEmpty());
-    presShell->FrameConstructor()->GenerateChildFrames(popupFrame);
-  }
+  popupFrame->GenerateFrames();
 
   
   nsIFrame* frame = aPopup->GetPrimaryFrame();
   if (!frame) return;
 
-  presShell->FrameNeedsReflow(frame, nsIPresShell::eTreeChange,
+  nsPresContext* presContext = popupFrame->PresContext();
+  nsCOMPtr<nsIPresShell> presShell = presContext->PresShell();
+  presShell->FrameNeedsReflow(popupFrame, nsIPresShell::eTreeChange,
                               NS_FRAME_HAS_DIRTY_CHILDREN);
 
   
@@ -1339,6 +1330,7 @@ void nsXULPopupManager::FirePopupShowingEvent(nsIContent* aPopup,
   
   
   
+  nsPopupType popupType = popupFrame->PopupType();
   if (popupType == ePopupTypePanel &&
       !popup->AsElement()->AttrValueIs(kNameSpaceID_None,
                                        nsGkAtoms::noautofocus, nsGkAtoms::_true,
