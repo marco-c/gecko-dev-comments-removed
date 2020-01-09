@@ -528,7 +528,18 @@ function runDoorhangerUpdateTest(updateParams, checkAttempts, steps) {
 
     const {notificationId, button, checkActiveUpdate, pageURLs} = step;
     return (async function() {
-      await BrowserTestUtils.waitForEvent(PanelUI.notificationPanel, "popupshown");
+      await TestUtils.waitForCondition(() =>
+        (PanelUI.notificationPanel.state == "open"),
+        "Waiting on PanelUI.notificationPanel.state to equal open",
+        undefined, 200
+      ).catch(e => {
+        
+        
+        
+        logTestInfo(e);
+      });
+      is(PanelUI.notificationPanel.state, "open",
+         "The PanelUI.notificationPanel.state should equal open");
       const shownNotificationId = AppMenuNotifications.activeNotification.id;
       is(shownNotificationId, notificationId,
          "The right notification showed up.");
