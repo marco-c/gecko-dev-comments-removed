@@ -188,7 +188,9 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
   get numChildren() {
     
     
-    if (isBeforePseudoElement(this.rawNode) || isAfterPseudoElement(this.rawNode)) {
+    if (isMarkerPseudoElement(this.rawNode) ||
+      isBeforePseudoElement(this.rawNode) || isAfterPseudoElement(this.rawNode)
+    ) {
       return 0;
     }
 
