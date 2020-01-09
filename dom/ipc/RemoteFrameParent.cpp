@@ -21,7 +21,8 @@ RemoteFrameParent::RemoteFrameParent() : mIPCOpen(false) {}
 RemoteFrameParent::~RemoteFrameParent() {}
 
 nsresult RemoteFrameParent::Init(const nsString& aPresentationURL,
-                                 const nsString& aRemoteType) {
+                                 const nsString& aRemoteType,
+                                 CanonicalBrowsingContext* aBrowsingContext) {
   mIPCOpen = true;
 
   
@@ -46,15 +47,9 @@ nsresult RemoteFrameParent::Init(const nsString& aPresentationURL,
   }
 
   
-  RefPtr<CanonicalBrowsingContext> browsingContext =
-      BrowsingContext::Create(nullptr, nullptr, EmptyString(),
-                              BrowsingContext::Type::Content)
-          .downcast<CanonicalBrowsingContext>();
-
   
-  
-  browsingContext->Group()->EnsureSubscribed(constructorSender);
-  browsingContext->SetOwnerProcessId(constructorSender->ChildID());
+  aBrowsingContext->Group()->EnsureSubscribed(constructorSender);
+  aBrowsingContext->SetOwnerProcessId(constructorSender->ChildID());
 
   ContentProcessManager* cpm = ContentProcessManager::GetSingleton();
   TabId tabId(nsContentUtils::GenerateTabId());
@@ -65,12 +60,12 @@ nsresult RemoteFrameParent::Init(const nsString& aPresentationURL,
   
   uint32_t chromeFlags = 0;
   RefPtr<TabParent> tabParent = new TabParent(
-      constructorSender, tabId, tabContext, browsingContext, chromeFlags);
+      constructorSender, tabId, tabContext, aBrowsingContext, chromeFlags);
 
   PBrowserParent* browser = constructorSender->SendPBrowserConstructor(
       
       tabParent.forget().take(), tabId, TabId(0), tabContext.AsIPCTabContext(),
-      chromeFlags, constructorSender->ChildID(), browsingContext,
+      chromeFlags, constructorSender->ChildID(), aBrowsingContext,
       constructorSender->IsForBrowser());
   if (NS_WARN_IF(!browser)) {
     MOZ_ASSERT(false, "Browser Constructor Failed");
