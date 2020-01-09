@@ -52,7 +52,6 @@ function configureStore(webConsoleUI, options = {}) {
   const autocomplete = getBoolPref(PREFS.FEATURES.AUTOCOMPLETE);
   const groupWarnings = getBoolPref(PREFS.FEATURES.GROUP_WARNINGS);
   const historyCount = getIntPref(PREFS.UI.INPUT_HISTORY_COUNT);
-  const filterContentMessages = getBoolPref(PREFS.FEATURES.FILTER_CONTENT_MESSAGES);
 
   const initialState = {
     prefs: PrefState({
@@ -62,7 +61,6 @@ function configureStore(webConsoleUI, options = {}) {
       autocomplete,
       historyCount,
       groupWarnings,
-      filterContentMessages,
     }),
     filters: FilterState({
       error: getBoolPref(PREFS.FILTER.ERROR),
@@ -77,9 +75,6 @@ function configureStore(webConsoleUI, options = {}) {
     ui: UiState({
       networkMessageActiveTabId: "headers",
       persistLogs: getBoolPref(PREFS.UI.PERSIST),
-      showContentMessages: webConsoleUI.isBrowserConsole && filterContentMessages
-        ? getBoolPref(PREFS.UI.CONTENT_MESSAGES)
-        : true,
       editor: getBoolPref(PREFS.UI.EDITOR),
     }),
   };
@@ -121,7 +116,7 @@ function createRootReducer() {
     
     
     
-    const newState = Object.entries(reducers).reduce((res, [key, reducer]) => {
+    const newState = [...Object.entries(reducers)].reduce((res, [key, reducer]) => {
       if (key !== "messages" && key !== "history") {
         res[key] = reducer(state[key], action);
       }
@@ -131,16 +126,15 @@ function createRootReducer() {
     
     newState.history = reducers.history(state.history, action, newState.prefs);
 
-    
-    newState.messages = reducers.messages(
-      state.messages,
-      action,
-      newState.filters,
-      newState.prefs,
-      newState.ui,
-    );
-
-    return newState;
+    return Object.assign(newState, {
+      
+      messages: reducers.messages(
+        state.messages,
+        action,
+        newState.filters,
+        newState.prefs,
+      ),
+    });
   };
 }
 
