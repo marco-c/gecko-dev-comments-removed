@@ -27,8 +27,8 @@
 :host {
   border-radius: 4px;
   
-  background-color: var(--grey-20);
-  color: var(--grey-90);
+  background-color: var(--in-content-box-info-background);
+  color: var(--in-content-text-color);
 }
 
 
