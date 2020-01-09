@@ -94,10 +94,10 @@ const MessageLoaderUtils = {
 
 
 
-  async _remoteLoader(provider, storage) {
+  async _remoteLoader(provider, options) {
     let remoteMessages = [];
     if (provider.url) {
-      const allCached = await MessageLoaderUtils._remoteLoaderCache(storage);
+      const allCached = await MessageLoaderUtils._remoteLoaderCache(options.storage);
       const cached = allCached[provider.id];
       let etag;
 
@@ -148,7 +148,7 @@ const MessageLoaderUtils = {
               version: STARTPAGE_VERSION,
             };
 
-            storage.set(MessageLoaderUtils.REMOTE_LOADER_CACHE_KEY, {...allCached, [provider.id]: cacheInfo});
+            options.storage.set(MessageLoaderUtils.REMOTE_LOADER_CACHE_KEY, {...allCached, [provider.id]: cacheInfo});
           }
         } else {
           MessageLoaderUtils.reportError(`No messages returned from ${provider.url}.`);
@@ -167,12 +167,18 @@ const MessageLoaderUtils = {
 
 
 
-  async _remoteSettingsLoader(provider) {
+
+
+  async _remoteSettingsLoader(provider, options) {
     let messages = [];
     if (provider.bucket) {
       try {
         messages = await MessageLoaderUtils._getRemoteSettingsMessages(provider.bucket);
+        if (!messages.length) {
+          MessageLoaderUtils._handleRemoteSettingsUndesiredEvent("ASR_RS_NO_MESSAGES", provider.id, options.dispatchToAS);
+        }
       } catch (e) {
+        MessageLoaderUtils._handleRemoteSettingsUndesiredEvent("ASR_RS_ERROR", provider.id, options.dispatchToAS);
         MessageLoaderUtils.reportError(e);
       }
     }
@@ -181,6 +187,16 @@ const MessageLoaderUtils = {
 
   _getRemoteSettingsMessages(bucket) {
     return RemoteSettings(bucket).get();
+  },
+
+  _handleRemoteSettingsUndesiredEvent(event, providerId, dispatchToAS) {
+    if (dispatchToAS) {
+      dispatchToAS(ac.ASRouterUserEvent({
+        action: "asrouter_undesired_event",
+        event,
+        value: providerId,
+      }));
+    }
   },
 
   
@@ -222,9 +238,10 @@ const MessageLoaderUtils = {
 
 
 
-  async loadMessagesForProvider(provider, storage) {
+
+  async loadMessagesForProvider(provider, options) {
     const loader = this._getMessageLoader(provider);
-    let messages = await loader(provider, storage);
+    let messages = await loader(provider, options);
     
     if (!messages) {
       messages = [];
@@ -443,7 +460,10 @@ class _ASRouter {
       let newState = {messages: [], providers: []};
       for (const provider of this.state.providers) {
         if (needsUpdate.includes(provider)) {
-          let {messages, lastUpdated, errors} = await MessageLoaderUtils.loadMessagesForProvider(provider, this._storage);
+          let {messages, lastUpdated, errors} = await MessageLoaderUtils.loadMessagesForProvider(provider, {
+            storage: this._storage,
+            dispatchToAS: this.dispatchToAS,
+          });
           messages = messages.filter(({content}) => !content || !content.category || ASRouterPreferences.getUserPreference(content.category));
           newState.providers.push({...provider, lastUpdated, errors});
           newState.messages = [...newState.messages, ...messages];
@@ -757,7 +777,7 @@ class _ASRouter {
       if (force) {
         CFRPageActions.forceRecommendation(target, message, this.dispatch);
       } else {
-        CFRPageActions.addRecommendation(target, trigger.param, message, this.dispatch);
+        CFRPageActions.addRecommendation(target, trigger.param.host, message, this.dispatch);
       }
 
     

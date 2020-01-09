@@ -341,6 +341,7 @@ this.TelemetryFeed = class TelemetryFeed {
       return;
     }
 
+    this.sendDiscoveryStreamLoadedContent(portID, session);
     this.sendDiscoveryStreamImpressions(portID, session);
 
     if (session.perf.visibility_event_rcvd_ts) {
@@ -371,6 +372,34 @@ this.TelemetryFeed = class TelemetryFeed {
 
     Object.keys(impressionSets).forEach(source => {
       const payload = this.createImpressionStats(port, {source, tiles: impressionSets[source]});
+      this.sendEvent(payload);
+      this.sendStructuredIngestionEvent(payload, "impression-stats", "1");
+    });
+  }
+
+  
+
+
+
+
+
+
+
+
+  sendDiscoveryStreamLoadedContent(port, session) {
+    const {loadedContentSets} = session;
+
+    if (!loadedContentSets) {
+      return;
+    }
+
+    Object.keys(loadedContentSets).forEach(source => {
+      const tiles = loadedContentSets[source];
+      const payload = this.createImpressionStats(port, {
+        source,
+        tiles,
+        loaded: tiles.length,
+      });
       this.sendEvent(payload);
       this.sendStructuredIngestionEvent(payload, "impression-stats", "1");
     });
@@ -701,6 +730,9 @@ this.TelemetryFeed = class TelemetryFeed {
       case at.DISCOVERY_STREAM_IMPRESSION_STATS:
         this.handleDiscoveryStreamImpressionStats(au.getPortIdOfSender(action), action.data);
         break;
+      case at.DISCOVERY_STREAM_LOADED_CONTENT:
+        this.handleDiscoveryStreamLoadedContent(au.getPortIdOfSender(action), action.data);
+        break;
       case at.TELEMETRY_UNDESIRED_EVENT:
         this.handleUndesiredEvent(action);
         break;
@@ -744,6 +776,33 @@ this.TelemetryFeed = class TelemetryFeed {
     data.tiles.forEach(tile => impressions.push({id: tile.id, pos: tile.pos}));
     impressionSets[data.source] = impressions;
     session.impressionSets = impressionSets;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  handleDiscoveryStreamLoadedContent(port, data) {
+    let session = this.sessions.get(port);
+
+    if (!session) {
+      throw new Error("Session does not exist.");
+    }
+
+    const loadedContentSets = session.loadedContentSets || {};
+    const loadedContents = loadedContentSets[data.source] || [];
+    
+    data.tiles.forEach(tile => loadedContents.push({id: tile.id, pos: tile.pos}));
+    loadedContentSets[data.source] = loadedContents;
+    session.loadedContentSets = loadedContentSets;
   }
 
   

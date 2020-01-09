@@ -43,13 +43,21 @@ function isPrivateWindow(win) {
 
 function checkURLMatch(aLocationURI, {hosts, matchPatternSet}, aRequest) {
   
-  if (hosts.has(aLocationURI.host)) {
-    return aLocationURI.host;
+  let match;
+  try {
+    match = {host: aLocationURI.host, url: aLocationURI.spec};
+  } catch (e) { 
+    return false;
+  }
+
+  
+  if (hosts.has(match.host)) {
+    return match;
   }
 
   if (matchPatternSet) {
-    if (matchPatternSet.matches(aLocationURI.spec)) {
-      return aLocationURI.host;
+    if (matchPatternSet.matches(match.url)) {
+      return match;
     }
   }
 
@@ -62,7 +70,10 @@ function checkURLMatch(aLocationURI, {hosts, matchPatternSet}, aRequest) {
   const originalLocation = aRequest.QueryInterface(Ci.nsIChannel).originalURI;
   
   if (originalLocation.spec !== aLocationURI.spec) {
-    return hosts.has(originalLocation.host) && originalLocation.host;
+    return hosts.has(originalLocation.host) && {
+      host: originalLocation.host,
+      url: originalLocation.spec,
+    };
   }
 
   return false;
@@ -140,23 +151,15 @@ this.ASRouterTriggerListeners = new Map([
         return;
       }
 
-      let host;
       const {gBrowser} = event.target.ownerGlobal;
-
-      try {
-        
-        host = gBrowser.currentURI.host;
-      } catch (e) {
-        return; 
-      }
-
-      if (checkURLMatch(gBrowser.currentURI, {hosts: this._hosts, matchPatternSet: this._matchPatternSet})) {
-        this.triggerHandler(gBrowser.selectedBrowser, host);
+      const match = checkURLMatch(gBrowser.currentURI, {hosts: this._hosts, matchPatternSet: this._matchPatternSet});
+      if (match) {
+        this.triggerHandler(gBrowser.selectedBrowser, match);
       }
     },
 
-    triggerHandler(aBrowser, host) {
-      const updated = this._updateVisits(host);
+    triggerHandler(aBrowser, match) {
+      const updated = this._updateVisits(match.host);
 
       
       
@@ -166,30 +169,24 @@ this.ASRouterTriggerListeners = new Map([
 
       this._triggerHandler(aBrowser, {
         id: "frequentVisits",
-        param: host,
+        param: match,
         context: {
           
           
-          recentVisits: this._visits.get(host).map(timestamp => ({host, timestamp})),
+          recentVisits: this._visits.get(match.host).map(timestamp => ({host: match.host, timestamp})),
         },
       });
     },
 
     onLocationChange(aBrowser, aWebProgress, aRequest, aLocationURI, aFlags) {
-      let host;
-      try {
-        host = aLocationURI ? aLocationURI.host : "";
-      } catch (e) { 
-        return;
-      }
       
       
       
       const isSameDocument = !!(aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT);
-      if (host && aWebProgress.isTopLevel && !isSameDocument) {
-        host = checkURLMatch(aLocationURI, {hosts: this._hosts, matchPatternSet: this._matchPatternSet}, aRequest);
-        if (host) {
-          this.triggerHandler(aBrowser, host);
+      if (aWebProgress.isTopLevel && !isSameDocument) {
+        const match = checkURLMatch(aLocationURI, {hosts: this._hosts, matchPatternSet: this._matchPatternSet}, aRequest);
+        if (match) {
+          this.triggerHandler(aBrowser, match);
         }
       }
     },
@@ -303,20 +300,14 @@ this.ASRouterTriggerListeners = new Map([
     },
 
     onLocationChange(aBrowser, aWebProgress, aRequest, aLocationURI, aFlags) {
-      let host;
-      try {
-        host = aLocationURI ? aLocationURI.host : "";
-      } catch (e) { 
-        return;
-      }
       
       
       
       const isSameDocument = !!(aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT);
-      if (host && aWebProgress.isTopLevel && !isSameDocument) {
-        host = checkURLMatch(aLocationURI, {hosts: this._hosts}, aRequest);
-        if (host) {
-          this._triggerHandler(aBrowser, {id: "openURL", param: host});
+      if (aWebProgress.isTopLevel && !isSameDocument) {
+        const match = checkURLMatch(aLocationURI, {hosts: this._hosts}, aRequest);
+        if (match) {
+          this._triggerHandler(aBrowser, {id: "openURL", param: match});
         }
       }
     },

@@ -279,6 +279,34 @@ class PlacesFeed {
     }
   }
 
+  
+
+
+
+
+  async deleteFromPocket(itemID) {
+    try {
+      await NewTabUtils.activityStreamLinks.deletePocketEntry(itemID);
+      this.store.dispatch({type: at.POCKET_LINK_DELETED_OR_ARCHIVED});
+    } catch (err) {
+      Cu.reportError(err);
+    }
+  }
+
+  
+
+
+
+
+  async archiveFromPocket(itemID) {
+    try {
+      await NewTabUtils.activityStreamLinks.archivePocketEntry(itemID);
+      this.store.dispatch({type: at.POCKET_LINK_DELETED_OR_ARCHIVED});
+    } catch (err) {
+      Cu.reportError(err);
+    }
+  }
+
   fillSearchTopSiteTerm({_target, data}) {
     _target.browser.ownerGlobal.gURLBar.search(`${data.label} `);
   }
@@ -384,6 +412,12 @@ class PlacesFeed {
         break;
       case at.SAVE_TO_POCKET:
         this.saveToPocket(action.data.site, action._target.browser);
+        break;
+      case at.DELETE_FROM_POCKET:
+        this.deleteFromPocket(action.data.pocket_id);
+        break;
+      case at.ARCHIVE_FROM_POCKET:
+        this.archiveFromPocket(action.data.pocket_id);
         break;
       case at.FILL_SEARCH_TERM:
         this.fillSearchTopSiteTerm(action);

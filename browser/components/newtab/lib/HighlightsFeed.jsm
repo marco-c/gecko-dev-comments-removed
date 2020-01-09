@@ -228,34 +228,6 @@ this.HighlightsFeed = class HighlightsFeed {
     });
   }
 
-  
-
-
-
-
-  async deleteFromPocket(itemID) {
-    try {
-      await NewTabUtils.activityStreamLinks.deletePocketEntry(itemID);
-      this.fetchHighlights({broadcast: true});
-    } catch (err) {
-      Cu.reportError(err);
-    }
-  }
-
-  
-
-
-
-
-  async archiveFromPocket(itemID) {
-    try {
-      await NewTabUtils.activityStreamLinks.archivePocketEntry(itemID);
-      this.fetchHighlights({broadcast: true});
-    } catch (err) {
-      Cu.reportError(err);
-    }
-  }
-
   onAction(action) {
     
     this.downloadsManager.onAction(action);
@@ -277,13 +249,8 @@ this.HighlightsFeed = class HighlightsFeed {
       case at.PLACES_HISTORY_CLEARED:
       case at.PLACES_LINK_BLOCKED:
       case at.DOWNLOAD_CHANGED:
+      case at.POCKET_LINK_DELETED_OR_ARCHIVED:
         this.fetchHighlights({broadcast: true});
-        break;
-      case at.DELETE_FROM_POCKET:
-        this.deleteFromPocket(action.data.pocket_id);
-        break;
-      case at.ARCHIVE_FROM_POCKET:
-        this.archiveFromPocket(action.data.pocket_id);
         break;
       case at.PLACES_LINKS_CHANGED:
       case at.PLACES_SAVED_TO_POCKET:
