@@ -1203,6 +1203,14 @@ class PresShell final : public nsIPresShell,
 
 
 
+
+
+    void FinalizeHandlingEvent(WidgetEvent* aEvent);
+
+    
+
+
+
     struct MOZ_STACK_CLASS AutoCurrentEventInfoSetter final {
       explicit AutoCurrentEventInfoSetter(EventHandler& aEventHandler)
           : mEventHandler(aEventHandler) {

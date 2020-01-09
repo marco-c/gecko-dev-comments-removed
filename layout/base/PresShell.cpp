@@ -7698,54 +7698,11 @@ nsresult PresShell::EventHandler::HandleEventInternal(
     manager->TryToFlushPendingNotificationsToIME();
   }
 
-  switch (aEvent->mMessage) {
-    case eKeyPress:
-    case eKeyDown:
-    case eKeyUp: {
-      if (aEvent->AsKeyboardEvent()->mKeyCode == NS_VK_ESCAPE) {
-        if (aEvent->mMessage == eKeyUp) {
-          
-          mPresShell->mIsLastChromeOnlyEscapeKeyConsumed = false;
-        } else {
-          if (aEvent->mFlags.mOnlyChromeDispatch &&
-              aEvent->mFlags.mDefaultPreventedByChrome) {
-            mPresShell->mIsLastChromeOnlyEscapeKeyConsumed = true;
-          }
-        }
-      }
-      if (aEvent->mMessage == eKeyDown) {
-        mPresShell->mIsLastKeyDownCanceled = aEvent->mFlags.mDefaultPrevented;
-      }
-      break;
-    }
-    case eMouseUp:
-      
-      nsIPresShell::SetCapturingContent(nullptr, 0);
-      break;
-    case eMouseMove:
-      nsIPresShell::AllowMouseCapture(false);
-      break;
-    case eDrag:
-    case eDragEnd:
-    case eDragEnter:
-    case eDragExit:
-    case eDragLeave:
-    case eDragOver:
-    case eDrop: {
-      
-      
-      
-      DataTransfer* dataTransfer = aEvent->AsDragEvent()->mDataTransfer;
-      if (dataTransfer) {
-        dataTransfer->Disconnect();
-      }
-      break;
-    }
-    default:
-      break;
-  }
+  FinalizeHandlingEvent(aEvent);
+
   RecordEventHandlingResponsePerformance(aEvent);
-  return rv;
+
+  return rv;  
 }
 
 nsresult PresShell::EventHandler::DispatchEvent(
@@ -7869,6 +7826,55 @@ bool PresShell::EventHandler::PrepareToDispatchEvent(WidgetEvent* aEvent) {
 
     default:
       return false;
+  }
+}
+
+void PresShell::EventHandler::FinalizeHandlingEvent(WidgetEvent* aEvent) {
+  switch (aEvent->mMessage) {
+    case eKeyPress:
+    case eKeyDown:
+    case eKeyUp: {
+      if (aEvent->AsKeyboardEvent()->mKeyCode == NS_VK_ESCAPE) {
+        if (aEvent->mMessage == eKeyUp) {
+          
+          mPresShell->mIsLastChromeOnlyEscapeKeyConsumed = false;
+        } else {
+          if (aEvent->mFlags.mOnlyChromeDispatch &&
+              aEvent->mFlags.mDefaultPreventedByChrome) {
+            mPresShell->mIsLastChromeOnlyEscapeKeyConsumed = true;
+          }
+        }
+      }
+      if (aEvent->mMessage == eKeyDown) {
+        mPresShell->mIsLastKeyDownCanceled = aEvent->mFlags.mDefaultPrevented;
+      }
+      return;
+    }
+    case eMouseUp:
+      
+      nsIPresShell::SetCapturingContent(nullptr, 0);
+      return;
+    case eMouseMove:
+      nsIPresShell::AllowMouseCapture(false);
+      return;
+    case eDrag:
+    case eDragEnd:
+    case eDragEnter:
+    case eDragExit:
+    case eDragLeave:
+    case eDragOver:
+    case eDrop: {
+      
+      
+      
+      DataTransfer* dataTransfer = aEvent->AsDragEvent()->mDataTransfer;
+      if (dataTransfer) {
+        dataTransfer->Disconnect();
+      }
+      return;
+    }
+    default:
+      return;
   }
 }
 
