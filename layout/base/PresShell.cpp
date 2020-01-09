@@ -10503,8 +10503,9 @@ nsresult PresShell::SetIsActive(bool aIsActive) {
 
 void PresShell::UpdateViewportOverridden(bool aAfterInitialization) {
   
-  bool needMVM = nsLayoutUtils::ShouldHandleMetaViewport(mDocument) ||
-                 gfxPrefs::APZAllowZooming();
+  
+  
+  bool needMVM = nsLayoutUtils::ShouldHandleMetaViewport(mDocument);
 
   if (needMVM == !!mMobileViewportManager) {
     
