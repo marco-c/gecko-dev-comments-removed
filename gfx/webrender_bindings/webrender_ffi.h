@@ -55,14 +55,12 @@ namespace wr {
 
 
 
-#define DECLARE_MEMBERS(id) \
-  uintptr_t id##_interner;  \
-  uintptr_t id##_data_store;
-struct InterningMemoryReport {
-  WEBRENDER_FOR_EACH_INTERNER(DECLARE_MEMBERS)
+#define DECLARE_MEMBER(id) uintptr_t id;
+struct InternerSubReport {
+  WEBRENDER_FOR_EACH_INTERNER(DECLARE_MEMBER)
 };
 
-#undef DECLARE_MEMBERS
+#undef DECLARE_MEMBER
 
 struct FontInstanceFlags {
   uint32_t bits;
