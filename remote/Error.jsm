@@ -100,15 +100,7 @@ class FatalError extends RemoteAgentError {
 class UnsupportedError extends RemoteAgentError {}
 
 
-class UnknownMethodError extends RemoteAgentError {
-  constructor(domain, command = null) {
-    if (command) {
-      super(`${domain}.${command}`);
-    } else {
-      super(domain);
-    }
-  }
-}
+class UnknownMethodError extends RemoteAgentError {}
 
 function formatError(error, {stack = false} = {}) {
   const els = [];
