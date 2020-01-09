@@ -637,6 +637,11 @@ bool NS_IsSameSiteForeign(nsIChannel* aChannel, nsIURI* aHostURI);
 
 
 
+#define NECKO_NO_APP_ID 0
+#define NECKO_UNKNOWN_APP_ID UINT32_MAX
+
+
+
 
 #define NECKO_SAFEBROWSING_FIRST_PARTY_DOMAIN \
   "safebrowsing.86868755-6b82-4842-b301-72671a0db32e.mozilla"
@@ -942,9 +947,9 @@ bool NS_ShouldClassifyChannel(nsIChannel* aChannel);
 
 
 
-nsresult NS_SetRequestBlockingReason(nsIChannel* channel, uint32_t reason);
-nsresult NS_SetRequestBlockingReason(nsILoadInfo* loadInfo, uint32_t reason);
-nsresult NS_SetRequestBlockingReasonIfNull(nsILoadInfo* loadInfo,
+nsresult NS_SetRequestBlockingReason(nsIChannel *channel, uint32_t reason);
+nsresult NS_SetRequestBlockingReason(nsILoadInfo *loadInfo, uint32_t reason);
+nsresult NS_SetRequestBlockingReasonIfNull(nsILoadInfo *loadInfo,
                                            uint32_t reason);
 
 namespace mozilla {

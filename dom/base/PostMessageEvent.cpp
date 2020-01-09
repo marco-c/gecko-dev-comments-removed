@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "PostMessageEvent.h"
 
@@ -51,20 +51,20 @@ PostMessageEvent::~PostMessageEvent() {}
 
 NS_IMETHODIMP
 PostMessageEvent::Run() {
-  
-  
-  
+  // Note: We don't init this AutoJSAPI with targetWindow, because we do not
+  // want exceptions during message deserialization to trigger error events on
+  // targetWindow.
   AutoJSAPI jsapi;
   jsapi.Init();
   JSContext* cx = jsapi.cx();
 
-  
-  
-  
+  // The document URI is just used for the principal mismatch error message
+  // below. Use a stack variable so mCallerDocumentURI is not held onto after
+  // this method finishes, regardless of the method outcome.
   nsCOMPtr<nsIURI> callerDocumentURI = mCallerDocumentURI.forget();
 
-  
-  
+  // If we bailed before this point we're going to leak mMessage, but
+  // that's probably better than crashing.
 
   RefPtr<nsGlobalWindowInner> targetWindow;
   if (mTargetWindow->IsClosedOrClosing() ||
@@ -74,30 +74,33 @@ PostMessageEvent::Run() {
 
   JSAutoRealm ar(cx, targetWindow->GetWrapper());
 
-  
-  
-  
-  
-  
-  
-  
-  
+  // Ensure that any origin which might have been provided is the origin of this
+  // window's document.  Note that we do this *now* instead of when postMessage
+  // is called because the target window might have been navigated to a
+  // different location between then and now.  If this check happened when
+  // postMessage was called, it would be fairly easy for a malicious webpage to
+  // intercept messages intended for another site by carefully timing navigation
+  // of the target window so it changed location after postMessage but before
+  // now.
   if (mProvidedPrincipal) {
-    
-    
-    
+    // Get the target's origin either from its principal or, in the case the
+    // principal doesn't carry a URI (e.g. the system principal), the target's
+    // document.
     nsIPrincipal* targetPrin = targetWindow->GetPrincipal();
     if (NS_WARN_IF(!targetPrin)) return NS_OK;
 
-    
-    
-    
-    
-    
+    // Note: This is contrary to the spec with respect to file: URLs, which
+    //       the spec groups into a single origin, but given we intentionally
+    //       don't do that in other places it seems better to hold the line for
+    //       now.  Long-term, we want HTML5 to address this so that we can
+    //       be compliant while being safer.
     if (!targetPrin->Equals(mProvidedPrincipal)) {
       OriginAttributes sourceAttrs = mProvidedPrincipal->OriginAttributesRef();
       OriginAttributes targetAttrs = targetPrin->OriginAttributesRef();
 
+      MOZ_DIAGNOSTIC_ASSERT(
+          sourceAttrs.mAppId == targetAttrs.mAppId,
+          "Target and source should have the same mAppId attribute.");
       MOZ_DIAGNOSTIC_ASSERT(
           sourceAttrs.mUserContextId == targetAttrs.mUserContextId,
           "Target and source should have the same userContextId attribute.");
@@ -167,7 +170,7 @@ PostMessageEvent::Run() {
     return NS_OK;
   }
 
-  
+  // Create the event
   RefPtr<MessageEvent> event = new MessageEvent(eventTarget, nullptr, nullptr);
 
   Nullable<WindowProxyOrMessagePortOrServiceWorker> source;
@@ -208,10 +211,10 @@ void PostMessageEvent::DispatchError(JSContext* aCx,
 
 void PostMessageEvent::Dispatch(nsGlobalWindowInner* aTargetWindow,
                                 Event* aEvent) {
-  
-  
-  
-  
+  // We can't simply call dispatchEvent on the window because doing so ends
+  // up flipping the trusted bit on the event, and we don't want that to
+  // happen because then untrusted content can call postMessage on a chrome
+  // window if it can get a reference to it.
 
   RefPtr<nsPresContext> presContext =
       aTargetWindow->GetExtantDoc()->GetPresContext();
@@ -224,5 +227,5 @@ void PostMessageEvent::Dispatch(nsGlobalWindowInner* aTargetWindow,
                             internalEvent, aEvent, &status);
 }
 
-}  
-}  
+}  // namespace dom
+}  // namespace mozilla
