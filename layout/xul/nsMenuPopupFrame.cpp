@@ -56,6 +56,11 @@
 #include "mozilla/dom/KeyboardEvent.h"
 #include "mozilla/dom/KeyboardEventBinding.h"
 #include <algorithm>
+#ifdef MOZ_WAYLAND
+#  include <gdk/gdk.h>
+#  include <gdk/gdkx.h>
+#  include <gdk/gdkwayland.h>
+#endif 
 
 using namespace mozilla;
 using mozilla::dom::Document;
@@ -1494,14 +1499,20 @@ nsresult nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame,
 
   nscoord oldAlignmentOffset = mAlignmentOffset;
 
+  bool inWayland = false;
+#ifdef MOZ_WAYLAND
+  inWayland = !GDK_IS_X11_DISPLAY(gdk_display_get_default());
+#endif
+
   
   
   
   
   
-  if (mInContentShell ||
-      (mFlip != FlipType_None &&
-       (!aIsMove || mIsOffset || mPopupType != ePopupTypePanel))) {
+  if (!inWayland &&
+      (mInContentShell ||
+       (mFlip != FlipType_None &&
+        (!aIsMove || mIsOffset || mPopupType != ePopupTypePanel)))) {
     int32_t appPerDev = presContext->AppUnitsPerDevPixel();
     LayoutDeviceIntRect anchorRectDevPix =
         LayoutDeviceIntRect::FromAppUnitsToNearest(anchorRect, appPerDev);
