@@ -7,6 +7,7 @@
 #include "nsFontFaceUtils.h"
 
 #include "gfxUserFontSet.h"
+#include "mozilla/RestyleManager.h"
 #include "nsFontMetrics.h"
 #include "nsIFrame.h"
 #include "nsLayoutUtils.h"
@@ -16,22 +17,26 @@
 
 using namespace mozilla;
 
-static bool ComputedStyleContainsFont(ComputedStyle* aComputedStyle,
-                                      nsPresContext* aPresContext,
-                                      const gfxUserFontSet* aUserFontSet,
-                                      const gfxUserFontEntry* aFont) {
+enum class FontUsageKind {
+  
+  None = 0,
   
   
-  if (!aFont) {
-    const mozilla::FontFamilyList& fontlist =
-        aComputedStyle->StyleFont()->mFont.fontlist;
-    return aUserFontSet->ContainsUserFontSetFonts(fontlist);
-  }
+  Frame,
+  
+  
+  
+  FrameAndFontMetrics,
+};
 
+static FontUsageKind StyleFontUsage(ComputedStyle* aComputedStyle,
+                                    nsPresContext* aPresContext,
+                                    const gfxUserFontSet* aUserFontSet,
+                                    const gfxUserFontEntry* aFont) {
   
   if (!aComputedStyle->StyleFont()->mFont.fontlist.Contains(
           aFont->FamilyName())) {
-    return false;
+    return FontUsageKind::None;
   }
 
   
@@ -39,19 +44,27 @@ static bool ComputedStyleContainsFont(ComputedStyle* aComputedStyle,
   RefPtr<nsFontMetrics> fm = nsLayoutUtils::GetFontMetricsForComputedStyle(
       aComputedStyle, aPresContext, 1.0f);
 
-  if (fm->GetThebesFontGroup()->ContainsUserFont(aFont)) {
-    return true;
+  if (!fm->GetThebesFontGroup()->ContainsUserFont(aFont)) {
+    return FontUsageKind::None;
   }
 
-  return false;
+  if (aComputedStyle->DependsOnFontMetrics()) {
+    MOZ_ASSERT(aPresContext->UsesExChUnits());
+    return FontUsageKind::FrameAndFontMetrics;
+  }
+
+  return FontUsageKind::Frame;
 }
 
-static bool FrameUsesFont(nsIFrame* aFrame, const gfxUserFontEntry* aFont) {
+static FontUsageKind FrameFontUsage(nsIFrame* aFrame,
+                                    nsPresContext* aPresContext,
+                                    const gfxUserFontEntry* aFont) {
   
-  nsPresContext* pc = aFrame->PresContext();
-  gfxUserFontSet* ufs = pc->GetUserFontSet();
-  if (ComputedStyleContainsFont(aFrame->Style(), pc, ufs, aFont)) {
-    return true;
+  gfxUserFontSet* ufs = aPresContext->GetUserFontSet();
+  FontUsageKind kind =
+      StyleFontUsage(aFrame->Style(), aPresContext, ufs, aFont);
+  if (kind == FontUsageKind::FrameAndFontMetrics) {
+    return kind;
   }
 
   
@@ -59,13 +72,16 @@ static bool FrameUsesFont(nsIFrame* aFrame, const gfxUserFontEntry* aFont) {
   for (ComputedStyle* extraContext;
        (extraContext = aFrame->GetAdditionalComputedStyle(contextIndex));
        ++contextIndex) {
-    if (ComputedStyleContainsFont(extraContext, pc, ufs, aFont)) {
-      return true;
+    kind =
+        std::max(kind, StyleFontUsage(extraContext, aPresContext, ufs, aFont));
+    if (kind == FontUsageKind::FrameAndFontMetrics) {
+      break;
     }
   }
 
-  return false;
+  return kind;
 }
+
 
 static void ScheduleReflow(nsIPresShell* aShell, nsIFrame* aFrame) {
   nsIFrame* f = aFrame;
@@ -101,13 +117,20 @@ static void ScheduleReflow(nsIPresShell* aShell, nsIFrame* aFrame) {
   aShell->FrameNeedsReflow(f, nsIPresShell::eStyleChange, NS_FRAME_IS_DIRTY);
 }
 
+enum class ReflowAlreadyScheduled {
+  No,
+  Yes,
+};
+
 
 void nsFontFaceUtils::MarkDirtyForFontChange(nsIFrame* aSubtreeRoot,
                                              const gfxUserFontEntry* aFont) {
+  MOZ_ASSERT(aFont);
   AutoTArray<nsIFrame*, 4> subtrees;
   subtrees.AppendElement(aSubtreeRoot);
 
-  nsIPresShell* ps = aSubtreeRoot->PresShell();
+  nsPresContext* pc = aSubtreeRoot->PresContext();
+  nsIPresShell* ps = pc->PresShell();
 
   
   
@@ -115,17 +138,33 @@ void nsFontFaceUtils::MarkDirtyForFontChange(nsIFrame* aSubtreeRoot,
     nsIFrame* subtreeRoot = subtrees.PopLastElement();
 
     
-    AutoTArray<nsIFrame*, 32> stack;
-    stack.AppendElement(subtreeRoot);
+    AutoTArray<Pair<nsIFrame*, ReflowAlreadyScheduled>, 32> stack;
+    stack.AppendElement(MakePair(subtreeRoot, ReflowAlreadyScheduled::No));
 
     do {
-      nsIFrame* f = stack.PopLastElement();
+      auto pair = stack.PopLastElement();
+      nsIFrame* f = pair.first();
+      ReflowAlreadyScheduled alreadyScheduled = pair.second();
 
       
       
-      if (FrameUsesFont(f, aFont)) {
-        ScheduleReflow(ps, f);
-      } else {
+      FontUsageKind kind = FrameFontUsage(f, pc, aFont);
+      if (kind != FontUsageKind::None) {
+        if (alreadyScheduled == ReflowAlreadyScheduled::No) {
+          ScheduleReflow(ps, f);
+          alreadyScheduled = ReflowAlreadyScheduled::Yes;
+        }
+        if (kind == FontUsageKind::FrameAndFontMetrics) {
+          MOZ_ASSERT(f->GetContent() && f->GetContent()->IsElement(),
+                     "How could we target a non-element with selectors?");
+          f->PresContext()->RestyleManager()->PostRestyleEvent(
+              Element::FromNode(f->GetContent()),
+              StyleRestyleHint_RECASCADE_SELF, nsChangeHint(0));
+        }
+      }
+
+      if (alreadyScheduled == ReflowAlreadyScheduled::No ||
+          pc->UsesExChUnits()) {
         if (f->IsPlaceholderFrame()) {
           nsIFrame* oof = nsPlaceholderFrame::GetRealFrameForPlaceholder(f);
           if (!nsLayoutUtils::IsProperAncestorFrame(subtreeRoot, oof)) {
@@ -139,7 +178,7 @@ void nsFontFaceUtils::MarkDirtyForFontChange(nsIFrame* aSubtreeRoot,
           nsFrameList::Enumerator childFrames(lists.CurrentList());
           for (; !childFrames.AtEnd(); childFrames.Next()) {
             nsIFrame* kid = childFrames.get();
-            stack.AppendElement(kid);
+            stack.AppendElement(MakePair(kid, alreadyScheduled));
           }
         }
       }

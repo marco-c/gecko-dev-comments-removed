@@ -256,9 +256,6 @@ class gfxUserFontSet {
   
   gfxUserFontFamily* LookupFamily(const nsACString& aName) const;
 
-  
-  bool ContainsUserFontSetFonts(const mozilla::FontFamilyList& aFontList) const;
-
   virtual gfxFontSrcPrincipal* GetStandardFontLoadPrincipal() const = 0;
 
   

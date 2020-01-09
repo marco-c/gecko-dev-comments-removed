@@ -1663,9 +1663,14 @@ void nsPresContext::UserFontSetUpdated(gfxUserFontEntry* aUpdatedFont) {
   
   
   
+  
+  
+  
+  
   if (!aUpdatedFont) {
-    PostRebuildAllStyleDataEvent(NS_STYLE_HINT_REFLOW,
-                                 RestyleHint::RecascadeSubtree());
+    auto hint =
+      UsesExChUnits() ? RestyleHint::RecascadeSubtree() : RestyleHint{0};
+    PostRebuildAllStyleDataEvent(NS_STYLE_HINT_REFLOW, hint);
     return;
   }
 
@@ -1673,19 +1678,9 @@ void nsPresContext::UserFontSetUpdated(gfxUserFontEntry* aUpdatedFont) {
   
   
   
-  if (UsesExChUnits()) {
-    PostRebuildAllStyleDataEvent(nsChangeHint(0),
-                                 RestyleHint::RecascadeSubtree());
-  }
-
   
   
-  
-  
-  
-  
-  nsIFrame* root = mShell->GetRootFrame();
-  if (root) {
+  if (nsIFrame* root = mShell->GetRootFrame()) {
     nsFontFaceUtils::MarkDirtyForFontChange(root, aUpdatedFont);
   }
 }
