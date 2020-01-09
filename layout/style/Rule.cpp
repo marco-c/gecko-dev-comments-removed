@@ -65,7 +65,8 @@ NS_IMPL_CYCLE_COLLECTION_CAN_SKIP_THIS_BEGIN(Rule)
   return tmp->IsCCLeaf() || tmp->IsKnownLive();
 NS_IMPL_CYCLE_COLLECTION_CAN_SKIP_THIS_END
 
- void Rule::DropSheetReference() { mSheet = nullptr; }
+
+void Rule::DropSheetReference() { mSheet = nullptr; }
 
 void Rule::SetCssText(const nsAString& aCssText) {
   

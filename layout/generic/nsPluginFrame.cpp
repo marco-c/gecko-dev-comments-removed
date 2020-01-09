@@ -202,8 +202,8 @@ void nsPluginFrame::DestroyFrom(nsIFrame* aDestructRoot,
   nsFrame::DestroyFrom(aDestructRoot, aPostDestroyData);
 }
 
- void nsPluginFrame::DidSetComputedStyle(
-    ComputedStyle* aOldComputedStyle) {
+
+void nsPluginFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
   if (HasView()) {
     nsView* view = GetView();
     nsViewManager* vm = view->GetViewManager();
@@ -351,8 +351,8 @@ nsresult nsPluginFrame::PrepForDrawing(nsIWidget* aWidget) {
 #define EMBED_DEF_WIDTH 240
 #define EMBED_DEF_HEIGHT 200
 
- nscoord nsPluginFrame::GetMinISize(
-    gfxContext* aRenderingContext) {
+
+nscoord nsPluginFrame::GetMinISize(gfxContext* aRenderingContext) {
   nscoord result = 0;
 
   if (!IsHidden(false)) {
@@ -367,8 +367,8 @@ nsresult nsPluginFrame::PrepForDrawing(nsIWidget* aWidget) {
   return result;
 }
 
- nscoord nsPluginFrame::GetPrefISize(
-    gfxContext* aRenderingContext) {
+
+nscoord nsPluginFrame::GetPrefISize(gfxContext* aRenderingContext) {
   return nsPluginFrame::GetMinISize(aRenderingContext);
 }
 
@@ -802,10 +802,9 @@ void nsPluginFrame::DidReflow(nsPresContext* aPresContext,
   }
 }
 
- void nsPluginFrame::PaintPrintPlugin(nsIFrame* aFrame,
-                                                  gfxContext* aCtx,
-                                                  const nsRect& aDirtyRect,
-                                                  nsPoint aPt) {
+
+void nsPluginFrame::PaintPrintPlugin(nsIFrame* aFrame, gfxContext* aCtx,
+                                     const nsRect& aDirtyRect, nsPoint aPt) {
   
   nsPoint pt = aPt + aFrame->GetContentRectRelativeToSelf().TopLeft();
   gfxPoint devPixelPt = nsLayoutUtils::PointToGfxPoint(
@@ -1633,8 +1632,8 @@ nsIObjectFrame* nsPluginFrame::GetNextObjectFrame(nsPresContext* aPresContext,
   return nullptr;
 }
 
- void nsPluginFrame::BeginSwapDocShells(nsISupports* aSupports,
-                                                  void*) {
+
+void nsPluginFrame::BeginSwapDocShells(nsISupports* aSupports, void*) {
   MOZ_ASSERT(aSupports, "null parameter");
   nsCOMPtr<nsIContent> content(do_QueryInterface(aSupports));
   if (!content) {
@@ -1652,7 +1651,8 @@ nsIObjectFrame* nsPluginFrame::GetNextObjectFrame(nsPresContext* aPresContext,
   objectFrame->UnregisterPluginForGeometryUpdates();
 }
 
- void nsPluginFrame::EndSwapDocShells(nsISupports* aSupports, void*) {
+
+void nsPluginFrame::EndSwapDocShells(nsISupports* aSupports, void*) {
   MOZ_ASSERT(aSupports, "null parameter");
   nsCOMPtr<nsIContent> content(do_QueryInterface(aSupports));
   if (!content) {

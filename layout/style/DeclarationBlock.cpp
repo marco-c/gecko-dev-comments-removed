@@ -12,7 +12,8 @@
 
 namespace mozilla {
 
- already_AddRefed<DeclarationBlock> DeclarationBlock::FromCssText(
+
+already_AddRefed<DeclarationBlock> DeclarationBlock::FromCssText(
     const nsAString& aCssText, URLExtraData* aExtraData, nsCompatibility aMode,
     css::Loader* aLoader) {
   NS_ConvertUTF16toUTF8 value(aCssText);

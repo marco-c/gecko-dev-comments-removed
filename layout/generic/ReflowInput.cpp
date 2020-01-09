@@ -341,7 +341,8 @@ void ReflowInput::SetComputedHeight(nscoord aComputedHeight) {
   }
 }
 
- void ReflowInput::MarkFrameChildrenDirty(nsIFrame* aFrame) {
+
+void ReflowInput::MarkFrameChildrenDirty(nsIFrame* aFrame) {
   if (aFrame->IsXULBoxFrame()) {
     return;
   }
@@ -1002,9 +1003,10 @@ void ReflowInput::InitFrameType(LayoutFrameType aFrameType) {
   mFrameType = frameType;
 }
 
- void ReflowInput::ComputeRelativeOffsets(
-    WritingMode aWM, nsIFrame* aFrame, const LogicalSize& aCBSize,
-    nsMargin& aComputedOffsets) {
+
+void ReflowInput::ComputeRelativeOffsets(WritingMode aWM, nsIFrame* aFrame,
+                                         const LogicalSize& aCBSize,
+                                         nsMargin& aComputedOffsets) {
   LogicalMargin offsets(aWM);
   mozilla::Side inlineStart = aWM.PhysicalSide(eLogicalSideIStart);
   mozilla::Side inlineEnd = aWM.PhysicalSide(eLogicalSideIEnd);
@@ -1109,8 +1111,10 @@ void ReflowInput::InitFrameType(LayoutFrameType aFrameType) {
   }
 }
 
- void ReflowInput::ApplyRelativePositioning(
-    nsIFrame* aFrame, const nsMargin& aComputedOffsets, nsPoint* aPosition) {
+
+void ReflowInput::ApplyRelativePositioning(nsIFrame* aFrame,
+                                           const nsMargin& aComputedOffsets,
+                                           nsPoint* aPosition) {
   if (!aFrame->IsRelativelyPositioned()) {
     NS_ASSERTION(!aFrame->GetProperty(nsIFrame::NormalPositionProperty()),
                  "We assume that changing the 'position' property causes "
@@ -2890,11 +2894,12 @@ nscoord ReflowInput::CalcLineHeight() const {
                         nsLayoutUtils::FontSizeInflationFor(mFrame));
 }
 
- nscoord ReflowInput::CalcLineHeight(nsIContent* aContent,
-                                                 ComputedStyle* aComputedStyle,
-                                                 nsPresContext* aPresContext,
-                                                 nscoord aBlockBSize,
-                                                 float aFontSizeInflation) {
+
+nscoord ReflowInput::CalcLineHeight(nsIContent* aContent,
+                                    ComputedStyle* aComputedStyle,
+                                    nsPresContext* aPresContext,
+                                    nscoord aBlockBSize,
+                                    float aFontSizeInflation) {
   MOZ_ASSERT(aComputedStyle, "Must have a ComputedStyle");
 
   nscoord lineHeight = ComputeLineHeight(aComputedStyle, aPresContext,

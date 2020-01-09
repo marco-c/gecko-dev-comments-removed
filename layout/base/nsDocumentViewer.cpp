@@ -641,7 +641,8 @@ nsDocumentViewer::~nsDocumentViewer() {
 
 
 
- void nsDocumentViewer::LoadStart(Document* aDocument) {
+
+void nsDocumentViewer::LoadStart(Document* aDocument) {
   MOZ_ASSERT(aDocument);
 
   if (!mDocument) {

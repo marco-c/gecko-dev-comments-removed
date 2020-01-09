@@ -13,14 +13,16 @@ using namespace mozilla;
 
 nsLeafFrame::~nsLeafFrame() {}
 
- nscoord nsLeafFrame::GetMinISize(gfxContext* aRenderingContext) {
+
+nscoord nsLeafFrame::GetMinISize(gfxContext* aRenderingContext) {
   nscoord result;
   DISPLAY_MIN_INLINE_SIZE(this, result);
   result = GetIntrinsicISize();
   return result;
 }
 
- nscoord nsLeafFrame::GetPrefISize(gfxContext* aRenderingContext) {
+
+nscoord nsLeafFrame::GetPrefISize(gfxContext* aRenderingContext) {
   nscoord result;
   DISPLAY_PREF_INLINE_SIZE(this, result);
   result = GetIntrinsicISize();

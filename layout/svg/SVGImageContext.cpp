@@ -16,15 +16,17 @@
 
 namespace mozilla {
 
- void SVGImageContext::MaybeStoreContextPaint(
-    Maybe<SVGImageContext>& aContext, nsIFrame* aFromFrame,
-    imgIContainer* aImgContainer) {
+
+void SVGImageContext::MaybeStoreContextPaint(Maybe<SVGImageContext>& aContext,
+                                             nsIFrame* aFromFrame,
+                                             imgIContainer* aImgContainer) {
   return MaybeStoreContextPaint(aContext, aFromFrame->Style(), aImgContainer);
 }
 
- void SVGImageContext::MaybeStoreContextPaint(
-    Maybe<SVGImageContext>& aContext, ComputedStyle* aFromComputedStyle,
-    imgIContainer* aImgContainer) {
+
+void SVGImageContext::MaybeStoreContextPaint(Maybe<SVGImageContext>& aContext,
+                                             ComputedStyle* aFromComputedStyle,
+                                             imgIContainer* aImgContainer) {
   const nsStyleSVG* style = aFromComputedStyle->StyleSVG();
 
   if (!style->ExposesContextProperties()) {

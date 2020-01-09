@@ -19,7 +19,8 @@ namespace mozilla {
         DisplayItemType::TYPE_TRANSFORM,
 };
 
- DisplayItemType LayerAnimationInfo::GetDisplayItemTypeForProperty(
+
+DisplayItemType LayerAnimationInfo::GetDisplayItemTypeForProperty(
     nsCSSPropertyID aProperty) {
   switch (aProperty) {
     case eCSSProperty_background_color:

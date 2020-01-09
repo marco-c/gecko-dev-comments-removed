@@ -210,9 +210,8 @@ nsMenuFrame* nsMenuBarFrame::FindMenuWithShortcut(KeyboardEvent* aKeyEvent,
   return nullptr;
 }
 
- nsMenuFrame* nsMenuBarFrame::GetCurrentMenuItem() {
-  return mCurrentMenu;
-}
+
+nsMenuFrame* nsMenuBarFrame::GetCurrentMenuItem() { return mCurrentMenu; }
 
 NS_IMETHODIMP
 nsMenuBarFrame::SetCurrentMenuItem(nsMenuFrame* aMenuItem) {

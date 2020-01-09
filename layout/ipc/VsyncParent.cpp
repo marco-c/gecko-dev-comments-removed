@@ -20,7 +20,8 @@ using namespace ipc;
 
 namespace layout {
 
- already_AddRefed<VsyncParent> VsyncParent::Create() {
+
+already_AddRefed<VsyncParent> VsyncParent::Create() {
   AssertIsOnBackgroundThread();
   RefPtr<gfx::VsyncSource> vsyncSource =
       gfxPlatform::GetPlatform()->GetHardwareVsync();

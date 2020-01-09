@@ -22,7 +22,8 @@ namespace mozilla {
 
 using image::imgDrawingParams;
 
- bool SVGContextPaint::IsAllowedForImageFromURI(nsIURI* aURI) {
+
+bool SVGContextPaint::IsAllowedForImageFromURI(nsIURI* aURI) {
   static bool sEnabledForContent = false;
   static bool sEnabledForContentCached = false;
 

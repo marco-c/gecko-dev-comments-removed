@@ -48,7 +48,8 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(CSSMediaRule,
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mMediaList)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
- void CSSMediaRule::DropSheetReference() {
+
+void CSSMediaRule::DropSheetReference() {
   if (mMediaList) {
     mMediaList->SetStyleSheet(nullptr);
   }
@@ -56,7 +57,8 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 }
 
 #ifdef DEBUG
- void CSSMediaRule::List(FILE* out, int32_t aIndent) const {
+
+void CSSMediaRule::List(FILE* out, int32_t aIndent) const {
   nsAutoCString str;
   for (int32_t i = 0; i < aIndent; i++) {
     str.AppendLiteral("  ");
@@ -75,7 +77,8 @@ void CSSMediaRule::SetConditionText(const nsAString& aConditionText,
   Media()->SetMediaText(aConditionText);
 }
 
- void CSSMediaRule::GetCssText(nsAString& aCssText) const {
+
+void CSSMediaRule::GetCssText(nsAString& aCssText) const {
   Servo_MediaRule_GetCssText(mRawRule, &aCssText);
 }
 
@@ -87,14 +90,16 @@ void CSSMediaRule::SetConditionText(const nsAString& aConditionText,
   return mMediaList;
 }
 
- size_t CSSMediaRule::SizeOfIncludingThis(
+
+size_t CSSMediaRule::SizeOfIncludingThis(
     mozilla::MallocSizeOf aMallocSizeOf) const {
   
   return aMallocSizeOf(this);
 }
 
- JSObject* CSSMediaRule::WrapObject(
-    JSContext* aCx, JS::Handle<JSObject*> aGivenProto) {
+
+JSObject* CSSMediaRule::WrapObject(JSContext* aCx,
+                                   JS::Handle<JSObject*> aGivenProto) {
   return CSSMediaRule_Binding::Wrap(aCx, this, aGivenProto);
 }
 

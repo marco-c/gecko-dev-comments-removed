@@ -154,7 +154,8 @@ nsImageBoxFrame::nsImageBoxFrame(ComputedStyle* aStyle,
 
 nsImageBoxFrame::~nsImageBoxFrame() {}
 
- void nsImageBoxFrame::MarkIntrinsicISizesDirty() {
+
+void nsImageBoxFrame::MarkIntrinsicISizesDirty() {
   SizeNeedsRecalc(mImageSize);
   nsLeafBoxFrame::MarkIntrinsicISizesDirty();
 }
@@ -591,8 +592,8 @@ bool nsImageBoxFrame::CanOptimizeToImageLayer() {
 
 
 
- void nsImageBoxFrame::DidSetComputedStyle(
-    ComputedStyle* aOldComputedStyle) {
+
+void nsImageBoxFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
   nsLeafBoxFrame::DidSetComputedStyle(aOldComputedStyle);
 
   

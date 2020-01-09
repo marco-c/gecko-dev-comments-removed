@@ -749,7 +749,8 @@ already_AddRefed<nsFrameSelection> nsIPresShell::FrameSelection() {
 static bool sSynthMouseMove = true;
 static uint32_t sNextPresShellId;
 
- bool PresShell::AccessibleCaretEnabled(nsIDocShell* aDocShell) {
+
+bool PresShell::AccessibleCaretEnabled(nsIDocShell* aDocShell) {
   
   if (StaticPrefs::layout_accessiblecaret_enabled()) {
     return true;
@@ -5450,7 +5451,8 @@ void PresShell::ProcessSynthMouseMoveEvent(bool aFromScroll) {
   }
 }
 
- void PresShell::MarkFramesInListApproximatelyVisible(
+
+void PresShell::MarkFramesInListApproximatelyVisible(
     const nsDisplayList& aList) {
   for (nsDisplayItem* item = aList.GetBottom(); item; item = item->GetAbove()) {
     nsDisplayList* sublist = item->GetChildren();
@@ -5477,7 +5479,8 @@ void PresShell::ProcessSynthMouseMoveEvent(bool aFromScroll) {
   }
 }
 
- void PresShell::DecApproximateVisibleCount(
+
+void PresShell::DecApproximateVisibleCount(
     VisibleFrames& aFrames, const Maybe<OnNonvisible>& aNonvisibleAction
     ) {
   for (auto iter = aFrames.Iter(); !iter.Done(); iter.Next()) {
@@ -5506,8 +5509,9 @@ void PresShell::RebuildApproximateFrameVisibilityDisplayList(
   DecApproximateVisibleCount(oldApproximatelyVisibleFrames);
 }
 
- void PresShell::ClearApproximateFrameVisibilityVisited(
-    nsView* aView, bool aClear) {
+
+void PresShell::ClearApproximateFrameVisibilityVisited(nsView* aView,
+                                                       bool aClear) {
   nsViewManager* vm = aView->GetViewManager();
   if (aClear) {
     PresShell* presShell = static_cast<PresShell*>(vm->GetPresShell());
@@ -6376,8 +6380,9 @@ bool PresShell::CanDispatchEvent(const WidgetGUIEvent* aEvent) const {
   return rv;
 }
 
- PresShell* PresShell::GetShellForEventTarget(
-    nsIFrame* aFrame, nsIContent* aContent) {
+
+PresShell* PresShell::GetShellForEventTarget(nsIFrame* aFrame,
+                                             nsIContent* aContent) {
   if (aFrame) {
     return static_cast<PresShell*>(aFrame->PresShell());
   }
@@ -6391,8 +6396,8 @@ bool PresShell::CanDispatchEvent(const WidgetGUIEvent* aEvent) const {
   return nullptr;
 }
 
- PresShell* PresShell::GetShellForTouchEvent(
-    WidgetGUIEvent* aEvent) {
+
+PresShell* PresShell::GetShellForTouchEvent(WidgetGUIEvent* aEvent) {
   PresShell* shell = nullptr;
   switch (aEvent->mMessage) {
     case eTouchMove:
@@ -6644,6 +6649,7 @@ nsresult PresShell::EventHandler::HandleEvent(nsIFrame* aFrame,
     
     
 
+    nsCOMPtr<nsIContent> overrideClickTarget;
     if (PointerEventHandler::IsPointerEventEnabled()) {
       
       
@@ -6661,8 +6667,7 @@ nsresult PresShell::EventHandler::HandleEvent(nsIFrame* aFrame,
                                   : eventTargetData.mFrame;
 
       if (pointerCapturingContent) {
-        eventTargetData.mOverrideClickTarget =
-            GetOverrideClickTarget(aGUIEvent, aFrame);
+        overrideClickTarget = GetOverrideClickTarget(aGUIEvent, aFrame);
         eventTargetData.mPresShell =
             PresShell::GetShellForEventTarget(nullptr, pointerCapturingContent);
         if (!eventTargetData.mPresShell) {
@@ -6731,8 +6736,8 @@ nsresult PresShell::EventHandler::HandleEvent(nsIFrame* aFrame,
     eventTargetData.mPresShell->PushCurrentEventInfo(eventTargetData.mFrame,
                                                      eventTargetData.mContent);
     EventHandler eventHandler(*eventTargetData.mPresShell);
-    nsresult rv = eventHandler.HandleEventInternal(
-        aGUIEvent, aEventStatus, true, eventTargetData.mOverrideClickTarget);
+    nsresult rv = eventHandler.HandleEventInternal(aGUIEvent, aEventStatus,
+                                                   true, overrideClickTarget);
 #ifdef DEBUG
     eventTargetData.mPresShell->ShowEventTargetDebug();
 #endif
@@ -9345,8 +9350,8 @@ bool nsIPresShell::RemoveRefreshObserver(nsARefreshObserver* aObserver,
                             aObserver, aFlushType);
 }
 
- bool nsIPresShell::AddPostRefreshObserver(
-    nsAPostRefreshObserver* aObserver) {
+
+bool nsIPresShell::AddPostRefreshObserver(nsAPostRefreshObserver* aObserver) {
   nsPresContext* presContext = GetPresContext();
   if (!presContext) {
     return false;
@@ -9355,7 +9360,8 @@ bool nsIPresShell::RemoveRefreshObserver(nsARefreshObserver* aObserver,
   return true;
 }
 
- bool nsIPresShell::RemovePostRefreshObserver(
+
+bool nsIPresShell::RemovePostRefreshObserver(
     nsAPostRefreshObserver* aObserver) {
   nsPresContext* presContext = GetPresContext();
   if (!presContext) {

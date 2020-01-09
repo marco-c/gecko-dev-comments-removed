@@ -35,7 +35,8 @@ nsresult NS_NewSprocketLayout(nsCOMPtr<nsBoxLayout>& aNewLayout) {
   return NS_OK;
 }
 
- void nsSprocketLayout::Shutdown() { NS_IF_RELEASE(gInstance); }
+
+void nsSprocketLayout::Shutdown() { NS_IF_RELEASE(gInstance); }
 
 nsSprocketLayout::nsSprocketLayout() {}
 

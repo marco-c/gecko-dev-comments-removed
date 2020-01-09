@@ -1309,7 +1309,8 @@ void ServoStyleSet::MaybeGCRuleTree() {
   Servo_MaybeGCRuleTree(mRawSet.get());
 }
 
- bool ServoStyleSet::MayTraverseFrom(const Element* aElement) {
+
+bool ServoStyleSet::MayTraverseFrom(const Element* aElement) {
   MOZ_ASSERT(aElement->IsInComposedDoc());
   nsINode* parent = aElement->GetFlattenedTreeParentNodeForStyle();
   if (!parent) {

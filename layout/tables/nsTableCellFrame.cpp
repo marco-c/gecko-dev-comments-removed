@@ -210,8 +210,8 @@ nsresult nsTableCellFrame::AttributeChanged(int32_t aNameSpaceID,
   return NS_OK;
 }
 
- void nsTableCellFrame::DidSetComputedStyle(
-    ComputedStyle* aOldComputedStyle) {
+
+void nsTableCellFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
   nsContainerFrame::DidSetComputedStyle(aOldComputedStyle);
 
   if (!aOldComputedStyle)  
@@ -249,7 +249,8 @@ void nsTableCellFrame::RemoveFrame(ChildListID aListID, nsIFrame* aOldFrame) {
 
 void nsTableCellFrame::SetColIndex(int32_t aColIndex) { mColIndex = aColIndex; }
 
- nsMargin nsTableCellFrame::GetUsedMargin() const {
+
+nsMargin nsTableCellFrame::GetUsedMargin() const {
   return nsMargin(0, 0, 0, 0);
 }
 
@@ -511,9 +512,8 @@ nsIFrame::LogicalSides nsTableCellFrame::GetLogicalSkipSides(
   return skip;
 }
 
- nsMargin nsTableCellFrame::GetBorderOverflow() {
-  return nsMargin(0, 0, 0, 0);
-}
+
+nsMargin nsTableCellFrame::GetBorderOverflow() { return nsMargin(0, 0, 0, 0); }
 
 
 
@@ -685,8 +685,8 @@ int32_t nsTableCellFrame::GetColSpan() {
   return colSpan;
 }
 
- nscoord nsTableCellFrame::GetMinISize(
-    gfxContext* aRenderingContext) {
+
+nscoord nsTableCellFrame::GetMinISize(gfxContext* aRenderingContext) {
   nscoord result = 0;
   DISPLAY_MIN_INLINE_SIZE(this, result);
 
@@ -696,8 +696,8 @@ int32_t nsTableCellFrame::GetColSpan() {
   return result;
 }
 
- nscoord nsTableCellFrame::GetPrefISize(
-    gfxContext* aRenderingContext) {
+
+nscoord nsTableCellFrame::GetPrefISize(gfxContext* aRenderingContext) {
   nscoord result = 0;
   DISPLAY_PREF_INLINE_SIZE(this, result);
 
@@ -1008,7 +1008,8 @@ nsBCTableCellFrame::nsBCTableCellFrame(ComputedStyle* aStyle,
 
 nsBCTableCellFrame::~nsBCTableCellFrame() {}
 
- nsMargin nsBCTableCellFrame::GetUsedBorder() const {
+
+nsMargin nsBCTableCellFrame::GetUsedBorder() const {
   WritingMode wm = GetWritingMode();
   return GetBorderWidth(wm).GetPhysicalMargin(wm);
 }
@@ -1056,7 +1057,8 @@ void nsBCTableCellFrame::SetBorderWidth(LogicalSide aSide, BCPixelSize aValue) {
   }
 }
 
- nsMargin nsBCTableCellFrame::GetBorderOverflow() {
+
+nsMargin nsBCTableCellFrame::GetBorderOverflow() {
   WritingMode wm = GetWritingMode();
   int32_t d2a = PresContext()->AppUnitsPerDevPixel();
   LogicalMargin halfBorder(wm, BC_BORDER_START_HALF_COORD(d2a, mBStartBorder),

@@ -104,8 +104,8 @@ void SVGAutoRenderState::SetPaintingToWindow(bool aPaintingToWindow) {
   mPaintingToWindow = aPaintingToWindow;
 }
 
- bool SVGAutoRenderState::IsPaintingToWindow(
-    DrawTarget* aDrawTarget) {
+
+bool SVGAutoRenderState::IsPaintingToWindow(DrawTarget* aDrawTarget) {
   void* state = aDrawTarget->GetUserData(&sSVGAutoRenderStateKey);
   if (state) {
     return static_cast<SVGAutoRenderState*>(state)->mPaintingToWindow;
@@ -1270,17 +1270,19 @@ static gfxRect PathExtentsToMaxStrokeExtents(const gfxRect& aPathExtents,
   return strokeExtents;
 }
 
- gfxRect nsSVGUtils::PathExtentsToMaxStrokeExtents(
-    const gfxRect& aPathExtents, nsTextFrame* aFrame,
-    const gfxMatrix& aMatrix) {
+
+gfxRect nsSVGUtils::PathExtentsToMaxStrokeExtents(const gfxRect& aPathExtents,
+                                                  nsTextFrame* aFrame,
+                                                  const gfxMatrix& aMatrix) {
   NS_ASSERTION(nsSVGUtils::IsInSVGTextSubtree(aFrame),
                "expected an nsTextFrame for SVG text");
   return ::PathExtentsToMaxStrokeExtents(aPathExtents, aFrame, 0.5, aMatrix);
 }
 
- gfxRect nsSVGUtils::PathExtentsToMaxStrokeExtents(
-    const gfxRect& aPathExtents, SVGGeometryFrame* aFrame,
-    const gfxMatrix& aMatrix) {
+
+gfxRect nsSVGUtils::PathExtentsToMaxStrokeExtents(const gfxRect& aPathExtents,
+                                                  SVGGeometryFrame* aFrame,
+                                                  const gfxMatrix& aMatrix) {
   bool strokeMayHaveCorners =
       !SVGContentUtils::ShapeTypeHasNoCorners(aFrame->GetContent());
 
@@ -1309,7 +1311,8 @@ static gfxRect PathExtentsToMaxStrokeExtents(const gfxRect& aPathExtents,
 
 
 
- nscolor nsSVGUtils::GetFallbackOrPaintColor(
+
+nscolor nsSVGUtils::GetFallbackOrPaintColor(
     ComputedStyle* aComputedStyle, nsStyleSVGPaint nsStyleSVG::*aFillOrStroke) {
   const nsStyleSVGPaint& paint = aComputedStyle->StyleSVG()->*aFillOrStroke;
   ComputedStyle* styleIfVisited = aComputedStyle->GetStyleIfVisited();
@@ -1350,9 +1353,11 @@ static gfxRect PathExtentsToMaxStrokeExtents(const gfxRect& aPathExtents,
   return color;
 }
 
- void nsSVGUtils::MakeFillPatternFor(
-    nsIFrame* aFrame, gfxContext* aContext, GeneralPattern* aOutPattern,
-    imgDrawingParams& aImgParams, SVGContextPaint* aContextPaint) {
+
+void nsSVGUtils::MakeFillPatternFor(nsIFrame* aFrame, gfxContext* aContext,
+                                    GeneralPattern* aOutPattern,
+                                    imgDrawingParams& aImgParams,
+                                    SVGContextPaint* aContextPaint) {
   const nsStyleSVG* style = aFrame->StyleSVG();
   if (style->mFill.Type() == eStyleSVGPaintType_None) {
     return;
@@ -1416,9 +1421,11 @@ static gfxRect PathExtentsToMaxStrokeExtents(const gfxRect& aPathExtents,
   aOutPattern->InitColorPattern(ToDeviceColor(color));
 }
 
- void nsSVGUtils::MakeStrokePatternFor(
-    nsIFrame* aFrame, gfxContext* aContext, GeneralPattern* aOutPattern,
-    imgDrawingParams& aImgParams, SVGContextPaint* aContextPaint) {
+
+void nsSVGUtils::MakeStrokePatternFor(nsIFrame* aFrame, gfxContext* aContext,
+                                      GeneralPattern* aOutPattern,
+                                      imgDrawingParams& aImgParams,
+                                      SVGContextPaint* aContextPaint) {
   const nsStyleSVG* style = aFrame->StyleSVG();
   if (style->mStroke.Type() == eStyleSVGPaintType_None) {
     return;
@@ -1482,9 +1489,10 @@ static gfxRect PathExtentsToMaxStrokeExtents(const gfxRect& aPathExtents,
   aOutPattern->InitColorPattern(ToDeviceColor(color));
 }
 
- float nsSVGUtils::GetOpacity(nsStyleSVGOpacitySource aOpacityType,
-                                          const float& aOpacity,
-                                          SVGContextPaint* aContextPaint) {
+
+float nsSVGUtils::GetOpacity(nsStyleSVGOpacitySource aOpacityType,
+                             const float& aOpacity,
+                             SVGContextPaint* aContextPaint) {
   float opacity = 1.0f;
   switch (aOpacityType) {
     case eStyleSVGOpacitySource_Normal:

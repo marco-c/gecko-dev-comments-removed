@@ -510,10 +510,10 @@ nsresult nsMathMLmfencedFrame::ReflowChar(
   return NS_OK;
 }
 
- void nsMathMLmfencedFrame::PlaceChar(nsMathMLChar* aMathMLChar,
-                                                nscoord aDesiredAscent,
-                                                nsBoundingMetrics& bm,
-                                                nscoord& dx) {
+
+void nsMathMLmfencedFrame::PlaceChar(nsMathMLChar* aMathMLChar,
+                                     nscoord aDesiredAscent,
+                                     nsBoundingMetrics& bm, nscoord& dx) {
   aMathMLChar->GetBoundingMetrics(bm);
 
   
@@ -558,7 +558,8 @@ static nscoord GetMaxCharWidth(nsIFrame* aFrame, DrawTarget* aDrawTarget,
   return width;
 }
 
- void nsMathMLmfencedFrame::GetIntrinsicISizeMetrics(
+
+void nsMathMLmfencedFrame::GetIntrinsicISizeMetrics(
     gfxContext* aRenderingContext, ReflowOutput& aDesiredSize) {
   nscoord width = 0;
 

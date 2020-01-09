@@ -127,7 +127,8 @@ bool CSSKeyframeRule::IsCCLeaf() const {
 }
 
 #ifdef DEBUG
- void CSSKeyframeRule::List(FILE* out, int32_t aIndent) const {
+
+void CSSKeyframeRule::List(FILE* out, int32_t aIndent) const {
   nsAutoCString str;
   for (int32_t i = 0; i < aIndent; i++) {
     str.AppendLiteral("  ");
@@ -174,8 +175,9 @@ size_t CSSKeyframeRule::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
   return n;
 }
 
- JSObject* CSSKeyframeRule::WrapObject(
-    JSContext* aCx, JS::Handle<JSObject*> aGivenProto) {
+
+JSObject* CSSKeyframeRule::WrapObject(JSContext* aCx,
+                                      JS::Handle<JSObject*> aGivenProto) {
   return CSSKeyframeRule_Binding::Wrap(aCx, this, aGivenProto);
 }
 

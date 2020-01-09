@@ -19,9 +19,10 @@ PreloadedStyleSheet::PreloadedStyleSheet(nsIURI* aURI,
                                          css::SheetParsingMode aParsingMode)
     : mLoaded(false), mURI(aURI), mParsingMode(aParsingMode) {}
 
- nsresult PreloadedStyleSheet::Create(
-    nsIURI* aURI, css::SheetParsingMode aParsingMode,
-    PreloadedStyleSheet** aResult) {
+
+nsresult PreloadedStyleSheet::Create(nsIURI* aURI,
+                                     css::SheetParsingMode aParsingMode,
+                                     PreloadedStyleSheet** aResult) {
   *aResult = nullptr;
 
   RefPtr<PreloadedStyleSheet> preloadedSheet =

@@ -34,7 +34,8 @@ NS_DECLARE_FRAME_PROPERTY_DELETABLE(FontInflationDataProperty,
   return bfc->GetProperty(FontInflationDataProperty());
 }
 
- bool nsFontInflationData::UpdateFontInflationDataISizeFor(
+
+bool nsFontInflationData::UpdateFontInflationDataISizeFor(
     const ReflowInput &aReflowInput) {
   nsIFrame *bfc = aReflowInput.mFrame;
   NS_ASSERTION(bfc->GetStateBits() & NS_FRAME_FONT_INFLATION_FLOW_ROOT,
@@ -59,8 +60,8 @@ NS_DECLARE_FRAME_PROPERTY_DELETABLE(FontInflationDataProperty,
   return oldInflationEnabled && oldUsableISize != data->mUsableISize;
 }
 
- void nsFontInflationData::MarkFontInflationDataTextDirty(
-    nsIFrame *aBFCFrame) {
+
+void nsFontInflationData::MarkFontInflationDataTextDirty(nsIFrame *aBFCFrame) {
   NS_ASSERTION(aBFCFrame->GetStateBits() & NS_FRAME_FONT_INFLATION_FLOW_ROOT,
                "should have been given a flow root");
 

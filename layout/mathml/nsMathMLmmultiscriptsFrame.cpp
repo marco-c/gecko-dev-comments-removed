@@ -84,8 +84,10 @@ nsMathMLmmultiscriptsFrame::TransmitAutomaticData() {
   return NS_OK;
 }
 
- nsresult nsMathMLmmultiscriptsFrame::Place(
-    DrawTarget* aDrawTarget, bool aPlaceOrigin, ReflowOutput& aDesiredSize) {
+
+nsresult nsMathMLmmultiscriptsFrame::Place(DrawTarget* aDrawTarget,
+                                           bool aPlaceOrigin,
+                                           ReflowOutput& aDesiredSize) {
   nscoord subScriptShift = 0;
   nscoord supScriptShift = 0;
   float fontSizeInflation = nsLayoutUtils::FontSizeInflationFor(this);

@@ -1007,13 +1007,15 @@ static uint32_t GetFirstFrameDelay(imgIRequest* req) {
   return static_cast<uint32_t>(delay);
 }
 
- void nsRefreshDriver::Shutdown() {
+
+void nsRefreshDriver::Shutdown() {
   
   sRegularRateTimer = nullptr;
   sThrottledRateTimer = nullptr;
 }
 
- int32_t nsRefreshDriver::DefaultInterval() {
+
+int32_t nsRefreshDriver::DefaultInterval() {
   return NSToIntRound(1000.0 / gfxPlatform::GetDefaultFrameRate());
 }
 
@@ -1036,7 +1038,8 @@ double nsRefreshDriver::GetRegularTimerInterval() const {
   return 1000.0 / rate;
 }
 
- double nsRefreshDriver::GetThrottledTimerInterval() {
+
+double nsRefreshDriver::GetThrottledTimerInterval() {
   int32_t rate = Preferences::GetInt("layout.throttled_frame_rate", -1);
   if (rate <= 0) {
     rate = DEFAULT_THROTTLED_FRAME_RATE;
@@ -2268,7 +2271,8 @@ void nsRefreshDriver::SetThrottled(bool aThrottled) {
   }
 }
 
- void nsRefreshDriver::PVsyncActorCreated(VsyncChild* aVsyncChild) {
+
+void nsRefreshDriver::PVsyncActorCreated(VsyncChild* aVsyncChild) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(!XRE_IsParentProcess());
   RefPtr<RefreshDriverTimer> vsyncRefreshDriverTimer =
@@ -2350,8 +2354,8 @@ void nsRefreshDriver::CancelPendingAnimationEvents(
   mAnimationEventFlushObservers.RemoveElement(aDispatcher);
 }
 
- TimeStamp nsRefreshDriver::GetIdleDeadlineHint(
-    TimeStamp aDefault) {
+
+TimeStamp nsRefreshDriver::GetIdleDeadlineHint(TimeStamp aDefault) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(!aDefault.IsNull());
 
@@ -2368,7 +2372,8 @@ void nsRefreshDriver::CancelPendingAnimationEvents(
   return sRegularRateTimer->GetIdleDeadlineHint(aDefault);
 }
 
- Maybe<TimeStamp> nsRefreshDriver::GetNextTickHint() {
+
+Maybe<TimeStamp> nsRefreshDriver::GetNextTickHint() {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (!sRegularRateTimer) {
@@ -2390,12 +2395,14 @@ void nsRefreshDriver::Disconnect() {
   }
 }
 
- bool nsRefreshDriver::IsJankCritical() {
+
+bool nsRefreshDriver::IsJankCritical() {
   MOZ_ASSERT(NS_IsMainThread());
   return sActiveVsyncTimers > 0;
 }
 
- bool nsRefreshDriver::GetJankLevels(Vector<uint64_t>& aJank) {
+
+bool nsRefreshDriver::GetJankLevels(Vector<uint64_t>& aJank) {
   aJank.clear();
   return aJank.append(sJankLevels, ArrayLength(sJankLevels));
 }

@@ -88,8 +88,9 @@ void nsSVGImageFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
   imageLoader->AddNativeObserver(mListener);
 }
 
- void nsSVGImageFrame::DestroyFrom(
-    nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData) {
+
+void nsSVGImageFrame::DestroyFrom(nsIFrame* aDestructRoot,
+                                  PostDestroyData& aPostDestroyData) {
   if (GetStateBits() & NS_FRAME_IS_NONDISPLAY) {
     DecApproximateVisibleCount();
   }

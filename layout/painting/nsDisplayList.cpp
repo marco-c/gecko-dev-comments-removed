@@ -142,9 +142,9 @@ void AssertUniqueItem(nsDisplayItem* aItem) {
 }
 #endif
 
- bool ActiveScrolledRoot::IsAncestor(
-    const ActiveScrolledRoot* aAncestor,
-    const ActiveScrolledRoot* aDescendant) {
+
+bool ActiveScrolledRoot::IsAncestor(const ActiveScrolledRoot* aAncestor,
+                                    const ActiveScrolledRoot* aDescendant) {
   if (!aAncestor) {
     
     return true;
@@ -162,7 +162,8 @@ void AssertUniqueItem(nsDisplayItem* aItem) {
   return false;
 }
 
- nsCString ActiveScrolledRoot::ToString(
+
+nsCString ActiveScrolledRoot::ToString(
     const ActiveScrolledRoot* aActiveScrolledRoot) {
   nsAutoCString str;
   for (auto* asr = aActiveScrolledRoot; asr; asr = asr->mParent) {
@@ -796,7 +797,8 @@ static bool GenerateAndPushTextMask(nsIFrame* aFrame, gfxContext* aContext,
   return true;
 }
 
- void nsDisplayListBuilder::AddAnimationsAndTransitionsToLayer(
+
+void nsDisplayListBuilder::AddAnimationsAndTransitionsToLayer(
     Layer* aLayer, nsDisplayListBuilder* aBuilder, nsDisplayItem* aItem,
     nsIFrame* aFrame, nsCSSPropertyID aProperty) {
   MOZ_ASSERT(
@@ -933,8 +935,8 @@ void nsDisplayListBuilder::AutoCurrentActiveScrolledRootSetter::
   mUsed = true;
 }
 
- nsRect
-nsDisplayListBuilder::OutOfFlowDisplayData::ComputeVisibleRectForFrame(
+
+nsRect nsDisplayListBuilder::OutOfFlowDisplayData::ComputeVisibleRectForFrame(
     nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
     const nsRect& aVisibleRect, const nsRect& aDirtyRect,
     nsRect* aOutDirtyRect) {
@@ -3064,7 +3066,8 @@ nsDisplayItem::nsDisplayItem(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
   SetBuildingRect(visible);
 }
 
- bool nsDisplayItem::ForceActiveLayers() {
+
+bool nsDisplayItem::ForceActiveLayers() {
   static bool sForce = false;
   static bool sForceCached = false;
 
@@ -3510,7 +3513,8 @@ static bool SpecialCutoutRegionCase(nsDisplayListBuilder* aBuilder,
   return true;
 }
 
- bool nsDisplayBackgroundImage::AppendBackgroundItemsToTop(
+
+bool nsDisplayBackgroundImage::AppendBackgroundItemsToTop(
     nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
     const nsRect& aBackgroundRect, nsDisplayList* aList,
     bool aAllowWillPaintBorderOptimization, ComputedStyle* aComputedStyle,
@@ -4014,7 +4018,8 @@ bool nsDisplayBackgroundImage::ComputeVisibility(nsDisplayListBuilder* aBuilder,
   return mBackgroundStyle;
 }
 
- nsRegion nsDisplayBackgroundImage::GetInsideClipRegion(
+
+nsRegion nsDisplayBackgroundImage::GetInsideClipRegion(
     const nsDisplayItem* aItem, StyleGeometryBox aClip, const nsRect& aRect,
     const nsRect& aBackgroundRect) {
   nsRegion result;
@@ -5365,8 +5370,8 @@ bool nsDisplayBoxShadowInner::CanCreateWebRenderCommands(
   return true;
 }
 
- void
-nsDisplayBoxShadowInner::CreateInsetBoxShadowWebRenderCommands(
+
+void nsDisplayBoxShadowInner::CreateInsetBoxShadowWebRenderCommands(
     mozilla::wr::DisplayListBuilder& aBuilder, const StackingContextHelper& aSc,
     nsRegion& aVisibleRegion, nsIFrame* aFrame, const nsRect& aBorderRect) {
   if (!nsCSSRendering::ShouldPaintBoxShadowInner(aFrame)) {
@@ -5824,9 +5829,10 @@ static bool IsItemTooSmallForActiveLayer(nsIFrame* aFrame) {
                    gfxPrefs::LayoutMinActiveLayerSize());
 }
 
- bool nsDisplayOpacity::NeedsActiveLayer(
-    nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
-    bool aEnforceMinimumSize) {
+
+bool nsDisplayOpacity::NeedsActiveLayer(nsDisplayListBuilder* aBuilder,
+                                        nsIFrame* aFrame,
+                                        bool aEnforceMinimumSize) {
   if (EffectCompositor::HasAnimationsForCompositor(aFrame,
                                                    eCSSProperty_opacity) ||
       (ActiveLayerTracker::IsStyleAnimated(
@@ -6169,16 +6175,16 @@ bool nsDisplayBlendMode::CanMerge(const nsDisplayItem* aItem) const {
   return true;
 }
 
- nsDisplayBlendContainer*
-nsDisplayBlendContainer::CreateForMixBlendMode(
+
+nsDisplayBlendContainer* nsDisplayBlendContainer::CreateForMixBlendMode(
     nsDisplayListBuilder* aBuilder, nsIFrame* aFrame, nsDisplayList* aList,
     const ActiveScrolledRoot* aActiveScrolledRoot) {
   return MakeDisplayItem<nsDisplayBlendContainer>(aBuilder, aFrame, aList,
                                                   aActiveScrolledRoot, false);
 }
 
- nsDisplayBlendContainer*
-nsDisplayBlendContainer::CreateForBackgroundBlendMode(
+
+nsDisplayBlendContainer* nsDisplayBlendContainer::CreateForBackgroundBlendMode(
     nsDisplayListBuilder* aBuilder, nsIFrame* aFrame, nsDisplayList* aList,
     const ActiveScrolledRoot* aActiveScrolledRoot) {
   return MakeDisplayItem<nsDisplayBlendContainer>(aBuilder, aFrame, aList,
@@ -6236,7 +6242,8 @@ bool nsDisplayBlendContainer::CreateWebRenderCommands(
       aBuilder, aResources, sc, aManager, aDisplayListBuilder);
 }
 
- nsDisplayTableBlendContainer*
+
+nsDisplayTableBlendContainer*
 nsDisplayTableBlendContainer::CreateForBackgroundBlendMode(
     nsDisplayListBuilder* aBuilder, nsIFrame* aFrame, nsDisplayList* aList,
     const ActiveScrolledRoot* aActiveScrolledRoot, nsIFrame* aAncestorFrame) {
@@ -6629,8 +6636,8 @@ void nsDisplayFixedPosition::Init(nsDisplayListBuilder* aBuilder) {
   }
 }
 
- nsDisplayFixedPosition*
-nsDisplayFixedPosition::CreateForFixedBackground(
+
+nsDisplayFixedPosition* nsDisplayFixedPosition::CreateForFixedBackground(
     nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
     nsDisplayBackgroundImage* aImage, uint32_t aIndex) {
   nsDisplayList temp;
@@ -6766,7 +6773,8 @@ nsDisplayTableFixedPosition::nsDisplayTableFixedPosition(
   }
 }
 
- nsDisplayTableFixedPosition*
+
+nsDisplayTableFixedPosition*
 nsDisplayTableFixedPosition::CreateForFixedBackground(
     nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
     nsDisplayBackgroundImage* aImage, uint32_t aIndex,
@@ -7349,7 +7357,8 @@ bool nsDisplayTransform::ShouldFlattenAway(nsDisplayListBuilder* aBuilder) {
 
 
 
- Point3D nsDisplayTransform::GetDeltaToTransformOrigin(
+
+Point3D nsDisplayTransform::GetDeltaToTransformOrigin(
     const nsIFrame* aFrame, float aAppUnitsPerPixel,
     const nsRect* aBoundsOverride) {
   MOZ_ASSERT(aFrame, "Can't get delta for a null frame!");
@@ -7393,8 +7402,10 @@ bool nsDisplayTransform::ShouldFlattenAway(nsDisplayListBuilder* aBuilder) {
   return Point3D(origin.x * scale, origin.y * scale, z * scale);
 }
 
- bool nsDisplayTransform::ComputePerspectiveMatrix(
-    const nsIFrame* aFrame, float aAppUnitsPerPixel, Matrix4x4& aOutMatrix) {
+
+bool nsDisplayTransform::ComputePerspectiveMatrix(const nsIFrame* aFrame,
+                                                  float aAppUnitsPerPixel,
+                                                  Matrix4x4& aOutMatrix) {
   MOZ_ASSERT(aFrame, "Can't get delta for a null frame!");
   MOZ_ASSERT(aFrame->IsTransformed() || aFrame->BackfaceIsHidden() ||
                  aFrame->Combines3DTransformWithAncestors(),
@@ -7626,7 +7637,8 @@ bool nsDisplayBackgroundColor::CanUseAsyncAnimations(
          layerManager->GetBackendType() != layers::LayersBackend::LAYERS_WR;
 }
 
- auto nsDisplayTransform::ShouldPrerenderTransformedContent(
+
+auto nsDisplayTransform::ShouldPrerenderTransformedContent(
     nsDisplayListBuilder* aBuilder, nsIFrame* aFrame, nsRect* aDirtyRect)
     -> PrerenderDecision {
   

@@ -133,8 +133,10 @@ void nsMathMLSelectedFrame::Reflow(nsPresContext* aPresContext,
 }
 
 
- nsresult nsMathMLSelectedFrame::Place(
-    DrawTarget* aDrawTarget, bool aPlaceOrigin, ReflowOutput& aDesiredSize) {
+
+nsresult nsMathMLSelectedFrame::Place(DrawTarget* aDrawTarget,
+                                      bool aPlaceOrigin,
+                                      ReflowOutput& aDesiredSize) {
   nsIFrame* childFrame = GetSelectedFrame();
 
   if (mInvalidMarkup) {

@@ -417,8 +417,9 @@ HTMLInputElement* nsNumberControlFrame::GetAnonTextControl() {
   return HTMLInputElement::FromNode(mTextField);
 }
 
- nsNumberControlFrame*
-nsNumberControlFrame::GetNumberControlFrameForTextField(nsIFrame* aFrame) {
+
+nsNumberControlFrame* nsNumberControlFrame::GetNumberControlFrameForTextField(
+    nsIFrame* aFrame) {
   
   
   
@@ -438,8 +439,9 @@ nsNumberControlFrame::GetNumberControlFrameForTextField(nsIFrame* aFrame) {
   return nullptr;
 }
 
- nsNumberControlFrame*
-nsNumberControlFrame::GetNumberControlFrameForSpinButton(nsIFrame* aFrame) {
+
+nsNumberControlFrame* nsNumberControlFrame::GetNumberControlFrameForSpinButton(
+    nsIFrame* aFrame) {
   
   
   

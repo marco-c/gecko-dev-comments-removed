@@ -1018,8 +1018,9 @@ already_AddRefed<CSSValue> nsComputedDOMStyle::DoGetBottom() {
   return GetOffsetWidthFor(eSideBottom);
 }
 
- void nsComputedDOMStyle::SetToRGBAColor(
-    nsROCSSPrimitiveValue* aValue, nscolor aColor) {
+
+void nsComputedDOMStyle::SetToRGBAColor(nsROCSSPrimitiveValue* aValue,
+                                        nscolor aColor) {
   nsAutoString string;
   nsStyleUtil::GetSerializedColorValue(aColor, string);
   aValue->SetString(string);
@@ -1127,8 +1128,9 @@ already_AddRefed<CSSValue> nsComputedDOMStyle::DoGetTransform() {
   return GetTransformValue(display->mSpecifiedTransform);
 }
 
- already_AddRefed<nsROCSSPrimitiveValue>
-nsComputedDOMStyle::MatrixToCSSValue(const mozilla::gfx::Matrix4x4& matrix) {
+
+already_AddRefed<nsROCSSPrimitiveValue> nsComputedDOMStyle::MatrixToCSSValue(
+    const mozilla::gfx::Matrix4x4& matrix) {
   bool is3D = !matrix.Is2D();
 
   nsAutoString resultString(NS_LITERAL_STRING("matrix"));
@@ -3654,14 +3656,16 @@ void nsComputedDOMStyle::ParentChainChanged(nsIContent* aContent) {
   ClearComputedStyle();
 }
 
- ComputedStyleMap* nsComputedDOMStyle::GetComputedStyleMap() {
+
+ComputedStyleMap* nsComputedDOMStyle::GetComputedStyleMap() {
   static ComputedStyleMap map{};
   return &map;
 }
 
 static StaticAutoPtr<nsTArray<const char*>> gCallbackPrefs;
 
- void nsComputedDOMStyle::RegisterPrefChangeCallbacks() {
+
+void nsComputedDOMStyle::RegisterPrefChangeCallbacks() {
   
   
   
@@ -3692,7 +3696,8 @@ static StaticAutoPtr<nsTArray<const char*>> gCallbackPrefs;
                                  GetComputedStyleMap());
 }
 
- void nsComputedDOMStyle::UnregisterPrefChangeCallbacks() {
+
+void nsComputedDOMStyle::UnregisterPrefChangeCallbacks() {
   if (!gCallbackPrefs) {
     return;
   }

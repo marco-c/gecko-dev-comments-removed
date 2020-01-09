@@ -965,7 +965,8 @@ nsRect nsTextBoxFrame::GetComponentAlphaBounds() const {
 
 bool nsTextBoxFrame::ComputesOwnOverflowArea() { return true; }
 
- void nsTextBoxFrame::MarkIntrinsicISizesDirty() {
+
+void nsTextBoxFrame::MarkIntrinsicISizesDirty() {
   mNeedsRecalc = true;
   nsLeafBoxFrame::MarkIntrinsicISizesDirty();
 }

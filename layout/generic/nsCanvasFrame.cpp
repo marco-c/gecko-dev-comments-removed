@@ -640,8 +640,8 @@ void nsCanvasFrame::PaintFocus(DrawTarget* aDrawTarget, nsPoint aPt) {
                              color->mColor);
 }
 
- nscoord nsCanvasFrame::GetMinISize(
-    gfxContext* aRenderingContext) {
+
+nscoord nsCanvasFrame::GetMinISize(gfxContext* aRenderingContext) {
   nscoord result;
   DISPLAY_MIN_INLINE_SIZE(this, result);
   if (mFrames.IsEmpty())
@@ -651,8 +651,8 @@ void nsCanvasFrame::PaintFocus(DrawTarget* aDrawTarget, nsPoint aPt) {
   return result;
 }
 
- nscoord nsCanvasFrame::GetPrefISize(
-    gfxContext* aRenderingContext) {
+
+nscoord nsCanvasFrame::GetPrefISize(gfxContext* aRenderingContext) {
   nscoord result;
   DISPLAY_PREF_INLINE_SIZE(this, result);
   if (mFrames.IsEmpty())

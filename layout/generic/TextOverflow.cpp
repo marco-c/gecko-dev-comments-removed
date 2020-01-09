@@ -341,7 +341,8 @@ TextOverflow::TextOverflow(nsDisplayListBuilder* aBuilder,
   
 }
 
- Maybe<TextOverflow> TextOverflow::WillProcessLines(
+
+Maybe<TextOverflow> TextOverflow::WillProcessLines(
     nsDisplayListBuilder* aBuilder, nsIFrame* aBlockFrame) {
   
   if (aBuilder->IsForEventDelivery() || aBuilder->IsForFrameVisibility() ||
@@ -760,13 +761,15 @@ void TextOverflow::PruneDisplayListContents(
   aList->AppendToTop(&saved);
 }
 
- bool TextOverflow::HasClippedOverflow(nsIFrame* aBlockFrame) {
+
+bool TextOverflow::HasClippedOverflow(nsIFrame* aBlockFrame) {
   const nsStyleTextReset* style = aBlockFrame->StyleTextReset();
   return style->mTextOverflow.mLeft.mType == NS_STYLE_TEXT_OVERFLOW_CLIP &&
          style->mTextOverflow.mRight.mType == NS_STYLE_TEXT_OVERFLOW_CLIP;
 }
 
- bool TextOverflow::CanHaveTextOverflow(nsIFrame* aBlockFrame) {
+
+bool TextOverflow::CanHaveTextOverflow(nsIFrame* aBlockFrame) {
   
   if (HasClippedOverflow(aBlockFrame) ||
       IsInlineAxisOverflowVisible(aBlockFrame)) {

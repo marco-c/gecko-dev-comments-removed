@@ -92,28 +92,30 @@ nsresult nsFirstLetterFrame::GetChildFrameContainingOffset(
 
 
 
- void nsFirstLetterFrame::AddInlineMinISize(
+
+void nsFirstLetterFrame::AddInlineMinISize(
     gfxContext* aRenderingContext, nsIFrame::InlineMinISizeData* aData) {
   DoInlineIntrinsicISize(aRenderingContext, aData, nsLayoutUtils::MIN_ISIZE);
 }
 
 
 
- void nsFirstLetterFrame::AddInlinePrefISize(
+
+void nsFirstLetterFrame::AddInlinePrefISize(
     gfxContext* aRenderingContext, nsIFrame::InlinePrefISizeData* aData) {
   DoInlineIntrinsicISize(aRenderingContext, aData, nsLayoutUtils::PREF_ISIZE);
   aData->mLineIsEmpty = false;
 }
 
 
- nscoord nsFirstLetterFrame::GetMinISize(
-    gfxContext* aRenderingContext) {
+
+nscoord nsFirstLetterFrame::GetMinISize(gfxContext* aRenderingContext) {
   return nsLayoutUtils::MinISizeFromInline(this, aRenderingContext);
 }
 
 
- nscoord nsFirstLetterFrame::GetPrefISize(
-    gfxContext* aRenderingContext) {
+
+nscoord nsFirstLetterFrame::GetPrefISize(gfxContext* aRenderingContext) {
   return nsLayoutUtils::PrefISizeFromInline(this, aRenderingContext);
 }
 
@@ -271,7 +273,8 @@ void nsFirstLetterFrame::Reflow(nsPresContext* aPresContext,
   NS_FRAME_SET_TRUNCATION(aReflowStatus, aReflowInput, aMetrics);
 }
 
- bool nsFirstLetterFrame::CanContinueTextRun() const {
+
+bool nsFirstLetterFrame::CanContinueTextRun() const {
   
   return true;
 }

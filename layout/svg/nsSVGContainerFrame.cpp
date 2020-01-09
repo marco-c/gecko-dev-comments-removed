@@ -97,8 +97,8 @@ bool nsSVGContainerFrame::ComputeCustomOverflow(
 
 
 
- void nsSVGContainerFrame::ReflowSVGNonDisplayText(
-    nsIFrame* aContainer) {
+
+void nsSVGContainerFrame::ReflowSVGNonDisplayText(nsIFrame* aContainer) {
   if (!(aContainer->GetStateBits() & NS_FRAME_IS_DIRTY)) {
     return;
   }

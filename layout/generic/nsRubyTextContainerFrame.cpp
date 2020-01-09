@@ -44,36 +44,41 @@ nsresult nsRubyTextContainerFrame::GetFrameName(nsAString& aResult) const {
 }
 #endif
 
- bool nsRubyTextContainerFrame::IsFrameOfType(
-    uint32_t aFlags) const {
+
+bool nsRubyTextContainerFrame::IsFrameOfType(uint32_t aFlags) const {
   if (aFlags & (eSupportsCSSTransforms | eSupportsContainLayoutAndPaint)) {
     return false;
   }
   return nsContainerFrame::IsFrameOfType(aFlags);
 }
 
- void nsRubyTextContainerFrame::SetInitialChildList(
-    ChildListID aListID, nsFrameList& aChildList) {
+
+void nsRubyTextContainerFrame::SetInitialChildList(ChildListID aListID,
+                                                   nsFrameList& aChildList) {
   nsContainerFrame::SetInitialChildList(aListID, aChildList);
   if (aListID == kPrincipalList) {
     UpdateSpanFlag();
   }
 }
 
- void nsRubyTextContainerFrame::AppendFrames(
-    ChildListID aListID, nsFrameList& aFrameList) {
+
+void nsRubyTextContainerFrame::AppendFrames(ChildListID aListID,
+                                            nsFrameList& aFrameList) {
   nsContainerFrame::AppendFrames(aListID, aFrameList);
   UpdateSpanFlag();
 }
 
- void nsRubyTextContainerFrame::InsertFrames(
-    ChildListID aListID, nsIFrame* aPrevFrame, nsFrameList& aFrameList) {
+
+void nsRubyTextContainerFrame::InsertFrames(ChildListID aListID,
+                                            nsIFrame* aPrevFrame,
+                                            nsFrameList& aFrameList) {
   nsContainerFrame::InsertFrames(aListID, aPrevFrame, aFrameList);
   UpdateSpanFlag();
 }
 
- void nsRubyTextContainerFrame::RemoveFrame(ChildListID aListID,
-                                                         nsIFrame* aOldFrame) {
+
+void nsRubyTextContainerFrame::RemoveFrame(ChildListID aListID,
+                                           nsIFrame* aOldFrame) {
   nsContainerFrame::RemoveFrame(aListID, aOldFrame);
   UpdateSpanFlag();
 }
@@ -97,9 +102,11 @@ void nsRubyTextContainerFrame::UpdateSpanFlag() {
   }
 }
 
- void nsRubyTextContainerFrame::Reflow(
-    nsPresContext* aPresContext, ReflowOutput& aDesiredSize,
-    const ReflowInput& aReflowInput, nsReflowStatus& aStatus) {
+
+void nsRubyTextContainerFrame::Reflow(nsPresContext* aPresContext,
+                                      ReflowOutput& aDesiredSize,
+                                      const ReflowInput& aReflowInput,
+                                      nsReflowStatus& aStatus) {
   MarkInReflow();
   DO_GLOBAL_REFLOW_COUNT("nsRubyTextContainerFrame");
   DISPLAY_REFLOW(aPresContext, this, aReflowInput, aDesiredSize, aStatus);

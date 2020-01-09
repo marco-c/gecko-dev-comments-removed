@@ -394,10 +394,11 @@ void nsResizerFrame::AdjustDimensions(int32_t* aPos, int32_t* aSize,
   if (aResizerDirection == -1) *aPos += oldSize - *aSize;
 }
 
- void nsResizerFrame::ResizeContent(nsIContent* aContent,
-                                                const Direction& aDirection,
-                                                const SizeInfo& aSizeInfo,
-                                                SizeInfo* aOriginalSizeInfo) {
+
+void nsResizerFrame::ResizeContent(nsIContent* aContent,
+                                   const Direction& aDirection,
+                                   const SizeInfo& aSizeInfo,
+                                   SizeInfo* aOriginalSizeInfo) {
   
   
   if (aContent->IsXULElement()) {
@@ -450,8 +451,9 @@ void nsResizerFrame::AdjustDimensions(int32_t* aPos, int32_t* aSize,
   }
 }
 
- void nsResizerFrame::MaybePersistOriginalSize(
-    nsIContent* aContent, const SizeInfo& aSizeInfo) {
+
+void nsResizerFrame::MaybePersistOriginalSize(nsIContent* aContent,
+                                              const SizeInfo& aSizeInfo) {
   nsresult rv;
 
   aContent->GetProperty(nsGkAtoms::_moz_original_size, &rv);
@@ -463,7 +465,8 @@ void nsResizerFrame::AdjustDimensions(int32_t* aPos, int32_t* aSize,
   if (NS_SUCCEEDED(rv)) sizeInfo.forget();
 }
 
- void nsResizerFrame::RestoreOriginalSize(nsIContent* aContent) {
+
+void nsResizerFrame::RestoreOriginalSize(nsIContent* aContent) {
   nsresult rv;
   SizeInfo* sizeInfo = static_cast<SizeInfo*>(
       aContent->GetProperty(nsGkAtoms::_moz_original_size, &rv));

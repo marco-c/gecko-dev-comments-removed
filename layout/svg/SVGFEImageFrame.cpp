@@ -75,8 +75,9 @@ nsIFrame* NS_NewSVGFEImageFrame(nsIPresShell* aPresShell,
 
 NS_IMPL_FRAMEARENA_HELPERS(SVGFEImageFrame)
 
- void SVGFEImageFrame::DestroyFrom(
-    nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData) {
+
+void SVGFEImageFrame::DestroyFrom(nsIFrame* aDestructRoot,
+                                  PostDestroyData& aPostDestroyData) {
   DecApproximateVisibleCount();
 
   nsCOMPtr<nsIImageLoadingContent> imageLoader =

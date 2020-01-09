@@ -295,19 +295,24 @@ void nsMathMLmencloseFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   }
 }
 
- nsresult nsMathMLmencloseFrame::MeasureForWidth(
-    DrawTarget* aDrawTarget, ReflowOutput& aDesiredSize) {
+
+nsresult nsMathMLmencloseFrame::MeasureForWidth(DrawTarget* aDrawTarget,
+                                                ReflowOutput& aDesiredSize) {
   return PlaceInternal(aDrawTarget, false, aDesiredSize, true);
 }
 
- nsresult nsMathMLmencloseFrame::Place(
-    DrawTarget* aDrawTarget, bool aPlaceOrigin, ReflowOutput& aDesiredSize) {
+
+nsresult nsMathMLmencloseFrame::Place(DrawTarget* aDrawTarget,
+                                      bool aPlaceOrigin,
+                                      ReflowOutput& aDesiredSize) {
   return PlaceInternal(aDrawTarget, aPlaceOrigin, aDesiredSize, false);
 }
 
- nsresult nsMathMLmencloseFrame::PlaceInternal(
-    DrawTarget* aDrawTarget, bool aPlaceOrigin, ReflowOutput& aDesiredSize,
-    bool aWidthOnly) {
+
+nsresult nsMathMLmencloseFrame::PlaceInternal(DrawTarget* aDrawTarget,
+                                              bool aPlaceOrigin,
+                                              ReflowOutput& aDesiredSize,
+                                              bool aWidthOnly) {
   
   
   

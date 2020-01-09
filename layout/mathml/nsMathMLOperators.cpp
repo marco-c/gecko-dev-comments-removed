@@ -395,8 +395,8 @@ void nsMathMLOperators::LookupOperators(const nsString& aOperator,
   }
 }
 
- bool nsMathMLOperators::IsMirrorableOperator(
-    const nsString& aOperator) {
+
+bool nsMathMLOperators::IsMirrorableOperator(const nsString& aOperator) {
   
   
   
@@ -407,7 +407,8 @@ void nsMathMLOperators::LookupOperators(const nsString& aOperator,
   return NS_MATHML_OPERATOR_IS_MIRRORABLE(flags);
 }
 
- nsStretchDirection nsMathMLOperators::GetStretchyDirection(
+
+nsStretchDirection nsMathMLOperators::GetStretchyDirection(
     const nsString& aOperator) {
   
   

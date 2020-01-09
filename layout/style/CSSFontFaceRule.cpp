@@ -182,12 +182,13 @@ void CSSFontFaceRule::GetCssText(nsAString& aCssText) const {
 
 nsICSSDeclaration* CSSFontFaceRule::Style() { return &mDecl; }
 
- size_t CSSFontFaceRule::SizeOfIncludingThis(
-    MallocSizeOf aMallocSizeOf) const {
+
+size_t CSSFontFaceRule::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
   return aMallocSizeOf(this);
 }
 
- JSObject* CSSFontFaceRule::WrapObject(
-    JSContext* aCx, JS::Handle<JSObject*> aGivenProto) {
+
+JSObject* CSSFontFaceRule::WrapObject(JSContext* aCx,
+                                      JS::Handle<JSObject*> aGivenProto) {
   return CSSFontFaceRule_Binding::Wrap(aCx, this, aGivenProto);
 }

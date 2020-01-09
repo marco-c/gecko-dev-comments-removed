@@ -661,8 +661,8 @@ nsresult nsSubDocumentFrame::GetFrameName(nsAString& aResult) const {
 }
 #endif
 
- nscoord nsSubDocumentFrame::GetMinISize(
-    gfxContext* aRenderingContext) {
+
+nscoord nsSubDocumentFrame::GetMinISize(gfxContext* aRenderingContext) {
   nscoord result;
   DISPLAY_MIN_INLINE_SIZE(this, result);
 
@@ -676,8 +676,8 @@ nsresult nsSubDocumentFrame::GetFrameName(nsAString& aResult) const {
   return result;
 }
 
- nscoord nsSubDocumentFrame::GetPrefISize(
-    gfxContext* aRenderingContext) {
+
+nscoord nsSubDocumentFrame::GetPrefISize(gfxContext* aRenderingContext) {
   nscoord result;
   DISPLAY_PREF_INLINE_SIZE(this, result);
 
@@ -691,7 +691,8 @@ nsresult nsSubDocumentFrame::GetFrameName(nsAString& aResult) const {
   return result;
 }
 
- IntrinsicSize nsSubDocumentFrame::GetIntrinsicSize() {
+
+IntrinsicSize nsSubDocumentFrame::GetIntrinsicSize() {
   nsIFrame* subDocRoot = ObtainIntrinsicSizeFrame();
   if (subDocRoot) {
     return subDocRoot->GetIntrinsicSize();
@@ -699,7 +700,8 @@ nsresult nsSubDocumentFrame::GetFrameName(nsAString& aResult) const {
   return nsAtomicContainerFrame::GetIntrinsicSize();
 }
 
- nsSize nsSubDocumentFrame::GetIntrinsicRatio() {
+
+nsSize nsSubDocumentFrame::GetIntrinsicRatio() {
   nsIFrame* subDocRoot = ObtainIntrinsicSizeFrame();
   if (subDocRoot) {
     return subDocRoot->GetIntrinsicRatio();

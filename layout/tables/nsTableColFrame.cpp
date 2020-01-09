@@ -62,8 +62,8 @@ void nsTableColFrame::SetColType(nsTableColType aType) {
   AddStateBits(nsFrameState(type << COL_TYPE_OFFSET));
 }
 
- void nsTableColFrame::DidSetComputedStyle(
-    ComputedStyle* aOldComputedStyle) {
+
+void nsTableColFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
   nsSplittableFrame::DidSetComputedStyle(aOldComputedStyle);
 
   if (!aOldComputedStyle)  

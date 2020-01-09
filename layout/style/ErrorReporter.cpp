@@ -111,7 +111,8 @@ void ErrorReporter::InitGlobals() {
 namespace mozilla {
 namespace css {
 
- void ErrorReporter::ReleaseGlobals() {
+
+void ErrorReporter::ReleaseGlobals() {
   NS_IF_RELEASE(sConsoleService);
   NS_IF_RELEASE(sScriptErrorFactory);
   NS_IF_RELEASE(sStringBundle);

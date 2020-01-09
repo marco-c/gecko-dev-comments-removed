@@ -166,8 +166,8 @@ void nsTableRowFrame::DestroyFrom(nsIFrame* aDestructRoot,
   nsContainerFrame::DestroyFrom(aDestructRoot, aPostDestroyData);
 }
 
- void nsTableRowFrame::DidSetComputedStyle(
-    ComputedStyle* aOldComputedStyle) {
+
+void nsTableRowFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
   nsContainerFrame::DidSetComputedStyle(aOldComputedStyle);
 
   if (!aOldComputedStyle)  
@@ -267,15 +267,14 @@ void nsTableRowFrame::RemoveFrame(ChildListID aListID, nsIFrame* aOldFrame) {
   tableFrame->SetGeometryDirty();
 }
 
- nsMargin nsTableRowFrame::GetUsedMargin() const {
-  return nsMargin(0, 0, 0, 0);
-}
 
- nsMargin nsTableRowFrame::GetUsedBorder() const {
-  return nsMargin(0, 0, 0, 0);
-}
+nsMargin nsTableRowFrame::GetUsedMargin() const { return nsMargin(0, 0, 0, 0); }
 
- nsMargin nsTableRowFrame::GetUsedPadding() const {
+
+nsMargin nsTableRowFrame::GetUsedBorder() const { return nsMargin(0, 0, 0, 0); }
+
+
+nsMargin nsTableRowFrame::GetUsedPadding() const {
   return nsMargin(0, 0, 0, 0);
 }
 

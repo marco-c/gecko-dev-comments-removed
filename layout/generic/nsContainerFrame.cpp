@@ -364,7 +364,8 @@ void nsContainerFrame::BuildDisplayListForNonBlockChildren(
   }
 }
 
- void nsContainerFrame::ChildIsDirty(nsIFrame* aChild) {
+
+void nsContainerFrame::ChildIsDirty(nsIFrame* aChild) {
   NS_ASSERTION(NS_SUBTREE_DIRTY(aChild), "child isn't actually dirty");
 
   AddStateBits(NS_FRAME_HAS_DIRTY_CHILDREN);
@@ -1633,7 +1634,8 @@ nsIFrame* nsContainerFrame::PullNextInFlowChild(
   return frame;
 }
 
- void nsContainerFrame::ReparentFloatsForInlineChild(
+
+void nsContainerFrame::ReparentFloatsForInlineChild(
     nsIFrame* aOurLineContainer, nsIFrame* aFrame, bool aReparentSiblings,
     ReparentingDirection aDirection) {
   

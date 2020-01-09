@@ -89,9 +89,11 @@ nsMathMLFrame::UpdatePresentationData(uint32_t aFlagsValues,
 
 
 
- void nsMathMLFrame::ResolveMathMLCharStyle(
-    nsPresContext* aPresContext, nsIContent* aContent,
-    ComputedStyle* aParentComputedStyle, nsMathMLChar* aMathMLChar) {
+
+void nsMathMLFrame::ResolveMathMLCharStyle(nsPresContext* aPresContext,
+                                           nsIContent* aContent,
+                                           ComputedStyle* aParentComputedStyle,
+                                           nsMathMLChar* aMathMLChar) {
   PseudoStyleType pseudoType = PseudoStyleType::mozMathAnonymous;  
   RefPtr<ComputedStyle> newComputedStyle;
   newComputedStyle = aPresContext->StyleSet()->ResolvePseudoElementStyle(
@@ -100,8 +102,9 @@ nsMathMLFrame::UpdatePresentationData(uint32_t aFlagsValues,
   aMathMLChar->SetComputedStyle(newComputedStyle);
 }
 
- void nsMathMLFrame::GetEmbellishDataFrom(
-    nsIFrame* aFrame, nsEmbellishData& aEmbellishData) {
+
+void nsMathMLFrame::GetEmbellishDataFrom(nsIFrame* aFrame,
+                                         nsEmbellishData& aEmbellishData) {
   
   aEmbellishData.flags = 0;
   aEmbellishData.coreFrame = nullptr;
@@ -119,7 +122,8 @@ nsMathMLFrame::UpdatePresentationData(uint32_t aFlagsValues,
 
 
 
- void nsMathMLFrame::GetPresentationDataFrom(
+
+void nsMathMLFrame::GetPresentationDataFrom(
     nsIFrame* aFrame, nsPresentationData& aPresentationData, bool aClimbTree) {
   
   aPresentationData.flags = 0;
@@ -154,9 +158,10 @@ nsMathMLFrame::UpdatePresentationData(uint32_t aFlagsValues,
       "bad MathML markup - could not find the top <math> element");
 }
 
- void nsMathMLFrame::GetRuleThickness(DrawTarget* aDrawTarget,
-                                                  nsFontMetrics* aFontMetrics,
-                                                  nscoord& aRuleThickness) {
+
+void nsMathMLFrame::GetRuleThickness(DrawTarget* aDrawTarget,
+                                     nsFontMetrics* aFontMetrics,
+                                     nscoord& aRuleThickness) {
   nscoord xHeight = aFontMetrics->XHeight();
   char16_t overBar = 0x00AF;
   nsBoundingMetrics bm = nsLayoutUtils::AppUnitBoundsOfString(
@@ -168,9 +173,10 @@ nsMathMLFrame::UpdatePresentationData(uint32_t aFlagsValues,
   }
 }
 
- void nsMathMLFrame::GetAxisHeight(DrawTarget* aDrawTarget,
-                                               nsFontMetrics* aFontMetrics,
-                                               nscoord& aAxisHeight) {
+
+void nsMathMLFrame::GetAxisHeight(DrawTarget* aDrawTarget,
+                                  nsFontMetrics* aFontMetrics,
+                                  nscoord& aAxisHeight) {
   gfxFont* mathFont = aFontMetrics->GetThebesFontGroup()->GetFirstMathFont();
   if (mathFont) {
     aAxisHeight = mathFont->MathTable()->Constant(
@@ -189,10 +195,11 @@ nsMathMLFrame::UpdatePresentationData(uint32_t aFlagsValues,
   }
 }
 
- nscoord nsMathMLFrame::CalcLength(nsPresContext* aPresContext,
-                                               ComputedStyle* aComputedStyle,
-                                               const nsCSSValue& aCSSValue,
-                                               float aFontSizeInflation) {
+
+nscoord nsMathMLFrame::CalcLength(nsPresContext* aPresContext,
+                                  ComputedStyle* aComputedStyle,
+                                  const nsCSSValue& aCSSValue,
+                                  float aFontSizeInflation) {
   NS_ASSERTION(aCSSValue.IsLengthUnit(), "not a length unit");
 
   if (aCSSValue.IsPixelLengthUnit()) {
@@ -217,10 +224,12 @@ nsMathMLFrame::UpdatePresentationData(uint32_t aFlagsValues,
   return 0;
 }
 
- void nsMathMLFrame::ParseNumericValue(
-    const nsString& aString, nscoord* aLengthValue, uint32_t aFlags,
-    nsPresContext* aPresContext, ComputedStyle* aComputedStyle,
-    float aFontSizeInflation) {
+
+void nsMathMLFrame::ParseNumericValue(const nsString& aString,
+                                      nscoord* aLengthValue, uint32_t aFlags,
+                                      nsPresContext* aPresContext,
+                                      ComputedStyle* aComputedStyle,
+                                      float aFontSizeInflation) {
   nsCSSValue cssValue;
 
   if (!nsMathMLElement::ParseNumericValue(aString, cssValue, aFlags,

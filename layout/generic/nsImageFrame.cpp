@@ -579,8 +579,9 @@ static bool HasAltText(const Element& aElement) {
 
 
 
- bool nsImageFrame::ShouldCreateImageFrameFor(
-    const Element& aElement, ComputedStyle& aStyle) {
+
+bool nsImageFrame::ShouldCreateImageFrameFor(const Element& aElement,
+                                             ComputedStyle& aStyle) {
   EventStates state = aElement.State();
   if (IMAGE_OK(state, HaveSpecifiedSize(aStyle.StylePosition()))) {
     
@@ -945,7 +946,8 @@ nscoord nsImageFrame::GetContinuationOffset() const {
   return offset;
 }
 
- nscoord nsImageFrame::GetMinISize(gfxContext* aRenderingContext) {
+
+nscoord nsImageFrame::GetMinISize(gfxContext* aRenderingContext) {
   
   
   DebugOnly<nscoord> result;
@@ -957,8 +959,8 @@ nscoord nsImageFrame::GetContinuationOffset() const {
   return iSize.GetUnit() == eStyleUnit_Coord ? iSize.GetCoordValue() : 0;
 }
 
- nscoord nsImageFrame::GetPrefISize(
-    gfxContext* aRenderingContext) {
+
+nscoord nsImageFrame::GetPrefISize(gfxContext* aRenderingContext) {
   
   
   DebugOnly<nscoord> result;
@@ -971,13 +973,11 @@ nscoord nsImageFrame::GetContinuationOffset() const {
   return iSize.GetUnit() == eStyleUnit_Coord ? iSize.GetCoordValue() : 0;
 }
 
- IntrinsicSize nsImageFrame::GetIntrinsicSize() {
-  return mIntrinsicSize;
-}
 
- nsSize nsImageFrame::GetIntrinsicRatio() {
-  return mIntrinsicRatio;
-}
+IntrinsicSize nsImageFrame::GetIntrinsicSize() { return mIntrinsicSize; }
+
+
+nsSize nsImageFrame::GetIntrinsicRatio() { return mIntrinsicRatio; }
 
 void nsImageFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
                           const ReflowInput& aReflowInput,
@@ -1846,8 +1846,9 @@ LayerState nsDisplayImage::GetLayerState(
   return LAYER_ACTIVE;
 }
 
- nsRegion nsDisplayImage::GetOpaqueRegion(
-    nsDisplayListBuilder* aBuilder, bool* aSnap) const {
+
+nsRegion nsDisplayImage::GetOpaqueRegion(nsDisplayListBuilder* aBuilder,
+                                         bool* aSnap) const {
   *aSnap = false;
   if (mImage && mImage->WillDrawOpaqueNow()) {
     const nsRect frameContentBox = GetBounds(aSnap);
@@ -2627,8 +2628,9 @@ static bool IsInAutoWidthTableCellForQuirk(nsIFrame* aFrame) {
   return false;
 }
 
- void nsImageFrame::AddInlineMinISize(
-    gfxContext* aRenderingContext, nsIFrame::InlineMinISizeData* aData) {
+
+void nsImageFrame::AddInlineMinISize(gfxContext* aRenderingContext,
+                                     nsIFrame::InlineMinISizeData* aData) {
   nscoord isize = nsLayoutUtils::IntrinsicForContainer(
       aRenderingContext, this, nsLayoutUtils::MIN_ISIZE);
   bool canBreak = !IsInAutoWidthTableCellForQuirk(this);

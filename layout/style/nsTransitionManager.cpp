@@ -340,7 +340,8 @@ bool CSSTransition::HasLowerCompositeOrderThan(
          nsCSSProps::GetStringValue(aOther.TransitionProperty());
 }
 
- Nullable<TimeDuration> CSSTransition::GetCurrentTimeAt(
+
+Nullable<TimeDuration> CSSTransition::GetCurrentTimeAt(
     const dom::DocumentTimeline& aTimeline, const TimeStamp& aBaseTime,
     const TimeDuration& aStartTime, double aPlaybackRate) {
   Nullable<TimeDuration> result;

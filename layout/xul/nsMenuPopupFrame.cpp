@@ -1612,9 +1612,8 @@ nsresult nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame,
   return NS_OK;
 }
 
- nsMenuFrame* nsMenuPopupFrame::GetCurrentMenuItem() {
-  return mCurrentMenu;
-}
+
+nsMenuFrame* nsMenuPopupFrame::GetCurrentMenuItem() { return mCurrentMenu; }
 
 LayoutDeviceIntRect nsMenuPopupFrame::GetConstraintRect(
     const LayoutDeviceIntRect& aAnchorRect,

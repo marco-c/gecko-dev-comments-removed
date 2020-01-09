@@ -310,7 +310,8 @@ PointerCapabilities Gecko_MediaFeatures_AllPointerCapabilities(
                                 LookAndFeel::eIntID_AllPointerCapabilities);
 }
 
- void nsMediaFeatures::InitSystemMetrics() {
+
+void nsMediaFeatures::InitSystemMetrics() {
   if (sSystemMetrics) return;
 
   MOZ_ASSERT(NS_IsMainThread());
@@ -467,9 +468,11 @@ PointerCapabilities Gecko_MediaFeatures_AllPointerCapabilities(
   }
 }
 
- void nsMediaFeatures::FreeSystemMetrics() {
+
+void nsMediaFeatures::FreeSystemMetrics() {
   delete sSystemMetrics;
   sSystemMetrics = nullptr;
 }
 
- void nsMediaFeatures::Shutdown() { FreeSystemMetrics(); }
+
+void nsMediaFeatures::Shutdown() { FreeSystemMetrics(); }

@@ -551,8 +551,9 @@ void nsCSSValueList::CloneInto(nsCSSValueList* aList) const {
   aList->mNext = mNext ? mNext->Clone() : nullptr;
 }
 
- bool nsCSSValueList::Equal(const nsCSSValueList* aList1,
-                                        const nsCSSValueList* aList2) {
+
+bool nsCSSValueList::Equal(const nsCSSValueList* aList1,
+                           const nsCSSValueList* aList2) {
   if (aList1 == aList2) {
     return true;
   }
@@ -656,8 +657,9 @@ nsCSSValuePairList* nsCSSValuePairList::Clone() const {
   return result;
 }
 
- bool nsCSSValuePairList::Equal(const nsCSSValuePairList* aList1,
-                                            const nsCSSValuePairList* aList2) {
+
+bool nsCSSValuePairList::Equal(const nsCSSValuePairList* aList1,
+                               const nsCSSValuePairList* aList2) {
   if (aList1 == aList2) {
     return true;
   }

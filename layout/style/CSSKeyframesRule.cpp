@@ -172,13 +172,15 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(CSSKeyframesRule, Rule)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mKeyframeList)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
- bool CSSKeyframesRule::IsCCLeaf() const {
+
+bool CSSKeyframesRule::IsCCLeaf() const {
   
   return Rule::IsCCLeaf() && !mKeyframeList;
 }
 
 #ifdef DEBUG
- void CSSKeyframesRule::List(FILE* out, int32_t aIndent) const {
+
+void CSSKeyframesRule::List(FILE* out, int32_t aIndent) const {
   nsAutoCString str;
   for (int32_t i = 0; i < aIndent; i++) {
     str.AppendLiteral("  ");
@@ -188,7 +190,8 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 }
 #endif
 
- void CSSKeyframesRule::DropSheetReference() {
+
+void CSSKeyframesRule::DropSheetReference() {
   if (mKeyframeList) {
     mKeyframeList->DropSheetReference();
   }
@@ -258,7 +261,8 @@ void CSSKeyframesRule::DeleteRule(const nsAString& aKey) {
   });
 }
 
- void CSSKeyframesRule::GetCssText(nsAString& aCssText) const {
+
+void CSSKeyframesRule::GetCssText(nsAString& aCssText) const {
   Servo_KeyframesRule_GetCssText(mRawRule, &aCssText);
 }
 
@@ -280,8 +284,8 @@ void CSSKeyframesRule::DeleteRule(const nsAString& aKey) {
   return nullptr;
 }
 
- size_t CSSKeyframesRule::SizeOfIncludingThis(
-    MallocSizeOf aMallocSizeOf) const {
+
+size_t CSSKeyframesRule::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
   size_t n = aMallocSizeOf(this);
   if (mKeyframeList) {
     n += mKeyframeList->SizeOfIncludingThis(aMallocSizeOf);
@@ -289,8 +293,9 @@ void CSSKeyframesRule::DeleteRule(const nsAString& aKey) {
   return n;
 }
 
- JSObject* CSSKeyframesRule::WrapObject(
-    JSContext* aCx, JS::Handle<JSObject*> aGivenProto) {
+
+JSObject* CSSKeyframesRule::WrapObject(JSContext* aCx,
+                                       JS::Handle<JSObject*> aGivenProto) {
   return CSSKeyframesRule_Binding::Wrap(aCx, this, aGivenProto);
 }
 

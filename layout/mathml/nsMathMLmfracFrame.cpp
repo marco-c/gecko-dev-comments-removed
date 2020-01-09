@@ -160,8 +160,9 @@ nsresult nsMathMLmfracFrame::AttributeChanged(int32_t aNameSpaceID,
                                                   aModType);
 }
 
- nsresult nsMathMLmfracFrame::MeasureForWidth(
-    DrawTarget* aDrawTarget, ReflowOutput& aDesiredSize) {
+
+nsresult nsMathMLmfracFrame::MeasureForWidth(DrawTarget* aDrawTarget,
+                                             ReflowOutput& aDesiredSize) {
   return PlaceInternal(aDrawTarget, false, aDesiredSize, true);
 }
 
@@ -173,9 +174,9 @@ nscoord nsMathMLmfracFrame::FixInterFrameSpacing(ReflowOutput& aDesiredSize) {
   return gap;
 }
 
- nsresult nsMathMLmfracFrame::Place(DrawTarget* aDrawTarget,
-                                                 bool aPlaceOrigin,
-                                                 ReflowOutput& aDesiredSize) {
+
+nsresult nsMathMLmfracFrame::Place(DrawTarget* aDrawTarget, bool aPlaceOrigin,
+                                   ReflowOutput& aDesiredSize) {
   return PlaceInternal(aDrawTarget, aPlaceOrigin, aDesiredSize, false);
 }
 

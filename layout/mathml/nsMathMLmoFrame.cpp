@@ -968,7 +968,8 @@ nsresult nsMathMLmoFrame::Place(DrawTarget* aDrawTarget, bool aPlaceOrigin,
   return NS_OK;
 }
 
- void nsMathMLmoFrame::MarkIntrinsicISizesDirty() {
+
+void nsMathMLmoFrame::MarkIntrinsicISizesDirty() {
   
   
   
@@ -991,8 +992,9 @@ nsresult nsMathMLmoFrame::Place(DrawTarget* aDrawTarget, bool aPlaceOrigin,
   nsMathMLContainerFrame::MarkIntrinsicISizesDirty();
 }
 
- void nsMathMLmoFrame::GetIntrinsicISizeMetrics(
-    gfxContext* aRenderingContext, ReflowOutput& aDesiredSize) {
+
+void nsMathMLmoFrame::GetIntrinsicISizeMetrics(gfxContext* aRenderingContext,
+                                               ReflowOutput& aDesiredSize) {
   ProcessOperatorData();
   if (UseMathMLChar()) {
     uint32_t stretchHint =

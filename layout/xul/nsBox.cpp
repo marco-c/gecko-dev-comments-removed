@@ -74,7 +74,8 @@ nsBox::~nsBox() {
   MOZ_COUNT_DTOR(nsBox);
 }
 
- void nsBox::Shutdown() {
+
+void nsBox::Shutdown() {
   gGotTheme = false;
   gTheme = nullptr;
 }
@@ -681,20 +682,23 @@ nsSize nsBox::BoundsCheck(const nsSize& aMinSize, const nsSize& aPrefSize,
       BoundsCheck(aMinSize.height, aPrefSize.height, aMaxSize.height));
 }
 
- nsIFrame* nsBox::GetChildXULBox(const nsIFrame* aFrame) {
+
+nsIFrame* nsBox::GetChildXULBox(const nsIFrame* aFrame) {
   
   
   return aFrame->IsXULBoxFrame() ? aFrame->PrincipalChildList().FirstChild()
                                  : nullptr;
 }
 
- nsIFrame* nsBox::GetNextXULBox(const nsIFrame* aFrame) {
+
+nsIFrame* nsBox::GetNextXULBox(const nsIFrame* aFrame) {
   return aFrame->GetParent() && aFrame->GetParent()->IsXULBoxFrame()
              ? aFrame->GetNextSibling()
              : nullptr;
 }
 
- nsIFrame* nsBox::GetParentXULBox(const nsIFrame* aFrame) {
+
+nsIFrame* nsBox::GetParentXULBox(const nsIFrame* aFrame) {
   return aFrame->GetParent() && aFrame->GetParent()->IsXULBoxFrame()
              ? aFrame->GetParent()
              : nullptr;

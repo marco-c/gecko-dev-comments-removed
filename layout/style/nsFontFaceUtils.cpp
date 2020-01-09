@@ -101,8 +101,9 @@ static void ScheduleReflow(nsIPresShell* aShell, nsIFrame* aFrame) {
   aShell->FrameNeedsReflow(f, nsIPresShell::eStyleChange, NS_FRAME_IS_DIRTY);
 }
 
- void nsFontFaceUtils::MarkDirtyForFontChange(
-    nsIFrame* aSubtreeRoot, const gfxUserFontEntry* aFont) {
+
+void nsFontFaceUtils::MarkDirtyForFontChange(nsIFrame* aSubtreeRoot,
+                                             const gfxUserFontEntry* aFont) {
   AutoTArray<nsIFrame*, 4> subtrees;
   subtrees.AppendElement(aSubtreeRoot);
 

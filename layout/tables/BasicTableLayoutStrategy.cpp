@@ -37,8 +37,8 @@ BasicTableLayoutStrategy::BasicTableLayoutStrategy(nsTableFrame *aTableFrame)
 
 BasicTableLayoutStrategy::~BasicTableLayoutStrategy() {}
 
- nscoord BasicTableLayoutStrategy::GetMinISize(
-    gfxContext *aRenderingContext) {
+
+nscoord BasicTableLayoutStrategy::GetMinISize(gfxContext *aRenderingContext) {
   DISPLAY_MIN_INLINE_SIZE(mTableFrame, mMinISize);
   if (mMinISize == NS_INTRINSIC_WIDTH_UNKNOWN) {
     ComputeIntrinsicISizes(aRenderingContext);
@@ -46,8 +46,9 @@ BasicTableLayoutStrategy::~BasicTableLayoutStrategy() {}
   return mMinISize;
 }
 
- nscoord BasicTableLayoutStrategy::GetPrefISize(
-    gfxContext *aRenderingContext, bool aComputingSize) {
+
+nscoord BasicTableLayoutStrategy::GetPrefISize(gfxContext *aRenderingContext,
+                                               bool aComputingSize) {
   DISPLAY_PREF_INLINE_SIZE(mTableFrame, mPrefISize);
   NS_ASSERTION((mPrefISize == NS_INTRINSIC_WIDTH_UNKNOWN) ==
                    (mPrefISizePctExpand == NS_INTRINSIC_WIDTH_UNKNOWN),
@@ -474,14 +475,16 @@ void BasicTableLayoutStrategy::ComputeIntrinsicISizes(
   mPrefISizePctExpand = pref_pct_expand;
 }
 
- void BasicTableLayoutStrategy::MarkIntrinsicISizesDirty() {
+
+void BasicTableLayoutStrategy::MarkIntrinsicISizesDirty() {
   mMinISize = NS_INTRINSIC_WIDTH_UNKNOWN;
   mPrefISize = NS_INTRINSIC_WIDTH_UNKNOWN;
   mPrefISizePctExpand = NS_INTRINSIC_WIDTH_UNKNOWN;
   mLastCalcISize = nscoord_MIN;
 }
 
- void BasicTableLayoutStrategy::ComputeColumnISizes(
+
+void BasicTableLayoutStrategy::ComputeColumnISizes(
     const ReflowInput &aReflowInput) {
   nscoord iSize = aReflowInput.ComputedISize();
 

@@ -146,8 +146,8 @@ NS_QUERYFRAME_TAIL_INHERITING(nsSVGDisplayContainerFrame)
 
 
 
- nscoord nsSVGOuterSVGFrame::GetMinISize(
-    gfxContext* aRenderingContext) {
+
+nscoord nsSVGOuterSVGFrame::GetMinISize(gfxContext* aRenderingContext) {
   nscoord result;
   DISPLAY_MIN_INLINE_SIZE(this, result);
 
@@ -156,8 +156,8 @@ NS_QUERYFRAME_TAIL_INHERITING(nsSVGDisplayContainerFrame)
   return result;
 }
 
- nscoord nsSVGOuterSVGFrame::GetPrefISize(
-    gfxContext* aRenderingContext) {
+
+nscoord nsSVGOuterSVGFrame::GetPrefISize(gfxContext* aRenderingContext) {
   nscoord result;
   DISPLAY_PREF_INLINE_SIZE(this, result);
 
@@ -197,7 +197,8 @@ NS_QUERYFRAME_TAIL_INHERITING(nsSVGDisplayContainerFrame)
   return result;
 }
 
- IntrinsicSize nsSVGOuterSVGFrame::GetIntrinsicSize() {
+
+IntrinsicSize nsSVGOuterSVGFrame::GetIntrinsicSize() {
   
   
 
@@ -226,7 +227,8 @@ NS_QUERYFRAME_TAIL_INHERITING(nsSVGDisplayContainerFrame)
   return intrinsicSize;
 }
 
- nsSize nsSVGOuterSVGFrame::GetIntrinsicRatio() {
+
+nsSize nsSVGOuterSVGFrame::GetIntrinsicRatio() {
   
   
   
@@ -505,8 +507,8 @@ void nsSVGOuterSVGFrame::DidReflow(nsPresContext* aPresContext,
   PresShell()->SynthesizeMouseMove(false);
 }
 
- void nsSVGOuterSVGFrame::UnionChildOverflow(
-    nsOverflowAreas& aOverflowAreas) {
+
+void nsSVGOuterSVGFrame::UnionChildOverflow(nsOverflowAreas& aOverflowAreas) {
   
 
   

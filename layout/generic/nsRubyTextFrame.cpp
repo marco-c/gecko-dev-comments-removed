@@ -36,7 +36,8 @@ nsContainerFrame* NS_NewRubyTextFrame(nsIPresShell* aPresShell,
 
 
 
- bool nsRubyTextFrame::CanContinueTextRun() const { return false; }
+
+bool nsRubyTextFrame::CanContinueTextRun() const { return false; }
 
 #ifdef DEBUG_FRAME_DUMP
 nsresult nsRubyTextFrame::GetFrameName(nsAString& aResult) const {
@@ -44,8 +45,9 @@ nsresult nsRubyTextFrame::GetFrameName(nsAString& aResult) const {
 }
 #endif
 
- void nsRubyTextFrame::BuildDisplayList(
-    nsDisplayListBuilder* aBuilder, const nsDisplayListSet& aLists) {
+
+void nsRubyTextFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
+                                       const nsDisplayListSet& aLists) {
   if (IsAutoHidden()) {
     return;
   }
@@ -53,10 +55,11 @@ nsresult nsRubyTextFrame::GetFrameName(nsAString& aResult) const {
   nsRubyContentFrame::BuildDisplayList(aBuilder, aLists);
 }
 
- void nsRubyTextFrame::Reflow(nsPresContext* aPresContext,
-                                           ReflowOutput& aDesiredSize,
-                                           const ReflowInput& aReflowInput,
-                                           nsReflowStatus& aStatus) {
+
+void nsRubyTextFrame::Reflow(nsPresContext* aPresContext,
+                             ReflowOutput& aDesiredSize,
+                             const ReflowInput& aReflowInput,
+                             nsReflowStatus& aStatus) {
   
   
   

@@ -556,12 +556,13 @@ static nsRect JoinBoxesForSlice(nsIFrame* aFrame, const nsRect& aBorderArea,
   return JoinBoxesForBlockAxisSlice(aFrame, aBorderArea);
 }
 
- bool nsCSSRendering::IsBoxDecorationSlice(
-    const nsStyleBorder& aStyleBorder) {
+
+bool nsCSSRendering::IsBoxDecorationSlice(const nsStyleBorder& aStyleBorder) {
   return aStyleBorder.mBoxDecorationBreak == StyleBoxDecorationBreak::Slice;
 }
 
- nsRect nsCSSRendering::BoxDecorationRectForBorder(
+
+nsRect nsCSSRendering::BoxDecorationRectForBorder(
     nsIFrame* aFrame, const nsRect& aBorderArea, Sides aSkipSides,
     const nsStyleBorder* aStyleBorder) {
   if (!aStyleBorder) {
@@ -574,7 +575,8 @@ static nsRect JoinBoxesForSlice(nsIFrame* aFrame, const nsRect& aBorderArea,
              : aBorderArea;
 }
 
- nsRect nsCSSRendering::BoxDecorationRectForBackground(
+
+nsRect nsCSSRendering::BoxDecorationRectForBackground(
     nsIFrame* aFrame, const nsRect& aBorderArea, Sides aSkipSides,
     const nsStyleBorder* aStyleBorder) {
   if (!aStyleBorder) {
@@ -594,9 +596,10 @@ static nsRect JoinBoxesForSlice(nsIFrame* aFrame, const nsRect& aBorderArea,
 
 
 
- void nsCSSRendering::ComputePixelRadii(
-    const nscoord* aAppUnitsRadii, nscoord aAppUnitsPerPixel,
-    RectCornerRadii* oBorderRadii) {
+
+void nsCSSRendering::ComputePixelRadii(const nscoord* aAppUnitsRadii,
+                                       nscoord aAppUnitsPerPixel,
+                                       RectCornerRadii* oBorderRadii) {
   Float radii[8];
   NS_FOR_CSS_HALF_CORNERS(corner)
   radii[corner] = Float(aAppUnitsRadii[corner]) / aAppUnitsPerPixel;
@@ -2021,7 +2024,8 @@ bool nsCSSRendering::ImageLayerClipState::IsValid() const {
   return true;
 }
 
- void nsCSSRendering::GetImageLayerClip(
+
+void nsCSSRendering::GetImageLayerClip(
     const nsStyleImageLayers::Layer& aLayer, nsIFrame* aForFrame,
     const nsStyleBorder& aBorder, const nsRect& aBorderArea,
     const nsRect& aCallerDirtyRect, bool aWillPaintBorder,
@@ -2808,8 +2812,9 @@ nsRect nsCSSRendering::ComputeImageLayerPositioningArea(
   return positionArea;
 }
 
- nscoord nsCSSRendering::ComputeRoundedSize(
-    nscoord aCurrentSize, nscoord aPositioningSize) {
+
+nscoord nsCSSRendering::ComputeRoundedSize(nscoord aCurrentSize,
+                                           nscoord aPositioningSize) {
   float repeatCount = NS_roundf(float(aPositioningSize) / float(aCurrentSize));
   if (repeatCount < 1.0f) {
     return aPositioningSize;
@@ -2923,8 +2928,10 @@ static nscoord ComputeSpacedRepeatSize(nscoord aImageDimension,
   return (aAvailableSpace - aImageDimension) / (NSToIntFloor(ratio) - 1);
 }
 
- nscoord nsCSSRendering::ComputeBorderSpacedRepeatSize(
-    nscoord aImageDimension, nscoord aAvailableSpace, nscoord& aSpace) {
+
+nscoord nsCSSRendering::ComputeBorderSpacedRepeatSize(nscoord aImageDimension,
+                                                      nscoord aAvailableSpace,
+                                                      nscoord& aSpace) {
   int32_t count = aImageDimension ? (aAvailableSpace / aImageDimension) : 0;
   aSpace = (aAvailableSpace - aImageDimension * count) / (count + 1);
   return aSpace + aImageDimension;
@@ -4267,8 +4274,9 @@ void nsContextBoxBlur::DoPaint() {
 
 gfxContext* nsContextBoxBlur::GetContext() { return mContext; }
 
- nsMargin nsContextBoxBlur::GetBlurRadiusMargin(
-    nscoord aBlurRadius, int32_t aAppUnitsPerDevPixel) {
+
+nsMargin nsContextBoxBlur::GetBlurRadiusMargin(nscoord aBlurRadius,
+                                               int32_t aAppUnitsPerDevPixel) {
   IntSize blurRadius = ComputeBlurRadius(aBlurRadius, aAppUnitsPerDevPixel);
 
   nsMargin result;
@@ -4277,7 +4285,8 @@ gfxContext* nsContextBoxBlur::GetContext() { return mContext; }
   return result;
 }
 
- void nsContextBoxBlur::BlurRectangle(
+
+void nsContextBoxBlur::BlurRectangle(
     gfxContext* aDestinationCtx, const nsRect& aRect,
     int32_t aAppUnitsPerDevPixel, RectCornerRadii* aCornerRadii,
     nscoord aBlurRadius, const Color& aShadowColor, const nsRect& aDirtyRect,
@@ -4341,7 +4350,8 @@ gfxContext* nsContextBoxBlur::GetContext() { return mContext; }
                                  dirtyRect, skipRect);
 }
 
- void nsContextBoxBlur::GetBlurAndSpreadRadius(
+
+void nsContextBoxBlur::GetBlurAndSpreadRadius(
     DrawTarget* aDestDrawTarget, int32_t aAppUnitsPerDevPixel,
     nscoord aBlurRadius, nscoord aSpreadRadius, IntSize& aOutBlurRadius,
     IntSize& aOutSpreadRadius, bool aConstrainSpreadRadius) {
@@ -4376,7 +4386,8 @@ gfxContext* nsContextBoxBlur::GetContext() { return mContext; }
   }
 }
 
- bool nsContextBoxBlur::InsetBoxBlur(
+
+bool nsContextBoxBlur::InsetBoxBlur(
     gfxContext* aDestinationCtx, Rect aDestinationRect, Rect aShadowClipRect,
     Color& aShadowColor, nscoord aBlurRadiusAppUnits,
     nscoord aSpreadDistanceAppUnits, int32_t aAppUnitsPerDevPixel,

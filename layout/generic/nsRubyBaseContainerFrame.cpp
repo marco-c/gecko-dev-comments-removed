@@ -156,7 +156,8 @@ static nscoord CalculateColumnPrefISize(
 
 
 
- void nsRubyBaseContainerFrame::AddInlineMinISize(
+
+void nsRubyBaseContainerFrame::AddInlineMinISize(
     gfxContext* aRenderingContext, nsIFrame::InlineMinISizeData* aData) {
   AutoRubyTextContainerArray textContainers(this);
 
@@ -208,7 +209,8 @@ static nscoord CalculateColumnPrefISize(
   }
 }
 
- void nsRubyBaseContainerFrame::AddInlinePrefISize(
+
+void nsRubyBaseContainerFrame::AddInlinePrefISize(
     gfxContext* aRenderingContext, nsIFrame::InlinePrefISizeData* aData) {
   AutoRubyTextContainerArray textContainers(this);
 
@@ -232,8 +234,8 @@ static nscoord CalculateColumnPrefISize(
   aData->mCurrentLine += sum;
 }
 
- bool nsRubyBaseContainerFrame::IsFrameOfType(
-    uint32_t aFlags) const {
+
+bool nsRubyBaseContainerFrame::IsFrameOfType(uint32_t aFlags) const {
   if (aFlags & (eSupportsCSSTransforms | eSupportsContainLayoutAndPaint)) {
     return false;
   }
@@ -241,11 +243,11 @@ static nscoord CalculateColumnPrefISize(
                                          ~(nsIFrame::eLineParticipant));
 }
 
- bool nsRubyBaseContainerFrame::CanContinueTextRun() const {
-  return true;
-}
 
- LogicalSize nsRubyBaseContainerFrame::ComputeSize(
+bool nsRubyBaseContainerFrame::CanContinueTextRun() const { return true; }
+
+
+LogicalSize nsRubyBaseContainerFrame::ComputeSize(
     gfxContext* aRenderingContext, WritingMode aWM, const LogicalSize& aCBSize,
     nscoord aAvailableISize, const LogicalSize& aMargin,
     const LogicalSize& aBorder, const LogicalSize& aPadding,
@@ -255,7 +257,8 @@ static nscoord CalculateColumnPrefISize(
   return LogicalSize(aWM, NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE);
 }
 
- nscoord nsRubyBaseContainerFrame::GetLogicalBaseline(
+
+nscoord nsRubyBaseContainerFrame::GetLogicalBaseline(
     WritingMode aWritingMode) const {
   return mBaseline;
 }
@@ -268,9 +271,11 @@ struct nsRubyBaseContainerFrame::RubyReflowInput {
   const nsTArray<UniquePtr<ReflowInput>>& mTextReflowInputs;
 };
 
- void nsRubyBaseContainerFrame::Reflow(
-    nsPresContext* aPresContext, ReflowOutput& aDesiredSize,
-    const ReflowInput& aReflowInput, nsReflowStatus& aStatus) {
+
+void nsRubyBaseContainerFrame::Reflow(nsPresContext* aPresContext,
+                                      ReflowOutput& aDesiredSize,
+                                      const ReflowInput& aReflowInput,
+                                      nsReflowStatus& aStatus) {
   MarkInReflow();
   DO_GLOBAL_REFLOW_COUNT("nsRubyBaseContainerFrame");
   DISPLAY_REFLOW(aPresContext, this, aReflowInput, aDesiredSize, aStatus);

@@ -741,7 +741,8 @@ gfxCharacterMap* FontFace::GetUnicodeRangeAsCharacterMap() {
 
 
 
- void FontFace::Entry::SetLoadState(UserFontLoadState aLoadState) {
+
+void FontFace::Entry::SetLoadState(UserFontLoadState aLoadState) {
   gfxUserFontEntry::SetLoadState(aLoadState);
 
   for (size_t i = 0; i < mFontFaces.Length(); i++) {
@@ -749,8 +750,8 @@ gfxCharacterMap* FontFace::GetUnicodeRangeAsCharacterMap() {
   }
 }
 
- void FontFace::Entry::GetUserFontSets(
-    nsTArray<gfxUserFontSet*>& aResult) {
+
+void FontFace::Entry::GetUserFontSets(nsTArray<gfxUserFontSet*>& aResult) {
   aResult.Clear();
 
   for (FontFace* f : mFontFaces) {

@@ -98,8 +98,8 @@ void nsLeafBoxFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
       MakeDisplayItem<nsDisplayEventReceiver>(aBuilder, this));
 }
 
- nscoord nsLeafBoxFrame::GetMinISize(
-    gfxContext* aRenderingContext) {
+
+nscoord nsLeafBoxFrame::GetMinISize(gfxContext* aRenderingContext) {
   nscoord result;
   DISPLAY_MIN_INLINE_SIZE(this, result);
   nsBoxLayoutState state(PresContext(), aRenderingContext);
@@ -119,8 +119,8 @@ void nsLeafBoxFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   return result;
 }
 
- nscoord nsLeafBoxFrame::GetPrefISize(
-    gfxContext* aRenderingContext) {
+
+nscoord nsLeafBoxFrame::GetPrefISize(gfxContext* aRenderingContext) {
   nscoord result;
   DISPLAY_PREF_INLINE_SIZE(this, result);
   nsBoxLayoutState state(PresContext(), aRenderingContext);
@@ -311,28 +311,31 @@ nsresult nsLeafBoxFrame::CharacterDataChanged(
   return nsLeafFrame::CharacterDataChanged(aInfo);
 }
 
- nsSize nsLeafBoxFrame::GetXULPrefSize(nsBoxLayoutState& aState) {
+
+nsSize nsLeafBoxFrame::GetXULPrefSize(nsBoxLayoutState& aState) {
   return nsBox::GetXULPrefSize(aState);
 }
 
- nsSize nsLeafBoxFrame::GetXULMinSize(nsBoxLayoutState& aState) {
+
+nsSize nsLeafBoxFrame::GetXULMinSize(nsBoxLayoutState& aState) {
   return nsBox::GetXULMinSize(aState);
 }
 
- nsSize nsLeafBoxFrame::GetXULMaxSize(nsBoxLayoutState& aState) {
+
+nsSize nsLeafBoxFrame::GetXULMaxSize(nsBoxLayoutState& aState) {
   return nsBox::GetXULMaxSize(aState);
 }
 
- nscoord nsLeafBoxFrame::GetXULFlex() {
-  return nsBox::GetXULFlex();
-}
 
- nscoord nsLeafBoxFrame::GetXULBoxAscent(
-    nsBoxLayoutState& aState) {
+nscoord nsLeafBoxFrame::GetXULFlex() { return nsBox::GetXULFlex(); }
+
+
+nscoord nsLeafBoxFrame::GetXULBoxAscent(nsBoxLayoutState& aState) {
   return nsBox::GetXULBoxAscent(aState);
 }
 
- void nsLeafBoxFrame::MarkIntrinsicISizesDirty() {
+
+void nsLeafBoxFrame::MarkIntrinsicISizesDirty() {
   
   
 }

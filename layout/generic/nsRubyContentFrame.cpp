@@ -19,7 +19,8 @@ using namespace mozilla;
 
 
 
- bool nsRubyContentFrame::IsFrameOfType(uint32_t aFlags) const {
+
+bool nsRubyContentFrame::IsFrameOfType(uint32_t aFlags) const {
   if (aFlags & eBidiInlineContainer) {
     return false;
   }

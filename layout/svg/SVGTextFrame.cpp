@@ -1293,8 +1293,8 @@ class TextNodeCorrespondenceRecorder {
   uint32_t mNodeCharIndex;
 };
 
- void TextNodeCorrespondenceRecorder::RecordCorrespondence(
-    SVGTextFrame* aRoot) {
+
+void TextNodeCorrespondenceRecorder::RecordCorrespondence(SVGTextFrame* aRoot) {
   if (aRoot->GetStateBits() & NS_STATE_SVG_TEXT_CORRESPONDENCE_DIRTY) {
     
     aRoot->MaybeResolveBidiForAnonymousBlockChild();

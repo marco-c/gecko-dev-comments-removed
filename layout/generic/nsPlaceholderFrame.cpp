@@ -41,28 +41,29 @@ NS_QUERYFRAME_HEAD(nsPlaceholderFrame)
 NS_QUERYFRAME_TAIL_INHERITING(nsFrame)
 #endif
 
- nsSize nsPlaceholderFrame::GetXULMinSize(
-    nsBoxLayoutState& aBoxLayoutState) {
+
+nsSize nsPlaceholderFrame::GetXULMinSize(nsBoxLayoutState& aBoxLayoutState) {
   nsSize size(0, 0);
   DISPLAY_MIN_SIZE(this, size);
   return size;
 }
 
- nsSize nsPlaceholderFrame::GetXULPrefSize(
-    nsBoxLayoutState& aBoxLayoutState) {
+
+nsSize nsPlaceholderFrame::GetXULPrefSize(nsBoxLayoutState& aBoxLayoutState) {
   nsSize size(0, 0);
   DISPLAY_PREF_SIZE(this, size);
   return size;
 }
 
- nsSize nsPlaceholderFrame::GetXULMaxSize(
-    nsBoxLayoutState& aBoxLayoutState) {
+
+nsSize nsPlaceholderFrame::GetXULMaxSize(nsBoxLayoutState& aBoxLayoutState) {
   nsSize size(NS_INTRINSICSIZE, NS_INTRINSICSIZE);
   DISPLAY_MAX_SIZE(this, size);
   return size;
 }
 
- void nsPlaceholderFrame::AddInlineMinISize(
+
+void nsPlaceholderFrame::AddInlineMinISize(
     gfxContext* aRenderingContext, nsIFrame::InlineMinISizeData* aData) {
   
   
@@ -79,7 +80,8 @@ NS_QUERYFRAME_TAIL_INHERITING(nsFrame)
   }
 }
 
- void nsPlaceholderFrame::AddInlinePrefISize(
+
+void nsPlaceholderFrame::AddInlinePrefISize(
     gfxContext* aRenderingContext, nsIFrame::InlinePrefISizeData* aData) {
   
   
@@ -185,7 +187,8 @@ void nsPlaceholderFrame::DestroyFrom(nsIFrame* aDestructRoot,
   nsFrame::DestroyFrom(aDestructRoot, aPostDestroyData);
 }
 
- bool nsPlaceholderFrame::CanContinueTextRun() const {
+
+bool nsPlaceholderFrame::CanContinueTextRun() const {
   if (!mOutOfFlowFrame) {
     return false;
   }

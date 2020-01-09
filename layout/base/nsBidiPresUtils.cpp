@@ -1301,9 +1301,12 @@ void nsBidiPresUtils::ResolveParagraphWithinBlock(BidiParagraphData* aBpd) {
   aBpd->ResetData();
 }
 
- nscoord nsBidiPresUtils::ReorderFrames(
-    nsIFrame* aFirstFrameOnLine, int32_t aNumFramesOnLine, WritingMode aLineWM,
-    const nsSize& aContainerSize, nscoord aStart) {
+
+nscoord nsBidiPresUtils::ReorderFrames(nsIFrame* aFirstFrameOnLine,
+                                       int32_t aNumFramesOnLine,
+                                       WritingMode aLineWM,
+                                       const nsSize& aContainerSize,
+                                       nscoord aStart) {
   nsSize containerSize(aContainerSize);
 
   
@@ -1466,7 +1469,8 @@ void nsBidiPresUtils::IsFirstOrLast(
   }
 }
 
- void nsBidiPresUtils::RepositionRubyContentFrame(
+
+void nsBidiPresUtils::RepositionRubyContentFrame(
     nsIFrame* aFrame, WritingMode aFrameWM,
     const LogicalMargin& aBorderPadding) {
   const nsFrameList& childList = aFrame->PrincipalChildList();
@@ -1500,7 +1504,8 @@ void nsBidiPresUtils::IsFirstOrLast(
   }
 }
 
- nscoord nsBidiPresUtils::RepositionRubyFrame(
+
+nscoord nsBidiPresUtils::RepositionRubyFrame(
     nsIFrame* aFrame, const nsContinuationStates* aContinuationStates,
     const WritingMode aContainerWM, const LogicalMargin& aBorderPadding) {
   LayoutFrameType frameType = aFrame->Type();
@@ -1561,7 +1566,8 @@ void nsBidiPresUtils::IsFirstOrLast(
   return icoord;
 }
 
- nscoord nsBidiPresUtils::RepositionFrame(
+
+nscoord nsBidiPresUtils::RepositionFrame(
     nsIFrame* aFrame, bool aIsEvenLevel, nscoord aStartOrEnd,
     const nsContinuationStates* aContinuationStates, WritingMode aContainerWM,
     bool aContainerReverseDir, const nsSize& aContainerSize) {
@@ -1673,9 +1679,11 @@ void nsBidiPresUtils::InitContinuationStates(
   }
 }
 
- nscoord nsBidiPresUtils::RepositionInlineFrames(
-    BidiLineData* aBld, WritingMode aLineWM, const nsSize& aContainerSize,
-    nscoord aStart) {
+
+nscoord nsBidiPresUtils::RepositionInlineFrames(BidiLineData* aBld,
+                                                WritingMode aLineWM,
+                                                const nsSize& aContainerSize,
+                                                nscoord aStart) {
   nscoord start = aStart;
   nsIFrame* frame;
   int32_t count = aBld->mVisualFrames.Length();

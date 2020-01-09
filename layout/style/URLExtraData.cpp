@@ -16,7 +16,8 @@ namespace mozilla {
 
 StaticRefPtr<URLExtraData> URLExtraData::sDummy;
 
- void URLExtraData::InitDummy() {
+
+void URLExtraData::InitDummy() {
   RefPtr<nsIURI> baseURI = NullPrincipalURI::Create();
   RefPtr<nsIURI> referrer = baseURI;
   sDummy = new URLExtraData(baseURI.forget(), referrer.forget(),
@@ -24,7 +25,8 @@ StaticRefPtr<URLExtraData> URLExtraData::sDummy;
                             net::RP_Unset);
 }
 
- void URLExtraData::ReleaseDummy() { sDummy = nullptr; }
+
+void URLExtraData::ReleaseDummy() { sDummy = nullptr; }
 
 URLExtraData::~URLExtraData() {
   if (!NS_IsMainThread()) {

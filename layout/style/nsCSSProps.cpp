@@ -113,7 +113,8 @@ void nsCSSProps::ReleaseTable(void) {
   }
 }
 
- bool nsCSSProps::IsCustomPropertyName(const nsAString& aProperty) {
+
+bool nsCSSProps::IsCustomPropertyName(const nsAString& aProperty) {
   return aProperty.Length() >= CSS_CUSTOM_NAME_PREFIX_LENGTH &&
          StringBeginsWith(aProperty, NS_LITERAL_STRING("--"));
 }
@@ -508,8 +509,8 @@ const CSSPropFlags nsCSSProps::kFlagsTable[eCSSProperty_COUNT] = {
 #undef CSS_PROP_LONGHAND
 };
 
- bool
-    nsCSSProps::gPropertyEnabled[eCSSProperty_COUNT_with_aliases] = {
+
+bool nsCSSProps::gPropertyEnabled[eCSSProperty_COUNT_with_aliases] = {
 
 
 

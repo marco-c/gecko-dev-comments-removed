@@ -45,16 +45,16 @@ NS_QUERYFRAME_HEAD(nsCheckboxRadioFrame)
   NS_QUERYFRAME_ENTRY(nsIFormControlFrame)
 NS_QUERYFRAME_TAIL_INHERITING(nsAtomicContainerFrame)
 
- nscoord nsCheckboxRadioFrame::GetMinISize(
-    gfxContext* aRenderingContext) {
+
+nscoord nsCheckboxRadioFrame::GetMinISize(gfxContext* aRenderingContext) {
   nscoord result;
   DISPLAY_MIN_INLINE_SIZE(this, result);
   result = StyleDisplay()->HasAppearance() ? DefaultSize() : 0;
   return result;
 }
 
- nscoord nsCheckboxRadioFrame::GetPrefISize(
-    gfxContext* aRenderingContext) {
+
+nscoord nsCheckboxRadioFrame::GetPrefISize(gfxContext* aRenderingContext) {
   nscoord result;
   DISPLAY_PREF_INLINE_SIZE(this, result);
   result = StyleDisplay()->HasAppearance() ? DefaultSize() : 0;

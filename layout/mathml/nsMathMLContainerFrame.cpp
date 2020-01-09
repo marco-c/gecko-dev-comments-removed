@@ -116,7 +116,8 @@ static bool IsForeignChild(const nsIFrame* aFrame) {
 
 NS_DECLARE_FRAME_PROPERTY_DELETABLE(HTMLReflowOutputProperty, ReflowOutput)
 
- void nsMathMLContainerFrame::SaveReflowAndBoundingMetricsFor(
+
+void nsMathMLContainerFrame::SaveReflowAndBoundingMetricsFor(
     nsIFrame* aFrame, const ReflowOutput& aReflowOutput,
     const nsBoundingMetrics& aBoundingMetrics) {
   ReflowOutput* reflowOutput = new ReflowOutput(aReflowOutput);
@@ -125,7 +126,8 @@ NS_DECLARE_FRAME_PROPERTY_DELETABLE(HTMLReflowOutputProperty, ReflowOutput)
 }
 
 
- void nsMathMLContainerFrame::GetReflowAndBoundingMetricsFor(
+
+void nsMathMLContainerFrame::GetReflowAndBoundingMetricsFor(
     nsIFrame* aFrame, ReflowOutput& aReflowOutput,
     nsBoundingMetrics& aBoundingMetrics, eMathMLFrameType* aMathMLFrameType) {
   MOZ_ASSERT(aFrame, "null arg");
@@ -551,7 +553,8 @@ nsresult nsMathMLContainerFrame::FinalizeReflow(DrawTarget* aDrawTarget,
 
 
 
- void nsMathMLContainerFrame::PropagatePresentationDataFor(
+
+void nsMathMLContainerFrame::PropagatePresentationDataFor(
     nsIFrame* aFrame, uint32_t aFlagsValues, uint32_t aFlagsToUpdate) {
   if (!aFrame || !aFlagsToUpdate) return;
   nsIMathMLFrame* mathMLFrame = do_QueryFrame(aFrame);
@@ -570,7 +573,8 @@ nsresult nsMathMLContainerFrame::FinalizeReflow(DrawTarget* aDrawTarget,
   }
 }
 
- void nsMathMLContainerFrame::PropagatePresentationDataFromChildAt(
+
+void nsMathMLContainerFrame::PropagatePresentationDataFromChildAt(
     nsIFrame* aParentFrame, int32_t aFirstChildIndex, int32_t aLastChildIndex,
     uint32_t aFlagsValues, uint32_t aFlagsToUpdate) {
   if (!aParentFrame || !aFlagsToUpdate) return;
@@ -619,7 +623,8 @@ void nsMathMLContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
 
 
- void nsMathMLContainerFrame::RebuildAutomaticDataForChildren(
+
+void nsMathMLContainerFrame::RebuildAutomaticDataForChildren(
     nsIFrame* aParentFrame) {
   
   
@@ -638,8 +643,8 @@ void nsMathMLContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   }
 }
 
- nsresult nsMathMLContainerFrame::ReLayoutChildren(
-    nsIFrame* aParentFrame) {
+
+nsresult nsMathMLContainerFrame::ReLayoutChildren(nsIFrame* aParentFrame) {
   if (!aParentFrame) return NS_OK;
 
   
@@ -905,7 +910,8 @@ void nsMathMLContainerFrame::Reflow(nsPresContext* aPresContext,
 static nscoord AddInterFrameSpacingToSize(ReflowOutput& aDesiredSize,
                                           nsMathMLContainerFrame* aFrame);
 
- void nsMathMLContainerFrame::MarkIntrinsicISizesDirty() {
+
+void nsMathMLContainerFrame::MarkIntrinsicISizesDirty() {
   mIntrinsicWidth = NS_INTRINSIC_WIDTH_UNKNOWN;
   nsContainerFrame::MarkIntrinsicISizesDirty();
 }
@@ -923,8 +929,8 @@ void nsMathMLContainerFrame::UpdateIntrinsicWidth(
   }
 }
 
- nscoord nsMathMLContainerFrame::GetMinISize(
-    gfxContext* aRenderingContext) {
+
+nscoord nsMathMLContainerFrame::GetMinISize(gfxContext* aRenderingContext) {
   nscoord result;
   DISPLAY_MIN_INLINE_SIZE(this, result);
   UpdateIntrinsicWidth(aRenderingContext);
@@ -932,8 +938,8 @@ void nsMathMLContainerFrame::UpdateIntrinsicWidth(
   return result;
 }
 
- nscoord nsMathMLContainerFrame::GetPrefISize(
-    gfxContext* aRenderingContext) {
+
+nscoord nsMathMLContainerFrame::GetPrefISize(gfxContext* aRenderingContext) {
   nscoord result;
   DISPLAY_PREF_INLINE_SIZE(this, result);
   UpdateIntrinsicWidth(aRenderingContext);
@@ -941,7 +947,8 @@ void nsMathMLContainerFrame::UpdateIntrinsicWidth(
   return result;
 }
 
- void nsMathMLContainerFrame::GetIntrinsicISizeMetrics(
+
+void nsMathMLContainerFrame::GetIntrinsicISizeMetrics(
     gfxContext* aRenderingContext, ReflowOutput& aDesiredSize) {
   
   nsIFrame* childFrame = mFrames.FirstChild();
@@ -988,8 +995,9 @@ void nsMathMLContainerFrame::UpdateIntrinsicWidth(
   ClearSavedChildMetrics();
 }
 
- nsresult nsMathMLContainerFrame::MeasureForWidth(
-    DrawTarget* aDrawTarget, ReflowOutput& aDesiredSize) {
+
+nsresult nsMathMLContainerFrame::MeasureForWidth(DrawTarget* aDrawTarget,
+                                                 ReflowOutput& aDesiredSize) {
   return Place(aDrawTarget, false, aDesiredSize);
 }
 
@@ -1191,8 +1199,10 @@ class nsMathMLContainerFrame::RowChildFrameIterator {
   }
 };
 
- nsresult nsMathMLContainerFrame::Place(
-    DrawTarget* aDrawTarget, bool aPlaceOrigin, ReflowOutput& aDesiredSize) {
+
+nsresult nsMathMLContainerFrame::Place(DrawTarget* aDrawTarget,
+                                       bool aPlaceOrigin,
+                                       ReflowOutput& aDesiredSize) {
   
   mBoundingMetrics = nsBoundingMetrics();
 
@@ -1320,8 +1330,9 @@ nscoord nsMathMLContainerFrame::FixInterFrameSpacing(
   return gap;
 }
 
- void nsMathMLContainerFrame::DidReflowChildren(nsIFrame* aFirst,
-                                                            nsIFrame* aStop)
+
+void nsMathMLContainerFrame::DidReflowChildren(nsIFrame* aFirst,
+                                               nsIFrame* aStop)
 
 {
   if (MOZ_UNLIKELY(!aFirst)) return;
@@ -1410,8 +1421,9 @@ nsresult nsMathMLContainerFrame::TransmitAutomaticDataForMrowLikeElement() {
   return NS_OK;
 }
 
- void nsMathMLContainerFrame::PropagateFrameFlagFor(
-    nsIFrame* aFrame, nsFrameState aFlags) {
+
+void nsMathMLContainerFrame::PropagateFrameFlagFor(nsIFrame* aFrame,
+                                                   nsFrameState aFlags) {
   if (!aFrame || !aFlags) return;
 
   aFrame->AddStateBits(aFlags);

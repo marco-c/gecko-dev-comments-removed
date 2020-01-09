@@ -923,7 +923,8 @@ void FontFaceSet::InsertRuleFontFace(FontFace* aFontFace, SheetType aSheetType,
   mUserFontSet->AddUserFontEntry(family, entry);
 }
 
- already_AddRefed<gfxUserFontEntry>
+
+already_AddRefed<gfxUserFontEntry>
 FontFaceSet::FindOrCreateUserFontEntryFromFontFace(FontFace* aFontFace) {
   nsAtom* fontFamily = aFontFace->GetFamilyName();
   if (!fontFamily) {
@@ -981,7 +982,8 @@ static StretchRange GetStretchRangeForDescriptor(
 
 
 
- already_AddRefed<gfxUserFontEntry>
+
+already_AddRefed<gfxUserFontEntry>
 FontFaceSet::FindOrCreateUserFontEntryFromFontFace(
     const nsACString& aFamilyName, FontFace* aFontFace, SheetType aSheetType) {
   FontFaceSet* set = aFontFace->GetPrimaryFontFaceSet();
@@ -1676,7 +1678,8 @@ FontFaceSet::HandleEvent(Event* aEvent) {
   return NS_OK;
 }
 
- bool FontFaceSet::PrefEnabled() {
+
+bool FontFaceSet::PrefEnabled() {
   static bool initialized = false;
   static bool enabled;
   if (!initialized) {
@@ -1742,19 +1745,21 @@ void FontFaceSet::CopyNonRuleFacesTo(FontFaceSet* aFontFaceSet) const {
 
 
 
- bool FontFaceSet::UserFontSet::IsFontLoadAllowed(
-    const gfxFontFaceSrc& aSrc) {
+
+bool FontFaceSet::UserFontSet::IsFontLoadAllowed(const gfxFontFaceSrc& aSrc) {
   return mFontFaceSet && mFontFaceSet->IsFontLoadAllowed(aSrc);
 }
 
- void FontFaceSet::UserFontSet::DispatchFontLoadViolations(
+
+void FontFaceSet::UserFontSet::DispatchFontLoadViolations(
     nsTArray<nsCOMPtr<nsIRunnable>>& aViolations) {
   if (mFontFaceSet) {
     mFontFaceSet->DispatchFontLoadViolations(aViolations);
   }
 }
 
- nsresult FontFaceSet::UserFontSet::StartLoad(
+
+nsresult FontFaceSet::UserFontSet::StartLoad(
     gfxUserFontEntry* aUserFontEntry, const gfxFontFaceSrc* aFontFaceSrc) {
   if (!mFontFaceSet) {
     return NS_ERROR_FAILURE;
@@ -1780,16 +1785,19 @@ void FontFaceSet::UserFontSet::RecordFontLoadDone(uint32_t aFontSize,
   }
 }
 
- nsresult FontFaceSet::UserFontSet::LogMessage(
-    gfxUserFontEntry* aUserFontEntry, const char* aMessage, uint32_t aFlags,
-    nsresult aStatus) {
+
+nsresult FontFaceSet::UserFontSet::LogMessage(gfxUserFontEntry* aUserFontEntry,
+                                              const char* aMessage,
+                                              uint32_t aFlags,
+                                              nsresult aStatus) {
   if (!mFontFaceSet) {
     return NS_ERROR_FAILURE;
   }
   return mFontFaceSet->LogMessage(aUserFontEntry, aMessage, aFlags, aStatus);
 }
 
- nsresult FontFaceSet::UserFontSet::SyncLoadFontData(
+
+nsresult FontFaceSet::UserFontSet::SyncLoadFontData(
     gfxUserFontEntry* aFontToLoad, const gfxFontFaceSrc* aFontFaceSrc,
     uint8_t*& aBuffer, uint32_t& aBufferLength) {
   if (!mFontFaceSet) {
@@ -1799,18 +1807,21 @@ void FontFaceSet::UserFontSet::RecordFontLoadDone(uint32_t aFontSize,
                                         aBufferLength);
 }
 
- bool FontFaceSet::UserFontSet::GetPrivateBrowsing() {
+
+bool FontFaceSet::UserFontSet::GetPrivateBrowsing() {
   return mFontFaceSet && mFontFaceSet->mPrivateBrowsing;
 }
 
- void FontFaceSet::UserFontSet::DoRebuildUserFontSet() {
+
+void FontFaceSet::UserFontSet::DoRebuildUserFontSet() {
   if (!mFontFaceSet) {
     return;
   }
   mFontFaceSet->MarkUserFontSetDirty();
 }
 
- already_AddRefed<gfxUserFontEntry>
+
+already_AddRefed<gfxUserFontEntry>
 FontFaceSet::UserFontSet::CreateUserFontEntry(
     const nsTArray<gfxFontFaceSrc>& aFontFaceSrcList, WeightRange aWeight,
     StretchRange aStretch, SlantStyleRange aStyle,

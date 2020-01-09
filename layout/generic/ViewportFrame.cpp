@@ -203,8 +203,8 @@ void ViewportFrame::RemoveFrame(ChildListID aListID, nsIFrame* aOldFrame) {
 }
 #endif
 
- nscoord ViewportFrame::GetMinISize(
-    gfxContext* aRenderingContext) {
+
+nscoord ViewportFrame::GetMinISize(gfxContext* aRenderingContext) {
   nscoord result;
   DISPLAY_MIN_INLINE_SIZE(this, result);
   if (mFrames.IsEmpty())
@@ -215,8 +215,8 @@ void ViewportFrame::RemoveFrame(ChildListID aListID, nsIFrame* aOldFrame) {
   return result;
 }
 
- nscoord ViewportFrame::GetPrefISize(
-    gfxContext* aRenderingContext) {
+
+nscoord ViewportFrame::GetPrefISize(gfxContext* aRenderingContext) {
   nscoord result;
   DISPLAY_PREF_INLINE_SIZE(this, result);
   if (mFrames.IsEmpty())

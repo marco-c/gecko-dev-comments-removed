@@ -20,7 +20,8 @@ nsresult nsBackdropFrame::GetFrameName(nsAString& aResult) const {
 }
 #endif
 
- ComputedStyle* nsBackdropFrame::GetParentComputedStyle(
+
+ComputedStyle* nsBackdropFrame::GetParentComputedStyle(
     nsIFrame** aProviderFrame) const {
   
   
@@ -28,8 +29,9 @@ nsresult nsBackdropFrame::GetFrameName(nsAString& aResult) const {
   return nullptr;
 }
 
- void nsBackdropFrame::BuildDisplayList(
-    nsDisplayListBuilder* aBuilder, const nsDisplayListSet& aLists) {
+
+void nsBackdropFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
+                                       const nsDisplayListSet& aLists) {
   DO_GLOBAL_REFLOW_COUNT_DSP("nsBackdropFrame");
   
   
@@ -43,7 +45,8 @@ nsresult nsBackdropFrame::GetFrameName(nsAString& aResult) const {
   DisplayBorderBackgroundOutline(aBuilder, aLists);
 }
 
- LogicalSize nsBackdropFrame::ComputeAutoSize(
+
+LogicalSize nsBackdropFrame::ComputeAutoSize(
     gfxContext* aRenderingContext, WritingMode aWM, const LogicalSize& aCBSize,
     nscoord aAvailableISize, const LogicalSize& aMargin,
     const LogicalSize& aBorder, const LogicalSize& aPadding,
@@ -59,10 +62,11 @@ nsresult nsBackdropFrame::GetFrameName(nsAString& aResult) const {
   return result;
 }
 
- void nsBackdropFrame::Reflow(nsPresContext* aPresContext,
-                                           ReflowOutput& aDesiredSize,
-                                           const ReflowInput& aReflowInput,
-                                           nsReflowStatus& aStatus) {
+
+void nsBackdropFrame::Reflow(nsPresContext* aPresContext,
+                             ReflowOutput& aDesiredSize,
+                             const ReflowInput& aReflowInput,
+                             nsReflowStatus& aStatus) {
   MarkInReflow();
   DO_GLOBAL_REFLOW_COUNT("nsBackdropFrame");
   DISPLAY_REFLOW(aPresContext, this, aReflowInput, aDesiredSize, aStatus);

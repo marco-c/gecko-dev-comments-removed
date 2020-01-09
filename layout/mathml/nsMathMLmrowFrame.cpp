@@ -53,7 +53,8 @@ nsresult nsMathMLmrowFrame::AttributeChanged(int32_t aNameSpaceID,
                                                   aModType);
 }
 
- eMathMLFrameType nsMathMLmrowFrame::GetMathMLFrameType() {
+
+eMathMLFrameType nsMathMLmrowFrame::GetMathMLFrameType() {
   if (!IsMrowLike()) {
     nsIMathMLFrame* child = do_QueryFrame(mFrames.FirstChild());
     if (child) {

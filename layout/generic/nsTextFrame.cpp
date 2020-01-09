@@ -2598,17 +2598,15 @@ void BuildTextRunsScanner::SetupBreakSinksForTextRun(gfxTextRun* aTextRun,
                                                      const void* aTextPtr) {
   using mozilla::intl::LineBreaker;
 
-  auto wordBreak = mLineContainer->StyleText()->EffectiveWordBreak();
-  switch (wordBreak) {
-    case StyleWordBreak::BreakAll:
+  
+  switch (mLineContainer->StyleText()->mWordBreak) {
+    case NS_STYLE_WORDBREAK_BREAK_ALL:
       mLineBreaker.SetWordBreak(LineBreaker::kWordBreak_BreakAll);
       break;
-    case StyleWordBreak::KeepAll:
+    case NS_STYLE_WORDBREAK_KEEP_ALL:
       mLineBreaker.SetWordBreak(LineBreaker::kWordBreak_KeepAll);
       break;
-    case StyleWordBreak::Normal:
     default:
-      MOZ_ASSERT(wordBreak == StyleWordBreak::Normal);
       mLineBreaker.SetWordBreak(LineBreaker::kWordBreak_Normal);
       break;
   }
@@ -4235,9 +4233,12 @@ void nsTextPaintStyle::InitSelectionStyle(int32_t aIndex) {
   selectionStyle->mInit = true;
 }
 
- bool nsTextPaintStyle::GetSelectionUnderline(
-    nsPresContext* aPresContext, int32_t aIndex, nscolor* aLineColor,
-    float* aRelativeSize, uint8_t* aStyle) {
+
+bool nsTextPaintStyle::GetSelectionUnderline(nsPresContext* aPresContext,
+                                             int32_t aIndex,
+                                             nscolor* aLineColor,
+                                             float* aRelativeSize,
+                                             uint8_t* aStyle) {
   NS_ASSERTION(aPresContext, "aPresContext is null");
   NS_ASSERTION(aRelativeSize, "aRelativeSize is null");
   NS_ASSERTION(aStyle, "aStyle is null");
@@ -4553,22 +4554,26 @@ nsIFrame* nsContinuingTextFrame::FirstContinuation() const {
 
 
 
- nscoord nsTextFrame::GetMinISize(gfxContext* aRenderingContext) {
+
+nscoord nsTextFrame::GetMinISize(gfxContext* aRenderingContext) {
   return nsLayoutUtils::MinISizeFromInline(this, aRenderingContext);
 }
 
 
- nscoord nsTextFrame::GetPrefISize(gfxContext* aRenderingContext) {
+
+nscoord nsTextFrame::GetPrefISize(gfxContext* aRenderingContext) {
   return nsLayoutUtils::PrefISizeFromInline(this, aRenderingContext);
 }
 
- void nsContinuingTextFrame::AddInlineMinISize(
-    gfxContext* aRenderingContext, InlineMinISizeData* aData) {
+
+void nsContinuingTextFrame::AddInlineMinISize(gfxContext* aRenderingContext,
+                                              InlineMinISizeData* aData) {
   
 }
 
- void nsContinuingTextFrame::AddInlinePrefISize(
-    gfxContext* aRenderingContext, InlinePrefISizeData* aData) {
+
+void nsContinuingTextFrame::AddInlinePrefISize(gfxContext* aRenderingContext,
+                                               InlinePrefISizeData* aData) {
   
 }
 
@@ -8317,7 +8322,7 @@ void nsTextFrame::AddInlineMinISizeForFlow(gfxContext* aRenderingContext,
     return;
   }
 
-  if (textStyle->EffectiveOverflowWrap() == StyleOverflowWrap::Anywhere &&
+  if (textStyle->mOverflowWrap == mozilla::StyleOverflowWrap::Anywhere &&
       textStyle->WordCanWrap(this)) {
     aData->OptionallyBreak();
     aData->mCurrentLine +=
@@ -8423,8 +8428,9 @@ bool nsTextFrame::IsCurrentFontInflation(float aInflation) const {
 
 
 
- void nsTextFrame::AddInlineMinISize(
-    gfxContext* aRenderingContext, nsIFrame::InlineMinISizeData* aData) {
+
+void nsTextFrame::AddInlineMinISize(gfxContext* aRenderingContext,
+                                    nsIFrame::InlineMinISizeData* aData) {
   float inflation = nsLayoutUtils::FontSizeInflationFor(this);
   TextRunType trtype = (inflation == 1.0f) ? eNotInflated : eInflated;
 
@@ -8573,8 +8579,9 @@ void nsTextFrame::AddInlinePrefISizeForFlow(
 
 
 
- void nsTextFrame::AddInlinePrefISize(
-    gfxContext* aRenderingContext, nsIFrame::InlinePrefISizeData* aData) {
+
+void nsTextFrame::AddInlinePrefISize(gfxContext* aRenderingContext,
+                                     nsIFrame::InlinePrefISizeData* aData) {
   float inflation = nsLayoutUtils::FontSizeInflationFor(this);
   TextRunType trtype = (inflation == 1.0f) ? eNotInflated : eInflated;
 
@@ -8664,8 +8671,9 @@ nsRect nsTextFrame::ComputeTightBounds(DrawTarget* aDrawTarget) const {
   return boundingBox;
 }
 
- nsresult nsTextFrame::GetPrefWidthTightBounds(
-    gfxContext* aContext, nscoord* aX, nscoord* aXMost) {
+
+nsresult nsTextFrame::GetPrefWidthTightBounds(gfxContext* aContext, nscoord* aX,
+                                              nscoord* aXMost) {
   gfxSkipCharsIterator iter =
       const_cast<nsTextFrame*>(this)->EnsureTextRun(nsTextFrame::eInflated);
   if (!mTextRun) return NS_ERROR_FAILURE;
@@ -9548,7 +9556,8 @@ void nsTextFrame::ReflowText(nsLineLayout& aLineLayout, nscoord aAvailableWidth,
 #endif
 }
 
- bool nsTextFrame::CanContinueTextRun() const {
+
+bool nsTextFrame::CanContinueTextRun() const {
   
   return true;
 }
@@ -9900,7 +9909,8 @@ nsIFrame::RenderedText nsTextFrame::GetRenderedText(
   return result;
 }
 
- bool nsTextFrame::IsEmpty() {
+
+bool nsTextFrame::IsEmpty() {
   NS_ASSERTION(!(mState & TEXT_IS_ONLY_WHITESPACE) ||
                    !(mState & TEXT_ISNOT_ONLY_WHITESPACE),
                "Invalid state");

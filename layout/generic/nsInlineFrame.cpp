@@ -80,7 +80,8 @@ static inline bool IsMarginZero(const LengthPercentageOrAuto& aLength) {
          nsLayoutUtils::IsMarginZero(aLength.AsLengthPercentage());
 }
 
- bool nsInlineFrame::IsSelfEmpty() {
+
+bool nsInlineFrame::IsSelfEmpty() {
 #if 0
   
   
@@ -226,13 +227,15 @@ void nsInlineFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
 
 
- void nsInlineFrame::AddInlineMinISize(
-    gfxContext* aRenderingContext, nsIFrame::InlineMinISizeData* aData) {
+
+void nsInlineFrame::AddInlineMinISize(gfxContext* aRenderingContext,
+                                      nsIFrame::InlineMinISizeData* aData) {
   DoInlineIntrinsicISize(aRenderingContext, aData, nsLayoutUtils::MIN_ISIZE);
 }
 
- void nsInlineFrame::AddInlinePrefISize(
-    gfxContext* aRenderingContext, nsIFrame::InlinePrefISizeData* aData) {
+
+void nsInlineFrame::AddInlinePrefISize(gfxContext* aRenderingContext,
+                                       nsIFrame::InlinePrefISizeData* aData) {
   DoInlineIntrinsicISize(aRenderingContext, aData, nsLayoutUtils::PREF_ISIZE);
   aData->mLineIsEmpty = false;
 }
@@ -407,7 +410,8 @@ bool nsInlineFrame::DrainSelfOverflowListInternal(bool aInFirstLine) {
   return true;
 }
 
- bool nsInlineFrame::DrainSelfOverflowList() {
+
+bool nsInlineFrame::DrainSelfOverflowList() {
   nsIFrame* lineContainer = nsLayoutUtils::FindNearestBlockAncestor(this);
   
   
@@ -421,12 +425,14 @@ bool nsInlineFrame::DrainSelfOverflowListInternal(bool aInFirstLine) {
   return DrainSelfOverflowListInternal(inFirstLine);
 }
 
- bool nsInlineFrame::CanContinueTextRun() const {
+
+bool nsInlineFrame::CanContinueTextRun() const {
   
   return true;
 }
 
- void nsInlineFrame::PullOverflowsFromPrevInFlow() {
+
+void nsInlineFrame::PullOverflowsFromPrevInFlow() {
   nsInlineFrame* prevInFlow = static_cast<nsInlineFrame*>(GetPrevInFlow());
   if (prevInFlow) {
     nsPresContext* presContext = PresContext();
@@ -640,7 +646,8 @@ void nsInlineFrame::ReflowFrames(nsPresContext* aPresContext,
 }
 
 
- bool nsInlineFrame::HasFramesToPull(nsInlineFrame* aNextInFlow) {
+
+bool nsInlineFrame::HasFramesToPull(nsInlineFrame* aNextInFlow) {
   while (aNextInFlow) {
     if (!aNextInFlow->mFrames.IsEmpty()) {
       return true;
@@ -1052,7 +1059,8 @@ void nsFirstLineFrame::Reflow(nsPresContext* aPresContext,
   
 }
 
- void nsFirstLineFrame::PullOverflowsFromPrevInFlow() {
+
+void nsFirstLineFrame::PullOverflowsFromPrevInFlow() {
   nsFirstLineFrame* prevInFlow =
       static_cast<nsFirstLineFrame*>(GetPrevInFlow());
   if (prevInFlow) {
@@ -1068,7 +1076,8 @@ void nsFirstLineFrame::Reflow(nsPresContext* aPresContext,
   }
 }
 
- bool nsFirstLineFrame::DrainSelfOverflowList() {
+
+bool nsFirstLineFrame::DrainSelfOverflowList() {
   AutoFrameListPtr overflowFrames(PresContext(), StealOverflowFrames());
   if (overflowFrames) {
     bool result = !overflowFrames->IsEmpty();

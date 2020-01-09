@@ -826,15 +826,15 @@ nscoord nsHTMLScrollFrame::GetIntrinsicVScrollbarWidth(
   return vScrollbarPrefSize.width;
 }
 
- nscoord nsHTMLScrollFrame::GetMinISize(
-    gfxContext* aRenderingContext) {
+
+nscoord nsHTMLScrollFrame::GetMinISize(gfxContext* aRenderingContext) {
   nscoord result = mHelper.mScrolledFrame->GetMinISize(aRenderingContext);
   DISPLAY_MIN_INLINE_SIZE(this, result);
   return result + GetIntrinsicVScrollbarWidth(aRenderingContext);
 }
 
- nscoord nsHTMLScrollFrame::GetPrefISize(
-    gfxContext* aRenderingContext) {
+
+nscoord nsHTMLScrollFrame::GetPrefISize(gfxContext* aRenderingContext) {
   nscoord result = mHelper.mScrolledFrame->GetPrefISize(aRenderingContext);
   DISPLAY_PREF_INLINE_SIZE(this, result);
   return NSCoordSaturatingAdd(result,
@@ -2636,8 +2636,9 @@ static nsPoint ClampAndAlignWithLayerPixels(
                               aCurrent.y));
 }
 
- void ScrollFrameHelper::ScrollActivityCallback(nsITimer* aTimer,
-                                                            void* anInstance) {
+
+void ScrollFrameHelper::ScrollActivityCallback(nsITimer* aTimer,
+                                               void* anInstance) {
   ScrollFrameHelper* self = static_cast<ScrollFrameHelper*>(anInstance);
 
   
@@ -3156,13 +3157,19 @@ void ScrollFrameHelper::AppendScrollPartsTo(nsDisplayListBuilder* aBuilder,
   }
 }
 
- bool ScrollFrameHelper::sFrameVisPrefsCached = false;
- uint32_t ScrollFrameHelper::sHorzExpandScrollPort = 0;
- uint32_t ScrollFrameHelper::sVertExpandScrollPort = 1;
- int32_t ScrollFrameHelper::sHorzScrollFraction = 2;
- int32_t ScrollFrameHelper::sVertScrollFraction = 2;
 
- void ScrollFrameHelper::EnsureFrameVisPrefsCached() {
+bool ScrollFrameHelper::sFrameVisPrefsCached = false;
+
+uint32_t ScrollFrameHelper::sHorzExpandScrollPort = 0;
+
+uint32_t ScrollFrameHelper::sVertExpandScrollPort = 1;
+
+int32_t ScrollFrameHelper::sHorzScrollFraction = 2;
+
+int32_t ScrollFrameHelper::sVertScrollFraction = 2;
+
+
+void ScrollFrameHelper::EnsureFrameVisPrefsCached() {
   if (!sFrameVisPrefsCached) {
     Preferences::AddUintVarCache(&sHorzExpandScrollPort,
                                  "layout.framevisibility.numscrollportwidths",

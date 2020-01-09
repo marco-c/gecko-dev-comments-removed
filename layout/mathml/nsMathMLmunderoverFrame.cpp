@@ -354,8 +354,10 @@ nsMathMLmunderoverFrame::TransmitAutomaticData() {
 
 
 
- nsresult nsMathMLmunderoverFrame::Place(
-    DrawTarget* aDrawTarget, bool aPlaceOrigin, ReflowOutput& aDesiredSize) {
+
+nsresult nsMathMLmunderoverFrame::Place(DrawTarget* aDrawTarget,
+                                        bool aPlaceOrigin,
+                                        ReflowOutput& aDesiredSize) {
   float fontSizeInflation = nsLayoutUtils::FontSizeInflationFor(this);
   if (NS_MATHML_EMBELLISH_IS_MOVABLELIMITS(mEmbellishData.flags) &&
       StyleFont()->mMathDisplay == NS_MATHML_DISPLAYSTYLE_INLINE) {

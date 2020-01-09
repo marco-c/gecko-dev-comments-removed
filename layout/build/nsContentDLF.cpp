@@ -259,7 +259,8 @@ nsContentDLF::CreateInstanceForDocument(nsISupports* aContainer,
   return NS_OK;
 }
 
- already_AddRefed<Document> nsContentDLF::CreateBlankDocument(
+
+already_AddRefed<Document> nsContentDLF::CreateBlankDocument(
     nsILoadGroup* aLoadGroup, nsIPrincipal* aPrincipal,
     nsDocShell* aContainer) {
   

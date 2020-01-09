@@ -515,8 +515,8 @@ void RestyleManager::ContentStateChangedInternal(const Element& aElement,
   }
 }
 
- nsCString RestyleManager::RestyleHintToString(
-    nsRestyleHint aHint) {
+
+nsCString RestyleManager::RestyleHintToString(nsRestyleHint aHint) {
   nsCString result;
   bool any = false;
   const char* names[] = {"Self",           "SomeDescendants",
@@ -549,7 +549,8 @@ void RestyleManager::ContentStateChangedInternal(const Element& aElement,
 }
 
 #ifdef DEBUG
- nsCString RestyleManager::ChangeHintToString(nsChangeHint aHint) {
+
+nsCString RestyleManager::ChangeHintToString(nsChangeHint aHint) {
   nsCString result;
   bool any = false;
   const char* names[] = {"RepaintFrame",
@@ -1859,8 +1860,8 @@ void RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
   aChangeList.Clear();
 }
 
- uint64_t RestyleManager::GetAnimationGenerationForFrame(
-    nsIFrame* aFrame) {
+
+uint64_t RestyleManager::GetAnimationGenerationForFrame(nsIFrame* aFrame) {
   EffectSet* effectSet = EffectSet::GetEffectSet(aFrame);
   return effectSet ? effectSet->GetAnimationGeneration() : 0;
 }
@@ -1874,7 +1875,8 @@ void RestyleManager::IncrementAnimationGeneration() {
   }
 }
 
- void RestyleManager::AddLayerChangesForAnimation(
+
+void RestyleManager::AddLayerChangesForAnimation(
     nsIFrame* aFrame, nsIContent* aContent, nsChangeHint aHintForThisFrame,
     nsStyleChangeList& aChangeListToProcess) {
   if (!aFrame || !aContent) {
@@ -2377,8 +2379,9 @@ void RestyleManager::PostRebuildAllStyleDataEvent(nsChangeHint aExtraHint,
   
 }
 
- void RestyleManager::ClearServoDataFromSubtree(
-    Element* aElement, IncludeRoot aIncludeRoot) {
+
+void RestyleManager::ClearServoDataFromSubtree(Element* aElement,
+                                               IncludeRoot aIncludeRoot) {
   if (aElement->HasServoData()) {
     StyleChildrenIterator it(aElement);
     for (nsIContent* n = it.GetNextChild(); n; n = it.GetNextChild()) {
@@ -2396,8 +2399,8 @@ void RestyleManager::PostRebuildAllStyleDataEvent(nsChangeHint aExtraHint,
   }
 }
 
- void RestyleManager::ClearRestyleStateFromSubtree(
-    Element* aElement) {
+
+void RestyleManager::ClearRestyleStateFromSubtree(Element* aElement) {
   if (aElement->HasAnyOfFlags(Element::kAllServoDescendantBits)) {
     StyleChildrenIterator it(aElement);
     for (nsIContent* n = it.GetNextChild(); n; n = it.GetNextChild()) {

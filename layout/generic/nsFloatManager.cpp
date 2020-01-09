@@ -1694,8 +1694,10 @@ void nsFloatManager::PolygonShapeInfo::Translate(nscoord aLineLeft,
   mBEnd += aBlockStart;
 }
 
- nscoord nsFloatManager::PolygonShapeInfo::XInterceptAtY(
-    const nscoord aY, const nsPoint& aP1, const nsPoint& aP2) {
+
+nscoord nsFloatManager::PolygonShapeInfo::XInterceptAtY(const nscoord aY,
+                                                        const nsPoint& aP1,
+                                                        const nsPoint& aP2) {
   
   
 
@@ -2436,7 +2438,8 @@ bool nsFloatManager::FloatInfo::MayNarrowInBlockDirection(
 
 
 
- LogicalRect nsFloatManager::ShapeInfo::ComputeShapeBoxRect(
+
+LogicalRect nsFloatManager::ShapeInfo::ComputeShapeBoxRect(
     const StyleShapeSource& aShapeOutside, nsIFrame* const aFrame,
     const LogicalRect& aMarginRect, WritingMode aWM) {
   LogicalRect rect = aMarginRect;
@@ -2740,7 +2743,8 @@ nsFloatManager::ShapeInfo::CreateImageShape(const nsStyleImage& aShapeImage,
                                     aContainerSize);
 }
 
- nscoord nsFloatManager::ShapeInfo::ComputeEllipseLineInterceptDiff(
+
+nscoord nsFloatManager::ShapeInfo::ComputeEllipseLineInterceptDiff(
     const nscoord aShapeBoxBStart, const nscoord aShapeBoxBEnd,
     const nscoord aBStartCornerRadiusL, const nscoord aBStartCornerRadiusB,
     const nscoord aBEndCornerRadiusL, const nscoord aBEndCornerRadiusB,
@@ -2807,14 +2811,17 @@ nsFloatManager::ShapeInfo::CreateImageShape(const nsStyleImage& aShapeImage,
   return lineDiff;
 }
 
- nscoord nsFloatManager::ShapeInfo::XInterceptAtY(
-    const nscoord aY, const nscoord aRadiusX, const nscoord aRadiusY) {
+
+nscoord nsFloatManager::ShapeInfo::XInterceptAtY(const nscoord aY,
+                                                 const nscoord aRadiusX,
+                                                 const nscoord aRadiusY) {
   
   MOZ_ASSERT(aRadiusY > 0);
   return aRadiusX * std::sqrt(1 - (aY * aY) / double(aRadiusY * aRadiusY));
 }
 
- nsPoint nsFloatManager::ShapeInfo::ConvertToFloatLogical(
+
+nsPoint nsFloatManager::ShapeInfo::ConvertToFloatLogical(
     const nsPoint& aPoint, WritingMode aWM, const nsSize& aContainerSize) {
   LogicalPoint logicalPoint(aWM, aPoint, aContainerSize);
   return nsPoint(logicalPoint.LineRelative(aWM, aContainerSize),
@@ -2867,7 +2874,8 @@ nsFloatManager::ShapeInfo::ConvertToFloatLogical(const nscoord aRadii[8],
   return logicalRadii;
 }
 
- size_t nsFloatManager::ShapeInfo::MinIntervalIndexContainingY(
+
+size_t nsFloatManager::ShapeInfo::MinIntervalIndexContainingY(
     const nsTArray<nsRect>& aIntervals, const nscoord aTargetY) {
   
   
@@ -2890,9 +2898,11 @@ nsFloatManager::ShapeInfo::ConvertToFloatLogical(const nscoord aRadii[8],
   return endIdx;
 }
 
- nscoord nsFloatManager::ShapeInfo::LineEdge(
-    const nsTArray<nsRect>& aIntervals, const nscoord aBStart,
-    const nscoord aBEnd, bool aIsLineLeft) {
+
+nscoord nsFloatManager::ShapeInfo::LineEdge(const nsTArray<nsRect>& aIntervals,
+                                            const nscoord aBStart,
+                                            const nscoord aBEnd,
+                                            bool aIsLineLeft) {
   MOZ_ASSERT(aBStart <= aBEnd,
              "The band's block start is greater than its block end?");
 

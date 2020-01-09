@@ -3955,8 +3955,8 @@ void nsTreeBodyFrame::RemoveImageCacheEntry(int32_t aRowIndex,
   }
 }
 
- void nsTreeBodyFrame::DidSetComputedStyle(
-    ComputedStyle* aOldComputedStyle) {
+
+void nsTreeBodyFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
   nsLeafBoxFrame::DidSetComputedStyle(aOldComputedStyle);
 
   

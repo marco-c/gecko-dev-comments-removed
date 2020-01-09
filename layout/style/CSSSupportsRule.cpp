@@ -30,7 +30,8 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(CSSSupportsRule)
 NS_INTERFACE_MAP_END_INHERITING(ConditionRule)
 
 #ifdef DEBUG
- void CSSSupportsRule::List(FILE* out, int32_t aIndent) const {
+
+void CSSSupportsRule::List(FILE* out, int32_t aIndent) const {
   nsAutoCString str;
   for (int32_t i = 0; i < aIndent; i++) {
     str.AppendLiteral("  ");
@@ -49,18 +50,20 @@ void CSSSupportsRule::SetConditionText(const nsAString& aConditionText,
   aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
 }
 
- void CSSSupportsRule::GetCssText(nsAString& aCssText) const {
+
+void CSSSupportsRule::GetCssText(nsAString& aCssText) const {
   Servo_SupportsRule_GetCssText(mRawRule, &aCssText);
 }
 
- size_t CSSSupportsRule::SizeOfIncludingThis(
-    MallocSizeOf aMallocSizeOf) const {
+
+size_t CSSSupportsRule::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
   
   return aMallocSizeOf(this);
 }
 
- JSObject* CSSSupportsRule::WrapObject(
-    JSContext* aCx, JS::Handle<JSObject*> aGivenProto) {
+
+JSObject* CSSSupportsRule::WrapObject(JSContext* aCx,
+                                      JS::Handle<JSObject*> aGivenProto) {
   return CSSSupportsRule_Binding::Wrap(aCx, this, aGivenProto);
 }
 

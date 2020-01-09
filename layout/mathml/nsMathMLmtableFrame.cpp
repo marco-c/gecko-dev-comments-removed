@@ -1219,7 +1219,8 @@ const nsStyleText* nsMathMLmtdInnerFrame::StyleTextForLineLayout() {
   return mUniqueStyleText.get();
 }
 
- void nsMathMLmtdInnerFrame::DidSetComputedStyle(
+
+void nsMathMLmtdInnerFrame::DidSetComputedStyle(
     ComputedStyle* aOldComputedStyle) {
   nsBlockFrame::DidSetComputedStyle(aOldComputedStyle);
   mUniqueStyleText = MakeUnique<nsStyleText>(*StyleText());

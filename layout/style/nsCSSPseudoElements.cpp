@@ -34,7 +34,8 @@ bool nsCSSPseudoElements::IsPseudoElement(nsAtom* aAtom) {
                                      kAtomCount_PseudoElements);
 }
 
- bool nsCSSPseudoElements::IsCSS2PseudoElement(nsAtom* aAtom) {
+
+bool nsCSSPseudoElements::IsCSS2PseudoElement(nsAtom* aAtom) {
   
   
   MOZ_ASSERT(IsPseudoElement(aAtom), "must be pseudo element");
@@ -50,8 +51,9 @@ bool nsCSSPseudoElements::IsPseudoElement(nsAtom* aAtom) {
   return result;
 }
 
- PseudoStyleType nsCSSPseudoElements::GetPseudoType(
-    nsAtom* aAtom, EnabledState aEnabledState) {
+
+PseudoStyleType nsCSSPseudoElements::GetPseudoType(nsAtom* aAtom,
+                                                   EnabledState aEnabledState) {
   Maybe<uint32_t> index = nsStaticAtomUtils::Lookup(aAtom, GetAtomBase(),
                                                     kAtomCount_PseudoElements);
   if (index.isSome()) {
@@ -62,13 +64,15 @@ bool nsCSSPseudoElements::IsPseudoElement(nsAtom* aAtom) {
   return Type::NotPseudo;
 }
 
- nsAtom* nsCSSPseudoElements::GetPseudoAtom(Type aType) {
+
+nsAtom* nsCSSPseudoElements::GetPseudoAtom(Type aType) {
   MOZ_ASSERT(PseudoStyle::IsPseudoElement(aType), "Unexpected type");
   size_t index = kAtomIndex_PseudoElements + static_cast<size_t>(aType);
   return nsGkAtoms::GetAtomByIndex(index);
 }
 
- already_AddRefed<nsAtom> nsCSSPseudoElements::GetPseudoAtom(
+
+already_AddRefed<nsAtom> nsCSSPseudoElements::GetPseudoAtom(
     const nsAString& aPseudoElement) {
   if (DOMStringIsNull(aPseudoElement) || aPseudoElement.IsEmpty() ||
       aPseudoElement.First() != char16_t(':')) {
@@ -100,14 +104,15 @@ bool nsCSSPseudoElements::IsPseudoElement(nsAtom* aAtom) {
   return pseudo.forget();
 }
 
- bool nsCSSPseudoElements::PseudoElementSupportsUserActionState(
+
+bool nsCSSPseudoElements::PseudoElementSupportsUserActionState(
     const Type aType) {
   return PseudoElementHasFlags(aType,
                                CSS_PSEUDO_ELEMENT_SUPPORTS_USER_ACTION_STATE);
 }
 
- nsString nsCSSPseudoElements::PseudoTypeAsString(
-    Type aPseudoType) {
+
+nsString nsCSSPseudoElements::PseudoTypeAsString(Type aPseudoType) {
   switch (aPseudoType) {
     case PseudoStyleType::before:
       return NS_LITERAL_STRING("::before");
@@ -121,7 +126,8 @@ bool nsCSSPseudoElements::IsPseudoElement(nsAtom* aAtom) {
 }
 
 #ifdef DEBUG
- void nsCSSPseudoElements::AssertAtoms() {
+
+void nsCSSPseudoElements::AssertAtoms() {
   nsStaticAtom* base = GetAtomBase();
 #  define CSS_PSEUDO_ELEMENT(name_, value_, flags_)                   \
     {                                                                 \

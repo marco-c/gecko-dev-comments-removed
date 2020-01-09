@@ -28,8 +28,8 @@ FixedTableLayoutStrategy::FixedTableLayoutStrategy(nsTableFrame *aTableFrame)
 
 FixedTableLayoutStrategy::~FixedTableLayoutStrategy() {}
 
- nscoord FixedTableLayoutStrategy::GetMinISize(
-    gfxContext *aRenderingContext) {
+
+nscoord FixedTableLayoutStrategy::GetMinISize(gfxContext *aRenderingContext) {
   DISPLAY_MIN_INLINE_SIZE(mTableFrame, mMinISize);
   if (mMinISize != NS_INTRINSIC_WIDTH_UNKNOWN) {
     return mMinISize;
@@ -117,8 +117,9 @@ FixedTableLayoutStrategy::~FixedTableLayoutStrategy() {}
   return (mMinISize = result);
 }
 
- nscoord FixedTableLayoutStrategy::GetPrefISize(
-    gfxContext *aRenderingContext, bool aComputingSize) {
+
+nscoord FixedTableLayoutStrategy::GetPrefISize(gfxContext *aRenderingContext,
+                                               bool aComputingSize) {
   
   
   
@@ -130,7 +131,8 @@ FixedTableLayoutStrategy::~FixedTableLayoutStrategy() {}
   return result;
 }
 
- void FixedTableLayoutStrategy::MarkIntrinsicISizesDirty() {
+
+void FixedTableLayoutStrategy::MarkIntrinsicISizesDirty() {
   mMinISize = NS_INTRINSIC_WIDTH_UNKNOWN;
   mLastCalcISize = nscoord_MIN;
 }
@@ -146,7 +148,8 @@ static inline nscoord AllocateUnassigned(nscoord aUnassignedSpace,
   return NSToCoordRound(float(aUnassignedSpace) * aShare);
 }
 
- void FixedTableLayoutStrategy::ComputeColumnISizes(
+
+void FixedTableLayoutStrategy::ComputeColumnISizes(
     const ReflowInput &aReflowInput) {
   nscoord tableISize = aReflowInput.ComputedISize();
 

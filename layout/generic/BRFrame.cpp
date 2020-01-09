@@ -169,15 +169,17 @@ void BRFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
   NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aMetrics);
 }
 
- void BRFrame::AddInlineMinISize(
-    gfxContext* aRenderingContext, nsIFrame::InlineMinISizeData* aData) {
+
+void BRFrame::AddInlineMinISize(gfxContext* aRenderingContext,
+                                nsIFrame::InlineMinISizeData* aData) {
   if (!GetParent()->Style()->ShouldSuppressLineBreak()) {
     aData->ForceBreak();
   }
 }
 
- void BRFrame::AddInlinePrefISize(
-    gfxContext* aRenderingContext, nsIFrame::InlinePrefISizeData* aData) {
+
+void BRFrame::AddInlinePrefISize(gfxContext* aRenderingContext,
+                                 nsIFrame::InlinePrefISizeData* aData) {
   if (!GetParent()->Style()->ShouldSuppressLineBreak()) {
     
     aData->mCurrentLine += 1;
@@ -185,13 +187,15 @@ void BRFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
   }
 }
 
- nscoord BRFrame::GetMinISize(gfxContext* aRenderingContext) {
+
+nscoord BRFrame::GetMinISize(gfxContext* aRenderingContext) {
   nscoord result = 0;
   DISPLAY_MIN_INLINE_SIZE(this, result);
   return result;
 }
 
- nscoord BRFrame::GetPrefISize(gfxContext* aRenderingContext) {
+
+nscoord BRFrame::GetPrefISize(gfxContext* aRenderingContext) {
   nscoord result = 0;
   DISPLAY_PREF_INLINE_SIZE(this, result);
   return result;

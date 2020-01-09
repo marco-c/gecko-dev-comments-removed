@@ -143,9 +143,9 @@ void nsMathMLTokenFrame::Reflow(nsPresContext* aPresContext,
 
 
 
- nsresult nsMathMLTokenFrame::Place(DrawTarget* aDrawTarget,
-                                                 bool aPlaceOrigin,
-                                                 ReflowOutput& aDesiredSize) {
+
+nsresult nsMathMLTokenFrame::Place(DrawTarget* aDrawTarget, bool aPlaceOrigin,
+                                   ReflowOutput& aDesiredSize) {
   mBoundingMetrics = nsBoundingMetrics();
   for (nsIFrame* childFrame : PrincipalChildList()) {
     ReflowOutput childSize(aDesiredSize.GetWritingMode());

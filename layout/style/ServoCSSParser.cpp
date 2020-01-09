@@ -14,23 +14,26 @@
 
 using namespace mozilla;
 
- bool ServoCSSParser::IsValidCSSColor(const nsAString& aValue) {
+
+bool ServoCSSParser::IsValidCSSColor(const nsAString& aValue) {
   return Servo_IsValidCSSColor(&aValue);
 }
 
- bool ServoCSSParser::ComputeColor(
-    ServoStyleSet* aStyleSet, nscolor aCurrentColor, const nsAString& aValue,
-    nscolor* aResultColor, bool* aWasCurrentColor, css::Loader* aLoader) {
+
+bool ServoCSSParser::ComputeColor(ServoStyleSet* aStyleSet,
+                                  nscolor aCurrentColor,
+                                  const nsAString& aValue,
+                                  nscolor* aResultColor, bool* aWasCurrentColor,
+                                  css::Loader* aLoader) {
   return Servo_ComputeColor(aStyleSet ? aStyleSet->RawSet() : nullptr,
                             aCurrentColor, &aValue, aResultColor,
                             aWasCurrentColor, aLoader);
 }
 
- already_AddRefed<RawServoDeclarationBlock>
-ServoCSSParser::ParseProperty(nsCSSPropertyID aProperty,
-                              const nsAString& aValue,
-                              const ParsingEnvironment& aParsingEnvironment,
-                              ParsingMode aParsingMode) {
+
+already_AddRefed<RawServoDeclarationBlock> ServoCSSParser::ParseProperty(
+    nsCSSPropertyID aProperty, const nsAString& aValue,
+    const ParsingEnvironment& aParsingEnvironment, ParsingMode aParsingMode) {
   NS_ConvertUTF16toUTF8 value(aValue);
   return Servo_ParseProperty(
              aProperty, &value, aParsingEnvironment.mUrlExtraData, aParsingMode,
@@ -38,27 +41,30 @@ ServoCSSParser::ParseProperty(nsCSSPropertyID aProperty,
       .Consume();
 }
 
- bool ServoCSSParser::ParseEasing(const nsAString& aValue,
-                                              URLExtraData* aUrl,
-                                              nsTimingFunction& aResult) {
+
+bool ServoCSSParser::ParseEasing(const nsAString& aValue, URLExtraData* aUrl,
+                                 nsTimingFunction& aResult) {
   return Servo_ParseEasing(&aValue, aUrl, &aResult);
 }
 
- bool ServoCSSParser::ParseTransformIntoMatrix(
-    const nsAString& aValue, bool& aContains3DTransform,
-    RawGeckoGfxMatrix4x4& aResult) {
+
+bool ServoCSSParser::ParseTransformIntoMatrix(const nsAString& aValue,
+                                              bool& aContains3DTransform,
+                                              RawGeckoGfxMatrix4x4& aResult) {
   return Servo_ParseTransformIntoMatrix(&aValue, &aContains3DTransform,
                                         &aResult);
 }
 
- bool ServoCSSParser::ParseFontShorthandForMatching(
+
+bool ServoCSSParser::ParseFontShorthandForMatching(
     const nsAString& aValue, URLExtraData* aUrl, RefPtr<SharedFontList>& aList,
     StyleComputedFontStyleDescriptor& aStyle, float& aStretch, float& aWeight) {
   return Servo_ParseFontShorthandForMatching(&aValue, aUrl, &aList, &aStyle,
                                              &aStretch, &aWeight);
 }
 
- already_AddRefed<URLExtraData> ServoCSSParser::GetURLExtraData(
+
+already_AddRefed<URLExtraData> ServoCSSParser::GetURLExtraData(
     Document* aDocument) {
   MOZ_ASSERT(aDocument);
 
