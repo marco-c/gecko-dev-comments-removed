@@ -171,7 +171,7 @@ pref("devtools.netmonitor.columnsData",
   '[{"name":"status","minWidth":30,"width":5}, {"name":"method","minWidth":30,"width":5}, {"name":"domain","minWidth":30,"width":10}, {"name":"file","minWidth":30,"width":25}, {"name":"cause","minWidth":30,"width":10},{"name":"type","minWidth":30,"width":5},{"name":"transferred","minWidth":30,"width":10},{"name":"contentSize","minWidth":30,"width":5},{"name":"waterfall","minWidth":150,"width":25}]');
 
 
-pref("devtools.netmonitor.features.resizeColumns", false);
+pref("devtools.netmonitor.features.resizeColumns", true);
 
 pref("devtools.netmonitor.response.ui.limit", 10240);
 
