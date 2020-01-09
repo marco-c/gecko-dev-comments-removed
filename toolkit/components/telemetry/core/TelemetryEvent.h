@@ -13,8 +13,11 @@
 namespace mozilla {
 namespace Telemetry {
 struct ChildEventData;
-}
+struct EventExtraEntry;
 }  
+}  
+
+using mozilla::Telemetry::EventExtraEntry;
 
 
 
@@ -28,6 +31,11 @@ void DeInitializeGlobalState();
 
 void SetCanRecordBase(bool b);
 void SetCanRecordExtended(bool b);
+
+
+void RecordEventNative(mozilla::Telemetry::EventID aId,
+                       const mozilla::Maybe<nsCString>& aValue,
+                       const mozilla::Maybe<nsTArray<EventExtraEntry>>& aExtra);
 
 
 nsresult RecordEvent(const nsACString& aCategory, const nsACString& aMethod,

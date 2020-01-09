@@ -8,6 +8,7 @@
 
 #include "mozilla/GuardObjects.h"
 #include "mozilla/StartupTimeline.h"
+#include "mozilla/TelemetryEventEnums.h"
 #include "mozilla/TelemetryHistogramEnums.h"
 #include "mozilla/TelemetryScalarEnums.h"
 #include "mozilla/TimeStamp.h"
@@ -35,6 +36,7 @@ struct KeyedHistogramAccumulation;
 struct ScalarAction;
 struct KeyedScalarAction;
 struct ChildEventData;
+struct EventExtraEntry;
 
 
 
@@ -567,6 +569,28 @@ void ScalarSet(mozilla::Telemetry::ScalarID aId, const nsAString& aKey,
 
 void ScalarSetMaximum(mozilla::Telemetry::ScalarID aId, const nsAString& aKey,
                       uint32_t aValue);
+
+
+
+
+
+
+
+
+
+void RecordEvent(mozilla::Telemetry::EventID aId,
+                 const mozilla::Maybe<nsCString>& aValue,
+                 const mozilla::Maybe<nsTArray<EventExtraEntry>>& aExtra);
+
+
+
+
+
+
+
+
+
+void SetEventRecordingEnabled(const nsACString& aCategory, bool aEnabled);
 
 }  
 }  
