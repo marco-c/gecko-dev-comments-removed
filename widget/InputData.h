@@ -197,6 +197,13 @@ class MultiTouchInput : public InputData {
   MultiTouchInput();
   MultiTouchInput(const MultiTouchInput& aOther);
   explicit MultiTouchInput(const WidgetTouchEvent& aTouchEvent);
+  
+  
+  
+  
+  
+  
+  explicit MultiTouchInput(const WidgetMouseEvent& aMouseEvent);
   void Translate(const ScreenPoint& aTranslation);
 
   WidgetTouchEvent ToWidgetTouchEvent(nsIWidget* aWidget) const;
@@ -212,9 +219,6 @@ class MultiTouchInput : public InputData {
   
   MultiTouchType mType;
   nsTArray<SingleTouchData> mTouches;
-  
-  
-  ExternalPoint mScreenOffset;
   bool mHandledByAPZ;
 };
 
@@ -410,10 +414,24 @@ class PinchGestureInput : public InputData {
   
 
   
+  
+  
+  
+  
+  
+  
   PinchGestureInput(PinchGestureType aType, uint32_t aTime,
-                    TimeStamp aTimeStamp, const ExternalPoint& aScreenOffset,
-                    const ScreenPoint& aFocusPoint, ScreenCoord aCurrentSpan,
-                    ScreenCoord aPreviousSpan, Modifiers aModifiers);
+                    TimeStamp aTimeStamp, const ScreenPoint& aFocusPoint,
+                    ParentLayerCoord aCurrentSpan,
+                    ParentLayerCoord aPreviousSpan, Modifiers aModifiers);
+
+  
+  
+  PinchGestureInput(PinchGestureType aType, uint32_t aTime,
+                    TimeStamp aTimeStamp,
+                    const ParentLayerPoint& aLocalFocusPoint,
+                    ParentLayerCoord aCurrentSpan,
+                    ParentLayerCoord aPreviousSpan, Modifiers aModifiers);
 
   bool TransformToLocal(const ScreenToParentLayerMatrix4x4& aTransform);
 
@@ -433,19 +451,15 @@ class PinchGestureInput : public InputData {
 
   
   
-  ExternalPoint mScreenOffset;
-
-  
-  
   ParentLayerPoint mLocalFocusPoint;
 
   
-  ScreenCoord mCurrentSpan;
+  ParentLayerCoord mCurrentSpan;
 
   
   
   
-  ScreenCoord mPreviousSpan;
+  ParentLayerCoord mPreviousSpan;
 
   
   

@@ -493,25 +493,6 @@ class AsyncPanZoomController {
                                             const ScreenPoint& aAnchor) const;
 
   
-
-
-  ParentLayerPoint ToParentLayerCoordinates(const ScreenPoint& aVector,
-                                            const ExternalPoint& aAnchor) const;
-
-  
-
-
-
-  static ExternalPoint ToExternalPoint(const ExternalPoint& aScreenOffset,
-                                       const ScreenPoint& aScreenPoint);
-
-  
-
-
-
-  ScreenPoint PanVector(const ExternalPoint& aPos) const;
-
-  
   
   bool CanScroll(const InputData& aEvent) const;
 
@@ -747,6 +728,17 @@ class AsyncPanZoomController {
 
 
 
+
+
+
+  ScreenCoord PanDistance() const;
+
+  
+
+
+
+
+
   ParentLayerPoint PanStart() const;
 
   
@@ -764,17 +756,6 @@ class AsyncPanZoomController {
 
 
   ParentLayerPoint GetFirstTouchPoint(const MultiTouchInput& aEvent);
-
-  
-
-
-
-  ExternalPoint GetExternalPoint(const InputData& aEvent);
-
-  
-
-
-  ExternalPoint GetFirstExternalTouchPoint(const MultiTouchInput& aEvent);
 
   
 
@@ -801,9 +782,7 @@ class AsyncPanZoomController {
 
 
 
-
-
-  nsEventStatus StartPanning(const ExternalPoint& aStartPoint);
+  nsEventStatus StartPanning(const ParentLayerPoint& aStartPoint);
 
   
 
@@ -1011,9 +990,6 @@ class AsyncPanZoomController {
   
   
   Maybe<uint64_t> mZoomAnimationId;
-
-  
-  ExternalPoint mStartTouch;
 
   friend class Axis;
 

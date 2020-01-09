@@ -156,7 +156,7 @@ class GestureEventListener final {
 
 
 
-  ScreenCoord GetYSpanFromGestureStartPoint();
+  ParentLayerCoord GetYSpanFromGestureStartPoint();
 
   
 
@@ -185,17 +185,17 @@ class GestureEventListener final {
 
 
 
-  ScreenCoord mSpanChange;
+  ParentLayerCoord mSpanChange;
 
   
 
 
 
-  ScreenCoord mPreviousSpan;
+  ParentLayerCoord mPreviousSpan;
 
   
-  ScreenCoord mFocusChange;
-  ScreenPoint mPreviousFocus;
+  ParentLayerCoord mFocusChange;
+  ParentLayerPoint mPreviousFocus;
 
   
 
@@ -219,7 +219,7 @@ class GestureEventListener final {
 
 
 
-  ScreenPoint mOneTouchPinchStartPosition;
+  ParentLayerPoint mOneTouchPinchStartPosition;
 
   
 
@@ -230,13 +230,7 @@ class GestureEventListener final {
 
 
 
-  ScreenPoint mTouchStartPosition;
-
-  
-
-
-
-  ExternalPoint mTouchStartOffset;
+  ParentLayerPoint mTouchStartPosition;
 
   
 
