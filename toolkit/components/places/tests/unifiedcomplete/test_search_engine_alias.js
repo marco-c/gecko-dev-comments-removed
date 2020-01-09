@@ -129,76 +129,106 @@ add_task(async function basicGetAndPost() {
 add_task(async function engineWithSuggestions() {
   let engine = await addTestSuggestionsEngine();
 
-  await PlacesTestUtils.addVisits(engine.searchForm);
+  
+  
+  let historyTitle = "fire";
+  await PlacesTestUtils.addVisits({
+    uri: engine.searchForm,
+    title: historyTitle,
+  });
   let historyMatch = {
     value: "http://localhost:9000/search",
-    comment: "test visit for http://localhost:9000/search",
+    comment: historyTitle,
   };
 
   
-  
-  for (let alias of ["moz", "@moz"]) {
-    engine.alias = alias;
-    Assert.equal(engine.alias, alias);
-
-    let expectedMatches = [
-      makeSearchMatch(`${alias} `, {
-        engineName: SUGGESTIONS_ENGINE_NAME,
-        alias,
-        searchQuery: "",
-        heuristic: true,
-      }),
-    ];
-    if (alias[0] != "@") {
-      expectedMatches.push(historyMatch);
+  for (let private of [false, true]) {
+    let searchParam = "enable-actions";
+    if (private) {
+      searchParam += " private-window";
     }
-    await check_autocomplete({
-      search: alias,
-      searchParam: "enable-actions",
-      matches: expectedMatches,
-    });
 
-    expectedMatches = [
-      makeSearchMatch(`${alias} `, {
-        engineName: SUGGESTIONS_ENGINE_NAME,
-        alias,
-        searchQuery: "",
-        heuristic: true,
-      }),
-    ];
-    if (alias[0] != "@") {
-      expectedMatches.push(historyMatch);
-    }
-    await check_autocomplete({
-      search: `${alias} `,
-      searchParam: "enable-actions",
-      matches: expectedMatches,
-    });
+    
+    
+    for (let alias of ["moz", "@moz"]) {
+      engine.alias = alias;
+      Assert.equal(engine.alias, alias);
 
-    await check_autocomplete({
-      search: `${alias} fire`,
-      searchParam: "enable-actions",
-      matches: [
-        makeSearchMatch(`${alias} fire`, {
+      
+      let expectedMatches = [
+        makeSearchMatch(`${alias} `, {
           engineName: SUGGESTIONS_ENGINE_NAME,
           alias,
-          searchQuery: "fire",
+          searchQuery: "",
           heuristic: true,
         }),
-        makeSearchMatch(`${alias} fire foo`, {
+      ];
+      if (alias[0] != "@") {
+        expectedMatches.push(historyMatch);
+      }
+      await check_autocomplete({
+        search: alias,
+        searchParam,
+        matches: expectedMatches,
+      });
+
+      
+      expectedMatches = [
+        makeSearchMatch(`${alias} `, {
           engineName: SUGGESTIONS_ENGINE_NAME,
           alias,
-          searchQuery: "fire",
-          searchSuggestion: "fire foo",
+          searchQuery: "",
+          heuristic: true,
         }),
-        makeSearchMatch(`${alias} fire bar`, {
+      ];
+      if (alias[0] != "@") {
+        expectedMatches.push(historyMatch);
+      }
+      await check_autocomplete({
+        search: `${alias} `,
+        searchParam,
+        matches: expectedMatches,
+      });
+
+      
+      
+      
+      
+      expectedMatches = [
+        makeSearchMatch(`${alias} ${historyTitle}`, {
           engineName: SUGGESTIONS_ENGINE_NAME,
           alias,
-          searchQuery: "fire",
-          searchSuggestion: "fire bar",
+          searchQuery: historyTitle,
+          heuristic: true,
         }),
-      ],
-    });
+      ];
+      
+      
+      if (!private) {
+        expectedMatches.push(
+          makeSearchMatch(`${alias} ${historyTitle} foo`, {
+            engineName: SUGGESTIONS_ENGINE_NAME,
+            alias,
+            searchQuery: historyTitle,
+            searchSuggestion: `${historyTitle} foo`,
+          }),
+          makeSearchMatch(`${alias} ${historyTitle} bar`, {
+            engineName: SUGGESTIONS_ENGINE_NAME,
+            alias,
+            searchQuery: historyTitle,
+            searchSuggestion: `${historyTitle} bar`,
+          })
+        );
+      }
+      if (alias[0] != "@") {
+        expectedMatches.push(historyMatch);
+      }
+      await check_autocomplete({
+        search: `${alias} ${historyTitle}`,
+        searchParam,
+        matches: expectedMatches,
+      });
+    }
   }
 
   engine.alias = "";

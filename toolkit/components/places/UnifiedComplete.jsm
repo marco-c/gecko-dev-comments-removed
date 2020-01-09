@@ -969,21 +969,25 @@ Search.prototype = {
             "";
           searchSuggestionsCompletePromise =
             this._matchSearchSuggestions(engine, query, alias);
-          
-          
-          
-          if ((this._searchEngineAliasMatch &&
-               this._searchEngineAliasMatch.isTokenAlias) ||
-              this.hasBehavior("restrict")) {
-            
-            await searchSuggestionsCompletePromise;
-            this._cleanUpNonCurrentMatches(null);
-            this._autocompleteSearch.finishSearch(true);
-            return;
-          }
         }
       }
     }
+
+    
+    
+    
+    if ((this._searchEngineAliasMatch &&
+         this._searchEngineAliasMatch.isTokenAlias) ||
+        (this._enableActions &&
+         this.hasBehavior("search") &&
+         this.hasBehavior("restrict"))) {
+      
+      await searchSuggestionsCompletePromise;
+      this._cleanUpNonCurrentMatches(null);
+      this._autocompleteSearch.finishSearch(true);
+      return;
+    }
+
     
     searchSuggestionsCompletePromise.then(() => {
       this._cleanUpNonCurrentMatches(UrlbarUtils.RESULT_GROUP.SUGGESTION);
