@@ -5,7 +5,6 @@
 "use strict";
 
 const { AutoRefreshHighlighter } = require("./auto-refresh");
-const Services = require("Services");
 const {
   CanvasFrameAnonymousContentHelper,
   createNode,
@@ -22,9 +21,6 @@ const {
 const { getNodeDisplayName } = require("devtools/server/actors/inspector/utils");
 const nodeConstants = require("devtools/shared/dom-node-constants");
 
-loader.lazyRequireGetter(this, "FlexboxHighlighter",
-  "devtools/server/actors/highlighters/flexbox", true);
-
 
 
 const BOX_MODEL_REGIONS = ["margin", "border", "padding", "content"];
@@ -33,8 +29,6 @@ const BOX_MODEL_SIDES = ["top", "right", "bottom", "left"];
 const GUIDE_STROKE_WIDTH = 1;
 
 const PSEUDO_CLASSES = [":hover", ":active", ":focus", ":focus-within"];
-
-const FLEXBOX_HIGHLIGHTER_COMBINE_PREF = "devtools.inspector.flexboxHighlighter.combine";
 
 
 
@@ -117,21 +111,6 @@ class BoxModelHighlighter extends AutoRefreshHighlighter {
 
     const { pageListenerTarget } = highlighterEnv;
     pageListenerTarget.addEventListener("pagehide", this.onPageHide);
-  }
-
-  
-
-
-
-
-
-  get showCombinedFlexboxHighlighter() {
-    if (typeof this._showCombinedFlexboxHighlighter === "undefined") {
-      this._showCombinedFlexboxHighlighter =
-        Services.prefs.getBoolPref(FLEXBOX_HIGHLIGHTER_COMBINE_PREF);
-    }
-
-    return this._showCombinedFlexboxHighlighter;
   }
 
   _buildMarkup() {
@@ -294,20 +273,7 @@ class BoxModelHighlighter extends AutoRefreshHighlighter {
 
     this.markup.destroy();
 
-    if (this._flexboxHighlighter) {
-      this._flexboxHighlighter.destroy();
-      this._flexboxHighlighter = null;
-    }
-
     AutoRefreshHighlighter.prototype.destroy.call(this);
-  }
-
-  get flexboxHighlighter() {
-    if (!this._flexboxHighlighter) {
-      this._flexboxHighlighter = new FlexboxHighlighter(this.highlighterEnv);
-    }
-
-    return this._flexboxHighlighter;
   }
 
   getElement(id) {
@@ -367,10 +333,6 @@ class BoxModelHighlighter extends AutoRefreshHighlighter {
     let shown = false;
     setIgnoreLayoutChanges(true);
 
-    
-    this.options.isFlexboxContainer =
-      !!(node && node.getAsFlexContainer && node.getAsFlexContainer());
-
     if (this._updateBoxModel()) {
       
       
@@ -388,89 +350,9 @@ class BoxModelHighlighter extends AutoRefreshHighlighter {
       this._hide();
     }
 
-    if (this.showCombinedFlexboxHighlighter) {
-      this._updateFlexboxHighlighter();
-    }
-
     setIgnoreLayoutChanges(false, this.highlighterEnv.window.document.documentElement);
 
     return shown;
-  }
-
-  
-
-
-
-  _updateFlexboxHighlighter() {
-    this._hideFlexboxHighlighter();
-
-    if (!this.currentNode) {
-      return;
-    }
-
-    const options = {};
-    let node = this.currentNode;
-    let showFlexboxHighlighter = false;
-
-    
-    
-    
-    if (this.options.isFlexboxContainer) {
-      for (const region of BOX_MODEL_REGIONS) {
-        const box = this.getElement(region);
-
-        if (region === "content") {
-          
-          box.removeAttribute("d");
-        } else {
-          
-          box.setAttribute("half-faded", "");
-        }
-      }
-
-      
-      
-      options.noContainerOutline = true;
-
-      
-      showFlexboxHighlighter = true;
-    } else {
-      
-      
-      const container = node.parentFlexElement;
-
-      if (container) {
-        for (const region of BOX_MODEL_REGIONS) {
-          const box = this.getElement(region);
-
-          
-          
-          box.setAttribute("half-faded", "");
-        }
-
-        
-        
-        
-        this._hideGuides();
-
-        node = container;
-
-        
-        showFlexboxHighlighter = true;
-      }
-    }
-
-    if (showFlexboxHighlighter) {
-      
-      this.flexboxHighlighter.show(node, options);
-    } else {
-      
-      for (const region of BOX_MODEL_REGIONS) {
-        const box = this.getElement(region);
-
-        box.removeAttribute("half-faded");
-      }
-    }
   }
 
   _scrollUpdate() {
@@ -486,18 +368,8 @@ class BoxModelHighlighter extends AutoRefreshHighlighter {
     this._untrackMutations();
     this._hideBoxModel();
     this._hideInfobar();
-    this._hideFlexboxHighlighter();
 
     setIgnoreLayoutChanges(false, this.highlighterEnv.window.document.documentElement);
-  }
-
-  
-
-
-  _hideFlexboxHighlighter() {
-    if (this._flexboxHighlighter) {
-      this.flexboxHighlighter.hide();
-    }
   }
 
   
@@ -651,11 +523,9 @@ class BoxModelHighlighter extends AutoRefreshHighlighter {
 
   _getBoxPathCoordinates(boxQuad, nextBoxQuad) {
     const {p1, p2, p3, p4} = boxQuad;
-    const isFlexboxContainer = this.options.isFlexboxContainer;
 
     let path;
-    if ((isFlexboxContainer && !nextBoxQuad) ||
-        (!isFlexboxContainer && (!nextBoxQuad || !this.options.onlyRegionArea))) {
+    if (!nextBoxQuad || !this.options.onlyRegionArea) {
       
       
       path = "M" + p1.x + "," + p1.y + " " +
