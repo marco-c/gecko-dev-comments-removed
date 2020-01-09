@@ -5,13 +5,13 @@
 
 
 
-function goUpdateGlobalEditMenuItems() {
+function goUpdateGlobalEditMenuItems(force) {
   
   
   
   
   
-  if (typeof gEditUIVisible != "undefined" && !gEditUIVisible)
+  if (!force && (typeof gEditUIVisible != "undefined" && !gEditUIVisible))
     return;
 
   goUpdateCommand("cmd_undo");
@@ -34,3 +34,38 @@ function goUpdateUndoEditMenuItems() {
 function goUpdatePasteMenuItems() {
   goUpdateCommand("cmd_paste");
 }
+
+
+window.addEventListener("contextmenu", (e) => {
+  
+  
+  let needsContextMenu = e.target.ownerDocument == document &&
+                         !e.defaultPrevented &&
+                         e.target.localName == "textarea" &&
+                         e.target.namespaceURI == "http://www.w3.org/1999/xhtml";
+
+  if (!needsContextMenu) {
+    return;
+  }
+
+  let popup = document.getElementById("textbox-contextmenu");
+  if (!popup) {
+    MozXULElement.insertFTLIfNeeded("toolkit/main-window/editmenu.ftl");
+    document.documentElement.appendChild(MozXULElement.parseXULToFragment(`
+      <menupopup id="textbox-contextmenu" class="textbox-contextmenu">
+        <menuitem data-l10n-id="editmenu-undo" command="cmd_undo"></menuitem>
+        <menuseparator></menuseparator>
+        <menuitem data-l10n-id="editmenu-cut" command="cmd_cut"></menuitem>
+        <menuitem data-l10n-id="editmenu-copy" command="cmd_copy"></menuitem>
+        <menuitem data-l10n-id="editmenu-paste" command="cmd_paste"></menuitem>
+        <menuitem data-l10n-id="editmenu-delete" command="cmd_delete"></menuitem>
+        <menuseparator></menuseparator>
+        <menuitem data-l10n-id="editmenu-select-all" command="cmd_selectAll"></menuitem>
+      </menupopup>
+    `));
+    popup = document.documentElement.lastElementChild;
+  }
+
+  goUpdateGlobalEditMenuItems(true);
+  popup.openPopupAtScreen(e.screenX, e.screenY, true);
+});
