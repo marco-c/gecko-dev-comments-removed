@@ -5349,7 +5349,8 @@ nsCSSFrameConstructor::FindElementTagData(const Element& aElement,
                                           nsIFrame* aParentFrame,
                                           uint32_t aFlags) {
   
-  if (aStyle.GetPseudoType() == PseudoStyleType::marker) {
+  if (aStyle.GetPseudoType() == PseudoStyleType::marker &&
+      aStyle.StyleContent()->ContentCount() == 0) {
     static const FrameConstructionData data = FCDATA_DECL(
         FCDATA_DISALLOW_OUT_OF_FLOW | FCDATA_SKIP_ABSPOS_PUSH |
             FCDATA_DISALLOW_GENERATED_CONTENT | FCDATA_IS_LINE_PARTICIPANT |
