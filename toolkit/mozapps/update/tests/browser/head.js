@@ -14,8 +14,6 @@ const BIN_SUFFIX = (AppConstants.platform == "win" ? ".exe" : "");
 const FILE_UPDATER_BIN = "updater" + (AppConstants.platform == "macosx" ? ".app" : BIN_SUFFIX);
 const FILE_UPDATER_BIN_BAK = FILE_UPDATER_BIN + ".bak";
 
-var DEBUG_AUS_TEST = true;
-
 const LOG_FUNCTION = info;
 
 const MAX_UPDATE_COPY_ATTEMPTS = 10;
@@ -31,6 +29,11 @@ const URL_MANUAL_UPDATE = gURLData + "downloadPage.html";
 Services.scriptloader.loadSubScript(DATA_URI_SPEC + "shared.js", this);
 
 let gOriginalUpdateAutoValue = null;
+
+
+
+
+gDebugTest = true;
 
 
 
@@ -180,7 +183,7 @@ async function setAppUpdateAutoEnabledHelper(enabled) {
 add_task(async function setDefaults() {
   await SpecialPowers.pushPrefEnv({
     set: [
-      [PREF_APP_UPDATE_LOG, DEBUG_AUS_TEST],
+      [PREF_APP_UPDATE_LOG, gDebugTest],
       
       
       ["services.sync.autoconnectDelay", 600000],

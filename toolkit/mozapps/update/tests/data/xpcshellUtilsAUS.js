@@ -185,7 +185,7 @@ load("shared.js");
 
 
 
-var DEBUG_AUS_TEST = true;
+gDebugTest = true;
 
 
 
@@ -1003,7 +1003,7 @@ function dumpOverride(aText) {
 
 
 function doTestFinish() {
-  if (DEBUG_AUS_TEST) {
+  if (gDebugTest) {
     
     
     
@@ -1028,7 +1028,7 @@ function doTestFinish() {
 
 function setDefaultPrefs() {
   Services.prefs.setBoolPref(PREF_APP_UPDATE_DISABLEDFORTESTING, false);
-  if (DEBUG_AUS_TEST) {
+  if (gDebugTest) {
     
     Services.prefs.setBoolPref(PREF_APP_UPDATE_LOG, true);
   } else {

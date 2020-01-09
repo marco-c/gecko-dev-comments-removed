@@ -90,6 +90,7 @@ const PR_CREATE_FILE = 0x08;
 const PR_TRUNCATE    = 0x20;
 
 var gChannel;
+var gDebugTest = false;
 
 
 Services.scriptloader.loadSubScript(DATA_URI_SPEC + "sharedUpdateXML.js", this);
@@ -770,7 +771,7 @@ function logTestInfo(aText, aCaller) {
 
 
 function debugDump(aText, aCaller) {
-  if (DEBUG_AUS_TEST) {
+  if (gDebugTest) {
     let caller = aCaller ? aCaller : Components.stack.caller;
     logTestInfo(aText, caller);
   }

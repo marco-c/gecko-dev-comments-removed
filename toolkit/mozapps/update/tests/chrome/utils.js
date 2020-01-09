@@ -137,12 +137,12 @@ var gPrefToCheck;
 var gUseTestUpdater = false;
 
 
-
-
-var DEBUG_AUS_TEST = true;
-
-
 Services.scriptloader.loadSubScript(DATA_URI_SPEC + "shared.js", this);
+
+
+
+
+gDebugTest = true;
 
 
 
@@ -799,7 +799,7 @@ function restoreUpdaterBackup() {
 
 
 function setupPrefs() {
-  if (DEBUG_AUS_TEST) {
+  if (gDebugTest) {
     Services.prefs.setBoolPref(PREF_APP_UPDATE_LOG, true);
   }
 
