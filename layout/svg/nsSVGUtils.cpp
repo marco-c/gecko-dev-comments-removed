@@ -1641,8 +1641,7 @@ void nsSVGUtils::PaintSVGGlyph(Element* aElement, gfxContext* aContext) {
   if (frame->GetContent()->IsSVGElement()) {
     
     
-    m = static_cast<SVGElement*>(frame->GetContent())
-            ->PrependLocalTransformsTo(gfxMatrix(), eUserSpaceToParent);
+    m = nsSVGUtils::GetTransformMatrixInUserSpace(frame, frame->GetParent());
   }
 
   
