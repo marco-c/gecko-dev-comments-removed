@@ -1490,8 +1490,6 @@ class ICTypeMonitor_AnyValue : public ICStub {
 
 
 
-extern const VMFunction DoTypeUpdateFallbackInfo;
-
 
 
 class ICTypeUpdate_Fallback : public ICStub {
