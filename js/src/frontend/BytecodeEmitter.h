@@ -128,7 +128,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   
   class BytecodeSection {
    public:
-    explicit BytecodeSection(JSContext* cx);
+    BytecodeSection(JSContext* cx, uint32_t lineNum);
 
     
 
@@ -195,6 +195,34 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
 
     
 
+    uint32_t currentLine() const { return currentLine_; }
+    uint32_t lastColumn() const { return lastColumn_; }
+    void setCurrentLine(uint32_t line) {
+      currentLine_ = line;
+      lastColumn_ = 0;
+    }
+    void setLastColumn(uint32_t column) { lastColumn_ = column; }
+
+    void updateSeparatorPosition() {
+      lastSeparatorOffet_ = code().length();
+      lastSeparatorLine_ = currentLine_;
+      lastSeparatorColumn_ = lastColumn_;
+    }
+
+    void updateSeparatorPositionIfPresent() {
+      if (lastSeparatorOffet_ == code().length()) {
+        lastSeparatorLine_ = currentLine_;
+        lastSeparatorColumn_ = lastColumn_;
+      }
+    }
+
+    bool isDuplicateLocation() const {
+      return lastSeparatorLine_ == currentLine_ &&
+             lastSeparatorColumn_ == lastColumn_;
+    }
+
+    
+
     size_t numICEntries() const { return numICEntries_; }
     void addNumICEntries() { numICEntries_++; }
     void setNumICEntries(size_t entries) { numICEntries_ = entries; }
@@ -250,6 +278,27 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
 
     
     uint32_t numYields_ = 0;
+
+    
+
+    
+    
+    
+    
+    uint32_t currentLine_;
+
+    
+    
+    
+    
+    
+    uint32_t lastColumn_ = 0;
+
+    
+    
+    uint32_t lastSeparatorOffet_ = 0;
+    uint32_t lastSeparatorLine_ = 0;
+    uint32_t lastSeparatorColumn_ = 0;
 
     
 
@@ -318,23 +367,6 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   const PerScriptData& perScriptData() const { return perScriptData_; }
 
  private:
-  
-  
-  
-  
-  uint32_t currentLine_ = 0;
-
-  
-  
-  
-  
-  
-  uint32_t lastColumn_ = 0;
-
-  uint32_t lastSeparatorOffet_ = 0;
-  uint32_t lastSeparatorLine_ = 0;
-  uint32_t lastSeparatorColumn_ = 0;
-
   
   mozilla::Maybe<uint32_t> mainOffset_ = {};
 
@@ -569,13 +601,6 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
     mainOffset_.emplace(bytecodeSection().code().length());
   }
 
-  unsigned currentLine() const { return currentLine_; }
-
-  void setCurrentLine(uint32_t line) {
-    currentLine_ = line;
-    lastColumn_ = 0;
-  }
-
   void setFunctionBodyEndPos(uint32_t pos) {
     functionBodyEndPos = mozilla::Some(pos);
   }
@@ -648,7 +673,6 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   MOZ_MUST_USE bool markSimpleBreakpoint();
   MOZ_MUST_USE bool updateLineNumberNotes(uint32_t offset);
   MOZ_MUST_USE bool updateSourceCoordNotes(uint32_t offset);
-  void updateSeparatorPosition();
 
   JSOp strictifySetNameOp(JSOp op);
 
