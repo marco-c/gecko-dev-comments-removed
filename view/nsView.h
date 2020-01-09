@@ -30,6 +30,67 @@ class PresShell;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 enum nsViewVisibility {
   nsViewVisibility_kHide = 0,
   nsViewVisibility_kShow = 1
