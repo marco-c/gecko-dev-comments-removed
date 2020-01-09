@@ -43,6 +43,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 XPCOMUtils.defineLazyServiceGetters(this, {
   aomStartup: ["@mozilla.org/addons/addon-manager-startup;1", "amIAddonManagerStartup"],
+  resProto: ["@mozilla.org/network/protocol;1?name=resource", "nsISubstitutingProtocolHandler"],
   spellCheck: ["@mozilla.org/spellchecker/engine;1", "mozISpellCheckingEngine"],
   timerManager: ["@mozilla.org/updates/timer-manager;1", "nsIUpdateTimerManager"],
 });
@@ -325,6 +326,13 @@ function buildJarURI(aJarfile, aPath) {
   return Services.io.newURI(uri);
 }
 
+function maybeResolveURI(uri) {
+  if (uri.schemeIs("resource")) {
+    return Services.io.newURI(resProto.resolveURI(uri));
+  }
+  return uri;
+}
+
 
 
 
@@ -554,6 +562,10 @@ class XPIState {
     return encoded`${this.id}:${this.version}`;
   }
 
+  get resolvedRootURI() {
+    return maybeResolveURI(Services.io.newURI(this.rootURI));
+  }
+
   
 
 
@@ -598,7 +610,8 @@ class XPIState {
       
       
       if (!file) {
-        let fileUrl = Services.io.newURI(this.rootURI);
+        let fileUrl = this.resolvedRootURI;
+
         if (fileUrl instanceof Ci.nsIJARURI) {
           fileUrl = fileUrl.JARFile;
         }
@@ -1685,7 +1698,7 @@ class BootstrapScope {
       let params = {
         id: addon.id,
         version: addon.version,
-        resourceURI: Services.io.newURI(addon.rootURI),
+        resourceURI: addon.resolvedRootURI,
         signedState: addon.signedState,
         temporarilyInstalled: addon.location.isTemporary,
         builtIn: addon.location.isBuiltin,
@@ -2879,6 +2892,7 @@ var XPIInternal = {
   getURIForResourceInFile,
   isXPI,
   iterDirectory,
+  maybeResolveURI,
   migrateAddonLoader,
   resolveDBReady,
 };
