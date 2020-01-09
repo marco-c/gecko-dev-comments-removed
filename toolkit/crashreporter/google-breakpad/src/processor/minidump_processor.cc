@@ -355,6 +355,26 @@ static const MDRawSystemInfo* GetSystemInfo(Minidump *dump,
   return minidump_system_info->system_info();
 }
 
+static uint64_t GetAddressForArchitecture(const MDCPUArchitecture architecture,
+                                          size_t raw_address)
+{
+  switch (architecture) {
+    case MD_CPU_ARCHITECTURE_X86:
+    case MD_CPU_ARCHITECTURE_MIPS:
+    case MD_CPU_ARCHITECTURE_PPC:
+    case MD_CPU_ARCHITECTURE_SHX:
+    case MD_CPU_ARCHITECTURE_ARM:
+    case MD_CPU_ARCHITECTURE_X86_WIN64:
+      
+      return raw_address & 0xffffffffULL;
+
+    default:
+      
+      
+      return raw_address;
+  }
+}
+
 
 
 
@@ -535,6 +555,7 @@ bool MinidumpProcessor::GetCPUInfo(Minidump *dump, SystemInfo *info) {
       break;
     }
 
+    case MD_CPU_ARCHITECTURE_ARM64:
     case MD_CPU_ARCHITECTURE_ARM64_OLD: {
       info->cpu = "arm64";
       break;
@@ -1634,6 +1655,12 @@ string MinidumpProcessor::GetCrashReason(Minidump *dump, uint64_t *address) {
       BPLOG(INFO) << "Unknown exception reason " << reason;
       break;
     }
+  }
+
+  if (address) {
+    *address = GetAddressForArchitecture(
+      static_cast<MDCPUArchitecture>(raw_system_info->processor_architecture),
+      *address);
   }
 
   return reason;

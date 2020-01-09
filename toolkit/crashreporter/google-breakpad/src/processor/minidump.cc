@@ -2399,7 +2399,11 @@ const uint8_t* MinidumpModule::GetCVRecord(uint32_t* size) {
                         module_.cv_record.data_size;
         return NULL;
       }
-      
+      if (minidump_->swap()) {
+        MDCVInfoELF* cv_record_elf =
+            reinterpret_cast<MDCVInfoELF*>(&(*cv_record)[0]);
+        Swap(&cv_record_elf->cv_signature);
+      }
     }
 
     

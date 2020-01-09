@@ -934,6 +934,7 @@ class FunctionRange {
 
 
 
+
 static void FillSortedFunctionRanges(vector<FunctionRange> &dest_ranges,
                                      vector<Module::Function *> *functions) {
   for (vector<Module::Function *>::const_iterator func_it = functions->cbegin();
@@ -946,7 +947,9 @@ static void FillSortedFunctionRanges(vector<FunctionRange> &dest_ranges,
          ranges_it != ranges.cend();
          ++ranges_it) {
       FunctionRange range(*ranges_it, func);
-      dest_ranges.push_back(range);
+      if (range.size != 0) {
+          dest_ranges.push_back(range);
+      }
     }
   }
 
