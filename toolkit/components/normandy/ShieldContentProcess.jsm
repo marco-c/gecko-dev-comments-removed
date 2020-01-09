@@ -1,0 +1,20 @@
+
+
+
+"use strict";
+
+
+
+
+
+
+
+
+
+const {AboutPages} = ChromeUtils.import("resource://normandy-content/AboutPages.jsm");
+
+function AboutStudies() {
+  return AboutPages.aboutStudies;
+}
+
+var EXPORTED_SYMBOLS = ["AboutStudies"];
