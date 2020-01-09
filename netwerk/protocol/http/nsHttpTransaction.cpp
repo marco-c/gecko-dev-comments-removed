@@ -445,12 +445,6 @@ nsresult nsHttpTransaction::Init(
                    nsIOService::gDefaultSegmentCount);
   if (NS_FAILED(rv)) return rv;
 
-#ifdef WIN32  
-  MOZ_DIAGNOSTIC_ASSERT(mPipeOut);
-  uint32_t *vtable = (uint32_t *)mPipeOut.get();
-  MOZ_DIAGNOSTIC_ASSERT(*vtable != 0);
-#endif  
-
   nsCOMPtr<nsIAsyncInputStream> tmp(mPipeIn);
   tmp.forget(responseBody);
   return NS_OK;
@@ -932,12 +926,6 @@ nsresult nsHttpTransaction::WriteSegments(nsAHttpSegmentWriter *writer,
 
   mWriter = writer;
 
-#ifdef WIN32  
-  MOZ_DIAGNOSTIC_ASSERT(mPipeOut);
-  uint32_t *vtable = (uint32_t *)mPipeOut.get();
-  MOZ_DIAGNOSTIC_ASSERT(*vtable != 0);
-#endif  
-
   if (!mPipeOut) {
     return NS_ERROR_UNEXPECTED;
   }
@@ -1207,13 +1195,6 @@ void nsHttpTransaction::Close(nsresult reason) {
 
   
   mPipeOut->CloseWithStatus(reason);
-
-#ifdef WIN32  
-  MOZ_DIAGNOSTIC_ASSERT(mPipeOut);
-  uint32_t *vtable = (uint32_t *)mPipeOut.get();
-  MOZ_DIAGNOSTIC_ASSERT(*vtable != 0);
-  mPipeOut = nullptr;  
-#endif                 
 }
 
 nsHttpConnectionInfo *nsHttpTransaction::ConnectionInfo() {
