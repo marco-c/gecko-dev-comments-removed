@@ -30,7 +30,7 @@ function run_test() {
   
   let certdb = Cc["@mozilla.org/security/x509certdb;1"]
                   .getService(Ci.nsIX509CertDB);
-  addCertFromFile(certdb, "CA.cert.der", "CTu,u,u");
+  addCertFromFile(certdb, "http2-ca.pem", "CTu,u,u");
 
   origin = "https://foo.example.com:" + h2Port;
   dump ("origin - " + origin + "\n");
@@ -42,21 +42,6 @@ function resetPrefs() {
   prefs.setBoolPref("network.http.spdy.enabled.http2", http2pref);
   prefs.setBoolPref("network.http.rcwn.enabled", rcwnpref);
   prefs.clearUserPref("network.dns.localDomains");
-}
-
-function readFile(file) {
-  let fstream = Cc["@mozilla.org/network/file-input-stream;1"]
-                  .createInstance(Ci.nsIFileInputStream);
-  fstream.init(file, -1, 0, 0);
-  let data = NetUtil.readInputStreamToString(fstream, fstream.available());
-  fstream.close();
-  return data;
-}
-
-function addCertFromFile(certdb, filename, trustString) {
-  let certFile = do_get_file(filename, false);
-  let der = readFile(certFile);
-  certdb.addCert(der, trustString);
 }
 
 function makeChan(origin, path) {

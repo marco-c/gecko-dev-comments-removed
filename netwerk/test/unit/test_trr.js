@@ -42,7 +42,7 @@ function run_test() {
   
   let certdb = Cc["@mozilla.org/security/x509certdb;1"]
       .getService(Ci.nsIX509CertDB);
-  addCertFromFile(certdb, "CA.cert.der", "CTu,u,u");
+  addCertFromFile(certdb, "http2-ca.pem", "CTu,u,u");
   do_test_pending();
   run_dns_tests();
 }
@@ -68,21 +68,6 @@ registerCleanupFunction(() => {
   prefs.clearUserPref("network.dns.native-is-localhost");
   resetTRRPrefs();
 });
-
-function readFile(file) {
-  let fstream = Cc["@mozilla.org/network/file-input-stream;1"]
-                  .createInstance(Ci.nsIFileInputStream);
-  fstream.init(file, -1, 0, 0);
-  let data = NetUtil.readInputStreamToString(fstream, fstream.available());
-  fstream.close();
-  return data;
-}
-
-function addCertFromFile(certdb, filename, trustString) {
-  let certFile = do_get_file(filename, false);
-  let der = readFile(certFile);
-  certdb.addCert(der, trustString);
-}
 
 function testsDone()
 {

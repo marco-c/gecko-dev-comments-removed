@@ -1159,7 +1159,7 @@ function handleRequest(req, res) {
 
 
 var options = {
-  key: fs.readFileSync(__dirname + '/http2-key.pem'),
+  key: fs.readFileSync(__dirname + '/http2-cert.key'),
   cert: fs.readFileSync(__dirname + '/http2-cert.pem'),
 };
 
