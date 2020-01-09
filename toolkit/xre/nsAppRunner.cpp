@@ -1685,7 +1685,7 @@ static void SetupLauncherProcessPref() {
   
   
 
-#    if defined(NIGHTLY_BUILD)
+#    if defined(NIGHTLY_BUILD) || (MOZ_UPDATE_CHANNEL == beta)
   
   
   
@@ -1710,7 +1710,7 @@ static void SetupLauncherProcessPref() {
 
   Preferences::RegisterCallback(&OnLauncherPrefChanged,
                                 PREF_WIN_LAUNCHER_PROCESS_ENABLED);
-#    if !defined(NIGHTLY_BUILD)
+#    if !defined(NIGHTLY_BUILD) && (MOZ_UPDATE_CHANNEL != beta)
   
   
   Preferences::RegisterCallback(&OnLauncherPrefChanged, kShieldPrefName);
