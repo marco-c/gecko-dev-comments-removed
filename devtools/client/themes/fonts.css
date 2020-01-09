@@ -266,13 +266,8 @@
 }
 
 
-.font-value-input[type=number]::-moz-number-spin-box {
-  margin-left: 3px;
-}
-
-
-.theme-dark .font-value-input[type=number]::-moz-number-spin-box {
-  filter: invert(25%);
+.font-value-input[type=number] {
+  -moz-appearance: textfield;
 }
 
 
