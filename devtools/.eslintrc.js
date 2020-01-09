@@ -109,9 +109,6 @@ module.exports = {
     "files": [
       
       
-      "client/shadereditor/**",
-      
-      
       "client/webaudioeditor/**",
     ],
     "rules": {
