@@ -226,7 +226,7 @@ class WebrtcAudioConduit : public AudioSessionConduit,
                            unsigned int* cumulativeLost) override;
   bool GetRTCPReceiverReport(uint32_t* jitterMs, uint32_t* packetsReceived,
                              uint64_t* bytesReceived, uint32_t* cumulativeLost,
-                             int32_t* rttMs) override;
+                             Maybe<double>* aOutRttSec) override;
   bool GetRTCPSenderReport(unsigned int* packetsSent,
                            uint64_t* bytesSent) override;
 
@@ -349,6 +349,9 @@ class WebrtcAudioConduit : public AudioSessionConduit,
 
   
   const nsCOMPtr<nsIEventTarget> mStsThread;
+
+  
+  Maybe<DOMHighResTimeStamp> mRttSec;
 };
 
 }  
