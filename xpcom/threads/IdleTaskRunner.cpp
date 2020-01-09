@@ -119,7 +119,7 @@ void IdleTaskRunner::Schedule(bool aAllowIdleDispatch) {
   TimeStamp hint = nsRefreshDriver::GetIdleDeadlineHint(now);
   if (hint != now) {
     
-    nsRefreshDriver::DispatchIdleRunnableAfterTick(this, mDelay);
+    nsRefreshDriver::DispatchIdleRunnableAfterTickUnlessExists(this, mDelay);
     
     SetTimerInternal(mDelay);
   } else {
