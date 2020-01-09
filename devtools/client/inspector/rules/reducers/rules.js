@@ -4,10 +4,14 @@
 
 "use strict";
 
+const Services = require("Services");
+
 const {
   UPDATE_ADD_RULE_ENABLED,
-  UPDATE_RULES,
   UPDATE_HIGHLIGHTED_SELECTOR,
+  UPDATE_RULES,
+  UPDATE_SOURCE_LINK_ENABLED,
+  UPDATE_SOURCE_LINK,
 } = require("../actions/index");
 
 const INITIAL_RULES = {
@@ -15,6 +19,9 @@ const INITIAL_RULES = {
   highlightedSelector: "",
   
   isAddRuleEnabled: false,
+  
+  
+  isSourceLinkEnabled: Services.prefs.getBoolPref("devtools.styleeditor.enabled"),
   
   rules: [],
 };
@@ -113,7 +120,33 @@ const reducers = {
     return {
       highlightedSelector: rules.highlightedSelector,
       isAddRuleEnabled: rules.isAddRuleEnabled,
+      isSourceLinkEnabled: rules.isSourceLinkEnabled,
       rules: newRules.map(rule => getRuleState(rule)),
+    };
+  },
+
+  [UPDATE_SOURCE_LINK_ENABLED](rules, { enabled }) {
+    return {
+      ...rules,
+      isSourceLinkEnabled: enabled,
+    };
+  },
+
+  [UPDATE_SOURCE_LINK](rules, { ruleId, sourceLink }) {
+    return {
+      highlightedSelector: rules.highlightedSelector,
+      isAddRuleEnabled: rules.isAddRuleEnabled,
+      isSourceLinkEnabled: rules.isSourceLinkEnabled,
+      rules: rules.rules.map(rule => {
+        if (rule.id !== ruleId) {
+          return rule;
+        }
+
+        return {
+          ...rule,
+          sourceLink,
+        };
+      }),
     };
   },
 

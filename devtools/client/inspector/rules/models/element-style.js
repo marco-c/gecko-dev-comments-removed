@@ -74,6 +74,8 @@ class ElementStyle {
       if (rule.editor) {
         rule.editor.destroy();
       }
+
+      rule.destroy();
     }
 
     if (this.ruleView.isNewRulesView) {
@@ -122,6 +124,10 @@ class ElementStyle {
       this.markOverriddenAll();
 
       this._sortRulesForPseudoElement();
+
+      if (this.ruleView.isNewRulesView) {
+        this.subscribeRulesToLocationChange();
+      }
 
       
       for (const r of existingRules) {
@@ -586,6 +592,15 @@ class ElementStyle {
       this._changed();
     } catch (e) {
       console.error(e);
+    }
+  }
+
+  
+
+
+  subscribeRulesToLocationChange() {
+    for (const rule of this.rules) {
+      rule.subscribeToLocationChange();
     }
   }
 

@@ -120,21 +120,6 @@ const selector = exports.selector = {
 
 
 
-const sourceLink = exports.sourceLink = {
-  
-  column: PropTypes.number,
-  
-  line: PropTypes.number,
-  
-  
-  mediaText: PropTypes.string,
-  
-  title: PropTypes.string,
-};
-
-
-
-
 exports.rule = {
   
   declarations: PropTypes.arrayOf(PropTypes.shape(declaration)),
@@ -171,7 +156,12 @@ exports.rule = {
   selector: PropTypes.shape(selector),
 
   
-  sourceLink: PropTypes.shape(sourceLink),
+  sourceLink: PropTypes.shape({
+    
+    label: PropTypes.string,
+    
+    title: PropTypes.string,
+  }),
 
   
   type: PropTypes.number,

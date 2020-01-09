@@ -8,6 +8,8 @@ const {
   UPDATE_ADD_RULE_ENABLED,
   UPDATE_HIGHLIGHTED_SELECTOR,
   UPDATE_RULES,
+  UPDATE_SOURCE_LINK_ENABLED,
+  UPDATE_SOURCE_LINK,
 } = require("./index");
 
 module.exports = {
@@ -48,6 +50,35 @@ module.exports = {
     return {
       type: UPDATE_RULES,
       rules,
+    };
+  },
+
+  
+
+
+
+
+
+  updateSourceLinkEnabled(enabled) {
+    return {
+      type: UPDATE_SOURCE_LINK_ENABLED,
+      enabled,
+    };
+  },
+
+  
+
+
+
+
+
+
+
+  updateSourceLink(ruleId, sourceLink) {
+    return {
+      type: UPDATE_SOURCE_LINK,
+      ruleId,
+      sourceLink,
     };
   },
 

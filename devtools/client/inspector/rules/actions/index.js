@@ -34,4 +34,10 @@ createEnum([
   
   "UPDATE_RULES",
 
+  
+  "UPDATE_SOURCE_LINK_ENABLED",
+
+  
+  "UPDATE_SOURCE_LINK",
+
 ], module.exports);
