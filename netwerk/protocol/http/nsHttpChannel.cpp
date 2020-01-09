@@ -2518,7 +2518,7 @@ nsresult nsHttpChannel::ContinueProcessResponse1() {
       (httpStatus != 407)) {
     nsAutoCString cookie;
     if (NS_SUCCEEDED(mResponseHead->GetHeader(nsHttp::Set_Cookie, cookie))) {
-      SetCookie(cookie.get());
+      SetCookie(cookie);
     }
 
     

@@ -253,7 +253,7 @@ class HttpBaseChannel : public nsHashPropertyBag,
   NS_IMETHOD SetDocumentURI(nsIURI* aDocumentURI) override;
   NS_IMETHOD GetRequestVersion(uint32_t* major, uint32_t* minor) override;
   NS_IMETHOD GetResponseVersion(uint32_t* major, uint32_t* minor) override;
-  NS_IMETHOD SetCookie(const char* aCookieHeader) override;
+  NS_IMETHOD SetCookie(const nsACString& aCookieHeader) override;
   NS_IMETHOD GetThirdPartyFlags(uint32_t* aForce) override;
   NS_IMETHOD SetThirdPartyFlags(uint32_t aForce) override;
   NS_IMETHOD GetForceAllowThirdPartyCookie(bool* aForce) override;
@@ -477,7 +477,7 @@ class HttpBaseChannel : public nsHashPropertyBag,
   
   
   
-  void NotifySetCookie(char const* aCookie);
+  void NotifySetCookie(const nsACString& aCookie);
 
   mozilla::dom::PerformanceStorage* GetPerformanceStorage();
   void MaybeReportTimingData();
