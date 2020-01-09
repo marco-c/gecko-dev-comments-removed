@@ -454,7 +454,6 @@ nsScriptSecurityManager::GetChannelURIPrincipal(nsIChannel* aChannel,
 
 
 
-
 NS_IMPL_ISUPPORTS(nsScriptSecurityManager, nsIScriptSecurityManager)
 
 
@@ -1149,7 +1148,8 @@ nsresult nsScriptSecurityManager::ReportError(const char* aMessageTag,
 
   
   rv = error->Init(message, EmptyString(), EmptyString(), 0, 0,
-                   nsIScriptError::errorFlag, "SOP", aFromPrivateWindow);
+                   nsIScriptError::errorFlag, "SOP", aFromPrivateWindow,
+                   true );
   NS_ENSURE_SUCCESS(rv, rv);
   console->LogMessage(error);
   return NS_OK;

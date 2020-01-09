@@ -240,7 +240,8 @@ already_AddRefed<XPCNativeInterface> XPCNativeInterface::NewInstance(
           do_CreateInstance(NS_SCRIPTERROR_CONTRACTID));
       error->Init(NS_ConvertUTF8toUTF16(errorMsg), filename, EmptyString(),
                   lineno, column, nsIScriptError::warningFlag,
-                  "chrome javascript", false );
+                  "chrome javascript", false ,
+                  true );
       console->LogMessage(error);
     }
   }

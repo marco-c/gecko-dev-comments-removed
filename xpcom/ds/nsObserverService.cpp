@@ -195,7 +195,8 @@ nsresult nsObserverService::FilterHttpOnTopics(const char* aTopic) {
     error->Init(NS_LITERAL_STRING(
                     "http-on-* observers only work in the parent process"),
                 EmptyString(), EmptyString(), 0, 0, nsIScriptError::warningFlag,
-                "chrome javascript", false );
+                "chrome javascript", false ,
+                true );
     console->LogMessage(error);
 
     return NS_ERROR_NOT_IMPLEMENTED;
