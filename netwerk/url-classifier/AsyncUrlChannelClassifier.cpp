@@ -337,9 +337,13 @@ void FeatureData::DoLookup(nsUrlClassifierDBServiceWorker* aWorkerClassifier) {
           isBlacklisted));
 
   if (isBlacklisted == false) {
+    
+    
+    
     for (TableData* tableData : mBlacklistTables) {
       if (tableData->DoLookup(aWorkerClassifier)) {
         isBlacklisted = true;
+        break;
       }
     }
   }
