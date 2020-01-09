@@ -1530,7 +1530,7 @@ bool js::FinishCompilation(JSContext* cx, HandleScript script,
         succeeded = false;
       }
     }
-    for (size_t i = 0; i < entry.script->nTypeSets(); i++) {
+    for (size_t i = 0; i < entry.script->numBytecodeTypeSets(); i++) {
       if (!CheckFrozenTypeSet(sweep, cx, &entry.bytecodeTypes[i],
                               &types->typeArray()[i])) {
         succeeded = false;
@@ -1619,7 +1619,7 @@ void js::FinishDefinitePropertiesAnalysis(JSContext* cx,
       MOZ_ASSERT(TypeScript::ArgTypes(script, j)->isSubset(&entry.argTypes[j]));
     }
 
-    for (size_t j = 0; j < script->nTypeSets(); j++) {
+    for (size_t j = 0; j < script->numBytecodeTypeSets(); j++) {
       MOZ_ASSERT(script->types(sweep)->typeArray()[j].isSubset(
           &entry.bytecodeTypes[j]));
     }
@@ -1647,7 +1647,7 @@ void js::FinishDefinitePropertiesAnalysis(JSContext* cx,
                                      TypeScript::ArgTypes(script, j));
     }
 
-    for (size_t j = 0; j < script->nTypeSets(); j++) {
+    for (size_t j = 0; j < script->numBytecodeTypeSets(); j++) {
       CheckDefinitePropertiesTypeSet(sweep, cx, &entry.bytecodeTypes[j],
                                      &types->typeArray()[j]);
     }
@@ -3508,16 +3508,16 @@ static void FillBytecodeTypeMap(JSScript* script, uint32_t* bytecodeMap) {
     JSOp op = JSOp(*pc);
     if (CodeSpec[op].format & JOF_TYPESET) {
       bytecodeMap[added++] = script->pcToOffset(pc);
-      if (added == script->nTypeSets()) {
+      if (added == script->numBytecodeTypeSets()) {
         break;
       }
     }
   }
-  MOZ_ASSERT(added == script->nTypeSets());
+  MOZ_ASSERT(added == script->numBytecodeTypeSets());
 
   
   
-  bytecodeMap[script->nTypeSets()] = 0;
+  bytecodeMap[script->numBytecodeTypeSets()] = 0;
 }
 
 void js::TypeMonitorResult(JSContext* cx, JSScript* script, jsbytecode* pc,
@@ -3573,14 +3573,14 @@ void js::TypeMonitorResult(JSContext* cx, JSScript* script, jsbytecode* pc,
 
 
 static size_t NumTypeSets(JSScript* script) {
-  size_t num = script->nTypeSets() + 1 ;
+  size_t num = script->numBytecodeTypeSets() + 1 ;
   if (JSFunction* fun = script->functionNonDelazifying()) {
     num += fun->nargs();
   }
 
   
   
-  static_assert(JSScript::NumTypeSetsBits == 16,
+  static_assert(JSScript::NumBytecodeTypeSetsBits == 16,
                 "JSScript typesets should have safe range to avoid overflow");
   static_assert(JSFunction::NArgsBits == 16,
                 "JSFunction nargs should have safe range to avoid overflow");
@@ -3618,7 +3618,7 @@ bool JSScript::makeTypes(JSContext* cx) {
 
   
   
-  size_t bytecodeTypeMapEntries = nTypeSets() + 1;
+  size_t bytecodeTypeMapEntries = numBytecodeTypeSets() + 1;
 
   
   
@@ -3642,7 +3642,7 @@ bool JSScript::makeTypes(JSContext* cx) {
 
 #ifdef DEBUG
   StackTypeSet* typeArray = typeScript->typeArray();
-  for (unsigned i = 0; i < nTypeSets(); i++) {
+  for (unsigned i = 0; i < numBytecodeTypeSets(); i++) {
     InferSpew(ISpewOps, "typeSet: %sT%p%s bytecode%u %p",
               InferSpewColor(&typeArray[i]), &typeArray[i],
               InferSpewColorReset(), i, this);

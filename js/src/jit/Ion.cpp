@@ -2161,7 +2161,7 @@ static bool CanIonCompileOrInlineScript(JSScript* script, const char** reason) {
     return false;
   }
 
-  if (script->nTypeSets() >= UINT16_MAX) {
+  if (script->numBytecodeTypeSets() >= UINT16_MAX) {
     
     
     *reason = "too many typesets";
