@@ -1301,15 +1301,6 @@ void WebRenderCommandBuilder::DoGroupingForDisplayList(
 
   bool snapped;
   nsRect groupBounds = aWrappingItem->GetBounds(aDisplayListBuilder, &snapped);
-  
-  
-  
-  
-  
-  
-  if (mClippedGroupBounds) {
-    groupBounds = groupBounds.Intersect(mClippedGroupBounds.value());
-  }
   DIGroup& group = groupData->mSubGroup;
 
   gfx::Size scale = aSc.GetInheritedScale();
@@ -1494,8 +1485,7 @@ bool WebRenderCommandBuilder::ShouldDumpDisplayList(
 void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
     nsDisplayList* aDisplayList, nsDisplayItem* aWrappingItem,
     nsDisplayListBuilder* aDisplayListBuilder, const StackingContextHelper& aSc,
-    wr::DisplayListBuilder& aBuilder, wr::IpcResourceUpdateQueue& aResources,
-    nsDisplayItem* aOuterItem) {
+    wr::DisplayListBuilder& aBuilder, wr::IpcResourceUpdateQueue& aResources) {
   if (mDoGrouping) {
     MOZ_RELEASE_ASSERT(
         aWrappingItem,
@@ -1605,25 +1595,6 @@ void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
         
         
         mContainsSVGGroup = mDoGrouping = true;
-        if (aOuterItem &&
-            aOuterItem->GetType() == DisplayItemType::TYPE_TRANSFORM) {
-          
-          
-          
-          
-          
-          nsDisplayTransform* transform =
-              static_cast<nsDisplayTransform*>(aOuterItem);
-
-          nsRect clippedBounds =
-              transform->GetClippedBounds(aDisplayListBuilder);
-          nsRect innerClippedBounds;
-          DebugOnly<bool> result = transform->UntransformRect(
-              aDisplayListBuilder, clippedBounds, &innerClippedBounds);
-          MOZ_ASSERT(result);
-
-          mClippedGroupBounds = Some(innerClippedBounds);
-        }
         GP("attempting to enter the grouping code\n");
       }
 
