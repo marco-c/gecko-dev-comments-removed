@@ -20,7 +20,6 @@ namespace dom {
 class BrowsingContext;
 class WindowGlobalParent;
 class JSWindowActorChild;
-class TabChild;
 
 
 

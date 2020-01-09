@@ -185,8 +185,7 @@ ContentRestoreInternal.prototype = {
         
         
         if (loadArguments.redirectLoadSwitchId) {
-          webNavigation.resumeRedirectedLoad(loadArguments.redirectLoadSwitchId,
-                                             loadArguments.redirectHistoryIndex);
+          webNavigation.resumeRedirectedLoad(loadArguments.redirectLoadSwitchId);
           return true;
         }
 

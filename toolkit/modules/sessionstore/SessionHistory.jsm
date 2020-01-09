@@ -74,12 +74,7 @@ var SessionHistoryInternal = {
     let webNavigation = docShell.QueryInterface(Ci.nsIWebNavigation);
     let history = webNavigation.sessionHistory;
 
-    let data = {
-      entries: [],
-      userContextId: loadContext.originAttributes.userContextId,
-      requestedIndex: history.legacySHistory.requestedIndex + 1,
-    };
-
+    let data = {entries: [], userContextId: loadContext.originAttributes.userContextId };
     
     
     
