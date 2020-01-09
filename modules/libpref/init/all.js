@@ -2682,7 +2682,7 @@ pref("csp.overrule_about_uris_without_csp_whitelist", false);
 pref("csp.skip_about_page_has_csp_assert", false);
 
 pref("security.allow_eval_with_system_principal", false);
-pref("security.uris_using_eval_with_system_principal", "autocomplete.xml,redux.js,react-redux.js,content-task.js,content-task.js,tree.xml,dialog.xml,preferencesbindings.js,wizard.xml,lodash.js,jszip.js,ajv-4.1.1.js,updates.js,setup,jsol.js,parent_utils.js");
+pref("security.uris_using_eval_with_system_principal", "autocomplete.xml,redux.js,react-redux.js,content-task.js,content-task.js,tree.xml,dialog.xml,preferencesbindings.js,wizard.xml,lodash.js,jszip.js,ajv-4.1.1.js,updates.js,setup,jsol.js,parent_utils.js,chrometask_chromescript");
 #endif
 
 
@@ -4659,7 +4659,6 @@ pref("signon.autofillForms",                true);
 pref("signon.autofillForms.http",           false);
 pref("signon.autologin.proxy",              false);
 pref("signon.formlessCapture.enabled",      true);
-pref("signon.privateBrowsingCapture.enabled", false);
 pref("signon.storeWhenAutocompleteOff",     true);
 pref("signon.debug",                        false);
 pref("signon.recipes.path",                 "chrome://passwordmgr/content/recipes.json");
