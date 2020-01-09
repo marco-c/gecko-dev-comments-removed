@@ -393,14 +393,20 @@ const AccessibleActor = ActorClassWithSpec(accessibleSpec, {
       return null;
     }
 
+    const { bounds } = this;
+    if (!bounds) {
+      return null;
+    }
+
     const { DOMNode: rawNode } = this.rawAccessible;
     const win = rawNode.ownerGlobal;
+
     
     
     const { walker } = this;
     walker.clearStyles(win);
     const contrastRatio = await getContrastRatioFor(rawNode.parentNode, {
-      bounds: this.bounds,
+      bounds,
       win,
     });
 
