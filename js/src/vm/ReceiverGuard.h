@@ -33,15 +33,19 @@ namespace js {
 
 
 
-
 class HeapReceiverGuard;
 
 class ReceiverGuard {
- public:
-  ObjectGroup* group;
-  Shape* shape;
+  ObjectGroup* group_;
+  Shape* shape_;
 
-  ReceiverGuard() : group(nullptr), shape(nullptr) {}
+  void MOZ_ALWAYS_INLINE assertInvariants() {
+    
+    MOZ_ASSERT_IF(group_ || shape_, !!group_ != !!shape_);
+  }
+
+ public:
+  ReceiverGuard() : group_(nullptr), shape_(nullptr) {}
 
   inline MOZ_IMPLICIT ReceiverGuard(const HeapReceiverGuard& guard);
 
@@ -49,7 +53,7 @@ class ReceiverGuard {
   MOZ_ALWAYS_INLINE ReceiverGuard(ObjectGroup* group, Shape* shape);
 
   bool operator==(const ReceiverGuard& other) const {
-    return group == other.group && shape == other.shape;
+    return group_ == other.group_ && shape_ == other.shape_;
   }
 
   bool operator!=(const ReceiverGuard& other) const {
@@ -57,8 +61,21 @@ class ReceiverGuard {
   }
 
   uintptr_t hash() const {
-    return (uintptr_t(group) >> 3) ^ (uintptr_t(shape) >> 3);
+    return (uintptr_t(group_) >> 3) ^ (uintptr_t(shape_) >> 3);
   }
+
+  void setShape(Shape* shape) {
+    shape_ = shape;
+    assertInvariants();
+  }
+
+  void setGroup(ObjectGroup* group) {
+    group_ = group;
+    assertInvariants();
+  }
+
+  Shape* getShape() const { return shape_; }
+  ObjectGroup* getGroup() const { return group_; }
 };
 
 
@@ -74,13 +91,15 @@ class HeapReceiverGuard {
 
  public:
   explicit HeapReceiverGuard(const ReceiverGuard& guard)
-      : group_(guard.group), shape_(guard.shape) {}
+      : group_(guard.getGroup()), shape_(guard.getShape()) {}
 
   void trace(JSTracer* trc);
 };
 
 inline ReceiverGuard::ReceiverGuard(const HeapReceiverGuard& guard)
-    : group(guard.group_), shape(guard.shape_) {}
+    : group_(guard.group_), shape_(guard.shape_) {
+  assertInvariants();
+}
 
 }  
 
