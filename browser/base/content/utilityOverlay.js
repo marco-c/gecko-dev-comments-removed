@@ -1073,3 +1073,14 @@ function trimURL(aURL) {
   }
   return url;
 }
+
+
+
+
+
+function updateFileMenuImportUIVisibility(id) {
+  if (!Services.policies.isAllowed("profileImport")) {
+    let command = document.getElementById(id);
+    command.setAttribute("disabled", "true");
+  }
+}
