@@ -192,10 +192,7 @@ async function waitForSources(dbg, ...sources) {
 function waitForSource(dbg, url) {
   return waitForState(
     dbg,
-    state => {
-      const sources = dbg.selectors.getSources(state);
-      return Object.values(sources).find(s => (s.url || "").includes(url));
-    },
+    state => findSource(dbg, url, { silent: true }),
     "source exists"
   );
 }
@@ -214,6 +211,7 @@ function waitForSelectedSource(dbg, url) {
   const {
     getSelectedSource,
     hasSymbols,
+    hasSourceMetaData,
     hasBreakpointPositions
   } = dbg.selectors;
 
@@ -235,9 +233,9 @@ function waitForSelectedSource(dbg, url) {
         return false;
       }
 
-      return (
-        hasSymbols(state, source) && hasBreakpointPositions(state, source.id)
-      );
+      return hasSymbols(state, source) &&
+        hasSourceMetaData( state, source.id) &&
+        hasBreakpointPositions(state, source.id);
     },
     "selected source"
   );
