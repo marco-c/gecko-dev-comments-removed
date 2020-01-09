@@ -282,10 +282,10 @@ elif platform.system() == 'Windows':
 
 if word_bits == 32:
     if platform.system() == 'Windows':
-        CONFIGURE_ARGS += ' --target=i686-pc-mingw32 --host=i686-pc-mingw32'
+        CONFIGURE_ARGS += ' --target=i686-pc-mingw32'
     elif platform.system() == 'Linux':
         if not platform.machine().startswith('arm'):
-            CONFIGURE_ARGS += ' --target=i686-pc-linux --host=i686-pc-linux'
+            CONFIGURE_ARGS += ' --target=i686-pc-linux'
 
     
     if not platform.machine().startswith('arm'):
@@ -297,7 +297,7 @@ if word_bits == 32:
         env['CXXFLAGS'] = '{0} {1}'.format(env.get('CXXFLAGS', ''), sse_flags)
 else:
     if platform.system() == 'Windows':
-        CONFIGURE_ARGS += ' --target=x86_64-pc-mingw32 --host=x86_64-pc-mingw32'
+        CONFIGURE_ARGS += ' --target=x86_64-pc-mingw32'
 
 if platform.system() == 'Linux' and AUTOMATION:
     CONFIGURE_ARGS = '--enable-stdcxx-compat --disable-gold ' + CONFIGURE_ARGS
