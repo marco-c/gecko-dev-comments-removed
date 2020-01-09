@@ -15,6 +15,7 @@
 #include "mozilla/ServoElementSnapshotTable.h"
 #include "nsChangeHint.h"
 #include "nsPresContext.h"
+#include "nsPresContextInlines.h"  
 #include "nsStringFwd.h"
 
 class nsAttrValue;
