@@ -80,15 +80,23 @@ add_task(async function test_abort() {
 
   
   let tab_get = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
+
+  
+  await startGetAssertionRequest(tab_get);
+  await waitForStatus(tab_get, "pending");
   await waitForStatus(tab_create, "aborted");
 
   
   await startGetAssertionRequest(tab_get);
-  await assertStatus(tab_get, "pending");
+  await waitForStatus(tab_get, "pending");
 
   
   await BrowserTestUtils.switchTab(gBrowser, tab_create);
-  await waitForStatus(tab_get, "aborted");
+  await assertStatus(tab_get, "pending");
+
+  
+  await BrowserTestUtils.switchTab(gBrowser, tab_get);
+  await assertStatus(tab_get, "pending");
 
   
   BrowserTestUtils.removeTab(tab_create);

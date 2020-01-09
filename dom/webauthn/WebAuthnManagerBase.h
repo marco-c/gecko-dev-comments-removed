@@ -50,7 +50,7 @@ class WebAuthnManagerBase : public nsIDOMEventListener {
   MOZ_CAN_RUN_SCRIPT virtual ~WebAuthnManagerBase();
 
   
-  MOZ_CAN_RUN_SCRIPT virtual void CancelTransaction(const nsresult& aError) = 0;
+  MOZ_CAN_RUN_SCRIPT virtual void HandleVisibilityChange() = 0;
 
   
   void ListenForVisibilityEvents();

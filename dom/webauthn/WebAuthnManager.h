@@ -48,7 +48,7 @@ namespace dom {
 class WebAuthnTransaction {
  public:
   explicit WebAuthnTransaction(const RefPtr<Promise>& aPromise)
-      : mPromise(aPromise), mId(NextId()) {
+      : mPromise(aPromise), mId(NextId()), mVisibilityChanged(false) {
     MOZ_ASSERT(mId > 0);
   }
 
@@ -57,6 +57,10 @@ class WebAuthnTransaction {
 
   
   uint64_t mId;
+
+  
+  
+  bool mVisibilityChanged;
 
  private:
   
@@ -105,7 +109,9 @@ class WebAuthnManager final : public WebAuthnManagerBase, public AbortFollower {
  protected:
   
   
-  void CancelTransaction(const nsresult& aError) override;
+  void CancelTransaction(const nsresult& aError);
+  
+  void HandleVisibilityChange() override;
 
  private:
   virtual ~WebAuthnManager();

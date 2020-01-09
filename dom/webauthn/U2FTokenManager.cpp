@@ -176,9 +176,12 @@ void U2FTokenManager::MaybeClearTransaction(
 }
 
 void U2FTokenManager::ClearTransaction() {
-  if (mLastTransactionId > 0) {
+  if (mLastTransactionId > 0 && mTransactionParent) {
     
     SendPromptNotification(kCancelPromptNotifcation, mLastTransactionId);
+    
+    Unused << mTransactionParent->SendAbort(mLastTransactionId,
+                                            NS_ERROR_DOM_ABORT_ERR);
   }
 
   mTransactionParent = nullptr;

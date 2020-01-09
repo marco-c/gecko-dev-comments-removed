@@ -40,7 +40,9 @@ class U2FTransaction {
 
  public:
   explicit U2FTransaction(const U2FCallback&& aCallback)
-      : mCallback(std::move(aCallback)), mId(NextId()) {
+      : mCallback(std::move(aCallback)),
+        mId(NextId()),
+        mVisibilityChanged(false) {
     MOZ_ASSERT(mId > 0);
   }
 
@@ -65,6 +67,10 @@ class U2FTransaction {
 
   
   uint64_t mId;
+
+  
+  
+  bool mVisibilityChanged;
 
  private:
   
@@ -124,7 +130,9 @@ class U2F final : public WebAuthnManagerBase, public nsWrapperCache {
  protected:
   
   
-  MOZ_CAN_RUN_SCRIPT void CancelTransaction(const nsresult& aError) override;
+  MOZ_CAN_RUN_SCRIPT void CancelTransaction(const nsresult& aError);
+  
+  MOZ_CAN_RUN_SCRIPT void HandleVisibilityChange() override;
 
  private:
   MOZ_CAN_RUN_SCRIPT ~U2F();
