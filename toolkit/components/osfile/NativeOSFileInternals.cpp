@@ -357,6 +357,7 @@ nsresult TypedArrayResult::GetCacheableResult(
   const ArrayBufferContents& contents = mContents.get();
   MOZ_ASSERT(contents.data);
 
+  
   JS::Rooted<JSObject*> arrayBuffer(
       cx, JS::NewArrayBufferWithContents(cx, contents.nbytes, contents.data));
   if (!arrayBuffer) {
@@ -368,10 +369,6 @@ nsresult TypedArrayResult::GetCacheableResult(
   if (!result) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
-  
-  
-  
-  JS_updateMallocCounter(cx, contents.nbytes);
   mContents.forget();
 
   aResult.setObject(*result);
