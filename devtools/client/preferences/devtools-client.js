@@ -280,6 +280,9 @@ pref("devtools.webconsole.sidebarToggle", false);
 pref("devtools.webconsole.jsterm.codeMirror", true);
 
 
+pref("devtools.webconsole.input.editor", false);
+
+
 pref("devtools.performance.new-panel-enabled", false);
 
 
