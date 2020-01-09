@@ -669,6 +669,7 @@ static nsIFrame* GetFrameForChildrenOnlyTransformHint(nsIFrame* aFrame) {
 
 
 
+
 static bool RecomputePosition(nsIFrame* aFrame) {
   
   
@@ -703,6 +704,12 @@ static bool RecomputePosition(nsIFrame* aFrame) {
                                     nsChangeHint_ReflowChangesSizeOrPosition);
       return false;
     }
+  }
+
+  
+  
+  if (aFrame->HasAnyStateBits(NS_FRAME_FIRST_REFLOW | NS_FRAME_IS_DIRTY)) {
+    return true;
   }
 
   aFrame->SchedulePaint();
