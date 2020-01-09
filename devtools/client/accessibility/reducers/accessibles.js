@@ -3,7 +3,12 @@
 
 "use strict";
 
-const { FETCH_CHILDREN, RESET, SELECT, HIGHLIGHT } = require("../constants");
+const {
+  FETCH_CHILDREN,
+  HIGHLIGHT,
+  RESET,
+  SELECT,
+} = require("../constants");
 
 
 
@@ -29,6 +34,10 @@ function accessibles(state = getInitialState(), action) {
   }
 }
 
+function getActorID(accessible) {
+  return accessible.actorID || accessible._form.actor;
+}
+
 
 
 
@@ -37,7 +46,8 @@ function accessibles(state = getInitialState(), action) {
 
 
 function cleanupChild(cache, accessible) {
-  const cached = cache.get(accessible.actorID);
+  const actorID = getActorID(accessible);
+  const cached = cache.get(actorID);
   if (!cached) {
     return;
   }
@@ -46,7 +56,7 @@ function cleanupChild(cache, accessible) {
     cleanupChild(cache, child);
   }
 
-  cache.delete(accessible.actorID);
+  cache.delete(actorID);
 }
 
 
@@ -58,7 +68,7 @@ function cleanupChild(cache, accessible) {
 
 
 function staleChildren(cache, accessible) {
-  const cached = cache.get(accessible.actorID);
+  const cached = cache.get(getActorID(accessible));
   if (!cached) {
     return false;
   }
@@ -67,7 +77,7 @@ function staleChildren(cache, accessible) {
 }
 
 function updateChildrenCache(cache, accessible, children) {
-  const { actorID } = accessible;
+  const actorID = getActorID(accessible);
 
   if (cache.has(actorID)) {
     const cached = cache.get(actorID);
@@ -88,6 +98,13 @@ function updateChildrenCache(cache, accessible, children) {
   return cache;
 }
 
+function updateAncestry(cache, ancestry) {
+  ancestry.forEach(({ accessible, children }) =>
+    updateChildrenCache(cache, accessible, children));
+
+  return cache;
+}
+
 
 
 
@@ -96,29 +113,29 @@ function updateChildrenCache(cache, accessible, children) {
 
 
 function onReceiveChildren(cache, action) {
-  const { accessible, response: children, error } = action;
-
-  if (error) {
-    console.warn("Error fetching children", accessible, error);
-    return cache;
+  const { error, accessible, response: children } = action;
+  if (!error) {
+    return updateChildrenCache(new Map(cache), accessible, children);
   }
 
-  return updateChildrenCache(new Map(cache), accessible, children);
-}
-
-function onReceiveAncestry(cache, action) {
-  const { accessible: acc, response: ancestry, error } = action;
-
-  if (error) {
-    console.warn("Error fetching ancestry", acc, error);
+  if (accessible.actorID) {
+    console.warn(`Error fetching children: `, accessible, error);
     return cache;
   }
 
   const newCache = new Map(cache);
-  ancestry.forEach(({ accessible, children }) =>
-    updateChildrenCache(newCache, accessible, children));
-
+  cleanupChild(newCache, accessible);
   return newCache;
+}
+
+function onReceiveAncestry(cache, action) {
+  const { error, response: ancestry } = action;
+  if (error) {
+    console.warn(`Error fetching ancestry: `, error);
+    return cache;
+  }
+
+  return updateAncestry(new Map(cache), ancestry);
 }
 
 exports.accessibles = accessibles;
