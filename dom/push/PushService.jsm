@@ -217,6 +217,7 @@ var PushService = {
       this._service.disconnect();
     }
 
+    let records = await this.getAllUnexpired();
     let broadcastListeners = await pushBroadcastService.getListeners();
 
     
@@ -229,7 +230,13 @@ var PushService = {
     
     this._setState(PUSH_SERVICE_RUNNING);
 
-    this._service.connect(broadcastListeners);
+    if (records.length > 0 || prefs.get("alwaysConnect")) {
+      
+      
+      
+      
+      this._service.connect(records, broadcastListeners);
+    }
   },
 
   _changeStateConnectionEnabledEvent: function(enabled) {
@@ -290,7 +297,7 @@ var PushService = {
                                   CHANGING_SERVICE_EVENT)
           );
 
-        } else if (aData == "dom.push.connection.enabled") {
+        } else if (aData == "dom.push.connection.enabled" || aData == "dom.push.alwaysConnect") {
           this._stateChangeProcessEnqueue(_ =>
             this._changeStateConnectionEnabledEvent(prefs.get("connection.enabled"))
           );
@@ -495,6 +502,8 @@ var PushService = {
 
     
     prefs.observe("connection.enabled", this);
+    
+    prefs.observe("alwaysConnect", this);
 
     
     Services.obs.addObserver(this, "idle-daily");
@@ -578,6 +587,7 @@ var PushService = {
     }
 
     prefs.ignore("connection.enabled", this);
+    prefs.ignore("alwaysConnect", this);
 
     Services.obs.removeObserver(this, "network:offline-status-changed");
     Services.obs.removeObserver(this, "clear-origin-attributes-data");
