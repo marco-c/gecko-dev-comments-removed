@@ -20,10 +20,33 @@
 
 
 module.exports = [
+  
+  
+  
+  
+  
   {
     name: "inspector.cold-open",
     path: "inspector/cold-open.js",
-    description: "Measure first open toolbox on inspector panel",
+    description: "Measure first open toolbox on inspector panel (incl. shared modules)",
+    cold: true,
+  },
+  {
+    name: "debugger.cold-open",
+    path: "debugger/cold-open.js",
+    description: "Measure first open toolbox on debugger panel",
+    cold: true,
+  },
+  {
+    name: "webconsole.cold-open",
+    path: "webconsole/cold-open.js",
+    description: "Measure first open toolbox on webconsole panel",
+    cold: true,
+  },
+  {
+    name: "netmonitor.cold-open",
+    path: "netmonitor/cold-open.js",
+    description: "Measure first open toolbox on netmonitor panel",
     cold: true,
   },
   

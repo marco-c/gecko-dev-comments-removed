@@ -1,0 +1,15 @@
+
+
+
+
+"use strict";
+
+const { openToolboxAndLog, closeToolbox, testSetup,
+        testTeardown, SIMPLE_URL } = require("../head");
+
+module.exports = async function() {
+  await testSetup(SIMPLE_URL);
+  await openToolboxAndLog("cold.webconsole", "webconsole");
+  await closeToolbox();
+  await testTeardown();
+};
