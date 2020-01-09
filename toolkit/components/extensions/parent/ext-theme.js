@@ -45,11 +45,20 @@ class Theme {
     if (startupData && startupData.lwtData) {
       Object.assign(this, startupData);
     } else {
+      
       this.lwtStyles = {};
-      this.lwtDarkStyles = {};
+      this.lwtDarkStyles = null;
+      if (darkDetails) {
+        this.lwtDarkStyles = {};
+      }
 
       if (experiment) {
         if (extension.experimentsAllowed) {
+          this.lwtStyles.experimental = {
+            colors: {},
+            images: {},
+            properties: {},
+          };
           const {baseURI} = this.extension;
           if (experiment.stylesheet) {
             experiment.stylesheet = baseURI.resolve(experiment.stylesheet);
@@ -82,8 +91,6 @@ class Theme {
       this.lwtData = {
         theme: this.lwtStyles,
         darkTheme: this.lwtDarkStyles,
-        id: this.extension.id,
-        version: this.extension.version,
       };
 
       if (this.experiment) {
@@ -119,14 +126,6 @@ class Theme {
 
 
   loadDetails(details, styles) {
-    if (this.experiment) {
-      styles.experimental = {
-        colors: {},
-        images: {},
-        properties: {},
-      };
-    }
-
     if (details.colors) {
       this.loadColors(details.colors, styles);
     }
@@ -138,6 +137,8 @@ class Theme {
     if (details.properties) {
       this.loadProperties(details.properties, styles);
     }
+
+    this.loadMetadata(this.extension, styles);
   }
 
   
@@ -336,10 +337,21 @@ class Theme {
     }
   }
 
+  
+
+
+
+
+
+
+  loadMetadata(extension, styles) {
+    styles.id = extension.id;
+    styles.version = extension.version;
+  }
+
   static unload(windowId) {
     let lwtData = {
-      theme: {},
-      darkTheme: {},
+      theme: null,
     };
 
     if (windowId) {
