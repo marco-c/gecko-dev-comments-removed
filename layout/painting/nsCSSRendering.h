@@ -573,9 +573,8 @@ struct nsCSSRendering {
     Float descentLimit = -1.0f;
     
     
-    
-    
-    uint8_t decoration = NS_STYLE_TEXT_DECORATION_LINE_UNDERLINE;
+    mozilla::StyleTextDecorationLine decoration =
+        mozilla::StyleTextDecorationLine_UNDERLINE;
     
     
     uint8_t style = NS_STYLE_TEXT_DECORATION_STYLE_NONE;

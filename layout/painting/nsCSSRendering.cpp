@@ -3682,10 +3682,10 @@ void nsCSSRendering::PaintDecorationLine(
     return;
   }
 
-  if (aParams.decoration != NS_STYLE_TEXT_DECORATION_LINE_UNDERLINE &&
-      aParams.decoration != NS_STYLE_TEXT_DECORATION_LINE_OVERLINE &&
-      aParams.decoration != NS_STYLE_TEXT_DECORATION_LINE_LINE_THROUGH) {
-    NS_ERROR("Invalid decoration value!");
+  if (aParams.decoration != StyleTextDecorationLine_UNDERLINE &&
+      aParams.decoration != StyleTextDecorationLine_OVERLINE &&
+      aParams.decoration != StyleTextDecorationLine_LINE_THROUGH) {
+    MOZ_ASSERT_UNREACHABLE("Invalid text decoration value");
     return;
   }
 
@@ -3961,10 +3961,10 @@ Rect nsCSSRendering::DecorationLineToPath(
     return path;
   }
 
-  if (aParams.decoration != NS_STYLE_TEXT_DECORATION_LINE_UNDERLINE &&
-      aParams.decoration != NS_STYLE_TEXT_DECORATION_LINE_OVERLINE &&
-      aParams.decoration != NS_STYLE_TEXT_DECORATION_LINE_LINE_THROUGH) {
-    NS_ERROR("Invalid decoration value!");
+  if (aParams.decoration != StyleTextDecorationLine_UNDERLINE &&
+      aParams.decoration != StyleTextDecorationLine_OVERLINE &&
+      aParams.decoration != StyleTextDecorationLine_LINE_THROUGH) {
+    MOZ_ASSERT_UNREACHABLE("Invalid text decoration value");
     return path;
   }
 
@@ -4109,42 +4109,34 @@ gfxRect nsCSSRendering::GetTextDecorationRectInternal(
   
   gfxFloat offset = 0.0;
 
-  switch (aParams.decoration) {
-    case NS_STYLE_TEXT_DECORATION_LINE_UNDERLINE:
-      offset = aParams.offset;
-      if (canLiftUnderline) {
-        if (descentLimit < -offset + r.Height()) {
-          
-          
-          
-          
-          gfxFloat offsetBottomAligned = -descentLimit + r.Height();
-          gfxFloat offsetTopAligned = 0.0;
-          offset = std::min(offsetBottomAligned, offsetTopAligned);
-        }
+  if (aParams.decoration == StyleTextDecorationLine_UNDERLINE) {
+    offset = aParams.offset;
+    if (canLiftUnderline) {
+      if (descentLimit < -offset + r.Height()) {
+        
+        
+        
+        
+        gfxFloat offsetBottomAligned = -descentLimit + r.Height();
+        gfxFloat offsetTopAligned = 0.0;
+        offset = std::min(offsetBottomAligned, offsetTopAligned);
       }
-      break;
-
-    case NS_STYLE_TEXT_DECORATION_LINE_OVERLINE:
-      
-      
-      
-      
-      
-      offset = aParams.offset - lineThickness + r.Height();
-      break;
-
-    case NS_STYLE_TEXT_DECORATION_LINE_LINE_THROUGH: {
-      
-      
-      gfxFloat extra = floor(r.Height() / 2.0 + 0.5);
-      extra = std::max(extra, lineThickness);
-      offset = aParams.offset - lineThickness + extra;
-      break;
     }
-
-    default:
-      NS_ERROR("Invalid decoration value!");
+  } else if (aParams.decoration == StyleTextDecorationLine_OVERLINE) {
+    
+    
+    
+    
+    
+    offset = aParams.offset - lineThickness + r.Height();
+  } else if (aParams.decoration == StyleTextDecorationLine_LINE_THROUGH) {
+    
+    
+    gfxFloat extra = floor(r.Height() / 2.0 + 0.5);
+    extra = std::max(extra, lineThickness);
+    offset = aParams.offset - lineThickness + extra;
+  } else {
+    MOZ_ASSERT_UNREACHABLE("Invalid text decoration value");
   }
 
   
