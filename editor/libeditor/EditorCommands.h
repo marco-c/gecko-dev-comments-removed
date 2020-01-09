@@ -15,6 +15,7 @@
 class nsAtom;
 class nsCommandParams;
 class nsICommandParams;
+class nsIEditingSession;
 
 namespace mozilla {
 
@@ -43,6 +44,9 @@ class EditorCommand : public nsIControllerCommand {
   NS_IMETHOD DoCommandParams(const char* aCommandName,
                              nsICommandParams* aParams,
                              nsISupports* aCommandRefCon) final;
+  NS_IMETHOD GetCommandStateParams(const char* aCommandName,
+                                   nsICommandParams* aParams,
+                                   nsISupports* aCommandRefCon) final;
 
   virtual bool IsCommandEnabled(const char* aCommandName,
                                 TextEditor* aTextEditor) const = 0;
@@ -53,6 +57,17 @@ class EditorCommand : public nsIControllerCommand {
   virtual nsresult DoCommandParams(const char* aCommandName,
                                    nsCommandParams* aParams,
                                    TextEditor& aTextEditor) const = 0;
+  
+
+
+
+
+
+
+
+  virtual nsresult GetCommandStateParams(
+      const char* aCommandName, nsCommandParams& aParams,
+      TextEditor* aTextEditor, nsIEditingSession* aEditingSession) const = 0;
 
  protected:
   EditorCommand() = default;
@@ -73,9 +88,11 @@ class EditorCommand : public nsIControllerCommand {
                                    nsCommandParams* aParams,             \
                                    TextEditor& aTextEditor) const final; \
   using EditorCommand::DoCommandParams;                                  \
-  NS_IMETHOD GetCommandStateParams(const char* aCommandName,             \
-                                   nsICommandParams* aParams,            \
-                                   nsISupports* aCommandRefCon) final;
+  virtual nsresult GetCommandStateParams(                                \
+      const char* aCommandName, nsCommandParams& aParams,                \
+      TextEditor* aTextEditor, nsIEditingSession* aEditingSession)       \
+      const final;                                                       \
+  using EditorCommand::GetCommandStateParams;
 
 #define NS_INLINE_DECL_EDITOR_COMMAND_MAKE_SINGLETON(_cmd) \
  public:                                                   \
