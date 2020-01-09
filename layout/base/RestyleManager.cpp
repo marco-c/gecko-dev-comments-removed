@@ -2565,7 +2565,8 @@ static void UpdateOneAdditionalComputedStyle(nsIFrame* aFrame, uint32_t aIndex,
   uint32_t equalStructs;  
   nsChangeHint childHint =
       aOldContext.CalcStyleDifference(*newStyle, &equalStructs);
-  if (!aFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
+  if (!aFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW) &&
+      !aFrame->IsColumnSpanInMulticolSubtree()) {
     childHint = NS_RemoveSubsumedHints(childHint,
                                        aRestyleState.ChangesHandledFor(aFrame));
   }
