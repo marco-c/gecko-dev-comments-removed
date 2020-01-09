@@ -136,6 +136,7 @@ impl<ColorType: Parse, UrlPaintServer: Parse> Parse for SVGPaint<ColorType, UrlP
     Debug,
     MallocSizeOf,
     PartialEq,
+    Parse,
     SpecifiedValueInfo,
     ToAnimatedValue,
     ToAnimatedZero,
@@ -144,27 +145,25 @@ impl<ColorType: Parse, UrlPaintServer: Parse> Parse for SVGPaint<ColorType, UrlP
 )]
 pub enum SvgLengthPercentageOrNumber<LengthPercentage, Number> {
     
-    LengthPercentage(LengthPercentage),
+    
+    
     
     Number(Number),
+    
+    LengthPercentage(LengthPercentage),
 }
 
 
+#[cfg(feature = "gecko")]
+pub fn is_context_value_enabled(_: &ParserContext) -> bool {
+    use crate::gecko_bindings::structs::mozilla;
+    unsafe { mozilla::StaticPrefs_sVarCache_gfx_font_rendering_opentype_svg_enabled }
+}
 
-impl<LengthPercentageType: Parse, NumberType: Parse> Parse
-    for SvgLengthPercentageOrNumber<LengthPercentageType, NumberType>
-{
-    fn parse<'i, 't>(
-        context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
-        if let Ok(num) = input.try(|i| NumberType::parse(context, i)) {
-            return Ok(SvgLengthPercentageOrNumber::Number(num));
-        }
 
-        let lp = LengthPercentageType::parse(context, input)?;
-        Ok(SvgLengthPercentageOrNumber::LengthPercentage(lp))
-    }
+#[cfg(not(feature = "gecko"))]
+pub fn is_context_value_enabled(_: &ParserContext) -> bool {
+    false
 }
 
 
@@ -175,6 +174,7 @@ impl<LengthPercentageType: Parse, NumberType: Parse> Parse
     Debug,
     MallocSizeOf,
     PartialEq,
+    Parse,
     SpecifiedValueInfo,
     ToAnimatedValue,
     ToAnimatedZero,
@@ -185,6 +185,7 @@ pub enum SVGLength<LengthType> {
     
     Length(LengthType),
     
+    #[parse(condition = "is_context_value_enabled")]
     ContextValue,
 }
 
@@ -216,6 +217,7 @@ pub enum SVGStrokeDashArray<LengthType> {
     Debug,
     MallocSizeOf,
     PartialEq,
+    Parse,
     SpecifiedValueInfo,
     ToAnimatedZero,
     ToComputedValue,

@@ -74,3 +74,26 @@ impl<RGBA> From<RGBA> for Color<RGBA> {
         Self::rgba(color)
     }
 }
+
+
+#[derive(
+    Animate,
+    Clone,
+    ComputeSquaredDistance,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    Parse,
+    SpecifiedValueInfo,
+    ToAnimatedValue,
+    ToAnimatedZero,
+    ToComputedValue,
+    ToCss,
+)]
+pub enum ColorOrAuto<C> {
+    
+    Color(C),
+    
+    Auto,
+}

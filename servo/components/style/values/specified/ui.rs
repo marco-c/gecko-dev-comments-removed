@@ -9,13 +9,9 @@ use crate::values::generics::ui as generics;
 use crate::values::specified::color::Color;
 use crate::values::specified::url::SpecifiedImageUrl;
 use crate::values::specified::Number;
-use crate::values::{Auto, Either};
 use cssparser::Parser;
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
-
-
-pub type ColorOrAuto = Either<Color, Auto>;
 
 
 pub type Cursor = generics::Cursor<CursorImage>;

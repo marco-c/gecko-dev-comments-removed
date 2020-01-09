@@ -165,6 +165,7 @@ impl<LengthPercentage> MaxSize<LengthPercentage> {
     Copy,
     Debug,
     MallocSizeOf,
+    Parse,
     PartialEq,
     SpecifiedValueInfo,
     ToAnimatedValue,
@@ -175,27 +176,15 @@ impl<LengthPercentage> MaxSize<LengthPercentage> {
 #[repr(C, u8)]
 pub enum GenericLengthOrNumber<L, N> {
     
-    Length(L),
+    
+    
     
     Number(N),
+    
+    Length(L),
 }
 
 pub use self::GenericLengthOrNumber as LengthOrNumber;
-
-impl<L: Parse, N: Parse> Parse for LengthOrNumber<L, N> {
-    fn parse<'i, 't>(
-        context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
-        if let Ok(number) = input.try(|i| N::parse(context, i)) {
-            
-            
-            return Ok(LengthOrNumber::Number(number));
-        }
-
-        Ok(LengthOrNumber::Length(L::parse(context, input)?))
-    }
-}
 
 impl<L, N> LengthOrNumber<L, N> {
     
