@@ -150,7 +150,20 @@ class ManifestParser(object):
         
         sections = read_ini(fp=fp, variables=defaults, strict=self.strict,
                             handle_defaults=self._handle_defaults)
-        self.manifest_defaults[filename] = defaults
+        if parentmanifest and filename:
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            self.manifest_defaults[(parentmanifest, filename)] = defaults
+        else:
+            self.manifest_defaults[filename] = defaults
 
         parent_section_found = False
 
@@ -341,10 +354,17 @@ class ManifestParser(object):
     def manifests(self, tests=None):
         """
         return manifests in order in which they appear in the tests
+        If |tests| is not set, the order of the manifests is unspecified.
         """
         if tests is None:
+            manifests = []
             
-            return self.manifest_defaults.keys()
+            for manifest in self.manifest_defaults.keys():
+                if isinstance(manifest, tuple):
+                    parentmanifest, manifest = manifest
+                if manifest not in manifests:
+                    manifests.append(manifest)
+            return manifests
 
         manifests = []
         for test in tests:

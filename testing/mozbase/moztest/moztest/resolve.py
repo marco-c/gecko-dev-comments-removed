@@ -331,6 +331,10 @@ class TestMetadata(object):
 
                     ancestor_manifest = metadata.get('ancestor-manifest')
                     if ancestor_manifest:
+                        
+                        
+                        
+                        defaults_manifests[0] = (ancestor_manifest, metadata['manifest'])
                         defaults_manifests.append(ancestor_manifest)
 
                     for manifest in defaults_manifests:
