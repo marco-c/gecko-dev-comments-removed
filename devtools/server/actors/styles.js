@@ -1085,12 +1085,10 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
 
   get metadata() {
     const data = {};
-    data.id = this.actorID;
     
     
     data.ancestors = this.ancestorRules.map(rule => {
       return {
-        id: rule.actorID,
         
         
         type: rule.rawRule.type,
@@ -1119,7 +1117,6 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
         
         
         href: this.rawNode.baseURI,
-        id: this.pageStyle.walker.getNode(this.rawNode).actorID,
         
         index: data.selector,
         
@@ -1134,7 +1131,6 @@ var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
         
         type: this.sheetActor.href ? "stylesheet" : "inline",
         href: this.sheetActor.href || this.sheetActor.window.location.toString(),
-        id: this.sheetActor.actorID,
         index: this.sheetActor.styleSheetIndex,
         
         isFramed: this.sheetActor.ownerWindow !== this.sheetActor.window,

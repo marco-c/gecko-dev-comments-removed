@@ -61,13 +61,12 @@ function cloneState(state = {}) {
 
 
 
-
-
 function createRule(ruleData, rules) {
   
   const ruleAncestry = [...ruleData.ancestors, { ...ruleData }];
 
   return ruleAncestry
+    
     .map((rule, index) => {
       
       rule.ancestors = ruleAncestry.slice(0, index);
@@ -78,9 +77,7 @@ function createRule(ruleData, rules) {
           `${rule.typeName} ${(rule.conditionText || rule.name || rule.keyText)}`;
       }
 
-      
-      
-      return rule.id || getRuleHash(rule);
+      return getRuleHash(rule);
     })
     
     .map((ruleId, index, array) => {
@@ -197,20 +194,19 @@ const reducers = {
     change = { ...defaults, ...change };
     state = cloneState(state);
 
+    const { type, href, index, isFramed } = change.source;
     const { selector, ancestors, ruleIndex, type: changeType } = change;
-    
-    
-    const sourceId = change.source.id || getSourceHash(change.source);
-    const ruleId = change.id || getRuleHash({ selector, ancestors, ruleIndex });
+    const sourceId = getSourceHash(change.source);
+    const ruleId = getRuleHash({ selector, ancestors, ruleIndex });
 
     
-    const source = Object.assign({}, state[sourceId], change.source);
+    const source = Object.assign({}, state[sourceId], { type, href, index, isFramed });
     
     const rules = Object.assign({}, source.rules);
     
     let rule = rules[ruleId];
     if (!rule) {
-      rule = createRule(change, rules);
+      rule = createRule({ selector, ancestors, ruleIndex }, rules);
       if (changeType.startsWith("rule-")) {
         rule.changeType = changeType;
       }
