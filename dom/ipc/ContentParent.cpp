@@ -5708,6 +5708,8 @@ mozilla::ipc::IPCResult ContentParent::RecvAttachBrowsingContext(
                                            (uint64_t)aChildId, this);
   }
 
+  child->Attach( true);
+
   return IPC_OK();
 }
 
@@ -5734,9 +5736,9 @@ mozilla::ipc::IPCResult ContentParent::RecvDetachBrowsingContext(
   }
 
   if (aMoveToBFCache) {
-    aContext->CacheChildren();
+    aContext->CacheChildren( true);
   } else {
-    aContext->Detach();
+    aContext->Detach( true);
   }
 
   return IPC_OK();
