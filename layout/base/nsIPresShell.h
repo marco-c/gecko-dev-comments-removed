@@ -1740,9 +1740,6 @@ class nsIPresShell : public nsStubDocumentObserver {
 #endif
 
   
-  void DoScrollContentIntoView();
-
-  
 
 
 
@@ -1827,13 +1824,6 @@ class nsIPresShell : public nsStubDocumentObserver {
   
   nsTHashtable<nsPtrHashKey<void>> mAllocatedPointers;
 #endif
-
-  
-  
-  
-  
-  
-  nsCOMPtr<nsIContent> mContentToScrollTo;
 
   
   uint64_t mPaintCount;

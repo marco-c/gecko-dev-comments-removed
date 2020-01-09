@@ -441,6 +441,11 @@ class PresShell final : public nsIPresShell,
   
 
 
+  MOZ_CAN_RUN_SCRIPT void DoScrollContentIntoView();
+
+  
+
+
 
 
 
@@ -1453,6 +1458,13 @@ class PresShell final : public nsIPresShell,
   nsCOMPtr<nsIContent> mPointerEventTarget;
 
   nsCOMPtr<nsIContent> mLastAnchorScrolledTo;
+
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIContent> mContentToScrollTo;
 
   
   uint64_t mAPZFocusSequenceNumber;
