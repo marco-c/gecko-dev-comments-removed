@@ -3011,6 +3011,62 @@ bool NS_IsOffline() {
   return offline || !connectivity;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+bool NS_ShouldClassifyChannel(nsIChannel *aChannel) {
+  nsCOMPtr<nsIHttpChannelInternal> httpChannel(do_QueryInterface(aChannel));
+  if (httpChannel) {
+    bool beConservative;
+    nsresult rv = httpChannel->GetBeConservative(&beConservative);
+
+    
+    
+    
+    
+    if (NS_SUCCEEDED(rv) && beConservative) {
+      return false;
+    }
+  }
+
+  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+  if (loadInfo) {
+    nsContentPolicyType type = loadInfo->GetExternalContentPolicyType();
+
+    
+    
+    if (nsContentUtils::IsSystemPrincipal(loadInfo->TriggeringPrincipal()) &&
+        nsIContentPolicy::TYPE_DOCUMENT != type) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 namespace mozilla {
 namespace net {
 
