@@ -13,7 +13,7 @@ const TAB_URL = URL_ROOT + "resources/service-workers/push-sw.html";
 
 add_task(async function() {
   await enableServiceWorkerDebugging();
-  const { document, tab } = await openAboutDebugging();
+  const { document, tab } = await openAboutDebugging({ enableWorkerUpdates: true });
 
   
   const swTab = await addTab(TAB_URL);
