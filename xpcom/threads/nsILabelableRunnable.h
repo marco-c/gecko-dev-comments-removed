@@ -63,10 +63,6 @@ class nsILabelableRunnable : public nsISupports {
   
   
   virtual bool GetAffectedSchedulerGroups(SchedulerGroupSet& aGroups) = 0;
-
-  
-  
-  bool IsReadyToRun();
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsILabelableRunnable, NS_ILABELABLERUNNABLE_IID);
