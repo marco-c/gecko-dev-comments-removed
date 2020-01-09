@@ -5376,10 +5376,7 @@ AttachDecision CallIRGenerator::tryAttachCallNative(HandleFunction calleeFunc) {
 
   
   if (isSpecialized) {
-    AttachDecision decision = tryAttachSpecialCaseCallNative(calleeFunc);
-    if (decision != AttachDecision::NoAction) {
-      return decision;
-    }
+    TRY_ATTACH(tryAttachSpecialCaseCallNative(calleeFunc));
   }
   if (JitOptions.disableCacheIRCalls) {
     return AttachDecision::NoAction;

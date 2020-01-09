@@ -511,11 +511,36 @@ class CallFlags {
 };
 
 enum class AttachDecision {
+  
   NoAction,
+
+  
   Attach,
+
+  
+  
   TemporarilyUnoptimizable,
+
+  
+  
+  
+  
+  
+  
+  
+  
   Deferred
 };
+
+
+
+#define TRY_ATTACH(expr)                      \
+  do {                                        \
+    AttachDecision result = expr;             \
+    if (result != AttachDecision::NoAction) { \
+      return result;                          \
+    }                                         \
+  } while (0)
 
 
 
