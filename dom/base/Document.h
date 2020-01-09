@@ -4420,10 +4420,6 @@ class Document : public nsINode,
 
  protected:
   
-  
-  nsCString mContentTypeForWriteCalls;
-
-  
   nsCOMPtr<nsISupports> mSecurityInfo;
 
   

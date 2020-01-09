@@ -137,11 +137,7 @@ class nsHtml5Parser final : public nsIParser, public nsSupportsWeakReference {
 
 
 
-
-
-  nsresult Parse(const nsAString& aSourceBuffer, void* aKey,
-                 const nsACString& aContentType, bool aLastCall,
-                 nsDTDMode aMode = eDTDMode_autodetect);
+  nsresult Parse(const nsAString& aSourceBuffer, void* aKey, bool aLastCall);
 
   
 
