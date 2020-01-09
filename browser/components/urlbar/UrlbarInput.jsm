@@ -159,7 +159,8 @@ class UrlbarInput {
     this._initPasteAndGo();
 
     
-    this._compositionState == UrlbarUtils.COMPOSITION.NONE;
+    this._compositionState = UrlbarUtils.COMPOSITION.NONE;
+    this._compositionClosedPopup = false;
   }
 
   
@@ -205,6 +206,11 @@ class UrlbarInput {
   formatValue() {
     this.valueFormatter.update();
   }
+
+  
+
+
+
 
   closePopup() {
     this.view.close();
@@ -1052,7 +1058,7 @@ class UrlbarInput {
     
     this.selectionStart = this.selectionEnd = 0;
 
-    this.closePopup();
+    this.view.close();
   }
 
   
@@ -1212,6 +1218,15 @@ class UrlbarInput {
     this._untrimmedValue = value;
     this.window.gBrowser.userTypedValue = value;
 
+    let compositionState = this._compositionState;
+    let compositionClosedPopup = this._compositionClosedPopup;
+
+    
+    if (this._compositionState != UrlbarUtils.COMPOSITION.COMPOSING) {
+      this._compositionState = UrlbarUtils.COMPOSITION.NONE;
+      this._compositionClosedPopup = false;
+    }
+
     if (value) {
       this.setAttribute("usertyping", "true");
     } else {
@@ -1233,14 +1248,11 @@ class UrlbarInput {
     
 
     
-    if (this._compositionState == UrlbarUtils.COMPOSITION.COMPOSING) {
+    
+    if (compositionState == UrlbarUtils.COMPOSITION.COMPOSING ||
+        (compositionState == UrlbarUtils.COMPOSITION.CANCELED &&
+         !compositionClosedPopup)) {
       return;
-    }
-
-    let handlingCompositionCommit =
-      this._compositionState == UrlbarUtils.COMPOSITION.COMMIT;
-    if (handlingCompositionCommit) {
-      this._compositionState = UrlbarUtils.COMPOSITION.NONE;
     }
 
     let sameSearchStrings = value == this._lastSearchString;
@@ -1257,7 +1269,7 @@ class UrlbarInput {
     
     if (sameSearchStrings &&
         !deletedAutofilledSubstring &&
-        !handlingCompositionCommit &&
+        compositionState == UrlbarUtils.COMPOSITION.NONE &&
         value.length > 0) {
       return;
     }
@@ -1376,7 +1388,12 @@ class UrlbarInput {
     this._compositionState = UrlbarUtils.COMPOSITION.COMPOSING;
 
     
-    this.closePopup();
+    if (this.view.isOpen) {
+      this._compositionClosedPopup = true;
+      this.view.close();
+    } else {
+      this._compositionClosedPopup = false;
+    }
   }
 
   _on_compositionend(event) {
@@ -1386,7 +1403,8 @@ class UrlbarInput {
 
     
     
-    this._compositionState = UrlbarUtils.COMPOSITION.COMMIT;
+    this._compositionState = event.data ? UrlbarUtils.COMPOSITION.COMMIT :
+                                          UrlbarUtils.COMPOSITION.CANCELED;
   }
 
   _on_popupshowing() {
