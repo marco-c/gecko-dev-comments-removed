@@ -330,7 +330,7 @@ def set_try_config(parameters, task_config_file):
     else:
         parameters['try_options'] = None
 
-    if parameters['try_mode']:
+    if parameters['try_mode'] == 'try_task_config':
         
         
         
