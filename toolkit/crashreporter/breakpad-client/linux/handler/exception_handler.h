@@ -276,11 +276,6 @@ class ExceptionHandler {
 typedef bool (*FirstChanceHandler)(int, siginfo_t*, void*);
 void SetFirstChanceExceptionHandler(FirstChanceHandler callback);
 
-typedef bool (*FirstChanceHandlerDeprecated)(int, void*, void*);
-
-
-void SetFirstChanceExceptionHandler(FirstChanceHandlerDeprecated callback);
-
 }  
 
 #endif  

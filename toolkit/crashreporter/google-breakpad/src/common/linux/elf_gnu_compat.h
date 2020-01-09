@@ -43,4 +43,9 @@
 #define NT_GNU_BUILD_ID 3
 #endif
 
+
+#ifndef NT_SIGINFO
+#define NT_SIGINFO 0x53494749
+#endif
+
 #endif  

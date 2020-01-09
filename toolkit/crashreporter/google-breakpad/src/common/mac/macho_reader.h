@@ -176,6 +176,10 @@ struct Segment {
   uint64_t vmsize;
 
   
+  uint64_t fileoff;
+  uint64_t filesize;
+
+  
   uint32_t maxprot;
   uint32_t initprot;
 

@@ -38,6 +38,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <limits>
+
 
 #if !defined(CPU_TYPE_ARM)
 #define CPU_TYPE_ARM 12
@@ -340,12 +342,11 @@ bool Reader::WalkLoadCommands(Reader::LoadCommandHandler *handler) const {
         segment.bits_64 = (type == LC_SEGMENT_64);
         size_t word_size = segment.bits_64 ? 8 : 4;
         cursor.CString(&segment.name, 16);
-        size_t file_offset, file_size;
         cursor
             .Read(word_size, false, &segment.vmaddr)
             .Read(word_size, false, &segment.vmsize)
-            .Read(word_size, false, &file_offset)
-            .Read(word_size, false, &file_size);
+            .Read(word_size, false, &segment.fileoff)
+            .Read(word_size, false, &segment.filesize);
         cursor >> segment.maxprot
                >> segment.initprot
                >> segment.nsects
@@ -354,8 +355,8 @@ bool Reader::WalkLoadCommands(Reader::LoadCommandHandler *handler) const {
           reporter_->LoadCommandTooShort(index, type);
           return false;
         }
-        if (file_offset > buffer_.Size() ||
-            file_size > buffer_.Size() - file_offset) {
+        if (segment.fileoff > buffer_.Size() ||
+            segment.filesize > buffer_.Size() - segment.fileoff) {
           reporter_->MisplacedSegmentData(segment.name);
           return false;
         }
@@ -363,11 +364,11 @@ bool Reader::WalkLoadCommands(Reader::LoadCommandHandler *handler) const {
         
         
         
-        if (file_offset == 0 && file_size == 0) {
+        if (segment.fileoff == 0 && segment.filesize == 0) {
           segment.contents.start = segment.contents.end = NULL;
         } else {
-          segment.contents.start = buffer_.start + file_offset;
-          segment.contents.end = segment.contents.start + file_size;
+          segment.contents.start = buffer_.start + segment.fileoff;
+          segment.contents.end = segment.contents.start + segment.filesize;
         }
         
         segment.section_list.start = cursor.here();
@@ -461,14 +462,14 @@ bool Reader::WalkSegmentSections(const Segment &segment,
   for (size_t i = 0; i < segment.nsects; i++) {
     Section section;
     section.bits_64 = segment.bits_64;
-    uint64_t size;
-    uint32_t offset, dummy32;
+    uint64_t size, offset;
+    uint32_t dummy32;
     cursor
         .CString(&section.section_name, 16)
         .CString(&section.segment_name, 16)
         .Read(word_size, false, &section.address)
         .Read(word_size, false, &size)
-        >> offset
+        .Read(sizeof(uint32_t), false, &offset)  
         >> section.align
         >> dummy32
         >> dummy32
@@ -481,6 +482,24 @@ bool Reader::WalkSegmentSections(const Segment &segment,
       reporter_->SectionsMissing(segment.name);
       return false;
     }
+
+    
+    
+    
+    
+    
+    
+    
+    if (segment.bits_64 &&
+        segment.fileoff + segment.filesize >
+            std::numeric_limits<uint32_t>::max()) {
+      const uint64_t section_offset_recomputed =
+          segment.fileoff + section.address - segment.vmaddr;
+      if (offset == static_cast<uint32_t>(section_offset_recomputed)) {
+        offset = section_offset_recomputed;
+      }
+    }
+
     const uint32_t section_type = section.flags & SECTION_TYPE;
     if (section_type == S_ZEROFILL || section_type == S_THREAD_LOCAL_ZEROFILL ||
             section_type == S_GB_ZEROFILL) {

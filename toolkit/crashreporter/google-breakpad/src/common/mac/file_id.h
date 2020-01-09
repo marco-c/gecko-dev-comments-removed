@@ -42,7 +42,7 @@ namespace google_breakpad {
 class FileID {
  public:
   FileID(const char *path);
-  ~FileID() {};
+  ~FileID() {}
 
   
   

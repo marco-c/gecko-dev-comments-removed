@@ -84,7 +84,7 @@ struct StackFrame {
       default:
         return "unknown";
     }
-  };
+  }
 
   
   
