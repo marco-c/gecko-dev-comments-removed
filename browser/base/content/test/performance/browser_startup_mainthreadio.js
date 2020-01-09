@@ -289,16 +289,6 @@ const startupPhases = {
       read: 3,
       close: 3,
     },
-    {
-      path: "UChrm:userChrome.css",
-      condition: WIN,
-      stat: 1,
-    },
-    { 
-      path: "UChrm:userContent.css",
-      condition: WIN,
-      stat: 1,
-    },
     { 
       path: "XREUSysExt:",
       condition: WIN,

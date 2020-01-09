@@ -416,6 +416,10 @@ nsLayoutStylesheetCache* nsLayoutStylesheetCache::Singleton() {
 }
 
 void nsLayoutStylesheetCache::InitFromProfile() {
+  if (!Preferences::GetBool(PREF_LEGACY_STYLESHEET_CUSTOMIZATION)) {
+    return;
+  }
+
   nsCOMPtr<nsIXULRuntime> appInfo =
       do_GetService("@mozilla.org/xre/app-info;1");
   if (appInfo) {
@@ -444,21 +448,6 @@ void nsLayoutStylesheetCache::InitFromProfile() {
                 eLogToConsole);
 
   if (XRE_IsParentProcess()) {
-    if (mUserChromeSheet || mUserContentSheet) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      Preferences::SetBool(PREF_LEGACY_STYLESHEET_CUSTOMIZATION, true);
-    }
-
     
     
     Telemetry::Accumulate(Telemetry::USER_CHROME_CSS_LOADED,
