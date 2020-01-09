@@ -639,8 +639,8 @@ class Nursery {
 
   
   void maybeResizeNursery(JS::GCReason reason);
-  void growAllocableSpace(unsigned newCapacity);
-  void shrinkAllocableSpace(unsigned newCapacity);
+  void growAllocableSpace(size_t newCapacity);
+  void shrinkAllocableSpace(size_t newCapacity);
   void minimizeAllocableSpace();
 
   
