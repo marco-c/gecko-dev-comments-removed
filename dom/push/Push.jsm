@@ -182,11 +182,13 @@ Push.prototype = {
 
     
     let request = {
+      QueryInterface: ChromeUtils.generateQI([Ci.nsIContentPermissionRequest]),
       types: typeArray,
       principal: this._principal,
       isHandlingUserInput,
+      userHadInteractedWithDocument: this._window.document.userHasInteracted,
+      documentDOMContentLoadedTimestamp: this._window.performance.timing.domContentLoadedEventEnd,
       topLevelPrincipal: this._topLevelPrincipal,
-      QueryInterface: ChromeUtils.generateQI([Ci.nsIContentPermissionRequest]),
       allow: allowCallback,
       cancel: cancelCallback,
       window: this._window,

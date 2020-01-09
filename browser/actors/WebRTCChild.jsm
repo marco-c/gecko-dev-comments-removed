@@ -220,6 +220,15 @@ function prompt(aContentWindow, aWindowID, aCallID, aConstraints, aDevices, aSec
   let isThirdPartyOrigin =
     aContentWindow.document.location.origin != aContentWindow.top.document.location.origin;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
   let request = {
     callID: aCallID,
     windowID: aWindowID,
