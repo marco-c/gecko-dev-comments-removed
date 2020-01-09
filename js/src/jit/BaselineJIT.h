@@ -297,10 +297,6 @@ struct BaselineScript final {
 
   
   
-  uint32_t bytecodeTypeMapOffset_ = 0;
-
-  
-  
   uint32_t resumeEntriesOffset_ = 0;
 
   
@@ -344,8 +340,7 @@ struct BaselineScript final {
       uint32_t debugOsrPrologueOffset, uint32_t debugOsrEpilogueOffset,
       uint32_t profilerEnterToggleOffset, uint32_t profilerExitToggleOffset,
       size_t retAddrEntries, size_t pcMappingIndexEntries, size_t pcMappingSize,
-      size_t bytecodeTypeMapEntries, size_t resumeEntries,
-      size_t traceLoggerToggleOffsetEntries);
+      size_t resumeEntries, size_t traceLoggerToggleOffsetEntries);
 
   static void Trace(JSTracer* trc, BaselineScript* script);
   static void Destroy(FreeOp* fop, BaselineScript* script);
@@ -501,12 +496,6 @@ struct BaselineScript final {
   }
 
   static void writeBarrierPre(Zone* zone, BaselineScript* script);
-
-  uint32_t* bytecodeTypeMap() {
-    MOZ_ASSERT(bytecodeTypeMapOffset_);
-    return reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(this) +
-                                       bytecodeTypeMapOffset_);
-  }
 
   uint8_t maxInliningDepth() const { return maxInliningDepth_; }
   void setMaxInliningDepth(uint32_t depth) {

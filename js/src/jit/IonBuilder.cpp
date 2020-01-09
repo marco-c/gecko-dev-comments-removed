@@ -751,18 +751,8 @@ AbortReasonOr<Ok> IonBuilder::init() {
     argTypes = nullptr;
   }
 
-  
-  
-  if (script()->hasBaselineScript()) {
-    bytecodeTypeMap = script()->baselineScript()->bytecodeTypeMap();
-  } else {
-    bytecodeTypeMap = alloc_->lifoAlloc()->newArrayUninitialized<uint32_t>(
-        script()->nTypeSets());
-    if (!bytecodeTypeMap) {
-      return abort(AbortReason::Alloc);
-    }
-    FillBytecodeTypeMap(script(), bytecodeTypeMap);
-  }
+  AutoSweepTypeScript sweep(script());
+  bytecodeTypeMap = script()->types(sweep)->bytecodeTypeMap();
 
   return Ok();
 }
