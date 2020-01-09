@@ -345,7 +345,10 @@ nsresult ResourceReader::OnWalkURI(const nsACString& aURISpec,
 
   rv = NS_NewURI(getter_AddRefs(uri), aURISpec, mParent->GetCharacterSet(),
                  mCurrentBaseURI);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_FAILED(rv)) {
+    
+    return NS_OK;
+  }
   return OnWalkURI(uri, aContentPolicyType);
 }
 
