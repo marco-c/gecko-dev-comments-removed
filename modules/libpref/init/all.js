@@ -4673,6 +4673,7 @@ pref("signon.recipes.path",                 "chrome://passwordmgr/content/recipe
 pref("signon.schemeUpgrades",               false);
 
 pref("signon.masterPasswordReprompt.timeout_ms", 900000); 
+pref("signon.showAutoCompleteFooter", false);
 
 
 pref("browser.formfill.debug",            false);
