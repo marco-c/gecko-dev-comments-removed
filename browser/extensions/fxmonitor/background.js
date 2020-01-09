@@ -1,0 +1,9 @@
+
+
+
+
+
+
+"use strict";
+
+browser.fxmonitor.start();
