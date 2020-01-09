@@ -1283,7 +1283,14 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
       
       LogicalRect bbox =
           marker->GetLogicalRect(wm, reflowOutput.PhysicalSize());
-      bbox.BStart(wm) = position.mBaseline - reflowOutput.BlockStartAscent();
+      const auto baselineGroup = BaselineSharingGroup::eFirst;
+      nscoord markerBaseline;
+      if (MOZ_UNLIKELY(wm.IsOrthogonalTo(marker->GetWritingMode()) ||
+                       !marker->GetNaturalBaselineBOffset(wm, baselineGroup, &markerBaseline))) {
+        
+        markerBaseline = bbox.BSize(wm) + marker->GetLogicalUsedMargin(wm).BEnd(wm);
+      }
+      bbox.BStart(wm) = position.mBaseline - markerBaseline;
       marker->SetRect(wm, bbox, reflowOutput.PhysicalSize());
     }
     
