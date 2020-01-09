@@ -98,8 +98,10 @@ int wmain(int argc, WCHAR **argv) {
   
   
 #if defined(mozilla_LauncherProcessWin_h)
-  if (mozilla::RunAsLauncherProcess(argc, argv)) {
-    return mozilla::LauncherMain(argc, argv);
+  mozilla::Maybe<int> launcherResult =
+      mozilla::LauncherMain(argc, argv, sAppData);
+  if (launcherResult) {
+    return launcherResult.value();
   }
 #endif  
 
