@@ -21,6 +21,7 @@
 #  include "nsDebug.h"
 #endif
 #include "2D.h"
+#include "mozilla/Atomics.h"
 #include "Point.h"
 #include "BaseRect.h"
 #include "Matrix.h"
@@ -58,7 +59,7 @@ class LoggingPrefs {
   
   
   
-  static int32_t sGfxLogLevel;
+  static Atomic<int32_t> sGfxLogLevel;
 };
 
 
