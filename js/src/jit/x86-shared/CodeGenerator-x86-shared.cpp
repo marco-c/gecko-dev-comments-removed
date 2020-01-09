@@ -1208,13 +1208,22 @@ void CodeGenerator::visitDivPowTwoI(LDivPowTwoI* ins) {
       
       
       
-      if (mir->canBeNegativeDividend()) {
+      if (mir->canBeNegativeDividend() && mir->isTruncated()) {
+        
+        
+        
         Register lhsCopy = ToRegister(ins->numeratorCopy());
         MOZ_ASSERT(lhsCopy != lhs);
         if (shift > 1) {
+          
           masm.sarl(Imm32(31), lhs);
         }
+        
+        
+        
         masm.shrl(Imm32(32 - shift), lhs);
+        
+        
         masm.addl(lhsCopy, lhs);
       }
       masm.sarl(Imm32(shift), lhs);
