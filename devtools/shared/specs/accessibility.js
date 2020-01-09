@@ -23,6 +23,18 @@ types.addDictType("accessibleWithChildren", {
 
 
 
+
+
+types.addDictType("auditEventData", {
+  
+  ancestries: "array:array:accessibleWithChildren",
+  
+  error: "boolean",
+});
+
+
+
+
 types.addDictType("accessibleRelation", {
   
   type: "string",
@@ -147,6 +159,10 @@ const accessibleWalkerSpec = generateActorSpec({
       type: "highlighter-event",
       data: Arg(0, "json"),
     },
+    "audit-event": {
+      type: "audit-event",
+      audit: Arg(0, "auditEventData"),
+    },
   },
 
   methods: {
@@ -168,12 +184,7 @@ const accessibleWalkerSpec = generateActorSpec({
         ancestry: RetVal("array:accessibleWithChildren"),
       },
     },
-    audit: {
-      request: {},
-      response: {
-        audit: RetVal("array:array:accessibleWithChildren"),
-      },
-    },
+    startAudit: {},
     highlightAccessible: {
       request: {
         accessible: Arg(0, "accessible"),

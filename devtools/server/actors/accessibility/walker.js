@@ -417,6 +417,27 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     return Promise.all(ancestries);
   },
 
+  
+
+
+
+
+  startAudit() {
+    
+    if (this._auditing) {
+      return;
+    }
+
+    this._auditing = this.audit()
+      
+      
+      .then(ancestries => this.emit("audit-event", { ancestries }))
+      .catch(() => this.emit("audit-event", { error: true }))
+      .finally(() => {
+        this._auditing = null;
+      });
+  },
+
   onHighlighterEvent: function(data) {
     this.emit("highlighter-event", data);
   },
