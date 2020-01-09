@@ -1707,11 +1707,10 @@ pref("browser.crashReports.unsubmittedCheck.autoSubmit2", false);
 
 #ifdef NIGHTLY_BUILD
 pref("extensions.formautofill.available", "on");
-pref("extensions.formautofill.creditCards.available", true);
 #else
 pref("extensions.formautofill.available", "detect");
-pref("extensions.formautofill.creditCards.available", false);
 #endif
+pref("extensions.formautofill.creditCards.available", false);
 pref("extensions.formautofill.addresses.enabled", true);
 pref("extensions.formautofill.creditCards.enabled", true);
 
