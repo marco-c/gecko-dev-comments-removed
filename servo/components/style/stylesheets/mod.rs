@@ -64,8 +64,14 @@ pub use self::supports_rule::SupportsRule;
 pub use self::viewport_rule::ViewportRule;
 
 
-#[cfg(not(feature = "gecko"))]
-pub type UrlExtraData = ::servo_url::ServoUrl;
+#[repr(u8)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, ToShmem)]
+pub enum CorsMode {
+    
+    None,
+    
+    Anonymous,
+}
 
 
 
@@ -82,7 +88,12 @@ pub type UrlExtraData = ::servo_url::ServoUrl;
 
 #[cfg(feature = "gecko")]
 #[derive(PartialEq)]
+#[repr(C)]
 pub struct UrlExtraData(usize);
+
+
+#[cfg(not(feature = "gecko"))]
+pub type UrlExtraData = ::servo_url::ServoUrl;
 
 #[cfg(feature = "gecko")]
 impl Clone for UrlExtraData {

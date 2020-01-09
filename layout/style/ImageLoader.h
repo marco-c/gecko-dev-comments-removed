@@ -34,8 +34,6 @@ class Document;
 
 namespace css {
 
-struct URLValue;
-
 
 
 
@@ -63,7 +61,7 @@ class ImageLoader final : public imgINotificationObserver {
 
   void DropDocumentReference();
 
-  imgRequestProxy* RegisterCSSImage(URLValue* aImage);
+  imgRequestProxy* RegisterCSSImage(const StyleLoadData& aImage);
 
   void AssociateRequestToFrame(imgIRequest* aRequest, nsIFrame* aFrame,
                                FrameFlags aFlags);
@@ -79,13 +77,13 @@ class ImageLoader final : public imgINotificationObserver {
   
   void ClearFrames(nsPresContext* aPresContext);
 
-  static void LoadImage(URLValue* aImage, dom::Document* aLoadingDoc);
+  static void LoadImage(const StyleComputedImageUrl& aImage, dom::Document&);
 
   
   
   
   
-  static void DeregisterCSSImageFromAllLoaders(URLValue* aImage);
+  static void DeregisterCSSImageFromAllLoaders(const StyleLoadData&);
 
   void FlushUseCounters();
 
@@ -182,7 +180,6 @@ class ImageLoader final : public imgINotificationObserver {
   
   bool mInClone;
 
-  
   
   struct ImageTableEntry {
     
