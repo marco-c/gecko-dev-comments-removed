@@ -1471,8 +1471,7 @@ nsresult EnsureMIMEOfScript(nsHttpChannel *aChannel, nsIURI *aURI,
     if (!sIsInited) {
       sIsInited = true;
       Preferences::AddBoolVarCache(&sCachedBlockScriptWithWrongMime,
-                                   "security.block_script_with_wrong_mime",
-                                   true);
+                                   "security.block_script_with_wrong_mime");
     }
 
     
@@ -1489,67 +1488,62 @@ nsresult EnsureMIMEOfScript(nsHttpChannel *aChannel, nsIURI *aURI,
     
     AccumulateCategorical(
         Telemetry::LABELS_SCRIPT_BLOCK_INCORRECT_MIME_3::text_plain);
-  } else if (StringBeginsWith(contentType, NS_LITERAL_CSTRING("text/xml"))) {
+    return NS_OK;
+  }
+
+  if (StringBeginsWith(contentType, NS_LITERAL_CSTRING("text/xml"))) {
     
     AccumulateCategorical(
         Telemetry::LABELS_SCRIPT_BLOCK_INCORRECT_MIME_3::text_xml);
-  } else if (StringBeginsWith(contentType,
-                              NS_LITERAL_CSTRING("application/octet-stream"))) {
+    return NS_OK;
+  }
+
+  if (StringBeginsWith(contentType,
+                       NS_LITERAL_CSTRING("application/octet-stream"))) {
     
     AccumulateCategorical(
         Telemetry::LABELS_SCRIPT_BLOCK_INCORRECT_MIME_3::app_octet_stream);
-  } else if (StringBeginsWith(contentType,
-                              NS_LITERAL_CSTRING("application/xml"))) {
+    return NS_OK;
+  }
+
+  if (StringBeginsWith(contentType, NS_LITERAL_CSTRING("application/xml"))) {
     
     AccumulateCategorical(
         Telemetry::LABELS_SCRIPT_BLOCK_INCORRECT_MIME_3::app_xml);
-  } else if (StringBeginsWith(contentType,
-                              NS_LITERAL_CSTRING("application/json"))) {
+    return NS_OK;
+  }
+
+  if (StringBeginsWith(contentType, NS_LITERAL_CSTRING("application/json"))) {
     
     AccumulateCategorical(
         Telemetry::LABELS_SCRIPT_BLOCK_INCORRECT_MIME_3::app_json);
-  } else if (StringBeginsWith(contentType, NS_LITERAL_CSTRING("text/json"))) {
+    return NS_OK;
+  }
+
+  if (StringBeginsWith(contentType, NS_LITERAL_CSTRING("text/json"))) {
     
     AccumulateCategorical(
         Telemetry::LABELS_SCRIPT_BLOCK_INCORRECT_MIME_3::text_json);
-  } else if (StringBeginsWith(contentType, NS_LITERAL_CSTRING("text/html"))) {
+    return NS_OK;
+  }
+
+  if (StringBeginsWith(contentType, NS_LITERAL_CSTRING("text/html"))) {
     
     AccumulateCategorical(
         Telemetry::LABELS_SCRIPT_BLOCK_INCORRECT_MIME_3::text_html);
-  } else if (contentType.IsEmpty()) {
+    return NS_OK;
+  }
+
+  if (contentType.IsEmpty()) {
     
     AccumulateCategorical(
         Telemetry::LABELS_SCRIPT_BLOCK_INCORRECT_MIME_3::empty);
-  } else {
-    
-    AccumulateCategorical(
-        Telemetry::LABELS_SCRIPT_BLOCK_INCORRECT_MIME_3::unknown);
+    return NS_OK;
   }
 
   
-  if (aLoadInfo->InternalContentPolicyType() ==
-      nsIContentPolicy::TYPE_INTERNAL_WORKER_IMPORT_SCRIPTS) {
-    
-    
-    static bool sCachedBlockImportScriptsWithWrongMime = false;
-    static bool sIsInited = false;
-    if (!sIsInited) {
-      sIsInited = true;
-      Preferences::AddBoolVarCache(
-          &sCachedBlockImportScriptsWithWrongMime,
-          "security.block_importScripts_with_wrong_mime", true);
-    }
-
-    
-    if (!sCachedBlockImportScriptsWithWrongMime) {
-      return NS_OK;
-    }
-
-    ReportMimeTypeMismatch(aChannel, "BlockImportScriptsWithWrongMimeType",
-                           aURI, contentType, Report::Error);
-    return NS_ERROR_CORRUPTED_CONTENT;
-  }
-
+  AccumulateCategorical(
+      Telemetry::LABELS_SCRIPT_BLOCK_INCORRECT_MIME_3::unknown);
   return NS_OK;
 }
 
