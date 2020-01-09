@@ -21,7 +21,6 @@
 #include "vm/BytecodeUtil.h"
 #include "vm/JSContext.h"
 #include "vm/Realm.h"
-#include "vm/UnboxedObject.h"
 
 namespace js {
 namespace jit {
@@ -2711,10 +2710,6 @@ inline bool IsCacheableDOMProxy(JSObject* obj) {
 }
 
 struct IonOsrTempData;
-
-template <typename T>
-void EmitICUnboxedPreBarrier(MacroAssembler& masm, const T& address,
-                             JSValueType type);
 
 
 
