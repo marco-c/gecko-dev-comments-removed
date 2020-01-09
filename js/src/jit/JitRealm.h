@@ -29,6 +29,8 @@ namespace jit {
 
 class FrameSizeClass;
 struct VMFunctionData;
+
+enum class TailCallVMFunctionId;
 enum class VMFunctionId;
 
 struct EnterJitData {
@@ -150,6 +152,10 @@ class JitRuntime {
   VMWrapperOffsets functionWrapperOffsets_;
 
   
+  
+  VMWrapperOffsets tailCallFunctionWrapperOffsets_;
+
+  
   UnprotectedData<JitcodeGlobalTable*> jitcodeGlobalTable_;
 
 #ifdef DEBUG
@@ -200,6 +206,10 @@ class JitRuntime {
   bool generateVMWrapper(JSContext* cx, MacroAssembler& masm,
                          const VMFunctionData& f, void* nativeFun,
                          uint32_t* wrapperOffset);
+
+  template <typename IdT>
+  bool generateVMWrappers(JSContext* cx, MacroAssembler& masm,
+                          VMWrapperOffsets& offsets);
   bool generateVMWrappers(JSContext* cx, MacroAssembler& masm);
 
   bool generateTLEventVM(MacroAssembler& masm, const VMFunctionData& f,
@@ -238,9 +248,13 @@ class JitRuntime {
 
   TrampolinePtr getVMWrapper(const VMFunction& f) const;
 
-  TrampolinePtr getVMWrapper(const VMFunctionId funId) const {
+  TrampolinePtr getVMWrapper(VMFunctionId funId) const {
     MOZ_ASSERT(trampolineCode_);
     return trampolineCode(functionWrapperOffsets_[size_t(funId)]);
+  }
+  TrampolinePtr getVMWrapper(TailCallVMFunctionId funId) const {
+    MOZ_ASSERT(trampolineCode_);
+    return trampolineCode(tailCallFunctionWrapperOffsets_[size_t(funId)]);
   }
 
   JitCode* debugTrapHandler(JSContext* cx);

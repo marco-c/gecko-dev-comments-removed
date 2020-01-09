@@ -1225,12 +1225,11 @@ bool DoToNumeric(JSContext* cx, HandleValue arg, MutableHandleValue ret);
 bool CopyStringSplitArray(JSContext* cx, HandleArrayObject arr,
                           MutableHandleValue result);
 
-
-extern const VMFunction DoConcatStringObjectInfo;
-
+enum class TailCallVMFunctionId;
 enum class VMFunctionId;
 
 extern const VMFunctionData& GetVMFunction(VMFunctionId id);
+extern const VMFunctionData& GetVMFunction(TailCallVMFunctionId id);
 
 }  
 }  
