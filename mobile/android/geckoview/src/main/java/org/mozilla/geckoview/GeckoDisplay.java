@@ -6,6 +6,7 @@
 
 package org.mozilla.geckoview;
 
+import android.graphics.Bitmap;
 import android.support.annotation.NonNull;
 import android.support.annotation.UiThread;
 import android.view.Surface;
@@ -117,5 +118,32 @@ public class GeckoDisplay {
     public boolean shouldPinOnScreen() {
         ThreadUtils.assertOnUiThread();
         return session.getDisplay() == this && session.shouldPinOnScreen();
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    @UiThread
+    public @NonNull GeckoResult<Bitmap> capturePixels() {
+        ThreadUtils.assertOnUiThread();
+        if (!session.isCompositorReady()) {
+            return GeckoResult.fromException(
+                    new IllegalStateException("Compositor must be ready before pixels can be captured"));
+        }
+        GeckoResult<Bitmap> result = new GeckoResult<>();
+        session.mCompositor.requestScreenPixels(result);
+        return result;
     }
 }
