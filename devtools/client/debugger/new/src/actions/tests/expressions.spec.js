@@ -2,7 +2,12 @@
 
 
 
-import { actions, selectors, createStore } from "../../utils/test-head";
+import {
+  actions,
+  selectors,
+  createStore,
+  makeSource
+} from "../../utils/test-head";
 
 const mockThreadClient = {
   evaluateInFrame: (script, { frameId }) =>
@@ -27,7 +32,7 @@ const mockThreadClient = {
       )
     ),
   getFrameScopes: async () => {},
-  sourceContents: () => ({}),
+  sourceContents: () => ({ source: "", contentType: "text/javascript" }),
   autocomplete: () => {
     return new Promise(resolve => {
       resolve({
@@ -147,7 +152,7 @@ async function createFrames(dispatch) {
     location: { sourceId, line: 3 }
   };
 
-  await dispatch(actions.newSource({ id: sourceId }));
+  await dispatch(actions.newSource(makeSource("example.js")));
 
   await dispatch(
     actions.paused({

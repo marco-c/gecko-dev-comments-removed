@@ -21,6 +21,8 @@ export type Mode =
       }
     };
 
+export type ThreadId = string;
+
 
 
 
@@ -44,6 +46,12 @@ export type SourceId = string;
 
 
 export type ActorId = string;
+
+export type SourceActorLocation = {|
+  +sourceActor: SourceActor,
+  +line: number,
+  +column?: number
+|};
 
 
 
@@ -106,11 +114,19 @@ export type Breakpoint = {|
   +options: BreakpointOptions
 |};
 
+
+
+
 export type BreakpointOptions = {
   hidden?: boolean,
   condition?: string,
   logValue?: string
 };
+
+export type BreakpointActor = {|
+  +actor: ActorId,
+  +source: SourceActor
+|};
 
 
 
@@ -133,7 +149,7 @@ export type XHRBreakpoint = {|
 
 export type BreakpointResult = {
   id: ActorId,
-  actualLocation: SourceLocation
+  actualLocation: SourceActorLocation
 };
 
 
@@ -167,6 +183,7 @@ export type FrameId = string;
 
 export type Frame = {
   id: FrameId,
+  thread: string,
   displayName: string,
   location: SourceLocation,
   generatedLocation: SourceLocation,
@@ -306,9 +323,8 @@ export type Grip = {
 
 
 type BaseSource = {|
-  +id: string,
+  +id: SourceId,
   +url: string,
-  +thread: string,
   +sourceMapURL?: string,
   +isBlackBoxed: boolean,
   +isPrettyPrinted: boolean,
@@ -346,6 +362,12 @@ export type WasmSource = {|
 |};
 
 export type Source = JsSource | WasmSource;
+
+export type SourceActor = {|
+  +actor: ActorId,
+  +source: SourceId,
+  +thread: ThreadId
+|};
 
 
 
