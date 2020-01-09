@@ -28,7 +28,9 @@ class nsIScrollbarMediator : public nsQueryFrame {
 
 
 
-  enum ScrollSnapMode { DISABLE_SNAP, ENABLE_SNAP };
+
+
+  enum ScrollSnapMode { DEFAULT, DISABLE_SNAP, ENABLE_SNAP };
 
   
 

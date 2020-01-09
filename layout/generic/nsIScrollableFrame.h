@@ -231,8 +231,13 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
 
 
 
+
+
+
   virtual void ScrollToCSSPixels(const CSSIntPoint& aScrollPosition,
                                  ScrollMode aMode = ScrollMode::eInstant,
+                                 nsIScrollbarMediator::ScrollSnapMode aSnap =
+                                     nsIScrollbarMediator::DEFAULT,
                                  nsAtom* aOrigin = nullptr) = 0;
   
 
@@ -271,9 +276,15 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
                         nsIScrollbarMediator::ScrollSnapMode aSnap =
                             nsIScrollbarMediator::DISABLE_SNAP) = 0;
 
+  
+
+
+
   virtual void ScrollByCSSPixels(const CSSIntPoint& aDelta,
                                  ScrollMode aMode = ScrollMode::eInstant,
-                                 nsAtom* aOrigin = nullptr) = 0;
+                                 nsAtom* aOrigin = nullptr,
+                                 nsIScrollbarMediator::ScrollSnapMode aSnap =
+                                     nsIScrollbarMediator::DEFAULT) = 0;
 
   
 
