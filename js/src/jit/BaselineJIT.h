@@ -141,7 +141,7 @@ class RetAddrEntry {
     IC,
 
     
-    NonOpIC,
+    PrologueIC,
 
     
     CallVM,
@@ -202,12 +202,6 @@ class RetAddrEntry {
   Kind kind() const {
     MOZ_ASSERT(kind_ < uint32_t(Kind::Invalid));
     return Kind(kind_);
-  }
-  bool isForOp() const { return kind() == Kind::IC; }
-
-  void setNonICKind(Kind kind) {
-    MOZ_ASSERT(kind != Kind::IC && kind != Kind::NonOpIC);
-    setKind(kind);
   }
 };
 

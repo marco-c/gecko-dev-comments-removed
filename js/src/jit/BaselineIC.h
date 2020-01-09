@@ -221,6 +221,7 @@ class ICEntry {
   ICStub* firstStub_;
 
   
+  
   uint32_t pcOffset_;
 
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
@@ -236,8 +237,7 @@ class ICEntry {
   
   
   
-  
-  static constexpr uint32_t NonOpPCOffset = UINT32_MAX;
+  static constexpr uint32_t ProloguePCOffset = UINT32_MAX;
 
   ICEntry(ICStub* firstStub, uint32_t pcOffset)
       : firstStub_(firstStub), pcOffset_(pcOffset) {}
@@ -252,7 +252,7 @@ class ICEntry {
   void setFirstStub(ICStub* stub) { firstStub_ = stub; }
 
   uint32_t pcOffset() const {
-    return pcOffset_ == NonOpPCOffset ? 0 : pcOffset_;
+    return pcOffset_ == ProloguePCOffset ? 0 : pcOffset_;
   }
   jsbytecode* pc(JSScript* script) const {
     return script->offsetToPC(pcOffset());
@@ -264,7 +264,7 @@ class ICEntry {
 
   inline ICStub** addressOfFirstStub() { return &firstStub_; }
 
-  bool isForOp() const { return pcOffset_ != NonOpPCOffset; }
+  bool isForPrologue() const { return pcOffset_ == ProloguePCOffset; }
 
   void trace(JSTracer* trc);
 };
