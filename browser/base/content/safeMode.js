@@ -55,11 +55,9 @@ function onExtra1() {
   if (defaultToReset) {
     
     window.close();
-    return true;
   }
   
   showResetDialog();
-  return false;
 }
 
 function onLoad() {
@@ -77,4 +75,5 @@ function onLoad() {
     document.documentElement.getButton("extra1").hidden = true;
     document.getElementById("resetProfileInstead").hidden = true;
   }
+  document.addEventListener("dialogextra1", onExtra1);
 }

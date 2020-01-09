@@ -96,6 +96,8 @@ AppPicker.prototype =
           
           document.getElementById("app-picker-notfound").removeAttribute("hidden");
         }
+
+        document.addEventListener("dialogextra2", function() { g_dialog.appPickerBrowse(); });
     },
 
     
