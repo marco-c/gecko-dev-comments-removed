@@ -35,6 +35,7 @@ add_task(async function() {
 
   
   await waitFor(() => objectInspector.querySelectorAll(".node").length === 5);
+  objectInspector.focus()
 
   const [
     root,
