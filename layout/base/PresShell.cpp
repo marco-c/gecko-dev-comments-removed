@@ -7686,66 +7686,8 @@ nsresult PresShell::EventHandler::HandleEventInternal(
 
   HandlingTimeAccumulator handlingTimeAccumulator(*this, aEvent);
 
-  
-  
-  nsresult rv = manager->PreHandleEvent(
-      GetPresContext(), aEvent, mPresShell->mCurrentEventFrame,
-      mPresShell->mCurrentEventContent, aEventStatus, aOverrideClickTarget);
-
-  
-  if (NS_SUCCEEDED(rv)) {
-    bool wasHandlingKeyBoardEvent = nsContentUtils::IsHandlingKeyBoardEvent();
-    if (aEvent->mClass == eKeyboardEventClass) {
-      nsContentUtils::SetIsHandlingKeyBoardEvent(true);
-    }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (aEvent->IsAllowedToDispatchDOMEvent() &&
-        !(aEvent->PropagationStopped() &&
-          aEvent->IsWaitingReplyFromRemoteProcess())) {
-      MOZ_ASSERT(nsContentUtils::IsSafeToRunScript(),
-                 "Somebody changed aEvent to cause a DOM event!");
-      nsPresShellEventCB eventCB(mPresShell);
-      if (nsIFrame* target = mPresShell->GetCurrentEventFrame()) {
-        if (target->OnlySystemGroupDispatch(aEvent->mMessage)) {
-          aEvent->StopPropagation();
-        }
-      }
-      if (aEvent->mClass == eTouchEventClass) {
-        DispatchTouchEventToDOM(aEvent, aEventStatus, &eventCB, touchIsNew);
-      } else {
-        DispatchEventToDOM(aEvent, aEventStatus, &eventCB);
-      }
-    }
-
-    nsContentUtils::SetIsHandlingKeyBoardEvent(wasHandlingKeyBoardEvent);
-
-    if (aEvent->mMessage == ePointerUp || aEvent->mMessage == ePointerCancel) {
-      
-      
-      
-      WidgetPointerEvent* pointerEvent = aEvent->AsPointerEvent();
-      MOZ_ASSERT(pointerEvent);
-      PointerEventHandler::ReleasePointerCaptureById(pointerEvent->pointerId);
-      PointerEventHandler::CheckPointerCaptureState(pointerEvent);
-    }
-
-    
-    
-    if (!mPresShell->IsDestroying() && NS_SUCCEEDED(rv)) {
-      rv = manager->PostHandleEvent(GetPresContext(), aEvent,
-                                    mPresShell->GetCurrentEventFrame(),
-                                    aEventStatus, aOverrideClickTarget);
-    }
-  }
+  nsresult rv = DispatchEvent(manager, aEvent, touchIsNew, aEventStatus,
+                              aOverrideClickTarget);
 
   if (!mPresShell->IsDestroying() && aIsHandlingNativeEvent) {
     
@@ -7802,6 +7744,77 @@ nsresult PresShell::EventHandler::HandleEventInternal(
       break;
   }
   RecordEventHandlingResponsePerformance(aEvent);
+  return rv;
+}
+
+nsresult PresShell::EventHandler::DispatchEvent(
+    EventStateManager* aEventStateManager, WidgetEvent* aEvent,
+    bool aTouchIsNew, nsEventStatus* aEventStatus,
+    nsIContent* aOverrideClickTarget) {
+  MOZ_ASSERT(aEventStateManager);
+  MOZ_ASSERT(aEvent);
+  MOZ_ASSERT(aEventStatus);
+
+  
+  
+  nsresult rv = aEventStateManager->PreHandleEvent(
+      GetPresContext(), aEvent, mPresShell->mCurrentEventFrame,
+      mPresShell->mCurrentEventContent, aEventStatus, aOverrideClickTarget);
+
+  
+  if (NS_SUCCEEDED(rv)) {
+    bool wasHandlingKeyBoardEvent = nsContentUtils::IsHandlingKeyBoardEvent();
+    if (aEvent->mClass == eKeyboardEventClass) {
+      nsContentUtils::SetIsHandlingKeyBoardEvent(true);
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (aEvent->IsAllowedToDispatchDOMEvent() &&
+        !(aEvent->PropagationStopped() &&
+          aEvent->IsWaitingReplyFromRemoteProcess())) {
+      MOZ_ASSERT(nsContentUtils::IsSafeToRunScript(),
+                 "Somebody changed aEvent to cause a DOM event!");
+      nsPresShellEventCB eventCB(mPresShell);
+      if (nsIFrame* target = mPresShell->GetCurrentEventFrame()) {
+        if (target->OnlySystemGroupDispatch(aEvent->mMessage)) {
+          aEvent->StopPropagation();
+        }
+      }
+      if (aEvent->mClass == eTouchEventClass) {
+        DispatchTouchEventToDOM(aEvent, aEventStatus, &eventCB, aTouchIsNew);
+      } else {
+        DispatchEventToDOM(aEvent, aEventStatus, &eventCB);
+      }
+    }
+
+    nsContentUtils::SetIsHandlingKeyBoardEvent(wasHandlingKeyBoardEvent);
+
+    if (aEvent->mMessage == ePointerUp || aEvent->mMessage == ePointerCancel) {
+      
+      
+      
+      WidgetPointerEvent* pointerEvent = aEvent->AsPointerEvent();
+      MOZ_ASSERT(pointerEvent);
+      PointerEventHandler::ReleasePointerCaptureById(pointerEvent->pointerId);
+      PointerEventHandler::CheckPointerCaptureState(pointerEvent);
+    }
+
+    
+    
+    if (!mPresShell->IsDestroying() && NS_SUCCEEDED(rv)) {
+      rv = aEventStateManager->PostHandleEvent(
+          GetPresContext(), aEvent, mPresShell->GetCurrentEventFrame(),
+          aEventStatus, aOverrideClickTarget);
+    }
+  }
   return rv;
 }
 

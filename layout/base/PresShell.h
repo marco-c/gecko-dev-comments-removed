@@ -1156,6 +1156,27 @@ class PresShell final : public nsIPresShell,
 
 
 
+
+
+
+
+
+
+
+    MOZ_CAN_RUN_SCRIPT
+    nsresult DispatchEvent(EventStateManager* aEventStateManager,
+                           WidgetEvent* aEvent, bool aTouchIsNew,
+                           nsEventStatus* aEventStatus,
+                           nsIContent* aOverrideClickTarget);
+
+    
+
+
+
+
+
+
+
     nsresult DispatchEventToDOM(WidgetEvent* aEvent,
                                 nsEventStatus* aEventStatus,
                                 nsPresShellEventCB* aEventCB);
