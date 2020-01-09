@@ -28,10 +28,6 @@
 
 .debug-target-pane__collapsable {
   overflow: hidden;
-  
-
-  margin: calc(var(--card-shadow-blur-radius) * -1);
-  padding: var(--card-shadow-blur-radius);
 }
 
 .debug-target-pane__collapsable--collapsed {

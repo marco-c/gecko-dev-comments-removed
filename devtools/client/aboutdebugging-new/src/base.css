@@ -78,7 +78,6 @@
   --monospace-font-family: monospace;
 
   --card-separator-color: var(--grey-20);
-  --card-shadow-blur-radius: var(--base-unit);
 
   
 
@@ -397,7 +396,7 @@ p, h1 {
 
 .card {
   background-color: var(--white-100); 
-  border-radius: var(--card-shadow-blur-radius); 
+  border-radius: var(--base-unit); 
   box-shadow: 0 1px 4px var(--grey-90-a10); 
   padding-block: calc(var(--base-unit) * 3) calc(var(--base-unit) * 2);
 }
