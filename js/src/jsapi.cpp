@@ -1171,10 +1171,10 @@ JS_PUBLIC_API void JS::RunIdleTimeGCTask(JSRuntime* rt) {
   }
 }
 
-JS_PUBLIC_API void JS_GC(JSContext* cx) {
+JS_PUBLIC_API void JS_GC(JSContext* cx, JS::GCReason reason) {
   AssertHeapIsIdle();
   JS::PrepareForFullGC(cx);
-  cx->runtime()->gc.gc(GC_NORMAL, JS::GCReason::API);
+  cx->runtime()->gc.gc(GC_NORMAL, reason);
 }
 
 JS_PUBLIC_API void JS_MaybeGC(JSContext* cx) {
@@ -3422,9 +3422,6 @@ void JS::TransitiveCompileOptions::copyPODTransitiveOptions(
   hasIntroductionInfo = rhs.hasIntroductionInfo;
   isProbablySystemCode = rhs.isProbablySystemCode;
   hideScriptFromDebugger = rhs.hideScriptFromDebugger;
-#ifdef ENABLE_BIGINT
-  bigIntEnabledOption = rhs.bigIntEnabledOption;
-#endif
 };
 
 void JS::ReadOnlyCompileOptions::copyPODOptions(
@@ -3551,9 +3548,6 @@ JS::CompileOptions::CompileOptions(JSContext* cx)
   }
   throwOnAsmJSValidationFailureOption =
       cx->options().throwOnAsmJSValidationFailure();
-#ifdef ENABLE_BIGINT
-  bigIntEnabledOption = cx->realm()->creationOptions().getBigIntEnabled();
-#endif
 }
 
 CompileOptions& CompileOptions::setIntroductionInfoToCaller(
