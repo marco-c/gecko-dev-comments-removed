@@ -120,7 +120,38 @@ add_task(async function() {
     
     unregisterFont(privateFontPath,  false);
 
+    
+    let origWidth = await ContentTask.spawn(aBrowser, {}, async function() {
+      let window = content.window.wrappedJSObject;
+      let contentDiv = window.document.getElementById("content");
+      return contentDiv.offsetWidth;
+    });
+
+    
     await registerFont(privateFontPath);
+
+    
+    await ContentTask.spawn(aBrowser, {}, async function() {
+      let window = content.window.wrappedJSObject;
+      let contentDiv = window.document.getElementById("content");
+      contentDiv.style.fontFamily = "'Fira Sans', monospace";
+    });
+
+    
+    
+    while (true) {
+      let width = await ContentTask.spawn(aBrowser, {}, async function() {
+        let window = content.window.wrappedJSObject;
+        let contentDiv = window.document.getElementById("content");
+        return contentDiv.offsetWidth;
+      });
+      if (width != origWidth) {
+        break;
+      }
+      
+      
+      await new Promise(c => setTimeout(c, 100));
+    }
 
     
     let fontList = await ContentTask.spawn(aBrowser, {}, async function() {
