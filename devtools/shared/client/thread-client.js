@@ -613,6 +613,28 @@ ThreadClient.prototype = {
   
 
 
+  getAvailableEventBreakpoints: DebuggerClient.requester({
+    type: "getAvailableEventBreakpoints",
+  }),
+
+  
+
+
+  getActiveEventBreakpoints: DebuggerClient.requester({
+    type: "getActiveEventBreakpoints",
+  }),
+
+  
+
+
+  setActiveEventBreakpoints: DebuggerClient.requester({
+    type: "setActiveEventBreakpoints",
+    ids: arg(0),
+  }),
+
+  
+
+
   source: function(form) {
     if (form.actor in this._threadGrips) {
       return this._threadGrips[form.actor];
