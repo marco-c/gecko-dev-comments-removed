@@ -1891,10 +1891,8 @@ void APZCTreeManager::SynthesizePinchGestureFromMouseWheel(
   ScreenPoint focusPoint = aWheelInput.mOrigin;
 
   
-  
-  
-  ParentLayerCoord oldSpan = 100;
-  ParentLayerCoord newSpan = oldSpan + aWheelInput.mDeltaY;
+  ScreenCoord oldSpan = 100;
+  ScreenCoord newSpan = oldSpan + aWheelInput.mDeltaY;
 
   
   TargetConfirmationFlags confFlags{true};
