@@ -427,7 +427,7 @@ gint moz_gtk_checkbox_get_metrics(gint* indicator_size,
 
 
 
-const ToggleGTKMetrics* GetToggleMetrics(bool isRadio);
+const ToggleGTKMetrics* GetToggleMetrics(WidgetNodeType aWidgetType);
 
 
 
