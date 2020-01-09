@@ -53,7 +53,7 @@ bool TryEmitter::emitTry() {
   
   
   
-  depth_ = bce_->stackDepth;
+  depth_ = bce_->bytecodeSection().stackDepth();
 
   
   if (!bce_->newSrcNote(SRC_TRY, &noteIndex_)) {
@@ -72,7 +72,7 @@ bool TryEmitter::emitTry() {
 
 bool TryEmitter::emitTryEnd() {
   MOZ_ASSERT(state_ == State::Try);
-  MOZ_ASSERT(depth_ == bce_->stackDepth);
+  MOZ_ASSERT(depth_ == bce_->bytecodeSection().stackDepth());
 
   
   if (hasFinally() && controlInfo_) {
@@ -106,7 +106,7 @@ bool TryEmitter::emitCatch() {
     return false;
   }
 
-  MOZ_ASSERT(bce_->stackDepth == depth_);
+  MOZ_ASSERT(bce_->bytecodeSection().stackDepth() == depth_);
 
   if (controlKind_ == ControlKind::Syntactic) {
     
@@ -139,7 +139,7 @@ bool TryEmitter::emitCatchEnd() {
     if (!bce_->emitGoSub(&controlInfo_->gosubs)) {
       return false;
     }
-    MOZ_ASSERT(bce_->stackDepth == depth_);
+    MOZ_ASSERT(bce_->bytecodeSection().stackDepth() == depth_);
 
     
     if (!bce_->emitJump(JSOP_GOTO, &catchAndFinallyJump_)) {
@@ -178,7 +178,7 @@ bool TryEmitter::emitFinally(
     }
   }
 
-  MOZ_ASSERT(bce_->stackDepth == depth_);
+  MOZ_ASSERT(bce_->bytecodeSection().stackDepth() == depth_);
 
   if (!bce_->emitJumpTarget(&finallyStart_)) {
     return false;
@@ -254,7 +254,7 @@ bool TryEmitter::emitEnd() {
     }
   }
 
-  MOZ_ASSERT(bce_->stackDepth == depth_);
+  MOZ_ASSERT(bce_->bytecodeSection().stackDepth() == depth_);
 
   
   

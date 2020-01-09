@@ -164,6 +164,15 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
       return lastOpcodeIsJumpTarget() ? lastTarget_.offset : offset();
     }
 
+    
+
+    int32_t stackDepth() const { return stackDepth_; }
+    void setStackDepth(int32_t depth) { stackDepth_ = depth; }
+
+    uint32_t maxStackDepth() const { return maxStackDepth_; }
+
+    void updateDepth(ptrdiff_t target);
+
    private:
     
 
@@ -182,6 +191,14 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
 
     
     JumpTarget lastTarget_ = {-1 - ptrdiff_t(JSOP_JUMPTARGET_LENGTH)};
+
+    
+
+    
+    uint32_t maxStackDepth_ = 0;
+
+    
+    int32_t stackDepth_ = 0;
   };
 
   BytecodeSection bytecodeSection_;
@@ -224,10 +241,6 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   unsigned firstLine = 0; 
 
   uint32_t maxFixedSlots = 0; 
-  uint32_t maxStackDepth =
-      0; 
-
-  int32_t stackDepth = 0; 
 
   uint32_t bodyScopeIndex =
       UINT32_MAX; 
@@ -542,7 +555,6 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   MOZ_MUST_USE bool emitFunctionScript(FunctionNode* funNode,
                                        TopLevelFunction isTopLevel);
 
-  void updateDepth(ptrdiff_t target);
   MOZ_MUST_USE bool markStepBreakpoint();
   MOZ_MUST_USE bool markSimpleBreakpoint();
   MOZ_MUST_USE bool updateLineNumberNotes(uint32_t offset);
