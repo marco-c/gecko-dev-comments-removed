@@ -654,7 +654,7 @@ bool HTMLInputElement::IsPopupBlocked() const {
 
   
   if (PopupBlocker::GetPopupControlState() <= PopupBlocker::openBlocked) {
-    return !PopupBlocker::TryUsePopupOpeningToken(OwnerDoc()->NodePrincipal());
+    return !PopupBlocker::TryUsePopupOpeningToken();
   }
 
   return !PopupBlocker::CanShowPopupByPermission(OwnerDoc()->NodePrincipal());
