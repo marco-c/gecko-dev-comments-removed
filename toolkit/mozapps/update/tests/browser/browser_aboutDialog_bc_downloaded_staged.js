@@ -14,8 +14,11 @@ add_task(async function aboutDialog_backgroundCheck_downloaded_staged() {
 
   
   
-  let updateParams = "&invalidCompleteSize=1";
-  await runAboutDialogUpdateTest(updateParams, true, [
+  let params = {queryString: "&invalidCompleteSize=1",
+                backgroundUpdate: true,
+                continueFile: CONTINUE_STAGING,
+                waitForUpdateState: STATE_APPLIED};
+  await runAboutDialogUpdateTest(params, [
     {
       panelId: "apply",
       checkActiveUpdate: {state: STATE_APPLIED},

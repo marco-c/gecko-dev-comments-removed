@@ -5,7 +5,7 @@
 
 
 
-add_task(async function aboutPrefs_backgroundCheck_downloaded_staged() {
+add_task(async function aboutDialog_backgroundCheck_downloaded_staging() {
   await SpecialPowers.pushPrefEnv({
     set: [
       [PREF_APP_UPDATE_STAGING_ENABLED, true],
@@ -16,9 +16,13 @@ add_task(async function aboutPrefs_backgroundCheck_downloaded_staged() {
   
   let params = {queryString: "&invalidCompleteSize=1",
                 backgroundUpdate: true,
-                continueFile: CONTINUE_STAGING,
-                waitForUpdateState: STATE_APPLIED};
-  await runAboutPrefsUpdateTest(params, [
+                waitForUpdateState: STATE_PENDING};
+  await runAboutDialogUpdateTest(params, [
+    {
+      panelId: "applying",
+      checkActiveUpdate: {state: STATE_PENDING},
+      continueFile: CONTINUE_STAGING,
+    },
     {
       panelId: "apply",
       checkActiveUpdate: {state: STATE_APPLIED},

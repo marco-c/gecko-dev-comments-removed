@@ -23,8 +23,8 @@ add_task(async function aboutDialog_foregroundCheck_downloadAuto_staging() {
 
   
   
-  let updateParams = "&invalidCompleteSize=1";
-  await runAboutDialogUpdateTest(updateParams, false, [
+  let params = {queryString: "&invalidCompleteSize=1"};
+  await runAboutDialogUpdateTest(params, [
     {
       panelId: "checkingForUpdates",
       checkActiveUpdate: null,

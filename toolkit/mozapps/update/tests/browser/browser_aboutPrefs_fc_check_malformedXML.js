@@ -6,8 +6,8 @@
 
 
 add_task(async function aboutPrefs_foregroundCheck_malformedXML() {
-  let updateParams = "&xmlMalformed=1";
-  await runAboutPrefsUpdateTest(updateParams, false, [
+  let params = {queryString: "&xmlMalformed=1"};
+  await runAboutPrefsUpdateTest(params, [
     {
       panelId: "checkingForUpdates",
       checkActiveUpdate: null,

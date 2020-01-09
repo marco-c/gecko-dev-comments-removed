@@ -626,10 +626,7 @@ function runDoorhangerUpdateTest(updateParams, checkAttempts, steps) {
 
 
 
-
-
-
-function runAboutDialogUpdateTest(updateParams, backgroundUpdate, steps) {
+function runAboutDialogUpdateTest(params, steps) {
   let aboutDialog;
   function processAboutDialogStep(step) {
     if (typeof(step) == "function") {
@@ -639,8 +636,12 @@ function runAboutDialogUpdateTest(updateParams, backgroundUpdate, steps) {
     const {panelId, checkActiveUpdate, continueFile, downloadInfo} = step;
     return (async function() {
       let updateDeck = aboutDialog.document.getElementById("updateDeck");
+      
+      
       await TestUtils.waitForCondition(() =>
-        (updateDeck.selectedPanel && updateDeck.selectedPanel.id == panelId),
+        (updateDeck.selectedPanel &&
+         (updateDeck.selectedPanel.id == panelId ||
+          updateDeck.selectedPanel.id == "apply")),
         "Waiting for the expected panel ID: " + panelId, undefined, 200
       ).catch(e => {
         
@@ -661,29 +662,29 @@ function runAboutDialogUpdateTest(updateParams, backgroundUpdate, steps) {
 
       if (panelId == "downloading") {
         for (let i = 0; i < downloadInfo.length; ++i) {
-          let info = downloadInfo[i];
+          let data = downloadInfo[i];
           
           await continueFileHandler(continueFile);
-          let patch = getPatchOfType(info.patchType);
+          let patch = getPatchOfType(data.patchType);
           
           
           let isLastPatch = (i == downloadInfo.length - 1);
           if (!isLastPatch || patch) {
-            let resultName = info.bitsResult ? "bitsResult" : "internalResult";
+            let resultName = data.bitsResult ? "bitsResult" : "internalResult";
             patch.QueryInterface(Ci.nsIWritablePropertyBag);
             await TestUtils.waitForCondition(() =>
-              (patch.getProperty(resultName) == info[resultName]),
+              (patch.getProperty(resultName) == data[resultName]),
               "Waiting for expected patch property " + resultName + " value: " +
-              info[resultName], undefined, 200
+              data[resultName], undefined, 200
             ).catch(e => {
               
               
               
               logTestInfo(e);
             });
-            is(patch.getProperty(resultName), info[resultName],
+            is(patch.getProperty(resultName), data[resultName],
                "The patch property " + resultName + " value should equal " +
-               info[resultName]);
+               data[resultName]);
           }
         }
       } else if (continueFile) {
@@ -727,18 +728,30 @@ function runAboutDialogUpdateTest(updateParams, backgroundUpdate, steps) {
 
     await setupTestUpdater();
 
+    let queryString = params.queryString ? params.queryString : "";
     let updateURL = URL_HTTP_UPDATE_SJS + "?detailsURL=" + gDetailsURL +
-                    updateParams + getVersionParams();
-    if (backgroundUpdate) {
-      if (Services.prefs.getBoolPref(PREF_APP_UPDATE_STAGING_ENABLED)) {
-        
-        
-        
-        gEnv.set("MOZ_TEST_SKIP_UPDATE_STAGE", "1");
-      }
+                    queryString + getVersionParams();
+    if (params.backgroundUpdate) {
       setUpdateURL(updateURL);
       gAUS.checkForBackgroundUpdates();
-      await waitForEvent("update-downloaded");
+      if (params.continueFile) {
+        await continueFileHandler(params.continueFile);
+      }
+      if (params.waitForUpdateState) {
+        await TestUtils.waitForCondition(() =>
+          (gUpdateManager.activeUpdate &&
+           gUpdateManager.activeUpdate.state == params.waitForUpdateState),
+          "Waiting for update state: " + params.waitForUpdateState,
+          undefined, 200
+        ).catch(e => {
+          
+          
+          logTestInfo(e);
+        });
+        
+        is(gUpdateManager.activeUpdate.state, params.waitForUpdateState,
+           "The update state value should equal " + params.waitForUpdateState);
+      }
     } else {
       updateURL += "&slowUpdateCheck=1&useSlowDownloadMar=1";
       setUpdateURL(updateURL);
@@ -766,10 +779,7 @@ function runAboutDialogUpdateTest(updateParams, backgroundUpdate, steps) {
 
 
 
-
-
-
-function runAboutPrefsUpdateTest(updateParams, backgroundUpdate, steps) {
+function runAboutPrefsUpdateTest(params, steps) {
   let tab;
   function processAboutPrefsStep(step) {
     if (typeof(step) == "function") {
@@ -781,13 +791,19 @@ function runAboutPrefsUpdateTest(updateParams, backgroundUpdate, steps) {
       await ContentTask.spawn(tab.linkedBrowser, {panelId},
                               async ({panelId}) => {
         let updateDeck = content.document.getElementById("updateDeck");
+        
+        
         await ContentTaskUtils.waitForCondition(() =>
-          (updateDeck.selectedPanel && updateDeck.selectedPanel.id == panelId),
+          (updateDeck.selectedPanel &&
+           (updateDeck.selectedPanel.id == panelId ||
+            updateDeck.selectedPanel.id == "apply")),
           "Waiting for the expected panel ID: " + panelId, undefined, 200
         ).catch(e => {
           
           
-          logTestInfo(e);
+          
+          
+          info(e);
         });
         is(updateDeck.selectedPanel.id, panelId,
            "The panel ID should equal " + panelId);
@@ -804,29 +820,29 @@ function runAboutPrefsUpdateTest(updateParams, backgroundUpdate, steps) {
 
       if (panelId == "downloading") {
         for (let i = 0; i < downloadInfo.length; ++i) {
-          let info = downloadInfo[i];
+          let data = downloadInfo[i];
           
           await continueFileHandler(continueFile);
-          let patch = getPatchOfType(info.patchType);
+          let patch = getPatchOfType(data.patchType);
           
           
           let isLastPatch = (i == downloadInfo.length - 1);
           if (!isLastPatch || patch) {
-            let resultName = info.bitsResult ? "bitsResult" : "internalResult";
+            let resultName = data.bitsResult ? "bitsResult" : "internalResult";
             patch.QueryInterface(Ci.nsIWritablePropertyBag);
             await TestUtils.waitForCondition(() =>
-              (patch.getProperty(resultName) == info[resultName]),
+              (patch.getProperty(resultName) == data[resultName]),
               "Waiting for expected patch property " + resultName + " value: " +
-              info[resultName], undefined, 200
+              data[resultName], undefined, 200
             ).catch(e => {
               
               
               
               logTestInfo(e);
             });
-            is(patch.getProperty(resultName), info[resultName],
+            is(patch.getProperty(resultName), data[resultName],
                "The patch property " + resultName + " value should equal " +
-               info[resultName]);
+               data[resultName]);
           }
         }
       } else if (continueFile) {
@@ -882,18 +898,31 @@ function runAboutPrefsUpdateTest(updateParams, backgroundUpdate, steps) {
 
     await setupTestUpdater();
 
+    let queryString = params.queryString ? params.queryString : "";
     let updateURL = URL_HTTP_UPDATE_SJS + "?detailsURL=" + gDetailsURL +
-                    updateParams + getVersionParams();
-    if (backgroundUpdate) {
-      if (Services.prefs.getBoolPref(PREF_APP_UPDATE_STAGING_ENABLED)) {
-        
-        
-        
-        gEnv.set("MOZ_TEST_SKIP_UPDATE_STAGE", "1");
-      }
+                    queryString + getVersionParams();
+    if (params.backgroundUpdate) {
       setUpdateURL(updateURL);
       gAUS.checkForBackgroundUpdates();
-      await waitForEvent("update-downloaded");
+      if (params.continueFile) {
+        await continueFileHandler(params.continueFile);
+      }
+      if (params.waitForUpdateState) {
+        
+        
+        await TestUtils.waitForCondition(() =>
+          (gUpdateManager.activeUpdate &&
+           gUpdateManager.activeUpdate.state == params.waitForUpdateState),
+          "Waiting for update state: " + params.waitForUpdateState,
+          undefined, 200
+        ).catch(e => {
+          
+          
+          logTestInfo(e);
+        });
+        is(gUpdateManager.activeUpdate.state, params.waitForUpdateState,
+           "The update state value should equal " + params.waitForUpdateState);
+      }
     } else {
       updateURL += "&slowUpdateCheck=1&useSlowDownloadMar=1";
       setUpdateURL(updateURL);
@@ -905,12 +934,16 @@ function runAboutPrefsUpdateTest(updateParams, backgroundUpdate, steps) {
       await BrowserTestUtils.removeTab(tab);
     });
 
+    
+    await ContentTask.spawn(tab.linkedBrowser, null, async () => {
+      content.document.getElementById("updatesCategory").scrollIntoView();
+    });
+
     for (let step of steps) {
       await processAboutPrefsStep(step);
     }
   })();
 }
-
 
 
 

@@ -5,7 +5,13 @@
 
 
 
-add_task(async function aboutDialog_foregroundCheck_downloadAuto() {
+add_task(async function aboutPrefs_backgroundCheck_downloading_staging() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [PREF_APP_UPDATE_STAGING_ENABLED, true],
+    ],
+  });
+
   let downloadInfo = [];
   if (Services.prefs.getBoolPref(PREF_APP_UPDATE_BITS_ENABLED)) {
     downloadInfo[0] = {patchType: "partial",
@@ -17,13 +23,10 @@ add_task(async function aboutDialog_foregroundCheck_downloadAuto() {
 
   
   
-  let params = {queryString: "&invalidCompleteSize=1"};
-  await runAboutDialogUpdateTest(params, [
-    {
-      panelId: "checkingForUpdates",
-      checkActiveUpdate: null,
-      continueFile: CONTINUE_CHECK,
-    },
+  let params = {queryString: "&useSlowDownloadMar=1&invalidCompleteSize=1",
+                backgroundUpdate: true,
+                waitForUpdateState: STATE_DOWNLOADING};
+  await runAboutPrefsUpdateTest(params, [
     {
       panelId: "downloading",
       checkActiveUpdate: {state: STATE_DOWNLOADING},
@@ -31,8 +34,13 @@ add_task(async function aboutDialog_foregroundCheck_downloadAuto() {
       downloadInfo,
     },
     {
-      panelId: "apply",
+      panelId: "applying",
       checkActiveUpdate: {state: STATE_PENDING},
+      continueFile: CONTINUE_STAGING,
+    },
+    {
+      panelId: "apply",
+      checkActiveUpdate: {state: STATE_APPLIED},
       continueFile: null,
     },
   ]);

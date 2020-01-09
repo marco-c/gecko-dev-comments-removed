@@ -6,8 +6,9 @@
 
 
 add_task(async function aboutPrefs_backgroundCheck_downloaded() {
-  let updateParams = "";
-  await runAboutPrefsUpdateTest(updateParams, true, [
+  let params = {backgroundUpdate: true,
+                waitForUpdateState: STATE_PENDING};
+  await runAboutPrefsUpdateTest(params, [
     {
       panelId: "apply",
       checkActiveUpdate: {state: STATE_PENDING},

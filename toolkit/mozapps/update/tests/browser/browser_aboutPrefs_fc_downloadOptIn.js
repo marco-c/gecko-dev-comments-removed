@@ -19,8 +19,8 @@ add_task(async function aboutPrefs_foregroundCheck_downloadOptIn() {
 
   
   
-  let updateParams = "&invalidCompleteSize=1";
-  await runAboutPrefsUpdateTest(updateParams, false, [
+  let params = {queryString: "&invalidCompleteSize=1"};
+  await runAboutPrefsUpdateTest(params, [
     {
       panelId: "checkingForUpdates",
       checkActiveUpdate: null,

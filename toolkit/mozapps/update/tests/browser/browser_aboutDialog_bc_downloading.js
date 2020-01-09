@@ -5,7 +5,7 @@
 
 
 
-add_task(async function aboutDialog_foregroundCheck_downloadAuto() {
+add_task(async function aboutDialog_backgroundCheck_downloading() {
   let downloadInfo = [];
   if (Services.prefs.getBoolPref(PREF_APP_UPDATE_BITS_ENABLED)) {
     downloadInfo[0] = {patchType: "partial",
@@ -17,13 +17,10 @@ add_task(async function aboutDialog_foregroundCheck_downloadAuto() {
 
   
   
-  let params = {queryString: "&invalidCompleteSize=1"};
+  let params = {queryString: "&useSlowDownloadMar=1&invalidCompleteSize=1",
+                backgroundUpdate: true,
+                waitForUpdateState: STATE_DOWNLOADING};
   await runAboutDialogUpdateTest(params, [
-    {
-      panelId: "checkingForUpdates",
-      checkActiveUpdate: null,
-      continueFile: CONTINUE_CHECK,
-    },
     {
       panelId: "downloading",
       checkActiveUpdate: {state: STATE_DOWNLOADING},

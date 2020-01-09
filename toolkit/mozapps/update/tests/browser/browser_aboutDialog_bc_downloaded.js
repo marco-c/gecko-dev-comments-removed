@@ -6,8 +6,9 @@
 
 
 add_task(async function aboutDialog_backgroundCheck_downloaded() {
-  let updateParams = "";
-  await runAboutDialogUpdateTest(updateParams, true, [
+  let params = {backgroundUpdate: true,
+                waitForUpdateState: STATE_PENDING};
+  await runAboutDialogUpdateTest(params, [
     {
       panelId: "apply",
       checkActiveUpdate: {state: STATE_PENDING},
