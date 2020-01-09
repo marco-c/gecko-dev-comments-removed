@@ -19,7 +19,7 @@ const {SocketListener} = ChromeUtils.import("chrome://remote/content/server/Sock
 
 
 
-this.Debugger = class {
+this.TargetListener = class {
   constructor(target) {
     this.target = target;
     this.listener = null;
