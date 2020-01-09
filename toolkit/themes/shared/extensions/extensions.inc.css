@@ -250,6 +250,7 @@ button.warning {
   }
 }
 
+#go-back,
 #header-utils-btn {
   -moz-context-properties: fill;
   fill: currentColor;
@@ -269,13 +270,35 @@ button.warning {
   margin-inline-end: 1px; 
 }
 
+#go-back > .button-box > .button-text,
 #header-utils-btn > .button-box > hbox > .button-text {
   display: none;
 }
 
+#go-back {
+  margin-inline-start: 0;
+  margin-inline-end: 16px;
+}
+
+#go-back > .button-box > .button-icon {
+  list-style-image: url("chrome://global/skin/icons/calendar-arrow-left.svg");
+  margin: 0;
+}
+
+#go-back > .button-box > .button-icon:-moz-locale-dir(rtl) {
+  list-style-image: url("chrome://global/skin/icons/calendar-arrow-right.svg");
+}
+
 #heading {
-  margin-top: 26px;
+  
+
+  margin-top: 21px;
   margin-bottom: 16px;
+}
+
+.header-name {
+  
+  margin-top: 5px;
 }
 
 .heading-inner {
