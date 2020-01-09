@@ -12,6 +12,11 @@ import sys
 import datetime
 import time
 
+try:
+    from urllib import unquote
+except ImportError:
+    from urllib.parse import unquote
+
 
 itags = {
     "5": {
@@ -598,6 +603,13 @@ def OK(flow, code=204):
 def request(flow):
     
     
+    
+    method = flow.request.method
+    method = unquote(method).split("=")
+    flow.request.method = method[-1]
+
+    
+    
     if flow.request.url.startswith("https://www.youtube.com/ptracking"):
         OK(flow)
         return
@@ -609,6 +621,9 @@ def request(flow):
         return
     
     if "push.services.mozilla.com" in flow.request.url:
+        OK(flow, code=200)
+        return
+    if "tracking-protection.cdn.mozilla.net" in flow.request.url:
         OK(flow, code=200)
         return
     if "gen_204" in flow.request.url:
