@@ -573,6 +573,8 @@ class BrowserParent final : public PBrowserParent,
   
   LayoutDeviceIntPoint GetClientOffset();
 
+  void StopIMEStateManagement();
+
   
 
 
