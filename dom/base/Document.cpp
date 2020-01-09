@@ -1246,7 +1246,6 @@ Document::Document(const char* aContentType)
       mDidDocumentOpen(false),
       mHasDisplayDocument(false),
       mFontFaceSetDirty(true),
-      mGetUserFontSetCalled(false),
       mDidFireDOMContentLoaded(true),
       mHasScrollLinkedEffect(false),
       mFrameRequestCallbacksScheduled(false),
@@ -11601,33 +11600,7 @@ nsAutoSyncOperation::~nsAutoSyncOperation() {
   }
 }
 
-gfxUserFontSet* Document::GetUserFontSet(bool aFlushUserFontSet) {
-  
-  
-  
-  
-  
-  
-  
-#ifdef DEBUG
-  bool userFontSetGottenBefore = mGetUserFontSetCalled;
-#endif
-  
-  
-  mGetUserFontSetCalled = true;
-  if (mFontFaceSetDirty && aFlushUserFontSet) {
-    
-    
-    
-    
-    
-    
-    NS_ASSERTION(!userFontSetGottenBefore || !GetShell() ||
-                     !GetShell()->IsReflowLocked(),
-                 "FlushUserFontSet should have been called first");
-    FlushUserFontSet();
-  }
-
+gfxUserFontSet* Document::GetUserFontSet() {
   if (!mFontFaceSet) {
     return nullptr;
   }
@@ -11636,12 +11609,6 @@ gfxUserFontSet* Document::GetUserFontSet(bool aFlushUserFontSet) {
 }
 
 void Document::FlushUserFontSet() {
-  if (!mGetUserFontSetCalled) {
-    return;  
-             
-             
-  }
-
   if (!mFontFaceSetDirty) {
     return;
   }
@@ -11678,22 +11645,20 @@ void Document::FlushUserFontSet() {
 }
 
 void Document::MarkUserFontSetDirty() {
-  if (!mGetUserFontSetCalled) {
-    
-    
-    
+  if (mFontFaceSetDirty) {
     return;
   }
-
   mFontFaceSetDirty = true;
+  if (nsIPresShell* shell = GetShell()) {
+    shell->EnsureStyleFlush();
+  }
 }
 
 FontFaceSet* Document::Fonts() {
   if (!mFontFaceSet) {
     nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(GetScopeObject());
     mFontFaceSet = new FontFaceSet(window, this);
-    GetUserFontSet();  
-                       
+    FlushUserFontSet();
   }
   return mFontFaceSet;
 }

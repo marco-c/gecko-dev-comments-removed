@@ -3339,7 +3339,7 @@ class Document : public nsINode,
     }
   }
 
-  gfxUserFontSet* GetUserFontSet(bool aFlushUserFontSet = true);
+  gfxUserFontSet* GetUserFontSet();
   void FlushUserFontSet();
   void MarkUserFontSetDirty();
   mozilla::dom::FontFaceSet* GetFonts() { return mFontFaceSet; }
@@ -4064,9 +4064,6 @@ class Document : public nsINode,
 
   
   bool mFontFaceSetDirty : 1;
-
-  
-  bool mGetUserFontSetCalled : 1;
 
   
   

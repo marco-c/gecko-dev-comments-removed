@@ -901,7 +901,7 @@ class nsPresContext : public nsISupports,
 
   bool SuppressingResizeReflow() const { return mSuppressResizeReflow; }
 
-  gfxUserFontSet* GetUserFontSet(bool aFlushUserFontSet = true);
+  gfxUserFontSet* GetUserFontSet();
 
   
   

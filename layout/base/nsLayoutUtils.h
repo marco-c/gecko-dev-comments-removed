@@ -2945,15 +2945,11 @@ class nsLayoutUtils {
   
   static uint8_t ControlCharVisibilityDefault();
 
-  enum class FlushUserFontSet {
-    Yes,
-    No,
-  };
-
+  
+  
   static already_AddRefed<nsFontMetrics> GetMetricsFor(
       nsPresContext* aPresContext, bool aIsVertical,
-      const nsStyleFont* aStyleFont, nscoord aFontSize, bool aUseUserFontSet,
-      FlushUserFontSet aFlushUserFontSet);
+      const nsStyleFont* aStyleFont, nscoord aFontSize, bool aUseUserFontSet);
 
   
 
