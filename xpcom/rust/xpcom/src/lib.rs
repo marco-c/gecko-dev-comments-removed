@@ -15,6 +15,7 @@ extern crate libc;
 extern crate nsstring;
 extern crate nserror;
 extern crate threadbound;
+extern crate thin_vec;
 
 
 #[macro_use]
