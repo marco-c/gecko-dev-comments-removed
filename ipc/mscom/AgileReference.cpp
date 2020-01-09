@@ -12,6 +12,11 @@
 #include "mozilla/Move.h"
 #include "mozilla/mscom/Utils.h"
 
+#if defined(MOZILLA_INTERNAL_API)
+#include "nsDebug.h"
+#include "nsPrintfCString.h"
+#endif  
+
 #if NTDDI_VERSION < NTDDI_WINBLUE
 
 
@@ -100,7 +105,13 @@ void AgileReference::Clear() {
   }
 
   DebugOnly<HRESULT> hr = git->RevokeInterfaceFromGlobal(mGitCookie);
+#if defined(MOZILLA_INTERNAL_API)
+  NS_WARNING_ASSERTION(SUCCEEDED(hr), nsPrintfCString(
+      "IGlobalInterfaceTable::RevokeInterfaceFromGlobal failed with HRESULT "
+      "0x%08lX", ((HRESULT)hr)).get());
+#else
   MOZ_ASSERT(SUCCEEDED(hr));
+#endif  
   mGitCookie = 0;
 }
 
