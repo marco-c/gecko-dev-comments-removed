@@ -1157,9 +1157,9 @@ var gIdentityHandler = {
 
       
       menulist.addEventListener("command", () => {
-        SitePermissions.set(gBrowser.currentURI,
-                            aPermission.id,
-                            menulist.selectedItem.value);
+        SitePermissions.setForPrincipal(gBrowser.contentPrincipal,
+                                        aPermission.id,
+                                        menulist.selectedItem.value);
       });
 
       container.appendChild(img);
@@ -1213,16 +1213,16 @@ var gIdentityHandler = {
           
           
           
-          let uris = browser._devicePermissionURIs || [];
-          for (let uri of uris) {
+          let principals = browser._devicePermissionPrincipals || [];
+          for (let principal of principals) {
             
             
             for (let id of ["camera", "microphone"]) {
               if (this._sharingState[id]) {
-                let perm = SitePermissions.get(uri, id);
+                let perm = SitePermissions.getForPrincipal(principal, id);
                 if (perm.state == SitePermissions.ALLOW &&
                     perm.scope == SitePermissions.SCOPE_PERSISTENT) {
-                  SitePermissions.remove(uri, id);
+                  SitePermissions.removeFromPrincipal(principal, id);
                 }
               }
             }
@@ -1231,7 +1231,7 @@ var gIdentityHandler = {
         browser.messageManager.sendAsyncMessage("webrtc:StopSharing", windowId);
         webrtcUI.forgetActivePermissionsFromBrowser(gBrowser.selectedBrowser);
       }
-      SitePermissions.remove(gBrowser.currentURI, aPermission.id, browser);
+      SitePermissions.removeFromPrincipal(gBrowser.contentPrincipal, aPermission.id, browser);
 
       this._permissionReloadHint.removeAttribute("hidden");
       PanelView.forNode(this._identityPopupMainView)
