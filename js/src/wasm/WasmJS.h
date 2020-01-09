@@ -89,16 +89,14 @@ MOZ_MUST_USE bool DeserializeModule(JSContext* cx, const Bytes& serialized,
 
 
 
-extern bool IsExportedFunction(JSFunction* fun);
 
-extern bool IsExportedWasmFunction(JSFunction* fun);
 
-extern bool IsExportedFunction(const Value& v, MutableHandleFunction f);
+
+
+extern bool IsWasmExportedFunction(JSFunction* fun);
 
 extern Instance& ExportedFunctionToInstance(JSFunction* fun);
-
 extern WasmInstanceObject* ExportedFunctionToInstanceObject(JSFunction* fun);
-
 extern uint32_t ExportedFunctionToFuncIndex(JSFunction* fun);
 
 extern bool IsSharedWasmMemoryObject(JSObject* obj);
