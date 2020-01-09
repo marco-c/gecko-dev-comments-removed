@@ -34,6 +34,7 @@ static FeatureMap sSupportedFeatures[] = {
     {"midi", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
     {"payment", FeaturePolicyUtils::FeaturePolicyValue::eAll},
     {"document-domain", FeaturePolicyUtils::FeaturePolicyValue::eAll},
+    {"display-capture", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
     
     {"speaker", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
     {"vr", FeaturePolicyUtils::FeaturePolicyValue::eAll},
