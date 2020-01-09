@@ -1432,14 +1432,11 @@ void NativeKey::InitWithKeyOrChar() {
       
       
       sLastKeyMSG = mMsg;
+
       
       
-      if (mMsg.wParam == VK_PROCESSKEY) {
-        mOriginalVirtualKeyCode =
-            static_cast<uint8_t>(::ImmGetVirtualKey(mMsg.hwnd));
-      } else {
-        mOriginalVirtualKeyCode = static_cast<uint8_t>(mMsg.wParam);
-      }
+      
+      mOriginalVirtualKeyCode = static_cast<uint8_t>(mMsg.wParam);
 
       
       
