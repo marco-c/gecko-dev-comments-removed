@@ -19,7 +19,6 @@
 #include "nsIDocShell.h"
 #include "nsIFile.h"
 #include "nsIServiceManager.h"
-#include "nsIWeakReferenceUtils.h"
 #include "nsIWidget.h"
 #include "nsIAppShellService.h"
 #include "nsAppShellCID.h"
@@ -103,10 +102,7 @@ void nsXRemoteService::HandleCommandsFor(Window aWindowId) {
 }
 
 bool nsXRemoteService::HandleNewProperty(XID aWindowId, Display *aDisplay,
-                                         Time aEventTime, Atom aChangedAtom,
-                                         nsIWeakReference *aDomWindow) {
-  nsCOMPtr<nsIDOMWindow> window(do_QueryReferent(aDomWindow));
-
+                                         Time aEventTime, Atom aChangedAtom) {
   if (aChangedAtom == sMozCommandLineAtom) {
     
     int result;
@@ -136,8 +132,7 @@ bool nsXRemoteService::HandleNewProperty(XID aWindowId, Display *aDisplay,
       return false;
 
     
-    const char *response =
-        nsRemoteService::HandleCommandLine(data, window, aEventTime);
+    const char *response = nsRemoteService::HandleCommandLine(data, aEventTime);
 
     
     XChangeProperty(aDisplay, aWindowId, sMozResponseAtom, XA_STRING, 8,
