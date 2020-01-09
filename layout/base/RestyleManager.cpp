@@ -2709,6 +2709,10 @@ bool RestyleManager::ProcessPostTraversal(Element* aElement,
   nsChangeHint changeHint =
       static_cast<nsChangeHint>(Servo_TakeChangeHint(aElement, &wasRestyled));
 
+  RefPtr<ComputedStyle> upToDateStyleIfRestyled =
+      wasRestyled ? aRestyleState.StyleSet().ResolveServoStyle(*aElement)
+                  : nullptr;
+
   
   
   if (styleFrame && styleFrame->GetContent() != aElement) {
@@ -2749,12 +2753,13 @@ bool RestyleManager::ProcessPostTraversal(Element* aElement,
     
     
     
-    if (styleFrame->StyleDisplay()->mDisplay == StyleDisplay::ListItem &&
+    if (wasRestyled &&
+        styleFrame->StyleDisplay()->mDisplay == StyleDisplay::ListItem &&
         styleFrame->IsBlockFrameOrSubclass() &&
         !nsLayoutUtils::GetMarkerPseudo(aElement)) {
       RefPtr<ComputedStyle> pseudoStyle =
           aRestyleState.StyleSet().ProbePseudoElementStyle(
-              *aElement, PseudoStyleType::marker, styleFrame->Style());
+              *aElement, PseudoStyleType::marker, upToDateStyleIfRestyled);
       if (pseudoStyle) {
         changeHint |= nsChangeHint_ReconstructFrame;
       }
@@ -2815,9 +2820,8 @@ bool RestyleManager::ProcessPostTraversal(Element* aElement,
   ServoRestyleState& childrenRestyleState =
       thisFrameRestyleState ? *thisFrameRestyleState : aRestyleState;
 
-  RefPtr<ComputedStyle> upToDateContext =
-      wasRestyled ? aRestyleState.StyleSet().ResolveServoStyle(*aElement)
-                  : oldOrDisplayContentsStyle;
+  ComputedStyle* upToDateStyle =
+      wasRestyled ? upToDateStyleIfRestyled : oldOrDisplayContentsStyle;
 
   ServoPostTraversalFlags childrenFlags =
       wasRestyled ? ServoPostTraversalFlags::ParentWasRestyled
@@ -2838,7 +2842,7 @@ bool RestyleManager::ProcessPostTraversal(Element* aElement,
     
     for (nsIFrame* f = styleFrame; f; f = f->GetNextContinuation()) {
       MOZ_ASSERT_IF(f != styleFrame, !f->GetAdditionalComputedStyle(0));
-      f->SetComputedStyle(upToDateContext);
+      f->SetComputedStyle(upToDateStyle);
     }
 
     if (styleFrame) {
@@ -2869,7 +2873,7 @@ bool RestyleManager::ProcessPostTraversal(Element* aElement,
 
     childrenFlags |=
         SendA11yNotifications(mPresContext, aElement, oldOrDisplayContentsStyle,
-                              upToDateContext, aFlags);
+                              upToDateStyle, aFlags);
   }
 
   const bool traverseElementChildren =
@@ -2879,14 +2883,13 @@ bool RestyleManager::ProcessPostTraversal(Element* aElement,
   bool recreatedAnyContext = wasRestyled;
   if (traverseElementChildren || traverseTextChildren) {
     StyleChildrenIterator it(aElement);
-    TextPostTraversalState textState(*aElement, upToDateContext,
+    TextPostTraversalState textState(*aElement, upToDateStyle,
                                      isDisplayContents && wasRestyled,
                                      childrenRestyleState);
     for (nsIContent* n = it.GetNextChild(); n; n = it.GetNextChild()) {
       if (traverseElementChildren && n->IsElement()) {
-        recreatedAnyContext |=
-            ProcessPostTraversal(n->AsElement(), upToDateContext,
-                                 childrenRestyleState, childrenFlags);
+        recreatedAnyContext |= ProcessPostTraversal(
+            n->AsElement(), upToDateStyle, childrenRestyleState, childrenFlags);
       } else if (traverseTextChildren && n->IsText()) {
         recreatedAnyContext |= ProcessPostTraversalForText(
             n, textState, childrenRestyleState, childrenFlags);

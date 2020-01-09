@@ -750,8 +750,19 @@ where
                     
                     
                     
-                    if self.processor.invalidates_on_eager_pseudo_element() && pseudo.is_eager() {
-                        invalidated_self = true;
+                    if self.processor.invalidates_on_eager_pseudo_element() {
+                        if pseudo.is_eager() {
+                            invalidated_self = true;
+                        }
+                        
+                        
+                        
+                        
+                        
+                        
+                        if pseudo.is_marker() && self.element.marker_pseudo_element().is_none() {
+                            invalidated_self = true;
+                        }
                     }
                 }
 
