@@ -2870,6 +2870,21 @@ void EventStateManager::PostHandleKeyboardEvent(
       RefPtr<TabParent> remote =
           aTargetFrame ? TabParent::GetFrom(aTargetFrame->GetContent())
                        : nullptr;
+      if (remote && aKeyboardEvent->mLayersId.IsValid()) {
+        
+        
+        
+        
+        
+        
+        TabParent* preciseRemote =
+            TabParent::GetTabParentFromLayersId(aKeyboardEvent->mLayersId);
+        if (preciseRemote) {
+          remote = preciseRemote;
+        }
+        
+        
+      }
       if (remote && !remote->IsReadyToHandleInputEvents()) {
         
         
