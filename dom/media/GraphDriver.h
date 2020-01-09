@@ -55,16 +55,11 @@ static const int SCHEDULE_SAFETY_MARGIN_MS = 10;
 static const int AUDIO_TARGET_MS =
     2 * MEDIA_GRAPH_TARGET_PERIOD_MS + SCHEDULE_SAFETY_MARGIN_MS;
 
-class MediaStream;
 class MediaStreamGraphImpl;
 
 class AudioCallbackDriver;
 class OfflineClockDriver;
 class SystemClockDriver;
-
-namespace dom {
-enum class AudioContextOperation;
-}
 
 
 
@@ -185,14 +180,17 @@ class GraphDriver {
 
   void EnsureNextIteration();
 
+  
+
+
+  void EnsureNextIterationLocked();
+
   MediaStreamGraphImpl* GraphImpl() const { return mGraphImpl; }
 
-#ifdef DEBUG
   
-  bool OnGraphThread();
-#endif
   
   virtual bool OnThread() = 0;
+  
   
   virtual bool ThreadRunning() = 0;
 
@@ -252,8 +250,6 @@ class ThreadedDriver : public GraphDriver {
   void RunThread();
   friend class MediaStreamGraphInitThreadRunnable;
   uint32_t IterationDuration() override { return MEDIA_GRAPH_TARGET_PERIOD_MS; }
-
-  nsIThread* Thread() { return mThread; }
 
   bool OnThread() override {
     return !mThread || mThread->EventTarget()->IsOnCurrentThread();
@@ -415,8 +411,6 @@ class AudioCallbackDriver : public GraphDriver,
   void EnqueueStreamAndPromiseForOperation(
       MediaStream* aStream, void* aPromise,
       dom::AudioContextOperation aOperation);
-
-  std::thread::id ThreadId() { return mAudioThreadId.load(); }
 
   bool OnThread() override {
     return mAudioThreadId.load() == std::this_thread::get_id();

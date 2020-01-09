@@ -41,7 +41,7 @@ GraphDriver::GraphDriver(MediaStreamGraphImpl* aGraphImpl)
 void GraphDriver::SetGraphTime(GraphDriver* aPreviousDriver,
                                GraphTime aLastSwitchNextIterationStart,
                                GraphTime aLastSwitchNextIterationEnd) {
-  MOZ_ASSERT(OnGraphThread() || !ThreadRunning());
+  MOZ_ASSERT(OnThread() || !ThreadRunning());
   GraphImpl()->GetMonitor().AssertCurrentThreadOwns();
   
   
@@ -63,7 +63,7 @@ void GraphDriver::SetGraphTime(GraphDriver* aPreviousDriver,
 }
 
 void GraphDriver::SwitchAtNextIteration(GraphDriver* aNextDriver) {
-  MOZ_ASSERT(OnGraphThread());
+  MOZ_ASSERT(OnThread());
   MOZ_ASSERT(aNextDriver);
   GraphImpl()->GetMonitor().AssertCurrentThreadOwns();
 
@@ -87,20 +87,14 @@ GraphTime GraphDriver::StateComputedTime() const {
 
 void GraphDriver::EnsureNextIteration() { GraphImpl()->EnsureNextIteration(); }
 
-#ifdef DEBUG
-bool GraphDriver::OnGraphThread() {
-  return GraphImpl()->RunByGraphDriver(this);
-}
-#endif
-
 bool GraphDriver::Switching() {
-  MOZ_ASSERT(OnGraphThread());
+  MOZ_ASSERT(OnThread());
   GraphImpl()->GetMonitor().AssertCurrentThreadOwns();
   return mNextDriver || mPreviousDriver;
 }
 
 void GraphDriver::SwitchToNextDriver() {
-  MOZ_ASSERT(OnGraphThread() || !ThreadRunning());
+  MOZ_ASSERT(OnThread() || !ThreadRunning());
   GraphImpl()->GetMonitor().AssertCurrentThreadOwns();
   MOZ_ASSERT(NextDriver());
 
@@ -111,19 +105,19 @@ void GraphDriver::SwitchToNextDriver() {
 }
 
 GraphDriver* GraphDriver::NextDriver() {
-  MOZ_ASSERT(OnGraphThread() || !ThreadRunning());
+  MOZ_ASSERT(OnThread() || !ThreadRunning());
   GraphImpl()->GetMonitor().AssertCurrentThreadOwns();
   return mNextDriver;
 }
 
 GraphDriver* GraphDriver::PreviousDriver() {
-  MOZ_ASSERT(OnGraphThread() || !ThreadRunning());
+  MOZ_ASSERT(OnThread() || !ThreadRunning());
   GraphImpl()->GetMonitor().AssertCurrentThreadOwns();
   return mPreviousDriver;
 }
 
 void GraphDriver::SetNextDriver(GraphDriver* aNextDriver) {
-  MOZ_ASSERT(OnGraphThread() || !ThreadRunning());
+  MOZ_ASSERT(OnThread() || !ThreadRunning());
   GraphImpl()->GetMonitor().AssertCurrentThreadOwns();
   MOZ_ASSERT(aNextDriver != this);
   MOZ_ASSERT(aNextDriver != mNextDriver);
@@ -139,7 +133,7 @@ void GraphDriver::SetNextDriver(GraphDriver* aNextDriver) {
 }
 
 void GraphDriver::SetPreviousDriver(GraphDriver* aPreviousDriver) {
-  MOZ_ASSERT(OnGraphThread() || !ThreadRunning());
+  MOZ_ASSERT(OnThread() || !ThreadRunning());
   GraphImpl()->GetMonitor().AssertCurrentThreadOwns();
   mPreviousDriver = aPreviousDriver;
 }
@@ -665,7 +659,7 @@ bool AudioCallbackDriver::Init() {
 void AudioCallbackDriver::Start() {
   MOZ_ASSERT(!IsStarted());
   MOZ_ASSERT(NS_IsMainThread() || OnCubebOperationThread() ||
-             (PreviousDriver() && PreviousDriver()->OnGraphThread()));
+             (PreviousDriver() && PreviousDriver()->OnThread()));
   if (mPreviousDriver) {
     if (mPreviousDriver->AsAudioCallbackDriver()) {
       LOG(LogLevel::Debug, ("Releasing audio driver off main thread."));
@@ -729,7 +723,7 @@ void AudioCallbackDriver::Revive() {
 }
 
 void AudioCallbackDriver::RemoveMixerCallback() {
-  MOZ_ASSERT(OnGraphThread() || !ThreadRunning());
+  MOZ_ASSERT(OnThread() || !ThreadRunning());
 
   if (mAddedMixer) {
     GraphImpl()->mMixer.RemoveCallback(this);
@@ -738,7 +732,7 @@ void AudioCallbackDriver::RemoveMixerCallback() {
 }
 
 void AudioCallbackDriver::AddMixerCallback() {
-  MOZ_ASSERT(OnGraphThread());
+  MOZ_ASSERT(OnThread());
 
   if (!mAddedMixer) {
     mGraphImpl->mMixer.AddCallback(this);
@@ -955,7 +949,7 @@ long AudioCallbackDriver::DataCallback(const AudioDataValue* aInputBuffer,
 }
 
 void AudioCallbackDriver::StateCallback(cubeb_state aState) {
-  MOZ_ASSERT(!OnGraphThread());
+  MOZ_ASSERT(!OnThread());
   LOG(LogLevel::Debug, ("AudioCallbackDriver State: %d", aState));
 
   
@@ -978,7 +972,7 @@ void AudioCallbackDriver::MixerCallback(AudioDataValue* aMixedBuffer,
                                         AudioSampleFormat aFormat,
                                         uint32_t aChannels, uint32_t aFrames,
                                         uint32_t aSampleRate) {
-  MOZ_ASSERT(OnGraphThread());
+  MOZ_ASSERT(OnThread());
   uint32_t toWrite = mBuffer.Available();
 
   if (!mBuffer.Available()) {
@@ -1034,7 +1028,7 @@ void AudioCallbackDriver::PanOutputIfNeeded(bool aMicrophoneActive) {
 }
 
 void AudioCallbackDriver::DeviceChangedCallback() {
-  MOZ_ASSERT(!OnGraphThread());
+  MOZ_ASSERT(!OnThread());
   
   
   MonitorAutoLock mon(mGraphImpl->GetMonitor());
@@ -1045,7 +1039,7 @@ void AudioCallbackDriver::DeviceChangedCallback() {
 }
 
 uint32_t AudioCallbackDriver::IterationDuration() {
-  MOZ_ASSERT(OnGraphThread());
+  MOZ_ASSERT(OnThread());
   
   
   return mIterationDurationMS;
@@ -1056,7 +1050,7 @@ bool AudioCallbackDriver::IsStarted() { return mStarted; }
 void AudioCallbackDriver::EnqueueStreamAndPromiseForOperation(
     MediaStream* aStream, void* aPromise,
     dom::AudioContextOperation aOperation) {
-  MOZ_ASSERT(OnGraphThread() || !ThreadRunning());
+  MOZ_ASSERT(OnThread() || !ThreadRunning());
   MonitorAutoLock mon(mGraphImpl->GetMonitor());
   mPromisesForOperation.AppendElement(
       StreamAndPromiseForOperation(aStream, aPromise, aOperation));

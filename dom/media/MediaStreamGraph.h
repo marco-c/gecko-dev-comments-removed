@@ -1205,14 +1205,6 @@ class MediaStreamGraph {
     SYSTEM_THREAD_DRIVER,
     OFFLINE_THREAD_DRIVER
   };
-  
-  
-  
-  
-  enum GraphRunType {
-    DIRECT_DRIVER,
-    SINGLE_THREAD,
-  };
   static const uint32_t AUDIO_CALLBACK_DRIVER_SHUTDOWN_TIMEOUT = 20 * 1000;
   static const TrackRate REQUEST_DEFAULT_SAMPLE_RATE = 0;
 
@@ -1332,8 +1324,8 @@ class MediaStreamGraph {
 
   
   
-  virtual bool OnGraphThreadOrNotRunning() const = 0;
-  virtual bool OnGraphThread() const = 0;
+  bool OnGraphThreadOrNotRunning() const;
+  bool OnGraphThread() const;
 
   
 

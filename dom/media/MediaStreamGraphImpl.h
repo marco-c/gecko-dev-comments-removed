@@ -31,7 +31,6 @@ class ShutdownTicket;
 
 template <typename T>
 class LinkedList;
-class GraphRunner;
 
 
 
@@ -110,21 +109,7 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
 
 
   explicit MediaStreamGraphImpl(GraphDriverType aGraphDriverRequested,
-                                GraphRunType aRunTypeRequested,
                                 TrackRate aSampleRate, AbstractThread* aWindow);
-
-  
-  
-  bool OnGraphThreadOrNotRunning() const override;
-  bool OnGraphThread() const override;
-
-#ifdef DEBUG
-  
-
-
-
-  bool RunByGraphDriver(GraphDriver* aDriver);
-#endif
 
   
 
@@ -197,15 +182,7 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
   
 
 
-
-
-
   bool OneIteration(GraphTime aStateEnd);
-
-  
-
-
-  bool OneIterationImpl(GraphTime aStateEnd);
 
   
 
@@ -265,7 +242,7 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
   void UpdateGraph(GraphTime aEndBlockingDecisions);
 
   void SwapMessageQueues() {
-    MOZ_ASSERT(OnGraphThread());
+    MOZ_ASSERT(CurrentDriver()->OnThread());
     MOZ_ASSERT(mFrontMessageQueue.IsEmpty());
     mMonitor.AssertCurrentThreadOwns();
     mFrontMessageQueue.SwapElements(mBackMessageQueue);
@@ -527,7 +504,7 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
 
 
   void SetCurrentDriver(GraphDriver* aDriver) {
-    MOZ_ASSERT(RunByGraphDriver(mDriver) || !mDriver->ThreadRunning());
+    MOZ_ASSERT(mDriver->OnThread() || !mDriver->ThreadRunning());
 #ifdef DEBUG
     mMonitor.AssertCurrentThreadOwns();
 #endif
@@ -611,13 +588,7 @@ class MediaStreamGraphImpl : public MediaStreamGraph,
   StreamSet AllStreams() { return StreamSet(*this); }
 
   
-
   
-
-
-
-  const UniquePtr<GraphRunner> mGraphRunner;
-
   
 
 
