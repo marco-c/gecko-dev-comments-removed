@@ -51,6 +51,10 @@ add_task(async function testContentBlockingMessage() {
 add_task(async function testForeignCookieBlockedMessage() {
   info("Test foreign cookie blocked message");
   
+  
+  
+  Cu.forceShrinkingGC();
+  
   await pushPref(COOKIE_BEHAVIOR_PREF, COOKIE_BEHAVIORS.REJECT_FOREIGN);
   const {hud, win} = await openNewWindowAndConsole(TEST_URI);
   const message = await waitFor(() => findMessage(hud,
@@ -62,6 +66,10 @@ add_task(async function testForeignCookieBlockedMessage() {
 
 add_task(async function testLimitForeignCookieBlockedMessage() {
   info("Test unvisited eTLD foreign cookies blocked message");
+  
+  
+  
+  Cu.forceShrinkingGC();
   
   await pushPref(COOKIE_BEHAVIOR_PREF, COOKIE_BEHAVIORS.LIMIT_FOREIGN);
   const {hud, win} = await openNewWindowAndConsole(TEST_URI);
