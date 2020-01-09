@@ -159,14 +159,14 @@ def docker_worker_debian_package(config, job, taskdesc):
         'apt-get dist-upgrade && '
         'cd /tmp && '
         
-        'dget -d -u {src_url} && '
+        '(dget -d -u {src_url} || exit 100) && '
         'echo "{src_sha256}  {src_file}" | sha256sum -c && '
         '{unpack} && '
         'cd {package} && '
         
         '{adjust}'
         
-        'mk-build-deps -i -r debian/control -t \'{resolver}\' && '
+        '(mk-build-deps -i -r debian/control -t \'{resolver}\' || exit 100) && '
         
         'DEB_BUILD_OPTIONS="parallel=$(nproc) nocheck" dpkg-buildpackage && '
         
