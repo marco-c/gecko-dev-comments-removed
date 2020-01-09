@@ -95,9 +95,6 @@ bool TabContext::SetTabContext(bool aIsMozBrowserElement,
                                const nsAString& aPresentationURL) {
   NS_ENSURE_FALSE(mInitialized, false);
 
-  
-  MOZ_RELEASE_ASSERT(aOriginAttributes.mAppId == NO_APP_ID);
-
   mInitialized = true;
   mIsMozBrowserElement = aIsMozBrowserElement;
   mChromeOuterWindowID = aChromeOuterWindowID;
