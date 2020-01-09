@@ -468,6 +468,41 @@ var DownloadIntegration = {
 
 
 
+
+
+
+
+
+
+
+
+  _zoneIdKey(aKey, aUrl, aFallback) {
+    try {
+      let url;
+      const uri = NetUtil.newURI(aUrl);
+      if (["http", "https", "ftp"].includes(uri.scheme)) {
+        url = uri.mutate().setUserPass("").finalize().spec;
+      } else if (aFallback) {
+        url = aFallback;
+      } else {
+        return "";
+      }
+      return aKey + "=" + url + "\r\n";
+    } catch (e) {
+      return "";
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+
   async downloadDone(aDownload) {
     
     
@@ -497,7 +532,13 @@ var DownloadIntegration = {
             { winAllowLengthBeyondMaxPathWithCaveats: true }
           );
           try {
-            await stream.write(new TextEncoder().encode("[ZoneTransfer]\r\nZoneId=" + zone + "\r\n"));
+            let zoneId = "[ZoneTransfer]\r\nZoneId=" + zone + "\r\n";
+            if (!aDownload.source.isPrivate) {
+              zoneId +=
+                this._zoneIdKey("ReferrerUrl", aDownload.source.referrer) +
+                this._zoneIdKey("HostUrl", aDownload.source.url, "about:internet");
+            }
+            await stream.write(new TextEncoder().encode(zoneId));
           } finally {
             await stream.close();
           }
