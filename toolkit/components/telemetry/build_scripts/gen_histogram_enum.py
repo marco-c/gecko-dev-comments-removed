@@ -92,6 +92,7 @@ def main(output, *filenames):
 
     
     categorical = filter(lambda h: h.kind() == "categorical", all_histograms)
+    categorical = filter(lambda h: h.record_on_os(buildconfig.substs["OS_TARGET"]), categorical)
     enums = [("LABELS_" + h.name(), h.labels(), h.name()) for h in categorical]
     for name, labels, _ in enums:
         print("\nenum class %s : uint32_t {" % name, file=output)
