@@ -328,7 +328,10 @@ inline void FlexibleShift32(MacroAssembler& masm, Register shift,
   
   
   LiveRegisterSet preserve;
-  preserve.add(ecx);
+
+  if (shift != ecx) {
+    preserve.add(ecx);
+  }
   preserve.add(internalSrcDest);
 
   preserve.takeUnchecked(srcDest);
