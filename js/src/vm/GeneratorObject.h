@@ -208,6 +208,15 @@ bool GeneratorThrowOrReturn(JSContext* cx, AbstractFramePtr frame,
 
 
 
+
+
+
+
+
+
+
+
+
 AbstractGeneratorObject* GetGeneratorObjectForFrame(JSContext* cx,
                                                     AbstractFramePtr frame);
 
