@@ -448,6 +448,23 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
         return Allow();
 
         
+      case __NR_mprotect:
+        return Allow();
+
+        
+      case __NR_madvise: {
+        Arg<int> advice(2);
+        return If(advice == MADV_DONTNEED, Allow())
+            .ElseIf(advice == MADV_FREE, Allow())
+            .ElseIf(advice == MADV_HUGEPAGE, Allow())
+            .ElseIf(advice == MADV_NOHUGEPAGE, Allow())
+#ifdef MOZ_ASAN
+            .ElseIf(advice == MADV_DONTDUMP, Allow())
+#endif
+            .Else(InvalidSyscall());
+      }
+
+      
 #if defined(ANDROID) || defined(MOZ_ASAN)
       case __NR_sigaltstack:
 #endif
@@ -1052,8 +1069,9 @@ class ContentSandboxPolicy : public SandboxPolicyCommon {
             .Default(SandboxPolicyCommon::EvaluateSyscall(sysno));
       }
 
-      case __NR_mprotect:
       case __NR_brk:
+        
+        
       case __NR_madvise:
         
         
@@ -1335,20 +1353,6 @@ class GMPSandboxPolicy : public SandboxPolicyCommon {
       case __NR_openat:
         return Trap(OpenTrap, mFiles);
 
-        
-      case __NR_mprotect:
-        return Allow();
-      case __NR_madvise: {
-        Arg<int> advice(2);
-        return If(advice == MADV_DONTNEED, Allow())
-            .ElseIf(advice == MADV_FREE, Allow())
-            .ElseIf(advice == MADV_HUGEPAGE, Allow())
-            .ElseIf(advice == MADV_NOHUGEPAGE, Allow())
-#  ifdef MOZ_ASAN
-            .ElseIf(advice == MADV_DONTDUMP, Allow())
-#  endif
-            .Else(InvalidSyscall());
-      }
       case __NR_brk:
       CASES_FOR_geteuid:
         return Allow();
