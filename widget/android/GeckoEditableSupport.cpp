@@ -1449,9 +1449,8 @@ nsresult GeckoEditableSupport::NotifyIME(
         
         
         RefPtr<GeckoEditableSupport> self(this);
-        nsAppShell::PostEvent([this, self] {
-          OnNotifyIMEOfCompositionEventHandled();
-        });
+        nsAppShell::PostEvent(
+            [this, self] { OnNotifyIMEOfCompositionEventHandled(); });
       }
       break;
     }
@@ -1462,8 +1461,7 @@ nsresult GeckoEditableSupport::NotifyIME(
   return NS_OK;
 }
 
-void GeckoEditableSupport::OnNotifyIMEOfCompositionEventHandled()
-{
+void GeckoEditableSupport::OnNotifyIMEOfCompositionEventHandled() {
   
   
   mIMEActiveCompositionCount = 0;

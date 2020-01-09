@@ -677,7 +677,9 @@ class nsDisplayListBuilder {
   
 
 
-  void SetPaintingForWebRender(bool aForWebRender) { mIsPaintingForWebRender = true; }
+  void SetPaintingForWebRender(bool aForWebRender) {
+    mIsPaintingForWebRender = true;
+  }
   bool IsPaintingForWebRender() const { return mIsPaintingForWebRender; }
   
 

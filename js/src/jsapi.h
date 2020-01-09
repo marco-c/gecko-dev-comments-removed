@@ -2585,9 +2585,8 @@ using ScriptPrivateReferenceHook = void (*)(const JS::Value&);
 
 
 extern JS_PUBLIC_API void SetScriptPrivateReferenceHooks(
-  JSRuntime* rt,
-  ScriptPrivateReferenceHook addRefHook,
-  ScriptPrivateReferenceHook releaseHook);
+    JSRuntime* rt, ScriptPrivateReferenceHook addRefHook,
+    ScriptPrivateReferenceHook releaseHook);
 
 
 

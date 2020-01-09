@@ -286,10 +286,7 @@ struct Statistics {
   
   void printTotalProfileTimes();
 
-  enum JSONUse {
-    TELEMETRY,
-    PROFILER
-  };
+  enum JSONUse { TELEMETRY, PROFILER };
 
   
   

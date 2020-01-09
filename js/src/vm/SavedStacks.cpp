@@ -1328,6 +1328,7 @@ bool SavedStacks::insertFrames(JSContext* cx, MutableHandleSavedFrame frame,
       
       
       
+      
       framePtr->clearHasCachedSavedFrame();
     }
 

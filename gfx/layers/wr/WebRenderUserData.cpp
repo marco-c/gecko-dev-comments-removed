@@ -102,8 +102,8 @@ bool WebRenderImageData::UsingSharedSurface() const {
   
   
   wr::ImageKey key;
-  nsresult rv = SharedSurfacesChild::Share(mContainer, mManager,
-      mManager->AsyncResourceUpdates(), key);
+  nsresult rv = SharedSurfacesChild::Share(
+      mContainer, mManager, mManager->AsyncResourceUpdates(), key);
   return NS_SUCCEEDED(rv) && mKey.ref() == key;
 }
 

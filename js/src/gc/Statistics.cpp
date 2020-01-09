@@ -585,7 +585,8 @@ void Statistics::writeLogMessage(const char* fmt, ...) {
 }
 #endif
 
-UniqueChars Statistics::renderJsonMessage(uint64_t timestamp, Statistics::JSONUse use) const {
+UniqueChars Statistics::renderJsonMessage(uint64_t timestamp,
+                                          Statistics::JSONUse use) const {
   
 
 
@@ -605,7 +606,7 @@ UniqueChars Statistics::renderJsonMessage(uint64_t timestamp, Statistics::JSONUs
   JSONPrinter json(printer);
 
   json.beginObject();
-  json.property("status", "completed");    
+  json.property("status", "completed");         
   formatJsonDescription(timestamp, json, use);  
 
   if (use == Statistics::JSONUse::TELEMETRY) {
@@ -625,8 +626,7 @@ UniqueChars Statistics::renderJsonMessage(uint64_t timestamp, Statistics::JSONUs
   return printer.release();
 }
 
-void Statistics::formatJsonDescription(uint64_t timestamp,
-                                       JSONPrinter& json,
+void Statistics::formatJsonDescription(uint64_t timestamp, JSONPrinter& json,
                                        JSONUse use) const {
   
   
