@@ -114,9 +114,13 @@ pub enum ImageFormat {
     
     RG8 = 5,
     
-    RGBAI32 = 6,
     
-    RGBA8 = 7,
+    RG16 = 6,
+
+    
+    RGBAI32 = 7,
+    
+    RGBA8 = 8,
 }
 
 impl ImageFormat {
@@ -128,6 +132,7 @@ impl ImageFormat {
             ImageFormat::BGRA8 => 4,
             ImageFormat::RGBAF32 => 16,
             ImageFormat::RG8 => 2,
+            ImageFormat::RG16 => 4,
             ImageFormat::RGBAI32 => 16,
             ImageFormat::RGBA8 => 4,
         }
