@@ -7,14 +7,14 @@
 "use strict";
 
 const Services = require("Services");
-const { LocalizationHelper } = require("devtools/shared/l10n");
 
 const PREF_UNUSED_CSS_ENABLED = "devtools.inspector.inactive.css.enabled";
-const INSPECTOR_L10N =
-  new LocalizationHelper("devtools/client/locales/inspector.properties");
 
 class InactivePropertyHelper {
   
+
+
+
 
 
 
@@ -58,7 +58,9 @@ class InactivePropertyHelper {
           "flex-wrap",
         ],
         when: () => !this.flexContainer,
-        error: property => msg("rule.inactive.css.not.flex.container", property),
+        fixId: "inactive-css-not-flex-container-fix",
+        msgId: "inactive-css-not-flex-container",
+        numFixProps: 2,
       },
       
       {
@@ -70,7 +72,9 @@ class InactivePropertyHelper {
           "order",
         ],
         when: () => !this.flexItem,
-        error: property => msg("rule.inactive.css.not.flex.item", property),
+        fixId: "inactive-css-not-flex-item-fix",
+        msgId: "inactive-css-not-flex-item",
+        numFixProps: 2,
       },
       
       {
@@ -85,7 +89,9 @@ class InactivePropertyHelper {
           "justify-items",
         ],
         when: () => !this.gridContainer,
-        error: property => msg("rule.inactive.css.not.grid.container", property),
+        fixId: "inactive-css-not-grid-container-fix",
+        msgId: "inactive-css-not-grid-container",
+        numFixProps: 2,
       },
       
       {
@@ -100,7 +106,9 @@ class InactivePropertyHelper {
           "justify-self",
         ],
         when: () => !this.gridItem,
-        error: property => msg("rule.inactive.css.not.grid.item", property),
+        fixId: "inactive-css-not-grid-item-fix",
+        msgId: "inactive-css-not-grid-item",
+        numFixProps: 2,
       },
       
       {
@@ -108,7 +116,9 @@ class InactivePropertyHelper {
           "align-self",
         ],
         when: () => !this.gridItem && !this.flexItem,
-        error: property => msg("rule.inactive.css.not.grid.or.flex.item", property),
+        fixId: "inactive-css-not-grid-or-flex-item-fix",
+        msgId: "inactive-css-not-grid-or-flex-item",
+        numFixProps: 4,
       },
       
       {
@@ -118,7 +128,9 @@ class InactivePropertyHelper {
           "justify-content",
         ],
         when: () => !this.gridContainer && !this.flexContainer,
-        error: property => msg("rule.inactive.css.not.grid.or.flex.container", property),
+        fixId: "inactive-css-not-grid-or-flex-container-fix",
+        msgId: "inactive-css-not-grid-or-flex-container",
+        numFixProps: 2,
       },
     ];
   }
@@ -148,14 +160,25 @@ class InactivePropertyHelper {
 
 
 
+
+
+
+
+
+
+
+
   isPropertyUsed(el, elStyle, cssRule, property) {
     if (!this.unusedCssEnabled) {
       return {used: true};
     }
 
-    const errors = [];
+    let fixId = "";
+    let msgId = "";
+    let numFixProps = 0;
+    let used = true;
 
-    this.VALIDATORS.forEach(validator => {
+    this.VALIDATORS.some(validator => {
       
       let isRuleConcerned = false;
 
@@ -167,7 +190,7 @@ class InactivePropertyHelper {
       }
 
       if (!isRuleConcerned) {
-        return;
+        return false;
       }
 
       this.select(el, elStyle, cssRule, property);
@@ -175,17 +198,23 @@ class InactivePropertyHelper {
       
       
       if (validator.when()) {
-        const error = validator.error(property);
+        fixId = validator.fixId;
+        msgId = validator.msgId;
+        numFixProps = validator.numFixProps;
+        used = false;
 
-        if (typeof error === "string") {
-          errors.push(validator.error(property));
-        }
+        return true;
       }
+
+      return false;
     });
 
     return {
-      used: !errors.length,
-      reasons: errors,
+      fixId,
+      msgId,
+      numFixProps,
+      property,
+      used,
     };
   }
 
@@ -348,19 +377,6 @@ class InactivePropertyHelper {
     }
     return null;
   }
-}
-
-
-
-
-
-
-
-
-
-
-function msg(...args) {
-  return INSPECTOR_L10N.getFormatStr(...args);
 }
 
 exports.inactivePropertyHelper = new InactivePropertyHelper();

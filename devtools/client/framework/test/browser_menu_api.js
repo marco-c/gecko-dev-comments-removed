@@ -21,6 +21,8 @@ add_task(async function() {
   
   toolbox.topWindow.MozXULElement.insertFTLIfNeeded("toolkit/main-window/editmenu.ftl");
 
+  loadFTL(toolbox, "toolkit/main-window/editmenu.ftl");
+
   await testMenuItems();
   await testMenuPopup(toolbox);
   await testSubmenu(toolbox);

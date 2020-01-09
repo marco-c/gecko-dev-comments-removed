@@ -427,3 +427,19 @@ function setupPreferencesForBrowserToolbox() {
 
   return SpecialPowers.pushPrefEnv(options);
 }
+
+
+
+
+
+
+
+
+
+function loadFTL(toolbox, path) {
+  const win = toolbox.doc.ownerGlobal;
+
+  if (win.MozXULElement) {
+    win.MozXULElement.insertFTLIfNeeded(path);
+  }
+}

@@ -635,12 +635,15 @@ function getPropertiesForRuleIndex(view, ruleIndex) {
 
   for (const currProp of ruleEditor.rule.textProps) {
     const icon = currProp.editor.unusedState;
+    const unused = currProp.editor.element.classList.contains("unused");
 
     declaration.set(`${currProp.name}:${currProp.value}`, {
       propertyName: currProp.name,
       propertyValue: currProp.value,
-      warnings: icon.title ? icon.title.split("\n") : [],
-      used: !currProp.editor.element.classList.contains("unused"),
+      icon: icon,
+      data: currProp.isUsed(),
+      warning: unused,
+      used: !unused,
     });
   }
 
@@ -679,6 +682,7 @@ async function toggleDeclaration(inspector, view, ruleIndex, declaration) {
   info(`Toggling declaration "${dec}" of rule ${ruleIndex} to ${newStatus}`);
 
   await togglePropStatus(view, textProp);
+  info("Toggled successfully.");
 }
 
 
@@ -692,19 +696,16 @@ async function toggleDeclaration(inspector, view, ruleIndex, declaration) {
 
 
 
-
-
-function checkDeclarationIsInactive(view, ruleIndex, declaration, warningL10nString) {
+async function checkDeclarationIsInactive(view, ruleIndex, declaration) {
   const declarations = getPropertiesForRuleIndex(view, ruleIndex);
   const [[ name, value ]] = Object.entries(declaration);
   const dec = `${name}:${value}`;
-  const { used, warnings } = declarations.get(dec);
+  const { used, warning } = declarations.get(dec);
 
   ok(!used, `"${dec}" is inactive`);
-  is(warnings.length, 1, `"${dec}" has a warning`);
+  ok(warning, `"${dec}" has a warning`);
 
-  const warning = INSPECTOR_L10N.getFormatStr(warningL10nString, name);
-  is(warnings[0], warning, `The warning on "${dec}" is correct`);
+  await checkInteractiveTooltip(view, ruleIndex, declaration);
 }
 
 
@@ -721,13 +722,60 @@ function checkDeclarationIsActive(view, ruleIndex, declaration) {
   const declarations = getPropertiesForRuleIndex(view, ruleIndex);
   const [[ name, value ]] = Object.entries(declaration);
   const dec = `${name}:${value}`;
-  const { used, warnings } = declarations.get(dec);
+  const { used, warning } = declarations.get(dec);
 
   ok(used, `${dec} is active`);
-  is(warnings.length, 0, `${dec} has no warnings`);
+  ok(!warning, `${dec} has no warning`);
 }
 
 
+
+
+
+
+
+
+
+
+
+async function checkInteractiveTooltip(view, ruleIndex, declaration) {
+  
+  const declarations = getPropertiesForRuleIndex(view, ruleIndex);
+  const [[ name, value ]] = Object.entries(declaration);
+  const dec = `${name}:${value}`;
+  const { icon, data } = declarations.get(dec);
+
+  
+  const tooltip = view.tooltips.getTooltip("interactiveTooltip");
+
+  
+  const inactiveCssTooltipHelper = view.tooltips.inactiveCssTooltipHelper;
+  const template = inactiveCssTooltipHelper.getTemplate(data, tooltip);
+
+  
+  const { doc } = tooltip;
+  await doc.l10n.translateFragment(template);
+
+  
+  const expected = template.firstElementChild.outerHTML;
+
+  
+  const onTooltipReady = tooltip.once("shown");
+  await view.tooltips.onInteractiveTooltipTargetHover(icon);
+  tooltip.show(icon);
+  await onTooltipReady;
+
+  
+  const actual = tooltip.panel.firstElementChild.outerHTML;
+
+  
+  const onTooltipHidden = tooltip.once("hidden");
+  tooltip.hide();
+  await onTooltipHidden;
+
+  
+  is(actual, expected, "Tooltip contains the correct value.");
+}
 
 
 
@@ -771,22 +819,13 @@ function checkDeclarationIsActive(view, ruleIndex, declaration) {
 
 async function runInactiveCSSTests(view, inspector, tests) {
   for (const test of tests) {
-    let event = null;
-
-    if (test.waitFor) {
-      event = inspector.once(test.waitFor);
-    }
-
     if (test.selector) {
       await selectNode(test.selector, inspector);
     }
 
-    if (test.waitFor) {
-      await event;
-    }
-
     if (test.activeDeclarations) {
-      
+      info("Checking whether declarations are marked as used.");
+
       for (const activeDeclarations of test.activeDeclarations) {
         for (const [name, value] of Object.entries(activeDeclarations.declarations)) {
           checkDeclarationIsActive(view, activeDeclarations.ruleIndex, {
@@ -797,12 +836,12 @@ async function runInactiveCSSTests(view, inspector, tests) {
     }
 
     if (test.inactiveDeclarations) {
+      info("Checking that declarations are unused and have a warning.");
+
       for (const inactiveDeclaration of test.inactiveDeclarations) {
-        
-        checkDeclarationIsInactive(view,
-                                   inactiveDeclaration.ruleIndex,
-                                   inactiveDeclaration.declaration,
-                                   inactiveDeclaration.l10n);
+        await checkDeclarationIsInactive(view,
+                                         inactiveDeclaration.ruleIndex,
+                                         inactiveDeclaration.declaration);
       }
     }
   }
