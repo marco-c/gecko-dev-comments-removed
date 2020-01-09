@@ -5,12 +5,24 @@
 
 "use strict";
 
-const {arg, DebuggerClient} = require("devtools/shared/client/debugger-client");
+const {
+  arg,
+  DebuggerClient,
+} = require("devtools/shared/client/debugger-client");
 const eventSource = require("devtools/shared/client/event-source");
-const {ThreadStateTypes} = require("devtools/shared/client/constants");
+const { ThreadStateTypes } = require("devtools/shared/client/constants");
 
-loader.lazyRequireGetter(this, "ObjectClient", "devtools/shared/client/object-client");
-loader.lazyRequireGetter(this, "SourceFront", "devtools/shared/fronts/source", true);
+loader.lazyRequireGetter(
+  this,
+  "ObjectClient",
+  "devtools/shared/client/object-client"
+);
+loader.lazyRequireGetter(
+  this,
+  "SourceFront",
+  "devtools/shared/fronts/source",
+  true
+);
 
 
 
@@ -50,7 +62,9 @@ ThreadClient.prototype = {
 
   _assertPaused: function(command) {
     if (!this.paused) {
-      throw Error(command + " command sent while not paused. Currently " + this._state);
+      throw Error(
+        command + " command sent while not paused. Currently " + this._state
+      );
     }
   },
 
@@ -67,36 +81,39 @@ ThreadClient.prototype = {
 
 
 
-  _doResume: DebuggerClient.requester({
-    type: "resume",
-    resumeLimit: arg(0),
-    rewind: arg(1),
-  }, {
-    before: function(packet) {
-      this._assertPaused("resume");
-
-      
-      
-      this._previousState = this._state;
-      this._state = "resuming";
-
-      return packet;
+  _doResume: DebuggerClient.requester(
+    {
+      type: "resume",
+      resumeLimit: arg(0),
+      rewind: arg(1),
     },
-    after: function(response) {
-      if (response.error && this._state == "resuming") {
+    {
+      before: function(packet) {
+        this._assertPaused("resume");
+
         
         
-        
-        if (response.state) {
-          this._state = ThreadStateTypes[response.state];
-        } else {
-          this._state = this._previousState;
+        this._previousState = this._state;
+        this._state = "resuming";
+
+        return packet;
+      },
+      after: function(response) {
+        if (response.error && this._state == "resuming") {
+          
+          
+          
+          if (response.state) {
+            this._state = ThreadStateTypes[response.state];
+          } else {
+            this._state = this._previousState;
+          }
         }
-      }
-      delete this._previousState;
-      return response;
-    },
-  }),
+        delete this._previousState;
+        return response;
+      },
+    }
+  ),
 
   
 
@@ -214,14 +231,17 @@ ThreadClient.prototype = {
   
 
 
-  detach: DebuggerClient.requester({
-    type: "detach",
-  }, {
-    after: function(response) {
-      this.client.unregisterClient(this);
-      return response;
+  detach: DebuggerClient.requester(
+    {
+      type: "detach",
     },
-  }),
+    {
+      after: function(response) {
+        this.client.unregisterClient(this);
+        return response;
+      },
+    }
+  ),
 
   
 
