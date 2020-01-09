@@ -195,7 +195,11 @@ bool Instance::callImport(JSContext* cx, uint32_t funcImportIndex,
   
   
   
-  if (!TypeScript::ThisTypes(script)->hasType(TypeSet::UndefinedType())) {
+  AutoSweepTypeScript sweep(script);
+  TypeScript* typeScript = script->types();
+
+  StackTypeSet* thisTypes = typeScript->thisTypes(sweep, script);
+  if (!thisTypes->hasType(TypeSet::UndefinedType())) {
     return true;
   }
 
@@ -228,7 +232,9 @@ bool Instance::callImport(JSContext* cx, uint32_t funcImportIndex,
       case ValType::NullRef:
         MOZ_CRASH("NullRef not expressible");
     }
-    if (!TypeScript::ArgTypes(script, i)->hasType(type)) {
+
+    StackTypeSet* argTypes = typeScript->argTypes(sweep, script, i);
+    if (!argTypes->hasType(type)) {
       return true;
     }
   }
@@ -237,7 +243,8 @@ bool Instance::callImport(JSContext* cx, uint32_t funcImportIndex,
   
   
   for (uint32_t i = importArgs.length(); i < importFun->nargs(); i++) {
-    if (!TypeScript::ArgTypes(script, i)->hasType(TypeSet::UndefinedType())) {
+    StackTypeSet* argTypes = typeScript->argTypes(sweep, script, i);
+    if (!argTypes->hasType(TypeSet::UndefinedType())) {
       return true;
     }
   }
