@@ -138,7 +138,11 @@ void ReportingObserver::MaybeReport(Report* aReport) {
 
   nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
       "ReportingObserver::MaybeReport",
-      [window]() { window->NotifyReportingObservers(); });
+      
+      
+      
+      [window]()
+          MOZ_CAN_RUN_SCRIPT_BOUNDARY { window->NotifyReportingObservers(); });
 
   NS_DispatchToCurrentThread(r);
 }
@@ -160,7 +164,8 @@ void ReportingObserver::MaybeNotify() {
   }
 
   
-  mCallback->Call(reports, *this);
+  RefPtr<ReportingObserverCallback> callback(mCallback);
+  callback->Call(reports, *this);
 }
 
 NS_IMETHODIMP
