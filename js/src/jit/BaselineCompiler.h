@@ -310,7 +310,7 @@ class BaselineCodeGen {
 
   
   
-  enum class ScriptObjectType { RegExp, Function, ObjectLiteral };
+  enum class ScriptObjectType { RegExp, Function };
   void pushScriptObjectArg(ScriptObjectType type);
   void pushScriptNameArg();
   void pushScriptScopeArg();
@@ -553,6 +553,8 @@ class BaselineCompilerHandler {
     static const unsigned EARLY_STACK_CHECK_SLOT_COUNT = 128;
     return script()->nslots() > EARLY_STACK_CHECK_SLOT_COUNT;
   }
+
+  JSObject* maybeNoCloneSingletonObject();
 };
 
 using BaselineCompilerCodeGen = BaselineCodeGen<BaselineCompilerHandler>;
@@ -644,6 +646,8 @@ class BaselineInterpreterHandler {
   
   
   bool needsEarlyStackCheck() const { return true; }
+
+  JSObject* maybeNoCloneSingletonObject() { return nullptr; }
 };
 
 using BaselineInterpreterCodeGen = BaselineCodeGen<BaselineInterpreterHandler>;
