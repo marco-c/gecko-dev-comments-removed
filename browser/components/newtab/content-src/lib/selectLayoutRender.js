@@ -112,7 +112,7 @@ export const selectLayoutRender = (state, prefs, rickRollCache) => {
   
   
   let spocsFill = [];
-  if (spocs.data && spocs.data.spocs) {
+  if (spocs.data.spocs) {
     const chosenSpocsFill = [...chosenSpocs]
       .map(spoc => ({id: spoc.id, reason: "n/a", displayed: 1, full_recalc: 0}));
     const unchosenSpocsFill = [...unchosenSpocs]

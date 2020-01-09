@@ -6,6 +6,8 @@ const SKIP_DOCS = [];
 
 const MESSAGE_CONTEXT_ATTRIBUTES = [
   "previousSessionEnd",
+  "trailheadInterrupt",
+  "trailheadTriplet",
 ];
 
 function getHeadingsFromDocs() {

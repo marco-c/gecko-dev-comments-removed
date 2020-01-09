@@ -40,6 +40,9 @@ const TEST_GLOBAL = {
     generateQI() { return {}; },
     import() { return global; },
   },
+  ClientEnvironment: {
+    get userId() { return "foo123"; },
+  },
   Components: {isSuccessCode: () => true},
   
   ContentSearchUIController: function() {}, 
@@ -276,6 +279,14 @@ const TEST_GLOBAL = {
   FxAccountsConfig: {
     promiseEmailFirstURI(id) {
       return Promise.resolve(id);
+    },
+  },
+  TelemetryEnvironment: {
+    setExperimentActive() {},
+  },
+  Sampling: {
+    ratioSample(seed, ratios) {
+      return 0;
     },
   },
 };

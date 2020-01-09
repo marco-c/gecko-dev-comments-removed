@@ -13,13 +13,15 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   AppConstants: "resource://gre/modules/AppConstants.jsm",
   OS: "resource://gre/modules/osfile.jsm",
   BookmarkPanelHub: "resource://activity-stream/lib/BookmarkPanelHub.jsm",
+  SnippetsTestMessageProvider: "resource://activity-stream/lib/SnippetsTestMessageProvider.jsm",
+  PanelTestProvider: "resource://activity-stream/lib/PanelTestProvider.jsm",
 });
 const {ASRouterActions: ra, actionTypes: at, actionCreators: ac} = ChromeUtils.import("resource://activity-stream/common/Actions.jsm");
 const {CFRMessageProvider} = ChromeUtils.import("resource://activity-stream/lib/CFRMessageProvider.jsm");
 const {OnboardingMessageProvider} = ChromeUtils.import("resource://activity-stream/lib/OnboardingMessageProvider.jsm");
-const {SnippetsTestMessageProvider} = ChromeUtils.import("resource://activity-stream/lib/SnippetsTestMessageProvider.jsm");
 const {RemoteSettings} = ChromeUtils.import("resource://services-settings/remote-settings.js");
 const {CFRPageActions} = ChromeUtils.import("resource://activity-stream/lib/CFRPageActions.jsm");
+const {AttributionCode} = ChromeUtils.import("resource:///modules/AttributionCode.jsm");
 
 ChromeUtils.defineModuleGetter(this, "ASRouterPreferences",
   "resource://activity-stream/lib/ASRouterPreferences.jsm");
@@ -29,7 +31,38 @@ ChromeUtils.defineModuleGetter(this, "QueryCache",
   "resource://activity-stream/lib/ASRouterTargeting.jsm");
 ChromeUtils.defineModuleGetter(this, "ASRouterTriggerListeners",
   "resource://activity-stream/lib/ASRouterTriggerListeners.jsm");
-const {AttributionCode} = ChromeUtils.import("resource:///modules/AttributionCode.jsm");
+ChromeUtils.defineModuleGetter(this, "TelemetryEnvironment",
+  "resource://gre/modules/TelemetryEnvironment.jsm");
+ChromeUtils.defineModuleGetter(this, "ClientEnvironment",
+  "resource://normandy/lib/ClientEnvironment.jsm");
+ChromeUtils.defineModuleGetter(this, "Sampling",
+  "resource://gre/modules/components-utils/Sampling.jsm");
+
+const TRAILHEAD_CONFIG = {
+  OVERRIDE_PREF: "trailhead.firstrun.branches",
+  DID_SEE_ABOUT_WELCOME_PREF: "trailhead.firstrun.didSeeAboutWelcome",
+  BRANCHES: {
+    interrupts: [
+      ["control"],
+      ["join"],
+      ["sync"],
+      ["nofirstrun"],
+      ["cards"],
+    ],
+    triplets: [
+      ["supercharge"],
+      ["payoff"],
+      ["multidevice"],
+      ["privacy"],
+    ],
+  },
+  LOCALES: ["en-US", "en-GB", "en-CA", "de", "de-DE", "fr", "fr-FR"],
+  EXPERIMENT_RATIOS: [
+    ["", 1],
+    ["interrupts", 1],
+    ["triplets", 1],
+  ],
+};
 
 const INCOMING_MESSAGE_NAME = "ASRouter:child-to-parent";
 const OUTGOING_MESSAGE_NAME = "ASRouter:parent-to-child";
@@ -44,8 +77,19 @@ const SNIPPETS_ENDPOINT_WHITELIST = "browser.newtab.activity-stream.asrouter.whi
 
 const MAX_MESSAGE_LIFETIME_CAP = 100;
 
-const LOCAL_MESSAGE_PROVIDERS = {OnboardingMessageProvider, CFRMessageProvider, SnippetsTestMessageProvider};
+const LOCAL_MESSAGE_PROVIDERS = {OnboardingMessageProvider, CFRMessageProvider};
 const STARTPAGE_VERSION = "6";
+
+
+
+
+
+
+
+async function chooseBranch(seed, branches) {
+  const ratios = branches.map(([item, ratio]) => ((typeof ratio !== "undefined") ? ratio : 1));
+  return branches[await Sampling.ratioSample(seed, ratios)][0];
+}
 
 const MessageLoaderUtils = {
   STARTPAGE_VERSION,
@@ -344,6 +388,9 @@ class _ASRouter {
       providerBlockList: [],
       messageImpressions: {},
       providerImpressions: {},
+      trailheadInitialized: false,
+      trailheadInterrupt: "",
+      trailheadTriplet: "",
       messages: [],
       errors: [],
     };
@@ -358,9 +405,9 @@ class _ASRouter {
 
   
   async onPrefChange() {
+    this._loadLocalProviders();
     this._updateMessageProviders();
     await this.loadMessagesFromAllProviders();
-    this.dispatchToAS(ac.BroadcastToContent({type: at.AS_ROUTER_PREF_CHANGED, data: ASRouterPreferences.specialConditions}));
   }
 
   
@@ -524,6 +571,11 @@ class _ASRouter {
     ASRouterPreferences.addListener(this.onPrefChange);
     BookmarkPanelHub.init(this.handleMessageRequest, this.addImpression);
 
+    this._loadLocalProviders();
+
+    
+    await this.setupTrailhead();
+
     const messageBlockList = await this._storage.get("messageBlockList") || [];
     const providerBlockList = await this._storage.get("providerBlockList") || [];
     const messageImpressions = await this._storage.get("messageImpressions") || {};
@@ -581,6 +633,17 @@ class _ASRouter {
     }
   }
 
+  _loadLocalProviders() {
+    
+    if (ASRouterPreferences.devtoolsEnabled) {
+      this._localProviders = {
+        ...this._localProviders,
+        SnippetsTestMessageProvider,
+        PanelTestProvider,
+      };
+    }
+  }
+
   
 
 
@@ -624,11 +687,82 @@ class _ASRouter {
   }
 
   
+
+
+
+
+  async _generateTrailheadBranches() {
+    let experiment = "";
+    let interrupt;
+    let triplet;
+
+    
+    const overrideValue = Services.prefs.getStringPref(TRAILHEAD_CONFIG.OVERRIDE_PREF, "");
+    if (overrideValue) {
+      [interrupt, triplet] = overrideValue.split("-");
+      return {experiment, interrupt, triplet: triplet || ""};
+    }
+
+    const locale = Services.locale.appLocaleAsLangTag;
+
+    if (TRAILHEAD_CONFIG.LOCALES.includes(locale)) {
+      const {userId} = ClientEnvironment;
+      experiment = await chooseBranch(`${userId}-trailhead-experiments`, TRAILHEAD_CONFIG.EXPERIMENT_RATIOS);
+
+      
+      
+      if (experiment === "interrupts") {
+        interrupt =  await chooseBranch(`${userId}-interrupts-branch`, TRAILHEAD_CONFIG.BRANCHES.interrupts);
+        if (["join", "sync", "cards"].includes(interrupt)) {
+          triplet = "supercharge";
+        }
+
+      
+      
+      } else {
+        interrupt = "join";
+        triplet = await chooseBranch(`${userId}-triplets-branch`, TRAILHEAD_CONFIG.BRANCHES.triplets);
+      }
+    } else {
+      
+      interrupt = "control";
+    }
+
+    return {experiment, interrupt, triplet};
+  }
+
+  async setupTrailhead() {
+    
+    if (this.state.trailheadInitialized || !Services.prefs.getBoolPref(TRAILHEAD_CONFIG.DID_SEE_ABOUT_WELCOME_PREF, false)) {
+      return;
+    }
+
+    const {experiment, interrupt, triplet} = await this._generateTrailheadBranches();
+    await this.setState({trailheadInitialized: true, trailheadInterrupt: interrupt, trailheadTriplet: triplet});
+
+    if (experiment) {
+      TelemetryEnvironment.setExperimentActive(
+        
+        `activity-stream-firstrun-trailhead-${experiment}`,
+        experiment === "interrupts" ? interrupt : triplet,
+        {type: "as-firstrun"}
+      );
+    }
+  }
+
+  
   _getMessagesContext() {
-    const {previousSessionEnd} = this.state;
+    const {previousSessionEnd, trailheadInterrupt, trailheadTriplet} = this.state;
+
     return {
       get previousSessionEnd() {
         return previousSessionEnd;
+      },
+      get trailheadInterrupt() {
+        return trailheadInterrupt;
+      },
+      get trailheadTriplet() {
+        return trailheadTriplet;
       },
     };
   }
@@ -786,6 +920,29 @@ class _ASRouter {
     );
   }
 
+  
+
+
+  routeMessageToTarget(message, target, trigger, force = false) {
+    switch (message.template) {
+      case "cfr_doorhanger":
+        if (force) {
+          CFRPageActions.forceRecommendation(target, message, this.dispatch);
+        } else {
+          CFRPageActions.addRecommendation(target, trigger.param.host, message, this.dispatch);
+        }
+        break;
+      case "fxa_bookmark_panel":
+        if (force) {
+          BookmarkPanelHub._forceShowMessage(message);
+        }
+        break;
+      default:
+        target.sendAsyncMessage(OUTGOING_MESSAGE_NAME, {type: "SET_MESSAGE", data: message});
+        break;
+    }
+  }
+
   async _sendMessageToTarget(message, target, trigger, force = false) {
     
     if (!message) {
@@ -807,19 +964,9 @@ class _ASRouter {
       try {
         target.sendAsyncMessage(OUTGOING_MESSAGE_NAME, {type: "SET_MESSAGE", data: {...message, bundle: bundledMessages && bundledMessages.bundle}});
       } catch (e) {}
-
-    
-    } else if (message.template === "cfr_doorhanger") {
-      if (force) {
-        CFRPageActions.forceRecommendation(target, message, this.dispatch);
-      } else {
-        CFRPageActions.addRecommendation(target, trigger.param.host, message, this.dispatch);
-      }
-
-    
     } else {
       try {
-        target.sendAsyncMessage(OUTGOING_MESSAGE_NAME, {type: "SET_MESSAGE", data: message});
+        this.routeMessageToTarget(message, target, trigger, force);
       } catch (e) {}
     }
   }
@@ -947,11 +1094,7 @@ class _ASRouter {
     await this.setState({lastMessageId: id});
     const newMessage = this.getMessageById(id);
 
-    if (newMessage && newMessage.provider === "cfr-fxa") {
-      BookmarkPanelHub._forceShowMessage(newMessage);
-    } else {
-      await this._sendMessageToTarget(newMessage, target, action.data, force);
-    }
+    await this._sendMessageToTarget(newMessage, target, action.data, force);
   }
 
   async blockMessageById(idOrIds) {
@@ -1160,6 +1303,7 @@ class _ASRouter {
     this.onMessage({data: action, target});
   }
 
+  
   async onMessage({data: action, target}) {
     switch (action.type) {
       case "USER_ACTION":
@@ -1174,6 +1318,13 @@ class _ASRouter {
         if (action.data && action.data.endpoint) {
           await this._addPreviewEndpoint(action.data.endpoint.url, target.portID);
         }
+
+        
+        if (action.data && action.data.trigger && action.data.trigger.id === "firstRun") {
+          Services.prefs.setBoolPref(TRAILHEAD_CONFIG.DID_SEE_ABOUT_WELCOME_PREF, true);
+          await this.setupTrailhead();
+        }
+
         
         await this.loadMessagesFromAllProviders();
         await this.sendNextMessage(target, (action.data && action.data.trigger) || {});
@@ -1276,6 +1427,8 @@ class _ASRouter {
   }
 }
 this._ASRouter = _ASRouter;
+this.chooseBranch = chooseBranch;
+this.TRAILHEAD_CONFIG = TRAILHEAD_CONFIG;
 
 
 
@@ -1283,4 +1436,4 @@ this._ASRouter = _ASRouter;
 
 this.ASRouter = new _ASRouter();
 
-const EXPORTED_SYMBOLS = ["_ASRouter", "ASRouter", "MessageLoaderUtils"];
+const EXPORTED_SYMBOLS = ["_ASRouter", "ASRouter", "MessageLoaderUtils", "chooseBranch", "TRAILHEAD_CONFIG"];
