@@ -54,7 +54,13 @@ class MVMContext {
   virtual void SetResolutionAndScaleTo(float aResolution) = 0;
   virtual void SetVisualViewportSize(const CSSSize& aSize) = 0;
   virtual void UpdateDisplayPortMargins() = 0;
-  virtual void Reflow(const CSSSize& aNewSize, const CSSSize& aOldSize) = 0;
+
+  enum class ResizeEventFlag {
+    IfNecessary,  
+    Suppress,     
+  };
+  virtual void Reflow(const CSSSize& aNewSize, const CSSSize& aOldSize,
+                      ResizeEventFlag aResizeEventFlag) = 0;
 };
 
 }  

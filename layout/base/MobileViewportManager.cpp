@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "MobileViewportManager.h"
 
@@ -19,7 +19,7 @@
 #include "UnitTransforms.h"
 
 #define MVM_LOG(...)
-
+// #define MVM_LOG(...) printf_stderr("MVM: " __VA_ARGS__)
 
 NS_IMPL_ISUPPORTS(MobileViewportManager, nsIDOMEventListener, nsIObserver)
 
@@ -112,8 +112,8 @@ void MobileViewportManager::ResolutionUpdated() {
   }
 
   if (!mPainted) {
-    
-    
+    // Save the value, so our default zoom calculation
+    // can take it into account later on.
     SetRestoreResolution(mContext->GetResolution());
   }
   RefreshVisualViewportSize();
@@ -136,7 +136,7 @@ MobileViewportManager::HandleEvent(dom::Event* event) {
   } else if (type.Equals(LOAD)) {
     MVM_LOG("%p: got a load event\n", this);
     if (!mPainted) {
-      
+      // Load event got fired before the before-first-paint message
       SetInitialViewport();
     }
   }
@@ -154,7 +154,7 @@ MobileViewportManager::Observe(nsISupports* aSubject, const char* aTopic,
       BEFORE_FIRST_PAINT.EqualsASCII(aTopic)) {
     MVM_LOG("%p: got a before-first-paint event\n", this);
     if (!mPainted) {
-      
+      // before-first-paint message arrived before load event
       SetInitialViewport();
     }
   }
@@ -261,55 +261,55 @@ void MobileViewportManager::UpdateResolution(
       MOZ_ASSERT(aViewportInfo.GetMinZoom() <= defaultZoom &&
                  defaultZoom <= aViewportInfo.GetMaxZoom());
 
-      
+      // On first paint, we always consider the zoom to have changed.
       newZoom = Some(defaultZoom);
     } else {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
+      // If this is not a first paint, then in some cases we want to update the
+      // pre- existing resolution so as to maintain how much actual content is
+      // visible within the display width. Note that "actual content" may be
+      // different with respect to CSS pixels because of the CSS viewport size
+      // changing.
+      //
+      // aDisplayWidthChangeRatio is non-empty if:
+      // (a) The meta-viewport tag information changes, and so the CSS viewport
+      //     might change as a result. If this happens after the content has
+      //     been painted, we want to adjust the zoom to compensate. OR
+      // (b) The display size changed from a nonzero value to another
+      //     nonzero value. This covers the case where e.g. the device was
+      //     rotated, and again we want to adjust the zoom to compensate.
+      // Note in particular that aDisplayWidthChangeRatio will be None if all
+      // that happened was a change in the full-zoom. In this case, we still
+      // want to compute a new CSS viewport, but we don't want to update the
+      // resolution.
+      //
+      // Given the above, the algorithm below accounts for all types of changes
+      // I can conceive of:
+      // 1. screen size changes, CSS viewport does not (pages with no meta
+      //    viewport or a fixed size viewport)
+      // 2. screen size changes, CSS viewport also does (pages with a
+      //    device-width viewport)
+      // 3. screen size remains constant, but CSS viewport changes (meta
+      //    viewport tag is added or removed)
+      // 4. neither screen size nor CSS viewport changes
       if (aDisplayWidthChangeRatio) {
-        
-        
-        
-        
-        
-        
-        
+        // One more complication is that our current zoom level may be the
+        // result of clamping to either the minimum or maximum zoom level
+        // allowed by the viewport. If we naively scale the zoom level with
+        // the change in the display width, we might be scaling one of these
+        // clamped values. What we really want to do is to make scaling of the
+        // zoom aware of these minimum and maximum clamping points, so that we
+        // keep display width changes completely reversible.
 
-        
-        
-        
+        // Because of the behavior of ShrinkToDisplaySizeIfNeeded, we are
+        // choosing zoom clamping points based on the content size of the
+        // scrollable rect, which might different from aViewportOrContentSize.
         CSSSize contentSize = aViewportOrContentSize;
         if (Maybe<CSSRect> scrollableRect =
                 mContext->CalculateScrollableRectForRSF()) {
           contentSize = scrollableRect->Size();
         }
 
-        
+        // We scale the sizes, though we only care about the scaled widths.
         ScreenSize minZoomDisplaySize =
             contentSize * aViewportInfo.GetMinZoom();
         ScreenSize maxZoomDisplaySize =
@@ -319,36 +319,36 @@ void MobileViewportManager::UpdateResolution(
         ScreenSize newDisplaySize(aDisplaySize);
         ScreenSize oldDisplaySize = newDisplaySize / ratio;
 
-        
-        
+        // To calculate an adjusted ratio, we use some combination of these
+        // four values:
         float a(minZoomDisplaySize.width);
         float b(maxZoomDisplaySize.width);
         float c(oldDisplaySize.width);
         float d(newDisplaySize.width);
 
-        
-        
-        
-        
-        
+        // For both oldDisplaySize and aDisplaySize, the values are in one of
+        // three "zones":
+        // 1) Less than or equal to minZoomDisplaySize.
+        // 2) Between minZoomDisplaySize and maxZoomDisplaySize.
+        // 3) Greater than or equal to maxZoomDisplaySize.
 
-        
-        
+        // Depending on which zone each are in, the adjusted ratio is shown in
+        // the table below (using the a-b-c-d coding from above):
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        //   d | 1 | 2 | 3 |
+        // c   +---+---+---+
+        //     | a | d | b |
+        // 1   | a | a | a |
+        //     +---+---+---+
+        //     | a | d | b |
+        // 2   | c | c | c |
+        //     +---+---+---+
+        //     | a | d | b |
+        // 3   | b | b | b |
+        //     +---+---+---+
 
-        
-        
+        // Conveniently, the numerator is just d clamped to a..b, and the
+        // denominator is c clamped to a..b.
         float numerator = clamped(d, a, b);
         float denominator = clamped(c, a, b);
 
@@ -357,29 +357,29 @@ void MobileViewportManager::UpdateResolution(
             zoom, adjustedRatio, viewportSize, mMobileViewportSize));
       }
     }
-  } else {  
+  } else {  // aType == UpdateType::ContentSize
     MOZ_ASSERT(aType == UpdateType::ContentSize);
     MOZ_ASSERT(aDisplayWidthChangeRatio.isNothing());
 
-    
-    
-    
+    // We try to scale down the contents only IF the document has no
+    // initial-scale AND IF it's not restored documents AND IF the resolution
+    // has never been changed by APZ.
     if (!mRestoreResolution && !mContext->IsResolutionUpdatedByApz() &&
         !aViewportInfo.IsDefaultZoomValid()) {
       if (zoom != intrinsicScale) {
         newZoom = Some(intrinsicScale);
       }
     } else {
-      
-      
-      
+      // Even in other scenarios, we want to ensure that zoom level is
+      // not _smaller_ than the intrinsic scale, otherwise we might be
+      // trying to show regions where there is no content to show.
       CSSToScreenScale clampedZoom = zoom;
 
       if (clampedZoom < intrinsicScale) {
         clampedZoom = intrinsicScale;
       }
 
-      
+      // Also clamp to the restrictions imposed by aViewportInfo.
       clampedZoom = ClampZoom(clampedZoom, aViewportInfo);
 
       if (clampedZoom != zoom) {
@@ -388,9 +388,9 @@ void MobileViewportManager::UpdateResolution(
     }
   }
 
-  
-  
-  
+  // If the zoom has changed, update the pres shell resolution accordingly.
+  // This will also call UpdateVisualViewportSize, which means we can early
+  // exit afterwards.
   if (newZoom) {
     LayoutDeviceToLayerScale resolution = ZoomToResolution(*newZoom, cssToDev);
     MVM_LOG("%p: setting resolution %f\n", this, resolution.scale);
@@ -400,8 +400,8 @@ void MobileViewportManager::UpdateResolution(
     return;
   }
 
-  
-  
+  // The visual viewport size also depends on the display size, and needs
+  // to be updated if if we didn't already update due to a zoom change.
   if (aType == UpdateType::ViewportSize) {
     UpdateVisualViewportSize(aDisplaySize, newZoom ? *newZoom : zoom);
   }
@@ -416,8 +416,8 @@ ScreenIntSize MobileViewportManager::GetCompositionSize(
   ScreenIntSize compositionSize(aDisplaySize);
   ScreenMargin scrollbars =
       mContext->ScrollbarAreaToExcludeFromCompositionBounds()
-      
-      
+      // Scrollbars are not subject to resolution scaling, so LD pixels =
+      // Screen pixels for them.
       * LayoutDeviceToScreenScale(1.0f);
 
   compositionSize.width -= scrollbars.LeftRight();
@@ -447,8 +447,8 @@ void MobileViewportManager::UpdateDisplayPortMargins() {
 }
 
 void MobileViewportManager::RefreshVisualViewportSize() {
-  
-  
+  // This function is a subset of RefreshViewportSize, and only updates the
+  // visual viewport size.
 
   if (!mContext) {
     return;
@@ -467,19 +467,19 @@ void MobileViewportManager::RefreshVisualViewportSize() {
 }
 
 void MobileViewportManager::RefreshViewportSize(bool aForceAdjustResolution) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // This function gets called by the various triggers that may result in a
+  // change of the CSS viewport. In some of these cases (e.g. the meta-viewport
+  // tag changes) we want to update the resolution and in others (e.g. the full
+  // zoom changing) we don't want to update the resolution. See the comment in
+  // UpdateResolution for some more detail on this. An important assumption we
+  // make here is that this RefreshViewportSize function will be called
+  // separately for each trigger that changes. For instance it should never get
+  // called such that both the full zoom and the meta-viewport tag have changed;
+  // instead it would get called twice - once after each trigger changes. This
+  // assumption is what allows the aForceAdjustResolution parameter to work as
+  // intended; if this assumption is violated then we will need to add extra
+  // complicated logic in UpdateResolution to ensure we only do the resolution
+  // update in the right scenarios.
 
   if (!mContext) {
     return;
@@ -488,7 +488,7 @@ void MobileViewportManager::RefreshViewportSize(bool aForceAdjustResolution) {
   Maybe<float> displayWidthChangeRatio;
   if (Maybe<LayoutDeviceIntSize> newDisplaySize =
           mContext->GetContentViewerSize()) {
-    
+    // See the comment in UpdateResolution for why we're doing this.
     if (mDisplaySize.width > 0) {
       if (aForceAdjustResolution ||
           mDisplaySize.width != newDisplaySize->width) {
@@ -507,7 +507,7 @@ void MobileViewportManager::RefreshViewportSize(bool aForceAdjustResolution) {
   MVM_LOG("%p: Computing CSS viewport using %d,%d\n", this, mDisplaySize.width,
           mDisplaySize.height);
   if (mDisplaySize.width == 0 || mDisplaySize.height == 0) {
-    
+    // We can't do anything useful here, we should just bail out
     return;
   }
 
@@ -519,12 +519,12 @@ void MobileViewportManager::RefreshViewportSize(bool aForceAdjustResolution) {
   MVM_LOG("%p: Computed CSS viewport %s\n", this, Stringify(viewport).c_str());
 
   if (!mIsFirstPaint && mMobileViewportSize == viewport) {
-    
+    // Nothing changed, so no need to do a reflow
     return;
   }
 
-  
-  
+  // If it's the first-paint or the viewport changed, we need to update
+  // various APZ properties (the zoom and some things that might depend on it)
   MVM_LOG("%p: Updating properties because %d || %d\n", this, mIsFirstPaint,
           mMobileViewportSize != viewport);
 
@@ -532,8 +532,8 @@ void MobileViewportManager::RefreshViewportSize(bool aForceAdjustResolution) {
     UpdateResolution(viewportInfo, displaySize, viewport,
                      displayWidthChangeRatio, UpdateType::ViewportSize);
   } else {
-    
-    
+    // Even without zoom, we need to update that the visual viewport size
+    // has changed.
     RefreshVisualViewportSize();
   }
   if (gfxPlatform::AsyncPanZoomEnabled()) {
@@ -542,16 +542,18 @@ void MobileViewportManager::RefreshViewportSize(bool aForceAdjustResolution) {
 
   CSSSize oldSize = mMobileViewportSize;
 
-  
+  // Update internal state.
   mMobileViewportSize = viewport;
 
   RefPtr<MobileViewportManager> strongThis(this);
 
-  
-  mContext->Reflow(viewport, oldSize);
+  // Kick off a reflow.
+  mContext->Reflow(viewport, oldSize,
+                   mIsFirstPaint ? MVMContext::ResizeEventFlag::Suppress
+                                 : MVMContext::ResizeEventFlag::IfNecessary);
 
-  
-  
+  // We are going to fit the content to the display width if the initial-scale
+  // is not specied and if the content is still wider than the display width.
   ShrinkToDisplaySizeIfNeeded(viewportInfo, displaySize);
 
   mIsFirstPaint = false;
@@ -564,9 +566,9 @@ void MobileViewportManager::ShrinkToDisplaySizeIfNeeded(
   }
 
   if (!mContext->AllowZoomingForDocument()) {
-    
-    
-    
+    // If zoom is disabled, we don't scale down wider contents to fit them
+    // into device screen because users won't be able to zoom out the tiny
+    // contents.
     return;
   }
 
