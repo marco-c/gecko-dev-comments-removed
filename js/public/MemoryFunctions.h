@@ -60,6 +60,38 @@ extern JS_PUBLIC_API void JS_string_free(JSContext* cx, void* p);
 
 extern JS_PUBLIC_API void JS_freeop(JSFreeOp* fop, void* p);
 
-extern JS_PUBLIC_API void JS_updateMallocCounter(JSContext* cx, size_t nbytes);
+namespace JS {
+
+
+
+
+#define JS_FOR_EACH_PUBLIC_MEMORY_USE(_) \
+  _(XPCWrappedNative)                    \
+  _(DOMBinding)
+
+enum class MemoryUse : uint8_t {
+#define DEFINE_MEMORY_USE(Name) Name,
+  JS_FOR_EACH_PUBLIC_MEMORY_USE(DEFINE_MEMORY_USE)
+#undef DEFINE_MEMORY_USE
+};
+
+
+
+
+
+
+
+extern JS_PUBLIC_API void AddAssociatedMemory(JSObject* obj, size_t nbytes,
+                                              MemoryUse use);
+
+
+
+
+
+
+extern JS_PUBLIC_API void RemoveAssociatedMemory(JSObject* obj, size_t nbytes,
+                                                 MemoryUse use);
+
+}  
 
 #endif 

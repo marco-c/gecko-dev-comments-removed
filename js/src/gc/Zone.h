@@ -454,6 +454,10 @@ class Zone : public JS::shadow::Zone,
 
   
   
+  js::gc::MemoryTracker gcMallocSize;
+
+  
+  
   js::gc::MemoryCounter jitCodeCounter;
 
   void updateMemoryCounter(js::gc::MemoryCounter& counter, size_t nbytes) {
@@ -491,6 +495,7 @@ class Zone : public JS::shadow::Zone,
   }
   void adoptMallocBytes(Zone* other) {
     gcMallocCounter.adopt(other->gcMallocCounter);
+    gcMallocSize.adopt(other->gcMallocSize);
   }
   size_t GCMaxMallocBytes() const { return gcMallocCounter.maxBytes(); }
   size_t GCMallocBytes() const { return gcMallocCounter.bytes(); }
@@ -502,6 +507,14 @@ class Zone : public JS::shadow::Zone,
   void updateAllGCMallocCountersOnGCStart();
   void updateAllGCMallocCountersOnGCEnd(const js::AutoLockGC& lock);
   js::gc::TriggerKind shouldTriggerGCForTooMuchMalloc();
+
+  
+  void addCellMemory(js::gc::Cell* cell, size_t nbytes, js::MemoryUse use) {
+    gcMallocSize.addMemory(cell, nbytes, use);
+  }
+  void removeCellMemory(js::gc::Cell* cell, size_t nbytes, js::MemoryUse use) {
+    gcMallocSize.removeMemory(cell, nbytes, use);
+  }
 
   void keepAtoms() { keepAtomsCount++; }
   void releaseAtoms();
