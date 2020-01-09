@@ -247,7 +247,7 @@ nsresult XPCWrappedNative::WrapNewGlobal(xpcObjectHelper& nativeHelper,
   
   
   RefPtr<XPCNativeInterface> iface =
-      XPCNativeInterface::GetNewOrUsed(&NS_GET_IID(nsISupports));
+      XPCNativeInterface::GetNewOrUsed(cx, &NS_GET_IID(nsISupports));
   MOZ_ASSERT(iface);
   nsresult status;
   success = wrapper->FindTearOff(iface, false, &status);
@@ -412,11 +412,11 @@ nsresult XPCWrappedNative::GetNewOrUsed(xpcObjectHelper& helper,
   } else {
     RefPtr<XPCNativeInterface> iface = Interface;
     if (!iface) {
-      iface = XPCNativeInterface::GetISupports();
+      iface = XPCNativeInterface::GetISupports(cx);
     }
 
-    XPCNativeSetKey key(iface);
-    RefPtr<XPCNativeSet> set = XPCNativeSet::GetNewOrUsed(&key);
+    XPCNativeSetKey key(cx, iface);
+    RefPtr<XPCNativeSet> set = XPCNativeSet::GetNewOrUsed(cx, &key);
 
     if (!set) {
       return NS_ERROR_FAILURE;
@@ -854,10 +854,11 @@ class MOZ_STACK_CLASS AutoClonePrivateGuard {
   RootedObject mNewReflector;
 };
 
-bool XPCWrappedNative::ExtendSet(XPCNativeInterface* aInterface) {
+bool XPCWrappedNative::ExtendSet(JSContext* aCx,
+                                 XPCNativeInterface* aInterface) {
   if (!mSet->HasInterface(aInterface)) {
     XPCNativeSetKey key(mSet, aInterface);
-    RefPtr<XPCNativeSet> newSet = XPCNativeSet::GetNewOrUsed(&key);
+    RefPtr<XPCNativeSet> newSet = XPCNativeSet::GetNewOrUsed(aCx, &key);
     if (!newSet) {
       return false;
     }
@@ -927,8 +928,9 @@ XPCWrappedNativeTearOff* XPCWrappedNative::FindTearOff(
   return to;
 }
 
-XPCWrappedNativeTearOff* XPCWrappedNative::FindTearOff(const nsIID& iid) {
-  RefPtr<XPCNativeInterface> iface = XPCNativeInterface::GetNewOrUsed(&iid);
+XPCWrappedNativeTearOff* XPCWrappedNative::FindTearOff(JSContext* cx,
+                                                       const nsIID& iid) {
+  RefPtr<XPCNativeInterface> iface = XPCNativeInterface::GetNewOrUsed(cx, &iid);
   return iface ? FindTearOff(iface) : nullptr;
 }
 
@@ -1012,7 +1014,7 @@ nsresult XPCWrappedNative::InitTearOff(XPCWrappedNativeTearOff* aTearOff,
   
   
 
-  if (!mSet->HasInterface(aInterface) && !ExtendSet(aInterface)) {
+  if (!mSet->HasInterface(aInterface) && !ExtendSet(cx, aInterface)) {
     aTearOff->SetInterface(nullptr);
     return NS_ERROR_NO_INTERFACE;
   }
@@ -1715,7 +1717,7 @@ NS_IMETHODIMP XPCWrappedNative::DebugDump(int16_t depth) {
 
 
 char* XPCWrappedNative::ToString(
-    XPCWrappedNativeTearOff* to ) const {
+    JSContext* cx, XPCWrappedNativeTearOff* to ) const {
 #ifdef DEBUG
 #  define FMT_ADDR " @ 0x%p"
 #  define FMT_STR(str) str
@@ -1740,7 +1742,7 @@ char* XPCWrappedNative::ToString(
   } else if (!name) {
     XPCNativeSet* set = GetSet();
     XPCNativeInterface** array = set->GetInterfaceArray();
-    RefPtr<XPCNativeInterface> isupp = XPCNativeInterface::GetISupports();
+    RefPtr<XPCNativeInterface> isupp = XPCNativeInterface::GetISupports(cx);
     uint16_t count = set->GetInterfaceCount();
 
     if (count == 1) {
