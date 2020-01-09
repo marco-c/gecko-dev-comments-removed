@@ -82,7 +82,7 @@ static HashNumber HashValue(const Value& v,
     return v.toSymbol()->hash();
   }
   if (v.isBigInt()) {
-    return v.toBigInt()->hash();
+    return MaybeForwarded(v.toBigInt())->hash();
   }
   if (v.isObject()) {
     return hcs.scramble(v.asRawBits());
@@ -423,6 +423,7 @@ static void TraceKey(Range& r, const HashableValue& key, JSTracer* trc) {
   HashableValue newKey = key.trace(trc);
 
   if (newKey.get() != key.get()) {
+    
     
     
     r.rekeyFront(newKey);
