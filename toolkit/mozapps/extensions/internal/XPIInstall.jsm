@@ -1103,8 +1103,6 @@ class AddonInstall {
 
 
 
-
-
   constructor(installLocation, url, options = {}) {
     this.wrapper = new AddonInstallWrapper(this);
     this.location = installLocation;
@@ -1120,7 +1118,7 @@ class AddonInstall {
     this.hash = this.originalHash;
     this.existingAddon = options.existingAddon || null;
     this.promptHandler = options.promptHandler || (() => Promise.resolve());
-    this.releaseNotesURI = options.releaseNotesURI || null;
+    this.releaseNotesURI = null;
 
     this._startupPromise = null;
 
@@ -2288,19 +2286,18 @@ function createUpdate(aCallback, aAddon, aUpdate, isUserRequested) {
       isUserRequestedUpdate: isUserRequested,
     };
 
-    try {
-      if (aUpdate.updateInfoURL)
-        opts.releaseNotesURI = Services.io.newURI(escapeAddonURI(aAddon, aUpdate.updateInfoURL));
-    } catch (e) {
-      
-    }
-
     let install;
     if (url instanceof Ci.nsIFileURL) {
       install = new LocalAddonInstall(aAddon.location, url, opts);
       await install.init();
     } else {
       install = new DownloadAddonInstall(aAddon.location, url, opts);
+    }
+    try {
+      if (aUpdate.updateInfoURL)
+        install.releaseNotesURI = Services.io.newURI(escapeAddonURI(aAddon, aUpdate.updateInfoURL));
+    } catch (e) {
+      
     }
 
     aCallback(install);

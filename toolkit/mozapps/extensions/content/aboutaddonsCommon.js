@@ -7,7 +7,6 @@
 
 
 
-
 var {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 var {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
@@ -64,29 +63,6 @@ function attachUpdateHandler(install) {
       Services.obs.notifyObservers(subject, "webextension-permission-prompt");
     });
   };
-}
-
-async function loadReleaseNotes(uri) {
-  const res = await fetch(uri.spec, {credentials: "omit"});
-
-  if (!res.ok) {
-    throw new Error("Error loading release notes");
-  }
-
-  
-  const text = await res.text();
-
-  
-  const ParserUtils = Cc["@mozilla.org/parserutils;1"]
-    .getService(Ci.nsIParserUtils);
-  const flags =
-    ParserUtils.SanitizerDropMedia |
-    ParserUtils.SanitizerDropNonCSSPresentation |
-    ParserUtils.SanitizerDropForms;
-
-  
-  const context = document.createElement("div");
-  return ParserUtils.parseFragment(text, flags, false, uri, context);
 }
 
 function openOptionsInTab(optionsURL) {
