@@ -142,12 +142,22 @@ class UrlbarView {
       fragment.appendChild(this._createRow(resultIndex));
     }
 
-    if (queryContext.preselected) {
-      this._selected = fragment.firstElementChild;
-      this._selected.toggleAttribute("selected", true);
-    } else if (queryContext.lastResultCount == 0) {
+    if (queryContext.lastResultCount == 0) {
+      if (queryContext.preselected) {
+        this._selected = fragment.firstElementChild;
+        this._selected.toggleAttribute("selected", true);
+      } else if (this._selected) {
+        
+        this._selected.toggleAttribute("selected", false);
+        this._selected = null;
+      }
+    } else if (this._selected) {
       
-      this._selected = null;
+      
+      
+      let resultIndex = this._selected.getAttribute("resultIndex");
+      this._selected = fragment.children[resultIndex];
+      this._selected.toggleAttribute("selected", true);
     }
 
     

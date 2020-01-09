@@ -29,7 +29,7 @@ add_task(async function alt_left_click_test() {
     };
   });
 
-  triggerCommand(true, {altKey: true});
+  triggerCommand("click", {altKey: true});
 
   await saveURLPromise;
   ok(true, "SaveURL was called");
@@ -41,7 +41,7 @@ add_task(async function shift_left_click_test() {
 
   let destinationURL = "http://" + TEST_VALUE + "/";
   let newWindowPromise = BrowserTestUtils.waitForNewWindow({url: destinationURL});
-  triggerCommand(true, {shiftKey: true});
+  triggerCommand("click", {shiftKey: true});
   let win = await newWindowPromise;
 
   info("URL should be loaded in a new window");
@@ -65,7 +65,7 @@ add_task(async function right_click_test() {
   
   await promiseOpenNewTab();
 
-  triggerCommand(true, {button: 2});
+  triggerCommand("click", {button: 2});
 
   
   is(gURLBar.value, TEST_VALUE, "Urlbar still has the value we entered");
@@ -81,7 +81,7 @@ add_task(async function shift_accel_left_click_test() {
   let tab = await promiseOpenNewTab();
 
   let loadStartedPromise = promiseLoadStarted();
-  triggerCommand(true, {accelKey: true, shiftKey: true});
+  triggerCommand("click", {accelKey: true, shiftKey: true});
   await loadStartedPromise;
 
   
@@ -101,25 +101,39 @@ add_task(async function shift_accel_left_click_test() {
 
 add_task(async function load_in_current_tab_test() {
   let tests = [
-    {desc: "Simple return keypress"},
-    {desc: "Left click on go button", click: true},
-    {desc: "Ctrl/Cmd+Return keypress", event: {accelKey: true}},
-    {desc: "Alt+Return keypress in a blank tab", event: {altKey: true}},
+    {
+      desc: "Simple return keypress",
+      type: "keypress",
+    },
+    {
+      desc: "Left click on go button",
+      type: "click",
+    },
+    {
+      desc: "Ctrl/Cmd+Return keypress",
+      type: "keypress",
+      details: {accelKey: true},
+    },
+    {
+      desc: "Alt+Return keypress in a blank tab",
+      type: "keypress",
+      details: {altKey: true},
+    },
   ];
 
-  for (let test of tests) {
-    info(`Running test: ${test.desc}`);
+  for (let {desc, type, details} of tests) {
+    info(`Running test: ${desc}`);
 
     
     let tab = await promiseOpenNewTab();
 
     
     let loadStartedPromise = promiseLoadStarted();
-    triggerCommand(test.click || false, test.event || {});
+    triggerCommand(type, details);
     await loadStartedPromise;
 
     info("URL should be loaded in the current tab");
-    is(gURLBar.value, TEST_VALUE, "Urlbar still has the value we entered");
+    is(gURLBar.textValue, TEST_VALUE, "Urlbar still has the value we entered");
     await promiseCheckChildNoFocusedElement(gBrowser.selectedBrowser);
     is(document.activeElement, gBrowser.selectedBrowser, "Content window should be focused");
     is(gBrowser.selectedTab, tab, "New URL was loaded in the current tab");
@@ -131,19 +145,29 @@ add_task(async function load_in_current_tab_test() {
 
 add_task(async function load_in_new_tab_test() {
   let tests = [
-    {desc: "Ctrl/Cmd left click on go button", click: true, event: {accelKey: true}},
-    {desc: "Alt+Return keypress in a dirty tab", event: {altKey: true}, url: START_VALUE},
+    {
+      desc: "Ctrl/Cmd left click on go button",
+      type: "click",
+      details: {accelKey: true},
+      url: null,
+    },
+    {
+      desc: "Alt+Return keypress in a dirty tab",
+      type: "keypress",
+      details: {altKey: true},
+      url: START_VALUE,
+    },
   ];
 
-  for (let test of tests) {
-    info(`Running test: ${test.desc}`);
+  for (let {desc, type, details, url} of tests) {
+    info(`Running test: ${desc}`);
 
     
-    let tab = await promiseOpenNewTab(test.url || "about:blank");
+    let tab = await promiseOpenNewTab(url || "about:blank");
 
     
     let tabSwitchedPromise = promiseNewTabSwitched();
-    triggerCommand(test.click || false, test.event || {});
+    triggerCommand(type, details);
     await tabSwitchedPromise;
 
     
@@ -159,18 +183,19 @@ add_task(async function load_in_new_tab_test() {
   }
 });
 
-function triggerCommand(shouldClick, event) {
+function triggerCommand(type, details = {}) {
   gURLBar.focus();
   gURLBar.value = "";
   EventUtils.sendString(TEST_VALUE);
 
-  if (shouldClick) {
+  if (type == "click") {
     ok(gURLBar.hasAttribute("usertyping"),
        "usertyping attribute must be set for the go button to be visible");
-
-    EventUtils.synthesizeMouseAtCenter(gURLBar.goButton, event);
+    EventUtils.synthesizeMouseAtCenter(gURLBar.goButton, details);
+  } else if (type == "keypress") {
+    EventUtils.synthesizeKey("KEY_Enter", details);
   } else {
-    EventUtils.synthesizeKey("KEY_Enter", event);
+    throw new Error("Unsupported event type");
   }
 }
 
