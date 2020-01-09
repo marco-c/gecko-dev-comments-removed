@@ -34,7 +34,9 @@ static const char kProfileProperties[] =
 
 
 
-nsresult ProfileResetCleanup(nsIToolkitProfile* aOldProfile) {
+
+nsresult ProfileResetCleanup(nsToolkitProfileService* aService,
+                             nsIToolkitProfile* aOldProfile) {
   nsresult rv;
   nsCOMPtr<nsIFile> profileDir;
   rv = aOldProfile->GetRootDir(getter_AddRefs(profileDir));
@@ -142,10 +144,5 @@ nsresult ProfileResetCleanup(nsIToolkitProfile* aOldProfile) {
   auto* piWindow = nsPIDOMWindowOuter::From(progressWindow);
   piWindow->Close();
 
-  
-  
-  rv = aOldProfile->Remove(false);
-  if (NS_FAILED(rv)) NS_WARNING("Could not remove the profile");
-
-  return rv;
+  return aService->ApplyResetProfile(aOldProfile);
 }
