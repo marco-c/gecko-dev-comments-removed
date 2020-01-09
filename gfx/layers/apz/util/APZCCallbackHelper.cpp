@@ -337,7 +337,7 @@ void APZCCallbackHelper::UpdateRootFrame(const RepaintRequest& aRequest) {
     presShellResolution =
         aRequest.GetPresShellResolution() * aRequest.GetAsyncZoom().scale;
     presShell->SetResolutionAndScaleTo(presShellResolution,
-                                   nsIPresShell::ChangeOrigin::eApz);
+                                       nsIPresShell::ChangeOrigin::eApz);
   }
 
   
@@ -443,7 +443,7 @@ nsPresContext* APZCCallbackHelper::GetPresContextForContent(
   return presShell->GetPresContext();
 }
 
-nsIPresShell* APZCCallbackHelper::GetRootContentDocumentPresShellForContent(
+PresShell* APZCCallbackHelper::GetRootContentDocumentPresShellForContent(
     nsIContent* aContent) {
   nsPresContext* context = GetPresContextForContent(aContent);
   if (!context) {
@@ -506,9 +506,9 @@ CSSPoint APZCCallbackHelper::ApplyCallbackTransform(
   
   
   float nonRootResolution = 1.0f;
-  if (nsIPresShell* shell =
+  if (PresShell* presShell =
           GetRootContentDocumentPresShellForContent(content)) {
-    nonRootResolution = shell->GetCumulativeNonRootScaleResolution();
+    nonRootResolution = presShell->GetCumulativeNonRootScaleResolution();
   }
   
   

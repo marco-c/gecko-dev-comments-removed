@@ -96,7 +96,7 @@ class APZCCallbackHelper {
 
   
 
-  static nsIPresShell* GetRootContentDocumentPresShellForContent(
+  static PresShell* GetRootContentDocumentPresShellForContent(
       nsIContent* aContent);
 
   
