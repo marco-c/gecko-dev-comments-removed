@@ -9,7 +9,7 @@ static unsigned FinalizeCalls = 0;
 static JSFinalizeStatus StatusBuffer[BufferSize];
 
 BEGIN_TEST(testGCFinalizeCallback) {
-  JS_SetGCParameter(cx, JSGC_MODE, JSGC_MODE_INCREMENTAL);
+  JS_SetGCParameter(cx, JSGC_MODE, JSGC_MODE_ZONE_INCREMENTAL);
 
   
   FinalizeCalls = 0;
