@@ -1091,6 +1091,9 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
   }
 
   
+  var lastDisplayedCueNums = 0;
+
+  
   
   
   
@@ -1102,6 +1105,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
     if (!cues) {
       LOG(`Abort processing because no cue.`);
       clearAllCuesDiv(overlay);
+      lastDisplayedCueNums = 0;
       return;
     }
 
@@ -1120,6 +1124,10 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
     
     
     function shouldCompute(cues) {
+      if (lastDisplayedCueNums != cues.length) {
+        return true;
+      }
+
       if (overlay.lastControlBarShownStatus != controlBarShown) {
         return true;
       }
@@ -1163,8 +1171,9 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
     let regionNodeBoxes = {};
     let regionNodeBox;
 
-    LOG(`=== processCues ===`);
-
+    LOG(`=== processCues, ` +
+        `lastDisplayedCueNums=${lastDisplayedCueNums}, currentCueNums=${cues.length} ===`);
+    lastDisplayedCueNums = cues.length;
     for (let i = 0; i < cues.length; i++) {
       cue = cues[i];
       if (cue.region != null) {
