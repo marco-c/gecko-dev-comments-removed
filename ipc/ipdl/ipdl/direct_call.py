@@ -596,9 +596,6 @@ VIRTUAL_CALL_CLASSES = set([
     ("PSessionStorageObserver", "parent"),
 
     
-    ("PIndexedDBPermissionRequest", "child"),
-
-    
     
     ("PBrowser", "child"),
 
