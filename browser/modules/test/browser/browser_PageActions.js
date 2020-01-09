@@ -1464,7 +1464,7 @@ add_task(async function contextMenu() {
   
   
   
-  EventUtils.synthesizeMouseAtCenter(gURLBar, { type: "mousemove" });
+  EventUtils.synthesizeMouseAtCenter(gURLBar.inputField, { type: "mousemove" });
   gURLBar.focus();
 });
 

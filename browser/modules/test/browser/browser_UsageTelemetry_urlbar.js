@@ -8,35 +8,16 @@ const SUGGEST_URLBAR_PREF = "browser.urlbar.suggest.searches";
 const SUGGESTION_ENGINE_NAME = "browser_UsageTelemetry usageTelemetrySearchSuggestions.xml";
 const ONEOFF_URLBAR_PREF = "browser.urlbar.oneOffSearches";
 
-ChromeUtils.defineModuleGetter(this, "URLBAR_SELECTED_RESULT_TYPES",
-                               "resource:///modules/BrowserUsageTelemetry.jsm");
+XPCOMUtils.defineLazyModuleGetters(this, {
+  SearchTelemetry: "resource:///modules/SearchTelemetry.jsm",
+  UrlbarTestUtils: "resource://testing-common/UrlbarTestUtils.jsm",
+  URLBAR_SELECTED_RESULT_TYPES: "resource:///modules/BrowserUsageTelemetry.jsm",
+  URLBAR_SELECTED_RESULT_METHODS: "resource:///modules/BrowserUsageTelemetry.jsm",
+});
 
-ChromeUtils.defineModuleGetter(this, "URLBAR_SELECTED_RESULT_METHODS",
-                               "resource:///modules/BrowserUsageTelemetry.jsm");
-
-ChromeUtils.defineModuleGetter(this, "SearchTelemetry",
-                              "resource:///modules/SearchTelemetry.jsm");
-
-let searchInAwesomebar = async function(inputText, win = window) {
-  await new Promise(r => waitForFocus(r, win));
-  
-  win.gURLBar.focus();
-  win.gURLBar.value = inputText;
-
-  
-  
-  
-  let event = win.document.createEvent("Events");
-  event.initEvent("input", true, true);
-  win.gURLBar.dispatchEvent(event);
-  win.gURLBar.controller.startSearch(inputText);
-
-  
-  await BrowserTestUtils.waitForEvent(win.gURLBar.popup, "popupshown");
-  
-  await BrowserTestUtils.waitForCondition(() => win.gURLBar.controller.searchStatus >=
-                                                Ci.nsIAutoCompleteController.STATUS_COMPLETE_NO_MATCH);
-};
+function searchInAwesomebar(inputText, win = window) {
+  return UrlbarTestUtils.promiseAutocompleteResultPopup(win, inputText, waitForFocus, true);
+}
 
 
 
@@ -46,24 +27,23 @@ let searchInAwesomebar = async function(inputText, win = window) {
 
 
 
-function clickURLBarSuggestion(entryName, button = 1) {
-  
-  
-  const expectedSuggestionName = entryName + " " + SUGGESTION_ENGINE_NAME + " Search";
-  return BrowserTestUtils.waitForCondition(() => {
-    for (let child of gURLBar.popup.richlistbox.children) {
-      if (child.label === expectedSuggestionName) {
-        
-        if (button == 1)
-          child.click();
-        else if (button == 2) {
-          EventUtils.synthesizeMouseAtCenter(child, {type: "mousedown", button: 2});
-        }
-        return true;
+async function clickURLBarSuggestion(resultTitle, button = 1) {
+  await UrlbarTestUtils.promiseSearchComplete(window);
+
+  const count = UrlbarTestUtils.getResultCount(window);
+  for (let i = 0; i < count; i++) {
+    let result = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
+    if (result.displayed.title == resultTitle) {
+      
+      let element = await UrlbarTestUtils.waitForAutocompleteResultAt(window, i);
+      if (button == 1)
+        EventUtils.synthesizeMouseAtCenter(element, {});
+      else if (button == 2) {
+        EventUtils.synthesizeMouseAtCenter(element, {type: "mousedown", button: 2});
       }
+      return;
     }
-    return false;
-  }, "Waiting for the expected suggestion to appear");
+  }
 }
 
 
@@ -353,7 +333,7 @@ add_task(async function test_oneOff_click() {
   let p = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
   await searchInAwesomebar("query");
   info("Click the first one-off button.");
-  gURLBar.popup.oneOffSearchButtons.getSelectableButtons(false)[0].click();
+  UrlbarTestUtils.getOneOffSearchButtons(window).getSelectableButtons(false)[0].click();
   await p;
 
   TelemetryTestUtils.assertHistogram(resultMethodHist,
@@ -476,7 +456,7 @@ add_task(async function test_suggestion_enterSelection() {
     let p = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
     await searchInAwesomebar("query");
     info("Select the second result and press Return.");
-    gURLBar.popup.selectedIndex = 1;
+    UrlbarTestUtils.setSelectedIndex(window, 1);
     EventUtils.synthesizeKey("KEY_Enter");
     await p;
 

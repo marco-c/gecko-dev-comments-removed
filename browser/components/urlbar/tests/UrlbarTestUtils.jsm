@@ -116,6 +116,16 @@ var UrlbarTestUtils = {
 
 
 
+  setSelectedIndex(win, index) {
+    let urlbar = getUrlbarAbstraction(win);
+    urlbar.setSelectedIndex(index);
+  },
+
+  
+
+
+
+
 
   getResultCount(win) {
     let urlbar = getUrlbarAbstraction(win);
@@ -306,6 +316,13 @@ class UrlbarAbstraction {
   getSelectedIndex() {
     return this.quantumbar ? this.urlbar.view.selectedIndex
                            : this.panel.selectedIndex;
+  }
+
+  setSelectedIndex(index) {
+    if (!this.quantumbar) {
+      return this.panel.selectedIndex = index;
+    }
+    return this.urlbar.view.selectedIndex;
   }
 
   getResultCount() {
