@@ -844,10 +844,12 @@ static bool ProcessFrameInternal(nsIFrame* aFrame,
                                 : nullptr;
 
     if (placeholder) {
-      
-      
-      nsRect placeholderOverflow =
-          aOverflow + currentFrame->GetOffsetTo(placeholder);
+      nsRect placeholderOverflow = aOverflow;
+      auto rv = nsLayoutUtils::TransformRect(currentFrame, placeholder,
+                                             placeholderOverflow);
+      if (rv != nsLayoutUtils::TRANSFORM_SUCCEEDED) {
+        placeholderOverflow = nsRect();
+      }
 
       CRR_LOG("Processing placeholder %p for OOF frame %p\n", placeholder,
               currentFrame);
