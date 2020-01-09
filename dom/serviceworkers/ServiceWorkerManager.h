@@ -330,7 +330,6 @@ class ServiceWorkerManager final : public nsIServiceWorkerManager,
 
   
   
-  
   static nsresult PrincipalToScopeKey(nsIPrincipal* aPrincipal,
                                       nsACString& aKey);
 

@@ -157,7 +157,7 @@ const char* NeckoParent::GetValidatedOriginAttributes(
     if (!aSerialized.IsNotNull()) {
       
       
-      aAttrs = OriginAttributes(NECKO_NO_APP_ID, false);
+      aAttrs = OriginAttributes(false);
     } else {
       aAttrs = aSerialized.mOriginAttributes;
     }

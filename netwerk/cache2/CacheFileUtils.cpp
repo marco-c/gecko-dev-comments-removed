@@ -100,7 +100,8 @@ class KeyParser : protected Tokenizer {
         break;
       case 'i': {
         
-        if (!ReadInteger(&originAttribs.mAppId)) {
+        uint32_t deprecatedAppId = 0;
+        if (!ReadInteger(&deprecatedAppId)) {
           return false;  
         }
         break;

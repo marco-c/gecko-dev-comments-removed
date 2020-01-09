@@ -70,6 +70,7 @@ class ExtractOriginData : protected mozilla::Tokenizer {
     origin.Assign(scope);
 
     
+    
     uint32_t appId;
     if (!ReadInteger(&appId)) {
       return;
@@ -130,7 +131,7 @@ class ExtractOriginData : protected mozilla::Tokenizer {
         }
       }
     } else {
-      OriginAttributes attrs(appId, inIsolatedMozBrowser);
+      OriginAttributes attrs(inIsolatedMozBrowser);
       attrs.CreateSuffix(suffix);
     }
 
