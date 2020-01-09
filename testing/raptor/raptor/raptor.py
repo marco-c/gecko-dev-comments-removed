@@ -10,6 +10,7 @@ import json
 import os
 import posixpath
 import shutil
+import signal
 import sys
 import tempfile
 import time
@@ -61,13 +62,27 @@ from results import RaptorResultsHandler
 from utils import view_gecko_profile
 
 
+class SignalHandler:
+
+    def __init__(self):
+        signal.signal(signal.SIGINT, self.handle_signal)
+        signal.signal(signal.SIGTERM, self.handle_signal)
+
+    def handle_signal(self, signum, frame):
+        raise SignalHandlerException("Program aborted due to signal %s" % signum)
+
+
+class SignalHandlerException(Exception):
+    pass
+
+
 class Raptor(object):
     """Container class for Raptor"""
 
     def __init__(self, app, binary, run_local=False, obj_path=None,
                  gecko_profile=False, gecko_profile_interval=None, gecko_profile_entries=None,
                  symbols_path=None, host=None, power_test=False, is_release_build=False,
-                 debug_mode=False, post_startup_delay=None, **kwargs):
+                 debug_mode=False, post_startup_delay=None, interrupt_handler=None, **kwargs):
 
         
         if host == 'HOST_IP':
@@ -99,6 +114,7 @@ class Raptor(object):
         self.device = None
         self.profile_class = app
         self.firefox_android_apps = FIREFOX_ANDROID_APPS
+        self.interrupt_handler = interrupt_handler
 
         
         self.debug_mode = debug_mode if self.config['run_local'] else False
@@ -377,31 +393,40 @@ class RaptorDesktop(Raptor):
     def run_test(self, test, timeout=None):
         self.run_test_setup(test)
 
-        if test.get('playback') is not None:
-            self.start_playback(test)
-
         if self.config['host'] not in ('localhost', '127.0.0.1'):
             self.delete_proxy_settings_from_profile()
 
-        
-        self.launch_desktop_browser(test)
-
-        
-        self.control_server._finished = False
-
-        self.wait_for_test_finish(test, timeout)
-
-        self.run_test_teardown()
-
-        
-        if not self.debug_mode:
-            if self.runner.is_running():
-                self.runner.stop()
-        else:
+        try:
             
-            if self.config['run_local']:
-                self.log.info("* debug-mode enabled - please shutdown the browser manually...")
-                self.runner.wait(timeout=None)
+            if test.get('playback') is not None:
+                self.start_playback(test)
+
+            
+            self.launch_desktop_browser(test)
+
+            
+            self.control_server._finished = False
+
+            self.wait_for_test_finish(test, timeout)
+
+        finally:
+            self.run_test_teardown()
+
+            
+            if not self.debug_mode:
+                if self.runner.is_running():
+                    self.runner.stop()
+            else:
+                
+                if self.config['run_local']:
+                    self.log.info("* debug-mode enabled - please shutdown the browser manually...")
+                    self.runner.wait(timeout=None)
+
+    def run_test_teardown(self):
+        self.log.info("stopping %s" % self.config['app'])
+        self.runner.stop()
+
+        super(RaptorDesktop, self).run_test_teardown()
 
     def check_for_crashes(self):
         try:
@@ -628,10 +653,20 @@ class RaptorAndroid(Raptor):
     def run_test(self, test, timeout=None):
         
         
-        if test.get('cold', False) is True:
-            self.run_test_cold(test, timeout)
-        else:
-            self.run_test_warm(test, timeout)
+        try:
+            if test.get('cold', False) is True:
+                self.run_test_cold(test, timeout)
+            else:
+                self.run_test_warm(test, timeout)
+
+        except SignalHandlerException:
+            self.device.stop_application(self.config['binary'])
+
+        finally:
+            if self.config['power_test']:
+                finish_android_power_test(self, test['name'])
+
+            self.run_test_teardown()
 
     def run_test_cold(self, test, timeout=None):
         '''
@@ -721,11 +756,6 @@ class RaptorAndroid(Raptor):
                 self.log.info("* debug-mode enabled - please shutdown the browser manually...")
                 self.runner.wait(timeout=None)
 
-        if self.config['power_test']:
-            finish_android_power_test(self, test['name'])
-
-        self.run_test_teardown()
-
     def run_test_warm(self, test, timeout=None):
         self.log.info("test %s is running in warm mode; browser will NOT be restarted between "
                       "page cycles" % test['name'])
@@ -754,15 +784,19 @@ class RaptorAndroid(Raptor):
 
         self.wait_for_test_finish(test, timeout)
 
-        if self.config['power_test']:
-            finish_android_power_test(self, test['name'])
-
-        self.run_test_teardown()
-
         
         if self.debug_mode and self.config['run_local']:
             self.log.info("* debug-mode enabled - please shutdown the browser manually...")
             self.runner.wait(timeout=None)
+
+    def run_test_teardown(self):
+        self.log.info('removing reverse socket connections')
+        self.device.remove_socket_connections('reverse')
+
+        self.log.info("stopping %s" % self.config['app'])
+        self.device.stop_application(self.config['binary'])
+
+        super(RaptorAndroid, self).run_test_teardown()
 
     def check_for_crashes(self):
         
@@ -840,17 +874,22 @@ def main(args=sys.argv[1:]):
                           is_release_build=args.is_release_build,
                           debug_mode=args.debug_mode,
                           post_startup_delay=args.post_startup_delay,
-                          activity=args.activity)
+                          activity=args.activity,
+                          interrupt_handler=SignalHandler(),
+                          )
 
     raptor.create_browser_profile()
     raptor.create_browser_handler()
     raptor.start_control_server()
 
-    for next_test in raptor_test_list:
-        raptor.run_test(next_test, timeout=int(next_test['page_timeout']))
+    try:
+        for next_test in raptor_test_list:
+            raptor.run_test(next_test, timeout=int(next_test['page_timeout']))
 
-    success = raptor.process_results(raptor_test_names)
-    raptor.clean_up()
+        success = raptor.process_results(raptor_test_names)
+
+    finally:
+        raptor.clean_up()
 
     if not success:
         
