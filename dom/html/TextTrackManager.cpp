@@ -625,12 +625,6 @@ void TextTrackManager::TimeMarchesOn() {
     return;
   }
 
-  nsISupports* parentObject = mMediaElement->OwnerDoc()->GetParentObject();
-  if (NS_WARN_IF(!parentObject)) {
-    return;
-  }
-  nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(parentObject);
-
   if (mMediaElement->ReadyState() == HTMLMediaElement_Binding::HAVE_NOTHING) {
     WEBVTT_LOG(
         "TimeMarchesOn return because media doesn't contain any data yet");
@@ -643,6 +637,15 @@ void TextTrackManager::TimeMarchesOn() {
   }
 
   
+  nsISupports* parentObject = mMediaElement->OwnerDoc()->GetParentObject();
+  if (NS_WARN_IF(!parentObject)) {
+    return;
+  }
+  nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(parentObject);
+  RefPtr<TextTrackCueList> currentCues = new TextTrackCueList(window);
+  RefPtr<TextTrackCueList> otherCues = new TextTrackCueList(window);
+
+  
   auto currentPlaybackTime =
       media::TimeUnit::FromSeconds(mMediaElement->CurrentTime());
   bool hasNormalPlayback = !mHasSeeked;
@@ -652,10 +655,6 @@ void TextTrackManager::TimeMarchesOn() {
       "hasNormalPlayback %d",
       mLastTimeMarchesOnCalled.ToSeconds(), currentPlaybackTime.ToSeconds(),
       hasNormalPlayback);
-
-  
-  RefPtr<TextTrackCueList> currentCues = new TextTrackCueList(window);
-  RefPtr<TextTrackCueList> otherCues = new TextTrackCueList(window);
 
   
   
