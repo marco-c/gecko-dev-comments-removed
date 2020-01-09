@@ -114,12 +114,10 @@ macro_rules! cssparser_internal__to_lowercase {
         // which initializes with `copy_from_slice` the part of the buffer it uses,
         // before it uses it.
         #[allow(unsafe_code)]
-        let mut buffer: [u8; $BUFFER_SIZE] = unsafe {
-            ::std::mem::uninitialized()
-        };
+        let mut buffer: [u8; $BUFFER_SIZE] = unsafe { ::std::mem::uninitialized() };
         let input: &str = $input;
         let $output = $crate::_internal__to_lowercase(&mut buffer, input);
-    }
+    };
 }
 
 
@@ -134,12 +132,10 @@ pub fn _internal__to_lowercase<'a>(buffer: &'a mut [u8], input: &'a str) -> Opti
     if let Some(buffer) = buffer.get_mut(..input.len()) {
         if let Some(first_uppercase) = input.bytes().position(|byte| matches!(byte, b'A'...b'Z')) {
             buffer.copy_from_slice(input.as_bytes());
-            ::std::ascii::AsciiExt::make_ascii_lowercase(&mut buffer[first_uppercase..]);
+            buffer[first_uppercase..].make_ascii_lowercase();
             
             
-            unsafe {
-                Some(::std::str::from_utf8_unchecked(buffer))
-            }
+            unsafe { Some(::std::str::from_utf8_unchecked(buffer)) }
         } else {
             
             Some(input)
