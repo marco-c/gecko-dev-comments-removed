@@ -10,6 +10,7 @@
 #include "Layers.h"
 #include "mozilla/layers/LayerManagerComposite.h"
 #include "LayerMLGPU.h"
+#include "mozilla/layers/MLGPUScreenshotGrabber.h"
 
 namespace mozilla {
 namespace layers {
@@ -124,6 +125,9 @@ class LayerManagerMLGPU final : public HostLayerManager {
   
   uint32_t mDebugFrameNumber;
   RefPtr<MLGBuffer> mDiagnosticVertices;
+
+  
+  MLGPUScreenshotGrabber mProfilerScreenshotGrabber;
 };
 
 }  
