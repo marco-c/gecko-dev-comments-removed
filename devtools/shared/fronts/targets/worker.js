@@ -24,6 +24,10 @@ class WorkerTargetFront extends
 
   form(json) {
     this.actorID = json.actor;
+    
+    
+    
+    this.id = json.id || this.actorID;
 
     
     
