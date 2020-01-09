@@ -125,6 +125,7 @@ const UPDATED_REQ_PROPS = [
 class RequestListItem extends Component {
   static get propTypes() {
     return {
+      blocked: PropTypes.bool,
       connector: PropTypes.object.isRequired,
       columns: PropTypes.object.isRequired,
       item: PropTypes.object.isRequired,
@@ -187,6 +188,7 @@ class RequestListItem extends Component {
 
   render() {
     const {
+      blocked,
       connector,
       columns,
       item,
@@ -205,6 +207,7 @@ class RequestListItem extends Component {
     const classList = ["request-list-item", index % 2 ? "odd" : "even"];
     isSelected && classList.push("selected");
     fromCache && classList.push("fromCache");
+    blocked && classList.push("blocked");
 
     return (
       dom.tr({

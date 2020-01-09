@@ -150,6 +150,7 @@ const UPDATE_PROPS = [
   "stacktrace",
   "isThirdPartyTrackingResource",
   "referrerPolicy",
+  "blockedReason",
 ];
 
 const PANELS = {
