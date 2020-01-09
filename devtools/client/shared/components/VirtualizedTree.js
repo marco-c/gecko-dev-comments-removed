@@ -858,6 +858,7 @@ class ArrowExpanderClass extends Component {
       className: "arrow theme-twisty",
       
       tabIndex: "-1",
+      "aria-hidden": true,
       onClick: this.props.expanded
         ? () => this.props.onCollapse(this.props.item)
         : e => this.props.onExpand(this.props.item, e.altKey),
