@@ -102,9 +102,6 @@ function Sandbox(options) {
     sandboxPrototype: "prototype" in options ? options.prototype : {},
     invisibleToDebugger: "invisibleToDebugger" in options ?
                          options.invisibleToDebugger : false,
-    
-    
-    freshCompartment: true,
   };
 
   const sandbox = Cu.Sandbox(systemPrincipal, options);

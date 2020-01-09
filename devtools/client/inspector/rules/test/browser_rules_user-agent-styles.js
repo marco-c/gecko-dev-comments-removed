@@ -58,6 +58,10 @@ const TEST_DATA = [
 ];
 
 add_task(async function() {
+  
+  
+  Cu.forceShrinkingGC();
+
   requestLongerTimeout(4);
 
   info("Starting the test with the pref set to true before toolbox is opened");
@@ -79,6 +83,10 @@ add_task(async function() {
 
   info("Resetting " + PREF_UA_STYLES);
   Services.prefs.clearUserPref(PREF_UA_STYLES);
+
+  
+  
+  Cu.forceShrinkingGC();
 });
 
 async function setUserAgentStylesPref(val) {
