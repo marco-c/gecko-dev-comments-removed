@@ -79,20 +79,19 @@ bool nsHTMLButtonControlFrame::ShouldClipPaintingToBorderBox() {
 
 void nsHTMLButtonControlFrame::BuildDisplayList(
     nsDisplayListBuilder* aBuilder, const nsDisplayListSet& aLists) {
-  
-  Maybe<DisplayListClipState::AutoSaveRestore> eventClipState;
-  const bool isForEventDelivery = aBuilder->IsForEventDelivery();
-  if (isForEventDelivery) {
-    eventClipState.emplace(aBuilder);
-    nsRect rect(aBuilder->ToReferenceFrame(this), GetSize());
-    nscoord radii[8];
-    bool hasRadii = GetBorderRadii(radii);
-    eventClipState->ClipContainingBlockDescendants(rect,
-                                                   hasRadii ? radii : nullptr);
-  }
-
   nsDisplayList onTop;
   if (IsVisibleForPainting()) {
+    
+    Maybe<DisplayListClipState::AutoSaveRestore> eventClipState;
+    if (aBuilder->IsForEventDelivery()) {
+      eventClipState.emplace(aBuilder);
+      nsRect rect(aBuilder->ToReferenceFrame(this), GetSize());
+      nscoord radii[8];
+      bool hasRadii = GetBorderRadii(radii);
+      eventClipState->ClipContainingBlockDescendants(rect,
+          hasRadii ? radii : nullptr);
+    }
+
     mRenderer.DisplayButton(aBuilder, aLists.BorderBackground(), &onTop);
   }
 
