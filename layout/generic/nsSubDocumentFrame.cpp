@@ -435,7 +435,7 @@ void nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     needsOwnLayer = true;
   }
 
-  if (aBuilder->IsRetainingDisplayList()) {
+  if (subdocRootFrame && aBuilder->IsRetainingDisplayList()) {
     
     
     
@@ -443,6 +443,7 @@ void nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     
     if (mPreviousCaret != aBuilder->GetCaretFrame()) {
       dirty = visible;
+      aBuilder->MarkFrameModifiedDuringBuilding(subdocRootFrame);
       aBuilder->RebuildAllItemsInCurrentSubtree();
       
       
