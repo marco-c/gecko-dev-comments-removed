@@ -4353,10 +4353,6 @@ nsCSSFrameConstructor::FindDisplayData(const nsStyleDisplay& aDisplay,
       FCDATA_FOR_DISPLAY(StyleDisplay::None, UNREACHABLE_FCDATA()),
       FCDATA_FOR_DISPLAY(StyleDisplay::Block, UNREACHABLE_FCDATA()),
       FCDATA_FOR_DISPLAY(StyleDisplay::FlowRoot, UNREACHABLE_FCDATA()),
-      
-      
-      
-      
       FCDATA_FOR_DISPLAY(
           StyleDisplay::Inline,
           FULL_CTOR_FCDATA(FCDATA_IS_INLINE | FCDATA_IS_LINE_PARTICIPANT,
