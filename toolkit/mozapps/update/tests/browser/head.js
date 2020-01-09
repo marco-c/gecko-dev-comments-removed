@@ -57,6 +57,9 @@ add_task(async function setupTestCommon() {
       [PREF_APP_UPDATE_DOWNLOAD_MAXATTEMPTS, 2],
       [PREF_APP_UPDATE_LOG, gDebugTest],
       [PREF_APP_UPDATE_SERVICE_ENABLED, false],
+      
+      
+      ["browser.library.activity-stream.enabled", false],
     ],
   });
 
