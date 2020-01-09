@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+#include "FuzzingInterface.h"
+
+namespace mozilla {
+
+LazyLogModule gFuzzingLog("nsFuzzing");
+
+} 
