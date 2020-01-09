@@ -352,7 +352,11 @@ void nsTableColGroupFrame::Reflow(nsPresContext* aPresContext,
 
 void nsTableColGroupFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                             const nsDisplayListSet& aLists) {
-  DisplayOutsetBoxShadow(aBuilder, aLists.BorderBackground());
+  
+  
+  
+  
+  
 
   
   AutoTArray<uint32_t, 1> colIdx;
@@ -377,13 +381,6 @@ void nsTableColGroupFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                                offset);
     }
   }
-
-  DisplayInsetBoxShadow(aBuilder, aLists.BorderBackground());
-
-  
-  
-  
-  
 
   for (nsIFrame* kid : PrincipalChildList()) {
     BuildDisplayListForChild(aBuilder, kid, aLists);
