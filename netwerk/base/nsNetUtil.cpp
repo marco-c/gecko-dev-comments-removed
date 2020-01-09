@@ -1624,23 +1624,29 @@ nsresult NS_NewURI(
 }
 
 nsresult NS_NewURI(
-    nsIURI **result, const nsAString &spec, const char *charset ,
-    nsIURI *baseURI ,
+    nsIURI **result, const nsAString &aSpec,
+    const char *charset , nsIURI *baseURI ,
     nsIIOService
         *ioService )  
 {
-  return NS_NewURI(result, NS_ConvertUTF16toUTF8(spec), charset, baseURI,
-                   ioService);
+  nsAutoCString spec;
+  if (!AppendUTF16toUTF8(aSpec, spec, mozilla::fallible)) {
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+  return NS_NewURI(result, spec, charset, baseURI, ioService);
 }
 
 nsresult NS_NewURI(
-    nsIURI **result, const nsAString &spec, NotNull<const Encoding *> encoding,
+    nsIURI **result, const nsAString &aSpec, NotNull<const Encoding *> encoding,
     nsIURI *baseURI ,
     nsIIOService
         *ioService )  
 {
-  return NS_NewURI(result, NS_ConvertUTF16toUTF8(spec), encoding, baseURI,
-                   ioService);
+  nsAutoCString spec;
+  if (!AppendUTF16toUTF8(aSpec, spec, mozilla::fallible)) {
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+  return NS_NewURI(result, spec, encoding, baseURI, ioService);
 }
 
 nsresult NS_NewURI(
