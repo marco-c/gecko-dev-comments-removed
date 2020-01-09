@@ -709,7 +709,7 @@ spacer {
 }
 
 canvas {
-  -moz-user-select: none;
+  user-select: none;
 }
 
 
