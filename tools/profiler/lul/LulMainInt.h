@@ -184,7 +184,7 @@ struct LExpr {
 
   
   
-  string ShowRule(const char* aNewReg) const;
+  std::string ShowRule(const char* aNewReg) const;
 
   
   

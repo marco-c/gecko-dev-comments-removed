@@ -4,22 +4,21 @@
 
 
 
-#include <ostream>
-#include "platform.h"
-#include "mozilla/HashFunctions.h"
-#include "mozilla/Sprintf.h"
-#include "mozilla/Logging.h"
+#include "ProfileBufferEntry.h"
 
+#include "platform.h"
+#include "ProfileBuffer.h"
+
+#include "js/TrackedOptimizationInfo.h"
+#include "jsapi.h"
+#include "jsfriendapi.h"
+#include "mozilla/HashFunctions.h"
+#include "mozilla/Logging.h"
+#include "mozilla/Sprintf.h"
 #include "nsThreadUtils.h"
 #include "nsXULAppAPI.h"
 
-
-#include "jsapi.h"
-#include "jsfriendapi.h"
-#include "js/TrackedOptimizationInfo.h"
-
-
-#include "ProfileBufferEntry.h"
+#include <ostream>
 
 using namespace mozilla;
 
@@ -71,21 +70,6 @@ ProfileBufferEntry::ProfileBufferEntry(Kind aKind, uint64_t aUint64)
 
 
 
-
-class JSONSchemaWriter {
-  JSONWriter& mWriter;
-  uint32_t mIndex;
-
- public:
-  explicit JSONSchemaWriter(JSONWriter& aWriter) : mWriter(aWriter), mIndex(0) {
-    aWriter.StartObjectProperty("schema",
-                                SpliceableJSONWriter::SingleLineStyle);
-  }
-
-  void WriteField(const char* aName) { mWriter.IntProperty(aName, mIndex++); }
-
-  ~JSONSchemaWriter() { mWriter.EndObject(); }
-};
 
 struct TypeInfo {
   Maybe<nsCString> mKeyedBy;

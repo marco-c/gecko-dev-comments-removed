@@ -42,11 +42,11 @@
 #ifndef LulDwarfExt_h
 #define LulDwarfExt_h
 
-#include <stdint.h>
+#include "LulDwarfSummariser.h"
 
 #include "mozilla/Assertions.h"
 
-#include "LulDwarfSummariser.h"
+#include <stdint.h>
 
 typedef signed char int8;
 typedef short int16;
@@ -66,6 +66,8 @@ typedef unsigned __PTRDIFF_TYPE__ uintptr;
 #endif
 
 namespace lul {
+
+class UniqueString;
 
 
 
@@ -1277,8 +1279,9 @@ class DwarfCFIToModule : public CallFrameInfo::Handler {
 
 
 
-int32_t parseDwarfExpr(Summariser *summ, const ByteReader *reader, string expr,
-                       bool debug, bool pushCfaAtStart, bool derefAtEnd);
+int32_t parseDwarfExpr(Summariser *summ, const ByteReader *reader,
+                       std::string expr, bool debug, bool pushCfaAtStart,
+                       bool derefAtEnd);
 
 }  
 

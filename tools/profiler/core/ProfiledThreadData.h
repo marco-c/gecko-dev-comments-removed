@@ -7,14 +7,16 @@
 #ifndef ProfiledThreadData_h
 #define ProfiledThreadData_h
 
-#include "mozilla/NotNull.h"
-#include "mozilla/TimeStamp.h"
-#include "mozilla/UniquePtrExtensions.h"
+#include "platform.h"
+#include "ProfileBufferEntry.h"
+#include "ThreadInfo.h"
+#include "ThreadResponsiveness.h"
 
 #include "js/ProfilingStack.h"
-#include "platform.h"
-#include "ProfileBuffer.h"
-#include "ThreadInfo.h"
+#include "mozilla/TimeStamp.h"
+#include "mozilla/UniquePtr.h"
+
+class ProfileBuffer;
 
 
 
@@ -51,7 +53,7 @@ class ProfiledThreadData final {
     MOZ_ASSERT(!mBufferPositionWhenReceivedJSContext,
                "JSContext should have been cleared before the thread was "
                "unregistered");
-    mUnregisterTime = TimeStamp::Now();
+    mUnregisterTime = mozilla::TimeStamp::Now();
     mBufferPositionWhenUnregistered = mozilla::Some(aBufferPosition);
   }
   mozilla::Maybe<uint64_t> BufferPositionWhenUnregistered() {
@@ -66,7 +68,7 @@ class ProfiledThreadData final {
                   double aSinceTime, bool aJSTracerEnabled);
 
   void StreamTraceLoggerJSON(JSContext* aCx, SpliceableJSONWriter& aWriter,
-                             const TimeStamp& aProcessStartTime);
+                             const mozilla::TimeStamp& aProcessStartTime);
 
   
   
@@ -85,7 +87,7 @@ class ProfiledThreadData final {
   
   
   void NotifyAboutToLoseJSContext(JSContext* aCx,
-                                  const TimeStamp& aProcessStartTime,
+                                  const mozilla::TimeStamp& aProcessStartTime,
                                   ProfileBuffer& aBuffer);
 
  private:
@@ -100,7 +102,7 @@ class ProfiledThreadData final {
   
   
   
-  UniquePtr<JITFrameInfo> mJITFrameInfoForPreviousJSContexts;
+  mozilla::UniquePtr<JITFrameInfo> mJITFrameInfoForPreviousJSContexts;
 
   
   
@@ -129,8 +131,8 @@ void StreamSamplesAndMarkers(const char* aName, int aThreadId,
                              const ProfileBuffer& aBuffer,
                              SpliceableJSONWriter& aWriter,
                              const mozilla::TimeStamp& aProcessStartTime,
-                             const TimeStamp& aRegisterTime,
-                             const TimeStamp& aUnregisterTime,
+                             const mozilla::TimeStamp& aRegisterTime,
+                             const mozilla::TimeStamp& aUnregisterTime,
                              double aSinceTime, UniqueStacks& aUniqueStacks);
 
 #endif  

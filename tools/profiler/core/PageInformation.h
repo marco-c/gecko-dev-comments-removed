@@ -7,10 +7,13 @@
 #ifndef PageInformation_h
 #define PageInformation_h
 
+#include "mozilla/Maybe.h"
+#include "mozilla/MemoryReporting.h"
 #include "nsID.h"
+#include "nsISupportsImpl.h"
 #include "nsString.h"
-#include "platform.h"
-#include "ProfileJSONWriter.h"
+
+class SpliceableJSONWriter;
 
 
 

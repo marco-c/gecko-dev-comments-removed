@@ -4,8 +4,9 @@
 
 
 
-#include "GeckoTaskTracerImpl.h"
 #include "TracedTaskCommon.h"
+
+#include "GeckoTaskTracerImpl.h"
 
 
 #define ENSURE_TRUE_VOID(x)   \

@@ -4,8 +4,11 @@
 
 
 
-#include "GeckoProfiler.h"
 #include "ProfilerChild.h"
+
+#include "GeckoProfiler.h"
+#include "platform.h"
+
 #include "nsThreadUtils.h"
 
 namespace mozilla {

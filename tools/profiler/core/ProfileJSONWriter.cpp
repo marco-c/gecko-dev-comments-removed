@@ -3,9 +3,9 @@
 
 
 
-#include "mozilla/HashFunctions.h"
-
 #include "ProfileJSONWriter.h"
+
+#include "mozilla/HashFunctions.h"
 
 void ChunkedJSONWriteFunc::Write(const char* aStr) {
   MOZ_ASSERT(mChunkPtr >= mChunkList.back().get() && mChunkPtr <= mChunkEnd);

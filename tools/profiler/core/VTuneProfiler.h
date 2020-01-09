@@ -24,16 +24,16 @@
 
 #else
 
-#  include <stddef.h>
-#  include <unordered_map>
-#  include <string>
-
 #  include "GeckoProfiler.h"
 
 
 
 
 #  include "vtune/ittnotify.h"
+
+#  include <stddef.h>
+#  include <unordered_map>
+#  include <string>
 
 class VTuneProfiler {
  public:

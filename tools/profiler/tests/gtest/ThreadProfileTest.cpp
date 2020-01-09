@@ -4,10 +4,10 @@
 
 
 
-#include "gtest/gtest.h"
-
 #include "ProfileBufferEntry.h"
 #include "ThreadInfo.h"
+
+#include "gtest/gtest.h"
 
 
 TEST(ThreadProfile, InsertOneEntry) {

@@ -8,7 +8,7 @@
 #define ThreadInfo_h
 
 #include "mozilla/TimeStamp.h"
-
+#include "nsISupportsImpl.h"
 #include "nsString.h"
 
 

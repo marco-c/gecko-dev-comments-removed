@@ -3,10 +3,11 @@
 
 
 
-#include "mozilla/ModuleUtils.h"
-#include "nsCOMPtr.h"
 #include "nsProfiler.h"
 #include "nsProfilerCIID.h"
+
+#include "mozilla/ModuleUtils.h"
+#include "nsCOMPtr.h"
 
 NS_GENERIC_FACTORY_CONSTRUCTOR_INIT(nsProfiler, Init)
 

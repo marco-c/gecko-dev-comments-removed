@@ -29,18 +29,13 @@
 #ifndef TOOLS_PLATFORM_H_
 #define TOOLS_PLATFORM_H_
 
-#include <stdint.h>
-#include <math.h>
-#include "MainThreadUtils.h"
-#include "ThreadResponsiveness.h"
-#include "mozilla/Logging.h"
-#include "mozilla/MemoryReporting.h"
-#include "mozilla/StaticMutex.h"
-#include "mozilla/TimeStamp.h"
-#include "mozilla/UniquePtr.h"
-#include "mozilla/Unused.h"
 #include "PlatformMacros.h"
-#include <vector>
+
+#include "mozilla/Logging.h"
+#include "mozilla/UniquePtr.h"
+
+#include <functional>
+#include <stdint.h>
 
 
 
@@ -115,6 +110,10 @@ void AppendSharedLibraries(mozilla::JSONWriter& aWriter);
 
 uint32_t ParseFeaturesFromStringArray(const char** aFeatures,
                                       uint32_t aFeatureCount);
+
+void profiler_get_profile_json_into_lazily_allocated_buffer(
+    const std::function<char*(size_t)>& aAllocator, double aSinceTime,
+    bool aIsShuttingDown);
 
 
 enum class JSSamplingFlags {
