@@ -1,5 +1,3 @@
-#![cfg_attr(test, deny(warnings))]
-#![deny(missing_docs)]
 
 
 
@@ -7,11 +5,12 @@
 
 
 
-#![no_std]
 
-extern crate void;
 
-use core::mem;
+
+
+
+
 
 
 
@@ -21,8 +20,10 @@ use core::mem;
 
 #[inline]
 pub unsafe fn unreachable() -> ! {
-    let x: &void::Void = mem::transmute(1usize);
-    void::unreachable(*x)
+    
+    enum Void { }
+    let x: &Void = ::std::mem::transmute(1usize);
+    match *x {}
 }
 
 
@@ -52,10 +53,7 @@ impl<T> UncheckedOptionExt<T> for Option<T> {
     }
 
     unsafe fn unchecked_unwrap_none(self) {
-        match self {
-            Some(_) => unreachable(),
-            None => ()
-        }
+        if self.is_some() { unreachable() }
     }
 }
 
@@ -74,4 +72,3 @@ impl<T, E> UncheckedResultExt<T, E> for Result<T, E> {
         }
     }
 }
-
