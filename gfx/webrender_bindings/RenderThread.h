@@ -219,10 +219,18 @@ class RenderThread final {
   WebRenderThreadPool& ThreadPool() { return mThreadPool; }
 
   
-  WebRenderProgramCache* ProgramCache();
+  
+  
+  WebRenderProgramCache* GetProgramCache() {
+    MOZ_ASSERT(IsInRenderThread());
+    return mProgramCache.get();
+  }
 
   
-  WebRenderShaders* Shaders() { return mShaders.get(); }
+  WebRenderShaders* GetShaders() {
+    MOZ_ASSERT(IsInRenderThread());
+    return mShaders.get();
+  }
 
   
   gl::GLContext* SharedGL();

@@ -70,17 +70,18 @@ class NewRenderer : public RendererEvent {
 
     bool supportLowPriorityTransactions = true;  
     wr::Renderer* wrRenderer = nullptr;
-    if (!wr_window_new(
-            aWindowId, mSize.width, mSize.height,
-            supportLowPriorityTransactions, gfxPrefs::WebRenderPictureCaching(),
-            compositor->gl(),
-            aRenderThread.ProgramCache() ? aRenderThread.ProgramCache()->Raw()
-                                         : nullptr,
-            aRenderThread.Shaders() ? aRenderThread.Shaders()->RawShaders()
-                                    : nullptr,
-            aRenderThread.ThreadPool().Raw(), &WebRenderMallocSizeOf,
-            &WebRenderMallocEnclosingSizeOf, mDocHandle, &wrRenderer,
-            mMaxTextureSize)) {
+    if (!wr_window_new(aWindowId, mSize.width, mSize.height,
+                       supportLowPriorityTransactions,
+                       gfxPrefs::WebRenderPictureCaching(), compositor->gl(),
+                       aRenderThread.GetProgramCache()
+                           ? aRenderThread.GetProgramCache()->Raw()
+                           : nullptr,
+                       aRenderThread.GetShaders()
+                           ? aRenderThread.GetShaders()->RawShaders()
+                           : nullptr,
+                       aRenderThread.ThreadPool().Raw(), &WebRenderMallocSizeOf,
+                       &WebRenderMallocEnclosingSizeOf, mDocHandle, &wrRenderer,
+                       mMaxTextureSize)) {
       
       return;
     }
