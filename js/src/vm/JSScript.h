@@ -2494,7 +2494,11 @@ class JSScript : public js::gc::TenuredCell {
   MOZ_MUST_USE bool appendSourceDataForToString(JSContext* cx,
                                                 js::StringBuffer& buf);
 
-  static bool tryLoadSource(JSContext* cx, js::ScriptSource* ss, bool* loaded);
+  
+  
+  
+  
+  static bool loadSource(JSContext* cx, js::ScriptSource* ss, bool* loaded);
 
   void setSourceObject(js::ScriptSourceObject* object);
   js::ScriptSourceObject* sourceObject() const { return sourceObject_; }
