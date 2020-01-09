@@ -1161,3 +1161,26 @@ async function pauseDebugger(dbg) {
   });
   await onPaused;
 }
+
+
+
+
+
+
+function hasVerticalOverflow(container) {
+  return container.scrollHeight > container.clientHeight;
+}
+
+
+
+
+
+
+function isScrolledToBottom(container) {
+  if (!container.lastChild) {
+    return true;
+  }
+  const lastNodeHeight = container.lastChild.clientHeight;
+  return container.scrollTop + container.clientHeight >=
+         container.scrollHeight - lastNodeHeight / 2;
+}
