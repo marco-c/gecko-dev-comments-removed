@@ -261,7 +261,7 @@ var PageThumbs = {
       return;
     }
     
-    PageThumbUtils.createSnapshotThumbnail(aBrowser.ownerGlobal,
+    PageThumbUtils.createSnapshotThumbnail(aBrowser.contentWindow,
                                            aCanvas,
                                            aArgs);
 
