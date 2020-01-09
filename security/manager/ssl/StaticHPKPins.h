@@ -1067,6 +1067,7 @@ static const TransportSecurityPreload kPublicKeyPinningPreloadList[] = {
   { "profiles.google.com", true, false, false, -1, &kPinset_google_root_pems },
   { "py.search.yahoo.com", false, true, false, -1, &kPinset_yahoo },
   { "qc.search.yahoo.com", false, true, false, -1, &kPinset_yahoo },
+  { "remotedesktop.corp.google.com", true, false, false, -1, &kPinset_google_root_pems },
   { "research.facebook.com", true, false, false, -1, &kPinset_facebook },
   { "ro.search.yahoo.com", false, true, false, -1, &kPinset_yahoo },
   { "ru.search.yahoo.com", false, true, false, -1, &kPinset_yahoo },
@@ -1151,4 +1152,4 @@ static const TransportSecurityPreload kPublicKeyPinningPreloadList[] = {
 
 static const int32_t kUnknownId = -1;
 
-static const PRTime kPreloadPKPinsExpirationTime = INT64_C(1561379020503000);
+static const PRTime kPreloadPKPinsExpirationTime = INT64_C(1561638170711000);
