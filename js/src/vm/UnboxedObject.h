@@ -285,13 +285,6 @@ inline bool IsUnboxedObjectClass(const Class* class_) {
   return class_ == &UnboxedPlainObject::class_;
 }
 
-
-
-
-bool TryConvertToUnboxedLayout(JSContext* cx, AutoEnterAnalysis& enter,
-                               Shape* templateShape, ObjectGroup* group,
-                               PreliminaryObjectArray* objects);
-
 }  
 
 namespace JS {
