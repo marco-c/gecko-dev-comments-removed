@@ -21,7 +21,7 @@ if (AppConstants.platform != "macosx" &&
      AppConstants.platform == "win")) {
   EXPECTED_REFLOWS_FIRST_OPEN.push({
     stack: [
-      "_rebuild@chrome://browser/content/search/search-one-offs.js",
+      "__rebuild@chrome://browser/content/search/search-one-offs.js",
       
 
 

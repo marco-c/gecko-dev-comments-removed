@@ -82,6 +82,12 @@ class SearchOneOffs {
 
 
 
+    this._rebuilding = false;
+
+    
+
+
+
 
     this._addEngineMenuThreshold = 5;
 
@@ -402,6 +408,24 @@ class SearchOneOffs {
 
 
   async _rebuild() {
+    if (this._rebuilding) {
+      return;
+    }
+
+    this._rebuilding = true;
+    try {
+      await this.__rebuild();
+    } catch (ex) {
+      Cu.reportError("Search-one-offs::_rebuild() error: " + ex);
+    } finally {
+      this._rebuilding = false;
+    }
+  }
+
+  
+
+
+  async __rebuild() {
     
     this._updateAfterQueryChanged();
 
