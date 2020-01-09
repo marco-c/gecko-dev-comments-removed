@@ -3235,6 +3235,14 @@ var SessionStoreInternal = {
       tabState.index = Math.max(1, Math.min(tabState.index, tabState.entries.length));
     } else {
       options.loadArguments = loadArguments;
+
+      
+      
+      
+      
+      if (loadArguments.redirectLoadSwitchId) {
+        loadArguments.redirectHistoryIndex = tabState.requestedIndex - 1;
+      }
     }
 
     
