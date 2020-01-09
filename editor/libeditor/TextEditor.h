@@ -62,9 +62,9 @@ class TextEditor : public EditorBase, public nsIPlaintextEditor {
 
   
   
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
+  MOZ_CAN_RUN_SCRIPT
   NS_IMETHOD Undo(uint32_t aCount) final;
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
+  MOZ_CAN_RUN_SCRIPT
   NS_IMETHOD Redo(uint32_t aCount) final;
 
   NS_IMETHOD Cut() override;
