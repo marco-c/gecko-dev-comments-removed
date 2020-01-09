@@ -60,6 +60,11 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   
   void NotifySetUserGestureActivationFromIPC(bool aIsUserGestureActivation);
 
+  
+  
+  bool ValidateTransaction(const Transaction& aTransaction,
+                           ContentParent* aSource);
+
  protected:
   void Traverse(nsCycleCollectionTraversalCallback& cb);
   void Unlink();
