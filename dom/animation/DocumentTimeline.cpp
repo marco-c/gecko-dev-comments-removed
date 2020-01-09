@@ -188,13 +188,6 @@ void DocumentTimeline::MostRecentRefreshTimeUpdated() {
 }
 
 void DocumentTimeline::WillRefresh(mozilla::TimeStamp aTime) {
-  
-  
-  
-  
-  
-  
-  nsAutoMicroTask mt;
   MostRecentRefreshTimeUpdated();
 }
 

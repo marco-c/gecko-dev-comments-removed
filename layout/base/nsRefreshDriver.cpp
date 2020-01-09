@@ -1897,6 +1897,26 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime) {
       }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (i == 1) {
+      nsAutoMicroTask mt;
+    }
+
+    
+    
+    if (i == 1 && (!mPresContext || !mPresContext->GetPresShell())) {
+      StopTimer();
+      return;
+    }
+
     if (i == 1) {
       
 
