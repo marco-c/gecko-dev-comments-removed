@@ -457,10 +457,13 @@ class UrlbarController {
 
   _notify(name, ...params) {
     for (let listener of this._listeners) {
-      try {
-        listener[name](...params);
-      } catch (ex) {
-        Cu.reportError(ex);
+      
+      if (typeof listener[name] != "undefined") {
+        try {
+          listener[name](...params);
+        } catch (ex) {
+          Cu.reportError(ex);
+        }
       }
     }
   }
