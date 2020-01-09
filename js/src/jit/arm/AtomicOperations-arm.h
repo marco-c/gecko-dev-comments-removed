@@ -32,6 +32,15 @@
 #  error "This file only for gcc-compatible compilers"
 #endif
 
+inline bool js::jit::AtomicOperations::Initialize() {
+  
+  return true;
+}
+
+inline void js::jit::AtomicOperations::ShutDown() {
+  
+}
+
 inline bool js::jit::AtomicOperations::hasAtomic8() {
   
   

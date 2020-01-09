@@ -37,6 +37,15 @@
 
 
 
+inline bool js::jit::AtomicOperations::Initialize() {
+  
+  return true;
+}
+
+inline void js::jit::AtomicOperations::ShutDown() {
+  
+}
+
 inline bool js::jit::AtomicOperations::hasAtomic8() { return true; }
 
 inline bool js::jit::AtomicOperations::isLockfree8() {

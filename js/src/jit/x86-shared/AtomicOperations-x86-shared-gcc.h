@@ -58,6 +58,15 @@
 
 
 
+inline bool js::jit::AtomicOperations::Initialize() {
+  
+  return true;
+}
+
+inline void js::jit::AtomicOperations::ShutDown() {
+  
+}
+
 
 
 
