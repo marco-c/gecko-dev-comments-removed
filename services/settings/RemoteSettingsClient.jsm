@@ -215,10 +215,15 @@ class RemoteSettingsClient extends EventEmitter {
 
 
 
-  async get(options = {}) {
-    const { filters = {}, order = "" } = options; 
 
-    if (!(await Utils.hasLocalData(this))) {
+  async get(options = {}) {
+    const {
+      filters = {},
+      order = "", 
+      syncIfEmpty = true,
+    } = options;
+
+    if (syncIfEmpty && !(await Utils.hasLocalData(this))) {
       try {
         
         
