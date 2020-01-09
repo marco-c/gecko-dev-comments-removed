@@ -4647,8 +4647,15 @@ void CanvasRenderingContext2D::DrawWindow(nsGlobalWindowInner& aWindow,
   } else {
     IntSize dtSize = IntSize::Ceil(sw, sh);
     if (!Factory::AllowedSurfaceSize(dtSize)) {
-      aError.Throw(NS_ERROR_FAILURE);
-      return;
+      
+      Size limitSize(mTarget->GetSize());
+      limitSize.Scale(matrix._11, matrix._22);
+      dtSize = Min(dtSize, IntSize::Ceil(limitSize));
+      
+      if (!Factory::AllowedSurfaceSize(dtSize)) {
+        aError.Throw(NS_ERROR_FAILURE);
+        return;
+      }
     }
     drawDT = gfxPlatform::GetPlatform()->CreateOffscreenContentDrawTarget(
         dtSize, SurfaceFormat::B8G8R8A8);
