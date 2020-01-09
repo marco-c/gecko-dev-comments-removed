@@ -201,7 +201,7 @@ class SourceParseContext : public ParseContext {
   template <typename ParseHandler, typename Unit>
   SourceParseContext(GeneralParser<ParseHandler, Unit>* prs, SharedContext* sc,
                      Directives* newDirectives)
-      : ParseContext(prs->cx_, prs->pc, sc, prs->tokenStream, prs->usedNames,
+      : ParseContext(prs->cx_, prs->pc_, sc, prs->tokenStream, prs->usedNames,
                      newDirectives,
                      mozilla::IsSame<ParseHandler, FullParseHandler>::value) {}
 };
@@ -258,7 +258,7 @@ class MOZ_STACK_CLASS ParserBase : private JS::AutoGCRooter,
   TraceListNode* traceListHead_;
 
   
-  ParseContext* pc;
+  ParseContext* pc_;
 
   
   UsedNameTracker& usedNames;
@@ -316,11 +316,11 @@ class MOZ_STACK_CLASS ParserBase : private JS::AutoGCRooter,
   TokenPos pos() const { return anyChars.currentToken().pos; }
 
   
-  bool yieldExpressionsSupported() const { return pc->isGenerator(); }
+  bool yieldExpressionsSupported() const { return pc_->isGenerator(); }
 
   bool setLocalStrictMode(bool strict) {
     MOZ_ASSERT(anyChars.debugHasNoLookahead());
-    return pc->sc()->setLocalStrictMode(strict);
+    return pc_->sc()->setLocalStrictMode(strict);
   }
 
  public:
@@ -328,7 +328,7 @@ class MOZ_STACK_CLASS ParserBase : private JS::AutoGCRooter,
 
   JSContext* getContext() const override { return cx_; }
 
-  bool strictMode() const override { return pc->sc()->strict(); }
+  bool strictMode() const override { return pc_->sc()->strict(); }
 
   const JS::ReadOnlyCompileOptions& options() const override {
     return anyChars.options();
@@ -786,7 +786,7 @@ class MOZ_STACK_CLASS GeneralParser : public PerHandlerParser<ParseHandler> {
   using Base::cx_;
   using Base::handler;
   using Base::isValidSimpleAssignmentTarget;
-  using Base::pc;
+  using Base::pc_;
   using Base::usedNames;
 
  private:
@@ -1505,7 +1505,7 @@ class MOZ_STACK_CLASS Parser<SyntaxParseHandler, Unit> final
   using Base::noteDeclaredName;
   using Base::null;
   using Base::options;
-  using Base::pc;
+  using Base::pc_;
   using Base::pos;
   using Base::propagateFreeNamesAndMarkClosedOverBindings;
   using Base::ss;
@@ -1602,7 +1602,7 @@ class MOZ_STACK_CLASS Parser<FullParseHandler, Unit> final
   using Base::handler;
   using Base::newFunctionBox;
   using Base::options;
-  using Base::pc;
+  using Base::pc_;
   using Base::pos;
   using Base::ss;
   using Base::tokenStream;
