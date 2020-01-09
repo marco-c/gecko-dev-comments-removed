@@ -31,7 +31,6 @@
 
 
 
-
 const {PromiseTestUtils} = ChromeUtils.import("resource://testing-common/PromiseTestUtils.jsm", {});
 PromiseTestUtils.whitelistRejectionsGlobally(/Message manager disconnected/);
 PromiseTestUtils.whitelistRejectionsGlobally(/No matching message handler/);
@@ -287,12 +286,6 @@ function closeBrowserAction(extension, win = window) {
   CustomizableUI.hidePanelForNode(node);
 
   return Promise.resolve();
-}
-
-function openBrowserActionPanel(extension, win = window, awaitLoad = false) {
-  clickBrowserAction(extension, win);
-
-  return awaitExtensionPanel(extension, win, awaitLoad);
 }
 
 async function toggleBookmarksToolbar(visible = true) {
