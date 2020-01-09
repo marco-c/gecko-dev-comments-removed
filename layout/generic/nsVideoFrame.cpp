@@ -230,6 +230,10 @@ already_AddRefed<Layer> nsVideoFrame::BuildLayer(
 
   layer->SetBaseTransform(gfx::Matrix4x4::From2D(transform));
   layer->SetScaleToSize(scaleHint, ScaleMode::STRETCH);
+
+  uint32_t flags = element->HasAlpha() ? 0 : Layer::CONTENT_OPAQUE;
+  layer->SetContentFlags(flags);
+
   RefPtr<Layer> result = layer.forget();
   return result.forget();
 }
@@ -469,13 +473,17 @@ class nsDisplayVideo : public nsDisplayItem {
     return true;
   }
 
-  
-  
-  
-  
-  
-  
-  
+  nsRegion GetOpaqueRegion(nsDisplayListBuilder* aBuilder,
+                           bool* aSnap) const override {
+    *aSnap = false;
+
+    HTMLVideoElement* element =
+        static_cast<HTMLVideoElement*>(Frame()->GetContent());
+    if (element->HasAlpha()) {
+      return nsRegion();
+    }
+    return GetBounds(aBuilder, aSnap);
+  }
 
   virtual nsRect GetBounds(nsDisplayListBuilder* aBuilder,
                            bool* aSnap) const override {
