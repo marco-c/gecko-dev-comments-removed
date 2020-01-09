@@ -338,6 +338,11 @@ class nsHTMLDocument : public mozilla::dom::Document, public nsIHTMLDocument {
   
   
   bool mHasBeenEditable;
+
+  
+
+
+  bool mIsPlainText;
 };
 
 namespace mozilla {
