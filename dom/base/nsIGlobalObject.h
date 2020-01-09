@@ -83,6 +83,20 @@ class nsIGlobalObject : public nsISupports,
   virtual JSObject* GetGlobalJSObject() = 0;
 
   
+
+
+
+
+
+
+
+
+
+
+
+  virtual JSObject* GetGlobalJSObjectPreserveColor() const = 0;
+
+  
   nsIPrincipal* PrincipalOrNull();
 
   void RegisterHostObjectURI(const nsACString& aURI);
