@@ -607,7 +607,9 @@ class CanvasRenderingContext2D final : public nsICanvasRenderingContextInternal,
 
 
 
-  bool EnsureTarget(const gfx::Rect* aCoveredRect = nullptr);
+  bool EnsureTarget(
+      const gfx::Rect* aCoveredRect = nullptr,
+      bool aWillClear = false);
 
   void RestoreClipsAndTransformToTarget();
 
@@ -666,7 +668,7 @@ class CanvasRenderingContext2D final : public nsICanvasRenderingContextInternal,
 
 
 
-  bool PatternIsOpaque(Style aStyle) const;
+  bool PatternIsOpaque(Style aStyle, bool* aIsColor = nullptr) const;
 
   nsLayoutUtils::SurfaceFromElementResult CachedSurfaceFromElement(
       Element* aElement);
