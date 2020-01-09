@@ -548,5 +548,15 @@ void HTMLVideoElement::EndCloningVisually() {
   }
 }
 
+void HTMLVideoElement::TogglePictureInPicture(ErrorResult& error) {
+  
+  
+  
+  nsresult rv = DispatchEvent(NS_LITERAL_STRING("MozTogglePictureInPicture"));
+  if (NS_FAILED(rv)) {
+    error.Throw(rv);
+  }
+}
+
 }  
 }  
