@@ -36,8 +36,13 @@ let gOriginalUpdateAutoValue = null;
 
 
 
+const gDetailsURL = URL_HOST + "/";
+const gDefaultWhatsNewURL = URL_HTTP_UPDATE_SJS + "?uiURL=DETAILS";
 
-gDebugTest = true;
+
+
+
+gDebugTest = false;
 
 
 requestLongerTimeout(10);
@@ -256,131 +261,10 @@ async function setAppUpdateAutoEnabledHelper(enabled) {
 
 
 
-
-
-
-
-
-function runUpdateTest(updateParams, checkAttempts, steps) {
-  return (async function() {
-    gEnv.set("MOZ_TEST_SKIP_UPDATE_STAGE", "1");
-    await SpecialPowers.pushPrefEnv({
-      set: [
-        [PREF_APP_UPDATE_DISABLEDFORTESTING, false],
-        [PREF_APP_UPDATE_IDLETIME, 0],
-        [PREF_APP_UPDATE_URL_MANUAL, URL_MANUAL_UPDATE],
-      ],
-    });
-
-    await setupTestUpdater();
-
-    let url = URL_HTTP_UPDATE_SJS +
-              "?" + updateParams +
-              getVersionParams();
-
-    setUpdateURL(url);
-
-    executeSoon(() => {
-      (async function() {
-        gAUS.checkForBackgroundUpdates();
-        for (var i = 0; i < checkAttempts - 1; i++) {
-          await waitForEvent("update-error", "check-attempt-failed");
-          gAUS.checkForBackgroundUpdates();
-        }
-      })();
-    });
-
-    for (let step of steps) {
-      await processStep(step);
-    }
-  })();
-}
-
-
-
-
-
-
-
-
-
-
-
-
-function runUpdateProcessingTest(updates, steps) {
-  return (async function() {
-    gEnv.set("MOZ_TEST_SKIP_UPDATE_STAGE", "1");
-    await SpecialPowers.pushPrefEnv({
-      set: [
-        [PREF_APP_UPDATE_DISABLEDFORTESTING, false],
-        [PREF_APP_UPDATE_IDLETIME, 0],
-        [PREF_APP_UPDATE_URL_MANUAL, URL_MANUAL_UPDATE],
-      ],
-    });
-
-    await setupTestUpdater();
-
-    writeUpdatesToXMLFile(getLocalUpdatesXMLString(updates), true);
-
-    writeUpdatesToXMLFile(getLocalUpdatesXMLString(""), false);
-    writeStatusFile(STATE_FAILED_CRC_ERROR);
-    reloadUpdateManagerData();
-
-    testPostUpdateProcessing();
-
-    for (let step of steps) {
-      await processStep(step);
-    }
-  })();
-}
-
-function processStep(step) {
-  if (typeof(step) == "function") {
-    return step();
-  }
-
-  const {notificationId, button, beforeClick, cleanup} = step;
-  return (async function() {
-    await BrowserTestUtils.waitForEvent(PanelUI.notificationPanel, "popupshown");
-    const shownNotification = AppMenuNotifications.activeNotification.id;
-
-    is(shownNotification, notificationId, "The right notification showed up.");
-    if (shownNotification != notificationId) {
-      if (cleanup) {
-        await cleanup();
-      }
-      return;
-    }
-
-    let buttonEl = getNotificationButton(window, notificationId, button);
-    if (beforeClick) {
-      await beforeClick();
-    }
-
-
-    buttonEl.click();
-
-    if (cleanup) {
-      await cleanup();
-    }
-  })();
-}
-
-
-
-
-
-
-
-
-
-
-
-
 function getNotificationButton(win, notificationId, button) {
   let notification =
     win.document.getElementById(`appMenu-${notificationId}-notification`);
-  is(notification.hidden, false, `${notificationId} notification is showing`);
+  ok(!notification.hidden, `${notificationId} notification is showing`);
   return notification[button];
 }
 
@@ -395,13 +279,10 @@ function getNotificationButton(win, notificationId, button) {
 
 
 
-
 function checkWhatsNewLink(win, id, url) {
   let whatsNewLink = win.document.getElementById(id);
-  is(whatsNewLink.href,
-     url || URL_HTTP_UPDATE_SJS + "?uiURL=DETAILS",
-     "What's new link points to the test_details URL");
-  is(whatsNewLink.hidden, false, "What's new link is not hidden.");
+  ok(!whatsNewLink.hidden, "What's new link is not hidden.");
+  is(whatsNewLink.href, url, `What's new link href should equal ${url}`);
 }
 
 
@@ -638,10 +519,102 @@ function getPatchOfType(type) {
 
 
 
+
+function runDoorhangerUpdateTest(updateParams, checkAttempts, steps) {
+  function processDoorhangerStep(step) {
+    if (typeof(step) == "function") {
+      return step();
+    }
+
+    const {notificationId, button, checkActiveUpdate, pageURLs} = step;
+    return (async function() {
+      await BrowserTestUtils.waitForEvent(PanelUI.notificationPanel, "popupshown");
+      const shownNotificationId = AppMenuNotifications.activeNotification.id;
+      is(shownNotificationId, notificationId,
+         "The right notification showed up.");
+
+      if (checkActiveUpdate) {
+        ok(!!gUpdateManager.activeUpdate,
+           "There should be an active update");
+        is(gUpdateManager.activeUpdate.state, checkActiveUpdate.state,
+           `The active update state should equal ${checkActiveUpdate.state}`);
+      } else {
+        ok(!gUpdateManager.activeUpdate,
+           "There should not be an active update");
+      }
+
+      if (pageURLs && pageURLs.whatsNew !== undefined) {
+        checkWhatsNewLink(window, `${notificationId}-whats-new`,
+                          pageURLs.whatsNew);
+      }
+
+      let buttonEl = getNotificationButton(window, notificationId, button);
+      buttonEl.click();
+
+      if (pageURLs && pageURLs.manual !== undefined) {
+        await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+        is(gBrowser.selectedBrowser.currentURI.spec, pageURLs.manual,
+           `The page's url should equal ${pageURLs.manual}`);
+        gBrowser.removeTab(gBrowser.selectedTab);
+      }
+    })();
+  }
+
+  return (async function() {
+    gEnv.set("MOZ_TEST_SKIP_UPDATE_STAGE", "1");
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        [PREF_APP_UPDATE_DISABLEDFORTESTING, false],
+        [PREF_APP_UPDATE_URL_MANUAL, URL_MANUAL_UPDATE],
+        [PREF_APP_UPDATE_URL_DETAILS, gDetailsURL],
+      ],
+    });
+
+    await setupTestUpdater();
+
+    let updateURL = URL_HTTP_UPDATE_SJS + "?detailsURL=" + gDetailsURL +
+                    updateParams + getVersionParams();
+    setUpdateURL(updateURL);
+
+    if (checkAttempts) {
+      
+      executeSoon(() => {
+        (async function() {
+          gAUS.checkForBackgroundUpdates();
+          for (var i = 0; i < checkAttempts - 1; i++) {
+            await waitForEvent("update-error", "check-attempt-failed");
+            gAUS.checkForBackgroundUpdates();
+          }
+        })();
+      });
+    } else {
+      
+      reloadUpdateManagerData();
+      writeStatusFile(STATE_FAILED_CRC_ERROR);
+      testPostUpdateProcessing();
+    }
+
+    for (let step of steps) {
+      await processDoorhangerStep(step);
+    }
+  })();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function runAboutDialogUpdateTest(updateParams, backgroundUpdate, steps) {
-  
-  
-  let detailsURL = URL_HOST + "/";
   let aboutDialog;
   function processAboutDialogStep(step) {
     if (typeof(step) == "function") {
@@ -708,8 +681,8 @@ function runAboutDialogUpdateTest(updateParams, backgroundUpdate, steps) {
         
         
         let link = selectedPanel.querySelector("label.text-link");
-        is(link.href, detailsURL,
-           "The panel's link href should equal the expected value");
+        is(link.href, gDetailsURL,
+           `The panel's link href should equal ${gDetailsURL}`);
       }
 
       let buttonPanels = ["downloadAndInstall", "apply"];
@@ -733,13 +706,13 @@ function runAboutDialogUpdateTest(updateParams, backgroundUpdate, steps) {
     await SpecialPowers.pushPrefEnv({
       set: [
         [PREF_APP_UPDATE_DISABLEDFORTESTING, false],
-        [PREF_APP_UPDATE_URL_MANUAL, detailsURL],
+        [PREF_APP_UPDATE_URL_MANUAL, gDetailsURL],
       ],
     });
 
     await setupTestUpdater();
 
-    let updateURL = URL_HTTP_UPDATE_SJS + "?detailsURL=" + detailsURL +
+    let updateURL = URL_HTTP_UPDATE_SJS + "?detailsURL=" + gDetailsURL +
                     updateParams + getVersionParams();
     if (backgroundUpdate) {
       if (Services.prefs.getBoolPref(PREF_APP_UPDATE_STAGING_ENABLED)) {
@@ -782,9 +755,6 @@ function runAboutDialogUpdateTest(updateParams, backgroundUpdate, steps) {
 
 
 function runAboutPrefsUpdateTest(updateParams, backgroundUpdate, steps) {
-  
-  
-  let detailsURL = URL_HOST + "/";
   let tab;
   function processAboutPrefsStep(step) {
     if (typeof(step) == "function") {
@@ -848,8 +818,8 @@ function runAboutPrefsUpdateTest(updateParams, backgroundUpdate, steps) {
         await continueFileHandler(continueFile);
       }
 
-      await ContentTask.spawn(tab.linkedBrowser, {panelId, detailsURL},
-                              async ({panelId, detailsURL}) => {
+      await ContentTask.spawn(tab.linkedBrowser, {panelId, gDetailsURL},
+                              async ({panelId, gDetailsURL}) => {
         let linkPanels = ["downloadFailed", "manualUpdate", "unsupportedSystem"];
         if (linkPanels.includes(panelId)) {
           let selectedPanel =
@@ -864,8 +834,8 @@ function runAboutPrefsUpdateTest(updateParams, backgroundUpdate, steps) {
             selector = "a.text-link";
           }
           let link = selectedPanel.querySelector(selector);
-          is(link.href, detailsURL,
-             "The panel's link href should equal the expected value");
+          is(link.href, gDetailsURL,
+             `The panel's link href should equal ${gDetailsURL}`);
         }
 
         let buttonPanels = ["downloadAndInstall", "apply"];
@@ -891,13 +861,13 @@ function runAboutPrefsUpdateTest(updateParams, backgroundUpdate, steps) {
     await SpecialPowers.pushPrefEnv({
       set: [
         [PREF_APP_UPDATE_DISABLEDFORTESTING, false],
-        [PREF_APP_UPDATE_URL_MANUAL, detailsURL],
+        [PREF_APP_UPDATE_URL_MANUAL, gDetailsURL],
       ],
     });
 
     await setupTestUpdater();
 
-    let updateURL = URL_HTTP_UPDATE_SJS + "?detailsURL=" + detailsURL +
+    let updateURL = URL_HTTP_UPDATE_SJS + "?detailsURL=" + gDetailsURL +
                     updateParams + getVersionParams();
     if (backgroundUpdate) {
       if (Services.prefs.getBoolPref(PREF_APP_UPDATE_STAGING_ENABLED)) {
@@ -959,9 +929,6 @@ function removeUpdateSettingsIni() {
 
 
 function runTelemetryUpdateTest(updateParams, event, stageFailure = false) {
-  
-  
-  let detailsURL = URL_HOST + "/";
   return (async function() {
     Services.telemetry.clearScalars();
     gEnv.set("MOZ_TEST_SLOW_SKIP_UPDATE_STAGE", "1");
@@ -977,7 +944,7 @@ function runTelemetryUpdateTest(updateParams, event, stageFailure = false) {
       removeUpdateSettingsIni();
     }
 
-    let updateURL = URL_HTTP_UPDATE_SJS + "?detailsURL=" + detailsURL +
+    let updateURL = URL_HTTP_UPDATE_SJS + "?detailsURL=" + gDetailsURL +
                     updateParams + getVersionParams();
     setUpdateURL(updateURL);
     if (Services.prefs.getBoolPref(PREF_APP_UPDATE_STAGING_ENABLED)) {

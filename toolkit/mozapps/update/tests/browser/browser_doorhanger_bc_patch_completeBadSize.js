@@ -1,31 +1,33 @@
-add_task(async function testCompletePatchWithBadCompleteSize() {
-  let updateParams = "completePatchOnly=1&invalidCompleteSize=1";
-  await runUpdateTest(updateParams, 1, [
+
+
+
+"use strict";
+
+add_task(async function doorhanger_bc_patch_completeBadSize() {
+  let updateParams = "&completePatchOnly=1&invalidCompleteSize=1";
+  await runDoorhangerUpdateTest(updateParams, 1, [
     {
       
       
       notificationId: "update-available",
       button: "button",
+      checkActiveUpdate: null,
+      pageURLs: {whatsNew: gDefaultWhatsNewURL},
     },
     {
       notificationId: "update-available",
       button: "button",
+      checkActiveUpdate: null,
+      pageURLs: {whatsNew: gDefaultWhatsNewURL},
     },
     {
-      
       
       
       notificationId: "update-manual",
       button: "button",
-      beforeClick() {
-        checkWhatsNewLink(window, "update-manual-whats-new");
-      },
-      async cleanup() {
-        await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
-        is(gBrowser.selectedBrowser.currentURI.spec,
-           URL_MANUAL_UPDATE, "Landed on manual update page.");
-        gBrowser.removeTab(gBrowser.selectedTab);
-      },
+      checkActiveUpdate: null,
+      pageURLs: {whatsNew: gDefaultWhatsNewURL,
+                 manual: URL_MANUAL_UPDATE},
     },
   ]);
 });

@@ -1,28 +1,26 @@
-add_task(async function testMalformedXml() {
-  const updateDetailsUrl = "http://example.com/details";
+
+
+
+"use strict";
+
+add_task(async function doorhanger_bc_check_malformedXML() {
   const maxBackgroundErrors = 10;
-  SpecialPowers.pushPrefEnv({set: [
-    [PREF_APP_UPDATE_BACKGROUNDMAXERRORS, maxBackgroundErrors],
-    [PREF_APP_UPDATE_URL_DETAILS, updateDetailsUrl],
-  ]});
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [PREF_APP_UPDATE_BACKGROUNDMAXERRORS, maxBackgroundErrors],
+    ],
+  });
 
-  let updateParams = "xmlMalformed=1";
-
-  await runUpdateTest(updateParams, maxBackgroundErrors, [
+  let updateParams = "&xmlMalformed=1";
+  await runDoorhangerUpdateTest(updateParams, maxBackgroundErrors, [
     {
       
       
       notificationId: "update-manual",
       button: "button",
-      beforeClick() {
-        checkWhatsNewLink(window, "update-manual-whats-new", updateDetailsUrl);
-      },
-      async cleanup() {
-        await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
-        is(gBrowser.selectedBrowser.currentURI.spec,
-           URL_MANUAL_UPDATE, "Landed on manual update page.");
-        gBrowser.removeTab(gBrowser.selectedTab);
-      },
+      checkActiveUpdate: null,
+      pageURLs: {whatsNew: gDetailsURL,
+                 manual: URL_MANUAL_UPDATE},
     },
   ]);
 });

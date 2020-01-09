@@ -1,13 +1,15 @@
-add_task(async function testCompleteAndPartialPatchesWithBadCompleteSize() {
-  let updateParams = "invalidCompleteSize=1&promptWaitTime=0";
 
-  await runUpdateTest(updateParams, 1, [
+
+
+"use strict";
+
+add_task(async function doorhanger_bc_downloaded() {
+  let updateParams = "&invalidCompleteSize=1&promptWaitTime=0";
+  await runDoorhangerUpdateTest(updateParams, 1, [
     {
       notificationId: "update-restart",
       button: "secondaryButton",
-      cleanup() {
-        AppMenuNotifications.removeNotification(/.*/);
-      },
+      checkActiveUpdate: {state: STATE_PENDING},
     },
   ]);
 });

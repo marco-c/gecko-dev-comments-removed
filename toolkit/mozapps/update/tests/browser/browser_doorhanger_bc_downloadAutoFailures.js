@@ -1,30 +1,40 @@
-add_task(async function testDownloadFailures() {
-  const maxBackgroundErrors = 5;
-  SpecialPowers.pushPrefEnv({set: [
-    [PREF_APP_UPDATE_BACKGROUNDMAXERRORS, maxBackgroundErrors],
-  ]});
-  let updateParams = "badURL=1";
 
-  await runUpdateTest(updateParams, 1, [
+
+
+"use strict";
+
+add_task(async function doorhanger_bc_downloadAutoFailures() {
+  const maxBackgroundErrors = 5;
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [PREF_APP_UPDATE_BACKGROUNDMAXERRORS, maxBackgroundErrors],
+    ],
+  });
+
+  let updateParams = "&badURL=1";
+  await runDoorhangerUpdateTest(updateParams, 1, [
     {
       
       
       notificationId: "update-available",
       button: "button",
+      checkActiveUpdate: null,
+      pageURLs: {whatsNew: gDefaultWhatsNewURL},
     },
     {
       notificationId: "update-available",
       button: "button",
+      checkActiveUpdate: null,
+      pageURLs: {whatsNew: gDefaultWhatsNewURL},
     },
     {
+      
+      
       notificationId: "update-manual",
       button: "button",
-      async cleanup() {
-        await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
-        is(gBrowser.selectedBrowser.currentURI.spec,
-           URL_MANUAL_UPDATE, "Landed on manual update page.");
-        gBrowser.removeTab(gBrowser.selectedTab);
-      },
+      checkActiveUpdate: null,
+      pageURLs: {whatsNew: gDefaultWhatsNewURL,
+                 manual: URL_MANUAL_UPDATE},
     },
   ]);
 });

@@ -1,26 +1,26 @@
-add_task(async function testPartialPatchApplyFailure() {
+
+
+
+"use strict";
+
+add_task(async function doorhanger_sp_patch_partialApplyFailure() {
   let patchProps = {type: "partial",
                     state: STATE_PENDING};
   let patches = getLocalPatchString(patchProps);
-  let updateProps = {isCompleteUpdate: "false"};
+  let updateProps = {isCompleteUpdate: "false",
+                     checkInterval: "1"};
   let updates = getLocalUpdateString(updateProps, patches);
+  writeUpdatesToXMLFile(getLocalUpdatesXMLString(updates), true);
 
-  await runUpdateProcessingTest(updates, [
+  let updateParams = "";
+  await runDoorhangerUpdateTest(updateParams, 0, [
     {
-      
-      
       
       notificationId: "update-manual",
       button: "button",
-      beforeClick() {
-        checkWhatsNewLink(window, "update-manual-whats-new");
-      },
-      async cleanup() {
-        await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
-        is(gBrowser.selectedBrowser.currentURI.spec,
-           URL_MANUAL_UPDATE, "Landed on manual update page.");
-        gBrowser.removeTab(gBrowser.selectedTab);
-      },
+      checkActiveUpdate: null,
+      pageURLs: {whatsNew: gDefaultWhatsNewURL,
+                 manual: URL_MANUAL_UPDATE},
     },
   ]);
 });
