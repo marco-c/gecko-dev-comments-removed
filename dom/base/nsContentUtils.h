@@ -219,9 +219,6 @@ class nsContentUtils {
  public:
   static nsresult Init();
 
-  
-  static nsresult RemoveWyciwygScheme(nsIURI* aURI, nsIURI** aReturn);
-
   static bool IsCallerChrome();
   static bool ThreadsafeIsCallerChrome();
   static bool IsCallerContentXBL();

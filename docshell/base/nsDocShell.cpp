@@ -149,7 +149,6 @@
 #include "nsIWidget.h"
 #include "nsIWindowWatcher.h"
 #include "nsIWritablePropertyBag2.h"
-#include "nsIWyciwygChannel.h"
 
 #include "nsCommandManager.h"
 #include "nsPIDOMWindow.h"
@@ -3276,18 +3275,11 @@ nsDocShell::AddChild(nsIDocShellTreeItem* aChild) {
     return NS_OK;
   }
 
-  if (!(mCurrentURI && SchemeIsWYCIWYG(mCurrentURI))) {
-    
-    
-    
-    
-
-    const Encoding* parentCS = doc->GetDocumentCharacterSet();
-    int32_t charsetSource = doc->GetDocumentCharacterSetSource();
-    
-    childAsDocShell->SetParentCharset(parentCS, charsetSource,
-                                      doc->NodePrincipal());
-  }
+  const Encoding* parentCS = doc->GetDocumentCharacterSet();
+  int32_t charsetSource = doc->GetDocumentCharacterSetSource();
+  
+  childAsDocShell->SetParentCharset(parentCS, charsetSource,
+                                    doc->NodePrincipal());
 
   
   
@@ -6252,18 +6244,6 @@ nsresult nsDocShell::Embed(nsIContentViewer* aContentViewer,
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  
-  
-  
-  if (mCurrentURI &&
-      (mLoadType & LOAD_CMD_HISTORY || mLoadType == LOAD_RELOAD_NORMAL ||
-       mLoadType == LOAD_RELOAD_CHARSET_CHANGE ||
-       mLoadType == LOAD_RELOAD_CHARSET_CHANGE_BYPASS_CACHE ||
-       mLoadType == LOAD_RELOAD_CHARSET_CHANGE_BYPASS_PROXY_AND_CACHE) &&
-      SchemeIsWYCIWYG(mCurrentURI)) {
-    SetBaseUrlForWyciwyg(aContentViewer);
-  }
-  
   if (mLSHE) {
     
     if (mLSHE->HasDetachedEditor()) {
@@ -6321,62 +6301,12 @@ nsDocShell::OnStateChange(nsIWebProgress* aProgress, nsIRequest* aRequest,
     nsAutoCString aURI;
     uri->GetAsciiSpec(aURI);
 
-    nsCOMPtr<nsIWyciwygChannel> wcwgChannel(do_QueryInterface(aRequest));
-    nsCOMPtr<nsIWebProgress> webProgress =
-        do_QueryInterface(GetAsSupports(this));
-
-    
-    if (this == aProgress && !wcwgChannel) {
+    if (this == aProgress) {
       mozilla::Unused << MaybeInitTiming();
       mTiming->NotifyFetchStart(uri,
                                 ConvertLoadTypeToNavigationType(mLoadType));
     }
 
-    
-    if (wcwgChannel && !mLSHE && (mItemType == typeContent) &&
-        aProgress == webProgress.get()) {
-      bool equalUri = true;
-      
-      
-      
-      if (mCurrentURI && NS_SUCCEEDED(uri->Equals(mCurrentURI, &equalUri)) &&
-          !equalUri) {
-        nsCOMPtr<nsIDocShellTreeItem> parentAsItem;
-        GetSameTypeParent(getter_AddRefs(parentAsItem));
-        nsCOMPtr<nsIDocShell> parentDS(do_QueryInterface(parentAsItem));
-        bool inOnLoadHandler = false;
-        if (parentDS) {
-          parentDS->GetIsExecutingOnLoadHandler(&inOnLoadHandler);
-        }
-        if (inOnLoadHandler) {
-          
-          
-          
-          
-          
-          nsCOMPtr<nsIDocShell> parent = do_QueryInterface(parentAsItem);
-          if (parent) {
-            bool oshe = false;
-            nsCOMPtr<nsISHEntry> entry;
-            parent->GetCurrentSHEntry(getter_AddRefs(entry), &oshe);
-            static_cast<nsDocShell*>(parent.get())->ClearFrameHistory(entry);
-          }
-        }
-
-        
-        
-        
-        
-        AddToSessionHistory(uri, wcwgChannel, nullptr, nullptr, nullptr, false,
-                            getter_AddRefs(mLSHE));
-        SetCurrentURI(uri, aRequest, true, 0);
-        
-        PersistLayoutHistoryState();
-        
-        
-        SetHistoryEntry(&mOSHE, mLSHE);
-      }
-    }
     
     mBusyFlags = (BusyFlags)(BUSY_FLAGS_BUSY | BUSY_FLAGS_BEFORE_PAGE_LOAD);
 
@@ -7747,8 +7677,6 @@ nsresult nsDocShell::RestoreFromHistory() {
 
   
   SetHistoryEntry(&mOSHE, mLSHE);
-
-  
 
   
   
@@ -9171,13 +9099,6 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
   nsresult rv = EnsureScriptEnvironment();
   if (NS_FAILED(rv)) {
     return rv;
-  }
-
-  
-  
-  if ((aLoadState->LoadType() & LOAD_CMD_NORMAL) &&
-      SchemeIsWYCIWYG(aLoadState->URI())) {
-    return NS_ERROR_FAILURE;
   }
 
   
@@ -12226,28 +12147,6 @@ nsDocShell::InterfaceRequestorProxy::GetInterface(const nsIID& aIID,
   }
   *aSink = nullptr;
   return NS_NOINTERFACE;
-}
-
-nsresult nsDocShell::SetBaseUrlForWyciwyg(nsIContentViewer* aContentViewer) {
-  if (!aContentViewer) {
-    return NS_ERROR_FAILURE;
-  }
-
-  nsCOMPtr<nsIURI> baseURI;
-  nsresult rv = NS_ERROR_NOT_AVAILABLE;
-
-  if (sURIFixup) {
-    rv = sURIFixup->CreateExposableURI(mCurrentURI, getter_AddRefs(baseURI));
-  }
-
-  
-  if (baseURI) {
-    Document* document = aContentViewer->GetDocument();
-    if (document) {
-      document->SetBaseURI(baseURI);
-    }
-  }
-  return rv;
 }
 
 

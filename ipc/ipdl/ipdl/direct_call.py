@@ -594,7 +594,6 @@ VIRTUAL_CALL_CLASSES = set([
     ("PHttpChannel", "parent"),
     ("PSessionStorageObserver", "child"),
     ("PSessionStorageObserver", "parent"),
-    ("PWyciwygChannel", "child"),
 
     
     ("PIndexedDBPermissionRequest", "child"),

@@ -24,7 +24,6 @@
 class nsIURI;
 class nsIDocShell;
 class nsICachingChannel;
-class nsIWyciwygChannel;
 class nsILoadGroup;
 
 namespace mozilla {
@@ -65,7 +64,6 @@ class nsHTMLDocument : public mozilla::dom::Document, public nsIHTMLDocument {
                                      nsIStreamListener** aDocListener,
                                      bool aReset = true,
                                      nsIContentSink* aSink = nullptr) override;
-  virtual void StopDocumentLoad() override;
 
   virtual void BeginLoad() override;
   virtual void EndLoad() override;
@@ -235,9 +233,6 @@ class nsHTMLDocument : public mozilla::dom::Document, public nsIHTMLDocument {
   void WriteCommon(const mozilla::dom::Sequence<nsString>& aText,
                    bool aNewlineTerminate, mozilla::ErrorResult& rv);
 
-  nsresult CreateAndAddWyciwygChannel(void);
-  nsresult RemoveWyciwygChannel(void);
-
   
   already_AddRefed<nsIChannel> CreateDummyChannelForCookies(
       nsIURI* aCodebaseURI);
@@ -280,8 +275,6 @@ class nsHTMLDocument : public mozilla::dom::Document, public nsIHTMLDocument {
   
   int32_t mNumForms;
 
-  static uint32_t gWyciwygSessionCnt;
-
   static void TryHintCharset(nsIContentViewer* aContentViewer,
                              int32_t& aCharsetSource,
                              NotNull<const Encoding*>& aEncoding);
@@ -296,10 +289,6 @@ class nsHTMLDocument : public mozilla::dom::Document, public nsIHTMLDocument {
   void TryTLD(int32_t& aCharsetSource, NotNull<const Encoding*>& aCharset);
   static void TryFallback(int32_t& aCharsetSource,
                           NotNull<const Encoding*>& aEncoding);
-
-  
-  virtual void SetDocumentCharacterSet(
-      NotNull<const Encoding*> aEncoding) override;
 
   
 
@@ -324,8 +313,6 @@ class nsHTMLDocument : public mozilla::dom::Document, public nsIHTMLDocument {
   bool mDisableDocWrite;
 
   bool mWarnedWidthHeight;
-
-  nsCOMPtr<nsIWyciwygChannel> mWyciwygChannel;
 
   
   nsresult GetMidasCommandManager(nsICommandManager** aCommandManager);

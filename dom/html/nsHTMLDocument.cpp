@@ -68,7 +68,6 @@
 #include "nsIDocumentEncoder.h"  
 #include "nsICachingChannel.h"
 #include "nsIContentViewer.h"
-#include "nsIWyciwygChannel.h"
 #include "nsIScriptElement.h"
 #include "nsIScriptError.h"
 #include "nsIMutableArray.h"
@@ -127,8 +126,6 @@ using namespace mozilla::dom;
 
 
 static NS_DEFINE_CID(kCParserCID, NS_PARSER_CID);
-
-uint32_t nsHTMLDocument::gWyciwygSessionCnt = 0;
 
 
 
@@ -191,7 +188,7 @@ nsHTMLDocument::nsHTMLDocument()
 nsHTMLDocument::~nsHTMLDocument() {}
 
 NS_IMPL_CYCLE_COLLECTION_INHERITED(nsHTMLDocument, Document, mAll,
-                                   mWyciwygChannel, mMidasCommandManager)
+                                   mMidasCommandManager)
 
 NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED(nsHTMLDocument, Document,
                                              nsIHTMLDocument)
@@ -234,11 +231,6 @@ void nsHTMLDocument::ResetToURI(nsIURI* aURI, nsILoadGroup* aLoadGroup,
   mScripts = nullptr;
 
   mForms = nullptr;
-
-  NS_ASSERTION(!mWyciwygChannel,
-               "nsHTMLDocument::Reset() - Wyciwyg Channel  still exists!");
-
-  mWyciwygChannel = nullptr;
 
   
   
@@ -447,20 +439,6 @@ void nsHTMLDocument::TryFallback(int32_t& aCharsetSource,
   aEncoding = FallbackEncoding::FromLocale();
 }
 
-void nsHTMLDocument::SetDocumentCharacterSet(
-    NotNull<const Encoding*> aEncoding) {
-  Document::SetDocumentCharacterSet(aEncoding);
-  
-  
-  nsCOMPtr<nsIWyciwygChannel> wyciwygChannel = do_QueryInterface(mChannel);
-  if (wyciwygChannel) {
-    nsAutoCString charset;
-    aEncoding->Name(charset);
-    wyciwygChannel->SetCharsetAndSource(GetDocumentCharacterSetSource(),
-                                        charset);
-  }
-}
-
 nsresult nsHTMLDocument::StartDocumentLoad(const char* aCommand,
                                            nsIChannel* aChannel,
                                            nsILoadGroup* aLoadGroup,
@@ -606,13 +584,6 @@ nsresult nsHTMLDocument::StartDocumentLoad(const char* aCommand,
   auto encoding = UTF_8_ENCODING;
 
   
-  
-  int32_t parserCharsetSource;
-  auto parserCharset = UTF_8_ENCODING;
-
-  nsCOMPtr<nsIWyciwygChannel> wyciwygChannel;
-
-  
   nsHtml5TreeOpExecutor* executor = nullptr;
   if (loadAsHtml5) {
     executor = static_cast<nsHtml5TreeOpExecutor*>(mParser->GetContentSink());
@@ -626,18 +597,14 @@ nsresult nsHTMLDocument::StartDocumentLoad(const char* aCommand,
 
   if (forceUtf8) {
     charsetSource = kCharsetFromUtf8OnlyMime;
-    parserCharsetSource = charsetSource;
   } else if (!IsHTMLDocument() || !docShell) {  
     charsetSource =
         IsHTMLDocument() ? kCharsetFromFallback : kCharsetFromDocTypeDefault;
     TryChannelCharset(aChannel, charsetSource, encoding, executor);
-    parserCharset = encoding;
-    parserCharsetSource = charsetSource;
   } else {
     NS_ASSERTION(docShell, "Unexpected null value");
 
     charsetSource = kCharsetUninitialized;
-    wyciwygChannel = do_QueryInterface(aChannel);
 
     
     
@@ -648,16 +615,12 @@ nsresult nsHTMLDocument::StartDocumentLoad(const char* aCommand,
 
     
     
-    if (!wyciwygChannel) {
-      
-      
-      
-      
-      
-      
-      
-      TryChannelCharset(aChannel, charsetSource, encoding, executor);
-    }
+    
+    
+    
+    
+    
+    TryChannelCharset(aChannel, charsetSource, encoding, executor);
 
     TryUserForcedCharset(cv, docShell, charsetSource, encoding);
 
@@ -670,42 +633,12 @@ nsresult nsHTMLDocument::StartDocumentLoad(const char* aCommand,
 
     TryTLD(charsetSource, encoding);
     TryFallback(charsetSource, encoding);
-
-    if (wyciwygChannel) {
-      
-      parserCharset = UTF_16LE_ENCODING;
-      parserCharsetSource = charsetSource < kCharsetFromChannel
-                                ? kCharsetFromChannel
-                                : charsetSource;
-
-      nsAutoCString cachedCharset;
-      int32_t cachedSource;
-      rv = wyciwygChannel->GetCharsetAndSource(&cachedSource, cachedCharset);
-      if (NS_SUCCEEDED(rv)) {
-        if (cachedSource > charsetSource) {
-          auto cachedEncoding = Encoding::ForLabel(cachedCharset);
-          if (cachedEncoding) {
-            charsetSource = cachedSource;
-            encoding = WrapNotNull(cachedEncoding);
-          }
-        }
-      } else {
-        
-        rv = NS_OK;
-      }
-    } else {
-      parserCharset = encoding;
-      parserCharsetSource = charsetSource;
-    }
   }
 
   SetDocumentCharacterSetSource(charsetSource);
   SetDocumentCharacterSet(encoding);
 
   if (cachingChan) {
-    NS_ASSERTION(encoding == parserCharset,
-                 "How did those end up different here?  wyciwyg channels are "
-                 "not nsICachingChannel");
     nsAutoCString charset;
     encoding->Name(charset);
     rv = cachingChan->SetCacheTokenCachedCharset(charset);
@@ -721,7 +654,7 @@ nsresult nsHTMLDocument::StartDocumentLoad(const char* aCommand,
 #ifdef DEBUG_charset
   printf(" charset = %s source %d\n", charset.get(), charsetSource);
 #endif
-  mParser->SetDocumentCharset(parserCharset, parserCharsetSource);
+  mParser->SetDocumentCharset(encoding, charsetSource);
   mParser->SetCommand(aCommand);
 
   if (!IsHTMLDocument()) {
@@ -765,20 +698,6 @@ nsresult nsHTMLDocument::StartDocumentLoad(const char* aCommand,
   mParser->Parse(uri, nullptr, (void*)this);
 
   return rv;
-}
-
-void nsHTMLDocument::StopDocumentLoad() {
-  BlockOnload();
-
-  
-  
-  RemoveWyciwygChannel();
-  NS_ASSERTION(!mWyciwygChannel,
-               "nsHTMLDocument::StopDocumentLoad(): "
-               "nsIWyciwygChannel could not be removed!");
-
-  Document::StopDocumentLoad();
-  UnblockOnload(false);
 }
 
 void nsHTMLDocument::BeginLoad() {
@@ -1567,17 +1486,6 @@ void nsHTMLDocument::WriteCommon(const nsAString& aText, bool aNewlineTerminate,
 
   static NS_NAMED_LITERAL_STRING(new_line, "\n");
 
-  
-  if (mWyciwygChannel && !key) {
-    if (!aText.IsEmpty()) {
-      mWyciwygChannel->WriteToCacheEntry(aText);
-    }
-
-    if (aNewlineTerminate) {
-      mWyciwygChannel->WriteToCacheEntry(new_line);
-    }
-  }
-
   ++mWriteLevel;
 
   
@@ -1760,84 +1668,6 @@ void nsHTMLDocument::GetSupportedNames(nsTArray<nsString>& aNames) {
 bool nsHTMLDocument::MatchFormControls(Element* aElement, int32_t aNamespaceID,
                                        nsAtom* aAtom, void* aData) {
   return aElement->IsNodeOfType(nsIContent::eHTML_FORM_CONTROL);
-}
-
-nsresult nsHTMLDocument::CreateAndAddWyciwygChannel(void) {
-  nsresult rv = NS_OK;
-  nsAutoCString url, originalSpec;
-
-  mDocumentURI->GetSpec(originalSpec);
-
-  
-  url = NS_LITERAL_CSTRING("wyciwyg://") +
-        nsPrintfCString("%d", gWyciwygSessionCnt++) + NS_LITERAL_CSTRING("/") +
-        originalSpec;
-
-  nsCOMPtr<nsIURI> wcwgURI;
-  NS_NewURI(getter_AddRefs(wcwgURI), url);
-
-  
-  
-  nsCOMPtr<nsIChannel> channel;
-  
-  rv = NS_NewChannel(getter_AddRefs(channel), wcwgURI, NodePrincipal(),
-                     nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL,
-                     nsIContentPolicy::TYPE_OTHER);
-  NS_ENSURE_SUCCESS(rv, rv);
-  nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
-  loadInfo->SetPrincipalToInherit(NodePrincipal());
-
-  mWyciwygChannel = do_QueryInterface(channel);
-
-  mWyciwygChannel->SetSecurityInfo(mSecurityInfo);
-
-  
-  
-  SetDocumentCharacterSetSource(kCharsetFromHintPrevDoc);
-  nsAutoCString charset;
-  GetDocumentCharacterSet()->Name(charset);
-  mWyciwygChannel->SetCharsetAndSource(kCharsetFromHintPrevDoc, charset);
-
-  
-  channel->SetLoadFlags(mLoadFlags);
-
-  nsCOMPtr<nsILoadGroup> loadGroup = GetDocumentLoadGroup();
-
-  
-  if (loadGroup && channel) {
-    rv = channel->SetLoadGroup(loadGroup);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    nsLoadFlags loadFlags = 0;
-    channel->GetLoadFlags(&loadFlags);
-    loadFlags |= nsIChannel::LOAD_DOCUMENT_URI;
-    if (nsDocShell::SandboxFlagsImplyCookies(mSandboxFlags)) {
-      loadFlags |= nsIRequest::LOAD_DOCUMENT_NEEDS_COOKIE;
-    }
-    channel->SetLoadFlags(loadFlags);
-
-    channel->SetOriginalURI(wcwgURI);
-
-    rv = loadGroup->AddRequest(mWyciwygChannel, nullptr);
-    NS_ASSERTION(NS_SUCCEEDED(rv), "Failed to add request to load group.");
-  }
-
-  return rv;
-}
-
-nsresult nsHTMLDocument::RemoveWyciwygChannel(void) {
-  nsCOMPtr<nsILoadGroup> loadGroup = GetDocumentLoadGroup();
-
-  
-  
-  if (loadGroup && mWyciwygChannel) {
-    mWyciwygChannel->CloseCacheEntry(NS_OK);
-    loadGroup->RemoveRequest(mWyciwygChannel, nullptr, NS_OK);
-  }
-
-  mWyciwygChannel = nullptr;
-
-  return NS_OK;
 }
 
 void* nsHTMLDocument::GenerateParserKey(void) {
@@ -3014,7 +2844,6 @@ void nsHTMLDocument::RemovedFromDocShell() {
   
   
   
-  
 }
 
 bool nsHTMLDocument::WillIgnoreCharsetOverride() {
@@ -3030,10 +2859,6 @@ bool nsHTMLDocument::WillIgnoreCharsetOverride() {
   }
   if (!mCharacterSet->IsAsciiCompatible() &&
       mCharacterSet != ISO_2022_JP_ENCODING) {
-    return true;
-  }
-  nsCOMPtr<nsIWyciwygChannel> wyciwyg = do_QueryInterface(mChannel);
-  if (wyciwyg) {
     return true;
   }
   nsIURI* uri = GetOriginalURI();

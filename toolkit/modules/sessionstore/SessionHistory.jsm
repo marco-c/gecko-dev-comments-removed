@@ -243,6 +243,7 @@ var SessionHistoryInternal = {
         if (child) {
           
           
+          
           if (child.URI.schemeIs("wyciwyg")) {
             children.length = 0;
             break;

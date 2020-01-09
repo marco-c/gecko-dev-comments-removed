@@ -28,7 +28,6 @@
 #include "expat.h"
 #include "nsINestedURI.h"
 #include "nsCharsetSource.h"
-#include "nsIWyciwygChannel.h"
 #include "nsIThreadRetargetableRequest.h"
 #include "nsPrintfCString.h"
 #include "nsNetUtil.h"
@@ -1036,8 +1035,7 @@ nsresult nsHtml5StreamParser::OnStartRequest(nsIRequest* aRequest) {
     mFeedChardetIfEncoding = nullptr;
   }
 
-  nsCOMPtr<nsIWyciwygChannel> wyciwygChannel(do_QueryInterface(mRequest));
-  if (mCharsetSource < kCharsetFromUtf8OnlyMime && !wyciwygChannel) {
+  if (mCharsetSource < kCharsetFromUtf8OnlyMime) {
     
     
     return NS_OK;

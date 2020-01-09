@@ -51,28 +51,18 @@ nsDefaultURIFixup::CreateExposableURI(nsIURI* aURI, nsIURI** aReturn) {
   NS_ENSURE_ARG_POINTER(aURI);
   NS_ENSURE_ARG_POINTER(aReturn);
 
-  bool isWyciwyg = net::SchemeIsWYCIWYG(aURI);
-
   nsAutoCString userPass;
   aURI->GetUserPass(userPass);
 
   
-  if (!isWyciwyg && userPass.IsEmpty()) {
+  if (userPass.IsEmpty()) {
     *aReturn = aURI;
     NS_ADDREF(*aReturn);
     return NS_OK;
   }
 
   
-  nsCOMPtr<nsIURI> uri;
-  if (isWyciwyg) {
-    nsresult rv =
-        nsContentUtils::RemoveWyciwygScheme(aURI, getter_AddRefs(uri));
-    NS_ENSURE_SUCCESS(rv, rv);
-  } else {
-    
-    uri = aURI;
-  }
+  nsCOMPtr<nsIURI> uri = aURI;
 
   Unused << NS_MutateURI(uri).SetUserPass(EmptyCString()).Finalize(uri);
 

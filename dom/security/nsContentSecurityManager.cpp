@@ -365,21 +365,6 @@ static nsresult DoContentSecurityChecks(nsIChannel* aChannel,
   nsresult rv = NS_GetFinalChannelURI(aChannel, getter_AddRefs(uri));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  if (contentPolicyType == nsIContentPolicy::TYPE_DOCUMENT ||
-      contentPolicyType == nsIContentPolicy::TYPE_SUBDOCUMENT) {
-    
-    
-    
-    nsCOMPtr<nsIURIFixup> urifixup(components::URIFixup::Service());
-    if (urifixup) {
-      nsCOMPtr<nsIURI> fixedURI;
-      rv = urifixup->CreateExposableURI(uri, getter_AddRefs(fixedURI));
-      if (NS_SUCCEEDED(rv)) {
-        uri = fixedURI;
-      }
-    }
-  }
-
   switch (contentPolicyType) {
     case nsIContentPolicy::TYPE_OTHER: {
       mimeTypeGuess = EmptyCString();
@@ -881,24 +866,6 @@ nsresult nsContentSecurityManager::CheckChannel(nsIChannel* aChannel) {
   nsCOMPtr<nsIURI> uri;
   nsresult rv = NS_GetFinalChannelURI(aChannel, getter_AddRefs(uri));
   NS_ENSURE_SUCCESS(rv, rv);
-
-  nsContentPolicyType contentPolicyType =
-      loadInfo->GetExternalContentPolicyType();
-
-  if (contentPolicyType == nsIContentPolicy::TYPE_DOCUMENT ||
-      contentPolicyType == nsIContentPolicy::TYPE_SUBDOCUMENT) {
-    
-    
-    
-    nsCOMPtr<nsIURIFixup> urifixup(components::URIFixup::Service());
-    if (urifixup) {
-      nsCOMPtr<nsIURI> fixedURI;
-      rv = urifixup->CreateExposableURI(uri, getter_AddRefs(fixedURI));
-      if (NS_SUCCEEDED(rv)) {
-        uri = fixedURI;
-      }
-    }
-  }
 
   
   uint32_t cookiePolicy = loadInfo->GetCookiePolicy();

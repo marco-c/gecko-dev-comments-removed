@@ -762,22 +762,6 @@ SessionStore.prototype = {
       return;
     }
 
-    
-    
-    
-    let historyIndex = data.index - 1;
-    for (let i = 0; i < data.entries.length; i++) {
-      if (data.entries[i].url.startsWith("wyciwyg")) {
-        
-        if (i <= historyIndex) {
-          data.index--;
-          historyIndex--;
-        }
-        data.entries.splice(i, 1);
-        i--;
-      }
-    }
-
     let formdata;
     let scrolldata;
     if (aBrowser.__SS_data) {

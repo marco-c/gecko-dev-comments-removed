@@ -497,13 +497,6 @@ nsresult GetCacheSessionNameForStoragePolicy(
     }
   }
   
-  else if (scheme.EqualsLiteral("wyciwyg")) {
-    if (isPrivate)
-      sessionName.AssignLiteral("wyciwyg-private");
-    else
-      sessionName.AssignLiteral("wyciwyg");
-  }
-  
   else if (scheme.EqualsLiteral("ftp")) {
     if (isPrivate)
       sessionName.AssignLiteral("FTP-private");
@@ -923,13 +916,6 @@ NS_IMETHODIMP _OldStorage::AsyncEvictStorage(
     rv = session->EvictEntries();
     NS_ENSURE_SUCCESS(rv, rv);
 
-    rv = GetCacheSession(NS_LITERAL_CSTRING("wyciwyg"), mWriteToDisk, mLoadInfo,
-                         mAppCache, getter_AddRefs(session));
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    rv = session->EvictEntries();
-    NS_ENSURE_SUCCESS(rv, rv);
-
     
     rv = GetCacheSession(EmptyCString(), mWriteToDisk, mLoadInfo, mAppCache,
                          getter_AddRefs(session));
@@ -1019,9 +1005,6 @@ nsresult _OldStorage::AssembleCacheKey(nsIURI *aURI,
     if (!aCacheKey.IsEmpty()) {
       aCacheKey.AppendLiteral("uri=");
     }
-  } else if (aScheme.EqualsLiteral("wyciwyg")) {
-    rv = aURI->GetSpec(uriSpec);
-    NS_ENSURE_SUCCESS(rv, rv);
   } else {
     rv = aURI->GetAsciiSpec(uriSpec);
     NS_ENSURE_SUCCESS(rv, rv);

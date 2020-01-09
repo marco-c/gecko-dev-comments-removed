@@ -7,8 +7,7 @@
 
 
 
-
-var testURL = "http://mochi.test:8888/browser/dom/html/test/file_refresh_wyciwyg_url.html";
+var testURL = "http://mochi.test:8888/browser/dom/html/test/file_refresh_after_document_write.html";
 let aTab, aBrowser;
 
 function test(){

@@ -592,7 +592,7 @@ class ContentParent final : public PContentParent,
   
   
   
-  nsresult AboutToLoadHttpFtpWyciwygDocumentForChild(nsIChannel* aChannel);
+  nsresult AboutToLoadHttpFtpDocumentForChild(nsIChannel* aChannel);
 
   nsresult TransmitPermissionsForPrincipal(nsIPrincipal* aPrincipal);
 

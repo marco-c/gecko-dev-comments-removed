@@ -1668,39 +1668,6 @@ HttpBaseChannel::SetReferrerWithPolicy(nsIURI* referrer,
   bool match;
 
   
-  
-  
-  
-  
-  
-  
-  
-  rv = referrer->SchemeIs("wyciwyg", &match);
-  if (NS_FAILED(rv)) return rv;
-  if (match) {
-    nsAutoCString path;
-    rv = referrer->GetPathQueryRef(path);
-    if (NS_FAILED(rv)) return rv;
-
-    uint32_t pathLength = path.Length();
-    if (pathLength <= 2) return NS_ERROR_FAILURE;
-
-    
-    
-    
-    int32_t slashIndex = path.FindChar('/', 2);
-    if (slashIndex == kNotFound) return NS_ERROR_FAILURE;
-
-    
-    rv =
-        NS_NewURI(getter_AddRefs(referrerGrip),
-                  Substring(path, slashIndex + 1, pathLength - slashIndex - 1));
-    if (NS_FAILED(rv)) return rv;
-
-    referrer = referrerGrip.get();
-  }
-
-  
   if (!IsReferrerSchemeAllowed(referrer)) {
     return NS_OK;  
   }
