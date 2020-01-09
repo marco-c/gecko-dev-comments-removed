@@ -60,7 +60,6 @@
 
 
 
-
 var C = class {
   static async * #$(value) {
     yield * await value;

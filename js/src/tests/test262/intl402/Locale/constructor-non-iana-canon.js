@@ -53,9 +53,19 @@ var testData = [
     },
     {
         tag: "aar-x-private",
-    },
+        
+        
+        
+        canonical: "aa-x-private",
+        maximized: "aa-Latn-ET-x-private",
+   },
     {
         tag: "heb-x-private",
+        
+        
+        
+        canonical: "he-x-private",
+        maximized: "he-Hebr-IL-x-private",
     },
     {
         tag: "de-u-kf",
@@ -63,6 +73,11 @@ var testData = [
     },
     {
         tag: "ces",
+        
+        
+        
+        canonical: "cs",
+        maximized: "cs-Latn-CZ",
     },
     {
         tag: "hy-arevela",
@@ -76,12 +91,6 @@ var testData = [
 ];
 
 for (const {tag, canonical = tag, maximized = canonical, minimized = canonical} of testData) {
-    assert.sameValue(
-      Intl.getCanonicalLocales(tag)[0],
-      canonical,
-      'The value of Intl.getCanonicalLocales(tag)[0] equals the value of `canonical`'
-    );
-
     const loc = new Intl.Locale(tag);
     assert.sameValue(
       new Intl.Locale(tag).toString(),

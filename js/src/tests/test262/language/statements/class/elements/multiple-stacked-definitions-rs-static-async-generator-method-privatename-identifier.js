@@ -60,7 +60,6 @@
 
 
 
-
 class C {
   static async * #$(value) {
     yield * await value;

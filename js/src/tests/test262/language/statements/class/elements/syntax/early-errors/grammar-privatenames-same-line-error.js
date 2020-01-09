@@ -30,7 +30,6 @@
 
 
 
-
 $DONOTEVALUATE();
 
 class C {

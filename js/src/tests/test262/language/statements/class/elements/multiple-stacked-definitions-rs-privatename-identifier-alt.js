@@ -56,7 +56,6 @@
 
 
 
-
 class C {
   #$; #_; #\u{6F}; #℘; #ZW_‌_NJ; #ZW_‍_J
   foo = "foobar"

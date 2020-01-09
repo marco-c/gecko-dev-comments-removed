@@ -60,7 +60,6 @@
 
 
 
-
 class C {
   static async m() { return 42; } static async #$(value) {
     return await value;

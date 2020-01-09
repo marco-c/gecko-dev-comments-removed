@@ -57,7 +57,6 @@
 
 
 
-
 var C = class {
   foo = "foobar";
   m() { return 42 }

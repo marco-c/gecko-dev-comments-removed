@@ -60,7 +60,6 @@
 
 
 
-
 var C = class {
   static m() { return 42; } static async #$(value) {
     return await value;

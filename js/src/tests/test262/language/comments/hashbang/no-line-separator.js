@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(eval('#!'), undefined);
+
+reportCompare(0, 0);

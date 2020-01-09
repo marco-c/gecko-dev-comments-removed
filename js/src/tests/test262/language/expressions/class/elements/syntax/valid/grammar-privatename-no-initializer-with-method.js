@@ -27,7 +27,6 @@
 
 
 
-
 var C = class {
   #x
   m() {}
