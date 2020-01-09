@@ -3044,7 +3044,7 @@ void RestyleManager::DoProcessPendingRestyles(ServoTraversalFlags aFlags) {
   }
 
   
-  nsIPresShell::AutoAssertNoFlush noReentrantFlush(*presShell);
+  PresShell::AutoAssertNoFlush noReentrantFlush(*presShell);
 
   
   

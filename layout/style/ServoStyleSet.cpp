@@ -290,10 +290,6 @@ void ServoStyleSet::SetAuthorStyleDisabled(bool aStyleDisabled) {
   }
   Servo_StyleSet_SetAuthorStyleDisabled(mRawSet.get(), mAuthorStyleDisabled);
   
-  
-  
-  
-  
   SetStylistStyleSheetsDirty();
 }
 
