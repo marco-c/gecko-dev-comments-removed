@@ -101,7 +101,7 @@ bool TestFunctions::ObjectFromAboutBlank(JSContext* aCx, JSObject* aObj) {
   
   
   RefPtr<nsGlobalWindowInner> win;
-  UNWRAP_OBJECT(Window, aObj, win);
+  UNWRAP_MAYBE_CROSS_ORIGIN_OBJECT(Window, aObj, win, aCx);
   if (!win) {
     return false;
   }
