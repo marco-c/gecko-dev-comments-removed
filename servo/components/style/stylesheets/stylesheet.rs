@@ -108,6 +108,34 @@ impl StylesheetContents {
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn from_shared_data(
+        rules: Arc<Locked<CssRules>>,
+        origin: Origin,
+        url_data: UrlExtraData,
+        quirks_mode: QuirksMode,
+    ) -> Self {
+        Self {
+            rules,
+            origin,
+            url_data: RwLock::new(url_data),
+            namespaces: RwLock::new(Namespaces::default()),
+            quirks_mode,
+            source_map_url: RwLock::new(None),
+            source_url: RwLock::new(None),
+        }
+    }
+
+    
     #[inline]
     pub fn rules<'a, 'b: 'a>(&'a self, guard: &'b SharedRwLockReadGuard) -> &'a [CssRule] {
         &self.rules.read_with(guard).0
