@@ -74,7 +74,7 @@ pub enum TextureTarget {
 }
 
 
-#[repr(u32)]
+#[repr(u8)]
 #[derive(Debug, Copy, Clone, Eq, Hash, PartialEq, Serialize, Deserialize)]
 pub enum ExternalImageType {
     
@@ -97,7 +97,7 @@ pub struct ExternalImageData {
 }
 
 
-#[repr(u32)]
+#[repr(u8)]
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub enum ImageFormat {
     
