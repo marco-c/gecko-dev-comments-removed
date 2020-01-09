@@ -5713,9 +5713,7 @@ void nsGlobalWindowInner::DisableDeviceSensor(uint32_t aType) {
 
 #if defined(MOZ_WIDGET_ANDROID)
 void nsGlobalWindowInner::EnableOrientationChangeListener() {
-  
-  nsIDocShell* docShell = nullptr;
-  if (!nsContentUtils::ShouldResistFingerprinting(docShell) &&
+  if (!nsContentUtils::ShouldResistFingerprinting(GetDocShell()) &&
       !mOrientationChangeObserver) {
     mOrientationChangeObserver = MakeUnique<WindowOrientationObserver>(this);
   }
@@ -5894,7 +5892,7 @@ void nsGlobalWindowInner::GetGamepads(nsTArray<RefPtr<Gamepad>>& aGamepads) {
 
   
   
-  if (nsContentUtils::ShouldResistFingerprinting()) {
+  if (nsContentUtils::ShouldResistFingerprinting(GetDocShell())) {
     return;
   }
 
