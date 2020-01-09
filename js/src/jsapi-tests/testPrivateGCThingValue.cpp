@@ -50,7 +50,7 @@ BEGIN_TEST(testPrivateGCThingValue) {
   CHECK(srcBuf.init(cx, code, mozilla::ArrayLength(code) - 1,
                     JS::SourceOwnership::Borrowed));
 
-  JS::RootedScript script(cx, JS::Compile(cx, options, srcBuf));
+  JS::RootedScript script(cx, JS::CompileDontInflate(cx, options, srcBuf));
   CHECK(script);
   JS_SetReservedSlot(obj, 0, PrivateGCThingValue(script));
 

@@ -38,7 +38,7 @@ BEGIN_TEST(testScriptInfo) {
   CHECK(srcBuf.init(cx, code, mozilla::ArrayLength(code) - 1,
                     JS::SourceOwnership::Borrowed));
 
-  JS::RootedScript script(cx, JS::Compile(cx, options, srcBuf));
+  JS::RootedScript script(cx, JS::CompileDontInflate(cx, options, srcBuf));
   CHECK(script);
 
   CHECK_EQUAL(JS_GetScriptBaseLineNumber(cx, script), startLine);

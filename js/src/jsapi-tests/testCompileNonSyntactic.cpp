@@ -95,7 +95,7 @@ bool testCompile(bool nonSyntactic) {
   CHECK(script);
   CHECK_EQUAL(script->hasNonSyntacticScope(), nonSyntactic);
 
-  script = Compile(cx, options, buf8);
+  script = CompileDontInflate(cx, options, buf8);
   CHECK(script);
   CHECK_EQUAL(script->hasNonSyntacticScope(), nonSyntactic);
 
