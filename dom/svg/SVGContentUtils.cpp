@@ -19,11 +19,13 @@
 #include "mozilla/SVGContextPaint.h"
 #include "mozilla/TextUtils.h"
 #include "nsComputedDOMStyle.h"
+#include "nsContainerFrame.h"
 #include "nsFontMetrics.h"
 #include "nsIFrame.h"
 #include "nsIScriptError.h"
 #include "nsLayoutUtils.h"
 #include "nsMathUtils.h"
+#include "nsSVGUtils.h"
 #include "nsWhitespaceTokenizer.h"
 #include "SVGAnimationElement.h"
 #include "SVGAnimatedPreserveAspectRatio.h"
@@ -466,15 +468,37 @@ SVGViewportElement* SVGContentUtils::GetNearestViewportElement(
 
 static gfx::Matrix GetCTMInternal(SVGElement* aElement, bool aScreenCTM,
                                   bool aHaveRecursed) {
-  gfxMatrix matrix = aElement->PrependLocalTransformsTo(
-      gfxMatrix(), aHaveRecursed ? eAllTransforms : eUserSpaceToParent);
+  auto getLocalTransformHelper =
+      [](SVGElement const* e, bool shouldIncludeChildToUserSpace) -> gfxMatrix {
+    gfxMatrix ret;
+
+    if (auto* f = e->GetPrimaryFrame()) {
+      ret = nsSVGUtils::GetTransformMatrixInUserSpace(f, f->GetParent());
+    } else {
+      
+      
+      
+      
+      
+      ret = e->PrependLocalTransformsTo({}, eUserSpaceToParent);
+    }
+
+    if (shouldIncludeChildToUserSpace) {
+      ret = e->PrependLocalTransformsTo({}, eChildToUserSpace) * ret;
+    }
+
+    return ret;
+  };
+
+  gfxMatrix matrix = getLocalTransformHelper(aElement, aHaveRecursed);
+
   SVGElement* element = aElement;
   nsIContent* ancestor = aElement->GetFlattenedTreeParent();
 
   while (ancestor && ancestor->IsSVGElement() &&
          !ancestor->IsSVGElement(nsGkAtoms::foreignObject)) {
     element = static_cast<SVGElement*>(ancestor);
-    matrix *= element->PrependLocalTransformsTo(gfxMatrix());  
+    matrix *= getLocalTransformHelper(element, true);
     if (!aScreenCTM && SVGContentUtils::EstablishesViewport(element)) {
       if (!element->NodeInfo()->Equals(nsGkAtoms::svg, kNameSpaceID_SVG) &&
           !element->NodeInfo()->Equals(nsGkAtoms::symbol, kNameSpaceID_SVG)) {
@@ -501,7 +525,7 @@ static gfx::Matrix GetCTMInternal(SVGElement* aElement, bool aScreenCTM,
     
     
     
-    matrix = aElement->PrependLocalTransformsTo(gfxMatrix());
+    matrix = getLocalTransformHelper(aElement, true);
   }
 
   if (auto* f = element->GetPrimaryFrame()) {
