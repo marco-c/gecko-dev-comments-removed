@@ -13,6 +13,7 @@
 #  include "mozilla/StateMirroring.h"
 #  include "mozilla/StaticPrefs.h"
 #  include "mozilla/TaskQueue.h"
+#  include "mozilla/dom/MediaDebugInfoBinding.h"
 
 #  include "FrameStatistics.h"
 #  include "MediaEventSource.h"
@@ -180,7 +181,7 @@ class MediaFormatReader final
 
   
   
-  void GetMozDebugReaderData(nsACString& aString);
+  void GetDebugInfo(dom::MediaFormatReaderDebugInfo& aInfo);
 
   
   

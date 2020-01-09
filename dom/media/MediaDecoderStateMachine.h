@@ -96,6 +96,7 @@
 #  include "mozilla/Attributes.h"
 #  include "mozilla/ReentrantMonitor.h"
 #  include "mozilla/StateMirroring.h"
+#  include "mozilla/dom/MediaDebugInfoBinding.h"
 #  include "nsAutoPtr.h"
 #  include "nsThreadUtils.h"
 
@@ -182,7 +183,8 @@ class MediaDecoderStateMachine
   
   TaskQueue* OwnerThread() const { return mTaskQueue; }
 
-  RefPtr<MediaDecoder::DebugInfoPromise> RequestDebugInfo();
+  RefPtr<GenericPromise> RequestDebugInfo(
+      dom::MediaDecoderStateMachineDebugInfo& aInfo);
 
   void SetOutputStreamPrincipal(const nsCOMPtr<nsIPrincipal>& aPrincipal);
   void SetOutputStreamCORSMode(CORSMode aCORSMode);
@@ -310,7 +312,7 @@ class MediaDecoderStateMachine
   static const char* ToStateStr(State aState);
   const char* ToStateStr();
 
-  nsCString GetDebugInfo();
+  void GetDebugInfo(dom::MediaDecoderStateMachineDebugInfo& aInfo);
 
   
   

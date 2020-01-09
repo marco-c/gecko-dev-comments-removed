@@ -116,7 +116,7 @@ class MediaSource final : public DOMEventTargetHelper,
 
   
   
-  void GetMozDebugReaderData(nsAString& aString);
+  already_AddRefed<Promise> MozDebugReaderData(ErrorResult& aRv);
 
   bool HasLiveSeekableRange() const { return mLiveSeekableRange.isSome(); }
   media::TimeInterval LiveSeekableRange() const {

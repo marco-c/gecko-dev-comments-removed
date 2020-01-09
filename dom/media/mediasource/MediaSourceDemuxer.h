@@ -15,6 +15,7 @@
 #  include "mozilla/Maybe.h"
 #  include "mozilla/Monitor.h"
 #  include "mozilla/TaskQueue.h"
+#  include "mozilla/dom/MediaDebugInfoBinding.h"
 
 namespace mozilla {
 
@@ -51,7 +52,7 @@ class MediaSourceDemuxer : public MediaDataDemuxer,
 
   
   
-  void GetMozDebugReaderData(nsACString& aString);
+  void GetDebugInfo(dom::MediaSourceDemuxerDebugInfo& aInfo);
 
   void AddSizeOfResources(MediaSourceDecoder::ResourceSizes* aSizes);
 

@@ -57,7 +57,7 @@ class AudioSink : private AudioStream::DataSource {
 
   MediaEventSource<bool>& AudibleEvent() { return mAudibleEvent; }
 
-  nsCString GetDebugInfo();
+  void GetDebugInfo(dom::MediaSinkDebugInfo& aInfo);
 
  private:
   

@@ -9,6 +9,7 @@
 
 #include "MediaDecoder.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/dom/MediaDebugInfoBinding.h"
 
 namespace mozilla {
 
@@ -53,7 +54,7 @@ class MediaSourceDecoder : public MediaDecoder,
 
   
   
-  void GetMozDebugReaderData(nsACString& aString) override;
+  void GetDebugInfo(dom::MediaSourceDecoderDebugInfo& aInfo);
 
   void AddSizeOfResources(ResourceSizes* aSizes) override;
 

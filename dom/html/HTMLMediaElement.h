@@ -18,10 +18,12 @@
 #include "DecoderTraits.h"
 #include "nsIAudioChannelAgent.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/dom/TextTrackManager.h"
-#include "mozilla/WeakPtr.h"
-#include "mozilla/dom/MediaKeys.h"
 #include "mozilla/StateWatching.h"
+#include "mozilla/WeakPtr.h"
+#include "mozilla/dom/HTMLMediaElementBinding.h"
+#include "mozilla/dom/MediaDebugInfoBinding.h"
+#include "mozilla/dom/MediaKeys.h"
+#include "mozilla/dom/TextTrackManager.h"
 #include "nsGkAtoms.h"
 #include "PrincipalChangeObserver.h"
 #include "nsStubMutationObserver.h"
@@ -32,7 +34,6 @@
 #  undef CurrentTime
 #endif
 
-#include "mozilla/dom/HTMLMediaElementBinding.h"
 
 
 
@@ -292,7 +293,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   void NotifyDecoderPrincipalChanged() final;
 
-  void GetEMEInfo(nsString& aEMEInfo);
+  void GetEMEInfo(dom::EMEDebugInfo& aInfo);
 
   class StreamCaptureTrackSource;
 
@@ -538,9 +539,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   bool AllowedToPlay() const;
 
   already_AddRefed<MediaSource> GetMozMediaSourceObject() const;
-  
-  
-  void GetMozDebugReaderData(nsAString& aString);
 
   
   
@@ -552,8 +550,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   
   already_AddRefed<Promise> MozRequestDebugLog(ErrorResult& aRv);
-
-  already_AddRefed<Promise> MozDumpDebugInfo();
 
   
   void SetVisible(bool aVisible);
