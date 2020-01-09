@@ -74,7 +74,10 @@ class WrapperFactory {
   static bool IsCOW(JSObject* wrapper);
 
   static JSObject* GetXrayWaiver(JS::HandleObject obj);
-  static JSObject* CreateXrayWaiver(JSContext* cx, JS::HandleObject obj);
+  
+  
+  static JSObject* CreateXrayWaiver(JSContext* cx, JS::HandleObject obj,
+                                    bool allowExisting = false);
   static JSObject* WaiveXray(JSContext* cx, JSObject* obj);
 
   

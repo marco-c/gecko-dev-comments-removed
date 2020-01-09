@@ -206,10 +206,12 @@ JSObject* WrapperFactory::GetXrayWaiver(HandleObject obj) {
   return scope->mWaiverWrapperMap->Find(obj);
 }
 
-JSObject* WrapperFactory::CreateXrayWaiver(JSContext* cx, HandleObject obj) {
+JSObject* WrapperFactory::CreateXrayWaiver(JSContext* cx, HandleObject obj,
+                                           bool allowExisting) {
   
   
-  MOZ_ASSERT(!GetXrayWaiver(obj));
+  
+  MOZ_ASSERT(bool(GetXrayWaiver(obj)) == allowExisting);
   XPCWrappedNativeScope* scope = ObjectScope(obj);
 
   JSAutoRealm ar(cx, obj);
@@ -243,15 +245,13 @@ JSObject* WrapperFactory::WaiveXray(JSContext* cx, JSObject* objArg) {
   return waiver;
 }
 
-
-bool WrapperFactory::AllowWaiver(JS::Compartment* target,
-                                 JS::Compartment* origin) {
+ bool WrapperFactory::AllowWaiver(JS::Compartment* target,
+                                              JS::Compartment* origin) {
   return CompartmentPrivate::Get(target)->allowWaivers &&
          CompartmentOriginInfo::Subsumes(target, origin);
 }
 
-
-bool WrapperFactory::AllowWaiver(JSObject* wrapper) {
+ bool WrapperFactory::AllowWaiver(JSObject* wrapper) {
   MOZ_ASSERT(js::IsCrossCompartmentWrapper(wrapper));
   return AllowWaiver(js::GetObjectCompartment(wrapper),
                      js::GetObjectCompartment(js::UncheckedUnwrap(wrapper)));
@@ -832,33 +832,48 @@ bool WrapperFactory::WaiveXrayAndWrap(JSContext* cx,
 
 
 static bool FixWaiverAfterTransplant(JSContext* cx, HandleObject oldWaiver,
-                                     HandleObject newobj) {
+                                     HandleObject newobj,
+                                     bool crossCompartmentTransplant) {
   MOZ_ASSERT(Wrapper::wrapperHandler(oldWaiver) == &XrayWaiver::singleton);
   MOZ_ASSERT(!js::IsCrossCompartmentWrapper(newobj));
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  js::NukeCrossCompartmentWrapperIfExists(cx, js::GetObjectCompartment(newobj),
-                                          oldWaiver);
+  if (crossCompartmentTransplant) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    js::NukeCrossCompartmentWrapperIfExists(
+        cx, js::GetObjectCompartment(newobj), oldWaiver);
+  } else {
+    
+    
+    MOZ_ASSERT(newobj == Wrapper::wrappedObject(oldWaiver));
+  }
 
   
   
   
   
-  JSObject* newWaiver = WrapperFactory::CreateXrayWaiver(cx, newobj);
+  
+  
+  JSObject* newWaiver = WrapperFactory::CreateXrayWaiver(
+      cx, newobj,  !crossCompartmentTransplant);
   if (!newWaiver) {
     return false;
+  }
+
+  if (!crossCompartmentTransplant) {
+    
+    MOZ_ASSERT(WrapperFactory::GetXrayWaiver(newobj) == newWaiver);
   }
 
   
@@ -867,30 +882,42 @@ static bool FixWaiverAfterTransplant(JSContext* cx, HandleObject oldWaiver,
     return false;
   }
 
-  
-  
-  
-  XPCWrappedNativeScope* scope = ObjectScope(oldWaiver);
-  JSObject* key = Wrapper::wrappedObject(oldWaiver);
-  MOZ_ASSERT(scope->mWaiverWrapperMap->Find(key));
-  scope->mWaiverWrapperMap->Remove(key);
+  if (crossCompartmentTransplant) {
+    
+    
+    
+    XPCWrappedNativeScope* scope = ObjectScope(oldWaiver);
+    JSObject* key = Wrapper::wrappedObject(oldWaiver);
+    MOZ_ASSERT(scope->mWaiverWrapperMap->Find(key));
+    scope->mWaiverWrapperMap->Remove(key);
+  }
+
   return true;
 }
 
 JSObject* TransplantObject(JSContext* cx, JS::HandleObject origobj,
                            JS::HandleObject target) {
   RootedObject oldWaiver(cx, WrapperFactory::GetXrayWaiver(origobj));
+  MOZ_ASSERT_IF(oldWaiver, GetNonCCWObjectRealm(oldWaiver) ==
+                               GetNonCCWObjectRealm(origobj));
   RootedObject newIdentity(cx, JS_TransplantObject(cx, origobj, target));
   if (!newIdentity || !oldWaiver) {
     return newIdentity;
   }
 
-  
-  if (newIdentity == origobj) {
-    return newIdentity;
+  bool crossCompartmentTransplant = (newIdentity != origobj);
+  if (!crossCompartmentTransplant) {
+    
+    
+    if (GetNonCCWObjectRealm(oldWaiver) == GetNonCCWObjectRealm(newIdentity)) {
+      
+      
+      return newIdentity;
+    }
   }
 
-  if (!FixWaiverAfterTransplant(cx, oldWaiver, newIdentity)) {
+  if (!FixWaiverAfterTransplant(cx, oldWaiver, newIdentity,
+                                crossCompartmentTransplant)) {
     return nullptr;
   }
   return newIdentity;
