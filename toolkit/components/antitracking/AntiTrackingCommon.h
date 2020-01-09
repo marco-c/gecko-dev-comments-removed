@@ -14,6 +14,7 @@
 #define USER_INTERACTION_PERM NS_LITERAL_CSTRING("storageAccessAPI")
 
 class nsIChannel;
+class nsICookieSettings;
 class nsIHttpChannel;
 class nsIPermission;
 class nsIPrincipal;
@@ -65,7 +66,8 @@ class AntiTrackingCommon final {
 
   
   
-  static bool IsFirstPartyStorageAccessGrantedFor(nsIPrincipal* aPrincipal);
+  static bool IsFirstPartyStorageAccessGrantedFor(
+      nsIPrincipal* aPrincipal, nsICookieSettings* aCookieSettings);
 
   enum StorageAccessGrantedReason {
     eStorageAccessAPI,
