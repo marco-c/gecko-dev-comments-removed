@@ -225,8 +225,6 @@ class UrlbarController {
           
           event.preventDefault();
         }
-        
-        
         this.input.handleCommand(event);
         break;
       case KeyEvent.DOM_VK_TAB:
