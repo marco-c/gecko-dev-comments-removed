@@ -306,6 +306,7 @@ Instance::callImport_anyref(Instance* instance, int32_t funcImportIndex,
   if (!BoxAnyRef(cx, rval, &result)) {
     return false;
   }
+  static_assert(sizeof(argv[0]) >= sizeof(void*), "fits");
   *(void**)argv = result.get().forCompiledCode();
   return true;
 }
@@ -934,27 +935,17 @@ void Instance::initElems(uint32_t tableIndex, const ElemSegment& seg,
   return -1;
 }
 
-
-
-
-
-
-
-
-
-
  void* Instance::tableGet(Instance* instance, uint32_t index,
                                       uint32_t tableIndex) {
-  MOZ_ASSERT(SASigTableGet.failureMode == FailureMode::FailOnNullPtr);
-
+  MOZ_ASSERT(SASigTableGet.failureMode == FailureMode::FailOnInvalidRef);
   const Table& table = *instance->tables()[tableIndex];
   MOZ_RELEASE_ASSERT(table.kind() == TableKind::AnyRef);
   if (index >= table.length()) {
     JS_ReportErrorNumberASCII(TlsContext.get(), GetErrorMessage, nullptr,
                               JSMSG_WASM_TABLE_OUT_OF_BOUNDS);
-    return nullptr;
+    return AnyRef::invalid().forCompiledCode();
   }
-  return const_cast<void*>(table.getShortlivedAnyRefLocForCompiledCode(index));
+  return table.getAnyRef(index).forCompiledCode();
 }
 
  uint32_t Instance::tableGrow(Instance* instance, void* initValue,

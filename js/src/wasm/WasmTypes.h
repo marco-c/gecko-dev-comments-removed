@@ -568,11 +568,16 @@ static inline const char* ToCString(ValType type) {
 class AnyRef {
   JSObject* value_;
 
+  explicit AnyRef() : value_((JSObject*)-1) {}
   explicit AnyRef(JSObject* p) : value_(p) {
     MOZ_ASSERT(((uintptr_t)p & 0x03) == 0);
   }
 
  public:
+  
+  
+  static AnyRef invalid() { return AnyRef(); }
+
   
   static AnyRef fromCompiledCode(void* p) { return AnyRef((JSObject*)p); }
 
@@ -1905,7 +1910,12 @@ enum class SymbolicAddress {
 
 
 
-enum class FailureMode : uint8_t { Infallible, FailOnNegI32, FailOnNullPtr };
+enum class FailureMode : uint8_t {
+  Infallible,
+  FailOnNegI32,
+  FailOnNullPtr,
+  FailOnInvalidRef
+};
 
 
 

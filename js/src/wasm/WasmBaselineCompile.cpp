@@ -10334,16 +10334,11 @@ bool BaseCompiler::emitTableGet() {
     return true;
   }
   
-  
-  
-  
   pushI32(tableIndex);
   if (!emitInstanceCall(lineOrBytecode, SASigTableGet,
                         false)) {
     return false;
   }
-
-  masm.loadPtr(Address(ReturnReg, 0), ReturnReg);
 
   
   
