@@ -409,7 +409,10 @@ Index::Index(const IndiceWrapper& aIndices, ByteStream* aSource,
       if (!haveSync) {
         continue;
       }
-
+      if (indice.start_composition == indice.end_composition) {
+        
+        continue;
+      }
       Sample sample;
       sample.mByteRange =
           MediaByteRange(indice.start_offset, indice.end_offset);
