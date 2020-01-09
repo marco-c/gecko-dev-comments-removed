@@ -130,7 +130,6 @@ class Mocks {
 
 
 
-
   createUSBRuntime(id, runtimeInfo = {}) {
     
     this._usbRuntimes.push({

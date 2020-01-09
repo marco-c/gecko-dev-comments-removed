@@ -32,7 +32,7 @@ add_task(async function() {
   ok(!hasConnectButton, "Connect button is not displayed");
 
   const hasLink = usbRuntimeSidebarItem.querySelector(".js-sidebar-link");
-  ok(!hasLink, "Unknown runtime is not selectable");
+  ok(!hasLink, "Unavailable runtime is not selectable");
 
   info("Add a valid runtime for the same device id and emit update event");
   mocks.createUSBRuntime(RUNTIME_ID, {

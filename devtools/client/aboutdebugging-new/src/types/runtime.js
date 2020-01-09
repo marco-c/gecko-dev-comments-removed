@@ -128,7 +128,8 @@ const runtime = {
 
   
   
-  isUnknown: PropTypes.bool.isRequired,
+  
+  isUnavailable: PropTypes.bool.isRequired,
 
   
   
