@@ -15,6 +15,9 @@ class ContentProcessSession {
     this.browsingContext = browsingContext;
     this.content = content;
     this.docShell = docShell;
+    
+    
+    this.docShell.QueryInterface(Ci.nsIWebNavigation);
 
     this.domains = new Domains(this, ContentProcessDomains);
     this.messageManager.addMessageListener("remote:request", this);
