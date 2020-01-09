@@ -4349,6 +4349,48 @@ Storage* nsGlobalWindowInner::GetSessionStorage(ErrorResult& aError) {
       return nullptr;
     }
 
+    uint32_t rejectedReason = 0;
+    nsContentUtils::StorageAccess access =
+        nsContentUtils::StorageAllowedForWindow(this, &rejectedReason);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (access == nsContentUtils::StorageAccess::eDeny &&
+        rejectedReason !=
+            nsIWebProgressListener::STATE_COOKIES_BLOCKED_FOREIGN) {
+      aError.Throw(NS_ERROR_DOM_SECURITY_ERR);
+      return nullptr;
+    }
+
     nsresult rv;
 
     nsCOMPtr<nsIDOMStorageManager> storageManager =

@@ -269,12 +269,6 @@ class LocalStorageCache : public LocalStorageCacheBridge {
 
   
   
-  
-  
-  bool mSessionOnlyDataSetActive : 1;
-
-  
-  
   bool mPreloadTelemetryRecorded : 1;
 };
 

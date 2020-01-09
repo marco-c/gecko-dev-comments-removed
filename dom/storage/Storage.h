@@ -134,22 +134,9 @@ class Storage : public nsISupports, public nsWrapperCache {
   virtual ~Storage();
 
   
-  
-  
-  
-  
-  
-  
   bool CanUseStorage(nsIPrincipal& aSubjectPrincipal);
 
   virtual void LastRelease() {}
-
-  
-  
-  
-  virtual bool ShouldThrowWhenStorageAccessDenied(uint32_t aRejectedReason) {
-    return true;
-  }
 
  private:
   nsCOMPtr<nsPIDOMWindowInner> mWindow;
