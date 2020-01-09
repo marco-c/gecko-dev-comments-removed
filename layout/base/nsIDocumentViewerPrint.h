@@ -40,12 +40,6 @@ class nsIDocumentViewerPrint : public nsISupports {
   virtual bool GetIsPrintPreview() = 0;
 
   
-  
-  
-  virtual mozilla::UniquePtr<mozilla::ServoStyleSet> CreateStyleSet(
-      mozilla::dom::Document* aDocument) = 0;
-
-  
 
 
 
@@ -82,8 +76,6 @@ NS_DEFINE_STATIC_IID_ACCESSOR(nsIDocumentViewerPrint,
   bool GetIsPrinting() override;                                \
   void SetIsPrintPreview(bool aIsPrintPreview) override;        \
   bool GetIsPrintPreview() override;                            \
-  mozilla::UniquePtr<mozilla::ServoStyleSet> CreateStyleSet(    \
-      mozilla::dom::Document* aDocument) override;              \
   void IncrementDestroyBlockedCount() override;                 \
   void DecrementDestroyBlockedCount() override;                 \
   void OnDonePrinting() override;                               \

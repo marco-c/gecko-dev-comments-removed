@@ -92,12 +92,15 @@ class MOZ_RAII AutoPrepareTraversal {
 
 }  
 
-ServoStyleSet::ServoStyleSet()
-    : mDocument(nullptr),
+ServoStyleSet::ServoStyleSet(Document& aDocument)
+    : mDocument(&aDocument),
       mAuthorStyleDisabled(false),
       mStylistState(StylistState::NotDirty),
       mUserFontSetUpdateGeneration(0),
-      mNeedsRestyleAfterEnsureUniqueInner(false) {}
+      mNeedsRestyleAfterEnsureUniqueInner(false) {
+  PreferenceSheet::EnsureInitialized();
+  mRawSet.reset(Servo_StyleSet_Init(&aDocument));
+}
 
 ServoStyleSet::~ServoStyleSet() {
   for (auto& sheetArray : mSheets) {
@@ -108,41 +111,10 @@ ServoStyleSet::~ServoStyleSet() {
 }
 
 nsPresContext* ServoStyleSet::GetPresContext() {
-  if (!mDocument) {
-    return nullptr;
-  }
-
   return mDocument->GetPresContext();
 }
 
-void ServoStyleSet::Init(nsPresContext* aPresContext) {
-  mDocument = aPresContext->Document();
-  MOZ_ASSERT(GetPresContext() == aPresContext);
-
-  mRawSet.reset(Servo_StyleSet_Init(aPresContext));
-
-  aPresContext->DeviceContext()->InitFontCache();
-
-  
-  
-  for (auto& sheetArray : mSheets) {
-    for (auto& sheet : sheetArray) {
-      
-      
-      
-      
-      
-
-      MOZ_ASSERT(sheet->RawContents(),
-                 "We should only append non-null raw sheets.");
-      Servo_StyleSet_AppendStyleSheet(mRawSet.get(), sheet);
-    }
-  }
-
-  
-  
-  SetStylistStyleSheetsDirty();
-
+void ServoStyleSet::ShellAttachedToDocument() {
   
   
   
@@ -165,11 +137,10 @@ void EnumerateShadowRoots(const Document& aDoc, const Functor& aCb) {
   }
 }
 
-void ServoStyleSet::Shutdown() {
+void ServoStyleSet::ShellDetachedFromDocument() {
   
   
   ClearNonInheritingComputedStyles();
-  mRawSet = nullptr;
   mStyleRuleMap = nullptr;
 }
 
@@ -630,13 +601,11 @@ nsresult ServoStyleSet::AppendStyleSheet(SheetType aType, StyleSheet* aSheet) {
   RemoveSheetOfType(aType, aSheet);
   AppendSheetOfType(aType, aSheet);
 
-  if (mRawSet) {
-    
-    
-    
-    Servo_StyleSet_AppendStyleSheet(mRawSet.get(), aSheet);
-    SetStylistStyleSheetsDirty();
-  }
+  
+  
+  
+  Servo_StyleSet_AppendStyleSheet(mRawSet.get(), aSheet);
+  SetStylistStyleSheetsDirty();
 
   if (mStyleRuleMap) {
     mStyleRuleMap->SheetAdded(*aSheet);
@@ -650,11 +619,10 @@ nsresult ServoStyleSet::RemoveStyleSheet(SheetType aType, StyleSheet* aSheet) {
   MOZ_ASSERT(IsCSSSheetType(aType));
 
   RemoveSheetOfType(aType, aSheet);
-  if (mRawSet) {
-    
-    Servo_StyleSet_RemoveStyleSheet(mRawSet.get(), aSheet);
-    SetStylistStyleSheetsDirty();
-  }
+
+  
+  Servo_StyleSet_RemoveStyleSheet(mRawSet.get(), aSheet);
+  SetStylistStyleSheetsDirty();
 
   if (mStyleRuleMap) {
     mStyleRuleMap->SheetRemoved(*aSheet);
@@ -675,20 +643,16 @@ nsresult ServoStyleSet::ReplaceSheets(
   
   for (const auto& sheet : mSheets[aType]) {
     sheet->DropStyleSet(this);
-    if (mRawSet) {
-      Servo_StyleSet_RemoveStyleSheet(mRawSet.get(), sheet);
-    }
+    Servo_StyleSet_RemoveStyleSheet(mRawSet.get(), sheet);
   }
   mSheets[aType].Clear();
 
   
   for (auto& sheet : aNewSheets) {
     AppendSheetOfType(aType, sheet);
-    if (mRawSet) {
-      MOZ_ASSERT(sheet->RawContents(),
-                 "Raw sheet should be in place before replacement.");
-      Servo_StyleSet_AppendStyleSheet(mRawSet.get(), sheet);
-    }
+    MOZ_ASSERT(sheet->RawContents(),
+               "Raw sheet should be in place before replacement.");
+    Servo_StyleSet_AppendStyleSheet(mRawSet.get(), sheet);
   }
 
   
@@ -714,12 +678,10 @@ nsresult ServoStyleSet::InsertStyleSheetBefore(SheetType aType,
   RemoveSheetOfType(aType, aNewSheet);
   InsertSheetOfType(aType, aNewSheet, aReferenceSheet);
 
-  if (mRawSet) {
-    
-    Servo_StyleSet_InsertStyleSheetBefore(mRawSet.get(), aNewSheet,
-                                          aReferenceSheet);
-    SetStylistStyleSheetsDirty();
-  }
+  
+  Servo_StyleSet_InsertStyleSheetBefore(mRawSet.get(), aNewSheet,
+                                        aReferenceSheet);
+  SetStylistStyleSheetsDirty();
 
   if (mStyleRuleMap) {
     mStyleRuleMap->SheetAdded(*aNewSheet);
@@ -772,20 +734,16 @@ nsresult ServoStyleSet::AddDocStyleSheet(StyleSheet* aSheet,
     StyleSheet* beforeSheet = mSheets[SheetType::Doc][index];
     InsertSheetOfType(SheetType::Doc, aSheet, beforeSheet);
 
-    if (mRawSet) {
-      
-      Servo_StyleSet_InsertStyleSheetBefore(mRawSet.get(), aSheet, beforeSheet);
-      SetStylistStyleSheetsDirty();
-    }
+    
+    Servo_StyleSet_InsertStyleSheetBefore(mRawSet.get(), aSheet, beforeSheet);
+    SetStylistStyleSheetsDirty();
   } else {
     
     AppendSheetOfType(SheetType::Doc, aSheet);
 
-    if (mRawSet) {
-      
-      Servo_StyleSet_AppendStyleSheet(mRawSet.get(), aSheet);
-      SetStylistStyleSheetsDirty();
-    }
+    
+    Servo_StyleSet_AppendStyleSheet(mRawSet.get(), aSheet);
+    SetStylistStyleSheetsDirty();
   }
 
   if (mStyleRuleMap) {
@@ -970,10 +928,6 @@ void ServoStyleSet::StyleNewSubtree(Element* aRoot) {
 }
 
 void ServoStyleSet::MarkOriginsDirty(OriginFlags aChangedOrigins) {
-  if (MOZ_UNLIKELY(!mRawSet)) {
-    return;
-  }
-
   SetStylistStyleSheetsDirty();
   Servo_StyleSet_NoteStyleSheetsChanged(mRawSet.get(), aChangedOrigins);
 }

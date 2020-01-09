@@ -95,12 +95,11 @@ class ServoStyleSet {
 
   static ServoStyleSet* Current() { return sInServoTraversal; }
 
-  ServoStyleSet();
+  explicit ServoStyleSet(dom::Document&);
   ~ServoStyleSet();
 
-  void Init(nsPresContext* aPresContext);
-  void BeginShutdown() {}
-  void Shutdown();
+  void ShellAttachedToDocument();
+  void ShellDetachedFromDocument();
 
   
   
@@ -505,8 +504,6 @@ class ServoStyleSet {
 
   void RemoveSheetOfType(SheetType aType, StyleSheet* aSheet);
 
-  
-  
   
   
   dom::Document* mDocument;

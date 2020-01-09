@@ -727,11 +727,7 @@ nsresult nsDocumentViewer::InitPresentationStuff(bool aDoInitialReflow) {
   NS_ASSERTION(!mPresShell, "Someone should have destroyed the presshell!");
 
   
-  UniquePtr<ServoStyleSet> styleSet = CreateStyleSet(mDocument);
-
-  
-  mPresShell = mDocument->CreatePresShell(mPresContext, mViewManager,
-                                          std::move(styleSet));
+  mPresShell = mDocument->CreatePresShell(mPresContext, mViewManager);
   if (!mPresShell) {
     return NS_ERROR_FAILURE;
   }
@@ -2289,81 +2285,6 @@ nsDocumentViewer::RequestWindowClose(bool* aCanClose) {
     *aCanClose = true;
 
   return NS_OK;
-}
-
-UniquePtr<ServoStyleSet> nsDocumentViewer::CreateStyleSet(Document* aDocument) {
-  
-  
-
-  
-  auto cache = nsLayoutStylesheetCache::Singleton();
-  nsStyleSheetService* sheetService = nsStyleSheetService::GetInstance();
-
-  MOZ_ASSERT(sheetService,
-             "should never be creating a StyleSet after the style sheet "
-             "service has gone");
-
-  auto styleSet = MakeUnique<ServoStyleSet>();
-
-  
-
-  for (StyleSheet* sheet : *sheetService->UserStyleSheets()) {
-    styleSet->AppendStyleSheet(SheetType::User, sheet);
-  }
-
-  StyleSheet* sheet = nsContentUtils::IsInChromeDocshell(aDocument)
-                          ? cache->GetUserChromeSheet()
-                          : cache->GetUserContentSheet();
-
-  if (sheet) {
-    styleSet->AppendStyleSheet(SheetType::User, sheet);
-  }
-
-  
-
-  styleSet->AppendStyleSheet(SheetType::Agent, cache->UASheet());
-
-  if (MOZ_LIKELY(mDocument->NodeInfoManager()->MathMLEnabled())) {
-    styleSet->AppendStyleSheet(SheetType::Agent, cache->MathMLSheet());
-  }
-
-  if (MOZ_LIKELY(mDocument->NodeInfoManager()->SVGEnabled())) {
-    styleSet->AppendStyleSheet(SheetType::Agent, cache->SVGSheet());
-  }
-
-  styleSet->AppendStyleSheet(SheetType::Agent, cache->HTMLSheet());
-
-  
-  
-
-  if (nsLayoutUtils::ShouldUseNoFramesSheet(aDocument)) {
-    styleSet->AppendStyleSheet(SheetType::Agent, cache->NoFramesSheet());
-  }
-
-  if (nsLayoutUtils::ShouldUseNoScriptSheet(aDocument)) {
-    styleSet->AppendStyleSheet(SheetType::Agent, cache->NoScriptSheet());
-  }
-
-  styleSet->AppendStyleSheet(SheetType::Agent, cache->CounterStylesSheet());
-
-  
-  
-  styleSet->AppendStyleSheet(SheetType::Agent, cache->MinimalXULSheet());
-
-  
-  if (aDocument->LoadsFullXULStyleSheetUpFront()) {
-    styleSet->AppendStyleSheet(SheetType::Agent, cache->XULSheet());
-  }
-
-  styleSet->AppendStyleSheet(SheetType::Agent, cache->FormsSheet());
-  styleSet->AppendStyleSheet(SheetType::Agent, cache->ScrollbarsSheet());
-  styleSet->AppendStyleSheet(SheetType::Agent, cache->PluginProblemSheet());
-
-  for (StyleSheet* sheet : *sheetService->AgentStyleSheets()) {
-    styleSet->AppendStyleSheet(SheetType::Agent, sheet);
-  }
-
-  return styleSet;
 }
 
 NS_IMETHODIMP

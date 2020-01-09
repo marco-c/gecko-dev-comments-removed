@@ -4,14 +4,14 @@
 
 
 
-#ifndef nsIPresContextInlines_h
-#define nsIPresContextInlines_h
+#ifndef nsPresContextInlines_h
+#define nsPresContextInlines_h
 
 #include "mozilla/PresShell.h"
 #include "nsCSSFrameConstructor.h"
 
 inline mozilla::ServoStyleSet* nsPresContext::StyleSet() const {
-  return GetPresShell()->StyleSet();
+  return mDocument->StyleSetForPresShellOrMediaQueryEvaluation();
 }
 
 inline nsCSSFrameConstructor* nsPresContext::FrameConstructor() {

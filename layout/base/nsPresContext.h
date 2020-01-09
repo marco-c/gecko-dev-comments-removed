@@ -297,11 +297,6 @@ class nsPresContext : public nsISupports,
   
 
 
-  void CompatibilityModeChanged();
-
-  
-
-
   uint16_t ImageAnimationMode() const { return mImageAnimationMode; }
   void SetImageAnimationMode(uint16_t aMode);
 

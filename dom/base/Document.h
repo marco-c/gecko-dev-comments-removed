@@ -1244,9 +1244,8 @@ class Document : public nsINode,
 
 
 
-  already_AddRefed<PresShell> CreatePresShell(
-      nsPresContext* aContext, nsViewManager* aViewManager,
-      UniquePtr<ServoStyleSet> aStyleSet);
+  already_AddRefed<PresShell> CreatePresShell(nsPresContext* aContext,
+                                              nsViewManager* aViewManager);
   void DeletePresShell();
 
   PresShell* GetPresShell() const {
@@ -1630,6 +1629,14 @@ class Document : public nsINode,
   void SetBody(nsGenericHTMLElement* aBody, ErrorResult& rv);
   
   HTMLSharedElement* GetHead();
+
+  ServoStyleSet* StyleSetForPresShellOrMediaQueryEvaluation() const {
+    return mStyleSet.get();
+  }
+
+  
+  
+  bool StyleSetFilled() const { return mStyleSetFilled; }
 
   
 
@@ -3784,7 +3791,14 @@ class Document : public nsINode,
   void RemoveStyleSheetsFromStyleSets(
       const nsTArray<RefPtr<StyleSheet>>& aSheets, SheetType aType);
   void ResetStylesheetsToURI(nsIURI* aURI);
-  void FillStyleSet(ServoStyleSet* aStyleSet);
+  void FillStyleSet();
+  void FillStyleSetUserAndUASheets();
+  void FillStyleSetDocumentSheets();
+  void CompatibilityModeChanged();
+  bool NeedsQuirksSheet() const {
+    
+    return mCompatMode == eCompatibility_NavQuirks && !IsSVGDocument();
+  }
   void AddStyleSheetToStyleSets(StyleSheet* aSheet);
   void RemoveStyleSheetFromStyleSets(StyleSheet* aSheet);
   void NotifyStyleSheetAdded(StyleSheet* aSheet, bool aDocumentSheet);
@@ -3808,6 +3822,7 @@ class Document : public nsINode,
   
   
   UniquePtr<SelectorCache> mSelectorCache;
+  UniquePtr<ServoStyleSet> mStyleSet;
 
  protected:
   friend class nsDocumentOnStack;
@@ -4166,8 +4181,10 @@ class Document : public nsINode,
   bool mNeedsReleaseAfterStackRefCntRelease : 1;
 
   
-  
   bool mStyleSetFilled : 1;
+
+  
+  bool mQuirkSheetAdded : 1;
 
   
   
