@@ -384,9 +384,10 @@ bool nsHTMLScrollFrame::TryLayout(ScrollReflowInput* aState,
       nsSize(std::max(0, layoutSize.width - vScrollbarDesiredWidth),
              std::max(0, layoutSize.height - hScrollbarDesiredHeight));
   if (mHelper.mIsUsingMinimumScaleSize) {
-    mHelper.mICBSize =
-        nsSize(std::max(0, aState->mInsideBorderSize.width - vScrollbarDesiredWidth),
-               std::max(0, aState->mInsideBorderSize.height - hScrollbarDesiredHeight));
+    mHelper.mICBSize = nsSize(
+        std::max(0, aState->mInsideBorderSize.width - vScrollbarDesiredWidth),
+        std::max(0,
+                 aState->mInsideBorderSize.height - hScrollbarDesiredHeight));
   }
 
   nsSize visualViewportSize = scrollPortSize;
@@ -5573,21 +5574,35 @@ void ScrollFrameHelper::UpdateMinimumScaleSize(
   }
 
   nsViewportInfo viewportInfo = doc->GetViewportInfo(displaySize);
-  nsSize maximumPossibleSize =
-      CSSSize::ToAppUnits(ScreenSize(displaySize) / viewportInfo.GetMinZoom());
 
+  
+  
+  CSSToScreenScale intrinsicMinScale(
+      displaySize.width / CSSRect::FromAppUnits(aScrollableOverflow).XMost());
+
+  
+  
+  CSSToScreenScale minScale =
+      std::max(intrinsicMinScale, viewportInfo.GetMinZoom());
+
+  
+  
+  mMinimumScaleSize = CSSSize::ToAppUnits(ScreenSize(displaySize) / minScale);
+
+  
+  
+  
   mMinimumScaleSize =
-      Min(maximumPossibleSize,
+      Min(mMinimumScaleSize,
           nsSize(aScrollableOverflow.XMost(), aScrollableOverflow.YMost()));
+
+  
+  
+  
+  
   mMinimumScaleSize = Max(aICBSize, mMinimumScaleSize);
 
-  
-  
-  
-  
-  if (mMinimumScaleSize.width != aICBSize.width) {
-    mIsUsingMinimumScaleSize = true;
-  }
+  mIsUsingMinimumScaleSize = true;
 }
 
 bool ScrollFrameHelper::ReflowFinished() {
