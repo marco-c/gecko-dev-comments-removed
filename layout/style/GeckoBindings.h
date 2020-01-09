@@ -731,8 +731,6 @@ bool Gecko_DocumentRule_UseForPresentation(
 
 
 void Gecko_SetJemallocThreadLocalArena(bool enabled);
-void Gecko_AddBufferToCrashReport(const void* addr, size_t len);
-void Gecko_AnnotateCrashReport(uint32_t key, const char* value_str);
 
 
 #define CSS_PSEUDO_ELEMENT(name_, value_, flags_) \
