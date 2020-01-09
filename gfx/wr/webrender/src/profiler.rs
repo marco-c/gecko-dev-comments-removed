@@ -7,10 +7,9 @@ use debug_render::DebugRenderer;
 use device::query::{GpuSampler, GpuTimer, NamedTag};
 use euclid::{Point2D, Rect, Size2D, vec2};
 use internal_types::FastHashMap;
-use renderer::{MAX_VERTEX_TEXTURE_WIDTH, wr_has_been_initialized};
+use renderer::MAX_VERTEX_TEXTURE_WIDTH;
 use std::collections::vec_deque::VecDeque;
 use std::{f32, mem};
-use std::ffi::CStr;
 use time::precise_time_ns;
 
 const GRAPH_WIDTH: f32 = 1024.0;
@@ -20,68 +19,6 @@ const GRAPH_FRAME_HEIGHT: f32 = 16.0;
 const PROFILE_PADDING: f32 = 10.0;
 
 const ONE_SECOND_NS: u64 = 1000000000;
-
-
-pub trait ProfilerHooks : Send + Sync {
-    
-    
-    fn begin_marker(&self, label: &CStr);
-
-    
-    
-    fn end_marker(&self, label: &CStr);
-}
-
-
-static mut PROFILER_HOOKS: Option<&'static ProfilerHooks> = None;
-
-
-
-
-pub fn set_profiler_hooks(hooks: Option<&'static ProfilerHooks>) {
-    if !wr_has_been_initialized() {
-        unsafe {
-            PROFILER_HOOKS = hooks;
-        }
-    }
-}
-
-
-pub struct ProfileScope {
-    name: &'static CStr,
-}
-
-impl ProfileScope {
-    
-    pub fn new(name: &'static CStr) -> Self {
-        unsafe {
-            if let Some(ref hooks) = PROFILER_HOOKS {
-                hooks.begin_marker(name);
-            }
-        }
-
-        ProfileScope {
-            name,
-        }
-    }
-}
-
-impl Drop for ProfileScope {
-    fn drop(&mut self) {
-        unsafe {
-            if let Some(ref hooks) = PROFILER_HOOKS {
-                hooks.end_marker(self.name);
-            }
-        }
-    }
-}
-
-
-macro_rules! profile_marker {
-    ($string:expr) => {
-        let _scope = $crate::profiler::ProfileScope::new(cstr!($string));
-    };
-}
 
 #[derive(Debug, Clone)]
 pub struct GpuProfileTag {

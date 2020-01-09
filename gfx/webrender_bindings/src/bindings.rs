@@ -24,7 +24,7 @@ use webrender::{ExternalImage, ExternalImageHandler, ExternalImageSource};
 use webrender::DebugFlags;
 use webrender::{ApiRecordingReceiver, BinaryRecorder};
 use webrender::{AsyncPropertySampler, PipelineInfo, SceneBuilderHooks};
-use webrender::{UploadMethod, VertexUsageHint, ProfilerHooks, set_profiler_hooks};
+use webrender::{UploadMethod, VertexUsageHint};
 use webrender::{Device, Shaders, WrShaders, ShaderPrecacheFlags};
 use thread_profiler::register_thread_with_profiler;
 use moz2d_renderer::Moz2dBlobImageHandler;
@@ -779,26 +779,6 @@ extern "C" {
     pub fn gecko_profiler_end_marker(name: *const c_char);
 }
 
-
-
-struct GeckoProfilerHooks;
-
-impl ProfilerHooks for GeckoProfilerHooks {
-    fn begin_marker(&self, label: &CStr) {
-        unsafe {
-            gecko_profiler_start_marker(label.as_ptr());
-        }
-    }
-
-    fn end_marker(&self, label: &CStr) {
-        unsafe {
-            gecko_profiler_end_marker(label.as_ptr());
-        }
-    }
-}
-
-const PROFILER_HOOKS: GeckoProfilerHooks = GeckoProfilerHooks {};
-
 #[allow(improper_ctypes)] 
 extern "C" {
     
@@ -1139,9 +1119,6 @@ pub extern "C" fn wr_window_new(window_id: WrWindowId,
         enable_picture_caching,
         ..Default::default()
     };
-
-    
-    set_profiler_hooks(Some(&PROFILER_HOOKS));
 
     let notifier = Box::new(CppNotifier {
         window_id: window_id,
