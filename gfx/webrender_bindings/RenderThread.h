@@ -218,8 +218,6 @@ class RenderThread final {
                             const TimeStamp& aStartTime,
                             uint8_t aDocFrameCount);
   
-  void DecPendingFrameCount(wr::WindowId aWindowId);
-  
   mozilla::Pair<bool, bool> IncRenderingFrameCount(wr::WindowId aWindowId,
                                                    bool aRender);
   
