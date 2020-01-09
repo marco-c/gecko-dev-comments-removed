@@ -2533,7 +2533,7 @@ bool nsHTMLDocument::QueryCommandSupported(const nsAString& commandID,
     if (commandID.LowerCaseEqualsLiteral("paste")) {
       return false;
     }
-    if (nsContentUtils::IsCutCopyRestricted()) {
+    if (!StaticPrefs::dom_allow_cut_copy()) {
       
       
       

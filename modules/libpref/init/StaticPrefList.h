@@ -606,6 +606,13 @@ VARCACHE_PREF(
 )
 
 
+VARCACHE_PREF(
+  "dom.allow_cut_copy",
+   dom_allow_cut_copy,
+  bool, true
+)
+
+
 
 
 

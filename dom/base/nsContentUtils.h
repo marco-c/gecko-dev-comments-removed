@@ -2337,12 +2337,6 @@ class nsContentUtils {
 
 
 
-  static bool IsCutCopyRestricted() { return !sIsCutCopyAllowed; }
-
-  
-
-
-
 
   static bool IsCutCopyAllowed(nsIPrincipal* aSubjectPrincipal);
 
@@ -3490,7 +3484,6 @@ class nsContentUtils {
 
   static bool sIsHandlingKeyBoardEvent;
   static bool sAllowXULXBL_for_file;
-  static bool sIsCutCopyAllowed;
   static uint32_t sHandlingInputTimeout;
   static bool sIsPerformanceTimingEnabled;
   static bool sIsResourceTimingEnabled;
