@@ -71,8 +71,6 @@ const prefs = {
       EDITOR: "devtools.webconsole.input.editor",
       
       CONTENT_MESSAGES: "devtools.browserconsole.contentMessages",
-      
-      MESSAGE_TIMESTAMP: "devtools.webconsole.timestampMessages",
     },
     FEATURES: {
       
