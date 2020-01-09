@@ -8,26 +8,25 @@ function registerPassthroughAnimator() {
   `);
 }
 
+function registerConstantLocalTimeAnimator(localTime) {
+  return runInAnimationWorklet(`
+    registerAnimator('constant_time', class {
+      animate(currentTime, effect) { effect.localTime = ${localTime}; }
+    });
+  `);
+}
+
+
 function runInAnimationWorklet(code) {
   return CSS.animationWorklet.addModule(
     URL.createObjectURL(new Blob([code], {type: 'text/javascript'}))
   );
 }
 
-function waitForAnimationFrames(count, callback) {
-  function rafCallback() {
-    if (count <= 0) {
-      callback();
-    } else {
-      count -= 1;
-      window.requestAnimationFrame(rafCallback);
-    }
-  }
-  rafCallback();
-};
-
-
-
-function waitTwoAnimationFrames(callback) {
-  waitForAnimationFrames(2, callback);
-};
+function waitForAsyncAnimationFrames(count) {
+  
+  
+  
+  
+  return waitForAnimationFrames(count + 1);
+}
