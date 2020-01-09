@@ -3711,18 +3711,46 @@ var AMTelemetry = {
     }
   },
 
+  convertToString(value) {
+    if (value == null) {
+      
+      return "";
+    }
+    switch (typeof(value)) {
+      case "string":
+        return value;
+      case "boolean":
+        return value ? "1" : "0";
+    }
+    return String(value);
+  },
+
   
 
 
 
 
-  formatExtraVars(extraVars) {
+
+  formatExtraVars({addon, ...extraVars}) {
+    if (addon) {
+      extraVars.addonId = addon.id;
+      extraVars.type = addon.type;
+    }
+
     
-    for (var key of Object.keys(extraVars)) {
-      if (typeof(extraVars[key]) !== "string") {
-        extraVars[key] = String(extraVars[key]);
+    for (var [key, value] of Object.entries(extraVars)) {
+      if (value == undefined) {
+        delete extraVars[key];
+      } else {
+        extraVars[key] = this.convertToString(value);
       }
     }
+
+    if (extraVars.addonId) {
+      extraVars.addonId = this.getTrimmedString(extraVars.addonId);
+    }
+
+    return extraVars;
   },
 
   
@@ -3786,8 +3814,7 @@ var AMTelemetry = {
     }
 
     
-    extra = {...extraVars, ...extra};
-    this.formatExtraVars(extra);
+    extra = this.formatExtraVars({...extraVars, ...extra});
 
     this.recordEvent({method: eventMethod, object, value: installId, extra});
   },
@@ -3835,13 +3862,95 @@ var AMTelemetry = {
     extra = {...extraVars, ...extra};
 
     let hasExtraVars = Object.keys(extra).length > 0;
-    this.formatExtraVars(extra);
+    extra = this.formatExtraVars(extra);
 
     this.recordEvent({method, object, value, extra: hasExtraVars ? extra : null});
   },
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  recordLinkEvent({object, value, extra = null}) {
+    this.recordEvent({method: "link", object, value, extra});
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  recordActionEvent({object, action, value, addon, view, extra}) {
+    extra = {...extra, action, addon, view};
+    this.recordEvent({
+      method: "action",
+      object,
+      
+      value: value == null ? null : this.convertToString(value),
+      extra: this.formatExtraVars(extra),
+    });
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  recordViewEvent({view, addon, type}) {
+    this.recordEvent({
+      method: "view",
+      object: "aboutAddons",
+      value: view,
+      extra: this.formatExtraVars({type, addon}),
+    });
+  },
+
   recordEvent({method, object, value, extra}) {
-    Services.telemetry.recordEvent("addonsManager", method, object, value, extra);
+    if (typeof value != "string") {
+      
+      
+      value = null;
+    }
+    try {
+      Services.telemetry.recordEvent("addonsManager", method, object, value, extra);
+    } catch (err) {
+      
+      
+      Cu.reportError(err);
+    }
   },
 };
 
