@@ -28,7 +28,7 @@ class nsToolkitProfile final : public nsIToolkitProfile {
   ~nsToolkitProfile() = default;
 
   nsToolkitProfile(const nsACString& aName, nsIFile* aRootDir,
-                   nsIFile* aLocalDir, nsToolkitProfile* aPrev, bool aFromDB);
+                   nsIFile* aLocalDir, nsToolkitProfile* aPrev);
 
   nsresult RemoveInternal(bool aRemoveFiles, bool aInBackground);
 
@@ -38,8 +38,6 @@ class nsToolkitProfile final : public nsIToolkitProfile {
   nsCOMPtr<nsIFile> mRootDir;
   nsCOMPtr<nsIFile> mLocalDir;
   nsIProfileLock* mLock;
-  uint32_t mIndex;
-  nsCString mSection;
 };
 
 class nsToolkitProfileLock final : public nsIProfileLock {
@@ -105,7 +103,6 @@ class nsToolkitProfileService final : public nsIToolkitProfileService {
   bool MaybeMakeDefaultDedicatedProfile(nsIToolkitProfile* aProfile);
   bool IsSnapEnvironment();
   nsresult CreateDefaultProfile(nsIToolkitProfile** aResult);
-  void SetNormalDefault(nsIToolkitProfile* aProfile);
 
   
   
@@ -129,13 +126,13 @@ class nsToolkitProfileService final : public nsIToolkitProfileService {
   
   nsCOMPtr<nsIFile> mTempData;
   
-  nsCOMPtr<nsIFile> mProfileDBFile;
+  nsCOMPtr<nsIFile> mListFile;
   
-  nsCOMPtr<nsIFile> mInstallDBFile;
+  nsCOMPtr<nsIFile> mInstallFile;
   
-  nsINIParser mProfileDB;
+  nsINIParser mInstallData;
   
-  nsCString mInstallSection;
+  nsCString mInstallHash;
   
   bool mStartWithLast;
   
