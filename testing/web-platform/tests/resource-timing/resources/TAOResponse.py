@@ -16,6 +16,12 @@ def main(request, response):
     elif tao == 'origin':
     
         response.headers.set('Timing-Allow-Origin', origin)
+    elif tao.startswith('origin_port'):
+    
+        origin_parts = origin.split(':')
+        host = origin_parts[0] + ':' + origin_parts[1]
+        port = tao.split('origin_port_')[1]
+        response.headers.set('Timing-Allow-Origin', host + ':' + port)
     elif tao == 'space':
     
         response.headers.set('Timing-Allow-Origin', (origin + ' *'))
