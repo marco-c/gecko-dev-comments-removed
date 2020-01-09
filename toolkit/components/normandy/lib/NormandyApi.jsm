@@ -55,11 +55,12 @@ var NormandyApi = {
   },
 
   absolutify(url) {
-    const apiBase = prefs.getCharPref("api_url");
-    const server = new URL(apiBase).origin;
     if (url.startsWith("http")) {
       return url;
-    } else if (url.startsWith("/")) {
+    }
+    const apiBase = prefs.getCharPref("api_url");
+    const server = new URL(apiBase).origin;
+    if (url.startsWith("/")) {
       return server + url;
     }
     throw new Error("Can't use relative urls");
@@ -87,50 +88,65 @@ var NormandyApi = {
     const rawText = await objectsResponse.text();
     const objectsWithSigs = JSON.parse(rawText);
 
-    const verifiedObjects = [];
+    return Promise.all(
+      objectsWithSigs.map(async (item) => {
+        
+        
+        
+        
+        const object = item[type];
+        const serialized = CanonicalJSON.stringify(object);
+        if (!rawText.includes(serialized)) {
+          log.debug(rawText, serialized);
+          throw new NormandyApi.InvalidSignatureError(
+            `Canonical ${type} serialization does not match!`);
+        }
+        
+        await this.verifyObjectSignature(serialized, item.signature, type);
+        return object;
+      })
+    );
+  },
 
-    for (const objectWithSig of objectsWithSigs) {
-      const {signature, x5u} = objectWithSig.signature;
-      const object = objectWithSig[type];
+  
 
-      const serialized = CanonicalJSON.stringify(object);
-      
-      
-      
-      
-      if (!rawText.includes(serialized)) {
-        log.debug(rawText, serialized);
-        throw new NormandyApi.InvalidSignatureError(
-          `Canonical ${type} serialization does not match!`);
-      }
 
-      const certChainResponse = await this.get(this.absolutify(x5u));
-      const certChain = await certChainResponse.text();
-      const builtSignature = `p384ecdsa=${signature}`;
 
-      const verifier = Cc["@mozilla.org/security/contentsignatureverifier;1"]
-        .createInstance(Ci.nsIContentSignatureVerifier);
 
-      let valid;
-      try {
-        valid = verifier.verifyContentSignature(
-          serialized,
-          builtSignature,
-          certChain,
-          "normandy.content-signature.mozilla.org"
-        );
-      } catch (err) {
-        throw new NormandyApi.InvalidSignatureError(`${type} signature validation failed: ${err}`);
-      }
 
-      if (!valid) {
-        throw new NormandyApi.InvalidSignatureError(`${type} signature is not valid`);
-      }
 
-      verifiedObjects.push(object);
+
+
+
+
+
+
+  async verifyObjectSignature(data, signaturePayload, type) {
+    const { signature, x5u } = signaturePayload;
+    const certChainResponse = await this.get(this.absolutify(x5u));
+    const certChain = await certChainResponse.text();
+    const builtSignature = `p384ecdsa=${signature}`;
+
+    const serialized = typeof data == "string" ? data : CanonicalJSON.stringify(data);
+
+    const verifier = Cc["@mozilla.org/security/contentsignatureverifier;1"]
+      .createInstance(Ci.nsIContentSignatureVerifier);
+
+    let valid;
+    try {
+      valid = verifier.verifyContentSignature(
+        serialized,
+        builtSignature,
+        certChain,
+        "normandy.content-signature.mozilla.org"
+      );
+    } catch (err) {
+      throw new NormandyApi.InvalidSignatureError(`${type} signature validation failed: ${err}`);
     }
 
-    return verifiedObjects;
+    if (!valid) {
+      throw new NormandyApi.InvalidSignatureError(`${type} signature is not valid`);
+    }
   },
 
   
