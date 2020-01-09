@@ -11,6 +11,7 @@
 #include "UrlClassifierFeatureFingerprinting.h"
 #include "UrlClassifierFeatureFlash.h"
 #include "UrlClassifierFeatureLoginReputation.h"
+#include "UrlClassifierFeatureNoChannel.h"
 #include "UrlClassifierFeatureTrackingProtection.h"
 #include "UrlClassifierFeatureTrackingAnnotation.h"
 #include "UrlClassifierFeatureCustomTables.h"
@@ -30,6 +31,7 @@ namespace net {
   UrlClassifierFeatureFingerprinting::MaybeShutdown();
   UrlClassifierFeatureFlash::MaybeShutdown();
   UrlClassifierFeatureLoginReputation::MaybeShutdown();
+  UrlClassifierFeatureNoChannel::MaybeShutdown();
   UrlClassifierFeatureTrackingAnnotation::MaybeShutdown();
   UrlClassifierFeatureTrackingProtection::MaybeShutdown();
 }
@@ -127,6 +129,12 @@ UrlClassifierFeatureFactory::GetFeatureByName(const nsACString& aName) {
     return feature.forget();
   }
 
+  
+  feature = UrlClassifierFeatureNoChannel::GetIfNameMatches(aName);
+  if (feature) {
+    return feature.forget();
+  }
+
   return nullptr;
 }
 
@@ -168,9 +176,18 @@ UrlClassifierFeatureFactory::GetFeatureByName(const nsACString& aName) {
   }
 
   
-  nsTArray<nsCString> features;
-  UrlClassifierFeatureFlash::GetFeatureNames(features);
-  aArray.AppendElements(features);
+  {
+    nsTArray<nsCString> features;
+    UrlClassifierFeatureFlash::GetFeatureNames(features);
+    aArray.AppendElements(features);
+  }
+
+  
+  {
+    nsTArray<nsCString> features;
+    UrlClassifierFeatureNoChannel::GetFeatureNames(features);
+    aArray.AppendElements(features);
+  }
 }
 
  already_AddRefed<nsIUrlClassifierFeature>
