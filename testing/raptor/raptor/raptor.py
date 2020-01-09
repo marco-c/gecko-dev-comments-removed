@@ -132,7 +132,7 @@ class Raptor(object):
                         host=self.config['host'],
                         b_port=self.benchmark_port,
                         debug_mode=1 if self.debug_mode else 0,
-                        browser_cycle=test['browser_cycle'])
+                        browser_cycle=test.get('browser_cycle', 1))
 
         self.install_raptor_webext()
 
@@ -323,7 +323,7 @@ class Raptor(object):
 
     def wait_for_test_finish(self, test, timeout):
         
-        timeout = int(timeout / 1000) * int(test['page_cycles'])
+        timeout = int(timeout / 1000) * int(test.get('page_cycles', 1))
         
         timeout += (int(self.post_startup_delay / 1000) + 3)
 
