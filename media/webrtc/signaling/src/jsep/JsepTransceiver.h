@@ -36,7 +36,8 @@ class JsepTransceiver {
         mWasCreatedBySetRemote(false),
         mStopped(false),
         mRemoved(false),
-        mNegotiated(false) {}
+        mNegotiated(false),
+        mCanRecycle(false) {}
 
   
   JsepTransceiver(const JsepTransceiver& orig)
@@ -51,7 +52,8 @@ class JsepTransceiver {
         mWasCreatedBySetRemote(orig.mWasCreatedBySetRemote),
         mStopped(orig.mStopped),
         mRemoved(orig.mRemoved),
-        mNegotiated(orig.mNegotiated) {}
+        mNegotiated(orig.mNegotiated),
+        mCanRecycle(orig.mCanRecycle) {}
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(JsepTransceiver);
 
@@ -155,6 +157,10 @@ class JsepTransceiver {
 
   bool IsNegotiated() const { return mNegotiated; }
 
+  void SetCanRecycle() { mCanRecycle = true; }
+
+  bool CanRecycle() const { return mCanRecycle; }
+
   
   SdpMediaSection::MediaType GetMediaType() const {
     MOZ_ASSERT(mRecvTrack.GetMediaType() == mSendTrack.GetMediaType());
@@ -189,6 +195,7 @@ class JsepTransceiver {
   bool mStopped;
   bool mRemoved;
   bool mNegotiated;
+  bool mCanRecycle;
 };
 
 }  
