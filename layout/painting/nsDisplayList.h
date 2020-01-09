@@ -6848,7 +6848,7 @@ class nsDisplayTransform : public nsDisplayHitTestInfoItem {
   mutable mozilla::Maybe<Matrix4x4Flagged> mTransform;
   mutable mozilla::Maybe<Matrix4x4Flagged> mInverseTransform;
   
-  Matrix4x4 mTransformPreserves3D;
+  mozilla::UniquePtr<Matrix4x4> mTransformPreserves3D;
   ComputeTransformFunction mTransformGetter;
   RefPtr<AnimatedGeometryRoot> mAnimatedGeometryRootForChildren;
   RefPtr<AnimatedGeometryRoot> mAnimatedGeometryRootForScrollMetadata;
@@ -6865,8 +6865,6 @@ class nsDisplayTransform : public nsDisplayHitTestInfoItem {
   
   
   bool mIsTransformSeparator;
-  
-  bool mTransformPreserves3DInited;
   
   bool mAllowAsyncAnimation;
   
