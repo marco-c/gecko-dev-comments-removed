@@ -164,21 +164,22 @@ public class GeckoScreenOrientation {
         if (mShouldNotify) {
             
             
+            ScreenOrientation primaryOrientation = aScreenOrientation;
             if (aScreenOrientation == ScreenOrientation.PORTRAIT) {
-                aScreenOrientation = ScreenOrientation.PORTRAIT_PRIMARY;
+                primaryOrientation = ScreenOrientation.PORTRAIT_PRIMARY;
             } else if (aScreenOrientation == ScreenOrientation.LANDSCAPE) {
-                aScreenOrientation = ScreenOrientation.LANDSCAPE_PRIMARY;
+                primaryOrientation = ScreenOrientation.LANDSCAPE_PRIMARY;
             } else if (aScreenOrientation == ScreenOrientation.DEFAULT) {
-                aScreenOrientation = ScreenOrientation.PORTRAIT_PRIMARY;
+                primaryOrientation = ScreenOrientation.PORTRAIT_PRIMARY;
             } else if (aScreenOrientation == ScreenOrientation.NONE) {
                 return false;
             }
 
             if (GeckoThread.isRunning()) {
-                onOrientationChange(aScreenOrientation.value, getAngle());
+                onOrientationChange(primaryOrientation.value, getAngle());
             } else {
                 GeckoThread.queueNativeCall(GeckoScreenOrientation.class, "onOrientationChange",
-                                            aScreenOrientation.value, getAngle());
+                                            primaryOrientation.value, getAngle());
             }
         }
         ScreenManagerHelper.refreshScreenInfo();

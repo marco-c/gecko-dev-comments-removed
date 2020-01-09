@@ -218,6 +218,7 @@ public final class GeckoProfile {
         
         
 
+        String resolvedProfileName = profileName;
         if (TextUtils.isEmpty(profileName) && profileDir == null) {
             
             final GeckoProfile profile = GeckoThread.getActiveProfile();
@@ -230,25 +231,25 @@ public final class GeckoProfile {
             return GeckoProfile.initFromArgs(context, sIntentArgs);
         } else if (profileName == null) {
             
-            profileName = CUSTOM_PROFILE;
+            resolvedProfileName = CUSTOM_PROFILE;
         }
 
         
         final boolean init = profileDir != null && profileDir.mkdirs();
 
         
-        GeckoProfile profile = sProfileCache.get(profileName);
+        GeckoProfile profile = sProfileCache.get(resolvedProfileName);
         GeckoProfile newProfile = null;
 
         if (profile == null) {
             try {
-                newProfile = new GeckoProfile(context, profileName, profileDir);
+                newProfile = new GeckoProfile(context, resolvedProfileName, profileDir);
             } catch (NoMozillaDirectoryException e) {
                 
                 throw new RuntimeException(e);
             }
 
-            profile = sProfileCache.putIfAbsent(profileName, newProfile);
+            profile = sProfileCache.putIfAbsent(resolvedProfileName, newProfile);
         }
 
         if (profile == null) {

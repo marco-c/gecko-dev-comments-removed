@@ -88,22 +88,25 @@ public final class GamepadUtils {
         
         boolean areKeysSwapped = areSonyXperiaGamepadKeysSwapped();
 
+        int translatedKeyCode = keyCode;
         
         
         switch (keyCode) {
             case KeyEvent.KEYCODE_BACK:
-                keyCode = (areKeysSwapped ? KeyEvent.KEYCODE_BUTTON_A : KeyEvent.KEYCODE_BUTTON_B);
+                translatedKeyCode = (areKeysSwapped ? KeyEvent.KEYCODE_BUTTON_A
+                                                    : KeyEvent.KEYCODE_BUTTON_B);
                 break;
 
             case KeyEvent.KEYCODE_DPAD_CENTER:
-                keyCode = (areKeysSwapped ? KeyEvent.KEYCODE_BUTTON_B : KeyEvent.KEYCODE_BUTTON_A);
+                translatedKeyCode = (areKeysSwapped ? KeyEvent.KEYCODE_BUTTON_B
+                                                    : KeyEvent.KEYCODE_BUTTON_A);
                 break;
 
             default:
                 return event;
         }
 
-        return new KeyEvent(event.getAction(), keyCode);
+        return new KeyEvent(event.getAction(), translatedKeyCode);
     }
 
     public static boolean isSonyXperiaGamepadKeyEvent(KeyEvent event) {
