@@ -2204,9 +2204,19 @@ struct StackMapGenerator {
 #ifndef DEBUG
     
     
-    if (countedPointers == 0 && extras.empty() &&
-        refDebugFrame == HasRefTypedDebugFrame::No) {
-      return true;
+    if (countedPointers == 0 && refDebugFrame == HasRefTypedDebugFrame::No) {
+      
+      
+      bool extrasHasRef = false;
+      for (bool b : extras) {
+        if (b) {
+          extrasHasRef = true;
+          break;
+        }
+      }
+      if (!extrasHasRef) {
+        return true;
+      }
     }
 #else
     
