@@ -516,6 +516,10 @@ function waitForLog(dbg, logValue) {
   );
 }
 
+async function waitForPausedThread(dbg, thread) {
+  return waitForState(dbg, state => dbg.selectors.getIsPaused(state, thread));
+}
+
 
 
 
@@ -1279,6 +1283,7 @@ const selectors = {
   projectSerchExpandedResults: ".project-text-search .result",
   threadsPaneItems: ".workers-pane .worker",
   threadsPaneItem: i => `.workers-pane .worker:nth-child(${i})`,
+  threadsPaneItemPause: i => `${selectors.threadsPaneItem(i)} .pause-badge`,
   CodeMirrorLines: ".CodeMirror-lines"
 };
 
