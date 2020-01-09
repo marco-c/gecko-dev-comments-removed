@@ -468,6 +468,7 @@ nsWindowWatcher::OpenWindowWithTabParent(
     return NS_ERROR_UNEXPECTED;
   }
 
+  bool isFissionWindow = Preferences::GetBool("fission.autostart");
   bool isPrivateBrowsingWindow =
       Preferences::GetBool("browser.privatebrowsing.autostart");
 
@@ -480,11 +481,11 @@ nsWindowWatcher::OpenWindowWithTabParent(
 
     
     
-    if (!isPrivateBrowsingWindow) {
-      nsCOMPtr<nsILoadContext> parentContext = openingTab->GetLoadContext();
-      if (parentContext) {
-        isPrivateBrowsingWindow = parentContext->UsePrivateBrowsing();
-      }
+    nsCOMPtr<nsILoadContext> parentContext = openingTab->GetLoadContext();
+    if (parentContext) {
+      isFissionWindow = parentContext->UseRemoteSubframes();
+      isPrivateBrowsingWindow =
+          isPrivateBrowsingWindow || parentContext->UsePrivateBrowsing();
     }
   }
 
@@ -517,6 +518,10 @@ nsWindowWatcher::OpenWindowWithTabParent(
   
   chromeFlags |= nsIWebBrowserChrome::CHROME_REMOTE_WINDOW;
 
+  if (isFissionWindow) {
+    chromeFlags |= nsIWebBrowserChrome::CHROME_FISSION_WINDOW;
+  }
+
   nsCOMPtr<nsIWebBrowserChrome> parentChrome(do_GetInterface(parentTreeOwner));
   nsCOMPtr<nsIWebBrowserChrome> newWindowChrome;
 
@@ -546,6 +551,7 @@ nsWindowWatcher::OpenWindowWithTabParent(
   }
 
   chromeContext->SetPrivateBrowsing(isPrivateBrowsingWindow);
+  chromeContext->SetRemoteSubframes(isFissionWindow);
 
   
   
@@ -1036,6 +1042,8 @@ nsresult nsWindowWatcher::OpenWindowInternal(
   
   bool isRemoteWindow =
       !!(chromeFlags & nsIWebBrowserChrome::CHROME_REMOTE_WINDOW);
+  bool isFissionWindow =
+      !!(chromeFlags & nsIWebBrowserChrome::CHROME_FISSION_WINDOW);
 
   if (isNewToplevelWindow) {
     nsCOMPtr<nsIDocShellTreeItem> childRoot;
@@ -1044,12 +1052,14 @@ nsresult nsWindowWatcher::OpenWindowInternal(
     if (childContext) {
       childContext->SetPrivateBrowsing(isPrivateBrowsingWindow);
       childContext->SetRemoteTabs(isRemoteWindow);
+      childContext->SetRemoteSubframes(isFissionWindow);
     }
   } else if (windowIsNew) {
     nsCOMPtr<nsILoadContext> childContext = do_QueryInterface(newDocShellItem);
     if (childContext) {
       childContext->SetPrivateBrowsing(isPrivateBrowsingWindow);
       childContext->SetRemoteTabs(isRemoteWindow);
+      childContext->SetRemoteSubframes(isFissionWindow);
     }
   }
 
@@ -1753,6 +1763,19 @@ uint32_t nsWindowWatcher::CalculateChromeFlagsForParent(
 
   if (remote) {
     chromeFlags |= nsIWebBrowserChrome::CHROME_REMOTE_WINDOW;
+  }
+
+  
+  bool fission = Preferences::GetBool("fission.autostart");
+
+  if (fission) {
+    fission = !WinHasOption(aFeatures, "non-fission", 0, &presenceFlag);
+  } else {
+    fission = WinHasOption(aFeatures, "fission", 0, &presenceFlag);
+  }
+
+  if (fission) {
+    chromeFlags |= nsIWebBrowserChrome::CHROME_FISSION_WINDOW;
   }
 
   chromeFlags |= WinHasOption(aFeatures, "popup", 0, &presenceFlag)
