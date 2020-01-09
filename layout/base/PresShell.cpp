@@ -6503,20 +6503,8 @@ nsresult PresShell::EventHandler::HandleEvent(nsIFrame* aFrame,
     return NS_OK;
   }
 
-  if (!nsContentUtils::IsSafeToRunScript() &&
-      aGUIEvent->IsAllowedToDispatchDOMEvent()) {
-    if (aGUIEvent->mClass == eCompositionEventClass) {
-      IMEStateManager::OnCompositionEventDiscarded(
-          aGUIEvent->AsCompositionEvent());
-    }
-#ifdef DEBUG
-    if (aGUIEvent->IsIMERelatedEvent()) {
-      nsPrintfCString warning("%s event is discarded",
-                              ToChar(aGUIEvent->mMessage));
-      NS_WARNING(warning.get());
-    }
-#endif
-    nsContentUtils::WarnScriptWasIgnored(GetDocument());
+  if (MaybeDiscardEvent(aGUIEvent)) {
+    
     return NS_OK;
   }
 
@@ -7093,6 +7081,40 @@ bool PresShell::EventHandler::MaybeHandleEventWithAccessibleCaret(
   
   
   aGUIEvent->mFlags.mMultipleActionsPrevented = true;
+  return true;
+}
+
+bool PresShell::EventHandler::MaybeDiscardEvent(WidgetGUIEvent* aGUIEvent) {
+  MOZ_ASSERT(aGUIEvent);
+
+  
+  if (nsContentUtils::IsSafeToRunScript()) {
+    return false;
+  }
+
+  
+  
+  if (!aGUIEvent->IsAllowedToDispatchDOMEvent()) {
+    return false;
+  }
+
+  
+  
+  
+  if (aGUIEvent->mClass == eCompositionEventClass) {
+    IMEStateManager::OnCompositionEventDiscarded(
+        aGUIEvent->AsCompositionEvent());
+  }
+
+#ifdef DEBUG
+  if (aGUIEvent->IsIMERelatedEvent()) {
+    nsPrintfCString warning("%s event is discarded",
+                            ToChar(aGUIEvent->mMessage));
+    NS_WARNING(warning.get());
+  }
+#endif  
+
+  nsContentUtils::WarnScriptWasIgnored(GetDocument());
   return true;
 }
 

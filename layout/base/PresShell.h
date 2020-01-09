@@ -578,6 +578,16 @@ class PresShell final : public nsIPresShell,
 
 
 
+
+
+
+
+    bool MaybeDiscardEvent(WidgetGUIEvent* aGUIEvent);
+
+    
+
+
+
     static nsIContent* GetCapturingContentFor(WidgetGUIEvent* aGUIEvent);
 
     
