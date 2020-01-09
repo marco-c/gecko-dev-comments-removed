@@ -972,6 +972,11 @@ class UrlbarInput {
     }
     this.removeAttribute("actiontype");
 
+    if (!value && this.view.isOpen) {
+      this.view.close();
+      return;
+    }
+
     
     this.startQuery({
       lastKey: null,
