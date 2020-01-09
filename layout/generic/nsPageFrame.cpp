@@ -524,8 +524,12 @@ void nsPageFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     while ((page = GetNextPage(page)) != nullptr) {
       nsRect childVisible = visibleRect + child->GetOffsetTo(page);
 
+      
+      
+      
       nsDisplayListBuilder::AutoBuildingDisplayList buildingForChild(
-          aBuilder, page, childVisible, childVisible);
+          aBuilder, page, childVisible, childVisible,
+          nsDisplayListBuilder::RIIS_YES);
       BuildDisplayListForExtraPage(aBuilder, this, page, &content);
     }
 

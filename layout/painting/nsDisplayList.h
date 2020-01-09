@@ -444,6 +444,11 @@ class nsDisplayListBuilder {
   
 
 
+  enum RecalcInInvalidSubtree { RIIS_NO, RIIS_YES };
+
+  
+
+
 
 
 
@@ -1132,15 +1137,25 @@ class nsDisplayListBuilder {
   class AutoBuildingDisplayList {
    public:
     AutoBuildingDisplayList(nsDisplayListBuilder* aBuilder, nsIFrame* aForChild,
-                            const nsRect& aVisibleRect,
-                            const nsRect& aDirtyRect)
-        : AutoBuildingDisplayList(aBuilder, aForChild, aVisibleRect, aDirtyRect,
-                                  aForChild->IsTransformed()) {}
+                            RecalcInInvalidSubtree aRecalcInvalidSubtree)
+        : AutoBuildingDisplayList(
+              aBuilder, aForChild, aBuilder->GetVisibleRect(),
+              aBuilder->GetDirtyRect(), aForChild->IsTransformed(),
+              aRecalcInvalidSubtree) {}
 
-    AutoBuildingDisplayList(nsDisplayListBuilder* aBuilder, nsIFrame* aForChild,
-                            const nsRect& aVisibleRect,
-                            const nsRect& aDirtyRect,
-                            const bool aIsTransformed);
+    AutoBuildingDisplayList(
+        nsDisplayListBuilder* aBuilder, nsIFrame* aForChild,
+        const nsRect& aVisibleRect, const nsRect& aDirtyRect,
+        RecalcInInvalidSubtree aRecalcInvalidSubtree = RIIS_NO)
+        : AutoBuildingDisplayList(aBuilder, aForChild, aVisibleRect, aDirtyRect,
+                                  aForChild->IsTransformed(),
+                                  aRecalcInvalidSubtree) {}
+
+    AutoBuildingDisplayList(
+        nsDisplayListBuilder* aBuilder, nsIFrame* aForChild,
+        const nsRect& aVisibleRect, const nsRect& aDirtyRect,
+        const bool aIsTransformed,
+        RecalcInInvalidSubtree aRecalcInvalidSubtree = RIIS_NO);
 
     void SetReferenceFrameAndCurrentOffset(const nsIFrame* aFrame,
                                            const nsPoint& aOffset) {

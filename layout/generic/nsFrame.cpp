@@ -3807,8 +3807,15 @@ void nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder* aBuilder,
   NS_ASSERTION(!isStackingContext || pseudoStackingContext,
                "Stacking contexts must also be pseudo-stacking-contexts");
 
+  
+  
+  
+  auto recalcInInvalidSubtree =
+      (child->GetStateBits() & NS_FRAME_IS_PUSHED_FLOAT)
+          ? nsDisplayListBuilder::RIIS_YES
+          : nsDisplayListBuilder::RIIS_NO;
   nsDisplayListBuilder::AutoBuildingDisplayList buildingForChild(
-      aBuilder, child, visible, dirty);
+      aBuilder, child, visible, dirty, recalcInInvalidSubtree);
   DisplayListClipState::AutoClipMultiple clipState(aBuilder);
   nsDisplayListBuilder::AutoCurrentActiveScrolledRootSetter asrSetter(aBuilder);
   CheckForApzAwareEventHandlers(aBuilder, child);
