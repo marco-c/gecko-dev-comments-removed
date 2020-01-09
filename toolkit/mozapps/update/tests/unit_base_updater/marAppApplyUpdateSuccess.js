@@ -6,7 +6,6 @@
 
 
 
-
 async function run_test() {
   if (!setupTestCommon()) {
     return;
