@@ -141,7 +141,7 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
       
       
       if (mustChangeProcess &&
-          tab.linkedBrowser.remoteType == "privileged") {
+          tab.linkedBrowser.remoteType == "privilegedabout") {
         debug(`Tab must flip away from the privileged content process ` +
               `on navigation`);
         gBrowser.updateBrowserRemoteness(tab.linkedBrowser, {
