@@ -83,6 +83,15 @@ function bytesToString(bytes) {
   return String.fromCharCode.apply(null, bytes);
 }
 
+class CertInfo {
+  constructor(cert, subject) {
+    this.cert = cert;
+    this.subject = subject;
+    this.trust = Ci.nsICertStorage.TRUST_INHERIT;
+  }
+}
+CertInfo.prototype.QueryInterface = ChromeUtils.generateQI([Ci.nsICertInfo]);
+
 this.RemoteSecuritySettings = class RemoteSecuritySettings {
     constructor() {
         this.client = RemoteSettings(Services.prefs.getCharPref(INTERMEDIATES_COLLECTION_PREF), {
@@ -148,22 +157,42 @@ this.RemoteSecuritySettings = class RemoteSecuritySettings {
 
         TelemetryStopwatch.start(INTERMEDIATES_UPDATE_MS_TELEMETRY);
 
-        Promise.all(waiting.slice(0, maxDownloadsPerRun)
-          .map(record => this.maybeDownloadAttachment(record, col, certStorage))
-        ).then(async () => {
-          const finalCurrent = await this.client.get();
-          const finalWaiting = finalCurrent.filter(record => !record.cert_import_complete);
-          const countPreloaded = finalCurrent.length - finalWaiting.length;
+        let toDownload = waiting.slice(0, maxDownloadsPerRun);
+        let recordsCertsAndSubjects = await Promise.all(
+          toDownload.map(record => this.maybeDownloadAttachment(record)));
+        let certInfos = [];
+        let recordsToUpdate = [];
+        for (let {record, cert, subject} of recordsCertsAndSubjects) {
+          if (cert && subject) {
+            certInfos.push(new CertInfo(cert, subject));
+            recordsToUpdate.push(record);
+          }
+        }
+        let result = await new Promise((resolve) => {
+          certStorage.addCerts(certInfos, resolve);
+        }).catch((err) => err);
+        if (result != Cr.NS_OK) {
+          Cu.reportError(`certStorage.addCerts failed: ${result}`);
+          Services.telemetry.getHistogramById(INTERMEDIATES_ERRORS_TELEMETRY)
+            .add("failedToUpdateDB");
+          return;
+        }
+        await Promise.all(recordsToUpdate.map((record) => {
+          record.cert_import_complete = true;
+          return col.update(record);
+        }));
+        const finalCurrent = await this.client.get();
+        const finalWaiting = finalCurrent.filter(record => !record.cert_import_complete);
+        const countPreloaded = finalCurrent.length - finalWaiting.length;
 
-          TelemetryStopwatch.finish(INTERMEDIATES_UPDATE_MS_TELEMETRY);
-          Services.telemetry.scalarSet(INTERMEDIATES_PRELOADED_TELEMETRY,
-                                       countPreloaded);
-          Services.telemetry.scalarSet(INTERMEDIATES_PENDING_TELEMETRY,
-                                       finalWaiting.length);
+        TelemetryStopwatch.finish(INTERMEDIATES_UPDATE_MS_TELEMETRY);
+        Services.telemetry.scalarSet(INTERMEDIATES_PRELOADED_TELEMETRY,
+                                     countPreloaded);
+        Services.telemetry.scalarSet(INTERMEDIATES_PENDING_TELEMETRY,
+                                     finalWaiting.length);
 
-          Services.obs.notifyObservers(null, "remote-security-settings:intermediates-updated",
-                                       "success");
-        });
+        Services.obs.notifyObservers(null, "remote-security-settings:intermediates-updated",
+                                     "success");
     }
 
     async onObservePollEnd(subject, topic, data) {
@@ -234,91 +263,80 @@ this.RemoteSecuritySettings = class RemoteSecuritySettings {
 
 
 
-    async maybeDownloadAttachment(record, col, certStorage) {
+
+
+    async maybeDownloadAttachment(record) {
       const {attachment: {hash, size}} = record;
+      let result = { record, cert: null, subject: null };
 
-      return this._downloadAttachmentBytes(record)
-      .then(async function(attachmentData) {
-        if (!attachmentData || attachmentData.length == 0) {
-          
-          log.debug(`Empty attachment. Hash=${hash}`);
+      let attachmentData;
+      try {
+        attachmentData = await this._downloadAttachmentBytes(record);
+      } catch (err) {
+        Cu.reportError(`Failed to download attachment: ${err}`);
+        Services.telemetry.getHistogramById(INTERMEDIATES_ERRORS_TELEMETRY)
+          .add("failedToDownloadMisc");
+        return result;
+      }
 
-          Services.telemetry.getHistogramById(INTERMEDIATES_ERRORS_TELEMETRY)
-            .add("emptyAttachment");
-
-          return;
-        }
-
+      if (!attachmentData || attachmentData.length == 0) {
         
-        if (attachmentData.length !== size) {
-          log.debug(`Unexpected attachment length. Hash=${hash} Lengths ${attachmentData.length} != ${size}`);
+        log.debug(`Empty attachment. Hash=${hash}`);
 
-          Services.telemetry.getHistogramById(INTERMEDIATES_ERRORS_TELEMETRY)
-            .add("unexpectedLength");
+        Services.telemetry.getHistogramById(INTERMEDIATES_ERRORS_TELEMETRY)
+          .add("emptyAttachment");
 
-          return;
-        }
+        return result;
+      }
 
+      
+      if (attachmentData.length !== size) {
+        log.debug(`Unexpected attachment length. Hash=${hash} Lengths ${attachmentData.length} != ${size}`);
+
+        Services.telemetry.getHistogramById(INTERMEDIATES_ERRORS_TELEMETRY)
+          .add("unexpectedLength");
+
+        return result;
+      }
+
+      
+      let dataAsString = gTextDecoder.decode(attachmentData);
+      let calculatedHash = getHash(dataAsString);
+      if (calculatedHash !== hash) {
+        log.warn(`Invalid hash. CalculatedHash=${calculatedHash}, Hash=${hash}, data=${dataAsString}`);
+
+        Services.telemetry.getHistogramById(INTERMEDIATES_ERRORS_TELEMETRY)
+          .add("unexpectedHash");
+
+        return result;
+      }
+      log.debug(`downloaded cert with hash=${hash}, size=${size}`);
+
+      let certBase64;
+      let subjectBase64;
+      try {
         
-        let dataAsString = gTextDecoder.decode(attachmentData);
-        let calculatedHash = getHash(dataAsString);
-        if (calculatedHash !== hash) {
-          log.warn(`Invalid hash. CalculatedHash=${calculatedHash}, Hash=${hash}, data=${dataAsString}`);
-
-          Services.telemetry.getHistogramById(INTERMEDIATES_ERRORS_TELEMETRY)
-            .add("unexpectedHash");
-
-          return;
-        }
-
-        let certBase64;
-        let subjectBase64;
-        try {
-          
-          certBase64 = dataAsString.split("-----")[2].replace(/\s/g, "");
-          
-          let certBytes = stringToBytes(atob(certBase64));
-          let cert = new X509.Certificate();
-          cert.parse(certBytes);
-          
-          
-          subjectBase64 = btoa(bytesToString(cert.tbsCertificate.subject._der._bytes));
-        } catch (err) {
-          Cu.reportError(`Failed to decode cert: ${err}`);
-
-          
-          
-          Services.telemetry.getHistogramById(INTERMEDIATES_ERRORS_TELEMETRY)
-            .add("failedToUpdateNSS");
-
-          return;
-        }
-        log.debug(`Adding cert. Hash=${hash}. Size=${size}`);
+        certBase64 = dataAsString.split("-----")[2].replace(/\s/g, "");
+        
+        let certBytes = stringToBytes(atob(certBase64));
+        let cert = new X509.Certificate();
+        cert.parse(certBytes);
         
         
-        
-        
-        let result = await new Promise((resolve) => {
-          certStorage.addCertBySubject(certBase64, subjectBase64,
-                                       Ci.nsICertStorage.TRUST_INHERIT,
-                                       resolve);
-        });
-        if (result != Cr.NS_OK) {
-          Cu.reportError(`Failed to add to cert storage: ${result}`);
-          Services.telemetry.getHistogramById(INTERMEDIATES_ERRORS_TELEMETRY)
-            .add("failedToUpdateDB");
-          return;
-        }
+        subjectBase64 = btoa(bytesToString(cert.tbsCertificate.subject._der._bytes));
+      } catch (err) {
+        Cu.reportError(`Failed to decode cert: ${err}`);
 
-        record.cert_import_complete = true;
-        await col.update(record);
-      })
-      .catch(() => {
         
         
         Services.telemetry.getHistogramById(INTERMEDIATES_ERRORS_TELEMETRY)
-          .add("failedToDownloadMisc");
-      });
+          .add("failedToUpdateNSS");
+
+        return result;
+      }
+      result.cert = certBase64;
+      result.subject = subjectBase64;
+      return result;
     }
 
     async maybeSync(expectedTimestamp, options) {
@@ -327,19 +345,12 @@ this.RemoteSecuritySettings = class RemoteSecuritySettings {
 
     async removeCerts(recordsToRemove) {
       let certStorage = Cc["@mozilla.org/security/certstorage;1"].getService(Ci.nsICertStorage);
-      let failures = 0;
-      for (let record of recordsToRemove) {
-        let result = await new Promise((resolve) => {
-          certStorage.removeCertByHash(record.pubKeyHash, resolve);
-        });
-        if (result != Cr.NS_OK) {
-          Cu.reportError(`Failed to remove intermediate certificate Hash=${record.pubKeyHash}: ${result}`);
-          failures++;
-        }
-      }
-
-      if (failures > 0) {
-        Cu.reportError(`Failed to remove ${failures} intermediate certificates`);
+      let hashes = recordsToRemove.map(record => record.pubKeyHash);
+      let result = await new Promise((resolve) => {
+          certStorage.removeCertsByHashes(hashes, resolve);
+      }).catch((err) => err);
+      if (result != Cr.NS_OK) {
+        Cu.reportError(`Failed to remove some intermediate certificates`);
         Services.telemetry.getHistogramById(INTERMEDIATES_ERRORS_TELEMETRY)
           .add("failedToRemove");
       }
