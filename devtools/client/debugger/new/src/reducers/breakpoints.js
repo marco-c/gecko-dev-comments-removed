@@ -14,7 +14,7 @@ import { isEqual } from "lodash";
 
 import { makeBreakpointId, findPosition } from "../utils/breakpoint";
 import { findEmptyLines } from "../utils/empty-lines";
-import { getTextAtPosition } from "../utils/source";
+import { getTextAtPosition, isInlineScript } from "../utils/source";
 
 
 import { getBreakpointsList as getBreakpointsListSelector } from "../selectors/breakpoints";
@@ -61,6 +61,26 @@ function update(
   switch (action.type) {
     case "UPDATE_BREAKPOINT_TEXT": {
       return updateBreakpointText(state, action.source);
+    }
+
+    case "ADD_SOURCES": {
+      const { sources } = action;
+
+      const scriptSources = sources.filter(source => isInlineScript(source));
+
+      if (scriptSources.length > 0) {
+        const { ...breakpointPositions } = state.breakpointPositions;
+
+        
+        
+        for (const source of scriptSources) {
+          delete breakpointPositions[source.id];
+        }
+
+        state = { ...state, breakpointPositions };
+      }
+
+      return state;
     }
 
     case "ADD_BREAKPOINT": {

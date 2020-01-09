@@ -14,7 +14,7 @@ import {
   makeBreakpointLocation
 } from "../../utils/breakpoint";
 
-import { getTextAtPosition } from "../../utils/source";
+import { getTextAtPosition, isInlineScript } from "../../utils/source";
 import { comparePosition } from "../../utils/location";
 
 import { originalToGeneratedId, isOriginalId } from "devtools-source-map";
@@ -173,7 +173,14 @@ export async function syncBreakpointPromise(
   }
 
   if (!newGeneratedLocation) {
-    return { previousLocation, breakpoint: null };
+    return {
+      previousLocation,
+      
+      
+      
+      
+      breakpoint: isInlineScript(generatedSource) ? bp : null
+    };
   }
 
   
