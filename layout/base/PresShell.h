@@ -587,6 +587,23 @@ class PresShell final : public nsIPresShell,
 
 
 
+
+
+
+
+
+
+
+    MOZ_CAN_RUN_SCRIPT
+    nsresult HandleEventUsingCoordinates(nsIFrame* aFrameForPresShell,
+                                         WidgetGUIEvent* aGUIEvent,
+                                         nsEventStatus* aEventStatus,
+                                         bool aDontRetargetEvents);
+
+    
+
+
+
     struct MOZ_STACK_CLASS EventTargetData final {
       EventTargetData() = delete;
       EventTargetData(const EventTargetData& aOther) = delete;
