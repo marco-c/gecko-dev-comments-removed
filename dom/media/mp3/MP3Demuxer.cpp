@@ -322,6 +322,13 @@ TimeIntervals MP3TrackDemuxer::GetBuffered() {
     buffered += TimeInterval(start, end);
   }
 
+  
+  
+  if (ValidNumAudioFrames() && Duration() > TimeUnit()) {
+    TimeInterval duration = TimeInterval(TimeUnit(), Duration());
+    return buffered.Intersection(duration);
+  }
+
   return buffered;
 }
 
@@ -333,8 +340,8 @@ TimeUnit MP3TrackDemuxer::Duration() const {
   }
 
   int64_t numFrames = 0;
-  const auto numAudioFrames = mParser.VBRInfo().NumAudioFrames();
-  if (mParser.VBRInfo().IsValid() && numAudioFrames.valueOr(0) + 1 > 1) {
+  const auto numAudioFrames = ValidNumAudioFrames();
+  if (numAudioFrames) {
     
     numFrames = numAudioFrames.value() + 1;
     return Duration(numFrames);
@@ -726,6 +733,13 @@ double MP3TrackDemuxer::AverageFrameLength() const {
            (vbr.NumAudioFrames().value() + 1);
   }
   return 0.0;
+}
+
+Maybe<uint32_t> MP3TrackDemuxer::ValidNumAudioFrames() const {
+  return mParser.VBRInfo().IsValid() &&
+                 mParser.VBRInfo().NumAudioFrames().valueOr(0) + 1 > 1
+             ? mParser.VBRInfo().NumAudioFrames()
+             : Nothing();
 }
 
 }  

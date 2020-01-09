@@ -123,6 +123,10 @@ class MP3TrackDemuxer : public MediaTrackDemuxer,
   double AverageFrameLength() const;
 
   
+  
+  Maybe<uint32_t> ValidNumAudioFrames() const;
+
+  
   MediaResourceIndex mSource;
 
   
