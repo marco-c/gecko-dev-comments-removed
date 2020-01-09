@@ -43,7 +43,7 @@ JITFLAGS = {
     ],
     
     'interp': [
-        ['--no-baseline', '--no-asmjs', '--no-wasm', '--no-native-regexp']
+        ['--no-baseline', '--no-asmjs', '--wasm-compiler=none', '--no-native-regexp']
     ],
     'none': [
         []  
