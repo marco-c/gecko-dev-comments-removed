@@ -77,8 +77,13 @@ bool WebIDLGlobalNameHash::DefineIfEnabled(
   
   
   
+  
+  
+  
+  
   JS::Rooted<JSObject*> global(
-      aCx, js::CheckedUnwrap(aObj,  false));
+      aCx,
+      js::CheckedUnwrapDynamic(aObj, aCx,  false));
   if (!global) {
     return Throw(aCx, NS_ERROR_DOM_SECURITY_ERR);
   }
@@ -90,7 +95,8 @@ bool WebIDLGlobalNameHash::DefineIfEnabled(
 #ifdef DEBUG
     JS::Rooted<JSObject*> temp(aCx, global);
     DebugOnly<nsGlobalWindowInner*> win;
-    MOZ_ASSERT(NS_SUCCEEDED(UNWRAP_OBJECT(Window, &temp, win)));
+    MOZ_ASSERT(NS_SUCCEEDED(
+        UNWRAP_MAYBE_CROSS_ORIGIN_OBJECT(Window, &temp, win, aCx)));
 #endif
   }
 
