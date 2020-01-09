@@ -189,7 +189,7 @@ class ShutdownLeaks(object):
 
     def _isHiddenWindowURL(self, url):
         return (url == "resource://gre-resources/hiddenWindow.html" or  
-                url == "chrome://browser/content/hiddenWindow.xul")     
+                url == "chrome://browser/content/hiddenWindowMac.xhtml")     
 
 
 class LSANLeaks(object):

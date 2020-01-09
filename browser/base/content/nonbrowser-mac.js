@@ -44,7 +44,7 @@ function nonBrowserWindowStartup() {
 
   
   
-  if (window.location.href == "chrome://browser/content/hiddenWindow.xul") {
+  if (window.location.href == "chrome://browser/content/hiddenWindowMac.xhtml") {
     var hiddenWindowDisabledItems = ["cmd_close", "minimizeWindow", "zoomWindow"];
     for (let hiddenWindowDisabledItem of hiddenWindowDisabledItems) {
       element = document.getElementById(hiddenWindowDisabledItem);
@@ -96,7 +96,7 @@ function nonBrowserWindowDelayedStartup() {
 function nonBrowserWindowShutdown() {
   
   
-  if (window.location.href == "chrome://browser/content/hiddenWindow.xul") {
+  if (window.location.href == "chrome://browser/content/hiddenWindowMac.xhtml") {
     let dockSupport = Cc["@mozilla.org/widget/macdocksupport;1"]
                       .getService(Ci.nsIMacDockSupport);
     dockSupport.dockMenu = null;
