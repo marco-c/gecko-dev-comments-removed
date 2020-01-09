@@ -1548,6 +1548,8 @@ void JsepSessionImpl::RollbackLocalOffer() {
 
     RefPtr<JsepTransceiver> temp(
         new JsepTransceiver(transceiver->GetMediaType()));
+    temp->mSendTrack.PopulateCodecs(mSupportedCodecs);
+    temp->mRecvTrack.PopulateCodecs(mSupportedCodecs);
     transceiver->Rollback(*temp);
   }
 
@@ -1570,6 +1572,8 @@ void JsepSessionImpl::RollbackRemoteOffer() {
     
     RefPtr<JsepTransceiver> temp(
         new JsepTransceiver(transceiver->GetMediaType()));
+    temp->mSendTrack.PopulateCodecs(mSupportedCodecs);
+    temp->mRecvTrack.PopulateCodecs(mSupportedCodecs);
     transceiver->Rollback(*temp);
 
     if (shouldRemove) {
