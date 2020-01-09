@@ -19,31 +19,6 @@ const MAX_DATA_URL_LENGTH = 40;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 const Services = require("Services");
 
 loader.lazyImporter(this, "findCssSelector", "resource://gre/modules/css-selector.js");
