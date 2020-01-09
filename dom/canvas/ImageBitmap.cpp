@@ -412,6 +412,33 @@ class CreateImageFromRawDataInMainThreadSyncTask final
   const Maybe<IntRect>& mCropRect;
 };
 
+static bool CheckSecurityForElements(bool aIsWriteOnly, bool aCORSUsed,
+                                     nsIPrincipal* aPrincipal) {
+  if (aIsWriteOnly || !aPrincipal) {
+    return false;
+  }
+
+  if (!aCORSUsed) {
+    nsIGlobalObject* incumbentSettingsObject = GetIncumbentGlobal();
+    if (NS_WARN_IF(!incumbentSettingsObject)) {
+      return false;
+    }
+
+    nsIPrincipal* principal = incumbentSettingsObject->PrincipalOrNull();
+    if (NS_WARN_IF(!principal) || !(principal->Subsumes(aPrincipal))) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+static bool CheckSecurityForElements(
+    const nsLayoutUtils::SurfaceFromElementResult& aRes) {
+  return CheckSecurityForElements(aRes.mIsWriteOnly, aRes.mCORSUsed,
+                                  aRes.mPrincipal);
+}
+
 
 
 
@@ -430,7 +457,8 @@ static already_AddRefed<SourceSurface> GetSurfaceFromElement(
     return nullptr;
   }
 
-  *aWriteOnly = res.mIsWriteOnly;
+  
+  *aWriteOnly = !CheckSecurityForElements(res);
 
   return surface.forget();
 }
@@ -843,7 +871,7 @@ already_AddRefed<ImageBitmap> ImageBitmap::CreateInternal(
   
   nsCOMPtr<nsIPrincipal> principal = aVideoEl.GetCurrentVideoPrincipal();
   bool CORSUsed = aVideoEl.GetCORSMode() != CORS_NONE;
-  bool writeOnly = CheckWriteOnlySecurity(CORSUsed, principal);
+  bool writeOnly = !CheckSecurityForElements(false, CORSUsed, principal);
 
   
   RefPtr<layers::Image> data = aVideoEl.GetCurrentImage();

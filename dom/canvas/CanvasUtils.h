@@ -11,7 +11,6 @@
 #include "mozilla/dom/ToJSValue.h"
 #include "jsapi.h"
 #include "mozilla/FloatingPoint.h"
-#include "nsLayoutUtils.h"
 
 class nsIPrincipal;
 
@@ -173,10 +172,6 @@ void DashArrayToJSVal(nsTArray<T>& dashes, JSContext* cx,
     rv.Throw(NS_ERROR_OUT_OF_MEMORY);
   }
 }
-
-
-
-bool CheckWriteOnlySecurity(bool aCORSUsed, nsIPrincipal* aPrincipal);
 
 }  
 }  
