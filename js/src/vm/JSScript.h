@@ -277,6 +277,12 @@ class DebugScript {
 
 
   BreakpointSite* breakpoints[1];
+
+  
+
+
+
+  bool needed() const { return stepMode > 0 || numSites > 0; }
 };
 
 using UniqueDebugScript = js::UniquePtr<DebugScript, JS::FreePolicy>;
