@@ -23,7 +23,8 @@ bool nsCSSAnonBoxes::IsTreePseudoElement(nsAtom* aPseudo) {
 #endif
 
 #ifdef DEBUG
-static nsStaticAtom* GetAtomBase() {
+
+nsStaticAtom* nsCSSAnonBoxes::GetAtomBase() {
   return const_cast<nsStaticAtom*>(
       nsGkAtoms::GetAtomByIndex(kAtomIndex_AnonBoxes));
 }

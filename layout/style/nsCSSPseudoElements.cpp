@@ -24,7 +24,8 @@ using namespace mozilla;
 #undef CSS_PSEUDO_ELEMENT
 };
 
-static nsStaticAtom* GetAtomBase() {
+
+nsStaticAtom* nsCSSPseudoElements::GetAtomBase() {
   return const_cast<nsStaticAtom*>(
       nsGkAtoms::GetAtomByIndex(kAtomIndex_PseudoElements));
 }
