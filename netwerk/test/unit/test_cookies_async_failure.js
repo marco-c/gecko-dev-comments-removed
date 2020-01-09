@@ -159,7 +159,7 @@ function* run_test_1(generator)
   
   Services.cookiemgr.add(cookie.host, cookie.path, cookie.name, "hallo",
     cookie.isSecure, cookie.isHttpOnly, cookie.isSession, cookie.expiry, {},
-    Ci.nsICookie2.SAMESITE_NONE);
+    Ci.nsICookie.SAMESITE_NONE);
 
   
   Assert.equal(Services.cookiemgr.countCookiesFromHost(cookie.host), 1);
@@ -212,7 +212,7 @@ function* run_test_1(generator)
   Assert.equal(Services.cookiemgr.countCookiesFromHost("foo.com"), 1);
   let enumerator = Services.cookiemgr.getCookiesFromHost(cookie.host, {});
   Assert.ok(enumerator.hasMoreElements());
-  let dbcookie = enumerator.getNext().QueryInterface(Ci.nsICookie2);
+  let dbcookie = enumerator.getNext().QueryInterface(Ci.nsICookie);
   Assert.equal(dbcookie.value, "hallo");
   Assert.ok(!enumerator.hasMoreElements());
 

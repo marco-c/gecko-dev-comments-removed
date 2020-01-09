@@ -64,7 +64,7 @@ var SessionCookiesInternal = {
                                cookie.value, !!cookie.secure, !!cookie.httponly,
                                 true, expiry,
                                cookie.originAttributes || {},
-                               Ci.nsICookie2.SAMESITE_NONE);
+                               Ci.nsICookie.SAMESITE_NONE);
         } catch (ex) {
           Cu.reportError(`nsCookieService::Add failed with error '${ex}' for cookie ${JSON.stringify(cookie)}.`);
         }
@@ -120,7 +120,7 @@ var SessionCookiesInternal = {
 
 
   _addCookie(cookie) {
-    cookie.QueryInterface(Ci.nsICookie2);
+    cookie.QueryInterface(Ci.nsICookie);
 
     
     if (cookie.isSession && PrivacyLevel.canSave(cookie.isSecure)) {
@@ -132,7 +132,7 @@ var SessionCookiesInternal = {
 
 
   _updateCookie(cookie) {
-    cookie.QueryInterface(Ci.nsICookie2);
+    cookie.QueryInterface(Ci.nsICookie);
 
     
     if (cookie.isSession && PrivacyLevel.canSave(cookie.isSecure)) {
@@ -146,7 +146,7 @@ var SessionCookiesInternal = {
 
 
   _removeCookie(cookie) {
-    cookie.QueryInterface(Ci.nsICookie2);
+    cookie.QueryInterface(Ci.nsICookie);
 
     if (cookie.isSession) {
       CookieStore.delete(cookie);
@@ -158,7 +158,7 @@ var SessionCookiesInternal = {
 
   _removeCookies(cookies) {
     for (let i = 0; i < cookies.length; i++) {
-      this._removeCookie(cookies.queryElementAt(i, Ci.nsICookie2));
+      this._removeCookie(cookies.queryElementAt(i, Ci.nsICookie));
     }
   },
 

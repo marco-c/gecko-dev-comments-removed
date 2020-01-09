@@ -327,12 +327,12 @@ void CookieServiceChild::GetCookieStringFromCookieHashTable(
     if (aIsSameSiteForeign) {
       
       
-      if (sameSiteAttr == nsICookie2::SAMESITE_STRICT) {
+      if (sameSiteAttr == nsICookie::SAMESITE_STRICT) {
         continue;
       }
       
       
-      if (sameSiteAttr == nsICookie2::SAMESITE_LAX && !aIsSafeTopLevelNav) {
+      if (sameSiteAttr == nsICookie::SAMESITE_LAX && !aIsSafeTopLevelNav) {
         continue;
       }
     }

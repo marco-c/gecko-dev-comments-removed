@@ -7,7 +7,6 @@
 #define nsCookie_h__
 
 #include "nsICookie.h"
-#include "nsICookie2.h"
 #include "nsString.h"
 
 #include "mozilla/MemoryReporting.h"
@@ -26,15 +25,13 @@ using mozilla::OriginAttributes;
 
 
 
-
-class nsCookie final : public nsICookie2 {
+class nsCookie final : public nsICookie {
   MOZ_DEFINE_MALLOC_SIZE_OF(MallocSizeOf)
 
  public:
   
   NS_DECL_ISUPPORTS
   NS_DECL_NSICOOKIE
-  NS_DECL_NSICOOKIE2
 
  private:
   
