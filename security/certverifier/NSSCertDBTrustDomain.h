@@ -11,7 +11,7 @@
 #include "ScopedNSSTypes.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/TimeStamp.h"
-#include "nsICertStorage.h"
+#include "nsICertBlocklist.h"
 #include "nsString.h"
 #include "mozpkix/pkixtypes.h"
 #include "secmodt.h"
@@ -202,6 +202,15 @@ class NSSCertDBTrustDomain : public mozilla::pkix::TrustDomain {
       EncodedResponseSource responseSource,  bool& expired);
   TimeDuration GetOCSPTimeout() const;
 
+  Result SynchronousCheckRevocationWithServer(
+      const mozilla::pkix::CertID& certID, const nsCString& aiaLocation,
+      mozilla::pkix::Time time, uint16_t maxOCSPLifetimeInDays,
+      const Result cachedResponseResult,
+      const Result stapledOCSPResponseResult);
+  Result HandleOCSPFailure(const Result cachedResponseResult,
+                           const Result stapledOCSPResponseResult,
+                           const Result error);
+
   const SECTrustType mCertDBTrustType;
   const OCSPFetching mOCSPFetching;
   OCSPCache& mOCSPCache;  
@@ -223,7 +232,7 @@ class NSSCertDBTrustDomain : public mozilla::pkix::TrustDomain {
   UniqueCERTCertList& mBuiltChain;    
   PinningTelemetryInfo* mPinningTelemetryInfo;
   const char* mHostname;  
-  nsCOMPtr<nsICertStorage> mCertBlocklist;
+  nsCOMPtr<nsICertBlocklist> mCertBlocklist;
   CertVerifier::OCSPStaplingStatus mOCSPStaplingStatus;
   
   UniqueSECItem mSCTListFromCertificate;
