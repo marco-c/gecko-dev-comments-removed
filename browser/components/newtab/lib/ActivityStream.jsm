@@ -209,7 +209,7 @@ const PREFS_CONFIG = new Map([
       localProvider: "OnboardingMessageProvider",
       enabled: true,
       
-      exclude: ["RETURN_TO_AMO_1"],
+      exclude: [],
     }),
   }],
   
