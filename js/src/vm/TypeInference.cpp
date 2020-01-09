@@ -3497,6 +3497,12 @@ bool JSScript::makeTypes(JSContext* cx) {
 
   AutoEnterAnalysis enter(cx);
 
+  
+  
+  if (!ensureHasAnalyzedArgsUsage(cx)) {
+    return false;
+  }
+
   UniquePtr<jit::ICScript> icScript(jit::ICScript::create(cx, this));
   if (!icScript) {
     return false;
