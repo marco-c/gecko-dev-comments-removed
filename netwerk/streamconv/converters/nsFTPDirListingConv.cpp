@@ -168,11 +168,11 @@ nsFTPDirListingConv::OnStartRequest(nsIRequest *request) {
 }
 
 NS_IMETHODIMP
-nsFTPDirListingConv::OnStopRequest(nsIRequest *request, nsISupports *ctxt,
+nsFTPDirListingConv::OnStopRequest(nsIRequest *request,
                                    nsresult aStatus) {
   
 
-  return mFinalListener->OnStopRequest(request, ctxt, aStatus);
+  return mFinalListener->OnStopRequest(request, aStatus);
 }
 
 

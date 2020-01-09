@@ -282,7 +282,7 @@ void nsBaseChannel::ContinueHandleAsyncRedirect(nsresult result) {
   if (NS_FAILED(result) && mListener) {
     
     mListener->OnStartRequest(this);
-    mListener->OnStopRequest(this, nullptr, mStatus);
+    mListener->OnStopRequest(this, mStatus);
     ChannelDone();
   }
 
@@ -765,7 +765,7 @@ nsBaseChannel::OnStartRequest(nsIRequest *request) {
 }
 
 NS_IMETHODIMP
-nsBaseChannel::OnStopRequest(nsIRequest *request, nsISupports *ctxt,
+nsBaseChannel::OnStopRequest(nsIRequest *request,
                              nsresult status) {
   
   
@@ -777,7 +777,7 @@ nsBaseChannel::OnStopRequest(nsIRequest *request, nsISupports *ctxt,
   mPumpingData = false;
 
   if (mListener)  
-    mListener->OnStopRequest(this, nullptr, mStatus);
+    mListener->OnStopRequest(this, mStatus);
   ChannelDone();
 
   
