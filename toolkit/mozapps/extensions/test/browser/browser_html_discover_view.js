@@ -339,6 +339,9 @@ add_task(async function setup() {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["extensions.htmlaboutaddons.enabled", true],
+      
+      
+      ["browser.discovery.enabled", false],
     ],
   });
 });
