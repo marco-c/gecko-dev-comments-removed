@@ -2,10 +2,8 @@ const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm")
 const {LogManager} = ChromeUtils.import("resource://normandy/lib/LogManager.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  ActionSandboxManager: "resource://normandy/lib/ActionSandboxManager.jsm",
   AddonStudyAction: "resource://normandy/actions/AddonStudyAction.jsm",
   ConsoleLogAction: "resource://normandy/actions/ConsoleLogAction.jsm",
-  NormandyApi: "resource://normandy/lib/NormandyApi.jsm",
   PreferenceExperimentAction: "resource://normandy/actions/PreferenceExperimentAction.jsm",
   PreferenceRollbackAction: "resource://normandy/actions/PreferenceRollbackAction.jsm",
   PreferenceRolloutAction: "resource://normandy/actions/PreferenceRolloutAction.jsm",
@@ -20,16 +18,9 @@ const log = LogManager.getLogger("recipe-runner");
 
 
 
-
-
-
-
-
-
 class ActionsManager {
   constructor() {
     this.finalized = false;
-    this.remoteActionSandboxes = {};
 
     const addonStudyAction = new AddonStudyAction();
 
@@ -44,52 +35,6 @@ class ActionsManager {
     };
   }
 
-  async fetchRemoteActions() {
-    const actions = await NormandyApi.fetchActions();
-
-    for (const action of actions) {
-      
-      if (action.name in this.localActions) {
-        continue;
-      }
-
-      try {
-        const implementation = await NormandyApi.fetchImplementation(action);
-        const sandbox = new ActionSandboxManager(implementation);
-        sandbox.addHold("ActionsManager");
-        this.remoteActionSandboxes[action.name] = sandbox;
-      } catch (err) {
-        log.warn(`Could not fetch implementation for ${action.name}: ${err}`);
-
-        let status;
-        if (/NetworkError/.test(err)) {
-          status = Uptake.ACTION_NETWORK_ERROR;
-        } else {
-          status = Uptake.ACTION_SERVER_ERROR;
-        }
-        await Uptake.reportAction(action.name, status);
-      }
-    }
-
-    const actionNames = Object.keys(this.remoteActionSandboxes);
-    log.debug(`Fetched ${actionNames.length} actions from the server: ${actionNames.join(", ")}`);
-  }
-
-  async preExecution() {
-    
-
-    for (const [actionName, manager] of Object.entries(this.remoteActionSandboxes)) {
-      try {
-        await manager.runAsyncCallback("preExecution");
-        manager.disabled = false;
-      } catch (err) {
-        log.error(`Could not run pre-execution hook for ${actionName}:`, err.message);
-        manager.disabled = true;
-        await Uptake.reportAction(actionName, Uptake.ACTION_PRE_EXECUTION_ERROR);
-      }
-    }
-  }
-
   async runRecipe(recipe) {
     let actionName = recipe.action;
 
@@ -97,27 +42,6 @@ class ActionsManager {
       log.info(`Executing recipe "${recipe.name}" (action=${recipe.action})`);
       const action = this.localActions[actionName];
       await action.runRecipe(recipe);
-    } else if (actionName in this.remoteActionSandboxes) {
-      let status;
-      const manager = this.remoteActionSandboxes[recipe.action];
-
-      if (manager.disabled) {
-        log.warn(
-          `Skipping recipe ${recipe.name} because ${recipe.action} failed during pre-execution.`
-        );
-        status = Uptake.RECIPE_ACTION_DISABLED;
-      } else {
-        try {
-          log.info(`Executing recipe "${recipe.name}" (action=${recipe.action})`);
-          await manager.runAsyncCallback("action", recipe);
-          status = Uptake.RECIPE_SUCCESS;
-        } catch (e) {
-          e.message = `Could not execute recipe ${recipe.name}: ${e.message}`;
-          Cu.reportError(e);
-          status = Uptake.RECIPE_EXECUTION_ERROR;
-        }
-      }
-      await Uptake.reportRecipe(recipe, status);
     } else {
       log.error(
         `Could not execute recipe ${recipe.name}:`,
@@ -137,26 +61,5 @@ class ActionsManager {
     for (const action of new Set(Object.values(this.localActions))) {
       action.finalize();
     }
-
-    
-    for (const [actionName, manager] of Object.entries(this.remoteActionSandboxes)) {
-      
-      if (manager.disabled) {
-        log.info(`Skipping post-execution hook for ${actionName} due to earlier failure.`);
-        continue;
-      }
-
-      try {
-        await manager.runAsyncCallback("postExecution");
-        await Uptake.reportAction(actionName, Uptake.ACTION_SUCCESS);
-      } catch (err) {
-        log.info(`Could not run post-execution hook for ${actionName}:`, err.message);
-        await Uptake.reportAction(actionName, Uptake.ACTION_POST_EXECUTION_ERROR);
-      }
-    }
-
-    
-    Object.values(this.remoteActionSandboxes)
-      .forEach(manager => manager.removeHold("ActionsManager"));
   }
 }

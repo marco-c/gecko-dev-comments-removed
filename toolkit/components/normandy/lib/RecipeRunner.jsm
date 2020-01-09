@@ -228,8 +228,6 @@ var RecipeRunner = {
     }
 
     const actions = new ActionsManager();
-    await actions.fetchRemoteActions();
-    await actions.preExecution();
 
     
     if (recipesToRun.length === 0) {

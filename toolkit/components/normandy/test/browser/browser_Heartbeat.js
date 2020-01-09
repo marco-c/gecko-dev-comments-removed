@@ -2,7 +2,6 @@
 
 ChromeUtils.import("resource://gre/modules/Services.jsm", this);
 ChromeUtils.import("resource://normandy/lib/Heartbeat.jsm", this);
-ChromeUtils.import("resource://normandy/lib/SandboxManager.jsm", this);
 
 
 
@@ -67,11 +66,6 @@ function assertTelemetrySent(hb, eventNames) {
     });
   });
 }
-
-
-const sandboxManager = new SandboxManager();
-sandboxManager.addHold("test running");
-
 
 
 
@@ -180,14 +174,4 @@ add_task(async function() {
   
   await BrowserTestUtils.closeWindow(targetWindow);
   await telemetrySentPromise;
-});
-
-
-
-add_task(async function() {
-  
-  sandboxManager.removeHold("test running");
-  await sandboxManager.isNuked()
-    .then(() => ok(true, "sandbox is nuked"))
-    .catch(e => ok(false, "sandbox is nuked", e));
 });
