@@ -1141,10 +1141,8 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
   },
 
   onSources: function(request) {
-    
-    
     for (const source of this.dbg.findSources()) {
-      this.sources.createSourceActor(source);
+      this._addSource(source);
     }
 
     
@@ -1761,7 +1759,6 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       pauseOnExceptions: this._options.pauseOnExceptions,
       ignoreCaughtExceptions: this._options.ignoreCaughtExceptions,
       skipBreakpoints: this.skipBreakpoints,
-      breakpoints: this.breakpointActorMap.listKeys(),
     };
   },
 });
