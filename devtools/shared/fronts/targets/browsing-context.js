@@ -5,10 +5,12 @@
 
 const {browsingContextTargetSpec} = require("devtools/shared/specs/targets/browsing-context");
 const { FrontClassWithSpec, registerFront } = require("devtools/shared/protocol");
+const { TargetMixin } = require("./target-mixin");
 
 loader.lazyRequireGetter(this, "ThreadClient", "devtools/shared/client/thread-client");
 
-class BrowsingContextTargetFront extends FrontClassWithSpec(browsingContextTargetSpec) {
+class BrowsingContextTargetFront extends
+  TargetMixin(FrontClassWithSpec(browsingContextTargetSpec)) {
   constructor(client) {
     super(client);
 
@@ -23,8 +25,8 @@ class BrowsingContextTargetFront extends FrontClassWithSpec(browsingContextTarge
     
     this._selected = false;
 
-    
-    this.client = client;
+    this._onTabNavigated = this._onTabNavigated.bind(this);
+    this._onFrameUpdate = this._onFrameUpdate.bind(this);
   }
 
   form(json) {
@@ -36,8 +38,8 @@ class BrowsingContextTargetFront extends FrontClassWithSpec(browsingContextTarge
 
     this.outerWindowID = json.outerWindowID;
     this.favicon = json.favicon;
-    this.title = json.title;
-    this.url = json.url;
+    this._title = json.title;
+    this._url = json.url;
   }
 
   
@@ -61,7 +63,6 @@ class BrowsingContextTargetFront extends FrontClassWithSpec(browsingContextTarge
     if (this.thread) {
       return Promise.resolve([{}, this.thread]);
     }
-
     const packet = {
       to: this._threadActor,
       type: "attach",
@@ -74,14 +75,65 @@ class BrowsingContextTargetFront extends FrontClassWithSpec(browsingContextTarge
     });
   }
 
+  
+
+
+  _onFrameUpdate(packet) {
+    this.emit("frame-update", packet);
+  }
+
+  
+
+
+  _onTabNavigated(packet) {
+    const event = Object.create(null);
+    event.url = packet.url;
+    event.title = packet.title;
+    event.nativeConsoleAPI = packet.nativeConsoleAPI;
+    event.isFrameSwitching = packet.isFrameSwitching;
+
+    
+    
+    
+    
+    if (!packet.isFrameSwitching || this.isWebExtension) {
+      this._url = packet.url;
+      this._title = packet.title;
+    }
+
+    
+    
+    if (packet.state == "start") {
+      this.emit("will-navigate", event);
+    } else {
+      this.emit("navigate", event);
+    }
+  }
+
   async attach() {
-    const response = await super.attach();
+    if (this._attach) {
+      return this._attach;
+    }
+    this._attach = (async () => {
+      
+      
+      
+      this.on("tabNavigated", this._onTabNavigated);
+      this.on("frameUpdate", this._onFrameUpdate);
 
-    this._threadActor = response.threadActor;
-    this.configureOptions.javascriptEnabled = response.javascriptEnabled;
-    this.traits = response.traits || {};
+      const response = await super.attach();
 
-    return response;
+      this._threadActor = response.threadActor;
+      this.configureOptions.javascriptEnabled = response.javascriptEnabled;
+      this.traits = response.traits || {};
+
+      
+      
+      if (this.targetForm.consoleActor) {
+        await this.attachConsole();
+      }
+    })();
+    return this._attach;
   }
 
   async reconfigure({ options }) {
@@ -111,11 +163,13 @@ class BrowsingContextTargetFront extends FrontClassWithSpec(browsingContextTarge
       }
     }
 
-    this.destroy();
+    
+    this.off("tabNavigated", this._onTabNavigated);
+    this.off("frameUpdate", this._onFrameUpdate);
 
     return response;
   }
 }
 
 exports.BrowsingContextTargetFront = BrowsingContextTargetFront;
-registerFront(BrowsingContextTargetFront);
+registerFront(exports.BrowsingContextTargetFront);
