@@ -18,13 +18,25 @@ fn is_auto_zero_angle(auto: &bool, angle: &Angle) -> bool {
 }
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToCss, ToResolvedValue)]
+#[derive(
+    Animate,
+    Clone,
+    ComputeSquaredDistance,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    ToAnimatedZero,
+    ToCss,
+    ToResolvedValue,
+)]
 #[repr(C)]
 pub struct OffsetRotate {
     
     
     
     
+    #[animation(constant)]
     #[css(represents_keyword)]
     pub auto: bool,
     
