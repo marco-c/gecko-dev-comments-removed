@@ -2539,19 +2539,36 @@ bool SourceMediaStream::PullNewData(GraphTime aDesiredUpToTime) {
   if (mFinished) {
     return false;
   }
+  bool streamPullingEnabled = false;
+  for (const TrackData& track : mUpdateTracks) {
+    if (!(track.mCommands & TrackEventCommand::TRACK_EVENT_ENDED) &&
+        track.mPullingEnabled) {
+      
+      
+      streamPullingEnabled = true;
+      break;
+    }
+  }
   
   
   StreamTime t = GraphTimeToStreamTime(aDesiredUpToTime);
-  StreamTime current = mTracks.GetEarliestTrackEnd();
   for (const TrackData& track : mUpdateTracks) {
-    if (!track.mPullingEnabled) {
-      continue;
-    }
     if (track.mCommands & TrackEventCommand::TRACK_EVENT_ENDED) {
       continue;
     }
-    current = track.mEndOfFlushedData + track.mData->GetDuration();
+    StreamTime current = track.mEndOfFlushedData + track.mData->GetDuration();
     if (t <= current) {
+      continue;
+    }
+    if (!track.mPullingEnabled) {
+      if (streamPullingEnabled) {
+        LOG(LogLevel::Verbose,
+            ("%p: Pulling disabled for track but enabled for stream, append "
+             "null data; stream=%p track=%d t=%f current end=%f",
+             GraphImpl(), this, track.mID, GraphImpl()->MediaTimeToSeconds(t),
+             GraphImpl()->MediaTimeToSeconds(current)));
+        track.mData->AppendNullData(t - current);
+      }
       continue;
     }
     LOG(LogLevel::Verbose,
