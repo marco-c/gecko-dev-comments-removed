@@ -202,6 +202,11 @@ class WidgetRenderingContext;
   CGImageRef mTopLeftCornerMask;
 
   
+  
+  NSView* mVibrancyViewsContainer;      
+  NSView* mNonDraggableViewsContainer;  
+
+  
   NSInteger mLastPressureStage;
 }
 
@@ -228,6 +233,9 @@ class WidgetRenderingContext;
 
 - (bool)preRender:(NSOpenGLContext*)aGLContext;
 - (void)postRender:(NSOpenGLContext*)aGLContext;
+
+- (NSView*)vibrancyViewsContainer;
+- (NSView*)nonDraggableViewsContainer;
 
 - (BOOL)isCoveringTitlebar;
 
