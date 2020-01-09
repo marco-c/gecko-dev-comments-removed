@@ -136,7 +136,10 @@ void nsTableColFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
   DisplayInsetBoxShadow(aBuilder, aLists.BorderBackground());
 
-  DisplayOutline(aBuilder, aLists);
+  
+  
+  
+  
 
   for (nsIFrame* kid : PrincipalChildList()) {
     BuildDisplayListForChild(aBuilder, kid, aLists);

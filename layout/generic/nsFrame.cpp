@@ -2351,15 +2351,13 @@ void nsFrame::DisplaySelectionOverlay(nsDisplayListBuilder* aBuilder,
 
 void nsFrame::DisplayOutlineUnconditional(nsDisplayListBuilder* aBuilder,
                                           const nsDisplayListSet& aLists) {
-  if (!StyleOutline()->ShouldPaintOutline()) {
-    return;
-  }
+  
+  
+  
+  
+  MOZ_ASSERT(!IsTableColGroupFrame() && !IsTableColFrame());
 
-  if (IsTableColGroupFrame() || IsTableColFrame()) {
-    
-    
-    
-    
+  if (!StyleOutline()->ShouldPaintOutline()) {
     return;
   }
 
