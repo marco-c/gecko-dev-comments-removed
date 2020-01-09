@@ -71,9 +71,9 @@ var PrintUtils = {
     window.messageManager.addMessageListener("Printing:Error", this);
   },
 
-  get bundle() {
-    delete this.bundle;
-    return this.bundle = Services.strings.createBundle("chrome://global/locale/printing.properties");
+  get _bundle() {
+    delete this._bundle;
+    return this._bundle = Services.strings.createBundle("chrome://global/locale/printing.properties");
   },
 
   
@@ -101,7 +101,7 @@ var PrintUtils = {
     return true;
   },
 
-  getDefaultPrinterName() {
+  _getDefaultPrinterName() {
     try {
       let PSSVC = Cc["@mozilla.org/gfx/printsettings-service;1"]
                     .getService(Ci.nsIPrintSettingsService);
@@ -124,7 +124,7 @@ var PrintUtils = {
 
   printWindow(aWindowID, aBrowser) {
     let mm = aBrowser.messageManager;
-    let defaultPrinterName = this.getDefaultPrinterName();
+    let defaultPrinterName = this._getDefaultPrinterName();
     mm.sendAsyncMessage("Printing:Print", {
       windowID: aWindowID,
       simplifiedMode: this._shouldSimplify,
@@ -244,7 +244,7 @@ var PrintUtils = {
   _originalURL: "",
   _shouldSimplify: false,
 
-  displayPrintingError(nsresult, isPrinting) {
+  _displayPrintingError(nsresult, isPrinting) {
     
     
     
@@ -287,7 +287,7 @@ var PrintUtils = {
       
       let ppMsgName = msgName + "_PP";
       try {
-        msg = this.bundle.GetStringFromName(ppMsgName);
+        msg = this._bundle.GetStringFromName(ppMsgName);
       } catch (e) {
         
         
@@ -295,19 +295,19 @@ var PrintUtils = {
     }
 
     if (!msg) {
-      msg = this.bundle.GetStringFromName(msgName);
+      msg = this._bundle.GetStringFromName(msgName);
     }
 
-    title = this.bundle.GetStringFromName(isPrinting ? "print_error_dialog_title"
-                                                     : "printpreview_error_dialog_title");
+    title = this._bundle.GetStringFromName(isPrinting ? "print_error_dialog_title"
+                                                      : "printpreview_error_dialog_title");
 
     Services.prompt.alert(window, title, msg);
   },
 
   receiveMessage(aMessage) {
     if (aMessage.name == "Printing:Error") {
-      this.displayPrintingError(aMessage.data.nsresult,
-                                aMessage.data.isPrinting);
+      this._displayPrintingError(aMessage.data.nsresult,
+                                 aMessage.data.isPrinting);
       return undefined;
     }
 
@@ -356,7 +356,7 @@ var PrintUtils = {
     return undefined;
   },
 
-  setPrinterDefaultsForSelectedPrinter(aPSSVC, aPrintSettings) {
+  _setPrinterDefaultsForSelectedPrinter(aPSSVC, aPrintSettings) {
     if (!aPrintSettings.printerName)
       aPrintSettings.printerName = aPSSVC.defaultPrinterName;
 
@@ -376,7 +376,7 @@ var PrintUtils = {
                     .getService(Ci.nsIPrintSettingsService);
       if (gPrintSettingsAreGlobal) {
         printSettings = PSSVC.globalPrintSettings;
-        this.setPrinterDefaultsForSelectedPrinter(PSSVC, printSettings);
+        this._setPrinterDefaultsForSelectedPrinter(PSSVC, printSettings);
       } else {
         printSettings = PSSVC.newPrintSettings;
       }
@@ -401,6 +401,10 @@ var PrintUtils = {
 
     QueryInterface: ChromeUtils.generateQI(["nsIObserver",
                                             "nsISupportsWeakReference"]),
+  },
+
+  get shouldSimplify() {
+    return this._shouldSimplify;
   },
 
   setSimplifiedMode(shouldSimplify) {
@@ -443,7 +447,7 @@ var PrintUtils = {
     }
     this._currentPPBrowser = ppBrowser;
     let mm = ppBrowser.messageManager;
-    let defaultPrinterName = this.getDefaultPrinterName();
+    let defaultPrinterName = this._getDefaultPrinterName();
 
     let sendEnterPreviewMessage = function(browser, simplified) {
       mm.sendAsyncMessage("Printing:Preview:Enter", {
