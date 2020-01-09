@@ -6,6 +6,7 @@
 
 #include "ExtensionProtocolHandler.h"
 
+#include "mozilla/BinarySearch.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/Promise.h"
@@ -41,6 +42,7 @@
 #include "nsIOutputStream.h"
 #include "nsIStreamConverterService.h"
 #include "nsNetUtil.h"
+#include "nsReadableUtils.h"
 #include "nsURLHelper.h"
 #include "prio.h"
 #include "SimpleChannel.h"
@@ -53,6 +55,30 @@
 #define EXTENSION_SCHEME "moz-extension"
 using mozilla::dom::Promise;
 using mozilla::ipc::FileDescriptor;
+
+
+
+
+
+
+
+
+
+
+
+
+
+static const char sStaticFileExtensions[][5] = {
+  
+  "bmp",
+  "gif",
+  "ico",
+  "jpeg",
+  "jpg",
+  "png",
+  "svg",
+  
+};
 
 namespace mozilla {
 
@@ -460,9 +486,10 @@ nsresult ExtensionProtocolHandler::SubstituteChannel(nsIURI* aURI,
 
   nsAutoCString ext;
   MOZ_TRY(url->GetFileExtension(ext));
+  ToLowerCase(ext);
 
   nsCOMPtr<nsIChannel> channel;
-  if (ext.LowerCaseEqualsLiteral("css")) {
+  if (ext.EqualsLiteral("css")) {
     
     static const auto convert = [](nsIStreamListener* listener,
                                    nsIChannel* channel,
@@ -502,6 +529,16 @@ nsresult ExtensionProtocolHandler::SubstituteChannel(nsIURI* aURI,
           return RequestOrReason(origChannel);
         });
   } else if (readyPromise) {
+    size_t matchIdx;
+    if (BinarySearchIf(
+            sStaticFileExtensions, 0, ArrayLength(sStaticFileExtensions),
+            [&ext](const char* aOther) { return ext.Compare(aOther); },
+            &matchIdx)) {
+      
+      
+      return NS_OK;
+    }
+
     channel = NS_NewSimpleChannel(
         aURI, aLoadInfo, *result,
         [readyPromise](nsIStreamListener* listener, nsIChannel* channel,
