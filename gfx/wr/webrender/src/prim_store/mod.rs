@@ -51,7 +51,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use storage;
 use util::{ScaleOffset, MatrixHelpers, MaxRect, Recycler, TransformedRectKind};
 use util::{pack_as_float, project_rect, raster_rect_to_device_pixels};
-use util::{scale_factors, clamp_to_scale_factor, RectHelpers};
+use util::{scale_factors, clamp_to_scale_factor};
 use smallvec::SmallVec;
 
 pub mod borders;
@@ -1764,7 +1764,6 @@ impl PrimitiveStore {
                     pic.local_rect,
                     frame_context,
                     frame_state,
-                    surface_index,
                 );
 
                 frame_state.tile_cache = Some(tile_cache);
@@ -3583,11 +3582,7 @@ fn get_unclipped_device_rect(
                 bottom_right,
             };
 
-            let p0 = unclipped_device_rect.origin + top_left;
-            let p1 = unclipped_device_rect.bottom_right() + bottom_right;
-            let unclipped = DeviceRect::from_floats(p0.x, p0.y, p1.x, p1.y);
-
-            Some((unclipped, snap_offsets))
+            Some((unclipped_device_rect, snap_offsets))
         }
         TransformedRectKind::Complex => {
             Some((unclipped_device_rect, SnapOffsets::empty()))
