@@ -304,6 +304,17 @@ class RootedVector : public Rooted<StackGCVector<T>> {
   explicit RootedVector(JSContext* cx) : Base(cx, Vec(cx)) {}
 };
 
+
+
+template <typename T>
+class PersistentRootedVector : public PersistentRooted<StackGCVector<T>> {
+  using Vec = StackGCVector<T>;
+  using Base = PersistentRooted<Vec>;
+
+ public:
+  explicit PersistentRootedVector(JSContext* cx) : Base(cx, Vec(cx)) {}
+};
+
 }  
 
 #endif  
