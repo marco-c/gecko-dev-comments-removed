@@ -80,14 +80,9 @@ class nsHistory;
 class nsGlobalWindowObserver;
 class nsGlobalWindowInner;
 class nsDOMWindowUtils;
-class nsIIdleService;
 struct nsRect;
 
 class nsWindowSizes;
-
-class IdleRequestExecutor;
-
-struct IdleObserverHolder;
 
 namespace mozilla {
 class AbstractThread;
@@ -104,8 +99,6 @@ class External;
 class Function;
 class Gamepad;
 enum class ImageBitmapFormat : uint8_t;
-class IdleRequest;
-class IdleRequestCallback;
 class IncrementalRunnable;
 class IntlUtils;
 class Location;
@@ -725,29 +718,6 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
                            mozilla::dom::CallerType aCallerType,
                            mozilla::ErrorResult& aError);
 
-  
-  nsTObserverArray<IdleObserverHolder> mIdleObservers;
-
-  
-  nsCOMPtr<nsITimer> mIdleTimer;
-
-  
-  uint32_t mIdleFuzzFactor;
-
-  
-  
-  int32_t mIdleCallbackIndex;
-
-  
-  
-  bool mCurrentlyIdle;
-
-  
-  
-  bool mAddActiveEventFuzzTime;
-
-  nsCOMPtr<nsIIdleService> mIdleService;
-
   RefPtr<mozilla::dom::WakeLock> mWakeLock;
 
   friend class HashchangeCallback;
@@ -1177,7 +1147,6 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   friend class mozilla::dom::PostMessageEvent;
   friend class DesktopNotification;
   friend class mozilla::dom::TimeoutManager;
-  friend class IdleRequestExecutor;
   friend class nsGlobalWindowInner;
 };
 

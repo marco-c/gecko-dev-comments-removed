@@ -155,37 +155,6 @@ extern already_AddRefed<nsIScriptTimeoutHandler> NS_CreateJSTimeoutHandler(
 
 extern const js::Class OuterWindowProxyClass;
 
-struct IdleObserverHolder {
-  mozilla::OwningNonNull<mozilla::dom::MozIdleObserver> mIdleObserver;
-  uint32_t mTimeInS;
-  bool mPrevNotificationIdle;
-
-  IdleObserverHolder() : mTimeInS(0), mPrevNotificationIdle(false) {
-    MOZ_COUNT_CTOR(IdleObserverHolder);
-  }
-
-  IdleObserverHolder(const IdleObserverHolder& aOther)
-      : mIdleObserver(aOther.mIdleObserver),
-        mTimeInS(aOther.mTimeInS),
-        mPrevNotificationIdle(aOther.mPrevNotificationIdle) {
-    MOZ_COUNT_CTOR(IdleObserverHolder);
-  }
-
-  bool operator==(const IdleObserverHolder& aOther) const {
-    return mIdleObserver.ref() == aOther.mIdleObserver &&
-           mTimeInS == aOther.mTimeInS;
-  }
-
-  ~IdleObserverHolder() { MOZ_COUNT_DTOR(IdleObserverHolder); }
-};
-
-inline void ImplCycleCollectionTraverse(
-    nsCycleCollectionTraversalCallback& aCallback, IdleObserverHolder& aField,
-    const char* aName, unsigned aFlags) {
-  CycleCollectionNoteChild(aCallback, aField.mIdleObserver.get(), aName,
-                           aFlags);
-}
-
 
 
 
@@ -490,13 +459,6 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
 #endif
 
   void AddSizeOfIncludingThis(nsWindowSizes& aWindowSizes) const;
-
-  void NotifyIdleObserver(IdleObserverHolder* aIdleObserverHolder,
-                          bool aCallOnidle);
-  nsresult HandleIdleActiveEvent();
-  bool ContainsIdleObserver(mozilla::dom::MozIdleObserver& aIdleObserver,
-                            uint32_t timeInS);
-  void HandleIdleObserverCallback();
 
   enum SlowScriptResponse {
     ContinueSlowScript = 0,
@@ -1011,29 +973,6 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
                       mozilla::dom::CallerType aCallerType,
                       mozilla::ErrorResult& aError);
 
-  
-  nsTObserverArray<IdleObserverHolder> mIdleObservers;
-
-  
-  nsCOMPtr<nsITimer> mIdleTimer;
-
-  
-  uint32_t mIdleFuzzFactor;
-
-  
-  
-  int32_t mIdleCallbackIndex;
-
-  
-  
-  bool mCurrentlyIdle;
-
-  
-  
-  bool mAddActiveEventFuzzTime;
-
-  nsCOMPtr<nsIIdleService> mIdleService;
-
   RefPtr<mozilla::dom::WakeLock> mWakeLock;
 
   friend class HashchangeCallback;
@@ -1125,19 +1064,6 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   void FireOfflineStatusEventIfChanged();
 
  public:
-  
-  nsresult ScheduleNextIdleObserverCallback();
-  uint32_t GetFuzzTimeMS();
-  nsresult ScheduleActiveTimerCallback();
-  uint32_t FindInsertionIndex(IdleObserverHolder* aIdleObserver);
-  nsresult RegisterIdleObserver(
-      mozilla::dom::MozIdleObserver& aIdleObserverPtr) override;
-  nsresult FindIndexOfElementToRemove(
-      mozilla::dom::MozIdleObserver& aIdleObserver,
-      int32_t* aRemoveElementIndex);
-  nsresult UnregisterIdleObserver(
-      mozilla::dom::MozIdleObserver& aIdleObserverPtr) override;
-
   
   nsresult FireHashchange(const nsAString& aOldURL, const nsAString& aNewURL);
 
@@ -1289,10 +1215,6 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   
   
   bool mHasHadSlowScript : 1;
-
-  
-  bool mNotifyIdleObserversIdleOnThaw : 1;
-  bool mNotifyIdleObserversActiveOnThaw : 1;
 
   
   bool mIsChrome : 1;
