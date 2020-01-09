@@ -58,6 +58,8 @@ const MessageState = overrides => Object.freeze(Object.assign({
   
   
   networkMessagesUpdateById: {},
+  
+  removedLogpointIds: new Set(),
   pausedExecutionPoint: null,
 }, overrides));
 
@@ -74,6 +76,7 @@ function cloneState(state) {
     removedActors: [...state.removedActors],
     repeatById: {...state.repeatById},
     networkMessagesUpdateById: {...state.networkMessagesUpdateById},
+    removedLogpointIds: new Set(state.removedLogpointIds),
     pausedExecutionPoint: state.pausedExecutionPoint,
   };
 }
@@ -92,7 +95,8 @@ function addMessage(state, filtersState, prefsState, newMessage) {
     return state;
   }
 
-  if (newMessage.executionPoint) {
+  if (newMessage.executionPoint && !newMessage.logpointId) {
+    
     
     
     const progress = newMessage.executionPoint.progress;
@@ -100,6 +104,14 @@ function addMessage(state, filtersState, prefsState, newMessage) {
       return state;
     }
     state.replayProgressMessages.add(progress);
+  }
+
+  
+  
+  if (newMessage.logpointId &&
+      state.removedLogpointIds &&
+      state.removedLogpointIds.has(newMessage.logpointId)) {
+    return state;
   }
 
   if (newMessage.type === constants.MESSAGE_TYPE.END_GROUP) {
@@ -225,7 +237,7 @@ function messages(state = MessageState(), action, filtersState, prefsState) {
         }, []),
       });
 
-    case constants.PRIVATE_MESSAGES_CLEAR:
+    case constants.PRIVATE_MESSAGES_CLEAR: {
       const removedIds = [];
       for (const [id, message] of messagesById) {
         if (message.private === true) {
@@ -241,6 +253,25 @@ function messages(state = MessageState(), action, filtersState, prefsState) {
       return removeMessagesFromState({
         ...state,
       }, removedIds);
+    }
+
+    case constants.MESSAGES_CLEAR_LOGPOINT: {
+      const removedIds = [];
+      for (const [id, message] of messagesById) {
+        if (message.logpointId == action.logpointId) {
+          removedIds.push(id);
+        }
+      }
+
+      if (removedIds.length === 0) {
+        return state;
+      }
+
+      return removeMessagesFromState({
+        ...state,
+        removedLogpointIds: new Set([...state.removedLogpointIds, action.logpointId]),
+      }, removedIds);
+    }
 
     case constants.MESSAGE_OPEN:
       const openState = {...state};
