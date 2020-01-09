@@ -258,12 +258,14 @@ class ProxyChannelFilter {
 
   
   getRequestData(channel, extraData) {
+    let originAttributes = channel.loadInfo && channel.loadInfo.originAttributes;
     let data = {
       requestId: String(channel.id),
       url: channel.finalURL,
       method: channel.method,
       type: channel.type,
       fromCache: !!channel.fromCache,
+      incognito: originAttributes && originAttributes.privateBrowsingId > 0,
 
       originUrl: channel.originURL || undefined,
       documentUrl: channel.documentURL || undefined,
