@@ -1562,8 +1562,7 @@ class MediaStreamGraphShutDownRunnable : public Runnable {
       
       
       
-      NS_ASSERTION(mGraph->mForceShutDown || !mGraph->mRealtime,
-                   "Not in forced shutdown?");
+      NS_ASSERTION(mGraph->mForceShutDown, "Not in forced shutdown?");
       mGraph->LifecycleStateRef() =
           MediaStreamGraphImpl::LIFECYCLE_WAITING_FOR_STREAM_DESTRUCTION;
     }
@@ -1730,7 +1729,7 @@ void MediaStreamGraphImpl::RunInStableState(bool aSourceIsMSG) {
       }
     }
 
-    if ((mForceShutDown || !mRealtime) &&
+    if (mForceShutDown &&
         LifecycleStateRef() == LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP) {
       
       
