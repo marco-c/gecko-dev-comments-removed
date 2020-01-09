@@ -155,8 +155,8 @@ function remoteSettingsFunction() {
 
 
 
-  remoteSettings.pollChanges = async ({ expectedTimestamp } = {}) => {
-    const trigger = expectedTimestamp ? "broadcast" : "timer";
+
+  remoteSettings.pollChanges = async ({ expectedTimestamp, trigger = "manual" } = {}) => {
     const telemetryArgs = {
       source: TELEMETRY_SOURCE,
       trigger,
@@ -224,7 +224,7 @@ function remoteSettingsFunction() {
     const checkedServerTimeInSeconds = Math.round(serverTimeMillis / 1000);
     gPrefs.setIntPref(PREF_SETTINGS_LAST_UPDATE, checkedServerTimeInSeconds);
 
-
+    
     const loadDump = gPrefs.getBoolPref(PREF_SETTINGS_LOAD_DUMP, true);
 
     
@@ -326,6 +326,6 @@ var RemoteSettings = remoteSettingsFunction();
 
 var remoteSettingsBroadcastHandler = {
   async receivedBroadcastMessage(data, broadcastID) {
-    return RemoteSettings.pollChanges({ expectedTimestamp: data });
+    return RemoteSettings.pollChanges({ expectedTimestamp: data, trigger: "broadcast" });
   },
 };

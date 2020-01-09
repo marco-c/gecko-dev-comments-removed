@@ -19,7 +19,7 @@ RemoteSettingsTimer.prototype = {
 
   
   notify(timer) {
-    RemoteSettings.pollChanges()
+    RemoteSettings.pollChanges({ trigger: "timer" })
       .catch(e => Cu.reportError(e));
   },
 };
