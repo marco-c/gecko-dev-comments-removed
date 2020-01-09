@@ -18,8 +18,10 @@ async function callRequestStorageAccess(callback, expectFail) {
 
   let success = true;
   
-  let rejectTrackers = SpecialPowers.Services.prefs.getIntPref("network.cookie.cookieBehavior") ==
-                         SpecialPowers.Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER &&
+  let rejectTrackers = [SpecialPowers.Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER,
+                        SpecialPowers.Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN].
+
+                         includes(SpecialPowers.Services.prefs.getIntPref("network.cookie.cookieBehavior")) &&
                        !isOnContentBlockingAllowList();
   
   if (origin != "https://another-tracking.example.net") {
@@ -120,7 +122,7 @@ async function callRequestStorageAccess(callback, expectFail) {
     
     
     await waitUntilPermission("http://example.net/browser/toolkit/components/antitracking/test/browser/page.html",
-                              "3rdPartyStorage^https://tracking.example.org");
+                              "3rdPartyStorage^" + window.origin);
   }
 
   return [threw, rejected];
@@ -145,12 +147,11 @@ async function interactWithTracker() {
     onmessage = resolve;
 
     info("Let's interact with the tracker");
-    window.open("https://tracking.example.org/browser/toolkit/components/antitracking/test/browser/3rdPartyOpenUI.html?messageme");
+    window.open("/browser/toolkit/components/antitracking/test/browser/3rdPartyOpenUI.html?messageme");
   });
 
   
-  await waitUntilPermission("https://tracking.example.org",
-                            "storageAccessAPI");
+  await waitUntilPermission(window.origin, "storageAccessAPI");
 }
 
 function isOnContentBlockingAllowList() {
