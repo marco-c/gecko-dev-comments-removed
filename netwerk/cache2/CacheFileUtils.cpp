@@ -48,7 +48,12 @@ class KeyParser : protected Tokenizer {
   char lastTag;
 
   
-  static bool TagChar(const char aChar) { return aChar >= ' ' && aChar <= '~'; }
+  
+  
+  static bool TagChar(const char aChar) {
+    unsigned char c = static_cast<unsigned char>(aChar);
+    return c >= ' ' && c <= '\x7f';
+  }
 
   bool ParseTags() {
     
