@@ -14,4 +14,5 @@ assertEq(dbg.addDebuggee(g), gw);
 
 
 
-assertEq(gw.makeDebuggeeValue(g), gw);
+
+assertEq(gw.unwrap(), gw);

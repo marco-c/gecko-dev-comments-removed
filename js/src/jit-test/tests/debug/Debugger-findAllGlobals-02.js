@@ -14,10 +14,9 @@ var g3w = dbg.addDebuggee(g3);
 var a = dbg.findAllGlobals();
 
 
-
-var g2w = g1w.makeDebuggeeValue(g2).unwrap();
-var g4w = g1w.makeDebuggeeValue(g4).unwrap();
-var thisw = g1w.makeDebuggeeValue(this).unwrap();
+var g2w = dbg.makeGlobalObjectReference(g2);
+var g4w = dbg.makeGlobalObjectReference(g4);
+var thisw = dbg.makeGlobalObjectReference(this);
 
 
 assertEq(a.indexOf(g1w) != -1, true);
