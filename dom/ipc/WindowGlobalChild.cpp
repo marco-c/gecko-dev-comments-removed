@@ -138,6 +138,13 @@ already_AddRefed<BrowserChild> WindowGlobalChild::GetBrowserChild() {
   return do_AddRef(static_cast<BrowserChild*>(Manager()));
 }
 
+uint64_t WindowGlobalChild::ContentParentId() {
+  if (XRE_IsParentProcess()) {
+    return 0;
+  }
+  return ContentChild::GetSingleton()->GetID();
+}
+
 void WindowGlobalChild::Destroy() {
   
   

@@ -61,6 +61,8 @@ class WindowGlobalChild final : public WindowGlobalActor,
   uint64_t InnerWindowId() { return mInnerWindowId; }
   uint64_t OuterWindowId() { return mOuterWindowId; }
 
+  uint64_t ContentParentId();
+
   bool IsCurrentGlobal();
 
   
