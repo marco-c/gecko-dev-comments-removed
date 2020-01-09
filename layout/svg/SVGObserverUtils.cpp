@@ -93,7 +93,7 @@ struct nsSVGFrameReferenceFromProperty {
  private:
   
   nsIFrame* mFrame;
-  nsIPresShell* mFramePresShell;
+  mozilla::PresShell* mFramePresShell;
 };
 
 void SVGRenderingObserver::StartObserving() {

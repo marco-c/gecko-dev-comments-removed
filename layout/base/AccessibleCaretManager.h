@@ -23,11 +23,10 @@
 class nsFrameSelection;
 class nsIContent;
 
-class nsIPresShell;
 struct nsPoint;
 
 namespace mozilla {
-
+class PresShell;
 namespace dom {
 class Element;
 class Selection;
@@ -48,7 +47,7 @@ class Selection;
 
 class AccessibleCaretManager {
  public:
-  explicit AccessibleCaretManager(nsIPresShell* aPresShell);
+  explicit AccessibleCaretManager(PresShell* aPresShell);
   virtual ~AccessibleCaretManager();
 
   
@@ -295,7 +294,7 @@ class AccessibleCaretManager {
   
   
   
-  nsIPresShell* MOZ_NON_OWNING_REF mPresShell = nullptr;
+  PresShell* MOZ_NON_OWNING_REF mPresShell = nullptr;
 
   
   

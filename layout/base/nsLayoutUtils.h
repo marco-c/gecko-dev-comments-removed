@@ -180,6 +180,7 @@ class nsLayoutUtils {
   typedef mozilla::ScreenMargin ScreenMargin;
   typedef mozilla::LayoutDeviceIntSize LayoutDeviceIntSize;
   typedef mozilla::LayoutDeviceRect LayoutDeviceRect;
+  typedef mozilla::PresShell PresShell;
   typedef mozilla::StyleGeometryBox StyleGeometryBox;
   typedef mozilla::SVGImageContext SVGImageContext;
   typedef mozilla::LogicalSize LogicalSize;
@@ -284,9 +285,8 @@ class nsLayoutUtils {
 
 
   static bool SetDisplayPortMargins(
-      nsIContent* aContent, nsIPresShell* aPresShell,
-      const ScreenMargin& aMargins, uint32_t aPriority = 0,
-      RepaintMode aRepaintMode = RepaintMode::Repaint);
+      nsIContent* aContent, PresShell* aPresShell, const ScreenMargin& aMargins,
+      uint32_t aPriority = 0, RepaintMode aRepaintMode = RepaintMode::Repaint);
 
   
 
@@ -797,7 +797,7 @@ class nsLayoutUtils {
 
 
   MOZ_CAN_RUN_SCRIPT
-  static void GetContainerAndOffsetAtEvent(mozilla::PresShell* aPresShell,
+  static void GetContainerAndOffsetAtEvent(PresShell* aPresShell,
                                            const mozilla::WidgetEvent* aEvent,
                                            nsIContent** aContainer,
                                            int32_t* aOffset);
@@ -2711,7 +2711,7 @@ class nsLayoutUtils {
 
 
 
-  static float GetCurrentAPZResolutionScale(nsIPresShell* aShell);
+  static float GetCurrentAPZResolutionScale(PresShell* aPresShell);
 
   
 
@@ -2817,14 +2817,14 @@ class nsLayoutUtils {
       const mozilla::LogicalMargin& aFramePadding, mozilla::WritingMode aLineWM,
       mozilla::WritingMode aFrameWM);
 
-  static bool HasDocumentLevelListenersForApzAwareEvents(nsIPresShell* aShell);
+  static bool HasDocumentLevelListenersForApzAwareEvents(PresShell* aPresShell);
 
   
 
 
 
 
-  static void SetVisualViewportSize(nsIPresShell* aPresShell, CSSSize aSize);
+  static void SetVisualViewportSize(PresShell* aPresShell, CSSSize aSize);
 
   
 

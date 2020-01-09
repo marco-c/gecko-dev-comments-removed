@@ -84,7 +84,7 @@ static FontUsageKind FrameFontUsage(nsIFrame* aFrame,
 }
 
 
-static void ScheduleReflow(nsIPresShell* aShell, nsIFrame* aFrame) {
+static void ScheduleReflow(PresShell* aPresShell, nsIFrame* aFrame) {
   nsIFrame* f = aFrame;
   if (f->IsFrameOfType(nsIFrame::eSVG) || nsSVGUtils::IsInSVGTextSubtree(f)) {
     
@@ -114,7 +114,8 @@ static void ScheduleReflow(nsIPresShell* aShell, nsIFrame* aFrame) {
     }
   }
 
-  aShell->FrameNeedsReflow(f, nsIPresShell::eStyleChange, NS_FRAME_IS_DIRTY);
+  aPresShell->FrameNeedsReflow(f, nsIPresShell::eStyleChange,
+                               NS_FRAME_IS_DIRTY);
 }
 
 enum class ReflowAlreadyScheduled {

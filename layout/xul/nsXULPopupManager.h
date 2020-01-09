@@ -58,6 +58,7 @@ class nsPIDOMWindowOuter;
 class nsRefreshDriver;
 
 namespace mozilla {
+class PresShell;
 namespace dom {
 class Event;
 class KeyboardEvent;
@@ -362,7 +363,7 @@ class nsXULPopupManager final : public nsIDOMEventListener,
   
   
   void AdjustPopupsOnWindowChange(nsPIDOMWindowOuter* aWindow);
-  void AdjustPopupsOnWindowChange(nsIPresShell* aPresShell);
+  void AdjustPopupsOnWindowChange(mozilla::PresShell* aPresShell);
 
   
   

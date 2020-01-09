@@ -23,10 +23,10 @@
 class nsContainerFrame;
 class nsIContent;
 class nsIFrame;
-class nsIPresShell;
 class nsPresContext;
 
 namespace mozilla {
+class PresShell;
 namespace layout {
 class FrameChildList;
 enum FrameChildListID {
@@ -86,13 +86,13 @@ class nsFrameList {
   
 
 
-  void* operator new(size_t sz, nsIPresShell* aPresShell);
+  void* operator new(size_t sz, mozilla::PresShell* aPresShell);
 
   
 
 
 
-  void Delete(nsIPresShell* aPresShell);
+  void Delete(mozilla::PresShell* aPresShell);
 
   
 

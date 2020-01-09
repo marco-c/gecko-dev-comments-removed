@@ -1330,12 +1330,12 @@ nsTextControlFrame::EditorInitializer::Run() {
   
   nsAutoScriptBlocker scriptBlocker;
 
-  nsCOMPtr<nsIPresShell> shell = mFrame->PresContext()->GetPresShell();
-  bool observes = shell->ObservesNativeAnonMutationsForPrint();
-  shell->ObserveNativeAnonMutationsForPrint(true);
+  RefPtr<mozilla::PresShell> presShell = mFrame->PresShell();
+  bool observes = presShell->ObservesNativeAnonMutationsForPrint();
+  presShell->ObserveNativeAnonMutationsForPrint(true);
   
   mFrame->EnsureEditorInitialized();
-  shell->ObserveNativeAnonMutationsForPrint(observes);
+  presShell->ObserveNativeAnonMutationsForPrint(observes);
 
   
   

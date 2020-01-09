@@ -14,7 +14,6 @@
 #include "nsIObserver.h"
 #include "Units.h"
 
-class nsIPresShell;
 class nsViewportInfo;
 
 namespace mozilla {

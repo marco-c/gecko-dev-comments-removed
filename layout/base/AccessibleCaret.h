@@ -20,11 +20,10 @@
 #include "nsString.h"
 
 class nsIFrame;
-class nsIPresShell;
 struct nsPoint;
 
 namespace mozilla {
-
+class PresShell;
 namespace dom {
 class Event;
 }  
@@ -46,7 +45,7 @@ class Event;
 
 class AccessibleCaret {
  public:
-  explicit AccessibleCaret(nsIPresShell* aPresShell);
+  explicit AccessibleCaret(PresShell* aPresShell);
   virtual ~AccessibleCaret();
 
   
@@ -193,7 +192,7 @@ class AccessibleCaret {
   
   
   
-  nsIPresShell* const MOZ_NON_OWNING_REF mPresShell = nullptr;
+  PresShell* const MOZ_NON_OWNING_REF mPresShell = nullptr;
 
   RefPtr<dom::AnonymousContent> mCaretElementHolder;
 

@@ -20,8 +20,6 @@
 #include "nsCOMPtr.h"
 #include "nsCoord.h"
 
-class nsIPresShell;
-
 nsresult NS_NewStackLayout(nsCOMPtr<nsBoxLayout>& aNewLayout);
 
 class nsStackLayout : public nsBoxLayout {

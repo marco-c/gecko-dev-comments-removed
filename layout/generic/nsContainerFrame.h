@@ -26,6 +26,10 @@
 
 class nsOverflowContinuationTracker;
 
+namespace mozilla {
+class PresShell;
+}  
+
 
 
 
@@ -650,7 +654,7 @@ class nsContainerFrame : public nsSplittableFrame {
 
   void SafelyDestroyFrameListProp(nsIFrame* aDestructRoot,
                                   PostDestroyData& aPostDestroyData,
-                                  nsIPresShell* aPresShell,
+                                  mozilla::PresShell* aPresShell,
                                   FrameListPropertyDescriptor aProp);
 
   

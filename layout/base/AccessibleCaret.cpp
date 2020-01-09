@@ -8,6 +8,7 @@
 
 #include "AccessibleCaretLogger.h"
 #include "mozilla/FloatingPoint.h"
+#include "mozilla/PresShell.h"
 #include "mozilla/StaticPrefs.h"
 #include "mozilla/ToString.h"
 #include "nsCanvasFrame.h"
@@ -66,7 +67,7 @@ std::ostream& operator<<(
 
 
 
-AccessibleCaret::AccessibleCaret(nsIPresShell* aPresShell)
+AccessibleCaret::AccessibleCaret(PresShell* aPresShell)
     : mPresShell(aPresShell) {
   
   if (mPresShell) {

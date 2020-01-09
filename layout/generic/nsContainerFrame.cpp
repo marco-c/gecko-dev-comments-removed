@@ -150,7 +150,7 @@ void nsContainerFrame::RemoveFrame(ChildListID aListID, nsIFrame* aOldFrame) {
     }
   }
 
-  nsIPresShell* shell = PresShell();
+  mozilla::PresShell* presShell = PresShell();
   nsContainerFrame* lastParent = nullptr;
 
   
@@ -167,8 +167,8 @@ void nsContainerFrame::RemoveFrame(ChildListID aListID, nsIFrame* aOldFrame) {
     parent->StealFrame(continuation);
     continuation->Destroy();
     if (generateReflowCommand && parent != lastParent) {
-      shell->FrameNeedsReflow(parent, nsIPresShell::eTreeChange,
-                              NS_FRAME_HAS_DIRTY_CHILDREN);
+      presShell->FrameNeedsReflow(parent, nsIPresShell::eTreeChange,
+                                  NS_FRAME_HAS_DIRTY_CHILDREN);
       lastParent = parent;
     }
   }
@@ -185,7 +185,7 @@ void nsContainerFrame::DestroyAbsoluteFrames(
 
 void nsContainerFrame::SafelyDestroyFrameListProp(
     nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData,
-    nsIPresShell* aPresShell, FrameListPropertyDescriptor aProp) {
+    mozilla::PresShell* aPresShell, FrameListPropertyDescriptor aProp) {
   
   
   

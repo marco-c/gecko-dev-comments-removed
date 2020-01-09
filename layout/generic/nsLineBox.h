@@ -22,6 +22,10 @@ class nsFloatCacheList;
 class nsFloatCacheFreeList;
 class nsWindowSizes;
 
+namespace mozilla {
+class PresShell;
+}  
+
 
 
 class nsFloatCache {
@@ -140,13 +144,13 @@ class nsFloatCacheFreeList : private nsFloatCacheList {
 
 
 
-nsLineBox* NS_NewLineBox(nsIPresShell* aPresShell, nsIFrame* aFrame,
+nsLineBox* NS_NewLineBox(mozilla::PresShell* aPresShell, nsIFrame* aFrame,
                          bool aIsBlock);
 
 
 
 
-nsLineBox* NS_NewLineBox(nsIPresShell* aPresShell, nsLineBox* aFromLine,
+nsLineBox* NS_NewLineBox(mozilla::PresShell* aPresShell, nsLineBox* aFromLine,
                          nsIFrame* aFrame, int32_t aCount);
 
 class nsLineList;
@@ -191,17 +195,17 @@ class nsLineBox final : public nsLineLink {
 
   
   
-  void* operator new(size_t sz, nsIPresShell* aPresShell);
+  void* operator new(size_t sz, mozilla::PresShell* aPresShell);
   void operator delete(void* aPtr, size_t sz) = delete;
 
  public:
   
-  friend nsLineBox* NS_NewLineBox(nsIPresShell* aPresShell, nsIFrame* aFrame,
-                                  bool aIsBlock);
-  friend nsLineBox* NS_NewLineBox(nsIPresShell* aPresShell,
+  friend nsLineBox* NS_NewLineBox(mozilla::PresShell* aPresShell,
+                                  nsIFrame* aFrame, bool aIsBlock);
+  friend nsLineBox* NS_NewLineBox(mozilla::PresShell* aPresShell,
                                   nsLineBox* aFromLine, nsIFrame* aFrame,
                                   int32_t aCount);
-  void Destroy(nsIPresShell* aPresShell);
+  void Destroy(mozilla::PresShell* aPresShell);
 
   
   bool IsBlock() const { return mFlags.mBlock; }
