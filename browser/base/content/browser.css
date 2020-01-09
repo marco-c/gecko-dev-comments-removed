@@ -254,18 +254,12 @@ panelview[mainview] > .panel-header {
 }
 
 
-
-#navigator-toolbox[movingtab] > #titlebar > #TabsToolbar {
-  padding-bottom: 15px;
-}
-
-#navigator-toolbox[movingtab] #tabbrowser-tabs {
+#tabbrowser-tabs[movingtab] {
   padding-bottom: 15px;
   margin-bottom: -15px;
 }
 
 #navigator-toolbox[movingtab] > #nav-bar {
-  margin-top: -15px;
   pointer-events: none;
 }
 
