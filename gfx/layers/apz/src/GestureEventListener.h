@@ -236,6 +236,12 @@ class GestureEventListener final {
 
 
 
+  ExternalPoint mTouchStartOffset;
+
+  
+
+
+
 
 
 
