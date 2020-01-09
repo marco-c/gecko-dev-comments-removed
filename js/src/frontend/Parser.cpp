@@ -148,7 +148,7 @@ ParserBase::ParserBase(JSContext* cx, LifoAlloc& alloc,
       usedNames_(usedNames),
       ss(nullptr),
       sourceObject_(cx, sourceObject),
-      keepAtoms(cx),
+      keepAtoms_(cx),
       foldConstants(foldConstants),
 #ifdef DEBUG
       checkOptionsCalled(false),
@@ -2705,7 +2705,7 @@ GeneralParser<ParseHandler, Unit>::functionDefinition(
   Directives directives(pc_);
   Directives newDirectives = directives;
 
-  Position start(keepAtoms, tokenStream);
+  Position start(keepAtoms_, tokenStream);
 
   
   
@@ -2764,7 +2764,7 @@ bool Parser<FullParseHandler, Unit>::trySyntaxParseInnerFunction(
     UsedNameTracker::RewindToken token = usedNames_.getRewindToken();
 
     
-    Position currentPosition(keepAtoms, tokenStream);
+    Position currentPosition(keepAtoms_, tokenStream);
     if (!syntaxParser->tokenStream.seek(currentPosition, anyChars)) {
       return false;
     }
@@ -2799,7 +2799,7 @@ bool Parser<FullParseHandler, Unit>::trySyntaxParseInnerFunction(
     }
 
     
-    Position currentSyntaxPosition(keepAtoms, syntaxParser->tokenStream);
+    Position currentSyntaxPosition(keepAtoms_, syntaxParser->tokenStream);
     if (!tokenStream.seek(currentSyntaxPosition, syntaxParser->anyChars)) {
       return false;
     }
@@ -8235,7 +8235,7 @@ typename ParseHandler::Node GeneralParser<ParseHandler, Unit>::assignExpr(
 
   
   
-  Position start(keepAtoms, tokenStream);
+  Position start(keepAtoms_, tokenStream);
 
   PossibleError possibleErrorInner(*this);
   Node lhs;
