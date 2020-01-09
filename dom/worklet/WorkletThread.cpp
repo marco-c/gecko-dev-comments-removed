@@ -289,7 +289,6 @@ WorkletThread::DelayedDispatch(already_AddRefed<nsIRunnable>, uint32_t aFlags) {
   
   
   
-  
 
   if (!JS::InitSelfHostedCode(context->Context())) {
     

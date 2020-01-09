@@ -399,10 +399,6 @@ struct JSRuntime : public js::MallocProvider<JSRuntime> {
 
   void finishRoots();
 
- public:
-  
-  js::UnprotectedData<JS::AsmJSCacheOps> asmJSCacheOps;
-
  private:
   js::UnprotectedData<const JSPrincipals*> trustedPrincipals_;
 

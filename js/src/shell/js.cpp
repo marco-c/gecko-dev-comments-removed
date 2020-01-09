@@ -9636,103 +9636,6 @@ static bool InstanceClassHasProtoAtDepth(const Class* clasp, uint32_t protoID,
   return true;
 }
 
-class ScopedFileDesc {
-  intptr_t fd_;
-
- public:
-  enum LockType { READ_LOCK, WRITE_LOCK };
-  ScopedFileDesc(int fd, LockType lockType) : fd_(fd) {
-    if (fd == -1) {
-      return;
-    }
-    if (!jsCacheOpened.compareExchange(false, true)) {
-      close(fd_);
-      fd_ = -1;
-      return;
-    }
-  }
-  ~ScopedFileDesc() {
-    if (fd_ == -1) {
-      return;
-    }
-    MOZ_ASSERT(jsCacheOpened == true);
-    jsCacheOpened = false;
-    close(fd_);
-  }
-  operator intptr_t() const { return fd_; }
-  intptr_t forget() {
-    intptr_t ret = fd_;
-    fd_ = -1;
-    return ret;
-  }
-};
-
-
-
-
-static const uint32_t asmJSCacheCookie = 0xabbadaba;
-
-static bool ShellOpenAsmJSCacheEntryForRead(
-    HandleObject global, const char16_t* begin, const char16_t* limit,
-    size_t* serializedSizeOut, const uint8_t** memoryOut, intptr_t* handleOut) {
-  return false;
-}
-
-static void ShellCloseAsmJSCacheEntryForRead(size_t serializedSize,
-                                             const uint8_t* memory,
-                                             intptr_t handle) {
-  
-  memory -= sizeof(uint32_t);
-  serializedSize += sizeof(uint32_t);
-
-  
-#ifdef XP_WIN
-  UnmapViewOfFile(const_cast<uint8_t*>(memory));
-#else
-  munmap(const_cast<uint8_t*>(memory), serializedSize);
-#endif
-
-  MOZ_ASSERT(jsCacheOpened == true);
-  jsCacheOpened = false;
-  close(handle);
-}
-
-static JS::AsmJSCacheResult ShellOpenAsmJSCacheEntryForWrite(
-    HandleObject global, const char16_t* begin, const char16_t* end,
-    size_t serializedSize, uint8_t** memoryOut, intptr_t* handleOut) {
-  return JS::AsmJSCache_Disabled_ShellFlags;
-}
-
-static void ShellCloseAsmJSCacheEntryForWrite(size_t serializedSize,
-                                              uint8_t* memory,
-                                              intptr_t handle) {
-  
-  memory -= sizeof(uint32_t);
-  serializedSize += sizeof(uint32_t);
-
-  
-#ifdef XP_WIN
-  FlushViewOfFile(memory, serializedSize);
-  FlushFileBuffers(HANDLE(_get_osfhandle(handle)));
-#else
-  msync(memory, serializedSize, MS_SYNC);
-#endif
-
-  MOZ_ASSERT(*(uint32_t*)memory == 0);
-  *(uint32_t*)memory = asmJSCacheCookie;
-
-  
-#ifdef XP_WIN
-  UnmapViewOfFile(const_cast<uint8_t*>(memory));
-#else
-  munmap(memory, serializedSize);
-#endif
-
-  MOZ_ASSERT(jsCacheOpened == true);
-  jsCacheOpened = false;
-  close(handle);
-}
-
 static bool ShellBuildId(JS::BuildIdCharVector* buildId) {
   
   
@@ -9746,10 +9649,6 @@ static bool ShellBuildId(JS::BuildIdCharVector* buildId) {
   const char buildid[] = "JS-shell";
   return buildId->append(buildid, sizeof(buildid));
 }
-
-static const JS::AsmJSCacheOps asmJSCacheOps = {
-    ShellOpenAsmJSCacheEntryForRead, ShellCloseAsmJSCacheEntryForRead,
-    ShellOpenAsmJSCacheEntryForWrite, ShellCloseAsmJSCacheEntryForWrite};
 
 static bool TimesAccessed(JSContext* cx, unsigned argc, Value* vp) {
   static int32_t accessed = 0;
@@ -11151,7 +11050,6 @@ int main(int argc, char** argv, char** envp) {
   JS_SetDestroyCompartmentCallback(cx, DestroyShellCompartmentPrivate);
 
   JS_AddInterruptCallback(cx, ShellInterruptCallback);
-  JS::SetAsmJSCacheOps(cx, &asmJSCacheOps);
 
   bufferStreamState = js_new<ExclusiveWaitableData<BufferStreamState>>(
       mutexid::BufferStreamState);

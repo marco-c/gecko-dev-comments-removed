@@ -39,7 +39,6 @@
 #include "mozilla/CycleCollectedJSRuntime.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/TimeStamp.h"
-#include "mozilla/dom/asmjscache/AsmJSCache.h"
 #include "mozilla/dom/AtomList.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/ErrorEventBinding.h"
@@ -663,43 +662,6 @@ void CTypesActivityCallback(JSContext* aCx, js::CTypesActivityType aType) {
   }
 }
 
-static nsIPrincipal* GetPrincipalForAsmJSCacheOp() {
-  WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
-  if (!workerPrivate) {
-    return nullptr;
-  }
-
-  
-  
-  return workerPrivate->GetPrincipalDontAssertMainThread();
-}
-
-static bool AsmJSCacheOpenEntryForRead(JS::Handle<JSObject*> aGlobal,
-                                       const char16_t* aBegin,
-                                       const char16_t* aLimit, size_t* aSize,
-                                       const uint8_t** aMemory,
-                                       intptr_t* aHandle) {
-  nsIPrincipal* principal = GetPrincipalForAsmJSCacheOp();
-  if (!principal) {
-    return false;
-  }
-
-  return asmjscache::OpenEntryForRead(principal, aBegin, aLimit, aSize, aMemory,
-                                      aHandle);
-}
-
-static JS::AsmJSCacheResult AsmJSCacheOpenEntryForWrite(
-    JS::Handle<JSObject*> aGlobal, const char16_t* aBegin, const char16_t* aEnd,
-    size_t aSize, uint8_t** aMemory, intptr_t* aHandle) {
-  nsIPrincipal* principal = GetPrincipalForAsmJSCacheOp();
-  if (!principal) {
-    return JS::AsmJSCache_InternalError;
-  }
-
-  return asmjscache::OpenEntryForWrite(principal, aBegin, aEnd, aSize, aMemory,
-                                       aHandle);
-}
-
 
 
 
@@ -823,12 +785,6 @@ bool InitJSContextForWorker(WorkerPrivate* aWorkerPrivate,
   static const JSSecurityCallbacks securityCallbacks = {
       ContentSecurityPolicyAllows};
   JS_SetSecurityCallbacks(aWorkerCx, &securityCallbacks);
-
-  
-  static const JS::AsmJSCacheOps asmJSCacheOps = {
-      AsmJSCacheOpenEntryForRead, asmjscache::CloseEntryForRead,
-      AsmJSCacheOpenEntryForWrite, asmjscache::CloseEntryForWrite};
-  JS::SetAsmJSCacheOps(aWorkerCx, &asmJSCacheOps);
 
   
   
