@@ -273,13 +273,6 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
 
 
-  static uint64_t UserInputCount() { return sUserInputCounter; }
-
-  
-
-
-
-
 
   static TimeStamp LatestUserInputStart() { return sLatestUserInputStart; }
 
@@ -1255,11 +1248,6 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   static nsresult UpdateUserActivityTimer(void);
   
   nsCOMArray<nsIContent> mAccessKeys;
-
-  
-  
-  
-  static uint64_t sUserInputCounter;
 
   
   
