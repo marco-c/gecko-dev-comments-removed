@@ -168,7 +168,19 @@ class LazyLogModule final {
   explicit constexpr LazyLogModule(const char* aLogName)
       : mLogName(aLogName), mLog(nullptr) {}
 
-  operator LogModule*();
+  operator LogModule*() {
+    
+    
+    
+    
+    LogModule* tmp = mLog;
+    if (MOZ_UNLIKELY(!tmp)) {
+      tmp = LogModule::Get(mLogName);
+      mLog = tmp;
+    }
+
+    return tmp;
+  }
 
  private:
   const char* const mLogName;
@@ -269,4 +281,4 @@ void log_print(const LogModule* aModule, LogLevel aLevel, const char* aFmt, ...)
 
 #undef MOZ_LOGGING_ENABLED
 
-#endif  
+#endif
