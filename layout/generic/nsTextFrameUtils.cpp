@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "nsTextFrameUtils.h"
 
@@ -17,7 +17,7 @@
 
 using namespace mozilla;
 
-// static
+
 bool nsTextFrameUtils::IsSpaceCombiningSequenceTail(const char16_t* aChars,
                                                     int32_t aLength) {
   return aLength > 0 &&
@@ -27,9 +27,9 @@ bool nsTextFrameUtils::IsSpaceCombiningSequenceTail(const char16_t* aChars,
 }
 
 static bool IsDiscardable(char16_t ch, nsTextFrameUtils::Flags* aFlags) {
-  // Unlike IS_DISCARDABLE, we don't discard \r. \r will be ignored by
-  // gfxTextRun and discarding it would force us to copy text in many cases of
-  // preformatted text containing \r\n.
+  
+  
+  
   if (ch == CH_SHY) {
     *aFlags |= nsTextFrameUtils::Flags::HasShy;
     return true;
@@ -54,7 +54,7 @@ static bool IsSpaceOrTabOrSegmentBreak(char16_t aCh) {
 }
 
 template <typename CharT>
-/* static */
+
 bool nsTextFrameUtils::IsSkippableCharacterForTransformText(CharT aChar) {
   return aChar == ' ' || aChar == '\t' || aChar == '\n' || aChar == CH_SHY ||
          (aChar > 0xFF && IsBidiControl(aChar));
@@ -87,9 +87,9 @@ static CharT* TransformWhiteSpaces(
   MOZ_ASSERT(aCompression == nsTextFrameUtils::COMPRESS_WHITESPACE ||
                  aCompression == nsTextFrameUtils::COMPRESS_WHITESPACE_NEWLINE,
              "whitespaces should be skippable!!");
-  // Get the context preceding/following this white space range.
-  // For 8-bit text (sizeof CharT == 1), the checks here should get optimized
-  // out, and isSegmentBreakSkippable should be initialized to be 'false'.
+  
+  
+  
   bool isSegmentBreakSkippable =
       sizeof(CharT) > 1 &&
       ((aBegin > 0 && IS_ZERO_WIDTH_SPACE(aText[aBegin - 1])) ||
@@ -110,8 +110,8 @@ static CharT* TransformWhiteSpaces(
     } else {
       ucs4after = aText[aEnd];
     }
-    // Discard newlines between characters that have F, W, or H
-    // EastAsianWidth property and neither side is Hangul.
+    
+    
     isSegmentBreakSkippable =
         IsSegmentBreakSkipChar(ucs4before) && IsSegmentBreakSkipChar(ucs4after);
   }
@@ -126,9 +126,9 @@ static CharT* TransformWhiteSpaces(
     }
     if (IsSpaceOrTab(ch)) {
       if (aHasSegmentBreak) {
-        // If white-space is set to normal, nowrap, or pre-line, white space
-        // characters are considered collapsible and all spaces and tabs
-        // immediately preceding or following a segment break are removed.
+        
+        
+        
         aSkipChars->SkipChar();
         continue;
       }
@@ -140,26 +140,26 @@ static CharT* TransformWhiteSpaces(
         keepTransformedWhiteSpace = true;
       }
     } else {
-      // Apply Segment Break Transformation Rules (CSS Text 3 - 4.1.2) for
-      // segment break characters.
+      
+      
       if (aCompression == nsTextFrameUtils::COMPRESS_WHITESPACE ||
-          // XXX: According to CSS Text 3, a lone CR should not always be
-          //      kept, but still go through the Segment Break Transformation
-          //      Rules. However, this is what current modern browser engines
-          //      (webkit/blink/edge) do. So, once we can get some clarity
-          //      from the specification issue, we should either remove the
-          //      lone CR condition here, or leave it here with this comment
-          //      being rephrased.
-          //      Please see https://github.com/w3c/csswg-drafts/issues/855.
+          
+          
+          
+          
+          
+          
+          
+          
           ch == '\r') {
         keepChar = true;
       } else {
-        // aCompression == COMPRESS_WHITESPACE_NEWLINE
+        
 
-        // Any collapsible segment break immediately following another
-        // collapsible segment break is removed.  Then the remaining segment
-        // break is either transformed into a space (U+0020) or removed
-        // depending on the context before and after the break.
+        
+        
+        
+        
         if (isSegmentBreakSkippable || aInWhitespace) {
           aSkipChars->SkipChar();
           continue;
@@ -199,7 +199,7 @@ CharT* nsTextFrameUtils::TransformText(const CharT* aText, uint32_t aLength,
   bool lastCharArabic = false;
   if (aCompression == COMPRESS_NONE ||
       aCompression == COMPRESS_NONE_TRANSFORM_TO_SPACE) {
-    // Skip discardables.
+    
     uint32_t i;
     for (i = 0; i < aLength; ++i) {
       CharT ch = aText[i];
@@ -214,7 +214,7 @@ CharT* nsTextFrameUtils::TransformText(const CharT* aText, uint32_t aLength,
             ch = ' ';
           }
         } else {
-          // aCompression == COMPRESS_NONE
+          
           if (ch == '\t') {
             flags |= Flags::HasTab;
           }
@@ -233,14 +233,14 @@ CharT* nsTextFrameUtils::TransformText(const CharT* aText, uint32_t aLength,
     uint32_t i;
     for (i = 0; i < aLength; ++i) {
       CharT ch = aText[i];
-      // CSS Text 3 - 4.1. The White Space Processing Rules
-      // White space processing in CSS affects only the document white space
-      // characters: spaces (U+0020), tabs (U+0009), and segment breaks.
-      // Since we need the context of segment breaks and their surrounding
-      // white spaces to proceed the white space processing, a consecutive run
-      // of spaces/tabs/segment breaks is collected in a first pass loop, then
-      // we apply the collapsing and transformation rules to this run in a
-      // second pass loop.
+      
+      
+      
+      
+      
+      
+      
+      
       if (IsSpaceOrTabOrSegmentBreak(ch)) {
         bool keepLastSpace = false;
         bool hasSegmentBreak = IsSegmentBreak(ch);
@@ -253,13 +253,13 @@ CharT* nsTextFrameUtils::TransformText(const CharT* aText, uint32_t aLength,
             hasSegmentBreak = true;
           }
         }
-        // Exclude trailing discardables before checking space combining
-        // sequence tail.
+        
+        
         for (; IsDiscardable(aText[j - 1], &flags); j--) {
           countTrailingDiscardables++;
         }
-        // If the last white space is followed by a combining sequence tail,
-        // exclude it from the range of TransformWhiteSpaces.
+        
+        
         if (sizeof(CharT) > 1 && aText[j - 1] == ' ' && j < aLength &&
             IsSpaceCombiningSequenceTail(&aText[j], aLength - j)) {
           keepLastSpace = true;
@@ -270,8 +270,8 @@ CharT* nsTextFrameUtils::TransformText(const CharT* aText, uint32_t aLength,
                                          inWhitespace, aOutput, flags,
                                          aCompression, aSkipChars);
         }
-        // We need to keep KeepChar()/SkipChar() in order, so process the
-        // last white space first, then process the trailing discardables.
+        
+        
         if (keepLastSpace) {
           keepLastSpace = false;
           *aOutput++ = ' ';
@@ -286,7 +286,7 @@ CharT* nsTextFrameUtils::TransformText(const CharT* aText, uint32_t aLength,
         i = j - 1;
         continue;
       }
-      // Process characters other than the document white space characters.
+      
       if (IsDiscardable(ch, &flags)) {
         aSkipChars->SkipChar();
       } else {
@@ -317,15 +317,15 @@ CharT* nsTextFrameUtils::TransformText(const CharT* aText, uint32_t aLength,
   return aOutput;
 }
 
-/*
- * NOTE: The TransformText and IsSkippableCharacterForTransformText template
- * functions are part of the public API of nsTextFrameUtils, while
- * their function bodies are not available in the header. They may stop working
- * (fail to resolve symbol in link time) once their callsites are moved to a
- * different translation unit (e.g. a different unified source file).
- * Explicit instantiating this function template with `uint8_t` and `char16_t`
- * could prevent us from the potential risk.
- */
+
+
+
+
+
+
+
+
+
 template uint8_t* nsTextFrameUtils::TransformText(
     const uint8_t* aText, uint32_t aLength, uint8_t* aOutput,
     CompressionMode aCompression, uint8_t* aIncomingFlags,
@@ -340,10 +340,10 @@ template bool nsTextFrameUtils::IsSkippableCharacterForTransformText(
     char16_t aChar);
 
 uint32_t nsTextFrameUtils::ComputeApproximateLengthWithWhitespaceCompression(
-    nsIContent* aContent, const nsStyleText* aStyleText) {
-  const nsTextFragment* frag = aContent->GetText();
-  // This is an approximation so we don't really need anything
-  // too fancy here.
+    Text* aText, const nsStyleText* aStyleText) {
+  const nsTextFragment* frag = &aText->TextFragment();
+  
+  
   uint32_t len;
   if (aStyleText->WhiteSpaceIsSignificant()) {
     len = frag->GetLength();
@@ -358,9 +358,9 @@ uint32_t nsTextFrameUtils::ComputeApproximateLengthWithWhitespaceCompression(
     } else {
       u.s1b = frag->Get1b();
     }
-    bool prevWS = true;  // more important to ignore blocks with
-                         // only whitespace than get inline boundaries
-                         // exactly right
+    bool prevWS = true;  
+                         
+                         
     len = 0;
     for (uint32_t i = 0, i_end = frag->GetLength(); i < i_end; ++i) {
       char16_t c = is2b ? u.s2b[i] : u.s1b[i];
