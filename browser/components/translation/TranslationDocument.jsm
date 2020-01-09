@@ -206,11 +206,7 @@ this.TranslationDocument.prototype = {
       
       
       const YIELD_INTERVAL = 100;
-      let maybeYield = Async.jankYielder(YIELD_INTERVAL);
-      for (let root of this.roots) {
-        root.swapText(target);
-        await maybeYield();
-      }
+      await Async.yieldingForEach(this.roots, root => root.swapText(target), YIELD_INTERVAL);
     })();
   },
 };
