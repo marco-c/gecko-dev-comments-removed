@@ -1533,27 +1533,6 @@ HttpBaseChannel::GetFlashPluginState(nsIHttpChannel::FlashPluginState* aState) {
 }
 
 NS_IMETHODIMP
-HttpBaseChannel::OverrideTrackingFlagsForDocumentCookieAccessor(
-    nsIHttpChannel* aDocumentChannel) {
-  LOG(("HttpBaseChannel::OverrideTrackingFlagsForDocumentCookieAccessor() %p",
-       this));
-
-  
-  
-  
-  
-
-  mThirdPartyClassificationFlags =
-      aDocumentChannel->GetThirdPartyClassificationFlags();
-  mFirstPartyClassificationFlags =
-      aDocumentChannel->GetFirstPartyClassificationFlags();
-
-  MOZ_ASSERT(
-      !(mFirstPartyClassificationFlags && mThirdPartyClassificationFlags));
-  return NS_OK;
-}
-
-NS_IMETHODIMP
 HttpBaseChannel::GetTransferSize(uint64_t* aTransferSize) {
   *aTransferSize = mTransferSize;
   return NS_OK;

@@ -3527,23 +3527,6 @@ already_AddRefed<nsIChannel> Document::CreateDummyChannelForCookies(
   }
   pbChannel->SetPrivate(loadContext->UsePrivateBrowsing());
 
-  nsCOMPtr<nsIHttpChannel> docHTTPChannel = do_QueryInterface(GetChannel());
-  if (docHTTPChannel) {
-    bool isTracking = docHTTPChannel->IsTrackingResource();
-    if (isTracking) {
-      
-      
-      nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(channel);
-      MOZ_ASSERT(httpChannel,
-                 "How come we're coming from an HTTP doc but "
-                 "we don't have an HTTP channel here?");
-      if (httpChannel) {
-        httpChannel->OverrideTrackingFlagsForDocumentCookieAccessor(
-            docHTTPChannel);
-      }
-    }
-  }
-
   return channel.forget();
 }
 
