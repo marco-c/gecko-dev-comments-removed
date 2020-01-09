@@ -203,7 +203,7 @@ class nsColumnSetFrame final : public nsContainerFrame {
                             nsPresContext* aPresContext, ReflowConfig& aConfig,
                             ColumnBalanceData& aColData,
                             ReflowOutput& aDesiredSize,
-                            bool& aUnboundedLastColumn, bool& aRunWasFeasible,
+                            bool aUnboundedLastColumn, bool aRunWasFeasible,
                             nsReflowStatus& aStatus);
   
 
