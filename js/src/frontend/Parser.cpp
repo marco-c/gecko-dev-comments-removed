@@ -7166,7 +7166,6 @@ GeneralParser<ParseHandler, Unit>::synthesizeConstructor(
     return null();
   }
 
-  
   auto initializerBody = finishLexicalScope(lexicalScope, stmtList);
   if (!initializerBody) {
     return null();
@@ -7191,7 +7190,7 @@ template <class ParseHandler, typename Unit>
 typename ParseHandler::FunctionNodeType
 GeneralParser<ParseHandler, Unit>::fieldInitializer(YieldHandling yieldHandling,
                                                     HandleAtom propAtom) {
-  TokenPos fieldPos = pos();
+  TokenPos firstTokenPos = pos();
 
   
   RootedFunction fun(cx_, newFunction(propAtom, FunctionSyntaxKind::Expression,
@@ -7203,21 +7202,22 @@ GeneralParser<ParseHandler, Unit>::fieldInitializer(YieldHandling yieldHandling,
 
   
   FunctionNodeType funNode =
-      handler_.newFunction(FunctionSyntaxKind::Expression, fieldPos);
+      handler_.newFunction(FunctionSyntaxKind::Expression, firstTokenPos);
   if (!funNode) {
     return null();
   }
 
   
   Directives directives(true);
-  FunctionBox* funbox = newFunctionBox(funNode, fun, fieldPos.begin, directives,
-                                       GeneratorKind::NotGenerator,
+  FunctionBox* funbox = newFunctionBox(funNode, fun, firstTokenPos.begin,
+                                       directives, GeneratorKind::NotGenerator,
                                        FunctionAsyncKind::SyncFunction);
   if (!funbox) {
     return null();
   }
   funbox->initWithEnclosingParseContext(pc_, FunctionSyntaxKind::Expression);
   handler_.setFunctionBox(funNode, funbox);
+  tokenStream.setFunctionStart(funbox);
 
   
   SourceParseContext funpc(this, funbox,  nullptr);
@@ -7238,21 +7238,20 @@ GeneralParser<ParseHandler, Unit>::fieldInitializer(YieldHandling yieldHandling,
   }
 
   
-  ListNodeType argsbody = handler_.newList(ParseNodeKind::ParamsBody, fieldPos);
-  if (!argsbody) {
-    return null();
-  }
-  handler_.setFunctionFormalParametersAndBody(funNode, argsbody);
-  funbox->function()->setArgCount(0);
-
-  tokenStream.setFunctionStart(funbox);
-
-  
   Node initializerExpr =
       assignExpr(InAllowed, yieldHandling, TripledotProhibited);
   if (!initializerExpr) {
     return null();
   }
+
+  
+  ListNodeType argsbody =
+      handler_.newList(ParseNodeKind::ParamsBody, firstTokenPos);
+  if (!argsbody) {
+    return null();
+  }
+  handler_.setFunctionFormalParametersAndBody(funNode, argsbody);
+  funbox->function()->setArgCount(0);
 
   funbox->setEnd(anyChars);
 
@@ -7263,13 +7262,14 @@ GeneralParser<ParseHandler, Unit>::fieldInitializer(YieldHandling yieldHandling,
   }
 
   
-  ThisLiteralType propAssignThis = handler_.newThisLiteral(fieldPos, thisName);
+  ThisLiteralType propAssignThis =
+      handler_.newThisLiteral(firstTokenPos, thisName);
   if (!propAssignThis) {
     return null();
   }
 
   NameNodeType propAssignName =
-      handler_.newPropertyName(propAtom->asPropertyName(), fieldPos);
+      handler_.newPropertyName(propAtom->asPropertyName(), firstTokenPos);
   if (!propAssignName) {
     return null();
   }
@@ -7279,8 +7279,6 @@ GeneralParser<ParseHandler, Unit>::fieldInitializer(YieldHandling yieldHandling,
   if (!propAssignFieldAccess) {
     return null();
   }
-  handler_.setBeginPosition(propAssignFieldAccess, propAssignName);
-  handler_.setEndPosition(propAssignFieldAccess, propAssignName);
 
   
   AssignmentNodeType initializerAssignment = handler_.newAssignment(
@@ -7288,22 +7286,30 @@ GeneralParser<ParseHandler, Unit>::fieldInitializer(YieldHandling yieldHandling,
   if (!initializerAssignment) {
     return null();
   }
-  handler_.setBeginPosition(initializerAssignment, initializerExpr);
-  handler_.setEndPosition(initializerAssignment, initializerExpr);
 
   bool canSkipLazyClosedOverBindings = handler_.canSkipLazyClosedOverBindings();
   if (!pc_->declareFunctionThis(usedNames_, canSkipLazyClosedOverBindings)) {
     return null();
   }
 
+  UnaryNodeType exprStatement =
+      handler_.newExprStatement(initializerAssignment, pos().end);
+  if (!exprStatement) {
+    return null();
+  }
+
+  ListNodeType statementList = handler_.newStatementList(firstTokenPos);
+  if (!argsbody) {
+    return null();
+  }
+  handler_.addStatementToList(statementList, exprStatement);
+
   
   LexicalScopeNodeType initializerBody =
-      finishLexicalScope(lexicalScope, initializerAssignment);
+      finishLexicalScope(lexicalScope, statementList);
   if (!initializerBody) {
     return null();
   }
-  handler_.setBeginPosition(initializerBody, initializerAssignment);
-  handler_.setEndPosition(initializerBody, initializerAssignment);
 
   handler_.setFunctionBody(funNode, initializerBody);
 
