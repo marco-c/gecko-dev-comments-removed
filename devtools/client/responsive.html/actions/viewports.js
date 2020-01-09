@@ -95,11 +95,6 @@ module.exports = {
 
 
   rotateViewport(id) {
-    
-    post(window, {
-      type: "viewport-orientation-change",
-    });
-
     return {
       type: ROTATE_VIEWPORT,
       id,
