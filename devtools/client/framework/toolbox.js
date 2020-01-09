@@ -463,7 +463,7 @@ Toolbox.prototype = {
         
         
         
-        this._debugTargetData = this._getDebugTargetData();
+        this._debugTargetData = await this._getDebugTargetData();
       }
 
       const domHelper = new DOMHelpers(this.win);
@@ -794,19 +794,20 @@ Toolbox.prototype = {
     }
   },
 
-  _getDebugTargetData: function() {
+  _getDebugTargetData: async function() {
     const url = new URL(this.win.location);
     const searchParams = new this.win.URLSearchParams(url.search);
 
     const targetType = searchParams.get("type") || DEBUG_TARGET_TYPES.TAB;
 
+    const deviceFront = await this.target.client.mainRoot.getFront("device");
+    const deviceDescription = await deviceFront.getDescription();
     const remoteId = searchParams.get("remoteId");
-    const runtimeInfo = remoteClientManager.getRuntimeInfoByRemoteId(remoteId);
     const connectionType = remoteClientManager.getConnectionTypeByRemoteId(remoteId);
 
     return {
       connectionType,
-      runtimeInfo,
+      deviceDescription,
       targetType,
     };
   },

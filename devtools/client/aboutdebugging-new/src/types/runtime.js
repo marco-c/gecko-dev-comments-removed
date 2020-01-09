@@ -105,10 +105,6 @@ const runtimeExtra = {
   
   
   deviceName: PropTypes.string,
-
-  
-  
-  adbPackageVersion: PropTypes.string,
 };
 
 const runtime = {
@@ -132,11 +128,6 @@ const runtime = {
 
   
   isConnectionTimeout: PropTypes.bool.isRequired,
-
-  
-  
-  
-  isFenix: PropTypes.bool.isRequired,
 
   
   

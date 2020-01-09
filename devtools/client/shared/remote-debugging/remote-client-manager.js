@@ -13,7 +13,6 @@ const { CONNECTION_TYPES } = require("devtools/client/shared/remote-debugging/co
 class RemoteClientManager {
   constructor() {
     this._clients = new Map();
-    this._runtimeInfoMap = new Map();
     this._onClientClosed = this._onClientClosed.bind(this);
   }
 
@@ -26,14 +25,9 @@ class RemoteClientManager {
 
 
 
-
-
-  setClient(id, type, client, runtimeInfo) {
+  setClient(id, type, client) {
     const key = this._getKey(id, type);
     this._clients.set(key, client);
-    if (runtimeInfo) {
-      this._runtimeInfoMap.set(key, runtimeInfo);
-    }
     client.addOneTimeListener("closed", this._onClientClosed);
   }
 
@@ -72,7 +66,7 @@ class RemoteClientManager {
 
 
   getClientByRemoteId(remoteId) {
-    const key = this._getKeyByRemoteId(remoteId);
+    const key = decodeURIComponent(remoteId);
     return this._clients.get(key);
   }
 
@@ -80,18 +74,12 @@ class RemoteClientManager {
 
 
 
-
-  getRuntimeInfoByRemoteId(remoteId) {
-    const key = this._getKeyByRemoteId(remoteId);
-    return this._runtimeInfoMap.get(key);
-  }
-
-  
-
-
-
   getConnectionTypeByRemoteId(remoteId) {
-    const key = this._getKeyByRemoteId(remoteId);
+    if (!remoteId) {
+      return CONNECTION_TYPES.THIS_FIREFOX;
+    }
+
+    const key = decodeURIComponent(remoteId);
     for (const type of Object.values(CONNECTION_TYPES)) {
       if (key.endsWith(type)) {
         return type;
@@ -104,23 +92,11 @@ class RemoteClientManager {
     return id + "-" + type;
   }
 
-  _getKeyByRemoteId(remoteId) {
-    if (!remoteId) {
-      
-      
-      const { THIS_FIREFOX } = CONNECTION_TYPES;
-      return this._getKey(THIS_FIREFOX, THIS_FIREFOX);
-    }
-
-    return decodeURIComponent(remoteId);
-  }
-
   _removeClientByKey(key) {
     const client = this._clients.get(key);
     if (client) {
       client.removeListener("closed", this._onClientClosed);
       this._clients.delete(key);
-      this._runtimeInfoMap.delete(key);
     }
   }
 

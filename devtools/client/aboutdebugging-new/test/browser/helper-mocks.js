@@ -133,35 +133,25 @@ class Mocks {
 
 
 
-
-
-
   createUSBRuntime(id, runtimeInfo = {}) {
     
     this._usbRuntimes.push({
+      id: id,
+      socketPath: runtimeInfo.socketPath || "test/path",
       deviceId: runtimeInfo.deviceId || "test device id",
       deviceName: runtimeInfo.deviceName || "test device name",
-      id: id,
-      isFenix: runtimeInfo.isFenix,
       shortName: runtimeInfo.shortName || "testshort",
-      socketPath: runtimeInfo.socketPath || "test/path",
-      versionName: runtimeInfo.versionName || "1.0",
     });
 
     
-    let mockUsbClient = runtimeInfo.clientWrapper;
-    if (!mockUsbClient) {
-      
-      mockUsbClient = createClientMock();
-      mockUsbClient.getDeviceDescription = () => {
-        return {
-          channel: runtimeInfo.channel || "release",
-          name: runtimeInfo.name || "TestBrand",
-          version: runtimeInfo.version || "1.0",
-        };
+    const mockUsbClient = createClientMock();
+    mockUsbClient.getDeviceDescription = () => {
+      return {
+        channel: runtimeInfo.channel || "release",
+        name: runtimeInfo.name || "TestBrand",
+        version: runtimeInfo.version || "1.0",
       };
-    }
-
+    };
     this._clients[RUNTIMES.USB][id] = mockUsbClient;
 
     return mockUsbClient;

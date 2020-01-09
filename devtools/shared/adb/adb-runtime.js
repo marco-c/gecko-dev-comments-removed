@@ -6,7 +6,6 @@
 
 const { RuntimeTypes } = require("devtools/client/webide/modules/runtime-types");
 const { prepareTCPConnection } = require("devtools/shared/adb/commands/index");
-const { shell } = require("devtools/shared/adb/commands/index");
 
 class AdbRuntime {
   constructor(adbDevice, socketPath) {
@@ -16,22 +15,8 @@ class AdbRuntime {
     this._socketPath = socketPath;
   }
 
-  async init() {
-    const packageName = this._packageName();
-    const query = `dumpsys package ${packageName} | grep versionName`;
-    const versionNameString = await shell(this._adbDevice.id, query);
-    const matches = versionNameString.match(/versionName=([\d.]+)/);
-    if (matches && matches[1]) {
-      this._versionName = matches[1];
-    }
-  }
-
   get id() {
     return this._adbDevice.id + "|" + this._socketPath;
-  }
-
-  get isFenix() {
-    return this._packageName().includes("org.mozilla.fenix");
   }
 
   get deviceId() {
@@ -42,35 +27,8 @@ class AdbRuntime {
     return this._adbDevice.name;
   }
 
-  get versionName() {
-    return this._versionName;
-  }
-
   get shortName() {
-    const packageName = this._packageName();
-
-    switch (packageName) {
-      case "org.mozilla.firefox":
-        return "Firefox";
-      case "org.mozilla.firefox_beta":
-        return "Firefox Beta";
-      case "org.mozilla.fennec":
-      case "org.mozilla.fennec_aurora":
-        
-        
-        
-        return "Firefox Nightly";
-      case "org.mozilla.fenix":
-        
-        
-        return "Firefox Preview";
-      case "org.mozilla.fenix.beta":
-        return "Firefox Preview Beta";
-      case "org.mozilla.fenix.nightly":
-        return "Firefox Preview Nightly";
-      default:
-        return "Firefox Custom";
-    }
+    return `Firefox ${this._channel()}`;
   }
 
   get socketPath() {
@@ -87,6 +45,25 @@ class AdbRuntime {
       connection.port = port;
       connection.connect();
     });
+  }
+
+  _channel() {
+    const packageName = this._packageName();
+
+    switch (packageName) {
+      case "org.mozilla.firefox":
+        return "";
+      case "org.mozilla.firefox_beta":
+        return "Beta";
+      case "org.mozilla.fennec":
+      case "org.mozilla.fennec_aurora":
+        
+        
+        
+        return "Nightly";
+      default:
+        return "Custom";
+    }
   }
 
   _packageName() {
