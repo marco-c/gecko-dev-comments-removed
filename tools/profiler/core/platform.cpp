@@ -239,7 +239,7 @@ static uint32_t DefaultFeatures() {
 static uint32_t StartupExtraDefaultFeatures() {
   
   
-  return ProfilerFeature::MainThreadIO;
+  return ProfilerFeature::MainThreadIO | ProfilerFeature::Memory;
 }
 
 class PSMutex : public StaticMutex {};
