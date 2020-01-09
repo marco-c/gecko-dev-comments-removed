@@ -1519,7 +1519,7 @@ PlacesToolbar.prototype = {
 
       
       if (draggedElt.open) {
-        draggedElt.lastElementChild.hidePopup();
+        draggedElt.menupopup.hidePopup();
         draggedElt.open = false;
       }
     }
