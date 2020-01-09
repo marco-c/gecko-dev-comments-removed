@@ -1,13 +1,13 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 
-# Our long term goal is to burn this list down, so new entries should be added
-# extremely sparingly and only with a very good reason! You must have an IPC
-# peer's r+ to add something new!
 
-# {(Protocol, side): (Class, HeaderFile)}
+
+
+
+
+
+
+
 DIRECT_CALL_OVERRIDES = {
     ("PAPZ", "parent"): (
         "RemoteContentController", "mozilla/layers/RemoteContentController.h"
@@ -52,11 +52,6 @@ DIRECT_CALL_OVERRIDES = {
     ("PLoginReputation", "parent"): ("LoginReputationParent", "mozilla/LoginReputationIPC.h"),
 
     ("PMedia", "child"): ("Child", "mozilla/media/MediaChild.h"),
-
-    ("PPendingIPCBlob", "child"): ("PendingIPCBlobChild", "mozilla/dom/ipc/PendingIPCBlobChild.h"),
-    ("PPendingIPCBlob", "parent"): (
-        "mozilla::dom::PendingIPCBlobParent", "mozilla/dom/ipc/PendingIPCBlobParent.h"
-    ),
 
     ("PPresentationRequest", "child"): (
         "PresentationRequestChild", "mozilla/dom/PresentationChild.h"
@@ -139,7 +134,7 @@ DIRECT_CALL_OVERRIDES = {
     ("PWebSocket", "child"): ("WebSocketChannelChild", "mozilla/net/WebSocketChannelChild.h"),
     ("PWebSocket", "parent"): ("WebSocketChannelParent", "mozilla/net/WebSocketChannelParent.h"),
 
-    # _ipdltest
+    
     ("PTestActorPunning", "child"): (
         "TestActorPunningChild", "mozilla/_ipdltest/TestActorPunning.h"
     ),
@@ -432,19 +427,19 @@ DIRECT_CALL_OVERRIDES = {
     ),
 }
 
-# Our long term goal is to burn this list down, so new entries should be added
-# extremely sparingly and only with a very good reason! You must have an IPC
-# peer's r+ to add something new!
 
-# set() of (Protocol, side)
+
+
+
+
 VIRTUAL_CALL_CLASSES = set([
-    # Defined as a strange template
+    
     ("PJavaScript", "child"),
     ("PJavaScript", "parent"),
     ("PMedia", "parent"),
     ("PTexture", "parent"),
 
-    # Defined in a .cpp
+    
     ("PBackgroundFileHandle", "parent"),
     ("PBackgroundFileRequest", "parent"),
     ("PBackgroundIDBCursor", "parent"),
@@ -485,7 +480,7 @@ VIRTUAL_CALL_CLASSES = set([
     ("PSimpleChannel", "child"),
     ("PTexture", "child"),
 
-    # .h is not exported
+    
     ("PBackground", "child"),
     ("PBackground", "parent"),
     ("PBackgroundFileHandle", "child"),
@@ -560,7 +555,7 @@ VIRTUAL_CALL_CLASSES = set([
     ("PWebrtcGlobal", "child"),
     ("PWebrtcGlobal", "parent"),
 
-    # .h is only exported on some platforms/configs
+    
     ("PCameras", "child"),
     ("PCameras", "parent"),
     ("PCompositorWidget", "child"),
@@ -579,7 +574,7 @@ VIRTUAL_CALL_CLASSES = set([
     ("PWebrtcProxyChannel", "child"),
     ("PWebrtcProxyChannel", "parent"),
 
-    # .h includes something that's a LOCAL_INCLUDE
+    
     ("PBackgroundLocalStorageCache", "child"),
     ("PBackgroundLocalStorageCache", "parent"),
     ("PBackgroundStorage", "child"),
@@ -593,11 +588,11 @@ VIRTUAL_CALL_CLASSES = set([
     ("PSessionStorageObserver", "child"),
     ("PSessionStorageObserver", "parent"),
 
-    # Recv* methods are MOZ_CAN_RUN_SCRIPT and OnMessageReceived is not, so
-    # it's not allowed to call them.
+    
+    
     ("PBrowser", "child"),
 
-    # can't be included safely for compilation error reasons
+    
     ("PGMPContent", "parent"),
     ("PGMPService", "child"),
     ("PGMPService", "parent"),
@@ -606,13 +601,13 @@ VIRTUAL_CALL_CLASSES = set([
     ("PGMPVideoEncoder", "parent"),
     ("PWebRenderBridge", "parent"),
 
-    # Not actually subclassed
+    
     ("PLoginReputation", "child"),
     ("PPluginSurface", "child"),
     ("PTestShellCommand", "child"),
 
-    # _ipdltest
-    # Not actually subclassed
+    
+    
     ("PTestIndirectProtocolParamFirst", "child"),
     ("PTestIndirectProtocolParamFirst", "parent"),
     ("PTestIndirectProtocolParamManage", "child"),
