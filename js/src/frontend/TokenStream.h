@@ -336,6 +336,10 @@ struct Token {
     
     
     
+    
+    
+    
+    
     SlashIsInvalid,
 
     
@@ -1864,9 +1868,6 @@ class GeneralTokenStreamChars : public SpecializedTokenStreamCharsBase<Unit> {
     
     
     
-    if (modifier == TokenStreamShared::SlashIsInvalid) {
-      modifier = TokenStreamShared::SlashIsDiv;
-    }
     token->modifier = modifier;
 #endif
 
