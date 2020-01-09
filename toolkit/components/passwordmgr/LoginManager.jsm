@@ -59,8 +59,6 @@ LoginManager.prototype = {
 
 
   _storage: null, 
-  _prefBranch: null, 
-  _remember: true,  
 
 
   
@@ -73,12 +71,6 @@ LoginManager.prototype = {
   init() {
     
     this._observer._pwmgr            = this;
-
-    
-    this._prefBranch = Services.prefs.getBranch("signon.");
-    this._prefBranch.addObserver("rememberSignons", this._observer);
-
-    this._remember = this._prefBranch.getBoolPref("rememberSignons");
     this._autoCompleteLookupPromise = null;
 
     
@@ -118,19 +110,8 @@ LoginManager.prototype = {
 
     
     observe(subject, topic, data) {
-      if (topic == "nsPref:changed") {
-        var prefName = data;
-        log.debug("got change to", prefName, "preference");
-
-        if (prefName == "rememberSignons") {
-          this._pwmgr._remember =
-              this._pwmgr._prefBranch.getBoolPref("rememberSignons");
-        } else {
-          log.debug("Oops! Pref not handled, change ignored.");
-        }
-      } else if (topic == "xpcom-shutdown") {
+      if (topic == "xpcom-shutdown") {
         delete this._pwmgr._storage;
-        delete this._pwmgr._prefBranch;
         this._pwmgr = null;
       } else if (topic == "passwordmgr-storage-replace") {
         (async () => {
@@ -184,7 +165,7 @@ LoginManager.prototype = {
 
     
     
-    clearAndGetHistogram("PWMGR_SAVING_ENABLED").add(this._remember);
+    clearAndGetHistogram("PWMGR_SAVING_ENABLED").add(LoginHelper.enabled);
     Services.obs.notifyObservers(null, "weave:telemetry:histogram", "PWMGR_SAVING_ENABLED");
 
     
@@ -454,7 +435,7 @@ LoginManager.prototype = {
 
   getLoginSavingEnabled(origin) {
     log.debug("Checking if logins to", origin, "can be saved.");
-    if (!this._remember) {
+    if (!LoginHelper.enabled) {
       return false;
     }
 
@@ -548,7 +529,7 @@ LoginManager.prototype = {
       return;
     }
 
-    if (!this._remember) {
+    if (!LoginHelper.enabled) {
       let acLookupPromise = this._autoCompleteLookupPromise = Promise.resolve({ logins: [] });
       acLookupPromise.then(completeSearch.bind(this, acLookupPromise));
       return;
