@@ -56,7 +56,10 @@ describe("CFRPageActions", () => {
         buttons: {
           primary: {
             label: {string_id: "primary_button_id"},
-            action: {id: "primary_action"},
+            action: {
+              id: "primary_action",
+              data: {},
+            },
           },
           secondary: [{
             label: {string_id: "secondary_button_id"},
@@ -468,12 +471,12 @@ describe("CFRPageActions", () => {
         });
       });
       it("should set the main action correctly", async () => {
+        sinon.stub(CFRPageActions, "_fetchLatestAddonVersion").resolves("latest-addon.xpi");
         await pageAction._handleClick();
         const mainAction = global.PopupNotifications.show.firstCall.args[4]; 
-
         assert.deepEqual(mainAction.label, {value: "Primary Button", attributes: {accesskey: "p"}});
         sandbox.spy(pageAction, "hide");
-        mainAction.callback();
+        await mainAction.callback();
         assert.calledOnce(pageAction.hide);
         
         assert.calledWith(dispatchStub, {
@@ -483,7 +486,7 @@ describe("CFRPageActions", () => {
         
         assert.calledWith(
           dispatchStub,
-          {type: "USER_ACTION", data: {id: "primary_action"}},
+          {type: "USER_ACTION", data: {id: "primary_action", data: {url: "latest-addon.xpi"}}},
           {browser: fakeBrowser}
         );
         
@@ -697,11 +700,9 @@ describe("CFRPageActions", () => {
         assert.calledOnce(PageAction.prototype.show);
       });
       it("should add the right url if we fetched and addon install URL", async () => {
-        sinon.stub(CFRPageActions, "_fetchLatestAddonVersion").returns(Promise.resolve("latest-addon.xpi"));
         fakeRecommendation.template = "cfr_doorhanger";
         await CFRPageActions.addRecommendation(fakeBrowser, fakeHost, fakeRecommendation, dispatchStub);
         const recommendation = CFRPageActions.RecommendationMap.get(fakeBrowser);
-        assert.equal(recommendation.content.buttons.primary.action.data.url, "latest-addon.xpi");
 
         
         assert.equal(recommendation.id, fakeRecommendation.id);

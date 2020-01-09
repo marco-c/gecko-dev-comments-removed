@@ -325,7 +325,8 @@ class PageAction {
     const mainAction = {
       label: primaryBtnStrings,
       accessKey: primaryBtnStrings.attributes.accesskey,
-      callback: () => {
+      callback: async () => {
+        primary.action.data.url = await CFRPageActions._fetchLatestAddonVersion(content.addon.id); 
         this._blockMessage(id);
         this.dispatchUserAction(primary.action);
         this.hide();
@@ -425,10 +426,10 @@ const CFRPageActions = {
 
 
 
-  async _fetchLatestAddonVersion({id}) {
+  async _fetchLatestAddonVersion(id) {
     let url = null;
     try {
-      const response = await fetch(`${ADDONS_API_URL}/${id}`);
+      const response = await fetch(`${ADDONS_API_URL}/${id}/`, {credentials: "omit"});
       if (response.status !== 204 && response.ok) {
         const json = await response.json();
         url = json.current_version.files[0].url;
@@ -439,37 +440,6 @@ const CFRPageActions = {
     return url;
   },
 
-  async _maybeAddAddonInstallURL(recommendation) {
-    const {content, template} = recommendation;
-    
-    if (template !== "cfr_doorhanger") {
-      return recommendation;
-    }
-
-    const url = await this._fetchLatestAddonVersion(content.addon);
-    
-    
-    if (!url) {
-      return false;
-    }
-
-    
-    
-    return {
-      ...recommendation,
-      content: {
-        ...content,
-        buttons: {
-          ...content.buttons,
-          primary: {
-            ...content.buttons.primary,
-            action: {...content.buttons.primary.action, data: {url}},
-          },
-        },
-      },
-    };
-  },
-
   
 
 
@@ -477,13 +447,9 @@ const CFRPageActions = {
 
 
 
-  async forceRecommendation(browser, originalRecommendation, dispatchToASRouter) {
+  async forceRecommendation(browser, recommendation, dispatchToASRouter) {
     
     const win = browser.browser.ownerGlobal;
-    const recommendation = await this._maybeAddAddonInstallURL(originalRecommendation);
-    if (!recommendation) {
-      return false;
-    }
     const {id, content} = recommendation;
     RecommendationMap.set(browser.browser, {id, content});
     if (!PageActionMap.has(win)) {
@@ -501,16 +467,12 @@ const CFRPageActions = {
 
 
 
-  async addRecommendation(browser, host, originalRecommendation, dispatchToASRouter) {
+  async addRecommendation(browser, host, recommendation, dispatchToASRouter) {
     const win = browser.ownerGlobal;
     if (PrivateBrowsingUtils.isWindowPrivate(win)) {
       return false;
     }
     if (browser !== win.gBrowser.selectedBrowser || !isHostMatch(browser, host)) {
-      return false;
-    }
-    const recommendation = await this._maybeAddAddonInstallURL(originalRecommendation);
-    if (!recommendation) {
       return false;
     }
     const {id, content} = recommendation;
