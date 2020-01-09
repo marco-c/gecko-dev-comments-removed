@@ -61,29 +61,29 @@ struct ExternalImageKeyPair {
 
 WindowId NewWindowId();
 
-MOZ_DEFINE_ENUM_CLASS_WITH_BASE(RenderRoot, uint8_t, (
-  
-  
-  
-  
-  
-  
-  Default,
+MOZ_DEFINE_ENUM_CLASS_WITH_BASE(
+    RenderRoot, uint8_t,
+    (
+        
+        
+        
+        
+        
+        
+        Default,
 
-  
-  
-  
-  
-  
-  Content
-));
+        
+        
+        
+        
+        
+        Content));
 
 typedef EnumSet<RenderRoot, uint8_t> RenderRootSet;
 
 
-const Array<RenderRoot, kRenderRootCount> kRenderRoots(
-    RenderRoot::Default,
-    RenderRoot::Content);
+const Array<RenderRoot, kRenderRootCount> kRenderRoots(RenderRoot::Default,
+                                                       RenderRoot::Content);
 
 const Array<RenderRoot, kRenderRootCount - 1> kNonDefaultRenderRoots(
     RenderRoot::Content);
@@ -91,12 +91,13 @@ const Array<RenderRoot, kRenderRootCount - 1> kNonDefaultRenderRoots(
 template <typename T>
 class RenderRootArray : public Array<T, kRenderRootCount> {
   typedef Array<T, kRenderRootCount> Super;
+
  public:
   RenderRootArray() {
     if (IsPod<T>::value) {
       
       PodArrayZero(*this);
-    } 
+    }  
   }
 
   T& operator[](wr::RenderRoot aIndex) {
@@ -114,6 +115,7 @@ class RenderRootArray : public Array<T, kRenderRootCount> {
 template <typename T>
 class NonDefaultRenderRootArray : public Array<T, kRenderRootCount - 1> {
   typedef Array<T, kRenderRootCount - 1> Super;
+
  public:
   NonDefaultRenderRootArray() {
     

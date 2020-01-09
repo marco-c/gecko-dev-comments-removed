@@ -163,6 +163,7 @@ enum class VRDisplayCapabilityFlags : uint16_t {
 
 
 
+
   Cap_PositionEmulated = 1 << 9,
   
 
