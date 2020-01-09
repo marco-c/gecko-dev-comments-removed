@@ -16,8 +16,6 @@
 #include "nsThreadUtils.h"
 #include "nsXULAppAPI.h"
 
-#include <objidl.h>
-
 
 
 
