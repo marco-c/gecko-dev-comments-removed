@@ -286,19 +286,9 @@ SubDialog.prototype = {
     
     let docEl = this._frame.contentDocument.documentElement;
 
-    let titleBarHeight = this._titleBar.clientHeight +
-                         parseFloat(getComputedStyle(this._titleBar).borderBottomWidth);
-
     
     let boxHorizontalBorder = 2 * parseFloat(getComputedStyle(this._box).borderLeftWidth);
-    let boxVerticalBorder = 2 * parseFloat(getComputedStyle(this._box).borderTopWidth);
     let frameHorizontalMargin = 2 * parseFloat(getComputedStyle(this._frame).marginLeft);
-    let frameVerticalMargin = 2 * parseFloat(getComputedStyle(this._frame).marginTop);
-
-    
-    let boxRect = this._box.getBoundingClientRect();
-    let frameRect = this._frame.getBoundingClientRect();
-    let frameSizeDifference = (frameRect.top - boxRect.top) + (boxRect.bottom - frameRect.bottom);
 
     
     let frameMinWidth = docEl.style.width;
@@ -317,6 +307,51 @@ SubDialog.prototype = {
     this._box.style.minWidth = "calc(" +
                                (boxHorizontalBorder + frameHorizontalMargin) +
                                "px + " + frameMinWidth + ")";
+
+    this.resizeVertically();
+
+    this._overlay.dispatchEvent(new CustomEvent("dialogopen", {
+      bubbles: true,
+      detail: { dialog: this },
+    }));
+    this._overlay.style.visibility = "visible";
+    this._overlay.style.opacity = ""; 
+
+    if (this._box.getAttribute("resizable") == "true") {
+      this._onResize = this._onResize.bind(this);
+      this._resizeObserver = new MutationObserver(this._onResize);
+      this._resizeObserver.observe(this._box, {attributes: true});
+    }
+
+    this._trapFocus();
+
+    
+    gSearchResultsPane.searchWithinNode(this._titleElement, gSearchResultsPane.query);
+
+    
+    gSearchResultsPane.searchWithinNode(this._frame.contentDocument.firstElementChild,
+      gSearchResultsPane.query);
+
+    
+    for (let node of gSearchResultsPane.listSearchTooltips) {
+      if (!node.tooltipNode) {
+        gSearchResultsPane.createSearchTooltip(node, gSearchResultsPane.query);
+      }
+    }
+  },
+
+  resizeVertically() {
+    let docEl = this._frame.contentDocument.documentElement;
+
+    let titleBarHeight = this._titleBar.clientHeight +
+                         parseFloat(getComputedStyle(this._titleBar).borderBottomWidth);
+    let boxVerticalBorder = 2 * parseFloat(getComputedStyle(this._box).borderTopWidth);
+    let frameVerticalMargin = 2 * parseFloat(getComputedStyle(this._frame).marginTop);
+
+    
+    let boxRect = this._box.getBoundingClientRect();
+    let frameRect = this._frame.getBoundingClientRect();
+    let frameSizeDifference = (frameRect.top - boxRect.top) + (boxRect.bottom - frameRect.bottom);
 
     
     
@@ -360,35 +395,6 @@ SubDialog.prototype = {
     this._box.style.minHeight = "calc(" +
                                 (boxVerticalBorder + titleBarHeight + frameVerticalMargin) +
                                 "px + " + frameMinHeight + ")";
-
-    this._overlay.dispatchEvent(new CustomEvent("dialogopen", {
-      bubbles: true,
-      detail: { dialog: this },
-    }));
-    this._overlay.style.visibility = "visible";
-    this._overlay.style.opacity = ""; 
-
-    if (this._box.getAttribute("resizable") == "true") {
-      this._onResize = this._onResize.bind(this);
-      this._resizeObserver = new MutationObserver(this._onResize);
-      this._resizeObserver.observe(this._box, {attributes: true});
-    }
-
-    this._trapFocus();
-
-    
-    gSearchResultsPane.searchWithinNode(this._titleElement, gSearchResultsPane.query);
-
-    
-    gSearchResultsPane.searchWithinNode(this._frame.contentDocument.firstElementChild,
-      gSearchResultsPane.query);
-
-    
-    for (let node of gSearchResultsPane.listSearchTooltips) {
-      if (!node.tooltipNode) {
-        gSearchResultsPane.createSearchTooltip(node, gSearchResultsPane.query);
-      }
-    }
   },
 
   _onResize(mutations) {
