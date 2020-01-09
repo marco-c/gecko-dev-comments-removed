@@ -1020,20 +1020,7 @@ Inspector.prototype = {
 
   async supportsEyeDropper() {
     try {
-      const hasSupportsHighlighters =
-        await this.target.actorHasMethod("inspector", "supportsHighlighters");
-
-      let supportsHighlighters;
-      if (hasSupportsHighlighters) {
-        supportsHighlighters = await this.inspector.supportsHighlighters();
-      } else {
-        
-        
-        const { nodeFront } = this.selection;
-        supportsHighlighters = nodeFront && nodeFront.isInHTMLDocument;
-      }
-
-      return supportsHighlighters;
+      return await this.inspector.supportsHighlighters();
     } catch (e) {
       console.error(e);
       return false;
