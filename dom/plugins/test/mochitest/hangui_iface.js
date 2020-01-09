@@ -1,10 +1,14 @@
+
+
 var user32;
 var sendMessage;
 var getDlgItem;
 var messageBox;
 var watcher;
 
+
 importScripts("hangui_common.js");
+
 importScripts("dialog_watcher.js");
 
 function initCTypes() {

@@ -1,6 +1,7 @@
 
 
 
+
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 function getTestPlugin(pluginName) {
@@ -17,5 +18,5 @@ function getTestPlugin(pluginName) {
 
 addMessageListener("check-plugin-unload", function(message) {
   var tag = getTestPlugin();
-  var results = sendAsyncMessage("check-plugin-unload", tag.loaded);
+  sendAsyncMessage("check-plugin-unload", tag.loaded);
 });
