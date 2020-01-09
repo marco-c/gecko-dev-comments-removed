@@ -1119,69 +1119,67 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "supportPseudo",
     let boxPositions = [],
         containerBox = new BoxPosition(rootOfCues);
 
-    (function() {
-      let styleBox, cue, controlBarBox;
-      if (controlBarShown) {
-        controlBarBox = new BoxPosition(controlBar);
+    let styleBox, cue, controlBarBox;
+    if (controlBarShown) {
+      controlBarBox = new BoxPosition(controlBar);
+      
+      boxPositions.push(controlBarBox);
+    }
+
+    
+    
+    let regionNodeBoxes = {};
+    let regionNodeBox;
+
+    for (let i = 0; i < cues.length; i++) {
+      cue = cues[i];
+      if (cue.region != null) {
+       
+        styleBox = new RegionCueStyleBox(window, cue);
+
+        if (!regionNodeBoxes[cue.region.id]) {
+          
+          
+          let adjustContainerBox = new BoxPosition(rootOfCues);
+          if (controlBarShown) {
+            adjustContainerBox.height -= controlBarBox.height;
+            adjustContainerBox.bottom += controlBarBox.height;
+          }
+          regionNodeBox = new RegionNodeBox(window, cue.region, adjustContainerBox);
+          regionNodeBoxes[cue.region.id] = regionNodeBox;
+        }
         
-        boxPositions.push(controlBarBox);
-      }
+        let currentRegionBox = regionNodeBoxes[cue.region.id];
+        let currentRegionNodeDiv = currentRegionBox.div;
+        
+        
+        
+        if (cue.region.scroll == "up" && currentRegionNodeDiv.childElementCount > 0) {
+          styleBox.div.style.transitionProperty = "top";
+          styleBox.div.style.transitionDuration = "0.433s";
+        }
 
-      
-      
-      let regionNodeBoxes = {};
-      let regionNodeBox;
+        currentRegionNodeDiv.appendChild(styleBox.div);
+        rootOfCues.appendChild(currentRegionNodeDiv);
+        cue.displayState = styleBox.div;
+        boxPositions.push(new BoxPosition(currentRegionBox));
+      } else {
+        
+        styleBox = new CueStyleBox(window, cue, containerBox);
+        rootOfCues.appendChild(styleBox.div);
 
-      for (let i = 0; i < cues.length; i++) {
-        cue = cues[i];
-        if (cue.region != null) {
-         
-          styleBox = new RegionCueStyleBox(window, cue);
-
-          if (!regionNodeBoxes[cue.region.id]) {
-            
-            
-            let adjustContainerBox = new BoxPosition(rootOfCues);
-            if (controlBarShown) {
-              adjustContainerBox.height -= controlBarBox.height;
-              adjustContainerBox.bottom += controlBarBox.height;
-            }
-            regionNodeBox = new RegionNodeBox(window, cue.region, adjustContainerBox);
-            regionNodeBoxes[cue.region.id] = regionNodeBox;
-          }
-          
-          let currentRegionBox = regionNodeBoxes[cue.region.id];
-          let currentRegionNodeDiv = currentRegionBox.div;
+        
+        
+        
+        let cueBox = adjustBoxPosition(styleBox, containerBox, controlBarBox, boxPositions);
+        if (cueBox) {
           
           
-          
-          if (cue.region.scroll == "up" && currentRegionNodeDiv.childElementCount > 0) {
-            styleBox.div.style.transitionProperty = "top";
-            styleBox.div.style.transitionDuration = "0.433s";
-          }
-
-          currentRegionNodeDiv.appendChild(styleBox.div);
-          rootOfCues.appendChild(currentRegionNodeDiv);
           cue.displayState = styleBox.div;
-          boxPositions.push(new BoxPosition(currentRegionBox));
-        } else {
-          
-          styleBox = new CueStyleBox(window, cue, containerBox);
-          rootOfCues.appendChild(styleBox.div);
-
-          
-          
-          
-          let cueBox = adjustBoxPosition(styleBox, containerBox, controlBarBox, boxPositions);
-          if (cueBox) {
-            
-            
-            cue.displayState = styleBox.div;
-            boxPositions.push(cueBox);
-          }
+          boxPositions.push(cueBox);
         }
       }
-    })();
+    }
   };
 
   WebVTT.Parser = function(window, decoder) {
