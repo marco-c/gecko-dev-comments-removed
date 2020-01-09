@@ -268,10 +268,12 @@ nsresult TRRService::ReadPrefs(const char *name) {
     nsAutoCString excludedDomains;
     Preferences::GetCString(TRR_PREF("excluded-domains"), excludedDomains);
 
+    mExcludedDomains.Clear();
     nsCCharSeparatedTokenizer tokenizer(
         excludedDomains, ',', nsCCharSeparatedTokenizer::SEPARATOR_OPTIONAL);
     while (tokenizer.hasMoreTokens()) {
       nsAutoCString token(tokenizer.nextToken());
+      LOG(("TRRService::ReadPrefs excluded-domains host:[%s]\n", token.get()));
       mExcludedDomains.PutEntry(token);
     }
   }
@@ -505,6 +507,28 @@ bool TRRService::IsTRRBlacklisted(const nsACString &aHost,
     mTRRBLStorage->Remove(hashkey, aPrivateBrowsing ? DataStorage_Private
                                                     : DataStorage_Persistent);
   }
+  return false;
+}
+
+bool TRRService::IsExcludedFromTRR(const nsACString &aHost) {
+  if (mExcludedDomains.GetEntry(aHost)) {
+    LOG(("Host [%s] Is Excluded From TRR via pref\n", aHost.BeginReading()));
+    return true;
+  }
+
+  int32_t dot = aHost.FindChar('.');
+  if (dot != kNotFound) {
+    
+    dot++;
+    nsDependentCSubstring domain = Substring(aHost, dot, aHost.Length() - dot);
+    nsAutoCString check(domain);
+
+    
+    if (IsExcludedFromTRR(check)) {
+      return true;
+    }
+  }
+
   return false;
 }
 

@@ -485,6 +485,53 @@ function test24c()
   listen = dns.asyncResolve("bar.example.com", 0, listenerFine, mainThread, defaultOriginAttributes);
 }
 
+
+function test25()
+{
+  dns.clearCache(true);
+  prefs.setIntPref("network.trr.mode", 3); 
+  prefs.setCharPref("network.trr.excluded-domains", "");
+  prefs.setCharPref("network.trr.uri", "https://foo.example.com:" + h2Port + "/dns-ip");
+
+  test_answer = "127.0.0.1";
+  listen = dns.asyncResolve("localhost", 0, listenerFails, mainThread, defaultOriginAttributes);
+}
+
+
+function test25b()
+{
+  dns.clearCache(true);
+  prefs.setIntPref("network.trr.mode", 3); 
+  prefs.setCharPref("network.trr.excluded-domains", "localhost");
+  prefs.setCharPref("network.trr.uri", "https://foo.example.com:" + h2Port + "/dns-ip");
+
+  test_answer = "127.0.0.1";
+  listen = dns.asyncResolve("localhost", 0, listenerFine, mainThread, defaultOriginAttributes);
+}
+
+
+function test25c()
+{
+  dns.clearCache(true);
+  prefs.setIntPref("network.trr.mode", 3); 
+  prefs.setCharPref("network.trr.excluded-domains", "localhost,local");
+  prefs.setCharPref("network.trr.uri", "https://foo.example.com:" + h2Port + "/dns-ip");
+
+  test_answer = "127.0.0.1";
+  listen = dns.asyncResolve("test.local", 0, listenerFine, mainThread, defaultOriginAttributes);
+}
+
+function test25d()
+{
+  dns.clearCache(true);
+  prefs.setIntPref("network.trr.mode", 3); 
+  prefs.setCharPref("network.trr.excluded-domains", "localhost,local,other");
+  prefs.setCharPref("network.trr.uri", "https://foo.example.com:" + h2Port + "/dns-ip");
+
+  test_answer = "127.0.0.1";
+  listen = dns.asyncResolve("domain.other", 0, listenerFine, mainThread, defaultOriginAttributes);
+}
+
 var tests = [ test1,
               test1b,
               test2,
@@ -515,6 +562,10 @@ var tests = [ test1,
               test24,
               test24b,
               test24c,
+              test25,
+              test25b,
+              test25c,
+              test25d,
               testsDone
             ];
 
