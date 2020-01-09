@@ -76,6 +76,7 @@ class Mitmproxy(Playback):
         self.mitmdump_path = None
         self.recordings = config.get("playback_recordings")
         self.browser_path = config.get("binary")
+        self.policies_dir = None
 
         
         
@@ -98,13 +99,15 @@ class Mitmproxy(Playback):
 
         
         self.download()
-
         
         self.start()
 
         
-        
-        self.setup()
+        try:
+            self.setup()
+        except Exception:
+            self.stop()
+            raise
 
     def download(self):
         """Download and unpack mitmproxy binary and pageset using tooltool"""
@@ -332,7 +335,7 @@ class MitmproxyDesktop(Mitmproxy):
         """Turn off the browser proxy that was used for mitmproxy playback. In Firefox
         we need to change the autoconfig files to revert the proxy; for Chromium the proxy
         was setup on the cmd line, so nothing is required here."""
-        if self.config["app"] == "firefox":
+        if self.config["app"] == "firefox" and self.policies_dir is not None:
             LOG.info("Turning off the browser proxy")
 
             self.write_policies_json(
