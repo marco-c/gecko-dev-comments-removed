@@ -78,8 +78,8 @@ class HTMLLinkElement final : public nsGenericHTMLElement,
   virtual bool HasDeferredDNSPrefetchRequest() override;
 
   
-  bool Disabled() const;
-  void SetDisabled(bool aDisabled, ErrorResult& aRv);
+  bool Disabled();
+  void SetDisabled(bool aDisabled);
 
   void GetHref(nsAString& aValue) {
     GetURIAttr(nsGkAtoms::href, nullptr, aValue);
@@ -170,14 +170,8 @@ class HTMLLinkElement final : public nsGenericHTMLElement,
   
   Maybe<SheetInfo> GetStyleSheetInfo() final;
 
+ protected:
   RefPtr<nsDOMTokenList> mRelList;
-
-  
-  
-  
-  
-  
-  bool mExplicitlyEnabled = false;
 };
 
 }  
