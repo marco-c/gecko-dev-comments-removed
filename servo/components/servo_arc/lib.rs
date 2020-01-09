@@ -602,7 +602,7 @@ impl<H, T> Arc<HeaderSlice<H, [T]>> {
         F: FnOnce(Layout) -> *mut u8,
         I: Iterator<Item = T> + ExactSizeIterator,
     {
-        use std::mem::size_of;
+        use std::mem::{align_of, size_of};
         assert_ne!(size_of::<T>(), 0, "Need to think about ZST");
 
         
@@ -679,7 +679,8 @@ impl<H, T> Arc<HeaderSlice<H, [T]>> {
                     current = current.offset(1);
                 }
                 
-                debug_assert_eq!(current as *mut u8, buffer.offset(size as isize));
+                
+                debug_assert!((buffer.offset(size as isize) as usize - current as *mut u8 as usize) < align_of::<Self>());
             }
             assert!(
                 items.next().is_none(),
@@ -1332,6 +1333,23 @@ mod tests {
         assert!(y.slice.is_empty());
         assert_eq!(x.header.header, 100);
         assert!(x.slice.is_empty());
+    }
+
+    #[test]
+    fn thin_assert_padding() {
+        #[derive(Clone, Default)]
+        #[repr(C)]
+        struct Padded {
+            i: u16,
+        }
+
+        
+        let header = HeaderWithLength::new(0i32, 2);
+        let items = vec![Padded { i: 0xdead }, Padded { i: 0xbeef }];
+        let a = ThinArc::from_header_and_iter(header, items.into_iter());
+        assert_eq!(a.slice.len(), 2);
+        assert_eq!(a.slice[0].i, 0xdead);
+        assert_eq!(a.slice[1].i, 0xbeef);
     }
 
     #[test]
