@@ -1252,7 +1252,7 @@ impl RenderTaskCache {
                 
                 
                 
-                let (texture_id, texture_layer, uv_rect) =
+                let (texture_id, texture_layer, uv_rect, _) =
                     texture_cache.get_cache_location(&entry.handle);
 
                 render_task.location = RenderTaskLocation::TextureCache {
