@@ -583,9 +583,6 @@ bool WebGLContext::InitAndValidateGL(FailureReason* const out_failReason) {
   }
 
   
-  mBypassShaderValidation = gfxPrefs::WebGLBypassShaderValidator();
-
-  
   if (!sh::Initialize()) {
     *out_failReason = {"FEATURE_FAILURE_WEBGL_GLSL",
                        "GLSL translator initialization failed!"};
