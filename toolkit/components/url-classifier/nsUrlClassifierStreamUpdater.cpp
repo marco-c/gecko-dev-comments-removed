@@ -126,9 +126,12 @@ nsresult nsUrlClassifierStreamUpdater::FetchUpdate(
        aUpdateUrl->GetSpecOrDefault().get()));
 #endif
 
+  
+  
   nsresult rv;
-  uint32_t loadFlags =
-      nsIChannel::INHIBIT_CACHING | nsIChannel::LOAD_BYPASS_CACHE;
+  uint32_t loadFlags = nsIChannel::INHIBIT_CACHING |
+                       nsIChannel::LOAD_BYPASS_CACHE |
+                       nsIChannel::LOAD_BYPASS_URL_CLASSIFIER;
   rv = NS_NewChannel(getter_AddRefs(mChannel), aUpdateUrl,
                      nsContentUtils::GetSystemPrincipal(),
                      nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
