@@ -1940,7 +1940,7 @@ class HTMLEditor final : public TextEditor,
   
 
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
+  MOZ_CAN_RUN_SCRIPT
   nsresult InsertObject(const nsACString& aType, nsISupports* aObject,
                         bool aIsSafe, Document* aSourceDoc,
                         const EditorDOMPoint& aPointToInsert,
