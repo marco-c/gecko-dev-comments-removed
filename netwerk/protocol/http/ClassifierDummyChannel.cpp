@@ -476,10 +476,19 @@ ClassifierDummyChannel::SetBeConservative(bool aBeConservative) {
 }
 
 NS_IMETHODIMP
-ClassifierDummyChannel::GetTrr(bool* aTrr) { return NS_ERROR_NOT_IMPLEMENTED; }
+ClassifierDummyChannel::GetIsTRRServiceChannel(bool* aTrr) {
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
 
 NS_IMETHODIMP
-ClassifierDummyChannel::SetTrr(bool aTrr) { return NS_ERROR_NOT_IMPLEMENTED; }
+ClassifierDummyChannel::SetIsTRRServiceChannel(bool aTrr) {
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP
+ClassifierDummyChannel::GetIsResolvedByTRR(bool* aResolvedByTRR) {
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
 
 NS_IMETHODIMP
 ClassifierDummyChannel::GetTlsFlags(uint32_t* aTlsFlags) {
@@ -610,7 +619,7 @@ ClassifierDummyChannel::SetNavigationStartTimeStamp(
 }
 
 NS_IMETHODIMP
-ClassifierDummyChannel::CancelByChannelClassifier(nsresult aErrorCode) {
+ClassifierDummyChannel::CancelByURLClassifier(nsresult aErrorCode) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 

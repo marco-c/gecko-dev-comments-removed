@@ -276,8 +276,9 @@ class HttpBaseChannel : public nsHashPropertyBag,
   NS_IMETHOD SetAllowAltSvc(bool aAllowAltSvc) override;
   NS_IMETHOD GetBeConservative(bool *aBeConservative) override;
   NS_IMETHOD SetBeConservative(bool aBeConservative) override;
-  NS_IMETHOD GetTrr(bool *aTRR) override;
-  NS_IMETHOD SetTrr(bool aTRR) override;
+  NS_IMETHOD GetIsTRRServiceChannel(bool *aTRR) override;
+  NS_IMETHOD SetIsTRRServiceChannel(bool aTRR) override;
+  NS_IMETHOD GetIsResolvedByTRR(bool *aResolvedByTRR) override;
   NS_IMETHOD GetTlsFlags(uint32_t *aTlsFlags) override;
   NS_IMETHOD SetTlsFlags(uint32_t aTlsFlags) override;
   NS_IMETHOD GetApiRedirectToURI(nsIURI **aApiRedirectToURI) override;
@@ -313,7 +314,7 @@ class HttpBaseChannel : public nsHashPropertyBag,
   NS_IMETHOD SetLastRedirectFlags(uint32_t aValue) override;
   NS_IMETHOD GetNavigationStartTimeStamp(TimeStamp *aTimeStamp) override;
   NS_IMETHOD SetNavigationStartTimeStamp(TimeStamp aTimeStamp) override;
-  NS_IMETHOD CancelByChannelClassifier(nsresult aErrorCode) override;
+  NS_IMETHOD CancelByURLClassifier(nsresult aErrorCode) override;
   virtual void SetIPv4Disabled(void) override;
   virtual void SetIPv6Disabled(void) override;
   NS_IMETHOD GetCrossOriginOpenerPolicy(
@@ -701,7 +702,12 @@ class HttpBaseChannel : public nsHashPropertyBag,
   
   
   uint32_t mBeConservative : 1;
-  uint32_t mTRR : 1;
+  
+  uint32_t mIsTRRServiceChannel : 1;
+  
+  
+  
+  uint32_t mResolvedByTRR : 1;
   uint32_t mResponseTimeoutEnabled : 1;
   
   uint32_t mAllRedirectsSameOrigin : 1;
