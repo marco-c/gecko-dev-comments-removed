@@ -213,9 +213,6 @@ class DecodedStreamData {
   
   const RefPtr<SourceMediaStream> mStream;
   const RefPtr<DecodedStreamGraphListener> mListener;
-  
-  
-  bool mEOSVideoCompensation;
 
   const RefPtr<OutputStreamManager> mOutputStreamManager;
   const RefPtr<AbstractThread> mAbstractMainThread;
@@ -238,7 +235,6 @@ DecodedStreamData::DecodedStreamData(
       mListener(MakeRefPtr<DecodedStreamGraphListener>(
           mStream, aInit.mAudioTrackID, std::move(aAudioEndedPromise),
           aInit.mVideoTrackID, std::move(aVideoEndedPromise), aMainThread)),
-      mEOSVideoCompensation(false),
       mOutputStreamManager(aOutputStreamManager),
       mAbstractMainThread(aMainThread) {
   MOZ_ASSERT(NS_IsMainThread());
@@ -673,8 +669,9 @@ void DecodedStream::SendVideo(bool aIsSameOrigin,
   }
 
   
+  bool compensateEOS = false;
   if (output.GetLastFrame()) {
-    mData->mEOSVideoCompensation = ZeroDurationAtLastChunk(output);
+    compensateEOS = ZeroDurationAtLastChunk(output);
   }
 
   if (!aIsSameOrigin) {
@@ -687,7 +684,7 @@ void DecodedStream::SendVideo(bool aIsSameOrigin,
   }
 
   if (mVideoQueue.IsFinished() && !mData->mHaveSentFinishVideo) {
-    if (mData->mEOSVideoCompensation) {
+    if (compensateEOS) {
       VideoSegment endSegment;
       
       auto deviation =
