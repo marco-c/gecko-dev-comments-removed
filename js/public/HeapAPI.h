@@ -346,17 +346,27 @@ class JS_FRIEND_API GCCellPtr {
 
 
 
-template <typename F, typename... Args>
-auto DispatchTyped(F f, GCCellPtr thing, Args&&... args) {
+template <typename F>
+auto MapGCThingTyped(GCCellPtr thing, F&& f) {
   switch (thing.kind()) {
 #define JS_EXPAND_DEF(name, type, _) \
   case JS::TraceKind::name:          \
-    return f(&thing.as<type>(), std::forward<Args>(args)...);
+    return f(&thing.as<type>());
     JS_FOR_EACH_TRACEKIND(JS_EXPAND_DEF);
 #undef JS_EXPAND_DEF
     default:
-      MOZ_CRASH("Invalid trace kind in DispatchTyped for GCCellPtr.");
+      MOZ_CRASH("Invalid trace kind in MapGCThingTyped for GCCellPtr.");
   }
+}
+
+
+
+template <typename F>
+void ApplyGCThingTyped(GCCellPtr thing, F&& f) {
+  
+  
+  
+  MapGCThingTyped(thing, f);
 }
 
 } 

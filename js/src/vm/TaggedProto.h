@@ -7,6 +7,8 @@
 #ifndef vm_TaggedProto_h
 #define vm_TaggedProto_h
 
+#include "mozilla/Maybe.h"
+
 #include "gc/Tracer.h"
 
 namespace js {
@@ -130,12 +132,18 @@ class WrappedPtrOperations<TaggedProto, Wrapper> {
 
 
 
-template <typename F, typename... Args>
-auto DispatchTyped(F f, const TaggedProto& proto, Args&&... args) {
+template <typename F>
+auto MapGCThingTyped(const TaggedProto& proto, F&& f) {
   if (proto.isObject()) {
-    return f(proto.toObject(), std::forward<Args>(args)...);
+    return mozilla::Some(f(proto.toObject()));
   }
-  return F::defaultValue(proto);
+  using ReturnType = decltype(f(static_cast<JSObject*>(nullptr)));
+  return mozilla::Maybe<ReturnType>();
+}
+
+template <typename F>
+bool ApplyGCThingTyped(const TaggedProto& proto, F&& f) {
+  return MapGCThingTyped(proto, [&f](auto t) { f(t); return true; }).isSome();
 }
 
 

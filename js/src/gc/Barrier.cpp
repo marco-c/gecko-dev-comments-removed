@@ -82,34 +82,17 @@ AutoTouchingGrayThings::~AutoTouchingGrayThings() {
 
 #endif  
 
-template <typename S>
-template <typename T>
-void ReadBarrierFunctor<S>::operator()(T* t) {
-  InternalBarrierMethods<T*>::readBarrier(t);
+ void InternalBarrierMethods<Value>::readBarrier(const Value& v) {
+  ApplyGCThingTyped(v, [](auto t) { t->readBarrier(t); });
 }
 
-
-
-#define JS_EXPAND_DEF(name, type, _) \
-  template void ReadBarrierFunctor<JS::Value>::operator()<type>(type*);
-JS_FOR_EACH_TRACEKIND(JS_EXPAND_DEF);
-#undef JS_EXPAND_DEF
-
-template <typename S>
-template <typename T>
-void PreBarrierFunctor<S>::operator()(T* t) {
-  InternalBarrierMethods<T*>::preBarrier(t);
+ void InternalBarrierMethods<Value>::preBarrier(const Value& v) {
+  ApplyGCThingTyped(v, [](auto t) { t->writeBarrierPre(t); });
 }
 
-
-
-#define JS_EXPAND_DEF(name, type, _) \
-  template void PreBarrierFunctor<JS::Value>::operator()<type>(type*);
-JS_FOR_EACH_TRACEKIND(JS_EXPAND_DEF);
-#undef JS_EXPAND_DEF
-
-template void PreBarrierFunctor<jsid>::operator()<JS::Symbol>(JS::Symbol*);
-template void PreBarrierFunctor<jsid>::operator()<JSString>(JSString*);
+ void InternalBarrierMethods<jsid>::preBarrier(jsid id) {
+  ApplyGCThingTyped(id, [](auto t) { t->writeBarrierPre(t); });
+}
 
 template <typename T>
  bool MovableCellHasher<T>::hasHash(const Lookup& l) {

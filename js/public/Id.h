@@ -20,6 +20,8 @@
 
 
 
+#include "mozilla/Maybe.h"
+
 #include "jstypes.h"
 
 #include "js/HeapAPI.h"
@@ -209,16 +211,24 @@ struct BarrierMethods<jsid> {
 
 
 
-template <typename F, typename... Args>
-auto DispatchTyped(F f, const jsid& id, Args&&... args) {
+template <typename F>
+auto MapGCThingTyped(const jsid& id, F&& f) {
   if (JSID_IS_STRING(id)) {
-    return f(JSID_TO_STRING(id), std::forward<Args>(args)...);
+    return mozilla::Some(f(JSID_TO_STRING(id)));
   }
   if (JSID_IS_SYMBOL(id)) {
-    return f(JSID_TO_SYMBOL(id), std::forward<Args>(args)...);
+    return mozilla::Some(f(JSID_TO_SYMBOL(id)));
   }
   MOZ_ASSERT(!JSID_IS_GCTHING(id));
-  return F::defaultValue(id);
+  using ReturnType = decltype(f(static_cast<JSString*>(nullptr)));
+  return mozilla::Maybe<ReturnType>();
+}
+
+
+
+template <typename F>
+bool ApplyGCThingTyped(const jsid& id, F&& f) {
+  return MapGCThingTyped(id, [&f](auto t) { f(t); return true; }).isSome();
 }
 
 #undef id
