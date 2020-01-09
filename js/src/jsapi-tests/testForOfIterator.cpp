@@ -5,6 +5,7 @@
 
 
 
+#include "js/ForOfIterator.h"
 #include "jsapi-tests/tests.h"
 
 BEGIN_TEST(testForOfIterator_basicNonIterable) {

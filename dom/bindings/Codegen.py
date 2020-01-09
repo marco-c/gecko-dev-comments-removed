@@ -1134,11 +1134,18 @@ class CGHeaders(CGWrapper):
                 headerSet = declareIncludes
             else:
                 headerSet = bindingHeaders
-            if t.nullable():
-                
-                
-                headerSet.add("mozilla/dom/Nullable.h")
-            unrolled = t.unroll()
+            
+            
+            
+            unrolled = t
+            while True:
+                if unrolled.nullable():
+                    headerSet.add("mozilla/dom/Nullable.h")
+                elif unrolled.isSequence():
+                    bindingHeaders.add("js/ForOfIterator.h")
+                else:
+                    break
+                unrolled = unrolled.inner
             if unrolled.isUnion():
                 headerSet.add(self.getUnionDeclarationFilename(config, unrolled))
                 bindingHeaders.add("mozilla/dom/UnionConversions.h")
@@ -1371,6 +1378,10 @@ def UnionTypes(unionTypes, config):
                 if f.nullable():
                     headers.add("mozilla/dom/Nullable.h")
                 isSequence = f.isSequence()
+                if isSequence:
+                    
+                    
+                    implheaders.add("js/ForOfIterator.h")
                 f = f.unroll()
                 if f.isPromise():
                     headers.add("mozilla/dom/Promise.h")
@@ -1471,6 +1482,10 @@ def UnionConversions(unionTypes, config):
             unionConversions[name] = CGUnionConversionStruct(t, config)
 
             def addHeadersForType(f):
+                if f.isSequence():
+                    
+                    
+                    headers.add("js/ForOfIterator.h")
                 f = f.unroll()
                 if f.isPromise():
                     headers.add("mozilla/dom/Promise.h")

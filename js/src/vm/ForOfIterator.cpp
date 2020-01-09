@@ -4,8 +4,7 @@
 
 
 
-#include "jsapi.h"
-
+#include "js/ForOfIterator.h"
 #include "vm/Interpreter.h"
 #include "vm/JSContext.h"
 #include "vm/JSObject.h"
