@@ -2931,6 +2931,9 @@ bool SizeComputationInput::ComputeMargin(WritingMode aWM,
     
     
     
+    if (aPercentBasis == NS_UNCONSTRAINEDSIZE) {
+      aPercentBasis = 0;
+    }
     LogicalMargin m(aWM);
     m.IStart(aWM) = nsLayoutUtils::ComputeCBDependentValue(
         aPercentBasis, styleMargin->mMargin.GetIStart(aWM));
@@ -2976,6 +2979,9 @@ bool SizeComputationInput::ComputePadding(WritingMode aWM,
     
     
     
+    if (aPercentBasis == NS_UNCONSTRAINEDSIZE) {
+      aPercentBasis = 0;
+    }
     LogicalMargin p(aWM);
     p.IStart(aWM) =
         std::max(0, nsLayoutUtils::ComputeCBDependentValue(
