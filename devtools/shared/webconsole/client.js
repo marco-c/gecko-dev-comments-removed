@@ -238,24 +238,6 @@ WebConsoleClient.prototype = {
 
 
 
-  inspectObjectProperties: function(actor, onResponse) {
-    const packet = {
-      to: actor,
-      type: "inspectProperties",
-    };
-    return this._client.request(packet, onResponse);
-  },
-
-  
-
-
-
-
-
-
-
-
-
 
 
 
