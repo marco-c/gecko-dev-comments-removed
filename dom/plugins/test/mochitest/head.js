@@ -55,7 +55,7 @@ function nativeVerticalWheelEventMsg() {
     case "mac": return 0; 
     case "linux": return 4; 
   }
-  throw "Native wheel events not supported on platform " + getPlatform();
+  throw new Error("Native wheel events not supported on platform " + getPlatform());
 }
 
 
