@@ -6,6 +6,7 @@
 #ifndef mozilla_dom_Document_h___
 #define mozilla_dom_Document_h___
 
+#include "mozilla/EventStates.h"  
 #include "mozilla/FlushType.h"  
 #include "mozilla/Pair.h"       
 #include "nsAutoPtr.h"          
@@ -23,7 +24,6 @@
 #include "nsILoadGroup.h"  
 #include "nsINode.h"       
 #include "nsIParser.h"
-#include "nsIPresShell.h"
 #include "nsIChannelEventSink.h"
 #include "nsIProgressEventSink.h"
 #include "nsIRadioGroupContainer.h"
@@ -107,6 +107,7 @@ class nsILayoutHistoryState;
 class nsILoadContext;
 class nsIObjectLoadingContent;
 class nsIObserver;
+class nsIPresShell;
 class nsIPrincipal;
 class nsIRequest;
 class nsIRunnable;
@@ -1252,18 +1253,12 @@ class Document : public nsINode,
     return GetBFCacheEntry() ? nullptr : mPresShell;
   }
 
-  nsIPresShell* GetObservingShell() const {
-    return mPresShell && mPresShell->IsObservingDocument() ? mPresShell
-                                                           : nullptr;
-  }
+  inline nsIPresShell* GetObservingShell() const;
 
   
   bool IsSafeToFlush() const;
 
-  nsPresContext* GetPresContext() const {
-    nsIPresShell* shell = GetShell();
-    return shell ? shell->GetPresContext() : nullptr;
-  }
+  inline nsPresContext* GetPresContext() const;
 
   bool HasShellOrBFCacheEntry() const { return mPresShell || mBFCacheEntry; }
 
