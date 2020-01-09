@@ -370,7 +370,7 @@ pub trait ReadBytesExt: io::Read {
     
     
     
-    #[cfg(byteorder_i128)]
+    #[cfg(feature = "i128")]
     #[inline]
     fn read_u128<T: ByteOrder>(&mut self) -> Result<u128> {
         let mut buf = [0; 16];
@@ -397,7 +397,8 @@ pub trait ReadBytesExt: io::Read {
     
     
     
-    #[cfg(byteorder_i128)]
+    
+    #[cfg(feature = "i128")]
     #[inline]
     fn read_i128<T: ByteOrder>(&mut self) -> Result<i128> {
         let mut buf = [0; 16];
@@ -456,7 +457,7 @@ pub trait ReadBytesExt: io::Read {
     }
 
     
-    #[cfg(byteorder_i128)]
+    #[cfg(feature = "i128")]
     #[inline]
     fn read_uint128<T: ByteOrder>(&mut self, nbytes: usize) -> Result<u128> {
         let mut buf = [0; 16];
@@ -465,7 +466,7 @@ pub trait ReadBytesExt: io::Read {
     }
 
     
-    #[cfg(byteorder_i128)]
+    #[cfg(feature = "i128")]
     #[inline]
     fn read_int128<T: ByteOrder>(&mut self, nbytes: usize) -> Result<i128> {
         let mut buf = [0; 16];
@@ -671,7 +672,7 @@ pub trait ReadBytesExt: io::Read {
     
     
     
-    #[cfg(byteorder_i128)]
+    #[cfg(feature = "i128")]
     #[inline]
     fn read_u128_into<T: ByteOrder>(
         &mut self,
@@ -821,7 +822,7 @@ pub trait ReadBytesExt: io::Read {
     
     
     
-    #[cfg(byteorder_i128)]
+    #[cfg(feature = "i128")]
     #[inline]
     fn read_i128_into<T: ByteOrder>(
         &mut self,
@@ -1372,7 +1373,7 @@ pub trait WriteBytesExt: io::Write {
     }
 
     
-    #[cfg(byteorder_i128)]
+    #[cfg(feature = "i128")]
     #[inline]
     fn write_u128<T: ByteOrder>(&mut self, n: u128) -> Result<()> {
         let mut buf = [0; 16];
@@ -1381,7 +1382,7 @@ pub trait WriteBytesExt: io::Write {
     }
 
     
-    #[cfg(byteorder_i128)]
+    #[cfg(feature = "i128")]
     #[inline]
     fn write_i128<T: ByteOrder>(&mut self, n: i128) -> Result<()> {
         let mut buf = [0; 16];
@@ -1465,7 +1466,7 @@ pub trait WriteBytesExt: io::Write {
     
     
     
-    #[cfg(byteorder_i128)]
+    #[cfg(feature = "i128")]
     #[inline]
     fn write_uint128<T: ByteOrder>(
         &mut self,
@@ -1481,7 +1482,7 @@ pub trait WriteBytesExt: io::Write {
     
     
     
-    #[cfg(byteorder_i128)]
+    #[cfg(feature = "i128")]
     #[inline]
     fn write_int128<T: ByteOrder>(
         &mut self,
