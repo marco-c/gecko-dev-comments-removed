@@ -8,7 +8,7 @@
 
 
 
-const { PromiseTestUtils } = scopedCuImport("resource://testing-common/PromiseTestUtils.jsm");
+const { PromiseTestUtils } = ChromeUtils.import("resource://testing-common/PromiseTestUtils.jsm");
 PromiseTestUtils.whitelistRejectionsGlobally(/Connection closed/);
 
 const { Toolbox } = require("devtools/client/framework/toolbox");

@@ -9,7 +9,7 @@
 
 
 
-const { PromiseTestUtils } = scopedCuImport(
+const { PromiseTestUtils } = ChromeUtils.import(
   "resource://testing-common/PromiseTestUtils.jsm"
 );
 PromiseTestUtils.whitelistRejectionsGlobally(/File closed/);

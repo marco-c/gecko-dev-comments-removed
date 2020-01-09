@@ -7,7 +7,7 @@ Services.scriptloader.loadSubScript(CHROME_URL_ROOT + "helper-addons.js", this);
 
 
 
-const { PromiseTestUtils } = scopedCuImport("resource://testing-common/PromiseTestUtils.jsm");
+const { PromiseTestUtils } = ChromeUtils.import("resource://testing-common/PromiseTestUtils.jsm");
 PromiseTestUtils.whitelistRejectionsGlobally(/File closed/);
 
 

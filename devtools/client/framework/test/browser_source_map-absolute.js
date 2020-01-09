@@ -7,7 +7,7 @@
 
 
 
-const { PromiseTestUtils } = scopedCuImport("resource://testing-common/PromiseTestUtils.jsm");
+const { PromiseTestUtils } = ChromeUtils.import("resource://testing-common/PromiseTestUtils.jsm");
 PromiseTestUtils.whitelistRejectionsGlobally(/this\.worker is null/);
 
 
