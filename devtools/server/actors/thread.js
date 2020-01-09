@@ -1734,15 +1734,6 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     
     let sourceActor;
     if (this._debuggerSourcesSeen.has(source) && this.sources.hasSourceActor(source)) {
-      
-      
-      
-      
-      
-      
-      if (!this.dbg.replaying) {
-        return false;
-      }
       sourceActor = this.sources.getSourceActor(source);
     } else {
       sourceActor = this.sources.createSourceActor(source);
