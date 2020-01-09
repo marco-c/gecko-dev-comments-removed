@@ -570,6 +570,10 @@ class DOMLocalization extends Localization {
 
 
   translateRoots() {
+    if (this.resourceIds.length === 0) {
+      return Promise.resolve();
+    }
+
     const roots = Array.from(this.roots);
     return Promise.all(
       roots.map(async root => {
