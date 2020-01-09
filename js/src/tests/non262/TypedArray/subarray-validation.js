@@ -4,8 +4,19 @@
 
 
 
-const otherGlobal = typeof newGlobal === "function" ? newGlobal({newCompartment: true}) : undefined;
+const otherGlobal = newGlobal({newCompartment: true});
 const typedArrayLengths = [0, 1, 1024];
+
+
+
+
+
+
+const eitherGlobalTypeError = {
+    [Symbol.hasInstance](obj) {
+        return obj instanceof TypeError || obj instanceof otherGlobal.TypeError;
+    }
+};
 
 function createTestCases(TAConstructor, constructor, constructorCrossRealm) {
     let testCases = [];
@@ -14,21 +25,16 @@ function createTestCases(TAConstructor, constructor, constructorCrossRealm) {
         method: TAConstructor.prototype.subarray,
         error: TypeError,
     });
-    if (otherGlobal) {
-        testCases.push({
-            species: constructorCrossRealm,
-            method: TAConstructor.prototype.subarray,
-            error: TypeError,
-        });
-        testCases.push({
-            species: constructor,
-            method: otherGlobal[TAConstructor.name].prototype.subarray,
-            
-            
-            
-            error: TypeError,
-        });
-    }
+    testCases.push({
+        species: constructorCrossRealm,
+        method: TAConstructor.prototype.subarray,
+        error: TypeError,
+    });
+    testCases.push({
+        species: constructor,
+        method: otherGlobal[TAConstructor.name].prototype.subarray,
+        error: eitherGlobalTypeError,
+    });
     return testCases;
 }
 
