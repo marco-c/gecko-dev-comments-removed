@@ -362,7 +362,7 @@ void nsPresContext::GetUserPreferences() {
 
   mPrefScrollbarSide = Preferences::GetInt("layout.scrollbar.side");
 
-  Document()->ResetLangPrefs();
+  Document()->SetMayNeedFontPrefsUpdate();
 
   
   nsAutoCString animatePref;
@@ -524,8 +524,12 @@ void nsPresContext::UpdateAfterPreferencesChanged() {
   }
 
   if (mDocument->IsInChromeDocShell()) {
+    
+    
     return;
   }
+
+  StaticPresData::Get()->InvalidateFontPrefs();
 
   
   GetUserPreferences();

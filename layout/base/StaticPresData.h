@@ -59,7 +59,7 @@ struct LangGroupFontPrefs {
   }
 
   
-  void Initialize(nsAtom* aLangGroupAtom);
+  void Initialize(nsStaticAtom* aLangGroupAtom);
 
   
 
@@ -174,17 +174,19 @@ class StaticPresData {
 
 
 
-  const LangGroupFontPrefs* GetFontPrefsForLangHelper(
-      nsAtom* aLanguage, const LangGroupFontPrefs* aPrefs,
-      bool* aNeedsToCache = nullptr) const;
-  const nsFont* GetDefaultFontHelper(uint8_t aFontID, nsAtom* aLanguage,
-                                     const LangGroupFontPrefs* aPrefs) const;
+  const LangGroupFontPrefs* GetFontPrefsForLang(nsAtom* aLanguage,
+                                                bool* aNeedsToCache = nullptr);
+  const nsFont* GetDefaultFont(uint8_t aFontID, nsAtom* aLanguage,
+                               const LangGroupFontPrefs* aPrefs) const;
+
+  void InvalidateFontPrefs() { mLangGroupFontPrefs.Reset(); }
 
  private:
   StaticPresData();
   ~StaticPresData() = default;
 
   nsLanguageAtomService* mLangService;
+  LangGroupFontPrefs mLangGroupFontPrefs;
 };
 
 }  

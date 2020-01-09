@@ -3606,10 +3606,9 @@ class Document : public nsINode,
   void RecomputeLanguageFromCharset();
 
  public:
-  void ResetLangPrefs() {
-    mLangGroupFontPrefs.Reset();
-    mFontGroupCacheDirty = true;
-  }
+  void SetMayNeedFontPrefsUpdate() { mMayNeedFontPrefsUpdate = true; }
+
+  bool MayNeedFontPrefsUpdate() { return mMayNeedFontPrefsUpdate; }
 
   already_AddRefed<nsAtom> GetContentLanguageAsAtomForStyle() const;
   already_AddRefed<nsAtom> GetLanguageForStyle() const;
@@ -3629,7 +3628,7 @@ class Document : public nsINode,
   }
 
   void CacheAllKnownLangPrefs() {
-    if (!mFontGroupCacheDirty) {
+    if (!mMayNeedFontPrefsUpdate) {
       return;
     }
     DoCacheAllKnownLangPrefs();
@@ -3987,7 +3986,7 @@ class Document : public nsINode,
   
   bool mBidiEnabled : 1;
   
-  bool mFontGroupCacheDirty : 1;
+  bool mMayNeedFontPrefsUpdate : 1;
   
   bool mMathMLEnabled : 1;
 
