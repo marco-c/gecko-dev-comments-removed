@@ -2773,13 +2773,6 @@ void js::gc::StoreBuffer::CellPtrEdge::traceTyped(TenuringTracer& mover) const {
              "traceKind mismatch.");
 #endif
 
-  
-  
-
-  if (!IsInsideNursery(*edge)) {
-    return;
-  }
-
   mover.traverse(reinterpret_cast<CellType**>(edge));
 }
 
