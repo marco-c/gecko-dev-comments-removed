@@ -10629,21 +10629,6 @@ bool nsContentUtils::
 }
 
 
-uint32_t nsContentUtils::GetNodeDepth(nsINode* aNode) {
-  uint32_t depth = 1;
-
-  MOZ_ASSERT(aNode, "Node shouldn't be null");
-
-  
-  
-  while ((aNode = aNode->GetFlattenedTreeParentNode())) {
-    ++depth;
-  }
-
-  return depth;
-}
-
-
 bool nsContentUtils::IsURIInPrefList(nsIURI* aURI, const char* aPrefName) {
   MOZ_ASSERT(aPrefName);
 
