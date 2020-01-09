@@ -25,6 +25,10 @@ class TelemetryTestRunner(BaseMarionetteTestRunner):
         
         prefs.update(
             {
+                
+                
+                
+                "browser.search.geoip.url": "data:application/json,{\"country_code\": \"DE\"}",
                 "toolkit.telemetry.server": "{}/pings".format(SERVER_URL),
                 "toolkit.telemetry.initDelay": 1,
                 "toolkit.telemetry.minSubsessionLength": 0,
