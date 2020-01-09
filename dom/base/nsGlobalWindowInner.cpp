@@ -4423,7 +4423,13 @@ Storage* nsGlobalWindowInner::GetLocalStorage(ErrorResult& aError) {
   }
 
   if (access == nsContentUtils::StorageAccess::eDeny) {
-    aError.Throw(NS_ERROR_DOM_SECURITY_ERR);
+    if (mDoc && (mDoc->GetSandboxFlags() & SANDBOXED_ORIGIN) != 0) {
+      
+      
+      
+      
+      aError.Throw(NS_ERROR_DOM_SECURITY_ERR);
+    }
     return nullptr;
   }
 
