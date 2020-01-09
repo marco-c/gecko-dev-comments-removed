@@ -4689,24 +4689,25 @@ CallIRGenerator::CallIRGenerator(JSContext* cx, HandleScript script,
       typeCheckInfo_(cx,  true),
       cacheIRStubKind_(BaselineCacheIRStubKind::Regular) {}
 
-bool CallIRGenerator::tryAttachStringSplit() {
+AttachDecision CallIRGenerator::tryAttachStringSplit() {
   
   if (argc_ != 2 || !args_[0].isString() || !args_[1].isString()) {
-    return false;
+    return AttachDecision::NoAction;
   }
 
   
   
   
   if (args_[0].toString()->isAtom() && args_[1].toString()->isAtom()) {
-    return false;
+    return AttachDecision::NoAction;
   }
 
   
   RootedObjectGroup group(cx_,
                           ObjectGroupRealm::getStringSplitStringGroup(cx_));
   if (!group) {
-    return false;
+    cx_->clearPendingException();
+    return AttachDecision::NoAction;
   }
 
   Int32OperandId argcId(writer.setInputOperandId(0));
@@ -4738,40 +4739,40 @@ bool CallIRGenerator::tryAttachStringSplit() {
 
   TypeScript::Monitor(cx_, script_, pc_, TypeSet::ObjectType(group));
 
-  return true;
+  return AttachDecision::Attach;
 }
 
-bool CallIRGenerator::tryAttachArrayPush() {
+AttachDecision CallIRGenerator::tryAttachArrayPush() {
   
   if (argc_ != 1 || !thisval_.isObject()) {
-    return false;
+    return AttachDecision::NoAction;
   }
 
   
   RootedObject thisobj(cx_, &thisval_.toObject());
   if (!thisobj->is<ArrayObject>()) {
-    return false;
+    return AttachDecision::NoAction;
   }
 
   if (thisobj->hasLazyGroup()) {
-    return false;
+    return AttachDecision::NoAction;
   }
 
   RootedArrayObject thisarray(cx_, &thisobj->as<ArrayObject>());
 
   
   if (!CanAttachAddElement(thisarray,  false)) {
-    return false;
+    return AttachDecision::NoAction;
   }
 
   
   if (!thisarray->lengthIsWritable()) {
-    return false;
+    return AttachDecision::NoAction;
   }
 
   
   if (!thisarray->isExtensible()) {
-    return false;
+    return AttachDecision::NoAction;
   }
 
   MOZ_ASSERT(!thisarray->getElementsHeader()->isFrozen(),
@@ -4822,36 +4823,36 @@ bool CallIRGenerator::tryAttachArrayPush() {
   cacheIRStubKind_ = BaselineCacheIRStubKind::Updated;
 
   trackAttached("ArrayPush");
-  return true;
+  return AttachDecision::Attach;
 }
 
-bool CallIRGenerator::tryAttachArrayJoin() {
+AttachDecision CallIRGenerator::tryAttachArrayJoin() {
   
   if (argc_ > 1) {
-    return false;
+    return AttachDecision::NoAction;
   }
 
   
   if (!thisval_.isObject()) {
-    return false;
+    return AttachDecision::NoAction;
   }
 
   
   RootedObject thisobj(cx_, &thisval_.toObject());
   if (!thisobj->is<ArrayObject>()) {
-    return false;
+    return AttachDecision::NoAction;
   }
 
   RootedArrayObject thisarray(cx_, &thisobj->as<ArrayObject>());
 
   
   if (thisarray->length() > 1) {
-    return false;
+    return AttachDecision::NoAction;
   }
 
   
   if (thisarray->getDenseInitializedLength() != thisarray->length()) {
-    return false;
+    return AttachDecision::NoAction;
   }
 
   
@@ -4892,10 +4893,10 @@ bool CallIRGenerator::tryAttachArrayJoin() {
   cacheIRStubKind_ = BaselineCacheIRStubKind::Regular;
 
   trackAttached("ArrayJoin");
-  return true;
+  return AttachDecision::Attach;
 }
 
-bool CallIRGenerator::tryAttachIsSuspendedGenerator() {
+AttachDecision CallIRGenerator::tryAttachIsSuspendedGenerator() {
   
   
   
@@ -4921,16 +4922,16 @@ bool CallIRGenerator::tryAttachIsSuspendedGenerator() {
   cacheIRStubKind_ = BaselineCacheIRStubKind::Regular;
 
   trackAttached("IsSuspendedGenerator");
-  return true;
+  return AttachDecision::Attach;
 }
 
-bool CallIRGenerator::tryAttachFunCall() {
+AttachDecision CallIRGenerator::tryAttachFunCall() {
   if (JitOptions.disableCacheIRCalls) {
-    return false;
+    return AttachDecision::NoAction;
   }
 
   if (!thisval_.isObject() || !thisval_.toObject().is<JSFunction>()) {
-    return false;
+    return AttachDecision::NoAction;
   }
   RootedFunction target(cx_, &thisval_.toObject().as<JSFunction>());
 
@@ -4972,20 +4973,20 @@ bool CallIRGenerator::tryAttachFunCall() {
     trackAttached("Native fun_call");
   }
 
-  return true;
+  return AttachDecision::Attach;
 }
 
-bool CallIRGenerator::tryAttachFunApply() {
+AttachDecision CallIRGenerator::tryAttachFunApply() {
   if (JitOptions.disableCacheIRCalls) {
-    return false;
+    return AttachDecision::NoAction;
   }
 
   if (argc_ != 2) {
-    return false;
+    return AttachDecision::NoAction;
   }
 
   if (!thisval_.isObject() || !thisval_.toObject().is<JSFunction>()) {
-    return false;
+    return AttachDecision::NoAction;
   }
   RootedFunction target(cx_, &thisval_.toObject().as<JSFunction>());
 
@@ -4998,7 +4999,7 @@ bool CallIRGenerator::tryAttachFunApply() {
   } else if (args_[1].isObject() && args_[1].toObject().is<ArrayObject>()) {
     format = CallFlags::FunApplyArray;
   } else {
-    return false;
+    return AttachDecision::NoAction;
   }
 
   Int32OperandId argcId(writer.setInputOperandId(0));
@@ -5040,52 +5041,42 @@ bool CallIRGenerator::tryAttachFunApply() {
     trackAttached("Native fun_apply");
   }
 
-  return true;
+  return AttachDecision::Attach;
 }
 
-bool CallIRGenerator::tryAttachSpecialCaseCallNative(HandleFunction callee) {
+AttachDecision CallIRGenerator::tryAttachSpecialCaseCallNative(
+    HandleFunction callee) {
   MOZ_ASSERT(mode_ == ICState::Mode::Specialized);
   MOZ_ASSERT(callee->isNative());
 
+  
   if (op_ == JSOP_FUNCALL && callee->native() == fun_call) {
-    if (tryAttachFunCall()) {
-      return true;
-    }
+    return tryAttachFunCall();
   }
-
   if (op_ == JSOP_FUNAPPLY && callee->native() == fun_apply) {
-    if (tryAttachFunApply()) {
-      return true;
-    }
+    return tryAttachFunApply();
   }
 
+  
   if (op_ != JSOP_CALL && op_ != JSOP_CALL_IGNORES_RV) {
-    return false;
+    return AttachDecision::NoAction;
   }
 
+  
   if (callee->native() == js::intrinsic_StringSplitString) {
-    if (tryAttachStringSplit()) {
-      return true;
-    }
+    return tryAttachStringSplit();
   }
-
   if (callee->native() == js::array_push) {
-    if (tryAttachArrayPush()) {
-      return true;
-    }
+    return tryAttachArrayPush();
   }
-
   if (callee->native() == js::array_join) {
-    if (tryAttachArrayJoin()) {
-      return true;
-    }
+    return tryAttachArrayJoin();
   }
   if (callee->native() == intrinsic_IsSuspendedGenerator) {
-    if (tryAttachIsSuspendedGenerator()) {
-      return true;
-    }
+    return tryAttachIsSuspendedGenerator();
   }
-  return false;
+
+  return AttachDecision::NoAction;
 }
 
 
@@ -5128,9 +5119,6 @@ bool CallIRGenerator::getTemplateObjectForScripted(HandleFunction calleeFunc,
     if (group->newScript(sweep) && !group->newScript(sweep)->analyzed()) {
       
       trackAttached(IRGenerator::NotAttached);
-
-      
-      
       *skipAttach = true;
       return true;
     }
@@ -5151,15 +5139,16 @@ bool CallIRGenerator::getTemplateObjectForScripted(HandleFunction calleeFunc,
   return true;
 }
 
-bool CallIRGenerator::tryAttachCallScripted(HandleFunction calleeFunc) {
+AttachDecision CallIRGenerator::tryAttachCallScripted(
+    HandleFunction calleeFunc) {
   if (JitOptions.disableCacheIRCalls) {
-    return false;
+    return AttachDecision::NoAction;
   }
 
   
   
   if (op_ == JSOP_FUNAPPLY) {
-    return false;
+    return AttachDecision::NoAction;
   }
 
   bool isSpecialized = mode_ == ICState::Mode::Specialized;
@@ -5171,19 +5160,18 @@ bool CallIRGenerator::tryAttachCallScripted(HandleFunction calleeFunc) {
 
   
   if (isConstructing && !calleeFunc->isConstructor()) {
-    return false;
+    return AttachDecision::NoAction;
   }
 
   
   if (!isConstructing && calleeFunc->isClassConstructor()) {
-    return false;
+    return AttachDecision::NoAction;
   }
 
   if (!calleeFunc->hasJitEntry()) {
     
     
-    
-    return false;
+    return AttachDecision::TemporarilyUnoptimizable;
   }
 
   if (isConstructing && !calleeFunc->hasJITCode()) {
@@ -5191,8 +5179,7 @@ bool CallIRGenerator::tryAttachCallScripted(HandleFunction calleeFunc) {
     
     
     
-    
-    return false;
+    return AttachDecision::TemporarilyUnoptimizable;
   }
 
   
@@ -5205,11 +5192,11 @@ bool CallIRGenerator::tryAttachCallScripted(HandleFunction calleeFunc) {
   bool skipAttach = false;
   if (isConstructing && isSpecialized &&
       !getTemplateObjectForScripted(calleeFunc, &templateObj, &skipAttach)) {
-    return false;
+    cx_->clearPendingException();
+    return AttachDecision::NoAction;
   }
   if (skipAttach) {
-    
-    return false;
+    return AttachDecision::TemporarilyUnoptimizable;
   }
 
   
@@ -5255,7 +5242,7 @@ bool CallIRGenerator::tryAttachCallScripted(HandleFunction calleeFunc) {
     trackAttached("Call any scripted func");
   }
 
-  return true;
+  return AttachDecision::Attach;
 }
 
 bool CallIRGenerator::getTemplateObjectForNative(HandleFunction calleeFunc,
@@ -5346,7 +5333,7 @@ bool CallIRGenerator::getTemplateObjectForNative(HandleFunction calleeFunc,
   }
 }
 
-bool CallIRGenerator::tryAttachCallNative(HandleFunction calleeFunc) {
+AttachDecision CallIRGenerator::tryAttachCallNative(HandleFunction calleeFunc) {
   MOZ_ASSERT(calleeFunc->isNative());
 
   bool isSpecialized = mode_ == ICState::Mode::Specialized;
@@ -5357,21 +5344,25 @@ bool CallIRGenerator::tryAttachCallNative(HandleFunction calleeFunc) {
   CallFlags flags(isConstructing, isSpread, isSameRealm);
 
   if (isConstructing && !calleeFunc->isConstructor()) {
-    return false;
+    return AttachDecision::NoAction;
   }
 
   
-  if (isSpecialized && tryAttachSpecialCaseCallNative(calleeFunc)) {
-    return true;
+  if (isSpecialized) {
+    AttachDecision decision = tryAttachSpecialCaseCallNative(calleeFunc);
+    if (decision != AttachDecision::NoAction) {
+      return decision;
+    }
   }
   if (JitOptions.disableCacheIRCalls) {
-    return false;
+    return AttachDecision::NoAction;
   }
 
   RootedObject templateObj(cx_);
   if (isConstructing && isSpecialized &&
       !getTemplateObjectForNative(calleeFunc, &templateObj)) {
-    return false;
+    cx_->clearPendingException();
+    return AttachDecision::NoAction;
   }
 
   
@@ -5416,7 +5407,7 @@ bool CallIRGenerator::tryAttachCallNative(HandleFunction calleeFunc) {
     trackAttached("Call any native func");
   }
 
-  return true;
+  return AttachDecision::Attach;
 }
 
 bool CallIRGenerator::getTemplateObjectForClassHook(
@@ -5432,7 +5423,6 @@ bool CallIRGenerator::getTemplateObjectForClassHook(
     Rooted<TypeDescr*> descr(cx_, calleeObj.as<TypeDescr>());
     result.set(TypedObject::createZeroed(cx_, descr, gc::TenuredHeap));
     if (!result) {
-      cx_->clearPendingException();
       return false;
     }
   }
@@ -5440,20 +5430,20 @@ bool CallIRGenerator::getTemplateObjectForClassHook(
   return true;
 }
 
-bool CallIRGenerator::tryAttachCallHook(HandleObject calleeObj) {
+AttachDecision CallIRGenerator::tryAttachCallHook(HandleObject calleeObj) {
   if (JitOptions.disableCacheIRCalls) {
-    return false;
+    return AttachDecision::NoAction;
   }
 
   if (op_ == JSOP_FUNAPPLY) {
-    return false;
+    return AttachDecision::NoAction;
   }
 
   if (mode_ != ICState::Mode::Specialized) {
     
     
     
-    return false;
+    return AttachDecision::NoAction;
   }
 
   bool isSpread = IsSpreadCallPC(pc_);
@@ -5462,13 +5452,14 @@ bool CallIRGenerator::tryAttachCallHook(HandleObject calleeObj) {
   JSNative hook =
       isConstructing ? calleeObj->constructHook() : calleeObj->callHook();
   if (!hook) {
-    return false;
+    return AttachDecision::NoAction;
   }
 
   RootedObject templateObj(cx_);
   if (isConstructing &&
       !getTemplateObjectForClassHook(calleeObj, &templateObj)) {
-    return false;
+    cx_->clearPendingException();
+    return AttachDecision::NoAction;
   }
 
   
@@ -5493,10 +5484,10 @@ bool CallIRGenerator::tryAttachCallHook(HandleObject calleeObj) {
   cacheIRStubKind_ = BaselineCacheIRStubKind::Monitored;
   trackAttached("Call native func");
 
-  return true;
+  return AttachDecision::Attach;
 }
 
-bool CallIRGenerator::tryAttachStub() {
+AttachDecision CallIRGenerator::tryAttachStub() {
   AutoAssertNoPendingException aanpe(cx_);
 
   
@@ -5510,14 +5501,14 @@ bool CallIRGenerator::tryAttachStub() {
     case JSOP_FUNAPPLY:
       break;
     default:
-      return false;
+      return AttachDecision::NoAction;
   }
 
   MOZ_ASSERT(mode_ != ICState::Mode::Generic);
 
   
   if (!callee_.isObject()) {
-    return false;
+    return AttachDecision::NoAction;
   }
 
   RootedObject calleeObj(cx_, &callee_.toObject());
@@ -5537,7 +5528,7 @@ bool CallIRGenerator::tryAttachStub() {
     return tryAttachCallNative(calleeFunc);
   }
 
-  return false;
+  return AttachDecision::NoAction;
 }
 
 void CallIRGenerator::trackAttached(const char* name) {
