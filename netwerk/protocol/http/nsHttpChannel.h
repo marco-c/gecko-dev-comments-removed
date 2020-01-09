@@ -452,8 +452,6 @@ class nsHttpChannel final : public HttpBaseChannel,
   MOZ_MUST_USE nsresult ContinueAsyncRedirectChannelToURI(nsresult rv);
   MOZ_MUST_USE nsresult OpenRedirectChannel(nsresult rv);
 
-  HttpTrafficCategory CreateTrafficCategory();
-
   
 
 

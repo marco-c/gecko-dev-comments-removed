@@ -2037,13 +2037,6 @@ VARCACHE_PREF(
 )
 
 
-VARCACHE_PREF(
-  "network.traffic_analyzer.enabled",
-  network_traffic_analyzer_enabled,
-  RelaxedAtomicBool, false
-)
-
-
 
 
 
