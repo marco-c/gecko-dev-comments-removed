@@ -637,8 +637,10 @@ nsresult VerifyCertificate(CERTCertificate* signerCert,
     return mozilla::psm::GetXPCOMFromNSSError(MapResultToPRErrorCode(result));
   }
 
+  
+  Time verificationTime = TimeFromEpochInSeconds(1556333000);
   result = BuildCertChain(
-      trustDomain, certDER, Now(), EndEntityOrCA::MustBeEndEntity,
+      trustDomain, certDER, verificationTime, EndEntityOrCA::MustBeEndEntity,
       KeyUsage::digitalSignature, KeyPurposeId::id_kp_codeSigning,
       CertPolicyId::anyPolicy, nullptr );
   if (result == mozilla::pkix::Result::ERROR_EXPIRED_CERTIFICATE) {
