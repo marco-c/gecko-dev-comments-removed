@@ -134,6 +134,7 @@ user_pref("extensions.update.background.url", "http://{server}/extensions-dummy/
 user_pref("extensions.update.url", "http://{server}/extensions-dummy/updateURL");
 
 user_pref("extensions.webservice.discoverURL", "http://{server}/extensions-dummy/discoveryURL");
+user_pref("extensions.privatebrowsing.notification", true);
 user_pref("findbar.highlightAll", false);
 user_pref("findbar.modalHighlight", false);
 

@@ -1749,6 +1749,11 @@ var gBrowserInit = {
       gBrowserThumbnails.init();
     });
 
+    
+    scheduleIdleTask(() => {
+      ExtensionsUI.showPrivateBrowsingNotification(window);
+    });
+
     scheduleIdleTask(() => {
       
       
