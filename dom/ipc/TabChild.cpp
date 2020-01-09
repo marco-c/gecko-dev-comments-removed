@@ -3345,12 +3345,16 @@ nsresult TabChild::PrepareProgressListenerData(
     NS_ENSURE_SUCCESS(rv, rv);
     aWebProgressData->loadType() = loadType;
 
-    uint64_t DOMWindowID = 0;
+    uint64_t outerDOMWindowID = 0;
+    uint64_t innerDOMWindowID = 0;
     
     
     
-    Unused << aWebProgress->GetDOMWindowID(&DOMWindowID);
-    aWebProgressData->DOMWindowID() = DOMWindowID;
+    Unused << aWebProgress->GetDOMWindowID(&outerDOMWindowID);
+    aWebProgressData->outerDOMWindowID() = outerDOMWindowID;
+
+    Unused << aWebProgress->GetInnerDOMWindowID(&innerDOMWindowID);
+    aWebProgressData->innerDOMWindowID() = innerDOMWindowID;
   }
 
   nsCOMPtr<nsIChannel> channel = do_QueryInterface(aRequest);
