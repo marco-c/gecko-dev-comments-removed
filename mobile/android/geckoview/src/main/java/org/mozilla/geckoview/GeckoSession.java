@@ -1122,7 +1122,7 @@ public class GeckoSession implements Parcelable {
         }
     }
 
-    protected Window mWindow;
+    protected @Nullable Window mWindow;
     private GeckoSessionSettings mSettings;
 
     public GeckoSession() {
@@ -2550,27 +2550,27 @@ public class GeckoSession implements Parcelable {
             
 
 
-            public final String origin;
+            public final @Nullable String origin;
             
 
 
-            public final String host;
+            public final @NonNull String host;
             
 
 
-            public final String organization;
+            public final @NonNull String organization;
             
 
 
-            public final String subjectName;
+            public final @NonNull String subjectName;
             
 
 
-            public final String issuerCommonName;
+            public final @NonNull String issuerCommonName;
             
 
 
-            public final String issuerOrganization;
+            public final @NonNull String issuerOrganization;
             
 
 
@@ -2969,14 +2969,14 @@ public class GeckoSession implements Parcelable {
 
 
 
-            public final String text;
+            public final @NonNull String text;
 
             
 
 
 
 
-            public final RectF clientRect;
+            public final @Nullable RectF clientRect;
 
              Selection(final GeckoBundle bundle) {
                 flags = (bundle.getBoolean("collapsed") ?
@@ -3449,7 +3449,7 @@ public class GeckoSession implements Parcelable {
             
 
 
-            public String uri;
+            public @Nullable String uri;
 
             
 
@@ -3459,12 +3459,12 @@ public class GeckoSession implements Parcelable {
             
 
 
-            public String username;
+            public @Nullable String username;
 
             
 
 
-            public String password;
+            public @Nullable String password;
 
              AuthOptions(final GeckoBundle options) {
                 flags = options.getInt("flags");
@@ -3532,22 +3532,22 @@ public class GeckoSession implements Parcelable {
 
 
 
-            public final String icon;
+            public final @Nullable String icon;
 
             
 
 
-            public final String id;
+            public final @NonNull String id;
 
             
 
 
-            public final Choice[] items;
+            public final @Nullable Choice[] items;
 
             
 
 
-            public final String label;
+            public final @NonNull String label;
 
             
 
@@ -4108,19 +4108,19 @@ public class GeckoSession implements Parcelable {
             
 
 
-            public final String id;
+            public final @NonNull String id;
 
             
 
 
-            public final String rawId;
+            public final @NonNull String rawId;
 
             
 
 
 
 
-            public final String name;
+            public final @Nullable String name;
 
             
 
