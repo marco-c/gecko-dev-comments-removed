@@ -835,9 +835,10 @@ static bool GenerateAndPushTextMask(nsIFrame* aFrame, gfxContext* aContext,
       RoundedOut(ToRect(sourceCtx->GetClipExtents(gfxContext::eDeviceSpace)));
 
   Matrix currentMatrix = sourceCtx->CurrentMatrix();
-  Matrix maskTransform =
-      currentMatrix * Matrix::Translation(-drawRect.x, -drawRect.y);
-  maskTransform.Invert();
+  Matrix invCurrentMatrix = currentMatrix;
+  invCurrentMatrix.Invert();
+  Matrix maskSurfaceDeviceOffsetTranslation =
+      Matrix::Translation(drawRect.TopLeft());
 
   
   RefPtr<DrawTarget> sourceTarget = sourceCtx->GetDrawTarget();
@@ -846,7 +847,7 @@ static bool GenerateAndPushTextMask(nsIFrame* aFrame, gfxContext* aContext,
     return false;
   }
   RefPtr<DrawTarget> maskDT = sourceTarget->CreateClippedDrawTarget(
-      drawRect.Size(), maskTransform * currentMatrix, SurfaceFormat::A8);
+      drawRect.Size(), maskSurfaceDeviceOffsetTranslation, SurfaceFormat::A8);
   if (!maskDT || !maskDT->IsValid()) {
     return false;
   }
@@ -864,8 +865,9 @@ static bool GenerateAndPushTextMask(nsIFrame* aFrame, gfxContext* aContext,
   
   
   RefPtr<SourceSurface> maskSurface = maskDT->Snapshot();
-  sourceCtx->PushGroupForBlendBack(gfxContentType::COLOR_ALPHA, 1.0,
-                                   maskSurface, maskTransform);
+  sourceCtx->PushGroupForBlendBack(
+      gfxContentType::COLOR_ALPHA, 1.0, maskSurface,
+      maskSurfaceDeviceOffsetTranslation * invCurrentMatrix);
 
   return true;
 }
@@ -6360,10 +6362,6 @@ bool nsDisplayOwnLayer::IsScrollbarContainer() const {
          layers::ScrollbarLayerType::Container;
 }
 
-bool nsDisplayOwnLayer::IsZoomingLayer() const {
-  return GetType() == DisplayItemType::TYPE_ASYNC_ZOOM;
-}
-
 bool nsDisplayOwnLayer::ShouldBuildLayerEvenIfInvisible(
     nsDisplayListBuilder* aBuilder) const {
   
@@ -6396,9 +6394,7 @@ bool nsDisplayOwnLayer::CreateWebRenderCommands(
     const StackingContextHelper& aSc, RenderRootStateManager* aManager,
     nsDisplayListBuilder* aDisplayListBuilder) {
   Maybe<wr::WrAnimationProperty> prop;
-  bool needsProp = aManager->LayerManager()->AsyncPanZoomEnabled() &&
-                   (IsScrollThumbLayer() || IsZoomingLayer());
-  if (needsProp) {
+  if (aManager->LayerManager()->AsyncPanZoomEnabled() && IsScrollThumbLayer()) {
     
     
     
@@ -6429,34 +6425,25 @@ bool nsDisplayOwnLayer::CreateWebRenderCommands(
 bool nsDisplayOwnLayer::UpdateScrollData(
     mozilla::layers::WebRenderScrollData* aData,
     mozilla::layers::WebRenderLayerScrollData* aLayerData) {
-  bool isRelevantToApz =
-      (IsScrollThumbLayer() || IsScrollbarContainer() || IsZoomingLayer());
-  if (!isRelevantToApz) {
-    return false;
-  }
+  bool ret = false;
 
-  if (!aLayerData) {
-    return true;
+  if (IsScrollThumbLayer() || IsScrollbarContainer()) {
+    ret = true;
+    if (aLayerData) {
+      aLayerData->SetScrollbarData(mScrollbarData);
+      if (IsScrollThumbLayer()) {
+        aLayerData->SetScrollbarAnimationId(mWrAnimationId);
+        LayoutDeviceRect bounds = LayoutDeviceIntRect::FromAppUnits(
+            mBounds, mFrame->PresContext()->AppUnitsPerDevPixel());
+        
+        
+        LayerIntRect layerBounds =
+            RoundedOut(bounds * LayoutDeviceToLayerScale(1.0f));
+        aLayerData->SetVisibleRegion(LayerIntRegion(layerBounds));
+      }
+    }
   }
-
-  if (IsZoomingLayer()) {
-    aLayerData->SetZoomAnimationId(mWrAnimationId);
-    return true;
-  }
-
-  aLayerData->SetScrollbarData(mScrollbarData);
-  if (IsScrollThumbLayer()) {
-    aLayerData->SetScrollbarAnimationId(mWrAnimationId);
-    LayoutDeviceRect bounds = LayoutDeviceIntRect::FromAppUnits(
-        mBounds, mFrame->PresContext()->AppUnitsPerDevPixel());
-    
-    
-    
-    LayerIntRect layerBounds =
-        RoundedOut(bounds * LayoutDeviceToLayerScale(1.0f));
-    aLayerData->SetVisibleRegion(LayerIntRegion(layerBounds));
-  }
-  return true;
+  return ret;
 }
 
 void nsDisplayOwnLayer::WriteDebugInfo(std::stringstream& aStream) {

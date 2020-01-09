@@ -2001,21 +2001,20 @@ inline bool RecordedCreateClippedDrawTarget::PlayEvent(
   const IntRect baseRect = aTranslator->GetReferenceDrawTarget()->GetRect();
   const IntRect transformedRect = RoundedToInt(
       mTransform.Inverse().TransformBounds(IntRectToRect(baseRect)));
-  const IntRect intersection =
+  IntRect intersection =
       IntRect(IntPoint(0, 0), mMaxSize).Intersect(transformedRect);
+
+  
+  
+  if (intersection.width == 0) intersection.width = 1;
+  if (intersection.height == 0) intersection.height = 1;
 
   RefPtr<DrawTarget> newDT =
       aTranslator->GetReferenceDrawTarget()->CreateSimilarDrawTarget(
-          intersection.Size(), SurfaceFormat::A8);
+          intersection.Size(), mFormat);
   
   
-  gfx::TileSet tileset;
-  gfx::Tile tile;
-  tile.mDrawTarget = newDT;
-  tile.mTileOrigin = gfx::IntPoint(intersection.X(), intersection.Y());
-  tileset.mTiles = &tile;
-  tileset.mTileCount = 1;
-  newDT = gfx::Factory::CreateTiledDrawTarget(tileset);
+  newDT = gfx::Factory::CreateOffsetDrawTarget(newDT, intersection.TopLeft());
 
   
   
