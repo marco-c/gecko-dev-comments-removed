@@ -1816,10 +1816,16 @@ var DownloadAddonInstall = class extends AddonInstall {
 
 
 
+
+
   constructor(installLocation, url, options = {}) {
     super(installLocation, url, options);
 
     this.browser = options.browser;
+    this.loadingPrincipal =
+      options.triggeringPrincipal ||
+      (this.browser && this.browser.contentPrincipal) ||
+      Services.scriptSecurityManager.getSystemPrincipal();
     this.sendCookies = Boolean(options.sendCookies);
 
     this.state = AddonManager.STATE_AVAILABLE;
@@ -1928,7 +1934,9 @@ var DownloadAddonInstall = class extends AddonInstall {
 
       this.channel = NetUtil.newChannel({
         uri: this.sourceURI,
-        loadUsingSystemPrincipal: true,
+        securityFlags: Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_DATA_INHERITS,
+        contentPolicyType: Ci.nsIContentPolicy.TYPE_SAVEAS_DOWNLOAD,
+        loadingPrincipal: this.loadingPrincipal,
       });
       this.channel.notificationCallbacks = this;
       if (this.sendCookies) {

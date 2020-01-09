@@ -1570,6 +1570,8 @@ var AddonManagerInternal = {
 
 
 
+
+
   async getInstallForURL(aUrl, aOptions = {}) {
     if (!gStarted)
       throw Components.Exception("AddonManager is not initialized",
@@ -2686,7 +2688,7 @@ var AddonManagerInternal = {
         installPromise.catch(() => {});
 
         return {listener, installPromise};
-     };
+      };
 
       try {
         checkInstallUrl(options.url);
@@ -2695,6 +2697,8 @@ var AddonManagerInternal = {
       }
 
       return AddonManagerInternal.getInstallForURL(options.url, {
+        browser: target,
+        triggeringPrincipal: options.triggeringPrincipal,
         hash: options.hash,
         telemetryInfo: {
           source: AddonManager.getInstallSourceFromHost(options.sourceHost),
