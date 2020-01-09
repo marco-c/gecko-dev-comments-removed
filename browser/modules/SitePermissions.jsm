@@ -300,11 +300,6 @@ var SitePermissions = {
       
       if (gPermissionObject[permission.type]) {
         
-        if (permission.type == "install") {
-          continue;
-        }
-
-        
         if ((permission.type == "canvas") && !this.resistFingerprinting) {
           continue;
         }
@@ -919,9 +914,8 @@ var gPermissionObject = {
   "install": {
     getDefault() {
       return Services.prefs.getBoolPref("xpinstall.whitelist.required") ?
-               SitePermissions.BLOCK : SitePermissions.ALLOW;
+               SitePermissions.UNKNOWN : SitePermissions.ALLOW;
     },
-    states: [ SitePermissions.ALLOW, SitePermissions.BLOCK ],
   },
 
   "geo": {
