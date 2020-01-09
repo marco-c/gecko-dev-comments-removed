@@ -71,6 +71,10 @@
 #include "OSFileConstants.h"
 #include "xpcpublic.h"
 
+#if defined(XP_MACOSX)
+# include "nsMacUtilsImpl.h"
+#endif
+
 #include "Principal.h"
 #include "WorkerDebuggerManager.h"
 #include "WorkerError.h"
@@ -2150,7 +2154,17 @@ uint32_t RuntimeService::ClampedHardwareConcurrency() const {
   
   
   if (!clampedHardwareConcurrency) {
-    int32_t numberOfProcessors = PR_GetNumberOfProcessors();
+    int32_t numberOfProcessors = 0;
+#if defined(XP_MACOSX)
+    if (nsMacUtilsImpl::IsTCSMAvailable()) {
+      
+      
+      numberOfProcessors = nsMacUtilsImpl::GetPhysicalCPUCount();
+    }
+#endif
+    if (numberOfProcessors == 0) {
+      numberOfProcessors = PR_GetNumberOfProcessors();
+    }
     if (numberOfProcessors <= 0) {
       numberOfProcessors = 1;  
     }
