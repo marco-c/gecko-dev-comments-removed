@@ -220,6 +220,7 @@ var SitePermissions = {
   SCOPE_POLICY: "{SitePermissions.SCOPE_POLICY}",
   SCOPE_GLOBAL: "{SitePermissions.SCOPE_GLOBAL}",
 
+  _permissionsArray: null,
   _defaultPrefBranch: Services.prefs.getBranch("permissions.default."),
 
   
@@ -250,8 +251,7 @@ var SitePermissions = {
         }
 
         
-        if ((permission.type == "canvas") &&
-            !Services.prefs.getBoolPref("privacy.resistFingerprinting")) {
+        if ((permission.type == "canvas") && !this.resistFingerprinting) {
           continue;
         }
 
@@ -348,14 +348,33 @@ var SitePermissions = {
 
 
   listPermissions() {
-    let permissions = Object.keys(gPermissionObject);
+    if (this._permissionsArray === null) {
+      let permissions = Object.keys(gPermissionObject);
 
-    
-    if (!Services.prefs.getBoolPref("privacy.resistFingerprinting")) {
-      permissions = permissions.filter(permission => permission !== "canvas");
+      
+      if (!this.resistFingerprinting) {
+        permissions = permissions.filter(permission => permission !== "canvas");
+      }
+      this._permissionsArray = permissions;
     }
 
-    return permissions;
+    return this._permissionsArray;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  onResistFingerprintingChanged(data, previous, latest) {
+    
+    
+    this._permissionsArray = null;
   },
 
   
@@ -810,3 +829,6 @@ if (!Services.prefs.getBoolPref("dom.webmidi.enabled")) {
 
 XPCOMUtils.defineLazyPreferenceGetter(SitePermissions, "temporaryPermissionExpireTime",
                                       "privacy.temporary_permission_expire_time_ms", 3600 * 1000);
+XPCOMUtils.defineLazyPreferenceGetter(SitePermissions, "resistFingerprinting",
+                                      "privacy.resistFingerprinting", false,
+                                      SitePermissions.onResistFingerprintingChanged.bind(SitePermissions));
