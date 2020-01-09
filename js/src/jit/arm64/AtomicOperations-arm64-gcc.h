@@ -1,10 +1,10 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
+/* For documentation, see jit/AtomicOperations.h */
 
 #ifndef jit_arm64_AtomicOperations_arm64_h
 #define jit_arm64_AtomicOperations_arm64_h
@@ -104,7 +104,7 @@ inline T js::jit::AtomicOperations::loadSafeWhenRacy(T* addr) {
 namespace js {
 namespace jit {
 
-
+// Clang requires a specialization for uint8_clamped.
 template <>
 inline js::uint8_clamped js::jit::AtomicOperations::loadSafeWhenRacy(
     js::uint8_clamped* addr) {
@@ -113,8 +113,8 @@ inline js::uint8_clamped js::jit::AtomicOperations::loadSafeWhenRacy(
   return js::uint8_clamped(v);
 }
 
-}  
-}  
+}  // namespace jit
+}  // namespace js
 
 template <typename T>
 inline void js::jit::AtomicOperations::storeSafeWhenRacy(T* addr, T val) {
@@ -125,15 +125,15 @@ inline void js::jit::AtomicOperations::storeSafeWhenRacy(T* addr, T val) {
 namespace js {
 namespace jit {
 
-
+// Clang requires a specialization for uint8_clamped.
 template <>
 inline void js::jit::AtomicOperations::storeSafeWhenRacy(
     js::uint8_clamped* addr, js::uint8_clamped val) {
   __atomic_store(&addr->val, &val.val, __ATOMIC_RELAXED);
 }
 
-}  
-}  
+}  // namespace jit
+}  // namespace js
 
 inline void js::jit::AtomicOperations::memcpySafeWhenRacy(void* dest,
                                                           const void* src,
@@ -149,4 +149,4 @@ inline void js::jit::AtomicOperations::memmoveSafeWhenRacy(void* dest,
   memmove(dest, src, nbytes);
 }
 
-#endif  
+#endif  // jit_arm64_AtomicOperations_arm64_h
