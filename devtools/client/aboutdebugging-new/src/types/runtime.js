@@ -6,6 +6,7 @@
 
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const { ClientWrapper } = require("../modules/client-wrapper");
+const { COMPATIBILITY_STATUS } = require("devtools/client/shared/remote-debugging/version-checker");
 
 const runtimeInfo = {
   
@@ -22,9 +23,34 @@ const runtimeInfo = {
   version: PropTypes.string.isRequired,
 };
 
+const compatibilityReport = {
+  
+  localID: PropTypes.string.isRequired,
+
+  
+  localVersion: PropTypes.string.isRequired,
+
+  
+  minVersion: PropTypes.string.isRequired,
+
+  
+  runtimeID: PropTypes.string.isRequired,
+
+  
+  runtimeVersion: PropTypes.string.isRequired,
+
+  
+  status: PropTypes.oneOf(Object.values(COMPATIBILITY_STATUS)).isRequired,
+};
+exports.compatibilityReport = PropTypes.shape(compatibilityReport);
+
 const runtimeDetails = {
   
   clientWrapper: PropTypes.instanceOf(ClientWrapper).isRequired,
+
+  
+  
+  compatibilityReport: PropTypes.shape(compatibilityReport).isRequired,
 
   
   connectionPromptEnabled: PropTypes.bool.isRequired,
