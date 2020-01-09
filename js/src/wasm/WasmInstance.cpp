@@ -847,6 +847,11 @@ Instance::tableInit(Instance* instance, uint32_t dstOffset, uint32_t srcOffset,
   return -1;
 }
 
+
+
+
+
+
  void* 
 
 Instance::tableGet(Instance* instance, uint32_t index, uint32_t tableIndex) {
