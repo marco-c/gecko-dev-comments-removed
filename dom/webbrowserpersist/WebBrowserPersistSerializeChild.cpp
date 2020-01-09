@@ -9,7 +9,6 @@
 #include <algorithm>
 
 #include "nsThreadUtils.h"
-#include "ipc/IPCMessageUtils.h"
 
 namespace mozilla {
 
@@ -84,12 +83,16 @@ WebBrowserPersistSerializeChild::Write(const char* aBuf, uint32_t aCount,
 
   
   
+  static const uint32_t kMaxWrite = 65536;
+
+  
+  
   
   const char* buf = aBuf;
   uint32_t count = aCount;
   *aWritten = 0;
   while (count > 0) {
-    uint32_t toWrite = std::min(IPC::MAX_MESSAGE_SIZE, count);
+    uint32_t toWrite = std::min(kMaxWrite, count);
     nsTArray<uint8_t> arrayBuf;
     
     arrayBuf.AppendElements(buf, toWrite);

@@ -106,11 +106,6 @@ namespace IPC {
 
 
 
-static const uint32_t MAX_MESSAGE_SIZE = 65536;
-
-
-
-
 
 
 
