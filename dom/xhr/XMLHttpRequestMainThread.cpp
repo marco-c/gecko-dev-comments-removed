@@ -647,7 +647,7 @@ void XMLHttpRequestMainThread::SetResponseType(
   }
 
   
-  mResponseType = aResponseType;
+  SetResponseTypeRaw(aResponseType);
 }
 
 void XMLHttpRequestMainThread::GetResponse(
