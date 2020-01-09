@@ -16,6 +16,7 @@ import sys
 
 from functools import partial
 from itertools import chain
+from operator import itemgetter
 
 
 UNSUPPORTED_FEATURES = set([
@@ -91,8 +92,8 @@ def tryParseTestFile(test262parser, source, testName):
 
 def createRefTestEntry(skip, skipIf, error, isModule):
     """
-    Creates the |reftest| entry from the input list. Or the empty string if no
-    reftest entry is required.
+    Returns the |reftest| tuple (terms, comments) from the input arguments. Or a
+    tuple of empty strings if no reftest entry is required.
     """
 
     terms = []
@@ -112,11 +113,18 @@ def createRefTestEntry(skip, skipIf, error, isModule):
     if isModule:
         terms.append("module")
 
-    line = " ".join(terms)
-    if comments:
-        line += " -- " + ", ".join(comments)
+    return (" ".join(terms), ", ".join(comments))
 
-    return line
+
+def createRefTestLine(terms, comments):
+    """
+    Creates the |reftest| line using the given terms and comments.
+    """
+
+    refTest = terms
+    if comments:
+        refTest += " -- " + comments
+    return refTest
 
 
 def createSource(testSource, refTest, prologue, epilogue):
@@ -201,7 +209,7 @@ def writeShellAndBrowserFiles(test262OutDir, harnessDir, includesMap, localInclu
     
     with io.open(os.path.join(test262OutDir, relPath, "shell.js"), "wb") as shellFile:
         if includeSource:
-            shellFile.write("// GENERATED, DO NOT EDIT\n")
+            shellFile.write(b"// GENERATED, DO NOT EDIT\n")
             shellFile.write(includeSource)
 
     
@@ -212,10 +220,6 @@ def writeShellAndBrowserFiles(test262OutDir, harnessDir, includesMap, localInclu
 def pathStartsWith(path, *args):
     prefix = os.path.join(*args)
     return os.path.commonprefix([path, prefix]) == prefix
-
-
-def fileNameEndsWith(filePath, suffix):
-    return os.path.splitext(os.path.basename(filePath))[0].endswith(suffix)
 
 
 def convertTestFile(test262parser, testSource, testName, includeSet, strictTests):
@@ -274,11 +278,6 @@ def convertTestFile(test262parser, testSource, testName, includeSet, strictTests
         refTestSkipIf.append(("!xulRuntime.shell", "browser cannot block main thread"))
 
     
-    isSupportFile = fileNameEndsWith(testName, "FIXTURE")
-    if isSupportFile:
-        refTestSkip.append("not a test file")
-
-    
     if "features" in testRec:
         unsupported = [f for f in testRec["features"] if f in UNSUPPORTED_FEATURES]
         if unsupported:
@@ -309,15 +308,21 @@ def convertTestFile(test262parser, testSource, testName, includeSet, strictTests
         includeSet.update(testRec["includes"])
 
     
-    if not isNegative and not async and not isSupportFile:
+    if not isNegative and not async:
         testEpilogue = "reportCompare(0, 0);"
     else:
         testEpilogue = ""
 
-    refTest = createRefTestEntry(refTestSkip, refTestSkipIf, errorType, isModule)
+    (terms, comments) = createRefTestEntry(refTestSkip, refTestSkipIf, errorType, isModule)
+    if raw:
+        refTest = ""
+        externRefTest = (terms, comments)
+    else:
+        refTest = createRefTestLine(terms, comments)
+        externRefTest = None
 
     
-    noStrictVariant = raw or isModule or isSupportFile
+    noStrictVariant = raw or isModule
     assert not (noStrictVariant and (onlyStrict or noStrict)),\
         "Unexpected onlyStrict or noStrict attribute: %s" % testName
 
@@ -326,7 +331,7 @@ def convertTestFile(test262parser, testSource, testName, includeSet, strictTests
         testPrologue = ""
         nonStrictSource = createSource(testSource, refTest, testPrologue, testEpilogue)
         testFileName = testName
-        yield (testFileName, nonStrictSource)
+        yield (testFileName, nonStrictSource, externRefTest)
 
     
     if not noStrictVariant and (onlyStrict or (not noStrict and strictTests)):
@@ -335,10 +340,29 @@ def convertTestFile(test262parser, testSource, testName, includeSet, strictTests
         testFileName = testName
         if not noStrict:
             testFileName = addSuffixToFileName(testFileName, "-strict")
-        yield (testFileName, strictSource)
+        yield (testFileName, strictSource, externRefTest)
 
 
-def process_test262(test262Dir, test262OutDir, strictTests):
+def convertFixtureFile(fixtureSource, fixtureName):
+    """
+    Convert a test262 fixture file to a compatible jstests test file.
+    """
+
+    
+    refTestSkip = ["not a test file"]
+    refTestSkipIf = []
+    errorType = None
+    isModule = False
+
+    (terms, comments) = createRefTestEntry(refTestSkip, refTestSkipIf, errorType, isModule)
+    refTest = createRefTestLine(terms, comments)
+
+    source = createSource(fixtureSource, refTest, "", "")
+    externRefTest = None
+    yield (fixtureName, source, externRefTest)
+
+
+def process_test262(test262Dir, test262OutDir, strictTests, externManifests):
     """
     Process all test262 files and converts them into jstests compatible tests.
     """
@@ -408,12 +432,27 @@ def process_test262(test262Dir, test262OutDir, strictTests):
                 continue
 
             
+            
+            isFixtureFile = fileName.endswith("_FIXTURE.js")
+
+            
             with io.open(filePath, "rb") as testFile:
                 testSource = testFile.read()
 
-            for (newFileName, newSource) in convertTestFile(test262parser, testSource, testName,
-                                                            includeSet, strictTests):
+            if isFixtureFile:
+                convert = convertFixtureFile(testSource, testName)
+            else:
+                convert = convertTestFile(test262parser, testSource, testName,
+                                          includeSet, strictTests)
+
+            for (newFileName, newSource, externRefTest) in convert:
                 writeTestFile(test262OutDir, newFileName, newSource)
+
+                if externRefTest is not None:
+                    externManifests.append({
+                        "name": newFileName,
+                        "reftest": externRefTest,
+                    })
 
         
         writeShellAndBrowserFiles(test262OutDir, harnessDir,
@@ -506,7 +545,7 @@ def fetch_local_changes(inDir, outDir, srcDir, strictTests):
         shutil.rmtree(outDir)
     os.makedirs(outDir)
 
-    process_test262(inDir, outDir, strictTests)
+    process_test262(inDir, outDir, strictTests, [])
 
 
 def fetch_pr_files(inDir, outDir, prNumber, strictTests):
@@ -560,7 +599,7 @@ def fetch_pr_files(inDir, outDir, prNumber, strictTests):
         with io.open(os.path.join(inDir, *filename.split("/")), "wb") as output_file:
             output_file.write(fileText.encode('utf8'))
 
-    process_test262(inDir, prTestsOutDir, strictTests)
+    process_test262(inDir, prTestsOutDir, strictTests, [])
 
 
 def general_update(inDir, outDir, strictTests):
@@ -595,7 +634,21 @@ def general_update(inDir, outDir, strictTests):
         subprocess.check_call(["git", "-C", inDir, "log", "-1"], stdout=info)
 
     
-    process_test262(inDir, outDir, strictTests)
+    externManifests = []
+    process_test262(inDir, outDir, strictTests, externManifests)
+
+    
+    with io.open(os.path.join(outDir, "jstests.list"), "wb") as manifestFile:
+        manifestFile.write(b"# GENERATED, DO NOT EDIT\n\n")
+        for externManifest in sorted(externManifests, key=itemgetter("name")):
+            (terms, comments) = externManifest["reftest"]
+            if terms:
+                entry = "%s script %s%s\n" % (
+                    terms,
+                    externManifest["name"],
+                    (" # %s" % comments) if comments else ""
+                )
+                manifestFile.write(entry.encode("utf-8"))
 
     
     if restoreLocalTestsDir:
