@@ -5351,12 +5351,24 @@ var StatusPanel = {
       }
     }
 
+    
+    
+    
+    
+    
+    
+    let textCropped = false;
+    if (text.length > 500 && text.match(/^data:[^,]+;base64,/)) {
+      text = text.substring(0, 500) + "\u2026";
+      textCropped = true;
+    }
+
     if (this._labelElement.value != text ||
         (text && !this.isVisible)) {
       this.panel.setAttribute("previoustype", this.panel.getAttribute("type"));
       this.panel.setAttribute("type", type);
       this._label = text;
-      this._labelElement.setAttribute("crop", type == "overLink" ? "center" : "end");
+      this._labelElement.setAttribute("crop", (type == "overLink" && !textCropped) ? "center" : "end");
     }
   },
 
