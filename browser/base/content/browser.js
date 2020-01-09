@@ -1931,6 +1931,10 @@ var gBrowserInit = {
       }, 300 * 1000);
     });
 
+    scheduleIdleTask(async () => {
+      NewTabPagePreloading.maybeCreatePreloadedBrowser(window);
+    });
+
     
     
     
@@ -2057,6 +2061,8 @@ var gBrowserInit = {
     }
 
     BrowserSearch.uninit();
+
+    NewTabPagePreloading.removePreloadedBrowser(window);
 
     
     
