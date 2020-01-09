@@ -125,6 +125,10 @@ class AudioDataListenerInterface {
   
 
 
+  virtual bool IsVoiceInput(MediaStreamGraphImpl* aGraph) const = 0;
+  
+
+
   virtual void DeviceChanged(MediaStreamGraphImpl* aGraph) = 0;
 
   
