@@ -153,17 +153,17 @@ add_task(async function test_unpinned() {
 add_task(async function test_url() {
   await do_test_update(function background() {
     
-    browser.tabs.create({}, function(tab) {
+    browser.tabs.create({url: "about:blank?initial_url=1"}, function(tab) {
+      const expectedUpdatedURL = "about:blank?updated_url=1";
+
       browser.tabs.onUpdated.addListener(function onUpdated(tabId, changeInfo) {
-        if ("url" in changeInfo) {
-          
-          
-          
-          if (changeInfo.url === "about:newtab") {
-            return;
-          }
-          browser.test.assertEq("about:blank", changeInfo.url,
-                                "Check changeInfo.url");
+        
+        
+        
+        
+        if ("url" in changeInfo && changeInfo.url === expectedUpdatedURL) {
+          browser.test.assertEq(expectedUpdatedURL, changeInfo.url,
+                                "Got tabs.onUpdated event for the expected url");
           browser.tabs.onUpdated.removeListener(onUpdated);
           
           browser.tabs.remove(tabId);
@@ -173,7 +173,8 @@ add_task(async function test_url() {
         browser.test.assertEq(tabId, tab.id, "Check tab id");
         browser.test.log("onUpdate: " + JSON.stringify(changeInfo));
       });
-      browser.tabs.update(tab.id, {url: "about:blank"});
+
+      browser.tabs.update(tab.id, {url: expectedUpdatedURL});
     });
   });
 });
