@@ -538,17 +538,6 @@ class nsLayoutUtils {
 
 
 
-
-  static bool IsAncestorFrame(const nsIFrame* aAncestorFrame,
-                              const nsIFrame* aFrame,
-                              const nsIFrame* aCommonAncestor = nullptr);
-
-  
-
-
-
-
-
   static bool IsProperAncestorFrameCrossDoc(
       nsIFrame* aAncestorFrame, nsIFrame* aFrame,
       nsIFrame* aCommonAncestor = nullptr);
