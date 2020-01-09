@@ -40,13 +40,6 @@ class nsColumnSetFrame final : public nsContainerFrame {
   nscoord GetMinISize(gfxContext* aRenderingContext) override;
   nscoord GetPrefISize(gfxContext* aRenderingContext) override;
 
-  
-
-
-
-
-  nscoord GetAvailableContentBSize(const ReflowInput& aReflowInput);
-
   nsContainerFrame* GetContentInsertionFrame() override {
     nsIFrame* frame = PrincipalChildList().FirstChild();
 
@@ -80,7 +73,7 @@ class nsColumnSetFrame final : public nsContainerFrame {
   }
 #endif
 
-  nsRect CalculateColumnRuleBounds(const nsPoint& aOffset);
+  nsRect CalculateColumnRuleBounds(const nsPoint& aOffset) const;
   void CreateBorderRenderers(nsTArray<nsCSSBorderRenderer>& aBorderRenderers,
                              gfxContext* aCtx, const nsRect& aDirtyRect,
                              const nsPoint& aPt);
@@ -180,7 +173,7 @@ class nsColumnSetFrame final : public nsContainerFrame {
 
 
   ReflowConfig ChooseColumnStrategy(const ReflowInput& aReflowInput,
-                                    bool aForceAuto);
+                                    bool aForceAuto) const;
 
   
 
@@ -208,9 +201,16 @@ class nsColumnSetFrame final : public nsContainerFrame {
                             ReflowOutput& aDesiredSize,
                             bool aUnboundedLastColumn, nsReflowStatus& aStatus);
 
+  
+
+
+
+
+  nscoord GetAvailableContentBSize(const ReflowInput& aReflowInput) const;
+
   void ForEachColumnRule(
       const std::function<void(const nsRect& lineRect)>& aSetLineRect,
-      const nsPoint& aPt);
+      const nsPoint& aPt) const;
 };
 
 #endif  
