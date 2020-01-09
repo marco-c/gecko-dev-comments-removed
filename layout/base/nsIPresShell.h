@@ -576,6 +576,7 @@ class nsIPresShell : public nsStubDocumentObserver {
 
 
   virtual void DoFlushPendingNotifications(mozilla::FlushType aType) = 0;
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   virtual void DoFlushPendingNotifications(mozilla::ChangesToFlush aType) = 0;
 
  public:
@@ -1814,9 +1815,6 @@ class nsIPresShell : public nsStubDocumentObserver {
 
 
   void DidDoReflow(bool aInterruptible);
-  
-  
-  bool ProcessReflowCommands(bool aInterruptible);
   
   static void sReflowContinueCallback(nsITimer* aTimer, void* aPresShell);
   bool ScheduleReflowOffTimer();
