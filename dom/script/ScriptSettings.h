@@ -275,6 +275,12 @@ class MOZ_STACK_CLASS AutoJSAPI : protected ScriptSettingsStackEntry {
   
   
   
+  MOZ_MUST_USE bool StealExceptionAndStack(JS::MutableHandle<JS::Value> aVal,
+                                           JS::MutableHandle<JSObject*> aStack);
+
+  
+  
+  
   
   
   
