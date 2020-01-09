@@ -133,10 +133,9 @@ bool CompositableParentManager::ReceiveCompositableUpdate(
           
           MOZ_ASSERT(texture->NumCompositableRefs() > 0);
         }
-        if (texturedDesc.textureOnWhite().type() ==
-            MaybeTexture::TPTextureParent) {
+        if (texturedDesc.textureOnWhiteParent().isSome()) {
           texture = TextureHost::AsTextureHost(
-              texturedDesc.textureOnWhite().get_PTextureParent());
+              texturedDesc.textureOnWhiteParent().ref());
           if (texture) {
             texture->SetLastFwdTransactionId(mFwdTransactionId);
             
