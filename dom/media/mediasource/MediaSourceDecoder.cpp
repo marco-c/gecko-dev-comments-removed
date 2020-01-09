@@ -293,7 +293,7 @@ bool MediaSourceDecoder::CanPlayThroughImpl() {
   TimeIntervals buffered = GetBuffered();
   buffered.SetFuzz(MediaSourceDemuxer::EOS_FUZZ / 2);
   TimeUnit timeAhead =
-      std::min(duration, currentPosition + TimeUnit::FromSeconds(10));
+      std::min(duration, currentPosition + TimeUnit::FromSeconds(3));
   TimeInterval interval(currentPosition, timeAhead);
   return buffered.ContainsWithStrictEnd(ClampIntervalToEnd(interval));
 }
