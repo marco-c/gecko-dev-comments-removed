@@ -30,6 +30,20 @@ class ContentProcessSession {
     this.messageManager.removeMessageListener("remote:destroy", this);
   }
 
+  
+
+  onEvent(eventName, params) {
+    this.messageManager.sendAsyncMessage("remote:event", {
+      browsingContextId: this.browsingContext.id,
+      event: {
+        method: eventName,
+        params,
+      },
+    });
+  }
+
+  
+
   async receiveMessage({name, data}) {
     const {browsingContextId} = data;
 
@@ -78,19 +92,5 @@ class ContentProcessSession {
       this.destroy();
       break;
     }
-  }
-
-  
-
-  
-  
-  onevent(eventName, params) {
-    this.messageManager.sendAsyncMessage("remote:event", {
-      browsingContextId: this.browsingContext.id,
-      event: {
-        method: eventName,
-        params,
-      },
-    });
   }
 }

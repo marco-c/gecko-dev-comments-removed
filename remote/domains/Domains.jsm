@@ -6,62 +6,91 @@
 
 var EXPORTED_SYMBOLS = ["Domains"];
 
-class Domains extends Map {
+const {UnknownMethodError} = ChromeUtils.import("chrome://remote/content/Error.jsm");
+const {Domain} = ChromeUtils.import("chrome://remote/content/domains/Domain.jsm");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Domains {
   constructor(session, modules) {
-    super();
     this.session = session;
     this.modules = modules;
+    this.instances = new Map();
   }
 
+  
   domainSupportsMethod(name, method) {
     const domain = this.modules[name];
-    return domain && typeof domain.prototype[method] == "function";
+    if (domain) {
+      return domain.implements(method);
+    }
+    return false;
   }
+
+  
+
+
+
+
+
 
   get(name) {
-    let inst = super.get(name);
+    let inst = this.instances.get(name);
     if (!inst) {
-      inst = this.new(name);
-      this.set(inst);
+      const Cls = this.modules[name];
+      if (!Cls) {
+        throw new UnknownMethodError(name);
+      }
+      if (!isConstructor(Cls)) {
+        throw new TypeError("Domain cannot be constructed");
+      }
+
+      inst = new Cls(this.session, this.session.target);
+      if (!(inst instanceof Domain)) {
+        throw new TypeError("Instance not a domain");
+      }
+
+      inst.addEventListener(this.session);
+
+      this.instances.set(name, inst);
     }
+
     return inst;
   }
 
-  set(domain) {
-    super.set(domain.name, domain);
+  get size() {
+    return this.instances.size;
   }
 
-  new(name) {
-    const Cls = this.modules[name];
-    if (!Cls) {
-      throw new Error("No such domain: " + name);
-    }
-
-    const inst = new Cls(this.session, this.session.target);
-    inst.on("*", this.session);
-
-    return inst;
-  }
-
-  delete(name) {
-    const inst = super.get(name);
-    if (inst) {
-      inst.off("*");
-      inst.destructor();
-      super.delete(inst.name);
-    }
-  }
-
+  
   clear() {
-    for (const name of this.keys()) {
-      this.delete(name);
+    for (const inst of this.instances.values()) {
+      inst.destructor();
     }
+    this.instances.clear();
   }
 
   
   static splitMethod(method) {
     return split(method, ".", 1);
   }
+}
+
+function isConstructor(obj) {
+  return !!obj.prototype && !!obj.prototype.constructor.name;
 }
 
 

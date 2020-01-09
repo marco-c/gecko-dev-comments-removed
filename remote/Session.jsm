@@ -82,6 +82,15 @@ class Session {
 
   
 
+  onEvent(eventName, params) {
+    this.connection.send({
+      method: eventName,
+      params,
+    });
+  }
+
+  
+
   receiveMessage({name, data}) {
     const {id, result, event, error} = data;
 
@@ -100,12 +109,7 @@ class Session {
     }
   }
 
-  
-
-  onevent(eventName, params) {
-    this.connection.send({
-      method: eventName,
-      params,
-    });
+  toString() {
+    return `[object Session ${this.connection.id}]`;
   }
 }
