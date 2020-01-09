@@ -1125,18 +1125,28 @@ class MOZ_RAII CacheIRWriter : public JS::CustomAutoRooter {
     bool isCrossRealm = cx_->realm() != calleeFunc->realm();
     buffer_.writeByte(uint32_t(isCrossRealm));
 
+    
+    
+    bool ignoresReturnValue =
+        op == JSOP_CALL_IGNORES_RV && calleeFunc->hasJitInfo() &&
+        calleeFunc->jitInfo()->type() == JSJitInfo::IgnoresReturnValueNative;
+
 #ifdef JS_SIMULATOR
     
     
     
     
-    void* target = JS_FUNC_TO_DATA_PTR(void*, calleeFunc->native());
-    void* redirected = Simulator::RedirectNativeFunction(target, Args_General3);
+    
+    
+    JSNative target = ignoresReturnValue
+                          ? calleeFunc->jitInfo()->ignoresReturnValueMethod
+                          : calleeFunc->native();
+    void* rawPtr = JS_FUNC_TO_DATA_PTR(void*, target);
+    void* redirected = Simulator::RedirectNativeFunction(rawPtr, Args_General3);
     addStubField(uintptr_t(redirected), StubField::Type::RawWord);
 #else
-    bool ignoresReturnValue =
-        op == JSOP_CALL_IGNORES_RV && calleeFunc->hasJitInfo() &&
-        calleeFunc->jitInfo()->type() == JSJitInfo::IgnoresReturnValueNative;
+    
+    
     buffer_.writeByte(ignoresReturnValue);
 #endif
   }
