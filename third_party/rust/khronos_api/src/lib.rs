@@ -30,6 +30,12 @@ pub const WGL_XML: &'static [u8] = include_bytes!("../api/xml/wgl.xml");
 pub const GLX_XML: &'static [u8] = include_bytes!("../api/xml/glx.xml");
 
 
+pub const GL_ANGLE_EXT_XML: &'static [u8] = include_bytes!("../api_angle/scripts/gl_angle_ext.xml");
+
+
+pub const EGL_ANGLE_EXT_XML: &'static [u8] = include_bytes!("../api_angle/scripts/egl_angle_ext.xml");
+
+
 pub const WEBGL_IDL: &'static [u8] = include_bytes!("../api_webgl/specs/latest/1.0/webgl.idl");
 
 
