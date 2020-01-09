@@ -4,8 +4,6 @@
 
 "use strict";
 
-
-
 XPCOMUtils.defineLazyGlobalGetters(this, ["URL"]);
 
 const {LoginFormFactory} = ChromeUtils.import("resource://gre/modules/LoginFormFactory.jsm");
