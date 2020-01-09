@@ -43,7 +43,9 @@ var gExceptionPaths = [
   "resource://search-plugins/",
 
   
-  "chrome://browser/content/aboutconfig/",
+  
+  "chrome://global/content/config.js",
+  "chrome://global/content/config.xul",
 ];
 
 

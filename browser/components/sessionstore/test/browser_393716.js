@@ -5,6 +5,15 @@
 
 const URL = "about:config";
 
+add_task(async function setup() {
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.aboutConfig.showWarning", false],
+    ],
+  });
+});
+
 
 
 
@@ -52,7 +61,7 @@ add_task(async function test_set_tabstate_and_duplicate() {
      "the tab's state was correctly restored");
 
   
-  await setInputValue(tab.linkedBrowser, {id: "textbox", value: value3});
+  await setInputValue(tab.linkedBrowser, {id: "search", value: value3});
 
   
   let tab2 = ss.duplicateTab(window, tab);
@@ -62,7 +71,7 @@ add_task(async function test_set_tabstate_and_duplicate() {
   ok(ss.getCustomTabValue(tab2, key2) == value2 &&
      tab2.linkedBrowser.currentURI.spec == URL,
      "correctly duplicated the tab's state");
-  let textbox = await getInputValue(tab2.linkedBrowser, {id: "textbox"});
+  let textbox = await getInputValue(tab2.linkedBrowser, {id: "search"});
   is(textbox, value3, "also duplicated text data");
 
   
