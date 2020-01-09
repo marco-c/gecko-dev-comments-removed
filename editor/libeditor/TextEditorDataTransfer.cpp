@@ -288,8 +288,7 @@ nsresult TextEditor::OnDrop(DragEvent* aDropEvent) {
 
     
     if (mDispatchInputEvent) {
-      RefPtr<DataTransfer> dataTransfer;  
-      FireInputEvent(EditAction::eDeleteByDrag, VoidString(), dataTransfer);
+      FireInputEvent(EditAction::eDeleteByDrag, VoidString(), nullptr);
       if (NS_WARN_IF(Destroyed())) {
         return NS_OK;
       }
