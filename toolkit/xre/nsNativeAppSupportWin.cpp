@@ -6,8 +6,7 @@
 #include "nsNativeAppSupportBase.h"
 #include "nsNativeAppSupportWin.h"
 
-#include <windows.h>
-#include <fcntl.h>
+#include "mozilla/WindowsConsole.h"
 
 using namespace mozilla;
 
@@ -25,25 +24,6 @@ class nsNativeAppSupportWin : public nsNativeAppSupportBase {
  private:
   ~nsNativeAppSupportWin() {}
 };  
-
-void UseParentConsole() {
-  if (AttachConsole(ATTACH_PARENT_PROCESS)) {
-    
-    
-    
-    
-    if (_fileno(stdout) == -2) {
-      freopen("CONOUT$", "w", stdout);
-    }
-    
-    if (_fileno(stderr) == -2) {
-      freopen("CONOUT$", "w", stderr);
-    }
-    if (_fileno(stdin) == -2) {
-      freopen("CONIN$", "r", stdin);
-    }
-  }
-}
 
 void nsNativeAppSupportWin::CheckConsole() {
   for (int i = 1; i < gArgc; ++i) {
