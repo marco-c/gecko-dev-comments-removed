@@ -4583,54 +4583,6 @@ CallIRGenerator::CallIRGenerator(JSContext* cx, HandleScript script,
       cacheIRStubKind_(BaselineCacheIRStubKind::Regular),
       isFirstStub_(isFirstStub) {}
 
-AttachDecision CallIRGenerator::tryAttachStringSplit() {
-  
-  if (argc_ != 2 || !args_[0].isString() || !args_[1].isString()) {
-    return AttachDecision::NoAction;
-  }
-
-  
-  RootedObjectGroup group(cx_,
-                          ObjectGroupRealm::getStringSplitStringGroup(cx_));
-  if (!group) {
-    cx_->clearPendingException();
-    return AttachDecision::NoAction;
-  }
-
-  Int32OperandId argcId(writer.setInputOperandId(0));
-
-  
-  writer.guardSpecificInt32Immediate(argcId, 2);
-
-  
-  ValOperandId calleeValId =
-      writer.loadArgumentFixedSlot(ArgumentKind::Callee, argc_);
-  ObjOperandId calleeObjId = writer.guardIsObject(calleeValId);
-  writer.guardSpecificNativeFunction(calleeObjId,
-                                     js::intrinsic_StringSplitString);
-
-  
-  ValOperandId arg0ValId =
-      writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
-  StringOperandId arg0StrId = writer.guardIsString(arg0ValId);
-
-  
-  ValOperandId arg1ValId =
-      writer.loadArgumentFixedSlot(ArgumentKind::Arg1, argc_);
-  StringOperandId arg1StrId = writer.guardIsString(arg1ValId);
-
-  
-  writer.callStringSplitResult(arg0StrId, arg1StrId, group);
-  writer.typeMonitorResult();
-
-  cacheIRStubKind_ = BaselineCacheIRStubKind::Monitored;
-  trackAttached("StringSplitString");
-
-  TypeScript::Monitor(cx_, script_, pc_, TypeSet::ObjectType(group));
-
-  return AttachDecision::Attach;
-}
-
 AttachDecision CallIRGenerator::tryAttachArrayPush() {
   
   if (argc_ != 1 || !thisval_.isObject()) {
@@ -4969,9 +4921,6 @@ AttachDecision CallIRGenerator::tryAttachSpecialCaseCallNative(
   }
 
   
-  if (callee->native() == js::intrinsic_StringSplitString) {
-    return tryAttachStringSplit();
-  }
   if (callee->native() == js::array_push) {
     return tryAttachArrayPush();
   }
