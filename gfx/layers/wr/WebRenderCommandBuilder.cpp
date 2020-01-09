@@ -520,7 +520,7 @@ struct DIGroup {
           
           
           if (DetectContainerLayerPropertiesBoundsChange(aItem, aData,
-                                                            *geometry)) {
+                                                         *geometry)) {
             nsRect clippedBounds = clip.ApplyNonRoundedIntersection(
                 geometry->ComputeInvalidationRegion());
             aData->mGeometry = std::move(geometry);

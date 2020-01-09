@@ -3309,6 +3309,7 @@ nsresult nsWindow::Create(nsIWidget *aParent, nsNativeWidget aNativeParent,
         int visualId = 0;
         if (useWebRender) {
           
+          
           needsAlphaVisual = true;
         }
         if (GLContextGLX::FindVisual(display, screenNumber, useWebRender,

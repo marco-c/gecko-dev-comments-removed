@@ -246,6 +246,6 @@ class JS_PUBLIC_API ContextOptions {
 
 JS_PUBLIC_API ContextOptions& ContextOptionsRef(JSContext* cx);
 
-} 
+}  
 
-#endif 
+#endif  

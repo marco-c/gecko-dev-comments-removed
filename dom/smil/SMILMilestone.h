@@ -64,10 +64,10 @@ class SMILMilestone {
     return !(*this < aOther);
   }
 
-  SMILTime mTime;    
-                     
-  bool mIsEnd;       
-                     
+  SMILTime mTime;  
+                   
+  bool mIsEnd;     
+                   
 };
 
 }  

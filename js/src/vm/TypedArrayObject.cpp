@@ -1411,7 +1411,7 @@ bool BufferGetterImpl(JSContext* cx, const CallArgs& args) {
 
 
 static bool TypedArray_toStringTagGetter(JSContext* cx, unsigned argc,
-    Value* vp) {
+                                         Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   

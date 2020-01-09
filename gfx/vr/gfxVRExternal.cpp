@@ -427,10 +427,12 @@ VRSystemManagerExternal::VRSystemManagerExternal(
     VRExternalShmem* aAPIShmem )
     : mExternalShmem(aAPIShmem)
 #if !defined(MOZ_WIDGET_ANDROID)
-#if defined(XP_WIN)
-    , mMutex(NULL)
-#endif  
-    , mSameProcess(aAPIShmem != nullptr)
+#  if defined(XP_WIN)
+      ,
+      mMutex(NULL)
+#  endif  
+      ,
+      mSameProcess(aAPIShmem != nullptr)
 #endif  
 {
 #if defined(XP_MACOSX)
@@ -832,10 +834,10 @@ bool VRSystemManagerExternal::PullState(
   bool status = true;
   MOZ_ASSERT(mExternalShmem);
 
-#if defined(XP_WIN)
+#  if defined(XP_WIN)
   WaitForMutex lock(mMutex);
   status = lock.GetStatus();
-#endif  
+#  endif  
 
   if (mExternalShmem && status) {
     VRExternalShmem tmp;
@@ -866,7 +868,7 @@ bool VRSystemManagerExternal::PullState(
 
   return success;
 }
-#endif  
+#endif    
 
 void VRSystemManagerExternal::PushState(VRBrowserState* aBrowserState,
                                         bool aNotifyCond) {
@@ -885,19 +887,20 @@ void VRSystemManagerExternal::PushState(VRBrowserState* aBrowserState,
     }
 #else
     bool status = true;
-#if defined(XP_WIN)
+#  if defined(XP_WIN)
     WaitForMutex lock(mMutex);
     status = lock.GetStatus();
-#endif  
+#  endif  
     if (status) {
       mExternalShmem->geckoGenerationA++;
       memcpy((void*)&(mExternalShmem->geckoState), (void*)aBrowserState,
-            sizeof(VRBrowserState));
-      mExternalShmem->geckoGenerationB++; mExternalShmem->geckoGenerationA++;
+             sizeof(VRBrowserState));
+      mExternalShmem->geckoGenerationB++;
+      mExternalShmem->geckoGenerationA++;
       memcpy((void*)&(mExternalShmem->geckoState), (void*)aBrowserState,
-            sizeof(VRBrowserState));
+             sizeof(VRBrowserState));
       mExternalShmem->geckoGenerationB++;
     }
-#endif  
+#endif    
   }
 }

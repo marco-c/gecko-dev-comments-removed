@@ -18,11 +18,11 @@ extern mozilla::LazyLogModule gUserInteractionPRLog;
   MOZ_LOG(gUserInteractionPRLog, LogLevel::Debug, (msg, ##__VA_ARGS__))
 
 CanonicalBrowsingContext::CanonicalBrowsingContext(BrowsingContext* aParent,
-                                                 BrowsingContext* aOpener,
-                                                 const nsAString& aName,
-                                                 uint64_t aBrowsingContextId,
-                                                 uint64_t aProcessId,
-                                                 BrowsingContext::Type aType)
+                                                   BrowsingContext* aOpener,
+                                                   const nsAString& aName,
+                                                   uint64_t aBrowsingContextId,
+                                                   uint64_t aProcessId,
+                                                   BrowsingContext::Type aType)
     : BrowsingContext(aParent, aOpener, aName, aBrowsingContextId, aType),
       mProcessId(aProcessId) {
   
@@ -129,7 +129,8 @@ void CanonicalBrowsingContext::NotifySetUserGestureActivationFromIPC(
   
 }
 
-void CanonicalBrowsingContext::Traverse(nsCycleCollectionTraversalCallback& cb) {
+void CanonicalBrowsingContext::Traverse(
+    nsCycleCollectionTraversalCallback& cb) {
   CanonicalBrowsingContext* tmp = this;
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mWindowGlobals);
 }

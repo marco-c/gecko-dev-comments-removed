@@ -13,7 +13,7 @@
 
 
 typedef Status __StatusTmp;
-#undef Status
+#  undef Status
 typedef __StatusTmp Status;
 #endif
 

@@ -20,7 +20,7 @@
 #define wasm_AsmJS_h
 
 #include "mozilla/Attributes.h"  
-#include "mozilla/Utf8.h"  
+#include "mozilla/Utf8.h"        
 
 #include <stdint.h>  
 

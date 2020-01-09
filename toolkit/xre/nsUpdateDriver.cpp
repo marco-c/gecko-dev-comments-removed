@@ -661,33 +661,33 @@ static void ApplyUpdate(nsIFile *greDir, nsIFile *updateDir, nsIFile *appDir,
   }
   delete[] argv;
 #elif defined(XP_MACOSX)
-  UpdateDriverSetupMacCommandLine(argc, argv, restart);
-  
-  
-  
-  if (restart && !IsRecursivelyWritable(installDirPath.get())) {
-    if (!LaunchElevatedUpdate(argc, argv, outpid)) {
-      LOG(("Failed to launch elevated update!"));
-      exit(1);
-    }
-    exit(0);
-  }
+UpdateDriverSetupMacCommandLine(argc, argv, restart);
 
-  if (isStaged) {
-    
-    LaunchChildMac(argc, argv);
-  } else {
-    
-    LaunchChildMac(argc, argv, outpid);
+
+
+if (restart && !IsRecursivelyWritable(installDirPath.get())) {
+  if (!LaunchElevatedUpdate(argc, argv, outpid)) {
+    LOG(("Failed to launch elevated update!"));
+    exit(1);
   }
+  exit(0);
+}
+
+if (isStaged) {
+  
+  LaunchChildMac(argc, argv);
+} else {
+  
+  LaunchChildMac(argc, argv, outpid);
+}
 #else
-  if (isStaged) {
-    
-    PR_CreateProcessDetached(updaterPath.get(), argv, nullptr, nullptr);
-  } else {
-    
-    *outpid = PR_CreateProcess(updaterPath.get(), argv, nullptr, nullptr);
-  }
+if (isStaged) {
+  
+  PR_CreateProcessDetached(updaterPath.get(), argv, nullptr, nullptr);
+} else {
+  
+  *outpid = PR_CreateProcess(updaterPath.get(), argv, nullptr, nullptr);
+}
 #endif
   if (restart) {
     exit(0);

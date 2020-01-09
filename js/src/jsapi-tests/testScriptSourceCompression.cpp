@@ -25,9 +25,9 @@
 #include "js/Utility.h"                   
 #include "js/Value.h"  
 #include "jsapi-tests/tests.h"
-#include "vm/Compression.h"  
+#include "vm/Compression.h"    
 #include "vm/HelperThreads.h"  
-#include "vm/JSFunction.h"   
+#include "vm/JSFunction.h"     
 #include "vm/JSScript.h"  
 
 using mozilla::ArrayLength;

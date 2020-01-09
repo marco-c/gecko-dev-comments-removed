@@ -41,7 +41,7 @@ nsresult WebSocketChannelConstructor(nsISupports* aOuter, const nsIID& aIID,
                                      void** aResult);
 nsresult WebSocketSSLChannelConstructor(nsISupports* aOuter, const nsIID& aIID,
                                         void** aResult);
-}
-}
+}  
+}  
 
 #endif

@@ -410,8 +410,8 @@ int GetGtkHeaderBarButtonLayout(WidgetNodeType* aButtonLayout,
   
   
   bool reversedButtonsPlacement = false;
-  const char *closeButton = strstr(decorationLayout, "close");
-  const char *separator = strchr(decorationLayout, ':');
+  const char* closeButton = strstr(decorationLayout, "close");
+  const char* separator = strchr(decorationLayout, ':');
   if (closeButton != nullptr && separator != nullptr) {
     reversedButtonsPlacement = closeButton < separator;
   }

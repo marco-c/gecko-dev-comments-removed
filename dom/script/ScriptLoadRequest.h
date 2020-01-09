@@ -255,10 +255,10 @@ class ScriptLoadRequest
                                    
   bool mIsXSLT;                    
   bool mIsCanceled;                
-  bool mWasCompiledOMT;    
-                           
-  bool mIsTracking;        
-                           
+  bool mWasCompiledOMT;  
+                         
+  bool mIsTracking;      
+                         
 
   RefPtr<ScriptFetchOptions> mFetchOptions;
 

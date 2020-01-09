@@ -3829,7 +3829,6 @@ nsresult EventStateManager::SetCursor(StyleCursorKind aCursor,
   uint32_t hotspotX = 0;
   uint32_t hotspotY = 0;
   if (aContainer) {
-
     
     
     

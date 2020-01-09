@@ -7383,7 +7383,7 @@ MOZ_NEVER_INLINE GCRuntime::IncrementalResult GCRuntime::gcCycle(
   if (shouldCollectNurseryForSlice(nonincrementalByAPI, budget)) {
     minorGC(reason, gcstats::PhaseKind::EVICT_NURSERY_FOR_MAJOR_GC);
   } else {
-    ++number; 
+    ++number;  
   }
 
   AutoGCSession session(rt, JS::HeapState::MajorCollecting);

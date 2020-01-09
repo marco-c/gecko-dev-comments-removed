@@ -472,7 +472,7 @@ void VRService::PushState(const mozilla::gfx::VRSystemState& aState) {
     memcpy((void*)&mAPIShmem->state, &aState, sizeof(VRSystemState));
     mAPIShmem->generationB++;
   }
-#endif 
+#endif    
 }
 
 void VRService::PullState(mozilla::gfx::VRBrowserState& aState) {
@@ -513,7 +513,7 @@ void VRService::PullState(mozilla::gfx::VRBrowserState& aState) {
       }
     }
   }
-#endif  
+#endif    
 }
 
 VRExternalShmem* VRService::GetAPIShmem() { return mAPIShmem; }

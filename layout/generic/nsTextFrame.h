@@ -405,11 +405,11 @@ class nsTextFrame : public nsFrame {
     mozilla::SVGContextPaint* contextPaint = nullptr;
     DrawPathCallbacks* callbacks = nullptr;
     enum {
-      PaintText,         
-      GenerateTextMask   
-                         
-                         
-                         
+      PaintText,        
+      GenerateTextMask  
+                        
+                        
+                        
     };
     uint8_t state = PaintText;
     explicit PaintTextParams(gfxContext* aContext) : context(aContext) {}
