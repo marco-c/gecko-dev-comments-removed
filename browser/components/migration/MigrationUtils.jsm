@@ -1023,6 +1023,17 @@ var MigrationUtils = Object.freeze({
   },
 
   insertVisitsWrapper(pageInfos) {
+    let now = new Date();
+    
+    
+    
+    for (let pageInfo of pageInfos) {
+      for (let visit of pageInfo.visits) {
+        if (visit.date && visit.date > now) {
+          visit.date = now;
+        }
+      }
+    }
     this._importQuantities.history += pageInfos.length;
     if (gKeepUndoData) {
       this._updateHistoryUndo(pageInfos);
