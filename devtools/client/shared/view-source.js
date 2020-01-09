@@ -49,6 +49,8 @@ exports.viewSourceInStyleEditor = async function(toolbox, sourceURL,
 
 
 
+
+
 exports.viewSourceInDebugger = async function(toolbox, sourceURL, sourceLine, sourceId,
                                               reason = "unknown") {
   const dbg = await toolbox.loadTool("jsdebugger");
