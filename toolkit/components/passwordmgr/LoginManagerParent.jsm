@@ -107,11 +107,11 @@ this.LoginManagerParent = {
     switch (msg.name) {
       case "PasswordManager:findLogins": {
         
-        this.sendLoginDataToChild(data.options.showMasterPassword,
-                                  data.formOrigin,
+        this.sendLoginDataToChild(data.formOrigin,
                                   data.actionOrigin,
                                   data.requestId,
-                                  msg.target.messageManager);
+                                  msg.target.messageManager,
+                                  data.options);
         break;
       }
 
@@ -194,8 +194,10 @@ this.LoginManagerParent = {
   
 
 
-  async sendLoginDataToChild(showMasterPassword, formOrigin, actionOrigin,
-                             requestId, target) {
+  async sendLoginDataToChild(formOrigin, actionOrigin, requestId, target, {
+    guid,
+    showMasterPassword,
+  }) {
     let recipes = [];
     if (formOrigin) {
       let formHost;
@@ -244,8 +246,9 @@ this.LoginManagerParent = {
             return;
           }
 
-          self.sendLoginDataToChild(showMasterPassword, formOrigin, actionOrigin,
-                                    requestId, target);
+          self.sendLoginDataToChild(formOrigin, actionOrigin, requestId, target, {
+            showMasterPassword,
+          });
         },
       };
 
@@ -260,12 +263,19 @@ this.LoginManagerParent = {
     }
 
     
-    let logins = this._searchAndDedupeLogins(formOrigin,
-                                             actionOrigin,
-                                             {
-                                               ignoreActionAndRealm: true,
-                                               acceptDifferentSubdomains: INCLUDE_OTHER_SUBDOMAINS_IN_LOOKUP,
-                                             });
+    let logins = null;
+    if (guid) {
+      logins = LoginHelper.searchLoginsWithObject({
+        guid,
+      });
+    } else {
+      logins = this._searchAndDedupeLogins(formOrigin,
+                                           actionOrigin,
+                                           {
+                                             ignoreActionAndRealm: true,
+                                             acceptDifferentSubdomains: INCLUDE_OTHER_SUBDOMAINS_IN_LOOKUP, 
+                                           });
+    }
 
     log("sendLoginDataToChild:", logins.length, "deduped logins");
     

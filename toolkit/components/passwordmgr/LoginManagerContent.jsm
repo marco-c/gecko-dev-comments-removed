@@ -103,6 +103,33 @@ const observer = {
     LoginManagerContent._onNavigation(aWebProgress.DOMWindow.document);
   },
 
+  
+  observe(subject, topic, data) {
+    switch (topic) {
+      case "autocomplete-did-enter-text": {
+        let input = subject.QueryInterface(Ci.nsIAutoCompleteInput);
+        let {selectedIndex} = input.popup;
+        if (selectedIndex < 0) {
+          break;
+        }
+        let style = input.controller.getStyleAt(selectedIndex);
+        if (style != "login" && style != "loginWithOrigin") {
+          break;
+        }
+        let {focusedInput} = LoginManagerContent._formFillService;
+        if (focusedInput.nodePrincipal.isNullPrincipal) {
+          
+          
+          return;
+        }
+        let details = JSON.parse(input.controller.getCommentAt(selectedIndex));
+        LoginManagerContent.onFieldAutoComplete(focusedInput, details.guid);
+        break;
+      }
+    }
+  },
+
+  
   handleEvent(aEvent) {
     if (!aEvent.isTrusted) {
       return;
@@ -116,7 +143,7 @@ const observer = {
       case "keydown": {
         if (aEvent.keyCode == aEvent.DOM_VK_TAB ||
             aEvent.keyCode == aEvent.DOM_VK_RETURN) {
-          LoginManagerContent.onUsernameInput(aEvent);
+          LoginManagerContent.onUsernameAutocompleted(aEvent.target);
         }
         break;
       }
@@ -144,6 +171,8 @@ const observer = {
   },
 };
 
+
+Services.obs.addObserver(observer, "autocomplete-did-enter-text");
 
 
 this.LoginManagerContent = {
@@ -319,6 +348,7 @@ this.LoginManagerContent = {
   },
 
   
+
 
 
 
@@ -735,16 +765,10 @@ this.LoginManagerContent = {
   
 
 
-  onDOMAutoComplete(event) {
-    if (!event.isTrusted) {
-      return;
-    }
-
+  onFieldAutoComplete(acInputField, loginGUID) {
     if (!LoginHelper.enabled) {
       return;
     }
-
-    let acInputField = event.target;
 
     
     if (ChromeUtils.getClassName(acInputField.ownerDocument) != "HTMLDocument") {
@@ -756,26 +780,17 @@ this.LoginManagerContent = {
     }
 
     if (LoginHelper.isUsernameFieldType(acInputField)) {
-      this.onUsernameInput(event);
+      this.onUsernameAutocompleted(acInputField, loginGUID);
     } else if (acInputField.hasBeenTypePassword) {
-      this._highlightFilledField(event.target);
+      this._highlightFilledField(acInputField);
     }
   },
 
   
 
 
-  onUsernameInput(event) {
-    let acInputField = event.target;
-
-    
-    
-    
-    if (!acInputField.value) {
-      return;
-    }
-
-    log("onUsernameInput from", event.type);
+  onUsernameAutocompleted(acInputField, loginGUID = null) {
+    log("onUsernameAutocompleted:", acInputField);
 
     let acForm = LoginFormFactory.createFromField(acInputField);
     let doc = acForm.ownerDocument;
@@ -787,7 +802,10 @@ this.LoginManagerContent = {
     let [usernameField, passwordField, ignored] =
         this._getFormFields(acForm, false, recipes);
     if (usernameField == acInputField && passwordField) {
-      this._getLoginDataFromParent(acForm, { showMasterPassword: false })
+      this._getLoginDataFromParent(acForm, {
+        guid: loginGUID,
+        showMasterPassword: false,
+      })
           .then(({ form, loginsFound, recipes }) => {
             this._fillForm(form, loginsFound, recipes, {
               autofillForm: true,
