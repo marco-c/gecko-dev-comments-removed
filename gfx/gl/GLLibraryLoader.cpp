@@ -4,6 +4,8 @@
 
 #include "GLLibraryLoader.h"
 
+#include <regex>
+
 #include "nsDebug.h"
 
 #ifdef WIN32
@@ -13,98 +15,83 @@
 namespace mozilla {
 namespace gl {
 
-bool GLLibraryLoader::OpenLibrary(const char* library) {
-  PRLibSpec lspec;
-  lspec.type = PR_LibSpec_Pathname;
-  lspec.value.pathname = library;
-
-  mLibrary = PR_LoadLibraryWithFlags(lspec, PR_LD_LAZY | PR_LD_LOCAL);
-  if (!mLibrary) return false;
-
-  return true;
-}
-
-bool GLLibraryLoader::LoadSymbols(const SymLoadStruct* firstStruct,
-                                  bool tryplatform, const char* prefix,
-                                  bool warnOnFailure) {
-  return LoadSymbols(mLibrary, firstStruct, tryplatform ? mLookupFunc : nullptr,
-                     prefix, warnOnFailure);
-}
-
-PRFuncPtr GLLibraryLoader::LookupSymbol(const char* sym) {
-  return LookupSymbol(mLibrary, sym, mLookupFunc);
-}
-
-PRFuncPtr GLLibraryLoader::LookupSymbol(PRLibrary* lib, const char* sym,
-                                        PlatformLookupFunction lookupFunction) {
-  PRFuncPtr res = 0;
-
-  
-  if (lib) {
-    res = PR_FindFunctionSymbol(lib, sym);
+void ClearSymbols(const SymLoadStruct* const firstStruct) {
+  for (auto itr = firstStruct; itr->symPointer; ++itr) {
+    *itr->symPointer = nullptr;
   }
-
-  
-  if (!res && lookupFunction) {
-    res = lookupFunction(sym);
-  }
-
-  
-  if (!res) {
-    PRLibrary* leakedLibRef;
-    res = PR_FindFunctionSymbolAndLibrary(sym, &leakedLibRef);
-  }
-
-  return res;
 }
 
-bool GLLibraryLoader::LoadSymbols(PRLibrary* lib,
-                                  const SymLoadStruct* firstStruct,
-                                  PlatformLookupFunction lookupFunction,
-                                  const char* prefix, bool warnOnFailure) {
-  char sbuf[MAX_SYMBOL_LENGTH * 2];
-  int failCount = 0;
 
-  const SymLoadStruct* ss = firstStruct;
-  while (ss->symPointer) {
-    *ss->symPointer = 0;
 
-    for (int i = 0; i < MAX_SYMBOL_NAMES; i++) {
-      if (ss->symNames[i] == nullptr) break;
 
-      const char* s = ss->symNames[i];
-      if (prefix && *prefix != 0) {
-        strcpy(sbuf, prefix);
-        strcat(sbuf, ss->symNames[i]);
-        s = sbuf;
-      }
 
-      PRFuncPtr p = LookupSymbol(lib, s, lookupFunction);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+bool SymbolLoader::LoadSymbols(const SymLoadStruct* const firstStruct,
+                               const bool warnOnFailures) const {
+  bool ok = true;
+
+  for (auto itr = firstStruct; itr->symPointer; ++itr) {
+    *itr->symPointer = nullptr;
+
+    for (const auto& s : itr->symNames) {
+      if (!s) break;
+
+      const auto p = GetProcAddress(s);
       if (p) {
-        *ss->symPointer = p;
+        *itr->symPointer = p;
         break;
       }
     }
 
-    if (*ss->symPointer == 0) {
-      if (warnOnFailure) {
-        printf_stderr("Can't find symbol '%s'.\n", ss->symNames[0]);
+    if (!*itr->symPointer) {
+      if (warnOnFailures) {
+        printf_stderr("Can't find symbol '%s'.\n", itr->symNames[0]);
       }
-
-      failCount++;
+      ok = false;
     }
-
-    ss++;
   }
 
-  return failCount == 0 ? true : false;
+  return ok;
 }
 
- void GLLibraryLoader::ClearSymbols(
-    const SymLoadStruct* const firstStruct) {
-  for (auto cur = firstStruct; cur->symPointer; ++cur) {
-    *cur->symPointer = nullptr;
+
+
+PRFuncPtr SymbolLoader::GetProcAddress(const char* const name) const {
+#ifdef DEBUG
+  static const std::regex kRESymbol("[a-z].*");
+  if (!std::regex_match(name, kRESymbol)) {
+    gfxCriticalError() << "Bad symbol name : " << name;
   }
+#endif
+
+  PRFuncPtr ret = nullptr;
+  if (!ret && mPfn) {
+    ret = mPfn(name);
+  }
+  if (!ret && mLib) {
+    ret = PR_FindFunctionSymbol(mLib, name);
+  }
+  return ret;
 }
 
 } 
