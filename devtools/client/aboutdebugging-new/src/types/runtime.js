@@ -62,6 +62,10 @@ const runtimeDetails = {
   connectionPromptEnabled: PropTypes.bool.isRequired,
 
   
+  
+  extensionDebugEnabled: PropTypes.bool.isRequired,
+
+  
   info: PropTypes.shape(runtimeInfo).isRequired,
 
   

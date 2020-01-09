@@ -160,6 +160,11 @@ p, h1 {
 }
 
 
+.unselectable-text {
+  -moz-user-select: none;
+}
+
+
 .undecorated-link,
 .undecorated-link:hover {
   text-decoration: none;
@@ -370,6 +375,13 @@ p, h1 {
   border-radius: 2px;
   color: var(--text-color);
   background-color: var(--box-background);
+}
+
+
+.default-checkbox {
+  height: calc(var(--base-unit) * 4);
+  margin-inline-end: var(--base-unit);
+  width: calc(var(--base-unit) * 4);
 }
 
 
