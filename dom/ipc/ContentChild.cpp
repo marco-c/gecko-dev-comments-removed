@@ -3741,14 +3741,35 @@ mozilla::ipc::IPCResult ContentChild::RecvAttachBrowsingContext(
 }
 
 mozilla::ipc::IPCResult ContentChild::RecvDetachBrowsingContext(
-    BrowsingContext* aContext, bool aMoveToBFCache) {
+    BrowsingContext* aContext) {
   MOZ_RELEASE_ASSERT(aContext);
 
-  if (aMoveToBFCache) {
-    aContext->CacheChildren( true);
-  } else {
-    aContext->Detach( true);
+  aContext->Detach( true);
+
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult ContentChild::RecvCacheBrowsingContextChildren(
+    BrowsingContext* aContext) {
+  MOZ_RELEASE_ASSERT(aContext);
+
+  aContext->CacheChildren( true);
+
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult ContentChild::RecvRestoreBrowsingContextChildren(
+    BrowsingContext* aContext, nsTArray<BrowsingContextId>&& aChildren) {
+  MOZ_DIAGNOSTIC_ASSERT(aContext);
+
+  BrowsingContext::Children children(aChildren.Length());
+
+  for (auto id : aChildren) {
+    RefPtr<BrowsingContext> child = BrowsingContext::Get(id);
+    children.AppendElement(child);
   }
+
+  aContext->RestoreChildren(std::move(children),  true);
 
   return IPC_OK();
 }

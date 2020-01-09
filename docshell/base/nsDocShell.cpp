@@ -7810,6 +7810,7 @@ nsresult nsDocShell::RestoreFromHistory() {
   
   document->NotifyPossibleTitleChange(false);
 
+  BrowsingContext::Children contexts(childShells.Count());
   
   for (i = 0; i < childShells.Count(); ++i) {
     nsIDocShellTreeItem* childItem = childShells.ObjectAt(i);
@@ -7849,12 +7850,7 @@ nsresult nsDocShell::RestoreFromHistory() {
     
     AddChild(childItem);
 
-    
-    
-    
-    RefPtr<BrowsingContext> childContext =
-        nsDocShell::Cast(childShell)->GetBrowsingContext();
-    childContext->Attach();
+    contexts.AppendElement(nsDocShell::Cast(childShell)->GetBrowsingContext());
 
     childShell->SetAllowPlugins(allowPlugins);
     childShell->SetAllowJavascript(allowJavascript);
@@ -7871,6 +7867,8 @@ nsresult nsDocShell::RestoreFromHistory() {
     rv = childShell->BeginRestore(nullptr, false);
     NS_ENSURE_SUCCESS(rv, rv);
   }
+
+  GetBrowsingContext()->RestoreChildren(std::move(contexts));
 
   
   
