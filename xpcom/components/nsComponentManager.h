@@ -52,6 +52,10 @@ struct PRThread;
 
 extern const mozilla::Module kXPCOMModule;
 
+namespace {
+  class MutexLock;
+}
+
 
 
 
@@ -262,6 +266,9 @@ class nsComponentManagerImpl final : public nsIComponentManager,
 
  private:
   ~nsComponentManagerImpl();
+
+  nsresult GetServiceLocked(MutexLock& aLock, nsFactoryEntry& aEntry,
+                            const nsIID& aIID, void** aResult);
 };
 
 #define NS_MAX_FILENAME_LEN 1024
