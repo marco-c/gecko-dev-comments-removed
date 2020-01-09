@@ -1221,6 +1221,17 @@ namespace js {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 class LiveSavedFrameCache {
  public:
   
@@ -1261,6 +1272,11 @@ class LiveSavedFrameCache {
     
     inline InterpreterFrame& asInterpreterFrame() const {
       return *ptr.as<InterpreterFrame*>();
+    }
+
+    
+    inline bool isRematerializedFrame() const {
+      return ptr.is<jit::RematerializedFrame*>();
     }
 
     bool operator==(const FramePtr& rhs) const { return rhs.ptr == this->ptr; }

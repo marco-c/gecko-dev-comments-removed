@@ -1422,7 +1422,10 @@ bool SavedStacks::insertFrames(JSContext* cx, MutableHandleSavedFrame frame,
         LiveSavedFrameCache::FramePtr::create(iter);
 
     if (framePtr) {
-      MOZ_ASSERT_IF(seenCached, framePtr->hasCachedSavedFrame());
+      
+      
+      MOZ_ASSERT_IF(seenCached, framePtr->hasCachedSavedFrame() ||
+                                    framePtr->isRematerializedFrame());
       seenCached |= framePtr->hasCachedSavedFrame();
     }
 
