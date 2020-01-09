@@ -11,6 +11,7 @@
 
 #include "jit/JitFrames.h"
 #include "jit/JSJitFrameIter.h"
+#include "js/UniquePtr.h"
 #include "vm/EnvironmentObject.h"
 #include "vm/JSFunction.h"
 #include "vm/Stack.h"
@@ -71,13 +72,13 @@ class RematerializedFrame {
 
   
   
-  static MOZ_MUST_USE bool RematerializeInlineFrames(
-      JSContext* cx, uint8_t* top, InlineFrameIterator& iter,
-      MaybeReadFallback& fallback, GCVector<RematerializedFrame*>& frames);
+  using RematerializedFrameVector = GCVector<UniquePtr<RematerializedFrame>>;
 
   
   
-  static void FreeInVector(GCVector<RematerializedFrame*>& frames);
+  static MOZ_MUST_USE bool RematerializeInlineFrames(
+      JSContext* cx, uint8_t* top, InlineFrameIterator& iter,
+      MaybeReadFallback& fallback, RematerializedFrameVector& frames);
 
   bool prevUpToDate() const { return prevUpToDate_; }
   void setPrevUpToDate() { prevUpToDate_ = true; }
@@ -199,19 +200,6 @@ class RematerializedFrame {
 };
 
 }  
-}  
-
-namespace JS {
-
-template <>
-struct MapTypeToRootKind<js::jit::RematerializedFrame*> {
-  static const RootKind kind = RootKind::Traceable;
-};
-
-template <>
-struct GCPolicy<js::jit::RematerializedFrame*>
-    : public NonGCPointerPolicy<js::jit::RematerializedFrame*> {};
-
 }  
 
 #endif  

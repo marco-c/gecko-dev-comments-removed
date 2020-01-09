@@ -1585,7 +1585,7 @@ class JitActivation : public Activation {
   
   
   
-  typedef GCVector<RematerializedFrame*> RematerializedFrameVector;
+  typedef GCVector<UniquePtr<RematerializedFrame>> RematerializedFrameVector;
   typedef HashMap<uint8_t*, RematerializedFrameVector> RematerializedFrameTable;
   js::UniquePtr<RematerializedFrameTable> rematerializedFrames_;
 
