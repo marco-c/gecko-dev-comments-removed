@@ -121,6 +121,17 @@ class nsINIParser {
 
 
 
+
+
+
+
+  nsresult RenameSection(const char* aSection, const char* aNewName);
+
+  
+
+
+
+
   nsresult WriteToFile(nsIFile* aFile);
 
  private:
