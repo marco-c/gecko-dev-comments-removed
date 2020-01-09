@@ -69,10 +69,8 @@ var whitelist = [
   
   {file: "chrome://global/locale/fallbackMenubar.properties",
    platforms: ["linux", "win"]},
-  {file: "chrome://global/locale/printPageSetup.dtd", platforms: ["linux", "macosx"]},
-  {file: "chrome://global/locale/printPreviewProgress.dtd",
+  {file: "resource://gre/localization/en-US/toolkit/printing/printDialogs.ftl",
    platforms: ["macosx"]},
-  {file: "chrome://global/locale/printProgress.dtd", platforms: ["macosx"]},
 
   
   {file: "chrome://global/skin/aboutRights.css", skipUnofficial: true},

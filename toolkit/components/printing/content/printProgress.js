@@ -52,14 +52,11 @@ var progressListener = {
       if (aStateFlags & Ci.nsIWebProgressListener.STATE_STOP) {
         
         
-        var msg = getString( "printComplete" );
-        dialog.title.setAttribute("value", msg);
+        document.l10n.setAttributes(dialog.title, "print-complete");
 
         
         dialog.progress.setAttribute( "value", 100 );
-        var percentPrint = getString( "progressText" );
-        percentPrint = replaceInsert( percentPrint, 1, 100 );
-        dialog.progressText.setAttribute("value", percentPrint);
+        document.l10n.setAttributes(dialog.progressText, "print-percent", {"percent": 100});
 
         if (Services.focus.activeWindow == window) {
           
@@ -87,10 +84,6 @@ var progressListener = {
         dialog.tempLabel.setAttribute("hidden", "true");
         dialog.progressBox.removeAttribute("hidden");
 
-        var progressLabel = getString("progress");
-        if (progressLabel == "") {
-          progressLabel = "Progress:"; 
-        }
         switchUI = false;
       }
 
@@ -120,9 +113,7 @@ var progressListener = {
         dialog.progress.setAttribute( "value", percent );
 
         
-        var percentPrint = getString( "progressText" );
-        percentPrint = replaceInsert( percentPrint, 1, percent );
-        dialog.progressText.setAttribute("value", percentPrint);
+        document.l10n.setAttributes(dialog.progressText, "print-percent", {"percent": percent});
       } else {
         
         dialog.progress.removeAttribute("value");
@@ -152,37 +143,7 @@ var progressListener = {
                                             "nsISupportsWeakReference"]),
 };
 
-function getString( stringId ) {
-   
-   if (!(stringId in dialog.strings)) {
-      
-      var elem = document.getElementById( "dialog.strings." + stringId );
-      try {
-        if ( elem
-           &&
-           elem.childNodes
-           &&
-           elem.childNodes[0]
-           &&
-           elem.childNodes[0].nodeValue ) {
-         dialog.strings[stringId] = elem.childNodes[0].nodeValue;
-        } else {
-          
-          dialog.strings[stringId] = "";
-        }
-      } catch (e) { dialog.strings[stringId] = ""; }
-   }
-   return dialog.strings[stringId];
-}
-
 function loadDialog() {
-}
-
-function replaceInsert( text, index, value ) {
-   var result = text;
-   var regExp = new RegExp( "#" + index );
-   result = result.replace( regExp, value );
-   return result;
 }
 
 function onLoad() {
@@ -214,11 +175,7 @@ function onLoad() {
 
     dialog.progressBox.setAttribute("hidden", "true");
 
-    var progressLabel = getString("preparing");
-    if (progressLabel == "") {
-      progressLabel = "Preparing..."; 
-    }
-    dialog.tempLabel.value = progressLabel;
+    document.l10n.setAttributes(dialog.tempLabel, "print-preparing");
 
     dialog.title.value = docTitle;
 
