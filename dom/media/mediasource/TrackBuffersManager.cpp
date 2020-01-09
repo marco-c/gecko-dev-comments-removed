@@ -447,6 +447,7 @@ void TrackBuffersManager::CompleteResetParserState() {
   }
 
   
+  mPendingInputBuffer = nullptr;
   mInputBuffer = nullptr;
   if (mCurrentInputBuffer) {
     mCurrentInputBuffer->EvictAll();
