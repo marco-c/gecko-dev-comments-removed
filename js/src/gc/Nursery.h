@@ -149,19 +149,9 @@ class Nursery {
   
 
 
-#ifndef JS_GC_SMALL_CHUNK_SIZE
-  
-
-
 
   static const size_t SubChunkLimit = 192 * 1024;
-#else
-  
-
-
-
-  static const size_t SubChunkLimit = 64 * 1024;
-#endif
+  static_assert(SubChunkLimit % SubChunkStep == 0, "The limit should be a multiple of the step");
 
   struct alignas(gc::CellAlignBytes) CellAlignedByte {
     char byte;
