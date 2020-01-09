@@ -66,7 +66,7 @@ class FreeBSDBootstrapper(BaseBootstrapper):
         
         self.pkg_install(*self.browser_packages)
 
-    def ensure_clang_static_analysis_package(self, checkout_root):
+    def ensure_clang_static_analysis_package(self, state_dir, checkout_root):
         
         pass
 
