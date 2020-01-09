@@ -24,6 +24,7 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ParentSHistory.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/layers/LayersTypes.h"
 #include "nsStubMutationObserver.h"
 #include "Units.h"
 #include "nsIFrame.h"
@@ -290,16 +291,7 @@ class nsFrameLoader final : public nsStubMutationObserver,
 
 
 
-
-
-
-
-
-
-
-
-
-  RenderFrame* GetCurrentRenderFrame() const;
+  mozilla::layers::LayersId GetLayersId() const;
 
   mozilla::dom::ChromeMessageSender* GetFrameMessageManager() {
     return mMessageManager;
