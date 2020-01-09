@@ -1887,12 +1887,12 @@ nsresult nsPrintJob::InitPrintDocConstruction(bool aHandleError) {
   FirePrintPreviewUpdateEvent();
 
   if (mLoadCounter == 0) {
-    AfterNetworkPrint(aHandleError);
+    ResumePrintAfterResourcesLoaded(aHandleError);
   }
   return rv;
 }
 
-nsresult nsPrintJob::AfterNetworkPrint(bool aHandleError) {
+nsresult nsPrintJob::ResumePrintAfterResourcesLoaded(bool aCleanupOnError) {
   
   
   
@@ -1918,9 +1918,9 @@ nsresult nsPrintJob::AfterNetworkPrint(bool aHandleError) {
   }
 
   
-  if (aHandleError && NS_FAILED(rv)) {
+  if (aCleanupOnError && NS_FAILED(rv)) {
     NS_WARNING_ASSERTION(rv == NS_ERROR_ABORT,
-                         "nsPrintJob::AfterNetworkPrint failed");
+                         "nsPrintJob::ResumePrintAfterResourcesLoaded failed");
     CleanupOnFailure(rv, !mIsDoingPrinting);
   }
 
@@ -1947,7 +1947,7 @@ nsPrintJob::OnStateChange(nsIWebProgress* aWebProgress, nsIRequest* aRequest,
     
     
     if (mLoadCounter == 0) {
-      AfterNetworkPrint(true);
+      ResumePrintAfterResourcesLoaded( true);
     }
   }
   return NS_OK;

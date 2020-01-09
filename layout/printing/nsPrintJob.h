@@ -200,7 +200,16 @@ class nsPrintJob final : public nsIObserver,
 
   void DisconnectPagePrintTimer();
 
-  nsresult AfterNetworkPrint(bool aHandleError);
+  
+
+
+
+
+
+
+
+
+  nsresult ResumePrintAfterResourcesLoaded(bool aCleanupOnError);
 
   nsresult SetRootView(nsPrintObject* aPO, bool& aDoReturn,
                        bool& aDocumentIsTopLevel, nsSize& aAdjSize);
