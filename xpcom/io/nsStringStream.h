@@ -10,6 +10,7 @@
 #include "nsIStringStream.h"
 #include "nsString.h"
 #include "nsMemory.h"
+#include "nsTArray.h"
 
 
 
@@ -44,12 +45,19 @@
 
 
 
+extern nsresult NS_NewByteInputStream(nsIInputStream** aStreamResult,
+                                      mozilla::Span<const char> aStringToRead,
+                                      nsAssignmentType aAssignment);
+
+
+
+
+
 
 
 
 extern nsresult NS_NewByteInputStream(nsIInputStream** aStreamResult,
-                                      mozilla::Span<const char> aStringToRead,
-                                      nsAssignmentType aAssignment);
+                                      nsTArray<uint8_t>&& aArray);
 
 
 
