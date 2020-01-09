@@ -647,10 +647,6 @@ var PanelMultiView = class extends AssociatedToNode {
     
     
     
-    let doingKeyboardActivation = prevPanelView._doingKeyboardActivation;
-    
-    
-    
     prevPanelView.active = false;
 
     
@@ -696,7 +692,6 @@ var PanelMultiView = class extends AssociatedToNode {
       }
     }
 
-    nextPanelView.focusWhenActive = doingKeyboardActivation;
     this._activateView(nextPanelView);
   }
 
@@ -819,7 +814,7 @@ var PanelMultiView = class extends AssociatedToNode {
     if (panelView.isOpenIn(this)) {
       panelView.active = true;
       if (panelView.focusWhenActive) {
-        panelView.focusFirstNavigableElement(false, true);
+        panelView.focusFirstNavigableElement();
         panelView.focusWhenActive = false;
       }
       panelView.dispatchCustomEvent("ViewShown");
@@ -1408,64 +1403,32 @@ var PanelView = class extends AssociatedToNode {
 
 
 
-  _isNavigableWithTabOnly(element) {
-    let tag = element.localName;
-    return tag == "menulist" || tag == "textbox" || tag == "input"
-           || tag == "textarea";
-  }
-
-  
 
 
 
-
-
-  _makeNavigableTreeWalker(arrowKey) {
-    let filter = node => {
-      if (node.disabled) {
-        return NodeFilter.FILTER_REJECT;
-      }
-      let bounds = this._getBoundsWithoutFlushing(node);
-      if (bounds.width == 0 || bounds.height == 0) {
-        return NodeFilter.FILTER_REJECT;
-      }
-      if (node.tagName == "button" || node.tagName == "toolbarbutton" ||
-          node.classList.contains("text-link") ||
-          node.classList.contains("navigable") ||
-          (!arrowKey && this._isNavigableWithTabOnly(node))) {
-        
-        if (!node.hasAttribute("tabindex")) {
-          node.setAttribute("tabindex", "-1");
-        }
-        return NodeFilter.FILTER_ACCEPT;
-      }
-      return NodeFilter.FILTER_SKIP;
-    };
-    return this.document.createTreeWalker(this.node, NodeFilter.SHOW_ELEMENT,
-      filter);
-  }
-
-  
-
-
-  get _tabNavigableWalker() {
-    if (!this.__tabNavigableWalker) {
-      this.__tabNavigableWalker = this._makeNavigableTreeWalker(false);
+  get _navigableElements() {
+    if (this.__navigableElements) {
+      return this.__navigableElements;
     }
-    return this.__tabNavigableWalker;
+
+    let navigableElements = Array.from(this.node.querySelectorAll(
+      ":-moz-any(button,toolbarbutton,menulist,.text-link,.navigable):not([disabled])"));
+    return this.__navigableElements = navigableElements.filter(element => {
+      
+      if (!element.hasAttribute("tabindex")) {
+        element.setAttribute("tabindex", "0");
+      }
+      if (element.hasAttribute("disabled")) {
+        return false;
+      }
+      let bounds = this._getBoundsWithoutFlushing(element);
+      return bounds.width > 0 && bounds.height > 0;
+    });
   }
 
   
 
 
-  get _arrowNavigableWalker() {
-    if (!this.__arrowNavigableWalker) {
-      this.__arrowNavigableWalker = this._makeNavigableTreeWalker(true);
-    }
-    return this.__arrowNavigableWalker;
-  }
-
-  
 
 
 
@@ -1485,20 +1448,8 @@ var PanelView = class extends AssociatedToNode {
 
 
 
-
-
-
-  focusFirstNavigableElement(homeKey = false, skipBack = false) {
-    
-    let walker = homeKey ?
-      this._arrowNavigableWalker : this._tabNavigableWalker;
-    walker.currentNode = walker.root;
-    this.selectedElement = walker.firstChild();
-    if (skipBack && walker.currentNode
-        && walker.currentNode.classList.contains("subviewbutton-back")
-        && walker.nextNode()) {
-      this.selectedElement = walker.currentNode;
-    }
+  focusFirstNavigableElement() {
+    this.selectedElement = this._navigableElements[0];
     this.focusSelectedElement();
   }
 
@@ -1506,14 +1457,8 @@ var PanelView = class extends AssociatedToNode {
 
 
 
-
-
-  focusLastNavigableElement(endKey = false) {
-    
-    let walker = endKey ?
-      this._arrowNavigableWalker : this._tabNavigableWalker;
-    walker.currentNode = walker.root;
-    this.selectedElement = walker.lastChild();
+  focusLastNavigableElement() {
+    this.selectedElement = this._navigableElements[this._navigableElements.length - 1];
     this.focusSelectedElement();
   }
 
@@ -1524,23 +1469,51 @@ var PanelView = class extends AssociatedToNode {
 
 
 
+  moveSelection(isDown) {
+    let buttons = this._navigableElements;
+    let lastSelected = this.selectedElement;
+    let newButton = null;
+    let maxIdx = buttons.length - 1;
+    if (lastSelected) {
+      let buttonIndex = buttons.indexOf(lastSelected);
+      if (buttonIndex != -1) {
+        
+        
+        do {
+          buttonIndex = buttonIndex + (isDown ? 1 : -1);
+        } while (buttons[buttonIndex] && buttons[buttonIndex].disabled);
+        if (isDown && buttonIndex > maxIdx)
+          buttonIndex = 0;
+        else if (!isDown && buttonIndex < 0)
+          buttonIndex = maxIdx;
+        newButton = buttons[buttonIndex];
+      } else {
+        
+        let allButtons = lastSelected.closest("panelview").getElementsByTagName("toolbarbutton");
+        let maxAllButtonIdx = allButtons.length - 1;
+        let allButtonIndex = allButtons.indexOf(lastSelected);
+        while (allButtonIndex >= 0 && allButtonIndex <= maxAllButtonIdx) {
+          allButtonIndex++;
+          
+          buttonIndex = buttons.indexOf(allButtons[allButtonIndex]);
+          if (buttonIndex != -1) {
+            
+            
+            
+            
+            newButton = buttons[isDown ? buttonIndex : buttonIndex - 1];
+            break;
+          }
+        }
+      }
+    }
 
-  moveSelection(isDown, arrowKey = false) {
-    let walker = arrowKey ?
-      this._arrowNavigableWalker : this._tabNavigableWalker;
-    let oldSel = this.selectedElement;
-    let newSel;
-    if (oldSel) {
-      walker.currentNode = oldSel;
-      newSel = isDown ? walker.nextNode() : walker.previousNode();
-    }
     
-    if (!newSel) {
-      walker.currentNode = walker.root;
-      newSel = isDown ? walker.firstChild() : walker.lastChild();
+    if (!newButton) {
+      newButton = buttons[isDown ? 0 : maxIdx];
     }
-    this.selectedElement = newSel;
-    return newSel;
+    this.selectedElement = newButton;
+    return newButton;
   }
 
   
@@ -1565,70 +1538,38 @@ var PanelView = class extends AssociatedToNode {
       return;
     }
 
+    let buttons = this._navigableElements;
+    if (!buttons.length) {
+      return;
+    }
+
     let stop = () => {
       event.stopPropagation();
       event.preventDefault();
-    };
-
-    
-    
-    
-    
-    let tabOnly = () => {
-      
-      
-      
-      let focus = this.document.activeElement;
-      if (!focus) {
-        return false;
-      }
-      
-      
-      
-      
-      
-      if (!(this.node.compareDocumentPosition(focus)
-            & Node.DOCUMENT_POSITION_CONTAINED_BY)) {
-        return false;
-      }
-      return this._isNavigableWithTabOnly(focus);
     };
 
     let keyCode = event.code;
     switch (keyCode) {
       case "ArrowDown":
       case "ArrowUp":
-        if (tabOnly()) {
-          break;
-        }
-        
       case "Tab": {
         stop();
         let isDown = (keyCode == "ArrowDown") ||
                      (keyCode == "Tab" && !event.shiftKey);
-        let button = this.moveSelection(isDown, keyCode != "Tab");
+        let button = this.moveSelection(isDown);
         button.focus();
         break;
       }
       case "Home":
-        if (tabOnly()) {
-          break;
-        }
         stop();
-        this.focusFirstNavigableElement(true);
+        this.focusFirstNavigableElement();
         break;
       case "End":
-        if (tabOnly()) {
-          break;
-        }
         stop();
-        this.focusLastNavigableElement(true);
+        this.focusLastNavigableElement();
         break;
       case "ArrowLeft":
       case "ArrowRight": {
-        if (tabOnly()) {
-          break;
-        }
         stop();
         if ((!this.window.RTL_UI && keyCode == "ArrowLeft") ||
             (this.window.RTL_UI && keyCode == "ArrowRight")) {
@@ -1645,15 +1586,11 @@ var PanelView = class extends AssociatedToNode {
       }
       case "Space":
       case "Enter": {
-        if (tabOnly()) {
-          break;
-        }
         let button = this.selectedElement;
         if (!button)
           break;
         stop();
 
-        this._doingKeyboardActivation = true;
         
         
         
@@ -1662,7 +1599,6 @@ var PanelView = class extends AssociatedToNode {
         button.doCommand();
         let clickEvent = new event.target.ownerGlobal.MouseEvent("click", {"bubbles": true});
         button.dispatchEvent(clickEvent);
-        this._doingKeyboardActivation = false;
         break;
       }
     }
@@ -1682,6 +1618,7 @@ var PanelView = class extends AssociatedToNode {
 
 
   clearNavigation() {
+    delete this.__navigableElements;
     let selected = this.selectedElement;
     if (selected) {
       selected.blur();
