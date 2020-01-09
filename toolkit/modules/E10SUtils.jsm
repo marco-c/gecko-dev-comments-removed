@@ -17,9 +17,12 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "useSeparatePrivilegedContentProcess
                                       "browser.tabs.remote.separatePrivilegedContentProcess", false);
 XPCOMUtils.defineLazyPreferenceGetter(this, "useHttpResponseProcessSelection",
                                       "browser.tabs.remote.useHTTPResponseProcessSelection", false);
+XPCOMUtils.defineLazyPreferenceGetter(this, "useCrossOriginOpenerPolicy",
+                                      "browser.tabs.remote.useCrossOriginOpenerPolicy", false);
 XPCOMUtils.defineLazyServiceGetter(this, "serializationHelper",
                                    "@mozilla.org/network/serialization-helper;1",
                                    "nsISerializationHelper");
+
 ChromeUtils.defineModuleGetter(this, "Utils",
                                "resource://gre/modules/sessionstore/Utils.jsm");
 
@@ -97,6 +100,9 @@ var E10SUtils = {
 
   useHttpResponseProcessSelection() {
     return useHttpResponseProcessSelection;
+  },
+  useCrossOriginOpenerPolicy() {
+    return useCrossOriginOpenerPolicy;
   },
 
   canLoadURIInRemoteType(aURL, aRemoteType = DEFAULT_REMOTE_TYPE,
@@ -323,6 +329,20 @@ var E10SUtils = {
       return true;
     }
 
+    let webNav = aDocShell.QueryInterface(Ci.nsIWebNavigation);
+    let sessionHistory = webNav.sessionHistory;
+    if (!aHasPostData &&
+        Services.appinfo.remoteType == WEB_REMOTE_TYPE &&
+        sessionHistory.count == 1 &&
+        webNav.currentURI.spec == "about:newtab") {
+      
+      
+      
+      
+      
+      return false;
+    }
+
     
     
     
@@ -347,8 +367,6 @@ var E10SUtils = {
     }
 
     
-    let webNav = aDocShell.QueryInterface(Ci.nsIWebNavigation);
-    let sessionHistory = webNav.sessionHistory;
     let requestedIndex = sessionHistory.legacySHistory.requestedIndex;
     if (requestedIndex >= 0) {
       if (sessionHistory.legacySHistory.getEntryAtIndex(requestedIndex).loadedInThisProcess) {
@@ -360,18 +378,6 @@ var E10SUtils = {
       let remoteType = Services.appinfo.remoteType;
       return remoteType ==
         this.getRemoteTypeForURIObject(aURI, true, remoteType, webNav.currentURI);
-    }
-
-    if (!aHasPostData &&
-        Services.appinfo.remoteType == WEB_REMOTE_TYPE &&
-        sessionHistory.count == 1 &&
-        webNav.currentURI.spec == "about:newtab") {
-      
-      
-      
-      
-      
-      return false;
     }
 
     

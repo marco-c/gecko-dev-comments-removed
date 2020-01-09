@@ -48,9 +48,7 @@ const OBSERVING = [
   "quit-application", "browser:purge-session-history",
   "browser:purge-session-history-for-domain",
   "idle-daily", "clear-origin-attributes-data",
-  "http-on-examine-response",
-  "http-on-examine-merged-response",
-  "http-on-examine-cached-response",
+  "http-on-may-change-process",
 ];
 
 
@@ -814,10 +812,8 @@ var SessionStoreInternal = {
           this._forgetTabsWithUserContextId(userContextId);
         }
         break;
-      case "http-on-examine-response":
-      case "http-on-examine-cached-response":
-      case "http-on-examine-merged-response":
-        this.onExamineResponse(aSubject);
+      case "http-on-may-change-process":
+        this.onMayChangeProcess(aSubject);
         break;
     }
   },
@@ -2286,6 +2282,8 @@ var SessionStoreInternal = {
 
 
   async _doProcessSwitch(aBrowser, aRemoteType, aChannel, aSwitchId) {
+    debug(`[process-switch]: performing switch from ${aBrowser.remoteType} to ${aRemoteType}`);
+
     
     await aBrowser.ownerGlobal.delayedStartupPromise;
 
@@ -2309,13 +2307,16 @@ var SessionStoreInternal = {
     }
 
     
-    return aBrowser.frameLoader.tabParent;
+    let tabParent = aBrowser.frameLoader.tabParent;
+    debug(`[process-switch]: new tabID: ${tabParent.tabId}`);
+    return tabParent;
   },
 
   
   
-  onExamineResponse(aChannel) {
-    if (!E10SUtils.useHttpResponseProcessSelection()) {
+  onMayChangeProcess(aChannel) {
+    if (!E10SUtils.useHttpResponseProcessSelection() &&
+        !E10SUtils.useCrossOriginOpenerPolicy()) {
       return;
     }
 
@@ -2323,13 +2324,21 @@ var SessionStoreInternal = {
       return; 
     }
 
-    let browsingContext = aChannel.loadInfo.browsingContext;
-    if (!browsingContext) {
-      return; 
+    
+    let cpType = aChannel.loadInfo.externalContentPolicyType;
+    let toplevel = cpType == Ci.nsIContentPolicy.TYPE_DOCUMENT;
+    if (!toplevel) {
+      debug(`[process-switch]: non-toplevel - ignoring`);
+      return;
     }
 
-    if (browsingContext.parent) {
-      return; 
+    
+    let browsingContext = toplevel
+        ? aChannel.loadInfo.browsingContext
+        : aChannel.loadInfo.frameBrowsingContext;
+    if (!browsingContext) {
+      debug(`[process-switch]: no BrowsingContext - ignoring`);
+      return;
     }
 
     
@@ -2338,34 +2347,63 @@ var SessionStoreInternal = {
       currentPrincipal = browsingContext.currentWindowGlobal.documentPrincipal;
     }
 
-    let parentChannel = aChannel.notificationCallbacks
-                                .getInterface(Ci.nsIParentChannel);
-    if (!parentChannel) {
-      return; 
+    
+    let parentChannel;
+    try {
+      parentChannel = aChannel.notificationCallbacks
+                              .getInterface(Ci.nsIParentChannel);
+    } catch (e) {
+      debug(`[process-switch]: No nsIParentChannel callback - ignoring`);
+      return;
     }
 
-    let tabParent = parentChannel.QueryInterface(Ci.nsIInterfaceRequestor)
-                                 .getInterface(Ci.nsITabParent);
-    if (!tabParent || !tabParent.ownerElement) {
-      console.warn("warning: Missing tabParent");
-      return; 
+    
+    let tabParent;
+    try {
+      tabParent = parentChannel.QueryInterface(Ci.nsIInterfaceRequestor)
+                               .getInterface(Ci.nsITabParent);
+    } catch (e) {
+      debug(`[process-switch]: No nsITabParent for channel - ignoring`);
+      return;
     }
 
+    
     let browser = tabParent.ownerElement;
-    if (browser.tagName !== "browser") {
-      console.warn("warning: Not a xul:browser element:", browser.tagName);
-      return; 
+    if (!browser) {
+      debug(`[process-switch]: TabParent has no ownerElement - ignoring`);
+      return;
     }
 
+    let tabbrowser = browser.ownerGlobal.gBrowser;
+    if (!tabbrowser) {
+      debug(`[process-switch]: cannot find tabbrowser for loading tab - ignoring`);
+      return;
+    }
+
+    let tab = tabbrowser.getTabForBrowser(browser);
+    if (!tab) {
+      debug(`[process-switch]: not a normal tab, so cannot swap processes - ignoring`);
+      return;
+    }
+
+    
     let resultPrincipal =
       Services.scriptSecurityManager.getChannelResultPrincipal(aChannel);
-    let useRemoteTabs = browser.ownerGlobal.gMultiProcessBrowser;
     let remoteType = E10SUtils.getRemoteTypeForPrincipal(resultPrincipal,
-                                                         useRemoteTabs,
+                                                         true,
                                                          browser.remoteType,
                                                          currentPrincipal);
-    if (browser.remoteType == remoteType) {
-      return; 
+    if (browser.remoteType == remoteType &&
+        (!E10SUtils.useCrossOriginOpenerPolicy() ||
+         !aChannel.hasCrossOriginOpenerPolicyMismatch())) {
+      debug(`[process-switch]: type (${remoteType}) is compatible - ignoring`);
+      return;
+    }
+
+    if (remoteType == E10SUtils.NOT_REMOTE ||
+        browser.remoteType == E10SUtils.NOT_REMOTE) {
+      debug(`[process-switch]: non-remote source/target - ignoring`);
+      return;
     }
 
     
@@ -3231,6 +3269,14 @@ var SessionStoreInternal = {
       tabState.index = Math.max(1, Math.min(tabState.index, tabState.entries.length));
     } else {
       options.loadArguments = loadArguments;
+
+      
+      
+      
+      
+      if (loadArguments.redirectLoadSwitchId) {
+        loadArguments.redirectHistoryIndex = tabState.requestedIndex - 1;
+      }
     }
 
     
@@ -3299,7 +3345,7 @@ var SessionStoreInternal = {
     let tabbrowser = aWindow.gBrowser;
     let startupPref = this._prefBranch.getIntPref("startup.page");
     if (startupPref == 1)
-      homePages = homePages.concat(HomePage.get().split("|"));
+      homePages = homePages.concat(HomePage.get(aWindow).split("|"));
 
     for (let i = tabbrowser._numPinnedTabs; i < tabbrowser.tabs.length; i++) {
       let tab = tabbrowser.tabs[i];
