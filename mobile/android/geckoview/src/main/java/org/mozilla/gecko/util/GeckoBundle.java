@@ -392,20 +392,20 @@ public final class GeckoBundle implements Parcelable {
     }
 
     private void put(final String key, final Object value) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      throw new UnsupportedOperationException();
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        throw new UnsupportedOperationException();
     }
 
     
