@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 #include "GeckoMVMContext.h"
 
@@ -141,16 +141,16 @@ void GeckoMVMContext::UpdateDisplayPortMargins() {
     bool hasDisplayPort = nsLayoutUtils::HasDisplayPort(root->GetContent());
     bool hasResolution = mPresShell->GetResolution() != 1.0f;
     if (!hasDisplayPort && !hasResolution) {
-      // We only want to update the displayport if there is one already, or
-      // add one if there's a resolution on the document (see bug 1225508
-      // comment 1).
+      
+      
+      
       return;
     }
     nsRect displayportBase = nsRect(
         nsPoint(0, 0), nsLayoutUtils::CalculateCompositionSizeForFrame(root));
-    // We only create MobileViewportManager for root content documents. If that
-    // ever changes we'd need to limit the size of this displayport base rect
-    // because non-toplevel documents have no limit on their size.
+    
+    
+    
     MOZ_ASSERT(mPresShell->GetPresContext()->IsRootContentDocument());
     nsLayoutUtils::SetDisplayPortBaseIfNotSet(root->GetContent(),
                                               displayportBase);
@@ -164,9 +164,9 @@ void GeckoMVMContext::Reflow(const CSSSize& aNewSize, const CSSSize& aOldSize,
                              ResizeEventFlag aResizeEventFlag) {
   MOZ_ASSERT(mPresShell);
 
-  ResizeReflowOptions reflowOptions = ResizeReflowOptions::eNoOption;
+  ResizeReflowOptions reflowOptions = ResizeReflowOptions::NoOption;
   if (aResizeEventFlag == ResizeEventFlag::Suppress) {
-    reflowOptions |= ResizeReflowOptions::eSuppressResizeEvent;
+    reflowOptions |= ResizeReflowOptions::SuppressResizeEvent;
   }
 
   RefPtr<PresShell> presShell = mPresShell;
@@ -177,4 +177,4 @@ void GeckoMVMContext::Reflow(const CSSSize& aNewSize, const CSSSize& aOldSize,
       nsPresContext::CSSPixelsToAppUnits(aOldSize.height), reflowOptions);
 }
 
-}  // namespace mozilla
+}  

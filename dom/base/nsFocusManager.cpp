@@ -719,7 +719,7 @@ nsFocusManager::WindowLowered(mozIDOMWindowProxy* aWindow) {
   if (mActiveWindow != window) return NS_OK;
 
   
-  nsIPresShell::SetCapturingContent(nullptr, 0);
+  PresShell::ReleaseCapturingContent();
 
   
   

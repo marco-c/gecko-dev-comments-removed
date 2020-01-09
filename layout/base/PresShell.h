@@ -9,6 +9,9 @@
 #ifndef mozilla_PresShell_h
 #define mozilla_PresShell_h
 
+#include "mozilla/PresShellForwards.h"
+#include "nsIPresShell.h"
+
 #include "mozilla/Attributes.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/dom/HTMLDocumentBinding.h"
@@ -21,7 +24,6 @@
 #include "nsContentUtils.h"  
 #include "nsCRT.h"
 #include "nsIObserver.h"
-#include "nsIPresShell.h"
 #include "nsISelectionController.h"
 #include "nsIWidget.h"
 #include "nsPresContext.h"
@@ -52,20 +54,16 @@ class EventDispatchingCallback;
 class GeckoMVMContext;
 class OverflowChangedTracker;
 
-
-
-typedef nsTHashtable<nsPtrHashKey<nsIFrame>> VisibleFrames;
-
-
-
-#define PAINTLOCK_EVENT_DELAY 5
-
 class PresShell final : public nsIPresShell,
                         public nsISelectionController,
                         public nsIObserver,
                         public nsSupportsWeakReference {
   typedef layers::FocusTarget FocusTarget;
   typedef dom::Element Element;
+
+  
+  
+  typedef nsTHashtable<nsPtrHashKey<nsIFrame>> VisibleFrames;
 
  public:
   PresShell();
@@ -96,23 +94,21 @@ class PresShell final : public nsIPresShell,
   NS_IMETHOD RepaintSelection(RawSelectionType aRawSelectionType) override;
 
   nsresult Initialize() override;
-  MOZ_CAN_RUN_SCRIPT nsresult
-  ResizeReflow(nscoord aWidth, nscoord aHeight, nscoord aOldWidth = 0,
-               nscoord aOldHeight = 0,
-               mozilla::ResizeReflowOptions aOptions =
-                   mozilla::ResizeReflowOptions::eNoOption) override;
+  MOZ_CAN_RUN_SCRIPT nsresult ResizeReflow(
+      nscoord aWidth, nscoord aHeight, nscoord aOldWidth = 0,
+      nscoord aOldHeight = 0,
+      ResizeReflowOptions aOptions = ResizeReflowOptions::NoOption) override;
   MOZ_CAN_RUN_SCRIPT nsresult ResizeReflowIgnoreOverride(
       nscoord aWidth, nscoord aHeight, nscoord aOldWidth, nscoord aOldHeight,
-      mozilla::ResizeReflowOptions aOptions =
-          mozilla::ResizeReflowOptions::eNoOption) override;
+      ResizeReflowOptions aOptions = ResizeReflowOptions::NoOption) override;
 
   MOZ_CAN_RUN_SCRIPT
   void DoFlushPendingNotifications(FlushType aType) override;
   MOZ_CAN_RUN_SCRIPT
   void DoFlushPendingNotifications(ChangesToFlush aType) override;
 
-  nsRectVisibility GetRectVisibility(nsIFrame* aFrame, const nsRect& aRect,
-                                     nscoord aMinTwips) const override;
+  RectVisibility GetRectVisibility(nsIFrame* aFrame, const nsRect& aRect,
+                                   nscoord aMinTwips) const override;
 
   nsresult CaptureHistoryState(
       nsILayoutHistoryState** aLayoutHistoryState) override;
@@ -419,6 +415,38 @@ class PresShell final : public nsIPresShell,
   MOZ_CAN_RUN_SCRIPT
   nsresult ScrollContentIntoView(nsIContent* aContent, ScrollAxis aVertical,
                                  ScrollAxis aHorizontal, uint32_t aFlags);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static void SetCapturingContent(nsIContent* aContent, CaptureFlags aFlags);
+
+  
+
+
+
+  static void ReleaseCapturingContent() {
+    PresShell::SetCapturingContent(nullptr, CaptureFlags::None);
+  }
 
  private:
   ~PresShell();

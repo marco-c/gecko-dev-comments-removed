@@ -352,8 +352,7 @@ void nsSplitterFrameInner::MouseUp(nsPresContext* aPresContext,
   if (mDragging && mOuter) {
     AdjustChildren(aPresContext);
     AddListener();
-    nsIPresShell::SetCapturingContent(nullptr,
-                                      0);  
+    PresShell::ReleaseCapturingContent();  
     mDragging = false;
     State newState = GetState();
     
@@ -517,7 +516,7 @@ nsresult nsSplitterFrameInner::MouseUp(Event* aMouseEvent) {
   NS_ENSURE_TRUE(mOuter, NS_OK);
   mPressed = false;
 
-  nsIPresShell::SetCapturingContent(nullptr, 0);
+  PresShell::ReleaseCapturingContent();
 
   return NS_OK;
 }
@@ -679,8 +678,8 @@ nsresult nsSplitterFrameInner::MouseDown(Event* aMouseEvent) {
 
   
 
-  nsIPresShell::SetCapturingContent(mOuter->GetContent(),
-                                    CAPTURE_IGNOREALLOWED);
+  PresShell::SetCapturingContent(mOuter->GetContent(),
+                                 CaptureFlags::IgnoreAllowedState);
 
   return NS_OK;
 }

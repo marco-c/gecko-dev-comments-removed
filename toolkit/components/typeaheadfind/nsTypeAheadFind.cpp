@@ -1200,13 +1200,13 @@ bool nsTypeAheadFind::IsRangeVisible(nsIPresShell* aPresShell,
   
   
   
-  nsRectVisibility rectVisibility = nsRectVisibility_kAboveViewport;
+  RectVisibility rectVisibility = RectVisibility::AboveViewport;
 
   if (!aGetTopVisibleLeaf && !frame->GetRect().IsEmpty()) {
     rectVisibility = aPresShell->GetRectVisibility(
         frame, frame->GetRectRelativeToSelf(), minDistance);
 
-    if (rectVisibility == nsRectVisibility_kVisible) {
+    if (rectVisibility == RectVisibility::Visible) {
       
       
       
@@ -1228,10 +1228,10 @@ bool nsTypeAheadFind::IsRangeVisible(nsIPresShell* aPresShell,
         nsLayoutUtils::TransformResult res =
             nsLayoutUtils::TransformRect(containerFrame, frame, r);
         if (res == nsLayoutUtils::TransformResult::TRANSFORM_SUCCEEDED) {
-          nsRectVisibility rangeRectVisibility =
+          RectVisibility rangeRectVisibility =
               aPresShell->GetRectVisibility(frame, r, minDistance);
 
-          if (rangeRectVisibility == nsRectVisibility_kVisible) {
+          if (rangeRectVisibility == RectVisibility::Visible) {
             atLeastOneRangeRectVisible = true;
             break;
           }
@@ -1272,7 +1272,7 @@ bool nsTypeAheadFind::IsRangeVisible(nsIPresShell* aPresShell,
     return false;
   }
 
-  while (rectVisibility == nsRectVisibility_kAboveViewport) {
+  while (rectVisibility == RectVisibility::AboveViewport) {
     frameTraversal->Next();
     frame = frameTraversal->CurrentItem();
     if (!frame) {

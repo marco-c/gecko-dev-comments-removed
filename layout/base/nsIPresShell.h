@@ -9,6 +9,8 @@
 #ifndef nsIPresShell_h___
 #define nsIPresShell_h___
 
+#include "mozilla/PresShellForwards.h"
+
 #include "mozilla/ArenaObjectID.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/FlushType.h"
@@ -23,6 +25,7 @@
 #include "FrameMetrics.h"
 #include "GeckoProfiler.h"
 #include "gfxPoint.h"
+#include "nsDOMNavigationTiming.h"
 #include "nsTHashtable.h"
 #include "nsHashKeys.h"
 #include "nsISupports.h"
@@ -125,25 +128,14 @@ class SourceSurface;
 }  
 }  
 
-
-
-
-#define CAPTURE_IGNOREALLOWED 1
-
-#define CAPTURE_RETARGETTOELEMENT 2
-
-#define CAPTURE_PREVENTDRAG 4
-
-#define CAPTURE_POINTERLOCK 8
-
-typedef struct CapturingContentInfo {
+struct CapturingContentInfo final {
   
   bool mAllowed;
   bool mPointerLock;
   bool mRetargetToElement;
   bool mPreventDrag;
   mozilla::StaticRefPtr<nsIContent> mContent;
-} CapturingContentInfo;
+};
 
 
 #define NS_IPRESSHELL_IID                            \
@@ -153,39 +145,7 @@ typedef struct CapturingContentInfo {
     }                                                \
   }
 
-
-#define VERIFY_REFLOW_ON 0x01
-#define VERIFY_REFLOW_NOISY 0x02
-#define VERIFY_REFLOW_ALL 0x04
-#define VERIFY_REFLOW_DUMP_COMMANDS 0x08
-#define VERIFY_REFLOW_NOISY_RC 0x10
-#define VERIFY_REFLOW_REALLY_NOISY_RC 0x20
-#define VERIFY_REFLOW_DURING_RESIZE_REFLOW 0x40
-
 #undef NOISY_INTERRUPTIBLE_REFLOW
-
-enum nsRectVisibility {
-  nsRectVisibility_kVisible,
-  nsRectVisibility_kAboveViewport,
-  nsRectVisibility_kBelowViewport,
-  nsRectVisibility_kLeftOfViewport,
-  nsRectVisibility_kRightOfViewport
-};
-
-namespace mozilla {
-enum class ResizeReflowOptions : uint32_t {
-  eNoOption = 0,
-  
-  
-  eBSizeLimit = 1 << 0,
-  
-  
-  
-  
-  eSuppressResizeEvent = 1 << 1,
-};
-MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(ResizeReflowOptions)
-}  
 
 
 
@@ -354,7 +314,7 @@ class nsIPresShell : public nsStubDocumentObserver {
       nscoord aWidth, nscoord aHeight, nscoord aOldWidth = 0,
       nscoord aOldHeight = 0,
       mozilla::ResizeReflowOptions aOptions =
-          mozilla::ResizeReflowOptions::eNoOption) = 0;
+          mozilla::ResizeReflowOptions::NoOption) = 0;
   
 
 
@@ -362,7 +322,7 @@ class nsIPresShell : public nsStubDocumentObserver {
   MOZ_CAN_RUN_SCRIPT virtual nsresult ResizeReflowIgnoreOverride(
       nscoord aWidth, nscoord aHeight, nscoord aOldWidth, nscoord aOldHeight,
       mozilla::ResizeReflowOptions aOptions =
-          mozilla::ResizeReflowOptions::eNoOption) = 0;
+          mozilla::ResizeReflowOptions::NoOption) = 0;
 
   
 
@@ -787,9 +747,8 @@ class nsIPresShell : public nsStubDocumentObserver {
 
 
 
-  virtual nsRectVisibility GetRectVisibility(nsIFrame* aFrame,
-                                             const nsRect& aRect,
-                                             nscoord aMinTwips) const = 0;
+  virtual mozilla::RectVisibility GetRectVisibility(
+      nsIFrame* aFrame, const nsRect& aRect, nscoord aMinTwips) const = 0;
 
   
 
@@ -1229,30 +1188,6 @@ class nsIPresShell : public nsStubDocumentObserver {
 
   
   static CapturingContentInfo gCaptureInfo;
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static void SetCapturingContent(nsIContent* aContent, uint8_t aFlags);
 
   
 

@@ -3412,7 +3412,7 @@ void HTMLInputElement::StartRangeThumbDrag(WidgetGUIEvent* aEvent) {
   mRangeThumbDragStartValue = GetValueAsDecimal();
   
   
-  nsIPresShell::SetCapturingContent(this, CAPTURE_IGNOREALLOWED);
+  PresShell::SetCapturingContent(this, CaptureFlags::IgnoreAllowedState);
   nsRangeFrame* rangeFrame = do_QueryFrame(GetPrimaryFrame());
 
   
@@ -3429,7 +3429,7 @@ void HTMLInputElement::FinishRangeThumbDrag(WidgetGUIEvent* aEvent) {
   MOZ_ASSERT(mIsDraggingRange);
 
   if (nsIPresShell::GetCapturingContent() == this) {
-    nsIPresShell::SetCapturingContent(nullptr, 0);  
+    PresShell::ReleaseCapturingContent();
   }
   if (aEvent) {
     nsRangeFrame* rangeFrame = do_QueryFrame(GetPrimaryFrame());
@@ -3444,7 +3444,7 @@ void HTMLInputElement::CancelRangeThumbDrag(bool aIsForUserEvent) {
 
   mIsDraggingRange = false;
   if (nsIPresShell::GetCapturingContent() == this) {
-    nsIPresShell::SetCapturingContent(nullptr, 0);  
+    PresShell::ReleaseCapturingContent();
   }
   if (aIsForUserEvent) {
     SetValueOfRangeForUserEvent(mRangeThumbDragStartValue);
@@ -3502,7 +3502,7 @@ void HTMLInputElement::StartNumberControlSpinnerSpin() {
 
   
   
-  nsIPresShell::SetCapturingContent(this, CAPTURE_IGNOREALLOWED);
+  PresShell::SetCapturingContent(this, CaptureFlags::IgnoreAllowedState);
 
   nsNumberControlFrame* numberControlFrame = do_QueryFrame(GetPrimaryFrame());
   if (numberControlFrame) {
@@ -3513,7 +3513,7 @@ void HTMLInputElement::StartNumberControlSpinnerSpin() {
 void HTMLInputElement::StopNumberControlSpinnerSpin(SpinnerStopState aState) {
   if (mNumberControlSpinnerIsSpinning) {
     if (nsIPresShell::GetCapturingContent() == this) {
-      nsIPresShell::SetCapturingContent(nullptr, 0);  
+      PresShell::ReleaseCapturingContent();
     }
 
     nsRepeatService::GetInstance()->Stop(HandleNumberControlSpin, this);

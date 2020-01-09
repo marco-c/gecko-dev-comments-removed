@@ -3634,7 +3634,7 @@ void Document::ReleaseCapture() const {
   
   nsCOMPtr<nsINode> node = nsIPresShell::GetCapturingContent();
   if (node && nsContentUtils::CanCallerAccess(node)) {
-    nsIPresShell::SetCapturingContent(nullptr, 0);
+    PresShell::ReleaseCapturingContent();
   }
 }
 
@@ -11095,7 +11095,7 @@ static void ChangePointerLockedElement(Element* aElement, Document* aDocument,
   }
   
   
-  nsIPresShell::SetCapturingContent(aElement, CAPTURE_POINTERLOCK);
+  PresShell::SetCapturingContent(aElement, CaptureFlags::PointerLock);
   DispatchPointerLockChange(aDocument);
 }
 

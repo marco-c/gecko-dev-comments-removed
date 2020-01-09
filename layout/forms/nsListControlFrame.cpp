@@ -822,7 +822,7 @@ void nsListControlFrame::CaptureMouseEvents(bool aGrabMouseEvents) {
     return;
 
   if (aGrabMouseEvents) {
-    nsIPresShell::SetCapturingContent(mContent, CAPTURE_IGNOREALLOWED);
+    PresShell::SetCapturingContent(mContent, CaptureFlags::IgnoreAllowedState);
   } else {
     nsIContent* capturingContent = nsIPresShell::GetCapturingContent();
 
@@ -837,7 +837,7 @@ void nsListControlFrame::CaptureMouseEvents(bool aGrabMouseEvents) {
       
       
       
-      nsIPresShell::SetCapturingContent(nullptr, 0);
+      PresShell::ReleaseCapturingContent();
     }
   }
 }
