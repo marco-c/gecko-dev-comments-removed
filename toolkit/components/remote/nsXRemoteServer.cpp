@@ -111,7 +111,7 @@ bool nsXRemoteServer::HandleNewProperty(XID aWindowId, Display *aDisplay,
     result = XGetWindowProperty(
         aDisplay, aWindowId, aChangedAtom, 0, 
         (65536 / sizeof(long)),               
-        True,                                 
+        X11True,                              
         XA_STRING,                            
         &actual_type,                         
         &actual_format,                       
@@ -156,7 +156,7 @@ void nsXRemoteServer::EnsureAtoms(void) {
   if (sMozVersionAtom) return;
 
   XInternAtoms(mozilla::DefaultXDisplay(), const_cast<char **>(XAtomNames),
-               ArrayLength(XAtomNames), False, XAtoms);
+               ArrayLength(XAtomNames), X11False, XAtoms);
 
   int i = 0;
   sMozVersionAtom = XAtoms[i++];

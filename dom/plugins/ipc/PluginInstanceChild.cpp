@@ -880,7 +880,7 @@ mozilla::ipc::IPCResult PluginInstanceChild::AnswerNPP_HandleEvent(
     
     
     
-    XSync(mWsInfo.display, False);
+    XSync(mWsInfo.display, X11False);
   }
 #endif
 
@@ -3171,7 +3171,7 @@ void PluginInstanceChild::PaintRectToPlatformSurface(const nsIntRect& aRect,
     exposeEvent.count = 0;
     
     exposeEvent.serial = 0;
-    exposeEvent.send_event = False;
+    exposeEvent.send_event = X11False;
     exposeEvent.major_code = 0;
     exposeEvent.minor_code = 0;
     mPluginIface->event(&mData, reinterpret_cast<void*>(&exposeEvent));
@@ -3551,7 +3551,7 @@ bool PluginInstanceChild::ShowPluginFrame() {
     currSurf = SurfaceDescriptorX11(xsurf);
     
     
-    XSync(mWsInfo.display, False);
+    XSync(mWsInfo.display, X11False);
   } else
 #endif
 #ifdef XP_WIN

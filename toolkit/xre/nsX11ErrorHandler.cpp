@@ -96,7 +96,7 @@ int X11Error(Display *display, XErrorEvent *event) {
     
     
     
-    if (XSynchronize(display, True) == XSynchronize(display, False)) {
+    if (XSynchronize(display, X11True) == XSynchronize(display, X11False)) {
       notes.AppendLiteral("; sync");
     } else {
       notes.AppendLiteral("; ");
@@ -141,6 +141,6 @@ void InstallX11ErrorHandler() {
   Display *display = mozilla::DefaultXDisplay();
   NS_ASSERTION(display, "No X display");
   if (PR_GetEnv("MOZ_X_SYNC")) {
-    XSynchronize(display, True);
+    XSynchronize(display, X11True);
   }
 }

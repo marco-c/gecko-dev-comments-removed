@@ -26,3 +26,14 @@
 #ifdef Always
 #  undef Always
 #endif
+
+
+
+#ifdef True
+#  undef True
+#  define X11True 1
+#endif
+#ifdef False
+#  undef False
+#  define X11False 0
+#endif

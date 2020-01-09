@@ -1075,7 +1075,7 @@ nsresult PluginInstanceParent::EndUpdateBackground(const nsIntRect& aRect) {
   
   
   
-  XSync(DefaultXDisplay(), False);
+  XSync(DefaultXDisplay(), X11False);
 #endif
 
   Unused << SendUpdateBackground(BackgroundDescriptor(), aRect);
@@ -1494,7 +1494,7 @@ int16_t PluginInstanceParent::NPP_HandleEvent(void* event) {
       XUngrabPointer(dpy, npevent->xbutton.time);
 #  endif
       
-      XSync(dpy, False);
+      XSync(dpy, X11False);
       break;
   }
 #endif
