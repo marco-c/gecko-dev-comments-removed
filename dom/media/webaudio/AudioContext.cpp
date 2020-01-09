@@ -92,6 +92,10 @@ static dom::AudioContext::AudioContextId gAudioContextId = 1;
 NS_IMPL_CYCLE_COLLECTION_CLASS(AudioContext)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(AudioContext)
+  
+  
+  
+  tmp->ShutdownWorklet();
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDestination)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mListener)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mWorklet)
@@ -630,6 +634,12 @@ AudioNodeStream* AudioContext::DestinationStream() const {
     return Destination()->Stream();
   }
   return nullptr;
+}
+
+void AudioContext::ShutdownWorklet() {
+  if (mWorklet) {
+    mWorklet->Impl()->NotifyWorkletFinished();
+  }
 }
 
 double AudioContext::CurrentTime() {
