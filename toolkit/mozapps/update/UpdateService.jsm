@@ -3228,6 +3228,8 @@ UpdateManager.prototype = {
         handleFallbackToCompleteUpdate(update, true);
       }
 
+      
+      
       update.QueryInterface(Ci.nsIWritablePropertyBag);
       update.setProperty("stagingFailed", "true");
     }
@@ -3821,12 +3823,20 @@ Downloader.prototype = {
         return null;
       }
 
+      
+      
+      
+      
+      
+      
+      
+      
       selectedPatch.QueryInterface(Ci.nsIWritablePropertyBag);
       if (selectedPatch.getProperty("bitsResult") != null &&
           selectedPatch.getProperty("internalResult") == null &&
-          selectedPatch.getProperty("stagingFailed") == null) {
+          !selectedPatch.errorCode) {
         LOG("Downloader:_selectPatch - Falling back to non-BITS download " +
-            "mechanism due to existing BITS result: " +
+            "mechanism for the same patch due to existing BITS result: " +
             selectedPatch.getProperty("bitsResult"));
         return selectedPatch;
       }
