@@ -272,7 +272,7 @@ double wasm::EstimateCompiledCodeSize(Tier tier, size_t bytecodeSize) {
 
 
 
-static const double tierCutoffMs = 250;
+static const double tierCutoffMs = 10;
 
 
 
