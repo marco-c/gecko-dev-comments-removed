@@ -5,26 +5,7 @@
 
 
 
-const {RemoteAgent} = ChromeUtils.import("chrome://remote/content/RemoteAgent.jsm");
-const {RemoteAgentError} = ChromeUtils.import("chrome://remote/content/Error.jsm");
-
-
-
 add_task(async function() {
-  try {
-    await testCDP();
-  } catch (e) {
-    
-    
-    if (e.response) {
-      throw RemoteAgentError.fromJSON(e.response);
-    } else {
-      throw e;
-    }
-  }
-});
-
-async function testCDP() {
   
   await RemoteAgent.listen(Services.io.newURI("http://localhost:9222"));
 
@@ -88,4 +69,4 @@ async function testCDP() {
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 
   await RemoteAgent.close();
-}
+});
