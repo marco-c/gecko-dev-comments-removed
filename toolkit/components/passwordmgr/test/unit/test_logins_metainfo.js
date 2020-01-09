@@ -14,7 +14,7 @@ XPCOMUtils.defineLazyServiceGetter(this, "gUUIDGenerator",
                                    "@mozilla.org/uuid-generator;1",
                                    "nsIUUIDGenerator");
 
-var gLooksLikeUUIDRegex = /^\{\w{8}-\w{4}-\w{4}-\w{4}-\w{12}\}$/;
+const gLooksLikeUUIDRegex = /^\{\w{8}-\w{4}-\w{4}-\w{4}-\w{12}\}$/;
 
 
 
@@ -48,17 +48,17 @@ function assertMetaInfoEqual(aActual, aExpected) {
 
 
 
-var gLoginInfo1;
-var gLoginInfo2;
-var gLoginInfo3;
+let gLoginInfo1;
+let gLoginInfo2;
+let gLoginInfo3;
 
 
 
 
 
-var gLoginMetaInfo1;
-var gLoginMetaInfo2;
-var gLoginMetaInfo3;
+let gLoginMetaInfo1;
+let gLoginMetaInfo2;
+let gLoginMetaInfo3;
 
 
 

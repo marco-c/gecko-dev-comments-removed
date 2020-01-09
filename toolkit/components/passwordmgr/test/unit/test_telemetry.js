@@ -19,7 +19,7 @@ const gReferenceTimeMs = new Date("2000-01-01T00:00:00").getTime();
 
 
 
-var daysBeforeMs = days => gReferenceTimeMs - (days + 0.5) * MS_PER_DAY;
+const daysBeforeMs = days => gReferenceTimeMs - (days + 0.5) * MS_PER_DAY;
 
 
 
