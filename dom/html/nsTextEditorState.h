@@ -163,24 +163,24 @@ class nsTextEditorState : public mozilla::SupportsWeakPtr<nsTextEditorState> {
 
   enum SetValueFlags {
     
-    eSetValue_Internal = 0,
+    eSetValue_Internal = 1 << 0,
     
-    eSetValue_BySetUserInput = 1 << 0,
-    
-    
-    eSetValue_ByContent = 1 << 1,
-    
-    eSetValue_Notify = 1 << 2,
+    eSetValue_BySetUserInput = 1 << 1,
     
     
+    eSetValue_ByContent = 1 << 2,
+    
+    eSetValue_Notify = 1 << 3,
     
     
     
-    eSetValue_MoveCursorToEndIfValueChanged = 1 << 3,
+    
+    
+    eSetValue_MoveCursorToEndIfValueChanged = 1 << 4,
     
     
     
-    eSetValue_ForXUL = 1 << 4,
+    eSetValue_ForXUL = 1 << 5,
   };
   MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE bool SetValue(const nsAString& aValue,

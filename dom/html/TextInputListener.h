@@ -47,7 +47,7 @@ class TextInputListener final : public nsIDOMEventListener,
   
 
 
-  void OnSelectionChange(Selection& aSelection, int16_t aReason);
+  void OnSelectionChange(dom::Selection& aSelection, int16_t aReason);
 
   
 

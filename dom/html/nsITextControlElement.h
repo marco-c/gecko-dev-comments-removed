@@ -181,11 +181,17 @@ class nsITextControlElement : public nsISupports {
 
   NS_IMETHOD_(bool) GetPreviewVisibility() = 0;
 
+  enum class ValueChangeKind {
+    Internal,
+    Script,
+    UserInteraction,
+  };
+
   
 
 
   NS_IMETHOD_(void)
-  OnValueChanged(bool aNotify, bool aWasInteractiveUserChange) = 0;
+  OnValueChanged(bool aNotify, ValueChangeKind) = 0;
 
   
 

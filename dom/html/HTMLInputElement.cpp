@@ -2604,8 +2604,10 @@ nsresult HTMLInputElement::SetValueInternal(const nsAString& aValue,
         
         
         
-        if (aFlags & (nsTextEditorState::eSetValue_Internal |
-                      nsTextEditorState::eSetValue_ByContent)) {
+        
+        
+        
+        if (aFlags & nsTextEditorState::eSetValue_ByContent) {
           MaybeUpdateAllValidityStates();
         }
       } else {
@@ -2640,8 +2642,7 @@ nsresult HTMLInputElement::SetValueInternal(const nsAString& aValue,
           }
         }
         if (mDoneCreating) {
-          OnValueChanged( true,
-                          false);
+          OnValueChanged( true, ValueChangeKind::Internal);
         }
         
       }
@@ -6753,8 +6754,10 @@ HTMLInputElement::InitializeKeyboardEventListeners() {
 }
 
 NS_IMETHODIMP_(void)
-HTMLInputElement::OnValueChanged(bool aNotify, bool aWasInteractiveUserChange) {
-  mLastValueChangeWasInteractive = aWasInteractiveUserChange;
+HTMLInputElement::OnValueChanged(bool aNotify, ValueChangeKind aKind) {
+  if (aKind != ValueChangeKind::Internal) {
+    mLastValueChangeWasInteractive = aKind == ValueChangeKind::UserInteraction;
+  }
 
   UpdateAllValidityStates(aNotify);
 

@@ -51,6 +51,7 @@
 
 using namespace mozilla;
 using namespace mozilla::dom;
+using ValueChangeKind = nsITextControlElement::ValueChangeKind;
 
 inline nsresult SetEditorFlagsIfNecessary(EditorBase& aEditorBase,
                                           uint32_t aFlags) {
@@ -987,7 +988,7 @@ void TextInputListener::HandleValueChanged(nsTextControlFrame* aFrame) {
 
   if (!mSettingValue) {
     mTxtCtrlElement->OnValueChanged( true,
-                                     true);
+                                    ValueChangeKind::UserInteraction);
   }
 }
 
@@ -2458,9 +2459,13 @@ bool nsTextEditorState::SetValue(const nsAString& aValue,
 
   
   
-  textControlElement->OnValueChanged( !!mBoundFrame,
-                                      false);
+  auto changeKind = (aFlags & eSetValue_Internal)
+    ? ValueChangeKind::Internal
+    : ValueChangeKind::Script;
 
+  
+  
+  textControlElement->OnValueChanged( !!mBoundFrame, changeKind);
   return true;
 }
 
