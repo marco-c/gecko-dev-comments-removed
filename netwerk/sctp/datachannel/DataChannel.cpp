@@ -1256,14 +1256,8 @@ bool DataChannelConnection::SendDeferredMessages() {
   uint32_t end = i;
   do {
     channel = mStreams[i];
-    if (!channel || channel->mBufferedData.IsEmpty()) {
-      i = UpdateCurrentStreamIndex();
-      continue;
-    }
-
     
-    if (channel->mState == CLOSED || channel->mState == CLOSING) {
-      channel->mBufferedData.Clear();
+    if (!channel || channel->mBufferedData.IsEmpty()) {
       i = UpdateCurrentStreamIndex();
       continue;
     }
@@ -1375,9 +1369,10 @@ void DataChannelConnection::HandleOpenRequestMessage(
   if ((channel = FindChannelByStream(stream))) {
     if (!(channel->mFlags & DATA_CHANNEL_FLAGS_EXTERNAL_NEGOTIATED)) {
       LOG(
-          ("ERROR: HandleOpenRequestMessage: channel for stream %u is in state "
-           "%d instead of CLOSED.",
-           stream, channel->mState));
+          ("ERROR: HandleOpenRequestMessage: channel for pre-existing stream "
+           "%u that was not externally negotiated. JS is lying to us, or "
+           "there's an id collision.",
+           stream));
       
     } else {
       LOG(("Open for externally negotiated channel %u", stream));
@@ -1405,20 +1400,18 @@ void DataChannelConnection::HandleOpenRequestMessage(
       &req->label[ntohs(req->label_length)], ntohs(req->protocol_length)));
 
   channel =
-      new DataChannel(this, stream, DataChannel::CONNECTING, label, protocol,
+      new DataChannel(this, stream, DataChannel::OPEN, label, protocol,
                       prPolicy, prValue, ordered, false, nullptr, nullptr);
   mStreams[stream] = channel;
 
-  channel->mState = DataChannel::WAITING_TO_OPEN;
-
-  LOG(("%s: sending ON_CHANNEL_CREATED for %s/%s: %u (state %u)", __FUNCTION__,
-       channel->mLabel.get(), channel->mProtocol.get(), stream,
-       channel->mState));
+  LOG(("%s: sending ON_CHANNEL_CREATED for %s/%s: %u", __FUNCTION__,
+       channel->mLabel.get(), channel->mProtocol.get(), stream));
   Dispatch(do_AddRef(new DataChannelOnMessageAvailable(
       DataChannelOnMessageAvailable::ON_CHANNEL_CREATED, this, channel)));
 
   LOG(("%s: deferring sending ON_CHANNEL_OPEN for %p", __FUNCTION__,
        channel.get()));
+  channel->AnnounceOpen();
 
   int error = SendOpenAckMessage(stream);
   if (error) {
@@ -1429,9 +1422,6 @@ void DataChannelConnection::HandleOpenRequestMessage(
     return;
   }
 
-  
-  
-  
   DeliverQueuedData(stream);
 }
 
@@ -1556,11 +1546,6 @@ void DataChannelConnection::HandleDataMessage(const void* data, size_t length,
     
     mQueuedData.AppendElement(
         new QueuedDataMessage(stream, ppid, flags, data, data_length));
-    return;
-  }
-
-  
-  if (channel->mState == CLOSED) {
     return;
   }
 
@@ -2104,14 +2089,8 @@ void DataChannelConnection::HandleStreamResetEvent(
           
           
 
-          LOG(("Incoming: Channel %u  closed, state %d", channel->mStream,
-               channel->mState));
-          ASSERT_WEBRTC(channel->mState == DataChannel::OPEN ||
-                        channel->mState == DataChannel::CLOSING ||
-                        channel->mState == DataChannel::CONNECTING ||
-                        channel->mState == DataChannel::WAITING_TO_OPEN);
-          if (channel->mState == DataChannel::OPEN ||
-              channel->mState == DataChannel::WAITING_TO_OPEN) {
+          LOG(("Incoming: Channel %u  closed", channel->mStream));
+          if (mStreams[channel->mStream]) {
             
             ResetOutgoingStream(channel->mStream);
           }
@@ -2119,7 +2098,6 @@ void DataChannelConnection::HandleStreamResetEvent(
 
           LOG(("Disconnected DataChannel %p from connection %p",
                (void*)channel.get(), (void*)channel->mConnection.get()));
-          
           channel->StreamClosedLocked();
         } else {
           LOG(("Can't find incoming channel %d", i));
@@ -2194,14 +2172,11 @@ void DataChannelConnection::HandleStreamChangeEvent(
     channel = mStreams[i];
     if (!channel) continue;
 
-    if ((channel->mState == CONNECTING) &&
-        (channel->mStream == INVALID_STREAM)) {
+    if (channel->mStream == INVALID_STREAM) {
       if ((strchg->strchange_flags & SCTP_STREAM_CHANGE_DENIED) ||
           (strchg->strchange_flags & SCTP_STREAM_CHANGE_FAILED)) {
         
-        channel->mState = CLOSED;
-        Dispatch(do_AddRef(new DataChannelOnMessageAvailable(
-            DataChannelOnMessageAvailable::ON_CHANNEL_CLOSED, this, channel)));
+        channel->AnnounceClosed();
         
       } else {
         stream = FindFreeStream();
@@ -2218,19 +2193,11 @@ void DataChannelConnection::HandleStreamChangeEvent(
             LOG(("SendOpenRequest failed, error = %d", error));
             
             mStreams[channel->mStream] = nullptr;
-            channel->mState = CLOSED;
+            channel->AnnounceClosed();
             
-            Dispatch(do_AddRef(new DataChannelOnMessageAvailable(
-                DataChannelOnMessageAvailable::ON_CHANNEL_CLOSED, this,
-                channel)));
           } else {
-            channel->mState = OPEN;
             channel->mFlags |= DATA_CHANNEL_FLAGS_READY;
-            LOG(("%s: sending ON_CHANNEL_OPEN for %p", __FUNCTION__,
-                 channel.get()));
-            Dispatch(do_AddRef(new DataChannelOnMessageAvailable(
-                DataChannelOnMessageAvailable::ON_CHANNEL_OPEN, this,
-                channel)));
+            channel->AnnounceOpen();
           }
         } else {
           
@@ -2484,7 +2451,7 @@ already_AddRefed<DataChannel> DataChannelConnection::OpenFinish(
 
 #ifdef TEST_QUEUED_DATA
   
-  channel->mState = OPEN;
+  channel->AnnounceOpen();
   channel->mFlags |= DATA_CHANNEL_FLAGS_READY;
   SendDataMsgInternalOrBuffer(channel, "Help me!", 8,
                               DATA_CHANNEL_PPID_DOMSTRING);
@@ -2505,36 +2472,30 @@ already_AddRefed<DataChannel> DataChannelConnection::OpenFinish(
       if (channel->mFlags & DATA_CHANNEL_FLAGS_FINISH_OPEN) {
         
         NS_ERROR("Failed to send open request");
-        Dispatch(do_AddRef(new DataChannelOnMessageAvailable(
-            DataChannelOnMessageAvailable::ON_CHANNEL_CLOSED, this, channel)));
+        channel->AnnounceClosed();
       }
       
       
       mStreams[stream] = nullptr;
       channel->mStream = INVALID_STREAM;
       
-      channel->mState = CLOSED;
       return nullptr;
       
     }
   }
+
   
-  channel->mState = OPEN;
   channel->mFlags |= DATA_CHANNEL_FLAGS_READY;
   
-  LOG(("%s: sending ON_CHANNEL_OPEN for %p", __FUNCTION__, channel.get()));
-  Dispatch(do_AddRef(new DataChannelOnMessageAvailable(
-      DataChannelOnMessageAvailable::ON_CHANNEL_OPEN, this, channel)));
+  channel->AnnounceOpen();
 
   return channel.forget();
 
 request_error_cleanup:
-  channel->mState = CLOSED;
   if (channel->mFlags & DATA_CHANNEL_FLAGS_FINISH_OPEN) {
     
     NS_ERROR("Failed to request more streams");
-    Dispatch(do_AddRef(new DataChannelOnMessageAvailable(
-        DataChannelOnMessageAvailable::ON_CHANNEL_CLOSED, this, channel)));
+    channel->AnnounceClosed();
     return channel.forget();
   }
   
@@ -2694,7 +2655,7 @@ int DataChannelConnection::SendDataMsgInternalOrBuffer(DataChannel& channel,
                                                        const uint8_t* data,
                                                        size_t len,
                                                        uint32_t ppid) {
-  if (NS_WARN_IF(channel.mState != OPEN && channel.mState != CONNECTING)) {
+  if (NS_WARN_IF(channel.mReadyState != OPEN)) {
     return EINVAL;  
   }
 
@@ -3006,8 +2967,8 @@ void DataChannelConnection::CloseInt(DataChannel* aChannel) {
   LOG(("Connection %p/Channel %p: Closing stream %u",
        channel->mConnection.get(), channel.get(), channel->mStream));
   
-  if (aChannel->mState == CLOSED || aChannel->mState == CLOSING) {
-    LOG(("Channel already closing/closed (%u)", aChannel->mState));
+  if (aChannel->mReadyState == CLOSED || aChannel->mReadyState == CLOSING) {
+    LOG(("Channel already closing/closed (%u)", aChannel->mReadyState));
     if (mState == CLOSED && channel->mStream != INVALID_STREAM) {
       
       
@@ -3026,7 +2987,7 @@ void DataChannelConnection::CloseInt(DataChannel* aChannel) {
       SendOutgoingStreamReset();
     }
   }
-  aChannel->mState = CLOSING;
+  aChannel->mReadyState = CLOSING;
   if (mState == CLOSED) {
     
     channel->StreamClosedLocked();
@@ -3077,7 +3038,7 @@ DataChannel::~DataChannel() {
   
   
   
-  NS_ASSERTION(mState == CLOSED || mState == CLOSING,
+  NS_ASSERTION(mReadyState == CLOSED || mReadyState == CLOSING,
                "unexpected state in ~DataChannel");
 }
 
@@ -3097,10 +3058,9 @@ void DataChannel::StreamClosedLocked() {
   LOG(("Destroying Data channel %u", mStream));
   MOZ_ASSERT_IF(mStream != INVALID_STREAM,
                 !mConnection->FindChannelByStream(mStream));
+  
   mStream = INVALID_STREAM;
-  mState = CLOSED;
-  mMainThreadEventTarget->Dispatch(do_AddRef(new DataChannelOnMessageAvailable(
-      DataChannelOnMessageAvailable::ON_CHANNEL_CLOSED, mConnection, this)));
+  AnnounceClosed();
   
 }
 
@@ -3111,7 +3071,7 @@ void DataChannel::ReleaseConnection() {
 
 void DataChannel::SetListener(DataChannelListener* aListener,
                               nsISupports* aContext) {
-  MutexAutoLock mLock(mListenerLock);
+  ASSERT_WEBRTC(NS_IsMainThread());
   mContext = aContext;
   mListener = aListener;
 }
@@ -3155,6 +3115,36 @@ void DataChannel::DecrementBufferedAmount(uint32_t aSize) {
           LOG(("%s: sending NO_LONGER_BUFFERED for %s/%s: %u", __FUNCTION__,
                mLabel.get(), mProtocol.get(), mStream));
           mListener->NotBuffered(mContext);
+        }
+      }));
+}
+
+void DataChannel::AnnounceOpen() {
+  mMainThreadEventTarget->Dispatch(NS_NewRunnableFunction(
+      "DataChannel::AnnounceOpen", [this, self = RefPtr<DataChannel>(this)] {
+        
+        
+        if (mReadyState != CLOSING && mReadyState != CLOSED && mListener) {
+          mReadyState = OPEN;
+          LOG(("%s: sending ON_CHANNEL_OPEN for %s/%s: %u", __FUNCTION__,
+               mLabel.get(), mProtocol.get(), mStream));
+          mListener->OnChannelConnected(mContext);
+        }
+      }));
+}
+
+void DataChannel::AnnounceClosed() {
+  mMainThreadEventTarget->Dispatch(NS_NewRunnableFunction(
+      "DataChannel::AnnounceClosed", [this, self = RefPtr<DataChannel>(this)] {
+        if (mReadyState == CLOSED) {
+          return;
+        }
+        mReadyState = CLOSED;
+        mBufferedData.Clear();
+        if (mListener) {
+          LOG(("%s: sending ON_CHANNEL_CLOSED for %s/%s: %u", __FUNCTION__,
+               mLabel.get(), mProtocol.get(), mStream));
+          mListener->OnChannelClosed(mContext);
         }
       }));
 }
@@ -3225,34 +3215,6 @@ dom::Nullable<uint16_t> DataChannel::GetMaxRetransmits() const {
   return dom::Nullable<uint16_t>();
 }
 
-
-void DataChannel::AppReady() {
-  ENSURE_DATACONNECTION;
-
-  MutexAutoLock lock(mConnection->mLock);
-
-  mFlags |= DATA_CHANNEL_FLAGS_READY;
-  if (mState == WAITING_TO_OPEN) {
-    mState = OPEN;
-    mMainThreadEventTarget->Dispatch(
-        do_AddRef(new DataChannelOnMessageAvailable(
-            DataChannelOnMessageAvailable::ON_CHANNEL_OPEN, mConnection,
-            this)));
-    for (uint32_t i = 0; i < mQueuedMessages.Length(); ++i) {
-      nsCOMPtr<nsIRunnable> runnable = mQueuedMessages[i];
-      MOZ_ASSERT(runnable);
-      mMainThreadEventTarget->Dispatch(runnable.forget());
-    }
-  } else {
-    NS_ASSERTION(mQueuedMessages.IsEmpty(),
-                 "Shouldn't have queued messages if not WAITING_TO_OPEN");
-  }
-  mQueuedMessages.Clear();
-  mQueuedMessages.Compact();
-  
-  
-}
-
 uint32_t DataChannel::GetBufferedAmountLowThreshold() {
   return mBufferedThreshold;
 }
@@ -3264,13 +3226,8 @@ void DataChannel::SetBufferedAmountLowThreshold(uint32_t aThreshold) {
 
 
 void DataChannel::SendOrQueue(DataChannelOnMessageAvailable* aMessage) {
-  if (!(mFlags & DATA_CHANNEL_FLAGS_READY) &&
-      (mState == CONNECTING || mState == WAITING_TO_OPEN)) {
-    mQueuedMessages.AppendElement(aMessage);
-  } else {
-    nsCOMPtr<nsIRunnable> runnable = aMessage;
-    mMainThreadEventTarget->Dispatch(runnable.forget());
-  }
+  nsCOMPtr<nsIRunnable> runnable = aMessage;
+  mMainThreadEventTarget->Dispatch(runnable.forget());
 }
 
 bool DataChannel::EnsureValidStream(ErrorResult& aRv) {

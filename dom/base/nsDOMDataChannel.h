@@ -96,8 +96,6 @@ class nsDOMDataChannel final : public mozilla::DOMEventTargetHelper,
 
   virtual nsresult NotBuffered(nsISupports* aContext) override;
 
-  virtual void AppReady();
-
   
   
   
