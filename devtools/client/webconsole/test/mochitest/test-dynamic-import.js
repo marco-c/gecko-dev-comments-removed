@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+function sum(...args) {
+  return `${args.join(" + ")} = ${args.reduce((acc, i) => acc + i)}`;
+}
+
+export {sum};

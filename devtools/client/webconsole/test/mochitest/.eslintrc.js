@@ -2,5 +2,11 @@
 
 module.exports = {
   
-  "extends": "../../../../.eslintrc.mochitests.js"
+  "extends": "../../../../.eslintrc.mochitests.js",
+  "overrides": [{
+    "files": ["test-dynamic-import.js"],
+    "parserOptions": {
+      "sourceType": "module",
+    },
+  }]
 };
