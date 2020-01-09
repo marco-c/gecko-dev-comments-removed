@@ -1513,6 +1513,10 @@ class RepositoryOperationBase : public StorageOperationBase {
  private:
   virtual nsresult PrepareOriginDirectory(OriginProps& aOriginProps,
                                           bool* aRemoved) = 0;
+
+  virtual nsresult PrepareClientDirectory(nsIFile* aFile,
+                                          const nsAString& aLeafName,
+                                          bool& aRemoved);
 };
 
 class CreateOrUpgradeDirectoryMetadataHelper final
@@ -1585,6 +1589,9 @@ class UpgradeStorageFrom2_1To2_2Helper final : public RepositoryOperationBase {
                                   bool* aRemoved) override;
 
   nsresult ProcessOriginDirectory(const OriginProps& aOriginProps) override;
+
+  nsresult PrepareClientDirectory(nsIFile* aFile, const nsAString& aLeafName,
+                                  bool& aRemoved) override;
 };
 
 class RestoreDirectoryMetadata2Helper final : public StorageOperationBase {
@@ -4375,6 +4382,7 @@ nsresult QuotaManager::UpgradeStorageFrom2_1To2_2(
   AssertIsOnIOThread();
   MOZ_ASSERT(aConnection);
 
+  
   
 
   nsresult rv = UpgradeStorage<UpgradeStorageFrom2_1To2_2Helper>(
@@ -8765,6 +8773,12 @@ nsresult RepositoryOperationBase::MaybeUpgradeClients(
       continue;
     }
 
+    bool removed;
+    rv = PrepareClientDirectory(file, leafName, removed);
+    if (NS_FAILED(rv) || removed) {
+      continue;
+    }
+
     Client::Type clientType;
     rv = Client::TypeFromText(leafName, clientType);
     if (NS_FAILED(rv)) {
@@ -8781,6 +8795,14 @@ nsresult RepositoryOperationBase::MaybeUpgradeClients(
     }
   }
 
+  return NS_OK;
+}
+
+nsresult RepositoryOperationBase::PrepareClientDirectory(
+    nsIFile* aFile, const nsAString& aLeafName, bool& aRemoved) {
+  AssertIsOnIOThread();
+
+  aRemoved = false;
   return NS_OK;
 }
 
@@ -9371,12 +9393,18 @@ nsresult UpgradeStorageFrom2_1To2_2Helper::PrepareOriginDirectory(
   MOZ_ASSERT(aOriginProps.mDirectory);
   MOZ_ASSERT(aRemoved);
 
+  nsresult rv =
+      MaybeUpgradeClients(aOriginProps, &Client::UpgradeStorageFrom2_1To2_2);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
   int64_t timestamp;
   nsCString group;
   nsCString origin;
   Nullable<bool> isApp;
-  nsresult rv = GetDirectoryMetadata(aOriginProps.mDirectory, timestamp, group,
-                                     origin, isApp);
+  rv = GetDirectoryMetadata(aOriginProps.mDirectory, timestamp, group, origin,
+                            isApp);
   if (NS_FAILED(rv) || isApp.IsNull()) {
     aOriginProps.mNeedsRestore = true;
   }
@@ -9419,6 +9447,24 @@ nsresult UpgradeStorageFrom2_1To2_2Helper::ProcessOriginDirectory(
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
+  }
+
+  return NS_OK;
+}
+
+nsresult UpgradeStorageFrom2_1To2_2Helper::PrepareClientDirectory(
+    nsIFile* aFile, const nsAString& aLeafName, bool& aRemoved) {
+  AssertIsOnIOThread();
+
+  if (Client::IsDeprecatedClient(aLeafName)) {
+    nsresult rv = aFile->Remove(true);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    aRemoved = true;
+  } else {
+    aRemoved = false;
   }
 
   return NS_OK;
