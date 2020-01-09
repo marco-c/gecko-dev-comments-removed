@@ -298,6 +298,31 @@ struct Token {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   enum Modifier {
     
     
@@ -306,6 +331,12 @@ struct Token {
     
     
     SlashIsRegExp,
+
+    
+    
+    
+    
+    SlashIsInvalid,
 
     
     
@@ -463,6 +494,7 @@ class TokenStreamShared {
   using Modifier = Token::Modifier;
   static constexpr Modifier SlashIsDiv = Token::SlashIsDiv;
   static constexpr Modifier SlashIsRegExp = Token::SlashIsRegExp;
+  static constexpr Modifier SlashIsInvalid = Token::SlashIsInvalid;
   static constexpr Modifier TemplateTail = Token::TemplateTail;
 
   using ModifierException = Token::ModifierException;
@@ -477,6 +509,12 @@ class TokenStreamShared {
       return;
     }
 
+    if (modifier == SlashIsInvalid &&
+        lookaheadToken.modifier != TemplateTail) {
+      
+      return;
+    }
+
     if (lookaheadToken.modifierException == SlashIsRegExpOK) {
       
       if (modifier == SlashIsRegExp && lookaheadToken.modifier == SlashIsDiv) {
@@ -485,9 +523,9 @@ class TokenStreamShared {
     }
 
     MOZ_ASSERT_UNREACHABLE(
-        "this token was previously looked up with a "
-        "different modifier, potentially making "
-        "tokenization non-deterministic");
+        "This token was scanned with both SlashIsRegExp and SlashIsDiv, indicating "
+        "the parser is confused about which one is allowed here. See comment "
+        "at Token::Modifier.");
 #endif
   }
 };
@@ -1846,6 +1884,9 @@ class GeneralTokenStreamChars : public SpecializedTokenStreamCharsBase<Unit> {
     
     
     
+    if (modifier == TokenStreamShared::SlashIsInvalid) {
+      modifier = TokenStreamShared::SlashIsDiv;
+    }
     token->modifier = modifier;
     token->modifierException = TokenStreamShared::NoException;
 #endif
