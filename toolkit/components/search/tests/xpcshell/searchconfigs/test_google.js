@@ -5,6 +5,7 @@
 
 const test = new SearchConfigTest({
   identifier: "google",
+  aliases: ["@google"],
   default: {
     
     
