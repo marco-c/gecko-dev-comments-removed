@@ -123,8 +123,4 @@ async function waitUntilDebuggerReady(debuggerContext) {
   
   
   await waitForLoadedSource(debuggerContext, "data:");
-
-  
-  
-  await waitForTime(1000);
 }
