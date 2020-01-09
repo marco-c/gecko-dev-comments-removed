@@ -9,10 +9,14 @@ var EXPORTED_SYMBOLS = [];
 const DEBUG = false;
 function debug(s) { dump("-*- NotificationDB component: " + s + "\n"); }
 
-ChromeUtils.defineModuleGetter(this, "FileUtils", "resource://gre/modules/FileUtils.jsm");
-ChromeUtils.defineModuleGetter(this, "KeyValueService", "resource://gre/modules/kvstore.jsm");
-ChromeUtils.defineModuleGetter(this, "OS", "resource://gre/modules/osfile.jsm");
-ChromeUtils.defineModuleGetter(this, "Services", "resource://gre/modules/Services.jsm");
+const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm");
+
+ChromeUtils.defineModuleGetter(this, "Services",
+                               "resource://gre/modules/Services.jsm");
+
+const NOTIFICATION_STORE_DIR = OS.Constants.Path.profileDir;
+const NOTIFICATION_STORE_PATH =
+        OS.Path.join(NOTIFICATION_STORE_DIR, "notificationstore.json");
 
 const kMessages = [
   "Notification:Save",
@@ -20,29 +24,19 @@ const kMessages = [
   "Notification:GetAll",
 ];
 
-
-
-function makeKey(origin, id) {
-  return origin.concat("\t", id);
-}
-
 var NotificationDB = {
 
   
   _shutdownInProgress: false,
 
-  
-  _store: null,
-
-  
-  
-  
-  _loadPromise: null,
-
   init() {
     if (this._shutdownInProgress) {
       return;
     }
+
+    this.notifications = {};
+    this.byTag = {};
+    this.loaded = false;
 
     this.tasks = []; 
     this.runningTask = null;
@@ -91,67 +85,68 @@ var NotificationDB = {
     return notifications;
   },
 
-  async maybeMigrateData() {
-    
-    
-    const oldStore = FileUtils.getFile("ProfD", ["notificationstore.json"]);
-
-    if (!oldStore.exists()) {
-      if (DEBUG) { debug("Old store doesn't exist; not migrating data."); }
-      return;
-    }
-
-    let data;
-    try {
-      data = await OS.File.read(oldStore.path, { encoding: "utf-8"});
-    } catch (ex) {
-      
-      if (DEBUG) { debug("Failed to read old store; not migrating data."); }
-      return;
-    } finally {
-      
-      await OS.File.remove(oldStore.path);
-    }
-
-    if (data.length > 0) {
-      
-      
-      
-      
-      
-      
-      
-      const notifications = this.filterNonAppNotifications(JSON.parse(data));
-
-      
-      
-      
-      for (const origin in notifications) {
-        for (const id in notifications[origin]) {
-          await this._store.put(makeKey(origin, id),
-            JSON.stringify(notifications[origin][id]));
+  
+  load() {
+    var promise = OS.File.read(NOTIFICATION_STORE_PATH, { encoding: "utf-8"});
+    return promise.then(
+      data => {
+        if (data.length > 0) {
+          
+          
+          this.notifications = this.filterNonAppNotifications(JSON.parse(data));
         }
+
+        
+        if (this.notifications) {
+          for (var origin in this.notifications) {
+            this.byTag[origin] = {};
+            for (var id in this.notifications[origin]) {
+              var curNotification = this.notifications[origin][id];
+              if (curNotification.tag) {
+                this.byTag[origin][curNotification.tag] = curNotification;
+              }
+            }
+          }
+        }
+
+        this.loaded = true;
+      },
+
+      
+      reason => {
+        this.loaded = true;
+        return this.createStore();
       }
-    }
+    );
   },
 
   
-  async load() {
-    
-    const dir = FileUtils.getDir("ProfD", ["notificationstore"], true);
-    this._store = await KeyValueService.getOrCreate(dir.path, "notifications");
+  createStore() {
+    var promise = OS.File.makeDir(NOTIFICATION_STORE_DIR, {
+      ignoreExisting: true,
+    });
+    return promise.then(
+      this.createFile.bind(this)
+    );
+  },
 
-    
-    
-    await this.maybeMigrateData();
+  
+  createFile() {
+    return OS.File.writeAtomic(NOTIFICATION_STORE_PATH, "");
+  },
+
+  
+  save() {
+    var data = JSON.stringify(this.notifications);
+    return OS.File.writeAtomic(NOTIFICATION_STORE_PATH, data, { encoding: "utf-8"});
   },
 
   
   ensureLoaded() {
-    if (!this._loadPromise) {
-      this._loadPromise = this.load();
+    if (!this.loaded) {
+      return this.load();
     }
-    return this._loadPromise;
+      return Promise.resolve();
   },
 
   receiveMessage(message) {
@@ -222,7 +217,11 @@ var NotificationDB = {
 
     var defer = {};
 
-    this.tasks.push({ operation, data, defer });
+    this.tasks.push({
+      operation,
+      data,
+      defer,
+    });
 
     var promise = new Promise(function(resolve, reject) {
       defer.resolve = resolve;
@@ -260,9 +259,11 @@ var NotificationDB = {
 
         case "delete":
           return this.taskDelete(task.data);
-      }
 
-      throw new Error(`Unknown task operation: ${task.operation}`);
+        default:
+          return Promise.reject(
+            new Error(`Found a task with unknown operation ${task.operation}`));
+      }
     })
     .then(payload => {
       if (DEBUG) {
@@ -281,54 +282,70 @@ var NotificationDB = {
     });
   },
 
-  enumerate(origin) {
-    
-    
-    
-    
-    
-    return this._store.enumerate(origin, `${origin}\n`);
-  },
-
-  async taskGetAll(data) {
+  taskGetAll(data) {
     if (DEBUG) { debug("Task, getting all"); }
     var origin = data.origin;
     var notifications = [];
-
-    for (const {value} of await this.enumerate(origin)) {
-      notifications.push(JSON.parse(value));
+    
+    if (this.notifications[origin]) {
+      if (data.tag) {
+        let n;
+        if ((n = this.byTag[origin][data.tag])) {
+          notifications.push(n);
+        }
+      } else {
+        for (var i in this.notifications[origin]) {
+          notifications.push(this.notifications[origin][i]);
+        }
+      }
     }
-
-    if (data.tag) {
-      notifications = notifications.filter(n => n.tag === data.tag);
-    }
-
-    return notifications;
+    return Promise.resolve(notifications);
   },
 
-  async taskSave(data) {
+  taskSave(data) {
     if (DEBUG) { debug("Task, saving"); }
     var origin = data.origin;
     var notification = data.notification;
+    if (!this.notifications[origin]) {
+      this.notifications[origin] = {};
+      this.byTag[origin] = {};
+    }
 
     
     
     if (notification.tag) {
-      for (const {key, value} of await this.enumerate(origin)) {
-        const oldNotification = JSON.parse(value);
-        if (oldNotification.tag === notification.tag) {
-          await this._store.delete(key);
-        }
+      var oldNotification = this.byTag[origin][notification.tag];
+      if (oldNotification) {
+        delete this.notifications[origin][oldNotification.id];
       }
+      this.byTag[origin][notification.tag] = notification;
     }
 
-    await this._store.put(makeKey(origin, notification.id),
-      JSON.stringify(notification));
+    this.notifications[origin][notification.id] = notification;
+    return this.save();
   },
 
-  async taskDelete(data) {
+  taskDelete(data) {
     if (DEBUG) { debug("Task, deleting"); }
-    await this._store.delete(makeKey(data.origin, data.id));
+    var origin = data.origin;
+    var id = data.id;
+    if (!this.notifications[origin]) {
+      if (DEBUG) { debug("No notifications found for origin: " + origin); }
+      return Promise.resolve();
+    }
+
+    
+    var oldNotification = this.notifications[origin][id];
+    if (!oldNotification) {
+      if (DEBUG) { debug("No notification found with id: " + id); }
+      return Promise.resolve();
+    }
+
+    if (oldNotification.tag) {
+      delete this.byTag[origin][oldNotification.tag];
+    }
+    delete this.notifications[origin][id];
+    return this.save();
   },
 };
 
