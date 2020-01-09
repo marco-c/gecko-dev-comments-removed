@@ -1223,6 +1223,8 @@ class UrlbarInput {
       return;
     }
 
+    this.view.removeAccessibleFocus();
+
     
     
     
