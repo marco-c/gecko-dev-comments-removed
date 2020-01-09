@@ -81,6 +81,9 @@ void AfterCheckpoint(const CheckpointId& aCheckpoint);
 
 size_t LastNormalCheckpoint();
 
+
+bool ShouldSendPaintMessage();
+
 }  
 
 namespace child {

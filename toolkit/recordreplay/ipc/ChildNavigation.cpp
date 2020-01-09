@@ -102,6 +102,11 @@ class NavigationPhase {
   virtual void HitRecordingEndpoint(const ExecutionPoint& aPoint) {
     Unsupported("HitRecordingEndpoint");
   }
+
+  
+  virtual bool ShouldSendPaintMessage() {
+    Unsupported("ShouldSendPaintMessage");
+  }
 };
 
 
@@ -186,6 +191,7 @@ class ForwardPhase final : public NavigationPhase {
   void AfterCheckpoint(const CheckpointId& aCheckpoint) override;
   void PositionHit(const ExecutionPoint& aPoint) override;
   void HitRecordingEndpoint(const ExecutionPoint& aPoint) override;
+  bool ShouldSendPaintMessage() override;
 };
 
 
@@ -224,6 +230,7 @@ class ReachBreakpointPhase final : public NavigationPhase {
 
   void AfterCheckpoint(const CheckpointId& aCheckpoint) override;
   void PositionHit(const ExecutionPoint& aPoint) override;
+  bool ShouldSendPaintMessage() override;
 };
 
 
@@ -233,7 +240,7 @@ class FindLastHitPhase final : public NavigationPhase {
   CheckpointId mStart;
 
   
-  Maybe<ExecutionPoint> mEnd;
+  ExecutionPoint mEnd;
 
   
   bool mIncludeEnd;
@@ -263,16 +270,18 @@ class FindLastHitPhase final : public NavigationPhase {
 
  public:
   
-  void Enter(const CheckpointId& aStart, const Maybe<ExecutionPoint>& aEnd,
+  void Enter(const CheckpointId& aStart, const ExecutionPoint& aEnd,
              bool aIncludeEnd);
 
   void ToString(nsAutoCString& aStr) override {
-    aStr.AppendPrintf("FindLastHit");
+    aStr.AppendPrintf("FindLastHit #%zu:%zu", mStart.mNormal, mStart.mTemporary);
+    mEnd.ToString(aStr);
   }
 
   void AfterCheckpoint(const CheckpointId& aCheckpoint) override;
   void PositionHit(const ExecutionPoint& aPoint) override;
   void HitRecordingEndpoint(const ExecutionPoint& aPoint) override;
+  bool ShouldSendPaintMessage() override;
 };
 
 
@@ -400,6 +409,10 @@ class NavigationState {
     return mPhase->CurrentExecutionPoint();
   }
 
+  bool ShouldSendPaintMessage() {
+    return mPhase->ShouldSendPaintMessage();
+  }
+
   void SetRecordingEndpoint(size_t aIndex, const ExecutionPoint& aEndpoint) {
     
     if (aIndex <= mRecordingEndpointIndex) {
@@ -432,8 +445,6 @@ class NavigationState {
     return mRecordingEndpoint;
   }
 
-  size_t NumTemporaryCheckpoints() { return mTemporaryCheckpoints.length(); }
-
   bool SaveTemporaryCheckpoint(const ExecutionPoint& aPoint) {
     MOZ_RELEASE_ASSERT(aPoint.mCheckpoint == mLastCheckpoint.mNormal);
     mTemporaryCheckpoints.append(aPoint);
@@ -452,6 +463,21 @@ class NavigationState {
 };
 
 static NavigationState* gNavigation;
+
+
+
+
+
+static CheckpointId
+SkipUnknownTemporaryCheckpoints(const CheckpointId& aCheckpoint)
+{
+  CheckpointId rval = aCheckpoint;
+  while (rval.mTemporary &&
+         rval.mNormal != gNavigation->LastCheckpoint().mNormal) {
+    rval = GetLastSavedCheckpointPriorTo(rval);
+  }
+  return rval;
+}
 
 
 
@@ -521,24 +547,21 @@ void PausedPhase::Resume(bool aForward) {
   }
 
   
-  if (mPoint.HasPosition()) {
-    CheckpointId start = gNavigation->LastCheckpoint();
+  
+  CheckpointId start = GetLastSavedCheckpoint();
 
-    
-    if (mSavedTemporaryCheckpoint) {
-      MOZ_RELEASE_ASSERT(start.mTemporary);
-      start.mTemporary--;
-    }
-    gNavigation->mFindLastHitPhase.Enter(start, Some(mPoint),
-                                          false);
-  } else {
-    
-    MOZ_RELEASE_ASSERT(mPoint.mCheckpoint != CheckpointId::First);
-
-    CheckpointId start(mPoint.mCheckpoint - 1);
-    gNavigation->mFindLastHitPhase.Enter(start, Nothing(),
-                                          false);
+  
+  if (mSavedTemporaryCheckpoint) {
+    start = GetLastSavedCheckpointPriorTo(start);
   }
+
+  
+  if (!mPoint.HasPosition() && start == CheckpointId(mPoint.mCheckpoint)) {
+    start = GetLastSavedCheckpointPriorTo(start);
+  }
+
+  start = SkipUnknownTemporaryCheckpoints(start);
+  gNavigation->mFindLastHitPhase.Enter(start, mPoint,  false);
   Unreachable();
 }
 
@@ -551,7 +574,6 @@ void PausedPhase::RestoreCheckpoint(size_t aCheckpoint) {
 void PausedPhase::RunToPoint(const ExecutionPoint& aTarget) {
   
   MOZ_RELEASE_ASSERT(!mPoint.HasPosition());
-  MOZ_RELEASE_ASSERT(aTarget.mCheckpoint == mPoint.mCheckpoint);
 
   ResumeExecution();
 
@@ -763,11 +785,14 @@ void ForwardPhase::PositionHit(const ExecutionPoint& aPoint) {
 }
 
 void ForwardPhase::HitRecordingEndpoint(const ExecutionPoint& aPoint) {
-  nsAutoCString str;
-  aPoint.ToString(str);
-
   gNavigation->mPausedPhase.Enter(aPoint,  false,
                                    true);
+}
+
+bool
+ForwardPhase::ShouldSendPaintMessage()
+{
+  return true;
 }
 
 
@@ -797,20 +822,20 @@ void ReachBreakpointPhase::Enter(
 }
 
 void ReachBreakpointPhase::AfterCheckpoint(const CheckpointId& aCheckpoint) {
-  if (aCheckpoint == mStart && mTemporaryCheckpoint.isSome()) {
-    js::EnsurePositionHandler(mTemporaryCheckpoint.ref().mPosition);
+  
+  MOZ_RELEASE_ASSERT(aCheckpoint.mNormal <= mPoint.mCheckpoint);
 
+  if (aCheckpoint == mStart) {
     
     
     mStartTime = CurrentTime();
-  } else {
-    MOZ_RELEASE_ASSERT(
-        (aCheckpoint == mStart && mTemporaryCheckpoint.isNothing()) ||
-        (aCheckpoint == mStart.NextCheckpoint( true) &&
-         mSavedTemporaryCheckpoint));
   }
 
   js::EnsurePositionHandler(mPoint.mPosition);
+
+  if (mTemporaryCheckpoint.isSome()) {
+    js::EnsurePositionHandler(mTemporaryCheckpoint.ref().mPosition);
+  }
 }
 
 
@@ -844,15 +869,20 @@ void ReachBreakpointPhase::PositionHit(const ExecutionPoint& aPoint) {
   }
 }
 
+bool
+ReachBreakpointPhase::ShouldSendPaintMessage()
+{
+  
+  
+  return false;
+}
+
 
 
 
 
 void FindLastHitPhase::Enter(const CheckpointId& aStart,
-                             const Maybe<ExecutionPoint>& aEnd,
-                             bool aIncludeEnd) {
-  MOZ_RELEASE_ASSERT(aEnd.isNothing() || aEnd.ref().HasPosition());
-
+                             const ExecutionPoint& aEnd, bool aIncludeEnd) {
   mStart = aStart;
   mEnd = aEnd;
   mIncludeEnd = aIncludeEnd;
@@ -881,22 +911,21 @@ void FindLastHitPhase::Enter(const CheckpointId& aStart,
 }
 
 void FindLastHitPhase::AfterCheckpoint(const CheckpointId& aCheckpoint) {
-  if (aCheckpoint == mStart.NextCheckpoint( false)) {
-    
-    MOZ_RELEASE_ASSERT(mEnd.isNothing());
+  
+  MOZ_RELEASE_ASSERT(aCheckpoint.mNormal <= mEnd.mCheckpoint);
+
+  if (!mEnd.HasPosition() && mEnd.mCheckpoint == aCheckpoint.mNormal) {
+    MOZ_RELEASE_ASSERT(!aCheckpoint.mTemporary);
     OnRegionEnd();
     Unreachable();
   }
-
-  
-  MOZ_RELEASE_ASSERT(aCheckpoint == mStart);
 
   for (const TrackedPosition& tracked : mTrackedPositions) {
     js::EnsurePositionHandler(tracked.mPosition);
   }
 
-  if (mEnd.isSome()) {
-    js::EnsurePositionHandler(mEnd.ref().mPosition);
+  if (mEnd.HasPosition()) {
+    js::EnsurePositionHandler(mEnd.mPosition);
   }
 }
 
@@ -921,7 +950,7 @@ void FindLastHitPhase::PositionHit(const ExecutionPoint& aPoint) {
 }
 
 void FindLastHitPhase::CheckForRegionEnd(const ExecutionPoint& aPoint) {
-  if (mEnd.isSome() && mEnd.ref() == aPoint) {
+  if (mEnd == aPoint) {
     OnRegionEnd();
     Unreachable();
   }
@@ -930,6 +959,16 @@ void FindLastHitPhase::CheckForRegionEnd(const ExecutionPoint& aPoint) {
 void FindLastHitPhase::HitRecordingEndpoint(const ExecutionPoint& aPoint) {
   OnRegionEnd();
   Unreachable();
+}
+
+bool
+FindLastHitPhase::ShouldSendPaintMessage()
+{
+  
+  
+  
+  
+  return gNavigation->LastCheckpoint().mNormal == mStart.mNormal;
 }
 
 const FindLastHitPhase::TrackedPosition& FindLastHitPhase::FindTrackedPosition(
@@ -959,14 +998,14 @@ void FindLastHitPhase::OnRegionEnd() {
     if (mStart.mTemporary) {
       
       
-      CheckpointId start = mStart;
-      start.mTemporary--;
+      CheckpointId start = GetLastSavedCheckpointPriorTo(mStart);
+      start = SkipUnknownTemporaryCheckpoints(start);
       ExecutionPoint end = gNavigation->LastTemporaryCheckpointLocation();
-      if (end.HasPosition()) {
+      if (end.HasPosition() || end.mCheckpoint != start.mNormal) {
         
         
         
-        gNavigation->mFindLastHitPhase.Enter(start, Some(end),
+        gNavigation->mFindLastHitPhase.Enter(start, end,
                                               true);
         Unreachable();
       } else {
@@ -1156,6 +1195,10 @@ ExecutionPoint TimeWarpTargetExecutionPoint(ProgressCounter aTarget) {
 
 bool MaybeDivergeFromRecording() {
   return gNavigation->MaybeDivergeFromRecording();
+}
+
+bool ShouldSendPaintMessage() {
+  return gNavigation->ShouldSendPaintMessage();
 }
 
 }  

@@ -140,6 +140,9 @@ bool HasSavedCheckpoint();
 CheckpointId GetLastSavedCheckpoint();
 
 
+CheckpointId GetLastSavedCheckpointPriorTo(const CheckpointId& aCheckpoint);
+
+
 
 void RestoreCheckpointAndResume(const CheckpointId& aCheckpoint);
 
