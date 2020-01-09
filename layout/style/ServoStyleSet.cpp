@@ -228,9 +228,6 @@ static const MediaFeatureChangeReason kMediaFeaturesAffectingDefaultStyle =
     MediaFeatureChangeReason::ZoomChange |
     
     
-    MediaFeatureChangeReason::MinFontSizeChange |
-    
-    
     
     
     MediaFeatureChangeReason::ResolutionChange;

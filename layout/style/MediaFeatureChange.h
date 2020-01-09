@@ -25,23 +25,20 @@ enum class MediaFeatureChangeReason {
   ZoomChange = 1 << 1,
   
   
-  MinFontSizeChange = 1 << 2,
+  ResolutionChange = 1 << 2,
+  
+  MediumChange = 1 << 3,
+  
+  SizeModeChange = 1 << 4,
   
   
-  ResolutionChange = 1 << 3,
-  
-  MediumChange = 1 << 4,
-  
-  SizeModeChange = 1 << 5,
+  SystemMetricsChange = 1 << 5,
   
   
-  SystemMetricsChange = 1 << 6,
+  DeviceSizeIsPageSizeChange = 1 << 6,
   
   
-  DeviceSizeIsPageSizeChange = 1 << 7,
-  
-  
-  DisplayModeChange = 1 << 8,
+  DisplayModeChange = 1 << 7,
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(MediaFeatureChangeReason)

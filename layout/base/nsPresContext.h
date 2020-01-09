@@ -571,31 +571,7 @@ class nsPresContext : public nsISupports,
     if (aNeedsToCache && *aNeedsToCache) {
       return 0;
     }
-    return std::max(mBaseMinFontSize, prefs->mMinimumFontSize);
-  }
-
-  
-
-
-
-  int32_t BaseMinFontSize() const { return mBaseMinFontSize; }
-
-  
-
-
-
-  void SetBaseMinFontSize(int32_t aMinFontSize) {
-    if (aMinFontSize == mBaseMinFontSize) {
-      return;
-    }
-
-    mBaseMinFontSize = aMinFontSize;
-
-    
-    
-    MediaFeatureValuesChanged(
-        {eRestyle_ForceDescendants, NS_STYLE_HINT_REFLOW,
-         mozilla::MediaFeatureChangeReason::MinFontSizeChange});
+    return prefs->mMinimumFontSize;
   }
 
   float GetFullZoom() { return mFullZoom; }
@@ -1238,9 +1214,6 @@ class nsPresContext : public nsISupports,
  protected:
   mozilla::WeakPtr<nsDocShell> mContainer;
 
-  
-  
-  int32_t mBaseMinFontSize;
   float mSystemFontScale;    
   float mTextZoom;           
   float mEffectiveTextZoom;  
