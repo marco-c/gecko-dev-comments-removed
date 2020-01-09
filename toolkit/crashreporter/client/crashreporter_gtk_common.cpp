@@ -107,7 +107,6 @@ static gboolean ReportCompleted(gpointer success) {
   return FALSE;
 }
 
-#ifdef MOZ_ENABLE_GCONF
 #  define HTTP_PROXY_DIR "/system/http_proxy"
 
 void LoadProxyinfo() {
@@ -179,7 +178,6 @@ void LoadProxyinfo() {
 
   
 }
-#endif
 
 gpointer SendThread(gpointer args) {
   string response, error;

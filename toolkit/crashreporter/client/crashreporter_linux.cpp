@@ -95,9 +95,7 @@ void SaveSettings() {
 }
 
 void SendReport() {
-#ifdef MOZ_ENABLE_GCONF
   LoadProxyinfo();
-#endif
 
   
   gSendThreadID = g_thread_create(SendThread, nullptr, TRUE, nullptr);
