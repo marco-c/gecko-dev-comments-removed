@@ -159,9 +159,9 @@ CustomElementCallback::CustomElementCallback(
 
 
 already_AddRefed<Element> CustomElementConstructor::Construct(
-    const char* aExecutionReason, ErrorResult& aRv) {
-  CallSetup s(this, aRv, aExecutionReason,
-              CallbackFunction::eRethrowExceptions);
+    ErrorResult& aRv, const char* aExecutionReason,
+    ExceptionHandling aExceptionHandling) {
+  CallSetup s(this, aRv, aExecutionReason, aExceptionHandling);
 
   JSContext* cx = s.GetContext();
   if (!cx) {
@@ -1068,8 +1068,8 @@ static void DoUpgrade(Element* aElement, CustomElementConstructor* aConstructor,
                       ErrorResult& aRv) {
   
   
-  RefPtr<Element> constructResult =
-      aConstructor->Construct("Custom Element Upgrade", aRv);
+  RefPtr<Element> constructResult = aConstructor->Construct(
+      aRv, "Custom Element Upgrade", CallbackFunction::eRethrowExceptions);
   if (aRv.Failed()) {
     return;
   }
