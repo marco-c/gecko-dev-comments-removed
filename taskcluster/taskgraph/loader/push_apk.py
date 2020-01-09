@@ -35,9 +35,7 @@ def get_dependent_loaded_tasks(config, params, loaded_tasks):
     )
     android_tasks = (
         task for task in tasks_with_matching_kind
-        if task.attributes.get('build_platform', '').startswith('android') and
-        
-        not task.attributes.get('disable-push-apk', False)
+        if task.attributes.get('build_platform', '').startswith('android')
     )
 
     
