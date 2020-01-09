@@ -63,17 +63,12 @@ if __name__ == '__main__':
         for path in prefpaths:
             prefs.update(Preferences.read_prefs(path))
 
-        interpolation = {"server": "%s:%d" % httpd.httpd.server_address}
+        interpolation = {"server": "%s:%d" % httpd.httpd.server_address,
+                         "OOP": "false"}
         for k, v in prefs.items():
             if isinstance(v, string_types):
                 v = v.format(**interpolation)
             prefs[k] = Preferences.cast(v)
-
-        
-        
-        
-        
-        prefs["browser.tabs.remote.autostart"] = True
 
         profile = FirefoxProfile(profile=profilePath,
                                  preferences=prefs,
@@ -87,7 +82,8 @@ if __name__ == '__main__':
         env["XPCOM_DEBUG_BREAK"] = "warn"
         
         
-        env["MOZ_DISABLE_CONTENT_SANDBOX"] = "1"
+        
+        env["MOZ_FORCE_DISABLE_E10S"] = "1"
 
         
         if not substs.get('HAVE_64BIT_BUILD'):
