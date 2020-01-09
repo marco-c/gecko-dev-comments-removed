@@ -41,7 +41,6 @@ class nsDOMCSSValueList;
 struct nsMargin;
 class nsROCSSPrimitiveValue;
 class nsStyleCoord;
-class nsStyleCorners;
 struct nsStyleFilter;
 class nsStyleGradient;
 struct nsStyleImage;
@@ -170,11 +169,10 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
 
   typedef bool (nsComputedDOMStyle::*PercentageBaseGetter)(nscoord&);
 
-  already_AddRefed<CSSValue> GetEllipseRadii(const nsStyleCorners& aRadius,
+  already_AddRefed<CSSValue> GetEllipseRadii(const mozilla::BorderRadius&,
                                              mozilla::Corner aFullCorner);
 
-  already_AddRefed<CSSValue> GetOffsetWidthFor(mozilla::Side aSide);
-
+  already_AddRefed<CSSValue> GetOffsetWidthFor(mozilla::Side);
   already_AddRefed<CSSValue> GetAbsoluteOffset(mozilla::Side);
   nscoord GetUsedAbsoluteOffset(mozilla::Side);
   already_AddRefed<CSSValue> GetNonStaticPositionOffset(
@@ -296,6 +294,7 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
   already_AddRefed<CSSValue> DoGetBorderTopLeftRadius();
   already_AddRefed<CSSValue> DoGetBorderTopRightRadius();
 
+
   
   already_AddRefed<CSSValue> DoGetBorderImageWidth();
 
@@ -314,6 +313,7 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
   already_AddRefed<CSSValue> DoGetOutlineRadiusBottomRight();
   already_AddRefed<CSSValue> DoGetOutlineRadiusTopLeft();
   already_AddRefed<CSSValue> DoGetOutlineRadiusTopRight();
+
 
   
   already_AddRefed<CSSValue> DoGetInitialLetter();
@@ -496,7 +496,7 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
                          const nsTArray<nsStyleCoord>& aBoxValues,
                          bool aClampNegativeCalc);
   void BasicShapeRadiiToString(nsAString& aCssText,
-                               const nsStyleCorners& aCorners);
+                               const mozilla::BorderRadius&);
 
   
   

@@ -943,7 +943,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleBorder {
   }
 
  public:
-  nsStyleCorners mBorderRadius;  
+  mozilla::StyleBorderRadius mBorderRadius;  
   nsStyleImage mBorderImageSource;
   nsStyleSides mBorderImageWidth;  
   mozilla::StyleNonNegativeLengthOrNumberRect mBorderImageOutset;
@@ -1047,7 +1047,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleOutline {
 
   nsChangeHint CalcDifference(const nsStyleOutline& aNewData) const;
 
-  nsStyleCorners mOutlineRadius;  
+  mozilla::StyleBorderRadius mOutlineRadius;
 
   
   
@@ -1291,9 +1291,9 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition {
   uint8_t mSpecifiedJustifyItems;
   uint8_t mJustifyItems;
   uint8_t mJustifySelf;
-  mozilla::StyleFlexDirection mFlexDirection;  
-  uint8_t mFlexWrap;       
-  uint8_t mObjectFit;      
+  mozilla::StyleFlexDirection mFlexDirection;
+  uint8_t mFlexWrap;   
+  uint8_t mObjectFit;  
   int32_t mOrder;
   float mFlexGrow;
   float mFlexShrink;
@@ -1635,10 +1635,7 @@ struct StyleAnimation {
 
 class StyleBasicShape final {
  public:
-  explicit StyleBasicShape(StyleBasicShapeType type)
-      : mType(type),
-        mFillRule(StyleFillRule::Nonzero),
-        mPosition(Position::FromPercentage(0.5f)) {}
+  explicit StyleBasicShape(StyleBasicShapeType);
 
   StyleBasicShapeType GetShapeType() const { return mType; }
   nsCSSKeyword GetShapeTypeName() const;
@@ -1654,17 +1651,16 @@ class StyleBasicShape final {
 
   bool HasRadius() const {
     MOZ_ASSERT(mType == StyleBasicShapeType::Inset, "expected inset");
-    nsStyleCoord zero;
-    zero.SetCoordValue(0);
     NS_FOR_CSS_HALF_CORNERS(corner) {
-      if (mRadius.Get(corner) != zero) {
+      auto& radius = mRadius.Get(corner);
+      if (radius.HasPercent() || radius.LengthInCSSPixels() != 0.0f) {
         return true;
       }
     }
     return false;
   }
 
-  const nsStyleCorners& GetRadius() const {
+  const mozilla::StyleBorderRadius& GetRadius() const {
     MOZ_ASSERT(mType == StyleBasicShapeType::Inset, "expected inset");
     return mRadius;
   }
@@ -1693,7 +1689,7 @@ class StyleBasicShape final {
   
   mozilla::Position mPosition;
   
-  nsStyleCorners mRadius;
+  mozilla::StyleBorderRadius mRadius;
 };
 
 struct StyleSVGPath final {
