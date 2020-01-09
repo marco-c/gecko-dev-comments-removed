@@ -696,6 +696,13 @@ class IonBuilder : public MIRGenerator,
                                           BoolVector& choiceSet,
                                           uint32_t* numInlineable);
 
+  OptimizationLevel optimizationLevel() const {
+    return optimizationInfo().level();
+  }
+  bool isHighestOptimizationLevel() const {
+    return IonOptimizations.isLastLevel(optimizationLevel());
+  }
+
   
   
   

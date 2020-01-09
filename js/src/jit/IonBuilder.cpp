@@ -484,6 +484,19 @@ IonBuilder::InliningDecision IonBuilder::canInlineTarget(JSFunction* target,
     return DontInline(inlineScript, "No baseline jitcode");
   }
 
+  
+  if (!isHighestOptimizationLevel()) {
+    OptimizationLevel level = optimizationLevel();
+    if (inlineScript->hasIonScript() &&
+        (inlineScript->ionScript()->isRecompiling() ||
+         inlineScript->ionScript()->optimizationLevel() > level)) {
+      return DontInline(inlineScript, "More optimized");
+    }
+    if (IonOptimizations.levelForScript(inlineScript, nullptr) > level) {
+      return DontInline(inlineScript, "Should be more optimized");
+    }
+  }
+
   if (TooManyFormalArguments(target->nargs())) {
     trackOptimizationOutcome(TrackedOutcome::CantInlineTooManyArgs);
     return DontInline(inlineScript, "Too many args");
@@ -776,7 +789,10 @@ AbortReasonOr<Ok> IonBuilder::build() {
 
   MOZ_TRY(init());
 
-  if (script()->hasBaselineScript()) {
+  
+  
+  
+  if (script()->hasBaselineScript() && isHighestOptimizationLevel()) {
     script()->baselineScript()->resetMaxInliningDepth();
   }
 
@@ -796,7 +812,7 @@ AbortReasonOr<Ok> IonBuilder::build() {
             (script()->hasIonScript() ? "Rec" : "C"), script()->filename(),
             script()->lineno(), script()->column(), (void*)script(),
             script()->getWarmUpCount(),
-            OptimizationLevelString(optimizationInfo().level()));
+            OptimizationLevelString(optimizationLevel()));
   }
 #endif
 
@@ -909,7 +925,7 @@ AbortReasonOr<Ok> IonBuilder::build() {
 
   MOZ_TRY(traverseBytecode());
 
-  if (script_->hasBaselineScript() &&
+  if (isHighestOptimizationLevel() && script_->hasBaselineScript() &&
       inlinedBytecodeLength_ >
           script_->baselineScript()->inlinedBytecodeLength()) {
     script_->baselineScript()->setInlinedBytecodeLength(inlinedBytecodeLength_);
@@ -4363,7 +4379,10 @@ IonBuilder::InliningDecision IonBuilder::makeInliningDecision(
     
     
     
-    outerBaseline->setMaxInliningDepth(0);
+    
+    if (isHighestOptimizationLevel()) {
+      outerBaseline->setMaxInliningDepth(0);
+    }
 
     trackOptimizationOutcome(TrackedOutcome::CantInlineExceededDepth);
     return DontInline(targetScript, "Vetoed: exceeding allowed inline depth");
@@ -4386,7 +4405,10 @@ IonBuilder::InliningDecision IonBuilder::makeInliningDecision(
   
   
   
-  if (targetScript->hasLoops() &&
+  
+  
+  
+  if (isHighestOptimizationLevel() && targetScript->hasLoops() &&
       inliningDepth_ >= targetScript->baselineScript()->maxInliningDepth()) {
     trackOptimizationOutcome(TrackedOutcome::CantInlineExceededDepth);
     return DontInline(targetScript,
@@ -4396,7 +4418,8 @@ IonBuilder::InliningDecision IonBuilder::makeInliningDecision(
   
   MOZ_ASSERT(maxInlineDepth > inliningDepth_);
   uint32_t scriptInlineDepth = maxInlineDepth - inliningDepth_ - 1;
-  if (scriptInlineDepth < outerBaseline->maxInliningDepth()) {
+  if (scriptInlineDepth < outerBaseline->maxInliningDepth() &&
+      isHighestOptimizationLevel()) {
     outerBaseline->setMaxInliningDepth(scriptInlineDepth);
   }
 
@@ -5947,12 +5970,12 @@ AbortReasonOr<Ok> IonBuilder::jsop_call(uint32_t argc, bool constructing,
   }
 
   if (status == InliningStatus_WarmUpCountTooLow && callTargets &&
-      callTargets->length() == 1) {
+      callTargets->length() == 1 && isHighestOptimizationLevel()) {
     JSFunction* target = callTargets.ref()[0];
     MRecompileCheck* check =
         MRecompileCheck::New(alloc(), target->nonLazyScript(),
                              optimizationInfo().inliningRecompileThreshold(),
-                             MRecompileCheck::RecompileCheck_Inlining);
+                             MRecompileCheck::RecompileCheckType::Inlining);
     current->add(check);
   }
 
@@ -7619,27 +7642,33 @@ static bool ObjectHasExtraOwnProperty(CompileRealm* realm,
 }
 
 void IonBuilder::insertRecompileCheck() {
+  MOZ_ASSERT(pc == script()->code() || *pc == JSOP_LOOPENTRY);
+
   
-  OptimizationLevel curLevel = optimizationInfo().level();
+  OptimizationLevel curLevel = optimizationLevel();
   if (IonOptimizations.isLastLevel(curLevel)) {
     return;
   }
 
   
+  
 
-  
-  
-  IonBuilder* topBuilder = outermostBuilder();
+  MRecompileCheck::RecompileCheckType type;
+  if (*pc == JSOP_LOOPENTRY) {
+    type = MRecompileCheck::RecompileCheckType::OptimizationLevelOSR;
+  } else if (this != outermostBuilder()) {
+    type = MRecompileCheck::RecompileCheckType::OptimizationLevelInlined;
+  } else {
+    type = MRecompileCheck::RecompileCheckType::OptimizationLevel;
+  }
 
   
   
   OptimizationLevel nextLevel = IonOptimizations.nextLevel(curLevel);
   const OptimizationInfo* info = IonOptimizations.get(nextLevel);
-  uint32_t warmUpThreshold =
-      info->compilerWarmUpThreshold(topBuilder->script());
+  uint32_t warmUpThreshold = info->recompileWarmUpThreshold(script(), pc);
   MRecompileCheck* check =
-      MRecompileCheck::New(alloc(), topBuilder->script(), warmUpThreshold,
-                           MRecompileCheck::RecompileCheck_OptimizationLevel);
+      MRecompileCheck::New(alloc(), script(), warmUpThreshold, type);
   current->add(check);
 }
 

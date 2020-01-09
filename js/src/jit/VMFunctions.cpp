@@ -1324,6 +1324,27 @@ bool IonRecompile(JSContext* cx) {
   return RecompileImpl(cx,  false);
 }
 
+bool IonForcedInvalidation(JSContext* cx) {
+  MOZ_ASSERT(cx->currentlyRunningInJit());
+  JitActivationIterator activations(cx);
+  JSJitFrameIter frame(activations->asJit());
+
+  MOZ_ASSERT(frame.type() == FrameType::Exit);
+  ++frame;
+
+  RootedScript script(cx, frame.script());
+  MOZ_ASSERT(script->hasIonScript());
+
+  if (script->baselineScript()->hasPendingIonBuilder()) {
+    LinkIonScript(cx, script);
+    return true;
+  }
+
+  Invalidate(cx, script,  false,
+              false);
+  return true;
+}
+
 bool SetDenseElement(JSContext* cx, HandleNativeObject obj, int32_t index,
                      HandleValue value, bool strict) {
   

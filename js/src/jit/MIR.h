@@ -10840,35 +10840,42 @@ class MCheckReturn : public MBinaryInstruction, public BoxInputsPolicy::Data {
 
 class MRecompileCheck : public MNullaryInstruction {
  public:
-  enum RecompileCheckType {
-    RecompileCheck_OptimizationLevel,
-    RecompileCheck_Inlining
+  enum class RecompileCheckType : uint8_t {
+    
+    
+    
+    
+    OptimizationLevel,
+
+    
+    
+    
+    
+    OptimizationLevelOSR,
+
+    
+    
+    
+    
+    OptimizationLevelInlined,
+
+    
+    
+    
+    Inlining
   };
 
  private:
   JSScript* script_;
   uint32_t recompileThreshold_;
-  bool forceRecompilation_;
-  bool increaseWarmUpCounter_;
+  RecompileCheckType type_;
 
   MRecompileCheck(JSScript* script, uint32_t recompileThreshold,
                   RecompileCheckType type)
       : MNullaryInstruction(classOpcode),
         script_(script),
-        recompileThreshold_(recompileThreshold) {
-    switch (type) {
-      case RecompileCheck_OptimizationLevel:
-        forceRecompilation_ = false;
-        increaseWarmUpCounter_ = true;
-        break;
-      case RecompileCheck_Inlining:
-        forceRecompilation_ = true;
-        increaseWarmUpCounter_ = false;
-        break;
-      default:
-        MOZ_CRASH("Unexpected recompile check type");
-    }
-
+        recompileThreshold_(recompileThreshold),
+        type_(type) {
     setGuard();
   }
 
@@ -10880,9 +10887,23 @@ class MRecompileCheck : public MNullaryInstruction {
 
   uint32_t recompileThreshold() const { return recompileThreshold_; }
 
-  bool forceRecompilation() const { return forceRecompilation_; }
+  bool forceInvalidation() const {
+    return type_ == RecompileCheckType::OptimizationLevelOSR;
+  }
 
-  bool increaseWarmUpCounter() const { return increaseWarmUpCounter_; }
+  bool forceRecompilation() const {
+    return type_ == RecompileCheckType::Inlining;
+  }
+
+  bool checkCounter() const {
+    return type_ != RecompileCheckType::OptimizationLevelInlined;
+  }
+
+  bool increaseWarmUpCounter() const {
+    return (type_ == RecompileCheckType::OptimizationLevel ||
+            type_ == RecompileCheckType::OptimizationLevelInlined ||
+            type_ == RecompileCheckType::OptimizationLevelOSR);
+  }
 
   AliasSet getAliasSet() const override { return AliasSet::None(); }
 };
