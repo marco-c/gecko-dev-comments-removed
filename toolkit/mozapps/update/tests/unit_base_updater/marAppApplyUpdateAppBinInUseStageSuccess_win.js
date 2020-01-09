@@ -33,7 +33,7 @@ function stageUpdateFinished() {
   checkPostUpdateRunningFile(false);
   checkFilesAfterUpdateSuccess(getStageDirFile, true, false);
   checkUpdateLogContents(LOG_COMPLETE_SUCCESS, true);
-  lockDirectory(getAppBaseDir().path);
+  lockDirectory(getGREBinDir().path);
   
   runUpdateUsingApp(STATE_SUCCEEDED);
 }

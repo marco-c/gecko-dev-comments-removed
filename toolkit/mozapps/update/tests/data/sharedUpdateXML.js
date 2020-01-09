@@ -13,6 +13,8 @@
 
 
 
+
+
 const FILE_SIMPLE_MAR = "simple.mar";
 const SIZE_SIMPLE_MAR = "1404";
 
@@ -132,9 +134,11 @@ function getRemoteUpdateString(aUpdateProps, aPatches) {
     updateProps[name] = aUpdateProps[name];
   }
 
+  
+  
   return getUpdateString(updateProps) + ">\n " +
          aPatches +
-         "\n</update>";
+         "\n</update>\n";
 }
 
 
@@ -217,7 +221,7 @@ function getLocalUpdateString(aUpdateProps, aPatches) {
       this._appVersion = val;
     },
     buildID: "20080811053724",
-    channel: gDefaultPrefBranch.getCharPref(PREF_APP_UPDATE_CHANNEL),
+    channel: UpdateUtils ? UpdateUtils.getUpdateChannel() : "default",
     custom1: null,
     custom2: null,
     detailsURL: URL_HTTP_UPDATE_SJS + "?uiURL=DETAILS",
@@ -347,4 +351,35 @@ function getPatchString(aPatchProps) {
          custom1 +
          custom2 +
          size;
+}
+
+
+
+
+
+
+
+
+function readFileBytes(aFile) {
+  let fis = Cc["@mozilla.org/network/file-input-stream;1"].
+            createInstance(Ci.nsIFileInputStream);
+  
+  
+  fis.init(aFile, -1, -1, Ci.nsIFileInputStream.CLOSE_ON_EOF);
+  let bis = Cc["@mozilla.org/binaryinputstream;1"].
+            createInstance(Ci.nsIBinaryInputStream);
+  bis.setInputStream(fis);
+  let data = [];
+  let count = fis.available();
+  while (count > 0) {
+    let bytes = bis.readByteArray(Math.min(65535, count));
+    data.push(String.fromCharCode.apply(null, bytes));
+    count -= bytes.length;
+    if (bytes.length == 0) {
+      throw new Error("Nothing read from input stream!");
+    }
+  }
+  data = data.join("");
+  fis.close();
+  return data.toString();
 }
