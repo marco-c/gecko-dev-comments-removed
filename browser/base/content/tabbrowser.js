@@ -2387,7 +2387,6 @@ window._gBrowser = {
       }
 
       
-      
       if (typeof index != "number") {
         
         if (!bulkOrderedOpen &&
@@ -2412,15 +2411,16 @@ window._gBrowser = {
             this._lastRelatedTabMap.set(openerTab, t);
           }
         } else {
-          
-          index = this.tabs.length;
+          index = Infinity;
         }
       }
       
       if (pinned) {
+        index = Math.max(index, 0);
         index = Math.min(index, this._numPinnedTabs);
       } else {
         index = Math.max(index, this._numPinnedTabs);
+        index = Math.min(index, this.tabs.length);
       }
 
       
