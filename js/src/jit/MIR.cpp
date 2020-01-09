@@ -3474,8 +3474,7 @@ MCompare::CompareType MCompare::determineCompareType(JSOp op, MDefinition* left,
   }
 
   
-  
-  if (!relationalEq && lhs == MIRType::String && rhs == MIRType::String) {
+  if (lhs == MIRType::String && rhs == MIRType::String) {
     return Compare_String;
   }
 

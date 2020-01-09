@@ -1206,36 +1206,42 @@ void MacroAssembler::compareStrings(JSOp op, Register left, Register right,
                                     Register result, Label* fail) {
   MOZ_ASSERT(left != result);
   MOZ_ASSERT(right != result);
-  MOZ_ASSERT(IsEqualityOp(op));
+  MOZ_ASSERT(IsEqualityOp(op) || IsRelationalOp(op));
 
-  Label done;
   Label notPointerEqual;
   
-  branchPtr(Assembler::NotEqual, left, right, &notPointerEqual);
-  move32(Imm32(op == JSOP_EQ || op == JSOP_STRICTEQ), result);
-  jump(&done);
+  branchPtr(Assembler::NotEqual, left, right,
+            IsEqualityOp(op) ? &notPointerEqual : fail);
+  move32(Imm32(op == JSOP_EQ || op == JSOP_STRICTEQ || op == JSOP_LE ||
+               op == JSOP_GE),
+         result);
 
-  bind(&notPointerEqual);
+  if (IsEqualityOp(op)) {
+    Label done;
+    jump(&done);
 
-  Label leftIsNotAtom;
-  Label setNotEqualResult;
-  
-  Imm32 nonAtomBit(JSString::NON_ATOM_BIT);
-  branchTest32(Assembler::NonZero, Address(left, JSString::offsetOfFlags()),
-               nonAtomBit, &leftIsNotAtom);
-  branchTest32(Assembler::Zero, Address(right, JSString::offsetOfFlags()),
-               nonAtomBit, &setNotEqualResult);
+    bind(&notPointerEqual);
 
-  bind(&leftIsNotAtom);
-  
-  loadStringLength(left, result);
-  branch32(Assembler::Equal, Address(right, JSString::offsetOfLength()), result,
-           fail);
+    Label leftIsNotAtom;
+    Label setNotEqualResult;
+    
+    Imm32 nonAtomBit(JSString::NON_ATOM_BIT);
+    branchTest32(Assembler::NonZero, Address(left, JSString::offsetOfFlags()),
+                 nonAtomBit, &leftIsNotAtom);
+    branchTest32(Assembler::Zero, Address(right, JSString::offsetOfFlags()),
+                 nonAtomBit, &setNotEqualResult);
 
-  bind(&setNotEqualResult);
-  move32(Imm32(op == JSOP_NE || op == JSOP_STRICTNE), result);
+    bind(&leftIsNotAtom);
+    
+    loadStringLength(left, result);
+    branch32(Assembler::Equal, Address(right, JSString::offsetOfLength()),
+             result, fail);
 
-  bind(&done);
+    bind(&setNotEqualResult);
+    move32(Imm32(op == JSOP_NE || op == JSOP_STRICTNE), result);
+
+    bind(&done);
+  }
 }
 
 void MacroAssembler::loadStringChars(Register str, Register dest,
