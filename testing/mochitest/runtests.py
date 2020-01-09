@@ -3114,6 +3114,13 @@ def run_test_harness(parser, options):
     if hasattr(options, 'log'):
         delattr(options, 'log')
 
+    
+    
+    if mozinfo.os == "win" and mozinfo.processor == "aarch64":
+        
+        
+        mozinfo.update({u"crashreporter": False})
+
     options.runByManifest = False
     if options.flavor in ('plain', 'browser', 'chrome'):
         options.runByManifest = True
