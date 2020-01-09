@@ -1403,13 +1403,45 @@ const DebugUtils = {
 };
 
 
-function promiseExtensionViewLoaded(browser) {
-  return new Promise(resolve => {
-    browser.messageManager.addMessageListener("Extension:ExtensionViewLoaded", function onLoad({data}) {
-      browser.messageManager.removeMessageListener("Extension:ExtensionViewLoaded", onLoad);
-      resolve(data.childId && ParentAPIManager.getContextById(data.childId));
-    });
+
+
+
+
+
+
+
+
+
+
+
+function promiseMessageFromChild(messageManager, messageName) {
+  return new Promise((resolve, reject) => {
+    let unregister;
+    function listener(message) {
+      unregister();
+      resolve(message.data);
+    }
+    function observer(subject, topic, data) {
+      if (subject === messageManager) {
+        unregister();
+        reject(new Error(`Message manager was disconnected before receiving ${messageName}`));
+      }
+    }
+    unregister = () => {
+      Services.obs.removeObserver(observer, "message-manager-close");
+      messageManager.removeMessageListener(messageName, listener);
+    };
+    messageManager.addMessageListener(messageName, listener);
+    Services.obs.addObserver(observer, "message-manager-close");
   });
+}
+
+
+async function promiseExtensionViewLoaded(browser) {
+  let {childId} = await promiseMessageFromChild(browser.messageManager, "Extension:ExtensionViewLoaded");
+  if (childId) {
+    return ParentAPIManager.getContextById(childId);
+  }
 }
 
 
