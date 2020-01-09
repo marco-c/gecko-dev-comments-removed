@@ -65,7 +65,8 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
 
   
   void AddIceCandidate(const std::string& candidate,
-                       const std::string& aTransportId);
+                       const std::string& aTransportId,
+                       const std::string& aUFrag);
 
   
   void UpdateNetworkState(bool online);
@@ -136,7 +137,8 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
       SignalIceConnectionStateChange;
   
   
-  sigslot::signal2<const std::string&, const std::string&> SignalCandidate;
+  sigslot::signal3<const std::string&, const std::string&, const std::string&>
+      SignalCandidate;
   
   sigslot::signal5<const std::string&, uint16_t, const std::string&, uint16_t,
                    const std::string&>

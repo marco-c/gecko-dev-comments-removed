@@ -13,6 +13,7 @@ namespace mozilla {
 
 struct CandidateInfo {
   std::string mCandidate;
+  std::string mUfrag;
   std::string mDefaultHostRtp;
   uint16_t mDefaultPortRtp = 0;
   std::string mDefaultHostRtcp;
