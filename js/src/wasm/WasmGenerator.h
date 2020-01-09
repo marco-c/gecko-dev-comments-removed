@@ -111,7 +111,7 @@ typedef ExclusiveWaitableData<CompileTaskState> ExclusiveCompileTaskState;
 
 
 
-struct CompileTask {
+struct CompileTask : public RunnableTask {
   const ModuleEnvironment& env;
   ExclusiveCompileTaskState& state;
   LifoAlloc lifo;
@@ -122,7 +122,11 @@ struct CompileTask {
               size_t defaultChunkSize)
       : env(env), state(state), lifo(defaultChunkSize) {}
 
+  virtual ~CompileTask(){};
+
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
+
+  void runTask() override;
 };
 
 

@@ -77,6 +77,15 @@ enum ThreadType {
   THREAD_TYPE_MAX            
 };
 
+
+
+
+
+
+struct RunnableTask {
+  virtual void runTask() = 0;
+};
+
 namespace oom {
 
 

@@ -22,7 +22,7 @@ class AutoLockHelperThreadState;
 
 
 
-class GCParallelTask {
+class GCParallelTask : public RunnableTask {
  public:
   using TaskFunc = void (*)(GCParallelTask*);
 
@@ -61,7 +61,7 @@ class GCParallelTask {
 
   
   
-  ~GCParallelTask();
+  virtual ~GCParallelTask();
 
   JSRuntime* runtime() { return runtime_; }
 
@@ -97,6 +97,8 @@ class GCParallelTask {
   }
   bool isRunning() const;
 
+  void runTask() override { func_(this); }
+
  private:
   void assertNotStarted() const {
     
@@ -124,8 +126,6 @@ class GCParallelTask {
     MOZ_ASSERT(state_ == State::Finished);
     state_ = State::NotStarted;
   }
-
-  void runTask() { func_(this); }
 
  protected:
   
