@@ -54,7 +54,7 @@ function history(state = getInitialState(), action, prefsState) {
     case UPDATE_HISTORY_POSITION:
       return updateHistoryPosition(state, action.direction, action.expression);
     case REVERSE_SEARCH_INPUT_TOGGLE:
-      return reverseSearchInputToggle(state);
+      return reverseSearchInputToggle(state, action);
     case REVERSE_SEARCH_INPUT_CHANGE:
       return reverseSearchInputChange(state, action.value);
     case REVERSE_SEARCH_BACK:
@@ -143,14 +143,23 @@ function updateHistoryPosition(state, direction, expression) {
   return state;
 }
 
-function reverseSearchInputToggle(state) {
-  return {
-    ...state,
-    reverseSearchEnabled: !state.reverseSearchEnabled,
-    position: state.reverseSearchEnabled === true ? state.entries.length : undefined,
-    currentReverseSearchResults: null,
-    currentReverseSearchResultsPosition: null,
-  };
+function reverseSearchInputToggle(state, action) {
+  const { initialValue = "" } = action;
+
+  
+  if (state.reverseSearchEnabled) {
+    return {
+      ...state,
+      reverseSearchEnabled: false,
+      position: undefined,
+      currentReverseSearchResults: null,
+      currentReverseSearchResultsPosition: null,
+    };
+  }
+
+  
+  
+  return reverseSearchInputChange(state, initialValue);
 }
 
 function reverseSearchInputChange(state, searchString) {
