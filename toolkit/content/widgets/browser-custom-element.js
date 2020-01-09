@@ -1361,6 +1361,39 @@ class MozBrowser extends MozElementMixin(XULFrameElement) {
     }
   }
 
+  updateSecurityUIForContentBlockingEvent(aEvent) {
+    if (this.isRemoteBrowser && this.messageManager) {
+      
+      
+      
+      void this.securityUI;
+      this._securityUI._updateContentBlockingEvent(aEvent);
+    }
+  }
+
+  callWebProgressContentBlockingEventListeners(aIsWebProgressPassed,
+                                               aIsTopLevel,
+                                               aIsLoadingDocument,
+                                               aLoadType,
+                                               aDOMWindowID,
+                                               aRequestURI,
+                                               aOriginalRequestURI,
+                                               aMatchedList,
+                                               aEvent) {
+    if (this._remoteWebProgressManager) {
+      this._remoteWebProgressManager
+          .callWebProgressContentBlockingEventListeners(aIsWebProgressPassed,
+                                                        aIsTopLevel,
+                                                        aIsLoadingDocument,
+                                                        aLoadType,
+                                                        aDOMWindowID,
+                                                        aRequestURI,
+                                                        aOriginalRequestURI,
+                                                        aMatchedList,
+                                                        aEvent);
+    }
+  }
+
   purgeSessionHistory() {
     if (this.isRemoteBrowser) {
       try {
