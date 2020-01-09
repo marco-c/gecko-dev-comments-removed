@@ -74,6 +74,13 @@ class PictureInPictureToggleChild extends ActorChild {
         mousemoveDeferredTask: null,
         
         weakOverVideo: null,
+        
+        isClickingToggle: false,
+        
+        
+        
+        
+        clickedElement: null,
       };
       this.weakDocStates.set(this.content.document, state);
     }
@@ -98,12 +105,25 @@ class PictureInPictureToggleChild extends ActorChild {
         }
         break;
       }
-      case "mousedown": {
-        this.onMouseDown(event);
+      case "mousedown":
+      case "pointerup":
+      case "mouseup":
+      case "click": {
+        this.onMouseButtonEvent(event);
+        break;
+      }
+      case "pointerdown": {
+        this.onPointerDown(event);
         break;
       }
       case "mousemove": {
         this.onMouseMove(event);
+        break;
+      }
+      case "pagehide": {
+        if (event.target.top == event.target) {
+          this.removeMouseButtonListeners();
+        }
         break;
       }
     }
@@ -200,6 +220,40 @@ class PictureInPictureToggleChild extends ActorChild {
     }
   }
 
+  addMouseButtonListeners() {
+    
+    
+    
+    
+    
+    
+    
+    
+    this.content.windowRoot.addEventListener("pointerdown", this,
+                                             { capture: true });
+    this.content.windowRoot.addEventListener("mousedown", this,
+                                             { capture: true });
+    this.content.windowRoot.addEventListener("mouseup", this,
+                                             { capture: true });
+    this.content.windowRoot.addEventListener("pointerup", this,
+                                             { capture: true });
+    this.content.windowRoot.addEventListener("click", this,
+                                             { capture: true });
+  }
+
+  removeMouseButtonListeners() {
+    this.content.windowRoot.removeEventListener("pointerdown", this,
+                                                { capture: true });
+    this.content.windowRoot.removeEventListener("mousedown", this,
+                                                { capture: true });
+    this.content.windowRoot.removeEventListener("mouseup", this,
+                                                { capture: true });
+    this.content.windowRoot.removeEventListener("pointerup", this,
+                                                { capture: true });
+    this.content.windowRoot.removeEventListener("click", this,
+                                                { capture: true });
+  }
+
   
 
 
@@ -222,11 +276,7 @@ class PictureInPictureToggleChild extends ActorChild {
     }
     this.content.document.addEventListener("mousemove", this,
                                            { mozSystemGroup: true, capture: true });
-    
-    
-    
-    this.content.document.addEventListener("mousedown", this,
-                                           { capture: true });
+    this.addMouseButtonListeners();
   }
 
   
@@ -239,8 +289,7 @@ class PictureInPictureToggleChild extends ActorChild {
     state.mousemoveDeferredTask.disarm();
     this.content.document.removeEventListener("mousemove", this,
                                               { mozSystemGroup: true, capture: true });
-    this.content.document.removeEventListener("mousedown", this,
-                                              { capture: true });
+    this.removeMouseButtonListeners();
     let oldOverVideo = state.weakOverVideo && state.weakOverVideo.get();
     if (oldOverVideo) {
       this.onMouseLeaveVideo(oldOverVideo);
@@ -258,8 +307,9 @@ class PictureInPictureToggleChild extends ActorChild {
 
 
 
-  onMouseDown(event) {
+  onPointerDown(event) {
     let state = this.docState;
+
     let video = state.weakOverVideo && state.weakOverVideo.get();
     if (!video) {
       return;
@@ -287,16 +337,53 @@ class PictureInPictureToggleChild extends ActorChild {
 
     let toggle = shadowRoot.getElementById("pictureInPictureToggleButton");
     if (this.isMouseOverToggle(toggle, event)) {
-      event.preventDefault();
-      event.stopPropagation();
+      state.isClickingToggle = true;
+      state.clickedElement = Cu.getWeakReference(event.originalTarget);
+      event.stopImmediatePropagation();
       let pipEvent =
         new this.content.CustomEvent("MozTogglePictureInPicture", {
           bubbles: true,
         });
       video.dispatchEvent(pipEvent);
+
       
       
       this.onMouseLeaveVideo(video);
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  onMouseButtonEvent(event) {
+    let state = this.docState;
+    if (state.isClickingToggle) {
+      event.stopImmediatePropagation();
+
+      
+      
+      
+      
+      
+      
+      let isMouseUpOnOtherElement =
+        event.type == "mouseup" &&
+        (!state.clickedElement ||
+         state.clickedElement.get() != event.originalTarget);
+
+      if (isMouseUpOnOtherElement || event.type == "click") {
+        
+        
+        state.isClickingToggle = false;
+        state.clickedElement = null;
+      }
     }
   }
 
