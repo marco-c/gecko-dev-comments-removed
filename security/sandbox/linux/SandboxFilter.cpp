@@ -626,6 +626,9 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
       case __NR_exit_group:
         return Allow();
 
+      case __NR_getrandom:
+        return Allow();
+
 #ifdef MOZ_ASAN
         
       case __NR_ioctl: {
@@ -1232,11 +1235,6 @@ class ContentSandboxPolicy : public SandboxPolicyCommon {
         return Allow();
 
 #endif  
-
-#ifdef __NR_getrandom
-      case __NR_getrandom:
-        return Allow();
-#endif
 
         
         
