@@ -268,6 +268,7 @@ function cssTrim(str) {
 
 
 
+
 function parseDeclarationsInternal(isCssPropertyKnown, inputString,
                                    parseComments, inComment, commentOverride) {
   if (inputString === null || inputString === undefined) {
@@ -465,6 +466,7 @@ function parseDeclarationsInternal(isCssPropertyKnown, inputString,
 
   return declarations;
 }
+
 
 
 

@@ -213,7 +213,7 @@ module.exports = {
     
     "camelcase": "error",
     
-    "complexity": ["error", 53],
+    "complexity": ["error", 40],
     
     
     "consistent-this": "off",

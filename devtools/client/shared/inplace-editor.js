@@ -1077,6 +1077,7 @@ InplaceEditor.prototype = {
   
 
 
+  
   _onKeyPress: function(event) {
     let prevent = false;
 
@@ -1210,6 +1211,7 @@ InplaceEditor.prototype = {
       event.preventDefault();
     }
   },
+  
 
   _onContextMenu: function(event) {
     if (this.contextMenu) {
@@ -1336,6 +1338,7 @@ InplaceEditor.prototype = {
 
     const preTimeoutQuery = this.input.value;
 
+    
     
     
     
@@ -1525,6 +1528,7 @@ InplaceEditor.prototype = {
       this.emit("after-suggest");
       this._doValidation();
     }, 0);
+    
   },
 
   

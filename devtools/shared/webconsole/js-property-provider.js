@@ -247,6 +247,7 @@ function analyzeInputString(str) {
 
 
 
+
 function JSPropertyProvider({
   dbgObject,
   environment,
@@ -506,6 +507,7 @@ function JSPropertyProvider({
 
   return prepareReturnedObject(getMatchedPropsInDbgObject(obj, search));
 }
+
 
 
 

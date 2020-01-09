@@ -1153,6 +1153,7 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
 
 
 
+  
   renderGridLineNumber(lineNumber, linePos, startPos, breadth, dimensionType,
     isStackedLine) {
     const displayPixelRatio = getDisplayPixelRatio(this.win);
@@ -1339,6 +1340,7 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
     this.ctx.fillText(numberText, x, y);
     this.ctx.restore();
   }
+  
 
   
 

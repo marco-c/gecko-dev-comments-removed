@@ -886,6 +886,7 @@ NetworkObserver.prototype = {
 
 
 
+  
   _setupHarTimings: function(httpActivity, fromCache) {
     if (fromCache) {
       
@@ -1097,6 +1098,7 @@ NetworkObserver.prototype = {
       offsets: ot.offsets,
     };
   },
+  
 
   _calculateOffsetAndTotalTime: function(harTimings,
                                           secureConnectionStartTime,
