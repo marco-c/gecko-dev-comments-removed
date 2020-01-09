@@ -222,6 +222,8 @@ def get_decision_parameters(config, options):
         if n in options and options[n] is not None:
             parameters[n] = options[n]
 
+    commit_message = get_hg_commit_message(os.path.join(GECKO, product_dir))
+
     
     
     parameters['filters'] = [
@@ -233,8 +235,7 @@ def get_decision_parameters(config, options):
     parameters['build_number'] = 1
     parameters['version'] = get_version(product_dir)
     parameters['app_version'] = get_app_version(product_dir)
-    parameters['message'] = try_syntax_from_message(
-            get_hg_commit_message(os.path.join(GECKO, product_dir)))
+    parameters['message'] = try_syntax_from_message(commit_message)
     parameters['hg_branch'] = get_hg_revision_branch(GECKO, revision=parameters['head_rev'])
     parameters['next_version'] = None
     parameters['phabricator_diff'] = None
@@ -275,6 +276,12 @@ def get_decision_parameters(config, options):
     
     if options.get('target_tasks_method'):
         parameters['target_tasks_method'] = options['target_tasks_method']
+
+    
+    
+    
+    if 'DONTBUILD' in commit_message and options['tasks_for'] == 'hg-push':
+        parameters['target_tasks_method'] = 'nothing'
 
     
     
