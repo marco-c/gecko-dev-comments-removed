@@ -248,7 +248,7 @@ extern void InstallSignalHandlers(const char* ProgramName);
 
 #if defined(MOZ_BLOCK_PROFILE_DOWNGRADE) || defined(MOZ_LAUNCHER_PROCESS)
 static const char kPrefHealthReportUploadEnabled[] =
-  "datareporting.healthreport.uploadEnabled";
+    "datareporting.healthreport.uploadEnabled";
 #endif  
 
 int gArgc;
@@ -1558,8 +1558,8 @@ static void SetupLauncherProcessPref() {
   }
 
   mozilla::LauncherVoidResult reflectResult =
-    launcherRegInfo.ReflectTelemetryPrefToRegistry(
-      Preferences::GetBool(kPrefHealthReportUploadEnabled, true));
+      launcherRegInfo.ReflectTelemetryPrefToRegistry(
+          Preferences::GetBool(kPrefHealthReportUploadEnabled, true));
   MOZ_ASSERT(reflectResult.isOk());
 
   Preferences::RegisterCallback(&OnLauncherPrefChanged,
@@ -2064,8 +2064,8 @@ static void SubmitDowngradeTelemetry(const nsCString& aLastVersion,
   NS_ENSURE_TRUE_VOID(prefBranch);
 
   bool enabled;
-  nsresult rv = prefBranch->GetBoolPref(kPrefHealthReportUploadEnabled,
-                                        &enabled);
+  nsresult rv =
+      prefBranch->GetBoolPref(kPrefHealthReportUploadEnabled, &enabled);
   NS_ENSURE_SUCCESS_VOID(rv);
   if (!enabled) {
     return;
@@ -3592,6 +3592,21 @@ static void SetShutdownChecks() {
   }
 }
 
+#if defined(MOZ_WAYLAND)
+bool IsWaylandDisabled() {
+  
+  
+  bool disableWayland = (gtk_check_version(3, 22, 0) != nullptr);
+  if (!disableWayland) {
+    
+    
+    disableWayland = (PR_GetEnv("GDK_BACKEND") == nullptr) &&
+                     (PR_GetEnv("MOZ_ENABLE_WAYLAND") == nullptr);
+  }
+  return disableWayland;
+}
+#endif
+
 namespace mozilla {
 namespace startup {
 Result<nsCOMPtr<nsIFile>, nsresult> GetIncompleteStartupFile(nsIFile* aProfLD) {
@@ -3765,15 +3780,7 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
 
     bool disableWayland = true;
 #  if defined(MOZ_WAYLAND)
-    
-    
-    disableWayland = (gtk_check_version(3, 22, 0) != nullptr);
-    if (!disableWayland) {
-      
-      
-      disableWayland = (PR_GetEnv("GDK_BACKEND") == nullptr) &&
-                       (PR_GetEnv("MOZ_ENABLE_WAYLAND") == nullptr);
-    }
+    disableWayland = IsWaylandDisabled();
 #  endif
     
     
