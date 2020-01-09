@@ -15,6 +15,7 @@
 #include "mozilla/HashFunctions.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Sprintf.h"
+#include "mozilla/StackWalk.h"
 #include "nsThreadUtils.h"
 #include "nsXULAppAPI.h"
 
@@ -988,13 +989,40 @@ void ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter,
       if (e.Get().IsNativeLeafAddr()) {
         numFrames++;
 
-        
-        
-        unsigned long long pc = (unsigned long long)(uintptr_t)e.Get().GetPtr();
-        char buf[20];
-        SprintfLiteral(buf, "%#llx", pc);
-        stack = aUniqueStacks.AppendFrame(stack, UniqueStacks::FrameKey(buf));
+        void* pc = e.Get().GetPtr();
         e.Next();
+
+        static const uint32_t BUF_SIZE = 256;
+        char buf[BUF_SIZE];
+
+        
+        
+        unsigned long long pcULL = (unsigned long long)(uintptr_t)pc;
+        SprintfLiteral(buf, "%#llx", pcULL);
+
+        
+        
+        
+        static const bool preSymbolicate = []() {
+          const char* symbolicate = getenv("MOZ_PROFILER_SYMBOLICATE");
+          return symbolicate && symbolicate[0] != '\0';
+        }();
+        if (preSymbolicate) {
+          MozCodeAddressDetails details;
+          if (MozDescribeCodeAddress(pc, &details)) {
+            
+            const uint32_t pcLen = strlen(buf);
+            buf[pcLen] = ' ';
+            
+            
+            
+            
+            MozFormatCodeAddressDetails(buf + pcLen + 1, BUF_SIZE - (pcLen + 1),
+                                        0, pc, &details);
+          }
+        }
+
+        stack = aUniqueStacks.AppendFrame(stack, UniqueStacks::FrameKey(buf));
 
       } else if (e.Get().IsLabel()) {
         numFrames++;

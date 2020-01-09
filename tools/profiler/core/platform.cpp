@@ -1259,7 +1259,7 @@ static void MergeStacks(uint32_t aFeatures, bool aIsSynchronous,
   }
 }
 
-#if defined(GP_OS_windows) && defined(USE_MOZ_STACK_WALK)
+#if defined(GP_OS_windows)
 static HANDLE GetThreadHandle(PlatformData* aData);
 #endif
 
@@ -2155,6 +2155,11 @@ static void PrintUsageThenExit(int aExitCode) {
       "\n"
       "  MOZ_PROFILER_SHUTDOWN\n"
       "  If set, the profiler saves a profile to the named file on shutdown.\n"
+      "\n"
+      "  MOZ_PROFILER_SYMBOLICATE\n"
+      "  If set, the profiler will pre-symbolicate profiles.\n"
+      "  *Note* This will add a significant pause when gathering data, and\n"
+      "  is intended mainly for local development.\n"
       "\n"
       "  MOZ_PROFILER_LUL_TEST\n"
       "  If set to any value, runs LUL unit tests at startup.\n"
