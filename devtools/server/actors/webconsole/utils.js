@@ -207,13 +207,27 @@ var WebConsoleUtils = {
 
 
   removeFramesAboveDebuggerEval(stack) {
+    const debuggerEvalFilename = "debugger eval code";
+
     
-    const evalIndex = stack.findIndex(({ filename }) => {
-      return filename == "debugger eval code";
+    const evalIndex = stack.findIndex(({ filename }, idx, arr) => {
+      const nextFrame = arr[idx + 1];
+      return filename == debuggerEvalFilename
+        && (!nextFrame || nextFrame.filename !== debuggerEvalFilename);
     });
     if (evalIndex != -1) {
       return stack.slice(0, evalIndex + 1);
     }
+
+    
+    
+    
+    if (stack.some(({ filename }) =>
+      filename && filename.startsWith("resource://devtools/"))
+    ) {
+      return null;
+    }
+
     return stack;
   },
 };
