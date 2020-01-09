@@ -358,6 +358,9 @@ nsresult XRE_InitChildProcess(int aArgc, char* aArgv[],
 #if defined(XP_LINUX) && defined(MOZ_SANDBOX)
   
   mozilla::SandboxEarlyInit();
+  
+  
+  mozilla::GetNumberOfProcessors();
 #endif
 
 #ifdef MOZ_JPROF

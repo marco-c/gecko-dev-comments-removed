@@ -1752,6 +1752,13 @@ nsISerialEventTarget* GetCurrentThreadSerialEventTarget();
 
 nsISerialEventTarget* GetMainThreadSerialEventTarget();
 
+
+
+
+
+
+size_t GetNumberOfProcessors();
+
 }  
 
 #endif  
