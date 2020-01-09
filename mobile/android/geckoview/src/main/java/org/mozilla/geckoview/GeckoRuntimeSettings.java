@@ -243,17 +243,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
             getSettings().mContentBlocking = cb;
             return this;
         }
-
-        
-
-
-
-
-
-        public @NonNull Builder autoplayDefault(@AutoplayDefault int autoplay) {
-            getSettings().mAutoplayDefault.set(autoplay);
-            return this;
-        }
     }
 
     private GeckoRuntime mRuntime;
@@ -275,8 +264,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
         "browser.display.use_document_fonts", 1);
      final Pref<Boolean> mConsoleOutput = new Pref<Boolean>(
         "geckoview.console.enabled", false);
-     final Pref<Integer> mAutoplayDefault = new Pref<Integer>(
-        "media.autoplay.default", AUTOPLAY_DEFAULT_BLOCKED);
 
      boolean mDebugPause;
      boolean mUseMaxScreenDepth;
@@ -536,41 +523,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
     public boolean getConsoleOutputEnabled() {
         return mConsoleOutput.get();
-    }
-
-    
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef({ AUTOPLAY_DEFAULT_ALLOWED, AUTOPLAY_DEFAULT_BLOCKED })
-     @interface AutoplayDefault {}
-
-    
-
-
-    public static final int AUTOPLAY_DEFAULT_ALLOWED = 0;
-
-    
-
-
-    public static final int AUTOPLAY_DEFAULT_BLOCKED = 1;
-
-    
-
-
-
-
-
-    public @NonNull GeckoRuntimeSettings setAutoplayDefault(@AutoplayDefault int autoplay) {
-        mAutoplayDefault.commit(autoplay);
-        return this;
-    }
-
-    
-
-
-
-
-    public @AutoplayDefault int getAutoplayDefault() {
-        return mAutoplayDefault.get();
     }
 
     @Override 
