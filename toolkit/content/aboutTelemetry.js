@@ -2441,7 +2441,7 @@ var SimpleMeasurements = {
   },
 };
 
-function renderProcessList(ping, selectEl) {
+function renderProcessList(payload, selectEl) {
   removeAllChildNodes(selectEl);
   let option = document.createElement("option");
   option.appendChild(document.createTextNode("parent"));
@@ -2449,13 +2449,13 @@ function renderProcessList(ping, selectEl) {
   option.selected = true;
   selectEl.appendChild(option);
 
-  if (!("processes" in ping.payload)) {
+  if (!("processes" in payload)) {
     selectEl.disabled = true;
     return;
   }
   selectEl.disabled = false;
 
-  for (let process of Object.keys(ping.payload.processes)) {
+  for (let process of Object.keys(payload.processes)) {
     
     
     if (process === "parent") {
@@ -2506,7 +2506,7 @@ function displayPingData(ping, updatePayloadList = false) {
 function displayRichPingData(ping, updatePayloadList) {
   
   if (updatePayloadList) {
-    renderProcessList(ping, document.getElementById("processes"));
+    renderProcessList(ping.payload, document.getElementById("processes"));
   }
 
   
@@ -2520,7 +2520,28 @@ function displayRichPingData(ping, updatePayloadList) {
   
   
   let isMainPing = (ping.type == "main" || ping.type == "saved-session");
+  let isEventPing = ping.type == "event";
   togglePingSections(isMainPing);
+
+  if (isEventPing) {
+    
+    let payload = { processes: {} };
+    for (let process of Object.keys(ping.payload.events)) {
+      payload.processes[process] = {
+        events: ping.payload.events[process],
+      };
+    }
+
+    
+    if (updatePayloadList) {
+      renderProcessList(payload, document.getElementById("processes"));
+    }
+
+    
+    Events.render(payload);
+    return;
+  }
+
 
   if (!isMainPing) {
     return;
