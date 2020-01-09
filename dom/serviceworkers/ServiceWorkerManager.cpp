@@ -951,14 +951,18 @@ RefPtr<ServiceWorkerRegistrationPromise> ServiceWorkerManager::GetRegistration(
 NS_IMETHODIMP
 ServiceWorkerManager::SendPushEvent(const nsACString& aOriginAttributes,
                                     const nsACString& aScope,
-                                    uint32_t aDataLength, uint8_t* aDataBytes,
+                                    const nsTArray<uint8_t>& aDataBytes,
                                     uint8_t optional_argc) {
-  if (optional_argc == 2) {
-    nsTArray<uint8_t> data;
-    if (!data.InsertElementsAt(0, aDataBytes, aDataLength, fallible)) {
-      return NS_ERROR_OUT_OF_MEMORY;
-    }
-    return SendPushEvent(aOriginAttributes, aScope, EmptyString(), Some(data));
+  if (optional_argc == 1) {
+    
+    
+    
+    
+    
+    
+    
+    return SendPushEvent(aOriginAttributes, aScope, EmptyString(),
+                         Some(aDataBytes));
   }
   MOZ_ASSERT(optional_argc == 0);
   return SendPushEvent(aOriginAttributes, aScope, EmptyString(), Nothing());
