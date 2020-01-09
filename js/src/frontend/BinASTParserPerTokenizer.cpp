@@ -16,6 +16,7 @@
 
 #include "frontend/BinAST-macros.h"
 #include "frontend/BinASTParser.h"
+#include "frontend/BinASTTokenReaderContext.h"
 #include "frontend/BinASTTokenReaderMultipart.h"
 #include "frontend/FullParseHandler.h"
 #include "frontend/ParseNode.h"
@@ -813,6 +814,7 @@ BinASTParserPerTokenizer<Tok>::asFinalParser() const {
 
 
 
+template class BinASTParserPerTokenizer<BinASTTokenReaderContext>;
 template class BinASTParserPerTokenizer<BinASTTokenReaderMultipart>;
 
 }  
