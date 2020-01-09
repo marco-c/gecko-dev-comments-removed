@@ -371,7 +371,7 @@ var gSearchResultsPane = {
 
       
       
-      let valueResult = nodeObject.tagName !== "menuitem" ?
+      let valueResult = nodeObject.tagName !== "menuitem" && nodeObject.tagName !== "radio" ?
         this.queryMatchesContent(nodeObject.getAttribute("value"), searchPhrase) : false;
 
       
