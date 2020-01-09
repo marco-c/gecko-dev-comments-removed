@@ -1268,12 +1268,15 @@ void js::AddPropertyTypesAfterProtoChange(JSContext* cx, NativeObject* obj,
   MOZ_ASSERT(obj->group() != oldGroup);
   MOZ_ASSERT(!obj->group()->unknownProperties(sweepObjGroup));
 
-  
   AutoSweepObjectGroup sweepOldGroup(oldGroup);
+  if (oldGroup->unknownProperties(sweepOldGroup)) {
+    MarkObjectGroupUnknownProperties(cx, obj->group());
+    return;
+  }
+
+  
   MarkObjectGroupFlags(
-      cx, obj,
-      oldGroup->flags(sweepOldGroup) &
-          (OBJECT_FLAG_DYNAMIC_MASK & ~OBJECT_FLAG_UNKNOWN_PROPERTIES));
+      cx, obj, oldGroup->flags(sweepOldGroup) & OBJECT_FLAG_DYNAMIC_MASK);
 
   
   
