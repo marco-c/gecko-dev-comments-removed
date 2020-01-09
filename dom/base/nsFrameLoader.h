@@ -92,9 +92,9 @@ class nsFrameLoader final : public nsStubMutationObserver,
                             public nsWrapperCache {
   friend class AutoResetInShow;
   friend class AutoResetInFrameSwap;
-  typedef mozilla::dom::PBrowserParent PBrowserParent;
   typedef mozilla::dom::Document Document;
   typedef mozilla::dom::BrowserParent BrowserParent;
+  typedef mozilla::dom::BrowserBridgeChild BrowserBridgeChild;
   typedef mozilla::dom::BrowsingContext BrowsingContext;
   typedef mozilla::layout::RenderFrame RenderFrame;
 
@@ -311,13 +311,13 @@ class nsFrameLoader final : public nsStubMutationObserver,
 
 
 
-  PBrowserParent* GetRemoteBrowser() const;
+  BrowserParent* GetBrowserParent() const;
 
   
 
 
 
-  mozilla::dom::BrowserBridgeChild* GetBrowserBridgeChild() const;
+  BrowserBridgeChild* GetBrowserBridgeChild() const;
 
   
 
