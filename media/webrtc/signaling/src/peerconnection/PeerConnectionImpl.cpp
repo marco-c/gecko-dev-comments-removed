@@ -308,7 +308,7 @@ PeerConnectionImpl::PeerConnectionImpl(const GlobalObject* aGlobal)
       mSTSThread(nullptr),
       mForceIceTcp(false),
       mMedia(nullptr),
-      mTransportHandler(nullptr),
+      mTransportHandler(MediaTransportHandler::Create()),
       mUuidGen(MakeUnique<PCUuidGenerator>()),
       mIceRestartCount(0),
       mIceRollbackCount(0),
@@ -405,10 +405,6 @@ nsresult PeerConnectionImpl::Initialize(PeerConnectionObserver& aObserver,
 
   
   
-  mTransportHandler = MediaTransportHandler::Create(mSTSThread);
-
-  
-  
   if (XRE_IsParentProcess()) {
     
     nsCOMPtr<nsISupports> nssDummy = do_GetService("@mozilla.org/psm;1", &res);
@@ -468,8 +464,8 @@ nsresult PeerConnectionImpl::Initialize(PeerConnectionObserver& aObserver,
     iceServers = aConfiguration.mIceServers.Value();
   }
 
-  res = mTransportHandler->CreateIceCtx("PC:" + GetName(), iceServers,
-                                        aConfiguration.mIceTransportPolicy);
+  res = mTransportHandler->Init("PC:" + GetName(), iceServers,
+                                aConfiguration.mIceTransportPolicy);
   if (NS_FAILED(res)) {
     CSFLogError(LOGTAG, "%s: Failed to init mtransport", __FUNCTION__);
     return NS_ERROR_FAILURE;
