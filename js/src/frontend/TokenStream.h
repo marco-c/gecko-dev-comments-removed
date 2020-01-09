@@ -754,6 +754,42 @@ class TokenStreamAnyChars : public TokenStreamShared {
 #if JS_COLUMN_DIMENSION_IS_CODE_POINTS()
   static constexpr uint32_t ColumnChunkLength = 128;
 
+  enum class UnitsType : unsigned char{
+      PossiblyMultiUnit = 0,
+      GuaranteedSingleUnit = 1,
+  };
+
+  class ChunkInfo {
+   public:
+    ChunkInfo(uint32_t col, UnitsType type)
+        : unitsType_(static_cast<unsigned char>(type)) {
+      memcpy(column_, &col, sizeof(col));
+    }
+
+    uint32_t column() const {
+      uint32_t col;
+      memcpy(&col, column_, sizeof(uint32_t));
+      return col;
+    }
+
+    UnitsType unitsType() const {
+      MOZ_ASSERT(unitsType_ <= 1, "unitsType_ must be 0 or 1");
+      return static_cast<UnitsType>(unitsType_);
+    }
+
+    void guaranteeSingleUnits() {
+      MOZ_ASSERT(unitsType() == UnitsType::PossiblyMultiUnit,
+                 "should only be setting to possibly optimize from the "
+                 "pessimistic case");
+      unitsType_ = static_cast<unsigned char>(UnitsType::GuaranteedSingleUnit);
+    }
+
+   private:
+    
+    unsigned char column_[sizeof(uint32_t)];
+    unsigned char unitsType_;
+  };
+
   
 
 
@@ -763,7 +799,7 @@ class TokenStreamAnyChars : public TokenStreamShared {
 
 
 
-  mutable HashMap<uint32_t, Vector<uint32_t>> longLineColumnInfo_;
+  mutable HashMap<uint32_t, Vector<ChunkInfo>> longLineColumnInfo_;
 #endif  
 
  protected:
@@ -829,7 +865,7 @@ class TokenStreamAnyChars : public TokenStreamShared {
   
   
   mutable uint32_t lineOfLastColumnComputation_ = UINT32_MAX;
-  mutable Vector<uint32_t>* lastChunkVectorForLine_ = nullptr;
+  mutable Vector<ChunkInfo>* lastChunkVectorForLine_ = nullptr;
   mutable uint32_t lastOffsetOfComputedColumn_ = UINT32_MAX;
   mutable uint32_t lastComputedColumn_ = 0;
 #endif  

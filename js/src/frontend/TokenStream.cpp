@@ -760,7 +760,8 @@ uint32_t TokenStreamAnyChars::computePartialColumn(
   
   
   auto ColumnFromPartial = [this, offset, &sourceUnits](uint32_t partialOffset,
-                                                        uint32_t partialCols) {
+                                                        uint32_t partialCols,
+                                                        UnitsType unitsType) {
     MOZ_ASSERT(partialOffset <= offset);
 
     
@@ -773,8 +774,18 @@ uint32_t TokenStreamAnyChars::computePartialColumn(
     const Unit* begin = sourceUnits.codeUnitPtrAt(partialOffset);
     const Unit* end = sourceUnits.codeUnitPtrAt(offset);
 
-    partialOffset += PointerRangeSize(begin, end);
-    partialCols += AssertedCast<uint32_t>(unicode::CountCodePoints(begin, end));
+    size_t offsetDelta = AssertedCast<uint32_t>(PointerRangeSize(begin, end));
+    partialOffset += offsetDelta;
+
+    if (unitsType == UnitsType::GuaranteedSingleUnit) {
+      MOZ_ASSERT(unicode::CountCodePoints(begin, end) == offsetDelta,
+                 "guaranteed-single-units also guarantee pointer distance "
+                 "equals code point count");
+      partialCols += offsetDelta;
+    } else {
+      partialCols +=
+          AssertedCast<uint32_t>(unicode::CountCodePoints(begin, end));
+    }
 
     this->lastOffsetOfComputedColumn_ = partialOffset;
     this->lastComputedColumn_ = partialCols;
@@ -784,14 +795,23 @@ uint32_t TokenStreamAnyChars::computePartialColumn(
   const uint32_t offsetInLine = offset - start;
 
   
-  
   const uint32_t chunkIndex = offsetInLine / ColumnChunkLength;
-
-  
-  
-  
   if (chunkIndex == 0) {
-    return ColumnFromPartial(start, 0);
+    
+    
+    
+    
+    
+    
+    UnitsType unitsType;
+    if (lastChunkVectorForLine_ && lastChunkVectorForLine_->length() > 0) {
+      MOZ_ASSERT((*lastChunkVectorForLine_)[0].column() == 0);
+      unitsType = (*lastChunkVectorForLine_)[0].unitsType();
+    } else {
+      unitsType = UnitsType::PossiblyMultiUnit;
+    }
+
+    return ColumnFromPartial(start, 0, unitsType);
   }
 
   
@@ -801,10 +821,10 @@ uint32_t TokenStreamAnyChars::computePartialColumn(
     if (!ptr) {
       
       
-      if (!longLineColumnInfo_.add(ptr, line, Vector<uint32_t>(cx))) {
+      if (!longLineColumnInfo_.add(ptr, line, Vector<ChunkInfo>(cx))) {
         
         cx->recoverFromOutOfMemory();
-        return ColumnFromPartial(start, 0);
+        return ColumnFromPartial(start, 0, UnitsType::PossiblyMultiUnit);
       }
     }
 
@@ -828,19 +848,43 @@ uint32_t TokenStreamAnyChars::computePartialColumn(
     const Unit* actualPtr = naivePtr;
     RetractPointerToCodePointBoundary(&actualPtr, limit);
 
+#  ifdef DEBUG
+    if ((*this->lastChunkVectorForLine_)[index].unitsType() ==
+        UnitsType::GuaranteedSingleUnit) {
+      MOZ_ASSERT(naivePtr == actualPtr, "miscomputed unitsType value");
+    }
+#  endif
+
     return naiveOffset - PointerRangeSize(actualPtr, naivePtr);
   };
 
   uint32_t partialOffset;
   uint32_t partialColumn;
+  UnitsType unitsType;
 
   auto entriesLen = AssertedCast<uint32_t>(lastChunkVectorForLine_->length());
-  if (entriesLen <= chunkIndex) {
+  if (chunkIndex < entriesLen) {
+    
+    
+    partialOffset = RetractedOffsetOfChunk(chunkIndex);
+    partialColumn = (*lastChunkVectorForLine_)[chunkIndex].column();
+
+    
+    unitsType = (*lastChunkVectorForLine_)[chunkIndex].unitsType();
+
+    
+    
+    
+    
+    MOZ_ASSERT_IF(chunkIndex == entriesLen - 1,
+                  (*lastChunkVectorForLine_)[chunkIndex].unitsType() ==
+                      UnitsType::PossiblyMultiUnit);
+  } else {
     
     
     if (entriesLen > 0) {
       partialOffset = RetractedOffsetOfChunk(entriesLen - 1);
-      partialColumn = (*lastChunkVectorForLine_)[entriesLen - 1];
+      partialColumn = (*lastChunkVectorForLine_)[entriesLen - 1].column();
     } else {
       partialOffset = start;
       partialColumn = 0;
@@ -849,21 +893,24 @@ uint32_t TokenStreamAnyChars::computePartialColumn(
     if (!lastChunkVectorForLine_->reserve(chunkIndex + 1)) {
       
       cx->recoverFromOutOfMemory();
-      return ColumnFromPartial(partialOffset, partialColumn);
+      return ColumnFromPartial(partialOffset, partialColumn,
+                               UnitsType::PossiblyMultiUnit);
     }
 
     
 
     
+    
     if (entriesLen == 0) {
-      lastChunkVectorForLine_->infallibleAppend(0);
+      lastChunkVectorForLine_->infallibleAppend(
+          ChunkInfo(0, UnitsType::PossiblyMultiUnit));
       entriesLen++;
     }
 
     do {
       const Unit* const begin = sourceUnits.codeUnitPtrAt(partialOffset);
       const Unit* chunkLimit = sourceUnits.codeUnitPtrAt(
-          start + std::min(entriesLen * ColumnChunkLength, offsetInLine));
+          start + std::min(entriesLen++ * ColumnChunkLength, offsetInLine));
 
       MOZ_ASSERT(begin < chunkLimit);
       MOZ_ASSERT(chunkLimit <= limit);
@@ -880,18 +927,28 @@ uint32_t TokenStreamAnyChars::computePartialColumn(
       MOZ_ASSERT(begin < chunkLimit);
       MOZ_ASSERT(chunkLimit <= limit);
 
-      partialOffset += PointerRangeSize(begin, chunkLimit);
-      partialColumn += unicode::CountCodePoints(begin, chunkLimit);
+      size_t numUnits = PointerRangeSize(begin, chunkLimit);
+      size_t numCodePoints = unicode::CountCodePoints(begin, chunkLimit);
 
-      lastChunkVectorForLine_->infallibleAppend(partialColumn);
-      entriesLen++;
+      
+      
+      if (numUnits == numCodePoints) {
+        lastChunkVectorForLine_->back().guaranteeSingleUnits();
+      }
+
+      partialOffset += numUnits;
+      partialColumn += numCodePoints;
+
+      lastChunkVectorForLine_->infallibleEmplaceBack(
+          partialColumn, UnitsType::PossiblyMultiUnit);
     } while (entriesLen < chunkIndex + 1);
-  } else {
-    partialOffset = RetractedOffsetOfChunk(chunkIndex);
-    partialColumn = (*lastChunkVectorForLine_)[chunkIndex];
+
+    
+    
+    unitsType = UnitsType::PossiblyMultiUnit;
   }
 
-  return ColumnFromPartial(partialOffset, partialColumn);
+  return ColumnFromPartial(partialOffset, partialColumn, unitsType);
 }
 
 #endif  
