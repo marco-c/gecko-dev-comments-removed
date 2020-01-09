@@ -1,3 +1,5 @@
+
+
 var requestURL = "//mochi.test:8888/tests/dom/cache/test/mochitest/mirror.sjs?" + context;
 var response;
 var c;

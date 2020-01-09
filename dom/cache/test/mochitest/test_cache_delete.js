@@ -1,5 +1,6 @@
+
+
 var name = "delete" + context;
-var c;
 
 function setupTest(reqs) {
   return new Promise(function(resolve, reject) {

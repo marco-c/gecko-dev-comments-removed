@@ -3,6 +3,8 @@
 
 
 
+
+
 var client;
 var context;
 
@@ -100,12 +102,12 @@ addEventListener("message", function workerWrapperOnMessage(e) {
   function runScript() {
     try {
       importScripts(data.script);
-    } catch (e) {
+    } catch (err) {
       client.postMessage({
         type: "status",
         status: false,
         context,
-        msg: "worker failed to import " + data.script + "; error: " + e.message,
+        msg: "worker failed to import " + data.script + "; error: " + err.message,
       });
     }
   }

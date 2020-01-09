@@ -1,3 +1,4 @@
+
 var name = "pb-window-cache";
 
 function testMatch(browser) {

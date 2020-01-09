@@ -49,6 +49,8 @@ function runTests(testFile, order) {
   }
 
   function importDrivers() {
+    
+    
     return Promise.all([loadScript("worker_driver.js"),
                         loadScript("serviceworker_driver.js")]);
   }
