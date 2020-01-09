@@ -70,7 +70,7 @@ ProcessChooser.prototype = {
       
       
       info("resolving");
-      resolve(self.remoteTab);
+      resolve(self.remoteTab.contentProcessId);
     });
 
     info("calling switchprocessto");

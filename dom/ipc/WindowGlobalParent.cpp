@@ -280,9 +280,10 @@ already_AddRefed<Promise> WindowGlobalParent::ChangeFrameRemoteness(
         
         
         if (bridge) {
-          promise->MaybeResolve(bridge->GetBrowserParent());
+          promise->MaybeResolve(
+              bridge->GetBrowserParent()->Manager()->ChildID());
         } else {
-          promise->MaybeResolve(browserParent);
+          promise->MaybeResolve(browserParent->Manager()->ChildID());
         }
       };
 

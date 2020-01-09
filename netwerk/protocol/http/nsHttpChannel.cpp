@@ -128,6 +128,7 @@
 #include "HttpTrafficAnalyzer.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/WindowGlobalParent.h"
+#include "js/Conversions.h"
 
 #ifdef MOZ_TASK_TRACER
 #  include "GeckoTaskTracer.h"
@@ -1782,9 +1783,9 @@ nsresult nsHttpChannel::CallOnStartRequest() {
 
     if (mListener) {
       nsCOMPtr<nsIStreamListener> deleteProtector(mListener);
-      mOnStartRequestCalled = true;
       deleteProtector->OnStartRequest(this);
     }
+
     mOnStartRequestCalled = true;
   });
 
@@ -1862,8 +1863,8 @@ nsresult nsHttpChannel::CallOnStartRequest() {
     MOZ_ASSERT(!mOnStartRequestCalled,
                "We should not call OsStartRequest twice");
     nsCOMPtr<nsIStreamListener> deleteProtector(mListener);
-    mOnStartRequestCalled = true;
     rv = deleteProtector->OnStartRequest(this);
+    mOnStartRequestCalled = true;
     if (NS_FAILED(rv)) return rv;
   } else {
     NS_WARNING("OnStartRequest skipped because of null listener");
@@ -2569,7 +2570,7 @@ nsresult nsHttpChannel::ContinueProcessResponse1() {
     
     gHttpHandler->OnMayChangeProcess(this);
 
-    if (mRedirectTabPromise) {
+    if (mRedirectContentProcessIdPromise) {
       MOZ_ASSERT(!mOnStartRequestCalled);
 
       PushRedirectAsyncFunc(&nsHttpChannel::ContinueProcessResponse2);
@@ -6362,11 +6363,6 @@ nsHttpChannel::AsyncOpen(nsIStreamListener* aListener) {
   NS_ENSURE_TRUE(!mIsPending, NS_ERROR_IN_PROGRESS);
   NS_ENSURE_TRUE(!mWasOpened, NS_ERROR_ALREADY_OPENED);
 
-  if (mCanceled) {
-    ReleaseListeners();
-    return mStatus;
-  }
-
   if (MaybeWaitForUploadStreamLength(listener, nullptr)) {
     return NS_OK;
   }
@@ -7249,10 +7245,11 @@ nsHttpChannel::GetRequestMethod(nsACString& aMethod) {
 class DomPromiseListener final : dom::PromiseNativeHandler {
   NS_DECL_ISUPPORTS
 
-  static RefPtr<nsHttpChannel::TabPromise> Create(dom::Promise* aDOMPromise) {
+  static RefPtr<nsHttpChannel::ContentProcessIdPromise> Create(
+      dom::Promise* aDOMPromise) {
     MOZ_ASSERT(aDOMPromise);
     RefPtr<DomPromiseListener> handler = new DomPromiseListener();
-    RefPtr<nsHttpChannel::TabPromise> promise =
+    RefPtr<nsHttpChannel::ContentProcessIdPromise> promise =
         handler->mPromiseHolder.Ensure(__func__);
     aDOMPromise->AppendNativeHandler(handler);
     return promise;
@@ -7260,15 +7257,12 @@ class DomPromiseListener final : dom::PromiseNativeHandler {
 
   virtual void ResolvedCallback(JSContext* aCx,
                                 JS::Handle<JS::Value> aValue) override {
-    nsCOMPtr<nsIRemoteTab> browserParent;
-    JS::Rooted<JSObject*> obj(aCx, &aValue.toObject());
-    nsresult rv =
-        UnwrapArg<nsIRemoteTab>(aCx, obj, getter_AddRefs(browserParent));
-    if (NS_FAILED(rv)) {
-      mPromiseHolder.Reject(rv, __func__);
+    uint64_t cpId;
+    if (!JS::ToUint64(aCx, aValue, &cpId)) {
+      mPromiseHolder.Reject(NS_ERROR_FAILURE, __func__);
       return;
     }
-    mPromiseHolder.Resolve(browserParent, __func__);
+    mPromiseHolder.Resolve(cpId, __func__);
   }
 
   virtual void RejectedCallback(JSContext* aCx,
@@ -7283,15 +7277,15 @@ class DomPromiseListener final : dom::PromiseNativeHandler {
  private:
   DomPromiseListener() = default;
   ~DomPromiseListener() = default;
-  MozPromiseHolder<nsHttpChannel::TabPromise> mPromiseHolder;
+  MozPromiseHolder<nsHttpChannel::ContentProcessIdPromise> mPromiseHolder;
 };
 
 NS_IMPL_ISUPPORTS0(DomPromiseListener)
 
-NS_IMETHODIMP nsHttpChannel::SwitchProcessTo(dom::Promise* aTabPromise,
-                                             uint64_t aIdentifier) {
+NS_IMETHODIMP nsHttpChannel::SwitchProcessTo(
+    dom::Promise* aContentProcessIdPromise, uint64_t aIdentifier) {
   MOZ_ASSERT(NS_IsMainThread());
-  NS_ENSURE_ARG(aTabPromise);
+  NS_ENSURE_ARG(aContentProcessIdPromise);
 
   LOG(("nsHttpChannel::SwitchProcessTo [this=%p]", this));
   LogCallingScriptLocation(this);
@@ -7299,7 +7293,8 @@ NS_IMETHODIMP nsHttpChannel::SwitchProcessTo(dom::Promise* aTabPromise,
   
   NS_ENSURE_FALSE(mOnStartRequestCalled, NS_ERROR_NOT_AVAILABLE);
 
-  mRedirectTabPromise = DomPromiseListener::Create(aTabPromise);
+  mRedirectContentProcessIdPromise =
+      DomPromiseListener::Create(aContentProcessIdPromise);
   mCrossProcessRedirectIdentifier = aIdentifier;
   return NS_OK;
 }
@@ -7650,7 +7645,7 @@ nsHttpChannel::OnStartRequest(nsIRequest* request) {
     
     gHttpHandler->OnMayChangeProcess(this);
 
-    if (mRedirectTabPromise) {
+    if (mRedirectContentProcessIdPromise) {
       PushRedirectAsyncFunc(&nsHttpChannel::ContinueOnStartRequest1);
       rv = StartCrossProcessRedirect();
       if (NS_SUCCEEDED(rv)) {
@@ -7957,10 +7952,9 @@ nsresult nsHttpChannel::ContinueOnStopRequestAfterAuthRetry(
       MOZ_ASSERT(!mOnStartRequestCalled,
                  "We should not call OnStartRequest twice.");
       nsCOMPtr<nsIStreamListener> listener(mListener);
-      mOnStartRequestCalled = true;
       listener->OnStartRequest(this);
-    } else {
       mOnStartRequestCalled = true;
+    } else {
       NS_WARNING("OnStartRequest skipped because of null listener");
     }
   }
@@ -8161,10 +8155,9 @@ nsresult nsHttpChannel::ContinueOnStopRequest(nsresult aStatus, bool aIsFromNet,
     MOZ_ASSERT(mOnStartRequestCalled,
                "OnStartRequest should be called before OnStopRequest");
     MOZ_ASSERT(!mOnStopRequestCalled, "We should not call OnStopRequest twice");
-    mOnStopRequestCalled = true;
     mListener->OnStopRequest(this, aStatus);
+    mOnStopRequestCalled = true;
   }
-  mOnStopRequestCalled = true;
 
   
   mDNSPrefetch = nullptr;
