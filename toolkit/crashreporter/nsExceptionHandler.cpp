@@ -182,8 +182,6 @@ typedef std::string xpstring;
 static const XP_CHAR dumpFileExtension[] = XP_TEXT(".dmp");
 #endif
 
-static const XP_CHAR childCrashAnnotationBaseName[] =
-    XP_TEXT("GeckoChildCrash");
 static const XP_CHAR extraFileExtension[] = XP_TEXT(".extra");
 static const XP_CHAR memoryReportExtension[] = XP_TEXT(".memory.json.gz");
 static xpstring* defaultMemoryReportPath = nullptr;
@@ -3333,8 +3331,19 @@ bool TakeMinidumpForChild(uint32_t childPid, nsIFile** dump,
 
 
 
-void RenameAdditionalHangMinidump(nsIFile* minidump, nsIFile* childMinidump,
-                                  const nsACString& name) {
+
+
+
+
+
+
+
+
+
+
+static void RenameAdditionalHangMinidump(nsIFile* minidump,
+                                         nsIFile* childMinidump,
+                                         const nsACString& name) {
   nsCOMPtr<nsIFile> directory;
   childMinidump->GetParent(getter_AddRefs(directory));
   if (!directory) return;
