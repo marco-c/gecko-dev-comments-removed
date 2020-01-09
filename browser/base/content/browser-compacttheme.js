@@ -2,6 +2,10 @@
 
 
 
+ChromeUtils.defineModuleGetter(
+    this, "LightweightThemeManager",
+    "resource://gre/modules/LightweightThemeManager.jsm");
+
 
 
 
