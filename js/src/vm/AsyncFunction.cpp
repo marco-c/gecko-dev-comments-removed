@@ -116,15 +116,16 @@ static bool AsyncFunctionResume(JSContext* cx,
                               &generatorOrValue)) {
     if (!generator->isClosed()) {
       generator->setClosed();
+    }
 
-      
-      if (cx->isExceptionPending()) {
-        RootedValue exn(cx);
-        if (!GetAndClearException(cx, &exn)) {
-          return false;
-        }
-        return AsyncFunctionThrown(cx, resultPromise, exn);
+    
+    if (resultPromise->state() == JS::PromiseState::Pending &&
+        cx->isExceptionPending()) {
+      RootedValue exn(cx);
+      if (!GetAndClearException(cx, &exn)) {
+        return false;
       }
+      return AsyncFunctionThrown(cx, resultPromise, exn);
     }
     return false;
   }
