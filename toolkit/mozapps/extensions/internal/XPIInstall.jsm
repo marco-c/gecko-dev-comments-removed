@@ -84,6 +84,8 @@ const PREF_XPI_WHITELIST_REQUIRED     = "xpinstall.whitelist.required";
 
 const TOOLKIT_ID                      = "toolkit@mozilla.org";
 
+const DEFAULT_THEME_ID = "default-theme@mozilla.org";
+
 
 const XPI_INTERNAL_SYMBOLS = [
   "BOOTSTRAP_REASONS",
@@ -3677,6 +3679,17 @@ var XPIInstall = {
 
     let addon = await loadManifest(pkg, XPIInternal.BuiltInLocation);
     addon.rootURI = base;
+
+    
+    
+    
+    
+    
+    
+    if (addon.id === DEFAULT_THEME_ID &&
+        !XPIDatabase.getAddonsByType("theme").some(theme => !theme.disabled)) {
+      addon.userDisabled = false;
+    }
     await this._activateAddon(addon);
   },
 
@@ -3714,8 +3727,13 @@ var XPIInstall = {
 
     let install = () => {
       addon.visible = true;
-      addon.active = true;
-      addon.userDisabled = false;
+      
+      
+      
+      if (addon.type !== "theme" || addon.location.isTemporary) {
+        addon.userDisabled = false;
+      }
+      addon.active = !addon.disabled;
 
       addon = XPIDatabase.addToDatabase(addon, addon._sourceBundle ? addon._sourceBundle.path : null);
 
@@ -3748,7 +3766,7 @@ var XPIInstall = {
     AddonManagerPrivate.callAddonListeners("onInstalled", addon.wrapper);
 
     
-    if (addon.type === "theme")
+    if (addon.type === "theme" && !addon.userDisabled)
       AddonManagerPrivate.notifyAddonChanged(addon.id, addon.type, false);
   },
 
