@@ -1,4 +1,3 @@
-use string_cache::DefaultAtom as Atom;
 use grammar::repr::*;
 use lr1::build_states;
 use lr1::core::Item;
@@ -6,6 +5,7 @@ use lr1::first::FirstSets;
 use lr1::interpret::interpret_partial;
 use lr1::lookahead::{Token, TokenSet};
 use lr1::tls::Lr1Tls;
+use string_cache::DefaultAtom as Atom;
 use test_util::{expect_debug, normalized_grammar};
 use tls::Tls;
 
@@ -61,14 +61,14 @@ fn backtrace1() {
     let state_stack = interpret_partial(&states, terms!["Int"]).unwrap();
     let top_state = *state_stack.last().unwrap();
 
-    // Top state will have items like:
-    //
-    // Expr = "Int" (*) [EOF],
-    // Expr = "Int" (*) ["+"],
-    // Expr = "Int" (*) [","],
-    // Expr = "Int" (*) [";"]
-    //
-    // Select the ";" one.
+    
+    
+    
+    
+    
+    
+    
+    
     let semi = Token::Terminal(term(";"));
     let semi_item = states[top_state.0]
         .items
@@ -120,15 +120,16 @@ fn backtrace1() {
         "  └─Expr───────────┘"
     ]
 ]
-"#.trim(),
+"#
+        .trim(),
     );
 }
 
 #[test]
 fn backtrace2() {
     let _tls = Tls::test();
-    // This grammar yields a S/R conflict. Is it (int -> int) -> int
-    // or int -> (int -> int)?
+    
+    
     let grammar = normalized_grammar(
         r#"
 grammar;
@@ -162,11 +163,12 @@ pub Ty: () = {
     (Nonterminal(Ty) -([Ty, "->", Ty], None, [])-> Item(Ty = Ty "->" Ty (*))),
     (Item(Ty = (*) Ty "->" Ty) -([], Some(Ty), ["->", Ty])-> Nonterminal(Ty))
 ]
-"#.trim(),
+"#
+        .trim(),
     );
 
-    // Check that we can successfully enumerate and paint the examples
-    // here.
+    
+    
     let pictures: Vec<_> = backtrace
         .lr1_examples(&first_sets, &item)
         .map(|e| e.paint_unstyled())
@@ -181,14 +183,15 @@ pub Ty: () = {
         "  └─Ty─────────────┘"
     ]
 ]
-"#.trim(),
+"#
+        .trim(),
     );
 }
 
 #[test]
 fn reduce_backtrace_3_graph() {
-    // This grammar yields a S/R conflict. Is it `(int -> int) -> int`
-    // or `int -> (int -> int)`?
+    
+    
     let _tls = Tls::test();
     let grammar = normalized_grammar(
         r#"
@@ -222,7 +225,8 @@ pub Ty: () = {
     (Nonterminal(Ty) -([Ty, "->", Ty], None, [])-> Item(Ty = Ty "->" Ty (*))),
     (Item(Ty = (*) Ty "->" Ty) -([], Some(Ty), ["->", Ty])-> Nonterminal(Ty))
 ]
-"#.trim(),
+"#
+        .trim(),
     );
 
     let list: Vec<_> = graph
@@ -239,7 +243,8 @@ pub Ty: () = {
         "  └─Ty─────────────┘"
     ]
 ]
-"#.trim(),
+"#
+        .trim(),
     );
 }
 
@@ -282,9 +287,9 @@ fn backtrace_filter() {
     let state_stack = interpret_partial(&states, terms!["Int"]).unwrap();
     let top_state = *state_stack.last().unwrap();
 
-    // Top state will have an item like:
-    //
-    // Expr = "Int" (*) [",", ";"],
+    
+    
+    
     let semi = Token::Terminal(term(";"));
     let lr1_item = states[top_state.0]
         .items
@@ -298,8 +303,8 @@ fn backtrace_filter() {
 
     println!("{:#?}", backtrace);
 
-    // With no filtering, we get examples with both `;` and `,` as
-    // lookahead (though `ExprSuffix` is in the way).
+    
+    
     let pictures: Vec<_> = backtrace
         .lr0_examples(lr1_item.to_lr0())
         .map(|e| e.paint_unstyled())
@@ -337,7 +342,7 @@ fn backtrace_filter() {
 ]
 "#.trim());
 
-    // Select those with `;` as lookahead
+    
     let semi_item = lr1_item.with_lookahead(TokenSet::from(semi));
     let pictures: Vec<_> = backtrace
         .lr1_examples(&first_sets, &semi_item)

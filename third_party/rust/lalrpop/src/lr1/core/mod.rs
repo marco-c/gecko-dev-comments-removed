@@ -1,4 +1,4 @@
-//! Core LR(1) types.
+
 
 use collections::Map;
 use grammar::repr::*;
@@ -12,7 +12,7 @@ use super::lookahead::*;
 #[derive(Copy, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Item<'grammar, L: Lookahead> {
     pub production: &'grammar Production,
-    /// the dot comes before `index`, so `index` would be 1 for X = A (*) B C
+    
     pub index: usize,
     pub lookahead: L,
 }
@@ -151,16 +151,16 @@ pub enum Action<'grammar> {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Conflict<'grammar, L> {
-    // when in this state...
+    
     pub state: StateIndex,
 
-    // with the following lookahead...
+    
     pub lookahead: L,
 
-    // we can reduce...
+    
     pub production: &'grammar Production,
 
-    // but we can also...
+    
     pub action: Action<'grammar>,
 }
 
@@ -170,11 +170,11 @@ pub type LR1Conflict<'grammar> = Conflict<'grammar, TokenSet>;
 
 #[derive(Debug)]
 pub struct TableConstructionError<'grammar, L: Lookahead> {
-    // LR(1) state set, possibly incomplete if construction is
-    // configured to terminate early.
+    
+    
     pub states: Vec<State<'grammar, L>>,
 
-    // Conflicts (non-empty) found in those states.
+    
     pub conflicts: Vec<Conflict<'grammar, L>>,
 }
 
@@ -227,13 +227,14 @@ impl Display for StateIndex {
 }
 
 impl<'grammar, L: Lookahead> State<'grammar, L> {
-    /// Returns the set of symbols which must appear on the stack to
-    /// be in this state. This is the *maximum* prefix of any item,
-    /// basically.
+    
+    
+    
     pub fn max_prefix(&self) -> &'grammar [Symbol] {
-        // Each state fn takes as argument the longest prefix of any
-        // item. Note that all items must have compatible prefixes.
-        let prefix = self.items
+        
+        
+        let prefix = self
+            .items
             .vec
             .iter()
             .map(|item| item.prefix())
@@ -250,20 +251,21 @@ impl<'grammar, L: Lookahead> State<'grammar, L> {
         prefix
     }
 
-    /// Returns the set of symbols from the stack that must be popped
-    /// for this state to return. If we have a state like:
-    ///
-    /// ```
-    /// X = A B C (*) C
-    /// Y = B C (*) C
-    /// C = (*) ...
-    /// ```
-    ///
-    /// This would return `[B, C]`. For every state other than the
-    /// start state, this will return a list of length at least 1.
-    /// For the start state, returns `[]`.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn will_pop(&self) -> &'grammar [Symbol] {
-        let prefix = self.items
+        let prefix = self
+            .items
             .vec
             .iter()
             .filter(|item| item.index > 0)
@@ -292,14 +294,15 @@ impl<'grammar, L: Lookahead> State<'grammar, L> {
             .unwrap_or(&[])
     }
 
-    /// Returns the type of nonterminal that this state will produce;
-    /// if `None` is returned, then this state may produce more than
-    /// one kind of nonterminal.
-    ///
-    /// FIXME -- currently, the start state returns `None` instead of
-    /// the goal symbol.
+    
+    
+    
+    
+    
+    
     pub fn will_produce(&self) -> Option<NonterminalString> {
-        let mut returnable_nonterminals: Vec<_> = self.items
+        let mut returnable_nonterminals: Vec<_> = self
+            .items
             .vec
             .iter()
             .filter(|item| item.index > 0)
@@ -314,12 +317,12 @@ impl<'grammar, L: Lookahead> State<'grammar, L> {
     }
 }
 
-/// `A = B C (*) D E F` or `A = B C (*)`
+
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct SymbolSets<'grammar> {
-    pub prefix: &'grammar [Symbol],       // both cases, [B, C]
-    pub cursor: Option<&'grammar Symbol>, // first [D], second []
-    pub suffix: &'grammar [Symbol],       // first [E, F], second []
+    pub prefix: &'grammar [Symbol],       
+    pub cursor: Option<&'grammar Symbol>, 
+    pub suffix: &'grammar [Symbol],       
 }
 
 impl<'grammar> SymbolSets<'grammar> {

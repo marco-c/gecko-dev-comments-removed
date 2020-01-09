@@ -2,18 +2,18 @@ use collections::{Map, Multimap, Set};
 use ena::unify::InPlaceUnificationTable;
 use lr1::core::{Action, LR1State, StateIndex};
 use lr1::lane_table::construct::state_set::StateSet;
-use lr1::lane_table::table::LaneTable;
 use lr1::lane_table::table::context_set::ContextSet;
+use lr1::lane_table::table::LaneTable;
 
-/// The "merge" phase of the algorithm is described in "Step 3c" of
-/// [the README][r].  It consists of walking through the various
-/// states in the lane table and merging them into sets of states that
-/// have compatible context sets; if we encounter a state S that has a
-/// successor T but where the context set of S is not compatible with
-/// T, then we will clone T into a new T2 (and hopefully the context
-/// set of S will be compatible with the reduced context of T2).
-///
-/// [r]: ../README.md
+
+
+
+
+
+
+
+
+
 pub struct Merge<'m, 'grammar: 'm> {
     table: &'m LaneTable<'grammar>,
     states: &'m mut Vec<LR1State<'grammar>>,
@@ -49,9 +49,9 @@ impl<'m, 'grammar> Merge<'m, 'grammar> {
     pub fn start(&mut self, beachhead_state: StateIndex) -> Result<(), (StateIndex, StateIndex)> {
         debug!("Merge::start(beachhead_state={:?})", beachhead_state);
 
-        // Since we always start walks from beachhead states, and they
-        // are not reachable from anyone else, this state should not
-        // have been unioned with anything else yet.
+        
+        
+        
         self.walk(beachhead_state)
     }
 
@@ -69,8 +69,8 @@ impl<'m, 'grammar> Merge<'m, 'grammar> {
         }
     }
 
-    /// If `state` is a cloned state, find its original index.  Useful
-    /// for indexing into the lane table and so forth.
+    
+    
     fn original_index(&self, state: StateIndex) -> StateIndex {
         *self.original_indices.get(&state).unwrap_or(&state)
     }
@@ -97,16 +97,17 @@ impl<'m, 'grammar> Merge<'m, 'grammar> {
                 );
                 self.walk(successor)?;
             } else {
-                // search for an existing clone with which we can merge
+                
                 debug!("Merge::walk: union failed, seek existing clone");
                 let existing_clone = {
                     let context_sets = &mut self.context_sets;
-                    self.clones.get(&successor)
-                               .into_iter()
-                               .flat_map(|clones| clones) // get() returns an Option<Set>
-                               .cloned()
-                               .filter(|&successor1| context_sets.union(state, successor1))
-                               .next()
+                    self.clones
+                        .get(&successor)
+                        .into_iter()
+                        .flat_map(|clones| clones) 
+                        .cloned()
+                        .filter(|&successor1| context_sets.union(state, successor1))
+                        .next()
                 };
 
                 if let Some(successor1) = existing_clone {
@@ -114,7 +115,7 @@ impl<'m, 'grammar> Merge<'m, 'grammar> {
                     self.patch_links(state, successor, successor1);
                     self.walk(successor1)?;
                 } else {
-                    // if we don't find one, we have to make a new clone
+                    
                     debug!("Merge::walk: creating new clone of {:?}", successor);
                     let successor1 = self.clone(successor);
                     if self.context_sets.union(state, successor1) {
@@ -144,21 +145,21 @@ impl<'m, 'grammar> Merge<'m, 'grammar> {
     }
 
     fn clone(&mut self, state: StateIndex) -> StateIndex {
-        // create a new state with same contents as the old one
+        
         let new_index = StateIndex(self.states.len());
         let new_state = self.states[state.0].clone();
         self.states.push(new_state);
 
-        // track the original index and clones
+        
         let original_index = self.original_index(state);
         self.original_indices.insert(new_index, original_index);
         self.clones.push(original_index, new_index);
 
-        // create a new unify key for this new state
+        
         let context_set = self.table.context_set(original_index).unwrap();
         self.context_sets.new_state(new_index, context_set);
 
-        // keep track of the clones of the target state
+        
         if original_index == self.target_states[0] {
             self.target_states.push(new_index);
         }

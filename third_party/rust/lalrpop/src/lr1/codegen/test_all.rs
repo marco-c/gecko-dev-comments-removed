@@ -1,6 +1,6 @@
-//! A compiler from an LR(1) table to a [recursive ascent] parser.
-//!
-//! [recursive ascent]: https://en.wikipedia.org/wiki/Recursive_ascent_parser
+
+
+
 
 use grammar::repr::{Grammar, NonterminalString, TypeParameter};
 use lr1::core::*;
@@ -91,11 +91,11 @@ impl<'ascent, 'grammar, W: Write> CodeGenerator<'ascent, 'grammar, W, TestAll> {
         if self.grammar.intern_token.is_some() {
             rust!(self.out, "let _ = self.builder;");
         }
-        // parse input using both methods:
+        
         try!(self.call_delegate("ascent"));
         try!(self.call_delegate("parse_table"));
 
-        // check that result is the same either way:
+        
         rust!(
             self.out,
             "assert_eq!({}ascent, {}parse_table);",
@@ -111,7 +111,8 @@ impl<'ascent, 'grammar, W: Write> CodeGenerator<'ascent, 'grammar, W, TestAll> {
     }
 
     fn call_delegate(&mut self, delegate: &str) -> io::Result<()> {
-        let non_lifetimes: Vec<_> = self.grammar
+        let non_lifetimes: Vec<_> = self
+            .grammar
             .type_parameters
             .iter()
             .filter(|&tp| match *tp {

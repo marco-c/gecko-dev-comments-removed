@@ -1,5 +1,5 @@
-//! Code to trace out a single lane, collecting information into the
-//! lane table as we go.
+
+
 
 use collections::Set;
 use grammar::repr::*;
@@ -48,9 +48,9 @@ impl<'trace, 'grammar, L: Lookahead> LaneTracer<'trace, 'grammar, L> {
     ) {
         let mut visited_set = Set::default();
 
-        // if the conflict item is a "shift" item, then the context
-        // is always the terminal to shift (and conflicts only arise
-        // around shifting terminal, so it must be a terminal)
+        
+        
+        
         match action {
             Action::Shift(term, _) => {
                 let mut token_set = TokenSet::new();
@@ -77,19 +77,19 @@ impl<'trace, 'grammar, L: Lookahead> LaneTracer<'trace, 'grammar, L> {
         }
 
         if item.index > 0 {
-            // This item was reached by shifting some symbol.  We need
-            // to unshift that symbol, which means we walk backwards
-            // to predecessors of `state` in the state graph.
-            //
-            // Example:
-            //
-            //     X = ...p T (*) ...s
-            //
-            // Here we would be "unshifting" T, which means we will
-            // walk to predecessors of the current state that were
-            // reached by shifting T. Those predecessors will contain
-            // an item like `X = ...p (*) T ...s`, which we will then
-            // process in turn.
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
             let shifted_symbol = item.production.symbols[item.index - 1].clone();
             let unshifted_item = Item {
                 index: item.index - 1,
@@ -103,36 +103,36 @@ impl<'trace, 'grammar, L: Lookahead> LaneTracer<'trace, 'grammar, L> {
             return;
         }
 
-        // Either: we are in the start state, or this item was
-        // reached by an epsilon transition. We have to
-        // "unepsilon", which means that we search elsewhere in
-        // the state for where the epsilon transition could have
-        // come from.
-        //
-        // Example:
-        //
-        //     X = (*) ...
-        //
-        // We will search for other items in the same state like:
-        //
-        //     Y = ...p (*) X ...s
-        //
-        // We can then insert `FIRST(...s)` as lookahead for
-        // `conflict`. If `...s` may derive epsilon, though, we
-        // have to recurse and search with the previous item.
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
 
         let state_items = &self.states[state.0].items.vec;
         let nonterminal = &item.production.nonterminal;
         if *nonterminal == self.start_nt {
-            // as a special case, if the `X` above is the special, synthetic
-            // start-terminal, then the only thing that comes afterwards is EOF.
+            
+            
             self.table.add_lookahead(state, conflict, &TokenSet::eof());
         }
 
-        // NB: Under the normal LR terms, the start nonterminal will
-        // only have one production like `X' = X`, in which case this
-        // loop is useless, but sometimes in tests we don't observe
-        // that restriction, so do it anyway.
+        
+        
+        
+        
         for pred_item in state_items
             .iter()
             .filter(|i| i.can_shift_nonterminal(nonterminal))

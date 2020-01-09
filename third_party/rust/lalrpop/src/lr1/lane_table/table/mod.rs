@@ -1,17 +1,17 @@
-//! The "Lane Table". In the paper, this is depicted like so:
-//!
-//! ```
-//! +-------+----+-----+----+------------+
-//! + State | C1 | ... | Cn | Successors |
-//! +-------+----+-----+----+------------+
-//! ```
-//!
-//! where each row summarizes some state that potentially contributes
-//! lookahead to the conflict. The columns `Ci` represent each of the
-//! conflicts we are trying to disentangle; their values are each
-//! `TokenSet` indicating the lookahead contributing by this state.
-//! The Successors is a vector of further successors. For simplicity
-//! though we store this using maps, at least for now.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 use collections::{Map, Multimap, Set};
 use grammar::repr::*;
@@ -63,12 +63,12 @@ impl<'grammar> LaneTable<'grammar> {
         self.successors.push(state, succ);
     }
 
-    /// Unions together the lookaheads for each column and returns a
-    /// context set containing all of them. For an LALR(1) grammar,
-    /// these token sets will be mutually disjoint, as discussed in
-    /// the [README]; otherwise `Err` will be returned.
-    ///
-    /// [README]: ../README.md
+    
+    
+    
+    
+    
+    
     pub fn columns(&self) -> Result<ContextSet, OverlappingLookahead> {
         let mut columns = ContextSet::new(self.conflicts);
         for (&(_, conflict_index), set) in &self.lookaheads {
@@ -81,12 +81,13 @@ impl<'grammar> LaneTable<'grammar> {
         self.successors.get(&state)
     }
 
-    /// Returns the state of states in the table that are **not**
-    /// reachable from another state in the table. These are called
-    /// "beachhead states".
+    
+    
+    
     pub fn beachhead_states(&self) -> Set<StateIndex> {
-        // set of all states that are reachable from another state
-        let reachable: Set<StateIndex> = self.successors
+        
+        let reachable: Set<StateIndex> = self
+            .successors
             .iter()
             .flat_map(|(_pred, succ)| succ)
             .cloned()
@@ -109,10 +110,10 @@ impl<'grammar> LaneTable<'grammar> {
         Ok(set)
     }
 
-    /// Returns a map containing all states that appear in the table,
-    /// along with the context set for each state (i.e., each row in
-    /// the table, basically). Returns Err if any state has a conflict
-    /// between the context sets even within its own row.
+    
+    
+    
+    
     pub fn rows(&self) -> Result<Map<StateIndex, ContextSet>, StateIndex> {
         let mut map = Map::new();
         for (&(state_index, conflict_index), token_set) in &self.lookaheads {
@@ -134,9 +135,9 @@ impl<'grammar> LaneTable<'grammar> {
             }
         }
 
-        // In some cases, there are states that have no context at
-        // all, only successors. In that case, make sure to add an
-        // empty row for them.
+        
+        
+        
         for (&state_index, _) in &self.successors {
             map.entry(state_index)
                 .or_insert_with(|| ContextSet::new(self.conflicts));
@@ -148,7 +149,8 @@ impl<'grammar> LaneTable<'grammar> {
 
 impl<'grammar> Debug for LaneTable<'grammar> {
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
-        let indices: Set<StateIndex> = self.lookaheads
+        let indices: Set<StateIndex> = self
+            .lookaheads
             .keys()
             .map(|&(state, _)| state)
             .chain(self.successors.iter().map(|(key, _)| key.clone()))
@@ -182,7 +184,7 @@ impl<'grammar> Debug for LaneTable<'grammar> {
 
         let widths: Vec<_> = (0..columns)
             .map(|c| {
-                // find the max width of any row at this column
+                
                 table.iter().map(|r| r[c].len()).max().unwrap()
             })
             .collect();

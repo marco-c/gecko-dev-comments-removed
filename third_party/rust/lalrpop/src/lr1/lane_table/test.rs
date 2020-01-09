@@ -1,12 +1,12 @@
-use string_cache::DefaultAtom as Atom;
 use grammar::repr::*;
-use test_util::{expect_debug, normalized_grammar};
 use lr1::build;
 use lr1::core::*;
 use lr1::first::FirstSets;
 use lr1::interpret;
 use lr1::state_graph::StateGraph;
 use lr1::tls::Lr1Tls;
+use string_cache::DefaultAtom as Atom;
+use test_util::{expect_debug, normalized_grammar};
 use tls::Tls;
 
 use super::construct::*;
@@ -42,9 +42,9 @@ fn traverse(states: &[LR0State], tokens: &[&str]) -> StateIndex {
         .unwrap()
 }
 
-/// A simplified version of the paper's initial grammar; this version
-/// only has one inconsistent state (the same state they talk about in
-/// the paper).
+
+
+
 pub fn paper_example_g0() -> Grammar {
     normalized_grammar(
         r#"
@@ -68,11 +68,11 @@ Y: () = {
     )
 }
 
-/// A (corrected) version of the sample grammar G1 from the paper. The
-/// grammar as written in the text omits some items, but the diagrams
-/// seem to contain the full set. I believe this is one of the
-/// smallest examples that still requires splitting states from the
-/// LR0 states.
+
+
+
+
+
 pub fn paper_example_g1() -> Grammar {
     normalized_grammar(
         r#"
@@ -110,7 +110,7 @@ fn build_table<'grammar>(
 ) -> LaneTable<'grammar> {
     let lr0_err = build::build_lr0_states(&grammar, nt(goal)).unwrap_err();
 
-    // Push the `tokens` to find the index of the inconsistent state
+    
     let inconsistent_state_index = traverse(&lr0_err.states, tokens);
     assert!(
         lr0_err
@@ -121,7 +121,7 @@ fn build_table<'grammar>(
     let inconsistent_state = &lr0_err.states[inconsistent_state_index.0];
     println!("inconsistent_state={:#?}", inconsistent_state.items);
 
-    // Extract conflicting items and trace the lanes, constructing a table
+    
     let conflicting_items = super::conflicting_actions(inconsistent_state);
     println!("conflicting_items={:#?}", conflicting_items);
     let first_sets = FirstSets::new(&grammar);
@@ -152,18 +152,19 @@ fn g0_conflict_1() {
     let _lr1_tls = Lr1Tls::install(grammar.terminals.clone());
     let table = build_table(&grammar, "G", &["e"]);
     println!("{:#?}", table);
-    // conflicting_actions={
-    //     Shift("e") // C0
-    //     Reduce(X = "e" => ActionFn(4)) // C1
-    //     Reduce(Y = "e" => ActionFn(6)) // C2
-    // }
+    
+    
+    
+    
+    
     expect_debug(
         &table,
         r#"
 | State | C0    | C1    | C2    | Successors |
 | S0    |       | ["c"] | ["d"] | {S3}       |
 | S3    | ["e"] | []    | []    | {S3}       |
-"#.trim_left(),
+"#
+        .trim_left(),
     );
 }
 
@@ -174,11 +175,11 @@ fn paper_example_g1_conflict_1() {
     let _lr1_tls = Lr1Tls::install(grammar.terminals.clone());
     let table = build_table(&grammar, "G", &["a", "e"]);
     println!("{:#?}", table);
-    // conflicting_actions={
-    //     Shift("e") // C0
-    //     Reduce(X = "e" => ActionFn(6)) // C1
-    //     Reduce(Y = "e" => ActionFn(8)) // C2
-    // }
+    
+    
+    
+    
+    
     expect_debug(
         &table,
         r#"
@@ -186,7 +187,8 @@ fn paper_example_g1_conflict_1() {
 | S1    |       | ["d"] | ["c"] | {S5}       |
 | S2    |       | ["c"] | ["d"] | {S5}       |
 | S5    | ["e"] | []    | []    | {S5}       |
-"#.trim_left(),
+"#
+        .trim_left(),
     );
 }
 
@@ -200,7 +202,7 @@ fn paper_example_g0_build() {
         .construct()
         .expect("failed to build lane table states");
 
-    // we do not require more *states* than LR(0), just different lookahead
+    
     assert_eq!(states.len(), lr0_err.states.len());
 
     let tree = interpret::interpret(&states, tokens!["e", "c"]).unwrap();
@@ -225,7 +227,7 @@ fn paper_example_g1_build() {
         .construct()
         .expect("failed to build lane table states");
 
-    // we require more *states* than LR(0), not just different lookahead
+    
     assert_eq!(states.len() - lr0_err.states.len(), 1);
 
     let tree = interpret::interpret(&states, tokens!["a", "e", "e", "d"]).unwrap();
@@ -303,12 +305,12 @@ fn large_conflict_1() {
     let table = build_table(&grammar, "G", &["x", "s", "k", "t"]);
     println!("{:#?}", table);
 
-    // conflicting_actions={
-    //     Shift("s") // C0
-    //     Reduce(U = U "k" "t") // C1
-    //     Reduce(X = "k" "t") // C2
-    //     Reduce(Y = "k" "t") // C3
-    // }
+    
+    
+    
+    
+    
+    
 
     expect_debug(
         &table,
@@ -323,40 +325,41 @@ fn large_conflict_1() {
 | S16   |       |       |            |       | {S27}      |
 | S27   | ["s"] | ["k"] |            |       | {S32}      |
 | S32   |       |       | ["z"]      | ["u"] | {S16}      |
-"#.trim_left(),
+"#
+        .trim_left(),
     );
 
-    // ^^ This differs in some particulars from what appears in the
-    // paper, but I believe it to be correct, and the paper to be wrong.
-    //
-    // Here is the table using the state names from the paper. I've
-    // marked the differences with `(*)`. Note that the paper does not
-    // include the C0 column (the shift).
-    //
-    // | State | pi1   | pi2   | pi3        | Successors |
-    // | B     | ["k"] |       | *1         | {G}        |
-    // | C     | ["k"] |       | *1         | {G}        |
-    // | D     | ["k"] |       | *1         | {G}        |
-    // | E     | ["k"] |       |            | {F}        |
-    // | F     |       | ["r"] | ["a"]      | {H}        |
-    // | G     |       | ["d"] | ["c", "w"] | {H}        |
-    // | H     |       |       |            | {I}        |
-    // | I     | ["k"] |       |            | {J}        |
-    // | J     |       | ["u"] | ["z"] *2   | {H}        |
-    //
-    // *1 - the paper lists "a", "b", and "r" here as lookaheads.  We
-    // do not. This is because when we trace back pi3, we never reach
-    // those states, as we have already acquired the necessary token
-    // of context earlier. I can imagine a distinct lane tracing
-    // algorithm that considers *sets* of conflicts and only
-    // terminates when all sets have context, but it's much more
-    // complex to implement, and seems to add little value.
-    //
-    // *2 - the paper does not list this context, and yet it seems to
-    // present. If you trace back "t" and "k" you reach state J which
-    // has the item "X = k t (*)". This "unepsilons" to "X = k t U (*)
-    // X P", and the lookahead from the "X" here is FIRST(P) which is
-    // "z".
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 }
 
 #[test]

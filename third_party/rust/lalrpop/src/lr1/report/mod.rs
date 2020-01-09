@@ -1,8 +1,8 @@
+use collections::*;
 use grammar::repr::*;
 use lr1::core::*;
-use std::io::{self, Write};
 use std::cmp::max;
-use collections::*;
+use std::io::{self, Write};
 
 use super::lookahead::*;
 
@@ -234,7 +234,7 @@ where
         L: Lookahead + LookaheadPrinter<W>,
     {
         try!(write!(self.out, "{}", INDENT_STRING));
-        // stringize it first to allow handle :width by Display for string
+        
         let s = format!("{}", item.production.nonterminal);
         try!(write!(self.out, "{:width$} ->", s, width = max_width));
         for i in 0..item.index {
@@ -256,7 +256,7 @@ where
     ) -> io::Result<()> {
         for entry in shifts {
             try!(write!(self.out, "{}", INDENT_STRING));
-            // stringize it first to allow handle :width by Display for string
+            
             let s = format!("{}", entry.0);
             try!(writeln!(
                 self.out,
@@ -340,7 +340,7 @@ where
     ) -> io::Result<()> {
         for entry in gotos {
             try!(write!(self.out, "{}", INDENT_STRING));
-            // stringize it first to allow handle :width by Display for string
+            
             let s = format!("{}", entry.0);
             try!(writeln!(
                 self.out,
@@ -372,7 +372,7 @@ where
     }
 }
 
-// helpers
+
 
 trait LookaheadPrinter<W>
 where

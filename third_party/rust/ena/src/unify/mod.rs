@@ -174,18 +174,20 @@ pub struct VarValue<K: UnifyKey> {
 
 
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct UnificationTable<S: UnificationStore> {
     
     values: S,
 }
 
 
-pub type InPlaceUnificationTable<K> = UnificationTable<InPlace<K>>;
+#[allow(type_alias_bounds)]
+pub type InPlaceUnificationTable<K: UnifyKey> = UnificationTable<InPlace<K>>;
 
 
 #[cfg(feature = "persistent")]
-pub type PersistentUnificationTable<K> = UnificationTable<Persistent<K>>;
+#[allow(type_alias_bounds)]
+pub type PersistentUnificationTable<K: UnifyKey> = UnificationTable<Persistent<K>>;
 
 
 
@@ -237,9 +239,7 @@ impl<K: UnifyKey> VarValue<K> {
 
 impl<S: UnificationStore> UnificationTable<S> {
     pub fn new() -> Self {
-        UnificationTable {
-            values: S::new()
-        }
+        Self::default()
     }
 
     

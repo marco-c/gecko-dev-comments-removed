@@ -1,16 +1,16 @@
-use string_cache::DefaultAtom as Atom;
 use generate;
 use grammar::repr::*;
-use test_util::{compare, expect_debug, normalized_grammar};
 use lr1::core::*;
 use lr1::interpret::interpret;
 use lr1::lookahead::Token;
 use lr1::lookahead::Token::EOF;
 use lr1::lookahead::TokenSet;
 use lr1::tls::Lr1Tls;
+use string_cache::DefaultAtom as Atom;
+use test_util::{compare, expect_debug, normalized_grammar};
 use tls::Tls;
 
-use super::{use_lane_table, build_lr0_states, build_lr1_states, LR};
+use super::{build_lr0_states, build_lr1_states, use_lane_table, LR};
 
 fn nt(t: &str) -> NonterminalString {
     NonterminalString(Atom::from(t))
@@ -134,29 +134,29 @@ grammar;
 
     let _lr1_tls = Lr1Tls::install(grammar.terminals.clone());
 
-    // for now, just test that process does not result in an error
-    // and yields expected number of states.
+    
+    
     let states = build_lr1_states(&grammar, nt("S")).unwrap();
     println!("{:#?}", states);
     assert_eq!(states.len(), if use_lane_table() { 9 } else { 16 });
 
-    // execute it on some sample inputs.
+    
     let tree = interpret(&states, tokens!["N", "-", "(", "N", "-", "N", ")"]).unwrap();
     assert_eq!(
         &format!("{}", tree)[..],
         r#"[S: [E: [E: [T: "N"]], "-", [T: "(", [E: [E: [T: "N"]], "-", [T: "N"]], ")"]]]"#
     );
 
-    // incomplete:
+    
     assert!(interpret(&states, tokens!["N", "-", "(", "N", "-", "N"]).is_err());
 
-    // incomplete:
+    
     assert!(interpret(&states, tokens!["N", "-"]).is_err());
 
-    // unexpected character:
+    
     assert!(interpret(&states, tokens!["N", "-", ")", "N", "-", "N", "("]).is_err());
 
-    // parens first:
+    
     let tree = interpret(&states, tokens!["(", "N", "-", "N", ")", "-", "N"]).unwrap();
     println!("{}", tree);
     assert_eq!(
@@ -164,7 +164,7 @@ grammar;
         r#"[S: [E: [E: [T: "(", [E: [E: [T: "N"]], "-", [T: "N"]], ")"]], "-", [T: "N"]]]"#
     );
 
-    // run some random tests
+    
     random_test(&grammar, &states, nt("S"));
 }
 
@@ -172,29 +172,29 @@ grammar;
 fn shift_reduce_conflict1() {
     let _tls = Tls::test();
 
-    // This grammar gets a shift-reduce conflict because if the input
-    // is "&" (*) "L", then we see two possibilities, and we must decide
-    // between them:
-    //
-    // "&" (*) "L" E
-    //  |       |  |
-    //  +-------+--|
-    //          |
-    //          E
-    //
-    // or
-    //
-    // "&"      (*) "L"
-    //  |            |
-    //  |  OPT_L     E
-    //  |   |        |
-    //  +---+---+----+
-    //          |
-    //          E
-    //
-    // to some extent this may be a false conflict, in that inlined
-    // rules would address it, but it's an interesting one for
-    // producing a useful error message.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
     let grammar = normalized_grammar(
         r#"
@@ -216,7 +216,7 @@ fn shift_reduce_conflict1() {
     assert!(build_lr1_states(&grammar, nt("E")).is_err());
 }
 
-/// One of the few grammars that IS LR(0).
+
 #[test]
 fn lr0_expr_grammar_with_explicit_eof() {
     let _tls = Tls::test();
@@ -241,13 +241,13 @@ T: () = {
 
     let _lr1_tls = Lr1Tls::install(grammar.terminals.clone());
 
-    // for now, just test that process does not result in an error
-    // and yields expected number of states.
+    
+    
     let states = build_lr0_states(&grammar, nt("S")).unwrap();
     assert_eq!(states.len(), 10);
 }
 
-/// Without the artifical '$', grammar is not LR(0).
+
 #[test]
 fn lr0_expr_grammar_with_implicit_eof() {
     let _tls = Tls::test();
@@ -275,9 +275,9 @@ T: () = {
     build_lr0_states(&grammar, nt("S")).unwrap_err();
 }
 
-/// When we moved to storing items as (lr0 -> TokenSet) pairs, a bug
-/// in the transitive closure routine could cause us to have `(Foo,
-/// S0)` and `(Foo, S1)` as distinct items instead of `(Foo, S0|S1)`.
+
+
+
 #[test]
 fn issue_144() {
     let _tls = Tls::test();
@@ -328,7 +328,7 @@ ty: () = {
     build_lr1_states(&grammar, nt("ForeignItem")).unwrap();
 }
 
-// Not sure if this is the right spot
+
 #[test]
 fn match_grammar() {
     let _tls = Tls::test();

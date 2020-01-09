@@ -1,15 +1,15 @@
-//! Error reporting. For now very stupid and simplistic.
+
 
 use collections::{set, Set};
-use lr1::trace::Tracer;
+use grammar::repr::*;
+use itertools::Itertools;
 use lr1::core::*;
 use lr1::example::{Example, ExampleStyles, ExampleSymbol};
 use lr1::first::FirstSets;
 use lr1::lookahead::{Token, TokenSet};
-use itertools::Itertools;
-use grammar::repr::*;
-use message::Message;
+use lr1::trace::Tracer;
 use message::builder::{BodyCharacter, Builder, Character, MessageBuilder};
+use message::Message;
 use tls::Tls;
 
 #[cfg(test)]
@@ -29,33 +29,33 @@ struct ErrorReportingCx<'cx, 'grammar: 'cx> {
 
 #[derive(Debug)]
 enum ConflictClassification {
-    /// The grammar is ambiguous. This means we have two examples of
-    /// precisely the same set of symbols which can be reduced in two
-    /// distinct ways.
+    
+    
+    
     Ambiguity { action: Example, reduce: Example },
 
-    /// The grammar is ambiguous, and moreover it looks like a
-    /// precedence error. This means that the reduction is to a
-    /// nonterminal `T` and the shift is some symbol sandwiched
-    /// between two instances of `T`.
+    
+    
+    
+    
     Precedence {
         shift: Example,
         reduce: Example,
         nonterminal: NonterminalString,
     },
 
-    /// Suggest inlining `nonterminal`. Makes sense if there are two
-    /// levels in the reduction tree in both examples, and the suffix
-    /// after the inner reduction is the same in all cases.
+    
+    
+    
     SuggestInline {
         shift: Example,
         reduce: Example,
         nonterminal: NonterminalString,
     },
 
-    /// Like the previous, but suggest replacing `nonterminal` with
-    /// `symbol?`. Makes sense if the thing to be inlined consists of
-    /// two alternatives, `X = symbol | ()`.
+    
+    
+    
     SuggestQuestion {
         shift: Example,
         reduce: Example,
@@ -63,10 +63,10 @@ enum ConflictClassification {
         symbol: Symbol,
     },
 
-    /// Can't say much beyond that a conflict occurred.
+    
     InsufficientLookahead { action: Example, reduce: Example },
 
-    /// Really can't say *ANYTHING*.
+    
     Naive,
 }
 
@@ -246,15 +246,15 @@ impl<'cx, 'grammar> ErrorReportingCx<'cx, 'grammar> {
         example: Example,
         intro_word: &str,
     ) -> Builder<C> {
-        // A shift example looks like:
-        //
-        // ...p1 ...p2 (*) L ...s2 ...s1
-        // |     |               |     |
-        // |     +-NT1-----------+     |
-        // |                           |
-        // |           ...             |
-        // |                           |
-        // +-NT2-----------------------+
+        
+        
+        
+        
+        
+        
+        
+        
+        
 
         let nt1 = example.reductions[0].nonterminal.clone();
 
@@ -349,10 +349,12 @@ impl<'cx, 'grammar> ErrorReportingCx<'cx, 'grammar> {
             .push(nonterminal.clone())
             .verbatimed()
             .text("with")
-            .text(symbol) // intentionally disable coloring here, looks better
+            .text(symbol) 
             .adjacent_text("`", "?`")
-            .text("(or, alternatively, by adding the annotation `#[inline]` \
-                   to the definition of")
+            .text(
+                "(or, alternatively, by adding the annotation `#[inline]` \
+                 to the definition of",
+            )
             .push(nonterminal)
             .punctuated(").")
             .text("For more information, see the section on inlining")
@@ -368,22 +370,22 @@ impl<'cx, 'grammar> ErrorReportingCx<'cx, 'grammar> {
         action: Example,
         reduce: Example,
     ) -> Message {
-        // The reduce example will look something like:
-        //
-        //
-        // ...p1 ...p2 (*) L ...s2 ...s1
-        // |     |               |     |
-        // |     +-NT1-----------+     |
-        // |     |               |     |
-        // |     +-...-----------+     |
-        // |     |               |     |
-        // |     +-NTn-----------+     |
-        // |                           |
-        // +-NTn+1---------------------+
-        //
-        // To solve the conflict, essentially, the user needs to
-        // modify the grammar so that `NTn` does not appear with `L`
-        // in its follow-set. How to guide them in this?
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
 
         let builder = self.report_error_not_lr1_core(conflict, action, reduce);
 
@@ -396,8 +398,8 @@ impl<'cx, 'grammar> ErrorReportingCx<'cx, 'grammar> {
             .end()
     }
 
-    /// Naive error reporting. This is a fallback path which (I think)
-    /// never actually executes.
+    
+    
     fn report_error_naive(&self, conflict: &TokenConflict<'grammar>) -> Message {
         let mut builder = MessageBuilder::new(conflict.production.span)
             .heading()
@@ -428,8 +430,8 @@ impl<'cx, 'grammar> ErrorReportingCx<'cx, 'grammar> {
     }
 
     fn classify(&mut self, conflict: &TokenConflict<'grammar>) -> ConflictClassification {
-        // Find examples from the conflicting action (either a shift
-        // or a reduce).
+        
+        
         let mut action_examples = match conflict.action {
             Action::Shift(..) => self.shift_examples(conflict),
             Action::Reduce(production) => {
@@ -437,19 +439,19 @@ impl<'cx, 'grammar> ErrorReportingCx<'cx, 'grammar> {
             }
         };
 
-        // Find examples from the conflicting reduce.
+        
         let mut reduce_examples = self.reduce_examples(
             conflict.state,
             conflict.production,
             conflict.lookahead.clone(),
         );
 
-        // Prefer shorter examples to longer ones.
+        
         action_examples.sort_by(|e, f| e.symbols.len().cmp(&f.symbols.len()));
         reduce_examples.sort_by(|e, f| e.symbols.len().cmp(&f.symbols.len()));
 
-        // This really shouldn't happen, but if we've failed to come
-        // up with examples, then report a "naive" error.
+        
+        
         if action_examples.is_empty() || reduce_examples.is_empty() {
             return ConflictClassification::Naive;
         }
@@ -472,9 +474,9 @@ impl<'cx, 'grammar> ErrorReportingCx<'cx, 'grammar> {
             return classification;
         }
 
-        // Give up. Just grab an example from each and pair them up.
-        // If there aren't even two examples, something's pretty
-        // bogus, but we'll just call it naive.
+        
+        
+        
         action_examples
             .into_iter()
             .zip(reduce_examples)
@@ -500,9 +502,9 @@ impl<'cx, 'grammar> ErrorReportingCx<'cx, 'grammar> {
             .filter(|&(action, reduce)| action.symbols == reduce.symbols)
             .filter(|&(action, reduce)| action.cursor == reduce.cursor)
             .map(|(action, reduce)| {
-                // Consider whether to call this a precedence
-                // error. We do this if we are stuck between reducing
-                // `T = T S T` and shifting `S`.
+                
+                
+                
                 if let Action::Shift(ref term, _) = conflict.action {
                     let nt = &conflict.production.nonterminal;
                     if conflict.production.symbols.len() == 3
@@ -531,14 +533,14 @@ impl<'cx, 'grammar> ErrorReportingCx<'cx, 'grammar> {
         action_examples: &[Example],
         reduce_examples: &[Example],
     ) -> Option<ConflictClassification> {
-        // If we get a shift/reduce conflict and the reduce
-        // is of a nonterminal like:
-        //
-        //     T = { () | U }
-        //
-        // then suggest replacing T with U?. I'm being a bit lenient
-        // here since I do not KNOW that it will help, but it often
-        // does, and it's better style anyhow.
+        
+        
+        
+        
+        
+        
+        
+        
 
         if let Action::Reduce(_) = conflict.action {
             return None;
@@ -577,21 +579,21 @@ impl<'cx, 'grammar> ErrorReportingCx<'cx, 'grammar> {
         action_examples: &[Example],
         reduce_examples: &[Example],
     ) -> Option<ConflictClassification> {
-        // Inlining can help resolve a shift/reduce conflict because
-        // it defers the need to reduce. In particular, if we inlined
-        // all the reductions up until the last one, then we would be
-        // able to *shift* the lookahead instead of having to reduce.
-        // This can be helpful if we can see that shifting would let
-        // us delay reducing until the lookahead diverges.
+        
+        
+        
+        
+        
+        
 
-        // Only applicable to shift/reduce:
+        
         if let Action::Reduce(_) = conflict.action {
             return None;
         }
 
-        // FIXME: The logic here finds the first example where inline
-        // would help; but maybe we want to restrict it to cases
-        // where inlining would help *all* the examples...?
+        
+        
+        
 
         action_examples
             .iter()
@@ -614,40 +616,40 @@ impl<'cx, 'grammar> ErrorReportingCx<'cx, 'grammar> {
     fn try_classify_inline_example<'ex>(&self, shift: &Example, reduce: &Example) -> bool {
         debug!("try_classify_inline_example({:?}, {:?})", shift, reduce);
 
-        // In the case of shift, the example will look like
-        //
-        // ```
-        // ... ... (*) L ...s1 ...
-        // |   |             |   |
-        // |   +-R0----------+   |
-        // |  ...                |
-        // +-Rn------------------+
-        // ```
-        //
-        // We want to extract the symbols ...s1: these are the
-        // things we are able to shift before being forced to
-        // make our next hard decision (to reduce R0 or not).
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         let shift_upcoming = &shift.symbols[shift.cursor + 1..shift.reductions[0].end];
         debug!(
             "try_classify_inline_example: shift_upcoming={:?}",
             shift_upcoming
         );
 
-        // For the reduce, the example might look like
-        //
-        // ```
-        // ...  ...   (*) ...s ...
-        // | | |    |        |
-        // | | +-R0-+        |
-        // | | ...  |        |
-        // | +--Ri--+        |
-        // |  ...            |
-        // +-R(i+1)----------+
-        // ```
-        //
-        // where Ri is the last reduction that requires
-        // shifting no additional symbols. In this case, if we
-        // inlined R0...Ri, then we know we can shift L.
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         let r0_end = reduce.reductions[0].end;
         let i = reduce.reductions.iter().position(|r| r.end != r0_end);
         let i = match i {
@@ -661,16 +663,16 @@ impl<'cx, 'grammar> ErrorReportingCx<'cx, 'grammar> {
             reduce_upcoming, i
         );
 
-        // For now, we only suggest inlining a single nonterminal,
-        // mostly because I am too lazy to weak the suggestion struct
-        // and error messages (but the rest of the code below doesn't
-        // make this assumption for the most part).
+        
+        
+        
+        
         if i != 1 {
             return false;
         }
 
-        // Make sure that all the things we are suggesting inlining
-        // are distinct so that we are not introducing a cycle.
+        
+        
         let mut duplicates = set();
         if reduce.reductions[0..i + 1]
             .iter()
@@ -679,22 +681,22 @@ impl<'cx, 'grammar> ErrorReportingCx<'cx, 'grammar> {
             return false;
         }
 
-        // Compare the two suffixes to see whether they
-        // diverge at some point.
+        
+        
         shift_upcoming
             .iter()
             .zip(reduce_upcoming)
             .filter_map(|(shift_sym, reduce_sym)| match (shift_sym, reduce_sym) {
                 (&ExampleSymbol::Symbol(ref shift_sym), &ExampleSymbol::Symbol(ref reduce_sym)) => {
                     if shift_sym == reduce_sym {
-                        // same symbol on both; we'll be able to shift them
+                        
                         None
                     } else {
-                        // different symbols: for this to work, must
-                        // have disjoint first sets. Note that we
-                        // consider a suffix matching epsilon to be
-                        // potentially overlapping, though we could
-                        // supply the actual lookahead for more precision.
+                        
+                        
+                        
+                        
+                        
                         let shift_first = self.first_sets.first0(&[shift_sym.clone()]);
                         let reduce_first = self.first_sets.first0(&[reduce_sym.clone()]);
                         if shift_first.is_disjoint(&reduce_first) {
@@ -705,10 +707,10 @@ impl<'cx, 'grammar> ErrorReportingCx<'cx, 'grammar> {
                     }
                 }
                 _ => {
-                    // we don't expect to encounter any
-                    // epsilons, I don't think, because those
-                    // only occur with an empty reduce at the
-                    // top level
+                    
+                    
+                    
+                    
                     Some(false)
                 }
             })
@@ -753,8 +755,8 @@ impl<'cx, 'grammar> ErrorReportingCx<'cx, 'grammar> {
         state: &LR1State<'grammar>,
         conflict: &TokenConflict<'grammar>,
     ) -> Set<LR0Item<'grammar>> {
-        // Lookahead must be a terminal, not EOF.
-        // Find an item J like `Bar = ... (*) L ...`.
+        
+        
         let lookahead = Symbol::Terminal(conflict.lookahead.unwrap_terminal().clone());
         state
             .items
@@ -783,57 +785,57 @@ fn token_conflicts<'grammar>(
         .collect()
 }
 
-//fn choose_example<'grammar>(states: &[State<'grammar>],
-//                            lookahead: Token,
-//                            conflict: &TokenConflict<'grammar>)
-//{
-//    // Whenever we have a conflict in state S, there is always:
-//    // - a given lookahead L that permits some reduction, due to
-//    //   an item I like `Foo = ... (*) [L]`
-//    // - another action that conflicts with R1.
-//    //
-//    // The backtrace code can give context to this item `I`, but the
-//    // problem is that it often results in many different contexts,
-//    // and we need to try and narrow those down to the one that will
-//    // help the user understand the problem.
-//    //
-//    // For that, we turn to the conflicting action, which can either be
-//    // a shift or reduce. Let's consider those two cases.
-//    //
-//    // ### Shift
-//    //
-//    // If the conflicting action is a shift, then there is at least
-//    // one item J in the state S like `Bar = ... (*) L ...`. We can
-//    // produce a backtrace from J and enumerate examples. We want to
-//    // find a pair of examples from I and J that share a common
-//    // prefix.
-//    //
-//    // ### Reduce
-//    //
-//    // If the conflicting action is a reduce, then there is at least
-//    // one item J in S like `Bar = ... (*) [L]`. We can produce a
-//    // backtrace for J and then search for an example that shares a
-//    // common prefix.
-//
-//}
-//
-//fn conflicting_item<'grammar>(state: &State<'grammar>,
-//                              lookahead: Token,
-//                              conflict: &TokenConflict<'grammar>)
-//                              -> Item<'grammar>
-//{
-//    match conflict.action {
-//        Action::Shift(_) => {
-//        }
-//        Action::Reduce(production) => {
-//            // Must be at least some other item J in S like `Bar = ... (*) [L]`.
-//            state.items.vec.iter()
-//                           .filter(|i| i.can_reduce())
-//                           .filter(|i| i.lookahead == lookahead)
-//                           .filter(|i| i.production == production)
-//                           .cloned()
-//                           .next()
-//                           .unwrap()
-//        }
-//    }
-//}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

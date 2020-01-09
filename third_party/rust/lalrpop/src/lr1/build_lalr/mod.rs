@@ -1,21 +1,21 @@
-//! Mega naive LALR(1) generation algorithm.
+
 
 use collections::{map, Map, Multimap};
+use grammar::repr::*;
 use itertools::Itertools;
 use lr1::build;
 use lr1::core::*;
 use lr1::lookahead::*;
-use grammar::repr::*;
-use std::rc::Rc;
 use std::mem;
+use std::rc::Rc;
 use tls::Tls;
 
 #[cfg(test)]
 mod test;
 
-// Intermediate LALR(1) state. Identical to an LR(1) state, but that
-// the items can be pushed to. We initially create these with an empty
-// set of actions, as well.
+
+
+
 struct LALR1State<'grammar> {
     pub index: StateIndex,
     pub items: Vec<LR1Item<'grammar>>,
@@ -28,11 +28,11 @@ pub fn build_lalr_states<'grammar>(
     grammar: &'grammar Grammar,
     start: NonterminalString,
 ) -> LR1Result<'grammar> {
-    // First build the LR(1) states
+    
     let lr_states = try!(build::build_lr1_states(grammar, start));
 
-    // With lane table, there is no reason to do state collapse
-    // for LALR. In fact, LALR is pointless!
+    
+    
     if build::use_lane_table() {
         println!("Warning: Now that the new lane-table algorithm is the default,");
         println!("         #[lalr] mode has no effect and can be removed.");
@@ -47,8 +47,8 @@ pub fn build_lalr_states<'grammar>(
 }
 
 pub fn collapse_to_lalr_states<'grammar>(lr_states: &[LR1State<'grammar>]) -> LR1Result<'grammar> {
-    // Now compress them. This vector stores, for each state, the
-    // LALR(1) state to which we will remap it.
+    
+    
     let mut remap: Vec<_> = (0..lr_states.len()).map(|_| StateIndex(0)).collect();
     let mut lalr1_map: Map<Vec<LR0Item>, StateIndex> = map();
     let mut lalr1_states: Vec<LALR1State> = vec![];
@@ -81,16 +81,16 @@ pub fn collapse_to_lalr_states<'grammar>(lr_states: &[LR1State<'grammar>]) -> LR
         remap[lr1_index] = lalr1_index;
     }
 
-    // The reduction process can leave us with multiple
-    // overlapping LR(0) items, whose lookaheads must be
-    // unioned. e.g. we may now have:
-    //
-    //     X = "(" (*) ")" ["Foo"]
-    //     X = "(" (*) ")" ["Bar"]
-    //
-    // which we will convert to:
-    //
-    //     X = "(" (*) ")" ["Foo", "Bar"]
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     for lalr1_state in &mut lalr1_states {
         let items = mem::replace(&mut lalr1_state.items, vec![]);
 
@@ -111,7 +111,7 @@ pub fn collapse_to_lalr_states<'grammar>(lr_states: &[LR1State<'grammar>]) -> LR
             .collect();
     }
 
-    // Now that items are fully built, create the actions
+    
     for (lr1_index, lr1_state) in lr_states.iter().enumerate() {
         let lalr1_index = remap[lr1_index];
         let lalr1_state = &mut lalr1_states[lalr1_index.0];
@@ -125,7 +125,7 @@ pub fn collapse_to_lalr_states<'grammar>(lr_states: &[LR1State<'grammar>]) -> LR
         for (nt, lr1_state) in &lr1_state.gotos {
             let target_state = remap[lr1_state.0];
             let prev = lalr1_state.gotos.insert(nt.clone(), target_state);
-            assert!(prev.unwrap_or(target_state) == target_state); // as above
+            assert!(prev.unwrap_or(target_state) == target_state); 
         }
 
         for &(ref token_set, production) in &lr1_state.reductions {
@@ -133,7 +133,7 @@ pub fn collapse_to_lalr_states<'grammar>(lr_states: &[LR1State<'grammar>]) -> LR
         }
     }
 
-    // Finally, create the new states and detect conflicts
+    
     let lr1_states: Vec<_> = lalr1_states
         .into_iter()
         .map(|lr| State {

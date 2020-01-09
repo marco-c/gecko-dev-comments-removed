@@ -1,10 +1,10 @@
 use bit_set::{self, BitSet};
 use collections::Collection;
+use grammar::repr::*;
 use lr1::core::*;
 use lr1::tls::Lr1Tls;
 use std::fmt::{Debug, Error, Formatter};
 use std::hash::Hash;
-use grammar::repr::*;
 
 pub trait Lookahead: Clone + Debug + Eq + Ord + Hash + Collection<Item = Self> {
     fn fmt_as_item_suffix(&self, fmt: &mut Formatter) -> Result<(), Error>;
@@ -63,9 +63,9 @@ impl Lookahead for Nil {
     }
 }
 
-/// I have semi-arbitrarily decided to use the term "token" to mean
-/// either one of the terminals of our language, or else the
-/// pseudo-symbol EOF that represents "end of input".
+
+
+
 #[derive(Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Token {
     EOF,
@@ -83,15 +83,17 @@ impl Lookahead for TokenSet {
 
         for (terminal, &next_state) in &this_state.shifts {
             let token = Token::Terminal(terminal.clone());
-            let inconsistent = this_state.reductions.iter().filter_map(
-                |&(ref reduce_tokens, production)| {
-                    if reduce_tokens.contains(&token) {
-                        Some(production)
-                    } else {
-                        None
-                    }
-                },
-            );
+            let inconsistent =
+                this_state
+                    .reductions
+                    .iter()
+                    .filter_map(|&(ref reduce_tokens, production)| {
+                        if reduce_tokens.contains(&token) {
+                            Some(production)
+                        } else {
+                            None
+                        }
+                    });
             let set = TokenSet::from(token.clone());
             for production in inconsistent {
                 conflicts.push(Conflict {
@@ -156,7 +158,7 @@ impl TokenSet {
         })
     }
 
-    /// A TokenSet containing all possible terminals + EOF.
+    
     pub fn all() -> Self {
         let mut s = TokenSet::new();
         with(|terminals| {
@@ -220,8 +222,8 @@ impl TokenSet {
         self.bit_set.contains(self.eof_bit())
     }
 
-    /// If this set contains EOF, removes it from the set and returns
-    /// true. Otherwise, returns false.
+    
+    
     pub fn take_eof(&mut self) -> bool {
         let eof_bit = self.eof_bit();
         let contains_eof = self.bit_set.contains(eof_bit);

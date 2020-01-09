@@ -1,14 +1,14 @@
-//! LR(1) state construction algorithm.
+
 
 use collections::{map, Multimap};
-use kernel_set;
 use grammar::repr::*;
+use kernel_set;
 use lr1::core::*;
 use lr1::first;
 use lr1::lane_table::*;
 use lr1::lookahead::*;
-use std::rc::Rc;
 use std::env;
+use std::rc::Rc;
 use tls::Tls;
 
 #[cfg(test)]
@@ -90,7 +90,7 @@ impl<'grammar, L: LookaheadBuild> LR<'grammar, L> {
         let mut states = vec![];
         let mut conflicts = vec![];
 
-        // create the starting state
+        
         kernel_set.add_state(Kernel::start(self.items(
             &self.start_nt,
             0,
@@ -113,8 +113,8 @@ impl<'grammar, L: LookaheadBuild> LR<'grammar, L> {
                 gotos: map(),
             };
 
-            // group the items that we can transition into by shifting
-            // over a term or nonterm
+            
+            
             let transitions: Multimap<Symbol, Multimap<LR0Item<'grammar>, L>> = items
                 .vec
                 .iter()
@@ -137,17 +137,17 @@ impl<'grammar, L: LookaheadBuild> LR<'grammar, L> {
                     .map(|(lr0_item, lookahead)| lr0_item.with_lookahead(lookahead))
                     .collect();
 
-                // Not entirely obvious: if the original set of items
-                // is sorted to begin with (and it is), then this new
-                // set of shifted items is *also* sorted. This is
-                // because it is produced from the old items by simply
-                // incrementing the index by 1.
+                
+                
+                
+                
+                
                 let next_state = kernel_set.add_state(Kernel::shifted(shifted_items));
 
                 match symbol {
                     Symbol::Terminal(s) => {
                         let prev = this_state.shifts.insert(s, next_state);
-                        assert!(prev.is_none()); // cannot have a shift/shift conflict
+                        assert!(prev.is_none()); 
                     }
 
                     Symbol::Nonterminal(s) => {
@@ -157,17 +157,17 @@ impl<'grammar, L: LookaheadBuild> LR<'grammar, L> {
                 }
             }
 
-            // finally, consider the reductions
+            
             for item in items.vec.iter().filter(|i| i.can_reduce()) {
                 this_state
                     .reductions
                     .push((item.lookahead.clone(), item.production));
             }
 
-            // check for shift-reduce conflicts (reduce-reduce detected above)
+            
             conflicts.extend(L::conflicts(&this_state));
 
-            // extract a new state
+            
             states.push(this_state);
 
             if self.permit_early_stop && session.stop_after(conflicts.len()) {
@@ -206,7 +206,7 @@ impl<'grammar, L: LookaheadBuild> LR<'grammar, L> {
             .collect()
     }
 
-    // expands `state` with epsilon moves
+    
     fn transitive_closure(&self, items: Vec<Item<'grammar, L>>) -> Items<'grammar, L> {
         let mut stack: Vec<LR0Item<'grammar>> = items.iter().map(|item| item.to_lr0()).collect();
         let mut map: Multimap<LR0Item<'grammar>, L> = items
@@ -219,31 +219,31 @@ impl<'grammar, L: LookaheadBuild> LR<'grammar, L> {
 
             let shift_symbol = item.shift_symbol();
 
-            // Check whether this is an item where the cursor
-            // is resting on a non-terminal:
-            //
-            // I = ... (*) X z... [lookahead]
-            //
-            // The `nt` will be X and the `remainder` will be `z...`.
+            
+            
+            
+            
+            
+            
             let (nt, remainder) = match shift_symbol {
-                None => continue, // requires a reduce
+                None => continue, 
                 Some((Symbol::Terminal(_), _)) => {
-                    continue; // requires a shift
+                    continue; 
                 }
                 Some((Symbol::Nonterminal(nt), remainder)) => (nt, remainder),
             };
 
-            // In that case, for each production of `X`, we are also
-            // in a state where the cursor rests at the start of that production:
-            //
-            // X = (*) a... [lookahead']
-            // X = (*) b... [lookahead']
-            //
-            // Here `lookahead'` is computed based on the `remainder` and our
-            // `lookahead`. In LR1 at least, it is the union of:
-            //
-            //   (a) FIRST(remainder)
-            //   (b) if remainder may match epsilon, also our lookahead.
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
             for new_item in L::epsilon_moves(self, &nt, remainder, &lookahead) {
                 let new_item0 = new_item.to_lr0();
                 if map.push(new_item0, new_item.lookahead) {
@@ -252,7 +252,8 @@ impl<'grammar, L: LookaheadBuild> LR<'grammar, L> {
             }
         }
 
-        let final_items = map.into_iter()
+        let final_items = map
+            .into_iter()
             .map(|(lr0_item, lookahead)| lr0_item.with_lookahead(lookahead))
             .collect();
 
@@ -262,26 +263,26 @@ impl<'grammar, L: LookaheadBuild> LR<'grammar, L> {
     }
 }
 
-/// Except for the initial state, the kernel sets always contain
-/// a set of "seed" items where something has been pushed (that is,
-/// index > 0). In other words, items like this:
-///
-///    A = ...p (*) ...
-///
-/// where ...p is non-empty. We now have to expand to include any
-/// epsilon moves:
-///
-///    A = ... (*) B ...
-///    B = (*) ...        // added by transitive_closure algorithm
-///
-/// But note that the state is completely identified by its
-/// kernel set: the same kernel sets always expand to the
-/// same transitive closures, and different kernel sets
-/// always expand to different transitive closures. The
-/// first point is obvious, but the latter point follows
-/// because the transitive closure algorithm only adds
-/// items where `index == 0`, and hence it can never add an
-/// item found in a kernel set.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[derive(Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 struct Kernel<'grammar, L: LookaheadBuild> {
     items: Vec<Item<'grammar, L>>,
@@ -289,15 +290,15 @@ struct Kernel<'grammar, L: LookaheadBuild> {
 
 impl<'grammar, L: LookaheadBuild> Kernel<'grammar, L> {
     pub fn start(items: Vec<Item<'grammar, L>>) -> Kernel<'grammar, L> {
-        // In start state, kernel should have only items with `index == 0`.
+        
         debug_assert!(items.iter().all(|item| item.index == 0));
         Kernel { items: items }
     }
 
     pub fn shifted(items: Vec<Item<'grammar, L>>) -> Kernel<'grammar, L> {
-        // Assert that this kernel consists only of shifted items
-        // where `index > 0`. This assertion could cost real time to
-        // check so only do it in debug mode.
+        
+        
+        
         debug_assert!(items.iter().all(|item| item.index > 0));
         Kernel { items: items }
     }
@@ -312,19 +313,19 @@ impl<'grammar, L: LookaheadBuild> kernel_set::Kernel for Kernel<'grammar, L> {
 }
 
 pub trait LookaheadBuild: Lookahead {
-    // Given that there exists an item
-    //
-    //     X = ... (*) Y ...s [L]
-    //
-    // where `nt` is `Y`, `remainder` is `...s`, and `lookahead` is
-    // `L`, computes the new items resulting from epsilon moves (if
-    // any). The technique of doing this will depend on the amount of
-    // lookahead.
-    //
-    // For example, if we have an LR0 item, then for each `Y = ...`
-    // production, we just add an `Y = (*) ...` item. But for LR1
-    // items, we have to add multiple items where we consider the
-    // lookahead from `FIRST(...s, L)`.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn epsilon_moves<'grammar>(
         lr: &LR<'grammar, Self>,
         nt: &NonterminalString,

@@ -1,5 +1,5 @@
-use string_cache::DefaultAtom as Atom;
 use grammar::repr::*;
+use string_cache::DefaultAtom as Atom;
 use test_util::expect_debug;
 use tls::Tls;
 
@@ -14,8 +14,12 @@ fn term(t: &str) -> TerminalString {
 }
 
 macro_rules! sym {
-    (ε) => { ExampleSymbol::Epsilon };
-    ($t:ident) => { ExampleSymbol::Symbol(Symbol::Nonterminal(nt(stringify!($t)))) }
+    (ε) => {
+        ExampleSymbol::Epsilon
+    };
+    ($t:ident) => {
+        ExampleSymbol::Symbol(Symbol::Nonterminal(nt(stringify!($t))))
+    };
 }
 
 macro_rules! syms {
@@ -24,12 +28,12 @@ macro_rules! syms {
     }
 }
 
-//  01234567890123456789012
-//  A1   B2  C3  D4 E5 F6
-//  |             |     |
-//  +-LongLabel22-+     |
-//  |                   |
-//  +-Label-------------+
+
+
+
+
+
+
 fn long_label_1_example() -> Example {
     Example {
         symbols: syms!(A1, B2, C3, D4, E5, F6),
@@ -70,26 +74,27 @@ fn long_label_1_strings() {
     "  ├─LongLabel22─┘     │",
     "  └─Label─────────────┘"
 ]
-"#.trim(),
+"#
+        .trim(),
     );
 }
 
-// Example with some empty sequences and
-// other edge cases.
-//
-//  012345678901234567890123456789012345
-//         A1  B2  C3 D4 E5       F6
-//  |   |           |       |   | |   |
-//  +-X-+           |       |   | |   |
-//  |               |       |   | |   |
-//  +-MegaLongLabel-+       |   | |   |
-//                          |   | |   |
-//                          +-Y-+ |   |
-//                                |   |
-//                                +-Z-+
+
+
+
+
+
+
+
+
+
+
+
+
+
 fn empty_labels_example() -> Example {
     Example {
-        //             0 1  2  3  4  5  6 7
+        
         symbols: syms!(ε, A1, B2, C3, D4, E5, ε, F6),
         cursor: 5,
         reductions: vec![
@@ -123,7 +128,7 @@ fn empty_labels_positions() {
     let example = empty_labels_example();
     let lengths = example.lengths();
     let positions = example.positions(&lengths);
-    //                            A1 B2  C3  D4  E5      F6
+    
     assert_eq!(positions, vec![0, 7, 11, 15, 18, 21, 24, 30, 36]);
 }
 
@@ -141,20 +146,21 @@ fn empty_labels_strings() {
     "                          └─Y─┘ │   │",
     "                                └─Z─┘"
 ]
-"#.trim(),
+"#
+        .trim(),
     );
 }
 
-// _return_      _A_ Expression _B_
-// |            |                  |
-// +-ExprAtom---+                  |
-// |            |                  |
-// +-ExprSuffix-+                  |
-// |                               |
-// +-ExprSuffix--------------------+
+
+
+
+
+
+
+
 fn single_token_example() -> Example {
     Example {
-        //             0 1  2  3  4  5  6 7
+        
         symbols: syms!(_return_, _A_, Expression, _B_),
         cursor: 5,
         reductions: vec![
@@ -190,6 +196,7 @@ fn single_token_strings() {
     "  ├─ExprSuffix─┘                  │",
     "  └─ExprSuffix────────────────────┘"
 ]
-"#.trim(),
+"#
+        .trim(),
     );
 }

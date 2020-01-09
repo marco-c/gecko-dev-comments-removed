@@ -1,9 +1,9 @@
-use string_cache::DefaultAtom as Atom;
 use grammar::repr::*;
 use lr1::build_states;
 use lr1::core::*;
 use lr1::first::FirstSets;
 use lr1::tls::Lr1Tls;
+use string_cache::DefaultAtom as Atom;
 use test_util::{expect_debug, normalized_grammar};
 use tls::Tls;
 
@@ -15,8 +15,8 @@ fn nt(t: &str) -> NonterminalString {
 
 #[test]
 fn shift_backtrace_1() {
-    // This grammar yields a S/R conflict. Is it `(int -> int) -> int`
-    // or `int -> (int -> int)`?
+    
+    
 
     let _tls = Tls::test();
     let grammar = normalized_grammar(
@@ -35,13 +35,13 @@ pub Ty: () = {
     let conflict = err.conflicts[0].clone();
     println!("conflict={:?}", conflict);
 
-    // Gin up the LR0 item involved in the shift/reduce conflict:
-    //
-    //     Ty = Ty (*) -> Ty (shift)
-    //
-    // from the item that we can reduce:
-    //
-    //     Ty = Ty -> Ty (*) (reduce)
+    
+    
+    
+    
+    
+    
+    
 
     assert!(conflict.production.symbols.len() == 3);
     let item = Item::lr0(conflict.production, 1);
@@ -56,7 +56,8 @@ pub Ty: () = {
     (Nonterminal(Ty) -([Ty], Some("->"), [Ty])-> Item(Ty = Ty (*) "->" Ty)),
     (Item(Ty = Ty "->" (*) Ty) -([Ty, "->"], Some(Ty), [])-> Nonterminal(Ty))
 ]
-"#.trim(),
+"#
+        .trim(),
     );
 
     let list: Vec<_> = graph
@@ -73,6 +74,7 @@ pub Ty: () = {
         "  └─Ty─────────────┘"
     ]
 ]
-"#.trim(),
+"#
+        .trim(),
     );
 }

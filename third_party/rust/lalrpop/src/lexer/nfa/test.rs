@@ -1,5 +1,5 @@
-use lexer::nfa::{NFAConstructionError, Noop, Other, StateKind, Test, NFA};
 use lexer::nfa::interpret::interpret;
+use lexer::nfa::{NFAConstructionError, Noop, Other, StateKind, Test, NFA};
 use lexer::re;
 
 #[test]
@@ -15,7 +15,7 @@ fn edge_iter() {
     nfa.push_edge(s0, Noop, s3);
     nfa.push_edge(s1, Noop, s2);
 
-    // check that if we mixed up the indies between Noop/Other, we'd get wrong thing here
+    
     nfa.push_edge(s0, Other, s2);
 
     let s0_edges: Vec<_> = nfa.edges::<Noop>(s0).map(|e| e.to).collect();
@@ -89,18 +89,18 @@ fn literal() {
     assert_eq!(interpret(&nfa, "AbcDEf"), Some("AbcDEf"));
 }
 
-// Test that uses of disallowed features trigger errors
-// during NFA construction:
+
+
 
 #[test]
 fn captures() {
     let num = re::parse_regex(r#"(aBCdeF)"#).unwrap();
-    NFA::from_re(&num).unwrap(); // captures are ok
+    NFA::from_re(&num).unwrap(); 
 
     let num = re::parse_regex(r#"(?:aBCdeF)"#).unwrap();
-    NFA::from_re(&num).unwrap(); // non-captures are ok
+    NFA::from_re(&num).unwrap(); 
 
-    let num = re::parse_regex(r#"(?P<foo>aBCdeF)"#).unwrap(); // named captures are not
+    let num = re::parse_regex(r#"(?P<foo>aBCdeF)"#).unwrap(); 
     assert_eq!(
         NFA::from_re(&num).unwrap_err(),
         NFAConstructionError::NamedCaptures

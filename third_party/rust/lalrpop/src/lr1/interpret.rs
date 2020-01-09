@@ -1,16 +1,16 @@
-//! LR(1) interpeter. Just builds up parse trees. Intended for testing.
 
-use lr1::core::*;
-use lr1::lookahead::*;
+
 use generate::ParseTree;
 use grammar::repr::*;
-use std::iter::IntoIterator;
+use lr1::core::*;
+use lr1::lookahead::*;
 use std::fmt::{Debug, Display, Error, Formatter};
+use std::iter::IntoIterator;
 use util::Sep;
 
 pub type InterpretError<'grammar, L> = (&'grammar State<'grammar, L>, Token);
 
-/// Feed in the given tokens and then EOF, returning the final parse tree that is reduced.
+
 pub fn interpret<'grammar, L>(
     states: &'grammar [State<'grammar, L>],
     tokens: Vec<TerminalString>,
@@ -23,7 +23,7 @@ where
     m.execute(tokens.into_iter())
 }
 
-/// Feed in the given tokens and returns the states on the stack.
+
 pub fn interpret_partial<'grammar, TOKENS, L>(
     states: &'grammar [State<'grammar, L>],
     tokens: TOKENS,
@@ -79,7 +79,7 @@ where
             println!("state={:?}", state);
             println!("terminal={:?}", terminal);
 
-            // check whether we can shift this token
+            
             if let Some(&next_index) = state.shifts.get(&terminal) {
                 self.data_stack.push(ParseTree::Terminal(terminal.clone()));
                 self.state_stack.push(next_index);
@@ -102,7 +102,7 @@ where
     {
         try!(self.execute_partial(tokens));
 
-        // drain now for EOF
+        
         loop {
             let state = self.top_state();
             match L::reduction(state, &Token::EOF) {
@@ -124,31 +124,31 @@ where
 
         let args = production.symbols.len();
 
-        // remove the top N items from the data stack
+        
         let mut popped = vec![];
         for _ in 0..args {
             popped.push(self.data_stack.pop().unwrap());
         }
         popped.reverse();
 
-        // remove the top N states
+        
         for _ in 0..args {
             self.state_stack.pop().unwrap();
         }
 
-        // construct the new, reduced tree and push it on the stack
+        
         let tree = ParseTree::Nonterminal(production.nonterminal.clone(), popped);
         self.data_stack.push(tree);
 
-        // recover the state and extract the "Goto" action
+        
         let receiving_state = self.top_state();
         match receiving_state.gotos.get(&production.nonterminal) {
             Some(&goto_state) => {
                 self.state_stack.push(goto_state);
-                true // keep going
+                true 
             }
             None => {
-                false // all done
+                false 
             }
         }
     }

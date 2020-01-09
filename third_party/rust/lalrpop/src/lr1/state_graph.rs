@@ -1,12 +1,12 @@
 use grammar::repr::*;
 use lr1::core::*;
 use lr1::lookahead::Lookahead;
-use petgraph::{EdgeDirection, Graph};
 use petgraph::graph::NodeIndex;
 use petgraph::prelude::*;
+use petgraph::{EdgeDirection, Graph};
 
-// Each state `s` corresponds to the node in the graph with index
-// `s`. The edges are the shift transitions.
+
+
 pub struct StateGraph {
     graph: Graph<(), Symbol>,
 }
@@ -18,17 +18,17 @@ impl StateGraph {
     {
         let mut graph = Graph::new();
 
-        // First, create the nodes.
+        
         for i in 0..states.len() {
             let j = graph.add_node(());
             assert_eq!(i, j.index());
         }
 
-        // Add in the edges.
+        
         for (i, state) in states.iter().enumerate() {
-            // Successors of a node arise from:
-            // - shifts (found in the `conflicts` and `tokens` maps)
-            // - gotos (found in the `gotos` map)
+            
+            
+            
             graph.extend_with_edges(
                 state
                     .shifts
@@ -49,10 +49,10 @@ impl StateGraph {
         StateGraph { graph: graph }
     }
 
-    /// Given a list of symbols `[X, Y, Z]`, traces back from
-    /// `initial_state_index` to find the set of states whence we
-    /// could have arrived at `initial_state_index` after pushing `X`,
-    /// `Y`, and `Z`.
+    
+    
+    
+    
     pub fn trace_back(
         &self,
         initial_state_index: StateIndex,

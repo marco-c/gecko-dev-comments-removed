@@ -1,7 +1,7 @@
-use string_cache::DefaultAtom as Atom;
 use grammar::repr::*;
 use lr1::build_states;
 use lr1::tls::Lr1Tls;
+use string_cache::DefaultAtom as Atom;
 use test_util::normalized_grammar;
 use tls::Tls;
 
@@ -42,8 +42,8 @@ pub Ty: () = {
                 "shift={:#?}, reduce={:#?}, nonterminal={:?}",
                 shift, reduce, nonterminal
             );
-            assert_eq!(shift.symbols.len(), 5); // Ty -> Ty -> Ty
-            assert_eq!(shift.cursor, 3); // Ty -> Ty -> Ty
+            assert_eq!(shift.symbols.len(), 5); 
+            assert_eq!(shift.cursor, 3); 
             assert_eq!(shift.symbols, reduce.symbols);
             assert_eq!(shift.cursor, reduce.cursor);
             assert_eq!(nonterminal, nt("Ty"));
@@ -162,7 +162,7 @@ Ident = r#"[a-zA-Z][a-zA-Z0-9]*"#;
     }
 }
 
-/// This example used to cause an out-of-bounds error.
+
 #[test]
 fn issue_249() {
     let _tls = Tls::test();
