@@ -172,6 +172,7 @@ enum class StyleScrollbarWidth : uint8_t {
 enum class StyleShapeSourceType : uint8_t {
   None,
   Image,  
+          
   Shape,
   Box,
   Path,  

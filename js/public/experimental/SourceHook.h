@@ -94,6 +94,6 @@ extern JS_FRIEND_API void SetSourceHook(JSContext* cx,
 extern JS_FRIEND_API mozilla::UniquePtr<SourceHook> ForgetSourceHook(
     JSContext* cx);
 
-} 
+}  
 
-#endif 
+#endif  

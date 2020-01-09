@@ -182,12 +182,12 @@ class FontList {
 
 
   struct Header {
-    std::atomic<uint32_t> mAllocated;    
-                                         
-    uint32_t mGeneration;                
-    uint32_t mFamilyCount;               
-    std::atomic<uint32_t> mBlockCount;   
-    std::atomic<uint32_t> mAliasCount;   
+    std::atomic<uint32_t> mAllocated;   
+                                        
+    uint32_t mGeneration;               
+    uint32_t mFamilyCount;              
+    std::atomic<uint32_t> mBlockCount;  
+    std::atomic<uint32_t> mAliasCount;  
     std::atomic<uint32_t> mLocalFaceCount;  
     Pointer mFamilies;    
     Pointer mAliases;     
@@ -254,9 +254,9 @@ class FontList {
     }
 
     RefPtr<mozilla::ipc::SharedMemoryBasic> mShmem;
-    void* mAddr; 
-                 
-                 
+    void* mAddr;  
+                  
+                  
   };
 
   Header& GetHeader() {

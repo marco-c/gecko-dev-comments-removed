@@ -1032,17 +1032,16 @@ FontFaceSet::FindOrCreateUserFontEntryFromFontFace(
   if (existingEntry) {
     
     
-    existingEntry->UpdateAttributes(weight, stretch, italicStyle,
-                                    featureSettings, variationSettings,
-                                    languageOverride, unicodeRanges,
-                                    fontDisplay, rangeFlags);
+    existingEntry->UpdateAttributes(
+        weight, stretch, italicStyle, featureSettings, variationSettings,
+        languageOverride, unicodeRanges, fontDisplay, rangeFlags);
     
     
     
     if (!existingEntry->mFamilyName.IsEmpty() &&
         existingEntry->mFamilyName != aFamilyName) {
       gfxUserFontFamily* family =
-        set->GetUserFontSet()->LookupFamily(existingEntry->mFamilyName);
+          set->GetUserFontSet()->LookupFamily(existingEntry->mFamilyName);
       if (family) {
         family->RemoveFontEntry(existingEntry);
       }

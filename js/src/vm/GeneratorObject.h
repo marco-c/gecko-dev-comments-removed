@@ -132,7 +132,8 @@ class AbstractGeneratorObject : public NativeObject {
     
     
     Value resumeIndex = getFixedSlot(RESUME_INDEX_SLOT);
-    return resumeIndex.isInt32() && resumeIndex.toInt32() < RESUME_INDEX_RUNNING;
+    return resumeIndex.isInt32() &&
+           resumeIndex.toInt32() < RESUME_INDEX_RUNNING;
   }
   void setRunning() {
     MOZ_ASSERT(isSuspended());

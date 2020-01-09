@@ -338,7 +338,8 @@ uint64_t HTMLTextFieldAccessible::NativeState() const {
     return state | states::SUPPORTS_AUTOCOMPLETION | states::HASPOPUP;
 
   
-  if (!BindingOrWidgetParent() && Preferences::GetBool("browser.formfill.enable")) {
+  if (!BindingOrWidgetParent() &&
+      Preferences::GetBool("browser.formfill.enable")) {
     
     
     

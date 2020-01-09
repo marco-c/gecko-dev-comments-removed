@@ -1057,9 +1057,8 @@ bool ModuleObject::execute(JSContext* cx, HandleModuleObject self,
   
   
   
-  auto guardA = mozilla::MakeScopeExit([&] {
-      self->setReservedSlot(ScriptSlot, UndefinedValue());
-    });
+  auto guardA = mozilla::MakeScopeExit(
+      [&] { self->setReservedSlot(ScriptSlot, UndefinedValue()); });
 
   RootedModuleEnvironmentObject scope(cx, self->environment());
   if (!scope) {

@@ -59,8 +59,8 @@ UniquePtr<SerializedStackHolder> GetCurrentStackForNetMonitor(JSContext* aCx);
 
 
 
-void NotifyNetworkMonitorAlternateStack(nsISupports* aChannel,
-                                        UniquePtr<SerializedStackHolder> aStackHolder);
+void NotifyNetworkMonitorAlternateStack(
+    nsISupports* aChannel, UniquePtr<SerializedStackHolder> aStackHolder);
 
 
 
