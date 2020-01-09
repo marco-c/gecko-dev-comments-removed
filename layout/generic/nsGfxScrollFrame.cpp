@@ -4466,8 +4466,9 @@ void ScrollFrameHelper::ScrollToRestoredPosition() {
         return;
       }
       if (mIsRoot && mOuter->PresContext()->IsRootContentDocument()) {
-        mOuter->PresShell()->SetPendingVisualScrollUpdate(
-            visualScrollToPos, FrameMetrics::eRestore);
+        mOuter->PresShell()->ScrollToVisual(visualScrollToPos,
+                                            FrameMetrics::eRestore,
+                                            nsIPresShell::ScrollMode::eInstant);
       }
       if (state == LoadingState::Loading || NS_SUBTREE_DIRTY(mOuter)) {
         
@@ -6671,4 +6672,29 @@ void ScrollFrameHelper::ApzSmoothScrollTo(const nsPoint& aDestination,
   
   
   mOuter->SchedulePaint();
+}
+
+bool ScrollFrameHelper::SmoothScrollVisual(
+    const nsPoint& aVisualViewportOffset,
+    FrameMetrics::ScrollOffsetUpdateType aUpdateType) {
+  bool canDoApzSmoothScroll = gfxPrefs::ScrollBehaviorEnabled() &&
+                              nsLayoutUtils::AsyncPanZoomEnabled(mOuter) &&
+                              WantAsyncScroll();
+  if (!canDoApzSmoothScroll) {
+    return false;
+  }
+
+  
+  nsPoint destination =
+      GetScrollRangeForClamping().ClampPoint(aVisualViewportOffset);
+
+  
+  
+  mDestination = GetScrollRange().ClampPoint(destination);
+
+  
+  ApzSmoothScrollTo(destination, aUpdateType == FrameMetrics::eRestore
+                                     ? nsGkAtoms::restore
+                                     : nsGkAtoms::other);
+  return true;
 }

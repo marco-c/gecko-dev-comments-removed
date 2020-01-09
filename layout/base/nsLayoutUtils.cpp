@@ -8810,8 +8810,9 @@ ScrollMetadata nsLayoutUtils::ComputeScrollMetadata(
           presShell->IsVisualViewportOffsetSet()) {
         
         
-        presShell->SetPendingVisualScrollUpdate(
-            presShell->GetVisualViewportOffset(), FrameMetrics::eRestore);
+        presShell->ScrollToVisual(presShell->GetVisualViewportOffset(),
+                                  FrameMetrics::eRestore,
+                                  nsIPresShell::ScrollMode::eInstant);
       }
 
       if (const Maybe<nsIPresShell::VisualScrollUpdate>& visualUpdate =

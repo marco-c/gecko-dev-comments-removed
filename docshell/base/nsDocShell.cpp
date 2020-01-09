@@ -5660,8 +5660,8 @@ nsresult nsDocShell::SetCurScrollPosEx(int32_t aCurHorizontalPos,
   
   
   
-  shell->SetPendingVisualScrollUpdate(targetPos,
-                                      layers::FrameMetrics::eMainThread);
+  shell->ScrollToVisual(targetPos, layers::FrameMetrics::eMainThread,
+                        nsIPresShell::ScrollMode::eInstant);
 
   return NS_OK;
 }

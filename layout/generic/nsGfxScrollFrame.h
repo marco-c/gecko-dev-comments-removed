@@ -544,6 +544,10 @@ class ScrollFrameHelper : public nsIReflowCallback {
 
   bool IsRootScrollFrameOfDocument() const { return mIsRoot; }
 
+  bool SmoothScrollVisual(
+      const nsPoint& aVisualViewportOffset,
+      mozilla::layers::FrameMetrics::ScrollOffsetUpdateType aUpdateType);
+
   
   
   void UpdateMinimumScaleSize(const nsRect& aScrollableOverflow,
@@ -1205,6 +1209,12 @@ class nsHTMLScrollFrame : public nsContainerFrame,
     aResult.AppendElement(OwnedAnonBox(mHelper.GetScrolledFrame()));
   }
 
+  bool SmoothScrollVisual(const nsPoint& aVisualViewportOffset,
+                          mozilla::layers::FrameMetrics::ScrollOffsetUpdateType
+                              aUpdateType) override {
+    return mHelper.SmoothScrollVisual(aVisualViewportOffset, aUpdateType);
+  }
+
 #ifdef DEBUG_FRAME_DUMP
   virtual nsresult GetFrameName(nsAString& aResult) const override;
 #endif
@@ -1681,6 +1691,12 @@ class nsXULScrollFrame final : public nsBoxFrame,
   
   void AppendDirectlyOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult) override {
     aResult.AppendElement(OwnedAnonBox(mHelper.GetScrolledFrame()));
+  }
+
+  bool SmoothScrollVisual(const nsPoint& aVisualViewportOffset,
+                          mozilla::layers::FrameMetrics::ScrollOffsetUpdateType
+                              aUpdateType) override {
+    return mHelper.SmoothScrollVisual(aVisualViewportOffset, aUpdateType);
   }
 
 #ifdef DEBUG_FRAME_DUMP

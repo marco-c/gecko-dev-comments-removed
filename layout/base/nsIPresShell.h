@@ -1693,15 +1693,21 @@ class nsIPresShell : public nsStubDocumentObserver {
   
   
   
+  enum class ScrollMode { eInstant, eSmooth };
+
   
   
   
   
   
   
-  void SetPendingVisualScrollUpdate(
-      const nsPoint& aVisualViewportOffset,
-      FrameMetrics::ScrollOffsetUpdateType aUpdateType);
+  
+  
+  
+  
+  void ScrollToVisual(const nsPoint& aVisualViewportOffset,
+                      FrameMetrics::ScrollOffsetUpdateType aUpdateType,
+                      ScrollMode aMode);
   void ClearPendingVisualScrollUpdate() {
     mPendingVisualScrollUpdate = mozilla::Nothing();
   }
@@ -1766,6 +1772,10 @@ class nsIPresShell : public nsStubDocumentObserver {
 
   void CancelPostedReflowCallbacks();
   void FlushPendingScrollAnchorAdjustments();
+
+  void SetPendingVisualScrollUpdate(
+      const nsPoint& aVisualViewportOffset,
+      FrameMetrics::ScrollOffsetUpdateType aUpdateType);
 
 #ifdef DEBUG
   mozilla::UniquePtr<mozilla::ServoStyleSet> CloneStyleSet(
