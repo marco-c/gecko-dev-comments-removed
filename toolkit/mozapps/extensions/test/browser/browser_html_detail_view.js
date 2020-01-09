@@ -133,7 +133,6 @@ add_task(async function testOpenDetailView() {
   ok(!card.querySelector("addon-details"), "The card doesn't have details");
   let loaded = waitForViewLoad(win);
   EventUtils.synthesizeMouseAtCenter(card, {clickCount: 1}, win);
-  EventUtils.synthesizeMouseAtCenter(card, {clickCount: 2}, win);
   await loaded;
 
   card = getAddonCard(doc, "test@mochi.test");
@@ -174,7 +173,6 @@ add_task(async function testDetailOperations() {
   ok(!card.querySelector("addon-details"), "The card doesn't have details");
   let loaded = waitForViewLoad(win);
   EventUtils.synthesizeMouseAtCenter(card, {clickCount: 1}, win);
-  EventUtils.synthesizeMouseAtCenter(card, {clickCount: 2}, win);
   await loaded;
 
   card = getAddonCard(doc, "test@mochi.test");
