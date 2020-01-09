@@ -149,10 +149,6 @@
 #include "nsContentUtils.h"
 #include "nsCSSProps.h"
 #include "nsIURIFixup.h"
-#ifndef DEBUG
-#  include "nsIAppStartup.h"
-#  include "nsToolkitCompsCID.h"
-#endif
 #include "nsCDefaultURIFixup.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/EventStateManager.h"
@@ -819,16 +815,12 @@ class PromiseDocumentFlushedResolver final {
   virtual ~PromiseDocumentFlushedResolver() = default;
 
   void Call() {
-    nsMutationGuard guard;
     ErrorResult error;
     JS::Rooted<JS::Value> returnVal(RootingCx());
     mCallback->Call(&returnVal, error);
 
     if (error.Failed()) {
       mPromise->MaybeReject(error);
-    } else if (guard.Mutated(0)) {
-      
-      mPromise->MaybeReject(NS_ERROR_DOM_NO_MODIFICATION_ALLOWED_ERR);
     } else {
       mPromise->MaybeResolve(returnVal);
     }

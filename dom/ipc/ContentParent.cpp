@@ -33,12 +33,13 @@
 #include "mozilla/AntiTrackingCommon.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/Components.h"
 #include "mozilla/StyleSheetInlines.h"
 #include "mozilla/DataStorage.h"
 #include "mozilla/devtools/HeapSnapshotTempFileHelperParent.h"
 #include "mozilla/docshell/OfflineCacheUpdateParent.h"
 #include "mozilla/dom/BrowsingContext.h"
-#include "mozilla/dom/CanonicalBrowsingContext.h"
+#include "mozilla/dom/ChromeBrowsingContext.h"
 #include "mozilla/dom/ClientManager.h"
 #include "mozilla/dom/ClientOpenWindowOpActors.h"
 #include "mozilla/dom/DataTransfer.h"
@@ -180,7 +181,6 @@
 #include "nsServiceManagerUtils.h"
 #include "nsStyleSheetService.h"
 #include "nsThreadUtils.h"
-#include "nsToolkitCompsCID.h"
 #include "nsWidgetsCID.h"
 #include "PreallocatedProcessManager.h"
 #include "ProcessPriorityManager.h"
@@ -1751,7 +1751,7 @@ void ContentParent::ActorDestroy(ActorDestroyReason why) {
   a11y::AccessibleWrap::ReleaseContentProcessIdFor(ChildID());
 #endif
 
-  CanonicalBrowsingContext::CleanupContexts(ChildID());
+  ChromeBrowsingContext::CleanupContexts(ChildID());
 }
 
 bool ContentParent::TryToRecycle() {
@@ -3803,8 +3803,7 @@ mozilla::ipc::IPCResult ContentParent::RecvShowAlert(
     return IPC_OK();
   }
 
-  nsCOMPtr<nsIAlertsService> sysAlerts(
-      do_GetService(NS_ALERTSERVICE_CONTRACTID));
+  nsCOMPtr<nsIAlertsService> sysAlerts(components::Alerts::Service());
   if (sysAlerts) {
     sysAlerts->ShowAlert(aAlert, this);
   }
@@ -3817,8 +3816,7 @@ mozilla::ipc::IPCResult ContentParent::RecvCloseAlert(
     return IPC_OK();
   }
 
-  nsCOMPtr<nsIAlertsService> sysAlerts(
-      do_GetService(NS_ALERTSERVICE_CONTRACTID));
+  nsCOMPtr<nsIAlertsService> sysAlerts(components::Alerts::Service());
   if (sysAlerts) {
     sysAlerts->CloseAlert(aName, aPrincipal);
   }
@@ -5587,8 +5585,7 @@ mozilla::ipc::IPCResult ContentParent::RecvStoreUserInteractionAsPermission(
 mozilla::ipc::IPCResult ContentParent::RecvAttachBrowsingContext(
     const BrowsingContextId& aParentId, const BrowsingContextId& aOpenerId,
     const BrowsingContextId& aChildId, const nsString& aName) {
-  RefPtr<CanonicalBrowsingContext> parent =
-      CanonicalBrowsingContext::Get(aParentId);
+  RefPtr<ChromeBrowsingContext> parent = ChromeBrowsingContext::Get(aParentId);
   if (aParentId && !parent) {
     
     
@@ -5654,8 +5651,8 @@ mozilla::ipc::IPCResult ContentParent::RecvAttachBrowsingContext(
 
 mozilla::ipc::IPCResult ContentParent::RecvDetachBrowsingContext(
     const BrowsingContextId& aContextId, const bool& aMoveToBFCache) {
-  RefPtr<CanonicalBrowsingContext> context =
-      CanonicalBrowsingContext::Get(aContextId);
+  RefPtr<ChromeBrowsingContext> context =
+      ChromeBrowsingContext::Get(aContextId);
 
   if (!context) {
     MOZ_LOG(BrowsingContext::GetLog(), LogLevel::Debug,
@@ -5690,8 +5687,8 @@ mozilla::ipc::IPCResult ContentParent::RecvDetachBrowsingContext(
 mozilla::ipc::IPCResult ContentParent::RecvSetOpenerBrowsingContext(
     const BrowsingContextId& aContextId,
     const BrowsingContextId& aOpenerContextId) {
-  RefPtr<CanonicalBrowsingContext> context =
-      CanonicalBrowsingContext::Get(aContextId);
+  RefPtr<ChromeBrowsingContext> context =
+      ChromeBrowsingContext::Get(aContextId);
 
   if (!context) {
     MOZ_LOG(BrowsingContext::GetLog(), LogLevel::Debug,
@@ -5723,8 +5720,8 @@ mozilla::ipc::IPCResult ContentParent::RecvSetOpenerBrowsingContext(
 
 mozilla::ipc::IPCResult ContentParent::RecvSetUserGestureActivation(
     const BrowsingContextId& aContextId, const bool& aNewValue) {
-  RefPtr<CanonicalBrowsingContext> context =
-      CanonicalBrowsingContext::Get(aContextId);
+  RefPtr<ChromeBrowsingContext> context =
+      ChromeBrowsingContext::Get(aContextId);
 
   if (!context) {
     MOZ_LOG(BrowsingContext::GetLog(), LogLevel::Debug,
@@ -5759,7 +5756,7 @@ void ContentParent::UnregisterRemoveWorkerActor() {
 
 mozilla::ipc::IPCResult ContentParent::RecvWindowClose(
     const BrowsingContextId& aContextId, const bool& aTrustedCaller) {
-  RefPtr<CanonicalBrowsingContext> bc = CanonicalBrowsingContext::Get(aContextId);
+  RefPtr<ChromeBrowsingContext> bc = ChromeBrowsingContext::Get(aContextId);
   if (!bc) {
     MOZ_LOG(BrowsingContext::GetLog(), LogLevel::Debug,
             ("ParentIPC: Trying to send a message to dead or detached context "
@@ -5781,7 +5778,7 @@ mozilla::ipc::IPCResult ContentParent::RecvWindowClose(
 
 mozilla::ipc::IPCResult ContentParent::RecvWindowFocus(
     const BrowsingContextId& aContextId) {
-  RefPtr<CanonicalBrowsingContext> bc = CanonicalBrowsingContext::Get(aContextId);
+  RefPtr<ChromeBrowsingContext> bc = ChromeBrowsingContext::Get(aContextId);
   if (!bc) {
     MOZ_LOG(BrowsingContext::GetLog(), LogLevel::Debug,
             ("ParentIPC: Trying to send a message to dead or detached context "
@@ -5799,7 +5796,7 @@ mozilla::ipc::IPCResult ContentParent::RecvWindowFocus(
 
 mozilla::ipc::IPCResult ContentParent::RecvWindowBlur(
     const BrowsingContextId& aContextId) {
-  RefPtr<CanonicalBrowsingContext> bc = CanonicalBrowsingContext::Get(aContextId);
+  RefPtr<ChromeBrowsingContext> bc = ChromeBrowsingContext::Get(aContextId);
   if (!bc) {
     MOZ_LOG(BrowsingContext::GetLog(), LogLevel::Debug,
             ("ParentIPC: Trying to send a message to dead or detached context "
@@ -5818,7 +5815,7 @@ mozilla::ipc::IPCResult ContentParent::RecvWindowBlur(
 mozilla::ipc::IPCResult ContentParent::RecvWindowPostMessage(
     const BrowsingContextId& aContextId, const ClonedMessageData& aMessage,
     const PostMessageData& aData) {
-  RefPtr<CanonicalBrowsingContext> bc = CanonicalBrowsingContext::Get(aContextId);
+  RefPtr<ChromeBrowsingContext> bc = ChromeBrowsingContext::Get(aContextId);
   if (!bc) {
     MOZ_LOG(BrowsingContext::GetLog(), LogLevel::Debug,
             ("ParentIPC: Trying to send a message to dead or detached context "
