@@ -85,6 +85,25 @@ async function toggleOpacityReachesThreshold(browser, videoID, opacityThreshold)
   });
 }
 
+async function assertSawMouseEvents(browser, isExpectingEvents) {
+  const MOUSE_BUTTON_EVENTS = [
+    "pointerdown",
+    "mousedown",
+    "pointerup",
+    "mouseup",
+    "click",
+  ];
+
+  let mouseEvents = await ContentTask.spawn(browser, null, async () => {
+    return this.content.wrappedJSObject.getRecordedEvents();
+  });
+
+  let expectedEvents = isExpectingEvents ? MOUSE_BUTTON_EVENTS
+                                         : [];
+  Assert.deepEqual(mouseEvents, expectedEvents,
+                   "Expected to get the right mouse events.");
+}
+
 
 
 
@@ -131,7 +150,7 @@ async function testToggle(testURL, expectations) {
       
       
       let args = { videoID, TOGGLE_ID };
-      let toggleClientRect = await ContentTask.spawn(browser, args, async args => {
+      let { toggleClientRect, controls } = await ContentTask.spawn(browser, args, async args => {
         let { videoID, TOGGLE_ID } = args;
         let video = content.document.getElementById(videoID);
         video.scrollIntoView({ behaviour: "instant" });
@@ -151,7 +170,15 @@ async function testToggle(testURL, expectations) {
           }, "Waiting for PictureInPictureToggleChild to be tracking the video.", 100, 100);
         }
         let rect = toggle.getBoundingClientRect();
-        return { top: rect.top, right: rect.right, left: rect.left, bottom: rect.bottom };
+        return {
+          toggleClientRect: {
+            top: rect.top,
+            right: rect.right,
+            left: rect.left,
+            bottom: rect.bottom,
+          },
+          controls: video.controls,
+        };
       });
 
       
@@ -184,9 +211,17 @@ async function testToggle(testURL, expectations) {
         let win = await domWindowOpened;
         ok(win, "A Picture-in-Picture window opened.");
         await BrowserTestUtils.closeWindow(win);
+
+        
+        
+        await assertSawMouseEvents(browser, false);
       } else {
         info("Clicking on toggle, and expecting no Picture-in-Picture window opens");
         await BrowserTestUtils.synthesizeMouseAtPoint(toggleLeft, toggleTop, {}, browser);
+
+        
+        
+        await assertSawMouseEvents(browser, !controls);
 
         
         
@@ -200,6 +235,11 @@ async function testToggle(testURL, expectations) {
 
         ok(true, "No Picture-in-Picture window found.");
       }
+
+      
+      
+      await BrowserTestUtils.synthesizeMouseAtPoint(1, 1, {}, browser);
+      assertSawMouseEvents(browser, true);
     }
   });
 }
