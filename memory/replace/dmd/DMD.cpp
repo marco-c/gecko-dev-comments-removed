@@ -41,7 +41,6 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/PodOperations.h"
 #include "mozilla/StackWalk.h"
-#include "mozilla/ThreadLocal.h"
 
 
 
@@ -439,6 +438,29 @@ class AutoUnlockState {
 
 
 
+#ifdef XP_WIN
+
+#  define DMD_TLS_INDEX_TYPE DWORD
+#  define DMD_CREATE_TLS_INDEX(i_) \
+    do {                           \
+      (i_) = TlsAlloc();           \
+    } while (0)
+#  define DMD_DESTROY_TLS_INDEX(i_) TlsFree((i_))
+#  define DMD_GET_TLS_DATA(i_) TlsGetValue((i_))
+#  define DMD_SET_TLS_DATA(i_, v_) TlsSetValue((i_), (v_))
+
+#else
+
+#  define DMD_TLS_INDEX_TYPE pthread_key_t
+#  define DMD_CREATE_TLS_INDEX(i_) pthread_key_create(&(i_), nullptr)
+#  define DMD_DESTROY_TLS_INDEX(i_) pthread_key_delete((i_))
+#  define DMD_GET_TLS_DATA(i_) pthread_getspecific((i_))
+#  define DMD_SET_TLS_DATA(i_, v_) pthread_setspecific((i_), (v_))
+
+#endif
+
+static DMD_TLS_INDEX_TYPE gTlsIndex;
+
 class Thread {
   
   friend class InfallibleAllocPolicy;
@@ -453,26 +475,8 @@ class Thread {
 
   DISALLOW_COPY_AND_ASSIGN(Thread);
 
-  static MOZ_THREAD_LOCAL(Thread*) tlsThread;
-
  public:
-  static void Init() {
-    if (!tlsThread.init()) {
-      MOZ_CRASH();
-    }
-  }
-
-  static Thread* Fetch() {
-    Thread* t = tlsThread.get();
-    if (MOZ_UNLIKELY(!t)) {
-      
-      
-      t = InfallibleAllocPolicy::new_<Thread>();
-      tlsThread.set(t);
-    }
-
-    return t;
-  }
+  static Thread* Fetch();
 
   bool BlockIntercepts() {
     MOZ_ASSERT(!mBlockIntercepts);
@@ -487,7 +491,19 @@ class Thread {
   bool InterceptsAreBlocked() const { return mBlockIntercepts; }
 };
 
-MOZ_THREAD_LOCAL(Thread*) Thread::tlsThread;
+
+Thread* Thread::Fetch() {
+  Thread* t = static_cast<Thread*>(DMD_GET_TLS_DATA(gTlsIndex));
+
+  if (MOZ_UNLIKELY(!t)) {
+    
+    
+    t = InfallibleAllocPolicy::new_<Thread>();
+    DMD_SET_TLS_DATA(gTlsIndex, t);
+  }
+
+  return t;
+}
 
 
 
@@ -1394,7 +1410,7 @@ static bool Init(malloc_table_t* aMallocTable) {
       sizeof(FastBernoulliTrial));
   ResetBernoulli();
 
-  Thread::Init();
+  DMD_CREATE_TLS_INDEX(gTlsIndex);
 
   {
     AutoLockState lock;
