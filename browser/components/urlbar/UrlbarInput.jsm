@@ -922,8 +922,7 @@ class UrlbarInput {
     }
 
     
-    
-    
+    this.selectionStart = this.selectionEnd = 0;
 
     this.closePopup();
   }
