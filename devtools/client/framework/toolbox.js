@@ -168,7 +168,6 @@ function Toolbox(target, selectedTool, hostType, contentWindow, frameId,
   this._onInspectObject = this._onInspectObject.bind(this);
   this._onNewSelectedNodeFront = this._onNewSelectedNodeFront.bind(this);
   this._onToolSelected = this._onToolSelected.bind(this);
-  this._onTargetClosed = this._onTargetClosed.bind(this);
   this.updateToolboxButtonsVisibility = this.updateToolboxButtonsVisibility.bind(this);
   this.updateToolboxButtons = this.updateToolboxButtons.bind(this);
   this.selectTool = this.selectTool.bind(this);
@@ -179,7 +178,7 @@ function Toolbox(target, selectedTool, hostType, contentWindow, frameId,
   this.toggleDragging = this.toggleDragging.bind(this);
   this.isPaintFlashing = false;
 
-  this._target.on("close", this._onTargetClosed);
+  this._target.on("close", this.destroy);
 
   if (!selectedTool) {
     selectedTool = Services.prefs.getCharPref(this._prefs.LAST_TOOL);
@@ -613,21 +612,6 @@ Toolbox.prototype = {
     const remoteId = new this.win.URLSearchParams(this.win.location.href).get("remoteId");
     const connectionType = remoteClientManager.getConnectionTypeByRemoteId(remoteId);
     return Object.assign({}, description, { connectionType });
-  },
-
-  _onTargetClosed: async function() {
-    const win = this.win; 
-
-    
-    this.destroy();
-    
-    
-
-    
-    
-    if (this.hostType === Toolbox.HostType.PAGE) {
-      win.location.replace("about:devtools-toolbox?disconnected");
-    }
   },
 
   
@@ -3081,7 +3065,7 @@ Toolbox.prototype = {
           }
           const target = this._target;
           this._target = null;
-          target.off("close", this._onTargetClosed);
+          target.off("close", this.destroy);
           return target.destroy();
         }, console.error).then(() => {
           this.emit("destroyed");
