@@ -3,14 +3,14 @@ load(libdir + "assert-offset-columns.js");
 
 assertOffsetColumns(
     "function f(n) { for (var i = 0; i < n; ++i) hits.push('.'); hits.push('!'); }",
-    "                         ^      ^      ^    ^    ^          ^    ^          ^",
+    "                             ^  ^      ^    ^    ^          ^    ^          ^",
     "0 1 3 4 . 2 1 3 4 . 2 1 3 4 . 2 1 5 6 ! 7",
 );
 
 
 assertOffsetColumns(
     "function f(n){var w0,x1=3,y2=4,z3=9}",
-    "                     ^    ^    ^   ^",
+    "                        ^    ^    ^^",
 );
 
 
@@ -23,14 +23,14 @@ assertOffsetColumns(
 assertOffsetColumns(
     
     "function f(n){var o={a:1,b:2,c:3}}",
-    "                  ^  ^   ^   ^   ^",
+    "                    ^^   ^   ^   ^",
 );
 
 
 assertOffsetColumns(
     
     "function f(n){var a=[1,2,n]}",
-    "                  ^  ^ ^ ^ ^",
+    "                    ^^ ^ ^ ^",
 );
 
 
@@ -44,44 +44,45 @@ assertOffsetColumns(
 
 assertOffsetColumns(
     "function f(n) { switch(n) { default: print(n); } }",
-    "                ^                    ^           ^",
+    "                       ^             ^           ^",
 );
 
 
 assertOffsetColumns(
     "function f(n) { do { print(n); break; } while(false); }",
-    "                ^    ^         ^                      ^",
+    "                ^    ^         ^              ^       ^",
+    "0 1 2 4"
 );
 
 
 assertOffsetColumns(
     "function f(n) { do { print(n); continue; } while(false); }",
-    "                ^    ^         ^                         ^",
+    "                ^    ^         ^                 ^       ^",
 );
 
 
 assertOffsetColumns(
     "function f(n) { with({}) { print(n); } }",
-    "                ^          ^           ^",
+    "                     ^     ^           ^",
 );
 
 
 assertOffsetColumns(
     "function f(n) { if (n == 3) print(n); }",
-    "                ^           ^         ^",
+    "                    ^       ^         ^",
 );
 
 
 
 assertOffsetColumns(
     "function f(n) { if (n == 2); else if (n === 3) print(n); }",
-    "                ^                 ^            ^         ^",
+    "                    ^                 ^        ^         ^",
 );
 
 
 assertOffsetColumns(
     "function f(n) { do { print(n); } while(false); }",
-    "                ^    ^                         ^",
+    "                ^    ^                 ^       ^",
 );
 
 
