@@ -123,7 +123,7 @@ class nsFilterInstance {
 
 
   static bool BuildWebRenderFilters(nsIFrame* aFilteredFrame,
-                                    WrFiltersHolder& aWrFilters,
+                                    nsTArray<mozilla::wr::FilterOp>& aWrFilters,
                                     mozilla::Maybe<nsRect>& aPostFilterClip);
 
  private:
