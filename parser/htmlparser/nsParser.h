@@ -255,12 +255,14 @@ class nsParser final : public nsIParser,
   
 
 
-  virtual void PushDefinedInsertionPoint() override;
+  void IncrementScriptNestingLevel() final;
 
   
 
 
-  virtual void PopDefinedInsertionPoint() override;
+  void DecrementScriptNestingLevel() final;
+
+  bool HasNonzeroScriptNestingLevel() const final;
 
   
 

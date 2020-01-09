@@ -206,14 +206,22 @@ class nsIParser : public nsParserBase {
 
 
 
-  virtual void PushDefinedInsertionPoint() = 0;
+  virtual void IncrementScriptNestingLevel() = 0;
 
   
 
 
 
 
-  virtual void PopDefinedInsertionPoint() = 0;
+  virtual void DecrementScriptNestingLevel() = 0;
+
+  
+
+
+
+
+
+  virtual bool HasNonzeroScriptNestingLevel() const = 0;
 
   
 

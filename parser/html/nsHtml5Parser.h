@@ -178,14 +178,22 @@ class nsHtml5Parser final : public nsIParser, public nsSupportsWeakReference {
 
 
 
-  virtual void PushDefinedInsertionPoint() override;
+  void IncrementScriptNestingLevel() final;
 
   
 
 
 
 
-  virtual void PopDefinedInsertionPoint() override;
+  void DecrementScriptNestingLevel() final;
+
+  
+
+
+
+
+
+  bool HasNonzeroScriptNestingLevel() const final;
 
   
 
@@ -277,7 +285,7 @@ class nsHtml5Parser final : public nsIParser, public nsSupportsWeakReference {
 
 
 
-  int32_t mInsertionPointPushLevel;
+  int32_t mScriptNestingLevel;
 
   
 
