@@ -666,8 +666,6 @@ enum ModuleKind { Wasm, AsmJS };
 
 enum class Shareable { False, True };
 
-enum class HasGcTypes { False, True };
-
 
 
 

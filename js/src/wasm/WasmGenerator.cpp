@@ -1056,7 +1056,6 @@ SharedMetadata ModuleGenerator::finishMetadata(const Bytes& bytecode) {
   
 
   metadata_->memoryUsage = env_->memoryUsage;
-  metadata_->temporaryGcTypesConfigured = env_->gcTypesConfigured;
   metadata_->minMemoryLength = env_->minMemoryLength;
   metadata_->maxMemoryLength = env_->maxMemoryLength;
   metadata_->startFuncIndex = env_->startFuncIndex;

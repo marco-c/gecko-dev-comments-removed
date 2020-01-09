@@ -68,7 +68,7 @@ struct CompilerEnvironment {
       Tier tier_;
       OptimizedBackend optimizedBackend_;
       DebugEnabled debug_;
-      HasGcTypes gcTypes_;
+      bool gcTypes_;
     };
   };
 
@@ -82,15 +82,15 @@ struct CompilerEnvironment {
   
   CompilerEnvironment(CompileMode mode, Tier tier,
                       OptimizedBackend optimizedBackend,
-                      DebugEnabled debugEnabled, HasGcTypes gcTypesConfigured);
+                      DebugEnabled debugEnabled, bool gcTypesConfigured);
 
   
-  void computeParameters(Decoder& d, HasGcTypes gcFeatureOptIn);
+  void computeParameters(Decoder& d, bool gcFeatureOptIn);
 
   
   
   
-  void computeParameters(HasGcTypes gcFeatureOptIn);
+  void computeParameters(bool gcFeatureOptIn);
 
   bool isComputed() const { return state_ == Computed; }
   CompileMode mode() const {
@@ -109,7 +109,7 @@ struct CompilerEnvironment {
     MOZ_ASSERT(isComputed());
     return debug_;
   }
-  HasGcTypes gcTypes() const {
+  bool gcTypes() const {
     MOZ_ASSERT(isComputed());
     return gcTypes_;
   }
@@ -132,14 +132,6 @@ struct ModuleEnvironment {
   
   const ModuleKind kind;
   const Shareable sharedMemoryEnabled;
-  
-  
-  
-  
-  
-  
-  
-  const HasGcTypes gcTypesConfigured;
   CompilerEnvironment* const compilerEnv;
 
   
@@ -152,7 +144,7 @@ struct ModuleEnvironment {
   
   
   
-  HasGcTypes gcFeatureOptIn;
+  bool gcFeatureOptIn;
 #endif
   MemoryUsage memoryUsage;
   uint32_t minMemoryLength;
@@ -177,16 +169,15 @@ struct ModuleEnvironment {
   Maybe<Name> moduleName;
   NameVector funcNames;
 
-  explicit ModuleEnvironment(HasGcTypes gcTypesConfigured,
+  explicit ModuleEnvironment(bool gcTypesConfigured,
                              CompilerEnvironment* compilerEnv,
                              Shareable sharedMemoryEnabled,
                              ModuleKind kind = ModuleKind::Wasm)
       : kind(kind),
         sharedMemoryEnabled(sharedMemoryEnabled),
-        gcTypesConfigured(gcTypesConfigured),
         compilerEnv(compilerEnv),
 #ifdef ENABLE_WASM_REFTYPES
-        gcFeatureOptIn(HasGcTypes::False),
+        gcFeatureOptIn(false),
 #endif
         memoryUsage(MemoryUsage::None),
         minMemoryLength(0),
@@ -206,7 +197,7 @@ struct ModuleEnvironment {
   size_t numFuncDefs() const {
     return funcTypes.length() - funcImportGlobalDataOffsets.length();
   }
-  HasGcTypes gcTypesEnabled() const { return compilerEnv->gcTypes(); }
+  bool gcTypesEnabled() const { return compilerEnv->gcTypes(); }
   bool usesMemory() const { return memoryUsage != MemoryUsage::None; }
   bool usesSharedMemory() const { return memoryUsage == MemoryUsage::Shared; }
   bool isAsmJS() const { return kind == ModuleKind::AsmJS; }
@@ -219,7 +210,7 @@ struct ModuleEnvironment {
   bool isRefSubtypeOf(ValType one, ValType two) const {
     MOZ_ASSERT(one.isReference());
     MOZ_ASSERT(two.isReference());
-    MOZ_ASSERT(gcTypesEnabled() == HasGcTypes::True);
+    MOZ_ASSERT(gcTypesEnabled());
     return one == two || two == ValType::AnyRef || one == ValType::NullRef ||
            (one.isRef() && two.isRef() && isStructPrefixOf(two, one));
   }
@@ -792,7 +783,7 @@ MOZ_MUST_USE bool DecodeValidatedLocalEntries(Decoder& d,
 
 MOZ_MUST_USE bool DecodeLocalEntries(Decoder& d, ModuleKind kind,
                                      const TypeDefVector& types,
-                                     HasGcTypes gcTypesEnabled,
+                                     bool gcTypesEnabled,
                                      ValTypeVector* locals);
 
 
