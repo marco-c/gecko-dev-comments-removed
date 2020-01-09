@@ -1849,6 +1849,12 @@ nsresult nsHttpChannel::ProcessFailedProxyConnect(uint32_t httpStatus) {
   }
   LOG(("Cancelling failed proxy CONNECT [this=%p httpStatus=%u]\n", this,
        httpStatus));
+
+  
+  
+  MOZ_ASSERT(mTransaction);
+  mTransaction->DontReuseConnection();
+
   Cancel(rv);
   {
     nsresult rv = CallOnStartRequest();

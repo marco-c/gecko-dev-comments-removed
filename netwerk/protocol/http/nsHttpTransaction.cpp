@@ -1159,7 +1159,21 @@ void nsHttpTransaction::Close(nsresult reason) {
     }
 
     
-    if (mCaps & NS_HTTP_STICKY_CONNECTION) relConn = false;
+    if (mCaps & NS_HTTP_STICKY_CONNECTION) {
+      LOG(("  keeping the connection because of STICKY_CONNECTION flag"));
+      relConn = false;
+    }
+
+    
+    
+    
+    
+    
+    
+    if (mProxyConnectFailed) {
+      LOG(("  keeping the connection because of mProxyConnectFailed"));
+      relConn = false;
+    }
   }
 
   
