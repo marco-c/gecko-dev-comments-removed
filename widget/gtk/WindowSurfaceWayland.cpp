@@ -413,16 +413,6 @@ WindowSurfaceWayland::~WindowSurfaceWayland() {
       delete mBackupBuffer[i];
     }
   }
-
-  if (!mIsMainThread) {
-    
-    
-    
-    mDisplayThreadMessageLoop->PostTask(NewRunnableFunction(
-        "WaylandDisplayRelease", &WaylandDisplayRelease, mWaylandDisplay));
-  } else {
-    WaylandDisplayRelease(mWaylandDisplay);
-  }
 }
 
 WindowBackBuffer* WindowSurfaceWayland::GetWaylandBufferToDraw(int aWidth,
