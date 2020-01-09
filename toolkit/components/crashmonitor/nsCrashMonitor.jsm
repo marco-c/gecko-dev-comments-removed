@@ -2,8 +2,6 @@
 
 
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-
 var MonitorAPI = ChromeUtils.import("resource://gre/modules/CrashMonitor.jsm").CrashMonitor;
 
 function CrashMonitor() {}
@@ -23,4 +21,4 @@ CrashMonitor.prototype = {
   },
 };
 
-this.NSGetFactory = XPCOMUtils.generateNSGetFactory([CrashMonitor]);
+var EXPORTED_SYMBOLS = ["CrashMonitor"];
