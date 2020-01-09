@@ -1,11 +1,15 @@
 
 
-function checkElement(entry, expectedName, beforeRender) {
+function checkElement(entry, expectedName, expectedIdentifier, beforeRender) {
   assert_equals(entry.entryType, 'element');
   assert_equals(entry.name, expectedName);
+  assert_equals(entry.identifier, expectedIdentifier);
   assert_equals(entry.duration, 0);
   assert_greater_than_equal(entry.startTime, beforeRender);
   assert_greater_than_equal(performance.now(), entry.startTime);
+  const rt_entries = performance.getEntriesByName(expectedName, 'resource');
+  assert_equals(rt_entries.length, 1);
+  assert_equals(rt_entries[0].responseEnd, entry.responseEnd);
 }
 
 
