@@ -926,12 +926,6 @@ class RTCPeerConnection {
                                        "NotSupportedError");
     }
 
-    if (!sdp && action != Ci.IPeerConnection.kActionRollback) {
-      throw new this._win.DOMException(
-          "Empty or null SDP provided to setLocalDescription",
-          "InvalidParameterError");
-    }
-
     
     
     
