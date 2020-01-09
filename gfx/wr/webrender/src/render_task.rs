@@ -141,6 +141,17 @@ impl RenderTaskTree {
 
     
     
+    pub fn add_dependency(
+        &mut self,
+        parent_id: RenderTaskId,
+        child_id: RenderTaskId,
+    ) {
+        let parent = &mut self[parent_id];
+        parent.children.push(child_id);
+    }
+
+    
+    
     pub fn generate_passes(
         &self,
         main_render_task: Option<RenderTaskId>,
