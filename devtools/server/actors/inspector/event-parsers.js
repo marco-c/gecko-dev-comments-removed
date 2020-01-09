@@ -7,6 +7,7 @@
 
 "use strict";
 
+const { Cu } = require("chrome");
 const Services = require("Services");
 
 
@@ -15,6 +16,60 @@ const JQUERY_LIVE_REGEX = /return typeof \w+.*.event\.triggered[\s\S]*\.event\.(
 var parsers = [
   {
     id: "jQuery events",
+    hasListeners: function(node) {
+      const global = node.ownerGlobal.wrappedJSObject;
+      const hasJQuery = global.jQuery && global.jQuery.fn && global.jQuery.fn.jquery;
+
+      if (!hasJQuery) {
+        return false;
+      }
+
+      const jQuery = global.jQuery;
+      const handlers = [];
+
+      
+      const data = jQuery._data || jQuery.data;
+      if (data) {
+        const eventsObj = data(node, "events");
+        for (const type in eventsObj) {
+          const events = eventsObj[type];
+          for (const key in events) {
+            const event = events[key];
+
+            if (node.wrappedJSObject == global.document && event.selector) {
+              continue;
+            }
+
+            if (typeof event === "object" || typeof event === "function") {
+              return true;
+            }
+          }
+        }
+      }
+
+      
+      const entry = jQuery(node)[0];
+      if (!entry) {
+        return handlers;
+      }
+
+      for (const type in entry.events) {
+        const events = entry.events[type];
+        for (const key in events) {
+          const event = events[key];
+
+          if (node.wrappedJSObject == global.document && event.selector) {
+            continue;
+          }
+
+          if (typeof events[key] === "function") {
+            return true;
+          }
+        }
+      }
+
+      return false;
+    },
     getListeners: function(node) {
       const global = node.ownerGlobal.wrappedJSObject;
       const hasJQuery = global.jQuery && global.jQuery.fn && global.jQuery.fn.jquery;
@@ -177,7 +232,7 @@ var parsers = [
       }
 
       for (const listener of listeners) {
-        if (listener.listenerObject && listener.type) {
+        if (isValidDOMListener(listener)) {
           return true;
         }
       }
@@ -192,18 +247,43 @@ var parsers = [
       
       
 
-      for (const listenerObj of listeners) {
-        const listener = listenerObj.listenerObject;
+      for (const listener of listeners) {
+        if (!isValidDOMListener(listener)) {
+          continue;
+        }
 
         
-        if (!listener || JQUERY_LIVE_REGEX.test(listener.toString())) {
+        let obj = listener.listenerObject;
+
+        
+        if (Cu.isXrayWrapper(obj)) {
+          obj = listener.listenerObject.wrappedJSObject;
+        }
+
+        let handler = null;
+
+        
+        if (typeof obj === "object") {
+          const unwrapped = Cu.isXrayWrapper(obj) ? obj.wrappedJSObject : obj;
+          if (typeof unwrapped.handleEvent === "function") {
+            handler = Cu.unwaiveXrays(unwrapped.handleEvent);
+          }
+        } else if (typeof obj === "function") {
+          
+          
+          if (JQUERY_LIVE_REGEX.test(obj.toString())) {
+            continue;
+          }
+          
+          handler = obj;
+        } else {
           continue;
         }
 
         const eventInfo = {
-          capturing: listenerObj.capturing,
-          type: listenerObj.type,
-          handler: listener,
+          capturing: listener.capturing,
+          type: listener.type,
+          handler: handler,
         };
 
         handlers.push(eventInfo);
@@ -212,7 +292,6 @@ var parsers = [
       return handlers;
     },
   },
-
   {
     id: "React events",
     hasListeners: function(node) {
@@ -397,6 +476,43 @@ function jQueryLiveGetListeners(node, boolOnEventFound) {
     return false;
   }
   return handlers;
+}
+
+function isValidDOMListener(listener) {
+  
+  
+  if (!listener.type) {
+    return false;
+  }
+
+  
+  let obj = listener.listenerObject;
+
+  
+  
+  if (!obj) {
+    return false;
+  }
+
+  
+  if (Cu.isXrayWrapper(obj)) {
+    obj = listener.listenerObject.wrappedJSObject;
+  }
+
+  
+  if (typeof obj === "object") {
+    const unwrapped = Cu.isXrayWrapper(obj) ? obj.wrappedJSObject : obj;
+    if (typeof unwrapped.handleEvent === "function") {
+      return Cu.unwaiveXrays(unwrapped.handleEvent);
+    }
+    return false;
+  } else if (typeof obj === "function") {
+    if (JQUERY_LIVE_REGEX.test(obj.toString())) {
+      return false;
+    }
+    return obj;
+  }
+  return false;
 }
 
 this.EventParsers = function EventParsers() {
