@@ -1104,6 +1104,11 @@ int nr_ice_component_pair_candidate(nr_ice_peer_ctx *pctx, nr_ice_component *pco
         continue;
 
       
+      if(lcand->type == RELAYED && pcand->mdns_addr && strlen(pcand->mdns_addr)) {
+        continue;
+      }
+
+      
 
 
 
