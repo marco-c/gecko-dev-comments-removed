@@ -34,16 +34,6 @@ class FeatureGateImplementation {
   constructor(definition) {
     this._definition = definition;
     this._observers = new Set();
-
-    switch (this.type) {
-      case "boolean": {
-        Services.prefs.getDefaultBranch("").setBoolPref(this.preference, this.defaultValue);
-        break;
-      }
-      default: {
-        throw new Error(`Unsupported feature gate type ${this.type}`);
-      }
-    }
   }
 
   
