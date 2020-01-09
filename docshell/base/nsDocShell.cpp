@@ -7868,7 +7868,9 @@ nsresult nsDocShell::RestoreFromHistory() {
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
-  GetBrowsingContext()->RestoreChildren(std::move(contexts));
+  if (!contexts.IsEmpty()) {
+    GetBrowsingContext()->RestoreChildren(std::move(contexts));
+  }
 
   
   
