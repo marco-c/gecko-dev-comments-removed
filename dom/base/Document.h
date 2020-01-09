@@ -12,8 +12,7 @@
 #include "nsCOMArray.h"         
 #include "nsCompatibility.h"    
 #include "nsCOMPtr.h"           
-#include "nsICookieSettings.h"
-#include "nsGkAtoms.h"  
+#include "nsGkAtoms.h"          
 #include "nsIApplicationCache.h"
 #include "nsIApplicationCacheContainer.h"
 #include "nsIContentViewer.h"
@@ -1505,9 +1504,6 @@ class Document : public nsINode,
 
   
   void SetCachedSizes(nsTabSizes* aSizes);
-
-  
-  nsICookieSettings* CookieSettings();
 
  protected:
   friend class nsUnblockOnloadEvent;
@@ -4666,8 +4662,6 @@ class Document : public nsINode,
   
   int32_t mCachedTabSizeGeneration;
   nsTabSizes mCachedTabSizes;
-
-  nsCOMPtr<nsICookieSettings> mCookieSettings;
 
  public:
   
