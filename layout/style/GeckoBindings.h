@@ -672,8 +672,13 @@ void Gecko_nsStyleFont_SetLang(nsStyleFont* font, nsAtom* atom);
 void Gecko_nsStyleFont_CopyLangFrom(nsStyleFont* aFont,
                                     const nsStyleFont* aSource);
 
-void Gecko_nsStyleFont_FixupNoneGeneric(nsStyleFont* font,
-                                        const mozilla::dom::Document*);
+
+
+
+
+
+void Gecko_nsStyleFont_PrioritizeUserFonts(
+    nsStyleFont* font, mozilla::FontFamilyType aDefaultGeneric);
 
 void Gecko_nsStyleFont_PrefillDefaultForGeneric(nsStyleFont* font,
                                                 const mozilla::dom::Document*,
