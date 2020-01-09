@@ -45,10 +45,14 @@ class GridList extends PureComponent {
             id: "grid-list",
             className: "devtools-monospace",
           },
-          grids.map(grid => GridItem({
+          grids
+          
+          .filter(grid => !grid.isSubgrid)
+          .map(grid => GridItem({
             key: grid.id,
             getSwatchColorPickerTooltip,
             grid,
+            grids,
             onHideBoxModelHighlighter,
             onSetGridOverlayColor,
             onShowBoxModelHighlighterForNode,
