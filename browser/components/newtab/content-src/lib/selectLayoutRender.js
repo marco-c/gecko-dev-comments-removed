@@ -39,21 +39,6 @@ export const selectLayoutRender = (state, prefs, rickRollCache) => {
     };
   }
 
-  function maybeInjectSpocs(data, spocsConfig) {
-    
-    if (data && spocsConfig && spocsConfig.positions && spocsConfig.positions.length) {
-      
-      if (!spocs.data.spocs || !spocs.data.spocs.length) {
-        return data;
-      }
-
-      
-      return rollForSpocs(data, spocsConfig);
-    }
-
-    return data;
-  }
-
   const positions = {};
   const DS_COMPONENTS = ["Message", "SectionTitle", "Navigation",
     "CardGrid", "Hero", "HorizontalRule", "List"];
@@ -68,10 +53,35 @@ export const selectLayoutRender = (state, prefs, rickRollCache) => {
     filterArray.push(...DS_COMPONENTS);
   }
 
+  const placeholderComponent = component => {
+    const data = {
+      recommendations: [],
+    };
+
+    let items = 0;
+    if (component.properties && component.properties.items) {
+      items = component.properties.items;
+    }
+    for (let i = 0; i < items; i++) {
+      data.recommendations.push({"placeholder": true});
+    }
+
+    return {...component, data};
+  };
+
   const handleComponent = component => {
     positions[component.type] = positions[component.type] || 0;
 
-    let {data} = feeds.data[component.feed.url];
+    const feed = feeds.data[component.feed.url];
+    let data = {
+      recommendations: [],
+    };
+    if (feed && feed.data) {
+      data = {
+        ...feed.data,
+        recommendations: [...feed.data.recommendations],
+      };
+    }
 
     if (component && component.properties && component.properties.offset) {
       data = {
@@ -80,7 +90,13 @@ export const selectLayoutRender = (state, prefs, rickRollCache) => {
       };
     }
 
-    data = maybeInjectSpocs(data, component.spocs);
+    
+    if (data && component.spocs && component.spocs.positions && component.spocs.positions.length) {
+      
+      if (spocs.loaded && spocs.data.spocs && spocs.data.spocs.length) {
+        data = rollForSpocs(data, component.spocs);
+      }
+    }
 
     let items = 0;
     if (component.properties && component.properties.items) {
@@ -91,7 +107,10 @@ export const selectLayoutRender = (state, prefs, rickRollCache) => {
     
     
     for (let i = 0; i < items; i++) {
-      data.recommendations[i].pos = positions[component.type]++;
+      data.recommendations[i] = {
+        ...data.recommendations[i],
+        pos: positions[component.type]++,
+      };
     }
 
     return {...component, data};
@@ -105,12 +124,14 @@ export const selectLayoutRender = (state, prefs, rickRollCache) => {
         ...row,
         components,
       });
-      for (const component of row.components) {
+      for (const component of row.components.filter(c => !filterArray.includes(c.type))) {
         if (component.feed) {
           const spocsConfig = component.spocs;
           
+          
           if (!feeds.data[component.feed.url] ||
             (spocsConfig && spocsConfig.positions && spocsConfig.positions.length && !spocs.loaded)) {
+            components.push(placeholderComponent(component));
             return renderedLayoutArray;
           }
           components.push(handleComponent(component));

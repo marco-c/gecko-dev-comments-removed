@@ -705,6 +705,15 @@ class _ASRouter {
     }
   }
 
+  async _hasAddonAttributionData() {
+    try {
+      const data = await AttributionCode.getAttrDataAsync() || {};
+      return data.source === "addons.mozilla.org";
+    } catch (e) {
+      return false;
+    }
+  }
+
   
 
 
@@ -724,7 +733,7 @@ class _ASRouter {
 
     const locale = Services.locale.appLocaleAsLangTag;
 
-    if (TRAILHEAD_CONFIG.LOCALES.includes(locale)) {
+    if (TRAILHEAD_CONFIG.LOCALES.includes(locale) && !(await this._hasAddonAttributionData())) {
       const {userId} = ClientEnvironment;
       experiment = await chooseBranch(`${userId}-trailhead-experiments`, TRAILHEAD_CONFIG.EXPERIMENT_RATIOS);
 
