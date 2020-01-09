@@ -85,6 +85,12 @@ add_task(async function() {
     checkLogContent(visibleLogs[i + 1 + SEASONS.length], SEASONS[i].chinese,
                     JS_UNICODE_FILENAME);
   }
+  
+  
+  clearFilterInput(hud);
+  is(hud.ui.clearButton.hidden, true, "Clear button is hidden");
+  setFilterInput(hud, JS_ASCII_FILENAME);
+  is(hud.ui.clearButton.hidden, false, "Clear button is visible");
 
   
   
@@ -152,17 +158,15 @@ add_task(async function() {
   
   
   clearFilterInput(hud);
-  visibleLogs = getVisibleLogs(hud);
-  is(visibleLogs.length, SEASONS.length * 2 + 1,
-       "the total number of all the logs after clearing filtering");
-  checkLogContent(visibleLogs[0], HTML_CONSOLE_OUTPUT, HTML_FILENAME);
-  for (let i = 0; i < SEASONS.length; i++) {
-    checkLogContent(visibleLogs[i + 1], SEASONS[i].english, JS_ASCII_FILENAME);
-  }
-  for (let i = 0; i < SEASONS.length; i++) {
-    checkLogContent(visibleLogs[i + 1 + SEASONS.length], SEASONS[i].chinese,
-                    JS_UNICODE_FILENAME);
-  }
+  checkAllMessagesAreVisible(hud);
+
+  
+  
+  setFilterInput(hud, JS_ASCII_FILENAME);
+
+  info("Click the input clear button");
+  clickClearButton(hud);
+  checkAllMessagesAreVisible(hud);
 });
 
 
@@ -222,6 +226,23 @@ function getVisibleLogs(hud) {
   return outputNode.querySelectorAll(".message");
 }
 
+function clickClearButton(hud) {
+  hud.ui.clearButton.click();
+}
+
+function checkAllMessagesAreVisible(hud) {
+  const visibleLogs = getVisibleLogs(hud);
+  is(visibleLogs.length, SEASONS.length * 2 + 1,
+       "the total number of all the logs after clearing filtering");
+  checkLogContent(visibleLogs[0], HTML_CONSOLE_OUTPUT, HTML_FILENAME);
+  for (let i = 0; i < SEASONS.length; i++) {
+    checkLogContent(visibleLogs[i + 1], SEASONS[i].english, JS_ASCII_FILENAME);
+  }
+  for (let i = 0; i < SEASONS.length; i++) {
+    checkLogContent(visibleLogs[i + 1 + SEASONS.length], SEASONS[i].chinese,
+                    JS_UNICODE_FILENAME);
+  }
+}
 
 
 
