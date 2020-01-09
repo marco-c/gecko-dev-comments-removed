@@ -98,6 +98,12 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["openintab", false],
 
   
+  ["quantumbar", false],
+
+  
+  ["speculativeConnect.enabled", true],
+
+  
   ["suggest.bookmark", true],
 
   
@@ -130,6 +136,7 @@ const PREF_URLBAR_DEFAULTS = new Map([
 ]);
 const PREF_OTHER_DEFAULTS = new Map([
   ["keyword.enabled", true],
+  ["browser.search.suggest.enabled", true],
 ]);
 
 
@@ -183,7 +190,9 @@ class Preferences {
       Ci.nsISupportsWeakReference,
     ]);
     Services.prefs.addObserver(PREF_URLBAR_BRANCH, this, true);
-    Services.prefs.addObserver("keyword.enabled", this, true);
+    for (let pref of PREF_OTHER_DEFAULTS.keys()) {
+      Services.prefs.addObserver(pref, this, true);
+    }
   }
 
   

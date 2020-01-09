@@ -53,6 +53,10 @@ class UrlbarResult {
 
     
     
+    this.heuristic = false;
+
+    
+    
     if (!payload || (typeof payload != "object")) {
       throw new Error("Invalid result payload");
     }

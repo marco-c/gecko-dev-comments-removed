@@ -308,7 +308,12 @@ class Query {
       throw new Error("Invalid provider passed to the add callback");
     }
     
-    if (this.canceled || !this.acceptableSources.includes(match.source)) {
+    if (this.canceled) {
+      return;
+    }
+    
+    
+    if (!this.acceptableSources.includes(match.source) && !match.heuristic) {
       return;
     }
 

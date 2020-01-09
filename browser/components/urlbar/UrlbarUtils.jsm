@@ -17,7 +17,6 @@ var EXPORTED_SYMBOLS = [
 ];
 
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-
 XPCOMUtils.defineLazyModuleGetters(this, {
   BinarySearch: "resource://gre/modules/BinarySearch.jsm",
   BrowserUtils: "resource://gre/modules/BrowserUtils.jsm",
@@ -25,6 +24,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   PlacesUIUtils: "resource:///modules/PlacesUIUtils.jsm",
   PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
   Services: "resource://gre/modules/Services.jsm",
+  UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
 });
 
 var UrlbarUtils = {
@@ -229,7 +229,84 @@ var UrlbarUtils = {
       return matches;
     }, []);
   },
+
+  
+
+
+
+
+
+  getUrlFromResult(result) {
+    switch (result.type) {
+      case UrlbarUtils.RESULT_TYPE.URL:
+      case UrlbarUtils.RESULT_TYPE.KEYWORD:
+      case UrlbarUtils.RESULT_TYPE.REMOTE_TAB:
+      case UrlbarUtils.RESULT_TYPE.TAB_SWITCH:
+        return {url: result.payload.url, postData: null};
+      case UrlbarUtils.RESULT_TYPE.SEARCH: {
+        const engine = Services.search.getEngineByName(result.payload.engine);
+        let [url, postData] = getSearchQueryUrl(
+          engine, result.payload.suggestion || result.payload.query);
+        return {url, postData};
+      }
+    }
+    return {url: null, postData: null};
+  },
+
+  
+
+
+
+
+
+
+
+  setupSpeculativeConnection(urlOrEngine, window) {
+    if (!UrlbarPrefs.get("speculativeConnect.enabled")) {
+      return;
+    }
+    if (urlOrEngine instanceof Ci.nsISearchEngine) {
+      try {
+        urlOrEngine.speculativeConnect({
+          window,
+          originAttributes: window.gBrowser.contentPrincipal.originAttributes,
+        });
+      } catch (ex) {
+        
+      }
+      return;
+    }
+
+    if (urlOrEngine instanceof URL) {
+      urlOrEngine = urlOrEngine.href;
+    }
+
+    try {
+      let uri = urlOrEngine instanceof Ci.nsIURI ? urlOrEngine
+                                                  : Services.io.newURI(urlOrEngine);
+      Services.io.speculativeConnect2(uri, window.gBrowser.contentPrincipal, null);
+    } catch (ex) {
+      
+    }
+  },
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+function getSearchQueryUrl(engine, query) {
+  let submission = engine.getSubmission(query, null, "keyword");
+  return [submission.uri.spec, submission.postData];
+}
 
 
 
