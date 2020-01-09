@@ -113,9 +113,23 @@ class ChangesView {
 
 
 
+
+
+
+
+
+
+
   copyChanges(ruleId, sourceId) {
     const state = this.store.getState().changes || {};
-    const filter = { ruleIds: [ruleId], sourceIds: [sourceId] };
+    const filter = {};
+    if (ruleId) {
+      filter.ruleIds = [ruleId];
+    }
+    if (sourceId) {
+      filter.sourceIds = [sourceId];
+    }
+
     const text = getChangesStylesheet(state, filter);
     clipboardHelper.copyString(text);
   }

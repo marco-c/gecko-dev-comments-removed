@@ -55,17 +55,30 @@ class ChangesContextMenu {
     });
     menu.append(menuitemCopy);
 
-    const ruleEl = target.closest("[data-ruleid]");
-    const sourceEl = target.closest("[data-sourceid]");
+    const ruleEl = target.closest("[data-rule-id]");
+    const ruleId = ruleEl ? ruleEl.dataset.ruleId : null;
+    const sourceEl = target.closest("[data-source-id]");
+    const sourceId = sourceEl ? sourceEl.dataset.sourceId : null;
 
-    if (ruleEl && sourceEl) {
-      const ruleId = ruleEl.dataset.ruleid;
-      const sourceId = sourceEl.dataset.sourceid;
-
+    
+    if (ruleId && sourceId) {
       
       menu.append(new MenuItem({
         label: getStr("changes.contextmenu.copyChanges"),
         click: () => this._onCopyChanges(ruleId, sourceId),
+      }));
+
+      menu.append(new MenuItem({
+        type: "separator",
+      }));
+    }
+
+    
+    if (!ruleId && sourceId) {
+      
+      menu.append(new MenuItem({
+        label: getStr("changes.contextmenu.copyAllChanges"),
+        click: () => this._onCopyChanges(null, sourceId),
       }));
 
       menu.append(new MenuItem({
