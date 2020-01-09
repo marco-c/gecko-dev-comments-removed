@@ -88,7 +88,15 @@ class DriverCrashGuard {
 
  protected:
   virtual void Initialize();
-  virtual bool UpdateEnvironment() = 0;
+  
+  
+  
+  
+  
+  virtual bool UpdateEnvironment() {
+    
+    return false;
+  }
   virtual void LogCrashRecovery() = 0;
   virtual void LogFeatureDisabled() = 0;
 
@@ -145,7 +153,6 @@ class D3D9VideoCrashGuard final : public DriverCrashGuard {
   explicit D3D9VideoCrashGuard(dom::ContentParent* aContentParent = nullptr);
 
  protected:
-  bool UpdateEnvironment() override;
   void LogCrashRecovery() override;
   void LogFeatureDisabled() override;
 };
@@ -155,7 +162,6 @@ class D3D11VideoCrashGuard final : public DriverCrashGuard {
   explicit D3D11VideoCrashGuard(dom::ContentParent* aContentParent = nullptr);
 
  protected:
-  bool UpdateEnvironment() override;
   void LogCrashRecovery() override;
   void LogFeatureDisabled() override;
 };
@@ -176,7 +182,6 @@ class WMFVPXVideoCrashGuard final : public DriverCrashGuard {
   explicit WMFVPXVideoCrashGuard(dom::ContentParent* aContentParent = nullptr);
 
  protected:
-  bool UpdateEnvironment() override;
   void LogCrashRecovery() override;
   void LogFeatureDisabled() override;
 };
