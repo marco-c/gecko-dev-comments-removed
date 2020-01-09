@@ -3171,13 +3171,28 @@ bool BytecodeEmitter::emitAnonymousFunctionWithComputedName(
   if (node->is<FunctionNode>()) {
     if (!emitTree(node)) {
       
+      
+      
+      
       return false;
     }
-    if (!emitDupAt(1)) {
+    unsigned depth = 1;
+    FunctionNode* funNode = &node->as<FunctionNode>();
+    FunctionBox* funbox = funNode->funbox();
+    if (funbox->isAsync() && funbox->needsHomeObject()) {
+      depth = 2;
+    }
+    if (!emitDupAt(depth)) {
+      
+      
+      
       
       return false;
     }
     if (!emit2(JSOP_SETFUNNAME, uint8_t(prefixKind))) {
+      
+      
+      
       
       return false;
     }
