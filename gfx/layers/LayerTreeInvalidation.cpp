@@ -624,8 +624,16 @@ struct ImageLayerProperties : public LayerPropertiesBase {
         mLastFrameID(-1),
         mIsMask(aIsMask) {
     if (mImageHost) {
-      mLastProducerID = mImageHost->GetLastProducerID();
-      mLastFrameID = mImageHost->GetLastFrameID();
+      if (aIsMask) {
+        
+        
+        
+        mLastProducerID = mImageHost->GetProducerID();
+        mLastFrameID = mImageHost->GetFrameID();
+      } else {
+        mLastProducerID = mImageHost->GetLastProducerID();
+        mLastFrameID = mImageHost->GetLastFrameID();
+      }
     }
   }
 
