@@ -664,19 +664,16 @@ already_AddRefed<nsIHTMLCollection> Element::GetElementsByTagName(
 
 nsIScrollableFrame* Element::GetScrollFrame(nsIFrame** aFrame,
                                             FlushType aFlushType) {
-  
-  if (IsSVGElement()) {
-    if (aFrame) {
-      *aFrame = nullptr;
-    }
-    return nullptr;
-  }
-
   nsIFrame* frame = GetPrimaryFrame(aFlushType);
   if (aFrame) {
     *aFrame = frame;
   }
   if (frame) {
+    if (frame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT)) {
+      
+      return nullptr;
+    }
+
     
     
     LayoutFrameType type = frame->Type();
@@ -932,7 +929,7 @@ void Element::MozScrollSnap() {
 }
 
 static nsSize GetScrollRectSizeForOverflowVisibleFrame(nsIFrame* aFrame) {
-  if (!aFrame) {
+  if (!aFrame || aFrame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT)) {
     return nsSize(0, 0);
   }
 
@@ -954,8 +951,6 @@ static nsSize GetScrollRectSizeForOverflowVisibleFrame(nsIFrame* aFrame) {
 }
 
 int32_t Element::ScrollHeight() {
-  if (IsSVGElement()) return 0;
-
   nsIFrame* frame;
   nsIScrollableFrame* sf = GetScrollFrame(&frame);
   nscoord height;
@@ -969,8 +964,6 @@ int32_t Element::ScrollHeight() {
 }
 
 int32_t Element::ScrollWidth() {
-  if (IsSVGElement()) return 0;
-
   nsIFrame* frame;
   nsIScrollableFrame* sf = GetScrollFrame(&frame);
   nscoord width;
