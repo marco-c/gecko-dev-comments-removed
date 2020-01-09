@@ -364,7 +364,7 @@ nsresult HTMLEditor::SetInlinePropertyOnTextNode(
   nsCOMPtr<nsIContent> textNodeForTheRange = &aText;
 
   
-  EditorRawDOMPoint atEnd(textNodeForTheRange, aEndOffset);
+  EditorDOMPoint atEnd(textNodeForTheRange, aEndOffset);
   if (!atEnd.IsEndOfContainer()) {
     
     ErrorResult error;
@@ -375,7 +375,7 @@ nsresult HTMLEditor::SetInlinePropertyOnTextNode(
   }
 
   
-  EditorRawDOMPoint atStart(textNodeForTheRange, aStartOffset);
+  EditorDOMPoint atStart(textNodeForTheRange, aStartOffset);
   if (!atStart.IsStartOfContainer()) {
     
     ErrorResult error;
@@ -397,7 +397,7 @@ nsresult HTMLEditor::SetInlinePropertyOnTextNode(
     if (IsSimpleModifiableNode(sibling, &aProperty, aAttribute, &aValue)) {
       
       return MoveNodeWithTransaction(*textNodeForTheRange,
-                                     EditorRawDOMPoint(sibling, 0));
+                                     EditorDOMPoint(sibling, 0));
     }
   }
 
@@ -453,7 +453,7 @@ nsresult HTMLEditor::SetInlinePropertyOnNodeImpl(nsIContent& aNode,
   }
   if (IsSimpleModifiableNode(nextSibling, &aProperty, aAttribute, &aValue)) {
     nsresult rv =
-        MoveNodeWithTransaction(aNode, EditorRawDOMPoint(nextSibling, 0));
+        MoveNodeWithTransaction(aNode, EditorDOMPoint(nextSibling, 0));
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -641,7 +641,7 @@ nsresult HTMLEditor::SplitStyleAbovePoint(
         isSet) {
       
       SplitNodeResult splitNodeResult = SplitNodeDeepWithTransaction(
-          *node, EditorRawDOMPoint(*aNode, *aOffset),
+          *node, EditorDOMPoint(*aNode, *aOffset),
           SplitAtEdges::eAllowToCreateEmptyContainer);
       NS_WARNING_ASSERTION(splitNodeResult.Succeeded(),
                            "Failed to split the node");
@@ -732,8 +732,7 @@ nsresult HTMLEditor::ClearStyle(nsCOMPtr<nsINode>* aNode, int32_t* aOffset,
     
     
     if (savedBR) {
-      rv =
-          MoveNodeWithTransaction(*savedBR, EditorRawDOMPoint(newSelParent, 0));
+      rv = MoveNodeWithTransaction(*savedBR, EditorDOMPoint(newSelParent, 0));
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
@@ -1641,7 +1640,7 @@ nsresult HTMLEditor::RelativeFontChangeOnTextNode(FontSize aDir,
   nsCOMPtr<nsIContent> textNodeForTheRange = &aTextNode;
 
   
-  EditorRawDOMPoint atEnd(textNodeForTheRange, aEndOffset);
+  EditorDOMPoint atEnd(textNodeForTheRange, aEndOffset);
   if (!atEnd.IsEndOfContainer()) {
     
     ErrorResult error;
@@ -1652,7 +1651,7 @@ nsresult HTMLEditor::RelativeFontChangeOnTextNode(FontSize aDir,
   }
 
   
-  EditorRawDOMPoint atStart(textNodeForTheRange, aStartOffset);
+  EditorDOMPoint atStart(textNodeForTheRange, aStartOffset);
   if (!atStart.IsStartOfContainer()) {
     
     ErrorResult error;
@@ -1678,7 +1677,7 @@ nsresult HTMLEditor::RelativeFontChangeOnTextNode(FontSize aDir,
   if (sibling && sibling->IsHTMLElement(nodeType)) {
     
     nsresult rv = MoveNodeWithTransaction(*textNodeForTheRange,
-                                          EditorRawDOMPoint(sibling, 0));
+                                          EditorDOMPoint(sibling, 0));
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -1789,7 +1788,7 @@ nsresult HTMLEditor::RelativeFontChangeOnNode(int32_t aSizeChange,
     if (sibling && sibling->IsHTMLElement(atom)) {
       
       
-      return MoveNodeWithTransaction(*aNode, EditorRawDOMPoint(sibling, 0));
+      return MoveNodeWithTransaction(*aNode, EditorDOMPoint(sibling, 0));
     }
 
     

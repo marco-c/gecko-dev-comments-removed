@@ -936,10 +936,8 @@ class EditorBase : public nsIEditor,
 
 
 
-  template <typename PT, typename CT>
-  MOZ_CAN_RUN_SCRIPT nsresult
-  InsertNodeWithTransaction(nsIContent& aContentToInsert,
-                            const EditorDOMPointBase<PT, CT>& aPointToInsert);
+  MOZ_CAN_RUN_SCRIPT nsresult InsertNodeWithTransaction(
+      nsIContent& aContentToInsert, const EditorDOMPoint& aPointToInsert);
 
   
 
@@ -1071,10 +1069,8 @@ class EditorBase : public nsIEditor,
 
 
 
-  template <typename PT, typename CT>
   MOZ_CAN_RUN_SCRIPT already_AddRefed<nsIContent> SplitNodeWithTransaction(
-      const EditorDOMPointBase<PT, CT>& aStartOfRightNode,
-      ErrorResult& aResult);
+      const EditorDOMPoint& aStartOfRightNode, ErrorResult& aResult);
 
   
 
@@ -1093,9 +1089,8 @@ class EditorBase : public nsIEditor,
 
 
 
-  template <typename PT, typename CT>
   MOZ_CAN_RUN_SCRIPT nsresult MoveNodeWithTransaction(
-      nsIContent& aContent, const EditorDOMPointBase<PT, CT>& aPointToInsert);
+      nsIContent& aContent, const EditorDOMPoint& aPointToInsert);
 
   
 
@@ -1107,7 +1102,7 @@ class EditorBase : public nsIEditor,
   MOZ_CAN_RUN_SCRIPT
   nsresult MoveNodeToEndWithTransaction(nsIContent& aContent,
                                         nsINode& aNewContainer) {
-    EditorRawDOMPoint pointToInsert;
+    EditorDOMPoint pointToInsert;
     pointToInsert.SetToEndOf(&aNewContainer);
     return MoveNodeWithTransaction(aContent, pointToInsert);
   }
@@ -1243,9 +1238,8 @@ class EditorBase : public nsIEditor,
 
 
 
-  template <typename PT, typename CT>
   MOZ_CAN_RUN_SCRIPT already_AddRefed<Element> CreateNodeWithTransaction(
-      nsAtom& aTag, const EditorDOMPointBase<PT, CT>& aPointToInsert);
+      nsAtom& aTag, const EditorDOMPoint& aPointToInsert);
 
   
 
@@ -1390,11 +1384,10 @@ class EditorBase : public nsIEditor,
 
 
 
-  template <typename PT, typename CT>
-  MOZ_CAN_RUN_SCRIPT SplitNodeResult SplitNodeDeepWithTransaction(
-      nsIContent& aMostAncestorToSplit,
-      const EditorDOMPointBase<PT, CT>& aDeepestStartOfRightNode,
-      SplitAtEdges aSplitAtEdges);
+  MOZ_CAN_RUN_SCRIPT SplitNodeResult
+  SplitNodeDeepWithTransaction(nsIContent& aMostAncestorToSplit,
+                               const EditorDOMPoint& aDeepestStartOfRightNode,
+                               SplitAtEdges aSplitAtEdges);
 
   
 

@@ -312,9 +312,8 @@ class TextEditRules : public nsITimerCallback, public nsINamed {
 
 
 
-  template <typename PT, typename CT>
   MOZ_CAN_RUN_SCRIPT CreateElementResult
-  CreateBR(const EditorDOMPointBase<PT, CT>& aPointToInsert) {
+  CreateBR(const EditorDOMPoint& aPointToInsert) {
     CreateElementResult ret = CreateBRInternal(aPointToInsert, false);
 #ifdef DEBUG
     
@@ -333,9 +332,8 @@ class TextEditRules : public nsITimerCallback, public nsINamed {
 
 
 
-  template <typename PT, typename CT>
   MOZ_CAN_RUN_SCRIPT CreateElementResult
-  CreateMozBR(const EditorDOMPointBase<PT, CT>& aPointToInsert) {
+  CreateMozBR(const EditorDOMPoint& aPointToInsert) {
     CreateElementResult ret = CreateBRInternal(aPointToInsert, true);
 #ifdef DEBUG
     
@@ -391,9 +389,8 @@ class TextEditRules : public nsITimerCallback, public nsINamed {
 
 
 
-  template <typename PT, typename CT>
-  MOZ_CAN_RUN_SCRIPT CreateElementResult CreateBRInternal(
-      const EditorDOMPointBase<PT, CT>& aPointToInsert, bool aCreateMozBR);
+  MOZ_CAN_RUN_SCRIPT CreateElementResult
+  CreateBRInternal(const EditorDOMPoint& aPointToInsert, bool aCreateMozBR);
 
  protected:
   
