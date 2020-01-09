@@ -2753,10 +2753,6 @@ class CompartmentPrivate {
   
   bool wasShutdown;
 
-  
-  
-  bool wrapperDenialWarnings[WrapperDenialTypeCount];
-
   JSObject2WrappedJSMap* GetWrappedJSMap() const { return mWrappedJSMap; }
   void UpdateWeakPointersAfterGC();
 
@@ -2836,6 +2832,10 @@ class RealmPrivate {
   
   
   bool forcePermissiveCOWs = false;
+
+  
+  
+  bool wrapperDenialWarnings[WrapperDenialTypeCount];
 
   const nsACString& GetLocation() {
     if (location.IsEmpty() && locationURI) {
