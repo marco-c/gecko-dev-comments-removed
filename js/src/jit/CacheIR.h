@@ -248,7 +248,6 @@ extern const uint32_t ArgLengths[];
   _(GuardNoAllocationMetadataBuilder, None)                                    \
   _(GuardObjectGroupNotPretenured, Field)                                      \
   _(GuardFunctionHasJitEntry, Id, Byte)                                        \
-  _(GuardAndUpdateSpreadArgc, Id, Byte)                                        \
   _(LoadObject, Id, Field)                                                     \
   _(LoadProto, Id, Id)                                                         \
   _(LoadEnclosingEnvironment, Id, Id)                                          \
@@ -840,14 +839,6 @@ class MOZ_RAII CacheIRWriter : public JS::CustomAutoRooter {
   }
   void guardFunctionHasJitEntry(ObjOperandId fun, bool isConstructing) {
     writeOpWithOperandId(CacheOp::GuardFunctionHasJitEntry, fun);
-    buffer_.writeByte(isConstructing);
-  }
-
-  
-  
-  
-  void guardAndUpdateSpreadArgc(Int32OperandId argcId, bool isConstructing) {
-    writeOpWithOperandId(CacheOp::GuardAndUpdateSpreadArgc, argcId);
     buffer_.writeByte(isConstructing);
   }
 
