@@ -276,14 +276,24 @@ typedef struct inheritanceStr inheritance;
 
 
 
+
+
+static PRUint32
+ssl_CacheNow()
+{
+    return PR_Now() / PR_USEC_PER_SEC;
+}
+
 static PRUint32
 LockSidCacheLock(sidCacheLock *lock, PRUint32 now)
 {
     SECStatus rv = sslMutex_Lock(&lock->mutex);
     if (rv != SECSuccess)
         return 0;
-    if (!now)
-        now = ssl_TimeSec();
+    if (!now) {
+        now = ssl_CacheNow();
+    }
+
     lock->timeStamp = now;
     lock->pid = myPid;
     return now;
@@ -631,8 +641,11 @@ FindSID(cacheDesc *cache, PRUint32 setNum, PRUint32 now,
 
 
 
+
+
+
 static sslSessionID *
-ServerSessionIDLookup(const PRIPv6Addr *addr,
+ServerSessionIDLookup(PRTime sslNow, const PRIPv6Addr *addr,
                       unsigned char *sessionID,
                       unsigned int sessionIDLength,
                       CERTCertDBHandle *dbHandle)
@@ -712,7 +725,7 @@ ServerSessionIDLookup(const PRIPv6Addr *addr,
             }
         }
         if (psce) {
-            psce->lastAccessTime = now;
+            psce->lastAccessTime = sslNow;
             sce = *psce; 
         }
     }
@@ -730,7 +743,7 @@ ServerSessionIDLookup(const PRIPv6Addr *addr,
 
 
 void
-ssl_ServerCacheSessionID(sslSessionID *sid)
+ssl_ServerCacheSessionID(sslSessionID *sid, PRTime creationTime)
 {
     PORT_Assert(sid);
 
@@ -748,7 +761,7 @@ ssl_ServerCacheSessionID(sslSessionID *sid)
 
         PORT_Assert(sid->creationTime != 0);
         if (!sid->creationTime)
-            sid->lastAccessTime = sid->creationTime = ssl_TimeUsec();
+            sid->lastAccessTime = sid->creationTime = creationTime;
         
 
 
@@ -1089,7 +1102,7 @@ InitCache(cacheDesc *cache, int maxCacheEntries, int maxCertCacheEntries,
     cache->srvNameCacheData = (srvNameCacheEntry *)(cache->cacheMem + (ptrdiff_t)cache->srvNameCacheData);
 
     
-    init_time = ssl_TimeSec();
+    init_time = ssl_CacheNow();
     pLock = cache->sidCacheLocks;
     for (locks_to_initialize = cache->numSIDCacheLocks + 3;
          locks_initialized < locks_to_initialize;
@@ -1518,7 +1531,7 @@ LockPoller(void *arg)
         if (sharedCache->stopPolling)
             break;
 
-        now = ssl_TimeSec();
+        now = ssl_CacheNow();
         then = now - expiration;
         for (pLock = cache->sidCacheLocks, locks_polled = 0;
              locks_to_poll > locks_polled && !sharedCache->stopPolling;

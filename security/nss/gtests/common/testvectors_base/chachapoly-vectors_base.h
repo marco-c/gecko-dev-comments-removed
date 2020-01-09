@@ -13,22 +13,22 @@
 #include <string>
 #include <vector>
 
-typedef struct chacha_testvector_str {
+typedef struct chaChaTestVectorStr {
   uint32_t id;
   std::vector<uint8_t> Data;
   std::vector<uint8_t> AAD;
   std::vector<uint8_t> Key;
   std::vector<uint8_t> IV;
   std::vector<uint8_t> CT;
-  bool invalid_tag;
-  bool invalid_iv;
-} chacha_testvector;
+  bool invalidTag;
+  bool invalidIV;
+} chaChaTestVector;
 
 
 
 
 
-const chacha_testvector kChaCha20Vectors[] = {
+const chaChaTestVector kChaCha20Vectors[] = {
     {0,
      {0x4c, 0x61, 0x64, 0x69, 0x65, 0x73, 0x20, 0x61, 0x6e, 0x64, 0x20, 0x47,
       0x65, 0x6e, 0x74, 0x6c, 0x65, 0x6d, 0x65, 0x6e, 0x20, 0x6f, 0x66, 0x20,

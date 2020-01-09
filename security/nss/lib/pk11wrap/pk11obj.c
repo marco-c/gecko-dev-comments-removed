@@ -933,11 +933,11 @@ PK11_Decrypt(PK11SymKey *symKey,
     if (haslock)
         PK11_ExitSlotMonitor(slot);
     pk11_CloseSession(slot, session, owner);
-    *outLen = len;
     if (crv != CKR_OK) {
         PORT_SetError(PK11_MapError(crv));
         return SECFailure;
     }
+    *outLen = len;
     return SECSuccess;
 }
 
@@ -979,11 +979,11 @@ PK11_Encrypt(PK11SymKey *symKey,
     if (haslock)
         PK11_ExitSlotMonitor(slot);
     pk11_CloseSession(slot, session, owner);
-    *outLen = len;
     if (crv != CKR_OK) {
         PORT_SetError(PK11_MapError(crv));
         return SECFailure;
     }
+    *outLen = len;
     return SECSuccess;
 }
 

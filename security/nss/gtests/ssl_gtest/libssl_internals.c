@@ -112,6 +112,7 @@ void SSLInt_PrintCipherSpecs(const char *label, PRFileDesc *fd) {
 
 
 
+
 SECStatus SSLInt_ShiftDtlsTimers(PRFileDesc *fd, PRIntervalTime shift) {
   size_t i;
   sslSocket *ss = ssl_FindSocket(fd);
@@ -297,10 +298,6 @@ SSLKEAType SSLInt_GetKEAType(SSLNamedGroup group) {
   return groupDef->keaType;
 }
 
-void SSLInt_SetTicketLifetime(uint32_t lifetime) {
-  ssl_ticket_lifetime = lifetime;
-}
-
 SECStatus SSLInt_SetSocketMaxEarlyDataSize(PRFileDesc *fd, uint32_t size) {
   sslSocket *ss;
 
@@ -322,10 +319,6 @@ SECStatus SSLInt_SetSocketMaxEarlyDataSize(PRFileDesc *fd, uint32_t size) {
   ssl_ReleaseSpecWriteLock(ss);
 
   return SECSuccess;
-}
-
-void SSLInt_RolloverAntiReplay(void) {
-  tls13_AntiReplayRollover(ssl_TimeUsec());
 }
 
 SECStatus SSLInt_HasPendingHandshakeData(PRFileDesc *fd, PRBool *pending) {

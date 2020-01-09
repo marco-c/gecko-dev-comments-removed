@@ -219,10 +219,11 @@ typedef SECStatus(PR_CALLBACK *SSLExtensionHandler)(
 
 
 
-#define SSL_SetupAntiReplay(window, k, bits)                                    \
-    SSL_EXPERIMENTAL_API("SSL_SetupAntiReplay",                                 \
-                         (PRTime _window, unsigned int _k, unsigned int _bits), \
-                         (window, k, bits))
+#define SSL_InitAntiReplay(now, window, k, bits)                \
+    SSL_EXPERIMENTAL_API("SSL_InitAntiReplay",                  \
+                         (PRTime _now, PRTime _window,          \
+                          unsigned int _k, unsigned int _bits), \
+                         (now, window, k, bits))
 
 
 
@@ -724,7 +725,19 @@ typedef struct SSLAeadContextStr SSLAeadContext;
                           mech, keySize, keyp))
 
 
+
+
+
+typedef PRTime(PR_CALLBACK *SSLTimeFunc)(void *arg);
+
+#define SSL_SetTimeFunc(fd, f, arg)                                      \
+    SSL_EXPERIMENTAL_API("SSL_SetTimeFunc",                              \
+                         (PRFileDesc * _fd, SSLTimeFunc _f, void *_arg), \
+                         (fd, f, arg))
+
+
 #define SSL_UseAltServerHelloType(fd, enable) SSL_DEPRECATED_EXPERIMENTAL_API
+#define SSL_SetupAntiReplay(a, b, c) SSL_DEPRECATED_EXPERIMENTAL_API
 
 SEC_END_PROTOS
 

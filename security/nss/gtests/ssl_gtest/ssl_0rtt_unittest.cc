@@ -106,7 +106,7 @@ class TlsZeroRttReplayTest : public TlsConnectTls13 {
     SendReceive();
 
     if (rollover) {
-      SSLInt_RolloverAntiReplay();
+      RolloverAntiReplay();
     }
 
     
@@ -187,17 +187,18 @@ TEST_P(TlsConnectTls13, ZeroRttServerOnly) {
 
 
 
-
 TEST_P(TlsConnectTls13, ZeroRttRejectOldTicket) {
+  static const PRTime kWindow = 10 * PR_USEC_PER_SEC;
+  EXPECT_EQ(SECSuccess, SSL_InitAntiReplay(now(), kWindow, 1, 3));
   SetupForZeroRtt();
+
+  Reset();
+  StartConnect();
   client_->Set0RttEnabled(true);
   server_->Set0RttEnabled(true);
-  EXPECT_EQ(SECSuccess, SSL_SetupAntiReplay(1, 1, 3));
-  SSLInt_RolloverAntiReplay();  
-  SSLInt_RolloverAntiReplay();
   ExpectResumption(RESUME_TICKET);
-  ZeroRttSendReceive(true, false, []() {
-    PR_Sleep(PR_MillisecondsToInterval(10));
+  ZeroRttSendReceive(true, false, [this]() {
+    AdvanceTime(1 + kWindow / 2);
     return true;
   });
   Handshake();
@@ -212,13 +213,15 @@ TEST_P(TlsConnectTls13, ZeroRttRejectOldTicket) {
 
 
 TEST_P(TlsConnectTls13, ZeroRttRejectPrematureTicket) {
+  static const PRTime kWindow = 10 * PR_USEC_PER_SEC;
+  EXPECT_EQ(SECSuccess, SSL_InitAntiReplay(now(), kWindow, 1, 3));
   ConfigureSessionCache(RESUME_BOTH, RESUME_TICKET);
   ConfigureVersion(SSL_LIBRARY_VERSION_TLS_1_3);
   server_->Set0RttEnabled(true);
   StartConnect();
   client_->Handshake();  
   server_->Handshake();  
-  PR_Sleep(PR_MillisecondsToInterval(10));
+  AdvanceTime(1 + kWindow / 2);
   Handshake();  
   CheckConnected();
   SendReceive();
@@ -227,9 +230,6 @@ TEST_P(TlsConnectTls13, ZeroRttRejectPrematureTicket) {
   Reset();
   client_->Set0RttEnabled(true);
   server_->Set0RttEnabled(true);
-  EXPECT_EQ(SECSuccess, SSL_SetupAntiReplay(1, 1, 3));
-  SSLInt_RolloverAntiReplay();  
-  SSLInt_RolloverAntiReplay();
   ExpectResumption(RESUME_TICKET);
   ExpectEarlyDataAccepted(false);
   StartConnect();
@@ -867,6 +867,59 @@ TEST_F(TlsConnectDatagram13, ZeroRttShortReadDtls) {
 
   Handshake();  
   ExpectEarlyDataAccepted(true);
+  CheckConnected();
+}
+
+
+
+
+
+
+TEST_F(TlsConnectStreamTls13, TimePassesByDefault) {
+  
+  
+  
+  static const unsigned int kTinyWindowMs = 5;
+  EXPECT_EQ(SECSuccess, SSL_InitAntiReplay(
+                            PR_Now(), kTinyWindowMs * PR_USEC_PER_MSEC, 1, 5));
+
+  
+  
+  client_->EnsureTlsSetup();
+  server_->EnsureTlsSetup();
+  client_->StartConnect();  
+  server_->StartConnect();
+
+  ConfigureSessionCache(RESUME_BOTH, RESUME_TICKET);
+  ConfigureVersion(SSL_LIBRARY_VERSION_TLS_1_3);
+  server_->Set0RttEnabled(true);
+  Handshake();
+  CheckConnected();
+  SendReceive();  
+  CheckKeys();
+
+  
+  PR_Sleep(PR_MillisecondsToInterval(kTinyWindowMs));
+
+  Reset();
+  client_->EnsureTlsSetup();
+  server_->EnsureTlsSetup();
+  client_->StartConnect();
+  server_->StartConnect();
+
+  
+  client_->Set0RttEnabled(true);
+  server_->Set0RttEnabled(true);
+  ExpectResumption(RESUME_TICKET);
+  ZeroRttSendReceive(true, false, []() {
+    
+    
+    
+    PR_Sleep(PR_MillisecondsToInterval(1000));
+    return true;
+  });
+  Handshake();
+  ExpectEarlyDataAccepted(false);
   CheckConnected();
 }
 
