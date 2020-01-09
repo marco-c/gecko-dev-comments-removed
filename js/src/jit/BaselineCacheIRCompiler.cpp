@@ -2474,51 +2474,36 @@ void BaselineCacheIRCompiler::pushCallArguments(Register argcReg,
   
   
   
-
-  Register count = scratch;
-
-  masm.move32(argcReg, count);
+  
 
   
   
   
   
-  
-  
-  if (isJitCall) {
-    if (isConstructing) {
-      masm.add32(Imm32(1), count);
-    }
-  } else {
-    masm.add32(Imm32(2 + isConstructing), count);
-  }
+  Register countReg = scratch;
+  masm.move32(argcReg, countReg);
+  masm.add32(Imm32(2 + isConstructing), countReg);
 
   
   AutoScratchRegister argPtr(allocator, masm);
-  masm.moveStackPtrTo(argPtr.get());
-
-  
-  
-  masm.addPtr(Imm32(STUB_FRAME_SIZE), argPtr);
+  Address argAddress(masm.getStackPointer(), STUB_FRAME_SIZE);
+  masm.computeEffectiveAddress(argAddress, argPtr.get());
 
   
   
   if (isJitCall) {
-    masm.alignJitStackBasedOnNArgs(count);
-
-    
-    masm.add32(Imm32(2), count);
+    masm.alignJitStackBasedOnNArgs(countReg);
   }
 
   
   Label loop, done;
   masm.bind(&loop);
-  masm.branchTest32(Assembler::Zero, count, count, &done);
+  masm.branchTest32(Assembler::Zero, countReg, countReg, &done);
   {
     masm.pushValue(Address(argPtr, 0));
     masm.addPtr(Imm32(sizeof(Value)), argPtr);
 
-    masm.sub32(Imm32(1), count);
+    masm.sub32(Imm32(1), countReg);
     masm.jump(&loop);
   }
   masm.bind(&done);
@@ -2554,10 +2539,8 @@ void BaselineCacheIRCompiler::pushSpreadCallArguments(Register argcReg,
 
   
   Register endReg = scratch;
-  masm.movePtr(argcReg, endReg);
-  static_assert(sizeof(Value) == 8, "Value must be 8 bytes");
-  masm.lshiftPtr(Imm32(3), endReg);
-  masm.addPtr(startReg, endReg);
+  BaseValueIndex endAddr(startReg, argcReg);
+  masm.computeEffectiveAddress(endAddr, endReg);
 
   
   Label copyDone;
