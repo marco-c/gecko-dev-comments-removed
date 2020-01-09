@@ -341,19 +341,6 @@ already_AddRefed<BasePrincipal> BasePrincipal::CreateCodebasePrincipal(
   return BasePrincipal::CreateCodebasePrincipal(uri, attrs);
 }
 
-already_AddRefed<BasePrincipal> BasePrincipal::CloneForcingFirstPartyDomain(
-    nsIURI* aURI) {
-  if (NS_WARN_IF(!IsCodebasePrincipal())) {
-    return nullptr;
-  }
-
-  OriginAttributes attrs = OriginAttributesRef();
-  
-  attrs.SetFirstPartyDomain(false, aURI, true );
-
-  return CloneForcingOriginAttributes(attrs);
-}
-
 already_AddRefed<BasePrincipal> BasePrincipal::CloneForcingOriginAttributes(
     const OriginAttributes& aOriginAttributes) {
   if (NS_WARN_IF(!IsCodebasePrincipal())) {
