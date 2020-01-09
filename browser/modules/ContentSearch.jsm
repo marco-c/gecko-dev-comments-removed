@@ -24,8 +24,6 @@ const OUTBOUND_MESSAGE = INBOUND_MESSAGE;
 const MAX_LOCAL_SUGGESTIONS = 3;
 const MAX_SUGGESTIONS = 6;
 
-const HANDOFF_TO_AWESOMEBAR_PREF = "browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar";
-
 
 
 
@@ -532,13 +530,7 @@ var ContentSearch = {
     
     
     
-    
-    
-    
-    
-    
-    if (!uri.startsWith("data:") &&
-        Services.prefs.getBoolPref(HANDOFF_TO_AWESOMEBAR_PREF)) {
+    if (!uri.startsWith("data:")) {
       return Promise.resolve(uri);
     }
 
