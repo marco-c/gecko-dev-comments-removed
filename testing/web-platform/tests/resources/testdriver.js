@@ -197,7 +197,7 @@
         }
     };
 
-    var manual = {
+    window.test_driver_internal = {
         
 
 
@@ -283,7 +283,4 @@
             return Promise.reject(new Error("unimplemented"));
         }
     };
-
-    window.test_driver_internal = Object.create(manual);
-
 })();
