@@ -6953,15 +6953,16 @@ void GCRuntime::incrementalSlice(SliceBudget& budget, JS::GCReason reason,
         bool(isIncremental), bool(lastMarkSlice), bool(useZeal), budgetBuffer);
   }
 #endif
-  MOZ_ASSERT_IF(isIncrementalGCInProgress(), isIncremental || lastMarkSlice);
+
+  MOZ_ASSERT_IF(isIncrementalGCInProgress(), isIncremental);
 
   
 
 
-
-
-  MOZ_ASSERT_IF(isIncrementalGCInProgress() && !isIncremental,
-                lastMarkSlice && nursery().isEmpty());
+  if (!isIncremental) {
+    MOZ_ASSERT(nursery().isEmpty());
+    storeBuffer().checkEmpty();
+  }
 
   isIncremental = !budget.isUnlimited();
 
