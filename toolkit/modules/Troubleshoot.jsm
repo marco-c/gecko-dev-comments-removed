@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 var EXPORTED_SYMBOLS = [
   "Troubleshoot",
@@ -12,10 +12,10 @@ const {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.j
 const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 XPCOMUtils.defineLazyGlobalGetters(this, ["DOMParser"]);
 
-
-
-
-
+// We use a preferences whitelist to make sure we only show preferences that
+// are useful for support and won't compromise the user's privacy.  Note that
+// entries are *prefixes*: for example, "accessibility." applies to all prefs
+// under the "accessibility.*" branch.
 const PREFS_WHITELIST = [
   "accessibility.",
   "apz.",
@@ -88,24 +88,25 @@ const PREFS_WHITELIST = [
   "webgl.",
 ];
 
-
+// The blacklist, unlike the whitelist, is a list of regular expressions.
 const PREFS_BLACKLIST = [
   /^media[.]webrtc[.]debug[.]aec_log_dir/,
   /^media[.]webrtc[.]debug[.]log_file/,
   /^network[.]proxy[.]/,
   /[.]print_to_filename$/,
   /^print[.]macosx[.]pagesetup/,
+  /^print[.]printer/,
 ];
 
-
+// Table of getters for various preference types.
 const PREFS_GETTERS = {};
 
 PREFS_GETTERS[Ci.nsIPrefBranch.PREF_STRING] = (prefs, name) => prefs.getStringPref(name);
 PREFS_GETTERS[Ci.nsIPrefBranch.PREF_INT] = (prefs, name) => prefs.getIntPref(name);
 PREFS_GETTERS[Ci.nsIPrefBranch.PREF_BOOL] = (prefs, name) => prefs.getBoolPref(name);
 
-
-
+// Return the preferences filtered by PREFS_BLACKLIST and PREFS_WHITELIST lists
+// and also by the custom 'filter'-ing function.
 function getPrefList(filter) {
   filter = filter || (name => true);
   function getPref(name) {
@@ -126,20 +127,20 @@ function getPrefList(filter) {
 
 var Troubleshoot = {
 
-  
-
-
-
-
-
-
+  /**
+   * Captures a snapshot of data that may help troubleshooters troubleshoot
+   * trouble.
+   *
+   * @param done A function that will be asynchronously called when the
+   *             snapshot completes.  It will be passed the snapshot object.
+   */
   snapshot: function snapshot(done) {
     let snapshot = {};
     let numPending = Object.keys(dataProviders).length;
     function providerDone(providerName, providerData) {
       snapshot[providerName] = providerData;
       if (--numPending == 0)
-        
+        // Ensure that done is always and truly called asynchronously.
         Services.tm.dispatchToMainThread(done.bind(null, snapshot));
     }
     for (let name in dataProviders) {
@@ -153,14 +154,14 @@ var Troubleshoot = {
     }
   },
 
-  kMaxCrashAge: 3 * 24 * 60 * 60 * 1000, 
+  kMaxCrashAge: 3 * 24 * 60 * 60 * 1000, // 3 days
 };
 
-
-
-
-
-
+// Each data provider is a name => function mapping.  When a snapshot is
+// captured, each provider's function is called, and it's the function's job to
+// generate the provider's data.  The function is passed a "done" callback, and
+// when done, it must pass its data to the callback.  The resulting snapshot
+// object will contain a name => data entry for each provider.
 var dataProviders = {
 
   application: function application(done) {
@@ -178,7 +179,7 @@ var dataProviders = {
     if (AppConstants.MOZ_UPDATER)
       data.updateChannel = ChromeUtils.import("resource://gre/modules/UpdateUtils.jsm", {}).UpdateUtils.UpdateChannel;
 
-    
+    // eslint-disable-next-line mozilla/use-default-preference-values
     try {
       data.vendor = Services.prefs.getCharPref("app.support.vendor");
     } catch (e) {}
@@ -203,10 +204,10 @@ var dataProviders = {
 
     data.remoteAutoStart = Services.appinfo.browserTabsRemoteAutostart;
 
-    
-    
-    
-    
+    // Services.ppmm.childCount is a count of how many processes currently
+    // exist that might respond to messages sent through the ppmm, including
+    // the parent process. So we subtract the parent process with the "- 1",
+    // and that’s how many content processes we’re waiting for.
     data.currentContentProcesses = Services.ppmm.childCount - 1;
     data.maxContentProcesses = Services.appinfo.maxWebProcessCount;
 
@@ -240,7 +241,7 @@ var dataProviders = {
       if (a.isActive != b.isActive)
         return b.isActive ? 1 : -1;
 
-      
+      // In some unfortunate cases addon names can be null.
       let aname = a.name || "";
       let bname = b.name || "";
       let lc = aname.localeCompare(bname);
@@ -284,7 +285,7 @@ var dataProviders = {
     let features = await AddonManager.getAddonsByTypes(["extension"]);
     features = features.filter(f => f.isSystem);
     features.sort(function(a, b) {
-      
+      // In some unfortunate cases addon names can be null.
       let aname = a.name || null;
       let bname = b.name || null;
       let lc = aname.localeCompare(bname);
@@ -313,10 +314,10 @@ var dataProviders = {
 
   graphics: function graphics(done) {
     function statusMsgForFeature(feature) {
-      
-      
-      
-      
+      // We return an object because in the try-newer-driver case we need to
+      // include the suggested version, which the consumer likely needs to plug
+      // into a format string from a localization file. Rather than returning
+      // a string in some cases and an object in others, return an object always.
       let msg = {key: ""};
       try {
         var status = gfxInfo.getFeatureStatus(feature);
@@ -348,13 +349,13 @@ var dataProviders = {
     let data = {};
 
     try {
-      
+      // nsIGfxInfo may not be implemented on some platforms.
       var gfxInfo = Cc["@mozilla.org/gfx/info;1"].getService(Ci.nsIGfxInfo);
     } catch (e) {}
 
     let promises = [];
-    
-    
+    // done will be called upon all pending promises being resolved.
+    // add your pending promise to promises when adding new ones.
     function completed() {
       Promise.all(promises).then(() => done(data));
     }
@@ -364,7 +365,7 @@ var dataProviders = {
     for (let win of Services.ww.getWindowEnumerator()) {
       let winUtils = win.windowUtils;
       try {
-        
+        // NOTE: windowless browser's windows should not be reported in the graphics troubleshoot report
         if (winUtils.layerManagerType == "None" || !winUtils.layerManagerRemote) {
           continue;
         }
@@ -379,7 +380,7 @@ var dataProviders = {
         data.numAcceleratedWindows++;
     }
 
-    
+    // If we had no OMTC windows, report back Basic Layers.
     if (!data.windowLayerManagerType) {
       data.windowLayerManagerType = "Basic";
       data.windowLayerManagerRemote = false;
@@ -397,10 +398,10 @@ var dataProviders = {
       return;
     }
 
-    
-    
-    
-    
+    // keys are the names of attributes on nsIGfxInfo, values become the names
+    // of the corresponding properties in our data object.  A null value means
+    // no change.  This is needed so that the names of properties in the data
+    // object are the same as the names of keys in aboutSupport.properties.
     let gfxInfoProps = {
       adapterDescription: null,
       adapterVendorID: null,
@@ -453,13 +454,13 @@ var dataProviders = {
         data[keyPrefix + "Extensions"] = "-";
         data[keyPrefix + "WSIInfo"] = "-";
 
-        
+        // //
 
         let canvas = doc.createElement("canvas");
         canvas.width = 1;
         canvas.height = 1;
 
-        
+        // //
 
         let creationError = null;
 
@@ -484,14 +485,14 @@ var dataProviders = {
             return;
         }
 
-        
+        // //
 
         data[keyPrefix + "Extensions"] = gl.getSupportedExtensions().join(" ");
 
-        
+        // //
 
         let ext = gl.getExtension("MOZ_debug");
-        
+        // This extension is unconditionally available to chrome. No need to check.
         let vendor = ext.getParameter(gl.VENDOR);
         let renderer = ext.getParameter(gl.RENDERER);
 
@@ -500,9 +501,9 @@ var dataProviders = {
         data[keyPrefix + "DriverExtensions"] = ext.getParameter(ext.EXTENSIONS);
         data[keyPrefix + "WSIInfo"] = ext.getParameter(ext.WSI_INFO);
 
-        
+        // //
 
-        
+        // Eagerly free resources.
         let loseExt = gl.getExtension("WEBGL_lose_context");
         if (loseExt) {
              loseExt.loseContext();
@@ -586,7 +587,7 @@ var dataProviders = {
   accessibility: function accessibility(done) {
     let data = {};
     data.isActive = Services.appinfo.accessibilityEnabled;
-    
+    // eslint-disable-next-line mozilla/use-default-preference-values
     try {
       data.forceDisabled =
         Services.prefs.getIntPref("accessibility.force_disabled");
