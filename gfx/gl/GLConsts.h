@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef GLCONSTS_H_
 #define GLCONSTS_H_
 
@@ -7002,5 +7000,3 @@
 #define LOCAL_WGL_VIDEO_OUT_STACKED_FIELDS_2_1               0x20CC
 
 #endif 
-
-

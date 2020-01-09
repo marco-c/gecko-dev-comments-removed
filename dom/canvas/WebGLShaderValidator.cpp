@@ -182,11 +182,6 @@ webgl::ShaderValidator* WebGLContext::CreateShaderValidator(
   if (IsExtensionEnabled(WebGLExtensionID::EXT_shader_texture_lod))
     resources.EXT_shader_texture_lod = 1;
 
-  if (IsExtensionEnabled(WebGLExtensionID::OVR_multiview2)) {
-    resources.OVR_multiview2 = 1;
-    resources.MaxViewsOVR = mGLMaxMultiviewViews;
-  }
-
   
   
   

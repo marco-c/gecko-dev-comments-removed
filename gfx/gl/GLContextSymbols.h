@@ -445,13 +445,6 @@ struct GLContextSymbols final {
 
   
   void(GLAPIENTRY* fPrimitiveRestartIndex)(GLuint);
-
-  
-  void(GLAPIENTRY* fFramebufferTextureMultiview)(GLenum target,
-                                                 GLenum attachment,
-                                                 GLuint texture, GLint level,
-                                                 GLint baseViewIndex,
-                                                 GLsizei numViews);
 };
 
 }  
