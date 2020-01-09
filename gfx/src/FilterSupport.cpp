@@ -54,7 +54,7 @@ static const float glinearRGBTosRGBMap[256] = {
 
 
 
-static const float gsRGBToLinearRGBMap[256] = {
+extern const float gsRGBToLinearRGBMap[256] = {
     0.000f, 0.000f, 0.001f, 0.001f, 0.001f, 0.002f, 0.002f, 0.002f, 0.002f,
     0.003f, 0.003f, 0.003f, 0.004f, 0.004f, 0.004f, 0.005f, 0.005f, 0.006f,
     0.006f, 0.007f, 0.007f, 0.007f, 0.008f, 0.009f, 0.009f, 0.010f, 0.010f,
