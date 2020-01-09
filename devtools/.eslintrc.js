@@ -109,9 +109,6 @@ module.exports = {
     "files": [
       
       
-      "client/canvasdebugger/**",
-      
-      
       "client/shadereditor/**",
       
       
