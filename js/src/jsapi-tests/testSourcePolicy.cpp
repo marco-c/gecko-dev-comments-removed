@@ -39,8 +39,7 @@ BEGIN_TEST(testBug795104) {
   
   opts.setNoScriptRval(false);
 
-  CHECK(JS::CompileFunction(cx, emptyScopeChain, opts, "f", 0, nullptr, srcBuf,
-                            &fun));
+  fun = JS::CompileFunction(cx, emptyScopeChain, opts, "f", 0, nullptr, srcBuf);
   CHECK(fun);
 
   JS_free(cx, s);

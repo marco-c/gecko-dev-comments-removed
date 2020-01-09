@@ -251,38 +251,31 @@ extern JS_PUBLIC_API bool CompileUtf8ForNonSyntacticScope(
 
 
 
-extern JS_PUBLIC_API bool CompileFunction(JSContext* cx,
-                                          HandleObjectVector envChain,
-                                          const ReadOnlyCompileOptions& options,
-                                          const char* name, unsigned nargs,
-                                          const char* const* argnames,
-                                          SourceText<char16_t>& srcBuf,
-                                          MutableHandle<JSFunction*> fun);
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API bool CompileFunction(JSContext* cx,
-                                          HandleObjectVector envChain,
-                                          const ReadOnlyCompileOptions& options,
-                                          const char* name, unsigned nargs,
-                                          const char* const* argnames,
-                                          SourceText<mozilla::Utf8Unit>& srcBuf,
-                                          MutableHandle<JSFunction*> fun);
-
-
-
-
-
-extern JS_PUBLIC_API bool CompileFunctionUtf8(
+extern JS_PUBLIC_API JSFunction* CompileFunction(
     JSContext* cx, HandleObjectVector envChain,
     const ReadOnlyCompileOptions& options, const char* name, unsigned nargs,
-    const char* const* argnames, const char* utf8, size_t length,
-    MutableHandle<JSFunction*> fun);
+    const char* const* argnames, SourceText<char16_t>& srcBuf);
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API JSFunction* CompileFunction(
+    JSContext* cx, HandleObjectVector envChain,
+    const ReadOnlyCompileOptions& options, const char* name, unsigned nargs,
+    const char* const* argnames, SourceText<mozilla::Utf8Unit>& srcBuf);
+
+
+
+
+
+extern JS_PUBLIC_API JSFunction* CompileFunctionUtf8(
+    JSContext* cx, HandleObjectVector envChain,
+    const ReadOnlyCompileOptions& options, const char* name, unsigned nargs,
+    const char* const* argnames, const char* utf8, size_t length);
 
 
 
