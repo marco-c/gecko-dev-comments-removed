@@ -34,12 +34,6 @@ add_task(threadClientTest(({ threadClient, debuggee }) => {
         },
         function(packet) {
           
-          Assert.equal(packet.frame.where.line, debuggee.line0 + 3);
-          Assert.notEqual(packet.why.type, "breakpoint");
-          Assert.equal(packet.why.type, "resumeLimit");
-        },
-        function(packet) {
-          
           
           Assert.equal(packet.frame.where.line, debuggee.line0 + 3);
           Assert.notEqual(packet.why.type, "breakpoint");

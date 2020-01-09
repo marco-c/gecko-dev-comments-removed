@@ -607,51 +607,37 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
   
   _intraFrameLocationIsStepTarget: function(startLocation, script, offset) {
     
-    if (!script.getOffsetLocation(offset).isEntryPoint) {
+    if (!script.getOffsetMetadata(offset).isBreakpoint) {
       return false;
     }
 
-    
-    
-    
-    
-    
-    
-    
-
     const generatedLocation = this.sources.getScriptOffsetLocation(script, offset);
 
-    
     if (startLocation.generatedUrl !== generatedLocation.generatedUrl) {
       return true;
     }
 
-    const pausePoints = generatedLocation.generatedSourceActor.pausePoints;
+    
+    
+    
     const lineChanged = startLocation.generatedLine !== generatedLocation.generatedLine;
     const columnChanged =
       startLocation.generatedColumn !== generatedLocation.generatedColumn;
-
-    if (!pausePoints) {
-      
-      return lineChanged;
-    }
-
-    
     if (!lineChanged && !columnChanged) {
       return false;
     }
 
     
     
-    const pausePoint = findPausePointForLocation(pausePoints, generatedLocation);
+    const pausePoints = generatedLocation.generatedSourceActor.pausePoints;
+    const pausePoint = pausePoints &&
+      findPausePointForLocation(pausePoints, generatedLocation);
 
     if (pausePoint) {
       return pausePoint.step;
     }
 
-    
-    
-    return lineChanged;
+    return script.getOffsetMetadata(offset).isStepStart;
   },
 
   _makeOnStep: function({ thread, pauseAndRespond, startFrame,

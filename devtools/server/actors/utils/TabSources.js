@@ -273,7 +273,7 @@ TabSources.prototype = {
 
 
   getScriptOffsetLocation: function(script, offset) {
-    const {lineNumber, columnNumber} = script.getOffsetLocation(offset);
+    const {lineNumber, columnNumber} = script.getOffsetMetadata(offset);
     return new GeneratedLocation(
       this.createSourceActor(script.source),
       lineNumber,
