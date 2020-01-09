@@ -943,7 +943,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleBorder {
   }
 
  public:
-  nsStyleCorners mBorderRadius;  
+  mozilla::StyleBorderRadius mBorderRadius;  
   nsStyleImage mBorderImageSource;
   nsStyleSides mBorderImageWidth;  
   mozilla::StyleNonNegativeLengthOrNumberRect mBorderImageOutset;
@@ -1047,7 +1047,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleOutline {
 
   nsChangeHint CalcDifference(const nsStyleOutline& aNewData) const;
 
-  nsStyleCorners mOutlineRadius;  
+  mozilla::StyleBorderRadius mOutlineRadius;
 
   
   
@@ -1654,17 +1654,16 @@ class StyleBasicShape final {
 
   bool HasRadius() const {
     MOZ_ASSERT(mType == StyleBasicShapeType::Inset, "expected inset");
-    nsStyleCoord zero;
-    zero.SetCoordValue(0);
     NS_FOR_CSS_HALF_CORNERS(corner) {
-      if (mRadius.Get(corner) != zero) {
+      auto& radius = mRadius.Get(corner);
+      if (radius.HasPercent() || radius.LengthInCSSPixels() != 0.0f) {
         return true;
       }
     }
     return false;
   }
 
-  const nsStyleCorners& GetRadius() const {
+  const mozilla::StyleBorderRadius& GetRadius() const {
     MOZ_ASSERT(mType == StyleBasicShapeType::Inset, "expected inset");
     return mRadius;
   }
@@ -1693,7 +1692,7 @@ class StyleBasicShape final {
   
   mozilla::Position mPosition;
   
-  nsStyleCorners mRadius;
+  mozilla::StyleBorderRadius mRadius;
 };
 
 struct StyleSVGPath final {

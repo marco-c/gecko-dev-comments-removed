@@ -55,7 +55,6 @@ class nsContainerFrame;
 class nsView;
 class nsIFrame;
 class nsStyleCoord;
-class nsStyleCorners;
 class nsPIDOMWindowOuter;
 class imgIRequest;
 struct nsStyleFont;
@@ -1946,13 +1945,13 @@ class nsLayoutUtils {
 
 
 
-  static bool HasNonZeroCorner(const nsStyleCorners& aCorners);
+  static bool HasNonZeroCorner(const mozilla::BorderRadius& aCorners);
 
   
 
 
 
-  static bool HasNonZeroCornerOnSide(const nsStyleCorners& aCorners,
+  static bool HasNonZeroCornerOnSide(const mozilla::BorderRadius& aCorners,
                                      mozilla::Side aSide);
 
   
