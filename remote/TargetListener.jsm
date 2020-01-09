@@ -64,7 +64,23 @@ class TargetListener {
   onConnectionAccepted(eventName, transport, listener) {
     const conn = new Connection(this.nextConnID++, transport);
     transport.ready();
+    transport.on("close", this.onConnectionClosed.bind(this, conn));
     this.sessions.set(conn, new Session(conn, this.target));
+  }
+
+  
+
+
+
+
+
+
+  onConnectionClosed(conn, eventName) {
+    const session = this.sessions.get(conn);
+    if (!session) {
+      return;
+    }
+    session.destructor();
   }
 
   get url() {
