@@ -402,6 +402,7 @@ class PageAction {
       }
       footerText.parentNode.appendChild(stepsContainer);
       for (let step of content.descriptionDetails.steps) {
+        
         const li = this.window.document.createXULElement("li");
         this._l10n.setAttributes(li, step.string_id);
         stepsContainer.appendChild(li);
