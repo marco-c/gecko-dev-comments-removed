@@ -434,15 +434,6 @@ class nsLayoutUtils {
 
   static bool IsPrimaryStyleFrame(const nsIFrame* aFrame);
 
-  
-
-
-
-
-
-
-  static nsIFrame* GetRealPrimaryFrameFor(const nsIContent* aContent);
-
 #ifdef DEBUG
   
   static bool gPreventAssertInCompareTreePosition;

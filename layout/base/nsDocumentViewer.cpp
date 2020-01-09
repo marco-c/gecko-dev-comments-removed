@@ -2420,8 +2420,7 @@ nsView* nsDocumentViewer::FindContainerView() {
     return nullptr;
   }
 
-  nsIFrame* subdocFrame =
-      nsLayoutUtils::GetRealPrimaryFrameFor(containerElement);
+  nsIFrame* subdocFrame = containerElement->GetPrimaryFrame();
   if (!subdocFrame) {
     
     LAYOUT_WARNING("Subdocument container has no frame");
