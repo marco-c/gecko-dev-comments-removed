@@ -973,6 +973,31 @@ int32_t Element::ScrollWidth() {
 }
 
 nsRect Element::GetClientAreaRect() {
+  Document* doc = OwnerDoc();
+  nsPresContext* presContext = doc->GetPresContext();
+
+  
+  
+  
+  bool overlayScrollbars =
+      LookAndFeel::GetInt(LookAndFeel::eIntID_UseOverlayScrollbars) != 0;
+  bool rootContentDocument =
+      presContext && presContext->IsRootContentDocument();
+  if (overlayScrollbars && rootContentDocument &&
+      doc->IsScrollingElement(this)) {
+    
+    
+    
+    nsIPresShell* presShell = doc->GetShell();
+
+    
+    RefPtr<nsViewManager> viewManager = presShell->GetViewManager();
+    if (viewManager) {
+      viewManager->FlushDelayedResize(false);
+    }
+    return nsRect(nsPoint(), presContext->GetVisibleArea().Size());
+  }
+
   nsIFrame* frame;
   nsIScrollableFrame* sf = GetScrollFrame(&frame);
 
