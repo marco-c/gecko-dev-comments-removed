@@ -359,6 +359,7 @@ TEST_F(pkixder_input_tests, Skip_WrapAroundPointer)
   
   
   const uint8_t* der = nullptr;
+  
   --der;
   Input buf;
   ASSERT_EQ(Success, buf.Init(der, 0));

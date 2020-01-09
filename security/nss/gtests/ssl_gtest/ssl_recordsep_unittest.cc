@@ -176,6 +176,7 @@ class BadPrSocket : public DummyIOLayerMethods {
     
     dummy_layer_ =
         PR_GetIdentitiesLayer(agent->ssl_fd(), DummyPrSocket::LayerId());
+    EXPECT_TRUE(dummy_layer_);
     original_methods_ = dummy_layer_->methods;
     original_secret_ = dummy_layer_->secret;
     dummy_layer_->methods = fd_->methods;
