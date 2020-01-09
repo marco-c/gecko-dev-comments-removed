@@ -5262,21 +5262,6 @@ nsresult Preferences::AddAtomicFloatVarCache(std::atomic<float>* aCache,
 
 
 
-
-
-
-
-
-#define PREF(name, cpp_type, value)
-#define VARCACHE_PREF(policy, name, id, cpp_type, value) \
-  cpp_type StaticPrefs::sVarCache_##id(value);
-#include "mozilla/StaticPrefList.h"
-#undef PREF
-#undef VARCACHE_PREF
-
-
-
-
 static void SetPref_bool(const char* aName, bool aDefaultValue) {
   PrefValue value;
   value.mBoolVal = aDefaultValue;
@@ -5350,6 +5335,40 @@ static void InitVarCachePref(StaticPrefs::UpdatePolicy aPolicy,
     AddVarCache(aCache, aName, aDefaultValue, true);
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define PREF(name, cpp_type, value)
+#define VARCACHE_PREF(policy, name, id, cpp_type, value)                       \
+  cpp_type StaticPrefs::sVarCache_##id(value);                                 \
+  void StaticPrefs::Set##id(StripAtomic<cpp_type> aValue) {                    \
+    MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread() && XRE_IsParentProcess(),          \
+                          "pref '" name "' being set outside parent process"); \
+    SetPref(Get##id##PrefName(), aValue);                                      \
+    if (UpdatePolicy::policy == UpdatePolicy::Once) {                          \
+      sVarCache_##id =                                                         \
+          GetPref(Get##id##PrefName(), StripAtomic<cpp_type>(sVarCache_##id)); \
+    }                                                                          \
+    /* The StaticPrefs storage will be updated by the registered callback */   \
+    return;                                                                    \
+  }
+#include "mozilla/StaticPrefList.h"
+#undef PREF
+#undef VARCACHE_PREF
 
 
 void StaticPrefs::InitAll(bool aIsStartup) {

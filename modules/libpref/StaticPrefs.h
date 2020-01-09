@@ -86,10 +86,6 @@ class StaticPrefs {
   
   
   
-  
-  
-  
-  
 
  public:
   
@@ -112,12 +108,7 @@ class StaticPrefs {
                           "' being accessed on background thread by getter"); \
     return sVarCache_##id;                                                    \
   }                                                                           \
-  static void Set##id(StripAtomic<cpp_type> aValue) {                         \
-    MOZ_DIAGNOSTIC_ASSERT(IsAtomic<cpp_type>::value || NS_IsMainThread(),     \
-                          "Non-atomic static pref '" str                      \
-                          "' being accessed on background thread by setter"); \
-    sVarCache_##id = aValue;                                                  \
-  }                                                                           \
+  static void Set##id(StripAtomic<cpp_type> aValue);                          \
   static const char* Get##id##PrefName() { return str; }                      \
   static StripAtomic<cpp_type> Get##id##PrefDefault() { return default_value; }
 
