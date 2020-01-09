@@ -1683,7 +1683,7 @@ JS_FRIEND_API bool JS_DetachArrayBuffer(JSContext* cx, HandleObject obj) {
   using BufferContents = ArrayBufferObject::BufferContents;
 
   BufferContents newContents =
-      buffer->hasStealableContents()
+      buffer->ownsData()
           ? BufferContents::createNoData()
           : buffer->contents();
 
@@ -1811,15 +1811,7 @@ JS_PUBLIC_API void* JS_StealArrayBufferContents(JSContext* cx,
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  bool hasStealableContents =
-      buffer->hasStealableContents() && buffer->isMalloced();
+  bool hasStealableContents = buffer->ownsData() && buffer->isMalloced();
 
   AutoRealm ar(cx, buffer);
   return ArrayBufferObject::stealContents(cx, buffer, hasStealableContents)
