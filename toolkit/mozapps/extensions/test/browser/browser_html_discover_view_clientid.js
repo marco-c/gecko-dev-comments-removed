@@ -62,7 +62,18 @@ add_task(async function clientid_enabled() {
 
   ok(isNoticeVisible(win), "Notice about personalization should be visible");
 
-  is(await requestPromise, EXPECTED_CLIENT_ID,
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  ok(await requestPromise,
      "Moz-Client-Id should be set when telemetry & discovery are enabled");
 
   let tabbrowser = win.windowRoot.ownerGlobal.gBrowser;
