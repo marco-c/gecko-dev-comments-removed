@@ -858,9 +858,6 @@ a11y::AccType nsInlineFrame::AccessibleType() {
   
   
   if (mContent->IsHTMLElement(
-          nsGkAtoms::input))  
-    return a11y::eHTMLButtonType;
-  if (mContent->IsHTMLElement(
           nsGkAtoms::img))  
     return a11y::eHyperTextType;
 

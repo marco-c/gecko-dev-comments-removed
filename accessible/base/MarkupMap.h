@@ -186,9 +186,15 @@ MARKUPMAP(hr,
 
 MARKUPMAP(input,
           [](Element* aElement, Accessible* aContext) -> Accessible* {
+            
+            
             if (aElement->AttrValueIs(kNameSpaceID_None, nsGkAtoms::type,
                                       nsGkAtoms::checkbox, eIgnoreCase)) {
               return new CheckboxAccessible(aElement, aContext->Document());
+            }
+            if (aElement->AttrValueIs(kNameSpaceID_None, nsGkAtoms::type,
+                                      nsGkAtoms::image, eIgnoreCase)) {
+              return new HTMLButtonAccessible(aElement, aContext->Document());
             }
             if (aElement->AttrValueIs(kNameSpaceID_None, nsGkAtoms::type,
                                       nsGkAtoms::radio, eIgnoreCase)) {
