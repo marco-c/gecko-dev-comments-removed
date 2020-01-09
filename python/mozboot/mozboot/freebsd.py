@@ -74,6 +74,10 @@ class FreeBSDBootstrapper(BaseBootstrapper):
         
         self.pkg_install('rust-cbindgen')
 
+    def ensure_nasm_packages(self, state_dir, checkout_root):
+        
+        pass
+
     def ensure_node_packages(self, state_dir, checkout_root):
         self.pkg_install('npm')
 

@@ -529,6 +529,10 @@ class OSXBootstrapper(BaseBootstrapper):
             self.install_toolchain_artifact(state_dir, checkout_root, stylo.MACOS_CLANG)
         self.install_toolchain_artifact(state_dir, checkout_root, stylo.MACOS_CBINDGEN)
 
+    def ensure_nasm_packages(self, state_dir, checkout_root):
+        
+        pass
+
     def ensure_node_packages(self, state_dir, checkout_root):
         
         from mozboot import node

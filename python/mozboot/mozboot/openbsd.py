@@ -55,5 +55,9 @@ class OpenBSDBootstrapper(BaseBootstrapper):
         
         self.run_as_root(['pkg_add', 'cbindgen'])
 
+    def ensure_nasm_packages(self, state_dir, checkout_root):
+        
+        pass
+
     def ensure_node_packages(self, state_dir, checkout_root):
         self.run_as_root(['pkg_add', 'node'])
