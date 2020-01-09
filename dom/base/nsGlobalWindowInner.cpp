@@ -6811,6 +6811,8 @@ void nsGlobalWindowInner::ForgetSharedWorker(SharedWorker* aSharedWorker) {
 }
 
 void nsGlobalWindowInner::StorageAccessGranted() {
+  PropagateFirstPartyStorageAccessGrantedToWorkers(this);
+
   
   
 
