@@ -290,19 +290,22 @@ Maybe<nsPoint> ScrollSnapUtils::GetSnapPointForDestination(
     
     
     
+    
+    
+    nsPoint clampedDestination = aScrollRange.ClampPoint(aDestination);
     for (auto range : aSnapInfo.mXRangeWiderThanSnapport) {
-      if (range.IsValid(aDestination.x, aSnapInfo.mSnapportSize.width) &&
+      if (range.IsValid(clampedDestination.x, aSnapInfo.mSnapportSize.width) &&
           calcSnapPoints.XDistanceBetweenBestAndSecondEdge() >
               aSnapInfo.mSnapportSize.width) {
-        calcSnapPoints.AddVerticalEdge(aDestination.x);
+        calcSnapPoints.AddVerticalEdge(clampedDestination.x);
         break;
       }
     }
     for (auto range : aSnapInfo.mYRangeWiderThanSnapport) {
-      if (range.IsValid(aDestination.y, aSnapInfo.mSnapportSize.height) &&
+      if (range.IsValid(clampedDestination.y, aSnapInfo.mSnapportSize.height) &&
           calcSnapPoints.YDistanceBetweenBestAndSecondEdge() >
               aSnapInfo.mSnapportSize.height) {
-        calcSnapPoints.AddHorizontalEdge(aDestination.y);
+        calcSnapPoints.AddHorizontalEdge(clampedDestination.y);
         break;
       }
     }
