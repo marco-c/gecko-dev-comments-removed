@@ -209,6 +209,18 @@ bool NS_ColorNameToRGB(const nsAString& aColorName, nscolor* aResult) {
 
 
 
+
+
+
+#define FAST_DIVIDE_BY_255(target, v)        \
+  PR_BEGIN_MACRO                             \
+  unsigned tmp_ = v;                         \
+  target = ((tmp_ << 8) + tmp_ + 255) >> 16; \
+  PR_END_MACRO
+
+
+
+
 #define MOZ_BLEND(target, bg, fg, fgalpha) \
   FAST_DIVIDE_BY_255(target, (bg) * (255 - fgalpha) + (fg) * (fgalpha))
 

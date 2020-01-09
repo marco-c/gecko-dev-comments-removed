@@ -48,18 +48,6 @@ inline uint8_t ClampColor(T aColor) {
 
 }  
 
-
-
-
-
-
-
-#define FAST_DIVIDE_BY_255(target, v)        \
-  PR_BEGIN_MACRO                             \
-  unsigned tmp_ = v;                         \
-  target = ((tmp_ << 8) + tmp_ + 255) >> 16; \
-  PR_END_MACRO
-
 enum class nsHexColorType : uint8_t {
   NoAlpha,     
   AllowAlpha,  
