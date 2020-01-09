@@ -1706,8 +1706,7 @@ nsresult Element::BindToTree(Document* aDocument, nsIContent* aParent,
   if (IsInComposedDoc()) {
     
     
-    CustomElementData* data = GetCustomElementData();
-    if (data) {
+    if (CustomElementData* data = GetCustomElementData()) {
       if (data->mState == CustomElementData::State::eCustom) {
         nsContentUtils::EnqueueLifecycleCallback(Document::eConnected, this);
       } else {
@@ -2619,18 +2618,16 @@ nsresult Element::BeforeSetAttr(int32_t aNamespaceID, nsAtom* aName,
                                 const nsAttrValueOrString* aValue,
                                 bool aNotify) {
   if (aNamespaceID == kNameSpaceID_None) {
-    if (aName == nsGkAtoms::_class) {
-      if (aValue) {
-        
-        
-        
-        
-        
-        
-        
-        
-        SetMayHaveClass();
-      }
+    if (aName == nsGkAtoms::_class && aValue) {
+      
+      
+      
+      
+      
+      
+      
+      
+      SetMayHaveClass();
     }
   }
 
