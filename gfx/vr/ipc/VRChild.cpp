@@ -105,23 +105,6 @@ void VRChild::ActorDestroy(ActorDestroyReason aWhy) {
 }
 
 void VRChild::Init() {
-  
-  
-  
-  
-  
-  
-  
-  nsTArray<GfxPrefSetting> prefs;
-  for (auto pref : gfxPrefs::all()) {
-    if (pref->HasDefaultValue()) {
-      continue;
-    }
-
-    GfxPrefValue value;
-    pref->GetCachedValue(&value);
-    prefs.AppendElement(GfxPrefSetting(pref->Index(), value));
-  }
   nsTArray<GfxVarUpdate> updates = gfxVars::FetchNonDefaultVars();
 
   DevicePrefs devicePrefs;
@@ -133,7 +116,7 @@ void VRChild::Init() {
   devicePrefs.advancedLayers() = gfxConfig::GetValue(Feature::ADVANCED_LAYERS);
   devicePrefs.useD2D1() = gfxConfig::GetValue(Feature::DIRECT2D);
 
-  SendInit(prefs, updates, devicePrefs);
+  SendInit(updates, devicePrefs);
 
   if (!sOpenVRControllerManifestManager) {
     sOpenVRControllerManifestManager = new OpenVRControllerManifestManager();
