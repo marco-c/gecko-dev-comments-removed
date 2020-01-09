@@ -98,13 +98,15 @@ class UrlbarInput {
     this._resultForCurrentValue = null;
     this._suppressStartQuery = false;
     this._untrimmedValue = "";
+    this._openViewOnFocus = false;
 
     
     this._enableAutofillPlaceholder = true;
 
     
     const METHODS = ["addEventListener", "removeEventListener",
-      "setAttribute", "hasAttribute", "removeAttribute", "getAttribute",
+      "getAttribute", "hasAttribute",
+      "setAttribute", "removeAttribute", "toggleAttribute",
       "select"];
     const READ_ONLY_PROPERTIES = ["inputField", "editor"];
     const READ_WRITE_PROPERTIES = ["placeholder", "readOnly",
@@ -470,7 +472,7 @@ class UrlbarInput {
           
           
           
-          this.startQuery();
+          this.startQuery({ allowEmptyInput: true });
           return;
         }
         const actionDetails = {
@@ -612,7 +614,7 @@ class UrlbarInput {
     allowAutofill = true,
     searchString = null,
     resetSearchState = true,
-    allowEmptyInput = true,
+    allowEmptyInput = false,
   } = {}) {
     if (this._suppressStartQuery) {
       return;
@@ -742,6 +744,15 @@ class UrlbarInput {
 
   set value(val) {
     return this._setValue(val, true);
+  }
+
+  get openViewOnFocus() {
+    return this._openViewOnFocus;
+  }
+
+  set openViewOnFocus(val) {
+    this._openViewOnFocus = val;
+    this.toggleAttribute("hidedropmarker", val);
   }
 
   
@@ -1301,6 +1312,10 @@ class UrlbarInput {
     if (this.getAttribute("pageproxystate") != "valid") {
       this.window.UpdatePopupNotificationsVisibility();
     }
+
+    if (this.openViewOnFocus) {
+      this.startQuery();
+    }
   }
 
   _on_mouseover(event) {
@@ -1322,7 +1337,7 @@ class UrlbarInput {
       if (this.view.isOpen) {
         this.view.close();
       } else {
-        this.startQuery({ allowEmptyInput: false });
+        this.startQuery();
       }
     }
   }
@@ -1383,6 +1398,7 @@ class UrlbarInput {
     this.startQuery({
       searchString: value,
       allowAutofill,
+      allowEmptyInput: true,
       resetSearchState: false,
     });
   }
@@ -1476,6 +1492,9 @@ class UrlbarInput {
   _on_TabSelect(event) {
     this._resetSearchState();
     this.controller.viewContextChanged();
+    if (this.focused && this.openViewOnFocus) {
+      this.startQuery();
+    }
   }
 
   _on_keydown(event) {

@@ -348,6 +348,10 @@
   transition: opacity 0.15s ease;
 }
 
+#urlbar[hidedropmarker] > .urlbar-history-dropmarker {
+  display: none;
+}
+
 
 #urlbar[quantumbar="false"] > .urlbar-history-dropmarker[open] {
   pointer-events: none;

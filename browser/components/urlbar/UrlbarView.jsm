@@ -289,16 +289,6 @@ class UrlbarView {
 
 
 
-  onViewContextChanged() {
-    
-    
-    this._rows.textContent = "";
-  }
-
-  
-
-
-
 
   handleEvent(event) {
     let methodName = "_on_" + event.type;

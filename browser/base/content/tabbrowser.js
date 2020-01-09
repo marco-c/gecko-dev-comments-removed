@@ -1178,7 +1178,9 @@ window._gBrowser = {
     
     if (newBrowser._urlbarFocused && gURLBar) {
       
-      gURLBar.closePopup();
+      if (!gURLBar.openViewOnFocus) {
+        gURLBar.closePopup();
+      }
 
       
       
