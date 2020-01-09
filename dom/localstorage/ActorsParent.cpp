@@ -4664,20 +4664,6 @@ void Datastore::GetSnapshotInitInfo(const nsString& aKey,
   MOZ_ASSERT(!mClosed);
   MOZ_ASSERT(!mInUpdateBatch);
 
-  nsString value;
-  int64_t sizeOfKey = 0;
-  int64_t sizeOfItem = 0;
-  bool checkKey = false;
-
-  if (!aKey.IsVoid()) {
-    GetItem(aKey, value);
-    if (!value.IsVoid()) {
-      sizeOfKey = aKey.Length();
-      sizeOfItem = sizeOfKey + value.Length();
-      checkKey = true;
-    }
-  }
-
 #ifdef DEBUG
   int64_t sizeOfKeys = 0;
   int64_t sizeOfItems = 0;
@@ -4690,8 +4676,53 @@ void Datastore::GetSnapshotInitInfo(const nsString& aKey,
   MOZ_ASSERT(mSizeOfItems == sizeOfItems);
 #endif
 
-  if (mSizeOfKeys - sizeOfKey <= gSnapshotPrefill) {
-    if (mSizeOfItems - sizeOfItem <= gSnapshotPrefill) {
+  
+  
+  
+  
+  auto GetLoadState = [&](auto aKeyLength, auto aValueLength) {
+    if (mSizeOfKeys - aKeyLength <= gSnapshotPrefill) {
+      if (mSizeOfItems - aKeyLength - aValueLength <= gSnapshotPrefill) {
+        return LSSnapshot::LoadState::AllOrderedItems;
+      }
+
+      return LSSnapshot::LoadState::AllOrderedKeys;
+    }
+
+    return LSSnapshot::LoadState::Partial;
+  };
+
+  
+  
+  nsString value;
+  
+  
+  
+  
+  bool checkKey = false;
+
+  
+  
+  LSSnapshot::LoadState loadState = GetLoadState( 0,
+                                                  0);
+  if (loadState != LSSnapshot::LoadState::AllOrderedItems && !aKey.IsVoid()) {
+    GetItem(aKey, value);
+    if (!value.IsVoid()) {
+      
+
+      
+      
+      
+      checkKey = true;
+
+      
+      
+      loadState = GetLoadState(aKey.Length(), value.Length());
+    }
+  }
+
+  switch (loadState) {
+    case LSSnapshot::LoadState::AllOrderedItems: {
       
       
 
@@ -4702,8 +4733,10 @@ void Datastore::GetSnapshotInitInfo(const nsString& aKey,
 
       aAddKeyToUnknownItems = false;
 
-      aLoadState = LSSnapshot::LoadState::AllOrderedItems;
-    } else {
+      break;
+    }
+
+    case LSSnapshot::LoadState::AllOrderedKeys: {
       
       
       
@@ -4765,55 +4798,65 @@ void Datastore::GetSnapshotInitInfo(const nsString& aKey,
 
       aAddKeyToUnknownItems = false;
 
-      aLoadState = LSSnapshot::LoadState::AllOrderedKeys;
+      break;
     }
-  } else {
-    int64_t size = 0;
-    for (uint32_t index = 0; index < mOrderedItems.Length(); index++) {
-      const LSItemInfo& item = mOrderedItems[index];
 
-      const nsString& key = item.key();
-      const nsString& value = item.value();
+    case LSSnapshot::LoadState::Partial: {
+      int64_t size = 0;
+      for (uint32_t index = 0; index < mOrderedItems.Length(); index++) {
+        const LSItemInfo& item = mOrderedItems[index];
 
-      if (checkKey && key == aKey) {
-        checkKey = false;
-      } else {
-        size += static_cast<int64_t>(key.Length()) +
-                static_cast<int64_t>(value.Length());
+        const nsString& key = item.key();
+        const nsString& value = item.value();
 
-        if (size > gSnapshotPrefill) {
-          aNextLoadIndex = index;
-          break;
+        if (checkKey && key == aKey) {
+          checkKey = false;
+        } else {
+          size += static_cast<int64_t>(key.Length()) +
+                  static_cast<int64_t>(value.Length());
+
+          if (size > gSnapshotPrefill) {
+            aNextLoadIndex = index;
+            break;
+          }
+        }
+
+        aLoadedItems.PutEntry(key);
+
+        LSItemInfo* itemInfo = aItemInfos.AppendElement();
+        itemInfo->key() = key;
+        itemInfo->value() = value;
+      }
+
+      aAddKeyToUnknownItems = false;
+
+      if (!aKey.IsVoid()) {
+        if (value.IsVoid()) {
+          aAddKeyToUnknownItems = true;
+        } else if (checkKey) {
+          
+
+          LSItemInfo* itemInfo = aItemInfos.AppendElement();
+          itemInfo->key() = aKey;
+          itemInfo->value() = value;
         }
       }
 
-      aLoadedItems.PutEntry(key);
+      MOZ_ASSERT(aItemInfos.Length() < mOrderedItems.Length());
 
-      LSItemInfo* itemInfo = aItemInfos.AppendElement();
-      itemInfo->key() = key;
-      itemInfo->value() = value;
+      break;
     }
 
-    aAddKeyToUnknownItems = false;
-
-    if (!aKey.IsVoid()) {
-      if (value.IsVoid()) {
-        aAddKeyToUnknownItems = true;
-      } else if (checkKey) {
-        LSItemInfo* itemInfo = aItemInfos.AppendElement();
-        itemInfo->key() = aKey;
-        itemInfo->value() = value;
-      }
-    }
-
-    MOZ_ASSERT(aItemInfos.Length() < mOrderedItems.Length());
-    aLoadState = LSSnapshot::LoadState::Partial;
+    default:
+      MOZ_CRASH("Bad load state value!");
   }
 
   aTotalLength = mValues.Count();
 
   aInitialUsage = mUsage;
   aPeakUsage = aInitialUsage;
+
+  aLoadState = loadState;
 }
 
 void Datastore::GetItem(const nsString& aKey, nsString& aValue) const {
