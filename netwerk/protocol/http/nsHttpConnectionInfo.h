@@ -134,11 +134,8 @@ class nsHttpConnectionInfo final : public ARefBase {
   uint32_t GetTlsFlags() const { return mTlsFlags; }
 
   
-  
-  void SetIsTrrServiceChannel(bool aIsTRRChannel) {
-    mIsTrrServiceChannel = aIsTRRChannel;
-  }
-  bool GetIsTrrServiceChannel() const { return mIsTrrServiceChannel; }
+  void SetTrrUsed(bool aUsed) { mTrrUsed = aUsed; }
+  bool GetTrrUsed() const { return mTrrUsed; }
 
   
   
@@ -225,7 +222,7 @@ class nsHttpConnectionInfo final : public ARefBase {
 
   uint32_t mTlsFlags;
   uint16_t mIsolated : 1;
-  uint16_t mIsTrrServiceChannel : 1;
+  uint16_t mTrrUsed : 1;
   uint16_t mTrrDisabled : 1;
   uint16_t mIPv4Disabled : 1;
   uint16_t mIPv6Disabled : 1;
