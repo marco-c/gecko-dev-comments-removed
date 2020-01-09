@@ -127,6 +127,18 @@ enum DeviceVendor {
   VendorMicrosoft,
   VendorParallels,
   VendorQualcomm,
+
+  
+  VendorMesaAll,
+  
+  
+  
+  VendorMesaLLVMPipe,
+  VendorMesaSoftPipe,
+  VendorMesaSWRast,
+  
+  VendorMesaUnknown,
+
   DeviceVendorMax
 };
 
@@ -276,7 +288,7 @@ inline bool ParseDriverVersion(const nsAString &aVersion,
                                uint64_t *aNumericVersion) {
   *aNumericVersion = 0;
 
-#if defined(XP_WIN)
+#if defined(XP_WIN) || defined(MOZ_X11)
   int a, b, c, d;
   char aStr[8], bStr[8], cStr[8], dStr[8];
   

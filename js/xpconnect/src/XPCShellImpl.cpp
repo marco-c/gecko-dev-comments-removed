@@ -72,6 +72,10 @@
 #  include "xpctest_private.h"
 #endif
 
+#ifdef USE_GLX_TEST
+bool fire_glxtest_process();
+#endif
+
 using namespace mozilla;
 using namespace JS;
 using mozilla::dom::AutoEntryScript;
@@ -1098,6 +1102,17 @@ int XRE_XPCShellMain(int argc, char** argv, char** envp,
     printf_stderr(
         "*** You are running in chaos test mode. See ChaosMode.h. ***\n");
   }
+
+#ifdef USE_GLX_TEST
+  
+  
+  
+  
+  
+  
+  
+  fire_glxtest_process();
+#endif
 
   
   XPCShellDirProvider dirprovider;
