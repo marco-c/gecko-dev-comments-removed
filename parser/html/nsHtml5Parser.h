@@ -254,6 +254,13 @@ class nsHtml5Parser final : public nsIParser, public nsSupportsWeakReference {
 
   nsresult ParseUntilBlocked();
 
+  
+
+
+
+
+  nsresult StartExecutor();
+
  private:
   virtual ~nsHtml5Parser();
 

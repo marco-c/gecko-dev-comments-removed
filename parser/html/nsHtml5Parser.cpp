@@ -195,35 +195,7 @@ nsresult nsHtml5Parser::Parse(const nsAString& aSourceBuffer, void* aKey,
   mozilla::Unused << streamKungFuDeathGrip;  
   RefPtr<nsHtml5TreeOpExecutor> executor(mExecutor);
 
-  if (!executor->HasStarted()) {
-    NS_ASSERTION(!GetStreamParser(),
-                 "Had stream parser but document.write started life cycle.");
-    
-    executor->SetParser(this);
-    mTreeBuilder->setScriptingEnabled(executor->IsScriptEnabled());
-
-    bool isSrcdoc = false;
-    nsCOMPtr<nsIChannel> channel;
-    rv = GetChannel(getter_AddRefs(channel));
-    if (NS_SUCCEEDED(rv)) {
-      isSrcdoc = NS_IsSrcdocChannel(channel);
-    }
-    mTreeBuilder->setIsSrcdocDocument(isSrcdoc);
-
-    mTokenizer->start();
-    executor->Start();
-    if (!aContentType.EqualsLiteral("text/html")) {
-      mTreeBuilder->StartPlainText();
-      mTokenizer->StartPlainText();
-    }
-    
-
-
-
-
-    rv = executor->WillBuildModel(eDTDMode_unknown);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
+  MOZ_RELEASE_ASSERT(executor->HasStarted());
 
   
   if (executor->IsComplete()) {
@@ -668,6 +640,26 @@ nsresult nsHtml5Parser::ParseUntilBlocked() {
       }
     }
   }
+}
+
+nsresult nsHtml5Parser::StartExecutor() {
+  MOZ_ASSERT(!GetStreamParser(),
+             "Had stream parser but document.write started life cycle.");
+  
+  RefPtr<nsHtml5TreeOpExecutor> executor(mExecutor);
+  executor->SetParser(this);
+  mTreeBuilder->setScriptingEnabled(executor->IsScriptEnabled());
+
+  mTreeBuilder->setIsSrcdocDocument(false);
+
+  mTokenizer->start();
+  executor->Start();
+
+  
+
+
+
+  return executor->WillBuildModel(eDTDMode_unknown);
 }
 
 nsresult nsHtml5Parser::Initialize(mozilla::dom::Document* aDoc, nsIURI* aURI,
