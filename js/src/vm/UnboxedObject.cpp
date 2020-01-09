@@ -846,7 +846,7 @@ NativeObject* UnboxedPlainObject::convertToNative(JSContext* cx,
   debugCheckNewObject(group,  nullptr, kind, heap);
 
   JSObject* obj =
-      js::AllocateObject(cx, kind,  0, heap, clasp);
+      js::Allocate<JSObject>(cx, kind,  0, heap, clasp);
   if (!obj) {
     return cx->alreadyReportedOOM();
   }
