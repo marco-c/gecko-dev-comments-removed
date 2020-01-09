@@ -234,7 +234,7 @@ function addSources(state: SourcesState, sources: Source[]) {
         [...existingSource.actors, ...source.actors],
         ({ actor }) => actor
       );
-      updatedSource = { ...updatedSource, actors }
+      updatedSource = (({ ...updatedSource, actors }: any): Source);
     }
 
     
@@ -378,10 +378,10 @@ export function getSourceFromId(state: OuterState, id: string): Source {
   return source;
 }
 
-export function getSourceByActorId(state: OuterState, actorId: string): Source {
+export function getSourceByActorId(state: OuterState, actorId: string): ?Source {
   
   
-  for (const source of Object.values(getSources(state))) {
+  for (const source of getSourceList(state)) {
     if (source.actors.some(({ actor }) => actor == actorId)) {
       return source;
     }
