@@ -7,8 +7,10 @@
 
 #include "mozilla/dom/JSWindowActorService.h"
 #include "mozilla/dom/ChromeUtilsBinding.h"
+#include "mozilla/dom/EventListenerBinding.h"
 #include "mozilla/dom/EventTargetBinding.h"
 #include "mozilla/dom/EventTarget.h"
+#include "mozilla/dom/JSWindowActorBinding.h"
 #include "mozilla/dom/PContent.h"
 #include "mozilla/StaticPtr.h"
 #include "mozJSComponentLoader.h"
@@ -19,66 +21,6 @@ namespace mozilla {
 namespace dom {
 namespace {
 StaticRefPtr<JSWindowActorService> gJSWindowActorService;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename T>
-nsresult CallJSActorMethod(nsWrapperCache* aActor, const char* aName,
-                           T& aNativeArg, JS::MutableHandleValue aRetVal) {
-  
-  
-  
-
-  aRetVal.setUndefined();
-
-  
-  
-  JS::Rooted<JSObject*> actor(RootingCx(), aActor->GetWrapper());
-  if (NS_WARN_IF(!actor)) {
-    return NS_ERROR_NOT_IMPLEMENTED;
-  }
-
-  
-  AutoEntryScript aes(actor, "CallJSActorMethod");
-  JSContext* cx = aes.cx();
-  JSAutoRealm ar(cx, actor);
-
-  
-  
-  JS::Rooted<JS::Value> func(cx);
-  if (NS_WARN_IF(!JS_GetProperty(cx, actor, aName, &func) ||
-                 func.isPrimitive())) {
-    JS_ClearPendingException(cx);
-    return NS_ERROR_NOT_IMPLEMENTED;
-  }
-
-  
-  JS::Rooted<JS::Value> argv(cx);
-  if (NS_WARN_IF(!ToJSValue(cx, aNativeArg, &argv))) {
-    JS_ClearPendingException(cx);
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  if (NS_WARN_IF(!JS_CallFunctionValue(cx, actor, func,
-                                       JS::HandleValueArray(argv), aRetVal))) {
-    JS_ClearPendingException(cx);
-    return NS_ERROR_FAILURE;
-  }
-
-  return NS_OK;
 }
 
 
@@ -301,8 +243,12 @@ NS_IMETHODIMP JSWindowActorProtocol::HandleEvent(Event* aEvent) {
   }
 
   
-  JS::Rooted<JS::Value> dummy(RootingCx());
-  return CallJSActorMethod(actor, "handleEvent", aEvent, &dummy);
+  JS::Rooted<JSObject*> global(RootingCx(),
+                               JS::GetNonCCWObjectGlobal(actor->GetWrapper()));
+  RefPtr<EventListener> eventListener =
+      new EventListener(actor->GetWrapper(), global, nullptr, nullptr);
+  eventListener->HandleEvent(*aEvent, "JSWindowActorProtocol::HandleEvent");
+  return NS_OK;
 }
 
 NS_IMETHODIMP JSWindowActorProtocol::Observe(nsISupports* aSubject,
@@ -332,43 +278,12 @@ NS_IMETHODIMP JSWindowActorProtocol::Observe(nsISupports* aSubject,
   }
 
   
-  
-  JS::Rooted<JSObject*> obj(RootingCx(), actor->GetWrapper());
-  if (NS_WARN_IF(!obj)) {
-    return NS_ERROR_NOT_IMPLEMENTED;
-  }
-
-  
-  AutoEntryScript aes(obj, "JSWindowActorProtocol::Observe");
-  JSContext* cx = aes.cx();
-  JSAutoRealm ar(cx, obj);
-
-  JS::AutoValueArray<3> argv(cx);
-  if (NS_WARN_IF(
-          !ToJSValue(cx, aSubject, argv[0]) ||
-          !NonVoidByteStringToJsval(cx, nsDependentCString(aTopic), argv[1]))) {
-    JS_ClearPendingException(cx);
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  if (aData) {
-    if (NS_WARN_IF(!ToJSValue(cx, nsDependentString(aData), argv[2]))) {
-      JS_ClearPendingException(cx);
-      return NS_ERROR_FAILURE;
-    }
-  } else {
-    argv[2].setNull();
-  }
-
-  
-  JS::Rooted<JS::Value> dummy(cx);
-  if (NS_WARN_IF(!JS_CallFunctionName(cx, obj, "observe",
-                                      JS::HandleValueArray(argv), &dummy))) {
-    JS_ClearPendingException(cx);
-    return NS_ERROR_FAILURE;
-  }
-
+  JS::Rooted<JSObject*> global(RootingCx(),
+                               JS::GetNonCCWObjectGlobal(actor->GetWrapper()));
+  RefPtr<MozObserverCallback> observerCallback =
+      new MozObserverCallback(actor->GetWrapper(), global, nullptr, nullptr);
+  observerCallback->Observe(aSubject, nsDependentCString(aTopic),
+                            aData ? nsDependentString(aData) : VoidString());
   return NS_OK;
 }
 
@@ -657,18 +572,13 @@ void JSWindowActorService::ReceiveMessage(nsISupports* aTarget,
   argument.mJson = json;
   argument.mSync = false;
 
-  JS::RootedValue argv(cx);
-  if (NS_WARN_IF(!ToJSValue(cx, argument, &argv))) {
-    return;
-  }
+  JS::Rooted<JSObject*> global(cx, JS::GetNonCCWObjectGlobal(aObj));
+  RefPtr<MessageListener> messageListener =
+      new MessageListener(aObj, global, nullptr, nullptr);
 
-  
-  JS::RootedValue dummy(cx);
-  if (NS_WARN_IF(!JS_CallFunctionName(cx, aObj, "recvAsyncMessage",
-                                      JS::HandleValueArray(argv), &dummy))) {
-    JS_ClearPendingException(cx);
-    return;
-  }
+  JS::Rooted<JS::Value> dummy(cx);
+  messageListener->ReceiveMessage(argument, &dummy,
+                                  "JSWindowActorService::ReceiveMessage");
 }
 
 void JSWindowActorService::RegisterWindowRoot(EventTarget* aRoot) {
@@ -681,8 +591,8 @@ void JSWindowActorService::RegisterWindowRoot(EventTarget* aRoot) {
   }
 }
 
- void JSWindowActorService::UnregisterWindowRoot(
-    EventTarget* aRoot) {
+
+void JSWindowActorService::UnregisterWindowRoot(EventTarget* aRoot) {
   if (gJSWindowActorService) {
     
     gJSWindowActorService->mRoots.RemoveElement(aRoot);
