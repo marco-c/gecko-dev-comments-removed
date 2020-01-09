@@ -1366,9 +1366,6 @@ pref("dom.forms.datetime.others", false);
 pref("dom.forms.datetime.timepicker", false);
 
 
-pref("dom.forms.autocomplete.formautofill", false);
-
-
 pref("dom.forms.selectSearch", false);
 
 

@@ -635,6 +635,13 @@ VARCACHE_PREF(
 )
 
 
+VARCACHE_PREF(
+  "dom.forms.autocomplete.formautofill",
+   dom_forms_autocomplete_formautofill,
+  bool, false
+)
+
+
 
 
 
