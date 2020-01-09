@@ -36,18 +36,13 @@ registerCleanupFunction(function() {
   Services.prefs.clearUserPref(kForceHostLookup);
 });
 
+
+
 var flagInputs = [
   Services.uriFixup.FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP,
   Services.uriFixup.FIXUP_FLAGS_MAKE_ALTERNATE_URI,
   Services.uriFixup.FIXUP_FLAG_FIX_SCHEME_TYPOS,
 ];
-
-flagInputs.concat([
-  flagInputs[0] | flagInputs[1],
-  flagInputs[1] | flagInputs[2],
-  flagInputs[0] | flagInputs[2],
-  flagInputs[0] | flagInputs[1] | flagInputs[2],
-]);
 
 
 

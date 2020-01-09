@@ -219,6 +219,7 @@ VariablesViewController.prototype = {
     }
     
     const deferred = defer();
+    
     aGrip.propertyIterator.slice(aGrip.start, aGrip.count,
       ({ ownProperties }) => {
         
