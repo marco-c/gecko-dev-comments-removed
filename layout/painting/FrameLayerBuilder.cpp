@@ -6841,6 +6841,13 @@ void FrameLayerBuilder::PaintItems(std::vector<AssignedDisplayItem>& aItems,
                    NSIntPixelsToAppUnits(aOffset.y, appUnitsPerDevPixel));
   boundRect.ScaleInverseRoundOut(aXScale, aYScale);
 
+  if (boundRect.IsEmpty()) {
+    
+    
+    
+    return;
+  }
+
 #ifdef DEBUG
   
   
