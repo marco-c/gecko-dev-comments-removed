@@ -121,10 +121,29 @@ enum PtrInfoTag {
 
 
 
-typedef struct {
+typedef struct jemalloc_ptr_info_s {
   enum PtrInfoTag tag;
   void* addr;   
   size_t size;  
+
+#ifdef MOZ_DEBUG
+  arena_id_t arenaId;  
+#endif
+
+#ifdef __cplusplus
+  jemalloc_ptr_info_s() = default;
+  jemalloc_ptr_info_s(enum PtrInfoTag aTag, void* aAddr, size_t aSize,
+                      arena_id_t aArenaId)
+      : tag(aTag),
+        addr(aAddr),
+        size(aSize)
+#  ifdef MOZ_DEBUG
+        ,
+        arenaId(aArenaId)
+#  endif
+  {
+  }
+#endif
 } jemalloc_ptr_info_t;
 
 static inline bool jemalloc_ptr_is_live(jemalloc_ptr_info_t* info) {
