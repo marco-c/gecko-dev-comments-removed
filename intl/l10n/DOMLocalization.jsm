@@ -823,5 +823,10 @@ class DOMLocalization extends Localization {
   }
 }
 
-this.DOMLocalization = DOMLocalization;
-var EXPORTED_SYMBOLS = ["DOMLocalization"];
+
+
+
+
+var getDOMLocalization = () => new DOMLocalization();
+
+var EXPORTED_SYMBOLS = ["DOMLocalization", "getDOMLocalization"];
