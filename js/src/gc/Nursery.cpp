@@ -142,7 +142,7 @@ bool js::Nursery::init(uint32_t maxNurseryBytes, AutoLockGCBgAlloc& lock) {
   if (!allocateNextChunk(0, lock)) {
     return false;
   }
-  capacity_ = NurseryChunkUsableSize;
+  capacity_ = SubChunkLimit;
   
 
   setCurrentChunk(0, true);
