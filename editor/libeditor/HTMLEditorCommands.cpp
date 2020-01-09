@@ -1407,16 +1407,8 @@ InsertTagCommand::DoCommandParams(const char* aCommandName,
   
   
   
-  
-  
-  nsCString asciiValue;
-  
-  nsresult rv =
-      aParams->AsCommandParams()->GetCString(STATE_ATTRIBUTE, asciiValue);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-  NS_ConvertASCIItoUTF16 value(asciiValue);
+  nsString value;
+  nsresult rv = aParams->AsCommandParams()->GetString(STATE_ATTRIBUTE, value);
   if (NS_WARN_IF(value.IsEmpty())) {
     return NS_ERROR_INVALID_ARG;
   }
