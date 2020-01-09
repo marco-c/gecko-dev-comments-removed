@@ -2433,7 +2433,9 @@ void nsFrame::DisplayBorderBackgroundOutline(nsDisplayListBuilder* aBuilder,
 
   
   
-  if (!bgIsThemed && StyleBorder()->HasBorder()) {
+  
+  
+  if (!bgIsThemed && StyleBorder()->HasBorder() && !IsTableFrame()) {
     aLists.BorderBackground()->AppendNewToTop<nsDisplayBorder>(aBuilder, this);
   }
 

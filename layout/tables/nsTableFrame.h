@@ -186,28 +186,6 @@ class nsTableFrame : public nsContainerFrame {
                                                    nsIFrame* aSourceFrame,
                                                    bool* aDidPassThrough);
 
-  typedef void (*DisplayGenericTablePartTraversal)(
-      nsDisplayListBuilder* aBuilder, nsFrame* aFrame,
-      const nsDisplayListSet& aLists);
-  static void GenericTraversal(nsDisplayListBuilder* aBuilder, nsFrame* aFrame,
-                               const nsDisplayListSet& aLists);
-
-  
-
-
-
-
-
-
-
-
-
-
-  static void DisplayGenericTablePart(
-      nsDisplayListBuilder* aBuilder, nsFrame* aFrame,
-      const nsDisplayListSet& aLists,
-      DisplayGenericTablePartTraversal aTraversal = GenericTraversal);
-
   
   
   static nsIFrame* GetFrameAtOrBefore(nsIFrame* aParentFrame,
