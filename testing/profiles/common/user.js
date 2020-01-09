@@ -10,8 +10,6 @@ user_pref("browser.newtabpage.activity-stream.asrouter.providers.snippets", "[]"
 user_pref("browser.newtabpage.activity-stream.feeds.section.topstories", false);
 user_pref("browser.newtabpage.activity-stream.feeds.snippets", false);
 user_pref("browser.newtabpage.activity-stream.tippyTop.service.endpoint", "");
-user_pref("browser.newtabpage.activity-stream.discoverystream.config", "{\"enabled\": false}");
-
 
 user_pref("browser.newtabpage.activity-stream.fxaccounts.endpoint", "");
 
