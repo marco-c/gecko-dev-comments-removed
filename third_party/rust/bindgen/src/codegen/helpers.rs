@@ -43,8 +43,6 @@ pub mod attributes {
     }
 
     pub fn doc(comment: String) -> TokenStream {
-        use std::str::FromStr;
-
         
         
         TokenStream::from_str(&comment).unwrap()

@@ -351,7 +351,6 @@ impl Bitfield {
     
     
     pub fn mask(&self) -> u64 {
-        use std::mem;
         use std::u64;
 
         let unoffseted_mask =
@@ -1068,8 +1067,6 @@ impl CompInfo {
     
     
     pub fn layout(&self, ctx: &BindgenContext) -> Option<Layout> {
-        use std::cmp;
-
         
         if self.kind == CompKind::Struct {
             return None;
