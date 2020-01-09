@@ -17,7 +17,13 @@ public class ActivityHandlerHelper {
     private static final String LOGTAG = "GeckoActivityHandlerHelper";
     private static final ActivityResultHandlerMap mActivityResultHandlerMap = new ActivityResultHandlerMap();
 
-    private static int makeRequestCode(ActivityResultHandler aHandler) {
+    
+
+
+
+
+
+    public static int registerActivityHandler(ActivityResultHandler aHandler) {
         return mActivityResultHandlerMap.put(aHandler);
     }
 
@@ -44,7 +50,6 @@ public class ActivityHandlerHelper {
     public static void startIntentForActivity(Activity activity, Intent intent, ActivityResultHandler activityResultHandler) {
         activity.startActivityForResult(intent, mActivityResultHandlerMap.put(activityResultHandler));
     }
-
 
     public static boolean handleActivityResult(int requestCode, int resultCode, Intent data) {
         ActivityResultHandler handler = mActivityResultHandlerMap.getAndRemove(requestCode);

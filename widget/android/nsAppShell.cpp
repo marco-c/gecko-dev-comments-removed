@@ -1,7 +1,7 @@
-/* -*- Mode: c++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2; -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "nsAppShell.h"
 
@@ -112,17 +112,17 @@ StaticRefPtr<WakeLockListener> sWakeLockListener;
 
 class GeckoThreadSupport final
     : public java::GeckoThread::Natives<GeckoThreadSupport> {
-  // When this number goes above 0, the app is paused. When less than or
-  // equal to zero, the app is resumed.
+  
+  
   static int32_t sPauseCount;
 
  public:
   static void SpeculativeConnect(jni::String::Param aUriStr) {
     if (!NS_IsMainThread()) {
-      // We will be on the main thread if the call was queued on the Java
-      // side during startup. Otherwise, the call was not queued, which
-      // means Gecko is already sufficiently loaded, and we don't really
-      // care about speculative connections at this point.
+      
+      
+      
+      
       return;
     }
 
@@ -151,10 +151,10 @@ class GeckoThreadSupport final
 
     struct NoOpEvent : nsAppShell::Event {
       void Run() override {
-        // We cannot call NS_DispatchToMainThread from within
-        // WaitOnGecko itself because the thread that is calling
-        // WaitOnGecko may not be an nsThread, and may not be able to do
-        // a sync dispatch.
+        
+        
+        
+        
         NS_DispatchToMainThread(do_AddRef(new NoOpRunnable()),
                                 NS_DISPATCH_SYNC);
       }
@@ -167,8 +167,8 @@ class GeckoThreadSupport final
     MOZ_ASSERT(NS_IsMainThread());
 
     sPauseCount++;
-    // If sPauseCount is now 1, we just crossed the threshold from "resumed"
-    // "paused". so we should notify observers and so on.
+    
+    
     if (sPauseCount != 1) {
       return;
     }
@@ -179,19 +179,19 @@ class GeckoThreadSupport final
 
     obsServ->NotifyObservers(nullptr, "memory-pressure", u"heap-minimize");
 
-    // If we are OOM killed with the disk cache enabled, the entire
-    // cache will be cleared (bug 105843), so shut down the cache here
-    // and re-init on foregrounding
+    
+    
+    
     if (nsCacheService::GlobalInstance()) {
       nsCacheService::GlobalInstance()->Shutdown();
     }
 
-    // We really want to send a notification like profile-before-change,
-    // but profile-before-change ends up shutting some things down instead
-    // of flushing data
+    
+    
+    
     Preferences* prefs = static_cast<Preferences*>(Preferences::GetService());
     if (prefs) {
-      // Force a main thread blocking save
+      
       prefs->SavePrefFileBlocking();
     }
   }
@@ -200,21 +200,21 @@ class GeckoThreadSupport final
     MOZ_ASSERT(NS_IsMainThread());
 
     sPauseCount--;
-    // If sPauseCount is now 0, we just crossed the threshold from "paused"
-    // to "resumed", so we should notify observers and so on.
+    
+    
     if (sPauseCount != 0) {
       return;
     }
 
-    // If we are OOM killed with the disk cache enabled, the entire
-    // cache will be cleared (bug 105843), so shut down cache on backgrounding
-    // and re-init here
+    
+    
+    
     if (nsCacheService::GlobalInstance()) {
       nsCacheService::GlobalInstance()->Init();
     }
 
-    // We didn't return from one of our own activities, so restore
-    // to foreground status
+    
+    
     nsCOMPtr<nsIObserverService> obsServ =
         mozilla::services::GetObserverService();
     obsServ->NotifyObservers(nullptr, "application-foreground", nullptr);
@@ -227,7 +227,7 @@ class GeckoThreadSupport final
     nsCString category(aCategory->ToCString());
 
     NS_CreateServicesFromCategory(category.get(),
-                                  nullptr,  // aOrigin
+                                  nullptr,  
                                   category.get(),
                                   aData ? aData->ToString().get() : nullptr);
   }
@@ -257,9 +257,9 @@ class GeckoAppShellSupport final
                               jni::Throwable::Param aException,
                               jni::String::Param aStack) {
     if (!jni::ReportException(aCls.Env(), aException.Get(), aStack.Get())) {
-      // Only crash below if crash reporter is initialized and annotation
-      // succeeded. Otherwise try other means of reporting the crash in
-      // Java.
+      
+      
+      
       return;
     }
 
@@ -285,9 +285,9 @@ class GeckoAppShellSupport final
     AutoTArray<float, 4> values;
 
     switch (aType) {
-      // Bug 938035, transfer HAL data for orientation sensor to meet w3c
-      // spec, ex: HAL report alpha=90 means East but alpha=90 means West
-      // in w3c spec
+      
+      
+      
       case hal::SENSOR_ORIENTATION:
         values.AppendElement(360.0f - aX);
         values.AppendElement(-aY);
@@ -388,7 +388,7 @@ nsAppShell::nsAppShell()
       mozilla::GeckoSystemStateListener::Init();
       mozilla::widget::Telemetry::Init();
 
-      // Set the corresponding state in GeckoThread.
+      
       java::GeckoThread::SetState(java::GeckoThread::State::RUNNING());
     }
     return;
@@ -398,7 +398,7 @@ nsAppShell::nsAppShell()
     ScreenManager& screenManager = ScreenManager::GetSingleton();
     screenManager.SetHelper(mozilla::MakeUnique<ScreenHelperAndroid>());
 
-    // Initialize JNI and Set the corresponding state in GeckoThread.
+    
     AndroidBridge::ConstructBridge();
     GeckoAppShellSupport::Init();
     GeckoThreadSupport::Init();
@@ -412,6 +412,7 @@ nsAppShell::nsAppShell()
     mozilla::widget::WebExecutorSupport::Init();
     nsWindow::InitNatives();
     mozilla::gl::AndroidSurfaceTexture::Init();
+    mozilla::WebAuthnTokenManager::Init();
 
     if (jni::IsFennec()) {
       BrowserLocaleManagerSupport::Init();
@@ -437,13 +438,13 @@ nsAppShell::nsAppShell()
 
 nsAppShell::~nsAppShell() {
   {
-    // Release any thread waiting for a sync call to finish.
+    
     MutexAutoLock lock(*sAppShellLock);
     sAppShell = nullptr;
     mSyncRunFinished.NotifyAll();
   }
 
-  while (mEventQueue.Pop(/* mayWait */ false)) {
+  while (mEventQueue.Pop( false)) {
     NS_WARNING("Discarded event on shutdown");
   }
 
@@ -492,7 +493,7 @@ void nsAppShell::RecordLatencies() {
           timeIDs[i], uint32_t(std::min<uint64_t>(UINT32_MAX, time)));
     }
 
-    // Reset latency counts.
+    
     Queue::sLatencyCount[i] = 0;
     Queue::sLatencyTime[i] = 0;
   }
@@ -536,13 +537,13 @@ nsAppShell::Observe(nsISupports* aSubject, const char* aTopic,
 
   if (!strcmp(aTopic, "xpcom-shutdown")) {
     {
-      // Release any thread waiting for a sync call to finish.
+      
       mozilla::MutexAutoLock shellLock(*sAppShellLock);
       mSyncRunQuit = true;
       mSyncRunFinished.NotifyAll();
     }
-    // We need to ensure no observers stick around after XPCOM shuts down
-    // or we'll see crashes, as the app shell outlives XPConnect.
+    
+    
     mObserversHash.Clear();
     return nsBaseAppShell::Observe(aSubject, aTopic, aData);
 
@@ -561,11 +562,11 @@ nsAppShell::Observe(nsISupports* aSubject, const char* aTopic,
     if (jni::IsAvailable()) {
       java::GeckoThread::SetState(java::GeckoThread::State::PROFILE_READY());
 
-      // Gecko on Android follows the Android app model where it never
-      // stops until it is killed by the system or told explicitly to
-      // quit. Therefore, we should *not* exit Gecko when there is no
-      // window or the last window is closed. nsIAppStartup::Quit will
-      // still force Gecko to exit.
+      
+      
+      
+      
+      
       nsCOMPtr<nsIAppStartup> appStartup = components::AppStartup::Service();
       if (appStartup) {
         appStartup->EnterLastWindowClosingSurvivalArea();
@@ -574,14 +575,14 @@ nsAppShell::Observe(nsISupports* aSubject, const char* aTopic,
     removeObserver = true;
 
   } else if (!strcmp(aTopic, "chrome-document-loaded")) {
-    // Set the global ready state and enable the window event dispatcher
-    // for this particular GeckoView.
+    
+    
     nsCOMPtr<dom::Document> doc = do_QueryInterface(aSubject);
     MOZ_ASSERT(doc);
     if (const RefPtr<nsWindow> window = nsWindow::From(doc->GetWindow())) {
       if (jni::IsAvailable()) {
-        // When our first window has loaded, assume any JS
-        // initialization has run and set Gecko to ready.
+        
+        
         java::GeckoThread::CheckAndSetState(
             java::GeckoThread::State::PROFILE_READY(),
             java::GeckoThread::State::RUNNING());
@@ -600,9 +601,9 @@ nsAppShell::Observe(nsISupports* aSubject, const char* aTopic,
 
   } else if (!strcmp(aTopic, "quit-application-granted")) {
     if (jni::IsAvailable()) {
-      // We are told explicitly to quit, perhaps due to
-      // nsIAppStartup::Quit being called. We should release our hold on
-      // nsIAppStartup and let it continue to quit.
+      
+      
+      
       nsCOMPtr<nsIAppStartup> appStartup = components::AppStartup::Service();
       if (appStartup) {
         appStartup->ExitLastWindowClosingSurvivalArea();
@@ -616,8 +617,8 @@ nsAppShell::Observe(nsISupports* aSubject, const char* aTopic,
     }
 
   } else if (!strcmp(aTopic, "content-document-global-created")) {
-    // Associate the PuppetWidget of the newly-created BrowserChild with a
-    // GeckoEditableChild instance.
+    
+    
     MOZ_ASSERT(!XRE_IsParentProcess());
 
     nsCOMPtr<mozIDOMWindowProxy> domWindow = do_QueryInterface(aSubject);
@@ -630,8 +631,8 @@ nsAppShell::Observe(nsISupports* aSubject, const char* aTopic,
         domWidget->GetOwningBrowserChild());
 
   } else if (!strcmp(aTopic, "geckoview-content-global-transferred")) {
-    // We're transferring to a new GeckoEditableParent, so notify the
-    // existing GeckoEditableChild instance associated with the docshell.
+    
+    
     nsCOMPtr<nsIDocShell> docShell = do_QueryInterface(aSubject);
     widget::GeckoEditableSupport::SetOnBrowserChild(
         dom::BrowserChild::GetFrom(docShell));
@@ -655,14 +656,14 @@ bool nsAppShell::ProcessNextNativeEvent(bool mayWait) {
   mozilla::UniquePtr<Event> curEvent;
 
   {
-    curEvent = mEventQueue.Pop(/* mayWait */ false);
+    curEvent = mEventQueue.Pop( false);
 
     if (!curEvent && mayWait) {
-      // This processes messages in the Android Looper. Note that we only
-      // get here if the normal Gecko event loop has been awoken
-      // (bug 750713). Looper messages effectively have the lowest
-      // priority because we only process them before we're about to
-      // wait for new events.
+      
+      
+      
+      
+      
       if (jni::IsAvailable() && XRE_IsParentProcess() &&
           AndroidBridge::Bridge()->PumpMessageLoop()) {
         return true;
@@ -672,7 +673,7 @@ bool nsAppShell::ProcessNextNativeEvent(bool mayWait) {
       mozilla::BackgroundHangMonitor().NotifyWait();
 
       AUTO_PROFILER_THREAD_SLEEP;
-      curEvent = mEventQueue.Pop(/* mayWait */ true);
+      curEvent = mEventQueue.Pop( true);
     }
   }
 
@@ -687,17 +688,17 @@ bool nsAppShell::ProcessNextNativeEvent(bool mayWait) {
 bool nsAppShell::SyncRunEvent(
     Event&& event, UniquePtr<Event> (*eventFactory)(UniquePtr<Event>&&),
     const TimeDuration timeout) {
-  // Perform the call on the Gecko thread in a separate lambda, and wait
-  // on the monitor on the current thread.
+  
+  
   MOZ_ASSERT(!NS_IsMainThread());
 
-  // This is the lock to check that app shell is still alive,
-  // and to wait on for the sync call to complete.
+  
+  
   mozilla::MutexAutoLock shellLock(*sAppShellLock);
   nsAppShell* const appShell = sAppShell;
 
   if (MOZ_UNLIKELY(!appShell)) {
-    // Post-shutdown.
+    
     return false;
   }
 
@@ -756,7 +757,7 @@ nsresult nsAppShell::AddObserver(const nsAString& aObserverKey,
   return NS_OK;
 }
 
-// Used by IPC code
+
 namespace mozilla {
 
 bool ProcessNextEvent() {
@@ -776,4 +777,4 @@ void NotifyEvent() {
   appShell->NotifyNativeEvent();
 }
 
-}  // namespace mozilla
+}  
