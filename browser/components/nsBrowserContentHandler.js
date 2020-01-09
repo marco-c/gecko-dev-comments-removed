@@ -61,18 +61,10 @@ function resolveURIInternal(aCmdLine, aArgument) {
 
 var gFirstWindow = false;
 
-function getNormalizedDate() {
-  let pad = num => ("" + num).padStart(2, "0");
-
-  let date = new Date();
-  return `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}`;
-}
-
 const OVERRIDE_NONE        = 0;
 const OVERRIDE_NEW_PROFILE = 1;
 const OVERRIDE_NEW_MSTONE  = 2;
 const OVERRIDE_NEW_BUILD_ID = 3;
-const OVERRIDE_NIGHTLY     = 4;
 
 
 
@@ -84,15 +76,6 @@ const OVERRIDE_NIGHTLY     = 4;
 
 
 function needHomepageOverride(prefb) {
-  let isInTests = Cu.isInAutomation || Services.prefs.getBoolPref("marionette.enabled", false);
-  if (AppConstants.NIGHTLY_BUILD && !isInTests) {
-    let pref = `startup.homepage_override_nightly.${getNormalizedDate()}`;
-    let url = Services.prefs.getCharPref(pref, "");
-    if (url) {
-      return OVERRIDE_NIGHTLY;
-    }
-  }
-
   var savedmstone = prefb.getCharPref("browser.startup.homepage_override.mstone", "");
 
   if (savedmstone == "ignore")
@@ -560,12 +543,6 @@ nsBrowserContentHandler.prototype = {
               
               UpdatePing.handleUpdateSuccess(old_mstone, old_buildId);
             }
-            break;
-          case OVERRIDE_NIGHTLY:
-            
-            let pref = `startup.homepage_override_nightly.${getNormalizedDate()}`;
-            overridePage = Services.prefs.getCharPref(pref);
-            Services.prefs.setCharPref(pref, "");
             break;
         }
       }
