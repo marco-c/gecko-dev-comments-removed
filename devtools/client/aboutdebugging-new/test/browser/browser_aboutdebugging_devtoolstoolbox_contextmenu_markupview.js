@@ -39,12 +39,10 @@ add_task(async function() {
   await toolbox.selectTool("inspector");
 
   info("Show context menu of markup view");
-  const markupFrame = getMarkupViewFrame(devtoolsDocument);
-  const markupDocument = markupFrame.contentDocument;
-  const markupWindow = markupFrame.contentWindow;
+  const markupDocument = toolbox.getPanel("inspector").markup.doc;
   EventUtils.synthesizeMouseAtCenter(markupDocument.body,
                                      { type: "contextmenu" },
-                                     markupWindow);
+                                     markupDocument.ownerGlobal);
 
   info("Check whether proper context menu of markup view will be shown");
   await waitUntil(() => devtoolsDocument.querySelector("#node-menu-edithtml"));
@@ -57,8 +55,3 @@ add_task(async function() {
   ]);
   await removeTab(tab);
 });
-
-function getMarkupViewFrame(rootDocument) {
-  const inspectorFrame = rootDocument.querySelector("#toolbox-panel-iframe-inspector");
-  return inspectorFrame.contentDocument.querySelector("#markup-box iframe");
-}
