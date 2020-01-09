@@ -6627,7 +6627,11 @@ nsViewportInfo Document::GetViewportInfo(const ScreenIntSize& aDisplaySize) {
     case Unknown: {
       nsAutoString viewport;
       GetHeaderData(nsGkAtoms::viewport, viewport);
-      if (viewport.IsEmpty()) {
+      
+      
+      
+      bool viewportIsEmpty = viewport.IsEmpty();
+      if (viewportIsEmpty) {
         
         
         
@@ -6721,11 +6725,12 @@ nsViewportInfo Document::GetViewportInfo(const ScreenIntSize& aDisplaySize) {
       mValidMaxScale =
           !maxScaleStr.IsEmpty() && NS_SUCCEEDED(scaleMaxErrorCode);
 
-      mViewportType = Specified;
+      mViewportType = viewportIsEmpty ? Empty : Specified;
       mViewportOverflowType = ViewportOverflowType::NoOverflow;
       MOZ_FALLTHROUGH;
     }
     case Specified:
+    case Empty:
     default:
       LayoutDeviceToScreenScale effectiveMinScale = mScaleMinFloat;
       LayoutDeviceToScreenScale effectiveMaxScale = mScaleMaxFloat;
@@ -6835,13 +6840,23 @@ nsViewportInfo Document::GetViewportInfo(const ScreenIntSize& aDisplaySize) {
           
           
           
-          
-          
+          if (mViewportType == Empty) {
+            
+            
+            
+            
+            
+            
+            
 
-          
-          
-          
-          width = gfxPrefs::DesktopViewportWidth() / fullZoom;
+            
+            
+            
+            width = gfxPrefs::DesktopViewportWidth() / fullZoom;
+          } else {
+            
+            width = displaySize.width;
+          }
         } else {
           width = height * aDisplaySize.width / aDisplaySize.height;
         }
