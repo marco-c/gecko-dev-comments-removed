@@ -62,6 +62,9 @@ async function performTests() {
   await jsterm.execute(`"smoke"`);
 
   
+  await waitForTick();
+
+  
   await resume(dbg);
 
   await onAwaitResultMessage;
