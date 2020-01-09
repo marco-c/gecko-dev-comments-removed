@@ -1032,7 +1032,7 @@ pref("security.sandbox.windows.log.stackTraceDepth", 0);
 
 
 
-pref("security.sandbox.gpu.level", 1);
+pref("security.sandbox.gpu.level", 0);
 
 
 
