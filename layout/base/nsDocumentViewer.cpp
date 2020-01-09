@@ -4103,8 +4103,8 @@ void nsDocumentViewer::OnDonePrinting() {
 #endif  
 }
 
-NS_IMETHODIMP nsDocumentViewer::SetPageMode(bool aPageMode,
-                                            nsIPrintSettings* aPrintSettings) {
+NS_IMETHODIMP nsDocumentViewer::SetPageModeForTesting(
+    bool aPageMode, nsIPrintSettings* aPrintSettings) {
   
   
   mIsPageMode = aPageMode;

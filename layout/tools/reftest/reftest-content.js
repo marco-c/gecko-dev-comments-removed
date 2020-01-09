@@ -219,7 +219,7 @@ function setupPrintMode() {
    ps.footerStrLeft = "";
    ps.footerStrCenter = "";
    ps.footerStrRight = "";
-   docShell.contentViewer.setPageMode(true, ps);
+   docShell.contentViewer.setPageModeForTesting( true, ps);
 }
 
 
