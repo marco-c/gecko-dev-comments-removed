@@ -2,17 +2,8 @@
 
 
 
-.runtime-actions {
+.runtime-actions__toolbar {
   column-gap: var(--base-unit);
-  display: grid;
-  grid-template-areas: "start center end";
-  grid-template-columns: max-content 1fr max-content;
-}
-
-.runtime-actions__end {
-  grid-area: end;
-}
-
-.runtime-actions__start {
-  grid-area: start;
+  display: flex;
+  justify-content: right;
 }
