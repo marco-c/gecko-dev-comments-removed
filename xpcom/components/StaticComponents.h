@@ -78,6 +78,7 @@ struct StringOffset final {
 
 struct StaticModule {
   nsID mCID;
+  StringOffset mContractID;
   Module::ProcessSelector mProcessSelector;
 
   const nsID& CID() const { return mCID; }
@@ -88,6 +89,22 @@ struct StaticModule {
 
 
   size_t Idx() const { return size_t(ID()); }
+
+  
+
+
+
+
+  bool Overridable() const;
+
+  
+
+
+
+
+
+
+  nsCString ContractID() const;
 
   
 
