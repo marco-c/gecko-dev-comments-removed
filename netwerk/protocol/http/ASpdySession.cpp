@@ -36,9 +36,6 @@ ASpdySession *ASpdySession::NewSpdySession(net::SpdyVersion version,
   
   
 
-  Telemetry::Accumulate(Telemetry::SPDY_VERSION2,
-                        static_cast<uint32_t>(version));
-
   return new Http2Session(aTransport, version, attemptingEarlyData);
 }
 
