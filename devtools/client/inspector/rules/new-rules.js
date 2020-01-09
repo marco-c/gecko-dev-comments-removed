@@ -22,6 +22,7 @@ const {
 const {
   updateAddRuleEnabled,
   updateHighlightedSelector,
+  updatePrintSimulationHidden,
   updateRules,
   updateSourceLinkEnabled,
 } = require("./actions/rules");
@@ -62,6 +63,7 @@ class RulesView {
     this.onSetClassState = this.onSetClassState.bind(this);
     this.onToggleClassPanelExpanded = this.onToggleClassPanelExpanded.bind(this);
     this.onToggleDeclaration = this.onToggleDeclaration.bind(this);
+    this.onTogglePrintSimulation = this.onTogglePrintSimulation.bind(this);
     this.onTogglePseudoClass = this.onTogglePseudoClass.bind(this);
     this.onToolChanged = this.onToolChanged.bind(this);
     this.onToggleSelectorHighlighter = this.onToggleSelectorHighlighter.bind(this);
@@ -95,6 +97,7 @@ class RulesView {
       onSetClassState: this.onSetClassState,
       onToggleClassPanelExpanded: this.onToggleClassPanelExpanded,
       onToggleDeclaration: this.onToggleDeclaration,
+      onTogglePrintSimulation: this.onTogglePrintSimulation,
       onTogglePseudoClass: this.onTogglePseudoClass,
       onToggleSelectorHighlighter: this.onToggleSelectorHighlighter,
       showDeclarationNameEditor: this.showDeclarationNameEditor,
@@ -102,6 +105,8 @@ class RulesView {
       showNewDeclarationEditor: this.showNewDeclarationEditor,
       showSelectorEditor: this.showSelectorEditor,
     });
+
+    this.initPrintSimulation();
 
     const provider = createElement(Provider, {
       id: "ruleview",
@@ -112,6 +117,25 @@ class RulesView {
 
     
     this.provider = provider;
+  }
+
+  async initPrintSimulation() {
+    const target = this.inspector.target;
+
+    
+    
+    
+    this.emulationFront = await target.getFront("emulation");
+
+    
+    
+    
+    if (await target.actorHasMethod("emulation", "getIsPrintSimulationEnabled") &&
+        !target.chrome) {
+      this.store.dispatch(updatePrintSimulationHidden(false));
+    } else {
+      this.store.dispatch(updatePrintSimulationHidden(true));
+    }
   }
 
   destroy() {
@@ -139,12 +163,17 @@ class RulesView {
 
     if (this.elementStyle) {
       this.elementStyle.destroy();
+      this.elementStyle = null;
+    }
+
+    if (this.emulationFront) {
+      this.emulationFront.destroy();
+      this.emulationFront = null;
     }
 
     this._dummyElement = null;
     this.cssProperties = null;
     this.doc = null;
-    this.elementStyle = null;
     this.inspector = null;
     this.pageStyle = null;
     this.selection = null;
@@ -381,6 +410,21 @@ class RulesView {
   
 
 
+  async onTogglePrintSimulation() {
+    const enabled = await this.emulationFront.getIsPrintSimulationEnabled();
+
+    if (!enabled) {
+      await this.emulationFront.startPrintMediaSimulation();
+    } else {
+      await this.emulationFront.stopPrintMediaSimulation(false);
+    }
+
+    await this.updateElementStyle();
+  }
+
+  
+
+
 
 
 
@@ -611,6 +655,23 @@ class RulesView {
     this.elementStyle = new ElementStyle(element, this, {}, this.pageStyle,
       this.showUserAgentStyles);
     this.elementStyle.onChanged = this.updateRules;
+
+    await this.updateElementStyle();
+  }
+
+  
+
+
+  updateClassList() {
+    this.store.dispatch(updateClasses(this.classList.currentClasses));
+  }
+
+  
+
+
+
+
+  async updateElementStyle() {
     await this.elementStyle.populate();
 
     const isAddRuleEnabled = this.selection.isElementNode() &&
@@ -619,13 +680,6 @@ class RulesView {
     this.store.dispatch(setPseudoClassLocks(this.elementStyle.element.pseudoClassLocks));
     this.updateClassList();
     this.updateRules();
-  }
-
-  
-
-
-  updateClassList() {
-    this.store.dispatch(updateClasses(this.classList.currentClasses));
   }
 
   
