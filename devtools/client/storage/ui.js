@@ -398,6 +398,11 @@ class StorageUI {
       if (this.tree.isSelected(path)) {
         this.table.clear();
         this.hideSidebar();
+
+        
+        
+        this.itemOffset = 0;
+
         this.emit("store-objects-cleared");
         break;
       }
