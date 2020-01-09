@@ -1,0 +1,16 @@
+
+
+class C {
+    x;;;;
+    y
+    ;
+}
+
+class D {
+    x = 5;
+    y = (x += 1);
+    
+}
+
+if (typeof reportCompare === "function")
+  reportCompare(true, true);
