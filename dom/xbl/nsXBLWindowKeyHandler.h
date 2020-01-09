@@ -49,27 +49,33 @@ class nsXBLWindowKeyHandler : public nsIDOMEventListener {
  protected:
   virtual ~nsXBLWindowKeyHandler();
 
+  MOZ_CAN_RUN_SCRIPT
   nsresult WalkHandlers(KeyboardEvent* aKeyEvent);
 
   
+  MOZ_CAN_RUN_SCRIPT
   bool WalkHandlersInternal(KeyboardEvent* aKeyEvent, bool aExecute,
                             bool* aOutReservedForChrome = nullptr);
 
   
   
+  MOZ_CAN_RUN_SCRIPT
   bool WalkHandlersAndExecute(KeyboardEvent* aKeyEvent, uint32_t aCharCode,
                               const IgnoreModifierState& aIgnoreModifierState,
                               bool aExecute,
                               bool* aOutReservedForChrome = nullptr);
 
   
+  MOZ_CAN_RUN_SCRIPT
   void HandleEventOnCaptureInDefaultEventGroup(KeyboardEvent* aEvent);
   
+  MOZ_CAN_RUN_SCRIPT
   void HandleEventOnCaptureInSystemEventGroup(KeyboardEvent* aEvent);
 
   
   
   
+  MOZ_CAN_RUN_SCRIPT
   bool HasHandlerForEvent(KeyboardEvent* aEvent,
                           bool* aOutReservedForChrome = nullptr);
 
