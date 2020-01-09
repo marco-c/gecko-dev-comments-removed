@@ -12196,8 +12196,7 @@ DocumentAutoplayPolicy Document::AutoplayPolicy() const {
 }
 
 void Document::MaybeAllowStorageForOpenerAfterUserInteraction() {
-  if (CookieSettings()->GetCookieBehavior() !=
-      nsICookieService::BEHAVIOR_REJECT_TRACKER) {
+  if (!CookieSettings()->GetRejectThirdPartyTrackers()) {
     return;
   }
 
@@ -12734,8 +12733,7 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
   }
 
   
-  if (CookieSettings()->GetCookieBehavior() !=
-      nsICookieService::BEHAVIOR_REJECT_TRACKER) {
+  if (!CookieSettings()->GetRejectThirdPartyTrackers()) {
     
     if (IsTopLevelContentDocument()) {
       promise->MaybeResolveWithUndefined();
@@ -12787,9 +12785,7 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
     return promise.forget();
   }
 
-  if (CookieSettings()->GetCookieBehavior() ==
-          nsICookieService::BEHAVIOR_REJECT_TRACKER &&
-      inner) {
+  if (CookieSettings()->GetRejectThirdPartyTrackers() && inner) {
     
     if (nsContentUtils::StorageDisabledByAntiTracking(this, nullptr)) {
       
