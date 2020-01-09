@@ -163,7 +163,7 @@ class Mitmproxy(Playback):
         
         env = os.environ.copy()
         env["PATH"] = os.path.dirname(browser_path) + os.pathsep + env["PATH"]
-        command = [mitmdump_path, "-k"]
+        command = [mitmdump_path]
 
         if "playback_tool_args" in self.config:
             command.extend(self.config["playback_tool_args"])
