@@ -903,8 +903,13 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
     if (NSS_Shutdown() != SECSuccess) {
       
       
+      
 #if defined(DEBUG) && !defined(ANDROID)
-      MOZ_CRASH("NSS_Shutdown failed");
+      if (!getenv("MOZ_IGNORE_NSS_SHUTDOWN_LEAKS")) {
+        MOZ_CRASH("NSS_Shutdown failed");
+      } else {
+        NS_WARNING("NSS_Shutdown failed");
+      }
 #else
       NS_WARNING("NSS_Shutdown failed");
 #endif
