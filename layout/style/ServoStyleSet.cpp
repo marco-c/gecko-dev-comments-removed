@@ -131,13 +131,7 @@ void ServoStyleSet::ShellDetachedFromDocument() {
   }
 
   
-  
-  
-  
-  
-  
-  
-  
+  UpdateStylistIfNeeded();
 
   
   
