@@ -361,7 +361,7 @@ struct Statistics {
   } allocsSinceMinorGC;
 
   
-  size_t preBytes;
+  size_t preHeapSize;
 
   
 
