@@ -56,7 +56,7 @@ class IMEStateManager {
     if (sInstalledMenuKeyboardListener) {
       return nullptr;
     }
-    return sActiveTabParent.get();
+    return TabParent::GetFocused();
   }
 
   
@@ -283,12 +283,6 @@ class IMEStateManager {
   static void CreateIMEContentObserver(EditorBase* aEditorBase);
   static void DestroyIMEContentObserver();
 
-  
-
-
-
-  static void NotifyIMEOfBlurForChildProcess();
-
   static bool IsEditable(nsINode* node);
 
   static bool IsIMEObserverNeeded(const IMEState& aState);
@@ -331,7 +325,6 @@ class IMEStateManager {
   
   
   static nsIWidget* sActiveInputContextWidget;
-  static StaticRefPtr<TabParent> sActiveTabParent;
   
   
   static StaticRefPtr<IMEContentObserver> sActiveIMEContentObserver;

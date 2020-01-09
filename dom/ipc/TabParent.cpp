@@ -357,7 +357,6 @@ void TabParent::RemoveWindowListeners() {
 
 void TabParent::DestroyInternal() {
   PopFocus(this);
-  IMEStateManager::OnTabParentDestroying(this);
 
   RemoveWindowListeners();
 
@@ -432,7 +431,7 @@ void TabParent::ActorDestroy(ActorDestroyReason why) {
 
   
   
-  IMEStateManager::OnTabParentDestroying(this);
+  TabParent::PopFocus(this);
 
   
   
