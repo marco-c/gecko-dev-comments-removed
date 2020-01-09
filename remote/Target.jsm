@@ -15,6 +15,11 @@ XPCOMUtils.defineLazyServiceGetter(this, "Favicons",
     "@mozilla.org/browser/favicon-service;1", "nsIFaviconService");
 
 
+
+
+
+
+
 this.Target = class {
   constructor(browser) {
     this.browser = browser;
