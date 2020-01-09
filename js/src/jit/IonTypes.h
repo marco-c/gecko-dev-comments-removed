@@ -466,6 +466,7 @@ enum class MIRType : uint8_t {
   Slots,        
   Elements,     
   Pointer,      
+  RefOrNull,    
   Shape,        
   ObjectGroup,  
   Last = ObjectGroup,
@@ -563,6 +564,7 @@ static inline size_t MIRTypeToSize(MIRType type) {
     case MIRType::Double:
       return 8;
     case MIRType::Pointer:
+    case MIRType::RefOrNull:
       return sizeof(uintptr_t);
     default:
       MOZ_CRASH("MIRTypeToSize - unhandled case");
@@ -619,6 +621,8 @@ static inline const char* StringFromMIRType(MIRType type) {
       return "Elements";
     case MIRType::Pointer:
       return "Pointer";
+    case MIRType::RefOrNull:
+      return "RefOrNull";
     case MIRType::Shape:
       return "Shape";
     case MIRType::ObjectGroup:
