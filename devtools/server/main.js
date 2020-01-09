@@ -95,6 +95,10 @@ var DebuggerServer = {
     return this._initialized;
   },
 
+  hasConnection() {
+    return Object.keys(this._connections).length > 0;
+  },
+
   
 
 
