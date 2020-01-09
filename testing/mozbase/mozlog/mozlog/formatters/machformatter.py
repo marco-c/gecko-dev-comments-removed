@@ -265,7 +265,7 @@ class MachFormatter(base.BaseFormatter):
     def mozleak_total(self, data):
         if data["bytes"] is None:
             
-            if data.get("induced_crashed", False):
+            if data.get("induced_crash", False):
                 data_log = data.copy()
                 data_log["level"] = "INFO"
                 data_log["message"] = ("leakcheck: %s deliberate crash and thus no leak log\n"
