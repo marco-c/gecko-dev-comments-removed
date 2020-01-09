@@ -3624,10 +3624,13 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
 #  if defined(MOZ_WAYLAND)
     
     
-    
-    
-    disableWayland = (PR_GetEnv("GDK_BACKEND") == nullptr) ||
-                     (gtk_check_version(3, 22, 0) != nullptr);
+    disableWayland = (gtk_check_version(3, 22, 0) != nullptr);
+    if (!disableWayland) {
+      
+      
+      disableWayland = (PR_GetEnv("GDK_BACKEND") == nullptr) &&
+                       (PR_GetEnv("MOZ_ENABLE_WAYLAND") == nullptr);
+    }
 #  endif
     
     
