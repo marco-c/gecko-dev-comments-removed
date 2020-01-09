@@ -1,0 +1,37 @@
+
+
+
+
+
+
+
+#ifndef __nsGTKRemoteServer_h__
+#define __nsGTKRemoteServer_h__
+
+#include <gdk/gdk.h>
+#include <gdk/gdkx.h>
+#include <gtk/gtk.h>
+
+#include "nsRemoteServer.h"
+#include "nsXRemoteServer.h"
+#include "mozilla/Attributes.h"
+
+class nsGTKRemoteServer final : public nsXRemoteServer {
+ public:
+  nsGTKRemoteServer() : mServerWindow(nullptr) {}
+  ~nsGTKRemoteServer() override { Shutdown(); }
+
+  nsresult Startup(const char* aAppName, const char* aProfileName) override;
+  void Shutdown() override;
+
+  static gboolean HandlePropertyChange(GtkWidget* widget,
+                                       GdkEventProperty* event,
+                                       nsGTKRemoteServer* aData);
+
+ private:
+  void HandleCommandsFor(GtkWidget* aWidget);
+
+  GtkWidget* mServerWindow;
+};
+
+#endif  
