@@ -6,7 +6,10 @@
 
 
 
+from __future__ import unicode_literals
+
 import os
+import io
 
 
 def get_build_entries(root_path):
@@ -54,13 +57,13 @@ def generate_precomplete(root_path):
     precomplete_file_path = os.path.join(root_path, rel_path_precomplete)
     
     
-    precomplete_file = open(precomplete_file_path, "wb")
+    precomplete_file = io.open(precomplete_file_path, mode="wt", newline='\n')
     rel_file_path_list, rel_dir_path_list = get_build_entries(root_path)
     for rel_file_path in rel_file_path_list:
-        precomplete_file.writelines("remove \""+rel_file_path+"\"\n")
+        precomplete_file.write("remove \""+rel_file_path+"\"\n")
 
     for rel_dir_path in rel_dir_path_list:
-        precomplete_file.writelines("rmdir \""+rel_dir_path+"\"\n")
+        precomplete_file.write("rmdir \""+rel_dir_path+"\"\n")
 
     precomplete_file.close()
 
