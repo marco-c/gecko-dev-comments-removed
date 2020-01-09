@@ -108,6 +108,9 @@ MozElements.NotificationBox = class NotificationBox {
 
 
 
+
+
+
   appendNotification(aLabel, aValue, aImage, aPriority, aButtons,
                      aEventCallback, aNotificationIs) {
     if (aPriority < this.PRIORITY_INFO_LOW ||
@@ -148,7 +151,8 @@ MozElements.NotificationBox = class NotificationBox {
     if (aButtons) {
       for (var b = 0; b < aButtons.length; b++) {
         var button = aButtons[b];
-        var buttonElem = document.createXULElement("button");
+        var buttonElem = document.createXULElement("button",
+          button.is ? { is: button.is } : {});
 
         if (button["l10n-id"]) {
             buttonElem.setAttribute("data-l10n-id", button["l10n-id"]);
