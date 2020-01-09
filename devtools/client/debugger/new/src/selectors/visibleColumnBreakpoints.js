@@ -164,7 +164,7 @@ export const visibleColumnBreakpoints: Selector<
 export function getFirstBreakpointPosition(
   state: State,
   { line, sourceId }: SourceLocation
-) {
+): ?BreakpointPosition {
   const positions = getBreakpointPositionsForSource(state, sourceId);
   const source = getSource(state, sourceId);
 

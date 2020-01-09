@@ -1,6 +1,7 @@
 
 
 
+
 function clickButton(dbg, button) {
   const resumeFired = waitForDispatch(dbg, "COMMAND");
   clickElement(dbg, button);
