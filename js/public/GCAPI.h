@@ -315,6 +315,13 @@ typedef enum JSGCParamKey {
 
   JSGC_MIN_LAST_DITCH_GC_PERIOD = 32,
 
+  
+
+
+
+
+  JSGC_ZONE_ALLOC_DELAY_KB = 33,
+
 } JSGCParamKey;
 
 
