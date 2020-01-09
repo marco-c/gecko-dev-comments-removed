@@ -143,11 +143,6 @@ class WebRenderCommandBuilder {
     RefPtr<WebRenderUserData>& data = userDataTable->GetOrInsert(
         WebRenderUserDataKey(aItem->GetPerFrameKey(), T::Type()));
     if (!data) {
-      
-      
-      if (data) {
-        data->RemoveFromTable();
-      }
       data = new T(GetRenderRootStateManager(), aItem);
       mWebRenderUserDatas.PutEntry(data);
       if (aOutIsRecycled) {
