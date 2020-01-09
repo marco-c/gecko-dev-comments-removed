@@ -7,36 +7,36 @@ g.eval(`
   }
 `);
 
-function test(ttl) {
-    let dbg = new Debugger(g);
-    let exiting = false;  
-    let done = false;  
-    dbg.onEnterFrame = frame => {
-        assertEq(frame.callee.name, "f");
-        frame.onEnterFrame = undefined;
-        frame.onStep = () => {
-            if (ttl == 0) {
-                exiting = true;
-                
-                
-                return {return: "ponies"};
-            }
-            ttl--;
-        };
-        frame.onPop = completion => {
-            if (!exiting)
-                done = true;
-        };
-    };
+let dbg = new Debugger(g);
+let steps = 0;
+let uncaughtErrorsReported = 0;
+dbg.onEnterFrame = frame => {
+  assertEq(frame.callee.name, "f");
+  dbg.onEnterFrame = undefined;
+  frame.onStep = () => {
+    steps++;
 
-    let result = g.f();
-    if (done)
-        assertEq(result instanceof g.f, true);
-    else
-        assertEq(result, "ponies");
+    
+    
+    
+    return {return: "ponies"};
+  };
 
-    dbg.enabled = false;
-    return done;
-}
+  
+  
+  frame.onPop = completion => {};
+};
 
-for (let ttl = 0; !test(ttl); ttl++) {}
+dbg.uncaughtExceptionHook = (reason) => {
+  
+  
+  assertEq(reason instanceof TypeError, true);
+  uncaughtErrorsReported++;
+  return undefined;  
+};
+
+let result = g.f();
+assertEq(result instanceof g.f, true);
+
+assertEq(steps > 0, true);
+assertEq(uncaughtErrorsReported, steps);

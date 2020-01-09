@@ -963,7 +963,8 @@ class MOZ_RAII AutoSetGeneratorRunning {
         asyncGenState_(static_cast<AsyncGeneratorObject::State>(0)),
         genObj_(cx, genObj) {
     if (genObj) {
-      if (!genObj->isClosed() && genObj->isSuspended()) {
+      if (!genObj->isClosed() && !genObj->isBeforeInitialYield() &&
+          genObj->isSuspended()) {
         
         resumeIndex_ = genObj->resumeIndex();
         genObj->setRunning();
@@ -1577,6 +1578,7 @@ static bool CheckResumptionValue(JSContext* cx, AbstractFramePtr frame,
   if (maybeThisv.isSome()) {
     const HandleValue& thisv = maybeThisv.ref();
     if (resumeMode == ResumeMode::Return && vp.isPrimitive()) {
+      
       if (vp.isUndefined()) {
         if (thisv.isMagic(JS_UNINITIALIZED_LEXICAL)) {
           return ThrowUninitializedThis(cx, frame);
@@ -1590,8 +1592,33 @@ static bool CheckResumptionValue(JSContext* cx, AbstractFramePtr frame,
       }
     }
   }
+
+  
+  
+  
+  if (resumeMode == ResumeMode::Return && frame && frame.isFunctionFrame() &&
+      frame.callee()->isGenerator()) {
+    Rooted<AbstractGeneratorObject*> genObj(cx);
+    {
+      AutoRealm ar(cx, frame.callee());
+      genObj = GetGeneratorObjectForFrame(cx, frame);
+    }
+
+    if (!genObj || genObj->isBeforeInitialYield()) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_DEBUG_FORCED_RETURN_DISALLOWED);
+      return false;
+    }
+  }
+
   return true;
 }
+
+
+
+
+
+
 
 static void AdjustGeneratorResumptionValue(JSContext* cx,
                                            AbstractFramePtr frame,
@@ -1617,6 +1644,7 @@ static void AdjustGeneratorResumptionValue(JSContext* cx,
   
   
   
+  
   if (frame.callee()->isGenerator()) {
     
     if (resumeMode == ResumeMode::Throw) {
@@ -1626,27 +1654,31 @@ static void AdjustGeneratorResumptionValue(JSContext* cx,
     
     Rooted<AbstractGeneratorObject*> genObj(
         cx, GetGeneratorObjectForFrame(cx, frame));
-    if (genObj) {
-      
-      
-      if (!frame.callee()->isAsync() && !genObj->isBeforeInitialYield()) {
-        JSObject* pair = CreateIterResultObject(cx, vp, true);
-        if (!pair) {
-          getAndClearExceptionThenThrow();
-          return;
-        }
-        vp.setObject(*pair);
-      }
 
-      
-      genObj->setClosed();
-    } else {
-      
-      
-      
-    }
-  } else if (frame.callee()->isAsync()) {
     
+    
+    
+    MOZ_RELEASE_ASSERT(genObj && !genObj->isBeforeInitialYield());
+
+    
+    
+    
+    
+    
+    
+    
+    if (!frame.callee()->isAsync()) {
+      JSObject* pair = CreateIterResultObject(cx, vp, true);
+      if (!pair) {
+        getAndClearExceptionThenThrow();
+        return;
+      }
+      vp.setObject(*pair);
+    }
+
+    
+    genObj->setClosed();
+  } else if (frame.callee()->isAsync()) {
     if (AbstractGeneratorObject* genObj =
             GetGeneratorObjectForFrame(cx, frame)) {
       
