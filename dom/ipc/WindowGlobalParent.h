@@ -64,7 +64,7 @@ class WindowGlobalParent final : public WindowGlobalActor,
 
   
   
-  already_AddRefed<BrowserParent> GetRemoteTab();
+  already_AddRefed<BrowserParent> GetBrowserParent();
 
   void ReceiveRawMessage(const JSWindowActorMessageMeta& aMeta,
                          ipc::StructuredCloneData&& aData);

@@ -66,6 +66,7 @@
 #include "mozilla/dom/Storage.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/BrowserParent.h"
+#include "mozilla/dom/BrowserHost.h"
 #include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/TabGroup.h"
 #include "nsIXULWindow.h"
@@ -476,7 +477,7 @@ nsWindowWatcher::OpenWindowWithRemoteTab(
   if (aRemoteTab) {
     
     
-    BrowserParent* openingTab = BrowserParent::GetFrom(aRemoteTab);
+    BrowserHost* openingTab = BrowserHost::GetFrom(aRemoteTab);
     parentWindowOuter = openingTab->GetParentWindowOuter();
 
     
