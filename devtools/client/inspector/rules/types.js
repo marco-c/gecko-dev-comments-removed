@@ -26,10 +26,17 @@ const declaration = exports.declaration = {
   id: PropTypes.string,
 
   
+  
+  isDeclarationValid: PropTypes.bool,
+
+  
   isEnabled: PropTypes.bool,
 
   
   isKnownProperty: PropTypes.bool,
+
+  
+  isNameValid: PropTypes.bool,
 
   
   isOverridden: PropTypes.bool,

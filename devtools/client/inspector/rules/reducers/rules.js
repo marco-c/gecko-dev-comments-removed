@@ -33,9 +33,14 @@ function getDeclarationState(declaration, ruleId) {
     
     id: declaration.id,
     
+    
+    isDeclarationValid: declaration.isValid(),
+    
     isEnabled: declaration.enabled,
     
     isKnownProperty: declaration.isKnownProperty,
+    
+    isNameValid: declaration.isNameValid(),
     
     isOverridden: !!declaration.overridden,
     
