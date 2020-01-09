@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set sw=2 ts=8 et tw=80 : */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "WebSocketLog.h"
 #include "base/compiler_specific.h"
@@ -36,7 +36,7 @@ NS_IMETHODIMP_(MozExternalRefCountType) WebSocketChannelChild::Release() {
   }
 
   if (mRefCnt == 0) {
-    mRefCnt = 1; /* stabilize */
+    mRefCnt = 1; 
     delete this;
     return 0;
   }
@@ -174,7 +174,7 @@ class EventTargetDispatcher : public ChannelEvent {
   }
 
  private:
-  // The lifetime of the child is ensured by ChannelEventQueue.
+  
   WebSocketChannelChild* mChild;
   nsAutoPtr<WebSocketEvent> mWebSocketEvent;
   nsCOMPtr<nsIEventTarget> mEventTarget;
@@ -183,14 +183,17 @@ class EventTargetDispatcher : public ChannelEvent {
 class StartEvent : public WebSocketEvent {
  public:
   StartEvent(const nsCString& aProtocol, const nsCString& aExtensions,
-             const nsString& aEffectiveURL, bool aEncrypted)
+             const nsString& aEffectiveURL, bool aEncrypted,
+             uint64_t aHttpChannelId)
       : mProtocol(aProtocol),
         mExtensions(aExtensions),
         mEffectiveURL(aEffectiveURL),
-        mEncrypted(aEncrypted) {}
+        mEncrypted(aEncrypted),
+        mHttpChannelId(aHttpChannelId) {}
 
   void Run(WebSocketChannelChild* aChild) override {
-    aChild->OnStart(mProtocol, mExtensions, mEffectiveURL, mEncrypted);
+    aChild->OnStart(mProtocol, mExtensions, mEffectiveURL, mEncrypted,
+                    mHttpChannelId);
   }
 
  private:
@@ -198,13 +201,17 @@ class StartEvent : public WebSocketEvent {
   nsCString mExtensions;
   nsString mEffectiveURL;
   bool mEncrypted;
+  uint64_t mHttpChannelId;
 };
 
 mozilla::ipc::IPCResult WebSocketChannelChild::RecvOnStart(
     const nsCString& aProtocol, const nsCString& aExtensions,
-    const nsString& aEffectiveURL, const bool& aEncrypted) {
+    const nsString& aEffectiveURL, const bool& aEncrypted,
+    const uint64_t& aHttpChannelId) {
   mEventQ->RunOrEnqueue(new EventTargetDispatcher(
-      this, new StartEvent(aProtocol, aExtensions, aEffectiveURL, aEncrypted),
+      this,
+      new StartEvent(aProtocol, aExtensions, aEffectiveURL, aEncrypted,
+                     aHttpChannelId),
       mTargetThread));
 
   return IPC_OK();
@@ -213,12 +220,14 @@ mozilla::ipc::IPCResult WebSocketChannelChild::RecvOnStart(
 void WebSocketChannelChild::OnStart(const nsCString& aProtocol,
                                     const nsCString& aExtensions,
                                     const nsString& aEffectiveURL,
-                                    const bool& aEncrypted) {
+                                    const bool& aEncrypted,
+                                    const uint64_t& aHttpChannelId) {
   LOG(("WebSocketChannelChild::RecvOnStart() %p\n", this));
   SetProtocol(aProtocol);
   mNegotiatedExtensions = aExtensions;
   mEffectiveURL = aEffectiveURL;
   mEncrypted = aEncrypted;
+  mHttpChannelId = aHttpChannelId;
 
   if (mListenerMT) {
     AutoEventEnqueuer ensureSerialDispatch(mEventQ);
@@ -443,7 +452,7 @@ WebSocketChannelChild::AsyncOpen(nsIURI* aURI, const nsACString& aOrigin,
     return NS_ERROR_FAILURE;
   }
 
-  // Corresponding release in DeallocPWebSocket
+  
   AddIPDLReference();
 
   Maybe<URIParams> uri;
@@ -466,7 +475,7 @@ WebSocketChannelChild::AsyncOpen(nsIURI* aURI, const nsACString& aOrigin,
     transportProvider = Some(ipcChild);
   }
 
-  // This must be called before sending constructor message.
+  
   SetupNeckoTarget();
 
   gNeckoChild->SendPWebSocketConstructor(
@@ -685,5 +694,5 @@ bool WebSocketChannelChild::IsOnTargetThread() {
   return NS_FAILED(rv) ? false : isOnTargetThread;
 }
 
-}  // namespace net
-}  // namespace mozilla
+}  
+}  
