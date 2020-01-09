@@ -427,7 +427,24 @@ JSObject* MaybeCrossOriginObject<Base>::enumerate(
   
   
   
-  return js::BaseProxyHandler::enumerate(cx, proxy);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  JS::Rooted<JSObject*> self(cx, proxy);
+  if (!MaybeWrapObject(cx, &self)) {
+    return nullptr;
+  }
+
+  return js::BaseProxyHandler::enumerate(cx, self);
 }
 
 
