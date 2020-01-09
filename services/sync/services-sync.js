@@ -22,7 +22,13 @@ pref("services.sync.scheduler.fxa.singleDeviceInterval", 3600);
 pref("services.sync.engine.addons", true);
 pref("services.sync.engine.addresses", false);
 pref("services.sync.engine.bookmarks", true);
+#ifdef EARLY_BETA_OR_EARLIER
+
+
+pref("services.sync.engine.bookmarks.buffer", true);
+#else
 pref("services.sync.engine.bookmarks.buffer", false);
+#endif
 pref("services.sync.engine.creditcards", false);
 pref("services.sync.engine.history", true);
 pref("services.sync.engine.passwords", true);
