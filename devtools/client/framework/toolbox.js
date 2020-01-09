@@ -213,7 +213,7 @@ function Toolbox(target, selectedTool, hostType, contentWindow, frameId,
 
   loader.lazyGetter(this, "direction", () => {
     
-    const top = this.win.top;
+    const top = this.topWindow;
     const topDocEl = top.document.documentElement;
     const isRtl = top.getComputedStyle(topDocEl).direction === "rtl";
     return isRtl ? "rtl" : "ltr";
@@ -375,6 +375,15 @@ Toolbox.prototype = {
 
   get win() {
     return this._win;
+  },
+
+  
+
+
+
+
+  get topWindow() {
+    return this.win.windowRoot.ownerGlobal;
   },
 
   
@@ -1166,11 +1175,11 @@ Toolbox.prototype = {
   postMessage: function(msg) {
     
     
-    if (this.win.parent) {
+    if (!this._destroyer) {
       
       
       msg.frameId = this.frameId;
-      this.win.parent.postMessage(msg, "*");
+      this.topWindow.postMessage(msg, "*");
     }
   },
 
