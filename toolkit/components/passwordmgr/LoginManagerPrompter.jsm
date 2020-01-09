@@ -28,59 +28,6 @@ const PROMPT_NEVER = 3;
 
 
 
-const PromptAbuseHelper = {
-  getBaseDomainOrFallback(hostname) {
-    try {
-      return Services.eTLD.getBaseDomainFromHost(hostname);
-    } catch (e) {
-      return hostname;
-    }
-  },
-
-  incrementPromptAbuseCounter(baseDomain, browser) {
-    if (!browser) {
-      return;
-    }
-
-    if (!browser.authPromptAbuseCounter) {
-      browser.authPromptAbuseCounter = {};
-    }
-
-    if (!browser.authPromptAbuseCounter[baseDomain]) {
-      browser.authPromptAbuseCounter[baseDomain] = 0;
-    }
-
-    browser.authPromptAbuseCounter[baseDomain] += 1;
-  },
-
-  resetPromptAbuseCounter(baseDomain, browser) {
-    if (!browser || !browser.authPromptAbuseCounter) {
-      return;
-    }
-
-    browser.authPromptAbuseCounter[baseDomain] = 0;
-  },
-
-  hasReachedAbuseLimit(baseDomain, browser) {
-    if (!browser || !browser.authPromptAbuseCounter) {
-      return false;
-    }
-
-    let abuseCounter = browser.authPromptAbuseCounter[baseDomain];
-    
-    if (this.abuseLimit < 0) {
-      return false;
-    }
-    return !!abuseCounter && abuseCounter >= this.abuseLimit;
-  },
-};
-
-XPCOMUtils.defineLazyPreferenceGetter(PromptAbuseHelper, "abuseLimit",
-                                      "prompts.authentication_dialog_abuse_limit");
-
-
-
-
 
 
 function LoginManagerPromptFactory() {
@@ -149,6 +96,28 @@ LoginManagerPromptFactory.prototype = {
       return;
     }
 
+    
+    
+    
+    
+    let browser = prompter._browser;
+    let baseDomain = null;
+    if (browser) {
+      try {
+        baseDomain = Services.eTLD.getBaseDomainFromHost(hostname);
+      } catch (e) {
+        baseDomain = hostname;
+      }
+
+      if (!browser.canceledAuthenticationPromptCounter) {
+        browser.canceledAuthenticationPromptCounter = {};
+      }
+
+      if (!browser.canceledAuthenticationPromptCounter[baseDomain]) {
+        browser.canceledAuthenticationPromptCounter[baseDomain] = 0;
+      }
+    }
+
     var self = this;
 
     var runnable = {
@@ -174,6 +143,16 @@ LoginManagerPromptFactory.prototype = {
           delete self._asyncPrompts[hashKey];
           prompt.inProgress = false;
           self._asyncPromptInProgress = false;
+
+          if (browser) {
+            
+            
+            if (ok && (prompt.authInfo.username || prompt.authInfo.password)) {
+              browser.canceledAuthenticationPromptCounter[baseDomain] = 0;
+            } else {
+              browser.canceledAuthenticationPromptCounter[baseDomain] += 1;
+            }
+          }
         }
 
         for (var consumer of prompt.consumers) {
@@ -196,8 +175,20 @@ LoginManagerPromptFactory.prototype = {
       },
     };
 
-    this._asyncPromptInProgress = true;
-    prompt.inProgress = true;
+    var cancelDialogLimit = Services.prefs.getIntPref("prompts.authentication_dialog_abuse_limit");
+
+    let cancelationCounter = browser.canceledAuthenticationPromptCounter[baseDomain];
+    this.log("cancelationCounter =", cancelationCounter);
+    if (cancelDialogLimit && cancelationCounter >= cancelDialogLimit) {
+      this.log("Blocking auth dialog, due to exceeding dialog bloat limit");
+      delete this._asyncPrompts[hashKey];
+
+      
+      runnable.cancel = true;
+    } else {
+      this._asyncPromptInProgress = true;
+      prompt.inProgress = true;
+    }
 
     Services.tm.dispatchToMainThread(runnable);
     this.log("_doAsyncPrompt:run dispatched");
@@ -632,35 +623,13 @@ LoginManagerPrompter.prototype = {
     }
 
     var ok = canAutologin;
-    let browser = this._browser;
-    let baseDomain = PromptAbuseHelper.getBaseDomainOrFallback(hostname);
-
     if (!ok) {
-      if (PromptAbuseHelper.hasReachedAbuseLimit(baseDomain, browser)) {
-        this.log("Blocking auth dialog, due to exceeding dialog bloat limit");
-        return false;
-      }
-
-      
-      
-      
-      
-      PromptAbuseHelper.incrementPromptAbuseCounter(baseDomain, browser);
-
       if (this._chromeWindow) {
         PromptUtils.fireDialogEvent(this._chromeWindow, "DOMWillOpenModalDialog", this._browser);
       }
       ok = Services.prompt.promptAuth(this._chromeWindow,
                                       aChannel, aLevel, aAuthInfo,
                                       checkboxLabel, checkbox);
-    }
-
-    let [username, password] = this._GetAuthInfo(aAuthInfo);
-
-    
-    
-    if (ok && (username || password)) {
-      PromptAbuseHelper.resetPromptAbuseCounter(baseDomain, browser);
     }
 
     
@@ -673,6 +642,8 @@ LoginManagerPrompter.prototype = {
     }
 
     try {
+      var [username, password] = this._GetAuthInfo(aAuthInfo);
+
       if (!password) {
         this.log("No password entered, so won't offer to save.");
         return ok;
@@ -914,10 +885,12 @@ LoginManagerPrompter.prototype = {
 
     let writeDataToUI = () => {
       
+      
       chromeDoc.getElementById("password-notification-username")
                .setAttribute("placeholder", usernamePlaceholder);
-      chromeDoc.getElementById("password-notification-username")
-               .setAttribute("value", login.username);
+      let nameField = chromeDoc.getElementById("password-notification-username");
+      nameField.setAttribute("value", login.username);
+      nameField.value = login.username;
 
       let toggleCheckbox = chromeDoc.getElementById("password-notification-visibilityToggle");
       toggleCheckbox.removeAttribute("checked");
@@ -925,6 +898,7 @@ LoginManagerPrompter.prototype = {
       
       passwordField.setAttribute("type", "password");
       passwordField.setAttribute("value", login.password);
+      passwordField.value = login.password;
       updateButtonLabel();
     };
 
