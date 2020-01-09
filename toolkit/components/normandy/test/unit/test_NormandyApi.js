@@ -163,7 +163,7 @@ add_task(async function test_fetchSignedObjects_canonical_mismatch() {
 
 
 
-add_task(async function test_fetchSignedObjects_validation_error() {
+add_task(withMockApiServer(async function test_fetchSignedObjects_validation_error() {
   const getApiUrl = sinon.stub(NormandyApi, "getApiUrl").resolves("http://localhost/object/");
 
   
@@ -193,7 +193,7 @@ add_task(async function test_fetchSignedObjects_validation_error() {
 
   getApiUrl.restore();
   get.restore();
-});
+}));
 
 
 
