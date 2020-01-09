@@ -147,6 +147,12 @@ inline bool TLTextIdIsTogglable(uint32_t id) {
   return true;
 }
 
+inline bool TLTextIdIsEnumEvent(uint32_t id) { return id < TraceLogger_Last; }
+
+inline bool TLTextIdIsScriptEvent(uint32_t id) {
+  return !TLTextIdIsEnumEvent(id);
+}
+
 inline bool TLTextIdIsTreeEvent(uint32_t id) {
   
   

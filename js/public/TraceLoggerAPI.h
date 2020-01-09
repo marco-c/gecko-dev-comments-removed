@@ -148,6 +148,12 @@ extern JS_PUBLIC_API void StopTraceLogger(JSContext* cx);
 
 extern JS_PUBLIC_API void ResetTraceLogger(void);
 
+
+extern JS_PUBLIC_API void SpewTraceLoggerThread(JSContext* cx);
+
+
+extern JS_PUBLIC_API void SpewTraceLoggerForCurrentProcess();
+
 #else
 
 
