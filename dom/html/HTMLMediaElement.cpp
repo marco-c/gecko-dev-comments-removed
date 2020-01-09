@@ -6027,7 +6027,8 @@ void HTMLMediaElement::NotifyOwnerDocumentActivityChanged() {
 
   
   if (!OwnerDoc()->IsCurrentActiveDocument() && mMediaKeys) {
-    mMediaKeys->Shutdown();
+    
+    
     DDUNLINKCHILD(mMediaKeys.get());
     mMediaKeys = nullptr;
     if (mDecoder) {

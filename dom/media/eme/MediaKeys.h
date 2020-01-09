@@ -14,6 +14,7 @@
 #include "mozilla/RefPtr.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
+#include "nsIDocumentActivity.h"
 #include "nsRefPtrHashtable.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/MediaKeysBinding.h"
@@ -48,7 +49,7 @@ typedef uint32_t PromiseId;
 
 
 
-class MediaKeys final : public nsISupports,
+class MediaKeys final : public nsIDocumentActivity,
                         public nsWrapperCache,
                         public SupportsWeakPtr<MediaKeys>,
                         public DecoderDoctorLifeLogger<MediaKeys> {
@@ -58,6 +59,9 @@ class MediaKeys final : public nsISupports,
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(MediaKeys)
   MOZ_DECLARE_WEAKREFERENCE_TYPENAME(MediaKeys)
+  
+  
+  NS_DECL_NSIDOCUMENTACTIVITY
 
   MediaKeys(nsPIDOMWindowInner* aParentWindow, const nsAString& aKeySystem,
             const MediaKeySystemConfiguration& aConfig);
@@ -156,11 +160,15 @@ class MediaKeys final : public nsISupports,
   
   already_AddRefed<DetailedPromise> RetrievePromise(PromiseId aId);
 
+  void RegisterActivityObserver();
+  void UnregisterActivityObserver();
+
   
   
   RefPtr<CDMProxy> mProxy;
 
   RefPtr<HTMLMediaElement> mElement;
+  RefPtr<Document> mDocument;
 
   nsCOMPtr<nsPIDOMWindowInner> mParent;
   const nsString mKeySystem;
