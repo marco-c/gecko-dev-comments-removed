@@ -177,6 +177,12 @@ var whitelist = [
   {file: "resource://gre/localization/en-US/toolkit/about/aboutCompat.ftl"},
 ];
 
+if (!AppConstants.MOZ_NEW_NOTIFICATION_STORE) {
+  
+  
+  whitelist.push({file: "resource://gre/modules/kvstore.jsm"});
+}
+
 whitelist = new Set(whitelist.filter(item =>
   ("isFromDevTools" in item) == isDevtools &&
   (!item.skipUnofficial || !AppConstants.MOZILLA_OFFICIAL) &&
