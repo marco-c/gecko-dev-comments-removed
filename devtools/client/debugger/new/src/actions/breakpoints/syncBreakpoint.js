@@ -157,8 +157,8 @@ export async function syncBreakpointPromise(
 
   const { id, actualLocation } = await client.setBreakpoint(
     scopedGeneratedLocation,
-    pendingBreakpoint.condition,
-    isOriginalId(sourceId)
+    isOriginalId(sourceId),
+    pendingBreakpoint.options
   );
 
   

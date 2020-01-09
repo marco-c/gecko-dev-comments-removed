@@ -36,18 +36,13 @@ import { isEmptyLineInSource } from "../../reducers/ast";
 import type { ThunkArgs, Action } from "../types";
 import type {
   Breakpoint,
+  BreakpointOptions,
   Source,
   SourceLocation,
   XHRBreakpoint
 } from "../../types";
 
 import { recordEvent } from "../../utils/telemetry";
-
-export type addBreakpointOptions = {
-  condition?: string,
-  hidden?: boolean,
-  log?: boolean
-};
 
 
 
@@ -270,15 +265,14 @@ export function remapBreakpoints(sourceId: string) {
 
 
 
-
-export function setBreakpointCondition(
+export function setBreakpointOptions(
   location: SourceLocation,
-  { condition, log = false }: addBreakpointOptions = {}
+  options: BreakpointOptions = {}
 ) {
   return async ({ dispatch, getState, client, sourceMaps }: ThunkArgs) => {
     const bp = getBreakpoint(getState(), location);
     if (!bp) {
-      return dispatch(addBreakpoint(location, { condition, log }));
+      return dispatch(addBreakpoint(location, options));
     }
 
     if (bp.loading) {
@@ -289,20 +283,20 @@ export function setBreakpointCondition(
       await dispatch(enableBreakpoint(bp));
     }
 
-    await client.setBreakpointCondition(
+    await client.setBreakpointOptions(
       bp.id,
       location,
-      condition,
+      options,
       isOriginalId(bp.location.sourceId)
     );
 
-    const newBreakpoint = { ...bp, disabled: false, condition, log };
+    const newBreakpoint = { ...bp, disabled: false, options };
 
     assertBreakpoint(newBreakpoint);
 
     return dispatch(
       ({
-        type: "SET_BREAKPOINT_CONDITION",
+        type: "SET_BREAKPOINT_OPTIONS",
         breakpoint: newBreakpoint
       }: Action)
     );
