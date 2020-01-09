@@ -1888,6 +1888,15 @@ XMLHttpRequestMainThread::OnStartRequest(nsIRequest* request) {
                    !(mRequestMethod.EqualsLiteral("HEAD") ||
                      mRequestMethod.EqualsLiteral("CONNECT"));
 
+  if (parseBody) {
+    
+    int64_t contentLength;
+    if (NS_SUCCEEDED(mChannel->GetContentLength(&contentLength)) &&
+        contentLength == 0) {
+      parseBody = false;
+    }
+  }
+
   mIsHtml = false;
   mWarnAboutSyncHtml = false;
   if (parseBody && NS_SUCCEEDED(status)) {
