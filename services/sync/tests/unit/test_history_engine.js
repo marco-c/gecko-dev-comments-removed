@@ -1,9 +1,8 @@
 
 
 
-ChromeUtils.import("resource://services-sync/service.js");
-ChromeUtils.import("resource://services-sync/engines/history.js");
-ChromeUtils.import("resource://services-common/utils.js");
+const {Service} = ChromeUtils.import("resource://services-sync/service.js");
+const {HistoryEngine} = ChromeUtils.import("resource://services-sync/engines/history.js");
 
 
 XPCOMUtils.defineLazyServiceGetter(this, "asyncHistory",

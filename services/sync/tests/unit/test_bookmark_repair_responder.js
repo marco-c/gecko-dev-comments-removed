@@ -1,11 +1,9 @@
 
 
 
-ChromeUtils.import("resource:///modules/PlacesUIUtils.jsm");
-
 ChromeUtils.import("resource://services-sync/engines/bookmarks.js");
-ChromeUtils.import("resource://services-sync/service.js");
-ChromeUtils.import("resource://services-sync/bookmark_repair.js");
+const {Service} = ChromeUtils.import("resource://services-sync/service.js");
+const {BookmarkRepairResponder} = ChromeUtils.import("resource://services-sync/bookmark_repair.js");
 
 
 

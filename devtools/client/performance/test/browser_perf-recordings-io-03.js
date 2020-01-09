@@ -7,8 +7,8 @@
 
 
 
-var { FileUtils } = ChromeUtils.import("resource://gre/modules/FileUtils.jsm", {});
-var { NetUtil } = ChromeUtils.import("resource://gre/modules/NetUtil.jsm", {});
+var { FileUtils } = ChromeUtils.import("resource://gre/modules/FileUtils.jsm");
+var { NetUtil } = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
 
 var test = async function () {
   let { target, panel, toolbox } = await initPerformance(SIMPLE_URL);

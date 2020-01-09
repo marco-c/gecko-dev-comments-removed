@@ -6,7 +6,7 @@
 
 
 const { MockRegistrar } =
-  ChromeUtils.import("resource://testing-common/MockRegistrar.jsm", {});
+  ChromeUtils.import("resource://testing-common/MockRegistrar.jsm");
 
 
 

@@ -2,8 +2,6 @@
 
 "use strict";
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 ChromeUtils.defineModuleGetter(this, "ClientEnvironmentBase", "resource://gre/modules/components-utils/ClientEnvironment.jsm");
 
 

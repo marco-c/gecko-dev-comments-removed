@@ -1,10 +1,10 @@
 
 
 
-const { Localization } = ChromeUtils.import("resource://gre/modules/Localization.jsm", {});
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm", {});
+const { Localization } = ChromeUtils.import("resource://gre/modules/Localization.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { L10nRegistry, FileSource } =
-  ChromeUtils.import("resource://gre/modules/L10nRegistry.jsm", {});
+  ChromeUtils.import("resource://gre/modules/L10nRegistry.jsm");
 
 const originalValues = {};
 

@@ -1,7 +1,7 @@
 
 
 
-const {PlacesTestUtils} = ChromeUtils.import("resource://testing-common/PlacesTestUtils.jsm", null);
+const {PlacesTestUtils} = ChromeUtils.import("resource://testing-common/PlacesTestUtils.jsm");
 
 function promisePageActionPanelOpen() {
   let dwu = window.windowUtils;

@@ -9,10 +9,10 @@
 
 const EXPORTED_SYMBOLS = ["BrowserTabs"];
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.import("resource://services-sync/main.js");
-ChromeUtils.import("resource:///modules/sessionstore/TabStateFlusher.jsm");
-ChromeUtils.import("resource://tps/logger.jsm");
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const {Weave} = ChromeUtils.import("resource://services-sync/main.js");
+const {TabStateFlusher} = ChromeUtils.import("resource:///modules/sessionstore/TabStateFlusher.jsm");
+const {Logger} = ChromeUtils.import("resource://tps/logger.jsm");
 
 
 

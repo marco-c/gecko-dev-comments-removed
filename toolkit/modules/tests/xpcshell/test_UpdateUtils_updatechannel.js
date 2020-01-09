@@ -3,8 +3,8 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Preferences.jsm");
-ChromeUtils.import("resource://gre/modules/UpdateUtils.jsm");
+const {Preferences} = ChromeUtils.import("resource://gre/modules/Preferences.jsm");
+const {UpdateUtils} = ChromeUtils.import("resource://gre/modules/UpdateUtils.jsm");
 
 const PREF_APP_UPDATE_CHANNEL = "app.update.channel";
 const TEST_CHANNEL            = "TestChannel";

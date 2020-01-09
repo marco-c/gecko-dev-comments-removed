@@ -5,7 +5,7 @@
 
 
 
-ChromeUtils.import("resource://services-sync/UIState.jsm");
+const {UIState} = ChromeUtils.import("resource://services-sync/UIState.jsm");
 
 ChromeUtils.defineModuleGetter(this, "FxAccounts",
   "resource://gre/modules/FxAccounts.jsm");

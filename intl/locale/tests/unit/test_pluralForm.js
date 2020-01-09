@@ -7,7 +7,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/PluralForm.jsm");
+const {PluralForm} = ChromeUtils.import("resource://gre/modules/PluralForm.jsm");
 
 function run_test()
 {

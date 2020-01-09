@@ -1,6 +1,6 @@
 
 
-ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
+var {NetUtil} = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
 
 function test() {
     var file = new File([new Blob(["test"], {type: "text/plain"})], "test-name");

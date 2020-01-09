@@ -4,7 +4,7 @@
 "use strict";
 
 var Cm = Components.manager;
-ChromeUtils.import("resource://gre/modules/Services.jsm");
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const VKB_ENTER_KEY = 13; 
 const INITIAL_PAGE_DELAY = 500; 

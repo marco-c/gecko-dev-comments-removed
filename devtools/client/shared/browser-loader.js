@@ -3,11 +3,11 @@
 
 "use strict";
 
-const loaders = ChromeUtils.import("resource://devtools/shared/base-loader.js", {});
+const loaders = ChromeUtils.import("resource://devtools/shared/base-loader.js", null);
 const {
   devtools,
   loader,
-} = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
+} = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
 const flags = devtools.require("devtools/shared/flags");
 const { joinURI } = devtools.require("devtools/shared/path");
 const { assert } = devtools.require("devtools/shared/DevToolsUtils");

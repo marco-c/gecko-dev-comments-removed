@@ -7,8 +7,8 @@
 
 
 const Preferences = window.Preferences = (function() {
-  ChromeUtils.import("resource://gre/modules/EventEmitter.jsm");
-  ChromeUtils.import("resource://gre/modules/Services.jsm");
+  const {EventEmitter} = ChromeUtils.import("resource://gre/modules/EventEmitter.jsm");
+  const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
   ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
   const lazy = {};
@@ -113,24 +113,6 @@ const Preferences = window.Preferences = (function() {
           console.error(`Missing preference for ID ${id}`);
         }
       }
-    },
-
-    updateQueued: false,
-
-    updateAllElements() {
-      if (this.updateQueued) {
-        return;
-      }
-
-      this.updateQueued = true;
-
-      Promise.resolve().then(() => {
-        const preferences = Preferences.getAll();
-        for (const preference of preferences) {
-          preference.updateElements();
-        }
-        this.updateQueued = false;
-      });
     },
 
     onUnload() {

@@ -2,7 +2,7 @@
 
 "use strict";
 
-ChromeUtils.import("resource://gre/modules/Downloads.jsm");
+const {Downloads} = ChromeUtils.import("resource://gre/modules/Downloads.jsm");
 
 function backgroundScript() {
   let complete = new Map();

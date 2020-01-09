@@ -8,7 +8,7 @@
 
 var EXPORTED_SYMBOLS = ["PerTestCoverageUtils"];
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const env = Cc["@mozilla.org/process/environment;1"].getService(Ci.nsIEnvironment);
 

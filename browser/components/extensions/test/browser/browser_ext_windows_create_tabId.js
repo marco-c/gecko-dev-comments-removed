@@ -4,7 +4,7 @@
 
 function assertNoLeaksInTabTracker() {
   
-  const {ExtensionParent} = ChromeUtils.import("resource://gre/modules/ExtensionParent.jsm", {});
+  const {ExtensionParent} = ChromeUtils.import("resource://gre/modules/ExtensionParent.jsm");
   const {tabTracker} = ExtensionParent.apiManager.global;
 
   for (const [tabId, nativeTab] of tabTracker._tabIds) {

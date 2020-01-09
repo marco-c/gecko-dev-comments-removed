@@ -3,8 +3,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/osfile.jsm");
-ChromeUtils.import("resource://gre/modules/Timer.jsm");
+const {setTimeout} = ChromeUtils.import("resource://gre/modules/Timer.jsm");
 
 function getProfileFile(name) {
   let file = do_get_profile();

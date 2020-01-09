@@ -1,10 +1,8 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/osfile.jsm");
-ChromeUtils.import("resource://services-sync/engines.js");
-ChromeUtils.import("resource://services-sync/service.js");
-ChromeUtils.import("resource://services-sync/util.js");
+const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm");
+const {Service} = ChromeUtils.import("resource://services-sync/service.js");
 
 async function makeSteamEngine() {
   let engine = new SyncEngine("Steam", Service);

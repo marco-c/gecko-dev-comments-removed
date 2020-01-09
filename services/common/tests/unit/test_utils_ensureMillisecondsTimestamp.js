@@ -1,8 +1,6 @@
 
 
 
-ChromeUtils.import("resource://services-common/utils.js");
-
 function run_test() {
     Assert.equal(null, CommonUtils.ensureMillisecondsTimestamp(null));
     Assert.equal(null, CommonUtils.ensureMillisecondsTimestamp(0));

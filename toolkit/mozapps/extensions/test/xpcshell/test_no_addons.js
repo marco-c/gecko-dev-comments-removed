@@ -7,7 +7,7 @@
 
 
 
-var XPIScope = ChromeUtils.import("resource://gre/modules/addons/XPIProvider.jsm", {});
+var XPIScope = ChromeUtils.import("resource://gre/modules/addons/XPIProvider.jsm", null);
 const {DB_SCHEMA} = XPIScope.XPIInternal;
 
 createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "1.9.2");

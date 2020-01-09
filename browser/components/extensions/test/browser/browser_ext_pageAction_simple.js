@@ -2,7 +2,7 @@
 
 "use strict";
 
-ChromeUtils.import("resource:///modules/PageActions.jsm");
+const {PageActions} = ChromeUtils.import("resource:///modules/PageActions.jsm");
 
 const BASE = "http://example.com/browser/browser/components/extensions/test/browser/";
 

@@ -9,7 +9,7 @@
 
 
 
-var {require} = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
+var {require} = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
 var {generateCssProperties} = require("devtools/server/actors/css-properties");
 const InspectorUtils = require("InspectorUtils");
 

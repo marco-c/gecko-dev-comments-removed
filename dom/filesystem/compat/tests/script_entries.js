@@ -1,7 +1,7 @@
 
 
 Cu.importGlobalProperties(["File", "Directory"]);
-ChromeUtils.import("resource://gre/modules/Services.jsm");
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 var tmpFile, tmpDir;
 
 addMessageListener("entries.open", function(e) {

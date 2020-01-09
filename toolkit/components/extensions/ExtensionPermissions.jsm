@@ -5,7 +5,7 @@
 
 "use strict";
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   ExtensionParent: "resource://gre/modules/ExtensionParent.jsm",
@@ -50,44 +50,38 @@ function emptyPermissions() {
 }
 
 var ExtensionPermissions = {
-  async _saveSoon(extensionId) {
+  async _saveSoon(extension) {
     await lazyInit();
 
-    prefs.data[extensionId] = await this._getCached(extensionId);
+    prefs.data[extension.id] = await this._getCached(extension);
     return prefs.saveSoon();
   },
 
-  async _get(extensionId) {
+  async _get(extension) {
     await lazyInit();
 
-    let perms = prefs.data[extensionId];
+    let perms = prefs.data[extension.id];
     if (!perms) {
       perms = emptyPermissions();
-      prefs.data[extensionId] = perms;
+      prefs.data[extension.id] = perms;
     }
 
     return perms;
   },
 
-  async _getCached(extensionId) {
-    return StartupCache.permissions.get(extensionId,
-                                        () => this._get(extensionId));
+  async _getCached(extension) {
+    return StartupCache.permissions.get(extension.id,
+                                        () => this._get(extension));
   },
 
-  get(extensionId) {
-    return this._getCached(extensionId);
+  get(extension) {
+    return this._getCached(extension);
   },
 
   
-
-
-
-
-
-
-
-  async add(extensionId, perms, emitter) {
-    let {permissions, origins} = await this._getCached(extensionId);
+  
+  async add(extension, perms) {
+    let {permissions, origins} = await this._getCached(extension);
 
     let added = emptyPermissions();
 
@@ -107,23 +101,15 @@ var ExtensionPermissions = {
     }
 
     if (added.permissions.length > 0 || added.origins.length > 0) {
-      this._saveSoon(extensionId);
-      if (emitter) {
-        emitter.emit("add-permissions", added);
-      }
+      this._saveSoon(extension);
+      extension.emit("add-permissions", added);
     }
   },
 
   
-
-
-
-
-
-
-
-  async remove(extensionId, perms, emitter) {
-    let {permissions, origins} = await this._getCached(extensionId);
+  
+  async remove(extension, perms) {
+    let {permissions, origins} = await this._getCached(extension);
 
     let removed = emptyPermissions();
 
@@ -146,15 +132,13 @@ var ExtensionPermissions = {
     }
 
     if (removed.permissions.length > 0 || removed.origins.length > 0) {
-      this._saveSoon(extensionId);
-      if (emitter) {
-        emitter.emit("remove-permissions", removed);
-      }
+      this._saveSoon(extension);
+      extension.emit("remove-permissions", removed);
     }
   },
 
-  async removeAll(extensionId) {
-    let perms = await this._getCached(extensionId);
+  async removeAll(extension) {
+    let perms = await this._getCached(extension);
 
     if (perms.permissions.length || perms.origins.length) {
       Object.assign(perms, emptyPermissions());

@@ -84,7 +84,7 @@ add_task(async function testReadFromDefinition() {
 
 
 add_task(async function testTargetedValues() {
-  const backstage = ChromeUtils.import("resource://featuregates/FeatureGate.jsm", {});
+  const backstage = ChromeUtils.import("resource://featuregates/FeatureGate.jsm", null);
   const targetingFacts = new Map(Object.entries({true1: true, true2: true, false1: false, false2: false}));
 
   Assert.equal(

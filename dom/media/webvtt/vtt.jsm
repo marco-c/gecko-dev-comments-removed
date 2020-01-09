@@ -27,8 +27,8 @@ var EXPORTED_SYMBOLS = ["WebVTT"];
 
 
 
-ChromeUtils.import('resource://gre/modules/Services.jsm');
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const {Services} = ChromeUtils.import('resource://gre/modules/Services.jsm');
+const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 (function(global) {
 
@@ -1012,8 +1012,14 @@ ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
     var controlBar;
     var controlBarShown;
     if (controls) {
-      
-      controlBar = controls.parentNode.getElementById("controlBar");
+      if (controls.localName == "videocontrols") {
+        
+        controlBar = controls.ownerDocument.getAnonymousElementByAttribute(
+          controls, "anonid", "controlBar");
+      } else {
+        
+        controlBar = controls.parentNode.getElementById("controlBar");
+      }
       controlBarShown = controlBar ? !!controlBar.clientHeight : false;
     } else {
       

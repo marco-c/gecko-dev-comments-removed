@@ -16,8 +16,7 @@ AddonManager.addExternalExtensionLoader({
     
     
     
-    ChromeUtils.import("resource://gre/modules/addons/XPIDatabase.jsm");
-    
+    const {AddonInternal} = ChromeUtils.import("resource://gre/modules/addons/XPIDatabase.jsm");
     let addon = new AddonInternal();
     let manifest = JSON.parse(await pkg.readString(MANIFEST));
     Object.assign(addon, manifest);

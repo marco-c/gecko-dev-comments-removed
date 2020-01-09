@@ -14,8 +14,8 @@
 
 var EXPORTED_SYMBOLS = ["ExtensionTestCommon", "MockExtension"];
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyGlobalGetters(this, ["TextEncoder"]);
 
@@ -25,8 +25,6 @@ ChromeUtils.defineModuleGetter(this, "Extension",
                                "resource://gre/modules/Extension.jsm");
 ChromeUtils.defineModuleGetter(this, "ExtensionParent",
                                "resource://gre/modules/ExtensionParent.jsm");
-ChromeUtils.defineModuleGetter(this, "ExtensionPermissions",
-                               "resource://gre/modules/ExtensionPermissions.jsm");
 ChromeUtils.defineModuleGetter(this, "FileUtils",
                                "resource://gre/modules/FileUtils.jsm");
 ChromeUtils.defineModuleGetter(this, "OS",
@@ -35,8 +33,8 @@ ChromeUtils.defineModuleGetter(this, "OS",
 XPCOMUtils.defineLazyGetter(this, "apiManager",
                             () => ExtensionParent.apiManager);
 
-ChromeUtils.import("resource://gre/modules/ExtensionCommon.jsm");
-ChromeUtils.import("resource://gre/modules/ExtensionUtils.jsm");
+const {ExtensionCommon} = ChromeUtils.import("resource://gre/modules/ExtensionCommon.jsm");
+const {ExtensionUtils} = ChromeUtils.import("resource://gre/modules/ExtensionUtils.jsm");
 
 XPCOMUtils.defineLazyServiceGetter(this, "uuidGen",
                                    "@mozilla.org/uuid-generator;1",
@@ -52,7 +50,6 @@ const {
 
 XPCOMUtils.defineLazyGetter(this, "console", () => ExtensionCommon.getConsole());
 
-var ExtensionTestCommon;
 
 
 
@@ -65,12 +62,11 @@ var ExtensionTestCommon;
 
 
 class MockExtension {
-  constructor(file, rootURI, addonData) {
+  constructor(file, rootURI, installType) {
     this.id = null;
     this.file = file;
     this.rootURI = rootURI;
-    this.installType = addonData.useAddonManager;
-    this.addonData = addonData;
+    this.installType = installType;
     this.addon = null;
 
     let promiseEvent = eventName => new Promise(resolve => {
@@ -121,10 +117,8 @@ class MockExtension {
 
   startup() {
     if (this.installType == "temporary") {
-      return AddonManager.installTemporaryAddon(this.file).then(async addon => {
+      return AddonManager.installTemporaryAddon(this.file).then(addon => {
         this.addon = addon;
-        this.id = addon.id;
-        await ExtensionTestCommon.setIncognitoOverride(this);
         return this._readyPromise;
       });
     } else if (this.installType == "permanent") {
@@ -135,10 +129,9 @@ class MockExtension {
         let install = await AddonManager.getInstallForFile(this.file);
         let listener = {
           onInstallFailed: reject,
-          onInstallEnded: async (install, newAddon) => {
+          onInstallEnded: (install, newAddon) => {
             this.addon = newAddon;
             this.id = newAddon.id;
-            await ExtensionTestCommon.setIncognitoOverride(this);
             this.resolveAddon(newAddon);
             resolve(this._readyPromise);
           },
@@ -178,7 +171,7 @@ function provide(obj, keys, value, override = false) {
   }
 }
 
-ExtensionTestCommon = class ExtensionTestCommon {
+var ExtensionTestCommon = class ExtensionTestCommon {
   
 
 
@@ -329,17 +322,6 @@ ExtensionTestCommon = class ExtensionTestCommon {
     return `(${this.serializeFunction(script)})();`;
   }
 
-  static setIncognitoOverride(extension) {
-    let {id, addonData} = extension;
-    if (!addonData || !addonData.incognitoOverride) {
-      return;
-    }
-    if (addonData.incognitoOverride == "not_allowed") {
-      return ExtensionPermissions.remove(id, {permissions: ["internal:privateBrowsingAllowed"], origins: []});
-    }
-    return ExtensionPermissions.add(id, {permissions: ["internal:privateBrowsingAllowed"], origins: []});
-  }
-
   
 
 
@@ -358,7 +340,7 @@ ExtensionTestCommon = class ExtensionTestCommon {
 
     
     if (data.useAddonManager) {
-      return new MockExtension(file, jarURI, data);
+      return new MockExtension(file, jarURI, data.useAddonManager);
     }
 
     let id;

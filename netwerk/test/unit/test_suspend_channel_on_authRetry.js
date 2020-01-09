@@ -3,8 +3,8 @@
 
 var CC = Components.Constructor;
 
-ChromeUtils.import("resource://testing-common/httpd.js");
-ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
+const {HttpServer} = ChromeUtils.import("resource://testing-common/httpd.js");
+const {NetUtil} = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
 
 
 var prefs = Cc["@mozilla.org/preferences-service;1"].

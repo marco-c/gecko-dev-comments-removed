@@ -6,7 +6,7 @@
 
 var EXPORTED_SYMBOLS = ["LanguageDetector"];
 
-ChromeUtils.import("resource://gre/modules/Timer.jsm");
+const {clearTimeout, setTimeout} = ChromeUtils.import("resource://gre/modules/Timer.jsm");
 
 
 

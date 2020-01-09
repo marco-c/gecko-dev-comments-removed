@@ -13,7 +13,7 @@ const url = new window.URL(href);
 
 
 if (url.search.length > 1) {
-  const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
+  const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
   const { gDevTools } = require("devtools/client/framework/devtools");
   const { targetFromURL } = require("devtools/client/framework/target-from-url");
   const { Toolbox } = require("devtools/client/framework/toolbox");

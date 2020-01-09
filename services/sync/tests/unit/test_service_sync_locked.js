@@ -1,8 +1,7 @@
 
 
 
-ChromeUtils.import("resource://services-sync/service.js");
-ChromeUtils.import("resource://services-sync/util.js");
+const {Service} = ChromeUtils.import("resource://services-sync/service.js");
 
 add_task(async function run_test() {
   validate_all_future_pings();

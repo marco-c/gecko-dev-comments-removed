@@ -1,8 +1,6 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/osfile.jsm");
-
 const kSelectedEnginePref = "browser.search.selectedEngine";
 
 

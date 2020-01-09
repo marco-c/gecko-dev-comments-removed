@@ -2,8 +2,6 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 add_task(async function test() {
   const testURL = getRootDirectory(gTestPath) + "empty.html";
   let tab = BrowserTestUtils.addTab(gBrowser, testURL);

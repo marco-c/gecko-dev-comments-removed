@@ -37,7 +37,7 @@ var EXPORTED_SYMBOLS = [ "DownloadUtils" ];
 
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 ChromeUtils.defineModuleGetter(this, "PluralForm",
                                "resource://gre/modules/PluralForm.jsm");

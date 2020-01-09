@@ -3,7 +3,7 @@
 
 
 
-const {TabStateFlusher} = ChromeUtils.import("resource:///modules/sessionstore/TabStateFlusher.jsm", {});
+const {TabStateFlusher} = ChromeUtils.import("resource:///modules/sessionstore/TabStateFlusher.jsm");
 
 const DUMMY = "http://example.com/browser/browser/base/content/test/general/dummy_page.html";
 

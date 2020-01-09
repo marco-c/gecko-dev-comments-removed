@@ -5,7 +5,7 @@
 
 
 
-const {AddonTestUtils} = ChromeUtils.import("resource://testing-common/AddonTestUtils.jsm", {});
+const {AddonTestUtils} = ChromeUtils.import("resource://testing-common/AddonTestUtils.jsm");
 
 const ID = "reinstall@tests.mozilla.org";
 

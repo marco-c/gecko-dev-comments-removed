@@ -2,7 +2,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm");
+var {PromiseUtils} = ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm");
 ChromeUtils.import("resource://gre/modules/Preferences.jsm", this);
 
 

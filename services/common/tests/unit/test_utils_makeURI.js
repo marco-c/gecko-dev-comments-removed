@@ -2,7 +2,6 @@
 
 
 _("Make sure uri strings are converted to nsIURIs");
-ChromeUtils.import("resource://services-common/utils.js");
 
 function run_test() {
   _test_makeURI();

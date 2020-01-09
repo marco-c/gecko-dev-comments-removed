@@ -8,17 +8,17 @@
 const {PushDB} = ChromeUtils.import("resource://gre/modules/PushDB.jsm");
 const {PushRecord} = ChromeUtils.import("resource://gre/modules/PushRecord.jsm");
 const {PushCrypto} = ChromeUtils.import("resource://gre/modules/PushCrypto.jsm");
-ChromeUtils.import("resource://gre/modules/Messaging.jsm"); 
-ChromeUtils.import("resource://gre/modules/Services.jsm"); 
-ChromeUtils.import("resource://gre/modules/Preferences.jsm"); 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm"); 
+const {EventDispatcher} = ChromeUtils.import("resource://gre/modules/Messaging.jsm"); 
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm"); 
+const {Preferences} = ChromeUtils.import("resource://gre/modules/Preferences.jsm"); 
+const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm"); 
 
 const Log = ChromeUtils.import("resource://gre/modules/AndroidLog.jsm", {}).AndroidLog.bind("Push");
 
 var EXPORTED_SYMBOLS = ["PushServiceAndroidGCM"];
 
 XPCOMUtils.defineLazyGetter(this, "console", () => {
-  let {ConsoleAPI} = ChromeUtils.import("resource://gre/modules/Console.jsm", {});
+  let {ConsoleAPI} = ChromeUtils.import("resource://gre/modules/Console.jsm");
   return new ConsoleAPI({
     dump: Log.i,
     maxLogLevelPref: "dom.push.loglevel",

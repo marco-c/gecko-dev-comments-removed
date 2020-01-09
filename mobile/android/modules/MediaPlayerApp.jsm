@@ -7,8 +7,8 @@
 
 var EXPORTED_SYMBOLS = ["MediaPlayerApp"];
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.import("resource://gre/modules/Messaging.jsm");
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const {EventDispatcher} = ChromeUtils.import("resource://gre/modules/Messaging.jsm");
 
 
 function send(type, data, callback) {

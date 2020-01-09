@@ -50,7 +50,7 @@ var DEBUG_TIMESTAMP = false;
 
 var gGlobalObject = Cu.getGlobalForObject(this);
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 

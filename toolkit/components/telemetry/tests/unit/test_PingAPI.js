@@ -22,7 +22,7 @@ XPCOMUtils.defineLazyGetter(this, "gPingsArchivePath", function() {
 
 
 function fakeStorageQuota(aArchiveQuota) {
-  let storage = ChromeUtils.import("resource://gre/modules/TelemetryStorage.jsm", {});
+  let storage = ChromeUtils.import("resource://gre/modules/TelemetryStorage.jsm", null);
   storage.Policy.getArchiveQuota = () => aArchiveQuota;
 }
 

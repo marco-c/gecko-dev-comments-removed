@@ -7,7 +7,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/BookmarkHTMLUtils.jsm");
+const {BookmarkHTMLUtils} = ChromeUtils.import("resource://gre/modules/BookmarkHTMLUtils.jsm");
 
 add_task(async function test_bookmarks_html_singleframe() {
   let bookmarksFile = OS.Path.join(do_get_cwd().path, "bookmarks_html_singleframe.html");

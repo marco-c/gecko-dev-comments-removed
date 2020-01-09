@@ -2,13 +2,13 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.defineModuleGetter(this, "BrowserUtils",
   "resource://gre/modules/BrowserUtils.jsm");
 
 var EXPORTED_SYMBOLS = ["DateTimePickerChild"];
 
-ChromeUtils.import("resource://gre/modules/ActorChild.jsm");
+const {ActorChild} = ChromeUtils.import("resource://gre/modules/ActorChild.jsm");
 
 
 
@@ -36,7 +36,9 @@ class DateTimePickerChild extends ActorChild {
       return;
     }
 
-    if (this._inputElement.openOrClosedShadowRoot) {
+    if (dateTimeBoxElement instanceof Ci.nsIDateTimeInputArea) {
+      dateTimeBoxElement.wrappedJSObject.setPickerState(false);
+    } else if (this._inputElement.openOrClosedShadowRoot) {
       
       
       let win = this._inputElement.ownerGlobal;
@@ -109,7 +111,9 @@ class DateTimePickerChild extends ActorChild {
 
         let win = this._inputElement.ownerGlobal;
 
-        if (this._inputElement.openOrClosedShadowRoot) {
+        if (dateTimeBoxElement instanceof Ci.nsIDateTimeInputArea) {
+          dateTimeBoxElement.wrappedJSObject.setValueFromPicker(Cu.cloneInto(aMessage.data, win));
+        } else if (this._inputElement.openOrClosedShadowRoot) {
           
           
           dateTimeBoxElement.dispatchEvent(
@@ -150,7 +154,9 @@ class DateTimePickerChild extends ActorChild {
           throw new Error("How do we get this event without a UA Widget or XBL binding?");
         }
 
-        if (this._inputElement.openOrClosedShadowRoot) {
+        if (dateTimeBoxElement instanceof Ci.nsIDateTimeInputArea) {
+          dateTimeBoxElement.wrappedJSObject.setPickerState(true);
+        } else if (this._inputElement.openOrClosedShadowRoot) {
           
           
           

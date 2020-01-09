@@ -11,7 +11,7 @@
 
 var EXPORTED_SYMBOLS = ["UrlbarProvidersManager"];
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 XPCOMUtils.defineLazyModuleGetters(this, {
   Log: "resource://gre/modules/Log.jsm",
   PlacesUtils: "resource://modules/PlacesUtils.jsm",
@@ -308,12 +308,7 @@ class Query {
       throw new Error("Invalid provider passed to the add callback");
     }
     
-    if (this.canceled) {
-      return;
-    }
-    
-    
-    if (!this.acceptableSources.includes(match.source) && !match.heuristic) {
+    if (this.canceled || !this.acceptableSources.includes(match.source)) {
       return;
     }
 

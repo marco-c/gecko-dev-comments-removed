@@ -2,7 +2,7 @@
 
 
 
-ChromeUtils.import("chrome://marionette/content/cookie.js");
+const {cookie} = ChromeUtils.import("chrome://marionette/content/cookie.js");
 
 
 

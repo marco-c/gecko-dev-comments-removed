@@ -6,8 +6,6 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 addEventListener("TalosContentProfilerCommand", (e) => {
   let name = e.detail.name;
   let data = e.detail.data;

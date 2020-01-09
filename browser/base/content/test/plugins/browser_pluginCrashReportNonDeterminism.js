@@ -1,7 +1,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm");
+const {PromiseUtils} = ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm");
 
 
 

@@ -3,8 +3,6 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 function run_test() {
   const pluginHost = Cc["@mozilla.org/plugin/host;1"].getService(Ci.nsIPluginHost);
   const pluginDefaultState = Services.prefs.getIntPref("plugin.default.state");

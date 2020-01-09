@@ -3,7 +3,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/PlacesDBUtils.jsm");
+const {PlacesDBUtils} = ChromeUtils.import("resource://gre/modules/PlacesDBUtils.jsm");
 
 var histograms = {
   PLACES_PAGES_COUNT: val => Assert.equal(val, 1),

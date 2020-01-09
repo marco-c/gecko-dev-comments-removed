@@ -18,9 +18,9 @@
 
 
 const { Localization } =
-  ChromeUtils.import("resource://gre/modules/Localization.jsm", {});
+  ChromeUtils.import("resource://gre/modules/Localization.jsm");
 const { Services } =
-  ChromeUtils.import("resource://gre/modules/Services.jsm", {});
+  ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 

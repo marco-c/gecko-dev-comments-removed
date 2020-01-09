@@ -6,7 +6,7 @@
 
 
 
-const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
+const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
 
 const QR = require("devtools/shared/qrcode/index");
 

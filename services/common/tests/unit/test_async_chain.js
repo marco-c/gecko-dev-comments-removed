@@ -1,7 +1,7 @@
 
 
 
-ChromeUtils.import("resource://services-common/async.js");
+const {Async} = ChromeUtils.import("resource://services-common/async.js");
 
 function run_test() {
   _("Chain a few async methods, making sure the 'this' object is correct.");

@@ -1,8 +1,8 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/lz4.js");
-ChromeUtils.import("resource://gre/modules/osfile.jsm");
+const {Lz4} = ChromeUtils.import("resource://gre/modules/lz4.js");
+const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 
 function compare_arrays(a, b) {
   return Array.prototype.join.call(a) == Array.prototype.join.call(b);

@@ -1,17 +1,25 @@
 
 
 
- 
-function run_test() {   
+
+var XPCOMUtils;
+function run_test() {
   var scope = {};
-  ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", scope);
+  var exports = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", scope);
   Assert.equal(typeof(scope.XPCOMUtils), "object");
   Assert.equal(typeof(scope.XPCOMUtils.generateNSGetFactory), "function");
+
+  equal(scope.XPCOMUtils, exports.XPCOMUtils);
+  deepEqual(Object.keys(scope), ["XPCOMUtils"]);
+  deepEqual(Object.keys(exports), ["XPCOMUtils"]);
+
+  exports = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+  equal(scope.XPCOMUtils, exports.XPCOMUtils);
+  deepEqual(Object.keys(exports), ["XPCOMUtils"]);
+
   
   
-  
-  var module = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm",
-                                  null);
+  var module = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", null);
   Assert.equal(typeof(XPCOMUtils), "undefined");
   Assert.equal(typeof(module), "object");
   Assert.equal(typeof(module.XPCOMUtils), "object");
@@ -20,16 +28,16 @@ function run_test() {
 
   
   Assert.equal(typeof(Cu.import), "function");
-  ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+  ({XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm"));
   Assert.equal(typeof(XPCOMUtils), "object");
   Assert.equal(typeof(XPCOMUtils.generateNSGetFactory), "function");
-  
+
   
   var scope2 = {};
   ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", scope2);
   Assert.equal(typeof(scope2.XPCOMUtils), "object");
   Assert.equal(typeof(scope2.XPCOMUtils.generateNSGetFactory), "function");
-  
+
   Assert.ok(scope2.XPCOMUtils == scope.XPCOMUtils);
 
   
@@ -51,7 +59,7 @@ function run_test() {
       didThrow = true;
   }
   Assert.ok(didThrow);
- 
+
   
   do_load_manifest("component_import.manifest");
   const contractID = "@mozilla.org/tests/module-importer;";

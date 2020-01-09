@@ -2,7 +2,7 @@
 
 
 
-var {FormHistory} = (ChromeUtils.import("resource://gre/modules/FormHistory.jsm", {}));
+var {FormHistory} = (ChromeUtils.import("resource://gre/modules/FormHistory.jsm"));
 
 
 add_task(async function test() {

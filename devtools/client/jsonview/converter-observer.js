@@ -8,13 +8,13 @@
 
 const Cm = Components.manager;
 
-const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", {});
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm", {});
+const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 XPCOMUtils.defineLazyGetter(this, "devtools", function() {
   
-  const {devtools} = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
+  const {devtools} = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
   return devtools;
 });
 

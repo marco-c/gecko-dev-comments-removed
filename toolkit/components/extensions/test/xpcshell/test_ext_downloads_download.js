@@ -2,8 +2,8 @@
 
 "use strict";
 
-ChromeUtils.import("resource://gre/modules/osfile.jsm");
-ChromeUtils.import("resource://gre/modules/Downloads.jsm");
+const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm");
+const {Downloads} = ChromeUtils.import("resource://gre/modules/Downloads.jsm");
 
 const gServer = createHttpServer();
 gServer.registerDirectory("/data/", do_get_file("data"));

@@ -7,7 +7,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const gInContentProcess = Services.appinfo.processType == Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT;
 
@@ -60,7 +60,7 @@ let ProcessObserver = {
         let messageManager = window.docShell.messageManager;
 
         let { ChildMessagePort } =
-          ChromeUtils.import("resource://gre/modules/remotepagemanager/RemotePageManagerChild.jsm", {});
+          ChromeUtils.import("resource://gre/modules/remotepagemanager/RemotePageManagerChild.jsm");
         
         new ChildMessagePort(messageManager, window);
         break;

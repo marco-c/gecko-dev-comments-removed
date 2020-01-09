@@ -7,7 +7,7 @@
 
 
 
-const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
+const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
 const { getUnicodeUrl, getUnicodeUrlPath, getUnicodeHostname } =
   require("devtools/client/shared/unicode-url");
 

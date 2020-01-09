@@ -7,9 +7,6 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 function checkService(service, interface) {
   info("Checking that Services." + service + " is an " + interface);
   Assert.ok(service in Services);
@@ -76,7 +73,7 @@ function run_test() {
 
   
   Cu.unload("resource://gre/modules/Services.jsm");
-  ChromeUtils.import("resource://gre/modules/Services.jsm");
+  ({Services} = ChromeUtils.import("resource://gre/modules/Services.jsm"));
 
   checkService("appinfo", Ci.nsIXULAppInfo);
 

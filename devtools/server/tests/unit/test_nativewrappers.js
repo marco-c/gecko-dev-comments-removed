@@ -1,10 +1,10 @@
-/* eslint-disable strict */
+
 function run_test() {
   Services.prefs.setBoolPref("security.allow_eval_with_system_principal", true);
   registerCleanupFunction(() => {
     Services.prefs.clearUserPref("security.allow_eval_with_system_principal");
   });
-  ChromeUtils.import("resource://gre/modules/jsdebugger.jsm");
+  const {addDebuggerToGlobal} = ChromeUtils.import("resource://gre/modules/jsdebugger.jsm");
   addDebuggerToGlobal(this);
   const g = testGlobal("test1");
 
@@ -24,8 +24,8 @@ function run_test() {
 
   const g2 = testGlobal("test2");
   g2.g = g;
-  // Not using the "stringify a function" trick because that runs afoul of the
-  // Cu.importGlobalProperties lint and we don't need it here anyway.
+  
+  
   g2.eval(`(function createBadEvent() {
     Cu.importGlobalProperties(["DOMParser"]);
     let parser = new DOMParser();

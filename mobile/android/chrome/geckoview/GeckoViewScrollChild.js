@@ -3,7 +3,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/GeckoViewChildModule.jsm");
+const {GeckoViewChildModule} = ChromeUtils.import("resource://gre/modules/GeckoViewChildModule.jsm");
 
 class GeckoViewScrollChild extends GeckoViewChildModule {
   onEnable() {

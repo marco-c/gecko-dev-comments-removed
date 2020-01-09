@@ -4,8 +4,7 @@
 
 
 
-ChromeUtils.import("resource:///modules/SitePermissions.jsm");
-ChromeUtils.import("resource://gre/modules/BrowserUtils.jsm");
+const {SitePermissions} = ChromeUtils.import("resource:///modules/SitePermissions.jsm");
 
 var gPermURI;
 var gPermPrincipal;

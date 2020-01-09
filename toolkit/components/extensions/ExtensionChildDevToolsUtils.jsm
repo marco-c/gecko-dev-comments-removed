@@ -13,8 +13,8 @@
 
 var EXPORTED_SYMBOLS = ["ExtensionChildDevToolsUtils"];
 
-ChromeUtils.import("resource://gre/modules/EventEmitter.jsm");
-ChromeUtils.import("resource://gre/modules/Services.jsm");
+const {EventEmitter} = ChromeUtils.import("resource://gre/modules/EventEmitter.jsm");
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 

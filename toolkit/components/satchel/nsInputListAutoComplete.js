@@ -2,8 +2,9 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-ChromeUtils.import("resource://gre/modules/nsFormAutoCompleteResult.jsm");
+const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const {FormAutoCompleteResult} =
+    ChromeUtils.import("resource://gre/modules/nsFormAutoCompleteResult.jsm");
 
 function InputListAutoComplete() {}
 

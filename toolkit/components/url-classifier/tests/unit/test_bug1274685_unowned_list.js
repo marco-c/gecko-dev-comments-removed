@@ -1,5 +1,5 @@
-ChromeUtils.import("resource://gre/modules/SafeBrowsing.jsm");
-ChromeUtils.import("resource://testing-common/AppInfo.jsm");
+const {SafeBrowsing} = ChromeUtils.import("resource://gre/modules/SafeBrowsing.jsm");
+const {updateAppInfo} = ChromeUtils.import("resource://testing-common/AppInfo.jsm");
 
 
 

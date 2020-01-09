@@ -1,9 +1,8 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/PlacesUtils.jsm");
-ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
-let {HttpServer} = ChromeUtils.import("resource://testing-common/httpd.js", {});
+const {PlacesUtils} = ChromeUtils.import("resource://gre/modules/PlacesUtils.jsm");
+let {HttpServer} = ChromeUtils.import("resource://testing-common/httpd.js");
 
 const USER_CONTEXTS = [
   "default",

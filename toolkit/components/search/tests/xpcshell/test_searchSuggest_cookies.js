@@ -8,7 +8,7 @@
 
 "use strict";
 
-ChromeUtils.import("resource://gre/modules/SearchSuggestionController.jsm");
+const {SearchSuggestionController} = ChromeUtils.import("resource://gre/modules/SearchSuggestionController.jsm");
 
 
 

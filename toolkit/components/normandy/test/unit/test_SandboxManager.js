@@ -1,6 +1,6 @@
 "use strict";
 
-ChromeUtils.import("resource://normandy/lib/SandboxManager.jsm");
+const {SandboxManager} = ChromeUtils.import("resource://normandy/lib/SandboxManager.jsm");
 
 
 

@@ -47,7 +47,7 @@ add_task(async function test_contentscript_context() {
 
   
   await contentPage.spawn(extension.id, async extensionId => {
-    let {DocumentManager} = ChromeUtils.import("resource://gre/modules/ExtensionContent.jsm", {});
+    let {DocumentManager} = ChromeUtils.import("resource://gre/modules/ExtensionContent.jsm", null);
     this.context = DocumentManager.getContext(extensionId, this.content);
 
     Assert.ok(this.context, "Got content script context");
@@ -79,7 +79,7 @@ add_task(async function test_contentscript_context() {
   await extension.unload();
 });
 
-async function contentscript_context_incognito_not_allowed_test() {
+add_task(async function test_contentscript_context_incognito_not_allowed() {
   async function background() {
     await browser.contentScripts.register({
       js: [{file: "registered_script.js"}],
@@ -91,6 +91,7 @@ async function contentscript_context_incognito_not_allowed_test() {
   }
 
   let extension = ExtensionTestUtils.loadExtension({
+    incognitoOverride: "not_allowed",
     manifest: {
       content_scripts: [{
         "matches": ["http://example.com/dummy"],
@@ -118,18 +119,13 @@ async function contentscript_context_incognito_not_allowed_test() {
   let contentPage = await ExtensionTestUtils.loadContentPage("http://example.com/dummy", {privateBrowsing: true});
 
   await contentPage.spawn(extension.id, async extensionId => {
-    let {DocumentManager} = ChromeUtils.import("resource://gre/modules/ExtensionContent.jsm", {});
+    let {DocumentManager} = ChromeUtils.import("resource://gre/modules/ExtensionContent.jsm", null);
     let context = DocumentManager.getContext(extensionId, this.content);
     Assert.equal(context, null, "Extension unable to use content_script in private browsing window");
   });
 
   await contentPage.close();
   await extension.unload();
-}
-
-add_task(async function test_contentscript_context_incognito_not_allowed() {
-  return runWithPrefs([["extensions.allowPrivateBrowsingByDefault", false]],
-                      contentscript_context_incognito_not_allowed_test);
 });
 
 add_task(async function test_contentscript_context_unload_while_in_bfcache() {
@@ -140,7 +136,7 @@ add_task(async function test_contentscript_context_unload_while_in_bfcache() {
 
   
   await contentPage.spawn(extension.id, async extensionId => {
-    let {DocumentManager} = ChromeUtils.import("resource://gre/modules/ExtensionContent.jsm", {});
+    let {DocumentManager} = ChromeUtils.import("resource://gre/modules/ExtensionContent.jsm", null);
     
     this.context = DocumentManager.getContext(extensionId, this.content);
 
@@ -153,7 +149,7 @@ add_task(async function test_contentscript_context_unload_while_in_bfcache() {
       this.content.addEventListener("pageshow", () => {
         
         
-        let {setTimeout} = ChromeUtils.import("resource://gre/modules/Timer.jsm", {});
+        let {setTimeout} = ChromeUtils.import("resource://gre/modules/Timer.jsm");
         setTimeout(resolve, 0);
       }, {once: true, mozSystemGroup: true});
     });
@@ -237,7 +233,7 @@ add_task(async function test_contentscript_context_valid_during_execution() {
     let context;
     let checkContextIsValid = (description) => {
       if (!context) {
-        let {DocumentManager} = ChromeUtils.import("resource://gre/modules/ExtensionContent.jsm", {});
+        let {DocumentManager} = ChromeUtils.import("resource://gre/modules/ExtensionContent.jsm", null);
         context = DocumentManager.getContext(extensionId, this.content);
       }
       Assert.equal(context.contentWindow, this.content, `${description}: contentWindow`);

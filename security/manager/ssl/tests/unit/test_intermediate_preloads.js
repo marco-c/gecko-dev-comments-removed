@@ -7,7 +7,7 @@
 "use strict";
 do_get_profile(); 
 
-const { RemoteSecuritySettings } = ChromeUtils.import("resource://testing-common/psm/RemoteSecuritySettings.jsm", {});
+const { RemoteSecuritySettings } = ChromeUtils.import("resource://testing-common/psm/RemoteSecuritySettings.jsm");
 
 let remoteSecSetting = new RemoteSecuritySettings();
 let server;

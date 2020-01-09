@@ -3,7 +3,7 @@
 
 "use strict";
 
-const {toksToTfIdfVector} = ChromeUtils.import("resource://activity-stream/lib/Tokenize.jsm", {});
+const {toksToTfIdfVector} = ChromeUtils.import("resource://activity-stream/lib/Tokenize.jsm");
 
 this.NaiveBayesTextTagger = class NaiveBayesTextTagger {
   constructor(model) {

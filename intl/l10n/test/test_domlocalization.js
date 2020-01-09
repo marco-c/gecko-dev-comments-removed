@@ -2,7 +2,7 @@
 
 
 const { DOMLocalization } =
-  ChromeUtils.import("resource://gre/modules/DOMLocalization.jsm", {});
+  ChromeUtils.import("resource://gre/modules/DOMLocalization.jsm");
 
 add_task(function test_methods_presence() {
   equal(typeof DOMLocalization.prototype.getAttributes, "function");

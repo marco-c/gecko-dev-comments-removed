@@ -2,8 +2,6 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 
 
 var url = "ws://localhost";

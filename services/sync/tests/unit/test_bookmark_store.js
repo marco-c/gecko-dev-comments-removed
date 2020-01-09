@@ -1,11 +1,8 @@
 
 
 
-ChromeUtils.import("resource://services-common/utils.js");
-ChromeUtils.import("resource://services-sync/engines.js");
-ChromeUtils.import("resource://services-sync/engines/bookmarks.js");
-ChromeUtils.import("resource://services-sync/service.js");
-ChromeUtils.import("resource://services-sync/util.js");
+const {Bookmark, BookmarkFolder, BookmarkQuery, BookmarksEngine, PlacesItem} = ChromeUtils.import("resource://services-sync/engines/bookmarks.js");
+const {Service} = ChromeUtils.import("resource://services-sync/service.js");
 
 const BookmarksToolbarTitle = "toolbar";
 

@@ -1,7 +1,7 @@
 requestLongerTimeout(2);
 
 const {PlacesTestUtils} =
-  ChromeUtils.import("resource://testing-common/PlacesTestUtils.jsm", {});
+  ChromeUtils.import("resource://testing-common/PlacesTestUtils.jsm");
 
 
 var now_mSec = Date.now();

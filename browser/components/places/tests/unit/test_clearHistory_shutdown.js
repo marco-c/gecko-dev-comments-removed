@@ -29,7 +29,7 @@ const UNEXPECTED_NOTIFICATIONS = [
 
 const FTP_URL = "ftp://localhost/clearHistoryOnShutdown/";
 
-ChromeUtils.import("resource:///modules/Sanitizer.jsm");
+const {Sanitizer} = ChromeUtils.import("resource:///modules/Sanitizer.jsm");
 
 
 

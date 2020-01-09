@@ -32,8 +32,8 @@ var EXPORTED_SYMBOLS = ["Dictionary", "Extension", "ExtensionData", "Langpack"];
 
 
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-ChromeUtils.import("resource://gre/modules/Services.jsm");
+const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   AddonManager: "resource://gre/modules/AddonManager.jsm",
@@ -72,9 +72,9 @@ XPCOMUtils.defineLazyGetter(
   () => Services.io.getProtocolHandler("resource")
           .QueryInterface(Ci.nsIResProtocolHandler));
 
-ChromeUtils.import("resource://gre/modules/ExtensionCommon.jsm");
-ChromeUtils.import("resource://gre/modules/ExtensionParent.jsm");
-ChromeUtils.import("resource://gre/modules/ExtensionUtils.jsm");
+const {ExtensionCommon} = ChromeUtils.import("resource://gre/modules/ExtensionCommon.jsm");
+const {ExtensionParent} = ChromeUtils.import("resource://gre/modules/ExtensionParent.jsm");
+const {ExtensionUtils} = ChromeUtils.import("resource://gre/modules/ExtensionUtils.jsm");
 
 XPCOMUtils.defineLazyServiceGetters(this, {
   aomStartup: ["@mozilla.org/addons/addon-manager-startup;1", "amIAddonManagerStartup"],
@@ -83,10 +83,6 @@ XPCOMUtils.defineLazyServiceGetters(this, {
 });
 
 XPCOMUtils.defineLazyPreferenceGetter(this, "processCount", "dom.ipc.processCount.extension");
-
-
-XPCOMUtils.defineLazyPreferenceGetter(this, "allowPrivateBrowsingByDefault",
-                                      "extensions.allowPrivateBrowsingByDefault", true);
 
 var {
   GlobalManager,
@@ -277,8 +273,6 @@ var UninstallObserver = {
       Services.perms.removeFromPrincipal(principal, "indexedDB");
       Services.perms.removeFromPrincipal(principal, "persistent-storage");
     }
-
-    ExtensionPermissions.removeAll(addon.id);
 
     if (!Services.prefs.getBoolPref(LEAVE_UUID_PREF, false)) {
       
@@ -568,11 +562,6 @@ class ExtensionData {
     this.manifest = manifest;
     this.rawManifest = manifest;
 
-    if (allowPrivateBrowsingByDefault &&
-        "incognito" in manifest && manifest.incognito == "not_allowed") {
-      throw new Error(`manifest.incognito set to "not_allowed" is currently unvailable for use.`);
-    }
-
     if (manifest && manifest.default_locale) {
       await this.initLocale();
     }
@@ -647,6 +636,7 @@ class ExtensionData {
       schemaURLs: null,
       type: this.type,
       webAccessibleResources,
+      privateBrowsingAllowed: manifest.incognito !== "not_allowed",
     };
 
     if (this.type === "extension") {
@@ -675,20 +665,13 @@ class ExtensionData {
         permissions.add(perm);
       }
 
-      
-      
-      if (!allowPrivateBrowsingByDefault &&
-          manifest.incognito !== "not_allowed" && this.isPrivileged) {
-        permissions.add("internal:privateBrowsingAllowed");
-      }
-
       if (this.id) {
         
         let matcher = new MatchPattern(this.getURL(), {ignorePath: true});
         originPermissions.add(matcher.pattern);
 
         
-        let perms = await ExtensionPermissions.get(this.id);
+        let perms = await ExtensionPermissions.get(this);
         for (let perm of perms.permissions) {
           permissions.add(perm);
         }
@@ -1630,6 +1613,7 @@ class Extension extends ExtensionData {
       whiteListedHosts: this.whiteListedHosts.patterns.map(pat => pat.pattern),
       permissions: this.permissions,
       optionalPermissions: this.optionalPermissions,
+      privateBrowsingAllowed: this.privateBrowsingAllowed,
     };
   }
 
@@ -1865,6 +1849,12 @@ class Extension extends ExtensionData {
         return;
       }
 
+      if (this.addonData && this.addonData.incognitoOverride !== undefined) {
+        this.policy.privateBrowsingAllowed = this.addonData.incognitoOverride !== "not_allowed";
+      } else {
+        this.policy.privateBrowsingAllowed = this.manifest.incognito !== "not_allowed";
+      }
+
       GlobalManager.init(this);
 
       this.initSharedData();
@@ -1979,7 +1969,8 @@ class Extension extends ExtensionData {
       this.state = "Shutdown: Flushed jar cache";
     }
 
-    if (this.cleanupFile || reason !== "APP_SHUTDOWN") {
+    if (this.cleanupFile ||
+        ["ADDON_INSTALL", "ADDON_UNINSTALL", "ADDON_UPGRADE", "ADDON_DOWNGRADE"].includes(reason)) {
       StartupCache.clearAddonData(this.id);
     }
 

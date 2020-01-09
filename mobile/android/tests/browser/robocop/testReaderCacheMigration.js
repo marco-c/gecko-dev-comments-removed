@@ -4,7 +4,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/ReaderMode.jsm");
+const {ReaderMode} = ChromeUtils.import("resource://gre/modules/ReaderMode.jsm");
 
 var java = new JavaBridge(this);
 

@@ -1,7 +1,7 @@
 
 
 
-const { Services } = ChromeUtils.import('resource://gre/modules/Services.jsm');
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 function getTestPlugin(pluginName) {
   var ph = Cc["@mozilla.org/plugin/host;1"].getService(Ci.nsIPluginHost);

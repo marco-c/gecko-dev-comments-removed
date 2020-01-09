@@ -1,8 +1,7 @@
 
 
 
-ChromeUtils.import("resource://services-sync/engines.js");
-ChromeUtils.import("resource://services-sync/service.js");
+const {Service} = ChromeUtils.import("resource://services-sync/service.js");
 
 function PetrolEngine() {}
 PetrolEngine.prototype.name = "petrol";

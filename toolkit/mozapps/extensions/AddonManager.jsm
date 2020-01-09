@@ -17,7 +17,7 @@ if ("@mozilla.org/xre/app-info;1" in Cc) {
   }
 }
 
-ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
+const {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 
 const MOZ_COMPATIBILITY_NIGHTLY = !["aurora", "beta", "release", "esr"].includes(AppConstants.MOZ_UPDATE_CHANNEL);
 
@@ -59,9 +59,11 @@ const WEBAPI_TEST_INSTALL_HOSTS = [
   "example.com",
 ];
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-ChromeUtils.import("resource://gre/modules/AsyncShutdown.jsm");
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+
+
+var {AsyncShutdown} = ChromeUtils.import("resource://gre/modules/AsyncShutdown.jsm");
 
 XPCOMUtils.defineLazyGlobalGetters(this, ["DOMParser", "Element"]);
 
@@ -94,7 +96,7 @@ const DEFAULT_PROVIDERS = [
   "resource://gre/modules/LightweightThemeManager.jsm",
 ];
 
-ChromeUtils.import("resource://gre/modules/Log.jsm");
+const {Log} = ChromeUtils.import("resource://gre/modules/Log.jsm");
 
 
 const PARENT_LOGGER_ID = "addons";
@@ -814,7 +816,7 @@ var AddonManagerInternal = {
       
       
       let { RemotePages } =
-        ChromeUtils.import("resource://gre/modules/remotepagemanager/RemotePageManagerParent.jsm", {});
+        ChromeUtils.import("resource://gre/modules/remotepagemanager/RemotePageManagerParent.jsm");
 
       gPluginPageListener = new RemotePages("about:plugins");
       gPluginPageListener.addMessageListener("RequestPlugins", this.requestPlugins);

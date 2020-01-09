@@ -17,7 +17,6 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.defineModuleGetter(this, "Timer",
                                "resource://gre/modules/Timer.jsm");
 ChromeUtils.defineModuleGetter(this, "PlacesTestUtils",

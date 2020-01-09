@@ -1,14 +1,9 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/PlacesDBUtils.jsm");
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-ChromeUtils.import("resource://services-common/utils.js");
-ChromeUtils.import("resource://services-sync/engines.js");
-ChromeUtils.import("resource://services-sync/constants.js");
-ChromeUtils.import("resource://services-sync/engines/history.js");
-ChromeUtils.import("resource://services-sync/service.js");
-ChromeUtils.import("resource://services-sync/util.js");
+const {PlacesDBUtils} = ChromeUtils.import("resource://gre/modules/PlacesDBUtils.jsm");
+const {HistoryEngine} = ChromeUtils.import("resource://services-sync/engines/history.js");
+const {Service} = ChromeUtils.import("resource://services-sync/service.js");
 
 let engine;
 let tracker;

@@ -5,7 +5,7 @@
 
 
 const {PrivateBrowsingUtils} =
-  ChromeUtils.import("resource://gre/modules/PrivateBrowsingUtils.jsm", {});
+  ChromeUtils.import("resource://gre/modules/PrivateBrowsingUtils.jsm");
 
 const UTF8 = "UTF-8";
 const UTF16 = "UTF-16";

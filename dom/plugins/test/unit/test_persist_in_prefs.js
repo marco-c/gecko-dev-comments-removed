@@ -3,8 +3,6 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 
 var DELIM = mozinfo.os == "win" ? "|" : ":";
 

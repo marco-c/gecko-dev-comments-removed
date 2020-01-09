@@ -6,7 +6,7 @@
 
 var EXPORTED_SYMBOLS = ["UrlbarInput"];
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   AppConstants: "resource://gre/modules/AppConstants.jsm",
@@ -57,7 +57,6 @@ class UrlbarInput {
     this.valueIsTyped = false;
     this.userInitiatedFocus = false;
     this.isPrivate = PrivateBrowsingUtils.isWindowPrivate(this.window);
-    this.lastQueryContextPromise = Promise.resolve();
     this._untrimmedValue = "";
     this._suppressStartQuery = false;
 
@@ -300,14 +299,15 @@ class UrlbarInput {
     
 
     let where = this._whereToOpen(event);
-    let {url, postData} = UrlbarUtils.getUrlFromResult(result);
     let openParams = {
-      postData,
+      postData: null,
       allowInheritPrincipal: false,
     };
 
     
     
+
+    let url = result.payload.url;
 
     switch (result.type) {
       case UrlbarUtils.RESULT_TYPE.TAB_SWITCH: {
@@ -322,7 +322,7 @@ class UrlbarInput {
           adoptIntoActiveWindow: UrlbarPrefs.get("switchTabs.adoptIntoActiveWindow"),
         };
 
-        if (this.window.switchToTabHavingURI(Services.io.newURI(url), false, loadOpts) &&
+        if (this.window.switchToTabHavingURI(Services.io.newURI(result.payload.url), false, loadOpts) &&
             prevTab.isEmpty) {
           this.window.gBrowser.removeTab(prevTab);
         }
@@ -334,26 +334,26 @@ class UrlbarInput {
         if (url) {
           break;
         }
+
         const actionDetails = {
           isSuggestion: !!result.payload.suggestion,
           alias: result.payload.keyword,
         };
         const engine = Services.search.getEngineByName(result.payload.engine);
+
+        [url, openParams.postData] = this._getSearchQueryUrl(
+          engine, result.payload.suggestion || result.payload.query);
         this._recordSearch(engine, event, actionDetails);
         break;
       }
-      case UrlbarUtils.RESULT_TYPE.OMNIBOX: {
+      case UrlbarUtils.RESULT_TYPE.OMNIBOX:
         
         ExtensionSearchHandler.handleInputEntered(result.payload.keyword,
                                                   result.payload.content,
                                                   where);
         return;
-      }
     }
 
-    if (!url) {
-      throw new Error(`Invalid url for result ${JSON.stringify(result)}`);
-    }
     this._loadURL(url, where, openParams);
   }
 
@@ -409,12 +409,8 @@ class UrlbarInput {
       UrlbarPrefs.get("autoFill") &&
       (!this._lastSearchString ||
        !this._lastSearchString.startsWith(searchString));
-    this._lastSearchString = searchString;
 
-    
-    
-    
-    this.lastQueryContextPromise = this.controller.startQuery(new UrlbarQueryContext({
+    this.controller.startQuery(new UrlbarQueryContext({
       enableAutofill,
       isPrivate: this.isPrivate,
       lastKey,
@@ -423,6 +419,7 @@ class UrlbarInput {
       providers: ["UnifiedComplete"],
       searchString,
     }));
+    this._lastSearchString = searchString;
   }
 
   typeRestrictToken(char) {
@@ -623,6 +620,22 @@ class UrlbarInput {
               event.metaKey : event.ctrlKey);
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+  _getSearchQueryUrl(engine, query) {
+    let submission = engine.getSubmission(query, null, "keyword");
+    return [submission.uri.spec, submission.postData];
+  }
 
   
 
@@ -724,7 +737,7 @@ class UrlbarInput {
     
     
     if (this.window.gInitialPages.includes(url)) {
-      browser.initialPageLoadedFromUserAction = url;
+      browser.initialPageLoadedFromURLBar = url;
     }
     try {
       UrlbarUtils.addToUrlbarHistory(url, this.window);

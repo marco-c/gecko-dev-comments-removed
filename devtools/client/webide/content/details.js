@@ -2,7 +2,7 @@
 
 
 
-const {require} = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
+const {require} = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
 const {AppManager} = require("devtools/client/webide/modules/app-manager");
 
 window.addEventListener("load", function() {

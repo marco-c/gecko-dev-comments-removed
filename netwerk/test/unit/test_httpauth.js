@@ -5,8 +5,6 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 function run_test() {
   var am = Cc["@mozilla.org/network/http-auth-manager;1"].
            getService(Ci.nsIHttpAuthManager);

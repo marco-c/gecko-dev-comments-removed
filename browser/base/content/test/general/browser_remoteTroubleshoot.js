@@ -2,7 +2,7 @@
 
 
 
-var {WebChannel} = ChromeUtils.import("resource://gre/modules/WebChannel.jsm", {});
+var {WebChannel} = ChromeUtils.import("resource://gre/modules/WebChannel.jsm");
 
 const TEST_URL_TAIL = "example.com/browser/browser/base/content/test/general/test_remoteTroubleshoot.html";
 const TEST_URI_GOOD = Services.io.newURI("https://" + TEST_URL_TAIL);

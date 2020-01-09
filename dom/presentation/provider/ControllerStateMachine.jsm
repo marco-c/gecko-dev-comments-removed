@@ -11,7 +11,7 @@
 var EXPORTED_SYMBOLS = ["ControllerStateMachine"]; 
 
 
-ChromeUtils.import("resource://gre/modules/presentation/StateMachineHelper.jsm");
+const {CommandType, State} = ChromeUtils.import("resource://gre/modules/presentation/StateMachineHelper.jsm");
 
 const DEBUG = false;
 function debug(str) {

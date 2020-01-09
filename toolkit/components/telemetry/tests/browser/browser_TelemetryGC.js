@@ -14,7 +14,7 @@
 
 
 
-const {GCTelemetry} = ChromeUtils.import("resource://gre/modules/GCTelemetry.jsm", {});
+const {GCTelemetry} = ChromeUtils.import("resource://gre/modules/GCTelemetry.jsm");
 
 function check(entries) {
   const FIELDS = ["random", "worst"];
@@ -111,7 +111,7 @@ add_task(async function test() {
   
   
   function initScript() {
-    const {GCTelemetry} = ChromeUtils.import("resource://gre/modules/GCTelemetry.jsm", {});
+    const {GCTelemetry} = ChromeUtils.import("resource://gre/modules/GCTelemetry.jsm");
 
     
 

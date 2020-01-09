@@ -3,7 +3,7 @@
 
 "use strict";
 
-const { TabState } = ChromeUtils.import("resource:///modules/sessionstore/TabState.jsm", {});
+const { TabState } = ChromeUtils.import("resource:///modules/sessionstore/TabState.jsm");
 
 
 

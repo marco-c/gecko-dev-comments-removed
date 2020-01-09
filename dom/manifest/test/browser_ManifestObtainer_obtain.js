@@ -1,7 +1,7 @@
 
 
 "use strict";
-const { ManifestObtainer } = ChromeUtils.import("resource://gre/modules/ManifestObtainer.jsm", {});
+const { ManifestObtainer } = ChromeUtils.import("resource://gre/modules/ManifestObtainer.jsm");
 const remoteURL = "http://mochi.test:8888/browser/dom/manifest/test/resource.sjs";
 const defaultURL = new URL("http://example.org/browser/dom/manifest/test/resource.sjs");
 defaultURL.searchParams.set("Content-Type", "text/html; charset=utf-8");

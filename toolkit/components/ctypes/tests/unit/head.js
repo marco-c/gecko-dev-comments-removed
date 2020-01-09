@@ -1,11 +1,11 @@
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
+var {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 try {
   
   
-  ChromeUtils.import("resource://gre/modules/ctypes.jsm");
+  var {ctypes} = ChromeUtils.import("resource://gre/modules/ctypes.jsm");
 } catch (e) {
 }
 

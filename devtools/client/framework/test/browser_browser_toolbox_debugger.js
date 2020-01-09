@@ -99,13 +99,13 @@ add_task(async function runTest() {
 
     const registerCleanupFunction = () => {};
 
-    const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
-    const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm", {});
+    const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
+    const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
     
     
     
-    const { setTimeout } = ChromeUtils.import("resource://gre/modules/Timer.jsm", {});
+    const { setTimeout } = ChromeUtils.import("resource://gre/modules/Timer.jsm");
     function waitUntil(predicate, interval = 10) {
       if (predicate()) {
         return Promise.resolve(true);
@@ -148,7 +148,7 @@ add_task(async function runTest() {
     env.set("MOZ_TOOLBOX_TEST_SCRIPT", "");
   });
 
-  const { BrowserToolboxProcess } = ChromeUtils.import("resource://devtools/client/framework/ToolboxProcess.jsm", {});
+  const { BrowserToolboxProcess } = ChromeUtils.import("resource://devtools/client/framework/ToolboxProcess.jsm");
   
   
   let closePromise;

@@ -5,7 +5,7 @@
 
 
 
-const { XPCOMUtils } = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", {});
+const { XPCOMUtils } = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 const manager = Cc["@mozilla.org/presentation-device/manager;1"]
                   .getService(Ci.nsIPresentationDeviceManager);

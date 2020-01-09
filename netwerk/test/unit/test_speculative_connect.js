@@ -4,8 +4,6 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 var CC = Components.Constructor;
 const ServerSocket = CC("@mozilla.org/network/server-socket;1",
                         "nsIServerSocket",

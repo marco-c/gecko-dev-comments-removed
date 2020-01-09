@@ -7,16 +7,11 @@ _("Test that node reassignment happens correctly using the FxA identity mgr.");
 
 
 
-ChromeUtils.import("resource://gre/modules/Log.jsm");
-ChromeUtils.import("resource://services-common/rest.js");
-ChromeUtils.import("resource://services-common/utils.js");
-ChromeUtils.import("resource://services-sync/constants.js");
-ChromeUtils.import("resource://services-sync/service.js");
-ChromeUtils.import("resource://services-sync/status.js");
-ChromeUtils.import("resource://services-sync/util.js");
-ChromeUtils.import("resource://testing-common/services/sync/rotaryengine.js");
-ChromeUtils.import("resource://services-sync/browserid_identity.js");
-ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm");
+const {RESTRequest} = ChromeUtils.import("resource://services-common/rest.js");
+const {Service} = ChromeUtils.import("resource://services-sync/service.js");
+const {Status} = ChromeUtils.import("resource://services-sync/status.js");
+const {BrowserIDManager} = ChromeUtils.import("resource://services-sync/browserid_identity.js");
+const {PromiseUtils} = ChromeUtils.import("resource://gre/modules/PromiseUtils.jsm");
 
 add_task(async function setup() {
   

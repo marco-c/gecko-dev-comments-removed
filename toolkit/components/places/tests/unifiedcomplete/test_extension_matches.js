@@ -4,7 +4,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/ExtensionSearchHandler.jsm");
+const {ExtensionSearchHandler} = ChromeUtils.import("resource://gre/modules/ExtensionSearchHandler.jsm");
 
 let controller = Cc["@mozilla.org/autocomplete/controller;1"].getService(Ci.nsIAutoCompleteController);
 

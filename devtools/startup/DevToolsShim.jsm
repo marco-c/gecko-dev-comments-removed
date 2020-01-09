@@ -4,9 +4,9 @@
 
 "use strict";
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm", {});
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-const { XPCOMUtils } = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", {});
+const { XPCOMUtils } = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 XPCOMUtils.defineLazyGetter(this, "DevtoolsStartup", () => {
   return Cc["@mozilla.org/devtools/startup-clh;1"]
             .getService(Ci.nsICommandLineHandler)
@@ -16,7 +16,7 @@ XPCOMUtils.defineLazyGetter(this, "DevtoolsStartup", () => {
 
 
 XPCOMUtils.defineLazyGetter(this, "Telemetry", function() {
-  const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
+  const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
   
   const Telemetry = require("devtools/client/shared/telemetry");
 

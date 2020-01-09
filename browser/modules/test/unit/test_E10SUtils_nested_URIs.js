@@ -1,8 +1,8 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/E10SUtils.jsm");
-ChromeUtils.import("resource://gre/modules/Services.jsm");
+const {E10SUtils} = ChromeUtils.import("resource://gre/modules/E10SUtils.jsm");
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 var TEST_PREFERRED_REMOTE_TYPES = [
   E10SUtils.WEB_REMOTE_TYPE,

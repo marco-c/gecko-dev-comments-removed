@@ -2,7 +2,7 @@
 
 
 
-ChromeUtils.import("resource://services-common/utils.js");
+const {CommonUtils} = ChromeUtils.import("resource://services-common/utils.js");
 
 
 

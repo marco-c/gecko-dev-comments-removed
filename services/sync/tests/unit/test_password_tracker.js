@@ -1,11 +1,8 @@
 
 
 
-ChromeUtils.import("resource://services-sync/constants.js");
-ChromeUtils.import("resource://services-sync/engines/passwords.js");
-ChromeUtils.import("resource://services-sync/engines.js");
-ChromeUtils.import("resource://services-sync/service.js");
-ChromeUtils.import("resource://services-sync/util.js");
+const {PasswordEngine} = ChromeUtils.import("resource://services-sync/engines/passwords.js");
+const {Service} = ChromeUtils.import("resource://services-sync/service.js");
 
 let engine;
 let store;

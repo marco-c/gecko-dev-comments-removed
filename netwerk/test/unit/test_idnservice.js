@@ -1,7 +1,6 @@
 
 
 "use strict";
-ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const idnService = Cc["@mozilla.org/network/idn-service;1"]
                      .getService(Ci.nsIIDNService);

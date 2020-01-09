@@ -9,9 +9,9 @@
 'use strict';
 
 
-ChromeUtils.import('resource://gre/modules/NetUtil.jsm');
+const {NetUtil} = ChromeUtils.import('resource://gre/modules/NetUtil.jsm');
 
-ChromeUtils.import('resource://testing-common/httpd.js');
+const {HttpServer} = ChromeUtils.import('resource://testing-common/httpd.js');
 
 let httpserver;
 let port;

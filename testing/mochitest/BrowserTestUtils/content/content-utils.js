@@ -6,8 +6,6 @@
 
 "use strict";
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-
 addEventListener("DOMContentLoaded", function(event) {
   let subframe = event.target != content.document;
   

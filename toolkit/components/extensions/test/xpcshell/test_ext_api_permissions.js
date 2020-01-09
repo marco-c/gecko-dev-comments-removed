@@ -2,7 +2,7 @@
 
 "use strict";
 
-let {Management} = ChromeUtils.import("resource://gre/modules/Extension.jsm", {});
+let {Management} = ChromeUtils.import("resource://gre/modules/Extension.jsm", null);
 function getNextContext() {
   return new Promise(resolve => {
     Management.on("proxy-context-load", function listener(type, context) {

@@ -10,7 +10,7 @@ function test() {
   CustomizableUI.addWidgetToArea("save-page-button", CustomizableUI.AREA_NAVBAR);
 
   
-  let CustomizableUIBSPass = ChromeUtils.import("resource:///modules/CustomizableUI.jsm", {});
+  let CustomizableUIBSPass = ChromeUtils.import("resource:///modules/CustomizableUI.jsm", null);
 
   let oldState = CustomizableUIBSPass.gSavedState;
   registerCleanupFunction(() => CustomizableUIBSPass.gSavedState = oldState );

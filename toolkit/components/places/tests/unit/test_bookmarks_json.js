@@ -2,7 +2,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/BookmarkJSONUtils.jsm");
+const {BookmarkJSONUtils} = ChromeUtils.import("resource://gre/modules/BookmarkJSONUtils.jsm");
 
 
 var test_bookmarks = {

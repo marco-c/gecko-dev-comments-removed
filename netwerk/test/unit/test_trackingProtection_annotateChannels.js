@@ -1,7 +1,7 @@
-ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
-ChromeUtils.import("resource://testing-common/UrlClassifierTestUtils.jsm");
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.import("resource://testing-common/httpd.js");
+const {NetUtil} = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
+const {UrlClassifierTestUtils} = ChromeUtils.import("resource://testing-common/UrlClassifierTestUtils.jsm");
+const {HttpServer} = ChromeUtils.import("resource://testing-common/httpd.js");
+var {Services} = ChromeUtils.import('resource://gre/modules/Services.jsm');
 
 
 

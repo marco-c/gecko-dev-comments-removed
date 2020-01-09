@@ -2,7 +2,7 @@
 
 "use strict";
 
-ChromeUtils.import("resource://gre/modules/ExtensionParent.jsm");
+var {ExtensionParent} = ChromeUtils.import("resource://gre/modules/ExtensionParent.jsm");
 
 var {
   ExtensionError,
@@ -140,9 +140,6 @@ this.sidebarAction = class extends ExtensionAPI {
   }
 
   createMenuItem(window, details) {
-    if (!this.extension.canAccessWindow(window)) {
-      return;
-    }
     let {document, SidebarUI} = window;
     let keyId = `ext-key-id-${this.id}`;
 
@@ -244,9 +241,6 @@ this.sidebarAction = class extends ExtensionAPI {
 
 
   updateWindow(window) {
-    if (!this.extension.canAccessWindow(window)) {
-      return;
-    }
     let nativeTab = window.gBrowser.selectedTab;
     this.updateButton(window, this.tabContext.get(nativeTab));
   }
@@ -289,19 +283,12 @@ this.sidebarAction = class extends ExtensionAPI {
     if (tabId != null && windowId != null) {
       throw new ExtensionError("Only one of tabId and windowId can be specified.");
     }
-    let target = null;
     if (tabId != null) {
-      target = tabTracker.getTab(tabId);
-      if (!this.extension.canAccessWindow(target.ownerGlobal)) {
-        throw new ExtensionError(`Invalid tab ID: ${tabId}`);
-      }
+      return tabTracker.getTab(tabId);
     } else if (windowId != null) {
-      target = windowTracker.getWindow(windowId);
-      if (!this.extension.canAccessWindow(target)) {
-        throw new ExtensionError(`Invalid window ID: ${windowId}`);
-      }
+      return windowTracker.getWindow(windowId);
     }
-    return target;
+    return null;
   }
 
   
@@ -370,7 +357,7 @@ this.sidebarAction = class extends ExtensionAPI {
 
   triggerAction(window) {
     let {SidebarUI} = window;
-    if (SidebarUI && this.extension.canAccessWindow(window)) {
+    if (SidebarUI) {
       SidebarUI.toggle(this.id);
     }
   }
@@ -382,7 +369,7 @@ this.sidebarAction = class extends ExtensionAPI {
 
   open(window) {
     let {SidebarUI} = window;
-    if (SidebarUI && this.extension.canAccessWindow(window)) {
+    if (SidebarUI) {
       SidebarUI.show(this.id);
     }
   }
@@ -452,16 +439,12 @@ this.sidebarAction = class extends ExtensionAPI {
 
         open() {
           let window = windowTracker.topWindow;
-          if (context.canAccessWindow(window)) {
-            sidebarAction.open(window);
-          }
+          sidebarAction.open(window);
         },
 
         close() {
           let window = windowTracker.topWindow;
-          if (context.canAccessWindow(window)) {
-            sidebarAction.close(window);
-          }
+          sidebarAction.close(window);
         },
 
         isOpen(details) {

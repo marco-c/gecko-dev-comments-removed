@@ -7,7 +7,7 @@
 
 
 
-var { DER } = ChromeUtils.import("resource://testing-common/psm/DER.jsm", {});
+var { DER } = ChromeUtils.import("resource://testing-common/psm/DER.jsm", null);
 
 function run_simple_tests() {
   throws(() => new DER.DER("this is not an array"), /invalid input/,

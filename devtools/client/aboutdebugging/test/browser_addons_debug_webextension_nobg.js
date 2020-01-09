@@ -15,7 +15,7 @@ const ADDON_NOBG_NAME = "test-devtools-webextension-nobg";
 
 const {
   BrowserToolboxProcess,
-} = ChromeUtils.import("resource://devtools/client/framework/ToolboxProcess.jsm", {});
+} = ChromeUtils.import("resource://devtools/client/framework/ToolboxProcess.jsm");
 
 
 

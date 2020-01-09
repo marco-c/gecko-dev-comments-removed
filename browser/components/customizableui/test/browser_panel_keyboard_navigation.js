@@ -4,7 +4,7 @@
 
 
 
-const {PanelView} = ChromeUtils.import("resource:///modules/PanelMultiView.jsm", {});
+const {PanelView} = ChromeUtils.import("resource:///modules/PanelMultiView.jsm", null);
 const kHelpButtonId = "appMenu-help-button";
 
 function getEnabledNavigableElementsForView(panelView) {

@@ -25,9 +25,9 @@ var EXPORTED_SYMBOLS = [
 
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-ChromeUtils.import("resource://gre/modules/AddonManager.jsm");
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const {AddonManager, AddonManagerPrivate} = ChromeUtils.import("resource://gre/modules/AddonManager.jsm");
 
 XPCOMUtils.defineLazyGlobalGetters(this, ["TextDecoder", "TextEncoder", "fetch"]);
 
@@ -171,7 +171,7 @@ const MSG_MESSAGE_MANAGER_CACHES_FLUSH = "AddonMessageManagerCachesFlush";
 
 var gIDTest = /^(\{[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\}|[a-z0-9-\._]*\@[a-z0-9-\._]+)$/i;
 
-ChromeUtils.import("resource://gre/modules/Log.jsm");
+const {Log} = ChromeUtils.import("resource://gre/modules/Log.jsm");
 const LOGGER_ID = "addons.xpi";
 
 
@@ -425,7 +425,6 @@ async function loadManifestFromWebManifest(aUri, aPackage) {
   addon.dependencies = Object.freeze(Array.from(extension.dependencies));
   addon.startupData = extension.startupData;
   addon.hidden = manifest.hidden;
-  addon.incognito = manifest.incognito;
 
   if (addon.type === "theme" && await aPackage.hasResource("preview.png")) {
     addon.previewImage = "preview.png";
@@ -2337,11 +2336,12 @@ AddonInstallWrapper.prototype = {
 
 
 
+var AddonUpdateChecker;
 var UpdateChecker = function(aAddon, aListener, aReason, aAppVersion, aPlatformVersion) {
   if (!aListener || !aReason)
     throw Cr.NS_ERROR_INVALID_ARG;
 
-  ChromeUtils.import("resource://gre/modules/addons/AddonUpdateChecker.jsm");
+  ({AddonUpdateChecker} = ChromeUtils.import("resource://gre/modules/addons/AddonUpdateChecker.jsm"));
 
   this.addon = aAddon;
   aAddon._updateCheck = this;

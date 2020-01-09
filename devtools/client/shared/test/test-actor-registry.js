@@ -6,7 +6,7 @@
 (function(exports) {
   const CC = Components.Constructor;
 
-  const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
+  const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
   const { fetch } = require("devtools/shared/DevToolsUtils");
 
   const TEST_URL_ROOT = "http://example.com/browser/devtools/client/shared/test/";
@@ -88,11 +88,6 @@
 
     const { TestActorFront } = await loadFront();
 
-    const front = new TestActorFront(client, toolbox);
-    
-    
-    front.actorID = form.testActor;
-    front.manage(front);
-    return front;
+    return new TestActorFront(client, form, toolbox);
   };
 })(this);

@@ -16,7 +16,7 @@
 </div>
 <pre id="test">
 <script type="application/javascript">
-ChromeUtils.import("resource://gre/modules/Services.jsm");
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 function createFileWithData(fileData) {
   var testFile = Services.dirsvc.get("ProfD", Ci.nsIFile);

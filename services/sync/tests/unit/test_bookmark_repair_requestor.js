@@ -1,6 +1,6 @@
 
 
-ChromeUtils.import("resource://services-sync/bookmark_repair.js");
+const {BookmarkRepairRequestor} = ChromeUtils.import("resource://services-sync/bookmark_repair.js");
 
 function makeClientRecord(id, fields = {}) {
   return {

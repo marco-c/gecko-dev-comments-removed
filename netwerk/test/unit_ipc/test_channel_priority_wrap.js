@@ -8,7 +8,7 @@
 'use strict';
 
 
-ChromeUtils.import('resource://testing-common/httpd.js');
+const {HttpServer} = ChromeUtils.import('resource://testing-common/httpd.js');
 
 let httpserver;
 let port;

@@ -11,7 +11,7 @@ Services.prefs.setBoolPref(PREF_EM_CHECK_UPDATE_SECURITY, false);
 
 Services.prefs.setBoolPref("lightweightThemes.update.enabled", true);
 
-ChromeUtils.import("resource://gre/modules/LightweightThemeManager.jsm");
+const {LightweightThemeManager} = ChromeUtils.import("resource://gre/modules/LightweightThemeManager.jsm");
 
 var gInstallDate;
 

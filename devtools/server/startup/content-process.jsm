@@ -26,7 +26,7 @@ function setupServer(mm) {
 
   
   const { DevToolsLoader } =
-    ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
+    ChromeUtils.import("resource://devtools/shared/Loader.jsm");
 
   
   

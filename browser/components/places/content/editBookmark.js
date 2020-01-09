@@ -2,7 +2,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+var {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 const MAX_FOLDER_ITEM_IN_MENU_LIST = 5;
 

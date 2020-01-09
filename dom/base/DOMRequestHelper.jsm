@@ -18,7 +18,7 @@
 
 var EXPORTED_SYMBOLS = ["DOMRequestIpcHelper"];
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 function DOMRequestIpcHelper() {
   

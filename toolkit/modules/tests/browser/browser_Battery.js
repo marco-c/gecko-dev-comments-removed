@@ -2,7 +2,7 @@
 
 
 "use strict";
-var {GetBattery, Debugging} = ChromeUtils.import("resource://gre/modules/Battery.jsm", {});
+var {GetBattery, Debugging} = ChromeUtils.import("resource://gre/modules/Battery.jsm", null);
 ChromeUtils.import("resource://gre/modules/Services.jsm", this);
 
 function test() {

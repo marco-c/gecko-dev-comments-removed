@@ -12,7 +12,7 @@
 
 var EXPORTED_SYMBOLS = ["UrlbarProviderUnifiedComplete"];
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 XPCOMUtils.defineLazyModuleGetters(this, {
   Log: "resource://gre/modules/Log.jsm",
   PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
@@ -197,6 +197,7 @@ function convertResultToMatches(context, result, urls) {
     if (!match) {
       continue;
     }
+    matches.push(match);
     
     if (i == 0) {
       if (style.includes("autofill") && result.defaultIndex == 0) {
@@ -204,10 +205,8 @@ function convertResultToMatches(context, result, urls) {
       }
       if (style.includes("heuristic")) {
         context.preselected = true;
-        match.heuristic = true;
       }
     }
-    matches.push(match);
   }
   return {matches, done};
 }

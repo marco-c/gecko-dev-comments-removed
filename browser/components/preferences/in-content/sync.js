@@ -4,9 +4,9 @@
 
 
 
-ChromeUtils.import("resource://services-sync/main.js");
-ChromeUtils.import("resource://gre/modules/FxAccounts.jsm");
-ChromeUtils.import("resource://gre/modules/Services.jsm");
+var {Weave} = ChromeUtils.import("resource://services-sync/main.js");
+var {FxAccounts, fxAccounts} = ChromeUtils.import("resource://gre/modules/FxAccounts.jsm");
+var {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 XPCOMUtils.defineLazyGetter(this, "FxAccountsCommon", function() {
   return ChromeUtils.import("resource://gre/modules/FxAccountsCommon.js", {});
@@ -51,8 +51,6 @@ var gSyncPane = {
   init() {
     this._setupEventListeners();
     this._adjustForPrefs();
-
-    document.getElementById("weavePrefsDeck").removeAttribute("data-hidden-from-search");
 
     
     let xps = Cc["@mozilla.org/weave/service;1"]

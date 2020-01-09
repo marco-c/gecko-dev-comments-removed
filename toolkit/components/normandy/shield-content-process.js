@@ -11,8 +11,8 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-ChromeUtils.import("resource://normandy-content/AboutPages.jsm");
+const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const {AboutPages} = ChromeUtils.import("resource://normandy-content/AboutPages.jsm");
 
 
 

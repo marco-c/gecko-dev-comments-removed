@@ -22,7 +22,7 @@
 
 "use strict";
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 XPCOMUtils.defineLazyGlobalGetters(this, ["URL"]);
 const displayModes = new Set(["fullscreen", "standalone", "minimal-ui",
   "browser",
@@ -33,13 +33,13 @@ const orientationTypes = new Set(["any", "natural", "landscape", "portrait",
 ]);
 const textDirections = new Set(["ltr", "rtl", "auto"]);
 
-ChromeUtils.import("resource://gre/modules/Console.jsm");
-ChromeUtils.import("resource://gre/modules/Services.jsm");
+const {ConsoleAPI} = ChromeUtils.import("resource://gre/modules/Console.jsm");
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
-ChromeUtils.import("resource://gre/modules/ValueExtractor.jsm");
+const {ValueExtractor} = ChromeUtils.import("resource://gre/modules/ValueExtractor.jsm");
 
-ChromeUtils.import("resource://gre/modules/ImageObjectProcessor.jsm");
+const {ImageObjectProcessor} = ChromeUtils.import("resource://gre/modules/ImageObjectProcessor.jsm");
 
 var ManifestProcessor = { 
   get defaultDisplayMode() {

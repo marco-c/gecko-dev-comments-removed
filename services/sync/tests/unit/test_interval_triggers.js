@@ -1,14 +1,8 @@
 
 
 
-ChromeUtils.import("resource://services-common/utils.js");
-ChromeUtils.import("resource://services-sync/constants.js");
-ChromeUtils.import("resource://services-sync/engines.js");
-ChromeUtils.import("resource://services-sync/engines/clients.js");
-ChromeUtils.import("resource://services-sync/util.js");
-
 Svc.Prefs.set("registerEngines", "");
-ChromeUtils.import("resource://services-sync/service.js");
+const {Service} = ChromeUtils.import("resource://services-sync/service.js");
 
 let scheduler;
 let clientsEngine;

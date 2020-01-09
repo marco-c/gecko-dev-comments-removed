@@ -1,9 +1,7 @@
 
 
 
-ChromeUtils.import("resource://services-sync/engines.js");
-ChromeUtils.import("resource://services-sync/service.js");
-ChromeUtils.import("resource://services-sync/util.js");
+const {Service} = ChromeUtils.import("resource://services-sync/service.js");
 
 add_task(async function test_tracker_basics() {
   let tracker = new Tracker("Tracker", Service);

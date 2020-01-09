@@ -5,7 +5,7 @@
 var testnum = 0;
 var dbConnection; 
 
-ChromeUtils.import("resource://gre/modules/Promise.jsm");
+const {Promise} = ChromeUtils.import("resource://gre/modules/Promise.jsm");
 
 function countDeletedEntries(expected) {
   return new Promise((resolve, reject) => {

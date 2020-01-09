@@ -2,8 +2,10 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/DownloadUtils.jsm");
-ChromeUtils.import("resource:///modules/SiteDataManager.jsm");
+const {SiteDataManager} = ChromeUtils.import("resource:///modules/SiteDataManager.jsm");
+
+ChromeUtils.defineModuleGetter(this, "DownloadUtils",
+                               "resource://gre/modules/DownloadUtils.jsm");
 
 var gClearSiteDataDialog = {
   _clearSiteDataCheckbox: null,

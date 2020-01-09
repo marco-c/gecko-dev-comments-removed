@@ -4,9 +4,9 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
-ChromeUtils.import("resource:///modules/SitePermissions.jsm");
+var {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+var {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
+const {SitePermissions} = ChromeUtils.import("resource:///modules/SitePermissions.jsm");
 
 const sitePermissionsL10n = {
   "desktop-notification": {
@@ -264,9 +264,11 @@ var gSitePermissionsManager = {
     hbox.appendChild(website);
 
     let menulist = document.createXULElement("menulist");
+    let menupopup = document.createXULElement("menupopup");
     menulist.setAttribute("flex", "1");
     menulist.setAttribute("width", "50");
     menulist.setAttribute("class", "website-status");
+    menulist.appendChild(menupopup);
     let states = SitePermissions.getAvailableStates(permission.type);
     for (let state of states) {
       
@@ -278,13 +280,15 @@ var gSitePermissionsManager = {
       } else if (state == SitePermissions.UNKNOWN) {
         continue;
       }
-      let m = menulist.appendItem(undefined, state);
+      let m = document.createXULElement("menuitem");
       document.l10n.setAttributes(m, this._getCapabilityString(state));
+      m.setAttribute("value", state);
+      menupopup.appendChild(m);
     }
     menulist.value = permission.capability;
 
     menulist.addEventListener("select", () => {
-      this.onPermissionChange(permission, Number(menulist.value));
+      this.onPermissionChange(permission, Number(menulist.selectedItem.value));
     });
 
     row.appendChild(hbox);

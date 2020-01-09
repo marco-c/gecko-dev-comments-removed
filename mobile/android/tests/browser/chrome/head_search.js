@@ -1,7 +1,7 @@
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.import("resource://testing-common/Task.jsm");
+var {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+var {Task} = ChromeUtils.import("resource://testing-common/Task.jsm");
 
 
 

@@ -6,9 +6,9 @@
 
 var EXPORTED_SYMBOLS = ["webrtcUI"];
 
-ChromeUtils.import("resource:///modules/syncedtabs/EventEmitter.jsm");
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const {EventEmitter} = ChromeUtils.import("resource:///modules/syncedtabs/EventEmitter.jsm");
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 ChromeUtils.defineModuleGetter(this, "AppConstants",
                                "resource://gre/modules/AppConstants.jsm");
@@ -608,7 +608,6 @@ function prompt(aBrowser, aRequest) {
         
         
         menupopup.parentNode.removeAttribute("value");
-        menupopup.parentNode.selectedItem = null;
 
         for (let device of devices)
           addDeviceToList(menupopup, device.name, device.deviceIndex);
@@ -629,14 +628,6 @@ function prompt(aBrowser, aRequest) {
         while (menupopup.lastChild) {
           menupopup.removeChild(menupopup.lastChild);
         }
-
-        
-        
-        
-        
-        menupopup.parentNode.removeAttribute("value");
-        menupopup.parentNode.selectedItem = null;
-
         let label = doc.getElementById("webRTC-selectWindow-label");
         const gumStringId = "getUserMedia.selectWindowOrScreen";
         label.setAttribute("value",

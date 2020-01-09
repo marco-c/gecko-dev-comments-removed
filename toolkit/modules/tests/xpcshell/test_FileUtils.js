@@ -1,7 +1,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/FileUtils.jsm");
+const {FileUtils} = ChromeUtils.import("resource://gre/modules/FileUtils.jsm");
 
 function do_check_throws(f, result, stack) {
   if (!stack)

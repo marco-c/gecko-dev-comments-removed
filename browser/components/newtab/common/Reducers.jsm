@@ -3,8 +3,8 @@
 
 "use strict";
 
-const {actionTypes: at} = ChromeUtils.import("resource://activity-stream/common/Actions.jsm", {});
-const {Dedupe} = ChromeUtils.import("resource://activity-stream/common/Dedupe.jsm", {});
+const {actionTypes: at} = ChromeUtils.import("resource://activity-stream/common/Actions.jsm");
+const {Dedupe} = ChromeUtils.import("resource://activity-stream/common/Dedupe.jsm");
 
 const TOP_SITES_DEFAULT_ROWS = 1;
 const TOP_SITES_MAX_SITES_PER_ROW = 8;

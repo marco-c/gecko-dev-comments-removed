@@ -1,5 +1,5 @@
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm", {});
+var {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 ChromeUtils.defineModuleGetter(this, "SessionStartup",
   "resource:///modules/sessionstore/SessionStartup.jsm");
 
@@ -19,7 +19,7 @@ function afterSessionStartupInitialization(cb) {
 
   
   
-  ChromeUtils.import("resource://gre/modules/CrashMonitor.jsm");
+  const {CrashMonitor} = ChromeUtils.import("resource://gre/modules/CrashMonitor.jsm");
   CrashMonitor.init();
 
   

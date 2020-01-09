@@ -2,7 +2,7 @@
 
 "use strict";
 
-ChromeUtils.import("resource://gre/modules/ExtensionUtils.jsm");
+var {ExtensionUtils} = ChromeUtils.import("resource://gre/modules/ExtensionUtils.jsm");
 
 var {
   ExtensionError,

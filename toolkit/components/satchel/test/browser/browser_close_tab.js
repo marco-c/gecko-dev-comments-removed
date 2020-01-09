@@ -2,7 +2,7 @@
 
 
 
-const {FormHistory} = ChromeUtils.import("resource://gre/modules/FormHistory.jsm", {});
+const {FormHistory} = ChromeUtils.import("resource://gre/modules/FormHistory.jsm");
 
 add_task(async function test() {
   const url = `data:text/html,<input type="text" name="field1">`;

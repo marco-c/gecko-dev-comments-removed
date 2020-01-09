@@ -3,7 +3,6 @@
 
 "use strict;";
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 ChromeUtils.defineModuleGetter(this, "Services",
   "resource://gre/modules/Services.jsm");
 ChromeUtils.defineModuleGetter(this, "FileUtils",
@@ -15,7 +14,7 @@ ChromeUtils.defineModuleGetter(this, "OS",
 ChromeUtils.defineModuleGetter(this, "CommonUtils",
   "resource://services-common/utils.js");
 
-ChromeUtils.import("resource://gre/modules/Preferences.jsm");
+const {Preferences} = ChromeUtils.import("resource://gre/modules/Preferences.jsm");
 
 var EXPORTED_SYMBOLS = [
   "LogManager",

@@ -2,7 +2,7 @@
 
 "use strict";
 
-ChromeUtils.import("resource://gre/modules/PlacesUtils.jsm");
+var {PlacesUtils} = ChromeUtils.import("resource://gre/modules/PlacesUtils.jsm");
 
 const {
   TYPE_BOOKMARK,

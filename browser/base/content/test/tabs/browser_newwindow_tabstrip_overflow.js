@@ -2,7 +2,7 @@
 
 
 
-const {LightweightThemeManager} = ChromeUtils.import("resource://gre/modules/LightweightThemeManager.jsm", {});
+const {LightweightThemeManager} = ChromeUtils.import("resource://gre/modules/LightweightThemeManager.jsm");
 registerCleanupFunction(() => {
   LightweightThemeManager.currentTheme = null;
   Services.prefs.clearUserPref("lightweightThemes.usedThemes");

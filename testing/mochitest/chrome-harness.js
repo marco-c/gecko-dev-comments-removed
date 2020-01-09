@@ -4,8 +4,8 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm", this);
-ChromeUtils.import("resource://gre/modules/NetUtil.jsm", this);
+var {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+var {NetUtil} = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
 
 
 

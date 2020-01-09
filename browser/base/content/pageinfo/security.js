@@ -3,9 +3,8 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/BrowserUtils.jsm");
-ChromeUtils.import("resource:///modules/SiteDataManager.jsm");
-ChromeUtils.import("resource://gre/modules/DownloadUtils.jsm");
+const {SiteDataManager} = ChromeUtils.import("resource:///modules/SiteDataManager.jsm");
+const {DownloadUtils} = ChromeUtils.import("resource://gre/modules/DownloadUtils.jsm");
 
 
 

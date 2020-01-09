@@ -2,7 +2,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const {
   DebounceCallback,
@@ -13,7 +13,7 @@ const {
   waitForEvent,
   waitForMessage,
   waitForObserverTopic,
-} = ChromeUtils.import("chrome://marionette/content/sync.js", {});
+} = ChromeUtils.import("chrome://marionette/content/sync.js");
 
 
 

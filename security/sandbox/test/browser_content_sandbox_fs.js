@@ -16,7 +16,7 @@ Services.scriptloader.loadSubScript("chrome://mochitests/content/browser/" +
 
 
 function createFile(path) {
-  ChromeUtils.import("resource://gre/modules/osfile.jsm");
+  const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm");
   let encoder = new TextEncoder();
   let array = encoder.encode("TEST FILE DUMMY DATA");
   return OS.File.writeAtomic(path, array).then(function(value) {
@@ -30,7 +30,7 @@ function createFile(path) {
 
 
 function createSymlink(path) {
-  ChromeUtils.import("resource://gre/modules/osfile.jsm");
+  const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm");
   
   return OS.File.unixSymLink("/Users", path).then(function(value) {
     return true;
@@ -43,7 +43,7 @@ function createSymlink(path) {
 
 
 function deleteFile(path) {
-  ChromeUtils.import("resource://gre/modules/osfile.jsm");
+  const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm");
   return OS.File.remove(path, {ignoreAbsent: false}).then(function(value) {
     return true;
   }).catch(function(err) {
@@ -56,7 +56,7 @@ function deleteFile(path) {
 
 
 function readDir(path) {
-  ChromeUtils.import("resource://gre/modules/osfile.jsm");
+  const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm");
   let numEntries = 0;
   let iterator = new OS.File.DirectoryIterator(path);
   let promise = iterator.forEach(function (dirEntry) {
@@ -74,7 +74,7 @@ function readDir(path) {
 
 
 function readFile(path) {
-  ChromeUtils.import("resource://gre/modules/osfile.jsm");
+  const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm");
   let promise = OS.File.read(path).then(function (binaryData) {
     return {ok: true};
   }).catch(function (error) {
@@ -87,7 +87,7 @@ function readFile(path) {
 
 
 function statPath(path) {
-  ChromeUtils.import("resource://gre/modules/osfile.jsm");
+  const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm");
   let promise = OS.File.stat(path).then(function (stat) {
     return {ok: true};
   }).catch(function (error) {

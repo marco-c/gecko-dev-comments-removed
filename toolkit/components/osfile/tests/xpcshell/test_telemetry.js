@@ -1,7 +1,7 @@
 "use strict";
 
-var {OS: {File, Path, Constants}} = ChromeUtils.import("resource://gre/modules/osfile.jsm", {});
-var {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm", {});
+var {OS: {File, Path, Constants}} = ChromeUtils.import("resource://gre/modules/osfile.jsm");
+var {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 add_task(async function init() {

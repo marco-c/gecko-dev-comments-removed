@@ -1,7 +1,6 @@
 
 
 "use strict";
-ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 function getString(clipboard) {
   var str = "";

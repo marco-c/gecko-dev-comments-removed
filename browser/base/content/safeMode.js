@@ -3,11 +3,11 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const appStartup = Services.startup;
 
-ChromeUtils.import("resource://gre/modules/ResetProfile.jsm");
+const {ResetProfile} = ChromeUtils.import("resource://gre/modules/ResetProfile.jsm");
 
 var defaultToReset = false;
 

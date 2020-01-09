@@ -1,8 +1,6 @@
 
 
 
-ChromeUtils.import("resource://services-common/utils.js");
-
 function run_test() {
   let data = ["Zm9vYmE=", "Zm9vYmE==", "Zm9vYmE==="];
   for (let d in data) {

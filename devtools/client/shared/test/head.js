@@ -10,7 +10,7 @@
 
 Services.scriptloader.loadSubScript("chrome://mochitests/content/browser/devtools/client/shared/test/shared-head.js", this);
 
-const {DOMHelpers} = ChromeUtils.import("resource://devtools/client/shared/DOMHelpers.jsm", {});
+const {DOMHelpers} = ChromeUtils.import("resource://devtools/client/shared/DOMHelpers.jsm");
 const {Hosts} = require("devtools/client/framework/toolbox-hosts");
 
 const TEST_URI_ROOT = "http://example.com/browser/devtools/client/shared/test/";

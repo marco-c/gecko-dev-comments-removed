@@ -1,7 +1,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
+var {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 var dirSvc = Services.dirSvc;
 var profileDir = do_get_profile();

@@ -3,7 +3,7 @@
 
 "use strict";
 
-const {tokenize} = ChromeUtils.import("resource://activity-stream/lib/Tokenize.jsm", {});
+const {tokenize} = ChromeUtils.import("resource://activity-stream/lib/Tokenize.jsm");
 
 
 

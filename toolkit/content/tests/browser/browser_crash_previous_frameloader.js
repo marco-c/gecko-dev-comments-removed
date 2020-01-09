@@ -78,7 +78,7 @@ add_task(async function test_crash_in_previous_frameloader() {
     
     
     await ContentTask.spawn(browser, null, function() {
-      ChromeUtils.import("resource://gre/modules/ctypes.jsm");
+      const {ctypes} = ChromeUtils.import("resource://gre/modules/ctypes.jsm");
       ChromeUtils.import("resource://gre/modules/Timer.jsm");
 
       let dies = function() {

@@ -1,7 +1,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
+var {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 
@@ -12,7 +12,7 @@ if (commonFile) {
 }
 
 
-ChromeUtils.import("resource:///modules/UrlbarUtils.jsm");
+var {UrlbarMuxer, UrlbarProvider, UrlbarQueryContext, UrlbarUtils} = ChromeUtils.import("resource:///modules/UrlbarUtils.jsm");
 XPCOMUtils.defineLazyModuleGetters(this, {
   HttpServer: "resource://testing-common/httpd.js",
   PlacesTestUtils: "resource://testing-common/PlacesTestUtils.jsm",
@@ -30,7 +30,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 
 
-ChromeUtils.import("resource://gre/modules/Timer.jsm");
+var {clearInterval, clearTimeout, setInterval, setIntervalWithTarget, setTimeout, setTimeoutWithTarget} = ChromeUtils.import("resource://gre/modules/Timer.jsm");
 Services.scriptloader.loadSubScript("resource://testing-common/sinon-2.3.2.js", this);
 
 

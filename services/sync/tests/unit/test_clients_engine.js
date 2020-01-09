@@ -1,12 +1,9 @@
 
 
 
-ChromeUtils.import("resource://services-sync/constants.js");
-ChromeUtils.import("resource://services-sync/engines.js");
-ChromeUtils.import("resource://services-sync/engines/clients.js");
-ChromeUtils.import("resource://services-sync/record.js");
-ChromeUtils.import("resource://services-sync/service.js");
-ChromeUtils.import("resource://services-sync/util.js");
+const {ClientEngine, ClientsRec} = ChromeUtils.import("resource://services-sync/engines/clients.js");
+const {CryptoWrapper} = ChromeUtils.import("resource://services-sync/record.js");
+const {Service} = ChromeUtils.import("resource://services-sync/service.js");
 
 const MORE_THAN_CLIENTS_TTL_REFRESH = 691200; 
 const LESS_THAN_CLIENTS_TTL_REFRESH = 86400; 

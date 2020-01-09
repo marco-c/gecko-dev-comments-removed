@@ -4,14 +4,14 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 var profileDir = do_get_profile();
 
 
 
 
 function cleanUp() {
+  const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+
   let files = [
     "places.sqlite",
     "cookies.sqlite",

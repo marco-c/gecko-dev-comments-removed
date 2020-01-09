@@ -1,7 +1,7 @@
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.import("resource://gre/modules/Timer.jsm");
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const {clearInterval, setInterval} = ChromeUtils.import("resource://gre/modules/Timer.jsm");
 
 
 let window = this;

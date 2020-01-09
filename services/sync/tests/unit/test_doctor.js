@@ -1,8 +1,7 @@
 
 
 
-const { Doctor, REPAIR_ADVANCE_PERIOD } = ChromeUtils.import("resource://services-sync/doctor.js", {});
-ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { Doctor, REPAIR_ADVANCE_PERIOD } = ChromeUtils.import("resource://services-sync/doctor.js", null);
 
 function mockDoctor(mocks) {
   

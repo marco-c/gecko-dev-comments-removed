@@ -12,9 +12,9 @@
 
 
 
-const { setTimeout } = ChromeUtils.import("resource://gre/modules/Timer.jsm", {});
-const { RemoteSettings } = ChromeUtils.import("resource://services-settings/remote-settings.js", {});
-const BlocklistClients = ChromeUtils.import("resource://services-common/blocklist-clients.js", {});
+const { setTimeout } = ChromeUtils.import("resource://gre/modules/Timer.jsm");
+const { RemoteSettings } = ChromeUtils.import("resource://services-settings/remote-settings.js");
+const BlocklistClients = ChromeUtils.import("resource://services-common/blocklist-clients.js", null);
 
 
 var id = "xpcshell@tests.mozilla.org";

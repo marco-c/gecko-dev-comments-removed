@@ -3,8 +3,6 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
-
 function test() {
   waitForExplicitFinish();
 

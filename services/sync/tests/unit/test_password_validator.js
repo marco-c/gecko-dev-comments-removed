@@ -1,7 +1,7 @@
 
 
 
-ChromeUtils.import("resource://services-sync/engines/passwords.js");
+const {PasswordValidator} = ChromeUtils.import("resource://services-sync/engines/passwords.js");
 
 function getDummyServerAndClient() {
   return {

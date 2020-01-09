@@ -2,10 +2,9 @@
 
 "use strict";
 
-ChromeUtils.import("resource://gre/modules/Promise.jsm");
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.import("resource://testing-common/Task.jsm");
-ChromeUtils.import("resource://testing-common/PromiseTestUtils.jsm");
+const {Promise} = ChromeUtils.import("resource://gre/modules/Promise.jsm");
+const {Task} = ChromeUtils.import("resource://testing-common/Task.jsm");
+const {PromiseTestUtils} = ChromeUtils.import("resource://testing-common/PromiseTestUtils.jsm");
 
 
 PromiseTestUtils.disableUncaughtRejectionObserverForSelfTest();

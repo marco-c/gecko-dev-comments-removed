@@ -9,7 +9,7 @@
 
 
 
-var { ForgetAboutSite } = ChromeUtils.import("resource://gre/modules/ForgetAboutSite.jsm", {});
+var { ForgetAboutSite } = ChromeUtils.import("resource://gre/modules/ForgetAboutSite.jsm");
 
 registerCleanupFunction(() => {
   Services.prefs.clearUserPref("security.cert_pinning.enforcement_level");

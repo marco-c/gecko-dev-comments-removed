@@ -7,8 +7,6 @@
 
 Services.prefs.setBoolPref(PREF_EM_CHECK_UPDATE_SECURITY, false);
 
-ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
-
 if (AppConstants.platform == "win" && AppConstants.DEBUG) {
   
   

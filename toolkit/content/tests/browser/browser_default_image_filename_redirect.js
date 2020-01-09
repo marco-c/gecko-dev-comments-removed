@@ -6,7 +6,7 @@
 
 
 
-let {WebRequest} = ChromeUtils.import("resource://gre/modules/WebRequest.jsm", {});
+let {WebRequest} = ChromeUtils.import("resource://gre/modules/WebRequest.jsm");
 let MockFilePicker = SpecialPowers.MockFilePicker;
 MockFilePicker.init(window);
 add_task(async function() {

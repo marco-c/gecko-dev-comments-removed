@@ -2,7 +2,7 @@
 
 
 
-ChromeUtils.import("resource://testing-common/httpd.js");
+var {HttpServer} = ChromeUtils.import("resource://testing-common/httpd.js");
 
 var server = new HttpServer();
 server.start(-1);

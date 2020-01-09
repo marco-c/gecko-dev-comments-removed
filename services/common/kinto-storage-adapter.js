@@ -11,8 +11,8 @@
 
 
 
-const { Sqlite } = ChromeUtils.import("resource://gre/modules/Sqlite.jsm", {});
-const { Kinto } = ChromeUtils.import("resource://services-common/kinto-offline-client.js", {});
+const { Sqlite } = ChromeUtils.import("resource://gre/modules/Sqlite.jsm");
+const { Kinto } = ChromeUtils.import("resource://services-common/kinto-offline-client.js");
 
 
 

@@ -38,7 +38,7 @@ async function openPage(enableDialogs) {
     
     let methodName = enableDialogs ? "enableDialogs" : "disableDialogs";
     await ContentTask.spawn(browser, methodName, async function(name) {
-      ChromeUtils.import("resource://gre/modules/Services.jsm");
+      const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
       Services.obs.addObserver(doc => {
         if (content && doc == content.document) {
           content.windowUtils[name]();

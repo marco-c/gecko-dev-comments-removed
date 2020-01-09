@@ -586,7 +586,7 @@ function regularListing(metadata, response) {
 
 
 function convertManifestToTestLinks(root, manifest) {
-  ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
+  const {NetUtil} = ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
 
   var manifestFile = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
   manifestFile.initWithFile(serverBasePath);

@@ -82,7 +82,7 @@ var gPluginHandler = {
   
   
   async openPluginUpdatePage(pluginTag) {
-    let { Blocklist } = ChromeUtils.import("resource://gre/modules/Blocklist.jsm", {});
+    let { Blocklist } = ChromeUtils.import("resource://gre/modules/Blocklist.jsm");
     let url = await Blocklist.getPluginBlockURL(pluginTag);
     openTrustedLinkIn(url, "tab");
   },

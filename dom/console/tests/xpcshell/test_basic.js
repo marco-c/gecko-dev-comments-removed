@@ -1,7 +1,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 add_task(async function() {
   Assert.ok("console" in this);

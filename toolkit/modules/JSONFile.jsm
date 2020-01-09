@@ -34,7 +34,7 @@ var EXPORTED_SYMBOLS = [
 
 
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 ChromeUtils.defineModuleGetter(this, "AsyncShutdown",
                                "resource://gre/modules/AsyncShutdown.jsm");

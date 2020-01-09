@@ -6,9 +6,8 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.import("resource://gre/modules/Troubleshoot.jsm");
+const {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
+const {Troubleshoot} = ChromeUtils.import("resource://gre/modules/Troubleshoot.jsm");
 
 function test() {
   waitForExplicitFinish();

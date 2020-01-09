@@ -1,6 +1,6 @@
 
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+var {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 try {
   
@@ -52,7 +52,7 @@ function base64UrlDecode(s) {
 
 
 function addResourceAlias() {
-  ChromeUtils.import("resource://gre/modules/Services.jsm");
+  const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
   const resProt = Services.io.getProtocolHandler("resource")
                           .QueryInterface(Ci.nsIResProtocolHandler);
   let uri = Services.io.newURI("resource://gre/modules/services-crypto/");

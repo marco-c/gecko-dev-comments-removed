@@ -1,5 +1,3 @@
-ChromeUtils.import("resource://gre/modules/ctypes.jsm");
-
 
 var scope = {};
 var ctypes = ctypes;

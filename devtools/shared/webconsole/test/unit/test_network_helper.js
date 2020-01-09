@@ -2,7 +2,7 @@
 
 
 "use strict";
-const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
+const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
 
 Object.defineProperty(this, "NetworkHelper", {
   get: function() {

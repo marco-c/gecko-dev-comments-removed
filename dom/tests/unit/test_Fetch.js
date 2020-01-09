@@ -2,7 +2,7 @@
 
 
 Cu.importGlobalProperties(["fetch"]);
-ChromeUtils.import("resource://testing-common/httpd.js");
+const {HttpServer} = ChromeUtils.import("resource://testing-common/httpd.js");
 
 const BinaryInputStream = Components.Constructor("@mozilla.org/binaryinputstream;1",
   "nsIBinaryInputStream", "setInputStream");

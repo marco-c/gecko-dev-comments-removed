@@ -1,7 +1,7 @@
 "use strict";
 
-const {SessionSaver} = ChromeUtils.import("resource:///modules/sessionstore/SessionSaver.jsm", {});
-const {TabStateFlusher} = ChromeUtils.import("resource:///modules/sessionstore/TabStateFlusher.jsm", {});
+const {SessionSaver} = ChromeUtils.import("resource:///modules/sessionstore/SessionSaver.jsm");
+const {TabStateFlusher} = ChromeUtils.import("resource:///modules/sessionstore/TabStateFlusher.jsm");
 
 
 
@@ -109,26 +109,4 @@ add_task(async function dontTemporarilyShowAboutHome() {
   is(win.gURLBar.value, "", "URL bar value should be empty.");
 
   await BrowserTestUtils.closeWindow(win);
-});
-
-
-
-
-
-
-add_task(async function() {
-  await BrowserTestUtils.withNewTab({
-    url: "http://example.com",
-    gBrowser,
-  }, async browser => {
-    const TYPED_VALUE = "This string should get cleared";
-    gURLBar.value = TYPED_VALUE;
-    browser.userTypedValue = TYPED_VALUE;
-
-    document.getElementById("home-button").click();
-    await BrowserTestUtils.browserLoaded(browser, false, HomePage.get());
-    is(gURLBar.value, "", "URL bar should be empty");
-    is(browser.userTypedValue, null,
-       "The browser should have no recorded userTypedValue");
-  });
 });

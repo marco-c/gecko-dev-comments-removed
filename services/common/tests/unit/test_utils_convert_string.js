@@ -3,8 +3,6 @@
 
 "use strict";
 
-ChromeUtils.import("resource://services-common/utils.js");
-
 
 
 const TEST_STR = "πόλλ' οἶδ' ἀλώπηξ, ἀλλ' ἐχῖνος ἓν μέγα";

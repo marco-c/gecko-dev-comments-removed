@@ -2,8 +2,6 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/BrowserUtils.jsm");
-
 function makeInputStream(aString) {
   let stream = Cc["@mozilla.org/io/string-input-stream;1"]
                  .createInstance(Ci.nsIStringInputStream);

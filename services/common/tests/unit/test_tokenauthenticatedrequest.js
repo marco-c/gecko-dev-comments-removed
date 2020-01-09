@@ -1,10 +1,8 @@
 
 
 
-ChromeUtils.import("resource://services-crypto/utils.js");
-ChromeUtils.import("resource://services-common/async.js");
-ChromeUtils.import("resource://services-common/rest.js");
-ChromeUtils.import("resource://services-common/utils.js");
+const {CryptoUtils} = ChromeUtils.import("resource://services-crypto/utils.js");
+const {TokenAuthenticatedRESTRequest} = ChromeUtils.import("resource://services-common/rest.js");
 
 function run_test() {
   initTestLogging("Trace");

@@ -3,7 +3,7 @@
 
 "use strict";
 
-ChromeUtils.import("resource://normandy/lib/LogManager.jsm");
+const {LogManager} = ChromeUtils.import("resource://normandy/lib/LogManager.jsm");
 
 var EXPORTED_SYMBOLS = ["EventEmitter"];
 

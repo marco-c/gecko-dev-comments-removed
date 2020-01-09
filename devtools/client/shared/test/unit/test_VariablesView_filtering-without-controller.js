@@ -8,9 +8,9 @@
 
 
 const { VariablesView } =
-  ChromeUtils.import("resource://devtools/client/shared/widgets/VariablesView.jsm", {});
+  ChromeUtils.import("resource://devtools/client/shared/widgets/VariablesView.jsm");
 const { require } =
-  ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
+  ChromeUtils.import("resource://devtools/shared/Loader.jsm");
 const { globals } = require("devtools/shared/builtin-modules");
 
 const DOMParser = new globals.DOMParser();

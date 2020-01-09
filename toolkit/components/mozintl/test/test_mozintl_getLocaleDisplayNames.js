@@ -1,8 +1,8 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-const { L10nRegistry, FileSource } = ChromeUtils.import("resource://gre/modules/L10nRegistry.jsm", {});
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { L10nRegistry, FileSource } = ChromeUtils.import("resource://gre/modules/L10nRegistry.jsm");
 
 const fs = {
   "toolkit/intl/languageNames.ftl": `

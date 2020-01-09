@@ -3,7 +3,7 @@
 
 
 
-const { XPCOMUtils } = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", {});
+const { XPCOMUtils } = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 var Prompter = {
   QueryInterface: ChromeUtils.generateQI([Ci.nsIPrompt]),

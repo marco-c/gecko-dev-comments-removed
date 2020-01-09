@@ -3,11 +3,11 @@
 
 "use strict";
 
-const {ActivityStreamMessageChannel} = ChromeUtils.import("resource://activity-stream/lib/ActivityStreamMessageChannel.jsm", {});
-const {ActivityStreamStorage} = ChromeUtils.import("resource://activity-stream/lib/ActivityStreamStorage.jsm", {});
-const {Prefs} = ChromeUtils.import("resource://activity-stream/lib/ActivityStreamPrefs.jsm", {});
-const {reducers} = ChromeUtils.import("resource://activity-stream/common/Reducers.jsm", {});
-const {redux} = ChromeUtils.import("resource://activity-stream/vendor/Redux.jsm", {});
+const {ActivityStreamMessageChannel} = ChromeUtils.import("resource://activity-stream/lib/ActivityStreamMessageChannel.jsm");
+const {ActivityStreamStorage} = ChromeUtils.import("resource://activity-stream/lib/ActivityStreamStorage.jsm");
+const {Prefs} = ChromeUtils.import("resource://activity-stream/lib/ActivityStreamPrefs.jsm");
+const {reducers} = ChromeUtils.import("resource://activity-stream/common/Reducers.jsm");
+const {redux} = ChromeUtils.import("resource://activity-stream/vendor/Redux.jsm");
 
 
 

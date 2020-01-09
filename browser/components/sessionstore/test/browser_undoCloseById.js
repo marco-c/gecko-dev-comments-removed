@@ -5,7 +5,7 @@
 
 
 
-ChromeUtils.import("resource:///modules/sessionstore/SessionStore.jsm");
+const {SessionStore} = ChromeUtils.import("resource:///modules/sessionstore/SessionStore.jsm");
 
 async function openAndCloseTab(window, url) {
   let tab = BrowserTestUtils.addTab(window.gBrowser, url);

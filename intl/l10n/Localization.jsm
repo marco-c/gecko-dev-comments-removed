@@ -21,9 +21,9 @@
 
 
 
-const { L10nRegistry } = ChromeUtils.import("resource://gre/modules/L10nRegistry.jsm", {});
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm", {});
-const { AppConstants } = ChromeUtils.import("resource://gre/modules/AppConstants.jsm", {});
+const { L10nRegistry } = ChromeUtils.import("resource://gre/modules/L10nRegistry.jsm");
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { AppConstants } = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 
 
 
@@ -229,9 +229,7 @@ class Localization {
 
   removeResourceIds(resourceIds) {
     this.resourceIds = this.resourceIds.filter(r => !resourceIds.includes(r));
-    if (this.resourceIds.length) {
-      this.onChange();
-    }
+    this.onChange();
     return this.resourceIds.length;
   }
 

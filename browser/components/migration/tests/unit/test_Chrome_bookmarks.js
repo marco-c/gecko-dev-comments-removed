@@ -1,6 +1,6 @@
 "use strict";
 
-ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
+const {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 
 add_task(async function() {
   let rootDir = do_get_file("chromefiles/", true);
@@ -28,7 +28,7 @@ add_task(async function() {
   
   
   
-  ChromeUtils.import("resource://gre/modules/osfile.jsm");
+  const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm");
   await OS.File.makeDir(target.path, {from: rootDir.parent.path, ignoreExisting: true});
 
   target.append("Bookmarks");

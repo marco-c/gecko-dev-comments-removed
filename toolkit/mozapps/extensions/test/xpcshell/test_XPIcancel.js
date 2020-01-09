@@ -4,7 +4,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/addons/XPIInstall.jsm");
+const {XPIInstall} = ChromeUtils.import("resource://gre/modules/addons/XPIInstall.jsm");
 
 function run_test() {
   

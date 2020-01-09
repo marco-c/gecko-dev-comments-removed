@@ -1,7 +1,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
+const {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 
 const MODULE_BASE = "resource://services-common/";
 const shared_modules = [

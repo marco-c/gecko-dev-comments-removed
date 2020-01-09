@@ -3,7 +3,7 @@
 
 "use strict";
 
-const { loader, require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
+const { loader, require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
 const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
 const EventEmitter = require("devtools/shared/event-emitter");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");

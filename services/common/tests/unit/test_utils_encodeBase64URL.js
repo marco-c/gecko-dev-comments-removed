@@ -1,8 +1,6 @@
 
 
 
-ChromeUtils.import("resource://services-common/utils.js");
-
 add_test(function test_simple() {
   let expected = {
     hello: "aGVsbG8=",

@@ -14,8 +14,9 @@ var gTestFuncs = [];
 
 var gIterator;
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.import("resource://gre/modules/accessibility/Utils.jsm");
+var {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+var AccessFu;
+const {Logger, Utils} = ChromeUtils.import("resource://gre/modules/accessibility/Utils.jsm");
 
 const MovementGranularity = {
   CHARACTER: 1,
@@ -143,7 +144,7 @@ var AccessFuTest = {
     Logger.logLevel = Logger.DEBUG;
 
     
-    ChromeUtils.import("resource://gre/modules/accessibility/AccessFu.jsm");
+    ({AccessFu} = ChromeUtils.import("resource://gre/modules/accessibility/AccessFu.jsm"));
 
     var prefs = [["accessibility.accessfu.notify_output", 1]];
     prefs.push.apply(prefs, aAdditionalPrefs);
@@ -213,7 +214,8 @@ class AccessFuContentTestRunner {
 
   async setupMessageManager(aMessageManager) {
     function contentScript() {
-      ChromeUtils.import("resource://gre/modules/accessibility/Utils.jsm");
+      
+      const {Logger, Utils} = ChromeUtils.import("resource://gre/modules/accessibility/Utils.jsm");
       Logger.logLevel = "DEBUG";
       Utils.inTest = true;
 

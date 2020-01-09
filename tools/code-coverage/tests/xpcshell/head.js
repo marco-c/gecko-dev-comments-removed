@@ -2,8 +2,8 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
-ChromeUtils.import("resource://gre/modules/osfile.jsm");
+var {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
+var {OS, require} = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 
 function getFiles() {
   const env = Cc["@mozilla.org/process/environment;1"].getService(Ci.nsIEnvironment);

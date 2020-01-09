@@ -5,7 +5,7 @@
 
 
 
-const { HttpServer } = ChromeUtils.import("resource://testing-common/httpd.js", {});
+const { HttpServer } = ChromeUtils.import("resource://testing-common/httpd.js");
 
 const server = new HttpServer();
 server.registerDirectory("/", do_get_cwd());

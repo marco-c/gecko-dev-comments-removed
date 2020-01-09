@@ -2,7 +2,7 @@
 
 
 function run_test() {
-  const { FluentBundle } = ChromeUtils.import("resource://gre/modules/Fluent.jsm", {});
+  const { FluentBundle } = ChromeUtils.import("resource://gre/modules/Fluent.jsm");
 
   test_methods_presence(FluentBundle);
   test_methods_calling(FluentBundle);

@@ -1,7 +1,7 @@
 try {
   
   
-  ChromeUtils.import("resource://gre/modules/ctypes.jsm");
+  var {ctypes} = ChromeUtils.import("resource://gre/modules/ctypes.jsm");
 } catch (e) {
 }
 

@@ -2,7 +2,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/ContextualIdentityService.jsm");
+const {ContextualIdentityService} = ChromeUtils.import("resource://gre/modules/ContextualIdentityService.jsm");
 
 
 

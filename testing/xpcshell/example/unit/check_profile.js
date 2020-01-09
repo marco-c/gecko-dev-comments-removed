@@ -2,7 +2,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 function check_profile_dir(profd) {
   Assert.ok(profd.exists());

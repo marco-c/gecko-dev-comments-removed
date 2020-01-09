@@ -2,7 +2,7 @@
 
 
 
-const {require} = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
+const {require} = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
 const RuntimeList = require("devtools/client/webide/modules/runtime-list");
 
 var runtimeList = new RuntimeList(window, window.parent);

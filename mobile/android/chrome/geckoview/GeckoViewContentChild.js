@@ -3,14 +3,15 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/GeckoViewChildModule.jsm");
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const {GeckoViewChildModule} = ChromeUtils.import("resource://gre/modules/GeckoViewChildModule.jsm");
+var {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+var {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  FormData: "resource://gre/modules/FormData.jsm",
   FormLikeFactory: "resource://gre/modules/FormLikeFactory.jsm",
   GeckoViewAutoFill: "resource://gre/modules/GeckoViewAutoFill.jsm",
   PrivacyFilter: "resource://gre/modules/sessionstore/PrivacyFilter.jsm",
-  Services: "resource://gre/modules/Services.jsm",
   SessionHistory: "resource://gre/modules/sessionstore/SessionHistory.jsm",
 });
 
@@ -202,7 +203,7 @@ class GeckoViewContentChild extends GeckoViewChildModule {
                 
                 
                 
-                return SessionStoreUtils.restoreFormData(frame.document, data);
+                return FormData.restore(frame, data);
               });
             }
           }, {capture: true, mozSystemGroup: true, once: true});
@@ -263,17 +264,8 @@ class GeckoViewContentChild extends GeckoViewChildModule {
           return aNode && aNode.getAttribute && aNode.getAttribute(aAttribute);
         }
 
-        function createAbsoluteUri(aBaseUri, aUri) {
-          if (!aUri || !aBaseUri || !aBaseUri.displaySpec) {
-            return null;
-          }
-          return Services.io.newURI(aUri, null, aBaseUri).displaySpec;
-        }
-
         const node = aEvent.composedTarget;
-        const baseUri = node.ownerDocument.baseURIObject;
-        const uri = createAbsoluteUri(baseUri,
-          nearestParentAttribute(node, "href"));
+        const uri = nearestParentAttribute(node, "href");
         const title = nearestParentAttribute(node, "title");
         const alt = nearestParentAttribute(node, "alt");
         const elementType = ChromeUtils.getClassName(node);
@@ -287,7 +279,6 @@ class GeckoViewContentChild extends GeckoViewChildModule {
             type: "GeckoView:ContextMenu",
             screenX: aEvent.screenX,
             screenY: aEvent.screenY,
-            baseUri: (baseUri && baseUri.displaySpec) || null,
             uri,
             title,
             alt,

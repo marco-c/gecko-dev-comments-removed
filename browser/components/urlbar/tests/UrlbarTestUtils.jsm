@@ -5,316 +5,89 @@
 
 const EXPORTED_SYMBOLS = ["UrlbarTestUtils"];
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   BrowserTestUtils: "resource://testing-common/BrowserTestUtils.jsm",
-  PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
   TestUtils: "resource://testing-common/TestUtils.jsm",
-  UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
-  UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
 });
 
 var UrlbarTestUtils = {
-  
-
-
-
-
-
-
-  promiseSearchComplete(win, restoreAnimationsFn = null) {
-    let urlbar = getUrlbarAbstraction(win);
-    return BrowserTestUtils.waitForPopupEvent(urlbar.panel, "shown").then(async () => {
-      await urlbar.promiseSearchComplete();
-      if (typeof restoreAnimations == "function") {
-        restoreAnimationsFn();
+  promiseSearchComplete(win, dontAnimate = false) {
+    return BrowserTestUtils.waitForPopupEvent(win.gURLBar.popup, "shown").then(() => {
+      function searchIsComplete() {
+        let isComplete = win.gURLBar.controller.searchStatus >=
+                         Ci.nsIAutoCompleteController.STATUS_COMPLETE_NO_MATCH;
+        if (isComplete) {
+          dump(`Restore popup dontAnimate value to ${dontAnimate}\n`);
+          win.gURLBar.popup.setAttribute("dontanimate", dontAnimate);
+        }
+        return isComplete;
       }
+
+      
+      return BrowserTestUtils.waitForCondition(searchIsComplete, "waiting urlbar search to complete");
     });
   },
 
-  
+  promiseAutocompleteResultPopup(inputText, win, waitForFocus, fireInputEvent = false) {
+    let dontAnimate = !!win.gURLBar.popup.getAttribute("dontanimate");
+    waitForFocus(() => {
+      dump(`Disable popup animation. Change dontAnimate value from ${dontAnimate} to true.\n`);
+      win.gURLBar.popup.setAttribute("dontanimate", "true");
+      win.gURLBar.focus();
+      win.gURLBar.value = inputText;
+      if (fireInputEvent) {
+        
+        let event = win.document.createEvent("Events");
+        event.initEvent("input", true, true);
+        win.gURLBar.dispatchEvent(event);
+      }
+      win.gURLBar.controller.startSearch(inputText);
+    }, win);
 
-
-
-
-
-
-
-  async promiseAutocompleteResultPopup(inputText, win, waitForFocus, fireInputEvent = false) {
-    let urlbar = getUrlbarAbstraction(win);
-    let restoreAnimationsFn = urlbar.disableAnimations();
-    await new Promise(resolve => waitForFocus(resolve, win));
-    urlbar.focus();
-    urlbar.value = inputText;
-    if (fireInputEvent) {
-      
-      urlbar.fireInputEvent();
-    }
-    
-    
-    if (!urlbar.quantumbar || !fireInputEvent) {
-      urlbar.startSearch(inputText);
-    }
-    return this.promiseSearchComplete(win, restoreAnimationsFn);
+    return this.promiseSearchComplete(win, dontAnimate);
   },
-
-  
-
-
-
-
-
 
   async waitForAutocompleteResultAt(win, index) {
-    let urlbar = getUrlbarAbstraction(win);
-    return urlbar.promiseResultAt(index);
+    let searchString = win.gURLBar.controller.searchString;
+    await BrowserTestUtils.waitForCondition(
+      () => win.gURLBar.popup.richlistbox.itemChildren.length > index &&
+            win.gURLBar.popup.richlistbox.itemChildren[index].getAttribute("ac-text") == searchString.trim(),
+      `Waiting for the autocomplete result for "${searchString}" at [${index}] to appear`);
+    
+    await new Promise(resolve => win.requestIdleCallback(resolve, {timeout: 1000}));
+    return win.gURLBar.popup.richlistbox.itemChildren[index];
   },
 
-  
-
-
-
-
-  async getDetailsOfResultAt(win, index) {
-    let urlbar = getUrlbarAbstraction(win);
-    return urlbar.getDetailsOfResultAt(index);
+  promiseSuggestionsPresent(win, msg = "") {
+    return TestUtils.waitForCondition(this.suggestionsPresent.bind(this, win),
+                                      msg || "Waiting for suggestions");
   },
 
-  
-
-
-
-
-  getSelectedElement(win) {
-    let urlbar = getUrlbarAbstraction(win);
-    return urlbar.getSelectedElement();
-  },
-
-  
-
-
-
-
-
-  getResultCount(win) {
-    let urlbar = getUrlbarAbstraction(win);
-    return urlbar.getResultCount();
-  },
-
-  
-
-
-
-
-  promiseSuggestionsPresent(win) {
-    let urlbar = getUrlbarAbstraction(win);
-    return urlbar.promiseSearchSuggestions();
-  },
-
-  
-
-
-
-
-
-  promiseSpeculativeConnections(httpserver, count) {
-    if (!httpserver) {
-      throw new Error("Must provide an http server");
+  suggestionsPresent(win) {
+    let controller = win.gURLBar.popup.input.controller;
+    let matchCount = controller.matchCount;
+    for (let i = 0; i < matchCount; i++) {
+      let url = controller.getValueAt(i);
+      let mozActionMatch = url.match(/^moz-action:([^,]+),(.*)$/);
+      if (mozActionMatch) {
+        let [, type, paramStr] = mozActionMatch;
+        let params = JSON.parse(paramStr);
+        if (type == "searchengine" && "searchSuggestion" in params) {
+          return true;
+        }
+      }
     }
-    return BrowserTestUtils.waitForCondition(
-      () => httpserver.connectionNumber == count,
-      "Waiting for speculative connection setup"
-    );
+    return false;
+  },
+
+  promiseSpeculativeConnection(httpserver) {
+    return BrowserTestUtils.waitForCondition(() => {
+      if (httpserver) {
+        return httpserver.connectionNumber == 1;
+      }
+      return false;
+    }, "Waiting for connection setup");
   },
 };
-
-
-
-
-var gUrlbarAbstractions = new WeakMap();
-
-function getUrlbarAbstraction(win) {
-  if (!gUrlbarAbstractions.has(win)) {
-    gUrlbarAbstractions.set(win, new UrlbarAbstraction(win));
-  }
-  return gUrlbarAbstractions.get(win);
-}
-
-
-
-
-
-class UrlbarAbstraction {
-  constructor(win) {
-    if (!win) {
-      throw new Error("Must provide a browser window");
-    }
-    this.urlbar = win.gURLBar;
-    this.quantumbar = UrlbarPrefs.get("quantumbar");
-    this.window = win;
-    this.window.addEventListener("unload", () => {
-      this.urlbar = null;
-      this.window = null;
-    }, {once: true});
-  }
-
-  
-
-
-
-  disableAnimations() {
-    if (!this.quantumbar) {
-      let dontAnimate = !!this.urlbar.popup.getAttribute("dontanimate");
-      this.urlbar.popup.setAttribute("dontanimate", "true");
-      return () => {
-        this.urlbar.popup.setAttribute("dontanimate", dontAnimate);
-      };
-    }
-    return () => {};
-  }
-
-  
-
-
-  focus() {
-    this.urlbar.inputField.focus();
-  }
-
-  
-
-
-  fireInputEvent() {
-    let event = this.window.document.createEvent("Events");
-    event.initEvent("input", true, true);
-    this.urlbar.inputField.dispatchEvent(event);
-  }
-
-  set value(val) {
-    this.urlbar.value = val;
-  }
-  get value() {
-    return this.urlbar.value;
-  }
-
-  get panel() {
-    return this.quantumbar ? this.urlbar.panel : this.urlbar.popup;
-  }
-
-  startSearch(text) {
-    if (this.quantumbar) {
-      this.urlbar.value = text;
-      this.urlbar.startQuery();
-    } else {
-      this.urlbar.controller.startSearch(text);
-    }
-  }
-
-  promiseSearchComplete() {
-    if (this.quantumbar) {
-      return this.urlbar.lastQueryContextPromise;
-    }
-    return BrowserTestUtils.waitForCondition(
-      () => this.urlbar.controller.searchStatus >=
-              Ci.nsIAutoCompleteController.STATUS_COMPLETE_NO_MATCH,
-      "waiting urlbar search to complete");
-  }
-
-  async promiseResultAt(index) {
-    if (!this.quantumbar) {
-      
-      
-      
-      
-      
-      let searchString = this.urlbar.controller.searchString;
-      await BrowserTestUtils.waitForCondition(
-        () => this.panel.richlistbox.itemChildren.length > index &&
-            this.panel.richlistbox.itemChildren[index].getAttribute("ac-text") == searchString.trim(),
-        `Waiting for the autocomplete result for "${searchString}" at [${index}] to appear`);
-      
-      await new Promise(resolve => this.window.requestIdleCallback(resolve, {timeout: 1000}));
-      return this.panel.richlistbox.itemChildren[index];
-    }
-    
-    await this.promiseSearchComplete();
-    if (index >= this.urlbar.view._rows.length) {
-      throw new Error("Not enough results");
-    }
-    return this.urlbar.view._rows.children[index];
-  }
-
-  getSelectedElement() {
-    if (this.quantumbar) {
-      return this.urlbar.view._selected || null;
-    }
-    return this.panel.selectedIndex >= 0 ?
-      this.panel.richlistbox.itemChildren[this.panel.selectedIndex] : null;
-  }
-
-  getResultCount() {
-    return this.quantumbar ? this.urlbar.view._rows.children.length
-                           : this.urlbar.controller.matchCount;
-  }
-
-  async getDetailsOfResultAt(index) {
-    await this.promiseResultAt(index);
-    function getType(style, action) {
-      if (style.includes("searchengine") || style.includes("suggestions")) {
-        return UrlbarUtils.RESULT_TYPE.SEARCH;
-      } else if (style.includes("extension")) {
-        return UrlbarUtils.RESULT_TYPE.OMNIBOX;
-      } else if (action && action.type == "keyword") {
-        return UrlbarUtils.RESULT_TYPE.KEYWORD;
-      } else if (action && action.type == "remotetab") {
-        return UrlbarUtils.RESULT_TYPE.REMOTE_TAB;
-      } else if (action && action.type == "switchtab") {
-        return UrlbarUtils.RESULT_TYPE.TAB_SWITCH;
-      }
-      return UrlbarUtils.RESULT_TYPE.URL;
-    }
-    let details = {};
-    if (this.quantumbar) {
-      let context = await this.urlbar.lastQueryContextPromise;
-      details.url = (UrlbarUtils.getUrlFromResult(context.results[index])).url;
-      details.type = context.results[index].type;
-      details.autofill = index == 0 && context.autofillValue;
-    } else {
-      details.url = this.urlbar.controller.getFinalCompleteValueAt(index);
-      let style = this.urlbar.controller.getStyleAt(index);
-      let action = PlacesUtils.parseActionUrl(this.urlbar.controller.getValueAt(index));
-      details.type = getType(style, action);
-      details.autofill = style.includes("autofill");
-    }
-    return details;
-  }
-
-  async promiseSearchSuggestions() {
-    if (!this.quantumbar) {
-      return TestUtils.waitForCondition(() => {
-        let controller = this.urlbar.controller;
-        let matchCount = controller.matchCount;
-        for (let i = 0; i < matchCount; i++) {
-          let url = controller.getValueAt(i);
-          let action = PlacesUtils.parseActionUrl(url);
-          if (action && action.type == "searchengine" &&
-              action.params.searchSuggestion) {
-            return true;
-          }
-        }
-        return false;
-      }, "Waiting for suggestions");
-    }
-    
-    
-    
-    
-    return this.promiseSearchComplete().then(context => {
-      
-      if (!context.results.some(r => r.type == UrlbarUtils.RESULT_TYPE.SEARCH &&
-                                r.payload.suggestion)) {
-        throw new Error("Cannot find a search suggestion");
-      }
-    });
-  }
-}

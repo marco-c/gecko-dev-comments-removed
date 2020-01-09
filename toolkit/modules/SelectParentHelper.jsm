@@ -8,8 +8,8 @@ var EXPORTED_SYMBOLS = [
   "SelectParentHelper",
 ];
 
-const {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm", {});
-const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm", {});
+const {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 const MAX_ROWS = 20;

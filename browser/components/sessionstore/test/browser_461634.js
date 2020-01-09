@@ -2,7 +2,7 @@
 
 
 
-ChromeUtils.import("resource:///modules/sessionstore/SessionStore.jsm");
+const {SessionStore} = ChromeUtils.import("resource:///modules/sessionstore/SessionStore.jsm");
 
 add_task(async function testClosedTabData() {
   

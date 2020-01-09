@@ -4,7 +4,7 @@
 
 var EXPORTED_SYMBOLS = ["Preferences"];
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 

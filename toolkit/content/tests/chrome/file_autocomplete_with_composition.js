@@ -1,8 +1,6 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 function waitForCondition(condition, nextTest) {
   var tries = 0;
   var interval = setInterval(function() {

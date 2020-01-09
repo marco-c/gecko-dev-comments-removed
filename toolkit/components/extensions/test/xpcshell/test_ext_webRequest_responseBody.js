@@ -3,9 +3,8 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Timer.jsm");
-ChromeUtils.import("resource://gre/modules/osfile.jsm");
-ChromeUtils.import("resource://testing-common/ExtensionTestCommon.jsm");
+const {OS} = ChromeUtils.import("resource://gre/modules/osfile.jsm");
+const {ExtensionTestCommon} = ChromeUtils.import("resource://testing-common/ExtensionTestCommon.jsm");
 
 const HOSTS = new Set([
   "example.com",

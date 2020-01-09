@@ -1,15 +1,14 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.import("resource://gre/modules/TelemetryController.jsm", this);
 ChromeUtils.import("resource://gre/modules/TelemetrySession.jsm", this);
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 
 
 
-ChromeUtils.import("resource://testing-common/AppInfo.jsm");
+const {updateAppInfo} = ChromeUtils.import("resource://testing-common/AppInfo.jsm");
 updateAppInfo();
 
 var gGlobalScope = this;

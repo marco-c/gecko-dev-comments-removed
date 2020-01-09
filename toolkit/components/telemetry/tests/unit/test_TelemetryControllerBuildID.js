@@ -18,7 +18,6 @@
 ChromeUtils.import("resource://gre/modules/Services.jsm", this);
 ChromeUtils.import("resource://gre/modules/TelemetryController.jsm", this);
 ChromeUtils.import("resource://gre/modules/TelemetrySession.jsm", this);
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
 
 ChromeUtils.import("resource://testing-common/AppInfo.jsm", this);

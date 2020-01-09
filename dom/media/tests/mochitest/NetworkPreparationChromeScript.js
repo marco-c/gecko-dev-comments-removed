@@ -1,7 +1,7 @@
 
 
 
-const { Services } = ChromeUtils.import('resource://gre/modules/Services.jsm');
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 var browser = Services.wm.getMostRecentWindow('navigator:browser');
 var connection = browser.navigator.mozMobileConnections[0];

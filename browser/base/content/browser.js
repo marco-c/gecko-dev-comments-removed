@@ -3,9 +3,9 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
+var {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+var {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+var {AppConstants} = ChromeUtils.import("resource://gre/modules/AppConstants.jsm");
 ChromeUtils.import("resource://gre/modules/NotificationDB.jsm");
 
 
@@ -179,7 +179,7 @@ XPCOMUtils.defineLazyGetter(this, "gTabBrowserBundle", () => {
 
 XPCOMUtils.defineLazyGetter(this, "gCustomizeMode", () => {
   let { CustomizeMode } =
-    ChromeUtils.import("resource:///modules/CustomizeMode.jsm", {});
+    ChromeUtils.import("resource:///modules/CustomizeMode.jsm");
   return new CustomizeMode(window);
 });
 
@@ -220,21 +220,21 @@ XPCOMUtils.defineLazyGetter(this, "gNotificationBox", () => {
 
 XPCOMUtils.defineLazyGetter(this, "InlineSpellCheckerUI", () => {
   let { InlineSpellChecker } =
-    ChromeUtils.import("resource://gre/modules/InlineSpellChecker.jsm", {});
+    ChromeUtils.import("resource://gre/modules/InlineSpellChecker.jsm");
   return new InlineSpellChecker();
 });
 
 XPCOMUtils.defineLazyGetter(this, "PageMenuParent", () => {
   
   let { PageMenuParent } =
-    ChromeUtils.import("resource://gre/modules/PageMenu.jsm", {});
+    ChromeUtils.import("resource://gre/modules/PageMenu.jsm");
   return new PageMenuParent();
 });
 
 XPCOMUtils.defineLazyGetter(this, "PopupNotifications", () => {
   
   let { PopupNotifications } =
-    ChromeUtils.import("resource://gre/modules/PopupNotifications.jsm", {});
+    ChromeUtils.import("resource://gre/modules/PopupNotifications.jsm");
   try {
     
     
@@ -264,7 +264,7 @@ XPCOMUtils.defineLazyGetter(this, "Win7Features", () => {
   if (WINTASKBAR_CONTRACTID in Cc &&
       Cc[WINTASKBAR_CONTRACTID].getService(Ci.nsIWinTaskbar).available) {
     let { AeroPeek } =
-      ChromeUtils.import("resource:///modules/WindowsPreviewPerTab.jsm", {});
+      ChromeUtils.import("resource:///modules/WindowsPreviewPerTab.jsm");
     return {
       onOpenWindow() {
         AeroPeek.onOpenWindow(window);
@@ -1414,7 +1414,7 @@ var gBrowserInit = {
 
   _delayedStartup() {
     let { TelemetryTimestamps } =
-      ChromeUtils.import("resource://gre/modules/TelemetryTimestamps.jsm", {});
+      ChromeUtils.import("resource://gre/modules/TelemetryTimestamps.jsm");
     TelemetryTimestamps.add("delayedStartupStarted");
 
     this._cancelDelayedStartup();
@@ -1747,11 +1747,6 @@ var gBrowserInit = {
 
     scheduleIdleTask(() => {
       gBrowserThumbnails.init();
-    });
-
-    
-    scheduleIdleTask(() => {
-      ExtensionsUI.showPrivateBrowsingNotification(window);
     });
 
     scheduleIdleTask(() => {
@@ -2168,12 +2163,6 @@ function BrowserHome(aEvent) {
   
   switch (where) {
   case "current":
-    
-    
-    
-    if (isInitialPage(homePage)) {
-      gBrowser.selectedBrowser.initialPageLoadedFromUserAction = homePage;
-    }
     loadOneOrMoreURIs(homePage, Services.scriptSecurityManager.getSystemPrincipal());
     if (isBlankPageURL(homePage)) {
       focusAndSelectUrlBar();

@@ -2,7 +2,7 @@
 
 
 
-ChromeUtils.import("chrome://marionette/content/navigate.js");
+const {navigate} = ChromeUtils.import("chrome://marionette/content/navigate.js");
 
 add_test(function test_isLoadEventExpected() {
   Assert.throws(() => navigate.isLoadEventExpected(undefined),

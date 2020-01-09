@@ -2,8 +2,6 @@
 
 "use strict";
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 async function runTests(options) {
   async function background(getTests) {
     async function checkDetails(expecting, details) {

@@ -26,8 +26,8 @@
 
 "use strict";
 
-ChromeUtils.import("resource://gre/modules/PromiseMessage.jsm");
-ChromeUtils.import("resource://gre/modules/ManifestProcessor.jsm");
+const {PromiseMessage} = ChromeUtils.import("resource://gre/modules/PromiseMessage.jsm");
+const {ManifestProcessor} = ChromeUtils.import("resource://gre/modules/ManifestProcessor.jsm");
 
 var ManifestObtainer = { 
   

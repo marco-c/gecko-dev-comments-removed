@@ -5,8 +5,8 @@
 
 "use strict";
 
-const { XPCOMUtils } = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", {});
-const { BrowserLoader } = ChromeUtils.import("resource://devtools/client/shared/browser-loader.js", {});
+const { XPCOMUtils } = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const { BrowserLoader } = ChromeUtils.import("resource://devtools/client/shared/browser-loader.js");
 
 
 const require = BrowserLoader({

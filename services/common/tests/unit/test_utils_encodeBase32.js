@@ -1,8 +1,6 @@
 
 
 
-ChromeUtils.import("resource://services-common/utils.js");
-
 function run_test() {
   
   Assert.equal("FOOBAR", CommonUtils.byteArrayToString([70, 79, 79, 66, 65, 82]));

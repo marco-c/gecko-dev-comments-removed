@@ -4,7 +4,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/BookmarkHTMLUtils.jsm");
+const {BookmarkHTMLUtils} = ChromeUtils.import("resource://gre/modules/BookmarkHTMLUtils.jsm");
 
 
 

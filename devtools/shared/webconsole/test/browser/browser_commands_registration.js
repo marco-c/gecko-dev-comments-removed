@@ -14,7 +14,7 @@ add_task(async function() {
 
   
   await ContentTask.spawn(gBrowser.selectedBrowser, null, async function() {
-    const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
+    const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
     const { WebConsoleCommands } = require("devtools/server/actors/webconsole/utils");
 
     

@@ -1,7 +1,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/ContextualIdentityService.jsm");
+const {ContextualIdentityService} = ChromeUtils.import("resource://gre/modules/ContextualIdentityService.jsm");
 
 function openTabInUserContext(userContextId) {
   let tab = BrowserTestUtils.addTab(gBrowser, "about:blank", {userContextId});

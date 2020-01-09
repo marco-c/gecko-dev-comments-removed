@@ -2,9 +2,9 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-ChromeUtils.import("resource://gre/modules/nsFormAutoCompleteResult.jsm");
-ChromeUtils.import("resource://gre/modules/Services.jsm");
+const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const {FormAutoCompleteResult} = ChromeUtils.import("resource://gre/modules/nsFormAutoCompleteResult.jsm");
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 ChromeUtils.defineModuleGetter(this, "SearchSuggestionController",
                                "resource://gre/modules/SearchSuggestionController.jsm");
 

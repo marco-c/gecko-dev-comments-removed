@@ -5,9 +5,6 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-
 function test_getSharingProviders()
 {
   let sharingService = Cc["@mozilla.org/widget/macsharingservice;1"].

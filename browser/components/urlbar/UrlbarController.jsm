@@ -8,13 +8,11 @@ var EXPORTED_SYMBOLS = [
   "UrlbarController",
 ];
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 XPCOMUtils.defineLazyModuleGetters(this, {
   AppConstants: "resource://gre/modules/AppConstants.jsm",
   
   PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
-  UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
   UrlbarProvidersManager: "resource:///modules/UrlbarProvidersManager.jsm",
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
 });
@@ -102,7 +100,6 @@ class UrlbarController {
     this._notify("onQueryStarted", queryContext);
     await this.manager.startQuery(queryContext, this);
     this._notify("onQueryFinished", queryContext);
-    return queryContext;
   }
 
   
@@ -139,14 +136,9 @@ class UrlbarController {
       this.input.autofill(queryContext.autofillValue);
     }
 
-    
-    if (queryContext.lastResultCount == 0) {
-      this.speculativeConnect(queryContext, 0, "resultsadded");
-    }
+    queryContext.lastResultCount = queryContext.results.length;
 
     this._notify("onQueryResults", queryContext);
-    
-    queryContext.lastResultCount = queryContext.results.length;
   }
 
   
@@ -245,58 +237,6 @@ class UrlbarController {
           event.preventDefault();
         }
         break;
-    }
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-  speculativeConnect(context, resultIndex, reason) {
-    
-    if (!this.input || context.isPrivate || context.results.length == 0) {
-      return;
-    }
-    let result = context.results[resultIndex];
-    let {url} = UrlbarUtils.getUrlFromResult(result);
-    if (!url) {
-      return;
-    }
-
-    switch (reason) {
-      case "resultsadded": {
-        
-        if (resultIndex == 0 && (context.preselected || context.autofillValue)) {
-          if (result.type == UrlbarUtils.RESULT_TYPE.SEARCH) {
-            
-            if (UrlbarPrefs.get("suggest.searches") &&
-                UrlbarPrefs.get("browser.search.suggest.enabled")) {
-              let engine = Services.search.defaultEngine;
-              UrlbarUtils.setupSpeculativeConnection(engine, this.browserWindow);
-            }
-          } else if (context.autofillValue) {
-            UrlbarUtils.setupSpeculativeConnection(url, this.browserWindow);
-          }
-        }
-        return;
-      }
-      case "mousedown": {
-        
-        if (url.startsWith("http")) {
-          UrlbarUtils.setupSpeculativeConnection(url, this.browserWindow);
-        }
-        return;
-      }
-      default: {
-        throw new Error("Invalid speculative connection reason");
-      }
     }
   }
 

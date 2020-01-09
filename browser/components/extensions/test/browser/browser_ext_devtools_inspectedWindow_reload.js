@@ -6,7 +6,7 @@
 
 requestLongerTimeout(4);
 
-const {require} = ChromeUtils.import("resource://devtools/shared/Loader.jsm", {});
+const {require} = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
 const {gDevTools} = require("devtools/client/framework/devtools");
 
 

@@ -2,7 +2,7 @@
 
 
 
-const {Utils} = ChromeUtils.import("resource://gre/modules/sessionstore/Utils.jsm", {});
+const {Utils} = ChromeUtils.import("resource://gre/modules/sessionstore/Utils.jsm");
 const triggeringPrincipal_base64 = Utils.SERIALIZED_SYSTEMPRINCIPAL;
 
 const TAB_STATE_NEEDS_RESTORE = 1;
@@ -25,10 +25,10 @@ registerCleanupFunction(() => {
   }
 });
 
-const {SessionSaver} = ChromeUtils.import("resource:///modules/sessionstore/SessionSaver.jsm", {});
-const {SessionFile} = ChromeUtils.import("resource:///modules/sessionstore/SessionFile.jsm", {});
-const {TabState} = ChromeUtils.import("resource:///modules/sessionstore/TabState.jsm", {});
-const {TabStateFlusher} = ChromeUtils.import("resource:///modules/sessionstore/TabStateFlusher.jsm", {});
+const {SessionSaver} = ChromeUtils.import("resource:///modules/sessionstore/SessionSaver.jsm");
+const {SessionFile} = ChromeUtils.import("resource:///modules/sessionstore/SessionFile.jsm");
+const {TabState} = ChromeUtils.import("resource:///modules/sessionstore/TabState.jsm");
+const {TabStateFlusher} = ChromeUtils.import("resource:///modules/sessionstore/TabStateFlusher.jsm");
 const ss = SessionStore;
 
 

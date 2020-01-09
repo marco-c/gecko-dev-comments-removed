@@ -2,8 +2,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.import("resource://gre/modules/CommonDialog.jsm");
+const {CommonDialog} = ChromeUtils.import("resource://gre/modules/CommonDialog.jsm");
 
 var propBag, args, Dialog;
 

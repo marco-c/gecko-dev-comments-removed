@@ -8,7 +8,7 @@
 
 
 
-var { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm", {});
+var { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 
 add_task(async function testCAandTitle() {
   let cert = await readCertificate("ca.pem", "CTu,CTu,CTu");

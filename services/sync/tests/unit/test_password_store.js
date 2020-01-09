@@ -2,8 +2,7 @@
 
 
 ChromeUtils.import("resource://services-sync/engines/passwords.js");
-ChromeUtils.import("resource://services-sync/service.js");
-ChromeUtils.import("resource://services-sync/util.js");
+const {Service} = ChromeUtils.import("resource://services-sync/service.js");
 
 
 async function checkRecord(name, record, expectedCount, timeCreated,

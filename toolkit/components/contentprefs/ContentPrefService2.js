@@ -2,10 +2,10 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.import("resource://gre/modules/ContentPrefUtils.jsm");
-ChromeUtils.import("resource://gre/modules/ContentPrefStore.jsm");
+const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const {ContentPref, cbHandleCompletion, cbHandleError, cbHandleResult} = ChromeUtils.import("resource://gre/modules/ContentPrefUtils.jsm");
+const {ContentPrefStore} = ChromeUtils.import("resource://gre/modules/ContentPrefStore.jsm");
 ChromeUtils.defineModuleGetter(this, "OS",
                                "resource://gre/modules/osfile.jsm");
 ChromeUtils.defineModuleGetter(this, "Sqlite",

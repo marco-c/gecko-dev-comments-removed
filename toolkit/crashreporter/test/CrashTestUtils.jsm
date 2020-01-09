@@ -39,8 +39,8 @@ var CrashTestUtils = {
 };
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.import("resource://gre/modules/ctypes.jsm");
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const {ctypes} = ChromeUtils.import("resource://gre/modules/ctypes.jsm");
 var dir = Services.dirsvc.get("CurWorkD", Ci.nsIFile);
 var file = dir.clone();
 file = file.parent;

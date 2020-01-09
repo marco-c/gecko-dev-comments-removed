@@ -5,9 +5,6 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-
 function test_find_app()
 {
   var mwaUtils = Cc["@mozilla.org/widget/mac-web-app-utils;1"].

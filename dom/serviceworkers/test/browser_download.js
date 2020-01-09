@@ -1,9 +1,7 @@
 
 
 
-ChromeUtils.import('resource://gre/modules/Services.jsm');
 var Downloads = ChromeUtils.import("resource://gre/modules/Downloads.jsm", {}).Downloads;
-ChromeUtils.import('resource://gre/modules/NetUtil.jsm');
 
 var gTestRoot = getRootDirectory(gTestPath).replace("chrome://mochitests/content/",
                                                     "http://mochi.test:8888/")

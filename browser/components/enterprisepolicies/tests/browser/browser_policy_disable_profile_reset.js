@@ -2,7 +2,7 @@
 
 "use strict";
 
-let {ResetProfile} = ChromeUtils.import("resource://gre/modules/ResetProfile.jsm", {});
+let {ResetProfile} = ChromeUtils.import("resource://gre/modules/ResetProfile.jsm");
 
 
 

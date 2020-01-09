@@ -2,8 +2,6 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 
 this.__defineGetter__("XPIProvider", function() {
   let scope = {};

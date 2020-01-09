@@ -2,8 +2,8 @@
 
 "use strict";
 
-ChromeUtils.import("resource://testing-common/AddonTestUtils.jsm");
-ChromeUtils.import("resource:///modules/HomePage.jsm");
+const {AddonTestUtils} = ChromeUtils.import("resource://testing-common/AddonTestUtils.jsm");
+const {HomePage} = ChromeUtils.import("resource:///modules/HomePage.jsm");
 
 const {
   createAppInfo,

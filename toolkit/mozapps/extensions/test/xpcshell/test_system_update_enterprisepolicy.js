@@ -5,7 +5,7 @@
 
 
 
-ChromeUtils.import("resource://testing-common/EnterprisePolicyTesting.jsm");
+const {EnterprisePolicyTesting} = ChromeUtils.import("resource://testing-common/EnterprisePolicyTesting.jsm");
 
 
 

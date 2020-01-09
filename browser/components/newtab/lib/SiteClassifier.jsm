@@ -3,7 +3,7 @@
 
 "use strict";
 
-const {RemoteSettings} = ChromeUtils.import("resource://services-settings/remote-settings.js", {});
+const {RemoteSettings} = ChromeUtils.import("resource://services-settings/remote-settings.js");
 
 
 

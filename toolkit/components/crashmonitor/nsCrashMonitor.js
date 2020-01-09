@@ -2,12 +2,9 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
-ChromeUtils.import("resource://gre/modules/Services.jsm");
+const {XPCOMUtils} = ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm");
 
-var Scope = {};
-ChromeUtils.import("resource://gre/modules/CrashMonitor.jsm", Scope);
-var MonitorAPI = Scope.CrashMonitor;
+var MonitorAPI = ChromeUtils.import("resource://gre/modules/CrashMonitor.jsm").CrashMonitor;
 
 function CrashMonitor() {}
 

@@ -2,9 +2,9 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/DeferredTask.jsm");
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-ChromeUtils.import("resource://gre/modules/Preferences.jsm");
+const {DeferredTask} = ChromeUtils.import("resource://gre/modules/DeferredTask.jsm");
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const {Preferences} = ChromeUtils.import("resource://gre/modules/Preferences.jsm");
 
 const SEARCH_TIMEOUT_MS = 500;
 

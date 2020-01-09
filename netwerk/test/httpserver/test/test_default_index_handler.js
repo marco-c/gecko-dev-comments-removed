@@ -8,8 +8,6 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 var srv, dir, gDirEntries;
 
 XPCOMUtils.defineLazyGetter(this, "BASE_URL", function() {

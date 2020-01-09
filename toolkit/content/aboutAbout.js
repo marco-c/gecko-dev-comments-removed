@@ -2,7 +2,7 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/AboutPagesUtils.jsm");
+const {AboutPagesUtils} = ChromeUtils.import("resource://gre/modules/AboutPagesUtils.jsm");
 
 var gContainer;
 window.onload = function() {

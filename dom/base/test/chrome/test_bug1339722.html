@@ -20,7 +20,7 @@
    * 4. Verify that it doesn't crash.
   **/
 
-  ChromeUtils.import("resource://gre/modules/Services.jsm");
+  const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
   const TOPIC = "http-on-useragent-request";
   let win;

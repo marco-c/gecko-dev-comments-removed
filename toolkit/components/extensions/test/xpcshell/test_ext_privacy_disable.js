@@ -4,7 +4,7 @@
 
 XPCOMUtils.defineLazyGetter(this, "Management", () => {
   
-  const {Management} = ChromeUtils.import("resource://gre/modules/Extension.jsm", {});
+  const {Management} = ChromeUtils.import("resource://gre/modules/Extension.jsm", null);
   return Management;
 });
 

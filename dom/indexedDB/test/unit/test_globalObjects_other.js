@@ -14,8 +14,7 @@ function* testSteps()
   }
 
   
-  
-  ChromeUtils.import(getSpec("GlobalObjectsModule.jsm"));
+  const {GlobalObjectsModule} = ChromeUtils.import(getSpec("GlobalObjectsModule.jsm"));
   let test = new GlobalObjectsModule();
   test.ok = ok;
   test.finishTest = continueToNextStep;

@@ -4,8 +4,7 @@
 
 
 
-ChromeUtils.import("resource:///modules/SitePermissions.jsm");
-ChromeUtils.import("resource://gre/modules/Services.jsm");
+const {SitePermissions} = ChromeUtils.import("resource:///modules/SitePermissions.jsm");
 
 const baseURL = getRootDirectory(gTestPath).replace("chrome://mochitests/content", "http://example.com");
 const URL = baseURL + "popup_blocker2.html";

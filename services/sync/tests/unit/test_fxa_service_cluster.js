@@ -1,9 +1,8 @@
 
 
 
-ChromeUtils.import("resource://services-sync/service.js");
-ChromeUtils.import("resource://services-sync/util.js");
-ChromeUtils.import("resource://testing-common/services/sync/fxa_utils.js");
+const {Service} = ChromeUtils.import("resource://services-sync/service.js");
+const {initializeIdentityWithTokenServerResponse} = ChromeUtils.import("resource://testing-common/services/sync/fxa_utils.js");
 
 add_task(async function test_findCluster() {
   _("Test FxA _findCluster()");

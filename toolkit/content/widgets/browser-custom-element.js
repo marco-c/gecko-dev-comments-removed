@@ -7,6 +7,7 @@
 
 
 {
+const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const elementsToDestroyOnUnload = new Set();
 
@@ -1032,7 +1033,7 @@ class MozBrowser extends MozElementMixin(XULFrameElement) {
       this._remoteWebNavigationImpl.swapBrowser(this);
 
       
-      let { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm", {});
+      let { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
       let aboutBlank = Services.io.newURI("about:blank");
       let ssm = Services.scriptSecurityManager;
       this._contentPrincipal = ssm.getLoadContextCodebasePrincipal(aboutBlank, this.loadContext);
@@ -1750,7 +1751,6 @@ class MozBrowser extends MozElementMixin(XULFrameElement) {
         if (msg.data.id != id) {
           return;
         }
-        mm.removeMessageListener("InPermitUnload", listener);
         aCallback(msg.data.inPermitUnload);
       });
       return;
@@ -1778,7 +1778,7 @@ class MozBrowser extends MozElementMixin(XULFrameElement) {
       let permitUnload;
       let id = this._permitUnloadId++;
       let mm = this.messageManager;
-      let Services = ChromeUtils.import("resource://gre/modules/Services.jsm", {}).Services;
+      let {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
       let msgListener = msg => {
         if (msg.data.id != id) {

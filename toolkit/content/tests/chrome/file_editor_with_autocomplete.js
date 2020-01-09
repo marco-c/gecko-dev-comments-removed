@@ -1,8 +1,6 @@
 
 
 
-ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 async function waitForCondition(condition) {
   return new Promise(resolve => {
     var tries = 0;
