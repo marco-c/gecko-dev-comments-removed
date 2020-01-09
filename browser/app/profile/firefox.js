@@ -421,6 +421,10 @@ pref("permissions.postPrompt.animate", true);
 
 
 
+pref("permissions.eventTelemetry.enabled", false);
+
+
+
 pref("browser.link.open_newwindow", 3);
 
 
