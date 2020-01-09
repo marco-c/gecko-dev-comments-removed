@@ -40,7 +40,7 @@ def get_dependent_loaded_tasks(config, params, loaded_tasks):
 
     
     
-    if params['project'] in ('mozilla-central', 'try'):
+    if params['project'] in ('mozilla-central', 'mozilla-beta', 'try'):
         shipping_tasks = list(android_tasks)
     else:
         shipping_tasks = [
