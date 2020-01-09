@@ -130,7 +130,7 @@ class App extends PureComponent {
     return Switch(
       {},
       Route({
-        path: "/connect",
+        path: "/setup",
         render: () => this.renderConnect(),
       }),
       Route({
@@ -142,7 +142,7 @@ class App extends PureComponent {
       
       
       Route({
-        render: () => Redirect({ to: "/connect"}),
+        render: () => Redirect({ to: "/setup"}),
       })
     );
   }
