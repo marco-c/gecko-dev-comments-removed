@@ -3,7 +3,7 @@
 
 
 use api::{ColorF, DebugFlags, DocumentLayer, FontRenderMode, PremultipliedColorF};
-use api::{PipelineId, RasterSpace};
+use api::{PipelineId};
 use api::units::*;
 use crate::clip::{ClipDataStore, ClipStore, ClipChainStack};
 use crate::clip_scroll_tree::{ClipScrollTree, ROOT_SPATIAL_NODE_INDEX, SpatialNodeIndex};
@@ -184,7 +184,6 @@ pub struct PictureContext {
     pub apply_local_clip_rect: bool,
     pub is_passthrough: bool,
     pub is_composite: bool,
-    pub raster_space: RasterSpace,
     pub surface_spatial_node_index: SpatialNodeIndex,
     pub raster_spatial_node_index: SpatialNodeIndex,
     

@@ -3,7 +3,7 @@
 
 
 
-use api::{ExternalScrollId, PipelineId, PropertyBinding, ReferenceFrameKind, ScrollClamping, ScrollLocation};
+use api::{ExternalScrollId, PipelineId, PropertyBinding, PropertyBindingId, ReferenceFrameKind, ScrollClamping, ScrollLocation};
 use api::{TransformStyle, ScrollSensitivity, StickyOffsetBounds};
 use api::units::*;
 use crate::clip_scroll_tree::{CoordinateSystem, CoordinateSystemId, SpatialNodeIndex, TransformUpdateState};
@@ -66,6 +66,15 @@ pub struct SpatialNode {
     
     
     pub coordinate_system_relative_scale_offset: ScaleOffset,
+
+    
+    
+    pub is_pinch_zooming: bool,
+
+    
+    
+    
+    pub is_ancestor_or_self_zooming: bool,
 }
 
 fn compute_offset_from(
@@ -116,6 +125,8 @@ impl SpatialNode {
             invertible: true,
             coordinate_system_id: CoordinateSystemId(0),
             coordinate_system_relative_scale_offset: ScaleOffset::identity(),
+            is_pinch_zooming: false,
+            is_ancestor_or_self_zooming: false,
         }
     }
 
@@ -251,6 +262,12 @@ impl SpatialNode {
 
         self.update_transform(state, coord_systems, scene_properties, previous_spatial_nodes);
         self.transform_kind = self.world_viewport_transform.kind();
+
+        let is_parent_zooming = match self.parent {
+            Some(parent) => previous_spatial_nodes[parent.0 as usize].is_ancestor_or_self_zooming,
+            _ => false,
+        };
+        self.is_ancestor_or_self_zooming = self.is_pinch_zooming | is_parent_zooming;
 
         
         
@@ -628,6 +645,20 @@ impl SpatialNode {
         match self.node_type {
             SpatialNodeType::ScrollFrame(info) if info.external_id == Some(external_id) => true,
             _ => false,
+        }
+    }
+
+    
+    
+    pub fn is_transform_bound_to_property(&self, id: PropertyBindingId) -> bool {
+        if let SpatialNodeType::ReferenceFrame(ref info) = self.node_type {
+            if let PropertyBinding::Binding(key, _) = info.source_transform {
+                id == key.id
+            } else {
+                false
+            }
+        } else {
+            false
         }
     }
 }

@@ -1595,6 +1595,8 @@ class AsyncPanZoomController {
 
   wr::RenderRoot GetRenderRoot() const { return mRenderRoot; }
 
+  bool IsPinchZooming() const { return mState == PINCHING; }
+
  private:
   
   CSSPoint mTestAsyncScrollOffset;
