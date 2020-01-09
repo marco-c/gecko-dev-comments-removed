@@ -972,6 +972,7 @@ class JS_PUBLIC_API RealmCreationOptions {
   RealmCreationOptions& setNewCompartmentInExistingZone(JSObject* obj);
   RealmCreationOptions& setNewCompartmentAndZone();
   RealmCreationOptions& setExistingCompartment(JSObject* obj);
+  RealmCreationOptions& setExistingCompartment(JS::Compartment* compartment);
 
   
   
