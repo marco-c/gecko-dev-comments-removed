@@ -64,7 +64,7 @@ nsresult nsTitleBarFrame::HandleEvent(nsPresContext* aPresContext,
 
   switch (aEvent->mMessage) {
     case eMouseDown: {
-      if (aEvent->AsMouseEvent()->button == WidgetMouseEvent::eLeftButton) {
+      if (aEvent->AsMouseEvent()->mButton == WidgetMouseEvent::eLeftButton) {
         
         nsCOMPtr<nsIDocShellTreeItem> dsti = aPresContext->GetDocShell();
         if (dsti) {
@@ -88,7 +88,7 @@ nsresult nsTitleBarFrame::HandleEvent(nsPresContext* aPresContext,
 
     case eMouseUp: {
       if (mTrackingMouseMove &&
-          aEvent->AsMouseEvent()->button == WidgetMouseEvent::eLeftButton) {
+          aEvent->AsMouseEvent()->mButton == WidgetMouseEvent::eLeftButton) {
         
         mTrackingMouseMove = false;
 

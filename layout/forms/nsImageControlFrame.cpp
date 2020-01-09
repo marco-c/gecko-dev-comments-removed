@@ -138,7 +138,7 @@ nsresult nsImageControlFrame::HandleEvent(nsPresContext* aPresContext,
   *aEventStatus = nsEventStatus_eIgnore;
 
   if (aEvent->mMessage == eMouseUp &&
-      aEvent->AsMouseEvent()->button == WidgetMouseEvent::eLeftButton) {
+      aEvent->AsMouseEvent()->mButton == WidgetMouseEvent::eLeftButton) {
     
     
     nsIntPoint* lastClickPoint = static_cast<nsIntPoint*>(

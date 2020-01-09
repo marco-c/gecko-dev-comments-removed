@@ -3097,7 +3097,7 @@ nsresult Element::PostHandleEventForLinks(EventChainPostVisitor& aVisitor) {
 
   switch (aVisitor.mEvent->mMessage) {
     case eMouseDown: {
-      if (aVisitor.mEvent->AsMouseEvent()->button ==
+      if (aVisitor.mEvent->AsMouseEvent()->mButton ==
           WidgetMouseEvent::eLeftButton) {
         
         nsILinkHandler* handler = aVisitor.mPresContext->GetLinkHandler();

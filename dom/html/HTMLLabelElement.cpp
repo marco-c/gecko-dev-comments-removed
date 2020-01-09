@@ -1,12 +1,12 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/**
- * Implementation of HTML <label> elements.
- */
+
+
+
+
+
+
+
+
 #include "HTMLLabelElement.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/MouseEvents.h"
@@ -17,7 +17,7 @@
 #include "nsQueryObject.h"
 #include "mozilla/dom/ShadowRoot.h"
 
-// construction, destruction
+
 
 NS_IMPL_NS_NEW_HTML_ELEMENT(Label)
 
@@ -31,7 +31,7 @@ JSObject* HTMLLabelElement::WrapNode(JSContext* aCx,
   return HTMLLabelElement_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-// nsIDOMHTMLLabelElement
+
 
 NS_IMPL_ELEMENT_CLONE(HTMLLabelElement)
 
@@ -41,7 +41,7 @@ HTMLFormElement* HTMLLabelElement::GetForm() const {
     return nullptr;
   }
 
-  // Not all labeled things have a form association.  Stick to the ones that do.
+  
   nsCOMPtr<nsIFormControl> formControl = do_QueryObject(control);
   if (!formControl) {
     return nullptr;
@@ -52,7 +52,7 @@ HTMLFormElement* HTMLLabelElement::GetForm() const {
 
 void HTMLLabelElement::Focus(const FocusOptions& aOptions,
                              ErrorResult& aError) {
-  // retarget the focus method at the for content
+  
   nsIFocusManager* fm = nsFocusManager::GetFocusManager();
   if (fm) {
     RefPtr<Element> elem = GetLabeledElement();
@@ -71,7 +71,7 @@ nsresult HTMLLabelElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
        aVisitor.mEvent->mMessage != eMouseDown) ||
       aVisitor.mEventStatus == nsEventStatus_eConsumeNoDefault ||
       !aVisitor.mPresContext ||
-      // Don't handle the event if it's already been handled by another label
+      
       aVisitor.mEvent->mFlags.mMultipleActionsPrevented) {
     return NS_OK;
   }
@@ -82,16 +82,16 @@ nsresult HTMLLabelElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
     return NS_OK;
   }
 
-  // Strong ref because event dispatch is going to happen.
+  
   RefPtr<Element> content = GetLabeledElement();
 
   if (content) {
     mHandlingEvent = true;
     switch (aVisitor.mEvent->mMessage) {
       case eMouseDown:
-        if (mouseEvent->button == WidgetMouseEvent::eLeftButton) {
-          // We reset the mouse-down point on every event because there is
-          // no guarantee we will reach the eMouseClick code below.
+        if (mouseEvent->mButton == WidgetMouseEvent::eLeftButton) {
+          
+          
           LayoutDeviceIntPoint* curPoint =
               new LayoutDeviceIntPoint(mouseEvent->mRefPoint);
           SetProperty(nsGkAtoms::labelMouseDownPtProperty,
@@ -118,26 +118,26 @@ nsresult HTMLLabelElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
                          dragDistance.y > CLICK_DISTANCE ||
                          dragDistance.y < -CLICK_DISTANCE;
           }
-          // Don't click the for-content if we did drag-select text or if we
-          // have a kbd modifier (which adjusts a selection).
+          
+          
           if (dragSelect || mouseEvent->IsShift() || mouseEvent->IsControl() ||
               mouseEvent->IsAlt() || mouseEvent->IsMeta()) {
             break;
           }
-          // Only set focus on the first click of multiple clicks to prevent
-          // to prevent immediate de-focus.
+          
+          
           if (mouseEvent->mClickCount <= 1) {
             nsIFocusManager* fm = nsFocusManager::GetFocusManager();
             if (fm) {
-              // Use FLAG_BYMOVEFOCUS here so that the label is scrolled to.
-              // Also, within HTMLInputElement::PostHandleEvent, inputs will
-              // be selected only when focused via a key or when the navigation
-              // flag is used and we want to select the text on label clicks as
-              // well.
-              // If the label has been clicked by the user, we also want to
-              // pass FLAG_BYMOUSE so that we get correct focus ring behavior,
-              // but we don't want to pass FLAG_BYMOUSE if this click event was
-              // caused by the user pressing an accesskey.
+              
+              
+              
+              
+              
+              
+              
+              
+              
               bool byMouse = (mouseEvent->inputSource !=
                               MouseEvent_Binding::MOZ_SOURCE_KEYBOARD);
               bool byTouch = (mouseEvent->inputSource ==
@@ -149,21 +149,21 @@ nsresult HTMLLabelElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
                                (byTouch ? nsIFocusManager::FLAG_BYTOUCH : 0));
             }
           }
-          // Dispatch a new click event to |content|
-          //    (For compatibility with IE, we do only left click.  If
-          //    we wanted to interpret the HTML spec very narrowly, we
-          //    would do nothing.  If we wanted to do something
-          //    sensible, we might send more events through like
-          //    this.)  See bug 7554, bug 49897, and bug 96813.
+          
+          
+          
+          
+          
+          
           nsEventStatus status = aVisitor.mEventStatus;
-          // Ok to use aVisitor.mEvent as parameter because DispatchClickEvent
-          // will actually create a new event.
+          
+          
           EventFlags eventFlags;
           eventFlags.mMultipleActionsPrevented = true;
           DispatchClickEvent(aVisitor.mPresContext, mouseEvent, content, false,
                              &eventFlags, &status);
-          // Do we care about the status this returned?  I don't think we do...
-          // Don't run another <label> off of this click
+          
+          
           mouseEvent->mFlags.mMultipleActionsPrevented = true;
         }
         break;
@@ -189,7 +189,7 @@ bool HTMLLabelElement::PerformAccesskey(bool aKeyCausesActivation,
       return false;
     }
 
-    // Click on it if the users prefs indicate to do so.
+    
     WidgetMouseEvent event(aIsTrustedEvent, eMouseClick, nullptr,
                            WidgetMouseEvent::eReal);
     event.inputSource = MouseEvent_Binding::MOZ_SOURCE_KEYBOARD;
@@ -208,13 +208,13 @@ nsGenericHTMLElement* HTMLLabelElement::GetLabeledElement() const {
   nsAutoString elementId;
 
   if (!GetAttr(kNameSpaceID_None, nsGkAtoms::_for, elementId)) {
-    // No @for, so we are a label for our first form control element.
-    // Do a depth-first traversal to look for the first form control element.
+    
+    
     return GetFirstLabelableDescendant();
   }
 
-  // We have a @for. The id has to be linked to an element in the same tree
-  // and this element should be a labelable form control.
+  
+  
   Element* element = nullptr;
 
   if (ShadowRoot* shadowRoot = GetContainingShadow()) {
@@ -245,5 +245,5 @@ nsGenericHTMLElement* HTMLLabelElement::GetFirstLabelableDescendant() const {
   return nullptr;
 }
 
-}  // namespace dom
-}  // namespace mozilla
+}  
+}  
