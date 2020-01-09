@@ -181,6 +181,61 @@ SelectionType ToSelectionType(TextRangeType aTextRangeType) {
 
 
 
+static nsDataHashtable<nsDepCharHashKey, Command>* sCommandHashtable = nullptr;
+
+Command GetInternalCommand(const char* aCommandName) {
+  return GetInternalCommand(aCommandName, EmptyString());
+}
+
+Command GetInternalCommand(const char* aCommandName, const nsAString& aParam) {
+  if (!aCommandName) {
+    return Command::DoNothing;
+  }
+
+  
+  
+  if (!strcmp(aCommandName, "cmd_align")) {
+    if (aParam.LowerCaseEqualsASCII("left")) {
+      return Command::FormatJustifyLeft;
+    }
+    if (aParam.LowerCaseEqualsASCII("right")) {
+      return Command::FormatJustifyRight;
+    }
+    if (aParam.LowerCaseEqualsASCII("center")) {
+      return Command::FormatJustifyCenter;
+    }
+    if (aParam.LowerCaseEqualsASCII("justify")) {
+      return Command::FormatJustifyFull;
+    }
+    return Command::DoNothing;
+  }
+
+  if (!sCommandHashtable) {
+    sCommandHashtable = new nsDataHashtable<nsDepCharHashKey, Command>();
+#define NS_DEFINE_COMMAND(aName, aCommandStr) \
+  sCommandHashtable->Put(#aCommandStr, Command::aName);
+
+#define NS_DEFINE_COMMAND_WITH_PARAM(aName, aCommandStr, aParam)
+
+#define NS_DEFINE_COMMAND_NO_EXEC_COMMAND(aName)
+
+#include "mozilla/CommandList.h"
+
+#undef NS_DEFINE_COMMAND
+#undef NS_DEFINE_COMMAND_WITH_PARAM
+#undef NS_DEFINE_COMMAND_NO_EXEC_COMMAND
+  }
+  Command command = Command::DoNothing;
+  if (!sCommandHashtable->Get(aCommandName, &command)) {
+    return Command::DoNothing;
+  }
+  return command;
+}
+
+
+
+
+
 #define NS_ROOT_EVENT_CLASS(aPrefix, aName)
 #define NS_EVENT_CLASS(aPrefix, aName)                         \
   aPrefix##aName* WidgetEvent::As##aName() { return nullptr; } \
@@ -1005,6 +1060,10 @@ void WidgetKeyboardEvent::Shutdown() {
   sKeyNameIndexHashtable = nullptr;
   delete sCodeNameIndexHashtable;
   sCodeNameIndexHashtable = nullptr;
+  
+  
+  delete sCommandHashtable;
+  sCommandHashtable = nullptr;
 }
 
 

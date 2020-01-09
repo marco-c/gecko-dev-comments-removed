@@ -218,6 +218,24 @@ enum class Command : CommandInt {
 
 const char* ToChar(Command aCommand);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Command GetInternalCommand(const char* aCommandName);
+Command GetInternalCommand(const char* aCommandName, const nsAString& aValue);
+
 }  
 
 
