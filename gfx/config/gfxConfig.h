@@ -10,12 +10,13 @@
 #include "gfxFeature.h"
 #include "gfxFallback.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/Maybe.h"
 
 namespace mozilla {
 namespace gfx {
 
 
-class FeatureChange;
+class FeatureFailure;
 
 
 
@@ -171,7 +172,8 @@ class gfxConfig {
   
   static const nsCString& GetFailureId(Feature aFeature);
 
-  static void ImportChange(Feature aFeature, const FeatureChange& aChange);
+  static void ImportChange(Feature aFeature,
+                           const Maybe<FeatureFailure>& aChange);
 
   static void Init();
   static void Shutdown();

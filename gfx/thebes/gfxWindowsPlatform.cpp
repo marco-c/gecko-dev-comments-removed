@@ -1963,7 +1963,7 @@ void gfxWindowsPlatform::ImportGPUDeviceData(
 
   DeviceManagerDx* dm = DeviceManagerDx::Get();
   if (gfxConfig::IsEnabled(Feature::D3D11_COMPOSITING)) {
-    dm->ImportDeviceInfo(aData.gpuDevice().get_D3D11DeviceStatus());
+    dm->ImportDeviceInfo(aData.gpuDevice().ref());
   } else {
     
     dm->ResetDevices();
