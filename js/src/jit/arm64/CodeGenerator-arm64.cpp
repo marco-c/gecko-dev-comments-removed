@@ -318,7 +318,9 @@ void CodeGenerator::visitMulI(LMulI* ins) {
         masm.Mov(destreg32, wzr);
         return;  
       case 1:
-        
+        if (destreg != lhsreg) {
+          masm.Mov(destreg32, lhsreg32);
+        }
         return;  
       case 2:
         masm.Adds(destreg32, lhsreg32, Operand(lhsreg32));
