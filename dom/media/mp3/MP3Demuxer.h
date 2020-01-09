@@ -53,7 +53,7 @@ class MP3TrackDemuxer : public MediaTrackDemuxer,
   int64_t StreamLength() const;
 
   
-  media::TimeUnit Duration() const;
+  media::NullableTimeUnit Duration() const;
 
   
   
