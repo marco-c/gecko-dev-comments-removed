@@ -537,6 +537,7 @@ class UrlbarInput {
     lastKey = null,
     searchString = null,
     resetSearchState = true,
+    allowEmptyInput = true,
   } = {}) {
     if (this._suppressStartQuery) {
       return;
@@ -552,7 +553,10 @@ class UrlbarInput {
     } else if (!this.textValue.startsWith(searchString)) {
       throw new Error("The current value doesn't start with the search string");
     }
-    this._lastSearchString = searchString;
+
+    if (searchString || allowEmptyInput) {
+      this._lastSearchString = searchString;
+    }
 
     
     
@@ -1211,7 +1215,7 @@ class UrlbarInput {
       if (this.view.isOpen) {
         this.view.close();
       } else {
-        this.startQuery();
+        this.startQuery({ allowEmptyInput: false });
       }
     }
   }
