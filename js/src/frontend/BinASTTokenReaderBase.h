@@ -26,53 +26,6 @@ class MOZ_STACK_CLASS BinASTTokenReaderBase {
   using ErrorResult = mozilla::GenericErrorResult<T>;
 
   
-  struct Context {
-    
-    constexpr static Context topLevel() {
-      return Context(BinASTKind::_Null, 0, ElementOf::TaggedTuple);
-    }
-
-    Context arrayElement() const {
-      return Context(kind, fieldIndex, ElementOf::Array);
-    }
-
-    
-    constexpr static Context firstField(BinASTKind kind) {
-      return Context(kind, 0, ElementOf::TaggedTuple);
-    }
-
-    const Context operator++(int) {
-      MOZ_ASSERT(elementOf == ElementOf::TaggedTuple);
-      Context result = *this;
-      fieldIndex++;
-      return result;
-    }
-
-    
-    
-    
-    BinASTKind kind;
-
-    
-    uint8_t fieldIndex;
-
-    enum class ElementOf {
-      
-      Array,
-
-      
-      TaggedTuple,
-    };
-    ElementOf elementOf;
-
-    Context() = delete;
-
-   private:
-    constexpr Context(BinASTKind kind, uint8_t fieldIndex, ElementOf elementOf)
-        : kind(kind), fieldIndex(fieldIndex), elementOf(elementOf) {}
-  };
-
-  
   class SkippableSubTree {
    public:
     SkippableSubTree(const size_t startOffset, const size_t length)
