@@ -3172,6 +3172,24 @@ bool BaselineCodeGen<Handler>::emit_JSOP_GETINTRINSIC() {
   return true;
 }
 
+typedef bool (*SetIntrinsicFn)(JSContext*, JSScript*, jsbytecode*, HandleValue);
+static const VMFunction SetIntrinsicInfo = FunctionInfo<SetIntrinsicFn>(
+    SetIntrinsicOperation, "SetIntrinsicOperation");
+
+template <typename Handler>
+bool BaselineCodeGen<Handler>::emit_JSOP_SETINTRINSIC() {
+  frame.syncStack(0);
+  masm.loadValue(frame.addressOfStackValue(-1), R0);
+
+  prepareVMCall();
+
+  pushArg(R0);
+  pushBytecodePCArg();
+  pushScriptArg();
+
+  return callVM(SetIntrinsicInfo);
+}
+
 typedef bool (*DefVarFn)(JSContext*, HandleObject, HandleScript, jsbytecode*);
 static const VMFunction DefVarInfo =
     FunctionInfo<DefVarFn>(DefVarOperation, "DefVarOperation");
@@ -5774,8 +5792,6 @@ MethodStatus BaselineCompiler::emitBody() {
     switch (op) {
       
       case JSOP_FORCEINTERPRETER:
-        
-      case JSOP_SETINTRINSIC:
         
       case JSOP_UNUSED71:
       case JSOP_UNUSED151:
