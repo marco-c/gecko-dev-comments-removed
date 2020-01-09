@@ -349,10 +349,11 @@ class AliasSet {
                               
     TypedArrayLengthOrOffset = 1 << 10,  
     WasmGlobalCell = 1 << 11,            
-    Last = WasmGlobalCell,
+    WasmTableElement = 1 << 12,          
+    Last = WasmTableElement,
     Any = Last | (Last - 1),
 
-    NumCategories = 12,
+    NumCategories = 13,
 
     
     Store_ = 1 << 31
@@ -1546,6 +1547,50 @@ class MConstant : public MNullaryInstruction {
   Value toJSValue() const;
 
   bool appendRoots(MRootList& roots) const override;
+};
+
+class MWasmNullConstant : public MNullaryInstruction {
+  explicit MWasmNullConstant() : MNullaryInstruction(classOpcode) {
+    setResultType(MIRType::RefOrNull);
+    setMovable();
+  }
+
+ public:
+  INSTRUCTION_HEADER(WasmNullConstant)
+
+  static MWasmNullConstant* New(TempAllocator& alloc) {
+    return new (alloc) MWasmNullConstant();
+  }
+
+  HashNumber valueHash() const override;
+  bool congruentTo(const MDefinition* ins) const override {
+    return ins->isWasmNullConstant();
+  }
+  AliasSet getAliasSet() const override { return AliasSet::None(); }
+
+  ALLOW_CLONE(MWasmNullConstant)
+};
+
+class MIsNullPointer : public MUnaryInstruction, public NoTypePolicy::Data {
+  explicit MIsNullPointer(MDefinition* value) : MUnaryInstruction(classOpcode,
+                                                                  value) {
+    MOZ_ASSERT(value->type() == MIRType::Pointer);
+    setResultType(MIRType::Boolean);
+    setMovable();
+  }
+ public:
+  INSTRUCTION_HEADER(IsNullPointer);
+
+  static MIsNullPointer* New(TempAllocator& alloc, MDefinition* value) {
+    return new (alloc) MIsNullPointer(value);
+  }
+
+  bool congruentTo(const MDefinition* ins) const override {
+    return congruentIfOperandsEqual(ins);
+  }
+  AliasSet getAliasSet() const override { return AliasSet::None(); }
+
+  ALLOW_CLONE(MIsNullPointer)
 };
 
 
@@ -3137,6 +3182,9 @@ class MCompare : public MBinaryInstruction, public ComparePolicy::Data {
     Compare_Object,
 
     
+    Compare_RefOrNull,
+
+    
     Compare_Bitwise,
 
     
@@ -3170,7 +3218,8 @@ class MCompare : public MBinaryInstruction, public ComparePolicy::Data {
       : MCompare(left, right, jsop) {
     MOZ_ASSERT(compareType == Compare_Int32 || compareType == Compare_UInt32 ||
                compareType == Compare_Int64 || compareType == Compare_UInt64 ||
-               compareType == Compare_Double || compareType == Compare_Float32);
+               compareType == Compare_Double || compareType == Compare_Float32 ||
+               compareType == Compare_RefOrNull);
     compareType_ = compareType;
     operandMightEmulateUndefined_ = false;
     setResultType(MIRType::Int32);
@@ -11785,7 +11834,7 @@ class MWasmLoadGlobalVar : public MUnaryInstruction, public NoTypePolicy::Data {
         globalDataOffset_(globalDataOffset),
         isConstant_(isConstant) {
     MOZ_ASSERT(IsNumberType(type) || IsSimdType(type) ||
-               type == MIRType::Pointer);
+               type == MIRType::Pointer || type == MIRType::RefOrNull);
     setResultType(type);
     setMovable();
   }
@@ -11904,6 +11953,29 @@ class MWasmDerivedPointer : public MUnaryInstruction,
   ALLOW_CLONE(MWasmDerivedPointer)
 };
 
+class MWasmLoadRef : public MUnaryInstruction,
+                     public NoTypePolicy::Data {
+  AliasSet::Flag aliasSet_;
+
+  explicit MWasmLoadRef(MDefinition* valueAddr, AliasSet::Flag aliasSet)
+      : MUnaryInstruction(classOpcode, valueAddr) {
+    MOZ_ASSERT(valueAddr->type() == MIRType::Pointer);
+    setResultType(MIRType::RefOrNull);
+    setMovable();
+  }
+
+ public:
+  INSTRUCTION_HEADER(WasmLoadRef)
+  TRIVIAL_NEW_WRAPPERS
+
+  bool congruentTo(const MDefinition* ins) const override {
+    return congruentIfOperandsEqual(ins);
+  }
+  AliasSet getAliasSet() const override { return AliasSet::Load(aliasSet_); }
+
+  ALLOW_CLONE(MWasmLoadRef)
+};
+
 class MWasmStoreRef : public MAryInstruction<3>,
                       public NoTypePolicy::Data {
   AliasSet::Flag aliasSet_;
@@ -11911,6 +11983,8 @@ class MWasmStoreRef : public MAryInstruction<3>,
   MWasmStoreRef(MDefinition* tls, MDefinition* valueAddr, MDefinition* value,
                 AliasSet::Flag aliasSet)
     : MAryInstruction<3>(classOpcode), aliasSet_(aliasSet) {
+    MOZ_ASSERT(valueAddr->type() == MIRType::Pointer);
+    MOZ_ASSERT(value->type() == MIRType::RefOrNull);
     initOperand(0, tls);
     initOperand(1, valueAddr);
     initOperand(2, value);
