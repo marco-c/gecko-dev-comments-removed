@@ -289,8 +289,6 @@ class gfxPrefs final {
   
   
 
-  
-  DECL_GFX_PREF(Live, "gfx.logging.level",                     GfxLoggingLevel, int32_t, mozilla::gfx::LOG_DEFAULT);
   DECL_GFX_PREF(Once, "layers.windowrecording.path",           LayersWindowRecordingPath, std::string, std::string());
 
   DECL_GFX_PREF(Live, "layout.frame_rate",                     LayoutFrameRate, int32_t, -1);
