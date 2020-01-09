@@ -43,7 +43,8 @@ class JSWindowActorService final {
                       BrowsingContext* aBrowsingContext,
                       JS::MutableHandleObject aActor, ErrorResult& aRv);
 
-  void ReceiveMessage(JS::RootedObject& aObj, const nsString& aMessageName,
+  void ReceiveMessage(nsISupports* aActor, JS::RootedObject& aObj,
+                      const nsString& aMessageName,
                       ipc::StructuredCloneData& aData);
 
   
