@@ -588,11 +588,7 @@ inline void MarkObjectStateChange(JSContext* cx, JSObject* obj) {
 
 
 extern void TypeMonitorResult(JSContext* cx, JSScript* script, jsbytecode* pc,
-                              TypeSet::Type type);
-extern void TypeMonitorResult(JSContext* cx, JSScript* script, jsbytecode* pc,
                               StackTypeSet* types, TypeSet::Type type);
-extern void TypeMonitorResult(JSContext* cx, JSScript* script, jsbytecode* pc,
-                              const Value& rval);
 
 
 
@@ -659,18 +655,6 @@ inline StackTypeSet* TypeScript::bytecodeTypes(const AutoSweepTypeScript& sweep,
   MOZ_ASSERT(CurrentThreadCanAccessZone(script->zone()));
   return BytecodeTypes(script, pc, bytecodeTypeMap(), bytecodeTypeMapHint(),
                        typeArray(sweep));
-}
-
- inline void TypeScript::MonitorBytecodeType(
-    JSContext* cx, JSScript* script, jsbytecode* pc, const js::Value& rval) {
-  TypeMonitorResult(cx, script, pc, rval);
-}
-
- inline void TypeScript::MonitorBytecodeType(JSContext* cx,
-                                                         JSScript* script,
-                                                         jsbytecode* pc,
-                                                         TypeSet::Type type) {
-  TypeMonitorResult(cx, script, pc, type);
 }
 
  inline void TypeScript::MonitorBytecodeType(
