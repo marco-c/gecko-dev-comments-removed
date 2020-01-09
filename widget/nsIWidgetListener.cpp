@@ -72,7 +72,7 @@ void nsIWidgetListener::RequestRepaint() {}
 
 bool nsIWidgetListener::ShouldNotBeVisible() {
   
-  return true;
+  return false;
 }
 
 nsEventStatus nsIWidgetListener::HandleEvent(WidgetGUIEvent* aEvent,
