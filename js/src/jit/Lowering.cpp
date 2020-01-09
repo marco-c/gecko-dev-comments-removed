@@ -590,6 +590,12 @@ void LIRGenerator::visitTest(MTest* test) {
   
   MOZ_ASSERT(opd->type() != MIRType::String);
 
+#ifdef ENABLE_BIGINT
+  
+  MOZ_ASSERT(opd->type() != MIRType::BigInt,
+             "BigInt should be boxed by TestPolicy");
+#endif
+
   
   if (MConstant* constant = opd->maybeConstantValue()) {
     bool b;
@@ -2090,6 +2096,9 @@ void LIRGenerator::visitToNumberInt32(MToNumberInt32* convert) {
 
     case MIRType::String:
     case MIRType::Symbol:
+#ifdef ENABLE_BIGINT
+    case MIRType::BigInt:
+#endif
     case MIRType::Object:
     case MIRType::Undefined:
       
@@ -2876,6 +2885,10 @@ void LIRGenerator::visitNot(MNot* ins) {
   
   
   MOZ_ASSERT(op->type() != MIRType::String);
+#ifdef ENABLE_BIGINT
+  MOZ_ASSERT(op->type() != MIRType::BigInt,
+             "BigInt should be boxed by TestPolicy");
+#endif
 
   
   
@@ -4671,6 +4684,11 @@ void LIRGenerator::visitConstant(MConstant* ins) {
     case MIRType::Symbol:
       define(new (alloc()) LPointer(ins->toSymbol()), ins);
       break;
+#ifdef ENABLE_BIGINT
+    case MIRType::BigInt:
+      define(new (alloc()) LPointer(ins->toBigInt()), ins);
+      break;
+#endif
     case MIRType::Object:
       define(new (alloc()) LPointer(&ins->toObject()), ins);
       break;

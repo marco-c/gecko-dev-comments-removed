@@ -78,6 +78,11 @@ class BigInt final : public js::gc::TenuredCell {
   bool isZero() const { return digitLength() == 0; }
   bool isNegative() const { return lengthSignAndReservedBits_ & SignBit; }
 
+  
+  static constexpr size_t offsetOfLengthSignAndReservedBits() {
+    return offsetof(BigInt, lengthSignAndReservedBits_);
+  }
+
   void initializeDigitsToZero();
 
   void traceChildren(JSTracer* trc);
