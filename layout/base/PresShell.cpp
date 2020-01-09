@@ -3313,7 +3313,8 @@ static nscoord ComputeWhereToScroll(WhereToScroll aWhereToScroll,
 
 
 
-static void ScrollToShowRect(nsIScrollableFrame* aFrameAsScrollable,
+static void ScrollToShowRect(nsIPresShell* aPresShell,
+                             nsIScrollableFrame* aFrameAsScrollable,
                              const nsRect& aRect,
                              nsIPresShell::ScrollAxis aVertical,
                              nsIPresShell::ScrollAxis aHorizontal,
@@ -3385,6 +3386,15 @@ static void ScrollToShowRect(nsIScrollableFrame* aFrameAsScrollable,
                                  aScrollFlags & ScrollFlags::ScrollSnap
                                      ? nsIScrollbarMediator::ENABLE_SNAP
                                      : nsIScrollbarMediator::DISABLE_SNAP);
+    
+    
+    
+    
+    if (aFrameAsScrollable->IsRootScrollFrameOfDocument() &&
+        aPresShell->GetPresContext()->IsRootContentDocument()) {
+      aPresShell->ScrollToVisual(scrollPt, FrameMetrics::eMainThread,
+                                 scrollMode);
+    }
   }
 }
 
@@ -3550,7 +3560,8 @@ bool nsIPresShell::ScrollFrameRectIntoView(nsIFrame* aFrame,
         targetRect = targetRect.Intersect(sf->GetScrolledRect());
       }
 
-      ScrollToShowRect(sf, targetRect, aVertical, aHorizontal, aScrollFlags);
+      ScrollToShowRect(this, sf, targetRect, aVertical, aHorizontal,
+                       aScrollFlags);
 
       nsPoint newPosition = sf->LastScrollDestination();
       
