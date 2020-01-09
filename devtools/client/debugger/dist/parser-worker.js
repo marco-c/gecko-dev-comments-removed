@@ -16995,7 +16995,7 @@ exports.getSource = getSource;
 exports.clearSources = clearSources;
 
 
-let cachedSources = new Map(); 
+const cachedSources = new Map(); 
 
 
 
@@ -17004,15 +17004,16 @@ function setSource(source) {
 }
 
 function getSource(sourceId) {
-  if (!cachedSources.has(sourceId)) {
+  const source = cachedSources.get(sourceId);
+  if (!source) {
     throw new Error(`Parser: source ${sourceId} was not provided.`);
   }
 
-  return cachedSources.get(sourceId);
+  return source;
 }
 
 function clearSources() {
-  cachedSources = new Map();
+  cachedSources.clear();
 }
 
  }),
