@@ -215,6 +215,11 @@ class Raptor(object):
                               but we do not install them on non Firefox browsers.")
 
         
+        
+        
+        self.config['subtest_alert_on'] = test.get('alert_on', None)
+
+        
         if self.config['app'] in ['firefox', 'geckoview', 'fennec']:
             webext_id = self.profile.addons.addon_details(raptor_webext)['id']
 

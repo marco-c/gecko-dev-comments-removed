@@ -69,7 +69,7 @@ class RaptorResultsHandler():
     def summarize_and_output(self, test_config):
         
         LOG.info("summarizing raptor test results")
-        output = Output(self.results, self.supporting_data)
+        output = Output(self.results, self.supporting_data, test_config['subtest_alert_on'])
         output.summarize()
         output.summarize_screenshots(self.images)
         
