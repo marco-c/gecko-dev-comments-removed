@@ -17,6 +17,7 @@
 #include "nsError.h"
 #include "nsStringFwd.h"
 #include "gfx2DGlue.h"
+#include "nsDependentSubstring.h"
 
 class nsIContent;
 
@@ -335,6 +336,14 @@ class SVGContentUtils {
 
 
   static bool ShapeTypeHasNoCorners(const nsIContent* aContent);
+
+  
+
+
+
+
+  static nsDependentSubstring GetAndEnsureOneToken(const nsAString& aString,
+                                                   bool& aSuccess);
 };
 
 }  
