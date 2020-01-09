@@ -101,7 +101,6 @@ class LocalStorageManager final : public nsIDOMStorageManager,
   
   nsresult GetStorageInternal(CreateMode aCreate, mozIDOMWindow* aWindow,
                               nsIPrincipal* aPrincipal,
-                              nsIPrincipal* aStoragePrincipal,
                               const nsAString& aDocumentURI, bool aPrivate,
                               Storage** aRetval);
 
