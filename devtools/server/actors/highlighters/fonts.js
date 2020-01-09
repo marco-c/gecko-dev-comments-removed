@@ -5,10 +5,20 @@
 "use strict";
 
 const InspectorUtils = require("InspectorUtils");
+loader.lazyRequireGetter(this, "loadSheet", "devtools/shared/layout/utils", true);
+loader.lazyRequireGetter(this, "removeSheet", "devtools/shared/layout/utils", true);
 
 
 
 const MAX_TEXT_RANGES = 100;
+
+
+
+
+
+
+const STYLESHEET_URI = "data:text/css," +
+  encodeURIComponent("::selection{background-color:hsl(197,71%,73%,.6)!important;}");
 
 
 
@@ -62,6 +72,10 @@ class FontsHighlighter {
     }
 
     
+    
+    loadSheet(this.env.window, STYLESHEET_URI);
+
+    
     const selection = doc.defaultView.getSelection();
     selection.removeAllRanges();
 
@@ -76,6 +90,12 @@ class FontsHighlighter {
     
     if (!this.currentNode) {
       return;
+    }
+
+    try {
+      removeSheet(this.env.window, STYLESHEET_URI);
+    } catch (e) {
+      
     }
 
     
