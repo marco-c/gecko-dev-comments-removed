@@ -48,6 +48,7 @@
 
 
 
+
 #if defined(JS_SIMULATOR_ARM64) || defined(JS_SIMULATOR_ARM)
 
 
@@ -64,6 +65,13 @@
 
 #ifdef __sparc__
 #  ifdef __LP64__
+#    define HAS_64BIT_ATOMICS
+#    define HAS_64BIT_LOCKFREE
+#  endif
+#endif
+
+#ifdef JS_CODEGEN_NONE
+#  ifdef JS_64BIT
 #    define HAS_64BIT_ATOMICS
 #    define HAS_64BIT_LOCKFREE
 #  endif
