@@ -289,6 +289,12 @@ class nsFrameLoader final : public nsStubMutationObserver,
 
 
 
+  mozilla::dom::RemoteFrameChild* GetRemoteFrameChild() const;
+
+  
+
+
+
 
   mozilla::layers::LayersId GetLayersId() const;
 
