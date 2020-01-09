@@ -26,6 +26,9 @@ class AbstractSandboxBroker {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(AbstractSandboxBroker)
 
+  static AbstractSandboxBroker *Create(GeckoProcessType aProcessType);
+
+  virtual void Shutdown() = 0;
   virtual bool LaunchApp(const wchar_t *aPath, const wchar_t *aArguments,
                          base::EnvironmentMap &aEnvironment,
                          GeckoProcessType aProcessType,
@@ -51,12 +54,6 @@ class AbstractSandboxBroker {
 
 
 
-  virtual bool AddTargetPeer(HANDLE aPeerProcess) = 0;
-
-  
-
-
-
 
 
   virtual void AddHandleToShare(HANDLE aHandle) = 0;
@@ -70,6 +67,8 @@ class SandboxBroker : public AbstractSandboxBroker {
   SandboxBroker();
 
   static void Initialize(sandbox::BrokerServices *aBrokerServices);
+
+  void Shutdown() override {}
 
   
 
@@ -102,7 +101,7 @@ class SandboxBroker : public AbstractSandboxBroker {
 
 
 
-  bool AddTargetPeer(HANDLE aPeerProcess) override;
+  static bool AddTargetPeer(HANDLE aPeerProcess);
 
   
 

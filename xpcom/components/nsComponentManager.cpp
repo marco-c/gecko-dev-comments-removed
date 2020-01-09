@@ -512,6 +512,7 @@ nsresult nsComponentManagerImpl::Init() {
     
     
     
+    case GeckoProcessType_RemoteSandboxBroker:
     default:
       loadChromeManifests = false;
       break;

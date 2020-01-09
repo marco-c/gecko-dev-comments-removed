@@ -56,6 +56,9 @@
 #    include "mozilla/Preferences.h"
 #    include "mozilla/sandboxing/sandboxLogging.h"
 #    include "WinUtils.h"
+#    if defined(_ARM64_)
+#      include "mozilla/remoteSandboxBroker.h"
+#    endif
 #  endif
 #endif
 
@@ -103,7 +106,6 @@ GeckoChildProcessHost::GeckoChildProcessHost(GeckoProcessType aProcessType,
       mGroupId(u"-"),
 #endif
 #if defined(MOZ_SANDBOX) && defined(XP_WIN)
-      mSandboxBroker(new SandboxBroker()),
       mEnableSandboxLogging(false),
       mSandboxLevel(0),
 #endif
@@ -151,6 +153,12 @@ GeckoChildProcessHost::~GeckoChildProcessHost()
         mChildProcessHandle);
 #endif
   }
+#if defined(MOZ_SANDBOX) && defined(XP_WIN)
+  if (mSandboxBroker) {
+    mSandboxBroker->Shutdown();
+    mSandboxBroker = nullptr;
+  }
+#endif
 }
 
 void GeckoChildProcessHost::Destroy() {
@@ -1020,19 +1028,22 @@ bool GeckoChildProcessHost::PerformAsyncLaunch(
   FilePath exePath;
   BinaryPathType pathType = GetPathToBinary(exePath, mProcessType);
 
-#  if defined(MOZ_SANDBOX) || (defined(_ARM64_) && defined(XP_WIN))
+#  if defined(MOZ_SANDBOX) || defined(_ARM64_)
   const bool isGMP = mProcessType == GeckoProcessType_GMPlugin;
   const bool isWidevine = isGMP && Contains(aExtraOpts, "gmp-widevinecdm");
-#    if defined(_ARM64_) && defined(XP_WIN)
+#    if defined(_ARM64_)
   const bool isClearKey = isGMP && Contains(aExtraOpts, "gmp-clearkey");
-  if (isGMP && (isClearKey || isWidevine)) {
+  const bool isSandboxBroker =
+      mProcessType == GeckoProcessType_RemoteSandboxBroker;
+  if (isClearKey || isWidevine || isSandboxBroker) {
+    
     
     
     
     exePath = exePath.DirName().AppendASCII("i686").Append(exePath.BaseName());
   }
-#    endif
-#  endif  
+#    endif  
+#  endif    
 
   CommandLine cmdLine(exePath.ToWStringHack());
 
@@ -1064,6 +1075,13 @@ bool GeckoChildProcessHost::PerformAsyncLaunch(
   }
 
 #  if defined(MOZ_SANDBOX)
+#    if defined(_ARM64_)
+  if (isClearKey || isWidevine)
+    mSandboxBroker = new RemoteSandboxBroker();
+  else
+#    endif  
+    mSandboxBroker = new SandboxBroker();
+
   bool shouldSandboxCurrentProcess = false;
 
   
@@ -1134,6 +1152,9 @@ bool GeckoChildProcessHost::PerformAsyncLaunch(
       }
       break;
     case GeckoProcessType_Socket:
+      
+      break;
+    case GeckoProcessType_RemoteSandboxBroker:
       
       break;
     case GeckoProcessType_Default:
@@ -1208,7 +1229,7 @@ bool GeckoChildProcessHost::PerformAsyncLaunch(
         
         break;
       default:
-        if (!mSandboxBroker->AddTargetPeer(process)) {
+        if (!SandboxBroker::AddTargetPeer(process)) {
           NS_WARNING("Failed to add child process as target peer.");
         }
         break;
