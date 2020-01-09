@@ -324,6 +324,8 @@ class BinParseContext : public ParseContext {
                      newDirectives,  true) {}
 };
 
+void TraceBinParser(JSTracer* trc, JS::AutoGCRooter* parser);
+
 extern template class BinASTParserPerTokenizer<BinTokenReaderMultipart>;
 
 }  

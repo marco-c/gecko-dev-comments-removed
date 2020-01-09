@@ -166,6 +166,11 @@
 
 
 
+
+
+
+
+
 #include "mozilla/Array.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/TypeTraits.h"
@@ -190,8 +195,6 @@ namespace js {
 class ModuleObject;
 
 namespace frontend {
-
-class ParserBase;
 
 template <class ParseHandler, typename Unit>
 class GeneralParser;
@@ -235,23 +238,17 @@ class AutoAwaitIsKeyword;
 template <class ParseHandler, typename Unit>
 class AutoInParametersOfAsyncFunction;
 
-class MOZ_STACK_CLASS ParserBase : private JS::AutoGCRooter,
-                                   public ErrorReportMixin {
-  using Base = ErrorReportMixin;
-
- private:
-  ParserBase* thisForCtor() { return this; }
-
-  
-  friend void js::frontend::TraceParser(JSTracer* trc,
-                                        JS::AutoGCRooter* parser);
+class MOZ_STACK_CLASS ParserSharedBase : private JS::AutoGCRooter {
+ public:
+  ParserSharedBase(JSContext* cx, LifoAlloc& alloc, UsedNameTracker& usedNames,
+                   ScriptSourceObject* sourceObject);
+  ~ParserSharedBase();
 
  public:
   JSContext* const cx_;
 
   LifoAlloc& alloc_;
 
-  TokenStreamAnyChars anyChars;
   LifoAlloc::Mark tempPoolMark_;
 
   
@@ -263,12 +260,45 @@ class MOZ_STACK_CLASS ParserBase : private JS::AutoGCRooter,
   
   UsedNameTracker& usedNames_;
 
-  ScriptSource* ss;
-
   RootedScriptSourceObject sourceObject_;
 
   
   AutoKeepAtoms keepAtoms_;
+
+ private:
+  
+  friend void js::frontend::TraceParser(JSTracer* trc,
+                                        JS::AutoGCRooter* parser);
+  friend void js::frontend::TraceBinParser(JSTracer* trc,
+                                           JS::AutoGCRooter* parser);
+
+ protected:
+  bool hasUsedName(HandlePropertyName name);
+
+ private:
+  
+  template <typename BoxT, typename ArgT>
+  BoxT* newTraceListNode(ArgT* arg);
+
+ public:
+  
+  ObjectBox* newObjectBox(JSObject* obj);
+
+  
+  BigIntBox* newBigIntBox(BigInt* val);
+};
+
+class MOZ_STACK_CLASS ParserBase : public ParserSharedBase,
+                                   public ErrorReportMixin {
+  using Base = ErrorReportMixin;
+
+ private:
+  ParserBase* thisForCtor() { return this; }
+
+ public:
+  TokenStreamAnyChars anyChars;
+
+  ScriptSource* ss;
 
   
   const bool foldConstants_ : 1;
@@ -394,14 +424,7 @@ class MOZ_STACK_CLASS ParserBase : private JS::AutoGCRooter,
     traceListHead_ = m.traceListHead;
   }
 
- private:
-  template <typename BoxT, typename ArgT>
-  BoxT* newTraceListNode(ArgT* arg);
-
  public:
-  ObjectBox* newObjectBox(JSObject* obj);
-  BigIntBox* newBigIntBox(BigInt* val);
-
   mozilla::Maybe<GlobalScope::Data*> newGlobalScopeData(
       ParseContext::Scope& scope);
   mozilla::Maybe<ModuleScope::Data*> newModuleScopeData(
@@ -423,7 +446,6 @@ class MOZ_STACK_CLASS ParserBase : private JS::AutoGCRooter,
   bool nextTokenContinuesLetDeclaration(TokenKind next);
 
   bool noteUsedNameInternal(HandlePropertyName name);
-  bool hasUsedName(HandlePropertyName name);
   bool hasUsedFunctionSpecialName(HandlePropertyName name);
 
   bool checkAndMarkSuperScope();
