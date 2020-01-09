@@ -135,7 +135,6 @@ nsresult nsUrlClassifierStreamUpdater::FetchUpdate(
                      nsIContentPolicy::TYPE_OTHER,
                      nullptr,  
                      nullptr,  
-                     nullptr,  
                      this,     
                      loadFlags);
 

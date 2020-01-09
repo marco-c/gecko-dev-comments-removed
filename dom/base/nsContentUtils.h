@@ -3388,9 +3388,8 @@ class nsContentUtils {
 
 
 
-  static void GetCookieLifetimePolicyFromCookieSettings(
-      nsICookieSettings* aCookieSettings, nsIPrincipal* aPrincipal,
-      uint32_t* aLifetimePolicy);
+  static void GetCookieLifetimePolicyForPrincipal(nsIPrincipal* aPrincipal,
+                                                  uint32_t* aLifetimePolicy);
 
   
 

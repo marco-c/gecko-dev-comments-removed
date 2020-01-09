@@ -222,7 +222,6 @@ nsresult nsIncrementalDownload::ProcessTimeout() {
                               nsIContentPolicy::TYPE_OTHER,
                               nullptr,  
                               nullptr,  
-                              nullptr,  
                               this,     
                               mLoadFlags);
 

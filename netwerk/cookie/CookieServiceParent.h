@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef mozilla_net_CookieServiceParent_h
 #define mozilla_net_CookieServiceParent_h
@@ -35,10 +35,10 @@ class CookieServiceParent : public PCookieServiceParent {
 
   void AddCookie(nsICookie *aCookie);
 
-  
-  
-  
-  
+  // This will return true if the CookieServiceParent is currently processing
+  // an update from the content process. This is used in ContentParent to make
+  // sure that we are only forwarding those cookie updates to other content
+  // processes, not the one they originated from.
   bool ProcessingCookie() { return mProcessingCookie; }
 
  protected:
@@ -46,12 +46,10 @@ class CookieServiceParent : public PCookieServiceParent {
 
   mozilla::ipc::IPCResult RecvSetCookieString(
       const URIParams &aHost, const Maybe<URIParams> &aChannelURI,
-      const Maybe<LoadInfoArgs> &aLoadInfoArgs, const bool &aIsForeign,
-      const bool &aIsTrackingResource,
+      const bool &aIsForeign, const bool &aIsTrackingResource,
       const bool &aFirstPartyStorageAccessGranted,
       const nsCString &aCookieString, const nsCString &aServerTime,
-      const bool &aFromHttp);
-
+      const OriginAttributes &aAttrs, const bool &aFromHttp);
   mozilla::ipc::IPCResult RecvPrepareCookieList(
       const URIParams &aHost, const bool &aIsForeign,
       const bool &aIsTackingResource,
@@ -67,7 +65,7 @@ class CookieServiceParent : public PCookieServiceParent {
   bool mProcessingCookie;
 };
 
-}  
-}  
+}  // namespace net
+}  // namespace mozilla
 
-#endif  
+#endif  // mozilla_net_CookieServiceParent_h

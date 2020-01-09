@@ -63,10 +63,8 @@ function setHandler(metadata, response) {
 
 function run_test() {
   
-  if (!inChildProcess()) {
+  if (!inChildProcess())
     Services.prefs.setIntPref("network.cookie.cookieBehavior", 0);
-    Services.prefs.setBoolPref("network.cookieSettings.unblocked_for_testing", true);
-  }
 
   httpserver = new HttpServer();
   httpserver.registerPathHandler("/set", setHandler);

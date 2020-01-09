@@ -64,10 +64,8 @@ var httpserv = null;
 
 function run_test() {
   
-  if (!inChildProcess()) {
+  if (!inChildProcess())
     Services.prefs.setIntPref("network.cookie.cookieBehavior", 0);
-    Services.prefs.setBoolPref("network.cookieSettings.unblocked_for_testing", true);
-  }
 
   httpserv = new HttpServer();
   httpserv.start(-1);

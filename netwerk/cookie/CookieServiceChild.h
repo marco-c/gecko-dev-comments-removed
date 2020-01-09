@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef mozilla_net_CookieServiceChild_h__
 #define mozilla_net_CookieServiceChild_h__
@@ -19,7 +19,6 @@
 class nsCookie;
 class nsICookiePermission;
 class nsIEffectiveTLDService;
-class nsILoadInfo;
 
 struct nsCookieAttributes;
 
@@ -61,10 +60,13 @@ class CookieServiceChild : public PCookieServiceChild,
   nsresult GetCookieStringInternal(nsIURI *aHostURI, nsIChannel *aChannel,
                                    char **aCookieString);
 
-  void GetCookieStringFromCookieHashTable(
-      nsIURI *aHostURI, bool aIsForeign, bool aIsTrackingResource,
-      bool aFirstPartyStorageAccessGranted, bool aIsSafeTopLevelNav,
-      bool aIsSameSiteForeign, nsIChannel *aChannel, nsCString &aCookieString);
+  void GetCookieStringFromCookieHashTable(nsIURI *aHostURI, bool aIsForeign,
+                                          bool aIsTrackingResource,
+                                          bool aFirstPartyStorageAccessGranted,
+                                          bool aIsSafeTopLevelNav,
+                                          bool aIsSameSiteForeign,
+                                          const OriginAttributes &aAttrs,
+                                          nsCString &aCookieString);
 
   nsresult SetCookieStringInternal(nsIURI *aHostURI, nsIChannel *aChannel,
                                    const char *aCookieString,
@@ -82,7 +84,7 @@ class CookieServiceChild : public PCookieServiceChild,
 
   void PrefChanged(nsIPrefBranch *aPrefBranch);
 
-  bool RequireThirdPartyCheck(nsILoadInfo *aLoadInfo);
+  bool RequireThirdPartyCheck();
 
   mozilla::ipc::IPCResult RecvTrackCookiesLoad(
       nsTArray<CookieStruct> &&aCookiesList, const OriginAttributes &aAttrs);
@@ -105,12 +107,13 @@ class CookieServiceChild : public PCookieServiceChild,
   nsCOMPtr<nsITimer> mCookieTimer;
   nsCOMPtr<mozIThirdPartyUtil> mThirdPartyUtil;
   nsCOMPtr<nsIEffectiveTLDService> mTLDService;
+  uint8_t mCookieBehavior;
   bool mThirdPartySession;
   bool mThirdPartyNonsecureSession;
   bool mIPCOpen;
 };
 
-}  
-}  
+}  // namespace net
+}  // namespace mozilla
 
-#endif  
+#endif  // mozilla_net_CookieServiceChild_h__

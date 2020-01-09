@@ -169,7 +169,6 @@ nsresult nsManifestCheck::Begin() {
                      nullptr,  
                      nullptr,  
                      nullptr,  
-                     nullptr,  
                      nsIRequest::LOAD_BYPASS_CACHE);
 
   NS_ENSURE_SUCCESS(rv, rv);
@@ -336,7 +335,6 @@ nsresult nsOfflineCacheUpdateItem::OpenChannel(nsOfflineCacheUpdate *aUpdate) {
   rv = NS_NewChannel(getter_AddRefs(mChannel), mURI, mLoadingPrincipal,
                      nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
                      nsIContentPolicy::TYPE_OTHER,
-                     nullptr,  
                      nullptr,  
                      nullptr,  
                      this,     
