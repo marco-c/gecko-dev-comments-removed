@@ -224,6 +224,16 @@ const POLICIES_TESTS = [
       "security.tls.version.max": 4,
     },
   },
+
+  
+  {
+    policies: {
+      "CaptivePortal": false,
+    },
+    lockedPrefs: {
+      "network.captive-portal-service.enabled": false,
+    },
+  },
 ];
 
 add_task(async function test_policy_remember_passwords() {
