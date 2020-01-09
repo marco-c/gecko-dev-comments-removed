@@ -4168,8 +4168,7 @@ class MToString : public MUnaryInstruction, public ToStringPolicy::Data {
     
     
     if (def->mightBeType(MIRType::Object) ||
-        def->mightBeType(MIRType::Symbol) ||
-        def->mightBeType(MIRType::BigInt)) {
+        def->mightBeType(MIRType::Symbol)) {
       setGuard();
     }
   }
