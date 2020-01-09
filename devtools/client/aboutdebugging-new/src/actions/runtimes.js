@@ -4,6 +4,8 @@
 
 "use strict";
 
+const Services = require("Services");
+
 const Actions = require("./index");
 
 const {
@@ -75,12 +77,21 @@ function onMultiE10sUpdated() {
 function connectRuntime(id) {
   return async (dispatch, getState) => {
     dispatch({ type: CONNECT_RUNTIME_START, id });
+
+    
+    
+    const connectionTimingOutDelay = Services.prefs.getIntPref(
+      "devtools.aboutdebugging.test-connection-timing-out-delay",
+      CONNECTION_TIMING_OUT_DELAY);
+    const connectionCancelDelay = Services.prefs.getIntPref(
+      "devtools.aboutdebugging.test-connection-cancel-delay", CONNECTION_CANCEL_DELAY);
+
     const connectionNotRespondingTimer = setTimeout(() => {
       
       
       
       dispatch({ type: CONNECT_RUNTIME_NOT_RESPONDING, id });
-    }, CONNECTION_TIMING_OUT_DELAY);
+    }, connectionTimingOutDelay);
     const connectionCancelTimer = setTimeout(() => {
       
       
@@ -88,7 +99,7 @@ function connectRuntime(id) {
       
       
       dispatch({ type: CONNECT_RUNTIME_CANCEL, id });
-    }, CONNECTION_CANCEL_DELAY);
+    }, connectionCancelDelay);
 
     try {
       const runtime = findRuntimeById(id, getState().runtimes);
