@@ -189,6 +189,14 @@ async function requestPromise(errorAction, actionFn) {
 
 
 
+
+
+
+
+
+
+
+
 class BitsRequest {
   constructor(request) {
     this._request = request;
@@ -203,34 +211,112 @@ class BitsRequest {
 
 
 
+
+
+
+
+
+  shutdown() {
+    if (this.hasShutdown) {
+      return;
+    }
+    
+    this._name = this._request.name;
+    this._status = this._request.status;
+    this._bitsId = this._request.bitsId;
+    this._transferError = this._request.transferError;
+
+    this._request = null;
+  }
+
+  
+
+
+  get hasShutdown() {
+    return !this._request;
+  }
+
+  
+
+
+
+
+
+
+
   get name() {
+    if (!this._request) {
+      return this._name;
+    }
     return this._request.name;
   }
   isPending() {
+    if (!this._request) {
+      return false;
+    }
     return this._request.isPending();
   }
   get status() {
+    if (!this._request) {
+      return this._status;
+    }
     return this._request.status;
   }
   cancel(status) {
-    return this._request.cancel(status);
+    return this.cancelAsync(status);
   }
   suspend() {
+    if (!this._request) {
+      throw new BitsError(Ci.nsIBits.ERROR_TYPE_USE_AFTER_REQUEST_SHUTDOWN,
+                          Ci.nsIBits.ERROR_ACTION_SUSPEND,
+                          Ci.nsIBits.ERROR_STAGE_PRETASK,
+                          Ci.nsIBits.ERROR_CODE_TYPE_NONE);
+    }
     return this._request.suspend();
   }
   resume() {
+    if (!this._request) {
+      throw new BitsError(Ci.nsIBits.ERROR_TYPE_USE_AFTER_REQUEST_SHUTDOWN,
+                          Ci.nsIBits.ERROR_ACTION_RESUME,
+                          Ci.nsIBits.ERROR_STAGE_PRETASK,
+                          Ci.nsIBits.ERROR_CODE_TYPE_NONE);
+    }
     return this._request.resume();
   }
   get loadGroup() {
+    if (!this._request) {
+      throw new BitsError(Ci.nsIBits.ERROR_TYPE_USE_AFTER_REQUEST_SHUTDOWN,
+                          Ci.nsIBits.ERROR_ACTION_NONE,
+                          Ci.nsIBits.ERROR_STAGE_PRETASK,
+                          Ci.nsIBits.ERROR_CODE_TYPE_NONE);
+    }
     return this._request.loadGroup;
   }
   set loadGroup(group) {
+    if (!this._request) {
+      throw new BitsError(Ci.nsIBits.ERROR_TYPE_USE_AFTER_REQUEST_SHUTDOWN,
+                          Ci.nsIBits.ERROR_ACTION_NONE,
+                          Ci.nsIBits.ERROR_STAGE_PRETASK,
+                          Ci.nsIBits.ERROR_CODE_TYPE_NONE);
+    }
     this._request.loadGroup = group;
   }
   get loadFlags() {
+    if (!this._request) {
+      throw new BitsError(Ci.nsIBits.ERROR_TYPE_USE_AFTER_REQUEST_SHUTDOWN,
+                          Ci.nsIBits.ERROR_ACTION_NONE,
+                          Ci.nsIBits.ERROR_STAGE_PRETASK,
+                          Ci.nsIBits.ERROR_CODE_TYPE_NONE);
+    }
     return this._request.loadFlags;
   }
   set loadFlags(flags) {
+    if (!this._request) {
+      throw new BitsError(Ci.nsIBits.ERROR_TYPE_USE_AFTER_REQUEST_SHUTDOWN,
+                          Ci.nsIBits.ERROR_ACTION_NONE,
+                          Ci.nsIBits.ERROR_STAGE_PRETASK,
+                          Ci.nsIBits.ERROR_CODE_TYPE_NONE);
+    }
     this._request.loadFlags = flags;
   }
 
@@ -238,6 +324,9 @@ class BitsRequest {
 
 
   get bitsId() {
+    if (!this._request) {
+      return this._bitsId;
+    }
     return this._request.bitsId;
   }
 
@@ -248,7 +337,12 @@ class BitsRequest {
 
 
   get transferError() {
-    let result = this._request.transferError;
+    let result;
+    if (this._request) {
+      result = this._request.transferError;
+    } else {
+      result = this._transferError;
+    }
     if (result == Ci.nsIBits.ERROR_TYPE_SUCCESS) {
       return null;
     }
@@ -265,6 +359,12 @@ class BitsRequest {
 
 
   async changeMonitorInterval(monitorIntervalMs) {
+    if (!this._request) {
+      throw new BitsError(Ci.nsIBits.ERROR_TYPE_USE_AFTER_REQUEST_SHUTDOWN,
+                          Ci.nsIBits.ERROR_ACTION_CHANGE_MONITOR_INTERVAL,
+                          Ci.nsIBits.ERROR_STAGE_PRETASK,
+                          Ci.nsIBits.ERROR_CODE_TYPE_NONE);
+    }
     let action = gBits.ERROR_ACTION_CHANGE_MONITOR_INTERVAL;
     return requestPromise(action, callback => {
       this._request.changeMonitorInterval(monitorIntervalMs, callback);
@@ -280,13 +380,19 @@ class BitsRequest {
 
 
   async cancelAsync(status) {
+    if (!this._request) {
+      throw new BitsError(Ci.nsIBits.ERROR_TYPE_USE_AFTER_REQUEST_SHUTDOWN,
+                          Ci.nsIBits.ERROR_ACTION_CANCEL,
+                          Ci.nsIBits.ERROR_STAGE_PRETASK,
+                          Ci.nsIBits.ERROR_CODE_TYPE_NONE);
+    }
     if (status === undefined) {
       status = Cr.NS_ERROR_ABORT;
     }
     let action = gBits.ERROR_ACTION_CANCEL;
     return requestPromise(action, callback => {
       this._request.cancelAsync(status, callback);
-    });
+    }).then(() => this.shutdown());
   }
 
   
@@ -296,6 +402,12 @@ class BitsRequest {
 
 
   async setPriorityHigh() {
+    if (!this._request) {
+      throw new BitsError(Ci.nsIBits.ERROR_TYPE_USE_AFTER_REQUEST_SHUTDOWN,
+                          Ci.nsIBits.ERROR_ACTION_SET_PRIORITY,
+                          Ci.nsIBits.ERROR_STAGE_PRETASK,
+                          Ci.nsIBits.ERROR_CODE_TYPE_NONE);
+    }
     let action = gBits.ERROR_ACTION_SET_PRIORITY;
     return requestPromise(action, callback => {
       this._request.setPriorityHigh(callback);
@@ -309,6 +421,12 @@ class BitsRequest {
 
 
   async setPriorityLow() {
+    if (!this._request) {
+      throw new BitsError(Ci.nsIBits.ERROR_TYPE_USE_AFTER_REQUEST_SHUTDOWN,
+                          Ci.nsIBits.ERROR_ACTION_SET_PRIORITY,
+                          Ci.nsIBits.ERROR_STAGE_PRETASK,
+                          Ci.nsIBits.ERROR_CODE_TYPE_NONE);
+    }
     let action = gBits.ERROR_ACTION_SET_PRIORITY;
     return requestPromise(action, callback => {
       this._request.setPriorityLow(callback);
@@ -322,10 +440,16 @@ class BitsRequest {
 
 
   async complete() {
+    if (!this._request) {
+      throw new BitsError(Ci.nsIBits.ERROR_TYPE_USE_AFTER_REQUEST_SHUTDOWN,
+                          Ci.nsIBits.ERROR_ACTION_COMPLETE,
+                          Ci.nsIBits.ERROR_STAGE_PRETASK,
+                          Ci.nsIBits.ERROR_CODE_TYPE_NONE);
+    }
     let action = gBits.ERROR_ACTION_COMPLETE;
     return requestPromise(action, callback => {
       this._request.complete(callback);
-    });
+    }).then(() => this.shutdown());
   }
 
   
@@ -335,6 +459,12 @@ class BitsRequest {
 
 
   async suspendAsync() {
+    if (!this._request) {
+      throw new BitsError(Ci.nsIBits.ERROR_TYPE_USE_AFTER_REQUEST_SHUTDOWN,
+                          Ci.nsIBits.ERROR_ACTION_SUSPEND,
+                          Ci.nsIBits.ERROR_STAGE_PRETASK,
+                          Ci.nsIBits.ERROR_CODE_TYPE_NONE);
+    }
     let action = gBits.ERROR_ACTION_SUSPEND;
     return requestPromise(action, callback => {
       this._request.suspendAsync(callback);
@@ -348,6 +478,12 @@ class BitsRequest {
 
 
   async resumeAsync() {
+    if (!this._request) {
+      throw new BitsError(Ci.nsIBits.ERROR_TYPE_USE_AFTER_REQUEST_SHUTDOWN,
+                          Ci.nsIBits.ERROR_ACTION_RESUME,
+                          Ci.nsIBits.ERROR_STAGE_PRETASK,
+                          Ci.nsIBits.ERROR_CODE_TYPE_NONE);
+    }
     let action = gBits.ERROR_ACTION_RESUME;
     return requestPromise(action, callback => {
       this._request.resumeAsync(callback);

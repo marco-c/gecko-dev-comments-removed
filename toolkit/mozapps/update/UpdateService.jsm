@@ -1956,6 +1956,7 @@ UpdateService.prototype = {
           if (!this._downloader.usingBits) {
             this.stopDownload();
           } else {
+            this._downloader.cleanup();
             
             
             
@@ -4642,6 +4643,20 @@ Downloader.prototype = {
     } else {
       
       this._update = null;
+    }
+  },
+
+  
+
+
+
+  cleanup: function Downloader_cleanup() {
+    if (this.usingBits) {
+      if (this._pendingRequest) {
+        this._pendingRequest.then(() => this._request.shutdown());
+      } else {
+        this._request.shutdown();
+      }
     }
   },
 
