@@ -3132,6 +3132,11 @@ APZCTreeManager::ComputeTransformForScrollThumb(
 
   
   
+  bool scrollbarSubjectToResolution =
+      aMetrics.IsRootContent() && gfxPrefs::LayoutUseContainersForRootFrames();
+
+  
+  
   
   
   AsyncTransformComponentMatrix scrollbarTransform;
@@ -3176,7 +3181,7 @@ APZCTreeManager::ComputeTransformForScrollThumb(
         thumbOriginDelta * effectiveZoom;
     yTranslation -= thumbOriginDeltaPL;
 
-    if (aMetrics.IsRootContent()) {
+    if (scrollbarSubjectToResolution) {
       
       
       
@@ -3211,7 +3216,7 @@ APZCTreeManager::ComputeTransformForScrollThumb(
         thumbOriginDelta * effectiveZoom;
     xTranslation -= thumbOriginDeltaPL;
 
-    if (aMetrics.IsRootContent()) {
+    if (scrollbarSubjectToResolution) {
       xTranslation *= aMetrics.GetPresShellResolution();
     }
 
@@ -3228,7 +3233,7 @@ APZCTreeManager::ComputeTransformForScrollThumb(
   
   
   
-  if (aMetrics.IsRootContent()) {
+  if (scrollbarSubjectToResolution) {
     compensation = AsyncTransformComponentMatrix::Scaling(
                        aMetrics.GetPresShellResolution(),
                        aMetrics.GetPresShellResolution(), 1.0f)
