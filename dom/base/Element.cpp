@@ -1912,9 +1912,10 @@ void Element::UnbindFromTree(bool aDeep, bool aNullParent) {
   }
 #endif
 
-  ClearInDocument();
-  SetIsConnected(false);
-
+  
+  
+  
+  
   
   
   
@@ -1939,6 +1940,9 @@ void Element::UnbindFromTree(bool aDeep, bool aNullParent) {
       }
     }
   }
+
+  ClearInDocument();
+  SetIsConnected(false);
 
   if (aNullParent || !mParent->IsInShadowTree()) {
     UnsetFlags(NODE_IS_IN_SHADOW_TREE);
