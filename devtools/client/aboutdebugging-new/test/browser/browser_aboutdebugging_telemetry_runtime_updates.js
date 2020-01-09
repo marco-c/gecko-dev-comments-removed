@@ -95,6 +95,10 @@ add_task(async function testUsbRuntimeUpdates() {
   info("Remove runtime 1");
   await removeUsbRuntime(USB_RUNTIME_1, mocks, document);
 
+  
+  
+  await undefined;
+
   checkTelemetryEvents([
     { method: "runtime_disconnected", extras: runtime1ConnectedExtras },
     { method: "runtime_removed", extras: runtime1Extras },
