@@ -847,6 +847,8 @@ with modules["CONTENT"]:
     
     errors["NS_ERROR_CONTENT_CRASHED"] = FAILURE(16)
     
+    errors["NS_ERROR_FRAME_CRASHED"] = FAILURE(14)
+    
     
     errors["NS_ERROR_BUILDID_MISMATCH"] = FAILURE(17)
 

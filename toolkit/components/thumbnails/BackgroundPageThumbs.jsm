@@ -288,7 +288,12 @@ const BackgroundPageThumbs = {
 
     
     
-    browser.addEventListener("oop-browser-crashed", () => {
+    browser.addEventListener("oop-browser-crashed", event => {
+      if (!event.isTopFrame) {
+        
+        return;
+      }
+
       Cu.reportError("BackgroundThumbnails remote process crashed - recovering");
       this._destroyBrowser();
       let curCapture = this._captureQueue.length ? this._captureQueue[0] : null;

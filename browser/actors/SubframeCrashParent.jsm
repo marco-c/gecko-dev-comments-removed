@@ -1,0 +1,10 @@
+
+
+
+
+"use strict";
+
+var EXPORTED_SYMBOLS = ["SubframeCrashParent"];
+
+class SubframeCrashParent extends JSWindowActorParent {
+}
