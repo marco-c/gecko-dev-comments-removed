@@ -24,6 +24,7 @@ class WindowsDllPatcherBase {
   ReadOnlyTargetFunction<MMPolicyT> ResolveRedirectedAddress(
       FARPROC aOriginalFunction) {
     ReadOnlyTargetFunction<MMPolicyT> origFn(mVMPolicy, aOriginalFunction);
+#if defined(_M_IX86) || defined(_M_X64)
     
     
     if (origFn[0] == 0xeb) {
@@ -45,13 +46,13 @@ class WindowsDllPatcherBase {
       if (offset <= 0) {
         
         
-        return std::move(origFn);
+        return origFn;
       }
 
       for (int8_t i = 0; i < offset; i++) {
         if (origFn[2 + i] != 0x90) {
           
-          return std::move(origFn);
+          return origFn;
         }
       }
 
@@ -79,15 +80,16 @@ class WindowsDllPatcherBase {
       return EnsureTargetIsAccessible(std::move(origFn), abstarget);
     }
 #endif
+#endif  
 
-    return std::move(origFn);
+    return origFn;
   }
 
  private:
   ReadOnlyTargetFunction<MMPolicyT> EnsureTargetIsAccessible(
       ReadOnlyTargetFunction<MMPolicyT> aOrigFn, uintptr_t aRedirAddress) {
     if (!mVMPolicy.IsPageAccessible(reinterpret_cast<void*>(aRedirAddress))) {
-      return std::move(aOrigFn);
+      return aOrigFn;
     }
 
     return ReadOnlyTargetFunction<MMPolicyT>(mVMPolicy, aRedirAddress);

@@ -7,11 +7,15 @@
 #ifndef mozilla_interceptor_PatcherDetour_h
 #define mozilla_interceptor_PatcherDetour_h
 
+#if defined(_M_ARM64)
+#  include "mozilla/interceptor/Arm64.h"
+#endif  
 #include "mozilla/interceptor/PatcherBase.h"
 #include "mozilla/interceptor/Trampoline.h"
 
 #include "mozilla/ScopeExit.h"
 #include "mozilla/TypedEnumBits.h"
+#include "mozilla/Types.h"
 #include "mozilla/Unused.h"
 
 #define COPY_CODES(NBYTES)                          \
@@ -67,10 +71,6 @@ class WindowsDllDetourPatcher final : public WindowsDllPatcherBase<VMPolicy> {
 
     const auto& tramps = this->mVMPolicy.Items();
     for (auto&& tramp : tramps) {
-#if defined(_M_ARM64)
-      MOZ_RELEASE_ASSERT(false, "Shouldn't get here");
-#endif
-
       
       Maybe<uintptr_t> instance = tramp.ReadEncodedPointer();
       if (!instance) {
@@ -101,6 +101,8 @@ class WindowsDllDetourPatcher final : public WindowsDllPatcherBase<VMPolicy> {
         continue;
       }
 
+#if defined(_M_IX86) || defined(_M_X64)
+
       Maybe<uint8_t> maybeOpcode1 = origBytes.ReadByte();
       if (!maybeOpcode1) {
         continue;
@@ -108,7 +110,7 @@ class WindowsDllDetourPatcher final : public WindowsDllPatcherBase<VMPolicy> {
 
       uint8_t opcode1 = maybeOpcode1.value();
 
-#if defined(_M_IX86)
+#  if defined(_M_IX86)
       
       MOZ_ASSERT(opcode1 == 0xE9);
       if (opcode1 != 0xE9) {
@@ -124,7 +126,7 @@ class WindowsDllDetourPatcher final : public WindowsDllPatcherBase<VMPolicy> {
       }
 
       origBytes.Commit();
-#elif defined(_M_X64)
+#  elif defined(_M_X64)
       if (opcode1 == 0x49) {
         if (!Clear13BytePatch(origBytes, tramp.GetCurrentRemoteAddress())) {
           continue;
@@ -137,9 +139,36 @@ class WindowsDllDetourPatcher final : public WindowsDllPatcherBase<VMPolicy> {
         MOZ_ASSERT_UNREACHABLE("Unrecognized patch!");
         continue;
       }
+#  endif
+
 #elif defined(_M_ARM64)
-      Unused << opcode1;
-      MOZ_RELEASE_ASSERT(false, "Shouldn't get here");
+
+      
+      Maybe<uint32_t> inst1 = origBytes.ReadLong();
+      if (!inst1) {
+        continue;
+      }
+
+      if (inst1.value() != 0x58000050) {
+        MOZ_ASSERT_UNREACHABLE("Unrecognized patch!");
+        continue;
+      }
+
+      Maybe<uint32_t> inst2 = origBytes.ReadLong();
+      if (!inst2) {
+        continue;
+      }
+
+      if (inst2.value() != arm64::BuildUnconditionalBranchToRegister(16)) {
+        MOZ_ASSERT_UNREACHABLE("Unrecognized patch!");
+        continue;
+      }
+
+      
+      
+      origBytes.WritePointer(tramp.GetCurrentRemoteAddress());
+      origBytes.Commit();
+
 #else
 #  error "Unknown processor type"
 #endif
@@ -148,6 +177,7 @@ class WindowsDllDetourPatcher final : public WindowsDllPatcherBase<VMPolicy> {
     this->mVMPolicy.Clear();
   }
 
+#if defined(_M_X64)
   bool Clear13BytePatch(WritableTargetFunction<MMPolicyT>& aOrigBytes,
                         const uintptr_t aResetToAddress) {
     Maybe<uint8_t> maybeOpcode2 = aOrigBytes.ReadByte();
@@ -211,6 +241,7 @@ class WindowsDllDetourPatcher final : public WindowsDllPatcherBase<VMPolicy> {
     
     return Clear13BytePatch(writableIntermediate, stubTramp.value());
   }
+#endif  
 
   void Init(DetourFlags aFlags = DetourFlags::eDefault, int aNumHooks = 0) {
     if (Initialized()) {
@@ -227,9 +258,11 @@ class WindowsDllDetourPatcher final : public WindowsDllPatcherBase<VMPolicy> {
     }
 
     ReservationFlags resFlags = ReservationFlags::eDefault;
+#if defined(_M_X64)
     if (aFlags & DetourFlags::eEnable10BytePatch) {
       resFlags |= ReservationFlags::eForceFirst2GB;
     }
+#endif  
 
     this->mVMPolicy.Reserve(aNumHooks, resFlags);
   }
@@ -249,8 +282,11 @@ class WindowsDllDetourPatcher final : public WindowsDllPatcherBase<VMPolicy> {
   }
 
  protected:
-  const static int kPageSize = 4096;
   const static int kHookSize = 128;
+
+#if !defined(_M_ARM64)
+
+  const static int kPageSize = 4096;
 
   
   static const BYTE kMaskHighNibble = 0xF0;
@@ -317,15 +353,15 @@ class WindowsDllDetourPatcher final : public WindowsDllPatcherBase<VMPolicy> {
         break;
       case kModNoRegDisp:
         if ((*aModRm & kMaskRm) == kRmNoRegDispDisp32) {
-#if defined(_M_X64)
+#  if defined(_M_X64)
           if (aSubOpcode) {
             *aSubOpcode = (*aModRm & kMaskReg) >> kRegFieldShift;
           }
           return kModOperand64;
-#else
+#  else
           
           numBytes += 4;
-#endif
+#  endif
         } else if (((*aModRm & kMaskRm) == kRmNeedSib &&
                     (*(aModRm + 1) & kMaskSibBase) == kSibBaseEbp)) {
           numBytes += 4;
@@ -346,7 +382,7 @@ class WindowsDllDetourPatcher final : public WindowsDllPatcherBase<VMPolicy> {
     return numBytes;
   }
 
-#if defined(_M_X64)
+#  if defined(_M_X64)
   enum class JumpType{Je, Jne, Jmp, Call};
 
   static bool GenerateJump(Trampoline<MMPolicyT>& aTramp,
@@ -384,15 +420,11 @@ class WindowsDllDetourPatcher final : public WindowsDllPatcherBase<VMPolicy> {
 
     return !!aTramp;
   }
-#endif
+#  endif
 
-  enum ePrefixGroupBits {
-    eNoPrefixes = 0,
-    ePrefixGroup1 = (1 << 0),
-    ePrefixGroup2 = (1 << 1),
-    ePrefixGroup3 = (1 << 2),
-    ePrefixGroup4 = (1 << 3)
-  };
+  enum ePrefixGroupBits{eNoPrefixes = 0, ePrefixGroup1 = (1 << 0),
+                        ePrefixGroup2 = (1 << 1), ePrefixGroup3 = (1 << 2),
+                        ePrefixGroup4 = (1 << 3)};
 
   int CountPrefixBytes(const ReadOnlyTargetFunction<MMPolicyT>& aBytes,
                        const int aBytesIndex, unsigned char* aOutGroupBits) {
@@ -458,6 +490,8 @@ class WindowsDllDetourPatcher final : public WindowsDllPatcherBase<VMPolicy> {
                (aReg << kRegFieldShift));
     return aModBits | (aReg << kRegFieldShift) | aRm;
   }
+
+#endif  
 
   void CreateTrampoline(ReadOnlyTargetFunction<MMPolicyT>& origBytes,
                         intptr_t aDest, void** aOutTramp) {
@@ -1042,7 +1076,36 @@ class WindowsDllDetourPatcher final : public WindowsDllPatcherBase<VMPolicy> {
       }
     }
 #elif defined(_M_ARM64)
-    MOZ_RELEASE_ASSERT(false, "Shouldn't get here");
+
+    
+    
+    
+    
+    const uint32_t kWorstCaseBytesRequired = 16;
+
+    while (origBytes.GetOffset() < kWorstCaseBytesRequired) {
+      uintptr_t curPC = origBytes.GetCurrentAbsolute();
+      uint32_t curInst = origBytes.ReadNextInstruction();
+
+      Result<arm64::LoadInfo, arm64::PCRelCheckError> pcRelInfo =
+          arm64::CheckForPCRel(curPC, curInst);
+      if (pcRelInfo.isErr()) {
+        if (pcRelInfo.unwrapErr() ==
+            arm64::PCRelCheckError::InstructionNotPCRel) {
+          
+          tramp.WriteInstruction(curInst);
+          continue;
+        }
+
+        
+        return;
+      }
+
+      
+      tramp.WriteLoadLiteral(pcRelInfo.unwrap().mAbsAddress,
+                             pcRelInfo.unwrap().mDestReg);
+    }
+
 #else
 #  error "Unknown processor type"
 #endif
@@ -1071,6 +1134,14 @@ class WindowsDllDetourPatcher final : public WindowsDllPatcherBase<VMPolicy> {
         return;
       }
     }
+#elif defined(_M_ARM64)
+    
+
+    tramp.WriteLoadLiteral(origBytes.GetAddress(), 16);
+    tramp.WriteInstruction(arm64::BuildUnconditionalBranchToRegister(16));
+
+#else
+#  error "Unsupported processor architecture"
 #endif
 
     
@@ -1146,6 +1217,17 @@ class WindowsDllDetourPatcher final : public WindowsDllPatcherBase<VMPolicy> {
       target.WriteByte(0xff);
       target.WriteByte(0xe3);
     }
+#elif defined(_M_ARM64)
+
+    
+    
+    target.WriteLong(0x58000050);
+    
+    target.WriteLong(arm64::BuildUnconditionalBranchToRegister(16));
+    target.WritePointer(aDest);
+
+#else
+#  error "Unsupported processor architecture"
 #endif
 
     if (!target.Commit()) {
