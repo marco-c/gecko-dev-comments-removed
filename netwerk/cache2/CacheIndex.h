@@ -1016,7 +1016,8 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
 
   
   
-  void DoBaseDomainAccessTelemetryReport();
+  
+  void DoTelemetryReport();
 
   static mozilla::StaticRefPtr<CacheIndex> gInstance;
   static StaticMutex sLock;
