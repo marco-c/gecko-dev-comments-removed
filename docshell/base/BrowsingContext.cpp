@@ -833,12 +833,12 @@ bool IPDLParamTraits<dom::BrowsingContext>::Read(
   }
 
   if (id == 0) {
-    aResult = nullptr;
+    *aResult = nullptr;
     return true;
   }
 
   *aResult = dom::BrowsingContext::Get(id);
-  MOZ_ASSERT(aResult, "Deserialized absent BrowsingContext!");
+  MOZ_ASSERT(*aResult, "Deserialized absent BrowsingContext!");
 
   
   if (!aActor->GetIPCChannel()->IsCrossProcess()) {
@@ -846,7 +846,7 @@ bool IPDLParamTraits<dom::BrowsingContext>::Read(
     NS_IF_RELEASE(bc);
   }
 
-  return aResult != nullptr;
+  return *aResult != nullptr;
 }
 
 void IPDLParamTraits<dom::BrowsingContext::Transaction>::Write(
