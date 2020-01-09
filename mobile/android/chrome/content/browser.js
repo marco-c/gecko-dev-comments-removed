@@ -1771,9 +1771,7 @@ var BrowserApp = {
         Services.prefs.setCharPref("intl.locale.os", languageTag);
         Services.prefs.savePrefFile(null);
 
-        let appLocale = this.getUALocalePref();
-
-        this.computeAcceptLanguages(languageTag, appLocale);
+        this.computeAcceptLanguages(languageTag);
 
         
         Strings.flush();
@@ -1795,7 +1793,7 @@ var BrowserApp = {
         
         let osLocale = Services.prefs.getCharPref("intl.locale.os");
 
-        this.computeAcceptLanguages(osLocale, data && data.languageTag);
+        this.computeAcceptLanguages(osLocale);
         break;
       }
 
@@ -2153,7 +2151,7 @@ var BrowserApp = {
 
 
 
-  computeAcceptLanguages(osLocale, appLocale) {
+  computeAcceptLanguages(osLocale) {
     let defaultBranch = Services.prefs.getDefaultBranch(null);
     let defaultAccept = defaultBranch.getComplexValue("intl.accept_languages", Ci.nsIPrefLocalizedString).data;
     console.log("Default intl.accept_languages = " + defaultAccept);
@@ -2168,10 +2166,6 @@ var BrowserApp = {
       defaultAccept = defaultAccept.toLowerCase();
     }
 
-    if (appLocale) {
-      appLocale = appLocale.toLowerCase();
-    }
-
     try {
         const resistFingerprinting = Services.prefs.getBoolPref("privacy.resistFingerprinting");
         if (resistFingerprinting) {
@@ -2179,28 +2173,30 @@ var BrowserApp = {
         }
     } catch (e) {}
 
+    
+    let chosen = Services.prefs.getCharPref("intl.locale.requested", "")
+                               .split(",")
+                               .map((x) => x.trim().toLowerCase())
+                               .filter((x) => x.length > 0);
+
+    
     if (osLocale) {
       osLocale = osLocale.toLowerCase();
+      if (!chosen.includes(osLocale)) {
+        chosen.push(osLocale);
+      }
     }
 
     
-    let chosen;
     if (defaultAccept) {
       
       
-      chosen = defaultAccept.split(",")
-                            .map((x) => x.trim())
-                            .filter((x) => (x != appLocale && x != osLocale));
-    } else {
-      chosen = [];
-    }
-
-    if (osLocale) {
-      chosen.unshift(osLocale);
-    }
-
-    if (appLocale && appLocale != osLocale) {
-      chosen.unshift(appLocale);
+      let defaults = defaultAccept.split(",").map((x) => x.trim());
+      for (let locale of defaults) {
+        if (!chosen.includes(locale)) {
+          chosen.push(locale);
+        }
+      }
     }
 
     let result = chosen.join(",");
