@@ -21,7 +21,12 @@ use super::Error;
 
 macro_rules! get_job {
     ($bcm:ident, $guid:expr, $name:expr) => {{
-        $bcm = BackgroundCopyManager::connect().map_err(|e| Other(e.to_string()))?;
+        $bcm = BackgroundCopyManager::connect().map_err(|e| {
+            ConnectBcm(HResultMessage {
+                hr: e.code(),
+                message: e.to_string(),
+            })
+        })?;
         $bcm.find_job_by_guid_and_name($guid, $name)
             .map_err(|e| GetJob($crate::in_process::format_error(&$bcm, e)))?
             .ok_or(NotFound)?
@@ -99,7 +104,12 @@ impl InProcessClient {
         
         
 
-        let bcm = BackgroundCopyManager::connect().map_err(|e| Other(e.to_string()))?;
+        let bcm = BackgroundCopyManager::connect().map_err(|e| {
+            ConnectBcm(HResultMessage {
+                hr: e.code(),
+                message: e.to_string(),
+            })
+        })?;
         let mut job = bcm
             .create_job(&self.job_name)
             .map_err(|e| Create(format_error(&bcm, e)))?;
