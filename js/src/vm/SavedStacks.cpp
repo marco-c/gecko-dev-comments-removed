@@ -138,7 +138,9 @@ void LiveSavedFrameCache::find(JSContext* cx, FramePtr& framePtr,
 
     
     
-    MOZ_ALWAYS_TRUE(!frames->empty());
+    
+    
+    MOZ_RELEASE_ASSERT(!frames->empty());
   }
 
   
