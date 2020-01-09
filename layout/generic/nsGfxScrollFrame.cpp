@@ -979,7 +979,8 @@ nscoord nsHTMLScrollFrame::GetLogicalBaseline(WritingMode aWritingMode) const {
   
   
   
-  if (mHelper.mScrolledFrame->IsBlockFrameOrSubclass()) {
+  if (mHelper.mScrolledFrame->IsBlockFrameOrSubclass() ||
+      StyleDisplay()->IsContainLayout()) {
     return nsContainerFrame::GetLogicalBaseline(aWritingMode);
   }
 

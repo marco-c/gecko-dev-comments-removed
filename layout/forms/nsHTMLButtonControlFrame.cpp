@@ -311,24 +311,14 @@ void nsHTMLButtonControlFrame::ReflowButtonContents(
   
   
   
-  if (aButtonReflowInput.mStyleDisplay->IsContainLayout()) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    nscoord containAscent = (buttonContentBox.BSize(wm) / 2) + clbp.BStart(wm);
-    aButtonDesiredSize.SetBlockStartAscent(containAscent);
-  } else if (aButtonDesiredSize.GetWritingMode().IsOrthogonalTo(wm)) {
-    aButtonDesiredSize.SetBlockStartAscent(contentsDesiredSize.ISize(wm));
-  } else {
-    aButtonDesiredSize.SetBlockStartAscent(
-        contentsDesiredSize.BlockStartAscent() + childPos.B(wm));
-  }
+  if (!aButtonReflowInput.mStyleDisplay->IsContainLayout()) {
+    if (aButtonDesiredSize.GetWritingMode().IsOrthogonalTo(wm)) {
+      aButtonDesiredSize.SetBlockStartAscent(contentsDesiredSize.ISize(wm));
+    } else {
+      aButtonDesiredSize.SetBlockStartAscent(
+          contentsDesiredSize.BlockStartAscent() + childPos.B(wm));
+    }
+  }  
 
   aButtonDesiredSize.SetOverflowAreasToDesiredBounds();
 }
