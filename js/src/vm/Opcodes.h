@@ -2220,7 +2220,7 @@
 
 
  \
-    MACRO(JSOP_RESUME, 205, "resume", NULL, 3, 2, 1, JOF_UINT16|JOF_INVOKE) \
+    MACRO(JSOP_RESUME, 205, "resume", NULL, 2, 2, 1, JOF_UINT8|JOF_INVOKE) \
     
 
 
