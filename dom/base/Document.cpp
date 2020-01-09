@@ -25,7 +25,6 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Likely.h"
 #include "mozilla/PresShell.h"
-#include "mozilla/PresShellInlines.h"
 #include "mozilla/RestyleManager.h"
 #include "mozilla/StaticPrefs.h"
 #include "mozilla/URLExtraData.h"
@@ -284,6 +283,7 @@
 #  include "nsXULPopupManager.h"
 #  include "nsIDocShellTreeOwner.h"
 #endif
+#include "nsIPresShellInlines.h"
 #include "mozilla/dom/BoxObject.h"
 
 #include "mozilla/DocLoadingTimelineMarker.h"
@@ -2854,6 +2854,9 @@ nsresult Document::InitCSP(nsIChannel* aChannel) {
 
   
   if (addonPolicy) {
+    nsCOMPtr<nsIAddonPolicyService> aps =
+        do_GetService("@mozilla.org/addons/policy-service;1");
+
     nsAutoString addonCSP;
     Unused << ExtensionPolicyService::GetSingleton().GetBaseCSP(addonCSP);
     csp->AppendPolicy(addonCSP, false, false);
@@ -6741,7 +6744,9 @@ nsINode* Document::AdoptNode(nsINode& aAdoptedNode, ErrorResult& rv) {
       
       
       
-      JSAutoRealm ar(cx, GetScopeObject()->GetGlobalJSObject());
+      JSObject* globalObject = GetScopeObject()->GetGlobalJSObject();
+      JS::ExposeObjectToActiveJS(globalObject);
+      JSAutoRealm ar(cx, globalObject);
       JS::Rooted<JS::Value> v(cx);
       rv = nsContentUtils::WrapNative(cx, ToSupports(this), this, &v,
                                        false);
