@@ -2097,6 +2097,13 @@ VARCACHE_PREF(
 )
 
 
+
+VARCACHE_PREF("browser.tabs.remote.useCrossOriginPolicy",
+              browser_tabs_remote_useCrossOriginPolicy,
+              bool, false
+)
+
+
 VARCACHE_PREF(
   "ui.use_standins_for_native_colors",
    ui_use_standins_for_native_colors,
