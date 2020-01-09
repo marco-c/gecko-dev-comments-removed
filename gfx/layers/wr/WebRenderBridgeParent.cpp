@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "mozilla/layers/WebRenderBridgeParent.h"
 
@@ -260,8 +260,8 @@ class MOZ_STACK_CLASS AutoWebRenderBridgeParentAsyncMessageSender {
   ~AutoWebRenderBridgeParentAsyncMessageSender() {
     mWebRenderBridgeParent->SendPendingAsyncMessages();
     if (mActorsToDestroy) {
-      // Destroy the actors after sending the async messages because the latter
-      // may contain references to some actors.
+      
+      
       for (const auto& op : *mActorsToDestroy) {
         mWebRenderBridgeParent->DestroyActor(op);
       }
@@ -318,7 +318,7 @@ WebRenderBridgeParent::WebRenderBridgeParent(const wr::PipelineId& aPipelineId)
       mIsFirstPaint(false),
       mSkippedComposite(false) {}
 
-/* static */ WebRenderBridgeParent* WebRenderBridgeParent::CreateDestroyed(
+ WebRenderBridgeParent* WebRenderBridgeParent::CreateDestroyed(
     const wr::PipelineId& aPipelineId) {
   return new WebRenderBridgeParent(aPipelineId);
 }
@@ -515,7 +515,7 @@ bool WebRenderBridgeParent::AddExternalImage(
     wr::ExternalImageId aExtId, wr::ImageKey aKey,
     wr::TransactionBuilder& aResources) {
   Range<wr::ImageKey> keys(&aKey, 1);
-  // Check if key is obsoleted.
+  
   if (keys[0].mNamespace != mIdNamespace) {
     return true;
   }
@@ -568,7 +568,7 @@ bool WebRenderBridgeParent::PushExternalImageForTexture(
     bool aIsUpdate, wr::TransactionBuilder& aResources) {
   auto op = aIsUpdate ? TextureHost::UPDATE_IMAGE : TextureHost::ADD_IMAGE;
   Range<wr::ImageKey> keys(&aKey, 1);
-  // Check if key is obsoleted.
+  
   if (keys[0].mNamespace != mIdNamespace) {
     return true;
   }
@@ -588,7 +588,7 @@ bool WebRenderBridgeParent::PushExternalImageForTexture(
       MOZ_ASSERT((it == mTextureHosts.end() && !aIsUpdate) ||
                  (it != mTextureHosts.end() && aIsUpdate));
       if (it != mTextureHosts.end()) {
-        // Release Texture if it exists.
+        
         ReleaseTextureOfImage(aKey);
       }
       mTextureHosts.emplace(wr::AsUint64(aKey),
@@ -632,7 +632,7 @@ bool WebRenderBridgeParent::UpdateExternalImage(
     const ImageIntRect& aDirtyRect, wr::TransactionBuilder& aResources,
     UniquePtr<ScheduleSharedSurfaceRelease>& aScheduleRelease) {
   Range<wr::ImageKey> keys(&aKey, 1);
-  // Check if key is obsoleted.
+  
   if (keys[0].mNamespace != mIdNamespace) {
     return true;
   }
@@ -658,9 +658,9 @@ bool WebRenderBridgeParent::UpdateExternalImage(
   }
 
   if (!(it->second == aExtId)) {
-    // We already have a mapping for this image key, so ensure we release the
-    // previous external image ID. This can happen when an image is animated,
-    // and it is changing the external image that the animation points to.
+    
+    
+    
     if (!aScheduleRelease) {
       aScheduleRelease = MakeUnique<ScheduleSharedSurfaceRelease>(this);
     }
@@ -735,7 +735,7 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvDeleteCompositorAnimations(
     return IPC_OK();
   }
 
-  // Once mWrEpoch has been rendered, we can delete these compositor animations
+  
   mCompositorAnimationsToDelete.push(
       CompositorAnimationIdsForEpoch(mWrEpoch, std::move(aIds)));
   return IPC_OK();
@@ -770,14 +770,14 @@ CompositorBridgeParent* WebRenderBridgeParent::GetRootCompositorBridgeParent()
   }
 
   if (IsRootWebRenderBridgeParent()) {
-    // This WebRenderBridgeParent is attached to the root
-    // CompositorBridgeParent.
+    
+    
     return static_cast<CompositorBridgeParent*>(mCompositorBridge);
   }
 
-  // Otherwise, this WebRenderBridgeParent is attached to a
-  // CrossProcessCompositorBridgeParent so we have an extra level of
-  // indirection to unravel.
+  
+  
+  
   CompositorBridgeParent::LayerTreeState* lts =
       CompositorBridgeParent::GetIndirectShadowTree(GetLayersId());
   if (!lts) {
@@ -842,8 +842,8 @@ void WebRenderBridgeParent::SetAPZSampleTime() {
     TimeStamp animationTime = cbp->GetTestingTimeStamp().valueOr(
         mCompositorScheduler->GetLastComposeTime());
     TimeDuration frameInterval = cbp->GetVsyncInterval();
-    // As with the non-webrender codepath in AsyncCompositionManager, we want to
-    // use the timestamp for the next vsync when advancing animations.
+    
+    
     if (frameInterval != TimeDuration::Forever()) {
       animationTime += frameInterval;
     }
@@ -879,8 +879,8 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvSetDisplayList(
   AUTO_PROFILER_TRACING("Paint", "SetDisplayList", GRAPHICS);
   UpdateFwdTransactionId(aFwdTransactionId);
 
-  // This ensures that destroy operations are always processed. It is not safe
-  // to early-return from RecvDPEnd without doing so.
+  
+  
   AutoWebRenderBridgeParentAsyncMessageSender autoAsyncMessageSender(
       this, &aToDestroy);
 
@@ -888,9 +888,9 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvSetDisplayList(
 
   mAsyncImageManager->SetCompositionTime(TimeStamp::Now());
 
-  // If id namespaces do not match, it means the command is obsolete, probably
-  // because the tab just moved to a new window.
-  // In that case do not send the commands to webrender.
+  
+  
+  
   bool validTransaction = aIdNamespace == mIdNamespace;
   wr::TransactionBuilder txn;
   txn.SetLowPriority(!IsRootWebRenderBridgeParent());
@@ -913,13 +913,13 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvSetDisplayList(
     mIsFirstPaint = true;
   }
 
-  // aScrollData is moved into this function but that is not reflected by the
-  // function signature due to the way the IPDL generator works. We remove the
-  // const so that we can move this structure all the way to the desired
-  // destination.
-  // Also note that this needs to happen before the display list transaction is
-  // sent to WebRender, so that the UpdateHitTestingTree call is guaranteed to
-  // be in the updater queue at the time that the scene swap completes.
+  
+  
+  
+  
+  
+  
+  
   UpdateAPZScrollData(wrEpoch,
                       std::move(const_cast<WebRenderScrollData&>(aScrollData)));
 
@@ -952,8 +952,8 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvSetDisplayList(
 
     mApi->SendTransaction(txn);
 
-    // We will schedule generating a frame after the scene
-    // build is done, so we don't need to do it here.
+    
+    
   } else if (observeLayersUpdate) {
     mCompositorBridge->ObserveLayersUpdate(GetLayersId(),
                                            mChildLayersObserverEpoch, true);
@@ -965,8 +965,8 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvSetDisplayList(
   mIsFirstPaint = false;
 
   if (!validTransaction) {
-    // Pretend we composited since someone is wating for this event,
-    // though DisplayList was not pushed to webrender.
+    
+    
     if (CompositorBridgeParent* cbp = GetRootCompositorBridgeParent()) {
       TimeStamp now = TimeStamp::Now();
       cbp->NotifyPipelineRendered(mPipelineId, wrEpoch, VsyncId(), now, now,
@@ -1005,8 +1005,8 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvEmptyTransaction(
   AUTO_PROFILER_TRACING("Paint", "EmptyTransaction", GRAPHICS);
   UpdateFwdTransactionId(aFwdTransactionId);
 
-  // This ensures that destroy operations are always processed. It is not safe
-  // to early-return without doing so.
+  
+  
   AutoWebRenderBridgeParentAsyncMessageSender autoAsyncMessageSender(
       this, &aToDestroy);
 
@@ -1014,10 +1014,10 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvEmptyTransaction(
 
   UpdateAPZFocusState(aFocusTarget);
   if (!aUpdates.empty()) {
-    // aUpdates is moved into this function but that is not reflected by the
-    // function signature due to the way the IPDL generator works. We remove the
-    // const so that we can move this structure all the way to the desired
-    // destination.
+    
+    
+    
+    
     UpdateAPZScrollOffsets(std::move(const_cast<ScrollUpdatesMap&>(aUpdates)),
                            aPaintSequenceNumber);
   }
@@ -1025,9 +1025,9 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvEmptyTransaction(
   wr::TransactionBuilder txn;
   txn.SetLowPriority(!IsRootWebRenderBridgeParent());
 
-  // Update WrEpoch for UpdateResources() and ProcessWebRenderParentCommands().
-  // WrEpoch is used to manage ExternalImages lifetimes in
-  // AsyncImagePipelineManager.
+  
+  
+  
   Unused << GetNextWrEpoch();
 
   if (!UpdateResources(aResourceUpdates, aSmallShmems, aLargeShmems, txn)) {
@@ -1049,13 +1049,13 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvEmptyTransaction(
   }
 
   if (txn.IsResourceUpdatesEmpty()) {
-    // If TransactionBuilder does not have resource updates nor display list,
-    // ScheduleGenerateFrame is not triggered via SceneBuilder and there is no
-    // need to update WrEpoch.
-    // Then we want to rollback WrEpoch. See Bug 1490117.
+    
+    
+    
+    
     RollbackWrEpoch();
   } else {
-    // There are resource updates, then we update Epoch of transaction.
+    
     txn.UpdateEpoch(mPipelineId, mWrEpoch);
     scheduleComposite = true;
   }
@@ -1066,33 +1066,33 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvEmptyTransaction(
 
   bool sendDidComposite = true;
   if (scheduleComposite || !mPendingTransactionIds.empty()) {
-    // If we are going to kick off a new composite as a result of this
-    // transaction, or if there are already composite-triggering pending
-    // transactions inflight, then set sendDidComposite to false because we will
-    // send the DidComposite message after the composite occurs.
-    // If there are no pending transactions and we're not going to do a
-    // composite, then we leave sendDidComposite as true so we just send
-    // the DidComposite notification now.
+    
+    
+    
+    
+    
+    
+    
     sendDidComposite = false;
   }
 
-  // Only register a value for CONTENT_FRAME_TIME telemetry if we actually drew
-  // something. It is for consistency with disabling WebRender.
+  
+  
   HoldPendingTransactionId(mWrEpoch, aTransactionId, false, aVsyncId,
                            aVsyncStartTime, aRefreshStartTime, aTxnStartTime,
                            aTxnURL, aFwdTime,
-                           /* aIsFirstPaint */ false,
-                           /* aUseForTelemetry */ scheduleComposite);
+                            false,
+                            scheduleComposite);
 
   if (scheduleComposite) {
-    // This is actually not necessary, since ScheduleGenerateFrame() is
-    // triggered via SceneBuilder thread. But if we remove it, it causes talos
-    // regression. The SceneBuilder thread seems not trigger next vsync right
-    // away. For now, we call ScheduleGenerateFrame() here.
+    
+    
+    
+    
     ScheduleGenerateFrame();
   } else if (sendDidComposite) {
-    // The only thing in the pending transaction id queue should be the entry
-    // we just added, and now we're going to pretend we rendered it
+    
+    
     MOZ_ASSERT(mPendingTransactionIds.size() == 1);
     if (CompositorBridgeParent* cbp = GetRootCompositorBridgeParent()) {
       TimeStamp now = TimeStamp::Now();
@@ -1129,8 +1129,8 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvParentCommands(
 bool WebRenderBridgeParent::ProcessWebRenderParentCommands(
     const InfallibleTArray<WebRenderParentCommand>& aCommands,
     wr::TransactionBuilder& aTxn) {
-  // Transaction for async image pipeline that uses ImageBridge always need to
-  // be non low priority.
+  
+  
   wr::TransactionBuilder txnForImageBridge;
   wr::AutoTransactionSender sender(mApi, &txnForImageBridge);
 
@@ -1183,9 +1183,9 @@ bool WebRenderBridgeParent::ProcessWebRenderParentCommands(
         const OpAddCompositorAnimations& op =
             cmd.get_OpAddCompositorAnimations();
         CompositorAnimations data(std::move(op.data()));
-        // AnimationHelper::GetNextCompositorAnimationsId() encodes the child
-        // process PID in the upper 32 bits of the id, verify that this is as
-        // expected.
+        
+        
+        
         if ((data.id() >> 32) != (uint64_t)OtherPid()) {
           return false;
         }
@@ -1196,7 +1196,7 @@ bool WebRenderBridgeParent::ProcessWebRenderParentCommands(
         break;
       }
       default: {
-        // other commands are handle on the child
+        
         break;
       }
     }
@@ -1207,50 +1207,50 @@ bool WebRenderBridgeParent::ProcessWebRenderParentCommands(
 void WebRenderBridgeParent::FlushSceneBuilds() {
   MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
 
-  // Since we are sending transactions through the scene builder thread, we need
-  // to block until all the inflight transactions have been processed. This
-  // flush message blocks until all previously sent scenes have been built
-  // and received by the render backend thread.
+  
+  
+  
+  
   mApi->FlushSceneBuilder();
-  // The post-swap hook for async-scene-building calls the
-  // ScheduleRenderOnCompositorThread function from the scene builder thread,
-  // which then triggers a call to ScheduleGenerateFrame() on the compositor
-  // thread. But since *this* function is running on the compositor thread,
-  // that scheduling will not happen until this call stack unwinds (or we
-  // could spin a nested event loop, but that's more messy). Instead, we
-  // simulate it ourselves by calling ScheduleGenerateFrame() directly.
-  // Note also that the post-swap hook will run and do another
-  // ScheduleGenerateFrame() after we unwind here, so we will end up with an
-  // extra render/composite that is probably avoidable, but in practice we
-  // shouldn't be calling this function all that much in production so this
-  // is probably fine. If it becomes an issue we can add more state tracking
-  // machinery to optimize it away.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   ScheduleGenerateFrame();
 }
 
 void WebRenderBridgeParent::FlushFrameGeneration() {
   MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
-  MOZ_ASSERT(IsRootWebRenderBridgeParent());  // This function is only useful on
-                                              // the root WRBP
+  MOZ_ASSERT(IsRootWebRenderBridgeParent());  
+                                              
 
-  // This forces a new GenerateFrame transaction to be sent to the render
-  // backend thread, if one is pending. This doesn't block on any other threads.
+  
+  
   if (mCompositorScheduler->NeedsComposite()) {
     mCompositorScheduler->CancelCurrentCompositeTask();
-    // Update timestamp of scheduler for APZ and animation.
+    
     mCompositorScheduler->UpdateLastComposeTime();
-    MaybeGenerateFrame(VsyncId(), /* aForceGenerateFrame */ true);
+    MaybeGenerateFrame(VsyncId(),  true);
   }
 }
 
 void WebRenderBridgeParent::FlushFramePresentation() {
   MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
 
-  // This sends a message to the render backend thread to send a message
-  // to the renderer thread, and waits for that message to be processed. So
-  // this effectively blocks on the render backend and renderer threads,
-  // following the same codepath that WebRender takes to render and composite
-  // a frame.
+  
+  
+  
+  
+  
   mApi->WaitFlushed();
 }
 
@@ -1261,28 +1261,28 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvGetSnapshot(
   }
   MOZ_ASSERT(!mPaused);
 
-  // This function should only get called in the root WRBP. If this function
-  // gets called in a non-root WRBP, we will set mForceRendering in this WRBP
-  // but it will have no effect because CompositeToTarget (which reads the
-  // flag) only gets invoked in the root WRBP. So we assert that this is the
-  // root WRBP (i.e. has a non-null mWidget) to catch violations of this rule.
+  
+  
+  
+  
+  
   MOZ_ASSERT(IsRootWebRenderBridgeParent());
 
   RefPtr<TextureHost> texture = TextureHost::AsTextureHost(aTexture);
   if (!texture) {
-    // We kill the content process rather than have it continue with an invalid
-    // snapshot, that may be too harsh and we could decide to return some sort
-    // of error to the child process and let it deal with it...
+    
+    
+    
     return IPC_FAIL_NO_REASON(this);
   }
 
-  // XXX Add other TextureHost supports.
-  // Only BufferTextureHost is supported now.
+  
+  
   BufferTextureHost* bufferTexture = texture->AsBufferTextureHost();
   if (!bufferTexture) {
-    // We kill the content process rather than have it continue with an invalid
-    // snapshot, that may be too harsh and we could decide to return some sort
-    // of error to the child process and let it deal with it...
+    
+    
+    
     return IPC_FAIL_NO_REASON(this);
   }
 
@@ -1294,12 +1294,12 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvGetSnapshot(
   uint8_t* buffer = bufferTexture->GetBuffer();
   IntSize size = bufferTexture->GetSize();
 
-  // We only support B8G8R8A8 for now.
+  
   MOZ_ASSERT(buffer);
   MOZ_ASSERT(bufferTexture->GetFormat() == SurfaceFormat::B8G8R8A8);
   uint32_t buffer_size = size.width * size.height * 4;
 
-  // Assert the stride of the buffer is what webrender expects
+  
   MOZ_ASSERT((uint32_t)(size.width * 4) == stride);
 
   FlushSceneBuilds();
@@ -1351,13 +1351,13 @@ void WebRenderBridgeParent::AddPipelineIdForCompositable(
   mAsyncCompositables.emplace(wr::AsUint64(aPipelineId), wrHost);
   mAsyncImageManager->AddAsyncImagePipeline(aPipelineId, wrHost);
 
-  // If this is being called from WebRenderBridgeParent::RecvSetDisplayList,
-  // then aTxn might contain a display list that references pipelines that
-  // we just added to the async image manager.
-  // If we send the display list alone then WR will not yet have the content for
-  // the pipelines and so it will emit errors; the SetEmptyDisplayList call
-  // below ensure that we provide its content to WR as part of the same
-  // transaction.
+  
+  
+  
+  
+  
+  
+  
   mAsyncImageManager->SetEmptyDisplayList(aPipelineId, aTxn,
                                           aTxnForImageBridge);
   return;
@@ -1430,7 +1430,7 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvClearCachedResources() {
     return IPC_OK();
   }
 
-  // Clear resources
+  
   wr::TransactionBuilder txn;
   txn.SetLowPriority(true);
   txn.ClearDisplayList(GetNextWrEpoch(), mPipelineId);
@@ -1440,15 +1440,15 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvClearCachedResources() {
           mCompositorBridge, GetLayersId(), mChildLayersObserverEpoch, false));
 
   mApi->SendTransaction(txn);
-  // Schedule generate frame to clean up Pipeline
+  
   ScheduleGenerateFrame();
-  // Remove animations.
+  
   for (const auto& id : mActiveAnimations) {
     mAnimStorage->ClearById(id);
   }
   mActiveAnimations.clear();
   std::queue<CompositorAnimationIdsForEpoch>().swap(
-      mCompositorAnimationsToDelete);  // clear queue
+      mCompositorAnimationsToDelete);  
   return IPC_OK();
 }
 
@@ -1467,23 +1467,23 @@ wr::Epoch WebRenderBridgeParent::UpdateWebRender(
     return mWrEpoch;
   }
 
-  // Update id name space to identify obsoleted keys.
-  // Since usage of invalid keys could cause crash in webrender.
+  
+  
   mIdNamespace = aApi->GetNamespace();
-  // XXX Remove it when webrender supports sharing/moving Keys between different
-  // webrender instances.
-  // XXX It requests client to update/reallocate webrender related resources,
-  // but parent side does not wait end of the update.
-  // The code could become simpler if we could serialise old keys deallocation
-  // and new keys allocation. But we do not do it, it is because client side
-  // deallocate old layers/webrender keys after new layers/webrender keys
-  // allocation. Without client side's layout refactoring, we could not finish
-  // all old layers/webrender keys removals before new layer/webrender keys
-  // allocation. In future, we could address the problem.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   Unused << SendWrUpdated(mIdNamespace, aTextureFactoryIdentifier);
   CompositorBridgeParentBase* cBridge = mCompositorBridge;
-  // XXX Stop to clear resources if webreder supports resources sharing between
-  // different webrender instances.
+  
+  
   ClearResources();
   mCompositorBridge = cBridge;
   mCompositorScheduler = aScheduler;
@@ -1491,10 +1491,10 @@ wr::Epoch WebRenderBridgeParent::UpdateWebRender(
   mAsyncImageManager = aImageMgr;
   mAnimStorage = aAnimStorage;
 
-  // Register pipeline to updated AsyncImageManager.
+  
   mAsyncImageManager->AddPipeline(mPipelineId, this);
 
-  return GetNextWrEpoch();  // Update webrender epoch
+  return GetNextWrEpoch();  
 }
 
 mozilla::ipc::IPCResult WebRenderBridgeParent::RecvScheduleComposite() {
@@ -1507,7 +1507,7 @@ void WebRenderBridgeParent::ScheduleForcedGenerateFrame() {
     return;
   }
 
-  wr::TransactionBuilder fastTxn(/* aUseSceneBuilderThread */ false);
+  wr::TransactionBuilder fastTxn( false);
   fastTxn.InvalidateRenderedFrame();
   mApi->SendTransaction(fastTxn);
 
@@ -1527,10 +1527,10 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvSyncWithCompositor() {
     root->FlushFrameGeneration();
   }
   FlushFramePresentation();
-  // Finally, we force the AsyncImagePipelineManager to handle all the
-  // pipeline updates produced in the last step, so that it frees any
-  // unneeded textures. Then we can return from this sync IPC call knowing
-  // that we've done everything we can to flush stuff on the compositor.
+  
+  
+  
+  
   mAsyncImageManager->ProcessPipelineUpdates();
 
   return IPC_OK();
@@ -1616,11 +1616,11 @@ bool WebRenderBridgeParent::AdvanceAnimations() {
   if (CompositorBridgeParent* cbp = GetRootCompositorBridgeParent()) {
     Maybe<TimeStamp> testingTimeStamp = cbp->GetTestingTimeStamp();
     if (testingTimeStamp) {
-      // If we are on testing refresh mode, use the testing time stamp.  And
-      // also we don't update mPreviousFrameTimeStamp since unlike normal
-      // refresh mode, on the testing mode animations on the compositor are
-      // synchronously composed, so we don't need to worry about the time gap
-      // between the main thread and compositor thread.
+      
+      
+      
+      
+      
       return AnimationHelper::SampleAnimations(mAnimStorage, *testingTimeStamp,
                                                *testingTimeStamp);
     }
@@ -1630,9 +1630,9 @@ bool WebRenderBridgeParent::AdvanceAnimations() {
   const bool isAnimating = AnimationHelper::SampleAnimations(
       mAnimStorage, mPreviousFrameTimeStamp, lastComposeTime);
 
-  // Reset the previous time stamp if we don't already have any running
-  // animations to avoid using the time which is far behind for newly
-  // started animations.
+  
+  
+  
   mPreviousFrameTimeStamp = isAnimating ? lastComposeTime : TimeStamp();
 
   return isAnimating;
@@ -1643,7 +1643,7 @@ bool WebRenderBridgeParent::SampleAnimations(
     nsTArray<wr::WrTransformProperty>& aTransformArray) {
   const bool isAnimating = AdvanceAnimations();
 
-  // return the animated data if has
+  
   if (mAnimStorage->AnimatedValueCount()) {
     for (auto iter = mAnimStorage->ConstAnimatedValueTableIter(); !iter.Done();
          iter.Next()) {
@@ -1671,11 +1671,11 @@ void WebRenderBridgeParent::CompositeIfNeeded() {
 void WebRenderBridgeParent::CompositeToTarget(VsyncId aId,
                                               gfx::DrawTarget* aTarget,
                                               const gfx::IntRect* aRect) {
-  // This function should only get called in the root WRBP
+  
   MOZ_ASSERT(IsRootWebRenderBridgeParent());
 
-  // The two arguments are part of the CompositorVsyncSchedulerOwner API but in
-  // this implementation they should never be non-null.
+  
+  
   MOZ_ASSERT(aTarget == nullptr);
   MOZ_ASSERT(aRect == nullptr);
 
@@ -1687,18 +1687,13 @@ void WebRenderBridgeParent::CompositeToTarget(VsyncId aId,
 
   if (mSkippedComposite ||
       wr::RenderThread::Get()->TooManyPendingFrames(mApi->GetId())) {
-    // Render thread is busy, try next time.
-    if (!mSkippedComposite) {
-      // Only record the vsync id for the first skipped composite,
-      // since this matches what we do for compressing messages
-      // in CompositorVsyncScheduler::PostCompositeTask.
-      mSkippedComposite = true;
-      mSkippedCompositeId = aId;
-    }
+    
+    mSkippedComposite = true;
+    mSkippedCompositeId = aId;
     mPreviousFrameTimeStamp = TimeStamp();
 
-    // Record that we skipped presenting a frame for
-    // all pending transactions that have finished scene building.
+    
+    
     for (auto& id : mPendingTransactionIds) {
       if (id.mSceneBuiltTime) {
         id.mSkippedComposites++;
@@ -1706,11 +1701,11 @@ void WebRenderBridgeParent::CompositeToTarget(VsyncId aId,
     }
     return;
   }
-  MaybeGenerateFrame(aId, /* aForceGenerateFrame */ false);
+  MaybeGenerateFrame(aId,  false);
 }
 
 TimeDuration WebRenderBridgeParent::GetVsyncInterval() const {
-  // This function should only get called in the root WRBP
+  
   MOZ_ASSERT(IsRootWebRenderBridgeParent());
   if (CompositorBridgeParent* cbp = GetRootCompositorBridgeParent()) {
     return cbp->GetVsyncInterval();
@@ -1720,37 +1715,37 @@ TimeDuration WebRenderBridgeParent::GetVsyncInterval() const {
 
 void WebRenderBridgeParent::MaybeGenerateFrame(VsyncId aId,
                                                bool aForceGenerateFrame) {
-  // This function should only get called in the root WRBP
+  
   MOZ_ASSERT(IsRootWebRenderBridgeParent());
 
   TimeStamp start = TimeStamp::Now();
   mAsyncImageManager->SetCompositionTime(start);
 
-  // Ensure GenerateFrame is handled on the render backend thread rather
-  // than going through the scene builder thread. That way we continue
-  // generating frames with the old scene even during slow scene builds.
+  
+  
+  
   bool useSceneBuilderThread = false;
   wr::TransactionBuilder fastTxn(useSceneBuilderThread);
 
-  // Handle transaction that is related to DisplayList.
+  
   wr::TransactionBuilder sceneBuilderTxn;
   wr::AutoTransactionSender sender(mApi, &sceneBuilderTxn);
 
-  // Adding and updating wr::ImageKeys of ImageHosts that uses ImageBridge are
-  // done without using transaction of scene builder thread. With it, updating
-  // of video frame becomes faster.
+  
+  
+  
   mAsyncImageManager->ApplyAsyncImagesOfImageBridge(sceneBuilderTxn, fastTxn);
 
   if (!mAsyncImageManager->GetCompositeUntilTime().IsNull()) {
-    // Trigger another CompositeToTarget() call because there might be another
-    // frame that we want to generate after this one.
-    // It will check if we actually want to generate the frame or not.
+    
+    
+    
     mCompositorScheduler->ScheduleComposition();
   }
 
   if (!mAsyncImageManager->GetAndResetWillGenerateFrame() &&
       fastTxn.IsEmpty() && !aForceGenerateFrame) {
-    // Could skip generating frame now.
+    
     mPreviousFrameTimeStamp = TimeStamp();
     return;
   }
@@ -1761,8 +1756,8 @@ void WebRenderBridgeParent::MaybeGenerateFrame(VsyncId aId,
   if (SampleAnimations(opacityArray, transformArray)) {
     ScheduleGenerateFrame();
   }
-  // We do this even if the arrays are empty, because it will clear out any
-  // previous properties store on the WR side, which is desirable.
+  
+  
   fastTxn.UpdateDynamicProperties(opacityArray, transformArray);
 
   SetAPZSampleTime();
@@ -1821,9 +1816,9 @@ void WebRenderBridgeParent::NotifyDidSceneBuild(
 
   mAsyncImageManager->SetWillGenerateFrame();
 
-  // If the scheduler has a composite more recent than our last composite (which
-  // we missed), and we're within the threshold ms of the last vsync, then
-  // kick of a late composite.
+  
+  
+  
   TimeStamp lastVsync = mCompositorScheduler->GetLastVsyncTime();
   VsyncId lastVsyncId = mCompositorScheduler->GetLastVsyncId();
   if (lastVsyncId == VsyncId() || !mMostRecentComposite ||
@@ -1834,8 +1829,8 @@ void WebRenderBridgeParent::NotifyDidSceneBuild(
     return;
   }
 
-  // Look through all the pipelines contained within the built scene
-  // and check which vsync they initiated from.
+  
+  
   auto info = aInfo->Raw();
   for (uintptr_t i = 0; i < info.epochs.length; i++) {
     auto epoch = info.epochs.data[i];
@@ -1847,9 +1842,9 @@ void WebRenderBridgeParent::NotifyDidSceneBuild(
 
     if (wrBridge) {
       VsyncId startId = wrBridge->GetVsyncIdForEpoch(epoch.epoch);
-      // If any of the pipelines started building on the current vsync (i.e
-      // we did all of display list building and scene building within the
-      // threshold), then don't do an early composite.
+      
+      
+      
       if (startId == lastVsyncId) {
         mCompositorScheduler->ScheduleComposition();
         return;
@@ -1944,8 +1939,8 @@ void WebRenderBridgeParent::FlushRendering(bool aWaitForPresent) {
     return;
   }
 
-  // This gets called during e.g. window resizes, so we need to flush the
-  // scene (which has the display list at the new window size).
+  
+  
   FlushSceneBuilds();
   FlushFrameGeneration();
   if (aWaitForPresent) {
@@ -1991,9 +1986,9 @@ void WebRenderBridgeParent::ClearResources() {
   txn.ClearDisplayList(wrEpoch, mPipelineId);
   mReceivedDisplayList = false;
 
-  // Schedule generate frame to clean up Pipeline
+  
   ScheduleGenerateFrame();
-  // WrFontKeys and WrImageKeys are deleted during WebRenderAPI destruction.
+  
   for (const auto& entry : mTextureHosts) {
     WebRenderTextureHost* wrTexture = entry.second->AsWebRenderTextureHost();
     MOZ_ASSERT(wrTexture);
@@ -2025,7 +2020,7 @@ void WebRenderBridgeParent::ClearResources() {
   }
   mActiveAnimations.clear();
   std::queue<CompositorAnimationIdsForEpoch>().swap(
-      mCompositorAnimationsToDelete);  // clear queue
+      mCompositorAnimationsToDelete);  
 
   if (IsRootWebRenderBridgeParent()) {
     mCompositorScheduler->Destroy();
@@ -2080,7 +2075,7 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvNewCompositable(
   if (mDestroyed) {
     return IPC_OK();
   }
-  if (!AddCompositable(aHandle, aInfo, /* aUseWebRender */ true)) {
+  if (!AddCompositable(aHandle, aInfo,  true)) {
     return IPC_FAIL_NO_REASON(this);
   }
   return IPC_OK();
@@ -2124,5 +2119,5 @@ void WebRenderBridgeParent::ExtractImageCompositeNotifications(
   mAsyncImageManager->FlushImageNotifications(aNotifications);
 }
 
-}  // namespace layers
-}  // namespace mozilla
+}  
+}  
